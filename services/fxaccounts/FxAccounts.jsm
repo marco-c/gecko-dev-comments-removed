@@ -1526,7 +1526,13 @@ FxAccountsInternal.prototype = {
   },
 
   
-  async _doTokenFetch(scopeString) {
+
+
+
+
+
+
+  async _doTokenFetch(scopeString, ttl) {
     
     
     
@@ -1536,7 +1542,8 @@ FxAccountsInternal.prototype = {
     try {
       let result = await this.fxAccountsOAuthGrantClient.getTokenFromAssertion(
         assertion,
-        scopeString
+        scopeString,
+        ttl
       );
       token = result.access_token;
     } catch (err) {
@@ -1552,7 +1559,8 @@ FxAccountsInternal.prototype = {
       assertion = await this.getAssertion(oAuthURL);
       let result = await this.fxAccountsOAuthGrantClient.getTokenFromAssertion(
         assertion,
-        scopeString
+        scopeString,
+        ttl
       );
       token = result.access_token;
     }
@@ -1597,7 +1605,7 @@ FxAccountsInternal.prototype = {
 
       
       
-      let promise = this._doTokenFetch(scopeString)
+      let promise = this._doTokenFetch(scopeString, options.ttl)
         .then(token => {
           
           

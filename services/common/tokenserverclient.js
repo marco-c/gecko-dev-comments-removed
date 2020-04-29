@@ -221,20 +221,72 @@ TokenServerClient.prototype = {
 
 
 
+
+
+
   async getTokenFromBrowserIDAssertion(url, assertion, addHeaders = {}) {
-    if (!url) {
-      throw new TokenServerClientError("url argument is not valid.");
-    }
+    this._log.debug("Beginning BID assertion exchange: " + url);
 
     if (!assertion) {
       throw new TokenServerClientError("assertion argument is not valid.");
     }
 
-    this._log.debug("Beginning BID assertion exchange: " + url);
+    return this._tokenServerExchangeRequest(
+      url,
+      `BrowserID ${assertion}`,
+      addHeaders
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  async getTokenFromOAuthToken(url, oauthToken, addHeaders = {}) {
+    this._log.debug("Beginning OAuth token exchange: " + url);
+
+    if (!oauthToken) {
+      throw new TokenServerClientError("oauthToken argument is not valid.");
+    }
+
+    return this._tokenServerExchangeRequest(
+      url,
+      `Bearer ${oauthToken}`,
+      addHeaders
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  async _tokenServerExchangeRequest(url, authorizationHeader, addHeaders = {}) {
+    if (!url) {
+      throw new TokenServerClientError("url argument is not valid.");
+    }
+
+    if (!authorizationHeader) {
+      throw new TokenServerClientError(
+        "authorizationHeader argument is not valid."
+      );
+    }
 
     let req = this.newRESTRequest(url);
     req.setHeader("Accept", "application/json");
-    req.setHeader("Authorization", "BrowserID " + assertion);
+    req.setHeader("Authorization", authorizationHeader);
 
     for (let header in addHeaders) {
       req.setHeader(header, addHeaders[header]);

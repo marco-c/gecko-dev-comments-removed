@@ -81,7 +81,8 @@ FxAccountsOAuthGrantClient.prototype = {
 
 
 
-  getTokenFromAssertion(assertion, scope) {
+
+  getTokenFromAssertion(assertion, scope, ttl) {
     if (!assertion) {
       throw new Error("Missing 'assertion' parameter");
     }
@@ -93,6 +94,7 @@ FxAccountsOAuthGrantClient.prototype = {
       client_id: this.parameters.client_id,
       assertion,
       response_type: "token",
+      ttl,
     };
 
     return this._createRequest(AUTH_ENDPOINT, "POST", params);
