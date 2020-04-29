@@ -150,8 +150,13 @@ export interface Library {
   arch: string;
 }
 
-export interface GeckoProfile {
-  
+
+
+
+
+export interface MinimallyTypedGeckoProfile {
+  libs: Array<{ debugName: string, breakpadId: string }>;
+  processes: Array<MinimallyTypedGeckoProfile>;
 }
 
 export type GetSymbolTableCallback = (
@@ -160,7 +165,7 @@ export type GetSymbolTableCallback = (
 ) => Promise<SymbolTableAsTuple>;
 
 export type ReceiveProfile = (
-  geckoProfile: GeckoProfile,
+  geckoProfile: MinimallyTypedGeckoProfile,
   getSymbolTableCallback: GetSymbolTableCallback
 ) => void;
 
@@ -189,7 +194,7 @@ export type GetActiveBrowsingContextID = () => number;
 
 
 interface GeckoProfilerFrameScriptInterface {
-  getProfile: () => Promise<object>;
+  getProfile: () => Promise<MinimallyTypedGeckoProfile>;
   getSymbolTable: GetSymbolTableCallback;
 }
 
@@ -221,7 +226,7 @@ export interface InitializedValues {
   
   pageContext: PageContext;
   
-  getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
+  getSymbolTableGetter: (profile: MinimallyTypedGeckoProfile) => GetSymbolTableCallback;
   
   
   
@@ -282,7 +287,7 @@ export type Action =
       openAboutProfiling?: () => void,
       openRemoteDevTools?: () => void,
       recordingSettingsFromPreferences: RecordingStateFromPreferences;
-      getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
+      getSymbolTableGetter: (profile: MinimallyTypedGeckoProfile) => GetSymbolTableCallback;
       supportedFeatures: string[] | null;
     }
   | {
@@ -299,7 +304,7 @@ export interface InitializeStoreValues {
   pageContext: PageContext;
   recordingPreferences: RecordingStateFromPreferences;
   supportedFeatures: string[] | null;
-  getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
+  getSymbolTableGetter: (profile: MinimallyTypedGeckoProfile) => GetSymbolTableCallback;
   openAboutProfiling?: () => void;
   openRemoteDevTools?: () => void;
 }

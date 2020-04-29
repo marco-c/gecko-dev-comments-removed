@@ -204,17 +204,11 @@ exports.startRecording = () => {
 
 
 
-
-exports.getProfileAndStopProfiler = window => {
+exports.getProfileAndStopProfiler = () => {
   return async (dispatch, getState) => {
     const perfFront = selectors.getPerfFront(getState());
     dispatch(changeRecordingState("request-to-get-profile-and-stop-profiler"));
     const profile = await perfFront.getProfileAndStopProfiler();
-
-    if (window.gClosePopup) {
-      
-      window.gClosePopup();
-    }
 
     const getSymbolTable = selectors.getSymbolTableGetter(getState())(profile);
     const receiveProfile = selectors.getReceiveProfileFn(getState());

@@ -16,6 +16,7 @@
 
 
 
+
 const TRANSFER_EVENT = "devtools:perf-html-transfer-profile";
 const SYMBOL_TABLE_REQUEST_EVENT = "devtools:perf-html-request-symbol-table";
 const SYMBOL_TABLE_RESPONSE_EVENT = "devtools:perf-html-reply-symbol-table";
@@ -66,7 +67,12 @@ function connectToPage() {
     unsafeWindow.connectToGeckoProfiler(
       makeAccessibleToPage(
         {
-          getProfile: () => Promise.resolve(gProfile),
+          getProfile: () =>
+            gProfile
+              ? Promise.resolve(gProfile)
+              : Promise.reject(
+                  new Error("No profile was available to inject into the page.")
+                ),
           getSymbolTable: (debugName, breakpadId) =>
             getSymbolTable(debugName, breakpadId),
         },
