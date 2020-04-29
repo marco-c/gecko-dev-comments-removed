@@ -2,6 +2,7 @@
 
 
 
+
 add_task(async function() {
   
   const dbg = await initDebugger("doc-sourcemaps3.html");

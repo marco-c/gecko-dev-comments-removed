@@ -8,7 +8,7 @@
 
 requestLongerTimeout(2);
 
-var gDefaultHostType = Services.prefs.getCharPref("devtools.toolbox.host");
+let gDefaultHostType = Services.prefs.getCharPref("devtools.toolbox.host");
 
 add_task(async function() {
   

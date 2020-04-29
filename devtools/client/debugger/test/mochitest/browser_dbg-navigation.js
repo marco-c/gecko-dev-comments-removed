@@ -2,11 +2,7 @@
 
 
 
-function countSources(dbg) {
-  return dbg.selectors.getSourceCount();
-}
-
-const sources = [
+const SOURCES = [
   "simple1.js",
   "simple2.js",
   "simple3.js",
@@ -43,7 +39,7 @@ add_task(async function() {
   await waitForRequestsToSettle(dbg);
   
   let onBreakpoint = waitForDispatch(dbg, "SET_BREAKPOINT");
-  await navigate(dbg, "doc-scripts.html", ...sources);
+  await navigate(dbg, "doc-scripts.html", ...SOURCES);
   await onBreakpoint
   is(countSources(dbg), 5, "5 sources are loaded.");
   ok(!getIsPaused(getCurrentThread()), "Is not paused");
@@ -51,7 +47,7 @@ add_task(async function() {
   await waitForRequestsToSettle(dbg);
   
   onBreakpoint = waitForDispatch(dbg, "SET_BREAKPOINT");
-  await navigate(dbg, "doc-scripts.html", ...sources);
+  await navigate(dbg, "doc-scripts.html", ...SOURCES);
   await onBreakpoint
   is(countSources(dbg), 5, "5 sources are loaded.");
 
@@ -68,3 +64,7 @@ add_task(async function() {
   await waitForRequestsToSettle(dbg);
   ok(getSelectedSource().url.includes("long.js"), "Selected source is long.js");
 });
+
+function countSources(dbg) {
+  return dbg.selectors.getSourceCount();
+}

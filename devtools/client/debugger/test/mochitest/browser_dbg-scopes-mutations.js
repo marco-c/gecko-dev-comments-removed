@@ -1,23 +1,6 @@
 
 
 
-function getScopeNodeLabel(dbg, index) {
-  return findElement(dbg, "scopeNode", index).innerText;
-}
-
-function getScopeNodeValue(dbg, index) {
-  return findElement(dbg, "scopeValue", index).innerText;
-}
-
-function expandNode(dbg, index) {
-  const node = findElement(dbg, "scopeNode", index);
-  const objectInspector = node.closest(".object-inspector");
-  const properties = objectInspector.querySelectorAll(".node").length;
-  findElement(dbg, "scopeNode", index).click();
-  return waitUntil(
-    () => objectInspector.querySelectorAll(".node").length !== properties
-  );
-}
 
 add_task(async function() {
   const dbg = await initDebugger("doc-script-mutate.html");
@@ -88,3 +71,21 @@ add_task(async function() {
     'The fourth element in the scope panel is "phonebook"'
   );
 });
+
+function getScopeNodeLabel(dbg, index) {
+  return findElement(dbg, "scopeNode", index).innerText;
+}
+
+function getScopeNodeValue(dbg, index) {
+  return findElement(dbg, "scopeValue", index).innerText;
+}
+
+function expandNode(dbg, index) {
+  const node = findElement(dbg, "scopeNode", index);
+  const objectInspector = node.closest(".object-inspector");
+  const properties = objectInspector.querySelectorAll(".node").length;
+  findElement(dbg, "scopeNode", index).click();
+  return waitUntil(
+    () => objectInspector.querySelectorAll(".node").length !== properties
+  );
+}

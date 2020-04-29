@@ -2,24 +2,6 @@
 
 
 
-function waitForSelectedFrame(dbg, displayName) {
-  const { getInScopeLines, getVisibleSelectedFrame } = dbg.selectors;
-  return waitForState(dbg, state => {
-    const frame = getVisibleSelectedFrame();
-
-    return (
-      frame &&
-      frame.displayName == displayName &&
-      getInScopeLines(frame.location)
-    );
-  });
-}
-
-async function assertFunctionPreview(dbg, line, column, displayName) {
-  const previewEl = await tryHovering(dbg, line, column, "tooltip");
-  is(previewEl.innerText, displayName);
-}
-
 
 add_task(async function() {
   const dbg = await initDebugger("doc-script-switching.html");
@@ -46,3 +28,20 @@ add_task(async function() {
     "In scope lines"
   );
 });
+
+function waitForSelectedFrame(dbg, displayName) {
+  const { getInScopeLines, getVisibleSelectedFrame } = dbg.selectors;
+  return waitForState(dbg, state => {
+    const frame = getVisibleSelectedFrame();
+
+    return (
+      frame?.displayName == displayName &&
+      getInScopeLines(frame.location)
+    );
+  });
+}
+
+async function assertFunctionPreview(dbg, line, column, displayName) {
+  const previewEl = await tryHovering(dbg, line, column, "tooltip");
+  is(previewEl.innerText, displayName);
+}

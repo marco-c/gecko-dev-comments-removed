@@ -2,24 +2,6 @@
 
 
 
-function skipPausing(dbg) {
-  clickElementWithSelector(dbg, ".command-bar-skip-pausing");
-  return waitForState(dbg, state => dbg.selectors.getSkipPausing());
-}
-
-function toggleBreakpoint(dbg, index) {
-  const breakpoints = findAllElements(dbg, "breakpointItems");
-  const bp = breakpoints[index];
-  const input = bp.querySelector("input");
-  input.click();
-}
-
-async function disableBreakpoint(dbg, index) {
-  const disabled = waitForDispatch(dbg, "SET_BREAKPOINT");
-  toggleBreakpoint(dbg, index);
-  await disabled;
-}
-
 
 
 
@@ -83,3 +65,21 @@ add_task(async function() {
   resume(dbg);
   ok(true, "Breakpoint is hit after a breakpoint was removed");
 });
+
+function skipPausing(dbg) {
+  clickElementWithSelector(dbg, ".command-bar-skip-pausing");
+  return waitForState(dbg, state => dbg.selectors.getSkipPausing());
+}
+
+function toggleBreakpoint(dbg, index) {
+  const breakpoints = findAllElements(dbg, "breakpointItems");
+  const bp = breakpoints[index];
+  const input = bp.querySelector("input");
+  input.click();
+}
+
+async function disableBreakpoint(dbg, index) {
+  const disabled = waitForDispatch(dbg, "SET_BREAKPOINT");
+  toggleBreakpoint(dbg, index);
+  await disabled;
+}

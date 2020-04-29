@@ -2,19 +2,6 @@
 
 
 
-async function checkWorkerThreads(dbg, count) {
-  await waitUntil(() => dbg.selectors.getThreads().length == count);
-  ok(true, `Have ${count} threads`);
-}
-
-async function checkWorkerStatus(dbg, status) {
-  await waitUntil(() => {
-    const threads = dbg.selectors.getThreads();
-    return threads.some(t => t.serviceWorkerStatus == status);
-  });
-  ok(true, `Have thread with status ${status}`);
-}
-
 
 
 add_task(async function() {
@@ -164,3 +151,16 @@ add_task(async function() {
   await waitForRequestsToSettle(dbg);
   await removeTab(gBrowser.selectedTab);
 });
+
+async function checkWorkerThreads(dbg, count) {
+  await waitUntil(() => dbg.selectors.getThreads().length == count);
+  ok(true, `Have ${count} threads`);
+}
+
+async function checkWorkerStatus(dbg, status) {
+  await waitUntil(() => {
+    const threads = dbg.selectors.getThreads();
+    return threads.some(t => t.serviceWorkerStatus == status);
+  });
+  ok(true, `Have thread with status ${status}`);
+}

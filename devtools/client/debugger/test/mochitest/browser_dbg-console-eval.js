@@ -5,17 +5,6 @@
 
 
 
-function waitForConsolePanelChange(dbg) {
-  const { toolbox } = dbg;
-
-  return new Promise(resolve => {
-    toolbox.getPanelWhenReady("webconsole").then(() => {
-      ok(toolbox.webconsolePanel, "Console is shown.");
-      resolve(toolbox.webconsolePanel);
-    });
-  });
-}
-
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html", "simple2");
 
@@ -32,3 +21,14 @@ add_task(async function() {
   await waitForConsolePanelChange(dbg);
   await hasConsoleMessage(dbg, "undefined");
 });
+
+function waitForConsolePanelChange(dbg) {
+  const { toolbox } = dbg;
+
+  return new Promise(resolve => {
+    toolbox.getPanelWhenReady("webconsole").then(() => {
+      ok(toolbox.webconsolePanel, "Console is shown.");
+      resolve(toolbox.webconsolePanel);
+    });
+  });
+}

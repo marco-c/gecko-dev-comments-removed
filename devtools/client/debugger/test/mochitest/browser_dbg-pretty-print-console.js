@@ -6,23 +6,6 @@
 
 requestLongerTimeout(2);
 
-async function waitForConsoleLink(dbg, text) {
-  const toolbox = dbg.toolbox;
-  const console = await toolbox.selectTool("webconsole");
-  const hud = console.hud;
-
-  return waitFor(() => {
-    
-    const linkEl = hud.ui.outputNode.querySelector(".frame-link-source");
-    if (!linkEl) {
-      return false;
-    }
-
-    const linkText = linkEl.textContent;
-    return linkText == text ? linkEl : null;
-  });
-}
-
 
 add_task(async function() {
   const dbg = await initDebugger("doc-minified.html");
@@ -54,3 +37,20 @@ add_task(async function() {
   await selectSource(dbg, "math.min.js:formatted");
   await waitForSelectedLocation(dbg, 22);
 });
+
+async function waitForConsoleLink(dbg, text) {
+  const toolbox = dbg.toolbox;
+  const console = await toolbox.selectTool("webconsole");
+  const hud = console.hud;
+
+  return waitFor(() => {
+    
+    const linkEl = hud.ui.outputNode.querySelector(".frame-link-source");
+    if (!linkEl) {
+      return false;
+    }
+
+    const linkText = linkEl.textContent;
+    return linkText == text ? linkEl : null;
+  });
+}

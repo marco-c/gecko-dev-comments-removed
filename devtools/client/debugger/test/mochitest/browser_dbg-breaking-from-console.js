@@ -5,9 +5,6 @@
 
 
 
-async function waitOnToolbox(toolbox, event) {
-  return new Promise(resolve => toolbox.on(event, resolve));
-}
 
 add_task(async function() {
   const url = EXAMPLE_URL + "doc-script-switching.html";
@@ -29,3 +26,7 @@ add_task(async function() {
   is(getCM(dbg).getValue(), "debugger");
   assertPausedLocation(dbg);
 });
+
+async function waitOnToolbox(toolbox, event) {
+  return new Promise(resolve => toolbox.on(event, resolve));
+}

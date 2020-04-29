@@ -1,13 +1,6 @@
 
 
 
-function getItems(dbg) {
-  return findAllElements(dbg, "outlineItems");
-}
-
-function getNthItem(dbg, index) {
-  return findElement(dbg, "outlineItem", index);
-}
 
 
 
@@ -64,3 +57,11 @@ add_task(async function() {
     "Alphabetized first function is correct"
   );
 });
+
+function getItems(dbg) {
+  return findAllElements(dbg, "outlineItems");
+}
+
+function getNthItem(dbg, index) {
+  return findElement(dbg, "outlineItem", index);
+}

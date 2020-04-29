@@ -1,3 +1,15 @@
+
+
+
+
+add_task(async function() {
+  const dbg = await initDebugger("doc-return-values.html");
+  await togglePauseOnExceptions(dbg, true, true);
+
+  await testReturnValue(dbg, "to sender");
+  await testThrowValue(dbg, "a fit");
+});
+
 function getLabel(dbg, index) {
   return findElement(dbg, "scopeNode", index).innerText;
 }
@@ -51,11 +63,3 @@ async function testThrowValue(dbg, val) {
   await resume(dbg);
   assertNotPaused(dbg);
 }
-
-add_task(async function() {
-  const dbg = await initDebugger("doc-return-values.html");
-  await togglePauseOnExceptions(dbg, true, true);
-
-  await testReturnValue(dbg, "to sender");
-  await testThrowValue(dbg, "a fit");
-});

@@ -3,6 +3,7 @@
 
 
 
+
 add_task(async function() {
   clearDebuggerPreferences();
 

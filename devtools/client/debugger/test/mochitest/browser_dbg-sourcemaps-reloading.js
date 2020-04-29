@@ -3,13 +3,6 @@
 
 requestLongerTimeout(2);
 
-async function waitForBreakpointCount(dbg, count) {
-  return waitForState(
-    dbg,
-    state => dbg.selectors.getBreakpointCount() === count
-  );
-}
-
 add_task(async function() {
   
   const dbg = await initDebugger("doc-sourcemaps.html");
@@ -59,3 +52,10 @@ add_task(async function() {
     "Breakpoint has correct line"
   );
 });
+
+async function waitForBreakpointCount(dbg, count) {
+  return waitForState(
+    dbg,
+    state => dbg.selectors.getBreakpointCount() === count
+  );
+}

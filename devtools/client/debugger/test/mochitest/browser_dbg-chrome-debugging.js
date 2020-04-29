@@ -5,15 +5,44 @@
 
 
 
-var gClient, gThreadFront;
-var gNewChromeSource = promise.defer();
 
-var { DevToolsLoader } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
-var customLoader = new DevToolsLoader({
+let gClient, gThreadFront;
+let gNewChromeSource = promise.defer();
+
+let { DevToolsLoader } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+let customLoader = new DevToolsLoader({
   invisibleToDebugger: true,
 });
-var { DevToolsServer } = customLoader.require("devtools/server/devtools-server");
-var { DevToolsClient } = require("devtools/client/devtools-client");
+let { DevToolsServer } = customLoader.require("devtools/server/devtools-server");
+let { DevToolsClient } = require("devtools/client/devtools-client");
+
+add_task(async function() {
+  gClient = initDevToolsClient();
+
+  const [type] = await gClient.connect();
+  is(type, "browser", "Root actor should identify itself as a browser.");
+
+  const descriptorFront = await gClient.mainRoot.getMainProcess();
+  const front = await descriptorFront.getTarget();
+  await front.attach();
+  const threadFront = await front.attachThread();
+  gThreadFront = threadFront;
+  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:mozilla");
+
+  
+  gThreadFront.on("newSource", onNewSource);
+
+  
+  const systemPrincipal = Cc["@mozilla.org/systemprincipal;1"].createInstance(
+      Ci.nsIPrincipal
+    );
+  const sandbox = Cu.Sandbox(systemPrincipal);
+  Cu.evalInSandbox("function foo() {}", sandbox, null, "http://foo.com");
+
+  await gNewChromeSource.promise;
+
+  await resumeAndCloseConnection();
+});
 
 function initDevToolsClient() {
   DevToolsServer.init();
@@ -44,32 +73,4 @@ registerCleanupFunction(function() {
 
   customLoader = null;
   DevToolsServer = null;
-});
-
-add_task(async function() {
-  gClient = initDevToolsClient();
-
-  const [type] = await gClient.connect();
-  is(type, "browser", "Root actor should identify itself as a browser.");
-
-  const descriptorFront = await gClient.mainRoot.getMainProcess();
-  const front = await descriptorFront.getTarget();
-  await front.attach();
-  const threadFront = await front.attachThread();
-  gThreadFront = threadFront;
-  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:mozilla");
-
-  
-  gThreadFront.on("newSource", onNewSource);
-
-  
-  const systemPrincipal = Cc["@mozilla.org/systemprincipal;1"].createInstance(
-      Ci.nsIPrincipal
-    );
-  const sandbox = Cu.Sandbox(systemPrincipal);
-  Cu.evalInSandbox("function foo() {}", sandbox, null, "http://foo.com");
-
-  await gNewChromeSource.promise;
-
-  await resumeAndCloseConnection();
 });

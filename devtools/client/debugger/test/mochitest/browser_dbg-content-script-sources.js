@@ -1,48 +1,10 @@
+
+
+
+
 "use strict";
 
 
-
-async function selectContentScriptSources(dbg) {
-  await waitForSources(dbg, "content_script.js");
-
-  
-  await selectSource(dbg, "content_script.js");
-
-  ok(
-    findElementWithSelector(dbg, ".sources-list .focused"),
-    "Source is focused"
-  );
-}
-
-async function installAndStartExtension() {
-  function contentScript() {
-    console.log("content script loads");
-
-    
-    
-    
-    window.onload = () => {};
-  }
-
-  let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      content_scripts: [
-        {
-          js: ["content_script.js"],
-          matches: ["http://example.com/*"],
-          run_at: "document_start"
-        }
-      ]
-    },
-    files: {
-      "content_script.js": contentScript
-    }
-  });
-
-  await extension.startup();
-
-  return extension;
-}
 
 add_task(async function() {
   await pushPref("devtools.chrome.enabled", true);
@@ -86,3 +48,45 @@ add_task(async function() {
 
   await extension.unload();
 });
+
+async function selectContentScriptSources(dbg) {
+  await waitForSources(dbg, "content_script.js");
+
+  
+  await selectSource(dbg, "content_script.js");
+
+  ok(
+    findElementWithSelector(dbg, ".sources-list .focused"),
+    "Source is focused"
+  );
+}
+
+async function installAndStartExtension() {
+  function contentScript() {
+    console.log("content script loads");
+
+    
+    
+    
+    window.onload = () => {};
+  }
+
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      content_scripts: [
+        {
+          js: ["content_script.js"],
+          matches: ["http://example.com/*"],
+          run_at: "document_start"
+        }
+      ]
+    },
+    files: {
+      "content_script.js": contentScript
+    }
+  });
+
+  await extension.startup();
+
+  return extension;
+}

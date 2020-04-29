@@ -2,20 +2,6 @@
 
 
 
-function findMessages(win, query) {
-  return Array.prototype.filter.call(
-    win.document.querySelectorAll(".message"),
-    e => e.innerText.includes(query)
-  );
-}
-
-async function hasMessage(dbg, msg) {
-  const webConsole = await dbg.toolbox.getPanel("webconsole");
-  return waitFor(
-    async () => findMessages(webConsole._frameWindow, msg).length > 0
-  );
-}
-
 add_task(async function() {
   Services.prefs.setBoolPref("devtools.toolbox.splitconsoleEnabled", true);
   Services.prefs.setBoolPref(
@@ -45,3 +31,17 @@ add_task(async function() {
   wrapper.dispatchEvaluateExpression(`await sleep(200, "DONE")`);
   await hasMessage(dbg, "DONE!!!");
 });
+
+function findMessages(win, query) {
+  return Array.prototype.filter.call(
+    win.document.querySelectorAll(".message"),
+    e => e.innerText.includes(query)
+  );
+}
+
+async function hasMessage(dbg, msg) {
+  const webConsole = await dbg.toolbox.getPanel("webconsole");
+  return waitFor(
+    async () => findMessages(webConsole._frameWindow, msg).length > 0
+  );
+}

@@ -2,29 +2,6 @@
 
 
 
-function assertClass(dbg, selector, className, ...args) {
-  ok(
-    findElement(dbg, selector, ...args).classList.contains(className),
-    `${className} class exists`
-  );
-}
-
-function threadIsPaused(dbg, index) {
-  return ok(findElement(dbg, "threadsPaneItemPause", index));
-}
-
-function threadIsSelected(dbg, index) {
-  return assertClass(dbg, "threadsPaneItem", "selected", index);
-}
-
-function getLabel(dbg, index) {
-  return findElement(dbg, "expressionNode", index).innerText;
-}
-
-function getValue(dbg, index) {
-  return findElement(dbg, "expressionValue", index).innerText;
-}
-
 
 
 add_task(async function() {
@@ -117,3 +94,26 @@ add_task(async function() {
   await dbg.actions.selectThread(getContext(dbg), thread1);
   assertPausedAtSourceAndLine(dbg, workerSource.id, 10);
 });
+
+function assertClass(dbg, selector, className, ...args) {
+  ok(
+    findElement(dbg, selector, ...args).classList.contains(className),
+    `${className} class exists`
+  );
+}
+
+function threadIsPaused(dbg, index) {
+  return ok(findElement(dbg, "threadsPaneItemPause", index));
+}
+
+function threadIsSelected(dbg, index) {
+  return assertClass(dbg, "threadsPaneItem", "selected", index);
+}
+
+function getLabel(dbg, index) {
+  return findElement(dbg, "expressionNode", index).innerText;
+}
+
+function getValue(dbg, index) {
+  return findElement(dbg, "expressionValue", index).innerText;
+}

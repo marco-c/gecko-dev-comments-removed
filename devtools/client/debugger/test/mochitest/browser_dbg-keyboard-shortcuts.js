@@ -5,25 +5,6 @@
 
 
 
-function pressResume(dbg) {
-  pressKey(dbg, "resumeKey");
-  return waitForPaused(dbg);
-}
-
-function pressStepOver(dbg) {
-  pressKey(dbg, "stepOverKey");
-  return waitForPaused(dbg);
-}
-
-function pressStepIn(dbg) {
-  pressKey(dbg, "stepInKey");
-  return waitForPaused(dbg);
-}
-
-function pressStepOut(dbg) {
-  pressKey(dbg, "stepOutKey");
-  return waitForPaused(dbg);
-}
 
 add_task(async function() {
   const dbg = await initDebugger("doc-debugger-statements.html");
@@ -48,3 +29,23 @@ add_task(async function() {
   await pressStepOver(dbg);
   assertPausedLocation(dbg);
 });
+
+function pressResume(dbg) {
+  pressKey(dbg, "resumeKey");
+  return waitForPaused(dbg);
+}
+
+function pressStepOver(dbg) {
+  pressKey(dbg, "stepOverKey");
+  return waitForPaused(dbg);
+}
+
+function pressStepIn(dbg) {
+  pressKey(dbg, "stepInKey");
+  return waitForPaused(dbg);
+}
+
+function pressStepOut(dbg) {
+  pressKey(dbg, "stepOutKey");
+  return waitForPaused(dbg);
+}

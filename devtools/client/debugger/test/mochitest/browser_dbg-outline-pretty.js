@@ -1,13 +1,6 @@
 
 
 
-function getItems(dbg) {
-  return findAllElements(dbg, "outlineItems");
-}
-
-function getNthItem(dbg, index) {
-  return findElement(dbg, "outlineItem", index);
-}
 
 
 add_task(async function () {
@@ -28,3 +21,11 @@ add_task(async function () {
 
   is(originalSource.length, prettySource.length, "Length of outline functions for both prettyPrint and originalSource same");
 });
+
+function getItems(dbg) {
+  return findAllElements(dbg, "outlineItems");
+}
+
+function getNthItem(dbg, index) {
+  return findElement(dbg, "outlineItem", index);
+}

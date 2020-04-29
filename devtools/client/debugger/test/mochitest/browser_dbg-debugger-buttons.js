@@ -2,31 +2,6 @@
 
 
 
-function clickButton(dbg, button) {
-  const resumeFired = waitForDispatch(dbg, "COMMAND");
-  clickElement(dbg, button);
-  return resumeFired;
-}
-
-async function clickStepOver(dbg) {
-  await clickButton(dbg, "stepOver");
-  return waitForPaused(dbg);
-}
-
-async function clickStepIn(dbg) {
-  await clickButton(dbg, "stepIn");
-  return waitForPaused(dbg);
-}
-
-async function clickStepOut(dbg) {
-  await clickButton(dbg, "stepOut");
-  return waitForPaused(dbg);
-}
-
-async function clickResume(dbg) {
-  return clickButton(dbg, "resume");
-}
-
 
 
 
@@ -64,3 +39,28 @@ add_task(async function() {
   await clickStepOut(dbg);
   assertPausedLocation(dbg);
 });
+
+function clickButton(dbg, button) {
+  const resumeFired = waitForDispatch(dbg, "COMMAND");
+  clickElement(dbg, button);
+  return resumeFired;
+}
+
+async function clickStepOver(dbg) {
+  await clickButton(dbg, "stepOver");
+  return waitForPaused(dbg);
+}
+
+async function clickStepIn(dbg) {
+  await clickButton(dbg, "stepIn");
+  return waitForPaused(dbg);
+}
+
+async function clickStepOut(dbg) {
+  await clickButton(dbg, "stepOut");
+  return waitForPaused(dbg);
+}
+
+async function clickResume(dbg) {
+  return clickButton(dbg, "resume");
+}

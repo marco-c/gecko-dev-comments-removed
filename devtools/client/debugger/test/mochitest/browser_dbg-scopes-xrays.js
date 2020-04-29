@@ -1,32 +1,6 @@
 
 
 
-function findNode(dbg, text) {
-  for (let index = 0;; index++) {
-    var elem = findElement(dbg, "scopeNode", index);
-    if (elem && elem.innerText == text) {
-      return elem;
-    }
-  }
-}
-
-function toggleNode(dbg, text) {
-  return toggleObjectInspectorNode(findNode(dbg, text));
-}
-
-function findNodeValue(dbg, text) {
-  for (let index = 0;; index++) {
-    var elem = findElement(dbg, "scopeNode", index);
-    if (elem && elem.innerText == text) {
-      return findElement(dbg, "scopeValue", index).innerText;
-    }
-  }
-}
-
-async function checkObjectNode(dbg, text, value) {
-  await toggleNode(dbg, text);
-  ok(findNodeValue(dbg, "a") == value, "object value");
-}
 
 
 add_task(async function() {
@@ -61,3 +35,30 @@ add_task(async function() {
   await checkObjectNode(dbg, "<value>", "6");
   await toggleNode(dbg, "weakmap");
 });
+
+function findNode(dbg, text) {
+  for (let index = 0;; index++) {
+    const elem = findElement(dbg, "scopeNode", index);
+    if (elem?.innerText == text) {
+      return elem;
+    }
+  }
+}
+
+function toggleNode(dbg, text) {
+  return toggleObjectInspectorNode(findNode(dbg, text));
+}
+
+function findNodeValue(dbg, text) {
+  for (let index = 0;; index++) {
+    const elem = findElement(dbg, "scopeNode", index);
+    if (elem?.innerText == text) {
+      return findElement(dbg, "scopeValue", index).innerText;
+    }
+  }
+}
+
+async function checkObjectNode(dbg, text, value) {
+  await toggleNode(dbg, text);
+  ok(findNodeValue(dbg, "a") == value, "object value");
+}

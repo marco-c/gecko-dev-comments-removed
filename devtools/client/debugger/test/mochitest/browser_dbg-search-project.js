@@ -2,37 +2,6 @@
 
 
 
-function openProjectSearch(dbg) {
-  synthesizeKeyShortcut("CmdOrCtrl+Shift+F");
-  return waitForState(
-    dbg,
-    state => dbg.selectors.getActiveSearch() === "project"
-  );
-}
-
-function closeProjectSearch(dbg) {
-  pressKey(dbg, "Escape");
-  return waitForState(dbg, state => !dbg.selectors.getActiveSearch());
-}
-
-async function selectResult(dbg) {
-  const select = waitForState(dbg, () => !dbg.selectors.getActiveSearch());
-  await clickElement(dbg, "fileMatch");
-  return select;
-}
-
-function getExpandedResultsCount(dbg) {
-  return findAllElements(dbg, "projectSerchExpandedResults").length;
-}
-
-function getResultsFiles(dbg) {
-  const matches = dbg.selectors
-    .getTextSearchResults()
-    .map(file => file.matches);
-
-  return [...matches].length;
-}
-
 
 add_task(async function() {
   const dbg = await initDebugger("doc-script-switching.html", "switching-01");
@@ -74,3 +43,34 @@ add_task(async function() {
 
   is(getExpandedResultsCount(dbg), 226);
 });
+
+function openProjectSearch(dbg) {
+  synthesizeKeyShortcut("CmdOrCtrl+Shift+F");
+  return waitForState(
+    dbg,
+    state => dbg.selectors.getActiveSearch() === "project"
+  );
+}
+
+function closeProjectSearch(dbg) {
+  pressKey(dbg, "Escape");
+  return waitForState(dbg, state => !dbg.selectors.getActiveSearch());
+}
+
+async function selectResult(dbg) {
+  const select = waitForState(dbg, () => !dbg.selectors.getActiveSearch());
+  await clickElement(dbg, "fileMatch");
+  return select;
+}
+
+function getExpandedResultsCount(dbg) {
+  return findAllElements(dbg, "projectSerchExpandedResults").length;
+}
+
+function getResultsFiles(dbg) {
+  const matches = dbg.selectors
+    .getTextSearchResults()
+    .map(file => file.matches);
+
+  return [...matches].length;
+}

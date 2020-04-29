@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 
@@ -10,24 +11,6 @@
 const {
   gDevToolsBrowser
 } = require("devtools/client/framework/devtools-browser");
-
-function toggleBreakpoint(dbg, index) {
-  const bp = findAllElements(dbg, "breakpointItems")[index];
-  const input = bp.querySelector("input");
-  input.click();
-}
-
-async function disableBreakpoint(dbg, index) {
-  const disabled = waitForDispatch(dbg, "SET_BREAKPOINT");
-  toggleBreakpoint(dbg, index);
-  await disabled;
-}
-
-async function enableBreakpoint(dbg, index) {
-  const enabled = waitForDispatch(dbg, "SET_BREAKPOINT");
-  toggleBreakpoint(dbg, index);
-  await enabled;
-}
 
 add_task(async function() {
   clearDebuggerPreferences();
@@ -65,3 +48,21 @@ add_task(async function() {
 
   info("Toolbox is destroyed");
 });
+
+function toggleBreakpoint(dbg, index) {
+  const bp = findAllElements(dbg, "breakpointItems")[index];
+  const input = bp.querySelector("input");
+  input.click();
+}
+
+async function disableBreakpoint(dbg, index) {
+  const disabled = waitForDispatch(dbg, "SET_BREAKPOINT");
+  toggleBreakpoint(dbg, index);
+  await disabled;
+}
+
+async function enableBreakpoint(dbg, index) {
+  const enabled = waitForDispatch(dbg, "SET_BREAKPOINT");
+  toggleBreakpoint(dbg, index);
+  await enabled;
+}

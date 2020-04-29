@@ -1,3 +1,7 @@
+
+
+
+
 add_task(async function() {
   const dbg = await initDebugger("doc-asm.html");
   await reload(dbg);

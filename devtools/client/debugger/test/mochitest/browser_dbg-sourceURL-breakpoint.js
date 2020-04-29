@@ -2,6 +2,7 @@
 
 
 
+
 add_task(async function() {
   const dbg = await initDebugger("doc-sourceURL-breakpoint.html", "my-foo.js");
   await selectSource(dbg, "my-foo.js");

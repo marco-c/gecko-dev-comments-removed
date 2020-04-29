@@ -1,13 +1,6 @@
 
 
 
-function getItems(dbg) {
-  return findAllElements(dbg, "outlineItems");
-}
-
-function getNthItem(dbg, index) {
-  return findElement(dbg, "outlineItem", index);
-}
 
 
 add_task(async function() {
@@ -80,3 +73,11 @@ add_task(async function() {
   ok(getItems(dbg)[0].textContent.includes("TodoModel(key)"), "item TodoModel");
   ok(getItems(dbg)[1].textContent.includes("addTodo(title)"), "item addTodo");
 });
+
+function getItems(dbg) {
+  return findAllElements(dbg, "outlineItems");
+}
+
+function getNthItem(dbg, index) {
+  return findElement(dbg, "outlineItem", index);
+}

@@ -1,16 +1,11 @@
 
 
 
+
 "use strict";
 
 
 
-
-async function waitForLink(toolbox) {
-  const { hud } = toolbox.getPanel("webconsole");
-
-  return waitFor(() => hud.ui.outputNode.querySelector(".frame-link-source"));
-}
 
 add_task(async function() {
   const toolbox = await initPane("doc-script-switching.html", "webconsole");
@@ -22,3 +17,9 @@ add_task(async function() {
   await waitForElementWithSelector(dbg, ".CodeMirror-code > .highlight-line");
   assertHighlightLocation(dbg, "script-switching-02", 14);
 });
+
+async function waitForLink(toolbox) {
+  const { hud } = toolbox.getPanel("webconsole");
+
+  return waitFor(() => hud.ui.outputNode.querySelector(".frame-link-source"));
+}

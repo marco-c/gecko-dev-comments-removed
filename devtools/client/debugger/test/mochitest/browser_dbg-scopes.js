@@ -1,9 +1,6 @@
 
 
 
-function getLabel(dbg, index) {
-  return findElement(dbg, "scopeNode", index).innerText;
-}
 
 add_task(async function() {
   const dbg = await initDebugger("doc-script-switching.html");
@@ -29,3 +26,7 @@ add_task(async function() {
   is(getLabel(dbg, 4), "foo()");
   is(getLabel(dbg, 5), "Window");
 });
+
+function getLabel(dbg, index) {
+  return findElement(dbg, "scopeNode", index).innerText;
+}

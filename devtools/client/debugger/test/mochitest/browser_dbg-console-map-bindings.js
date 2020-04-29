@@ -1,6 +1,26 @@
 
 
 
+
+add_task(async function() {
+  Services.prefs.setBoolPref("devtools.toolbox.splitconsoleEnabled", true);
+  const dbg = await initDebugger("doc-strict.html");
+
+  await getSplitConsole(dbg);
+  ok(dbg.toolbox.splitConsole, "Split console is shown.");
+
+  invokeInTab("strict", 2);
+
+  await waitForPaused(dbg);
+  await evaluate(dbg, "var c = 3");
+  const msg2 = await evaluate(dbg, "c");
+
+  is(msg2.trim(), "3");
+});
+
+
+
+
 function getSplitConsole(dbg) {
   const { toolbox, win } = dbg;
 
@@ -27,19 +47,3 @@ async function evaluate(dbg, expression) {
   const msg = await evaluateExpressionInConsole(hud, expression);
   return msg.innerText;
 }
-
-add_task(async function() {
-  Services.prefs.setBoolPref("devtools.toolbox.splitconsoleEnabled", true);
-  const dbg = await initDebugger("doc-strict.html");
-
-  await getSplitConsole(dbg);
-  ok(dbg.toolbox.splitConsole, "Split console is shown.");
-
-  invokeInTab("strict", 2);
-
-  await waitForPaused(dbg);
-  await evaluate(dbg, "var c = 3");
-  const msg2 = await evaluate(dbg, "c");
-
-  is(msg2.trim(), "3");
-});

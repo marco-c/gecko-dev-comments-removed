@@ -2,6 +2,50 @@
 
 
 
+
+add_task(async function() {
+  await pushPref("devtools.debugger.features.inline-preview", true);
+
+  const dbg = await initDebugger(
+    "doc-inline-preview.html",
+    "inline-preview.js"
+  );
+  await selectSource(dbg, "inline-preview.js");
+
+  await checkInlinePreview(dbg, "checkValues", [
+    { identifier: "a:", value: '""' },
+    { identifier: "b:", value: "false" },
+    { identifier: "c:", value: "undefined" },
+    { identifier: "d:", value: "null" },
+    { identifier: "e:", value: "Array []" },
+    { identifier: "f:", value: "Object { }" },
+    { identifier: "obj:", value: "Object { foo: 1 }" },
+    {
+      identifier: "bs:",
+      value: "Array(101) [ {…}, {…}, {…}, … ]",
+    },
+  ]);
+
+  await checkInlinePreview(dbg, "columnWise", [
+    { identifier: "c:", value: '"c"' },
+    { identifier: "a:", value: '"a"' },
+    { identifier: "b:", value: '"b"' },
+  ]);
+
+  
+  invokeInTab("btnClick");
+  await checkInspectorIcon(dbg);
+
+  const { toolbox } = dbg;
+  await toolbox.selectTool("jsdebugger");
+
+  await waitForPaused(dbg);
+
+  
+  
+  await checkInspectorIcon(dbg);
+});
+
 async function checkInlinePreview(dbg, fnName, inlinePreviews) {
   invokeInTab(fnName);
 
@@ -49,47 +93,3 @@ async function checkInspectorIcon(dbg) {
 
   await resume(dbg);
 }
-
-
-add_task(async function() {
-  await pushPref("devtools.debugger.features.inline-preview", true);
-
-  const dbg = await initDebugger(
-    "doc-inline-preview.html",
-    "inline-preview.js"
-  );
-  await selectSource(dbg, "inline-preview.js");
-
-  await checkInlinePreview(dbg, "checkValues", [
-    { identifier: "a:", value: '""' },
-    { identifier: "b:", value: "false" },
-    { identifier: "c:", value: "undefined" },
-    { identifier: "d:", value: "null" },
-    { identifier: "e:", value: "Array []" },
-    { identifier: "f:", value: "Object { }" },
-    { identifier: "obj:", value: "Object { foo: 1 }" },
-    {
-      identifier: "bs:",
-      value: "Array(101) [ {…}, {…}, {…}, … ]",
-    },
-  ]);
-
-  await checkInlinePreview(dbg, "columnWise", [
-    { identifier: "c:", value: '"c"' },
-    { identifier: "a:", value: '"a"' },
-    { identifier: "b:", value: '"b"' },
-  ]);
-
-  
-  invokeInTab("btnClick");
-  await checkInspectorIcon(dbg);
-
-  const { toolbox } = dbg;
-  await toolbox.selectTool("jsdebugger");
-
-  await waitForPaused(dbg);
-
-  
-  
-  await checkInspectorIcon(dbg);
-});

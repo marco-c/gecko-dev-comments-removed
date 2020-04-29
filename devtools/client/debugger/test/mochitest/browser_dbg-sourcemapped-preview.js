@@ -2,7 +2,17 @@
 
 
 
+
 requestLongerTimeout(3);
+
+add_task(async function() {
+  const dbg = await initDebugger("doc-sourcemapped.html");
+  dbg.actions.toggleMapScopes();
+
+  await testForOf(dbg);
+  await testShadowing(dbg);
+  await testImportedBindings(dbg);
+});
 
 async function breakpointPreviews(
   dbg,
@@ -195,12 +205,3 @@ function testImportedBindings(dbg) {
     ]
   );
 }
-
-add_task(async function() {
-  const dbg = await initDebugger("doc-sourcemapped.html");
-  dbg.actions.toggleMapScopes();
-
-  await testForOf(dbg);
-  await testShadowing(dbg);
-  await testImportedBindings(dbg);
-});

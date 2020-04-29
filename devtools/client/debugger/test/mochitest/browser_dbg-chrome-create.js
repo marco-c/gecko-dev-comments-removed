@@ -7,6 +7,8 @@
 
 
 
+
+
 PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
 PromiseTestUtils.whitelistRejectionsGlobally(/NS_ERROR_FAILURE/);
 
@@ -14,34 +16,6 @@ requestLongerTimeout(5);
 
 const { BrowserToolboxLauncher } = ChromeUtils.import("resource://devtools/client/framework/browser-toolbox/Launcher.jsm");
 let gProcess = undefined;
-
-function initChromeDebugger() {
-  info("Initializing a chrome debugger process.");
-  return new Promise(resolve => {
-    BrowserToolboxLauncher.init(onClose, _process => {
-      info("Browser toolbox process started successfully.");
-      resolve(_process);
-    });
-  });
-}
-
-function onClose() {
-  is(
-    gProcess._dbgProcess.exitCode,
-    Services.appinfo.OS == "WINNT" ? -9 : -15,
-    "The remote debugger process didn't die cleanly."
-  );
-
-  info("process exit value: " + gProcess._dbgProcess.exitCode);
-
-  info("profile path: " + gProcess._dbgProfilePath);
-
-  finish();
-}
-
-registerCleanupFunction(function() {
-  gProcess = null;
-});
 
 add_task(async function() {
   
@@ -83,4 +57,32 @@ add_task(async function() {
   info("profile path: " + gProcess._dbgProfilePath);
 
   await gProcess.close();
+});
+
+function initChromeDebugger() {
+  info("Initializing a chrome debugger process.");
+  return new Promise(resolve => {
+    BrowserToolboxLauncher.init(onClose, _process => {
+      info("Browser toolbox process started successfully.");
+      resolve(_process);
+    });
+  });
+}
+
+function onClose() {
+  is(
+    gProcess._dbgProcess.exitCode,
+    Services.appinfo.OS == "WINNT" ? -9 : -15,
+    "The remote debugger process didn't die cleanly."
+  );
+
+  info("process exit value: " + gProcess._dbgProcess.exitCode);
+
+  info("profile path: " + gProcess._dbgProfilePath);
+
+  finish();
+}
+
+registerCleanupFunction(function() {
+  gProcess = null;
 });

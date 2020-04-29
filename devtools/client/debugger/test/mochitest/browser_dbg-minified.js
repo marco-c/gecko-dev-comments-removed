@@ -3,13 +3,6 @@
 
 
 
-function getScopeNodeLabel(dbg, index) {
-  return findElement(dbg, "scopeNode", index).innerText;
-}
-
-function getScopeNodeValue(dbg, index) {
-  return findElement(dbg, "scopeValue", index).innerText;
-}
 
 add_task(async function() {
   const dbg = await initDebugger("doc-minified2.html", "sum.js");
@@ -28,3 +21,11 @@ add_task(async function() {
   is(getScopeNodeValue(dbg, 3), "2", "check scope value");
   is(getScopeNodeLabel(dbg, 4), "Window", "check scope label");
 });
+
+function getScopeNodeLabel(dbg, index) {
+  return findElement(dbg, "scopeNode", index).innerText;
+}
+
+function getScopeNodeValue(dbg, index) {
+  return findElement(dbg, "scopeValue", index).innerText;
+}

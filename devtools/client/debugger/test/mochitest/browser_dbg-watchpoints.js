@@ -2,10 +2,6 @@
 
 
 
-async function getScopeValue(dbg, index) {
-  return (await waitForElement(dbg, "scopeValue", index)).innerText;
-}
-
 
 
 
@@ -103,3 +99,8 @@ add_task(async function() {
   assertPausedAtSourceAndLine(dbg, sourceId, 25);
   await waitForRequestsToSettle(dbg);
 });
+
+async function getScopeValue(dbg, index) {
+  return (await waitForElement(dbg, "scopeValue", index)).innerText;
+}
+

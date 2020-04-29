@@ -2,10 +2,6 @@
 
 
 
-function firstBreakpoint(dbg) {
-  return dbg.selectors.getBreakpointsList()[0];
-}
-
 
 
 add_task(async function() {
@@ -20,5 +16,7 @@ add_task(async function() {
 
   await reload(dbg, source.url);
   await waitForState(dbg, state => dbg.selectors.getBreakpointCount() == 1);
-  is(firstBreakpoint(dbg).location.line, 19, "Breakpoint is on line 19");
+
+  const firstBreakpoint = dbg.selectors.getBreakpointsList()[0];
+  is(firstBreakpoint.location.line, 19, "Breakpoint is on line 19");
 });

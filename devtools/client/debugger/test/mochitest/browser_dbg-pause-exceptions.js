@@ -1,13 +1,6 @@
 
 
 
-function uncaughtException() {
-  return invokeInTab("uncaughtException").catch(() => {});
-}
-
-function caughtException() {
-  return invokeInTab("caughtException");
-}
 
 
 
@@ -107,3 +100,11 @@ add_task(async function() {
   assertPausedAtSourceAndLine(dbg, source.id, 77);
   await resume(dbg);
 });
+
+function uncaughtException() {
+  return invokeInTab("uncaughtException").catch(() => {});
+}
+
+function caughtException() {
+  return invokeInTab("caughtException");
+}
