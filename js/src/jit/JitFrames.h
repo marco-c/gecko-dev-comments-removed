@@ -90,44 +90,36 @@ JSScript* MaybeForwardedScriptFromCalleeToken(CalleeToken token);
 
 
 class LSafepoint;
+class CodegenSafepointIndex;
 
 
 
 class SafepointIndex {
   
   
-  uint32_t displacement_;
+  uint32_t displacement_ = 0;
 
-  union {
-    LSafepoint* safepoint_;
-
-    
-    uint32_t safepointOffset_;
-  };
-
-#ifdef DEBUG
-  bool resolved;
-#endif
+  
+  uint32_t safepointOffset_ = 0;
 
  public:
-  SafepointIndex(uint32_t displacement, LSafepoint* safepoint)
-      : displacement_(displacement),
-        safepoint_(safepoint)
-#ifdef DEBUG
-        ,
-        resolved(false)
-#endif
-  {
-  }
+  inline explicit SafepointIndex(const CodegenSafepointIndex& csi);
 
-  void resolve();
-
-  LSafepoint* safepoint() {
-    MOZ_ASSERT(!resolved);
-    return safepoint_;
-  }
   uint32_t displacement() const { return displacement_; }
   uint32_t safepointOffset() const { return safepointOffset_; }
+};
+
+class CodegenSafepointIndex {
+  uint32_t displacement_ = 0;
+
+  LSafepoint* safepoint_ = nullptr;
+
+ public:
+  CodegenSafepointIndex(uint32_t displacement, LSafepoint* safepoint)
+      : displacement_(displacement), safepoint_(safepoint) {}
+
+  LSafepoint* safepoint() const { return safepoint_; }
+  uint32_t displacement() const { return displacement_; }
   void adjustDisplacement(uint32_t offset) {
     MOZ_ASSERT(offset >= displacement_);
     displacement_ = offset;

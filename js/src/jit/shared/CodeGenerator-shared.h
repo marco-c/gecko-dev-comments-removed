@@ -63,7 +63,7 @@ class CodeGeneratorShared : public LElementVisitor {
   
   NonAssertingLabel returnLabel_;
 
-  js::Vector<SafepointIndex, 0, SystemAllocPolicy> safepointIndices_;
+  js::Vector<CodegenSafepointIndex, 0, SystemAllocPolicy> safepointIndices_;
   js::Vector<OsiIndex, 0, SystemAllocPolicy> osiIndices_;
 
   
@@ -134,7 +134,8 @@ class CodeGeneratorShared : public LElementVisitor {
     return skipArgCheckEntryOffset_;
   }
 
-  typedef js::Vector<SafepointIndex, 8, SystemAllocPolicy> SafepointIndices;
+  typedef js::Vector<CodegenSafepointIndex, 8, SystemAllocPolicy>
+      SafepointIndices;
 
  protected:
 #ifdef CHECK_OSIPOINT_REGISTERS

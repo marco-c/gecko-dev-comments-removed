@@ -780,12 +780,12 @@ void IonScript::copyConstants(const Value* vp) {
   }
 }
 
-void IonScript::copySafepointIndices(const SafepointIndex* si) {
-  
-  
+void IonScript::copySafepointIndices(const CodegenSafepointIndex* si) {
   
   SafepointIndex* table = safepointIndices();
-  memcpy(table, si, safepointIndexEntries_ * sizeof(SafepointIndex));
+  for (size_t i = 0; i < safepointIndexEntries_; ++i) {
+    table[i] = SafepointIndex(si[i]);
+  }
 }
 
 void IonScript::copyOsiIndices(const OsiIndex* oi) {
