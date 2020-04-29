@@ -4,6 +4,14 @@
 
 "use strict";
 
+loader.lazyGetter(this, "telemetry", () => {
+  const Telemetry = require("devtools/client/shared/telemetry");
+  return new Telemetry();
+});
+
+
+let telemetrySessionId = null;
+
 
 
 
@@ -28,6 +36,20 @@ exports.toggleEnableDevToolsPopup = function(doc) {
   if (isVisible) {
     popup.hidePopup();
   } else {
+    if (!telemetrySessionId) {
+      telemetrySessionId = parseInt(telemetry.msSinceProcessStart(), 10);
+    }
     popup.openPopup(anchor, "bottomcenter topright");
+    telemetry.recordEvent("f12_popup_displayed", "tools", null, {
+      session_id: telemetrySessionId,
+    });
   }
+};
+
+
+
+
+
+exports.getF12SessionId = function() {
+  return telemetrySessionId;
 };

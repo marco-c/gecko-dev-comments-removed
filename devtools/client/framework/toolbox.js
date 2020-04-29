@@ -212,6 +212,13 @@ loader.lazyRequireGetter(
   "devtools/shared/picker-constants"
 );
 
+loader.lazyRequireGetter(
+  this,
+  "getF12SessionId",
+  "devtools/client/framework/enable-devtools-popup",
+  true
+);
+
 const DEVTOOLS_F12_DISABLED_PREF = "devtools.experiment.f12.shortcut_disabled";
 
 
@@ -257,6 +264,19 @@ function Toolbox(
 
   
   if (Services.prefs.getBoolPref(DEVTOOLS_F12_DISABLED_PREF, false)) {
+    
+    
+    
+    
+    
+    
+    
+    this.sessionId = getF12SessionId() || msSinceProcessStart;
+
+    this.telemetry.recordEvent("f12_enabled", "tools", null, {
+      session_id: this.sessionId,
+    });
+
     
     Services.prefs.setBoolPref(DEVTOOLS_F12_DISABLED_PREF, false);
   }
@@ -1456,6 +1476,7 @@ Toolbox.prototype = {
 
     const browserWin = this.topWindow;
     this.telemetry.preparePendingEvent(browserWin, "open", "tools", null, [
+      "enable_f12",
       "entrypoint",
       "first_panel",
       "host",
