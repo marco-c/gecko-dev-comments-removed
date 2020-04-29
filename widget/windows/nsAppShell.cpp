@@ -53,40 +53,40 @@ class WinWakeLockListener final : public nsIDOMMozWakeLockListener {
 
   NS_IMETHOD Callback(const nsAString& aTopic,
                       const nsAString& aState) override {
+    WAKE_LOCK_LOG("WinWakeLock: topic=%s, state=%s",
+                  NS_ConvertUTF16toUTF8(aTopic).get(),
+                  NS_ConvertUTF16toUTF8(aState).get());
     if (!aTopic.EqualsASCII("screen") && !aTopic.EqualsASCII("audio-playing") &&
         !aTopic.EqualsASCII("video-playing")) {
       return NS_OK;
     }
 
     
-    if (aTopic.EqualsASCII("audio-playing") &&
-        aState.EqualsASCII("locked-background")) {
-      return NS_OK;
-    }
-
-    if (aTopic.EqualsASCII("screen") || aTopic.EqualsASCII("video-playing")) {
-      mRequireForDisplay = aState.EqualsASCII("locked-foreground");
-    }
-
     
     
-    if (aState.EqualsASCII("locked-foreground")) {
-      WAKE_LOCK_LOG("WinWakeLock: Blocking screen saver");
-      if (mRequireForDisplay) {
-        
-        SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_CONTINUOUS);
-      } else {
-        SetThreadExecutionState(ES_SYSTEM_REQUIRED | ES_CONTINUOUS);
-      }
+    if (aTopic.EqualsASCII("audio-playing")) {
+      mRequireForNonDisplayLock = aState.EqualsASCII("locked-foreground") ||
+                                  aState.EqualsASCII("locked-background");
+    } else if (aTopic.EqualsASCII("screen") ||
+               aTopic.EqualsASCII("video-playing")) {
+      mRequireForDisplayLock = aState.EqualsASCII("locked-foreground");
+    }
+
+    if (mRequireForDisplayLock) {
+      WAKE_LOCK_LOG("WinWakeLock: Request display lock");
+      SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_CONTINUOUS);
+    } else if (mRequireForNonDisplayLock) {
+      WAKE_LOCK_LOG("WinWakeLock: Request non-display lock");
+      SetThreadExecutionState(ES_SYSTEM_REQUIRED | ES_CONTINUOUS);
     } else {
-      WAKE_LOCK_LOG("WinWakeLock: Unblocking screen saver");
-      
+      WAKE_LOCK_LOG("WinWakeLock: reset lock");
       SetThreadExecutionState(ES_CONTINUOUS);
     }
     return NS_OK;
   }
 
-  bool mRequireForDisplay = false;
+  bool mRequireForDisplayLock = false;
+  bool mRequireForNonDisplayLock = false;
 };
 
 NS_IMPL_ISUPPORTS(WinWakeLockListener, nsIDOMMozWakeLockListener)
@@ -543,7 +543,6 @@ bool nsAppShell::ProcessNextNativeEvent(bool mayWait) {
       mozilla::BackgroundHangMonitor().NotifyWait();
       {
         AUTO_PROFILER_LABEL("nsAppShell::ProcessNextNativeEvent::Wait", IDLE);
-        AUTO_PROFILER_THREAD_SLEEP;
         WinUtils::WaitForMessage();
       }
     }
