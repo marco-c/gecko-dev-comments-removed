@@ -19,40 +19,19 @@
 
 
 
-
-
-
-
-
-
-
-
-
-function requireLazy(callback) {
-  
-  let cache;
-  return () => {
-    if (cache === undefined) {
-      cache = callback();
-    }
-    return cache;
-  };
-}
-
-
- (this).module = {};
-
-const lazyServices = requireLazy(() =>
-  ChromeUtils.import("resource://gre/modules/Services.jsm")
+const { createLazyLoaders } = ChromeUtils.import(
+  "resource://devtools/client/performance-new/typescript-lazy-load.jsm.js"
 );
-const lazyPanelMultiView = requireLazy(() =>
-  ChromeUtils.import("resource:///modules/PanelMultiView.jsm")
-);
-const lazyBackground = requireLazy(() =>
-  ChromeUtils.import(
-    "resource://devtools/client/performance-new/popup/background.jsm.js"
-  )
-);
+
+const lazy = createLazyLoaders({
+  Services: () => ChromeUtils.import("resource://gre/modules/Services.jsm"),
+  PanelMultiView: () =>
+    ChromeUtils.import("resource:///modules/PanelMultiView.jsm"),
+  Background: () =>
+    ChromeUtils.import(
+      "resource://devtools/client/performance-new/popup/background.jsm.js"
+    ),
+});
 
 
 
@@ -127,8 +106,8 @@ function createViewControllers(state, elements) {
     },
 
     updatePresets() {
-      const { Services } = lazyServices();
-      const { presets, getRecordingPreferences } = lazyBackground();
+      const { Services } = lazy.Services();
+      const { presets, getRecordingPreferences } = lazy.Background();
       const { presetName } = getRecordingPreferences(
         "aboutprofiling",
         Services.profiler.GetFeatures()
@@ -143,13 +122,13 @@ function createViewControllers(state, elements) {
         elements.presetDescription.style.display = "none";
         elements.presetCustom.style.display = "block";
       }
-      const { PanelMultiView } = lazyPanelMultiView();
+      const { PanelMultiView } = lazy.PanelMultiView();
       
       PanelMultiView.forNode(elements.panelview).descriptionHeightWorkaround();
     },
 
     updateProfilerActive() {
-      const { Services } = lazyServices();
+      const { Services } = lazy.Services();
       const isProfilerActive = Services.profiler.IsActive();
       elements.inactive.setAttribute(
         "hidden",
@@ -170,8 +149,8 @@ function createViewControllers(state, elements) {
         
         return;
       }
-      const { Services } = lazyServices();
-      const { presets } = lazyBackground();
+      const { Services } = lazy.Services();
+      const { presets } = lazy.Background();
       const currentPreset = Services.prefs.getCharPref(
         "devtools.performance.recording.preset"
       );
@@ -230,7 +209,7 @@ function initializePopup(state, elements, view) {
 
     
     
-    const { PanelMultiView } = lazyPanelMultiView();
+    const { PanelMultiView } = lazy.PanelMultiView();
     PanelMultiView.forNode(elements.panelview).descriptionHeightWorkaround();
 
     
@@ -255,7 +234,7 @@ function addPopupEventHandlers(state, elements, view) {
     startProfiler,
     stopProfiler,
     captureProfile,
-  } = lazyBackground();
+  } = lazy.Background();
 
   
 
@@ -326,7 +305,7 @@ function addPopupEventHandlers(state, elements, view) {
   });
 
   
-  const { Services } = lazyServices();
+  const { Services } = lazy.Services();
   Services.obs.addObserver(view.updateProfilerActive, "profiler-started");
   Services.obs.addObserver(view.updateProfilerActive, "profiler-stopped");
   state.cleanup.push(() => {
@@ -334,6 +313,9 @@ function addPopupEventHandlers(state, elements, view) {
     Services.obs.removeObserver(view.updateProfilerActive, "profiler-stopped");
   });
 }
+
+
+ (this).module = {};
 
 module.exports = {
   selectElementsInPanelview,

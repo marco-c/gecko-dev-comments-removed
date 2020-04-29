@@ -20,37 +20,18 @@
 
 
 
-
-
-
-
-
-
-
-
-
-function requireLazy(callback) {
-  
-  let cache;
-  return () => {
-    if (cache === undefined) {
-      cache = callback();
-    }
-    return cache;
-  };
-}
-
-const lazyServices = requireLazy(() =>
-  require("resource://gre/modules/Services.jsm")
+const ChromeUtils = require("ChromeUtils");
+const { createLazyLoaders } = ChromeUtils.import(
+  "resource://devtools/client/performance-new/typescript-lazy-load.jsm.js"
 );
 
-const lazyChrome = requireLazy(() => require("chrome"));
-
-const lazyOS = requireLazy(() => require("resource://gre/modules/osfile.jsm"));
-
-const lazyProfilerGetSymbols = requireLazy(() =>
-  require("resource://gre/modules/ProfilerGetSymbols.jsm")
-);
+const lazy = createLazyLoaders({
+  Chrome: () => require("chrome"),
+  Services: () => require("Services"),
+  OS: () => ChromeUtils.import("resource://gre/modules/osfile.jsm"),
+  ProfilerGetSymbols: () =>
+    ChromeUtils.import("resource://gre/modules/ProfilerGetSymbols.jsm"),
+});
 
 const TRANSFER_EVENT = "devtools:perf-html-transfer-profile";
 const SYMBOL_TABLE_REQUEST_EVENT = "devtools:perf-html-request-symbol-table";
@@ -84,7 +65,7 @@ const UI_BASE_URL_PATH_DEFAULT = "/from-addon";
 
 
 function receiveProfile(profile, getSymbolTableCallback) {
-  const { Services } = lazyServices();
+  const Services = lazy.Services();
   
   
   const win = Services.wm.getMostRecentWindow("navigator:browser");
@@ -221,7 +202,7 @@ async function getSymbolTableFromDebuggee(perfFront, path, breakpadId) {
 
 
 async function doesFileExistAtPath(path) {
-  const { OS } = lazyOS();
+  const { OS } = lazy.OS();
   try {
     const result = await OS.File.stat(path);
     return !result.isDir;
@@ -254,7 +235,7 @@ async function doesFileExistAtPath(path) {
 
 
 async function getSymbolTableFromLocalBinary(objdirs, filename, breakpadId) {
-  const { OS } = lazyOS();
+  const { OS } = lazy.OS();
   const candidatePaths = [];
   for (const objdirPath of objdirs) {
     
@@ -268,7 +249,7 @@ async function getSymbolTableFromLocalBinary(objdirs, filename, breakpadId) {
 
   for (const path of candidatePaths) {
     if (await doesFileExistAtPath(path)) {
-      const { ProfilerGetSymbols } = lazyProfilerGetSymbols();
+      const { ProfilerGetSymbols } = lazy.ProfilerGetSymbols();
       try {
         return await ProfilerGetSymbols.getSymbolTable(path, path, breakpadId);
       } catch (e) {
@@ -312,7 +293,7 @@ function createMultiModalGetSymbolTableFn(profile, getObjdirs, perfFront) {
     }
     const { name, path, debugPath } = result;
     if (await doesFileExistAtPath(path)) {
-      const { ProfilerGetSymbols } = lazyProfilerGetSymbols();
+      const { ProfilerGetSymbols } = lazy.ProfilerGetSymbols();
       
       
       
@@ -355,8 +336,8 @@ function createMultiModalGetSymbolTableFn(profile, getObjdirs, perfFront) {
 
 
 function restartBrowserWithEnvironmentVariable(envName, value) {
-  const { Services } = lazyServices();
-  const { Cc, Ci } = lazyChrome();
+  const Services = lazy.Services();
+  const { Cc, Ci } = lazy.Chrome();
   const env = Cc["@mozilla.org/process/environment;1"].getService(
     Ci.nsIEnvironment
   );
@@ -373,7 +354,7 @@ function restartBrowserWithEnvironmentVariable(envName, value) {
 
 
 function getEnvironmentVariable(envName) {
-  const { Cc, Ci } = lazyChrome();
+  const { Cc, Ci } = lazy.Chrome();
   const env = Cc["@mozilla.org/process/environment;1"].getService(
     Ci.nsIEnvironment
   );
@@ -386,7 +367,7 @@ function getEnvironmentVariable(envName) {
 
 
 function openFilePickerForObjdir(window, objdirs, changeObjdirs) {
-  const { Cc, Ci } = lazyChrome();
+  const { Cc, Ci } = lazy.Chrome();
   const FilePicker = Cc["@mozilla.org/filepicker;1"].createInstance(
     Ci.nsIFilePicker
   );
