@@ -2445,6 +2445,7 @@ SI T mix(T x, T y, vec4_scalar a) {
 
 
 
+
 template <typename T>
 SI T linearQuantize(T P, float scale) {
   return P * scale + (0.5f - 0.5f * scale);
