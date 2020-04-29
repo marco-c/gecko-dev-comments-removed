@@ -397,7 +397,11 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
       let relationObject;
       for (const target of targets) {
         
-        if (target.rootDocument !== doc.rawAccessible) {
+        try {
+          if (target.rootDocument !== doc.rawAccessible) {
+            continue;
+          }
+        } catch (e) {
           continue;
         }
 
