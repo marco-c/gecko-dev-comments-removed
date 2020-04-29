@@ -75,7 +75,18 @@ class MDNCompatibility {
     if (version === true) {
       return 0;
     }
-    return version === false ? Number.MAX_VALUE : parseFloat(version);
+
+    if (version === false) {
+      return Number.MAX_VALUE;
+    }
+
+    if (version.startsWith("\u2264")) {
+      
+      
+      version = version.substring(1);
+    }
+
+    return parseFloat(version);
   }
 
   
