@@ -34,7 +34,7 @@ class AntiTrackingUtils final {
   static already_AddRefed<nsIURI> MaybeGetDocumentURIBeingLoaded(
       nsIChannel* aChannel);
 
-  static void CreateStoragePermissionKey(const nsCString& aTrackingOrigin,
+  static void CreateStoragePermissionKey(const nsACString& aTrackingOrigin,
                                          nsACString& aPermissionKey);
 
   
@@ -86,6 +86,10 @@ class AntiTrackingUtils final {
   
   
   static bool IsFirstLevelSubContext(dom::BrowsingContext* aBrowsingContext);
+
+  
+  
+  static uint32_t GetCookieBehavior(dom::BrowsingContext* aBrowsingContext);
 };
 
 }  

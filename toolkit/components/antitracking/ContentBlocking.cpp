@@ -554,29 +554,16 @@ ContentBlocking::CompleteAllowAccessFor(
     ContentBlockingNotifier::StorageAccessGrantedReason aReason) {
   MOZ_ASSERT(aParentContext->IsInProcess());
 
+  
+  
+  ContentBlocking::UpdateAllowAccessOnCurrentProcess(aParentContext,
+                                                     aTrackingOrigin);
+
+  
   nsCOMPtr<nsPIDOMWindowInner> parentInner =
-      aParentContext->GetDOMWindow()->GetCurrentInnerWindow();
+      AntiTrackingUtils::GetInnerWindow(aParentContext);
+  MOZ_ASSERT(parentInner);
 
-  
-  nsCOMPtr<nsPIDOMWindowOuter> topOuterWindow =
-      AntiTrackingUtils::GetTopWindow(parentInner);
-  if (!topOuterWindow) {
-    return;
-  }
-
-  nsCOMPtr<nsPIDOMWindowInner> topInnerWindow =
-      topOuterWindow->GetCurrentInnerWindow();
-  if (!topInnerWindow) {
-    return;
-  }
-
-  nsAutoCString permissionKey;
-  AntiTrackingUtils::CreateStoragePermissionKey(aTrackingOrigin, permissionKey);
-
-  
-  topInnerWindow->SaveStorageAccessGranted(permissionKey);
-
-  
   nsGlobalWindowInner::Cast(parentInner)->StorageAccessGranted();
 
   
@@ -604,6 +591,13 @@ ContentBlocking::SaveAccessForOriginOnParentProcess(
   if (!wgp) {
     LOG(("Can't get window global parent"));
     return ParentAccessGrantPromise::CreateAndReject(false, __func__);
+  }
+
+  
+  
+  BrowsingContext* bc = wgp->BrowsingContext();
+  if (bc->IsTop()) {
+    ContentBlocking::UpdateAllowAccessOnParentProcess(bc, aTrackingOrigin);
   }
 
   return ContentBlocking::SaveAccessForOriginOnParentProcess(
@@ -678,6 +672,145 @@ ContentBlocking::SaveAccessForOriginOnParentProcess(
 
   LOG(("Result: %s", NS_SUCCEEDED(rv) ? "success" : "failure"));
   return ParentAccessGrantPromise::CreateAndResolve(rv, __func__);
+}
+
+
+bool ContentBlocking::HasStorageAccessGranted(
+    BrowsingContext* aBrowsingContext, const nsACString& aPermissionKey) {
+  MOZ_ASSERT(aBrowsingContext);
+
+  bool useRemoteSubframes;
+  aBrowsingContext->GetUseRemoteSubframes(&useRemoteSubframes);
+
+  
+  
+  nsCOMPtr<nsPIDOMWindowInner> inner;
+  if (useRemoteSubframes) {
+    inner = AntiTrackingUtils::GetInnerWindow(aBrowsingContext);
+  } else {
+    inner = AntiTrackingUtils::GetInnerWindow(aBrowsingContext->Top());
+  }
+
+  if (!inner) {
+    return false;
+  }
+
+  return inner->HasStorageAccessGranted(aPermissionKey);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void ContentBlocking::UpdateAllowAccessOnCurrentProcess(
+    BrowsingContext* aParentContext, const nsACString& aTrackingOrigin) {
+  MOZ_ASSERT(aParentContext && aParentContext->IsInProcess());
+
+  nsAutoCString permissionKey;
+  AntiTrackingUtils::CreateStoragePermissionKey(aTrackingOrigin, permissionKey);
+
+  bool useRemoteSubframes;
+  aParentContext->GetUseRemoteSubframes(&useRemoteSubframes);
+
+  
+  
+  
+  
+  if (useRemoteSubframes) {
+    if (aParentContext->IsTopContent()) {
+      
+      
+      
+      return;
+    }
+
+    BrowsingContext* top = aParentContext->Top();
+    top->PreOrderWalk([&](BrowsingContext* aContext) {
+      
+      if (aContext->IsInProcess()) {
+        nsAutoCString origin;
+        Unused << AntiTrackingUtils::GetPrincipalAndTrackingOrigin(
+            aContext, nullptr, origin);
+
+        uint32_t behavior = AntiTrackingUtils::GetCookieBehavior(aContext);
+        if (behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER &&
+            !AntiTrackingUtils::IsFirstLevelSubContext(aContext)) {
+          return;
+        }
+
+        if (aTrackingOrigin == origin) {
+          nsCOMPtr<nsPIDOMWindowInner> inner =
+              AntiTrackingUtils::GetInnerWindow(aContext);
+          if (inner) {
+            inner->SaveStorageAccessGranted(permissionKey);
+          }
+        }
+      }
+    });
+  } else {
+    nsCOMPtr<nsPIDOMWindowInner> topInner =
+        AntiTrackingUtils::GetInnerWindow(aParentContext->Top());
+    if (topInner) {
+      topInner->SaveStorageAccessGranted(permissionKey);
+    }
+  }
+}
+
+
+void ContentBlocking::UpdateAllowAccessOnParentProcess(
+    BrowsingContext* aParentContext, const nsACString& aTrackingOrigin) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(aParentContext && aParentContext->IsTop());
+
+  bool useRemoteSubframes;
+  aParentContext->GetUseRemoteSubframes(&useRemoteSubframes);
+  if (!useRemoteSubframes) {
+    
+    
+    return;
+  }
+
+  nsAutoCString permissionKey;
+  AntiTrackingUtils::CreateStoragePermissionKey(aTrackingOrigin, permissionKey);
+
+  aParentContext->PreOrderWalk([&](BrowsingContext* aContext) {
+    WindowGlobalParent* wgp = aContext->Canonical()->GetCurrentWindowGlobal();
+    if (!wgp) {
+      return;
+    }
+
+    uint32_t behavior = AntiTrackingUtils::GetCookieBehavior(aContext);
+    if (behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER &&
+        !AntiTrackingUtils::IsFirstLevelSubContext(aContext)) {
+      return;
+    }
+
+    nsAutoCString origin;
+    AntiTrackingUtils::GetPrincipalAndTrackingOrigin(aContext, nullptr, origin);
+    if (aTrackingOrigin == origin) {
+      Unused << wgp->SendSaveStorageAccessGranted(permissionKey);
+    }
+  });
 }
 
 bool ContentBlocking::ShouldAllowAccessFor(nsPIDOMWindowInner* aWindow,
