@@ -17,6 +17,7 @@
 #include "jit/IonOptimizationLevels.h"
 #include "jit/IonTypes.h"
 #include "js/UbiNode.h"
+#include "util/TrailingArray.h"
 #include "vm/TraceLogging.h"
 
 namespace js {
@@ -152,7 +153,68 @@ class OsiIndex;
 class IonIC;
 
 
-struct IonScript {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct alignas(8) IonScript final : public TrailingArray {
+ private:
+  
+  uint32_t constantTable_ = 0;
+  uint32_t constantEntries_ = 0;
+
+  
+  uint32_t runtimeData_ = 0;
+  uint32_t runtimeSize_ = 0;
+
+  
+  uint32_t osiIndexOffset_ = 0;
+  uint32_t osiIndexEntries_ = 0;
+
+  
+  uint32_t safepointIndexOffset_ = 0;
+  uint32_t safepointIndexEntries_ = 0;
+
+  
+  uint32_t bailoutTable_ = 0;
+  uint32_t bailoutEntries_ = 0;
+
+  
+  uint32_t icIndex_ = 0;
+  uint32_t icEntries_ = 0;
+
+  
+  uint32_t safepointsStart_ = 0;
+  uint32_t safepointsSize_ = 0;
+
+  
+  uint32_t snapshots_ = 0;
+  uint32_t snapshotsListSize_ = 0;
+  uint32_t snapshotsRVATableSize_ = 0;
+
+  
+  uint32_t recovers_ = 0;
+  uint32_t recoversSize_ = 0;
+
+  
+  uint32_t allocBytes_ = 0;
+
  private:
   
   HeapPtrJitCode method_ = nullptr;
@@ -186,25 +248,6 @@ struct IonScript {
   uint32_t recompiling_ = 0;
 
   
-  
-  uint32_t runtimeData_ = 0;
-  uint32_t runtimeSize_ = 0;
-
-  
-  
-  
-  uint32_t icIndex_ = 0;
-  uint32_t icEntries_ = 0;
-
-  
-  uint32_t safepointIndexOffset_ = 0;
-  uint32_t safepointIndexEntries_ = 0;
-
-  
-  uint32_t safepointsStart_ = 0;
-  uint32_t safepointsSize_ = 0;
-
-  
   uint32_t frameSlots_ = 0;
 
   
@@ -213,30 +256,6 @@ struct IonScript {
   
   
   uint32_t frameSize_ = 0;
-
-  
-  uint32_t bailoutTable_ = 0;
-  uint32_t bailoutEntries_ = 0;
-
-  
-  uint32_t osiIndexOffset_ = 0;
-  uint32_t osiIndexEntries_ = 0;
-
-  
-  uint32_t snapshots_ = 0;
-  uint32_t snapshotsListSize_ = 0;
-  uint32_t snapshotsRVATableSize_ = 0;
-
-  
-  uint32_t recovers_ = 0;
-  uint32_t recoversSize_ = 0;
-
-  
-  uint32_t constantTable_ = 0;
-  uint32_t constantEntries_ = 0;
-
-  
-  uint32_t allocBytes_ = 0;
 
   
   uint32_t invalidationCount_ = 0;
