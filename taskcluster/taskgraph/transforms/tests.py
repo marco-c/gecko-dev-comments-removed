@@ -1595,7 +1595,9 @@ def make_job_description(config, tests):
         else:
             
             
-            jobdesc['optimization'] = {'test': (schedules, None)}
+            
+            
+            jobdesc['optimization'] = {'test': (schedules, {})}
 
         run = jobdesc['run'] = {}
         run['using'] = 'mozharness-test'

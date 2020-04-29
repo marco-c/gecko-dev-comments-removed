@@ -214,7 +214,7 @@ OptimizationSchema = voluptuous.Any(
     
     {'skip-unless-schedules': list(schedules.ALL_COMPONENTS)},
     
-    {'test': (list(schedules.ALL_COMPONENTS), None)},
+    {'test': (list(schedules.ALL_COMPONENTS), dict)},
     {'test-inclusive': list(schedules.ALL_COMPONENTS)},
     {'test-try': list(schedules.ALL_COMPONENTS)},
 )
