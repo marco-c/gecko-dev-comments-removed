@@ -28,6 +28,6 @@
 
 
 
-@interface mozSliderAccessible : mozAccessible
+@interface mozIncrementableAccessible : mozAccessible
 
 @end
