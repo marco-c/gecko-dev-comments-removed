@@ -524,7 +524,15 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
 
         
         if '-chrome' in try_name:
-            return True
+            if 'android' in platform:
+                
+                if 'pgo' in platform:
+                    return True
+                else:
+                    return False
+            else:
+                
+                return True
         if '-chromium' in try_name:
             return True
 
