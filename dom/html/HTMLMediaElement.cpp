@@ -5316,7 +5316,7 @@ void HTMLMediaElement::NotifyMediaStreamTrackAdded(
 
   
   mWatchManager.ManualNotify(&HTMLMediaElement::UpdateReadyStateInternal);
-  mAbstractMainThread->TailDispatcher().AddDirectTask(
+  AbstractThread::DispatchDirectTask(
       NewRunnableMethod("HTMLMediaElement::FirstFrameLoaded", this,
                         &HTMLMediaElement::FirstFrameLoaded));
 }

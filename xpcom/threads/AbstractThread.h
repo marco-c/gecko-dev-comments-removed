@@ -84,6 +84,10 @@ class AbstractThread : public nsISerialEventTarget {
 
   
   
+  virtual bool IsTailDispatcherAvailable() { return true; }
+
+  
+  
   
   nsresult TailDispatchTasksFor(AbstractThread* aThread);
   bool HasTailTasksFor(AbstractThread* aThread);

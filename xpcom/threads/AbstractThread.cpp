@@ -50,7 +50,8 @@ class XPCOMThreadWrapper : public AbstractThread {
     nsCOMPtr<nsIRunnable> r = aRunnable;
     AbstractThread* currentThread;
     if (aReason != TailDispatch && (currentThread = GetCurrent()) &&
-        RequiresTailDispatch(currentThread)) {
+        RequiresTailDispatch(currentThread) &&
+        currentThread->IsTailDispatcherAvailable()) {
       return currentThread->TailDispatcher().AddTask(this, r.forget());
     }
 
@@ -95,6 +96,7 @@ class XPCOMThreadWrapper : public AbstractThread {
 
   TaskDispatcher& TailDispatcher() override {
     MOZ_ASSERT(IsCurrentThreadIn());
+    MOZ_ASSERT(IsTailDispatcherAvailable());
     if (!mTailDispatcher.isSome()) {
       mTailDispatcher.emplace( true);
 
@@ -105,6 +107,14 @@ class XPCOMThreadWrapper : public AbstractThread {
     }
 
     return mTailDispatcher.ref();
+  }
+
+  bool IsTailDispatcherAvailable() override {
+    
+    
+    bool inEventLoop =
+        static_cast<nsThread*>(mThread.get())->RecursionDepth() > 0;
+    return inEventLoop;
   }
 
   bool MightHaveTailTasks() override { return mTailDispatcher.isSome(); }
@@ -237,13 +247,31 @@ void AbstractThread::InitMainThread() {
 
 void AbstractThread::DispatchStateChange(
     already_AddRefed<nsIRunnable> aRunnable) {
-  GetCurrent()->TailDispatcher().AddStateChangeTask(this, std::move(aRunnable));
+  AbstractThread* currentThread = GetCurrent();
+  if (currentThread->IsTailDispatcherAvailable()) {
+    currentThread->TailDispatcher().AddStateChangeTask(this,
+                                                       std::move(aRunnable));
+  } else {
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIRunnable> neverDispatched = aRunnable;
+  }
 }
 
 
 void AbstractThread::DispatchDirectTask(
     already_AddRefed<nsIRunnable> aRunnable) {
-  GetCurrent()->TailDispatcher().AddDirectTask(std::move(aRunnable));
+  AbstractThread* currentThread = GetCurrent();
+  if (currentThread->IsTailDispatcherAvailable()) {
+    currentThread->TailDispatcher().AddDirectTask(std::move(aRunnable));
+  } else {
+    
+    currentThread->Dispatch(std::move(aRunnable));
+  }
 }
 
 
