@@ -8,7 +8,7 @@ use glean_core::CommonMetricData;
 
 
 #[derive(Clone, Debug)]
-pub struct BooleanMetric(glean_core::metrics::BooleanMetric);
+pub struct BooleanMetric(pub(crate) glean_core::metrics::BooleanMetric);
 
 impl BooleanMetric {
     

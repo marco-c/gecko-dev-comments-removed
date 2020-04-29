@@ -7,16 +7,18 @@
 
 
 
-pub use glean_core::{CommonMetricData, Lifetime};
+pub use glean_core::{CommonMetricData, ErrorType, Lifetime};
 
 mod boolean;
 mod counter;
+mod labeled;
 mod string;
 mod string_list;
 mod uuid;
 
 pub use self::boolean::BooleanMetric;
 pub use self::counter::CounterMetric;
+pub use self::labeled::LabeledMetric;
 pub use self::string::StringMetric;
 pub use self::string_list::StringListMetric;
 pub use self::uuid::UuidMetric;
