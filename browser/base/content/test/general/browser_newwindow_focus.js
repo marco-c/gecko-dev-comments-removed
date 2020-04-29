@@ -12,35 +12,6 @@ const PAGE = `data:text/html,<a id="target" href="%23" onclick="window.open('htt
 
 
 
-
-
-
-
-
-function promiseNewWindow() {
-  return new Promise(resolve => {
-    let observer = (win, topic, data) => {
-      if (topic == "domwindowopened") {
-        Services.ww.unregisterNotification(observer);
-        win.addEventListener(
-          "load",
-          function() {
-            resolve(win);
-          },
-          { once: true }
-        );
-      }
-    };
-
-    Services.ww.registerNotification(observer);
-  });
-}
-
-
-
-
-
-
 add_task(async function test_focus_browser() {
   await BrowserTestUtils.withNewTab(
     {
@@ -48,7 +19,7 @@ add_task(async function test_focus_browser() {
       gBrowser,
     },
     async function(browser) {
-      let newWinPromise = promiseNewWindow();
+      let newWinPromise = BrowserTestUtils.domWindowOpenedAndLoaded(null);
       let delayedStartupPromise = BrowserTestUtils.waitForNewWindow();
 
       await BrowserTestUtils.synthesizeMouseAtCenter("#target", {}, browser);
@@ -88,7 +59,7 @@ add_task(async function test_no_steal_focus() {
       gBrowser,
     },
     async function(browser) {
-      let newWinPromise = promiseNewWindow();
+      let newWinPromise = BrowserTestUtils.domWindowOpenedAndLoaded(null);
       let delayedStartupPromise = BrowserTestUtils.waitForNewWindow();
 
       await BrowserTestUtils.synthesizeMouseAtCenter("#target", {}, browser);
