@@ -19,77 +19,15 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/dom/CryptoBuffer.h"
 #include "mozilla/dom/CryptoKey.h"
+#include "mozilla/psm/PSMIPCCommon.h"
 #include "ipc/IPCMessageUtils.h"
 
 namespace mozilla {
 
-
-static SECItem* WrapPrivateKeyInfoWithEmptyPassword(
-    SECKEYPrivateKey* pk) 
-{
-  UniquePK11SlotInfo slot(PK11_GetInternalSlot());
-  if (!slot) {
-    return nullptr;
-  }
-
-  
-  
-  
-  
-  SECItem dummyPassword = {siBuffer, nullptr, 0};
-  ScopedSECKEYEncryptedPrivateKeyInfo epki(PK11_ExportEncryptedPrivKeyInfo(
-      slot.get(), SEC_OID_AES_128_CBC, &dummyPassword, pk, 1, nullptr));
-
-  if (!epki) {
-    return nullptr;
-  }
-
-  return SEC_ASN1EncodeItem(
-      nullptr, nullptr, epki.get(),
-      NSS_Get_SECKEY_EncryptedPrivateKeyInfoTemplate(nullptr, false));
-}
-
-
-static SECStatus UnwrapPrivateKeyInfoWithEmptyPassword(
-    SECItem* derPKI, SECItem* publicValue, KeyType type,
-    SECKEYPrivateKey** privk) {
-  UniquePK11SlotInfo slot(PK11_GetInternalSlot());
-  if (!slot) {
-    return SECFailure;
-  }
-
-  UniquePLArenaPool temparena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
-  if (!temparena) {
-    return SECFailure;
-  }
-
-  SECKEYEncryptedPrivateKeyInfo* epki =
-      PORT_ArenaZNew(temparena.get(), SECKEYEncryptedPrivateKeyInfo);
-  if (!epki) {
-    return SECFailure;
-  }
-
-  SECStatus rv = SEC_ASN1DecodeItem(
-      temparena.get(), epki,
-      NSS_Get_SECKEY_EncryptedPrivateKeyInfoTemplate(nullptr, false), derPKI);
-  if (rv != SECSuccess) {
-    
-
-
-    return rv;
-  }
-
-  
-  
-  SECItem dummyPassword = {siBuffer, nullptr, 0};
-  return PK11_ImportEncryptedPrivateKeyInfoAndReturnKey(
-      slot.get(), epki, &dummyPassword, nullptr, publicValue, false, false,
-      type, KU_ALL, privk, nullptr);
-}
-
 nsresult DtlsIdentity::Serialize(nsTArray<uint8_t>* aKeyDer,
                                  nsTArray<uint8_t>* aCertDer) {
-  ScopedSECItem derPki(WrapPrivateKeyInfoWithEmptyPassword(private_key_.get()));
+  ScopedSECItem derPki(
+      psm::WrapPrivateKeyInfoWithEmptyPassword(private_key_.get()));
   if (!derPki) {
     return NS_ERROR_FAILURE;
   }
@@ -108,36 +46,12 @@ RefPtr<DtlsIdentity> DtlsIdentity::Deserialize(
   UniqueCERTCertificate cert(CERT_NewTempCertificate(
       CERT_GetDefaultCertDB(), &certDer, nullptr, true, true));
 
-  
-  
-  ScopedSECKEYPublicKey publicKey(CERT_ExtractPublicKey(cert.get()));
-  
-  SECItem* publicValue = nullptr;
-  switch (publicKey->keyType) {
-    case dsaKey:
-      publicValue = &publicKey->u.dsa.publicValue;
-      break;
-    case dhKey:
-      publicValue = &publicKey->u.dh.publicValue;
-      break;
-    case rsaKey:
-      publicValue = &publicKey->u.rsa.modulus;
-      break;
-    case ecKey:
-      publicValue = &publicKey->u.ec.publicValue;
-      break;
-    default:
-      MOZ_ASSERT(false);
-      return nullptr;
-  }
-
   SECItem derPKI = {siBuffer, const_cast<uint8_t*>(aKeyDer.Elements()),
                     static_cast<unsigned int>(aKeyDer.Length())};
 
   SECKEYPrivateKey* privateKey;
-  if (UnwrapPrivateKeyInfoWithEmptyPassword(&derPKI, publicValue,
-                                            publicKey->keyType,
-                                            &privateKey) != SECSuccess) {
+  if (psm::UnwrapPrivateKeyInfoWithEmptyPassword(&derPKI, cert, &privateKey) !=
+      SECSuccess) {
     MOZ_ASSERT(false);
     return nullptr;
   }
