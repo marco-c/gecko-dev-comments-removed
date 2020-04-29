@@ -7,6 +7,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AddonTestUtils: "resource://testing-common/AddonTestUtils.jsm",
+  ExtensionTestUtils: "resource://testing-common/ExtensionXPCShellUtils.jsm",
   NetUtil: "resource://gre/modules/NetUtil.jsm",
   RemoteSettings: "resource://services-settings/remote-settings.js",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
@@ -125,5 +127,67 @@ var SearchTestUtils = Object.freeze({
       engines.push(engine);
     }
     return engines;
+  },
+
+  
+
+
+
+
+
+
+  initXPCShellAddonManager(scope) {
+    ExtensionTestUtils.init(scope);
+    AddonTestUtils.usePrivilegedSignatures = false;
+    AddonTestUtils.overrideCertDB();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async installSearchExtension(options = {}) {
+    options.id = options.id ?? "example";
+    options.name = options.name ?? "Example";
+    options.version = options.version ?? "1.0";
+
+    let extensionInfo = {
+      useAddonManager: "permanent",
+      manifest: {
+        version: options.version,
+        applications: {
+          gecko: {
+            id: options.id + "@tests.mozilla.org",
+          },
+        },
+        chrome_settings_overrides: {
+          search_provider: {
+            name: options.name,
+            search_url: "https://example.com/",
+            search_url_get_params: "?q={searchTerms}",
+          },
+        },
+      },
+    };
+    if (options.keyword) {
+      extensionInfo.manifest.chrome_settings_overrides.search_provider.keyword =
+        options.keyword;
+    }
+
+    let extension = ExtensionTestUtils.loadExtension(extensionInfo);
+    await extension.startup();
+    await AddonTestUtils.waitForSearchProviderStartup(extension);
+    return extension;
   },
 });
