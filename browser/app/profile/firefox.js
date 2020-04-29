@@ -476,7 +476,6 @@ pref("browser.tabs.extraDragSpace", false);
 
 pref("browser.tabs.selectOwnerOnClose", true);
 
-pref("browser.tabs.showAudioPlayingIcon", true);
 
 pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
 

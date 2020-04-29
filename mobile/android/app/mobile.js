@@ -676,8 +676,6 @@ pref("layout.accessiblecaret.hapticfeedback", true);
 
 pref("layout.accessiblecaret.extend_selection_for_phone_number", true);
 
-pref("browser.tabs.showAudioPlayingIcon", true);
-
 pref("dom.serviceWorkers.enabled", true);
 
 
