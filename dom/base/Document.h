@@ -1433,7 +1433,7 @@ class Document : public nsINode,
   nsICookieJarSettings* CookieJarSettings();
 
   
-  bool HasStoragePermission() { return mHasStoragePermission; }
+  bool HasStoragePermission();
 
   
   inline void Changed() { ++mGeneration; }
