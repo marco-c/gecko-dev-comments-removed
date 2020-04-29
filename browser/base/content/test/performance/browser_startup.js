@@ -84,6 +84,7 @@ const startupPhases = {
         "nsPlacesExpiration.js",
       ]),
       modules: new Set([
+        "resource://gre/modules/Blocklist.jsm",
         
         
         "resource://gre/modules/BookmarkHTMLUtils.jsm",
