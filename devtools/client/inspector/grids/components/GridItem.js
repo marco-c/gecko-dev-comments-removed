@@ -46,7 +46,7 @@ class GridItem extends PureComponent {
   constructor(props) {
     super(props);
 
-    this.colorValueEl = createRef();
+    this.swatchContainer = createRef();
     this.swatchEl = createRef();
 
     this.onGridCheckboxClick = this.onGridCheckboxClick.bind(this);
@@ -79,7 +79,7 @@ class GridItem extends PureComponent {
   }
 
   setGridColor() {
-    const color = this.colorValueEl.current.textContent;
+    const color = this.swatchContainer.current.dataset.color;
     this.props.onSetGridOverlayColor(this.props.grid.nodeFront, color);
   }
 
@@ -133,7 +133,10 @@ class GridItem extends PureComponent {
       Fragment,
       null,
       dom.li(
-        {},
+        {
+          "data-color": grid.color,
+          ref: this.swatchContainer,
+        },
         dom.label(
           {},
           dom.input({
@@ -164,18 +167,7 @@ class GridItem extends PureComponent {
             backgroundColor: grid.color,
           },
           title: grid.color,
-        }),
-        
-        
-        
-        
-        dom.span(
-          {
-            className: "layout-color-value",
-            ref: this.colorValueEl,
-          },
-          grid.color
-        )
+        })
       ),
       this.renderSubgrids()
     );

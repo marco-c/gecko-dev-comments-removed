@@ -1590,6 +1590,7 @@ OutputParser.prototype = {
     const val = color.nextColorUnit();
 
     swatch.nextElementSibling.textContent = val;
+    swatch.parentNode.dataset.color = val;
     swatch.emit("unit-change", val);
   },
 
