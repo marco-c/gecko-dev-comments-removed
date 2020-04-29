@@ -1104,7 +1104,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-  void DispatchCrossProcessEvent(WidgetEvent* aEvent, nsFrameLoader* aRemote,
+  void DispatchCrossProcessEvent(WidgetEvent* aEvent,
+                                 dom::BrowserParent* aRemoteTarget,
                                  nsEventStatus* aStatus);
   
 

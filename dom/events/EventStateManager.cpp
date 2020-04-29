@@ -1269,12 +1269,13 @@ bool EventStateManager::WalkESMTreeToHandleAccessKey(
 }  
 
 void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
-                                                  nsFrameLoader* aFrameLoader,
+                                                  BrowserParent* aRemoteTarget,
                                                   nsEventStatus* aStatus) {
-  BrowserParent* remote = BrowserParent::GetFrom(aFrameLoader);
-  if (!remote) {
-    return;
-  }
+  MOZ_ASSERT(aEvent);
+  MOZ_ASSERT(aRemoteTarget);
+  MOZ_ASSERT(aStatus);
+
+  BrowserParent* remote = aRemoteTarget;
 
   WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
   bool isContextMenuKey = mouseEvent && mouseEvent->IsContextMenuKeyEvent();
@@ -1372,7 +1373,7 @@ bool EventStateManager::HandleCrossProcessEvent(WidgetEvent* aEvent,
   
   
   
-  AutoTArray<nsCOMPtr<nsIContent>, 1> targets;
+  AutoTArray<RefPtr<BrowserParent>, 1> remoteTargets;
   if (aEvent->mClass != eTouchEventClass || aEvent->mMessage == eTouchStart) {
     
     
@@ -1380,8 +1381,8 @@ bool EventStateManager::HandleCrossProcessEvent(WidgetEvent* aEvent,
                           ? sLastDragOverFrame.GetFrame()
                           : GetEventTarget();
     nsIContent* target = frame ? frame->GetContent() : nullptr;
-    if (IsRemoteTarget(target)) {
-      targets.AppendElement(target);
+    if (BrowserParent* remoteTarget = BrowserParent::GetFrom(target)) {
+      remoteTargets.AppendElement(remoteTarget);
     }
   } else {
     
@@ -1407,31 +1408,20 @@ bool EventStateManager::HandleCrossProcessEvent(WidgetEvent* aEvent,
         continue;
       }
       nsCOMPtr<nsIContent> target = do_QueryInterface(targetPtr);
-      if (IsRemoteTarget(target) && !targets.Contains(target)) {
-        targets.AppendElement(target);
+      BrowserParent* remoteTarget = BrowserParent::GetFrom(target);
+      if (remoteTarget && !remoteTargets.Contains(remoteTarget)) {
+        remoteTargets.AppendElement(remoteTarget);
       }
     }
   }
 
-  if (targets.Length() == 0) {
+  if (remoteTargets.Length() == 0) {
     return false;
   }
 
   
-  
-  for (uint32_t i = 0; i < targets.Length(); ++i) {
-    nsIContent* target = targets[i];
-    RefPtr<nsFrameLoaderOwner> loaderOwner = do_QueryObject(target);
-    if (!loaderOwner) {
-      continue;
-    }
-
-    RefPtr<nsFrameLoader> frameLoader = loaderOwner->GetFrameLoader();
-    if (!frameLoader) {
-      continue;
-    }
-
-    DispatchCrossProcessEvent(aEvent, frameLoader, aStatus);
+  for (uint32_t i = 0; i < remoteTargets.Length(); ++i) {
+    DispatchCrossProcessEvent(aEvent, remoteTargets[i], aStatus);
   }
   return aEvent->HasBeenPostedToRemoteProcess();
 }
