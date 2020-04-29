@@ -17,7 +17,22 @@ class nsHTTPSOnlyUtils {
 
 
 
+
+
   static bool ShouldUpgradeRequest(nsIURI* aURI, nsILoadInfo* aLoadInfo);
+
+  
+
+
+
+
+
+
+
+
+  static bool ShouldUpgradeWebSocket(nsIURI* aURI, int32_t aInnerWindowId,
+                                     bool aFromPrivateWindow,
+                                     uint32_t aHttpsOnlyStatus);
 
   
 
@@ -46,6 +61,19 @@ class nsHTTPSOnlyUtils {
   static void LogMessage(const nsAString& aMessage, uint32_t aFlags,
                          uint64_t aInnerWindowID, bool aFromPrivateWindow,
                          nsIURI* aURI = nullptr);
-};
 
+  
+
+
+
+
+  static bool OnionException(nsIURI* aURI);
+
+  
+
+
+
+
+  static bool LoopbackOrLocalException(nsIURI* aURI);
+};
 #endif 
