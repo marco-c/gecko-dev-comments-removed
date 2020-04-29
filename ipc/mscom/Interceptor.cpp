@@ -302,6 +302,15 @@ Interceptor::GetMarshalSizeMax(REFIID riid, void* pv, DWORD dwDestContext,
     return hr;
   }
 
+#if defined(MOZ_MSCOM_REMARSHAL_NO_HANDLER)
+  if (XRE_IsContentProcess() && IsCallerExternalProcess()) {
+    
+    
+    
+    return hr;
+  }
+#endif  
+
   DWORD payloadSize = 0;
   hr = mEventSink->GetHandlerPayloadSize(WrapNotNull(this),
                                          WrapNotNull(&payloadSize));
