@@ -1697,8 +1697,7 @@ var gProtectionsHandler = {
     }
 
     this.anyDetected = false;
-    this.anyBlocking = false;
-
+    let anyBlocking = false;
     this.noTrackersDetectedDescription.hidden = false;
 
     for (let blocker of this.blockers) {
@@ -1713,22 +1712,22 @@ var gProtectionsHandler = {
       let detected = blocker.isDetected(event);
       blocker.categoryItem.classList.toggle("notFound", !detected);
       this.anyDetected = this.anyDetected || detected;
-      this.anyBlocking = this.anyBlocking || blocker.activated;
+      anyBlocking = anyBlocking || blocker.activated;
     }
 
     
-    this.hasException = ContentBlockingAllowList.includes(
+    let hasException = ContentBlockingAllowList.includes(
       gBrowser.selectedBrowser
     );
 
     
     
     
-    if (isSimulated || !this.anyBlocking) {
+    if (isSimulated || !anyBlocking) {
       this.iconBox.removeAttribute("animate");
       
       
-    } else if (this.anyBlocking && !this.iconBox.hasAttribute("active")) {
+    } else if (anyBlocking && !this.iconBox.hasAttribute("active")) {
       this.iconBox.setAttribute("animate", "true");
     }
 
@@ -1736,21 +1735,16 @@ var gProtectionsHandler = {
     
     
     
-    let isPanelOpen = ["showing", "open"].includes(
-      this._protectionsPopup.state
-    );
-    if (isPanelOpen) {
-      this._protectionsPopup.toggleAttribute("detected", this.anyDetected);
-      this._protectionsPopup.toggleAttribute("blocking", this.anyBlocking);
-      this._protectionsPopup.toggleAttribute("hasException", this.hasException);
-    }
+    this._protectionsPopup.toggleAttribute("detected", this.anyDetected);
+    this._protectionsPopup.toggleAttribute("blocking", anyBlocking);
+    this._protectionsPopup.toggleAttribute("hasException", hasException);
 
     this._categoryItemOrderInvalidated = true;
 
     if (this.anyDetected) {
       this.noTrackersDetectedDescription.hidden = true;
 
-      if (isPanelOpen) {
+      if (["showing", "open"].includes(this._protectionsPopup.state)) {
         this.reorderCategoryItems();
 
         
@@ -1763,16 +1757,16 @@ var gProtectionsHandler = {
       }
     }
 
-    this.iconBox.toggleAttribute("active", this.anyBlocking);
-    this.iconBox.toggleAttribute("hasException", this.hasException);
+    this.iconBox.toggleAttribute("active", anyBlocking);
+    this.iconBox.toggleAttribute("hasException", hasException);
 
-    if (this.hasException) {
+    if (hasException) {
       this.showDisabledTooltipForTPIcon();
       if (!this.hadShieldState && !isSimulated) {
         this.hadShieldState = true;
         this.shieldHistogramAdd(1);
       }
-    } else if (this.anyBlocking) {
+    } else if (anyBlocking) {
       this.showActiveTooltipForTPIcon();
       if (!this.hadShieldState && !isSimulated) {
         this.hadShieldState = true;
@@ -1852,7 +1846,7 @@ var gProtectionsHandler = {
       [host]
     );
 
-    let currentlyEnabled = !this.hasException;
+    let currentlyEnabled = !this._protectionsPopup.hasAttribute("hasException");
 
     for (let tpSwitch of [
       this._protectionsPopupTPSwitch,
@@ -1911,10 +1905,6 @@ var gProtectionsHandler = {
     } else {
       this._protectionsPopup.removeAttribute("milestone");
     }
-
-    this._protectionsPopup.toggleAttribute("detected", this.anyDetected);
-    this._protectionsPopup.toggleAttribute("blocking", this.anyBlocking);
-    this._protectionsPopup.toggleAttribute("hasException", this.hasException);
   },
 
   
