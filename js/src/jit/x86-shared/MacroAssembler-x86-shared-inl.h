@@ -312,65 +312,15 @@ void MacroAssembler::lshift32(Register shift, Register srcDest) {
   shll_cl(srcDest);
 }
 
-
-
-
-
-
-
-
-
-
-
-inline void FlexibleShift32(MacroAssembler& masm, Register shift,
-                            Register srcDest, bool left,
-                            bool arithmetic = false) {
-  
-  Register internalSrcDest = (srcDest != ecx) ? srcDest : ebx;
-  MOZ_ASSERT(internalSrcDest != ecx);
-
-  
-  
-  LiveRegisterSet preserve;
-
-  if (shift != ecx) {
-    preserve.add(ecx);
-  }
-  preserve.add(internalSrcDest);
-
-  preserve.takeUnchecked(srcDest);
-
-  
-  masm.PushRegsInMask(preserve);
-
-  
-  masm.moveRegPair(shift, srcDest, ecx, internalSrcDest);
-  if (masm.oom()) {
-    return;
-  }
-
-  
-  if (left) {
-    masm.lshift32(ecx, internalSrcDest);
-  } else {
-    if (arithmetic) {
-      masm.rshift32Arithmetic(ecx, internalSrcDest);
-    } else {
-      masm.rshift32(ecx, internalSrcDest);
-    }
-  }
-
-  
-  if (internalSrcDest != srcDest) {
-    masm.mov(internalSrcDest, srcDest);
-  }
-
-  
-  masm.PopRegsInMask(preserve);
-}
-
 void MacroAssembler::flexibleLshift32(Register shift, Register srcDest) {
-  FlexibleShift32(*this, shift, srcDest, true);
+  if (shift == ecx) {
+    shll_cl(srcDest);
+  } else {
+    
+    xchg(shift, ecx);
+    shll_cl(shift == srcDest ? ecx : srcDest == ecx ? shift : srcDest);
+    xchg(shift, ecx);
+  }
 }
 
 void MacroAssembler::rshift32(Register shift, Register srcDest) {
@@ -379,7 +329,14 @@ void MacroAssembler::rshift32(Register shift, Register srcDest) {
 }
 
 void MacroAssembler::flexibleRshift32(Register shift, Register srcDest) {
-  FlexibleShift32(*this, shift, srcDest, false, false);
+  if (shift == ecx) {
+    shrl_cl(srcDest);
+  } else {
+    
+    xchg(shift, ecx);
+    shrl_cl(shift == srcDest ? ecx : srcDest == ecx ? shift : srcDest);
+    xchg(shift, ecx);
+  }
 }
 
 void MacroAssembler::rshift32Arithmetic(Register shift, Register srcDest) {
@@ -389,7 +346,14 @@ void MacroAssembler::rshift32Arithmetic(Register shift, Register srcDest) {
 
 void MacroAssembler::flexibleRshift32Arithmetic(Register shift,
                                                 Register srcDest) {
-  FlexibleShift32(*this, shift, srcDest, false, true);
+  if (shift == ecx) {
+    sarl_cl(srcDest);
+  } else {
+    
+    xchg(shift, ecx);
+    sarl_cl(shift == srcDest ? ecx : srcDest == ecx ? shift : srcDest);
+    xchg(shift, ecx);
+  }
 }
 
 void MacroAssembler::lshift32(Imm32 shift, Register srcDest) {

@@ -241,7 +241,7 @@ bool shiftTest(JSContext* cx, const char* name,
       Register rhs = rightHandSides.takeAny();
 
       
-      if (lhsOutput == rhs && lhsInput != rhsInput) {
+      if (lhsOutput == rhs && *lhsInput != *rhsInput) {
         continue;
       }
 
@@ -257,8 +257,10 @@ bool shiftTest(JSContext* cx, const char* name,
                     &outputFail);
 
       
-      masm.branch32(Assembler::NotEqual, AbsoluteAddress(rhsInput), rhs,
-                    &clobberRhs);
+      if (lhsOutput != rhs) {
+        masm.branch32(Assembler::NotEqual, AbsoluteAddress(rhsInput), rhs,
+                      &clobberRhs);
+      }
 
       if (lhsOutput != ecx && rhs != ecx) {
         
