@@ -2301,3 +2301,21 @@ SPAN_TEST(construct_from_iterators_static) {
     ASSERT_EQ(constSpan.Elements() + 1, subSpan.Elements());
   }
 }
+
+SPAN_TEST(construct_from_container_with_type_deduction) {
+  std::vector<int> vec = {1, 2, 3, 4, 5};
+
+  
+  {
+    const auto& constVecRef = vec;
+
+    auto span = Span{constVecRef};
+    static_assert(std::is_same_v<decltype(span), Span<const int>>);
+  }
+
+  
+  {
+    auto span = Span{vec};
+    static_assert(std::is_same_v<decltype(span), Span<int>>);
+  }
+}

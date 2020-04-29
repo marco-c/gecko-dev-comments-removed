@@ -3077,6 +3077,12 @@ auto MakeBackInserter(nsTArray<T>& aArray) {
   return nsTArrayBackInserter<T>{aArray};
 }
 
+template <typename E, class Alloc>
+Span(nsTArray_Impl<E, Alloc>&) -> Span<E>;
+
+template <typename E, class Alloc>
+Span(const nsTArray_Impl<E, Alloc>&) -> Span<const E>;
+
 }  
 
 
@@ -3108,4 +3114,4 @@ static_assert(sizeof(AutoTArray<uint32_t, 2>) ==
 
 #include "nsTArray-inl.h"
 
-#endif  
+#endif
