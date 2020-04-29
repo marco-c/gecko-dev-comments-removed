@@ -101,32 +101,5 @@ add_task(async () => {
   );
 
   
-  
-  if (gBrowser.ownerDocument.activeElement != gBrowser.selectedTab) {
-    evt = waitForMacEvent(
-      "AXFocusedUIElementChanged",
-      iface => iface.getAttributeValue("AXRole") == "AXRadioButton"
-    );
-    gBrowser.selectedTab.focus();
-    await evt;
-  }
-
-  
-  evt = waitForMacEvent(
-    "AXFocusedUIElementChanged",
-    iface => iface.getAttributeValue("AXRole") == "AXRadioButton"
-  );
-  EventUtils.synthesizeKey("KEY_ArrowLeft", { metaKey: true });
-  await evt;
-
-  
-  evt = waitForMacEvent("AXSelectedChildrenChanged");
-  EventUtils.synthesizeKey(" ", { metaKey: true, shiftKey: true });
-  await evt;
-
-  selectedTabs = tablist.getAttributeValue("AXSelectedChildren");
-  is(selectedTabs.length, 2, "two tabs selected");
-
-  
   await Promise.all(newTabs.map(t => BrowserTestUtils.removeTab(t)));
 });
