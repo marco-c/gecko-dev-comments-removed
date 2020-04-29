@@ -302,6 +302,7 @@ struct DIGroup {
   int32_t mAppUnitsPerDevPixel;
   gfx::Size mScale;
   ScrollableLayerGuid::ViewID mScrollId;
+  CompositorHitTestInfo mHitInfo;
   LayerPoint mResidualOffset;
   LayerIntRect mLayerBounds;  
   
@@ -313,7 +314,8 @@ struct DIGroup {
 
   DIGroup()
       : mAppUnitsPerDevPixel(0),
-        mScrollId(ScrollableLayerGuid::NULL_SCROLL_ID) {}
+        mScrollId(ScrollableLayerGuid::NULL_SCROLL_ID),
+        mHitInfo(CompositorHitTestInvisibleToHit) {}
 
   void InvalidateRect(const IntRect& aRect) {
     auto r = aRect.Intersect(mPreservedRect);
@@ -667,6 +669,9 @@ struct DIGroup {
       return;
     }
 
+    
+    mHitInfo = CompositorHitTestInvisibleToHit;
+
     PaintItemRange(aGrouper, aStartItem, aEndItem, context, recorder,
                    rootManager, aResources);
 
@@ -742,8 +747,11 @@ struct DIGroup {
 
     
     
-    CompositorHitTestInfo hitInfo(CompositorHitTestFlags::eVisibleToHitTest,
-                                  CompositorHitTestFlags::eIrregularArea);
+    
+    CompositorHitTestInfo hitInfo = mHitInfo;
+    if (hitInfo.contains(CompositorHitTestFlags::eVisibleToHitTest)) {
+      hitInfo += CompositorHitTestFlags::eIrregularArea;
+    }
 
     
     
@@ -771,6 +779,19 @@ struct DIGroup {
       GP("Trying %s %p-%d %d %d %d %d\n", item->Name(), item->Frame(),
          item->GetPerFrameKey(), bounds.x, bounds.y, bounds.XMost(),
          bounds.YMost());
+
+      if (item->GetType() == DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO) {
+        
+        
+        
+        
+        
+        
+        mHitInfo +=
+            static_cast<nsDisplayCompositorHitTestInfo*>(item)->HitTestFlags();
+        continue;
+      }
+
       GP("paint check invalid %d %d - %d %d\n", bottomRight.x, bottomRight.y,
          size.width, size.height);
       
@@ -798,11 +819,6 @@ struct DIGroup {
         aGrouper->PaintContainerItem(this, item, data, bounds, children,
                                      aContext, aRecorder, aRootManager,
                                      aResources);
-        continue;
-      }
-      if (item->GetType() == DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO) {
-        
-        
         continue;
       }
       nsPaintedDisplayItem* paintedItem = item->AsPaintedDisplayItem();
