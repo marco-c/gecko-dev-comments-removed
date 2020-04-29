@@ -1006,8 +1006,13 @@ void nsPresContext::SetFullZoom(float aZoom) {
   mDeviceContext->SetFullZoom(aZoom);
 
   NS_ASSERTION(!mSuppressResizeReflow,
-               "two zooms happening at the same time? impossible!");
-  mSuppressResizeReflow = true;
+               "two zooms happening at the same time? Impossible!");
+
+  
+  
+  
+  RefPtr<MobileViewportManager> mvm = mPresShell->GetMobileViewportManager();
+  mSuppressResizeReflow = !mvm;
 
   mFullZoom = aZoom;
 
