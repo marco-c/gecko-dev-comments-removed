@@ -221,7 +221,13 @@ class JitRuntime {
 #ifdef DEBUG
   
   
-  MainThreadData<uint32_t> ionBailAfter_{false};
+  
+  MainThreadData<uint32_t> ionBailAfterCounter_{0};
+
+  
+  
+  
+  MainThreadData<bool> ionBailAfterEnabled_{false};
 #endif
 
   
@@ -419,11 +425,13 @@ class JitRuntime {
   }
 
 #ifdef DEBUG
-  void* addressOfIonBailAfter() { return &ionBailAfter_; }
+  void* addressOfIonBailAfterCounter() { return &ionBailAfterCounter_; }
 
   
   
-  void setIonBailAfter(uint32_t after) { ionBailAfter_ = after; }
+  void setIonBailAfterCounter(uint32_t after) { ionBailAfterCounter_ = after; }
+  bool ionBailAfterEnabled() const { return ionBailAfterEnabled_; }
+  void setIonBailAfterEnabled(bool enabled) { ionBailAfterEnabled_ = enabled; }
 #endif
 
   size_t numFinishedOffThreadTasks() const {
