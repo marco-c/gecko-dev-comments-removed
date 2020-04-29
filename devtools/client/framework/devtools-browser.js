@@ -73,6 +73,10 @@ const BROWSER_STYLESHEET_URL = "chrome://devtools/skin/devtools-browser.css";
 
 
 
+const DEVTOOLS_F12_DISABLED_PREF = "devtools.experiment.f12.shortcut_disabled";
+
+
+
 
 var gDevToolsBrowser = (exports.gDevToolsBrowser = {
   
@@ -299,8 +303,23 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     
     switch (key.id) {
       case "toggleToolbox":
-      case "toggleToolboxF12":
         await gDevToolsBrowser.toggleToolboxCommand(window.gBrowser, startTime);
+        break;
+      case "toggleToolboxF12":
+        
+        
+        
+        const isF12Disabled = Services.prefs.getBoolPref(
+          DEVTOOLS_F12_DISABLED_PREF,
+          false
+        );
+
+        if (!isF12Disabled) {
+          await gDevToolsBrowser.toggleToolboxCommand(
+            window.gBrowser,
+            startTime
+          );
+        }
         break;
       case "browserToolbox":
         BrowserToolboxLauncher.init();

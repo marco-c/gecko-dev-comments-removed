@@ -212,6 +212,8 @@ loader.lazyRequireGetter(
   "devtools/shared/picker-constants"
 );
 
+const DEVTOOLS_F12_DISABLED_PREF = "devtools.experiment.f12.shortcut_disabled";
+
 
 
 
@@ -252,6 +254,12 @@ function Toolbox(
   
   
   this.sessionId = msSinceProcessStart;
+
+  
+  if (Services.prefs.getBoolPref(DEVTOOLS_F12_DISABLED_PREF, false)) {
+    
+    Services.prefs.setBoolPref(DEVTOOLS_F12_DISABLED_PREF, false);
+  }
 
   
   
