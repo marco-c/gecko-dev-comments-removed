@@ -432,7 +432,6 @@ pref("browser.link.open_newwindow.restriction", 2);
 #endif
 
 
-pref("browser.tabs.multiselect", true);
 pref("browser.tabs.closeTabByDblclick", false);
 pref("browser.tabs.closeWindowWithLastTab", true);
 pref("browser.tabs.allowTabDetach", true);
@@ -1713,9 +1712,6 @@ pref("dom.ipc.processPrelaunch.enabled", true);
 pref("browser.migrate.chrome.history.limit", 2000);
 pref("browser.migrate.chrome.history.maxAgeInDays", 180);
 
-
-pref("dom.mozBrowserFramesEnabled", true);
-
 pref("extensions.pocket.api", "api.getpocket.com");
 pref("extensions.pocket.enabled", true);
 pref("extensions.pocket.oAuthConsumerKey", "40249-e88c401e1b1f2242d9e441c4");
@@ -1963,7 +1959,11 @@ pref("devtools.inspector.showAllAnonymousContent", false);
 
 pref("devtools.inspector.new-rulesview.enabled", false);
 
+#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
+pref("devtools.inspector.compatibility.enabled", true);
+#else
 pref("devtools.inspector.compatibility.enabled", false);
+#endif
 
 pref("devtools.inspector.color-scheme-simulation.enabled", false);
 
