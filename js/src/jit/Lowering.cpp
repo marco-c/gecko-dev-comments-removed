@@ -3420,7 +3420,8 @@ void LIRGenerator::visitLoadUnboxedScalar(MLoadUnboxedScalar* ins) {
 
   
   LDefinition tempDef = LDefinition::BogusTemp();
-  if (ins->readType() == Scalar::Uint32 && IsFloatingPointType(ins->type())) {
+  if (ins->storageType() == Scalar::Uint32 &&
+      IsFloatingPointType(ins->type())) {
     tempDef = temp();
   }
 
