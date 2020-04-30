@@ -48,6 +48,11 @@ const TIPS = {
 
   
   
+  
+  UPDATE_CHECKING: "intervention_update_checking",
+
+  
+  
   UPDATE_REFRESH: "intervention_update_refresh",
 
   
@@ -517,67 +522,68 @@ class ProviderInterventions extends UrlbarProvider {
 
     
     
+    if (topDocIDs.has("update")) {
+      this._setCurrentTipFromAppUpdaterStatus();
+    } else if (topDocIDs.has("clear")) {
+      let window = BrowserWindowTracker.getTopWindow();
+      if (!PrivateBrowsingUtils.isWindowPrivate(window)) {
+        this.currentTip = TIPS.CLEAR;
+      }
+    } else if (topDocIDs.has("refresh")) {
+      
+      this.currentTip = TIPS.REFRESH;
+    }
+
+    return (
+      this.currentTip != TIPS.NONE &&
+      (this.currentTip != TIPS.REFRESH ||
+        Services.policies.isAllowed("profileRefresh"))
+    );
+  }
+
+  async _setCurrentTipFromAppUpdaterStatus(waitForCheck) {
+    
+    
+    
+    
+    
     
     
     
     try {
       this.checkForBrowserUpdate();
     } catch (ex) {
-      return false;
+      return;
     }
 
     
-    
-    if (topDocIDs.has("update")) {
-      
-      switch (appUpdater.status) {
-        case AppUpdater.STATUS.READY_FOR_RESTART:
-          
-          this.currentTip = TIPS.UPDATE_RESTART;
-          break;
-        case AppUpdater.STATUS.DOWNLOAD_AND_INSTALL:
-          
-          
-          this.currentTip = TIPS.UPDATE_ASK;
-          break;
-        case AppUpdater.STATUS.NO_UPDATES_FOUND:
-          
-          this.currentTip = TIPS.UPDATE_REFRESH;
-          break;
-        case AppUpdater.STATUS.CHECKING:
-          
-          
-          
-          return false;
-        default:
-          
-          
-          
-          
-          this.currentTip = TIPS.UPDATE_WEB;
-          break;
-      }
-    } else if (topDocIDs.has("clear")) {
-      let window = BrowserWindowTracker.getTopWindow();
-      if (PrivateBrowsingUtils.isWindowPrivate(window)) {
-        return false;
-      }
-
-      this.currentTip = TIPS.CLEAR;
-    } else if (topDocIDs.has("refresh")) {
-      this.currentTip = TIPS.REFRESH;
-    } else {
-      
-      return false;
+    switch (appUpdater.status) {
+      case AppUpdater.STATUS.READY_FOR_RESTART:
+        
+        this.currentTip = TIPS.UPDATE_RESTART;
+        break;
+      case AppUpdater.STATUS.DOWNLOAD_AND_INSTALL:
+        
+        
+        this.currentTip = TIPS.UPDATE_ASK;
+        break;
+      case AppUpdater.STATUS.NO_UPDATES_FOUND:
+        
+        this.currentTip = TIPS.UPDATE_REFRESH;
+        break;
+      case AppUpdater.STATUS.CHECKING:
+        
+        
+        this.currentTip = TIPS.UPDATE_CHECKING;
+        break;
+      default:
+        
+        
+        
+        
+        this.currentTip = TIPS.UPDATE_WEB;
+        break;
     }
-
-    if (
-      this.currentTip == TIPS.REFRESH &&
-      !Services.policies.isAllowed("profileRefresh")
-    ) {
-      return false;
-    }
-    return true;
   }
 
   
@@ -589,6 +595,50 @@ class ProviderInterventions extends UrlbarProvider {
   async startQuery(queryContext, addCallback) {
     let instance = {};
     this.queries.set(queryContext, instance);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (this.currentTip == TIPS.UPDATE_CHECKING) {
+      
+      
+      this._setCurrentTipFromAppUpdaterStatus();
+      if (this.currentTip == TIPS.UPDATE_CHECKING) {
+        
+        await new Promise(resolve => {
+          this._appUpdaterListener = () => {
+            appUpdater.removeListener(this._appUpdaterListener);
+            delete this._appUpdaterListener;
+            resolve();
+          };
+          appUpdater.addListener(this._appUpdaterListener);
+        });
+        if (!this.queries.has(queryContext)) {
+          
+          return;
+        }
+        
+        
+        
+        this._setCurrentTipFromAppUpdaterStatus();
+        if (this.currentTip == TIPS.UPDATE_CHECKING) {
+          this.queries.delete(queryContext);
+          return;
+        }
+      }
+    }
+    
+    
 
     let result = new UrlbarResult(
       UrlbarUtils.RESULT_TYPE.TIP,
@@ -620,6 +670,13 @@ class ProviderInterventions extends UrlbarProvider {
   cancelQuery(queryContext) {
     logger.info(`Canceling query for ${queryContext.searchString}`);
     this.queries.delete(queryContext);
+
+    
+    
+    if (this._appUpdaterListener) {
+      appUpdater.removeListener(this._appUpdaterListener);
+      delete this._appUpdaterListener;
+    }
   }
 
   
