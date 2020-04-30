@@ -34,11 +34,9 @@
 
 
 
-from __future__ import absolute_import
-
 import os.path
 import re
-from xpidl import xpidl
+import xpidl
 
 
 class AutoIndent(object):

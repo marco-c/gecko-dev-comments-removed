@@ -5,12 +5,10 @@
 
 
 
-from __future__ import absolute_import
-
 import mozunit
 import unittest
-from xpidl import xpidl
-from xpidl import header
+import xpidl
+import header
 
 
 class TestParser(unittest.TestCase):
