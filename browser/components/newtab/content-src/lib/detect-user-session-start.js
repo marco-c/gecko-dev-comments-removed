@@ -3,7 +3,7 @@
 
 
 import { actionCreators as ac, actionTypes as at } from "common/Actions.jsm";
-import { perfService as perfSvc } from "common/PerfService.jsm";
+import { perfService as perfSvc } from "content-src/lib/perf-service";
 
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";

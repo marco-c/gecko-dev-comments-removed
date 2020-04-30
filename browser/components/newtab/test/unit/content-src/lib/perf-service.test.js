@@ -1,5 +1,5 @@
 
-import { _PerfService } from "common/PerfService.jsm";
+import { _PerfService } from "content-src/lib/perf-service";
 import { FakePerformance } from "test/unit/utils.js";
 
 let perfService;
