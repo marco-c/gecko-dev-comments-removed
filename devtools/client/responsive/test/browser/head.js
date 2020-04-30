@@ -924,22 +924,22 @@ function promiseContentReflow(ui) {
 
 
 
-function promiseRDMZoom(ui, browser, zoom) {
-  return new Promise(resolve => {
-    const currentZoom = ZoomManager.getZoomForBrowser(browser);
-    if (currentZoom.toFixed(2) == zoom.toFixed(2)) {
-      resolve();
-      return;
-    }
+async function promiseRDMZoom(ui, browser, zoom) {
+  const currentZoom = ZoomManager.getZoomForBrowser(browser);
+  if (currentZoom.toFixed(2) == zoom.toFixed(2)) {
+    return;
+  }
 
-    const zoomComplete = BrowserTestUtils.waitForEvent(
-      browser,
-      "FullZoomResolutionStable"
-    );
-    ZoomManager.setZoomForBrowser(browser, zoom);
+  const width = browser.getBoundingClientRect().width;
 
-    
-    zoomComplete.then(promiseContentReflow(ui)).then(resolve);
+  ZoomManager.setZoomForBrowser(browser, zoom);
+
+  
+  
+  
+  
+  await BrowserTestUtils.waitForCondition(function() {
+    return browser.getBoundingClientRect().width != width;
   });
 }
 
