@@ -4,8 +4,8 @@
 
 "use strict";
 
-const { AboutProtectionsHandler } = ChromeUtils.import(
-  "resource:///modules/aboutpages/AboutProtectionsHandler.jsm"
+const { AboutProtectionsParent } = ChromeUtils.import(
+  "resource:///actors/AboutProtectionsParent.jsm"
 );
 const nsLoginInfo = new Components.Constructor(
   "@mozilla.org/login-manager/loginInfo;1",
@@ -41,14 +41,23 @@ let fakeDataWithError = {
 
 
 
-const mockGetMonitorData = data => async () => data;
-
-
-const mockGetLoginData = async () => {
+const mockGetMonitorData = data => {
   return {
-    hasFxa: true,
-    numLogins: Services.logins.countLogins("", "", ""),
-    numSyncedDevices: 0,
+    getMonitorData: async () => data,
+  };
+};
+
+
+const mockGetMonitorAndLoginData = data => {
+  return {
+    getMonitorData: async () => data,
+    getLoginData: () => {
+      return {
+        hasFxa: true,
+        numLogins: Services.logins.countLogins("", "", ""),
+        numSyncedDevices: 0,
+      };
+    },
   };
 };
 
@@ -57,8 +66,6 @@ add_task(async function() {
     url: "about:protections",
     gBrowser,
   });
-  const { getLoginData } = AboutProtectionsHandler;
-  const { getMonitorData } = AboutProtectionsHandler;
 
   await reloadTab(tab);
 
@@ -69,8 +76,8 @@ add_task(async function() {
     "Check that the correct content is displayed for users with monitor data."
   );
   Services.logins.addLogin(TEST_LOGIN1);
-  AboutProtectionsHandler.getMonitorData = mockGetMonitorData(
-    fakeDataWithNoError
+  AboutProtectionsParent.setTestOverride(
+    mockGetMonitorData(fakeDataWithNoError)
   );
   await reloadTab(tab);
 
@@ -127,8 +134,8 @@ add_task(async function() {
     ...fakeDataWithNoError,
     potentiallyBreachedLogins: 0,
   };
-  AboutProtectionsHandler.getMonitorData = mockGetMonitorData(
-    noBreachedLoginsData
+  AboutProtectionsParent.setTestOverride(
+    mockGetMonitorData(noBreachedLoginsData)
   );
 
   await reloadTab(tab);
@@ -154,10 +161,9 @@ add_task(async function() {
   info(
     "Check that correct content is displayed when monitor data contains an error message."
   );
-  AboutProtectionsHandler.getMonitorData = mockGetMonitorData(
-    fakeDataWithError
+  AboutProtectionsParent.setTestOverride(
+    mockGetMonitorAndLoginData(fakeDataWithError)
   );
-  AboutProtectionsHandler.getLoginData = mockGetLoginData;
   await reloadTab(tab);
   await checkNoLoginsContentIsDisplayed(tab);
 
@@ -188,8 +194,7 @@ add_task(async function() {
   Services.logins.removeLogin(TEST_LOGIN1);
 
   
-  AboutProtectionsHandler.getLoginData = getLoginData;
-  AboutProtectionsHandler.getMonitorData = getMonitorData;
+  AboutProtectionsParent.setTestOverride(null);
 
   await BrowserTestUtils.removeTab(tab);
 });

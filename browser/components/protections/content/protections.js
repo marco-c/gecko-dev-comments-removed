@@ -16,10 +16,7 @@ window.addEventListener("beforeunload", () => {
 document.addEventListener("DOMContentLoaded", e => {
   let todayInMs = Date.now();
   let weekAgoInMs = todayInMs - 6 * 24 * 60 * 60 * 1000;
-  RPMSendAsyncMessage("FetchContentBlockingEvents", {
-    from: weekAgoInMs,
-    to: todayInMs,
-  });
+
   let dataTypes = [
     "cryptominer",
     "fingerprinter",
@@ -357,17 +354,10 @@ document.addEventListener("DOMContentLoaded", e => {
     }
   };
 
-  RPMAddMessageListener("SendContentBlockingRecords", message => {
-    createGraph(message.data);
-  });
-  RPMAddMessageListener("SendUserMobileDeviceData", message => {
-    if (
-      RPMGetBoolPref("browser.contentblocking.report.show_mobile_app") &&
-      !message.data.mobileDeviceConnected
-    ) {
-      document.getElementById("mobile-hanger").classList.remove("hidden");
-    }
-  });
+  RPMSendQuery("FetchContentBlockingEvents", {
+    from: weekAgoInMs,
+    to: todayInMs,
+  }).then(createGraph);
 
   let exitIcon = document.querySelector("#mobile-hanger .exit-icon");
   
@@ -397,14 +387,32 @@ document.addEventListener("DOMContentLoaded", e => {
     "browser.contentblocking.report.lockwise.enabled",
     true
   );
+
+  let lockwiseCard;
   if (lockwiseEnabled) {
     const lockwiseUI = document.querySelector(".lockwise-card");
     lockwiseUI.classList.remove("hidden");
     lockwiseUI.classList.add("loading");
 
-    const lockwiseCard = new LockwiseCard(document);
+    lockwiseCard = new LockwiseCard(document);
     lockwiseCard.init();
   }
+
+  RPMSendQuery("FetchUserLoginsData", {}).then(data => {
+    if (lockwiseCard) {
+      
+      lockwiseCard.buildContent(data);
+    }
+
+    if (
+      RPMGetBoolPref("browser.contentblocking.report.show_mobile_app") &&
+      !data.mobileDeviceConnected
+    ) {
+      document
+        .getElementById("mobile-hanger")
+        .classList.toggle("hidden", false);
+    }
+  });
 
   
   const lockwiseUI = document.querySelector(".lockwise-card");
@@ -441,8 +449,4 @@ document.addEventListener("DOMContentLoaded", e => {
   
   const proxyUI = document.querySelector(".proxy-card");
   proxyUI.dataset.enabled = proxyEnabled;
-
-  
-  
-  RPMSendAsyncMessage("FetchUserLoginsData");
 });

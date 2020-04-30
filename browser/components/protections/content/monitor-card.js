@@ -24,7 +24,6 @@ export default class MonitorClass {
   init() {
     
     this.getMonitorData();
-    RPMSendAsyncMessage("FetchMonitorData");
 
     let monitorReportLink = this.doc.getElementById("full-report-link");
     monitorReportLink.addEventListener("click", () => {
@@ -48,9 +47,8 @@ export default class MonitorClass {
   
 
 
-
   getMonitorData() {
-    RPMAddMessageListener("SendMonitorData", ({ data: monitorData }) => {
+    RPMSendQuery("FetchMonitorData", {}).then(monitorData => {
       
       this.buildContent(monitorData);
 

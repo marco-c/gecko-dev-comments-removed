@@ -69,14 +69,6 @@ export default class LockwiseCard {
     lockwiseReportLink.addEventListener("click", () => {
       this.doc.sendTelemetryEvent("click", "lw_about_link");
     });
-
-    RPMAddMessageListener("SendUserLoginsData", ({ data }) => {
-      
-      this.buildContent(data);
-
-      const lockwiseUI = document.querySelector(".card.lockwise-card.loading");
-      lockwiseUI.classList.remove("loading");
-    });
   }
 
   buildContent(data) {
@@ -121,6 +113,9 @@ export default class LockwiseCard {
       title.setAttribute("data-l10n-id", "lockwise-title");
       headerContent.setAttribute("data-l10n-id", "lockwise-header-content");
     }
+
+    const lockwiseUI = document.querySelector(".card.lockwise-card.loading");
+    lockwiseUI.classList.remove("loading");
   }
 
   
