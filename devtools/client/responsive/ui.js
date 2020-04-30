@@ -197,22 +197,7 @@ class ResponsiveUI {
       this.rdmFrame.contentWindow.addEventListener("message", this);
     }
 
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    const rdmContent = this.tab.linkedBrowser;
-    const fullZoom = rdmContent.fullZoom;
-    const textZoom = rdmContent.textZoom;
+    this.tab.linkedBrowser.enterResponsiveMode();
 
     
     
@@ -243,20 +228,6 @@ class ResponsiveUI {
 
     
     this.showBrowserUI();
-
-    if (!this.isBrowserUIEnabled) {
-      
-      
-      
-      const bc = this._toolWindow.docShell.browsingContext;
-      const zoomActor = bc.currentWindowGlobal.getActor("Zoom");
-      zoomActor.sendAsyncMessage("FullZoom", { value: 1.0 });
-
-      
-      
-      rdmContent.fullZoom = fullZoom;
-      rdmContent.textZoom = textZoom;
-    }
 
     
     message.post(this.toolWindow, "post-init");
@@ -392,7 +363,6 @@ class ResponsiveUI {
       await this.updateMaxTouchPointsEnabled(false);
 
       if (this.isBrowserUIEnabled) {
-        await this.responsiveFront.setDocumentInRDMPane(false);
         await this.responsiveFront.setFloatingScrollbars(false);
 
         
@@ -409,6 +379,7 @@ class ResponsiveUI {
     this.tab.removeEventListener("TabClose", this);
     this.tab.removeEventListener("BeforeTabRemotenessChange", this);
     this.browserWindow.removeEventListener("unload", this);
+    this.tab.linkedBrowser.leaveResponsiveMode();
 
     if (!this.isBrowserUIEnabled) {
       this.tab.linkedBrowser.removeEventListener("FullZoomChange", this);
@@ -430,6 +401,7 @@ class ResponsiveUI {
       this.browserContainerEl.classList.remove("responsive-mode");
       this.browserStackEl.style.removeProperty("--rdm-width");
       this.browserStackEl.style.removeProperty("--rdm-height");
+      this.browserStackEl.style.removeProperty("--rdm-zoom");
     }
 
     if (!this.isBrowserUIEnabled && !isTabContentDestroying) {
@@ -912,7 +884,7 @@ class ResponsiveUI {
       
       
       
-      await this.responsiveFront.setDocumentInRDMPane(true);
+      this.tab.linkedBrowser.enterResponsiveMode();
 
       
       await this.responsiveFront.setFloatingScrollbars(true);
@@ -1139,13 +1111,11 @@ class ResponsiveUI {
 
     const zoom = this.tab.linkedBrowser.fullZoom;
 
-    const scaledWidth = width * zoom;
-    const scaledHeight = height * zoom;
-
     
     
-    this.browserStackEl.style.setProperty("--rdm-width", `${scaledWidth}px`);
-    this.browserStackEl.style.setProperty("--rdm-height", `${scaledHeight}px`);
+    this.browserStackEl.style.setProperty("--rdm-width", `${width}px`);
+    this.browserStackEl.style.setProperty("--rdm-height", `${height}px`);
+    this.browserStackEl.style.setProperty("--rdm-zoom", zoom);
 
     
     
