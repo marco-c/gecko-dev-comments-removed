@@ -2637,7 +2637,7 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
     
     
     
-    mState = NOTHING;
+    SetState(NOTHING);
   }
 
   return nsEventStatus_eConsumeNoDefault;
