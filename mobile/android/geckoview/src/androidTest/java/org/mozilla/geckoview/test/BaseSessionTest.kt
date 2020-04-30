@@ -1,7 +1,7 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 package org.mozilla.geckoview.test
 
@@ -20,10 +20,10 @@ import org.junit.rules.ErrorCollector
 
 import kotlin.reflect.KClass
 
-/**
- * Common base class for tests using GeckoSessionTestRule,
- * providing the test rule and other utilities.
- */
+
+
+
+
 open class BaseSessionTest(noErrorCollector: Boolean = false) {
     companion object {
         const val CLICK_TO_RELOAD_HTML_PATH = "/assets/www/clickToReload.html"
@@ -68,6 +68,7 @@ open class BaseSessionTest(noErrorCollector: Boolean = false) {
         const val PUSH_HTML_PATH = "/assets/www/push/push.html"
         const val OPEN_WINDOW_PATH = "/assets/www/worker/open_window.html"
         const val OPEN_WINDOW_TARGET_PATH = "/assets/www/worker/open_window_target.html"
+        const val DATA_URI_PATH = "/assets/www/data_uri.html"
 
         const val TEST_ENDPOINT = GeckoSessionTestRule.TEST_ENDPOINT
     }
