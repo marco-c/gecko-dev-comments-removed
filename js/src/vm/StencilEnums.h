@@ -167,14 +167,13 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
 
   
-  IsAsync = 1 << 14,
-
   
+  
+  
+  
+  IsAsync = 1 << 14,
   IsGenerator = 1 << 15,
 
-  
-  
-  
   
   
   
@@ -183,15 +182,23 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
 
   
   
+  
   FunctionHasThisBinding = 1 << 17,
 
+  
+  
+  
   NeedsHomeObject = 1 << 18,
 
+  
+  
   IsDerivedClassConstructor = 1 << 19,
 
   
   HasRest = 1 << 20,
 
+  
+  
   
   NeedsFunctionEnvironmentObjects = 1 << 21,
 
@@ -202,9 +209,14 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   FunctionHasExtraBodyVarScope = 1 << 22,
 
   
+  
+  
+  
+  
+  
+  
   ShouldDeclareArguments = 1 << 23,
 
-  
   
   
   
@@ -231,8 +243,11 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   
+  
+  
   AlwaysNeedsArgsObj = 1 << 25,
 
+  
   
   
   HasMappedArgsObj = 1 << 26,
