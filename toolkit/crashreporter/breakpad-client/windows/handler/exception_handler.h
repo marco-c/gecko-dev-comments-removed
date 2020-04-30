@@ -89,6 +89,12 @@ using std::wstring;
 class ExceptionHandler {
  public:
   
+  enum class FilterResult {
+    HandleException,
+    AbortWithoutMinidump,
+    ContinueSearch
+  };
+
   
   
   
@@ -99,8 +105,13 @@ class ExceptionHandler {
   
   
   
-  typedef bool (*FilterCallback)(void* context, EXCEPTION_POINTERS* exinfo,
-                                 MDRawAssertionInfo* assertion);
+  
+  
+  
+  
+  typedef FilterResult (*FilterCallback)(void* context,
+                                         EXCEPTION_POINTERS* exinfo,
+                                         MDRawAssertionInfo* assertion);
 
   
   
@@ -345,14 +356,26 @@ class ExceptionHandler {
                                     MDRawAssertionInfo* assertion);
 
   
+  enum class MinidumpResult {
+    Success,
+    Failure,
+    Ignored
+  };
+
   
   
   
   
   
-  bool WriteMinidumpWithException(DWORD requesting_thread_id,
-                                  EXCEPTION_POINTERS* exinfo,
-                                  MDRawAssertionInfo* assertion);
+  
+  
+  
+  
+  
+  
+  MinidumpResult WriteMinidumpWithException(DWORD requesting_thread_id,
+                                            EXCEPTION_POINTERS* exinfo,
+                                            MDRawAssertionInfo* assertion);
 
   
   
@@ -466,7 +489,7 @@ class ExceptionHandler {
 
   
   
-  bool handler_return_value_;
+  MinidumpResult handler_return_value_;
 
   
   
