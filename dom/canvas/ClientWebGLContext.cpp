@@ -737,9 +737,9 @@ bool ClientWebGLContext::CreateHostContext(const uvec2& requestedSize) {
     }
 
     outOfProcess.mCommandSource = MakeUnique<ClientWebGLCommandSource>(
-        std::move(commandPcq->mProducer), std::move(responsePcq->mConsumer));
-    auto sink = MakeUnique<HostWebGLCommandSink>(
-        std::move(commandPcq->mConsumer), std::move(responsePcq->mProducer));
+        commandPcq->TakeProducer(), responsePcq->TakeConsumer());
+    auto sink = MakeUnique<HostWebGLCommandSink>(commandPcq->TakeConsumer(),
+                                                 responsePcq->TakeProducer());
 
     
     

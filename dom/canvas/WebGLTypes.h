@@ -96,7 +96,7 @@ inline auto AutoAssertCast(const From val) {
 
 namespace ipc {
 template <typename T>
-struct PcqParamTraits;
+struct QueueParamTraits;
 }
 
 namespace webgl {
@@ -733,7 +733,7 @@ class RawBuffer {
   
   bool mOwnsData = false;
 
-  friend mozilla::ipc::PcqParamTraits<RawBuffer>;
+  friend mozilla::ipc::QueueParamTraits<RawBuffer>;
 
  public:
   using ElementType = T;

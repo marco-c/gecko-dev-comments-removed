@@ -29,7 +29,7 @@ using ClientWebGLCommandSource = SyncCommandSource<size_t>;
 
 
 
-class HostWebGLCommandSink : public SyncCommandSink<size_t> {
+class HostWebGLCommandSink final : public SyncCommandSink<size_t> {
  public:
   HostWebGLCommandSink(UniquePtr<Consumer>&& aConsumer,
                        UniquePtr<Producer>&& aResponseProducer)
