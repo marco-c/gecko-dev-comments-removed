@@ -243,6 +243,13 @@ class DocumentOrShadowRoot {
   }
 
  protected:
+  
+  void TraverseSheetRefInStylesIfApplicable(
+      StyleSheet&, nsCycleCollectionTraversalCallback&);
+  void TraverseStyleSheets(nsTArray<RefPtr<StyleSheet>>&, const char*,
+                           nsCycleCollectionTraversalCallback&);
+  void UnlinkStyleSheets(nsTArray<RefPtr<StyleSheet>>&);
+
   using StyleSheetSet = nsTHashtable<nsPtrHashKey<const StyleSheet>>;
   void RemoveSheetFromStylesIfApplicable(StyleSheet&);
   void ClearAdoptedStyleSheets();
