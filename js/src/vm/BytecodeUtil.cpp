@@ -31,6 +31,7 @@
 #include "frontend/BytecodeCompiler.h"
 #include "frontend/SourceNotes.h"  
 #include "gc/PublicIterators.h"
+#include "jit/IonScript.h"  
 #include "js/CharacterEncoding.h"
 #include "js/Printf.h"
 #include "js/Symbol.h"

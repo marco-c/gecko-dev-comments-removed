@@ -87,8 +87,9 @@ class JitFrameLayout;
 class ExitFrameLayout;
 
 class BaselineFrame;
-
 class JitActivation;
+class SafepointIndex;
+class OsiIndex;
 
 
 
