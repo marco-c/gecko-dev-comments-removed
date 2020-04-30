@@ -304,10 +304,14 @@ enum class MutableScriptFlagsEnum : uint32_t {
   
   FailedShapeGuard = 1 << 19,
 
+  
   HadFrequentBailouts = 1 << 20,
 
+  
+  
   HadOverflowBailout = 1 << 21,
 
+  
   
   Uninlineable = 1 << 22,
 
