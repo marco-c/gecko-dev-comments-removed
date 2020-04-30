@@ -149,8 +149,7 @@ nsresult nsCanvasFrame::CreateAnonymousContent(
 
   
   
-  if (PresContext()->IsChrome() && PresContext()->IsRoot() &&
-      doc->AllowXULXBL()) {
+  if (XRE_IsParentProcess() && doc->NodePrincipal()->IsSystemPrincipal()) {
     nsNodeInfoManager* nodeInfoManager = doc->NodeInfoManager();
     RefPtr<NodeInfo> nodeInfo =
         nodeInfoManager->GetNodeInfo(nsGkAtoms::popupgroup, nullptr,
