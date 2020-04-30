@@ -67,18 +67,24 @@ enum class TryNoteKind : uint8_t {
 
 enum class ImmutableScriptFlagsEnum : uint32_t {
   
+  
+  
+  
+  
+
+  
+  
   IsForEval = 1 << 0,
-
-  
-  
   IsModule = 1 << 1,
-
-  
   IsFunction = 1 << 2,
 
   
+  
+  
   SelfHosted = 1 << 3,
 
+  
+  
   
   ForceStrict = 1 << 4,
 
@@ -87,6 +93,9 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   HasNonSyntacticScope = 1 << 5,
 
+  
+  
+  
   
   NoScriptRval = 1 << 6,
 
