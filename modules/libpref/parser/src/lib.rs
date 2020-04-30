@@ -76,6 +76,7 @@
 
 
 
+
 use std::os::raw::{c_char, c_uchar};
 
 
@@ -373,14 +374,22 @@ impl<'t> Parser<'t> {
         loop {
             
             let (pref_value_kind, mut is_sticky) = match token {
-                Token::Pref => (PrefValueKind::Default, false),
-                Token::StickyPref => (PrefValueKind::Default, true),
+                Token::Pref if self.kind == PrefValueKind::Default => {
+                    (PrefValueKind::Default, false)
+                }
+                Token::StickyPref if self.kind == PrefValueKind::Default => {
+                    (PrefValueKind::Default, true)
+                }
                 Token::UserPref => (PrefValueKind::User, false),
                 Token::SingleChar(EOF) => return !self.has_errors,
                 _ => {
                     token = self.error_and_recover(
                         token,
-                        "expected pref specifier at start of pref definition",
+                        if self.kind == PrefValueKind::Default {
+                            "expected pref specifier at start of pref definition"
+                        } else {
+                            "expected 'user_pref' at start of pref definition"
+                        },
                     );
                     continue;
                 }
