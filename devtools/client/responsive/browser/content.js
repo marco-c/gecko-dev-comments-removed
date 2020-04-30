@@ -62,9 +62,7 @@ var global = this;
 
     
     
-    
     if (docShell.contentViewer) {
-      setDocumentInRDMPane(true);
       makeScrollbarsFloating();
     }
     active = true;
@@ -128,7 +126,6 @@ var global = this;
     webProgress.removeProgressListener(WebProgressListener);
     docShell.deviceSizeIsPageSize = gDeviceSizeWasPageSize;
     restoreScrollbars();
-    setDocumentInRDMPane(false);
     stopOnResize();
     sendAsyncMessage("ResponsiveMode:Stop:Done");
   }
@@ -169,11 +166,6 @@ var global = this;
       } catch (e) {}
     }
     flushStyle();
-  }
-
-  function setDocumentInRDMPane(inRDMPane) {
-    
-    docShell.browsingContext.inRDMPane = inRDMPane;
   }
 
   function flushStyle() {
