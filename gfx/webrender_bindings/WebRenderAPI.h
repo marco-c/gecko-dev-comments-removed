@@ -541,8 +541,8 @@ class DisplayListBuilder final {
       wr::WrColorRange aColorRange, wr::ImageRendering aFilter,
       bool aPreferCompositorSurface = false);
 
-  void PushIFrame(const wr::LayoutRect& aBounds, bool aIsBackfaceVisible,
-                  wr::PipelineId aPipeline, bool aIgnoreMissingPipeline);
+  void PushIFrame(const wr::LayoutRect& aBounds, wr::PipelineId aPipeline,
+                  bool aIgnoreMissingPipeline);
 
   
   

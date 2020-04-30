@@ -266,7 +266,7 @@ void WebRenderImageData::CreateAsyncImageWebRenderCommands(
   
   
   wr::LayoutRect r = wr::ToLayoutRect(aBounds);
-  aBuilder.PushIFrame(r, aIsBackfaceVisible, mPipelineId.ref(),
+  aBuilder.PushIFrame(r, mPipelineId.ref(),
                        false);
 
   WrBridge()->AddWebRenderParentCommand(
