@@ -16,8 +16,6 @@ const { AppConstants } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AboutPrivateBrowsingHandler:
-    "resource:///modules/aboutpages/AboutPrivateBrowsingHandler.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   HeadlessShell: "resource:///modules/HeadlessShell.jsm",
   HomePage: "resource:///modules/HomePage.jsm",
@@ -515,9 +513,6 @@ nsBrowserContentHandler.prototype = {
         false
       );
       if (privateWindowParam) {
-        
-        
-        AboutPrivateBrowsingHandler.init();
         let forcePrivate = true;
         let resolvedURI;
         if (!PrivateBrowsingUtils.enabled) {
@@ -543,9 +538,6 @@ nsBrowserContentHandler.prototype = {
       }
       
       if (cmdLine.handleFlag("private-window", false)) {
-        
-        
-        AboutPrivateBrowsingHandler.init();
         openBrowserWindow(
           cmdLine,
           gSystemPrincipal,
