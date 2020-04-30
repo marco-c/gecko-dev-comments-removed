@@ -37,6 +37,8 @@ function getDevToolsPrefBranchName(extensionId) {
 
 
 
+
+
 global.getTargetTabIdForToolbox = toolbox => {
   let { target } = toolbox;
 
@@ -255,7 +257,6 @@ class DevToolsPageDefinition {
       if (this.devtoolsPageForToolbox.size === 0) {
         DevToolsShim.off("theme-changed", this.onThemeChanged);
       }
-      this.extension.emit("devtools-page-shutdown", toolbox);
     }
   }
 
@@ -310,29 +311,11 @@ this.devtools = class extends ExtensionAPI {
   constructor(extension) {
     super(extension);
 
-    this._initialized = false;
-
     
     this.pageDefinition = null;
 
     this.onToolboxCreated = this.onToolboxCreated.bind(this);
     this.onToolboxDestroy = this.onToolboxDestroy.bind(this);
-
-    
-    extension.on("add-permissions", (ignoreEvent, permissions) => {
-      if (permissions.permissions.includes("devtools")) {
-        this._initialize();
-      }
-    });
-    extension.on("remove-permissions", (ignoreEvent, permissions) => {
-      Services.prefs.setBoolPref(
-        `${getDevToolsPrefBranchName(extension.id)}.enabled`,
-        false
-      );
-      if (permissions.permissions.includes("devtools")) {
-        this._uninitialize();
-      }
-    });
   }
 
   static onUninstall(extensionId) {
@@ -344,12 +327,8 @@ this.devtools = class extends ExtensionAPI {
     prefBranch.deleteBranch("");
   }
 
-  _initialize() {
+  onManifestEntry(entryName) {
     const { extension } = this;
-
-    if (!extension.hasPermission("devtools") || this._initialized) {
-      return;
-    }
 
     this.initDevToolsPref();
 
@@ -367,17 +346,9 @@ this.devtools = class extends ExtensionAPI {
 
     DevToolsShim.on("toolbox-created", this.onToolboxCreated);
     DevToolsShim.on("toolbox-destroy", this.onToolboxDestroy);
-    this._initialized = true;
   }
 
-  _uninitialize() {
-    
-    
-    
-    if (!this._initialized) {
-      return;
-    }
-
+  onShutdown() {
     DevToolsShim.off("toolbox-created", this.onToolboxCreated);
     DevToolsShim.off("toolbox-destroy", this.onToolboxDestroy);
 
@@ -391,15 +362,6 @@ this.devtools = class extends ExtensionAPI {
     }
 
     this.uninitDevToolsPref();
-    this._initialized = false;
-  }
-
-  onStartup() {
-    this._initialize();
-  }
-
-  onShutdown() {
-    this._uninitialize();
   }
 
   getAPI(context) {
