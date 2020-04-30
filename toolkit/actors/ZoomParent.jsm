@@ -27,20 +27,10 @@ class ZoomParent extends JSWindowActorParent {
 
 
 
-
-
-
     switch (message.name) {
       case "FullZoomChange": {
         let event = document.createEvent("Events");
         event.initEvent("FullZoomChange", true, false);
-        browser.dispatchEvent(event);
-        break;
-      }
-
-      case "FullZoomResolutionStable": {
-        let event = document.createEvent("Events");
-        event.initEvent("FullZoomResolutionStable", true, false);
         browser.dispatchEvent(event);
         break;
       }

@@ -23,6 +23,9 @@ const ZOOM_LEVELS = [
   2.0,
   2.4,
   3.0,
+  
+  
+  
 ];
 
 info("--- Starting viewport test output ---");
@@ -31,7 +34,7 @@ const WIDTH = 200;
 const HEIGHT = 200;
 const TESTS = [
   { content: "width=600", res_target: 0.333 },
-  { content: "width=600, initial-scale=1.0", res_target: 1.0 },
+  { content: "width=600, initial-scale=1.0", res_target: 0.333 },
   { content: "width=device-width", res_target: 1.0 },
   { content: "width=device-width, initial-scale=2.0", res_target: 2.0 },
 ];
@@ -54,16 +57,10 @@ for (const { content, res_target } of TESTS) {
       await setTouchAndMetaViewportSupport(ui, true);
 
       
-      const random_zoom_levels = ZOOM_LEVELS.slice();
-      const l = random_zoom_levels.length;
-      for (let i = l - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * l);
-        const temp = random_zoom_levels[i];
-        random_zoom_levels[i] = random_zoom_levels[j];
-        random_zoom_levels[j] = temp;
-      }
+      
+      await promiseContentReflow(ui);
 
-      for (const zoom of random_zoom_levels) {
+      for (const zoom of ZOOM_LEVELS.concat([...ZOOM_LEVELS].reverse())) {
         info(`Set zoom to ${zoom}.`);
         await promiseRDMZoom(ui, browser, zoom);
 
