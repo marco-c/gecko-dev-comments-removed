@@ -738,16 +738,17 @@ bool ClientWebGLContext::CreateHostContext(const uvec2& requestedSize) {
     
     static constexpr size_t CommandQueueSize = 256 * 1024;  
     static constexpr size_t ResponseQueueSize = 8 * 1024;   
+    using mozilla::webgl::ProducerConsumerQueue;
     auto commandPcq = ProducerConsumerQueue::Create(cbc, CommandQueueSize);
     auto responsePcq = ProducerConsumerQueue::Create(cbc, ResponseQueueSize);
     if (!commandPcq || !responsePcq) {
       return Err("Failed to create command/response PCQ");
     }
 
-    outOfProcess.mCommandSource = MakeUnique<ClientWebGLCommandSource>(
+    outOfProcess.mCommandSource = MakeUnique<ClientWebGLCommandSourceP>(
         commandPcq->TakeProducer(), responsePcq->TakeConsumer());
-    auto sink = MakeUnique<HostWebGLCommandSink>(commandPcq->TakeConsumer(),
-                                                 responsePcq->TakeProducer());
+    auto sink = MakeUnique<HostWebGLCommandSinkP>(commandPcq->TakeConsumer(),
+                                                  responsePcq->TakeProducer());
 
     
     

@@ -21,9 +21,6 @@
 namespace mozilla {
 
 using mozilla::ipc::IPDLParamTraits;
-using mozilla::webgl::Consumer;
-using mozilla::webgl::Producer;
-using mozilla::webgl::ProducerConsumerQueue;
 using mozilla::webgl::QueueStatus;
 
 enum CommandResult { kSuccess, kTimeExpired, kQueueEmpty, kError };
@@ -37,10 +34,12 @@ enum CommandSyncType { ASYNC, SYNC };
 
 
 
-template <typename Command>
+template <typename Command, typename _Source>
 class CommandSource {
+  using Source = _Source;
+
  public:
-  explicit CommandSource(UniquePtr<Producer>&& aSource)
+  explicit CommandSource(UniquePtr<Source>&& aSource)
       : mSource(std::move(aSource)) {
     MOZ_ASSERT(mSource);
   }
@@ -64,9 +63,9 @@ class CommandSource {
   CommandSource() = default;
 
  protected:
-  friend struct IPDLParamTraits<mozilla::CommandSource<Command>>;
+  friend struct IPDLParamTraits<mozilla::CommandSource<Command, Source>>;
 
-  UniquePtr<Producer> mSource;
+  UniquePtr<Source> mSource;
 };
 
 
@@ -79,10 +78,12 @@ class CommandSource {
 
 
 
-template <typename Command>
+template <typename Command, typename _Sink>
 class CommandSink {
+  using Sink = _Sink;
+
  public:
-  explicit CommandSink(UniquePtr<Consumer>&& aSink) : mSink(std::move(aSink)) {
+  explicit CommandSink(UniquePtr<Sink>&& aSink) : mSink(std::move(aSink)) {
     MOZ_ASSERT(mSink);
   }
 
@@ -197,7 +198,7 @@ class CommandSink {
   }
 
  protected:
-  friend struct IPDLParamTraits<mozilla::CommandSink<Command>>;
+  friend struct IPDLParamTraits<mozilla::CommandSink<Command, Sink>>;
 
   
 
@@ -250,7 +251,7 @@ class CommandSink {
     return IsSuccess(status);
   }
 
-  UniquePtr<Consumer> mSink;
+  UniquePtr<Sink> mSink;
 };
 
 enum SyncResponse : uint8_t { RESPONSE_NAK, RESPONSE_ACK };
@@ -260,15 +261,18 @@ enum SyncResponse : uint8_t { RESPONSE_NAK, RESPONSE_ACK };
 
 
 
-
-template <typename Command>
-class SyncCommandSource : public CommandSource<Command> {
+template <typename Command, typename _Source, typename _ResponseQueue>
+class SyncCommandSource : public CommandSource<Command, _Source> {
  public:
-  using BaseType = CommandSource<Command>;
-  SyncCommandSource(UniquePtr<Producer>&& aProducer,
-                    UniquePtr<Consumer>&& aResponseConsumer)
-      : CommandSource<Command>(std::move(aProducer)),
-        mResponseSink(std::move(aResponseConsumer)) {}
+  using BaseType = CommandSource<Command, _Source>;
+  using Source = _Source;
+  using ResponseQueue = _ResponseQueue;
+  using ResponseSink = typename ResponseQueue::Consumer;
+
+  SyncCommandSource(UniquePtr<Source>&& aSource,
+                    UniquePtr<ResponseSink>&& aResponseSink)
+      : CommandSource<Command, Source>(std::move(aSource)),
+        mResponseSink(std::move(aResponseSink)) {}
 
   template <typename... Args>
   QueueStatus RunAsyncCommand(Command aCommand, Args&&... aArgs) {
@@ -292,7 +296,8 @@ class SyncCommandSource : public CommandSource<Command> {
 
   
   SyncCommandSource() = default;
-  friend struct mozilla::ipc::IPDLParamTraits<SyncCommandSource<Command>>;
+  friend struct mozilla::ipc::IPDLParamTraits<
+      SyncCommandSource<Command, Source, ResponseQueue>>;
 
  protected:
   QueueStatus ReadSyncResponse() {
@@ -316,7 +321,7 @@ class SyncCommandSource : public CommandSource<Command> {
     return status;
   }
 
-  UniquePtr<Consumer> mResponseSink;
+  UniquePtr<ResponseSink> mResponseSink;
 };
 
 
@@ -326,19 +331,25 @@ class SyncCommandSource : public CommandSource<Command> {
 
 
 
-template <typename Command>
-class SyncCommandSink : public CommandSink<Command> {
-  using BaseType = CommandSink<Command>;
+template <typename Command, typename _Sink, typename _ResponseQueue>
+class SyncCommandSink : public CommandSink<Command, _Sink> {
+  using BaseType = CommandSink<Command, _Sink>;
+  using ResponseQueue = _ResponseQueue;
+  using Sink = _Sink;
+  using ResponseSource = typename ResponseQueue::Producer;
 
  public:
-  SyncCommandSink(UniquePtr<Consumer>&& aConsumer,
-                  UniquePtr<Producer>&& aResponseSource)
-      : CommandSink<Command>(std::move(aConsumer)),
-        mResponseSource(std::move(aResponseSource)) {}
+  SyncCommandSink(UniquePtr<Sink>&& aSink,
+                  UniquePtr<ResponseSource>&& aResponseSource)
+      : CommandSink<Command, Sink>(std::move(aSink)),
+        mResponseSource(std::move(aResponseSource)) {
+    MOZ_ASSERT(mResponseSource);
+  }
 
   
   SyncCommandSink() = default;
-  friend struct mozilla::ipc::IPDLParamTraits<SyncCommandSink<Command>>;
+  friend struct mozilla::ipc::IPDLParamTraits<
+      SyncCommandSink<Command, Sink, ResponseQueue>>;
 
   
   
@@ -485,7 +496,7 @@ class SyncCommandSink : public CommandSink<Command> {
     return WriteArgs(nak);
   }
 
-  UniquePtr<Producer> mResponseSource;
+  UniquePtr<ResponseSource> mResponseSource;
 };
 
 
@@ -579,51 +590,44 @@ namespace ipc {
 template <typename T>
 struct IPDLParamTraits;
 
-template <typename Command>
-struct IPDLParamTraits<mozilla::CommandSource<Command>> {
+template <typename Command, typename Source>
+struct IPDLParamTraits<mozilla::CommandSource<Command, Source>> {
  public:
-  typedef mozilla::CommandSource<Command> paramType;
+  typedef mozilla::CommandSource<Command, Source> paramType;
 
   static void Write(IPC::Message* aMsg, IProtocol* aActor,
                     const paramType& aParam) {
-    MOZ_ASSERT(aParam.mSource);
-    WriteIPDLParam(aMsg, aActor, *aParam.mSource.get());
+    WriteIPDLParam(aMsg, aActor, aParam.mSource);
   }
 
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
                    IProtocol* aActor, paramType* aResult) {
-    Producer* producer = new Producer;
-    bool ret = ReadIPDLParam(aMsg, aIter, aActor, producer);
-    aResult->mSource.reset(producer);
-    return ret;
+    return ReadIPDLParam(aMsg, aIter, aActor, &aResult->mSource);
   }
 };
 
-template <typename Command>
-struct IPDLParamTraits<mozilla::CommandSink<Command>> {
+template <typename Command, typename Sink>
+struct IPDLParamTraits<mozilla::CommandSink<Command, Sink>> {
  public:
-  typedef mozilla::CommandSink<Command> paramType;
+  typedef mozilla::CommandSink<Command, Sink> paramType;
 
   static void Write(IPC::Message* aMsg, IProtocol* aActor,
                     const paramType& aParam) {
-    MOZ_ASSERT(aParam.mSink);
-    WriteIPDLParam(aMsg, aActor, *aParam.mSink.get());
+    WriteIPDLParam(aMsg, aActor, aParam.mSink);
   }
 
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
                    IProtocol* aActor, paramType* aResult) {
-    Consumer* consumer = new Consumer;
-    bool ret = ReadIPDLParam(aMsg, aIter, aActor, consumer);
-    aResult->mSink.reset(consumer);
-    return ret;
+    return ReadIPDLParam(aMsg, aIter, aActor, &aResult->mSink);
   }
 };
 
-template <typename Command>
-struct IPDLParamTraits<mozilla::SyncCommandSource<Command>>
-    : public IPDLParamTraits<mozilla::CommandSource<Command>> {
+template <typename Command, typename Source, typename ResponseQueue>
+struct IPDLParamTraits<
+    mozilla::SyncCommandSource<Command, Source, ResponseQueue>>
+    : public IPDLParamTraits<mozilla::CommandSource<Command, Source>> {
  public:
-  typedef mozilla::SyncCommandSource<Command> paramType;
+  typedef mozilla::SyncCommandSource<Command, Source, ResponseQueue> paramType;
   typedef typename paramType::BaseType paramBaseType;
 
   static void Write(IPC::Message* aMsg, IProtocol* aActor,
@@ -640,11 +644,11 @@ struct IPDLParamTraits<mozilla::SyncCommandSource<Command>>
   }
 };
 
-template <typename Command>
-struct IPDLParamTraits<mozilla::SyncCommandSink<Command>>
-    : public IPDLParamTraits<mozilla::CommandSink<Command>> {
+template <typename Command, typename Sink, typename ResponseQueue>
+struct IPDLParamTraits<mozilla::SyncCommandSink<Command, Sink, ResponseQueue>>
+    : public IPDLParamTraits<mozilla::CommandSink<Command, Sink>> {
  public:
-  typedef mozilla::SyncCommandSink<Command> paramType;
+  typedef mozilla::SyncCommandSink<Command, Sink, ResponseQueue> paramType;
   typedef typename paramType::BaseType paramBaseType;
 
   static void Write(IPC::Message* aMsg, IProtocol* aActor,
