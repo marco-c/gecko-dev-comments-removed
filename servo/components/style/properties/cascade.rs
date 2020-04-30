@@ -384,10 +384,15 @@ fn tweak_when_ignoring_colors(
             if color.0.is_transparent() {
                 return;
             }
-            let color = builder.device.default_color();
-            declarations_to_apply_unless_overriden.push(
-                PropertyDeclaration::Color(specified::ColorPropertyValue(color.into()))
-            )
+            
+            
+            
+            if builder.get_parent_inherited_text().clone_color().alpha == 0 {
+                let color = builder.device.default_color();
+                declarations_to_apply_unless_overriden.push(
+                    PropertyDeclaration::Color(specified::ColorPropertyValue(color.into()))
+                )
+            }
         },
         
         #[cfg(feature = "gecko")]
