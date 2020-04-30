@@ -18,8 +18,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   CrashSubmit: "resource://gre/modules/CrashSubmit.jsm",
   E10SUtils: "resource://gre/modules/E10SUtils.jsm",
   PluralForm: "resource://gre/modules/PluralForm.jsm",
-  RemotePages:
-    "resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm",
   SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
 });
@@ -94,31 +92,6 @@ var TabCrashHandler = {
 
     Services.obs.addObserver(this, "ipc:content-shutdown");
     Services.obs.addObserver(this, "oop-frameloader-crashed");
-
-    this.pageListener = new RemotePages("about:tabcrashed");
-    
-    
-    
-    this.pageListener.addMessageListener(
-      "Load",
-      this.receiveMessage.bind(this)
-    );
-    this.pageListener.addMessageListener(
-      "RemotePage:Unload",
-      this.receiveMessage.bind(this)
-    );
-    this.pageListener.addMessageListener(
-      "closeTab",
-      this.receiveMessage.bind(this)
-    );
-    this.pageListener.addMessageListener(
-      "restoreTab",
-      this.receiveMessage.bind(this)
-    );
-    this.pageListener.addMessageListener(
-      "restoreAll",
-      this.receiveMessage.bind(this)
-    );
   },
 
   observe(aSubject, aTopic, aData) {
@@ -187,42 +160,6 @@ var TabCrashHandler = {
         }
 
         this.browserMap.set(browser, aSubject.childID);
-        break;
-      }
-    }
-  },
-
-  receiveMessage(message) {
-    let browser = message.target.browser;
-    let gBrowser = browser.ownerGlobal.gBrowser;
-    let tab = gBrowser.getTabForBrowser(browser);
-
-    switch (message.name) {
-      case "Load": {
-        this.onAboutTabCrashedLoad(message);
-        break;
-      }
-
-      case "RemotePage:Unload": {
-        this.onAboutTabCrashedUnload(message);
-        break;
-      }
-
-      case "closeTab": {
-        this.maybeSendCrashReport(message);
-        gBrowser.removeTab(tab, { animate: true });
-        break;
-      }
-
-      case "restoreTab": {
-        this.maybeSendCrashReport(message);
-        SessionStore.reviveCrashedTab(tab);
-        break;
-      }
-
-      case "restoreAll": {
-        this.maybeSendCrashReport(message);
-        SessionStore.reviveAllCrashedTabs();
         break;
       }
     }
@@ -389,7 +326,7 @@ var TabCrashHandler = {
 
   sendToRestartRequiredPage(browser) {
     let uri = browser.currentURI;
-    let gBrowser = browser.ownerGlobal.gBrowser;
+    let gBrowser = browser.getTabBrowser();
     let tab = gBrowser.getTabForBrowser(browser);
     
     gBrowser.updateBrowserRemoteness(browser, {
@@ -417,7 +354,7 @@ var TabCrashHandler = {
   sendToTabCrashedPage(browser) {
     let title = browser.contentTitle;
     let uri = browser.currentURI;
-    let gBrowser = browser.ownerGlobal.gBrowser;
+    let gBrowser = browser.getTabBrowser();
     let tab = gBrowser.getTabForBrowser(browser);
     
     gBrowser.updateBrowserRemoteness(browser, {
@@ -456,7 +393,7 @@ var TabCrashHandler = {
 
 
 
-  maybeSendCrashReport(message) {
+  maybeSendCrashReport(browser, message) {
     if (!AppConstants.MOZ_CRASHREPORTER) {
       return;
     }
@@ -465,8 +402,6 @@ var TabCrashHandler = {
       
       return;
     }
-
-    let browser = message.target.browser;
 
     if (message.data.autoSubmit) {
       
@@ -548,29 +483,23 @@ var TabCrashHandler = {
 
         if (this.browserMap.get(browser) == childID) {
           this.browserMap.delete(browser);
-          let ports = this.pageListener.portsForBrowser(browser);
-          if (ports.length) {
-            
-            
-            ports[0].sendAsyncMessage("CrashReportSent");
-          }
+          browser.sendMessageToActor("CrashReportSent", {}, "AboutTabCrashed");
         }
       }
     }
   },
 
-  onAboutTabCrashedLoad(message) {
+  
+
+
+
+
+
+
+
+  onAboutTabCrashedLoad(browser) {
     this._crashedTabCount++;
 
-    
-    
-    
-    
-    this.pageListener.sendAsyncMessage("UpdateCount", {
-      count: this._crashedTabCount,
-    });
-
-    let browser = message.target.browser;
     let window = browser.ownerGlobal;
 
     
@@ -584,10 +513,9 @@ var TabCrashHandler = {
 
     let dumpID = this.getDumpID(browser);
     if (!dumpID) {
-      message.target.sendAsyncMessage("SetCrashReportAvailable", {
+      return {
         hasReport: false,
-      });
-      return;
+      };
     }
 
     let requestAutoSubmit = !UnsubmittedCrashHandler.autoSubmit;
@@ -615,25 +543,16 @@ var TabCrashHandler = {
       Services.telemetry.getHistogramById("FX_CONTENT_CRASH_PRESENTED").add(1);
     }
 
-    message.target.sendAsyncMessage("SetCrashReportAvailable", data);
+    return data;
   },
 
-  onAboutTabCrashedUnload(message) {
+  onAboutTabCrashedUnload(browser) {
     if (!this._crashedTabCount) {
       Cu.reportError("Can not decrement crashed tab count to below 0");
       return;
     }
     this._crashedTabCount--;
 
-    
-    
-    
-    
-    this.pageListener.sendAsyncMessage("UpdateCount", {
-      count: this._crashedTabCount,
-    });
-
-    let browser = message.target.browser;
     let childID = this.browserMap.get(browser);
 
     
