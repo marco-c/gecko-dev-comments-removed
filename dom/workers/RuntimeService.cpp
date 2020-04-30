@@ -2235,6 +2235,13 @@ WorkerThreadPrimaryRunnable::Run() {
 
   SetThreadHelper threadHelper(mWorkerPrivate, mThread);
 
+  auto failureCleanup = MakeScopeExit([&]() {
+    
+    
+    
+    mWorkerPrivate->ScheduleDeletion(WorkerPrivate::WorkerRan);
+  });
+
   mWorkerPrivate->AssertIsOnWorkerThread();
 
   
@@ -2264,6 +2271,8 @@ WorkerThreadPrimaryRunnable::Run() {
           mWorkerPrivate);
       return NS_ERROR_FAILURE;
     }
+
+    failureCleanup.release();
 
     {
       PROFILER_SET_JS_CONTEXT(cx);
