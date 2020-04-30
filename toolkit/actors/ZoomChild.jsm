@@ -18,8 +18,6 @@ class ZoomChild extends JSWindowActorChild {
       fullZoom: NaN,
       textZoom: NaN,
     };
-
-    this._resolutionBeforeFullZoomChange = 0;
   }
 
   get fullZoom() {
@@ -91,34 +89,10 @@ class ZoomChild extends JSWindowActorChild {
       return;
     }
 
-    if (event.type == "PreFullZoomChange") {
-      
-      
-      
-      if (this._resolutionBeforeFullZoomChange == 0) {
-        this._resolutionBeforeFullZoomChange = this.contentWindow.windowUtils.getResolution();
-      }
-      return;
-    }
-
     if (event.type == "FullZoomChange") {
       if (this.refreshFullZoom()) {
         this.sendAsyncMessage("FullZoomChange", {});
       }
-      return;
-    }
-
-    if (event.type == "mozupdatedremoteframedimensions") {
-      
-      
-      if (this._resolutionBeforeFullZoomChange != 0) {
-        this.contentWindow.windowUtils.setResolutionAndScaleTo(
-          this._resolutionBeforeFullZoomChange
-        );
-        this._resolutionBeforeFullZoomChange = 0;
-      }
-
-      this.sendAsyncMessage("FullZoomResolutionStable", {});
       return;
     }
 

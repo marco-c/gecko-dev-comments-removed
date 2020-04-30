@@ -1187,19 +1187,6 @@ mozilla::ipc::IPCResult BrowserChild::RecvUpdateDimensions(
                         screenRect.y + mClientOffset.y + mChromeOffset.y,
                         screenSize.width, screenSize.height, true);
 
-  
-  
-  
-  
-  RefPtr<Document> doc = GetTopLevelDocument();
-  BrowsingContext* bc = doc ? doc->GetBrowsingContext() : nullptr;
-  if (bc && bc->InRDMPane()) {
-    RefPtr<AsyncEventDispatcher> dispatcher = new AsyncEventDispatcher(
-        doc, NS_LITERAL_STRING("mozupdatedremoteframedimensions"),
-        CanBubble::eYes, ChromeOnlyDispatch::eYes);
-    dispatcher->PostDOMEvent();
-  }
-
   RecvSafeAreaInsetsChanged(mPuppetWidget->GetSafeAreaInsets());
 
   return IPC_OK();
