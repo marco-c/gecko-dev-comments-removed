@@ -12,7 +12,6 @@
 #include "base/message_loop.h"   
 #include "base/task.h"           
 #include "mozilla/StaticPrefs_layers.h"
-#include "mozilla/dom/WebGLChild.h"
 #include "mozilla/layers/CompositorManagerChild.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/APZChild.h"
