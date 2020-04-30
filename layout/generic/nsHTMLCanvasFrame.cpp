@@ -162,7 +162,7 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
         
 
         wr::LayoutRect r = wr::ToLayoutRect(bounds);
-        aBuilder.PushIFrame(r, data->GetPipelineId().ref(),
+        aBuilder.PushIFrame(r, !BackfaceIsHidden(), data->GetPipelineId().ref(),
                              false);
 
         gfx::Matrix4x4 scTransform;
