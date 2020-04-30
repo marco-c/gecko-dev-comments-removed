@@ -26,33 +26,82 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
-class WindowObserver {
+class TabObserver {
   
 
 
 
 
   constructor({ registerExisting = false } = {}) {
-    this.registerExisting = registerExisting;
     EventEmitter.decorate(this);
+
+    this.registerExisting = registerExisting;
+
+    this.onTabOpen = this.onTabOpen.bind(this);
+    this.onTabClose = this.onTabClose.bind(this);
   }
 
   async start() {
+    Services.wm.addListener(this);
+
     if (this.registerExisting) {
+      
       for (const win of Services.wm.getEnumerator("navigator:browser")) {
-        this.onOpenDOMWindow(win);
+        this._registerDOMWindow(win);
       }
     }
-
-    Services.wm.addListener(this);
   }
 
   stop() {
     Services.wm.removeListener(this);
+
+    
+    for (const win of Services.wm.getEnumerator("navigator:browser")) {
+      this._unregisterDOMWindow(win);
+    }
   }
 
-  onOpenDOMWindow(win) {
-    this.emit("open", win);
+  
+
+  onTabOpen({ target }) {
+    this.emit("open", target);
+  }
+
+  onTabClose({ target }) {
+    this.emit("close", target);
+  }
+
+  
+
+  _registerDOMWindow(win) {
+    for (const tab of win.gBrowser.tabs) {
+      
+      
+      if (!tab.linkedBrowser) {
+        continue;
+      }
+
+      this.onTabOpen({ target: tab });
+    }
+
+    win.gBrowser.tabContainer.addEventListener("TabOpen", this.onTabOpen);
+    win.gBrowser.tabContainer.addEventListener("TabClose", this.onTabClose);
+  }
+
+  _unregisterDOMWindow(win) {
+    for (const tab of win.gBrowser.tabs) {
+      
+      if (!tab.linkedBrowser) {
+        continue;
+      }
+
+      
+      
+      this.onTabClose({ target: tab });
+    }
+
+    win.gBrowser.tabContainer.removeEventListener("TabOpen", this.onTabOpen);
+    win.gBrowser.tabContainer.removeEventListener("TabClose", this.onTabClose);
   }
 
   
@@ -70,100 +119,26 @@ class WindowObserver {
       return;
     }
 
-    this.onOpenDOMWindow(win);
+    this._registerDOMWindow(win);
   }
 
   onCloseWindow(xulWindow) {
-    this.emit("close", xulWindow.docShell.domWindow);
+    const win = xulWindow.docShell.domWindow;
+
+    
+    if (
+      win.document.documentElement.getAttribute("windowtype") !=
+      "navigator:browser"
+    ) {
+      return;
+    }
+
+    this._unregisterDOMWindow(win);
   }
 
   
 
   get QueryInterface() {
     return ChromeUtils.generateQI([Ci.nsIWindowMediatorListener]);
-  }
-}
-
-
-
-
-
-
-
-class TabObserver {
-  
-
-
-
-
-  constructor({ registerExisting = false } = {}) {
-    this.windows = new WindowObserver({ registerExisting });
-    EventEmitter.decorate(this);
-    this.onWindowOpen = this.onWindowOpen.bind(this);
-    this.onWindowClose = this.onWindowClose.bind(this);
-    this.onTabOpen = this.onTabOpen.bind(this);
-    this.onTabClose = this.onTabClose.bind(this);
-  }
-
-  async start() {
-    this.windows.on("open", this.onWindowOpen);
-    this.windows.on("close", this.onWindowClose);
-    await this.windows.start();
-  }
-
-  stop() {
-    this.windows.off("open", this.onWindowOpen);
-    this.windows.off("close", this.onWindowClose);
-    this.windows.stop();
-
-    
-    for (const window of Services.wm.getEnumerator("navigator:browser")) {
-      this.onWindowClose("close", window);
-    }
-  }
-
-  onTabOpen({ target }) {
-    this.emit("open", target);
-  }
-
-  onTabClose({ target }) {
-    this.emit("close", target);
-  }
-
-  
-
-  async onWindowOpen(eventName, window) {
-    for (const tab of window.gBrowser.tabs) {
-      
-      
-      if (!tab.linkedBrowser) {
-        continue;
-      }
-      this.onTabOpen({ target: tab });
-    }
-
-    window.addEventListener("TabOpen", this.onTabOpen);
-    window.addEventListener("TabClose", this.onTabClose);
-  }
-
-  onWindowClose(eventName, window) {
-    
-    if (!window.gBrowser) {
-      return;
-    }
-
-    for (const tab of window.gBrowser.tabs) {
-      
-      if (!tab.linkedBrowser) {
-        continue;
-      }
-
-      
-      
-      this.onTabClose({ target: tab });
-    }
-
-    window.removeEventListener("TabOpen", this.onTabOpen);
-    window.removeEventListener("TabClose", this.onTabClose);
   }
 }
