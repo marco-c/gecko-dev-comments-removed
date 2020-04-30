@@ -635,7 +635,10 @@ class ExtensionData {
       this.manifest.permissions
     );
 
-    if (this.manifest.devtools_page) {
+    if (
+      this.manifest.devtools_page &&
+      !this.manifest.optional_permissions.includes("devtools")
+    ) {
       permissions.add("devtools");
     }
 
@@ -652,6 +655,10 @@ class ExtensionData {
   }
 
   get manifestOptionalPermissions() {
+    if (this.type !== "extension") {
+      return null;
+    }
+
     let { permissions, origins } = this.permissionsObject(
       this.manifest.optional_permissions
     );
@@ -1662,13 +1669,19 @@ class BootstrapScope {
 
   async update(data, reason) {
     
-    await ExtensionData.migratePermissions(
-      data.id,
-      data.oldPermissions,
-      data.oldOptionalPermissions,
-      data.userPermissions,
-      data.optionalPermissions
-    );
+    
+    if (data.oldPermissions !== null) {
+      
+      
+      let emptyPermissions = { permissions: [], origins: [] };
+      await ExtensionData.migratePermissions(
+        data.id,
+        data.oldPermissions,
+        data.oldOptionalPermissions,
+        data.userPermissions || emptyPermissions,
+        data.optionalPermissions || emptyPermissions
+      );
+    }
 
     return Management.emit("update", {
       id: data.id,
@@ -2423,6 +2436,18 @@ class Extension extends ExtensionData {
           });
           this.permissions.add(PRIVATE_ALLOWED_PERMISSION);
         }
+      }
+
+      
+      if (
+        this.manifest.devtools_page &&
+        !this.manifest.optional_permissions.includes("devtools")
+      ) {
+        ExtensionPermissions.add(this.id, {
+          permissions: ["devtools"],
+          origins: [],
+        });
+        this.permissions.add("devtools");
       }
 
       GlobalManager.init(this);
