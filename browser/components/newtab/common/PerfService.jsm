@@ -4,26 +4,7 @@
 
 "use strict";
 
-if (typeof ChromeUtils !== "undefined") {
-  
-  
-  
-  var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-}
-
-let usablePerfObj;
-
-
-
-if (typeof Services !== "undefined") {
-  
-  
-  usablePerfObj = Services.appShell.hiddenDOMWindow.performance;
-} else {
-  
-  
-  usablePerfObj = performance;
-}
+let usablePerfObj = window.performance;
 
 function _PerfService(options) {
   

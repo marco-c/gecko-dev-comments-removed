@@ -2409,16 +2409,28 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
 
 
   sendClick(event) {
+    const {
+      dataset
+    } = event.target;
     const metric = {
-      event_context: event.target.dataset.metric,
+      event_context: dataset.metric,
       
       
       id: "NEWTAB_FOOTER_BAR_CONTENT"
     };
+    const {
+      entrypoint_name,
+      entrypoint_value
+    } = dataset; 
+
+    const entrypoint = entrypoint_name ? new URLSearchParams([[entrypoint_name, entrypoint_value]]).toString() : entrypoint_value;
     const action = {
-      type: event.target.dataset.action,
+      type: dataset.action,
       data: {
-        args: event.target.dataset.args
+        args: dataset.args,
+        ...(entrypoint && {
+          entrypoint
+        })
       }
     };
 
@@ -2426,7 +2438,7 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
       ASRouterUtils.executeAction(action);
     }
 
-    if (!this.state.message.content.do_not_autoblock && !event.target.dataset.do_not_autoblock) {
+    if (!this.state.message.content.do_not_autoblock && !dataset.do_not_autoblock) {
       ASRouterUtils.blockById(this.state.message.id);
     }
 
@@ -3052,6 +3064,8 @@ function convertLinks(links, sendClick, doNotAutoBlock, openNewWindow = false) {
         "data-action": action,
         "data-args": links[linkTag].args,
         "data-do_not_autoblock": doNotAutoBlock,
+        "data-entrypoint_name": links[linkTag].entrypoint_name,
+        "data-entrypoint_value": links[linkTag].entrypoint_value,
         onClick: sendClick
       });
       return acc;
@@ -7549,7 +7563,7 @@ class DSSignup extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponen
     const {
       title,
       url,
-      context,
+      excerpt,
       flight_id,
       id,
       shim
@@ -7567,7 +7581,7 @@ class DSSignup extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponen
       dispatch: dispatch,
       onLinkClick: this.onLinkClick,
       url: url
-    }, context)), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_3__["ImpressionStats"], {
+    }, excerpt)), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(_DiscoveryStreamImpressionStats_ImpressionStats__WEBPACK_IMPORTED_MODULE_3__["ImpressionStats"], {
       flightId: flight_id,
       rows: [{
         id,
@@ -9172,29 +9186,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-if (typeof ChromeUtils !== "undefined") {
-  
-  
-  
-  var {
-    Services
-  } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-}
-
-let usablePerfObj;
-
-
-
-if (typeof Services !== "undefined") {
-  
-  
-  usablePerfObj = Services.appShell.hiddenDOMWindow.performance;
-} else {
-  
-  
-  usablePerfObj = performance;
-}
-
+let usablePerfObj = window.performance;
 function _PerfService(options) {
   
   
@@ -12325,14 +12317,21 @@ class SimpleSnippet_SimpleSnippet extends external_React_default.a.PureComponent
     }
 
     const {
-      button_url
+      button_url,
+      button_entrypoint_value,
+      button_entrypoint_name
     } = this.props.content; 
 
-    const type = this.props.content.button_action || button_url && "OPEN_URL";
+    const type = this.props.content.button_action || button_url && "OPEN_URL"; 
+
+    const entrypoint = button_entrypoint_name ? new URLSearchParams([[button_entrypoint_name, button_entrypoint_value]]).toString() : button_entrypoint_value;
     this.props.onAction({
       type,
       data: {
-        args: this.props.content.button_action_args || button_url
+        args: this.props.content.button_action_args || button_url,
+        ...(entrypoint && {
+          entrypoint
+        })
       }
     });
 
