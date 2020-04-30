@@ -532,7 +532,6 @@ var gFinalShutdownBarrier = null;
 var gBeforeShutdownBarrier = null;
 var gRepoShutdownState = "";
 var gShutdownInProgress = false;
-var gPluginPageListener = null;
 var gBrowserUpdated = null;
 
 var AMTelemetry;
@@ -820,18 +819,6 @@ var AddonManagerInternal = {
         }
       }
 
-      
-      
-      let { RemotePages } = ChromeUtils.import(
-        "resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm"
-      );
-
-      gPluginPageListener = new RemotePages("about:plugins");
-      gPluginPageListener.addMessageListener(
-        "RequestPlugins",
-        this.requestPlugins
-      );
-
       gStartupComplete = true;
       this.recordTimestamp("AMI_startup_end");
     } catch (e) {
@@ -1061,8 +1048,6 @@ var AddonManagerInternal = {
     Services.prefs.removeObserver(PREF_EM_CHECK_UPDATE_SECURITY, this);
     Services.prefs.removeObserver(PREF_EM_UPDATE_ENABLED, this);
     Services.prefs.removeObserver(PREF_EM_AUTOUPDATE_DEFAULT, this);
-    gPluginPageListener.destroy();
-    gPluginPageListener = null;
 
     let savedError = null;
     
@@ -1112,30 +1097,6 @@ var AddonManagerInternal = {
     if (savedError) {
       throw savedError;
     }
-  },
-
-  async requestPlugins({ target: port }) {
-    
-    const NEEDED_PROPS = [
-      "name",
-      "pluginLibraries",
-      "pluginFullpath",
-      "version",
-      "isActive",
-      "blocklistState",
-      "description",
-      "pluginMimeTypes",
-    ];
-    function filterProperties(plugin) {
-      let filtered = {};
-      for (let prop of NEEDED_PROPS) {
-        filtered[prop] = plugin[prop];
-      }
-      return filtered;
-    }
-
-    let aPlugins = await AddonManager.getAddonsByTypes(["plugin"]);
-    port.sendAsyncMessage("PluginList", aPlugins.map(filterProperties));
   },
 
   

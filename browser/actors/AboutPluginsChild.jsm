@@ -1,0 +1,12 @@
+
+
+
+
+
+var EXPORTED_SYMBOLS = ["AboutPluginsChild"];
+
+const { RemotePageChild } = ChromeUtils.import(
+  "resource://gre/actors/RemotePageChild.jsm"
+);
+
+class AboutPluginsChild extends RemotePageChild {}
