@@ -21,51 +21,81 @@
 namespace mozilla {
 
 using mozilla::ipc::IPDLParamTraits;
-using mozilla::webgl::QueueStatus;
+using mozilla::webgl::Consumer;
+using mozilla::webgl::PcqStatus;
+using mozilla::webgl::Producer;
+using mozilla::webgl::ProducerConsumerQueue;
 
-enum CommandResult { kSuccess, kTimeExpired, kQueueEmpty, kError };
+template <typename Derived, typename SinkType>
+struct MethodDispatcher;
+
+enum CommandResult { Success, TimeExpired, QueueEmpty, Error };
 
 enum CommandSyncType { ASYNC, SYNC };
 
-
-
-
-
-
-
-
-template <typename Command, typename _Source>
-class CommandSource {
-  using Source = _Source;
-
+class BasicSource {
  public:
-  explicit CommandSource(UniquePtr<Source>&& aSource)
-      : mSource(std::move(aSource)) {
-    MOZ_ASSERT(mSource);
+  explicit BasicSource(UniquePtr<Producer>&& aProducer)
+      : mProducer(std::move(aProducer)) {
+    MOZ_ASSERT(mProducer);
+  }
+  virtual ~BasicSource() = default;
+
+  
+  BasicSource() = default;
+  friend struct mozilla::ipc::IPDLParamTraits<BasicSource>;
+
+ protected:
+  UniquePtr<Producer> mProducer;
+};
+
+class BasicSink {
+ public:
+  explicit BasicSink(UniquePtr<Consumer>&& aConsumer)
+      : mConsumer(std::move(aConsumer)) {
+    MOZ_ASSERT(mConsumer);
+  }
+  virtual ~BasicSink() = default;
+
+  
+  BasicSink() = default;
+  friend struct mozilla::ipc::IPDLParamTraits<BasicSink>;
+
+ protected:
+  UniquePtr<Consumer> mConsumer;
+};
+
+
+
+
+
+
+
+
+template <typename Command>
+class CommandSource : public BasicSource {
+ public:
+  explicit CommandSource(UniquePtr<Producer>&& aProducer)
+      : BasicSource(std::move(aProducer)) {}
+
+  template <typename... Args>
+  PcqStatus InsertCommand(Command aCommand, Args&&... aArgs) {
+    return this->mProducer->TryWaitInsert(Nothing() ,
+                                          aCommand, aArgs...);
+  }
+
+  PcqStatus InsertCommand(Command aCommand) {
+    return this->mProducer->TryWaitInsert(Nothing() ,
+                                          aCommand);
   }
 
   template <typename... Args>
-  QueueStatus InsertCommand(Command aCommand, Args&&... aArgs) {
-    return this->mSource->TryWaitInsert(Nothing() , aCommand,
-                                        aArgs...);
-  }
-
-  QueueStatus InsertCommand(Command aCommand) {
-    return this->mSource->TryWaitInsert(Nothing() , aCommand);
-  }
-
-  template <typename... Args>
-  QueueStatus RunCommand(Command aCommand, Args&&... aArgs) {
+  PcqStatus RunCommand(Command aCommand, Args&&... aArgs) {
     return InsertCommand(aCommand, std::forward<Args>(aArgs)...);
   }
 
   
   CommandSource() = default;
-
- protected:
-  friend struct IPDLParamTraits<mozilla::CommandSource<Command, Source>>;
-
-  UniquePtr<Source> mSource;
 };
 
 
@@ -78,39 +108,36 @@ class CommandSource {
 
 
 
-template <typename Command, typename _Sink>
-class CommandSink {
-  using Sink = _Sink;
-
+template <typename Command>
+class CommandSink : public BasicSink {
  public:
-  explicit CommandSink(UniquePtr<Sink>&& aSink) : mSink(std::move(aSink)) {
-    MOZ_ASSERT(mSink);
-  }
+  explicit CommandSink(UniquePtr<Consumer>&& aConsumer)
+      : BasicSink(std::move(aConsumer)) {}
 
   
 
 
   CommandResult ProcessOne(const Maybe<TimeDuration>& aTimeout) {
     Command command;
-    QueueStatus status = (aTimeout.isNothing() || aTimeout.value())
-                             ? this->mSink->TryWaitRemove(aTimeout, command)
-                             : this->mSink->TryRemove(command);
+    PcqStatus status = (aTimeout.isNothing() || aTimeout.value())
+                           ? this->mConsumer->TryWaitRemove(aTimeout, command)
+                           : this->mConsumer->TryRemove(command);
 
-    if (status == QueueStatus::kSuccess) {
+    if (status == PcqStatus::Success) {
       if (DispatchCommand(command)) {
-        return CommandResult::kSuccess;
+        return CommandResult::Success;
       }
-      return CommandResult::kError;
+      return CommandResult::Error;
     }
 
-    if (status == QueueStatus::kNotReady) {
-      return CommandResult::kQueueEmpty;
+    if (status == PcqStatus::PcqNotReady) {
+      return CommandResult::QueueEmpty;
     }
 
-    if (status == QueueStatus::kOOMError) {
+    if (status == PcqStatus::PcqOOMError) {
       ReportOOM();
     }
-    return CommandResult::kError;
+    return CommandResult::Error;
   }
 
   CommandResult ProcessOneNow() { return ProcessOne(Some(TimeDuration(0))); }
@@ -125,7 +152,7 @@ class CommandSink {
     CommandResult result;
     do {
       result = ProcessOneNow();
-    } while (result == CommandResult::kSuccess);
+    } while (result == CommandResult::Success);
     return result;
   }
 
@@ -142,8 +169,7 @@ class CommandSink {
     do {
       result = ProcessOne(Some(aDuration - (now - start)));
       now = TimeStamp::Now();
-    } while ((result == CommandResult::kSuccess) &&
-             ((now - start) < aDuration));
+    } while ((result == CommandResult::Success) && ((now - start) < aDuration));
     return result;
   }
 
@@ -198,8 +224,6 @@ class CommandSink {
   }
 
  protected:
-  friend struct IPDLParamTraits<mozilla::CommandSink<Command, Sink>>;
-
   
 
 
@@ -213,27 +237,26 @@ class CommandSink {
   virtual void ReportOOM() {}
 
   template <typename... Args, size_t... Indices>
-  QueueStatus CallTryRemove(std::tuple<Args...>& aArgs,
-                            std::index_sequence<Indices...>) {
-    QueueStatus status = mSink->TryRemove(std::get<Indices>(aArgs)...);
+  PcqStatus CallTryRemove(std::tuple<Args...>& aArgs,
+                          std::index_sequence<Indices...>) {
+    PcqStatus status = mConsumer->TryRemove(std::get<Indices>(aArgs)...);
     
     
     
-    MOZ_ASSERT(status != QueueStatus::kNotReady);
+    MOZ_ASSERT(status != PcqStatus::PcqNotReady);
     return status;
   }
 
-  QueueStatus CallTryRemove(std::tuple<>& aArgs,
-                            std::make_integer_sequence<size_t, 0>) {
-    return QueueStatus::kSuccess;
+  PcqStatus CallTryRemove(std::tuple<>& aArgs,
+                          std::make_integer_sequence<size_t, 0>) {
+    return PcqStatus::Success;
   }
 
   template <typename T, typename MethodType, typename... Args,
-            size_t... Indices,
-            typename ReturnType =
-                typename mozilla::FunctionTypeTraits<MethodType>::ReturnType>
-  ReturnType CallMethod(T& aObj, MethodType aMethod, std::tuple<Args...>& aArgs,
-                        std::index_sequence<Indices...>) {
+            size_t... Indices, typename ReturnType>
+  std::result_of<MethodType> CallMethod(T& aObj, MethodType aMethod,
+                                        std::tuple<Args...>& aArgs,
+                                        std::index_sequence<Indices...>) {
     return (aObj.*aMethod)(std::forward<Args>(std::get<Indices>(aArgs))...);
   }
 
@@ -246,12 +269,9 @@ class CommandSink {
 
   template <typename... Args>
   bool ReadArgs(std::tuple<Args...>& aArgs) {
-    QueueStatus status =
-        CallTryRemove(aArgs, std::index_sequence_for<Args...>{});
+    PcqStatus status = CallTryRemove(aArgs, std::index_sequence_for<Args...>{});
     return IsSuccess(status);
   }
-
-  UniquePtr<Sink> mSink;
 };
 
 enum SyncResponse : uint8_t { RESPONSE_NAK, RESPONSE_ACK };
@@ -261,67 +281,62 @@ enum SyncResponse : uint8_t { RESPONSE_NAK, RESPONSE_ACK };
 
 
 
-template <typename Command, typename _Source, typename _ResponseQueue>
-class SyncCommandSource : public CommandSource<Command, _Source> {
- public:
-  using BaseType = CommandSource<Command, _Source>;
-  using Source = _Source;
-  using ResponseQueue = _ResponseQueue;
-  using ResponseSink = typename ResponseQueue::Consumer;
 
-  SyncCommandSource(UniquePtr<Source>&& aSource,
-                    UniquePtr<ResponseSink>&& aResponseSink)
-      : CommandSource<Command, Source>(std::move(aSource)),
-        mResponseSink(std::move(aResponseSink)) {}
+template <typename Command>
+class SyncCommandSource : public CommandSource<Command> {
+ public:
+  using BaseType = CommandSource<Command>;
+  SyncCommandSource(UniquePtr<Producer>&& aProducer,
+                    UniquePtr<Consumer>&& aResponseConsumer)
+      : CommandSource<Command>(std::move(aProducer)),
+        mConsumer(std::move(aResponseConsumer)) {}
 
   template <typename... Args>
-  QueueStatus RunAsyncCommand(Command aCommand, Args&&... aArgs) {
+  PcqStatus RunAsyncCommand(Command aCommand, Args&&... aArgs) {
     return this->RunCommand(aCommand, std::forward<Args>(aArgs)...);
   }
 
   template <typename... Args>
-  QueueStatus RunVoidSyncCommand(Command aCommand, Args&&... aArgs) {
-    QueueStatus status =
-        RunAsyncCommand(aCommand, std::forward<Args>(aArgs)...);
+  PcqStatus RunVoidSyncCommand(Command aCommand, Args&&... aArgs) {
+    PcqStatus status = RunAsyncCommand(aCommand, std::forward<Args>(aArgs)...);
     return IsSuccess(status) ? this->ReadSyncResponse() : status;
   }
 
   template <typename ResultType, typename... Args>
-  QueueStatus RunSyncCommand(Command aCommand, ResultType& aReturn,
-                             Args&&... aArgs) {
-    QueueStatus status =
+  PcqStatus RunSyncCommand(Command aCommand, ResultType& aReturn,
+                           Args&&... aArgs) {
+    PcqStatus status =
         RunVoidSyncCommand(aCommand, std::forward<Args>(aArgs)...);
     return IsSuccess(status) ? this->ReadResult(aReturn) : status;
   }
 
   
   SyncCommandSource() = default;
-  friend struct mozilla::ipc::IPDLParamTraits<
-      SyncCommandSource<Command, Source, ResponseQueue>>;
+  friend struct mozilla::ipc::IPDLParamTraits<SyncCommandSource<Command>>;
 
  protected:
-  QueueStatus ReadSyncResponse() {
+  PcqStatus ReadSyncResponse() {
     SyncResponse response;
-    QueueStatus status =
-        mResponseSink->TryWaitRemove(Nothing() , response);
-    MOZ_ASSERT(status != QueueStatus::kNotReady);
+    PcqStatus status =
+        mConsumer->TryWaitRemove(Nothing() , response);
+    MOZ_ASSERT(status != PcqStatus::PcqNotReady);
 
     if (IsSuccess(status) && response != RESPONSE_ACK) {
-      return QueueStatus::kFatalError;
+      return PcqStatus::PcqFatalError;
     }
     return status;
   }
 
   template <typename T>
-  QueueStatus ReadResult(T& aResult) {
-    QueueStatus status = mResponseSink->TryRemove(aResult);
+  PcqStatus ReadResult(T& aResult) {
+    PcqStatus status = mConsumer->TryRemove(aResult);
     
     
-    MOZ_ASSERT(status != QueueStatus::kNotReady);
+    MOZ_ASSERT(status != PcqStatus::PcqNotReady);
     return status;
   }
 
-  UniquePtr<ResponseSink> mResponseSink;
+  UniquePtr<Consumer> mConsumer;
 };
 
 
@@ -331,25 +346,19 @@ class SyncCommandSource : public CommandSource<Command, _Source> {
 
 
 
-template <typename Command, typename _Sink, typename _ResponseQueue>
-class SyncCommandSink : public CommandSink<Command, _Sink> {
-  using BaseType = CommandSink<Command, _Sink>;
-  using ResponseQueue = _ResponseQueue;
-  using Sink = _Sink;
-  using ResponseSource = typename ResponseQueue::Producer;
+template <typename Command>
+class SyncCommandSink : public CommandSink<Command> {
+  using BaseType = CommandSink<Command>;
 
  public:
-  SyncCommandSink(UniquePtr<Sink>&& aSink,
-                  UniquePtr<ResponseSource>&& aResponseSource)
-      : CommandSink<Command, Sink>(std::move(aSink)),
-        mResponseSource(std::move(aResponseSource)) {
-    MOZ_ASSERT(mResponseSource);
-  }
+  SyncCommandSink(UniquePtr<Consumer>&& aConsumer,
+                  UniquePtr<Producer>&& aResponseProducer)
+      : CommandSink<Command>(std::move(aConsumer)),
+        mProducer(std::move(aResponseProducer)) {}
 
   
   SyncCommandSink() = default;
-  friend struct mozilla::ipc::IPDLParamTraits<
-      SyncCommandSink<Command, Sink, ResponseQueue>>;
+  friend struct mozilla::ipc::IPDLParamTraits<SyncCommandSink<Command>>;
 
   
   
@@ -482,7 +491,7 @@ class SyncCommandSink : public CommandSink<Command, _Sink> {
  protected:
   template <typename... Args>
   bool WriteArgs(const Args&... aArgs) {
-    return IsSuccess(mResponseSource->TryInsert(aArgs...));
+    return IsSuccess(mProducer->TryInsert(aArgs...));
   }
 
   template <typename... Args>
@@ -496,68 +505,73 @@ class SyncCommandSink : public CommandSink<Command, _Sink> {
     return WriteArgs(nak);
   }
 
-  UniquePtr<ResponseSource> mResponseSource;
+  UniquePtr<Producer> mProducer;
 };
-
-
 
 
 
 
 template <typename Derived>
-struct MethodDispatcher {
-  template <CommandSyncType syncType>
-  struct DispatchMethod;
-
+struct CommandDispatchDriver {
   
-  template <>
-  struct DispatchMethod<CommandSyncType::ASYNC> {
-    template <typename MethodType, typename ObjectType, typename SinkType>
-    static MOZ_ALWAYS_INLINE bool Run(SinkType& aSink, MethodType mMethod,
-                                      ObjectType& aObj) {
-      return aSink.DispatchAsyncMethod(aObj, mMethod);
-    }
-  };
 
-  
-  template <>
-  struct DispatchMethod<CommandSyncType::SYNC> {
-    template <typename MethodType, typename ObjectType, typename SinkType>
-    static MOZ_ALWAYS_INLINE bool Run(SinkType& aSink, MethodType aMethod,
-                                      ObjectType& aObj) {
-      return aSink.DispatchSyncMethod(aObj, aMethod);
+
+  template <size_t commandId, typename... Args>
+  static MOZ_ALWAYS_INLINE bool DispatchCommandHelper(size_t aId,
+                                                      Args&... aArgs) {
+    if (commandId == aId) {
+      return Derived::template Dispatch<commandId>(aArgs...);
     }
-  };
+    return Derived::template DispatchCommand<commandId + 1>(aId, aArgs...);
+  }
 };
 
 
 
-#define DECLARE_METHOD_DISPATCHER(_DISPATCHER, _OBJECTTYPE)                    \
-  struct _DISPATCHER : public MethodDispatcher<_DISPATCHER> {                  \
+
+
+
+template <typename Derived, typename _SinkType>
+struct MethodDispatcher {
+  using SinkType = _SinkType;
+  template <CommandSyncType syncType>
+  struct DispatchMethod;
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+};
+
+
+
+#define DECLARE_METHOD_DISPATCHER(_DISPATCHER, _SINKTYPE, _OBJECTTYPE)         \
+  struct _DISPATCHER : public MethodDispatcher<_DISPATCHER, _SINKTYPE> {       \
     using ObjectType = _OBJECTTYPE;                                            \
-    template <size_t commandId>                                                \
-    struct IdDispatcher {                                                      \
-      template <typename SinkType>                                             \
-      static MOZ_ALWAYS_INLINE bool DispatchCommand(size_t aId,                \
-                                                    SinkType& aSink,           \
-                                                    ObjectType& aObj) {        \
-        MOZ_CRASH("Impossible -- Unhandled command ID");                       \
-        return false;                                                          \
-      }                                                                        \
-      static MOZ_ALWAYS_INLINE CommandSyncType SyncType(size_t aId) {          \
-        MOZ_ASSERT_UNREACHABLE("Impossible -- Unhandled command ID");          \
-        return CommandSyncType::ASYNC;                                         \
-      }                                                                        \
-    };                                                                         \
-    template <typename SinkType, size_t commandId = 0>                         \
+    template <size_t commandId = 0>                                            \
     static MOZ_ALWAYS_INLINE bool DispatchCommand(size_t aId, SinkType& aSink, \
                                                   ObjectType& aObj) {          \
-      return IdDispatcher<commandId>::DispatchCommand(aId, aSink, aObj);       \
+      MOZ_ASSERT_UNREACHABLE("Unhandled command ID");                          \
+      return false;                                                            \
     }                                                                          \
-    template <size_t commandId = 0>                                            \
-    static MOZ_ALWAYS_INLINE CommandSyncType SyncType(size_t aId) {            \
-      return IdDispatcher<commandId>::SyncType(aId);                           \
-    }                                                                          \
+    template <size_t commandId>                                                \
+    static MOZ_ALWAYS_INLINE bool Dispatch(SinkType& aSink, ObjectType& aObj); \
     template <size_t commandId>                                                \
     struct MethodInfo;                                                         \
     template <size_t commandId>                                                \
@@ -570,111 +584,127 @@ struct MethodDispatcher {
 
 
 
-#define DEFINE_METHOD_DISPATCHER(_DISPATCHER, _ID, _METHOD, _SYNC)             \
-  template <>                                                                  \
-  struct _DISPATCHER::MethodInfo<_ID> {                                        \
-    using MethodType = decltype(&_METHOD);                                     \
-  };                                                                           \
-  template <>                                                                  \
-  constexpr CommandSyncType _DISPATCHER::SyncType<_ID>() {                     \
-    return _SYNC;                                                              \
-  }                                                                            \
-  template <>                                                                  \
-  constexpr size_t _DISPATCHER::Id<decltype(&_METHOD), &_METHOD>() {           \
-    return _ID;                                                                \
-  }                                                                            \
-  template <>                                                                  \
-  struct _DISPATCHER::IdDispatcher<_ID> {                                      \
-    template <typename SinkType>                                               \
-    static MOZ_ALWAYS_INLINE bool DispatchCommand(size_t aId, SinkType& aSink, \
-                                                  ObjectType& aObj) {          \
-      return (_ID == aId) ? DispatchMethod<_SYNC>::Run(aSink, &_METHOD, aObj)  \
-                          : _DISPATCHER::DispatchCommand<SinkType, _ID + 1>(   \
-                                aId, aSink, aObj);                             \
-    }                                                                          \
-    static MOZ_ALWAYS_INLINE CommandSyncType SyncType(size_t aId) {            \
-      return (_ID == aId) ? _DISPATCHER::SyncType<_ID>()                       \
-                          : _DISPATCHER::SyncType<_ID + 1>(aId);               \
-    }                                                                          \
-  };
+#define DEFINE_METHOD_DISPATCHER(_DISPATCHER, _ID, _METHOD, _SYNC)
+
+
+
+
+
+
+
+
+
+                                                                     \
+  template <>                                                                \
+  struct _DISPATCHER::MethodInfo<_ID> {                                      \
+    using MethodType = decltype(&_METHOD);                                   \
+  };                                                                         \
+  template <>                                                                \
+  constexpr CommandSyncType _DISPATCHER::SyncType<_ID>() {                   \
+    return _SYNC;                                                            \
+  }                                                                          \
+  template <>                                                                \
+  constexpr size_t _DISPATCHER::Id<decltype(&_METHOD), &_METHOD>() {         \
+    return _ID;                                                              \
+  }
 
 namespace ipc {
 template <typename T>
 struct IPDLParamTraits;
 
-template <typename Command, typename Source>
-struct IPDLParamTraits<mozilla::CommandSource<Command, Source>> {
+template <>
+struct IPDLParamTraits<mozilla::BasicSource> {
  public:
-  typedef mozilla::CommandSource<Command, Source> paramType;
+  typedef mozilla::BasicSource paramType;
 
   static void Write(IPC::Message* aMsg, IProtocol* aActor,
                     const paramType& aParam) {
-    WriteIPDLParam(aMsg, aActor, aParam.mSource);
+    MOZ_ASSERT(aParam.mProducer);
+    WriteIPDLParam(aMsg, aActor, *aParam.mProducer.get());
   }
 
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
                    IProtocol* aActor, paramType* aResult) {
-    return ReadIPDLParam(aMsg, aIter, aActor, &aResult->mSource);
+    Producer* producer = new Producer;
+    bool ret = ReadIPDLParam(aMsg, aIter, aActor, producer);
+    aResult->mProducer.reset(producer);
+    return ret;
   }
 };
 
-template <typename Command, typename Sink>
-struct IPDLParamTraits<mozilla::CommandSink<Command, Sink>> {
+template <>
+struct IPDLParamTraits<mozilla::BasicSink> {
  public:
-  typedef mozilla::CommandSink<Command, Sink> paramType;
+  typedef mozilla::BasicSink paramType;
 
   static void Write(IPC::Message* aMsg, IProtocol* aActor,
                     const paramType& aParam) {
-    WriteIPDLParam(aMsg, aActor, aParam.mSink);
+    MOZ_ASSERT(aParam.mConsumer);
+    WriteIPDLParam(aMsg, aActor, *aParam.mConsumer.get());
   }
 
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
                    IProtocol* aActor, paramType* aResult) {
-    return ReadIPDLParam(aMsg, aIter, aActor, &aResult->mSink);
+    Consumer* consumer = new Consumer;
+    bool ret = ReadIPDLParam(aMsg, aIter, aActor, consumer);
+    aResult->mConsumer.reset(consumer);
+    return ret;
   }
 };
 
-template <typename Command, typename Source, typename ResponseQueue>
-struct IPDLParamTraits<
-    mozilla::SyncCommandSource<Command, Source, ResponseQueue>>
-    : public IPDLParamTraits<mozilla::CommandSource<Command, Source>> {
+template <typename Command>
+struct IPDLParamTraits<mozilla::CommandSource<Command>>
+    : public IPDLParamTraits<mozilla::BasicSource> {
  public:
-  typedef mozilla::SyncCommandSource<Command, Source, ResponseQueue> paramType;
+  typedef mozilla::CommandSource<Command> paramType;
+};
+
+template <typename Command>
+struct IPDLParamTraits<mozilla::CommandSink<Command>>
+    : public IPDLParamTraits<mozilla::BasicSink> {
+ public:
+  typedef mozilla::CommandSink<Command> paramType;
+};
+
+template <typename Command>
+struct IPDLParamTraits<mozilla::SyncCommandSource<Command>>
+    : public IPDLParamTraits<mozilla::CommandSource<Command>> {
+ public:
+  typedef mozilla::SyncCommandSource<Command> paramType;
   typedef typename paramType::BaseType paramBaseType;
 
   static void Write(IPC::Message* aMsg, IProtocol* aActor,
                     const paramType& aParam) {
     WriteIPDLParam(aMsg, aActor, static_cast<const paramBaseType&>(aParam));
-    WriteIPDLParam(aMsg, aActor, aParam.mResponseSink);
+    WriteIPDLParam(aMsg, aActor, aParam.mConsumer);
   }
 
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
                    IProtocol* aActor, paramType* aParam) {
     bool result =
         ReadIPDLParam(aMsg, aIter, aActor, static_cast<paramBaseType*>(aParam));
-    return result && ReadIPDLParam(aMsg, aIter, aActor, &aParam->mResponseSink);
+    return result && ReadIPDLParam(aMsg, aIter, aActor, &aParam->mConsumer);
   }
 };
 
-template <typename Command, typename Sink, typename ResponseQueue>
-struct IPDLParamTraits<mozilla::SyncCommandSink<Command, Sink, ResponseQueue>>
-    : public IPDLParamTraits<mozilla::CommandSink<Command, Sink>> {
+template <typename Command>
+struct IPDLParamTraits<mozilla::SyncCommandSink<Command>>
+    : public IPDLParamTraits<mozilla::CommandSink<Command>> {
  public:
-  typedef mozilla::SyncCommandSink<Command, Sink, ResponseQueue> paramType;
+  typedef mozilla::SyncCommandSink<Command> paramType;
   typedef typename paramType::BaseType paramBaseType;
 
   static void Write(IPC::Message* aMsg, IProtocol* aActor,
                     const paramType& aParam) {
     WriteIPDLParam(aMsg, aActor, static_cast<const paramBaseType&>(aParam));
-    WriteIPDLParam(aMsg, aActor, aParam.mResponseSource);
+    WriteIPDLParam(aMsg, aActor, aParam.mProducer);
   }
 
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
                    IProtocol* aActor, paramType* aParam) {
     bool result =
         ReadIPDLParam(aMsg, aIter, aActor, static_cast<paramBaseType*>(aParam));
-    return result &&
-           ReadIPDLParam(aMsg, aIter, aActor, &aParam->mResponseSource);
+    return result && ReadIPDLParam(aMsg, aIter, aActor, &aParam->mProducer);
   }
 };
 

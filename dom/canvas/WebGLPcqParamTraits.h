@@ -3,8 +3,8 @@
 
 
 
-#ifndef WEBGLQUEUEPARAMTRAITS_H_
-#define WEBGLQUEUEPARAMTRAITS_H_
+#ifndef WEBGLPCQPARAMTRAITS_H_
+#define WEBGLPCQPARAMTRAITS_H_
 
 #include <type_traits>
 
@@ -17,7 +17,7 @@ namespace mozilla {
 
 namespace webgl {
 template <typename T>
-struct QueueParamTraits;
+struct PcqParamTraits;
 
 template <>
 struct IsTriviallySerializable<FloatOrInt> : std::true_type {};
@@ -57,15 +57,6 @@ struct IsTriviallySerializable<avec3<T>> : std::true_type {};
 template <>
 struct IsTriviallySerializable<webgl::TexUnpackBlob> : std::true_type {};
 
-template <>
-struct IsTriviallySerializable<webgl::TypedQuad> : std::true_type {};
-template <>
-struct IsTriviallySerializable<webgl::VertAttribPointerDesc> : std::true_type {
-};
-template <>
-struct IsTriviallySerializable<webgl::ReadPixelsDesc> : std::true_type {};
-
-
 
 
 
@@ -103,23 +94,21 @@ struct IsTriviallySerializable<webgl::ReadPixelsDesc> : std::true_type {};
 
 
 template <typename T>
-struct QueueParamTraits<RawBuffer<T>> {
+struct PcqParamTraits<RawBuffer<T>> {
   using ParamType = RawBuffer<T>;
 
-  template <typename U>
-  static QueueStatus Write(ProducerView<U>& aProducerView,
-                           const ParamType& aArg) {
+  static PcqStatus Write(ProducerView& aProducerView, const ParamType& aArg) {
     aProducerView.WriteParam(aArg.mLength);
     return (aArg.mLength > 0)
                ? aProducerView.Write(aArg.mData, aArg.mLength * sizeof(T))
-               : aProducerView.GetStatus();
+               : aProducerView.Status();
   }
 
-  template <typename U, typename ElementType = typename std::remove_cv_t<
-                            typename ParamType::ElementType>>
-  static QueueStatus Read(ConsumerView<U>& aConsumerView, ParamType* aArg) {
+  template <
+      typename ElementType = std::remove_cv_t<typename ParamType::ElementType>>
+  static PcqStatus Read(ConsumerView& aConsumerView, ParamType* aArg) {
     size_t len;
-    QueueStatus status = aConsumerView.ReadParam(&len);
+    PcqStatus status = aConsumerView.ReadParam(&len);
     if (!status) {
       return status;
     }
@@ -129,7 +118,7 @@ struct QueueParamTraits<RawBuffer<T>> {
         aArg->mLength = 0;
         aArg->mData = nullptr;
       }
-      return QueueStatus::kSuccess;
+      return PcqStatus::Success;
     }
 
     if (!aArg) {
@@ -137,17 +126,17 @@ struct QueueParamTraits<RawBuffer<T>> {
     }
 
     struct RawBufferReadMatcher {
-      QueueStatus operator()(RefPtr<mozilla::ipc::SharedMemoryBasic>& smem) {
+      PcqStatus operator()(RefPtr<mozilla::ipc::SharedMemoryBasic>& smem) {
         if (!smem) {
-          return QueueStatus::kFatalError;
+          return PcqStatus::PcqFatalError;
         }
         mArg->mSmem = smem;
         mArg->mData = static_cast<ElementType*>(smem->memory());
         mArg->mLength = mLength;
         mArg->mOwnsData = false;
-        return QueueStatus::kSuccess;
+        return PcqStatus::Success;
       }
-      QueueStatus operator()() {
+      PcqStatus operator()() {
         mArg->mSmem = nullptr;
         ElementType* buf = new ElementType[mLength];
         mArg->mData = buf;
@@ -156,7 +145,7 @@ struct QueueParamTraits<RawBuffer<T>> {
         return mConsumerView.Read(buf, mLength * sizeof(T));
       }
 
-      ConsumerView<U>& mConsumerView;
+      ConsumerView& mConsumerView;
       ParamType* mArg;
       size_t mLength;
     };
@@ -315,23 +304,20 @@ struct QueueParamTraits<RawBuffer<T>> {
 
 
 template <>
-struct QueueParamTraits<webgl::ContextLossReason> {
+struct PcqParamTraits<webgl::ContextLossReason> {
   using ParamType = webgl::ContextLossReason;
 
-  template <typename U>
-  static QueueStatus Write(ProducerView<U>& aProducerView,
-                           const ParamType& aArg) {
+  static PcqStatus Write(ProducerView& aProducerView, const ParamType& aArg) {
     return aProducerView.WriteParam(static_cast<uint8_t>(aArg));
   }
 
-  template <typename U>
-  static QueueStatus Read(ConsumerView<U>& aConsumerView, ParamType* aArg) {
+  static PcqStatus Read(ConsumerView& aConsumerView, ParamType* aArg) {
     uint8_t val;
     auto status = aConsumerView.ReadParam(&val);
     if (!status) return status;
     if (!ReadContextLossReason(val, aArg)) {
       MOZ_ASSERT_UNREACHABLE("Invalid ContextLossReason");
-      return QueueStatus::kFatalError;
+      return PcqStatus::PcqFatalError;
     }
     return status;
   }
@@ -343,11 +329,10 @@ struct QueueParamTraits<webgl::ContextLossReason> {
 };
 
 template <typename V, typename E>
-struct QueueParamTraits<Result<V, E>> {
+struct PcqParamTraits<Result<V, E>> {
   using T = Result<V, E>;
 
-  template <typename U>
-  static QueueStatus Write(ProducerView<U>& aProducerView, const T& aArg) {
+  static PcqStatus Write(ProducerView& aProducerView, const T& aArg) {
     const auto ok = aArg.isOk();
     auto status = aProducerView.WriteParam(ok);
     if (!status) return status;
@@ -359,8 +344,7 @@ struct QueueParamTraits<Result<V, E>> {
     return status;
   }
 
-  template <typename U>
-  static QueueStatus Read(ConsumerView<U>& aConsumerView, T* const aArg) {
+  static PcqStatus Read(ConsumerView& aConsumerView, T* const aArg) {
     bool ok;
     auto status = aConsumerView.ReadParam(&ok);
     if (!status) return status;
@@ -393,26 +377,24 @@ struct QueueParamTraits<Result<V, E>> {
 };
 
 template <>
-struct QueueParamTraits<std::string> {
+struct PcqParamTraits<std::string> {
   using T = std::string;
 
-  template <typename U>
-  static QueueStatus Write(ProducerView<U>& aProducerView, const T& aArg) {
+  static PcqStatus Write(ProducerView& aProducerView, const T& aArg) {
     auto status = aProducerView.WriteParam(aArg.size());
     if (!status) return status;
     status = aProducerView.Write(aArg.data(), aArg.size());
     return status;
   }
 
-  template <typename U>
-  static QueueStatus Read(ConsumerView<U>& aConsumerView, T* const aArg) {
+  static PcqStatus Read(ConsumerView& aConsumerView, T* const aArg) {
     size_t size;
     auto status = aConsumerView.ReadParam(&size);
     if (!status) return status;
 
     const UniqueBuffer temp = malloc(size);
     const auto dest = static_cast<char*>(temp.get());
-    if (!dest) return QueueStatus::kFatalError;
+    if (!dest) return PcqStatus::PcqFatalError;
 
     status = aConsumerView.Read(dest, size);
     if (aArg) {
@@ -432,19 +414,17 @@ struct QueueParamTraits<std::string> {
 };
 
 template <typename U>
-struct QueueParamTraits<std::vector<U>> {
-  using T = std::vector<U>;
+struct PcqParamTraits<std::vector<U>> {
+  using T = std::string;
 
-  template <typename V>
-  static QueueStatus Write(ProducerView<V>& aProducerView, const T& aArg) {
+  static PcqStatus Write(ProducerView& aProducerView, const T& aArg) {
     auto status = aProducerView.WriteParam(aArg.size());
     if (!status) return status;
     status = aProducerView.Write(aArg.data(), aArg.size());
     return status;
   }
 
-  template <typename V>
-  static QueueStatus Read(ConsumerView<V>& aConsumerView, T* const aArg) {
+  static PcqStatus Read(ConsumerView& aConsumerView, T* const aArg) {
     MOZ_CRASH("no way to fallibly resize vectors without exceptions");
     size_t size;
     auto status = aConsumerView.ReadParam(&size);
@@ -466,23 +446,21 @@ struct QueueParamTraits<std::vector<U>> {
 };
 
 template <>
-struct QueueParamTraits<WebGLExtensionID> {
+struct PcqParamTraits<WebGLExtensionID> {
   using T = WebGLExtensionID;
 
-  template <typename U>
-  static QueueStatus Write(ProducerView<U>& aProducerView, const T& aArg) {
+  static PcqStatus Write(ProducerView& aProducerView, const T& aArg) {
     return aProducerView.WriteParam(mozilla::EnumValue(aArg));
   }
 
-  template <typename U>
-  static QueueStatus Read(ConsumerView<U>& aConsumerView, T* const aArg) {
-    QueueStatus status = QueueStatus::kSuccess;
+  static PcqStatus Read(ConsumerView& aConsumerView, T* const aArg) {
+    PcqStatus status = PcqStatus::Success;
     if (aArg) {
       status = aConsumerView.ReadParam(
           reinterpret_cast<typename std::underlying_type<T>::type*>(aArg));
       if (*aArg >= WebGLExtensionID::Max) {
         MOZ_ASSERT(false);
-        return QueueStatus::kFatalError;
+        return PcqStatus::PcqFatalError;
       }
     }
     return status;
@@ -493,70 +471,6 @@ struct QueueParamTraits<WebGLExtensionID> {
     return sizeof(T);
   }
 };
-
-template <>
-struct QueueParamTraits<CompileResult> {
-  using T = CompileResult;
-
-  template <typename U>
-  static QueueStatus Write(ProducerView<U>& aProducerView, const T& aArg) {
-    aProducerView.WriteParam(aArg.pending);
-    aProducerView.WriteParam(aArg.log);
-    aProducerView.WriteParam(aArg.translatedSource);
-    return aProducerView.WriteParam(aArg.success);
-  }
-
-  template <typename U>
-  static QueueStatus Read(ConsumerView<U>& aConsumerView, T* const aArg) {
-    aConsumerView.ReadParam(aArg ? &aArg->pending : nullptr);
-    aConsumerView.ReadParam(aArg ? &aArg->log : nullptr);
-    aConsumerView.ReadParam(aArg ? &aArg->translatedSource : nullptr);
-    return aConsumerView.ReadParam(aArg ? &aArg->success : nullptr);
-  }
-
-  template <typename View>
-  static size_t MinSize(View& aView, const T* const aArg) {
-    return aView.MinSizeParam(aArg ? &aArg->pending : nullptr) +
-           aView.MinSizeParam(aArg ? &aArg->log : nullptr) +
-           aView.MinSizeParam(aArg ? &aArg->translatedSource : nullptr) +
-           aView.MinSizeParam(aArg ? &aArg->success : nullptr);
-  }
-};
-
-#if 0
-
-template <>
-struct QueueParamTraits<LinkResult> {
-  using T = LinkResult;
-
-  template <typename U>
-  static QueueStatus Write(ProducerView<U>& aProducerView, const T& aArg) {
-    aProducerView.WriteParam(aArg.pending);
-    aProducerView.WriteParam(aArg.log);
-    aProducerView.WriteParam(aArg.active);
-    aProducerView.WriteParam(aArg.tfBufferMode);
-    return aProducerView.WriteParam(aArg.success);
-  }
-
-  template <typename U>
-  static QueueStatus Read(ConsumerView<U>& aConsumerView, T* const aArg) {
-    aConsumerView.ReadParam(aArg ? &aArg->pending : nullptr);
-    aConsumerView.ReadParam(aArg ? &aArg->log : nullptr);
-    aConsumerView.ReadParam(aArg ? &aArg->active : nullptr);
-    aConsumerView.ReadParam(aArg ? &aArg->tfBufferMode : nullptr);
-    return aConsumerView.ReadParam(aArg ? &aArg->success : nullptr);
-  }
-
-  template <typename View>
-  static size_t MinSize(View& aView, const T* const aArg) {
-    return aView.MinSizeParam(aArg ? &aArg->pending : nullptr) +
-        aView.MinSizeParam(aArg ? &aArg->log : nullptr) +
-        aView.MinSizeParam(aArg ? &aArg->active : nullptr) +
-        aView.MinSizeParam(aArg ? &aArg->tfBufferMode : nullptr) +
-        aView.MinSizeParam(aArg ? &aArg->success : nullptr);
-  }
-};
-#endif
 
 }  
 }  

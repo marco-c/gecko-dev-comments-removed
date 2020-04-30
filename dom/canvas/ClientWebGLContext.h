@@ -20,7 +20,6 @@
 
 #include "mozilla/Logging.h"
 #include "WebGLCrossProcessCommandQueue.h"
-#include "WebGLCommandQueue.h"
 
 #include <memory>
 #include <unordered_map>
@@ -198,8 +197,7 @@ struct RemotingData final {
   
   
   RefPtr<mozilla::dom::WebGLChild> mWebGLChild;
-  UniquePtr<ClientWebGLCommandSourceP> mCommandSourcePcq;
-  UniquePtr<ClientWebGLCommandSourceI> mCommandSourceIpdl;
+  UniquePtr<ClientWebGLCommandSource> mCommandSource;
 };
 
 struct NotLostData final {

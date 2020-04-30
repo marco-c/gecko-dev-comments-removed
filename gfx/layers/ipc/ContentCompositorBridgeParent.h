@@ -161,7 +161,8 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
     return IPC_FAIL_NO_REASON(this);
   }
 
-  already_AddRefed<dom::PWebGLParent> AllocPWebGLParent() override;
+  already_AddRefed<dom::PWebGLParent> AllocPWebGLParent(
+      const webgl::InitContextDesc&, webgl::InitContextResult* out) override;
 
   
   
