@@ -38,6 +38,12 @@ ChromeUtils.defineModuleGetter(
   "resource://services-settings/remote-settings.js"
 );
 
+const CascadeFilter = Components.Constructor(
+  "@mozilla.org/cascade-filter;1",
+  "nsICascadeFilter",
+  "setFilterData"
+);
+
 
 
 
@@ -127,9 +133,11 @@ function doesAddonEntryMatch(matches, addonProps) {
 
 const TOOLKIT_ID = "toolkit@mozilla.org";
 const PREF_BLOCKLIST_ITEM_URL = "extensions.blocklist.itemURL";
+const PREF_BLOCKLIST_ADDONITEM_URL = "extensions.blocklist.addonItemURL";
 const PREF_BLOCKLIST_ENABLED = "extensions.blocklist.enabled";
 const PREF_BLOCKLIST_LEVEL = "extensions.blocklist.level";
 const PREF_BLOCKLIST_SUPPRESSUI = "extensions.blocklist.suppressUI";
+const PREF_BLOCKLIST_USE_MLBF = "extensions.blocklist.useMLBF";
 const PREF_EM_LOGGING_ENABLED = "extensions.logging.enabled";
 const URI_BLOCKLIST_DIALOG =
   "chrome://mozapps/content/extensions/blocklist.xhtml";
@@ -151,10 +159,17 @@ const PREF_BLOCKLIST_PLUGINS_COLLECTION =
 const PREF_BLOCKLIST_PLUGINS_CHECKED_SECONDS =
   "services.blocklist.plugins.checked";
 const PREF_BLOCKLIST_PLUGINS_SIGNER = "services.blocklist.plugins.signer";
+
 const PREF_BLOCKLIST_ADDONS_COLLECTION = "services.blocklist.addons.collection";
 const PREF_BLOCKLIST_ADDONS_CHECKED_SECONDS =
   "services.blocklist.addons.checked";
 const PREF_BLOCKLIST_ADDONS_SIGNER = "services.blocklist.addons.signer";
+
+const PREF_BLOCKLIST_ADDONS3_COLLECTION =
+  "services.blocklist.addons-mlbf.collection";
+const PREF_BLOCKLIST_ADDONS3_CHECKED_SECONDS =
+  "services.blocklist.addons-mlbf.checked";
+const PREF_BLOCKLIST_ADDONS3_SIGNER = "services.blocklist.addons-mlbf.signer";
 
 const BlocklistTelemetry = {
   
@@ -1062,6 +1077,9 @@ this.PluginBlocklistRS = {
 
 
 
+
+
+
 this.ExtensionBlocklistRS = {
   async _ensureEntries() {
     this.ensureInitialized();
@@ -1141,6 +1159,15 @@ this.ExtensionBlocklistRS = {
   shutdown() {
     if (this._client) {
       this._client.off("sync", this._onUpdate);
+      this._didShutdown = true;
+    }
+  },
+
+  
+  undoShutdown() {
+    if (this._didShutdown) {
+      this._client.on("sync", this._onUpdate);
+      this._didShutdown = false;
     }
   },
 
@@ -1286,6 +1313,233 @@ this.ExtensionBlocklistRS = {
   },
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+this.ExtensionBlocklistMLBF = {
+  RS_ATTACHMENT_ID: "addons-mlbf.bin",
+
+  async _fetchMLBF(record) {
+    
+    
+    let hash = record?.attachment.hash;
+    if (this._mlbfData && hash && this._mlbfData.cascadeHash === hash) {
+      
+      return this._mlbfData;
+    }
+    const {
+      buffer,
+      record: actualRecord,
+    } = await this._client.attachments.download(record, {
+      attachmentId: this.RS_ATTACHMENT_ID,
+      useCache: true,
+      fallbackToCache: true,
+      fallbackToDump: true,
+    });
+    return {
+      cascadeHash: actualRecord.attachment.hash,
+      cascadeFilter: new CascadeFilter(new Uint8Array(buffer)),
+      
+      
+      
+      
+      generationTime: actualRecord.generation_time,
+    };
+  },
+
+  async _updateMLBF(forceUpdate = false) {
+    
+    
+    
+    
+    
+    if (!forceUpdate && this._updatePromise) {
+      return this._updatePromise;
+    }
+    const isUpdateReplaced = () => this._updatePromise != updatePromise;
+    const updatePromise = (async () => {
+      if (!gBlocklistEnabled) {
+        this._mlbfData = null;
+        return;
+      }
+      let records = await this._client.get();
+      if (isUpdateReplaced()) {
+        return;
+      }
+
+      let mlbfRecord = records.find(
+        r => r.attachment_type == "bloomfilter-full" && r.attachment
+      );
+
+      let mlbf = await this._fetchMLBF(mlbfRecord);
+      
+      
+      if (isUpdateReplaced()) {
+        return;
+      }
+      this._mlbfData = mlbf;
+    })()
+      .catch(e => {
+        Cu.reportError(e);
+      })
+      .then(() => {
+        if (!isUpdateReplaced()) {
+          this._updatePromise = null;
+        }
+        return this._updatePromise;
+      });
+    this._updatePromise = updatePromise;
+    return updatePromise;
+  },
+
+  ensureInitialized() {
+    if (!gBlocklistEnabled || this._initialized) {
+      return;
+    }
+    this._initialized = true;
+    this._client = RemoteSettings(
+      Services.prefs.getCharPref(PREF_BLOCKLIST_ADDONS3_COLLECTION),
+      {
+        bucketNamePref: PREF_BLOCKLIST_BUCKET,
+        lastCheckTimePref: PREF_BLOCKLIST_ADDONS3_CHECKED_SECONDS,
+        signerName: Services.prefs.getCharPref(PREF_BLOCKLIST_ADDONS3_SIGNER),
+      }
+    );
+    this._onUpdate = this._onUpdate.bind(this);
+    this._client.on("sync", this._onUpdate);
+  },
+
+  shutdown() {
+    if (this._client) {
+      this._client.off("sync", this._onUpdate);
+      this._didShutdown = true;
+    }
+  },
+
+  
+  undoShutdown() {
+    if (this._didShutdown) {
+      this._client.on("sync", this._onUpdate);
+      this._didShutdown = false;
+    }
+  },
+
+  async _onUpdate() {
+    this.ensureInitialized();
+    await this._updateMLBF(true);
+
+    
+    const types = ["extension", "theme", "locale", "dictionary"];
+    let addons = await AddonManager.getAddonsByTypes(types);
+    for (let addon of addons) {
+      let oldState = addon.blocklistState;
+      await addon.updateBlocklistState(false);
+      let state = addon.blocklistState;
+
+      LOG(
+        "Blocklist state for " +
+          addon.id +
+          " changed from " +
+          oldState +
+          " to " +
+          state
+      );
+
+      
+      if (state == oldState) {
+        continue;
+      }
+
+      
+      
+      if (state != Ci.nsIBlocklistService.STATE_SOFTBLOCKED) {
+        addon.softDisabled = false;
+      }
+    }
+
+    AddonManagerPrivate.updateAddonAppDisabledStates();
+  },
+
+  async getState(addon) {
+    let state = await this.getEntry(addon);
+    return state ? state.state : Ci.nsIBlocklistService.STATE_NOT_BLOCKED;
+  },
+
+  async getEntry(addon) {
+    if (!this._mlbfData) {
+      this.ensureInitialized();
+      await this._updateMLBF(false);
+    }
+
+    let blockKey = addon.id + ":" + addon.version;
+
+    if (!addon.signedState) {
+      
+      return null;
+    }
+
+    if (!this._mlbfData) {
+      
+      
+      
+      
+      
+      
+      
+      return null;
+    }
+    let { cascadeFilter, generationTime } = this._mlbfData;
+    if (!cascadeFilter.has(blockKey)) {
+      
+      return null;
+    }
+    
+
+    if (addon.signedDate > generationTime) {
+      
+      
+      
+      return null;
+    }
+
+    return {
+      state: Ci.nsIBlocklistService.STATE_BLOCKED,
+      url: this.createBlocklistURL(addon.id, addon.version),
+    };
+  },
+
+  createBlocklistURL(id, version) {
+    let url = Services.urlFormatter.formatURLPref(PREF_BLOCKLIST_ADDONITEM_URL);
+    return url.replace(/%addonID%/g, id).replace(/%addonVersion%/g, version);
+  },
+};
+
 const EXTENSION_BLOCK_FILTERS = [
   "id",
   "name",
@@ -1378,6 +1632,7 @@ let Blocklist = {
       Services.prefs.getIntPref(PREF_BLOCKLIST_LEVEL, DEFAULT_LEVEL),
       MAX_BLOCK_LEVEL
     );
+    this._chooseExtensionBlocklistImplementationFromPref();
     Services.prefs.addObserver("extensions.blocklist.", this);
     Services.prefs.addObserver(PREF_EM_LOGGING_ENABLED, this);
 
@@ -1398,7 +1653,7 @@ let Blocklist = {
   shutdown() {
     GfxBlocklistRS.shutdown();
     PluginBlocklistRS.shutdown();
-    ExtensionBlocklistRS.shutdown();
+    this.ExtensionBlocklist.shutdown();
 
     Services.obs.removeObserver(this, "xpcom-shutdown");
     Services.prefs.removeObserver("extensions.blocklist.", this);
@@ -1432,6 +1687,15 @@ let Blocklist = {
             );
             this._blocklistUpdated();
             break;
+          case PREF_BLOCKLIST_USE_MLBF:
+            let oldImpl = this.ExtensionBlocklist;
+            this._chooseExtensionBlocklistImplementationFromPref();
+            if (oldImpl._initialized) {
+              oldImpl.shutdown();
+              this.ExtensionBlocklist.undoShutdown();
+              this.ExtensionBlocklist._onUpdate();
+            } 
+            break;
         }
         break;
     }
@@ -1440,7 +1704,7 @@ let Blocklist = {
   loadBlocklistAsync() {
     
     GfxBlocklistRS.checkForEntries();
-    ExtensionBlocklistRS.ensureInitialized();
+    this.ExtensionBlocklist.ensureInitialized();
     PluginBlocklistRS.ensureInitialized();
   },
 
@@ -1453,15 +1717,25 @@ let Blocklist = {
   },
 
   getAddonBlocklistState(addon, appVersion, toolkitVersion) {
-    return ExtensionBlocklistRS.getState(addon, appVersion, toolkitVersion);
+    
+    return this.ExtensionBlocklist.getState(addon, appVersion, toolkitVersion);
   },
 
   getAddonBlocklistEntry(addon, appVersion, toolkitVersion) {
-    return ExtensionBlocklistRS.getEntry(addon, appVersion, toolkitVersion);
+    
+    return this.ExtensionBlocklist.getEntry(addon, appVersion, toolkitVersion);
+  },
+
+  _chooseExtensionBlocklistImplementationFromPref() {
+    if (Services.prefs.getBoolPref(PREF_BLOCKLIST_USE_MLBF, false)) {
+      this.ExtensionBlocklist = ExtensionBlocklistMLBF;
+    } else {
+      this.ExtensionBlocklist = ExtensionBlocklistRS;
+    }
   },
 
   _blocklistUpdated() {
-    ExtensionBlocklistRS._onUpdate();
+    this.ExtensionBlocklist._onUpdate();
     PluginBlocklistRS._onUpdate();
   },
 };
