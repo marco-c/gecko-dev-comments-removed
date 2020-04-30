@@ -1757,7 +1757,7 @@ static Range* GetTypedArrayRange(TempAllocator& alloc, Scalar::Type type) {
 void MLoadUnboxedScalar::computeRange(TempAllocator& alloc) {
   
   
-  setRange(GetTypedArrayRange(alloc, storageType()));
+  setRange(GetTypedArrayRange(alloc, readType()));
 }
 
 void MArrayLength::computeRange(TempAllocator& alloc) {
