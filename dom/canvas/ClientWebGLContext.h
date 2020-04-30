@@ -198,7 +198,8 @@ struct RemotingData final {
   
   
   RefPtr<mozilla::dom::WebGLChild> mWebGLChild;
-  UniquePtr<ClientWebGLCommandSourceP> mCommandSource;
+  UniquePtr<ClientWebGLCommandSourceP> mCommandSourcePcq;
+  UniquePtr<ClientWebGLCommandSourceI> mCommandSourceIpdl;
 };
 
 struct NotLostData final {
