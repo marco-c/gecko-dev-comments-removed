@@ -117,7 +117,15 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   TreatAsRunOnce = 1 << 7,
+  
 
+  
+  
+  
+  
+
+  
+  
   
   Strict = 1 << 8,
 
@@ -127,8 +135,13 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
 
   
   
+  
+  
   HasInnerFunctions = 1 << 10,
 
+  
+  
+  
   
   HasDirectEval = 1 << 11,
 
@@ -141,16 +154,10 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
   BindingsAccessedDynamically = 1 << 12,
 
+  
+  
   
   
   
