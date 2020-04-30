@@ -21,11 +21,6 @@ const { classifySite } = ChromeUtils.import(
 
 ChromeUtils.defineModuleGetter(
   this,
-  "perfService",
-  "resource://activity-stream/common/PerfService.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
   "AboutNewTab",
   "resource:///modules/AboutNewTab.jsm"
 );
@@ -128,6 +123,7 @@ this.TelemetryFeed = class TelemetryFeed {
     this._aboutHomeSeen = false;
     this._classifySite = classifySite;
     this._addWindowListeners = this._addWindowListeners.bind(this);
+    this._browserOpenNewtabStart = null;
     this.handleEvent = this.handleEvent.bind(this);
   }
 
@@ -152,6 +148,16 @@ this.TelemetryFeed = class TelemetryFeed {
       value: ClientID.getClientID(),
     });
     return this.telemetryClientId;
+  }
+
+  get processStartTs() {
+    let startupInfo = Services.startup.getStartupInfo();
+    let processStartTs = startupInfo.process.getTime();
+
+    Object.defineProperty(this, "processStartTs", {
+      value: processStartTs,
+    });
+    return this.processStartTs;
   }
 
   init() {
@@ -234,7 +240,14 @@ this.TelemetryFeed = class TelemetryFeed {
   }
 
   browserOpenNewtabStart() {
-    perfService.mark("browser-open-newtab-start");
+    let now = Cu.now();
+    this._browserOpenNewtabStart = Math.round(this.processStartTs + now);
+
+    ChromeUtils.addProfilerMarker(
+      "UserTiming",
+      now,
+      "browser-open-newtab-start"
+    );
   }
 
   setLoadTriggerInfo(port) {
@@ -261,10 +274,11 @@ this.TelemetryFeed = class TelemetryFeed {
 
     let data_to_save;
     try {
+      if (!this._browserOpenNewtabStart) {
+        throw new Error("No browser-open-newtab-start recorded.");
+      }
       data_to_save = {
-        load_trigger_ts: perfService.getMostRecentAbsMarkStartByName(
-          "browser-open-newtab-start"
-        ),
+        load_trigger_ts: this._browserOpenNewtabStart,
         load_trigger_type: "menu_plus_or_keyboard",
       };
     } catch (e) {
@@ -359,19 +373,7 @@ this.TelemetryFeed = class TelemetryFeed {
       
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      load_trigger_ts = perfService.timeOrigin;
+      load_trigger_ts = this.processStartTs;
     }
 
     const session = {
@@ -409,8 +411,9 @@ this.TelemetryFeed = class TelemetryFeed {
     this.sendDiscoveryStreamImpressions(portID, session);
 
     if (session.perf.visibility_event_rcvd_ts) {
+      let absNow = this.processStartTs + Cu.now();
       session.session_duration = Math.round(
-        perfService.absNow() - session.perf.visibility_event_rcvd_ts
+        absNow - session.perf.visibility_event_rcvd_ts
       );
 
       
