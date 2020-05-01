@@ -3434,6 +3434,52 @@ already_AddRefed<Element> HTMLEditor::ReplaceContainerWithTransactionInternal(
   return newContainer.forget();
 }
 
+nsresult HTMLEditor::RemoveContainerWithTransaction(Element& aElement) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  EditorDOMPoint pointToInsertChildren(&aElement);
+  if (NS_WARN_IF(!pointToInsertChildren.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  AutoRemoveContainerSelNotify selNotify(RangeUpdaterRef(),
+                                         pointToInsertChildren);
+
+  
+  while (aElement.HasChildren()) {
+    nsCOMPtr<nsIContent> child = aElement.GetLastChild();
+    if (NS_WARN_IF(!child)) {
+      return NS_ERROR_FAILURE;
+    }
+    
+    
+    
+    nsresult rv = EditorBase::DeleteNodeWithTransaction(*child);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+      return rv;
+    }
+
+    
+    
+    
+    rv = InsertNodeWithTransaction(
+        *child, EditorDOMPoint(pointToInsertChildren.GetContainer(),
+                               pointToInsertChildren.Offset()));
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
+      return rv;
+    }
+  }
+
+  
+  nsresult rv = EditorBase::DeleteNodeWithTransaction(aElement);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EditorBase::DeleteNodeWithTransaction() failed");
+  return rv;
+}
+
 MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLEditor::ContentAppended(
     nsIContent* aFirstNewContent) {
   DoContentInserted(aFirstNewContent, eAppended);
@@ -3873,7 +3919,7 @@ nsresult HTMLEditor::RemoveBlockContainerWithTransaction(Element& aElement) {
   
   nsresult rv = RemoveContainerWithTransaction(aElement);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "EditorBase::RemoveContainerWithTransaction() failed");
+                       "HTMLEditor::RemoveContainerWithTransaction() failed");
   return rv;
 }
 

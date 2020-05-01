@@ -2063,6 +2063,14 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT nsresult RemoveContainerWithTransaction(Element& aElement);
+
+  
+
+
+
+
+
 
 
 
