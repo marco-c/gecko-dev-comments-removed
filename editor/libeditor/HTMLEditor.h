@@ -2074,6 +2074,50 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> InsertContainerWithTransaction(
+      nsIContent& aContent, nsAtom& aTagName) {
+    return InsertContainerWithTransactionInternal(
+        aContent, aTagName, *nsGkAtoms::_empty, EmptyString());
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> InsertContainerWithTransaction(
+      nsIContent& aContent, nsAtom& aTagName, nsAtom& aAttribute,
+      const nsAString& aAttributeValue) {
+    return InsertContainerWithTransactionInternal(aContent, aTagName,
+                                                  aAttribute, aAttributeValue);
+  }
+
+  
+
+
+
+
+
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT MoveNodeResult
   MoveNodeOrChildren(nsIContent& aNode, const EditorDOMPoint& aPointToInsert);
 
@@ -3431,6 +3475,29 @@ class HTMLEditor final : public TextEditor,
                                           nsAtom& aAttribute,
                                           const nsAString& aAttributeValue,
                                           bool aCloneAllAttributes);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element>
+  InsertContainerWithTransactionInternal(nsIContent& aContent, nsAtom& aTagName,
+                                         nsAtom& aAttribute,
+                                         const nsAString& aAttributeValue);
 
   
 

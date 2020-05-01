@@ -3355,6 +3355,68 @@ already_AddRefed<Element> HTMLEditor::InsertBRElementWithTransaction(
   return newBRElement.forget();
 }
 
+already_AddRefed<Element> HTMLEditor::InsertContainerWithTransactionInternal(
+    nsIContent& aContent, nsAtom& aTagName, nsAtom& aAttribute,
+    const nsAString& aAttributeValue) {
+  EditorDOMPoint pointToInsertNewContainer(&aContent);
+  if (NS_WARN_IF(!pointToInsertNewContainer.IsSet())) {
+    return nullptr;
+  }
+  
+  
+  
+  
+  
+  
+  DebugOnly<bool> advanced = pointToInsertNewContainer.AdvanceOffset();
+  NS_WARNING_ASSERTION(advanced, "Failed to advance offset to after aContent");
+
+  
+  RefPtr<Element> newContainer = CreateHTMLContent(&aTagName);
+  if (NS_WARN_IF(!newContainer)) {
+    return nullptr;
+  }
+
+  
+  if (&aAttribute != nsGkAtoms::_empty) {
+    nsresult rv = newContainer->SetAttr(kNameSpaceID_None, &aAttribute,
+                                        aAttributeValue, true);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Element::SetAttr() failed");
+      return nullptr;
+    }
+  }
+
+  
+  AutoInsertContainerSelNotify selNotify(RangeUpdaterRef());
+
+  
+  
+  nsresult rv = EditorBase::DeleteNodeWithTransaction(aContent);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+    return nullptr;
+  }
+
+  {
+    AutoTransactionsConserveSelection conserveSelection(*this);
+    rv = InsertNodeWithTransaction(aContent, EditorDOMPoint(newContainer, 0));
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
+      return nullptr;
+    }
+  }
+
+  
+  rv = InsertNodeWithTransaction(*newContainer, pointToInsertNewContainer);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
+    return nullptr;
+  }
+
+  return newContainer.forget();
+}
+
 already_AddRefed<Element> HTMLEditor::ReplaceContainerWithTransactionInternal(
     Element& aOldContainer, nsAtom& aTagName, nsAtom& aAttribute,
     const nsAString& aAttributeValue, bool aCloneAllAttributes) {
@@ -4697,7 +4759,7 @@ nsresult HTMLEditor::CopyLastEditableChildStylesWithTransaction(
     lastClonedElement = InsertContainerWithTransaction(*lastClonedElement,
                                                        MOZ_KnownLive(*tagName));
     if (!lastClonedElement) {
-      NS_WARNING("EditorBase::InsertContainerWithTransaction() failed");
+      NS_WARNING("HTMLEditor::InsertContainerWithTransaction() failed");
       return NS_ERROR_FAILURE;
     }
     CloneAttributesWithTransaction(*lastClonedElement, *elementInPreviousBlock);

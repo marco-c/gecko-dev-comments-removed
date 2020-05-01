@@ -1483,50 +1483,6 @@ class EditorBase : public nsIEditor,
 
 
 
-
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> InsertContainerWithTransaction(
-      nsIContent& aContent, nsAtom& aTagName) {
-    return InsertContainerWithTransactionInternal(
-        aContent, aTagName, *nsGkAtoms::_empty, EmptyString());
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> InsertContainerWithTransaction(
-      nsIContent& aContent, nsAtom& aTagName, nsAtom& aAttribute,
-      const nsAString& aAttributeValue) {
-    return InsertContainerWithTransactionInternal(aContent, aTagName,
-                                                  aAttribute, aAttributeValue);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT already_AddRefed<nsIContent> SplitNodeWithTransaction(
       const EditorDOMPoint& aStartOfRightNode, ErrorResult& aResult);
 
@@ -1718,29 +1674,6 @@ class EditorBase : public nsIEditor,
   MOZ_CAN_RUN_SCRIPT nsresult DeleteTextWithTransaction(dom::Text& aTextNode,
                                                         uint32_t aOffset,
                                                         uint32_t aLength);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element>
-  InsertContainerWithTransactionInternal(nsIContent& aContent, nsAtom& aTagName,
-                                         nsAtom& aAttribute,
-                                         const nsAString& aAttributeValue);
 
   
 
