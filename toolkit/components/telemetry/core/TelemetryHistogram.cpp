@@ -156,8 +156,8 @@ struct HistogramInfo {
 
 
 struct HistogramSnapshotData {
-  nsTArray<base::Histogram::Sample> mBucketRanges;
-  nsTArray<base::Histogram::Count> mBucketCounts;
+  CopyableTArray<base::Histogram::Sample> mBucketRanges;
+  CopyableTArray<base::Histogram::Count> mBucketCounts;
   int64_t mSampleSum;  
 };
 
