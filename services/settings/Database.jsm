@@ -198,16 +198,32 @@ class Database {
       await executeIDB(
         "records",
         store => {
-          const range = IDBKeyRange.only(this.identifier);
-          const request = store.index("cid").openKeyCursor(range);
-          request.onsuccess = event => {
-            const cursor = event.target.result;
-            if (cursor) {
-              store.delete(cursor.primaryKey);
-              cursor.continue();
-            }
-          };
-          return request;
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          return store.delete(
+            IDBKeyRange.bound(
+              [this.identifier],
+              [this.identifier, []],
+              false,
+              true
+            )
+          );
         },
         { desc: "clear() in " + this.identifier }
       );
