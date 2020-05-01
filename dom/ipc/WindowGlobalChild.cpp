@@ -34,7 +34,7 @@
 
 #include "mozilla/dom/JSWindowActorBinding.h"
 #include "mozilla/dom/JSWindowActorChild.h"
-#include "mozilla/dom/JSActorService.h"
+#include "mozilla/dom/JSWindowActorService.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIURIMutator.h"
 
@@ -440,7 +440,7 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvDispatchSecurityPolicyViolation(
 }
 
 IPCResult WindowGlobalChild::RecvRawMessage(
-    const JSActorMessageMeta& aMeta, const ClonedMessageData& aData,
+    const JSWindowActorMessageMeta& aMeta, const ClonedMessageData& aData,
     const ClonedMessageData& aStack) {
   StructuredCloneData data;
   data.BorrowFromClonedMessageDataForChild(aData);
@@ -450,7 +450,7 @@ IPCResult WindowGlobalChild::RecvRawMessage(
   return IPC_OK();
 }
 
-void WindowGlobalChild::ReceiveRawMessage(const JSActorMessageMeta& aMeta,
+void WindowGlobalChild::ReceiveRawMessage(const JSWindowActorMessageMeta& aMeta,
                                           StructuredCloneData&& aData,
                                           StructuredCloneData&& aStack) {
   RefPtr<JSWindowActorChild> actor =

@@ -4,21 +4,24 @@
 
 
 
-#ifndef mozilla_dom_JSWindowActorProtocol_h
-#define mozilla_dom_JSWindowActorProtocol_h
+#ifndef mozilla_dom_JSWindowActorService_h
+#define mozilla_dom_JSWindowActorService_h
 
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/ErrorResult.h"
 #include "nsIURI.h"
+#include "nsRefPtrHashtable.h"
 #include "nsString.h"
 #include "nsTArray.h"
+#include "mozilla/dom/JSWindowActor.h"
+
 #include "nsIObserver.h"
 #include "nsIDOMEventListener.h"
+#include "mozilla/EventListenerManager.h"
 #include "mozilla/extensions/WebExtensionContentScript.h"
 
 namespace mozilla {
 namespace dom {
-
 struct WindowActorOptions;
 class JSWindowActorInfo;
 class EventTarget;
@@ -92,6 +95,41 @@ class JSWindowActorProtocol final : public nsIObserver,
   ChildSide mChild;
 
   RefPtr<extensions::MatchPatternSet> mURIMatcher;
+};
+
+class JSWindowActorService final {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(JSWindowActorService)
+
+  static already_AddRefed<JSWindowActorService> GetSingleton();
+
+  void RegisterWindowActor(const nsACString& aName,
+                           const WindowActorOptions& aOptions,
+                           ErrorResult& aRv);
+
+  void UnregisterWindowActor(const nsACString& aName);
+
+  
+  void LoadJSWindowActorInfos(nsTArray<JSWindowActorInfo>& aInfos);
+
+  
+  
+  void GetJSWindowActorInfos(nsTArray<JSWindowActorInfo>& aInfos);
+
+  
+  void RegisterChromeEventTarget(EventTarget* aTarget);
+
+  
+  static void UnregisterChromeEventTarget(EventTarget* aTarget);
+
+  already_AddRefed<JSWindowActorProtocol> GetProtocol(const nsACString& aName);
+
+ private:
+  JSWindowActorService();
+  ~JSWindowActorService();
+
+  nsTArray<EventTarget*> mChromeEventTargets;
+  nsRefPtrHashtable<nsCStringHashKey, JSWindowActorProtocol> mDescriptors;
 };
 
 }  
