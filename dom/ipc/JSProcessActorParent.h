@@ -41,6 +41,7 @@ class JSProcessActorParent final : public JSActor {
   ContentParent* Manager() const { return mManager; }
 
   void Init(const nsACString& aName, ContentParent* aManager);
+  void AfterDestroy();
 
  protected:
   
