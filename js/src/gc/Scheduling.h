@@ -352,7 +352,14 @@ static const size_t GCZoneAllocThresholdBase = 27 * 1024 * 1024;
 static const size_t GCMinNurseryBytes = 256 * 1024;
 
 
-static const double NonIncrementalFactor = 1.12;
+
+
+
+
+static const double SmallHeapIncrementalLimit = 1.40;
+
+
+static const double LargeHeapIncrementalLimit = 1.10;
 
 
 static const size_t ZoneAllocDelayBytes = 1024 * 1024;
@@ -451,7 +458,14 @@ class GCSchedulingTunables {
 
 
 
-  UnprotectedData<double> nonIncrementalFactor_;
+  UnprotectedData<double> smallHeapIncrementalLimit_;
+
+  
+
+
+
+
+  UnprotectedData<double> largeHeapIncrementalLimit_;
 
   
 
@@ -558,7 +572,12 @@ class GCSchedulingTunables {
   size_t gcMinNurseryBytes() const { return gcMinNurseryBytes_; }
   size_t gcMaxNurseryBytes() const { return gcMaxNurseryBytes_; }
   size_t gcZoneAllocThresholdBase() const { return gcZoneAllocThresholdBase_; }
-  double nonIncrementalFactor() const { return nonIncrementalFactor_; }
+  double smallHeapIncrementalLimit() const {
+    return smallHeapIncrementalLimit_;
+  }
+  double largeHeapIncrementalLimit() const {
+    return largeHeapIncrementalLimit_;
+  }
   size_t zoneAllocDelayBytes() const { return zoneAllocDelayBytes_; }
   const mozilla::TimeDuration& highFrequencyThreshold() const {
     return highFrequencyThreshold_;
@@ -724,7 +743,10 @@ class HeapSize {
 
 class HeapThreshold {
  protected:
-  HeapThreshold() : startBytes_(SIZE_MAX), sliceBytes_(SIZE_MAX) {}
+  HeapThreshold()
+      : startBytes_(SIZE_MAX),
+        incrementalLimitBytes_(SIZE_MAX),
+        sliceBytes_(SIZE_MAX) {}
 
   
   
@@ -734,19 +756,26 @@ class HeapThreshold {
 
   
   
+  size_t incrementalLimitBytes_;
+
+  
+  
   size_t sliceBytes_;
 
  public:
   size_t startBytes() const { return startBytes_; }
   size_t sliceBytes() const { return sliceBytes_; }
-  size_t nonIncrementalBytes(ZoneAllocator* zone,
-                             const GCSchedulingTunables& tunables) const;
+  size_t incrementalLimitBytes() const { return incrementalLimitBytes_; }
   double eagerAllocTrigger(bool highFrequencyGC) const;
 
   void setSliceThreshold(ZoneAllocator* zone, const HeapSize& heapSize,
                          const GCSchedulingTunables& tunables);
   void clearSliceThreshold() { sliceBytes_ = SIZE_MAX; }
   bool hasSliceThreshold() const { return sliceBytes_ != SIZE_MAX; }
+
+ protected:
+  void setIncrementalLimitFromStartBytes(size_t retainedBytes,
+                                         const GCSchedulingTunables& tunables);
 };
 
 
@@ -774,8 +803,9 @@ class GCHeapThreshold : public HeapThreshold {
 
 class MallocHeapThreshold : public HeapThreshold {
  public:
-  void updateStartThreshold(size_t lastBytes, size_t baseBytes,
-                            double growthFactor, const AutoLockGC& lock);
+  void updateStartThreshold(size_t lastBytes,
+                            const GCSchedulingTunables& tunables,
+                            const AutoLockGC& lock);
 
  private:
   static size_t computeZoneTriggerBytes(double growthFactor, size_t lastBytes,

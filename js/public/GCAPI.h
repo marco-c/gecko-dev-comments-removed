@@ -139,6 +139,7 @@ typedef enum JSGCParamKey {
 
 
 
+
   
 
 
@@ -246,7 +247,16 @@ typedef enum JSGCParamKey {
 
 
 
-  JSGC_NON_INCREMENTAL_FACTOR = 25,
+  JSGC_SMALL_HEAP_INCREMENTAL_LIMIT = 25,
+
+  
+
+
+
+
+
+
+  JSGC_LARGE_HEAP_INCREMENTAL_LIMIT = 26,
 
   
 

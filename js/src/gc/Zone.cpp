@@ -62,15 +62,12 @@ void js::ZoneAllocator::updateMemoryCountersOnGCStart() {
 void js::ZoneAllocator::updateGCStartThresholds(
     GCRuntime& gc, JSGCInvocationKind invocationKind,
     const js::AutoLockGC& lock) {
-  
-  
   bool isAtomsZone = JS::Zone::from(this)->isAtomsZone();
   gcHeapThreshold.updateStartThreshold(gcHeapSize.retainedBytes(),
                                        invocationKind, gc.tunables,
                                        gc.schedulingState, isAtomsZone, lock);
-  mallocHeapThreshold.updateStartThreshold(
-      mallocHeapSize.retainedBytes(), gc.tunables.mallocThresholdBase(),
-      gc.tunables.mallocGrowthFactor(), lock);
+  mallocHeapThreshold.updateStartThreshold(mallocHeapSize.retainedBytes(),
+                                           gc.tunables, lock);
 }
 
 void js::ZoneAllocator::setGCSliceThresholds(GCRuntime& gc) {

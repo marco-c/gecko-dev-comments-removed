@@ -1193,7 +1193,10 @@ pref("javascript.options.mem.gc_low_frequency_heap_growth", 150);
 pref("javascript.options.mem.gc_allocation_threshold_mb", 27);
 
 
-pref("javascript.options.mem.gc_non_incremental_factor", 112);
+pref("javascript.options.mem.gc_small_heap_incremental_limit", 140);
+
+
+pref("javascript.options.mem.gc_large_heap_incremental_limit", 110);
 
 
 pref("javascript.options.mem.gc_min_empty_chunk_count", 1);
