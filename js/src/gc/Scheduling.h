@@ -352,7 +352,7 @@ static const size_t GCZoneAllocThresholdBase = 27 * 1024 * 1024;
 static const size_t GCMinNurseryBytes = 256 * 1024;
 
 
-static const float NonIncrementalFactor = 1.12f;
+static const double NonIncrementalFactor = 1.12;
 
 
 static const size_t ZoneAllocDelayBytes = 1024 * 1024;
@@ -367,13 +367,13 @@ static const size_t SmallHeapSizeMaxBytes = 100 * 1024 * 1024;
 static const size_t LargeHeapSizeMinBytes = 500 * 1024 * 1024;
 
 
-static const float HighFrequencySmallHeapGrowth = 3.0f;
+static const double HighFrequencySmallHeapGrowth = 3.0;
 
 
-static const float HighFrequencyLargeHeapGrowth = 1.5f;
+static const double HighFrequencyLargeHeapGrowth = 1.5;
 
 
-static const float LowFrequencyHeapGrowth = 1.5f;
+static const double LowFrequencyHeapGrowth = 1.5;
 
 
 static const uint32_t MinEmptyChunkCount = 1;
@@ -397,13 +397,13 @@ static const bool IncrementalWeakMapMarkingEnabled = true;
 static const uint32_t NurseryFreeThresholdForIdleCollection = ChunkSize / 4;
 
 
-static const float NurseryFreeThresholdForIdleCollectionFraction = 0.25f;
+static const double NurseryFreeThresholdForIdleCollectionFraction = 0.25;
 
 
-static const float PretenureThreshold = 0.6f;
+static const double PretenureThreshold = 0.6;
 
 
-static const float PretenureGroupThreshold = 3000;
+static const double PretenureGroupThreshold = 3000;
 
 
 static const auto MinLastDitchGCPeriod = 60;  
@@ -412,7 +412,7 @@ static const auto MinLastDitchGCPeriod = 60;
 static const size_t MallocThresholdBase = 38 * 1024 * 1024;
 
 
-static const float MallocGrowthFactor = 1.5f;
+static const double MallocGrowthFactor = 1.5;
 
 }  
 
@@ -451,7 +451,7 @@ class GCSchedulingTunables {
 
 
 
-  UnprotectedData<float> nonIncrementalFactor_;
+  UnprotectedData<double> nonIncrementalFactor_;
 
   
 
@@ -480,8 +480,8 @@ class GCSchedulingTunables {
 
   MainThreadOrGCTaskData<size_t> smallHeapSizeMaxBytes_;
   MainThreadOrGCTaskData<size_t> largeHeapSizeMinBytes_;
-  MainThreadOrGCTaskData<float> highFrequencySmallHeapGrowth_;
-  MainThreadOrGCTaskData<float> highFrequencyLargeHeapGrowth_;
+  MainThreadOrGCTaskData<double> highFrequencySmallHeapGrowth_;
+  MainThreadOrGCTaskData<double> highFrequencyLargeHeapGrowth_;
 
   
 
@@ -489,7 +489,7 @@ class GCSchedulingTunables {
 
 
 
-  MainThreadOrGCTaskData<float> lowFrequencyHeapGrowth_;
+  MainThreadOrGCTaskData<double> lowFrequencyHeapGrowth_;
 
   
 
@@ -509,7 +509,7 @@ class GCSchedulingTunables {
 
 
   UnprotectedData<uint32_t> nurseryFreeThresholdForIdleCollection_;
-  UnprotectedData<float> nurseryFreeThresholdForIdleCollectionFraction_;
+  UnprotectedData<double> nurseryFreeThresholdForIdleCollectionFraction_;
 
   
 
@@ -519,7 +519,7 @@ class GCSchedulingTunables {
 
 
 
-  UnprotectedData<float> pretenureThreshold_;
+  UnprotectedData<double> pretenureThreshold_;
 
   
 
@@ -549,7 +549,7 @@ class GCSchedulingTunables {
 
 
 
-  MainThreadOrGCTaskData<float> mallocGrowthFactor_;
+  MainThreadOrGCTaskData<double> mallocGrowthFactor_;
 
  public:
   GCSchedulingTunables();
@@ -579,12 +579,12 @@ class GCSchedulingTunables {
   uint32_t nurseryFreeThresholdForIdleCollection() const {
     return nurseryFreeThresholdForIdleCollection_;
   }
-  float nurseryFreeThresholdForIdleCollectionFraction() const {
+  double nurseryFreeThresholdForIdleCollectionFraction() const {
     return nurseryFreeThresholdForIdleCollectionFraction_;
   }
 
-  bool attemptPretenuring() const { return pretenureThreshold_ < 1.0f; }
-  float pretenureThreshold() const { return pretenureThreshold_; }
+  bool attemptPretenuring() const { return pretenureThreshold_ < 1.0; }
+  double pretenureThreshold() const { return pretenureThreshold_; }
   uint32_t pretenureGroupThreshold() const { return pretenureGroupThreshold_; }
 
   mozilla::TimeDuration minLastDitchGCPeriod() const {
@@ -592,7 +592,7 @@ class GCSchedulingTunables {
   }
 
   size_t mallocThresholdBase() const { return mallocThresholdBase_; }
-  float mallocGrowthFactor() const { return mallocGrowthFactor_; }
+  double mallocGrowthFactor() const { return mallocGrowthFactor_; }
 
   MOZ_MUST_USE bool setParameter(JSGCParamKey key, uint32_t value,
                                  const AutoLockGC& lock);
@@ -601,9 +601,9 @@ class GCSchedulingTunables {
  private:
   void setSmallHeapSizeMaxBytes(size_t value);
   void setLargeHeapSizeMinBytes(size_t value);
-  void setHighFrequencySmallHeapGrowth(float value);
-  void setHighFrequencyLargeHeapGrowth(float value);
-  void setLowFrequencyHeapGrowth(float value);
+  void setHighFrequencySmallHeapGrowth(double value);
+  void setHighFrequencyLargeHeapGrowth(double value);
+  void setLowFrequencyHeapGrowth(double value);
   void setMinEmptyChunkCount(uint32_t value);
   void setMaxEmptyChunkCount(uint32_t value);
 };
@@ -741,7 +741,7 @@ class HeapThreshold {
   size_t sliceBytes() const { return sliceBytes_; }
   size_t nonIncrementalBytes(ZoneAllocator* zone,
                              const GCSchedulingTunables& tunables) const;
-  float eagerAllocTrigger(bool highFrequencyGC) const;
+  double eagerAllocTrigger(bool highFrequencyGC) const;
 
   void setSliceThreshold(ZoneAllocator* zone, const HeapSize& heapSize,
                          const GCSchedulingTunables& tunables);
@@ -760,10 +760,10 @@ class GCHeapThreshold : public HeapThreshold {
                             const AutoLockGC& lock);
 
  private:
-  static float computeZoneHeapGrowthFactorForHeapSize(
+  static double computeZoneHeapGrowthFactorForHeapSize(
       size_t lastBytes, const GCSchedulingTunables& tunables,
       const GCSchedulingState& state);
-  static size_t computeZoneTriggerBytes(float growthFactor, size_t lastBytes,
+  static size_t computeZoneTriggerBytes(double growthFactor, size_t lastBytes,
                                         JSGCInvocationKind gckind,
                                         const GCSchedulingTunables& tunables,
                                         const AutoLockGC& lock);
@@ -775,10 +775,10 @@ class GCHeapThreshold : public HeapThreshold {
 class MallocHeapThreshold : public HeapThreshold {
  public:
   void updateStartThreshold(size_t lastBytes, size_t baseBytes,
-                            float growthFactor, const AutoLockGC& lock);
+                            double growthFactor, const AutoLockGC& lock);
 
  private:
-  static size_t computeZoneTriggerBytes(float growthFactor, size_t lastBytes,
+  static size_t computeZoneTriggerBytes(double growthFactor, size_t lastBytes,
                                         size_t baseBytes,
                                         const AutoLockGC& lock);
 };
