@@ -84,7 +84,7 @@ struct IconData {
   enum AsyncFaviconFetchMode fetchMode;
   uint16_t status;  
   uint8_t rootIcon;
-  nsTArray<IconPayload> payloads;
+  CopyableTArray<IconPayload> payloads;
 };
 
 
