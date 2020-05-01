@@ -13,41 +13,12 @@
 importScripts(
   "resource://gre/modules/workers/require.js",
   "resource://gre/modules/CanonicalJSON.jsm",
+  "resource://services-settings/IDBHelpers.jsm",
   "resource://gre/modules/third_party/jsesc/jsesc.js"
 );
 
-const IDB_NAME = "remote-settings";
-const IDB_VERSION = 2;
 const IDB_RECORDS_STORE = "records";
 const IDB_TIMESTAMPS_STORE = "timestamps";
-
-
-
-
-
-
-
-
-
-function bulkOperationHelper(store, operation, list, listIndex = 0) {
-  const CHUNK_LENGTH = 250;
-  const max = Math.min(listIndex + CHUNK_LENGTH, list.length);
-  let request;
-  for (; listIndex < max; listIndex++) {
-    request = store[operation](list[listIndex]);
-  }
-  if (listIndex < list.length) {
-    
-    request.onsuccess = bulkOperationHelper.bind(
-      null,
-      store,
-      operation,
-      list,
-      listIndex
-    );
-  }
-  
-}
 
 const Agent = {
   
@@ -186,85 +157,32 @@ async function loadJSONDump(bucket, collection) {
 async function importDumpIDB(bucket, collection, records) {
   
   
-  const db = await openIDB(IDB_NAME, IDB_VERSION);
+  const db = await IDBHelpers.openIDB(false );
 
   
   
   const cid = bucket + "/" + collection;
-  await executeIDB(db, IDB_RECORDS_STORE, store => {
-    
-    records.forEach(item => {
-      item._cid = cid;
-    });
-    bulkOperationHelper(store, "put", records);
+  
+  records.forEach(item => {
+    item._cid = cid;
   });
+  await IDBHelpers.executeIDB(
+    db,
+    IDB_RECORDS_STORE,
+    "readwrite",
+    (store, rejectTransaction) => {
+      IDBHelpers.bulkOperationHelper(store, rejectTransaction, "put", records);
+    }
+  ).promise;
 
   
   const timestamp =
     records.length === 0
       ? 0
       : Math.max(...records.map(record => record.last_modified));
-  await executeIDB(db, IDB_TIMESTAMPS_STORE, store =>
+  await IDBHelpers.executeIDB(db, IDB_TIMESTAMPS_STORE, "readwrite", store =>
     store.put({ cid, value: timestamp })
-  );
+  ).promise;
   
   db.close();
-}
-
-
-
-
-class IndexedDBError extends Error {
-  constructor(error) {
-    super(`IndexedDB: ${error.message}`);
-    this.name = error.name;
-    this.stack = error.stack;
-  }
-}
-
-
-
-
-async function openIDB(dbname, version) {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(dbname, version);
-    request.onupgradeneeded = () => {
-      
-      reject(
-        new Error(
-          `IndexedDB: Error accessing ${dbname} Chrome IDB at version ${version}`
-        )
-      );
-    };
-    request.onerror = event => reject(new IndexedDBError(event.target.error));
-    request.onsuccess = event => {
-      const db = event.target.result;
-      resolve(db);
-    };
-  });
-}
-
-
-
-
-
-
-
-
-async function executeIDB(db, storeName, callback) {
-  const mode = "readwrite";
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction([storeName], mode);
-    const store = transaction.objectStore(storeName);
-    let result;
-    try {
-      result = callback(store);
-    } catch (e) {
-      transaction.abort();
-      reject(new IndexedDBError(e));
-    }
-    transaction.onerror = event =>
-      reject(new IndexedDBError(event.target.error));
-    transaction.oncomplete = event => resolve(result);
-  });
 }

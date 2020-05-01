@@ -7,10 +7,9 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["indexedDB"]);
-
 XPCOMUtils.defineLazyModuleGetters(this, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
+  IDBHelpers: "resource://services-settings/IDBHelpers.jsm",
   CommonUtils: "resource://services-common/utils.js",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
 });
@@ -18,72 +17,11 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 var EXPORTED_SYMBOLS = ["Database"];
 
 
-const DB_NAME = "remote-settings";
-const DB_VERSION = 2;
-
-
-
-
-class IndexedDBError extends Error {
-  constructor(error, method = "", identifier = "") {
-    super(`IndexedDB: ${identifier} ${method} ${error.message}`);
-    this.name = error.name;
-    this.stack = error.stack;
-  }
-}
-
-class ShutdownError extends IndexedDBError {
-  constructor(error, method = "", identifier = "") {
-    if (typeof error == "string") {
-      error = new Error(error);
-    }
-    super(error, method, identifier);
-  }
-}
-
-
-
-
-
-
-
-
-
-function bulkOperationHelper(store, operation, list, listIndex = 0) {
-  const CHUNK_LENGTH = 250;
-  const max = Math.min(listIndex + CHUNK_LENGTH, list.length);
-  let request;
-  for (; listIndex < max; listIndex++) {
-    request = store[operation](list[listIndex]);
-  }
-  if (listIndex < list.length) {
-    
-    request.onsuccess = bulkOperationHelper.bind(
-      null,
-      store,
-      operation,
-      list,
-      listIndex
-    );
-  }
-  
-}
-
-
 
 
 
 
 class Database {
-  
-  static get IDBError() {
-    return IndexedDBError;
-  }
-
-  static get ShutdownError() {
-    return ShutdownError;
-  }
-
   constructor(identifier) {
     ensureShutdownBlocker();
     this.identifier = identifier;
@@ -95,7 +33,7 @@ class Database {
     try {
       await executeIDB(
         "records",
-        store => {
+        (store, rejectTransaction) => {
           
           if (ObjectUtils.isEmpty(filters)) {
             const range = IDBKeyRange.only(this.identifier);
@@ -110,20 +48,24 @@ class Database {
             .openCursor(IDBKeyRange.only(this.identifier));
           const objFilters = transformSubObjectFilters(filters);
           request.onsuccess = event => {
-            const cursor = event.target.result;
-            if (cursor) {
-              const { value } = cursor;
-              if (filterObject(objFilters, value)) {
-                results.push(value);
+            try {
+              const cursor = event.target.result;
+              if (cursor) {
+                const { value } = cursor;
+                if (filterObject(objFilters, value)) {
+                  results.push(value);
+                }
+                cursor.continue();
               }
-              cursor.continue();
+            } catch (ex) {
+              rejectTransaction(ex);
             }
           };
         },
         { mode: "readonly" }
       );
     } catch (e) {
-      throw new IndexedDBError(e, "list()", this.identifier);
+      throw new IDBHelpers.IndexedDBError(e, "list()", this.identifier);
     }
     
     for (const result of results) {
@@ -137,9 +79,10 @@ class Database {
     try {
       await executeIDB(
         "records",
-        store => {
-          bulkOperationHelper(
+        (store, rejectTransaction) => {
+          IDBHelpers.bulkOperationHelper(
             store,
+            rejectTransaction,
             "put",
             toInsert.map(item => {
               return Object.assign({ _cid }, item);
@@ -149,7 +92,7 @@ class Database {
         { desc: "importBulk() in " + this.identifier }
       );
     } catch (e) {
-      throw new IndexedDBError(e, "importBulk()", this.identifier);
+      throw new IDBHelpers.IndexedDBError(e, "importBulk()", this.identifier);
     }
   }
 
@@ -158,9 +101,10 @@ class Database {
     try {
       await executeIDB(
         "records",
-        store => {
-          bulkOperationHelper(
+        (store, rejectTransaction) => {
+          IDBHelpers.bulkOperationHelper(
             store,
+            rejectTransaction,
             "delete",
             toDelete.map(item => {
               return [_cid, item.id];
@@ -170,7 +114,7 @@ class Database {
         { desc: "deleteBulk() in " + this.identifier }
       );
     } catch (e) {
-      throw new IndexedDBError(e, "deleteBulk()", this.identifier);
+      throw new IDBHelpers.IndexedDBError(e, "deleteBulk()", this.identifier);
     }
   }
 
@@ -185,7 +129,11 @@ class Database {
         { mode: "readonly" }
       );
     } catch (e) {
-      throw new IndexedDBError(e, "getLastModified()", this.identifier);
+      throw new IDBHelpers.IndexedDBError(
+        e,
+        "getLastModified()",
+        this.identifier
+      );
     }
     return entry ? entry.value : null;
   }
@@ -205,7 +153,11 @@ class Database {
         { desc: "saveLastModified() in " + this.identifier }
       );
     } catch (e) {
-      throw new IndexedDBError(e, "saveLastModified()", this.identifier);
+      throw new IDBHelpers.IndexedDBError(
+        e,
+        "saveLastModified()",
+        this.identifier
+      );
     }
     return value;
   }
@@ -221,7 +173,7 @@ class Database {
         { mode: "readonly" }
       );
     } catch (e) {
-      throw new IndexedDBError(e, "getMetadata()", this.identifier);
+      throw new IDBHelpers.IndexedDBError(e, "getMetadata()", this.identifier);
     }
     return entry ? entry.metadata : null;
   }
@@ -235,7 +187,7 @@ class Database {
       );
       return metadata;
     } catch (e) {
-      throw new IndexedDBError(e, "saveMetadata()", this.identifier);
+      throw new IDBHelpers.IndexedDBError(e, "saveMetadata()", this.identifier);
     }
   }
 
@@ -260,7 +212,7 @@ class Database {
         { desc: "clear() in " + this.identifier }
       );
     } catch (e) {
-      throw new IndexedDBError(e, "clear()", this.identifier);
+      throw new IDBHelpers.IndexedDBError(e, "clear()", this.identifier);
     }
   }
 
@@ -281,7 +233,7 @@ class Database {
         { desc: "create() in " + this.identifier }
       );
     } catch (e) {
-      throw new IndexedDBError(e, "create()", this.identifier);
+      throw new IDBHelpers.IndexedDBError(e, "create()", this.identifier);
     }
     return record;
   }
@@ -296,7 +248,7 @@ class Database {
         { desc: "update() in " + this.identifier }
       );
     } catch (e) {
-      throw new IndexedDBError(e, "update()", this.identifier);
+      throw new IDBHelpers.IndexedDBError(e, "update()", this.identifier);
     }
   }
 
@@ -310,7 +262,7 @@ class Database {
         { desc: "delete() in " + this.identifier }
       );
     } catch (e) {
-      throw new IndexedDBError(e, "delete()", this.identifier);
+      throw new IDBHelpers.IndexedDBError(e, "delete()", this.identifier);
     }
   }
 }
@@ -324,56 +276,13 @@ let gDBPromise = null;
 
 
 
-async function openIDB(callback) {
+async function openIDB() {
   
   
   
   if (!gDBPromise) {
     
-    gDBPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-      request.onupgradeneeded = event => {
-        
-        const transaction = event.target.transaction;
-        transaction.onabort = event => {
-          const error =
-            event.target.error ||
-            transaction.error ||
-            new DOMException("The operation has been aborted", "AbortError");
-          reject(new IndexedDBError(error, "open()"));
-        };
-
-        const db = event.target.result;
-        db.onerror = event => reject(new IndexedDBError(event.target.error));
-
-        if (event.oldVersion < 1) {
-          
-          const recordsStore = db.createObjectStore("records", {
-            keyPath: ["_cid", "id"],
-          });
-          
-          recordsStore.createIndex("cid", "_cid");
-          
-          recordsStore.createIndex("last_modified", ["_cid", "last_modified"]);
-          
-          db.createObjectStore("timestamps", {
-            keyPath: "cid",
-          });
-        }
-        if (event.oldVersion < 2) {
-          
-          db.createObjectStore("collections", {
-            keyPath: "cid",
-          });
-        }
-      };
-      request.onerror = event =>
-        reject(new IndexedDBError(event.target.error, "open()"));
-      request.onsuccess = event => {
-        const db = event.target.result;
-        resolve(db);
-      };
-    });
+    gDBPromise = IDBHelpers.openIDB();
   }
   let db = await gDBPromise;
   if (!gDB) {
@@ -400,7 +309,10 @@ async function executeIDB(storeName, callback, options = {}) {
     
     
     if (gShutdownStarted || Services.startup.shuttingDown) {
-      throw new ShutdownError("The application is shutting down", "execute()");
+      throw new IDBHelpers.ShutdownError(
+        "The application is shutting down",
+        "execute()"
+      );
     }
     await openIDB();
   } else {
@@ -408,44 +320,41 @@ async function executeIDB(storeName, callback, options = {}) {
     
     await Promise.resolve();
   }
-  let db = gDB;
-  const { mode = "readwrite" } = options;
-  const transaction = db.transaction([storeName], mode);
 
-  let promise = new Promise((resolve, reject) => {
-    const store = transaction.objectStore(storeName);
-    let result;
-    try {
-      result = callback(store);
-    } catch (e) {
-      transaction.abort();
-      reject(new IndexedDBError(e, "execute()", storeName));
-    }
-    transaction.onerror = event =>
-      reject(new IndexedDBError(event.target.error, "execute()"));
-    transaction.oncomplete = event => resolve(result);
-  });
+  
+  if (!gDB && (gShutdownStarted || Services.startup.shuttingDown)) {
+    throw new IDBHelpers.ShutdownError(
+      "The application is shutting down",
+      "execute()"
+    );
+  }
+
+  
+  const { mode = "readwrite", desc = "" } = options;
+  let { promise, transaction } = IDBHelpers.executeIDB(
+    gDB,
+    storeName,
+    mode,
+    callback,
+    desc
+  );
+
   
   
   
+  
+  
+  
+  let finishedFn;
   if (mode == "readonly") {
     gPendingReadOnlyTransactions.add(transaction);
-    promise
-      .finally(() => gPendingReadOnlyTransactions.delete(transaction))
-      
-      
-      
-      
-      .catch(() => {});
+    finishedFn = () => gPendingReadOnlyTransactions.delete(transaction);
   } else {
-    let obj = { promise, desc: options.desc };
+    let obj = { promise, desc };
     gPendingWriteOperations.add(obj);
-    promise
-      .finally(() => gPendingWriteOperations.delete(obj))
-      
-      .catch(() => {});
+    finishedFn = () => gPendingWriteOperations.delete(obj);
   }
-  return promise;
+  return promise.finally(finishedFn);
 }
 
 function _isUndefined(value) {
@@ -519,8 +428,50 @@ function sortObjects(order, list) {
   });
 }
 
-let gShutdownBlocker = false;
+
+
+Database._executeIDB = executeIDB;
+
 let gShutdownStarted = false;
+
+Database._cancelShutdown = () => {
+  gShutdownStarted = false;
+};
+
+let gShutdownBlocker = false;
+Database._shutdownHandler = () => {
+  gShutdownStarted = true;
+  const NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR = 0x80660006;
+  
+  
+  for (let transaction of Array.from(gPendingReadOnlyTransactions)) {
+    try {
+      transaction.abort();
+    } catch (ex) {
+      
+
+      
+      
+      
+      
+      if (ex.result != NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR) {
+        
+        Cu.reportError(ex);
+      }
+    }
+  }
+  if (gDB) {
+    
+    
+    gDB.close();
+    gDB = null;
+  }
+  gDBPromise = null;
+  return Promise.allSettled(
+    Array.from(gPendingWriteOperations).map(op => op.promise)
+  );
+};
+
 function ensureShutdownBlocker() {
   if (gShutdownBlocker) {
     return;
@@ -528,38 +479,7 @@ function ensureShutdownBlocker() {
   gShutdownBlocker = true;
   AsyncShutdown.profileBeforeChange.addBlocker(
     "RemoteSettingsClient - finish IDB access.",
-    () => {
-      gShutdownStarted = true;
-      const NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR = 0x80660006;
-      
-      
-      for (let transaction of Array.from(gPendingReadOnlyTransactions)) {
-        try {
-          transaction.abort();
-        } catch (ex) {
-          
-
-          
-          
-          
-          
-          if (ex.result != NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR) {
-            
-            Cu.reportError(ex);
-          }
-        }
-      }
-      if (gDB) {
-        
-        
-        gDB.close();
-        gDB = null;
-      }
-      gDBPromise = null;
-      return Promise.allSettled(
-        Array.from(gPendingWriteOperations).map(op => op.promise)
-      );
-    },
+    Database._shutdownHandler,
     {
       fetchState() {
         return Array.from(gPendingWriteOperations).map(op => op.desc);
