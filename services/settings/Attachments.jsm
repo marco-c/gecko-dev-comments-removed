@@ -78,6 +78,9 @@ class Downloader {
 
 
 
+
+
+
   async download(record, options) {
     let {
       retries,
@@ -85,6 +88,7 @@ class Downloader {
       attachmentId = record?.id,
       useCache = false,
       fallbackToCache = false,
+      fallbackToDump = false,
     } = options || {};
 
     if (!useCache) {
@@ -133,6 +137,28 @@ class Downloader {
 
     
     
+    let dumpInfo;
+    if (fallbackToDump && record) {
+      try {
+        dumpInfo = await this._readAttachmentDump(attachmentId);
+        
+        
+        
+        if (record.attachment.hash === dumpInfo.record.attachment.hash) {
+          return {
+            buffer: await dumpInfo.readBuffer(),
+            record: dumpInfo.record,
+            _source: "dump_match",
+          };
+        }
+      } catch (e) {
+        fallbackToDump = false;
+        errorIfAllFails = e;
+      }
+    }
+
+    
+    
     if (record && record.attachment) {
       try {
         const newBuffer = await this.downloadAsBytes(record, {
@@ -161,6 +187,20 @@ class Downloader {
       const { size, hash } = cachedRecord.attachment;
       if (await RemoteSettingsWorker.checkContentHash(buffer, size, hash)) {
         return { buffer, record: cachedRecord, _source: "cache_fallback" };
+      }
+    }
+
+    
+    if (fallbackToDump) {
+      try {
+        dumpInfo = dumpInfo || (await this._readAttachmentDump(attachmentId));
+        return {
+          buffer: await dumpInfo.readBuffer(),
+          record: dumpInfo.record,
+          _source: "dump_fallback",
+        };
+      } catch (e) {
+        errorIfAllFails = e;
       }
     }
 
@@ -317,6 +357,30 @@ class Downloader {
     }
     return resp.arrayBuffer();
   }
+
+  async _readAttachmentDump(attachmentId) {
+    async function fetchResource(resourceUrl) {
+      try {
+        return await fetch(resourceUrl);
+      } catch (e) {
+        throw new Downloader.DownloadError(resourceUrl);
+      }
+    }
+    const resourceUrlPrefix =
+      Downloader._RESOURCE_BASE_URL + "/" + this.folders.join("/") + "/";
+    const recordUrl = `${resourceUrlPrefix}${attachmentId}.meta.json`;
+    const attachmentUrl = `${resourceUrlPrefix}${attachmentId}`;
+    const record = await (await fetchResource(recordUrl)).json();
+    return {
+      record,
+      async readBuffer() {
+        return (await fetchResource(attachmentUrl)).arrayBuffer();
+      },
+    };
+  }
+
+  
+  static _RESOURCE_BASE_URL = "resource://app/defaults";
 
   async _makeDirs() {
     const dirPath = OS.Path.join(
