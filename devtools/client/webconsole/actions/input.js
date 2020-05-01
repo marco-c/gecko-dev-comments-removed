@@ -66,7 +66,7 @@ function evaluateExpression(expression, from = "input") {
     }
 
     
-    dispatch(
+    const { messages } = dispatch(
       messagesActions.messagesAdd([
         new ConsoleCommand({
           messageText: expression,
@@ -74,6 +74,8 @@ function evaluateExpression(expression, from = "input") {
         }),
       ])
     );
+    const [consoleCommandMessage] = messages;
+
     dispatch({
       type: EVALUATE_EXPRESSION,
       expression,
@@ -97,6 +99,34 @@ function evaluateExpression(expression, from = "input") {
         mapped,
       })
       .then(onSettled, onSettled);
+
+    
+    
+    
+    const serverConsoleCommandTimestamp =
+      response.startTime ||
+      (response.resultID && Number(response.resultID.replace(/\-\d*$/, ""))) ||
+      null;
+
+    
+    
+    
+    if (
+      serverConsoleCommandTimestamp &&
+      consoleCommandMessage.timeStamp > serverConsoleCommandTimestamp
+    ) {
+      
+      
+      dispatch(messagesActions.messageRemove(consoleCommandMessage.id));
+      dispatch(
+        messagesActions.messagesAdd([
+          new ConsoleCommand({
+            messageText: expression,
+            timeStamp: serverConsoleCommandTimestamp,
+          }),
+        ])
+      );
+    }
 
     return dispatch(onExpressionEvaluated(response));
   };
