@@ -361,16 +361,16 @@ static const size_t ZoneAllocDelayBytes = 1024 * 1024;
 static const auto HighFrequencyThreshold = 1;  
 
 
-static const size_t HighFrequencyLowLimitBytes = 100 * 1024 * 1024;
+static const size_t SmallHeapSizeMaxBytes = 100 * 1024 * 1024;
 
 
-static const size_t HighFrequencyHighLimitBytes = 500 * 1024 * 1024;
+static const size_t LargeHeapSizeMinBytes = 500 * 1024 * 1024;
 
 
-static const float HighFrequencyHeapGrowthMax = 3.0f;
+static const float HighFrequencySmallHeapGrowth = 3.0f;
 
 
-static const float HighFrequencyHeapGrowthMin = 1.5f;
+static const float HighFrequencyLargeHeapGrowth = 1.5f;
 
 
 static const float LowFrequencyHeapGrowth = 1.5f;
@@ -478,10 +478,10 @@ class GCSchedulingTunables {
 
 
 
-  MainThreadOrGCTaskData<size_t> highFrequencyLowLimitBytes_;
-  MainThreadOrGCTaskData<size_t> highFrequencyHighLimitBytes_;
-  MainThreadOrGCTaskData<float> highFrequencyHeapGrowthMax_;
-  MainThreadOrGCTaskData<float> highFrequencyHeapGrowthMin_;
+  MainThreadOrGCTaskData<size_t> smallHeapSizeMaxBytes_;
+  MainThreadOrGCTaskData<size_t> largeHeapSizeMinBytes_;
+  MainThreadOrGCTaskData<float> highFrequencySmallHeapGrowth_;
+  MainThreadOrGCTaskData<float> highFrequencyLargeHeapGrowth_;
 
   
 
@@ -563,17 +563,13 @@ class GCSchedulingTunables {
   const mozilla::TimeDuration& highFrequencyThreshold() const {
     return highFrequencyThreshold_;
   }
-  size_t highFrequencyLowLimitBytes() const {
-    return highFrequencyLowLimitBytes_;
+  size_t smallHeapSizeMaxBytes() const { return smallHeapSizeMaxBytes_; }
+  size_t largeHeapSizeMinBytes() const { return largeHeapSizeMinBytes_; }
+  double highFrequencySmallHeapGrowth() const {
+    return highFrequencySmallHeapGrowth_;
   }
-  size_t highFrequencyHighLimitBytes() const {
-    return highFrequencyHighLimitBytes_;
-  }
-  double highFrequencyHeapGrowthMax() const {
-    return highFrequencyHeapGrowthMax_;
-  }
-  double highFrequencyHeapGrowthMin() const {
-    return highFrequencyHeapGrowthMin_;
+  double highFrequencyLargeHeapGrowth() const {
+    return highFrequencyLargeHeapGrowth_;
   }
   double lowFrequencyHeapGrowth() const { return lowFrequencyHeapGrowth_; }
   unsigned minEmptyChunkCount(const AutoLockGC&) const {
@@ -603,10 +599,10 @@ class GCSchedulingTunables {
   void resetParameter(JSGCParamKey key, const AutoLockGC& lock);
 
  private:
-  void setHighFrequencyLowLimit(size_t value);
-  void setHighFrequencyHighLimit(size_t value);
-  void setHighFrequencyHeapGrowthMin(float value);
-  void setHighFrequencyHeapGrowthMax(float value);
+  void setSmallHeapSizeMaxBytes(size_t value);
+  void setLargeHeapSizeMinBytes(size_t value);
+  void setHighFrequencySmallHeapGrowth(float value);
+  void setHighFrequencyLargeHeapGrowth(float value);
   void setLowFrequencyHeapGrowth(float value);
   void setMinEmptyChunkCount(uint32_t value);
   void setMaxEmptyChunkCount(uint32_t value);
@@ -889,6 +885,21 @@ class MemoryTracker {
 };
 
 #endif  
+
+static inline double LinearInterpolate(double x, double x0, double y0,
+                                       double x1, double y1) {
+  MOZ_ASSERT(x0 < x1);
+
+  if (x < x0) {
+    return y0;
+  }
+
+  if (x < x1) {
+    return y0 + (y1 - y0) * ((x - x0) / (x1 - x0));
+  }
+
+  return y1;
+}
 
 }  
 }  

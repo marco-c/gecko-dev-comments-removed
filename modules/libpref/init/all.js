@@ -1175,16 +1175,16 @@ pref("javascript.options.mem.gc_compacting", true);
 pref("javascript.options.mem.gc_high_frequency_time_limit_ms", 1000);
 
 
-pref("javascript.options.mem.gc_high_frequency_low_limit_mb", 100);
+pref("javascript.options.mem.gc_small_heap_size_max_mb", 100);
 
 
-pref("javascript.options.mem.gc_high_frequency_high_limit_mb", 500);
+pref("javascript.options.mem.gc_large_heap_size_min_mb", 500);
 
 
-pref("javascript.options.mem.gc_high_frequency_heap_growth_max", 300);
+pref("javascript.options.mem.gc_high_frequency_small_heap_growth", 300);
 
 
-pref("javascript.options.mem.gc_high_frequency_heap_growth_min", 150);
+pref("javascript.options.mem.gc_high_frequency_large_heap_growth", 150);
 
 
 pref("javascript.options.mem.gc_low_frequency_heap_growth", 150);

@@ -12,6 +12,6 @@ gc();
 
 
 
-gcparam('highFrequencyHighLimit', 99);
+gcparam('largeHeapSizeMin', 99);
 
 

@@ -154,7 +154,11 @@ typedef enum JSGCParamKey {
 
 
 
-  JSGC_HIGH_FREQUENCY_LOW_LIMIT = 12,
+
+
+
+
+  JSGC_SMALL_HEAP_SIZE_MAX = 12,
 
   
 
@@ -162,7 +166,11 @@ typedef enum JSGCParamKey {
 
 
 
-  JSGC_HIGH_FREQUENCY_HIGH_LIMIT = 13,
+
+
+
+
+  JSGC_LARGE_HEAP_SIZE_MIN = 13,
 
   
 
@@ -170,7 +178,7 @@ typedef enum JSGCParamKey {
 
 
 
-  JSGC_HIGH_FREQUENCY_HEAP_GROWTH_MAX = 14,
+  JSGC_HIGH_FREQUENCY_SMALL_HEAP_GROWTH = 14,
 
   
 
@@ -178,9 +186,12 @@ typedef enum JSGCParamKey {
 
 
 
-  JSGC_HIGH_FREQUENCY_HEAP_GROWTH_MIN = 15,
+  JSGC_HIGH_FREQUENCY_LARGE_HEAP_GROWTH = 15,
 
   
+
+
+
 
 
 
