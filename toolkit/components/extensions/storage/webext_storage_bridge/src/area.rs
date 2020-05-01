@@ -186,6 +186,16 @@ impl StorageSyncArea {
         )
     }
 
+    xpcom_method!(
+        wipe_all => WipeAll(
+            callback: *const mozIExtensionStorageCallback
+        )
+    );
+    
+    fn wipe_all(&self, callback: &mozIExtensionStorageCallback) -> Result<()> {
+        self.dispatch(StorageOp::WipeAll, callback)
+    }
+
     xpcom_method!(teardown => Teardown(callback: *const mozIExtensionStorageCallback));
     
     fn teardown(&self, callback: &mozIExtensionStorageCallback) -> Result<()> {
