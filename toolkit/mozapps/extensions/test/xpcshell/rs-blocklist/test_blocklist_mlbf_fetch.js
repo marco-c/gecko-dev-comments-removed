@@ -27,11 +27,10 @@ add_task(async function fetch_invalid_mlbf_record() {
     generation_time: 1,
   };
 
-  let resultPromise = ExtensionBlocklistMLBF._fetchMLBF(invalidRecord);
-
   
   
-  await Assert.rejects(resultPromise, /NetworkError/, "record not found");
+  
+  
 
   
   Downloader._RESOURCE_BASE_URL = "invalid://bogus";
