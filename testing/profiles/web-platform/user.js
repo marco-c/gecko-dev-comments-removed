@@ -49,3 +49,6 @@ user_pref("media.block-autoplay-until-in-foreground", false);
 
 user_pref("browser.cache.offline.storage.enable", true);
 user_pref("browser.cache.offline.enable", true);
+
+
+user_pref("network.cookie.cookieBehavior", 4);
