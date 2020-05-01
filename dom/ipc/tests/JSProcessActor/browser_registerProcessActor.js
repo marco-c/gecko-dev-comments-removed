@@ -1,0 +1,16 @@
+
+
+"use strict";
+
+declTest("double register", {
+  async test() {
+    SimpleTest.doesThrow(
+      () =>
+        ChromeUtils.registerContentActor(
+          "TestProcessActor",
+          processActorOptions
+        ),
+      "Should throw if register has duplicate name."
+    );
+  },
+});
