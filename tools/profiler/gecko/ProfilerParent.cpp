@@ -71,10 +71,8 @@ ProfilerParentTracker::ProfilerParentTracker() {
 ProfilerParentTracker::~ProfilerParentTracker() {
   MOZ_COUNT_DTOR(ProfilerParentTracker);
 
-  nsTArray<ProfilerParent*> parents;
-  parents = mProfilerParents;
   
-  for (ProfilerParent* profilerParent : parents) {
+  for (ProfilerParent* profilerParent : mProfilerParents.Clone()) {
     if (!profilerParent->mDestroyed) {
       
       
