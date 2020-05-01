@@ -138,6 +138,7 @@ const PREF_BLOCKLIST_ENABLED = "extensions.blocklist.enabled";
 const PREF_BLOCKLIST_LEVEL = "extensions.blocklist.level";
 const PREF_BLOCKLIST_SUPPRESSUI = "extensions.blocklist.suppressUI";
 const PREF_BLOCKLIST_USE_MLBF = "extensions.blocklist.useMLBF";
+const PREF_BLOCKLIST_USE_MLBF_STASHES = "extensions.blocklist.useMLBF.stashes";
 const PREF_EM_LOGGING_ENABLED = "extensions.logging.enabled";
 const URI_BLOCKLIST_DIALOG =
   "chrome://mozapps/content/extensions/blocklist.xhtml";
@@ -1342,6 +1343,25 @@ this.ExtensionBlocklistRS = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 this.ExtensionBlocklistMLBF = {
   RS_ATTACHMENT_ID: "addons-mlbf.bin",
 
@@ -1386,6 +1406,7 @@ this.ExtensionBlocklistMLBF = {
     const updatePromise = (async () => {
       if (!gBlocklistEnabled) {
         this._mlbfData = null;
+        this._stashes = null;
         return;
       }
       let records = await this._client.get();
@@ -1393,9 +1414,39 @@ this.ExtensionBlocklistMLBF = {
         return;
       }
 
-      let mlbfRecord = records.find(
-        r => r.attachment_type == "bloomfilter-full" && r.attachment
-      );
+      let mlbfRecords = records
+        .filter(r => r.attachment)
+        
+        .sort((a, b) => b.generation_time - a.generation_time);
+      let mlbfRecord;
+      if (this.stashesEnabled) {
+        mlbfRecord = mlbfRecords.find(
+          r => r.attachment_type == "bloomfilter-base"
+        );
+        this._stashes = records
+          .filter(({ stash }) => {
+            return (
+              
+              stash &&
+              
+              Array.isArray(stash.blocked) &&
+              Array.isArray(stash.unblocked)
+            );
+          })
+          
+          .sort((a, b) => b.stash_time - a.stash_time)
+          .map(({ stash }) => ({
+            blocked: new Set(stash.blocked),
+            unblocked: new Set(stash.unblocked),
+          }));
+      } else {
+        mlbfRecord = mlbfRecords.find(
+          r =>
+            r.attachment_type == "bloomfilter-full" ||
+            r.attachment_type == "bloomfilter-base"
+        );
+        this._stashes = null;
+      }
 
       let mlbf = await this._fetchMLBF(mlbfRecord);
       
@@ -1433,6 +1484,10 @@ this.ExtensionBlocklistMLBF = {
     );
     this._onUpdate = this._onUpdate.bind(this);
     this._client.on("sync", this._onUpdate);
+    this.stashesEnabled = Services.prefs.getBoolPref(
+      PREF_BLOCKLIST_USE_MLBF_STASHES,
+      false
+    );
   },
 
   shutdown() {
@@ -1499,6 +1554,19 @@ this.ExtensionBlocklistMLBF = {
 
     let blockKey = addon.id + ":" + addon.version;
 
+    if (this._stashes) {
+      
+      for (let stash of this._stashes) {
+        
+        if (stash.blocked.has(blockKey)) {
+          return this._createBlockEntry(addon);
+        }
+        if (stash.unblocked.has(blockKey)) {
+          return null;
+        }
+      }
+    }
+
     if (!addon.signedState) {
       
       return null;
@@ -1528,6 +1596,10 @@ this.ExtensionBlocklistMLBF = {
       return null;
     }
 
+    return this._createBlockEntry(addon);
+  },
+
+  _createBlockEntry(addon) {
     return {
       state: Ci.nsIBlocklistService.STATE_BLOCKED,
       url: this.createBlocklistURL(addon.id, addon.version),
@@ -1695,6 +1767,18 @@ let Blocklist = {
               this.ExtensionBlocklist.undoShutdown();
               this.ExtensionBlocklist._onUpdate();
             } 
+            break;
+          case PREF_BLOCKLIST_USE_MLBF_STASHES:
+            ExtensionBlocklistMLBF.stashesEnabled = Services.prefs.getBoolPref(
+              PREF_BLOCKLIST_USE_MLBF_STASHES,
+              false
+            );
+            if (
+              ExtensionBlocklistMLBF._initialized &&
+              !ExtensionBlocklistMLBF._didShutdown
+            ) {
+              ExtensionBlocklistMLBF._onUpdate();
+            }
             break;
         }
         break;
