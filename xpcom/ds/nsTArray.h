@@ -167,6 +167,14 @@ class JSStructuredCloneData;
 
 
 
+
+
+
+
+
+
+
+
 struct nsTArrayFallibleResult {
   
   MOZ_IMPLICIT constexpr nsTArrayFallibleResult(bool aResult)
@@ -296,15 +304,8 @@ constexpr bool SpecializableIsCopyConstructibleValue =
 
 
 template <typename E, typename Impl, typename Alloc,
-          bool IsCopyConstructible = SpecializableIsCopyConstructibleValue<E>
-          
-          
-          
-          
-          
-          
-          
-          >
+          bool IsCopyConstructible = SpecializableIsCopyConstructibleValue<E>&&
+              std::is_same_v<Alloc, nsTArrayInfallibleAllocator>>
 class nsTArray_CopyEnabler;
 
 template <typename E, typename Impl, typename Alloc>
@@ -322,37 +323,17 @@ class nsTArray_CopyEnabler<E, Impl, Alloc, true> {
   nsTArray_CopyEnabler() = default;
 
   nsTArray_CopyEnabler(const nsTArray_CopyEnabler& aOther) {
-    
-    
-    if constexpr (std::is_same_v<Alloc, nsTArrayFallibleAllocator>) {
-      auto res = static_cast<Impl*>(this)->AppendElements(
-          static_cast<const Impl&>(aOther), mozilla::fallible);
-#ifdef DEBUG
-      MOZ_ASSERT(res);
-#else
-      (void)res;
-#endif
-    } else {
-      static_cast<Impl*>(this)->template AppendElementsInternal<Alloc>(
-          static_cast<const Impl&>(aOther).Elements(),
-          static_cast<const Impl&>(aOther).Length());
-    }
+    static_cast<Impl*>(this)->template AppendElementsInternal<Alloc>(
+        static_cast<const Impl&>(aOther).Elements(),
+        static_cast<const Impl&>(aOther).Length());
   }
 
   nsTArray_CopyEnabler& operator=(const nsTArray_CopyEnabler& aOther) {
     if (this != &aOther) {
-      
-      
-      E* const res =
-          static_cast<Impl*>(this)->template ReplaceElementsAtInternal<Alloc>(
-              0, static_cast<Impl*>(this)->Length(),
-              static_cast<const Impl&>(aOther).Elements(),
-              static_cast<const Impl&>(aOther).Length());
-#ifdef DEBUG
-      MOZ_ASSERT(res);
-#else
-      (void)res;
-#endif
+      static_cast<Impl*>(this)->template ReplaceElementsAtInternal<Alloc>(
+          0, static_cast<Impl*>(this)->Length(),
+          static_cast<const Impl&>(aOther).Elements(),
+          static_cast<const Impl&>(aOther).Length());
     }
     return *this;
   }
@@ -2689,6 +2670,16 @@ class nsTArray : public nsTArray_Impl<E, nsTArrayInfallibleAllocator> {
     AppendElements(aIL.begin(), aIL.size());
   }
 
+  template <class Item>
+  nsTArray(const Item* aArray, size_type aArrayLen) {
+    AppendElements(aArray, aArrayLen);
+  }
+
+  template <class Item>
+  explicit nsTArray(mozilla::Span<Item> aSpan) {
+    AppendElements(aSpan);
+  }
+
   template <class Allocator>
   explicit nsTArray(const nsTArray_Impl<E, Allocator>& aOther)
       : base_type(aOther) {}
@@ -2764,6 +2755,12 @@ class nsTArray : public nsTArray_Impl<E, nsTArrayInfallibleAllocator> {
   mozilla::NotNull<elem_type*> AppendElement() {
     return mozilla::WrapNotNullUnchecked(
         this->template AppendElementsInternal<InfallibleAlloc>(1));
+  }
+
+  self_type Clone() const {
+    self_type result;
+    result.Assign(*this);
+    return result;
   }
 
   mozilla::NotNull<elem_type*> InsertElementsAt(index_type aIndex,
@@ -2875,6 +2872,47 @@ class nsTArray : public nsTArray_Impl<E, nsTArrayInfallibleAllocator> {
   }
 };
 
+template <class E>
+class CopyableTArray : public nsTArray<E> {
+ public:
+  using nsTArray<E>::nsTArray;
+
+  CopyableTArray(const CopyableTArray& aOther) : nsTArray<E>() {
+    this->Assign(aOther);
+  }
+  CopyableTArray& operator=(const CopyableTArray& aOther) {
+    if (this != &aOther) {
+      this->Assign(aOther);
+    }
+    return *this;
+  }
+  template <typename Allocator>
+  MOZ_IMPLICIT CopyableTArray(const nsTArray_Impl<E, Allocator>& aOther) {
+    this->Assign(aOther);
+  }
+  template <typename Allocator>
+  CopyableTArray& operator=(const nsTArray_Impl<E, Allocator>& aOther) {
+    if constexpr (std::is_same_v<Allocator, nsTArrayInfallibleAllocator>) {
+      if (this == &aOther) {
+        return *this;
+      }
+    }
+    this->Assign(aOther);
+    return *this;
+  }
+  template <typename Allocator>
+  MOZ_IMPLICIT CopyableTArray(nsTArray_Impl<E, Allocator>&& aOther)
+      : nsTArray<E>{std::move(aOther)} {}
+  template <typename Allocator>
+  CopyableTArray& operator=(nsTArray_Impl<E, Allocator>&& aOther) {
+    static_cast<nsTArray<E>&>(*this) = std::move(aOther);
+    return *this;
+  }
+
+  CopyableTArray(CopyableTArray&&) = default;
+  CopyableTArray& operator=(CopyableTArray&&) = default;
+};
+
 
 
 
@@ -2976,6 +3014,14 @@ class MOZ_NON_MEMMOVABLE AutoTArray : public nsTArray<E> {
     return *this;
   }
 
+  
+  
+  self_type Clone() const {
+    self_type result;
+    result.Assign(*this);
+    return result;
+  }
+
  private:
   
   
@@ -3027,7 +3073,9 @@ class MOZ_NON_MEMMOVABLE AutoTArray : public nsTArray<E> {
 
 
 template <class E>
-class AutoTArray<E, 0> : public nsTArray<E> {};
+class AutoTArray<E, 0> : public nsTArray<E> {
+  using nsTArray<E>::nsTArray;
+};
 
 template <class E, size_t N>
 struct nsTArray_RelocationStrategy<AutoTArray<E, N>> {
