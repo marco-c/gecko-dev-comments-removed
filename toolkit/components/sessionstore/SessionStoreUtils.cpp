@@ -550,7 +550,7 @@ static void AppendValueToCollectedData(
     nsTArray<CollectedInputDataValue>& aIdVals) {
   CollectedInputDataValue entry;
   entry.type = aValueType;
-  entry.value = AsVariant(aValue);
+  entry.value = AsVariant(CopyableTArray(aValue.Clone()));
   AppendEntryToCollectedData(aNode, aId, entry, aNumXPath, aNumId, aXPathVals,
                              aIdVals);
 }
@@ -1334,10 +1334,10 @@ static void CollectFrameTreeData(JSContext* aCx,
       selectVal.AppendElement(
           data.value.as<mozilla::dom::CollectedNonMultipleSelectValue>()
               .mValue);
-    } else if (data.value.is<nsTArray<nsString>>()) {
+    } else if (data.value.is<CopyableTArray<nsString>>()) {
       
       valueIdx.AppendElement(strVal.Length());
-      strVal.AppendElements(data.value.as<nsTArray<nsString>>());
+      strVal.AppendElements(data.value.as<CopyableTArray<nsString>>());
       
       id.AppendElement(data.id);
       type.AppendElement(data.type);
