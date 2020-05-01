@@ -72,7 +72,7 @@ struct ProcInfo {
   
   uint64_t cpuKernel = 0;
   
-  nsTArray<ThreadInfo> threads;
+  CopyableTArray<ThreadInfo> threads;
 };
 
 typedef MozPromise<ProcInfo, nsresult, true> ProcInfoPromise;

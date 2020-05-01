@@ -365,7 +365,7 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
 
   
   
-  nsTArray<AlternativeCharCode> mAlternativeCharCodes;
+  CopyableTArray<AlternativeCharCode> mAlternativeCharCodes;
   
   nsString mKeyValue;
   
@@ -753,9 +753,9 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
   
   
   
-  nsTArray<CommandInt> mEditCommandsForSingleLineEditor;
-  nsTArray<CommandInt> mEditCommandsForMultiLineEditor;
-  nsTArray<CommandInt> mEditCommandsForRichTextEditor;
+  CopyableTArray<CommandInt> mEditCommandsForSingleLineEditor;
+  CopyableTArray<CommandInt> mEditCommandsForMultiLineEditor;
+  CopyableTArray<CommandInt> mEditCommandsForRichTextEditor;
 
   nsTArray<CommandInt>& EditCommandsRef(
       nsIWidget::NativeKeyBindingsType aType) {
@@ -1111,7 +1111,7 @@ class WidgetQueryContentEvent : public WidgetGUIEvent {
     
     AutoTArray<mozilla::FontRange, 1> mFontRanges;
     
-    nsTArray<mozilla::LayoutDeviceIntRect> mRectArray;
+    CopyableTArray<mozilla::LayoutDeviceIntRect> mRectArray;
     
     bool mReversed;
     

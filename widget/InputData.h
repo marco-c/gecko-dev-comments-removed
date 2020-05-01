@@ -216,7 +216,7 @@ class MultiTouchInput : public InputData {
   
   
   MultiTouchType mType;
-  nsTArray<SingleTouchData> mTouches;
+  CopyableTArray<SingleTouchData> mTouches;
   
   
   ExternalPoint mScreenOffset;
@@ -693,7 +693,7 @@ class KeyboardInput : public InputData {
   KeyboardEventType mType;
   uint32_t mKeyCode;
   uint32_t mCharCode;
-  nsTArray<ShortcutKeyCandidate> mShortcutCandidates;
+  CopyableTArray<ShortcutKeyCandidate> mShortcutCandidates;
 
   bool mHandledByAPZ;
 

@@ -1030,7 +1030,7 @@ class nsIWidget : public nsISupports {
     uintptr_t mWindowID;  
     bool mVisible;        
     LayoutDeviceIntRect mBounds;
-    nsTArray<LayoutDeviceIntRect> mClipRegion;
+    CopyableTArray<LayoutDeviceIntRect> mClipRegion;
   };
 
   
