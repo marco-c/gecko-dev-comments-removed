@@ -1467,57 +1467,6 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> ReplaceContainerWithTransaction(
-      Element& aOldContainer, nsAtom& aTagName) {
-    return ReplaceContainerWithTransactionInternal(
-        aOldContainer, aTagName, *nsGkAtoms::_empty, EmptyString(), false);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element>
-  ReplaceContainerAndCloneAttributesWithTransaction(Element& aOldContainer,
-                                                    nsAtom& aTagName) {
-    return ReplaceContainerWithTransactionInternal(
-        aOldContainer, aTagName, *nsGkAtoms::_empty, EmptyString(), true);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> ReplaceContainerWithTransaction(
-      Element& aOldContainer, nsAtom& aTagName, nsAtom& aAttribute,
-      const nsAString& aAttributeValue) {
-    return ReplaceContainerWithTransactionInternal(
-        aOldContainer, aTagName, aAttribute, aAttributeValue, false);
-  }
-
-  
-
-
-
-
   MOZ_CAN_RUN_SCRIPT void CloneAttributesWithTransaction(
       Element& aDestElement, Element& aSourceElement);
 
@@ -1777,28 +1726,6 @@ class EditorBase : public nsIEditor,
   MOZ_CAN_RUN_SCRIPT nsresult DeleteTextWithTransaction(dom::Text& aTextNode,
                                                         uint32_t aOffset,
                                                         uint32_t aLength);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element>
-  ReplaceContainerWithTransactionInternal(Element& aElement, nsAtom& aTagName,
-                                          nsAtom& aAttribute,
-                                          const nsAString& aAttributeValue,
-                                          bool aCloneAllAttributes);
 
   
 
