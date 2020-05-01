@@ -15582,28 +15582,14 @@ already_AddRefed<mozilla::dom::Promise> Document::HasStorageAccess(
     return promise.forget();
   }
 
-  RefPtr<BrowsingContext> bc = GetBrowsingContext();
-  if (!bc) {
-    promise->MaybeResolve(false);
-    return promise.forget();
+  nsCOMPtr<Document> topLevelDoc = GetTopLevelContentDocument();
+  if (!topLevelDoc) {
+    aRv.Throw(NS_ERROR_NOT_AVAILABLE);
+    return nullptr;
   }
-
-  RefPtr<BrowsingContext> topBC = bc->Top();
-  
-  
-  
-  
-  
-  
-  
-  
-  if (auto* topOuterWindow = topBC->GetDOMWindow()) {
-    if (nsGlobalWindowOuter::Cast(topOuterWindow)
-            ->GetPrincipal()
-            ->Equals(NodePrincipal())) {
-      promise->MaybeResolve(true);
-      return promise.forget();
-    }
+  if (topLevelDoc->NodePrincipal()->Equals(NodePrincipal())) {
+    promise->MaybeResolve(true);
+    return promise.forget();
   }
 
   nsPIDOMWindowInner* inner = GetInnerWindow();
