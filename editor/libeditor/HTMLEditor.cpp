@@ -1798,7 +1798,7 @@ EditorDOMPoint HTMLEditor::InsertNodeIntoProperAncestorWithTransaction(
         SplitNodeDeepWithTransaction(MOZ_KnownLive(*pointToInsert.GetChild()),
                                      aPointToInsert, aSplitAtEdges);
     if (splitNodeResult.Failed()) {
-      NS_WARNING("EditorBase::SplitNodeDeepWithTransaction() failed");
+      NS_WARNING("HTMLEditor::SplitNodeDeepWithTransaction() failed");
       return EditorDOMPoint();
     }
     pointToInsert = splitNodeResult.SplitPoint();
@@ -3983,6 +3983,89 @@ nsresult HTMLEditor::RemoveBlockContainerWithTransaction(Element& aElement) {
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::RemoveContainerWithTransaction() failed");
   return rv;
+}
+
+SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
+    nsIContent& aMostAncestorToSplit,
+    const EditorDOMPoint& aStartOfDeepestRightNode,
+    SplitAtEdges aSplitAtEdges) {
+  MOZ_ASSERT(aStartOfDeepestRightNode.IsSetAndValid());
+  MOZ_ASSERT(
+      aStartOfDeepestRightNode.GetContainer() == &aMostAncestorToSplit ||
+      EditorUtils::IsDescendantOf(*aStartOfDeepestRightNode.GetContainer(),
+                                  aMostAncestorToSplit));
+
+  if (NS_WARN_IF(!aStartOfDeepestRightNode.IsSet())) {
+    return SplitNodeResult(NS_ERROR_INVALID_ARG);
+  }
+
+  nsCOMPtr<nsIContent> newLeftNodeOfMostAncestor;
+  EditorDOMPoint atStartOfRightNode(aStartOfDeepestRightNode);
+  while (true) {
+    
+    
+    
+    
+    if (NS_WARN_IF(!atStartOfRightNode.GetContainerAsContent())) {
+      return SplitNodeResult(NS_ERROR_FAILURE);
+    }
+    
+    
+    if (NS_WARN_IF(atStartOfRightNode.GetContainer() != &aMostAncestorToSplit &&
+                   !atStartOfRightNode.GetContainerParentAsContent())) {
+      return SplitNodeResult(NS_ERROR_FAILURE);
+    }
+
+    nsIContent* currentRightNode = atStartOfRightNode.GetContainerAsContent();
+
+    
+    
+    if ((aSplitAtEdges == SplitAtEdges::eAllowToCreateEmptyContainer &&
+         !atStartOfRightNode.GetContainerAsText()) ||
+        (!atStartOfRightNode.IsStartOfContainer() &&
+         !atStartOfRightNode.IsEndOfContainer())) {
+      ErrorResult error;
+      nsCOMPtr<nsIContent> newLeftNode =
+          SplitNodeWithTransaction(atStartOfRightNode, error);
+      if (error.Failed()) {
+        NS_WARNING("EditorBase::SplitNodeWithTransaction() failed");
+        return SplitNodeResult(error.StealNSResult());
+      }
+
+      if (currentRightNode == &aMostAncestorToSplit) {
+        
+        return SplitNodeResult(newLeftNode, &aMostAncestorToSplit);
+      }
+
+      
+      atStartOfRightNode.Set(currentRightNode);
+    }
+    
+    
+    else if (!atStartOfRightNode.IsStartOfContainer()) {
+      if (currentRightNode == &aMostAncestorToSplit) {
+        return SplitNodeResult(&aMostAncestorToSplit, nullptr);
+      }
+
+      
+      atStartOfRightNode.Set(currentRightNode);
+      DebugOnly<bool> advanced = atStartOfRightNode.AdvanceOffset();
+      NS_WARNING_ASSERTION(advanced,
+                           "Failed to advance offset after current node");
+    }
+    
+    
+    else {
+      if (currentRightNode == &aMostAncestorToSplit) {
+        return SplitNodeResult(nullptr, &aMostAncestorToSplit);
+      }
+
+      
+      atStartOfRightNode.Set(currentRightNode);
+    }
+  }
+
+  return SplitNodeResult(NS_ERROR_FAILURE);
 }
 
 nsIContent* HTMLEditor::GetPriorHTMLSibling(nsINode* aNode,

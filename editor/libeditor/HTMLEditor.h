@@ -2158,6 +2158,40 @@ class HTMLEditor final : public TextEditor,
       const EditorDOMPoint& aPointToInsert,
       MoveToEndOfContainer aMoveToEndOfContainer = MoveToEndOfContainer::No);
 
+  enum class SplitAtEdges {
+    
+    
+    
+    eDoNotCreateEmptyContainer,
+    
+    
+    
+    
+    eAllowToCreateEmptyContainer,
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT SplitNodeResult
+  SplitNodeDeepWithTransaction(nsIContent& aMostAncestorToSplit,
+                               const EditorDOMPoint& aDeepestStartOfRightNode,
+                               SplitAtEdges aSplitAtEdges);
+
   
 
 

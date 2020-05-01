@@ -117,22 +117,6 @@ struct IMEState;
 
 
 
-enum class SplitAtEdges {
-  
-  
-  
-  eDoNotCreateEmptyContainer,
-  
-  
-  
-  
-  eAllowToCreateEmptyContainer,
-};
-
-
-
-
-
 
 
 
@@ -1711,28 +1695,6 @@ class EditorBase : public nsIEditor,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   DoJoinNodes(nsIContent& aContentToKeep, nsIContent& aContentToJoin);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT SplitNodeResult
-  SplitNodeDeepWithTransaction(nsIContent& aMostAncestorToSplit,
-                               const EditorDOMPoint& aDeepestStartOfRightNode,
-                               SplitAtEdges aSplitAtEdges);
 
   
 
