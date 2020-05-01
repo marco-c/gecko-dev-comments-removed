@@ -5,7 +5,7 @@
 var EXPORTED_SYMBOLS = ["IDBHelpers"];
 
 const DB_NAME = "remote-settings";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 
 
@@ -170,6 +170,12 @@ async function openIDB(allowUpgrades = true) {
         
         db.createObjectStore("collections", {
           keyPath: "cid",
+        });
+      }
+      if (event.oldVersion < 3) {
+        
+        db.createObjectStore("attachments", {
+          keyPath: ["cid", "attachmentId"],
         });
       }
     };
