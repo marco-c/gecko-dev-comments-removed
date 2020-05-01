@@ -765,7 +765,7 @@ class RemoteSettingsClient extends EventEmitter {
     options = {}
   ) {
     const { retry = false } = options;
-    const since = retry || !localTimestamp ? undefined : `${localTimestamp}`;
+    const since = retry || !localTimestamp ? undefined : `"${localTimestamp}"`;
 
     
     console.debug(
