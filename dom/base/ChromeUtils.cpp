@@ -26,7 +26,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/IdleDeadline.h"
-#include "mozilla/dom/JSWindowActorService.h"
+#include "mozilla/dom/JSActorService.h"
 #include "mozilla/dom/MediaControlUtils.h"
 #include "mozilla/dom/MediaControlService.h"
 #include "mozilla/dom/MediaMetadata.h"
@@ -914,7 +914,7 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
                     thread->mCpuKernel = entry.cpuKernel;
                     thread->mTid = entry.tid;
                   }
-                  procInfo.mThreads = threads;
+                  procInfo.mThreads = std::move(threads);
 
                   mozilla::dom::Sequence<mozilla::dom::ChildProcInfoDictionary>
                       children;
@@ -950,9 +950,9 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
                       thread->mTid = entry.tid;
                       thread->mName.Assign(entry.name);
                     }
-                    childProcInfo->mThreads = threads;
+                    childProcInfo->mThreads = std::move(threads);
                   }
-                  procInfo.mChildren = children;
+                  procInfo.mChildren = std::move(children);
                   domPromise->MaybeResolve(procInfo);
                 };  
 
@@ -1204,7 +1204,7 @@ void ChromeUtils::RegisterWindowActor(const GlobalObject& aGlobal,
                                       ErrorResult& aRv) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  RefPtr<JSWindowActorService> service = JSWindowActorService::GetSingleton();
+  RefPtr<JSActorService> service = JSActorService::GetSingleton();
   service->RegisterWindowActor(aName, aOptions, aRv);
 }
 
@@ -1213,7 +1213,7 @@ void ChromeUtils::UnregisterWindowActor(const GlobalObject& aGlobal,
                                         const nsACString& aName) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  RefPtr<JSWindowActorService> service = JSWindowActorService::GetSingleton();
+  RefPtr<JSActorService> service = JSActorService::GetSingleton();
   service->UnregisterWindowActor(aName);
 }
 

@@ -5,18 +5,6 @@
 
 
 interface nsISupports;
-interface nsIContentChild;
-interface nsIContentParent;
-
-interface mixin JSWindowActor {
-  [Throws]
-  void sendAsyncMessage(DOMString messageName,
-                        optional any obj);
-
-  [Throws]
-  Promise<any> sendQuery(DOMString messageName,
-                         optional any obj);
-};
 
 [ChromeOnly, Exposed=Window]
 interface JSWindowActorParent {
@@ -33,13 +21,13 @@ interface JSWindowActorParent {
   [Throws]
   readonly attribute CanonicalBrowsingContext? browsingContext;
 };
-JSWindowActorParent includes JSWindowActor;
+JSWindowActorParent includes JSActor;
 
 [ChromeOnly, Exposed=Window]
 interface JSWindowActorChild {
   [ChromeOnly]
   constructor();
-  
+
   
 
 
@@ -64,45 +52,7 @@ interface JSWindowActorChild {
   [Throws]
   readonly attribute WindowProxy? contentWindow;
 };
-JSWindowActorChild includes JSWindowActor;
-
-
-
-
-
-
-
-
-[Exposed=Window]
-callback interface MozObserverCallback {
-  void observe(nsISupports subject, ByteString topic, DOMString? data);
-};
-
-
-
-
-
-[MOZ_CAN_RUN_SCRIPT_BOUNDARY]
-callback MozJSWindowActorCallback = void();
-
-
-
-
-
-
-
-
-
-
-
-
-
-[GenerateInit]
-dictionary MozJSWindowActorCallbacks {
-  [ChromeOnly] MozJSWindowActorCallback willDestroy;
-  [ChromeOnly] MozJSWindowActorCallback didDestroy;
-  [ChromeOnly] MozJSWindowActorCallback actorCreated;
-};
+JSWindowActorChild includes JSActor;
 
 
 
