@@ -409,8 +409,11 @@ class MockRuntime {
     }
 
     this.stageParameters_.standingTransform = new gfx.mojom.Transform();
+
+    
+    
     this.stageParameters_.standingTransform.matrix =
-      getMatrixFromTransform(floorOrigin);
+      XRMathHelper.inverse(getMatrixFromTransform(floorOrigin));
 
     this.onStageParametersUpdated();
   }
