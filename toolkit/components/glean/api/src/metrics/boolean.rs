@@ -2,7 +2,7 @@
 
 
 
-use glean_core::CommonMetricData;
+use super::CommonMetricData;
 
 
 

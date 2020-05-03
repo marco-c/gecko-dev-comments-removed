@@ -2,10 +2,11 @@
 
 
 
-use glean_core::{metrics::MetricType, CommonMetricData, ErrorType};
 use std::sync::RwLock;
 
-use super::BooleanMetric;
+use glean_core::metrics::MetricType;
+
+use super::{BooleanMetric, CommonMetricData, ErrorType};
 
 
 
