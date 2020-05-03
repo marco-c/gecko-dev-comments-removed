@@ -3449,8 +3449,6 @@ void WorkerPrivate::WaitForWorkerEvents() {
   AssertIsOnWorkerThread();
   mMutex.AssertCurrentThreadOwns();
 
-  AUTO_PROFILER_THREAD_SLEEP;
-
   
   mCondVar.Wait();
 }
