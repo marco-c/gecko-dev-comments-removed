@@ -312,7 +312,6 @@ class TRRRacer {
 
   _getFastestTRRFromResults(results) {
     
-    
     let TRRTimingMap = new Map();
     for (let { trr, time } of results) {
       if (!TRRTimingMap.has(trr)) {
@@ -326,15 +325,21 @@ class TRRRacer {
     
     
     
+    
+    
     let fastestTRR;
     let fastestAverageTime = -1;
-    for (let trr of TRRTimingMap.keys()) {
+    let trrs = [...TRRTimingMap.keys()];
+    for (let trr of trrs) {
       let times = TRRTimingMap.get(trr);
       if (!times.length) {
         continue;
       }
 
-      let averageTime = times.reduce((a, b) => a + b) / times.length;
+      
+      
+      let averageTime =
+        times.map(a => Math.log(a + 1)).reduce((a, b) => a + b) / times.length;
       if (fastestAverageTime == -1 || averageTime < fastestAverageTime) {
         fastestAverageTime = averageTime;
         fastestTRR = trr;
