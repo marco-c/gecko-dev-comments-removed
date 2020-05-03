@@ -18,16 +18,24 @@ _target_task_methods = {}
 
 
 TARGET_TASK_BLACKLIST = [
-    r'-ccov/',
-    r'windows10-aarch64/opt',
-    r'win64-aarch64-laptop',
-    r'windows10-64-ref-hw-2017',
-    r'android-hw',
+    
+    r'build-.*-gcp',  
+    r'build-.*-aarch64',  
+    r'mingwclang',  
+    r'valgrind',  
+    
     r'android-geckoview-docs',
-    r'linux1804-32',   
+    r'android-hw',
+    
+    r'windows10-64-ref-hw',
+    r'windows10-aarch64',
+    
     r'linux-',  
+    r'linux1804-32',  
     r'linux.*web-platform-tests.*-fis-',  
+    
     r'web-platform-tests.*backlog',  
+    r'-ccov/',
 ]
 
 
@@ -81,10 +89,12 @@ def filter_tasks_by_blacklist(task, optional_filters=None):
 
     Args:
         task (str): String representing the task name.
+        optional_filters (list, optional):
+            Additional filters to apply to task filtering.
 
     Returns:
         (Boolean): True if task does not match any known filters.
-        False otherwise.
+            False otherwise.
     """
     if optional_filters:
         for item in optional_filters:
