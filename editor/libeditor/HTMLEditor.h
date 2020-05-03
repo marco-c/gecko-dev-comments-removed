@@ -3607,8 +3607,6 @@ class HTMLEditor final : public TextEditor,
 
   nsresult GetLastCellInRow(nsINode* aRowNode, nsINode** aCellNode);
 
-  static nsresult GetCellFromRange(nsRange* aRange, Element** aCell);
-
   
 
 

@@ -2905,12 +2905,8 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
         return NS_ERROR_FAILURE;
       }
 
-      RefPtr<Element> deletedCell;
-      DebugOnly<nsresult> rvIgnored =
-          HTMLEditor::GetCellFromRange(range, getter_AddRefs(deletedCell));
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rvIgnored),
-          "HTMLEditor::GetCellFromRange() failed, but ignored");
+      Element* deletedCell =
+          HTMLEditUtils::GetTableCellElementIfOnlyOneSelected(*range);
       if (!deletedCell) {
         MOZ_KnownLive(SelectionRefPtr())
             ->RemoveRangeAndUnselectFramesAndNotifyListeners(*range,
@@ -3880,38 +3876,6 @@ nsresult HTMLEditor::GetCellContext(Element** aTable, Element** aCell,
   return NS_OK;
 }
 
-
-nsresult HTMLEditor::GetCellFromRange(nsRange* aRange, Element** aCell) {
-  
-  
-  if (NS_WARN_IF(!aRange) || NS_WARN_IF(!aCell)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  *aCell = nullptr;
-  Element* element = HTMLEditUtils::GetElementIfOnlyOneSelected(*aRange);
-  if (!element) {
-    
-    
-    if (NS_WARN_IF(!aRange->GetStartContainer())) {
-      return NS_ERROR_FAILURE;
-    }
-    if (NS_WARN_IF(!aRange->GetChildAtStartOffset())) {
-      return NS_ERROR_FAILURE;
-    }
-    if (NS_WARN_IF(!aRange->GetEndContainer())) {
-      return NS_ERROR_FAILURE;
-    }
-    return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
-  }
-
-  if (!HTMLEditUtils::IsTableCell(element)) {
-    return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
-  }
-  *aCell = do_AddRef(element).take();
-  return NS_OK;
-}
-
 NS_IMETHODIMP HTMLEditor::GetFirstSelectedCell(
     nsRange** aFirstSelectedRange, Element** aFirstSelectedCellElement) {
   if (NS_WARN_IF(!aFirstSelectedCellElement)) {
@@ -3968,13 +3932,8 @@ already_AddRefed<Element> HTMLEditor::GetFirstSelectedTableCellElement(
   
   mSelectedCellIndex = 0;
 
-  RefPtr<Element> selectedCell;
-  nsresult rv =
-      HTMLEditor::GetCellFromRange(firstRange, getter_AddRefs(selectedCell));
-  if (NS_FAILED(rv)) {
-    
-    return nullptr;
-  }
+  RefPtr<Element> selectedCell =
+      HTMLEditUtils::GetTableCellElementIfOnlyOneSelected(*firstRange);
   if (!selectedCell) {
     
     
@@ -4048,10 +4007,8 @@ already_AddRefed<Element> HTMLEditor::GetNextSelectedTableCellElement(
       return nullptr;
     }
 
-    RefPtr<Element> nextSelectedCellElement;
-    nsresult rv = HTMLEditor::GetCellFromRange(
-        range, getter_AddRefs(nextSelectedCellElement));
-    if (NS_FAILED(rv)) {
+    if (!range->GetStartContainer() || !range->GetChildAtStartOffset() ||
+        !range->GetEndContainer()) {
       
       
       
@@ -4059,7 +4016,8 @@ already_AddRefed<Element> HTMLEditor::GetNextSelectedTableCellElement(
       return nullptr;
     }
 
-    if (nextSelectedCellElement) {
+    if (RefPtr<Element> nextSelectedCellElement =
+            HTMLEditUtils::GetTableCellElementIfOnlyOneSelected(*range)) {
       mSelectedCellIndex++;
       return nextSelectedCellElement.forget();
     }
