@@ -504,99 +504,67 @@ class SyncCommandSink : public CommandSink<Command, _Sink> {
 
 
 
-template <typename Derived>
-struct MethodDispatcher {
-  template <CommandSyncType syncType, int = 0>
-  struct DispatchMethod;
 
-  
-  template <int dummy>
-  struct DispatchMethod<CommandSyncType::ASYNC, dummy> {
-    template <typename MethodType, typename ObjectType, typename SinkType>
-    static MOZ_ALWAYS_INLINE bool Run(SinkType& aSink, MethodType mMethod,
-                                      ObjectType& aObj) {
-      return aSink.DispatchAsyncMethod(aObj, mMethod);
-    }
-  };
 
-  
-  template <int dummy>
-  struct DispatchMethod<CommandSyncType::SYNC, dummy> {
-    template <typename MethodType, typename ObjectType, typename SinkType>
-    static MOZ_ALWAYS_INLINE bool Run(SinkType& aSink, MethodType aMethod,
-                                      ObjectType& aObj) {
-      return aSink.DispatchSyncMethod(aObj, aMethod);
-    }
-  };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <template <size_t> typename Derived>
+class EmptyMethodDispatcher {
+ public:
+  template <typename SinkType, typename ObjectType>
+  static MOZ_ALWAYS_INLINE bool DispatchCommand(size_t aId, SinkType& aSink,
+                                                ObjectType& aObj) {
+    MOZ_CRASH("Illegal ID in DispatchCommand");
+  }
+  static MOZ_ALWAYS_INLINE CommandSyncType SyncType(size_t aId) {
+    MOZ_CRASH("Illegal ID in SyncType");
+  }
 };
 
 
+template <template <size_t> typename Derived, size_t id, typename MethodType,
+          MethodType method, CommandSyncType syncType>
+class MethodDispatcher {
+  using DerivedType = Derived<id>;
+  using NextDispatcher = Derived<id + 1>;
 
-#define DECLARE_METHOD_DISPATCHER(_DISPATCHER, _OBJECTTYPE)                    \
-  struct _DISPATCHER : public MethodDispatcher<_DISPATCHER> {                  \
-    using ObjectType = _OBJECTTYPE;                                            \
-    template <size_t commandId>                                                \
-    struct IdDispatcher {                                                      \
-      template <typename SinkType>                                             \
-      static MOZ_ALWAYS_INLINE bool DispatchCommand(size_t aId,                \
-                                                    SinkType& aSink,           \
-                                                    ObjectType& aObj) {        \
-        MOZ_CRASH("Impossible -- Unhandled command ID");                       \
-        return false;                                                          \
-      }                                                                        \
-      static MOZ_ALWAYS_INLINE CommandSyncType SyncType(size_t aId) {          \
-        MOZ_ASSERT_UNREACHABLE("Impossible -- Unhandled command ID");          \
-        return CommandSyncType::ASYNC;                                         \
-      }                                                                        \
-    };                                                                         \
-    template <typename SinkType, size_t commandId = 0>                         \
-    static MOZ_ALWAYS_INLINE bool DispatchCommand(size_t aId, SinkType& aSink, \
-                                                  ObjectType& aObj) {          \
-      return IdDispatcher<commandId>::DispatchCommand(aId, aSink, aObj);       \
-    }                                                                          \
-    template <size_t commandId = 0>                                            \
-    static MOZ_ALWAYS_INLINE CommandSyncType SyncType(size_t aId) {            \
-      return IdDispatcher<commandId>::SyncType(aId);                           \
-    }                                                                          \
-    template <size_t commandId>                                                \
-    struct MethodInfo;                                                         \
-    template <size_t commandId>                                                \
-    static constexpr CommandSyncType SyncType();                               \
-    template <typename MethodType, MethodType method>                          \
-    static constexpr size_t Id();                                              \
-  };
+ public:
+  template <typename SinkType, typename ObjectType>
+  static MOZ_ALWAYS_INLINE bool DispatchCommand(size_t aId, SinkType& aSink,
+                                                ObjectType& aObj) {
+    if (aId == id) {
+      return (syncType == CommandSyncType::ASYNC)
+                 ? aSink.DispatchAsyncMethod(aObj, Method())
+                 : aSink.DispatchSyncMethod(aObj, Method());
+    }
+    return NextDispatcher::DispatchCommand(aId, aSink, aObj);
+  }
 
+  static MOZ_ALWAYS_INLINE CommandSyncType SyncType(size_t aId) {
+    return (aId == id) ? syncType : NextDispatcher::SyncType(aId);
+  }
 
-
-
-
-#define DEFINE_METHOD_DISPATCHER(_DISPATCHER, _ID, _METHOD, _SYNC)             \
-  template <>                                                                  \
-  struct _DISPATCHER::MethodInfo<_ID> {                                        \
-    using MethodType = decltype(&_METHOD);                                     \
-  };                                                                           \
-  template <>                                                                  \
-  constexpr CommandSyncType _DISPATCHER::SyncType<_ID>() {                     \
-    return _SYNC;                                                              \
-  }                                                                            \
-  template <>                                                                  \
-  constexpr size_t _DISPATCHER::Id<decltype(&_METHOD), &_METHOD>() {           \
-    return _ID;                                                                \
-  }                                                                            \
-  template <>                                                                  \
-  struct _DISPATCHER::IdDispatcher<_ID> {                                      \
-    template <typename SinkType>                                               \
-    static MOZ_ALWAYS_INLINE bool DispatchCommand(size_t aId, SinkType& aSink, \
-                                                  ObjectType& aObj) {          \
-      return (_ID == aId) ? DispatchMethod<_SYNC>::Run(aSink, &_METHOD, aObj)  \
-                          : _DISPATCHER::DispatchCommand<SinkType, _ID + 1>(   \
-                                aId, aSink, aObj);                             \
-    }                                                                          \
-    static MOZ_ALWAYS_INLINE CommandSyncType SyncType(size_t aId) {            \
-      return (_ID == aId) ? _DISPATCHER::SyncType<_ID>()                       \
-                          : _DISPATCHER::SyncType<_ID + 1>(aId);               \
-    }                                                                          \
-  };
+  static constexpr CommandSyncType SyncType() { return syncType; }
+  static constexpr size_t Id() { return id; }
+  static constexpr MethodType Method() { return method; }
+};
 
 namespace ipc {
 template <typename T>
