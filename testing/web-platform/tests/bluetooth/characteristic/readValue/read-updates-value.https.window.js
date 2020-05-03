@@ -1,6 +1,7 @@
 
 
 
+
 const test_desc = 'Succesful read should update characteristic.value';
 const EXPECTED_VALUE = [0, 1, 2];
 

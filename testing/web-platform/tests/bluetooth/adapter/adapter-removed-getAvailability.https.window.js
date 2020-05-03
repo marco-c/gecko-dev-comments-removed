@@ -1,6 +1,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'getAvailability() resolves with false after the powered ' +
     'on adapter is removed.';

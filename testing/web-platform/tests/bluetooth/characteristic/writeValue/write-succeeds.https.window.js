@@ -1,6 +1,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'A regular write request to a writable characteristic ' +
     'should succeed.';

@@ -1,6 +1,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'getAvailability() resolves with true after adapter is ' +
     'inserted into a system with a platform that supports Bluetooth LE.';

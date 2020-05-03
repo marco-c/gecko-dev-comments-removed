@@ -2,6 +2,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'Calls to getPrimaryService should return the same object.';
 let device;

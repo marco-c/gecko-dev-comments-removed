@@ -1,6 +1,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'getDevices() resolves with empty array if no device ' +
     'permissions have been granted.';

@@ -2,6 +2,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'Request for absent service without permission. Should ' +
     'Reject with SecurityError even if services have been discovered already.';
