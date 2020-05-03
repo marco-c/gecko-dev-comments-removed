@@ -2287,7 +2287,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  already_AddRefed<dom::StaticRange> GetExtendedRangeToIncludeInvisibleNodes(
+  already_AddRefed<dom::StaticRange> GetRangeExtendedToIncludeInvisibleNodes(
       const dom::AbstractRange& aAbstractRange);
 
   

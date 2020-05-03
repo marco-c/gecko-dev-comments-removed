@@ -11,6 +11,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/dom/Selection.h"
+#include "mozilla/Result.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/UniquePtr.h"
 #include "nsIFrame.h"
@@ -570,6 +571,74 @@ class nsFrameSelection final {
 
 
 
+
+  template <typename RangeType>
+  MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
+  CreateRangeExtendedToNextGraphemeClusterBoundary() {
+    return CreateRangeExtendedToSomewhere<RangeType>(eDirNext, eSelectCluster,
+                                                     eLogical);
+  }
+
+  
+
+
+
+
+  template <typename RangeType>
+  MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
+  CreateRangeExtendedToPreviousCharacterBoundary() {
+    return CreateRangeExtendedToSomewhere<RangeType>(
+        eDirPrevious, eSelectCharacter, eLogical);
+  }
+
+  
+
+
+
+  template <typename RangeType>
+  MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
+  CreateRangeExtendedToNextWordBoundary() {
+    return CreateRangeExtendedToSomewhere<RangeType>(eDirNext, eSelectWord,
+                                                     eLogical);
+  }
+
+  
+
+
+
+  template <typename RangeType>
+  MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
+  CreateRangeExtendedToPreviousWordBoundary() {
+    return CreateRangeExtendedToSomewhere<RangeType>(eDirPrevious, eSelectWord,
+                                                     eLogical);
+  }
+
+  
+
+
+
+  template <typename RangeType>
+  MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
+  CreateRangeExtendedToPreviousHardLineBreak() {
+    return CreateRangeExtendedToSomewhere<RangeType>(
+        eDirPrevious, eSelectBeginLine, eLogical);
+  }
+
+  
+
+
+
+  template <typename RangeType>
+  MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
+  CreateRangeExtendedToNextHardLineBreak() {
+    return CreateRangeExtendedToSomewhere<RangeType>(eDirNext, eSelectEndLine,
+                                                     eLogical);
+  }
+
+  
+
+
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult SelectAll();
 
   
@@ -770,6 +839,49 @@ class nsFrameSelection final {
                                         nsSelectionAmount aAmount,
                                         CaretMovementStyle aMovementStyle);
 
+  
+
+
+
+  mozilla::Result<nsPeekOffsetStruct, nsresult> PeekOffsetForCaretMove(
+      nsDirection aDirection, bool aContinueSelection,
+      const nsSelectionAmount aAmount, CaretMovementStyle aMovementStyle,
+      const nsPoint& aDesiredPos) const;
+
+  
+
+
+
+
+  template <typename RangeType>
+  MOZ_CAN_RUN_SCRIPT mozilla::Result<RefPtr<RangeType>, nsresult>
+  CreateRangeExtendedToSomewhere(nsDirection aDirection,
+                                 const nsSelectionAmount aAmount,
+                                 CaretMovementStyle aMovementStyle);
+
+  
+
+
+
+
+
+  static mozilla::Result<bool, nsresult> IsIntraLineCaretMove(
+      nsSelectionAmount aAmount) {
+    switch (aAmount) {
+      case eSelectCharacter:
+      case eSelectCluster:
+      case eSelectWord:
+      case eSelectWordNoSpace:
+      case eSelectBeginLine:
+      case eSelectEndLine:
+        return true;
+      case eSelectLine:
+        return false;
+      default:
+        return mozilla::Err(NS_ERROR_FAILURE);
+    }
+  }
+
   nsresult FetchDesiredPos(
       nsPoint& aDesiredPos);  
                               
@@ -902,6 +1014,14 @@ class nsFrameSelection final {
     CaretAssociateHint mHint = mozilla::CARET_ASSOCIATE_BEFORE;
     nsBidiLevel mBidiLevel = BIDI_LEVEL_UNDEFINED;
     int8_t mMovementStyle = 0;
+
+    bool IsVisualMovement(bool aContinueSelection,
+                          CaretMovementStyle aMovementStyle) const {
+      return aMovementStyle == eVisual ||
+             (aMovementStyle == eUsePrefStyle &&
+              (mMovementStyle == 1 ||
+               (mMovementStyle == 2 && !aContinueSelection)));
+    }
   };
 
   Caret mCaret;
