@@ -1320,6 +1320,12 @@ void nsCocoaWindow::MoveToWorkspace(const nsAString& workspaceIDStr) {
     return;
   }
 
+  if ([NSScreen screensHaveSeparateSpaces] && [[NSScreen screens] count] > 1) {
+    
+    
+    return;
+  }
+
   nsresult rv = NS_OK;
   int32_t workspaceID = workspaceIDStr.ToInteger(&rv);
   if (NS_FAILED(rv)) {
