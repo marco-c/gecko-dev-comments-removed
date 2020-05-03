@@ -14,6 +14,7 @@
 #include "jit/BaselineIC.h"
 #include "jit/CacheIRSpewer.h"
 #include "jit/InlinableNatives.h"
+#include "jit/Ion.h"         
 #include "vm/PlainObject.h"  
 #include "vm/SelfHosting.h"
 
