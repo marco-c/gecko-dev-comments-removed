@@ -84,8 +84,8 @@ const PREF_ACTIVITY_STREAM_DEBUG = "browser.newtabpage.activity-stream.debug";
 
 const AboutHomeStartupCacheChild = {
   _initted: false,
-  STATE_RESPONSE_MESSAGE: "AboutHomeStartupCache:State:Response",
-  STATE_REQUEST_MESSAGE: "AboutHomeStartupCache:State:Request",
+  CACHE_REQUEST_MESSAGE: "AboutHomeStartupCache:CacheRequest",
+  CACHE_RESPONSE_MESSAGE: "AboutHomeStartupCache:CacheResponse",
 
   
 
@@ -112,6 +112,8 @@ const AboutHomeStartupCacheChild = {
     if (this._initted) {
       throw new Error("AboutHomeStartupCacheChild already initted.");
     }
+
+    Services.cpmm.addMessageListener(this.CACHE_REQUEST_MESSAGE, this);
 
     this._pageInputStream = pageInputStream;
     this._scriptInputStream = scriptInputStream;
@@ -180,19 +182,6 @@ const AboutHomeStartupCacheChild = {
     return channel;
   },
 
-  getAboutHomeState() {
-    return new Promise(resolve => {
-      Services.cpmm.addMessageListener(this.STATE_RESPONSE_MESSAGE, m => {
-        Services.cpmm.removeMessageListener(this.STATE_RESPONSE_MESSAGE, this);
-        resolve(m.data.state);
-      });
-
-      Services.cpmm.sendAsyncMessage(this.STATE_REQUEST_MESSAGE);
-    });
-  },
-
-  _constructionPromise: null,
-
   
 
 
@@ -207,46 +196,31 @@ const AboutHomeStartupCacheChild = {
 
 
 
-
-
-
-
-  constructAndSendCache() {
+  async constructAndSendCache(state) {
     if (!IS_PRIVILEGED_PROCESS) {
       throw new Error("Wrong process type.");
     }
 
-    if (this._constructionPromise) {
-      return this._constructionPromise;
-    }
+    let worker = this.getOrCreateWorker();
 
-    return (this._constructionPromise = (async () => {
-      try {
-        let worker = this.getOrCreateWorker();
-        let state = await this.getAboutHomeState();
+    let { page, script } = await worker.post("construct", [state]);
 
-        let { page, script } = await worker.post("construct", [state]);
+    let pageInputStream = Cc[
+      "@mozilla.org/io/string-input-stream;1"
+    ].createInstance(Ci.nsIStringInputStream);
 
-        let pageInputStream = Cc[
-          "@mozilla.org/io/string-input-stream;1"
-        ].createInstance(Ci.nsIStringInputStream);
+    pageInputStream.setUTF8Data(page);
 
-        pageInputStream.setUTF8Data(page);
+    let scriptInputStream = Cc[
+      "@mozilla.org/io/string-input-stream;1"
+    ].createInstance(Ci.nsIStringInputStream);
 
-        let scriptInputStream = Cc[
-          "@mozilla.org/io/string-input-stream;1"
-        ].createInstance(Ci.nsIStringInputStream);
+    scriptInputStream.setUTF8Data(script);
 
-        scriptInputStream.setUTF8Data(script);
-
-        Services.cpmm.sendAsyncMessage("AboutHomeStartupCache:PopulateCache", {
-          pageInputStream,
-          scriptInputStream,
-        });
-      } finally {
-        this._constructionPromise = null;
-      }
-    })());
+    Services.cpmm.sendAsyncMessage(this.CACHE_RESPONSE_MESSAGE, {
+      pageInputStream,
+      scriptInputStream,
+    });
   },
 
   _cacheWorker: null,
@@ -257,6 +231,13 @@ const AboutHomeStartupCacheChild = {
 
     this._cacheWorker = new BasePromiseWorker(CACHE_WORKER_URL);
     return this._cacheWorker;
+  },
+
+  receiveMessage(message) {
+    if (message.name === this.CACHE_REQUEST_MESSAGE) {
+      let { state } = message.data;
+      this.constructAndSendCache(state);
+    }
   },
 };
 

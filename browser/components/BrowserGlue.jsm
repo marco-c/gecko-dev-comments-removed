@@ -3,6 +3,7 @@
 
 
 var EXPORTED_SYMBOLS = [
+  "AboutHomeStartupCache",
   "BrowserGlue",
   "ContentPermissionPrompt",
   "DefaultBrowserCheck",
@@ -46,6 +47,12 @@ ChromeUtils.defineModuleGetter(
   this,
   "NetUtil",
   "resource://gre/modules/NetUtil.jsm"
+);
+
+ChromeUtils.defineModuleGetter(
+  this,
+  "DeferredTask",
+  "resource://gre/modules/DeferredTask.jsm"
 );
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -1176,6 +1183,11 @@ BrowserGlue.prototype = {
 
   
   _dispose: function BG__dispose() {
+    
+    
+    
+    AboutHomeStartupCache.uninit();
+
     let os = Services.obs;
     os.removeObserver(this, "notifications-open-settings");
     os.removeObserver(this, "final-ui-startup");
@@ -1989,7 +2001,6 @@ BrowserGlue.prototype = {
       }
     }
 
-    AboutHomeStartupCache.uninit();
     BrowserUsageTelemetry.uninit();
     SearchTelemetry.uninit();
     PageThumbs.uninit();
@@ -4837,6 +4848,7 @@ var AboutHomeStartupCache = {
   ABOUT_HOME_URI_STRING: "about:home",
   SCRIPT_EXTENSION: "script",
   ENABLED_PREF: "browser.startup.homepage.abouthome_cache.enabled",
+  PRELOADED_NEWTAB_PREF: "browser.newtab.preload",
   LOG_LEVEL_PREF: "browser.startup.homepage.abouthome_cache.loglevel",
 
   
@@ -4853,15 +4865,18 @@ var AboutHomeStartupCache = {
 
   
   
-  
-  POPULATE_MESSAGE: "AboutHomeStartupCache:PopulateCache",
+  CACHE_REQUEST_MESSAGE: "AboutHomeStartupCache:CacheRequest",
+  CACHE_RESPONSE_MESSAGE: "AboutHomeStartupCache:CacheResponse",
+
   
   
   
   SEND_STREAMS_MESSAGE: "AboutHomeStartupCache:InputStreams",
 
-  STATE_RESPONSE_MESSAGE: "AboutHomeStartupCache:State:Response",
-  STATE_REQUEST_MESSAGE: "AboutHomeStartupCache:State:Request",
+  
+  
+  
+  CACHE_DEBOUNCE_RATE_MS: 5000,
 
   
   _cacheEntry: null,
@@ -4877,9 +4892,11 @@ var AboutHomeStartupCache = {
   
   
   _scriptPipe: null,
+  _cacheDeferred: null,
 
   _enabled: false,
   _initted: false,
+  _hasWrittenThisSession: false,
 
   init() {
     if (this._initted) {
@@ -4892,6 +4909,13 @@ var AboutHomeStartupCache = {
       return;
     }
 
+    this.log = Log.repository.getLogger(this.LOG_NAME);
+    this.log.manageLevelFromPref(this.LOG_LEVEL_PREF);
+    this._appender = new Log.ConsoleAppender(new Log.BasicFormatter());
+    this.log.addAppender(this._appender);
+
+    this.log.trace("Initting.");
+
     
     
     
@@ -4900,16 +4924,17 @@ var AboutHomeStartupCache = {
       Services.prefs.getIntPref("browser.startup.page") === 1;
 
     if (!willLoadAboutHome) {
+      this.log.trace("Not configured to load about:home by default.");
+      return;
+    }
+
+    if (!Services.prefs.getBoolPref(this.PRELOADED_NEWTAB_PREF, false)) {
+      this.log.trace("Preloaded about:newtab disabled.");
       return;
     }
 
     Services.obs.addObserver(this, "ipc:content-created");
-    Services.ppmm.addMessageListener(this.POPULATE_MESSAGE, this);
-    Services.ppmm.addMessageListener(this.STATE_REQUEST_MESSAGE, this);
-
-    this.log = Log.repository.getLogger(this.LOG_NAME);
-    this.log.manageLevelFromPref(this.LOG_LEVEL_PREF);
-    this.log.addAppender(new Log.ConsoleAppender(new Log.BasicFormatter()));
+    Services.obs.addObserver(this, "ipc:content-shutdown");
 
     let lci = Services.loadContextInfo.default;
     let storage = Services.cache2.diskCacheStorage(lci, false);
@@ -4924,6 +4949,19 @@ var AboutHomeStartupCache = {
       this.log.error("Failed to open about:home cache entry", e);
     }
 
+    this._cacheTask = new DeferredTask(async () => {
+      await this.cacheNow();
+    }, this.CACHE_DEBOUNCE_RATE_MS);
+
+    AsyncShutdown.quitApplicationGranted.addBlocker(
+      "AboutHomeStartupCache: Writing cache",
+      async () => {
+        await this.onShutdown();
+      },
+      () => this._cacheProgress
+    );
+
+    this._cacheDeferred = null;
     this._initted = true;
     this.log.trace("Initialized.");
   },
@@ -4934,14 +4972,23 @@ var AboutHomeStartupCache = {
     }
 
     Services.obs.removeObserver(this, "ipc:content-created");
-    Services.ppmm.removeMessageListener(this.POPULATE_MESSAGE, this);
-    Services.ppmm.removeMessageListener(this.STATE_REQUEST_MESSAGE, this);
+    Services.obs.removeObserver(this, "ipc:content-shutdown");
+
+    if (this._cacheTask) {
+      this._cacheTask.disarm();
+      this._cacheTask = null;
+    }
+
     this._pagePipe = null;
     this._scriptPipe = null;
     this._initted = false;
     this._cacheEntry = null;
-
+    this._hasWrittenThisSession = false;
     this.log.trace("Uninitialized.");
+    this.log.removeAppender(this._appender);
+    this.log = null;
+    this._appender = null;
+    this._cacheDeferred = null;
   },
 
   _aboutHomeURI: null,
@@ -4953,6 +5000,95 @@ var AboutHomeStartupCache = {
 
     this._aboutHomeURI = Services.io.newURI(this.ABOUT_HOME_URI_STRING);
     return this._aboutHomeURI;
+  },
+
+  
+  
+  _cacheProgress: "Not yet begun",
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async onShutdown() {
+    
+    
+    if (!this._hasWrittenThisSession) {
+      this.log.trace("Never wrote a cache this session. Arming cache task.");
+      this._cacheTask.arm();
+    }
+
+    if (this._cacheTask.isArmed) {
+      this.log.trace("Finalizing cache task on shutdown");
+      await this._cacheTask.finalize();
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  async cacheNow() {
+    this._hasWrittenThisSession = true;
+    this._cacheProgress = "Getting cache streams";
+    let { pageInputStream, scriptInputStream } = await this.requestCache();
+
+    if (!pageInputStream || !scriptInputStream) {
+      this._cacheProgress = "Failed to get streams";
+      return;
+    }
+
+    this._cacheProgress = "Writing to cache";
+    await this.populateCache(pageInputStream, scriptInputStream);
+    this._cacheProgress = "Done";
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  requestCache() {
+    this.log.trace("Parent is requesting Activity Stream state object.");
+    if (!this._procManager) {
+      this.log.error("requestCache called with no _procManager!");
+      return { pageInputStream: null, scriptInputStream: null };
+    }
+
+    if (this._procManager.remoteType != E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE) {
+      this.log.error("Somehow got the wrong process type.");
+      return { pageInputStream: null, scriptInputStream: null };
+    }
+
+    let state = AboutNewTab.activityStream.store.getState();
+    return new Promise(resolve => {
+      this._cacheDeferred = resolve;
+      this.log.trace("Parent received cache streams.");
+      this._procManager.sendAsyncMessage(this.CACHE_REQUEST_MESSAGE, { state });
+    });
   },
 
   
@@ -5171,28 +5307,61 @@ var AboutHomeStartupCache = {
 
   
 
-  receiveMessage(message) {
-    
-    if (message.target.remoteType != E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE) {
-      this.log.error(
-        "Received a message from a non-privileged content process!"
+
+
+
+
+
+
+
+
+  onContentProcessCreated(childID, procManager) {
+    if (procManager.remoteType == E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE) {
+      this.log.trace(
+        `A privileged about content process is launching with ID ${childID}.` +
+          "Sending it the cache input streams."
       );
+      this.sendCacheInputStreams(procManager);
+      procManager.addMessageListener(this.CACHE_RESPONSE_MESSAGE, this);
+      this._procManager = procManager;
+      this._procManagerID = childID;
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+  onContentProcessShutdown(childID) {
+    if (this._procManagerID == childID) {
+      this._procManager.removeMessageListener(
+        this.CACHE_RESPONSE_MESSAGE,
+        this
+      );
+      this._procManager = null;
+      this._procManagerID = null;
+    }
+  },
+
+  
+
+
+
+
+
+  onPreloadedNewTabMessage() {
+    if (!this._initted || !this._enabled) {
       return;
     }
+    this.log.trace("Preloaded about:newtab was updated.");
 
-    switch (message.name) {
-      case this.POPULATE_MESSAGE: {
-        let { pageInputStream, scriptInputStream } = message.data;
-        this.populateCache(pageInputStream, scriptInputStream);
-        break;
-      }
-      case this.STATE_REQUEST_MESSAGE: {
-        this.log.trace("Parent got request for Activity Stream state object.");
-        let state = AboutNewTab.activityStream.store.getState();
-        message.target.sendAsyncMessage(this.STATE_RESPONSE_MESSAGE, { state });
-        break;
-      }
-    }
+    this._cacheTask.disarm();
+    this._cacheTask.arm();
   },
 
   QueryInterface: ChromeUtils.generateQI([
@@ -5202,21 +5371,45 @@ var AboutHomeStartupCache = {
 
   
 
-  observe(aSubject, aTopic, aData) {
-    if (aTopic != "ipc:content-created") {
+  receiveMessage(message) {
+    
+    if (message.target.remoteType != E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE) {
+      this.log.error(
+        "Received a message from a non-privileged content process!"
+      );
       return;
     }
 
-    let procManager = aSubject
-      .QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIMessageSender);
+    if (message.name == this.CACHE_RESPONSE_MESSAGE) {
+      this.log.trace("Parent received cache streams.");
+      if (!this._cacheDeferred) {
+        this.log.error("Parent doesn't have _cacheDeferred set up!");
+        return;
+      }
 
-    if (procManager.remoteType == E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE) {
-      this.log.trace(
-        "A privileged about content process is launching. Sending it " +
-          "the cache input streams."
-      );
-      this.sendCacheInputStreams(procManager);
+      this._cacheDeferred(message.data);
+      this._cacheDeferred = null;
+    }
+  },
+
+  
+
+  observe(aSubject, aTopic, aData) {
+    switch (aTopic) {
+      case "ipc:content-created": {
+        let childID = aData;
+        let procManager = aSubject
+          .QueryInterface(Ci.nsIInterfaceRequestor)
+          .getInterface(Ci.nsIMessageSender);
+        this.onContentProcessCreated(childID, procManager);
+        break;
+      }
+
+      case "ipc:content-shutdown": {
+        let childID = aData;
+        this.onContentProcessShutdown(childID);
+        break;
+      }
     }
   },
 
