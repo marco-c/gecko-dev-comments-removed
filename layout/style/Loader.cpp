@@ -434,6 +434,10 @@ void SheetLoadData::ScheduleLoadEventIfNeeded() {
 
 
 
+static RefPtr<StyleSheet> CloneSheet(StyleSheet& aSheet) {
+  return aSheet.Clone(nullptr, nullptr, nullptr, nullptr);
+}
+
 bool LoaderReusableStyleSheets::FindReusableStyleSheet(
     nsIURI* aURL, RefPtr<StyleSheet>& aResult) {
   MOZ_ASSERT(aURL);
@@ -511,10 +515,6 @@ static void AssertIncompleteSheetMatches(const SheetLoadData& aData,
 
 auto Loader::Sheets::Lookup(SheetLoadDataHashKey& aKey, bool aSyncLoad)
     -> CacheResult {
-  auto CloneSheet = [](StyleSheet& aSheet) -> RefPtr<StyleSheet> {
-    return aSheet.Clone(nullptr, nullptr, nullptr, nullptr);
-  };
-
   nsIURI* uri = aKey.GetURI();
   
 #ifdef MOZ_XUL
@@ -1853,7 +1853,10 @@ void Loader::DoSheetComplete(SheetLoadData& aLoadData,
           LOG(("  Putting sheet in XUL prototype cache"));
           NS_ASSERTION(sheet->IsComplete(),
                        "Should only be caching complete sheets");
-          cache->PutStyleSheet(sheet);
+          
+          
+          
+          cache->PutStyleSheet(CloneSheet(*sheet));
         }
       }
     } else {

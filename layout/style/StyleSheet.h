@@ -553,6 +553,12 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   StyleSheet* mParentSheet;  
 
+  
+  
+  
+  
+  nsCOMPtr<nsIGlobalObject> mRelevantGlobal;
+
   RefPtr<dom::Document> mConstructorDocument;
 
   

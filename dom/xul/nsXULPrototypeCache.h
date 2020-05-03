@@ -69,7 +69,7 @@ class nsXULPrototypeCache : public nsIObserver {
 
 
 
-  nsresult PutStyleSheet(mozilla::StyleSheet* aStyleSheet);
+  nsresult PutStyleSheet(RefPtr<mozilla::StyleSheet>&& aStyleSheet);
 
   
 
