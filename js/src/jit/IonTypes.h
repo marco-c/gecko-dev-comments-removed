@@ -72,7 +72,7 @@ enum BailoutKind {
   Bailout_DuringVMCall,
 
   
-  Bailout_NonJSFunctionCallee,
+  Bailout_TooManyArguments,
 
   
   Bailout_DynamicNameNotFound,
@@ -169,6 +169,9 @@ enum BailoutKind {
   Bailout_ShapeGuard,
 
   
+  Bailout_ValueGuard,
+
+  
   Bailout_UninitializedLexical,
 
   
@@ -182,8 +185,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "Bailout_Inevitable";
     case Bailout_DuringVMCall:
       return "Bailout_DuringVMCall";
-    case Bailout_NonJSFunctionCallee:
-      return "Bailout_NonJSFunctionCallee";
+    case Bailout_TooManyArguments:
+      return "Bailout_TooManyArguments";
     case Bailout_DynamicNameNotFound:
       return "Bailout_DynamicNameNotFound";
     case Bailout_StringArgumentsEval:
@@ -244,6 +247,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "Bailout_BoundsCheck";
     case Bailout_ShapeGuard:
       return "Bailout_ShapeGuard";
+    case Bailout_ValueGuard:
+      return "Bailout_ValueGuard";
     case Bailout_UninitializedLexical:
       return "Bailout_UninitializedLexical";
     case Bailout_IonExceptionDebugMode:

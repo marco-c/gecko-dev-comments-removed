@@ -4631,6 +4631,14 @@ void CodeGenerator::visitTypeBarrierO(LTypeBarrierO* lir) {
   masm.bind(&ok);
 }
 
+void CodeGenerator::visitGuardValue(LGuardValue* lir) {
+  ValueOperand input = ToValue(lir, LGuardValue::Input);
+  Value expected = lir->mir()->expected();
+  Label bail;
+  masm.branchTestValue(Assembler::NotEqual, input, expected, &bail);
+  bailoutFrom(&bail, lir->snapshot());
+}
+
 
 class OutOfLineCallPostWriteBarrier : public OutOfLineCodeBase<CodeGenerator> {
   LInstruction* lir_;
