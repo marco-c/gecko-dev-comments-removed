@@ -89,8 +89,7 @@ const {
 } = require("devtools/client/performance-new/browser");
 
 
-
-const PROFILE_ENTRY_SIZE = 9;
+const PROFILE_ENTRY_SIZE = 8;
 
 
 
