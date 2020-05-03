@@ -739,7 +739,7 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
   if (frameLoader) {
     ReceiveMessage(CHILD_PROCESS_SHUTDOWN_MESSAGE, false, nullptr);
 
-    if (!mBrowsingContext->GetParent()) {
+    if (mBrowsingContext->IsTop()) {
       
       
       
@@ -750,8 +750,19 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
     if (why == AbnormalShutdown) {
       frameLoader->MaybeNotifyCrashed(mBrowsingContext, GetIPCChannel());
 
-      if (!mBrowsingContext->IsTopContent()) {
-        OnSubFrameCrashed();
+      auto* bridge = GetBrowserBridgeParent();
+      if (bridge && bridge->CanSend() && !mBrowsingContext->IsDiscarded()) {
+        MOZ_ASSERT(!mBrowsingContext->IsTop());
+
+        
+        
+        
+        mBrowsingContext->SetOwnerProcessId(
+            bridge->Manager()->Manager()->ChildID());
+        mBrowsingContext->SetCurrentInnerWindowId(0);
+
+        
+        Unused << bridge->SendSubFrameCrashed();
       }
     }
   }
@@ -4081,25 +4092,6 @@ FakeChannel::OnAuthCancelled(nsISupports* aContext, bool userCancel) {
     return NS_ERROR_FAILURE;
   }
   return NS_OK;
-}
-
-void BrowserParent::OnSubFrameCrashed() {
-  if (mBrowsingContext->IsDiscarded()) {
-    return;
-  }
-  BrowserBridgeParent* bridge = GetBrowserBridgeParent();
-  if (!bridge || !bridge->CanSend()) {
-    return;
-  }
-
-  
-  
-  
-  mBrowsingContext->SetOwnerProcessId(bridge->Manager()->Manager()->ChildID());
-  mBrowsingContext->SetCurrentInnerWindowId(0);
-
-  
-  Unused << bridge->SendSubFrameCrashed(mBrowsingContext);
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvIsWindowSupportingProtectedMedia(

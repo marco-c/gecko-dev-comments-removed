@@ -3174,18 +3174,16 @@ void nsFrameLoader::InitializeBrowserAPI() {
   if (!OwnerIsMozBrowserFrame()) {
     return;
   }
-  if (!IsRemoteFrame()) {
-    nsresult rv = EnsureMessageManager();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
-    if (mMessageManager) {
-      mMessageManager->LoadFrameScript(
-          NS_LITERAL_STRING("chrome://global/content/BrowserElementChild.js"),
-           true,
-           true, IgnoreErrors());
-    }
+
+  nsresult rv = EnsureMessageManager();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
   }
+  mMessageManager->LoadFrameScript(
+      NS_LITERAL_STRING("chrome://global/content/BrowserElementChild.js"),
+       true,
+       true, IgnoreErrors());
+
   nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(mOwnerContent);
   if (browserFrame) {
     browserFrame->InitializeBrowserAPI();
@@ -3440,7 +3438,7 @@ void nsFrameLoader::MaybeNotifyCrashed(BrowsingContext* aBrowsingContext,
   init.mCancelable = true;
   if (aBrowsingContext) {
     init.mBrowsingContextId = aBrowsingContext->Id();
-    init.mIsTopFrame = !aBrowsingContext->GetParent();
+    init.mIsTopFrame = aBrowsingContext->IsTop();
   }
 
   RefPtr<FrameCrashedEvent> event = FrameCrashedEvent::Constructor(
