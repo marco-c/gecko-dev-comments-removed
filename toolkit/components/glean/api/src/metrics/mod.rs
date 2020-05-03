@@ -4,10 +4,13 @@
 
 
 
+use std::convert::TryFrom;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 
 
-pub use glean_core::{CommonMetricData, ErrorType, Lifetime};
+
+pub use glean_core::{metrics::TimeUnit, CommonMetricData, ErrorType, Lifetime};
 
 mod boolean;
 mod counter;
@@ -15,6 +18,7 @@ mod labeled;
 mod ping;
 mod string;
 mod string_list;
+mod timespan;
 mod uuid;
 
 pub use self::boolean::BooleanMetric;
@@ -23,4 +27,37 @@ pub use self::labeled::LabeledMetric;
 pub use self::ping::Ping;
 pub use self::string::StringMetric;
 pub use self::string_list::StringListMetric;
+pub use self::timespan::TimespanMetric;
 pub use self::uuid::UuidMetric;
+
+
+
+
+
+
+
+
+
+struct Instant(u64);
+
+impl Instant {
+    
+    fn now() -> Instant {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("SystemTime before UNIX epoch!");
+        let now = now.as_nanos();
+
+        match u64::try_from(now) {
+            Ok(now) => Instant(now),
+            Err(_) => {
+                
+                panic!("timestamp exceeds value range")
+            }
+        }
+    }
+
+    fn as_u64(&self) -> u64 {
+        self.0
+    }
+}
