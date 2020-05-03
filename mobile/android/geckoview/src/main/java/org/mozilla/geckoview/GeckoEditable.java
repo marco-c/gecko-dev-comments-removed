@@ -608,13 +608,39 @@ import android.view.inputmethod.EditorInfo;
 
                 
                 
-                if (!icMaybeSendComposition(
+                if (icMaybeSendComposition(
                         action.mSequence, SEND_COMPOSITION_USE_ENTIRE_TEXT)) {
+                    mFocusedChild.onImeReplaceText(
+                            action.mStart, action.mEnd, action.mSequence.toString());
+                    break;
+                }
+
+                
+                sendCharKeyEvents(action);
+
+                
+                
+                
+                
+                
+                final int selStartOnShadow = Selection.getSelectionStart(mText.getShadowText());
+                final int selEndOnShadow = Selection.getSelectionEnd(mText.getShadowText());
+                int actionStart = action.mStart;
+                int actionEnd = action.mEnd;
+                
+                
+                
+                
+                
+                if (action.mStart == action.mEnd && selStartOnShadow == selEndOnShadow &&
+                    action.mStart == selStartOnShadow + action.mSequence.toString().length()) {
                     
-                    sendCharKeyEvents(action);
+                    
+                    actionStart = -1;
+                    actionEnd = -1;
                 }
                 mFocusedChild.onImeReplaceText(
-                        action.mStart, action.mEnd, action.mSequence.toString());
+                        actionStart, actionEnd, action.mSequence.toString());
                 break;
 
             default:
