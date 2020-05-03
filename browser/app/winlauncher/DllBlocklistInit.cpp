@@ -30,7 +30,8 @@ namespace mozilla {
 
 
 LauncherVoidResultWithLineInfo InitializeDllBlocklistOOP(
-    const wchar_t* aFullImagePath, HANDLE aChildProcess) {
+    const wchar_t* aFullImagePath, HANDLE aChildProcess,
+    const IMAGE_THUNK_DATA*) {
   return mozilla::Ok();
 }
 
@@ -42,7 +43,8 @@ LauncherVoidResultWithLineInfo InitializeDllBlocklistOOPFromLauncher(
 #else
 
 static LauncherVoidResultWithLineInfo InitializeDllBlocklistOOPInternal(
-    const wchar_t* aFullImagePath, HANDLE aChildProcess) {
+    const wchar_t* aFullImagePath, HANDLE aChildProcess,
+    const IMAGE_THUNK_DATA* aCachedNtdllThunk) {
   freestanding::gK32.Init();
   if (freestanding::gK32.IsInitialized()) {
     freestanding::gK32.Transfer(aChildProcess, &freestanding::gK32);
@@ -100,18 +102,26 @@ static LauncherVoidResultWithLineInfo InitializeDllBlocklistOOPInternal(
     return LAUNCHER_ERROR_FROM_WIN32(ERROR_BAD_EXE_FORMAT);
   }
 
-  auto ntdllBoundaries = ntdllImage.GetBounds();
-  if (!ntdllBoundaries) {
-    return LAUNCHER_ERROR_FROM_WIN32(ERROR_BAD_EXE_FORMAT);
-  }
+  
+  
+  
+  
+  
+  
+  Maybe<Span<IMAGE_THUNK_DATA> > ntdllThunks;
+  if (aCachedNtdllThunk) {
+    ntdllThunks = ourExeImage.GetIATThunksForModule("ntdll.dll");
+  } else {
+    Maybe<Range<const uint8_t> > ntdllBoundaries = ntdllImage.GetBounds();
+    if (!ntdllBoundaries) {
+      return LAUNCHER_ERROR_FROM_WIN32(ERROR_BAD_EXE_FORMAT);
+    }
 
-  
-  
-  
-  
-  
-  Maybe<Span<IMAGE_THUNK_DATA> > ntdllThunks =
-      ourExeImage.GetIATThunksForModule("ntdll.dll", ntdllBoundaries.ptr());
+    
+    
+    ntdllThunks =
+        ourExeImage.GetIATThunksForModule("ntdll.dll", ntdllBoundaries.ptr());
+  }
   if (!ntdllThunks) {
     return LAUNCHER_ERROR_FROM_WIN32(ERROR_INVALID_DATA);
   }
@@ -119,17 +129,19 @@ static LauncherVoidResultWithLineInfo InitializeDllBlocklistOOPInternal(
   SIZE_T bytesWritten;
 
   {  
-    PIMAGE_THUNK_DATA firstIatThunk = ntdllThunks.value().data();
+    PIMAGE_THUNK_DATA firstIatThunkDst = ntdllThunks.value().data();
+    const IMAGE_THUNK_DATA* firstIatThunkSrc =
+        aCachedNtdllThunk ? aCachedNtdllThunk : firstIatThunkDst;
     SIZE_T iatLength = ntdllThunks.value().LengthBytes();
 
-    AutoVirtualProtect prot(firstIatThunk, iatLength, PAGE_READWRITE,
+    AutoVirtualProtect prot(firstIatThunkDst, iatLength, PAGE_READWRITE,
                             aChildProcess);
     if (!prot) {
       return LAUNCHER_ERROR_FROM_MOZ_WINDOWS_ERROR(prot.GetError());
     }
 
-    ok = !!::WriteProcessMemory(aChildProcess, firstIatThunk, firstIatThunk,
-                                iatLength, &bytesWritten);
+    ok = !!::WriteProcessMemory(aChildProcess, firstIatThunkDst,
+                                firstIatThunkSrc, iatLength, &bytesWritten);
     if (!ok || bytesWritten != iatLength) {
       return LAUNCHER_ERROR_FROM_LAST();
     }
@@ -154,7 +166,8 @@ static LauncherVoidResultWithLineInfo InitializeDllBlocklistOOPInternal(
 }
 
 LauncherVoidResultWithLineInfo InitializeDllBlocklistOOP(
-    const wchar_t* aFullImagePath, HANDLE aChildProcess) {
+    const wchar_t* aFullImagePath, HANDLE aChildProcess,
+    const IMAGE_THUNK_DATA* aCachedNtdllThunk) {
   
   
   
@@ -176,12 +189,14 @@ LauncherVoidResultWithLineInfo InitializeDllBlocklistOOP(
                                   exeImageBase);
   }
 
-  return InitializeDllBlocklistOOPInternal(aFullImagePath, aChildProcess);
+  return InitializeDllBlocklistOOPInternal(aFullImagePath, aChildProcess,
+                                           aCachedNtdllThunk);
 }
 
 LauncherVoidResultWithLineInfo InitializeDllBlocklistOOPFromLauncher(
     const wchar_t* aFullImagePath, HANDLE aChildProcess) {
-  return InitializeDllBlocklistOOPInternal(aFullImagePath, aChildProcess);
+  return InitializeDllBlocklistOOPInternal(aFullImagePath, aChildProcess,
+                                           nullptr);
 }
 
 #endif  

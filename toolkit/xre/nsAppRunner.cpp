@@ -4708,6 +4708,13 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   
   
   
+  
+  mozilla::ipc::GeckoChildProcessHost::CacheNtDllThunk();
+
+  
+  
+  
+  
   mozilla::mscom::ProcessRuntime msCOMRuntime;
 #endif
 
