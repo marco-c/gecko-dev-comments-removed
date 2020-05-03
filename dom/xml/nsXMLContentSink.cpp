@@ -1060,7 +1060,7 @@ nsresult nsXMLContentSink::HandleEndElement(const char16_t* aName,
     
     mState = eXMLContentSinkState_InEpilog;
 
-    mDocument->TriggerInitialTranslation();
+    mDocument->OnParsingCompleted();
 
     
     MaybeStartLayout(false);

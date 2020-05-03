@@ -3716,10 +3716,7 @@ class Document : public nsINode,
 
 
 
-
-
-
-  void TriggerInitialTranslation();
+  void OnParsingCompleted();
 
   
 

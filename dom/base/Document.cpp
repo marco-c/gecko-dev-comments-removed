@@ -3946,7 +3946,7 @@ void Document::OnL10nResourceContainerParsed() {
   }
 }
 
-void Document::TriggerInitialTranslation() {
+void Document::OnParsingCompleted() {
   
   
   
