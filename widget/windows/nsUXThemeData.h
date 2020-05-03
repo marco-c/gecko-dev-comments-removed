@@ -79,7 +79,28 @@ enum WindowsThemeColor {
 #define CMDBUTTONIDX_BUTTONBOX 3
 
 class nsUXThemeData {
-  static HANDLE sThemes[eUXNumClasses];
+  
+  
+  
+  class ThemeHandle final {
+    Maybe<HANDLE> mHandle;
+
+   public:
+    ThemeHandle() = default;
+    ~ThemeHandle();
+
+    
+    ThemeHandle(const ThemeHandle&) = delete;
+    ThemeHandle(ThemeHandle&&) = delete;
+    ThemeHandle& operator=(const ThemeHandle&) = delete;
+    ThemeHandle& operator=(ThemeHandle&&) = delete;
+
+    operator HANDLE();
+    void OpenOnce(HWND aWindow, LPCWSTR aClassList);
+    void Close();
+  };
+
+  static ThemeHandle sThemes[eUXNumClasses];
 
   
   
