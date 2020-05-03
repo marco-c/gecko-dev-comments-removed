@@ -69,7 +69,7 @@ let gMgr = Cc["@mozilla.org/memory-reporter-manager;1"].getService(
 const gPageName = "about:memory";
 document.title = gPageName;
 
-const gUnnamedProcessStr = "Main Process";
+const gMainProcessPrefix = "Main Process";
 
 const gFilterUpdateDelayMS = 300;
 
@@ -1169,7 +1169,16 @@ function appendAboutMemoryMain(
       "bad presence"
     );
 
-    let process = aProcess === "" ? gUnnamedProcessStr : aProcess;
+    
+    
+    
+    
+    
+    
+    
+    let process = aProcess
+      ? aProcess
+      : gMainProcessPrefix + " (pid " + Services.appinfo.processID + ")";
 
     
     
@@ -1256,10 +1265,10 @@ function appendAboutMemoryMain(
       );
 
       
-      if (aProcessA == gUnnamedProcessStr) {
+      if (aProcessA.startsWith(gMainProcessPrefix)) {
         return -1;
       }
-      if (aProcessB == gUnnamedProcessStr) {
+      if (aProcessB.startsWith(gMainProcessPrefix)) {
         return 1;
       }
 
