@@ -31,10 +31,11 @@ NS_IMPL_RELEASE_INHERITED(SessionStorage, Storage)
 
 SessionStorage::SessionStorage(nsPIDOMWindowInner* aWindow,
                                nsIPrincipal* aPrincipal,
+                               nsIPrincipal* aStoragePrincipal,
                                SessionStorageCache* aCache,
                                SessionStorageManager* aManager,
                                const nsAString& aDocumentURI, bool aIsPrivate)
-    : Storage(aWindow, aPrincipal, aPrincipal),
+    : Storage(aWindow, aPrincipal, aStoragePrincipal),
       mCache(aCache),
       mManager(aManager),
       mDocumentURI(aDocumentURI),
@@ -42,7 +43,7 @@ SessionStorage::SessionStorage(nsPIDOMWindowInner* aWindow,
   MOZ_ASSERT(aCache);
 }
 
-SessionStorage::~SessionStorage() {}
+SessionStorage::~SessionStorage() = default;
 
 int64_t SessionStorage::GetOriginQuotaUsage() const {
   return mCache->GetOriginQuotaUsage(DATASET);
