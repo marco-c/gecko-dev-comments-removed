@@ -9815,6 +9815,17 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
 
       
       
+      
+      if (effectiveZoomFlag == nsViewportInfo::ZoomFlag::DisallowZoom &&
+          scaleFloat > CSSToScreenScale(0.0f)) {
+        scaleMinFloat = scaleMaxFloat = scaleFloat;
+      }
+      MOZ_ASSERT(
+          scaleFloat > CSSToScreenScale(0.0f) || !mValidScaleFloat,
+          "If we don't have a positive scale, we should be using auto scale.");
+
+      
+      
       if (mValidScaleFloat && scaleFloat >= scaleMinFloat &&
           scaleFloat <= scaleMaxFloat) {
         CSSSize displaySize = ScreenSize(aDisplaySize) / scaleFloat;
