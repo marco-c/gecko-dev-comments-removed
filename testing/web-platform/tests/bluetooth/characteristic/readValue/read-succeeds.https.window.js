@@ -1,7 +1,6 @@
 
 
 
-
 'use strict';
 const test_desc = 'A read request succeeds and returns the characteristic\'s ' +
     'value.';

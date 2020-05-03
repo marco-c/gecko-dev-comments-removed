@@ -2,7 +2,6 @@
 
 
 
-
 'use strict';
 const test_desc = 'Wrong Service name. Reject with TypeError.';
 const expected = new DOMException(

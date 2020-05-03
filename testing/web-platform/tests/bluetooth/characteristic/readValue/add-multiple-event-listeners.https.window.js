@@ -1,7 +1,6 @@
 
 
 
-
 'use strict';
 const test_desc = 'Add multiple event listeners then readValue().';
 

@@ -1,7 +1,6 @@
 
 
 
-
 'use strict';
 const test_desc = 'getDevices() resolves with permitted devices that can be ' +
     'GATT connected to.';

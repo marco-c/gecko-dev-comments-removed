@@ -398,7 +398,20 @@
         self.addEventListener("message",
                 function(event) {
                     if (event.data && event.data.type && event.data.type === "connect") {
-                        this_obj._add_message_port(event.source);
+                        if (event.ports && event.ports[0]) {
+                            
+                            
+                            
+                            
+                            
+                            this_obj._add_message_port(event.ports[0]);
+                            event.ports[0].start();
+                        } else {
+                            
+                            
+                            
+                            this_obj._add_message_port(event.source);
+                        }
                     }
                 }, false);
 

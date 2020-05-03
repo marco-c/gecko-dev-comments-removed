@@ -1,7 +1,6 @@
 
 
 
-
 'use strict';
 const test_desc = 'Same parent service returned from multiple characteristics.';
 
