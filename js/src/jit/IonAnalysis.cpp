@@ -1295,9 +1295,18 @@ bool js::jit::DeadIfUnused(const MDefinition* def) {
   
   
   
-  if (def->isGuard() && (def->block() != def->block()->graph().osrBlock() ||
-                         def->isImplicitlyUsed())) {
-    return false;
+  
+  
+  if (def->isGuard()) {
+    if (JitOptions.warpBuilder) {
+      return false;
+    }
+    if (def->isImplicitlyUsed()) {
+      return false;
+    }
+    if (def->block() != def->block()->graph().osrBlock()) {
+      return false;
+    }
   }
 
   
@@ -1588,6 +1597,64 @@ class TypeAnalyzer {
 
 } 
 
+static bool ShouldSpecializeOsrPhis() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return JitOptions.warpBuilder;
+}
+
 
 static MIRType GuessPhiType(MPhi* phi, bool* hasInputsWithEmptyTypes) {
 #ifdef DEBUG
@@ -1631,6 +1698,12 @@ static MIRType GuessPhiType(MPhi* phi, bool* hasInputsWithEmptyTypes) {
     
     if (in->resultTypeSet() && in->resultTypeSet()->empty()) {
       *hasInputsWithEmptyTypes = true;
+      continue;
+    }
+
+    
+    
+    if (ShouldSpecializeOsrPhis() && in->isOsrValue()) {
       continue;
     }
 
@@ -1807,6 +1880,34 @@ bool TypeAnalyzer::specializePhis() {
     }
   } while (!phiWorklist_.empty());
 
+  if (ShouldSpecializeOsrPhis() && graph.osrBlock()) {
+    
+    
+    MBasicBlock* preHeader = graph.osrPreHeaderBlock();
+    MBasicBlock* header = preHeader->getSingleSuccessor();
+    MOZ_ASSERT(header->isLoopHeader());
+
+    for (MPhiIterator phi(header->phisBegin()); phi != header->phisEnd();
+         phi++) {
+      MPhi* preHeaderPhi = phi->getOperand(0)->toPhi();
+      MOZ_ASSERT(preHeaderPhi->block() == preHeader);
+
+      if (preHeaderPhi->type() == MIRType::Value) {
+        
+        continue;
+      }
+
+      MIRType loopType = phi->type();
+      if (!respecialize(preHeaderPhi, loopType)) {
+        return false;
+      }
+    }
+
+    if (!propagateAllPhiSpecializations()) {
+      return false;
+    }
+  }
+
   MOZ_ASSERT(phiWorklist_.empty());
   return true;
 }
@@ -1953,6 +2054,21 @@ void TypeAnalyzer::replaceRedundantPhi(MPhi* phi) {
   
   block->insertBefore(*(block->begin()), c);
   phi->justReplaceAllUsesWith(c);
+
+  if (ShouldSpecializeOsrPhis() && block == graph.osrPreHeaderBlock()) {
+    
+    
+    MBasicBlock* osrBlock = graph.osrBlock();
+    MOZ_ASSERT(block->getPredecessor(1) == osrBlock);
+    MDefinition* def = phi->getOperand(1);
+    if (def->isOsrValue()) {
+      MGuardValue* guard = MGuardValue::New(alloc(), def, v);
+      osrBlock->insertBefore(osrBlock->lastIns(), guard);
+    } else {
+      MOZ_ASSERT(def->isConstant());
+      MOZ_ASSERT(def->type() == phi->type());
+    }
+  }
 }
 
 bool TypeAnalyzer::insertConversions() {

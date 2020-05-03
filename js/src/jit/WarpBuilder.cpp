@@ -238,10 +238,9 @@ bool WarpBuilder::startNewOsrPreHeaderBlock(BytecodeLocation loopHead) {
     current->initSlot(slot, osrv);
   }
 
-  current->add(MStart::New(alloc()));
+  MStart* start = MStart::New(alloc());
+  current->add(start);
 
-  
-  
   
   
 
