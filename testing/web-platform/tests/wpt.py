@@ -1,3 +1,7 @@
 
 
+
+import os
+abspath = os.path.abspath(__file__)
+os.chdir(os.path.dirname(abspath))
 exec(compile(open("wpt", "r").read(), "wpt", 'exec'))
