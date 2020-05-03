@@ -72,6 +72,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   already_AddRefed<WindowGlobalParent> GetParentWindowGlobal() const;
 
+  already_AddRefed<CanonicalBrowsingContext> GetParentCrossChromeBoundary();
+
   nsISHistory* GetSessionHistory();
   void SetSessionHistory(nsISHistory* aSHistory) {
     mSessionHistory = aSHistory;
