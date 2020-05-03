@@ -5,10 +5,18 @@
 
 
 
+from __future__ import absolute_import
+
+import sys
+
+
+
+sys.path.pop(0)
+
 import mozunit
 import unittest
-import xpidl
-import header
+from xpidl import xpidl
+from xpidl import header
 
 
 class TestParser(unittest.TestCase):
