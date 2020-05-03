@@ -37,8 +37,14 @@ const frameTargetPrototype = extend({}, browsingContextTargetPrototype);
 
 
 
-frameTargetPrototype.initialize = function(connection, docShell) {
-  BrowsingContextTargetActor.prototype.initialize.call(this, connection);
+
+
+frameTargetPrototype.initialize = function(connection, docShell, options) {
+  BrowsingContextTargetActor.prototype.initialize.call(
+    this,
+    connection,
+    options
+  );
 
   this.traits.reconfigure = false;
 

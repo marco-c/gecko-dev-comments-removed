@@ -238,8 +238,23 @@ const browsingContextTargetPrototype = {
 
 
 
-  initialize: function(connection) {
+
+
+
+
+
+
+
+
+
+
+
+
+  initialize: function(connection, options = {}) {
     Actor.prototype.initialize.call(this, connection);
+
+    this.followWindowGlobalLifeCycle = options.followWindowGlobalLifeCycle;
+    this.doNotFireFrameUpdates = options.doNotFireFrameUpdates;
 
     
     this._extraActors = {};
@@ -870,6 +885,12 @@ const browsingContextTargetPrototype = {
   },
 
   _notifyDocShellsUpdate(docshells) {
+    
+    
+    if (this.doNotFireFrameUpdates) {
+      return;
+    }
+
     const windows = this._docShellsToWindows(docshells);
 
     
@@ -887,6 +908,12 @@ const browsingContextTargetPrototype = {
   },
 
   _notifyDocShellDestroy(webProgress) {
+    
+    
+    if (this.doNotFireFrameUpdates) {
+      return;
+    }
+
     webProgress = webProgress.QueryInterface(Ci.nsIWebProgress);
     const id = webProgress.DOMWindow.windowUtils.outerWindowID;
     this.emit("frameUpdate", {
@@ -900,6 +927,12 @@ const browsingContextTargetPrototype = {
   },
 
   _notifyDocShellDestroyAll() {
+    
+    
+    if (this.doNotFireFrameUpdates) {
+      return;
+    }
+
     this.emit("frameUpdate", {
       destroyAll: true,
     });
@@ -980,6 +1013,13 @@ const browsingContextTargetPrototype = {
     }
 
     this._attached = false;
+
+    
+    
+    
+    if (this.followWindowGlobalLifeCycle) {
+      return true;
+    }
 
     this.emit("tabDetached");
 
@@ -1391,12 +1431,16 @@ const browsingContextTargetPrototype = {
       return;
     }
 
-    this.emit("tabNavigated", {
-      url: newURI,
-      nativeConsoleAPI: true,
-      state: "start",
-      isFrameSwitching: isFrameSwitching,
-    });
+    
+    
+    if (!this.followWindowGlobalLifeCycle) {
+      this.emit("tabNavigated", {
+        url: newURI,
+        nativeConsoleAPI: true,
+        state: "start",
+        isFrameSwitching: isFrameSwitching,
+      });
+    }
 
     if (reset) {
       this._setWindow(this._originalWindow);
@@ -1422,6 +1466,17 @@ const browsingContextTargetPrototype = {
     
     
     if (!isTopLevel) {
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    if (this.followWindowGlobalLifeCycle) {
       return;
     }
 
