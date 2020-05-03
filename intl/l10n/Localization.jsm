@@ -258,11 +258,32 @@ class Localization {
   
 
 
+  addResourceId(resourceId) {
+    this.resourceIds.push(resourceId);
+    this.onChange();
+    return this.resourceIds.length;
+  }
+
+  
+
+
+  removeResourceId(resourceId) {
+    this.resourceIds = this.resourceIds.filter(r => r !== resourceId);
+    this.onChange();
+    return this.resourceIds.length;
+  }
+
+  
+
+
   addResourceIds(resourceIds) {
     this.resourceIds.push(...resourceIds);
     this.onChange();
     return this.resourceIds.length;
   }
+
+  
+
 
   removeResourceIds(resourceIds) {
     this.resourceIds = this.resourceIds.filter(r => !resourceIds.includes(r));
