@@ -275,7 +275,7 @@ struct Statistics {
     size_t startFaults = 0;
     size_t endFaults = 0;
     PhaseTimeTable phaseTimes;
-    PhaseTimeTable parallelTimes;
+    PhaseTimeTable maxParallelTimes;
 
     TimeDuration duration() const { return end - start; }
     bool wasReset() const { return resetReason != gc::AbortReason::None; }
@@ -348,7 +348,6 @@ struct Statistics {
 
   
   PhaseTimeTable phaseTimes;
-  PhaseTimeTable parallelTimes;
 
   
   EnumeratedArray<Count, COUNT_LIMIT,
