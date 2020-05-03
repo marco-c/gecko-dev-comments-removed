@@ -21,6 +21,8 @@
 
 
 
+extern "C" {
+
 struct glslopt_shader;
 struct glslopt_ctx;
 
@@ -87,5 +89,6 @@ void glslopt_shader_get_texture_desc (glslopt_shader* shader, int index, const c
 
 void glslopt_shader_get_stats (glslopt_shader* shader, int* approxMath, int* approxTex, int* approxFlow);
 
+} 
 
 #endif 
