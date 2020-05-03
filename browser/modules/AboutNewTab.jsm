@@ -250,7 +250,10 @@ const AboutNewTab = {
   observe(subject, topic, data) {
     switch (topic) {
       case TOPIC_APP_QUIT: {
-        this.uninit();
+        
+        
+        
+        Services.tm.dispatchToMainThread(() => this.uninit());
         break;
       }
       case BROWSER_READY_NOTIFICATION: {

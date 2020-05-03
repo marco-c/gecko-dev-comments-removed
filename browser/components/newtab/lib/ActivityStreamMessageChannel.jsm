@@ -10,6 +10,12 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/AboutNewTab.jsm"
 );
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "AboutHomeStartupCache",
+  "resource:///modules/BrowserGlue.jsm"
+);
+
 const { RemotePages } = ChromeUtils.import(
   "resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm"
 );
@@ -106,6 +112,10 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
 
   broadcast(action) {
+    
+    
+    AboutHomeStartupCache.onPreloadedNewTabMessage();
+
     this.channel.sendAsyncMessage(this.outgoingMessageName, action);
   }
 
@@ -158,6 +168,11 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
 
   sendToPreloaded(action) {
+    
+    
+    
+    AboutHomeStartupCache.onPreloadedNewTabMessage();
+
     const preloadedBrowsers = this.getPreloadedBrowser();
     if (preloadedBrowsers && action.data) {
       for (let preloadedBrowser of preloadedBrowsers) {
