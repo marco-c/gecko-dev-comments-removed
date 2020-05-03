@@ -122,7 +122,13 @@
   }
   .urlbarView-results[wrap] > .urlbarView-row[has-url] > .urlbarView-row-inner > .urlbarView-url {
     margin-top: 2px;
-    padding-inline-start: calc(@urlbarViewItemInlinePadding@ + @identityBoxMarginInlineEnd@ +  16px);
+  }
+  
+  .urlbarView-results[wrap] > .urlbarView-row[has-url] > .urlbarView-row-inner > .urlbarView-url:-moz-locale-dir(ltr) {
+    padding-left: calc(@urlbarViewItemInlinePadding@ + @identityBoxMarginInlineEnd@ +  16px);
+  }
+  .urlbarView-results[wrap] > .urlbarView-row[has-url] > .urlbarView-row-inner > .urlbarView-url:-moz-locale-dir(rtl) {
+    padding-right: calc(@urlbarViewItemInlinePadding@ + @identityBoxMarginInlineEnd@ +  16px);
   }
   
 
