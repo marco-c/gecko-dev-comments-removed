@@ -1,30 +1,26 @@
 
 
 use super::super::settings as shared_settings;
-#[cfg(feature = "unwind")]
-use super::fde::emit_fde;
 use super::registers::{FPR, GPR, RU};
 use super::settings as isa_settings;
-#[cfg(feature = "unwind")]
-use super::unwind::UnwindInfo;
 use crate::abi::{legalize_args, ArgAction, ArgAssigner, ValueConversion};
-#[cfg(feature = "unwind")]
-use crate::binemit::{FrameUnwindKind, FrameUnwindSink};
 use crate::cursor::{Cursor, CursorPosition, EncCursor};
 use crate::ir;
+use crate::ir::entities::StackSlot;
 use crate::ir::immediates::Imm64;
 use crate::ir::stackslot::{StackOffset, StackSize};
+use crate::ir::types;
 use crate::ir::{
-    get_probestack_funcref, AbiParam, ArgumentExtension, ArgumentLoc, ArgumentPurpose,
-    FrameLayoutChange, InstBuilder, ValueLoc,
+    get_probestack_funcref, AbiParam, ArgumentExtension, ArgumentLoc, ArgumentPurpose, InstBuilder,
+    ValueLoc,
 };
 use crate::isa::{CallConv, RegClass, RegUnit, TargetIsa};
 use crate::regalloc::RegisterSet;
 use crate::result::CodegenResult;
 use crate::stack_layout::layout_stack;
 use alloc::borrow::Cow;
+use alloc::vec::Vec;
 use core::i32;
-use std::boxed::Box;
 use target_lexicon::{PointerWidth, Triple};
 
 
@@ -378,6 +374,7 @@ fn callee_saved_gprs(isa: &dyn TargetIsa, call_conv: CallConv) -> &'static [RU] 
                 
                 
                 
+                
                 &[
                     RU::rbx,
                     RU::rdi,
@@ -395,10 +392,43 @@ fn callee_saved_gprs(isa: &dyn TargetIsa, call_conv: CallConv) -> &'static [RU] 
 }
 
 
-fn callee_saved_gprs_used(isa: &dyn TargetIsa, func: &ir::Function) -> RegisterSet {
+fn callee_saved_fprs(isa: &dyn TargetIsa, call_conv: CallConv) -> &'static [RU] {
+    match isa.triple().pointer_width().unwrap() {
+        PointerWidth::U16 => panic!(),
+        PointerWidth::U32 => &[],
+        PointerWidth::U64 => {
+            if call_conv.extends_windows_fastcall() {
+                
+                
+                
+                
+                &[
+                    RU::xmm6,
+                    RU::xmm7,
+                    RU::xmm8,
+                    RU::xmm9,
+                    RU::xmm10,
+                    RU::xmm11,
+                    RU::xmm12,
+                    RU::xmm13,
+                    RU::xmm14,
+                    RU::xmm15,
+                ]
+            } else {
+                &[]
+            }
+        }
+    }
+}
+
+
+fn callee_saved_regs_used(isa: &dyn TargetIsa, func: &ir::Function) -> RegisterSet {
     let mut all_callee_saved = RegisterSet::empty();
     for reg in callee_saved_gprs(isa, func.signature.call_conv) {
         all_callee_saved.free(GPR, *reg as RegUnit);
+    }
+    for reg in callee_saved_fprs(isa, func.signature.call_conv) {
+        all_callee_saved.free(FPR, *reg as RegUnit);
     }
 
     let mut used = RegisterSet::empty();
@@ -407,8 +437,14 @@ fn callee_saved_gprs_used(isa: &dyn TargetIsa, func: &ir::Function) -> RegisterS
         
         
         if let ValueLoc::Reg(ru) = *value_loc {
-            if !used.is_avail(GPR, ru) {
-                used.free(GPR, ru);
+            if GPR.contains(ru) {
+                if !used.is_avail(GPR, ru) {
+                    used.free(GPR, ru);
+                }
+            } else if FPR.contains(ru) {
+                if !used.is_avail(FPR, ru) {
+                    used.free(FPR, ru);
+                }
             }
         }
     }
@@ -424,8 +460,14 @@ fn callee_saved_gprs_used(isa: &dyn TargetIsa, func: &ir::Function) -> RegisterS
             match func.dfg[inst] {
                 ir::instructions::InstructionData::RegMove { dst, .. }
                 | ir::instructions::InstructionData::RegFill { dst, .. } => {
-                    if !used.is_avail(GPR, dst) {
-                        used.free(GPR, dst);
+                    if GPR.contains(dst) {
+                        if !used.is_avail(GPR, dst) {
+                            used.free(GPR, dst);
+                        }
+                    } else if FPR.contains(dst) {
+                        if !used.is_avail(FPR, dst) {
+                            used.free(FPR, dst);
+                        }
                     }
                 }
                 _ => (),
@@ -478,38 +520,12 @@ fn baldrdash_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> 
 
 
 
-
-
-
-
-#[derive(Clone)]
-struct CFAState {
-    
-    
-    
-    cf_ptr_reg: RegUnit,
-    
-    
-    
-    
-    
-    
-    
-    cf_ptr_offset: isize,
-    
-    
-    
-    current_depth: isize,
-}
-
-
-
 fn fastcall_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> CodegenResult<()> {
     if isa.triple().pointer_width().unwrap() != PointerWidth::U64 {
         panic!("TODO: windows-fastcall: x86-32 not implemented yet");
     }
 
-    let csrs = callee_saved_gprs_used(isa, func);
+    let csrs = callee_saved_regs_used(isa, func);
 
     
     
@@ -519,11 +535,28 @@ fn fastcall_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> C
     
     
     let word_size = isa.pointer_bytes() as usize;
+    let num_fprs = csrs.iter(FPR).len();
     let csr_stack_size = ((csrs.iter(GPR).len() + 2) * word_size) as i32;
 
     
-    
+    let fpr_slot = if num_fprs > 0 {
+        
+        
+        
+        
+        
+        
+        Some(func.create_stack_slot(ir::StackSlotData {
+            kind: ir::StackSlotKind::ExplicitSlot,
+            size: (num_fprs * types::F64X2.bytes() as usize) as u32,
+            offset: None,
+        }))
+    } else {
+        None
+    };
 
+    
+    
     func.create_stack_slot(ir::StackSlotData {
         kind: ir::StackSlotKind::IncomingArg,
         size: csr_stack_size as u32,
@@ -544,8 +577,18 @@ fn fastcall_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> C
     func.signature.params.push(fp_arg);
     func.signature.returns.push(fp_arg);
 
-    for csr in csrs.iter(GPR) {
-        let csr_arg = ir::AbiParam::special_reg(reg_type, ir::ArgumentPurpose::CalleeSaved, csr);
+    for gp_csr in csrs.iter(GPR) {
+        let csr_arg = ir::AbiParam::special_reg(reg_type, ir::ArgumentPurpose::CalleeSaved, gp_csr);
+        func.signature.params.push(csr_arg);
+        func.signature.returns.push(csr_arg);
+    }
+
+    for fp_csr in csrs.iter(FPR) {
+        
+        
+        
+        let csr_arg =
+            ir::AbiParam::special_reg(types::F64X2, ir::ArgumentPurpose::CalleeSaved, fp_csr);
         func.signature.params.push(csr_arg);
         func.signature.returns.push(csr_arg);
     }
@@ -553,8 +596,14 @@ fn fastcall_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> C
     
     let entry_block = func.layout.entry_block().expect("missing entry block");
     let mut pos = EncCursor::new(func, isa).at_first_insertion_point(entry_block);
-    let prologue_cfa_state =
-        insert_common_prologue(&mut pos, local_stack_size, reg_type, &csrs, isa);
+    insert_common_prologue(
+        &mut pos,
+        local_stack_size,
+        reg_type,
+        &csrs,
+        fpr_slot.as_ref(),
+        isa,
+    );
 
     
     let mut pos = pos.at_position(CursorPosition::Nowhere);
@@ -563,8 +612,7 @@ fn fastcall_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> C
         local_stack_size,
         reg_type,
         &csrs,
-        isa,
-        prologue_cfa_state,
+        fpr_slot.as_ref(),
     );
 
     Ok(())
@@ -575,7 +623,11 @@ fn system_v_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> C
     let pointer_width = isa.triple().pointer_width().unwrap();
     let word_size = pointer_width.bytes() as usize;
 
-    let csrs = callee_saved_gprs_used(isa, func);
+    let csrs = callee_saved_regs_used(isa, func);
+    assert!(
+        csrs.iter(FPR).len() == 0,
+        "SysV ABI does not have callee-save SIMD registers"
+    );
 
     
     
@@ -614,19 +666,11 @@ fn system_v_prologue_epilogue(func: &mut ir::Function, isa: &dyn TargetIsa) -> C
     
     let entry_block = func.layout.entry_block().expect("missing entry block");
     let mut pos = EncCursor::new(func, isa).at_first_insertion_point(entry_block);
-    let prologue_cfa_state =
-        insert_common_prologue(&mut pos, local_stack_size, reg_type, &csrs, isa);
+    insert_common_prologue(&mut pos, local_stack_size, reg_type, &csrs, None, isa);
 
     
     let mut pos = pos.at_position(CursorPosition::Nowhere);
-    insert_common_epilogues(
-        &mut pos,
-        local_stack_size,
-        reg_type,
-        &csrs,
-        isa,
-        prologue_cfa_state,
-    );
+    insert_common_epilogues(&mut pos, local_stack_size, reg_type, &csrs, None);
 
     Ok(())
 }
@@ -638,121 +682,61 @@ fn insert_common_prologue(
     stack_size: i64,
     reg_type: ir::types::Type,
     csrs: &RegisterSet,
+    fpr_slot: Option<&StackSlot>,
     isa: &dyn TargetIsa,
-) -> Option<CFAState> {
-    let word_size = isa.pointer_bytes() as isize;
-    if stack_size > 0 {
-        
-        if let Some(stack_limit_arg) = pos.func.special_param(ArgumentPurpose::StackLimit) {
-            
-            
-            
-            
-            
-            let total_stack_size = (csrs.iter(GPR).len() + 1 + 1) as i64 * word_size as i64;
-
-            insert_stack_check(pos, total_stack_size, stack_limit_arg);
+) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if stack_size > 0 || !pos.func.is_leaf() {
+        let scratch = ir::ValueLoc::Reg(RU::rax as RegUnit);
+        let stack_limit_arg = match pos.func.special_param(ArgumentPurpose::StackLimit) {
+            Some(arg) => {
+                let copy = pos.ins().copy(arg);
+                pos.func.locations[copy] = scratch;
+                Some(copy)
+            }
+            None => pos
+                .func
+                .stack_limit
+                .map(|gv| interpret_gv(pos, gv, scratch)),
+        };
+        if let Some(stack_limit_arg) = stack_limit_arg {
+            insert_stack_check(pos, stack_size, stack_limit_arg);
         }
     }
-
-    let mut cfa_state = if let Some(ref mut frame_layout) = pos.func.frame_layout {
-        let cfa_state = CFAState {
-            cf_ptr_reg: RU::rsp as RegUnit,
-            cf_ptr_offset: word_size,
-            current_depth: -word_size,
-        };
-
-        frame_layout.initial = vec![
-            FrameLayoutChange::CallFrameAddressAt {
-                reg: cfa_state.cf_ptr_reg,
-                offset: cfa_state.cf_ptr_offset,
-            },
-            FrameLayoutChange::ReturnAddressAt {
-                cfa_offset: cfa_state.current_depth,
-            },
-        ]
-        .into_boxed_slice();
-
-        Some(cfa_state)
-    } else {
-        None
-    };
 
     
     let block = pos.current_block().expect("missing block under cursor");
     let fp = pos.func.dfg.append_block_param(block, reg_type);
     pos.func.locations[fp] = ir::ValueLoc::Reg(RU::rbp as RegUnit);
 
-    let push_fp_inst = pos.ins().x86_push(fp);
-
-    if let Some(ref mut frame_layout) = pos.func.frame_layout {
-        let cfa_state = cfa_state
-            .as_mut()
-            .expect("cfa state exists when recording frame layout");
-        cfa_state.current_depth -= word_size;
-        cfa_state.cf_ptr_offset += word_size;
-        frame_layout.instructions.insert(
-            push_fp_inst,
-            vec![
-                FrameLayoutChange::CallFrameAddressAt {
-                    reg: cfa_state.cf_ptr_reg,
-                    offset: cfa_state.cf_ptr_offset,
-                },
-                FrameLayoutChange::RegAt {
-                    reg: RU::rbp as RegUnit,
-                    cfa_offset: cfa_state.current_depth,
-                },
-            ]
-            .into_boxed_slice(),
-        );
-    }
+    pos.ins().x86_push(fp);
 
     let mov_sp_inst = pos
         .ins()
         .copy_special(RU::rsp as RegUnit, RU::rbp as RegUnit);
 
-    if let Some(ref mut frame_layout) = pos.func.frame_layout {
-        let mut cfa_state = cfa_state
-            .as_mut()
-            .expect("cfa state exists when recording frame layout");
-        cfa_state.cf_ptr_reg = RU::rbp as RegUnit;
-        frame_layout.instructions.insert(
-            mov_sp_inst,
-            vec![FrameLayoutChange::CallFrameAddressAt {
-                reg: cfa_state.cf_ptr_reg,
-                offset: cfa_state.cf_ptr_offset,
-            }]
-            .into_boxed_slice(),
-        );
-    }
-
+    let mut last_csr_push = None;
     for reg in csrs.iter(GPR) {
         
         let csr_arg = pos.func.dfg.append_block_param(block, reg_type);
 
         
         pos.func.locations[csr_arg] = ir::ValueLoc::Reg(reg);
-
-        
-        let reg_push_inst = pos.ins().x86_push(csr_arg);
-
-        if let Some(ref mut frame_layout) = pos.func.frame_layout {
-            let mut cfa_state = cfa_state
-                .as_mut()
-                .expect("cfa state exists when recording frame layout");
-            cfa_state.current_depth -= word_size;
-            frame_layout.instructions.insert(
-                reg_push_inst,
-                vec![FrameLayoutChange::RegAt {
-                    reg,
-                    cfa_offset: cfa_state.current_depth,
-                }]
-                .into_boxed_slice(),
-            );
-        }
+        last_csr_push = Some(pos.ins().x86_push(csr_arg));
     }
 
     
+    let mut adjust_sp_inst = None;
     if stack_size > 0 {
         if isa.flags().enable_probestack() && stack_size > (1 << isa.flags().probestack_size_log2())
         {
@@ -788,15 +772,89 @@ fn insert_common_prologue(
             if !isa.flags().probestack_func_adjusts_sp() {
                 let result = pos.func.dfg.inst_results(call)[0];
                 pos.func.locations[result] = rax_val;
-                pos.func.prologue_end = Some(pos.ins().adjust_sp_down(result));
+                adjust_sp_inst = Some(pos.ins().adjust_sp_down(result));
             }
         } else {
             
-            pos.func.prologue_end = Some(pos.ins().adjust_sp_down_imm(Imm64::new(stack_size)));
+            adjust_sp_inst = Some(pos.ins().adjust_sp_down_imm(Imm64::new(stack_size)));
         }
     }
 
-    cfa_state
+    
+    let mut last_fpr_save = None;
+    if let Some(fpr_slot) = fpr_slot {
+        debug_assert!(csrs.iter(FPR).len() != 0);
+
+        
+        
+        
+        
+        let stack_addr = pos.ins().stack_addr(types::I64, *fpr_slot, 0);
+
+        
+        
+        pos.func.locations[stack_addr] = ir::ValueLoc::Reg(RU::r11 as u16);
+
+        let mut fpr_offset = 0;
+
+        for reg in csrs.iter(FPR) {
+            
+            let csr_arg = pos.func.dfg.append_block_param(block, types::F64X2);
+
+            
+            pos.func.locations[csr_arg] = ir::ValueLoc::Reg(reg);
+
+            last_fpr_save =
+                Some(
+                    pos.ins()
+                        .store(ir::MemFlags::trusted(), csr_arg, stack_addr, fpr_offset),
+                );
+
+            fpr_offset += types::F64X2.bytes() as i32;
+        }
+    }
+
+    pos.func.prologue_end = Some(
+        last_fpr_save
+            .or(adjust_sp_inst)
+            .or(last_csr_push)
+            .unwrap_or(mov_sp_inst),
+    );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn interpret_gv(pos: &mut EncCursor, gv: ir::GlobalValue, scratch: ir::ValueLoc) -> ir::Value {
+    match pos.func.global_values[gv] {
+        ir::GlobalValueData::VMContext => pos
+            .func
+            .special_param(ir::ArgumentPurpose::VMContext)
+            .expect("no vmcontext parameter found"),
+        ir::GlobalValueData::Load {
+            base,
+            offset,
+            global_type,
+            readonly: _,
+        } => {
+            let base = interpret_gv(pos, base, scratch);
+            let ret = pos
+                .ins()
+                .load(global_type, ir::MemFlags::trusted(), base, offset);
+            pos.func.locations[ret] = scratch;
+            return ret;
+        }
+        ref other => panic!("global value for stack limit not supported: {}", other),
+    }
 }
 
 
@@ -806,9 +864,34 @@ fn insert_stack_check(pos: &mut EncCursor, stack_size: i64, stack_limit_arg: ir:
 
     
     
-    let stack_limit_copy = pos.ins().copy(stack_limit_arg);
-    pos.func.locations[stack_limit_copy] = ir::ValueLoc::Reg(RU::rax as RegUnit);
-    let sp_threshold = pos.ins().iadd_imm(stack_limit_copy, stack_size);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if stack_size >= 32 * 1024 {
+        let cflags = pos.ins().ifcmp_sp(stack_limit_arg);
+        pos.func.locations[cflags] = ir::ValueLoc::Reg(RU::rflags as RegUnit);
+        pos.ins().trapif(
+            IntCC::UnsignedGreaterThanOrEqual,
+            cflags,
+            ir::TrapCode::StackOverflow,
+        );
+    }
+
+    
+    
+    let sp_threshold = pos.ins().iadd_imm(stack_limit_arg, stack_size);
     pos.func.locations[sp_threshold] = ir::ValueLoc::Reg(RU::rax as RegUnit);
 
     
@@ -828,24 +911,13 @@ fn insert_common_epilogues(
     stack_size: i64,
     reg_type: ir::types::Type,
     csrs: &RegisterSet,
-    isa: &dyn TargetIsa,
-    cfa_state: Option<CFAState>,
+    fpr_slot: Option<&StackSlot>,
 ) {
     while let Some(block) = pos.next_block() {
         pos.goto_last_inst(block);
         if let Some(inst) = pos.current_inst() {
             if pos.func.dfg[inst].opcode().is_return() {
-                let is_last = pos.func.layout.last_block() == Some(block);
-                insert_common_epilogue(
-                    inst,
-                    stack_size,
-                    pos,
-                    reg_type,
-                    csrs,
-                    isa,
-                    is_last,
-                    cfa_state.clone(),
-                );
+                insert_common_epilogue(inst, stack_size, pos, reg_type, csrs, fpr_slot);
             }
         }
     }
@@ -859,113 +931,101 @@ fn insert_common_epilogue(
     pos: &mut EncCursor,
     reg_type: ir::types::Type,
     csrs: &RegisterSet,
-    isa: &dyn TargetIsa,
-    is_last: bool,
-    mut cfa_state: Option<CFAState>,
+    fpr_slot: Option<&StackSlot>,
 ) {
-    let word_size = isa.pointer_bytes() as isize;
+    
+    
+    let mut restored_fpr_values = Vec::new();
+
+    
+    let mut first_fpr_load = None;
+    if let Some(fpr_slot) = fpr_slot {
+        debug_assert!(csrs.iter(FPR).len() != 0);
+
+        
+        
+        
+        
+        
+        let stack_addr = pos.ins().stack_addr(types::I64, *fpr_slot, 0);
+
+        first_fpr_load.get_or_insert(pos.current_inst().expect("current inst"));
+
+        
+        
+        pos.func.locations[stack_addr] = ir::ValueLoc::Reg(RU::r11 as u16);
+
+        let mut fpr_offset = 0;
+
+        for reg in csrs.iter(FPR) {
+            let value = pos.ins().load(
+                types::F64X2,
+                ir::MemFlags::trusted(),
+                stack_addr,
+                fpr_offset,
+            );
+            fpr_offset += types::F64X2.bytes() as i32;
+
+            
+            
+            
+            
+
+            pos.func.locations[value] = ir::ValueLoc::Reg(reg);
+            restored_fpr_values.push(value);
+        }
+    }
+
+    let mut sp_adjust_inst = None;
     if stack_size > 0 {
-        pos.ins().adjust_sp_up_imm(Imm64::new(stack_size));
+        sp_adjust_inst = Some(pos.ins().adjust_sp_up_imm(Imm64::new(stack_size)));
     }
 
     
+    let fp_pop = pos.ins().x86_pop(reg_type);
+    let fp_pop_inst = pos.prev_inst().unwrap();
+    pos.func.locations[fp_pop] = ir::ValueLoc::Reg(RU::rbp as RegUnit);
+    pos.func.dfg.append_inst_arg(inst, fp_pop);
+
     
-    let fp_ret = pos.ins().x86_pop(reg_type);
-    let fp_pop_inst = pos.built_inst();
-
-    if let Some(ref mut cfa_state) = cfa_state.as_mut() {
-        
-        cfa_state.current_depth += word_size;
-        cfa_state.cf_ptr_offset -= word_size;
-        
-        
-        
-        cfa_state.cf_ptr_reg = RU::rsp as RegUnit;
-    }
-
-    pos.prev_inst();
-
-    pos.func.locations[fp_ret] = ir::ValueLoc::Reg(RU::rbp as RegUnit);
-    pos.func.dfg.append_inst_arg(inst, fp_ret);
-
+    let mut first_csr_pop_inst = None;
     for reg in csrs.iter(GPR) {
-        let csr_ret = pos.ins().x86_pop(reg_type);
-        if let Some(ref mut cfa_state) = cfa_state.as_mut() {
-            
-            
-            
-            
-            cfa_state.current_depth += word_size;
-        }
-        pos.prev_inst();
-
-        pos.func.locations[csr_ret] = ir::ValueLoc::Reg(reg);
-        pos.func.dfg.append_inst_arg(inst, csr_ret);
+        let csr_pop = pos.ins().x86_pop(reg_type);
+        first_csr_pop_inst = Some(pos.prev_inst().unwrap());
+        pos.func.locations[csr_pop] = ir::ValueLoc::Reg(reg);
+        pos.func.dfg.append_inst_arg(inst, csr_pop);
     }
 
-    if let Some(ref mut frame_layout) = pos.func.frame_layout {
-        let cfa_state = cfa_state
-            .as_mut()
-            .expect("cfa state exists when recording frame layout");
-        
-        
-        
-        
-        
-        assert_eq!(cfa_state.current_depth, -word_size);
-        assert_eq!(cfa_state.cf_ptr_offset, word_size);
-
-        
-        let new_cfa = FrameLayoutChange::CallFrameAddressAt {
-            reg: cfa_state.cf_ptr_reg,
-            offset: cfa_state.cf_ptr_offset,
-        };
-        let new_cfa = if is_last {
-            vec![new_cfa]
-        } else {
-            vec![FrameLayoutChange::Preserve, new_cfa]
-        };
-
-        frame_layout
-            .instructions
-            .entry(fp_pop_inst)
-            .and_modify(|insts| {
-                *insts = insts
-                    .iter()
-                    .cloned()
-                    .chain(new_cfa.clone().into_iter())
-                    .collect::<Box<[_]>>();
-            })
-            .or_insert_with(|| new_cfa.into_boxed_slice());
-
-        if !is_last {
-            
-            frame_layout
-                .instructions
-                .insert(inst, vec![FrameLayoutChange::Restore].into_boxed_slice());
-        }
+    for value in restored_fpr_values.into_iter() {
+        pos.func.dfg.append_inst_arg(inst, value);
     }
+
+    pos.func.epilogues_start.push(
+        first_fpr_load
+            .or(sp_adjust_inst)
+            .or(first_csr_pop_inst)
+            .unwrap_or(fp_pop_inst),
+    );
 }
 
 #[cfg(feature = "unwind")]
-pub fn emit_unwind_info(
+pub fn create_unwind_info(
     func: &ir::Function,
     isa: &dyn TargetIsa,
-    kind: FrameUnwindKind,
-    sink: &mut dyn FrameUnwindSink,
-) {
-    match kind {
-        FrameUnwindKind::Fastcall => {
-            
-            
-            if let Some(info) = UnwindInfo::try_from_func(func, isa, Some(RU::rbp.into())) {
-                info.emit(sink);
-            }
+) -> CodegenResult<Option<crate::isa::unwind::UnwindInfo>> {
+    use crate::isa::unwind::UnwindInfo;
+
+    
+    
+    Ok(match func.signature.call_conv {
+        CallConv::Fast | CallConv::Cold | CallConv::SystemV => {
+            super::unwind::systemv::create_unwind_info(func, isa, Some(RU::rbp.into()))?
+                .map(|u| UnwindInfo::SystemV(u))
         }
-        FrameUnwindKind::Libunwind => {
-            if func.frame_layout.is_some() {
-                emit_fde(func, isa, sink);
-            }
+        CallConv::WindowsFastcall => {
+            super::unwind::winx64::create_unwind_info(func, isa, Some(RU::rbp.into()))?
+                .map(|u| UnwindInfo::WindowsX64(u))
         }
-    }
+        _ => None,
+    })
 }

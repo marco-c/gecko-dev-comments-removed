@@ -115,6 +115,8 @@ fn static_addr(
     pos.use_srcloc(inst);
 
     
+    
+    
     if access_size > bound {
         
         pos.ins().trap(ir::TrapCode::HeapOutOfBounds);
@@ -130,10 +132,20 @@ fn static_addr(
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     let limit = bound - access_size;
-
-    
-    
     if offset_ty != ir::types::I32 || limit < 0xffff_ffff {
         let oob = if limit & 1 == 1 {
             

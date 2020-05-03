@@ -40,6 +40,13 @@
 )]
 #![no_std]
 
+
+
+
+
+
+#![cfg_attr(not(feature = "all-arch"), allow(dead_code))]
+
 #[allow(unused_imports)] 
 #[macro_use]
 extern crate alloc;
@@ -71,6 +78,7 @@ pub mod flowgraph;
 pub mod ir;
 pub mod isa;
 pub mod loop_analysis;
+pub mod machinst;
 pub mod print_errors;
 pub mod settings;
 pub mod timing;
@@ -86,10 +94,12 @@ mod context;
 mod dce;
 mod divconst_magic_numbers;
 mod fx;
+mod inst_predicates;
 mod iterators;
 mod legalizer;
 mod licm;
 mod nan_canonicalization;
+mod num_uses;
 mod partition_slice;
 mod postopt;
 mod predicates;

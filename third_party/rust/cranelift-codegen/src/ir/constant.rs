@@ -59,6 +59,11 @@ impl ConstantData {
     }
 
     
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    
     pub fn into_vec(self) -> Vec<u8> {
         self.0
     }
@@ -99,16 +104,12 @@ impl fmt::Display for ConstantData {
     
     
     
-    
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "0x")?;
-        let mut bytes_written = 0;
-        for b in self.0.iter().rev().skip_while(|&&b| b == 0) {
-            write!(f, "{:02x}", b)?;
-            bytes_written += 1;
-        }
-        if bytes_written < 1 {
-            write!(f, "00")?;
+        if !self.is_empty() {
+            write!(f, "0x")?;
+            for b in self.0.iter().rev() {
+                write!(f, "{:02x}", b)?;
+            }
         }
         Ok(())
     }
@@ -224,10 +225,7 @@ impl ConstantPool {
             *self.values_to_handles.get(&constant_value).unwrap()
         } else {
             let constant_handle = Constant::new(self.len());
-            self.values_to_handles
-                .insert(constant_value.clone(), constant_handle);
-            self.handles_to_values
-                .insert(constant_handle, ConstantPoolEntry::new(constant_value));
+            self.set(constant_handle, constant_value);
             constant_handle
         }
     }
@@ -236,6 +234,25 @@ impl ConstantPool {
     pub fn get(&self, constant_handle: Constant) -> &ConstantData {
         assert!(self.handles_to_values.contains_key(&constant_handle));
         &self.handles_to_values.get(&constant_handle).unwrap().data
+    }
+
+    
+    
+    
+    pub fn set(&mut self, constant_handle: Constant, constant_value: ConstantData) {
+        let replaced = self.handles_to_values.insert(
+            constant_handle,
+            ConstantPoolEntry::new(constant_value.clone()),
+        );
+        assert!(
+            replaced.is_none(),
+            "attempted to overwrite an existing constant {:?}: {:?} => {:?}",
+            constant_handle,
+            &constant_value,
+            replaced.unwrap().data
+        );
+        self.values_to_handles
+            .insert(constant_value, constant_handle);
     }
 
     
@@ -345,6 +362,24 @@ mod tests {
     }
 
     #[test]
+    fn set() {
+        let mut sut = ConstantPool::new();
+        let handle = Constant::with_number(42).unwrap();
+        let data = vec![1, 2, 3];
+        sut.set(handle, data.clone().into());
+        assert_eq!(sut.get(handle), &data.into());
+    }
+
+    #[test]
+    #[should_panic]
+    fn disallow_overwriting_constant() {
+        let mut sut = ConstantPool::new();
+        let handle = Constant::with_number(42).unwrap();
+        sut.set(handle, vec![].into());
+        sut.set(handle, vec![1].into());
+    }
+
+    #[test]
     #[should_panic]
     fn get_nonexistent_constant() {
         let sut = ConstantPool::new();
@@ -374,7 +409,7 @@ mod tests {
         assert_eq!(ConstantData::from([42].as_ref()).to_string(), "0x2a");
         assert_eq!(
             ConstantData::from([3, 2, 1, 0].as_ref()).to_string(),
-            "0x010203"
+            "0x00010203"
         );
         assert_eq!(
             ConstantData::from(3735928559u32.to_le_bytes().as_ref()).to_string(),
@@ -435,12 +470,12 @@ mod tests {
         }
 
         parse_ok("0x00", "0x00");
-        parse_ok("0x00000042", "0x42");
+        parse_ok("0x00000042", "0x00000042");
         parse_ok(
             "0x0102030405060708090a0b0c0d0e0f00",
             "0x0102030405060708090a0b0c0d0e0f00",
         );
-        parse_ok("0x_0000_0043_21", "0x4321");
+        parse_ok("0x_0000_0043_21", "0x0000004321");
 
         parse_err("", "Expected a hexadecimal string, e.g. 0x1234");
         parse_err("0x", "Expected a hexadecimal string, e.g. 0x1234");

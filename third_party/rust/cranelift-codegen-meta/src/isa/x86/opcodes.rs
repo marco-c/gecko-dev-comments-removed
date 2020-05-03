@@ -292,6 +292,14 @@ pub static OR_IMM8_SIGN_EXTEND: [u8; 1] = [0x83];
 pub static ORPS: [u8; 2] = [0x0f, 0x56];
 
 
+
+pub static PACKSSWB: [u8; 3] = [0x66, 0x0f, 0x63];
+
+
+
+pub static PACKSSDW: [u8; 3] = [0x66, 0x0f, 0x6b];
+
+
 pub static PADDB: [u8; 3] = [0x66, 0x0f, 0xfc];
 
 
@@ -536,6 +544,30 @@ pub static PSUBUSW: [u8; 3] = [0x66, 0x0f, 0xd9];
 
 
 pub static PTEST: [u8; 4] = [0x66, 0x0f, 0x38, 0x17];
+
+
+pub static PUNPCKHBW: [u8; 3] = [0x66, 0x0f, 0x68];
+
+
+pub static PUNPCKHWD: [u8; 3] = [0x66, 0x0f, 0x69];
+
+
+pub static PUNPCKHDQ: [u8; 3] = [0x66, 0x0f, 0x6A];
+
+
+pub static PUNPCKHQDQ: [u8; 3] = [0x66, 0x0f, 0x6D];
+
+
+pub static PUNPCKLBW: [u8; 3] = [0x66, 0x0f, 0x60];
+
+
+pub static PUNPCKLWD: [u8; 3] = [0x66, 0x0f, 0x61];
+
+
+pub static PUNPCKLDQ: [u8; 3] = [0x66, 0x0f, 0x62];
+
+
+pub static PUNPCKLQDQ: [u8; 3] = [0x66, 0x0f, 0x6C];
 
 
 pub static PUSH_REG: [u8; 1] = [0x50];

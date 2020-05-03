@@ -68,7 +68,7 @@ pub struct ElemIndex(u32);
 entity_impl!(ElemIndex);
 
 
-#[derive(Debug, Clone, Copy, Hash)]
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct Global {
     
     pub ty: ir::Type,
@@ -79,7 +79,7 @@ pub struct Global {
 }
 
 
-#[derive(Debug, Clone, Copy, Hash)]
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub enum GlobalInit {
     
     I32Const(i32),
@@ -102,7 +102,7 @@ pub enum GlobalInit {
 }
 
 
-#[derive(Debug, Clone, Copy, Hash)]
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct Table {
     
     pub ty: TableElementType,
@@ -113,7 +113,7 @@ pub struct Table {
 }
 
 
-#[derive(Debug, Clone, Copy, Hash)]
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub enum TableElementType {
     
     Val(ir::Type),
@@ -122,7 +122,7 @@ pub enum TableElementType {
 }
 
 
-#[derive(Debug, Clone, Copy, Hash)]
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct Memory {
     
     pub minimum: u32,

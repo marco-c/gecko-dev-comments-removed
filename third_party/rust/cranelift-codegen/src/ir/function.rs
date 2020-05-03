@@ -10,13 +10,14 @@ use crate::ir::{
     Block, ExtFuncData, FuncRef, GlobalValue, GlobalValueData, Heap, HeapData, Inst, JumpTable,
     JumpTableData, Opcode, SigRef, StackSlot, StackSlotData, Table, TableData,
 };
-use crate::ir::{BlockOffsets, FrameLayout, InstEncodings, SourceLocs, StackSlots, ValueLocations};
+use crate::ir::{BlockOffsets, InstEncodings, SourceLocs, StackSlots, ValueLocations};
 use crate::ir::{DataFlowGraph, ExternalName, Layout, Signature};
 use crate::ir::{JumpTableOffsets, JumpTables};
 use crate::isa::{CallConv, EncInfo, Encoding, Legalize, TargetIsa};
 use crate::regalloc::{EntryRegDiversions, RegDiversions};
 use crate::value_label::ValueLabelsRanges;
 use crate::write::write_function;
+use alloc::vec::Vec;
 use core::fmt;
 
 
@@ -93,9 +94,14 @@ pub struct Function {
     
     
     
+    pub epilogues_start: Vec<Inst>,
+
     
     
-    pub frame_layout: Option<FrameLayout>,
+    
+    
+    
+    pub stack_limit: Option<ir::GlobalValue>,
 }
 
 impl Function {
@@ -119,7 +125,8 @@ impl Function {
             jt_offsets: SecondaryMap::new(),
             srclocs: SecondaryMap::new(),
             prologue_end: None,
-            frame_layout: None,
+            epilogues_start: Vec::new(),
+            stack_limit: None,
         }
     }
 
@@ -140,7 +147,8 @@ impl Function {
         self.jt_offsets.clear();
         self.srclocs.clear();
         self.prologue_end = None;
-        self.frame_layout = None;
+        self.epilogues_start.clear();
+        self.stack_limit = None;
     }
 
     
@@ -238,24 +246,26 @@ impl Function {
 
     
     pub fn update_encoding(&mut self, inst: ir::Inst, isa: &dyn TargetIsa) -> Result<(), Legalize> {
-        self.encode(inst, isa).map(|e| self.encodings[inst] = e)
+        if isa.get_mach_backend().is_some() {
+            Ok(())
+        } else {
+            self.encode(inst, isa).map(|e| self.encodings[inst] = e)
+        }
     }
 
     
     
     pub fn encode(&self, inst: ir::Inst, isa: &dyn TargetIsa) -> Result<Encoding, Legalize> {
-        isa.encode(&self, &self.dfg[inst], self.dfg.ctrl_typevar(inst))
+        if isa.get_mach_backend().is_some() {
+            Ok(Encoding::new(0, 0))
+        } else {
+            isa.encode(&self, &self.dfg[inst], self.dfg.ctrl_typevar(inst))
+        }
     }
 
     
     pub fn collect_debug_info(&mut self) {
         self.dfg.collect_debug_info();
-        self.collect_frame_layout_info();
-    }
-
-    
-    pub fn collect_frame_layout_info(&mut self) {
-        self.frame_layout = Some(FrameLayout::new());
     }
 
     

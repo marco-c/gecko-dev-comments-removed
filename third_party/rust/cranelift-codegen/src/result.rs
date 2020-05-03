@@ -1,6 +1,7 @@
 
 
 use crate::verifier::VerifierErrors;
+use std::string::String;
 use thiserror::Error;
 
 
@@ -30,6 +31,17 @@ pub enum CodegenError {
     
     #[error("Code for function is too large")]
     CodeTooLarge,
+
+    
+    
+    
+    #[error("Unsupported feature: {0}")]
+    Unsupported(String),
+
+    
+    #[cfg(feature = "unwind")]
+    #[error("Register mapping error")]
+    RegisterMappingError(crate::isa::unwind::systemv::RegisterMappingError),
 }
 
 

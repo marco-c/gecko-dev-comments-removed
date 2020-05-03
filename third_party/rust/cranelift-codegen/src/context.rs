@@ -10,8 +10,8 @@
 
 
 use crate::binemit::{
-    relax_branches, shrink_instructions, CodeInfo, FrameUnwindKind, FrameUnwindSink,
-    MemoryCodeSink, RelocSink, StackmapSink, TrapSink,
+    relax_branches, shrink_instructions, CodeInfo, MemoryCodeSink, RelocSink, StackmapSink,
+    TrapSink,
 };
 use crate::dce::do_dce;
 use crate::dominator_tree::DominatorTree;
@@ -19,8 +19,10 @@ use crate::flowgraph::ControlFlowGraph;
 use crate::ir::Function;
 use crate::isa::TargetIsa;
 use crate::legalize_function;
+use crate::legalizer::simple_legalize;
 use crate::licm::do_licm;
 use crate::loop_analysis::LoopAnalysis;
+use crate::machinst::MachCompileResult;
 use crate::nan_canonicalization::do_nan_canonicalization;
 use crate::postopt::do_postopt;
 use crate::redundant_reload_remover::RedundantReloadRemover;
@@ -55,6 +57,12 @@ pub struct Context {
 
     
     pub redundant_reload_remover: RedundantReloadRemover,
+
+    
+    pub mach_compile_result: Option<MachCompileResult>,
+
+    
+    pub want_disasm: bool,
 }
 
 impl Context {
@@ -78,6 +86,8 @@ impl Context {
             regalloc: regalloc::Context::new(),
             loop_analysis: LoopAnalysis::new(),
             redundant_reload_remover: RedundantReloadRemover::new(),
+            mach_compile_result: None,
+            want_disasm: false,
         }
     }
 
@@ -89,6 +99,14 @@ impl Context {
         self.regalloc.clear();
         self.loop_analysis.clear();
         self.redundant_reload_remover.clear();
+        self.mach_compile_result = None;
+        self.want_disasm = false;
+    }
+
+    
+    
+    pub fn set_disasm(&mut self, val: bool) {
+        self.want_disasm = val;
     }
 
     
@@ -130,9 +148,13 @@ impl Context {
     pub fn compile(&mut self, isa: &dyn TargetIsa) -> CodegenResult<CodeInfo> {
         let _tt = timing::compile();
         self.verify_if(isa)?;
-        debug!("Compiling:\n{}", self.func.display(isa));
 
         let opt_level = isa.flags().opt_level();
+        debug!(
+            "Compiling (opt level {:?}):\n{}",
+            opt_level,
+            self.func.display(isa)
+        );
 
         self.compute_cfg();
         if opt_level != OptLevel::None {
@@ -141,6 +163,7 @@ impl Context {
         if isa.flags().enable_nan_canonicalization() {
             self.canonicalize_nans(isa)?;
         }
+
         self.legalize(isa)?;
         if opt_level != OptLevel::None {
             self.postopt(isa)?;
@@ -149,23 +172,32 @@ impl Context {
             self.licm(isa)?;
             self.simple_gvn(isa)?;
         }
+
         self.compute_domtree();
         self.eliminate_unreachable_code(isa)?;
         if opt_level != OptLevel::None {
             self.dce(isa)?;
         }
-        self.regalloc(isa)?;
-        self.prologue_epilogue(isa)?;
-        if opt_level == OptLevel::Speed || opt_level == OptLevel::SpeedAndSize {
-            self.redundant_reload_remover(isa)?;
-        }
-        if opt_level == OptLevel::SpeedAndSize {
-            self.shrink_instructions(isa)?;
-        }
-        let result = self.relax_branches(isa);
 
-        debug!("Compiled:\n{}", self.func.display(isa));
-        result
+        if let Some(backend) = isa.get_mach_backend() {
+            let result = backend.compile_function(&self.func, self.want_disasm)?;
+            let info = result.code_info();
+            self.mach_compile_result = Some(result);
+            Ok(info)
+        } else {
+            self.regalloc(isa)?;
+            self.prologue_epilogue(isa)?;
+            if opt_level == OptLevel::Speed || opt_level == OptLevel::SpeedAndSize {
+                self.redundant_reload_remover(isa)?;
+            }
+            if opt_level == OptLevel::SpeedAndSize {
+                self.shrink_instructions(isa)?;
+            }
+            let result = self.relax_branches(isa);
+
+            debug!("Compiled:\n{}", self.func.display(isa));
+            result
+        }
     }
 
     
@@ -191,23 +223,23 @@ impl Context {
     ) -> CodeInfo {
         let _tt = timing::binemit();
         let mut sink = MemoryCodeSink::new(mem, relocs, traps, stackmaps);
-        isa.emit_function_to_memory(&self.func, &mut sink);
+        if let Some(ref result) = &self.mach_compile_result {
+            result.sections.emit(&mut sink);
+        } else {
+            isa.emit_function_to_memory(&self.func, &mut sink);
+        }
         sink.info
     }
 
     
     
     
-    
-    
-    
-    pub fn emit_unwind_info(
+    #[cfg(feature = "unwind")]
+    pub fn create_unwind_info(
         &self,
         isa: &dyn TargetIsa,
-        kind: FrameUnwindKind,
-        sink: &mut dyn FrameUnwindSink,
-    ) {
-        isa.emit_unwind_info(&self.func, kind, sink);
+    ) -> CodegenResult<Option<crate::isa::unwind::UnwindInfo>> {
+        isa.create_unwind_info(&self.func)
     }
 
     
@@ -279,9 +311,15 @@ impl Context {
         
         self.domtree.clear();
         self.loop_analysis.clear();
-        legalize_function(&mut self.func, &mut self.cfg, isa);
-        debug!("Legalized:\n{}", self.func.display(isa));
-        self.verify_if(isa)
+        if isa.get_mach_backend().is_some() {
+            
+            simple_legalize(&mut self.func, &mut self.cfg, isa);
+            self.verify_if(isa)
+        } else {
+            legalize_function(&mut self.func, &mut self.cfg, isa);
+            debug!("Legalized:\n{}", self.func.display(isa));
+            self.verify_if(isa)
+        }
     }
 
     

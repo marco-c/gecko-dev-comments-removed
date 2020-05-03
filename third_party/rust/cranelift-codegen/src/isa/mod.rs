@@ -48,6 +48,7 @@ pub use crate::isa::call_conv::CallConv;
 pub use crate::isa::constraints::{
     BranchRange, ConstraintKind, OperandConstraint, RecipeConstraints,
 };
+pub use crate::isa::enc_tables::Encodings;
 pub use crate::isa::encoding::{base_size, EncInfo, Encoding};
 pub use crate::isa::registers::{regs_overlap, RegClass, RegClassIndex, RegInfo, RegUnit};
 pub use crate::isa::stack::{StackBase, StackBaseMask, StackRef};
@@ -55,7 +56,9 @@ pub use crate::isa::stack::{StackBase, StackBaseMask, StackRef};
 use crate::binemit;
 use crate::flowgraph;
 use crate::ir;
-use crate::isa::enc_tables::Encodings;
+#[cfg(feature = "unwind")]
+use crate::isa::unwind::systemv::RegisterMappingError;
+use crate::machinst::MachBackend;
 use crate::regalloc;
 use crate::result::CodegenResult;
 use crate::settings;
@@ -74,17 +77,14 @@ mod riscv;
 #[cfg(feature = "x86")]
 mod x86;
 
-#[cfg(all(feature = "x86", feature = "unwind"))]
-
-pub mod fde {
-    pub use super::x86::map_reg;
-}
-
 #[cfg(feature = "arm32")]
 mod arm32;
 
 #[cfg(feature = "arm64")]
-mod arm64;
+mod aarch64;
+
+#[cfg(feature = "unwind")]
+pub mod unwind;
 
 mod call_conv;
 mod constraints;
@@ -92,6 +92,9 @@ mod enc_tables;
 mod encoding;
 pub mod registers;
 mod stack;
+
+#[cfg(test)]
+mod test_utils;
 
 
 
@@ -117,7 +120,7 @@ pub fn lookup(triple: Triple) -> Result<Builder, LookupError> {
             isa_builder!(x86, "x86", triple)
         }
         Architecture::Arm { .. } => isa_builder!(arm32, "arm32", triple),
-        Architecture::Aarch64 { .. } => isa_builder!(arm64, "arm64", triple),
+        Architecture::Aarch64 { .. } => isa_builder!(aarch64, "arm64", triple),
         _ => Err(LookupError::Unsupported),
     }
 }
@@ -176,7 +179,7 @@ pub type Legalize =
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Hash)]
 pub struct TargetFrontendConfig {
     
     pub default_call_conv: CallConv,
@@ -259,6 +262,12 @@ pub trait TargetIsa: fmt::Display + Send + Sync {
 
     
     fn register_info(&self) -> RegInfo;
+
+    #[cfg(feature = "unwind")]
+    
+    fn map_dwarf_register(&self, _: RegUnit) -> Result<u16, RegisterMappingError> {
+        Err(RegisterMappingError::UnsupportedArchitecture)
+    }
 
     
     fn legal_encodings<'a>(
@@ -388,13 +397,27 @@ pub trait TargetIsa: fmt::Display + Send + Sync {
     
     
     
-    fn emit_unwind_info(
+    #[cfg(feature = "unwind")]
+    fn create_unwind_info(
         &self,
         _func: &ir::Function,
-        _kind: binemit::FrameUnwindKind,
-        _sink: &mut dyn binemit::FrameUnwindSink,
-    ) {
+    ) -> CodegenResult<Option<unwind::UnwindInfo>> {
         
+        Ok(None)
+    }
+
+    
+    
+    
+    #[cfg(feature = "unwind")]
+    fn create_systemv_cie(&self) -> Option<gimli::write::CommonInformationEntry> {
+        
+        None
+    }
+
+    
+    fn get_mach_backend(&self) -> Option<&dyn MachBackend> {
+        None
     }
 }
 

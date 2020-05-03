@@ -39,6 +39,8 @@ use cranelift_codegen::ir::{
 };
 use cranelift_codegen::packed_option::ReservedValue;
 use cranelift_frontend::{FunctionBuilder, Variable};
+use std::cmp;
+use std::convert::TryFrom;
 use std::vec::Vec;
 use wasmparser::{MemoryImmediate, Operator};
 
@@ -655,42 +657,42 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
         Operator::I16x8Load8x8S {
             memarg: MemoryImmediate { flags: _, offset },
         } => {
-            let (flags, base, offset) = prepare_load(*offset, builder, state, environ)?;
+            let (flags, base, offset) = prepare_load(*offset, 8, builder, state, environ)?;
             let loaded = builder.ins().sload8x8(flags, base, offset);
             state.push1(loaded);
         }
         Operator::I16x8Load8x8U {
             memarg: MemoryImmediate { flags: _, offset },
         } => {
-            let (flags, base, offset) = prepare_load(*offset, builder, state, environ)?;
+            let (flags, base, offset) = prepare_load(*offset, 8, builder, state, environ)?;
             let loaded = builder.ins().uload8x8(flags, base, offset);
             state.push1(loaded);
         }
         Operator::I32x4Load16x4S {
             memarg: MemoryImmediate { flags: _, offset },
         } => {
-            let (flags, base, offset) = prepare_load(*offset, builder, state, environ)?;
+            let (flags, base, offset) = prepare_load(*offset, 8, builder, state, environ)?;
             let loaded = builder.ins().sload16x4(flags, base, offset);
             state.push1(loaded);
         }
         Operator::I32x4Load16x4U {
             memarg: MemoryImmediate { flags: _, offset },
         } => {
-            let (flags, base, offset) = prepare_load(*offset, builder, state, environ)?;
+            let (flags, base, offset) = prepare_load(*offset, 8, builder, state, environ)?;
             let loaded = builder.ins().uload16x4(flags, base, offset);
             state.push1(loaded);
         }
         Operator::I64x2Load32x2S {
             memarg: MemoryImmediate { flags: _, offset },
         } => {
-            let (flags, base, offset) = prepare_load(*offset, builder, state, environ)?;
+            let (flags, base, offset) = prepare_load(*offset, 8, builder, state, environ)?;
             let loaded = builder.ins().sload32x2(flags, base, offset);
             state.push1(loaded);
         }
         Operator::I64x2Load32x2U {
             memarg: MemoryImmediate { flags: _, offset },
         } => {
-            let (flags, base, offset) = prepare_load(*offset, builder, state, environ)?;
+            let (flags, base, offset) = prepare_load(*offset, 8, builder, state, environ)?;
             let loaded = builder.ins().uload32x2(flags, base, offset);
             state.push1(loaded);
         }
@@ -1282,7 +1284,10 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
         }
         Operator::I8x16ExtractLaneU { lane } | Operator::I16x8ExtractLaneU { lane } => {
             let vector = pop1_with_bitcast(state, type_of(op), builder);
-            state.push1(builder.ins().extractlane(vector, lane.clone()));
+            let extracted = builder.ins().extractlane(vector, lane.clone());
+            state.push1(builder.ins().uextend(I32, extracted));
+            
+            
             
         }
         Operator::I32x4ExtractLane { lane }
@@ -1394,7 +1399,7 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
             let a = state.pop1();
             state.push1(builder.ins().bnot(a));
         }
-        Operator::I16x8Shl | Operator::I32x4Shl | Operator::I64x2Shl => {
+        Operator::I8x16Shl | Operator::I16x8Shl | Operator::I32x4Shl | Operator::I64x2Shl => {
             let (a, b) = state.pop2();
             let bitcast_a = optionally_bitcast_vector(a, type_of(op), builder);
             let bitwidth = i64::from(builder.func.dfg.value_type(a).bits());
@@ -1403,7 +1408,7 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
             let b_mod_bitwidth = builder.ins().band_imm(b, bitwidth - 1);
             state.push1(builder.ins().ishl(bitcast_a, b_mod_bitwidth))
         }
-        Operator::I16x8ShrU | Operator::I32x4ShrU | Operator::I64x2ShrU => {
+        Operator::I8x16ShrU | Operator::I16x8ShrU | Operator::I32x4ShrU | Operator::I64x2ShrU => {
             let (a, b) = state.pop2();
             let bitcast_a = optionally_bitcast_vector(a, type_of(op), builder);
             let bitwidth = i64::from(builder.func.dfg.value_type(a).bits());
@@ -1412,7 +1417,7 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
             let b_mod_bitwidth = builder.ins().band_imm(b, bitwidth - 1);
             state.push1(builder.ins().ushr(bitcast_a, b_mod_bitwidth))
         }
-        Operator::I16x8ShrS | Operator::I32x4ShrS => {
+        Operator::I8x16ShrS | Operator::I16x8ShrS | Operator::I32x4ShrS => {
             let (a, b) = state.pop2();
             let bitcast_a = optionally_bitcast_vector(a, type_of(op), builder);
             let bitwidth = i64::from(builder.func.dfg.value_type(a).bits());
@@ -1537,10 +1542,7 @@ pub fn translate_operator<FE: FuncEnvironment + ?Sized>(
             let a = pop1_with_bitcast(state, I32X4, builder);
             state.push1(builder.ins().fcvt_from_sint(F32X4, a))
         }
-        Operator::I8x16Shl
-        | Operator::I8x16ShrS
-        | Operator::I8x16ShrU
-        | Operator::I8x16Mul
+        Operator::I8x16Mul
         | Operator::I64x2Mul
         | Operator::I64x2ShrS
         | Operator::I32x4TruncSatF32x4S
@@ -1701,25 +1703,70 @@ fn get_heap_addr(
     heap: ir::Heap,
     addr32: ir::Value,
     offset: u32,
+    width: u32,
     addr_ty: Type,
     builder: &mut FunctionBuilder,
 ) -> (ir::Value, i32) {
-    use core::cmp::min;
-
-    let mut adjusted_offset = u64::from(offset);
     let offset_guard_size: u64 = builder.func.heaps[heap].offset_guard_size.into();
 
     
     
     
-    if offset_guard_size != 0 {
-        adjusted_offset = adjusted_offset / offset_guard_size * offset_guard_size;
-    }
-
     
     
     
-    let check_size = min(u64::from(u32::MAX), 1 + adjusted_offset) as u32;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let adjusted_offset = if offset_guard_size == 0 {
+        u64::from(offset) + u64::from(width)
+    } else {
+        assert!(width < 1024);
+        cmp::max(u64::from(offset) / offset_guard_size * offset_guard_size, 1)
+    };
+    debug_assert!(adjusted_offset > 0); 
+    let check_size = u32::try_from(adjusted_offset).unwrap_or(u32::MAX);
     let base = builder.ins().heap_addr(addr_ty, heap, addr32, check_size);
 
     
@@ -1736,6 +1783,7 @@ fn get_heap_addr(
 
 fn prepare_load<FE: FuncEnvironment + ?Sized>(
     offset: u32,
+    loaded_bytes: u32,
     builder: &mut FunctionBuilder,
     state: &mut FuncTranslationState,
     environ: &mut FE,
@@ -1744,7 +1792,14 @@ fn prepare_load<FE: FuncEnvironment + ?Sized>(
 
     
     let heap = state.get_heap(builder.func, 0, environ)?;
-    let (base, offset) = get_heap_addr(heap, addr32, offset, environ.pointer_type(), builder);
+    let (base, offset) = get_heap_addr(
+        heap,
+        addr32,
+        offset,
+        loaded_bytes,
+        environ.pointer_type(),
+        builder,
+    );
 
     
     
@@ -1763,7 +1818,13 @@ fn translate_load<FE: FuncEnvironment + ?Sized>(
     state: &mut FuncTranslationState,
     environ: &mut FE,
 ) -> WasmResult<()> {
-    let (flags, base, offset) = prepare_load(offset, builder, state, environ)?;
+    let (flags, base, offset) = prepare_load(
+        offset,
+        mem_op_size(opcode, result_ty),
+        builder,
+        state,
+        environ,
+    )?;
     let (load, dfg) = builder.ins().Load(opcode, result_ty, flags, offset, base);
     state.push1(dfg.first_result(load));
     Ok(())
@@ -1782,13 +1843,30 @@ fn translate_store<FE: FuncEnvironment + ?Sized>(
 
     
     let heap = state.get_heap(builder.func, 0, environ)?;
-    let (base, offset) = get_heap_addr(heap, addr32, offset, environ.pointer_type(), builder);
+    let (base, offset) = get_heap_addr(
+        heap,
+        addr32,
+        offset,
+        mem_op_size(opcode, val_ty),
+        environ.pointer_type(),
+        builder,
+    );
     
     let flags = MemFlags::new();
     builder
         .ins()
         .Store(opcode, val_ty, flags, offset.into(), val, base);
     Ok(())
+}
+
+fn mem_op_size(opcode: ir::Opcode, ty: Type) -> u32 {
+    match opcode {
+        ir::Opcode::Istore8 | ir::Opcode::Sload8 | ir::Opcode::Uload8 => 1,
+        ir::Opcode::Istore16 | ir::Opcode::Sload16 | ir::Opcode::Uload16 => 2,
+        ir::Opcode::Istore32 | ir::Opcode::Sload32 | ir::Opcode::Uload32 => 4,
+        ir::Opcode::Store | ir::Opcode::Load => ty.bytes(),
+        _ => panic!("unknown size of mem op for {:?}", opcode),
+    }
 }
 
 fn translate_icmp(cc: IntCC, builder: &mut FunctionBuilder, state: &mut FuncTranslationState) {

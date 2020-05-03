@@ -383,7 +383,9 @@ impl SSABuilder {
         
         
         for block in self.ssa_blocks.keys() {
-            self.seal_one_block(block, func);
+            if !self.is_sealed(block) {
+                self.seal_one_block(block, func);
+            }
         }
         mem::replace(&mut self.side_effects, SideEffects::new())
     }

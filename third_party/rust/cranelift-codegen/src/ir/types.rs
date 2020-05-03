@@ -280,6 +280,16 @@ impl Type {
     }
 
     
+    
+    
+    pub fn split_lanes(self) -> Option<Self> {
+        match self.half_width() {
+            Some(half_width) => half_width.by(2),
+            None => None,
+        }
+    }
+
+    
     pub fn index(self) -> usize {
         usize::from(self.0)
     }
