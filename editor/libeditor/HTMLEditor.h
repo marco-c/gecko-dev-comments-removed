@@ -1989,6 +1989,18 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT nsresult JoinNodesWithTransaction(nsINode& aLeftNode,
+                                                       nsINode& aRightNode);
+
+  
+
+
+
+
+
+
+
+
 
 
 

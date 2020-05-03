@@ -1475,18 +1475,6 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult JoinNodesWithTransaction(nsINode& aLeftNode,
-                                                       nsINode& aRightNode);
-
-  
-
-
-
-
   MOZ_CAN_RUN_SCRIPT nsresult MoveNodeWithTransaction(
       nsIContent& aContent, const EditorDOMPoint& aPointToInsert);
 
