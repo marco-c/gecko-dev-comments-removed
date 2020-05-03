@@ -127,6 +127,8 @@ using refcounted class mozilla::dom::CrossProcessSHEntry from "mozilla/dom/Maybe
 using mozilla::ContentBlockingNotifier::StorageAccessGrantedReason from "mozilla/ContentBlockingNotifier.h";
 using mozilla::ContentBlockingNotifier::BlockingDecision from "mozilla/ContentBlockingNotifier.h";
 using mozilla::ContentBlocking::StorageAccessPromptChoices from "mozilla/ContentBlocking.h";
+using JSActorMessageKind from "mozilla/dom/JSActor.h";
+using JSActorMessageMeta from "mozilla/dom/PWindowGlobal.h";
 
 union ChromeRegistryItem
 {
@@ -239,13 +241,29 @@ struct JSWindowActorInfo
 {
   nsCString name;
   bool allFrames;
+
+  
   nsCString? url;
 
   JSWindowActorEventDecl[] events;
+
+  
   nsCString[] observers;
   nsString[] matches;
   nsString[] remoteTypes;
   nsString[] messageManagerGroups;
+};
+
+struct JSProcessActorInfo
+{
+    
+    nsCString name;
+    
+    nsCString? url;
+
+    
+    nsCString[] observers;
+    nsString[] remoteTypes;
 };
 
 struct GMPAPITags
@@ -443,6 +461,9 @@ both:
     async PWebBrowserPersistDocument(nullable PBrowser aBrowser,
                                      MaybeDiscardedBrowsingContext aContext);
 
+    async RawMessage(JSActorMessageMeta aMetadata, ClonedMessageData aData,
+                     ClonedMessageData aStack);
+
 child:
     async InitGMPService(Endpoint<PGMPServiceChild> service);
     async InitProcessHangMonitor(Endpoint<PProcessHangMonitorChild> hangMonitor);
@@ -612,12 +633,17 @@ child:
     
 
 
-    async InitJSWindowActorInfos(JSWindowActorInfo[] aInfos);
+    async InitJSActorInfos(JSProcessActorInfo[] aContentInfos, JSWindowActorInfo[] aWindowInfos);
 
     
 
 
     async UnregisterJSWindowActor(nsCString name);
+
+    
+
+
+    async UnregisterJSProcessActor(nsCString name);
 
     async SetXPCOMProcessAttributes(XPCOMInitData xpcomInit,
                                     StructuredCloneData initialData,

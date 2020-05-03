@@ -4,6 +4,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 interface nsISupports;
 
 [ChromeOnly, Exposed=Window]

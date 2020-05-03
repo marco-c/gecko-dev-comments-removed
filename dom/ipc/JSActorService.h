@@ -14,6 +14,8 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "mozilla/dom/JSActor.h"
+#include "mozilla/dom/JSProcessActorProtocol.h"
+#include "mozilla/dom/JSWindowActorProtocol.h"
 
 #include "nsIObserver.h"
 #include "nsIDOMEventListener.h"
@@ -22,7 +24,9 @@
 
 namespace mozilla {
 namespace dom {
+struct ProcessActorOptions;
 struct WindowActorOptions;
+class JSProcessActorInfo;
 class JSWindowActorInfo;
 class EventTarget;
 
@@ -51,13 +55,25 @@ class JSActorService final {
   void UnregisterWindowActor(const nsACString& aName);
 
   
-  void LoadJSWindowActorInfos(nsTArray<JSWindowActorInfo>&& aInfos);
-
-  
   
   void GetJSWindowActorInfos(nsTArray<JSWindowActorInfo>& aInfos);
 
   already_AddRefed<JSWindowActorProtocol> GetJSWindowActorProtocol(
+      const nsACString& aName);
+
+  
+
+  void RegisterProcessActor(const nsACString& aName,
+                            const ProcessActorOptions& aOptions,
+                            ErrorResult& aRv);
+
+  void UnregisterProcessActor(const nsACString& aName);
+
+  
+  
+  void GetJSProcessActorInfos(nsTArray<JSProcessActorInfo>& aInfos);
+
+  already_AddRefed<JSProcessActorProtocol> GetJSProcessActorProtocol(
       const nsACString& aName);
 
  private:

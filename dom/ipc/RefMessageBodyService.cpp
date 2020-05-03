@@ -5,6 +5,7 @@
 
 
 #include "RefMessageBodyService.h"
+#include "nsContentUtils.h"
 
 namespace mozilla {
 namespace dom {
