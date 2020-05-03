@@ -4,8 +4,9 @@
 
 
 
-UNIFIED_SOURCES += [
-    'TestFogInit.cpp',
-]
+if CONFIG['MOZ_GLEAN']:
+    UNIFIED_SOURCES += [
+        'TestFogInit.cpp',
+    ]
 
 FINAL_LIBRARY = 'xul-gtest'
