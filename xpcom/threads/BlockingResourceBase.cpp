@@ -521,7 +521,13 @@ CVStatus OffTheBooksCondVar::Wait(TimeDuration aDuration) {
   mLock->mOwningThread = nullptr;
 
   
-  CVStatus status = mImpl.wait_for(*mLock, aDuration);
+  CVStatus status;
+  {
+#  if defined(MOZILLA_INTERNAL_API)
+    AUTO_PROFILER_THREAD_SLEEP;
+#  endif
+    status = mImpl.wait_for(*mLock, aDuration);
+  }
 
   
   mLock->SetAcquisitionState(savedAcquisitionState);
