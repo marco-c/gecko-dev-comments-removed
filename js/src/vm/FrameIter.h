@@ -20,7 +20,7 @@
 
 #include "jit/JSJitFrameIter.h"  
 #include "js/RootingAPI.h"       
-#include "js/TypeDecls.h"        
+#include "js/TypeDecls.h"  
 #include "js/UniquePtr.h"        
 #include "js/Value.h"            
 #include "vm/Activation.h"       
@@ -29,13 +29,7 @@
 #include "wasm/WasmFrameIter.h"  
 #include "wasm/WasmTypes.h"  
 
-struct JS_PUBLIC_API JSContext;
-
-class JSAtom;
-class JSFunction;
-class JSObject;
 struct JSPrincipals;
-class JSScript;
 
 namespace JS {
 

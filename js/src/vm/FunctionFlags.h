@@ -12,7 +12,9 @@
 
 #include <stdint.h>  
 
-class JSAtom;
+#include "jstypes.h"  
+
+class JS_PUBLIC_API JSAtom;
 
 namespace js {
 
