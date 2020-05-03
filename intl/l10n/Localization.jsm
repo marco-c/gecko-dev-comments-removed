@@ -234,7 +234,7 @@ class Localization {
   }
 
   init(eager = false) {
-    this.onChange(eager);
+    this.regenerateBundles(eager);
   }
 
   cached(iterable) {
@@ -248,11 +248,9 @@ class Localization {
   
 
 
-
-
-  addResourceIds(resourceIds, eager = false) {
+  addResourceIds(resourceIds) {
     this.resourceIds.push(...resourceIds);
-    this.onChange(eager);
+    this.onChange();
     return this.resourceIds.length;
   }
 
@@ -489,13 +487,17 @@ class Localization {
     }
   }
 
+  onChange() {
+    this.regenerateBundles(false);
+  }
+
   
 
 
 
 
 
-  onChange(eager = false) {
+  regenerateBundles(eager = false) {
     let generateMessages = this.isSync ? this.generateBundlesSync : this.generateBundles;
     this.bundles = this.cached(generateMessages(this.resourceIds));
     if (eager) {

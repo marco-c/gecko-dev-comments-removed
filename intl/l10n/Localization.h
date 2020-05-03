@@ -51,7 +51,7 @@ class Localization : public nsIObserver,
 
 
 
-  uint32_t AddResourceIds(const nsTArray<nsString>& aResourceIds, bool aEager);
+  uint32_t AddResourceIds(const nsTArray<nsString>& aResourceIds);
 
   uint32_t RemoveResourceIds(const nsTArray<nsString>& aResourceIds);
 

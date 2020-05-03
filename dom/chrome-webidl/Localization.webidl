@@ -95,7 +95,7 @@ interface Localization {
 
 
 
-  unsigned long addResourceIds(sequence<DOMString> aResourceIds, optional boolean aEager = false);
+  unsigned long addResourceIds(sequence<DOMString> aResourceIds);
 
   
 
