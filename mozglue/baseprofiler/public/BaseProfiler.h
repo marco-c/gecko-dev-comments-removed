@@ -23,16 +23,7 @@
 
 
 #ifdef MOZ_GECKO_PROFILER
-
-
-#  if defined(XP_MACOSX) || defined(XP_LINUX) || \
-      (defined(XP_WIN) && !defined(__MINGW32__))
-#    define MOZ_BASE_PROFILER
-#  else
-
-
-
-#  endif
+#  define MOZ_BASE_PROFILER
 #endif  
 
 
