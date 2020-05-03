@@ -6,7 +6,7 @@
 
 
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import subprocess
 import sys
@@ -46,7 +46,8 @@ def get_range_length(range, debug_ranges):
 
 
 def main(bin, compilation_unit):
-    p = subprocess.Popen(['objdump', '-W', bin], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(['objdump', '-W', bin], stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, universal_newlines=True)
     (out, err) = p.communicate()
     sections = re.split('\n(Contents of the|The section) ', out)
     debug_info = [s for s in sections if s.startswith('.debug_info')]
