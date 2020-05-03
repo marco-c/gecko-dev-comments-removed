@@ -35,6 +35,20 @@ function verify_navigation_state(expect_url, test_name) {
   }, test_name + " got client hints according to expectations.");
 }
 
+function verify_subresource_state(expect_url, test_name) {
+  promise_test(t => {
+    return new Promise(resolve => {
+      let win;
+      window.addEventListener('message', t.step_func(function(e) {
+        win.close();
+        assert_equals(e.data, "PASS", "message from opened page");
+        fetch("/client-hints/accept-ch-stickiness/resources/clear-site-data.html").then(resolve);
+      }));
+      
+      fetch(expect_url).then(resolve);
+    });
+  }, test_name + " got client hints according to expectations.");
+}
 const run_test = test => {
   
   
