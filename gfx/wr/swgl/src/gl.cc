@@ -2822,37 +2822,42 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
     
   }
 
-  
-  float lx = l0.x;
-  
-  float lk = 1.0f / (l1.y - l0.y);
-  
-  float lm = (l1.x - l0.x) * lk;
-  
-  float rx = r0.x;
-  
-  float rk = 1.0f / (r1.y - r0.y);
-  
-  float rm = (r1.x - r0.x) * rk;
+  struct Edge
+  {
+    float yScale;
+    float xSlope;
+    float x;
+    Interpolants interpSlope;
+    Interpolants interp;
+
+    Edge(float y, const Point2D& p0, const Point2D& p1,
+         const Interpolants& i0, const Interpolants& i1) :
+      
+      yScale(1.0f / (p1.y - p0.y)),
+      
+      xSlope((p1.x - p0.x) * yScale),
+      
+      x(p0.x + (y - p0.y) * xSlope),
+      
+      interpSlope((i1 - i0) * yScale),
+      
+      interp(i0 + (y - p0.y) * interpSlope)
+    {}
+
+    void nextRow() {
+      
+      x += xSlope;
+      interp += interpSlope;
+    }
+  };
+
   
   assert(l0.y == r0.y);
   
   float y = floor(max(l0.y, clipRect.y0) + 0.5f) + 0.5f;
   
-  lx += (y - l0.y) * lm;
-  rx += (y - r0.y) * rm;
-  
-  Interpolants lo = interp_outs[l0i];
-  
-  Interpolants lom = (interp_outs[l1i] - lo) * lk;
-  
-  lo = lo + lom * (y - l0.y);
-  
-  Interpolants ro = interp_outs[r0i];
-  
-  Interpolants rom = (interp_outs[r1i] - ro) * rk;
-  
-  ro = ro + rom * (y - r0.y);
+  Edge left(y, l0, l1, interp_outs[l0i], interp_outs[l1i]);
+  Edge right(y, r0, r1, interp_outs[r0i], interp_outs[r1i]);
   
   P* fbuf = (P*)colortex.sample_ptr(0, int(y), layer, sizeof(P));
   uint16_t* fdepth =
@@ -2876,42 +2881,22 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
         if (e1.y < e0.y || e0i == end) return;                         \
         /* Otherwise, it's a duplicate, so keep searching. */          \
       }
+      
       STEP_EDGE(l0i, l0, l1i, l1, NEXT_POINT, r1i);
-      
-      lk = 1.0f / (l1.y - l0.y);
-      
-      lm = (l1.x - l0.x) * lk;
-      
-      lx = l0.x + (y - l0.y) * lm;
-      
-      lo = interp_outs[l0i];
-      
-      lom = (interp_outs[l1i] - lo) * lk;
-      
-      lo += lom * (y - l0.y);
+      left = Edge(y, l0, l1, interp_outs[l0i], interp_outs[l1i]);
     }
     
     if (y > r1.y) {
+      
       STEP_EDGE(r0i, r0, r1i, r1, PREV_POINT, l1i);
-      
-      rk = 1.0f / (r1.y - r0.y);
-      
-      rm = (r1.x - r0.x) * rk;
-      
-      rx = r0.x + (y - r0.y) * rm;
-      
-      ro = interp_outs[r0i];
-      
-      rom = (interp_outs[r1i] - ro) * rk;
-      
-      ro += rom * (y - r0.y);
+      right = Edge(y, r0, r1, interp_outs[r0i], interp_outs[r1i]);
     }
     
     
     
     
-    int startx = int(max(min(lx, rx), clipRect.x0) + 0.5f);
-    int endx = int(min(max(lx, rx), clipRect.x1) + 0.5f);
+    int startx = int(max(min(left.x, right.x), clipRect.x0) + 0.5f);
+    int endx = int(min(max(left.x, right.x), clipRect.x1) + 0.5f);
     
     int span = endx - startx;
     if (span > 0) {
@@ -2997,9 +2982,10 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
       {
         
         
-        Interpolants step = (ro - lo) * (1.0f / (rx - lx));
+        Interpolants step =
+            (right.interp - left.interp) * (1.0f / (right.x - left.x));
         
-        Interpolants o = lo + step * (startx + 0.5f - lx);
+        Interpolants o = left.interp + step * (startx + 0.5f - left.x);
         fragment_shader->init_span(&o, &step, 4.0f);
       }
       if (!use_discard) {
@@ -3084,13 +3070,9 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
     }
   next_span:
     
-    lx += lm;
-    rx += rm;
-    
     y++;
-    
-    lo += lom;
-    ro += rom;
+    left.nextRow();
+    right.nextRow();
     
     fbuf += colortex.stride(sizeof(P)) / sizeof(P);
     fdepth += depthtex.stride(sizeof(uint16_t)) / sizeof(uint16_t);
@@ -3153,44 +3135,52 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
     r1 = p[r1i]; 
   }
 
-  
-  
-  
-  
-  Point3D lc = l0;
-  
-  float lk = 1.0f / (l1.y - l0.y);
-  
-  Point3D lm = (l1 - l0) * lk;
-  
-  Point3D rc = r0;
-  
-  float rk = 1.0f / (r1.y - r0.y);
-  
-  Point3D rm = (r1 - r0) * rk;
+  struct Edge
+  {
+    float yScale;
+    
+    
+    
+    
+    Point3D pSlope;
+    Point3D p;
+    Interpolants interpSlope;
+    Interpolants interp;
+
+    Edge(float y, const Point3D& p0, const Point3D& p1,
+         const Interpolants& i0, const Interpolants& i1) :
+      
+      yScale(1.0f / (p1.y - p0.y)),
+      
+      pSlope((p1 - p0) * yScale),
+      
+      p(p0 + (y - p0.y) * pSlope),
+      
+      
+      
+      
+      interpSlope((i1 * p1.w - i0 * p0.w) * yScale),
+      
+      interp(i0 * p0.w + (y - p0.y) * interpSlope)
+    {}
+
+    float x() const { return p.x; }
+    vec2_scalar zw() const { return {p.z, p.w}; }
+
+    void nextRow() {
+      
+      p += pSlope;
+      interp += interpSlope;
+    }
+  };
+
   
   assert(l0.y == r0.y);
   
   float y = floor(max(l0.y, clipRect.y0) + 0.5f) + 0.5f;
   
-  lc += (y - l0.y) * lm;
-  rc += (y - r0.y) * rm;
-  
-  
-  
-  
-  Interpolants lo = interp_outs[l0i] * l0.w;
-  
-  
-  Interpolants lom = (interp_outs[l1i] * l1.w - lo) * lk;
-  
-  lo = lo + lom * (y - l0.y);
-  
-  Interpolants ro = interp_outs[r0i] * r0.w;
-  
-  Interpolants rom = (interp_outs[r1i] * r1.w - ro) * rk;
-  
-  ro = ro + rom * (y - r0.y);
+  Edge left(y, l0, l1, interp_outs[l0i], interp_outs[l1i]);
+  Edge right(y, r0, r1, interp_outs[r0i], interp_outs[r1i]);
   
   P* fbuf = (P*)colortex.sample_ptr(0, int(y), layer, sizeof(P));
   uint16_t* fdepth =
@@ -3199,42 +3189,22 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
   while (y < clipRect.y1) {
     
     if (y > l1.y) {
+      
       STEP_EDGE(l0i, l0, l1i, l1, NEXT_POINT, r1i);
-      
-      lk = 1.0f / (l1.y - l0.y);
-      
-      lm = (l1 - l0) * lk;
-      
-      lc = l0 + (y - l0.y) * lm;
-      
-      lo = interp_outs[l0i] * l0.w;
-      
-      lom = (interp_outs[l1i] * l1.w - lo) * lk;
-      
-      lo += lom * (y - l0.y);
+      left = Edge(y, l0, l1, interp_outs[l0i], interp_outs[l1i]);
     }
     
     if (y > r1.y) {
+      
       STEP_EDGE(r0i, r0, r1i, r1, PREV_POINT, l1i);
-      
-      rk = 1.0f / (r1.y - r0.y);
-      
-      rm = (r1 - r0) * rk;
-      
-      rc = r0 + (y - r0.y) * rm;
-      
-      ro = interp_outs[r0i] * r0.w;
-      
-      rom = (interp_outs[r1i] * r1.w - ro) * rk;
-      
-      ro += rom * (y - r0.y);
+      right = Edge(y, r0, r1, interp_outs[r0i], interp_outs[r1i]);
     }
     
     
     
     
-    int startx = int(max(min(lc.x, rc.x), clipRect.x0) + 0.5f);
-    int endx = int(min(max(lc.x, rc.x), clipRect.x1) + 0.5f);
+    int startx = int(max(min(left.x(), right.x()), clipRect.x0) + 0.5f);
+    int endx = int(min(max(left.x(), right.x()), clipRect.x1) + 0.5f);
     
     int span = endx - startx;
     if (span > 0) {
@@ -3285,9 +3255,9 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
       {
         
         vec2_scalar stepZW =
-            (rc.sel(Z, W) - lc.sel(Z, W)) * (1.0f / (rc.x - lc.x));
+            (right.zw() - left.zw()) * (1.0f / (right.x() - left.x()));
         
-        vec2_scalar zw = lc.sel(Z, W) + stepZW * (startx + 0.5f - lc.x);
+        vec2_scalar zw = left.zw() + stepZW * (startx + 0.5f - left.x());
         
         
         fragment_shader->gl_FragCoord.z = init_interp(zw.x, stepZW.x);
@@ -3297,9 +3267,10 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
         
         
         
-        Interpolants step = (ro - lo) * (1.0f / (rc.x - lc.x));
+        Interpolants step =
+            (right.interp - left.interp) * (1.0f / (right.x() - left.x()));
         
-        Interpolants o = lo + step * (startx + 0.5f - lc.x);
+        Interpolants o = left.interp + step * (startx + 0.5f - left.x());
         fragment_shader->init_span(&o, &step, 4.0f);
       }
       if (!use_discard) {
@@ -3346,13 +3317,9 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
       }
     }
     
-    lc += lm;
-    rc += rm;
-    
     y++;
-    
-    lo += lom;
-    ro += rom;
+    left.nextRow();
+    right.nextRow();
     
     fbuf += colortex.stride(sizeof(P)) / sizeof(P);
     fdepth += depthtex.stride(sizeof(uint16_t)) / sizeof(uint16_t);
