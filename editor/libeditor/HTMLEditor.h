@@ -2192,7 +2192,8 @@ class HTMLEditor final : public TextEditor,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT MoveNodeResult
-  MoveNodeOrChildren(nsIContent& aNode, const EditorDOMPoint& aPointToInsert);
+  MoveNodeOrChildrenWithTransaction(nsIContent& aNode,
+                                    const EditorDOMPoint& aPointToInsert);
 
   
 
@@ -2204,8 +2205,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT MoveNodeResult
-  MoveChildren(Element& aElement, const EditorDOMPoint& aPointToInsert);
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT MoveNodeResult MoveChildrenWithTransaction(
+      Element& aElement, const EditorDOMPoint& aPointToInsert);
 
   
 
