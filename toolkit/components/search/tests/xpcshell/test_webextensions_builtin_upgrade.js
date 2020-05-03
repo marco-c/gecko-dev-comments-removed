@@ -3,6 +3,10 @@
 
 "use strict";
 
+
+
+Services.prefs.setIntPref("extensions.enabledScopes", 5);
+
 const {
   createAppInfo,
   promiseShutdownManager,
