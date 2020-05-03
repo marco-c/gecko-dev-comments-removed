@@ -322,7 +322,7 @@ already_AddRefed<XPCNativeInterface> XPCNativeInterface::NewInstance(
         failed = true;
         break;
       }
-      jsid name = INTERNED_STRING_TO_JSID(cx, str);
+      jsid name = PropertyKey::fromPinnedString(str);
 
       
       
@@ -345,7 +345,7 @@ already_AddRefed<XPCNativeInterface> XPCNativeInterface::NewInstance(
         nullptr == (str = JS_AtomizeAndPinString(cx, bytes))) {
       failed = true;
     }
-    interfaceName = INTERNED_STRING_TO_JSID(cx, str);
+    interfaceName = PropertyKey::fromPinnedString(str);
   }
 
   if (!failed) {

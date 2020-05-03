@@ -394,6 +394,11 @@ static bool PrincipalImmuneToScriptPolicy(nsIPrincipal* aPrincipal) {
   }
 
   
+  if (nsContentUtils::IsPDFJS(principal)) {
+    return true;
+  }
+
+  
   
   if (aPrincipal->SchemeIs("about")) {
     uint32_t flags;
@@ -3063,7 +3068,7 @@ bool XPCJSRuntime::InitializeStrings(JSContext* cx) {
         mStrIDs[0] = JSID_VOID;
         return false;
       }
-      mStrIDs[i] = INTERNED_STRING_TO_JSID(cx, str);
+      mStrIDs[i] = PropertyKey::fromPinnedString(str);
       mStrJSVals[i].setString(str);
     }
 

@@ -264,7 +264,6 @@ const WHITELIST_VARS: &'static [&'static str] = &[
 
 
 const WHITELIST_FUNCTIONS: &'static [&'static str] = &[
-    "INTERNED_STRING_TO_JSID",
     "JS::ExceptionStackOrNull",
     "JS_AddExtraGCRootsTracer",
     "JS_AddInterruptCallback",

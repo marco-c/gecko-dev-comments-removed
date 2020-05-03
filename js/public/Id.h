@@ -103,6 +103,13 @@ struct PropertyKey {
 
   bool isWellKnownSymbol(JS::SymbolCode code) const;
 
+  
+  
+  
+  
+  
+  static PropertyKey fromPinnedString(JSString* str);
+
 } JS_HAZ_GC_POINTER;
 
 }  
@@ -116,15 +123,6 @@ static MOZ_ALWAYS_INLINE bool JSID_IS_STRING(jsid id) { return id.isString(); }
 static MOZ_ALWAYS_INLINE JSString* JSID_TO_STRING(jsid id) {
   return id.toString();
 }
-
-
-
-
-
-
-
-
-JS_PUBLIC_API jsid INTERNED_STRING_TO_JSID(JSContext* cx, JSString* str);
 
 static MOZ_ALWAYS_INLINE bool JSID_IS_INT(jsid id) { return id.isInt(); }
 
