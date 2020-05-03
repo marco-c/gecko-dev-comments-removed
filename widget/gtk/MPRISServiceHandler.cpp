@@ -15,6 +15,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Sprintf.h"
 #include "nsIXULAppInfo.h"
+#include "nsServiceManagerUtils.h"
 
 
 #undef LOG
