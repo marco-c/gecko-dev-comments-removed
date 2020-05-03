@@ -18,14 +18,14 @@ promise_test(async t => {
   
   const wakeLock1 = await getWakeLockObject(
     iframe,
-    "/wake-lock/resources/page1.html"
+    "/screen-wake-lock/resources/page1.html"
   );
   
   const frameDOMException1 = iframe.contentWindow.DOMException;
   
   const wakeLock2 = await getWakeLockObject(
     iframe,
-    "/wake-lock/resources/page2.html"
+    "/screen-wake-lock/resources/page2.html"
   );
   
   
@@ -47,7 +47,7 @@ promise_test(async t => {
   
   await getWakeLockObject(
     outerIframe,
-    "/wake-lock/resources/page1.html"
+    "/screen-wake-lock/resources/page1.html"
   );
 
   
@@ -59,7 +59,7 @@ promise_test(async t => {
   
   const wakeLock = await getWakeLockObject(
     innerIframe,
-    "/wake-lock/resources/page2.html"
+    "/screen-wake-lock/resources/page2.html"
   );
   
   const innerIframeDOMException = innerIframe.contentWindow.DOMException;
@@ -68,7 +68,7 @@ promise_test(async t => {
   
   await new Promise(resolve => {
     outerIframe.addEventListener("load", resolve);
-    outerIframe.src = "/wake-lock/resources/page2.html";
+    outerIframe.src = "/screen-wake-lock/resources/page2.html";
   });
 
   
