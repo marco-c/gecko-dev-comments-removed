@@ -118,8 +118,7 @@ PostMessageEvent::Run() {
     
     
     
-    if (!BasePrincipal::Cast(targetPrin)
-             ->EqualsIgnoringFPD(mProvidedPrincipal)) {
+    if (!targetPrin->Equals(mProvidedPrincipal)) {
       OriginAttributes sourceAttrs = mProvidedPrincipal->OriginAttributesRef();
       OriginAttributes targetAttrs = targetPrin->OriginAttributesRef();
 
