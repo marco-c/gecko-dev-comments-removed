@@ -2185,10 +2185,7 @@ class HTMLEditor final : public TextEditor,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT MoveNodeResult
   MoveChildren(Element& aElement, const EditorDOMPoint& aPointToInsert);
 
-  using EditorBase::MoveChildren;
-
   
-
 
 
 
@@ -2206,6 +2203,27 @@ class HTMLEditor final : public TextEditor,
 
   
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void MoveChildrenBetween(nsIContent& aFirstChild, nsIContent& aLastChild,
+                           const EditorRawDOMPoint& aPointToInsert,
+                           ErrorResult& aError);
+
+  
 
 
 

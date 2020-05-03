@@ -1487,29 +1487,6 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
-
-
-
-
-
-  void MoveChildren(nsIContent& aFirstChild, nsIContent& aLastChild,
-                    const EditorRawDOMPoint& aPointToInsert,
-                    ErrorResult& aError);
-
-  
-
-
-
-
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT nsresult CloneAttributeWithTransaction(
       nsAtom& aAttribute, Element& aDestElement, Element& aSourceElement);
 
