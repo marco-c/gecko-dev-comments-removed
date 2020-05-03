@@ -6,13 +6,13 @@ use std::sync::RwLock;
 
 use glean_core::metrics::MetricType;
 
-use super::{BooleanMetric, CommonMetricData, ErrorType};
+use super::{BooleanMetric, CommonMetricData, ErrorType, StringMetric};
 
 
 
 
 mod private {
-    use super::{BooleanMetric, CommonMetricData};
+    use super::{BooleanMetric, CommonMetricData, StringMetric};
 
     
     
@@ -40,6 +40,21 @@ mod private {
 
         fn new_inner(meta: CommonMetricData) -> Self::Inner {
             glean_core::metrics::BooleanMetric::new(meta)
+        }
+    }
+
+    
+    
+    
+    impl Sealed for StringMetric {
+        type Inner = glean_core::metrics::StringMetric;
+
+        fn from_inner(metric: Self::Inner) -> Self {
+            StringMetric(metric)
+        }
+
+        fn new_inner(meta: CommonMetricData) -> Self::Inner {
+            glean_core::metrics::StringMetric::new(meta)
         }
     }
 }
