@@ -17,7 +17,7 @@ class nsINode;
 
 namespace mozilla {
 
-class EditorBase;
+class HTMLEditor;
 
 
 
@@ -27,7 +27,7 @@ class EditorBase;
 
 class JoinNodeTransaction final : public EditTransactionBase {
  protected:
-  JoinNodeTransaction(EditorBase& aEditorBase, nsIContent& aLeftContent,
+  JoinNodeTransaction(HTMLEditor& aHTMLEditor, nsIContent& aLeftContent,
                       nsIContent& aRightContent);
 
  public:
@@ -40,7 +40,7 @@ class JoinNodeTransaction final : public EditTransactionBase {
 
 
   static already_AddRefed<JoinNodeTransaction> MaybeCreate(
-      EditorBase& aEditorBase, nsIContent& aLeftContent,
+      HTMLEditor& aHTMLEditor, nsIContent& aLeftContent,
       nsIContent& aRightContent);
 
   
@@ -57,7 +57,7 @@ class JoinNodeTransaction final : public EditTransactionBase {
   NS_DECL_EDITTRANSACTIONBASE_GETASMETHODS_OVERRIDE(JoinNodeTransaction)
 
  protected:
-  RefPtr<EditorBase> mEditorBase;
+  RefPtr<HTMLEditor> mHTMLEditor;
 
   
   

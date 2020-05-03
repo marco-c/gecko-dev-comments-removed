@@ -46,6 +46,7 @@ class AutoSetTemporaryAncestorLimiter;
 class EditActionResult;
 class EditResult;
 class EmptyEditableFunctor;
+class JoinNodeTransaction;
 class ListElementSelectionState;
 class ListItemElementSelectionState;
 class MoveNodeResult;
@@ -1191,6 +1192,20 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT void DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
                                       nsIContent& aNewLeftNode,
                                       ErrorResult& aError);
+
+  
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  DoJoinNodes(nsIContent& aContentToKeep, nsIContent& aContentToJoin);
 
  protected:  
   
@@ -4750,6 +4765,7 @@ class HTMLEditor final : public TextEditor,
   friend class CSSEditUtils;
   friend class EditorBase;
   friend class EmptyEditableFunctor;
+  friend class JoinNodeTransaction;
   friend class ListElementSelectionState;
   friend class ListItemElementSelectionState;
   friend class ParagraphStateAtSelection;
