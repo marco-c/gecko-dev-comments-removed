@@ -255,10 +255,6 @@ nsresult SerializeInputStream(nsIInputStream* aInputStream, uint64_t aSize,
                               PIPCBlobInputStreamParent*& aActorParent,
                               ContentParent* aManager);
 
-nsresult SerializeInputStream(nsIInputStream* aInputStream, uint64_t aSize,
-                              PIPCBlobInputStreamParent*& aActorParent,
-                              mozilla::ipc::PBackgroundParent* aManager);
-
 
 
 nsresult SerializeUntyped(BlobImpl* aBlobImpl, mozilla::ipc::IProtocol* aActor,
