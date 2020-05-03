@@ -537,18 +537,19 @@ class LoginManagerPrompter {
               }
               case "dismissed":
                 
-                log.debug("dismissed");
                 this.wasDismissed = true;
               
               case "removed": {
+                
+                
+                log.debug(topic);
                 currentNotification = null;
+
                 let usernameField = chromeDoc.getElementById(
                   "password-notification-username"
                 );
                 usernameField.removeEventListener("input", onInput);
                 usernameField.removeEventListener("keyup", onKeyUp);
-                
-                usernameField.value = "";
                 let passwordField = chromeDoc.getElementById(
                   "password-notification-password"
                 );
@@ -558,9 +559,6 @@ class LoginManagerPrompter {
                   "command",
                   onVisibilityToggle
                 );
-                
-                
-                passwordField.value = "";
                 break;
               }
             }
