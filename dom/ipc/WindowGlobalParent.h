@@ -38,7 +38,7 @@ namespace dom {
 
 class WindowGlobalChild;
 class JSWindowActorParent;
-class JSWindowActorMessageMeta;
+class JSActorMessageMeta;
 
 
 
@@ -81,7 +81,7 @@ class WindowGlobalParent final : public WindowContext,
   
   already_AddRefed<BrowserParent> GetBrowserParent();
 
-  void ReceiveRawMessage(const JSWindowActorMessageMeta& aMeta,
+  void ReceiveRawMessage(const JSActorMessageMeta& aMeta,
                          ipc::StructuredCloneData&& aData,
                          ipc::StructuredCloneData&& aStack);
 
@@ -177,7 +177,7 @@ class WindowGlobalParent final : public WindowContext,
 
  protected:
   const nsAString& GetRemoteType() override;
-  JSWindowActor::Type GetSide() override { return JSWindowActor::Type::Parent; }
+  JSActor::Type GetSide() override { return JSActor::Type::Parent; }
 
   
   mozilla::ipc::IPCResult RecvLoadURI(
@@ -204,7 +204,7 @@ class WindowGlobalParent final : public WindowContext,
   mozilla::ipc::IPCResult RecvSetClientInfo(
       const IPCClientInfo& aIPCClientInfo);
   mozilla::ipc::IPCResult RecvDestroy();
-  mozilla::ipc::IPCResult RecvRawMessage(const JSWindowActorMessageMeta& aMeta,
+  mozilla::ipc::IPCResult RecvRawMessage(const JSActorMessageMeta& aMeta,
                                          const ClonedMessageData& aData,
                                          const ClonedMessageData& aStack);
 

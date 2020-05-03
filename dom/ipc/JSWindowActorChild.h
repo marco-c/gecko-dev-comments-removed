@@ -11,7 +11,8 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/JSWindowActor.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/JSActor.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
 
@@ -31,11 +32,11 @@ class WindowProxyHolder;
 namespace mozilla {
 namespace dom {
 
-class JSWindowActorChild final : public JSWindowActor {
+class JSWindowActorChild final : public JSActor {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(JSWindowActorChild,
-                                                         JSWindowActor)
+                                                         JSActor)
 
   explicit JSWindowActorChild(nsIGlobalObject* aGlobal = nullptr);
 
@@ -61,7 +62,7 @@ class JSWindowActorChild final : public JSWindowActor {
   Nullable<WindowProxyHolder> GetContentWindow(ErrorResult& aRv);
 
  protected:
-  void SendRawMessage(const JSWindowActorMessageMeta& aMeta,
+  void SendRawMessage(const JSActorMessageMeta& aMeta,
                       ipc::StructuredCloneData&& aData,
                       ipc::StructuredCloneData&& aStack,
                       ErrorResult& aRv) override;
