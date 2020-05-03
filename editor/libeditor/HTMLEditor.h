@@ -3567,6 +3567,18 @@ class HTMLEditor final : public TextEditor,
   
 
 
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT EditorDOMPoint
+  PrepareToInsertBRElement(const EditorDOMPoint& aPointToInsert);
+
+  
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult IndentAsSubAction();
 
   
