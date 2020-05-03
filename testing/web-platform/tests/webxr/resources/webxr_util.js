@@ -22,6 +22,11 @@ function xr_promise_test(name, func, properties) {
       xr_debug = navigator.xr.test.Debug;
     }
 
+    if (self.internals && internals.xrTest && navigator.xr) {
+      
+      await setupWebKitWebXRTestAPI;
+    }
+
     
     
     
@@ -198,4 +203,17 @@ let loadChromiumResources = Promise.resolve().then(() => {
   });
 
   return chain;
+});
+
+let setupWebKitWebXRTestAPI = Promise.resolve().then(() => {
+  if (!self.internals) {
+    
+    return;
+  }
+
+  
+  
+  
+  navigator.xr.test = internals.xrTest;
+  return Promise.resolve();
 });
