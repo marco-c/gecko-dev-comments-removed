@@ -7,6 +7,7 @@
 #define HTMLEditUtils_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/Element.h"
 #include "nsGkAtoms.h"
@@ -264,6 +265,38 @@ class HTMLEditUtils final {
       }
     }
     return nullptr;
+  }
+
+  
+
+
+
+  static Element* GetElementIfOnlyOneSelected(
+      const dom::AbstractRange& aRange) {
+    if (!aRange.IsPositioned()) {
+      return nullptr;
+    }
+    const RangeBoundary& start = aRange.StartRef();
+    const RangeBoundary& end = aRange.EndRef();
+    if (NS_WARN_IF(!start.IsSetAndValid()) ||
+        NS_WARN_IF(!end.IsSetAndValid()) ||
+        start.Container() != end.Container()) {
+      return nullptr;
+    }
+    nsIContent* childAtStart = start.GetChildAtOffset();
+    if (!childAtStart || !childAtStart->IsElement()) {
+      return nullptr;
+    }
+    
+    
+    if (childAtStart->GetNextSibling()) {
+      return childAtStart->GetNextSibling() == end.GetChildAtOffset()
+                 ? childAtStart->AsElement()
+                 : nullptr;
+    }
+    
+    
+    return !end.GetChildAtOffset() ? childAtStart->AsElement() : nullptr;
   }
 
   static EditAction GetEditActionForInsert(const nsAtom& aTagName);

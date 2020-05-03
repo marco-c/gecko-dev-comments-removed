@@ -3889,39 +3889,27 @@ nsresult HTMLEditor::GetCellFromRange(nsRange* aRange, Element** aCell) {
   }
 
   *aCell = nullptr;
-
-  nsCOMPtr<nsINode> startContainer = aRange->GetStartContainer();
-  if (NS_WARN_IF(!startContainer)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  uint32_t startOffset = aRange->StartOffset();
-
-  nsCOMPtr<nsINode> childNode = aRange->GetChildAtStartOffset();
-  
-  if (!childNode) {
-    NS_WARNING("First selection range does not starts from a node");
-    return NS_ERROR_FAILURE;
-  }
-
-  nsCOMPtr<nsINode> endContainer = aRange->GetEndContainer();
-  if (NS_WARN_IF(!endContainer)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  
-  if (startContainer == endContainer &&
-      aRange->EndOffset() == startOffset + 1 &&
-      HTMLEditUtils::IsTableCell(childNode)) {
+  Element* element = HTMLEditUtils::GetElementIfOnlyOneSelected(*aRange);
+  if (!element) {
     
     
-    RefPtr<Element> cellElement = childNode->AsElement();
-    cellElement.forget(aCell);
-    return NS_OK;
+    if (NS_WARN_IF(!aRange->GetStartContainer())) {
+      return NS_ERROR_FAILURE;
+    }
+    if (NS_WARN_IF(!aRange->GetChildAtStartOffset())) {
+      return NS_ERROR_FAILURE;
+    }
+    if (NS_WARN_IF(!aRange->GetEndContainer())) {
+      return NS_ERROR_FAILURE;
+    }
+    return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
   }
-  return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
+
+  if (!HTMLEditUtils::IsTableCell(element)) {
+    return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
+  }
+  *aCell = do_AddRef(element).take();
+  return NS_OK;
 }
 
 NS_IMETHODIMP HTMLEditor::GetFirstSelectedCell(
