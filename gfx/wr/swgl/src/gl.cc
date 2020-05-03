@@ -2412,8 +2412,7 @@ static inline WideRGBA8 blend_pixels_RGBA8(PackedRGBA8 pdst, WideRGBA8 src) {
 }
 
 template <bool DISCARD>
-static inline void commit_output(uint32_t* buf, PackedRGBA8 mask) {
-  fragment_shader->run();
+static inline void discard_output(uint32_t* buf, PackedRGBA8 mask) {
   PackedRGBA8 dst = unaligned_load<PackedRGBA8>(buf);
   WideRGBA8 r = pack_pixels_RGBA8();
   if (blend_key) r = blend_pixels_RGBA8(dst, r);
@@ -2422,57 +2421,23 @@ static inline void commit_output(uint32_t* buf, PackedRGBA8 mask) {
 }
 
 template <bool DISCARD>
-static inline void commit_output(uint32_t* buf) {
-  commit_output<DISCARD>(buf, 0);
+static inline void discard_output(uint32_t* buf) {
+  discard_output<DISCARD>(buf, 0);
 }
 
 template <>
-inline void commit_output<false>(uint32_t* buf) {
-  fragment_shader->run();
+inline void discard_output<false>(uint32_t* buf) {
   WideRGBA8 r = pack_pixels_RGBA8();
   if (blend_key) r = blend_pixels_RGBA8(unaligned_load<PackedRGBA8>(buf), r);
   unaligned_store(buf, pack(r));
-}
-
-static inline void commit_span(uint32_t* buf, PackedRGBA8 r) {
-  if (blend_key)
-    r = pack(blend_pixels_RGBA8(unaligned_load<PackedRGBA8>(buf), unpack(r)));
-  unaligned_store(buf, r);
-}
-
-UNUSED static inline void commit_solid_span(uint32_t* buf, PackedRGBA8 r,
-                                            int len) {
-  if (blend_key) {
-    auto src = unpack(r);
-    for (uint32_t* end = &buf[len]; buf < end; buf += 4) {
-      unaligned_store(
-          buf, pack(blend_pixels_RGBA8(unaligned_load<PackedRGBA8>(buf), src)));
-    }
-  } else {
-    fill_n(buf, len, bit_cast<U32>(r).x);
-  }
-}
-
-UNUSED static inline void commit_texture_span(uint32_t* buf, uint32_t* src,
-                                              int len) {
-  if (blend_key) {
-    for (uint32_t* end = &buf[len]; buf < end; buf += 4, src += 4) {
-      PackedRGBA8 r = unaligned_load<PackedRGBA8>(src);
-      unaligned_store(buf, pack(blend_pixels_RGBA8(
-                               unaligned_load<PackedRGBA8>(buf), unpack(r))));
-    }
-  } else {
-    memcpy(buf, src, len * sizeof(uint32_t));
-  }
 }
 
 static inline PackedRGBA8 span_mask_RGBA8(int span) {
   return bit_cast<PackedRGBA8>(I32(span) < I32{1, 2, 3, 4});
 }
 
-template <bool DISCARD>
-static inline void commit_output(uint32_t* buf, int span) {
-  commit_output<DISCARD>(buf, span_mask_RGBA8(span));
+static inline PackedRGBA8 span_mask(uint32_t*, int span) {
+  return span_mask_RGBA8(span);
 }
 
 static inline WideR8 pack_pixels_R8(Float c) {
@@ -2507,8 +2472,7 @@ static inline WideR8 blend_pixels_R8(WideR8 dst, WideR8 src) {
 }
 
 template <bool DISCARD>
-static inline void commit_output(uint8_t* buf, WideR8 mask) {
-  fragment_shader->run();
+static inline void discard_output(uint8_t* buf, WideR8 mask) {
   WideR8 dst = unpack(unaligned_load<PackedR8>(buf));
   WideR8 r = pack_pixels_R8();
   if (blend_key) r = blend_pixels_R8(dst, r);
@@ -2517,16 +2481,96 @@ static inline void commit_output(uint8_t* buf, WideR8 mask) {
 }
 
 template <bool DISCARD>
-static inline void commit_output(uint8_t* buf) {
-  commit_output<DISCARD>(buf, 0);
+static inline void discard_output(uint8_t* buf) {
+  discard_output<DISCARD>(buf, 0);
 }
 
 template <>
-inline void commit_output<false>(uint8_t* buf) {
-  fragment_shader->run();
+inline void discard_output<false>(uint8_t* buf) {
   WideR8 r = pack_pixels_R8();
   if (blend_key) r = blend_pixels_R8(unpack(unaligned_load<PackedR8>(buf)), r);
   unaligned_store(buf, pack(r));
+}
+
+static inline WideR8 span_mask_R8(int span) {
+  return bit_cast<WideR8>(WideR8(span) < WideR8{1, 2, 3, 4});
+}
+
+static inline WideR8 span_mask(uint8_t*, int span) {
+  return span_mask_R8(span);
+}
+
+template <bool DISCARD, bool W, typename P, typename M>
+static inline void commit_output(P* buf, M mask) {
+  fragment_shader->run<W>();
+  discard_output<DISCARD>(buf, mask);
+}
+
+template <bool DISCARD, bool W, typename P>
+static inline void commit_output(P* buf) {
+  fragment_shader->run<W>();
+  discard_output<DISCARD>(buf);
+}
+
+template <bool DISCARD, bool W, typename P>
+static inline void commit_output(P* buf, int span) {
+  commit_output<DISCARD, W>(buf, span_mask(buf, span));
+}
+
+template <bool DISCARD, bool W, typename P, typename Z>
+static inline void commit_output(P* buf, Z z, uint16_t* zbuf) {
+  ZMask4 zmask;
+  if (check_depth4<true, DISCARD>(z, zbuf, zmask)) {
+    commit_output<DISCARD, W>(buf, unpack(zmask, buf));
+    if (DISCARD) {
+      discard_depth(z, zbuf, zmask);
+    }
+  } else {
+    fragment_shader->skip<W>();
+  }
+}
+
+template <bool DISCARD, bool W, typename P, typename Z>
+static inline void commit_output(P* buf, Z z, uint16_t* zbuf, int span) {
+  ZMask4 zmask;
+  if (check_depth4<false, DISCARD>(z, zbuf, zmask, span)) {
+    commit_output<DISCARD, W>(buf, unpack(zmask, buf));
+    if (DISCARD) {
+      discard_depth(z, zbuf, zmask);
+    }
+  }
+}
+
+static inline void commit_span(uint32_t* buf, PackedRGBA8 r) {
+  if (blend_key)
+    r = pack(blend_pixels_RGBA8(unaligned_load<PackedRGBA8>(buf), unpack(r)));
+  unaligned_store(buf, r);
+}
+
+UNUSED static inline void commit_solid_span(uint32_t* buf, PackedRGBA8 r,
+                                            int len) {
+  if (blend_key) {
+    auto src = unpack(r);
+    for (uint32_t* end = &buf[len]; buf < end; buf += 4) {
+      unaligned_store(
+          buf, pack(blend_pixels_RGBA8(unaligned_load<PackedRGBA8>(buf), src)));
+    }
+  } else {
+    fill_n(buf, len, bit_cast<U32>(r).x);
+  }
+}
+
+UNUSED static inline void commit_texture_span(uint32_t* buf, uint32_t* src,
+                                              int len) {
+  if (blend_key) {
+    for (uint32_t* end = &buf[len]; buf < end; buf += 4, src += 4) {
+      PackedRGBA8 r = unaligned_load<PackedRGBA8>(src);
+      unaligned_store(buf, pack(blend_pixels_RGBA8(
+                               unaligned_load<PackedRGBA8>(buf), unpack(r))));
+    }
+  } else {
+    memcpy(buf, src, len * sizeof(uint32_t));
+  }
 }
 
 static inline void commit_span(uint8_t* buf, PackedR8 r) {
@@ -2546,45 +2590,6 @@ UNUSED static inline void commit_solid_span(uint8_t* buf, PackedR8 r, int len) {
     fill_n((uint32_t*)buf, len / 4, bit_cast<uint32_t>(r));
   }
 }
-
-static inline WideR8 span_mask_R8(int span) {
-  return bit_cast<WideR8>(WideR8(span) < WideR8{1, 2, 3, 4});
-}
-
-template <bool DISCARD>
-static inline void commit_output(uint8_t* buf, int span) {
-  commit_output<DISCARD>(buf, span_mask_R8(span));
-}
-
-template <bool DISCARD, typename P, typename Z>
-static inline void commit_output(P* buf, Z z, uint16_t* zbuf) {
-  ZMask4 zmask;
-  if (check_depth4<true, DISCARD>(z, zbuf, zmask)) {
-    commit_output<DISCARD>(buf, unpack(zmask, buf));
-    if (DISCARD) {
-      discard_depth(z, zbuf, zmask);
-    }
-  } else {
-    fragment_shader->skip();
-  }
-}
-
-template <bool DISCARD, typename P, typename Z>
-static inline void commit_output(P* buf, Z z, uint16_t* zbuf, int span) {
-  ZMask4 zmask;
-  if (check_depth4<false, DISCARD>(z, zbuf, zmask, span)) {
-    commit_output<DISCARD>(buf, unpack(zmask, buf));
-    if (DISCARD) {
-      discard_depth(z, zbuf, zmask);
-    }
-  }
-}
-
-static const size_t MAX_FLATS = 64;
-typedef float Flats[MAX_FLATS];
-
-static const size_t MAX_INTERPOLANTS = 16;
-typedef VectorType<float, MAX_INTERPOLANTS> Interpolants;
 
 template <typename S, typename P>
 static ALWAYS_INLINE void dispatch_draw_span(S* shader, P* buf, int len) {
@@ -2609,6 +2614,39 @@ static ALWAYS_INLINE void dispatch_draw_span(S* shader, P* buf, int len) {
 #endif
 #include "load_shader.h"
 #pragma GCC diagnostic pop
+
+static const size_t MAX_FLATS = 64;
+typedef float Flats[MAX_FLATS];
+
+static const size_t MAX_INTERPOLANTS = 16;
+typedef VectorType<float, MAX_INTERPOLANTS> Interpolants;
+
+typedef vec2_scalar Point2D;
+typedef vec4_scalar Point3D;
+
+struct ClipRect {
+  float x0;
+  float y0;
+  float x1;
+  float y1;
+
+  ClipRect(const IntRect& i) : x0(i.x0), y0(i.y0), x1(i.x1), y1(i.y1) {}
+  ClipRect(Texture& t) : ClipRect(ctx->apply_scissor(t.bounds())) {}
+
+  template <typename P>
+  bool overlaps(int nump, const P* p) const {
+    
+    
+    
+    
+    int sides = 0;
+    for (int i = 0; i < nump; i++) {
+      sides |= p[i].x < x1 ? (p[i].x > x0 ? 1 | 2 : 1) : 2;
+      sides |= p[i].y < y1 ? (p[i].y > y0 ? 4 | 8 : 4) : 8;
+    }
+    return sides == 0xF;
+  }
+};
 
 
 
@@ -2659,9 +2697,9 @@ static inline void draw_depth_span(uint16_t z, P* buf, uint16_t* depth,
             skip = 0;
           }
           
-          commit_output<false>(buf, unpack(lowHalf(zmask), buf));
+          commit_output<false, false>(buf, unpack(lowHalf(zmask), buf));
           
-          commit_output<false>(buf + 4, unpack(highHalf(zmask), buf));
+          commit_output<false, false>(buf + 4, unpack(highHalf(zmask), buf));
           break;
       }
       
@@ -2692,8 +2730,8 @@ static inline void draw_depth_span(uint16_t z, P* buf, uint16_t* depth,
             skip = 0;
           }
           
-          commit_output<false>(buf);
-          commit_output<false>(buf + 4);
+          commit_output<false, false>(buf);
+          commit_output<false, false>(buf + 4);
           break;
         default: 
           if (skip) {
@@ -2702,9 +2740,9 @@ static inline void draw_depth_span(uint16_t z, P* buf, uint16_t* depth,
             skip = 0;
           }
           
-          commit_output<false>(buf, unpack(lowHalf(zmask), buf));
+          commit_output<false, false>(buf, unpack(lowHalf(zmask), buf));
           
-          commit_output<false>(buf + 4, unpack(highHalf(zmask), buf));
+          commit_output<false, false>(buf + 4, unpack(highHalf(zmask), buf));
           break;
       }
       
@@ -2719,32 +2757,33 @@ static inline void draw_depth_span(uint16_t z, P* buf, uint16_t* depth,
   }
 }
 
-typedef vec2_scalar Point2D;
-typedef vec4_scalar Point3D;
 
-struct ClipRect {
-  float x0;
-  float y0;
-  float x1;
-  float y1;
-
-  ClipRect(const IntRect& i) : x0(i.x0), y0(i.y0), x1(i.x1), y1(i.y1) {}
-  ClipRect(Texture& t) : ClipRect(ctx->apply_scissor(t.bounds())) {}
-
-  template <typename P>
-  bool overlaps(int nump, const P* p) const {
+template <bool DISCARD, bool W, typename P, typename Z>
+static ALWAYS_INLINE void draw_span(P* buf, uint16_t* depth, int span, Z z) {
+  if (depth) {
     
     
     
     
-    int sides = 0;
-    for (int i = 0; i < nump; i++) {
-      sides |= p[i].x < x1 ? (p[i].x > x0 ? 1 | 2 : 1) : 2;
-      sides |= p[i].y < y1 ? (p[i].y > y0 ? 4 | 8 : 4) : 8;
+    
+    for (; span >= 4; span -= 4, buf += 4, depth += 4) {
+      commit_output<DISCARD, W>(buf, z(), depth);
     }
-    return sides == 0xF;
+    
+    if (span > 0) {
+      commit_output<DISCARD, W>(buf, z(), depth, span);
+    }
+  } else {
+    
+    for (; span >= 4; span -= 4, buf += 4) {
+      commit_output<DISCARD, W>(buf);
+    }
+    
+    if (span > 0) {
+      commit_output<DISCARD, W>(buf, span);
+    }
   }
-};
+}
 
 
 
@@ -2904,9 +2943,8 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
       ctx->shaded_pixels += span;
       
       P* buf = fbuf + startx;
-      uint16_t* depth = fdepth + startx;
       
-      bool use_depth = depthtex.buf != nullptr;
+      uint16_t* depth = depthtex.buf != nullptr ? fdepth + startx : nullptr;
       bool use_discard = fragment_shader->use_discard();
       if (depthtex.delay_clear) {
         
@@ -2950,11 +2988,11 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
                                      IntRect{startx, yi, endx, yi + 1});
               
               
-              use_depth = false;
+              depth = nullptr;
             }
           } else {
             
-            use_depth = false;
+            depth = nullptr;
           }
         }
       }
@@ -2965,7 +3003,7 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
         if ((mask & (1 << (yi & 31))) == 0) {
           mask |= 1 << (yi & 31);
           colortex.delay_clear--;
-          if (use_depth || blend_key || use_discard) {
+          if (depth || blend_key || use_discard) {
             
             
             force_clear_row<P>(colortex, yi);
@@ -2990,7 +3028,7 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
       }
       if (!use_discard) {
         
-        if (use_depth) {
+        if (depth) {
           
           
           
@@ -3013,59 +3051,21 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
             depth += span & ~7;
             span &= 7;
           }
-          
-          for (; span >= 4; span -= 4, buf += 4, depth += 4) {
-            commit_output<false>(buf, z, depth);
-          }
-          
-          if (span > 0) {
-            commit_output<false>(buf, z, depth, span);
-          }
         } else {
-          if (span >= 4) {
-            
-            if (fragment_shader->has_draw_span(buf)) {
-              
-              int len = span & ~3;
-              fragment_shader->draw_span(buf, len);
-              buf += len;
-              span &= 3;
-            } else {
-              
-              do {
-                commit_output<false>(buf);
-                buf += 4;
-                span -= 4;
-              } while (span >= 4);
-            }
-          }
           
-          if (span > 0) {
-            commit_output<false>(buf, span);
+          if (span >= 4 && fragment_shader->has_draw_span(buf)) {
+            
+            int len = span & ~3;
+            fragment_shader->draw_span(buf, len);
+            buf += len;
+            span &= 3;
           }
         }
+        draw_span<false, false>(buf, depth, span, [=]{ return z; });
       } else {
         
         
-        if (use_depth) {
-          
-          for (; span >= 4; span -= 4, buf += 4, depth += 4) {
-            commit_output<true>(buf, z, depth);
-          }
-          
-          if (span > 0) {
-            commit_output<true>(buf, z, depth, span);
-          }
-        } else {
-          
-          for (; span >= 4; span -= 4, buf += 4) {
-            commit_output<true>(buf);
-          }
-          
-          if (span > 0) {
-            commit_output<true>(buf, span);
-          }
-        }
+        draw_span<true, false>(buf, depth, span, [=]{ return z; });
       }
     }
   next_span:
@@ -3212,9 +3212,8 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
       ctx->shaded_pixels += span;
       
       P* buf = fbuf + startx;
-      uint16_t* depth = fdepth + startx;
       
-      bool use_depth = depthtex.buf != nullptr;
+      uint16_t* depth = depthtex.buf != nullptr ? fdepth + startx : nullptr;
       bool use_discard = fragment_shader->use_discard();
       if (depthtex.delay_clear) {
         
@@ -3238,7 +3237,7 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
         if ((mask & (1 << (yi & 31))) == 0) {
           mask |= 1 << (yi & 31);
           colortex.delay_clear--;
-          if (use_depth || blend_key || use_discard) {
+          if (depth || blend_key || use_discard) {
             
             
             force_clear_row<P>(colortex, yi);
@@ -3271,49 +3270,14 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
             (right.interp - left.interp) * (1.0f / (right.x() - left.x()));
         
         Interpolants o = left.interp + step * (startx + 0.5f - left.x());
-        fragment_shader->init_span(&o, &step, 4.0f);
+        fragment_shader->init_span<true>(&o, &step, 4.0f);
       }
       if (!use_discard) {
         
-        if (use_depth) {
-          
-          
-          
-          
-          for (; span >= 4; span -= 4, buf += 4, depth += 4) {
-            commit_output<false>(buf, packDepth(), depth);
-          }
-          
-          if (span > 0) {
-            commit_output<false>(buf, packDepth(), depth, span);
-          }
-        } else {
-          
-          for (; span >= 4; span -= 4, buf += 4) {
-            commit_output<false>(buf);
-          }
-          
-          if (span > 0) {
-            commit_output<false>(buf, span);
-          }
-        }
+        draw_span<false, true>(buf, depth, span, packDepth);
       } else {
         
-        if (use_depth) {
-          for (; span >= 4; span -= 4, buf += 4, depth += 4) {
-            commit_output<true>(buf, packDepth(), depth);
-          }
-          if (span > 0) {
-            commit_output<true>(buf, packDepth(), depth, span);
-          }
-        } else {
-          for (; span >= 4; span -= 4, buf += 4) {
-            commit_output<true>(buf);
-          }
-          if (span > 0) {
-            commit_output<true>(buf, span);
-          }
-        }
+        draw_span<true, true>(buf, depth, span, packDepth);
       }
     }
     
@@ -3378,14 +3342,10 @@ static int clip_near_far(int nump, Point3D* p, Interpolants* interp) {
 
 
 
-static void draw_perspective(int nump, Texture& colortex, int layer,
+static void draw_perspective(int nump, Flats flat_outs,
+                             Interpolants interp_outs[6],
+                             Texture& colortex, int layer,
                              Texture& depthtex) {
-  
-  Flats flat_outs;
-  Interpolants interp_outs[6] = {0};
-  vertex_shader->run((char*)flat_outs, (char*)interp_outs,
-                     sizeof(Interpolants));
-
   
   Point3D p[6];
   vec4 pos = vertex_shader->gl_Position;
@@ -3448,19 +3408,21 @@ static void draw_perspective(int nump, Texture& colortex, int layer,
 
 static void draw_quad(int nump, Texture& colortex, int layer,
                       Texture& depthtex) {
-  if (fragment_shader->use_perspective()) {
-    draw_perspective(nump, colortex, layer, depthtex);
+  
+  Flats flat_outs;
+  
+  
+  Interpolants interp_outs[6] = {0};
+  vertex_shader->run((char*)flat_outs, (char*)interp_outs,
+                     sizeof(Interpolants));
+  vec4 pos = vertex_shader->gl_Position;
+  
+  if (test_any(pos.w != pos.w.x)) {
+    draw_perspective(nump, flat_outs, interp_outs, colortex, layer, depthtex);
     return;
   }
 
   
-  Flats flat_outs;
-  Interpolants interp_outs[4] = {0};
-  vertex_shader->run((char*)flat_outs, (char*)interp_outs,
-                     sizeof(Interpolants));
-
-  
-  vec4 pos = vertex_shader->gl_Position;
   
   float w = 1.0f / pos.w.x;
   vec2 screen =
@@ -3479,7 +3441,7 @@ static void draw_quad(int nump, Texture& colortex, int layer,
   }
 
   
-  float screenZ = (vertex_shader->gl_Position.z.x * w + 1) * 0.5f;
+  float screenZ = (pos.z.x * w + 1) * 0.5f;
   if (screenZ < 0 || screenZ > 1) {
     
     return;
