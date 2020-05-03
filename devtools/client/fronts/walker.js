@@ -453,14 +453,10 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
 
 
   async reparentRemoteFrame() {
-    
-    const descriptorFront = this.targetFront.descriptorFront;
-    
-    
-    if (!descriptorFront.getParentTarget) {
+    const parentTarget = await this.targetFront.getParentTarget();
+    if (!parentTarget) {
       return;
     }
-    const parentTarget = await descriptorFront.getParentTarget();
     
     if (parentTarget == this.targetFront) {
       return;
@@ -471,7 +467,7 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     
     
     const parentNode = (
-      await parentWalker.getEmbedderElement(descriptorFront.id)
+      await parentWalker.getEmbedderElement(this.targetFront.browsingContextID)
     ).node;
 
     

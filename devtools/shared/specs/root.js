@@ -106,6 +106,7 @@ const rootSpecPrototype = {
       response: RetVal("root.listRemoteFrames"),
     },
 
+    
     getBrowsingContextDescriptor: {
       request: {
         id: Arg(0, "number"),

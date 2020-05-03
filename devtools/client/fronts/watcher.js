@@ -45,5 +45,39 @@ class WatcherFront extends FrontClassWithSpec(watcherSpec) {
     const front = this.actor(form.actor);
     this.emit("target-destroyed", front);
   }
+
+  
+
+
+
+  async getParentBrowsingContextTarget(browsingContextID) {
+    const id = await this.getParentBrowsingContextID(browsingContextID);
+    if (!id) {
+      return null;
+    }
+    return this.getBrowsingContextTarget(id);
+  }
+
+  
+
+
+  async getBrowsingContextTarget(id) {
+    
+    for (const front of this.poolChildren()) {
+      if (front.browsingContextID == id) {
+        return front;
+      }
+    }
+    
+    
+    
+    
+    
+    const topLevelTarget = await this.parentFront.getTarget();
+    if (topLevelTarget.browsingContextID == id) {
+      return topLevelTarget;
+    }
+    return null;
+  }
 }
 registerFront(WatcherFront);

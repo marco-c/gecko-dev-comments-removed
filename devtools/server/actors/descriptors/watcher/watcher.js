@@ -119,4 +119,24 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   notifyTargetDestroyed(actor) {
     this.emit("target-destroyed-form", actor);
   },
+
+  getParentBrowsingContextID(browsingContextID) {
+    const browsingContext = BrowsingContext.get(browsingContextID);
+    if (!browsingContext) {
+      throw new Error(
+        `BrowsingContext with ID=${browsingContextID} doesn't exist.`
+      );
+    }
+    
+    
+    
+    
+    if (browsingContext.parent) {
+      return browsingContext.parent.id;
+    }
+    if (browsingContext.embedderWindowGlobal) {
+      return browsingContext.embedderWindowGlobal.browsingContext.id;
+    }
+    return null;
+  },
 });

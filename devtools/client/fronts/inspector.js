@@ -179,10 +179,22 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     
     
     
-    const descriptor = await this.targetFront.client.mainRoot.getBrowsingContextDescriptor(
-      browsingContextId
-    );
-    const target = await descriptor.getTarget();
+    
+    const { descriptorFront } = this.targetFront;
+
+    
+    
+    let target;
+    if (descriptorFront && descriptorFront.traits.watcher) {
+      const watcher = await descriptorFront.getWatcher();
+      target = await watcher.getBrowsingContextTarget(browsingContextId);
+    } else {
+      
+      const descriptor = await this.targetFront.client.mainRoot.getBrowsingContextDescriptor(
+        browsingContextId
+      );
+      target = await descriptor.getTarget();
+    }
     const { walker } = await target.getFront("inspector");
     return walker.getNodeActorFromContentDomReference(contentDomReference);
   }
