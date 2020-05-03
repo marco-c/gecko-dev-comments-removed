@@ -3150,6 +3150,15 @@ PKIX_PL_Cert_CheckNameConstraints(
                 if (arena == NULL) {
                         PKIX_ERROR(PKIX_OUTOFMEMORY);
                 }
+                
+                if (treatCommonNameAsDNSName) {
+                    SECCertificateUsage certificateUsage;
+                    certificateUsage = ((PKIX_PL_NssContext*)plContext)->certificateUsage;
+                    if ((certificateUsage != certificateUsageSSLServer) &&
+                        (certificateUsage != certificateUsageIPsec)) {
+                        treatCommonNameAsDNSName = PKIX_FALSE;
+                    }
+                }
 
                 
 

@@ -441,6 +441,28 @@ typedef struct CK_NSS_IKE1_PRF_DERIVE_PARAMS {
 
 
 
+typedef struct CK_NSS_IKE1_APP_B_PRF_DERIVE_PARAMS {
+    CK_MECHANISM_TYPE prfMechanism;
+    CK_BBOOL bHasKeygxy;
+    CK_OBJECT_HANDLE hKeygxy;
+    CK_BYTE_PTR pExtraData;
+    CK_ULONG ulExtraDataLen;
+} CK_NSS_IKE1_APP_B_PRF_DERIVE_PARAMS;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
