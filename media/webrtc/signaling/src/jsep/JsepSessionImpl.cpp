@@ -113,7 +113,8 @@ nsresult JsepSessionImpl::AddTransceiver(RefPtr<JsepTransceiver> transceiver) {
     
     transceiver->mJsDirection = SdpDirectionAttribute::kSendrecv;
 #ifdef DEBUG
-    for (auto& transceiver : mTransceivers) {
+    for (const auto& [id, transceiver] : mTransceivers) {
+      (void)id;  
       MOZ_ASSERT(transceiver->GetMediaType() != SdpMediaSection::kApplication);
     }
 #endif
@@ -123,7 +124,7 @@ nsresult JsepSessionImpl::AddTransceiver(RefPtr<JsepTransceiver> transceiver) {
   transceiver->mRecvTrack.PopulateCodecs(mSupportedCodecs);
   
 
-  mTransceivers.push_back(transceiver);
+  mTransceivers[mTransceiverIdCounter++] = transceiver;
   return NS_OK;
 }
 
@@ -690,8 +691,8 @@ JsepSession::Result JsepSessionImpl::SetLocalDescription(
   if (type == kJsepSdpOffer) {
     
     mOldTransceivers.clear();
-    for (const auto& transceiver : mTransceivers) {
-      mOldTransceivers.push_back(new JsepTransceiver(*transceiver));
+    for (const auto& [id, transceiver] : mTransceivers) {
+      mOldTransceivers[id] = new JsepTransceiver(*transceiver);
     }
   }
 
@@ -862,8 +863,8 @@ JsepSession::Result JsepSessionImpl::SetRemoteDescription(
   
   if (type == kJsepSdpOffer) {
     mOldTransceivers.clear();
-    for (const auto& transceiver : mTransceivers) {
-      mOldTransceivers.push_back(new JsepTransceiver(*transceiver));
+    for (const auto& [id, transceiver] : mTransceivers) {
+      mOldTransceivers[id] = new JsepTransceiver(*transceiver);
       if (!transceiver->IsNegotiated()) {
         
         
@@ -958,7 +959,8 @@ nsresult JsepSessionImpl::HandleNegotiatedSession(
   }
 
   std::vector<JsepTrack*> remoteTracks;
-  for (const RefPtr<JsepTransceiver>& transceiver : mTransceivers) {
+  for (const auto& [id, transceiver] : mTransceivers) {
+    (void)id;  
     remoteTracks.push_back(&transceiver->mRecvTrack);
   }
   JsepTrack::SetUniquePayloadTypes(remoteTracks);
@@ -1331,7 +1333,8 @@ nsresult JsepSessionImpl::SetRemoteDescriptionAnswer(JsepSdpType type,
 }
 
 JsepTransceiver* JsepSessionImpl::GetTransceiverForLevel(size_t level) {
-  for (RefPtr<JsepTransceiver>& transceiver : mTransceivers) {
+  for (auto& [id, transceiver] : mTransceivers) {
+    (void)id;  
     if (transceiver->HasLevel() && (transceiver->GetLevel() == level)) {
       return transceiver.get();
     }
@@ -1341,7 +1344,8 @@ JsepTransceiver* JsepSessionImpl::GetTransceiverForLevel(size_t level) {
 }
 
 JsepTransceiver* JsepSessionImpl::GetTransceiverForMid(const std::string& mid) {
-  for (RefPtr<JsepTransceiver>& transceiver : mTransceivers) {
+  for (auto& [id, transceiver] : mTransceivers) {
+    (void)id;  
     if (transceiver->IsAssociated() && (transceiver->GetMid() == mid)) {
       return transceiver.get();
     }
@@ -1371,7 +1375,8 @@ JsepTransceiver* JsepSessionImpl::GetTransceiverForLocal(size_t level) {
   
 
   
-  for (RefPtr<JsepTransceiver>& transceiver : mTransceivers) {
+  for (auto& [id, transceiver] : mTransceivers) {
+    (void)id;  
     if (transceiver->GetMediaType() != SdpMediaSection::kApplication &&
         !transceiver->IsStopped() && !transceiver->HasLevel()) {
       transceiver->SetLevel(level);
@@ -1380,7 +1385,8 @@ JsepTransceiver* JsepSessionImpl::GetTransceiverForLocal(size_t level) {
   }
 
   
-  for (RefPtr<JsepTransceiver>& transceiver : mTransceivers) {
+  for (auto& [id, transceiver] : mTransceivers) {
+    (void)id;  
     if (!transceiver->IsStopped() && !transceiver->HasLevel()) {
       transceiver->SetLevel(level);
       return transceiver.get();
@@ -1417,12 +1423,13 @@ JsepTransceiver* JsepSessionImpl::GetTransceiverForRemote(
   newTransceiver->SetCreatedBySetRemote();
   nsresult rv = AddTransceiver(newTransceiver);
   NS_ENSURE_SUCCESS(rv, nullptr);
-  return mTransceivers.back().get();
+  return newTransceiver.get();
 }
 
 JsepTransceiver* JsepSessionImpl::GetTransceiverWithTransport(
     const std::string& transportId) {
-  for (const auto& transceiver : mTransceivers) {
+  for (const auto& [id, transceiver] : mTransceivers) {
+    (void)id;  
     if (transceiver->HasOwnTransport() &&
         (transceiver->mTransport.mTransportId == transportId)) {
       MOZ_ASSERT(transceiver->HasLevel(),
@@ -1485,7 +1492,8 @@ nsresult JsepSessionImpl::UpdateTransceiversFromRemoteDescription(
 JsepTransceiver* JsepSessionImpl::FindUnassociatedTransceiver(
     SdpMediaSection::MediaType type, bool magic) {
   
-  for (RefPtr<JsepTransceiver>& transceiver : mTransceivers) {
+  for (auto& [id, transceiver] : mTransceivers) {
+    (void)id;  
     if (type == SdpMediaSection::kApplication &&
         type == transceiver->GetMediaType()) {
       transceiver->RestartDatachannelTransceiver();
@@ -1502,10 +1510,10 @@ JsepTransceiver* JsepSessionImpl::FindUnassociatedTransceiver(
 }
 
 void JsepSessionImpl::RollbackLocalOffer() {
-  for (size_t i = 0; i < mTransceivers.size(); ++i) {
-    RefPtr<JsepTransceiver>& transceiver(mTransceivers[i]);
-    if (i < mOldTransceivers.size()) {
-      transceiver->Rollback(*mOldTransceivers[i], false);
+  for (auto& [id, transceiver] : mTransceivers) {
+    if (mOldTransceivers.count(id)) {
+      transceiver->Rollback(*mOldTransceivers[id], false);
+      mOldTransceivers[id] = transceiver;
       continue;
     }
 
@@ -1514,16 +1522,18 @@ void JsepSessionImpl::RollbackLocalOffer() {
     temp->mSendTrack.PopulateCodecs(mSupportedCodecs);
     temp->mRecvTrack.PopulateCodecs(mSupportedCodecs);
     transceiver->Rollback(*temp, false);
+    mOldTransceivers[id] = transceiver;
   }
 
-  mOldTransceivers.clear();
+  mTransceivers = std::move(mOldTransceivers);
 }
 
 void JsepSessionImpl::RollbackRemoteOffer() {
-  for (size_t i = 0; i < mTransceivers.size(); ++i) {
-    RefPtr<JsepTransceiver>& transceiver(mTransceivers[i]);
-    if (i < mOldTransceivers.size()) {
-      transceiver->Rollback(*mOldTransceivers[i], true);
+  for (auto& [id, transceiver] : mTransceivers) {
+    if (mOldTransceivers.count(id)) {
+      
+      transceiver->Rollback(*mOldTransceivers[id], true);
+      mOldTransceivers[id] = transceiver;
       continue;
     }
 
@@ -1542,12 +1552,12 @@ void JsepSessionImpl::RollbackRemoteOffer() {
     if (shouldRemove) {
       transceiver->Stop();
       transceiver->SetRemoved();
-      mTransceivers.erase(mTransceivers.begin() + i);
-      --i;
+    } else {
+      mOldTransceivers[id] = transceiver;
     }
   }
 
-  mOldTransceivers.clear();
+  mTransceivers = std::move(mOldTransceivers);
 }
 
 nsresult JsepSessionImpl::ValidateLocalDescription(const Sdp& description,
@@ -2133,7 +2143,8 @@ nsresult JsepSessionImpl::UpdateDefaultCandidate(
     return NS_ERROR_UNEXPECTED;
   }
 
-  for (const auto& transceiver : mTransceivers) {
+  for (const auto& [id, transceiver] : mTransceivers) {
+    (void)id;  
     
     
     if (transceiver->mTransport.mTransportId == transportId) {
@@ -2236,7 +2247,8 @@ const std::string JsepSessionImpl::GetLastError() const { return mLastError; }
 bool JsepSessionImpl::CheckNegotiationNeeded() const {
   MOZ_ASSERT(mState == kJsepStateStable);
 
-  for (const auto& transceiver : mTransceivers) {
+  for (const auto& [id, transceiver] : mTransceivers) {
+    (void)id;  
     if (transceiver->IsStopped()) {
       if (transceiver->IsAssociated()) {
         MOZ_MTLOG(ML_DEBUG, "[" << mName
