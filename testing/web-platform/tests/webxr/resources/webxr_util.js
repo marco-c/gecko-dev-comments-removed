@@ -10,19 +10,21 @@
 
 
 var xr_debug = function(name, msg) {}
+var isChromiumBased = 'MojoInterfaceInterceptor' in self;
+var isWebKitBased = 'internals' in self && 'xrTest' in internals;
 
 function xr_promise_test(name, func, properties) {
   promise_test(async (t) => {
     
     xr_debug(name, 'setup');
 
-    if (window.XRTest === undefined) {
+    if (isChromiumBased) {
       
       await loadChromiumResources;
       xr_debug = navigator.xr.test.Debug;
     }
 
-    if (self.internals && internals.xrTest && navigator.xr) {
+    if (isWebKitBased) {
       
       await setupWebKitWebXRTestAPI;
     }
@@ -161,7 +163,7 @@ function forEachWebxrObject(callback) {
 
 
 let loadChromiumResources = Promise.resolve().then(() => {
-  if (!('MojoInterfaceInterceptor' in self)) {
+  if (!isChromiumBased) {
     
     
     return;
@@ -206,7 +208,7 @@ let loadChromiumResources = Promise.resolve().then(() => {
 });
 
 let setupWebKitWebXRTestAPI = Promise.resolve().then(() => {
-  if (!self.internals || !internals.xrTest) {
+  if (!isWebKitBased) {
     
     return;
   }
