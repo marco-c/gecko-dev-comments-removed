@@ -47,6 +47,12 @@ class UrlbarValueFormatter {
   }
 
   update() {
+    
+    if (this._formattingApplied) {
+      this.urlbarInput.removeAttribute("domaindir");
+      this.scheme.value = "";
+    }
+
     if (!this.inputField.value) {
       return;
     }
@@ -196,7 +202,6 @@ class UrlbarValueFormatter {
   }
 
   _removeURLFormat() {
-    this.scheme.value = "";
     if (!this._formattingApplied) {
       return;
     }
@@ -222,7 +227,6 @@ class UrlbarValueFormatter {
   _formatURL() {
     let urlMetaData = this._getUrlMetaData();
     if (!urlMetaData) {
-      this.urlbarInput.removeAttribute("domaindir");
       return false;
     }
 
