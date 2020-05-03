@@ -351,23 +351,22 @@ ThirdPartyUtil::IsThirdPartyChannel(nsIChannel* aChannel, nsIURI* aURI,
   if (NS_FAILED(rv)) return rv;
 
   if (!doForce) {
-    if (nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo()) {
-      parentIsThird = loadInfo->GetIsInThirdPartyContext();
-      if (!parentIsThird && loadInfo->GetExternalContentPolicyType() !=
-                                nsIContentPolicy::TYPE_DOCUMENT) {
-        
-        
+    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+    parentIsThird = loadInfo->GetIsInThirdPartyContext();
+    BasePrincipal* loadingPrincipal =
+        BasePrincipal::Cast(loadInfo->GetLoadingPrincipal());
+    if (!parentIsThird &&
+        loadInfo->GetExternalContentPolicyType() !=
+            nsIContentPolicy::TYPE_DOCUMENT &&
+        (!loadingPrincipal->AddonPolicy() ||
+         !loadingPrincipal->AddonAllowsLoad(channelURI))) {
+      
+      
 
-        rv = loadInfo->GetLoadingPrincipal()->IsThirdPartyURI(channelURI,
-                                                              &parentIsThird);
-        if (NS_FAILED(rv)) {
-          return rv;
-        }
+      rv = loadingPrincipal->IsThirdPartyURI(channelURI, &parentIsThird);
+      if (NS_FAILED(rv)) {
+        return rv;
       }
-    } else {
-      NS_WARNING(
-          "Found channel with no loadinfo, assuming third-party request");
-      parentIsThird = true;
     }
   }
 
