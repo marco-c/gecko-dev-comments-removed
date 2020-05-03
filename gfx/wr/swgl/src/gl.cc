@@ -2859,7 +2859,12 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
     Edge(float y, const Point2D& p0, const Point2D& p1,
          const Interpolants& i0, const Interpolants& i1) :
       
-      yScale(1.0f / (p1.y - p0.y)),
+      
+      
+      
+      
+      
+      yScale(1.0f / max(p1.y - p0.y, 1.0f / 256)),
       
       xSlope((p1.x - p0.x) * yScale),
       
@@ -2889,9 +2894,12 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
   uint16_t* fdepth =
     (uint16_t*)depthtex.sample_ptr(0, int(y), 0, sizeof(uint16_t));
   
-  while (y < clipRect.y1) {
+  float checkY = min(min(l1.y, r1.y), clipRect.y1);
+  for (;;) {
     
-    if (y > l1.y) {
+    if (y > checkY) {
+      
+      if (y > clipRect.y1) break;
       
 #define STEP_EDGE(e0i, e0, e1i, e1, STEP_POINT, end)                   \
       for (;;) {                                                       \
@@ -2908,14 +2916,19 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint16_t z,
         /* Otherwise, it's a duplicate, so keep searching. */          \
       }
       
-      STEP_EDGE(l0i, l0, l1i, l1, NEXT_POINT, r1i);
-      left = Edge(y, l0, l1, interp_outs[l0i], interp_outs[l1i]);
-    }
-    
-    if (y > r1.y) {
+      if (y > l1.y) {
+        
+        do { STEP_EDGE(l0i, l0, l1i, l1, NEXT_POINT, r1i); } while (y > l1.y);
+        left = Edge(y, l0, l1, interp_outs[l0i], interp_outs[l1i]);
+      }
       
-      STEP_EDGE(r0i, r0, r1i, r1, PREV_POINT, l1i);
-      right = Edge(y, r0, r1, interp_outs[r0i], interp_outs[r1i]);
+      if (y > r1.y) {
+        
+        do { STEP_EDGE(r0i, r0, r1i, r1, PREV_POINT, l1i); } while (y > r1.y);
+        right = Edge(y, r0, r1, interp_outs[r0i], interp_outs[r1i]);
+      }
+      
+      checkY = min(min(l1.y, r1.y), clipRect.y1);
     }
     
     
@@ -3137,7 +3150,7 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
     Edge(float y, const Point3D& p0, const Point3D& p1,
          const Interpolants& i0, const Interpolants& i1) :
       
-      yScale(1.0f / (p1.y - p0.y)),
+      yScale(1.0f / max(p1.y - p0.y, 1.0f / 256)),
       
       pSlope((p1 - p0) * yScale),
       
@@ -3173,18 +3186,26 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
   uint16_t* fdepth =
     (uint16_t*)depthtex.sample_ptr(0, int(y), 0, sizeof(uint16_t));
   
-  while (y < clipRect.y1) {
+  float checkY = min(min(l1.y, r1.y), clipRect.y1);
+  for (;;) {
     
-    if (y > l1.y) {
+    if (y > checkY) {
       
-      STEP_EDGE(l0i, l0, l1i, l1, NEXT_POINT, r1i);
-      left = Edge(y, l0, l1, interp_outs[l0i], interp_outs[l1i]);
-    }
-    
-    if (y > r1.y) {
+      if (y > clipRect.y1) break;
       
-      STEP_EDGE(r0i, r0, r1i, r1, PREV_POINT, l1i);
-      right = Edge(y, r0, r1, interp_outs[r0i], interp_outs[r1i]);
+      if (y > l1.y) {
+        
+        do { STEP_EDGE(l0i, l0, l1i, l1, NEXT_POINT, r1i); } while (y > l1.y);
+        left = Edge(y, l0, l1, interp_outs[l0i], interp_outs[l1i]);
+      }
+      
+      if (y > r1.y) {
+        
+        do { STEP_EDGE(r0i, r0, r1i, r1, PREV_POINT, l1i); } while (y > r1.y);
+        right = Edge(y, r0, r1, interp_outs[r0i], interp_outs[r1i]);
+      }
+      
+      checkY = min(min(l1.y, r1.y), clipRect.y1);
     }
     
     
