@@ -28,6 +28,7 @@ const kDebuggerPrefs = [
 ];
 
 const DEVTOOLS_ENABLED_PREF = "devtools.enabled";
+const DEVTOOLS_F12_DISABLED_PREF = "devtools.experiment.f12.shortcut_disabled";
 
 const DEVTOOLS_POLICY_DISABLED_PREF = "devtools.policy.disabled";
 
@@ -35,11 +36,6 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "ActorManagerParent",
-  "resource://gre/modules/ActorManagerParent.jsm"
-);
 ChromeUtils.defineModuleGetter(
   this,
   "Services",
@@ -358,11 +354,16 @@ DevToolsStartup.prototype = {
     const isInitialLaunch =
       cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH;
     if (isInitialLaunch) {
-      this._registerDevToolsJsWindowActors();
-
       
       
       Services.prefs.setBoolPref(DEVTOOLS_ENABLED_PREF, true);
+
+      
+      
+      
+      if (this.isDevToolsUser()) {
+        Services.prefs.setBoolPref(DEVTOOLS_F12_DISABLED_PREF, false);
+      }
 
       
       this.devtoolsFlag = flags.devtools;
@@ -1217,23 +1218,6 @@ DevToolsStartup.prototype = {
       dump("DevTools telemetry entry point failed: " + e + "\n");
     }
     this.recorded = true;
-  },
-
-  _registerDevToolsJsWindowActors() {
-    ActorManagerParent.addActors({
-      DevToolsFrame: {
-        parent: {
-          moduleURI:
-            "resource://devtools/server/connectors/js-window-actor/DevToolsFrameParent.jsm",
-        },
-        child: {
-          moduleURI:
-            "resource://devtools/server/connectors/js-window-actor/DevToolsFrameChild.jsm",
-        },
-        allFrames: true,
-      },
-    });
-    ActorManagerParent.flush();
   },
 
   

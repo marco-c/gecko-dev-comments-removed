@@ -17,6 +17,8 @@ types.addDictType("root.listWorkers", {
 types.addDictType("root.listServiceWorkerRegistrations", {
   registrations: "array:serviceWorkerRegistration",
 });
+
+
 types.addDictType("root.listRemoteFrames", {
   frames: "array:frameDescriptor",
 });
@@ -99,6 +101,8 @@ const rootSpecPrototype = {
       },
     },
 
+    
+    
     listRemoteFrames: {
       request: {
         id: Arg(0, "number"),
