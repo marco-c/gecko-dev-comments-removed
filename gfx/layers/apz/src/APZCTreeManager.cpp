@@ -1720,9 +1720,6 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
       aEvent.mLayersId = hit.mLayersId;
       hitResult = hit.mHitResult;
 
-      
-      pinchInput.mHandledByAPZ = true;
-
       if (hit.mTargetApzc) {
         MOZ_ASSERT(hitResult != CompositorHitTestInvisibleToHit);
 

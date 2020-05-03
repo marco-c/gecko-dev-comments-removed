@@ -537,9 +537,7 @@ ParentLayerPoint PanGestureInput::UserMultipliedLocalPanDisplacement() const {
 }
 
 PinchGestureInput::PinchGestureInput()
-    : InputData(PINCHGESTURE_INPUT),
-      mType(PINCHGESTURE_START),
-      mHandledByAPZ(false) {}
+    : InputData(PINCHGESTURE_INPUT), mType(PINCHGESTURE_START) {}
 
 PinchGestureInput::PinchGestureInput(
     PinchGestureType aType, uint32_t aTime, TimeStamp aTimeStamp,
@@ -550,8 +548,7 @@ PinchGestureInput::PinchGestureInput(
       mFocusPoint(aFocusPoint),
       mScreenOffset(aScreenOffset),
       mCurrentSpan(aCurrentSpan),
-      mPreviousSpan(aPreviousSpan),
-      mHandledByAPZ(false) {}
+      mPreviousSpan(aPreviousSpan) {}
 
 bool PinchGestureInput::TransformToLocal(
     const ScreenToParentLayerMatrix4x4& aTransform) {
@@ -566,74 +563,6 @@ bool PinchGestureInput::TransformToLocal(
   }
   mLocalFocusPoint = *point;
   return true;
-}
-
-WidgetWheelEvent PinchGestureInput::ToWidgetWheelEvent(
-    nsIWidget* aWidget) const {
-  WidgetWheelEvent wheelEvent(true, eWheel, aWidget);
-  wheelEvent.mModifiers = this->modifiers | MODIFIER_CONTROL;
-  wheelEvent.mTime = mTime;
-  wheelEvent.mTimeStamp = mTimeStamp;
-  wheelEvent.mRefPoint = RoundedToInt(ViewAs<LayoutDevicePixel>(
-      mFocusPoint,
-      PixelCastJustification::LayoutDeviceIsScreenForUntransformedEvent));
-  wheelEvent.mButtons = 0;
-  wheelEvent.mFlags.mHandledByAPZ = mHandledByAPZ;
-  wheelEvent.mDeltaMode = WheelEvent_Binding::DOM_DELTA_PIXEL;
-
-#if defined(OS_MACOSX)
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  wheelEvent.mDeltaY = (mPreviousSpan - 100.0) *
-                       (aWidget ? aWidget->GetDefaultScaleInternal() : 1.f);
-#else
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-
-  if (mPreviousSpan != 0.f) {
-    wheelEvent.mDeltaY = -100.0 * (mCurrentSpan / mPreviousSpan) *
-                         (aWidget ? aWidget->GetDefaultScaleInternal() : 1.f);
-  } else {
-    
-    wheelEvent.mDeltaY = -100.0 * mCurrentSpan *
-                         (aWidget ? aWidget->GetDefaultScaleInternal() : 1.f);
-  }
-#endif
-
-  return wheelEvent;
 }
 
 TapGestureInput::TapGestureInput()
