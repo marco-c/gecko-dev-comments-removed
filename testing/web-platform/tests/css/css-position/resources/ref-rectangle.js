@@ -3,6 +3,9 @@
 
 
 function createIndicatorForStickyElements(sticky_divs) {
+  if (sticky_divs.length == 0)
+    throw "No sticky div was found in the test case.";
+
   sticky_divs.forEach((sticky_div) => {
     
     
