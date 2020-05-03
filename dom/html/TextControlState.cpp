@@ -2081,7 +2081,7 @@ void TextControlState::SetSelectionRange(
       return;
     }
     if (mBoundFrame) {
-      rv = mBoundFrame->ScrollSelectionIntoView();
+      mBoundFrame->ScrollSelectionIntoViewAsync();
     }
     
     
