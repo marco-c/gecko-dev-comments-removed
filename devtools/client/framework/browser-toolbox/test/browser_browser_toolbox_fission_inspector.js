@@ -18,22 +18,20 @@ add_task(async function() {
   
   await pushPref("devtools.browsertoolbox.panel", "inspector");
 
-  
-  
-  
-  const tab = await addTab(
-    `data:text/html,<div id="my-div" style="color: red">Foo</div><div id="second-div" style="color: blue">Foo</div>`
-  );
-
-  
-  tab.linkedBrowser.setAttribute("test-tab", "true");
-
   const ToolboxTask = await initBrowserToolboxTask({
     enableBrowserToolboxFission: true,
   });
   await ToolboxTask.importFunctions({
     selectNodeFront,
   });
+
+  
+  
+  const tab = await addTab(
+    `data:text/html,<div id="my-div" style="color: red">Foo</div><div id="second-div" style="color: blue">Foo</div>`
+  );
+  
+  tab.linkedBrowser.setAttribute("test-tab", "true");
 
   const color = await ToolboxTask.spawn(null, async () => {
     

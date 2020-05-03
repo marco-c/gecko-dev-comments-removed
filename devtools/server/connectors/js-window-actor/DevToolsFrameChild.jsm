@@ -9,7 +9,103 @@ var EXPORTED_SYMBOLS = ["DevToolsFrameChild"];
 const { EventEmitter } = ChromeUtils.import(
   "resource://gre/modules/EventEmitter.jsm"
 );
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const Loader = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+
+
+const DEBUG = false;
+
+
+
+
+function shouldNotifyWindowGlobal(windowGlobal, watchedBrowsingContextID) {
+  const browsingContext = windowGlobal.browsingContext;
+
+  
+  
+  const window = Services.wm.getCurrentInnerWindowWithId(
+    windowGlobal.innerWindowId
+  );
+  if (!window.docShell.hasLoadedNonBlankURI) {
+    return false;
+  }
+
+  
+  
+  if (
+    watchedBrowsingContextID &&
+    browsingContext.top.id != watchedBrowsingContextID
+  ) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  if (
+    !browsingContext.parent &&
+    browsingContext.id == watchedBrowsingContextID
+  ) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (Cu.isRemoteProxy(windowGlobal.window)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  if (
+    browsingContext.parent &&
+    browsingContext.parent.window &&
+    !Cu.isRemoteProxy(browsingContext.parent.window)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function logWindowGlobal(windowGlobal, message) {
+  if (!DEBUG) {
+    return;
+  }
+  const browsingContext = windowGlobal.browsingContext;
+  dump(
+    message +
+      " | BrowsingContext.id: " +
+      browsingContext.id +
+      " Inner Window ID: " +
+      windowGlobal.innerWindowId +
+      " pid:" +
+      windowGlobal.osPid +
+      " isClosed:" +
+      windowGlobal.isClosed +
+      " isInProcess:" +
+      windowGlobal.isInProcess +
+      " isCurrentGlobal:" +
+      windowGlobal.isCurrentGlobal +
+      " currentRemoteType:" +
+      browsingContext.currentRemoteType +
+      " hasParent:" +
+      (browsingContext.parent ? browsingContext.parent.id : "no") +
+      " => " +
+      (windowGlobal.documentURI ? windowGlobal.documentURI.spec : "no-uri") +
+      "\n"
+  );
+}
 
 class DevToolsFrameChild extends JSWindowActorChild {
   constructor() {
@@ -22,35 +118,92 @@ class DevToolsFrameChild extends JSWindowActorChild {
     this._connections = new Map();
 
     this._onConnectionChange = this._onConnectionChange.bind(this);
+    this._onSharedDataChanged = this._onSharedDataChanged.bind(this);
     EventEmitter.decorate(this);
   }
 
-  connect(msg) {
-    this.useCustomLoader = this.document.nodePrincipal.isSystemPrincipal;
-
-    
-    this.loader = this.useCustomLoader
-      ? new Loader.DevToolsLoader({
-          invisibleToDebugger: true,
-        })
-      : Loader;
-
-    const { prefix } = msg.data;
-    if (this._connections.get(prefix)) {
+  instantiate() {
+    const { sharedData } = Services.cpmm;
+    const perPrefixMap = sharedData.get("DevTools:watchedPerPrefix");
+    if (!perPrefixMap) {
       throw new Error(
-        "DevToolsFrameChild connect was called more than once" +
-          ` for the same connection (prefix: "${prefix}")`
+        "Request to instantiate the target(s) for the BrowsingContext, but `sharedData` is empty about watched targets"
       );
     }
+
+    
+    for (const [prefix, { targets, browsingContextID }] of perPrefixMap) {
+      if (
+        targets.has("frame") &&
+        shouldNotifyWindowGlobal(this.manager, browsingContextID)
+      ) {
+        this._createTargetActor(prefix);
+      }
+    }
+  }
+
+  
+  _createTargetActor(parentConnectionPrefix) {
+    if (this._connections.get(parentConnectionPrefix)) {
+      throw new Error(
+        "DevToolsFrameChild _createTargetActor was called more than once" +
+          ` for the same connection (prefix: "${parentConnectionPrefix}")`
+      );
+    }
+
+    
+    
+    
+    
+    
+    
+    const prefix =
+      parentConnectionPrefix + "windowGlobal" + this.manager.innerWindowId;
+
+    logWindowGlobal(
+      this.manager,
+      "Instantiate WindowGlobalTarget with prefix: " + prefix
+    );
 
     const { connection, targetActor } = this._createConnectionAndActor(prefix);
     this._connections.set(prefix, { connection, actor: targetActor });
 
-    const { actor } = this._connections.get(prefix);
-    return { actor: actor.form() };
+    if (!this._isListeningForChange) {
+      
+      Services.cpmm.sharedData.addEventListener(
+        "change",
+        this._onSharedDataChanged
+      );
+      this._isListeningForChange = true;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    this.sendAsyncMessage("DevToolsFrameChild:connectFromContent", {
+      parentConnectionPrefix,
+      prefix,
+      actor: targetActor.form(),
+    });
   }
 
   _createConnectionAndActor(prefix) {
+    this.useCustomLoader = this.document.nodePrincipal.isSystemPrincipal;
+
+    
+    if (!this.loader) {
+      this.loader = this.useCustomLoader
+        ? new Loader.DevToolsLoader({
+            invisibleToDebugger: true,
+          })
+        : Loader;
+    }
     const { DevToolsServer } = this.loader.require(
       "devtools/server/devtools-server"
     );
@@ -107,23 +260,6 @@ class DevToolsFrameChild extends JSWindowActorChild {
     DevToolsServer.destroy();
   }
 
-  disconnect(msg) {
-    const { prefix } = msg.data;
-    const connectionInfo = this._connections.get(prefix);
-    if (!connectionInfo) {
-      console.error(
-        "No connection available in DevToolsFrameChild::disconnect"
-      );
-      return;
-    }
-
-    
-    
-    
-    connectionInfo.connection.close();
-    this._connections.delete(prefix);
-  }
-
   
 
 
@@ -149,10 +285,16 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
   receiveMessage(data) {
     switch (data.name) {
-      case "DevToolsFrameParent:connect":
-        return this.connect(data);
-      case "DevToolsFrameParent:disconnect":
-        return this.disconnect(data);
+      case "DevToolsFrameParent:instantiate-already-available":
+        const { prefix, browsingContextID } = data.data;
+        
+        
+        if (!shouldNotifyWindowGlobal(this.manager, browsingContextID)) {
+          throw new Error(
+            "Mismatch between DevToolsFrameParent and DevToolsFrameChild shouldNotifyWindowGlobal"
+          );
+        }
+        return this._createTargetActor(prefix);
       case "DevToolsFrameParent:packet":
         return this.emit("packet-received", data);
       default:
@@ -162,12 +304,63 @@ class DevToolsFrameChild extends JSWindowActorChild {
     }
   }
 
+  handleEvent({ type }) {
+    
+    
+    if (type == "DOMWindowCreated") {
+      this.instantiate();
+    }
+  }
+
+  _onSharedDataChanged({ type, changedKeys }) {
+    if (type == "change") {
+      if (!changedKeys.includes("DevTools:watchedPerPrefix")) {
+        return;
+      }
+      const { sharedData } = Services.cpmm;
+      const perPrefixMap = sharedData.get("DevTools:watchedPerPrefix");
+      if (!perPrefixMap) {
+        this.didDestroy();
+        return;
+      }
+      let isStillWatching = false;
+      
+      for (const [prefix, { targets }] of perPrefixMap) {
+        
+        if (targets.has("frame")) {
+          isStillWatching = true;
+          continue;
+        }
+        const connectionInfo = this._connections.get(prefix);
+        
+        if (!connectionInfo) {
+          continue;
+        }
+        connectionInfo.connection.close();
+        this._connections.delete(prefix);
+      }
+      
+      if (!isStillWatching) {
+        this.didDestroy();
+      }
+    } else {
+      throw new Error("Unsupported event:" + type + "\n");
+    }
+  }
+
   didDestroy() {
     for (const [, connectionInfo] of this._connections) {
       connectionInfo.connection.close();
     }
+    this._connections.clear();
     if (this.useCustomLoader) {
       this.loader.destroy();
+    }
+    if (this._isListeningForChange) {
+      Services.cpmm.sharedData.removeEventListener(
+        "change",
+        this._onSharedDataChanged
+      );
     }
   }
 }

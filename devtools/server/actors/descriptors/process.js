@@ -31,6 +31,12 @@ loader.lazyRequireGetter(
   "devtools/server/connectors/content-process-connector",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "WatcherActor",
+  "devtools/server/actors/descriptors/watcher/watcher",
+  true
+);
 
 const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
   initialize(connection, options = {}) {
@@ -129,11 +135,28 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
     return this._childProcessConnect();
   },
 
+  
+
+
+
+
+  getWatcher() {
+    if (!this.watcher) {
+      this.watcher = new WatcherActor(this.conn);
+      this.manage(this.watcher);
+    }
+    return this.watcher;
+  },
+
   form() {
     return {
       actor: this.actorID,
       id: this.id,
       isParent: this.isParent,
+      traits: {
+        
+        watcher: true,
+      },
     };
   },
 

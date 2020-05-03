@@ -25,6 +25,13 @@ const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
 const { tabDescriptorSpec } = require("devtools/shared/specs/descriptors/tab");
 const { AppConstants } = require("resource://gre/modules/AppConstants.jsm");
 
+loader.lazyRequireGetter(
+  this,
+  "WatcherActor",
+  "devtools/server/actors/descriptors/watcher/watcher",
+  true
+);
+
 
 
 
@@ -61,6 +68,8 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
         
         
         hasTabInfo: true,
+        
+        watcher: true,
       },
       url: this._getUrl(),
     };
@@ -142,6 +151,19 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
         });
       }
     });
+  },
+
+  
+
+
+
+
+  getWatcher() {
+    if (!this.watcher) {
+      this.watcher = new WatcherActor(this.conn, { browser: this._browser });
+      this.manage(this.watcher);
+    }
+    return this.watcher;
   },
 
   get _tabbrowser() {

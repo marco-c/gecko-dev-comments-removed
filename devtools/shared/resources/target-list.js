@@ -77,6 +77,8 @@ class LegacyImplementationProcesses {
   }
 }
 
+
+
 class LegacyImplementationFrames {
   constructor(targetList, onTargetAvailable) {
     this.targetList = targetList;
@@ -281,6 +283,13 @@ class TargetList {
 
   constructor(rootFront, targetFront) {
     this.rootFront = rootFront;
+
+    
+    
+    
+    
+    this.descriptorFront = targetFront.descriptorFront;
+
     
     
     this.targetFront = targetFront;
@@ -415,11 +424,23 @@ class TargetList {
       }
       this._setListening(type, true);
 
+      
+      const supportsWatcher = this.descriptorFront?.traits?.watcher;
+      if (supportsWatcher) {
+        const watcher = await this.descriptorFront.getWatcher();
+        if (watcher.traits[type]) {
+          if (!this._startedListeningToWatcher) {
+            this._startedListeningToWatcher = true;
+            watcher.on("target-available", this._onTargetAvailable);
+            watcher.on("target-destroyed", this._onTargetDestroyed);
+          }
+          await watcher.watchTargets(type);
+          continue;
+        }
+      }
       if (this.legacyImplementation[type]) {
         await this.legacyImplementation[type].listen();
       } else {
-        
-        
         throw new Error(`Unsupported target type '${type}'`);
       }
     }
@@ -432,11 +453,18 @@ class TargetList {
       }
       this._setListening(type, false);
 
+      
+      const supportsWatcher = this.descriptorFront?.traits?.watcher;
+      if (supportsWatcher) {
+        const watcher = this.descriptorFront.getCachedWatcher();
+        if (watcher && watcher.traits[type]) {
+          watcher.unwatchTargets(type);
+          continue;
+        }
+      }
       if (this.legacyImplementation[type]) {
         this.legacyImplementation[type].unlisten();
       } else {
-        
-        
         throw new Error(`Unsupported target type '${type}'`);
       }
     }
