@@ -379,3 +379,16 @@ function moveToDocument(pointerType) {
                    .pointerMove(0, 0)
                    .send();
 }
+
+
+function resolveWhen(condition) {
+  return new Promise((resolve, reject) => {
+    function tick() {
+      if (condition())
+        resolve();
+      else
+        requestAnimationFrame(tick.bind(this));
+    }
+    tick();
+  });
+}
