@@ -14,9 +14,22 @@ namespace mozilla {
 namespace dom {
 
 enum class DocumentL10nState {
-  Initialized = 0,
+  
+  Uninitialized = 0,
+
+  
+  Activated,
+
+  
+  
+  
+  
+  
   InitialTranslationTriggered,
-  InitialTranslationCompleted
+
+  
+  
+  InitialTranslationCompleted,
 };
 
 
@@ -34,10 +47,14 @@ class DocumentL10n final : public DOMLocalization {
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DocumentL10n, DOMLocalization)
 
-  explicit DocumentL10n(Document* aDocument);
-  void Init(Sequence<nsString>& aResourceIds, ErrorResult& aRv);
+  static RefPtr<DocumentL10n> Create(Document* aDocument);
+
+  void Activate();
 
  protected:
+  explicit DocumentL10n(Document* aDocument);
+  bool Init();
+
   virtual ~DocumentL10n() = default;
 
   RefPtr<Document> mDocument;
