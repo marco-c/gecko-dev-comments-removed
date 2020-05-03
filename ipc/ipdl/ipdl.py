@@ -3,11 +3,11 @@
 
 from __future__ import print_function
 
+from io import StringIO
 import optparse
 import os
 import sys
-from cStringIO import StringIO
-from ConfigParser import RawConfigParser
+from configparser import RawConfigParser
 
 import ipdl
 

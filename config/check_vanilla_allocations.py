@@ -38,8 +38,7 @@
 
 
 
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
 import re
@@ -112,7 +111,7 @@ def main():
         ]
 
     
-    alloc_fns_unescaped = [fn.translate(None, r'\\') for fn in alloc_fns]
+    alloc_fns_unescaped = [fn.replace('\\', '') for fn in alloc_fns]
 
     
     
