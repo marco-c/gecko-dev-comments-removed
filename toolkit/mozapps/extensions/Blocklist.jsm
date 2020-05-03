@@ -1371,6 +1371,15 @@ this.ExtensionBlocklistMLBF = {
     let hash = record?.attachment.hash;
     if (this._mlbfData && hash && this._mlbfData.cascadeHash === hash) {
       
+
+      
+      
+      
+      
+      
+      if (record.generation_time > this._mlbfData.generationTime) {
+        this._mlbfData.generationTime = record.generation_time;
+      }
       return this._mlbfData;
     }
     const {

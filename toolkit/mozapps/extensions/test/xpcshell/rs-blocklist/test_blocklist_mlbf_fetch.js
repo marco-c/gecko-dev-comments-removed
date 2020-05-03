@@ -130,6 +130,40 @@ add_task(async function public_api_uses_mlbf() {
 
 
 
+add_task(async function fetch_updated_mlbf_same_hash() {
+  const recordUpdate = {
+    ...MLBF_RECORD,
+    generation_time: MLBF_RECORD.generation_time + 1,
+  };
+  const blockedAddonUpdate = {
+    id: "@blocked",
+    version: "1",
+    signedDate: new Date(recordUpdate.generation_time),
+  };
+
+  
+  
+  
+  Assert.equal(
+    await Blocklist.getAddonBlocklistState(blockedAddonUpdate),
+    Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
+    "Add-on not blocked before blocklist update"
+  );
+
+  await AddonTestUtils.loadBlocklistRawData({ extensionsMLBF: [recordUpdate] });
+  
+
+  Assert.equal(
+    await Blocklist.getAddonBlocklistState(blockedAddonUpdate),
+    Ci.nsIBlocklistService.STATE_BLOCKED,
+    "Add-on blocked after update"
+  );
+
+  
+});
+
+
+
 add_task(async function handle_database_corruption() {
   const blockedAddon = {
     id: "@blocked",
