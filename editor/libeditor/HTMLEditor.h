@@ -2217,6 +2217,23 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  void MovePreviousSiblings(nsIContent& aChild,
+                            const EditorRawDOMPoint& aPointToInsert,
+                            ErrorResult& aError);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
