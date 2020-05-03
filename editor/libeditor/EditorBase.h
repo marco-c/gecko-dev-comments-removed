@@ -1488,22 +1488,6 @@ class EditorBase : public nsIEditor,
 
 
 
-  void MoveAllChildren(nsINode& aContainer,
-                       const EditorRawDOMPoint& aPointToInsert,
-                       ErrorResult& aError);
-
-  
-
-
-
-
-
-
-
-
-
-
-
   void MovePreviousSiblings(nsIContent& aChild,
                             const EditorRawDOMPoint& aPointToInsert,
                             ErrorResult& aError);
