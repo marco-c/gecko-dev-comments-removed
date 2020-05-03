@@ -2155,13 +2155,13 @@ class nsIWidget : public nsISupports {
 
   static already_AddRefed<nsIBidiKeyboard> CreateBidiKeyboard();
 
- protected:
   
 
 
 
   virtual double GetDefaultScaleInternal() { return 1.0; }
 
+ protected:
   
   
   
