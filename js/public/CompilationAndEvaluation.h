@@ -13,7 +13,6 @@
 #include <stddef.h>  
 #include <stdio.h>   
 
-#include "jsapi.h"    
 #include "jstypes.h"  
 
 #include "js/CompileOptions.h"  
@@ -242,9 +241,6 @@ extern JS_PUBLIC_API bool InitScriptSourceElement(
 
 extern JS_PUBLIC_API void ExposeScriptToDebugger(JSContext* cx,
                                                  Handle<JSScript*> script);
-
-extern JS_PUBLIC_API void SetGetElementCallback(JSContext* cx,
-                                                JSGetElementCallback callback);
 
 } 
 

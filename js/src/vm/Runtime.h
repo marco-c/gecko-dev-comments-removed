@@ -36,7 +36,6 @@
 #endif
 #include "js/AllocationRecording.h"
 #include "js/BuildId.h"  
-#include "js/CompilationAndEvaluation.h"
 #include "js/Debug.h"
 #include "js/experimental/SourceHook.h"  
 #include "js/GCVector.h"
@@ -329,8 +328,6 @@ struct JSRuntime {
   
   js::MainThreadData<JSSetUseCounterCallback> useCounterCallback;
 
-  js::MainThreadData<JSGetElementCallback> getElementCallback;
-
  public:
   
   
@@ -339,8 +336,6 @@ struct JSRuntime {
 
   void setTelemetryCallback(JSRuntime* rt,
                             JSAccumulateTelemetryDataCallback callback);
-
-  void setElementCallback(JSRuntime* rt, JSGetElementCallback callback);
 
   
   
