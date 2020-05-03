@@ -44,6 +44,14 @@ void BCEScriptStencil::init(BytecodeEmitter& bce,
     
     immutableFlags.setFlag(ImmutableFlags::HasMappedArgsObj,
                            funbox->hasMappedArgsObj());
+
+    
+    
+    
+    if (bce.emitterMode != BytecodeEmitter::LazyFunction) {
+      immutableFlags.setFlag(ImmutableFlags::IsLikelyConstructorWrapper,
+                             funbox->isLikelyConstructorWrapper());
+    }
   } 
 }
 

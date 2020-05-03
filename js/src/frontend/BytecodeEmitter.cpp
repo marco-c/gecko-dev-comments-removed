@@ -5763,11 +5763,6 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
       return false;
     }
 
-    
-    if (funbox->isLikelyConstructorWrapper()) {
-      bce2.getResultScript()->setIsLikelyConstructorWrapper();
-    }
-
     if (!fe.emitNonLazyEnd()) {
       
       return false;
