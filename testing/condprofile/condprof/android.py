@@ -79,9 +79,9 @@ class AndroidDevice:
             
             
             
-            self.device = ADBDevice(verbose=self.verbose,
-                                    logger_name="adb",
-                                    test_root='/sdcard/tests')
+            self.device = ADBDevice(
+                verbose=self.verbose, logger_name="adb", test_root="/sdcard/tests"
+            )
         except Exception:
             logger.error("Cannot initialize device")
             raise
