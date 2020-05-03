@@ -581,7 +581,7 @@ class Document : public nsINode,
   
   
   
-  nsIPrincipal* IntrinsicStoragePrincipal() const {
+  nsIPrincipal* IntrinsicStoragePrincipal() final {
     return mIntrinsicStoragePrincipal;
   }
 
