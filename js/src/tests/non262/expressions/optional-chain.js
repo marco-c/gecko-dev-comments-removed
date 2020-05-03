@@ -190,6 +190,26 @@ shouldThrowReferenceError('`${G}`?.r');
 
 shouldBe(false?.4:5, 5);
 
+
+shouldThrowReferenceError('(0 || 1 << x)?.$');
+shouldThrowReferenceError('(0 || 1 >> x)?.$');
+shouldThrowReferenceError('(0 || 1 >>> x)?.$');
+shouldThrowReferenceError('(0 || 1 + x)?.$');
+shouldThrowReferenceError('(0 || 1 - x)?.$');
+shouldThrowReferenceError('(0 || 1 % x)?.$');
+shouldThrowReferenceError('(0 || 1 / x)?.$');
+shouldThrowReferenceError('(0 || 1 == x)?.$');
+shouldThrowReferenceError('(0 || 1 != x)?.$');
+shouldThrowReferenceError('(0 || 1 !== x)?.$');
+shouldThrowReferenceError('(0 || 1 === x)?.$');
+shouldThrowReferenceError('(0 || 1 <= x)?.$');
+shouldThrowReferenceError('(0 || 1 >= x)?.$');
+shouldThrowReferenceError('(0 || 1 ** x)?.$');
+shouldThrowReferenceError('(0 || 1 | x)?.$');
+shouldThrowReferenceError('(0 || 1 & x)?.$');
+shouldThrowReferenceError('(0 || 1 instanceof x)?.$');
+shouldThrowReferenceError('(0 || "foo" in x)?.$');
+
 function testSideEffectCountFunction() {
   let count = 0;
   let a = {
