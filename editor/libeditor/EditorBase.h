@@ -1631,28 +1631,13 @@ class EditorBase : public nsIEditor,
                                                         uint32_t aOffset,
                                                         uint32_t aLength);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT void DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
-                                      nsIContent& aNewLeftNode,
-                                      ErrorResult& aError);
+  struct MOZ_STACK_CLASS SavedRange final {
+    RefPtr<Selection> mSelection;
+    nsCOMPtr<nsINode> mStartContainer;
+    nsCOMPtr<nsINode> mEndContainer;
+    int32_t mStartOffset = 0;
+    int32_t mEndOffset = 0;
+  };
 
   
 

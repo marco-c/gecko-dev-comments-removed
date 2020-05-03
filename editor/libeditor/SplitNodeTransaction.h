@@ -16,7 +16,7 @@
 
 namespace mozilla {
 
-class EditorBase;
+class HTMLEditor;
 
 
 
@@ -25,7 +25,7 @@ class EditorBase;
 class SplitNodeTransaction final : public EditTransactionBase {
  private:
   template <typename PT, typename CT>
-  SplitNodeTransaction(EditorBase& aEditorBase,
+  SplitNodeTransaction(HTMLEditor& aHTMLEditor,
                        const EditorDOMPointBase<PT, CT>& aStartOfRightContent);
 
  public:
@@ -42,7 +42,7 @@ class SplitNodeTransaction final : public EditTransactionBase {
 
   template <typename PT, typename CT>
   static already_AddRefed<SplitNodeTransaction> Create(
-      EditorBase& aEditorBase,
+      HTMLEditor& aHTMLEditor,
       const EditorDOMPointBase<PT, CT>& aStartOfRightContent);
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -59,7 +59,7 @@ class SplitNodeTransaction final : public EditTransactionBase {
  protected:
   virtual ~SplitNodeTransaction() = default;
 
-  RefPtr<EditorBase> mEditorBase;
+  RefPtr<HTMLEditor> mHTMLEditor;
 
   
   

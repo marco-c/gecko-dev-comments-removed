@@ -52,6 +52,7 @@ class MoveNodeResult;
 class ParagraphStateAtSelection;
 class ResizerSelectionListener;
 class Runnable;
+class SplitNodeTransaction;
 class SplitRangeOffFromNodeResult;
 class SplitRangeOffResult;
 class WSRunObject;
@@ -1167,6 +1168,29 @@ class HTMLEditor final : public TextEditor,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult OnModifyDocument();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT void DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
+                                      nsIContent& aNewLeftNode,
+                                      ErrorResult& aError);
 
  protected:  
   
@@ -4730,6 +4754,7 @@ class HTMLEditor final : public TextEditor,
   friend class ListItemElementSelectionState;
   friend class ParagraphStateAtSelection;
   friend class SlurpBlobEventListener;
+  friend class SplitNodeTransaction;
   friend class TextEditor;
   friend class WSRunObject;
   friend class WSRunScanner;
