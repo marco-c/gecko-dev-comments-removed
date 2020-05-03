@@ -727,25 +727,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-
-
-
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> DeleteSelectionAndCreateElement(
-      nsAtom& aTag);
-
-  
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult DeleteSelectionAndPrepareToCreateNode();
-
-  
-
-
-
   nsresult SharedOutputString(uint32_t aFlags, bool* aIsCollapsed,
                               nsAString& aResult) const;
 

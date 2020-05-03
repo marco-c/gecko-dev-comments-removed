@@ -3548,6 +3548,25 @@ class HTMLEditor final : public TextEditor,
   
 
 
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> DeleteSelectionAndCreateElement(
+      nsAtom& aTag);
+
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult DeleteSelectionAndPrepareToCreateNode();
+
+  
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult IndentAsSubAction();
 
   
