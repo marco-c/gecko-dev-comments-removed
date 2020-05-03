@@ -1910,6 +1910,10 @@ void Shape::sweep(JSFreeOp* fop) {
 
 
 
+
+  MOZ_ASSERT(zone()->isGCSweeping());
+  MOZ_ASSERT_IF(parent, parent->zone() == zone());
+
   if (parent && parent->isMarkedAny()) {
     if (inDictionary()) {
       if (parent->dictNext == DictionaryShapeLink(this)) {
