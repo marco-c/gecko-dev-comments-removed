@@ -3,24 +3,23 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-import io
+from __future__ import absolute_import, print_function
 from optparse import OptionParser
 import sys
 import re
 
 o = OptionParser()
-o.add_option('--buildid', dest='buildid')
-o.add_option('--version', dest='version')
+o.add_option("--buildid", dest="buildid")
+o.add_option("--version", dest="version")
 
 (options, args) = o.parse_args()
 
 if not options.buildid:
-    print('--buildid is required', file=sys.stderr)
+    print >>sys.stderr, "--buildid is required"
     sys.exit(1)
 
 if not options.version:
-    print('--version is required', file=sys.stderr)
+    print >>sys.stderr, "--version is required"
     sys.exit(1)
 
 
@@ -29,8 +28,7 @@ if not options.version:
 
 
 
-define, MOZ_BUILDID, buildid = io.open(
-    options.buildid, 'r', encoding='utf-8').read().split()
+define, MOZ_BUILDID, buildid = open(options.buildid, 'r').read().split()
 
 
 majorVersion = re.match(r'^(\d+)[^\d].*', options.version).group(1)

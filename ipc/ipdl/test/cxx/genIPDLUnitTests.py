@@ -2,7 +2,7 @@
 
 
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function
 
 import string
 import sys
@@ -124,7 +124,7 @@ def main(argv):
     }
 ''' % (t, t, t, t) for t in unittests+extras])
 
-    templatefile = open(template, 'r', encoding='utf-8')
+    templatefile = open(template, 'r')
     sys.stdout.write(
         string.Template(templatefile.read()).substitute(
             INCLUDES=includes,

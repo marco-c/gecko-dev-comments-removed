@@ -1450,7 +1450,7 @@ with some new IPDL/C++ nodes that are tuned for C++ codegen."""
 
             
             
-            permutation = list(range(len(newfields)))
+            permutation = range(len(newfields))
 
             
             

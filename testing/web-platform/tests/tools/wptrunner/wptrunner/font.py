@@ -78,12 +78,7 @@ class FontInstaller(object):
         
         
         fonts = check_output(['/usr/sbin/system_profiler', '-xml', 'SPFontsDataType'])
-        try:
-            
-            readPlistFromBytes = plistlib.readPlistFromBytes
-        except AttributeError:
-            readPlistFromBytes = plistlib.readPlistFromString
-        fonts = readPlistFromBytes(fonts)
+        fonts = plistlib.readPlistFromString(fonts)
         assert len(fonts) == 1
         for font in fonts[0]['_items']:
             if font['path'] == installed_font_path:

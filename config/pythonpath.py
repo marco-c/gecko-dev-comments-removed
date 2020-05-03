@@ -2,9 +2,8 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
-
-
+from __future__ import absolute_import
+from __future__ import print_function
 """
 Run a python script, adding extra directories to the python path.
 """
@@ -12,7 +11,7 @@ Run a python script, adding extra directories to the python path.
 
 def main(args):
     def usage():
-        print("pythonpath.py -I directory script.py [args...]", file=sys.stderr)
+        print >>sys.stderr, "pythonpath.py -I directory script.py [args...]"
         sys.exit(150)
 
     paths = []
@@ -48,14 +47,14 @@ def main(args):
     frozenglobals['__name__'] = '__main__'
     frozenglobals['__file__'] = script
 
-    exec(open(script, encoding='utf-8').read(), frozenglobals)
+    execfile(script, frozenglobals)
 
 
 
 frozenglobals = globals()
 
-import os
 import sys
+import os
 
 if __name__ == '__main__':
     main(sys.argv[1:])
