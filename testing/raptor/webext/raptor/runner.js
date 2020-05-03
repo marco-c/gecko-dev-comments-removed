@@ -740,7 +740,7 @@ async function raptorRunner() {
   await sleep(postStartupDelay);
 
   
-  if (!isGeckoView && newTabPerCycle) {
+  if (!isGeckoView) {
     await openTab();
   }
 
