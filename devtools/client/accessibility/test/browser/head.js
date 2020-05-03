@@ -76,33 +76,18 @@ async function initA11y() {
 
 
 
-function forceGC() {
-  SpecialPowers.gc();
-  SpecialPowers.forceShrinkingGC();
-  SpecialPowers.forceCC();
-  SpecialPowers.gc();
-  SpecialPowers.forceShrinkingGC();
-  SpecialPowers.forceCC();
-}
 
+function shutdownA11y() {
+  if (!Services.appinfo.accessibilityEnabled) {
+    return Promise.resolve();
+  }
 
+  
+  Cu.forceGC();
+  Cu.forceCC();
+  Cu.forceShrinkingGC();
 
-
-function isA11YEnabled() {
-  return Services.appinfo.accessibilityEnabled;
-}
-
-
-
-
-
-function waitForA11YShutdown() {
   return new Promise(resolve => {
-    if (!Services.appinfo.accessibilityEnabled) {
-      resolve();
-      return;
-    }
-
     const observe = (subject, topic, data) => {
       if (data === "0") {
         Services.obs.removeObserver(observe, "a11y-init-or-shutdown");
@@ -115,28 +100,6 @@ function waitForA11YShutdown() {
     
     Services.obs.addObserver(observe, "a11y-init-or-shutdown");
   });
-}
-
-
-
-
-async function shutdownA11y() {
-  forceGC();
-  if (isA11YEnabled()) {
-    await waitForA11YShutdown();
-  }
-
-  const browser = gBrowser.selectedBrowser;
-  if (await SpecialPowers.spawn(browser, [], isA11YEnabled)) {
-    await SpecialPowers.spawn(browser, [], waitForA11YShutdown);
-  }
-
-  
-  ok(!isA11YEnabled(), "Accessibility service in parent process is shut down.");
-  ok(
-    !(await SpecialPowers.spawn(browser, [], isA11YEnabled)),
-    "Accessibility service in content process is shut down."
-  );
 }
 
 registerCleanupFunction(async () => {
@@ -193,15 +156,6 @@ async function addTestTab(url) {
 
 
 async function disableAccessibilityInspector(env) {
-  if (
-    Services.prefs.getBoolPref(
-      "devtools.accessibility.auto-init.enabled",
-      false
-    )
-  ) {
-    return;
-  }
-
   const { doc, win, panel } = env;
   
   
@@ -857,9 +811,6 @@ function addA11YPanelTask(msg, uri, task, options = {}) {
     const env = await addTestTab(buildURL(uri, options));
     await task(env);
     await disableAccessibilityInspector(env);
-    await closeToolbox();
-    await shutdownA11y();
-    await removeTab(gBrowser.selectedTab);
   });
 }
 
