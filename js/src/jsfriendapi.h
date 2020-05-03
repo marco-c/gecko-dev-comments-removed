@@ -2200,65 +2200,12 @@ static MOZ_ALWAYS_INLINE void SET_JITINFO(JSFunction* func,
 
 
 
-
-
-
-static MOZ_ALWAYS_INLINE jsid JSID_FROM_BITS(size_t bits) {
-  jsid id;
-  JSID_BITS(id) = bits;
-  return id;
-}
-
-namespace js {
-namespace detail {
-bool IdMatchesAtom(jsid id, JSAtom* atom);
-bool IdMatchesAtom(jsid id, JSString* atom);
-}  
-}  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static MOZ_ALWAYS_INLINE jsid NON_INTEGER_ATOM_TO_JSID(JSAtom* atom) {
-  MOZ_ASSERT(((size_t)atom & JSID_TYPE_MASK) == 0);
-  jsid id = JSID_FROM_BITS((size_t)atom | JSID_TYPE_STRING);
-  MOZ_ASSERT(js::detail::IdMatchesAtom(id, atom));
-  return id;
-}
-
-static MOZ_ALWAYS_INLINE jsid NON_INTEGER_ATOM_TO_JSID(JSString* atom) {
-  MOZ_ASSERT(((size_t)atom & JSID_TYPE_MASK) == 0);
-  jsid id = JSID_FROM_BITS((size_t)atom | JSID_TYPE_STRING);
-  MOZ_ASSERT(js::detail::IdMatchesAtom(id, atom));
-  return id;
-}
-
-
-
 static MOZ_ALWAYS_INLINE bool JSID_IS_ATOM(jsid id) {
   return JSID_IS_STRING(id);
 }
 
 static MOZ_ALWAYS_INLINE bool JSID_IS_ATOM(jsid id, JSAtom* atom) {
-  return id == NON_INTEGER_ATOM_TO_JSID(atom);
+  return id == JS::PropertyKey::fromNonIntAtom(atom);
 }
 
 static MOZ_ALWAYS_INLINE JSAtom* JSID_TO_ATOM(jsid id) {
