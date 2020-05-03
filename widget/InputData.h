@@ -452,6 +452,8 @@ class PinchGestureInput : public InputData {
 
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
 
+  WidgetWheelEvent ToWidgetWheelEvent(nsIWidget* aWidget) const;
+
   
   
   PinchGestureType mType;
@@ -481,6 +483,8 @@ class PinchGestureInput : public InputData {
   
   
   ScreenCoord mPreviousSpan;
+
+  bool mHandledByAPZ;
 
   
   
