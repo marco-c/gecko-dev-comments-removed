@@ -1,16 +1,16 @@
 
 
 
-function clickOnElement(id, callback) {
+async function clickOnElementAndDelay(id, delay, callback) {
   const element = document.getElementById(id);
   const clickHandler = () => {
-    mainThreadBusy(120);
+    mainThreadBusy(delay);
     if (callback)
       callback();
     element.removeEventListener("mousedown", clickHandler);
   };
   element.addEventListener("mousedown", clickHandler);
-  test_driver.click(element);
+  await test_driver.click(element);
 }
 
 function mainThreadBusy(duration) {
@@ -21,12 +21,13 @@ function mainThreadBusy(duration) {
 
 
 
-function verifyClickEvent(entry, targetId, is_first=false) {
+
+function verifyClickEvent(entry, targetId, isFirst=false, minDuration=104) {
   assert_true(entry.cancelable);
   assert_equals(entry.name, 'mousedown');
   assert_equals(entry.entryType, 'event');
-  assert_greater_than_equal(entry.duration, 104,
-      "The entry's duration should be greater than or equal to 104 ms.");
+  assert_greater_than_equal(entry.duration, minDuration,
+      "The entry's duration should be greater than or equal to " + minDuration + " ms.");
   assert_greater_than(entry.processingStart, entry.startTime,
       "The entry's processingStart should be greater than startTime.");
   assert_greater_than_equal(entry.processingEnd, entry.processingStart,
@@ -35,7 +36,7 @@ function verifyClickEvent(entry, targetId, is_first=false) {
   
   assert_greater_than_equal(entry.duration + 4, entry.processingEnd - entry.startTime,
       "The entry's duration must be at least as large as processingEnd - startTime.");
-  if (is_first) {
+  if (isFirst) {
     let firstInputs = performance.getEntriesByType('first-input');
     assert_equals(firstInputs.length, 1, 'There should be a single first-input entry');
     let firstInput = firstInputs[0];
@@ -61,6 +62,58 @@ function wait() {
 
 function clickAndBlockMain(id) {
   return new Promise((resolve, reject) => {
-    clickOnElement(id, resolve);
+    clickOnElementAndDelay(id, 120, resolve);
   });
+}
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+async function testDuration(t, id, numEntries, dur, fastDur, slowDur) {
+  assert_implements(window.PerformanceEventTiming, 'Event Timing is not supported.');
+  const observerPromise = new Promise(async resolve => {
+    let minDuration = Math.ceil(dur / 8) * 8;
+    
+    minDuration = Math.max(minDuration, 16);
+    let numEntriesReceived = 0;
+    new PerformanceObserver(list => {
+      const mouseDowns = list.getEntriesByName('mousedown');
+      mouseDowns.forEach(e => {
+        t.step(() => {
+          verifyClickEvent(e, id, false , minDuration);
+        });
+      });
+      numEntriesReceived += mouseDowns.length;
+      
+      
+      if (numEntriesReceived >= numEntries)
+        resolve();
+    }).observe({type: "event", durationThreshold: dur});
+  });
+  const clicksPromise = new Promise(async resolve => {
+    for (let index = 0; index < numEntries; index++) {
+      
+      await clickOnElementAndDelay(id, slowDur);
+      
+      if (fastDur > 0) {
+        await clickOnElementAndDelay(id, fastDur);
+      } else {
+        
+        await test_driver.click(document.getElementById(id));
+      }
+    }
+    resolve();
+  });
+  return Promise.all([observerPromise, clicksPromise]);
 }
