@@ -1069,7 +1069,6 @@ class WebExtensionTest : BaseSessionTest() {
         testIframeTopLevel()
     }
 
-    @Ignore 
     @Test
     fun loadWebExtensionPage() {
         val result = GeckoResult<String>()
