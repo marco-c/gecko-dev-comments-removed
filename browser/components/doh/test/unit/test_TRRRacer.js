@@ -175,4 +175,23 @@ add_task(async function test_TRRRacer_getFastestTRRFromResults() {
   let racer = new TRRRacer();
   let fastest = racer._getFastestTRRFromResults(results);
   Assert.equal(fastest, "trr2");
+
+  
+  results = [
+    { trr: "trr1", time: -1 },
+    { trr: "trr2", time: -1 },
+  ];
+
+  fastest = racer._getFastestTRRFromResults(results);
+  Assert.equal(fastest, undefined);
+
+  
+  
+  
+  
+  let firstResult = racer._getFastestTRRFromResults(results, true);
+  while (racer._getFastestTRRFromResults(results, true) == firstResult) {
+    continue;
+  }
+  Assert.ok(true, "Both TRRs were possible outputs when all results invalid.");
 });

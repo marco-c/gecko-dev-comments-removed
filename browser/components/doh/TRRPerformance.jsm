@@ -295,12 +295,15 @@ class TRRRacer {
     }
   }
 
-  getFastestTRR() {
+  getFastestTRR(returnRandomDefault = false) {
     if (!this._complete) {
       throw new Error("getFastestTRR: Measurement still running.");
     }
 
-    return this._getFastestTRRFromResults(this._aggregator.results);
+    return this._getFastestTRRFromResults(
+      this._aggregator.results,
+      returnRandomDefault
+    );
   }
 
   
@@ -310,7 +313,9 @@ class TRRRacer {
 
 
 
-  _getFastestTRRFromResults(results) {
+
+
+  _getFastestTRRFromResults(results, returnRandomDefault = false) {
     
     let TRRTimingMap = new Map();
     for (let { trr, time } of results) {
@@ -344,6 +349,10 @@ class TRRRacer {
         fastestAverageTime = averageTime;
         fastestTRR = trr;
       }
+    }
+
+    if (returnRandomDefault && !fastestTRR) {
+      fastestTRR = trrs[Math.floor(Math.random() * trrs.length)];
     }
 
     return fastestTRR;
