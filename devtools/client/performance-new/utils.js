@@ -12,7 +12,7 @@
 
 const { OS } = require("resource://gre/modules/osfile.jsm");
 
-const UNITS = ["B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+const UNITS = ["B", "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"];
 
 
 
@@ -60,10 +60,10 @@ function formatFileSize(num) {
   }
 
   const exponent = Math.min(
-    Math.floor(Math.log(num) / Math.log(1000)),
+    Math.floor(Math.log2(num) / Math.log2(1024)),
     UNITS.length - 1
   );
-  const numStr = Number((num / Math.pow(1000, exponent)).toPrecision(3));
+  const numStr = Number((num / Math.pow(1024, exponent)).toPrecision(3));
   const unit = UNITS[exponent];
 
   return (neg ? "-" : "") + numStr + " " + unit;
@@ -92,6 +92,45 @@ function makeExponentialScale(rangeStart, rangeEnd) {
   
   const fromFractionToSingleDigitValue = frac => {
     return +fromFractionToValue(frac).toPrecision(1);
+  };
+
+  return {
+    
+    fromFractionToValue,
+    
+    fromValueToFraction,
+    
+    
+    fromFractionToSingleDigitValue,
+  };
+}
+
+
+
+
+
+
+
+
+
+function makePowerOf2Scale(rangeStart, rangeEnd) {
+  const startExp = Math.log2(rangeStart);
+  const endExp = Math.log2(rangeEnd);
+
+  
+  const fromFractionToValue = frac =>
+    Math.pow(2, Math.round((1 - frac) * startExp + frac * endExp));
+
+  
+  const fromValueToFraction = value =>
+    (Math.log2(value) - startExp) / (endExp - startExp);
+
+  
+  const fromFractionToSingleDigitValue = frac => {
+    
+    
+    
+    return fromFractionToValue(frac);
   };
 
   return {
@@ -370,6 +409,7 @@ const featureDescriptions = [
 module.exports = {
   formatFileSize,
   makeExponentialScale,
+  makePowerOf2Scale,
   scaleRangeWithClamping,
   calculateOverhead,
   withCommonPathPrefixRemoved,
