@@ -91,7 +91,7 @@ class MakeBackend(CommonBackend):
             ret.append((
                     """{stub}: {script}{inputs}{backend}{force}
 \t$(REPORT_BUILD)
-\t$(call py3_action,file_generate,{locale}{script} """  
+\t$(call py_action,file_generate,{locale}{script} """  
                     """{method} {output} {dep_file} {stub}{inputs}{flags})
 \t@$(TOUCH) $@
 """).format(
