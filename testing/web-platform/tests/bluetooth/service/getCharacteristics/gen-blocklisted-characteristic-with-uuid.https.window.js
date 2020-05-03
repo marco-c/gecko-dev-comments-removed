@@ -2,6 +2,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'Serial Number String characteristic is blocklisted. ' +
     'Should reject with SecurityError.';

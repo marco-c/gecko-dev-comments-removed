@@ -2,6 +2,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'disconnect() called before getPrimaryServices. ' +
     'Reject with NetworkError.';

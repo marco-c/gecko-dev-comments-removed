@@ -1,6 +1,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'A device disconnecting after the BluetoothDevice object ' +
     'has been GC\'ed should not access freed memory.';

@@ -1,6 +1,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'Reading a characteristic should fire an event.';
 

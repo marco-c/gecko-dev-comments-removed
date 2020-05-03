@@ -1,6 +1,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'A device that reconnects during the ' +
     'gattserverdisconnected event should still receive ' +

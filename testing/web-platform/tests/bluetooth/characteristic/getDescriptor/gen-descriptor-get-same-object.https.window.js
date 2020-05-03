@@ -2,6 +2,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'Calls to getDescriptor should return the same object.';
 let characteristic;

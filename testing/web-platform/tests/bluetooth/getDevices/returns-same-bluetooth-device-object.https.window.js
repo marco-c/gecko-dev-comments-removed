@@ -1,6 +1,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'multiple calls to getDevices() resolves with the same' +
     'BluetoothDevice objects for each granted Bluetooth device.';

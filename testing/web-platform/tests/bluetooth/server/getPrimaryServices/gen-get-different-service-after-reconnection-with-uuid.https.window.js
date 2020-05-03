@@ -2,6 +2,7 @@
 
 
 
+
 'use strict';
 const test_desc =
     'Calls to getPrimaryServices after a disconnection should return ' +

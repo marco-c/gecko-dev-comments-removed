@@ -2,6 +2,7 @@
 
 
 
+
 'use strict';
 const test_desc = 'Service is removed before getCharacteristic call. ' +
     'Reject with InvalidStateError.';
