@@ -36,7 +36,7 @@ use cranelift_codegen::Context;
 use cranelift_wasm::{FuncIndex, FuncTranslator, ModuleTranslationState, WasmResult};
 
 use crate::bindings;
-use crate::isa::{make_isa, POINTER_SIZE};
+use crate::isa::make_isa;
 use crate::utils::DashResult;
 use crate::wasm2clif::{init_sig, TransEnv, TRAP_THROW_REPORTED};
 
@@ -221,7 +221,12 @@ impl<'static_env, 'module_env> BatchCompiler<'static_env, 'module_env> {
         }
 
         if self.static_environ.ref_types_enabled {
-            self.emit_stackmaps(stackmaps);
+            if self.context.mach_compile_result.is_some() {
+                
+                log::warn!("new isel backend doesn't support stackmaps yet");
+            } else {
+                self.emit_stackmaps(stackmaps);
+            }
         }
 
         self.current_func.code_size = info.code_size;
@@ -262,15 +267,20 @@ impl<'static_env, 'module_env> BatchCompiler<'static_env, 'module_env> {
     fn frame_pushed(&self) -> StackSize {
         
         
-        let total = self
-            .context
-            .func
-            .stack_slots
-            .layout_info
-            .expect("No frame")
-            .frame_size;
+        let total = if let Some(result) = &self.context.mach_compile_result {
+            result.frame_size
+        } else {
+            self.context
+                .func
+                .stack_slots
+                .layout_info
+                .expect("No frame")
+                .frame_size
+        };
+
         let sm_pushed = StackSize::from(self.isa.flags().baldrdash_prologue_words())
             * mem::size_of::<usize>() as StackSize;
+
         total
             .checked_sub(sm_pushed)
             .expect("SpiderMonkey prologue pushes not counted")
@@ -346,16 +356,33 @@ impl<'a> RelocSink for Relocations<'a> {
                 index,
             } => {
                 
-                let payload_size = match reloc {
-                    Reloc::X86CallPCRel4 => 4,
-                    _ => panic!("unhandled call relocation"),
-                };
-
                 let func_index = FuncIndex::new(index as usize);
 
                 
                 
-                let offset = at + payload_size;
+                
+                #[cfg(feature = "cranelift_x86")]
+                let offset = at
+                    + match reloc {
+                        Reloc::X86CallPCRel4 => 4,
+                        _ => unreachable!(),
+                    };
+
+                
+                
+                #[cfg(feature = "cranelift_arm64")]
+                let offset = match reloc {
+                    Reloc::Arm64Call => at + 4,
+                    _ => unreachable!(),
+                };
+
+                #[cfg(not(any(feature = "cranelift_x86", feature = "cranelift_arm64")))]
+                let offset = {
+                    
+                    let _reloc = reloc;
+                    at
+                };
+
                 self.metadata.push(bindings::MetadataEntry::direct_call(
                     offset, srcloc, func_index,
                 ));
@@ -365,33 +392,33 @@ impl<'a> RelocSink for Relocations<'a> {
                 namespace: SYMBOLIC_FUNCTION_NAMESPACE,
                 index,
             } => {
-                let payload_size = match reloc {
-                    Reloc::Abs8 => {
-                        debug_assert_eq!(POINTER_SIZE, 8);
-                        8
-                    }
-                    _ => panic!("unhandled user-space symbolic call relocation"),
-                };
-
                 
                 let sym = index.into();
 
                 
-                let offset = at + payload_size;
+
+                #[cfg(feature = "cranelift_x86")]
+                let offset = at
+                    + match reloc {
+                        Reloc::Abs8 => 8,
+                        _ => unreachable!(),
+                    };
+
+                #[cfg(feature = "cranelift_arm64")]
+                let offset = match reloc {
+                    Reloc::Abs8 => at + 4,
+                    _ => unreachable!(),
+                };
+
+                #[cfg(not(any(feature = "cranelift_x86", feature = "cranelift_arm64")))]
+                let offset = at;
+
                 self.metadata.push(bindings::MetadataEntry::symbolic_access(
                     offset, srcloc, sym,
                 ));
             }
 
             ExternalName::LibCall(call) => {
-                let payload_size = match reloc {
-                    Reloc::Abs8 => {
-                        debug_assert_eq!(POINTER_SIZE, 8);
-                        8
-                    }
-                    _ => panic!("unhandled libcall symbolic call relocation"),
-                };
-
                 let sym = match call {
                     ir::LibCall::CeilF32 => bindings::SymbolicAddress::CeilF32,
                     ir::LibCall::CeilF64 => bindings::SymbolicAddress::CeilF64,
@@ -407,7 +434,23 @@ impl<'a> RelocSink for Relocations<'a> {
                 };
 
                 
-                let offset = at + payload_size;
+                #[cfg(feature = "cranelift_x86")]
+                let offset = at
+                    + match reloc {
+                        Reloc::Abs8 => 8,
+                        _ => unreachable!(),
+                    };
+
+                
+                #[cfg(feature = "cranelift_arm64")]
+                let offset = match reloc {
+                    Reloc::Abs8 => at,
+                    _ => unreachable!(),
+                };
+
+                #[cfg(not(any(feature = "cranelift_x86", feature = "cranelift_arm64")))]
+                let offset = at;
+
                 self.metadata.push(bindings::MetadataEntry::symbolic_access(
                     offset, srcloc, sym,
                 ));

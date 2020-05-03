@@ -31,6 +31,10 @@ struct CraneliftCompiler;
 
 extern "C" {
 
+
+bool cranelift_supports_platform();
+
+
 void cranelift_initialize();
 
 
