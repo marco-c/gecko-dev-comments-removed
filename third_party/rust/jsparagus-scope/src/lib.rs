@@ -1,7 +1,15 @@
 
 
 
-mod context;
+
+
+
+
+
+
+
+
+mod builder;
 pub mod data;
 pub mod frame_slot;
 pub mod free_name_tracker;
@@ -12,6 +20,10 @@ extern crate jsparagus_ast as ast;
 use ast::visit::Pass;
 
 pub use pass::ScopeDataMapAndFunctionMap;
+
+
+
+
 
 
 pub fn generate_scope_data<'alloc, 'a>(

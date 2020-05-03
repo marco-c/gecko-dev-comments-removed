@@ -1199,5 +1199,6 @@ LazyArrowFunction :
         try_it(['Script', 'LazyArrowFunction'])
         try_it(['Script'])
 
+
 if __name__ == '__main__':
     unittest.main()

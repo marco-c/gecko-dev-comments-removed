@@ -522,7 +522,6 @@ where
         
         if let Some(init) = self.maybe_init {
             (self.init)(emitter, init)?;
-            emitter.emit.pop();
         }
 
         
@@ -549,7 +548,6 @@ where
 
         if let Some(update) = self.maybe_update {
             (self.update)(emitter, &update)?;
-            emitter.emit.pop();
         }
 
         

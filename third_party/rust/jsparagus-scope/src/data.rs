@@ -1,3 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
 use crate::frame_slot::FrameSlot;
 use ast::associated_data::{AssociatedData, Key as AssociatedDataKey};
 use ast::source_atom_set::SourceAtomSetIndex;
@@ -11,6 +22,8 @@ pub enum BindingKind {
     Let,
     Const,
 }
+
+
 
 
 #[derive(Debug)]
@@ -71,6 +84,12 @@ pub struct GlobalScopeData {
     pub let_start: usize,
     pub const_start: usize,
 
+    
+    
+    
+    
+    
+    
     
     pub bindings: Vec<BindingName>,
 
@@ -143,6 +162,44 @@ impl<'a> Iterator for GlobalBindingIter<'a> {
 
 
 #[derive(Debug)]
+pub struct VarScopeData {
+    
+    pub bindings: Vec<BindingName>,
+
+    
+    
+    
+    
+    
+    
+    
+    pub first_frame_slot: FrameSlot,
+
+    
+    
+    
+    pub enclosing: ScopeIndex,
+}
+
+impl VarScopeData {
+    pub fn new(var_count: usize, enclosing: ScopeIndex) -> Self {
+        let capacity = var_count;
+
+        Self {
+            bindings: Vec::with_capacity(capacity),
+            
+            first_frame_slot: FrameSlot::new(0),
+            enclosing,
+        }
+    }
+}
+
+
+
+
+
+
+#[derive(Debug)]
 pub struct LexicalScopeData {
     pub const_start: usize,
 
@@ -168,7 +225,7 @@ pub struct LexicalScopeData {
 }
 
 impl LexicalScopeData {
-    pub fn new(
+    fn new(
         let_count: usize,
         const_count: usize,
         enclosing: ScopeIndex,
@@ -184,6 +241,27 @@ impl LexicalScopeData {
             enclosing,
             functions,
         }
+    }
+
+    pub fn new_block(
+        let_count: usize,
+        const_count: usize,
+        enclosing: ScopeIndex,
+        functions: Vec<AssociatedDataKey>,
+    ) -> Self {
+        Self::new(let_count, const_count, enclosing, functions)
+    }
+
+    pub fn new_named_lambda(enclosing: ScopeIndex) -> Self {
+        Self::new(0, 1, enclosing, Vec::new())
+    }
+
+    pub fn new_function_lexical(
+        let_count: usize,
+        const_count: usize,
+        enclosing: ScopeIndex,
+    ) -> Self {
+        Self::new(let_count, const_count, enclosing, Vec::new())
     }
 
     pub fn iter<'a>(&'a self) -> LexicalBindingIter<'a> {
@@ -226,20 +304,95 @@ impl<'a> Iterator for LexicalBindingIter<'a> {
     }
 }
 
+
+
+
+
+
+#[derive(Debug)]
+pub struct FunctionScopeData {
+    has_parameter_exprs: bool,
+    non_positional_formal_start: usize,
+    var_start: usize,
+
+    
+    
+    
+    
+    pub bindings: Vec<Option<BindingName>>,
+
+    
+    
+    
+    
+    
+    
+    
+    pub first_frame_slot: FrameSlot,
+
+    
+    
+    
+    pub enclosing: ScopeIndex,
+}
+
+impl FunctionScopeData {
+    pub fn new(
+        has_parameter_exprs: bool,
+        positional_parameter_count: usize,
+        non_positional_formal_start: usize,
+        var_count: usize,
+        enclosing: ScopeIndex,
+    ) -> Self {
+        let capacity = positional_parameter_count + non_positional_formal_start + var_count;
+
+        Self {
+            has_parameter_exprs,
+            non_positional_formal_start: positional_parameter_count,
+            var_start: positional_parameter_count + non_positional_formal_start,
+            bindings: Vec::with_capacity(capacity),
+            
+            first_frame_slot: FrameSlot::new(0),
+            enclosing,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum ScopeData {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    AliasPrevious,
+
     Global(GlobalScopeData),
+    Var(VarScopeData),
     Lexical(LexicalScopeData),
+    Function(FunctionScopeData),
 }
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ScopeIndex {
     index: usize,
 }
 impl ScopeIndex {
     fn new(index: usize) -> Self {
         Self { index }
+    }
+
+    pub fn next(&self) -> Self {
+        Self {
+            index: self.index + 1,
+        }
     }
 }
 
@@ -250,8 +403,10 @@ impl From<ScopeIndex> for usize {
 }
 
 
+
 #[derive(Debug)]
 pub struct ScopeDataList {
+    
     
     scopes: Vec<Option<ScopeData>>,
 }
@@ -300,10 +455,13 @@ impl From<ScopeDataList> for Vec<ScopeData> {
 }
 
 
+
 #[derive(Debug)]
 pub struct ScopeDataMap {
     scopes: ScopeDataList,
     global: ScopeIndex,
+
+    
     non_global: AssociatedData<ScopeIndex>,
 }
 
@@ -345,6 +503,20 @@ impl ScopeDataMap {
         match self.scopes.get_mut(index) {
             ScopeData::Lexical(scope) => scope,
             _ => panic!("Unexpected scope data for lexical"),
+        }
+    }
+
+    pub fn get_function_at_mut(&mut self, index: ScopeIndex) -> &mut FunctionScopeData {
+        match self.scopes.get_mut(index) {
+            ScopeData::Function(scope) => scope,
+            _ => panic!("Unexpected scope data for function"),
+        }
+    }
+
+    pub fn is_alias(&mut self, index: ScopeIndex) -> bool {
+        match self.scopes.get(index) {
+            ScopeData::AliasPrevious => true,
+            _ => false,
         }
     }
 }
