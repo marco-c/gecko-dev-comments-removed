@@ -29,7 +29,7 @@ enum class DocumentL10nState {
 
   
   
-  InitialTranslationCompleted,
+  Ready,
 };
 
 
@@ -49,7 +49,7 @@ class DocumentL10n final : public DOMLocalization {
 
   static RefPtr<DocumentL10n> Create(Document* aDocument);
 
-  void Activate();
+  void Activate(const bool aLazy);
 
  protected:
   explicit DocumentL10n(Document* aDocument);
@@ -74,6 +74,8 @@ class DocumentL10n final : public DOMLocalization {
 
   Document* GetDocument() { return mDocument; };
   void OnCreatePresShell();
+
+  DocumentL10nState GetState() { return mState; };
 };
 
 }  

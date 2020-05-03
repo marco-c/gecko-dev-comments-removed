@@ -1362,7 +1362,6 @@ Document::Document(const char* aContentType)
       mDocLWTheme(Doc_Theme_Uninitialized),
       mSavedResolution(1.0f),
       mSavedResolutionBeforeMVM(1.0f),
-      mPendingInitialTranslation(false),
       mGeneration(0),
       mCachedTabSizeGeneration(0),
       mNextFormNumber(0),
@@ -3838,18 +3837,15 @@ bool Document::GetAllowPlugins() {
   return true;
 }
 
-void Document::InitializeLocalization(Sequence<nsString>& aResourceIds) {
-  MOZ_ASSERT(!mDocumentL10n, "mDocumentL10n should not be initialized yet");
+void Document::EnsureL10n() {
+  if (!mDocumentL10n) {
+    mDocumentL10n = DocumentL10n::Create(this);
+    MOZ_ASSERT(mDocumentL10n);
+  }
+}
 
-  RefPtr<DocumentL10n> l10n = DocumentL10n::Create(this);
-  if (NS_WARN_IF(!l10n)) {
-    return;
-  }
-  if (aResourceIds.Length()) {
-    l10n->AddResourceIds(aResourceIds);
-  }
-  l10n->Activate();
-  mDocumentL10n = l10n;
+bool Document::HasPendingInitialTranslation() {
+  return mDocumentL10n && mDocumentL10n->GetState() != DocumentL10nState::Ready;
 }
 
 DocumentL10n* Document::GetL10n() { return mDocumentL10n; }
@@ -3869,38 +3865,26 @@ void Document::LocalizationLinkAdded(Element* aLinkElement) {
     return;
   }
 
+  bool mWasDocumentL10nSet = mDocumentL10n;
+
+  EnsureL10n();
+
   nsAutoString href;
   aLinkElement->GetAttr(kNameSpaceID_None, nsGkAtoms::href, href);
-  
-  
-  if (mDocumentL10n) {
-    mDocumentL10n->AddResourceId(href);
-  } else if (mReadyState >= READYSTATE_INTERACTIVE) {
-    
-    
-    Sequence<nsString> resourceIds;
-    if (NS_WARN_IF(!resourceIds.AppendElement(href, fallible))) {
-      return;
-    }
-    InitializeLocalization(resourceIds);
-    mDocumentL10n->TriggerInitialTranslation();
-  } else {
-    
-    
-    
-    
-    if (NS_WARN_IF(!mL10nResources.AppendElement(href, fallible))) {
-      return;
-    }
 
-    if (!mPendingInitialTranslation) {
+  mDocumentL10n->AddResourceId(href);
+
+  if (mReadyState >= READYSTATE_INTERACTIVE) {
+    
+    
+    mDocumentL10n->Activate(true);
+  } else {
+    if (!mWasDocumentL10nSet) {
       
       
       
       BlockOnload();
     }
-
-    mPendingInitialTranslation = true;
   }
 }
 
@@ -3909,15 +3893,13 @@ void Document::LocalizationLinkRemoved(Element* aLinkElement) {
     return;
   }
 
-  nsAutoString href;
-  aLinkElement->GetAttr(kNameSpaceID_None, nsGkAtoms::href, href);
   if (mDocumentL10n) {
+    nsAutoString href;
+    aLinkElement->GetAttr(kNameSpaceID_None, nsGkAtoms::href, href);
     uint32_t remaining = mDocumentL10n->RemoveResourceId(href);
     if (remaining == 0) {
       mDocumentL10n = nullptr;
     }
-  } else {
-    mL10nResources.RemoveElement(href);
   }
 }
 
@@ -3934,9 +3916,8 @@ void Document::LocalizationLinkRemoved(Element* aLinkElement) {
 
 
 void Document::OnL10nResourceContainerParsed() {
-  if (!mL10nResources.IsEmpty()) {
-    InitializeLocalization(mL10nResources);
-    mL10nResources.Clear();
+  if (mDocumentL10n) {
+    mDocumentL10n->Activate(false);
   }
 }
 
@@ -3952,14 +3933,13 @@ void Document::OnParsingCompleted() {
 }
 
 void Document::InitialTranslationCompleted() {
-  if (mPendingInitialTranslation) {
-    
-    
-    
-    
-    UnblockOnload( false);
-  }
-  mPendingInitialTranslation = false;
+  MOZ_ASSERT(mDocumentL10n,
+             "DocumentL10n must be initialized before this point.");
+  
+  
+  
+  
+  UnblockOnload( false);
 
   mL10nProtoElements.Clear();
 
