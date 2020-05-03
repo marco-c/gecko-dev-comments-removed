@@ -237,6 +237,8 @@ class BasePrincipal : public nsJSPrincipals {
   inline bool FastSubsumesIgnoringFPD(nsIPrincipal* aOther);
   inline bool FastSubsumesConsideringDomainIgnoringFPD(nsIPrincipal* aOther);
 
+  inline bool EqualsIgnoringFPD(nsIPrincipal* aOther);
+
   
   inline bool IsSystemPrincipal() const;
 
@@ -417,6 +419,32 @@ inline bool BasePrincipal::FastSubsumesConsideringDomainIgnoringFPD(
 
 inline bool BasePrincipal::IsSystemPrincipal() const {
   return Kind() == eSystemPrincipal;
+}
+
+inline bool BasePrincipal::EqualsIgnoringFPD(nsIPrincipal* aOther) {
+  MOZ_ASSERT(aOther);
+
+  auto other = Cast(aOther);
+  if (Kind() != other->Kind()) {
+    
+    return false;
+  }
+
+  
+  
+  
+  if (Kind() == eSystemPrincipal) {
+    return this == other;
+  }
+
+  if (Kind() == eContentPrincipal || Kind() == eNullPrincipal) {
+    return mOriginNoSuffix == other->mOriginNoSuffix &&
+           dom::ChromeUtils::IsOriginAttributesEqualIgnoringFPD(
+               mOriginAttributes, other->mOriginAttributes);
+  }
+
+  MOZ_ASSERT(Kind() == eExpandedPrincipal);
+  return mOriginNoSuffix == other->mOriginNoSuffix;
 }
 
 }  
