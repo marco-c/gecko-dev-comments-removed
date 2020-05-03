@@ -634,7 +634,6 @@ AbortReasonOr<Ok> WarpOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
   
   
   
-  
 
   const CacheIRStubInfo* stubInfo = nullptr;
   const uint8_t* stubData = nullptr;
@@ -653,6 +652,12 @@ AbortReasonOr<Ok> WarpOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
       break;
     default:
       MOZ_CRASH("Unexpected stub");
+  }
+
+  
+  
+  if (stub->stubDataHasNurseryPointers(stubInfo)) {
+    return Ok();
   }
 
   
