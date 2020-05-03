@@ -16,10 +16,9 @@ const { ExtensionBlocklist: ExtensionBlocklistMLBF } = Blocklist;
 const blockedAddon = {
   id: "{6f62927a-e380-401a-8c9e-c485b7d87f0d}",
   version: "9.2.0",
-  signedState: 2, 
   
   
-  signedDate: 1588098908496, 
+  signedDate: new Date(1588098908496), 
 };
 
 
@@ -27,8 +26,7 @@ const blockedAddon = {
 const nonBlockedAddon = {
   id: "disable-ctrl-q-and-cmd-q@robwu.nl",
   version: "1",
-  signedState: 2, 
-  signedDate: 1482430349000, 
+  signedDate: new Date(1482430349000), 
 };
 
 async function sha256(arrayBuffer) {

@@ -1567,7 +1567,8 @@ this.ExtensionBlocklistMLBF = {
       }
     }
 
-    if (!addon.signedState) {
+    let { signedDate } = addon;
+    if (!signedDate) {
       
       return null;
     }
@@ -1589,7 +1590,7 @@ this.ExtensionBlocklistMLBF = {
     }
     
 
-    if (addon.signedDate > generationTime) {
+    if (signedDate.getTime() > generationTime) {
       
       
       

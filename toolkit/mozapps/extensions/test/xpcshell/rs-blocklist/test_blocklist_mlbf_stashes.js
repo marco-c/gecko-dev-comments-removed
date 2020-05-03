@@ -74,8 +74,7 @@ add_task(async function basic_stash() {
     await Blocklist.getAddonBlocklistState({
       id: "@onlyblockedbymlbf",
       version: "1",
-      signedState: 2, 
-      signedDate: 0, 
+      signedDate: new Date(0), 
     }),
     Ci.nsIBlocklistService.STATE_BLOCKED,
     "falls through to MLBF if entry is not found in stash"
