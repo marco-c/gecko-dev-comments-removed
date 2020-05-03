@@ -3885,7 +3885,7 @@ void Document::LocalizationLinkAdded(Element* aLinkElement) {
       return;
     }
     InitializeLocalization(resourceIds);
-    mDocumentL10n->TriggerInitialDocumentTranslation();
+    mDocumentL10n->TriggerInitialTranslation();
   } else {
     
     
@@ -3944,18 +3944,18 @@ void Document::OnL10nResourceContainerParsed() {
   }
 }
 
-void Document::TriggerInitialDocumentTranslation() {
+void Document::TriggerInitialTranslation() {
   
   
   
   OnL10nResourceContainerParsed();
 
   if (mDocumentL10n) {
-    mDocumentL10n->TriggerInitialDocumentTranslation();
+    mDocumentL10n->TriggerInitialTranslation();
   }
 }
 
-void Document::InitialDocumentTranslationCompleted() {
+void Document::InitialTranslationCompleted() {
   if (mPendingInitialTranslation) {
     
     

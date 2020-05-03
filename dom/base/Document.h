@@ -3719,7 +3719,7 @@ class Document : public nsINode,
 
 
 
-  void TriggerInitialDocumentTranslation();
+  void TriggerInitialTranslation();
 
   
 
@@ -3727,7 +3727,7 @@ class Document : public nsINode,
 
 
 
-  void InitialDocumentTranslationCompleted();
+  void InitialTranslationCompleted();
 
   
 

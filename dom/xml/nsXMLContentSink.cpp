@@ -1060,7 +1060,7 @@ nsresult nsXMLContentSink::HandleEndElement(const char16_t* aName,
     
     mState = eXMLContentSinkState_InEpilog;
 
-    mDocument->TriggerInitialDocumentTranslation();
+    mDocument->TriggerInitialTranslation();
 
     
     MaybeStartLayout(false);
@@ -1397,9 +1397,7 @@ nsresult nsXMLContentSink::AddText(const char16_t* aText, int32_t aLength) {
   return NS_OK;
 }
 
-void nsXMLContentSink::InitialDocumentTranslationCompleted() {
-  StartLayout(false);
-}
+void nsXMLContentSink::InitialTranslationCompleted() { StartLayout(false); }
 
 void nsXMLContentSink::FlushPendingNotifications(FlushType aType) {
   
