@@ -3865,8 +3865,6 @@ void Document::LocalizationLinkAdded(Element* aLinkElement) {
     return;
   }
 
-  bool mWasDocumentL10nSet = mDocumentL10n;
-
   EnsureL10n();
 
   nsAutoString href;
@@ -3875,15 +3873,15 @@ void Document::LocalizationLinkAdded(Element* aLinkElement) {
   mDocumentL10n->AddResourceId(href);
 
   if (mReadyState >= READYSTATE_INTERACTIVE) {
-    
-    
     mDocumentL10n->Activate(true);
+    mDocumentL10n->TriggerInitialTranslation();
   } else {
-    if (!mWasDocumentL10nSet) {
+    if (!mDocumentL10n->mBlockingLayout) {
       
       
       
       BlockOnload();
+      mDocumentL10n->mBlockingLayout = true;
     }
   }
 }
@@ -3933,13 +3931,14 @@ void Document::OnParsingCompleted() {
 }
 
 void Document::InitialTranslationCompleted() {
-  MOZ_ASSERT(mDocumentL10n,
-             "DocumentL10n must be initialized before this point.");
-  
-  
-  
-  
-  UnblockOnload( false);
+  if (mDocumentL10n->mBlockingLayout) {
+    
+    
+    
+    
+    UnblockOnload( false);
+    mDocumentL10n->mBlockingLayout = false;
+  }
 
   mL10nProtoElements.Clear();
 
