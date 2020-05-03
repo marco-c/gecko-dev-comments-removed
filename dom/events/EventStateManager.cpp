@@ -4,8 +4,10 @@
 
 
 
+#include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventDispatcher.h"
+#include "mozilla/EventForwards.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/EventStates.h"
 #include "mozilla/HTMLEditor.h"
@@ -21,6 +23,8 @@
 #include "mozilla/TouchEvents.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/DragEvent.h"
 #include "mozilla/dom/Event.h"
@@ -54,6 +58,7 @@
 #include "nsIFrame.h"
 #include "nsFrameLoaderOwner.h"
 #include "nsIWidget.h"
+#include "nsLiteralString.h"
 #include "nsPresContext.h"
 #include "nsGkAtoms.h"
 #include "nsIFormControl.h"
@@ -2170,20 +2175,24 @@ bool EventStateManager::DoDefaultDragStart(
   return true;
 }
 
-nsresult EventStateManager::ChangeZoom(int32_t change) {
-  MOZ_ASSERT(change == 1 || change == -1, "Can only change by +/- 10%.");
+void EventStateManager::ChangeZoom(bool aIncrease) {
+  
+  
+  nsIDocShell* docShell = mDocument->GetDocShell();
+  if (!docShell) {
+    return;
+  }
 
-  
-  
-  
-  
-  nsContentUtils::DispatchChromeEvent(
-      mDocument, ToSupports(mDocument),
-      (change == 1 ? NS_LITERAL_STRING("DoZoomEnlargeBy10")
-                   : NS_LITERAL_STRING("DoZoomReduceBy10")),
-      CanBubble::eYes, Cancelable::eYes);
+  BrowsingContext* bc = docShell->GetBrowsingContext();
+  if (!bc) {
+    return;
+  }
 
-  return NS_OK;
+  if (XRE_IsParentProcess()) {
+    bc->Canonical()->DispatchWheelZoomChange(aIncrease);
+  } else if (BrowserChild* child = BrowserChild::GetFrom(docShell)) {
+    child->SendWheelZoomChange(aIncrease);
+  }
 }
 
 void EventStateManager::DoScrollHistory(int32_t direction) {
@@ -2206,14 +2215,9 @@ void EventStateManager::DoScrollZoom(nsIFrame* aTargetFrame,
   nsIContent* content = aTargetFrame->GetContent();
   if (content && !nsContentUtils::IsInChromeDocshell(content->OwnerDoc())) {
     
-    int32_t change = (adjustment > 0) ? -1 : 1;
-
+    const bool increase = adjustment <= 0;
     EnsureDocument(mPresContext);
-    ChangeZoom(change);
-    nsContentUtils::DispatchChromeEvent(
-        mDocument, ToSupports(mDocument),
-        NS_LITERAL_STRING("ZoomChangeUsingMouseWheel"), CanBubble::eYes,
-        Cancelable::eYes);
+    ChangeZoom(increase);
   }
 }
 
@@ -3052,8 +3056,7 @@ void EventStateManager::PostHandleKeyboardEvent(
   switch (aKeyboardEvent->mKeyNameIndex) {
     case KEY_NAME_INDEX_ZoomIn:
     case KEY_NAME_INDEX_ZoomOut:
-      ChangeZoom(aKeyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_ZoomIn ? 1
-                                                                        : -1);
+      ChangeZoom(aKeyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_ZoomIn);
       aStatus = nsEventStatus_eConsumeNoDefault;
       break;
     default:
@@ -3153,10 +3156,6 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
               suppressBlur = disabled;
             }
           }
-        }
-
-        if (!suppressBlur) {
-          suppressBlur = nsContentUtils::IsUserFocusIgnored(activeContent);
         }
 
         

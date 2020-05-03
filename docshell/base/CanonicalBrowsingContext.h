@@ -80,6 +80,9 @@ class CanonicalBrowsingContext final : public BrowsingContext {
                        JS::Handle<JSObject*> aGivenProto) override;
 
   
+  void DispatchWheelZoomChange(bool aIncrease);
+
+  
   
   
   

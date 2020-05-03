@@ -403,6 +403,12 @@ parent:
 
 
 
+    async WheelZoomChange(bool increase);
+
+    
+
+
+
     async EnableDisableCommands(MaybeDiscardedBrowsingContext bc,
                                 nsString action,
                                 nsCString[] enabledCommands,
