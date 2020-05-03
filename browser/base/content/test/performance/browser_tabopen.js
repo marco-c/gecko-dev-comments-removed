@@ -23,6 +23,9 @@ const EXPECTED_REFLOWS = [
 
 
 add_task(async function() {
+  
+  gReduceMotionOverride = false;
+
   await ensureNoPreloadedBrowser();
   await disableFxaBadge();
 

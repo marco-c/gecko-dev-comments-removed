@@ -3,10 +3,8 @@
 
 
 function test() {
-  Services.prefs.setBoolPref("toolkit.cosmeticAnimations.enabled", false);
-  registerCleanupFunction(function() {
-    Services.prefs.clearUserPref("toolkit.cosmeticAnimations.enabled");
-  });
+  
+  gReduceMotionOverride = true;
 
   
   

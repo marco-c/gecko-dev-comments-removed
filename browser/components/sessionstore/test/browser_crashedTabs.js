@@ -15,11 +15,7 @@ const PAGE_2 =
 
 
 
-add_task(async function test_initialize() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["toolkit.cosmeticAnimations.enabled", false]],
-  });
-});
+gReduceMotionOverride = true;
 
 
 Services.prefs.clearUserPref("browser.sessionstore.restore_on_demand");

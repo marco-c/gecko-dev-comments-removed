@@ -561,6 +561,12 @@ Tester.prototype = {
         }
       }
 
+      
+      
+      if (typeof gReduceMotionOverride == "boolean") {
+        gReduceMotionOverride = null;
+      }
+
       Services.obs.notifyObservers(null, "test-complete");
 
       if (

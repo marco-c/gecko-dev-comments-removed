@@ -8,9 +8,8 @@
 
 
 add_task(async function() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["toolkit.cosmeticAnimations.enabled", false]],
-  });
+  
+  gReduceMotionOverride = true;
 
   let downButton = gBrowser.tabContainer.arrowScrollbox._scrollButtonDown;
   let closingTabsSpacer = gBrowser.tabContainer._closingTabsSpacer;

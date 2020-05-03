@@ -60,6 +60,9 @@ function waitForSnapshotCount(histogram, expectedCount) {
 
 add_task(async function setup() {
   
+  gReduceMotionOverride = false;
+
+  
   
   let oldCanRecord = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;

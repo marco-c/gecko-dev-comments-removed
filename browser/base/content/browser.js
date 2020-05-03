@@ -560,6 +560,19 @@ if (AppConstants.platform != "macosx") {
   var gEditUIVisible = true;
 }
 
+Object.defineProperty(this, "gReduceMotion", {
+  enumerable: true,
+  get() {
+    return typeof gReduceMotionOverride == "boolean"
+      ? gReduceMotionOverride
+      : gReduceMotionSetting;
+  },
+});
+
+var gReduceMotionSetting = true;
+
+var gReduceMotionOverride;
+
 
 
 
@@ -2260,7 +2273,15 @@ var gBrowserInit = {
     });
 
     scheduleIdleTask(() => {
-      CombinedStopReload.animationDisabledDuringStartup = false;
+      
+      let reduceMotionQuery = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      );
+      function readSetting() {
+        gReduceMotionSetting = reduceMotionQuery.matches;
+      }
+      reduceMotionQuery.addListener(readSetting);
+      readSetting();
     });
 
     scheduleIdleTask(() => {
@@ -5549,8 +5570,6 @@ var LinkTargetDisplay = {
 };
 
 var CombinedStopReload = {
-  animationDisabledDuringStartup: true,
-
   
   
   ensureInitialized() {
@@ -5663,9 +5682,8 @@ var CombinedStopReload = {
       aWebProgress.isTopLevel &&
       aWebProgress.isLoadingDocument &&
       !gBrowser.tabAnimationsInProgress &&
-      !this.animationDisabledDuringStartup &&
-      this.stopReloadContainer.closest("#nav-bar-customization-target") &&
-      window.matchMedia("(prefers-reduced-motion: no-preference)").matches;
+      !gReduceMotion &&
+      this.stopReloadContainer.closest("#nav-bar-customization-target");
 
     this._cancelTransition();
     if (shouldAnimate) {
@@ -5687,10 +5705,9 @@ var CombinedStopReload = {
       aWebProgress.isTopLevel &&
       !aWebProgress.isLoadingDocument &&
       !gBrowser.tabAnimationsInProgress &&
-      !this.animationDisabledDuringStartup &&
+      !gReduceMotion &&
       this._loadTimeExceedsMinimumForAnimation() &&
-      this.stopReloadContainer.closest("#nav-bar-customization-target") &&
-      window.matchMedia("(prefers-reduced-motion: no-preference)").matches;
+      this.stopReloadContainer.closest("#nav-bar-customization-target");
 
     if (shouldAnimate) {
       BrowserUtils.setToolbarButtonHeightProperty(this.stopReloadContainer);

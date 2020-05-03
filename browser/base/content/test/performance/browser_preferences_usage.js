@@ -158,10 +158,6 @@ add_task(async function open_10_tabs() {
     "network.loadinfo.skip_type_assertion": {
       
     },
-    "toolkit.cosmeticAnimations.enabled": {
-      min: 5,
-      max: 20,
-    },
   };
 
   Services.prefs.resetStats();
@@ -196,10 +192,6 @@ add_task(async function navigate_around() {
     },
     "network.loadinfo.skip_type_assertion": {
       
-    },
-    "toolkit.cosmeticAnimations.enabled": {
-      min: 30,
-      max: 55,
     },
   };
 

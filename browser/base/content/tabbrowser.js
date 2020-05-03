@@ -74,12 +74,6 @@
         E10SUtils: "resource://gre/modules/E10SUtils.jsm",
       });
 
-      XPCOMUtils.defineLazyPreferenceGetter(
-        this,
-        "animationsEnabled",
-        "toolkit.cosmeticAnimations.enabled"
-      );
-
       this._setupEventListeners();
       this._initialized = true;
     },
@@ -2598,7 +2592,7 @@
         !skipAnimation &&
         !pinned &&
         this.tabContainer.getAttribute("overflow") != "true" &&
-        this.animationsEnabled;
+        !gReduceMotion;
 
       
       
@@ -3389,6 +3383,7 @@
 
       if (
         !animate  ||
+        gReduceMotion ||
         isLastTab ||
         aTab.pinned ||
         aTab.hidden ||
@@ -3397,8 +3392,7 @@
         aTab.getAttribute("fadein") !=
           "true"  ||
         window.getComputedStyle(aTab).maxWidth ==
-          "0.1px"  ||
-        !this.animationsEnabled
+          "0.1px" 
       ) {
         
         TelemetryStopwatch.cancel("FX_TAB_CLOSE_TIME_ANIM_MS", aTab);
@@ -4321,7 +4315,7 @@
       
       
       
-      if (this.animationsEnabled) {
+      if (!gReduceMotion) {
         aTab.style.maxWidth = ""; 
         aTab.removeAttribute("fadein");
       }
@@ -4358,7 +4352,7 @@
 
       
       
-      if (this.animationsEnabled) {
+      if (!gReduceMotion) {
         for (let tab of tabs) {
           tab.style.maxWidth = ""; 
           tab.removeAttribute("fadein");
@@ -5976,7 +5970,7 @@
             !aWebProgress.isLoadingDocument &&
             Components.isSuccessCode(aStatus) &&
             !gBrowser.tabAnimationsInProgress &&
-            Services.prefs.getBoolPref("toolkit.cosmeticAnimations.enabled")
+            !gReduceMotion
           ) {
             if (this.mTab._notselectedsinceload) {
               this.mTab.setAttribute("notselectedsinceload", "true");

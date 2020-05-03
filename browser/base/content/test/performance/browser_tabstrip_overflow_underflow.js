@@ -29,6 +29,9 @@ const EXPECTED_UNDERFLOW_REFLOWS = [
 
 
 add_task(async function() {
+  
+  gReduceMotionOverride = false;
+
   await ensureNoPreloadedBrowser();
 
   const TAB_COUNT_FOR_OVERFLOW = computeMaxTabCount();
