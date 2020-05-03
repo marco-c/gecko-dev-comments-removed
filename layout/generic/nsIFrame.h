@@ -750,7 +750,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual nsresult GetOffsets(int32_t& start, int32_t& end) const = 0;
+  virtual nsresult GetOffsets(int32_t& start, int32_t& end) const;
 
   
 
@@ -847,10 +847,10 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual ComputedStyle* GetAdditionalComputedStyle(int32_t aIndex) const = 0;
+  virtual ComputedStyle* GetAdditionalComputedStyle(int32_t aIndex) const;
 
   virtual void SetAdditionalComputedStyle(int32_t aIndex,
-                                          ComputedStyle* aComputedStyle) = 0;
+                                          ComputedStyle* aComputedStyle);
 
   
 
@@ -1437,7 +1437,8 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual nscoord GetLogicalBaseline(mozilla::WritingMode aWM) const = 0;
+
+  virtual nscoord GetLogicalBaseline(mozilla::WritingMode aWritingMode) const;
 
   
 
@@ -1635,11 +1636,11 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual const nsFrameList& GetChildList(ChildListID aListID) const = 0;
+  virtual const nsFrameList& GetChildList(ChildListID aListID) const;
   const nsFrameList& PrincipalChildList() const {
     return GetChildList(kPrincipalList);
   }
-  virtual void GetChildLists(nsTArray<ChildList>* aLists) const = 0;
+  virtual void GetChildLists(nsTArray<ChildList>* aLists) const;
 
   
 
@@ -1989,7 +1990,7 @@ class nsIFrame : public nsQueryFrame {
                                nsEventStatus* aEventStatus) = 0;
 
   virtual nsresult GetContentForEvent(mozilla::WidgetEvent* aEvent,
-                                      nsIContent** aContent) = 0;
+                                      nsIContent** aContent);
 
   
   
@@ -2093,14 +2094,14 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual nsresult GetPointFromOffset(int32_t inOffset, nsPoint* outPoint) = 0;
+  virtual nsresult GetPointFromOffset(int32_t inOffset, nsPoint* outPoint);
 
   
 
 
 
   virtual nsresult GetCharacterRectsInRange(int32_t aInOffset, int32_t aLength,
-                                            nsTArray<nsRect>& aRects) = 0;
+                                            nsTArray<nsRect>& aRects);
 
   
 
@@ -2113,7 +2114,7 @@ class nsIFrame : public nsQueryFrame {
   virtual nsresult GetChildFrameContainingOffset(
       int32_t inContentOffset,
       bool inHint,  
-      int32_t* outFrameContentOffset, nsIFrame** outChildFrame) = 0;
+      int32_t* outFrameContentOffset, nsIFrame** outChildFrame);
 
   
 
@@ -2155,7 +2156,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual nsresult CharacterDataChanged(const CharacterDataChangeInfo&) = 0;
+  virtual nsresult CharacterDataChanged(const CharacterDataChangeInfo&);
 
   
 
@@ -2169,7 +2170,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                    int32_t aModType) = 0;
+                                    int32_t aModType);
 
   
 
@@ -2182,10 +2183,10 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-  virtual nsIFrame* GetPrevContinuation() const = 0;
-  virtual void SetPrevContinuation(nsIFrame*) = 0;
-  virtual nsIFrame* GetNextContinuation() const = 0;
-  virtual void SetNextContinuation(nsIFrame*) = 0;
+  virtual nsIFrame* GetPrevContinuation() const;
+  virtual void SetPrevContinuation(nsIFrame*);
+  virtual nsIFrame* GetNextContinuation() const;
+  virtual void SetNextContinuation(nsIFrame*);
   virtual nsIFrame* FirstContinuation() const {
     return const_cast<nsIFrame*>(this);
   }
@@ -2203,11 +2204,11 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-  virtual nsIFrame* GetPrevInFlow() const = 0;
-  virtual void SetPrevInFlow(nsIFrame*) = 0;
+  virtual nsIFrame* GetPrevInFlow() const;
+  virtual void SetPrevInFlow(nsIFrame*);
 
-  virtual nsIFrame* GetNextInFlow() const = 0;
-  virtual void SetNextInFlow(nsIFrame*) = 0;
+  virtual nsIFrame* GetNextInFlow() const;
+  virtual void SetNextInFlow(nsIFrame*);
 
   
 
@@ -2258,7 +2259,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual nscoord GetMinISize(gfxContext* aRenderingContext) = 0;
+  virtual nscoord GetMinISize(gfxContext* aRenderingContext);
 
   
 
@@ -2266,7 +2267,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual nscoord GetPrefISize(gfxContext* aRenderingContext) = 0;
+  virtual nscoord GetPrefISize(gfxContext* aRenderingContext);
 
   
 
@@ -2410,7 +2411,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   virtual void AddInlineMinISize(gfxContext* aRenderingContext,
-                                 InlineMinISizeData* aData) = 0;
+                                 InlineMinISizeData* aData);
 
   
 
@@ -2423,7 +2424,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   virtual void AddInlinePrefISize(gfxContext* aRenderingContext,
-                                  InlinePrefISizeData* aData) = 0;
+                                  InlinePrefISizeData* aData);
 
   
 
@@ -2443,7 +2444,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   virtual IntrinsicSizeOffsetData IntrinsicISizeOffsets(
-      nscoord aPercentageBasis = NS_UNCONSTRAINEDSIZE) = 0;
+      nscoord aPercentageBasis = NS_UNCONSTRAINEDSIZE);
 
   
 
@@ -2454,7 +2455,7 @@ class nsIFrame : public nsQueryFrame {
   IntrinsicSizeOffsetData IntrinsicBSizeOffsets(
       nscoord aPercentageBasis = NS_UNCONSTRAINEDSIZE);
 
-  virtual mozilla::IntrinsicSize GetIntrinsicSize() = 0;
+  virtual mozilla::IntrinsicSize GetIntrinsicSize();
 
   
 
@@ -2464,7 +2465,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual mozilla::AspectRatio GetIntrinsicRatio() = 0;
+  virtual mozilla::AspectRatio GetIntrinsicRatio();
 
   
 
@@ -2685,13 +2686,13 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) = 0;
+  virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas);
 
   
 
 
 
-  virtual void UnionChildOverflow(nsOverflowAreas& aOverflowAreas) = 0;
+  virtual void UnionChildOverflow(nsOverflowAreas& aOverflowAreas);
 
   
 
@@ -2702,7 +2703,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual bool CanContinueTextRun() const = 0;
+  virtual bool CanContinueTextRun() const;
 
   
 
@@ -3434,8 +3435,8 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual nsresult GetSelectionController(nsPresContext* aPresContext,
-                                          nsISelectionController** aSelCon) = 0;
+  nsresult GetSelectionController(nsPresContext* aPresContext,
+                                  nsISelectionController** aSelCon);
 
   
 
@@ -3508,7 +3509,7 @@ class nsIFrame : public nsQueryFrame {
 
   virtual nsresult CheckVisibility(nsPresContext* aContext, int32_t aStartIndex,
                                    int32_t aEndIndex, bool aRecurse,
-                                   bool* aFinished, bool* _retval) = 0;
+                                   bool* aFinished, bool* _retval);
 
   
 
@@ -3516,7 +3517,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual void ChildIsDirty(nsIFrame* aChild) = 0;
+  virtual void ChildIsDirty(nsIFrame* aChild);
 
   
 
@@ -3526,7 +3527,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 #ifdef ACCESSIBILITY
-  virtual mozilla::a11y::AccType AccessibleType() = 0;
+  virtual mozilla::a11y::AccType AccessibleType();
 #endif
 
   
@@ -3676,7 +3677,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual bool IsEmpty() = 0;
+  virtual bool IsEmpty();
   
 
 
@@ -3686,7 +3687,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual bool IsSelfEmpty() = 0;
+  virtual bool IsSelfEmpty();
 
   
 
@@ -4633,8 +4634,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual FrameSearchResult PeekOffsetNoAmount(bool aForward,
-                                               int32_t* aOffset) = 0;
+  virtual FrameSearchResult PeekOffsetNoAmount(bool aForward, int32_t* aOffset);
 
   
 
@@ -4656,7 +4656,7 @@ class nsIFrame : public nsQueryFrame {
 
   virtual FrameSearchResult PeekOffsetCharacter(
       bool aForward, int32_t* aOffset,
-      PeekOffsetCharacterOptions aOptions = PeekOffsetCharacterOptions()) = 0;
+      PeekOffsetCharacterOptions aOptions = PeekOffsetCharacterOptions());
   static_assert(sizeof(PeekOffsetCharacterOptions) <= sizeof(intptr_t),
                 "aOptions should be changed to const reference");
 
