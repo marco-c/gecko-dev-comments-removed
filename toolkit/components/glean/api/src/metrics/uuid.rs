@@ -6,6 +6,9 @@ use uuid::Uuid;
 
 use glean_core::CommonMetricData;
 
+
+
+
 #[derive(Clone, Debug)]
 pub struct UuidMetric(glean_core::metrics::UuidMetric);
 
