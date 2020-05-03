@@ -2110,8 +2110,10 @@ bool NS_IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI) {
   
   nsCOMPtr<nsIURI> channelURI;
   NS_GetFinalChannelURI(aChannel, getter_AddRefs(channelURI));
-  if (BasePrincipal::Cast(loadInfo->TriggeringPrincipal())
-          ->AddonAllowsLoad(channelURI)) {
+  RefPtr<BasePrincipal> triggeringPrincipal =
+      BasePrincipal::Cast(loadInfo->TriggeringPrincipal());
+  if (triggeringPrincipal->AddonPolicy() &&
+      triggeringPrincipal->AddonAllowsLoad(channelURI)) {
     return false;
   }
 
@@ -2122,8 +2124,7 @@ bool NS_IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI) {
     
     
     
-    rv = loadInfo->TriggeringPrincipal()->IsThirdPartyChannel(aChannel,
-                                                              &isForeign);
+    rv = triggeringPrincipal->IsThirdPartyChannel(aChannel, &isForeign);
   } else {
     nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
         do_GetService(THIRDPARTYUTIL_CONTRACTID);
