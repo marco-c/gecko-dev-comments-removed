@@ -2165,6 +2165,28 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT nsresult MoveNodeWithTransaction(
+      nsIContent& aContent, const EditorDOMPoint& aPointToInsert);
+
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  MoveNodeToEndWithTransaction(nsIContent& aContent, nsINode& aNewContainer) {
+    EditorDOMPoint pointToInsert;
+    pointToInsert.SetToEndOf(&aNewContainer);
+    return MoveNodeWithTransaction(aContent, pointToInsert);
+  }
+
+  
+
+
+
+
 
 
 

@@ -4664,6 +4664,56 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
   return NS_OK;
 }
 
+nsresult HTMLEditor::MoveNodeWithTransaction(
+    nsIContent& aContent, const EditorDOMPoint& aPointToInsert) {
+  MOZ_ASSERT(aPointToInsert.IsSetAndValid());
+
+  EditorDOMPoint oldPoint(&aContent);
+  if (NS_WARN_IF(!oldPoint.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  if (aPointToInsert == oldPoint) {
+    return NS_OK;
+  }
+
+  
+  AutoMoveNodeSelNotify selNotify(RangeUpdaterRef(), oldPoint, aPointToInsert);
+
+  
+  
+  
+  
+  
+  
+  
+  nsresult rv = EditorBase::DeleteNodeWithTransaction(aContent);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+    return rv;
+  }
+
+  
+  EditorDOMPoint pointToInsert(selNotify.ComputeInsertionPoint());
+  if (NS_WARN_IF(!pointToInsert.IsSet())) {
+    return NS_ERROR_FAILURE;
+  }
+  
+  
+  
+  
+  
+  
+  if (NS_WARN_IF(!pointToInsert.IsSetAndValid())) {
+    pointToInsert.SetToEndOf(pointToInsert.GetContainer());
+  }
+  rv = InsertNodeWithTransaction(aContent, pointToInsert);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EditorBase::InsertNodeWithTransaction() failed");
+  return rv;
+}
+
 already_AddRefed<Element> HTMLEditor::DeleteSelectionAndCreateElement(
     nsAtom& aTag) {
   MOZ_ASSERT(IsEditActionDataAvailable());
@@ -5268,9 +5318,9 @@ nsresult HTMLEditor::SetCSSBackgroundColorWithTransaction(
   if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
     return ignoredError.StealNSResult();
   }
-  NS_WARNING_ASSERTION(
-      !ignoredError.Failed(),
-      "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
+  NS_WARNING_ASSERTION(!ignoredError.Failed(),
+                       "HTMLEditor::OnStartToHandleTopLevelEditSubAction() "
+                       "failed, but ignored");
 
   {
     AutoSelectionRestorer restoreSelectionLater(*this);
@@ -5525,6 +5575,7 @@ nsresult HTMLEditor::CopyLastEditableChildStylesWithTransaction(
     }
     nsAtom* tagName = elementInPreviousBlock->NodeInfo()->NameAtom();
     
+    
     if (!firstClonsedElement) {
       firstClonsedElement = lastClonedElement = CreateNodeWithTransaction(
           MOZ_KnownLive(*tagName), EditorDOMPoint(newBlock, 0));
@@ -5641,6 +5692,7 @@ Element* HTMLEditor::GetSelectionContainerElement() const {
         if (!focusNode) {
           focusNode = startContainer;
         } else if (focusNode != startContainer) {
+          
           
           
           focusNode = startContainer->GetParentNode();
@@ -5895,7 +5947,8 @@ void HTMLEditor::NotifyRootChanged() {
   rv = MaybeCollapseSelectionAtFirstEditableNode(false);
   if (NS_FAILED(rv)) {
     NS_WARNING(
-        "HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(false) failed, "
+        "HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(false) "
+        "failed, "
         "but ignored");
     return;
   }
@@ -5968,6 +6021,7 @@ bool HTMLEditor::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) {
   
   
   
+  
   if (mComposition && aGUIEvent->AsCompositionEvent()) {
     return true;
   }
@@ -6022,6 +6076,7 @@ bool HTMLEditor::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) {
     if (!editingHost) {
       return false;
     }
+    
     
     
     if (eventTargetNode == document->GetRootElement() &&
