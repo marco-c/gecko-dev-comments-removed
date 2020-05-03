@@ -38,6 +38,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gLoadDump",
+  "services.settings.load_dump",
+  true
+);
+
 
 
 
@@ -320,7 +327,10 @@ class RemoteSettingsClient extends EventEmitter {
       try {
         
         
-        if (await Utils.hasLocalDump(this.bucketName, this.collectionName)) {
+        if (
+          gLoadDump &&
+          (await Utils.hasLocalDump(this.bucketName, this.collectionName))
+        ) {
           
           console.debug(`${this.identifier} Local DB is empty, load JSON dump`);
           await this._importJSONDump();
@@ -406,8 +416,10 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
+
   async maybeSync(expectedTimestamp, options = {}) {
-    const { loadDump = true, trigger = "manual" } = options;
+    
+    const { loadDump = gLoadDump, trigger = "manual" } = options;
 
     
     

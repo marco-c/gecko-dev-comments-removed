@@ -36,7 +36,6 @@ const PREF_SETTINGS_SERVER_BACKOFF = "server.backoff";
 const PREF_SETTINGS_LAST_UPDATE = "last_update_seconds";
 const PREF_SETTINGS_LAST_ETAG = "last_etag";
 const PREF_SETTINGS_CLOCK_SKEW_SECONDS = "clock_skew_seconds";
-const PREF_SETTINGS_LOAD_DUMP = "load_dump";
 
 
 const TELEMETRY_COMPONENT = "remotesettings";
@@ -295,9 +294,6 @@ function remoteSettingsFunction() {
     gPrefs.setIntPref(PREF_SETTINGS_LAST_UPDATE, checkedServerTimeInSeconds);
 
     
-    const loadDump = gPrefs.getBoolPref(PREF_SETTINGS_LOAD_DUMP, true);
-
-    
     
     let firstError;
     for (const change of changes) {
@@ -311,7 +307,7 @@ function remoteSettingsFunction() {
       
       
       try {
-        await client.maybeSync(last_modified, { loadDump, trigger });
+        await client.maybeSync(last_modified, { trigger });
 
         
         Services.prefs.setIntPref(
