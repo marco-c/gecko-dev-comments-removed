@@ -339,13 +339,21 @@ class RefTest(object):
             profile = mozprofile.Profile(**kwargs)
 
         
-        profile_data_dir = os.path.join(SCRIPT_DIRECTORY, 'profile_data')
 
+        
+        
+        profile_data_dir = os.path.join(SCRIPT_DIRECTORY, 'profile_data')
         
         
         
         if build_obj:
             path = os.path.join(build_obj.topsrcdir, 'testing', 'profiles')
+            if os.path.isdir(path):
+                profile_data_dir = path
+        
+        if not os.path.isdir(profile_data_dir):
+            path = os.path.abspath(os.path.join(SCRIPT_DIRECTORY, '..', '..', '..',
+                                                'testing', 'profiles'))
             if os.path.isdir(path):
                 profile_data_dir = path
 
@@ -483,9 +491,6 @@ class RefTest(object):
         if options.enable_webrender:
             browserEnv["MOZ_WEBRENDER"] = "1"
             browserEnv["MOZ_ACCELERATED"] = "1"
-            
-            browserEnv["MOZ_X_SYNC"] = "1"
-            browserEnv["GDK_SYNCHRONIZE"] = "1"
         else:
             browserEnv["MOZ_WEBRENDER"] = "0"
 
