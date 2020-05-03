@@ -1011,12 +1011,13 @@ class ModalPrompter {
     if (browsingContext && domWin) {
       throw new Error("Pass either browsingContext or domWin");
     }
-    this.browsingContext = browsingContext;
+    
+    this.browsingContext = browsingContext?.top;
     this._domWin = domWin;
 
     if (this._domWin) {
       
-      this.browsingContext = BrowsingContext.getFromWindow(this._domWin);
+      this.browsingContext = BrowsingContext.getFromWindow(this._domWin)?.top;
     } else if (this.browsingContext) {
       
       if (this.browsingContext.window) {
@@ -1055,8 +1056,7 @@ class ModalPrompter {
     if (
       !this.browsingContext ||
       !this._domWin ||
-      (this._domWin.isChromeWindow &&
-        !this.browsingContext.top.embedderElement) ||
+      (this._domWin.isChromeWindow && !this.browsingContext.embedderElement) ||
       !ModalPrompter.tabModalEnabled
     ) {
       modalType = Ci.nsIPrompt.MODAL_TYPE_WINDOW;
