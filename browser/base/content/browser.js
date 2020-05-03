@@ -8740,6 +8740,13 @@ var PanicButtonNotifier = {
       this.notify();
     }
   },
+  createPanelIfNeeded() {
+    
+    if (!document.getElementById("panic-button-success-notification")) {
+      let template = document.getElementById("panicButtonNotificationTemplate");
+      template.replaceWith(template.content);
+    }
+  },
   notify() {
     if (!this._initialized) {
       window.PanicButtonNotifierShouldNotify = true;
@@ -8747,6 +8754,7 @@ var PanicButtonNotifier = {
     }
     
     try {
+      this.createPanelIfNeeded();
       let popup = document.getElementById("panic-button-success-notification");
       popup.hidden = false;
       
