@@ -1459,22 +1459,6 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<nsIContent> SplitNodeWithTransaction(
-      const EditorDOMPoint& aStartOfRightNode, ErrorResult& aResult);
-
-  
-
-
-
-
   MOZ_CAN_RUN_SCRIPT nsresult MoveNodeWithTransaction(
       nsIContent& aContent, const EditorDOMPoint& aPointToInsert);
 
