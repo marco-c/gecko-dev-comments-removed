@@ -153,6 +153,12 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
   bool threads =
       cx->realm() &&
       cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled();
+#if defined(JS_CODEGEN_ARM64)
+  bool reftypesOnArm64 = cx->options().wasmReftypes();
+#else
+  
+  bool reftypesOnArm64 = false;
+#endif
   if (reason) {
     char sep = 0;
     if (debug && !Append(reason, "debug", &sep)) {
@@ -167,8 +173,11 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
     if (threads && !Append(reason, "threads", &sep)) {
       return false;
     }
+    if (reftypesOnArm64 && !Append(reason, "reftypes", &sep)) {
+      return false;
+    }
   }
-  *isDisabled = debug || gc || multiValue || threads;
+  *isDisabled = debug || gc || multiValue || threads || reftypesOnArm64;
   return true;
 }
 
@@ -183,7 +192,8 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
 bool wasm::ReftypesAvailable(JSContext* cx) {
   
 #ifdef ENABLE_WASM_REFTYPES
-  return true;
+  return cx->options().wasmReftypes() &&
+         (BaselineAvailable(cx) || IonAvailable(cx) || CraneliftAvailable(cx));
 #else
   return false;
 #endif
