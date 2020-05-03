@@ -3931,7 +3931,7 @@ void Document::OnParsingCompleted() {
 }
 
 void Document::InitialTranslationCompleted() {
-  if (mDocumentL10n->mBlockingLayout) {
+  if (mDocumentL10n && mDocumentL10n->mBlockingLayout) {
     
     
     
