@@ -326,17 +326,25 @@ void RTCRtpReceiver::UpdateTransport() {
 
   UniquePtr<MediaPipelineFilter> filter;
 
-  if (mJsepTransceiver->HasBundleLevel() &&
-      mJsepTransceiver->mRecvTrack.GetNegotiatedDetails()) {
-    filter = MakeUnique<MediaPipelineFilter>();
+  auto const& details = mJsepTransceiver->mRecvTrack.GetNegotiatedDetails();
+  if (mJsepTransceiver->HasBundleLevel() && details) {
+    std::vector<webrtc::RtpExtension> extmaps;
+    details->ForEachRTPHeaderExtension(
+        [&extmaps](const SdpExtmapAttributeList::Extmap& extmap) {
+          extmaps.emplace_back(extmap.extensionname, extmap.entry);
+        });
+    filter = MakeUnique<MediaPipelineFilter>(extmaps);
 
     
     
     for (unsigned int ssrc : mJsepTransceiver->mRecvTrack.GetSsrcs()) {
       filter->AddRemoteSSRC(ssrc);
     }
-
-    
+    auto mid = Maybe<std::string>();
+    if (GetMid() != "") {
+      mid = Some(GetMid());
+    }
+    filter->SetRemoteMediaStreamId(mid);
 
     
     auto uniquePts = mJsepTransceiver->mRecvTrack.GetNegotiatedDetails()

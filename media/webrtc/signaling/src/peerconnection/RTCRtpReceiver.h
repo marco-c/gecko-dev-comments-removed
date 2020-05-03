@@ -108,7 +108,6 @@ class RTCRtpReceiver : public nsISupports,
   nsresult UpdateVideoConduit();
   nsresult UpdateAudioConduit();
 
-  
   std::string GetMid() const;
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;

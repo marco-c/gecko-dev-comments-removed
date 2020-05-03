@@ -10,54 +10,136 @@
 #include "MediaPipelineFilter.h"
 
 #include "webrtc/common_types.h"
-
+#include "webrtc/api/rtpparameters.h"
 #include "mozilla/Logging.h"
 
 
 extern mozilla::LazyLogModule gMediaPipelineLog;
 
+#define DEBUG_LOG(x) MOZ_LOG(gMediaPipelineLog, LogLevel::Debug, x)
+
 namespace mozilla {
+MediaPipelineFilter::MediaPipelineFilter(
+    const std::vector<webrtc::RtpExtension>& aExtMap)
+    : mExtMap(aExtMap) {}
 
-MediaPipelineFilter::MediaPipelineFilter() : correlator_(0) {}
+void MediaPipelineFilter::SetRemoteMediaStreamId(const Maybe<std::string>& aMid) {
+  if (aMid != mRemoteMid) {
+    DEBUG_LOG(("MediaPipelineFilter added new remote RTP MID: '%s'.",
+               aMid.valueOr("").c_str()));
+    mRemoteMidBinding = Nothing();
+    mRemoteMid = aMid;
+  }
+}
 
-bool MediaPipelineFilter::Filter(const webrtc::RTPHeader& header,
-                                 uint32_t correlator) {
-  if (correlator) {
-    
-    
-    if (correlator == correlator_) {
-      AddRemoteSSRC(header.ssrc);
+void MediaPipelineFilter::AddRtpExtensionMapping(
+    const webrtc::RtpExtension& aExt) {
+  mExtMap.push_back(aExt);
+}
+
+Maybe<webrtc::RtpExtension> MediaPipelineFilter::GetRtpExtension(
+    const std::string& aUri) const {
+  for (const auto& ext : mExtMap) {
+    if (ext.uri == aUri) {
+      return Some(ext);
+    }
+  }
+  return Nothing();
+}
+
+bool MediaPipelineFilter::Filter(const webrtc::RTPHeader& header) {
+  DEBUG_LOG(("MediaPipelineFilter inspecting seq# %u SSRC: %u",
+             header.sequenceNumber, header.ssrc));
+
+  auto fromStreamId = [&](const webrtc::StreamId& aId) {
+    return Maybe<std::string>(aId.empty() ? Nothing() : Some(aId.data()));
+  };
+
+  
+  
+  
+
+  const auto& mid = fromStreamId(header.extension.mid);
+
+  
+  if (mRemoteMidBinding == Some(header.ssrc) && mid && mRemoteMid != mid) {
+    mRemoteMidBinding = Nothing();
+  }
+  
+  if (mid && mRemoteMid == mid) {
+    DEBUG_LOG(("MediaPipelineFilter learned SSRC: %u for MID: '%s'",
+               header.ssrc, mRemoteMid.value().c_str()));
+    mRemoteMidBinding = Some(header.ssrc);
+  }
+  
+  if (mRemoteMidBinding) {
+    MOZ_ASSERT(mRemoteMid != Nothing());
+    if (mRemoteMidBinding == Some(header.ssrc)) {
+      DEBUG_LOG(
+          ("MediaPipelineFilter SSRC: %u matched for MID: '%s'."
+           " passing packet",
+           header.ssrc, mRemoteMid.value().c_str()));
       return true;
     }
-    
-    
-    remote_ssrc_set_.erase(header.ssrc);
+    DEBUG_LOG(
+        ("MediaPipelineFilter SSRC: %u did not match bound SSRC %u for"
+         " MID: '%s'. ignoring packet",
+         header.ssrc, mRemoteMidBinding.value(), mRemoteMid.value().c_str()));
     return false;
   }
 
-  if (!header.extension.stream_id.empty() && !remote_rid_set_.empty() &&
-      remote_rid_set_.count(header.extension.stream_id.data())) {
-    return true;
-  }
-  if (!header.extension.stream_id.empty()) {
-    MOZ_LOG(gMediaPipelineLog, LogLevel::Debug,
-            ("MediaPipelineFilter ignoring seq# %u ssrc: %u RID: %s",
-             header.sequenceNumber, header.ssrc,
-             header.extension.stream_id.data()));
-  }
+  
+  
+  
 
-  if (remote_ssrc_set_.count(header.ssrc)) {
-    return true;
+  const auto streamId = fromStreamId(header.extension.stream_id);
+  if (streamId && !remote_rid_set_.empty()) {
+    if (remote_rid_set_.count(streamId.value())) {
+      DEBUG_LOG(("MediaPipelineFilter RID: %s matched. passing packet",
+                 streamId.value().c_str()));
+      return true;
+    }
+    DEBUG_LOG(("MediaPipelineFilter RID: %s did not match any of %zu RIDs",
+               streamId.value().c_str(), remote_rid_set_.size()));
   }
 
   
+  
+  
+
+  if (remote_ssrc_set_.count(header.ssrc)) {
+    DEBUG_LOG(
+        ("MediaPipelineFilter SSRC: %u matched remote SSRC set."
+         " passing packet",
+         header.ssrc));
+    return true;
+  }
+  DEBUG_LOG(
+      ("MediaPipelineFilter SSRC: %u did not match any of %zu"
+       " remote SSRCS.",
+       header.ssrc, remote_ssrc_set_.size()));
+
+  
+  
+  
+
   if (payload_type_set_.count(header.payloadType)) {
+    DEBUG_LOG(
+        ("MediaPipelineFilter payload-type: %u matched %zu"
+         " unique payload type. learning ssrc. passing packet",
+         header.ssrc, remote_ssrc_set_.size()));
     
     
     AddRemoteSSRC(header.ssrc);
     return true;
   }
-
+  DEBUG_LOG(
+      ("MediaPipelineFilter payload-type: %u did not match any of %zu"
+       " unique payload-types.",
+       header.payloadType, payload_type_set_.size()));
+  DEBUG_LOG(
+      ("MediaPipelineFilter packet failed to match any criteria."
+       " ignoring packet"));
   return false;
 }
 
@@ -73,10 +155,6 @@ void MediaPipelineFilter::AddUniquePT(uint8_t payload_type) {
   payload_type_set_.insert(payload_type);
 }
 
-void MediaPipelineFilter::SetCorrelator(uint32_t correlator) {
-  correlator_ = correlator;
-}
-
 void MediaPipelineFilter::Update(const MediaPipelineFilter& filter_update) {
   
   
@@ -84,9 +162,17 @@ void MediaPipelineFilter::Update(const MediaPipelineFilter& filter_update) {
   if (!filter_update.remote_ssrc_set_.empty()) {
     remote_ssrc_set_ = filter_update.remote_ssrc_set_;
   }
-
+  
+  
+  if (filter_update.mRemoteMidBinding ||
+      (filter_update.mRemoteMid && filter_update.mRemoteMid != mRemoteMid)) {
+    mRemoteMid = filter_update.mRemoteMid;
+    mRemoteMidBinding = filter_update.mRemoteMidBinding;
+  }
   payload_type_set_ = filter_update.payload_type_set_;
-  correlator_ = filter_update.correlator_;
+
+  
+  mExtMap = filter_update.mExtMap;
 }
 
 }  

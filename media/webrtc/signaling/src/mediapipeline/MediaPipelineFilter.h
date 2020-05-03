@@ -16,6 +16,8 @@
 
 #include <set>
 
+#include "mozilla/Maybe.h"
+
 namespace webrtc {
 struct RTPHeader;
 }
@@ -44,36 +46,46 @@ namespace mozilla {
 
 
 
+
+
 class MediaPipelineFilter {
  public:
-  MediaPipelineFilter();
+  MediaPipelineFilter() = default;
+  explicit MediaPipelineFilter(
+      const std::vector<webrtc::RtpExtension>& aExtMap);
 
   
   
   
-  bool Filter(const webrtc::RTPHeader& header, uint32_t correlator = 0);
+  bool Filter(const webrtc::RTPHeader& header);
 
   void AddRemoteSSRC(uint32_t ssrc);
   void AddRemoteRtpStreamId(const std::string& rtp_strm_id);
+  
+  void AddRtpExtensionMapping(const webrtc::RtpExtension& aExt);
+
+  void SetRemoteMediaStreamId(const Maybe<std::string>& aMid);
 
   
   void AddUniquePT(uint8_t payload_type);
-  void SetCorrelator(uint32_t correlator);
 
   void Update(const MediaPipelineFilter& filter_update);
 
- private:
-  
-  static const size_t PT_OFFSET = 1;
-  
-  static const size_t FIRST_SSRC_OFFSET = 4;
+  std::vector<webrtc::RtpExtension> GetExtmap() const { return mExtMap; }
 
-  uint32_t correlator_;
+ private:
+  Maybe<webrtc::RtpExtension> GetRtpExtension(const std::string& aUri) const;
   
   
   std::set<uint32_t> remote_ssrc_set_;
   std::set<uint8_t> payload_type_set_;
+  
   std::set<std::string> remote_rid_set_;
+  Maybe<std::string> mRemoteMid;
+  Maybe<uint32_t> mRemoteMidBinding;
+  
+  
+  std::vector<webrtc::RtpExtension> mExtMap;
 };
 
 }  
