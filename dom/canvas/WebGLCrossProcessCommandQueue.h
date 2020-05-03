@@ -21,7 +21,9 @@ using mozilla::webgl::ProducerConsumerQueue;
 
 
 
-using ClientWebGLCommandSource = SyncCommandSource<size_t>;
+using ClientWebGLCommandSourceP =
+    SyncCommandSource<size_t, mozilla::webgl::PcqProducer,
+                      mozilla::webgl::ProducerConsumerQueue>;
 
 
 
@@ -29,11 +31,14 @@ using ClientWebGLCommandSource = SyncCommandSource<size_t>;
 
 
 
-class HostWebGLCommandSink final : public SyncCommandSink<size_t> {
+template <typename Consumer, typename Queue>
+class HostWebGLCommandSink final
+    : public SyncCommandSink<size_t, Consumer, Queue> {
  public:
   HostWebGLCommandSink(UniquePtr<Consumer>&& aConsumer,
-                       UniquePtr<Producer>&& aResponseProducer)
-      : SyncCommandSink(std::move(aConsumer), std::move(aResponseProducer)) {}
+                       UniquePtr<typename Queue::Producer>&& aResponseProducer)
+      : SyncCommandSink<size_t, Consumer, Queue>(
+            std::move(aConsumer), std::move(aResponseProducer)) {}
 
   HostWebGLContext* mHostContext = nullptr;
 
@@ -46,13 +51,18 @@ class HostWebGLCommandSink final : public SyncCommandSink<size_t> {
   bool DispatchCommand(size_t command) override;
 };
 
+using HostWebGLCommandSinkP =
+    HostWebGLCommandSink<mozilla::webgl::PcqConsumer,
+                         mozilla::webgl::ProducerConsumerQueue>;
+
 namespace ipc {
 
-template <>
-struct IPDLParamTraits<mozilla::HostWebGLCommandSink>
-    : public IPDLParamTraits<mozilla::SyncCommandSink<size_t>> {
+template <typename Consumer, typename Queue>
+struct IPDLParamTraits<mozilla::HostWebGLCommandSink<Consumer, Queue>>
+    : public IPDLParamTraits<
+          mozilla::SyncCommandSink<size_t, Consumer, Queue>> {
  public:
-  typedef mozilla::HostWebGLCommandSink paramType;
+  typedef mozilla::HostWebGLCommandSink<Consumer, Queue> paramType;
 };
 
 }  
