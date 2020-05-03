@@ -2,9 +2,12 @@
 
 function assert_ArrayBuffer(actual, expected, message) {
   
-  const bufferType = expected.shared ? self.SharedArrayBuffer : ArrayBuffer;
-  assert_equals(Object.getPrototypeOf(actual), bufferType.prototype,
-                `${message}: prototype`);
+  
+  const isShared = !("isView" in actual.constructor);
+  assert_equals(isShared, expected.shared, `${message}: constructor`);
+  const sharedString = expected.shared ? "Shared" : "";
+  assert_equals(actual.toString(), `[object ${sharedString}ArrayBuffer]`, `${message}: toString()`);
+  assert_equals(Object.getPrototypeOf(actual).toString(), `[object ${sharedString}ArrayBuffer]`, `${message}: prototype toString()`);
   if (expected.detached) {
     
     let byteLength;
