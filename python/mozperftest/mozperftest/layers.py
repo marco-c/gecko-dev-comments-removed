@@ -134,20 +134,7 @@ class Layers(Layer):
                 "%r tried to set %r, but does not own it" % (self.name, name)
             )
 
-        
-        
         return self.env.set_arg(name, value)
 
     def get_arg(self, name, default=None):
         return self.env.get_arg(name, default)
-
-    
-    def _call_env(self, name):
-        def _call(*args, **kw):
-            return [getattr(layer, name)(*args, **kw) for layer in self.layers]
-
-        return _call
-
-    
-    def __getattr__(self, name):
-        return self._call_env(name)
