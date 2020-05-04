@@ -71,22 +71,18 @@ class ReferrerInfo : public nsIReferrerInfo {
       const Maybe<nsCString>& aComputedReferrer = Maybe<nsCString>());
 
   
-  explicit ReferrerInfo(const Element&);
-  explicit ReferrerInfo(const Document&);
+  already_AddRefed<nsIReferrerInfo> Clone() const;
 
   
-  already_AddRefed<ReferrerInfo> Clone() const;
-
-  
-  already_AddRefed<ReferrerInfo> CloneWithNewPolicy(
+  already_AddRefed<nsIReferrerInfo> CloneWithNewPolicy(
       ReferrerPolicyEnum aPolicy) const;
 
   
-  already_AddRefed<ReferrerInfo> CloneWithNewSendReferrer(
+  already_AddRefed<nsIReferrerInfo> CloneWithNewSendReferrer(
       bool aSendReferrer) const;
 
   
-  already_AddRefed<ReferrerInfo> CloneWithNewOriginalReferrer(
+  already_AddRefed<nsIReferrerInfo> CloneWithNewOriginalReferrer(
       nsIURI* aOriginalReferrer) const;
 
   
@@ -316,6 +312,20 @@ class ReferrerInfo : public nsIReferrerInfo {
     ePolicySendWhenSameDomain = 1,
     ePolicySendWhenSameHost = 2,
   };
+
+  
+
+
+
+
+
+  void GetReferrerPolicyFromAtribute(nsINode* aNode,
+                                     ReferrerPolicyEnum& aPolicy) const;
+
+  
+
+
+  bool HasRelNoReferrer(nsINode* aNode) const;
 
   
 

@@ -11996,6 +11996,7 @@ nsresult nsDocShell::OnLinkClickSync(
   
   
   RefPtr<Document> referrerDoc = aContent->OwnerDoc();
+  NS_ENSURE_TRUE(referrerDoc, NS_ERROR_UNEXPECTED);
 
   
   
@@ -12028,9 +12029,12 @@ nsresult nsDocShell::OnLinkClickSync(
   GetIsExecutingOnLoadHandler(&inOnLoadHandler);
   uint32_t loadType = inOnLoadHandler ? LOAD_NORMAL_REPLACE : LOAD_LINK;
 
-  nsCOMPtr<nsIReferrerInfo> referrerInfo =
-      isElementAnchorOrArea ? new ReferrerInfo(*aContent->AsElement())
-                            : new ReferrerInfo(*referrerDoc);
+  nsCOMPtr<nsIReferrerInfo> referrerInfo = new ReferrerInfo();
+  if (isElementAnchorOrArea) {
+    referrerInfo->InitWithNode(aContent);
+  } else {
+    referrerInfo->InitWithDocument(referrerDoc);
+  }
 
   RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(aURI);
   loadState->SetReferrerInfo(referrerInfo);

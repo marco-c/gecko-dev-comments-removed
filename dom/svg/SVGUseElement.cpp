@@ -358,7 +358,9 @@ void SVGUseElement::UpdateShadowTree() {
 
   
   
-  auto referrerInfo = MakeRefPtr<ReferrerInfo>(*this);
+  nsCOMPtr<nsIReferrerInfo> referrerInfo = new mozilla::dom::ReferrerInfo();
+  referrerInfo->InitWithNode(this);
+
   mContentURLData = new URLExtraData(baseURI.forget(), referrerInfo.forget(),
                                      do_AddRef(NodePrincipal()));
 

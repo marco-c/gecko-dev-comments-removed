@@ -1145,17 +1145,22 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
   
   
   
-  Element* element = AsContent()->AsElement();
-  MOZ_ASSERT(element->NodePrincipal() == aDocument->NodePrincipal(),
+#ifdef DEBUG
+  nsIContent* thisContent = AsContent();
+  MOZ_ASSERT(thisContent->NodePrincipal() == aDocument->NodePrincipal(),
              "Principal mismatch?");
+#endif
 
   nsLoadFlags loadFlags =
       aLoadFlags | nsContentUtils::CORSModeToLoadImageFlags(GetCORSMode());
 
   RefPtr<imgRequestProxy>& req = PrepareNextRequest(aImageLoadType);
+  nsCOMPtr<nsIContent> content =
+      do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
+
   nsCOMPtr<nsIPrincipal> triggeringPrincipal;
   bool result = nsContentUtils::QueryTriggeringPrincipal(
-      element, aTriggeringPrincipal, getter_AddRefs(triggeringPrincipal));
+      content, aTriggeringPrincipal, getter_AddRefs(triggeringPrincipal));
 
   
   
@@ -1164,10 +1169,14 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
       result ? nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON
              : PolicyTypeForLoad(aImageLoadType);
 
-  auto referrerInfo = MakeRefPtr<ReferrerInfo>(*element);
+  nsCOMPtr<nsINode> thisNode =
+      do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
+  nsCOMPtr<nsIReferrerInfo> referrerInfo = new ReferrerInfo();
+  referrerInfo->InitWithNode(thisNode);
+
   nsresult rv = nsContentUtils::LoadImage(
-      aNewURI, element, aDocument, triggeringPrincipal, 0, referrerInfo, this,
-      loadFlags, element->LocalName(), getter_AddRefs(req), policyType,
+      aNewURI, thisNode, aDocument, triggeringPrincipal, 0, referrerInfo, this,
+      loadFlags, content->LocalName(), getter_AddRefs(req), policyType,
       mUseUrgentStartForChannel);
 
   
@@ -1323,6 +1332,7 @@ void nsImageLoadingContent::UpdateImageState(bool aNotify) {
     }
   }
 
+  NS_ASSERTION(thisContent->IsElement(), "Not an element?");
   thisContent->AsElement()->UpdateState(aNotify);
 }
 
