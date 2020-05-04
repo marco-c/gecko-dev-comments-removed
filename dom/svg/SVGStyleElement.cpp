@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/SVGStyleElement.h"
 
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/SVGStyleElementBinding.h"
 #include "nsCOMPtr.h"
@@ -172,15 +173,13 @@ void SVGStyleElement::SetTitle(const nsAString& aTitle, ErrorResult& rv) {
 
 
 Maybe<nsStyleLinkElement::SheetInfo> SVGStyleElement::GetStyleSheetInfo() {
-  if (!IsCSSMimeTypeAttribute(*this)) {
+  if (!IsCSSMimeTypeAttributeForStyleElement(*this)) {
     return Nothing();
   }
 
   nsAutoString title;
   nsAutoString media;
   GetTitleAndMediaForElement(*this, title, media);
-  nsCOMPtr<nsIReferrerInfo> referrerInfo = new ReferrerInfo();
-  referrerInfo->InitWithNode(this);
 
   return Some(SheetInfo{
       *OwnerDoc(),
@@ -191,7 +190,7 @@ Maybe<nsStyleLinkElement::SheetInfo> SVGStyleElement::GetStyleSheetInfo() {
       nullptr,
       
       
-      referrerInfo.forget(),
+      MakeAndAddRef<ReferrerInfo>(*this),
       AttrValueToCORSMode(GetParsedAttr(nsGkAtoms::crossorigin)),
       title,
       media,
