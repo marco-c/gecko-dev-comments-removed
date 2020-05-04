@@ -203,7 +203,7 @@ bool InvokeFunction(JSContext* cx, HandleObject obj, bool constructing,
   TraceLoggerThread* logger = TraceLoggerForCurrentThread(cx);
   TraceLogStartEvent(logger, TraceLogger_Call);
 
-  AutoArrayRooter argvRoot(cx, argc + 1 + constructing, argv);
+  RootedExternalValueArray argvRoot(cx, argc + 1 + constructing, argv);
 
   
   RootedValue thisv(cx, argv[0]);

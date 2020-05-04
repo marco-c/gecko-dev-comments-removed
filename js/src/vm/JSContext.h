@@ -1117,10 +1117,11 @@ class MOZ_STACK_CLASS ExternalValueArray {
 };
 
 
-class MOZ_RAII AutoArrayRooter : public JS::Rooted<ExternalValueArray> {
+class MOZ_RAII RootedExternalValueArray
+    : public JS::Rooted<ExternalValueArray> {
  public:
-  AutoArrayRooter(JSContext* cx, size_t len,
-                  Value* vec MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+  RootedExternalValueArray(JSContext* cx, size_t len,
+                           Value* vec MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : JS::Rooted<ExternalValueArray>(cx, ExternalValueArray(len, vec)) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
   }
