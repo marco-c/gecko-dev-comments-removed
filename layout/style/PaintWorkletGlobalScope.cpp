@@ -27,11 +27,8 @@ bool PaintWorkletGlobalScope::WrapGlobalObject(
   
   
   
-  
-  
-  bool defineSharedArrayBufferConstructor = true;
   options.creationOptions().setDefineSharedArrayBufferConstructor(
-      defineSharedArrayBufferConstructor);
+      IsSharedMemoryAllowed());
 
   JS::AutoHoldPrincipals principals(aCx, new WorkletPrincipals(mImpl));
   return PaintWorkletGlobalScope_Binding::Wrap(

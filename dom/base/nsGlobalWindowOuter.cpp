@@ -2226,8 +2226,6 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
       
 
       
-
-      
       
       rv = CreateNativeGlobalForInner(
           cx, newInnerWindow, aDocument->GetDocumentURI(),

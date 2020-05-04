@@ -46,11 +46,8 @@ bool AudioWorkletGlobalScope::WrapGlobalObject(
   
   
   
-  
-  
-  bool defineSharedArrayBufferConstructor = true;
   options.creationOptions().setDefineSharedArrayBufferConstructor(
-      defineSharedArrayBufferConstructor);
+      IsSharedMemoryAllowed());
 
   JS::AutoHoldPrincipals principals(aCx, new WorkletPrincipals(mImpl));
   return AudioWorkletGlobalScope_Binding::Wrap(
