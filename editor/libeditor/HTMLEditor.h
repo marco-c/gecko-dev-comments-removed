@@ -1281,7 +1281,7 @@ class HTMLEditor final : public TextEditor,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  CreateStyleForInsertText(dom::AbstractRange& aAbstractRange);
+  CreateStyleForInsertText(const dom::AbstractRange& aAbstractRange);
 
   
 

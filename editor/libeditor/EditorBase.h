@@ -2258,7 +2258,7 @@ class EditorBase : public nsIEditor,
 
 
   already_AddRefed<EditTransactionBase> CreateTransactionForCollapsedRange(
-      nsRange& aCollapsedRange,
+      const nsRange& aCollapsedRange,
       HowToHandleCollapsedRange aHowToHandleCollapsedRange);
 
  private:
