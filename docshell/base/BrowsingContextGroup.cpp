@@ -5,8 +5,11 @@
 
 
 #include "mozilla/dom/BrowsingContextGroup.h"
+
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/BrowsingContextBinding.h"
 #include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -48,22 +51,14 @@ BrowsingContextGroup::BrowsingContextGroup(uint64_t aId) : mId(aId) {
       GetMainThreadSerialEventTarget(), "BrowsingContextGroup worker queue");
 }
 
-bool BrowsingContextGroup::Contains(BrowsingContext* aBrowsingContext) {
-  return aBrowsingContext->Group() == this;
+void BrowsingContextGroup::Register(nsISupports* aContext) {
+  MOZ_DIAGNOSTIC_ASSERT(aContext);
+  mContexts.PutEntry(aContext);
 }
 
-void BrowsingContextGroup::Register(BrowsingContext* aBrowsingContext) {
-  MOZ_DIAGNOSTIC_ASSERT(aBrowsingContext);
-  MOZ_DIAGNOSTIC_ASSERT(this == sChromeGroup ? aBrowsingContext->IsChrome()
-                                             : aBrowsingContext->IsContent(),
-                        "Only chrome BCs may exist in the chrome group, and "
-                        "only content BCs may exist in other groups");
-  mContexts.PutEntry(aBrowsingContext);
-}
-
-void BrowsingContextGroup::Unregister(BrowsingContext* aBrowsingContext) {
-  MOZ_DIAGNOSTIC_ASSERT(aBrowsingContext);
-  mContexts.RemoveEntry(aBrowsingContext);
+void BrowsingContextGroup::Unregister(nsISupports* aContext) {
+  MOZ_DIAGNOSTIC_ASSERT(aContext);
+  mContexts.RemoveEntry(aContext);
 
   if (mContexts.IsEmpty()) {
     
@@ -90,11 +85,11 @@ void BrowsingContextGroup::Unsubscribe(ContentParent* aOriginProcess) {
   
   
   
+  
   nsTArray<RefPtr<BrowsingContext>> toDiscard;
-  for (auto& context : mContexts) {
-    if (context.GetKey()->Canonical()->IsEmbeddedInProcess(
-            aOriginProcess->ChildID())) {
-      toDiscard.AppendElement(context.GetKey());
+  for (auto& context : mToplevels) {
+    if (context->Canonical()->IsEmbeddedInProcess(aOriginProcess->ChildID())) {
+      toDiscard.AppendElement(context);
     }
   }
   for (auto& context : toDiscard) {
@@ -128,7 +123,7 @@ void BrowsingContextGroup::EnsureSubscribed(ContentParent* aProcess) {
   
   
   
-  nsTArray<SyncedContextInitializer> inits(mContexts.Count() * 2);
+  nsTArray<SyncedContextInitializer> inits(mContexts.Count());
   CollectContextInitializers(mToplevels, inits);
 
   

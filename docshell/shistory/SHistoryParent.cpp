@@ -5,11 +5,15 @@
 
 
 #include "SHistoryParent.h"
+
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/SHEntryParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ContentProcessManager.h"
-#include "nsTHashtable.h"
+#include "mozilla/dom/PContentParent.h"
 #include "mozilla/Logging.h"
+#include "nsTHashtable.h"
+#include "SHEntryChild.h"
 
 extern mozilla::LazyLogModule gSHistoryLog;
 

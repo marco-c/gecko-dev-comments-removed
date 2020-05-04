@@ -5,6 +5,8 @@
 
 
 #include "nsWebNavigationInfo.h"
+
+#include "mozilla/dom/BrowsingContext.h"
 #include "nsIWebNavigation.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIDocumentLoaderFactory.h"
