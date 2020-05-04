@@ -11246,23 +11246,12 @@ bool nsIFrame::IsStackingContext() {
 static bool IsFrameScrolledOutOfView(const nsIFrame* aTarget,
                                      const nsRect& aTargetRect,
                                      const nsIFrame* aParent) {
-  
-  
-  nsIFrame* clipParent = nullptr;
-
-  if (aParent->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
-      nsLayoutUtils::IsReallyFixedPos(aParent)) {
-    
-    clipParent = aParent->GetParent();
-  } else {
-    nsIScrollableFrame* scrollableFrame =
-        nsLayoutUtils::GetNearestScrollableFrame(
-            const_cast<nsIFrame*>(aParent),
-            nsLayoutUtils::SCROLLABLE_INCLUDE_HIDDEN);
-    clipParent = do_QueryFrame(scrollableFrame);
-  }
-
-  if (!clipParent) {
+  nsIScrollableFrame* scrollableFrame =
+      nsLayoutUtils::GetNearestScrollableFrame(
+          const_cast<nsIFrame*>(aParent),
+          nsLayoutUtils::SCROLLABLE_FIXEDPOS_FINDS_ROOT |
+              nsLayoutUtils::SCROLLABLE_INCLUDE_HIDDEN);
+  if (!scrollableFrame) {
     
     
     
@@ -11270,30 +11259,32 @@ static bool IsFrameScrolledOutOfView(const nsIFrame* aTarget,
     return nsLayoutUtils::FrameIsScrolledOutOfViewInCrossProcess(aTarget);
   }
 
-  nsRect clipRect = clipParent->GetVisualOverflowRectRelativeToSelf();
+  nsIFrame* scrollableParent = do_QueryFrame(scrollableFrame);
+  nsRect scrollableRect =
+      scrollableParent->GetVisualOverflowRectRelativeToSelf();
   
   
-  if (clipRect.IsEmpty()) {
+  if (scrollableRect.IsEmpty()) {
     return true;
   }
 
   nsRect transformedRect = nsLayoutUtils::TransformFrameRectToAncestor(
-      aTarget, aTargetRect, clipParent);
+      aTarget, aTargetRect, scrollableParent);
 
   if (transformedRect.IsEmpty()) {
     
     
-    if (transformedRect.x > clipRect.XMost() ||
-        transformedRect.y > clipRect.YMost() ||
-        clipRect.x > transformedRect.XMost() ||
-        clipRect.y > transformedRect.YMost()) {
+    if (transformedRect.x > scrollableRect.XMost() ||
+        transformedRect.y > scrollableRect.YMost() ||
+        scrollableRect.x > transformedRect.XMost() ||
+        scrollableRect.y > transformedRect.YMost()) {
       return true;
     }
-  } else if (!transformedRect.Intersects(clipRect)) {
+  } else if (!transformedRect.Intersects(scrollableRect)) {
     return true;
   }
 
-  nsIFrame* parent = clipParent->GetParent();
+  nsIFrame* parent = scrollableParent->GetParent();
   if (!parent) {
     return false;
   }
