@@ -36,7 +36,7 @@ struct ValueArray {
 
 
 template <size_t N>
-using AutoValueArray = Rooted<ValueArray<N>>;
+using RootedValueArray = Rooted<ValueArray<N>>;
 
 
 
@@ -59,7 +59,7 @@ class HandleValueArray {
       : length_(values.length()), elements_(values.begin()) {}
 
   template <size_t N>
-  MOZ_IMPLICIT HandleValueArray(const AutoValueArray<N>& values)
+  MOZ_IMPLICIT HandleValueArray(const RootedValueArray<N>& values)
       : length_(N), elements_(values.begin()) {}
 
   
