@@ -31,15 +31,13 @@
 using namespace js;
 using namespace js::gc;
 
+using mozilla::LinkedList;
+
 using JS::AutoGCRooter;
 
 using RootRange = RootedValueMap::Range;
 using RootEntry = RootedValueMap::Entry;
 using RootEnum = RootedValueMap::Enum;
-
-template <typename T>
-using TraceFunction = void (*)(JSTracer* trc, T* ref, const char* name);
-
 
 
 
@@ -48,30 +46,40 @@ using TraceFunction = void (*)(JSTracer* trc, T* ref, const char* name);
 
 
 struct ConcreteTraceable {
-  ConcreteTraceable() { MOZ_CRASH("instantiation of ConcreteTraceable"); }
-  void trace(JSTracer*) {}
+  ConcreteTraceable() = delete;
+  void trace(JSTracer*) = delete;
 };
 
 template <typename T>
-static inline void TraceStackOrPersistentRoot(JSTracer* trc, T* thingp,
-                                              const char* name) {
+inline void RootedGCThingTraits<T>::trace(JSTracer* trc, T* thingp,
+                                          const char* name) {
   TraceNullableRoot(trc, thingp, name);
 }
 
-template <>
-inline void TraceStackOrPersistentRoot(JSTracer* trc, ConcreteTraceable* thingp,
-                                       const char* name) {
-  js::DispatchWrapper<ConcreteTraceable>::TraceWrapped(trc, thingp, name);
+template <typename T>
+inline void RootedTraceableTraits<T>::trace(JSTracer* trc,
+                                            VirtualTraceable* thingp,
+                                            const char* name) {
+  thingp->trace(trc, name);
+}
+
+template <typename T>
+inline void JS::Rooted<T>::trace(JSTracer* trc, const char* name) {
+  PtrTraits::trace(trc, &ptr, name);
+}
+
+template <typename T>
+inline void JS::PersistentRooted<T>::trace(JSTracer* trc, const char* name) {
+  PtrTraits::trace(trc, &ptr, name);
 }
 
 template <typename T>
 static inline void TraceExactStackRootList(JSTracer* trc,
-                                           JS::Rooted<void*>* rooter,
+                                           JS::Rooted<void*>* listHead,
                                            const char* name) {
-  while (rooter) {
-    T* addr = reinterpret_cast<JS::Rooted<T>*>(rooter)->address();
-    TraceStackOrPersistentRoot(trc, addr, name);
-    rooter = rooter->previous();
+  auto typedList = reinterpret_cast<JS::Rooted<T>*>(listHead);
+  for (JS::Rooted<T>* root = typedList; root; root = root->previous()) {
+    root->trace(trc, name);
   }
 }
 
@@ -103,11 +111,11 @@ static void TraceExactStackRoots(JSContext* cx, JSTracer* trc) {
 
 template <typename T>
 static inline void TracePersistentRootedList(
-    JSTracer* trc, mozilla::LinkedList<PersistentRooted<void*>>& list,
+    JSTracer* trc, LinkedList<PersistentRooted<void*>>& list,
     const char* name) {
-  for (PersistentRooted<void*>* r : list) {
-    TraceStackOrPersistentRoot(
-        trc, reinterpret_cast<PersistentRooted<T>*>(r)->address(), name);
+  auto& typedList = reinterpret_cast<LinkedList<PersistentRooted<T>>&>(list);
+  for (PersistentRooted<T>* root : typedList) {
+    root->trace(trc, name);
   }
 }
 
@@ -135,9 +143,8 @@ static void TracePersistentRooted(JSRuntime* rt, JSTracer* trc) {
 
 template <typename T>
 static void FinishPersistentRootedChain(
-    mozilla::LinkedList<PersistentRooted<void*>>& listArg) {
-  auto& list =
-      reinterpret_cast<mozilla::LinkedList<PersistentRooted<T>>&>(listArg);
+    LinkedList<PersistentRooted<void*>>& listArg) {
+  auto& list = reinterpret_cast<LinkedList<PersistentRooted<T>>&>(listArg);
   while (!list.isEmpty()) {
     list.getFirst()->reset();
   }
