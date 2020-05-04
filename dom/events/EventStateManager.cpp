@@ -5187,7 +5187,7 @@ nsresult EventStateManager::HandleMiddleClickPaste(
 
   
   
-  nsRange* range = selection->GetRangeAt(0);
+  const nsRange* range = selection->GetRangeAt(0);
   if (!range) {
     return NS_OK;
   }

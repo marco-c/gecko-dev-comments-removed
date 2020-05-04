@@ -1785,8 +1785,7 @@ bool nsFocusManager::IsNonFocusableRoot(nsIContent* aContent) {
   Document* doc = aContent->GetComposedDoc();
   NS_ASSERTION(doc, "aContent must have current document");
   return aContent == doc->GetRootElement() &&
-         (doc->HasFlag(NODE_IS_EDITABLE) || !aContent->IsEditable() ||
-          nsContentUtils::IsUserFocusIgnored(aContent));
+         (doc->HasFlag(NODE_IS_EDITABLE) || !aContent->IsEditable());
 }
 
 Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
@@ -1819,7 +1818,7 @@ Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
   
   
   if (aElement == doc->GetRootElement()) {
-    return nsContentUtils::IsUserFocusIgnored(aElement) ? nullptr : aElement;
+    return aElement;
   }
 
   
@@ -2514,10 +2513,7 @@ void nsFocusManager::SendFocusOrBlurEvent(
     aRelatedTarget = nullptr;
   }
 
-  bool dontDispatchEvent =
-      eventTargetDoc && nsContentUtils::IsUserFocusIgnored(eventTargetDoc);
-
-  if (!dontDispatchEvent && aDocument && aDocument->EventHandlingSuppressed()) {
+  if (aDocument && aDocument->EventHandlingSuppressed()) {
     for (uint32_t i = mDelayedBlurFocusEvents.Length(); i > 0; --i) {
       
       if (mDelayedBlurFocusEvents[i - 1].mEventMessage == aEventMessage &&
@@ -2550,16 +2546,11 @@ void nsFocusManager::FireFocusOrBlurEvent(EventMessage aEventMessage,
                                           nsISupports* aTarget,
                                           bool aWindowRaised, bool aIsRefocus,
                                           EventTarget* aRelatedTarget) {
-  nsCOMPtr<EventTarget> eventTarget = do_QueryInterface(aTarget);
-  nsCOMPtr<Document> eventTargetDoc = GetDocumentHelper(eventTarget);
   nsCOMPtr<nsPIDOMWindowOuter> currentWindow = mFocusedWindow;
   nsCOMPtr<nsPIDOMWindowInner> targetWindow = do_QueryInterface(aTarget);
   nsCOMPtr<Document> targetDocument = do_QueryInterface(aTarget);
   nsCOMPtr<nsIContent> currentFocusedContent =
       currentWindow ? currentWindow->GetFocusedElement() : nullptr;
-
-  bool dontDispatchEvent =
-      eventTargetDoc && nsContentUtils::IsUserFocusIgnored(eventTargetDoc);
 
 #ifdef ACCESSIBILITY
   nsAccessibilityService* accService = GetAccService();
@@ -2572,25 +2563,23 @@ void nsFocusManager::FireFocusOrBlurEvent(EventMessage aEventMessage,
   }
 #endif
 
-  if (!dontDispatchEvent) {
-    nsContentUtils::AddScriptRunner(
-        new FocusBlurEvent(aTarget, aEventMessage, aPresShell->GetPresContext(),
-                           aWindowRaised, aIsRefocus, aRelatedTarget));
+  nsContentUtils::AddScriptRunner(
+      new FocusBlurEvent(aTarget, aEventMessage, aPresShell->GetPresContext(),
+                         aWindowRaised, aIsRefocus, aRelatedTarget));
 
-    
-    
-    
-    
-    
-    
-    
-    if (!targetWindow && !targetDocument) {
-      EventMessage focusInOrOutMessage =
-          aEventMessage == eFocus ? eFocusIn : eFocusOut;
-      FireFocusInOrOutEvent(focusInOrOutMessage, aPresShell, aTarget,
-                            currentWindow, currentFocusedContent,
-                            aRelatedTarget);
-    }
+  
+  
+  
+  
+  
+  
+  
+  if (!targetWindow && !targetDocument) {
+    EventMessage focusInOrOutMessage =
+        aEventMessage == eFocus ? eFocusIn : eFocusOut;
+    FireFocusInOrOutEvent(focusInOrOutMessage, aPresShell, aTarget,
+                          currentWindow, currentFocusedContent,
+                          aRelatedTarget);
   }
 }
 
@@ -2849,7 +2838,7 @@ nsresult nsFocusManager::GetSelectionLocation(Document* aDocument,
   uint32_t startOffset = 0;
   if (domSelection) {
     isCollapsed = domSelection->IsCollapsed();
-    RefPtr<nsRange> domRange = domSelection->GetRangeAt(0);
+    RefPtr<const nsRange> domRange = domSelection->GetRangeAt(0);
     if (domRange) {
       nsCOMPtr<nsINode> startNode = domRange->GetStartContainer();
       nsCOMPtr<nsINode> endNode = domRange->GetEndContainer();
