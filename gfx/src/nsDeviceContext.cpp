@@ -137,8 +137,9 @@ nsFontCache::Observe(nsISupports*, const char* aTopic, const char16_t*) {
 
 already_AddRefed<nsFontMetrics> nsFontCache::GetMetricsFor(
     const nsFont& aFont, const nsFontMetrics::Params& aParams) {
-  nsAtom* language =
-      aParams.language ? aParams.language : mLocaleLanguage.get();
+  nsAtom* language = aParams.language && !aParams.language->IsEmpty()
+                         ? aParams.language
+                         : mLocaleLanguage.get();
 
   
   
