@@ -208,7 +208,7 @@ OutputParser.prototype = {
       } else if (
         token.tokenType === "function" &&
         token.text === "var" &&
-        options.isVariableInUse
+        options.getVariableValue
       ) {
         sawVariable = true;
         const { node } = this._parseVariable(token, text, tokenStream, options);
@@ -220,7 +220,7 @@ OutputParser.prototype = {
       if (
         token.tokenType !== "function" ||
         token.text !== "var" ||
-        !options.isVariableInUse
+        !options.getVariableValue
       ) {
         functionData.push(text.substring(token.startOffset, token.endOffset));
       }
@@ -279,7 +279,7 @@ OutputParser.prototype = {
 
     
     if (tokens && tokens.length === 1) {
-      varValue = options.isVariableInUse(tokens[0].text);
+      varValue = options.getVariableValue(tokens[0].text);
     }
 
     
@@ -402,7 +402,7 @@ OutputParser.prototype = {
               );
             }
             ++parenDepth;
-          } else if (token.text === "var" && options.isVariableInUse) {
+          } else if (token.text === "var" && options.getVariableValue) {
             const { node: variableNode, value } = this._parseVariable(
               token,
               text,
@@ -1906,7 +1906,7 @@ OutputParser.prototype = {
       urlClass: "",
       fontFamilyClass: "",
       baseURI: undefined,
-      isVariableInUse: null,
+      getVariableValue: null,
       unmatchedVariableClass: null,
     };
 
