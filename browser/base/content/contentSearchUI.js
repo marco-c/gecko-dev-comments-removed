@@ -94,6 +94,7 @@ this.ContentSearchUIController = (function() {
       this._defaultEngine = {
         name: engine.name,
         icon,
+        isAppProvided: engine.isAppProvided,
       };
       this._updateDefaultEngineHeader();
       this._updateDefaultEngineIcon();
@@ -682,13 +683,11 @@ this.ContentSearchUIController = (function() {
     },
 
     _updateDefaultEngineIcon() {
-      let eng = this._engines.find(
-        engine => engine.name === this.defaultEngine.name
-      );
       
       
-      let icon =
-        eng && eng.identifier ? this.defaultEngine.icon : DEFAULT_INPUT_ICON;
+      let icon = this.defaultEngine.isAppProvided
+        ? this.defaultEngine.icon
+        : DEFAULT_INPUT_ICON;
       document.body.style.setProperty(
         "--newtab-search-icon",
         "url(" + icon + ")"
