@@ -957,9 +957,11 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
 
   mBuffer.BufferFilled();
 
+#ifdef MOZ_SAMPLE_TYPE_FLOAT32
   
   
   NaNToZeroInPlace(aOutputBuffer, aFrames * mOutputChannelCount);
+#endif
 
   
   
