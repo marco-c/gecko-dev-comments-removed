@@ -490,8 +490,8 @@ class JSTerm extends Component {
           },
 
           Esc: false,
-          "Cmd-F": false,
-          "Ctrl-F": false,
+          
+          [Editor.accel("F")]: false,
         },
       });
 
