@@ -2241,8 +2241,11 @@ var gMainPane = {
         "action",
         Ci.nsIHandlerInfo.handleInternally
       );
-      document.l10n.setAttributes(internalMenuItem, "applications-open-inapp");
-      internalMenuItem.setAttribute(APP_ICON_ATTR_NAME, "handleInternally");
+      document.l10n.setAttributes(
+        internalMenuItem,
+        "applications-preview-inapp"
+      );
+      internalMenuItem.setAttribute(APP_ICON_ATTR_NAME, "ask");
       menuPopup.appendChild(internalMenuItem);
     }
 
@@ -2275,28 +2278,17 @@ var gMainPane = {
         "action",
         Ci.nsIHandlerInfo.useSystemDefault
       );
-      
-      
-      
-      if (internalMenuItem) {
-        document.l10n.setAttributes(
-          defaultMenuItem,
-          "applications-use-os-default"
-        );
-        defaultMenuItem.setAttribute("image", ICON_URL_APP);
-      } else {
-        document.l10n.setAttributes(
-          defaultMenuItem,
-          "applications-use-app-default",
-          {
-            "app-name": handlerInfo.defaultDescription,
-          }
-        );
-        defaultMenuItem.setAttribute(
-          "image",
-          handlerInfo.iconURLForSystemDefault
-        );
-      }
+      document.l10n.setAttributes(
+        defaultMenuItem,
+        "applications-use-app-default",
+        {
+          "app-name": handlerInfo.defaultDescription,
+        }
+      );
+      defaultMenuItem.setAttribute(
+        "image",
+        handlerInfo.iconURLForSystemDefault
+      );
 
       menuPopup.appendChild(defaultMenuItem);
     }
@@ -3347,7 +3339,7 @@ class HandlerInfoWrapper {
 
       case Ci.nsIHandlerInfo.handleInternally:
         if (this instanceof InternalHandlerInfoWrapper) {
-          return "handleInternally";
+          return "ask";
         }
         break;
 
