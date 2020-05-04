@@ -11,9 +11,16 @@ class ReftestFissionChild extends JSWindowActorChild {
 
     let parentContext = this.browsingContext.parent;
     if (parentContext) {
-      this.sendAsyncMessage("ForwardAfterPaintEvent",
-        {toBrowsingContext: parentContext, fromBrowsingContext: this.browsingContext,
-         rects, originalTargetUri});
+      try {
+        this.sendAsyncMessage("ForwardAfterPaintEvent",
+          {toBrowsingContext: parentContext, fromBrowsingContext: this.browsingContext,
+           rects, originalTargetUri});
+      } catch (e) {
+        
+        
+        
+        Cu.reportError(e);
+      }
     }
   }
 
