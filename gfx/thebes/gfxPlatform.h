@@ -755,6 +755,8 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   static bool WebRenderPrefEnabled();
   
   static bool WebRenderEnvvarEnabled();
+  
+  static bool WebRenderEnvvarDisabled();
 
   void NotifyFrameStats(nsTArray<mozilla::layers::FrameStats>&& aFrameStats);
 

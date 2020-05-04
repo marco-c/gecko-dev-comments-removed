@@ -16,6 +16,7 @@
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/webrender/webrender_ffi.h"
 #include "mozilla/layers/PaintThread.h"
+#include "mozilla/gfx/gfxConfigManager.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/GraphicsMessages.h"
@@ -64,7 +65,6 @@
 
 #if defined(XP_WIN)
 #  include "gfxWindowsPlatform.h"
-#  include "DisplayConfigWindows.h"
 #elif defined(XP_MACOSX)
 #  include "gfxPlatformMac.h"
 #  include "gfxQuartzSurface.h"
@@ -80,7 +80,6 @@
 
 #ifdef XP_WIN
 #  include "mozilla/WindowsVersion.h"
-#  include "mozilla/gfx/DeviceManagerDx.h"
 #endif
 
 #ifdef MOZ_WAYLAND
@@ -798,82 +797,6 @@ WebRenderMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 #undef REPORT_INTERNER
 #undef REPORT_DATA_STORE
 
-static const char* const WR_ROLLOUT_PREF = "gfx.webrender.all.qualified";
-static const bool WR_ROLLOUT_PREF_DEFAULTVALUE = true;
-static const char* const WR_ROLLOUT_DEFAULT_PREF =
-    "gfx.webrender.all.qualified.default";
-static const bool WR_ROLLOUT_DEFAULT_PREF_DEFAULTVALUE = false;
-static const char* const WR_ROLLOUT_PREF_OVERRIDE =
-    "gfx.webrender.all.qualified.gfxPref-default-override";
-static const char* const WR_ROLLOUT_HW_QUALIFIED_OVERRIDE =
-    "gfx.webrender.all.qualified.hardware-override";
-static const char* const PROFILE_BEFORE_CHANGE_TOPIC = "profile-before-change";
-
-
-
-
-
-
-
-
-
-
-class WrRolloutPrefShutdownSaver : public nsIObserver {
- public:
-  NS_DECL_ISUPPORTS
-
-  NS_IMETHOD Observe(nsISupports*, const char* aTopic,
-                     const char16_t*) override {
-    if (strcmp(PROFILE_BEFORE_CHANGE_TOPIC, aTopic) != 0) {
-      
-      return NS_OK;
-    }
-
-    SaveRolloutPref();
-
-    
-    RefPtr<WrRolloutPrefShutdownSaver> kungFuDeathGrip(this);
-    nsCOMPtr<nsIObserverService> observerService =
-        mozilla::services::GetObserverService();
-    if (NS_WARN_IF(!observerService)) {
-      return NS_ERROR_FAILURE;
-    }
-    observerService->RemoveObserver(this, PROFILE_BEFORE_CHANGE_TOPIC);
-    return NS_OK;
-  }
-
-  static void AddShutdownObserver() {
-    MOZ_ASSERT(XRE_IsParentProcess());
-    nsCOMPtr<nsIObserverService> observerService =
-        mozilla::services::GetObserverService();
-    if (NS_WARN_IF(!observerService)) {
-      return;
-    }
-    RefPtr<WrRolloutPrefShutdownSaver> wrRolloutSaver =
-        new WrRolloutPrefShutdownSaver();
-    observerService->AddObserver(wrRolloutSaver, PROFILE_BEFORE_CHANGE_TOPIC,
-                                 false);
-  }
-
- private:
-  virtual ~WrRolloutPrefShutdownSaver() = default;
-
-  void SaveRolloutPref() {
-    if (Preferences::HasUserValue(WR_ROLLOUT_PREF) ||
-        Preferences::GetType(WR_ROLLOUT_PREF) == nsIPrefBranch::PREF_INVALID) {
-      
-      
-      
-      
-      return;
-    }
-
-    bool defaultValue =
-        Preferences::GetBool(WR_ROLLOUT_PREF, false, PrefValueKind::Default);
-    Preferences::SetBool(WR_ROLLOUT_DEFAULT_PREF, defaultValue);
-  }
-};
-
 static void FrameRatePrefChanged(const char* aPref, void*) {
   int32_t newRate = gfxPlatform::ForceSoftwareVsync()
                         ? gfxPlatform::GetSoftwareVsyncRate()
@@ -883,8 +806,6 @@ static void FrameRatePrefChanged(const char* aPref, void*) {
     gfxPlatform::ReInitFrameRate();
   }
 }
-
-NS_IMPL_ISUPPORTS(WrRolloutPrefShutdownSaver, nsIObserver)
 
 void gfxPlatform::Init() {
   MOZ_RELEASE_ASSERT(!XRE_IsGPUProcess(), "GFX: Not allowed in GPU process.");
@@ -928,8 +849,6 @@ void gfxPlatform::Init() {
   }
 
   if (XRE_IsParentProcess()) {
-    WrRolloutPrefShutdownSaver::AddShutdownObserver();
-
     nsCOMPtr<nsIFile> profDir;
     nsresult rv = NS_GetSpecialDirectory(NS_APP_PROFILE_DIR_STARTUP,
                                          getter_AddRefs(profDir));
@@ -1235,22 +1154,6 @@ static bool IsFeatureSupported(long aFeature, bool aDefault) {
     return aDefault;
   }
   return status == nsIGfxInfo::FEATURE_STATUS_OK;
-}
-
-static void ApplyGfxInfoFeature(long aFeature, FeatureState& aFeatureState) {
-  nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
-  nsCString blockId;
-  int32_t status;
-  if (!NS_SUCCEEDED(gfxInfo->GetFeatureStatus(aFeature, blockId, &status))) {
-    aFeatureState.Disable(FeatureStatus::BlockedNoGfxInfo, "gfxInfo is broken",
-                          NS_LITERAL_CSTRING("FEATURE_FAILURE_NO_GFX_INFO"));
-
-  } else {
-    if (status != nsIGfxInfo::FEATURE_STATUS_OK) {
-      aFeatureState.Disable(FeatureStatus::Blacklisted,
-                            "Blacklisted by gfxInfo", blockId);
-    }
-  }
 }
 
 
@@ -2770,138 +2673,10 @@ bool gfxPlatform::WebRenderEnvvarEnabled() {
   return (env && *env == '1');
 }
 
-static bool WebRenderEnvvarDisabled() {
+
+bool gfxPlatform::WebRenderEnvvarDisabled() {
   const char* env = PR_GetEnv("MOZ_WEBRENDER");
   return (env && *env == '0');
-}
-
-static bool InMarionetteRolloutTest() {
-  
-  
-  
-  return Preferences::HasUserValue(WR_ROLLOUT_HW_QUALIFIED_OVERRIDE);
-}
-
-
-
-
-
-
-
-
-
-static bool CalculateWrQualifiedPrefValue() {
-  auto clearPrefOnExit = MakeScopeExit([]() {
-    
-    
-    
-    Preferences::ClearUser(WR_ROLLOUT_DEFAULT_PREF);
-  });
-
-  if (!Preferences::HasUserValue(WR_ROLLOUT_PREF) &&
-      Preferences::HasUserValue(WR_ROLLOUT_DEFAULT_PREF)) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return Preferences::GetBool(WR_ROLLOUT_DEFAULT_PREF,
-                                WR_ROLLOUT_DEFAULT_PREF_DEFAULTVALUE);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (Preferences::HasUserValue(WR_ROLLOUT_PREF_OVERRIDE)) {
-    return Preferences::GetBool(WR_ROLLOUT_PREF_OVERRIDE);
-  }
-  return Preferences::GetBool(WR_ROLLOUT_PREF, WR_ROLLOUT_PREF_DEFAULTVALUE);
-}
-
-static FeatureState& WebRenderHardwareQualificationStatus(
-    bool* aOutGuardedByQualifiedPref) {
-  FeatureState& featureWebRenderQualified =
-      gfxConfig::GetFeature(Feature::WEBRENDER_QUALIFIED);
-  featureWebRenderQualified.EnableByDefault();
-  MOZ_ASSERT(aOutGuardedByQualifiedPref && *aOutGuardedByQualifiedPref);
-
-  if (Preferences::HasUserValue(WR_ROLLOUT_HW_QUALIFIED_OVERRIDE)) {
-    if (!Preferences::GetBool(WR_ROLLOUT_HW_QUALIFIED_OVERRIDE)) {
-      featureWebRenderQualified.Disable(
-          FeatureStatus::BlockedOverride, "HW qualification pref override",
-          NS_LITERAL_CSTRING("FEATURE_FAILURE_WR_QUALIFICATION_OVERRIDE"));
-    }
-    return featureWebRenderQualified;
-  }
-
-  nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
-  nsCString failureId;
-  int32_t status;
-  if (NS_FAILED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_WEBRENDER,
-                                          failureId, &status))) {
-    featureWebRenderQualified.Disable(
-        FeatureStatus::BlockedNoGfxInfo, "gfxInfo is broken",
-        NS_LITERAL_CSTRING("FEATURE_FAILURE_WR_NO_GFX_INFO"));
-    return featureWebRenderQualified;
-  }
-
-  switch (status) {
-    case nsIGfxInfo::FEATURE_ALLOW_ALWAYS:
-#ifndef NIGHTLY_BUILD
-      
-      
-      
-      *aOutGuardedByQualifiedPref = false;
-      break;
-#endif
-    case nsIGfxInfo::FEATURE_ALLOW_QUALIFIED:
-      *aOutGuardedByQualifiedPref = true;
-      break;
-    case nsIGfxInfo::FEATURE_DENIED:
-      featureWebRenderQualified.Disable(FeatureStatus::Denied,
-                                        "Not on allowlist", failureId);
-      break;
-    default:
-      featureWebRenderQualified.Disable(FeatureStatus::Blacklisted,
-                                        "No qualified hardware", failureId);
-      break;
-    case nsIGfxInfo::FEATURE_STATUS_OK:
-      MOZ_ASSERT_UNREACHABLE("We should still be rolling out WebRender!");
-      featureWebRenderQualified.Disable(FeatureStatus::Blocked,
-                                        "Not controlled by rollout", failureId);
-      break;
-  }
-
-#if !defined(NIGHTLY_BUILD) && defined(XP_WIN)
-  
-  nsAutoString adapterVendorID;
-  gfxInfo->GetAdapterVendorID(adapterVendorID);
-  if (adapterVendorID == u"0x8086") {
-    bool hasBattery = false;
-    gfxInfo->GetHasBattery(&hasBattery);
-    if (hasBattery && !gfxConfig::IsEnabled(Feature::WEBRENDER_COMPOSITOR)) {
-      featureWebRenderQualified.Disable(
-          FeatureStatus::Blocked, "Battery Intel requires os compositor",
-          NS_LITERAL_CSTRING("INTEL_BATTERY_REQUIRES_DCOMP"));
-    }
-  }
-#endif
-
-  return featureWebRenderQualified;
 }
 
 void gfxPlatform::InitWebRenderConfig() {
@@ -2921,109 +2696,20 @@ void gfxPlatform::InitWebRenderConfig() {
     
     
     
-    if (UseWebRender()) {
+    if (gfxVars::UseWebRender()) {
       reporter.SetSuccessful();
     }
     return;
   }
 
   
-  FeatureState& featureComp =
-      gfxConfig::GetFeature(Feature::WEBRENDER_COMPOSITOR);
-  featureComp.SetDefaultFromPref("gfx.webrender.compositor", true, false);
-
-  if (StaticPrefs::gfx_webrender_compositor_force_enabled_AtStartup()) {
-    featureComp.UserForceEnable("Force enabled by pref");
-  }
-
-  ApplyGfxInfoFeature(nsIGfxInfo::FEATURE_WEBRENDER_COMPOSITOR, featureComp);
+  gfxConfigManager manager;
+  manager.Init();
+  manager.ConfigureWebRender();
 
 #ifdef XP_WIN
-  
-  
-  
-  if (!DeviceManagerDx::Get()->CheckHardwareStretchingSupport() &&
-      HasScaledResolution()) {
-    featureComp.Disable(
-        FeatureStatus::Unavailable, "No hardware stretching support",
-        NS_LITERAL_CSTRING("FEATURE_FAILURE_NO_HARDWARE_STRETCHING"));
-  }
-#endif
-
-  bool guardedByQualifiedPref = true;
-  FeatureState& featureWebRenderQualified =
-      WebRenderHardwareQualificationStatus(&guardedByQualifiedPref);
-  FeatureState& featureWebRender = gfxConfig::GetFeature(Feature::WEBRENDER);
-
-  featureWebRender.DisableByDefault(
-      FeatureStatus::OptIn, "WebRender is an opt-in feature",
-      NS_LITERAL_CSTRING("FEATURE_FAILURE_DEFAULT_OFF"));
-
-  const bool wrQualifiedAll = CalculateWrQualifiedPrefValue();
-
-  
-  
-  
-  
-  if (envvarEnabled) {
-    featureWebRender.UserEnable("Force enabled by envvar");
-  } else if (prefEnabled) {
-    featureWebRender.UserEnable("Force enabled by pref");
-  } else if (featureWebRenderQualified.IsEnabled()) {
-    
-    
-    
-    if (!guardedByQualifiedPref) {
-      featureWebRender.UserEnable("Qualified in release");
-    } else if (wrQualifiedAll) {
-      featureWebRender.UserEnable("Qualified enabled by pref");
-    }
-  }
-
-  
-  
-  
-  if (StaticPrefs::gfx_webrender_force_disabled_AtStartup() ||
-      (WebRenderEnvvarDisabled() && !InMarionetteRolloutTest())) {
-    featureWebRender.UserDisable(
-        "User force-disabled WR",
-        NS_LITERAL_CSTRING("FEATURE_FAILURE_USER_FORCE_DISABLED"));
-  }
-
-  
-  if (!gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
-    featureWebRender.ForceDisable(
-        FeatureStatus::UnavailableNoHwCompositing,
-        "Hardware compositing is disabled",
-        NS_LITERAL_CSTRING("FEATURE_FAILURE_WEBRENDER_NEED_HWCOMP"));
-  }
-
-  if (InSafeMode()) {
-    featureWebRender.ForceDisable(
-        FeatureStatus::UnavailableInSafeMode, "Safe-mode is enabled",
-        NS_LITERAL_CSTRING("FEATURE_FAILURE_SAFE_MODE"));
-  }
-
-#ifdef XP_WIN
-  if (StaticPrefs::gfx_webrender_force_angle_AtStartup()) {
-    if (!gfxConfig::IsEnabled(Feature::D3D11_HW_ANGLE)) {
-      featureWebRender.ForceDisable(
-          FeatureStatus::UnavailableNoAngle, "ANGLE is disabled",
-          NS_LITERAL_CSTRING("FEATURE_FAILURE_ANGLE_DISABLED"));
-    } else if (
-        !gfxConfig::IsEnabled(Feature::GPU_PROCESS)
-#  ifdef NIGHTLY_BUILD
-        && !StaticPrefs::
-               gfx_webrender_enabled_no_gpu_process_with_angle_win_AtStartup()
-#  endif
-    ) {
-      
-      featureWebRender.ForceDisable(
-          FeatureStatus::UnavailableNoGpuProcess, "GPU Process is disabled",
-          NS_LITERAL_CSTRING("FEATURE_FAILURE_GPU_PROCESS_DISABLED"));
-    } else {
-      gfxVars::SetUseWebRenderANGLE(gfxConfig::IsEnabled(Feature::WEBRENDER));
-    }
+  if (gfxConfig::IsEnabled(Feature::WEBRENDER_ANGLE)) {
+    gfxVars::SetUseWebRenderANGLE(gfxConfig::IsEnabled(Feature::WEBRENDER));
   }
 #endif
 
@@ -3066,39 +2752,15 @@ void gfxPlatform::InitWebRenderConfig() {
 
     UpdateAllowSacrificingSubpixelAA();
   }
-#if defined(MOZ_WIDGET_GTK)
-  else {
-    if (gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
-      
-      
-      
-      
-      gfxConfig::Disable(Feature::HW_COMPOSITING, FeatureStatus::Blocked,
-                         "Acceleration blocked by platform");
-    }
-
-    if (!gfxConfig::IsEnabled(Feature::HW_COMPOSITING) &&
-        gfxConfig::IsEnabled(Feature::GPU_PROCESS) &&
-        !StaticPrefs::layers_gpu_process_allow_software_AtStartup()) {
-      
-      
-      gfxConfig::Disable(Feature::GPU_PROCESS, FeatureStatus::Unavailable,
-                         "Hardware compositing is unavailable.");
-    }
-  }
-#endif
 
 #ifdef XP_WIN
+  if (gfxConfig::IsEnabled(Feature::WEBRENDER_DCOMP_PRESENT)) {
+    gfxVars::SetUseWebRenderDCompWin(true);
+  }
   if (Preferences::GetBool("gfx.webrender.flip-sequential", false)) {
     
     if (IsWin10OrLater() && UseWebRender() && gfxVars::UseWebRenderANGLE()) {
       gfxVars::SetUseWebRenderFlipSequentialWin(true);
-    }
-  }
-  if (Preferences::GetBool("gfx.webrender.dcomp-win.enabled", false)) {
-    
-    if (IsWin10OrLater() && UseWebRender() && gfxVars::UseWebRenderANGLE()) {
-      gfxVars::SetUseWebRenderDCompWin(true);
     }
   }
   if (Preferences::GetBool("gfx.webrender.triple-buffering.enabled", false)) {
@@ -3109,21 +2771,7 @@ void gfxPlatform::InitWebRenderConfig() {
   }
 #endif
 
-  if (!StaticPrefs::gfx_webrender_picture_caching()) {
-    featureComp.ForceDisable(
-        FeatureStatus::Unavailable, "Picture caching is disabled",
-        NS_LITERAL_CSTRING("FEATURE_FAILURE_PICTURE_CACHING_DISABLED"));
-  }
-
-#ifdef XP_WIN
-  if (!gfxVars::UseWebRenderDCompWin()) {
-    featureComp.Disable(
-        FeatureStatus::Unavailable, "No DirectComposition usage",
-        NS_LITERAL_CSTRING("FEATURE_FAILURE_NO_DIRECTCOMPOSITION"));
-  }
-#endif
-
-  if (gfx::gfxConfig::IsEnabled(gfx::Feature::WEBRENDER_COMPOSITOR)) {
+  if (gfxConfig::IsEnabled(Feature::WEBRENDER_COMPOSITOR)) {
     gfxVars::SetUseWebRenderCompositor(true);
   }
 
@@ -3131,25 +2779,9 @@ void gfxPlatform::InitWebRenderConfig() {
       Telemetry::ScalarID::GFX_OS_COMPOSITOR,
       gfx::gfxConfig::IsEnabled(gfx::Feature::WEBRENDER_COMPOSITOR));
 
-  
-  
-  if (StaticPrefs::gfx_webrender_max_partial_present_rects_AtStartup() > 0) {
-    if (UseWebRender()) {
-      FeatureState& featurePartial =
-          gfxConfig::GetFeature(Feature::WEBRENDER_PARTIAL);
-      featurePartial.EnableByDefault();
-      if (StaticPrefs::gfx_webrender_picture_caching()) {
-        gfxVars::SetWebRenderMaxPartialPresentRects(
-            StaticPrefs::gfx_webrender_max_partial_present_rects_AtStartup());
-        
-        
-        featurePartial.UserEnable("Enabled");
-      } else {
-        featurePartial.ForceDisable(
-            FeatureStatus::Unavailable, "Picture caching is disabled",
-            NS_LITERAL_CSTRING("FEATURE_FAILURE_PICTURE_CACHING_DISABLED"));
-      }
-    }
+  if (gfxConfig::IsEnabled(Feature::WEBRENDER_PARTIAL)) {
+    gfxVars::SetWebRenderMaxPartialPresentRects(
+        StaticPrefs::gfx_webrender_max_partial_present_rects_AtStartup());
   }
 
   
