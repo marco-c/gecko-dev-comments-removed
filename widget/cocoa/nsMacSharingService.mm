@@ -1,29 +1,29 @@
-/* -*- Mode: c++; tab-width: 2; indent-tabs-mode: nil; -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #import <Cocoa/Cocoa.h>
 
 #include "nsMacSharingService.h"
 
 #include "jsapi.h"
-#include "js/Array.h"  // JS::NewArrayObject
+#include "js/Array.h"  
 #include "nsCocoaUtils.h"
 #include "mozilla/MacStringHelpers.h"
 
 NS_IMPL_ISUPPORTS(nsMacSharingService, nsIMacSharingService)
 
-// List of sharingProviders that we do not want to expose to
-// the user, because they are duplicates or do not work correctly
-// within the context
+
+
+
 NSArray* filteredProviderNames =
     @[ @"com.apple.share.System.add-to-safari-reading-list", @"com.apple.share.Mail.compose" ];
 
 NSString* const remindersServiceName = @"com.apple.reminders.RemindersShareExtension";
 
-// These are some undocumented constants also used by Safari
-// to let us open the preferences window
+
+
 NSString* const extensionPrefPanePath = @"/System/Library/PreferencePanes/Extensions.prefPane";
 const UInt32 openSharingSubpaneDescriptorType = 'ptru';
 NSString* const openSharingSubpaneActionKey = @"action";
@@ -31,12 +31,12 @@ NSString* const openSharingSubpaneActionValue = @"revealExtensionPoint";
 NSString* const openSharingSubpaneProtocolKey = @"protocol";
 NSString* const openSharingSubpaneProtocolValue = @"com.apple.share-services";
 
-// Expose the id so we can pass reference through to JS and back
+
 @interface NSSharingService (ExposeName)
 - (id)name;
 @end
 
-// Clean up the activity once the share is complete
+
 @interface SharingServiceDelegate : NSObject <NSSharingServiceDelegate> {
   NSUserActivity* mShareActivity;
 }
@@ -78,12 +78,12 @@ NSString* const openSharingSubpaneProtocolValue = @"com.apple.share-services";
 @end
 
 static NSString* NSImageToBase64(const NSImage* aImage) {
-  NSRect rect = NSMakeRect(0, 0, aImage.size.width, aImage.size.height);
-  NSImageRep* bestRep = [aImage bestRepresentationForRect:rect context:nil hints:nil];
-  NSData* tiffData = [NSBitmapImageRep TIFFRepresentationOfImageRepsInArray:@[ bestRep ]];
-  NSBitmapImageRep* bitmapRep = [NSBitmapImageRep imageRepWithData:tiffData];
+  CGImageRef cgRef = [aImage CGImageForProposedRect:nil context:nil hints:nil];
+  NSBitmapImageRep* bitmapRep = [[NSBitmapImageRep alloc] initWithCGImage:cgRef];
+  [bitmapRep setSize:[aImage size]];
   NSData* imageData = [bitmapRep representationUsingType:NSPNGFileType properties:@{}];
   NSString* base64Encoded = [imageData base64EncodedStringWithOptions:0];
+  [bitmapRep release];
   return [NSString stringWithFormat:@"data:image/png;base64,%@", base64Encoded];
 }
 
@@ -166,7 +166,7 @@ nsMacSharingService::ShareUrl(const nsAString& aServiceName, const nsAString& aP
   NSString* pageTitle = nsCocoaUtils::ToNSString(aPageTitle);
   NSSharingService* service = [NSSharingService sharingServiceNamed:serviceName];
 
-  // Reminders fetch its data from an activity, not the share data
+  
   if ([[service name] isEqual:remindersServiceName]) {
     NSUserActivity* shareActivity =
         [[NSUserActivity alloc] initWithActivityType:NSUserActivityTypeBrowsingWeb];
@@ -177,8 +177,8 @@ nsMacSharingService::ShareUrl(const nsAString& aServiceName, const nsAString& aP
     [shareActivity setTitle:pageTitle];
     [shareActivity becomeCurrent];
 
-    // Pass ownership of shareActivity to shareDelegate, which will release the
-    // activity once sharing has completed.
+    
+    
     SharingServiceDelegate* shareDelegate =
         [[SharingServiceDelegate alloc] initWithActivity:shareActivity];
     [shareActivity release];
@@ -187,7 +187,7 @@ nsMacSharingService::ShareUrl(const nsAString& aServiceName, const nsAString& aP
     [shareDelegate release];
   }
 
-  // Twitter likes the the title as an additional share item
+  
   NSArray* toShare = [[service name] isEqual:NSSharingServiceNamePostOnTwitter]
                          ? @[ pageUrl, pageTitle ]
                          : @[ pageUrl ];
