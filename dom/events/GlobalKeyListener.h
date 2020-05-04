@@ -29,8 +29,6 @@ class EventTarget;
 class KeyboardEvent;
 }  
 
-using namespace dom;
-
 class KeyEventHandler;
 
 
@@ -42,7 +40,7 @@ class KeyEventHandler;
 
 class GlobalKeyListener : public nsIDOMEventListener {
  public:
-  explicit GlobalKeyListener(EventTarget* aTarget);
+  explicit GlobalKeyListener(dom::EventTarget* aTarget);
 
   void InstallKeyboardEventListenersTo(
       EventListenerManager* aEventListenerManager);
@@ -56,33 +54,33 @@ class GlobalKeyListener : public nsIDOMEventListener {
   virtual ~GlobalKeyListener() = default;
 
   MOZ_CAN_RUN_SCRIPT
-  void WalkHandlers(KeyboardEvent* aKeyEvent);
+  void WalkHandlers(dom::KeyboardEvent* aKeyEvent);
 
   
   MOZ_CAN_RUN_SCRIPT
-  bool WalkHandlersInternal(KeyboardEvent* aKeyEvent, bool aExecute,
+  bool WalkHandlersInternal(dom::KeyboardEvent* aKeyEvent, bool aExecute,
                             bool* aOutReservedForChrome = nullptr);
 
   
   
   MOZ_CAN_RUN_SCRIPT
-  bool WalkHandlersAndExecute(KeyboardEvent* aKeyEvent, uint32_t aCharCode,
+  bool WalkHandlersAndExecute(dom::KeyboardEvent* aKeyEvent, uint32_t aCharCode,
                               const IgnoreModifierState& aIgnoreModifierState,
                               bool aExecute,
                               bool* aOutReservedForChrome = nullptr);
 
   
   MOZ_CAN_RUN_SCRIPT
-  void HandleEventOnCaptureInDefaultEventGroup(KeyboardEvent* aEvent);
+  void HandleEventOnCaptureInDefaultEventGroup(dom::KeyboardEvent* aEvent);
   
   MOZ_CAN_RUN_SCRIPT
-  void HandleEventOnCaptureInSystemEventGroup(KeyboardEvent* aEvent);
+  void HandleEventOnCaptureInSystemEventGroup(dom::KeyboardEvent* aEvent);
 
   
   
   
   MOZ_CAN_RUN_SCRIPT
-  bool HasHandlerForEvent(KeyboardEvent* aEvent,
+  bool HasHandlerForEvent(dom::KeyboardEvent* aEvent,
                           bool* aOutReservedForChrome = nullptr);
 
   
@@ -99,12 +97,12 @@ class GlobalKeyListener : public nsIDOMEventListener {
 
   virtual bool IsDisabled() const { return false; }
 
-  virtual already_AddRefed<EventTarget> GetHandlerTarget(
+  virtual already_AddRefed<dom::EventTarget> GetHandlerTarget(
       KeyEventHandler* aHandler) {
     return do_AddRef(mTarget);
   }
 
-  EventTarget* mTarget;  
+  dom::EventTarget* mTarget;  
 
   KeyEventHandler* mHandler;  
 };
@@ -117,10 +115,11 @@ class GlobalKeyListener : public nsIDOMEventListener {
 
 class XULKeySetGlobalKeyListener final : public GlobalKeyListener {
  public:
-  explicit XULKeySetGlobalKeyListener(Element* aElement, EventTarget* aTarget);
+  explicit XULKeySetGlobalKeyListener(dom::Element* aElement,
+                                      dom::EventTarget* aTarget);
 
-  static void AttachKeyHandler(Element* aElementTarget);
-  static void DetachKeyHandler(Element* aElementTarget);
+  static void AttachKeyHandler(dom::Element* aElementTarget);
+  static void DetachKeyHandler(dom::Element* aElementTarget);
 
  protected:
   virtual ~XULKeySetGlobalKeyListener();
@@ -129,14 +128,14 @@ class XULKeySetGlobalKeyListener final : public GlobalKeyListener {
   
   
   
-  Element* GetElement(bool* aIsDisabled = nullptr) const;
+  dom::Element* GetElement(bool* aIsDisabled = nullptr) const;
 
   virtual void EnsureHandlers() override;
 
   virtual bool CanHandle(KeyEventHandler* aHandler,
                          bool aWillExecute) const override;
   virtual bool IsDisabled() const override;
-  virtual already_AddRefed<EventTarget> GetHandlerTarget(
+  virtual already_AddRefed<dom::EventTarget> GetHandlerTarget(
       KeyEventHandler* aHandler) override;
 
   
@@ -149,13 +148,13 @@ class XULKeySetGlobalKeyListener final : public GlobalKeyListener {
 
 
   bool GetElementForHandler(KeyEventHandler* aHandler,
-                            Element** aElementForHandler) const;
+                            dom::Element** aElementForHandler) const;
 
   
 
 
 
-  bool IsExecutableElement(Element* aElement) const;
+  bool IsExecutableElement(dom::Element* aElement) const;
 
   
   nsWeakPtr mWeakPtrForElement;
@@ -169,9 +168,9 @@ class XULKeySetGlobalKeyListener final : public GlobalKeyListener {
 
 class RootWindowGlobalKeyListener final : public GlobalKeyListener {
  public:
-  explicit RootWindowGlobalKeyListener(EventTarget* aTarget);
+  explicit RootWindowGlobalKeyListener(dom::EventTarget* aTarget);
 
-  static void AttachKeyHandler(EventTarget* aTarget);
+  static void AttachKeyHandler(dom::EventTarget* aTarget);
 
   static layers::KeyboardMap CollectKeyboardShortcuts();
 

@@ -4,12 +4,14 @@
 
 
 
+#include "nsHTMLDNSPrefetch.h"
+
 #include "base/basictypes.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/NeckoChild.h"
 #include "nsURLHelper.h"
 
-#include "nsHTMLDNSPrefetch.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 
