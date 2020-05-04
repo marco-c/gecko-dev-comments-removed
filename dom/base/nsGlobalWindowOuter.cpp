@@ -2224,15 +2224,8 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
       
       
       
+
       
-      
-      
-      
-      
-      
-      
-      
-      bool aDefineSharedArrayBufferConstructor = true;
 
       
       
@@ -2240,7 +2233,7 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
           cx, newInnerWindow, aDocument->GetDocumentURI(),
           aDocument->NodePrincipal(), &newInnerGlobal,
           ComputeIsSecureContext(aDocument),
-          aDefineSharedArrayBufferConstructor);
+          newInnerWindow->IsSharedMemoryAllowed());
       NS_ASSERTION(
           NS_SUCCEEDED(rv) && newInnerGlobal &&
               newInnerWindow->GetWrapperPreserveColor() == newInnerGlobal,

@@ -3147,6 +3147,16 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
   }
 
   
+  nsCOMPtr<nsIHttpChannelInternal> httpChan = do_QueryInterface(mChannel);
+  nsILoadInfo::CrossOriginOpenerPolicy policy =
+      nsILoadInfo::OPENER_POLICY_UNSAFE_NONE;
+  if (IsTopLevelContentDocument() && httpChan &&
+      NS_SUCCEEDED(httpChan->GetCrossOriginOpenerPolicy(&policy)) && docShell &&
+      docShell->GetBrowsingContext()) {
+    docShell->GetBrowsingContext()->SetOpenerPolicy(policy);
+  }
+
+  
   
   
   

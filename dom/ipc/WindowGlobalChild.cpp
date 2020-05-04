@@ -75,6 +75,7 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
   
   RefPtr<dom::BrowsingContext> bc = docshell->GetBrowsingContext();
 
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   
   
   
@@ -86,8 +87,9 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
       loadInfo->GetExternalContentPolicyType() ==
           nsIContentPolicy::TYPE_DOCUMENT &&
       NS_SUCCEEDED(httpChan->GetCrossOriginOpenerPolicy(&policy))) {
-    bc->SetOpenerPolicy(policy);
+    MOZ_DIAGNOSTIC_ASSERT(policy == bc->GetOpenerPolicy());
   }
+#endif
 
   WindowGlobalInit init(principal,
                         aWindow->GetDocumentContentBlockingAllowListPrincipal(),

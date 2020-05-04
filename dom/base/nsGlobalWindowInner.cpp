@@ -1561,10 +1561,7 @@ void nsGlobalWindowInner::InitDocumentDependentState(JSContext* aCx) {
   
   ClearDocumentDependentSlots(aCx);
 
-  
-  
-  
-  if (!mWindowGlobalChild && (XRE_IsParentProcess() || mBrowserChild)) {
+  if (!mWindowGlobalChild) {
     mWindowGlobalChild = WindowGlobalChild::Create(this);
   }
 
