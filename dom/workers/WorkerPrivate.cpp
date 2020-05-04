@@ -2234,12 +2234,7 @@ WorkerPrivate::WorkerPrivate(
       
       
       
-      
-      
-      
-      
-      bool defineSharedArrayBufferConstructor = true;
-
+      const bool defineSharedArrayBufferConstructor = IsSharedMemoryAllowed();
       chromeCreationOptions.setDefineSharedArrayBufferConstructor(
           defineSharedArrayBufferConstructor);
       contentCreationOptions.setDefineSharedArrayBufferConstructor(
