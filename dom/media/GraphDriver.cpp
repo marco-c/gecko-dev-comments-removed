@@ -422,7 +422,9 @@ class AudioCallbackDriver::FallbackWrapper : public GraphInterface {
                "The audio driver can only enter stopping if it iterated the "
                "graph, which it can only do if there's no fallback driver");
     if (audioState != AudioStreamState::Running && result.IsStillProcessing()) {
-      mOwner->MaybeStartAudioStream();
+      if (audioState != AudioStreamState::Errored) {
+        mOwner->MaybeStartAudioStream();
+      }
       return result;
     }
 
@@ -957,6 +959,10 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
 
   
   
+  NaNToZeroInPlace(aOutputBuffer, aFrames * mOutputChannelCount);
+
+  
+  
   
   
   
@@ -1029,10 +1035,11 @@ void AudioCallbackDriver::StateCallback(cubeb_state aState) {
       ("AudioCallbackDriver(%p) State: %s", this, StateToString(aState)));
 
   
-  
   AudioStreamState streamState = mAudioStreamState.exchange(
-      aState == CUBEB_STATE_STARTED ? AudioStreamState::Running
-                                    : AudioStreamState::None);
+      aState == CUBEB_STATE_STARTED
+          ? AudioStreamState::Running
+          : aState == CUBEB_STATE_ERROR ? AudioStreamState::Errored
+                                        : AudioStreamState::None);
 
   if (aState == CUBEB_STATE_ERROR) {
     
@@ -1222,6 +1229,7 @@ TimeDuration AudioCallbackDriver::AudioOutputLatency() {
 void AudioCallbackDriver::FallbackToSystemClockDriver() {
   MOZ_ASSERT(!ThreadRunning());
   MOZ_ASSERT(mAudioStreamState == AudioStreamState::None ||
+             mAudioStreamState == AudioStreamState::Errored ||
              mAudioStreamState == AudioStreamState::Pending);
   MOZ_ASSERT(mFallbackDriverState == FallbackDriverState::None);
   LOG(LogLevel::Debug,
@@ -1265,6 +1273,10 @@ void AudioCallbackDriver::FallbackDriverStopped(GraphTime aIterationStart,
 
 void AudioCallbackDriver::MaybeStartAudioStream() {
   AudioStreamState streamState = mAudioStreamState;
+  MOZ_ASSERT(
+      streamState != AudioStreamState::Errored,
+      "An errored stream must not attempted to be re-started, an error stream"
+      " has already beed started once");
   if (streamState != AudioStreamState::None) {
     LOG(LogLevel::Verbose,
         ("%p: AudioCallbackDriver %p Cannot re-init.", Graph(), this));

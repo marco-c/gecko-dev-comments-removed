@@ -242,6 +242,11 @@ void AudioBlockPanStereoToStereo(const float aInputL[WEBAUDIO_BLOCK_SIZE],
 
 
 
+void NaNToZeroInPlace(float* aSamples, size_t aCount);
+
+
+
+
 float AudioBufferSumOfSquares(const float* aInput, uint32_t aLength);
 
 
