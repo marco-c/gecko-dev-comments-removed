@@ -444,7 +444,7 @@ nsresult nsWebBrowserFind::GetSearchLimits(nsRange* aSearchRange,
   
   
 
-  RefPtr<nsRange> range;
+  RefPtr<const nsRange> range;
   nsCOMPtr<nsINode> node;
   uint32_t offset;
 
