@@ -163,6 +163,13 @@ def test_optimization_strategy(responses, params, opt, tasks, arg, expected):
     
     pytest.param(
         (0.1,),
+        {'tasks': {'task-1': 0.9, 'task-3': 0.5}, 'known_tasks': ['task-1', 'task-3', 'task-4']},
+        ['task-2'],
+    ),
+
+    
+    pytest.param(
+        (0.1,),
         {'groups': {'foo/test.ini': 0.4}},
         ['task-0'],
     ),
