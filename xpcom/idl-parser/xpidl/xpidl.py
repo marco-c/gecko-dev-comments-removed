@@ -634,12 +634,13 @@ class WebIDL(object):
 
         parent.setName(self)
 
-    def nativeType(self, calltype):
+    def nativeType(self, calltype, const=False):
         if calltype == 'element':
-            return 'RefPtr<%s>' % self.native
-        return "%s *%s" % (self.native, '*' if 'out' in calltype else '')
+            return 'RefPtr<%s%s>' % ('const ' if const else '', self.native)
+        return "%s%s *%s" % ('const ' if const else '', self.native,
+                             '*' if 'out' in calltype else '')
 
-    def rustType(self, calltype):
+    def rustType(self, calltype, const=False):
         
         return "%s*const libc::c_void" % ('*mut ' if 'out' in calltype else '')
 
