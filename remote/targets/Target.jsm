@@ -16,6 +16,10 @@ const { WebSocketHandshake } = ChromeUtils.import(
   "chrome://remote/content/server/WebSocketHandshake.jsm"
 );
 
+const UUIDGen = Cc["@mozilla.org/uuid-generator;1"].getService(
+  Ci.nsIUUIDGenerator
+);
+
 
 
 
@@ -37,6 +41,9 @@ class Target {
 
     
     this.connections = new Set();
+    this.id = UUIDGen.generateUUID()
+      .toString()
+      .slice(1, -1);
   }
 
   
