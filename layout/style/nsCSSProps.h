@@ -118,6 +118,14 @@ class nsCSSProps {
 
  private:
   
+
+
+
+
+  static void RecomputeEnabledState(const char* aPrefName,
+                                    void* aClosure = nullptr);
+
+  
   
   static const nsCSSPropertyID* const
       kSubpropertyTable[eCSSProperty_COUNT - eCSSProperty_COUNT_no_shorthands];
