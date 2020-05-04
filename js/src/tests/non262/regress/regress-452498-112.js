@@ -21,7 +21,7 @@ function test()
 
 
 
-  expect = 'ReferenceError: can\'t access lexical declaration `q\' before initialization';
+  expect = 'ReferenceError: can\'t access lexical declaration 'q\' before initialization';
 
   try
   {
