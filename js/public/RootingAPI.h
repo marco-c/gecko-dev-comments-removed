@@ -918,9 +918,6 @@ namespace JS {
 class JS_PUBLIC_API AutoGCRooter;
 
 enum class AutoGCRooterKind : uint8_t {
-  Parser,        
-  BinASTParser,  
-
   WrapperVector, 
   Wrapper,       
   Custom,        
