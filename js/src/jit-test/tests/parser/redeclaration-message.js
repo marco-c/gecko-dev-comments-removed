@@ -6,5 +6,5 @@ try {
     
     assertEq(true, false);
 } catch (e) {
-    assertEq(e.message, "can't access lexical declaration 'aLet' before initialization");
+    assertEq(e.message, "can't access lexical declaration `aLet' before initialization");
 }
