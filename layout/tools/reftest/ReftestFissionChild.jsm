@@ -54,6 +54,15 @@ class ReftestFissionChild extends JSWindowActorChild {
       {
         
         
+        
+        if (msg.data.fromBrowsingContext.embedderElement == null) {
+          this.forwardAfterPaintEventToParent(msg.data.rects, msg.data.originalTargetUri,
+             true);
+          return;
+        }
+
+        
+        
         let style = this.contentWindow.getComputedStyle(msg.data.fromBrowsingContext.embedderElement);
         let translate = new DOMMatrixReadOnly().translate(
           parseFloat(style.paddingLeft) + parseFloat(style.borderLeftWidth),
