@@ -308,7 +308,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   
   
-  WindowContext* GetParentWindow() const { return mParentWindow; }
+  WindowContext* GetParentWindowContext() const { return mParentWindow; }
+  WindowContext* GetTopWindowContext();
 
   already_AddRefed<BrowsingContext> GetOpener() const {
     RefPtr<BrowsingContext> opener(Get(GetOpenerId()));

@@ -46,6 +46,11 @@ class WindowContext : public nsISupports, public nsWrapperCache {
 
   bool IsCached() const;
 
+  
+  
+  WindowContext* GetParentWindowContext();
+  WindowContext* TopWindowContext();
+
   Span<RefPtr<BrowsingContext>> Children() { return mChildren; }
 
   

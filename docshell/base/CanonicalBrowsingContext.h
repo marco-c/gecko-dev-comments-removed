@@ -65,12 +65,20 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   WindowGlobalParent* GetCurrentWindowGlobal() const;
 
+  
+  
+  CanonicalBrowsingContext* GetParent() {
+    return Cast(BrowsingContext::GetParent());
+  }
+  CanonicalBrowsingContext* Top() { return Cast(BrowsingContext::Top()); }
+  WindowGlobalParent* GetParentWindowContext();
+  WindowGlobalParent* GetTopWindowContext();
+
   already_AddRefed<nsIWidget> GetParentProcessWidgetContaining();
 
-  already_AddRefed<WindowGlobalParent> GetEmbedderWindowGlobal() const;
-
   
-  already_AddRefed<WindowGlobalParent> GetParentWindowGlobal() const;
+  
+  already_AddRefed<WindowGlobalParent> GetEmbedderWindowGlobal() const;
 
   already_AddRefed<CanonicalBrowsingContext> GetParentCrossChromeBoundary();
 

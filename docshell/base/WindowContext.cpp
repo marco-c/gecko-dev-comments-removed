@@ -49,6 +49,18 @@ bool WindowContext::IsCached() const {
   return mBrowsingContext->mCurrentWindowContext != this;
 }
 
+WindowContext* WindowContext::GetParentWindowContext() {
+  return mBrowsingContext->GetParentWindowContext();
+}
+
+WindowContext* WindowContext::TopWindowContext() {
+  WindowContext* current = this;
+  while (current->GetParentWindowContext()) {
+    current = current->GetParentWindowContext();
+  }
+  return current;
+}
+
 nsIGlobalObject* WindowContext::GetParentObject() const {
   return xpc::NativeGlobal(xpc::PrivilegedJunkScope());
 }
@@ -154,6 +166,7 @@ void WindowContext::Init() {
 
   
   mBrowsingContext->RegisterWindowContext(this);
+  Group()->Register(this);
 }
 
 void WindowContext::Discard() {
@@ -167,6 +180,7 @@ void WindowContext::Discard() {
   mIsDiscarded = true;
   gWindowContexts->Remove(InnerWindowId());
   mBrowsingContext->UnregisterWindowContext(this);
+  Group()->Unregister(this);
 }
 
 WindowContext::WindowContext(BrowsingContext* aBrowsingContext,

@@ -63,6 +63,20 @@ class WindowGlobalParent final : public WindowContext,
   }
 
   
+  
+  
+  WindowGlobalParent* GetParentWindowContext() {
+    return static_cast<WindowGlobalParent*>(
+        WindowContext::GetParentWindowContext());
+  }
+  WindowGlobalParent* TopWindowContext() {
+    return static_cast<WindowGlobalParent*>(WindowContext::TopWindowContext());
+  }
+  CanonicalBrowsingContext* GetBrowsingContext() {
+    return CanonicalBrowsingContext::Cast(WindowContext::GetBrowsingContext());
+  }
+
+  
   bool IsClosed() { return !CanSend(); }
 
   
@@ -98,7 +112,7 @@ class WindowGlobalParent final : public WindowContext,
   
   
   CanonicalBrowsingContext* BrowsingContext() override {
-    return CanonicalBrowsingContext::Cast(WindowContext::GetBrowsingContext());
+    return GetBrowsingContext();
   }
 
   

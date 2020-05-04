@@ -117,6 +117,13 @@ BrowsingContext* BrowsingContext::Top() {
   return bc;
 }
 
+WindowContext* BrowsingContext::GetTopWindowContext() {
+  if (mParentWindow) {
+    return mParentWindow->TopWindowContext();
+  }
+  return mCurrentWindowContext;
+}
+
 
 void BrowsingContext::Init() {
   if (!sBrowsingContexts) {

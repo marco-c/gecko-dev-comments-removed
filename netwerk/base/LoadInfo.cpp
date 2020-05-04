@@ -577,24 +577,23 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
       mParserCreatedScript(false),
       mHasStoragePermission(false),
       mIsFromProcessingFrameAttributes(false) {
-  RefPtr<WindowGlobalParent> embedderWGP =
-      aBrowsingContext->GetParentWindowGlobal();
-  BrowsingContext* embedderBC = embedderWGP->BrowsingContext();
-  MOZ_ASSERT(embedderBC);
+  RefPtr<WindowGlobalParent> parentWGP =
+      aBrowsingContext->GetParentWindowContext();
+  CanonicalBrowsingContext* parentBC = parentWGP->BrowsingContext();
+  MOZ_ASSERT(parentBC);
   nsTArray<nsCOMPtr<nsIPrincipal>> ancestorPrincipals;
   nsTArray<uint64_t> ancestorOuterWindowIDs;
-  CanonicalBrowsingContext* ancestorBC = embedderBC->Canonical();
-  RefPtr<WindowGlobalParent> topLevelWGP = embedderWGP;
+  CanonicalBrowsingContext* ancestorBC = parentBC;
+  RefPtr<WindowGlobalParent> topLevelWGP = parentWGP->TopWindowContext();
 
   
   
-  while (RefPtr<WindowGlobalParent> ancestorWGP =
-             ancestorBC->GetParentWindowGlobal()) {
+  while (WindowGlobalParent* ancestorWGP =
+             ancestorBC->GetParentWindowContext()) {
     nsCOMPtr<nsIPrincipal> parentPrincipal = ancestorWGP->DocumentPrincipal();
     MOZ_ASSERT(parentPrincipal, "Ancestor principal is null");
     ancestorPrincipals.AppendElement(parentPrincipal.forget());
     ancestorOuterWindowIDs.AppendElement(ancestorWGP->OuterWindowId());
-    topLevelWGP = ancestorWGP;
     ancestorBC = ancestorWGP->BrowsingContext();
   }
   mAncestorPrincipals = ancestorPrincipals;
@@ -602,11 +601,10 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
   MOZ_DIAGNOSTIC_ASSERT(mAncestorPrincipals.Length() ==
                         mAncestorOuterWindowIDs.Length());
 
-  if (RefPtr<WindowGlobalParent> ancestorWGP =
-          embedderWGP->BrowsingContext()->GetParentWindowGlobal()) {
+  if (WindowGlobalParent* ancestorWGP = parentWGP->GetParentWindowContext()) {
     mParentOuterWindowID = ancestorWGP->OuterWindowId();
   } else {
-    mParentOuterWindowID = embedderWGP->OuterWindowId();
+    mParentOuterWindowID = parentWGP->OuterWindowId();
   }
 
   
@@ -630,36 +628,36 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
 
   
   
-  mClientInfo = embedderWGP->GetClientInfo();
-  mLoadingPrincipal = embedderWGP->DocumentPrincipal();
-  ComputeIsThirdPartyContext(embedderWGP);
+  mClientInfo = parentWGP->GetClientInfo();
+  mLoadingPrincipal = parentWGP->DocumentPrincipal();
+  ComputeIsThirdPartyContext(parentWGP);
 
   
   
   
   
-  mOuterWindowID = embedderWGP->OuterWindowId();
+  mOuterWindowID = parentWGP->OuterWindowId();
   mTopOuterWindowID = topLevelWGP->OuterWindowId();
-  mBrowsingContextID = embedderBC->Id();
+  mBrowsingContextID = parentBC->Id();
 
   
   
-  mCookieJarSettings = embedderWGP->CookieJarSettings();
-  if (embedderBC->IsContentSubframe()) {
+  mCookieJarSettings = parentWGP->CookieJarSettings();
+  if (parentBC->IsContentSubframe()) {
     mDocumentHasLoaded = false;
   } else {
-    mDocumentHasLoaded = embedderWGP->DocumentHasLoaded();
+    mDocumentHasLoaded = parentWGP->DocumentHasLoaded();
   }
   if (topLevelWGP->BrowsingContext()->IsTop()) {
     if (mCookieJarSettings) {
       bool stopAtOurLevel = mCookieJarSettings->GetCookieBehavior() ==
                             nsICookieService::BEHAVIOR_REJECT_TRACKER;
       if (!stopAtOurLevel ||
-          topLevelWGP->OuterWindowId() != embedderWGP->OuterWindowId()) {
+          topLevelWGP->OuterWindowId() != parentWGP->OuterWindowId()) {
         mTopLevelPrincipal = topLevelWGP->DocumentPrincipal();
       }
     }
-    if (embedderBC->IsContentSubframe()) {
+    if (parentBC->IsContentSubframe()) {
       
       
       mDocumentHasLoaded = topLevelWGP->DocumentHasLoaded();
@@ -671,44 +669,44 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
   
   
   
-  if (embedderBC->IsTop()) {
-    if (!Document::StorageAccessSandboxed(embedderWGP->SandboxFlags())) {
-      mTopLevelStorageAreaPrincipal = embedderWGP->DocumentPrincipal();
+  if (parentBC->IsTop()) {
+    if (!Document::StorageAccessSandboxed(parentWGP->SandboxFlags())) {
+      mTopLevelStorageAreaPrincipal = parentWGP->DocumentPrincipal();
     }
 
     
     
     if (!mTopLevelPrincipal) {
-      mTopLevelPrincipal = embedderWGP->DocumentPrincipal();
+      mTopLevelPrincipal = parentWGP->DocumentPrincipal();
     }
   }
 
-  mInnerWindowID = embedderWGP->InnerWindowId();
+  mInnerWindowID = parentWGP->InnerWindowId();
   mFrameBrowsingContextID = aBrowsingContext->Id();
-  mDocumentHasUserInteracted = embedderWGP->DocumentHasUserInteracted();
+  mDocumentHasUserInteracted = parentWGP->DocumentHasUserInteracted();
 
   
   
-  mBlockAllMixedContent = embedderWGP->GetDocumentBlockAllMixedContent();
+  mBlockAllMixedContent = parentWGP->GetDocumentBlockAllMixedContent();
 
   
   
   
   
-  mUpgradeInsecureRequests = embedderWGP->GetDocumentUpgradeInsecureRequests();
+  mUpgradeInsecureRequests = parentWGP->GetDocumentUpgradeInsecureRequests();
   mOriginAttributes = mLoadingPrincipal->OriginAttributesRef();
 
   
   
-  if (embedderBC->IsContent()) {
+  if (parentBC->IsContent()) {
     mOriginAttributes.SyncAttributesWithPrivateBrowsing(
-        embedderBC->UsePrivateBrowsing());
+        parentBC->UsePrivateBrowsing());
   }
 
   
   
   
-  if (embedderBC->IsChrome()) {
+  if (parentBC->IsChrome()) {
     MOZ_ASSERT(mOriginAttributes.mPrivateBrowsingId == 0,
                "chrome docshell shouldn't have mPrivateBrowsingId set.");
   }
