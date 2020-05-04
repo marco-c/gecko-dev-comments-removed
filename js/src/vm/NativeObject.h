@@ -735,7 +735,9 @@ class NativeObject : public JSObject {
     if (inDictionaryMode()) {
       return lastProperty()->base()->slotSpan();
     }
-    return lastProperty()->slotSpan();
+    
+    
+    return lastProperty()->slotSpan(getClass());
   }
 
   
