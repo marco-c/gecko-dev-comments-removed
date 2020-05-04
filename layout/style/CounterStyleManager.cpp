@@ -481,27 +481,27 @@ static bool EthiopicToText(CounterValue aOrdinal, nsAString& aResult) {
   return true;
 }
 
-static uint8_t GetDefaultSpeakAsForSystem(uint8_t aSystem) {
-  MOZ_ASSERT(aSystem != NS_STYLE_COUNTER_SYSTEM_EXTENDS,
+static SpeakAs GetDefaultSpeakAsForSystem(StyleCounterSystem aSystem) {
+  MOZ_ASSERT(aSystem != StyleCounterSystem::Extends,
              "Extends system does not have static default speak-as");
   switch (aSystem) {
-    case NS_STYLE_COUNTER_SYSTEM_ALPHABETIC:
-      return NS_STYLE_COUNTER_SPEAKAS_SPELL_OUT;
-    case NS_STYLE_COUNTER_SYSTEM_CYCLIC:
-      return NS_STYLE_COUNTER_SPEAKAS_BULLETS;
+    case StyleCounterSystem::Alphabetic:
+      return SpeakAs::Spellout;
+    case StyleCounterSystem::Cyclic:
+      return SpeakAs::Bullets;
     default:
-      return NS_STYLE_COUNTER_SPEAKAS_NUMBERS;
+      return SpeakAs::Numbers;
   }
 }
 
-static bool SystemUsesNegativeSign(uint8_t aSystem) {
-  MOZ_ASSERT(aSystem != NS_STYLE_COUNTER_SYSTEM_EXTENDS,
+static bool SystemUsesNegativeSign(StyleCounterSystem aSystem) {
+  MOZ_ASSERT(aSystem != StyleCounterSystem::Extends,
              "Cannot check this for extending style");
   switch (aSystem) {
-    case NS_STYLE_COUNTER_SYSTEM_SYMBOLIC:
-    case NS_STYLE_COUNTER_SYSTEM_ALPHABETIC:
-    case NS_STYLE_COUNTER_SYSTEM_NUMERIC:
-    case NS_STYLE_COUNTER_SYSTEM_ADDITIVE:
+    case StyleCounterSystem::Symbolic:
+    case StyleCounterSystem::Alphabetic:
+    case StyleCounterSystem::Numeric:
+    case StyleCounterSystem::Additive:
       return true;
     default:
       return false;
@@ -528,7 +528,7 @@ class BuiltinCounterStyle : public CounterStyle {
   virtual bool IsOrdinalInAutoRange(CounterValue aOrdinal) override;
   virtual void GetPad(PadType& aResult) override;
   virtual CounterStyle* GetFallback() override;
-  virtual uint8_t GetSpeakAs() override;
+  virtual SpeakAs GetSpeakAs() override;
   virtual bool UseNegativeSign() override;
 
   virtual bool GetInitialCounterText(CounterValue aOrdinal,
@@ -752,7 +752,7 @@ CounterStyle* BuiltinCounterStyle::GetFallback() {
 }
 
 
-uint8_t BuiltinCounterStyle::GetSpeakAs() {
+SpeakAs BuiltinCounterStyle::GetSpeakAs() {
   switch (mStyle) {
     case NS_STYLE_LIST_STYLE_NONE:
     case NS_STYLE_LIST_STYLE_DISC:
@@ -760,9 +760,9 @@ uint8_t BuiltinCounterStyle::GetSpeakAs() {
     case NS_STYLE_LIST_STYLE_SQUARE:
     case NS_STYLE_LIST_STYLE_DISCLOSURE_CLOSED:
     case NS_STYLE_LIST_STYLE_DISCLOSURE_OPEN:
-      return NS_STYLE_COUNTER_SPEAKAS_BULLETS;
+      return SpeakAs::Bullets;
     default:
-      return NS_STYLE_COUNTER_SPEAKAS_NUMBERS;
+      return SpeakAs::Numbers;
   }
 }
 
@@ -965,7 +965,7 @@ class CustomCounterStyle final : public CounterStyle {
   virtual bool IsOrdinalInAutoRange(CounterValue aOrdinal) override;
   virtual void GetPad(PadType& aResult) override;
   virtual CounterStyle* GetFallback() override;
-  virtual uint8_t GetSpeakAs() override;
+  virtual SpeakAs GetSpeakAs() override;
   virtual bool UseNegativeSign() override;
 
   virtual void CallFallbackStyle(CounterValue aOrdinal,
@@ -975,7 +975,7 @@ class CustomCounterStyle final : public CounterStyle {
                                      WritingMode aWritingMode,
                                      nsAString& aResult, bool& aIsRTL) override;
 
-  bool IsExtendsSystem() { return mSystem == NS_STYLE_COUNTER_SYSTEM_EXTENDS; }
+  bool IsExtendsSystem() { return mSystem == StyleCounterSystem::Extends; }
 
   void* operator new(size_t sz, nsPresContext* aPresContext) {
     return aPresContext->PresShell()->AllocateByObjectID(
@@ -1001,8 +1001,8 @@ class CustomCounterStyle final : public CounterStyle {
   
   
   
-  uint8_t GetSpeakAsAutoValue();
-  void ComputeRawSpeakAs(uint8_t& aSpeakAs, CounterStyle*& aSpeakAsCounter);
+  SpeakAs GetSpeakAsAutoValue();
+  void ComputeRawSpeakAs(SpeakAs& aSpeakAs, CounterStyle*& aSpeakAsCounter);
   CounterStyle* ComputeSpeakAs();
 
   CounterStyle* ComputeExtends();
@@ -1017,10 +1017,10 @@ class CustomCounterStyle final : public CounterStyle {
   RefPtr<const RawServoCounterStyleRule> mRule;
   uint32_t mRuleGeneration;
 
-  uint8_t mSystem;
+  StyleCounterSystem mSystem;
   
   
-  MOZ_INIT_OUTSIDE_CTOR uint8_t mSpeakAs;
+  MOZ_INIT_OUTSIDE_CTOR SpeakAs mSpeakAs;
 
   enum {
     
@@ -1127,7 +1127,7 @@ void CustomCounterStyle::GetSpokenCounterText(CounterValue aOrdinal,
                                               WritingMode aWritingMode,
                                               nsAString& aResult,
                                               bool& aIsBullet) {
-  if (GetSpeakAs() != NS_STYLE_COUNTER_SPEAKAS_OTHER) {
+  if (GetSpeakAs() != SpeakAs::Other) {
     CounterStyle::GetSpokenCounterText(aOrdinal, aWritingMode, aResult,
                                        aIsBullet);
   } else {
@@ -1141,10 +1141,10 @@ void CustomCounterStyle::GetSpokenCounterText(CounterValue aOrdinal,
 
 bool CustomCounterStyle::IsBullet() {
   switch (mSystem) {
-    case NS_STYLE_COUNTER_SYSTEM_CYCLIC:
+    case StyleCounterSystem::Cyclic:
       
       return true;
-    case NS_STYLE_COUNTER_SYSTEM_EXTENDS:
+    case StyleCounterSystem::Extends:
       return GetExtendsRoot()->IsBullet();
     default:
       return false;
@@ -1192,16 +1192,16 @@ bool CustomCounterStyle::IsOrdinalInRange(CounterValue aOrdinal) {
 
 bool CustomCounterStyle::IsOrdinalInAutoRange(CounterValue aOrdinal) {
   switch (mSystem) {
-    case NS_STYLE_COUNTER_SYSTEM_CYCLIC:
-    case NS_STYLE_COUNTER_SYSTEM_NUMERIC:
-    case NS_STYLE_COUNTER_SYSTEM_FIXED:
+    case StyleCounterSystem::Cyclic:
+    case StyleCounterSystem::Numeric:
+    case StyleCounterSystem::Fixed:
       return true;
-    case NS_STYLE_COUNTER_SYSTEM_ALPHABETIC:
-    case NS_STYLE_COUNTER_SYSTEM_SYMBOLIC:
+    case StyleCounterSystem::Alphabetic:
+    case StyleCounterSystem::Symbolic:
       return aOrdinal >= 1;
-    case NS_STYLE_COUNTER_SYSTEM_ADDITIVE:
+    case StyleCounterSystem::Additive:
       return aOrdinal >= 0;
-    case NS_STYLE_COUNTER_SYSTEM_EXTENDS:
+    case StyleCounterSystem::Extends:
       return GetExtendsRoot()->IsOrdinalInAutoRange(aOrdinal);
     default:
       MOZ_ASSERT_UNREACHABLE("Invalid system for computing auto value.");
@@ -1239,7 +1239,7 @@ CounterStyle* CustomCounterStyle::GetFallback() {
 }
 
 
-uint8_t CustomCounterStyle::GetSpeakAs() {
+SpeakAs CustomCounterStyle::GetSpeakAs() {
   if (!(mFlags & FLAG_SPEAKAS_INITED)) {
     ComputeSpeakAs();
   }
@@ -1248,7 +1248,7 @@ uint8_t CustomCounterStyle::GetSpeakAs() {
 
 
 bool CustomCounterStyle::UseNegativeSign() {
-  if (mSystem == NS_STYLE_COUNTER_SYSTEM_EXTENDS) {
+  if (mSystem == StyleCounterSystem::Extends) {
     return GetExtendsRoot()->UseNegativeSign();
   }
   return SystemUsesNegativeSign(mSystem);
@@ -1272,21 +1272,21 @@ bool CustomCounterStyle::GetInitialCounterText(CounterValue aOrdinal,
                                                nsAString& aResult,
                                                bool& aIsRTL) {
   switch (mSystem) {
-    case NS_STYLE_COUNTER_SYSTEM_CYCLIC:
+    case StyleCounterSystem::Cyclic:
       return GetCyclicCounterText(aOrdinal, aResult, GetSymbols());
-    case NS_STYLE_COUNTER_SYSTEM_FIXED: {
+    case StyleCounterSystem::Fixed: {
       int32_t start = Servo_CounterStyleRule_GetFixedFirstValue(mRule);
       return GetFixedCounterText(aOrdinal, aResult, start, GetSymbols());
     }
-    case NS_STYLE_COUNTER_SYSTEM_SYMBOLIC:
+    case StyleCounterSystem::Symbolic:
       return GetSymbolicCounterText(aOrdinal, aResult, GetSymbols());
-    case NS_STYLE_COUNTER_SYSTEM_ALPHABETIC:
+    case StyleCounterSystem::Alphabetic:
       return GetAlphabeticCounterText(aOrdinal, aResult, GetSymbols());
-    case NS_STYLE_COUNTER_SYSTEM_NUMERIC:
+    case StyleCounterSystem::Numeric:
       return GetNumericCounterText(aOrdinal, aResult, GetSymbols());
-    case NS_STYLE_COUNTER_SYSTEM_ADDITIVE:
+    case StyleCounterSystem::Additive:
       return GetAdditiveCounterText(aOrdinal, aResult, GetAdditiveSymbols());
-    case NS_STYLE_COUNTER_SYSTEM_EXTENDS:
+    case StyleCounterSystem::Extends:
       return GetExtendsRoot()->GetInitialCounterText(aOrdinal, aWritingMode,
                                                      aResult, aIsRTL);
     default:
@@ -1310,8 +1310,8 @@ Span<const AdditiveSymbol> CustomCounterStyle::GetAdditiveSymbols() {
 }
 
 
-uint8_t CustomCounterStyle::GetSpeakAsAutoValue() {
-  uint8_t system = mSystem;
+SpeakAs CustomCounterStyle::GetSpeakAsAutoValue() {
+  auto system = mSystem;
   if (IsExtendsSystem()) {
     CounterStyle* root = GetExtendsRoot();
     if (!root->IsCustomStyle()) {
@@ -1329,7 +1329,7 @@ uint8_t CustomCounterStyle::GetSpeakAsAutoValue() {
 
 
 
-void CustomCounterStyle::ComputeRawSpeakAs(uint8_t& aSpeakAs,
+void CustomCounterStyle::ComputeRawSpeakAs(SpeakAs& aSpeakAs,
                                            CounterStyle*& aSpeakAsCounter) {
   NS_ASSERTION(!(mFlags & FLAG_SPEAKAS_INITED),
                "ComputeRawSpeakAs is called with speak-as inited.");
@@ -1341,16 +1341,16 @@ void CustomCounterStyle::ComputeRawSpeakAs(uint8_t& aSpeakAs,
       aSpeakAs = GetSpeakAsAutoValue();
       break;
     case StyleCounterSpeakAs::Tag::Bullets:
-      aSpeakAs = NS_STYLE_COUNTER_SPEAKAS_BULLETS;
+      aSpeakAs = SpeakAs::Bullets;
       break;
     case StyleCounterSpeakAs::Tag::Numbers:
-      aSpeakAs = NS_STYLE_COUNTER_SPEAKAS_NUMBERS;
+      aSpeakAs = SpeakAs::Numbers;
       break;
     case StyleCounterSpeakAs::Tag::Words:
-      aSpeakAs = NS_STYLE_COUNTER_SPEAKAS_WORDS;
+      aSpeakAs = SpeakAs::Words;
       break;
     case StyleCounterSpeakAs::Tag::Ident:
-      aSpeakAs = NS_STYLE_COUNTER_SPEAKAS_OTHER;
+      aSpeakAs = SpeakAs::Other;
       aSpeakAsCounter = mManager->ResolveCounterStyle(speakAs.AsIdent());
       break;
     case StyleCounterSpeakAs::Tag::None: {
@@ -1388,7 +1388,7 @@ void CustomCounterStyle::ComputeRawSpeakAs(uint8_t& aSpeakAs,
 
 CounterStyle* CustomCounterStyle::ComputeSpeakAs() {
   if (mFlags & FLAG_SPEAKAS_INITED) {
-    if (mSpeakAs == NS_STYLE_COUNTER_SPEAKAS_OTHER) {
+    if (mSpeakAs == SpeakAs::Other) {
       return mSpeakAsCounter;
     }
     return this;
@@ -1404,7 +1404,7 @@ CounterStyle* CustomCounterStyle::ComputeSpeakAs() {
   ComputeRawSpeakAs(mSpeakAs, speakAsCounter);
 
   bool inLoop = false;
-  if (mSpeakAs != NS_STYLE_COUNTER_SPEAKAS_OTHER) {
+  if (mSpeakAs != SpeakAs::Other) {
     mSpeakAsCounter = nullptr;
   } else if (!speakAsCounter->IsCustomStyle()) {
     mSpeakAsCounter = speakAsCounter;
@@ -1576,25 +1576,25 @@ CounterStyle* AnonymousCounterStyle::GetFallback() {
   return CounterStyleManager::GetDecimalStyle();
 }
 
-uint8_t AnonymousCounterStyle::GetSystem() const {
+StyleCounterSystem AnonymousCounterStyle::GetSystem() const {
   switch (mSymbolsType) {
     case StyleSymbolsType::Cyclic:
-      return NS_STYLE_COUNTER_SYSTEM_CYCLIC;
+      return StyleCounterSystem::Cyclic;
     case StyleSymbolsType::Numeric:
-      return NS_STYLE_COUNTER_SYSTEM_NUMERIC;
+      return StyleCounterSystem::Numeric;
     case StyleSymbolsType::Fixed:
-      return NS_STYLE_COUNTER_SYSTEM_FIXED;
+      return StyleCounterSystem::Fixed;
     case StyleSymbolsType::Alphabetic:
-      return NS_STYLE_COUNTER_SYSTEM_ALPHABETIC;
+      return StyleCounterSystem::Alphabetic;
     case StyleSymbolsType::Symbolic:
-      return NS_STYLE_COUNTER_SYSTEM_SYMBOLIC;
+      return StyleCounterSystem::Symbolic;
   }
   MOZ_ASSERT_UNREACHABLE("Unknown symbols() type");
-  return NS_STYLE_COUNTER_SYSTEM_CYCLIC;
+  return StyleCounterSystem::Cyclic;
 }
 
 
-uint8_t AnonymousCounterStyle::GetSpeakAs() {
+SpeakAs AnonymousCounterStyle::GetSpeakAs() {
   return GetDefaultSpeakAsForSystem(GetSystem());
 }
 
@@ -1712,20 +1712,20 @@ void CounterStyle::GetSpokenCounterText(CounterValue aOrdinal,
   bool isRTL;  
   aIsBullet = false;
   switch (GetSpeakAs()) {
-    case NS_STYLE_COUNTER_SPEAKAS_BULLETS:
+    case SpeakAs::Bullets:
       aResult.Assign(kDiscCharacter);
       aIsBullet = true;
       break;
-    case NS_STYLE_COUNTER_SPEAKAS_NUMBERS:
+    case SpeakAs::Numbers:
       DecimalToText(aOrdinal, aResult);
       break;
-    case NS_STYLE_COUNTER_SPEAKAS_SPELL_OUT:
+    case SpeakAs::Spellout:
       
       
-    case NS_STYLE_COUNTER_SPEAKAS_WORDS:
+    case SpeakAs::Words:
       GetCounterText(aOrdinal, WritingMode(), aResult, isRTL);
       break;
-    case NS_STYLE_COUNTER_SPEAKAS_OTHER:
+    case SpeakAs::Other:
       
       MOZ_ASSERT_UNREACHABLE("Invalid speak-as value");
       break;
