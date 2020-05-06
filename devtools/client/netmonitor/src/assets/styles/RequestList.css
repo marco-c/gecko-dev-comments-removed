@@ -78,6 +78,11 @@
   table-layout: fixed;
 }
 
+.requests-list-table {
+  
+  overflow: hidden;
+}
+
 .requests-list-column,
 .ws-frames-list-column {
   white-space: nowrap;
@@ -118,6 +123,11 @@
 .ws-frames-list-headers th {
   height: calc(var(--theme-toolbar-height) + 1px);
   border-bottom: 1px solid var(--theme-splitter-color);
+}
+
+.requests-list-headers th {
+  
+  overflow: visible;
 }
 
 .requests-list-headers th:not(:first-child),
@@ -206,6 +216,9 @@
   min-height: 23px;
   position: absolute;
   background-color: transparent;
+  
+
+  height: 100vh;
 }
 
 
