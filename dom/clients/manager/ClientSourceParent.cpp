@@ -120,8 +120,7 @@ IPCResult ClientSourceParent::RecvFreeze() {
 
   
   
-  nsTArray<ClientHandleParent*> handleList(mHandleList);
-  for (ClientHandleParent* handle : handleList) {
+  for (ClientHandleParent* handle : mHandleList.Clone()) {
     Unused << ClientHandleParent::Send__delete__(handle);
   }
 
@@ -182,8 +181,7 @@ void ClientSourceParent::ActorDestroy(ActorDestroyReason aReason) {
   DebugOnly<bool> removed = mService->RemoveSource(this);
   MOZ_ASSERT(removed);
 
-  nsTArray<ClientHandleParent*> handleList(mHandleList);
-  for (ClientHandleParent* handle : handleList) {
+  for (ClientHandleParent* handle : mHandleList.Clone()) {
     
     
     Unused << ClientHandleParent::Send__delete__(handle);
