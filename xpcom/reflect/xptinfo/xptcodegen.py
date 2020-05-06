@@ -501,7 +501,7 @@ namespace detail {
 
     
     fd.write("const char sStrings[] = {\n")
-    for s, off in strings.iteritems():
+    for s, off in strings.items():
         fd.write("  // %d = %s\n  '%s','\\0',\n" % (off, s, "','".join(s)))
     fd.write("};\n\n")
 
