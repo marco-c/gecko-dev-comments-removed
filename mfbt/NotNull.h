@@ -71,6 +71,14 @@
 
 namespace mozilla {
 
+namespace detail {
+template <typename T>
+struct CopyablePtr {
+  T mPtr;
+  explicit CopyablePtr(T aPtr) : mPtr{std::move(aPtr)} {}
+};
+}  
+
 
 
 
@@ -106,14 +114,23 @@ template <typename T>
 class NotNull {
   template <typename U>
   friend constexpr NotNull<U> WrapNotNull(U aBasePtr);
+  template <typename U>
+  friend constexpr NotNull<U> WrapNotNullUnchecked(U aBasePtr);
   template <typename U, typename... Args>
   friend constexpr NotNull<U> MakeNotNull(Args&&... aArgs);
+  template <typename U>
+  friend class NotNull;
 
-  T mBasePtr;
+  detail::CopyablePtr<T> mBasePtr;
 
   
   template <typename U>
-  constexpr explicit NotNull(U aBasePtr) : mBasePtr(aBasePtr) {}
+  constexpr explicit NotNull(U aBasePtr) : mBasePtr(T{std::move(aBasePtr)}) {
+    static_assert(sizeof(T) == sizeof(NotNull<T>),
+                  "NotNull must have zero space overhead.");
+    static_assert(offsetof(NotNull<T>, mBasePtr) == 0,
+                  "mBasePtr must have zero offset.");
+  }
 
  public:
   
@@ -122,28 +139,25 @@ class NotNull {
   
   template <typename U>
   constexpr MOZ_IMPLICIT NotNull(const NotNull<U>& aOther)
-      : mBasePtr(aOther.get()) {
-    static_assert(sizeof(T) == sizeof(NotNull<T>),
-                  "NotNull must have zero space overhead.");
-    static_assert(offsetof(NotNull<T>, mBasePtr) == 0,
-                  "mBasePtr must have zero offset.");
-  }
+      : mBasePtr(aOther.mBasePtr) {}
 
   
   explicit operator bool() const = delete;
 
   
   
-  constexpr const T& get() const { return mBasePtr; }
+  constexpr const T& get() const { return mBasePtr.mPtr; }
 
   
   constexpr operator const T&() const { return get(); }
 
   
   constexpr auto* operator->() const MOZ_NONNULL_RETURN {
-    return mBasePtr.operator->();
+    return mBasePtr.mPtr.operator->();
   }
-  constexpr decltype(*mBasePtr) operator*() const { return *mBasePtr; }
+  constexpr decltype(*mBasePtr.mPtr) operator*() const {
+    return *mBasePtr.mPtr;
+  }
 
   
   
@@ -162,6 +176,8 @@ class NotNull<T*> {
   friend constexpr NotNull<U*> WrapNotNullUnchecked(U* aBasePtr);
   template <typename U, typename... Args>
   friend constexpr NotNull<U> MakeNotNull(Args&&... aArgs);
+  template <typename U>
+  friend class NotNull;
 
   T* mBasePtr;
 
@@ -199,16 +215,20 @@ class NotNull<T*> {
 };
 
 template <typename T>
-constexpr NotNull<T> WrapNotNull(const T aBasePtr) {
-  NotNull<T> notNull(aBasePtr);
+constexpr NotNull<T> WrapNotNull(T aBasePtr) {
   MOZ_RELEASE_ASSERT(aBasePtr);
-  return notNull;
+  return NotNull<T>{std::move(aBasePtr)};
 }
 
 
 
 
 
+
+template <typename T>
+constexpr NotNull<T> WrapNotNullUnchecked(T aBasePtr) {
+  return NotNull<T>{std::move(aBasePtr)};
+}
 
 template <typename T>
 MOZ_NONNULL(1)
