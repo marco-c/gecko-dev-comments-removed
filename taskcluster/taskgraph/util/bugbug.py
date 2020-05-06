@@ -16,8 +16,8 @@ from taskgraph.util.taskcluster import requests_retry_session
 logger = logging.getLogger(__name__)
 
 BUGBUG_BASE_URL = "https://bugbug.herokuapp.com"
-RETRY_TIMEOUT = 4 * 60  
-RETRY_INTERVAL = 5      
+RETRY_TIMEOUT = 8 * 60  
+RETRY_INTERVAL = 10      
 
 
 CT_LOW = 0.5
