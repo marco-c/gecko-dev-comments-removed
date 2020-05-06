@@ -14,10 +14,10 @@
 
 class nsCocoaFeatures {
  public:
-  static int32_t macOSVersion();
-  static int32_t macOSVersionMajor();
-  static int32_t macOSVersionMinor();
-  static int32_t macOSVersionBugFix();
+  static int32_t OSXVersion();
+  static int32_t OSXVersionMajor();
+  static int32_t OSXVersionMinor();
+  static int32_t OSXVersionBugFix();
   static bool OnYosemiteOrLater();
   static bool OnElCapitanOrLater();
   static bool OnSierraExactly();
@@ -41,10 +41,9 @@ class nsCocoaFeatures {
   static int32_t ExtractBugFixVersion(int32_t aVersion);
 
  private:
-  nsCocoaFeatures() = delete;  
   static void InitializeVersionNumbers();
 
-  static int32_t mOSVersion;
+  static int32_t mOSXVersion;
 };
 
 

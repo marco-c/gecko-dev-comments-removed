@@ -711,6 +711,17 @@ bool GLContext::InitImpl() {
       MarkUnsupported(GLFeature::framebuffer_multisample);
     }
 
+#ifdef XP_MACOSX
+    
+    
+    
+    
+    if (Vendor() == gl::GLVendor::NVIDIA &&
+        !nsCocoaFeatures::IsAtLeastVersion(10, 8, 3)) {
+      MarkUnsupported(GLFeature::depth_texture);
+    }
+#endif
+
     const auto versionStr = (const char*)fGetString(LOCAL_GL_VERSION);
     if (strstr(versionStr, "Mesa")) {
       
