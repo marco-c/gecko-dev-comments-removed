@@ -362,7 +362,8 @@ ContentBlocking::AllowAccessFor(
                  
                  
                  
-                 if (aReason == ContentBlockingNotifier::eOpener) {
+                 if (aReason == ContentBlockingNotifier::eOpener &&
+                     !bc->IsDiscarded()) {
                    MOZ_ASSERT(bc->IsInProcess());
                    ContentBlocking::OnAllowAccessFor(bc, trackingOrigin,
                                                      behavior, aReason);
