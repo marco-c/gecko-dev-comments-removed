@@ -333,7 +333,7 @@ void DisplayItemData::BeginUpdate(Layer* aLayer, LayerState aState,
 
   
   
-  AutoTArray<nsIFrame*, 4> copy(mFrameList);
+  CopyableAutoTArray<nsIFrame*, 4> copy(mFrameList);
   if (!copy.RemoveElement(aItem->Frame())) {
     AddFrame(aItem->Frame());
     mChangedFrameInvalidations.Or(mChangedFrameInvalidations,
@@ -5740,7 +5740,7 @@ void ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry) {
   
   
   nsTArray<RefPtr<Layer>> maskLayers(
-      aEntry->mLayer->GetAllAncestorMaskLayers());
+      aEntry->mLayer->GetAllAncestorMaskLayers().Clone());
 
   
   

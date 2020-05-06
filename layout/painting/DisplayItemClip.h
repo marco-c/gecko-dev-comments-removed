@@ -182,7 +182,7 @@ class DisplayItemClip {
 
  private:
   nsRect mClipRect;
-  nsTArray<RoundedRect> mRoundedClipRects;
+  CopyableTArray<RoundedRect> mRoundedClipRects;
   
   
   bool mHaveClipRect;
