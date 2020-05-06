@@ -7248,7 +7248,8 @@ nsIWidget* nsIFrame::GetNearestWidget(nsPoint& aOffset) const {
   return widget;
 }
 
-Matrix4x4Flagged nsIFrame::GetTransformMatrix(const nsIFrame* aStopAtAncestor,
+Matrix4x4Flagged nsIFrame::GetTransformMatrix(ViewportType aViewportType,
+                                              RelativeTo aStopAtAncestor,
                                               nsIFrame** aOutAncestor,
                                               uint32_t aFlags) const {
   MOZ_ASSERT(aOutAncestor, "Need a place to put the ancestor!");
@@ -7257,20 +7258,53 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(const nsIFrame* aStopAtAncestor,
 
 
 
-  if (IsTransformed()) {
-    
+  bool isTransformed = IsTransformed();
+  const nsIFrame* zoomedContentRoot = nullptr;
+  if (aStopAtAncestor.mViewportType == ViewportType::Visual) {
+    zoomedContentRoot = ViewportUtils::IsZoomedContentRoot(this);
+    if (zoomedContentRoot) {
+      MOZ_ASSERT(aViewportType != ViewportType::Visual);
+    }
+  }
 
-
-    NS_ASSERTION(nsLayoutUtils::GetCrossDocParentFrame(this),
-                 "Cannot transform the viewport frame!");
+  if (isTransformed || zoomedContentRoot) {
+    Matrix4x4 result;
     int32_t scaleFactor =
         ((aFlags & IN_CSS_UNITS) ? AppUnitsPerCSSPixel()
                                  : PresContext()->AppUnitsPerDevPixel());
 
-    Matrix4x4 result = nsDisplayTransform::GetResultingTransformMatrix(
-        this, nsPoint(0, 0), scaleFactor,
-        nsDisplayTransform::INCLUDE_PERSPECTIVE |
-            nsDisplayTransform::OFFSET_BY_ORIGIN);
+    
+
+
+    if (isTransformed) {
+      NS_ASSERTION(nsLayoutUtils::GetCrossDocParentFrame(this),
+                   "Cannot transform the viewport frame!");
+
+      result = result * nsDisplayTransform::GetResultingTransformMatrix(
+                            this, nsPoint(0, 0), scaleFactor,
+                            nsDisplayTransform::INCLUDE_PERSPECTIVE |
+                                nsDisplayTransform::OFFSET_BY_ORIGIN);
+    }
+
+    if (zoomedContentRoot) {
+      Matrix4x4 layoutToVisual;
+      ScrollableLayerGuid::ViewID targetScrollId =
+          nsLayoutUtils::FindOrCreateIDFor(zoomedContentRoot->GetContent());
+      if (aFlags & nsIFrame::IN_CSS_UNITS) {
+        layoutToVisual =
+            ViewportUtils::GetVisualToLayoutTransform(targetScrollId)
+                .Inverse()
+                .ToUnknownMatrix();
+      } else {
+        layoutToVisual =
+            ViewportUtils::GetVisualToLayoutTransform<LayoutDevicePixel>(
+                targetScrollId)
+                .Inverse()
+                .ToUnknownMatrix();
+      }
+      result = result * layoutToVisual;
+    }
+
     *aOutAncestor = nsLayoutUtils::GetCrossDocParentFrame(this);
     nsPoint delta = GetOffsetToCrossDoc(*aOutAncestor);
     
@@ -7336,12 +7370,16 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(const nsIFrame* aStopAtAncestor,
 
   
   const nsIFrame* current = this;
-  while (!(*aOutAncestor)->IsTransformed() &&
-         !nsLayoutUtils::IsPopup(*aOutAncestor) &&
-         *aOutAncestor != aStopAtAncestor &&
-         (!(aFlags & STOP_AT_STACKING_CONTEXT_AND_DISPLAY_PORT) ||
-          (!(*aOutAncestor)->IsStackingContext() &&
-           !nsLayoutUtils::FrameHasDisplayPort(*aOutAncestor, current)))) {
+  auto shouldStopAt = [](const nsIFrame* aCurrent, nsIFrame* aAncestor,
+                         uint32_t aFlags) {
+    return aAncestor->IsTransformed() || nsLayoutUtils::IsPopup(aAncestor) ||
+           ViewportUtils::IsZoomedContentRoot(aAncestor) ||
+           ((aFlags & STOP_AT_STACKING_CONTEXT_AND_DISPLAY_PORT) &&
+            (aAncestor->IsStackingContext() ||
+             nsLayoutUtils::FrameHasDisplayPort(aAncestor, aCurrent)));
+  };
+  while (*aOutAncestor != aStopAtAncestor.mFrame &&
+         !shouldStopAt(current, *aOutAncestor, aFlags)) {
     
     nsIFrame* parent = nsLayoutUtils::GetCrossDocParentFrame(*aOutAncestor);
     if (!parent) break;
