@@ -508,18 +508,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   
   
-  
-  
-  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI(
-      wr::RenderRoot aRenderRoot) const;
-
-  
-  
-  
-  
-  
-  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPIAtPoint(
-      const ScreenPoint& aPoint) const;
+  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI() const;
 
  protected:
   

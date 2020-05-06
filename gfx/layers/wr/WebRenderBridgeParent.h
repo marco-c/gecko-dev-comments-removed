@@ -100,7 +100,7 @@ class WebRenderBridgeParent final
                         const wr::PipelineId& aPipelineId,
                         widget::CompositorWidget* aWidget,
                         CompositorVsyncScheduler* aScheduler,
-                        nsTArray<RefPtr<wr::WebRenderAPI>>&& aApis,
+                        RefPtr<wr::WebRenderAPI>&& aApi,
                         RefPtr<AsyncImagePipelineManager>&& aImageMgr,
                         RefPtr<CompositorAnimationStorage>&& aAnimStorage,
                         TimeDuration aVsyncRate);
@@ -109,27 +109,8 @@ class WebRenderBridgeParent final
       const wr::PipelineId& aPipelineId);
 
   wr::PipelineId PipelineId() { return mPipelineId; }
-
-  bool CloneWebRenderAPIs(nsTArray<RefPtr<wr::WebRenderAPI>>& aOutAPIs) {
-    for (auto& api : mApis) {
-      if (api) {
-        RefPtr<wr::WebRenderAPI> clone = api->Clone();
-        if (!clone) {
-          return false;
-        }
-        aOutAPIs.AppendElement(clone);
-      }
-    }
-    return true;
-  }
-  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPIAtPoint(
-      const ScreenPoint& aPoint);
-  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI(
-      wr::RenderRoot aRenderRoot) {
-    if (aRenderRoot > wr::kHighestRenderRoot) {
-      return nullptr;
-    }
-    return do_AddRef(mApis[aRenderRoot]);
+  already_AddRefed<wr::WebRenderAPI> GetWebRenderAPI() {
+    return do_AddRef(mApi);
   }
   AsyncImagePipelineManager* AsyncImageManager() { return mAsyncImageManager; }
   CompositorVsyncScheduler* CompositorScheduler() {
@@ -304,8 +285,7 @@ class WebRenderBridgeParent final
                            RefPtr<const wr::WebRenderPipelineInfo> aInfo);
 
   wr::Epoch UpdateWebRender(
-      CompositorVsyncScheduler* aScheduler,
-      nsTArray<RefPtr<wr::WebRenderAPI>>&& aApis,
+      CompositorVsyncScheduler* aScheduler, RefPtr<wr::WebRenderAPI>&& aApi,
       AsyncImagePipelineManager* aImageMgr,
       CompositorAnimationStorage* aAnimStorage,
       const TextureFactoryIdentifier& aTextureFactoryIdentifier);
@@ -380,15 +360,6 @@ class WebRenderBridgeParent final
 
   explicit WebRenderBridgeParent(const wr::PipelineId& aPipelineId);
   virtual ~WebRenderBridgeParent();
-
-  wr::WebRenderAPI* Api(wr::RenderRoot aRenderRoot) {
-    if (IsRootWebRenderBridgeParent()) {
-      return mApis[aRenderRoot];
-    } else {
-      MOZ_ASSERT(aRenderRoot == wr::RenderRoot::Default);
-      return mApis[*mRenderRoot];
-    }
-  }
 
   
   
@@ -573,14 +544,7 @@ class WebRenderBridgeParent final
   CompositorBridgeParentBase* MOZ_NON_OWNING_REF mCompositorBridge;
   wr::PipelineId mPipelineId;
   RefPtr<widget::CompositorWidget> mWidget;
-  
-  
-  
-  
-  
-  
-  
-  wr::RenderRootArray<RefPtr<wr::WebRenderAPI>> mApis;
+  RefPtr<wr::WebRenderAPI> mApi;
   
   
   
