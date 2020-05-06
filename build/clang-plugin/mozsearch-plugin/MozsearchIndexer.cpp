@@ -40,6 +40,18 @@
 #define getEndLoc getLocEnd
 #endif
 
+
+
+
+
+
+
+#if __cplusplus < 201402L
+using llvm::make_unique;
+#else
+using std::make_unique;
+#endif
+
 using namespace clang;
 
 const std::string GENERATED("__GENERATED__" PATHSEP_STRING);
@@ -198,7 +210,7 @@ private:
           Absolute = Filename;
         }
       }
-      std::unique_ptr<FileInfo> Info = llvm::make_unique<FileInfo>(Absolute);
+      std::unique_ptr<FileInfo> Info = make_unique<FileInfo>(Absolute);
       It = FileMap.insert(std::make_pair(Id, std::move(Info))).first;
     }
     return It->second.get();
@@ -452,7 +464,7 @@ public:
       : CI(CI), SM(CI.getSourceManager()), LO(CI.getLangOpts()), CurMangleContext(nullptr),
         AstContext(nullptr), CurDeclContext(nullptr), TemplateStack(nullptr) {
     CI.getPreprocessor().addPPCallbacks(
-        llvm::make_unique<PreprocessorHook>(this));
+        make_unique<PreprocessorHook>(this));
   }
 
   virtual DiagnosticConsumer *clone(DiagnosticsEngine &Diags) const {
@@ -1630,7 +1642,7 @@ class IndexAction : public PluginASTAction {
 protected:
   std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                  llvm::StringRef F) {
-    return llvm::make_unique<IndexConsumer>(CI);
+    return make_unique<IndexConsumer>(CI);
   }
 
   bool ParseArgs(const CompilerInstance &CI,
