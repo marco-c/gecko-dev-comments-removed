@@ -520,10 +520,11 @@ void MediaTransportHandlerSTS::ActivateTransport(
     bool aPrivacyRequested) {
   mInitPromise->Then(
       mStsThread, __func__,
-      [=, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
+      [=, keyDer = aKeyDer.Clone(), certDer = aCertDer.Clone(),
+       self = RefPtr<MediaTransportHandlerSTS>(this)]() {
         MOZ_ASSERT(aComponentCount);
         RefPtr<DtlsIdentity> dtlsIdentity(
-            DtlsIdentity::Deserialize(aKeyDer, aCertDer, aAuthType));
+            DtlsIdentity::Deserialize(keyDer, certDer, aAuthType));
         if (!dtlsIdentity) {
           MOZ_ASSERT(false);
           return;
@@ -611,7 +612,8 @@ void MediaTransportHandlerSTS::StartIceGathering(
     const nsTArray<NrIceStunAddr>& aStunAddrs) {
   mInitPromise->Then(
       mStsThread, __func__,
-      [=, self = RefPtr<MediaTransportHandlerSTS>(this)]() {
+      [=, stunAddrs = aStunAddrs.Clone(),
+       self = RefPtr<MediaTransportHandlerSTS>(this)]() {
         mObfuscateHostAddresses = aObfuscateHostAddresses;
 
         
@@ -620,8 +622,8 @@ void MediaTransportHandlerSTS::StartIceGathering(
         
         mIceCtx->SetCtxFlags(aDefaultRouteOnly);
 
-        if (aStunAddrs.Length()) {
-          mIceCtx->SetStunAddrs(aStunAddrs);
+        if (stunAddrs.Length()) {
+          mIceCtx->SetStunAddrs(stunAddrs);
         }
 
         
