@@ -203,7 +203,7 @@ def main(log, args):
             tar.extractall(path=str(fetch_dir))
     except Exception:
         log.error(
-            "Could not read extract browsertime results archive",
+            "Could not read/extract browsertime results archive",
             path=browsertime_results_path,
             exc_info=True
         )
@@ -285,6 +285,33 @@ def main(log, args):
     }
     for entry in suites:
         entry["extraOptions"] = jobs_json["extra_options"]
+
+    
+    
+    
+    similarity = None
+    if "android" in os.getenv("TC_PLATFORM", ""):
+        try:
+            from similarity import calculate_similarity
+            similarity = calculate_similarity(jobs_json, fetch_dir, OUTPUT_DIR, log)
+        except Exception:
+            log.info("Failed to calculate similarity score", exc_info=True)
+
+    if similarity:
+        suites[0]["subtests"].append({
+            "name": "Similarity3D",
+            "value": similarity[0],
+            "replicates": [similarity[0]],
+            "lowerIsBetter": False,
+            "unit": "a.u.",
+        })
+        suites[0]["subtests"].append({
+            "name": "Similarity2D",
+            "value": similarity[1],
+            "replicates": [similarity[1]],
+            "lowerIsBetter": False,
+            "unit": "a.u.",
+        })
 
     
     

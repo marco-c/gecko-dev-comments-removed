@@ -33,6 +33,10 @@ def run_visual_metrics(config, jobs):
 
             
             
+            job['worker'].setdefault('env', {})['TC_PLATFORM'] = platform
+
+            
+            
             
             job['treeherder']['platform'] = platform
 
