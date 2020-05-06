@@ -37,9 +37,10 @@ void RemoteContentController::NotifyLayerTransforms(
     const nsTArray<MatrixMessage>& aTransforms) {
   if (MessageLoop::current() != mCompositorThread) {
     
-    mCompositorThread->PostTask(NewRunnableMethod<nsTArray<MatrixMessage>>(
-        "layers::RemoteContentController::NotifyLayerTransforms", this,
-        &RemoteContentController::NotifyLayerTransforms, aTransforms));
+    mCompositorThread->PostTask(
+        NewRunnableMethod<CopyableTArray<MatrixMessage>>(
+            "layers::RemoteContentController::NotifyLayerTransforms", this,
+            &RemoteContentController::NotifyLayerTransforms, aTransforms));
     return;
   }
 

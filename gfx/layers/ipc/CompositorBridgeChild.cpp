@@ -520,7 +520,7 @@ mozilla::ipc::IPCResult CompositorBridgeChild::RecvDidComposite(
     const LayersId& aId, const TransactionId& aTransactionId,
     const TimeStamp& aCompositeStart, const TimeStamp& aCompositeEnd) {
   
-  AutoTArray<RefPtr<TextureClientPool>, 2> texturePools = mTexturePools;
+  const auto texturePools = mTexturePools.Clone();
 
   if (mLayerManager) {
     MOZ_ASSERT(!aId.IsValid());

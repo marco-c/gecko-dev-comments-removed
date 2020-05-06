@@ -177,7 +177,7 @@ class WebRenderLayerScrollData final {
   
   
   
-  nsTArray<size_t> mScrollIds;
+  CopyableTArray<size_t> mScrollIds;
 
   
   

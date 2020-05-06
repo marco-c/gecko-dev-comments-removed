@@ -105,7 +105,7 @@ class APZTestData {
  private:
   DataStore mPaints;
   DataStore mRepaintRequests;
-  nsTArray<HitResult> mHitResults;
+  CopyableTArray<HitResult> mHitResults;
   
   std::map<std::string, std::string> mAdditionalData;
 
