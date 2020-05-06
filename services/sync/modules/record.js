@@ -5,6 +5,7 @@
 var EXPORTED_SYMBOLS = [
   "WBORecord",
   "RecordManager",
+  "RawCryptoWrapper",
   "CryptoWrapper",
   "CollectionKeyManager",
   "Collection",
@@ -28,6 +29,16 @@ const { Async } = ChromeUtils.import("resource://services-common/async.js");
 const { CommonUtils } = ChromeUtils.import(
   "resource://services-common/utils.js"
 );
+
+
+
+
+
+
+
+
+
+
 
 function WBORecord(collection, id) {
   this.data = {};
@@ -131,15 +142,70 @@ Utils.deferGetSet(WBORecord, "data", [
   "payload",
 ]);
 
-function CryptoWrapper(collection, id) {
-  this.cleartext = {};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function RawCryptoWrapper(collection, id) {
+  
+  
+  
+  
+  this.cleartext = this.defaultCleartext();
   WBORecord.call(this, collection, id);
   this.ciphertext = null;
-  this.id = id;
 }
-CryptoWrapper.prototype = {
+RawCryptoWrapper.prototype = {
   __proto__: WBORecord.prototype,
-  _logName: "Sync.Record.CryptoWrapper",
+  _logName: "Sync.Record.RawCryptoWrapper",
+
+  
+
+
+
+
+
+
+
+
+  defaultCleartext() {
+    return null;
+  },
+
+  
+
+
+
+
+
+
+  transformBeforeEncrypt(outgoingCleartext) {
+    throw new TypeError("Override to stringify outgoing records");
+  },
+
+  
+
+
+
+
+
+
+
+  transformAfterDecrypt(incomingCleartext) {
+    throw new TypeError("Override to parse incoming records");
+  },
 
   ciphertextHMAC: function ciphertextHMAC(keyBundle) {
     let hasher = keyBundle.sha256HMACHasher;
@@ -166,7 +232,7 @@ CryptoWrapper.prototype = {
 
     this.IV = Weave.Crypto.generateRandomIV();
     this.ciphertext = await Weave.Crypto.encrypt(
-      JSON.stringify(this.cleartext),
+      this.transformBeforeEncrypt(this.cleartext),
       keyBundle.encryptionKeyB64,
       this.IV
     );
@@ -191,29 +257,59 @@ CryptoWrapper.prototype = {
       Utils.throwHMACMismatch(this.hmac, computedHMAC);
     }
 
-    
     let cleartext = await Weave.Crypto.decrypt(
       this.ciphertext,
       keyBundle.encryptionKeyB64,
       this.IV
     );
+    this.cleartext = this.transformAfterDecrypt(cleartext);
+    this.ciphertext = null;
+
+    return this.cleartext;
+  },
+};
+
+Utils.deferGetSet(RawCryptoWrapper, "payload", ["ciphertext", "IV", "hmac"]);
+
+
+
+
+
+
+
+
+
+function CryptoWrapper(collection, id) {
+  RawCryptoWrapper.call(this, collection, id);
+}
+CryptoWrapper.prototype = {
+  __proto__: RawCryptoWrapper.prototype,
+  _logName: "Sync.Record.CryptoWrapper",
+
+  defaultCleartext() {
+    return {};
+  },
+
+  transformBeforeEncrypt(cleartext) {
+    return JSON.stringify(cleartext);
+  },
+
+  transformAfterDecrypt(cleartext) {
+    
     let json_result = JSON.parse(cleartext);
 
-    if (json_result && json_result instanceof Object) {
-      this.cleartext = json_result;
-      this.ciphertext = null;
-    } else {
+    if (!(json_result && json_result instanceof Object)) {
       throw new Error(
         `Decryption failed: result is <${json_result}>, not an object.`
       );
     }
 
     
-    if (this.cleartext.id != this.id) {
-      throw new Error(`Record id mismatch: ${this.cleartext.id} != ${this.id}`);
+    if (json_result.id != this.id) {
+      throw new Error(`Record id mismatch: ${json_result.id} != ${this.id}`);
     }
 
-    return this.cleartext;
+    return json_result;
   },
 
   cleartextToString() {
@@ -248,17 +344,16 @@ CryptoWrapper.prototype = {
 
   
   get id() {
-    return WBORecord.prototype.__lookupGetter__("id").call(this);
+    return super.id;
   },
 
   
   set id(val) {
-    WBORecord.prototype.__lookupSetter__("id").call(this, val);
+    super.id = val;
     return (this.cleartext.id = val);
   },
 };
 
-Utils.deferGetSet(CryptoWrapper, "payload", ["ciphertext", "IV", "hmac"]);
 Utils.deferGetSet(CryptoWrapper, "cleartext", "deleted");
 
 

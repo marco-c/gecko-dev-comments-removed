@@ -5,6 +5,7 @@
 use std::{error, fmt, result, str::Utf8Error};
 
 use nserror::{nsresult, NS_ERROR_INVALID_ARG, NS_ERROR_UNEXPECTED};
+use serde_json::Error as JsonError;
 
 
 pub type Result<T> = result::Result<T, Error>;
@@ -49,6 +50,12 @@ impl From<nsresult> for Error {
 
 impl From<Utf8Error> for Error {
     fn from(error: Utf8Error) -> Error {
+        Error::MalformedString(error.into())
+    }
+}
+
+impl From<JsonError> for Error {
+    fn from(error: JsonError) -> Error {
         Error::MalformedString(error.into())
     }
 }
