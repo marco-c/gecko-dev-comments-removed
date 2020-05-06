@@ -1797,12 +1797,6 @@ bool nsImageLoadingContent::ScriptedImageObserver::CancelRequests() {
   return cancelled;
 }
 
-
-
-mozilla::dom::ReferrerPolicy nsImageLoadingContent::GetImageReferrerPolicy() {
-  return mozilla::dom::ReferrerPolicy::_empty;
-}
-
 Element* nsImageLoadingContent::FindImageMap() {
   nsIContent* thisContent = AsContent();
   Element* thisElement = thisContent->AsElement();
