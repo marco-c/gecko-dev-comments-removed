@@ -45,14 +45,7 @@ class FxAccountsDevice {
   constructor(fxai) {
     this._fxai = fxai;
     this._deviceListCache = null;
-
-    
-    
-    
-    
-    
-    
-    this._generation = 0;
+    this._fetchAndCacheDeviceListPromise = null;
 
     
     
@@ -71,9 +64,11 @@ class FxAccountsDevice {
   }
 
   async getLocalId() {
-    
-    
-    return this._updateDeviceRegistrationIfNecessary();
+    return this._withCurrentAccountState(currentState => {
+      
+      
+      return this._updateDeviceRegistrationIfNecessary(currentState);
+    });
   }
 
   
@@ -169,25 +164,6 @@ class FxAccountsDevice {
     return DEVICE_TYPE_DESKTOP;
   }
 
-  async _checkDeviceUpdateNeeded(device) {
-    
-    
-    
-    const availableCommandsKeys = Object.keys(
-      await this._fxai.commands.availableCommands()
-    ).sort();
-    return (
-      !device ||
-      !device.registrationVersion ||
-      device.registrationVersion < this.DEVICE_REGISTRATION_VERSION ||
-      !device.registeredCommandsKeys ||
-      !CommonUtils.arrayEqual(
-        device.registeredCommandsKeys,
-        availableCommandsKeys
-      )
-    );
-  }
-
   
 
 
@@ -215,91 +191,148 @@ class FxAccountsDevice {
 
 
   async refreshDeviceList({ ignoreCached = false } = {}) {
+    
     if (this._fetchAndCacheDeviceListPromise) {
-      
-      
+      log.info("Already fetching device list, return existing promise");
       return this._fetchAndCacheDeviceListPromise;
     }
-    if (ignoreCached || !this._deviceListCache) {
-      return this._fetchAndCacheDeviceList();
-    }
-    if (
-      this._fxai.now() - this._deviceListCache.lastFetch <
-      this.TIME_BETWEEN_FXA_DEVICES_FETCH_MS
-    ) {
-      
-      
-      return false;
-    }
-    return this._fetchAndCacheDeviceList();
-  }
 
-  async _fetchAndCacheDeviceList() {
-    if (this._fetchAndCacheDeviceListPromise) {
-      return this._fetchAndCacheDeviceListPromise;
+    
+    if (!ignoreCached && this._deviceListCache) {
+      const ageOfCache = this._fxai.now() - this._deviceListCache.lastFetch;
+      if (ageOfCache < this.TIME_BETWEEN_FXA_DEVICES_FETCH_MS) {
+        log.info("Device list cache is fresh, re-using it");
+        return false;
+      }
     }
-    let generation = this._generation;
-    return (this._fetchAndCacheDeviceListPromise = this._fxai
-      .withVerifiedAccountState(async state => {
-        let accountData = await state.getUserAccountData([
-          "sessionToken",
-          "device",
-        ]);
 
-        let devices;
-        try {
-          devices = await this._fxai.fxAccountsClient.getDeviceList(
-            accountData.sessionToken
-          );
-        } catch (err) {
-          await this._fxai._handleTokenError(err);
-          
-          throw new Error("not reached!");
-        }
-        if (generation != this._generation) {
-          throw new Error("Another user has signed in");
-        }
+    log.info("fetching updated device list");
+    this._fetchAndCacheDeviceListPromise = (async () => {
+      try {
+        const devices = await this._withVerifiedAccountState(
+          async currentState => {
+            const accountData = await currentState.getUserAccountData([
+              "sessionToken",
+              "device",
+            ]);
+            const devices = await this._fxai.fxAccountsClient.getDeviceList(
+              accountData.sessionToken
+            );
+            log.info("got new device list", devices);
+            
+            
+            
+            const ourDevice = devices.find(device => device.isCurrentDevice);
+            if (ourDevice && ourDevice.pushEndpointExpired) {
+              await this._fxai.fxaPushService.unsubscribe();
+              await this._registerOrUpdateDevice(currentState, accountData);
+            }
+            return devices;
+          }
+        );
+        log.info("updating the cache");
+        
+        
         this._deviceListCache = {
           lastFetch: this._fxai.now(),
           devices,
         };
-
-        
-        
-        
-        const ourDevice = devices.find(device => device.isCurrentDevice);
-        if (ourDevice && ourDevice.pushEndpointExpired) {
-          await this._fxai.fxaPushService.unsubscribe();
-          await this._registerOrUpdateDevice(accountData);
-        }
-
         return true;
-      })
-      .finally(_ => {
+      } finally {
         this._fetchAndCacheDeviceListPromise = null;
-      }));
+      }
+    })();
+    return this._fetchAndCacheDeviceListPromise;
   }
 
   async updateDeviceRegistration() {
-    try {
-      const signedInUser = await this._fxai.currentAccountState.getUserAccountData();
+    return this._withCurrentAccountState(async currentState => {
+      const signedInUser = await currentState.getUserAccountData([
+        "sessionToken",
+        "device",
+      ]);
       if (signedInUser) {
-        await this._registerOrUpdateDevice(signedInUser);
+        await this._registerOrUpdateDevice(currentState, signedInUser);
       }
-    } catch (error) {
-      await this._logErrorAndResetDeviceRegistrationVersion(error);
-    }
+    });
   }
 
-  async _updateDeviceRegistrationIfNecessary() {
-    let data = await this._fxai.currentAccountState.getUserAccountData();
+  async updateDeviceRegistrationIfNecessary() {
+    return this._withCurrentAccountState(currentState => {
+      return this._updateDeviceRegistrationIfNecessary(currentState);
+    });
+  }
+
+  reset() {
+    this._deviceListCache = null;
+    this._fetchAndCacheDeviceListPromise = null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  _withCurrentAccountState(func) {
+    return this._fxai.withCurrentAccountState(async currentState => {
+      try {
+        return await func(currentState);
+      } catch (err) {
+        
+        
+        
+        throw await this._fxai._handleTokenError(err);
+      }
+    });
+  }
+
+  _withVerifiedAccountState(func) {
+    return this._fxai.withVerifiedAccountState(async currentState => {
+      try {
+        return await func(currentState);
+      } catch (err) {
+        
+        throw await this._fxai._handleTokenError(err);
+      }
+    });
+  }
+
+  async _checkDeviceUpdateNeeded(device) {
+    
+    
+    
+    const availableCommandsKeys = Object.keys(
+      await this._fxai.commands.availableCommands()
+    ).sort();
+    return (
+      !device ||
+      !device.registrationVersion ||
+      device.registrationVersion < this.DEVICE_REGISTRATION_VERSION ||
+      !device.registeredCommandsKeys ||
+      !CommonUtils.arrayEqual(
+        device.registeredCommandsKeys,
+        availableCommandsKeys
+      )
+    );
+  }
+
+  async _updateDeviceRegistrationIfNecessary(currentState) {
+    let data = await currentState.getUserAccountData([
+      "sessionToken",
+      "device",
+    ]);
     if (!data) {
       
       return null;
     }
     const { device } = data;
     if (await this._checkDeviceUpdateNeeded(device)) {
-      return this._registerOrUpdateDevice(data);
+      return this._registerOrUpdateDevice(currentState, data);
     }
     
     return device.id;
@@ -308,7 +341,7 @@ class FxAccountsDevice {
   
   
   
-  async _registerOrUpdateDevice(signedInUser) {
+  async _registerOrUpdateDevice(currentState, signedInUser) {
     const { sessionToken, device: currentDevice } = signedInUser;
     if (!sessionToken) {
       throw new Error("_registerOrUpdateDevice called without a session token");
@@ -356,10 +389,10 @@ class FxAccountsDevice {
       }
 
       
-      let {
-        device: deviceProps,
-      } = await this._fxai.currentAccountState.getUserAccountData();
-      await this._fxai.currentAccountState.updateUserAccountData({
+      let { device: deviceProps } = await currentState.getUserAccountData([
+        "device",
+      ]);
+      await currentState.updateUserAccountData({
         device: {
           ...deviceProps, 
           id: device.id,
@@ -369,45 +402,59 @@ class FxAccountsDevice {
       });
       return device.id;
     } catch (error) {
-      return this._handleDeviceError(error, sessionToken);
+      return this._handleDeviceError(currentState, error, sessionToken);
     }
   }
 
-  _handleDeviceError(error, sessionToken) {
-    return Promise.resolve()
-      .then(() => {
-        if (error.code === 400) {
-          if (error.errno === ERRNO_UNKNOWN_DEVICE) {
-            return this._recoverFromUnknownDevice();
-          }
-
-          if (error.errno === ERRNO_DEVICE_SESSION_CONFLICT) {
-            return this._recoverFromDeviceSessionConflict(error, sessionToken);
-          }
+  async _handleDeviceError(currentState, error, sessionToken) {
+    try {
+      if (error.code === 400) {
+        if (error.errno === ERRNO_UNKNOWN_DEVICE) {
+          return this._recoverFromUnknownDevice(currentState);
         }
 
-        
-        return this._fxai._handleTokenError(error);
-      })
-      .catch(error => this._logErrorAndResetDeviceRegistrationVersion(error))
-      .catch(() => {});
+        if (error.errno === ERRNO_DEVICE_SESSION_CONFLICT) {
+          return this._recoverFromDeviceSessionConflict(
+            currentState,
+            error,
+            sessionToken
+          );
+        }
+      }
+
+      
+      
+      
+      
+      throw await this._fxai._handleTokenError(error);
+    } catch (error) {
+      await this._logErrorAndResetDeviceRegistrationVersion(
+        currentState,
+        error
+      );
+      return null;
+    }
   }
 
-  async _recoverFromUnknownDevice() {
+  async _recoverFromUnknownDevice(currentState) {
     
     
     
     log.warn("unknown device id, clearing the local device data");
     try {
-      await this._fxai.currentAccountState.updateUserAccountData({
+      await currentState.updateUserAccountData({
         device: null,
       });
     } catch (error) {
-      await this._logErrorAndResetDeviceRegistrationVersion(error);
+      await this._logErrorAndResetDeviceRegistrationVersion(
+        currentState,
+        error
+      );
     }
+    return null;
   }
 
-  async _recoverFromDeviceSessionConflict(error, sessionToken) {
+  async _recoverFromDeviceSessionConflict(currentState, error, sessionToken) {
     
     
     
@@ -427,7 +474,7 @@ class FxAccountsDevice {
       const length = matchingDevices.length;
       if (length === 1) {
         const deviceId = matchingDevices[0].id;
-        await this._fxai.currentAccountState.updateUserAccountData({
+        await currentState.updateUserAccountData({
           device: {
             id: deviceId,
             registrationVersion: null,
@@ -440,22 +487,28 @@ class FxAccountsDevice {
           "insane server state, " + length + " devices for this session"
         );
       }
-      await this._logErrorAndResetDeviceRegistrationVersion(error);
+      await this._logErrorAndResetDeviceRegistrationVersion(
+        currentState,
+        error
+      );
     } catch (secondError) {
       log.error("failed to recover from device-session conflict", secondError);
-      await this._logErrorAndResetDeviceRegistrationVersion(error);
+      await this._logErrorAndResetDeviceRegistrationVersion(
+        currentState,
+        error
+      );
     }
     return null;
   }
 
-  async _logErrorAndResetDeviceRegistrationVersion(error) {
+  async _logErrorAndResetDeviceRegistrationVersion(currentState, error) {
     
     
     
     
     log.error("device registration failed", error);
     try {
-      this._fxai.currentAccountState.updateUserAccountData({
+      currentState.updateUserAccountData({
         device: null,
       });
     } catch (secondError) {
@@ -466,17 +519,11 @@ class FxAccountsDevice {
     }
   }
 
-  reset() {
-    this._deviceListCache = null;
-    this._generation++;
-    this._fetchAndCacheDeviceListPromise = null;
-  }
-
   
   observe(subject, topic, data) {
     switch (topic) {
       case ON_DEVICE_CONNECTED_NOTIFICATION:
-        this._fetchAndCacheDeviceList().catch(error => {
+        this.refreshDeviceList({ ignoreCached: true }).catch(error => {
           log.warn(
             "failed to refresh devices after connecting a new device",
             error
@@ -488,7 +535,7 @@ class FxAccountsDevice {
         if (!json.isLocalDevice) {
           
           
-          this._fetchAndCacheDeviceList().catch(error => {
+          this.refreshDeviceList({ ignoreCached: true }).catch(error => {
             log.warn(
               "failed to refresh devices after disconnecting a device",
               error
@@ -497,9 +544,9 @@ class FxAccountsDevice {
         }
         break;
       case ONVERIFIED_NOTIFICATION:
-        this._updateDeviceRegistrationIfNecessary().catch(error => {
+        this.updateDeviceRegistrationIfNecessary().catch(error => {
           log.warn(
-            "_updateDeviceRegistrationIfNecessary failed after verification",
+            "updateDeviceRegistrationIfNecessary failed after verification",
             error
           );
         });
