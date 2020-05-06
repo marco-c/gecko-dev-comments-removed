@@ -2,13 +2,19 @@
 
 
 
-let port = null;
+let backgroundPort = null;
+let nativePort = null;
 
 window.addEventListener("pageshow", () => {
-  port = browser.runtime.connectNative("browser");
+  backgroundPort = browser.runtime.connect();
+  nativePort = browser.runtime.connectNative("browser");
 
-  port.onMessage.addListener(message => {
-    if (message.eval) {
+  nativePort.onMessage.addListener(message => {
+    if (message.type) {
+      
+      
+      backgroundPort.postMessage(message);
+    } else if (message.eval) {
       try {
         
         
@@ -28,7 +34,7 @@ window.addEventListener("pageshow", () => {
   }
 
   function sendSyncResponse(id, response, exception) {
-    port.postMessage({
+    nativePort.postMessage({
       id,
       response: JSON.stringify(response),
       exception: exception && exception.toString(),
@@ -37,5 +43,6 @@ window.addEventListener("pageshow", () => {
 });
 
 window.addEventListener("pagehide", () => {
-  port.disconnect();
+  backgroundPort.disconnect();
+  nativePort.disconnect();
 });

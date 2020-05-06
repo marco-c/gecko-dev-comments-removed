@@ -1877,6 +1877,11 @@ public class GeckoSessionTestRule implements TestRule {
         return waitForMessage(id);
     }
 
+    public int getSessionPid(final @NonNull GeckoSession session) {
+        final Double dblPid = (Double) webExtensionApiCall(session, "GetPidForTab", null);
+        return dblPid.intValue();
+    }
+
     private Object waitForMessage(String id) {
         UiThreadUtils.waitForCondition(() -> mPendingMessages.containsKey(id),
                 mTimeoutMillis);
@@ -2107,10 +2112,21 @@ public class GeckoSessionTestRule implements TestRule {
         });
     }
 
-    private Object webExtensionApiCall(final String apiName, SetArgs argsSetter) {
+    private Object webExtensionApiCall(final @NonNull String apiName, final @NonNull SetArgs argsSetter) {
+        return webExtensionApiCall(null, apiName, argsSetter);
+    }
+
+    private Object webExtensionApiCall(final GeckoSession session, final @NonNull String apiName,
+                                       final @NonNull SetArgs argsSetter) {
         
         UiThreadUtils.waitForCondition(() -> RuntimeCreator.backgroundPort() != null,
                 mTimeoutMillis);
+
+        if (session != null) {
+            
+            UiThreadUtils.waitForCondition(() -> mPorts.get(session) != null,
+                    mTimeoutMillis);
+        }
 
         final String id = UUID.randomUUID().toString();
 
@@ -2129,7 +2145,15 @@ public class GeckoSessionTestRule implements TestRule {
             throw new RuntimeException(ex);
         }
 
-        RuntimeCreator.backgroundPort().postMessage(message);
+        if (session == null) {
+            RuntimeCreator.backgroundPort().postMessage(message);
+        } else {
+            
+            
+            
+            mPorts.get(session).postMessage(message);
+        }
+
         return waitForMessage(id);
     }
 
