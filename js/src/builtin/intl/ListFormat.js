@@ -86,7 +86,7 @@ function getListFormatInternals(obj) {
 
 
 
-function InitializeListFormat(listFormat, locales, options) {
+function InitializeListFormat(listFormat, locales, options, supportsTypeAndStyle) {
     assert(IsObject(listFormat), "InitializeListFormat called with non-object");
     assert(GuardToListFormat(listFormat) !== null, "InitializeListFormat called with non-ListFormat");
 
@@ -132,11 +132,15 @@ function InitializeListFormat(listFormat, locales, options) {
     
 
     
-    var type = GetOption(options, "type", "string", ["conjunction"], "conjunction");
+    var type = GetOption(options, "type", "string",
+                         supportsTypeAndStyle ? ["conjunction", "disjunction", "unit"] : ["conjunction"],
+                         "conjunction");
     lazyListFormatData.type = type;
 
     
-    var style = GetOption(options, "style", "string", ["long"], "long");
+    var style = GetOption(options, "style", "string",
+                          supportsTypeAndStyle ? ["long", "short", "narrow"] : ["long"],
+                          "long");
     lazyListFormatData.style = style;
 
     
