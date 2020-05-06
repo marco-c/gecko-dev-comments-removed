@@ -145,6 +145,10 @@ public class WebExtension {
 
 
 
+
+
+
+    @Deprecated
     public WebExtension(final @NonNull String location, final @NonNull String id,
                         final @WebExtensionFlags long flags,
                         final @NonNull WebExtensionController controller) {
@@ -171,6 +175,10 @@ public class WebExtension {
 
 
 
+
+
+
+    @Deprecated
     public WebExtension(final @NonNull String location,
                         final @NonNull WebExtensionController controller) {
         this(location, "{" + UUID.randomUUID().toString() + "}", Flags.NONE, controller);
