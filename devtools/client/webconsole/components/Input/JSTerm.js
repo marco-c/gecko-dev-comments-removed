@@ -798,9 +798,10 @@ class JSTerm extends Component {
     if (!addedCharacterMatchCompletion && !addedCharacterMatchPopupItem) {
       this.autocompletePopup.hidePopup();
     } else if (
-      completionText &&
       !change.canceled &&
-      (addedCharacterMatchCompletion || addedCharacterMatchPopupItem)
+      (completionText ||
+        addedCharacterMatchCompletion ||
+        addedCharacterMatchPopupItem)
     ) {
       
       
