@@ -107,6 +107,7 @@ enum TestCaseFlags {
   TEST_CASE_IS_TRANSPARENT = 1 << 2,
   TEST_CASE_IS_ANIMATED = 1 << 3,
   TEST_CASE_IGNORE_OUTPUT = 1 << 4,
+  TEST_CASE_ASSUME_SRGB_OUTPUT = 1 << 5,
 };
 
 struct ImageTestCase {
@@ -138,7 +139,12 @@ struct ImageTestCase {
   }
 
   BGRAColor ChooseColor(const BGRAColor& aColor) const {
-    if (mSurfaceFlags & SurfaceFlags::TO_SRGB_COLORSPACE) {
+    
+    
+    
+    
+    if ((mSurfaceFlags & SurfaceFlags::TO_SRGB_COLORSPACE) ||
+        (mFlags & TEST_CASE_ASSUME_SRGB_OUTPUT)) {
       return aColor.sRGBColor();
     }
     return aColor.DeviceColor();
