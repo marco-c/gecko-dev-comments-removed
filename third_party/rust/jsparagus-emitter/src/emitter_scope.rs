@@ -1,9 +1,17 @@
+
+
+
+
+
+
 use crate::emitter::InstructionWriter;
 use crate::scope_notes::ScopeNoteIndex;
 use ast::source_atom_set::SourceAtomSetIndex;
 use scope::data::{BindingKind, GlobalScopeData, LexicalScopeData, ScopeDataMap, ScopeIndex};
 use scope::frame_slot::FrameSlot;
 use std::collections::HashMap;
+
+
 
 
 
@@ -14,13 +22,18 @@ pub enum NameLocation {
     FrameSlot(FrameSlot, BindingKind),
 }
 
+
+
+
+
+
 #[derive(Debug)]
-pub struct GlobalEmitterScope {
+struct GlobalEmitterScope {
     cache: HashMap<SourceAtomSetIndex, NameLocation>,
 }
 
 impl GlobalEmitterScope {
-    pub fn new(data: &GlobalScopeData) -> Self {
+    fn new(data: &GlobalScopeData) -> Self {
         let mut cache = HashMap::new();
         for item in data.iter() {
             cache.insert(item.name(), NameLocation::Global(item.kind()));
@@ -84,8 +97,9 @@ impl LexicalEmitterScope {
     }
 }
 
+
 #[derive(Debug)]
-pub enum EmitterScope {
+enum EmitterScope {
     Global(GlobalEmitterScope),
     Lexical(LexicalEmitterScope),
 }
@@ -118,23 +132,38 @@ impl EmitterScope {
 
 
 
+
+
+
+
+
 pub struct EmitterScopeStack {
     scope_stack: Vec<EmitterScope>,
 }
 
 impl EmitterScopeStack {
+    
     pub fn new() -> Self {
         Self {
             scope_stack: Vec::new(),
         }
     }
 
-    pub fn innermost(&self) -> &EmitterScope {
+    
+    fn innermost(&self) -> &EmitterScope {
         self.scope_stack
             .last()
             .expect("There should be at least one scope")
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn enter_global(&mut self, emit: &mut InstructionWriter, scope_data_map: &ScopeDataMap) {
         let scope_index = scope_data_map.get_global_index();
         let scope_data = scope_data_map.get_global_at(scope_index);
@@ -169,6 +198,8 @@ impl EmitterScopeStack {
         emit.enter_global_scope(scope_index);
     }
 
+    
+    
     pub fn leave_global(&mut self, emit: &InstructionWriter) {
         match self.scope_stack.pop() {
             Some(EmitterScope::Global(_)) => {}
@@ -177,7 +208,8 @@ impl EmitterScopeStack {
         emit.leave_global_scope();
     }
 
-    pub fn dead_zone_frame_slot_range(
+    
+    fn dead_zone_frame_slot_range(
         &self,
         emit: &mut InstructionWriter,
         slot_start: FrameSlot,
@@ -196,6 +228,11 @@ impl EmitterScopeStack {
         emit.pop();
     }
 
+    
+    
+    
+    
+    
     pub fn enter_lexical(
         &mut self,
         emit: &mut InstructionWriter,
@@ -220,6 +257,7 @@ impl EmitterScopeStack {
         self.dead_zone_frame_slot_range(emit, first_frame_slot, next_frame_slot);
     }
 
+    
     pub fn leave_lexical(&mut self, emit: &mut InstructionWriter) {
         let lexical_scope = match self.scope_stack.pop() {
             Some(EmitterScope::Lexical(scope)) => scope,
@@ -232,6 +270,12 @@ impl EmitterScopeStack {
         );
     }
 
+    
+    
+    
+    
+    
+    
     pub fn lookup_name(&mut self, name: SourceAtomSetIndex) -> NameLocation {
         for scope in self.scope_stack.iter().rev() {
             if let Some(loc) = scope.lookup_name(name) {

@@ -167,7 +167,7 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
             
             
             if t.term == Term::Terminal(TerminalId::ErrorToken) {
-                return Err(Parser::parse_error(token));
+                return Err(Parser::parse_error(token).into());
             }
 
             
@@ -184,9 +184,9 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
                 });
                 return Ok(false);
             }
-            return Err(Parser::parse_error(token));
+            return Err(Parser::parse_error(token).into());
         }
         
-        Err(ParseError::ParserCannotUnpackToken)
+        Err(ParseError::ParserCannotUnpackToken.into())
     }
 }
