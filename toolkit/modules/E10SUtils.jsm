@@ -553,7 +553,7 @@ var E10SUtils = {
     
     
     if (aPrincipal.isSystemPrincipal || aPrincipal.isExpandedPrincipal) {
-      throw Cr.NS_ERROR_UNEXPECTED;
+      throw Components.Exception("", Cr.NS_ERROR_UNEXPECTED);
     }
 
     

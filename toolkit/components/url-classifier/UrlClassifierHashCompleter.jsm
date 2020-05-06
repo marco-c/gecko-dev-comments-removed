@@ -215,7 +215,7 @@ HashCompleter.prototype = {
     aCallback
   ) {
     if (!aGethashUrl) {
-      throw Cr.NS_ERROR_NOT_INITIALIZED;
+      throw Components.Exception("", Cr.NS_ERROR_NOT_INITIALIZED);
     }
 
     
@@ -287,7 +287,7 @@ HashCompleter.prototype = {
       for (var url in this._backoffs) {
         this._backoffs[url] = null;
       }
-      throw Cr.NS_ERROR_NOT_INITIALIZED;
+      throw Components.Exception("", Cr.NS_ERROR_NOT_INITIALIZED);
     }
 
     
@@ -883,7 +883,7 @@ HashCompleterRequest.prototype = {
     this.telemetryClockStart = 0;
 
     if (this._shuttingDown) {
-      throw Cr.NS_ERROR_ABORT;
+      throw Components.Exception("", Cr.NS_ERROR_ABORT);
     }
 
     

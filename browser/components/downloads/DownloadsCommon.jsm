@@ -1078,7 +1078,7 @@ const DownloadsViewPrototype = {
 
 
   onDownloadStateChanged(download) {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   },
 
   
@@ -1110,7 +1110,7 @@ const DownloadsViewPrototype = {
 
 
   onDownloadRemoved(download) {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   },
 
   
@@ -1120,7 +1120,7 @@ const DownloadsViewPrototype = {
 
 
   _refreshProperties() {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   },
 
   
@@ -1129,7 +1129,7 @@ const DownloadsViewPrototype = {
 
 
   _updateView() {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   },
 
   

@@ -5725,7 +5725,7 @@
         !aBrowser.frameLoader ||
         !aBrowser.frameLoader.remoteTab
       ) {
-        throw Cr.NS_ERROR_FAILURE;
+        throw Components.Exception("", Cr.NS_ERROR_FAILURE);
       }
 
       

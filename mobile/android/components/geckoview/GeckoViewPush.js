@@ -176,12 +176,12 @@ PushSubscription.prototype = {
 
   
   get lastPush() {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   },
 
   
   get pushCount() {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   },
 
   
@@ -203,7 +203,7 @@ PushSubscription.prototype = {
 
   
   get p256dhPrivateKey() {
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   },
 
   

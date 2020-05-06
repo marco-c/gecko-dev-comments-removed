@@ -419,7 +419,7 @@ nsBrowserContentHandler.prototype = {
     
     
     if (cmdLine.handleFlag("remote", true)) {
-      throw Cr.NS_ERROR_ABORT;
+      throw Components.Exception("", Cr.NS_ERROR_ABORT);
     }
 
     var uriparam;
@@ -878,7 +878,7 @@ nsBrowserContentHandler.prototype = {
         cmdLine.length != urlFlagIdx + 2 ||
         /firefoxurl(-[a-f0-9]+)?:/i.test(urlParam)
       ) {
-        throw Cr.NS_ERROR_ABORT;
+        throw Components.Exception("", Cr.NS_ERROR_ABORT);
       }
       var isDefault = false;
       try {
@@ -892,7 +892,7 @@ nsBrowserContentHandler.prototype = {
       if (isDefault) {
         
         
-        throw Cr.NS_ERROR_ABORT;
+        throw Components.Exception("", Cr.NS_ERROR_ABORT);
       }
     }
   },
