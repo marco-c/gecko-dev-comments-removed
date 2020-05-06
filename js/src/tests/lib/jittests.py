@@ -521,7 +521,10 @@ def check_output(out, err, rc, timed_out, test, options):
             return False
 
     if test.expect_crash:
-        if sys.platform == 'win32' and rc == 3 - 2 ** 31:
+        
+        
+        
+        if sys.platform == 'win32' and rc in (3 - 2 ** 31, 3 + 2 ** 31):
             return True
 
         if sys.platform != 'win32' and rc == -11:
