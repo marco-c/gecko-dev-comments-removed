@@ -23,8 +23,11 @@ use crate::store::{LazyStore, LazyStoreConfig};
 
 
 
+
+
+
 #[derive(xpcom)]
-#[xpimplements(mozIConfigurableExtensionStorageArea)]
+#[xpimplements(mozIConfigurableExtensionStorageArea, mozIInterruptible)]
 #[refcnt = "nonatomic"]
 pub struct InitStorageSyncArea {
     
@@ -212,6 +215,8 @@ impl StorageSyncArea {
         match mem::take(&mut *maybe_store) {
             Some(store) => {
                 
+                store.interrupt();
+                
                 
                 
                 
@@ -237,4 +242,17 @@ fn teardown(
     let runnable = TaskRunnable::new(TeardownTask::name(), Box::new(task))?;
     runnable.dispatch_with_options(queue.coerce(), DispatchOptions::new().may_block(true))?;
     Ok(())
+}
+
+
+impl StorageSyncArea {
+    xpcom_method!(
+        interrupt => Interrupt()
+    );
+    
+    
+    fn interrupt(&self) -> Result<()> {
+        self.store()?.interrupt();
+        Ok(())
+    }
 }

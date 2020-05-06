@@ -9,6 +9,7 @@ use std::{
 };
 
 use once_cell::sync::OnceCell;
+use sql_support::SqlInterruptHandle;
 use webext_storage::store::Store;
 
 use crate::error::{Error, Result};
@@ -23,8 +24,19 @@ pub struct LazyStoreConfig {
 
 #[derive(Default)]
 pub struct LazyStore {
-    store: OnceCell<Mutex<Store>>,
+    store: OnceCell<InterruptStore>,
     config: OnceCell<LazyStoreConfig>,
+}
+
+
+
+
+
+
+
+struct InterruptStore {
+    inner: Mutex<Store>,
+    handle: SqlInterruptHandle,
 }
 
 impl LazyStore {
@@ -39,13 +51,32 @@ impl LazyStore {
     
     
     
+    
+    
+    pub fn interrupt(&self) {
+        if let Some(outer) = self.store.get() {
+            outer.handle.interrupt();
+        }
+    }
+
+    
+    
+    
     pub fn get(&self) -> Result<MutexGuard<'_, Store>> {
         Ok(self
             .store
             .get_or_try_init(|| match self.config.get() {
-                Some(config) => Ok(Mutex::new(Store::new(&config.path)?)),
+                Some(config) => {
+                    let store = Store::new(&config.path)?;
+                    let handle = store.interrupt_handle();
+                    Ok(InterruptStore {
+                        inner: Mutex::new(store),
+                        handle,
+                    })
+                }
                 None => Err(Error::NotConfigured),
             })?
+            .inner
             .lock()
             .unwrap())
     }
@@ -57,7 +88,7 @@ impl LazyStore {
         if let Some(store) = self
             .store
             .into_inner()
-            .map(|mutex| mutex.into_inner().unwrap())
+            .map(|outer| outer.inner.into_inner().unwrap())
         {
             if let Err((store, error)) = store.close() {
                 

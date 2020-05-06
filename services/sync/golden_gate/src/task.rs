@@ -28,6 +28,12 @@ use crate::ferry::{Ferry, FerryResult};
 
 
 pub struct FerryTask<N: ?Sized + BridgedEngine> {
+    
+    
+    
+    
+    
+    
     engine: Weak<N>,
     ferry: Ferry,
     callback: ThreadPtrHandle<mozIBridgedSyncEngineCallback>,
