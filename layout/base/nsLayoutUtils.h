@@ -693,7 +693,6 @@ class nsLayoutUtils {
 
 
 
-
     SCROLLABLE_FIXEDPOS_FINDS_ROOT = 0x10,
     
 
