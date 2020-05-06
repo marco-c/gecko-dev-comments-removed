@@ -84,9 +84,9 @@ class FontInfoData {
   }
 
   
-  virtual bool GetOtherFamilyNames(const nsACString& aFamilyName,
-                                   nsTArray<nsCString>& aOtherFamilyNames) {
-    return mOtherFamilyNames.Get(aFamilyName, &aOtherFamilyNames);
+  const nsTArray<nsCString>* GetOtherFamilyNames(
+      const nsACString& aFamilyName) {
+    return mOtherFamilyNames.GetValue(aFamilyName);
   }
 
   nsTArray<nsCString> mFontFamiliesToLoad;
@@ -116,7 +116,8 @@ class FontInfoData {
   nsDataHashtable<nsCStringHashKey, FontFaceData> mFontFaceData;
 
   
-  nsDataHashtable<nsCStringHashKey, nsTArray<nsCString> > mOtherFamilyNames;
+  nsDataHashtable<nsCStringHashKey, CopyableTArray<nsCString> >
+      mOtherFamilyNames;
 };
 
 

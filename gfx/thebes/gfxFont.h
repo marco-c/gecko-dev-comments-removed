@@ -97,7 +97,7 @@ struct gfxFontStyle {
   
 
   
-  nsTArray<gfxFontFeature> featureSettings;
+  CopyableTArray<gfxFontFeature> featureSettings;
 
   
   
@@ -110,7 +110,7 @@ struct gfxFontStyle {
   RefPtr<gfxFontFeatureValueSet> featureValueLookup;
 
   
-  nsTArray<gfxFontVariation> variationSettings;
+  CopyableTArray<gfxFontVariation> variationSettings;
 
   
   gfxFloat size;

@@ -1951,12 +1951,11 @@ bool gfxFcPlatformFontList::FindAndAddFamilies(
 
   
   
-  AutoTArray<FamilyAndGeneric, 10> cachedFamilies;
-  if (mFcSubstituteCache.Get(familyName, &cachedFamilies)) {
-    if (cachedFamilies.IsEmpty()) {
+  if (auto* cachedFamilies = mFcSubstituteCache.GetValue(familyName)) {
+    if (cachedFamilies->IsEmpty()) {
       return false;
     }
-    aOutput->AppendElements(cachedFamilies);
+    aOutput->AppendElements(*cachedFamilies);
     return true;
   }
 
@@ -1976,6 +1975,7 @@ bool gfxFcPlatformFontList::FindAndAddFamilies(
   FcConfigSubstitute(nullptr, fontWithSentinel, FcMatchPattern);
 
   
+  AutoTArray<FamilyAndGeneric, 10> cachedFamilies;
   FcChar8* substName = nullptr;
   for (int i = 0; FcPatternGetString(fontWithSentinel, FC_FAMILY, i,
                                      &substName) == FcResultMatch;
