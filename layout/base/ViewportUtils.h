@@ -34,7 +34,8 @@ class ViewportUtils {
 
 
 
-  static CSSToCSSMatrix4x4 GetVisualToLayoutTransform(
+  template <typename Units = CSSPixel>
+  static gfx::Matrix4x4Typed<Units, Units> GetVisualToLayoutTransform(
       layers::ScrollableLayerGuid::ViewID aScrollId);
 
   
@@ -50,6 +51,18 @@ class ViewportUtils {
   static nsRect VisualToLayout(const nsRect& aRect, PresShell* aContext);
   static nsPoint LayoutToVisual(const nsPoint& aPt, PresShell* aContext);
 };
+
+
+
+
+
+
+
+extern template CSSToCSSMatrix4x4 ViewportUtils::GetVisualToLayoutTransform<
+    CSSPixel>(layers::ScrollableLayerGuid::ViewID);
+extern template LayoutDeviceToLayoutDeviceMatrix4x4
+    ViewportUtils::GetVisualToLayoutTransform<LayoutDevicePixel>(
+        layers::ScrollableLayerGuid::ViewID);
 
 }  
 
