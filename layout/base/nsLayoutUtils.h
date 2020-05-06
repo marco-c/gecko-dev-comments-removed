@@ -12,6 +12,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/RelativeTo.h"
 #include "mozilla/StaticPrefs_nglayout.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/UniquePtr.h"
@@ -134,39 +135,6 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DrawStringFlags)
 
 
 
-enum class ViewportType { Layout, Visual };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct RelativeTo {
-  const nsIFrame* mFrame = nullptr;
-  
-  
-  ViewportType mViewportType = ViewportType::Layout;
-  bool operator==(const RelativeTo& aOther) const {
-    return mFrame == aOther.mFrame && mViewportType == aOther.mViewportType;
-  }
-  friend std::ostream& operator<<(std::ostream& aOs, const RelativeTo& aR) {
-    return aOs << "{" << aR.mFrame << ", "
-               << (aR.mViewportType == ViewportType::Visual ? "visual"
-                                                            : "layout")
-               << "}";
-  }
-};
-
-
-
 
 
 
@@ -180,6 +148,8 @@ class nsLayoutUtils {
   typedef mozilla::layers::StackingContextHelper StackingContextHelper;
   typedef mozilla::ContainerLayerParameters ContainerLayerParameters;
   typedef mozilla::IntrinsicSize IntrinsicSize;
+  typedef mozilla::RelativeTo RelativeTo;
+  typedef mozilla::ViewportType ViewportType;
   typedef mozilla::gfx::SourceSurface SourceSurface;
   typedef mozilla::gfx::sRGBColor sRGBColor;
   typedef mozilla::gfx::DrawTarget DrawTarget;
