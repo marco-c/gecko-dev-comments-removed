@@ -79,6 +79,9 @@ struct CopyablePtr {
 };
 }  
 
+template <typename T>
+class MovingNotNull;
+
 
 
 
@@ -141,6 +144,10 @@ class NotNull {
   constexpr MOZ_IMPLICIT NotNull(const NotNull<U>& aOther)
       : mBasePtr(aOther.mBasePtr) {}
 
+  template <typename U>
+  constexpr MOZ_IMPLICIT NotNull(MovingNotNull<U>&& aOther)
+      : mBasePtr(std::move(aOther)) {}
+
   
   explicit operator bool() const = delete;
 
@@ -199,6 +206,10 @@ class NotNull<T*> {
                   "mBasePtr must have zero offset.");
   }
 
+  template <typename U>
+  constexpr MOZ_IMPLICIT NotNull(MovingNotNull<U>&& aOther)
+      : mBasePtr(NotNull{std::move(aOther)}) {}
+
   
   explicit operator bool() const = delete;
 
@@ -247,6 +258,71 @@ constexpr NotNull<T*> WrapNotNullUnchecked(T* const aBasePtr) {
 #  pragma GCC diagnostic pop
 #endif
   return NotNull<T*>{aBasePtr};
+}
+
+
+
+
+
+
+template <typename T>
+class MOZ_NON_AUTOABLE MovingNotNull {
+  template <typename U>
+  friend constexpr MovingNotNull<U> WrapMovingNotNullUnchecked(U aBasePtr);
+
+  T mBasePtr;
+#ifdef DEBUG
+  bool mConsumed = false;
+#endif
+
+  
+  template <typename U>
+  constexpr explicit MovingNotNull(U aBasePtr) : mBasePtr{std::move(aBasePtr)} {
+#ifndef DEBUG
+    static_assert(sizeof(T) == sizeof(MovingNotNull<T>),
+                  "NotNull must have zero space overhead.");
+#endif
+    static_assert(offsetof(MovingNotNull<T>, mBasePtr) == 0,
+                  "mBasePtr must have zero offset.");
+  }
+
+ public:
+  MovingNotNull() = delete;
+
+  MOZ_IMPLICIT MovingNotNull(const NotNull<T>& aSrc) : mBasePtr(aSrc) {}
+
+  template <typename U>
+  MOZ_IMPLICIT MovingNotNull(const NotNull<U>& aSrc) : mBasePtr(aSrc) {}
+
+  MOZ_IMPLICIT operator T() && { return std::move(*this).unwrapBasePtr(); }
+
+  MOZ_IMPLICIT operator NotNull<T>() && { return std::move(*this).unwrap(); }
+
+  NotNull<T> unwrap() && {
+    return WrapNotNullUnchecked(std::move(*this).unwrapBasePtr());
+  }
+
+  T unwrapBasePtr() && {
+#ifdef DEBUG
+    MOZ_ASSERT(!mConsumed);
+    mConsumed = true;
+#endif
+    return std::move(mBasePtr);
+  }
+
+  MovingNotNull(MovingNotNull&&) = default;
+  MovingNotNull& operator=(MovingNotNull&&) = default;
+};
+
+template <typename T>
+constexpr MovingNotNull<T> WrapMovingNotNullUnchecked(T aBasePtr) {
+  return MovingNotNull<T>{std::move(aBasePtr)};
+}
+
+template <typename T>
+constexpr MovingNotNull<T> WrapMovingNotNull(T aBasePtr) {
+  MOZ_RELEASE_ASSERT(aBasePtr);
+  return WrapMovingNotNullUnchecked(std::move(aBasePtr));
 }
 
 namespace detail {
