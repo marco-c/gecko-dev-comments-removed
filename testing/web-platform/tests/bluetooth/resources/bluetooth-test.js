@@ -24,12 +24,11 @@ function loadScript(path) {
 
 
 
-function loadScripts(paths) {
-  let chain = Promise.resolve();
+async function loadScripts(paths) {
   for (let path of paths) {
-    chain = chain.then(() => loadScript(path));
+    await loadScript(path);
   }
-  return chain;
+  return;
 }
 
 
@@ -42,7 +41,7 @@ function loadScripts(paths) {
 
 
 
-function performChromiumSetup() {
+async function performChromiumSetup() {
   
   if (typeof Mojo === 'undefined') {
     return;
@@ -65,27 +64,26 @@ function performChromiumSetup() {
       '/js-test-resources/bluetooth/bluetooth-fake-adapter.js',
     ];
   }
-  return loadScripts([
-           `${genPrefix}/layout_test_data/mojo/public/js/mojo_bindings.js`,
-           `${genPrefix}/content/test/data/mojo_web_test_helper_test.mojom.js`,
-           `${genPrefix}/device/bluetooth/public/mojom/uuid.mojom.js`,
-           `${genPrefix}/url/mojom/origin.mojom.js`,
-           `${genPrefix}/device/bluetooth/public/mojom/test/fake_bluetooth.mojom.js`,
-           `${genPrefix}/content/shell/common/web_test/fake_bluetooth_chooser.mojom.js`,
-           `${prefix}/web-bluetooth-test.js`,
-         ].concat(extra))
-      
-      
-      
-      
-      
-      
-      
-      
-      .then(
-          () => typeof setBluetoothFakeAdapter === 'undefined' ?
-              undefined :
-              setBluetoothFakeAdapter(''));
+  await loadScripts([
+    `${genPrefix}/layout_test_data/mojo/public/js/mojo_bindings.js`,
+    `${genPrefix}/content/test/data/mojo_web_test_helper_test.mojom.js`,
+    `${genPrefix}/device/bluetooth/public/mojom/uuid.mojom.js`,
+    `${genPrefix}/url/mojom/origin.mojom.js`,
+    `${genPrefix}/device/bluetooth/public/mojom/test/fake_bluetooth.mojom.js`,
+    `${genPrefix}/content/shell/common/web_test/fake_bluetooth_chooser.mojom.js`,
+    `${prefix}/web-bluetooth-test.js`,
+  ].concat(extra));
+
+  
+  
+  
+  
+  
+  
+  
+  if (typeof setBluetoothFakeAdapter !== 'undefined') {
+    setBluetoothFakeAdapter('');
+  }
 }
 
 
@@ -99,16 +97,13 @@ function performChromiumSetup() {
 
 
 function bluetooth_test(test_function, name, properties) {
-  Promise.resolve().then(
-      () => promise_test(
-          t => Promise
-                   .resolve()
-                   
-                   .then(performChromiumSetup)
-                   .then(() => test_function(t))
-                   .then(() => navigator.bluetooth.test.allResponsesConsumed())
-                   .then(consumed => assert_true(consumed)),
-          name, properties));
+  return promise_test(async (t) => {
+    
+    await performChromiumSetup();
+    await test_function(t);
+    let consumed = await navigator.bluetooth.test.allResponsesConsumed();
+    assert_true(consumed);
+  }, name, properties);
 }
 
 
@@ -138,22 +133,21 @@ function waitForDocumentReady() {
 
 
 
-function callWithTrustedClick(callback) {
-  return waitForDocumentReady().then(() => new Promise(resolve => {
-                                       let button =
-                                           document.createElement('button');
-                                       button.textContent =
-                                           'click to continue test';
-                                       button.style.display = 'block';
-                                       button.style.fontSize = '20px';
-                                       button.style.padding = '10px';
-                                       button.onclick = () => {
-                                         document.body.removeChild(button);
-                                         resolve(callback());
-                                       };
-                                       document.body.appendChild(button);
-                                       test_driver.click(button);
-                                     }));
+async function callWithTrustedClick(callback) {
+  await waitForDocumentReady();
+  return new Promise(resolve => {
+    let button = document.createElement('button');
+    button.textContent = 'click to continue test';
+    button.style.display = 'block';
+    button.style.fontSize = '20px';
+    button.style.padding = '10px';
+    button.onclick = () => {
+      document.body.removeChild(button);
+      resolve(callback());
+    };
+    document.body.appendChild(button);
+    test_driver.click(button);
+  });
 }
 
 
@@ -356,7 +350,7 @@ function assert_promise_resolves_after_event(
 
 
 function assert_no_events(object, event_name) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     let event_listener = (e) => {
       object.removeEventListener(event_name, event_listener);
       assert_unreached('Object should not fire an event.');
