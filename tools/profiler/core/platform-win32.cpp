@@ -288,51 +288,6 @@ void Registers::SyncPopulate() {
 
 #if defined(GP_PLAT_amd64_windows)
 
-#  ifndef MOZ_BASE_PROFILER
-
-
-static WindowsDllInterceptor NtDllIntercept;
-
-typedef NTSTATUS(NTAPI* LdrUnloadDll_func)(HMODULE module);
-static WindowsDllInterceptor::FuncHookType<LdrUnloadDll_func> stub_LdrUnloadDll;
-
-static NTSTATUS NTAPI patched_LdrUnloadDll(HMODULE module) {
-  
-  
-  AutoSuppressStackWalking suppress;
-  return stub_LdrUnloadDll(module);
-}
-
-
-typedef PVOID(WINAPI* LdrResolveDelayLoadedAPI_func)(
-    PVOID ParentModuleBase, PVOID DelayloadDescriptor, PVOID FailureDllHook,
-    PVOID FailureSystemHook, PVOID ThunkAddress, ULONG Flags);
-static WindowsDllInterceptor::FuncHookType<LdrResolveDelayLoadedAPI_func>
-    stub_LdrResolveDelayLoadedAPI;
-
-static PVOID WINAPI patched_LdrResolveDelayLoadedAPI(
-    PVOID ParentModuleBase, PVOID DelayloadDescriptor, PVOID FailureDllHook,
-    PVOID FailureSystemHook, PVOID ThunkAddress, ULONG Flags) {
-  
-  
-  AutoSuppressStackWalking suppress;
-  return stub_LdrResolveDelayLoadedAPI(ParentModuleBase, DelayloadDescriptor,
-                                       FailureDllHook, FailureSystemHook,
-                                       ThunkAddress, Flags);
-}
-
-void InitializeWin64ProfilerHooks() {
-  NtDllIntercept.Init("ntdll.dll");
-  stub_LdrUnloadDll.Set(NtDllIntercept, "LdrUnloadDll", &patched_LdrUnloadDll);
-  if (IsWin8OrLater()) {  
-    stub_LdrResolveDelayLoadedAPI.Set(NtDllIntercept,
-                                      "LdrResolveDelayLoadedAPI",
-                                      &patched_LdrResolveDelayLoadedAPI);
-  }
-}
-
-#  else  
-
 
 
 namespace mozilla {
@@ -343,5 +298,4 @@ MFBT_API void InitializeWin64ProfilerHooks();
 
 using mozilla::baseprofiler::InitializeWin64ProfilerHooks;
 
-#  endif  
 #endif    

@@ -21,16 +21,9 @@
 
 
 
-
-#ifdef MOZ_GECKO_PROFILER
-#  define MOZ_BASE_PROFILER
-#endif  
-
-
-
 #include "mozilla/BaseProfilerCounts.h"
 
-#ifndef MOZ_BASE_PROFILER
+#ifndef MOZ_GECKO_PROFILER
 
 
 

@@ -24,7 +24,7 @@
 
 #include "BaseProfiler.h"
 
-#ifdef MOZ_BASE_PROFILER
+#ifdef MOZ_GECKO_PROFILER
 
 #  include "EHABIStackWalk.h"
 

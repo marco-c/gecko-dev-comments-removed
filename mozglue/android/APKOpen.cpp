@@ -202,7 +202,7 @@ static void EnsureBaseProfilerInitialized() {
     return;
   }
 
-#ifdef MOZ_BASE_PROFILER
+#ifdef MOZ_GECKO_PROFILER
   
   
   

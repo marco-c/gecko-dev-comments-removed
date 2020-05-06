@@ -16,7 +16,7 @@
 #include "mozilla/ProfileChunkedBuffer.h"
 #include "mozilla/Vector.h"
 
-#ifdef MOZ_BASE_PROFILER
+#ifdef MOZ_GECKO_PROFILER
 #  include "BaseProfileJSONWriter.h"
 #  include "BaseProfilerMarkerPayload.h"
 #endif  
@@ -2530,7 +2530,7 @@ void TestProfilerDependencies() {
   TestBlocksRingBufferSerialization();
 }
 
-#ifdef MOZ_BASE_PROFILER
+#ifdef MOZ_GECKO_PROFILER
 
 class BaseTestMarkerPayload : public baseprofiler::ProfilerMarkerPayload {
  public:
@@ -2880,7 +2880,7 @@ int wmain()
 int main()
 #endif  
 {
-#ifdef MOZ_BASE_PROFILER
+#ifdef MOZ_GECKO_PROFILER
   printf("BaseTestProfiler -- pid: %d, tid: %d\n",
          baseprofiler::profiler_current_process_id(),
          baseprofiler::profiler_current_thread_id());

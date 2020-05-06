@@ -1132,7 +1132,6 @@ class ActivePS {
     MOZ_ASSERT(sInstance);
     uint64_t bufferRangeStart = sInstance->mProfileBuffer.BufferRangeStart();
     
-#ifdef MOZ_BASE_PROFILER
     
     
     
@@ -1159,14 +1158,12 @@ class ActivePS {
                 sInstance->mBaseProfileThreads.get());
       sInstance->mBaseProfileThreads.reset();
     }
-#endif
     sInstance->mExitProfiles.eraseIf(
         [bufferRangeStart](const ExitProfile& aExitProfile) {
           return aExitProfile.mBufferPositionAtGatherTime < bufferRangeStart;
         });
   }
 
-#ifdef MOZ_BASE_PROFILER
   static void AddBaseProfileThreads(PSLockRef aLock,
                                     UniquePtr<char[]> aBaseProfileThreads) {
     MOZ_ASSERT(sInstance);
@@ -1186,7 +1183,6 @@ class ActivePS {
               sInstance->mBaseProfileThreads.get());
     return std::move(sInstance->mBaseProfileThreads);
   }
-#endif
 
   static void AddExitProfile(PSLockRef aLock, const nsCString& aExitProfile) {
     MOZ_ASSERT(sInstance);
@@ -1293,11 +1289,9 @@ class ActivePS {
   bool mWasPaused;
 #endif
 
-#ifdef MOZ_BASE_PROFILER
   
   UniquePtr<char[]> mBaseProfileThreads;
   ProfileBufferBlockIndex mGeckoIndexWhenBaseProfileAdded;
-#endif
 
   struct ExitProfile {
     nsCString mJSON;
@@ -2570,13 +2564,11 @@ static void locked_profiler_stream_json_for_this_process(
     }
 #endif
 
-#ifdef MOZ_BASE_PROFILER
     UniquePtr<char[]> baseProfileThreads =
         ActivePS::MoveBaseProfileThreads(aLock);
     if (baseProfileThreads) {
       aWriter.Splice(baseProfileThreads.get());
     }
-#endif
   }
   aWriter.EndArray();
 
@@ -2660,9 +2652,7 @@ static void PrintUsageThenExit(int aExitCode) {
       "\n"
       "  MOZ_PROFILER_HELP\n"
       "  If set to any value, prints this message.\n"
-#ifdef MOZ_BASE_PROFILER
       "  Use MOZ_BASE_PROFILER_HELP for BaseProfiler help.\n"
-#endif
       "\n"
       "  MOZ_LOG\n"
       "  Enables logging. The levels of logging available are\n"
@@ -4001,7 +3991,6 @@ void GetProfilerEnvVarsForChildProcess(
   }
   aSetEnv("MOZ_PROFILER_STARTUP_FILTERS", filtersString.c_str());
 
-#ifdef MOZ_BASE_PROFILER
   
   auto copyEnv = [&](const char* aName) {
     const char* env = getenv(aName);
@@ -4017,7 +4006,6 @@ void GetProfilerEnvVarsForChildProcess(
   copyEnv("MOZ_BASE_PROFILER_STARTUP_FEATURES_BITFIELD");
   copyEnv("MOZ_BASE_PROFILER_STARTUP_FEATURES");
   copyEnv("MOZ_BASE_PROFILER_STARTUP_FILTERS");
-#endif
 }
 
 }  
@@ -4139,7 +4127,6 @@ static void TriggerPollJSSamplingOnMainThread() {
   }
 }
 
-#ifdef MOZ_BASE_PROFILER
 static bool HasMinimumLength(const char* aString, size_t aMinimumLength) {
   if (!aString) {
     return false;
@@ -4151,7 +4138,6 @@ static bool HasMinimumLength(const char* aString, size_t aMinimumLength) {
   }
   return true;
 }
-#endif  
 
 static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
                                   double aInterval, uint32_t aFeatures,
@@ -4181,7 +4167,6 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
 
   MOZ_RELEASE_ASSERT(CorePS::Exists() && !ActivePS::Exists(aLock));
 
-#ifdef MOZ_BASE_PROFILER
   UniquePtr<char[]> baseprofile;
   if (baseprofiler::profiler_is_active()) {
     
@@ -4206,7 +4191,6 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
     
     baseprofiler::profiler_stop();
   }
-#endif
 
 #if defined(GP_PLAT_amd64_windows)
   InitializeWin64ProfilerHooks();
@@ -4232,7 +4216,6 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
   
   MOZ_ASSERT(ActivePS::Exists(aLock));
 
-#ifdef MOZ_BASE_PROFILER
   
   
   if (HasMinimumLength(baseprofile.get(), 2)) {
@@ -4241,7 +4224,6 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
     
     ActivePS::AddBaseProfileThreads(aLock, std::move(baseprofile));
   }
-#endif
 
   
   Maybe<int> mainThreadId;
