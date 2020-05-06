@@ -7721,6 +7721,9 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel(
     if (strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr) {
       sCSDSupportLevel = aIsPIPWindow ? CSD_SUPPORT_CLIENT : CSD_SUPPORT_SYSTEM;
       
+    } else if (strstr(currentDesktop, "pop:GNOME") != nullptr) {
+      sCSDSupportLevel = CSD_SUPPORT_CLIENT;
+      
     } else if (strstr(currentDesktop, "GNOME") != nullptr) {
       sCSDSupportLevel = aIsPIPWindow ? CSD_SUPPORT_CLIENT : CSD_SUPPORT_SYSTEM;
     } else if (strstr(currentDesktop, "XFCE") != nullptr) {
