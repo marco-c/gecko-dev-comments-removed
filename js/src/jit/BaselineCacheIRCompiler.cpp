@@ -1122,31 +1122,28 @@ bool BaselineCacheIRCompiler::emitStoreDenseElement(ObjOperandId objId,
   BaseObjectElementIndex element(scratch, index);
   masm.branchTestMagic(Assembler::Equal, element, failure->label());
 
-  
-  
-  
-  Label noSpecialHandling;
-  Address elementsFlags(scratch, ObjectElements::offsetOfFlags());
-  masm.branchTest32(
-      Assembler::Zero, elementsFlags,
-      Imm32(ObjectElements::CONVERT_DOUBLE_ELEMENTS |
-            ObjectElements::COPY_ON_WRITE | ObjectElements::FROZEN),
-      &noSpecialHandling);
+  if (IsTypeInferenceEnabled()) {
+    
+    
+    Label noSpecialHandling;
+    Address elementsFlags(scratch, ObjectElements::offsetOfFlags());
+    masm.branchTest32(Assembler::Zero, elementsFlags,
+                      Imm32(ObjectElements::CONVERT_DOUBLE_ELEMENTS |
+                            ObjectElements::COPY_ON_WRITE),
+                      &noSpecialHandling);
 
-  
-  
-  masm.branchTest32(
-      Assembler::NonZero, elementsFlags,
-      Imm32(ObjectElements::COPY_ON_WRITE | ObjectElements::FROZEN),
-      failure->label());
+    
+    masm.branchTest32(Assembler::NonZero, elementsFlags,
+                      Imm32(ObjectElements::COPY_ON_WRITE), failure->label());
 
-  
-  
-  
-  
-  masm.convertInt32ValueToDouble(val);
+    
+    
+    
+    
+    masm.convertInt32ValueToDouble(val);
 
-  masm.bind(&noSpecialHandling);
+    masm.bind(&noSpecialHandling);
+  }
 
   
   
@@ -1194,11 +1191,13 @@ bool BaselineCacheIRCompiler::emitStoreDenseElementHole(ObjOperandId objId,
   Address initLength(scratch, ObjectElements::offsetOfInitializedLength());
   Address elementsFlags(scratch, ObjectElements::offsetOfFlags());
 
-  
-  
-  
-  masm.branchTest32(Assembler::NonZero, elementsFlags,
-                    Imm32(ObjectElements::COPY_ON_WRITE), failure->label());
+  if (IsTypeInferenceEnabled()) {
+    
+    
+    
+    masm.branchTest32(Assembler::NonZero, elementsFlags,
+                      Imm32(ObjectElements::COPY_ON_WRITE), failure->label());
+  }
 
   
   
@@ -1256,19 +1255,21 @@ bool BaselineCacheIRCompiler::emitStoreDenseElementHole(ObjOperandId objId,
     masm.spectreBoundsCheck32(index, initLength, spectreTemp, failure->label());
   }
 
-  
-  Label noConversion;
-  masm.branchTest32(Assembler::Zero, elementsFlags,
-                    Imm32(ObjectElements::CONVERT_DOUBLE_ELEMENTS),
-                    &noConversion);
+  if (IsTypeInferenceEnabled()) {
+    
+    Label noConversion;
+    masm.branchTest32(Assembler::Zero, elementsFlags,
+                      Imm32(ObjectElements::CONVERT_DOUBLE_ELEMENTS),
+                      &noConversion);
 
-  
-  
-  
-  
-  masm.convertInt32ValueToDouble(val);
+    
+    
+    
+    
+    masm.convertInt32ValueToDouble(val);
 
-  masm.bind(&noConversion);
+    masm.bind(&noConversion);
+  }
 
   
   
@@ -1339,11 +1340,13 @@ bool BaselineCacheIRCompiler::emitArrayPush(ObjOperandId objId,
   Address elementsLength(scratch, ObjectElements::offsetOfLength());
   Address elementsFlags(scratch, ObjectElements::offsetOfFlags());
 
-  
-  
-  
-  masm.branchTest32(Assembler::NonZero, elementsFlags,
-                    Imm32(ObjectElements::COPY_ON_WRITE), failure->label());
+  if (IsTypeInferenceEnabled()) {
+    
+    
+    
+    masm.branchTest32(Assembler::NonZero, elementsFlags,
+                      Imm32(ObjectElements::COPY_ON_WRITE), failure->label());
+  }
 
   
   masm.load32(elementsInitLength, scratchLength);
@@ -1384,19 +1387,21 @@ bool BaselineCacheIRCompiler::emitArrayPush(ObjOperandId objId,
 
   masm.bind(&capacityOk);
 
-  
-  Label noConversion;
-  masm.branchTest32(Assembler::Zero, elementsFlags,
-                    Imm32(ObjectElements::CONVERT_DOUBLE_ELEMENTS),
-                    &noConversion);
+  if (IsTypeInferenceEnabled()) {
+    
+    Label noConversion;
+    masm.branchTest32(Assembler::Zero, elementsFlags,
+                      Imm32(ObjectElements::CONVERT_DOUBLE_ELEMENTS),
+                      &noConversion);
 
-  
-  
-  
-  
-  masm.convertInt32ValueToDouble(val);
+    
+    
+    
+    
+    masm.convertInt32ValueToDouble(val);
 
-  masm.bind(&noConversion);
+    masm.bind(&noConversion);
+  }
 
   
   

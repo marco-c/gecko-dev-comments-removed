@@ -3693,8 +3693,7 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElement(
   }
 
   NativeObject* nobj = &obj->as<NativeObject>();
-  if (!nobj->containsDenseElement(index) ||
-      nobj->getElementsHeader()->isFrozen()) {
+  if (!nobj->containsDenseElement(index) || nobj->denseElementsAreFrozen()) {
     return AttachDecision::NoAction;
   }
 
@@ -3754,16 +3753,9 @@ static bool CanAttachAddElement(NativeObject* obj, bool isInit) {
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
     NativeObject* nproto = &proto->as<NativeObject>();
-    if (!nproto->isExtensible() && nproto->getDenseInitializedLength() > 0) {
+    if (nproto->denseElementsAreFrozen() &&
+        nproto->getDenseInitializedLength() > 0) {
       return false;
     }
 
@@ -3792,7 +3784,7 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElementHole(
     return AttachDecision::NoAction;
   }
 
-  MOZ_ASSERT(!nobj->getElementsHeader()->isFrozen(),
+  MOZ_ASSERT(!nobj->denseElementsAreFrozen(),
              "Extensible objects should not have frozen elements");
 
   uint32_t initLength = nobj->getDenseInitializedLength();
@@ -4775,7 +4767,7 @@ AttachDecision CallIRGenerator::tryAttachArrayPush() {
     return AttachDecision::NoAction;
   }
 
-  MOZ_ASSERT(!thisarray->getElementsHeader()->isFrozen(),
+  MOZ_ASSERT(!thisarray->denseElementsAreFrozen(),
              "Extensible arrays should not have frozen elements");
   MOZ_ASSERT(thisarray->lengthIsWritable());
 

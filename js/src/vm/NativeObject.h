@@ -206,6 +206,11 @@ class ObjectElements {
 
     
     
+    
+    
+    
+    
+    
     FROZEN = 0x20,
   };
 
@@ -317,6 +322,8 @@ class ObjectElements {
     flags |= FROZEN;
   }
 
+  bool isFrozen() const { return flags & FROZEN; }
+
  public:
   constexpr ObjectElements(uint32_t capacity, uint32_t length)
       : flags(0), initializedLength(0), capacity(capacity), length(length) {}
@@ -369,11 +376,10 @@ class ObjectElements {
   static bool MakeElementsCopyOnWrite(JSContext* cx, NativeObject* obj);
 
   static MOZ_MUST_USE bool PreventExtensions(JSContext* cx, NativeObject* obj);
-  static void FreezeOrSeal(JSContext* cx, NativeObject* obj,
-                           IntegrityLevel level);
+  static MOZ_MUST_USE bool FreezeOrSeal(JSContext* cx, HandleNativeObject obj,
+                                        IntegrityLevel level);
 
   bool isSealed() const { return flags & SEALED; }
-  bool isFrozen() const { return flags & FROZEN; }
 
   uint8_t elementAttributes() const {
     if (isFrozen()) {
@@ -1310,7 +1316,7 @@ class NativeObject : public JSObject {
     return getElementsHeader()->isSealed();
   }
   bool denseElementsAreFrozen() const {
-    return getElementsHeader()->isFrozen();
+    return hasAllFlags(js::BaseShape::FROZEN_ELEMENTS);
   }
 
   
