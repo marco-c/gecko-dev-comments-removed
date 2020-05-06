@@ -2,7 +2,7 @@
 
 
 
-window.tests.set(
+tests.set(
   "globalArrayObjectLiteral",
   (function() {
     var garbage = [];

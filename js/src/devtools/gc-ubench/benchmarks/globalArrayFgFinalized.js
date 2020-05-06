@@ -2,7 +2,7 @@
 
 
 
-window.tests.set(
+tests.set(
   "globalArrayFgFinalized",
   (function() {
     var garbage = [];

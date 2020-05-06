@@ -2,7 +2,7 @@
 
 
 
-window.tests.set(
+tests.set(
   "pairCyclicWeakMap",
   (function() {
     var garbage = [];

@@ -2,7 +2,7 @@
 
 
 
-window.tests.set("noAllocation", {
+tests.set("noAllocation", {
   description: "Do not generate any garbage.",
   load: N => {},
   unload: () => {},
