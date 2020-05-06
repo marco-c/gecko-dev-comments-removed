@@ -614,6 +614,8 @@ class SpecialPowersParent extends JSWindowActorParent {
 
   
   receiveMessage(aMessage) {
+    ChromeUtils.addProfilerMarker("SpecialPowers", undefined, aMessage.name);
+
     
     
     
