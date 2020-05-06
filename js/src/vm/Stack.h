@@ -359,7 +359,7 @@ class InterpreterFrame {
 
   
   void initExecuteFrame(JSContext* cx, HandleScript script,
-                        AbstractFramePtr prev, const Value& newTargetValue,
+                        AbstractFramePtr prev, HandleValue newTargetValue,
                         HandleObject envChain);
 
  public:
@@ -807,7 +807,7 @@ class InterpreterStack {
 
   
   InterpreterFrame* pushExecuteFrame(JSContext* cx, HandleScript script,
-                                     const Value& newTargetValue,
+                                     HandleValue newTargetValue,
                                      HandleObject envChain,
                                      AbstractFramePtr evalInFrame);
 

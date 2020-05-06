@@ -185,14 +185,14 @@ extern bool InternalConstructWithProvidedThis(JSContext* cx, HandleValue fval,
 
 
 
-
 extern bool ExecuteKernel(JSContext* cx, HandleScript script,
-                          JSObject& scopeChain, const Value& newTargetVal,
-                          AbstractFramePtr evalInFrame, Value* result);
+                          HandleObject envChainArg, HandleValue newTargetValue,
+                          AbstractFramePtr evalInFrame,
+                          MutableHandleValue result);
 
 
-extern bool Execute(JSContext* cx, HandleScript script, JSObject& scopeChain,
-                    Value* rval);
+extern bool Execute(JSContext* cx, HandleScript script, HandleObject envChain,
+                    MutableHandleValue rval);
 
 class ExecuteState;
 class InvokeState;
@@ -200,7 +200,7 @@ class InvokeState;
 
 
 
-class RunState {
+class MOZ_RAII RunState {
  protected:
   enum Kind { Execute, Invoke };
   Kind kind_;
@@ -236,19 +236,20 @@ class RunState {
 };
 
 
-class ExecuteState : public RunState {
+class MOZ_RAII ExecuteState : public RunState {
   RootedValue newTargetValue_;
-  RootedObject envChain_;
+  HandleObject envChain_;
 
   AbstractFramePtr evalInFrame_;
-  Value* result_;
+  MutableHandleValue result_;
 
  public:
-  ExecuteState(JSContext* cx, JSScript* script, const Value& newTargetValue,
-               JSObject& envChain, AbstractFramePtr evalInFrame, Value* result)
+  ExecuteState(JSContext* cx, JSScript* script, HandleValue newTargetValue,
+               HandleObject envChain, AbstractFramePtr evalInFrame,
+               MutableHandleValue result)
       : RunState(cx, Execute, script),
         newTargetValue_(cx, newTargetValue),
-        envChain_(cx, &envChain),
+        envChain_(envChain),
         evalInFrame_(evalInFrame),
         result_(result) {}
 
@@ -261,15 +262,11 @@ class ExecuteState : public RunState {
 
   InterpreterFrame* pushInterpreterFrame(JSContext* cx);
 
-  void setReturnValue(const Value& v) {
-    if (result_) {
-      *result_ = v;
-    }
-  }
+  void setReturnValue(const Value& v) { result_.set(v); }
 };
 
 
-class InvokeState final : public RunState {
+class MOZ_RAII InvokeState final : public RunState {
   const CallArgs& args_;
   MaybeConstruct construct_;
 
