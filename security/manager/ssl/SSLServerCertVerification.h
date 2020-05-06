@@ -93,6 +93,8 @@ class SSLServerCertVerificationResult final
 
 class SSLServerCertVerificationJob : public Runnable {
  public:
+  SSLServerCertVerificationJob(const SSLServerCertVerificationJob&) = delete;
+
   
   static SECStatus Dispatch(uint64_t addrForLogging, void* aPinArg,
                             const UniqueCERTCertificate& serverCert,
