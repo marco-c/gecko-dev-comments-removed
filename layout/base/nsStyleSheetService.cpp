@@ -155,7 +155,8 @@ nsStyleSheetService::LoadAndRegisterSheet(nsIURI* aSheetURI,
   rv = LoadAndRegisterSheetInternal(aSheetURI, aSheetType);
   if (NS_SUCCEEDED(rv)) {
     
-    for (PresShell* presShell : mPresShells.Clone()) {
+    nsTArray<RefPtr<PresShell>> toNotify(mPresShells);
+    for (PresShell* presShell : toNotify) {
       StyleSheet* sheet = mSheets[aSheetType].LastElement();
       presShell->NotifyStyleSheetServiceSheetAdded(sheet, aSheetType);
     }
@@ -306,7 +307,8 @@ nsStyleSheetService::UnregisterSheet(nsIURI* aSheetURI, uint32_t aSheetType) {
   }
 
   
-  for (PresShell* presShell : mPresShells.Clone()) {
+  nsTArray<RefPtr<PresShell>> toNotify(mPresShells);
+  for (PresShell* presShell : toNotify) {
     if (presShell->StyleSet()) {
       if (sheet) {
         presShell->NotifyStyleSheetServiceSheetRemoved(sheet, aSheetType);

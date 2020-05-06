@@ -15,8 +15,8 @@ namespace net {
 
 
 using TypeRecordEmpty = Nothing;
-using TypeRecordTxt = CopyableTArray<nsCString>;
-using TypeRecordHTTPSSVC = CopyableTArray<SVCB>;
+using TypeRecordTxt = nsTArray<nsCString>;
+using TypeRecordHTTPSSVC = nsTArray<SVCB>;
 
 
 
