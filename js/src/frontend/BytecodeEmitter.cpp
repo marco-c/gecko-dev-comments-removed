@@ -9718,7 +9718,7 @@ bool BytecodeEmitter::emitInitializeFunctionSpecialNames() {
   
   
   
-  if (funbox->hasThisBinding()) {
+  if (funbox->functionHasThisBinding()) {
     if (!emitInitializeFunctionSpecialName(this, cx->names().dotThis,
                                            JSOp::FunctionThis)) {
       return false;

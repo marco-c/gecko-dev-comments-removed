@@ -7198,7 +7198,7 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
 
     if (numFields > 0) {
       
-      ctorbox->setHasThisBinding();
+      ctorbox->setFunctionHasThisBinding();
     }
   }
 
@@ -9532,7 +9532,7 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::memberCall(
       
       
       if (pc_->isFunctionBox() && !pc_->sc()->strict()) {
-        pc_->functionBox()->setHasExtensibleScope();
+        pc_->functionBox()->setFunHasExtensibleScope();
       }
 
       
