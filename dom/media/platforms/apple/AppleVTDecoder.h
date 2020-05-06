@@ -67,6 +67,7 @@ class AppleVTDecoder : public MediaDataDecoder,
   
   
   void OutputFrame(CVPixelBufferRef aImage, AppleFrameRef aFrameRef);
+  void OnDecodeError(OSStatus aError);
 
  private:
   virtual ~AppleVTDecoder();
