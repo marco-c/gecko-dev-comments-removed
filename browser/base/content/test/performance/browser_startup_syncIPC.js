@@ -191,11 +191,6 @@ const startupPhases = {
       ignoreIfUnused: true, 
       maxCount: 1,
     },
-    {
-      name: "PWebRenderBridge::Msg_EnsureConnected",
-      condition: WIN && WEBRENDER,
-      maxCount: 1,
-    },
   ],
 
   
