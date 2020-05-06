@@ -97,7 +97,10 @@ def iter_symbols(binary):
             addr = int(m.group(0), 16)
             
             
+            flags = line[m.end():][:7]
             
+            weak = 'w' in flags
+
             rest = line[m.end() + 9:].split()
             
             
@@ -116,6 +119,7 @@ def iter_symbols(binary):
                 'size': int(rest[1], 16) if ty == ELF else 0,
                 'name': name,
                 'version': ver or None,
+                'weak': weak,
             }
     else:
         export_table = False
@@ -143,6 +147,7 @@ def iter_symbols(binary):
                 'size': 0,
                 'name': name,
                 'version': None,
+                'weak': None,
             }
 
 
@@ -160,8 +165,20 @@ def check_dep_versions(target, binary, lib, prefix, max_version):
     prefix = prefix + '_'
     try:
         for sym in at_least_one(iter_symbols(binary)):
-            if sym['addr'] == 0 and sym['version'] and \
-                    sym['version'].startswith(prefix):
+            
+            if sym['addr'] != 0:
+                continue
+
+            
+            
+            if sym['weak']:
+                continue
+
+            
+            if not sym['version']:
+                continue
+
+            if sym['version'].startswith(prefix):
                 version = Version(sym['version'][len(prefix):])
                 if version > max_version:
                     unwanted.append(sym)
