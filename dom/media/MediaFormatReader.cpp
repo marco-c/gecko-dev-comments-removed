@@ -1836,7 +1836,7 @@ void MediaFormatReader::HandleDemuxedSamples(
 
       
       
-      samples = decoder.mQueuedSamples;
+      samples = decoder.mQueuedSamples.Clone();
       if (!recyclable) {
         LOG("Decoder does not support recycling, recreate decoder.");
         ShutdownDecoder(aTrack);

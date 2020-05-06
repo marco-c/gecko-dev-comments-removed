@@ -45,16 +45,16 @@ typedef MozPromise<DecryptResult, DecryptResult,  true>
 class CDMKeyInfo {
  public:
   explicit CDMKeyInfo(const nsTArray<uint8_t>& aKeyId)
-      : mKeyId(aKeyId), mStatus() {}
+      : mKeyId(aKeyId.Clone()), mStatus() {}
 
   CDMKeyInfo(const nsTArray<uint8_t>& aKeyId,
              const dom::Optional<dom::MediaKeyStatus>& aStatus)
-      : mKeyId(aKeyId), mStatus(aStatus.Value()) {}
+      : mKeyId(aKeyId.Clone()), mStatus(aStatus.Value()) {}
 
   
   
   CDMKeyInfo(const CDMKeyInfo& aKeyInfo) {
-    mKeyId = aKeyInfo.mKeyId;
+    mKeyId = aKeyInfo.mKeyId.Clone();
     if (aKeyInfo.mStatus.WasPassed()) {
       mStatus.Construct(aKeyInfo.mStatus.Value());
     }

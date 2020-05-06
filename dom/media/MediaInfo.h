@@ -80,7 +80,7 @@ class TrackInfo {
   media::TimeUnit mMediaTime;
   CryptoTrack mCrypto;
 
-  nsTArray<MetadataTag> mTags;
+  CopyableTArray<MetadataTag> mTags;
 
   
   
@@ -118,7 +118,7 @@ class TrackInfo {
     mCrypto = aOther.mCrypto;
     mIsRenderedExternally = aOther.mIsRenderedExternally;
     mType = aOther.mType;
-    mTags = aOther.mTags;
+    mTags = aOther.mTags.Clone();
     MOZ_COUNT_CTOR(TrackInfo);
   }
   bool IsEqualTo(const TrackInfo& rhs) const;
@@ -336,9 +336,9 @@ class EncryptionInfo {
     nsString mType;
 
     
-    nsTArray<uint8_t> mInitData;
+    CopyableTArray<uint8_t> mInitData;
   };
-  typedef nsTArray<InitData> InitDatas;
+  typedef CopyableTArray<InitData> InitDatas;
 
   
   bool IsEncrypted() const { return mEncrypted; }

@@ -748,8 +748,7 @@ void MediaCache::CloseStreamsForPrivateBrowsing() {
       [self = RefPtr<MediaCache>(this)]() mutable {
         AutoLock lock(self->mMonitor);
         
-        nsTArray<MediaCacheStream*> streams(self->mStreams);
-        for (MediaCacheStream* s : streams) {
+        for (MediaCacheStream* s : self->mStreams.Clone()) {
           if (s->mIsPrivateBrowsing) {
             s->CloseInternal(lock);
           }

@@ -641,7 +641,7 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   Canonical<bool> mOutputCaptured;
 
   
-  Canonical<nsTArray<RefPtr<ProcessedMediaTrack>>> mOutputTracks;
+  Canonical<CopyableTArray<RefPtr<ProcessedMediaTrack>>> mOutputTracks;
 
   
   Canonical<PrincipalHandle> mOutputPrincipal;
@@ -693,7 +693,7 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   AbstractCanonical<bool>* CanonicalOutputCaptured() {
     return &mOutputCaptured;
   }
-  AbstractCanonical<nsTArray<RefPtr<ProcessedMediaTrack>>>*
+  AbstractCanonical<CopyableTArray<RefPtr<ProcessedMediaTrack>>>*
   CanonicalOutputTracks() {
     return &mOutputTracks;
   }

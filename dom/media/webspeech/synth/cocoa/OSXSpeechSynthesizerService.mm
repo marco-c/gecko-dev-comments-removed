@@ -1,8 +1,8 @@
-/* -*- Mode: Objective-C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 sw=2 et tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsISupports.h"
 #include "nsServiceManagerUtils.h"
@@ -21,9 +21,9 @@
 
 @class SpeechDelegate;
 
-// We can escape the default delimiters ("[[" and "]]") by temporarily
-// changing the delimiters just before they appear, and changing them back
-// just after.
+
+
+
 #define DLIM_ESCAPE_START "[[dlim (( ))]]"
 #define DLIM_ESCAPE_END "((dlim [[ ]]))"
 
@@ -101,7 +101,7 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(SpeechTaskCallback)
 
 SpeechTaskCallback::SpeechTaskCallback(nsISpeechTask* aTask, NSSpeechSynthesizer* aSynth,
                                        const nsTArray<size_t>& aOffsets)
-    : mTask(aTask), mSpeechSynthesizer(aSynth), mCurrentIndex(0), mOffsets(aOffsets) {
+    : mTask(aTask), mSpeechSynthesizer(aSynth), mCurrentIndex(0), mOffsets(aOffsets.Clone()) {
   mDelegate = [[SpeechDelegate alloc] initWithCallback:this];
   [mSpeechSynthesizer setDelegate:mDelegate];
   mStartingTime = TimeStamp::Now();
@@ -129,8 +129,8 @@ SpeechTaskCallback::OnPause() {
 
   [mSpeechSynthesizer pauseSpeakingAtBoundary:NSSpeechImmediateBoundary];
   if (!mTask) {
-    // When calling pause() on child porcess, it may not receive end event
-    // from chrome process yet.
+    
+    
     return NS_ERROR_FAILURE;
   }
   mTask->DispatchPause(GetTimeDurationFromStart(), mCurrentIndex);
@@ -145,8 +145,8 @@ SpeechTaskCallback::OnResume() {
 
   [mSpeechSynthesizer continueSpeaking];
   if (!mTask) {
-    // When calling resume() on child porcess, it may not receive end event
-    // from chrome process yet.
+    
+    
     return NS_ERROR_FAILURE;
   }
   mTask->DispatchResume(GetTimeDurationFromStart(), mCurrentIndex);
@@ -190,7 +190,7 @@ void SpeechTaskCallback::OnError(uint32_t aIndex) {
 
 void SpeechTaskCallback::OnDidFinishSpeaking() {
   mTask->DispatchEnd(GetTimeDurationFromStart(), mCurrentIndex);
-  // no longer needed
+  
   [mSpeechSynthesizer setDelegate:nil];
   mTask = nullptr;
 }
@@ -217,7 +217,7 @@ class RegisterVoicesRunnable final : public Runnable {
  private:
   ~RegisterVoicesRunnable() override = default;
 
-  // This runnable always use sync mode.  It is unnecesarry to reference object
+  
   OSXSpeechSynthesizerService* mSpeechService;
   nsTArray<OSXVoice>& mVoices;
 };
@@ -315,7 +315,7 @@ OSXSpeechSynthesizerService::OSXSpeechSynthesizerService() : mInitialized(false)
 bool OSXSpeechSynthesizerService::Init() {
   if (Preferences::GetBool("media.webspeech.synth.test") ||
       !StaticPrefs::media_webspeech_synth_enabled()) {
-    // When test is enabled, we shouldn't add OS backend (Bug 1160844)
+    
     return false;
   }
 
@@ -324,7 +324,7 @@ bool OSXSpeechSynthesizerService::Init() {
     return false;
   }
 
-  // Get all the voices and register in the SynthVoiceRegistry
+  
   nsCOMPtr<nsIRunnable> runnable = new EnumVoicesRunnable(this);
   thread->Dispatch(runnable, NS_DISPATCH_NORMAL);
 
@@ -341,15 +341,15 @@ OSXSpeechSynthesizerService::Speak(const nsAString& aText, const nsAString& aUri
              "OSXSpeechSynthesizerService doesn't allow this voice URI");
 
   NSSpeechSynthesizer* synth = [[NSSpeechSynthesizer alloc] init];
-  // strlen("urn:moz-tts:osx:") == 16
+  
   NSString* identifier = nsCocoaUtils::ToNSString(Substring(aUri, 16));
   [synth setVoice:identifier];
 
-  // default rate is 180-220
+  
   [synth setObject:[NSNumber numberWithInt:aRate * 200] forProperty:NSSpeechRateProperty error:nil];
-  // volume allows 0.0-1.0
+  
   [synth setObject:[NSNumber numberWithFloat:aVolume] forProperty:NSSpeechVolumeProperty error:nil];
-  // Use default pitch value to calculate this
+  
   NSNumber* defaultPitch = [synth objectForProperty:NSSpeechPitchBaseProperty error:nil];
   if (defaultPitch) {
     int newPitch = [defaultPitch intValue] * (aPitch / 2 + 0.5);
@@ -359,14 +359,14 @@ OSXSpeechSynthesizerService::Speak(const nsAString& aText, const nsAString& aUri
   }
 
   nsAutoString escapedText;
-  // We need to map the the offsets from the given text to the escaped text.
-  // The index of the offsets array is the position in the escaped text,
-  // the element value is the position in the user-supplied text.
+  
+  
+  
   nsTArray<size_t> offsets;
   offsets.SetCapacity(aText.Length());
 
-  // This loop looks for occurances of "[[" or "]]", escapes them, and
-  // populates the offsets array to supply a map to the original offsets.
+  
+  
   for (size_t i = 0; i < aText.Length(); i++) {
     if (aText.Length() > i + 1 &&
         ((aText[i] == ']' && aText[i + 1] == ']') || (aText[i] == '[' && aText[i + 1] == '['))) {
@@ -425,5 +425,5 @@ already_AddRefed<OSXSpeechSynthesizerService> OSXSpeechSynthesizerService::GetIn
   return speechService.forget();
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
