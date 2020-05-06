@@ -826,7 +826,7 @@ nsTArray<AnimationProperty> KeyframeEffect::BuildProperties(
   
   
   
-  auto keyframesCopy(mKeyframes);
+  auto keyframesCopy(mKeyframes.Clone());
 
   result = KeyframeUtils::GetAnimationPropertiesFromKeyframes(
       keyframesCopy, mTarget.mElement, aStyle, mEffectOptions.mComposite);
@@ -1043,8 +1043,8 @@ already_AddRefed<KeyframeEffect> KeyframeEffect::Constructor(
   
   
   
-  effect->mKeyframes = aSource.mKeyframes;
-  effect->mProperties = aSource.mProperties;
+  effect->mKeyframes = aSource.mKeyframes.Clone();
+  effect->mProperties = aSource.mProperties.Clone();
   for (auto iter = aSource.mBaseValues.ConstIter(); !iter.Done(); iter.Next()) {
     
     

@@ -75,7 +75,7 @@ struct Keyframe {
                                                   
   dom::CompositeOperationOrAuto mComposite =
       dom::CompositeOperationOrAuto::Auto;
-  nsTArray<PropertyValuePair> mPropertyValues;
+  CopyableTArray<PropertyValuePair> mPropertyValues;
 };
 
 }  

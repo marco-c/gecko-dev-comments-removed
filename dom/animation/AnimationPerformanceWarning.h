@@ -61,7 +61,7 @@ struct AnimationPerformanceWarning {
   Type mType;
 
   
-  Maybe<nsTArray<int32_t>> mParams;
+  Maybe<CopyableTArray<int32_t>> mParams;
 
   bool ToLocalizedString(nsAString& aLocalizedString) const;
   template <uint32_t N>
