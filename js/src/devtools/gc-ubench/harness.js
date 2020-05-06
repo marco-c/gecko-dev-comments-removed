@@ -28,10 +28,50 @@ var features = {
 
 var load_paused = false;
 
+class FrameTimer {
+  constructor() {
+    
+    
+    
+    this.start = undefined;
 
-var stopped = 0;
-var start;
-var prev;
+    
+    this.prev = undefined;
+
+    
+    this.stopped = 0;
+  }
+
+  is_stopped() {
+    return this.stopped != 0;
+  }
+
+  start_recording() {
+    this.start = this.prev = performance.now();
+  }
+
+  record_frame_callback(timestamp) {
+    const delay = timestamp - this.prev;
+    this.prev = timestamp;
+    return delay;
+  }
+
+  stop() {
+    const now = performance.now();
+    this.stopped = now;
+  }
+
+  resume() {
+    const now = performance.now();
+    this.prev += now - this.stopped;
+    const stop_duration = now - this.stopped;
+    this.start += stop_duration;
+    this.stopped = 0;
+  }
+}
+
+var gFrameTimer = new FrameTimer();
+
 var latencyGraph;
 var memoryGraph;
 var ctx;
@@ -392,11 +432,9 @@ function stopstart() {
   const do_graph = document.getElementById("do-graph");
   if (do_graph.checked) {
     window.requestAnimationFrame(handler);
-    prev = performance.now();
-    start += prev - stopped;
-    stopped = 0;
+    gFrameTimer.resume();
   } else {
-    stopped = performance.now();
+    gFrameTimer.stop();
   }
   update_load_state();
 }
@@ -410,7 +448,7 @@ function do_load() {
 
 var previous = 0;
 function handler(timestamp) {
-  if (stopped) {
+  if (gFrameTimer.is_stopped()) {
     return;
   }
 
@@ -427,14 +465,12 @@ function handler(timestamp) {
     activeTest.makeGarbage(activeTest.garbagePerFrame);
   }
 
-  var delay = timestamp - prev;
-  prev = timestamp;
+  const delay = gFrameTimer.record_frame_callback(timestamp);
+
+  update_histogram(gHistogram, delay);
 
   
-  
-  update_histogram(gHistogram, Math.round(delay * 100));
-
-  var t = timestamp - start;
+  var t = timestamp - gFrameTimer.start;
   var newIndex = Math.round(t / sampleTime);
   while (sampleIndex < newIndex) {
     sampleIndex++;
@@ -492,6 +528,9 @@ function summarize(arr) {
 }
 
 function update_histogram(histogram, delay) {
+  
+  
+  delay = Math.round(delay * 100) / 100;
   var current = histogram.has(delay) ? histogram.get(delay) : 0;
   histogram.set(delay, ++current);
 }
@@ -500,7 +539,7 @@ function reset_draw_state() {
   for (var i = 0; i < numSamples; i++) {
     delays[i] = 0;
   }
-  start = prev = performance.now();
+  gFrameTimer.start_recording();
   sampleIndex = 0;
 }
 
@@ -584,7 +623,7 @@ function start_test_cycle(tests_to_run) {
 function update_load_state() {
   if (activeTest.name == "noAllocation") {
     loadState = "(none)";
-  } else if (stopped || load_paused) {
+  } else if (gFrameTimer.is_stopped() || load_paused) {
     loadState = "(inactive)";
   } else {
     loadState = "(active)";
@@ -632,8 +671,7 @@ function report_test_result(test, histogram) {
 function compute_test_score(histogram) {
   var score = 0;
   for (let [delay, count] of histogram) {
-    delay = delay / 100;
-    score += Math.abs((delay - 16.66) * count);
+    score += Math.abs((delay - 1000/60) * count);
   }
   score = score / (testDuration / 1000);
   return Math.round(score * 1000) / 1000;
@@ -653,7 +691,6 @@ function compute_test_spark_histogram(histogram) {
   ];
   var rescaled = new Map();
   for (let [delay,] of histogram) {
-    delay = delay / 100;
     for (var i = 0; i < ranges.length; ++i) {
       var low = ranges[i][0];
       var high = ranges[i][1];
