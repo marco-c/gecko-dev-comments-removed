@@ -51,6 +51,8 @@ enum class GamepadId : uint32_t {
   
   kRazer1532Product0900 = 0x15320900,
   
+  kSonyProduct0268 = 0x054c0268,
+  
   kSonyProduct05c4 = 0x054c05c4,
   
   kSonyProduct09cc = 0x054c09cc,
