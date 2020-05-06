@@ -22,23 +22,10 @@ class WarpCacheIR;
 using MDefinitionStackVector = Vector<MDefinition*, 8, SystemAllocPolicy>;
 
 
-
-struct MOZ_STACK_CLASS TranspilerOutput {
-  
-  MDefinition* result = nullptr;
-
-  TranspilerOutput() = default;
-
-  TranspilerOutput(const TranspilerOutput&) = delete;
-  void operator=(const TranspilerOutput&) = delete;
-};
-
-
 MOZ_MUST_USE bool TranspileCacheIRToMIR(MIRGenerator& mirGen,
                                         MBasicBlock* current,
                                         const WarpCacheIR* snapshot,
-                                        const MDefinitionStackVector& inputs,
-                                        TranspilerOutput& output);
+                                        const MDefinitionStackVector& inputs);
 
 }  
 }  
