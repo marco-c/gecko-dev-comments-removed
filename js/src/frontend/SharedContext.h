@@ -426,10 +426,7 @@ class FunctionBox : public SharedContext {
   JSFunction* function() const;
 
   
-  void initializeFunction(JSFunction* fun) {
-    clobberFunction(fun);
-    synchronizeArgCount();
-  }
+  void initializeFunction(JSFunction* fun) { clobberFunction(fun); }
 
   void setAsmJSModule(JSFunction* function);
   bool isAsmJSModule() { return isAsmJSModule_; }
