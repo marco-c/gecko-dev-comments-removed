@@ -4355,6 +4355,15 @@ static bool EmitBodyExprs(FunctionCompiler& f) {
 #endif
 
       
+#ifdef ENABLE_WASM_SIMD
+      case uint16_t(Op::SimdPrefix): {
+        
+        
+        return f.iter().unrecognizedOpcode(&op);
+      }
+#endif
+
+      
       case uint16_t(Op::MiscPrefix): {
         switch (op.b1) {
           case uint32_t(MiscOp::I32TruncSSatF32):
