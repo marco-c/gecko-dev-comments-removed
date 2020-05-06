@@ -622,12 +622,6 @@ bool mozJSComponentLoader::ReuseGlobal(nsIURI* aURI) {
 
   
   
-  if (spec.EqualsASCII("resource://testing-common/BrowserTestUtils.jsm")) {
-    return false;
-  }
-
-  
-  
   
   
   if (FindInReadable(NS_LITERAL_CSTRING("resource://specialpowers/"), spec)) {
