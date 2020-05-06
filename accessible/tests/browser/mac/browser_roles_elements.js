@@ -92,9 +92,7 @@ addAccessibleTask(
     testRoleAndSubRole(accDoc, "main", null, "AXLandmarkMain");
     testRoleAndSubRole(accDoc, "navigation", null, "AXLandmarkNavigation");
     testRoleAndSubRole(accDoc, "search", null, "AXLandmarkSearch");
-    
-    todo(false, "Bug 1635184 - Exposure of SearchField subrole not working.");
-    
+    testRoleAndSubRole(accDoc, "searchbox", null, "AXSearchField");
 
     
     testRoleAndSubRole(
@@ -123,9 +121,7 @@ addAccessibleTask(
     testRoleAndSubRole(accDoc, "tooltip", null, "AXUserInterfaceTooltip");
 
     
-    
-    todo(false, "Bug 1635184 - Exposure of SearchField subrole not working.");
-    
+    testRoleAndSubRole(accDoc, "htmlSearch", "AXTextField", "AXSearchField");
 
     
     testRoleAndSubRole(accDoc, "toggle", "AXCheckBox", "AXToggle");
