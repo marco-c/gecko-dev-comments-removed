@@ -12,7 +12,7 @@ use atomic_refcell::AtomicRefCell;
 use moz_task::{DispatchOptions, Task, TaskRunnable, ThreadPtrHandle, ThreadPtrHolder};
 use nserror::nsresult;
 use nsstring::{nsACString, nsCString};
-use sync15_traits::{ApplyResults, BridgedEngine};
+use sync15_traits::{ApplyResults, BridgedEngine, Guid};
 use thin_vec::ThinVec;
 use xpcom::{
     interfaces::{
@@ -45,15 +45,6 @@ where
     N: ?Sized + BridgedEngine + Send + Sync + 'static,
     N::Error: BridgedError,
 {
-    
-    #[inline]
-    pub fn for_initialize(
-        engine: &Arc<N>,
-        callback: &mozIBridgedSyncEngineCallback,
-    ) -> error::Result<FerryTask<N>> {
-        Self::with_ferry(engine, Ferry::Initialize, callback)
-    }
-
     
     #[inline]
     pub fn for_last_sync(
@@ -109,6 +100,15 @@ where
     }
 
     
+    #[inline]
+    pub fn for_sync_started(
+        engine: &Arc<N>,
+        callback: &mozIBridgedSyncEngineCallback,
+    ) -> error::Result<FerryTask<N>> {
+        Self::with_ferry(engine, Ferry::SyncStarted, callback)
+    }
+
+    
     pub fn for_store_incoming(
         engine: &Arc<N>,
         incoming_envelopes_json: &[nsCString],
@@ -133,13 +133,10 @@ where
         uploaded_ids: &[nsCString],
         callback: &mozIBridgedSyncEngineCallback,
     ) -> error::Result<FerryTask<N>> {
-        let uploaded_ids = uploaded_ids.iter().try_fold(
-            Vec::with_capacity(uploaded_ids.len()),
-            |mut ids, id| -> error::Result<_> {
-                ids.push(std::str::from_utf8(&*id)?.into());
-                Ok(ids)
-            },
-        )?;
+        let uploaded_ids = uploaded_ids
+            .iter()
+            .map(|id| Guid::from_slice(&*id))
+            .collect();
         Self::with_ferry(
             engine,
             Ferry::SetUploaded(server_modified_millis, uploaded_ids),
@@ -175,15 +172,6 @@ where
         callback: &mozIBridgedSyncEngineCallback,
     ) -> error::Result<FerryTask<N>> {
         Self::with_ferry(engine, Ferry::Wipe, callback)
-    }
-
-    
-    #[inline]
-    pub fn for_finalize(
-        engine: &Arc<N>,
-        callback: &mozIBridgedSyncEngineCallback,
-    ) -> error::Result<FerryTask<N>> {
-        Self::with_ferry(engine, Ferry::Finalize, callback)
     }
 
     
@@ -229,10 +217,6 @@ where
             None => return Err(Error::DidNotRun(self.ferry.name()).into()),
         };
         Ok(match &self.ferry {
-            Ferry::Initialize => {
-                engine.initialize()?;
-                FerryResult::default()
-            }
             Ferry::LastSync => FerryResult::LastSync(engine.last_sync()?),
             Ferry::SetLastSync(last_sync_millis) => {
                 engine.set_last_sync(*last_sync_millis)?;
@@ -242,6 +226,10 @@ where
             Ferry::ResetSyncId => FerryResult::AssignedSyncId(engine.reset_sync_id()?),
             Ferry::EnsureCurrentSyncId(new_sync_id) => {
                 FerryResult::AssignedSyncId(engine.ensure_current_sync_id(&*new_sync_id)?)
+            }
+            Ferry::SyncStarted => {
+                engine.sync_started()?;
+                FerryResult::default()
             }
             Ferry::StoreIncoming(incoming_envelopes) => {
                 engine.store_incoming(incoming_envelopes.as_slice())?;
@@ -261,10 +249,6 @@ where
             }
             Ferry::Wipe => {
                 engine.wipe()?;
-                FerryResult::default()
-            }
-            Ferry::Finalize => {
-                engine.finalize()?;
                 FerryResult::default()
             }
         })

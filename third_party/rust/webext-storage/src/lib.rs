@@ -10,6 +10,7 @@ mod db;
 pub mod error;
 mod schema;
 pub mod store;
+mod sync;
 
 
 

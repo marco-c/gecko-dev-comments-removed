@@ -17,13 +17,6 @@ pub trait BridgedEngine {
     
     
     
-    fn initialize(&self) -> Result<(), Self::Error> {
-        Ok(())
-    }
-
-    
-    
-    
     fn last_sync(&self) -> Result<i64, Self::Error>;
 
     
@@ -51,6 +44,10 @@ pub trait BridgedEngine {
 
     
     
+    fn sync_started(&self) -> Result<(), Self::Error>;
+
+    
+    
     
     
     fn store_incoming(&self, incoming_cleartexts: &[IncomingEnvelope]) -> Result<(), Self::Error>;
@@ -62,7 +59,7 @@ pub trait BridgedEngine {
     
     
     
-    fn set_uploaded(&self, server_modified_millis: i64, ids: &[String]) -> Result<(), Self::Error>;
+    fn set_uploaded(&self, server_modified_millis: i64, ids: &[Guid]) -> Result<(), Self::Error>;
 
     
     
@@ -78,13 +75,6 @@ pub trait BridgedEngine {
     
     
     fn wipe(&self) -> Result<(), Self::Error>;
-
-    
-    
-    
-    fn finalize(&self) -> Result<(), Self::Error> {
-        Ok(())
-    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -144,14 +134,13 @@ impl IncomingEnvelope {
     
     
     
-    pub fn payload(&self) -> Result<Payload, Box<dyn Error>> {
+    pub fn payload(&self) -> Result<Payload, PayloadError> {
         let payload: Payload = serde_json::from_str(&self.cleartext)?;
         if payload.id != self.id {
-            return Err(MismatchedIdError {
+            return Err(PayloadError::MismatchedId {
                 envelope: self.id.clone(),
                 payload: payload.id,
-            }
-            .into());
+            });
         }
         Ok(payload)
     }
@@ -166,34 +155,42 @@ pub struct OutgoingEnvelope {
     cleartext: String,
 }
 
-impl OutgoingEnvelope {
-    
-    
-    pub fn new(payload: Payload) -> Result<OutgoingEnvelope, Box<dyn Error>> {
-        let cleartext = serde_json::to_string(&payload)?;
-        Ok(OutgoingEnvelope {
-            id: payload.id,
-            cleartext,
-        })
+impl From<Payload> for OutgoingEnvelope {
+    fn from(payload: Payload) -> Self {
+        let id = payload.id.clone();
+        OutgoingEnvelope {
+            id,
+            cleartext: payload.into_json_string(),
+        }
     }
 }
 
 
-
 #[derive(Debug)]
-pub struct MismatchedIdError {
-    pub envelope: Guid,
-    pub payload: Guid,
+pub enum PayloadError {
+    
+    Invalid(serde_json::Error),
+    
+    MismatchedId { envelope: Guid, payload: Guid },
 }
 
-impl Error for MismatchedIdError {}
+impl Error for PayloadError {}
 
-impl fmt::Display for MismatchedIdError {
+impl From<serde_json::Error> for PayloadError {
+    fn from(err: serde_json::Error) -> PayloadError {
+        PayloadError::Invalid(err)
+    }
+}
+
+impl fmt::Display for PayloadError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "ID `{}` in envelope doesn't match `{}` in payload",
-            self.envelope, self.payload
-        )
+        match self {
+            PayloadError::Invalid(err) => err.fmt(f),
+            PayloadError::MismatchedId { envelope, payload } => write!(
+                f,
+                "ID `{}` in envelope doesn't match `{}` in payload",
+                envelope, payload
+            ),
+        }
     }
 }
