@@ -207,10 +207,15 @@ function Intl_ListFormat_format(list) {
     }
 
     
-    getListFormatInternals(listFormat);
+    var stringList = StringListFromIterable(list, "format");
 
     
-    var stringList = StringListFromIterable(list, "format");
+    if (stringList.length < 2) {
+        return stringList.length === 0 ? "" : stringList[0];
+    }
+
+    
+    getListFormatInternals(listFormat);
 
     
     return intl_FormatList(listFormat, stringList,  false);
@@ -230,10 +235,15 @@ function Intl_ListFormat_formatToParts(list) {
     }
 
     
-    getListFormatInternals(listFormat);
+    var stringList = StringListFromIterable(list, "formatToParts");
 
     
-    var stringList = StringListFromIterable(list, "formatToParts");
+    if (stringList.length < 2) {
+        return stringList.length === 0 ? [] : [{type: "element", value: stringList[0]}];
+    }
+
+    
+    getListFormatInternals(listFormat);
 
     
     return intl_FormatList(listFormat, stringList,  true);
