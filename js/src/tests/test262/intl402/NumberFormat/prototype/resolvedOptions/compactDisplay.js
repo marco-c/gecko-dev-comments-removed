@@ -7,7 +7,6 @@
 
 
 
-
 for (const notation of [undefined, "standard", "scientific", "engineering"]) {
   const options = new Intl.NumberFormat([], {
     notation,

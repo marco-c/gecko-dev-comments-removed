@@ -7,7 +7,6 @@
 
 
 
-
 assert.throws(TypeError, () => {
   new Intl.NumberFormat([], {
     style: "unit",

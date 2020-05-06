@@ -8,7 +8,6 @@
 
 
 
-
 function verifyFormatParts(actual, expected, message) {
   assert.sameValue(Array.isArray(expected), true, `${message}: expected is Array`);
   assert.sameValue(Array.isArray(actual), true, `${message}: actual is Array`);

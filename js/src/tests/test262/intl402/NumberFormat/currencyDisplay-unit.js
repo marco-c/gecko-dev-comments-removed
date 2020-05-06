@@ -14,7 +14,6 @@
 
 
 
-
 const validOptions = [
   [undefined, "symbol"],
   ["narrowSymbol", "narrowSymbol"],

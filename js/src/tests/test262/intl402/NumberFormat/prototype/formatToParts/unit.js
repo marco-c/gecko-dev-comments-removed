@@ -7,7 +7,6 @@
 
 
 
-
 const numbers = [-987, -0.001, -0, 0, 0.001, 987];
 const displays = [
   "short",

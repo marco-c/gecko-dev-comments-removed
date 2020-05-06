@@ -8,7 +8,6 @@
 
 
 
-
 const options = new Intl.PluralRules([], {
   "minimumSignificantDigits": 1,
   "maximumSignificantDigits": 2,

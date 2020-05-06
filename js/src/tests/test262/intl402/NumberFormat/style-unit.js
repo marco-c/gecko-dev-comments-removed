@@ -13,7 +13,6 @@
 
 
 
-
 const validOptions = [
   [undefined, "decimal"],
   ["unit", "unit"],

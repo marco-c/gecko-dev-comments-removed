@@ -8,7 +8,6 @@
 
 
 
-
 const nfShort = new Intl.NumberFormat("ko-KR", {
   notation: "compact",
   compactDisplay: "short",

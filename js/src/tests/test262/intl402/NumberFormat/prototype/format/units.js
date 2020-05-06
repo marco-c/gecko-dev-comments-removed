@@ -7,7 +7,6 @@
 
 
 
-
 function check(unit) {
   const s1 = (123).toLocaleString(undefined, { style: "unit", unit: unit });
   const s2 = (123).toLocaleString();

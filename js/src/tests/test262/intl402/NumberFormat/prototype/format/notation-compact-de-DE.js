@@ -8,7 +8,6 @@
 
 
 
-
 const nfShort = new Intl.NumberFormat("de-DE", {
   notation: "compact",
   compactDisplay: "short",

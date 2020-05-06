@@ -8,7 +8,6 @@
 
 
 
-
 const options = new Intl.NumberFormat([], {
   "style": "currency",
   "currency": "EUR",
