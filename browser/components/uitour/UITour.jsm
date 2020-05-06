@@ -169,7 +169,7 @@ var UITour = {
         query: aDocument => {
           
           
-          let node = aDocument.getElementById("pocket-button-box");
+          let node = aDocument.getElementById("pocket-button");
           if (node && !node.hidden) {
             return node;
           }
