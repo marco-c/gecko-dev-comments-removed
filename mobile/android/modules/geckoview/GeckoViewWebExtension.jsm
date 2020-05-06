@@ -150,11 +150,22 @@ class EmbedderPort {
 }
 
 class GeckoViewConnection {
-  constructor(sender, nativeApp) {
+  constructor(sender, nativeApp, allowContentMessaging) {
     this.sender = sender;
     this.nativeApp = nativeApp;
-    const scope = GeckoViewWebExtension.extensionScopes.get(sender.extensionId);
-    this.allowContentMessaging = scope.allowContentMessaging;
+    if (allowContentMessaging) {
+      this.allowContentMessaging = allowContentMessaging;
+    } else {
+      const scope = GeckoViewWebExtension.extensionScopes.get(
+        sender.extensionId
+      );
+      if (scope) {
+        this.allowContentMessaging = scope.allowContentMessaging;
+      } else {
+        this.allowContentMessaging = false;
+      }
+    }
+
     if (!this.allowContentMessaging && !sender.verified) {
       throw new Error(`Unexpected messaging sender: ${JSON.stringify(sender)}`);
     }
@@ -251,6 +262,22 @@ async function filterPromptPermissions(aPermissions) {
   return promptPermissions;
 }
 
+
+const FLAG_NONE = 0;
+const FLAG_ALLOW_CONTENT_MESSAGING = 1 << 0;
+
+function exportFlags(aPolicy) {
+  let flags = FLAG_NONE;
+  if (!aPolicy) {
+    return flags;
+  }
+  const { extension } = aPolicy;
+  if (extension.hasPermission("nativeMessagingFromContent")) {
+    flags |= FLAG_ALLOW_CONTENT_MESSAGING;
+  }
+  return flags;
+}
+
 async function exportExtension(aAddon, aPermissions, aSourceURI) {
   
   const policy = WebExtensionPolicy.getByID(aAddon.id);
@@ -302,6 +329,7 @@ async function exportExtension(aAddon, aPermissions, aSourceURI) {
     webExtensionId: id,
     locationURI: aSourceURI != null ? aSourceURI.spec : "",
     isBuiltIn: isBuiltin,
+    webExtensionFlags: exportFlags(policy),
     metaData: {
       origins: aPermissions ? aPermissions.origins : [],
       promptPermissions,

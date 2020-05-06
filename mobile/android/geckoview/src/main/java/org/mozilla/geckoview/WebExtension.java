@@ -86,6 +86,7 @@ public class WebExtension {
 
     private final static String LOGTAG = "WebExtension";
 
+    
     public static class Flags {
         
 
