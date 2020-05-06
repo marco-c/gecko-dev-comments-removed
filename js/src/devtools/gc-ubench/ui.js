@@ -35,6 +35,50 @@ var memoryCtx;
 var loadState = "(init)"; 
 var testState = "idle"; 
 
+class FrameTimer {
+  constructor() {
+    
+    
+    
+    this.start = undefined;
+
+    
+    this.prev = undefined;
+
+    
+    this.stopped = 0;
+  }
+
+  is_stopped() {
+    return this.stopped != 0;
+  }
+
+  start_recording(now = performance.now()) {
+    this.start = this.prev = now;
+  }
+
+  on_frame_finished(now = performance.now()) {
+    const delay = now - this.prev;
+    this.prev = now;
+    return delay;
+  }
+
+  pause(now = performance.now()) {
+    this.stopped = now;
+    
+    
+    this.prev = now - this.prev;
+  }
+
+  resume(now = performance.now()) {
+    this.prev = now - this.prev;
+    const stop_duration = now - this.stopped;
+    this.start += stop_duration;
+    this.stopped = 0;
+  }
+}
+
+var gFrameTimer = new FrameTimer();
 function parse_units(v) {
   if (!v.length) {
     return NaN;
@@ -398,7 +442,7 @@ function handler(timestamp) {
 
   gLoadMgr.tick();
 
-  const delay = gFrameTimer.record_frame_callback(timestamp);
+  const delay = gFrameTimer.on_frame_finished(timestamp);
 
   update_histogram(gHistogram, delay);
 
