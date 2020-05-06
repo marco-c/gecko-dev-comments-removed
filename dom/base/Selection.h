@@ -841,6 +841,8 @@ class Selection final : public nsSupportsWeakReference,
     static nsresult SubtractRange(StyledRange& aRange, nsRange& aSubtract,
                                   nsTArray<StyledRange>* aOutput);
 
+    void UnregisterSelection();
+
     
     
     
