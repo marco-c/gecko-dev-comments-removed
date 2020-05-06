@@ -591,7 +591,30 @@ public class WebExtensionController {
     }
 
     
-    GeckoResult<WebExtension> installBuiltIn(final String uri) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @NonNull
+    @AnyThread
+    public GeckoResult<WebExtension> installBuiltIn(final @NonNull String uri) {
         WebExtensionInstallResult result = new WebExtensionInstallResult();
         final GeckoBundle bundle = new GeckoBundle(2);
         bundle.putString("locationUri", uri);

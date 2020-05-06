@@ -4265,6 +4265,7 @@ var XPIInstall = {
 
 
 
+
   async installBuiltinAddon(base) {
     if (lastLightweightTheme === null) {
       lastLightweightTheme = Services.prefs.getCharPref(PREF_SELECTED_LWT, "");
@@ -4309,6 +4310,7 @@ var XPIInstall = {
       }
     }
     await this._activateAddon(addon);
+    return addon.wrapper;
   },
 
   
