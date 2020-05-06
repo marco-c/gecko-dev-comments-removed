@@ -1326,8 +1326,13 @@ mozilla::ipc::IPCResult BrowserChild::RecvHandleTap(
   }
   CSSToLayoutDeviceScale scale(
       presShell->GetPresContext()->CSSToDevPixelScale());
-  CSSPoint point =
-      APZCCallbackHelper::ApplyCallbackTransform(aPoint / scale, aGuid);
+  CSSPoint point = aPoint / scale;
+
+  
+  
+  
+  
+  InputAPZContext context(aGuid, aInputBlockId, nsEventStatus_eSentinel);
 
   switch (aType) {
     case GeckoContentController::TapType::eSingleTap:
@@ -1622,6 +1627,16 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealMouseButtonEvent(
 void BrowserChild::HandleRealMouseButtonEvent(const WidgetMouseEvent& aEvent,
                                               const ScrollableLayerGuid& aGuid,
                                               const uint64_t& aInputBlockId) {
+  WidgetMouseEvent localEvent(aEvent);
+  localEvent.mWidget = mPuppetWidget;
+
+  
+  
+  
+  
+  
+  InputAPZContext context1(aGuid, aInputBlockId, nsEventStatus_eSentinel);
+
   
   
   
@@ -1629,23 +1644,19 @@ void BrowserChild::HandleRealMouseButtonEvent(const WidgetMouseEvent& aEvent,
   
   
   UniquePtr<DisplayportSetListener> postLayerization;
-  if (aInputBlockId && aEvent.mFlags.mHandledByAPZ) {
+  if (aInputBlockId && localEvent.mFlags.mHandledByAPZ) {
     nsCOMPtr<Document> document(GetTopLevelDocument());
     postLayerization = APZCCallbackHelper::SendSetTargetAPZCNotification(
-        mPuppetWidget, document, aEvent, aGuid.mLayersId, aInputBlockId);
+        mPuppetWidget, document, localEvent, aGuid.mLayersId, aInputBlockId);
   }
 
-  InputAPZContext context(aGuid, aInputBlockId, nsEventStatus_eIgnore,
-                          postLayerization != nullptr);
+  InputAPZContext context2(aGuid, aInputBlockId, nsEventStatus_eSentinel,
+                           postLayerization != nullptr);
 
-  WidgetMouseEvent localEvent(aEvent);
-  localEvent.mWidget = mPuppetWidget;
-  APZCCallbackHelper::ApplyCallbackTransform(localEvent, aGuid,
-                                             mPuppetWidget->GetDefaultScale());
   DispatchWidgetEventViaAPZ(localEvent);
 
-  if (aInputBlockId && aEvent.mFlags.mHandledByAPZ) {
-    mAPZEventState->ProcessMouseEvent(aEvent, aInputBlockId);
+  if (aInputBlockId && localEvent.mFlags.mHandledByAPZ) {
+    mAPZEventState->ProcessMouseEvent(localEvent, aInputBlockId);
   }
 
   
@@ -1732,8 +1743,13 @@ void BrowserChild::DispatchWheelEvent(const WidgetWheelEvent& aEvent,
   }
 
   localEvent.mWidget = mPuppetWidget;
-  APZCCallbackHelper::ApplyCallbackTransform(localEvent, aGuid,
-                                             mPuppetWidget->GetDefaultScale());
+
+  
+  
+  
+  
+  InputAPZContext context(aGuid, aInputBlockId, nsEventStatus_eSentinel);
+
   DispatchWidgetEventViaAPZ(localEvent);
 
   if (localEvent.mCanTriggerSwipe) {
@@ -1787,8 +1803,11 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealTouchEvent(
   WidgetTouchEvent localEvent(aEvent);
   localEvent.mWidget = mPuppetWidget;
 
-  APZCCallbackHelper::ApplyCallbackTransform(localEvent, aGuid,
-                                             mPuppetWidget->GetDefaultScale());
+  
+  
+  
+  
+  InputAPZContext context(aGuid, aInputBlockId, aApzResponse);
 
   if (localEvent.mMessage == eTouchStart && AsyncPanZoomEnabled()) {
     nsCOMPtr<Document> document = GetTopLevelDocument();
