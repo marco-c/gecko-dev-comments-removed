@@ -2324,19 +2324,3 @@ function isCanonicalizedStructurallyValidTimeZoneName(timeZone) {
   }
   return zoneNamePattern.test(timeZone);
 }
-
-
-
-
-
-
-
-if (typeof addIntlExtras === "function") {
-    let intlExtras = {};
-    addIntlExtras(intlExtras);
-
-    Object.defineProperty(Intl, "ListFormat", {
-        value: intlExtras.ListFormat,
-        writable: true, enumerable: false, configurable: true
-    });
-}

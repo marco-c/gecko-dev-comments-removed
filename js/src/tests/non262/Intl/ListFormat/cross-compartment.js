@@ -1,7 +1,6 @@
 
 
 var g = newGlobal();
-addIntlListFormat(g);
 
 var locale = "en";
 var list = ["a", "b", "c"];
