@@ -4161,11 +4161,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       
       Unused << gfxPlatform::GetPlatform();
 
-      bool useWebRender =
-          gfx::gfxVars::UseWebRender() && AllowWebRenderForThisWindow();
-
       mIsAccelerated = ComputeShouldAccelerate();
-      MOZ_ASSERT(mIsAccelerated | !useWebRender);
+      bool useWebRender = gfx::gfxVars::UseWebRender() && mIsAccelerated;
 
       if (mWindowType == eWindowType_toplevel) {
         

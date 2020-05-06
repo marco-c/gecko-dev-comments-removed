@@ -191,6 +191,12 @@ const startupPhases = {
       ignoreIfUnused: true, 
       maxCount: 1,
     },
+    {
+      name: "PWebRenderBridge::Msg_EnsureConnected",
+      condition: WIN && WEBRENDER,
+      ignoreIfUnused: true,
+      maxCount: 1,
+    },
   ],
 
   
@@ -220,6 +226,12 @@ const startupPhases = {
       name: "PLayerTransaction::Msg_GetTextureFactoryIdentifier",
       condition: WIN && WEBRENDER,
       ignoreIfUnused: true, 
+      maxCount: 1,
+    },
+    {
+      name: "PWebRenderBridge::Msg_EnsureConnected",
+      condition: WIN && WEBRENDER,
+      ignoreIfUnused: true,
       maxCount: 1,
     },
     {
