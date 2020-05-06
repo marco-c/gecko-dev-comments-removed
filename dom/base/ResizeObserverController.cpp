@@ -168,8 +168,7 @@ uint32_t ResizeObserverController::BroadcastAllActiveObservations() {
 
   
   
-  const nsTArray<RefPtr<ResizeObserver>> observers(mResizeObservers);
-  for (auto& observer : observers) {
+  for (auto& observer : mResizeObservers.Clone()) {
     
     
     

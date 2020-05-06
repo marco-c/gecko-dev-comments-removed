@@ -94,7 +94,7 @@ class ShadowIncludingTreeIterator {
   
   
   
-  AutoTArray<nsINode*, 4> mRoots;
+  CopyableAutoTArray<nsINode*, 4> mRoots;
 
 #ifdef DEBUG
   

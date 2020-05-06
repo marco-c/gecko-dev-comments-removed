@@ -2162,13 +2162,13 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     
     nsTArray<nsCOMPtr<nsIPrincipal>> ancestorPrincipals;
     
-    ancestorPrincipals = doc->AncestorPrincipals();
+    ancestorPrincipals = doc->AncestorPrincipals().Clone();
     ancestorPrincipals.InsertElementAt(0, doc->NodePrincipal());
     docShell->SetAncestorPrincipals(std::move(ancestorPrincipals));
 
     
     nsTArray<uint64_t> ancestorOuterWindowIDs;
-    ancestorOuterWindowIDs = doc->AncestorOuterWindowIDs();
+    ancestorOuterWindowIDs = doc->AncestorOuterWindowIDs().Clone();
     ancestorOuterWindowIDs.InsertElementAt(0, win->WindowID());
     docShell->SetAncestorOuterWindowIDs(std::move(ancestorOuterWindowIDs));
   }

@@ -327,9 +327,7 @@ void nsIGlobalObject::BroadcastReport(Report* aReport) {
 }
 
 void nsIGlobalObject::NotifyReportingObservers() {
-  const nsTArray<RefPtr<ReportingObserver>> reportingObservers(
-      mReportingObservers);
-  for (auto& observer : reportingObservers) {
+  for (auto& observer : mReportingObservers.Clone()) {
     
     
     
