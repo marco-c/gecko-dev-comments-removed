@@ -3514,8 +3514,8 @@ bool JS::OwningCompileOptions::copy(JSContext* cx,
   
   release();
 
-  copyPODTransitiveOptions(rhs);
   copyPODNonTransitiveOptions(rhs);
+  copyPODTransitiveOptions(rhs);
 
   elementRoot = rhs.element();
   elementAttributeNameRoot = rhs.elementAttributeName();
