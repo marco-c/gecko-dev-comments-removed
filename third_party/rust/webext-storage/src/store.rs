@@ -9,6 +9,7 @@ use std::path::Path;
 use std::result;
 
 use serde_json::Value as JsonValue;
+use sql_support::SqlInterruptHandle;
 
 
 
@@ -40,6 +41,11 @@ impl Store {
         Ok(Self {
             db: StorageDb::new_memory(db_path)?,
         })
+    }
+
+    
+    pub fn interrupt_handle(&self) -> SqlInterruptHandle {
+        self.db.interrupt_handle()
     }
 
     

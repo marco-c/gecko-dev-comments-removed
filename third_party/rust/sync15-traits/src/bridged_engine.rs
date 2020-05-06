@@ -2,10 +2,6 @@
 
 
 
-use std::{sync::Mutex, sync::MutexGuard, sync::PoisonError};
-
-use interrupt_support::Interruptee;
-
 
 
 pub trait BridgedEngine {
@@ -51,31 +47,22 @@ pub trait BridgedEngine {
     
     
     
-    fn store_incoming(
-        &self,
-        incoming_cleartexts: &[String],
-        signal: &dyn Interruptee,
-    ) -> Result<(), Self::Error>;
+    fn store_incoming(&self, incoming_cleartexts: &[String]) -> Result<(), Self::Error>;
 
     
     
-    fn apply(&self, signal: &dyn Interruptee) -> Result<ApplyResults, Self::Error>;
+    fn apply(&self) -> Result<ApplyResults, Self::Error>;
 
     
     
     
-    fn set_uploaded(
-        &self,
-        server_modified_millis: i64,
-        ids: &[String],
-        signal: &dyn Interruptee,
-    ) -> Result<(), Self::Error>;
+    fn set_uploaded(&self, server_modified_millis: i64, ids: &[String]) -> Result<(), Self::Error>;
 
     
     
     
     
-    fn sync_finished(&self, signal: &dyn Interruptee) -> Result<(), Self::Error>;
+    fn sync_finished(&self) -> Result<(), Self::Error>;
 
     
     
@@ -120,78 +107,5 @@ impl From<Vec<String>> for ApplyResults {
             records,
             num_reconciled: None,
         }
-    }
-}
-
-
-
-
-impl<E> BridgedEngine for Mutex<E>
-where
-    E: BridgedEngine,
-    E::Error: for<'a> From<PoisonError<MutexGuard<'a, E>>>,
-{
-    type Error = E::Error;
-
-    fn initialize(&self) -> Result<(), Self::Error> {
-        self.lock()?.initialize()
-    }
-
-    fn last_sync(&self) -> Result<i64, Self::Error> {
-        self.lock()?.last_sync()
-    }
-
-    fn set_last_sync(&self, millis: i64) -> Result<(), Self::Error> {
-        self.lock()?.set_last_sync(millis)
-    }
-
-    fn store_incoming(
-        &self,
-        incoming_cleartexts: &[String],
-        signal: &dyn Interruptee,
-    ) -> Result<(), Self::Error> {
-        self.lock()?.store_incoming(incoming_cleartexts, signal)
-    }
-
-    fn apply(&self, signal: &dyn Interruptee) -> Result<ApplyResults, Self::Error> {
-        self.lock()?.apply(signal)
-    }
-
-    fn set_uploaded(
-        &self,
-        server_modified_millis: i64,
-        ids: &[String],
-        signal: &dyn Interruptee,
-    ) -> Result<(), Self::Error> {
-        self.lock()?
-            .set_uploaded(server_modified_millis, ids, signal)
-    }
-
-    fn sync_finished(&self, signal: &dyn Interruptee) -> Result<(), Self::Error> {
-        self.lock()?.sync_finished(signal)
-    }
-
-    fn reset(&self) -> Result<(), Self::Error> {
-        self.lock()?.reset()
-    }
-
-    fn wipe(&self) -> Result<(), Self::Error> {
-        self.lock()?.wipe()
-    }
-
-    fn finalize(&self) -> Result<(), Self::Error> {
-        self.lock()?.finalize()
-    }
-
-    fn sync_id(&self) -> Result<Option<String>, Self::Error> {
-        self.lock()?.sync_id()
-    }
-
-    fn reset_sync_id(&self) -> Result<String, Self::Error> {
-        self.lock()?.reset_sync_id()
-    }
-
-    fn ensure_current_sync_id(&self, new_sync_id: &str) -> Result<String, Self::Error> {
-        self.lock()?.ensure_current_sync_id(new_sync_id)
     }
 }

@@ -7,11 +7,12 @@ use crate::schema;
 use rusqlite::types::{FromSql, ToSql};
 use rusqlite::Connection;
 use rusqlite::OpenFlags;
-use sql_support::ConnExt;
+use sql_support::{ConnExt, SqlInterruptHandle, SqlInterruptScope};
 use std::fs;
 use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 use std::result;
+use std::sync::{atomic::AtomicUsize, Arc};
 use url::Url;
 
 
@@ -23,6 +24,7 @@ use url::Url;
 
 pub struct StorageDb {
     writer: Connection,
+    interrupt_counter: Arc<AtomicUsize>,
 }
 impl StorageDb {
     
@@ -50,7 +52,10 @@ impl StorageDb {
 
         let conn = Connection::open_with_flags(db_path.clone(), flags)?;
         match init_sql_connection(&conn, true) {
-            Ok(()) => Ok(Self { writer: conn }),
+            Ok(()) => Ok(Self {
+                writer: conn,
+                interrupt_counter: Arc::new(AtomicUsize::new(0)),
+            }),
             Err(e) => {
                 
                 if let ErrorKind::DatabaseUpgradeError = e.kind() {
@@ -68,12 +73,45 @@ impl StorageDb {
     
     
     
+    pub fn interrupt_handle(&self) -> SqlInterruptHandle {
+        SqlInterruptHandle::new(
+            self.writer.get_interrupt_handle(),
+            self.interrupt_counter.clone(),
+        )
+    }
+
+    
+    
+    
+    
+    
+    
+    #[allow(dead_code)]
+    pub fn begin_interrupt_scope(&self) -> SqlInterruptScope {
+        SqlInterruptScope::new(self.interrupt_counter.clone())
+    }
+
+    
+    
+    
+    
+    
     
     
     pub fn close(self) -> result::Result<(), (StorageDb, Error)> {
-        self.writer
-            .close()
-            .map_err(|(writer, err)| (StorageDb { writer }, err.into()))
+        let StorageDb {
+            writer,
+            interrupt_counter,
+        } = self;
+        writer.close().map_err(|(writer, err)| {
+            (
+                StorageDb {
+                    writer,
+                    interrupt_counter,
+                },
+                err.into(),
+            )
+        })
     }
 }
 

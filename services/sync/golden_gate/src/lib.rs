@@ -113,5 +113,5 @@ pub use error::{Error, Result};
 
 
 pub use interrupt_support::{Interrupted, Interruptee};
-pub use sync15_traits::BridgedEngine;
+pub use sync15_traits::{ApplyResults, BridgedEngine};
 pub use task::{ApplyTask, FerryTask};

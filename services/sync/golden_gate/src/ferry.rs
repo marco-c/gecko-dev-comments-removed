@@ -2,30 +2,28 @@
 
 
 
-use std::sync::Arc;
-
 use nsstring::nsCString;
 use storage_variant::VariantType;
 use xpcom::{interfaces::nsIVariant, RefPtr};
 
 
 
-pub enum Ferry<S> {
+pub enum Ferry {
     Initialize,
     LastSync,
     SetLastSync(i64),
     SyncId,
     ResetSyncId,
     EnsureCurrentSyncId(String),
-    StoreIncoming(Vec<String>, Arc<S>),
-    SetUploaded(i64, Vec<String>, Arc<S>),
-    SyncFinished(Arc<S>),
+    StoreIncoming(Vec<String>),
+    SetUploaded(i64, Vec<String>),
+    SyncFinished,
     Reset,
     Wipe,
     Finalize,
 }
 
-impl<S> Ferry<S> {
+impl Ferry {
     
     
     pub fn name(&self) -> &'static str {
@@ -38,7 +36,7 @@ impl<S> Ferry<S> {
             Ferry::EnsureCurrentSyncId(_) => concat!(module_path!(), "ensureCurrentSyncId"),
             Ferry::StoreIncoming { .. } => concat!(module_path!(), "storeIncoming"),
             Ferry::SetUploaded { .. } => concat!(module_path!(), "setUploaded"),
-            Ferry::SyncFinished(_) => concat!(module_path!(), "sync"),
+            Ferry::SyncFinished => concat!(module_path!(), "syncFinished"),
             Ferry::Reset => concat!(module_path!(), "reset"),
             Ferry::Wipe => concat!(module_path!(), "wipe"),
             Ferry::Finalize => concat!(module_path!(), "finalize"),
@@ -56,8 +54,8 @@ pub enum FerryResult {
     Null,
 }
 
-impl From<()> for FerryResult {
-    fn from(_: ()) -> FerryResult {
+impl Default for FerryResult {
+    fn default() -> Self {
         FerryResult::Null
     }
 }

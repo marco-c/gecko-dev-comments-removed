@@ -47,11 +47,7 @@ class BridgedStore {
       
       
       let incomingCleartexts = chunk.map(record => record.cleartextToString());
-      await promisifyWithSignal(
-        null,
-        this.engine._bridge.storeIncoming,
-        incomingCleartexts
-      );
+      await promisify(this.engine._bridge.storeIncoming, incomingCleartexts);
     }
     
     return [];
@@ -194,10 +190,6 @@ function BridgedEngine(bridge, name, service) {
 
   this._bridge = bridge;
   this._bridge.logger = new LogAdapter(this._log);
-
-  
-  
-  this._applyTimeoutMillis = 5 * 60 * 60 * 1000; 
 }
 
 BridgedEngine.prototype = {
@@ -308,7 +300,7 @@ BridgedEngine.prototype = {
     
     
     await this.initialize();
-    await promisifyWithSignal(null, this._bridge.syncFinished);
+    await promisify(this._bridge.syncFinished);
   },
 
   
@@ -332,34 +324,18 @@ BridgedEngine.prototype = {
     await super._processIncoming(newitems);
     await this.initialize();
 
-    
-    
-    
-    let watchdog = this._newWatchdog();
-    watchdog.start(this._applyTimeoutMillis);
-
-    try {
-      let outgoingRecords = await promisifyWithSignal(
-        watchdog.signal,
-        this._bridge.apply
-      );
-      let changeset = {};
-      for (let record of outgoingRecords) {
-        
-        
-        let cleartext = JSON.parse(record);
-        changeset[cleartext.id] = {
-          synced: false,
-          cleartext,
-        };
-      }
-      this._modified.replace(changeset);
-    } finally {
-      watchdog.stop();
-      if (watchdog.abortReason) {
-        this._log.warn(`Aborting bookmark merge: ${watchdog.abortReason}`);
-      }
+    let outgoingRecords = await promisify(this._bridge.apply);
+    let changeset = {};
+    for (let record of outgoingRecords) {
+      
+      
+      let cleartext = JSON.parse(record);
+      changeset[cleartext.id] = {
+        synced: false,
+        cleartext,
+      };
     }
+    this._modified.replace(changeset);
   },
 
   
@@ -370,12 +346,7 @@ BridgedEngine.prototype = {
 
   async _onRecordsWritten(succeeded, failed, serverModifiedTime) {
     await this.initialize();
-    await promisifyWithSignal(
-      null,
-      this._bridge.setUploaded,
-      serverModifiedTime,
-      succeeded
-    );
+    await promisify(this._bridge.setUploaded, serverModifiedTime, succeeded);
   },
 
   async _createTombstone() {
@@ -423,35 +394,6 @@ function promisify(func, ...params) {
         reject(transformError(code, message));
       },
     });
-  });
-}
-
-
-
-function promisifyWithSignal(signal, func, ...params) {
-  if (!signal) {
-    return promisify(func, ...params);
-  }
-  return new Promise((resolve, reject) => {
-    if (signal.aborted) {
-      
-      
-      throw new InterruptedError("Interrupted before starting operation");
-    }
-    function onAbort() {
-      signal.removeEventListener("abort", onAbort);
-      op.cancel(Cr.NS_ERROR_ABORT);
-    }
-    let op = func(...params, {
-      handleSuccess(result) {
-        signal.removeEventListener("abort", onAbort);
-        resolve(result);
-      },
-      handleError(code, message) {
-        reject(transformError(code, message));
-      },
-    });
-    signal.addEventListener("abort", onAbort);
   });
 }
 
