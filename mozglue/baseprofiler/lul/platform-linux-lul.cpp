@@ -3,21 +3,18 @@
 
 
 
+#include <stdio.h>
+#include <signal.h>
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
+
+#include "AutoObjectMapper.h"
 #include "BaseProfiler.h"
-
-#ifdef MOZ_GECKO_PROFILER
-
-#  include <stdio.h>
-#  include <signal.h>
-#  include <string.h>
-#  include <stdlib.h>
-#  include <time.h>
-
-#  include "platform.h"
-#  include "PlatformMacros.h"
-#  include "LulMain.h"
-#  include "BaseProfilerSharedLibraries.h"
-#  include "AutoObjectMapper.h"
+#include "BaseProfilerSharedLibraries.h"
+#include "platform.h"
+#include "PlatformMacros.h"
+#include "LulMain.h"
 
 
 
@@ -28,7 +25,7 @@
 void read_procmaps(lul::LUL* aLUL) {
   MOZ_ASSERT(aLUL->CountMappings() == 0);
 
-#  if defined(GP_OS_linux) || defined(GP_OS_android)
+#if defined(GP_OS_linux) || defined(GP_OS_android)
   SharedLibraryInfo info = SharedLibraryInfo::GetInfoForSelf();
 
   for (size_t i = 0; i < info.GetSize(); i++) {
@@ -36,13 +33,13 @@ void read_procmaps(lul::LUL* aLUL) {
 
     std::string nativePath = lib.GetDebugPath();
 
-#    if defined(MOZ_LINKER)
+#  if defined(MOZ_LINKER)
     
     AutoObjectMapperFaultyLib mapper(aLUL->mLog);
-#    else
+#  else
     
     AutoObjectMapperPOSIX mapper(aLUL->mLog);
-#    endif
+#  endif
 
     
     
@@ -66,9 +63,9 @@ void read_procmaps(lul::LUL* aLUL) {
     
   }
 
-#  else
-#    error "Unknown platform"
-#  endif
+#else
+#  error "Unknown platform"
+#endif
 }
 
 
@@ -82,5 +79,3 @@ void logging_sink_for_LUL(const char* str) {
   
   
 }
-
-#endif  

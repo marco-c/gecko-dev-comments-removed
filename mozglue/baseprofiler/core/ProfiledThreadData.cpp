@@ -4,18 +4,15 @@
 
 
 
+#include "ProfiledThreadData.h"
+
 #include "BaseProfiler.h"
+#include "ProfileBuffer.h"
+#include "BaseProfileJSONWriter.h"
 
-#ifdef MOZ_GECKO_PROFILER
-
-#  include "ProfiledThreadData.h"
-
-#  include "ProfileBuffer.h"
-#  include "BaseProfileJSONWriter.h"
-
-#  if defined(GP_OS_darwin)
-#    include <pthread.h>
-#  endif
+#if defined(GP_OS_darwin)
+#  include <pthread.h>
+#endif
 
 namespace mozilla {
 namespace baseprofiler {
@@ -170,5 +167,3 @@ void StreamSamplesAndMarkers(const char* aName, int aThreadId,
 
 }  
 }  
-
-#endif  

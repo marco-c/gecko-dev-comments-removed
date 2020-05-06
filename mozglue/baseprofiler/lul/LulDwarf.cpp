@@ -41,27 +41,23 @@
 
 
 
-#include "BaseProfiler.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-#ifdef MOZ_GECKO_PROFILER
+#include <map>
+#include <stack>
+#include <string>
 
-#  include <stdint.h>
-#  include <stdio.h>
-#  include <string.h>
-#  include <stdlib.h>
+#include "mozilla/Assertions.h"
+#include "mozilla/Sprintf.h"
 
-#  include <map>
-#  include <stack>
-#  include <string>
-
-#  include "mozilla/Assertions.h"
-#  include "mozilla/Sprintf.h"
-
-#  include "LulCommonExt.h"
-#  include "LulDwarfInt.h"
+#include "LulCommonExt.h"
+#include "LulDwarfInt.h"
 
 
-#  define DEBUG_DWARF 0
+#define DEBUG_DWARF 0
 
 namespace lul {
 
@@ -2254,5 +2250,3 @@ void DwarfCFIToModule::Reporter::ExpressionCouldNotBeSummarised(
 }
 
 }  
-
-#endif  

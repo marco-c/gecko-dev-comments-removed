@@ -4,17 +4,15 @@
 
 
 
+#include "BaseProfilingStack.h"
+
+#include <algorithm>
+
+#include "mozilla/IntegerRange.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/UniquePtrExtensions.h"
+
 #include "BaseProfiler.h"
-
-#ifdef MOZ_GECKO_PROFILER
-
-#  include "BaseProfilingStack.h"
-
-#  include "mozilla/IntegerRange.h"
-#  include "mozilla/UniquePtr.h"
-#  include "mozilla/UniquePtrExtensions.h"
-
-#  include <algorithm>
 
 namespace mozilla {
 namespace baseprofiler {
@@ -52,5 +50,3 @@ void ProfilingStack::ensureCapacitySlow() {
 
 }  
 }  
-
-#endif  

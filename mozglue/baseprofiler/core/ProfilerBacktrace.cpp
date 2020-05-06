@@ -4,16 +4,13 @@
 
 
 
+#include "ProfilerBacktrace.h"
+
 #include "BaseProfiler.h"
-
-#ifdef MOZ_GECKO_PROFILER
-
-#  include "ProfilerBacktrace.h"
-
-#  include "ProfileBuffer.h"
-#  include "ProfiledThreadData.h"
-#  include "BaseProfileJSONWriter.h"
-#  include "ThreadInfo.h"
+#include "BaseProfileJSONWriter.h"
+#include "ProfileBuffer.h"
+#include "ProfiledThreadData.h"
+#include "ThreadInfo.h"
 
 namespace mozilla {
 namespace baseprofiler {
@@ -79,5 +76,3 @@ ProfileBufferEntryReader::
 };
 
 }  
-
-#endif  

@@ -4,18 +4,16 @@
 
 
 
+#ifdef XP_WIN
+#  undef UNICODE
+#  undef _UNICODE
+#endif
+
+#include "VTuneProfiler.h"
+
+#include <memory>
+
 #include "BaseProfiler.h"
-
-#ifdef MOZ_GECKO_PROFILER
-
-#  ifdef XP_WIN
-#    undef UNICODE
-#    undef _UNICODE
-#  endif
-
-#  include "VTuneProfiler.h"
-
-#  include <memory>
 
 namespace mozilla {
 namespace baseprofiler {
@@ -92,5 +90,3 @@ void VTuneProfiler::RegisterThreadInternal(const char* aName) {
 
 }  
 }  
-
-#endif  

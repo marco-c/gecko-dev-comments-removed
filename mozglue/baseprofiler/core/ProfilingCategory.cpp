@@ -4,14 +4,12 @@
 
 
 
+#include "BaseProfilingCategory.h"
+
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/Assertions.h"
+
 #include "BaseProfiler.h"
-
-#ifdef MOZ_GECKO_PROFILER
-
-#  include "BaseProfilingCategory.h"
-
-#  include "mozilla/ArrayUtils.h"
-#  include "mozilla/Assertions.h"
 
 namespace mozilla {
 namespace baseprofiler {
@@ -71,5 +69,3 @@ const ProfilingCategoryPairInfo& GetProfilingCategoryPairInfo(
 
 }  
 }  
-
-#endif  

@@ -4,49 +4,45 @@
 
 
 
-#include "BaseProfiler.h"
+#include "BaseProfilerSharedLibraries.h"
 
-#ifdef MOZ_GECKO_PROFILER
+#define PATH_MAX_TOSTRING(x) #x
+#define PATH_MAX_STRING(x) PATH_MAX_TOSTRING(x)
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <limits.h>
+#include <unistd.h>
+#include <fstream>
+#include "platform.h"
+#include "mozilla/Sprintf.h"
+#include "mozilla/Unused.h"
 
-#  include "BaseProfilerSharedLibraries.h"
+#include <algorithm>
+#include <arpa/inet.h>
+#include <dlfcn.h>
+#include <elf.h>
+#include <fcntl.h>
+#include <features.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <vector>
 
-#  define PATH_MAX_TOSTRING(x) #  x
-#  define PATH_MAX_STRING(x) PATH_MAX_TOSTRING(x)
-#  include <stdlib.h>
-#  include <stdio.h>
-#  include <string.h>
-#  include <limits.h>
-#  include <unistd.h>
-#  include <fstream>
-#  include "platform.h"
-#  include "mozilla/Sprintf.h"
-#  include "mozilla/Unused.h"
+#if defined(MOZ_LINKER)
+#  include "AutoObjectMapper.h"
+#endif
+#if defined(GP_OS_linux) || defined(GP_OS_android)
+#  include <link.h>  
+#else
+#  error "Unexpected configuration"
+#endif
 
-#  include <algorithm>
-#  include <arpa/inet.h>
-#  include <dlfcn.h>
-#  include <elf.h>
-#  include <fcntl.h>
-#  include <features.h>
-#  include <sys/mman.h>
-#  include <sys/stat.h>
-#  include <sys/types.h>
-#  include <vector>
-
-#  if defined(MOZ_LINKER)
-#    include "AutoObjectMapper.h"
-#  endif
-#  if defined(GP_OS_linux) || defined(GP_OS_android)
-#    include <link.h>  
-#  else
-#    error "Unexpected configuration"
-#  endif
-
-#  if defined(GP_OS_android)
+#if defined(GP_OS_android)
 extern "C" MOZ_EXPORT __attribute__((weak)) int dl_iterate_phdr(
     int (*callback)(struct dl_phdr_info* info, size_t size, void* data),
     void* data);
-#  endif
+#endif
 
 
 
@@ -182,15 +178,15 @@ class MemoryMappedFile {
       return false;
     }
 
-#  if defined(__x86_64__) || defined(__aarch64__) || \
-      (defined(__mips__) && _MIPS_SIM == _ABI64)
+#if defined(__x86_64__) || defined(__aarch64__) || \
+    (defined(__mips__) && _MIPS_SIM == _ABI64)
 
     struct stat st;
     if (fstat(fd, &st) == -1 || st.st_size < 0) {
-#  else
+#else
     struct stat64 st;
     if (fstat64(fd, &st) == -1 || st.st_size < 0) {
-#  endif
+#endif
       close(fd);
       return false;
     }
@@ -357,7 +353,7 @@ class FileID {
   }
 
 
-#  define NOTE_PADDING(a) ((a + 3) & ~3)
+#define NOTE_PADDING(a) ((a + 3) & ~3)
 
   static bool ElfClassBuildIDNoteIdentifier(const void* section, size_t length,
                                             std::vector<uint8_t>& identifier) {
@@ -651,10 +647,10 @@ struct LoadedLibraryInfo {
   unsigned long mLastMappingEnd;
 };
 
-#  if defined(MOZ_LINKER)
+#if defined(MOZ_LINKER)
 static void outputMapperLog(const char* aBuf) { 
 }
-#  endif
+#endif
 
 static std::string IDtoUUIDString(const std::vector<uint8_t>& aIdentifier) {
   std::string uuid = FileID::ConvertIdentifierToUUIDString(aIdentifier);
@@ -668,7 +664,7 @@ static std::string getId(const char* bin_name) {
   std::vector<uint8_t> identifier;
   identifier.reserve(kDefaultBuildIdSize);
 
-#  if defined(MOZ_LINKER)
+#if defined(MOZ_LINKER)
   if (std::string(bin_name).find(std::string("!/")) != std::string::npos) {
     AutoObjectMapperFaultyLib mapper(outputMapperLog);
     void* image = nullptr;
@@ -679,7 +675,7 @@ static std::string getId(const char* bin_name) {
       }
     }
   }
-#  endif
+#endif
 
   FileID file_id(bin_name);
   if (file_id.ElfFileIdentifier(identifier)) {
@@ -736,7 +732,7 @@ static int dl_iterate_callback(struct dl_phdr_info* dl_info, size_t size,
 SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
   SharedLibraryInfo info;
 
-#  if defined(GP_OS_linux)
+#if defined(GP_OS_linux)
   
   
   char exeName[PATH_MAX];
@@ -755,9 +751,9 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
   }
 
   unsigned long exeExeAddr = 0;
-#  endif
+#endif
 
-#  if defined(GP_OS_android)
+#if defined(GP_OS_android)
   
   if (!dl_iterate_phdr) {
     
@@ -766,7 +762,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
     
     return info;
   }
-#  endif
+#endif
 
   
   pid_t pid = mozilla::baseprofiler::profiler_current_process_id();
@@ -794,12 +790,12 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
       continue;
     }
 
-#  if defined(GP_OS_linux)
+#if defined(GP_OS_linux)
     
     if (exeNameLen > 0 && strcmp(modulePath, exeName) == 0) {
       exeExeAddr = start;
     }
-#  elif defined(GP_OS_android)
+#elif defined(GP_OS_android)
     
     
     if (0 == strcmp(modulePath, "/dev/ashmem/dalvik-jit-code-cache")) {
@@ -811,7 +807,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
         break;
       }
     }
-#  endif
+#endif
   }
 
   std::vector<LoadedLibraryInfo> libInfoList;
@@ -826,7 +822,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
                             libInfo.mFirstMappingStart - libInfo.mBaseAddress));
   }
 
-#  if defined(GP_OS_linux)
+#if defined(GP_OS_linux)
   
   
   
@@ -842,12 +838,10 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
       break;
     }
   }
-#  endif
+#endif
 
   return info;
 }
 
 void SharedLibraryInfo::Initialize() { 
 }
-
-#endif  

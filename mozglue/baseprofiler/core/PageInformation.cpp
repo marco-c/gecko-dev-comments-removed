@@ -4,13 +4,10 @@
 
 
 
+#include "PageInformation.h"
+
 #include "BaseProfiler.h"
-
-#ifdef MOZ_GECKO_PROFILER
-
-#  include "PageInformation.h"
-
-#  include "BaseProfileJSONWriter.h"
+#include "BaseProfileJSONWriter.h"
 
 namespace mozilla {
 namespace baseprofiler {
@@ -50,5 +47,3 @@ size_t PageInformation::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
 
 }  
 }  
-
-#endif  

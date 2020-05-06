@@ -3,20 +3,17 @@
 
 
 
+#include "BaseProfilerMarkerPayload.h"
+
+#include <inttypes.h>
+
+#include "mozilla/Maybe.h"
+#include "mozilla/Sprintf.h"
+
 #include "BaseProfiler.h"
-
-#ifdef MOZ_GECKO_PROFILER
-
-#  include "BaseProfilerMarkerPayload.h"
-
-#  include "ProfileBufferEntry.h"
-#  include "BaseProfileJSONWriter.h"
-#  include "ProfilerBacktrace.h"
-
-#  include "mozilla/Maybe.h"
-#  include "mozilla/Sprintf.h"
-
-#  include <inttypes.h>
+#include "BaseProfileJSONWriter.h"
+#include "ProfileBufferEntry.h"
+#include "ProfilerBacktrace.h"
 
 namespace mozilla {
 namespace baseprofiler {
@@ -542,5 +539,3 @@ void LongTaskMarkerPayload::StreamPayload(SpliceableJSONWriter& aWriter,
 
 }  
 }  
-
-#endif  

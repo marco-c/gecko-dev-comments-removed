@@ -37,19 +37,17 @@
 
 
 
+
+
+#include "LulCommonExt.h"
+
+#include <stdlib.h>
+#include <string.h>
+
+#include <string>
+#include <map>
+
 #include "BaseProfiler.h"
-
-#ifdef MOZ_GECKO_PROFILER
-
-
-
-#  include "LulCommonExt.h"
-
-#  include <stdlib.h>
-#  include <string.h>
-
-#  include <string>
-#  include <map>
 
 namespace lul {
 
@@ -102,5 +100,3 @@ const UniqueString* UniqueStringUniverse::ToUniqueString(string str) {
 }
 
 }  
-
-#endif  
