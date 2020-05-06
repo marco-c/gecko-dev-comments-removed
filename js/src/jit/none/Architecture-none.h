@@ -16,20 +16,10 @@
 namespace js {
 namespace jit {
 
-static const bool SupportsSimd = false;
 static const uint32_t SimdMemoryAlignment =
     4;  
 static const uint32_t WasmStackAlignment = 8;
 static const uint32_t WasmTrapInstructionLength = 0;
-
-
-
-static constexpr bool SupportsUint32x4FloatConversions = false;
-
-
-static constexpr bool SupportsUint8x16Compares = false;
-static constexpr bool SupportsUint16x8Compares = false;
-static constexpr bool SupportsUint32x4Compares = false;
 
 class Registers {
  public:

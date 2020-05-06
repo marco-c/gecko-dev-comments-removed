@@ -332,27 +332,27 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
 
 static void DumpAllRegs(MacroAssembler& masm) {
-  if (JitSupportsSimd()) {
-    masm.PushRegsInMask(AllRegs);
-  } else {
-    
-    
-    
-    
-    
-    for (GeneralRegisterBackwardIterator iter(AllRegs.gprs()); iter.more();
-         ++iter) {
-      masm.Push(*iter);
-    }
-
-    masm.reserveStack(sizeof(RegisterDump::FPUArray));
-    for (FloatRegisterBackwardIterator iter(AllRegs.fpus()); iter.more();
-         ++iter) {
-      FloatRegister reg = *iter;
-      Address spillAddress(StackPointer, reg.getRegisterDumpOffsetInBytes());
-      masm.storeDouble(reg, spillAddress);
-    }
+#ifdef ENABLE_WASM_SIMD
+  masm.PushRegsInMask(AllRegs);
+#else
+  
+  
+  
+  
+  
+  for (GeneralRegisterBackwardIterator iter(AllRegs.gprs()); iter.more();
+       ++iter) {
+    masm.Push(*iter);
   }
+
+  masm.reserveStack(sizeof(RegisterDump::FPUArray));
+  for (FloatRegisterBackwardIterator iter(AllRegs.fpus()); iter.more();
+       ++iter) {
+    FloatRegister reg = *iter;
+    Address spillAddress(StackPointer, reg.getRegisterDumpOffsetInBytes());
+    masm.storeDouble(reg, spillAddress);
+  }
+#endif
 }
 
 void JitRuntime::generateInvalidator(MacroAssembler& masm, Label* bailoutTail) {
@@ -545,6 +545,7 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm) {
 static void PushBailoutFrame(MacroAssembler& masm, Register spArg) {
   
   DumpAllRegs(masm);
+
   
   masm.movq(rsp, spArg);
 }

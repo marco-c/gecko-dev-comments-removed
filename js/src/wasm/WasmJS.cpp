@@ -32,6 +32,11 @@
 #include "jit/Simulator.h"
 #include "js/Printf.h"
 #include "js/PropertySpec.h"  
+#if defined(JS_CODEGEN_X64)   
+#  include "jit/x64/Assembler-x64.h"
+#  include "jit/x86-shared/Architecture-x86-shared.h"
+#  include "jit/x86-shared/Assembler-x86-shared.h"
+#endif
 #include "util/StringBuffer.h"
 #include "util/Text.h"
 #include "vm/ErrorObject.h"
@@ -71,6 +76,14 @@ extern mozilla::Atomic<bool> fuzzingSafe;
 static inline bool WasmMultiValueFlag(JSContext* cx) {
 #ifdef ENABLE_WASM_MULTI_VALUE
   return cx->options().wasmMultiValue();
+#else
+  return false;
+#endif
+}
+
+static inline bool WasmSimdFlag(JSContext* cx) {
+#ifdef ENABLE_WASM_SIMD
+  return cx->options().wasmSimd() && js::jit::JitSupportsWasmSimd();
 #else
   return false;
 #endif
@@ -122,6 +135,7 @@ bool wasm::IonDisabledByFeatures(JSContext* cx, bool* isDisabled,
   
   bool debug = cx->realm() && cx->realm()->debuggerObservesAsmJS();
   bool gc = cx->options().wasmGc();
+  bool simd = WasmSimdFlag(cx);
   if (reason) {
     char sep = 0;
     if (debug && !Append(reason, "debug", &sep)) {
@@ -130,8 +144,11 @@ bool wasm::IonDisabledByFeatures(JSContext* cx, bool* isDisabled,
     if (gc && !Append(reason, "gc", &sep)) {
       return false;
     }
+    if (simd && !Append(reason, "simd", &sep)) {
+      return false;
+    }
   }
-  *isDisabled = debug || gc;
+  *isDisabled = debug || gc || simd;
   return true;
 }
 
@@ -160,6 +177,7 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
   
   bool reftypesOnArm64 = false;
 #endif
+  bool simd = WasmSimdFlag(cx);
   if (reason) {
     char sep = 0;
     if (debug && !Append(reason, "debug", &sep)) {
@@ -177,8 +195,11 @@ bool wasm::CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
     if (reftypesOnArm64 && !Append(reason, "reftypes", &sep)) {
       return false;
     }
+    if (simd && !Append(reason, "simd", &sep)) {
+      return false;
+    }
   }
-  *isDisabled = debug || gc || multiValue || threads || reftypesOnArm64;
+  *isDisabled = debug || gc || multiValue || threads || reftypesOnArm64 || simd;
   return true;
 }
 
@@ -217,6 +238,11 @@ bool wasm::I64BigIntConversionAvailable(JSContext* cx) {
 #else
   return false;
 #endif
+}
+
+bool wasm::SimdAvailable(JSContext* cx) {
+  
+  return WasmSimdFlag(cx) && BaselineAvailable(cx);
 }
 
 bool wasm::ThreadsAvailable(JSContext* cx) {

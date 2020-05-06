@@ -60,6 +60,9 @@ ABIArg ABIArgGenerator::next(MIRType type) {
       break;
 
     default:
+      
+      
+      
       MOZ_CRASH("Unexpected argument type");
   }
   return current_;

@@ -124,12 +124,6 @@ static constexpr uint32_t CodeAlignment = 8;
 
 
 
-static constexpr bool SupportsSimd = false;
-
-
-
-
-
 
 
 
@@ -1237,7 +1231,6 @@ class AssemblerMIPSShared : public AssemblerShared {
   }
   static bool SupportsUnalignedAccesses() { return true; }
   static bool SupportsFastUnalignedAccesses() { return false; }
-  static bool SupportsSimd() { return js::jit::SupportsSimd; }
 
   static bool HasRoundInstruction(RoundingMode mode) { return false; }
 

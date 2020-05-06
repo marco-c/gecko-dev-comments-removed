@@ -581,6 +581,11 @@ static void PushBailoutFrame(MacroAssembler& masm, uint32_t frameClass,
     masm.storePtr(Register::FromCode(i), Address(StackPointer, off));
   }
 
+#ifdef ENABLE_WASM_SIMD
+  
+#  error "Needs more careful logic if SIMD is enabled"
+#endif
+
   
   
   for (uint32_t i = 0; i < FloatRegisters::TotalDouble; i++) {

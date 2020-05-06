@@ -22,15 +22,6 @@
 namespace js {
 namespace jit {
 
-
-
-static constexpr bool SupportsUint32x4FloatConversions = false;
-
-
-static constexpr bool SupportsUint8x16Compares = false;
-static constexpr bool SupportsUint16x8Compares = false;
-static constexpr bool SupportsUint32x4Compares = false;
-
 #if defined(JS_CODEGEN_X86)
 
 
@@ -186,6 +177,13 @@ class FloatRegisters {
  public:
   using Encoding = X86Encoding::XMMRegisterID;
 
+  
+  
+  
+  
+  
+  
+
   enum ContentType {
     Single,   
     Double,   
@@ -197,8 +195,7 @@ class FloatRegisters {
   union RegisterContent {
     float s;
     double d;
-    int32_t i4[4];
-    float s4[4];
+    uint8_t v128[16];
   };
 
   static const char* GetName(Encoding code) {

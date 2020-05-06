@@ -113,6 +113,9 @@ bool I64BigIntConversionAvailable(JSContext* cx);
 bool ThreadsAvailable(JSContext* cx);
 
 
+bool SimdAvailable(JSContext* cx);
+
+
 
 
 MOZ_MUST_USE bool Eval(JSContext* cx, Handle<TypedArrayObject*> code,

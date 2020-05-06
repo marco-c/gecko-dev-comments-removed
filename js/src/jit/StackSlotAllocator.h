@@ -29,7 +29,6 @@ class StackSlotAllocator {
   }
 
   uint32_t allocateQuadSlot() {
-    MOZ_ASSERT(SupportsSimd);
     
     
     if (height_ % 8 != 0) {

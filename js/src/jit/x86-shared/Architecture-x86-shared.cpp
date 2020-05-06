@@ -42,9 +42,9 @@ js::jit::FloatRegisterSet js::jit::FloatRegister::ReduceSetForPush(
   SetType bits = s.bits();
 
   
-  if (!JitSupportsSimd()) {
-    bits &= Codes::AllPhysMask * Codes::SpreadScalar;
-  }
+#ifndef ENABLE_WASM_SIMD
+  bits &= Codes::AllPhysMask * Codes::SpreadScalar;
+#endif
 
   
   

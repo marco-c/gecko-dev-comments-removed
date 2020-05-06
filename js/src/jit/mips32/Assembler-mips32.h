@@ -154,15 +154,6 @@ static constexpr uint32_t SimdMemoryAlignment = 8;
 static constexpr uint32_t WasmStackAlignment = SimdMemoryAlignment;
 static const uint32_t WasmTrapInstructionLength = 4;
 
-
-
-static constexpr bool SupportsUint32x4FloatConversions = false;
-
-
-static constexpr bool SupportsUint8x16Compares = false;
-static constexpr bool SupportsUint16x8Compares = false;
-static constexpr bool SupportsUint32x4Compares = false;
-
 static constexpr Scale ScalePointer = TimesFour;
 
 class Assembler : public AssemblerMIPSShared {
