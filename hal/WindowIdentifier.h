@@ -49,11 +49,6 @@ class WindowIdentifier {
   
 
 
-  WindowIdentifier(const WindowIdentifier& other);
-
-  
-
-
 
 
 
@@ -66,7 +61,7 @@ class WindowIdentifier {
 
 
 
-  WindowIdentifier(const nsTArray<uint64_t>& id, nsPIDOMWindowInner* window);
+  WindowIdentifier(nsTArray<uint64_t>&& id, nsPIDOMWindowInner* window);
 
   
 
@@ -100,7 +95,9 @@ class WindowIdentifier {
 
   AutoTArray<uint64_t, 3> mID;
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
-  bool mIsEmpty;
+#ifdef DEBUG
+  bool mIsEmpty = false;
+#endif
 };
 
 }  

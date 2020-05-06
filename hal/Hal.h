@@ -72,8 +72,7 @@ void Shutdown();
 
 
 void Vibrate(const nsTArray<uint32_t>& pattern, nsPIDOMWindowInner* aWindow);
-void Vibrate(const nsTArray<uint32_t>& pattern,
-             const hal::WindowIdentifier& id);
+void Vibrate(const nsTArray<uint32_t>& pattern, hal::WindowIdentifier&& id);
 
 
 
@@ -88,7 +87,7 @@ void Vibrate(const nsTArray<uint32_t>& pattern,
 
 
 void CancelVibrate(nsPIDOMWindowInner* aWindow);
-void CancelVibrate(const hal::WindowIdentifier& id);
+void CancelVibrate(hal::WindowIdentifier&& id);
 
 #define MOZ_DEFINE_HAL_OBSERVER(name_)
 

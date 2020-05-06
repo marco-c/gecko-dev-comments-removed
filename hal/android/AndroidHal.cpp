@@ -20,7 +20,7 @@ namespace java = mozilla::java;
 namespace mozilla {
 namespace hal_impl {
 
-void Vibrate(const nsTArray<uint32_t>& pattern, const WindowIdentifier&) {
+void Vibrate(const nsTArray<uint32_t>& pattern, WindowIdentifier&&) {
   
   
   
@@ -49,7 +49,7 @@ void Vibrate(const nsTArray<uint32_t>& pattern, const WindowIdentifier&) {
   b->Vibrate(pattern);
 }
 
-void CancelVibrate(const WindowIdentifier&) {
+void CancelVibrate(WindowIdentifier&&) {
   
 
   java::GeckoAppShell::CancelVibrate();
