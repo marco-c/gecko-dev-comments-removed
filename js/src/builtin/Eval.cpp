@@ -348,7 +348,11 @@ static bool EvalKernel(JSContext* cx, HandleValue v, EvalType evalType,
   }
 
   
-  HandleValue newTargetVal = NullHandleValue;
+  RootedValue newTargetVal(cx);
+  if (esg.script()->isDirectEvalInFunction()) {
+    newTargetVal = caller.newTarget();
+  }
+
   return ExecuteKernel(cx, esg.script(), env, newTargetVal,
                        NullFramePtr() , vp);
 }
