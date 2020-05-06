@@ -274,6 +274,7 @@ Tester.prototype = {
   checker: null,
   currentTestIndex: -1,
   lastStartTime: null,
+  lastStartTimestamp: null,
   lastAssertionCount: 0,
   failuresFromInitialWindowState: 0,
 
@@ -777,6 +778,13 @@ Tester.prototype = {
       }
 
       
+      let name = this.currentTest.path;
+      name = name.slice(name.lastIndexOf("/") + 1);
+      ChromeUtils.addProfilerMarker(
+        "browser-test",
+        this.lastStartTimestamp,
+        name
+      );
       let time = Date.now() - this.lastStartTime;
       this.structuredLogger.testEnd(
         this.currentTest.path,
@@ -1007,6 +1015,7 @@ Tester.prototype = {
 
     
     try {
+      this.lastStartTimestamp = performance.now();
       this._scriptLoader.loadSubScript(this.currentTest.path, scope);
       
       this.lastStartTime = Date.now();
@@ -1041,6 +1050,7 @@ Tester.prototype = {
               continue;
             }
             this.SimpleTest.info("Entering test " + task.name);
+            let startTimestamp = performance.now();
             try {
               let result = await task();
               if (isGenerator(result)) {
@@ -1074,6 +1084,11 @@ Tester.prototype = {
               );
             }
             PromiseTestUtils.assertNoUncaughtRejections();
+            ChromeUtils.addProfilerMarker(
+              "browser-test",
+              startTimestamp,
+              task.name.replace(/^bound /, "") || "task"
+            );
             this.SimpleTest.info("Leaving test " + task.name);
           }
           this.finish();
