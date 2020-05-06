@@ -6669,8 +6669,10 @@ void HTMLMediaElement::SetRequestHeaders(nsIHttpChannel* aChannel) {
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   
-  nsCOMPtr<nsIReferrerInfo> referrerInfo = new ReferrerInfo();
-  referrerInfo->InitWithDocument(OwnerDoc());
+  
+  
+  
+  auto referrerInfo = MakeRefPtr<ReferrerInfo>(*OwnerDoc());
   rv = aChannel->SetReferrerInfoWithoutClone(referrerInfo);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
