@@ -717,13 +717,28 @@ static bool ShouldCacheTitleBarInfo(nsWindowType aWindowType,
 }
 
 void nsWindow::SendAnAPZEvent(InputData& aEvent) {
+  APZEventResult result;
   if (mAPZC) {
-    APZEventResult es = mAPZC->InputBridge()->ReceiveInputEvent(aEvent);
-    
+    result = mAPZC->InputBridge()->ReceiveInputEvent(aEvent);
   }
-  
-  
-  
+  if (result.mStatus == nsEventStatus_eConsumeNoDefault) {
+    return;
+  }
+
+  MOZ_ASSERT(aEvent.mInputType == PANGESTURE_INPUT ||
+             aEvent.mInputType == PINCHGESTURE_INPUT);
+
+  if (aEvent.mInputType == PANGESTURE_INPUT) {
+    PanGestureInput& panInput = aEvent.AsPanGestureInput();
+    WidgetWheelEvent event = panInput.ToWidgetWheelEvent(this);
+    ProcessUntransformedAPZEvent(&event, result);
+
+    return;
+  }
+
+  PinchGestureInput& pinchInput = aEvent.AsPinchGestureInput();
+  WidgetWheelEvent event = pinchInput.ToWidgetWheelEvent(this);
+  ProcessUntransformedAPZEvent(&event, result);
 }
 
 void nsWindow::RecreateDirectManipulationIfNeeded() {
