@@ -663,7 +663,11 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
         if len(video_jobs) > 0:
             
             
-            jobs_json = {"jobs": video_jobs, "application": {"name": self.browser_name}}
+            jobs_json = {
+                "jobs": video_jobs,
+                "application": {"name": self.browser_name},
+                "extra_options": output.summarized_results["suites"][0]["extraOptions"]
+            }
 
             if self.browser_version is not None:
                 jobs_json["application"]["version"] = self.browser_version
