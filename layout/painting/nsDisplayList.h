@@ -585,6 +585,10 @@ class nsDisplayListBuilder {
 
 
   nsIFrame* GetIgnoreScrollFrame() { return mIgnoreScrollFrame; }
+  void SetIsRelativeToLayoutViewport();
+  bool IsRelativeToLayoutViewport() const {
+    return mIsRelativeToLayoutViewport;
+  }
   
 
 
@@ -2030,6 +2034,7 @@ class nsDisplayListBuilder {
   bool mIsInActiveDocShell;
   bool mBuildAsyncZoomContainer;
   bool mContainsBackdropFilter;
+  bool mIsRelativeToLayoutViewport;
 
   nsRect mHitTestArea;
   CompositorHitTestInfo mHitTestInfo;
