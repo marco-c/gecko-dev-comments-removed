@@ -111,6 +111,10 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   const char* introducerFilename_ = nullptr;
   const char16_t* sourceMapURL_ = nullptr;
 
+  
+  
+  bool skipFilenameValidation_ = false;
+
  public:
   
   bool selfHostingMode = false;
@@ -121,6 +125,7 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool sourceIsLazy = false;
   bool allowHTMLComments = true;
   bool hideScriptFromDebugger = false;
+  bool nonSyntacticScope = false;
 
   
 
@@ -148,6 +153,7 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool mutedErrors() const { return mutedErrors_; }
   bool forceFullParse() const { return forceFullParse_; }
   bool forceStrictMode() const { return forceStrictMode_; }
+  bool skipFilenameValidation() const { return skipFilenameValidation_; }
   const char* filename() const { return filename_; }
   const char* introducerFilename() const { return introducerFilename_; }
   const char16_t* sourceMapURL() const { return sourceMapURL_; }
@@ -199,29 +205,15 @@ class JS_PUBLIC_API ReadOnlyCompileOptions : public TransitiveCompileOptions {
 
   
   bool isRunOnce = false;
-
-  bool nonSyntacticScope = false;
   bool noScriptRval = false;
 
  protected:
-  
-  
-  bool skipFilenameValidation_ = false;
-
   ReadOnlyCompileOptions() = default;
 
   
   
   
   void copyPODNonTransitiveOptions(const ReadOnlyCompileOptions& rhs);
-
- public:
-  
-  
-  bool skipFilenameValidation() const { return skipFilenameValidation_; }
-  const char* filename() const { return filename_; }
-  const char* introducerFilename() const { return introducerFilename_; }
-  const char16_t* sourceMapURL() const { return sourceMapURL_; }
 
  private:
   void operator=(const ReadOnlyCompileOptions&) = delete;
