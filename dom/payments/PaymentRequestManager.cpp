@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/PaymentRequestChild.h"
@@ -18,14 +18,14 @@ namespace mozilla {
 namespace dom {
 namespace {
 
-/*
- *  Following Convert* functions are used for convert PaymentRequest structs
- *  to transferable structs for IPC.
- */
+
+
+
+
 void ConvertMethodData(JSContext* aCx, const PaymentMethodData& aMethodData,
                        IPCPaymentMethodData& aIPCMethodData, ErrorResult& aRv) {
   MOZ_ASSERT(aCx);
-  // Convert JSObject to a serialized string
+  
   nsAutoString serializedData;
   if (aMethodData.mData.WasPassed()) {
     JS::RootedObject object(aCx, aMethodData.mData.Value());
@@ -56,7 +56,7 @@ void ConvertModifier(JSContext* aCx, const PaymentDetailsModifier& aModifier,
                      IPCPaymentDetailsModifier& aIPCModifier,
                      ErrorResult& aRv) {
   MOZ_ASSERT(aCx);
-  // Convert JSObject to a serialized string
+  
   nsAutoString serializedData;
   if (aModifier.mData.WasPassed()) {
     JS::RootedObject object(aCx, aModifier.mData.Value());
@@ -130,7 +130,7 @@ void ConvertDetailsInit(JSContext* aCx, const PaymentDetailsInit& aDetails,
                         IPCPaymentDetails& aIPCDetails, bool aRequestShipping,
                         ErrorResult& aRv) {
   MOZ_ASSERT(aCx);
-  // Convert PaymentDetailsBase members
+  
   nsTArray<IPCPaymentItem> displayItems;
   nsTArray<IPCPaymentShippingOption> shippingOptions;
   nsTArray<IPCPaymentDetailsModifier> modifiers;
@@ -140,29 +140,29 @@ void ConvertDetailsInit(JSContext* aCx, const PaymentDetailsInit& aDetails,
     return;
   }
 
-  // Convert |id|
+  
   nsAutoString id;
   if (aDetails.mId.WasPassed()) {
     id = aDetails.mId.Value();
   }
 
-  // Convert required |total|
+  
   IPCPaymentItem total;
   ConvertItem(aDetails.mTotal, total);
 
   aIPCDetails =
       IPCPaymentDetails(id, total, displayItems, shippingOptions, modifiers,
-                        EmptyString(),   // error message
-                        EmptyString(),   // shippingAddressErrors
-                        EmptyString(),   // payerErrors
-                        EmptyString());  // paymentMethodErrors
+                        EmptyString(),   
+                        EmptyString(),   
+                        EmptyString(),   
+                        EmptyString());  
 }
 
 void ConvertDetailsUpdate(JSContext* aCx, const PaymentDetailsUpdate& aDetails,
                           IPCPaymentDetails& aIPCDetails, bool aRequestShipping,
                           ErrorResult& aRv) {
   MOZ_ASSERT(aCx);
-  // Convert PaymentDetailsBase members
+  
   nsTArray<IPCPaymentItem> displayItems;
   nsTArray<IPCPaymentShippingOption> shippingOptions;
   nsTArray<IPCPaymentDetailsModifier> modifiers;
@@ -172,13 +172,13 @@ void ConvertDetailsUpdate(JSContext* aCx, const PaymentDetailsUpdate& aDetails,
     return;
   }
 
-  // Convert required |total|
+  
   IPCPaymentItem total;
   if (aDetails.mTotal.WasPassed()) {
     ConvertItem(aDetails.mTotal.Value(), total);
   }
 
-  // Convert |error|
+  
   nsAutoString error;
   if (aDetails.mError.WasPassed()) {
     error = aDetails.mError.Value();
@@ -211,7 +211,7 @@ void ConvertDetailsUpdate(JSContext* aCx, const PaymentDetailsUpdate& aDetails,
     }
   }
 
-  aIPCDetails = IPCPaymentDetails(EmptyString(),  // id
+  aIPCDetails = IPCPaymentDetails(EmptyString(),  
                                   total, displayItems, shippingOptions,
                                   modifiers, error, shippingAddressErrors,
                                   payerErrors, paymentMethodErrors);
@@ -246,7 +246,8 @@ void ConvertResponseData(const IPCPaymentResponseData& aIPCData,
       bData.expiryYear = data.expiryYear();
       bData.cardSecurityCode = data.cardSecurityCode();
       bData.billingAddress.country = data.billingAddress().country();
-      bData.billingAddress.addressLine = data.billingAddress().addressLine();
+      bData.billingAddress.addressLine =
+          data.billingAddress().addressLine().Clone();
       bData.billingAddress.region = data.billingAddress().region();
       bData.billingAddress.regionCode = data.billingAddress().regionCode();
       bData.billingAddress.city = data.billingAddress().city();
@@ -304,9 +305,9 @@ void ConvertMethodChangeDetails(const IPCMethodChangeDetails& aIPCDetails,
     }
   }
 }
-}  // end of namespace
+}  
 
-/* PaymentRequestManager */
+
 
 StaticRefPtr<PaymentRequestManager> gPaymentManager;
 const char kSupportedRegionsPref[] = "dom.payments.request.supportedRegions";
@@ -367,8 +368,8 @@ nsresult PaymentRequestManager::SendRequestPayment(
     PaymentRequest* aRequest, const IPCPaymentActionRequest& aAction,
     bool aResponseExpected) {
   PaymentRequestChild* requestChild = GetPaymentChild(aRequest);
-  // bug 1580496, ignoring the case that requestChild is nullptr. It could be
-  // nullptr while the corresponding nsPIDOMWindowInner is nullptr.
+  
+  
   if (NS_WARN_IF(!requestChild)) {
     return NS_ERROR_FAILURE;
   }
@@ -400,8 +401,8 @@ void PaymentRequestManager::NotifyRequestDone(PaymentRequest* aRequest) {
 }
 
 void PaymentRequestManager::RequestIPCOver(PaymentRequest* aRequest) {
-  // This must only be called from ActorDestroy or if we're sure we won't
-  // receive any more IPC for aRequest.
+  
+  
   mActivePayments.Remove(aRequest);
 }
 
@@ -424,7 +425,7 @@ void GetSelectedShippingOption(const PaymentDetailsBase& aDetails,
   const Sequence<PaymentShippingOption>& shippingOptions =
       aDetails.mShippingOptions.Value();
   for (const PaymentShippingOption& shippingOption : shippingOptions) {
-    // set aOption to last selected option's ID
+    
     if (shippingOption.mSelected) {
       aOption = shippingOption.mId;
     }
@@ -449,10 +450,10 @@ void PaymentRequestManager::CreatePayment(
     return;
   }
   request->SetOptions(aOptions);
-  /*
-   *  Set request's |mId| to details.id if details.id exists.
-   *  Otherwise, set |mId| to internal id.
-   */
+  
+
+
+
   nsAutoString requestId;
   if (aDetails.mId.WasPassed() && !aDetails.mId.Value().IsEmpty()) {
     requestId = aDetails.mId.Value();
@@ -461,11 +462,11 @@ void PaymentRequestManager::CreatePayment(
   }
   request->SetId(requestId);
 
-  /*
-   * Set request's |mShippingType| and |mShippingOption| if shipping is
-   * required. Set request's mShippingOption to last selected option's ID if
-   * details.shippingOptions exists, otherwise set it as null.
-   */
+  
+
+
+
+
   nsAutoString shippingOption;
   SetDOMStringToNull(shippingOption);
   if (aOptions.mRequestShipping) {
@@ -594,7 +595,7 @@ void PaymentRequestManager::UpdatePayment(JSContext* aCx,
 }
 
 nsresult PaymentRequestManager::ClosePayment(PaymentRequest* aRequest) {
-  // for the case, the payment request is waiting for response from user.
+  
   if (auto entry = mActivePayments.Lookup(aRequest)) {
     NotifyRequestDone(aRequest);
   }
@@ -683,9 +684,9 @@ nsresult PaymentRequestManager::RespondPayment(
           break;
         }
       }
-      // If PaymentActionResponse is not PAYMENT_ACCEPTED, no need to keep the
-      // PaymentRequestChild instance. Otherwise, keep PaymentRequestChild for
-      // merchants call PaymentResponse.complete()
+      
+      
+      
       if (rejectedReason.Failed()) {
         NotifyRequestDone(aRequest);
       }
@@ -732,7 +733,7 @@ nsresult PaymentRequestManager::ChangePayerDetail(
     const nsAString& aPayerEmail, const nsAString& aPayerPhone) {
   MOZ_ASSERT(aRequest);
   RefPtr<PaymentResponse> response = aRequest->GetResponse();
-  // ignoring the case call changePayerDetail during show().
+  
   if (!response) {
     return NS_OK;
   }
@@ -748,5 +749,5 @@ nsresult PaymentRequestManager::ChangePaymentMethod(
   return aRequest->UpdatePaymentMethod(aMethodName, methodDetails);
 }
 
-}  // end of namespace dom
-}  // end of namespace mozilla
+}  
+}  
