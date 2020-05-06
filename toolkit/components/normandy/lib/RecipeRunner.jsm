@@ -48,7 +48,6 @@ const SHIELD_ENABLED_PREF = "app.normandy.enabled";
 const DEV_MODE_PREF = "app.normandy.dev_mode";
 const API_URL_PREF = "app.normandy.api_url";
 const LAZY_CLASSIFY_PREF = "app.normandy.experiments.lazy_classify";
-const LAST_BUILDID_PREF = "app.normandy.last_seen_buildid";
 const ONSYNC_SKEW_SEC_PREF = "app.normandy.onsync_skew_sec";
 
 
@@ -102,16 +101,9 @@ var RecipeRunner = {
     
     
     
-    let lastSeenBuildID = Services.prefs.getCharPref(LAST_BUILDID_PREF, "");
     let hasNewBuildID =
-      lastSeenBuildID && Services.appinfo.appBuildID != lastSeenBuildID;
-
-    if (hasNewBuildID || !lastSeenBuildID) {
-      Services.prefs.setCharPref(
-        LAST_BUILDID_PREF,
-        Services.appinfo.appBuildID
-      );
-    }
+      Services.appinfo.lastAppBuildID != null &&
+      Services.appinfo.lastAppBuildID != Services.appinfo.appBuildID;
 
     
     

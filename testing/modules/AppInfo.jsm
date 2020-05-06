@@ -28,31 +28,28 @@ let origRuntime = Cc["@mozilla.org/xre/app-info;1"].getService(
 
 
 
+
+
+
 var newAppInfo = function(options = {}) {
-  let ID = "ID" in options ? options.ID : "xpcshell@tests.mozilla.org";
-  let name = "name" in options ? options.name : "xpcshell";
-  let version = "version" in options ? options.version : "1";
-  let platformVersion =
-    "platformVersion" in options ? options.platformVersion : "p-ver";
-  let OS = "OS" in options ? options.OS : "XPCShell";
   let extraProps = "extraProps" in options ? options.extraProps : {};
 
   let appInfo = {
     
     vendor: "Mozilla",
-    name,
-    ID,
-    version,
-    appBuildID: "20160315",
+    name: options.name ?? "xpcshell",
+    ID: options.ID ?? "xpcshell@tests.mozilla.org",
+    version: options.version ?? "1",
+    appBuildID: options.appBuildID ?? "20160315",
 
     
-    platformVersion,
+    platformVersion: options.platformVersion ?? "p-ver",
     platformBuildID: origPlatformInfo.platformBuildID,
 
     
     inSafeMode: false,
     logConsoleErrors: true,
-    OS,
+    OS: options.OS ?? "XPCShell",
     XPCOMABI: "noarch-spidermonkey",
     invalidateCachesOnRestart() {},
     shouldBlockIncompatJaws: false,
@@ -65,12 +62,15 @@ var newAppInfo = function(options = {}) {
     },
   };
 
+  appInfo.lastAppBuildID = options.lastAppBuildID ?? appInfo.appBuildID;
+  appInfo.lastAppVersion = options.lastAppVersion ?? appInfo.version;
+
   let interfaces = [Ci.nsIXULAppInfo, Ci.nsIPlatformInfo, Ci.nsIXULRuntime];
   if ("nsIWinAppHelper" in Ci) {
     interfaces.push(Ci.nsIWinAppHelper);
   }
 
-  if ("crashReporter" in options && options.crashReporter) {
+  if (options.crashReporter) {
     
     appInfo.annotations = {};
     appInfo.annotateCrashReport = function(key, data) {

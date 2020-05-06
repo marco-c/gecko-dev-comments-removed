@@ -441,7 +441,7 @@ decorate_task(
     await RecipeRunner.init();
     ok(
       !runStub.called,
-      "RecipeRunner.run is called immediately when not in dev mode or first run"
+      "RecipeRunner.run should not be called immediately when not in dev mode or first run"
     );
     ok(registerTimerStub.called, "RecipeRunner.init registers a timer");
   }
@@ -506,31 +506,6 @@ decorate_task(
     
     
     Services.prefs.setBoolPref("app.normandy.first_run", true);
-  }
-);
-
-
-decorate_task(
-  withPrefEnv({
-    set: [
-      ["datareporting.healthreport.uploadEnabled", true], 
-      ["app.normandy.last_seen_buildid", "not-the-current-buildid"],
-    ],
-  }),
-  withStub(RecipeRunner, "run"),
-  withStub(RecipeRunner, "registerTimer"),
-  withStub(RecipeRunner, "watchPrefs"),
-  async function testInitFirstRun(runStub, registerTimerStub, watchPrefsStub) {
-    await RecipeRunner.init();
-    Assert.deepEqual(
-      runStub.args,
-      [[{ trigger: "newBuildID" }]],
-      "RecipeRunner.run is called immediately on a new build ID"
-    );
-    ok(
-      registerTimerStub.called,
-      "RecipeRunner.registerTimer registers a timer"
-    );
   }
 );
 
