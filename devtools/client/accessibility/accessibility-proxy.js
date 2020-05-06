@@ -4,6 +4,8 @@
 
 "use strict";
 
+const Services = require("Services");
+
 const {
   accessibility: { AUDIT_TYPE },
 } = require("devtools/shared/constants");
@@ -24,6 +26,7 @@ class AccessibilityProxy {
 
     this.accessibilityEventsMap = new Map();
     this.accessibleWalkerEventsMap = new Map();
+    this.supports = {};
 
     this.audit = this.audit.bind(this);
     this.disableAccessibility = this.disableAccessibility.bind(this);
@@ -256,6 +259,14 @@ class AccessibilityProxy {
         [this.toolbox.targetList.TYPES.FRAME],
         this._onTargetAvailable
       );
+      
+      
+      
+      this.supports.autoInit = Services.prefs.getBoolPref(
+        "devtools.accessibility.auto-init.enabled",
+        false
+      );
+
       return true;
     } catch (e) {
       
@@ -342,7 +353,6 @@ class AccessibilityProxy {
       
       
       await this.accessibilityFront.bootstrap();
-      this.supports = {};
       
       
       
