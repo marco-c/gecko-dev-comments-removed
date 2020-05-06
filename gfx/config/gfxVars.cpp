@@ -30,7 +30,7 @@ void gfxVars::SetValuesForInitialize(
     }
   } else {
     
-    gGfxVarInitUpdates = new nsTArray<GfxVarUpdate>(aInitUpdates);
+    gGfxVarInitUpdates = new nsTArray<GfxVarUpdate>(aInitUpdates.Clone());
   }
 }
 
