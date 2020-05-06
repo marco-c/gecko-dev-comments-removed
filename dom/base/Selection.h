@@ -283,7 +283,7 @@ class Selection final : public nsSupportsWeakReference,
 
 
   bool IsCollapsed() const {
-    uint32_t cnt = mStyledRanges.mRanges.Length();
+    uint32_t cnt = mStyledRanges.Length();
     if (cnt == 0) {
       return true;
     }
@@ -316,7 +316,7 @@ class Selection final : public nsSupportsWeakReference,
 
   void DeleteFromDocument(mozilla::ErrorResult& aRv);
 
-  uint32_t RangeCount() const { return mStyledRanges.mRanges.Length(); }
+  uint32_t RangeCount() const { return mStyledRanges.Length(); }
 
   void GetType(nsAString& aOutType) const;
 
@@ -758,6 +758,10 @@ class Selection final : public nsSupportsWeakReference,
   struct StyledRanges {
     StyledRange* FindRangeData(nsRange* aRange);
 
+    using Elements = AutoTArray<StyledRange, 1>;
+
+    Elements::size_type Length() const;
+
     nsresult RemoveCollapsedRanges();
 
     nsresult RemoveRangeAndUnregisterSelection(nsRange& aRange);
@@ -858,7 +862,7 @@ class Selection final : public nsSupportsWeakReference,
     
     
     
-    AutoTArray<StyledRange, 1> mRanges;
+    Elements mRanges;
   };
 
   StyledRanges mStyledRanges;
