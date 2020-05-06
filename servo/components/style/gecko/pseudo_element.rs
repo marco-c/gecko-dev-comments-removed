@@ -94,6 +94,12 @@ impl PseudoElement {
 
     
     #[inline]
+    pub fn is_animatable(&self) -> bool {
+        matches!(*self, Self::Before | Self::After | Self::Marker)
+    }
+
+    
+    #[inline]
     pub fn is_before_or_after(&self) -> bool {
         self.is_before() || self.is_after()
     }
