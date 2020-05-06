@@ -5,7 +5,9 @@
 
 
 
-using NetAddrArray from "mozilla/net/PDNSParams.h";
+using NetAddr from "mozilla/net/DNS.h";
+using mozilla::net::IPCTypeRecord from "mozilla/net/DNSByTypeRecord.h";
+
 
 namespace mozilla {
 namespace net {
@@ -17,13 +19,13 @@ namespace net {
 struct DNSRecord
 {
   nsCString canonicalName;
-  NetAddrArray addrs;
+  NetAddr[] addrs;
 };
 
 union DNSRequestResponse
 {
   DNSRecord;
-  nsCString[];   
+  IPCTypeRecord; 
   nsresult;   
 };
 
