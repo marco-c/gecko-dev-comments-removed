@@ -69,48 +69,12 @@ class FunctionIndex : public TypedIndex<FunctionIndexType> {
 };
 
 
-struct LazyScriptCreationData {
-  frontend::AtomVector closedOverBindings;
-
-  
-  Vector<FunctionIndex> innerFunctionIndexes;
-  bool forceStrict = false;
-
-  explicit LazyScriptCreationData(JSContext* cx) : innerFunctionIndexes(cx) {}
-
-  bool init(JSContext* cx, const frontend::AtomVector& COB,
-            Vector<FunctionIndex>&& innerIndexes, bool isForceStrict) {
-    
-    mozilla::CheckedUint32 ngcthings =
-        mozilla::CheckedUint32(COB.length()) +
-        mozilla::CheckedUint32(innerIndexes.length());
-    if (!ngcthings.isValid()) {
-      ReportAllocationOverflow(cx);
-      return false;
-    }
-
-    forceStrict = isForceStrict;
-    innerFunctionIndexes = std::move(innerIndexes);
-
-    if (!closedOverBindings.appendAll(COB)) {
-      ReportOutOfMemory(cx);  
-      return false;
-    }
-    return true;
-  }
-
-  bool create(JSContext* cx, CompilationInfo& compilationInfo,
-              HandleFunction function, FunctionBox* funbox,
-              HandleScriptSourceObject sourceObject);
-};
-
-
 
 
 
 
 struct FunctionCreationData {
-  FunctionCreationData(HandleAtom atom, FunctionSyntaxKind kind,
+  FunctionCreationData(HandleAtom explicitName, FunctionSyntaxKind kind,
                        GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
                        bool isSelfHosting = false, bool inFunctionBox = false);
 
@@ -126,26 +90,39 @@ struct FunctionCreationData {
   
   
   FunctionCreationData(const FunctionCreationData& data)
-      : atom(data.atom),
+      : explicitName(data.explicitName),
         flags(data.flags),
         immutableFlags(data.immutableFlags) {
-    MOZ_RELEASE_ASSERT(!data.lazyScriptData);
+    MOZ_RELEASE_ASSERT(!data.hasLazyScriptData());
   }
 
   FunctionCreationData(FunctionCreationData&& data) = default;
 
   
-  JSAtom* atom = nullptr;
+  JSAtom* explicitName = nullptr;
 
   FunctionFlags flags = {};
   ImmutableScriptFlags immutableFlags = {};
 
-  mozilla::Maybe<LazyScriptCreationData> lazyScriptData = {};
+  
+  
+  mozilla::Maybe<frontend::AtomVector> closedOverBindings = {};
+  
+  mozilla::Maybe<Vector<FunctionIndex>> innerFunctionIndexes = {};
+  
 
-  HandleAtom getAtom(JSContext* cx) const;
+  HandleAtom getExplicitName(JSContext* cx) const;
+
+  bool createLazyScript(JSContext* cx, CompilationInfo& compilationInfo,
+                        HandleFunction function, FunctionBox* funbox,
+                        HandleScriptSourceObject sourceObject);
+
+  bool hasLazyScriptData() const {
+    return closedOverBindings && innerFunctionIndexes;
+  }
 
   void trace(JSTracer* trc) {
-    TraceNullableRoot(trc, &atom, "FunctionCreationData atom");
+    TraceNullableRoot(trc, &explicitName, "FunctionCreationData explicitName");
   }
 };
 
