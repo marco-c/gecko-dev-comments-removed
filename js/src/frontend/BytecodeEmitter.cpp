@@ -114,12 +114,6 @@ BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent, SharedContext* sc,
     
     bytecodeSection().setNumICEntries(sc->asFunctionBox()->nargs() + 1);
   }
-
-  
-  if (sc->isTopLevelContext()) {
-    bool isRunOnce = compilationInfo.options.isRunOnce;
-    sc->setTreatAsRunOnce(isRunOnce);
-  }
 }
 
 BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent,
@@ -5740,13 +5734,6 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
       return false;
     }
 
-    
-    
-    const JS::TransitiveCompileOptions& transitiveOptions = parser->options();
-    
-    funbox->addToImmutableFlags(
-        ImmutableScriptFlags::fromCompileOptions(transitiveOptions));
-
     EmitterMode nestedMode = emitterMode;
     if (nestedMode == BytecodeEmitter::LazyFunction) {
       MOZ_ASSERT(compilationInfo.sourceObject->source()->hasBinASTSource());
@@ -6754,8 +6741,8 @@ bool BytecodeEmitter::emitExpressionStatement(UnaryNode* exprStmt) {
 
   bool wantval = false;
   bool useful = false;
-  if (!sc->isFunctionBox()) {
-    useful = wantval = !parser->options().noScriptRval;
+  if (sc->isTopLevelContext()) {
+    useful = wantval = !sc->noScriptRval();
   }
 
   

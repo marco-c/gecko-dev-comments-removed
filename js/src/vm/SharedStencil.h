@@ -13,10 +13,9 @@
 #include <stdint.h>  
 
 #include "frontend/SourceNotes.h"  
-#include "js/CompileOptions.h"  
-#include "js/TypeDecls.h"        
-#include "js/UniquePtr.h"        
-#include "util/TrailingArray.h"  
+#include "js/TypeDecls.h"          
+#include "js/UniquePtr.h"          
+#include "util/TrailingArray.h"    
 #include "vm/StencilEnums.h"  
 
 
@@ -131,30 +130,6 @@ class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
   using ScriptFlagBase<ImmutableScriptFlagsEnum>::ScriptFlagBase;
 
   void operator=(uint32_t flag) { flags_ = flag; }
-
-  static ImmutableScriptFlags fromCompileOptions(
-      const JS::ReadOnlyCompileOptions& options) {
-    ImmutableScriptFlags isf;
-    isf.setFlag(ImmutableScriptFlagsEnum::NoScriptRval, options.noScriptRval);
-    isf.setFlag(ImmutableScriptFlagsEnum::SelfHosted, options.selfHostingMode);
-    isf.setFlag(ImmutableScriptFlagsEnum::TreatAsRunOnce, options.isRunOnce);
-    isf.setFlag(ImmutableScriptFlagsEnum::ForceStrict,
-                options.forceStrictMode());
-    return isf;
-  };
-
-  static ImmutableScriptFlags fromCompileOptions(
-      const JS::TransitiveCompileOptions& options) {
-    ImmutableScriptFlags isf;
-    isf.setFlag(ImmutableScriptFlagsEnum::NoScriptRval,
-                 false);
-    isf.setFlag(ImmutableScriptFlagsEnum::SelfHosted, options.selfHostingMode);
-    isf.setFlag(ImmutableScriptFlagsEnum::TreatAsRunOnce,
-                 false);
-    isf.setFlag(ImmutableScriptFlagsEnum::ForceStrict,
-                options.forceStrictMode());
-    return isf;
-  };
 };
 
 class MutableScriptFlags : public ScriptFlagBase<MutableScriptFlagsEnum> {
