@@ -566,6 +566,16 @@ CUBEB_EXPORT int cubeb_stream_get_latency(cubeb_stream * stream, uint32_t * late
 
 
 
+
+
+CUBEB_EXPORT int cubeb_stream_get_input_latency(cubeb_stream * stream, uint32_t * latency);
+
+
+
+
+
+
+
 CUBEB_EXPORT int cubeb_stream_set_volume(cubeb_stream * stream, float volume);
 
 

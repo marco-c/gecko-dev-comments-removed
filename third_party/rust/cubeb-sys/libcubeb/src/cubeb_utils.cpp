@@ -19,5 +19,6 @@ size_t cubeb_sample_size(cubeb_sample_format format)
     default:
       
       assert(false);
+      return 0;
   }
 }
