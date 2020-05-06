@@ -22,7 +22,6 @@ from xpidl.rust_macros import print_rust_macros_bindings
 from xpidl.xpidl import IDLParser
 
 from mozbuild.makeutil import Makefile
-from mozpack import path as mozpath
 from mozbuild.pythonutil import iter_modules_in_path
 from mozbuild.util import FileAvoidWrite
 
@@ -60,24 +59,14 @@ def process(input_dirs, inc_paths, bindings_conf, cache_dir, header_dir,
 
         rule.add_dependencies(six.ensure_text(s) for s in idl.deps)
 
-        
-        
-        
-        
-        
-        
-        
-        
-        relpath = mozpath.relpath(path, topsrcdir)
-
         with FileAvoidWrite(header_path) as fh:
-            print_header(idl, fh, path, relpath)
+            print_header(idl, fh, path)
 
         with FileAvoidWrite(rs_rt_path) as fh:
-            print_rust_bindings(idl, fh, relpath)
+            print_rust_bindings(idl, fh, path)
 
         with FileAvoidWrite(rs_bt_path) as fh:
-            print_rust_macros_bindings(idl, fh, relpath)
+            print_rust_macros_bindings(idl, fh, path)
 
     
     
