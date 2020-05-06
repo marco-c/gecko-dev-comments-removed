@@ -10,8 +10,6 @@
 #include "js/AllocPolicy.h"
 #include "js/Vector.h"
 
-#include "vm/BytecodeLocation.h"
-
 namespace js {
 namespace jit {
 
@@ -24,11 +22,23 @@ class WarpCacheIR;
 using MDefinitionStackVector = Vector<MDefinition*, 8, SystemAllocPolicy>;
 
 
+
+struct MOZ_STACK_CLASS TranspilerOutput {
+  
+  MDefinition* result = nullptr;
+
+  TranspilerOutput() = default;
+
+  TranspilerOutput(const TranspilerOutput&) = delete;
+  void operator=(const TranspilerOutput&) = delete;
+};
+
+
 MOZ_MUST_USE bool TranspileCacheIRToMIR(MIRGenerator& mirGen,
-                                        BytecodeLocation loc,
                                         MBasicBlock* current,
                                         const WarpCacheIR* snapshot,
-                                        const MDefinitionStackVector& inputs);
+                                        const MDefinitionStackVector& inputs,
+                                        TranspilerOutput& output);
 
 }  
 }  
