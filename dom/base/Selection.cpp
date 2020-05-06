@@ -844,19 +844,19 @@ static bool MaybeDispatchSelectstartEvent(
 }
 
 
-bool Selection::AreUserSelectedRangesNonEmpty(
+bool Selection::IsUserSelectionNotCollapsed(
     const nsRange& aRange, nsTArray<RefPtr<nsRange>>& aTempRangesToAdd) {
   MOZ_ASSERT(aTempRangesToAdd.IsEmpty());
 
   RefPtr<nsRange> scratchRange = aRange.CloneRange();
   UserSelectRangesToAdd(scratchRange, aTempRangesToAdd);
-  const bool newRangesNonEmpty =
+  const bool userSelectionNotCollapsed =
       aTempRangesToAdd.Length() > 1 ||
       (aTempRangesToAdd.Length() == 1 && !aTempRangesToAdd[0]->Collapsed());
 
   aTempRangesToAdd.ClearAndRetainStorage();
 
-  return newRangesNonEmpty;
+  return userSelectionNotCollapsed;
 }
 
 nsresult Selection::AddRangesForUserSelectableNodes(
@@ -892,10 +892,11 @@ nsresult Selection::AddRangesForUserSelectableNodes(
     
     
 
-    const bool newRangesNonEmpty =
-        AreUserSelectedRangesNonEmpty(*aRange, rangesToAdd);
-    MOZ_ASSERT(!newRangesNonEmpty || nsContentUtils::IsSafeToRunScript());
-    if (newRangesNonEmpty && nsContentUtils::IsSafeToRunScript()) {
+    const bool userSelectionNotCollapsed =
+        IsUserSelectionNotCollapsed(*aRange, rangesToAdd);
+    MOZ_ASSERT(!userSelectionNotCollapsed ||
+               nsContentUtils::IsSafeToRunScript());
+    if (userSelectionNotCollapsed && nsContentUtils::IsSafeToRunScript()) {
       
       
       
