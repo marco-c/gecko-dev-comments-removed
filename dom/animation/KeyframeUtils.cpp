@@ -408,7 +408,7 @@ static bool ConvertKeyframeSequence(JSContext* aCx, dom::Document* aDocument,
 
     
     dom::binding_detail::FastBaseKeyframe keyframeDict;
-    BindingCallContext callCx(aCx, aContext);
+    dom::BindingCallContext callCx(aCx, aContext);
     if (!keyframeDict.Init(callCx, value,
                            "Element of sequence<Keyframe> argument")) {
       
