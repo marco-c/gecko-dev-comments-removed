@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include <OpenGL/OpenGL.h>
 #include <OpenGL/CGLRenderers.h>
@@ -59,7 +59,7 @@ static OperatingSystem OSXVersionToOperatingSystem(uint32_t aOSXVersion) {
 
   return OperatingSystem::Unknown;
 }
-// The following three functions are derived from Chromium code
+
 static CFTypeRef SearchPortForProperty(io_registry_entry_t dspPort, CFStringRef propertyName) {
   return IORegistryEntrySearchCFProperty(dspPort, kIOServicePlane, propertyName,
                                          kCFAllocatorDefault,
@@ -94,15 +94,15 @@ void GfxInfo::GetDeviceInfo() {
 nsresult GfxInfo::Init() {
   nsresult rv = GfxInfoBase::Init();
 
-  // Calling CGLQueryRendererInfo causes us to switch to the discrete GPU
-  // even when we don't want to. We'll avoid doing so for now and just
-  // use the device ids.
+  
+  
+  
 
   GetDeviceInfo();
 
   AddCrashReportAnnotations();
 
-  mOSXVersion = nsCocoaFeatures::OSXVersion();
+  mOSXVersion = nsCocoaFeatures::macOSVersion();
 
   return rv;
 }
@@ -113,122 +113,122 @@ GfxInfo::GetD2DEnabled(bool* aEnabled) { return NS_ERROR_FAILURE; }
 NS_IMETHODIMP
 GfxInfo::GetDWriteEnabled(bool* aEnabled) { return NS_ERROR_FAILURE; }
 
-/* readonly attribute bool HasBattery; */
+
 NS_IMETHODIMP GfxInfo::GetHasBattery(bool* aHasBattery) { return NS_ERROR_NOT_IMPLEMENTED; }
 
-/* readonly attribute DOMString DWriteVersion; */
+
 NS_IMETHODIMP
 GfxInfo::GetDWriteVersion(nsAString& aDwriteVersion) { return NS_ERROR_FAILURE; }
 
-/* readonly attribute DOMString cleartypeParameters; */
+
 NS_IMETHODIMP
 GfxInfo::GetCleartypeParameters(nsAString& aCleartypeParams) { return NS_ERROR_FAILURE; }
 
-/* readonly attribute DOMString windowProtocol; */
+
 NS_IMETHODIMP
 GfxInfo::GetWindowProtocol(nsAString& aWindowProtocol) { return NS_ERROR_NOT_IMPLEMENTED; }
 
-/* readonly attribute DOMString desktopEnvironment; */
+
 NS_IMETHODIMP
 GfxInfo::GetDesktopEnvironment(nsAString& aDesktopEnvironment) { return NS_ERROR_NOT_IMPLEMENTED; }
 
-/* readonly attribute DOMString adapterDescription; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDescription(nsAString& aAdapterDescription) {
   aAdapterDescription.AssignLiteral("");
   return NS_OK;
 }
 
-/* readonly attribute DOMString adapterDescription2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDescription2(nsAString& aAdapterDescription) { return NS_ERROR_FAILURE; }
 
-/* readonly attribute DOMString adapterRAM; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterRAM(uint32_t* aAdapterRAM) {
   *aAdapterRAM = mAdapterRAM;
   return NS_OK;
 }
 
-/* readonly attribute DOMString adapterRAM2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterRAM2(uint32_t* aAdapterRAM) { return NS_ERROR_FAILURE; }
 
-/* readonly attribute DOMString adapterDriver; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriver(nsAString& aAdapterDriver) {
   aAdapterDriver.AssignLiteral("");
   return NS_OK;
 }
 
-/* readonly attribute DOMString adapterDriver2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriver2(nsAString& aAdapterDriver) { return NS_ERROR_FAILURE; }
 
-/* readonly attribute DOMString adapterDriverVendor; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriverVendor(nsAString& aAdapterDriverVendor) {
   aAdapterDriverVendor.AssignLiteral("");
   return NS_OK;
 }
 
-/* readonly attribute DOMString adapterDriverVendor2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriverVendor2(nsAString& aAdapterDriverVendor) { return NS_ERROR_FAILURE; }
 
-/* readonly attribute DOMString adapterDriverVersion; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriverVersion(nsAString& aAdapterDriverVersion) {
   aAdapterDriverVersion.AssignLiteral("");
   return NS_OK;
 }
 
-/* readonly attribute DOMString adapterDriverVersion2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriverVersion2(nsAString& aAdapterDriverVersion) { return NS_ERROR_FAILURE; }
 
-/* readonly attribute DOMString adapterDriverDate; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriverDate(nsAString& aAdapterDriverDate) {
   aAdapterDriverDate.AssignLiteral("");
   return NS_OK;
 }
 
-/* readonly attribute DOMString adapterDriverDate2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDriverDate2(nsAString& aAdapterDriverDate) { return NS_ERROR_FAILURE; }
 
-/* readonly attribute DOMString adapterVendorID; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterVendorID(nsAString& aAdapterVendorID) {
   aAdapterVendorID = mAdapterVendorID;
   return NS_OK;
 }
 
-/* readonly attribute DOMString adapterVendorID2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterVendorID2(nsAString& aAdapterVendorID) { return NS_ERROR_FAILURE; }
 
-/* readonly attribute DOMString adapterDeviceID; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDeviceID(nsAString& aAdapterDeviceID) {
   aAdapterDeviceID = mAdapterDeviceID;
   return NS_OK;
 }
 
-/* readonly attribute DOMString adapterDeviceID2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterDeviceID2(nsAString& aAdapterDeviceID) { return NS_ERROR_FAILURE; }
 
-/* readonly attribute DOMString adapterSubsysID; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterSubsysID(nsAString& aAdapterSubsysID) { return NS_ERROR_FAILURE; }
 
-/* readonly attribute DOMString adapterSubsysID2; */
+
 NS_IMETHODIMP
 GfxInfo::GetAdapterSubsysID2(nsAString& aAdapterSubsysID) { return NS_ERROR_FAILURE; }
 
-/* readonly attribute Array<DOMString> displayInfo; */
+
 NS_IMETHODIMP
 GfxInfo::GetDisplayInfo(nsTArray<nsString>& aDisplayInfo) {
   for (NSScreen* screen in [NSScreen screens]) {
@@ -260,7 +260,7 @@ GfxInfo::GetDisplayHeight(nsTArray<uint32_t>& aDisplayHeight) {
   return NS_OK;
 }
 
-/* readonly attribute boolean isGPU2Active; */
+
 NS_IMETHODIMP
 GfxInfo::GetIsGPU2Active(bool* aIsGPU2Active) { return NS_ERROR_FAILURE; }
 
@@ -281,7 +281,7 @@ void GfxInfo::AddCrashReportAnnotations() {
                                      narrowDriverVersion);
 }
 
-// We don't support checking driver versions on Mac.
+
 #define IMPLEMENT_MAC_DRIVER_BLOCKLIST(os, device, features, blockOn, ruleId)          \
   APPEND_TO_DRIVER_BLOCKLIST(os, device, features, blockOn, DRIVER_COMPARISON_IGNORED, \
                              V(0, 0, 0, 0), ruleId, "")
@@ -306,7 +306,7 @@ nsresult GfxInfo::GetFeatureStatusImpl(int32_t aFeature, int32_t* aStatus,
                                        nsAString& aSuggestedDriverVersion,
                                        const nsTArray<GfxDriverInfo>& aDriverInfo,
                                        nsACString& aFailureId,
-                                       OperatingSystem* aOS /* = nullptr */) {
+                                       OperatingSystem* aOS ) {
   NS_ENSURE_ARG_POINTER(aStatus);
   aSuggestedDriverVersion.SetIsVoid(true);
   *aStatus = nsIGfxInfo::FEATURE_STATUS_UNKNOWN;
@@ -317,10 +317,10 @@ nsresult GfxInfo::GetFeatureStatusImpl(int32_t aFeature, int32_t* aStatus,
     return NS_OK;
   }
 
-  // Don't evaluate special cases when we're evaluating the downloaded blocklist.
+  
   if (!aDriverInfo.Length()) {
     if (aFeature == nsIGfxInfo::FEATURE_CANVAS2D_ACCELERATION) {
-      // See bug 1249659
+      
       switch (os) {
         case OperatingSystem::OSX10_5:
         case OperatingSystem::OSX10_6:
@@ -345,9 +345,9 @@ nsresult GfxInfo::GetFeatureStatusImpl(int32_t aFeature, int32_t* aStatus,
 }
 
 nsresult GfxInfo::FindMonitors(JSContext* aCx, JS::HandleObject aOutArray) {
-  // Getting the refresh rate is a little hard on OS X. We could use
-  // CVDisplayLinkGetNominalOutputVideoRefreshPeriod, but that's a little
-  // involved. Ideally we could query it from vsync. For now, we leave it out.
+  
+  
+  
   int32_t deviceCount = 0;
   for (NSScreen* screen in [NSScreen screens]) {
     NSRect rect = [screen frame];
@@ -371,33 +371,33 @@ nsresult GfxInfo::FindMonitors(JSContext* aCx, JS::HandleObject aOutArray) {
 
 #ifdef DEBUG
 
-// Implement nsIGfxInfoDebug
 
-/* void spoofVendorID (in DOMString aVendorID); */
+
+
 NS_IMETHODIMP GfxInfo::SpoofVendorID(const nsAString& aVendorID) {
   mAdapterVendorID = aVendorID;
   return NS_OK;
 }
 
-/* void spoofDeviceID (in unsigned long aDeviceID); */
+
 NS_IMETHODIMP GfxInfo::SpoofDeviceID(const nsAString& aDeviceID) {
   mAdapterDeviceID = aDeviceID;
   return NS_OK;
 }
 
-/* void spoofDriverVersion (in DOMString aDriverVersion); */
+
 NS_IMETHODIMP GfxInfo::SpoofDriverVersion(const nsAString& aDriverVersion) {
   mDriverVersion = aDriverVersion;
   return NS_OK;
 }
 
-/* void spoofOSVersion (in unsigned long aVersion); */
+
 NS_IMETHODIMP GfxInfo::SpoofOSVersion(uint32_t aVersion) {
   mOSXVersion = aVersion;
   return NS_OK;
 }
 
-/* void fireTestProcess (); */
+
 NS_IMETHODIMP GfxInfo::FireTestProcess() { return NS_OK; }
 
 #endif

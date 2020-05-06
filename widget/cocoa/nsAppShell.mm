@@ -355,8 +355,8 @@ nsresult nsAppShell::Init() {
   
   
   
-  if (nsCocoaFeatures::OSXVersionMinor() == 10 && nsCocoaFeatures::OSXVersionBugFix() < 2 &&
-      nsCocoaFeatures::OSXVersionMajor() == 10) {
+  if (nsCocoaFeatures::macOSVersionMinor() == 10 && nsCocoaFeatures::macOSVersionBugFix() < 2 &&
+      nsCocoaFeatures::macOSVersionMajor() == 10) {
     
     
     
