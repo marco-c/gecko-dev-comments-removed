@@ -3231,8 +3231,8 @@ nsDOMWindowUtils::SelectAtPoint(float aX, float aY, uint32_t aSelectBehavior,
   nsCOMPtr<nsIWidget> widget = GetWidget(&offset);
   LayoutDeviceIntPoint pt =
       nsContentUtils::ToWidgetPoint(CSSPoint(aX, aY), offset, GetPresContext());
-  nsPoint ptInRoot =
-      nsLayoutUtils::GetEventCoordinatesRelativeTo(widget, pt, rootFrame);
+  nsPoint ptInRoot = nsLayoutUtils::GetEventCoordinatesRelativeTo(
+      widget, pt, RelativeTo{rootFrame});
   nsIFrame* targetFrame = nsLayoutUtils::GetFrameForPoint(rootFrame, ptInRoot);
   
   
@@ -3242,8 +3242,8 @@ nsDOMWindowUtils::SelectAtPoint(float aX, float aY, uint32_t aSelectBehavior,
 
   
   
-  nsPoint relPoint =
-      nsLayoutUtils::GetEventCoordinatesRelativeTo(widget, pt, targetFrame);
+  nsPoint relPoint = nsLayoutUtils::GetEventCoordinatesRelativeTo(
+      widget, pt, RelativeTo{targetFrame});
 
   nsresult rv = static_cast<nsFrame*>(targetFrame)
                     ->SelectByTypeAtPoint(GetPresContext(), relPoint, amount,

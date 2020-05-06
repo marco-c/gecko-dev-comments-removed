@@ -3227,8 +3227,9 @@ already_AddRefed<DOMMatrixReadOnly> Element::GetTransformToAncestor(
     
     
     
-    transform = nsLayoutUtils::GetTransformToAncestor(
-                    primaryFrame, ancestorFrame, nsIFrame::IN_CSS_UNITS)
+    transform = nsLayoutUtils::GetTransformToAncestor(RelativeTo{primaryFrame},
+                                                      RelativeTo{ancestorFrame},
+                                                      nsIFrame::IN_CSS_UNITS)
                     .GetMatrix();
   }
 
@@ -3243,7 +3244,8 @@ already_AddRefed<DOMMatrixReadOnly> Element::GetTransformToParent() {
   Matrix4x4 transform;
   if (primaryFrame) {
     nsIFrame* parentFrame = primaryFrame->GetParent();
-    transform = nsLayoutUtils::GetTransformToAncestor(primaryFrame, parentFrame,
+    transform = nsLayoutUtils::GetTransformToAncestor(RelativeTo{primaryFrame},
+                                                      RelativeTo{parentFrame},
                                                       nsIFrame::IN_CSS_UNITS)
                     .GetMatrix();
   }
@@ -3259,7 +3261,8 @@ already_AddRefed<DOMMatrixReadOnly> Element::GetTransformToViewport() {
   if (primaryFrame) {
     transform =
         nsLayoutUtils::GetTransformToAncestor(
-            primaryFrame, nsLayoutUtils::GetDisplayRootFrame(primaryFrame),
+            RelativeTo{primaryFrame},
+            RelativeTo{nsLayoutUtils::GetDisplayRootFrame(primaryFrame)},
             nsIFrame::IN_CSS_UNITS)
             .GetMatrix();
   }
