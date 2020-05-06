@@ -104,6 +104,14 @@ class APZCCallbackHelper {
 
 
 
+
+
+
+
+
+
+
+
   static CSSPoint ApplyCallbackTransform(const CSSPoint& aInput,
                                          const ScrollableLayerGuid& aGuid);
 
