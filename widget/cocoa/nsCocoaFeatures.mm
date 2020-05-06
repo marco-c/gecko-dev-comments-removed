@@ -10,18 +10,20 @@
 
 
 
+#define MACOS_VERSION_MASK 0x00FFFFFF
+#define MACOS_MAJOR_VERSION_MASK 0x00FFFFFF
+#define MACOS_MINOR_VERSION_MASK 0x00FFFFFF
+#define MACOS_BUGFIX_VERSION_MASK 0x00FFFFFF
+#define MACOS_VERSION_10_0_HEX 0x000A0000
+#define MACOS_VERSION_10_9_HEX 0x000A0900
+#define MACOS_VERSION_10_10_HEX 0x000A0A00
+#define MACOS_VERSION_10_11_HEX 0x000A0B00
+#define MACOS_VERSION_10_12_HEX 0x000A0C00
+#define MACOS_VERSION_10_13_HEX 0x000A0D00
+#define MACOS_VERSION_10_14_HEX 0x000A0E00
+#define MACOS_VERSION_10_15_HEX 0x000A0F00
 
-#define MAC_OS_X_VERSION_MASK 0x0000FFFF
-#define MAC_OS_X_VERSION_10_0_HEX 0x00001000
-#define MAC_OS_X_VERSION_10_7_HEX 0x00001070
-#define MAC_OS_X_VERSION_10_8_HEX 0x00001080
-#define MAC_OS_X_VERSION_10_9_HEX 0x00001090
-#define MAC_OS_X_VERSION_10_10_HEX 0x000010A0
-#define MAC_OS_X_VERSION_10_11_HEX 0x000010B0
-#define MAC_OS_X_VERSION_10_12_HEX 0x000010C0
-#define MAC_OS_X_VERSION_10_13_HEX 0x000010D0
-#define MAC_OS_X_VERSION_10_14_HEX 0x000010E0
-#define MAC_OS_X_VERSION_10_15_HEX 0x000010F0
+
 
 #include "nsCocoaFeatures.h"
 #include "nsCocoaUtils.h"
@@ -30,27 +32,27 @@
 
 #import <Cocoa/Cocoa.h>
 
-int32_t nsCocoaFeatures::mOSXVersion = 0;
+ int32_t nsCocoaFeatures::mOSVersion = 0;
 
 
 inline int32_t AssembleVersion(int32_t aMajor, int32_t aMinor, int32_t aBugFix) {
   MOZ_ASSERT(aMajor >= 10);
-  return MAC_OS_X_VERSION_10_0_HEX + (aMajor - 10) * 0x100 + (aMinor << 4) + aBugFix;
+  return (aMajor << 16) + (aMinor << 8) + aBugFix;
 }
 
 int32_t nsCocoaFeatures::ExtractMajorVersion(int32_t aVersion) {
-  MOZ_ASSERT((aVersion & MAC_OS_X_VERSION_MASK) == aVersion);
-  return ((aVersion & 0xFF00) - 0x1000) / 0x100 + 10;
+  MOZ_ASSERT((aVersion & MACOS_VERSION_MASK) == aVersion);
+  return (aVersion & 0xFF0000) >> 16;
 }
 
 int32_t nsCocoaFeatures::ExtractMinorVersion(int32_t aVersion) {
-  MOZ_ASSERT((aVersion & MAC_OS_X_VERSION_MASK) == aVersion);
-  return (aVersion & 0xF0) >> 4;
+  MOZ_ASSERT((aVersion & MACOS_VERSION_MASK) == aVersion);
+  return (aVersion & 0xFF00) >> 8;
 }
 
 int32_t nsCocoaFeatures::ExtractBugFixVersion(int32_t aVersion) {
-  MOZ_ASSERT((aVersion & MAC_OS_X_VERSION_MASK) == aVersion);
-  return aVersion & 0x0F;
+  MOZ_ASSERT((aVersion & MACOS_VERSION_MASK) == aVersion);
+  return aVersion & 0xFF;
 }
 
 static int intAtStringIndex(NSArray* array, int index) {
@@ -63,6 +65,11 @@ void nsCocoaFeatures::GetSystemVersion(int& major, int& minor, int& bugfix) {
   NSString* versionString = [[NSDictionary
       dictionaryWithContentsOfFile:@"/System/Library/CoreServices/SystemVersion.plist"]
       objectForKey:@"ProductVersion"];
+  if (!versionString) {
+    NS_ERROR("Couldn't read /System/Library/CoreServices/SystemVersion.plist to determine macOS "
+             "version.");
+    return;
+  }
   NSArray* versions = [versionString componentsSeparatedByString:@"."];
   NSUInteger count = [versions count];
   if (count > 0) {
@@ -77,26 +84,28 @@ void nsCocoaFeatures::GetSystemVersion(int& major, int& minor, int& bugfix) {
 }
 
 int32_t nsCocoaFeatures::GetVersion(int32_t aMajor, int32_t aMinor, int32_t aBugFix) {
-  int32_t osxVersion;
+  int32_t macOSVersion;
   if (aMajor < 10) {
     aMajor = 10;
-    NS_ERROR("Couldn't determine OS X version, assuming 10.7");
-    osxVersion = MAC_OS_X_VERSION_10_7_HEX;
-  } else if (aMinor < 7) {
-    aMinor = 7;
-    NS_ERROR("OS X version too old, assuming 10.7");
-    osxVersion = MAC_OS_X_VERSION_10_7_HEX;
+    NS_ERROR("Couldn't determine macOS version, assuming 10.9");
+    macOSVersion = MACOS_VERSION_10_9_HEX;
+  } else if (aMajor == 10 && aMinor < 9) {
+    aMinor = 9;
+    NS_ERROR("macOS version too old, assuming 10.9");
+    macOSVersion = MACOS_VERSION_10_9_HEX;
   } else {
-    MOZ_ASSERT(aMajor == 10);  
-    MOZ_ASSERT(aMinor < 16);
+    MOZ_ASSERT(aMajor >= 10);
+    MOZ_ASSERT(aMajor < 256);
+    MOZ_ASSERT(aMinor >= 0);
+    MOZ_ASSERT(aMinor < 256);
     MOZ_ASSERT(aBugFix >= 0);
-    MOZ_ASSERT(aBugFix < 16);
-    osxVersion = AssembleVersion(aMajor, aMinor, aBugFix);
+    MOZ_ASSERT(aBugFix < 256);
+    macOSVersion = AssembleVersion(aMajor, aMinor, aBugFix);
   }
-  MOZ_ASSERT(aMajor == ExtractMajorVersion(osxVersion));
-  MOZ_ASSERT(aMinor == ExtractMinorVersion(osxVersion));
-  MOZ_ASSERT(aBugFix == ExtractBugFixVersion(osxVersion));
-  return osxVersion;
+  MOZ_ASSERT(aMajor == ExtractMajorVersion(macOSVersion));
+  MOZ_ASSERT(aMinor == ExtractMinorVersion(macOSVersion));
+  MOZ_ASSERT(aBugFix == ExtractBugFixVersion(macOSVersion));
+  return macOSVersion;
 }
 
  void nsCocoaFeatures::InitializeVersionNumbers() {
@@ -108,69 +117,67 @@ int32_t nsCocoaFeatures::GetVersion(int32_t aMajor, int32_t aMinor, int32_t aBug
 
   int major, minor, bugfix;
   GetSystemVersion(major, minor, bugfix);
-  mOSXVersion = GetVersion(major, minor, bugfix);
+  mOSVersion = GetVersion(major, minor, bugfix);
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
- int32_t nsCocoaFeatures::OSXVersion() {
+ int32_t nsCocoaFeatures::macOSVersion() {
   
-  MOZ_ASSERT((mOSXVersion & MAC_OS_X_VERSION_MASK) >= 0);
-  if (!mOSXVersion) {
-    mOSXVersion = -1;
+  MOZ_ASSERT((mOSVersion & MACOS_VERSION_MASK) >= 0);
+  if (!mOSVersion) {
+    mOSVersion = -1;
     InitializeVersionNumbers();
   }
-  return mOSXVersion;
+  return mOSVersion;
 }
 
- int32_t nsCocoaFeatures::OSXVersionMajor() {
-  MOZ_ASSERT((OSXVersion() & MAC_OS_X_VERSION_10_0_HEX) == MAC_OS_X_VERSION_10_0_HEX);
-  return 10;
+ int32_t nsCocoaFeatures::macOSVersionMajor() {
+  return ExtractMajorVersion(macOSVersion());
 }
 
- int32_t nsCocoaFeatures::OSXVersionMinor() {
-  return ExtractMinorVersion(OSXVersion());
+ int32_t nsCocoaFeatures::macOSVersionMinor() {
+  return ExtractMinorVersion(macOSVersion());
 }
 
- int32_t nsCocoaFeatures::OSXVersionBugFix() {
-  return ExtractBugFixVersion(OSXVersion());
+ int32_t nsCocoaFeatures::macOSVersionBugFix() {
+  return ExtractBugFixVersion(macOSVersion());
 }
 
  bool nsCocoaFeatures::OnYosemiteOrLater() {
-  return (OSXVersion() >= MAC_OS_X_VERSION_10_10_HEX);
+  return (macOSVersion() >= MACOS_VERSION_10_10_HEX);
 }
 
  bool nsCocoaFeatures::OnElCapitanOrLater() {
-  return (OSXVersion() >= MAC_OS_X_VERSION_10_11_HEX);
+  return (macOSVersion() >= MACOS_VERSION_10_11_HEX);
 }
 
  bool nsCocoaFeatures::OnSierraExactly() {
-  return (OSXVersion() >= MAC_OS_X_VERSION_10_12_HEX) &&
-         (OSXVersion() < MAC_OS_X_VERSION_10_13_HEX);
+  return (macOSVersion() >= MACOS_VERSION_10_12_HEX) && (macOSVersion() < MACOS_VERSION_10_13_HEX);
 }
 
 
 bool Gecko_OnSierraExactly() { return nsCocoaFeatures::OnSierraExactly(); }
 
  bool nsCocoaFeatures::OnSierraOrLater() {
-  return (OSXVersion() >= MAC_OS_X_VERSION_10_12_HEX);
+  return (macOSVersion() >= MACOS_VERSION_10_12_HEX);
 }
 
  bool nsCocoaFeatures::OnHighSierraOrLater() {
-  return (OSXVersion() >= MAC_OS_X_VERSION_10_13_HEX);
+  return (macOSVersion() >= MACOS_VERSION_10_13_HEX);
 }
 
 bool Gecko_OnHighSierraOrLater() { return nsCocoaFeatures::OnHighSierraOrLater(); }
 
  bool nsCocoaFeatures::OnMojaveOrLater() {
-  return (OSXVersion() >= MAC_OS_X_VERSION_10_14_HEX);
+  return (macOSVersion() >= MACOS_VERSION_10_14_HEX);
 }
 
  bool nsCocoaFeatures::OnCatalinaOrLater() {
-  return (OSXVersion() >= MAC_OS_X_VERSION_10_15_HEX);
+  return (macOSVersion() >= MACOS_VERSION_10_15_HEX);
 }
 
  bool nsCocoaFeatures::IsAtLeastVersion(int32_t aMajor, int32_t aMinor,
                                                     int32_t aBugFix) {
-  return OSXVersion() >= GetVersion(aMajor, aMinor, aBugFix);
+  return macOSVersion() >= GetVersion(aMajor, aMinor, aBugFix);
 }
