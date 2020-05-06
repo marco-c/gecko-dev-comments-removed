@@ -307,7 +307,7 @@ class OSXBootstrapper(BaseBootstrapper):
 
         
         
-        outdated = set(self.check_output(cmd + ['outdated', '-q'],
+        outdated = set(self.check_output(cmd + ['outdated', '--quiet'],
                                          universal_newlines=True).split())
         to_upgrade = [package for package in packages if package in outdated]
 
