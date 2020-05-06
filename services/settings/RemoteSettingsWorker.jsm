@@ -55,19 +55,17 @@ class Worker {
     this.idleTimeoutId = null;
   }
 
-  async _execute(method, args = [], options = {}) {
+  async _execute(method, args = []) {
     if (gShutdown) {
       throw new RemoteSettingsWorkerError("Remote Settings has shut down.");
     }
-    const { mustComplete = false } = options;
-
     
     if (!this.worker) {
       this.worker = new ChromeWorker(this.source);
       this.worker.onmessage = this._onWorkerMessage.bind(this);
       this.worker.onerror = error => {
         
-        for (const { reject } of this.callbacks.values()) {
+        for (const [, reject] of this.callbacks.values()) {
           reject(error);
         }
         this.callbacks.clear();
@@ -79,21 +77,16 @@ class Worker {
     if (this.idleTimeoutId) {
       clearTimeout(this.idleTimeoutId);
     }
-    let identifier = method + "-";
-    
-    if (identifier == "importJSONDump") {
-      identifier += `${args[0]}-${args[1]}-`;
-    }
     return new Promise((resolve, reject) => {
-      const callbackId = `${identifier}${++this.lastCallbackId}`;
-      this.callbacks.set(callbackId, { resolve, reject, mustComplete });
+      const callbackId = `${method}-${++this.lastCallbackId}`;
+      this.callbacks.set(callbackId, [resolve, reject]);
       this.worker.postMessage({ callbackId, method, args });
     });
   }
 
   _onWorkerMessage(event) {
     const { callbackId, result, error } = event.data;
-    const { resolve, reject } = this.callbacks.get(callbackId);
+    const [resolve, reject] = this.callbacks.get(callbackId);
     if (error) {
       reject(new RemoteSettingsWorkerError(error));
     } else {
@@ -117,31 +110,6 @@ class Worker {
     }
   }
 
-  
-
-
-
-  _abortCancelableRequests() {
-    
-    const callbackCopy = Array.from(this.callbacks.entries());
-    const error = new Error("Shutdown, aborting read-only worker requests.");
-    for (const [id, { reject, mustComplete }] of callbackCopy) {
-      if (!mustComplete) {
-        this.callbacks.delete(id);
-        reject(error);
-      }
-    }
-    
-    if (!this.callbacks.size) {
-      this.stop();
-      if (gShutdownResolver) {
-        gShutdownResolver();
-      }
-    }
-    
-    
-  }
-
   stop() {
     this.worker.terminate();
     this.worker = null;
@@ -157,9 +125,7 @@ class Worker {
   }
 
   async importJSONDump(bucket, collection) {
-    return this._execute("importJSONDump", [bucket, collection], {
-      mustComplete: true,
-    });
+    return this._execute("importJSONDump", [bucket, collection]);
   }
 
   async checkFileHash(filepath, size, hash) {
@@ -191,15 +157,9 @@ try {
         return null;
       }
       
-      let finishedPromise = new Promise(resolve => {
+      return new Promise(resolve => {
         gShutdownResolver = resolve;
       });
-
-      
-      RemoteSettingsWorker._abortCancelableRequests();
-
-      
-      return finishedPromise;
     },
     {
       fetchState() {
