@@ -5,8 +5,11 @@
 
 
 #include "mozilla/dom/HTMLImageElement.h"
+#include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/HTMLImageElementBinding.h"
 #include "mozilla/dom/BindContext.h"
+#include "mozilla/dom/NameSpaceConstants.h"
+#include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 #include "nsStyleConsts.h"
 #include "nsPresContext.h"
@@ -316,9 +319,31 @@ nsresult HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                         const nsAttrValue* aOldValue,
                                         nsIPrincipal* aMaybeScriptedPrincipal,
                                         bool aNotify) {
+  if (aNameSpaceID != kNameSpaceID_None) {
+    return nsGenericHTMLElement::AfterSetAttr(aNameSpaceID, aName, aValue,
+                                              aOldValue,
+                                              aMaybeScriptedPrincipal, aNotify);
+  }
+
   nsAttrValueOrString attrVal(aValue);
 
-  if (aName == nsGkAtoms::loading && aNameSpaceID == kNameSpaceID_None) {
+  if (aValue) {
+    AfterMaybeChangeAttr(aNameSpaceID, aName, attrVal, aOldValue,
+                         aMaybeScriptedPrincipal, aNotify);
+  }
+
+  if (mForm && (aName == nsGkAtoms::name || aName == nsGkAtoms::id) && aValue &&
+      !aValue->IsEmptyString()) {
+    
+    MOZ_ASSERT(aValue->Type() == nsAttrValue::eAtom,
+               "Expected atom value for name/id");
+    mForm->AddImageElementToTable(
+        this, nsDependentAtomString(aValue->GetAtomValue()));
+  }
+
+  bool forceReload = false;
+
+  if (aName == nsGkAtoms::loading) {
     if (aValue &&
         static_cast<HTMLImageElement::Loading>(aValue->GetEnumValue()) ==
             Loading::Lazy &&
@@ -330,28 +355,9 @@ nsresult HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                !ImageState().HasState(NS_EVENT_STATE_LOADING)) {
       StopLazyLoadingAndStartLoadIfNeeded();
     }
-  }
-
-  if (aValue) {
-    AfterMaybeChangeAttr(aNameSpaceID, aName, attrVal, aOldValue,
-                         aMaybeScriptedPrincipal, true, aNotify);
-  }
-
-  if (aNameSpaceID == kNameSpaceID_None && mForm &&
-      (aName == nsGkAtoms::name || aName == nsGkAtoms::id) && aValue &&
-      !aValue->IsEmptyString()) {
+  } else if (aName == nsGkAtoms::src && !aValue) {
     
-    MOZ_ASSERT(aValue->Type() == nsAttrValue::eAtom,
-               "Expected atom value for name/id");
-    mForm->AddImageElementToTable(
-        this, nsDependentAtomString(aValue->GetAtomValue()));
-  }
-
-  
-  
-  
-
-  if (aName == nsGkAtoms::src && aNameSpaceID == kNameSpaceID_None && !aValue) {
+    
     
     
     mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
@@ -367,7 +373,7 @@ nsresult HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       
       CancelImageRequests(aNotify);
     }
-  } else if (aName == nsGkAtoms::srcset && aNameSpaceID == kNameSpaceID_None) {
+  } else if (aName == nsGkAtoms::srcset) {
     
     
     mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
@@ -375,117 +381,40 @@ nsresult HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
     mSrcsetTriggeringPrincipal = aMaybeScriptedPrincipal;
 
     PictureSourceSrcsetChanged(this, attrVal.String(), aNotify);
-  } else if (aName == nsGkAtoms::sizes && aNameSpaceID == kNameSpaceID_None) {
+  } else if (aName == nsGkAtoms::sizes) {
     
     
     mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
 
     PictureSourceSizesChanged(this, attrVal.String(), aNotify);
-  } else if (aName == nsGkAtoms::decoding &&
-             aNameSpaceID == kNameSpaceID_None) {
+  } else if (aName == nsGkAtoms::decoding) {
     
     SetSyncDecodingHint(
         aValue && static_cast<ImageDecodingType>(aValue->GetEnumValue()) ==
                       ImageDecodingType::Sync);
-  }
-
-  return nsGenericHTMLElement::AfterSetAttr(
-      aNameSpaceID, aName, aValue, aOldValue, aMaybeScriptedPrincipal, aNotify);
-}
-
-nsresult HTMLImageElement::OnAttrSetButNotChanged(
-    int32_t aNamespaceID, nsAtom* aName, const nsAttrValueOrString& aValue,
-    bool aNotify) {
-  AfterMaybeChangeAttr(aNamespaceID, aName, aValue, nullptr, nullptr, false,
-                       aNotify);
-
-  return nsGenericHTMLElement::OnAttrSetButNotChanged(aNamespaceID, aName,
-                                                      aValue, aNotify);
-}
-
-void HTMLImageElement::AfterMaybeChangeAttr(
-    int32_t aNamespaceID, nsAtom* aName, const nsAttrValueOrString& aValue,
-    const nsAttrValue* aOldValue, nsIPrincipal* aMaybeScriptedPrincipal,
-    bool aValueMaybeChanged, bool aNotify) {
-  bool forceReload = false;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aNamespaceID == kNameSpaceID_None && aName == nsGkAtoms::src) {
-    
-    
-    mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
-
-    mSrcTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
-        this, aValue.String(), aMaybeScriptedPrincipal);
-
-    if (InResponsiveMode()) {
-      if (mResponsiveSelector && mResponsiveSelector->Content() == this) {
-        mResponsiveSelector->SetDefaultSource(aValue.String(),
-                                              mSrcTriggeringPrincipal);
-      }
-      QueueImageLoadTask(true);
-    } else if (aNotify && ShouldLoadImage()) {
-      
-      
-      
-
-      
-      
-
-      
-      mNewRequestsWillNeedAnimationReset = true;
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      LoadImage(aValue.String(), true, aNotify, eImageLoadType_Normal,
-                mSrcTriggeringPrincipal);
-
-      mNewRequestsWillNeedAnimationReset = false;
-    }
-  } else if (aNamespaceID == kNameSpaceID_None &&
-             aName == nsGkAtoms::crossorigin && aNotify) {
-    if (aValueMaybeChanged && GetCORSMode() != AttrValueToCORSMode(aOldValue)) {
-      
-      forceReload = true;
-    }
-  } else if (aName == nsGkAtoms::referrerpolicy &&
-             aNamespaceID == kNameSpaceID_None && aNotify) {
+  } else if (aName == nsGkAtoms::referrerpolicy) {
     ReferrerPolicy referrerPolicy = GetImageReferrerPolicy();
-    if (!InResponsiveMode() && referrerPolicy != ReferrerPolicy::_empty &&
-        aValueMaybeChanged &&
-        referrerPolicy != ReferrerPolicyFromAttr(aOldValue)) {
-      
-      
-      
-      
-      
-      forceReload = true;
-    }
+    
+    
+    forceReload = aNotify && !InResponsiveMode() &&
+                  referrerPolicy != ReferrerPolicy::_empty &&
+                  referrerPolicy != ReferrerPolicyFromAttr(aOldValue);
+  } else if (aName == nsGkAtoms::crossorigin) {
+    
+    
+    
+    
+    forceReload = aNotify && GetCORSMode() != AttrValueToCORSMode(aOldValue);
   }
 
-  
-  
-  
   if (forceReload) {
     
     
+    
+    
+    
+    
     mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
-
     if (InResponsiveMode()) {
       
       
@@ -496,6 +425,75 @@ void HTMLImageElement::AfterMaybeChangeAttr(
       
       ForceReload(aNotify, IgnoreErrors());
     }
+  }
+
+  return nsGenericHTMLElement::AfterSetAttr(
+      aNameSpaceID, aName, aValue, aOldValue, aMaybeScriptedPrincipal, aNotify);
+}
+
+nsresult HTMLImageElement::OnAttrSetButNotChanged(
+    int32_t aNamespaceID, nsAtom* aName, const nsAttrValueOrString& aValue,
+    bool aNotify) {
+  AfterMaybeChangeAttr(aNamespaceID, aName, aValue, nullptr, nullptr, aNotify);
+  return nsGenericHTMLElement::OnAttrSetButNotChanged(aNamespaceID, aName,
+                                                      aValue, aNotify);
+}
+
+void HTMLImageElement::AfterMaybeChangeAttr(
+    int32_t aNamespaceID, nsAtom* aName, const nsAttrValueOrString& aValue,
+    const nsAttrValue* aOldValue, nsIPrincipal* aMaybeScriptedPrincipal,
+    bool aNotify) {
+  if (aNamespaceID != kNameSpaceID_None || aName != nsGkAtoms::src) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
+
+  mSrcTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
+      this, aValue.String(), aMaybeScriptedPrincipal);
+
+  if (InResponsiveMode()) {
+    if (mResponsiveSelector && mResponsiveSelector->Content() == this) {
+      mResponsiveSelector->SetDefaultSource(aValue.String(),
+                                            mSrcTriggeringPrincipal);
+    }
+    QueueImageLoadTask(true);
+  } else if (aNotify && ShouldLoadImage()) {
+    
+    
+    
+
+    
+    
+
+    
+    mNewRequestsWillNeedAnimationReset = true;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    LoadImage(aValue.String(), true, aNotify, eImageLoadType_Normal,
+              mSrcTriggeringPrincipal);
+
+    mNewRequestsWillNeedAnimationReset = false;
   }
 }
 

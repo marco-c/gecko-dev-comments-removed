@@ -379,13 +379,11 @@ class HTMLImageElement final : public nsGenericHTMLElement,
 
 
 
-
-
   void AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName,
                             const nsAttrValueOrString& aValue,
                             const nsAttrValue* aOldValue,
                             nsIPrincipal* aMaybeScriptedPrincipal,
-                            bool aValueMaybeChanged, bool aNotify);
+                            bool aNotify);
 
   bool ShouldLoadImage() const;
 
