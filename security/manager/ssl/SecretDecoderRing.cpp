@@ -206,7 +206,8 @@ SecretDecoderRing::AsyncEncryptStrings(const nsTArray<nsCString>& plaintexts,
 
   
   nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
-      "BackgroundSdrEncryptStrings", [promise, plaintexts]() mutable {
+      "BackgroundSdrEncryptStrings",
+      [promise, plaintexts = plaintexts.Clone()]() mutable {
         BackgroundSdrEncryptStrings(plaintexts, promise);
       }));
 
@@ -263,7 +264,8 @@ SecretDecoderRing::AsyncDecryptStrings(
 
   
   nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
-      "BackgroundSdrDecryptStrings", [promise, encryptedStrings]() mutable {
+      "BackgroundSdrDecryptStrings",
+      [promise, encryptedStrings = encryptedStrings.Clone()]() mutable {
         BackgroundSdrDecryptStrings(encryptedStrings, promise);
       }));
 

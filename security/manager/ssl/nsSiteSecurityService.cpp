@@ -379,7 +379,7 @@ SiteHPKPState::SiteHPKPState(const nsCString& aHost,
       mExpireTime(aExpireTime),
       mState(aState),
       mIncludeSubdomains(aIncludeSubdomains),
-      mSHA256keys(aSHA256keys) {}
+      mSHA256keys(aSHA256keys.Clone()) {}
 
 NS_IMETHODIMP
 SiteHPKPState::GetHostname(nsACString& aHostname) {
@@ -1662,7 +1662,7 @@ nsSiteSecurityService::GetKeyPinsForHostname(
       foundEntry = privateEntry;
     }
   }
-  pinArray = foundEntry->mSHA256keys;
+  pinArray = foundEntry->mSHA256keys.Clone();
   *aIncludeSubdomains = foundEntry->mIncludeSubdomains;
   *aFound = true;
   return NS_OK;
@@ -1791,11 +1791,11 @@ nsSiteSecurityService::Enumerate(uint32_t aType,
       return NS_ERROR_INVALID_ARG;
   }
 
-  nsTArray<mozilla::dom::DataStorageItem> items;
+  nsTArray<mozilla::psm::DataStorageItem> items;
   mSiteStateStorage->GetAll(&items);
 
   nsCOMArray<nsISiteSecurityState> states;
-  for (const mozilla::dom::DataStorageItem& item : items) {
+  for (const mozilla::psm::DataStorageItem& item : items) {
     if (!StringEndsWith(item.key(), keySuffix)) {
       
       continue;

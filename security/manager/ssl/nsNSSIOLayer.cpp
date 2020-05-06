@@ -1796,7 +1796,7 @@ class ClientAuthDataRunnable : public SyncRunnableBase {
   ClientAuthInfo mInfo;
   CERTCertificate* const mServerCert;
   nsTArray<nsTArray<uint8_t>> mCollectedCANames;
-  nsTArray<nsTArray<uint8_t>> mEnterpriseIntermediates;
+  nsTArray<nsTArray<uint8_t>> mEnterpriseCertificates;
   UniqueCERTCertificate mSelectedCertificate;
   UniqueSECKEYPrivateKey mSelectedKey;
 };
@@ -1815,7 +1815,7 @@ class RemoteClientAuthDataRunnable : public ClientAuthDataRunnable {
  protected:
   virtual void RunOnTargetThread() override;
 
-  nsTArray<ByteArray> mBuiltChain;
+  CopyableTArray<ByteArray> mBuiltChain;
 };
 
 nsTArray<nsTArray<uint8_t>> CollectCANames(CERTDistNames* caNames) {
@@ -1967,12 +1967,12 @@ class ClientAuthCertNonverifyingTrustDomain final : public TrustDomain {
  public:
   ClientAuthCertNonverifyingTrustDomain(
       nsTArray<nsTArray<uint8_t>>& collectedCANames,
-      nsTArray<nsTArray<uint8_t>>& thirdPartyIntermediates)
+      nsTArray<nsTArray<uint8_t>>& thirdPartyCertificates)
       : mCollectedCANames(collectedCANames),
 #ifdef MOZ_NEW_CERT_STORAGE
         mCertStorage(do_GetService(NS_CERT_STORAGE_CID)),
 #endif
-        mThirdPartyIntermediates(thirdPartyIntermediates) {
+        mThirdPartyCertificates(thirdPartyCertificates) {
   }
 
   virtual mozilla::pkix::Result GetCertTrust(
@@ -2042,7 +2042,7 @@ class ClientAuthCertNonverifyingTrustDomain final : public TrustDomain {
 #ifdef MOZ_NEW_CERT_STORAGE
   nsCOMPtr<nsICertStorage> mCertStorage;
 #endif
-  nsTArray<nsTArray<uint8_t>>& mThirdPartyIntermediates;  
+  nsTArray<nsTArray<uint8_t>>& mThirdPartyCertificates;  
   UniqueCERTCertList mBuiltChain;
 };
 
@@ -2064,14 +2064,20 @@ mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::GetCertTrust(
   
   
   
+  
+  
+  
+  
   Input issuer(cert.GetIssuer());
+  Input subject(cert.GetSubject());
   for (const auto& caName : mCollectedCANames) {
     Input caNameInput;
     rv = caNameInput.Init(caName.Elements(), caName.Length());
     if (rv != Success) {
       continue;  
     }
-    if (InputsAreEqual(issuer, caNameInput)) {
+    if (InputsAreEqual(issuer, caNameInput) ||
+        InputsAreEqual(subject, caNameInput)) {
       trustLevel = TrustLevel::TrustAnchor;
       return Success;
     }
@@ -2080,11 +2086,20 @@ mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::GetCertTrust(
   return Success;
 }
 
+
+
+
+
+
+
+
+
+
 mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::FindIssuer(
     Input encodedIssuerName, IssuerChecker& checker, Time time) {
   
   
-  Vector<Input> geckoIntermediateCandidates;
+  Vector<Input> geckoCandidates;
 #ifdef MOZ_NEW_CERT_STORAGE
   if (!mCertStorage) {
     return mozilla::pkix::Result::FATAL_ERROR_LIBRARY_FAILURE;
@@ -2103,27 +2118,26 @@ mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::FindIssuer(
     if (rv != Success) {
       continue;  
     }
-    
-    if (!geckoIntermediateCandidates.append(certDER)) {
+    if (!geckoCandidates.append(certDER)) {
       return mozilla::pkix::Result::FATAL_ERROR_NO_MEMORY;
     }
   }
 #endif
 
-  for (const auto& thirdPartyIntermediate : mThirdPartyIntermediates) {
-    Input thirdPartyIntermediateInput;
-    mozilla::pkix::Result rv = thirdPartyIntermediateInput.Init(
-        thirdPartyIntermediate.Elements(), thirdPartyIntermediate.Length());
+  for (const auto& thirdPartyCertificate : mThirdPartyCertificates) {
+    Input thirdPartyCertificateInput;
+    mozilla::pkix::Result rv = thirdPartyCertificateInput.Init(
+        thirdPartyCertificate.Elements(), thirdPartyCertificate.Length());
     if (rv != Success) {
       continue;  
     }
-    if (!geckoIntermediateCandidates.append(thirdPartyIntermediateInput)) {
+    if (!geckoCandidates.append(thirdPartyCertificateInput)) {
       return mozilla::pkix::Result::FATAL_ERROR_NO_MEMORY;
     }
   }
 
   bool keepGoing = true;
-  for (Input candidate : geckoIntermediateCandidates) {
+  for (Input candidate : geckoCandidates) {
     mozilla::pkix::Result rv = checker.Check(candidate, nullptr, keepGoing);
     if (rv != Success) {
       return rv;
@@ -2139,7 +2153,7 @@ mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::FindIssuer(
   
   UniqueCERTCertList candidates(CERT_CreateSubjectCertList(
       nullptr, CERT_GetDefaultCertDB(), &encodedIssuerNameItem, 0, false));
-  Vector<Input> nssIntermediateCandidates;
+  Vector<Input> nssCandidates;
   if (candidates) {
     for (CERTCertListNode* n = CERT_LIST_HEAD(candidates);
          !CERT_LIST_END(n, candidates); n = CERT_LIST_NEXT(n)) {
@@ -2149,15 +2163,13 @@ mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::FindIssuer(
       if (rv != Success) {
         continue;  
       }
-      if (!n->cert->isRoot) {
-        if (!nssIntermediateCandidates.append(certDER)) {
-          return mozilla::pkix::Result::FATAL_ERROR_NO_MEMORY;
-        }
+      if (!nssCandidates.append(certDER)) {
+        return mozilla::pkix::Result::FATAL_ERROR_NO_MEMORY;
       }
     }
   }
 
-  for (Input candidate : nssIntermediateCandidates) {
+  for (Input candidate : nssCandidates) {
     mozilla::pkix::Result rv = checker.Check(candidate, nullptr, keepGoing);
     if (rv != Success) {
       return rv;
@@ -2181,33 +2193,43 @@ mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::IsChainValid(
 mozilla::pkix::Result ClientAuthDataRunnable::BuildChainForCertificate(
     CERTCertificate* cert, UniqueCERTCertList& builtChain) {
   ClientAuthCertNonverifyingTrustDomain trustDomain(mCollectedCANames,
-                                                    mEnterpriseIntermediates);
+                                                    mEnterpriseCertificates);
   Input certDER;
   mozilla::pkix::Result result =
       certDER.Init(cert->derCert.data, cert->derCert.len);
   if (result != Success) {
     return result;
   }
-  mozilla::pkix::Result eeResult = BuildCertChain(
-      trustDomain, certDER, Now(), EndEntityOrCA::MustBeEndEntity,
-      KeyUsage::noParticularKeyUsageRequired, KeyPurposeId::anyExtendedKeyUsage,
-      CertPolicyId::anyPolicy, nullptr);
-  if (eeResult == Success) {
-    builtChain = trustDomain.TakeBuiltChain();
-    return Success;
+  
+  
+  
+  const EndEntityOrCA kEndEntityOrCAParams[] = {EndEntityOrCA::MustBeEndEntity,
+                                                EndEntityOrCA::MustBeCA};
+  
+  
+  
+  
+  
+  
+  
+  const KeyPurposeId kKeyPurposeIdParams[] = {KeyPurposeId::anyExtendedKeyUsage,
+                                              KeyPurposeId::id_kp_OCSPSigning};
+  for (const auto& endEntityOrCAParam : kEndEntityOrCAParams) {
+    for (const auto& keyPurposeIdParam : kKeyPurposeIdParams) {
+      mozilla::pkix::Result result =
+          BuildCertChain(trustDomain, certDER, Now(), endEntityOrCAParam,
+                         KeyUsage::noParticularKeyUsageRequired,
+                         keyPurposeIdParam, CertPolicyId::anyPolicy, nullptr);
+      if (result == Success) {
+        builtChain = trustDomain.TakeBuiltChain();
+        return Success;
+      }
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+              ("client cert non-validation returned %d for '%s'",
+               static_cast<int>(result), cert->subjectName));
+    }
   }
-  mozilla::pkix::Result caResult = BuildCertChain(
-      trustDomain, certDER, Now(), EndEntityOrCA::MustBeCA,
-      KeyUsage::noParticularKeyUsageRequired, KeyPurposeId::anyExtendedKeyUsage,
-      CertPolicyId::anyPolicy, nullptr);
-  if (caResult == Success) {
-    builtChain = trustDomain.TakeBuiltChain();
-    return Success;
-  }
-  MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-          ("client cert non-validation returned %d %d\n",
-           static_cast<int>(eeResult), static_cast<int>(caResult)));
-  return eeResult;
+  return mozilla::pkix::Result::ERROR_UNKNOWN_ISSUER;
 }
 
 void ClientAuthDataRunnable::RunOnTargetThread() {
@@ -2219,10 +2241,16 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
   if (NS_WARN_IF(!component)) {
     return;
   }
-  nsresult rv = component->GetEnterpriseIntermediates(mEnterpriseIntermediates);
+  nsresult rv = component->GetEnterpriseIntermediates(mEnterpriseCertificates);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
+  nsTArray<nsTArray<uint8_t>> enterpriseRoots;
+  rv = component->GetEnterpriseRoots(enterpriseRoots);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+  mEnterpriseCertificates.AppendElements(std::move(enterpriseRoots));
 
   if (NS_WARN_IF(NS_FAILED(CheckForSmartCardChanges()))) {
     return;
@@ -2253,8 +2281,7 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
         BuildChainForCertificate(n->cert, unusedBuiltChain);
     if (result != Success) {
       MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-              ("removing cert '%s' (result=%d)", n->cert->subjectName,
-               static_cast<int>(result)));
+              ("removing cert '%s'", n->cert->subjectName));
       CERTCertListNode* toRemove = n;
       n = CERT_LIST_NEXT(n);
       CERT_RemoveCertListNode(toRemove);
@@ -2448,9 +2475,8 @@ mozilla::pkix::Result RemoteClientAuthDataRunnable::BuildChainForCertificate(
 void RemoteClientAuthDataRunnable::RunOnTargetThread() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsTArray<uint8_t> serverCertSerialized;
-  serverCertSerialized.AppendElements(mServerCert->derCert.data,
-                                      mServerCert->derCert.len);
+  const ByteArray serverCertSerialized = CopyableTArray<uint8_t>{
+      mServerCert->derCert.data, mServerCert->derCert.len};
 
   
   Maybe<ByteArray> clientCertSerialized;
