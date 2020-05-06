@@ -26,13 +26,6 @@ const BinaryInputStream = Components.Constructor(
   "setInputStream"
 );
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "gModernConfig",
-  SearchUtils.BROWSER_SEARCH_PREF + "modernConfig",
-  false
-);
-
 const SEARCH_BUNDLE = "chrome://global/locale/search/search.properties";
 const BRAND_BUNDLE = "chrome://branding/locale/brand.properties";
 
@@ -2040,12 +2033,6 @@ SearchEngine.prototype = {
   },
 
   get isAppProvided() {
-    
-    
-    if (gModernConfig) {
-      return this._extensionID && this._isBuiltin;
-    }
-
     if (this._extensionID) {
       return this._isBuiltin || this._isDistribution;
     }
