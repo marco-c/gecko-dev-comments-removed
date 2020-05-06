@@ -58,7 +58,6 @@ static const SnapshotOffset INVALID_RECOVER_OFFSET = uint32_t(-1);
 static const SnapshotOffset INVALID_SNAPSHOT_OFFSET = uint32_t(-1);
 
 
-
 enum BailoutKind {
   
   
@@ -122,6 +121,9 @@ enum BailoutKind {
   Bailout_ObjectIdentityOrTypeGuard,
 
   
+  Bailout_SpecificAtomGuard,
+
+  
   Bailout_NonInt32Input,
   Bailout_NonNumericInput,  
   Bailout_NonBooleanInput,
@@ -175,7 +177,9 @@ enum BailoutKind {
   Bailout_UninitializedLexical,
 
   
-  Bailout_IonExceptionDebugMode
+  Bailout_IonExceptionDebugMode,
+
+  Bailout_Limit
 };
 
 inline const char* BailoutKindString(BailoutKind kind) {
@@ -213,6 +217,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "Bailout_NonIntegerIndex";
     case Bailout_ObjectIdentityOrTypeGuard:
       return "Bailout_ObjectIdentityOrTypeGuard";
+    case Bailout_SpecificAtomGuard:
+      return "Bailout_SpecifcAtomGuard";
     case Bailout_NonInt32Input:
       return "Bailout_NonInt32Input";
     case Bailout_NonNumericInput:
@@ -253,9 +259,12 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "Bailout_UninitializedLexical";
     case Bailout_IonExceptionDebugMode:
       return "Bailout_IonExceptionDebugMode";
-    default:
-      MOZ_CRASH("Invalid BailoutKind");
+
+    case Bailout_Limit:
+      break;
   }
+
+  MOZ_CRASH("Invalid BailoutKind");
 }
 
 static const uint32_t ELEMENT_TYPE_BITS = 5;
