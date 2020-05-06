@@ -125,6 +125,8 @@ TestInterfaceJS.prototype = {
   },
 
   testThrowNsresult() {
+    
+    
     throw Cr.NS_BINDING_ABORTED;
   },
 
