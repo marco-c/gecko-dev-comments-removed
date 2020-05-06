@@ -291,7 +291,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   
   
-  typedef nsTArray<Tuple<uint16_t, uint16_t, uint16_t>> TPortRemapping;
+  typedef CopyableTArray<Tuple<uint16_t, uint16_t, uint16_t>> TPortRemapping;
   Maybe<TPortRemapping> mPortRemapping;
 
   
