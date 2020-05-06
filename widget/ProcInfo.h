@@ -22,13 +22,10 @@ class GeckoChildProcessHost;
 enum class ProcType {
   
   Web,
-  WebIsolated,
   File,
   Extension,
   PrivilegedAbout,
-  PrivilegedMozilla,
   WebLargeAllocation,
-  WebCOOPCOEP,
   
   Browser,  
   Plugin,
@@ -66,8 +63,6 @@ struct ProcInfo {
   
   ProcType type;
   
-  nsString origin;
-  
   nsString filename;
   
   uint64_t virtualMemorySize = 0;
@@ -91,13 +86,11 @@ typedef MozPromise<ProcInfo, nsresult, true> ProcInfoPromise;
 
 #ifdef XP_MACOSX
 RefPtr<ProcInfoPromise> GetProcInfo(base::ProcessId pid, int32_t childId,
-                                    const ProcType& processType,
-                                    const nsAString& origin,
+                                    const ProcType& type,
                                     mach_port_t aChildTask = MACH_PORT_NULL);
 #else
 RefPtr<ProcInfoPromise> GetProcInfo(base::ProcessId pid, int32_t childId,
-                                    const ProcType& processType,
-                                    const nsAString& origin);
+                                    const ProcType& type);
 #endif
 
 }  
