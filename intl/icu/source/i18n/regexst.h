@@ -25,6 +25,7 @@
 #if !UCONFIG_NO_REGULAR_EXPRESSIONS
 
 #include "regeximp.h"
+#include "regexcst.h"
 
 U_NAMESPACE_BEGIN
 
@@ -39,17 +40,16 @@ public:
     RegexStaticSets(UErrorCode *status);         
     ~RegexStaticSets();
     static void    initGlobals(UErrorCode *status);
-    static UBool   cleanup();
 
-    UnicodeSet    *fPropSets[URX_LAST_SET];     
-    Regex8BitSet   fPropSets8[URX_LAST_SET];    
+    UnicodeSet    fPropSets[URX_LAST_SET] {};      
+    Regex8BitSet  fPropSets8[URX_LAST_SET] {};     
 
-    UnicodeSet    fRuleSets[10];               
-    UnicodeSet    fUnescapeCharSet;            
-                                               
-    UnicodeSet    *fRuleDigitsAlias;
-    UText         *fEmptyText;                 
-                                               
+    UnicodeSet    fRuleSets[kRuleSet_count] {};    
+    UnicodeSet    fUnescapeCharSet {};             
+                                                   
+    UnicodeSet    *fRuleDigitsAlias {};
+    UText         *fEmptyText {};                  
+                                                   
 
 };
 

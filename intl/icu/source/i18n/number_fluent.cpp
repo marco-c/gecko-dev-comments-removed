@@ -11,7 +11,6 @@
 #include "number_formatimpl.h"
 #include "umutex.h"
 #include "number_asformat.h"
-#include "number_skeletons.h"
 #include "number_utils.h"
 #include "number_utypes.h"
 #include "util.h"
@@ -20,6 +19,16 @@
 using namespace icu;
 using namespace icu::number;
 using namespace icu::number::impl;
+
+#if (U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN) && defined(_MSC_VER)
+
+
+
+
+
+#pragma warning(push)
+#pragma warning(disable: 4661)
+#endif
 
 template<typename Derived>
 Derived NumberFormatterSettings<Derived>::notation(const Notation& notation) const& {
@@ -320,16 +329,7 @@ Derived NumberFormatterSettings<Derived>::macros(impl::MacroProps&& macros)&& {
     return move;
 }
 
-template<typename Derived>
-UnicodeString NumberFormatterSettings<Derived>::toSkeleton(UErrorCode& status) const {
-    if (U_FAILURE(status)) {
-        return ICU_Utility::makeBogusString();
-    }
-    if (fMacros.copyErrorTo(status)) {
-        return ICU_Utility::makeBogusString();
-    }
-    return skeleton::generate(fMacros, status);
-}
+
 
 template<typename Derived>
 LocalPointer<Derived> NumberFormatterSettings<Derived>::clone() const & {
@@ -358,15 +358,7 @@ LocalizedNumberFormatter NumberFormatter::withLocale(const Locale& locale) {
     return with().locale(locale);
 }
 
-UnlocalizedNumberFormatter
-NumberFormatter::forSkeleton(const UnicodeString& skeleton, UErrorCode& status) {
-    return skeleton::create(skeleton, nullptr, status);
-}
 
-UnlocalizedNumberFormatter
-NumberFormatter::forSkeleton(const UnicodeString& skeleton, UParseError& perror, UErrorCode& status) {
-    return skeleton::create(skeleton, &perror, status);
-}
 
 
 template<typename T> using NFS = NumberFormatterSettings<T>;
@@ -766,14 +758,11 @@ int32_t LocalizedNumberFormatter::getCallCount() const {
     return umtx_loadAcquire(*callCount);
 }
 
-Format* LocalizedNumberFormatter::toFormat(UErrorCode& status) const {
-    if (U_FAILURE(status)) {
-        return nullptr;
-    }
-    LocalPointer<LocalizedNumberFormatterAsFormat> retval(
-            new LocalizedNumberFormatterAsFormat(*this, fMacros.locale), status);
-    return retval.orphan();
-}
 
+
+#if (U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN) && defined(_MSC_VER)
+
+#pragma warning(pop)
+#endif
 
 #endif 

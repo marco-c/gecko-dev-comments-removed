@@ -44,21 +44,21 @@ int32_t ScientificModifier::apply(FormattedStringBuilder &output, int32_t , int3
     i += output.insert(
             i,
             fHandler->fSymbols->getSymbol(DecimalFormatSymbols::ENumberFormatSymbol::kExponentialSymbol),
-            UNUM_EXPONENT_SYMBOL_FIELD,
+            {UFIELD_CATEGORY_NUMBER, UNUM_EXPONENT_SYMBOL_FIELD},
             status);
     if (fExponent < 0 && fHandler->fSettings.fExponentSignDisplay != UNUM_SIGN_NEVER) {
         i += output.insert(
                 i,
                 fHandler->fSymbols
                         ->getSymbol(DecimalFormatSymbols::ENumberFormatSymbol::kMinusSignSymbol),
-                UNUM_EXPONENT_SIGN_FIELD,
+                {UFIELD_CATEGORY_NUMBER, UNUM_EXPONENT_SIGN_FIELD},
                 status);
     } else if (fExponent >= 0 && fHandler->fSettings.fExponentSignDisplay == UNUM_SIGN_ALWAYS) {
         i += output.insert(
                 i,
                 fHandler->fSymbols
                         ->getSymbol(DecimalFormatSymbols::ENumberFormatSymbol::kPlusSignSymbol),
-                UNUM_EXPONENT_SIGN_FIELD,
+                {UFIELD_CATEGORY_NUMBER, UNUM_EXPONENT_SIGN_FIELD},
                 status);
     }
     
@@ -70,7 +70,7 @@ int32_t ScientificModifier::apply(FormattedStringBuilder &output, int32_t , int3
                 i - j,
                 d,
                 *fHandler->fSymbols,
-                UNUM_EXPONENT_FIELD,
+                {UFIELD_CATEGORY_NUMBER, UNUM_EXPONENT_FIELD},
                 status);
     }
     return i - rightIndex;
@@ -93,7 +93,7 @@ bool ScientificModifier::isStrong() const {
     return true;
 }
 
-bool ScientificModifier::containsField(UNumberFormatFields field) const {
+bool ScientificModifier::containsField(Field field) const {
     (void)field;
     
     UPRV_UNREACHABLE;
@@ -148,6 +148,11 @@ void ScientificHandler::processQuantity(DecimalQuantity &quantity, MicroProps &m
     ScientificModifier &mod = micros.helpers.scientificModifier;
     mod.set(exponent, this);
     micros.modInner = &mod;
+
+    
+    
+    
+    quantity.adjustExponent(exponent);
 
     
     micros.rounder = RoundingImpl::passThrough();

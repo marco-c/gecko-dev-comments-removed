@@ -53,10 +53,10 @@ class CompactDecimalFormat;
 
 namespace number {
 class LocalizedNumberFormatter;
-class FormattedNumber;
 namespace impl {
 class DecimalQuantity;
 struct DecimalFormatFields;
+class UFormattedNumberData;
 }
 }
 
@@ -1283,7 +1283,6 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
     virtual void setNegativeSuffix(const UnicodeString& newValue);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1303,7 +1302,6 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     void setSignAlwaysShown(UBool value);
-#endif  
 
     
 
@@ -1650,7 +1648,6 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
     virtual void setSecondaryGroupingSize(int32_t newValue);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1687,8 +1684,6 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     void setMinimumGroupingDigits(int32_t newValue);
-#endif  
-
 
     
 
@@ -1729,7 +1724,6 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
     virtual void setDecimalPatternMatchRequired(UBool newValue);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1789,8 +1783,6 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     void setFormatFailIfMoreThanMaxDigits(UBool value);
-#endif  
-
 
     
 
@@ -2067,7 +2059,6 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 #endif  
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2114,7 +2105,6 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     const number::LocalizedNumberFormatter* toNumberFormatter(UErrorCode& status) const;
-#endif  
 
     
 
@@ -2168,11 +2158,17 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
     const numparse::impl::NumberParserImpl* getCurrencyParser(UErrorCode& status) const;
 
-    static void fieldPositionHelper(const number::FormattedNumber& formatted, FieldPosition& fieldPosition,
-                                    int32_t offset, UErrorCode& status);
+    static void fieldPositionHelper(
+        const number::impl::UFormattedNumberData& formatted,
+        FieldPosition& fieldPosition,
+        int32_t offset,
+        UErrorCode& status);
 
-    static void fieldPositionIteratorHelper(const number::FormattedNumber& formatted,
-                                            FieldPositionIterator* fpi, int32_t offset, UErrorCode& status);
+    static void fieldPositionIteratorHelper(
+        const number::impl::UFormattedNumberData& formatted,
+        FieldPositionIterator* fpi,
+        int32_t offset,
+        UErrorCode& status);
 
     void setupFastFormat();
 

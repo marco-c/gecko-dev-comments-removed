@@ -31,9 +31,11 @@ const DecimalQuantity* validateUFormattedNumberToDecimalQuantity(
 
 
 
-class UFormattedNumberData : public FormattedValueStringBuilderImpl {
+
+
+class U_I18N_API UFormattedNumberData : public FormattedValueStringBuilderImpl {
 public:
-    UFormattedNumberData() : FormattedValueStringBuilderImpl(0) {}
+    UFormattedNumberData() : FormattedValueStringBuilderImpl(kUndefinedField) {}
     virtual ~UFormattedNumberData();
 
     DecimalQuantity quantity;

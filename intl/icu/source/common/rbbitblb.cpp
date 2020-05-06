@@ -18,6 +18,7 @@
 #include "unicode/unistr.h"
 #include "rbbitblb.h"
 #include "rbbirb.h"
+#include "rbbiscan.h"
 #include "rbbisetb.h"
 #include "rbbidata.h"
 #include "cstring.h"
@@ -52,6 +53,7 @@ RBBITableBuilder::~RBBITableBuilder() {
     }
     delete fDStates;
     delete fSafeTable;
+    delete fLookAheadRuleMap;
 }
 
 
@@ -121,7 +123,7 @@ void  RBBITableBuilder::buildForwardTable() {
     }
     cn->fLeftChild = fTree;
     fTree->fParent = cn;
-    cn->fRightChild = new RBBINode(RBBINode::endMark);
+    RBBINode *endMarkerNode = cn->fRightChild = new RBBINode(RBBINode::endMark);
     
     if (cn->fRightChild == NULL) {
         *fStatus = U_MEMORY_ALLOCATION_ERROR;
@@ -164,7 +166,7 @@ void  RBBITableBuilder::buildForwardTable() {
     
     
     if (fRB->fChainRules) {
-        calcChainedFollowPos(fTree);
+        calcChainedFollowPos(fTree, endMarkerNode);
     }
 
     
@@ -178,6 +180,7 @@ void  RBBITableBuilder::buildForwardTable() {
     
     
     buildStateTable();
+    mapLookAheadRules();
     flagAcceptingStates();
     flagLookAheadStates();
     flagTaggedStates();
@@ -401,18 +404,12 @@ void RBBITableBuilder::addRuleRootNodes(UVector *dest, RBBINode *node) {
 
 
 
-void RBBITableBuilder::calcChainedFollowPos(RBBINode *tree) {
+void RBBITableBuilder::calcChainedFollowPos(RBBINode *tree, RBBINode *endMarkNode) {
 
-    UVector         endMarkerNodes(*fStatus);
     UVector         leafNodes(*fStatus);
-    int32_t         i;
-
     if (U_FAILURE(*fStatus)) {
         return;
     }
-
-    
-    tree->findNodes(&endMarkerNodes, RBBINode::endMark, *fStatus);
 
     
     tree->findNodes(&leafNodes, RBBINode::leafChar, *fStatus);
@@ -442,19 +439,17 @@ void RBBITableBuilder::calcChainedFollowPos(RBBINode *tree) {
     int32_t  startNodeIx;
 
     for (endNodeIx=0; endNodeIx<leafNodes.size(); endNodeIx++) {
-        RBBINode *tNode   = (RBBINode *)leafNodes.elementAt(endNodeIx);
-        RBBINode *endNode = NULL;
+        RBBINode *endNode   = (RBBINode *)leafNodes.elementAt(endNodeIx);
 
         
         
-        for (i=0; i<endMarkerNodes.size(); i++) {
-            if (tNode->fFollowPos->contains(endMarkerNodes.elementAt(i))) {
-                endNode = tNode;
-                break;
-            }
-        }
-        if (endNode == NULL) {
-            
+        
+        
+        
+        
+        
+
+        if (!endNode->fFollowPos->contains(endMarkNode)) {
             continue;
         }
 
@@ -474,7 +469,6 @@ void RBBITableBuilder::calcChainedFollowPos(RBBINode *tree) {
                 }
             }
         }
-
 
         
         
@@ -709,6 +703,77 @@ ExitBuildSTdeleteall:
 
 
 
+void RBBITableBuilder::mapLookAheadRules() {
+    fLookAheadRuleMap =  new UVector32(fRB->fScanner->numRules() + 1, *fStatus);
+    if (fLookAheadRuleMap == nullptr) {
+        *fStatus = U_MEMORY_ALLOCATION_ERROR;
+    }
+    if (U_FAILURE(*fStatus)) {
+        return;
+    }
+    fLookAheadRuleMap->setSize(fRB->fScanner->numRules() + 1);
+    int32_t laSlotsInUse = 0;
+
+    for (int32_t n=0; n<fDStates->size(); n++) {
+        RBBIStateDescriptor *sd = (RBBIStateDescriptor *)fDStates->elementAt(n);
+        int32_t laSlotForState = 0;
+
+        
+        
+
+        
+        
+
+        bool sawLookAheadNode = false;
+        for (int32_t ipos=0; ipos<sd->fPositions->size(); ++ipos) {
+            RBBINode *node = static_cast<RBBINode *>(sd->fPositions->elementAt(ipos));
+            if (node->fType != RBBINode::NodeType::lookAhead) {
+                continue;
+            }
+            sawLookAheadNode = true;
+            int32_t ruleNum = node->fVal;     
+            U_ASSERT(ruleNum < fLookAheadRuleMap->size());
+            U_ASSERT(ruleNum > 0);
+            int32_t laSlot = fLookAheadRuleMap->elementAti(ruleNum);
+            if (laSlot != 0) {
+                if (laSlotForState == 0) {
+                    laSlotForState = laSlot;
+                } else {
+                    
+                    U_ASSERT(laSlot == laSlotForState);
+                }
+            }
+        }
+        if (!sawLookAheadNode) {
+            continue;
+        }
+
+        if (laSlotForState == 0) {
+            laSlotForState = ++laSlotsInUse;
+        }
+
+        
+        
+        
+
+        for (int32_t ipos=0; ipos<sd->fPositions->size(); ++ipos) {
+            RBBINode *node = static_cast<RBBINode *>(sd->fPositions->elementAt(ipos));
+            if (node->fType != RBBINode::NodeType::lookAhead) {
+                continue;
+            }
+            int32_t ruleNum = node->fVal;     
+            int32_t existingVal = fLookAheadRuleMap->elementAti(ruleNum);
+            (void)existingVal;
+            U_ASSERT(existingVal == 0 || existingVal == laSlotForState);
+            fLookAheadRuleMap->setElementAt(laSlotForState, ruleNum);
+        }
+    }
+
+}
+
+
+
+
 
 
 
@@ -744,7 +809,7 @@ void     RBBITableBuilder::flagAcceptingStates() {
 
                 if (sd->fAccepting==0) {
                     
-                    sd->fAccepting = endMarker->fVal;
+                    sd->fAccepting = fLookAheadRuleMap->elementAti(endMarker->fVal);
                     if (sd->fAccepting == 0) {
                         sd->fAccepting = -1;
                     }
@@ -753,19 +818,10 @@ void     RBBITableBuilder::flagAcceptingStates() {
                     
                     
                     
-                    sd->fAccepting = endMarker->fVal;
+                    sd->fAccepting = fLookAheadRuleMap->elementAti(endMarker->fVal);
                 }
                 
                 
-
-                
-                
-                if (endMarker->fLookAheadEnd) {
-                    
-                    
-                    
-                    sd->fLookAhead = sd->fAccepting;
-                }
             }
         }
     }
@@ -792,11 +848,20 @@ void     RBBITableBuilder::flagLookAheadStates() {
     }
     for (i=0; i<lookAheadNodes.size(); i++) {
         lookAheadNode = (RBBINode *)lookAheadNodes.elementAt(i);
+        U_ASSERT(lookAheadNode->fType == RBBINode::NodeType::lookAhead);
 
         for (n=0; n<fDStates->size(); n++) {
             RBBIStateDescriptor *sd = (RBBIStateDescriptor *)fDStates->elementAt(n);
-            if (sd->fPositions->indexOf(lookAheadNode) >= 0) {
-                sd->fLookAhead = lookAheadNode->fVal;
+            int32_t positionsIdx = sd->fPositions->indexOf(lookAheadNode);
+            if (positionsIdx >= 0) {
+                U_ASSERT(lookAheadNode == sd->fPositions->elementAt(positionsIdx));
+                int32_t lookaheadSlot = fLookAheadRuleMap->elementAti(lookAheadNode->fVal);
+                U_ASSERT(sd->fLookAhead == 0 || sd->fLookAhead == lookaheadSlot);
+                
+                
+                
+                
+                sd->fLookAhead = lookaheadSlot;
             }
         }
     }
@@ -1203,16 +1268,6 @@ void RBBITableBuilder::removeState(IntPair duplStates) {
                 newVal = existingVal - 1;
             }
             sd->fDtran->setElementAt(newVal, col);
-        }
-        if (sd->fAccepting == duplState) {
-            sd->fAccepting = keepState;
-        } else if (sd->fAccepting > duplState) {
-            sd->fAccepting--;
-        }
-        if (sd->fLookAhead == duplState) {
-            sd->fLookAhead = keepState;
-        } else if (sd->fLookAhead > duplState) {
-            sd->fLookAhead--;
         }
     }
 }

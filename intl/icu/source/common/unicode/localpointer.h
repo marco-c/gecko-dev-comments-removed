@@ -225,7 +225,6 @@ public:
         src.ptr=NULL;
     }
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -238,7 +237,6 @@ public:
 
     explicit LocalPointer(std::unique_ptr<T> &&p)
         : LocalPointerBase<T>(p.release()) {}
-#endif  
 
     
 
@@ -261,7 +259,6 @@ public:
         return *this;
     }
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -274,7 +271,6 @@ public:
         adoptInstead(p.release());
         return *this;
     }
-#endif  
 
     
 
@@ -332,7 +328,6 @@ public:
         }
     }
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -347,7 +342,6 @@ public:
     operator std::unique_ptr<T> () && {
         return std::unique_ptr<T>(LocalPointerBase<T>::orphan());
     }
-#endif  
 };
 
 
@@ -406,7 +400,6 @@ public:
         src.ptr=NULL;
     }
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -419,7 +412,6 @@ public:
 
     explicit LocalArray(std::unique_ptr<T[]> &&p)
         : LocalPointerBase<T>(p.release()) {}
-#endif  
 
     
 
@@ -442,7 +434,6 @@ public:
         return *this;
     }
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -455,7 +446,6 @@ public:
         adoptInstead(p.release());
         return *this;
     }
-#endif  
 
     
 
@@ -521,7 +511,6 @@ public:
 
     T &operator[](ptrdiff_t i) const { return LocalPointerBase<T>::ptr[i]; }
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -536,7 +525,6 @@ public:
     operator std::unique_ptr<T[]> () && {
         return std::unique_ptr<T[]>(LocalPointerBase<T>::orphan());
     }
-#endif  
 };
 
 

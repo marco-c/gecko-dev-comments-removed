@@ -66,7 +66,7 @@ class  RegexCImpl;
 class  RegexMatcher;
 class  RegexPattern;
 struct REStackFrame;
-class  RuleBasedBreakIterator;
+class  BreakIterator;
 class  UnicodeSet;
 class  UVector;
 class  UVector32;
@@ -610,12 +610,6 @@ private:
                                    
 
     UVector32       *fGroupMap;    
-                                   
-
-    UnicodeSet     **fStaticSets;  
-                                   
-
-    Regex8BitSet   *fStaticSets8;  
                                    
 
     int32_t         fStartType;    
@@ -1780,7 +1774,9 @@ private:
     void                 MatchAt(int64_t startIdx, UBool toEnd, UErrorCode &status);
     inline void          backTrack(int64_t &inputIdx, int32_t &patIdx);
     UBool                isWordBoundary(int64_t pos);         
-    UBool                isUWordBoundary(int64_t pos);        
+    UBool                isUWordBoundary(int64_t pos, UErrorCode &status);   
+    
+    int64_t              followingGCBoundary(int64_t pos, UErrorCode &status);
     REStackFrame        *resetStack();
     inline REStackFrame *StateSave(REStackFrame *fp, int64_t savePatIdx, UErrorCode &status);
     void                 IncrementTime(UErrorCode &status);
@@ -1874,7 +1870,8 @@ private:
     UErrorCode          fDeferredStatus;   
                                            
 
-    RuleBasedBreakIterator  *fWordBreakItr;
+    BreakIterator       *fWordBreakItr;
+    BreakIterator       *fGCBreakItr;
 };
 
 U_NAMESPACE_END

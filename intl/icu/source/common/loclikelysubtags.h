@@ -86,6 +86,18 @@ public:
     LSR makeMaximizedLsrFrom(const Locale &locale, UErrorCode &errorCode) const;
 
     
+
+
+
+
+
+
+
+
+
+    int32_t compareLikely(const LSR &lsr, const LSR &other, int32_t likelyInfo) const;
+
+    
     
     
 #if 0
@@ -110,6 +122,8 @@ private:
 
 
     LSR maximize(const char *language, const char *script, const char *region) const;
+
+    int32_t getLikelyIndex(const char *language, const char *script) const;
 
     static int32_t trieNext(BytesTrie &iter, const char *s, int32_t i);
 

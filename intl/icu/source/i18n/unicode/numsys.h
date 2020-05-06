@@ -77,6 +77,12 @@ public:
 
 
 
+    NumberingSystem& operator=(const NumberingSystem& other) = default;
+
+    
+
+
+
     virtual ~NumberingSystem();
 
     

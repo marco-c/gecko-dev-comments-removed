@@ -1039,13 +1039,29 @@ uloc_getLineOrientation(const char* localeId,
 
 
 
+
 typedef enum {
-  ULOC_ACCEPT_FAILED   = 0,  
-  ULOC_ACCEPT_VALID    = 1,  
-  ULOC_ACCEPT_FALLBACK = 2   
+    
 
 
+
+    ULOC_ACCEPT_FAILED   = 0,
+    
+
+
+
+    ULOC_ACCEPT_VALID    = 1,
+    
+
+
+
+
+    ULOC_ACCEPT_FALLBACK = 2   
 } UAcceptResult;
+
+
+
+
 
 
 
@@ -1066,6 +1082,11 @@ uloc_acceptLanguageFromHTTP(char *result, int32_t resultAvailable,
                             const char *httpAcceptLanguage,
                             UEnumeration* availableLocales,
                             UErrorCode *status);
+
+
+
+
+
 
 
 

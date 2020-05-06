@@ -483,6 +483,26 @@ public:
 
     const UnicodeString& getDecimal() const;
 
+#if !UCONFIG_NO_FORMATTING
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+    UDateFormatHourCycle getDefaultHourCycle(UErrorCode& status) const;
+#endif  
+
+#endif 
+    
     
 
 

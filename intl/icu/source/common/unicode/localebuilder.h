@@ -12,7 +12,6 @@
 #include "unicode/stringpiece.h"
 #include "unicode/uobject.h"
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -307,8 +306,6 @@ private:
 };
 
 U_NAMESPACE_END
-
-#endif  
 
 #endif 
 

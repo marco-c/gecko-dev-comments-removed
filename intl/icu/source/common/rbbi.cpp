@@ -883,9 +883,15 @@ int32_t RuleBasedBreakIterator::handleNext() {
                 return lookaheadResult;
             }
         }
+
+        
+        
+        
+        
+        
+        
         int16_t rule = row->fLookAhead;
         if (rule != 0) {
-            
             int32_t  pos = (int32_t)UTEXT_GETNATIVEINDEX(&fText);
             lookAheadMatches.setPosition(rule, pos);
         }
@@ -1111,7 +1117,7 @@ static icu::UInitOnce gRBBIInitOnce = U_INITONCE_INITIALIZER;
 
 
 U_CDECL_BEGIN
-static UBool U_CALLCONV rbbi_cleanup(void) {
+UBool U_CALLCONV rbbi_cleanup(void) {
     delete gLanguageBreakFactories;
     gLanguageBreakFactories = nullptr;
     delete gEmptyString;

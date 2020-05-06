@@ -67,19 +67,50 @@ class U_COMMON_API StringPiece : public UMemory {
 
 
 
-  StringPiece() : ptr_(NULL), length_(0) { }
+  StringPiece() : ptr_(nullptr), length_(0) { }
+
   
 
 
 
 
   StringPiece(const char* str);
+#ifndef U_HIDE_DRAFT_API
+#if defined(__cpp_char8_t) || defined(U_IN_DOXYGEN)
+  
+
+
+
+
+  StringPiece(const char8_t* str) : StringPiece(reinterpret_cast<const char*>(str)) {}
+#endif
+  
+
+
+
+
+
+  StringPiece(std::nullptr_t p) : ptr_(p), length_(0) {}
+#endif  
+
   
 
 
 
   StringPiece(const std::string& str)
     : ptr_(str.data()), length_(static_cast<int32_t>(str.size())) { }
+#ifndef U_HIDE_DRAFT_API
+#if defined(__cpp_lib_char8_t) || defined(U_IN_DOXYGEN)
+  
+
+
+
+  StringPiece(const std::u8string& str)
+    : ptr_(reinterpret_cast<const char*>(str.data())),
+      length_(static_cast<int32_t>(str.size())) { }
+#endif
+#endif  
+
 #ifndef U_HIDE_DRAFT_API
   
 
@@ -100,13 +131,22 @@ class U_COMMON_API StringPiece : public UMemory {
 
 
 
+
+
+
   template <typename T,
             typename = typename std::enable_if<
-                std::is_same<decltype(T().data()), const char*>::value &&
+                (std::is_same<decltype(T().data()), const char*>::value
+#if defined(__cpp_char8_t)
+                    || std::is_same<decltype(T().data()), const char8_t*>::value
+#endif
+                ) &&
                 std::is_same<decltype(T().size()), size_t>::value>::type>
   StringPiece(T str)
-      : ptr_(str.data()), length_(static_cast<int32_t>(str.size())) {}
+      : ptr_(reinterpret_cast<const char*>(str.data())),
+        length_(static_cast<int32_t>(str.size())) {}
 #endif  
+
   
 
 
@@ -114,6 +154,19 @@ class U_COMMON_API StringPiece : public UMemory {
 
 
   StringPiece(const char* offset, int32_t len) : ptr_(offset), length_(len) { }
+#ifndef U_HIDE_DRAFT_API
+#if defined(__cpp_char8_t) || defined(U_IN_DOXYGEN)
+  
+
+
+
+
+
+  StringPiece(const char8_t* str, int32_t len) :
+      StringPiece(reinterpret_cast<const char*>(str), len) {}
+#endif
+#endif  
+
   
 
 
@@ -165,7 +218,7 @@ class U_COMMON_API StringPiece : public UMemory {
 
 
 
-  void clear() { ptr_ = NULL; length_ = 0; }
+  void clear() { ptr_ = nullptr; length_ = 0; }
 
   
 
@@ -181,6 +234,29 @@ class U_COMMON_API StringPiece : public UMemory {
 
 
   void set(const char* str);
+
+#ifndef U_HIDE_DRAFT_API
+#if defined(__cpp_char8_t) || defined(U_IN_DOXYGEN)
+  
+
+
+
+
+
+  inline void set(const char8_t* xdata, int32_t len) {
+      set(reinterpret_cast<const char*>(xdata), len);
+  }
+
+  
+
+
+
+
+  inline void set(const char8_t* str) {
+      set(reinterpret_cast<const char*>(str));
+  }
+#endif
+#endif  
 
   
 
@@ -211,6 +287,26 @@ class U_COMMON_API StringPiece : public UMemory {
       }
     }
   }
+
+#ifndef U_HIDE_DRAFT_API
+  
+
+
+
+
+
+
+  int32_t find(StringPiece needle, int32_t offset);
+
+  
+
+
+
+
+
+
+  int32_t compare(StringPiece other);
+#endif  
 
   
 

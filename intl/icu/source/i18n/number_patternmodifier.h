@@ -50,9 +50,11 @@ class U_I18N_API ImmutablePatternModifier : public MicroPropsGenerator, public U
 
     const Modifier* getModifier(Signum signum, StandardPlural::Form plural) const;
 
+    
+    void addToChain(const MicroPropsGenerator* parent);
+
   private:
-    ImmutablePatternModifier(AdoptingModifierStore* pm, const PluralRules* rules,
-                             const MicroPropsGenerator* parent);
+    ImmutablePatternModifier(AdoptingModifierStore* pm, const PluralRules* rules);
 
     const LocalPointer<AdoptingModifierStore> pm;
     const PluralRules* rules;
@@ -130,8 +132,10 @@ class U_I18N_API MutablePatternModifier
 
 
 
-    void setSymbols(const DecimalFormatSymbols* symbols, const CurrencySymbols* currencySymbols,
-                    UNumberUnitWidth unitWidth, const PluralRules* rules);
+
+
+    void setSymbols(const DecimalFormatSymbols* symbols, const CurrencyUnit& currency,
+                    UNumberUnitWidth unitWidth, const PluralRules* rules, UErrorCode& status);
 
     
 
@@ -165,21 +169,6 @@ class U_I18N_API MutablePatternModifier
 
     ImmutablePatternModifier *createImmutable(UErrorCode &status);
 
-    
-
-
-
-
-
-
-
-
-
-
-
-    ImmutablePatternModifier *
-    createImmutableAndChain(const MicroPropsGenerator *parent, UErrorCode &status);
-
     MicroPropsGenerator &addToChain(const MicroPropsGenerator *parent);
 
     void processQuantity(DecimalQuantity &, MicroProps &micros, UErrorCode &status) const U_OVERRIDE;
@@ -193,7 +182,7 @@ class U_I18N_API MutablePatternModifier
 
     bool isStrong() const U_OVERRIDE;
 
-    bool containsField(UNumberFormatFields field) const U_OVERRIDE;
+    bool containsField(Field field) const U_OVERRIDE;
 
     void getParameters(Parameters& output) const U_OVERRIDE;
 
@@ -219,7 +208,7 @@ class U_I18N_API MutablePatternModifier
     
     const DecimalFormatSymbols *fSymbols;
     UNumberUnitWidth fUnitWidth;
-    const CurrencySymbols *fCurrencySymbols;
+    CurrencySymbols fCurrencySymbols;
     const PluralRules *fRules;
 
     

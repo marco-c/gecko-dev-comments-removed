@@ -29,11 +29,6 @@ U_NAMESPACE_BEGIN
 
 
 
-#ifndef U_FORCE_HIDE_DRAFT_API
-
-
-
-
 
 
 
@@ -58,7 +53,6 @@ class U_I18N_API ConstrainedFieldPosition : public UMemory {
     
     ~ConstrainedFieldPosition();
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -228,22 +222,15 @@ class U_I18N_API ConstrainedFieldPosition : public UMemory {
         int32_t field,
         int32_t start,
         int32_t limit);
-#endif  
 
   private:
     int64_t fContext = 0LL;
     int32_t fField = 0;
     int32_t fStart = 0;
     int32_t fLimit = 0;
-#ifndef U_HIDE_DRAFT_API
     int32_t fCategory = UFIELD_CATEGORY_UNDEFINED;
-#else   
-    int32_t fCategory = 0;
-#endif  
     int8_t fConstraint = 0;
 };
-
-
 
 
 
@@ -321,7 +308,6 @@ class U_I18N_API FormattedValue  {
 
     virtual UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const = 0;
 };
-#endif  
 
 U_NAMESPACE_END
 

@@ -152,7 +152,6 @@ uplrules_select(const UPluralRules *uplrules,
                UChar *keyword, int32_t capacity,
                UErrorCode *status);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -175,7 +174,6 @@ uplrules_selectFormatted(const UPluralRules *uplrules,
                const struct UFormattedNumber* number,
                UChar *keyword, int32_t capacity,
                UErrorCode *status);
-#endif  
 
 #ifndef U_HIDE_INTERNAL_API
 

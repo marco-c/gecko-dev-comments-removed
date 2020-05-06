@@ -350,7 +350,6 @@ public:
 
     UnicodeString select(double number) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -367,7 +366,6 @@ public:
 
 
     UnicodeString select(const number::FormattedNumber& number, UErrorCode& status) const;
-#endif  
 
 #ifndef U_HIDE_INTERNAL_API
     

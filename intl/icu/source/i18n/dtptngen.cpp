@@ -324,6 +324,7 @@ DateTimePatternGenerator::createEmptyInstance(UErrorCode& status) {
 DateTimePatternGenerator::DateTimePatternGenerator(UErrorCode &status) :
     skipMatcher(nullptr),
     fAvailableFormatKeyHash(nullptr),
+    fDefaultHourFormatChar(0),
     internalErrorCode(U_ZERO_ERROR)
 {
     fp = new FormatParser();
@@ -338,6 +339,7 @@ DateTimePatternGenerator::DateTimePatternGenerator(UErrorCode &status) :
 DateTimePatternGenerator::DateTimePatternGenerator(const Locale& locale, UErrorCode &status) :
     skipMatcher(nullptr),
     fAvailableFormatKeyHash(nullptr),
+    fDefaultHourFormatChar(0),
     internalErrorCode(U_ZERO_ERROR)
 {
     fp = new FormatParser();
@@ -356,6 +358,7 @@ DateTimePatternGenerator::DateTimePatternGenerator(const DateTimePatternGenerato
     UObject(),
     skipMatcher(nullptr),
     fAvailableFormatKeyHash(nullptr),
+    fDefaultHourFormatChar(0),
     internalErrorCode(U_ZERO_ERROR)
 {
     fp = new FormatParser();
@@ -655,6 +658,23 @@ void DateTimePatternGenerator::getAllowedHourFormats(const Locale &locale, UErro
     int32_t* allowedFormats = getAllowedHourFormatsLangCountry(language, country, status);
 
     
+    char buffer[8];
+    int32_t count = locale.getKeywordValue("hours", buffer, sizeof(buffer), status);
+
+    fDefaultHourFormatChar = 0;
+    if (U_SUCCESS(status) && count > 0) {
+        if(uprv_strcmp(buffer, "h24") == 0) {
+            fDefaultHourFormatChar = LOW_K;
+        } else if(uprv_strcmp(buffer, "h23") == 0) {
+            fDefaultHourFormatChar = CAP_H;
+        } else if(uprv_strcmp(buffer, "h12") == 0) {
+            fDefaultHourFormatChar = LOW_H;
+        } else if(uprv_strcmp(buffer, "h11") == 0) {
+            fDefaultHourFormatChar = CAP_K;
+        }
+    }
+
+    
     if (allowedFormats == nullptr) {
         UErrorCode localStatus = U_ZERO_ERROR;
         const Region* region = Region::getInstance(country, localStatus);
@@ -667,13 +687,16 @@ void DateTimePatternGenerator::getAllowedHourFormats(const Locale &locale, UErro
     if (allowedFormats != nullptr) {  
         
         
-        switch (allowedFormats[0]) {
-            case ALLOWED_HOUR_FORMAT_h: fDefaultHourFormatChar = LOW_H; break;
-            case ALLOWED_HOUR_FORMAT_H: fDefaultHourFormatChar = CAP_H; break;
-            case ALLOWED_HOUR_FORMAT_K: fDefaultHourFormatChar = CAP_K; break;
-            case ALLOWED_HOUR_FORMAT_k: fDefaultHourFormatChar = LOW_K; break;
-            default: fDefaultHourFormatChar = CAP_H; break;
+        if (!fDefaultHourFormatChar) {
+            switch (allowedFormats[0]) {
+                case ALLOWED_HOUR_FORMAT_h: fDefaultHourFormatChar = LOW_H; break;
+                case ALLOWED_HOUR_FORMAT_H: fDefaultHourFormatChar = CAP_H; break;
+                case ALLOWED_HOUR_FORMAT_K: fDefaultHourFormatChar = CAP_K; break;
+                case ALLOWED_HOUR_FORMAT_k: fDefaultHourFormatChar = LOW_K; break;
+                default: fDefaultHourFormatChar = CAP_H; break;
+            }
         }
+
         for (int32_t i = 0; i < UPRV_LENGTHOF(fAllowedHourFormats); ++i) {
             fAllowedHourFormats[i] = allowedFormats[i + 1];
             if (fAllowedHourFormats[i] == ALLOWED_HOUR_FORMAT_UNKNOWN) {
@@ -681,9 +704,36 @@ void DateTimePatternGenerator::getAllowedHourFormats(const Locale &locale, UErro
             }
         }
     } else {  
-        fDefaultHourFormatChar = CAP_H;
+        if (!fDefaultHourFormatChar) {
+            fDefaultHourFormatChar = CAP_H;
+        }
         fAllowedHourFormats[0] = ALLOWED_HOUR_FORMAT_H;
         fAllowedHourFormats[1] = ALLOWED_HOUR_FORMAT_UNKNOWN;
+    }
+}
+
+UDateFormatHourCycle
+DateTimePatternGenerator::getDefaultHourCycle(UErrorCode& status) const {
+    if (U_FAILURE(status)) {
+        return UDAT_HOUR_CYCLE_23;
+    }
+    if (fDefaultHourFormatChar == 0) {
+        
+        
+        status = U_UNSUPPORTED_ERROR;
+        return UDAT_HOUR_CYCLE_23;
+    }
+    switch (fDefaultHourFormatChar) {
+        case CAP_K:
+            return UDAT_HOUR_CYCLE_11;
+        case LOW_H:
+            return UDAT_HOUR_CYCLE_12;
+        case CAP_H:
+            return UDAT_HOUR_CYCLE_23;
+        case LOW_K:
+            return UDAT_HOUR_CYCLE_24;
+        default:
+            UPRV_UNREACHABLE;
     }
 }
 
@@ -1479,6 +1529,7 @@ DateTimePatternGenerator::getBestRaw(DateTimeMatcher& source,
                                      UErrorCode &status,
                                      const PtnSkeleton** specifiedSkeletonPtr) {
     int32_t bestDistance = 0x7fffffff;
+    int32_t bestMissingFieldMask = -1;
     DistanceInfo tempInfo;
     const UnicodeString *bestPattern=nullptr;
     const PtnSkeleton* specifiedSkeleton=nullptr;
@@ -1492,8 +1543,15 @@ DateTimePatternGenerator::getBestRaw(DateTimeMatcher& source,
             continue;
         }
         int32_t distance=source.getDistance(trial, includeMask, tempInfo);
-        if (distance<bestDistance) {
+        
+        
+        
+        
+        
+        
+        if (distance<bestDistance || (distance==bestDistance && bestMissingFieldMask<tempInfo.missingFieldMask)) {
             bestDistance=distance;
+            bestMissingFieldMask=tempInfo.missingFieldMask;
             bestPattern=patternMap->getPatternFromSkeleton(*trial.getSkeletonPtr(), &specifiedSkeleton);
             missingFields->setTo(tempInfo);
             if (distance==0) {
@@ -1566,6 +1624,8 @@ DateTimePatternGenerator::adjustFieldTypes(const UnicodeString& pattern,
                     
                     
                     
+                    
+                    
 
                     UChar reqFieldChar = dtMatcher->skeleton.original.getFieldChar(typeValue);
                     int32_t reqFieldLen = dtMatcher->skeleton.original.getFieldLength(typeValue);
@@ -1591,9 +1651,28 @@ DateTimePatternGenerator::adjustFieldTypes(const UnicodeString& pattern,
                             && (typeValue!= UDATPG_YEAR_FIELD || reqFieldChar==CAP_Y))
                             ? reqFieldChar
                             : field.charAt(0);
-                    if (typeValue == UDATPG_HOUR_FIELD && (flags & kDTPGSkeletonUsesCapJ) != 0) {
-                        c = fDefaultHourFormatChar;
+                    if (typeValue == UDATPG_HOUR_FIELD && fDefaultHourFormatChar != 0) {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+
+                        if ((flags & kDTPGSkeletonUsesCapJ) != 0 || reqFieldChar == fDefaultHourFormatChar) {
+                            c = fDefaultHourFormatChar;
+                        } else if (reqFieldChar == LOW_H && fDefaultHourFormatChar == CAP_K) {
+                            c = CAP_K;
+                        } else if (reqFieldChar == CAP_H && fDefaultHourFormatChar == LOW_K) {
+                            c = LOW_K;
+                        } else if (reqFieldChar == LOW_K && fDefaultHourFormatChar == CAP_H) {
+                            c = CAP_H;
+                        } else if (reqFieldChar == CAP_K && fDefaultHourFormatChar == LOW_H) {
+                            c = LOW_H;
+                        }
                     }
+
                     field.remove();
                     for (int32_t j=adjFieldLen; j>0; --j) {
                         field += c;
@@ -2118,6 +2197,11 @@ DateTimeMatcher::DateTimeMatcher(const DateTimeMatcher& other) {
     copyFrom(other.skeleton);
 }
 
+DateTimeMatcher& DateTimeMatcher::operator=(const DateTimeMatcher& other) {
+    copyFrom(other.skeleton);
+    return *this;
+}
+
 
 void
 DateTimeMatcher::set(const UnicodeString& pattern, FormatParser* fp) {
@@ -2162,6 +2246,33 @@ DateTimeMatcher::set(const UnicodeString& pattern, FormatParser* fp, PtnSkeleton
         }
         skeletonResult.type[field] = subField;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!skeletonResult.original.isFieldEmpty(UDATPG_MINUTE_FIELD)
+        && !skeletonResult.original.isFieldEmpty(UDATPG_FRACTIONAL_SECOND_FIELD)
+        && skeletonResult.original.isFieldEmpty(UDATPG_SECOND_FIELD)) {
+        
+        for (i = 0; dtTypes[i].patternChar != 0; i++) {
+            if (dtTypes[i].field == UDATPG_SECOND_FIELD) {
+                
+                skeletonResult.original.populate(UDATPG_SECOND_FIELD, dtTypes[i].patternChar, dtTypes[i].minLen);
+                skeletonResult.baseOriginal.populate(UDATPG_SECOND_FIELD, dtTypes[i].patternChar, dtTypes[i].minLen);
+                
+                
+                int16_t subField = dtTypes[i].type;
+                skeletonResult.type[UDATPG_SECOND_FIELD] = (subField > 0) ? subField + 1 : subField;
+                break;
+            }
+        }
+    }
+
     
     if (!skeletonResult.original.isFieldEmpty(UDATPG_HOUR_FIELD)) {
         if (skeletonResult.original.getFieldChar(UDATPG_HOUR_FIELD)==LOW_H || skeletonResult.original.getFieldChar(UDATPG_HOUR_FIELD)==CAP_K) {

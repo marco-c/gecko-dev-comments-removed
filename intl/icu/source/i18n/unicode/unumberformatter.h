@@ -349,7 +349,6 @@ typedef enum UNumberSignDisplay {
 
 
 
-
             UNUM_SIGN_ACCOUNTING_EXCEPT_ZERO,
 
     
@@ -438,7 +437,6 @@ unumf_openForSkeletonAndLocale(const UChar* skeleton, int32_t skeletonLen, const
                                UErrorCode* ec);
 
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -451,10 +449,9 @@ unumf_openForSkeletonAndLocale(const UChar* skeleton, int32_t skeletonLen, const
 
 
 
-U_DRAFT UNumberFormatter* U_EXPORT2
+U_STABLE UNumberFormatter* U_EXPORT2
 unumf_openForSkeletonAndLocaleWithError(
        const UChar* skeleton, int32_t skeletonLen, const char* locale, UParseError* perror, UErrorCode* ec);
-#endif  
 
 
 
@@ -532,7 +529,6 @@ U_STABLE void U_EXPORT2
 unumf_formatDecimal(const UNumberFormatter* uformatter, const char* value, int32_t valueLen,
                     UFormattedNumber* uresult, UErrorCode* ec);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -547,9 +543,8 @@ unumf_formatDecimal(const UNumberFormatter* uformatter, const char* value, int32
 
 
 
-U_DRAFT const UFormattedValue* U_EXPORT2
+U_STABLE const UFormattedValue* U_EXPORT2
 unumf_resultAsValue(const UFormattedNumber* uresult, UErrorCode* ec);
-#endif  
 
 
 

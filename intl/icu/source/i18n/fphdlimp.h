@@ -63,7 +63,8 @@ class FieldPositionOnlyHandler : public FieldPositionHandler {
 
 
 
-class FieldPositionIteratorHandler : public FieldPositionHandler {
+
+class U_I18N_API FieldPositionIteratorHandler : public FieldPositionHandler {
   FieldPositionIterator* iter; 
   UVector32* vec;
   UErrorCode status;

@@ -102,4 +102,16 @@ const LocalizedNumberFormatter& LocalizedNumberFormatterAsFormat::getNumberForma
     return fFormatter;
 }
 
+
+
+
+Format* LocalizedNumberFormatter::toFormat(UErrorCode& status) const {
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+    LocalPointer<LocalizedNumberFormatterAsFormat> retval(
+            new LocalizedNumberFormatterAsFormat(*this, fMacros.locale), status);
+    return retval.orphan();
+}
+
 #endif 

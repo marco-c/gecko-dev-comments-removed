@@ -91,9 +91,10 @@ private:
     void     calcFirstPos(RBBINode *n);
     void     calcLastPos(RBBINode  *n);
     void     calcFollowPos(RBBINode *n);
-    void     calcChainedFollowPos(RBBINode *n);
+    void     calcChainedFollowPos(RBBINode *n, RBBINode *endMarkNode);
     void     bofFixup();
     void     buildStateTable();
+    void     mapLookAheadRules();
     void     flagAcceptingStates();
     void     flagLookAheadStates();
     void     flagTaggedStates();
@@ -174,6 +175,9 @@ private:
 
     
     UVector          *fSafeTable;
+
+    
+    UVector32        *fLookAheadRuleMap = nullptr;
 
 
     RBBITableBuilder(const RBBITableBuilder &other); 

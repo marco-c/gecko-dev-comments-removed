@@ -1274,6 +1274,10 @@ void RBBIRuleScanner::scanSet() {
 
 }
 
+int32_t RBBIRuleScanner::numRules() {
+    return fRuleNum;
+}
+
 U_NAMESPACE_END
 
 #endif 

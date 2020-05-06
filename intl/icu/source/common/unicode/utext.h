@@ -183,25 +183,6 @@ typedef struct UText UText;
 U_STABLE UText * U_EXPORT2
 utext_close(UText *ut);
 
-#if U_SHOW_CPLUSPLUS_API
-
-U_NAMESPACE_BEGIN
-
-
-
-
-
-
-
-
-
-
-U_DEFINE_LOCAL_OPEN_POINTER(LocalUTextPointer, UText, utext_close);
-
-U_NAMESPACE_END
-
-#endif
-
 
 
 
@@ -1598,6 +1579,25 @@ enum {
 
 U_CDECL_END
 
+
+#if U_SHOW_CPLUSPLUS_API
+
+U_NAMESPACE_BEGIN
+
+
+
+
+
+
+
+
+
+
+U_DEFINE_LOCAL_OPEN_POINTER(LocalUTextPointer, UText, utext_close);
+
+U_NAMESPACE_END
+
+#endif
 
 
 #endif

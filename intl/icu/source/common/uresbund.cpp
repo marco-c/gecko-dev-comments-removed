@@ -2611,8 +2611,8 @@ ures_getFunctionalEquivalent(char *result, int32_t resultCapacity,
     char defVal[1024] = ""; 
     char defLoc[1024] = ""; 
     char base[1024] = ""; 
-    char found[1024];
-    char parent[1024];
+    char found[1024] = "";
+    char parent[1024] = "";
     char full[1024] = "";
     UResourceBundle bund1, bund2;
     UResourceBundle *res = NULL;

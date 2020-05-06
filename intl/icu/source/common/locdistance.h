@@ -26,6 +26,24 @@ class LocaleDistance final : public UMemory {
 public:
     static const LocaleDistance *getSingleton(UErrorCode &errorCode);
 
+    static int32_t shiftDistance(int32_t distance) {
+        return distance << DISTANCE_SHIFT;
+    }
+
+    static int32_t getShiftedDistance(int32_t indexAndDistance) {
+        return indexAndDistance & DISTANCE_MASK;
+    }
+
+    static double getDistanceDouble(int32_t indexAndDistance) {
+        double shiftedDistance = getShiftedDistance(indexAndDistance);
+        return shiftedDistance / (1 << DISTANCE_SHIFT);
+    }
+
+    static int32_t getIndex(int32_t indexAndDistance) {
+        
+        return indexAndDistance >> INDEX_SHIFT;
+    }
+
     
 
 
@@ -36,9 +54,9 @@ public:
 
     int32_t getBestIndexAndDistance(const LSR &desired,
                                     const LSR **supportedLSRs, int32_t supportedLSRsLength,
-                                    int32_t threshold, ULocMatchFavorSubtag favorSubtag) const;
-
-    int32_t getParadigmLSRsLength() const { return paradigmLSRsLength; }
+                                    int32_t shiftedThreshold,
+                                    ULocMatchFavorSubtag favorSubtag,
+                                    ULocMatchDirection direction) const;
 
     UBool isParadigmLSR(const LSR &lsr) const;
 
@@ -51,11 +69,33 @@ public:
     }
 
 private:
-    LocaleDistance(const LocaleDistanceData &data);
+    
+    static constexpr int32_t DISTANCE_SHIFT = 3;
+    static constexpr int32_t DISTANCE_FRACTION_MASK = 7;
+    
+    static constexpr int32_t DISTANCE_INT_SHIFT = 7;
+    static constexpr int32_t INDEX_SHIFT = DISTANCE_INT_SHIFT + DISTANCE_SHIFT;
+    static constexpr int32_t DISTANCE_MASK = 0x3ff;
+    
+    static constexpr int32_t INDEX_NEG_1 = 0xfffffc00;
+
+    static int32_t getDistanceFloor(int32_t indexAndDistance) {
+        return (indexAndDistance & DISTANCE_MASK) >> DISTANCE_SHIFT;
+    }
+
+    LocaleDistance(const LocaleDistanceData &data, const XLikelySubtags &likely);
     LocaleDistance(const LocaleDistance &other) = delete;
     LocaleDistance &operator=(const LocaleDistance &other) = delete;
 
     static void initLocaleDistance(UErrorCode &errorCode);
+
+    UBool isMatch(const LSR &desired, const LSR &supported,
+                  int32_t shiftedThreshold, ULocMatchFavorSubtag favorSubtag) const {
+        const LSR *pSupp = &supported;
+        return getBestIndexAndDistance(
+            desired, &pSupp, 1,
+            shiftedThreshold, favorSubtag, ULOCMATCH_DIRECTION_WITH_ONE_WAY) >= 0;
+    }
 
     static int32_t getDesSuppScriptDistance(BytesTrie &iter, uint64_t startState,
                                             const char *desired, const char *supported);
@@ -78,6 +118,8 @@ private:
     int32_t getDefaultRegionDistance() const {
         return defaultRegionDistance;
     }
+
+    const XLikelySubtags &likelySubtags;
 
     
     

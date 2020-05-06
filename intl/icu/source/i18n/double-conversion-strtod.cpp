@@ -49,10 +49,12 @@ U_NAMESPACE_BEGIN
 
 namespace double_conversion {
 
+#if defined(DOUBLE_CONVERSION_CORRECT_DOUBLE_OPERATIONS)
 
 
 
 static const int kMaxExactDoubleIntegerDecimalDigits = 15;
+#endif 
 
 static const int kMaxUint64DecimalDigits = 19;
 
@@ -69,6 +71,7 @@ static const int kMinDecimalPower = -324;
 static const uint64_t kMaxUint64 = DOUBLE_CONVERSION_UINT64_2PART_C(0xFFFFFFFF, FFFFFFFF);
 
 
+#if defined(DOUBLE_CONVERSION_CORRECT_DOUBLE_OPERATIONS)
 static const double exact_powers_of_ten[] = {
   1.0,  
   10.0,
@@ -96,6 +99,7 @@ static const double exact_powers_of_ten[] = {
   10000000000000000000000.0
 };
 static const int kExactPowersOfTenSize = DOUBLE_CONVERSION_ARRAY_SIZE(exact_powers_of_ten);
+#endif 
 
 
 

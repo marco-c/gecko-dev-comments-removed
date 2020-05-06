@@ -150,6 +150,26 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
 
 
+
+    int32_t getExponent() const;
+
+    
+
+
+
+
+
+
+
+
+
+
+    void adjustExponent(int32_t delta);
+
+    
+
+
+
     bool isZeroish() const;
 
     
@@ -165,7 +185,17 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     bool isNaN() const U_OVERRIDE;
 
     
+
+
+
+
+
     int64_t toLong(bool truncateIfOverflow = false) const;
+
+    
+
+
+
 
     uint64_t toFractionLong(bool includeTrailingZeros) const;
 
@@ -350,6 +380,10 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     
     int32_t lReqPos = 0;
     int32_t rReqPos = 0;
+
+    
+    
+    int32_t exponent = 0;
 
     
 

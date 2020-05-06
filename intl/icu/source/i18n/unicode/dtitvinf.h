@@ -360,6 +360,7 @@ private:
         kIPI_HOUR,
         kIPI_MINUTE,
         kIPI_SECOND,
+        kIPI_MILLISECOND,
         kIPI_MAX_INDEX
     };
 public:

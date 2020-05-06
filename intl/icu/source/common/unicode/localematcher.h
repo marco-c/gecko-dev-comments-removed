@@ -20,7 +20,7 @@
 
 
 
-#ifndef U_HIDE_DRAFT_API
+#ifndef U_FORCE_HIDE_DRAFT_API
 
 
 
@@ -91,6 +91,42 @@ enum ULocMatchDemotion {
 };
 #ifndef U_IN_DOXYGEN
 typedef enum ULocMatchDemotion ULocMatchDemotion;
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum ULocMatchDirection {
+    
+
+
+
+
+    ULOCMATCH_DIRECTION_WITH_ONE_WAY,
+    
+
+
+
+
+
+    ULOCMATCH_DIRECTION_ONLY_TWO_WAY
+};
+#ifndef U_IN_DOXYGEN
+typedef enum ULocMatchDirection ULocMatchDirection;
 #endif
 
 struct UHashtable;
@@ -182,6 +218,7 @@ public:
 
         Result &operator=(Result &&src) U_NOEXCEPT;
 
+#ifndef U_HIDE_DRAFT_API
         
 
 
@@ -236,6 +273,7 @@ public:
 
 
         Locale makeResolvedLocale(UErrorCode &errorCode) const;
+#endif  
 
     private:
         Result(const Locale *desired, const Locale *supported,
@@ -298,6 +336,7 @@ public:
 
         Builder &operator=(Builder &&src) U_NOEXCEPT;
 
+#ifndef U_HIDE_DRAFT_API
         
 
 
@@ -420,6 +459,21 @@ public:
 
 
 
+        Builder &setDirection(ULocMatchDirection direction) {
+            if (U_SUCCESS(errorCode_)) {
+                direction_ = direction;
+            }
+            return *this;
+        }
+
+        
+
+
+
+
+
+
+
 
 
         UBool copyErrorTo(UErrorCode &outErrorCode) const;
@@ -435,6 +489,7 @@ public:
 
 
         LocaleMatcher build(UErrorCode &errorCode) const;
+#endif  
 
     private:
         friend class LocaleMatcher;
@@ -451,6 +506,7 @@ public:
         ULocMatchDemotion demotion_ = ULOCMATCH_DEMOTION_REGION;
         Locale *defaultLocale_ = nullptr;
         ULocMatchFavorSubtag favor_ = ULOCMATCH_FAVOR_LANGUAGE;
+        ULocMatchDirection direction_ = ULOCMATCH_DIRECTION_WITH_ONE_WAY;
     };
 
     
@@ -479,6 +535,7 @@ public:
 
     LocaleMatcher &operator=(LocaleMatcher &&src) U_NOEXCEPT;
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -546,6 +603,7 @@ public:
 
 
     Result getBestMatchResult(Locale::Iterator &desiredLocales, UErrorCode &errorCode) const;
+#endif  
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -574,6 +632,8 @@ private:
     LocaleMatcher(const LocaleMatcher &other) = delete;
     LocaleMatcher &operator=(const LocaleMatcher &other) = delete;
 
+    int32_t putIfAbsent(const LSR &lsr, int32_t i, int32_t suppLength, UErrorCode &errorCode);
+
     int32_t getBestSuppIndex(LSR desiredLSR, LocaleLsrIterator *remainingIter, UErrorCode &errorCode) const;
 
     const XLikelySubtags &likelySubtags;
@@ -581,6 +641,7 @@ private:
     int32_t thresholdDistance;
     int32_t demotionPerDesiredLocale;
     ULocMatchFavorSubtag favorSubtag;
+    ULocMatchDirection direction;
 
     
     const Locale ** supportedLocales;
@@ -595,7 +656,6 @@ private:
     int32_t supportedLSRsLength;
     Locale *ownedDefaultLocale;
     const Locale *defaultLocale;
-    int32_t defaultLocaleIndex;
 };
 
 U_NAMESPACE_END

@@ -291,6 +291,17 @@ public:
 
     void setSymbol(ENumberFormatSymbol symbol, const UnicodeString &value, const UBool propogateDigits);
 
+#ifndef U_HIDE_INTERNAL_API
+    
+
+
+
+
+
+
+    void setCurrency(const UChar* currency, UErrorCode& status);
+#endif  
+
     
 
 
@@ -373,8 +384,6 @@ private:
 
 
     void initialize();
-
-    void setCurrencyForSymbols();
 
 public:
 

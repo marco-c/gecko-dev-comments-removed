@@ -210,6 +210,12 @@ protected:
 
 
 
+    BasicTimeZone& operator=(const BasicTimeZone&) = default;
+
+    
+
+
+
 
 
 

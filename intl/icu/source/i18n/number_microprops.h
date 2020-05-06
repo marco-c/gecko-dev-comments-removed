@@ -37,7 +37,7 @@ struct MicroProps : public MicroPropsGenerator {
     
     const DecimalFormatSymbols* symbols;
     const Modifier* modOuter;
-    const Modifier* modMiddle;
+    const Modifier* modMiddle = nullptr;
     const Modifier* modInner;
 
     

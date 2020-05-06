@@ -38,7 +38,6 @@ U_NAMESPACE_BEGIN
 class FormattedDateIntervalData;
 class DateIntervalFormat;
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -109,7 +108,7 @@ class U_I18N_API FormattedDateInterval : public UMemory, public FormattedValue {
         : fData(nullptr), fErrorCode(errorCode) {}
     friend class DateIntervalFormat;
 };
-#endif 
+
 
 
 
@@ -503,7 +502,6 @@ public:
                           FieldPosition& fieldPosition,
                           UErrorCode& status) const ;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -517,7 +515,6 @@ public:
     FormattedDateInterval formatToValue(
         const DateInterval& dtInterval,
         UErrorCode& status) const;
-#endif 
 
     
 
@@ -548,7 +545,6 @@ public:
                           FieldPosition& fieldPosition,
                           UErrorCode& status) const ;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -569,7 +565,6 @@ public:
         Calendar& fromCalendar,
         Calendar& toCalendar,
         UErrorCode& status) const;
-#endif 
 
     
 

@@ -23,6 +23,18 @@ namespace impl {
 class PatternParser;
 
 
+enum PatternSignType {
+    
+    PATTERN_SIGN_TYPE_POS,
+    
+    PATTERN_SIGN_TYPE_POS_SIGN,
+    
+    PATTERN_SIGN_TYPE_NEG,
+    
+    PATTERN_SIGN_TYPE_COUNT
+};
+
+
 struct U_I18N_API Endpoints {
     int32_t start = 0;
     int32_t end = 0;
@@ -295,9 +307,11 @@ class U_I18N_API PatternStringUtils {
 
 
     static void patternInfoToStringBuilder(const AffixPatternProvider& patternInfo, bool isPrefix,
-                                           Signum signum, UNumberSignDisplay signDisplay,
+                                           PatternSignType patternSignType,
                                            StandardPlural::Form plural, bool perMilleReplacesPercent,
                                            UnicodeString& output);
+
+    static PatternSignType resolveSignDisplay(UNumberSignDisplay signDisplay, Signum signum);
 
   private:
     

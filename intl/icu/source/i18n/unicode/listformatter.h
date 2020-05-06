@@ -26,10 +26,10 @@
 #include "unicode/unistr.h"
 #include "unicode/locid.h"
 #include "unicode/formattedvalue.h"
+#include "unicode/ulistformatter.h"
 
 U_NAMESPACE_BEGIN
 
-class FieldPositionIterator;
 class FieldPositionHandler;
 class FormattedListData;
 class ListFormatter;
@@ -50,9 +50,11 @@ struct ListFormatData : public UMemory {
     UnicodeString startPattern;
     UnicodeString middlePattern;
     UnicodeString endPattern;
+    Locale locale;
 
-  ListFormatData(const UnicodeString& two, const UnicodeString& start, const UnicodeString& middle, const UnicodeString& end) :
-      twoPattern(two), startPattern(start), middlePattern(middle), endPattern(end) {}
+  ListFormatData(const UnicodeString& two, const UnicodeString& start, const UnicodeString& middle, const UnicodeString& end,
+                 const Locale& loc) :
+      twoPattern(two), startPattern(start), middlePattern(middle), endPattern(end), locale(loc) {}
 };
 
 
@@ -64,7 +66,6 @@ struct ListFormatData : public UMemory {
 
 
 #if !UCONFIG_NO_FORMATTING
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -135,7 +136,6 @@ class U_I18N_API FormattedList : public UMemory, public FormattedValue {
     friend class ListFormatter;
 };
 #endif 
-#endif 
 
 
 
@@ -185,8 +185,27 @@ class U_I18N_API ListFormatter : public UObject{
 
     static ListFormatter* createInstance(const Locale& locale, UErrorCode& errorCode);
 
+#ifndef U_HIDE_DRAFT_API
+#if !UCONFIG_NO_FORMATTING
+    
+
+
+
+
+
+
+
+
+
+    static ListFormatter* createInstance(
+      const Locale& locale, UListFormatterType type, UListFormatterWidth width, UErrorCode& errorCode);
+#endif  
+#endif  
+  
 #ifndef U_HIDE_INTERNAL_API
     
+
+
 
 
 
@@ -220,29 +239,7 @@ class U_I18N_API ListFormatter : public UObject{
     UnicodeString& format(const UnicodeString items[], int32_t n_items,
         UnicodeString& appendTo, UErrorCode& errorCode) const;
 
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    UnicodeString& format(const UnicodeString items[], int32_t n_items,
-        UnicodeString & appendTo, FieldPositionIterator* posIter,
-        UErrorCode& errorCode) const;
-#endif 
-
 #if !UCONFIG_NO_FORMATTING
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -258,7 +255,6 @@ class U_I18N_API ListFormatter : public UObject{
         const UnicodeString items[],
         int32_t n_items,
         UErrorCode& errorCode) const;
-#endif  
 #endif 
 
 #ifndef U_HIDE_INTERNAL_API

@@ -377,12 +377,10 @@ typedef enum UNumberFormatFields {
     UNUM_PERMILL_FIELD,
     
     UNUM_SIGN_FIELD,
-#ifndef U_HIDE_DRAFT_API
     
     UNUM_MEASURE_UNIT_FIELD,
     
     UNUM_COMPACT_FIELD,
-#endif  
 
 #ifndef U_HIDE_DEPRECATED_API
     
@@ -1032,7 +1030,6 @@ typedef enum UNumberFormatAttribute {
 
   UNUM_SCALE = 21,
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -1042,7 +1039,6 @@ typedef enum UNumberFormatAttribute {
 
 
   UNUM_MINIMUM_GROUPING_DIGITS = 22,
-#endif 
 
   
 
@@ -1083,8 +1079,6 @@ typedef enum UNumberFormatAttribute {
 
   UNUM_PARSE_DECIMAL_MARK_REQUIRED = 0x1002,
 
-#ifndef U_HIDE_DRAFT_API
-
   
 
 
@@ -1100,8 +1094,6 @@ typedef enum UNumberFormatAttribute {
 
 
   UNUM_SIGN_ALWAYS_SHOWN = 0x1004,
-
-#endif 
 
 #ifndef U_HIDE_INTERNAL_API
   

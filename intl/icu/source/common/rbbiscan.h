@@ -73,6 +73,8 @@ public:
                                                     
                                                     
 
+    int32_t     numRules();                         
+
     
 
 

@@ -264,7 +264,6 @@ class UnicodeString;
 class FormattedRelativeDateTime;
 class FormattedRelativeDateTimeData;
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -327,7 +326,6 @@ class U_I18N_API FormattedRelativeDateTime : public UMemory, public FormattedVal
         : fData(nullptr), fErrorCode(errorCode) {}
     friend class RelativeDateTimeFormatter;
 };
-#endif  
 
 
 
@@ -492,7 +490,6 @@ public:
             UnicodeString& appendTo,
             UErrorCode& status) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -515,7 +512,6 @@ public:
             UDateDirection direction,
             UDateRelativeUnit unit,
             UErrorCode& status) const;
-#endif  
 
     
 
@@ -539,7 +535,6 @@ public:
             UnicodeString& appendTo,
             UErrorCode& status) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -559,7 +554,6 @@ public:
             UDateDirection direction,
             UDateAbsoluteUnit unit,
             UErrorCode& status) const;
-#endif  
 
     
 
@@ -587,7 +581,6 @@ public:
             UnicodeString& appendTo,
             UErrorCode& status) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -610,7 +603,6 @@ public:
             double offset,
             URelativeDateTimeUnit unit,
             UErrorCode& status) const;
-#endif  
 
     
 
@@ -638,7 +630,6 @@ public:
             UnicodeString& appendTo,
             UErrorCode& status) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -661,7 +652,6 @@ public:
             double offset,
             URelativeDateTimeUnit unit,
             UErrorCode& status) const;
-#endif  
 
     
 
@@ -724,13 +714,11 @@ private:
             UErrorCode& status,
             Args... args) const;
 
-#ifndef U_HIDE_DRAFT_API  
     template<typename F, typename... Args>
     FormattedRelativeDateTime doFormatToValue(
             F callback,
             UErrorCode& status,
             Args... args) const;
-#endif  
 
     void formatImpl(
             double quantity,

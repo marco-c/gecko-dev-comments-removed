@@ -34,16 +34,13 @@
 struct UListFormatter;
 typedef struct UListFormatter UListFormatter;  
 
-#ifndef U_HIDE_DRAFT_API
 struct UFormattedList;
 
 
 
 
 typedef struct UFormattedList UFormattedList;
-#endif  
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -61,7 +58,65 @@ typedef enum UListFormatterField {
 
     ULISTFMT_ELEMENT_FIELD
 } UListFormatterField;
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+typedef enum UListFormatterType {
+    
+
+
+
+
+    ULISTFMT_TYPE_AND,
+
+    
+
+
+
+
+
+    ULISTFMT_TYPE_OR,
+
+    
+
+
+
+
+    ULISTFMT_TYPE_UNITS
+} UListFormatterType;
+
+
+
+
+
+
+typedef enum UListFormatterWidth {
+    
+
+
+
+
+    ULISTFMT_WIDTH_WIDE,
+
+    
+
+
+
+    ULISTFMT_WIDTH_SHORT,
+
+    
+
+
+
+    ULISTFMT_WIDTH_NARROW,
+} UListFormatterWidth;
 #endif 
+
+
 
 
 
@@ -83,6 +138,34 @@ U_CAPI UListFormatter* U_EXPORT2
 ulistfmt_open(const char*  locale,
               UErrorCode*  status);
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT UListFormatter* U_EXPORT2
+ulistfmt_openForType(const char*  locale, UListFormatterType type,
+                     UListFormatterWidth width, UErrorCode*  status);
+#endif 
+
 
 
 
@@ -92,7 +175,6 @@ ulistfmt_open(const char*  locale,
 U_CAPI void U_EXPORT2
 ulistfmt_close(UListFormatter *listfmt);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -137,7 +219,6 @@ ulistfmt_resultAsValue(const UFormattedList* uresult, UErrorCode* ec);
 
 U_CAPI void U_EXPORT2
 ulistfmt_closeResult(UFormattedList* uresult);
-#endif 
 
 
 #if U_SHOW_CPLUSPLUS_API
@@ -155,7 +236,6 @@ U_NAMESPACE_BEGIN
 
 U_DEFINE_LOCAL_OPEN_POINTER(LocalUListFormatterPointer, UListFormatter, ulistfmt_close);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -166,7 +246,6 @@ U_DEFINE_LOCAL_OPEN_POINTER(LocalUListFormatterPointer, UListFormatter, ulistfmt
 
 
 U_DEFINE_LOCAL_OPEN_POINTER(LocalUFormattedListPointer, UFormattedList, ulistfmt_closeResult);
-#endif 
 
 U_NAMESPACE_END
 
@@ -215,7 +294,6 @@ ulistfmt_format(const UListFormatter* listfmt,
                 int32_t            resultCapacity,
                 UErrorCode*        status);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -250,7 +328,6 @@ ulistfmt_formatStringsToResult(
                 int32_t            stringCount,
                 UFormattedList*    uresult,
                 UErrorCode*        status);
-#endif 
 
 #endif 
 

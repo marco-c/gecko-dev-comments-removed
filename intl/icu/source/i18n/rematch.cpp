@@ -177,6 +177,7 @@ RegexMatcher::~RegexMatcher() {
 
     #if UCONFIG_NO_BREAK_ITERATION==0
     delete fWordBreakItr;
+    delete fGCBreakItr;
     #endif
 }
 
@@ -222,6 +223,7 @@ void RegexMatcher::init(UErrorCode &status) {
     fDeferredStatus    = status;
     fData              = fSmallData;
     fWordBreakItr      = NULL;
+    fGCBreakItr        = NULL;
 
     fStack             = NULL;
     fInputText         = NULL;
@@ -1854,12 +1856,15 @@ RegexMatcher &RegexMatcher::reset(const UnicodeString &input) {
     
     fInputUniStrMaybeMutable = TRUE;
 
-    if (fWordBreakItr != NULL) {
 #if UCONFIG_NO_BREAK_ITERATION==0
-        UErrorCode status = U_ZERO_ERROR;
-        fWordBreakItr->setText(fInputText, status);
-#endif
+    if (fWordBreakItr) {
+        fWordBreakItr->setText(fInputText, fDeferredStatus);
     }
+    if (fGCBreakItr) {
+        fGCBreakItr->setText(fInputText, fDeferredStatus);
+    }
+#endif
+
     return *this;
 }
 
@@ -1876,12 +1881,14 @@ RegexMatcher &RegexMatcher::reset(UText *input) {
         delete fInput;
         fInput = NULL;
 
-        if (fWordBreakItr != NULL) {
 #if UCONFIG_NO_BREAK_ITERATION==0
-            UErrorCode status = U_ZERO_ERROR;
-            fWordBreakItr->setText(input, status);
-#endif
+        if (fWordBreakItr) {
+            fWordBreakItr->setText(input, fDeferredStatus);
         }
+        if (fGCBreakItr) {
+            fGCBreakItr->setText(fInputText, fDeferredStatus);
+        }
+#endif
     }
     reset();
     fInputUniStrMaybeMutable = FALSE;
@@ -2542,7 +2549,7 @@ UBool RegexMatcher::isWordBoundary(int64_t pos) {
             
             return FALSE;
         }
-        cIsWord = fPattern->fStaticSets[URX_ISWORD_SET]->contains(c);
+        cIsWord = RegexStaticSets::gStaticSets->fPropSets[URX_ISWORD_SET].contains(c);
     }
 
     
@@ -2555,7 +2562,7 @@ UBool RegexMatcher::isWordBoundary(int64_t pos) {
         UChar32 prevChar = UTEXT_PREVIOUS32(fInputText);
         if (!(u_hasBinaryProperty(prevChar, UCHAR_GRAPHEME_EXTEND)
               || u_charType(prevChar) == U_FORMAT_CHAR)) {
-            prevCIsWord = fPattern->fStaticSets[URX_ISWORD_SET]->contains(prevChar);
+            prevCIsWord = RegexStaticSets::gStaticSets->fPropSets[URX_ISWORD_SET].contains(prevChar);
             break;
         }
     }
@@ -2580,7 +2587,7 @@ UBool RegexMatcher::isChunkWordBoundary(int32_t pos) {
             
             return FALSE;
         }
-        cIsWord = fPattern->fStaticSets[URX_ISWORD_SET]->contains(c);
+        cIsWord = RegexStaticSets::gStaticSets->fPropSets[URX_ISWORD_SET].contains(c);
     }
 
     
@@ -2594,7 +2601,7 @@ UBool RegexMatcher::isChunkWordBoundary(int32_t pos) {
         U16_PREV(inputBuf, fLookStart, pos, prevChar);
         if (!(u_hasBinaryProperty(prevChar, UCHAR_GRAPHEME_EXTEND)
               || u_charType(prevChar) == U_FORMAT_CHAR)) {
-            prevCIsWord = fPattern->fStaticSets[URX_ISWORD_SET]->contains(prevChar);
+            prevCIsWord = RegexStaticSets::gStaticSets->fPropSets[URX_ISWORD_SET].contains(prevChar);
             break;
         }
     }
@@ -2611,35 +2618,58 @@ UBool RegexMatcher::isChunkWordBoundary(int32_t pos) {
 
 
 
-UBool RegexMatcher::isUWordBoundary(int64_t pos) {
+UBool RegexMatcher::isUWordBoundary(int64_t pos, UErrorCode &status) {
     UBool       returnVal = FALSE;
+
 #if UCONFIG_NO_BREAK_ITERATION==0
+    
+    
 
     
-    if (fWordBreakItr == NULL) {
-        fWordBreakItr =
-            (RuleBasedBreakIterator *)BreakIterator::createWordInstance(Locale::getEnglish(), fDeferredStatus);
-        if (U_FAILURE(fDeferredStatus)) {
+    if (fWordBreakItr == nullptr) {
+        fWordBreakItr = BreakIterator::createWordInstance(Locale::getEnglish(), status);
+        if (U_FAILURE(status)) {
             return FALSE;
         }
-        fWordBreakItr->setText(fInputText, fDeferredStatus);
+        fWordBreakItr->setText(fInputText, status);
     }
 
+    
+    
     if (pos >= fLookLimit) {
         fHitEnd = TRUE;
         returnVal = TRUE;   
                             
                             
     } else {
-        if (!UTEXT_USES_U16(fInputText)) {
-            
-            UErrorCode status = U_ZERO_ERROR;
-            pos = utext_extract(fInputText, 0, pos, NULL, 0, &status);
-        }
         returnVal = fWordBreakItr->isBoundary((int32_t)pos);
     }
 #endif
     return   returnVal;
+}
+
+
+int64_t RegexMatcher::followingGCBoundary(int64_t pos, UErrorCode &status) {
+    int64_t result = pos;
+
+#if UCONFIG_NO_BREAK_ITERATION==0
+    
+    
+
+    
+    if (fGCBreakItr == nullptr) {
+        fGCBreakItr = BreakIterator::createCharacterInstance(Locale::getEnglish(), status);
+        if (U_FAILURE(status)) {
+            return pos;
+        }
+        fGCBreakItr->setText(fInputText, status);
+    }
+    result = fGCBreakItr->following(pos);
+    if (result == BreakIterator::DONE) {
+        result = pos;
+    }
+#endif
+    return result;
 }
 
 
@@ -3082,7 +3112,7 @@ void RegexMatcher::MatchAt(int64_t startIdx, UBool toEnd, UErrorCode &status) {
 
         case URX_BACKSLASH_BU:          
             {
-                UBool success = isUWordBoundary(fp->fInputIdx);
+                UBool success = isUWordBoundary(fp->fInputIdx, status);
                 success ^= (UBool)(opValue != 0);     
                 if (!success) {
                     fp = (REStackFrame *)fStack->popFrame(fFrameSize);
@@ -3185,98 +3215,20 @@ void RegexMatcher::MatchAt(int64_t startIdx, UBool toEnd, UErrorCode &status) {
 
         case URX_BACKSLASH_X:
             
+
             
-            
-            {
-
-                
-                if (fp->fInputIdx >= fActiveLimit) {
-                    fHitEnd = TRUE;
-                    fp = (REStackFrame *)fStack->popFrame(fFrameSize);
-                    break;
-                }
-
-                UTEXT_SETNATIVEINDEX(fInputText, fp->fInputIdx);
-
-                
-                
-                UChar32  c;
-                c = UTEXT_NEXT32(fInputText);
-                fp->fInputIdx = UTEXT_GETNATIVEINDEX(fInputText);
-                UnicodeSet **sets = fPattern->fStaticSets;
-                if (sets[URX_GC_NORMAL]->contains(c))  goto GC_Extend;
-                if (sets[URX_GC_CONTROL]->contains(c)) goto GC_Control;
-                if (sets[URX_GC_L]->contains(c))       goto GC_L;
-                if (sets[URX_GC_LV]->contains(c))      goto GC_V;
-                if (sets[URX_GC_LVT]->contains(c))     goto GC_T;
-                if (sets[URX_GC_V]->contains(c))       goto GC_V;
-                if (sets[URX_GC_T]->contains(c))       goto GC_T;
-                goto GC_Extend;
-
-
-
-GC_L:
-                if (fp->fInputIdx >= fActiveLimit)         goto GC_Done;
-                c = UTEXT_NEXT32(fInputText);
-                fp->fInputIdx = UTEXT_GETNATIVEINDEX(fInputText);
-                if (sets[URX_GC_L]->contains(c))       goto GC_L;
-                if (sets[URX_GC_LV]->contains(c))      goto GC_V;
-                if (sets[URX_GC_LVT]->contains(c))     goto GC_T;
-                if (sets[URX_GC_V]->contains(c))       goto GC_V;
-                (void)UTEXT_PREVIOUS32(fInputText);
-                fp->fInputIdx = UTEXT_GETNATIVEINDEX(fInputText);
-                goto GC_Extend;
-
-GC_V:
-                if (fp->fInputIdx >= fActiveLimit)         goto GC_Done;
-                c = UTEXT_NEXT32(fInputText);
-                fp->fInputIdx = UTEXT_GETNATIVEINDEX(fInputText);
-                if (sets[URX_GC_V]->contains(c))       goto GC_V;
-                if (sets[URX_GC_T]->contains(c))       goto GC_T;
-                (void)UTEXT_PREVIOUS32(fInputText);
-                fp->fInputIdx = UTEXT_GETNATIVEINDEX(fInputText);
-                goto GC_Extend;
-
-GC_T:
-                if (fp->fInputIdx >= fActiveLimit)         goto GC_Done;
-                c = UTEXT_NEXT32(fInputText);
-                fp->fInputIdx = UTEXT_GETNATIVEINDEX(fInputText);
-                if (sets[URX_GC_T]->contains(c))       goto GC_T;
-                (void)UTEXT_PREVIOUS32(fInputText);
-                fp->fInputIdx = UTEXT_GETNATIVEINDEX(fInputText);
-                goto GC_Extend;
-
-GC_Extend:
-                
-                for (;;) {
-                    if (fp->fInputIdx >= fActiveLimit) {
-                        break;
-                    }
-                    c = UTEXT_CURRENT32(fInputText);
-                    if (sets[URX_GC_EXTEND]->contains(c) == FALSE) {
-                        break;
-                    }
-                    (void)UTEXT_NEXT32(fInputText);
-                    fp->fInputIdx = UTEXT_GETNATIVEINDEX(fInputText);
-                }
-                goto GC_Done;
-
-GC_Control:
-                
-                
-                if (c == 0x0d && fp->fInputIdx < fActiveLimit && UTEXT_CURRENT32(fInputText) == 0x0a) {
-                    c = UTEXT_NEXT32(fInputText);
-                    fp->fInputIdx = UTEXT_GETNATIVEINDEX(fInputText);
-                }
-
-GC_Done:
-                if (fp->fInputIdx >= fActiveLimit) {
-                    fHitEnd = TRUE;
-                }
+            if (fp->fInputIdx >= fActiveLimit) {
+                fHitEnd = TRUE;
+                fp = (REStackFrame *)fStack->popFrame(fFrameSize);
                 break;
             }
 
-
+            fp->fInputIdx = followingGCBoundary(fp->fInputIdx, status);
+            if (fp->fInputIdx >= fActiveLimit) {
+                fHitEnd = TRUE;
+                fp->fInputIdx = fActiveLimit;
+            }
+            break;
 
 
         case URX_BACKSLASH_Z:          
@@ -3310,13 +3262,13 @@ GC_Done:
                 UTEXT_SETNATIVEINDEX(fInputText, fp->fInputIdx);
                 UChar32 c = UTEXT_NEXT32(fInputText);
                 if (c < 256) {
-                    Regex8BitSet *s8 = &fPattern->fStaticSets8[opValue];
-                    if (s8->contains(c)) {
+                    Regex8BitSet &s8 = RegexStaticSets::gStaticSets->fPropSets8[opValue];
+                    if (s8.contains(c)) {
                         success = !success;
                     }
                 } else {
-                    const UnicodeSet *s = fPattern->fStaticSets[opValue];
-                    if (s->contains(c)) {
+                    const UnicodeSet &s = RegexStaticSets::gStaticSets->fPropSets[opValue];
+                    if (s.contains(c)) {
                         success = !success;
                     }
                 }
@@ -3346,14 +3298,14 @@ GC_Done:
 
                 UChar32 c = UTEXT_NEXT32(fInputText);
                 if (c < 256) {
-                    Regex8BitSet *s8 = &fPattern->fStaticSets8[opValue];
-                    if (s8->contains(c) == FALSE) {
+                    Regex8BitSet &s8 = RegexStaticSets::gStaticSets->fPropSets8[opValue];
+                    if (s8.contains(c) == FALSE) {
                         fp->fInputIdx = UTEXT_GETNATIVEINDEX(fInputText);
                         break;
                     }
                 } else {
-                    const UnicodeSet *s = fPattern->fStaticSets[opValue];
-                    if (s->contains(c) == FALSE) {
+                    const UnicodeSet &s = RegexStaticSets::gStaticSets->fPropSets[opValue];
+                    if (s.contains(c) == FALSE) {
                         fp->fInputIdx = UTEXT_GETNATIVEINDEX(fInputText);
                         break;
                     }
@@ -4662,7 +4614,7 @@ void RegexMatcher::MatchChunkAt(int32_t startIdx, UBool toEnd, UErrorCode &statu
 
         case URX_BACKSLASH_BU:          
             {
-                UBool success = isUWordBoundary(fp->fInputIdx);
+                UBool success = isUWordBoundary(fp->fInputIdx, status);
                 success ^= (UBool)(opValue != 0);     
                 if (!success) {
                     fp = (REStackFrame *)fStack->popFrame(fFrameSize);
@@ -4760,12 +4712,8 @@ void RegexMatcher::MatchChunkAt(int32_t startIdx, UBool toEnd, UErrorCode &statu
             break;
 
 
-
         case URX_BACKSLASH_X:
-        
-        
-        
-        {
+            
 
             
             if (fp->fInputIdx >= fActiveLimit) {
@@ -4774,76 +4722,12 @@ void RegexMatcher::MatchChunkAt(int32_t startIdx, UBool toEnd, UErrorCode &statu
                 break;
             }
 
-            
-            
-            UChar32  c;
-            U16_NEXT(inputBuf, fp->fInputIdx, fActiveLimit, c);
-            UnicodeSet **sets = fPattern->fStaticSets;
-            if (sets[URX_GC_NORMAL]->contains(c))  goto GC_Extend;
-            if (sets[URX_GC_CONTROL]->contains(c)) goto GC_Control;
-            if (sets[URX_GC_L]->contains(c))       goto GC_L;
-            if (sets[URX_GC_LV]->contains(c))      goto GC_V;
-            if (sets[URX_GC_LVT]->contains(c))     goto GC_T;
-            if (sets[URX_GC_V]->contains(c))       goto GC_V;
-            if (sets[URX_GC_T]->contains(c))       goto GC_T;
-            goto GC_Extend;
-
-
-
-GC_L:
-            if (fp->fInputIdx >= fActiveLimit)         goto GC_Done;
-            U16_NEXT(inputBuf, fp->fInputIdx, fActiveLimit, c);
-            if (sets[URX_GC_L]->contains(c))       goto GC_L;
-            if (sets[URX_GC_LV]->contains(c))      goto GC_V;
-            if (sets[URX_GC_LVT]->contains(c))     goto GC_T;
-            if (sets[URX_GC_V]->contains(c))       goto GC_V;
-            U16_PREV(inputBuf, 0, fp->fInputIdx, c);
-            goto GC_Extend;
-
-GC_V:
-            if (fp->fInputIdx >= fActiveLimit)         goto GC_Done;
-            U16_NEXT(inputBuf, fp->fInputIdx, fActiveLimit, c);
-            if (sets[URX_GC_V]->contains(c))       goto GC_V;
-            if (sets[URX_GC_T]->contains(c))       goto GC_T;
-            U16_PREV(inputBuf, 0, fp->fInputIdx, c);
-            goto GC_Extend;
-
-GC_T:
-            if (fp->fInputIdx >= fActiveLimit)         goto GC_Done;
-            U16_NEXT(inputBuf, fp->fInputIdx, fActiveLimit, c);
-            if (sets[URX_GC_T]->contains(c))       goto GC_T;
-            U16_PREV(inputBuf, 0, fp->fInputIdx, c);
-            goto GC_Extend;
-
-GC_Extend:
-            
-            for (;;) {
-                if (fp->fInputIdx >= fActiveLimit) {
-                    break;
-                }
-                U16_NEXT(inputBuf, fp->fInputIdx, fActiveLimit, c);
-                if (sets[URX_GC_EXTEND]->contains(c) == FALSE) {
-                    U16_BACK_1(inputBuf, 0, fp->fInputIdx);
-                    break;
-                }
-            }
-            goto GC_Done;
-
-GC_Control:
-            
-            
-            if (c == 0x0d && fp->fInputIdx < fActiveLimit && inputBuf[fp->fInputIdx] == 0x0a) {
-                fp->fInputIdx++;
-            }
-
-GC_Done:
+            fp->fInputIdx = followingGCBoundary(fp->fInputIdx, status);
             if (fp->fInputIdx >= fActiveLimit) {
                 fHitEnd = TRUE;
+                fp->fInputIdx = fActiveLimit;
             }
             break;
-        }
-
-
 
 
         case URX_BACKSLASH_Z:          
@@ -4877,13 +4761,13 @@ GC_Done:
                 UChar32 c;
                 U16_NEXT(inputBuf, fp->fInputIdx, fActiveLimit, c);
                 if (c < 256) {
-                    Regex8BitSet *s8 = &fPattern->fStaticSets8[opValue];
-                    if (s8->contains(c)) {
+                    Regex8BitSet &s8 = RegexStaticSets::gStaticSets->fPropSets8[opValue];
+                    if (s8.contains(c)) {
                         success = !success;
                     }
                 } else {
-                    const UnicodeSet *s = fPattern->fStaticSets[opValue];
-                    if (s->contains(c)) {
+                    const UnicodeSet &s = RegexStaticSets::gStaticSets->fPropSets[opValue];
+                    if (s.contains(c)) {
                         success = !success;
                     }
                 }
@@ -4909,13 +4793,13 @@ GC_Done:
                 UChar32  c;
                 U16_NEXT(inputBuf, fp->fInputIdx, fActiveLimit, c);
                 if (c < 256) {
-                    Regex8BitSet *s8 = &fPattern->fStaticSets8[opValue];
-                    if (s8->contains(c) == FALSE) {
+                    Regex8BitSet &s8 = RegexStaticSets::gStaticSets->fPropSets8[opValue];
+                    if (s8.contains(c) == FALSE) {
                         break;
                     }
                 } else {
-                    const UnicodeSet *s = fPattern->fStaticSets[opValue];
-                    if (s->contains(c) == FALSE) {
+                    const UnicodeSet &s = RegexStaticSets::gStaticSets->fPropSets[opValue];
+                    if (s.contains(c) == FALSE) {
                         break;
                     }
                 }

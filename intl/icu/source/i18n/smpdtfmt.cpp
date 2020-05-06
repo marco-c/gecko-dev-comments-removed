@@ -583,11 +583,14 @@ SimpleDateFormat& SimpleDateFormat::operator=(const SimpleDateFormat& other)
     fHasMinute = other.fHasMinute;
     fHasSecond = other.fHasSecond;
 
+    fLocale = other.fLocale;
+
     
-    if (fLocale != other.fLocale) {
-        delete fTimeZoneFormat;
-        fTimeZoneFormat = NULL; 
-        fLocale = other.fLocale;
+    
+    delete fTimeZoneFormat;
+    fTimeZoneFormat = NULL;
+    if (other.fTimeZoneFormat) {
+        fTimeZoneFormat = new TimeZoneFormat(*other.fTimeZoneFormat);
     }
 
 #if !UCONFIG_NO_BREAK_ITERATION
@@ -996,7 +999,8 @@ SimpleDateFormat::_format(Calendar& cal, UnicodeString& appendTo,
         
         
         if (ch != prevCh && count > 0) {
-            subFormat(appendTo, prevCh, count, capitalizationContext, fieldNum++, handler, *workCal, status);
+            subFormat(appendTo, prevCh, count, capitalizationContext, fieldNum++,
+                      prevCh, handler, *workCal, status);
             count = 0;
         }
         if (ch == QUOTE) {
@@ -1023,7 +1027,8 @@ SimpleDateFormat::_format(Calendar& cal, UnicodeString& appendTo,
 
     
     if (count > 0) {
-        subFormat(appendTo, prevCh, count, capitalizationContext, fieldNum++, handler, *workCal, status);
+        subFormat(appendTo, prevCh, count, capitalizationContext, fieldNum++,
+                  prevCh, handler, *workCal, status);
     }
 
     if (calClone != NULL) {
@@ -1402,10 +1407,11 @@ SimpleDateFormat::processOverrideString(const Locale &locale, const UnicodeStrin
 
 void
 SimpleDateFormat::subFormat(UnicodeString &appendTo,
-                            UChar ch,
+                            char16_t ch,
                             int32_t count,
                             UDisplayContext capitalizationContext,
                             int32_t fieldNum,
+                            char16_t fieldToOutput,
                             FieldPositionHandler& handler,
                             Calendar& cal,
                             UErrorCode& status) const
@@ -1853,8 +1859,11 @@ SimpleDateFormat::subFormat(UnicodeString &appendTo,
         
         if (toAppend == NULL || toAppend->isBogus()) {
             
-            subFormat(appendTo, 0x61, count, capitalizationContext, fieldNum,
-                      handler, cal, status);
+            
+            
+            
+            subFormat(appendTo, u'a', count, capitalizationContext, fieldNum, u'b', handler, cal, status);
+            return;
         } else {
             appendTo += *toAppend;
         }
@@ -1874,9 +1883,11 @@ SimpleDateFormat::subFormat(UnicodeString &appendTo,
         if (ruleSet == NULL) {
             
             
-            subFormat(appendTo, 0x61, count, capitalizationContext, fieldNum,
-                      handler, cal, status);
-            break;
+            
+            
+            
+            subFormat(appendTo, u'a', count, capitalizationContext, fieldNum, u'B', handler, cal, status);
+            return;
         }
 
         
@@ -1945,8 +1956,11 @@ SimpleDateFormat::subFormat(UnicodeString &appendTo,
         if (periodType == DayPeriodRules::DAYPERIOD_AM ||
             periodType == DayPeriodRules::DAYPERIOD_PM ||
             toAppend->isBogus()) {
-            subFormat(appendTo, 0x61, count, capitalizationContext, fieldNum,
-                      handler, cal, status);
+            
+            
+            
+            subFormat(appendTo, u'a', count, capitalizationContext, fieldNum, u'B', handler, cal, status);
+            return;
         }
         else {
             appendTo += *toAppend;
@@ -1990,7 +2004,7 @@ SimpleDateFormat::subFormat(UnicodeString &appendTo,
     }
 #endif
 
-    handler.addAttribute(fgPatternIndexToDateFormatField[patternCharIndex], beginOffset, appendTo.length());
+    handler.addAttribute(DateFormatSymbols::getPatternCharIndex(fieldToOutput), beginOffset, appendTo.length());
 }
 
 

@@ -186,7 +186,7 @@ class RoundingImpl {
   private:
     Precision fPrecision;
     UNumberFormatRoundingMode fRoundingMode;
-    bool fPassThrough;
+    bool fPassThrough = true;  
 };
 
 

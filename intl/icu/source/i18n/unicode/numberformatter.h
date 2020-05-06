@@ -155,6 +155,8 @@ class DecNum;
 class NumberRangeFormatterImpl;
 struct RangeMacroProps;
 struct UFormattedNumberImpl;
+class MutablePatternModifier;
+class ImmutablePatternModifier;
 
 
 
@@ -984,6 +986,10 @@ class U_I18N_API IntegerWidth : public UMemory {
     friend class impl::NumberFormatterImpl;
 
     
+    friend class impl::MutablePatternModifier;
+    friend class impl::ImmutablePatternModifier;
+
+    
     friend class impl::NumberPropertyMapper;
 
     
@@ -1410,9 +1416,6 @@ struct U_I18N_API MacroProps : public UMemory {
     const PluralRules* rules = nullptr;  
 
     
-    const CurrencySymbols* currencySymbols = nullptr;  
-
-    
     int32_t threshold = kInternalDefaultThreshold;
 
     
@@ -1432,6 +1435,16 @@ struct U_I18N_API MacroProps : public UMemory {
 };
 
 } 
+
+#if (U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN) && defined(_MSC_VER)
+
+
+
+
+
+#pragma warning(push)
+#pragma warning(disable: 4661)
+#endif
 
 
 
@@ -2082,7 +2095,6 @@ class U_I18N_API NumberFormatterSettings {
 
     UnicodeString toSkeleton(UErrorCode& status) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2104,7 +2116,6 @@ class U_I18N_API NumberFormatterSettings {
 
 
     LocalPointer<Derived> clone() &&;
-#endif  
 
     
 
@@ -2399,6 +2410,11 @@ class U_I18N_API LocalizedNumberFormatter
     friend class UnlocalizedNumberFormatter;
 };
 
+#if (U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN) && defined(_MSC_VER)
+
+#pragma warning(pop)
+#endif
+
 
 
 
@@ -2411,14 +2427,11 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
   public:
 
     
-#ifndef U_FORCE_HIDE_DRAFT_API
-    
 
 
 
     FormattedNumber()
         : fData(nullptr), fErrorCode(U_INVALID_STATE_ERROR) {}
-#endif  
 
     
 
@@ -2471,60 +2484,6 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
     
     
     UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
-
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    UBool nextFieldPosition(FieldPosition& fieldPosition, UErrorCode& status) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void getAllFieldPositions(FieldPositionIterator &iterator, UErrorCode &status) const;
-#endif  
 
 #ifndef U_HIDE_DRAFT_API
     
@@ -2646,7 +2605,6 @@ class U_I18N_API NumberFormatter final {
 
     static UnlocalizedNumberFormatter forSkeleton(const UnicodeString& skeleton, UErrorCode& status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2666,7 +2624,6 @@ class U_I18N_API NumberFormatter final {
 
     static UnlocalizedNumberFormatter forSkeleton(const UnicodeString& skeleton,
                                                   UParseError& perror, UErrorCode& status);
-#endif
 
     
 
@@ -2681,5 +2638,5 @@ U_NAMESPACE_END
 
 #endif 
 
-#endif
+#endif 
 

@@ -16,26 +16,35 @@ U_NAMESPACE_BEGIN
 struct LSR final : public UMemory {
     static constexpr int32_t REGION_INDEX_LIMIT = 1001 + 26 * 26;
 
+    static constexpr int32_t EXPLICIT_LSR = 7;
+    static constexpr int32_t EXPLICIT_LANGUAGE = 4;
+    static constexpr int32_t EXPLICIT_SCRIPT = 2;
+    static constexpr int32_t EXPLICIT_REGION = 1;
+    static constexpr int32_t IMPLICIT_LSR = 0;
+    static constexpr int32_t DONT_CARE_FLAGS = 0;
+
     const char *language;
     const char *script;
     const char *region;
     char *owned = nullptr;
     
     int32_t regionIndex = 0;
+    int32_t flags = 0;
     
     int32_t hashCode = 0;
 
     LSR() : language("und"), script(""), region("") {}
 
     
-    LSR(const char *lang, const char *scr, const char *r) :
+    LSR(const char *lang, const char *scr, const char *r, int32_t f) :
             language(lang),  script(scr), region(r),
-            regionIndex(indexForRegion(region)) {}
+            regionIndex(indexForRegion(region)), flags(f) {}
     
 
 
 
-    LSR(char prefix, const char *lang, const char *scr, const char *r, UErrorCode &errorCode);
+    LSR(char prefix, const char *lang, const char *scr, const char *r, int32_t f,
+        UErrorCode &errorCode);
     LSR(LSR &&other) U_NOEXCEPT;
     LSR(const LSR &other) = delete;
     inline ~LSR() {
@@ -55,6 +64,7 @@ struct LSR final : public UMemory {
 
     static int32_t indexForRegion(const char *region);
 
+    UBool isEquivalentTo(const LSR &other) const;
     UBool operator==(const LSR &other) const;
 
     inline UBool operator!=(const LSR &other) const {

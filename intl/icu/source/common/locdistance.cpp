@@ -69,7 +69,7 @@ void U_CALLCONV LocaleDistance::initLocaleDistance(UErrorCode &errorCode) {
         errorCode = U_MISSING_RESOURCE_ERROR;
         return;
     }
-    gLocaleDistance = new LocaleDistance(data);
+    gLocaleDistance = new LocaleDistance(data, likely);
     if (gLocaleDistance == nullptr) {
         errorCode = U_MEMORY_ALLOCATION_ERROR;
         return;
@@ -83,7 +83,8 @@ const LocaleDistance *LocaleDistance::getSingleton(UErrorCode &errorCode) {
     return gLocaleDistance;
 }
 
-LocaleDistance::LocaleDistance(const LocaleDistanceData &data) :
+LocaleDistance::LocaleDistance(const LocaleDistanceData &data, const XLikelySubtags &likely) :
+        likelySubtags(likely),
         trie(data.distanceTrieBytes),
         regionToPartitionsIndex(data.regionToPartitions), partitionArrays(data.partitions),
         paradigmLSRs(data.paradigms), paradigmLSRsLength(data.paradigmsLength),
@@ -97,17 +98,19 @@ LocaleDistance::LocaleDistance(const LocaleDistanceData &data) :
     
     
     
-    LSR en("en", "Latn", "US");
-    LSR enGB("en", "Latn", "GB");
+    LSR en("en", "Latn", "US", LSR::EXPLICIT_LSR);
+    LSR enGB("en", "Latn", "GB", LSR::EXPLICIT_LSR);
     const LSR *p_enGB = &enGB;
-    defaultDemotionPerDesiredLocale = getBestIndexAndDistance(en, &p_enGB, 1,
-            50, ULOCMATCH_FAVOR_LANGUAGE) & 0xff;
+    int32_t indexAndDistance = getBestIndexAndDistance(en, &p_enGB, 1,
+            shiftDistance(50), ULOCMATCH_FAVOR_LANGUAGE, ULOCMATCH_DIRECTION_WITH_ONE_WAY);
+    defaultDemotionPerDesiredLocale  = getDistanceFloor(indexAndDistance);
 }
 
 int32_t LocaleDistance::getBestIndexAndDistance(
         const LSR &desired,
         const LSR **supportedLSRs, int32_t supportedLSRsLength,
-        int32_t threshold, ULocMatchFavorSubtag favorSubtag) const {
+        int32_t shiftedThreshold,
+        ULocMatchFavorSubtag favorSubtag, ULocMatchDirection direction) const {
     BytesTrie iter(trie);
     
     
@@ -116,6 +119,8 @@ int32_t LocaleDistance::getBestIndexAndDistance(
     uint64_t desLangState = desLangDistance >= 0 && supportedLSRsLength > 1 ? iter.getState64() : 0;
     
     int32_t bestIndex = -1;
+    
+    int32_t bestLikelyInfo = -1;
     for (int32_t slIndex = 0; slIndex < supportedLSRsLength; ++slIndex) {
         const LSR &supported = *supportedLSRs[slIndex];
         bool star = false;
@@ -149,11 +154,18 @@ int32_t LocaleDistance::getBestIndexAndDistance(
         
         
         
+        int32_t roundedThreshold = (shiftedThreshold + DISTANCE_FRACTION_MASK) >> DISTANCE_SHIFT;
+        
+        
+        
+        
         
         if (favorSubtag == ULOCMATCH_FAVOR_SCRIPT) {
             distance >>= 2;
         }
-        if (distance >= threshold) {
+        
+        
+        if (distance > roundedThreshold) {
             continue;
         }
 
@@ -171,7 +183,7 @@ int32_t LocaleDistance::getBestIndexAndDistance(
             scriptDistance &= ~DISTANCE_IS_FINAL;
         }
         distance += scriptDistance;
-        if (distance >= threshold) {
+        if (distance > roundedThreshold) {
             continue;
         }
 
@@ -180,8 +192,8 @@ int32_t LocaleDistance::getBestIndexAndDistance(
         } else if (star || (flags & DISTANCE_IS_FINAL) != 0) {
             distance += defaultRegionDistance;
         } else {
-            int32_t remainingThreshold = threshold - distance;
-            if (minRegionDistance >= remainingThreshold) {
+            int32_t remainingThreshold = roundedThreshold - distance;
+            if (minRegionDistance > remainingThreshold) {
                 continue;
             }
 
@@ -196,15 +208,51 @@ int32_t LocaleDistance::getBestIndexAndDistance(
                     partitionsForRegion(supported),
                     remainingThreshold);
         }
-        if (distance < threshold) {
-            if (distance == 0) {
-                return slIndex << 8;
+        int32_t shiftedDistance = shiftDistance(distance);
+        if (shiftedDistance == 0) {
+            
+            
+            shiftedDistance |= (desired.flags ^ supported.flags);
+            if (shiftedDistance < shiftedThreshold) {
+                if (direction != ULOCMATCH_DIRECTION_ONLY_TWO_WAY ||
+                        
+                        isMatch(supported, desired, shiftedThreshold, favorSubtag)) {
+                    if (shiftedDistance == 0) {
+                        return slIndex << INDEX_SHIFT;
+                    }
+                    bestIndex = slIndex;
+                    shiftedThreshold = shiftedDistance;
+                    bestLikelyInfo = -1;
+                }
             }
-            bestIndex = slIndex;
-            threshold = distance;
+        } else {
+            if (shiftedDistance < shiftedThreshold) {
+                if (direction != ULOCMATCH_DIRECTION_ONLY_TWO_WAY ||
+                        
+                        isMatch(supported, desired, shiftedThreshold, favorSubtag)) {
+                    bestIndex = slIndex;
+                    shiftedThreshold = shiftedDistance;
+                    bestLikelyInfo = -1;
+                }
+            } else if (shiftedDistance == shiftedThreshold && bestIndex >= 0) {
+                if (direction != ULOCMATCH_DIRECTION_ONLY_TWO_WAY ||
+                        
+                        isMatch(supported, desired, shiftedThreshold, favorSubtag)) {
+                    bestLikelyInfo = likelySubtags.compareLikely(
+                            supported, *supportedLSRs[bestIndex], bestLikelyInfo);
+                    if ((bestLikelyInfo & 1) != 0) {
+                        
+                        
+                        
+                        bestIndex = slIndex;
+                    }
+                }
+            }
         }
     }
-    return bestIndex >= 0 ? (bestIndex << 8) | threshold : 0xffffff00 | ABOVE_THRESHOLD;
+    return bestIndex >= 0 ?
+            (bestIndex << INDEX_SHIFT) | shiftedThreshold :
+            INDEX_NEG_1 | shiftDistance(ABOVE_THRESHOLD);
 }
 
 int32_t LocaleDistance::getDesSuppScriptDistance(
@@ -273,7 +321,7 @@ int32_t LocaleDistance::getRegionPartitionsDistance(
                     d = getFallbackRegionDistance(iter, startState);
                     star = true;
                 }
-                if (d >= threshold) {
+                if (d > threshold) {
                     return d;
                 } else if (regionDistance < d) {
                     regionDistance = d;
@@ -286,7 +334,7 @@ int32_t LocaleDistance::getRegionPartitionsDistance(
             }
         } else if (!star) {
             int32_t d = getFallbackRegionDistance(iter, startState);
-            if (d >= threshold) {
+            if (d > threshold) {
                 return d;
             } else if (regionDistance < d) {
                 regionDistance = d;
@@ -354,9 +402,12 @@ int32_t LocaleDistance::trieNext(BytesTrie &iter, const char *s, bool wantValue)
 UBool LocaleDistance::isParadigmLSR(const LSR &lsr) const {
     
     
+    
+    
+    
     U_ASSERT(paradigmLSRsLength <= 15);
     for (int32_t i = 0; i < paradigmLSRsLength; ++i) {
-        if (lsr == paradigmLSRs[i]) { return true; }
+        if (lsr.isEquivalentTo(paradigmLSRs[i])) { return true; }
     }
     return false;
 }

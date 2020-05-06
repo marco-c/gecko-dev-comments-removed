@@ -449,7 +449,6 @@ class U_I18N_API NumberRangeFormatterSettings {
 
     Derived identityFallback(UNumberRangeIdentityFallback identityFallback) &&;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -471,7 +470,6 @@ class U_I18N_API NumberRangeFormatterSettings {
 
 
     LocalPointer<Derived> clone() &&;
-#endif  
 
     
 
@@ -728,52 +726,6 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
     UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
 
 #ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    UBool nextFieldPosition(FieldPosition& fieldPosition, UErrorCode& status) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    void getAllFieldPositions(FieldPositionIterator &iterator, UErrorCode &status) const;
-
     
 
 
