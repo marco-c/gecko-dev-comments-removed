@@ -6,6 +6,13 @@
 
 
 
+
+
+requestLongerTimeout(2);
+
+
+
+
 add_task(async function() {
   const { front, client } = await initPerfFront();
 
