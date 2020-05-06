@@ -939,7 +939,7 @@ void nsPipe::OnPipeException(nsresult aReason, bool aOutputOnly) {
 
     
     
-    nsTArray<nsPipeInputStream*> list(mInputList);
+    nsTArray<nsPipeInputStream*> list = mInputList.Clone();
     for (uint32_t i = 0; i < list.Length(); ++i) {
       
       
