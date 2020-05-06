@@ -1194,6 +1194,14 @@ static bool MakeStructField(JSContext* cx, const ValType& v, bool isMutable,
       t = GlobalObject::getOrCreateScalarTypeDescr(cx, cx->global(),
                                                    Scalar::Int32);
       break;
+    case ValType::V128:
+      
+      
+      
+      props.alignAsV128 = true;
+      t = GlobalObject::getOrCreateScalarTypeDescr(cx, cx->global(),
+                                                   Scalar::Int32);
+      break;
     case ValType::F32:
       t = GlobalObject::getOrCreateScalarTypeDescr(cx, cx->global(),
                                                    Scalar::Float32);
@@ -1290,6 +1298,28 @@ bool Module::makeStructTypeDescrs(
         }
         if (!MakeStructField(cx, ValType::I32, sf.isMutable, "_%d_high", k++,
                              &ids, &fieldTypeObjs, &fieldProps)) {
+          return false;
+        }
+      } else if (v.kind() == ValType::V128) {
+        
+        
+        sf.isMutable = false;
+        allowConstruct = false;
+
+        if (!MakeStructField(cx, ValType::V128, sf.isMutable, "_%d_x", k, &ids,
+                             &fieldTypeObjs, &fieldProps)) {
+          return false;
+        }
+        if (!MakeStructField(cx, ValType::I32, sf.isMutable, "_%d_y", k, &ids,
+                             &fieldTypeObjs, &fieldProps)) {
+          return false;
+        }
+        if (!MakeStructField(cx, ValType::I32, sf.isMutable, "_%d_z", k, &ids,
+                             &fieldTypeObjs, &fieldProps)) {
+          return false;
+        }
+        if (!MakeStructField(cx, ValType::I32, sf.isMutable, "_%d_w", k++, &ids,
+                             &fieldTypeObjs, &fieldProps)) {
           return false;
         }
       } else {

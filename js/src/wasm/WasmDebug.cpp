@@ -392,6 +392,13 @@ bool DebugState::getGlobal(Instance& instance, uint32_t globalIndex,
         
         vp.set(MagicValue(JS_OPTIMIZED_OUT));
         break;
+      case ValType::V128:
+        
+        
+        vp.set(MagicValue(JS_OPTIMIZED_OUT));
+        break;
+      default:
+        MOZ_CRASH("Global constant type");
     }
     return true;
   }
@@ -422,6 +429,15 @@ bool DebugState::getGlobal(Instance& instance, uint32_t globalIndex,
     case ValType::Ref: {
       
       vp.set(MagicValue(JS_OPTIMIZED_OUT));
+      break;
+    }
+    case ValType::V128: {
+      
+      vp.set(MagicValue(JS_OPTIMIZED_OUT));
+      break;
+    }
+    default: {
+      MOZ_CRASH("Global variable type");
       break;
     }
   }

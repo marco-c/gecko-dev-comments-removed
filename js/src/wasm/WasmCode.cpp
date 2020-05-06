@@ -613,6 +613,11 @@ bool LazyStubSegment::addStubs(size_t codeLength,
     codeRanges_.back().offsetBy(offsetInSegment);
     i++;
 
+#ifdef ENABLE_WASM_SIMD
+    if (funcExports[funcExportIndex].funcType().hasV128ArgOrRet()) {
+      continue;
+    }
+#endif
     if (funcExports[funcExportIndex]
             .funcType()
             .temporarilyUnsupportedReftypeForEntry()) {
@@ -674,8 +679,13 @@ bool LazyStubTier::createMany(const Uint32Vector& funcExportIndices,
   DebugOnly<uint32_t> numExpectedRanges = 0;
   for (uint32_t funcExportIndex : funcExportIndices) {
     const FuncExport& fe = funcExports[funcExportIndex];
-    numExpectedRanges +=
-        fe.funcType().temporarilyUnsupportedReftypeForEntry() ? 1 : 2;
+    
+    bool unsupportedType =
+#ifdef ENABLE_WASM_SIMD
+        fe.funcType().hasV128ArgOrRet() ||
+#endif
+        fe.funcType().temporarilyUnsupportedReftypeForEntry();
+    numExpectedRanges += (unsupportedType ? 1 : 2);
     void* calleePtr =
         moduleSegmentBase + metadata.codeRange(fe).funcNormalEntry();
     Maybe<ImmPtr> callee;
@@ -759,8 +769,12 @@ bool LazyStubTier::createMany(const Uint32Vector& funcExportIndices,
 
     
     
-    interpRangeIndex +=
-        fe.funcType().temporarilyUnsupportedReftypeForEntry() ? 1 : 2;
+    bool unsupportedType =
+#ifdef ENABLE_WASM_SIMD
+        fe.funcType().hasV128ArgOrRet() ||
+#endif
+        fe.funcType().temporarilyUnsupportedReftypeForEntry();
+    interpRangeIndex += (unsupportedType ? 1 : 2);
   }
 
   return true;
@@ -786,7 +800,14 @@ bool LazyStubTier::createOne(uint32_t funcExportIndex,
   if (codeTier.metadata()
           .funcExports[funcExportIndex]
           .funcType()
-          .temporarilyUnsupportedReftypeForEntry()) {
+          .temporarilyUnsupportedReftypeForEntry()
+#ifdef ENABLE_WASM_SIMD
+      || codeTier.metadata()
+             .funcExports[funcExportIndex]
+             .funcType()
+             .hasV128ArgOrRet()
+#endif
+  ) {
     MOZ_ASSERT(codeRanges.length() >= 1);
     MOZ_ASSERT(codeRanges.back().isInterpEntry());
     return true;
