@@ -20,9 +20,7 @@
 
 
 
-async function run_test() {
-  do_test_pending();
-
+async function testSteps() {
   
   
   
@@ -50,6 +48,4 @@ async function run_test() {
   } catch (ex) {
     ok(false, "Should not have thrown");
   }
-
-  do_test_finished();
 }

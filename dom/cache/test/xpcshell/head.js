@@ -6,6 +6,9 @@
 
 
 
+
+
+
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
@@ -17,13 +20,34 @@ var sts = Cc["@mozilla.org/network/stream-transport-service;1"].getService(
 );
 var hash = Cc["@mozilla.org/security/hash;1"].createInstance(Ci.nsICryptoHash);
 
+function run_test() {
+  runTest();
+}
 
-Cu.importGlobalProperties(["caches", "fetch"]);
+function runTest() {
+  do_get_profile();
+
+  
+  Cu.importGlobalProperties(["caches", "fetch"]);
+
+  Assert.ok(
+    typeof testSteps === "function",
+    "There should be a testSteps function"
+  );
+  Assert.ok(
+    testSteps.constructor.name === "AsyncFunction",
+    "testSteps should be an async function"
+  );
+
+  add_task(testSteps);
+
+  
+  
+  run_next_test();
+}
 
 
 function create_test_profile(zipFileName) {
-  do_get_profile();
-
   var directoryService = Services.dirsvc;
 
   var profileDir = directoryService.get("ProfD", Ci.nsIFile);
