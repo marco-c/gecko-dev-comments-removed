@@ -25,7 +25,6 @@ var systemAppOrigin = (function() {
   return systemOrigin;
 })();
 
-var threshold = Services.prefs.getIntPref("ui.dragThresholdX", 25);
 var isClickHoldEnabled = Services.prefs.getBoolPref(
   "ui.click_hold_context_menus"
 );
@@ -33,6 +32,16 @@ var clickHoldDelay = Services.prefs.getIntPref(
   "ui.click_hold_context_menus.delay",
   500
 );
+
+
+const TOUCH_CONTACT = 0x02;
+const TOUCH_REMOVE = 0x04;
+
+const TOUCH_STATES = {
+  touchstart: TOUCH_CONTACT,
+  touchmove: TOUCH_CONTACT,
+  touchend: TOUCH_REMOVE,
+};
 
 const kStateHover = 0x00000004; 
 
@@ -67,15 +76,6 @@ TouchSimulator.prototype = {
     if (this.enabled) {
       
       return;
-    }
-
-    
-    if (
-      Services.prefs.getBoolPref(
-        "devtools.responsive.touchGestureSimulation.enabled"
-      )
-    ) {
-      this.events.push("dblclick");
     }
 
     this.events.forEach(evt => {
@@ -303,24 +303,16 @@ TouchSimulator.prototype = {
           this
         );
         return;
-      case "dblclick":
-        evt.preventDefault();
-        evt.stopImmediatePropagation();
-        const win = this.getContent(evt.target);
-
-        
-        
-        setTimeout(() => {
-          this.synthesizeNativeTap(win, evt.clientX, evt.clientY);
-          this.synthesizeNativeTap(win, evt.clientX, evt.clientY);
-        }, this.getDelayBeforeMouseEvent(evt));
-
-        return;
     }
 
     const target = eventTarget || this.target;
     if (target && type) {
-      this.sendTouchEvent(evt, target, type);
+      this.synthesizeNativeTouch(
+        this.getContent(evt.target),
+        evt.clientX,
+        evt.clientY,
+        type
+      );
     }
 
     if (!isSystemWindow) {
@@ -388,6 +380,13 @@ TouchSimulator.prototype = {
     
     
     utils.sendNativeTouchTap(pt.x, pt.y, false, null);
+    return true;
+  },
+
+  synthesizeNativeTouch(win, x, y, type) {
+    const pt = this.coordinatesRelativeToScreen(win, x, y);
+    const utils = win.windowUtils;
+    utils.sendNativeTouchPoint(0, TOUCH_STATES[type], pt.x, pt.y, 1, 90, null);
     return true;
   },
 

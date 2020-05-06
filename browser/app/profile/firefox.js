@@ -2251,8 +2251,6 @@ pref("devtools.responsive.reloadConditions.userAgent", false);
 
 pref("devtools.responsive.reloadNotification.enabled", true);
 
-pref("devtools.responsive.touchGestureSimulation.enabled", false);
-
 pref("devtools.responsive.touchSimulation.enabled", false);
 
 
