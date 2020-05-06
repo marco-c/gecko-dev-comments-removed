@@ -117,21 +117,25 @@ class SharedContext {
   JSContext* const cx_;
 
  protected:
-  enum class Kind : uint8_t { FunctionBox, Global, Eval, Module };
-
   CompilationInfo& compilationInfo_;
 
-  ThisBinding thisBinding_;
+  
+  ImmutableScriptFlags immutableFlags_ = {};
 
  public:
-  SourceExtent extent;
+  
+  SourceExtent extent = {};
 
   
   
-  
-  mozilla::Maybe<SourceExtent> scriptExtent;
+  mozilla::Maybe<SourceExtent> scriptExtent = {};
 
  protected:
+  
+  ThisBinding thisBinding_ = ThisBinding::Global;
+
+  
+  
   bool allowNewTarget_ : 1;
   bool allowSuperProperty_ : 1;
   bool allowSuperCall_ : 1;
@@ -146,9 +150,11 @@ class SharedContext {
   bool hasExplicitUseStrict_ : 1;
 
   
-  using ImmutableFlags = ImmutableScriptFlagsEnum;
 
-  ImmutableScriptFlags immutableFlags_ = {};
+  enum class Kind : uint8_t { FunctionBox, Global, Eval, Module };
+
+  
+  using ImmutableFlags = ImmutableScriptFlagsEnum;
 
   void computeAllowSyntax(Scope* scope);
   void computeInWith(Scope* scope);
@@ -284,8 +290,8 @@ class FunctionBox : public SharedContext {
 
   
   
-  FunctionBox* traceLink_;
-  FunctionBox* emitLink_;
+  FunctionBox* traceLink_ = nullptr;
+  FunctionBox* emitLink_ = nullptr;
 
   
   
@@ -297,61 +303,67 @@ class FunctionBox : public SharedContext {
   
   
   
-  AbstractScopePtr enclosingScope_;
+  AbstractScopePtr enclosingScope_ = {};
 
   
-  LexicalScope::Data* namedLambdaBindings_;
+  LexicalScope::Data* namedLambdaBindings_ = nullptr;
 
   
-  FunctionScope::Data* functionScopeBindings_;
-
-  
-  
-  VarScope::Data* extraVarScopeBindings_;
+  FunctionScope::Data* functionScopeBindings_ = nullptr;
 
   
   
-  
-  size_t funcDataIndex_;
+  VarScope::Data* extraVarScopeBindings_ = nullptr;
 
-  void initWithEnclosingParseContext(ParseContext* enclosing,
-                                     FunctionSyntaxKind kind, bool isArrow,
-                                     bool allowSuperProperty);
+  
+  JSAtom* explicitName_ = nullptr;
+
+  
+  
+  
+  size_t funcDataIndex_ = (size_t)(-1);
 
  public:
+  
+  FunctionNode* functionNode = nullptr;
+
+  
+  mozilla::Maybe<FieldInitializers> fieldInitializers = {};
+
+  FunctionFlags flags_ = {};  
+  uint16_t length = 0;        
+  uint16_t nargs_ = 0;        
+
+  
+  bool emitBytecode : 1;
+  bool wasEmitted : 1;
+
+  
+  bool isAnnexB : 1;
+
+  
+  bool useAsm : 1;
+  bool isAsmJSModule_ : 1;
+
+  
+  bool hasParameterExprs : 1;
+  bool hasDestructuringArgs : 1;
+  bool hasDuplicateParameters : 1;
+
+  
+  bool hasExprBody_ : 1;
+
+  
+  bool usesApply : 1;   
+  bool usesThis : 1;    
+  bool usesReturn : 1;  
+
+  
+
   FunctionBox(JSContext* cx, FunctionBox* traceListHead, SourceExtent extent,
               CompilationInfo& compilationInfo, Directives directives,
               GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
               JSAtom* explicitName, FunctionFlags flags, size_t index);
-
-  
-  FunctionNode* functionNode;
-
-  mozilla::Maybe<FieldInitializers> fieldInitializers;
-
-  uint16_t length;
-
-  bool hasDestructuringArgs : 1;   
-
-  bool hasParameterExprs : 1;      
-  bool hasDuplicateParameters : 1; 
-  bool useAsm : 1;                 
-  bool isAnnexB : 1;     
-  bool wasEmitted : 1;   
-  bool emitBytecode : 1; 
-
-  
-  bool usesApply : 1;      
-  bool usesThis : 1;       
-  bool usesReturn : 1;     
-  bool hasExprBody_ : 1;   
-
-
-  bool isAsmJSModule_ : 1; 
-  uint16_t nargs_;
-
-  JSAtom* explicitName_;
-  FunctionFlags flags_;
 
   MutableHandle<FunctionCreationData> functionCreationData() const;
 
@@ -385,6 +397,12 @@ class FunctionBox : public SharedContext {
 
   void initWithEnclosingScope(JSFunction* fun);
 
+ private:
+  void initWithEnclosingParseContext(ParseContext* enclosing,
+                                     FunctionSyntaxKind kind, bool isArrow,
+                                     bool allowSuperProperty);
+
+ public:
   void initWithEnclosingParseContext(ParseContext* enclosing,
                                      Handle<FunctionCreationData> fun,
                                      FunctionSyntaxKind kind) {
