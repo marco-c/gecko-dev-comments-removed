@@ -1,8 +1,8 @@
-# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 option('--with-windows-version', nargs=1, default='603',
        help='Windows SDK version to target. Win 8.1 (603) is currently'
@@ -32,8 +32,8 @@ option(env='WINDOWSSDKDIR', nargs=1,
 def windows_sdk_dir(value, host, compiler):
     if value:
         return value
-    # Ideally, we'd actually check for host/target ABI being MSVC, but
-    # that's waiting for bug 1617793.
+    
+    
     if host.kernel != 'WINNT' or compiler.type != 'clang-cl':
         return ()
 
@@ -41,13 +41,13 @@ def windows_sdk_dir(value, host, compiler):
         r'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows Kits\Installed Roots'
         r'\KitsRoot*', get_32_and_64_bit=True))
 
-# The Windows SDK 8.1 and 10 have different layouts. The former has
-# $SDK/include/$subdir, while the latter has $SDK/include/$version/$subdir.
-# The vcvars* scripts don't actually care about the version, they just take
-# the last alphanumerically.
-# The $SDK/lib directories always have version subdirectories, but while the
-# versions match the one in $SDK/include for SDK 10, it's "winv6.3" for SDK
-# 8.1.
+
+
+
+
+
+
+
 
 
 @imports('os')
@@ -66,8 +66,8 @@ def get_sdk_dirs(sdk, subdir):
             return ()
         if subdir in subdirs:
             return (base,)
-        # At this point, either we have an incomplete or invalid SDK directory,
-        # or we exclusively have version numbers in subdirs.
+        
+        
         return tuple(os.path.join(base, s) for s in subdirs
                      if os.path.isdir(os.path.join(base, s, subdir)))
 
@@ -103,8 +103,8 @@ def valid_windows_sdk_dir_result(value):
 @imports(_from='textwrap', _import='dedent')
 def valid_windows_sdk_dir(compiler, windows_sdk_dir, target_version,
                           windows_sdk_dir_env):
-    # Ideally, we'd actually check for host/target ABI being MSVC, but
-    # that's waiting for bug 1617793.
+    
+    
     if compiler.type != 'clang-cl':
         return None
     if windows_sdk_dir_env:
@@ -121,8 +121,8 @@ def valid_windows_sdk_dir(compiler, windows_sdk_dir, target_version,
             shared_dir = os.path.join(sdk.include, 'shared')
             result = try_preprocess(compiler.wrapper + [compiler.compiler] +
                                     compiler.flags +
-                                    ['-I', um_dir, '-I', shared_dir], 'C',
-                                    check)
+                                    ['-X', '-I', um_dir, '-I', shared_dir], 'C',
+                                    check, onerror=lambda: '')
             if result:
                 maxver = result.splitlines()[-1]
                 try:
@@ -175,8 +175,8 @@ def valid_ucrt_sdk_dir_result(value):
 @imports(_from='__builtin__', _import='sorted')
 @imports(_import='mozpack.path', _as='mozpath')
 def valid_ucrt_sdk_dir(windows_sdk_dir, windows_sdk_dir_env, compiler):
-    # Ideally, we'd actually check for host/target ABI being MSVC, but
-    # that's waiting for bug 1617793.
+    
+    
     if compiler.type != 'clang-cl':
         return None
     if windows_sdk_dir_env:
@@ -186,18 +186,18 @@ def valid_ucrt_sdk_dir(windows_sdk_dir, windows_sdk_dir_env, compiler):
         sdk = get_sdk_dirs(d, 'ucrt')
         if sdk:
             version = os.path.basename(sdk.include)
-            # We're supposed to always find a version in the directory, because
-            # the 8.1 SDK, which doesn't have a version in the directory, doesn't
-            # contain the Universal CRT SDK. When the main SDK is 8.1, there
-            # is, however, supposed to be a reduced install of the SDK 10
-            # with the UCRT.
+            
+            
+            
+            
+            
             if version != 'include':
                 sdks[d] = Version(version), sdk
                 continue
         if d == windows_sdk_dir_env:
-            # When WINDOWSSDKDIR is set in the environment and we can't find the
-            # Universal CRT SDK, chances are this is a start-shell-msvc*.bat
-            # setup, where INCLUDE and LIB already contain the UCRT paths.
+            
+            
+            
             ucrt_includes = [
                 p for p in os.environ.get('INCLUDE', '').split(';')
                 if os.path.basename(p).lower() == 'ucrt'
@@ -207,8 +207,8 @@ def valid_ucrt_sdk_dir(windows_sdk_dir, windows_sdk_dir_env, compiler):
                 if os.path.basename(os.path.dirname(p)).lower() == 'ucrt'
             ]
             if ucrt_includes and ucrt_libs:
-                # Pick the first of each, since they are the ones that the
-                # compiler would look first. Assume they contain the SDK files.
+                
+                
                 include = os.path.dirname(ucrt_includes[0])
                 lib = os.path.dirname(os.path.dirname(ucrt_libs[0]))
                 path = os.path.dirname(os.path.dirname(include))
@@ -252,7 +252,7 @@ def vc_path(c_compiler, host_c_compiler, toolchain_search_path):
     if c_compiler.type != 'clang-cl' and host_c_compiler.type != 'clang-cl':
         return
 
-    # In clang-cl builds, we need the headers and libraries from an MSVC installation.
+    
     vc_program = find_program('cl.exe', paths=toolchain_search_path)
     if not vc_program:
         die('Cannot find a Visual C++ install for e.g. ATL headers.')
@@ -281,8 +281,8 @@ def dia_sdk_dir(vc_path, dia_sdk_path):
         path = os.path.normpath(dia_sdk_path[0])
 
     elif vc_path:
-        # This would be easier if we had the installationPath that
-        # get_vc_paths works with, since 'DIA SDK' is relative to that.
+        
+        
         path = os.path.normpath(os.path.join(
             vc_path, '..', '..', '..', '..', 'DIA SDK'))
     else:
@@ -321,7 +321,7 @@ def include_path(vc_path, windows_sdk_dir, ucrt_sdk_dir, dia_sdk_dir):
     ))
     if dia_sdk_dir:
         includes.append(os.path.join(dia_sdk_dir, 'include'))
-    # Set in the environment for old-configure
+    
     includes = ';'.join(includes)
     os.environ['INCLUDE'] = includes
     return includes
@@ -336,8 +336,8 @@ def dia_sdk_subdir(host_or_target, subdir):
     def dia_sdk_subdir(dia_sdk_dir, target, subdir):
         if not dia_sdk_dir:
             return
-        # For some reason the DIA SDK still uses the old-style targets
-        # even in a newer MSVC.
+        
+        
         old_target = {
             'x86': '',
             'x86_64': 'amd64',
@@ -346,10 +346,10 @@ def dia_sdk_subdir(host_or_target, subdir):
         }.get(target.cpu)
         if old_target is None:
             return
-        # As old_target can be '', and os.path.join will happily use the empty
-        # string, leading to a string ending with a backslash, that Make will
-        # interpret as a "string continues on next line" indicator, use variable
-        # args.
+        
+        
+        
+        
         old_target = (old_target,) if old_target else ()
         return os.path.join(dia_sdk_dir, subdir, *old_target)
 
@@ -374,7 +374,7 @@ def lib_path_for(host_or_target):
             'aarch64': 'arm64',
         }.get(target.cpu)
 
-        # MSVC2017 switched to use the same target naming as the sdk.
+        
         atlmfc_dir = os.path.join(vc_path, 'atlmfc', 'lib', sdk_target)
         if not os.path.isdir(atlmfc_dir):
             die('Cannot find the ATL/MFC libraries in the Visual C++ directory '
@@ -400,7 +400,7 @@ def lib_path_for(host_or_target):
 @depends_if(lib_path_for(target))
 @imports('os')
 def lib_path(libs):
-    # Set in the environment for old-configure
+    
     libs = ';'.join(libs)
     os.environ['LIB'] = libs
     return libs
@@ -420,12 +420,12 @@ def host_linker_libpaths(libs):
 @depends_if(lib_path_for_host)
 @imports(_from='mozbuild.shellutil', _import='quote')
 def host_linker_libpaths_bat(libs):
-    # .bat files need a different style of quoting. Batch quoting is actually
-    # not defined, and up to applications to handle, so it's not really clear
-    # what should be escaped and what not, but most paths should work just
-    # fine without escaping. And we don't care about double-quotes possibly
-    # having to be escaped because they're not allowed in file names on
-    # Windows.
+    
+    
+    
+    
+    
+    
     return ['"-LIBPATH:%s"' % l for l in libs]
 
 
@@ -444,7 +444,7 @@ def sdk_bin_path(valid_windows_sdk_dir, valid_ucrt_sdk_dir, host):
         'x86_64': 'x64',
     }.get(host.cpu)
 
-    # From version 10.0.15063.0 onwards the bin path contains the version number.
+    
     versioned_bin = ('bin' if valid_ucrt_sdk_dir.version < '10.0.15063.0'
                      else os.path.join('bin', str(valid_ucrt_sdk_dir.version)))
     result = [
@@ -457,12 +457,12 @@ def sdk_bin_path(valid_windows_sdk_dir, valid_ucrt_sdk_dir, host):
     return result
 
 
-# allow_missing=True for mingw builds, until bug 1617793
+
 mt = check_prog('MT', ('mt.exe',), allow_missing=True, paths=sdk_bin_path)
 
 
-# Check that MT is not something unexpected like "magnetic tape manipulation
-# utility".
+
+
 @depends(mt, wine)
 @checking('whether MT is really Microsoft Manifest Tool', lambda x: bool(x))
 def valid_mt(path, wine):
