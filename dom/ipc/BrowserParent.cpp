@@ -3394,6 +3394,20 @@ void BrowserParent::ApzAwareEventRoutingToChild(
     }
     if (aOutApzResponse) {
       *aOutApzResponse = InputAPZContext::GetApzResponse();
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (*aOutApzResponse == nsEventStatus_eSentinel) {
+        *aOutApzResponse = nsEventStatus_eIgnore;
+      }
     }
   } else {
     if (aOutInputBlockId) {
