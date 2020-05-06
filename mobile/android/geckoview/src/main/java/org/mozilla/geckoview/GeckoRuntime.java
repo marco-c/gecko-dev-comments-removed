@@ -486,6 +486,10 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
+
+
+
+    @Deprecated 
     @UiThread
     public @NonNull GeckoResult<Void> registerWebExtension(
             final @NonNull WebExtension webExtension) {
@@ -519,6 +523,10 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
+
+
+
+    @Deprecated 
     @UiThread
     public @NonNull GeckoResult<Void> unregisterWebExtension(
             final @NonNull WebExtension webExtension) {

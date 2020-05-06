@@ -831,6 +831,7 @@ var GeckoViewWebExtension = {
         this.pageActionClick(aData.extensionId);
         break;
       }
+      
       case "GeckoView:RegisterWebExtension": {
         let uri;
         try {
@@ -880,6 +881,7 @@ var GeckoViewWebExtension = {
         break;
       }
 
+      
       case "GeckoView:UnregisterWebExtension": {
         if (!this.extensionScopes.has(aData.id)) {
           aCallback.onError(
@@ -1073,6 +1075,7 @@ var GeckoViewWebExtension = {
     }
   },
 };
+
 
 GeckoViewWebExtension.extensionScopes = new Map();
 
