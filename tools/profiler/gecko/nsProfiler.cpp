@@ -870,7 +870,7 @@ RefPtr<nsProfiler::SymbolTablePromise> nsProfiler::GetSymbolTableMozPromise(
     }
   }
 
-  mSymbolTableThread->Dispatch(NS_NewRunnableFunction(
+  nsresult rv = mSymbolTableThread->Dispatch(NS_NewRunnableFunction(
       "nsProfiler::GetSymbolTableMozPromise runnable on ProfSymbolTable thread",
       [promiseHolder = std::move(promiseHolder),
        debugPath = nsCString(aDebugPath),
@@ -886,6 +886,12 @@ RefPtr<nsProfiler::SymbolTablePromise> nsProfiler::GetSymbolTableMozPromise(
           promiseHolder.Reject(NS_ERROR_FAILURE, __func__);
         }
       }));
+
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    
+    promiseHolder.Reject(NS_ERROR_FAILURE, __func__);
+  }
 
   return promise;
 }
