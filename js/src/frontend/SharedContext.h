@@ -366,7 +366,6 @@ class FunctionBox : public SharedContext {
   bool emitBytecode : 1; 
 
   
-  bool usesArguments : 1;  
   bool usesApply : 1;      
   bool usesThis : 1;       
   bool usesReturn : 1;     
@@ -467,7 +466,7 @@ class FunctionBox : public SharedContext {
   }
 
   bool isLikelyConstructorWrapper() const {
-    return usesArguments && usesApply && usesThis && !usesReturn;
+    return argumentsHasVarBinding() && usesApply && usesThis && !usesReturn;
   }
 
   bool isGenerator() const {
