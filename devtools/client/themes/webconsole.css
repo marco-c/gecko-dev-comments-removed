@@ -414,6 +414,13 @@
 }
 
 
+.message.network .headers-panel-container #block-button,
+.message.network .headers-panel-container #edit-resend-button,
+.message.network .headers-panel-container .devtools-separator {
+  display: none;
+}
+
+
 html #webconsole-notificationbox {
   flex: 0;
   width: 100%;
