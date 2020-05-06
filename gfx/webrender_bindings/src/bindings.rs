@@ -2260,12 +2260,8 @@ pub struct WrStackingContextParams {
     pub reference_frame_kind: WrReferenceFrameKind,
     pub scrolling_relative_to: *const u64,
     pub prim_flags: PrimitiveFlags,
-    
-    pub cache_tiles: bool,
     pub mix_blend_mode: MixBlendMode,
-    
-    
-    pub is_backdrop_root: bool,
+    pub flags: StackingContextFlags,
 }
 
 #[no_mangle]
@@ -2389,8 +2385,7 @@ pub extern "C" fn wr_dp_push_stacking_context(
         &r_filter_datas,
         &[],
         glyph_raster_space,
-        params.cache_tiles,
-        params.is_backdrop_root,
+        params.flags,
     );
 
     result

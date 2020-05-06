@@ -7,7 +7,7 @@ use api::{ClipId, ColorF, CommonItemProperties, ComplexClipRegion, ComponentTran
 use api::{DisplayItem, DisplayItemRef, ExtendMode, ExternalScrollId, FilterData, SharedFontInstanceMap};
 use api::{FilterOp, FilterPrimitive, FontInstanceKey, GlyphInstance, GlyphOptions, GradientStop};
 use api::{IframeDisplayItem, ImageKey, ImageRendering, ItemRange, ColorDepth, QualitySettings};
-use api::{LineOrientation, LineStyle, NinePatchBorderSource, PipelineId, MixBlendMode};
+use api::{LineOrientation, LineStyle, NinePatchBorderSource, PipelineId, MixBlendMode, StackingContextFlags};
 use api::{PropertyBinding, ReferenceFrame, ReferenceFrameKind, ScrollFrameDisplayItem, ScrollSensitivity};
 use api::{Shadow, SpaceAndClipInfo, SpatialId, StackingContext, StickyFrameDisplayItem, ImageMask};
 use api::{ClipMode, PrimitiveKeyKind, TransformStyle, YuvColorSpace, ColorRange, YuvData, TempFilterData};
@@ -454,11 +454,10 @@ impl<'a> SceneBuilder<'a> {
             CompositeOps::default(),
             TransformStyle::Flat,
              PrimitiveFlags::IS_BACKFACE_VISIBLE,
-             false,
             ROOT_SPATIAL_NODE_INDEX,
             ClipChainId::NONE,
             RasterSpace::Screen,
-             true,
+            StackingContextFlags::IS_BACKDROP_ROOT,
             device_pixel_scale,
         );
 
@@ -900,11 +899,10 @@ impl<'a> SceneBuilder<'a> {
             composition_operations,
             stacking_context.transform_style,
             prim_flags,
-            stacking_context.cache_tiles,
             spatial_node_index,
             clip_chain_id,
             stacking_context.raster_space,
-            stacking_context.is_backdrop_root,
+            stacking_context.flags,
             self.sc_stack.last().unwrap().snap_to_device.device_pixel_scale,
         );
 
@@ -1798,11 +1796,10 @@ impl<'a> SceneBuilder<'a> {
         composite_ops: CompositeOps,
         transform_style: TransformStyle,
         prim_flags: PrimitiveFlags,
-        create_tile_cache: bool,
         spatial_node_index: SpatialNodeIndex,
         clip_chain_id: ClipChainId,
         requested_raster_space: RasterSpace,
-        is_backdrop_root: bool,
+        flags: StackingContextFlags,
         device_pixel_scale: DevicePixelScale,
     ) {
         
@@ -1814,11 +1811,6 @@ impl<'a> SceneBuilder<'a> {
         } else {
             None
         };
-
-        if is_pipeline_root && create_tile_cache && self.config.global_enable_picture_caching {
-            
-            debug_assert!(!self.sc_stack.iter().any(|sc| sc.create_tile_cache));
-        }
 
         
         
@@ -1893,6 +1885,10 @@ impl<'a> SceneBuilder<'a> {
         let mut blit_reason = BlitReason::empty();
         let mut current_clip_chain_id = clip_chain_id;
 
+        if flags.contains(StackingContextFlags::IS_BLEND_CONTAINER) {
+            blit_reason |= BlitReason::ISOLATE;
+        }
+
         
         
         while current_clip_chain_id != ClipChainId::NONE {
@@ -1932,8 +1928,7 @@ impl<'a> SceneBuilder<'a> {
             blit_reason,
             transform_style,
             context_3d,
-            create_tile_cache,
-            is_backdrop_root,
+            is_backdrop_root: flags.contains(StackingContextFlags::IS_BACKDROP_ROOT),
             snap_to_device,
         });
     }
@@ -2169,48 +2164,52 @@ impl<'a> SceneBuilder<'a> {
         
         
         
-        let has_mix_blend = if let (Some(mix_blend_mode), false) = (stacking_context.composite_ops.mix_blend_mode, parent_is_empty) {
-            let composite_mode = Some(PictureCompositeMode::MixBlend(mix_blend_mode));
+        if let (Some(mix_blend_mode), false) = (stacking_context.composite_ops.mix_blend_mode, parent_is_empty) {
+            if self.sc_stack.last().unwrap().blit_reason.contains(BlitReason::ISOLATE) {
+                let composite_mode = Some(PictureCompositeMode::MixBlend(mix_blend_mode));
 
-            let mut prim_list = PrimitiveList::empty();
-            prim_list.add_prim(
-                cur_instance.clone(),
-                LayoutRect::zero(),
-                stacking_context.spatial_node_index,
-                stacking_context.prim_flags,
-            );
-
-            let blend_pic_index = PictureIndex(self.prim_store.pictures
-                .alloc()
-                .init(PicturePrimitive::new_image(
-                    composite_mode.clone(),
-                    Picture3DContext::Out,
-                    None,
-                    true,
-                    stacking_context.prim_flags,
-                    stacking_context.requested_raster_space,
-                    prim_list,
+                let mut prim_list = PrimitiveList::empty();
+                prim_list.add_prim(
+                    cur_instance.clone(),
+                    LayoutRect::zero(),
                     stacking_context.spatial_node_index,
-                    None,
-                    PictureOptions::default(),
-                ))
-            );
+                    stacking_context.prim_flags,
+                );
 
-            current_pic_index = blend_pic_index;
-            cur_instance = create_prim_instance(
-                blend_pic_index,
-                composite_mode.into(),
-                ClipChainId::NONE,
-                &mut self.interners,
-            );
+                let blend_pic_index = PictureIndex(self.prim_store.pictures
+                    .alloc()
+                    .init(PicturePrimitive::new_image(
+                        composite_mode.clone(),
+                        Picture3DContext::Out,
+                        None,
+                        true,
+                        stacking_context.prim_flags,
+                        stacking_context.requested_raster_space,
+                        prim_list,
+                        stacking_context.spatial_node_index,
+                        None,
+                        PictureOptions::default(),
+                    ))
+                );
 
-            if cur_instance.is_chased() {
-                println!("\tis a mix-blend picture for a stacking context with {:?}", mix_blend_mode);
+                current_pic_index = blend_pic_index;
+                cur_instance = create_prim_instance(
+                    blend_pic_index,
+                    composite_mode.into(),
+                    ClipChainId::NONE,
+                    &mut self.interners,
+                );
+
+                if cur_instance.is_chased() {
+                    println!("\tis a mix-blend picture for a stacking context with {:?}", mix_blend_mode);
+                }
+            } else {
+                
+                
+                
+                warn!("found a mix-blend-mode outside a blend container, ignoring");
             }
-            true
-        } else {
-            false
-        };
+        }
 
         
         
@@ -2225,13 +2224,6 @@ impl<'a> SceneBuilder<'a> {
             }
             
             Some(ref mut parent_sc) => {
-                
-                
-                
-                
-                if has_mix_blend {
-                    parent_sc.blit_reason |= BlitReason::ISOLATE;
-                }
                 parent_sc.prim_list.add_prim(
                     cur_instance,
                     LayoutRect::zero(),
@@ -3830,9 +3822,6 @@ struct FlattenedStackingContext {
 
     
     context_3d: Picture3DContext<ExtendedPrimitiveInstance>,
-
-    
-    create_tile_cache: bool,
 
     
     is_backdrop_root: bool,
