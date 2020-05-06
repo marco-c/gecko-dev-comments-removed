@@ -712,6 +712,21 @@ function handleRequest(req, res) {
         });
       }
 
+      
+      if (packet.questions[0].type == "TXT") {
+        answers.push({
+          name: packet.questions[0].name,
+          type: packet.questions[0].type,
+          ttl: 55,
+          class: "IN",
+          flush: false,
+          data: Buffer.from(
+            "62586B67646D39705932556761584D6762586B676347467A63336476636D513D",
+            "hex"
+          ),
+        });
+      }
+
       if (u.query.cnameloop) {
         answers.push({
           name: "cname.example.com",
@@ -836,33 +851,6 @@ function handleRequest(req, res) {
     
     return;
   }
-  
-  else if (u.pathname === "/esni-dns") {
-    content = Buffer.from(
-      "0000" +
-      "8180" +
-      "0001" + 
-      "0001" + 
-      "00000000" + 
-      "055F65736E69076578616D706C6503636F6D00" + 
-      "00100001" + 
-      "C00C" + 
-      "0010" + 
-      "0001" + 
-      "00000037" + 
-      "0021" + 
-        "2062586B67646D39705932556761584D6762586B676347467A63336476636D513D", 
-      "hex"
-    );
-
-    res.setHeader("Content-Type", "application/dns-message");
-    res.setHeader("Content-Length", content.length);
-    res.writeHead(200);
-    res.write(content);
-    res.end("");
-    return;
-  }
-
   
   else if (u.pathname === "/esni-dns-push") {
     

@@ -113,7 +113,7 @@ add_task(async function testEsniRequest() {
   
   prefs.setCharPref(
     "network.trr.uri",
-    "https://foo.example.com:" + h2Port + "/esni-dns"
+    "https://foo.example.com:" + h2Port + "/doh"
   );
 
   let listenerEsni = new DNSListener();
