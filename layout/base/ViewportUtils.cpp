@@ -5,6 +5,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/ViewportUtils.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
+#include "mozilla/layers/InputAPZContext.h"
 #include "mozilla/layers/ScrollableLayerGuid.h"
 #include "nsIContent.h"
 #include "nsLayoutUtils.h"
@@ -12,6 +13,7 @@
 namespace mozilla {
 
 using layers::APZCCallbackHelper;
+using layers::InputAPZContext;
 using layers::ScrollableLayerGuid;
 
 CSSToCSSMatrix4x4 ViewportUtils::GetVisualToLayoutTransform(
@@ -45,6 +47,51 @@ CSSToCSSMatrix4x4 ViewportUtils::GetVisualToLayoutTransform(
 
   return mozilla::CSSToCSSMatrix4x4::Scaling(1 / resolution, 1 / resolution, 1)
       .PostTranslate(transform.x, transform.y, 0);
+}
+
+CSSToCSSMatrix4x4 GetVisualToLayoutTransform(PresShell* aContext) {
+  ScrollableLayerGuid::ViewID targetScrollId =
+      InputAPZContext::GetTargetLayerGuid().mScrollId;
+  if (targetScrollId == ScrollableLayerGuid::NULL_SCROLL_ID) {
+    if (nsIFrame* rootScrollFrame = aContext->GetRootScrollFrame()) {
+      targetScrollId =
+          nsLayoutUtils::FindOrCreateIDFor(rootScrollFrame->GetContent());
+    }
+  }
+  return ViewportUtils::GetVisualToLayoutTransform(targetScrollId);
+}
+
+nsPoint ViewportUtils::VisualToLayout(const nsPoint& aPt, PresShell* aContext) {
+  auto visualToLayout = mozilla::GetVisualToLayoutTransform(aContext);
+  CSSPoint cssPt = CSSPoint::FromAppUnits(aPt);
+  cssPt = visualToLayout.TransformPoint(cssPt);
+  return CSSPoint::ToAppUnits(cssPt);
+}
+
+nsRect ViewportUtils::VisualToLayout(const nsRect& aRect, PresShell* aContext) {
+  auto visualToLayout = mozilla::GetVisualToLayoutTransform(aContext);
+  CSSRect cssRect = CSSRect::FromAppUnits(aRect);
+  cssRect = visualToLayout.TransformBounds(cssRect);
+  nsRect result = CSSRect::ToAppUnits(cssRect);
+
+  
+  
+  
+  
+  
+  if (!aRect.IsEmpty() && result.IsEmpty()) {
+    result.width = 1;
+    result.height = 1;
+  }
+
+  return result;
+}
+
+nsPoint ViewportUtils::LayoutToVisual(const nsPoint& aPt, PresShell* aContext) {
+  auto visualToLayout = mozilla::GetVisualToLayoutTransform(aContext);
+  CSSPoint cssPt = CSSPoint::FromAppUnits(aPt);
+  auto transformed = visualToLayout.Inverse().TransformPoint(cssPt);
+  return CSSPoint::ToAppUnits(transformed);
 }
 
 }  
