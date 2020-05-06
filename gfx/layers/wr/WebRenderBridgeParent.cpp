@@ -2388,27 +2388,19 @@ void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
   TimeStamp start = TimeStamp::Now();
   mAsyncImageManager->SetCompositionTime(start);
 
-  wr::RenderRootArray<Maybe<wr::TransactionBuilder>> fastTxns;
   
-  wr::RenderRootArray<Maybe<wr::TransactionBuilder>> sceneBuilderTxns;
-  wr::RenderRootArray<Maybe<wr::AutoTransactionSender>> senders;
-  for (auto& api : mApis) {
-    if (!api) {
-      continue;
-    }
-    auto renderRoot = api->GetRenderRoot();
-    
-    
-    
-    fastTxns[renderRoot].emplace(false );
-    sceneBuilderTxns[renderRoot].emplace();
-    senders[renderRoot].emplace(api, sceneBuilderTxns[renderRoot].ptr());
-  }
+  
+  
+  wr::TransactionBuilder fastTxn(false );
+  
+  wr::TransactionBuilder sceneBuilderTxn;
+  wr::AutoTransactionSender senders(mApis[wr::RenderRoot::Default],
+                                    &sceneBuilderTxn);
 
   
   
   
-  mAsyncImageManager->ApplyAsyncImagesOfImageBridge(sceneBuilderTxns, fastTxns);
+  mAsyncImageManager->ApplyAsyncImagesOfImageBridge(sceneBuilderTxn, fastTxn);
 
   if (!mAsyncImageManager->GetCompositeUntilTime().IsNull()) {
     
@@ -2417,22 +2409,11 @@ void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
     mCompositorScheduler->ScheduleComposition();
   }
 
-  uint8_t framesGenerated = 0;
-  wr::RenderRootArray<bool> generateFrame;
-  for (auto& api : mApis) {
-    if (!api) {
-      continue;
-    }
-    auto renderRoot = api->GetRenderRoot();
-    generateFrame[renderRoot] =
-        mAsyncImageManager->GetAndResetWillGenerateFrame(renderRoot) ||
-        !fastTxns[renderRoot]->IsEmpty() || aForceGenerateFrame;
-    if (generateFrame[renderRoot]) {
-      framesGenerated++;
-    }
-  }
+  bool generateFrame = mAsyncImageManager->GetAndResetWillGenerateFrame(
+                           wr::RenderRoot::Default) ||
+                       !fastTxn.IsEmpty() || aForceGenerateFrame;
 
-  if (framesGenerated == 0) {
+  if (!generateFrame) {
     
     mPreviousFrameTimeStamp = TimeStamp();
     return;
@@ -2446,32 +2427,25 @@ void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
   }
   
   
-  fastTxns[wr::RenderRoot::Default]->UpdateDynamicProperties(
-      animations.mOpacityArrays, animations.mTransformArrays,
-      animations.mColorArrays);
+  fastTxn.UpdateDynamicProperties(animations.mOpacityArrays,
+                                  animations.mTransformArrays,
+                                  animations.mColorArrays);
 
   SetAPZSampleTime();
 
   wr::RenderThread::Get()->IncPendingFrameCount(
-      mApis[wr::RenderRoot::Default]->GetId(), aId, start, framesGenerated);
+      mApis[wr::RenderRoot::Default]->GetId(), aId, start, 1);
 
 #if defined(ENABLE_FRAME_LATENCY_LOG)
   auto startTime = TimeStamp::Now();
   mApis[wr::RenderRoot::Default]->SetFrameStartTime(startTime);
 #endif
 
-  MOZ_ASSERT(framesGenerated > 0);
+  MOZ_ASSERT(generateFrame);
+  fastTxn.GenerateFrame();
+
   wr::RenderRootArray<wr::TransactionBuilder*> generateFrameTxns;
-  for (auto& api : mApis) {
-    if (!api) {
-      continue;
-    }
-    auto renderRoot = api->GetRenderRoot();
-    if (generateFrame[renderRoot]) {
-      fastTxns[renderRoot]->GenerateFrame();
-      generateFrameTxns[renderRoot] = fastTxns[renderRoot].ptr();
-    }
-  }
+  generateFrameTxns[wr::RenderRoot::Default] = &fastTxn;
   wr::WebRenderAPI::SendTransactions(mApis, generateFrameTxns);
 
 #if defined(MOZ_WIDGET_ANDROID)
