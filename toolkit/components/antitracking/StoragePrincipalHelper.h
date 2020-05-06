@@ -119,9 +119,14 @@
 
 
 class nsIChannel;
+class nsILoadGroup;
 class nsIPrincipal;
 
 namespace mozilla {
+
+namespace dom {
+class Document;
+}
 
 namespace ipc {
 class PrincipalInfo;
@@ -134,12 +139,40 @@ class StoragePrincipalHelper final {
   static nsresult Create(nsIChannel* aChannel, nsIPrincipal* aPrincipal,
                          nsIPrincipal** aStoragePrincipal);
 
-  static nsresult PrepareOriginAttributes(nsIChannel* aChannel,
-                                          OriginAttributes& aOriginAttributes);
+  static nsresult PrepareEffectiveStoragePrincipalOriginAttributes(
+      nsIChannel* aChannel, OriginAttributes& aOriginAttributes);
 
   static bool VerifyValidStoragePrincipalInfoForPrincipalInfo(
       const mozilla::ipc::PrincipalInfo& aStoragePrincipalInfo,
       const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
+
+  enum PrincipalType {
+    
+    eRegularPrincipal,
+
+    
+    
+    
+    
+    eStorageAccessPrincipal,
+
+    
+    
+    ePartitionedPrincipal,
+  };
+
+  
+
+
+  static bool GetOriginAttributes(nsIChannel* aChannel,
+                                  OriginAttributes& aAttributes,
+                                  PrincipalType aPrincipalType);
+
+  static bool GetRegularPrincipalOriginAttributes(
+      dom::Document* aDocument, OriginAttributes& aAttributes);
+
+  static bool GetRegularPrincipalOriginAttributes(
+      nsILoadGroup* aLoadGroup, OriginAttributes& aAttributes);
 };
 
 }  

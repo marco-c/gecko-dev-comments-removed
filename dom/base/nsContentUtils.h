@@ -998,17 +998,6 @@ class nsContentUtils {
   
 
 
-  static mozilla::OriginAttributes GetOriginAttributes(Document* aDoc);
-
-  
-
-
-  static mozilla::OriginAttributes GetOriginAttributes(
-      nsILoadGroup* aLoadGroup);
-
-  
-
-
   static bool IsInPrivateBrowsing(Document* aDoc);
 
   
@@ -2482,15 +2471,6 @@ class nsContentUtils {
 
 
   static bool IsSubDocumentTabbable(nsIContent* aContent);
-
-  
-
-
-
-
-
-
-  static bool IsUserFocusIgnored(nsINode* aNode);
 
   
 

@@ -594,15 +594,6 @@ bool NS_UsePrivateBrowsing(nsIChannel* channel);
 
 
 
-
-bool NS_GetOriginAttributes(nsIChannel* aChannel,
-                            mozilla::OriginAttributes& aAttributes,
-                            bool aUsingStoragePrincipal = false);
-
-
-
-
-
 bool NS_HasBeenCrossOrigin(nsIChannel* aChannel, bool aReport = false);
 
 
