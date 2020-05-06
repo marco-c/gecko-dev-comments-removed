@@ -126,7 +126,8 @@ def get_debugger_path(debugger):
 
         
         try:
-            path = check_output(['xcrun', '--find', 'lldb']).strip()
+            path = check_output(['xcrun', '--find', 'lldb'],
+                                universal_newlines=True).strip()
             if path:
                 return path
         except Exception:
