@@ -106,15 +106,8 @@ bool HTMLSummaryElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
     return disallowOverridingFocusability;
   }
 
-#ifdef XP_MACOSX
-  
-  
-  
-  *aIsFocusable = !aWithMouse || nsFocusManager::sMouseFocusesFormControl;
-#else
   
   *aIsFocusable = true;
-#endif
 
   
   return false;
