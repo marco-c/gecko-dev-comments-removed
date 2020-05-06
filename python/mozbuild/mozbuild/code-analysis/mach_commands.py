@@ -1063,6 +1063,7 @@ class StaticAnalysis(MachCommandBase):
         
         
         self._set_log_level(verbose)
+        self._activate_virtualenv()
         self._dump_results = dump_results
 
         force_download = not self._dump_results
