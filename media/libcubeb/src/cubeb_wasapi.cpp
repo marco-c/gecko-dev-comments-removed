@@ -89,6 +89,9 @@ DEFINE_PROPERTYKEY(PKEY_Device_InstanceId,      0x78c34fc8, 0x104a, 0x4aca, 0x9e
 #endif
 
 namespace {
+
+const int64_t LATENCY_NOT_AVAILABLE_YET = -1;
+
 struct com_heap_ptr_deleter {
   void operator()(void * ptr) const noexcept {
     CoTaskMemFree(ptr);
@@ -211,6 +214,7 @@ struct cubeb {
   
   cubeb_device_collection_changed_callback output_collection_changed_callback = nullptr;
   void * output_collection_changed_user_ptr = nullptr;
+  UINT64 performance_counter_frequency;
 };
 
 class wasapi_endpoint_notification_client;
@@ -334,6 +338,9 @@ struct cubeb_stream {
   std::atomic<std::atomic<bool>*> emergency_bailout { nullptr };
   
   HANDLE thread_ready_event = 0;
+  
+
+  std::atomic<int64_t> input_latency_hns { LATENCY_NOT_AVAILABLE_YET };
 };
 
 class monitor_device_notifications {
@@ -856,6 +863,7 @@ bool get_input_buffer(cubeb_stream * stm)
   BYTE * input_packet = NULL;
   DWORD flags;
   UINT64 dev_pos;
+  UINT64 pc_position;
   UINT32 next;
   
 
@@ -885,12 +893,24 @@ bool get_input_buffer(cubeb_stream * stm)
                                         &frames,
                                         &flags,
                                         &dev_pos,
-                                        NULL);
+                                        &pc_position);
+
     if (FAILED(hr)) {
       LOG("GetBuffer failed for capture: %lx", hr);
       return false;
     }
     XASSERT(frames == next);
+
+    if (stm->context->performance_counter_frequency) {
+      LARGE_INTEGER now;
+      UINT64 now_hns;
+      
+      QueryPerformanceCounter(&now);
+      now_hns = 10000000 * now.QuadPart / stm->context->performance_counter_frequency;
+      if (now_hns >= pc_position) {
+        stm->input_latency_hns = now_hns - pc_position;
+      }
+    }
 
     UINT32 input_stream_samples = frames * stm->input_stream_params.channels;
     
@@ -1525,6 +1545,14 @@ int wasapi_init(cubeb ** context, char const * context_name)
   if (cubeb_strings_init(&ctx->device_ids) != CUBEB_OK) {
     delete ctx;
     return CUBEB_ERROR;
+  }
+
+  LARGE_INTEGER frequency;
+  if (QueryPerformanceFrequency(&frequency)) {
+    LOG("Failed getting performance counter frequency, latency reporting will be inacurate");
+    ctx->performance_counter_frequency = 0;
+  } else {
+    ctx->performance_counter_frequency = frequency.QuadPart;
   }
 
   *context = ctx;
@@ -2609,7 +2637,34 @@ int wasapi_stream_get_latency(cubeb_stream * stm, uint32_t * latency)
   if (FAILED(hr)) {
     return CUBEB_ERROR;
   }
-  *latency = hns_to_frames(stm, latency_hns);
+  
+  if (latency_hns == 0) {
+     double delay_s = current_stream_delay(stm);
+     
+     *latency = delay_s * stm->output_stream_params.rate;
+  } else {
+     *latency = hns_to_frames(stm, latency_hns);
+  }
+
+  return CUBEB_OK;
+}
+
+
+int wasapi_stream_get_input_latency(cubeb_stream * stm, uint32_t * latency)
+{
+  XASSERT(stm && latency);
+
+  if (!has_input(stm)) {
+    return CUBEB_ERROR;
+  }
+
+  auto_lock lock(stm->stream_reset_lock);
+
+  if (stm->input_latency_hns == LATENCY_NOT_AVAILABLE_YET) {
+    return CUBEB_ERROR;
+  }
+
+  *latency = hns_to_frames(stm, stm->input_latency_hns);
 
   return CUBEB_OK;
 }
@@ -2973,6 +3028,7 @@ cubeb_ops const wasapi_ops = {
    wasapi_stream_reset_default_device,
    wasapi_stream_get_position,
    wasapi_stream_get_latency,
+   wasapi_stream_get_input_latency,
    wasapi_stream_set_volume,
    NULL,
    NULL,

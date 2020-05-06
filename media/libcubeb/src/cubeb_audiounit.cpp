@@ -3621,6 +3621,7 @@ cubeb_ops const audiounit_ops = {
    nullptr,
    audiounit_stream_get_position,
    audiounit_stream_get_latency,
+   NULL,
    audiounit_stream_set_volume,
    audiounit_stream_get_current_device,
    audiounit_stream_device_destroy,
