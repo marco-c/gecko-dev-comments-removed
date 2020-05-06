@@ -451,15 +451,14 @@ PresShell* APZCCallbackHelper::GetRootContentDocumentPresShellForContent(
   return context->PresShell();
 }
 
-CSSPoint APZCCallbackHelper::ApplyCallbackTransform(
-    const CSSPoint& aInput, const ScrollableLayerGuid& aGuid) {
-  CSSPoint input = aInput;
+mozilla::CSSToCSSMatrix4x4 APZCCallbackHelper::GetCallbackTransform(
+    const ScrollableLayerGuid& aGuid) {
   if (aGuid.mScrollId == ScrollableLayerGuid::NULL_SCROLL_ID) {
-    return input;
+    return {};
   }
   nsCOMPtr<nsIContent> content = nsLayoutUtils::FindContentFor(aGuid.mScrollId);
   if (!content) {
-    return input;
+    return {};
   }
 
   
@@ -469,16 +468,24 @@ CSSPoint APZCCallbackHelper::ApplyCallbackTransform(
   
   
   
+  float resolution = 1.0f;
   if (PresShell* presShell =
           GetRootContentDocumentPresShellForContent(content)) {
-    input = input / presShell->GetResolution();
+    resolution = presShell->GetResolution();
   }
 
   
   
   CSSPoint transform = nsLayoutUtils::GetCumulativeApzCallbackTransform(
       content->GetPrimaryFrame());
-  return input + transform;
+
+  return mozilla::CSSToCSSMatrix4x4::Scaling(1 / resolution, 1 / resolution, 1)
+      .PostTranslate(transform.x, transform.y, 0);
+}
+
+CSSPoint APZCCallbackHelper::ApplyCallbackTransform(
+    const CSSPoint& aInput, const ScrollableLayerGuid& aGuid) {
+  return GetCallbackTransform(aGuid).TransformPoint(aInput);
 }
 
 LayoutDeviceIntPoint APZCCallbackHelper::ApplyCallbackTransform(
