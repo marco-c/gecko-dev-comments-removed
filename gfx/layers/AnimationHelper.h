@@ -147,8 +147,6 @@ class CompositorAnimationStorage final {
   typedef nsClassHashtable<nsUint64HashKey, AnimatedValue> AnimatedValueTable;
   typedef nsDataHashtable<nsUint64HashKey, AnimationStorageData>
       AnimationsTable;
-  typedef nsDataHashtable<nsUint64HashKey, wr::RenderRoot>
-      AnimationsRenderRootsTable;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorAnimationStorage)
  public:
@@ -194,8 +192,7 @@ class CompositorAnimationStorage final {
   
 
 
-  void SetAnimations(uint64_t aId, const AnimationArray& aAnimations,
-                     wr::RenderRoot aRenderRoot);
+  void SetAnimations(uint64_t aId, const AnimationArray& aAnimations);
 
   
 
@@ -205,10 +202,6 @@ class CompositorAnimationStorage final {
   }
 
   uint32_t AnimationsCount() const { return mAnimations.Count(); }
-
-  wr::RenderRoot AnimationRenderRoot(const uint64_t& aId) const {
-    return mAnimationRenderRoots.Get(aId);
-  }
 
   
 
@@ -222,7 +215,6 @@ class CompositorAnimationStorage final {
  private:
   AnimatedValueTable mAnimatedValues;
   AnimationsTable mAnimations;
-  AnimationsRenderRootsTable mAnimationRenderRoots;
 };
 
 
