@@ -210,6 +210,58 @@ class AccessibleWalkerFront extends FrontClassWithSpec(accessibleWalkerSpec) {
 
     return super.pick();
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async getAncestry(accessible) {
+    const ancestry = await super.getAncestry(accessible);
+    if (!BROWSER_TOOLBOX_FISSION_ENABLED) {
+      
+      return ancestry;
+    }
+
+    const parentTarget = await this.targetFront.getParentTarget();
+    if (!parentTarget) {
+      return ancestry;
+    }
+
+    
+    
+    
+    const { walker: domWalkerFront } = await this.targetFront.getFront(
+      "inspector"
+    );
+    const frameNodeFront = (await domWalkerFront.getRootNode()).parentNode();
+    const accessibilityFront = await parentTarget.getFront("accessibility");
+    await accessibilityFront.bootstrap();
+    const { accessibleWalkerFront } = accessibilityFront;
+    const frameAccessibleFront = await accessibleWalkerFront.getAccessibleFor(
+      frameNodeFront
+    );
+
+    
+    
+    
+    ancestry.push(
+      {
+        accessible: frameAccessibleFront,
+        children: await frameAccessibleFront.children(),
+      },
+      ...(await accessibleWalkerFront.getAncestry(frameAccessibleFront))
+    );
+
+    return ancestry;
+  }
 }
 
 class AccessibilityFront extends FrontClassWithSpec(accessibilitySpec) {
