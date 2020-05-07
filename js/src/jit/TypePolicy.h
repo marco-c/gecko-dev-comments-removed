@@ -324,6 +324,19 @@ class ToInt32Policy final : public TypePolicy {
 };
 
 
+class ToBigIntPolicy final : public TypePolicy {
+ public:
+  constexpr ToBigIntPolicy() = default;
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* def);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
+};
+
+
 class ToStringPolicy final : public TypePolicy {
  public:
   constexpr ToStringPolicy() = default;

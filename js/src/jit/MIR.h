@@ -4194,6 +4194,33 @@ class MTruncateToInt32 : public MUnaryInstruction, public ToInt32Policy::Data {
 };
 
 
+
+class MToBigInt : public MUnaryInstruction, public ToBigIntPolicy::Data {
+ private:
+  explicit MToBigInt(MDefinition* def) : MUnaryInstruction(classOpcode, def) {
+    setResultType(MIRType::BigInt);
+    setMovable();
+
+    
+    if (!def->definitelyType(
+            {MIRType::Boolean, MIRType::String, MIRType::BigInt})) {
+      setGuard();
+    }
+  }
+
+ public:
+  INSTRUCTION_HEADER(ToBigInt)
+  TRIVIAL_NEW_WRAPPERS
+
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+
+  ALLOW_CLONE(MToBigInt)
+};
+
+
 class MToString : public MUnaryInstruction, public ToStringPolicy::Data {
  public:
   

@@ -2942,6 +2942,20 @@ class LValueToInt32 : public LInstructionHelper<1, BOX_PIECES, 2> {
 };
 
 
+class LValueToBigInt : public LInstructionHelper<1, BOX_PIECES, 0> {
+ public:
+  LIR_HEADER(ValueToBigInt)
+  static const size_t Input = 0;
+
+  explicit LValueToBigInt(const LBoxAllocation& input)
+      : LInstructionHelper(classOpcode) {
+    setBoxOperand(Input, input);
+  }
+
+  MToBigInt* mir() const { return mir_->toToBigInt(); }
+};
+
+
 
 
 
