@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsNativeThemeCocoa.h"
 
@@ -44,7 +44,7 @@
 #include "gfxContext.h"
 #include "gfxQuartzSurface.h"
 #include "gfxQuartzNativeDrawing.h"
-#include "gfxUtils.h"  // for ToDeviceColor
+#include "gfxUtils.h"  
 #include <algorithm>
 
 using namespace mozilla;
@@ -54,7 +54,7 @@ using mozilla::dom::HTMLMeterElement;
 #define DRAW_IN_FRAME_DEBUG 0
 #define SCROLLBARS_VISUAL_DEBUG 0
 
-// private Quartz routines needed here
+
 extern "C" {
 CG_EXTERN void CGContextSetCTM(CGContextRef, CGAffineTransform);
 CG_EXTERN void CGContextSetBaseCTM(CGContextRef, CGAffineTransform);
@@ -63,26 +63,26 @@ void CUIDraw(CUIRendererRef r, CGRect rect, CGContextRef ctx, CFDictionaryRef op
              CFDictionaryRef* result);
 }
 
-// Workaround for NSCell control tint drawing
-// Without this workaround, NSCells are always drawn with the clear control tint
-// as long as they're not attached to an NSControl which is a subview of an active window.
-// XXXmstange Why doesn't Webkit need this?
+
+
+
+
 @implementation NSCell (ControlTintWorkaround)
 - (int)_realControlTint {
   return [self controlTint];
 }
 @end
 
-// The purpose of this class is to provide objects that can be used when drawing
-// NSCells using drawWithFrame:inView: without causing any harm. The only
-// messages that will be sent to such an object are "isFlipped" and
-// "currentEditor": isFlipped needs to return YES in order to avoid drawing bugs
-// on 10.4 (see bug 465069); currentEditor (which isn't even a method of
-// NSView) will be called when drawing search fields, and we only provide it in
-// order to prevent "unrecognized selector" exceptions.
-// There's no need to pass the actual NSView that we're drawing into to
-// drawWithFrame:inView:. What's more, doing so even causes unnecessary
-// invalidations as soon as we draw a focusring!
+
+
+
+
+
+
+
+
+
+
 @interface CellDrawView : NSView
 
 @end
@@ -99,13 +99,13 @@ void CUIDraw(CUIRendererRef r, CGRect rect, CGContextRef ctx, CFDictionaryRef op
 
 @end
 
-// These two classes don't actually add any behavior over NSButtonCell. Their
-// purpose is to make it easy to distinguish NSCell objects that are used for
-// drawing radio buttons / checkboxes from other cell types.
-// The class names are made up, there are no classes with these names in AppKit.
-// The reason we need them is that calling [cell setButtonType:NSRadioButton]
-// doesn't leave an easy-to-check "marker" on the cell object - there is no
-// -[NSButtonCell buttonType] method.
+
+
+
+
+
+
+
 @interface RadioButtonCell : NSButtonCell
 @end
 
@@ -123,20 +123,20 @@ static void DrawFocusRingForCellIfNeeded(NSCell* aCell, NSRect aWithFrame, NSVie
     CGContextRef cgContext = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
     CGContextSaveGState(cgContext);
 
-    // It's important to set the focus ring style before we enter the
-    // transparency layer so that the transparency layer only contains
-    // the normal button mask without the focus ring, and the conversion
-    // to the focus ring shape happens only when the transparency layer is
-    // ended.
+    
+    
+    
+    
+    
     NSSetFocusRingStyle(NSFocusRingOnly);
 
-    // We need to draw the whole button into a transparency layer because
-    // many button types are composed of multiple parts, and if these parts
-    // were drawn while the focus ring style was active, each individual part
-    // would produce a focus ring for itself. But we only want one focus ring
-    // for the whole button. The transparency layer is a way to merge the
-    // individual button parts together before the focus ring shape is
-    // calculated.
+    
+    
+    
+    
+    
+    
+    
     CGContextBeginTransparencyLayerWithRect(cgContext, NSRectToCGRect(aWithFrame), 0);
     [aCell drawFocusRingMaskWithFrame:aWithFrame inView:aInView];
     CGContextEndTransparencyLayer(cgContext);
@@ -147,24 +147,24 @@ static void DrawFocusRingForCellIfNeeded(NSCell* aCell, NSRect aWithFrame, NSVie
 
 static bool FocusIsDrawnByDrawWithFrame(NSCell* aCell) {
 #if defined(MAC_OS_X_VERSION_10_8) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_8
-  // When building with the 10.8 SDK or higher, focus rings don't draw as part
-  // of -[NSCell drawWithFrame:inView:] and must be drawn by a separate call
-  // to -[NSCell drawFocusRingMaskWithFrame:inView:]; .
-  // See the NSButtonCell section under
-  // https://developer.apple.com/library/mac/releasenotes/AppKit/RN-AppKitOlderNotes/#X10_8Notes
+  
+  
+  
+  
+  
   return false;
 #else
   if (!nsCocoaFeatures::OnYosemiteOrLater()) {
-    // When building with the 10.7 SDK or lower, focus rings always draw as
-    // part of -[NSCell drawWithFrame:inView:] if the build is run on 10.9 or
-    // lower.
+    
+    
+    
     return true;
   }
 
-  // On 10.10, whether the focus ring is drawn as part of
-  // -[NSCell drawWithFrame:inView:] depends on the cell type.
-  // Radio buttons and checkboxes draw their own focus rings, other cell
-  // types need -[NSCell drawFocusRingMaskWithFrame:inView:].
+  
+  
+  
+  
   return
       [aCell isKindOfClass:[RadioButtonCell class]] || [aCell isKindOfClass:[CheckboxCell class]];
 #endif
@@ -178,11 +178,11 @@ static void DrawCellIncludingFocusRing(NSCell* aCell, NSRect aWithFrame, NSView*
   }
 }
 
-/**
- * NSProgressBarCell is used to draw progress bars of any size.
- */
+
+
+
 @interface NSProgressBarCell : NSCell {
-  /*All instance variables are private*/
+  
   double mValue;
   double mMax;
   bool mIsIndeterminate;
@@ -272,8 +272,8 @@ static void DrawCellIncludingFocusRing(NSCell* aCell, NSRect aWithFrame, NSView*
 }
 @end
 
-// Workaround for Bug 542048
-// On 64-bit, NSSearchFieldCells don't draw focus rings.
+
+
 #if defined(__x86_64__)
 
 @implementation SearchFieldCellWithFocusRing
@@ -282,18 +282,18 @@ static void DrawCellIncludingFocusRing(NSCell* aCell, NSRect aWithFrame, NSView*
   [super drawWithFrame:rect inView:controlView];
 
   if (FocusIsDrawnByDrawWithFrame(self)) {
-    // For some reason, -[NSSearchFieldCell drawWithFrame:inView] doesn't draw a
-    // focus ring in 64 bit mode, no matter what SDK is used or what OS X version
-    // we're running on. But if FocusIsDrawnByDrawWithFrame(self), then our
-    // caller expects us to draw a focus ring. So we just do that here.
+    
+    
+    
+    
     DrawFocusRingForCellIfNeeded(self, rect, controlView);
   }
 }
 
 - (void)drawFocusRingMaskWithFrame:(NSRect)rect inView:(NSView*)controlView {
-  // By default this draws nothing. I don't know why.
-  // We just draw the search field again. It's a great mask shape for its own
-  // focus ring.
+  
+  
+  
   [super drawWithFrame:rect inView:controlView];
 }
 
@@ -307,9 +307,9 @@ static void DrawCellIncludingFocusRing(NSCell* aCell, NSRect aWithFrame, NSView*
 @implementation ToolbarSearchFieldCellWithFocusRing
 
 - (BOOL)_isToolbarMode {
-  // This function is called during -[NSSearchFieldCell drawWithFrame:inView:].
-  // Returning YES from it selects the style that's appropriate for search
-  // fields inside toolbars.
+  
+  
+  
   return YES;
 }
 
@@ -317,12 +317,12 @@ static void DrawCellIncludingFocusRing(NSCell* aCell, NSRect aWithFrame, NSView*
 
 #define HITHEME_ORIENTATION kHIThemeOrientationNormal
 
-static CGFloat kMaxFocusRingWidth = 0;  // initialized by the nsNativeThemeCocoa constructor
+static CGFloat kMaxFocusRingWidth = 0;  
 
-// These enums are for indexing into the margin array.
+
 enum {
-  leopardOSorlater = 0,  // 10.6 - 10.9
-  yosemiteOSorlater = 1  // 10.10+
+  leopardOSorlater = 0,  
+  yosemiteOSorlater = 1  
 };
 
 enum { miniControlSize, smallControlSize, regularControlSize };
@@ -384,7 +384,7 @@ static NSWindow* NativeWindowForFrame(nsIFrame* aFrame, nsIWidget** aTopLevelWid
 static NSSize WindowButtonsSize(nsIFrame* aFrame) {
   NSWindow* window = NativeWindowForFrame(aFrame);
   if (!window) {
-    // Return fallback values.
+    
     return NSMakeSize(54, 16);
   }
 
@@ -409,15 +409,15 @@ static BOOL FrameIsInActiveWindow(nsIFrame* aFrame) {
   NSWindow* win = NativeWindowForFrame(aFrame, &topLevelWidget);
   if (!topLevelWidget || !win) return YES;
 
-  // XUL popups, e.g. the toolbar customization popup, can't become key windows,
-  // but controls in these windows should still get the active look.
+  
+  
   if (topLevelWidget->WindowType() == eWindowType_popup) return YES;
   if ([win isSheet]) return [win isKeyWindow];
   return [win isMainWindow] && ![win attachedSheet];
 }
 
-// Toolbar controls and content controls respond to different window
-// activeness states.
+
+
 static BOOL IsActive(nsIFrame* aFrame, BOOL aIsToolbarControl) {
   if (aIsToolbarControl) return [NativeWindowForFrame(aFrame) isMainWindow];
   return FrameIsInActiveWindow(aFrame);
@@ -439,8 +439,8 @@ nsNativeThemeCocoa::nsNativeThemeCocoa() {
 
   kMaxFocusRingWidth = nsCocoaFeatures::OnYosemiteOrLater() ? 7 : 4;
 
-  // provide a local autorelease pool, as this is called during startup
-  // before the main event-loop pool is in place
+  
+  
   nsAutoreleasePool pool;
 
   mDisclosureButtonCell = [[NSButtonCell alloc] initTextCell:@""];
@@ -512,15 +512,15 @@ nsNativeThemeCocoa::~nsNativeThemeCocoa() {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-// Limit on the area of the target rect (in pixels^2) in
-// DrawCellWithScaling() and DrawButton() and above which we
-// don't draw the object into a bitmap buffer.  This is to avoid crashes in
-// [NSGraphicsContext graphicsContextWithGraphicsPort:flipped:] and
-// CGContextDrawImage(), and also to avoid very poor drawing performance in
-// CGContextDrawImage() when it scales the bitmap (particularly if xscale or
-// yscale is less than but near 1 -- e.g. 0.9).  This value was determined
-// by trial and error, on OS X 10.4.11 and 10.5.4, and on systems with
-// different amounts of RAM.
+
+
+
+
+
+
+
+
+
 #define BITMAP_MAX_AREA 500000
 
 static int GetBackingScaleFactorForRendering(CGContextRef cgContext) {
@@ -531,31 +531,31 @@ static int GetBackingScaleFactorForRendering(CGContextRef cgContext) {
   return maxScale > 1.0 ? 2 : 1;
 }
 
-/*
- * Draw the given NSCell into the given cgContext.
- *
- * destRect - the size and position of the resulting control rectangle
- * controlSize - the NSControlSize which will be given to the NSCell before
- *  asking it to render
- * naturalSize - The natural dimensions of this control.
- *  If the control rect size is not equal to either of these, a scale
- *  will be applied to the context so that rendering the control at the
- *  natural size will result in it filling the destRect space.
- *  If a control has no natural dimensions in either/both axes, pass 0.0f.
- * minimumSize - The minimum dimensions of this control.
- *  If the control rect size is less than the minimum for a given axis,
- *  a scale will be applied to the context so that the minimum is used
- *  for drawing.  If a control has no minimum dimensions in either/both
- *  axes, pass 0.0f.
- * marginSet - an array of margins; a multidimensional array of [2][3][4],
- *  with the first dimension being the OS version (Tiger or Leopard),
- *  the second being the control size (mini, small, regular), and the third
- *  being the 4 margin values (left, top, right, bottom).
- * view - The NSView that we're drawing into. As far as I can tell, it doesn't
- *  matter if this is really the right view; it just has to return YES when
- *  asked for isFlipped. Otherwise we'll get drawing bugs on 10.4.
- * mirrorHorizontal - whether to mirror the cell horizontally
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static void DrawCellWithScaling(NSCell* cell, CGContextRef cgContext, const HIRect& destRect,
                                 NSControlSize controlSize, NSSize naturalSize, NSSize minimumSize,
                                 const float marginSet[][3][4], NSView* view,
@@ -568,21 +568,21 @@ static void DrawCellWithScaling(NSCell* cell, CGContextRef cgContext, const HIRe
   if (naturalSize.width != 0.0f) drawRect.size.width = naturalSize.width;
   if (naturalSize.height != 0.0f) drawRect.size.height = naturalSize.height;
 
-  // Keep aspect ratio when scaling if one dimension is free.
+  
   if (naturalSize.width == 0.0f && naturalSize.height != 0.0f)
     drawRect.size.width = destRect.size.width * naturalSize.height / destRect.size.height;
   if (naturalSize.height == 0.0f && naturalSize.width != 0.0f)
     drawRect.size.height = destRect.size.height * naturalSize.width / destRect.size.width;
 
-  // Honor minimum sizes.
+  
   if (drawRect.size.width < minimumSize.width) drawRect.size.width = minimumSize.width;
   if (drawRect.size.height < minimumSize.height) drawRect.size.height = minimumSize.height;
 
   [NSGraphicsContext saveGraphicsState];
 
-  // Only skip the buffer if the area of our cell (in pixels^2) is too large.
+  
   if (drawRect.size.width * drawRect.size.height > BITMAP_MAX_AREA) {
-    // Inflate the rect Gecko gave us by the margin for the control.
+    
     InflateControlRect(&drawRect, controlSize, marginSet);
 
     NSGraphicsContext* savedContext = [NSGraphicsContext currentContext];
@@ -598,11 +598,11 @@ static void DrawCellWithScaling(NSCell* cell, CGContextRef cgContext, const HIRe
     float h = ceil(drawRect.size.height);
     NSRect tmpRect = NSMakeRect(kMaxFocusRingWidth, kMaxFocusRingWidth, w, h);
 
-    // inflate to figure out the frame we need to tell NSCell to draw in, to get something that's
-    // 0,0,w,h
+    
+    
     InflateControlRect(&tmpRect, controlSize, marginSet);
 
-    // and then, expand by kMaxFocusRingWidth size to make sure we can capture any focus ring
+    
     w += kMaxFocusRingWidth * 2.0;
     h += kMaxFocusRingWidth * 2.0;
 
@@ -613,8 +613,8 @@ static void DrawCellWithScaling(NSCell* cell, CGContextRef cgContext, const HIRe
         (int)w * backingScaleFactor * 4, rgb, kCGImageAlphaPremultipliedFirst);
     CGColorSpaceRelease(rgb);
 
-    // We need to flip the image twice in order to avoid drawing bugs on 10.4, see bug 465069.
-    // This is the first flip transform, applied to cgContext.
+    
+    
     CGContextScaleCTM(cgContext, 1.0f, -1.0f);
     CGContextTranslateCTM(cgContext, 0.0f, -(2.0 * destRect.origin.y + destRect.size.height));
     if (mirrorHorizontal) {
@@ -628,10 +628,10 @@ static void DrawCellWithScaling(NSCell* cell, CGContextRef cgContext, const HIRe
 
     CGContextScaleCTM(ctx, backingScaleFactor, backingScaleFactor);
 
-    // Set the context's "base transform" to in order to get correctly-sized focus rings.
+    
     CGContextSetBaseCTM(ctx, CGAffineTransformMakeScale(backingScaleFactor, backingScaleFactor));
 
-    // This is the second flip transform, applied to ctx.
+    
     CGContextScaleCTM(ctx, 1.0f, -1.0f);
     CGContextTranslateCTM(ctx, 0.0f, -(2.0 * tmpRect.origin.y + tmpRect.size.height));
 
@@ -641,9 +641,9 @@ static void DrawCellWithScaling(NSCell* cell, CGContextRef cgContext, const HIRe
 
     CGImageRef img = CGBitmapContextCreateImage(ctx);
 
-    // Drop the image into the original destination rectangle, scaling to fit
-    // Only scale kMaxFocusRingWidth by xscale/yscale when the resulting rect
-    // doesn't extend beyond the overflow rect
+    
+    
+    
     float xscale = destRect.size.width / drawRect.size.width;
     float yscale = destRect.size.height / drawRect.size.height;
     float scaledFocusRingX = xscale < 1.0f ? kMaxFocusRingWidth * xscale : kMaxFocusRingWidth;
@@ -670,30 +670,30 @@ static void DrawCellWithScaling(NSCell* cell, CGContextRef cgContext, const HIRe
 }
 
 struct CellRenderSettings {
-  // The natural dimensions of the control.
-  // If a control has no natural dimensions in either/both axes, set to 0.0f.
+  
+  
   NSSize naturalSizes[3];
 
-  // The minimum dimensions of the control.
-  // If a control has no minimum dimensions in either/both axes, set to 0.0f.
+  
+  
   NSSize minimumSizes[3];
 
-  // A three-dimensional array,
-  // with the first dimension being the OS version ([0] 10.6-10.9, [1] 10.10 and above),
-  // the second being the control size (mini, small, regular), and the third
-  // being the 4 margin values (left, top, right, bottom).
+  
+  
+  
+  
   float margins[2][3][4];
 };
 
-/*
- * This is a helper method that returns the required NSControlSize given a size
- * and the size of the three controls plus a tolerance.
- * size - The width or the height of the element to draw.
- * sizes - An array with the all the width/height of the element for its
- *         different sizes.
- * tolerance - The tolerance as passed to DrawCellWithSnapping.
- * NOTE: returns NSRegularControlSize if all values in 'sizes' are zero.
- */
+
+
+
+
+
+
+
+
+
 static NSControlSize FindControlSize(CGFloat size, const CGFloat* sizes, CGFloat tolerance) {
   for (uint32_t i = miniControlSize; i <= regularControlSize; ++i) {
     if (sizes[i] == 0) {
@@ -701,7 +701,7 @@ static NSControlSize FindControlSize(CGFloat size, const CGFloat* sizes, CGFloat
     }
 
     CGFloat next = 0;
-    // Find next value.
+    
     for (uint32_t j = i + 1; j <= regularControlSize; ++j) {
       if (sizes[j] != 0) {
         next = sizes[j];
@@ -709,7 +709,7 @@ static NSControlSize FindControlSize(CGFloat size, const CGFloat* sizes, CGFloat
       }
     }
 
-    // If it's the latest value, we pick it.
+    
     if (next == 0) {
       return CocoaSizeForEnum(i);
     }
@@ -719,24 +719,24 @@ static NSControlSize FindControlSize(CGFloat size, const CGFloat* sizes, CGFloat
     }
   }
 
-  // If we are here, that means sizes[] was an array with only empty values
-  // or the algorithm above is wrong.
-  // The former can happen but the later would be wrong.
+  
+  
+  
   NS_ASSERTION(sizes[0] == 0 && sizes[1] == 0 && sizes[2] == 0,
                "We found no control! We shouldn't be there!");
   return CocoaSizeForEnum(regularControlSize);
 }
 
-/*
- * Draw the given NSCell into the given cgContext with a nice control size.
- *
- * This function is similar to DrawCellWithScaling, but it decides what
- * control size to use based on the destRect's size.
- * Scaling is only applied when the difference between the destRect's size
- * and the next smaller natural size is greater than snapTolerance. Otherwise
- * it snaps to the next smaller control size without scaling because unscaled
- * controls look nicer.
- */
+
+
+
+
+
+
+
+
+
+
 static void DrawCellWithSnapping(NSCell* cell, CGContextRef cgContext, const HIRect& destRect,
                                  const CellRenderSettings settings, float verticalAlignFactor,
                                  NSView* view, BOOL mirrorHorizontal, float snapTolerance = 2.0f) {
@@ -758,7 +758,7 @@ static void DrawCellWithSnapping(NSCell* cell, CGContextRef cgContext, const HIR
   NSControlSize controlSize = NSRegularControlSize;
   size_t sizeIndex = 0;
 
-  // At some sizes, don't scale but snap.
+  
   const NSControlSize smallerControlSize =
       EnumSizeForCocoaSize(controlSizeX) < EnumSizeForCocoaSize(controlSizeY) ? controlSizeX
                                                                               : controlSizeY;
@@ -768,12 +768,12 @@ static void DrawCellWithSnapping(NSCell* cell, CGContextRef cgContext, const HIR
   float diffHeight = size.height ? rectHeight - size.height : 0.0f;
   if (diffWidth >= 0.0f && diffHeight >= 0.0f && diffWidth <= snapTolerance &&
       diffHeight <= snapTolerance) {
-    // Snap to the smaller control size.
+    
     controlSize = smallerControlSize;
     sizeIndex = smallerControlSizeIndex;
     MOZ_ASSERT(sizeIndex < ArrayLength(settings.naturalSizes));
 
-    // Resize and center the drawRect.
+    
     if (sizes[sizeIndex].width) {
       drawRect.origin.x += ceil((destRect.size.width - sizes[sizeIndex].width) / 2);
       drawRect.size.width = sizes[sizeIndex].width;
@@ -784,7 +784,7 @@ static void DrawCellWithSnapping(NSCell* cell, CGContextRef cgContext, const HIR
       drawRect.size.height = sizes[sizeIndex].height;
     }
   } else {
-    // Use the larger control size.
+    
     controlSize = EnumSizeForCocoaSize(controlSizeX) > EnumSizeForCocoaSize(controlSizeY)
                       ? controlSizeX
                       : controlSizeY;
@@ -806,7 +806,7 @@ static void DrawCellWithSnapping(NSCell* cell, CGContextRef cgContext, const HIR
 @end
 
 static id GetAquaAppearance() {
-  // We only need NSAppearance on 10.10 and up.
+  
   if (nsCocoaFeatures::OnYosemiteOrLater()) {
     Class NSAppearanceClass = NSClassFromString(@"NSAppearance");
     if (NSAppearanceClass && [NSAppearanceClass respondsToSelector:@selector(appearanceNamed:)]) {
@@ -830,13 +830,13 @@ static void RenderWithCoreUI(CGRect aRect, CGContextRef cgContext, NSDictionary*
   }
 
   if (appearance && [appearance respondsToSelector:@selector(_drawInRect:context:options:)]) {
-    // Render through NSAppearance on Mac OS 10.10 and up. This will call
-    // CUIDraw with a CoreUI renderer that will give us the correct 10.10
-    // style. Calling CUIDraw directly with [NSWindow coreUIRenderer] still
-    // renders 10.9-style widgets on 10.10.
+    
+    
+    
+    
     [appearance _drawInRect:aRect context:cgContext options:aOptions];
   } else {
-    // 10.9 and below
+    
     CUIRendererRef renderer =
         [NSWindow respondsToSelector:@selector(coreUIRenderer)] ? [NSWindow coreUIRenderer] : nil;
     CUIDraw(renderer, aRect, cgContext, (CFDictionaryRef)aOptions, NULL);
@@ -844,7 +844,7 @@ static void RenderWithCoreUI(CGRect aRect, CGContextRef cgContext, NSDictionary*
 }
 
 static float VerticalAlignFactor(nsIFrame* aFrame) {
-  if (!aFrame) return 0.5f;  // default: center
+  if (!aFrame) return 0.5f;  
 
   const auto& va = aFrame->StyleDisplay()->mVerticalAlign;
   auto kw = va.IsKeyword() ? va.AsKeyword() : StyleVerticalAlignKeyword::Middle;
@@ -878,45 +878,45 @@ static void ApplyControlParamsToNSCell(nsNativeThemeCocoa::ControlParams aContro
   [aCell setHighlighted:aControlParams.pressed];
 }
 
-// These are the sizes that Gecko needs to request to draw if it wants
-// to get a standard-sized Aqua radio button drawn. Note that the rects
-// that draw these are actually a little bigger.
+
+
+
 static const CellRenderSettings radioSettings = {{
-                                                     NSMakeSize(11, 11),  // mini
-                                                     NSMakeSize(13, 13),  // small
-                                                     NSMakeSize(16, 16)   // regular
+                                                     NSMakeSize(11, 11),  
+                                                     NSMakeSize(13, 13),  
+                                                     NSMakeSize(16, 16)   
                                                  },
                                                  {NSZeroSize, NSZeroSize, NSZeroSize},
                                                  {{
-                                                      // Leopard
-                                                      {0, 0, 0, 0},  // mini
-                                                      {0, 1, 1, 1},  // small
-                                                      {0, 0, 0, 0}   // regular
+                                                      
+                                                      {0, 0, 0, 0},  
+                                                      {0, 1, 1, 1},  
+                                                      {0, 0, 0, 0}   
                                                   },
                                                   {
-                                                      // Yosemite
-                                                      {0, 0, 0, 0},  // mini
-                                                      {1, 1, 1, 2},  // small
-                                                      {0, 0, 0, 0}   // regular
+                                                      
+                                                      {0, 0, 0, 0},  
+                                                      {1, 1, 1, 2},  
+                                                      {0, 0, 0, 0}   
                                                   }}};
 
 static const CellRenderSettings checkboxSettings = {{
-                                                        NSMakeSize(11, 11),  // mini
-                                                        NSMakeSize(13, 13),  // small
-                                                        NSMakeSize(16, 16)   // regular
+                                                        NSMakeSize(11, 11),  
+                                                        NSMakeSize(13, 13),  
+                                                        NSMakeSize(16, 16)   
                                                     },
                                                     {NSZeroSize, NSZeroSize, NSZeroSize},
                                                     {{
-                                                         // Leopard
-                                                         {0, 1, 0, 0},  // mini
-                                                         {0, 1, 0, 1},  // small
-                                                         {0, 1, 0, 1}   // regular
+                                                         
+                                                         {0, 1, 0, 0},  
+                                                         {0, 1, 0, 1},  
+                                                         {0, 1, 0, 1}   
                                                      },
                                                      {
-                                                         // Yosemite
-                                                         {0, 1, 0, 0},  // mini
-                                                         {0, 1, 0, 1},  // small
-                                                         {0, 1, 0, 1}   // regular
+                                                         
+                                                         {0, 1, 0, 0},  
+                                                         {0, 1, 0, 1},  
+                                                         {0, 1, 0, 1}   
                                                      }}};
 
 static NSCellStateValue CellStateForCheckboxOrRadioState(
@@ -943,7 +943,7 @@ void nsNativeThemeCocoa::DrawCheckboxOrRadio(CGContextRef cgContext, bool inChec
   [cell setControlTint:(aParams.controlParams.insideActiveWindow ? [NSColor currentControlTint]
                                                                  : NSClearControlTint)];
 
-  // Ensure that the control is square.
+  
   float length = std::min(inBoxRect.size.width, inBoxRect.size.height);
   HIRect drawRect = CGRectMake(inBoxRect.origin.x + (int)((inBoxRect.size.width - length) / 2.0f),
                                inBoxRect.origin.y + (int)((inBoxRect.size.height - length) / 2.0f),
@@ -956,26 +956,26 @@ void nsNativeThemeCocoa::DrawCheckboxOrRadio(CGContextRef cgContext, bool inChec
 }
 
 static const CellRenderSettings searchFieldSettings = {{
-                                                           NSMakeSize(0, 16),  // mini
-                                                           NSMakeSize(0, 19),  // small
-                                                           NSMakeSize(0, 22)   // regular
+                                                           NSMakeSize(0, 16),  
+                                                           NSMakeSize(0, 19),  
+                                                           NSMakeSize(0, 22)   
                                                        },
                                                        {
-                                                           NSMakeSize(32, 0),  // mini
-                                                           NSMakeSize(38, 0),  // small
-                                                           NSMakeSize(44, 0)   // regular
+                                                           NSMakeSize(32, 0),  
+                                                           NSMakeSize(38, 0),  
+                                                           NSMakeSize(44, 0)   
                                                        },
                                                        {{
-                                                            // Leopard
-                                                            {0, 0, 0, 0},  // mini
-                                                            {0, 0, 0, 0},  // small
-                                                            {0, 0, 0, 0}   // regular
+                                                            
+                                                            {0, 0, 0, 0},  
+                                                            {0, 0, 0, 0},  
+                                                            {0, 0, 0, 0}   
                                                         },
                                                         {
-                                                            // Yosemite
-                                                            {0, 0, 0, 0},  // mini
-                                                            {0, 0, 0, 0},  // small
-                                                            {0, 0, 0, 0}   // regular
+                                                            
+                                                            {0, 0, 0, 0},  
+                                                            {0, 0, 0, 0},  
+                                                            {0, 0, 0, 0}   
                                                         }}};
 
 static bool IsToolbarStyleContainer(nsIFrame* aFrame) {
@@ -1025,8 +1025,8 @@ void nsNativeThemeCocoa::DrawSearchField(CGContextRef cgContext, const HIRect& i
   [cell setEnabled:!aParams.disabled];
   [cell setShowsFirstResponder:aParams.focused];
 
-  // When using the 10.11 SDK, the default string will be shown if we don't
-  // set the placeholder string.
+  
+  
   [cell setPlaceholderString:@""];
 
   DrawCellWithSnapping(cell, cgContext, inBoxRect, searchFieldSettings, aParams.verticalAlignFactor,
@@ -1056,7 +1056,7 @@ void nsNativeThemeCocoa::DrawMenuBackground(CGContextRef cgContext, const CGRect
     mdi.menuType = kThemeMenuTypeHierarchical;
   }
 
-  // The rounded corners draw outside the frame.
+  
   CGRect deflatedRect = CGRectMake(inBoxRect.origin.x, inBoxRect.origin.y + 4, inBoxRect.size.width,
                                    inBoxRect.size.height - 8);
   HIThemeDrawMenuBackground(&deflatedRect, &mdi, cgContext, HITHEME_ORIENTATION);
@@ -1116,7 +1116,7 @@ void nsNativeThemeCocoa::DrawMenuIcon(CGContextRef cgContext, const CGRect& aRec
 
   NSSize size = GetMenuIconSize(aParams.icon);
 
-  // Adjust size and position of our drawRect.
+  
   CGFloat paddingX = std::max(CGFloat(0.0), aRect.size.width - size.width);
   CGFloat paddingY = std::max(CGFloat(0.0), aRect.size.height - size.height);
   CGFloat paddingStartX = std::min(paddingX, kMenuIconIndent);
@@ -1131,7 +1131,7 @@ void nsNativeThemeCocoa::DrawMenuIcon(CGContextRef cgContext, const CGRect& aRec
 
   NSString* imageName = GetMenuIconName(aParams);
   if (!nsCocoaFeatures::OnElCapitanOrLater()) {
-    // Pre-10.11, image names are prefixed with "image."
+    
     imageName = [@"image." stringByAppendingString:imageName];
   }
 
@@ -1180,8 +1180,8 @@ static void SetCGContextStrokeColor(CGContextRef cgContext, nscolor aColor) {
 
 void nsNativeThemeCocoa::DrawMenuItem(CGContextRef cgContext, const CGRect& inBoxRect,
                                       const MenuItemParams& aParams) {
-  // If the background is contributed by vibrancy (which is part of the window background), we don't
-  // need to draw any background here.
+  
+  
   if (!aParams.backgroundIsVibrant) {
     HIThemeMenuItemDrawInfo drawInfo;
     memset(&drawInfo, 0, sizeof(drawInfo));
@@ -1235,31 +1235,31 @@ static const NSSize kHelpButtonSize = NSMakeSize(20, 20);
 static const NSSize kDisclosureButtonSize = NSMakeSize(21, 21);
 
 static const CellRenderSettings pushButtonSettings = {{
-                                                          NSMakeSize(0, 16),  // mini
-                                                          NSMakeSize(0, 19),  // small
-                                                          NSMakeSize(0, 22)   // regular
+                                                          NSMakeSize(0, 16),  
+                                                          NSMakeSize(0, 19),  
+                                                          NSMakeSize(0, 22)   
                                                       },
                                                       {
-                                                          NSMakeSize(18, 0),  // mini
-                                                          NSMakeSize(26, 0),  // small
-                                                          NSMakeSize(30, 0)   // regular
+                                                          NSMakeSize(18, 0),  
+                                                          NSMakeSize(26, 0),  
+                                                          NSMakeSize(30, 0)   
                                                       },
                                                       {{
-                                                           // Leopard
-                                                           {0, 0, 0, 0},  // mini
-                                                           {4, 0, 4, 1},  // small
-                                                           {5, 0, 5, 2}   // regular
+                                                           
+                                                           {0, 0, 0, 0},  
+                                                           {4, 0, 4, 1},  
+                                                           {5, 0, 5, 2}   
                                                        },
                                                        {
-                                                           // Yosemite
-                                                           {0, 0, 0, 0},  // mini
-                                                           {4, 0, 4, 1},  // small
-                                                           {5, 0, 5, 2}   // regular
+                                                           
+                                                           {0, 0, 0, 0},  
+                                                           {4, 0, 4, 1},  
+                                                           {5, 0, 5, 2}   
                                                        }}};
 
-// The height at which we start doing square buttons instead of rounded buttons
-// Rounded buttons look bad if drawn at a height greater than 26, so at that point
-// we switch over to doing square buttons which looks fine at any size.
+
+
+
 #define DO_SQUARE_BUTTON_HEIGHT 26
 
 void nsNativeThemeCocoa::DrawRoundedBezelPushButton(CGContextRef cgContext, const HIRect& inBoxRect,
@@ -1293,7 +1293,7 @@ void nsNativeThemeCocoa::DrawHelpButton(CGContextRef cgContext, const HIRect& in
   ApplyControlParamsToNSCell(aControlParams, mHelpButtonCell);
   DrawCellWithScaling(mHelpButtonCell, cgContext, inBoxRect, NSRegularControlSize, NSZeroSize,
                       kHelpButtonSize, NULL, mCellDrawView,
-                      false);  // Don't mirror icon in RTL.
+                      false);  
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -1307,7 +1307,7 @@ void nsNativeThemeCocoa::DrawDisclosureButton(CGContextRef cgContext, const HIRe
   [mDisclosureButtonCell setState:aCellState];
   DrawCellWithScaling(mDisclosureButtonCell, cgContext, inBoxRect, NSRegularControlSize, NSZeroSize,
                       kDisclosureButtonSize, NULL, mCellDrawView,
-                      false);  // Don't mirror icon in RTL.
+                      false);  
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -1351,12 +1351,12 @@ static void RenderTransformedHIThemeControl(CGContextRef aCGContext, const HIRec
     drawDirect = FALSE;
   }
 
-  // Fall back to no bitmap buffer if the area of our control (in pixels^2)
-  // is too large.
+  
+  
   if (drawDirect || (aRect.size.width * aRect.size.height > BITMAP_MAX_AREA)) {
     aFunc(aCGContext, drawRect, aData);
   } else {
-    // Inflate the buffer to capture focus rings.
+    
     int w = ceil(drawRect.size.width) + 2 * kMaxFocusRingWidth;
     int h = ceil(drawRect.size.height) + 2 * kMaxFocusRingWidth;
 
@@ -1370,12 +1370,12 @@ static void RenderTransformedHIThemeControl(CGContextRef aCGContext, const HIRec
     CGContextScaleCTM(bitmapctx, backingScaleFactor, backingScaleFactor);
     CGContextTranslateCTM(bitmapctx, kMaxFocusRingWidth, kMaxFocusRingWidth);
 
-    // Set the context's "base transform" to in order to get correctly-sized focus rings.
+    
     CGContextSetBaseCTM(bitmapctx,
                         CGAffineTransformMakeScale(backingScaleFactor, backingScaleFactor));
 
-    // HITheme always wants to draw into a flipped context, or things
-    // get confused.
+    
+    
     CGContextTranslateCTM(bitmapctx, 0.0f, aRect.size.height);
     CGContextScaleCTM(bitmapctx, 1.0f, -1.0f);
 
@@ -1385,7 +1385,7 @@ static void RenderTransformedHIThemeControl(CGContextRef aCGContext, const HIRec
 
     CGAffineTransform ctm = CGContextGetCTM(aCGContext);
 
-    // We need to unflip, so that we can do a DrawImage without getting a flipped image.
+    
     CGContextTranslateCTM(aCGContext, 0.0f, aRect.size.height);
     CGContextScaleCTM(aCGContext, 1.0f, -1.0f);
 
@@ -1565,13 +1565,13 @@ void nsNativeThemeCocoa::DrawTreeHeaderCell(CGContextRef cgContext, const HIRect
   CGContextClipToRect(cgContext, inBoxRect);
 
   HIRect drawFrame = inBoxRect;
-  // Always remove the top border.
+  
   drawFrame.origin.y -= 1;
   drawFrame.size.height += 1;
-  // Remove the left border in LTR mode and the right border in RTL mode.
+  
   drawFrame.size.width += 1;
   if (aParams.lastTreeHeaderCell) {
-    drawFrame.size.width += 1;  // Also remove the other border.
+    drawFrame.size.width += 1;  
   }
   if (!aParams.controlParams.rtl || aParams.lastTreeHeaderCell) {
     drawFrame.origin.x -= 1;
@@ -1589,49 +1589,49 @@ void nsNativeThemeCocoa::DrawTreeHeaderCell(CGContextRef cgContext, const HIRect
 }
 
 static const CellRenderSettings dropdownSettings = {{
-                                                        NSMakeSize(0, 16),  // mini
-                                                        NSMakeSize(0, 19),  // small
-                                                        NSMakeSize(0, 22)   // regular
+                                                        NSMakeSize(0, 16),  
+                                                        NSMakeSize(0, 19),  
+                                                        NSMakeSize(0, 22)   
                                                     },
                                                     {
-                                                        NSMakeSize(18, 0),  // mini
-                                                        NSMakeSize(38, 0),  // small
-                                                        NSMakeSize(44, 0)   // regular
+                                                        NSMakeSize(18, 0),  
+                                                        NSMakeSize(38, 0),  
+                                                        NSMakeSize(44, 0)   
                                                     },
                                                     {{
-                                                         // Leopard
-                                                         {1, 1, 2, 1},  // mini
-                                                         {3, 0, 3, 1},  // small
-                                                         {3, 0, 3, 0}   // regular
+                                                         
+                                                         {1, 1, 2, 1},  
+                                                         {3, 0, 3, 1},  
+                                                         {3, 0, 3, 0}   
                                                      },
                                                      {
-                                                         // Yosemite
-                                                         {1, 1, 2, 1},  // mini
-                                                         {3, 0, 3, 1},  // small
-                                                         {3, 0, 3, 0}   // regular
+                                                         
+                                                         {1, 1, 2, 1},  
+                                                         {3, 0, 3, 1},  
+                                                         {3, 0, 3, 0}   
                                                      }}};
 
 static const CellRenderSettings editableMenulistSettings = {{
-                                                                NSMakeSize(0, 15),  // mini
-                                                                NSMakeSize(0, 18),  // small
-                                                                NSMakeSize(0, 21)   // regular
+                                                                NSMakeSize(0, 15),  
+                                                                NSMakeSize(0, 18),  
+                                                                NSMakeSize(0, 21)   
                                                             },
                                                             {
-                                                                NSMakeSize(18, 0),  // mini
-                                                                NSMakeSize(38, 0),  // small
-                                                                NSMakeSize(44, 0)   // regular
+                                                                NSMakeSize(18, 0),  
+                                                                NSMakeSize(38, 0),  
+                                                                NSMakeSize(44, 0)   
                                                             },
                                                             {{
-                                                                 // Leopard
-                                                                 {0, 0, 2, 2},  // mini
-                                                                 {0, 0, 3, 2},  // small
-                                                                 {0, 1, 3, 3}   // regular
+                                                                 
+                                                                 {0, 0, 2, 2},  
+                                                                 {0, 0, 3, 2},  
+                                                                 {0, 1, 3, 3}   
                                                              },
                                                              {
-                                                                 // Yosemite
-                                                                 {0, 0, 2, 2},  // mini
-                                                                 {0, 0, 3, 2},  // small
-                                                                 {0, 1, 3, 3}   // regular
+                                                                 
+                                                                 {0, 0, 2, 2},  
+                                                                 {0, 0, 3, 2},  
+                                                                 {0, 1, 3, 3}   
                                                              }}};
 
 void nsNativeThemeCocoa::DrawDropdown(CGContextRef cgContext, const HIRect& inBoxRect,
@@ -1659,26 +1659,26 @@ void nsNativeThemeCocoa::DrawDropdown(CGContextRef cgContext, const HIRect& inBo
 
 static const CellRenderSettings spinnerSettings = {
     {
-        NSMakeSize(11, 16),  // mini (width trimmed by 2px to reduce blank border)
-        NSMakeSize(15, 22),  // small
-        NSMakeSize(19, 27)   // regular
+        NSMakeSize(11, 16),  
+        NSMakeSize(15, 22),  
+        NSMakeSize(19, 27)   
     },
     {
-        NSMakeSize(11, 16),  // mini (width trimmed by 2px to reduce blank border)
-        NSMakeSize(15, 22),  // small
-        NSMakeSize(19, 27)   // regular
+        NSMakeSize(11, 16),  
+        NSMakeSize(15, 22),  
+        NSMakeSize(19, 27)   
     },
     {{
-         // Leopard
-         {0, 0, 0, 0},  // mini
-         {0, 0, 0, 0},  // small
-         {0, 0, 0, 0}   // regular
+         
+         {0, 0, 0, 0},  
+         {0, 0, 0, 0},  
+         {0, 0, 0, 0}   
      },
      {
-         // Yosemite
-         {0, 0, 0, 0},  // mini
-         {0, 0, 0, 0},  // small
-         {0, 0, 0, 0}   // regular
+         
+         {0, 0, 0, 0},  
+         {0, 0, 0, 0},  
+         {0, 0, 0, 0}   
      }}};
 
 HIThemeButtonDrawInfo nsNativeThemeCocoa::SpinButtonDrawInfo(ThemeButtonKind aKind,
@@ -1720,18 +1720,18 @@ void nsNativeThemeCocoa::DrawSpinButton(CGContextRef cgContext, const HIRect& in
 
   HIThemeButtonDrawInfo bdi = SpinButtonDrawInfo(kThemeIncDecButtonMini, aParams);
 
-  // Cocoa only allows kThemeIncDecButton to paint the up and down spin buttons
-  // together as a single unit (presumably because when one button is active,
-  // the appearance of both changes (in different ways)). Here we have to paint
-  // both buttons, using clip to hide the one we don't want to paint.
+  
+  
+  
+  
   HIRect drawRect = inBoxRect;
   drawRect.size.height *= 2;
   if (aDrawnButton == SpinButton::eDown) {
     drawRect.origin.y -= inBoxRect.size.height;
   }
 
-  // Shift the drawing a little to the left, since cocoa paints with more
-  // blank space around the visual buttons than we'd like:
+  
+  
   drawRect.origin.x -= 1;
 
   CGContextSaveGState(cgContext);
@@ -1764,14 +1764,14 @@ void nsNativeThemeCocoa::DrawTextBox(CGContextRef cgContext, const HIRect& inBox
   fdi.version = 0;
   fdi.kind = kHIThemeFrameTextFieldSquare;
 
-  // We don't ever set an inactive state for this because it doesn't
-  // look right (see other apps).
+  
+  
   fdi.state = aParams.disabled ? kThemeStateUnavailable : kThemeStateActive;
   fdi.isFocused = aParams.focused;
 
-  // HIThemeDrawFrame takes the rect for the content area of the frame, not
-  // the bounding rect for the frame. Here we reduce the size of the rect we
-  // will pass to make it the size of the content.
+  
+  
+  
   HIRect drawRect = inBoxRect;
   SInt32 frameOutset = 0;
   ::GetThemeMetric(kThemeMetricEditTextFrameOutset, &frameOutset);
@@ -1786,77 +1786,77 @@ void nsNativeThemeCocoa::DrawTextBox(CGContextRef cgContext, const HIRect& inBox
 }
 
 static const CellRenderSettings progressSettings[2][2] = {
-    // Vertical progress bar.
-    {// Determined settings.
+    
+    {
      {{
-          NSZeroSize,         // mini
-          NSMakeSize(10, 0),  // small
-          NSMakeSize(16, 0)   // regular
+          NSZeroSize,         
+          NSMakeSize(10, 0),  
+          NSMakeSize(16, 0)   
       },
       {NSZeroSize, NSZeroSize, NSZeroSize},
       {{
-          // Leopard
-          {0, 0, 0, 0},  // mini
-          {1, 1, 1, 1},  // small
-          {1, 1, 1, 1}   // regular
+          
+          {0, 0, 0, 0},  
+          {1, 1, 1, 1},  
+          {1, 1, 1, 1}   
       }}},
-     // There is no horizontal margin in regular undetermined size.
+     
      {{
-          NSZeroSize,         // mini
-          NSMakeSize(10, 0),  // small
-          NSMakeSize(16, 0)   // regular
+          NSZeroSize,         
+          NSMakeSize(10, 0),  
+          NSMakeSize(16, 0)   
       },
       {NSZeroSize, NSZeroSize, NSZeroSize},
       {{
-           // Leopard
-           {0, 0, 0, 0},  // mini
-           {1, 1, 1, 1},  // small
-           {1, 0, 1, 0}   // regular
+           
+           {0, 0, 0, 0},  
+           {1, 1, 1, 1},  
+           {1, 0, 1, 0}   
        },
        {
-           // Yosemite
-           {0, 0, 0, 0},  // mini
-           {1, 1, 1, 1},  // small
-           {1, 0, 1, 0}   // regular
+           
+           {0, 0, 0, 0},  
+           {1, 1, 1, 1},  
+           {1, 0, 1, 0}   
        }}}},
-    // Horizontal progress bar.
-    {// Determined settings.
+    
+    {
      {{
-          NSZeroSize,         // mini
-          NSMakeSize(0, 10),  // small
-          NSMakeSize(0, 16)   // regular
+          NSZeroSize,         
+          NSMakeSize(0, 10),  
+          NSMakeSize(0, 16)   
       },
       {NSZeroSize, NSZeroSize, NSZeroSize},
       {{
-           // Leopard
-           {0, 0, 0, 0},  // mini
-           {1, 1, 1, 1},  // small
-           {1, 1, 1, 1}   // regular
+           
+           {0, 0, 0, 0},  
+           {1, 1, 1, 1},  
+           {1, 1, 1, 1}   
        },
        {
-           // Yosemite
-           {0, 0, 0, 0},  // mini
-           {1, 1, 1, 1},  // small
-           {1, 1, 1, 1}   // regular
+           
+           {0, 0, 0, 0},  
+           {1, 1, 1, 1},  
+           {1, 1, 1, 1}   
        }}},
-     // There is no horizontal margin in regular undetermined size.
+     
      {{
-          NSZeroSize,         // mini
-          NSMakeSize(0, 10),  // small
-          NSMakeSize(0, 16)   // regular
+          NSZeroSize,         
+          NSMakeSize(0, 10),  
+          NSMakeSize(0, 16)   
       },
       {NSZeroSize, NSZeroSize, NSZeroSize},
       {{
-           // Leopard
-           {0, 0, 0, 0},  // mini
-           {1, 1, 1, 1},  // small
-           {0, 1, 0, 1}   // regular
+           
+           {0, 0, 0, 0},  
+           {1, 1, 1, 1},  
+           {0, 1, 0, 1}   
        },
        {
-           // Yosemite
-           {0, 0, 0, 0},  // mini
-           {1, 1, 1, 1},  // small
-           {0, 1, 0, 1}   // regular
+           
+           {0, 0, 0, 0},  
+           {1, 1, 1, 1},  
+           {0, 1, 0, 1}   
        }}}}};
 
 nsNativeThemeCocoa::ProgressParams nsNativeThemeCocoa::ComputeProgressParams(
@@ -1893,22 +1893,22 @@ void nsNativeThemeCocoa::DrawProgress(CGContextRef cgContext, const HIRect& inBo
 }
 
 static const CellRenderSettings meterSetting = {{
-                                                    NSMakeSize(0, 16),  // mini
-                                                    NSMakeSize(0, 16),  // small
-                                                    NSMakeSize(0, 16)   // regular
+                                                    NSMakeSize(0, 16),  
+                                                    NSMakeSize(0, 16),  
+                                                    NSMakeSize(0, 16)   
                                                 },
                                                 {NSZeroSize, NSZeroSize, NSZeroSize},
                                                 {{
-                                                     // Leopard
-                                                     {1, 1, 1, 1},  // mini
-                                                     {1, 1, 1, 1},  // small
-                                                     {1, 1, 1, 1}   // regular
+                                                     
+                                                     {1, 1, 1, 1},  
+                                                     {1, 1, 1, 1},  
+                                                     {1, 1, 1, 1}   
                                                  },
                                                  {
-                                                     // Yosemite
-                                                     {1, 1, 1, 1},  // mini
-                                                     {1, 1, 1, 1},  // small
-                                                     {1, 1, 1, 1}   // regular
+                                                     
+                                                     {1, 1, 1, 1},  
+                                                     {1, 1, 1, 1},  
+                                                     {1, 1, 1, 1}   
                                                  }}};
 
 nsNativeThemeCocoa::MeterParams nsNativeThemeCocoa::ComputeMeterParams(nsIFrame* aFrame) {
@@ -1945,13 +1945,13 @@ void nsNativeThemeCocoa::DrawMeter(CGContextRef cgContext, const HIRect& inBoxRe
   [cell setMaxValue:aParams.max];
   [cell setDoubleValue:aParams.value];
 
-  /**
-   * The way HTML and Cocoa defines the meter/indicator widget are different.
-   * So, we are going to use a trick to get the Cocoa widget showing what we
-   * are expecting: we set the warningValue or criticalValue to the current
-   * value when we want to have the widget to be in the warning or critical
-   * state.
-   */
+  
+
+
+
+
+
+
   switch (aParams.optimumState) {
     case OptimumState::eOptimum:
       [cell setWarningValue:aParams.max + 1];
@@ -1973,16 +1973,16 @@ void nsNativeThemeCocoa::DrawMeter(CGContextRef cgContext, const HIRect& inBoxRe
   CGContextSaveGState(cgContext);
 
   if (vertical) {
-    /**
-     * Cocoa doesn't provide a vertical meter bar so to show one, we have to
-     * show a rotated horizontal meter bar.
-     * Given that we want to show a vertical meter bar, we assume that the rect
-     * has vertical dimensions but we can't correctly draw a meter widget inside
-     * such a rectangle so we need to inverse width and height (and re-position)
-     * to get a rectangle with horizontal dimensions.
-     * Finally, we want to show a vertical meter so we want to rotate the result
-     * so it is vertical. We do that by changing the context.
-     */
+    
+
+
+
+
+
+
+
+
+
     CGFloat tmp = rect.size.width;
     rect.size.width = rect.size.height;
     rect.size.height = tmp;
@@ -2050,8 +2050,8 @@ Maybe<nsNativeThemeCocoa::ScaleParams> nsNativeThemeCocoa::ComputeHTMLScaleParam
 
   bool isHorizontal = IsRangeHorizontal(aFrame);
 
-  // ScaleParams requires integer min, max and value. This is purely for
-  // drawing, so we normalize to a range 0-1000 here.
+  
+  
   ScaleParams params;
   params.value = int32_t(rangeFrame->GetValueAsFractionOfRange() * 1000);
   params.min = 0;
@@ -2100,8 +2100,8 @@ void nsNativeThemeCocoa::DrawScale(CGContextRef cgContext, const HIRect& inBoxRe
 }
 
 nsIFrame* nsNativeThemeCocoa::SeparatorResponsibility(nsIFrame* aBefore, nsIFrame* aAfter) {
-  // Usually a separator is drawn by the segment to the right of the
-  // separator, but pressed and selected segments have higher priority.
+  
+  
   if (!aBefore || !aAfter) return nullptr;
   if (IsSelectedButton(aAfter)) return aAfter;
   if (IsSelectedButton(aBefore) || IsPressedButton(aBefore)) return aBefore;
@@ -2109,19 +2109,19 @@ nsIFrame* nsNativeThemeCocoa::SeparatorResponsibility(nsIFrame* aBefore, nsIFram
 }
 
 static CGRect SeparatorAdjustedRect(CGRect aRect, nsNativeThemeCocoa::SegmentParams aParams) {
-  // A separator between two segments should always be located in the leftmost
-  // pixel column of the segment to the right of the separator, regardless of
-  // who ends up drawing it.
-  // CoreUI draws the separators inside the drawing rect.
+  
+  
+  
+  
   if (!aParams.atLeftEnd && !aParams.drawsLeftSeparator) {
-    // The segment to the left of us draws the separator, so we need to make
-    // room for it.
+    
+    
     aRect.origin.x += 1;
     aRect.size.width -= 1;
   }
   if (aParams.drawsRightSeparator) {
-    // We draw the right separator, so we need to extend the draw rect into the
-    // segment to our right.
+    
+    
     aRect.size.width += 1;
   }
   return aRect;
@@ -2206,13 +2206,13 @@ void nsNativeThemeCocoa::DrawSegment(CGContextRef cgContext, const HIRect& inBox
 }
 
 static nsIFrame* GetParentScrollbarFrame(nsIFrame* aFrame) {
-  // Walk our parents to find a scrollbar frame
+  
   nsIFrame* scrollbarFrame = aFrame;
   do {
     if (scrollbarFrame->IsScrollbarFrame()) break;
   } while ((scrollbarFrame = scrollbarFrame->GetParent()));
 
-  // We return null if we can't find a parent scrollbar frame
+  
   return scrollbarFrame;
 }
 
@@ -2220,16 +2220,16 @@ void nsNativeThemeCocoa::DrawToolbar(CGContextRef cgContext, const CGRect& inBox
                                      bool aIsMain) {
   CGRect drawRect = inBoxRect;
 
-  // top border
+  
   drawRect.size.height = 1.0f;
   DrawNativeGreyColorInRect(cgContext, toolbarTopBorderGrey, drawRect, aIsMain);
 
-  // background
+  
   drawRect.origin.y += drawRect.size.height;
   drawRect.size.height = inBoxRect.size.height - 2.0f;
   DrawNativeGreyColorInRect(cgContext, toolbarFillGrey, drawRect, aIsMain);
 
-  // bottom border
+  
   drawRect.origin.y += drawRect.size.height;
   drawRect.size.height = 1.0f;
   DrawNativeGreyColorInRect(cgContext, toolbarBottomBorderGrey, drawRect, aIsMain);
@@ -2244,17 +2244,17 @@ static bool ToolbarCanBeUnified(const gfx::Rect& aRect, NSWindow* aWindow) {
          aRect.YMost() <= unifiedToolbarHeight;
 }
 
-// By default, kCUIWidgetWindowFrame drawing draws rounded corners in the
-// upper corners. Depending on the context type, it fills the background in
-// the corners with black or leaves it transparent. Unfortunately, this corner
-// rounding interacts poorly with the window corner masking we apply during
-// titlebar drawing and results in small remnants of the corner background
-// appearing at the rounded edge.
-// So we draw square corners.
+
+
+
+
+
+
+
 static void DrawNativeTitlebarToolbarWithSquareCorners(CGContextRef aContext, const CGRect& aRect,
                                                        CGFloat aUnifiedHeight, BOOL aIsMain,
                                                        BOOL aIsFlipped) {
-  // We extend the draw rect horizontally and clip away the rounded corners.
+  
   const CGFloat extendHorizontal = 10;
   CGRect drawRect = CGRectInset(aRect, -extendHorizontal, 0);
   CGContextSaveGState(aContext);
@@ -2301,9 +2301,9 @@ void nsNativeThemeCocoa::DrawStatusBar(CGContextRef cgContext, const HIRect& inB
   CGContextSaveGState(cgContext);
   CGContextClipToRect(cgContext, inBoxRect);
 
-  // kCUIWidgetWindowFrame draws a complete window frame with both title bar
-  // and bottom bar. We only want the bottom bar, so we extend the draw rect
-  // upwards to make space for the title bar, and then we clip it away.
+  
+  
+  
   CGRect drawRect = inBoxRect;
   const int extendUpwards = 40;
   drawRect.origin.y -= extendUpwards;
@@ -2378,8 +2378,8 @@ nsNativeThemeCocoa::ScrollbarParams nsNativeThemeCocoa::ComputeScrollbarParams(n
   params.rtl = IsFrameRTL(aFrame);
   params.horizontal = aIsHorizontal;
   params.onDarkBackground = IsDarkBackground(aFrame);
-  // Don't use custom scrollbars for overlay scrollbars since they are
-  // generally good enough for use cases of custom scrollbars.
+  
+  
   if (!params.overlay) {
     ComputedStyle* style = nsLayoutUtils::StyleForScrollbar(aFrame);
     const nsStyleUI* ui = style->StyleUI();
@@ -2478,7 +2478,7 @@ static ScrollbarTrackDecorationColors ComputeScrollbarTrackDecorationColors(nsco
 void nsNativeThemeCocoa::DrawScrollbarTrack(CGContextRef cgContext, const CGRect& inBoxRect,
                                             ScrollbarParams aParams) {
   if (aParams.overlay && !aParams.rolledOver) {
-    // Non-hovered overlay scrollbars don't have a track. Draw nothing.
+    
     return;
   }
 
@@ -2502,10 +2502,10 @@ void nsNativeThemeCocoa::DrawScrollbarTrack(CGContextRef cgContext, const CGRect
     return;
   }
 
-  // Paint the background color
+  
   SetCGContextFillColor(cgContext, aParams.trackColor);
   CGContextFillRect(cgContext, inBoxRect);
-  // Paint decorations
+  
   ScrollbarTrackDecorationColors colors = ComputeScrollbarTrackDecorationColors(aParams.trackColor);
   CGPoint innerPoints[2];
   CGPoint shadowPoints[2];
@@ -2554,24 +2554,24 @@ void nsNativeThemeCocoa::DrawScrollbarTrack(CGContextRef cgContext, const CGRect
 void nsNativeThemeCocoa::DrawScrollCorner(CGContextRef cgContext, const CGRect& inBoxRect,
                                           ScrollbarParams aParams) {
   if (aParams.overlay && !aParams.rolledOver) {
-    // Non-hovered overlay scrollbars don't have a corner. Draw nothing.
+    
     return;
   }
 
   if (!aParams.custom) {
-    // For non-custom scrollbar, just draw a white rect. It is what
-    // Safari does. We don't want to try painting the decorations like
-    // the custom case below because we don't have control over what
-    // the system would draw for the scrollbar.
+    
+    
+    
+    
     SetCGContextFillColor(cgContext, NS_RGB(255, 255, 255));
     CGContextFillRect(cgContext, inBoxRect);
     return;
   }
 
-  // Paint the background
+  
   SetCGContextFillColor(cgContext, aParams.trackColor);
   CGContextFillRect(cgContext, inBoxRect);
-  // Paint the decorations
+  
   ScrollbarTrackDecorationColors colors = ComputeScrollbarTrackDecorationColors(aParams.trackColor);
   CGRect shadowRect, innerRect;
   if (aParams.rtl) {
@@ -2668,7 +2668,7 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
     nsIFrame* aFrame, StyleAppearance aAppearance, const nsRect& aRect) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
 
-  // setup to draw into the correct port
+  
   int32_t p2a = aFrame->PresContext()->AppUnitsPerDevPixel();
 
   gfx::Rect nativeWidgetRect(aRect.x, aRect.y, aRect.width, aRect.height);
@@ -2676,12 +2676,12 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
   float originalHeight = nativeWidgetRect.Height();
   nativeWidgetRect.Round();
   if (nativeWidgetRect.IsEmpty()) {
-    return Nothing();  // Don't attempt to draw invisible widgets.
+    return Nothing();  
   }
 
   bool hidpi = IsHiDPIContext(aFrame->PresContext()->DeviceContext());
   if (hidpi) {
-    // Use high-resolution drawing.
+    
     nativeWidgetRect.Scale(0.5f);
     originalHeight *= 0.5f;
   }
@@ -2751,15 +2751,15 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
 
     case StyleAppearance::Button:
       if (IsDefaultButton(aFrame)) {
-        // Check whether the default button is in a document that does not
-        // match the :-moz-window-inactive pseudoclass. This activeness check
-        // is different from the other "active window" checks in this file
-        // because we absolutely need the button's default button appearance to
-        // be in sync with its text color, and the text color is changed by
-        // such a :-moz-window-inactive rule. (That's because on 10.10 and up,
-        // default buttons in active windows have blue background and white
-        // text, and default buttons in inactive windows have white background
-        // and black text.)
+        
+        
+        
+        
+        
+        
+        
+        
+        
         EventStates docState = aFrame->GetContent()->OwnerDoc()->GetDocumentState();
         bool isInActiveWindow = !docState.HasState(NS_DOCUMENT_STATE_WINDOW_INACTIVE);
         if (!IsDisabled(aFrame, eventState) && isInActiveWindow &&
@@ -2784,12 +2784,12 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
         return Some(WidgetInfo::Dropdown(params));
       }
       if (originalHeight > DO_SQUARE_BUTTON_HEIGHT) {
-        // If the button is tall enough, draw the square button style so that
-        // buttons with non-standard content look good. Otherwise draw normal
-        // rounded aqua buttons.
-        // This comparison is done based on the height that is calculated without
-        // the top, because the snapped height can be affected by the top of the
-        // rect and that may result in different height depending on the top value.
+        
+        
+        
+        
+        
+        
         return Some(WidgetInfo::Button(ButtonParams{ComputeControlParams(aFrame, eventState),
                                                     ButtonType::eSquareBezelPushButton}));
       }
@@ -2825,9 +2825,9 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
         bool isSpinner = (aAppearance == StyleAppearance::Spinner);
         nsIContent* content = aFrame->GetContent();
         if (isSpinner && content->IsHTMLElement()) {
-          // In HTML the theming for the spin buttons is drawn individually into
-          // their own backgrounds instead of being drawn into the background of
-          // their spinner parent as it is for XUL.
+          
+          
+          
           break;
         }
         SpinButtonParams params;
@@ -2921,11 +2921,11 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
     case StyleAppearance::Textfield:
     case StyleAppearance::NumberInput: {
       bool isFocused = eventState.HasState(NS_EVENT_STATE_FOCUS);
-      // XUL textboxes set the native appearance on the containing box, while
-      // concrete focus is set on the html:input element within it. We can
-      // though, check the focused attribute of xul textboxes in this case.
-      // On Mac, focus rings are always shown for textboxes, so we do not need
-      // to check the window's focus ring state here
+      
+      
+      
+      
+      
       if (aFrame->GetContent()->IsXULElement() && IsFocused(aFrame)) {
         isFocused = true;
       }
@@ -2939,7 +2939,7 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
       return Some(WidgetInfo::SearchField(ComputeSearchFieldParams(aFrame, eventState)));
 
     case StyleAppearance::ProgressBar: {
-      // Don't request repaints for scrollbars at 100% because those don't animate.
+      
       if (GetProgressValue(aFrame) < GetProgressMaxValue(aFrame)) {
         if (!QueueAnimatedContentForRefresh(aFrame->GetContent(), 30)) {
           NS_WARNING("Unable to animate progressbar!");
@@ -2957,7 +2957,7 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
 
     case StyleAppearance::Progresschunk:
     case StyleAppearance::Meterchunk:
-      // Do nothing: progress and meter bars cases will draw chunks.
+      
       break;
 
     case StyleAppearance::Treetwisty:
@@ -2976,11 +2976,11 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
       return Some(WidgetInfo::ColorFill(sRGBColor(1.0, 1.0, 1.0, 1.0)));
 
     case StyleAppearance::Treeheader:
-      // do nothing, taken care of by individual header cells
+      
     case StyleAppearance::Treeheadersortarrow:
-      // do nothing, taken care of by treeview header
+      
     case StyleAppearance::Treeline:
-      // do nothing, these lines don't exist on macos
+      
       break;
 
     case StyleAppearance::ScaleHorizontal:
@@ -2990,7 +2990,7 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
 
     case StyleAppearance::ScalethumbHorizontal:
     case StyleAppearance::ScalethumbVertical:
-      // do nothing, drawn by scale
+      
       break;
 
     case StyleAppearance::Range: {
@@ -3038,11 +3038,11 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
 
     case StyleAppearance::MozMacSourceListSelection:
     case StyleAppearance::MozMacActiveSourceListSelection: {
-      // If we're in XUL tree, we need to rely on the source list's clear
-      // background display item. If we cleared the background behind the
-      // selections, the source list would not pick up the right font
-      // smoothing background. So, to simplify a bit, we only support vibrancy
-      // if we're in a source list.
+      
+      
+      
+      
+      
       if (VibrancyManager::SystemSupportsVibrancy() && IsInSourceList(aFrame)) {
         return Nothing();
       }
@@ -3119,14 +3119,14 @@ void nsNativeThemeCocoa::RenderWidget(const WidgetInfo& aWidgetInfo, DrawTarget&
 
   CGContextRef cgContext = nativeDrawing.BeginNativeDrawing();
   if (cgContext == nullptr) {
-    // The Quartz surface handles 0x0 surfaces by internally
-    // making all operations no-ops; there's no cgcontext created for them.
-    // Unfortunately, this means that callers that want to render
-    // directly to the CGContext need to be aware of this quirk.
+    
+    
+    
+    
     return;
   }
 
-  // Set the context's "base transform" to in order to get correctly-sized focus rings.
+  
   CGContextSetBaseCTM(cgContext, CGAffineTransformMakeScale(aScale, aScale));
 
   switch (aWidgetInfo.Widget()) {
@@ -3296,8 +3296,8 @@ void nsNativeThemeCocoa::RenderWidget(const WidgetInfo& aWidgetInfo, DrawTarget&
       break;
     }
     case Widget::eListBox: {
-      // We have to draw this by hand because kHIThemeFrameListBox drawing
-      // is buggy on 10.5, see bug 579259.
+      
+      
       SetCGContextFillColor(cgContext, sRGBColor(1.0, 1.0, 1.0, 1.0));
       CGContextFillRect(cgContext, macRect);
 
@@ -3343,7 +3343,7 @@ void nsNativeThemeCocoa::RenderWidget(const WidgetInfo& aWidgetInfo, DrawTarget&
     }
   }
 
-  // Reset the base CTM.
+  
   CGContextSetBaseCTM(cgContext, CGAffineTransformIdentity);
 
   nativeDrawing.EndNativeDrawing();
@@ -3360,15 +3360,15 @@ bool nsNativeThemeCocoa::CreateWebRenderCommandsForWidget(
 
   EventStates eventState = GetContentState(aFrame, aAppearance);
 
-  // This list needs to stay consistent with the list in DrawWidgetBackground.
-  // For every switch case in DrawWidgetBackground, there are three choices:
-  //  - If the case in DrawWidgetBackground draws nothing for the given widget
-  //    type, then don't list it here. We will hit the "default: return true;"
-  //    case.
-  //  - If the case in DrawWidgetBackground draws something simple for the given
-  //    widget type, imitate that drawing using WebRender commands.
-  //  - If the case in DrawWidgetBackground draws something complicated for the
-  //    given widget type, return false here.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   switch (aAppearance) {
     case StyleAppearance::Dialog:
       if (IsWindowSheet(aFrame) && VibrancyManager::SystemSupportsVibrancy()) {
@@ -3443,21 +3443,21 @@ bool nsNativeThemeCocoa::CreateWebRenderCommandsForWidget(
     case StyleAppearance::ScrollbartrackVertical: {
       BOOL isOverlay = nsLookAndFeel::UseOverlayScrollbars();
       if (isOverlay && !IsParentScrollbarRolledOver(aFrame)) {
-        // There is no scrollbar track, draw nothing and return true.
+        
         return true;
       }
-      // There is a scrollbar track and it needs to be drawn using fallback.
+      
       return false;
     }
 
     case StyleAppearance::Textarea: {
       if (eventState.HasState(NS_EVENT_STATE_FOCUS)) {
-        // We can't draw the focus ring using webrender, so fall back to regular
-        // drawing if we're focused.
+        
+        
         return false;
       }
 
-      // White background
+      
       aBuilder.PushRect(bounds, bounds, true,
                         wr::ToColorF(ToDeviceColor(sRGBColor::OpaqueWhite())));
 
@@ -3484,7 +3484,7 @@ bool nsNativeThemeCocoa::CreateWebRenderCommandsForWidget(
     }
 
     case StyleAppearance::Listbox: {
-      // White background
+      
       aBuilder.PushRect(bounds, bounds, true,
                         wr::ToColorF(ToDeviceColor(sRGBColor::OpaqueWhite())));
 
@@ -3526,9 +3526,9 @@ bool nsNativeThemeCocoa::CreateWebRenderCommandsForWidget(
 
 LayoutDeviceIntMargin nsNativeThemeCocoa::DirectionAwareMargin(const LayoutDeviceIntMargin& aMargin,
                                                                nsIFrame* aFrame) {
-  // Assuming aMargin was originally specified for a horizontal LTR context,
-  // reinterpret the values as logical, and then map to physical coords
-  // according to aFrame's actual writing mode.
+  
+  
+  
   WritingMode wm = aFrame->GetWritingMode();
   nsMargin m = LogicalMargin(wm, aMargin.top, aMargin.right, aMargin.bottom, aMargin.left)
                    .GetPhysicalMargin(wm);
@@ -3563,8 +3563,8 @@ LayoutDeviceIntMargin nsNativeThemeCocoa::GetWidgetBorder(nsDeviceContext* aCont
 
     case StyleAppearance::Checkbox:
     case StyleAppearance::Radio: {
-      // nsCheckboxRadioFrame::GetIntrinsicWidth and nsCheckboxRadioFrame::GetIntrinsicHeight
-      // assume a border width of 2px.
+      
+      
       result.SizeTo(2, 2, 2, 2);
       break;
     }
@@ -3610,9 +3610,9 @@ LayoutDeviceIntMargin nsNativeThemeCocoa::GetWidgetBorder(nsDeviceContext* aCont
       bool isHorizontal = (aAppearance == StyleAppearance::ScrollbartrackHorizontal);
       if (nsLookAndFeel::UseOverlayScrollbars()) {
         if (!nsCocoaFeatures::OnYosemiteOrLater()) {
-          // Pre-10.10, we have to center the thumb rect in the middle of the
-          // scrollbar. Starting with 10.10, the expected rect for thumb
-          // rendering is the full width of the scrollbar.
+          
+          
+          
           if (isHorizontal) {
             result.top = 2;
             result.bottom = 1;
@@ -3621,7 +3621,7 @@ LayoutDeviceIntMargin nsNativeThemeCocoa::GetWidgetBorder(nsDeviceContext* aCont
             result.right = 1;
           }
         }
-        // Leave a bit of space at the start and the end on all OS X versions.
+        
         if (isHorizontal) {
           result.left = 1;
           result.right = 1;
@@ -3643,25 +3643,25 @@ LayoutDeviceIntMargin nsNativeThemeCocoa::GetWidgetBorder(nsDeviceContext* aCont
   }
 
   if (IsHiDPIContext(aContext)) {
-    result = result + result;  // doubled
+    result = result + result;  
   }
 
   NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(result);
 }
 
-// Return false here to indicate that CSS padding values should be used. There is
-// no reason to make a distinction between padding and border values, just specify
-// whatever values you want in GetWidgetBorder and only use this to return true
-// if you want to override CSS padding values.
+
+
+
+
 bool nsNativeThemeCocoa::GetWidgetPadding(nsDeviceContext* aContext, nsIFrame* aFrame,
                                           StyleAppearance aAppearance,
                                           LayoutDeviceIntMargin* aResult) {
-  // We don't want CSS padding being used for certain widgets.
-  // See bug 381639 for an example of why.
+  
+  
   switch (aAppearance) {
-    // Radios and checkboxes return a fixed size in GetMinimumWidgetSize
-    // and have a meaningful baseline, so they can't have
-    // author-specified padding.
+    
+    
+    
     case StyleAppearance::Checkbox:
     case StyleAppearance::Radio:
       aResult->SizeTo(0, 0, 0, 0);
@@ -3699,12 +3699,12 @@ bool nsNativeThemeCocoa::GetWidgetOverflow(nsDeviceContext* aContext, nsIFrame* 
       break;
     }
     case StyleAppearance::ProgressBar: {
-      // Progress bars draw a 2 pixel white shadow under their progress indicators.
+      
       overflow.bottom = 2;
       break;
     }
     case StyleAppearance::Meter: {
-      // Meter bars overflow their boxes by about 2 pixels.
+      
       overflow.SizeTo(2, 2, 2, 2);
       break;
     }
@@ -3713,7 +3713,7 @@ bool nsNativeThemeCocoa::GetWidgetOverflow(nsDeviceContext* aContext, nsIFrame* 
   }
 
   if (IsHiDPIContext(aContext)) {
-    // Double the number of device pixels.
+    
     overflow += overflow;
   }
 
@@ -3791,7 +3791,7 @@ nsNativeThemeCocoa::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* 
         buttonWidth = size.width;
         buttonHeight = size.height;
         if (aAppearance != StyleAppearance::Spinner) {
-          // the buttons are half the height of the spinner
+          
           buttonHeight /= 2;
         }
       }
@@ -3814,10 +3814,10 @@ nsNativeThemeCocoa::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* 
     case StyleAppearance::Textfield:
     case StyleAppearance::Textarea:
     case StyleAppearance::Searchfield: {
-      // at minimum, we should be tall enough for 9pt text.
-      // I'm using hardcoded values here because the appearance manager
-      // values for the frame size are incorrect.
-      aResult->SizeTo(0, (2 + 2) /* top */ + 9 + (1 + 1) /* bottom */);
+      
+      
+      
+      aResult->SizeTo(0, (2 + 2)  + 9 + (1 + 1) );
       break;
     }
 
@@ -3831,8 +3831,8 @@ nsNativeThemeCocoa::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* 
     case StyleAppearance::MozMacFullscreenButton: {
       if ([NativeWindowForFrame(aFrame) respondsToSelector:@selector(toggleFullScreen:)] &&
           !nsCocoaFeatures::OnYosemiteOrLater()) {
-        // This value is hardcoded because it's needed before we can measure the
-        // position and size of the fullscreen button.
+        
+        
         aResult->SizeTo(16, 17);
       }
       *aIsOverridable = false;
@@ -3865,7 +3865,7 @@ nsNativeThemeCocoa::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* 
     case StyleAppearance::Treeheadercell: {
       SInt32 headerHeight = 0;
       ::GetThemeMetric(kThemeMetricListHeaderHeight, &headerHeight);
-      aResult->SizeTo(0, headerHeight - 1);  // We don't need the top border.
+      aResult->SizeTo(0, headerHeight - 1);  
       break;
     }
 
@@ -3924,10 +3924,10 @@ nsNativeThemeCocoa::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* 
         break;
       }
 
-      // yeah, i know i'm cheating a little here, but i figure that it
-      // really doesn't matter if the scrollbar is vertical or horizontal
-      // and the width metric is a really good metric for every piece
-      // of the scrollbar.
+      
+      
+      
+      
 
       int32_t themeMetric =
           IsSmallScrollbar(aFrame) ? kThemeMetricSmallScrollBarWidth : kThemeMetricScrollBarWidth;
@@ -3939,17 +3939,6 @@ nsNativeThemeCocoa::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* 
 
     case StyleAppearance::ScrollbarNonDisappearing: {
       int32_t themeMetric = kThemeMetricScrollBarWidth;
-
-      if (aFrame) {
-        if (IsSmallScrollbar(aFrame)) {
-          // XXX We're interested in the width of non-disappearing scrollbars
-          // to leave enough space for a dropmarker in non-native styled
-          // comboboxes (bug 869314). It isn't clear to me if comboboxes can
-          // ever have small scrollbars.
-          themeMetric = kThemeMetricSmallScrollBarWidth;
-        }
-      }
-
       SInt32 scrollbarWidth = 0;
       ::GetThemeMetric(themeMetric, &scrollbarWidth);
       aResult->SizeTo(scrollbarWidth, scrollbarWidth);
@@ -3965,7 +3954,7 @@ nsNativeThemeCocoa::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* 
       SInt32 scrollbarWidth = 0;
       ::GetThemeMetric(themeMetric, &scrollbarWidth);
 
-      // It seems that for both sizes of scrollbar, the buttons are one pixel "longer".
+      
       if (aAppearance == StyleAppearance::ScrollbarbuttonLeft ||
           aAppearance == StyleAppearance::ScrollbarbuttonRight)
         aResult->SizeTo(scrollbarWidth + 1, scrollbarWidth);
@@ -4005,7 +3994,7 @@ NS_IMETHODIMP
 nsNativeThemeCocoa::WidgetStateChanged(nsIFrame* aFrame, StyleAppearance aAppearance,
                                        nsAtom* aAttribute, bool* aShouldRepaint,
                                        const nsAttrValue* aOldValue) {
-  // Some widget types just never change state.
+  
   switch (aAppearance) {
     case StyleAppearance::MozWindowTitlebar:
     case StyleAppearance::Toolbox:
@@ -4034,15 +4023,15 @@ nsNativeThemeCocoa::WidgetStateChanged(nsIFrame* aFrame, StyleAppearance aAppear
       break;
   }
 
-  // XXXdwh Not sure what can really be done here.  Can at least guess for
-  // specific widgets that they're highly unlikely to have certain states.
-  // For example, a toolbar doesn't care about any states.
+  
+  
+  
   if (!aAttribute) {
-    // Hover/focus/active changed.  Always repaint.
+    
     *aShouldRepaint = true;
   } else {
-    // Check the attribute to see if it's relevant.
-    // disabled, checked, dlgtype, default, etc.
+    
+    
     *aShouldRepaint = false;
     if (aAttribute == nsGkAtoms::disabled || aAttribute == nsGkAtoms::checked ||
         aAttribute == nsGkAtoms::selected || aAttribute == nsGkAtoms::visuallyselected ||
@@ -4057,22 +4046,22 @@ nsNativeThemeCocoa::WidgetStateChanged(nsIFrame* aFrame, StyleAppearance aAppear
 
 NS_IMETHODIMP
 nsNativeThemeCocoa::ThemeChanged() {
-  // This is unimplemented because we don't care if gecko changes its theme
-  // and macOS system appearance changes are handled by
-  // nsLookAndFeel::SystemWantsDarkTheme.
+  
+  
+  
   return NS_OK;
 }
 
 bool nsNativeThemeCocoa::ThemeSupportsWidget(nsPresContext* aPresContext, nsIFrame* aFrame,
                                              StyleAppearance aAppearance) {
-  // if this is a dropdown button in a combobox the answer is always no
+  
   if (aAppearance == StyleAppearance::MozMenulistArrowButton) {
     nsIFrame* parentFrame = aFrame->GetParent();
     if (parentFrame && parentFrame->IsComboboxControlFrame()) return false;
   }
 
   switch (aAppearance) {
-    // Combobox dropdowns don't support native theming in vertical mode.
+    
     case StyleAppearance::Menulist:
     case StyleAppearance::MenulistButton:
     case StyleAppearance::MozMenulistArrowButton:
@@ -4119,7 +4108,7 @@ bool nsNativeThemeCocoa::ThemeSupportsWidget(nsPresContext* aPresContext, nsIFra
     case StyleAppearance::Textarea:
     case StyleAppearance::Searchfield:
     case StyleAppearance::Toolbox:
-    // case StyleAppearance::Toolbarbutton:
+    
     case StyleAppearance::ProgressBar:
     case StyleAppearance::ProgressbarVertical:
     case StyleAppearance::Progresschunk:
@@ -4170,11 +4159,11 @@ bool nsNativeThemeCocoa::ThemeSupportsWidget(nsPresContext* aPresContext, nsIFra
       nsIFrame* parentFrame = aFrame->GetParent();
       if (!parentFrame || !parentFrame->IsScrollFrame()) return true;
 
-      // Note that IsWidgetStyled is not called for resizers on Mac. This is
-      // because for scrollable containers, the native resizer looks better
-      // when (non-overlay) scrollbars are present even when the style is
-      // overriden, and the custom transparent resizer looks better when
-      // scrollbars are not present.
+      
+      
+      
+      
+      
       nsIScrollableFrame* scrollFrame = do_QueryFrame(parentFrame);
       return (!nsLookAndFeel::UseOverlayScrollbars() && scrollFrame &&
               scrollFrame->GetScrollbarVisibility());
@@ -4196,7 +4185,7 @@ bool nsNativeThemeCocoa::ThemeSupportsWidget(nsPresContext* aPresContext, nsIFra
 }
 
 bool nsNativeThemeCocoa::WidgetIsContainer(StyleAppearance aAppearance) {
-  // flesh this out at some point
+  
   switch (aAppearance) {
     case StyleAppearance::MozMenulistArrowButton:
     case StyleAppearance::Radio:
@@ -4275,10 +4264,10 @@ bool nsNativeThemeCocoa::NeedToClearBackgroundBehindWidget(nsIFrame* aFrame,
                                                            StyleAppearance aAppearance) {
   switch (aAppearance) {
     case StyleAppearance::MozMacSourceList:
-    // If we're in a XUL tree, we don't want to clear the background behind the
-    // selections below, since that would make our source list to not pick up
-    // the right font smoothing background. But since we don't call this method
-    // in nsTreeBodyFrame::BuildDisplayList, we never get here.
+    
+    
+    
+    
     case StyleAppearance::MozMacSourceListSelection:
     case StyleAppearance::MozMacActiveSourceListSelection:
     case StyleAppearance::MozMacVibrancyLight:
@@ -4357,7 +4346,7 @@ nsITheme::Transparency nsNativeThemeCocoa::GetWidgetTransparency(nsIFrame* aFram
     case StyleAppearance::ScrollbarSmall:
     case StyleAppearance::Scrollbar:
     case StyleAppearance::Scrollcorner: {
-      // We don't use custom scrollbars when using overlay scrollbars.
+      
       if (nsLookAndFeel::UseOverlayScrollbars()) {
         return eTransparent;
       }
@@ -4370,8 +4359,8 @@ nsITheme::Transparency nsNativeThemeCocoa::GetWidgetTransparency(nsIFrame* aFram
     }
 
     case StyleAppearance::Statusbar:
-      // Knowing that scrollbars and statusbars are opaque improves
-      // performance, because we create layers for them.
+      
+      
       return eOpaque;
 
     case StyleAppearance::Toolbar:

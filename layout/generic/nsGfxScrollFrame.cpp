@@ -1334,22 +1334,21 @@ nscoord ScrollFrameHelper::GetNondisappearingScrollbarWidth(
                "computations");
 
   bool verticalWM = aWM.IsVertical();
-  if (UsesOverlayScrollbars()) {
-    
-    
-    nsIFrame* box = verticalWM ? mHScrollbarBox : mVScrollbarBox;
-    nsITheme* theme = aState->PresContext()->Theme();
-    if (box &&
-        theme->ThemeSupportsWidget(aState->PresContext(), box,
-                                   StyleAppearance::ScrollbarNonDisappearing)) {
-      LayoutDeviceIntSize size;
-      bool canOverride = true;
-      theme->GetMinimumWidgetSize(aState->PresContext(), box,
-                                  StyleAppearance::ScrollbarNonDisappearing,
-                                  &size, &canOverride);
-      return aState->PresContext()->DevPixelsToAppUnits(
-          verticalWM ? size.height : size.width);
-    }
+  
+  
+  
+  nsIFrame* box = verticalWM ? mHScrollbarBox : mVScrollbarBox;
+  nsITheme* theme = aState->PresContext()->Theme();
+  if (box &&
+      theme->ThemeSupportsWidget(aState->PresContext(), box,
+                                 StyleAppearance::ScrollbarNonDisappearing)) {
+    LayoutDeviceIntSize size;
+    bool canOverride = true;
+    theme->GetMinimumWidgetSize(aState->PresContext(), box,
+                                StyleAppearance::ScrollbarNonDisappearing,
+                                &size, &canOverride);
+    return aState->PresContext()->DevPixelsToAppUnits(verticalWM ? size.height
+                                                                 : size.width);
   }
 
   nsMargin sizes(GetDesiredScrollbarSizes(aState));
