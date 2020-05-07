@@ -33,6 +33,8 @@
 #include "RecentEventsBuffer.h"  
 #include "SampledAPZCState.h"
 
+#include "base/message_loop.h"
+
 namespace mozilla {
 
 namespace ipc {

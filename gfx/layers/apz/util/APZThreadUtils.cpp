@@ -6,100 +6,59 @@
 
 #include "mozilla/layers/APZThreadUtils.h"
 
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/StaticMutex.h"
-
 namespace mozilla {
 namespace layers {
 
 static bool sThreadAssertionsEnabled = true;
-static StaticRefPtr<nsISerialEventTarget> sControllerThread;
-static StaticMutex sControllerThreadMutex;
+static MessageLoop* sControllerThread;
 
 
 void APZThreadUtils::SetThreadAssertionsEnabled(bool aEnabled) {
-  StaticMutexAutoLock lock(sControllerThreadMutex);
   sThreadAssertionsEnabled = aEnabled;
 }
 
 
 bool APZThreadUtils::GetThreadAssertionsEnabled() {
-  StaticMutexAutoLock lock(sControllerThreadMutex);
   return sThreadAssertionsEnabled;
 }
 
 
-void APZThreadUtils::SetControllerThread(nsISerialEventTarget* aThread) {
+void APZThreadUtils::SetControllerThread(MessageLoop* aLoop) {
   
   
-  StaticMutexAutoLock lock(sControllerThreadMutex);
-  MOZ_ASSERT(!sControllerThread || !aThread || sControllerThread == aThread);
-  if (aThread != sControllerThread) {
-    
-    sControllerThread = aThread;
-    ClearOnShutdown(&sControllerThread);
-  }
+  MOZ_ASSERT(!sControllerThread || !aLoop || sControllerThread == aLoop);
+  sControllerThread = aLoop;
 }
 
 
 void APZThreadUtils::AssertOnControllerThread() {
-#if DEBUG
   if (!GetThreadAssertionsEnabled()) {
     return;
   }
-  StaticMutexAutoLock lock(sControllerThreadMutex);
-  MOZ_ASSERT(sControllerThread && sControllerThread->IsOnCurrentThread());
-#endif
+
+  MOZ_ASSERT(sControllerThread == MessageLoop::current());
 }
 
 
 void APZThreadUtils::RunOnControllerThread(RefPtr<Runnable>&& aTask) {
-  RefPtr<nsISerialEventTarget> thread;
-  {
-    StaticMutexAutoLock lock(sControllerThreadMutex);
-    thread = sControllerThread;
-  }
   RefPtr<Runnable> task = std::move(aTask);
 
-  if (!thread) {
+  if (!sControllerThread) {
     
     NS_WARNING("Dropping task posted to controller thread");
     return;
   }
 
-  if (thread->IsOnCurrentThread()) {
+  if (sControllerThread == MessageLoop::current()) {
     task->Run();
   } else {
-    thread->Dispatch(task.forget());
+    sControllerThread->PostTask(task.forget());
   }
 }
 
 
 bool APZThreadUtils::IsControllerThread() {
-  StaticMutexAutoLock lock(sControllerThreadMutex);
-  return sControllerThread && sControllerThread->IsOnCurrentThread();
-}
-
-
-void APZThreadUtils::DelayedDispatch(already_AddRefed<Runnable> aRunnable,
-                                int aDelayMs) {
-  MOZ_ASSERT(!XRE_IsContentProcess(),
-             "ContentProcessController should only be used remotely.");
-  RefPtr<nsISerialEventTarget> thread;
-  {
-    StaticMutexAutoLock lock(sControllerThreadMutex);
-    thread = sControllerThread;
-  }
-  if (!thread) {
-    
-    NS_WARNING("Dropping task posted to controller thread");
-    return;
-  }
-  if (aDelayMs) {
-    thread->DelayedDispatch(std::move(aRunnable), aDelayMs);
-  } else {
-    thread->Dispatch(std::move(aRunnable));
-  }
+  return sControllerThread == MessageLoop::current();
 }
 
 NS_IMPL_ISUPPORTS(GenericNamedTimerCallbackBase, nsITimerCallback, nsINamed)

@@ -54,6 +54,7 @@ T MinIgnoreZero(const T& a, const T& b);
 
 class VideoStreamFactory;
 class WebrtcAudioConduit;
+class nsThread;
 
 
 class WebrtcVideoEncoder : public VideoEncoder, public webrtc::VideoEncoder {};

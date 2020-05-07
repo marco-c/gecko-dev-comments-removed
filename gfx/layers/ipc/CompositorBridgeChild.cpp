@@ -9,6 +9,7 @@
 #include "mozilla/layers/CompositorThread.h"
 #include <stddef.h>              
 #include "ClientLayerManager.h"  
+#include "base/message_loop.h"   
 #include "base/task.h"           
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/layers/CompositorManagerChild.h"
@@ -35,6 +36,7 @@
 #include "nsDebug.h"          
 #include "nsISupportsImpl.h"  
 #include "nsTArray.h"         
+#include "nsXULAppAPI.h"      
 #include "FrameLayerBuilder.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowserParent.h"
@@ -83,7 +85,7 @@ CompositorBridgeChild::CompositorBridgeChild(CompositorManagerChild* aManager)
       mCanSend(false),
       mActorDestroyed(false),
       mFwdTransactionId(0),
-      mThread(NS_GetCurrentThread()),
+      mMessageLoop(MessageLoop::current()),
       mProcessToken(0),
       mSectionAllocator(nullptr),
       mPaintLock("CompositorBridgeChild.mPaintLock"),
@@ -166,7 +168,7 @@ void CompositorBridgeChild::Destroy() {
     
     
     
-    NS_GetCurrentThread()->Dispatch(
+    MessageLoop::current()->PostTask(
         NewRunnableMethod("CompositorBridgeChild::PrepareFinalDestroy", selfRef,
                           &CompositorBridgeChild::PrepareFinalDestroy));
     return;
@@ -228,7 +230,7 @@ void CompositorBridgeChild::Destroy() {
   
 
   
-  NS_GetCurrentThread()->Dispatch(
+  MessageLoop::current()->PostTask(
       NewRunnableMethod("CompositorBridgeChild::PrepareFinalDestroy", selfRef,
                         &CompositorBridgeChild::PrepareFinalDestroy));
 }
@@ -468,8 +470,8 @@ mozilla::ipc::IPCResult CompositorBridgeChild::RecvUpdatePluginConfigurations(
 
 #if defined(XP_WIN)
 static void ScheduleSendAllPluginsCaptured(CompositorBridgeChild* aThis,
-                                           nsISerialEventTarget* aThread) {
-  aThread->Dispatch(NewNonOwningRunnableMethod(
+                                           MessageLoop* aLoop) {
+  aLoop->PostTask(NewNonOwningRunnableMethod(
       "CompositorBridgeChild::SendAllPluginsCaptured", aThis,
       &CompositorBridgeChild::SendAllPluginsCaptured));
 }
@@ -483,9 +485,10 @@ mozilla::ipc::IPCResult CompositorBridgeChild::RecvCaptureAllPlugins(
 
   
   
-  ImageBridgeChild::GetSingleton()->GetThread()->Dispatch(NewRunnableFunction(
-      "ScheduleSendAllPluginsCapturedRunnable", &ScheduleSendAllPluginsCaptured,
-      this, NS_GetCurrentThread()));
+  ImageBridgeChild::GetSingleton()->GetMessageLoop()->PostTask(
+      NewRunnableFunction("ScheduleSendAllPluginsCapturedRunnable",
+                          &ScheduleSendAllPluginsCaptured, this,
+                          MessageLoop::current()));
   return IPC_OK();
 #else
   MOZ_ASSERT_UNREACHABLE(
