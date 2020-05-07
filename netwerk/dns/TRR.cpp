@@ -1342,6 +1342,15 @@ TRR::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
   nsCOMPtr<nsIChannel> channel;
   channel.swap(mChannel);
 
+  {
+    
+    nsCOMPtr<nsITimer> timer;
+    mTimeout.swap(timer);
+    if (timer) {
+      timer->Cancel();
+    }
+  }
+
   if (UseDefaultServer()) {
     
     gTRRService->TRRIsOkay(NS_SUCCEEDED(aStatusCode) ? TRRService::OKAY_NORMAL
