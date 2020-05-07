@@ -283,15 +283,19 @@ const observer = {
 
       case "input": {
         let field = aEvent.target;
-        let { hasBeenTypePassword } = field;
+        let isPasswordType = LoginHelper.isPasswordFieldType(field);
         
-        if (docState.generatedPasswordFields.has(field)) {
-          LoginManagerChild.forWindow(
-            window
-          )._maybeStopTreatingAsGeneratedPasswordField(aEvent);
+        let loginManagerChild = LoginManagerChild.forWindow(window);
+        if (
+          docState.generatedPasswordFields.has(field) &&
+          loginManagerChild._doesEventClearPrevFieldValue(aEvent)
+        ) {
+          loginManagerChild._stopTreatingAsGeneratedPasswordField(
+            aEvent.target
+          );
         }
 
-        if (!hasBeenTypePassword && !LoginHelper.isUsernameFieldType(field)) {
+        if (!isPasswordType && !LoginHelper.isUsernameFieldType(field)) {
           break;
         }
 
@@ -311,14 +315,14 @@ const observer = {
         
         let isAutofillInput = filledLogin && !fillWasUserTriggered;
         if (!alreadyModified && isAutofillInput) {
-          if (hasBeenTypePassword && filledLogin.password == field.value) {
+          if (isPasswordType && filledLogin.password == field.value) {
             log(
               "Ignoring password input event that doesn't change autofilled values"
             );
             break;
           }
           if (
-            !hasBeenTypePassword &&
+            !isPasswordType &&
             filledLogin.usernameField &&
             filledLogin.username == field.value
           ) {
@@ -329,6 +333,20 @@ const observer = {
           }
         }
         docState.fieldModificationsByRootElement.set(formLikeRoot, true);
+
+        if (
+          
+          
+          
+          isPasswordType &&
+          loginManagerChild._doesEventClearPrevFieldValue(aEvent) &&
+          
+          
+          filledLogin &&
+          filledLogin.password !== field.value
+        ) {
+          docState.fillsByRootElement.delete(formLikeRoot);
+        }
 
         break;
       }
@@ -1684,15 +1702,17 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     }
   }
 
-  _maybeStopTreatingAsGeneratedPasswordField(event) {
-    let passwordField = event.target;
-    let { value } = passwordField;
+  
 
-    
-    
-    if (!value || (event.data && event.data == value)) {
-      this._stopTreatingAsGeneratedPasswordField(passwordField);
-    }
+
+
+
+
+
+
+
+  _doesEventClearPrevFieldValue({ target, data }) {
+    return !target.value || (data && data == target.value);
   }
 
   _stopTreatingAsGeneratedPasswordField(passwordField) {
