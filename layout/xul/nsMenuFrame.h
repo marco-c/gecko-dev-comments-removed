@@ -41,8 +41,6 @@ class Element;
 }  
 }  
 
-#define NS_STATE_ACCELTEXT_IS_DERIVED NS_STATE_BOX_CHILD_RESERVED
-
 
 enum nsMenuType {
   
@@ -232,9 +230,6 @@ class nsMenuFrame final : public nsBoxFrame, public nsIReflowCallback {
   void UpdateMenuSpecialState();
 
   
-  void BuildAcceleratorText(bool aNotify);
-
-  
   void Execute(mozilla::WidgetGUIEvent* aEvent);
 
   
@@ -256,8 +251,6 @@ class nsMenuFrame final : public nsBoxFrame, public nsIReflowCallback {
 
   bool mIsMenu;   
   bool mChecked;  
-  bool mIgnoreAccelTextChange;  
-                                
   bool mReflowCallbackPosted;
   nsMenuType mType;
 
