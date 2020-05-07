@@ -223,17 +223,13 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   js::jit::Register backtrack_stack_pointer_;
   js::jit::Register temp0_, temp1_, temp2_;
 
-  
-  
-  
-  
-  js::jit::NonAssertingLabel entry_label_;
-  js::jit::NonAssertingLabel start_label_;
-  js::jit::NonAssertingLabel backtrack_label_;
-  js::jit::NonAssertingLabel success_label_;
-  js::jit::NonAssertingLabel exit_label_;
-  js::jit::NonAssertingLabel stack_overflow_label_;
-  js::jit::NonAssertingLabel exit_with_exception_label_;
+  js::jit::Label entry_label_;
+  js::jit::Label start_label_;
+  js::jit::Label backtrack_label_;
+  js::jit::Label success_label_;
+  js::jit::Label exit_label_;
+  js::jit::Label stack_overflow_label_;
+  js::jit::Label exit_with_exception_label_;
 
   
   
