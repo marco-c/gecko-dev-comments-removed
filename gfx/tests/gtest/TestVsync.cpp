@@ -189,3 +189,14 @@ TEST_F(VsyncTester, VsyncSourceHasVsyncRate) {
   ASSERT_NE(vsyncRate, TimeDuration::Forever());
   ASSERT_GT(vsyncRate.ToMilliseconds(), 0);
 }
+
+
+
+
+
+
+TEST_F(VsyncTester, DisableVsync) {
+  VsyncSource::Display& globalDisplay = mVsyncSource->GetGlobalDisplay();
+  globalDisplay.DisableVsync();
+  ASSERT_FALSE(globalDisplay.IsVsyncEnabled());
+}
