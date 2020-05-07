@@ -5665,9 +5665,7 @@ bool jit::ElementAccessIsTypedArray(CompilerConstraintList* constraints,
 
   *arrayType = types->getTypedArrayType(constraints);
 
-  
-  if (*arrayType == Scalar::MaxTypedArrayViewType ||
-      Scalar::isBigIntType(*arrayType)) {
+  if (*arrayType == Scalar::MaxTypedArrayViewType) {
     return false;
   }
 
