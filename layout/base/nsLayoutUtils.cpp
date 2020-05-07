@@ -854,6 +854,8 @@ static nsRect GetDisplayPortFromMarginsData(
 
   if (presShell->IsDisplayportSuppressed()) {
     alignment = ScreenSize(1, 1);
+  } else if (gfxVars::UseWebRender()) {
+    alignment = ScreenSize(512, 512);
   } else if (StaticPrefs::layers_enable_tiles_AtStartup()) {
     
     
