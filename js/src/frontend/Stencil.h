@@ -366,10 +366,7 @@ struct FunctionCreationData {
 };
 
 
-class ScriptStencil {
- public:
-  using ImmutableFlags = ImmutableScriptFlagsEnum;
-
+class ScriptStencilBase {
  public:
   
   mozilla::Maybe<FunctionIndex> functionIndex;
@@ -385,9 +382,15 @@ class ScriptStencil {
   uint32_t natoms = 0;
   js::UniquePtr<js::ImmutableScriptData> immutableScriptData = nullptr;
 
-  
+  explicit ScriptStencilBase(JSContext* cx) : gcThings(cx) {}
+};
 
-  ScriptStencil(JSContext* cx) : gcThings(cx) {}
+
+class ScriptStencil : public ScriptStencilBase {
+ public:
+  using ImmutableFlags = ImmutableScriptFlagsEnum;
+
+  explicit ScriptStencil(JSContext* cx) : ScriptStencilBase(cx) {}
 
   bool isFunction() const {
     return immutableFlags.hasFlag(ImmutableFlags::IsFunction);
