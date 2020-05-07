@@ -68,35 +68,6 @@ class FunctionIndex : public TypedIndex<FunctionIndexType> {
   using Base::Base;
 };
 
-
-
-
-
-
-struct FunctionCreationData {
-  
-  FunctionCreationData() = default;
-  FunctionCreationData(const FunctionCreationData&) = delete;
-  FunctionCreationData(FunctionCreationData&& data) = default;
-
-  
-  
-  mozilla::Maybe<frontend::AtomVector> closedOverBindings = {};
-  
-  mozilla::Maybe<Vector<FunctionIndex>> innerFunctionIndexes = {};
-  
-
-  bool createLazyScript(JSContext* cx, CompilationInfo& compilationInfo,
-                        HandleFunction function, FunctionBox* funbox,
-                        HandleScriptSourceObject sourceObject);
-
-  bool hasLazyScriptData() const {
-    return closedOverBindings && innerFunctionIndexes;
-  }
-
-  void trace(JSTracer* trc) {}
-};
-
 FunctionFlags InitialFunctionFlags(FunctionSyntaxKind kind,
                                    GeneratorKind generatorKind,
                                    FunctionAsyncKind asyncKind,
@@ -363,6 +334,35 @@ using ScriptThingVariant =
 
 
 using ScriptThingsVector = Vector<ScriptThingVariant>;
+
+
+
+
+
+
+struct FunctionCreationData {
+  
+  FunctionCreationData() = default;
+  FunctionCreationData(const FunctionCreationData&) = delete;
+  FunctionCreationData(FunctionCreationData&& data) = default;
+
+  
+  
+  mozilla::Maybe<frontend::AtomVector> closedOverBindings = {};
+  
+  mozilla::Maybe<Vector<FunctionIndex>> innerFunctionIndexes = {};
+  
+
+  bool createLazyScript(JSContext* cx, CompilationInfo& compilationInfo,
+                        HandleFunction function, FunctionBox* funbox,
+                        HandleScriptSourceObject sourceObject);
+
+  bool hasLazyScriptData() const {
+    return closedOverBindings && innerFunctionIndexes;
+  }
+
+  void trace(JSTracer* trc) {}
+};
 
 
 class ScriptStencil {
