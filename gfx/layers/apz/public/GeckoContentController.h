@@ -14,6 +14,7 @@
 #include "mozilla/Attributes.h"                  
 #include "mozilla/DefineEnum.h"                  
 #include "mozilla/EventForwards.h"               
+#include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/MatrixMessage.h"        
 #include "mozilla/layers/RepaintRequest.h"       
 #include "mozilla/layers/ScrollableLayerGuid.h"  
@@ -109,7 +110,9 @@ class GeckoContentController {
 
 
   virtual void PostDelayedTask(already_AddRefed<Runnable> aRunnable,
-                               int aDelayMs) = 0;
+                               int aDelayMs) {
+    APZThreadUtils::PostDelayedTask(std::move(aRunnable), aDelayMs);
+  }
 
   
 
