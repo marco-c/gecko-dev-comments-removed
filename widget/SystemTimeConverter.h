@@ -88,11 +88,12 @@ class SystemTimeConverter {
     
     
     
-    Time deltaFromNow;
-    bool newer = IsTimeNewerThanTimestamp(aTime, roughlyNow, &deltaFromNow);
+    
+    TimeStamp timeAsTimeStamp;
+    bool newer = IsTimeNewerThanTimestamp(aTime, roughlyNow, &timeAsTimeStamp);
 
     
-    static const Time kTolerance = 30;
+    static const TimeDuration kTolerance = TimeDuration::FromMilliseconds(30.0);
 
     
     if (newer) {
@@ -106,7 +107,7 @@ class SystemTimeConverter {
       return roughlyNow;
     }
 
-    if (deltaFromNow <= kTolerance) {
+    if (roughlyNow - timeAsTimeStamp <= kTolerance) {
       
       
       
@@ -117,7 +118,7 @@ class SystemTimeConverter {
     }
 
     
-    return roughlyNow - TimeDuration::FromMilliseconds(deltaFromNow);
+    return timeAsTimeStamp;
   }
 
   void CompensateForBackwardsSkew(Time aReferenceTime,
@@ -155,8 +156,7 @@ class SystemTimeConverter {
     
     
     
-    Time delta;
-    if (IsTimeNewerThanTimestamp(aReferenceTime, aLowerBound, &delta)) {
+    if (IsTimeNewerThanTimestamp(aReferenceTime, aLowerBound, nullptr)) {
       return;
     }
 
@@ -190,7 +190,7 @@ class SystemTimeConverter {
   }
 
   bool IsTimeNewerThanTimestamp(Time aTime, TimeStamp aTimeStamp,
-                                Time* aDelta) {
+                                TimeStamp* aTimeAsTimeStamp) {
     Time timeDelta = aTime - mReferenceTime;
 
     
@@ -199,18 +199,23 @@ class SystemTimeConverter {
     
     
     
-    Time timeStampDelta = static_cast<int64_t>(
-        (aTimeStamp - mReferenceTimeStamp).ToMilliseconds());
+    TimeDuration timeStampDelta = (aTimeStamp - mReferenceTimeStamp);
+    int64_t wholeMillis = static_cast<int64_t>(timeStampDelta.ToMilliseconds());
+    Time wrappedTimeStampDelta = wholeMillis;  
 
-    Time timeToTimeStamp = timeStampDelta - timeDelta;
+    Time timeToTimeStamp = wrappedTimeStampDelta - timeDelta;
     bool isNewer = false;
     if (timeToTimeStamp == 0) {
-      *aDelta = 0;
+      
     } else if (timeToTimeStamp < kTimeHalfRange) {
-      *aDelta = timeToTimeStamp;
+      wholeMillis -= timeToTimeStamp;
     } else {
       isNewer = true;
-      *aDelta = timeDelta - timeStampDelta;
+      wholeMillis += (-timeToTimeStamp);
+    }
+    if (aTimeAsTimeStamp) {
+      *aTimeAsTimeStamp =
+          mReferenceTimeStamp + TimeDuration::FromMilliseconds(wholeMillis);
     }
 
     return isNewer;
