@@ -342,29 +342,6 @@ using ScriptThingVariant =
 using ScriptThingsVector = Vector<ScriptThingVariant>;
 
 
-
-
-
-
-struct FunctionCreationData {
-  
-  FunctionCreationData(const FunctionCreationData&) = delete;
-  FunctionCreationData(FunctionCreationData&& data) = default;
-
-  
-  
-  ScriptThingsVector gcThings;
-
-  explicit FunctionCreationData(JSContext* cx) : gcThings(cx) {}
-
-  bool createLazyScript(JSContext* cx, CompilationInfo& compilationInfo,
-                        HandleFunction function, FunctionBox* funbox,
-                        HandleScriptSourceObject sourceObject);
-
-  void trace(JSTracer* trc);
-};
-
-
 class ScriptStencilBase {
  public:
   
@@ -382,6 +359,10 @@ class ScriptStencilBase {
   js::UniquePtr<js::ImmutableScriptData> immutableScriptData = nullptr;
 
   explicit ScriptStencilBase(JSContext* cx) : gcThings(cx) {}
+
+  
+  
+  void trace(JSTracer* trc);
 };
 
 

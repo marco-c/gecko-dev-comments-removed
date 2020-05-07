@@ -123,7 +123,6 @@ bool js::frontend::EmitScriptThingsVector(JSContext* cx,
       
       
       
-      MOZ_ASSERT(!data.is<FunctionCreationData>());
       output[i] = JS::GCCellPtr(data.as<JSFunction*>());
       return true;
     }

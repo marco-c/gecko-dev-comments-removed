@@ -368,9 +368,9 @@ class FunctionBox : public SharedContext {
 
   JSFunction* createFunction(JSContext* cx);
 
-  MutableHandle<FunctionCreationData> functionCreationData() const;
+  MutableHandle<ScriptStencilBase> functionStencil() const;
 
-  bool hasFunctionCreationData() const;
+  bool hasFunctionStencil() const;
   bool hasFunction() const;
 
 #ifdef DEBUG

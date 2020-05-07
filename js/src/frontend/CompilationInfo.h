@@ -26,7 +26,7 @@
 namespace js {
 namespace frontend {
 
-using FunctionType = mozilla::Variant<JSFunction*, FunctionCreationData>;
+using FunctionType = mozilla::Variant<JSFunction*, ScriptStencilBase>;
 
 
 
@@ -48,7 +48,7 @@ struct MOZ_RAII CompilationInfo {
   UsedNameTracker usedNames;
   LifoAllocScope& allocScope;
   FunctionTreeHolder treeHolder;
-  
+
   
   
   Vector<RegExpCreationData> regExpData;
