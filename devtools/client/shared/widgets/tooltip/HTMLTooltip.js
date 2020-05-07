@@ -374,7 +374,7 @@ function HTMLTooltip(
   
   this.consumeOutsideClicks = this.noAutoHide ? false : consumeOutsideClicks;
   this.isMenuTooltip = isMenuTooltip;
-  this.useXulWrapper = this._isXULPopupAvailable() && useXulWrapper;
+  this.useXulWrapper = this._isXUL() && useXulWrapper;
   this.preferredWidth = "auto";
   this.preferredHeight = "auto";
 
@@ -404,7 +404,7 @@ function HTMLTooltip(
     this.doc.documentElement.appendChild(this.xulPanelWrapper);
     this.xulPanelWrapper.appendChild(inner);
     inner.appendChild(this.container);
-  } else if (this._hasXULRootElement()) {
+  } else if (this._isXUL()) {
     this.doc.documentElement.appendChild(this.container);
   } else {
     
@@ -981,12 +981,8 @@ HTMLTooltip.prototype = {
   
 
 
-  _hasXULRootElement: function() {
+  _isXUL: function() {
     return this.doc.documentElement.namespaceURI === XUL_NS;
-  },
-
-  _isXULPopupAvailable: function() {
-    return this.doc.nodePrincipal.isSystemPrincipal;
   },
 
   _createXulPanelWrapper: function() {

@@ -304,7 +304,11 @@ class ResponsiveUI {
 
           
           
-          if (this.browserStackEl.classList.contains("device-modal-opened")) {
+          if (
+            this.browserStackEl.classList.contains(
+              "device-selector-menu-opened"
+            )
+          ) {
             const style = this.browserWindow.getComputedStyle(
               this.browserStackEl
             );
@@ -582,6 +586,8 @@ class ResponsiveUI {
       case "update-device-modal":
         this.onUpdateDeviceModal(event);
         break;
+      case "update-device-toolbar-height":
+        this.onUpdateToolbarHeight(event);
     }
   }
 
@@ -801,13 +807,31 @@ class ResponsiveUI {
   }
 
   onUpdateDeviceModal(event) {
-    if (event.data.isOpen) {
-      this.browserStackEl.classList.add("device-modal-opened");
-      const style = this.browserWindow.getComputedStyle(this.browserStackEl);
-      this.rdmFrame.style.height = style.height;
-    } else {
-      this.rdmFrame.style.removeProperty("height");
-      this.browserStackEl.classList.remove("device-modal-opened");
+    
+    if (!event.data.isOpen) {
+      this.restoreToolbarHeight();
+    }
+  }
+
+  
+
+
+
+
+  onUpdateToolbarHeight(event) {
+    if (!event.data.isOpen) {
+      const {
+        isModalOpen,
+      } = this.rdmFrame.contentWindow.store.getState().devices;
+
+      
+      
+      
+      if (isModalOpen) {
+        return;
+      }
+
+      this.restoreToolbarHeight();
     }
   }
 
@@ -816,6 +840,14 @@ class ResponsiveUI {
       "devtools.responsive.deviceState"
     );
     return !!deviceState;
+  }
+
+  
+
+
+  restoreToolbarHeight() {
+    this.rdmFrame.style.removeProperty("height");
+    this.browserStackEl.classList.remove("device-selector-menu-opened");
   }
 
   

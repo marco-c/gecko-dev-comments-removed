@@ -133,13 +133,7 @@ strong {
 }
 
 .tooltip-xul-wrapper .tooltip-container {
-  
-
-
-
-
-
-  position: static;
+  position: absolute;
 }
 
 .tooltip-top {
