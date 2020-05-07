@@ -73,6 +73,11 @@ var ModuleManager = {
 
     window.document.documentElement.appendChild(aBrowser);
 
+    
+    
+    
+    aBrowser.docShellIsActive = true;
+
     WindowEventDispatcher.registerListener(this, [
       "GeckoView:UpdateModuleState",
       "GeckoView:UpdateInitData",
