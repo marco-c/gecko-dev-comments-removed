@@ -68,7 +68,7 @@ add_task(async function test_location_timeout_xhr() {
     SearchTestUtils.promiseSearchNotification("geoip-lookup-xhr-complete").then(
       () => {
         
-        checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.TIMEOUT);
+        checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.XHRTIMEOUT);
         
         
         verifyProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS", 0);
