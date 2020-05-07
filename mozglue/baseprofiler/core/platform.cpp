@@ -3375,7 +3375,15 @@ void ProfilerBacktraceDestructor::operator()(ProfilerBacktrace* aBacktrace) {
 }
 
 bool profiler_is_locked_on_current_thread() {
-  return PSAutoLock::IsLockedOnCurrentThread();
+  
+  
+  
+  
+  
+  
+  
+  return PSAutoLock::IsLockedOnCurrentThread() ||
+         CorePS::CoreBuffer().IsThreadSafeAndLockedOnCurrentThread();
 }
 
 static void racy_profiler_add_marker(const char* aMarkerName,

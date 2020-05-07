@@ -4875,7 +4875,15 @@ void profiler_add_js_allocation_marker(JS::RecordAllocationInfo&& info) {
 }
 
 bool profiler_is_locked_on_current_thread() {
-  return gPSMutex.IsLockedOnCurrentThread();
+  
+  
+  
+  
+  
+  
+  
+  return gPSMutex.IsLockedOnCurrentThread() ||
+         CorePS::CoreBuffer().IsThreadSafeAndLockedOnCurrentThread();
 }
 
 bool profiler_add_native_allocation_marker(int aMainThreadId, int64_t aSize,
