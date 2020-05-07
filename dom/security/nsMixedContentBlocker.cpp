@@ -212,7 +212,8 @@ NS_IMPL_ISUPPORTS(nsMixedContentBlocker, nsIContentPolicy, nsIChannelEventSink)
 
 static void LogMixedContentMessage(
     MixedContentTypes aClassification, nsIURI* aContentLocation,
-    Document* aRootDoc, nsMixedContentBlockerMessageType aMessageType) {
+    uint64_t aInnerWindowID, nsMixedContentBlockerMessageType aMessageType,
+    nsIURI* aRequestingLocation) {
   nsAutoCString messageCategory;
   uint32_t severityFlag;
   nsAutoCString messageLookupKey;
@@ -235,12 +236,17 @@ static void LogMixedContentMessage(
     }
   }
 
-  AutoTArray<nsString, 1> strings;
+  nsAutoString localizedMsg;
+  AutoTArray<nsString, 1> params;
   CopyUTF8toUTF16(aContentLocation->GetSpecOrDefault(),
-                  *strings.AppendElement());
-  nsContentUtils::ReportToConsole(severityFlag, messageCategory, aRootDoc,
-                                  nsContentUtils::eSECURITY_PROPERTIES,
-                                  messageLookupKey.get(), strings);
+                  *params.AppendElement());
+  nsContentUtils::FormatLocalizedString(nsContentUtils::eSECURITY_PROPERTIES,
+                                        messageLookupKey.get(), params,
+                                        localizedMsg);
+
+  nsContentUtils::ReportToConsoleByWindowID(localizedMsg, severityFlag,
+                                            messageCategory, aInnerWindowID,
+                                            aRequestingLocation);
 }
 
 
@@ -891,6 +897,8 @@ nsresult nsMixedContentBlocker::ShouldLoad(
     }
   }
 
+  uint64_t topInnerWindowID =
+      docShell->GetBrowsingContext()->GetTopWindowContext()->Id();
   nsDocShell* nativeDocShell = nsDocShell::Cast(docShell);
 
   uint32_t state = nsIWebProgressListener::STATE_IS_BROKEN;
@@ -951,8 +959,8 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   if (StaticPrefs::security_mixed_content_block_display_content() &&
       classification == eMixedDisplay) {
     if (allowMixedContent) {
-      LogMixedContentMessage(classification, aContentLocation, rootDoc,
-                             eUserOverride);
+      LogMixedContentMessage(classification, aContentLocation, topInnerWindowID,
+                             eUserOverride, requestingLocation);
       *aDecision = nsIContentPolicy::ACCEPT;
       
       
@@ -990,8 +998,8 @@ nsresult nsMixedContentBlocker::ShouldLoad(
       }
     } else {
       *aDecision = nsIContentPolicy::REJECT_REQUEST;
-      LogMixedContentMessage(classification, aContentLocation, rootDoc,
-                             eBlocked);
+      LogMixedContentMessage(classification, aContentLocation, topInnerWindowID,
+                             eBlocked, requestingLocation);
       if (!rootDoc->GetHasMixedDisplayContentBlocked() &&
           NS_SUCCEEDED(stateRV)) {
         rootDoc->SetHasMixedDisplayContentBlocked(true);
@@ -1008,8 +1016,8 @@ nsresult nsMixedContentBlocker::ShouldLoad(
     
     
     if (allowMixedContent) {
-      LogMixedContentMessage(classification, aContentLocation, rootDoc,
-                             eUserOverride);
+      LogMixedContentMessage(classification, aContentLocation, topInnerWindowID,
+                             eUserOverride, requestingLocation);
       *aDecision = nsIContentPolicy::ACCEPT;
       
       
@@ -1051,8 +1059,8 @@ nsresult nsMixedContentBlocker::ShouldLoad(
       
       
       *aDecision = nsIContentPolicy::REJECT_REQUEST;
-      LogMixedContentMessage(classification, aContentLocation, rootDoc,
-                             eBlocked);
+      LogMixedContentMessage(classification, aContentLocation, topInnerWindowID,
+                             eBlocked, requestingLocation);
       
       
       if (rootDoc->GetHasMixedActiveContentBlocked()) {
@@ -1074,8 +1082,8 @@ nsresult nsMixedContentBlocker::ShouldLoad(
     
 
     
-    LogMixedContentMessage(classification, aContentLocation, rootDoc,
-                           eUserOverride);
+    LogMixedContentMessage(classification, aContentLocation, topInnerWindowID,
+                           eUserOverride, requestingLocation);
 
     
     
