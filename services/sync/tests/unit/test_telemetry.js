@@ -1320,7 +1320,7 @@ add_task(async function test_deletion_request_ping() {
     await assertRecordedSyncDeviceID(undefined);
 
     
-    Services.obs.notifyObservers(null, "weave:service:ready");
+    telem.observe(null, "weave:service:ready");
     await assertRecordedSyncDeviceID(undefined);
 
     
@@ -1328,16 +1328,16 @@ add_task(async function test_deletion_request_ping() {
     currentDeviceID = MOCK_DEVICE_ID1;
 
     
-    Services.obs.notifyObservers(null, "weave:service:ready");
+    telem.observe(null, "weave:service:ready");
     await assertRecordedSyncDeviceID(SANITIZED_DEVICE_ID1);
 
     
     currentDeviceID = MOCK_DEVICE_ID2;
-    Services.obs.notifyObservers(null, "fxaccounts:new_device_id");
+    telem.observe(null, "fxaccounts:new_device_id");
     await assertRecordedSyncDeviceID(SANITIZED_DEVICE_ID2);
 
     
-    Services.obs.notifyObservers(null, "fxaccounts:onlogout");
+    telem.observe(null, "fxaccounts:onlogout");
     await assertRecordedSyncDeviceID("");
   } finally {
     fxAccounts.telemetry._setHashedUID(false);
