@@ -337,6 +337,10 @@ static void StatsCellCallback(JSRuntime* rt, void* data, JS::GCCellPtr cellptr,
       JS::ClassInfo info;  
       info.objectsGCHeap += thingSize;
 
+      if (!obj->isTenured()) {
+        info.objectsGCHeap += Nursery::nurseryCellHeaderSize();
+      }
+
       obj->addSizeOfExcludingThis(rtStats->mallocSizeOf_, &info);
 
       
