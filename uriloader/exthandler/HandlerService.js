@@ -8,6 +8,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+const TOPIC_PDFJS_HANDLER_CHANGED = "pdfjs:handlerChanged";
+
 ChromeUtils.defineModuleGetter(
   this,
   "FileUtils",
@@ -443,6 +445,12 @@ HandlerService.prototype = {
     delete storedHandlerInfo.stubEntry;
 
     this._store.saveSoon();
+
+    
+    
+    if (handlerInfo.type == "application/pdf") {
+      Services.obs.notifyObservers(null, TOPIC_PDFJS_HANDLER_CHANGED);
+    }
   },
 
   

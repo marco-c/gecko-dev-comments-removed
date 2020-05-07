@@ -23,11 +23,15 @@ const PDF_VIEWER_ORIGIN = "resource://pdf.js";
 const PDF_VIEWER_WEB_PAGE = "resource://pdf.js/web/viewer.html";
 const MAX_NUMBER_OF_PREFS = 50;
 const MAX_STRING_PREF_LENGTH = 128;
+const PDF_CONTENT_TYPE = "application/pdf";
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -58,6 +62,7 @@ ChromeUtils.defineModuleGetter(
   "PdfjsContentUtils",
   "resource://pdf.js/PdfjsContentUtils.jsm"
 );
+ChromeUtils.defineModuleGetter(this, "PdfJs", "resource://pdf.js/PdfJs.jsm");
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["XMLHttpRequest"]);
 
@@ -68,6 +73,26 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/mime;1",
   "nsIMIMEService"
 );
+XPCOMUtils.defineLazyServiceGetter(
+  Svc,
+  "handlers",
+  "@mozilla.org/uriloader/handler-service;1",
+  "nsIHandlerService"
+);
+
+XPCOMUtils.defineLazyGetter(this, "gOurBinary", () => {
+  let file = Services.dirsvc.get("XREExeF", Ci.nsIFile);
+  
+  if (AppConstants.platform == "macosx") {
+    while (file) {
+      if (/\.app\/?$/i.test(file.leafName)) {
+        break;
+      }
+      file = file.parent;
+    }
+  }
+  return file;
+});
 
 function getBoolPref(pref, def) {
   try {
@@ -326,7 +351,7 @@ class ChromeActions {
             Ci.nsILoadContext
           );
           this.extListener = extHelperAppSvc.doContent(
-            data.isAttachment ? "application/octet-stream" : "application/pdf",
+            data.isAttachment ? "application/octet-stream" : PDF_CONTENT_TYPE,
             aRequest,
             loadContext,
             false
@@ -1010,7 +1035,86 @@ PdfStreamConverter.prototype = {
     this.listener = aListener;
   },
 
+  _usableHandler(handlerInfo) {
+    let { preferredApplicationHandler } = handlerInfo;
+    if (
+      !preferredApplicationHandler ||
+      !(preferredApplicationHandler instanceof Ci.nsILocalHandlerApp)
+    ) {
+      return false;
+    }
+    preferredApplicationHandler.QueryInterface(Ci.nsILocalHandlerApp);
+    
+    let { executable } = preferredApplicationHandler;
+    if (!executable) {
+      return false;
+    }
+    return !executable.equals(gOurBinary);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _validateAndMaybeUpdatePDFPrefs() {
+    let { processType, PROCESS_TYPE_DEFAULT } = Services.appinfo;
+    
+    if (processType != PROCESS_TYPE_DEFAULT || PdfJs.cachedIsDefault()) {
+      return true;
+    }
+
+    
+    
+    
+    let mime = Svc.mime.getFromTypeAndExtension(PDF_CONTENT_TYPE, "pdf");
+    
+    
+
+    if (!mime) {
+      
+      
+      return true;
+    }
+
+    const { saveToDisk, useHelperApp, useSystemDefault } = Ci.nsIHandlerInfo;
+    let { preferredAction, alwaysAskBeforeHandling } = mime;
+    
+    
+    if (alwaysAskBeforeHandling || preferredAction == saveToDisk) {
+      return false;
+    }
+    
+    if (preferredAction == useHelperApp && this._usableHandler(mime)) {
+      return false;
+    }
+    
+    if (preferredAction == useSystemDefault && !mime.isCurrentAppOSDefault()) {
+      return false;
+    }
+    
+    
+    Cu.reportError("Found unusable PDF preferences. Fixing back to PDF.js");
+
+    mime.preferredAction = Ci.nsIHandlerInfo.handleInternally;
+    mime.alwaysAskBeforeHandling = false;
+    Svc.handlers.store(mime);
+    return true;
+  },
+
   getConvertedType(aFromType) {
+    if (!this._validateAndMaybeUpdatePDFPrefs()) {
+      throw new Components.Exception(
+        "Can't use PDF.js",
+        Cr.NS_ERROR_NOT_AVAILABLE
+      );
+    }
+
     return "text/html";
   },
 
