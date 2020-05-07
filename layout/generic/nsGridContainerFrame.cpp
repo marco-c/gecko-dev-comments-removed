@@ -1410,22 +1410,18 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
       mClampMaxLine = 1 + aRange->Extent();
       mRepeatAutoEnd = mRepeatAutoStart;
       const auto& styleSubgrid = aTracks.mTemplate.AsSubgrid();
-      const auto fillStart = styleSubgrid->fill_start;
-      
-      
-      mHasRepeatAuto =
-          fillStart != std::numeric_limits<decltype(fillStart)>::max();
+      const auto fillLen = styleSubgrid->fill_len;
+      mHasRepeatAuto = fillLen != 0;
       if (mHasRepeatAuto) {
         const auto& lineNameLists = styleSubgrid->names;
-        int32_t extraAutoFillLineCount = mClampMaxLine - lineNameLists.Length();
+        const int32_t extraAutoFillLineCount =
+            mClampMaxLine - lineNameLists.Length();
         
         
-        const uint32_t possibleRepeatLength = std::max<int32_t>(
-            0, extraAutoFillLineCount + styleSubgrid->fill_len);
-        MOZ_ASSERT(styleSubgrid->fill_len > 0);
-        const uint32_t repeatRemainder =
-            possibleRepeatLength % styleSubgrid->fill_len;
-        mRepeatAutoStart = fillStart;
+        const uint32_t possibleRepeatLength =
+            std::max<int32_t>(0, extraAutoFillLineCount + fillLen);
+        const uint32_t repeatRemainder = possibleRepeatLength % fillLen;
+        mRepeatAutoStart = styleSubgrid->fill_start;
         mRepeatAutoEnd =
             mRepeatAutoStart + possibleRepeatLength - repeatRemainder;
       }
