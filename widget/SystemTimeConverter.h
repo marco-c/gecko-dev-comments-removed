@@ -25,7 +25,7 @@ namespace mozilla {
 
 
 
-template <typename Time>
+template <typename Time, typename TimeStampNowProvider = TimeStamp>
 class SystemTimeConverter {
  public:
   SystemTimeConverter()
@@ -42,7 +42,7 @@ class SystemTimeConverter {
   template <typename CurrentTimeGetter>
   mozilla::TimeStamp GetTimeStampFromSystemTime(
       Time aTime, CurrentTimeGetter& aCurrentTimeGetter) {
-    TimeStamp roughlyNow = TimeStamp::Now();
+    TimeStamp roughlyNow = TimeStampNowProvider::Now();
 
     
     
@@ -176,7 +176,7 @@ class SystemTimeConverter {
   void UpdateReferenceTime(Time aReferenceTime,
                            const CurrentTimeGetter& aCurrentTimeGetter) {
     Time currentTime = aCurrentTimeGetter.GetCurrentTime();
-    TimeStamp currentTimeStamp = TimeStamp::Now();
+    TimeStamp currentTimeStamp = TimeStampNowProvider::Now();
     Time timeSinceReference = currentTime - aReferenceTime;
     TimeStamp referenceTimeStamp =
         currentTimeStamp - TimeDuration::FromMilliseconds(timeSinceReference);

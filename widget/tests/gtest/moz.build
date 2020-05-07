@@ -1,0 +1,15 @@
+
+
+
+
+
+
+UNIFIED_SOURCES = [
+    'TestTimeConverter.cpp',
+]
+
+FINAL_LIBRARY = 'xul-gtest'
+
+LOCAL_INCLUDES += [
+    '/widget',
+]
