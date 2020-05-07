@@ -96,6 +96,16 @@ AccessibilityPanel.prototype = {
       this.onTargetAvailable
     );
 
+    
+    
+    if (
+      this.accessibilityProxy.supports.autoInit &&
+      this.accessibilityProxy.canBeEnabled &&
+      !this.accessibilityProxy.enabled
+    ) {
+      await this.accessibilityProxy.enableAccessibility();
+    }
+
     this.picker = new Picker(this);
     this.fluentBundles = await this.createFluentBundles();
 
@@ -185,7 +195,7 @@ AccessibilityPanel.prototype = {
     
     this.shouldRefresh = false;
     this.postContentMessage("initialize", {
-      supports: this.supports,
+      supports: this.accessibilityProxy.supports,
       fluentBundles: this.fluentBundles,
       toolbox: this._toolbox,
       getAccessibilityTreeRoot: this.accessibilityProxy
