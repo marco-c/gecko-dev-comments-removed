@@ -8,10 +8,7 @@ const {
   createFactory,
   Component,
 } = require("devtools/client/shared/vendor/react");
-const {
-  div,
-  span,
-} = require("devtools/client/shared/vendor/react-dom-factories");
+const { div } = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { L10N } = require("devtools/client/accessibility/utils/l10n");
 const Button = createFactory(
@@ -70,7 +67,6 @@ class Toolbar extends Component {
     const disableButtonStr = disabling
       ? "accessibility.disabling"
       : "accessibility.disable";
-    const betaID = "beta";
     let title;
     let isDisabled = false;
 
@@ -113,20 +109,7 @@ class Toolbar extends Component {
           role: "separator",
           className: "devtools-separator",
         }),
-      
-      span(
-        {
-          className: "beta",
-          role: "presentation",
-          id: betaID,
-        },
-        L10N.getStr("accessibility.beta")
-      ),
-      AccessibilityTreeFilter({
-        audit,
-        describedby: betaID,
-        toolboxDoc,
-      }),
+      AccessibilityTreeFilter({ audit, toolboxDoc }),
       
       ...optionalSimulationSection,
       AccessibilityPrefs({ toolboxDoc })
