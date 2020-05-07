@@ -204,6 +204,46 @@ def bootstrap(topsrcdir, mozilla_dir=None):
     from mach.util import setenv
     from mozboot.util import get_state_dir
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    try:
+        import resource
+        
+        
+        (soft, hard) = resource.getrlimit(resource.RLIMIT_NOFILE)
+        
+        
+        limit = os.environ.get('MOZ_LIMIT_NOFILE')
+        if limit:
+            limit = int(limit)
+        else:
+            
+            
+            
+            limit = min(soft, 8192)
+        
+        if limit != soft:
+            resource.setrlimit(resource.RLIMIT_NO_FILE, (limit, hard))
+    except ImportError:
+        
+        pass
+
     from mozbuild.util import patch_main
     patch_main()
 
