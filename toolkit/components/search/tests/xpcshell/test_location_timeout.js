@@ -41,8 +41,8 @@ add_task(async function test_location_timeout() {
   let server = startServer(continuePromise);
   let url =
     "http://localhost:" + server.identity.primaryPort + "/lookup_country";
-  Services.prefs.setCharPref("geo.provider-country.network.url", url);
-  Services.prefs.setIntPref("geo.provider-country.network.timeout", 50);
+  Services.prefs.setCharPref("browser.region.network.url", url);
+  Services.prefs.setIntPref("browser.region.network.timeout", 50);
   await Services.search.init();
   ok(
     !Services.prefs.prefHasUserValue("browser.search.region"),
@@ -55,28 +55,21 @@ add_task(async function test_location_timeout() {
   
   equal(getProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS"), 0);
 
-  let notification = SearchTestUtils.promiseSearchNotification(
-    "geoip-lookup-xhr-complete"
-  );
   
   
   resolveContinuePromise();
-  await notification;
+  await SearchTestUtils.promiseSearchNotification("engines-reloaded");
 
   
   
   
   ok(getProbeSum("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS") != 0);
   
-  checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.success);
+  checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS);
 
   
   
   equal(Services.prefs.getCharPref("browser.search.region"), "AU");
 
-  await SearchTestUtils.promiseSearchNotification("engines-reloaded");
-
-  await new Promise(resolve => {
-    server.stop(resolve);
-  });
+  await new Promise(resolve => server.stop(resolve));
 });
