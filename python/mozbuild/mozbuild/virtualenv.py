@@ -503,6 +503,9 @@ class VirtualenvManager(object):
         else:
             thismodule = __file__
 
+        
+        
+        os.environ.pop('__PYVENV_LAUNCHER__', None)
         args = [self.python_path, thismodule, 'populate', self.topsrcdir,
                 self.topobjdir, self.virtualenv_root, self.manifest_path]
 
