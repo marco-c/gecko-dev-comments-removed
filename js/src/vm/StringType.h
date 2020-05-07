@@ -257,13 +257,11 @@ class JSString : public js::gc::Cell {
 
 
 
-
-
   
   static_assert(js::gc::CellFlagBitsReservedForGC <= 3,
                 "JSString::flags must reserve enough bits for Cell");
 
-  static const uint32_t NON_ATOM_BIT = js::Bit(1);
+  static const uint32_t NON_ATOM_BIT = js::Bit(3);
   static const uint32_t LINEAR_BIT = js::Bit(4);
   static const uint32_t DEPENDENT_BIT = js::Bit(5);
   static const uint32_t INLINE_CHARS_BIT = js::Bit(6);
@@ -286,8 +284,9 @@ class JSString : public js::gc::Cell {
   static const uint32_t INIT_DEPENDENT_FLAGS =
       NON_ATOM_BIT | LINEAR_BIT | DEPENDENT_BIT;
 
-  static const uint32_t TYPE_FLAGS_MASK =
-      js::BitMask(9) - js::BitMask(3) + NON_ATOM_BIT;
+  static const uint32_t TYPE_FLAGS_MASK = js::BitMask(9) - js::BitMask(3);
+  static_assert((TYPE_FLAGS_MASK & js::gc::CellHeader::RESERVED_MASK) == 0,
+                "GC reserved bits must not be used for Strings");
 
   static const uint32_t LATIN1_CHARS_BIT = js::Bit(9);
 
