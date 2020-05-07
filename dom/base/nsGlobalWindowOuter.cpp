@@ -2449,6 +2449,16 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
   bc->SetCurrentInnerWindowId(mInnerWindow->WindowID());
 
   
+  nsCOMPtr<nsIChannel> mixedChannel;
+  mDocShell->GetMixedContentChannel(getter_AddRefs(mixedChannel));
+  
+  
+  
+  if (mixedChannel && (mixedChannel == aDocument->GetChannel())) {
+    wgc->WindowContext()->SetAllowMixedContent(true);
+  }
+
+  
   
   if (doomCurrentInner) {
     currentInner->FreeInnerObjects();
