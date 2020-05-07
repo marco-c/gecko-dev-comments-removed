@@ -371,7 +371,7 @@ void nsHttpConnectionInfo::SerializeHttpConnectionInfo(
 
   nsTArray<ProxyInfoCloneArgs> proxyInfoArray;
   nsProxyInfo::SerializeProxyInfo(aInfo->ProxyInfo(), proxyInfoArray);
-  aArgs.proxyInfo() = proxyInfoArray;
+  aArgs.proxyInfo() = std::move(proxyInfoArray);
 }
 
 
