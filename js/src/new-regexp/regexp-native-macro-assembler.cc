@@ -413,15 +413,15 @@ void SMRegExpMacroAssembler::CheckNotBackReferenceImpl(int start_reg,
   masm_.bind(&success);
 
   
+  masm_.addToStackPtr(Imm32(sizeof(uintptr_t)));
+
+  
   masm_.subPtr(input_end_pointer_, current_position_);
   if (read_backward) {
     
     masm_.addPtr(register_location(start_reg), current_position_);
     masm_.subPtr(register_location(start_reg + 1), current_position_);
   }
-
-  
-  masm_.addToStackPtr(Imm32(sizeof(uintptr_t)));
 
   masm_.bind(&fallthrough);
 }
