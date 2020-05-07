@@ -193,7 +193,9 @@ def strip_unwanted_langpacks_from_worker(config, jobs):
                 
                 assert platform in OSX_OK_PLATFORMS
                 continue
-            for path in map['paths'].keys():
+            
+            
+            for path in list(map['paths'].keys()):
                 if path.endswith('target.langpack.xpi'):
                     del map['paths'][path]
             if map['paths'] == {}:
