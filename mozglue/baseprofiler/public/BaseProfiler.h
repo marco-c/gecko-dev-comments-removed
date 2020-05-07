@@ -732,6 +732,11 @@ MFBT_API void profiler_add_marker(const char* aMarkerName,
 MFBT_API void profiler_add_js_marker(const char* aMarkerName);
 
 
+
+
+bool profiler_is_locked_on_current_thread();
+
+
 MFBT_API void profiler_add_marker_for_thread(
     int aThreadId, ProfilingCategoryPair aCategoryPair, const char* aMarkerName,
     UniquePtr<ProfilerMarkerPayload> aPayload);
