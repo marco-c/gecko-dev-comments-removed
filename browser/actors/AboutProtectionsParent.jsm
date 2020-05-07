@@ -144,7 +144,6 @@ class AboutProtectionsParent extends JSWindowActorParent {
 
 
 
-
   async getLoginData() {
     if (gTestOverride && "getLoginData" in gTestOverride) {
       return gTestOverride.getLoginData();
@@ -173,9 +172,6 @@ class AboutProtectionsParent extends JSWindowActorParent {
     return {
       hasFxa,
       numLogins: userFacingLogins,
-      numSyncedDevices: fxAccounts.device.recentDeviceList
-        ? fxAccounts.device.recentDeviceList.length
-        : 0,
       mobileDeviceConnected,
     };
   }

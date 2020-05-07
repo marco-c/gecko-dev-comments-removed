@@ -10,10 +10,6 @@ const LOCKWISE_URL_IOS = RPMGetStringPref(
 const LOCKWISE_URL_ANDROID = RPMGetStringPref(
   "browser.contentblocking.report.lockwise.mobile-android.url"
 );
-const MANAGE_DEVICES_URL = RPMGetStringPref(
-  "browser.contentblocking.report.manage_devices.url",
-  ""
-);
 const HOW_IT_WORKS_URL_PREF = RPMGetFormatURLPref(
   "browser.contentblocking.report.lockwise.how_it_works.url"
 );
@@ -34,17 +30,6 @@ export default class LockwiseCard {
       this.doc.sendTelemetryEvent("click", "lw_open_button");
       RPMSendAsyncMessage("OpenAboutLogins");
     });
-
-    const syncLink = this.doc.getElementById("turn-on-sync");
-    
-    const eventHandler = evt => {
-      if (evt.keyCode == evt.DOM_VK_RETURN || evt.type == "click") {
-        this.doc.sendTelemetryEvent("click", "lw_app_link");
-        RPMSendAsyncMessage("OpenSyncPreferences");
-      }
-    };
-    syncLink.addEventListener("click", eventHandler);
-    syncLink.addEventListener("keydown", eventHandler);
 
     
     const androidLockwiseAppLink = this.doc.getElementById(
@@ -72,7 +57,7 @@ export default class LockwiseCard {
   }
 
   buildContent(data) {
-    const { hasFxa, numLogins, numSyncedDevices } = data;
+    const { hasFxa, numLogins } = data;
     const isLoggedIn = numLogins > 0 || hasFxa;
     const title = this.doc.getElementById("lockwise-title");
     const headerContent = this.doc.getElementById("lockwise-header-content");
@@ -97,7 +82,7 @@ export default class LockwiseCard {
         "data-l10n-id",
         "lockwise-header-content-logged-in"
       );
-      this.renderContentForLoggedInUser(container, numLogins, numSyncedDevices);
+      this.renderContentForLoggedInUser(container, numLogins);
     } else {
       if (
         !RPMGetBoolPref(
@@ -126,9 +111,7 @@ export default class LockwiseCard {
 
 
 
-
-
-  renderContentForLoggedInUser(container, storedLogins, syncedDevices) {
+  renderContentForLoggedInUser(container, storedLogins) {
     const lockwiseCardBody = this.doc.querySelector(
       ".card.lockwise-card .card-body"
     );
@@ -154,27 +137,5 @@ export default class LockwiseCard {
 
     const howItWorksLink = this.doc.getElementById("lockwise-how-it-works");
     howItWorksLink.href = HOW_IT_WORKS_URL_PREF;
-
-    
-    const syncedDevicesBlock = container.querySelector(
-      ".number-of-synced-devices.block"
-    );
-    syncedDevicesBlock.textContent = syncedDevices;
-
-    const syncedDevicesText = container.querySelector(".synced-devices-text");
-    const textEl = syncedDevicesText.querySelector("span");
-    document.l10n.setAttributes(textEl, "lockwise-connected-device-status", {
-      count: syncedDevices,
-    });
-
-    
-    if (syncedDevices === 0) {
-      const syncLink = this.doc.getElementById("turn-on-sync");
-      syncLink.classList.remove("hidden");
-    } else {
-      const manageDevicesLink = this.doc.getElementById("manage-devices");
-      manageDevicesLink.href = MANAGE_DEVICES_URL;
-      manageDevicesLink.classList.remove("hidden");
-    }
   }
 }

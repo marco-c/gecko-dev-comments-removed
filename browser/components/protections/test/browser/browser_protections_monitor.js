@@ -48,6 +48,8 @@ const mockGetMonitorData = data => {
 };
 
 
+
+
 const mockGetMonitorAndLoginData = data => {
   return {
     getMonitorData: async () => data,
@@ -55,7 +57,6 @@ const mockGetMonitorAndLoginData = data => {
       return {
         hasFxa: true,
         numLogins: Services.logins.countLogins("", "", ""),
-        numSyncedDevices: 0,
       };
     },
   };

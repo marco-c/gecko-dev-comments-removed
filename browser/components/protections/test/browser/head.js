@@ -13,17 +13,13 @@ async function reloadTab(tab) {
 }
 
 
-const mockGetLoginDataWithSyncedDevices = (
-  deviceCount,
-  mobileDeviceConnected = false
-) => {
+const mockGetLoginDataWithSyncedDevices = (mobileDeviceConnected = false) => {
   return {
     getLoginData: () => {
       return {
         hasFxa: true,
         numLogins: Services.logins.countLogins("", "", ""),
-        numSyncedDevices: deviceCount,
-        mobileDeviceConnected: deviceCount && mobileDeviceConnected,
+        mobileDeviceConnected,
       };
     },
   };
