@@ -727,13 +727,16 @@ DevTools.prototype = {
     );
     const inspector = toolbox.getCurrentPanel();
 
-    
-    
-    const onNewNode = inspector.selection.once("new-node-front");
     const nodeFront = await inspector.inspectorFront.getNodeActorFromContentDomReference(
       domReference
     );
+    if (!nodeFront) {
+      return;
+    }
 
+    
+    
+    const onNewNode = inspector.selection.once("new-node-front");
     
     inspector.selection.setNodeFront(nodeFront, {
       reason: "browser-context-menu",
@@ -773,6 +776,10 @@ DevTools.prototype = {
     const nodeFront = await inspectorFront.getNodeActorFromContentDomReference(
       domReference
     );
+    if (!nodeFront) {
+      return;
+    }
+
     
     
     const a11yPanel = toolbox.getCurrentPanel();
