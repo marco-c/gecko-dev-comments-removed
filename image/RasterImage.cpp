@@ -1718,19 +1718,32 @@ void RasterImage::NotifyDecodeComplete(
   NotifyProgress(aProgress, aInvalidRect, aFrameCount, aDecoderFlags,
                  aSurfaceFlags);
 
-  if (!(aDecoderFlags & DecoderFlags::FIRST_FRAME_ONLY) && mHasBeenDecoded &&
-      mAnimationState) {
+  if (!(aDecoderFlags & DecoderFlags::FIRST_FRAME_ONLY)) {
     
-    
-    
-    mAnimationState->NotifyDecodeComplete();
+    MOZ_ASSERT_IF(aFrameCount && *aFrameCount > 1, mAnimationState || mError);
+    if (mAnimationState && aFrameCount) {
+      mAnimationState->UpdateKnownFrameCount(*aFrameCount);
+    }
 
-    auto size = ToUnoriented(mSize);
-    IntRect rect = mAnimationState->UpdateState(this, size.ToUnknownSize());
+    
+    if (mAnimationState && aFrameCount == Some(1u) && mPendingAnimation &&
+        ShouldAnimate()) {
+      StartAnimation();
+    }
 
-    if (!rect.IsEmpty()) {
-      auto dirtyRect = UnorientedIntRect::FromUnknownRect(rect);
-      NotifyProgress(NoProgress, dirtyRect);
+    if (mAnimationState && mHasBeenDecoded) {
+      
+      
+      
+      mAnimationState->NotifyDecodeComplete();
+
+      auto size = ToUnoriented(mSize);
+      IntRect rect = mAnimationState->UpdateState(this, size.ToUnknownSize());
+
+      if (!rect.IsEmpty()) {
+        auto dirtyRect = UnorientedIntRect::FromUnknownRect(rect);
+        NotifyProgress(NoProgress, dirtyRect);
+      }
     }
   }
 
