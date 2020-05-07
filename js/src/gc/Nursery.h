@@ -242,20 +242,6 @@ class Nursery {
     return allocateCell(zone, size, JS::TraceKind::String);
   }
 
-  static JS::Zone* getCellZone(const gc::Cell* cell) {
-    return gc::NurseryCellHeader::from(cell)->zone;
-  }
-
-  static JS::Zone* getStringZone(const JSString* str) {
-    
-    return getCellZone(reinterpret_cast<const js::gc::Cell*>(str));
-  }
-
-  static JS::Zone* getBigIntZone(const JS::BigInt* bi) {
-    
-    return getCellZone(reinterpret_cast<const js::gc::Cell*>(bi));
-  }
-
   static size_t nurseryCellHeaderSize() { return sizeof(gc::NurseryCellHeader); }
 
   
