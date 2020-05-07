@@ -262,13 +262,20 @@ URIFixup.prototype = {
       });
     }
 
-    
-    let isDefaultProtocolHandler =
-      !isCommonProtocol &&
+    let canHandleProtocol =
       scheme &&
-      Services.io.getProtocolHandler(scheme) == defaultProtocolHandler;
+      (isCommonProtocol ||
+        Services.io.getProtocolHandler(scheme) != defaultProtocolHandler ||
+        externalProtocolService.externalProtocolHandlerExists(scheme));
 
-    if (!isDefaultProtocolHandler || !possiblyHostPortRegex.test(uriString)) {
+    if (
+      canHandleProtocol ||
+      
+      
+      
+      (!possiblyHostPortRegex.test(uriString) &&
+        !userPasswordRegex.test(uriString))
+    ) {
       
       try {
         info.fixedURI = Services.io.newURI(uriString);
@@ -281,26 +288,18 @@ URIFixup.prototype = {
 
     
     
+    
+    
+    
+    
     if (
       info.fixedURI &&
-      isDefaultProtocolHandler &&
       keywordEnabled &&
       fixupFlags & FIXUP_FLAG_FIX_SCHEME_TYPOS &&
       scheme &&
-      !externalProtocolService.externalProtocolHandlerExists(scheme)
+      !canHandleProtocol
     ) {
-      if (!userPasswordRegex.test(uriString)) {
-        
-        
-        
-        
-        tryKeywordFixupForURIInfo(uriString, info, isPrivateContext, postData);
-      } else {
-        
-        
-        
-        info.preferredURI = info.fixedURI = null;
-      }
+      tryKeywordFixupForURIInfo(uriString, info, isPrivateContext, postData);
     }
 
     if (info.fixedURI) {
