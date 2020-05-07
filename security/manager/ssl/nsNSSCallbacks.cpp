@@ -885,10 +885,12 @@ static void AccumulateNonECCKeySize(Telemetry::HistogramID probe,
 
 
 static void AccumulateECCCurve(Telemetry::HistogramID probe, uint32_t bits) {
-  unsigned int value = bits == 256 ? 23                              
-                                   : bits == 384 ? 24                
-                                                 : bits == 521 ? 25  
-                                                               : 0;  
+  unsigned int value =
+      bits == 255 ? 29                                            
+                  : bits == 256 ? 23                              
+                                : bits == 384 ? 24                
+                                              : bits == 521 ? 25  
+                                                            : 0;  
   Telemetry::Accumulate(probe, value);
 }
 
