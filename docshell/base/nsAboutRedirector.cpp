@@ -101,6 +101,8 @@ static const RedirEntry kRedirMap[] = {
      nsIAboutModule::ALLOW_SCRIPT},
     {"plugins", "chrome://global/content/plugins.html",
      nsIAboutModule::URI_MUST_LOAD_IN_CHILD},
+    {"processes", "chrome://global/content/aboutProcesses.html",
+     nsIAboutModule::ALLOW_SCRIPT},
     
     
     
