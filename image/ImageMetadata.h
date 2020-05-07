@@ -95,7 +95,7 @@ class ImageMetadata {
   Maybe<Orientation> mOrientation;
 
   
-  nsTArray<nsIntSize> mNativeSizes;
+  CopyableTArray<nsIntSize> mNativeSizes;
 
   bool mHasAnimation : 1;
 };
