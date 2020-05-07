@@ -54,14 +54,9 @@ const gfx::IntRect AnimationState::UpdateStateInternal(
 
     
     
-    
-    
-    
-    if (mHasBeenDecoded) {
-      const DebugOnly<Maybe<uint32_t>> frameCount = FrameCount();
-      MOZ_ASSERT(static_cast<const Maybe<uint32_t>&>(frameCount).isSome());
-      mIsCurrentlyDecoded = aResult.Surface().IsFullyDecoded();
-    }
+    mIsCurrentlyDecoded =
+        bool(aResult.Surface()) &&
+        NS_SUCCEEDED(aResult.Surface().Seek(mCurrentAnimationFrameIndex));
   }
 
   gfx::IntRect ret;
@@ -444,10 +439,39 @@ LookupResult FrameAnimator::GetCompositedFrame(AnimationState& aState,
     MOZ_ASSERT(StaticPrefs::image_mem_animated_discardable_AtStartup());
     MOZ_ASSERT(aState.GetHasRequestedDecode());
     MOZ_ASSERT(!aState.GetIsCurrentlyDecoded());
-    if (result.Type() == MatchType::NOT_FOUND) {
-      return result;
+
+    if (result.Type() == MatchType::EXACT) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      UnorientedIntRect rect = UnorientedIntRect::FromUnknownRect(
+          aState.UpdateStateInternal(result, mSize));
+
+      if (!rect.IsEmpty()) {
+        nsCOMPtr<nsIEventTarget> eventTarget = do_GetMainThread();
+        RefPtr<RasterImage> image = mImage;
+        nsCOMPtr<nsIRunnable> ev = NS_NewRunnableFunction(
+            "FrameAnimator::GetCompositedFrame",
+            [=]() -> void { image->NotifyProgress(NoProgress, rect); });
+        eventTarget->Dispatch(ev.forget(), NS_DISPATCH_NORMAL);
+      }
     }
-    return LookupResult(MatchType::PENDING);
+
+    
+    if (aState.mCompositedFrameInvalid) {
+      if (result.Type() == MatchType::NOT_FOUND) {
+        return result;
+      }
+      return LookupResult(MatchType::PENDING);
+    }
   }
 
   
