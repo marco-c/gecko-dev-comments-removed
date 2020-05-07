@@ -173,64 +173,6 @@ XPCOMUtils.defineLazyGetter(this, "domainsWhitelist", () => {
   return domains;
 });
 
-
-
-
-
-
-
-
-
-
-
-XPCOMUtils.defineLazyGetter(this, "suffixesWhitelist", () => {
-  const branch = "browser.fixup.domainsuffixwhitelist.";
-  let suffixes = new Map();
-  let prefs = Services.prefs
-    .getChildList(branch)
-    .filter(p => Services.prefs.getBoolPref(p, false));
-  for (let pref of prefs) {
-    let suffix = pref.substring(branch.length);
-    let lastPart = suffix.substr(suffix.lastIndexOf(".") + 1);
-    if (lastPart) {
-      let entries = suffixes.get(lastPart);
-      if (!entries) {
-        entries = new Set();
-        suffixes.set(lastPart, entries);
-      }
-      entries.add(suffix);
-    }
-  }
-  
-  suffixes._observer = {
-    observe(subject, topic, data) {
-      let suffix = data.substring(branch.length);
-      let lastPart = suffix.substr(suffix.lastIndexOf(".") + 1);
-      let entries = suffixes.get(lastPart);
-      if (Services.prefs.getBoolPref(data, false)) {
-        
-        if (!entries) {
-          entries = new Set();
-          suffixes.set(lastPart, entries);
-        }
-        entries.add(suffix);
-      } else if (entries) {
-        
-        entries.delete(suffix);
-        if (!entries.size) {
-          suffixes.delete(lastPart);
-        }
-      }
-    },
-    QueryInterface: ChromeUtils.generateQI([
-      Ci.nsIObserver,
-      Ci.nsISupportsWeakReference,
-    ]),
-  };
-  Services.prefs.addObserver(branch, suffixes._observer, true);
-  return suffixes;
-});
-
 function URIFixup() {}
 
 URIFixup.prototype = {
@@ -606,28 +548,10 @@ function isDomainWhitelisted(asciiHost) {
   
   
   
-  let lastDotIndex = asciiHost.lastIndexOf(".");
-  if (lastDotIndex == asciiHost.length - 1) {
+  if (asciiHost.endsWith(".")) {
     asciiHost = asciiHost.substring(0, asciiHost.length - 1);
-    lastDotIndex = asciiHost.lastIndexOf(".");
   }
-  if (domainsWhitelist.has(asciiHost.toLowerCase())) {
-    return true;
-  }
-  
-  
-  if (lastDotIndex <= 0) {
-    return false;
-  }
-  
-  
-  
-  let lastPart = asciiHost.substr(lastDotIndex + 1);
-  let suffixes = suffixesWhitelist.get(lastPart);
-  if (suffixes) {
-    return Array.from(suffixes).some(s => asciiHost.endsWith(s));
-  }
-  return false;
+  return domainsWhitelist.has(asciiHost.toLowerCase());
 }
 
 
