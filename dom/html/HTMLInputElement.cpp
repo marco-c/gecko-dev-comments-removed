@@ -6803,8 +6803,7 @@ void HTMLInputElement::SetFilePickerFiltersFromAccept(
 
   
   
-  nsTArray<nsFilePickerFilter> filtersCopy;
-  filtersCopy = filters;
+  const nsTArray<nsFilePickerFilter> filtersCopy = filters.Clone();
   for (uint32_t i = 0; i < filtersCopy.Length(); ++i) {
     const nsFilePickerFilter& filterToCheck = filtersCopy[i];
     if (filterToCheck.mFilterMask) {
