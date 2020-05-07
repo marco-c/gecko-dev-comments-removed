@@ -98,7 +98,7 @@ inline nsCString FormatBlob(const nsACString& aParam) {
 
 enum GetFileNameFunc { OPEN_FUNC, SAVE_FUNC };
 
-typedef nsTArray<nsCString> StringArray;
+typedef CopyableTArray<nsCString> StringArray;
 
 
 typedef struct _OpenFileNameIPC {
@@ -196,7 +196,7 @@ typedef struct _IPCInternetBuffers {
              (o.mBuffer == mBuffer) && (o.mBufferTotal == mBufferTotal);
     }
   };
-  nsTArray<Buffer> mBuffers;
+  CopyableTArray<Buffer> mBuffers;
 } IPCInternetBuffers;
 
 typedef struct _IPCPrintDlg {
