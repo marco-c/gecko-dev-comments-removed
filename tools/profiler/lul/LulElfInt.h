@@ -83,6 +83,14 @@
 
 #endif
 
+#if defined(GP_OS_freebsd)
+
+#  ifndef ElfW
+#    define ElfW(type) Elf_##type
+#  endif
+
+#endif
+
 namespace lul {
 
 

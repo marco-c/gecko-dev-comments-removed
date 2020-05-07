@@ -135,10 +135,11 @@
 #endif
 
 
-#if defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_x86_linux) ||     \
-    defined(GP_PLAT_amd64_android) || defined(GP_PLAT_x86_android) || \
-    defined(GP_PLAT_mips64_linux) || defined(GP_PLAT_arm64_linux) ||  \
-    defined(GP_PLAT_arm64_android)
+#if defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_x86_linux) ||       \
+    defined(GP_PLAT_amd64_android) || defined(GP_PLAT_x86_android) ||   \
+    defined(GP_PLAT_mips64_linux) || defined(GP_PLAT_arm64_linux) ||    \
+    defined(GP_PLAT_arm64_android) || defined(GP_PLAT_amd64_freebsd) || \
+    defined(GP_PLAT_arm64_freebsd)
 #  define HAVE_NATIVE_UNWIND
 #  define USE_LUL_STACKWALK
 #  include "lul/LulMain.h"
@@ -172,7 +173,7 @@
 #  define VALGRIND_MAKE_MEM_DEFINED(_addr, _len) ((void)0)
 #endif
 
-#if defined(GP_OS_linux) || defined(GP_OS_android)
+#if defined(GP_OS_linux) || defined(GP_OS_android) || defined(GP_OS_freebsd)
 #  include <ucontext.h>
 #endif
 
@@ -710,7 +711,7 @@ class ActivePS {
                                ? new ProfilerIOInterposeObserver()
                                : nullptr),
         mIsPaused(false)
-#if defined(GP_OS_linux)
+#if defined(GP_OS_linux) || defined(GP_OS_freebsd)
         ,
         mWasPaused(false)
 #endif
@@ -1074,7 +1075,7 @@ class ActivePS {
 
   PS_GET_AND_SET(bool, IsPaused)
 
-#if defined(GP_OS_linux)
+#if defined(GP_OS_linux) || defined(GP_OS_freebsd)
   PS_GET_AND_SET(bool, WasPaused)
 #endif
 
@@ -1283,7 +1284,7 @@ class ActivePS {
   
   bool mIsPaused;
 
-#if defined(GP_OS_linux)
+#if defined(GP_OS_linux) || defined(GP_OS_freebsd)
   
   
   bool mWasPaused;
@@ -1454,7 +1455,7 @@ class Registers {
   Address mSP;  
   Address mFP;  
   Address mLR;  
-#if defined(GP_OS_linux) || defined(GP_OS_android)
+#if defined(GP_OS_linux) || defined(GP_OS_android) || defined(GP_OS_freebsd)
   
   
   ucontext_t* mContext;  
@@ -1839,6 +1840,10 @@ static void DoLULBacktrace(PSLockRef aLock,
   startRegs.xip = lul::TaggedUWord(mc->gregs[REG_RIP]);
   startRegs.xsp = lul::TaggedUWord(mc->gregs[REG_RSP]);
   startRegs.xbp = lul::TaggedUWord(mc->gregs[REG_RBP]);
+#  elif defined(GP_PLAT_amd64_freebsd)
+  startRegs.xip = lul::TaggedUWord(mc->mc_rip);
+  startRegs.xsp = lul::TaggedUWord(mc->mc_rsp);
+  startRegs.xbp = lul::TaggedUWord(mc->mc_rbp);
 #  elif defined(GP_PLAT_arm_linux) || defined(GP_PLAT_arm_android)
   startRegs.r15 = lul::TaggedUWord(mc->arm_pc);
   startRegs.r14 = lul::TaggedUWord(mc->arm_lr);
@@ -1851,6 +1856,11 @@ static void DoLULBacktrace(PSLockRef aLock,
   startRegs.x29 = lul::TaggedUWord(mc->regs[29]);
   startRegs.x30 = lul::TaggedUWord(mc->regs[30]);
   startRegs.sp = lul::TaggedUWord(mc->sp);
+#  elif defined(GP_PLAT_arm64_freebsd)
+  startRegs.pc = lul::TaggedUWord(mc->mc_gpregs.gp_elr);
+  startRegs.x29 = lul::TaggedUWord(mc->mc_gpregs.gp_x[29]);
+  startRegs.x30 = lul::TaggedUWord(mc->mc_gpregs.gp_lr);
+  startRegs.sp = lul::TaggedUWord(mc->mc_gpregs.gp_sp);
 #  elif defined(GP_PLAT_x86_linux) || defined(GP_PLAT_x86_android)
   startRegs.xip = lul::TaggedUWord(mc->gregs[REG_EIP]);
   startRegs.xsp = lul::TaggedUWord(mc->gregs[REG_ESP]);
@@ -1897,13 +1907,15 @@ static void DoLULBacktrace(PSLockRef aLock,
   lul::StackImage stackImg;
 
   {
-#  if defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_amd64_android)
+#  if defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_amd64_android) || \
+      defined(GP_PLAT_amd64_freebsd)
     uintptr_t rEDZONE_SIZE = 128;
     uintptr_t start = startRegs.xsp.Value() - rEDZONE_SIZE;
 #  elif defined(GP_PLAT_arm_linux) || defined(GP_PLAT_arm_android)
     uintptr_t rEDZONE_SIZE = 0;
     uintptr_t start = startRegs.r13.Value() - rEDZONE_SIZE;
-#  elif defined(GP_PLAT_arm64_linux) || defined(GP_PLAT_arm64_android)
+#  elif defined(GP_PLAT_arm64_linux) || defined(GP_PLAT_arm64_android) || \
+      defined(GP_PLAT_arm64_freebsd)
     uintptr_t rEDZONE_SIZE = 0;
     uintptr_t start = startRegs.sp.Value() - rEDZONE_SIZE;
 #  elif defined(GP_PLAT_x86_linux) || defined(GP_PLAT_x86_android)
@@ -2745,7 +2757,7 @@ class Sampler {
       const TimeStamp& aNow, const Func& aProcessRegs);
 
  private:
-#if defined(GP_OS_linux) || defined(GP_OS_android)
+#if defined(GP_OS_linux) || defined(GP_OS_android) || defined(GP_OS_freebsd)
   
   struct sigaction mOldSigprofHandler;
 
@@ -2854,7 +2866,8 @@ class SamplerThread {
   
 #if defined(GP_OS_windows)
   HANDLE mThread;
-#elif defined(GP_OS_darwin) || defined(GP_OS_linux) || defined(GP_OS_android)
+#elif defined(GP_OS_darwin) || defined(GP_OS_linux) || \
+    defined(GP_OS_android) || defined(GP_OS_freebsd)
   pthread_t mThread;
 #endif
 
@@ -3330,7 +3343,7 @@ void SamplerThread::Run() {
 #  include "platform-win32.cpp"
 #elif defined(GP_OS_darwin)
 #  include "platform-macos.cpp"
-#elif defined(GP_OS_linux) || defined(GP_OS_android)
+#elif defined(GP_OS_linux) || defined(GP_OS_android) || defined(GP_OS_freebsd)
 #  include "platform-linux-android.cpp"
 #else
 #  error "bad platform"

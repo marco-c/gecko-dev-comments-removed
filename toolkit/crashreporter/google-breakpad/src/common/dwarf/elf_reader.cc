@@ -57,7 +57,7 @@
 #endif
 
 
-#if __APPLE__
+#if __APPLE__ || __FreeBSD__
 #ifndef __LITTLE_ENDIAN
 #define __LITTLE_ENDIAN __ORDER_LITTLE_ENDIAN__
 #endif  

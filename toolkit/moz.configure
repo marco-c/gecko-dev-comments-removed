@@ -73,6 +73,8 @@ def gecko_profiler(target):
         return target.cpu in ('aarch64', 'arm', 'x86', 'x86_64')
     elif target.kernel == 'Linux':
         return target.cpu in ('aarch64', 'arm', 'x86', 'x86_64', 'mips64')
+    elif target.kernel == 'FreeBSD':
+        return target.cpu in ('aarch64', 'x86_64')
     return target.os in ('OSX', 'WINNT')
 
 @depends(gecko_profiler)
@@ -97,7 +99,7 @@ def gecko_profiler_parse_elf(value, target):
     
     
     
-    if value and target.kernel == 'Linux':
+    if value and (target.kernel == 'Linux' or target.kernel == 'FreeBSD'):
         return True
 
 set_config('MOZ_GECKO_PROFILER_PARSE_ELF', gecko_profiler_parse_elf)

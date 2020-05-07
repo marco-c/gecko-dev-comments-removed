@@ -39,7 +39,7 @@ class ProfilerCodeAddressService : public mozilla::CodeAddressService<> {
   bool GetFunction(const void* aPc, nsACString& aResult);
 
  private:
-#ifdef XP_LINUX
+#if defined(XP_LINUX) || defined(XP_FREEBSD)
   
   
   mozilla::HashMap<const char*, mozilla::SymbolTable,

@@ -795,6 +795,11 @@ bool MFBT_API MozDescribeCodeAddress(void* aPC,
   aDetails->library[mozilla::ArrayLength(aDetails->library) - 1] = '\0';
   aDetails->loffset = (char*)aPC - (char*)info.dli_fbase;
 
+#  if !defined(XP_FREEBSD)
+  
+  
+  
+
   const char* symbol = info.dli_sname;
   if (!symbol || symbol[0] == '\0') {
     return true;
@@ -809,6 +814,8 @@ bool MFBT_API MozDescribeCodeAddress(void* aPC,
   }
 
   aDetails->foffset = (char*)aPC - (char*)info.dli_saddr;
+#  endif
+
   return true;
 }
 
