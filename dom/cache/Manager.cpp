@@ -167,12 +167,13 @@ class SetupAction final : public SyncDBAction {
 
 class DeleteOrphanedBodyAction final : public Action {
  public:
-  explicit DeleteOrphanedBodyAction(const nsTArray<nsID>& aDeletedBodyIdList)
-      : mDeletedBodyIdList(aDeletedBodyIdList) {}
+  using DeletedBodyIdList = AutoTArray<nsID, 64>;
 
-  explicit DeleteOrphanedBodyAction(const nsID& aBodyId) {
-    mDeletedBodyIdList.AppendElement(aBodyId);
-  }
+  explicit DeleteOrphanedBodyAction(DeletedBodyIdList&& aDeletedBodyIdList)
+      : mDeletedBodyIdList(std::move(aDeletedBodyIdList)) {}
+
+  explicit DeleteOrphanedBodyAction(const nsID& aBodyId)
+      : mDeletedBodyIdList{aBodyId} {}
 
   void RunOnTarget(Resolver* aResolver, const QuotaInfo& aQuotaInfo,
                    Data*) override {
@@ -202,7 +203,7 @@ class DeleteOrphanedBodyAction final : public Action {
   }
 
  private:
-  nsTArray<nsID> mDeletedBodyIdList;
+  DeletedBodyIdList mDeletedBodyIdList;
 };
 
 bool IsHeadRequest(const CacheRequest& aRequest,
@@ -2028,7 +2029,10 @@ bool Manager::SetBodyIdOrphanedIfRefed(const nsID& aBodyId) {
 void Manager::NoteOrphanedBodyIdList(const nsTArray<nsID>& aDeletedBodyIdList) {
   NS_ASSERT_OWNINGTHREAD(Manager);
 
-  AutoTArray<nsID, 64> deleteNowList;
+  
+  
+  
+  DeleteOrphanedBodyAction::DeletedBodyIdList deleteNowList;
   deleteNowList.SetCapacity(aDeletedBodyIdList.Length());
 
   for (uint32_t i = 0; i < aDeletedBodyIdList.Length(); ++i) {
@@ -2041,7 +2045,8 @@ void Manager::NoteOrphanedBodyIdList(const nsTArray<nsID>& aDeletedBodyIdList) {
   
   RefPtr<Context> context = mContext;
   if (!deleteNowList.IsEmpty() && context && !context->IsCanceled()) {
-    RefPtr<Action> action = new DeleteOrphanedBodyAction(deleteNowList);
+    RefPtr<Action> action =
+        new DeleteOrphanedBodyAction(std::move(deleteNowList));
     context->Dispatch(action);
   }
 }

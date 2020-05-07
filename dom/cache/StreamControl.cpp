@@ -62,7 +62,7 @@ void StreamControl::CloseAllReadStreams() {
   
   
   
-  auto readStreamList = mReadStreamList;
+  auto readStreamList = mReadStreamList.Clone();
   ReadStreamList::ForwardIterator iter(readStreamList);
   while (iter.HasMore()) {
     iter.GetNext()->CloseStream();
