@@ -3160,8 +3160,7 @@ bool ContentParent::CanOpenBrowser(const IPCTabContext& aContext) {
   
   
   
-  if (aContext.type() != IPCTabContext::TPopupIPCTabContext &&
-      aContext.type() != IPCTabContext::TUnsafeIPCTabContext) {
+  if (aContext.type() != IPCTabContext::TPopupIPCTabContext) {
     ASSERT_UNLESS_FUZZING(
         "Unexpected IPCTabContext type.  Aborting AllocPBrowserParent.");
     return false;
@@ -3260,8 +3259,7 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
 
   
   
-  if (openerTabId > 0 ||
-      aContext.type() == IPCTabContext::TUnsafeIPCTabContext) {
+  if (openerTabId > 0) {
     
     
     

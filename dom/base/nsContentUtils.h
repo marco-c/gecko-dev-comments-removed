@@ -109,7 +109,6 @@ class nsWrapperCache;
 class nsAttrValue;
 class nsITransferable;
 class nsPIWindowRoot;
-class nsIWindowProvider;
 class nsIReferrerInfo;
 
 struct JSRuntime;
@@ -2096,10 +2095,6 @@ class nsContentUtils {
                "This static variable only makes sense on the main thread!");
     return sScriptBlockerCount == 0;
   }
-
-  
-  
-  static nsIWindowProvider* GetWindowProviderForContentProcess();
 
   
   
