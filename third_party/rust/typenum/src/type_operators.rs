@@ -1,6 +1,7 @@
 
 
 
+use private::{Internal, InternalMarker};
 use {Bit, NInt, NonZero, PInt, UInt, UTerm, Unsigned, Z0};
 
 
@@ -88,7 +89,7 @@ pub trait Pow<Exp> {
 }
 
 macro_rules! impl_pow_f {
-    ($t: ty) => (
+    ($t:ty) => {
         impl Pow<UTerm> for $t {
             type Output = $t;
             #[inline]
@@ -106,13 +107,17 @@ macro_rules! impl_pow_f {
                 let mut exp = <UInt<U, B> as Unsigned>::to_u32();
                 let mut base = self;
 
-                if exp == 0 { return 1.0 }
+                if exp == 0 {
+                    return 1.0;
+                }
 
                 while exp & 1 == 0 {
                     base *= base;
                     exp >>= 1;
                 }
-                if exp == 1 { return base }
+                if exp == 1 {
+                    return base;
+                }
 
                 let mut acc = base.clone();
                 while exp > 1 {
@@ -143,13 +148,17 @@ macro_rules! impl_pow_f {
                 let mut exp = U::to_u32();
                 let mut base = self;
 
-                if exp == 0 { return 1.0 }
+                if exp == 0 {
+                    return 1.0;
+                }
 
                 while exp & 1 == 0 {
                     base *= base;
                     exp >>= 1;
                 }
-                if exp == 1 { return base }
+                if exp == 1 {
+                    return base;
+                }
 
                 let mut acc = base.clone();
                 while exp > 1 {
@@ -162,7 +171,7 @@ macro_rules! impl_pow_f {
                 acc
             }
         }
-    );
+    };
 }
 
 impl_pow_f!(f32);
@@ -221,20 +230,20 @@ fn pow_test() {
     let u3 = U3::new();
 
     macro_rules! check {
-        ($x:ident) => (
+        ($x:ident) => {
             assert_eq!($x.powi(z0), 1);
             assert_eq!($x.powi(u0), 1);
 
-            assert_eq!($x.powi(p3), $x*$x*$x);
-            assert_eq!($x.powi(u3), $x*$x*$x);
-        );
-        ($x:ident, $f:ident) => (
+            assert_eq!($x.powi(p3), $x * $x * $x);
+            assert_eq!($x.powi(u3), $x * $x * $x);
+        };
+        ($x:ident, $f:ident) => {
             assert!((<$f as Pow<Z0>>::powi(*$x, z0) - 1.0).abs() < ::core::$f::EPSILON);
             assert!((<$f as Pow<U0>>::powi(*$x, u0) - 1.0).abs() < ::core::$f::EPSILON);
 
-            assert!((<$f as Pow<P3>>::powi(*$x, p3) - $x*$x*$x).abs() < ::core::$f::EPSILON);
-            assert!((<$f as Pow<U3>>::powi(*$x, u3) - $x*$x*$x).abs() < ::core::$f::EPSILON);
-        );
+            assert!((<$f as Pow<P3>>::powi(*$x, p3) - $x * $x * $x).abs() < ::core::$f::EPSILON);
+            assert!((<$f as Pow<U3>>::powi(*$x, u3) - $x * $x * $x).abs() < ::core::$f::EPSILON);
+        };
     }
 
     for x in &[0i8, -3, 2] {
@@ -273,6 +282,9 @@ fn pow_test() {
 pub trait Cmp<Rhs = Self> {
     
     type Output;
+
+    #[doc(hidden)]
+    fn compare<IM: InternalMarker>(&self, &Rhs) -> Self::Output;
 }
 
 
@@ -325,8 +337,10 @@ where
 {
     type Output = <A as IsLessPrivate<B, Compare<A, B>>>::Output;
 
-    fn is_less(self, _: B) -> Self::Output {
-        unsafe { ::core::mem::uninitialized() }
+    #[inline]
+    fn is_less(self, rhs: B) -> Self::Output {
+        let lhs_cmp_rhs = self.compare::<Internal>(&rhs);
+        self.is_less_private(rhs, lhs_cmp_rhs)
     }
 }
 
@@ -345,8 +359,10 @@ where
 {
     type Output = <A as IsEqualPrivate<B, Compare<A, B>>>::Output;
 
-    fn is_equal(self, _: B) -> Self::Output {
-        unsafe { ::core::mem::uninitialized() }
+    #[inline]
+    fn is_equal(self, rhs: B) -> Self::Output {
+        let lhs_cmp_rhs = self.compare::<Internal>(&rhs);
+        self.is_equal_private(rhs, lhs_cmp_rhs)
     }
 }
 
@@ -365,8 +381,10 @@ where
 {
     type Output = <A as IsGreaterPrivate<B, Compare<A, B>>>::Output;
 
-    fn is_greater(self, _: B) -> Self::Output {
-        unsafe { ::core::mem::uninitialized() }
+    #[inline]
+    fn is_greater(self, rhs: B) -> Self::Output {
+        let lhs_cmp_rhs = self.compare::<Internal>(&rhs);
+        self.is_greater_private(rhs, lhs_cmp_rhs)
     }
 }
 
@@ -385,8 +403,10 @@ where
 {
     type Output = <A as IsLessOrEqualPrivate<B, Compare<A, B>>>::Output;
 
-    fn is_less_or_equal(self, _: B) -> Self::Output {
-        unsafe { ::core::mem::uninitialized() }
+    #[inline]
+    fn is_less_or_equal(self, rhs: B) -> Self::Output {
+        let lhs_cmp_rhs = self.compare::<Internal>(&rhs);
+        self.is_less_or_equal_private(rhs, lhs_cmp_rhs)
     }
 }
 
@@ -405,8 +425,10 @@ where
 {
     type Output = <A as IsNotEqualPrivate<B, Compare<A, B>>>::Output;
 
-    fn is_not_equal(self, _: B) -> Self::Output {
-        unsafe { ::core::mem::uninitialized() }
+    #[inline]
+    fn is_not_equal(self, rhs: B) -> Self::Output {
+        let lhs_cmp_rhs = self.compare::<Internal>(&rhs);
+        self.is_not_equal_private(rhs, lhs_cmp_rhs)
     }
 }
 
@@ -425,8 +447,10 @@ where
 {
     type Output = <A as IsGreaterOrEqualPrivate<B, Compare<A, B>>>::Output;
 
-    fn is_greater_or_equal(self, _: B) -> Self::Output {
-        unsafe { ::core::mem::uninitialized() }
+    #[inline]
+    fn is_greater_or_equal(self, rhs: B) -> Self::Output {
+        let lhs_cmp_rhs = self.compare::<Internal>(&rhs);
+        self.is_greater_or_equal_private(rhs, lhs_cmp_rhs)
     }
 }
 
@@ -456,45 +480,81 @@ where
 #[deprecated(since = "1.9.0", note = "use the `op!` macro instead")]
 #[macro_export]
 macro_rules! cmp {
-    ($a:ident < $b:ty) => (
+    ($a:ident < $b:ty) => {
         <$a as $crate::IsLess<$b>>::Output
-    );
-    ($a:ty, < $b:ty) => (
+    };
+    ($a:ty, < $b:ty) => {
         <$a as $crate::IsLess<$b>>::Output
-    );
+    };
 
-    ($a:ident == $b:ty) => (
+    ($a:ident == $b:ty) => {
         <$a as $crate::IsEqual<$b>>::Output
-    );
-    ($a:ty, == $b:ty) => (
+    };
+    ($a:ty, == $b:ty) => {
         <$a as $crate::IsEqual<$b>>::Output
-    );
+    };
 
-    ($a:ident > $b:ty) => (
+    ($a:ident > $b:ty) => {
         <$a as $crate::IsGreater<$b>>::Output
-    );
-    ($a:ty, > $b:ty) => (
+    };
+    ($a:ty, > $b:ty) => {
         <$a as $crate::IsGreater<$b>>::Output
-    );
+    };
 
-    ($a:ident <= $b:ty) => (
+    ($a:ident <= $b:ty) => {
         <$a as $crate::IsLessOrEqual<$b>>::Output
-    );
-    ($a:ty, <= $b:ty) => (
+    };
+    ($a:ty, <= $b:ty) => {
         <$a as $crate::IsLessOrEqual<$b>>::Output
-    );
+    };
 
-    ($a:ident != $b:ty) => (
+    ($a:ident != $b:ty) => {
         <$a as $crate::IsNotEqual<$b>>::Output
-    );
-    ($a:ty, != $b:ty) => (
+    };
+    ($a:ty, != $b:ty) => {
         <$a as $crate::IsNotEqual<$b>>::Output
-    );
+    };
 
-    ($a:ident >= $b:ty) => (
+    ($a:ident >= $b:ty) => {
         <$a as $crate::IsGreaterOrEqual<$b>>::Output
-    );
-    ($a:ty, >= $b:ty) => (
+    };
+    ($a:ty, >= $b:ty) => {
         <$a as $crate::IsGreaterOrEqual<$b>>::Output
-    );
+    };
+}
+
+
+
+
+
+
+pub trait SquareRoot {
+    
+    type Output;
+}
+
+
+
+
+
+
+pub trait Logarithm2 {
+    
+    type Output;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait Gcd<Rhs> {
+    
+    type Output;
 }

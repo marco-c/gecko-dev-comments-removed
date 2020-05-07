@@ -31,7 +31,7 @@ pub trait Ord {
 
 
 
-pub trait Bit {
+pub trait Bit: Copy + Default {
     #[allow(missing_docs)]
     const U8: u8;
     #[allow(missing_docs)]
@@ -54,7 +54,7 @@ pub trait Bit {
 
 
 
-pub trait Unsigned {
+pub trait Unsigned: Copy + Default {
     #[allow(missing_docs)]
     const U8: u8;
     #[allow(missing_docs)]
