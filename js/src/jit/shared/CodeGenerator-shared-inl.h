@@ -107,6 +107,14 @@ static inline Register64 ToRegister64(const LInt64Allocation& a) {
 #endif
 }
 
+static inline Register64 ToRegister64(const LInt64Definition& a) {
+#if JS_BITS_PER_WORD == 32
+  return Register64(ToRegister(a.pointerHigh()), ToRegister(a.pointerLow()));
+#else
+  return Register64(ToRegister(a.pointer()));
+#endif
+}
+
 static inline Register ToTempRegisterOrInvalid(const LDefinition* def) {
   if (def->isBogusTemp()) {
     return InvalidReg;
@@ -226,7 +234,8 @@ int32_t CodeGeneratorShared::ToStackOffset(LAllocation a) const {
   if (a.isArgument()) {
     return ArgToStackOffset(a.toArgument()->index());
   }
-  return SlotToStackOffset(a.toStackSlot()->slot());
+  return SlotToStackOffset(a.isStackSlot() ? a.toStackSlot()->slot()
+                                           : a.toStackArea()->base());
 }
 
 int32_t CodeGeneratorShared::ToStackOffset(const LAllocation* a) const {
