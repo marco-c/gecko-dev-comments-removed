@@ -52,29 +52,26 @@ class SafeRefCounted : public SafeRefCountedBase {
 
  public:
   
-  void AddRef() const {
+  MozRefCountType AddRef() const {
     
     MOZ_ASSERT(int32_t(mRefCnt) >= 0);
-#ifndef MOZ_REFCOUNTED_LEAK_CHECKING
-    ++mRefCnt;
-#else
-    const char* type = static_cast<const T*>(this)->typeName();
-    uint32_t size = static_cast<const T*>(this)->typeSize();
-    const void* ptr = static_cast<const T*>(this);
-    MozRefCountType cnt = ++mRefCnt;
+    const MozRefCountType cnt = ++mRefCnt;
+#ifdef MOZ_REFCOUNTED_LEAK_CHECKING
+    const char* const type = static_cast<const T*>(this)->typeName();
+    const uint32_t size = static_cast<const T*>(this)->typeSize();
+    const void* const ptr = static_cast<const T*>(this);
     detail::RefCountLogger::logAddRef(ptr, cnt, type, size);
 #endif
+    return cnt;
   }
 
-  void Release() const {
+  MozRefCountType Release() const {
     
     MOZ_ASSERT(int32_t(mRefCnt) > 0);
-#ifndef MOZ_REFCOUNTED_LEAK_CHECKING
-    MozRefCountType cnt = --mRefCnt;
-#else
-    const char* type = static_cast<const T*>(this)->typeName();
-    const void* ptr = static_cast<const T*>(this);
-    MozRefCountType cnt = --mRefCnt;
+    const MozRefCountType cnt = --mRefCnt;
+#ifdef MOZ_REFCOUNTED_LEAK_CHECKING
+    const char* const type = static_cast<const T*>(this)->typeName();
+    const void* const ptr = static_cast<const T*>(this);
     
     
     detail::RefCountLogger::logRelease(ptr, cnt, type);
@@ -89,6 +86,7 @@ class SafeRefCounted : public SafeRefCountedBase {
 #endif
       delete static_cast<const T*>(this);
     }
+    return cnt;
   }
 
   
@@ -424,14 +422,29 @@ struct CopyablePtr<SafeRefPtr<T>> {
 
 }  
 
-#define MOZ_INLINE_DECL_SAFEREFCOUNTING_DERIVED(Base) \
-  MozExternalRefCountType AddRef() override {         \
-    Base::AddRef();                                   \
-    return refCount();                                \
-  }                                                   \
-  MozExternalRefCountType Release() override {        \
-    Base::Release();                                  \
-    return refCount();                                \
-  }
+
+
+
+#if defined(NS_BUILD_REFCNT_LOGGING)
+#  define MOZ_INLINE_DECL_SAFEREFCOUNTING_INHERITED(Class, Super)         \
+    template <typename T, ::mozilla::detail::RefCountAtomicity Atomicity> \
+    friend class ::mozilla::detail::SafeRefCounted;                       \
+    NS_IMETHOD_(MozExternalRefCountType) AddRef() override {              \
+      NS_IMPL_ADDREF_INHERITED_GUTS(Class, Super);                        \
+    }                                                                     \
+    NS_IMETHOD_(MozExternalRefCountType) Release() override {             \
+      NS_IMPL_RELEASE_INHERITED_GUTS(Class, Super);                       \
+    }
+#else  
+#  define MOZ_INLINE_DECL_SAFEREFCOUNTING_INHERITED(Class, Super)         \
+    template <typename T, ::mozilla::detail::RefCountAtomicity Atomicity> \
+    friend class ::mozilla::detail::SafeRefCounted;                       \
+    NS_IMETHOD_(MozExternalRefCountType) AddRef() override {              \
+      return Super::AddRef();                                             \
+    }                                                                     \
+    NS_IMETHOD_(MozExternalRefCountType) Release() override {             \
+      return Super::Release();                                            \
+    }
+#endif
 
 #endif
