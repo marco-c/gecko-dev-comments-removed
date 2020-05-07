@@ -2360,8 +2360,20 @@ bool WarpBuilder::build_InitElemArray(BytecodeLocation loc) {
 
   
   
-  
-  return buildIC(loc, CacheKind::SetElem, {obj, indexConst, val});
+
+  auto* elements = MElements::New(alloc(), obj);
+  current->add(elements);
+
+  current->add(MPostWriteBarrier::New(alloc(), obj, val));
+
+  auto* store = MStoreElement::New(alloc(), elements, indexConst, val,
+                                    false);
+  current->add(store);
+
+  auto* setLength = MSetInitializedLength::New(alloc(), elements, indexConst);
+  current->add(setLength);
+
+  return resumeAfter(setLength, loc);
 }
 
 bool WarpBuilder::build_InitElemInc(BytecodeLocation loc) {
