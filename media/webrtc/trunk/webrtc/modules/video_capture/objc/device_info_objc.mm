@@ -1,12 +1,12 @@
-/*
- *  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #if !defined(__has_feature) || !__has_feature(objc_arc)
 #error "This file requires ARC support."
@@ -43,17 +43,39 @@
 }
 
 + (int)captureDeviceCount {
-  return [[AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo] count];
+  int cnt = 0;
+  for (AVCaptureDevice* device in
+       [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]) {
+    if ([device isSuspended]) {
+      continue;
+    }
+    cnt++;
+  }
+  return cnt;
 }
 
 + (AVCaptureDevice*)captureDeviceForIndex:(int)index {
-  return [[AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]
-      objectAtIndex:index];
+  int cnt = 0;
+  for (AVCaptureDevice* device in
+       [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]) {
+    if ([device isSuspended]) {
+      continue;
+    }
+    if (cnt == index) {
+      return device;
+    }
+    cnt++;
+  }
+
+  return nil;
 }
 
 + (AVCaptureDevice*)captureDeviceForUniqueId:(NSString*)uniqueId {
   for (AVCaptureDevice* device in
        [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]) {
+    if ([device isSuspended]) {
+      continue;
+    }
     if ([uniqueId isEqual:device.uniqueID]) {
       return device;
     }
@@ -77,8 +99,8 @@
 + (webrtc::VideoCaptureCapability)capabilityForPreset:(NSString*)preset {
   webrtc::VideoCaptureCapability capability;
 
-  // TODO(tkchin): Maybe query AVCaptureDevice for supported formats, and
-  // then get the dimensions / frame rate from each supported format
+  
+  
   if ([preset isEqualToString:AVCaptureSessionPreset352x288]) {
     capability.width = 352;
     capability.height = 288;
@@ -103,7 +125,7 @@
 }
 
 - (void)configureObservers {
-  //register device connected / disconnected event
+  
   _lock = [[NSLock alloc] init];
 
   NSNotificationCenter *notificationCenter = [NSNotificationCenter defaultCenter];
