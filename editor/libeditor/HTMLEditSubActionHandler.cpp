@@ -2359,9 +2359,13 @@ EditActionResult HTMLEditor::HandleDeleteSelection(
                          "HTMLEditor::HandleDeleteSelectionInternal() failed");
     return result;
   }
-  if (!result.Handled()) {
-    
-    
+  
+  
+  
+  if (!result.Handled() && SelectionRefPtr()->RangeCount() > 0 &&
+      (!SelectionRefPtr()->IsCollapsed() ||
+       EditorBase::HowToHandleCollapsedRangeFor(aDirectionAndAmount) !=
+           HowToHandleCollapsedRange::Ignore)) {
     nsresult rv =
         DeleteSelectionWithTransaction(aDirectionAndAmount, aStripWrappers);
     if (rv == NS_ERROR_EDITOR_DESTROYED) {
@@ -2375,6 +2379,9 @@ EditActionResult HTMLEditor::HandleDeleteSelection(
         "EditorBase::DeleteSelectionWithTransaction() failed, but ignored");
   }
 
+  
+  
+  
   EditorDOMPoint atNewStartOfSelection(
       EditorBase::GetStartPoint(*SelectionRefPtr()));
   if (NS_WARN_IF(!atNewStartOfSelection.IsSet())) {
@@ -3212,7 +3219,10 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
   
   
   if (firstRangeStart.GetContainer() == firstRangeEnd.GetContainer()) {
-    {
+    
+    
+    
+    if (firstRangeStart != firstRangeEnd) {
       AutoTrackDOMPoint startTracker(RangeUpdaterRef(), &firstRangeStart);
       AutoTrackDOMPoint endTracker(RangeUpdaterRef(), &firstRangeEnd);
 
@@ -3223,6 +3233,8 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
         return EditActionHandled(rv);
       }
     }
+    
+    
     nsresult rv = DeleteUnnecessaryNodesAndCollapseSelection(
         aDirectionAndAmount, firstRangeStart, firstRangeEnd);
     NS_WARNING_ASSERTION(
