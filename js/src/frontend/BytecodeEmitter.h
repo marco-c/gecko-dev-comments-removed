@@ -42,7 +42,6 @@
 #include "js/RootingAPI.h"                 
 #include "js/TypeDecls.h"                  
 #include "vm/BytecodeUtil.h"               
-#include "vm/CheckIsCallableKind.h"        
 #include "vm/CheckIsObjectKind.h"          
 #include "vm/FunctionPrefixKind.h"         
 #include "vm/GeneratorResumeKind.h"        
@@ -406,9 +405,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   
   MOZ_MUST_USE bool emitCheckIsObj(CheckIsObjectKind kind);
-
-  
-  MOZ_MUST_USE bool emitCheckIsCallable(CheckIsCallableKind kind);
 
   
   MOZ_MUST_USE bool emitPushNotUndefinedOrNull();

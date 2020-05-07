@@ -10,9 +10,8 @@
 #include "frontend/NameAnalysisTypes.h"
 #include "js/TypeDecls.h"
 #include "vm/BytecodeUtil.h"
-#include "vm/CheckIsCallableKind.h"  
-#include "vm/CheckIsObjectKind.h"    
-#include "vm/FunctionPrefixKind.h"   
+#include "vm/CheckIsObjectKind.h"   
+#include "vm/FunctionPrefixKind.h"  
 #include "vm/StringType.h"
 
 namespace js {
@@ -280,10 +279,6 @@ class BytecodeLocation {
   CheckIsObjectKind getCheckIsObjectKind() const {
     MOZ_ASSERT(is(JSOp::CheckIsObj));
     return CheckIsObjectKind(GET_UINT8(rawBytecode_));
-  }
-  CheckIsCallableKind getCheckIsCallableKind() const {
-    MOZ_ASSERT(is(JSOp::CheckIsCallable));
-    return CheckIsCallableKind(GET_UINT8(rawBytecode_));
   }
 
   uint32_t getNewArrayLength() const {

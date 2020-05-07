@@ -13,8 +13,7 @@
 
 #include "jspubtd.h"
 
-#include "vm/CheckIsCallableKind.h"  
-#include "vm/CheckIsObjectKind.h"    
+#include "vm/CheckIsObjectKind.h"  
 #include "vm/Iteration.h"
 #include "vm/Stack.h"
 
@@ -676,8 +675,6 @@ void ReportRuntimeRedeclaration(JSContext* cx, HandlePropertyName name,
                                 const char* redeclKind);
 
 bool ThrowCheckIsObject(JSContext* cx, CheckIsObjectKind kind);
-
-bool ThrowCheckIsCallable(JSContext* cx, CheckIsCallableKind kind);
 
 bool ThrowUninitializedThis(JSContext* cx);
 

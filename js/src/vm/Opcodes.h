@@ -1390,17 +1390,6 @@
 
 
 
- \
-    MACRO(CheckIsCallable, check_is_callable, NULL, 2, 1, 1, JOF_UINT8) \
-    
-
-
-
-
-
-
-
-
 
 
 
@@ -3671,6 +3660,7 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(237)                                   \
   MACRO(238)                                   \
   MACRO(239)                                   \
   MACRO(240)                                   \
