@@ -10,6 +10,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
   EveryWindow: "resource:///modules/EveryWindow.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
+  Preferences: "resource://gre/modules/Preferences.jsm",
 });
 XPCOMUtils.defineLazyServiceGetter(
   this,
@@ -57,13 +58,9 @@ class _ToolbarPanelHub {
     
     
     await waitForInitialized;
-    if (this.whatsNewPanelEnabled) {
-      
-      
-      this.enableAppmenuButton();
-    }
     
-    Services.prefs.addObserver(WHATSNEW_ENABLED_PREF, this);
+    
+    this.enableAppmenuButton();
 
     this.state = {
       protectionPanelMessageSeen: Services.prefs.getBoolPref(
@@ -76,17 +73,6 @@ class _ToolbarPanelHub {
   uninit() {
     EveryWindow.unregisterCallback(TOOLBAR_BUTTON_ID);
     EveryWindow.unregisterCallback(APPMENU_BUTTON_ID);
-    Services.prefs.removeObserver(WHATSNEW_ENABLED_PREF, this);
-  }
-
-  observe(aSubject, aTopic, aPrefName) {
-    switch (aPrefName) {
-      case WHATSNEW_ENABLED_PREF:
-        if (!this.whatsNewPanelEnabled) {
-          this.uninit();
-        }
-        break;
-    }
   }
 
   get messages() {
@@ -97,8 +83,14 @@ class _ToolbarPanelHub {
     });
   }
 
-  get whatsNewPanelEnabled() {
-    return Services.prefs.getBoolPref(WHATSNEW_ENABLED_PREF, false);
+  toggleWhatsNewPref(event) {
+    event.stopPropagation();
+    event.preventDefault();
+    const [checkbox] = event.target.getElementsByTagName("checkbox");
+    const value = checkbox.checked;
+
+    checkbox.checked = !value;
+    Preferences.set(WHATSNEW_ENABLED_PREF, !value);
   }
 
   maybeInsertFTL(win) {
@@ -178,6 +170,12 @@ class _ToolbarPanelHub {
 
   
   async renderMessages(win, doc, containerId, options = {}) {
+    
+    let value = Preferences.get(WHATSNEW_ENABLED_PREF);
+    let checkbox = win.document.getElementById("panelMenu-toggleWhatsNew");
+
+    checkbox.checked = value;
+
     this.maybeLoadCustomElement(win);
     const messages =
       (options.force && options.messages) ||
