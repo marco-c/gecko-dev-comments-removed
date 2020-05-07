@@ -1797,15 +1797,6 @@ class BaseScript : public gc::TenuredCell {
                                    const SourceExtent& extent,
                                    uint32_t immutableFlags);
 
-  
-  
-  static BaseScript* CreateLazy(
-      JSContext* cx, const frontend::CompilationInfo& compilationInfo,
-      HandleFunction fun, HandleScriptSourceObject sourceObject,
-      const frontend::AtomVector& closedOverBindings,
-      const Vector<frontend::FunctionIndex>& innerFunctionIndexes,
-      const SourceExtent& extent, uint32_t immutableFlags);
-
   uint8_t* jitCodeRaw() const { return headerAndJitCodeRaw_.ptr(); }
   bool isUsingInterpreterTrampoline(JSRuntime* rt) const;
 
@@ -2068,6 +2059,12 @@ class BaseScript : public gc::TenuredCell {
   void swapData(UniquePtr<PrivateScriptData>& other);
 
   mozilla::Span<const JS::GCCellPtr> gcthings() const {
+    return data_ ? data_->gcthings() : mozilla::Span<JS::GCCellPtr>();
+  }
+
+  
+  mozilla::Span<JS::GCCellPtr> gcthingsForInit() {
+    MOZ_ASSERT(!hasBytecode());
     return data_ ? data_->gcthings() : mozilla::Span<JS::GCCellPtr>();
   }
 

@@ -328,9 +328,15 @@ class EmptyGlobalScopeType {};
 
 
 
+class NullScriptThing {};
+using ClosedOverBinding = JSAtom*;
+
+
+
 using ScriptThingVariant =
-    mozilla::Variant<BigIntIndex, ObjLiteralCreationData, RegExpIndex,
-                     ScopeIndex, FunctionIndex, EmptyGlobalScopeType>;
+    mozilla::Variant<ClosedOverBinding, NullScriptThing, BigIntIndex,
+                     ObjLiteralCreationData, RegExpIndex, ScopeIndex,
+                     FunctionIndex, EmptyGlobalScopeType>;
 
 
 using ScriptThingsVector = Vector<ScriptThingVariant>;
@@ -348,20 +354,15 @@ struct FunctionCreationData {
 
   
   
-  mozilla::Maybe<frontend::AtomVector> closedOverBindings = {};
-  
-  mozilla::Maybe<Vector<FunctionIndex>> innerFunctionIndexes = {};
-  
+  mozilla::Maybe<ScriptThingsVector> gcThings = {};
 
   bool createLazyScript(JSContext* cx, CompilationInfo& compilationInfo,
                         HandleFunction function, FunctionBox* funbox,
                         HandleScriptSourceObject sourceObject);
 
-  bool hasLazyScriptData() const {
-    return closedOverBindings && innerFunctionIndexes;
-  }
+  bool hasLazyScriptData() const { return gcThings.isSome(); }
 
-  void trace(JSTracer* trc) {}
+  void trace(JSTracer* trc);
 };
 
 
