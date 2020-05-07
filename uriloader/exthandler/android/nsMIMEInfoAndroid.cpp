@@ -340,6 +340,20 @@ nsMIMEInfoAndroid::LaunchWithFile(nsIFile* aFile) {
   return LoadUriInternal(uri);
 }
 
+NS_IMETHODIMP
+nsMIMEInfoAndroid::IsCurrentAppOSDefault(bool* aRetVal) {
+  
+  
+  
+  
+  
+  
+  
+  
+  *aRetVal = false;
+  return NS_OK;
+}
+
 nsMIMEInfoAndroid::nsMIMEInfoAndroid(const nsACString& aMIMEType)
     : mType(aMIMEType),
       mAlwaysAsk(true),
