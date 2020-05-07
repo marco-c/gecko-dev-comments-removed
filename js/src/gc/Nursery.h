@@ -176,20 +176,6 @@ class Nursery {
   
   static const size_t SubChunkStep = gc::ArenaSize;
 
-  struct alignas(gc::CellAlignBytes) CellAlignedByte {
-    char byte;
-  };
-
-  struct StringLayout {
-    JS::Zone* zone;
-    CellAlignedByte cell;
-  };
-
-  struct BigIntLayout {
-    JS::Zone* zone;
-    CellAlignedByte cell;
-  };
-
   using BufferRelocationOverlay = void*;
   using BufferSet = HashSet<void*, PointerHasher<void*>, SystemAllocPolicy>;
 
@@ -247,43 +233,31 @@ class Nursery {
 
   
   
-  gc::Cell* allocateString(JS::Zone* zone, size_t size, gc::AllocKind kind);
+  gc::Cell* allocateCell(JS::Zone* zone, size_t size, gc::AllocKind kind);
 
-  
-  
-  gc::Cell* allocateBigInt(JS::Zone* zone, size_t size, gc::AllocKind kind);
+  gc::Cell* allocateBigInt(JS::Zone* zone, size_t size, gc::AllocKind kind) {
+    MOZ_ASSERT(kind == gc::AllocKind::BIGINT);
+    return allocateCell(zone, size, kind);
+  }
+  gc::Cell* allocateString(JS::Zone* zone, size_t size, gc::AllocKind kind) {
+    return allocateCell(zone, size, kind);
+  }
 
-  
+  static JS::Zone* getCellZone(const gc::Cell* cell) {
+    return gc::NurseryCellHeader::from(cell)->zone;
+  }
+
   static JS::Zone* getStringZone(const JSString* str) {
-#ifdef DEBUG
-    auto cell = reinterpret_cast<const js::gc::Cell*>(
-        str);  
-    MOZ_ASSERT(js::gc::IsInsideNursery(cell),
-               "getStringZone must be passed a nursery string");
-#endif
-
-    auto layout =
-        reinterpret_cast<const uint8_t*>(str) - offsetof(StringLayout, cell);
-    return reinterpret_cast<const StringLayout*>(layout)->zone;
+    
+    return getCellZone(reinterpret_cast<const js::gc::Cell*>(str));
   }
 
-  
   static JS::Zone* getBigIntZone(const JS::BigInt* bi) {
-#ifdef DEBUG
-    auto cell = reinterpret_cast<const js::gc::Cell*>(
-        bi);  
-    MOZ_ASSERT(js::gc::IsInsideNursery(cell),
-               "getBigIntZone must be passed a nursery BigInt");
-#endif
-
-    auto layout =
-        reinterpret_cast<const uint8_t*>(bi) - offsetof(BigIntLayout, cell);
-    return reinterpret_cast<const BigIntLayout*>(layout)->zone;
+    
+    return getCellZone(reinterpret_cast<const js::gc::Cell*>(bi));
   }
 
-  static size_t stringHeaderSize() { return offsetof(StringLayout, cell); }
-
-  static size_t bigIntHeaderSize() { return offsetof(BigIntLayout, cell); }
+  static size_t nurseryCellHeaderSize() { return sizeof(gc::NurseryCellHeader); }
 
   
   void* allocateBuffer(JS::Zone* zone, size_t nbytes);
