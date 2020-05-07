@@ -500,7 +500,7 @@ class RegExpCompiler {
 
   struct CompilationResult final {
     explicit CompilationResult(RegExpError err) : error(err) {}
-    CompilationResult(Object code, int registers)
+    CompilationResult(Handle<Object> code, int registers)
         : code(code), num_registers(registers) {}
 
     static CompilationResult RegExpTooBig() {
@@ -510,7 +510,7 @@ class RegExpCompiler {
     bool Succeeded() const { return error == RegExpError::kNone; }
 
     const RegExpError error = RegExpError::kNone;
-    Object code;
+    Handle<Object> code;
     int num_registers = 0;
   };
 
@@ -520,9 +520,17 @@ class RegExpCompiler {
 
   
   
-  static RegExpNode* OptionallyStepBackToLeadSurrogate(RegExpCompiler* compiler,
-                                                       RegExpNode* on_success,
-                                                       JSRegExp::Flags flags);
+  
+  
+  
+  
+  RegExpNode* PreprocessRegExp(RegExpCompileData* data, JSRegExp::Flags flags,
+                               bool is_one_byte);
+
+  
+  
+  RegExpNode* OptionallyStepBackToLeadSurrogate(RegExpNode* on_success,
+                                                JSRegExp::Flags flags);
 
   inline void AddWork(RegExpNode* node) {
     if (!node->on_work_list() && !node->label()->is_bound()) {

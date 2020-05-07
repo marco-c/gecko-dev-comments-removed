@@ -218,7 +218,7 @@ class RecursionCheck {
 
 RegExpCompiler::RegExpCompiler(Isolate* isolate, Zone* zone, int capture_count,
                                bool one_byte)
-    : next_register_(2 * (capture_count + 1)),
+    : next_register_(JSRegExp::RegistersForCaptureCount(capture_count)),
       unicode_lookaround_stack_register_(kNoRegister),
       unicode_lookaround_position_register_(kNoRegister),
       work_list_(nullptr),
@@ -264,7 +264,7 @@ RegExpCompiler::CompilationResult RegExpCompiler::Assemble(
   isolate->IncreaseTotalRegexpCodeGenerated(code);
   work_list_ = nullptr;
 
-  return {*code, next_register_};
+  return {code, next_register_};
 }
 
 bool Trace::DeferredAction::Mentions(int that) {
@@ -3799,32 +3799,74 @@ void TextNode::FillInBMInfo(Isolate* isolate, int initial_offset, int budget,
   if (initial_offset == 0) set_bm_info(not_at_start, bm);
 }
 
-
 RegExpNode* RegExpCompiler::OptionallyStepBackToLeadSurrogate(
-    RegExpCompiler* compiler, RegExpNode* on_success, JSRegExp::Flags flags) {
-  DCHECK(!compiler->read_backward());
-  Zone* zone = compiler->zone();
+    RegExpNode* on_success, JSRegExp::Flags flags) {
+  DCHECK(!read_backward());
   ZoneList<CharacterRange>* lead_surrogates = CharacterRange::List(
-      zone, CharacterRange::Range(kLeadSurrogateStart, kLeadSurrogateEnd));
+      zone(), CharacterRange::Range(kLeadSurrogateStart, kLeadSurrogateEnd));
   ZoneList<CharacterRange>* trail_surrogates = CharacterRange::List(
-      zone, CharacterRange::Range(kTrailSurrogateStart, kTrailSurrogateEnd));
+      zone(), CharacterRange::Range(kTrailSurrogateStart, kTrailSurrogateEnd));
 
-  ChoiceNode* optional_step_back = new (zone) ChoiceNode(2, zone);
+  ChoiceNode* optional_step_back = new (zone()) ChoiceNode(2, zone());
 
-  int stack_register = compiler->UnicodeLookaroundStackRegister();
-  int position_register = compiler->UnicodeLookaroundPositionRegister();
+  int stack_register = UnicodeLookaroundStackRegister();
+  int position_register = UnicodeLookaroundPositionRegister();
   RegExpNode* step_back = TextNode::CreateForCharacterRanges(
-      zone, lead_surrogates, true, on_success, flags);
+      zone(), lead_surrogates, true, on_success, flags);
   RegExpLookaround::Builder builder(true, step_back, stack_register,
                                     position_register);
   RegExpNode* match_trail = TextNode::CreateForCharacterRanges(
-      zone, trail_surrogates, false, builder.on_match_success(), flags);
+      zone(), trail_surrogates, false, builder.on_match_success(), flags);
 
   optional_step_back->AddAlternative(
       GuardedAlternative(builder.ForMatch(match_trail)));
   optional_step_back->AddAlternative(GuardedAlternative(on_success));
 
   return optional_step_back;
+}
+
+RegExpNode* RegExpCompiler::PreprocessRegExp(RegExpCompileData* data,
+                                             JSRegExp::Flags flags,
+                                             bool is_one_byte) {
+  
+  RegExpNode* captured_body =
+      RegExpCapture::ToNode(data->tree, 0, this, accept());
+  RegExpNode* node = captured_body;
+  if (!data->tree->IsAnchoredAtStart() && !IsSticky(flags)) {
+    
+    
+    JSRegExp::Flags default_flags = JSRegExp::Flags();
+    RegExpNode* loop_node = RegExpQuantifier::ToNode(
+        0, RegExpTree::kInfinity, false,
+        new (zone()) RegExpCharacterClass('*', default_flags), this,
+        captured_body, data->contains_anchor);
+
+    if (data->contains_anchor) {
+      
+      
+      ChoiceNode* first_step_node = new (zone()) ChoiceNode(2, zone());
+      first_step_node->AddAlternative(GuardedAlternative(captured_body));
+      first_step_node->AddAlternative(GuardedAlternative(new (zone()) TextNode(
+          new (zone()) RegExpCharacterClass('*', default_flags), false,
+          loop_node)));
+      node = first_step_node;
+    } else {
+      node = loop_node;
+    }
+  }
+  if (is_one_byte) {
+    node = node->FilterOneByte(RegExpCompiler::kMaxRecursion);
+    
+    
+    if (node != nullptr) {
+      node = node->FilterOneByte(RegExpCompiler::kMaxRecursion);
+    }
+  } else if (IsUnicode(flags) && (IsGlobal(flags) || IsSticky(flags))) {
+    node = OptionallyStepBackToLeadSurrogate(node, flags);
+  }
+
+  if (node == nullptr) node = new (zone()) EndNode(EndNode::BACKTRACK, zone());
+  return node;
 }
 
 }  
