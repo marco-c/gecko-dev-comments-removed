@@ -398,7 +398,7 @@ if DEBUG:
          '-r', 'descendants(' + base_hg_rev + ')',
          '--template', '{node} {desc|firstline}\\n'])
     for line in output.splitlines():
-        eprint(str(line, "ascii"))
+        eprint(line.decode('utf-8', 'ignore'))
 
 
 query = '(' + wider_range + ') & modifies("glob:' + relative_path + '/**")'
