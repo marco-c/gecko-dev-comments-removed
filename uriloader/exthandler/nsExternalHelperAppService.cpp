@@ -1734,9 +1734,9 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
 #endif
     if (action == nsIMIMEInfo::useHelperApp ||
         action == nsIMIMEInfo::useSystemDefault) {
-      rv = LaunchWithApplication(nullptr, false);
+      rv = LaunchWithApplication();
     } else {
-      rv = SaveToDisk(nullptr, false);
+      rv = PromptForSaveDestination();
     }
   }
 
@@ -2219,27 +2219,24 @@ void nsExternalAppHandler::RequestSaveDestination(
 
 
 
-
-NS_IMETHODIMP nsExternalAppHandler::SaveToDisk(nsIFile* aNewFileLocation,
-                                               bool aRememberThisPreference) {
+NS_IMETHODIMP nsExternalAppHandler::PromptForSaveDestination() {
   if (mCanceled) return NS_OK;
 
   mMimeInfo->SetPreferredAction(nsIMIMEInfo::saveToDisk);
 
-  if (!aNewFileLocation) {
-    if (mSuggestedFileName.IsEmpty())
-      RequestSaveDestination(mTempLeafName, mTempFileExtension);
-    else {
-      nsAutoString fileExt;
-      int32_t pos = mSuggestedFileName.RFindChar('.');
-      if (pos >= 0)
-        mSuggestedFileName.Right(fileExt, mSuggestedFileName.Length() - pos);
-      if (fileExt.IsEmpty()) fileExt = mTempFileExtension;
-
-      RequestSaveDestination(mSuggestedFileName, fileExt);
-    }
+  if (mSuggestedFileName.IsEmpty()) {
+    RequestSaveDestination(mTempLeafName, mTempFileExtension);
   } else {
-    ContinueSave(aNewFileLocation);
+    nsAutoString fileExt;
+    int32_t pos = mSuggestedFileName.RFindChar('.');
+    if (pos >= 0) {
+      mSuggestedFileName.Right(fileExt, mSuggestedFileName.Length() - pos);
+    }
+    if (fileExt.IsEmpty()) {
+      fileExt = mTempFileExtension;
+    }
+
+    RequestSaveDestination(mSuggestedFileName, fileExt);
   }
 
   return NS_OK;
@@ -2294,16 +2291,8 @@ nsresult nsExternalAppHandler::ContinueSave(nsIFile* aNewFileLocation) {
 
 
 
-
-NS_IMETHODIMP nsExternalAppHandler::LaunchWithApplication(
-    nsIFile* aApplication, bool aRememberThisPreference) {
+NS_IMETHODIMP nsExternalAppHandler::LaunchWithApplication() {
   if (mCanceled) return NS_OK;
-
-  if (mMimeInfo && aApplication) {
-    PlatformLocalHandlerApp_t* handlerApp =
-        new PlatformLocalHandlerApp_t(EmptyString(), aApplication);
-    mMimeInfo->SetPreferredApplicationHandler(handlerApp);
-  }
 
   
   

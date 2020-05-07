@@ -622,7 +622,7 @@ nsUnknownContentTypeDialog.prototype = {
     } else if (aTimer == this._saveToDiskTimer) {
       
       
-      this.mLauncher.saveToDisk(null, false);
+      this.mLauncher.promptForSaveDestination();
       this._saveToDiskTimer = null;
     }
   },
@@ -1030,31 +1030,12 @@ nsUnknownContentTypeDialog.prototype = {
       if (this.dialogElement("save").selected) {
         
         
-        
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-        
         this._saveToDiskTimer = Cc["@mozilla.org/timer;1"].createInstance(
           nsITimer
         );
         this._saveToDiskTimer.initWithCallback(this, 0, nsITimer.TYPE_ONE_SHOT);
       } else {
-        this.mLauncher.launchWithApplication(null, false);
+        this.mLauncher.launchWithApplication();
       }
 
       
