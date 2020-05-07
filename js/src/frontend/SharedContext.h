@@ -336,6 +336,7 @@ class FunctionBox : public SharedContext {
 
   
   bool emitBytecode : 1;
+  bool emitLazy : 1;
   bool wasEmitted : 1;
 
   

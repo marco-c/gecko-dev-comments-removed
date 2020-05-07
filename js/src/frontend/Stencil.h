@@ -348,19 +348,18 @@ using ScriptThingsVector = Vector<ScriptThingVariant>;
 
 struct FunctionCreationData {
   
-  FunctionCreationData() = default;
   FunctionCreationData(const FunctionCreationData&) = delete;
   FunctionCreationData(FunctionCreationData&& data) = default;
 
   
   
-  mozilla::Maybe<ScriptThingsVector> gcThings = {};
+  ScriptThingsVector gcThings;
+
+  explicit FunctionCreationData(JSContext* cx) : gcThings(cx) {}
 
   bool createLazyScript(JSContext* cx, CompilationInfo& compilationInfo,
                         HandleFunction function, FunctionBox* funbox,
                         HandleScriptSourceObject sourceObject);
-
-  bool hasLazyScriptData() const { return gcThings.isSome(); }
 
   void trace(JSTracer* trc);
 };
