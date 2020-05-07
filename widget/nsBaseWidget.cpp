@@ -908,7 +908,7 @@ void nsBaseWidget::ConfigureAPZCTreeManager() {
 
 void nsBaseWidget::ConfigureAPZControllerThread() {
   
-  APZThreadUtils::SetControllerThread(MessageLoop::current());
+  APZThreadUtils::SetControllerThread(NS_GetCurrentThread());
 }
 
 void nsBaseWidget::SetConfirmedTargetAPZC(

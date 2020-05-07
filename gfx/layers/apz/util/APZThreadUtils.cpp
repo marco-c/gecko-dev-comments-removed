@@ -10,7 +10,7 @@ namespace mozilla {
 namespace layers {
 
 static bool sThreadAssertionsEnabled = true;
-static MessageLoop* sControllerThread;
+static nsISerialEventTarget* sControllerThread;
 
 
 void APZThreadUtils::SetThreadAssertionsEnabled(bool aEnabled) {
@@ -23,11 +23,11 @@ bool APZThreadUtils::GetThreadAssertionsEnabled() {
 }
 
 
-void APZThreadUtils::SetControllerThread(MessageLoop* aLoop) {
+void APZThreadUtils::SetControllerThread(nsISerialEventTarget* aThread) {
   
   
-  MOZ_ASSERT(!sControllerThread || !aLoop || sControllerThread == aLoop);
-  sControllerThread = aLoop;
+  MOZ_ASSERT(!sControllerThread || !aThread || sControllerThread == aThread);
+  sControllerThread = aThread;
 }
 
 
@@ -36,7 +36,7 @@ void APZThreadUtils::AssertOnControllerThread() {
     return;
   }
 
-  MOZ_ASSERT(sControllerThread == MessageLoop::current());
+  MOZ_ASSERT(sControllerThread->IsOnCurrentThread());
 }
 
 
@@ -49,25 +49,29 @@ void APZThreadUtils::RunOnControllerThread(RefPtr<Runnable>&& aTask) {
     return;
   }
 
-  if (sControllerThread == MessageLoop::current()) {
+  if (sControllerThread->IsOnCurrentThread()) {
     task->Run();
   } else {
-    sControllerThread->PostTask(task.forget());
+    sControllerThread->Dispatch(task.forget());
   }
 }
 
 
 bool APZThreadUtils::IsControllerThread() {
-  return sControllerThread == MessageLoop::current();
+  return sControllerThread == NS_GetCurrentThread();
 }
 
 
-void APZThreadUtils::PostDelayedTask(already_AddRefed<Runnable> aRunnable,
+void APZThreadUtils::DelayedDispatch(already_AddRefed<Runnable> aRunnable,
                                      int aDelayMs) {
-  MOZ_ASSERT(sControllerThread && sControllerThread == MessageLoop::current());
+  MOZ_ASSERT(sControllerThread && sControllerThread->IsOnCurrentThread());
   MOZ_ASSERT(!XRE_IsContentProcess(),
              "ContentProcessController should only be used remotely.");
-  sControllerThread->PostDelayedTask(std::move(aRunnable), aDelayMs);
+  if (aDelayMs) {
+    sControllerThread->DelayedDispatch(std::move(aRunnable), aDelayMs);
+  } else {
+    sControllerThread->Dispatch(std::move(aRunnable));
+  }
 }
 
 NS_IMPL_ISUPPORTS(GenericNamedTimerCallbackBase, nsITimerCallback, nsINamed)
