@@ -54,7 +54,6 @@ class APZThreadUtils {
 
 
 
-
   static void DelayedDispatch(already_AddRefed<Runnable> aRunnable,
                               int aDelayMs);
 };
