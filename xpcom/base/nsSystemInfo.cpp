@@ -1030,7 +1030,7 @@ nsresult nsSystemInfo::Init() {
 
 
 
-#  define DEFAULT_ANDROID_VERSION "6.0.99"
+#  define DEFAULT_ANDROID_VERSION "10.0.99"
 
 
 void nsSystemInfo::GetAndroidSystemInfo(AndroidSystemInfo* aInfo) {
