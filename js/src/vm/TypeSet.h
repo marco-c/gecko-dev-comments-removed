@@ -13,6 +13,7 @@
 #include "mozilla/Attributes.h"  
 #include "mozilla/Likely.h"      
 
+#include <initializer_list>
 #include <stdint.h>  
 #include <stdio.h>   
 
@@ -498,6 +499,9 @@ class TypeSet {
 
   
   bool mightBeMIRType(jit::MIRType type) const;
+
+  
+  bool isSubset(std::initializer_list<jit::MIRType> types) const;
 
   
 

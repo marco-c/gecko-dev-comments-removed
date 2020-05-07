@@ -18,6 +18,7 @@
 #include "mozilla/MacroForEach.h"
 
 #include <algorithm>
+#include <initializer_list>
 
 #include "jit/AtomicOp.h"
 #include "jit/BaselineIC.h"
@@ -716,6 +717,9 @@ class MDefinition : public MNode {
   }
 
   bool mightBeMagicType() const;
+
+  
+  bool definitelyType(std::initializer_list<MIRType> types) const;
 
   bool maybeEmulatesUndefined(CompilerConstraintList* constraints);
 
