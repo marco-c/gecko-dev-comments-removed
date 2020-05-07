@@ -1107,15 +1107,21 @@ PdfStreamConverter.prototype = {
     return true;
   },
 
-  getConvertedType(aFromType) {
-    if (!this._validateAndMaybeUpdatePDFPrefs()) {
-      throw new Components.Exception(
-        "Can't use PDF.js",
-        Cr.NS_ERROR_NOT_AVAILABLE
-      );
+  getConvertedType(aFromType, aChannel) {
+    const HTML = "text/html";
+    if (this._validateAndMaybeUpdatePDFPrefs()) {
+      return HTML;
+    }
+    
+    
+    if (aChannel && aChannel.URI.schemeIs("file")) {
+      let triggeringPrincipal = aChannel?.loadInfo?.triggeringPrincipal;
+      if (triggeringPrincipal?.isSystemPrincipal) {
+        return HTML;
+      }
     }
 
-    return "text/html";
+    throw new Components.Exception("Can't use PDF.js", Cr.NS_ERROR_FAILURE);
   },
 
   
