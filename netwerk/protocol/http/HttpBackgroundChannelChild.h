@@ -17,14 +17,11 @@ using mozilla::ipc::IPCResult;
 namespace mozilla {
 namespace net {
 
-class BackgroundDataBridgeChild;
 class HttpChannelChild;
 
 class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   friend class BackgroundChannelCreateCallback;
   friend class PHttpBackgroundChannelChild;
-  friend class HttpChannelChild;
-  friend class BackgroundDataBridgeChild;
 
  public:
   explicit HttpBackgroundChannelChild();
@@ -48,8 +45,7 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
                                    const nsresult& aTransportStatus,
                                    const uint64_t& aOffset,
                                    const uint32_t& aCount,
-                                   const nsCString& aData,
-                                   const bool& aDataFromSocketProcess);
+                                   const nsCString& aData);
 
   IPCResult RecvOnStopRequest(
       const nsresult& aChannelStatus, const ResourceTimingStructArgs& aTiming,
@@ -65,8 +61,6 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  void CreateDataBridge();
-
  private:
   virtual ~HttpBackgroundChannelChild();
 
@@ -81,12 +75,7 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   
   
   
-  
-  
-  
-  
-  
-  bool IsWaitingOnStartRequest(bool aDataFromSocketProcess = false);
+  bool IsWaitingOnStartRequest();
 
   
   
@@ -106,8 +95,6 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   
   
   nsTArray<nsCOMPtr<nsIRunnable>> mQueuedRunnables;
-
-  RefPtr<BackgroundDataBridgeChild> mDataBridgeChild;
 };
 
 }  
