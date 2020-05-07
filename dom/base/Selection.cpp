@@ -384,7 +384,8 @@ void Selection::SetCaretBidiLevel(const Nullable<int16_t>& aCaretBidiLevel,
   if (aCaretBidiLevel.IsNull()) {
     mFrameSelection->UndefineCaretBidiLevel();
   } else {
-    mFrameSelection->SetCaretBidiLevel(aCaretBidiLevel.Value());
+    mFrameSelection->SetCaretBidiLevelAndMaybeSchedulePaint(
+        aCaretBidiLevel.Value());
   }
 }
 
@@ -3541,17 +3542,17 @@ nsresult Selection::SelectionLanguageChange(bool aLangRTL) {
     if ((level != levelBefore) && (level != levelAfter))
       level = std::min(levelBefore, levelAfter);
     if (IS_SAME_DIRECTION(level, kbdBidiLevel))
-      frameSelection->SetCaretBidiLevel(level);
+      frameSelection->SetCaretBidiLevelAndMaybeSchedulePaint(level);
     else
-      frameSelection->SetCaretBidiLevel(level + 1);
+      frameSelection->SetCaretBidiLevelAndMaybeSchedulePaint(level + 1);
   } else {
     
     
     
     if (IS_SAME_DIRECTION(levelBefore, kbdBidiLevel))
-      frameSelection->SetCaretBidiLevel(levelBefore);
+      frameSelection->SetCaretBidiLevelAndMaybeSchedulePaint(levelBefore);
     else
-      frameSelection->SetCaretBidiLevel(levelAfter);
+      frameSelection->SetCaretBidiLevelAndMaybeSchedulePaint(levelAfter);
   }
 
   

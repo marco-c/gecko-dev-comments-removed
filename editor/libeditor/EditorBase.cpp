@@ -5046,7 +5046,7 @@ EditActionResult EditorBase::SetCaretBidiLevelForDeletion(
 
   
   
-  frameSelection->SetCaretBidiLevel(levelOfDeletion);
+  frameSelection->SetCaretBidiLevelAndMaybeSchedulePaint(levelOfDeletion);
 
   if (!StaticPrefs::bidi_edit_delete_immediately() &&
       levelBefore != levelAfter) {

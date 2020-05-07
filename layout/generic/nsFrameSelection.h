@@ -474,11 +474,7 @@ class nsFrameSelection final {
   void SetHint(CaretAssociateHint aHintRight) { mCaret.mHint = aHintRight; }
   CaretAssociateHint GetHint() const { return mCaret.mHint; }
 
-  
-
-
-
-  void SetCaretBidiLevel(nsBidiLevel aLevel);
+  void SetCaretBidiLevelAndMaybeSchedulePaint(nsBidiLevel aLevel);
 
   
 
