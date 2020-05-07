@@ -872,6 +872,12 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   bool newWindowShouldBeModal = false;
   bool parentIsModal = false;
   if (!newBC) {
+    if (XRE_IsContentProcess()) {
+      
+      
+      return NS_OK;
+    }
+
     windowIsNew = true;
     isNewToplevelWindow = true;
 
