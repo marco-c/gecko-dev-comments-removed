@@ -1434,22 +1434,7 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
       }
     }
     ExpandRepeatLineNames(!!aRange, aTracks);
-    
-    
-    if (mHasRepeatAuto) {
-      
-      
-      
-      
-      
-      
-      
-      mTemplateLinesEnd = mExpandedLineNames.Length() -
-                          (mTrackAutoRepeatLineNames.Length() - 2) +
-                          mRepeatEndDelta;
-    } else {
-      mTemplateLinesEnd = mExpandedLineNames.Length();
-    }
+    mTemplateLinesEnd = mExpandedLineNames.Length() + mRepeatEndDelta;
     MOZ_ASSERT(mHasRepeatAuto || mRepeatEndDelta <= 0);
     MOZ_ASSERT(!mHasRepeatAuto || aRange ||
                (mExpandedLineNames.Length() >= 2 &&
