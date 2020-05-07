@@ -130,7 +130,6 @@ class Toolbar extends PureComponent {
         DeviceSelector({
           devices,
           onChangeDevice,
-          doResizeViewport,
           onUpdateDeviceModal,
           selectedDevice,
           viewportId: viewport.id,
