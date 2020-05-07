@@ -309,7 +309,7 @@ void VRManager::StartTasks() {
   if (!mTaskTimer) {
     mTaskInterval = GetOptimalTaskInterval();
     mTaskTimer = NS_NewTimer();
-    mTaskTimer->SetTarget(CompositorThreadHolder::Loop()->SerialEventTarget());
+    mTaskTimer->SetTarget(CompositorThread());
     mTaskTimer->InitWithNamedFuncCallback(
         TaskTimerCallback, this, mTaskInterval,
         nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP,
@@ -1380,7 +1380,7 @@ void VRManager::SubmitFrame(VRLayerParent* aLayer,
     mSubmitThread->Start();
     mSubmitThread->PostTask(task.forget());
 #else
-    CompositorThreadHolder::Loop()->PostTask(task.forget());
+    CompositorThread()->Dispatch(task.forget());
 #endif  
   }
 }
@@ -1514,10 +1514,8 @@ void VRManager::SubmitFrameInternal(const layers::SurfaceDescriptor& aTexture,
 
 
 
-  MessageLoop* loop = CompositorThreadHolder::Loop();
-
-  loop->PostTask(NewRunnableMethod("gfx::VRManager::StartFrame", this,
-                                   &VRManager::StartFrame));
+  CompositorThread()->Dispatch(NewRunnableMethod("gfx::VRManager::StartFrame",
+                                                 this, &VRManager::StartFrame));
 #elif defined(MOZ_WIDGET_ANDROID)
   
   StartFrame();

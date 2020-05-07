@@ -110,9 +110,6 @@ class CompositorVsyncScheduler {
   virtual ~CompositorVsyncScheduler();
 
   
-  void ScheduleTask(already_AddRefed<CancelableRunnable>);
-
-  
   
   void PostCompositeTask(VsyncId aId, TimeStamp aCompositeTimestamp);
 
