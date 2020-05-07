@@ -46,7 +46,8 @@ DocAccessibleWrap::get_accParent(
      IDispatch __RPC_FAR* __RPC_FAR* ppdispParent) {
   
   DocAccessibleChild* ipcDoc = IPCDoc();
-  if (!ipcDoc) {
+  if (!ipcDoc || static_cast<dom::BrowserChild*>(ipcDoc->Manager())
+                         ->GetTopLevelDocAccessibleChild() != ipcDoc) {
     return DocAccessible::get_accParent(ppdispParent);
   }
 
