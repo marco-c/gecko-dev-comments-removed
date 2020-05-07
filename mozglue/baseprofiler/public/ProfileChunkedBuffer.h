@@ -590,6 +590,13 @@ class ProfileChunkedBuffer {
   
   
   
+  [[nodiscard]] bool IsThreadSafeAndLockedOnCurrentThread() const {
+    return mMutex.IsActivatedAndLockedOnCurrentThread();
+  }
+
+  
+  
+  
   template <typename Callback>
   auto LockAndRun(Callback&& aCallback) const {
     baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
