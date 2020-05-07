@@ -212,6 +212,15 @@ loader.lazyRequireGetter(
   "devtools/shared/picker-constants"
 );
 
+loader.lazyRequireGetter(
+  this,
+  "getF12SessionId",
+  "devtools/client/framework/enable-devtools-popup",
+  true
+);
+
+const DEVTOOLS_F12_DISABLED_PREF = "devtools.experiment.f12.shortcut_disabled";
+
 
 
 
@@ -252,6 +261,25 @@ function Toolbox(
   
   
   this.sessionId = msSinceProcessStart;
+
+  
+  if (Services.prefs.getBoolPref(DEVTOOLS_F12_DISABLED_PREF, false)) {
+    
+    
+    
+    
+    
+    
+    
+    this.sessionId = getF12SessionId() || msSinceProcessStart;
+
+    this.telemetry.recordEvent("f12_enabled", "tools", null, {
+      session_id: this.sessionId,
+    });
+
+    
+    Services.prefs.setBoolPref(DEVTOOLS_F12_DISABLED_PREF, false);
+  }
 
   
   
@@ -327,6 +355,7 @@ function Toolbox(
   this._onResumedState = this._onResumedState.bind(this);
   this._onTargetAvailable = this._onTargetAvailable.bind(this);
   this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
+  this._onNavigate = this._onNavigate.bind(this);
 
   this.isPaintFlashing = false;
 
@@ -691,7 +720,7 @@ Toolbox.prototype = {
       
       
       targetFront.on("will-navigate", this._onWillNavigate);
-      targetFront.on("navigate", this._refreshHostTitle);
+      targetFront.on("navigate", this._onNavigate);
       targetFront.on("frame-update", this._updateFrames);
       targetFront.on("inspect-object", this._onInspectObject);
 
@@ -791,13 +820,6 @@ Toolbox.prototype = {
         this._URL = this.win.location.href;
       }
 
-      if (this.hostType === Toolbox.HostType.PAGE) {
-        
-        
-        
-        this._debugTargetData = this._getDebugTargetData();
-      }
-
       const domReady = new Promise(resolve => {
         DOMHelpers.onceDOMReady(
           this.win,
@@ -858,6 +880,9 @@ Toolbox.prototype = {
         "aria-label",
         L10N.getStr("toolbox.label")
       );
+
+      
+      this._setDebugTargetData();
 
       this.webconsolePanel = this.doc.querySelector(
         "#toolbox-panel-webconsole"
@@ -965,7 +990,7 @@ Toolbox.prototype = {
   detachTarget() {
     this.target.off("inspect-object", this._onInspectObject);
     this.target.off("will-navigate", this._onWillNavigate);
-    this.target.off("navigate", this._refreshHostTitle);
+    this.target.off("navigate", this._onNavigate);
     this.target.off("frame-update", this._updateFrames);
 
     
@@ -1798,7 +1823,6 @@ Toolbox.prototype = {
       closeToolbox: this.closeToolbox,
       focusButton: this._onToolbarFocus,
       toolbox: this,
-      debugTargetData: this._debugTargetData,
       onTabsOrderUpdated: this._onTabsOrderUpdated,
     });
 
@@ -4176,5 +4200,25 @@ Toolbox.prototype = {
     }
 
     return id;
+  },
+
+  
+
+
+  _onNavigate: function() {
+    this._refreshHostTitle();
+    this._setDebugTargetData();
+  },
+
+  
+
+
+  _setDebugTargetData() {
+    if (this.hostType === Toolbox.HostType.PAGE) {
+      
+      
+      
+      this.component.setDebugTargetData(this._getDebugTargetData());
+    }
   },
 };
