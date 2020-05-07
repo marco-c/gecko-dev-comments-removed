@@ -3695,10 +3695,9 @@ class MToDouble : public MToFPInstruction {
     setMovable();
 
     
-    
-    if (def->mightBeType(MIRType::Object) ||
-        def->mightBeType(MIRType::Symbol) ||
-        def->mightBeType(MIRType::BigInt)) {
+    if (!def->definitelyType({MIRType::Undefined, MIRType::Null,
+                              MIRType::Boolean, MIRType::Int32, MIRType::Double,
+                              MIRType::Float32, MIRType::String})) {
       setGuard();
     }
   }
@@ -3763,10 +3762,9 @@ class MToFloat32 : public MToFPInstruction {
     setMovable();
 
     
-    
-    if (def->mightBeType(MIRType::Object) ||
-        def->mightBeType(MIRType::Symbol) ||
-        def->mightBeType(MIRType::BigInt)) {
+    if (!def->definitelyType({MIRType::Undefined, MIRType::Null,
+                              MIRType::Boolean, MIRType::Int32, MIRType::Double,
+                              MIRType::Float32, MIRType::String})) {
       setGuard();
     }
   }
@@ -4059,10 +4057,9 @@ class MToNumberInt32 : public MUnaryInstruction, public ToInt32Policy::Data {
     setMovable();
 
     
-    
-    if (def->mightBeType(MIRType::Object) ||
-        def->mightBeType(MIRType::Symbol) ||
-        def->mightBeType(MIRType::BigInt)) {
+    if (!def->definitelyType({MIRType::Undefined, MIRType::Null,
+                              MIRType::Boolean, MIRType::Int32, MIRType::Double,
+                              MIRType::Float32, MIRType::String})) {
       setGuard();
     }
   }
@@ -4118,10 +4115,9 @@ class MToIntegerInt32 : public MUnaryInstruction, public ToInt32Policy::Data {
     setMovable();
 
     
-    
-    if (def->mightBeType(MIRType::Object) ||
-        def->mightBeType(MIRType::Symbol) ||
-        def->mightBeType(MIRType::BigInt)) {
+    if (!def->definitelyType({MIRType::Undefined, MIRType::Null,
+                              MIRType::Boolean, MIRType::Int32, MIRType::Double,
+                              MIRType::Float32, MIRType::String})) {
       setGuard();
     }
   }
@@ -4159,10 +4155,9 @@ class MTruncateToInt32 : public MUnaryInstruction, public ToInt32Policy::Data {
     setMovable();
 
     
-    
-    if (def->mightBeType(MIRType::Object) ||
-        def->mightBeType(MIRType::Symbol) ||
-        def->mightBeType(MIRType::BigInt)) {
+    if (!def->definitelyType({MIRType::Undefined, MIRType::Null,
+                              MIRType::Boolean, MIRType::Int32, MIRType::Double,
+                              MIRType::Float32, MIRType::String})) {
       setGuard();
     }
   }
@@ -4215,8 +4210,10 @@ class MToString : public MUnaryInstruction, public ToStringPolicy::Data {
     if (JitOptions.warpBuilder) {
       mightHaveSideEffects_ = true;
     } else {
-      if (input()->mightBeType(MIRType::Object) ||
-          input()->mightBeType(MIRType::Symbol)) {
+      if (!def->definitelyType({MIRType::Undefined, MIRType::Null,
+                                MIRType::Boolean, MIRType::Int32,
+                                MIRType::Double, MIRType::Float32,
+                                MIRType::String, MIRType::BigInt})) {
         mightHaveSideEffects_ = true;
       }
 
