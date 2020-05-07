@@ -34,17 +34,54 @@ class LoadContext final : public nsILoadContext, public nsIInterfaceRequestor {
   NS_DECL_NSIINTERFACEREQUESTOR
 
   LoadContext(const IPC::SerializedLoadContext& aToCopy,
-              dom::Element* aTopFrameElement, OriginAttributes& aAttrs);
+              dom::Element* aTopFrameElement, OriginAttributes& aAttrs)
+      : mTopFrameElement(do_GetWeakReference(aTopFrameElement)),
+        mIsContent(aToCopy.mIsContent),
+        mUseRemoteTabs(aToCopy.mUseRemoteTabs),
+        mUseRemoteSubframes(aToCopy.mUseRemoteSubframes),
+        mUseTrackingProtection(aToCopy.mUseTrackingProtection),
+#ifdef DEBUG
+        mIsNotNull(aToCopy.mIsNotNull),
+#endif
+        mOriginAttributes(aAttrs) {
+  }
+
+  LoadContext(dom::Element* aTopFrameElement, bool aIsContent,
+              bool aUsePrivateBrowsing, bool aUseRemoteTabs,
+              bool aUseRemoteSubframes, bool aUseTrackingProtection,
+              const OriginAttributes& aAttrs)
+      : mTopFrameElement(do_GetWeakReference(aTopFrameElement)),
+        mIsContent(aIsContent),
+        mUseRemoteTabs(aUseRemoteTabs),
+        mUseRemoteSubframes(aUseRemoteSubframes),
+        mUseTrackingProtection(aUseTrackingProtection),
+#ifdef DEBUG
+        mIsNotNull(true),
+#endif
+        mOriginAttributes(aAttrs) {
+    MOZ_DIAGNOSTIC_ASSERT(aUsePrivateBrowsing ==
+                          (aAttrs.mPrivateBrowsingId > 0));
+  }
 
   
-  explicit LoadContext(OriginAttributes& aAttrs);
+  explicit LoadContext(OriginAttributes& aAttrs)
+      : mTopFrameElement(nullptr),
+        mIsContent(false),
+        mUseRemoteTabs(false),
+        mUseRemoteSubframes(false),
+        mUseTrackingProtection(false),
+#ifdef DEBUG
+        mIsNotNull(true),
+#endif
+        mOriginAttributes(aAttrs) {
+  }
 
   
   explicit LoadContext(nsIPrincipal* aPrincipal,
                        nsILoadContext* aOptionalBase = nullptr);
 
  private:
-  ~LoadContext();
+  ~LoadContext() {}
 
   nsWeakPtr mTopFrameElement;
   bool mIsContent;

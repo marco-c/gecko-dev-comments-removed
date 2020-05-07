@@ -1283,7 +1283,7 @@ already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
   cpm->RegisterRemoteFrame(browserParent);
 
   nsCOMPtr<nsIPrincipal> initialPrincipal =
-      NullPrincipal::Create(aBrowsingContext->OriginAttributesRef());
+      NullPrincipal::Create(aContext.OriginAttributesRef());
   WindowGlobalInit windowInit = WindowGlobalActor::AboutBlankInitializer(
       aBrowsingContext, initialPrincipal);
 
@@ -3160,7 +3160,8 @@ bool ContentParent::CanOpenBrowser(const IPCTabContext& aContext) {
   
   
   
-  if (aContext.type() != IPCTabContext::TPopupIPCTabContext) {
+  if (aContext.type() != IPCTabContext::TPopupIPCTabContext &&
+      aContext.type() != IPCTabContext::TUnsafeIPCTabContext) {
     ASSERT_UNLESS_FUZZING(
         "Unexpected IPCTabContext type.  Aborting AllocPBrowserParent.");
     return false;
@@ -3168,8 +3169,14 @@ bool ContentParent::CanOpenBrowser(const IPCTabContext& aContext) {
 
   if (aContext.type() == IPCTabContext::TPopupIPCTabContext) {
     const PopupIPCTabContext& popupContext = aContext.get_PopupIPCTabContext();
+    if (popupContext.opener().type() != PBrowserOrId::TPBrowserParent) {
+      ASSERT_UNLESS_FUZZING(
+          "Unexpected PopupIPCTabContext type.  Aborting AllocPBrowserParent.");
+      return false;
+    }
 
-    auto opener = BrowserParent::GetFrom(popupContext.openerParent());
+    auto opener =
+        BrowserParent::GetFrom(popupContext.opener().get_PBrowserParent());
     if (!opener) {
       ASSERT_UNLESS_FUZZING(
           "Got null opener from child; aborting AllocPBrowserParent.");
@@ -3215,7 +3222,8 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
     
     
     const PopupIPCTabContext& popupContext = aContext.get_PopupIPCTabContext();
-    auto opener = BrowserParent::GetFrom(popupContext.openerParent());
+    auto opener =
+        BrowserParent::GetFrom(popupContext.opener().get_PBrowserParent());
     openerTabId = opener->GetTabId();
     openerCpId = opener->Manager()->ChildID();
 
@@ -3259,7 +3267,8 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
 
   
   
-  if (openerTabId > 0) {
+  if (openerTabId > 0 ||
+      aContext.type() == IPCTabContext::TUnsafeIPCTabContext) {
     
     
     

@@ -616,10 +616,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   void AssertOriginAttributesMatchPrivateBrowsing();
 
-  
-  
-  void AssertCoherentLoadContext();
-
   friend class ::nsOuterWindowProxy;
   friend class ::nsGlobalWindowOuter;
   friend class WindowContext;
