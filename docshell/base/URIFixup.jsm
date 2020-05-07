@@ -13,6 +13,9 @@
 
 
 
+
+
+
 var EXPORTED_SYMBOLS = ["URIFixup", "URIFixupInfo"];
 
 const { XPCOMUtils } = ChromeUtils.import(
@@ -83,24 +86,13 @@ XPCOMUtils.defineLazyGetter(
 );
 
 
-XPCOMUtils.defineLazyGetter(this, "asciiAlphaRegex", () => /^[a-z]$/i);
+XPCOMUtils.defineLazyGetter(this, "asciiAlphaRegex", () => /[a-z]/i);
 
 
-XPCOMUtils.defineLazyGetter(this, "asciiHexRegex", () => /^[a-f0-9]$/i);
-
-
-XPCOMUtils.defineLazyGetter(
-  this,
-  "asciiNumberRegex",
-  () => /^[0-9]+(\.[0-9]+)?$/
-);
+XPCOMUtils.defineLazyGetter(this, "numberRegex", () => /^[0-9]+(\.[0-9]+)?$/);
 
 
 XPCOMUtils.defineLazyGetter(this, "maxOneTabRegex", () => /^[^\t]*\t?[^\t]*$/);
-
-
-
-
 
 
 
@@ -139,17 +131,33 @@ XPCOMUtils.defineLazyGetter(
 );
 
 
+
+
+XPCOMUtils.defineLazyGetter(
+  this,
+  "IPv4LikeRegex",
+  () => /^(?:[a-z+.-]+:\/*(?!\/))?(?:\d{1,3}\.){2,3}\d{1,3}(?::\d+|\/)?/i
+);
+XPCOMUtils.defineLazyGetter(
+  this,
+  "IPv6LikeRegex",
+  () =>
+    /^(?:[a-z+.-]+:\/*(?!\/))?\[(?:[0-9a-f]{0,4}:){0,7}[0-9a-f]{0,4}\]?(?::\d+|\/)?/i
+);
+
+
 XPCOMUtils.defineLazyGetter(this, "domainsWhitelist", () => {
+  const branch = "browser.fixup.domainwhitelist.";
   let domains = new Set(
     Services.prefs
-      .getChildList("browser.fixup.domainwhitelist.")
+      .getChildList(branch)
       .filter(p => Services.prefs.getBoolPref(p, false))
-      .map(p => p.substring(30))
+      .map(p => p.substring(branch.length))
   );
   
   domains._observer = {
     observe(subject, topic, data) {
-      let domain = data.substring(30);
+      let domain = data.substring(branch.length);
       if (Services.prefs.getBoolPref(data, false)) {
         domains.add(domain);
       } else {
@@ -161,11 +169,7 @@ XPCOMUtils.defineLazyGetter(this, "domainsWhitelist", () => {
       Ci.nsISupportsWeakReference,
     ]),
   };
-  Services.prefs.addObserver(
-    "browser.fixup.domainwhitelist.",
-    domains._observer,
-    true
-  );
+  Services.prefs.addObserver(branch, domains._observer, true);
   return domains;
 });
 
@@ -209,39 +213,11 @@ URIFixup.prototype = {
     let info = new URIFixupInfo(uriString);
 
     let scheme = extractScheme(uriString);
-    let isCommonProtocol = COMMON_PROTOCOLS.includes(scheme);
-    
-    
-    
     if (scheme == "view-source") {
-      
-      
-      let newFixupFlags =
-        fixupFlags &
-        ~FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP &
-        ~FIXUP_FLAGS_MAKE_ALTERNATE_URI;
-
-      let innerURIString = uriString.substring(12).trim();
-
-      
-      let innerScheme = extractScheme(innerURIString);
-      if (innerScheme == "view-source") {
-        throw new Components.Exception(
-          "Prevent view-source recursion",
-          Cr.NS_ERROR_FAILURE
-        );
-      }
-
-      let innerInfo = this.getFixupURIInfo(
-        innerURIString,
-        newFixupFlags,
+      info.preferredURI = info.fixedURI = fixupViewSource(
+        uriString,
+        fixupFlags,
         postData
-      );
-      if (!innerInfo.preferredURI) {
-        throw new Components.Exception("No preferredURI", Cr.NS_ERROR_FAILURE);
-      }
-      info.preferredURI = info.fixedURI = Services.io.newURI(
-        "view-source:" + innerInfo.preferredURI.spec
       );
       return info;
     }
@@ -259,13 +235,14 @@ URIFixup.prototype = {
 
     
     
+    let isCommonProtocol = COMMON_PROTOCOLS.includes(scheme);
     if (
       fixupSchemeTypos &&
       fixupFlags & FIXUP_FLAG_FIX_SCHEME_TYPOS &&
       scheme &&
       !isCommonProtocol
     ) {
-      for (let [typo, fixed] of [
+      info.fixupChangedProtocol = [
         ["ttp", "http"],
         ["htp", "http"],
         ["ttps", "https"],
@@ -274,18 +251,17 @@ URIFixup.prototype = {
         ["htps", "https"],
         ["ile", "file"],
         ["le", "file"],
-      ]) {
+      ].some(([typo, fixed]) => {
         if (uriString.startsWith(typo)) {
           scheme = fixed;
           uriString = scheme + uriString.substring(typo.length);
-          info.fixupChangedProtocol = true;
           isCommonProtocol = true;
-          break;
+          return true;
         }
-      }
+        return false;
+      });
     }
 
-    
     
     let isDefaultProtocolHandler =
       !isCommonProtocol &&
@@ -329,9 +305,7 @@ URIFixup.prototype = {
 
     if (info.fixedURI) {
       if (!info.preferredURI) {
-        if (fixupFlags & FIXUP_FLAGS_MAKE_ALTERNATE_URI) {
-          info.fixupCreatedAlternateURI = makeAlternateFixedURI(info);
-        }
+        maybeSetAlternateFixedURI(info, fixupFlags);
         info.preferredURI = info.fixedURI;
       }
       return info;
@@ -342,15 +316,10 @@ URIFixup.prototype = {
     
     
     
-    let inputHadDuffProtocol = false;
-    if (!scheme) {
-      if (uriString.startsWith("://")) {
-        uriString = uriString.substring(3);
-        inputHadDuffProtocol = true;
-      } else if (uriString.startsWith("//")) {
-        uriString = uriString.substring(2);
-        inputHadDuffProtocol = true;
-      }
+    let inputHadDuffProtocol =
+      uriString.startsWith("://") || uriString.startsWith("//");
+    if (inputHadDuffProtocol) {
+      uriString = uriString.replace(/^:?\/\//, "");
     }
 
     
@@ -361,11 +330,7 @@ URIFixup.prototype = {
       if (uriWithProtocol) {
         info.fixedURI = uriWithProtocol;
         info.fixupChangedProtocol = true;
-        
-        
-        if (fixupFlags & FIXUP_FLAGS_MAKE_ALTERNATE_URI) {
-          info.fixupCreatedAlternateURI = makeAlternateFixedURI(info);
-        }
+        maybeSetAlternateFixedURI(info, fixupFlags);
         info.preferredURI = info.fixedURI;
       }
     }
@@ -374,11 +339,10 @@ URIFixup.prototype = {
     if (
       keywordEnabled &&
       fixupFlags & FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP &&
-      !inputHadDuffProtocol
+      !inputHadDuffProtocol &&
+      keywordURIFixup(uriString, info, isPrivateContext, postData)
     ) {
-      if (keywordURIFixup(uriString, info, isPrivateContext, postData)) {
-        return info;
-      }
+      return info;
     }
 
     if (
@@ -576,6 +540,7 @@ URIFixupInfo.prototype = {
 
 
 
+
 function isDomainWhitelisted(asciiHost) {
   if (dnsFirstForSingleWords) {
     return true;
@@ -625,7 +590,7 @@ function checkAndFixPublicSuffix(info) {
   
   
   let suffix = Services.eTLD.getPublicSuffix(uri);
-  if (!suffix || asciiNumberRegex.test(suffix)) {
+  if (!suffix || numberRegex.test(suffix)) {
     return true;
   }
   for (let [typo, fixed] of [
@@ -688,9 +653,11 @@ function tryKeywordFixupForURIInfo(
 
 
 
-function makeAlternateFixedURI(info) {
+
+function maybeSetAlternateFixedURI(info, fixupFlags) {
   let uri = info.fixedURI;
   if (
+    !(fixupFlags & FIXUP_FLAGS_MAKE_ALTERNATE_URI) ||
     !alternateEnabled ||
     
     !uri.schemeIs("http") ||
@@ -701,13 +668,12 @@ function makeAlternateFixedURI(info) {
   ) {
     return false;
   }
+
   let oldHost = uri.host;
   
   if (oldHost == "localhost") {
     return false;
   }
-
-  let numDots = (oldHost.match(/\./g) || []).length;
 
   
   
@@ -721,6 +687,7 @@ function makeAlternateFixedURI(info) {
   );
 
   let newHost = "";
+  let numDots = (oldHost.match(/\./g) || []).length;
   if (numDots == 0) {
     newHost = prefix + oldHost + suffix;
   } else if (numDots == 1) {
@@ -746,6 +713,7 @@ function makeAlternateFixedURI(info) {
     }
     return false;
   }
+  info.fixupCreatedAlternateURI = true;
   return true;
 }
 
@@ -838,164 +806,40 @@ function keywordURIFixup(uriString, fixupInfo, isPrivateContext, postData) {
   
 
   
-  
-  
-  
-
-  
-  
-  const NOT_FOUND = Infinity;
-  let firstDotLoc = NOT_FOUND;
-  let lastDotLoc = NOT_FOUND;
-  let firstColonLoc = NOT_FOUND;
-  let firstQuoteLoc = NOT_FOUND;
-  let firstSpaceLoc = NOT_FOUND;
-  let firstQMarkLoc = NOT_FOUND;
-  let lastLSBracketLoc = NOT_FOUND;
-  let lastSlashLoc = NOT_FOUND;
-  let foundDots = 0;
-  let foundColons = 0;
-  let foundDigits = 0;
-  let foundRSBrackets = 0;
-  let looksLikeIpv6 = true;
-  let hasAsciiAlpha = false;
-  for (let i = 0, pos = 0; i < uriString.length; ++i, ++pos) {
-    let iter = uriString[i];
-    if (pos >= 1 && foundRSBrackets == 0) {
-      if (
-        !(
-          lastLSBracketLoc == 0 &&
-          (iter == ":" ||
-            iter == "." ||
-            iter == "]" ||
-            asciiHexRegex.test(iter))
-        )
-      ) {
-        looksLikeIpv6 = false;
-      }
-    }
-
-    
-    
-    if (
-      (i == uriString.length - 1 ||
-        (lastSlashLoc == NOT_FOUND && iter == "/")) &&
-      
-      (foundDots == 2 || foundDots == 3) &&
-      
-      (foundDots + foundDigits == pos ||
-        
-        
-        (foundColons == 1 &&
-          firstColonLoc > lastDotLoc &&
-          foundDots + foundDigits + foundColons == pos))
-    ) {
-      
-      
-      
-      return false;
-    }
-
-    if (iter == ".") {
-      foundDots++;
-      lastDotLoc = pos;
-      if (firstDotLoc == NOT_FOUND) {
-        firstDotLoc = pos;
-      }
-    } else if (iter == ":") {
-      foundColons++;
-      if (firstColonLoc == NOT_FOUND) {
-        firstColonLoc = pos;
-      }
-    } else if (iter == " " && firstSpaceLoc == NOT_FOUND) {
-      firstSpaceLoc = pos;
-    } else if (iter == "?" && firstQMarkLoc == NOT_FOUND) {
-      firstQMarkLoc = pos;
-    } else if ((iter == "'" || iter == '"') && firstQuoteLoc == NOT_FOUND) {
-      firstQuoteLoc = pos;
-    } else if (iter == "[") {
-      lastLSBracketLoc = pos;
-    } else if (iter == "]") {
-      foundRSBrackets++;
-    } else if (iter == "/") {
-      lastSlashLoc = pos;
-    } else if (asciiAlphaRegex.test(iter)) {
-      hasAsciiAlpha = true;
-    } else if (asciiNumberRegex.test(iter)) {
-      foundDigits++;
-    }
-  }
-
-  if (lastLSBracketLoc > 0 || foundRSBrackets != 1) {
-    looksLikeIpv6 = false;
-  }
-
-  
-  
-  if (looksLikeIpv6) {
+  if (IPv4LikeRegex.test(uriString) || IPv6LikeRegex.test(uriString)) {
     return false;
   }
 
-  let asciiHost = fixupInfo.fixedURI && fixupInfo.fixedURI.asciiHost;
-  let displayHost = fixupInfo.fixedURI && fixupInfo.fixedURI.displayHost;
-
   
   
   
-  if (
-    ((firstSpaceLoc < firstDotLoc || firstQuoteLoc < firstDotLoc) &&
-      (firstSpaceLoc < firstColonLoc || firstQuoteLoc < firstColonLoc) &&
-      (firstSpaceLoc < firstQMarkLoc || firstQuoteLoc < firstQMarkLoc)) ||
-    firstQMarkLoc == 0
-  ) {
+  if (uriString.startsWith("?") || /^[^.:?]*[\s"']/.test(uriString)) {
     return tryKeywordFixupForURIInfo(
       fixupInfo.originalInput,
       fixupInfo,
       isPrivateContext,
       postData
     );
-    
-    
-  } else if (
+  }
+
+  
+  
+  
+  let asciiHost = fixupInfo.fixedURI?.asciiHost;
+  if (asciiHost && isDomainWhitelisted(asciiHost)) {
+    return false;
+  }
+
+  
+  
+  let displayHost = fixupInfo.fixedURI && fixupInfo.fixedURI.displayHost;
+  let hasAsciiAlpha = asciiAlphaRegex.test(uriString);
+  if (
     asciiHost &&
     displayHost &&
     !hasAsciiAlpha &&
     asciiHost.toLowerCase() == displayHost.toLowerCase()
   ) {
-    if (!dnsFirstForSingleWords) {
-      return tryKeywordFixupForURIInfo(
-        fixupInfo.originalInput,
-        fixupInfo,
-        isPrivateContext,
-        postData
-      );
-    }
-    
-    
-  } else if (
-    (firstDotLoc == NOT_FOUND ||
-      (foundDots == 1 &&
-        (firstDotLoc == 0 || firstDotLoc == uriString.length - 1))) &&
-    firstColonLoc == NOT_FOUND &&
-    firstQMarkLoc == NOT_FOUND
-  ) {
-    if (asciiHost && isDomainWhitelisted(asciiHost)) {
-      return false;
-    }
-
-    
-    
-    if (
-      firstDotLoc == NOT_FOUND &&
-      lastSlashLoc != NOT_FOUND &&
-      hasAsciiAlpha &&
-      asciiHost
-    ) {
-      return false;
-    }
-
-    
-    
     return tryKeywordFixupForURIInfo(
       fixupInfo.originalInput,
       fixupInfo,
@@ -1003,10 +847,93 @@ function keywordURIFixup(uriString, fixupInfo, isPrivateContext, postData) {
       postData
     );
   }
+
+  
+  if (uriString.includes(":") || uriString.includes("?")) {
+    return false;
+  }
+
+  
+  
+  let firstDotIndex = uriString.indexOf(".");
+  if (
+    firstDotIndex == uriString.length - 1 ||
+    (firstDotIndex == 0 && firstDotIndex == uriString.lastIndexOf("."))
+  ) {
+    return tryKeywordFixupForURIInfo(
+      fixupInfo.originalInput,
+      fixupInfo,
+      isPrivateContext,
+      postData
+    );
+  }
+
+  
+  
+  if (
+    firstDotIndex == -1 &&
+    (!uriString.includes("/") || !hasAsciiAlpha || !asciiHost)
+  ) {
+    return tryKeywordFixupForURIInfo(
+      fixupInfo.originalInput,
+      fixupInfo,
+      isPrivateContext,
+      postData
+    );
+  }
+
   return false;
 }
+
+
+
+
+
 
 function extractScheme(uriString) {
   let matches = uriString.match(possibleProtocolRegex);
   return matches ? matches[1].replace("\t", "").toLowerCase() : "";
+}
+
+
+
+
+
+
+
+
+
+
+
+function fixupViewSource(uriString, fixupFlags, postData) {
+  
+  
+  let newFixupFlags =
+    fixupFlags &
+    ~FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP &
+    ~FIXUP_FLAGS_MAKE_ALTERNATE_URI;
+
+  let innerURIString = uriString.substring(12).trim();
+
+  
+  let innerScheme = extractScheme(innerURIString);
+  if (innerScheme == "view-source") {
+    throw new Components.Exception(
+      "Prevent view-source recursion",
+      Cr.NS_ERROR_FAILURE
+    );
+  }
+
+  let info = Services.uriFixup.getFixupURIInfo(
+    innerURIString,
+    newFixupFlags,
+    postData
+  );
+  if (!info.preferredURI) {
+    throw new Components.Exception(
+      "Couldn't build a valid uri",
+      Cr.NS_ERROR_MALFORMED_URI
+    );
+  }
+  return Services.io.newURI("view-source:" + info.preferredURI.spec);
 }
