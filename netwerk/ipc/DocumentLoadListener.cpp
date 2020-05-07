@@ -780,7 +780,6 @@ void DocumentLoadListener::RedirectToRealChannelFinished(nsresult aRv) {
   
   
   redirectingParent->ContinueVerification(this);
-  return;
 }
 
 NS_IMETHODIMP
