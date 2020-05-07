@@ -157,14 +157,6 @@ struct FeaturesD3D : FeatureSetBase
 
     
     
-    Feature emulateClearViewAfterDualSourceBlending = {"emulate_clear_view_after_dual_source_blending",
-                              FeatureCategory::D3DWorkarounds,
-                              "On Sandybridge, calling ClearView after using dual source blending causes "
-                              "the hardware to hang", &members,
-                              "https://bugzilla.mozilla.org/show_bug.cgi?id=1633628"};
-
-    
-    
     
     
     Feature useSystemMemoryForConstantBuffers = {

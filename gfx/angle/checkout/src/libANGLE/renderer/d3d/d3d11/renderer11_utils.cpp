@@ -2435,9 +2435,7 @@ void InitializeFeatures(const Renderer11DeviceCaps &deviceCaps,
             
             
             features->setDataFasterThanImageUploadOn128bitFormats.enabled = false;
-        } else if (IsSandyBridge(adapterDesc.DeviceId)) {
-	    features->emulateClearViewAfterDualSourceBlending.enabled = true;
-	}
+        }
     }
 
     if (IsAMD(adapterDesc.VendorId))
