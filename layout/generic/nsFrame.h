@@ -156,61 +156,11 @@ class nsFrame : public nsIFrame {
   void DestroyFrom(nsIFrame* aDestructRoot,
                    PostDestroyData& aPostDestroyData) override;
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  nsresult HandleEvent(nsPresContext* aPresContext,
-                       mozilla::WidgetGUIEvent* aEvent,
-                       nsEventStatus* aEventStatus) override;
-
   static nsresult GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
                                                  nsPeekOffsetStruct* aPos,
                                                  nsIFrame* aBlockFrame,
                                                  int32_t aLineStart,
                                                  int8_t aOutSideLimit);
-
-  FrameSearchResult PeekOffsetWord(bool aForward, bool aWordSelectEatSpace,
-                                   bool aIsKeyboardSelect, int32_t* aOffset,
-                                   PeekWordState* aState,
-                                   bool aTrimSpaces) override;
-  
-
-
-
-
-
-
-
-  static bool BreakWordBetweenPunctuation(const PeekWordState* aState,
-                                          bool aForward, bool aPunctAfter,
-                                          bool aWhitespaceAfter,
-                                          bool aIsKeyboardSelect);
-
-  ComputedStyle* GetParentComputedStyle(
-      nsIFrame** aProviderFrame) const override {
-    return DoGetParentComputedStyle(aProviderFrame);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  ComputedStyle* DoGetParentComputedStyle(nsIFrame** aProviderFrame) const;
-
-  void MarkIntrinsicISizesDirty() override;
-
-  mozilla::LogicalSize ComputeSize(
-      gfxContext* aRenderingContext, mozilla::WritingMode aWM,
-      const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
-      const mozilla::LogicalSize& aMargin, const mozilla::LogicalSize& aBorder,
-      const mozilla::LogicalSize& aPadding, ComputeSizeFlags aFlags) override;
 
   
 
@@ -228,59 +178,6 @@ class nsFrame : public nsIFrame {
   
   nsRect ComputeSimpleTightBounds(mozilla::gfx::DrawTarget* aDrawTarget) const;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual mozilla::LogicalSize ComputeAutoSize(
-      gfxContext* aRenderingContext, mozilla::WritingMode aWM,
-      const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
-      const mozilla::LogicalSize& aMargin, const mozilla::LogicalSize& aBorder,
-      const mozilla::LogicalSize& aPadding, ComputeSizeFlags aFlags);
-
-  
-
-
-
-  nscoord ShrinkWidthToFit(gfxContext* aRenderingContext, nscoord aISizeInCB,
-                           ComputeSizeFlags aFlags);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
-              const ReflowInput& aReflowInput,
-              nsReflowStatus& aStatus) override;
   void DidReflow(nsPresContext* aPresContext,
                  const ReflowInput* aReflowInput) override;
 
@@ -313,38 +210,10 @@ class nsFrame : public nsIFrame {
 
   void PushDirtyBitToAbsoluteFrames();
 
-  
-
-  NS_IMETHOD HandlePress(nsPresContext* aPresContext,
-                         mozilla::WidgetGUIEvent* aEvent,
-                         nsEventStatus* aEventStatus);
-
-  NS_IMETHOD HandleMultiplePress(nsPresContext* aPresContext,
-                                 mozilla::WidgetGUIEvent* aEvent,
-                                 nsEventStatus* aEventStatus,
-                                 bool aControlHeld);
-
-  MOZ_CAN_RUN_SCRIPT
-  NS_IMETHOD HandleDrag(nsPresContext* aPresContext,
-                        mozilla::WidgetGUIEvent* aEvent,
-                        nsEventStatus* aEventStatus);
-
-  NS_IMETHOD HandleRelease(nsPresContext* aPresContext,
-                           mozilla::WidgetGUIEvent* aEvent,
-                           nsEventStatus* aEventStatus);
-
-  enum { SELECT_ACCUMULATE = 0x01 };
-
   nsresult PeekBackwardAndForward(nsSelectionAmount aAmountBack,
                                   nsSelectionAmount aAmountForward,
                                   int32_t aStartPos, bool aJumpLines,
                                   uint32_t aSelectFlags);
-
-  nsresult SelectByTypeAtPoint(nsPresContext* aPresContext,
-                               const nsPoint& aPoint,
-                               nsSelectionAmount aBeginAmountType,
-                               nsSelectionAmount aEndAmountType,
-                               uint32_t aSelectFlags);
 
   
   
@@ -357,10 +226,6 @@ class nsFrame : public nsIFrame {
   nsSize GetXULMaxSize(nsBoxLayoutState& aBoxLayoutState) override;
   nscoord GetXULFlex() override;
   nscoord GetXULBoxAscent(nsBoxLayoutState& aBoxLayoutState) override;
-
-  
-  
-  bool XULComputesOwnOverflowArea() override { return true; }
 
   
   
@@ -509,14 +374,6 @@ class nsFrame : public nsIFrame {
       nsDisplayListBuilder* aBuilder, nsDisplayList* aList,
       uint16_t aContentType = nsISelectionDisplay::DISPLAY_FRAMES);
 
-  
-
-
-  int16_t DetermineDisplaySelection();
-
-  
-  void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
-
  public:
   
 
@@ -592,27 +449,8 @@ class nsFrame : public nsIFrame {
            aFrame->PresContext()->IsPaginated() && aFrame->IsBlockFrame();
   }
 
-  nsILineIterator* GetLineIterator() override;
-
  protected:
-  
-  
-  
-  
-  
-  
-  
-  
-  nsresult GetDataForTableSelection(const nsFrameSelection* aFrameSelection,
-                                    mozilla::PresShell* aPresShell,
-                                    mozilla::WidgetMouseEvent* aMouseEvent,
-                                    nsIContent** aParentContent,
-                                    int32_t* aContentOffset,
-                                    mozilla::TableSelectionMode* aTarget);
-
   NS_IMETHOD DoXULLayout(nsBoxLayoutState& aBoxLayoutState) override;
-
-  nsBoxLayoutMetrics* BoxMetrics() const;
 
   
   void FireDOMEvent(const nsAString& aDOMEventName,

@@ -122,6 +122,7 @@ class nsPlaceholderFrame;
 class nsStyleChangeList;
 class nsWindowSizes;
 
+struct nsBoxLayoutMetrics;
 struct nsPeekOffsetStruct;
 struct nsPoint;
 struct nsRect;
@@ -132,6 +133,7 @@ struct CharacterDataChangeInfo;
 namespace mozilla {
 
 enum class PseudoStyleType : uint8_t;
+enum class TableSelectionMode : uint32_t;
 class EventStates;
 class PresShell;
 struct ReflowInput;
@@ -792,12 +794,14 @@ class nsIFrame : public nsQueryFrame {
     }
   }
 
+ protected:
   
   
   
   
-  virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) = 0;
+  virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle);
 
+ public:
 
 
 
@@ -1985,10 +1989,61 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual nsresult HandleEvent(nsPresContext* aPresContext,
                                mozilla::WidgetGUIEvent* aEvent,
-                               nsEventStatus* aEventStatus) = 0;
+                               nsEventStatus* aEventStatus);
 
+  nsresult SelectByTypeAtPoint(nsPresContext* aPresContext,
+                               const nsPoint& aPoint,
+                               nsSelectionAmount aBeginAmountType,
+                               nsSelectionAmount aEndAmountType,
+                               uint32_t aSelectFlags);
+
+  enum { SELECT_ACCUMULATE = 0x01 };
+
+ protected:
+  
+
+  NS_IMETHOD HandlePress(nsPresContext* aPresContext,
+                         mozilla::WidgetGUIEvent* aEvent,
+                         nsEventStatus* aEventStatus);
+
+  NS_IMETHOD HandleMultiplePress(nsPresContext* aPresContext,
+                                 mozilla::WidgetGUIEvent* aEvent,
+                                 nsEventStatus* aEventStatus,
+                                 bool aControlHeld);
+
+  MOZ_CAN_RUN_SCRIPT
+  NS_IMETHOD HandleDrag(nsPresContext* aPresContext,
+                        mozilla::WidgetGUIEvent* aEvent,
+                        nsEventStatus* aEventStatus);
+
+  NS_IMETHOD HandleRelease(nsPresContext* aPresContext,
+                           mozilla::WidgetGUIEvent* aEvent,
+                           nsEventStatus* aEventStatus);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsresult GetDataForTableSelection(const nsFrameSelection* aFrameSelection,
+                                    mozilla::PresShell* aPresShell,
+                                    mozilla::WidgetMouseEvent* aMouseEvent,
+                                    nsIContent** aParentContent,
+                                    int32_t* aContentOffset,
+                                    mozilla::TableSelectionMode* aTarget);
+
+  
+
+
+  int16_t DetermineDisplaySelection();
+
+ public:
   virtual nsresult GetContentForEvent(mozilla::WidgetEvent* aEvent,
                                       nsIContent** aContent);
 
@@ -2230,8 +2285,12 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual void MarkIntrinsicISizesDirty() = 0;
+  virtual void MarkIntrinsicISizesDirty();
 
+ private:
+  nsBoxLayoutMetrics* BoxMetrics() const;
+
+ public:
   
 
 
@@ -2546,8 +2605,38 @@ class nsIFrame : public nsQueryFrame {
       gfxContext* aRenderingContext, mozilla::WritingMode aWritingMode,
       const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
       const mozilla::LogicalSize& aMargin, const mozilla::LogicalSize& aBorder,
-      const mozilla::LogicalSize& aPadding, ComputeSizeFlags aFlags) = 0;
+      const mozilla::LogicalSize& aPadding, ComputeSizeFlags aFlags);
 
+ protected:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual mozilla::LogicalSize ComputeAutoSize(
+      gfxContext* aRenderingContext, mozilla::WritingMode aWM,
+      const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
+      const mozilla::LogicalSize& aMargin, const mozilla::LogicalSize& aBorder,
+      const mozilla::LogicalSize& aPadding, ComputeSizeFlags aFlags);
+
+  
+
+
+
+  nscoord ShrinkWidthToFit(gfxContext* aRenderingContext, nscoord aISizeInCB,
+                           ComputeSizeFlags aFlags);
+
+ public:
   
 
 
@@ -2625,9 +2714,29 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aReflowOutput,
-                      const ReflowInput& aReflowInput,
-                      nsReflowStatus& aStatus) = 0;
+                      const ReflowInput& aReflowInput, nsReflowStatus& aStatus);
 
   
   
@@ -3550,7 +3659,24 @@ class nsIFrame : public nsQueryFrame {
 
 
   virtual ComputedStyle* GetParentComputedStyle(
-      nsIFrame** aProviderFrame) const = 0;
+      nsIFrame** aProviderFrame) const {
+    return DoGetParentComputedStyle(aProviderFrame);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  ComputedStyle* DoGetParentComputedStyle(nsIFrame** aProviderFrame) const;
 
   
 
@@ -3914,7 +4040,10 @@ class nsIFrame : public nsQueryFrame {
 
 
   virtual bool DoesClipChildren();
-  virtual bool XULComputesOwnOverflowArea() = 0;
+
+  
+  
+  virtual bool XULComputesOwnOverflowArea() { return true; }
 
   nsresult SyncXULLayout(nsBoxLayoutState& aBoxLayoutState);
 
@@ -3964,7 +4093,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual nsILineIterator* GetLineIterator() = 0;
+  virtual nsILineIterator* GetLineIterator() { return nullptr; }
 
   
 
@@ -4720,7 +4849,21 @@ class nsIFrame : public nsQueryFrame {
 
   virtual FrameSearchResult PeekOffsetWord(
       bool aForward, bool aWordSelectEatSpace, bool aIsKeyboardSelect,
-      int32_t* aOffset, PeekWordState* aState, bool aTrimSpaces) = 0;
+      int32_t* aOffset, PeekWordState* aState, bool aTrimSpaces);
+
+ protected:
+  
+
+
+
+
+
+
+
+  static bool BreakWordBetweenPunctuation(const PeekWordState* aState,
+                                          bool aForward, bool aPunctAfter,
+                                          bool aWhitespaceAfter,
+                                          bool aIsKeyboardSelect);
 
   
 
