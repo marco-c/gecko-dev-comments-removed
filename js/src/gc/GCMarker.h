@@ -28,6 +28,8 @@ static const size_t SMALL_MARK_STACK_BASE_CAPACITY = 256;
 
 namespace gc {
 
+enum IncrementalProgress { NotFinished = 0, Finished };
+
 struct Cell;
 
 struct WeakKeyTableHashPolicy {
@@ -47,6 +49,10 @@ struct WeakMarkable {
 
   WeakMarkable(WeakMapBase* weakmapArg, Cell* keyArg)
       : weakmap(weakmapArg), key(keyArg) {}
+
+  bool operator==(const WeakMarkable& other) const {
+    return weakmap == other.weakmap && key == other.key;
+  }
 };
 
 using WeakEntryVector = Vector<WeakMarkable, 2, js::SystemAllocPolicy>;
@@ -321,6 +327,16 @@ class GCMarker : public JSTracer {
 
   void delayMarkingChildren(gc::Cell* cell);
 
+  
+  void forgetWeakKey(js::gc::WeakKeyTable& weakKeys, WeakMapBase* map,
+                     gc::Cell* keyOrDelegate, gc::Cell* keyToRemove);
+
+  
+  void forgetWeakMap(WeakMapBase* map, Zone* zone);
+
+  
+  void severWeakDelegate(JSObject* key, JSObject* delegate);
+
   bool isDrained() { return isMarkStackEmpty() && !delayedMarkingList; }
 
   
@@ -471,7 +487,17 @@ class GCMarker : public JSTracer {
   
   MainThreadOrGCTaskData<MarkingState> state;
 
+ public:
+  
+
+
+
+
+
+  MainThreadOrGCTaskData<bool> incrementalWeakMapMarkingEnabled;
+
 #ifdef DEBUG
+ private:
   
   MainThreadOrGCTaskData<size_t> markLaterArenas;
 

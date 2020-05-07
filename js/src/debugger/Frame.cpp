@@ -73,6 +73,7 @@
 #include "wasm/WasmTypes.h"                
 
 #include "debugger/Debugger-inl.h"  
+#include "gc/WeakMap-inl.h"         
 #include "vm/Compartment-inl.h"     
 #include "vm/JSContext-inl.h"       
 #include "vm/JSObject-inl.h"        

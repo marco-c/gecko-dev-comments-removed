@@ -33,6 +33,12 @@ WeakMapBase::~WeakMapBase() {
 }
 
 void WeakMapBase::unmarkZone(JS::Zone* zone) {
+  AutoEnterOOMUnsafeRegion oomUnsafe;
+  if (!zone->gcWeakKeys().clear()) {
+    oomUnsafe.crash("clearing weak keys table");
+  }
+  MOZ_ASSERT(zone->gcNurseryWeakKeys().count() == 0);
+
   for (WeakMapBase* m : zone->gcWeakMapList()) {
     m->mapColor = CellColor::White;
   }
@@ -138,26 +144,22 @@ size_t ObjectValueWeakMap::sizeOfIncludingThis(
 
 bool ObjectValueWeakMap::findSweepGroupEdges() {
   
-
-
-
-
+  
   JS::AutoSuppressGCAnalysis nogc;
   for (Range r = all(); !r.empty(); r.popFront()) {
     JSObject* key = r.front().key();
-    if (key->asTenured().isMarkedBlack()) {
-      continue;
-    }
     JSObject* delegate = gc::detail::GetDelegate(key);
     if (!delegate) {
       continue;
     }
+
+    
+    
     Zone* delegateZone = delegate->zone();
-    if (delegateZone == zone() || !delegateZone->isGCMarking()) {
-      continue;
-    }
-    if (!delegateZone->addSweepGroupEdgeTo(key->zone())) {
-      return false;
+    if (delegateZone != zone() && delegateZone->isGCMarking()) {
+      if (!delegateZone->addSweepGroupEdgeTo(key->zone())) {
+        return false;
+      }
     }
   }
   return true;

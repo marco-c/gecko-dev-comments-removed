@@ -130,6 +130,11 @@ void WeakMap<K, V>::markKey(GCMarker* marker, gc::Cell* markedCell,
   MOZ_ASSERT(mapColor);
 
   Ptr p = Base::lookup(static_cast<Lookup>(origKey));
+  
+  
+  
+  
+  
   MOZ_ASSERT(p.found());
 
   mozilla::DebugOnly<gc::Cell*> oldKey = gc::ToMarkable(p->key());
@@ -220,6 +225,30 @@ void WeakMap<K, V>::trace(JSTracer* trc) {
 }
 
 template <class K, class V>
+ void WeakMap<K, V>::forgetKey(UnbarrieredKey key) {
+  
+  if (zone()->needsIncrementalBarrier()) {
+    JSRuntime* rt = zone()->runtimeFromMainThread();
+    if (JSObject* delegate = js::gc::detail::GetDelegate(key)) {
+      js::gc::WeakKeyTable& weakKeys = delegate->zone()->gcWeakKeys(delegate);
+      rt->gc.marker.forgetWeakKey(weakKeys, this, delegate, key);
+    } else {
+      js::gc::WeakKeyTable& weakKeys = key->zone()->gcWeakKeys(key);
+      rt->gc.marker.forgetWeakKey(weakKeys, this, key, key);
+    }
+  }
+}
+
+template <class K, class V>
+ void WeakMap<K, V>::clear() {
+  Base::clear();
+  JSRuntime* rt = zone()->runtimeFromMainThread();
+  if (zone()->needsIncrementalBarrier()) {
+    rt->gc.marker.forgetWeakMap(this, zone());
+  }
+}
+
+template <class K, class V>
  void WeakMap<K, V>::addWeakEntry(
     GCMarker* marker, gc::Cell* key, const gc::WeakMarkable& markable) {
   Zone* zone = key->asTenured().zone();
@@ -249,8 +278,7 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
     if (markEntry(marker, e.front().mutableKey(), e.front().value())) {
       markedAny = true;
     }
-    if (!marker->isWeakMarking()) {
-      
+    if (!marker->incrementalWeakMapMarkingEnabled && !marker->isWeakMarking()) {
       
       continue;
     }
@@ -271,14 +299,26 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
       
       gc::Cell* weakKey = gc::detail::ExtractUnbarriered(e.front().key());
       gc::WeakMarkable markable(this, weakKey);
-      addWeakEntry(marker, weakKey, markable);
       if (JSObject* delegate = gc::detail::GetDelegate(e.front().key())) {
         addWeakEntry(marker, delegate, markable);
+      } else {
+        addWeakEntry(marker, weakKey, markable);
       }
     }
   }
 
   return markedAny;
+}
+
+template <class K, class V>
+void WeakMap<K, V>::postSeverDelegate(GCMarker* marker, JSObject* key,
+                                      Compartment* comp) {
+  if (mapColor) {
+    
+    
+    gc::WeakMarkable markable(this, key);
+    addWeakEntry(marker, key, markable);
+  }
 }
 
 template <class K, class V>
