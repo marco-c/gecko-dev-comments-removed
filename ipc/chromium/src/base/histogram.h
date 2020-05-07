@@ -70,7 +70,7 @@ class Histogram {
   
   static const size_t kBucketCount_MAX;
 
-  typedef nsTArray<Count> Counts;
+  typedef CopyableTArray<Count> Counts;
   typedef const Sample* Ranges;
 
   

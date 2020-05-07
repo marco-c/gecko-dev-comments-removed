@@ -1555,7 +1555,7 @@ ParentImpl::ForceCloseBackgroundActorsRunnable::Run() {
 
   if (!mActorArray->IsEmpty()) {
     
-    nsTArray<ParentImpl*> actorsToClose(*mActorArray);
+    nsTArray<ParentImpl*> actorsToClose(mActorArray->Clone());
 
     for (uint32_t index = 0; index < actorsToClose.Length(); index++) {
       actorsToClose[index]->Close();
