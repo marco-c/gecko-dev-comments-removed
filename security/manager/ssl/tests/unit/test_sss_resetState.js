@@ -16,12 +16,6 @@ var gSSService = Cc["@mozilla.org/ssservice;1"].getService(
 
 function test_removeState(secInfo, type, flags) {
   info(`running test_removeState(type=${type}, flags=${flags})`);
-  const NON_ISSUED_KEY_HASH = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
-  const PINNING_ROOT_KEY_HASH = "VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8=";
-  const PINNING_HEADERS = `pin-sha256="${NON_ISSUED_KEY_HASH}"; pin-sha256="${PINNING_ROOT_KEY_HASH}"`;
-  let headerAddendum =
-    type == Ci.nsISiteSecurityService.HEADER_HPKP ? PINNING_HEADERS : "";
-  
   
   
   
@@ -30,7 +24,7 @@ function test_removeState(secInfo, type, flags) {
   gSSService.processHeader(
     type,
     notPreloadedURI,
-    "max-age=1000;" + headerAddendum,
+    "max-age=1000;",
     secInfo,
     flags,
     Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
@@ -46,7 +40,7 @@ function test_removeState(secInfo, type, flags) {
   gSSService.processHeader(
     type,
     notPreloadedURI,
-    "max-age=0;" + headerAddendum,
+    "max-age=0;",
     secInfo,
     flags,
     Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
@@ -58,16 +52,13 @@ function test_removeState(secInfo, type, flags) {
   
   
   
-  let preloadedHost =
-    type == Ci.nsISiteSecurityService.HEADER_HPKP
-      ? "include-subdomains.pinning.example.com"
-      : "includesubdomains.preloaded.test";
+  let preloadedHost = "includesubdomains.preloaded.test";
   let preloadedURI = Services.io.newURI(`https://${preloadedHost}`);
   ok(gSSService.isSecureURI(type, preloadedURI, flags));
   gSSService.processHeader(
     type,
     preloadedURI,
-    "max-age=1000;" + headerAddendum,
+    "max-age=1000;",
     secInfo,
     flags,
     Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
@@ -83,19 +74,12 @@ function test_removeState(secInfo, type, flags) {
   gSSService.processHeader(
     type,
     preloadedURI,
-    "max-age=0;" + headerAddendum,
+    "max-age=0;",
     secInfo,
     flags,
     Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
   );
-  
-  
-  
-  if (type == Ci.nsISiteSecurityService.HEADER_HPKP) {
-    ok(gSSService.isSecureURI(type, preloadedURI, flags));
-  } else {
-    ok(!gSSService.isSecureURI(type, preloadedURI, flags));
-  }
+  ok(!gSSService.isSecureURI(type, preloadedURI, flags));
   gSSService.resetState(type, preloadedURI, flags);
   ok(gSSService.isSecureURI(type, preloadedURI, flags));
 }
@@ -118,30 +102,10 @@ function add_tests() {
       Ci.nsISiteSecurityService.HEADER_HSTS,
       Ci.nsISocketProvider.NO_PERMANENT_STORAGE
     );
-
-    test_removeState(secInfo, Ci.nsISiteSecurityService.HEADER_HPKP, 0);
-    test_removeState(
-      secInfo,
-      Ci.nsISiteSecurityService.HEADER_HPKP,
-      Ci.nsISocketProvider.NO_PERMANENT_STORAGE
-    );
   });
 }
 
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("security.cert_pinning.hpkp.enabled");
-  Services.prefs.clearUserPref(
-    "sercurity.cert_pinning.process_headers_from_non_builtin_roots"
-  );
-});
-
 function run_test() {
-  Services.prefs.setBoolPref("security.cert_pinning.hpkp.enabled", true);
-  Services.prefs.setBoolPref(
-    "security.cert_pinning.process_headers_from_non_builtin_roots",
-    true
-  );
-
   add_tls_server_setup("BadCertAndPinningServer", "bad_certs");
 
   add_tests();

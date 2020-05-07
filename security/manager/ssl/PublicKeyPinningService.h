@@ -39,15 +39,6 @@ class PublicKeyPinningService {
       const OriginAttributes& originAttributes,
        bool& chainHasValidPins,
        PinningTelemetryInfo* pinningTelemetryInfo);
-  
-
-
-
-
-  static nsresult ChainMatchesPinset(
-      const nsTArray<RefPtr<nsIX509Cert>>& certList,
-      const nsTArray<nsCString>& aSHA256keys,
-       bool& chainMatchesPinset);
 
   
 

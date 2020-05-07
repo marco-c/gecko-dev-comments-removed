@@ -966,19 +966,19 @@ const SecuritySettingsCleaner = {
       let sss = Cc["@mozilla.org/ssservice;1"].getService(
         Ci.nsISiteSecurityService
       );
-      for (let type of [
-        Ci.nsISiteSecurityService.HEADER_HSTS,
-        Ci.nsISiteSecurityService.HEADER_HPKP,
-      ]) {
-        
-        
-        for (let entry of sss.enumerate(type)) {
-          let hostname = entry.hostname;
-          if (Services.eTLD.hasRootDomain(hostname, aHost)) {
-            
-            let uri = Services.io.newURI("https://" + hostname);
-            sss.resetState(type, uri, 0, entry.originAttributes);
-          }
+      
+      
+      for (let entry of sss.enumerate(Ci.nsISiteSecurityService.HEADER_HSTS)) {
+        let hostname = entry.hostname;
+        if (Services.eTLD.hasRootDomain(hostname, aHost)) {
+          
+          let uri = Services.io.newURI("https://" + hostname);
+          sss.resetState(
+            Ci.nsISiteSecurityService.HEADER_HSTS,
+            uri,
+            0,
+            entry.originAttributes
+          );
         }
       }
 

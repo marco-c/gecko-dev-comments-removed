@@ -284,24 +284,13 @@ async function updatePinningList({ data: { current: records } }) {
   
   for (let item of records) {
     try {
-      const { pinType, pins = [], versions } = item;
-      if (versions.includes(Services.appinfo.version)) {
-        if (pinType == "KeyPin" && pins.length) {
-          siteSecurityService.setKeyPins(
-            item.hostName,
-            item.includeSubdomains,
-            item.expires,
-            pins,
-            true
-          );
-        }
-        if (pinType == "STSPin") {
-          siteSecurityService.setHSTSPreload(
-            item.hostName,
-            item.includeSubdomains,
-            item.expires
-          );
-        }
+      const { pinType, versions } = item;
+      if (versions.includes(Services.appinfo.version) && pinType == "STSPin") {
+        siteSecurityService.setHSTSPreload(
+          item.hostName,
+          item.includeSubdomains,
+          item.expires
+        );
       }
     } catch (e) {
       

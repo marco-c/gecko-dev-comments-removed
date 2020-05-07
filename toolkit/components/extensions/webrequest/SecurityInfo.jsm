@@ -194,7 +194,7 @@ const SecurityInfo = {
       }
 
       info.hsts = sss.isSecureURI(sss.HEADER_HSTS, uri, flags);
-      info.hpkp = sss.isSecureURI(sss.HEADER_HPKP, uri, flags);
+      info.hpkp = sss.isSecureURI(sss.STATIC_PINNING, uri, flags);
     } else {
       info.hsts = false;
       info.hpkp = false;
