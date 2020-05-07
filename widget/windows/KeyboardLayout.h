@@ -124,7 +124,7 @@ class MOZ_STACK_CLASS UniCharsAndModifiers final {
   nsAutoString mChars;
   
   
-  AutoTArray<Modifiers, 5> mModifiers;
+  CopyableAutoTArray<Modifiers, 5> mModifiers;
 };
 
 struct DeadKeyEntry {
