@@ -48,13 +48,6 @@ class TabContext {
 
 
 
-
-  const OriginAttributes& OriginAttributesRef() const;
-
-  
-
-
-
   const nsAString& PresentationURL() const;
 
   UIStateChangeType ShowFocusRings() const;
@@ -78,19 +71,8 @@ class TabContext {
 
   bool SetTabContext(const TabContext& aContext);
 
-  
-
-
-  void SetPrivateBrowsingAttributes(bool aIsPrivateBrowsing);
-
-  
-
-
-  void SetFirstPartyDomainAttributes(const nsAString& aFirstPartyDomain);
-
   bool SetTabContext(uint64_t aChromeOuterWindowID,
                      UIStateChangeType aShowFocusRings,
-                     const OriginAttributes& aOriginAttributes,
                      const nsAString& aPresentationURL,
                      uint32_t aMaxTouchPoints);
 
@@ -135,11 +117,6 @@ class TabContext {
   
 
 
-  OriginAttributes mOriginAttributes;
-
-  
-
-
   nsString mPresentationURL;
 
   
@@ -166,20 +143,14 @@ class MutableTabContext : public TabContext {
 
   bool SetTabContext(uint64_t aChromeOuterWindowID,
                      UIStateChangeType aShowFocusRings,
-                     const OriginAttributes& aOriginAttributes,
                      const nsAString& aPresentationURL,
                      uint32_t aMaxTouchPoints) {
     return TabContext::SetTabContext(aChromeOuterWindowID, aShowFocusRings,
-                                     aOriginAttributes, aPresentationURL,
-                                     aMaxTouchPoints);
+                                     aPresentationURL, aMaxTouchPoints);
   }
 
   bool SetTabContextForJSPluginFrame(uint32_t aJSPluginID) {
     return TabContext::SetTabContextForJSPluginFrame(aJSPluginID);
-  }
-
-  void SetFirstPartyDomainAttributes(const nsAString& aFirstPartyDomain) {
-    TabContext::SetFirstPartyDomainAttributes(aFirstPartyDomain);
   }
 };
 
