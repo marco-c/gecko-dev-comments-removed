@@ -102,9 +102,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   
   float mFontSizeFactor;
   nscoord mFontSizeOffset;
-  uint8_t mFontSizeKeyword;  
-                             
-                             
+  mozilla::StyleFontSize mFontSizeKeyword;  
+                                            
 
   mozilla::StyleGenericFontFamily mGenericID;
 
