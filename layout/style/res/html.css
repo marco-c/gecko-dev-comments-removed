@@ -713,12 +713,27 @@ canvas {
 }
 
 
-
-
-:-moz-focusring:not(input):not(button):not(select):not(textarea):not(iframe):not(frame):not(body):not(html),
-input[type="file"]:-moz-focusring {
+:-moz-focusring {
   
    outline: 1px dotted;
+}
+
+iframe:-moz-focusring,
+body:-moz-focusring,
+html:-moz-focusring {
+  
+
+  outline-style: none;
+}
+
+input:not([type="file"]):-moz-focusring,
+button:-moz-focusring,
+select:-moz-focusring,
+button:-moz-focusring,
+textarea:-moz-focusring {
+  
+
+  outline-style: auto;
 }
 
 

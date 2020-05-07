@@ -2606,8 +2606,9 @@ void nsFrame::DisplayOutlineUnconditional(nsDisplayListBuilder* aBuilder,
   
   
   MOZ_ASSERT(!IsTableColGroupFrame() && !IsTableColFrame());
+  const auto& outline = *StyleOutline();
 
-  if (!StyleOutline()->ShouldPaintOutline()) {
+  if (!outline.ShouldPaintOutline()) {
     return;
   }
 
@@ -2621,6 +2622,14 @@ void nsFrame::DisplayOutlineUnconditional(nsDisplayListBuilder* aBuilder,
     
     
     
+    return;
+  }
+
+  
+  
+  
+  
+  if (outline.mOutlineStyle.IsAuto() && IsThemed()) {
     return;
   }
 
