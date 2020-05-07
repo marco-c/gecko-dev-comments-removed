@@ -1655,14 +1655,7 @@ void RasterImage::NotifyProgress(
   
   RefPtr<RasterImage> image = this;
 
-  const bool wasDefaultFlags = aSurfaceFlags == DefaultSurfaceFlags();
-
-  auto invalidRect = ToOriented(aInvalidRect);
-
-  if (!invalidRect.IsEmpty() && wasDefaultFlags) {
-    
-    UpdateImageContainer(Some(invalidRect.ToUnknownRect()));
-  }
+  UnorientedIntRect invalidRect = aInvalidRect;
 
   if (!(aDecoderFlags & DecoderFlags::FIRST_FRAME_ONLY)) {
     
@@ -1676,11 +1669,28 @@ void RasterImage::NotifyProgress(
         ShouldAnimate()) {
       StartAnimation();
     }
+
+    if (mAnimationState) {
+      auto size = ToUnoriented(mSize);
+      IntRect rect = mAnimationState->UpdateState(this, size.ToUnknownSize());
+
+      invalidRect.UnionRect(invalidRect,
+                            UnorientedIntRect::FromUnknownRect(rect));
+    }
+  }
+
+  const bool wasDefaultFlags = aSurfaceFlags == DefaultSurfaceFlags();
+
+  auto orientedInvalidRect = ToOriented(invalidRect);
+
+  if (!orientedInvalidRect.IsEmpty() && wasDefaultFlags) {
+    
+    UpdateImageContainer(Some(orientedInvalidRect.ToUnknownRect()));
   }
 
   
-  image->mProgressTracker->SyncNotifyProgress(aProgress,
-                                              invalidRect.ToUnknownRect());
+  image->mProgressTracker->SyncNotifyProgress(
+      aProgress, orientedInvalidRect.ToUnknownRect());
 }
 
 void RasterImage::NotifyDecodeComplete(
