@@ -33,6 +33,7 @@ class MediaSession;
 
 
 
+
 class MOZ_STACK_CLASS ContentPlaybackController {
  public:
   explicit ContentPlaybackController(BrowsingContext* aContext);
