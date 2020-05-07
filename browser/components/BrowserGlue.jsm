@@ -393,6 +393,7 @@ let ACTORS = {
     
     
     matches: ["*://*/*"],
+    messageManagerGroups: ["browsers"],
     allFrames: true,
   },
 
