@@ -163,14 +163,17 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
       return this.walker.gripToNodeFront(grip);
     }
 
-    const { contentDomReference } = grip;
-    const { browsingContextId } = contentDomReference;
+    return this.getNodeActorFromContentDomReference(grip.contentDomReference);
+  }
 
+  async getNodeActorFromContentDomReference(contentDomReference) {
+    const { browsingContextId } = contentDomReference;
     
     
-    
-    
-    if (this.targetFront.browsingContextID === browsingContextId) {
+    if (
+      this.targetFront.browsingContextID === browsingContextId ||
+      !this.isContentFissionEnabled
+    ) {
       return this.walker.getNodeActorFromContentDomReference(
         contentDomReference
       );
