@@ -158,9 +158,17 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
     
     
     
+#if !defined(_M_ARM64)
+#  if defined(_M_AMD64)
+    LPCWSTR kNvidiaShimDriver = L"nvd3d9wrapx.dll";
+    LPCWSTR kNvidiaInitDriver = L"nvinitx.dll";
+#  elif defined(_M_IX86)
+    LPCWSTR kNvidiaShimDriver = L"nvd3d9wrap.dll";
+    LPCWSTR kNvidiaInitDriver = L"nvinit.dll";
+#  endif
     if (moduleNameStr.LowerCaseEqualsLiteral("detoured.dll") &&
-        !mozilla::IsWin8OrLater() && ::GetModuleHandle(L"nvd3d9wrapx.dll") &&
-        !::GetModuleHandle(L"nvinitx.dll")) {
+        !mozilla::IsWin8OrLater() && ::GetModuleHandle(kNvidiaShimDriver) &&
+        !::GetModuleHandle(kNvidiaInitDriver)) {
       NS_NAMED_LITERAL_STRING(pdbNameStr, "detoured.pdb");
       SharedLibrary shlib(
           (uintptr_t)module.lpBaseOfDll,
@@ -172,6 +180,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
       sharedLibraryInfo.AddSharedLibrary(shlib);
       continue;
     }
+#endif  
 
     nsCString breakpadId;
     
