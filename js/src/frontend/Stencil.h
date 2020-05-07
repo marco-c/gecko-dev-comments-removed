@@ -74,35 +74,10 @@ class FunctionIndex : public TypedIndex<FunctionIndexType> {
 
 
 struct FunctionCreationData {
-  FunctionCreationData(HandleAtom explicitName, FunctionSyntaxKind kind,
-                       GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
-                       bool isSelfHosting = false, bool inFunctionBox = false);
-
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  FunctionCreationData(const FunctionCreationData& data)
-      : explicitName(data.explicitName),
-        flags(data.flags),
-        immutableFlags(data.immutableFlags) {
-    MOZ_RELEASE_ASSERT(!data.hasLazyScriptData());
-  }
-
+  FunctionCreationData() = default;
+  FunctionCreationData(const FunctionCreationData&) = delete;
   FunctionCreationData(FunctionCreationData&& data) = default;
-
-  
-  JSAtom* explicitName = nullptr;
-
-  FunctionFlags flags = {};
-  ImmutableScriptFlags immutableFlags = {};
 
   
   
@@ -110,8 +85,6 @@ struct FunctionCreationData {
   
   mozilla::Maybe<Vector<FunctionIndex>> innerFunctionIndexes = {};
   
-
-  HandleAtom getExplicitName(JSContext* cx) const;
 
   bool createLazyScript(JSContext* cx, CompilationInfo& compilationInfo,
                         HandleFunction function, FunctionBox* funbox,
@@ -121,10 +94,14 @@ struct FunctionCreationData {
     return closedOverBindings && innerFunctionIndexes;
   }
 
-  void trace(JSTracer* trc) {
-    TraceNullableRoot(trc, &explicitName, "FunctionCreationData explicitName");
-  }
+  void trace(JSTracer* trc) {}
 };
+
+FunctionFlags InitialFunctionFlags(FunctionSyntaxKind kind,
+                                   GeneratorKind generatorKind,
+                                   FunctionAsyncKind asyncKind,
+                                   bool isSelfHosting = false,
+                                   bool hasUnclonedName = false);
 
 
 
