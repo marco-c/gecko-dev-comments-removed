@@ -7,7 +7,7 @@ add_task(async function setup() {
   await useTestEngines("simple-engines");
   
   Services.prefs.setCharPref(
-    "geo.provider-country.network.url",
+    "browser.region.network.url",
     'data:application/json,{"country_code": "US"}'
   );
 

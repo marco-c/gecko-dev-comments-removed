@@ -9,6 +9,10 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+XPCOMUtils.defineLazyModuleGetters(this, {
+  LocationHelper: "resource://gre/modules/LocationHelper.jsm",
+});
+
 XPCOMUtils.defineLazyGlobalGetters(this, ["XMLHttpRequest"]);
 
 
@@ -239,7 +243,6 @@ NetworkGeoPositionObject.prototype = {
 };
 
 function NetworkGeolocationProvider() {
-  this.mode = "provider";
   
 
 
@@ -287,9 +290,7 @@ NetworkGeolocationProvider.prototype = {
   listener: null,
 
   get isWifiScanningEnabled() {
-    return Cc["@mozilla.org/wifi/monitor;1"] && this.mode == "provider"
-      ? this._wifiScanningEnabled
-      : this._wifiScanningEnabledCountry;
+    return Cc["@mozilla.org/wifi/monitor;1"] && this._wifiScanningEnabled;
   },
 
   resetTimer() {
@@ -362,30 +363,9 @@ NetworkGeolocationProvider.prototype = {
     
     this.resetTimer();
 
-    function isPublic(ap) {
-      let mask = "_nomap";
-      let result = ap.ssid.indexOf(mask, ap.ssid.length - mask.length);
-      if (result != -1) {
-        LOG("Filtering out " + ap.ssid + " " + result);
-        return false;
-      }
-      return true;
-    }
-
-    function sort(a, b) {
-      return b.signal - a.signal;
-    }
-
-    function encode(ap) {
-      return { macAddress: ap.mac, signalStrength: ap.signal };
-    }
-
     let wifiData = null;
     if (accessPoints) {
-      wifiData = accessPoints
-        .filter(isPublic)
-        .sort(sort)
-        .map(encode);
+      wifiData = LocationHelper.formatWifiAccessPoints(accessPoints);
     }
     this.sendLocationRequest(wifiData);
   },
@@ -424,48 +404,6 @@ NetworkGeolocationProvider.prototype = {
 
 
 
-  async getCountry(statusCallback) {
-    this.mode = "provider-country";
-
-    let self = this;
-    let promise = new Promise((resolve, reject) => {
-      this.watch({
-        update(country) {
-          resolve(country);
-          self.shutdown();
-        },
-        notifyError(code, message) {
-          reject(message);
-          self.shutdown();
-        },
-        notifyStatus(status) {
-          if (statusCallback) {
-            statusCallback(status);
-          }
-        },
-      });
-    }).finally(() => {
-      this.mode = "provider";
-    });
-
-    this.startup();
-    Services.tm.dispatchToMainThread(() => this.sendLocationRequest(null));
-
-    return promise;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -486,29 +424,23 @@ NetworkGeolocationProvider.prototype = {
       data.wifiAccessPoints = wifiData;
     }
 
-    
-    
-    if (this.mode == "provider") {
-      let useCached = isCachedRequestMoreAccurateThanServerRequest(
-        data.cellTowers,
-        data.wifiAccessPoints
-      );
+    let useCached = isCachedRequestMoreAccurateThanServerRequest(
+      data.cellTowers,
+      data.wifiAccessPoints
+    );
 
-      LOG("Use request cache:" + useCached + " reason:" + gDebugCacheReasoning);
+    LOG("Use request cache:" + useCached + " reason:" + gDebugCacheReasoning);
 
-      if (useCached) {
-        gCachedRequest.location.timestamp = Date.now();
-        if (this.listener) {
-          this.listener.update(gCachedRequest.location);
-        }
-        return;
+    if (useCached) {
+      gCachedRequest.location.timestamp = Date.now();
+      if (this.listener) {
+        this.listener.update(gCachedRequest.location);
       }
+      return;
     }
 
     
-    let url = Services.urlFormatter.formatURLPref(
-      "geo." + this.mode + ".network.url"
-    );
+    let url = Services.urlFormatter.formatURLPref("geo.provider.network.url");
     LOG("Sending request");
 
     let xhr = new XMLHttpRequest();
@@ -523,7 +455,6 @@ NetworkGeolocationProvider.prototype = {
     xhr.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
     xhr.responseType = "json";
     xhr.mozBackgroundRequest = true;
-    
     xhr.timeout = Services.prefs.getIntPref("geo.provider.network.timeout");
     xhr.ontimeout = () => {
       LOG("Location request XHR timed out.");
@@ -547,28 +478,21 @@ NetworkGeolocationProvider.prototype = {
         return;
       }
 
-      let newLocation;
-      if (this.mode == "provider-country") {
-        newLocation = xhr.response && xhr.response.country_code;
-      } else {
-        newLocation = new NetworkGeoPositionObject(
-          xhr.response.location.lat,
-          xhr.response.location.lng,
-          xhr.response.accuracy
-        );
-      }
+      let newLocation = new NetworkGeoPositionObject(
+        xhr.response.location.lat,
+        xhr.response.location.lng,
+        xhr.response.accuracy
+      );
 
       if (this.listener) {
         this.listener.update(newLocation);
       }
 
-      if (this.mode == "provider") {
-        gCachedRequest = new CachedRequest(
-          newLocation,
-          data.cellTowers,
-          data.wifiAccessPoints
-        );
-      }
+      gCachedRequest = new CachedRequest(
+        newLocation,
+        data.cellTowers,
+        data.wifiAccessPoints
+      );
     };
 
     var requestData = JSON.stringify(data);

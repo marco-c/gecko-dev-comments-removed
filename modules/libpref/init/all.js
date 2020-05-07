@@ -3999,8 +3999,6 @@ pref("network.psl.onUpdate_notify", false);
   pref("geo.provider.network.url", "https://location.services.mozilla.com/v1/geolocate?key=%MOZILLA_API_KEY%");
 #endif
 
-pref("geo.provider-country.network.url", "https://location.services.mozilla.com/v1/country?key=%MOZILLA_API_KEY%");
-pref("geo.provider-country.network.scan", false);
 
 pref("geo.provider.network.timeToWaitBeforeSending", 5000);
 
@@ -4018,6 +4016,14 @@ pref("geo.provider.network.timeout", 60000);
 #if defined(MOZ_WIDGET_GTK) && defined(MOZ_GPSD)
   pref("geo.provider.use_gpsd", true);
 #endif
+
+
+pref("browser.region.log", false);
+pref("browser.region.network.url", "https://location.services.mozilla.com/v1/country?key=%MOZILLA_API_KEY%");
+
+pref("browser.region.network.scan", false);
+
+pref("browser.region.timeout", 5000);
 
 
 pref("device.storage.enabled", false);
