@@ -148,8 +148,14 @@ void CreateElementTransaction::InsertNewNode(ErrorResult& aError) {
     return;
   }
 
-  if (NS_WARN_IF(mPointToInsert.GetContainer() !=
-                 mPointToInsert.GetChild()->GetParentNode())) {
+  
+  
+  if (NS_WARN_IF(mPointToInsert.GetChild() &&
+                 mPointToInsert.GetContainer() !=
+                     mPointToInsert.GetChild()->GetParentNode())) {
+    
+    
+    
     aError.Throw(NS_ERROR_FAILURE);
     return;
   }
