@@ -2,8 +2,8 @@
 
 
 
-#ifndef DOM_MEDIA_MEDIACONTROL_PLAYBACKCONTROLLER_H_
-#define DOM_MEDIA_MEDIACONTROL_PLAYBACKCONTROLLER_H_
+#ifndef DOM_MEDIA_MEDIACONTROL_CONTENTPLAYBACKCONTROLLER_H_
+#define DOM_MEDIA_MEDIACONTROL_CONTENTPLAYBACKCONTROLLER_H_
 
 #include "MediaControlKeysEvent.h"
 #include "nsPIDOMWindow.h"
@@ -33,10 +33,10 @@ class MediaSession;
 
 
 
-class MOZ_STACK_CLASS PlaybackController {
+class MOZ_STACK_CLASS ContentPlaybackController {
  public:
-  explicit PlaybackController(BrowsingContext* aContext);
-  ~PlaybackController() = default;
+  explicit ContentPlaybackController(BrowsingContext* aContext);
+  ~ContentPlaybackController() = default;
 
   void Focus();
   void Play();
