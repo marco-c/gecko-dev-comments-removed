@@ -832,11 +832,15 @@ nsresult nsMixedContentBlocker::ShouldLoad(
 
   
   
-  RefPtr<BrowsingContext> bc = docShell->GetBrowsingContext();
-  RefPtr<BrowsingContext> rootBC = bc->Top();
-  bool rootHasSecureConnection = rootBC->GetIsSecure();
-  WindowContext* topWC = bc->GetTopWindowContext();
-  bool allowMixedContent = topWC->GetAllowMixedContent();
+  bool rootHasSecureConnection =
+      docShell->GetBrowsingContext()->Top()->GetIsSecure();
+  bool allowMixedContent = false;
+  nsresult rv =
+      docShell->GetAllowMixedContentAndConnectionData(&allowMixedContent);
+  if (NS_FAILED(rv)) {
+    *aDecision = REJECT_REQUEST;
+    return rv;
+  }
 
   
   
@@ -858,7 +862,8 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   }
 
   
-  nsCOMPtr<nsIDocShell> rootShell = rootBC->GetDocShell();
+  nsCOMPtr<nsIDocShell> rootShell =
+      docShell->GetBrowsingContext()->Top()->GetDocShell();
   nsCOMPtr<Document> rootDoc = rootShell ? rootShell->GetDocument() : nullptr;
 
   

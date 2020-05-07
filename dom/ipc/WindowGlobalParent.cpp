@@ -82,8 +82,6 @@ void WindowGlobalParent::Init(const WindowGlobalInit& aInit) {
   
   WindowContext::Init();
 
-  WindowContext::SetAllowMixedContent(aInit.allowMixedContent());
-
   
   dom::ContentParentId processId(0);
   ContentParent* cp = nullptr;
