@@ -2027,10 +2027,6 @@ GeneralParser<ParseHandler, Unit>::functionBody(InHandling inHandling,
   uint32_t startYieldOffset = pc_->lastYieldOffset;
 #endif
 
-  
-  
-  
-
   Node body;
   if (type == StatementListBody) {
     bool inheritedStrict = pc_->sc()->strict();
