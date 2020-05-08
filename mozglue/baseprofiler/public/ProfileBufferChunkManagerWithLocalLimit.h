@@ -98,19 +98,19 @@ class ProfileBufferChunkManagerWithLocalLimit final
     size_t bytes = 0;
     for (const ProfileBufferChunk* chunk = aChunks.get(); chunk;
          chunk = chunk->GetNext()) {
-      bytes += chunk->ChunkBytes();
+      bytes += chunk->BufferBytes();
     }
     
-    mUnreleasedBytes -= bytes;
+    mUnreleasedBufferBytes -= bytes;
     if (!mReleasedChunks) {
       
-      MOZ_ASSERT(mReleasedBytes == 0);
-      mReleasedBytes = bytes;
+      MOZ_ASSERT(mReleasedBufferBytes == 0);
+      mReleasedBufferBytes = bytes;
       mReleasedChunks = std::move(aChunks);
     } else {
       
       
-      mReleasedBytes += bytes;
+      mReleasedBufferBytes += bytes;
       mReleasedChunks->SetLast(std::move(aChunks));
     }
   }
@@ -126,14 +126,14 @@ class ProfileBufferChunkManagerWithLocalLimit final
   [[nodiscard]] UniquePtr<ProfileBufferChunk> GetExtantReleasedChunks() final {
     baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
     MOZ_ASSERT(mUser, "Not registered yet");
-    mReleasedBytes = 0;
+    mReleasedBufferBytes = 0;
     return std::move(mReleasedChunks);
   }
 
   void ForgetUnreleasedChunks() final {
     baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
     MOZ_ASSERT(mUser, "Not registered yet");
-    mUnreleasedBytes = 0;
+    mUnreleasedBufferBytes = 0;
   }
 
   [[nodiscard]] size_t SizeOfExcludingThis(
@@ -172,16 +172,17 @@ class ProfileBufferChunkManagerWithLocalLimit final
     
     
     
-    while (mReleasedBytes + mUnreleasedBytes + mChunkMinBufferBytes >=
+    while (mReleasedBufferBytes + mUnreleasedBufferBytes +
+                   mChunkMinBufferBytes >=
                mMaxTotalBytes &&
-           mReleasedBytes != 0) {
+           mReleasedBufferBytes != 0) {
       MOZ_ASSERT(!!mReleasedChunks);
       
       
       UniquePtr<ProfileBufferChunk> oldest =
           std::exchange(mReleasedChunks, mReleasedChunks->ReleaseNext());
       
-      mReleasedBytes -= oldest->ChunkBytes();
+      mReleasedBufferBytes -= oldest->BufferBytes();
       if (mChunkDestroyedCallback) {
         
         mChunkDestroyedCallback(*oldest);
@@ -203,7 +204,7 @@ class ProfileBufferChunkManagerWithLocalLimit final
 
     if (chunk) {
       
-      mUnreleasedBytes += chunk->ChunkBytes();
+      mUnreleasedBufferBytes += chunk->BufferBytes();
     }
 
     return chunk;
@@ -232,11 +233,11 @@ class ProfileBufferChunkManagerWithLocalLimit final
 
   
   
-  size_t mUnreleasedBytes = 0;
+  size_t mUnreleasedBufferBytes = 0;
 
   
   
-  size_t mReleasedBytes = 0;
+  size_t mReleasedBufferBytes = 0;
 
   
   
