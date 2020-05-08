@@ -452,6 +452,14 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   
   
+  bool IsVisibleToCSS(const gfxFontFamily& aFamily) const;
+  bool IsVisibleToCSS(const mozilla::fontlist::Family& aFamily) const;
+
+  
+  void SetVisibilityLevel();
+
+  
+  
   
   
   
@@ -599,20 +607,20 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   gfxFontEntry* CommonFontFallback(uint32_t aCh, uint32_t aNextCh,
                                    Script aRunScript,
                                    const gfxFontStyle* aMatchStyle,
-                                   FontFamily* aMatchedFamily);
+                                   FontFamily& aMatchedFamily);
 
   
   gfxFontEntry* GlobalFontFallback(const uint32_t aCh, Script aRunScript,
                                    const gfxFontStyle* aMatchStyle,
                                    uint32_t& aCmapCount,
-                                   FontFamily* aMatchedFamily);
+                                   FontFamily& aMatchedFamily);
 
   
   
   
   virtual gfxFontEntry* PlatformGlobalFontFallback(
       const uint32_t aCh, Script aRunScript, const gfxFontStyle* aMatchStyle,
-      FontFamily* aMatchedFamily) {
+      FontFamily& aMatchedFamily) {
     return nullptr;
   }
 
@@ -821,6 +829,8 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
       mFontEntries;
 
   RefPtr<gfxFontEntry> mDefaultFontEntry;
+
+  FontVisibility mVisibilityLevel = FontVisibility::Base;
 
   bool mFontFamilyWhitelistActive;
 };
