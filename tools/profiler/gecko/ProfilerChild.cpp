@@ -8,6 +8,7 @@
 
 #include "GeckoProfiler.h"
 #include "platform.h"
+#include "ProfilerParent.h"
 
 #include "nsThreadUtils.h"
 
@@ -20,6 +21,125 @@ ProfilerChild::ProfilerChild()
 
 ProfilerChild::~ProfilerChild() { MOZ_COUNT_DTOR(ProfilerChild); }
 
+void ProfilerChild::ResolveChunkUpdate(
+    PProfilerChild::AwaitNextChunkManagerUpdateResolver& aResolve) {
+  MOZ_ASSERT(!!aResolve,
+             "ResolveChunkUpdate should only be called when there's a pending "
+             "resolver");
+  MOZ_ASSERT(
+      !mChunkManagerUpdate.IsNotUpdate(),
+      "ResolveChunkUpdate should only be called with a real or final update");
+  MOZ_ASSERT(
+      !mDestroyed,
+      "ResolveChunkUpdate should not be called if the actor was destroyed");
+  if (mChunkManagerUpdate.IsFinal()) {
+    
+    
+    std::move(aResolve)(ProfilerParent::MakeFinalUpdate());
+  } else {
+    
+    
+    
+    
+    
+    ProfileBufferChunkManagerUpdate update{
+        mChunkManagerUpdate.UnreleasedBytes(),
+        mChunkManagerUpdate.ReleasedBytes(),
+        mChunkManagerUpdate.OldestDoneTimeStamp(),
+        {}};
+    update.newlyReleasedChunks().SetCapacity(
+        mChunkManagerUpdate.NewlyReleasedChunksRef().size());
+    for (const ProfileBufferControlledChunkManager::ChunkMetadata& chunk :
+         mChunkManagerUpdate.NewlyReleasedChunksRef()) {
+      update.newlyReleasedChunks().EmplaceBack(chunk.mDoneTimeStamp,
+                                               chunk.mBufferBytes);
+    }
+
+    std::move(aResolve)(update);
+
+    
+    
+    mChunkManagerUpdate.Clear();
+  }
+
+  
+  aResolve = nullptr;
+}
+
+void ProfilerChild::ChunkManagerUpdateCallback(
+    ProfileBufferControlledChunkManager::Update&& aUpdate) {
+  if (mDestroyed) {
+    return;
+  }
+  
+  mChunkManagerUpdate.Fold(std::move(aUpdate));
+  if (mAwaitNextChunkManagerUpdateResolver) {
+    
+    ResolveChunkUpdate(mAwaitNextChunkManagerUpdateResolver);
+  }
+}
+
+void ProfilerChild::SetupChunkManager() {
+  mChunkManager = profiler_get_controlled_chunk_manager();
+  if (NS_WARN_IF(!mChunkManager)) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  mThread->Dispatch(NS_NewRunnableFunction(
+      "ChunkManagerUpdate Callback", [profilerChild = RefPtr(this)]() mutable {
+        profilerChild->mChunkManagerUpdate.Clear();
+      }));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  AddRef();
+  mChunkManager->SetUpdateCallback(
+      
+      [profilerChildPtr = static_cast<void*>(this)](
+          ProfileBufferControlledChunkManager::Update&& aUpdate) {
+        
+        
+        ProfilerChild* profilerChild =
+            static_cast<ProfilerChild*>(profilerChildPtr);
+        profilerChild->mThread->Dispatch(NS_NewRunnableFunction(
+            "ChunkManagerUpdate Callback",
+            [profilerChildPtr, update = std::move(aUpdate)]() mutable {
+              ProfilerChild* profilerChild =
+                  static_cast<ProfilerChild*>(profilerChildPtr);
+              const bool isFinal = update.IsFinal();
+              profilerChild->ChunkManagerUpdateCallback(std::move(update));
+              if (isFinal) {
+                profilerChild->Release();
+              }
+            }));
+      });
+}
+
+void ProfilerChild::ResetChunkManager() {
+  if (mChunkManager) {
+    
+    
+    mChunkManager->SetUpdateCallback({});
+  } else if (!mChunkManagerUpdate.IsFinal()) {
+    
+    mChunkManagerUpdate.Fold(
+        ProfileBufferControlledChunkManager::Update(nullptr));
+  }
+  mChunkManager = nullptr;
+  mAwaitNextChunkManagerUpdateResolver = nullptr;
+}
+
 mozilla::ipc::IPCResult ProfilerChild::RecvStart(
     const ProfilerInitParams& params) {
   nsTArray<const char*> filterArray;
@@ -31,6 +151,8 @@ mozilla::ipc::IPCResult ProfilerChild::RecvStart(
                  params.features(), filterArray.Elements(),
                  filterArray.Length(), params.activeBrowsingContextID(),
                  params.duration());
+
+  SetupChunkManager();
 
   return IPC_OK();
 }
@@ -47,10 +169,13 @@ mozilla::ipc::IPCResult ProfilerChild::RecvEnsureStarted(
                           filterArray.Length(),
                           params.activeBrowsingContextID(), params.duration());
 
+  SetupChunkManager();
+
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult ProfilerChild::RecvStop() {
+  ResetChunkManager();
   profiler_stop();
   return IPC_OK();
 }
@@ -85,13 +210,23 @@ static nsCString CollectProfileOrEmptyString(bool aIsShuttingDown) {
 
 mozilla::ipc::IPCResult ProfilerChild::RecvAwaitNextChunkManagerUpdate(
     AwaitNextChunkManagerUpdateResolver&& aResolve) {
-  
+  MOZ_ASSERT(!mDestroyed,
+             "Recv... should not be called if the actor was destroyed");
+  if (mChunkManagerUpdate.IsNotUpdate()) {
+    
+    mAwaitNextChunkManagerUpdateResolver = std::move(aResolve);
+  } else {
+    
+    ResolveChunkUpdate(aResolve);
+  }
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult ProfilerChild::RecvDestroyReleasedChunksAtOrBefore(
     const TimeStamp& aTimeStamp) {
-  
+  if (mChunkManager) {
+    mChunkManager->DestroyChunksAtOrBefore(aTimeStamp);
+  }
   return IPC_OK();
 }
 
@@ -117,6 +252,7 @@ void ProfilerChild::ActorDestroy(ActorDestroyReason aActorDestroyReason) {
 }
 
 void ProfilerChild::Destroy() {
+  ResetChunkManager();
   if (!mDestroyed) {
     Close();
   }
