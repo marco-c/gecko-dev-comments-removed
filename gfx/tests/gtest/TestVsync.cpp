@@ -127,6 +127,9 @@ TEST_F(VsyncTester, CompositorGetVsyncNotifications) {
 
   vsyncDispatcher = nullptr;
   testVsyncObserver = nullptr;
+
+  globalDisplay.DisableVsync();
+  ASSERT_FALSE(globalDisplay.IsVsyncEnabled());
 }
 
 
@@ -154,6 +157,9 @@ TEST_F(VsyncTester, ParentRefreshDriverGetVsyncNotifications) {
 
   vsyncDispatcher = nullptr;
   testVsyncObserver = nullptr;
+
+  globalDisplay.DisableVsync();
+  ASSERT_FALSE(globalDisplay.IsVsyncEnabled());
 }
 
 
@@ -180,6 +186,9 @@ TEST_F(VsyncTester, ChildRefreshDriverGetVsyncNotifications) {
 
   vsyncDispatcher = nullptr;
   testVsyncObserver = nullptr;
+
+  globalDisplay.DisableVsync();
+  ASSERT_FALSE(globalDisplay.IsVsyncEnabled());
 }
 
 
@@ -188,15 +197,7 @@ TEST_F(VsyncTester, VsyncSourceHasVsyncRate) {
   TimeDuration vsyncRate = globalDisplay.GetVsyncRate();
   ASSERT_NE(vsyncRate, TimeDuration::Forever());
   ASSERT_GT(vsyncRate.ToMilliseconds(), 0);
-}
 
-
-
-
-
-
-TEST_F(VsyncTester, DisableVsync) {
-  VsyncSource::Display& globalDisplay = mVsyncSource->GetGlobalDisplay();
   globalDisplay.DisableVsync();
   ASSERT_FALSE(globalDisplay.IsVsyncEnabled());
 }
