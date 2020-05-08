@@ -59,6 +59,12 @@ class PerformanceNavigationTiming final : public PerformanceResourceTiming {
   void UpdatePropertiesFromHttpChannel(nsIHttpChannel* aHttpChannel,
                                        nsITimedChannel* aChannel);
 
+  
+
+
+
+  static bool Enabled(JSContext* aCx, JSObject* aGlobal);
+
  private:
   ~PerformanceNavigationTiming() = default;
 };
