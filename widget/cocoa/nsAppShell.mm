@@ -83,6 +83,8 @@ class MacWakeLockListener final : public nsIDOMMozWakeLockListener {
         shouldKeepDisplayOn ? kIOPMAssertionTypeNoDisplaySleep : kIOPMAssertionTypeNoIdleSleep;
     IOPMAssertionID& assertionId =
         shouldKeepDisplayOn ? mAssertionNoDisplaySleepID : mAssertionNoIdleSleepID;
+    WAKE_LOCK_LOG("topic=%s, shouldKeepDisplayOn=%d", NS_ConvertUTF16toUTF8(aTopic).get(),
+                  shouldKeepDisplayOn);
 
     
     
