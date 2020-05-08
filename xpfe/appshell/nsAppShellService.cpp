@@ -409,6 +409,15 @@ WindowlessBrowser::Close() {
 }
 
 NS_IMETHODIMP
+WindowlessBrowser::GetBrowsingContext(BrowsingContext** aBrowsingContext) {
+  nsCOMPtr<nsIDocShellTreeItem> docShellTreeItem = do_QueryInterface(mBrowser);
+  if (!docShellTreeItem) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+  return docShellTreeItem->GetBrowsingContextXPCOM(aBrowsingContext);
+}
+
+NS_IMETHODIMP
 WindowlessBrowser::GetDocShell(nsIDocShell** aDocShell) {
   nsCOMPtr<nsIDocShell> docShell = do_GetInterface(mInterfaceRequestor);
   if (!docShell) {
@@ -457,8 +466,7 @@ nsAppShellService::CreateWindowlessBrowser(bool aIsChrome,
 
 
   nsCOMPtr<nsIWebBrowser> browser = nsWebBrowser::Create(
-      stub, widget, browsingContext, nullptr ,
-      true );
+      stub, widget, browsingContext, nullptr );
 
   if (NS_WARN_IF(!browser)) {
     NS_ERROR("Couldn't create instance of nsWebBrowser!");

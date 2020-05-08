@@ -323,11 +323,6 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateIndependent(
   return bc.forget();
 }
 
-void BrowsingContext::SetWindowless() {
-  MOZ_DIAGNOSTIC_ASSERT(!mEverAttached);
-  mWindowless = true;
-}
-
 void BrowsingContext::EnsureAttached() {
   if (!mEverAttached) {
     Register(this);
@@ -1963,6 +1958,7 @@ void BrowsingContext::DidSet(FieldIndex<IDX_DefaultLoadFlags>) {
 bool BrowsingContext::CanSet(FieldIndex<IDX_UseGlobalHistory>,
                              const bool& aUseGlobalHistory,
                              ContentParent* aSource) {
+  
   
   return true;
 }

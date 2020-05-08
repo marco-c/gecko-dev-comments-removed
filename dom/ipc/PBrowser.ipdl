@@ -968,13 +968,6 @@ child:
 
 
 
-    async SetUseGlobalHistory(bool aUse);
-
-    
-
-
-
-
 
 
 

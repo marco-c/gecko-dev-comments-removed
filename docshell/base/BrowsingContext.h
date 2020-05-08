@@ -220,7 +220,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool IsDiscarded() const { return mIsDiscarded; }
 
   bool Windowless() const { return mWindowless; }
-  void SetWindowless();
 
   
   
@@ -385,6 +384,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   float FullZoom() const { return GetFullZoom(); }
   float TextZoom() const { return GetTextZoom(); }
+
+  bool UseGlobalHistory() const { return GetUseGlobalHistory(); }
 
   bool IsLoading();
 
