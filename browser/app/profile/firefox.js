@@ -1033,15 +1033,7 @@ pref("dom.ipc.shims.enabledWarnings", false);
   
   
   
-  
-  
-  
-  
-#if defined(NIGHTLY_BUILD)
-  pref("security.sandbox.gpu.level", -1);
-#else
   pref("security.sandbox.gpu.level", 0);
-#endif
 
   
   
