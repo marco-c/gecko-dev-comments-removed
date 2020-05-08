@@ -14,6 +14,7 @@ class nsIProfilerStartParams;
 
 namespace mozilla {
 
+class ProfileBufferGlobalController;
 class ProfilerParentTracker;
 
 
@@ -61,17 +62,24 @@ class ProfilerParent final : public PProfilerParent {
   static void ProfilerResumed();
   static void ClearAllPages();
 
+  
+  static ProfileBufferChunkManagerUpdate MakeFinalUpdate();
+
  private:
+  friend class ProfileBufferGlobalController;
   friend class ProfilerParentTracker;
 
-  ProfilerParent();
+  explicit ProfilerParent(base::ProcessId aChildPid);
   virtual ~ProfilerParent();
 
   void Init();
   void ActorDestroy(ActorDestroyReason aActorDestroyReason) override;
   void ActorDealloc() override;
 
+  void RequestChunkManagerUpdate();
+
   RefPtr<ProfilerParent> mSelfRef;
+  base::ProcessId mChildPid;
   nsTArray<MozPromiseHolder<SingleProcessProfilePromise>>
       mPendingRequestedProfiles;
   bool mDestroyed;
