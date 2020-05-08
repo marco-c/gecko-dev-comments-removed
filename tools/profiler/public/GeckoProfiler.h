@@ -285,18 +285,18 @@ bool IsThreadBeingProfiled();
 
 static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_ENTRIES =
 #  if !defined(ARCH_ARMV6)
-    mozilla::MakePowerOfTwo32<1u << 20>();  
+    mozilla::MakePowerOfTwo32<8 * 1024 * 1024>();  
 #  else
-    mozilla::MakePowerOfTwo32<1u << 17>();  // 131'072 entries = 1MB
+    mozilla::MakePowerOfTwo32<512 * 1024>();  // 512k entries = 4MB
 #  endif
 
 
 
 static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_STARTUP_ENTRIES =
 #  if !defined(ARCH_ARMV6)
-    mozilla::MakePowerOfTwo32<1u << 23>();  
+    mozilla::MakePowerOfTwo32<64 * 1024 * 1024>();  
 #  else
-    mozilla::MakePowerOfTwo32<1u << 17>();  
+    mozilla::MakePowerOfTwo32<512 * 1024>();  
 #  endif
 
 #  define PROFILER_DEFAULT_DURATION 20 /* seconds, for tests only */
