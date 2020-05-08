@@ -457,8 +457,8 @@ nsAppShellService::CreateWindowlessBrowser(bool aIsChrome,
 
 
   nsCOMPtr<nsIWebBrowser> browser = nsWebBrowser::Create(
-      stub, widget, OriginAttributes(), browsingContext,
-      nullptr , true );
+      stub, widget, browsingContext, nullptr ,
+      true );
 
   if (NS_WARN_IF(!browser)) {
     NS_ERROR("Couldn't create instance of nsWebBrowser!");

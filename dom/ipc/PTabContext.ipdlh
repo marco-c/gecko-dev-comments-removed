@@ -25,9 +25,6 @@ struct PopupIPCTabContext
 
 struct FrameIPCTabContext
 {
-  
-  OriginAttributes originAttributes;
-
   uint64_t chromeOuterWindowID;
 
   
