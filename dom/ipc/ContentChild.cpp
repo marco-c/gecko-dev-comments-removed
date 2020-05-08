@@ -859,6 +859,14 @@ nsresult ContentChild::ProvideWindowCommon(
   nsresult rv;
 
   RefPtr<BrowsingContext> parent = aOpenWindowInfo->GetParent();
+  MOZ_DIAGNOSTIC_ASSERT(parent, "We must have a parent BC");
+
+  
+  
+  
+  if (NS_WARN_IF(!parent->UseRemoteTabs())) {
+    return NS_ERROR_ABORT;
+  }
 
   
   
