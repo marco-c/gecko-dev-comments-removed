@@ -149,13 +149,23 @@ function makeRuleset(coeffs, biases) {
 
     const parentElement = element.parentElement;
     
-    if (parentElement.tagName === "TD") {
+    if (
+      
+      parentElement &&
+      parentElement.tagName === "TD" &&
+      parentElement.parentElement
+    ) {
       
       return regex.test(parentElement.parentElement.textContent);
     }
 
     
-    if (parentElement.tagName === "DD") {
+    if (
+      parentElement &&
+      parentElement.tagName === "DD" &&
+      
+      parentElement.previousElementSibling
+    ) {
       return regex.test(parentElement.previousElementSibling.textContent);
     }
     return false;
