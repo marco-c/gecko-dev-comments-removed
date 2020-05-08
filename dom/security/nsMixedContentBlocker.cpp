@@ -15,6 +15,7 @@
 #include "nsIWebProgressListener.h"
 #include "nsContentUtils.h"
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/Document.h"
 #include "nsIChannel.h"
 #include "nsIParentChannel.h"
@@ -510,8 +511,8 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   nsCOMPtr<nsISupports> requestingContext = aLoadInfo->GetLoadingContext();
   nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadInfo->GetLoadingPrincipal();
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = aLoadInfo->TriggeringPrincipal();
-
-  bool isPreload = nsContentUtils::IsPreloadType(contentType);
+  RefPtr<WindowContext> requestingWindow =
+      WindowContext::GetById(aLoadInfo->GetInnerWindowID());
 
   
   
@@ -786,10 +787,9 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   }
   
   NS_ENSURE_TRUE(docShell, NS_OK);
+  NS_ENSURE_TRUE(requestingWindow, NS_OK);
 
-  Document* document = docShell->GetDocument();
-  MOZ_ASSERT(document, "Expected a document");
-  if (isHttpScheme && document->GetUpgradeInsecureRequests(isPreload)) {
+  if (isHttpScheme && aLoadInfo->GetUpgradeInsecureRequests()) {
     *aDecision = ACCEPT;
     return NS_OK;
   }
@@ -812,7 +812,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   
-  if (document->GetBlockAllMixedContent(isPreload)) {
+  if (aLoadInfo->GetBlockAllMixedContent()) {
     
     nsAutoCString spec;
     nsresult rv = aContentLocation->GetSpec(spec);
@@ -821,25 +821,23 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     AutoTArray<nsString, 1> params;
     CopyUTF8toUTF16(spec, *params.AppendElement());
 
-    CSP_LogLocalizedStr(
-        "blockAllMixedContent", params,
-        EmptyString(),  
-        EmptyString(),  
-        0,              
-        0,              
-        nsIScriptError::errorFlag, NS_LITERAL_CSTRING("blockAllMixedContent"),
-        document->InnerWindowID(),
-        !!document->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId);
+    CSP_LogLocalizedStr("blockAllMixedContent", params,
+                        EmptyString(),  
+                        EmptyString(),  
+                        0,              
+                        0,              
+                        nsIScriptError::errorFlag,
+                        NS_LITERAL_CSTRING("blockAllMixedContent"),
+                        requestingWindow->Id(),
+                        !!aLoadInfo->GetOriginAttributes().mPrivateBrowsingId);
     *aDecision = REJECT_REQUEST;
     return NS_OK;
   }
 
   
   
-  RefPtr<BrowsingContext> bc = docShell->GetBrowsingContext();
-  RefPtr<BrowsingContext> rootBC = bc->Top();
-  bool rootHasSecureConnection = rootBC->GetIsSecure();
-  WindowContext* topWC = bc->GetTopWindowContext();
+  WindowContext* topWC = requestingWindow->TopWindowContext();
+  bool rootHasSecureConnection = topWC->GetBrowsingContext()->GetIsSecure();
   bool allowMixedContent = topWC->GetAllowMixedContent();
 
   
@@ -848,11 +846,10 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   if (contentType == TYPE_SUBDOCUMENT && !rootHasSecureConnection) {
     bool httpsParentExists = false;
 
-    RefPtr<BrowsingContext> curBC = docShell->GetBrowsingContext();
-
-    while (!httpsParentExists && curBC) {
-      httpsParentExists = curBC->GetIsSecure();
-      curBC = curBC->GetParent();
+    RefPtr<WindowContext> curWindow = requestingWindow;
+    while (!httpsParentExists && curWindow) {
+      httpsParentExists = curWindow->GetBrowsingContext()->GetIsSecure();
+      curWindow = curWindow->GetParentWindowContext();
     }
 
     if (!httpsParentExists) {
@@ -862,7 +859,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   }
 
   
-  nsCOMPtr<nsIDocShell> rootShell = rootBC->GetDocShell();
+  nsCOMPtr<nsIDocShell> rootShell = topWC->GetBrowsingContext()->GetDocShell();
   nsCOMPtr<Document> rootDoc = rootShell ? rootShell->GetDocument() : nullptr;
 
   
