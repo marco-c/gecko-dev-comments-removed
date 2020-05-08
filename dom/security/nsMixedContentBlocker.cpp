@@ -328,19 +328,12 @@ nsMixedContentBlocker::ShouldLoad(nsIURI* aContentLocation,
                                   nsILoadInfo* aLoadInfo,
                                   const nsACString& aMimeGuess,
                                   int16_t* aDecision) {
-  uint32_t contentType = aLoadInfo->InternalContentPolicyType();
-  nsCOMPtr<nsISupports> requestingContext = aLoadInfo->GetLoadingContext();
-  nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadInfo->GetLoadingPrincipal();
-  nsCOMPtr<nsIPrincipal> triggeringPrincipal = aLoadInfo->TriggeringPrincipal();
-
   
   
   
   
-  nsresult rv =
-      ShouldLoad(false,  
-                 contentType, aContentLocation, loadingPrincipal,
-                 triggeringPrincipal, requestingContext, aMimeGuess, aDecision);
+  nsresult rv = ShouldLoad(false,  
+                           aContentLocation, aLoadInfo, aMimeGuess, aDecision);
 
   if (*aDecision == nsIContentPolicy::REJECT_REQUEST) {
     NS_SetRequestBlockingReason(aLoadInfo,
@@ -502,28 +495,33 @@ bool nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(nsIURI* aURI) {
 
 
 
-nsresult nsMixedContentBlocker::ShouldLoad(
-    bool aHadInsecureImageRedirect, uint32_t aContentType,
-    nsIURI* aContentLocation, nsIPrincipal* aLoadingPrincipal,
-    nsIPrincipal* aTriggeringPrincipal, nsISupports* aRequestingContext,
-    const nsACString& aMimeGuess, int16_t* aDecision) {
+nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
+                                           nsIURI* aContentLocation,
+                                           nsILoadInfo* aLoadInfo,
+                                           const nsACString& aMimeGuess,
+                                           int16_t* aDecision) {
   
   
   
   
   MOZ_ASSERT(NS_IsMainThread());
 
-  bool isPreload = nsContentUtils::IsPreloadType(aContentType);
+  uint32_t contentType = aLoadInfo->InternalContentPolicyType();
+  nsCOMPtr<nsISupports> requestingContext = aLoadInfo->GetLoadingContext();
+  nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadInfo->GetLoadingPrincipal();
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal = aLoadInfo->TriggeringPrincipal();
+
+  bool isPreload = nsContentUtils::IsPreloadType(contentType);
 
   
   
   
   bool isWorkerType =
-      aContentType == nsIContentPolicy::TYPE_INTERNAL_WORKER ||
-      aContentType == nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER ||
-      aContentType == nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER;
-  aContentType =
-      nsContentUtils::InternalContentPolicyTypeToExternal(aContentType);
+      contentType == nsIContentPolicy::TYPE_INTERNAL_WORKER ||
+      contentType == nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER ||
+      contentType == nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER;
+  contentType =
+      nsContentUtils::InternalContentPolicyTypeToExternal(contentType);
 
   
   MixedContentTypes classification = eMixedScript;
@@ -591,7 +589,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
                 "TYPE_DATAREQUEST is not a synonym for "
                 "TYPE_XMLHTTPREQUEST");
 
-  switch (aContentType) {
+  switch (contentType) {
     
     case TYPE_DOCUMENT:
       *aDecision = ACCEPT;
@@ -687,13 +685,13 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   
   
   
-  if (aTriggeringPrincipal) {
-    if (aTriggeringPrincipal->IsSystemPrincipal()) {
+  if (triggeringPrincipal) {
+    if (triggeringPrincipal->IsSystemPrincipal()) {
       *aDecision = ACCEPT;
       return NS_OK;
     }
     nsCOMPtr<nsIExpandedPrincipal> expanded =
-        do_QueryInterface(aTriggeringPrincipal);
+        do_QueryInterface(triggeringPrincipal);
     if (expanded) {
       *aDecision = ACCEPT;
       return NS_OK;
@@ -704,12 +702,12 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   
   
   nsCOMPtr<nsIURI> requestingLocation;
-  auto* baseLoadingPrincipal = BasePrincipal::Cast(aLoadingPrincipal);
+  auto* baseLoadingPrincipal = BasePrincipal::Cast(loadingPrincipal);
   if (baseLoadingPrincipal) {
     baseLoadingPrincipal->GetURI(getter_AddRefs(requestingLocation));
   }
   if (!requestingLocation) {
-    auto* baseTriggeringPrincipal = BasePrincipal::Cast(aTriggeringPrincipal);
+    auto* baseTriggeringPrincipal = BasePrincipal::Cast(triggeringPrincipal);
     if (baseTriggeringPrincipal) {
       baseTriggeringPrincipal->GetURI(getter_AddRefs(requestingLocation));
     }
@@ -778,11 +776,11 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   
 
   nsCOMPtr<nsIDocShell> docShell =
-      NS_CP_GetDocShellFromContext(aRequestingContext);
+      NS_CP_GetDocShellFromContext(requestingContext);
   
   
   if (XRE_IsParentProcess() && !docShell &&
-      (aContentType == TYPE_IMAGE || aContentType == TYPE_MEDIA)) {
+      (contentType == TYPE_IMAGE || contentType == TYPE_MEDIA)) {
     *aDecision = ACCEPT;
     return NS_OK;
   }
@@ -801,7 +799,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   
   
   bool isUpgradableDisplayType =
-      nsContentUtils::IsUpgradableDisplayType(aContentType) &&
+      nsContentUtils::IsUpgradableDisplayType(contentType) &&
       StaticPrefs::security_mixed_content_upgrade_display_content();
   if (isHttpScheme && isUpgradableDisplayType) {
     *aDecision = ACCEPT;
@@ -847,7 +845,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   
   
   
-  if (aContentType == TYPE_SUBDOCUMENT && !rootHasSecureConnection) {
+  if (contentType == TYPE_SUBDOCUMENT && !rootHasSecureConnection) {
     bool httpsParentExists = false;
 
     RefPtr<BrowsingContext> curBC = docShell->GetBrowsingContext();
@@ -908,10 +906,10 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   nsresult stateRV = securityUI->GetState(&state);
 
   OriginAttributes originAttributes;
-  if (aLoadingPrincipal) {
-    originAttributes = aLoadingPrincipal->OriginAttributesRef();
-  } else if (aTriggeringPrincipal) {
-    originAttributes = aTriggeringPrincipal->OriginAttributesRef();
+  if (loadingPrincipal) {
+    originAttributes = loadingPrincipal->OriginAttributesRef();
+  } else if (triggeringPrincipal) {
+    originAttributes = triggeringPrincipal->OriginAttributesRef();
   }
 
   
@@ -943,7 +941,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   }
 
   
-  if (aContentType == TYPE_OBJECT_SUBREQUEST) {
+  if (contentType == TYPE_OBJECT_SUBREQUEST) {
     if (!StaticPrefs::security_mixed_content_block_object_subrequest()) {
       rootDoc->WarnOnceAbout(Document::eMixedDisplayObjectSubrequest);
     }
@@ -978,7 +976,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
         }
 
         nativeDocShell->nsDocLoader::OnSecurityChange(
-            aRequestingContext,
+            requestingContext,
             (state |
              nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT));
       } else {
@@ -986,7 +984,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
         
         if (NS_SUCCEEDED(stateRV)) {
           nativeDocShell->nsDocLoader::OnSecurityChange(
-              aRequestingContext,
+              requestingContext,
               (state |
                nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT));
         }
@@ -999,7 +997,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
           NS_SUCCEEDED(stateRV)) {
         rootDoc->SetHasMixedDisplayContentBlocked(true);
         nativeDocShell->nsDocLoader::OnSecurityChange(
-            aRequestingContext,
+            requestingContext,
             (state |
              nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT));
       }
@@ -1034,7 +1032,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
         }
 
         nativeDocShell->nsDocLoader::OnSecurityChange(
-            aRequestingContext,
+            requestingContext,
             (state |
              nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT));
 
@@ -1044,7 +1042,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
         
         if (NS_SUCCEEDED(stateRV)) {
           nativeDocShell->nsDocLoader::OnSecurityChange(
-              aRequestingContext,
+              requestingContext,
               (state |
                nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT));
         }
@@ -1067,7 +1065,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
       
       if (NS_SUCCEEDED(stateRV)) {
         nativeDocShell->nsDocLoader::OnSecurityChange(
-            aRequestingContext,
+            requestingContext,
             (state |
              nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT));
       }
@@ -1083,7 +1081,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
     
     
     nsContentUtils::AddScriptRunner(new nsMixedContentEvent(
-        aRequestingContext, classification, rootHasSecureConnection));
+        requestingContext, classification, rootHasSecureConnection));
     *aDecision = ACCEPT;
     return NS_OK;
   }
