@@ -10,6 +10,7 @@
 #include "BaseProfiler.h"
 #include "mozilla/BaseProfilerDetail.h"
 #include "mozilla/ProfileBufferChunkManager.h"
+#include "mozilla/ProfileBufferControlledChunkManager.h"
 
 namespace mozilla {
 
@@ -27,7 +28,8 @@ namespace mozilla {
 
 
 class ProfileBufferChunkManagerWithLocalLimit final
-    : public ProfileBufferChunkManager {
+    : public ProfileBufferChunkManager,
+      public ProfileBufferControlledChunkManager {
  public:
   using Length = ProfileBufferChunk::Length;
 
@@ -38,6 +40,13 @@ class ProfileBufferChunkManagerWithLocalLimit final
                                                    Length aChunkMinBufferBytes)
       : mMaxTotalBytes(aMaxTotalBytes),
         mChunkMinBufferBytes(aChunkMinBufferBytes) {}
+
+  ~ProfileBufferChunkManagerWithLocalLimit() {
+    if (mUpdateCallback) {
+      
+      std::move(mUpdateCallback)(Update(nullptr));
+    }
+  }
 
   [[nodiscard]] size_t MaxTotalSize() const final {
     
@@ -95,10 +104,19 @@ class ProfileBufferChunkManagerWithLocalLimit final
     baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
     MOZ_ASSERT(mUser, "Not registered yet");
     
+    
+    const ProfileBufferChunk* const newlyReleasedChunks = aChunks.get();
+    
     size_t bytes = 0;
-    for (const ProfileBufferChunk* chunk = aChunks.get(); chunk;
+    for (const ProfileBufferChunk* chunk = newlyReleasedChunks; chunk;
          chunk = chunk->GetNext()) {
       bytes += chunk->BufferBytes();
+      MOZ_ASSERT(!chunk->ChunkHeader().mDoneTimeStamp.IsNull(),
+                 "All released chunks should have a 'Done' timestamp");
+      MOZ_ASSERT(
+          !chunk->GetNext() || (chunk->ChunkHeader().mDoneTimeStamp <
+                                chunk->GetNext()->ChunkHeader().mDoneTimeStamp),
+          "Released chunk groups must have increasing timestamps");
     }
     
     mUnreleasedBufferBytes -= bytes;
@@ -110,8 +128,16 @@ class ProfileBufferChunkManagerWithLocalLimit final
     } else {
       
       
+      MOZ_ASSERT(mReleasedChunks->Last()->ChunkHeader().mDoneTimeStamp <
+                     aChunks->ChunkHeader().mDoneTimeStamp,
+                 "Chunks must be released in increasing timestamps");
       mReleasedBufferBytes += bytes;
       mReleasedChunks->SetLast(std::move(aChunks));
+    }
+
+    if (mUpdateCallback) {
+      mUpdateCallback(Update(mUnreleasedBufferBytes, mReleasedBufferBytes,
+                             mReleasedChunks.get(), newlyReleasedChunks));
     }
   }
 
@@ -127,6 +153,9 @@ class ProfileBufferChunkManagerWithLocalLimit final
     baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
     MOZ_ASSERT(mUser, "Not registered yet");
     mReleasedBufferBytes = 0;
+    if (mUpdateCallback) {
+      mUpdateCallback(Update(mUnreleasedBufferBytes, 0, nullptr, nullptr));
+    }
     return std::move(mReleasedChunks);
   }
 
@@ -134,6 +163,10 @@ class ProfileBufferChunkManagerWithLocalLimit final
     baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
     MOZ_ASSERT(mUser, "Not registered yet");
     mUnreleasedBufferBytes = 0;
+    if (mUpdateCallback) {
+      mUpdateCallback(
+          Update(0, mReleasedBufferBytes, mReleasedChunks.get(), nullptr));
+    }
   }
 
   [[nodiscard]] size_t SizeOfExcludingThis(
@@ -147,6 +180,44 @@ class ProfileBufferChunkManagerWithLocalLimit final
     baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
     MOZ_ASSERT(mUser, "Not registered yet");
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf, lock);
+  }
+
+  void SetUpdateCallback(UpdateCallback&& aUpdateCallback) final {
+    baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
+    if (mUpdateCallback) {
+      
+      std::move(mUpdateCallback)(Update(nullptr));
+    }
+    mUpdateCallback = std::move(aUpdateCallback);
+    if (mUpdateCallback) {
+      mUpdateCallback(Update(mUnreleasedBufferBytes, mReleasedBufferBytes,
+                             mReleasedChunks.get(), nullptr));
+    }
+  }
+
+  void DestroyChunksAtOrBefore(TimeStamp aDoneTimeStamp) final {
+    MOZ_ASSERT(!aDoneTimeStamp.IsNull());
+    baseprofiler::detail::BaseProfilerAutoLock lock(mMutex);
+    for (;;) {
+      if (!mReleasedChunks) {
+        
+        break;
+      }
+      if (mReleasedChunks->ChunkHeader().mDoneTimeStamp > aDoneTimeStamp) {
+        
+        break;
+      }
+      
+      
+      UniquePtr<ProfileBufferChunk> oldest =
+          std::exchange(mReleasedChunks, mReleasedChunks->ReleaseNext());
+      mReleasedBufferBytes -= oldest->ChunkBytes();
+      if (mChunkDestroyedCallback) {
+        
+        mChunkDestroyedCallback(*oldest);
+      }
+      
+    }
   }
 
  protected:
@@ -205,6 +276,11 @@ class ProfileBufferChunkManagerWithLocalLimit final
     if (chunk) {
       
       mUnreleasedBufferBytes += chunk->BufferBytes();
+
+      if (mUpdateCallback) {
+        mUpdateCallback(Update(mUnreleasedBufferBytes, mReleasedBufferBytes,
+                               mReleasedChunks.get(), nullptr));
+      }
     }
 
     return chunk;
@@ -251,6 +327,8 @@ class ProfileBufferChunkManagerWithLocalLimit final
   
   
   std::function<void(UniquePtr<ProfileBufferChunk>)> mChunkReceiver;
+
+  UpdateCallback mUpdateCallback;
 };
 
 }  
