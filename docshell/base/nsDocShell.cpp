@@ -379,7 +379,6 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mIsOffScreenBrowser(false),
       mDisableMetaRefreshWhenInactive(false),
       mIsAppTab(false),
-      mUseGlobalHistory(false),
       mDeviceSizeIsPageSize(false),
       mWindowDraggingAllowed(false),
       mInFrameSwap(false),
@@ -2830,7 +2829,7 @@ nsDocShell::AddChild(nsIDocShellTreeItem* aChild) {
   childDocShell->SetChildOffset(dynamic ? -1 : mChildList.Length() - 1);
 
   
-  if (mUseGlobalHistory) {
+  if (mBrowsingContext->GetUseGlobalHistory()) {
     childDocShell->SetUseGlobalHistory(true);
   }
 
@@ -3009,7 +3008,7 @@ nsresult nsDocShell::AddChildSHEntryToParent(nsISHEntry* aNewEntry,
 
 NS_IMETHODIMP
 nsDocShell::SetUseGlobalHistory(bool aUseGlobalHistory) {
-  mUseGlobalHistory = aUseGlobalHistory;
+  mBrowsingContext->SetUseGlobalHistory(aUseGlobalHistory);
   if (!aUseGlobalHistory) {
     return NS_OK;
   }
@@ -3020,7 +3019,7 @@ nsDocShell::SetUseGlobalHistory(bool aUseGlobalHistory) {
 
 NS_IMETHODIMP
 nsDocShell::GetUseGlobalHistory(bool* aUseGlobalHistory) {
-  *aUseGlobalHistory = mUseGlobalHistory;
+  *aUseGlobalHistory = mBrowsingContext->GetUseGlobalHistory();
   return NS_OK;
 }
 
@@ -11232,7 +11231,8 @@ void nsDocShell::AddURIVisit(nsIURI* aURI, nsIURI* aPreviousURI,
 
   
   
-  if (mItemType != typeContent || !mUseGlobalHistory || UsePrivateBrowsing()) {
+  if (mItemType != typeContent || !mBrowsingContext->GetUseGlobalHistory() ||
+      UsePrivateBrowsing()) {
     return;
   }
 
@@ -12362,7 +12362,7 @@ bool nsDocShell::HasUnloadedParent() {
 }
 
 void nsDocShell::UpdateGlobalHistoryTitle(nsIURI* aURI) {
-  if (!mUseGlobalHistory || UsePrivateBrowsing()) {
+  if (!mBrowsingContext->GetUseGlobalHistory() || UsePrivateBrowsing()) {
     return;
   }
 
