@@ -642,13 +642,21 @@ class FirefoxLauncher {
 
       
       'focusmanager.testmode': true,
+
       
       'general.useragent.updates.enabled': false,
+
       
       
       'geo.provider.testing': true,
+
       
       'geo.wifi.scan': false,
+
+      
+      
+      'gfx.color_management.force_srgb': true,
+
       
       'hangmonitor.timeout': 0,
       
