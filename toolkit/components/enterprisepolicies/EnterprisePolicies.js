@@ -424,18 +424,16 @@ let InstallSources = null;
 
 
 function areEnterpriseOnlyPoliciesAllowed() {
-  if (Services.prefs.getBoolPref(PREF_DISALLOW_ENTERPRISE, false)) {
-    
-    
-    
-    return false;
+  if (Cu.isInAutomation || isXpcshell) {
+    if (Services.prefs.getBoolPref(PREF_DISALLOW_ENTERPRISE, false)) {
+      
+      
+      return false;
+    }
+    return true;
   }
 
-  if (
-    AppConstants.MOZ_UPDATE_CHANNEL != "release" ||
-    Cu.isInAutomation ||
-    isXpcshell
-  ) {
+  if (AppConstants.MOZ_UPDATE_CHANNEL != "release") {
     return true;
   }
 
