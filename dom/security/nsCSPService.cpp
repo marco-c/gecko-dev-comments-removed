@@ -19,6 +19,7 @@
 #include "nsContentUtils.h"
 #include "nsContentPolicyUtils.h"
 #include "nsNetUtil.h"
+#include "mozilla/net/DocumentLoadListener.h"
 
 using namespace mozilla;
 
@@ -230,10 +231,16 @@ CSPService::AsyncOnChannelRedirect(nsIChannel* oldChannel,
   if (XRE_IsE10sParentProcess()) {
     nsCOMPtr<nsIParentChannel> parentChannel;
     NS_QueryNotificationCallbacks(oldChannel, parentChannel);
+    RefPtr<net::DocumentLoadListener> docListener =
+        do_QueryObject(parentChannel);
     
     
     
-    if (parentChannel) {
+    
+    
+    
+    
+    if (parentChannel && !docListener) {
       return NS_OK;
     }
   }
