@@ -243,7 +243,8 @@ static uint32_t AvailableFeatures() {
 
 static uint32_t DefaultFeatures() {
   return ProfilerFeature::Java | ProfilerFeature::JS | ProfilerFeature::Leaf |
-         ProfilerFeature::StackWalk | ProfilerFeature::Threads;
+         ProfilerFeature::StackWalk | ProfilerFeature::Threads |
+         ProfilerFeature::Screenshots;
 }
 
 

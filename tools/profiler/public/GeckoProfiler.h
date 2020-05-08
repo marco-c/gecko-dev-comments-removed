@@ -293,7 +293,7 @@ static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_ENTRIES =
 
 static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_STARTUP_ENTRIES =
 #  if !defined(ARCH_ARMV6)
-    mozilla::MakePowerOfTwo32<1u << 22>();  
+    mozilla::MakePowerOfTwo32<1u << 23>();  
 #  else
     mozilla::MakePowerOfTwo32<1u << 17>();  
 #  endif
