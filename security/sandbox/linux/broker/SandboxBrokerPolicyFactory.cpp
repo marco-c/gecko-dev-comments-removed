@@ -254,6 +254,22 @@ static void AddLdconfigPaths(SandboxBroker::Policy* aPolicy) {
   AddPathsFromFile(aPolicy, ldConfig);
 }
 
+static void AddLdLibraryEnvPaths(SandboxBroker::Policy* aPolicy) {
+  nsAutoCString LdLibraryEnv(PR_GetEnv("LD_LIBRARY_PATH"));
+  
+  
+  
+  
+  LdLibraryEnv.ReplaceChar(';', ':');
+  for (const nsACString& libPath : LdLibraryEnv.Split(':')) {
+    char* resolvedPath = realpath(PromiseFlatCString(libPath).get(), nullptr);
+    if (resolvedPath) {
+      aPolicy->AddDir(rdonly, resolvedPath);
+      free(resolvedPath);
+    }
+  }
+}
+
 static void AddSharedMemoryPaths(SandboxBroker::Policy* aPolicy, pid_t aPid) {
   std::string shmPath("/dev/shm");
   if (base::SharedMemory::AppendPosixShmPrefix(&shmPath, aPid)) {
@@ -299,6 +315,7 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory() {
 
   AddMesaSysfsPaths(policy);
   AddLdconfigPaths(policy);
+  AddLdLibraryEnvPaths(policy);
 
   
   policy->AddPath(rdonly, "/proc/modules");
