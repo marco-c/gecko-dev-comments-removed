@@ -56,6 +56,7 @@ const unsigned short SVG_FECOMPONENTTRANSFER_TYPE_TABLE = 2;
 const unsigned short SVG_FECOMPONENTTRANSFER_TYPE_DISCRETE = 3;
 const unsigned short SVG_FECOMPONENTTRANSFER_TYPE_LINEAR = 4;
 const unsigned short SVG_FECOMPONENTTRANSFER_TYPE_GAMMA = 5;
+const unsigned short SVG_FECOMPONENTTRANSFER_SAME_AS_R = 6;
 
 
 const unsigned short SVG_FEBLEND_MODE_UNKNOWN = 0;
