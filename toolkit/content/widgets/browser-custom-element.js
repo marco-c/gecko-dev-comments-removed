@@ -303,7 +303,13 @@
 
 
 
-      this._sameProcessAsFrameLoader = null;
+
+
+
+
+      if (this.mInitialized) {
+        this._sameProcessAsFrameLoader = null;
+      }
 
       this._loadContext = null;
 
@@ -1282,16 +1288,6 @@
         
         var securityUI = this.securityUI; 
       } catch (e) {}
-
-      
-      
-      
-      
-      if (this.hasOwnProperty("sameProcessAsFrameLoader")) {
-        var sameProcessAsFrameLoader = this.sameProcessAsFrameLoader;
-        delete this.sameProcessAsFrameLoader;
-        this.sameProcessAsFrameLoader = sameProcessAsFrameLoader;
-      }
 
       if (!this.isRemoteBrowser) {
         
