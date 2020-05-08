@@ -393,7 +393,13 @@ bool HTMLVideoElement::ShouldCreateVideoWakeLock() const {
   
   
   
-  return HasVideo() && HasAudio();
+  
+  
+  
+  
+  
+  
+  return HasVideo() && (mSrcStream || HasAudio());
 }
 
 void HTMLVideoElement::CreateVideoWakeLockIfNeeded() {
