@@ -36,9 +36,36 @@ extern JS_PUBLIC_API JSObject* NewArrayBuffer(JSContext* cx, uint32_t nbytes);
 
 
 
+
+
+
+
+
+
 extern JS_PUBLIC_API JSObject* NewArrayBufferWithContents(JSContext* cx,
                                                           size_t nbytes,
                                                           void* contents);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JSObject* CopyArrayBuffer(
+    JSContext* cx, JS::Handle<JSObject*> maybeArrayBuffer);
 
 using BufferContentsFreeFunc = void (*)(void* contents, void* userData);
 
