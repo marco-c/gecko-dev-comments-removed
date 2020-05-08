@@ -129,7 +129,6 @@ use crate::render_target::RenderTargetKind;
 use crate::render_task::{RenderTask, RenderTaskLocation, BlurTaskCache, ClearMode};
 use crate::resource_cache::{ResourceCache, ImageGeneration};
 use crate::scene::SceneProperties;
-use crate::spatial_tree::CoordinateSystemId;
 use smallvec::SmallVec;
 use std::{mem, u8, marker, u32};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -2355,6 +2354,13 @@ pub struct TileCacheInstance {
     frame_id: FrameId,
 }
 
+enum SurfacePromotionResult {
+    Failed,
+    Success {
+        flip_y: bool,
+    }
+}
+
 impl TileCacheInstance {
     pub fn new(
         slice: usize,
@@ -2919,15 +2925,15 @@ impl TileCacheInstance {
         prim_spatial_node_index: SpatialNodeIndex,
         on_picture_surface: bool,
         frame_context: &FrameVisibilityContext,
-    ) -> bool {
+    ) -> SurfacePromotionResult {
         
         if !flags.contains(PrimitiveFlags::PREFER_COMPOSITOR_SURFACE) {
-            return false;
+            return SurfacePromotionResult::Failed;
         }
 
         
         if self.external_surfaces.len() == MAX_COMPOSITOR_SURFACES {
-            return false;
+            return SurfacePromotionResult::Failed;
         }
 
         
@@ -2935,30 +2941,31 @@ impl TileCacheInstance {
         
         
         if prim_clip_chain.needs_mask {
-            return false;
+            return SurfacePromotionResult::Failed;
         }
 
         
         
         if !on_picture_surface {
-            return false;
+            return SurfacePromotionResult::Failed;
         }
 
-        
-        
-        
-        let prim_spatial_node = &frame_context.spatial_tree
-            .spatial_nodes[prim_spatial_node_index.0 as usize];
-        if prim_spatial_node.coordinate_system_id != CoordinateSystemId::root() {
-            return false;
+        let mapper : SpaceMapper<PicturePixel, WorldPixel> = SpaceMapper::new_with_target(
+            ROOT_SPATIAL_NODE_INDEX,
+            prim_spatial_node_index,
+            frame_context.global_screen_world_rect,
+            &frame_context.spatial_tree);
+        let transform = mapper.get_transform();
+        if !transform.is_2d_scale_translation() {
+            return SurfacePromotionResult::Failed;
+        }
+        if transform.m11 < 0.0 {
+            return SurfacePromotionResult::Failed;
         }
 
-        
-        
-        if !self.map_local_to_surface.get_transform().is_simple_2d_translation() {
-            return false;
+        SurfacePromotionResult::Success {
+            flip_y: transform.m22 < 0.0,
         }
-        return true;
     }
 
     fn setup_compositor_surfaces_yuv(
@@ -3002,6 +3009,7 @@ impl TileCacheInstance {
         resource_cache: &mut ResourceCache,
         composite_state: &mut CompositeState,
         image_rendering: ImageRendering,
+        flip_y: bool,
     ) {
         let mut api_keys = [ImageKey::DUMMY; 3];
         api_keys[0] = api_key;
@@ -3011,6 +3019,7 @@ impl TileCacheInstance {
             frame_context,
             ExternalSurfaceDependency::Rgb {
                 image_dependency,
+                flip_y,
             },
             &api_keys,
             resource_cache,
@@ -3329,14 +3338,21 @@ impl TileCacheInstance {
                 let opacity_binding_index = image_instance.opacity_binding_index;
 
                 let mut promote_to_surface = false;
+                let mut promote_with_flip_y = false;
                 
-                if composite_state.picture_caching_is_enabled &&
-                   self.can_promote_to_surface(image_key.common.flags,
-                                                prim_clip_chain,
-                                                prim_spatial_node_index,
-                                                on_picture_surface,
-                                                frame_context) {
-                        promote_to_surface = true;
+                if composite_state.picture_caching_is_enabled {
+                    match self.can_promote_to_surface(image_key.common.flags,
+                                                      prim_clip_chain,
+                                                      prim_spatial_node_index,
+                                                      on_picture_surface,
+                                                      frame_context) {
+                        SurfacePromotionResult::Failed => {
+                        }
+                        SurfacePromotionResult::Success{flip_y} => {
+                            promote_to_surface = true;
+                            promote_with_flip_y = flip_y;
+                        }
+                    }
                 }
                 *is_compositor_surface = promote_to_surface;
 
@@ -3375,6 +3391,7 @@ impl TileCacheInstance {
                         resource_cache,
                         composite_state,
                         image_data.image_rendering,
+                        promote_with_flip_y,
                     );
                 } else {
                     prim_info.images.push(ImageDependency {
@@ -3392,12 +3409,15 @@ impl TileCacheInstance {
 
                 
                 if composite_state.picture_caching_is_enabled {
-                    promote_to_surface = self.can_promote_to_surface(
+                    promote_to_surface = match self.can_promote_to_surface(
                                                 prim_data.common.flags,
                                                 prim_clip_chain,
                                                 prim_spatial_node_index,
                                                 on_picture_surface,
-                                                frame_context);
+                                                frame_context) {
+                        SurfacePromotionResult::Failed => false,
+                        SurfacePromotionResult::Success{flip_y} => !flip_y,
+                    };
 
                     
                     

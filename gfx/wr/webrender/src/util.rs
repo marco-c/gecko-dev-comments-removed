@@ -300,6 +300,7 @@ pub trait MatrixHelpers<Src, Dst> {
     fn transform_kind(&self) -> TransformedRectKind;
     fn is_simple_translation(&self) -> bool;
     fn is_simple_2d_translation(&self) -> bool;
+    fn is_2d_scale_translation(&self) -> bool;
     
     fn determinant_2d(&self) -> f32;
     
@@ -410,6 +411,21 @@ impl<Src, Dst> MatrixHelpers<Src, Dst> for Transform3D<f32, Src, Dst> {
         }
 
         self.m43.abs() < NEARLY_ZERO
+    }
+
+    
+
+
+
+
+
+    fn is_2d_scale_translation(&self) -> bool {
+        (self.m33 - 1.0).abs() < NEARLY_ZERO && 
+            (self.m44 - 1.0).abs() < NEARLY_ZERO &&
+            self.m12.abs() < NEARLY_ZERO && self.m13.abs() < NEARLY_ZERO && self.m14.abs() < NEARLY_ZERO &&
+            self.m21.abs() < NEARLY_ZERO && self.m23.abs() < NEARLY_ZERO && self.m24.abs() < NEARLY_ZERO &&
+            self.m31.abs() < NEARLY_ZERO && self.m32.abs() < NEARLY_ZERO && self.m34.abs() < NEARLY_ZERO &&
+            self.m43.abs() < NEARLY_ZERO
     }
 
     fn determinant_2d(&self) -> f32 {
