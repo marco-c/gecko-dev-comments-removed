@@ -756,6 +756,7 @@ void Accessible::XULElmName(DocAccessible* aDocument, nsIContent* aElm,
 
 
 
+
   
   
   
@@ -765,7 +766,6 @@ void Accessible::XULElmName(DocAccessible* aDocument, nsIContent* aElm,
     aElm->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::label, aName);
   }
 
-  
   
   if (aName.IsEmpty()) {
     NameFromAssociatedXULLabel(aDocument, aElm, aName);
