@@ -1542,7 +1542,10 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
   } else {
     
     
-    if (allowFrameSwitch) AdjustWindowFocus(newWindow, true);
+    if (allowFrameSwitch) {
+      AdjustWindowFocus(newWindow->GetBrowsingContext(), true,
+                        IsWindowVisible(newWindow));
+    }
 
     
     uint32_t focusMethod =
@@ -1717,41 +1720,55 @@ mozilla::dom::BrowsingContext* nsFocusManager::GetCommonAncestor(
   return parent;
 }
 
-void nsFocusManager::AdjustWindowFocus(nsPIDOMWindowOuter* aWindow,
-                                       bool aCheckPermission) {
-  bool isVisible = IsWindowVisible(aWindow);
-
-  nsCOMPtr<nsPIDOMWindowOuter> window(aWindow);
-  while (window) {
+void nsFocusManager::AdjustWindowFocus(BrowsingContext* aBrowsingContext,
+                                       bool aCheckPermission, bool aIsVisible) {
+  BrowsingContext* bc = aBrowsingContext;
+  while (bc) {
     
     
-    nsCOMPtr<Element> frameElement = window->GetFrameElementInternal();
+    nsCOMPtr<Element> frameElement = bc->GetEmbedderElement();
 
-    nsCOMPtr<nsIDocShellTreeItem> dsti = window->GetDocShell();
-    if (!dsti) return;
-    nsCOMPtr<nsIDocShellTreeItem> parentDsti;
-    dsti->GetInProcessParent(getter_AddRefs(parentDsti));
-    if (!parentDsti) {
+    if (!frameElement && XRE_IsContentProcess()) {
+      
+      
+      mozilla::dom::ContentChild* contentChild =
+          mozilla::dom::ContentChild::GetSingleton();
+      MOZ_ASSERT(contentChild);
+      contentChild->SendAdjustWindowFocus(bc, false, aIsVisible);
       return;
     }
 
-    window = parentDsti->GetWindow();
-    if (window) {
-      
-      
-      
-      if (IsWindowVisible(window) != isVisible) break;
-
-      
-      
-      
-      if (aCheckPermission && !nsContentUtils::LegacyIsCallerNativeCode() &&
-          !nsContentUtils::CanCallerAccess(window->GetCurrentInnerWindow())) {
-        break;
+    BrowsingContext* parent = bc->GetParent();
+    if (!parent && XRE_IsParentProcess()) {
+      CanonicalBrowsingContext* canonical = bc->Canonical();
+      RefPtr<WindowGlobalParent> embedder =
+          canonical->GetEmbedderWindowGlobal();
+      if (embedder) {
+        parent = embedder->BrowsingContext();
       }
-
-      window->SetFocusedElement(frameElement);
     }
+    bc = parent;
+    if (!bc) {
+      return;
+    }
+    nsCOMPtr<nsPIDOMWindowOuter> window = bc->GetDOMWindow();
+    MOZ_ASSERT(window);
+    
+    
+    
+    if (IsWindowVisible(window) != aIsVisible) {
+      return;
+    }
+
+    
+    
+    
+    if (aCheckPermission && !nsContentUtils::LegacyIsCallerNativeCode() &&
+        !nsContentUtils::CanCallerAccess(window->GetCurrentInnerWindow())) {
+      return;
+    }
+
+    window->SetFocusedElement(frameElement);
   }
 }
 
@@ -2251,7 +2268,8 @@ void nsFocusManager::Focus(nsPIDOMWindowOuter* aWindow, Element* aElement,
     
     
     
-    AdjustWindowFocus(aWindow, false);
+    AdjustWindowFocus(aWindow->GetBrowsingContext(), false,
+                      IsWindowVisible(aWindow));
   }
 
   

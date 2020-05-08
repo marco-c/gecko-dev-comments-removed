@@ -298,7 +298,8 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  void AdjustWindowFocus(nsPIDOMWindowOuter* aNewWindow, bool aCheckPermission);
+  void AdjustWindowFocus(mozilla::dom::BrowsingContext* aBrowsingContext,
+                         bool aCheckPermission, bool aIsVisible);
 
   
 
