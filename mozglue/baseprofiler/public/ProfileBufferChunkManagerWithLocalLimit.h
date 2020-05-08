@@ -208,15 +208,7 @@ class ProfileBufferChunkManagerWithLocalLimit final
         break;
       }
       
-      
-      UniquePtr<ProfileBufferChunk> oldest =
-          std::exchange(mReleasedChunks, mReleasedChunks->ReleaseNext());
-      mReleasedBufferBytes -= oldest->ChunkBytes();
-      if (mChunkDestroyedCallback) {
-        
-        mChunkDestroyedCallback(*oldest);
-      }
-      
+      DiscardOldestReleasedChunk(lock);
     }
   }
 
@@ -229,10 +221,48 @@ class ProfileBufferChunkManagerWithLocalLimit final
   void UnlockAfterPeekExtantReleasedChunks() final { mMutex.Unlock(); }
 
  private:
+  void MaybeRecycleChunk(
+      UniquePtr<ProfileBufferChunk>&& chunk,
+      const baseprofiler::detail::BaseProfilerAutoLock& aLock) {
+    
+    
+    
+    if (chunk->BufferBytes() >= mChunkMinBufferBytes) {
+      
+      if (!mRecycledChunks) {
+        mRecycledChunks = std::move(chunk);
+      } else if (!mRecycledChunks->GetNext()) {
+        mRecycledChunks->InsertNext(std::move(chunk));
+      }
+    }
+  }
+
+  UniquePtr<ProfileBufferChunk> TakeRecycledChunk(
+      const baseprofiler::detail::BaseProfilerAutoLock& aLock) {
+    UniquePtr<ProfileBufferChunk> recycled;
+    if (mRecycledChunks) {
+      recycled = std::exchange(mRecycledChunks, mRecycledChunks->ReleaseNext());
+      recycled->MarkRecycled();
+    }
+    return recycled;
+  }
+
+  void DiscardOldestReleasedChunk(
+      const baseprofiler::detail::BaseProfilerAutoLock& aLock) {
+    MOZ_ASSERT(!!mReleasedChunks);
+    UniquePtr<ProfileBufferChunk> oldest =
+        std::exchange(mReleasedChunks, mReleasedChunks->ReleaseNext());
+    mReleasedBufferBytes -= oldest->BufferBytes();
+    if (mChunkDestroyedCallback) {
+      
+      mChunkDestroyedCallback(*oldest);
+    }
+    MaybeRecycleChunk(std::move(oldest), aLock);
+  }
+
   [[nodiscard]] UniquePtr<ProfileBufferChunk> GetChunk(
-      const baseprofiler::detail::BaseProfilerAutoLock&) {
+      const baseprofiler::detail::BaseProfilerAutoLock& aLock) {
     MOZ_ASSERT(mUser, "Not registered yet");
-    UniquePtr<ProfileBufferChunk> chunk;
     
     
     
@@ -246,27 +276,13 @@ class ProfileBufferChunkManagerWithLocalLimit final
     while (mReleasedBufferBytes + mUnreleasedBufferBytes +
                    mChunkMinBufferBytes >=
                mMaxTotalBytes &&
-           mReleasedBufferBytes != 0) {
-      MOZ_ASSERT(!!mReleasedChunks);
+           !!mReleasedChunks) {
       
-      
-      UniquePtr<ProfileBufferChunk> oldest =
-          std::exchange(mReleasedChunks, mReleasedChunks->ReleaseNext());
-      
-      mReleasedBufferBytes -= oldest->BufferBytes();
-      if (mChunkDestroyedCallback) {
-        
-        mChunkDestroyedCallback(*oldest);
-      }
-      
-      
-      
-      if (!chunk && oldest->BufferBytes() >= mChunkMinBufferBytes) {
-        
-        chunk = std::move(oldest);
-        chunk->MarkRecycled();
-      }
+      DiscardOldestReleasedChunk(aLock);
     }
+
+    
+    UniquePtr<ProfileBufferChunk> chunk = TakeRecycledChunk(aLock);
 
     if (!chunk) {
       
@@ -290,9 +306,15 @@ class ProfileBufferChunkManagerWithLocalLimit final
       MallocSizeOf aMallocSizeOf,
       const baseprofiler::detail::BaseProfilerAutoLock&) const {
     MOZ_ASSERT(mUser, "Not registered yet");
+    size_t size = 0;
+    if (mReleasedChunks) {
+      size += mReleasedChunks->SizeOfIncludingThis(aMallocSizeOf);
+    }
+    if (mRecycledChunks) {
+      size += mRecycledChunks->SizeOfIncludingThis(aMallocSizeOf);
+    }
     
-    return mReleasedChunks ? mReleasedChunks->SizeOfIncludingThis(aMallocSizeOf)
-                           : 0;
+    return size;
   }
 
   
@@ -318,6 +340,10 @@ class ProfileBufferChunkManagerWithLocalLimit final
   
   
   UniquePtr<ProfileBufferChunk> mReleasedChunks;
+
+  
+  
+  UniquePtr<ProfileBufferChunk> mRecycledChunks;
 
   
   
