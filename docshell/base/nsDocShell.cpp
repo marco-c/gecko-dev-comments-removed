@@ -6402,7 +6402,13 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
   if (docFactory) {
     nsCOMPtr<nsIPrincipal> principal, storagePrincipal;
     uint32_t sandboxFlags = mBrowsingContext->GetSandboxFlags();
-    if (sandboxFlags & SANDBOXED_ORIGIN) {
+    
+    
+    
+    
+    
+    
+    if ((sandboxFlags & SANDBOXED_ORIGIN) && !aActor) {
       if (aPrincipal) {
         principal = NullPrincipal::CreateWithInheritedAttributes(aPrincipal);
       } else {
