@@ -2102,10 +2102,25 @@ bool WarpBuilder::build_NewArray(BytecodeLocation loc) {
 
   
   gc::InitialHeap heap = gc::DefaultHeap;
-  MConstant* templateConst = constant(NullValue());
 
-  auto* ins = MNewArray::NewVM(alloc(),  nullptr, length,
-                               templateConst, heap, loc.toRawBytecode());
+  MConstant* templateConst;
+  bool useVMCall;
+  if (const auto* snapshot = getOpSnapshot<WarpNewArray>(loc)) {
+    templateConst = constant(ObjectValue(*snapshot->templateObject()));
+    useVMCall = snapshot->useVMCall();
+  } else {
+    templateConst = constant(NullValue());
+    useVMCall = true;
+  }
+
+  MNewArray* ins;
+  if (useVMCall) {
+    ins = MNewArray::NewVM(alloc(),  nullptr, length,
+                           templateConst, heap, loc.toRawBytecode());
+  } else {
+    ins = MNewArray::New(alloc(),  nullptr, length,
+                         templateConst, heap, loc.toRawBytecode());
+  }
   current->add(ins);
   current->push(ins);
   return true;
@@ -2132,10 +2147,17 @@ bool WarpBuilder::build_NewArrayCopyOnWrite(BytecodeLocation loc) {
 bool WarpBuilder::build_NewObject(BytecodeLocation loc) {
   
   gc::InitialHeap heap = gc::DefaultHeap;
-  MConstant* templateConst = constant(NullValue());
 
-  auto* ins = MNewObject::NewVM(alloc(),  nullptr,
-                                templateConst, heap, MNewObject::ObjectLiteral);
+  MNewObject* ins;
+  if (const auto* snapshot = getOpSnapshot<WarpNewObject>(loc)) {
+    auto* templateConst = constant(ObjectValue(*snapshot->templateObject()));
+    ins = MNewObject::New(alloc(),  nullptr, templateConst,
+                          heap, MNewObject::ObjectLiteral);
+  } else {
+    auto* templateConst = constant(NullValue());
+    ins = MNewObject::NewVM(alloc(),  nullptr, templateConst,
+                            heap, MNewObject::ObjectLiteral);
+  }
   current->add(ins);
   current->push(ins);
   return resumeAfter(ins, loc);
