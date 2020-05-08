@@ -27,3 +27,9 @@ global.define = function(fn) {
 };
 
 global.requestIdleCallback = function() {};
+
+
+
+global.document.nodePrincipal = {
+  isSystemPrincipal: false,
+};

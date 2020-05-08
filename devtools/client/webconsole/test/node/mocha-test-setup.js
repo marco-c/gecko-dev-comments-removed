@@ -97,6 +97,12 @@ global.ChromeUtils = {
 global.define = function() {};
 
 
+
+global.document.nodePrincipal = {
+  isSystemPrincipal: false,
+};
+
+
 const requireHacker = require("require-hacker");
 requireHacker.global_hook("default", (path, module) => {
   const paths = {
