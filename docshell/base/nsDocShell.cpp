@@ -5656,17 +5656,8 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
   
   
   
-  
-  
-  
   RefPtr<DocumentChannel> docChannel = do_QueryObject(aOldChannel);
-  if (docChannel) {
-    nsCOMPtr<nsIURI> previousURI;
-    uint32_t previousFlags = 0;
-    docChannel->GetLastVisit(getter_AddRefs(previousURI), &previousFlags);
-    SavePreviousRedirectsAndLastVisit(aNewChannel, previousURI, previousFlags,
-                                      docChannel->GetRedirectChain());
-  } else {
+  if (!docChannel) {
     
     
     
@@ -10110,9 +10101,7 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
   }
 
   
-  bool updateGHistory =
-      !(aLoadType == LOAD_BYPASS_HISTORY || aLoadType == LOAD_ERROR_PAGE ||
-        aLoadType & LOAD_CMD_HISTORY);
+  bool updateGHistory = ShouldUpdateGlobalHistory(aLoadType);
 
   
   
@@ -10238,7 +10227,8 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
 
   
   
-  if (updateGHistory && aAddToGlobalHistory && !net::ChannelIsPost(aChannel)) {
+  if (ShouldAddURIVisit(aChannel) && updateGHistory && aAddToGlobalHistory &&
+      !net::ChannelIsPost(aChannel)) {
     nsCOMPtr<nsIURI> previousURI;
     uint32_t previousFlags = 0;
 
@@ -11183,6 +11173,17 @@ nsDocShell::MakeEditable(bool aInWaitForUriLoad) {
   return mEditorData->MakeEditable(aInWaitForUriLoad);
 }
 
+ bool nsDocShell::ShouldAddURIVisit(nsIChannel* aChannel) {
+  bool needToAddURIVisit = true;
+  nsCOMPtr<nsIPropertyBag2> props(do_QueryInterface(aChannel));
+  if (props) {
+    mozilla::Unused << props->GetPropertyAsBool(
+        NS_LITERAL_STRING("docshell.needToAddURIVisit"), &needToAddURIVisit);
+  }
+
+  return needToAddURIVisit;
+}
+
  void nsDocShell::ExtractLastVisit(
     nsIChannel* aChannel, nsIURI** aURI, uint32_t* aChannelRedirectFlags) {
   nsCOMPtr<nsIPropertyBag2> props(do_QueryInterface(aChannel));
@@ -11289,23 +11290,6 @@ void nsDocShell::AddURIVisit(nsIURI* aURI, nsIURI* aPreviousURI,
 
   InternalAddURIVisit(aURI, aPreviousURI, aChannelRedirectFlags,
                       aResponseStatus, mBrowsingContext, widget, mLoadType);
-}
-
-void nsDocShell::SavePreviousRedirectsAndLastVisit(
-    nsIChannel* aChannel, nsIURI* aPreviousURI, uint32_t aPreviousFlags,
-    const nsTArray<net::DocumentChannelRedirect>& aRedirects) {
-  nsCOMPtr<nsIURI> previousURI = aPreviousURI;
-  uint32_t previousFlags = aPreviousFlags;
-
-  for (auto& redirect : aRedirects) {
-    if (!redirect.isPost()) {
-      AddURIVisit(redirect.uri(), previousURI, previousFlags,
-                  redirect.responseStatus());
-      previousURI = redirect.uri();
-      previousFlags = redirect.redirectFlags();
-    }
-  }
-  SaveLastVisit(aChannel, previousURI, previousFlags);
 }
 
 
@@ -12267,7 +12251,6 @@ nsDocShell::ResumeRedirectedLoad(uint64_t aIdentifier, int32_t aHistoryIndex) {
   cpcl->RegisterCallback(
       aIdentifier, [self, aHistoryIndex](
                        nsDocShellLoadState* aLoadState,
-                       nsTArray<net::DocumentChannelRedirect>&& aRedirects,
                        nsTArray<Endpoint<extensions::PStreamFilterParent>>&&
                            aStreamFilterEndpoints,
                        nsDOMNavigationTiming* aTiming) {
@@ -12282,9 +12265,8 @@ nsDocShell::ResumeRedirectedLoad(uint64_t aIdentifier, int32_t aHistoryIndex) {
         uint32_t previousFlags = 0;
         ExtractLastVisit(aLoadState->GetPendingRedirectedChannel(),
                          getter_AddRefs(previousURI), &previousFlags);
-        self->SavePreviousRedirectsAndLastVisit(
-            aLoadState->GetPendingRedirectedChannel(), previousURI,
-            previousFlags, aRedirects);
+        self->SaveLastVisit(aLoadState->GetPendingRedirectedChannel(),
+                            previousURI, previousFlags);
 
         if (aTiming) {
           self->mTiming = new nsDOMNavigationTiming(self, aTiming);
@@ -12372,6 +12354,12 @@ bool nsDocShell::HasUnloadedParent() {
     parent = parent->GetInProcessParentDocshell();
   }
   return false;
+}
+
+
+bool nsDocShell::ShouldUpdateGlobalHistory(uint32_t aLoadType) {
+  return !(aLoadType == LOAD_BYPASS_HISTORY || aLoadType == LOAD_ERROR_PAGE ||
+           aLoadType & LOAD_CMD_HISTORY);
 }
 
 void nsDocShell::UpdateGlobalHistoryTitle(nsIURI* aURI) {

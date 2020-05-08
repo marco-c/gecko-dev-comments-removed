@@ -67,7 +67,6 @@ class EventTarget;
 }  
 namespace net {
 class LoadInfo;
-class DocumentChannelRedirect;
 class DocumentLoadListener;
 }  
 }  
@@ -510,6 +509,8 @@ class nsDocShell final : public nsDocLoader,
 
   nsDocShell* GetInProcessChildAt(int32_t aIndex);
 
+  static bool ShouldAddURIVisit(nsIChannel* aChannel);
+
   
 
 
@@ -764,8 +765,8 @@ class nsDocShell final : public nsDocLoader,
 
 
 
-  void SaveLastVisit(nsIChannel* aChannel, nsIURI* aURI,
-                     uint32_t aChannelRedirectFlags);
+  static void SaveLastVisit(nsIChannel* aChannel, nsIURI* aURI,
+                            uint32_t aChannelRedirectFlags);
 
   
 
@@ -801,24 +802,6 @@ class nsDocShell final : public nsDocLoader,
       nsIURI* aURI, nsIURI* aPreviousURI, uint32_t aChannelRedirectFlags,
       uint32_t aResponseStatus, mozilla::dom::BrowsingContext* aBrowsingContext,
       nsIWidget* aWidget, uint32_t aLoadType);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void SavePreviousRedirectsAndLastVisit(
-      nsIChannel* aChannel, nsIURI* aURI, uint32_t aChannelRedirectFlags,
-      const nsTArray<mozilla::net::DocumentChannelRedirect>& aRedirects);
 
   already_AddRefed<nsIURIFixupInfo> KeywordToURI(const nsACString& aKeyword,
                                                  bool aIsPrivateContext,
@@ -993,6 +976,8 @@ class nsDocShell final : public nsDocLoader,
   void ReattachEditorToWindow(nsISHEntry* aSHEntry);
   void RecomputeCanExecuteScripts();
   void ClearFrameHistory(nsISHEntry* aEntry);
+  
+  static bool ShouldUpdateGlobalHistory(uint32_t aLoadType);
   void UpdateGlobalHistoryTitle(nsIURI* aURI);
   bool IsFrame() { return mBrowsingContext->GetParent(); }
   bool CanSetOriginAttributes();

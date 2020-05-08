@@ -52,6 +52,17 @@ using namespace mozilla::dom;
 namespace mozilla {
 namespace net {
 
+static void SetNeedToAddURIVisit(nsIChannel* aChannel,
+                                 bool aNeedToAddURIVisit) {
+  nsCOMPtr<nsIWritablePropertyBag2> props(do_QueryInterface(aChannel));
+  if (!props) {
+    return;
+  }
+
+  props->SetPropertyAsBool(NS_LITERAL_STRING("docshell.needToAddURIVisit"),
+                           aNeedToAddURIVisit);
+}
+
 
 
 
@@ -262,12 +273,40 @@ DocumentLoadListener::~DocumentLoadListener() {
   LOG(("DocumentLoadListener dtor [this=%p]", this));
 }
 
-net::LastVisitInfo DocumentLoadListener::LastVisitInfo() const {
+void DocumentLoadListener::AddURIVisit(nsIChannel* aChannel,
+                                       uint32_t aLoadFlags) {
+  if (mLoadStateLoadType == LOAD_ERROR_PAGE ||
+      mLoadStateLoadType == LOAD_BYPASS_HISTORY) {
+    return;
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
+
   nsCOMPtr<nsIURI> previousURI;
   uint32_t previousFlags = 0;
-  nsDocShell::ExtractLastVisit(mChannel, getter_AddRefs(previousURI),
-                               &previousFlags);
-  return net::LastVisitInfo{previousURI, previousFlags};
+  if (mLoadStateLoadType & nsIDocShell::LOAD_CMD_RELOAD) {
+    previousURI = uri;
+  } else {
+    nsDocShell::ExtractLastVisit(aChannel, getter_AddRefs(previousURI),
+                                 &previousFlags);
+  }
+
+  
+  uint32_t responseStatus = 0;
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
+  if (httpChannel) {
+    Unused << httpChannel->GetResponseStatus(&responseStatus);
+  }
+
+  RefPtr<CanonicalBrowsingContext> browsingContext =
+      mParentChannelListener->GetBrowsingContext();
+  nsCOMPtr<nsIWidget> widget =
+      browsingContext->GetParentProcessWidgetContaining();
+
+  nsDocShell::InternalAddURIVisit(uri, previousURI, previousFlags,
+                                  responseStatus, browsingContext, widget,
+                                  mLoadStateLoadType);
 }
 
 already_AddRefed<LoadInfo> DocumentLoadListener::CreateLoadInfo(
@@ -1135,12 +1174,12 @@ void DocumentLoadListener::SerializeRedirectData(
     aArgs.contentDispositionFilename() = Some(contentDispositionFilenameTemp);
   }
 
+  SetNeedToAddURIVisit(mChannel, false);
+
   aArgs.newLoadFlags() = aLoadFlags;
   aArgs.redirectFlags() = aRedirectFlags;
-  aArgs.redirects() = mRedirects.Clone();
   aArgs.redirectIdentifier() = mCrossProcessRedirectIdentifier;
   aArgs.properties() = do_QueryObject(mChannel.get());
-  aArgs.lastVisitInfo() = LastVisitInfo();
   aArgs.srcdocData() = mSrcdocData;
   aArgs.baseUri() = mBaseURI;
   aArgs.loadStateLoadFlags() = mLoadStateLoadFlags;
@@ -1376,7 +1415,20 @@ DocumentLoadListener::RedirectToRealChannel(
     uint32_t aRedirectFlags, uint32_t aLoadFlags,
     const Maybe<uint64_t>& aDestinationProcess,
     nsTArray<ParentEndpoint>&& aStreamFilterEndpoints) {
-  LOG(("DocumentLoadListener RedirectToRealChannel [this=%p]", this));
+  LOG(
+      ("DocumentLoadListener RedirectToRealChannel [this=%p] "
+       "aRedirectFlags=%" PRIx32 ", aLoadFlags=%" PRIx32,
+       this, aRedirectFlags, aLoadFlags));
+
+  
+  
+  nsresult status = NS_OK;
+  mChannel->GetStatus(&status);
+  bool updateGHistory =
+      nsDocShell::ShouldUpdateGlobalHistory(mLoadStateLoadType);
+  if (NS_SUCCEEDED(status) && updateGHistory && !net::ChannelIsPost(mChannel)) {
+    AddURIVisit(mChannel, aLoadFlags);
+  }
 
   if (aDestinationProcess || OtherPid()) {
     
@@ -1486,7 +1538,7 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
   
   
   uint32_t redirectFlags = 0;
-  if (mRedirects.IsEmpty()) {
+  if (!mHaveVisibleRedirect) {
     redirectFlags = nsIChannelEventSink::REDIRECT_INTERNAL;
   }
 
@@ -1767,20 +1819,21 @@ DocumentLoadListener::AsyncOnChannelRedirect(
          this));
     aCallback->OnRedirectVerifyCallback(NS_OK);
     return NS_OK;
-  } else {
+  }
+
+  if (!net::ChannelIsPost(aOldChannel)) {
+    AddURIVisit(aOldChannel, 0);
+
     nsCOMPtr<nsIURI> oldURI;
     aOldChannel->GetURI(getter_AddRefs(oldURI));
-    uint32_t responseStatus = 0;
-    if (nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aOldChannel)) {
-      Unused << httpChannel->GetResponseStatus(&responseStatus);
-    }
-    mRedirects.AppendElement(DocumentChannelRedirect{
-        oldURI, aFlags, responseStatus, net::ChannelIsPost(aOldChannel)});
+    nsDocShell::SaveLastVisit(aNewChannel, oldURI, aFlags);
   }
+  mHaveVisibleRedirect |= true;
+
   LOG(
       ("DocumentLoadListener AsyncOnChannelRedirect [this=%p] "
-       "mRedirects=%" PRIx32,
-       this, uint32_t(mRedirects.Length())));
+       "mHaveVisibleRedirect=%c",
+       this, mHaveVisibleRedirect ? 'T' : 'F'));
 
   
   
