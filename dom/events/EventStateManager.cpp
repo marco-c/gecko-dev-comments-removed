@@ -4959,10 +4959,6 @@ nsresult EventStateManager::InitAndDispatchClickEvent(
   nsresult rv = aPresShell->HandleEventWithTarget(
       &event, targetFrame, MOZ_KnownLive(target), &status);
 
-  if (event.mFlags.mHadNonPrivilegedClickListeners && !aNoContentDispatch) {
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_TYPES_OF_USER_CLICKS::Has_JS_Listener);
-  }
   
   
   
@@ -5087,14 +5083,6 @@ nsresult EventStateManager::DispatchClickEvents(
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-  }
-
-  
-  
-  if (XRE_IsParentProcess() && !IsRemoteTarget(aClickTarget) &&
-      !notDispatchToContents) {
-    Telemetry::AccumulateCategorical(
-        Telemetry::LABELS_TYPES_OF_USER_CLICKS::Browser_Chrome);
   }
 
   return rv;
