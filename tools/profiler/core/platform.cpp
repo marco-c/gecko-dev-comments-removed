@@ -3784,6 +3784,8 @@ void profiler_shutdown(IsFastShutdown aIsFastShutdown) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
+  ProfilerParent::ProfilerWillStopIfStarted();
+
   
   
   SamplerThread* samplerThread = nullptr;
@@ -4293,6 +4295,8 @@ void profiler_start(PowerOfTwo32 aCapacity, double aInterval,
                     const Maybe<double>& aDuration) {
   LOG("profiler_start");
 
+  ProfilerParent::ProfilerWillStopIfStarted();
+
   SamplerThread* samplerThread = nullptr;
   {
     PSAutoLock lock(gPSMutex);
@@ -4334,6 +4338,8 @@ void profiler_ensure_started(PowerOfTwo32 aCapacity, double aInterval,
                              uint64_t aActiveBrowsingContextID,
                              const Maybe<double>& aDuration) {
   LOG("profiler_ensure_started");
+
+  ProfilerParent::ProfilerWillStopIfStarted();
 
   bool startedProfiler = false;
   SamplerThread* samplerThread = nullptr;
@@ -4443,6 +4449,8 @@ void profiler_stop() {
   LOG("profiler_stop");
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
+
+  ProfilerParent::ProfilerWillStopIfStarted();
 
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)
   
