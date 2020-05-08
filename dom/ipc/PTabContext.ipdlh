@@ -7,6 +7,7 @@
 include "mozilla/dom/TabMessageUtils.h";
 
 include protocol PBrowser;
+include PBrowserOrId;
 
 using UIStateChangeType from "nsPIDOMWindow.h";
 using mozilla::OriginAttributes from "mozilla/ipc/BackgroundUtils.h";
@@ -18,13 +19,16 @@ namespace dom {
 
 struct PopupIPCTabContext
 {
-  PBrowser opener;
+  PBrowserOrId opener;
   uint64_t chromeOuterWindowID;
 };
 
 
 struct FrameIPCTabContext
 {
+  
+  OriginAttributes originAttributes;
+
   uint64_t chromeOuterWindowID;
 
   
@@ -48,6 +52,13 @@ struct JSPluginFrameIPCTabContext
 
 
 
+struct UnsafeIPCTabContext
+{ };
+
+
+
+
+
 
 
 
@@ -56,6 +67,7 @@ union IPCTabContext
   PopupIPCTabContext;
   FrameIPCTabContext;
   JSPluginFrameIPCTabContext;
+  UnsafeIPCTabContext;
 };
 
 }

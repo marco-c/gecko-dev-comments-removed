@@ -831,6 +831,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       nsCOMPtr<nsIWindowProvider> provider;
       if (parentTreeOwner) {
         provider = do_GetInterface(parentTreeOwner);
+      } else if (XRE_IsContentProcess()) {
+        
+        
+        provider = nsContentUtils::GetWindowProviderForContentProcess();
       }
 
       if (provider) {

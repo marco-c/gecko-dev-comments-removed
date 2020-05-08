@@ -45,7 +45,8 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
 
   BrowsingContext* GetBrowsingContext() { return mBrowsingContext; }
 
-  nsILoadContext* GetLoadContext();
+  
+  nsILoadContext* GetLoadContext() { return nullptr; }
 
   void NavigateByKey(bool aForward, bool aForDocumentNavigation);
 
