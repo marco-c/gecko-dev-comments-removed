@@ -121,18 +121,6 @@ MaybeInvalidTabContext::MaybeInvalidTabContext(const IPCTabContext& aParams)
       maxTouchPoints = ipcContext.maxTouchPoints();
       break;
     }
-    case IPCTabContext::TUnsafeIPCTabContext: {
-      
-      
-      
-      
-      if (!StaticPrefs::dom_serviceWorkers_enabled()) {
-        mInvalidReason = "ServiceWorkers should be enabled.";
-        return;
-      }
-
-      break;
-    }
     default: {
       MOZ_CRASH();
     }
