@@ -118,19 +118,6 @@ class nsCSSProps {
 
  private:
   
-  
-  static const nsCSSPropertyID* const
-      kSubpropertyTable[eCSSProperty_COUNT - eCSSProperty_COUNT_no_shorthands];
-
- public:
-  
-
-
-  static bool IsBackdropFilterAvailable(JSContext*, JSObject*) {
-    return IsEnabled(eCSSProperty_backdrop_filter);
-  }
-
-  
 
 
 
@@ -138,6 +125,12 @@ class nsCSSProps {
   static void RecomputeEnabledState(const char* aPrefName,
                                     void* aClosure = nullptr);
 
+  
+  
+  static const nsCSSPropertyID* const
+      kSubpropertyTable[eCSSProperty_COUNT - eCSSProperty_COUNT_no_shorthands];
+
+ public:
   static const nsCSSPropertyID* SubpropertyEntryFor(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(eCSSProperty_COUNT_no_shorthands <= aProperty &&
                    aProperty < eCSSProperty_COUNT,

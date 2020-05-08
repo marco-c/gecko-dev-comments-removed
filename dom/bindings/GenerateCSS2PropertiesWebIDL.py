@@ -23,14 +23,8 @@ def generate(output, idlFilename, dataFile):
         
         extendedAttrs = ["CEReactions", "Throws",
                          "SetterNeedsSubjectPrincipal=NonSystem"]
-
         if p.pref != "":
-            
-            
-            if p.method == "BackdropFilter":
-                extendedAttrs.append('Func="nsCSSProps::IsBackdropFilterAvailable"')
-            else:
-                extendedAttrs.append('Pref="%s"' % p.pref)
+            extendedAttrs.append('Pref="%s"' % p.pref)
 
         prop = p.method
 

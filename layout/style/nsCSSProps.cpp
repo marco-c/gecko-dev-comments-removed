@@ -14,14 +14,12 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Casting.h"
 
-#include "gfxPlatform.h"
 #include "nsLayoutUtils.h"
 #include "nsIWidget.h"
 #include "nsStyleConsts.h"  
 
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/AnimationEffectBinding.h"  
-#include "mozilla/gfx/gfxVars.h"                 
 #include "mozilla/LookAndFeel.h"                 
 
 #include "nsString.h"
@@ -65,19 +63,12 @@ static nsStaticCaseInsensitiveNameTable* CreateStaticTable(
 }
 
 void nsCSSProps::RecomputeEnabledState(const char* aPref, void*) {
-  bool foundPref = false;
   for (const PropertyPref* pref = kPropertyPrefTable;
        pref->mPropID != eCSSProperty_UNKNOWN; pref++) {
     if (!aPref || !strcmp(aPref, pref->mPref)) {
-      foundPref = true;
       gPropertyEnabled[pref->mPropID] = Preferences::GetBool(pref->mPref);
-      if (pref->mPropID == eCSSProperty_backdrop_filter) {
-        gPropertyEnabled[pref->mPropID] &=
-            gfxPlatform::Initialized() && gfx::gfxVars::UseWebRender();
-      }
     }
   }
-  MOZ_ASSERT(foundPref);
 }
 
 void nsCSSProps::AddRefTable(void) {
