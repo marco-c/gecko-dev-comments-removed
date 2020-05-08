@@ -1699,13 +1699,6 @@ class EditorBase : public nsIEditor,
 
 
 
-  nsIContent* GetRightmostChild(nsINode* aCurrentNode,
-                                bool bNoBlockCrossing = false) const;
-
-  
-
-
-
   nsIContent* GetLeftmostChild(nsINode* aCurrentNode,
                                bool bNoBlockCrossing = false) const;
 

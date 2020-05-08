@@ -69,6 +69,7 @@ namespace mozilla {
 
 using namespace dom;
 using StyleDifference = HTMLEditUtils::StyleDifference;
+using ChildBlockBoundary = HTMLEditUtils::ChildBlockBoundary;
 
 enum { kLonely = 0, kPrevSib = 1, kNextSib = 2, kBothSibs = 3 };
 
@@ -7829,8 +7830,9 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
     
     if (wsScannerAtEnd.StartsFromOtherBlockElement()) {
       
-      nsINode* child = GetRightmostChild(
-          wsScannerAtEnd.StartReasonOtherBlockElementPtr(), true);
+      nsIContent* child = HTMLEditUtils::GetLastLeafChild(
+          *wsScannerAtEnd.StartReasonOtherBlockElementPtr(),
+          ChildBlockBoundary::TreatAsLeaf);
       if (child) {
         newEndPoint.SetAfter(child);
       }

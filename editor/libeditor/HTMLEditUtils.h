@@ -199,6 +199,32 @@ class HTMLEditUtils final {
 
 
 
+  enum class ChildBlockBoundary {
+    
+    Ignore,
+    
+    TreatAsLeaf,
+  };
+  static nsIContent* GetLastLeafChild(nsINode& aNode,
+                                      ChildBlockBoundary aChildBlockBoundary) {
+    for (nsIContent* content = aNode.GetLastChild(); content;
+         content = content->GetLastChild()) {
+      if (aChildBlockBoundary == ChildBlockBoundary::TreatAsLeaf &&
+          HTMLEditUtils::IsBlockElement(*content)) {
+        return content;
+      }
+      if (!content->HasChildren()) {
+        return content;
+      }
+    }
+    return nullptr;
+  }
+
+  
+
+
+
+
   static Element* GetAncestorBlockElement(
       const nsIContent& aContent, const nsINode* aAncestorLimiter = nullptr) {
     MOZ_ASSERT(
