@@ -61,10 +61,25 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
 
 
   async getRootNode() {
-    if (this.rootNode) {
-      return this.rootNode;
+    
+    
+    
+    
+    this._rootNodeWatchers++;
+    if (this.traits.watchRootNode && this._rootNodeWatchers === 1) {
+      await super.watchRootNode();
     }
-    const rootNode = await this.once("root-available");
+
+    let rootNode = this.rootNode;
+    if (!rootNode) {
+      rootNode = await this.once("root-available");
+    }
+
+    this._rootNodeWatchers--;
+    if (this.traits.watchRootNode && this._rootNodeWatchers === 0) {
+      super.unwatchRootNode();
+    }
+
     return rootNode;
   }
 
