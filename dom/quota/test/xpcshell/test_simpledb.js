@@ -1,0 +1,6 @@
+
+
+
+
+
+loadScript("dom/quota/test/common/test_simpledb.js");
