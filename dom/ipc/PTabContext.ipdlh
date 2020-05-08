@@ -48,13 +48,6 @@ struct JSPluginFrameIPCTabContext
 
 
 
-struct UnsafeIPCTabContext
-{ };
-
-
-
-
-
 
 
 
@@ -63,7 +56,6 @@ union IPCTabContext
   PopupIPCTabContext;
   FrameIPCTabContext;
   JSPluginFrameIPCTabContext;
-  UnsafeIPCTabContext;
 };
 
 }

@@ -611,7 +611,6 @@ ContentChild::~ContentChild() {
 
 NS_INTERFACE_MAP_BEGIN(ContentChild)
   NS_INTERFACE_MAP_ENTRY(nsIContentChild)
-  NS_INTERFACE_MAP_ENTRY(nsIWindowProvider)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIContentChild)
 NS_INTERFACE_MAP_END
 
@@ -780,20 +779,6 @@ void ContentChild::SetProcessName(const nsAString& aName) {
 #endif
 }
 
-NS_IMETHODIMP
-ContentChild::ProvideWindow(nsIOpenWindowInfo* aOpenWindowInfo,
-                            uint32_t aChromeFlags, bool aCalledFromJS,
-                            bool aWidthSpecified, nsIURI* aURI,
-                            const nsAString& aName, const nsACString& aFeatures,
-                            bool aForceNoOpener, bool aForceNoReferrer,
-                            nsDocShellLoadState* aLoadState, bool* aWindowIsNew,
-                            BrowsingContext** aReturn) {
-  return ProvideWindowCommon(nullptr, aOpenWindowInfo, aChromeFlags,
-                             aCalledFromJS, aWidthSpecified, aURI, aName,
-                             aFeatures, aForceNoOpener, aForceNoReferrer,
-                             aLoadState, aWindowIsNew, aReturn);
-}
-
 static nsresult GetCreateWindowParams(nsIOpenWindowInfo* aOpenWindowInfo,
                                       nsDocShellLoadState* aLoadState,
                                       bool aForceNoReferrer, float* aFullZoom,
@@ -864,17 +849,16 @@ nsresult ContentChild::ProvideWindowCommon(
     nsIURI* aURI, const nsAString& aName, const nsACString& aFeatures,
     bool aForceNoOpener, bool aForceNoReferrer, nsDocShellLoadState* aLoadState,
     bool* aWindowIsNew, BrowsingContext** aReturn) {
+  MOZ_DIAGNOSTIC_ASSERT(aTabOpener, "We must have a tab opener");
+
   *aReturn = nullptr;
 
-  UniquePtr<IPCTabContext> ipcContext;
   nsAutoCString features(aFeatures);
   nsAutoString name(aName);
 
   nsresult rv;
 
   RefPtr<BrowsingContext> parent = aOpenWindowInfo->GetParent();
-  MOZ_ASSERT(!parent || aTabOpener,
-             "If parent is non-null, we should have an aTabOpener");
 
   
   
@@ -896,7 +880,7 @@ nsresult ContentChild::ProvideWindowCommon(
   
   bool loadInDifferentProcess =
       aForceNoOpener && sNoopenerNewProcess && !useRemoteSubframes;
-  if (aTabOpener && !loadInDifferentProcess && aURI) {
+  if (!loadInDifferentProcess && aURI) {
     
     
     
@@ -942,25 +926,13 @@ nsresult ContentChild::ProvideWindowCommon(
     return NS_ERROR_ABORT;
   }
 
-  if (aTabOpener) {
-    PopupIPCTabContext context;
-    context.openerChild() = aTabOpener;
-    ipcContext = MakeUnique<IPCTabContext>(context);
-  } else {
-    
-    
-    UnsafeIPCTabContext unsafeTabContext;
-    ipcContext = MakeUnique<IPCTabContext>(unsafeTabContext);
-  }
-
-  MOZ_ASSERT(ipcContext);
   TabId tabId(nsContentUtils::GenerateTabId());
 
   
   
   
   RefPtr<BrowsingContext> openerBC;
-  if (aTabOpener && !aForceNoOpener) {
+  if (!aForceNoOpener) {
     openerBC = parent;
   }
 
@@ -980,17 +952,9 @@ nsresult ContentChild::ProvideWindowCommon(
   
   
   MutableTabContext newTabContext;
-  if (aTabOpener) {
-    newTabContext.SetTabContext(
-        aTabOpener->ChromeOuterWindowID(), aTabOpener->ShowFocusRings(),
-        aTabOpener->PresentationURL(), aTabOpener->MaxTouchPoints());
-  } else {
-    newTabContext.SetTabContext(
-         0,
-         UIStateChangeType_NoChange,
-         EmptyString(),
-         0);
-  }
+  newTabContext.SetTabContext(
+      aTabOpener->ChromeOuterWindowID(), aTabOpener->ShowFocusRings(),
+      aTabOpener->PresentationURL(), aTabOpener->MaxTouchPoints());
 
   
   
@@ -1029,8 +993,10 @@ nsresult ContentChild::ProvideWindowCommon(
   }
 
   
+  PopupIPCTabContext ipcContext;
+  ipcContext.openerChild() = aTabOpener;
   if (NS_WARN_IF(!SendConstructPopupBrowser(
-          std::move(parentEp), std::move(windowParentEp), tabId, *ipcContext,
+          std::move(parentEp), std::move(windowParentEp), tabId, ipcContext,
           windowInit, aChromeFlags))) {
     return NS_ERROR_ABORT;
   }
@@ -1087,13 +1053,10 @@ nsresult ContentChild::ProvideWindowCommon(
       return;
     }
 
-    ParentShowInfo showInfo(EmptyString(), false, true, false, 0, 0, 0);
-    if (aTabOpener) {
-      showInfo = ParentShowInfo(
-          EmptyString(), false, true, false, aTabOpener->WebWidget()->GetDPI(),
-          aTabOpener->WebWidget()->RoundsWidgetCoordinatesTo(),
-          aTabOpener->WebWidget()->GetDefaultScale().scale);
-    }
+    ParentShowInfo showInfo(
+        EmptyString(), false, true, false, aTabOpener->WebWidget()->GetDPI(),
+        aTabOpener->WebWidget()->RoundsWidgetCoordinatesTo(),
+        aTabOpener->WebWidget()->GetDefaultScale().scale);
 
     newChild->SetMaxTouchPoints(maxTouchPoints);
     newChild->SetHasSiblings(hasSiblings);
