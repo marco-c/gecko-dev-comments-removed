@@ -757,18 +757,12 @@ void Accessible::XULElmName(DocAccessible* aDocument, nsIContent* aElm,
 
 
   
-  nsCOMPtr<nsIDOMXULSelectControlItemElement> itemEl =
-      aElm->AsElement()->AsXULSelectControlItem();
-  if (itemEl) {
-    itemEl->GetLabel(aName);
-  } else {
-    
-    
-    nsCOMPtr<nsIDOMXULSelectControlElement> select =
-        aElm->AsElement()->AsXULSelectControl();
-    if (!select) {
-      aElm->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::label, aName);
-    }
+  
+  
+  nsCOMPtr<nsIDOMXULSelectControlElement> select =
+      aElm->AsElement()->AsXULSelectControl();
+  if (!select) {
+    aElm->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::label, aName);
   }
 
   
