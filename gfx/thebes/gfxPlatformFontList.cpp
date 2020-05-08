@@ -459,19 +459,7 @@ nsresult gfxPlatformFontList::InitFontList() {
   CancelLoader();
 
   
-  
-  mCodepointsWithNoFonts.reset();
-  mCodepointsWithNoFonts.SetRange(0, 0x1f);            
-  mCodepointsWithNoFonts.SetRange(0x7f, 0x9f);         
-  mCodepointsWithNoFonts.SetRange(0xE000, 0xF8FF);     
-  mCodepointsWithNoFonts.SetRange(0xF0000, 0x10FFFD);  
-  mCodepointsWithNoFonts.SetRange(0xfdd0, 0xfdef);     
-  for (unsigned i = 0; i <= 0x100000; i += 0x10000) {
-    mCodepointsWithNoFonts.SetRange(i + 0xfffe, i + 0xffff);  
-  }
-  
-  mReplacementCharFallbackFamily = FontFamily();
-
+  mVisibilityLevel = FontVisibility::Unknown;
   SetVisibilityLevel();
 
   sPlatformFontList = this;
@@ -537,10 +525,26 @@ nsresult gfxPlatformFontList::InitFontList() {
 }
 
 void gfxPlatformFontList::SetVisibilityLevel() {
-  mVisibilityLevel = FontVisibility(
+  FontVisibility newLevel = FontVisibility(
       std::min(int32_t(FontVisibility::User),
                std::max(int32_t(FontVisibility::Base),
                         StaticPrefs::layout_css_font_visibility_level())));
+  if (newLevel != mVisibilityLevel) {
+    mVisibilityLevel = newLevel;
+    
+    
+    mCodepointsWithNoFonts.reset();
+    mCodepointsWithNoFonts.SetRange(0, 0x1f);            
+    mCodepointsWithNoFonts.SetRange(0x7f, 0x9f);         
+    mCodepointsWithNoFonts.SetRange(0xE000, 0xF8FF);     
+    mCodepointsWithNoFonts.SetRange(0xF0000, 0x10FFFD);  
+    mCodepointsWithNoFonts.SetRange(0xfdd0, 0xfdef);     
+    for (unsigned i = 0; i <= 0x100000; i += 0x10000) {
+      mCodepointsWithNoFonts.SetRange(i + 0xfffe, i + 0xffff);  
+    }
+    
+    mReplacementCharFallbackFamily = FontFamily();
+  }
 }
 
 void gfxPlatformFontList::FontListChanged() {
