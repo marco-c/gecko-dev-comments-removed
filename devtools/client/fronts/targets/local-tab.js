@@ -140,7 +140,7 @@ class LocalTabTargetFront extends BrowsingContextTargetFront {
 
       
       
-      await this.once("close");
+      await this.once("target-destroyed");
     } else {
       
       

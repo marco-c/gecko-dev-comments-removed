@@ -1181,6 +1181,11 @@ class ResponsiveUI {
     
     
     if (this.isBrowserUIEnabled) {
+      
+      
+      
+      
+      await this.targetList.targetFront.once("target-destroyed");
       const newTarget = await this.client.mainRoot.getTab();
       await this.targetList.switchToTarget(newTarget);
     } else {

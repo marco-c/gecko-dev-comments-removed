@@ -561,6 +561,10 @@ function TargetMixin(parentClass) {
       }
 
       
+      
+      this.emit("target-destroyed");
+
+      
       super.destroy();
 
       this._cleanup();

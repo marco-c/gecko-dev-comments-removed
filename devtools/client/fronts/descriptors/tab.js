@@ -31,6 +31,8 @@ class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
     
     
     this._localTab = null;
+
+    this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
   }
 
   form(json) {
@@ -79,7 +81,15 @@ class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
     front.actorID = form.actor;
     front.form(form);
     this.manage(front);
+    front.on("target-destroyed", this._onTargetDestroyed);
     return front;
+  }
+
+  _onTargetDestroyed() {
+    
+    
+    
+    this._targetFront = null;
   }
 
   
