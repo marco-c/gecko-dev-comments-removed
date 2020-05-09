@@ -94,6 +94,7 @@ public class ContentBlocking {
 
 
 
+
             public @NonNull Builder enhancedTrackingProtectionLevel(final @CBEtpLevel int level) {
                 getSettings().setEnhancedTrackingProtectionLevel(level);
                 return this;
@@ -194,6 +195,7 @@ public class ContentBlocking {
         }
 
         
+
 
 
 
@@ -472,6 +474,13 @@ public class ContentBlocking {
 
 
         public static final int ACCEPT_NON_TRACKERS = 4;
+
+        
+
+
+
+
+        public static final int ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS = 5;
 
         protected CookieBehavior() {}
     }
