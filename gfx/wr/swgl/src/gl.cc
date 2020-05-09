@@ -2354,6 +2354,25 @@ template <typename T>
 static inline T muldiv255(T x, T y) {
   return (x * y + x) >> 8;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+static inline T addlow(T x, T y) {
+  typedef VectorType<uint8_t, sizeof(T)> bytes;
+  return bit_cast<T>(bit_cast<bytes>(x) + bit_cast<bytes>(y));
+}
+
 static inline WideRGBA8 alphas(WideRGBA8 c) {
   return SHUFFLE(c, c, 3, 3, 3, 3, 7, 7, 7, 7, 11, 11, 11, 11, 15, 15, 15, 15);
 }
@@ -2365,11 +2384,16 @@ static inline WideRGBA8 blend_pixels_RGBA8(PackedRGBA8 pdst, WideRGBA8 src) {
                               0xFFFF, 0xFFFF, 0xFFFF, 0};
   const WideRGBA8 ALPHA_MASK = {0, 0, 0, 0xFFFF, 0, 0, 0, 0xFFFF,
                                 0, 0, 0, 0xFFFF, 0, 0, 0, 0xFFFF};
+  const WideRGBA8 ALPHA_OPAQUE = {0, 0, 0, 255, 0, 0, 0, 255,
+                                  0, 0, 0, 255, 0, 0, 0, 255};
   switch (blend_key) {
     case BLEND_KEY_NONE:
       return src;
     case BLEND_KEY(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE):
-      return dst + muldiv255((src - dst) | ALPHA_MASK, alphas(src));
+      
+      
+      return addlow(dst,
+          muldiv255(alphas(src), (src | ALPHA_OPAQUE) - (dst & RGB_MASK)));
     case BLEND_KEY(GL_ONE, GL_ONE_MINUS_SRC_ALPHA):
       return src + dst - muldiv255(dst, alphas(src));
     case BLEND_KEY(GL_ZERO, GL_ONE_MINUS_SRC_COLOR):
@@ -2389,8 +2413,10 @@ static inline WideRGBA8 blend_pixels_RGBA8(PackedRGBA8 pdst, WideRGBA8 src) {
     case BLEND_KEY(GL_ONE_MINUS_DST_ALPHA, GL_ONE, GL_ZERO, GL_ONE):
       return dst + ((src - muldiv255(src, alphas(src))) & RGB_MASK);
     case BLEND_KEY(GL_CONSTANT_COLOR, GL_ONE_MINUS_SRC_COLOR):
-      return dst +
-             muldiv255(combine(ctx->blendcolor, ctx->blendcolor) - dst, src);
+      
+      
+      return addlow(dst,
+          muldiv255(src, combine(ctx->blendcolor, ctx->blendcolor) - dst));
     case BLEND_KEY(GL_ONE, GL_ONE_MINUS_SRC1_COLOR): {
       WideRGBA8 secondary =
           pack_pixels_RGBA8(fragment_shader->gl_SecondaryFragColor);
