@@ -7,6 +7,7 @@
 #ifndef mozilla_layers_APZThreadUtils_h
 #define mozilla_layers_APZThreadUtils_h
 
+#include "base/message_loop.h"
 #include "nsINamed.h"
 #include "nsITimer.h"
 
@@ -29,7 +30,7 @@ class APZThreadUtils {
   
 
 
-  static void SetControllerThread(nsISerialEventTarget* aThread);
+  static void SetControllerThread(MessageLoop* aLoop);
 
   
 
@@ -49,13 +50,6 @@ class APZThreadUtils {
 
 
   static bool IsControllerThread();
-
-  
-
-
-
-  static void DelayedDispatch(already_AddRefed<Runnable> aRunnable,
-                              int aDelayMs);
 };
 
 
