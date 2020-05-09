@@ -25,12 +25,6 @@
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/ReentrantMonitor.h"  
 
-class MessageLoop;
-
-namespace base {
-class Thread;
-}  
-
 namespace mozilla {
 namespace ipc {
 class Shmem;
@@ -166,14 +160,7 @@ class ImageBridgeChild final : public PImageBridgeChild,
 
 
 
-  base::Thread* GetThread() const;
-
-  
-
-
-
-
-  MessageLoop* GetMessageLoop() const override;
+  nsISerialEventTarget* GetThread() const override;
 
   base::ProcessId GetParentPid() const override { return OtherPid(); }
 

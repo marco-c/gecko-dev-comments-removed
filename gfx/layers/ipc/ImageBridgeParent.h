@@ -19,12 +19,6 @@
 #include "nsISupportsImpl.h"
 #include "nsTArrayForwardDeclare.h"  
 
-class MessageLoop;
-
-namespace base {
-class Thread;
-}  
-
 namespace mozilla {
 namespace ipc {
 class Shmem;
@@ -45,7 +39,7 @@ class ImageBridgeParent final : public PImageBridgeParent,
   typedef nsTArray<OpDestroy> OpDestroyArray;
 
  protected:
-  ImageBridgeParent(MessageLoop* aLoop, ProcessId aChildProcessId);
+  ImageBridgeParent(nsISerialEventTarget* aThread, ProcessId aChildProcessId);
 
  public:
   virtual ~ImageBridgeParent();
@@ -98,7 +92,7 @@ class ImageBridgeParent final : public PImageBridgeParent,
   
   mozilla::ipc::IPCResult RecvWillClose();
 
-  MessageLoop* GetMessageLoop() const { return mMessageLoop; }
+  nsISerialEventTarget* GetThread() const { return mThread; }
 
   
 
@@ -142,7 +136,7 @@ class ImageBridgeParent final : public PImageBridgeParent,
   static void ShutdownInternal();
 
   void DeferredDestroy();
-  MessageLoop* mMessageLoop;
+  nsCOMPtr<nsISerialEventTarget> mThread;
   
   
   RefPtr<ImageBridgeParent> mSelfRef;

@@ -551,7 +551,7 @@ void AsyncImagePipelineManager::NotifyPipelinesUpdated(
 
   
   
-  layers::CompositorThreadHolder::Loop()->PostTask(
+  layers::CompositorThread()->Dispatch(
       NewRunnableMethod("ProcessPipelineUpdates", this,
                         &AsyncImagePipelineManager::ProcessPipelineUpdates));
 }
