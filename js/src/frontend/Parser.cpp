@@ -1845,6 +1845,39 @@ static bool CreateLazyScript(JSContext* cx, CompilationInfo& compilationInfo,
   return true;
 }
 
+static bool MaybePublishFunction(JSContext* cx,
+                                 CompilationInfo& compilationInfo,
+                                 FunctionBox* funbox) {
+  if (!funbox->hasFunctionStencil()) {
+    return true;
+  }
+
+  
+  
+  
+  if (!funbox->emitLazy && !funbox->emitBytecode) {
+    return true;
+  }
+
+  
+  
+  Rooted<ScriptStencilBase> stencil(cx,
+                                    std::move(funbox->functionStencil().get()));
+
+  RootedFunction fun(cx, funbox->createFunction(cx));
+  if (!fun) {
+    return false;
+  }
+
+  funbox->initializeFunction(fun);
+
+  if (!funbox->emitLazy) {
+    return true;
+  }
+
+  return CreateLazyScript(cx, compilationInfo, stencil, fun, funbox);
+}
+
 bool ParserBase::publishDeferredFunctions(FunctionTree* root) {
   if (root) {
     auto visitor = [](ParserBase* parser, FunctionTree* tree) {
@@ -1852,38 +1885,8 @@ bool ParserBase::publishDeferredFunctions(FunctionTree* root) {
       if (!funbox) {
         return true;
       }
-
-      if (!funbox->hasFunctionStencil()) {
-        return true;
-      }
-
-      
-      
-      
-      if (!funbox->emitLazy && !funbox->emitBytecode) {
-        return true;
-      }
-
-      JSContext* cx = parser->cx_;
-
-      
-      
-      Rooted<ScriptStencilBase> stencil(
-          cx, std::move(funbox->functionStencil().get()));
-
-      RootedFunction fun(cx, funbox->createFunction(cx));
-      if (!fun) {
-        return false;
-      }
-
-      funbox->initializeFunction(fun);
-
-      if (!funbox->emitLazy) {
-        return true;
-      }
-
-      return CreateLazyScript(cx, parser->compilationInfo_, stencil, fun,
-                              funbox);
+      return MaybePublishFunction(parser->cx_, parser->compilationInfo_,
+                                  funbox);
     };
     return root->visitRecursively(this->cx_, this, visitor);
   }
