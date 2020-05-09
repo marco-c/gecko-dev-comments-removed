@@ -996,6 +996,12 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
         rv = NS_ERROR_DNS_LOOKUP_QUEUE_FULL;
 
         
+      } else if (StaticPrefs::network_dns_disabled()) {
+        LOG(("  DNS resolution disabled: dropping request for host [%s].\n",
+             host.get()));
+        rv = NS_ERROR_UNKNOWN_HOST;
+
+        
       } else if (flags & RES_OFFLINE) {
         LOG(("  Offline request for host [%s]; ignoring.\n", host.get()));
         rv = NS_ERROR_OFFLINE;
