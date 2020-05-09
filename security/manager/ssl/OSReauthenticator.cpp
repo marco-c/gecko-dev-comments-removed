@@ -23,8 +23,15 @@ NS_IMPL_ISUPPORTS(OSReauthenticator, nsIOSReauthenticator)
 extern mozilla::LazyLogModule gCredentialManagerSecretLog;
 
 using mozilla::LogLevel;
+using mozilla::Preferences;
 using mozilla::WindowsHandle;
 using mozilla::dom::Promise;
+
+#define PREF_BLANK_PASSWORD "security.osreauthenticator.blank_password"
+#define PREF_PASSWORD_LAST_CHANGED_LO \
+  "security.osreauthenticator.password_last_changed_lo"
+#define PREF_PASSWORD_LAST_CHANGED_HI \
+  "security.osreauthenticator.password_last_changed_hi"
 
 #if defined(XP_WIN)
 #  include <combaseapi.h>
@@ -34,6 +41,9 @@ using mozilla::dom::Promise;
 #  define SECURITY_WIN32
 #  include <security.h>
 #  include <shlwapi.h>
+#  if !defined(__MINGW32__)
+#    include <Lm.h>
+#  endif  
 struct HandleCloser {
   typedef HANDLE pointer;
   void operator()(HANDLE h) {
@@ -44,10 +54,17 @@ struct HandleCloser {
 };
 struct BufferFreer {
   typedef LPVOID pointer;
-  void operator()(LPVOID b) { CoTaskMemFree(b); }
+  ULONG mSize;
+  explicit BufferFreer(ULONG size) : mSize(size) {}
+  void operator()(LPVOID b) {
+    SecureZeroMemory(b, mSize);
+    CoTaskMemFree(b);
+  }
 };
 typedef std::unique_ptr<HANDLE, HandleCloser> ScopedHANDLE;
 typedef std::unique_ptr<LPVOID, BufferFreer> ScopedBuffer;
+
+constexpr int64_t Int32Modulo = 2147483648;
 
 
 std::unique_ptr<char[]> GetTokenInfo(ScopedHANDLE& token) {
@@ -84,15 +101,40 @@ std::unique_ptr<char[]> GetUserTokenInfo() {
   return GetTokenInfo(scopedToken);
 }
 
+Maybe<int64_t> GetPasswordLastChanged(const WCHAR* username) {
+#  if defined(__MINGW32__)
+  
+  return mozilla::Nothing();
+#  else
+  LPUSER_INFO_1 user_info = NULL;
+  DWORD passwordAgeInSeconds = 0;
+
+  NET_API_STATUS ret =
+      NetUserGetInfo(NULL, username, 1, reinterpret_cast<LPBYTE*>(&user_info));
+
+  if (ret == NERR_Success) {
+    
+    passwordAgeInSeconds = user_info->usri1_password_age;
+    NetApiBufferFree(user_info);
+  } else {
+    return mozilla::Nothing();
+  }
+
+  
+  
+  return mozilla::Some(PR_Now() - passwordAgeInSeconds * PR_USEC_PER_SEC);
+#  endif
+}
 
 
-static nsresult ReauthenticateUserWindows(const nsAString& aMessageText,
-                                          const nsAString& aCaptionText,
-                                          const WindowsHandle& hwndParent,
-                                           bool& reauthenticated,
-                                           bool& isBlankPassword) {
+
+static nsresult ReauthenticateUserWindows(
+    const nsAString& aMessageText, const nsAString& aCaptionText,
+    const WindowsHandle& hwndParent,
+     bool& reauthenticated,
+     bool& isBlankPassword,
+     int64_t& prefLastChanged) {
   reauthenticated = false;
-  isBlankPassword = false;
 
   
   DWORD usernameLength = CREDUI_MAX_USERNAME_LENGTH + 1;
@@ -118,22 +160,40 @@ static nsresult ReauthenticateUserWindows(const nsAString& aMessageText,
       usernameNoDomain = backslash + 1;
     }
 
-    HANDLE logonUserHandle = INVALID_HANDLE_VALUE;
-    bool result =
-        LogonUser(usernameNoDomain, L".", L"", LOGON32_LOGON_INTERACTIVE,
-                  LOGON32_PROVIDER_DEFAULT, &logonUserHandle);
-    if (result) {
-      CloseHandle(logonUserHandle);
+    Maybe<int64_t> lastChanged = GetPasswordLastChanged(usernameNoDomain);
+    if (lastChanged.isSome()) {
+      bool shouldCheckAgain = lastChanged.value() > prefLastChanged;
+      
+      prefLastChanged = lastChanged.value();
+
+      if (shouldCheckAgain) {
+        HANDLE logonUserHandle = INVALID_HANDLE_VALUE;
+        bool result =
+            LogonUser(usernameNoDomain, L".", L"", LOGON32_LOGON_INTERACTIVE,
+                      LOGON32_PROVIDER_DEFAULT, &logonUserHandle);
+        if (result) {
+          CloseHandle(logonUserHandle);
+        }
+        
+        
+        
+        
+        reauthenticated = isBlankPassword =
+            (result || GetLastError() == ERROR_ACCOUNT_RESTRICTION);
+      } else if (isBlankPassword) {
+        reauthenticated = true;
+      }
+
+      if (reauthenticated) {
+        return NS_OK;
+      }
+    } else {
+      isBlankPassword = false;
     }
+  } else {
     
     
-    
-    
-    if (result || GetLastError() == ERROR_ACCOUNT_RESTRICTION) {
-      reauthenticated = true;
-      isBlankPassword = true;
-      return NS_OK;
-    }
+    isBlankPassword = false;
   }
 
   
@@ -176,7 +236,7 @@ static nsresult ReauthenticateUserWindows(const nsAString& aMessageText,
     err = CredUIPromptForWindowsCredentialsW(
         &credui, err, &authPackage, nullptr, 0, &outCredBuffer, &outCredSize,
         nullptr, CREDUIWIN_ENUMERATE_CURRENT_USER);
-    ScopedBuffer scopedOutCredBuffer(outCredBuffer);
+    ScopedBuffer scopedOutCredBuffer(outCredBuffer, BufferFreer(outCredSize));
     if (err == ERROR_CANCELLED) {
       MOZ_LOG(gCredentialManagerSecretLog, LogLevel::Debug,
               ("Error getting authPackage for user login, user cancel."));
@@ -258,12 +318,12 @@ static nsresult ReauthenticateUser(const nsAString& prompt,
                                    const nsAString& caption,
                                    const WindowsHandle& hwndParent,
                                     bool& reauthenticated,
-                                    bool& isBlankPassword) {
+                                    bool& isBlankPassword,
+                                    int64_t& prefLastChanged) {
   reauthenticated = false;
-  isBlankPassword = false;
 #if defined(XP_WIN)
   return ReauthenticateUserWindows(prompt, caption, hwndParent, reauthenticated,
-                                   isBlankPassword);
+                                   isBlankPassword, prefLastChanged);
 #elif defined(XP_MACOSX)
   return ReauthenticateUserMacOS(prompt, reauthenticated, isBlankPassword);
 #endif  
@@ -273,22 +333,53 @@ static nsresult ReauthenticateUser(const nsAString& prompt,
 static void BackgroundReauthenticateUser(RefPtr<Promise>& aPromise,
                                          const nsAString& aMessageText,
                                          const nsAString& aCaptionText,
-                                         const WindowsHandle& hwndParent) {
+                                         const WindowsHandle& hwndParent,
+                                         bool isBlankPassword,
+                                         int64_t prefLastChanged) {
   nsAutoCString recovery;
   bool reauthenticated;
-  bool isBlankPassword;
-  nsresult rv = ReauthenticateUser(aMessageText, aCaptionText, hwndParent,
-                                   reauthenticated, isBlankPassword);
-  nsTArray<bool> results(2);
+  nsresult rv =
+      ReauthenticateUser(aMessageText, aCaptionText, hwndParent,
+                         reauthenticated, isBlankPassword, prefLastChanged);
+
+  nsTArray<int32_t> prefLastChangedUpdates;
+#if defined(XP_WIN)
+  
+  prefLastChanged += PR_USEC_PER_SEC;
+  
+  
+  int32_t prefLastChangedHi = prefLastChanged / Int32Modulo;
+  int32_t prefLastChangedLo = prefLastChanged % Int32Modulo;
+  prefLastChangedUpdates.AppendElement(prefLastChangedHi);
+  prefLastChangedUpdates.AppendElement(prefLastChangedLo);
+#endif
+
+  nsTArray<int32_t> results(2);
   results.AppendElement(reauthenticated);
   results.AppendElement(isBlankPassword);
   nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
       "BackgroundReauthenticateUserResolve",
-      [rv, results = std::move(results), aPromise = std::move(aPromise)]() {
+      [rv, results = std::move(results),
+       prefLastChangedUpdates = std::move(prefLastChangedUpdates),
+       aPromise = std::move(aPromise)]() {
         if (NS_FAILED(rv)) {
           aPromise->MaybeReject(rv);
         } else {
           aPromise->MaybeResolve(results);
+        }
+
+        nsresult rv = Preferences::SetBool(PREF_BLANK_PASSWORD, results[1]);
+        if (NS_FAILED(rv)) {
+          return;
+        }
+        if (prefLastChangedUpdates.Length() > 1) {
+          rv = Preferences::SetInt(PREF_PASSWORD_LAST_CHANGED_HI,
+                                   prefLastChangedUpdates[0]);
+          if (NS_FAILED(rv)) {
+            return;
+          }
+          Preferences::SetInt(PREF_PASSWORD_LAST_CHANGED_LO,
+                              prefLastChangedUpdates[1]);
         }
       }));
   NS_DispatchToMainThread(runnable.forget());
@@ -325,12 +416,36 @@ OSReauthenticator::AsyncReauthenticateUser(const nsAString& aMessageText,
     }
   }
 
+  int64_t prefLastChanged = 0;
+  bool isBlankPassword = false;
+#if defined(XP_WIN)
+  
+  
+  int32_t prefLastChangedLo;
+  int32_t prefLastChangedHi;
+  rv = Preferences::GetBool(PREF_BLANK_PASSWORD, &isBlankPassword);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = Preferences::GetInt(PREF_PASSWORD_LAST_CHANGED_LO, &prefLastChangedLo);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = Preferences::GetInt(PREF_PASSWORD_LAST_CHANGED_HI, &prefLastChangedHi);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  prefLastChanged = prefLastChangedHi * Int32Modulo + prefLastChangedLo;
+#endif
+
   nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
       "BackgroundReauthenticateUser",
       [promiseHandle, aMessageText = nsAutoString(aMessageText),
-       aCaptionText = nsAutoString(aCaptionText), hwndParent]() mutable {
+       aCaptionText = nsAutoString(aCaptionText), hwndParent, isBlankPassword,
+       prefLastChanged]() mutable {
         BackgroundReauthenticateUser(promiseHandle, aMessageText, aCaptionText,
-                                     hwndParent);
+                                     hwndParent, isBlankPassword,
+                                     prefLastChanged);
       }));
 
   nsCOMPtr<nsIEventTarget> target(
