@@ -339,6 +339,12 @@ void CompilationInfo::trace(JSTracer* trc) {
 bool ParserBase::setSourceMapInfo() {
   
   
+  if (!options().sourcePragmas()) {
+    return true;
+  }
+
+  
+  
   if (!ss) {
     return true;
   }
