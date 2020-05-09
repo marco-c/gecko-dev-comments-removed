@@ -4,20 +4,24 @@
 
 
 #include "CompositorThread.h"
-#include "MainThreadUtils.h"
-#include "nsThreadUtils.h"
+
 #include "CompositorBridgeParent.h"
+#include "MainThreadUtils.h"
+#include "VRManagerParent.h"
+#include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/layers/CanvasTranslator.h"
 #include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/layers/ImageBridgeParent.h"
 #include "mozilla/media/MediaSystemResourceService.h"
-#include "VRManagerParent.h"
+#include "nsThread.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 namespace layers {
 
 static StaticRefPtr<CompositorThreadHolder> sCompositorThreadHolder;
 static bool sFinishedCompositorShutDown = false;
+static mozilla::BackgroundHangMonitor* sBackgroundHangMonitor;
 
 nsISerialEventTarget* CompositorThread() {
   return sCompositorThreadHolder
@@ -47,20 +51,24 @@ CompositorThreadHolder::CreateCompositorThread() {
              "The compositor thread has already been started!");
 
   nsCOMPtr<nsIThread> compositorThread;
-  nsresult rv =
-      NS_NewNamedThread("Compositor", getter_AddRefs(compositorThread));
+  nsresult rv = NS_NewNamedThread(
+      "Compositor", getter_AddRefs(compositorThread),
+      NS_NewRunnableFunction(
+          "CompositorThreadHolder::CompositorThreadHolderSetup", []() {
+            sBackgroundHangMonitor = new mozilla::BackgroundHangMonitor(
+                "Compositor",
+                
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+                128,
+                
+
+
+                2048);
+            nsCOMPtr<nsIThread> thread = NS_GetCurrentThread();
+            static_cast<nsThread*>(thread.get())->SetUseHangMonitor(true);
+          }));
 
   if (NS_FAILED(rv)) {
     return nullptr;
@@ -103,7 +111,19 @@ void CompositorThreadHolder::Shutdown() {
   CompositorManagerParent::Shutdown();
   CanvasTranslator::Shutdown();
 
+  
+  
+  
+  CompositorThread()->Dispatch(NS_NewRunnableFunction(
+      "CompositorThreadHolder::Shutdown",
+      [backgroundHangMonitor = UniquePtr<mozilla::BackgroundHangMonitor>(
+           sBackgroundHangMonitor)]() {
+        nsCOMPtr<nsIThread> thread = NS_GetCurrentThread();
+        static_cast<nsThread*>(thread.get())->SetUseHangMonitor(false);
+      }));
+
   sCompositorThreadHolder = nullptr;
+  sBackgroundHangMonitor = nullptr;
 
   
   
