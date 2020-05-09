@@ -250,6 +250,11 @@ IPCResult WindowGlobalParent::RecvUpdateDocumentURI(nsIURI* aURI) {
   
   
   mDocumentURI = aURI;
+  
+  nsCOMPtr<nsIURI> innerDocURI = NS_GetInnermostURI(mDocumentURI);
+  if (innerDocURI) {
+    WindowContext::SetIsSecure(innerDocURI->SchemeIs("https"));
+  }
   return IPC_OK();
 }
 

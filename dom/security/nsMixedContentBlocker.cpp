@@ -837,7 +837,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   WindowContext* topWC = requestingWindow->TopWindowContext();
-  bool rootHasSecureConnection = topWC->GetBrowsingContext()->GetIsSecure();
+  bool rootHasSecureConnection = topWC->GetIsSecure();
   bool allowMixedContent = topWC->GetAllowMixedContent();
 
   
@@ -848,7 +848,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
 
     RefPtr<WindowContext> curWindow = requestingWindow;
     while (!httpsParentExists && curWindow) {
-      httpsParentExists = curWindow->GetBrowsingContext()->GetIsSecure();
+      httpsParentExists = curWindow->GetIsSecure();
       curWindow = curWindow->GetParentWindowContext();
     }
 
