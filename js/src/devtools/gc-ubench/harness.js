@@ -3,8 +3,23 @@
 
 
 
-var gDefaultGarbagePiles = "8M";
+
+
+
+
 var gDefaultGarbagePerFrame = "8K";
+
+
+
+
+
+
+
+
+
+
+var gDefaultGarbagePiles = "8";
+
 var gDefaultTestDuration = 8.0;
 
 function parse_units(v) {
