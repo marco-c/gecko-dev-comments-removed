@@ -4056,9 +4056,32 @@ class nsIFrame : public nsQueryFrame {
   NS_IMETHOD DoXULLayout(nsBoxLayoutState& aBoxLayoutState);
   nsresult EndXULLayout(nsBoxLayoutState& aState);
 
+  nsSize GetUncachedXULMinSize(nsBoxLayoutState& aBoxLayoutState);
+  nsSize GetUncachedXULPrefSize(nsBoxLayoutState& aBoxLayoutState);
+  nsSize GetUncachedXULMaxSize(nsBoxLayoutState& aBoxLayoutState);
+
   
   
   
+
+  
+
+
+
+
+  void ReflowAbsoluteFrames(nsPresContext* aPresContext,
+                            ReflowOutput& aDesiredSize,
+                            const ReflowInput& aReflowInput,
+                            nsReflowStatus& aStatus,
+                            bool aConstrainBSize = true);
+
+ private:
+  void BoxReflow(nsBoxLayoutState& aState, nsPresContext* aPresContext,
+                 ReflowOutput& aDesiredSize, gfxContext* aRenderingContext,
+                 nscoord aX, nscoord aY, nscoord aWidth, nscoord aHeight,
+                 bool aMoveFrame = true);
+
+  NS_IMETHODIMP RefreshSizeCache(nsBoxLayoutState& aState);
 
  public:
   

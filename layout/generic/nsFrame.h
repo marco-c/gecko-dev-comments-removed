@@ -181,16 +181,6 @@ class nsFrame : public nsIFrame {
   void DidReflow(nsPresContext* aPresContext,
                  const ReflowInput* aReflowInput) override;
 
-  
-
-
-
-
-  void ReflowAbsoluteFrames(nsPresContext* aPresContext,
-                            ReflowOutput& aDesiredSize,
-                            const ReflowInput& aReflowInput,
-                            nsReflowStatus& aStatus,
-                            bool aConstrainBSize = true);
   void FinishReflowWithAbsoluteFrames(nsPresContext* aPresContext,
                                       ReflowOutput& aDesiredSize,
                                       const ReflowInput& aReflowInput,
@@ -219,13 +209,6 @@ class nsFrame : public nsIFrame {
   
   virtual ContentOffsets CalcContentOffsetsFromFramePoint(
       const nsPoint& aPoint);
-
-  
-  nsSize GetXULPrefSize(nsBoxLayoutState& aBoxLayoutState) override;
-  nsSize GetXULMinSize(nsBoxLayoutState& aBoxLayoutState) override;
-  nsSize GetXULMaxSize(nsBoxLayoutState& aBoxLayoutState) override;
-  nscoord GetXULFlex() override;
-  nscoord GetXULBoxAscent(nsBoxLayoutState& aBoxLayoutState) override;
 
   
   
@@ -450,20 +433,11 @@ class nsFrame : public nsIFrame {
   }
 
  protected:
-  NS_IMETHOD DoXULLayout(nsBoxLayoutState& aBoxLayoutState) override;
-
   
   void FireDOMEvent(const nsAString& aDOMEventName,
                     nsIContent* aContent = nullptr);
 
  private:
-  void BoxReflow(nsBoxLayoutState& aState, nsPresContext* aPresContext,
-                 ReflowOutput& aDesiredSize, gfxContext* aRenderingContext,
-                 nscoord aX, nscoord aY, nscoord aWidth, nscoord aHeight,
-                 bool aMoveFrame = true);
-
-  NS_IMETHODIMP RefreshSizeCache(nsBoxLayoutState& aState);
-
   
   bool HasCSSAnimations();
 

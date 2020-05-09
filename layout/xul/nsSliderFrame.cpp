@@ -1363,7 +1363,7 @@ nsSize nsSliderFrame::GetXULMinSize(nsBoxLayoutState& aState) {
   EnsureOrient();
 
   
-  return nsIFrame::GetXULMinSize(aState);
+  return nsIFrame::GetUncachedXULMinSize(aState);
 }
 
 nsSize nsSliderFrame::GetXULMaxSize(nsBoxLayoutState& aState) {
