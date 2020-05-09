@@ -349,14 +349,20 @@ uint64_t AntiTrackingUtils::GetTopLevelAntiTrackingWindowId(
 
   RefPtr<WindowContext> winContext =
       aBrowsingContext->GetCurrentWindowContext();
-  if (!winContext || winContext->GetCookieBehavior().isNothing()) {
+  if (!winContext) {
+    return 0;
+  }
+
+  Maybe<net::CookieJarSettingsArgs> cookieJarSettings =
+      winContext->GetCookieJarSettings();
+  if (cookieJarSettings.isNothing()) {
     return 0;
   }
 
   
   
   
-  uint32_t behavior = *winContext->GetCookieBehavior();
+  uint32_t behavior = cookieJarSettings->cookieBehavior();
   if (behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER &&
       aBrowsingContext->IsTop()) {
     return 0;
@@ -472,9 +478,15 @@ uint32_t AntiTrackingUtils::GetCookieBehavior(
   MOZ_ASSERT(aBrowsingContext);
 
   RefPtr<dom::WindowContext> win = aBrowsingContext->GetCurrentWindowContext();
-  if (!win || win->GetCookieBehavior().isNothing()) {
+  if (!win) {
     return nsICookieService::BEHAVIOR_REJECT;
   }
 
-  return *win->GetCookieBehavior();
+  Maybe<net::CookieJarSettingsArgs> cookieJarSetting =
+      win->GetCookieJarSettings();
+  if (cookieJarSetting.isNothing()) {
+    return nsICookieService::BEHAVIOR_REJECT;
+  }
+
+  return cookieJarSetting->cookieBehavior();
 }
