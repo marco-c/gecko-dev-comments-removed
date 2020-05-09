@@ -23,6 +23,9 @@ namespace rx
 namespace
 {
 
+const uint32_t SandyBridge[] = {0x0102, 0x0106, 0x010A, 0x0112, 0x0116, 0x0122, 0x0126};
+
+
 const uint32_t IvyBridge[] = {0x0152, 0x0156, 0x015A, 0x0162, 0x0166, 0x016A};
 
 const uint32_t Haswell[] = {
@@ -90,6 +93,11 @@ bool IntelDriverVersion::operator<(const IntelDriverVersion &version)
 bool IntelDriverVersion::operator>=(const IntelDriverVersion &version)
 {
     return !(*this < version);
+}
+
+bool IsSandyBridge(uint32_t DeviceId)
+{
+    return std::find(std::begin(SandyBridge), std::end(SandyBridge), DeviceId) != std::end(SandyBridge);
 }
 
 bool IsIvyBridge(uint32_t DeviceId)

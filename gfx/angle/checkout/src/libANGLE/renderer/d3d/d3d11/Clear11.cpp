@@ -505,7 +505,36 @@ angle::Result Clear11::clearFramebuffer(const gl::Context *context,
         const auto &framebufferRTV = renderTarget->getRenderTargetView();
         ASSERT(framebufferRTV.valid());
 
-        if ((!(mRenderer->getRenderer11DeviceCaps().supportsClearView) && needScissoredClear) ||
+        bool canClearView = true;
+        if (mRenderer->getFeatures().emulateClearViewAfterDualSourceBlending.enabled) {
+            
+            auto isDualSource = [](auto blend) { switch (blend) {
+                        case D3D11_BLEND_SRC1_COLOR:
+                        case D3D11_BLEND_INV_SRC1_COLOR:
+                        case D3D11_BLEND_SRC1_ALPHA:
+                        case D3D11_BLEND_INV_SRC1_ALPHA:
+                                return true;
+                        default:
+                                return false;
+            }};
+            FLOAT blendFactor[4];
+            UINT sampleMask;
+            ID3D11BlendState *blendState;
+            D3D11_BLEND_DESC blendDesc;
+            deviceContext1->OMGetBlendState(&blendState, blendFactor, &sampleMask);
+            if (blendState) {
+                    blendState->GetDesc(&blendDesc);
+                    
+                    if (isDualSource(blendDesc.RenderTarget[0].SrcBlend) ||
+                        isDualSource(blendDesc.RenderTarget[0].DestBlend) ||
+                        isDualSource(blendDesc.RenderTarget[0].SrcBlendAlpha) ||
+                        isDualSource(blendDesc.RenderTarget[0].DestBlendAlpha)) {
+                            canClearView = false;
+                    }
+            }
+        }
+
+        if ((!(mRenderer->getRenderer11DeviceCaps().supportsClearView && canClearView) && needScissoredClear) ||
             clearParams.colorType != GL_FLOAT ||
             (formatInfo.redBits > 0 && !clearParams.colorMaskRed) ||
             (formatInfo.greenBits > 0 && !clearParams.colorMaskGreen) ||
