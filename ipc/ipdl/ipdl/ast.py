@@ -2,6 +2,9 @@
 
 
 
+from .util import hash_str
+
+
 NOT_NESTED = 1
 INSIDE_SYNC_NESTED = 2
 INSIDE_CPOW_NESTED = 3
@@ -209,7 +212,7 @@ class UsingStmt(Node):
 
 class PrettyPrinted:
     @classmethod
-    def __hash__(cls): return hash(cls.pretty)
+    def __hash__(cls): return hash_str(cls.pretty)
 
     @classmethod
     def __str__(cls): return cls.pretty
