@@ -898,12 +898,10 @@ MarkupView.prototype = {
 
 
 
-
   _shouldNewSelectionBeHighlighted: function() {
     const reason = this.inspector.selection.reason;
     const unwantedReasons = [
-      "inspector-open",
-      "navigateaway",
+      "inspector-default-selection",
       "nodeselected",
       "test",
     ];

@@ -4,7 +4,6 @@
 
 "use strict";
 
-const defer = require("devtools/shared/defer");
 const {
   FrontClassWithSpec,
   types,
@@ -24,21 +23,33 @@ loader.lazyRequireGetter(
 class WalkerFront extends FrontClassWithSpec(walkerSpec) {
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
-    this._createRootNodePromise();
     this._orphaned = new Set();
     this._retainedOrphans = new Set();
 
     
     this.autoCleanup = true;
 
+    this._rootNodeWatchers = 0;
+    this._onRootNodeAvailable = this._onRootNodeAvailable.bind(this);
+    this._onRootNodeDestroyed = this._onRootNodeDestroyed.bind(this);
+
     this.before("new-mutations", this.onMutations.bind(this));
+
+    
+    
+    this.on("root-available", this._onRootNodeAvailable);
+    this.on("root-destroyed", this._onRootNodeDestroyed);
   }
 
   
   form(json) {
     this.actorID = json.actor;
+
+    
+    
+    
     this.rootNode = types.getType("domnode").read(json.root, this);
-    this._rootNodeDeferred.resolve(this.rootNode);
+
     
     this.traits = json.traits || {};
   }
@@ -49,18 +60,27 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
 
 
 
-  getRootNode() {
-    return this._rootNodeDeferred.promise;
-  }
+  async getRootNode() {
+    
+    
+    
+    
+    this._rootNodeWatchers++;
+    if (this.traits.watchRootNode && this._rootNodeWatchers === 1) {
+      await super.watchRootNode();
+    }
 
-  
+    let rootNode = this.rootNode;
+    if (!rootNode) {
+      rootNode = await this.once("root-available");
+    }
 
+    this._rootNodeWatchers--;
+    if (this.traits.watchRootNode && this._rootNodeWatchers === 0) {
+      super.unwatchRootNode();
+    }
 
-
-  async _createRootNodePromise() {
-    this._rootNodeDeferred = defer();
-    await this._rootNodeDeferred.promise;
-    this.emit("new-root");
+    return rootNode;
   }
 
   
@@ -243,23 +263,17 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     const emitMutations = [];
     for (const change of mutations) {
       
-      let targetID;
-      let targetFront;
-
+      
       if (change.type === "newRoot") {
+        const rootNode = types.getType("domnode").read(change.target, this);
+        this.emit("root-available", rootNode);
         
-        
-        if (this.rootNode) {
-          this._createRootNodePromise();
-        }
-        this.rootNode = types.getType("domnode").read(change.target, this);
-        this._rootNodeDeferred.resolve(this.rootNode);
-        targetID = this.rootNode.actorID;
-        targetFront = this.rootNode;
-      } else {
-        targetID = change.target;
-        targetFront = this.get(targetID);
+        continue;
       }
+
+      
+      const targetID = change.target;
+      const targetFront = this.get(targetID);
 
       if (!targetFront) {
         console.warn(
@@ -337,8 +351,8 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
           }
         }
       } else if (change.type === "documentUnload") {
-        if (targetFront === this.rootNode) {
-          this._createRootNodePromise();
+        if (!this.traits.watchRootNode && targetFront === this.rootNode) {
+          this.emit("root-destroyed");
         }
 
         
@@ -544,6 +558,43 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     nodeSelectors.splice(0, rootFrontSelectors.length - 1);
 
     return querySelectors(nodeFront);
+  }
+
+  _onRootNodeAvailable(rootNode) {
+    this.rootNode = rootNode;
+  }
+
+  _onRootNodeDestroyed() {
+    this.rootNode = null;
+  }
+
+  async watchRootNode(onRootNodeAvailable) {
+    this.on("root-available", onRootNodeAvailable);
+
+    this._rootNodeWatchers++;
+    if (this.traits.watchRootNode && this._rootNodeWatchers === 1) {
+      await super.watchRootNode();
+    } else if (this.rootNode) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      await onRootNodeAvailable(this.rootNode);
+    }
+  }
+
+  unwatchRootNode(onRootNodeAvailable) {
+    this.off("root-available", onRootNodeAvailable);
+
+    this._rootNodeWatchers--;
+    if (this.traits.watchRootNode && this._rootNodeWatchers === 0) {
+      super.unwatchRootNode();
+    }
   }
 }
 
