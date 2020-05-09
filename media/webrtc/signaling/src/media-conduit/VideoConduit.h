@@ -98,7 +98,7 @@ class WebrtcVideoConduit
 
 
   MediaConduitErrorCode ReceivedRTPPacket(const void* data, int len,
-                                          uint32_t ssrc) override;
+                                          webrtc::RTPHeader& header) override;
 
   
 

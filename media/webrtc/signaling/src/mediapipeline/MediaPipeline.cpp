@@ -583,7 +583,7 @@ void MediaPipeline::RtpPacketReceived(const MediaPacket& packet) {
                       packet.len());
 
   (void)mConduit->ReceivedRTPPacket(packet.data(), packet.len(),
-                                    header.ssrc);  
+                                    header);  
 }
 
 void MediaPipeline::RtcpPacketReceived(const MediaPacket& packet) {

@@ -2000,9 +2000,8 @@ MediaConduitErrorCode WebrtcVideoConduit::DeliverPacket(const void* data,
   return kMediaConduitNoError;
 }
 
-MediaConduitErrorCode WebrtcVideoConduit::ReceivedRTPPacket(const void* data,
-                                                            int len,
-                                                            uint32_t ssrc) {
+MediaConduitErrorCode WebrtcVideoConduit::ReceivedRTPPacket(
+    const void* data, int len, webrtc::RTPHeader& header) {
   ASSERT_ON_THREAD(mStsThread);
 
   if (mAllowSsrcChange || mWaitingForInitialSsrc) {
@@ -2015,7 +2014,21 @@ MediaConduitErrorCode WebrtcVideoConduit::ReceivedRTPPacket(const void* data,
       return kMediaConduitNoError;
     }
 
-    if (mRecvSSRC != ssrc) {
+    bool switchRequired = mRecvSSRC != header.ssrc;
+    if (switchRequired) {
+      
+      
+      
+      MutexAutoLock lock(mMutex);
+      const webrtc::VideoReceiveStream::Config::Rtp& rtp =
+          mRecvStreamConfig.rtp;
+      switchRequired =
+          rtp.rtx_associated_payload_types.find(header.payloadType) ==
+              rtp.rtx_associated_payload_types.end() &&
+          rtp.ulpfec_payload_type != header.payloadType;
+    }
+
+    if (switchRequired) {
       
       
       
@@ -2023,14 +2036,15 @@ MediaConduitErrorCode WebrtcVideoConduit::ReceivedRTPPacket(const void* data,
       mRtpPacketQueue.Enqueue(data, len);
 
       CSFLogDebug(LOGTAG, "%s: switching from SSRC %u to %u", __FUNCTION__,
-                  static_cast<uint32_t>(mRecvSSRC), ssrc);
+                  static_cast<uint32_t>(mRecvSSRC), header.ssrc);
       
-      mRecvSSRC = ssrc;
+      mRecvSSRC = header.ssrc;
 
       
       NS_DispatchToMainThread(NS_NewRunnableFunction(
           "WebrtcVideoConduit::WebrtcGmpPCHandleSetter",
-          [this, self = RefPtr<WebrtcVideoConduit>(this), ssrc]() mutable {
+          [this, self = RefPtr<WebrtcVideoConduit>(this),
+           ssrc = header.ssrc]() mutable {
             
             
             

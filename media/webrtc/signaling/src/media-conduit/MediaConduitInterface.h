@@ -148,8 +148,8 @@ class MediaSessionConduit {
 
 
 
-  virtual MediaConduitErrorCode ReceivedRTPPacket(const void* data, int len,
-                                                  uint32_t ssrc) = 0;
+  virtual MediaConduitErrorCode ReceivedRTPPacket(
+      const void* data, int len, webrtc::RTPHeader& header) = 0;
 
   
 
