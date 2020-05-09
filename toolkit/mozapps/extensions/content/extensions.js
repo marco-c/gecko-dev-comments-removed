@@ -568,3 +568,15 @@ function htmlView(type) {
     },
   };
 }
+
+
+
+
+window.openAbuseReport = ({ addonId, reportEntryPoint }) => {
+  promiseHtmlBrowserLoaded().then(browser => {
+    browser.contentWindow.openAbuseReport({
+      addonId,
+      reportEntryPoint,
+    });
+  });
+};
