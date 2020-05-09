@@ -504,7 +504,13 @@ void nsXULPrototypeCache::CollectMemoryReports(
   
 
   other += sInstance->mStyleSheetTable.ShallowSizeOfExcludingThis(mallocSizeOf);
-  
+  for (auto iter = sInstance->mStyleSheetTable.ConstIter(); !iter.Done();
+       iter.Next()) {
+    
+    
+    
+    other += iter.Data()->SizeOfIncludingThis(mallocSizeOf);
+  }
 
   other += sInstance->mScriptTable.ShallowSizeOfExcludingThis(mallocSizeOf);
   

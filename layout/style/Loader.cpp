@@ -1856,6 +1856,10 @@ void Loader::DoSheetComplete(SheetLoadData& aLoadData,
           
           
           
+
+          
+          
+          
           cache->PutStyleSheet(CloneSheet(*sheet));
         }
       }
