@@ -121,7 +121,8 @@ async function initToolbox(url, host) {
 
       await client.connect();
       
-      target = await client.mainRoot.getTab({ tab });
+      const tabDescriptor = await client.mainRoot.getTab({ tab });
+      target = await tabDescriptor.getTarget();
       
       target.shouldCloseClient = true;
     } else {

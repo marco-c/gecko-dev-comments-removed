@@ -97,7 +97,8 @@ exports.TargetFactory = {
     }
 
     
-    return client.mainRoot.getTab({ tab });
+    const descriptor = await client.mainRoot.getTab({ tab });
+    return descriptor.getTarget();
   },
 
   

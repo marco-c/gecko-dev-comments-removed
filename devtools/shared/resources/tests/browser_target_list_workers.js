@@ -143,7 +143,8 @@ async function testTabWorkers(mainRoot, tab) {
   info("Test TargetList against workers via a tab target");
 
   
-  const target = await mainRoot.getTab({ tab });
+  const descriptor = await mainRoot.getTab({ tab });
+  const target = await descriptor.getTarget();
 
   
   

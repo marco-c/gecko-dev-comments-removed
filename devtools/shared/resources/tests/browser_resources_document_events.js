@@ -16,7 +16,8 @@ add_task(async function() {
 
   
   const client = await createLocalClient();
-  const target = await client.mainRoot.getTab({ tab });
+  const descriptor = await client.mainRoot.getTab({ tab });
+  const target = await descriptor.getTarget();
   const targetList = new TargetList(client.mainRoot, target);
   await targetList.startListening();
 

@@ -248,7 +248,7 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
       descriptorFront.setLocalTab(filter.tab);
     }
 
-    return descriptorFront.getTarget();
+    return descriptorFront;
   }
 
   
