@@ -421,6 +421,10 @@ pub struct FontInstance {
     
     
     
+    pub texture_padding: bool,
+    
+    
+    
     
     
     pub size: Au,
@@ -460,6 +464,7 @@ impl FontInstance {
         FontInstance {
             transform: FontTransform::identity(),
             transform_glyphs: false,
+            texture_padding: false,
             color,
             size: base.size,
             base,
@@ -474,6 +479,7 @@ impl FontInstance {
         FontInstance {
             transform: FontTransform::identity(),
             transform_glyphs: false,
+            texture_padding: false,
             color: ColorU::new(0, 0, 0, 255),
             size: base.size,
             render_mode: base.render_mode,
