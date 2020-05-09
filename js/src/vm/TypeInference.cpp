@@ -3521,6 +3521,14 @@ bool JSFunction::setTypeForScriptedFunction(JSContext* cx, HandleFunction fun,
   if (!IsTypeInferenceEnabled()) {
     return true;
   }
+
+  
+  
+  
+  if (fun->isSingleton() || fun->group()->maybeInterpretedFunction()) {
+    return true;
+  }
+
   if (singleton) {
     if (!setSingleton(cx, fun)) {
       return false;
