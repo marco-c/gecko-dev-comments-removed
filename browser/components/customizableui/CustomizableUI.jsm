@@ -4367,11 +4367,11 @@ var CustomizableUI = {
         
         if (
           !fragment.lastElementChild ||
-          fragment.lastElementChild.localName == "menuseparator"
+          fragment.lastElementChild.localName == "toolbarseparator"
         ) {
           continue;
         }
-        subviewItem = doc.createXULElement("menuseparator");
+        subviewItem = doc.createXULElement("toolbarseparator");
       } else if (menuChild.localName == "menuitem") {
         subviewItem = doc.createXULElement("toolbarbutton");
         CustomizableUI.addShortcut(menuChild, subviewItem);
