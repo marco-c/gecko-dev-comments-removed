@@ -514,11 +514,13 @@ MediaConduitErrorCode WebrtcVideoConduit::SetLocalRTPExtensions(
 }
 
 bool WebrtcVideoConduit::SetLocalSSRCs(
-    const std::vector<unsigned int>& aSSRCs) {
+    const std::vector<unsigned int>& aSSRCs,
+    const std::vector<unsigned int>& aRtxSSRCs) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  if (mSendStreamConfig.rtp.ssrcs == aSSRCs) {
+  if (mSendStreamConfig.rtp.ssrcs == aSSRCs &&
+      mSendStreamConfig.rtp.rtx.ssrcs == aRtxSSRCs) {
     return true;
   }
 
@@ -526,6 +528,7 @@ bool WebrtcVideoConduit::SetLocalSSRCs(
     MutexAutoLock lock(mMutex);
     
     mSendStreamConfig.rtp.ssrcs = aSSRCs;
+    mSendStreamConfig.rtp.rtx.ssrcs = aRtxSSRCs;
 
     bool wasTransmitting = mEngineTransmitting;
     if (StopTransmittingLocked() != kMediaConduitNoError) {
@@ -920,6 +923,12 @@ MediaConduitErrorCode WebrtcVideoConduit::ConfigureSendMediaCodec(
   mSendStreamConfig.encoder_settings.payload_type = codecConfig->mType;
   mSendStreamConfig.rtp.rtcp_mode = webrtc::RtcpMode::kCompound;
   mSendStreamConfig.rtp.max_packet_size = kVideoMtu;
+  if (codecConfig->RtxPayloadTypeIsSet()) {
+    mSendStreamConfig.rtp.rtx.payload_type = codecConfig->mRTXPayloadType;
+  } else {
+    mSendStreamConfig.rtp.rtx.payload_type = -1;
+    mSendStreamConfig.rtp.rtx.ssrcs.clear();
+  }
 
   
   
@@ -978,23 +987,23 @@ static uint32_t GenerateRandomSSRC() {
   return ssrc;
 }
 
-bool WebrtcVideoConduit::SetRemoteSSRC(unsigned int ssrc) {
+bool WebrtcVideoConduit::SetRemoteSSRC(uint32_t ssrc, uint32_t rtxSsrc) {
   MOZ_ASSERT(NS_IsMainThread());
   MutexAutoLock lock(mMutex);
 
-  return SetRemoteSSRCLocked(ssrc);
+  return SetRemoteSSRCLocked(ssrc, rtxSsrc);
 }
 
-bool WebrtcVideoConduit::SetRemoteSSRCLocked(unsigned int ssrc) {
+bool WebrtcVideoConduit::SetRemoteSSRCLocked(uint32_t ssrc, uint32_t rtxSsrc) {
   MOZ_ASSERT(NS_IsMainThread());
   mMutex.AssertCurrentThreadOwns();
 
-  unsigned int current_ssrc;
+  uint32_t current_ssrc;
   if (!GetRemoteSSRCLocked(&current_ssrc)) {
     return false;
   }
 
-  if (current_ssrc == ssrc) {
+  if (current_ssrc == ssrc && mRecvStreamConfig.rtp.rtx_ssrc == rtxSsrc) {
     return true;
   }
 
@@ -1016,6 +1025,7 @@ bool WebrtcVideoConduit::SetRemoteSSRCLocked(unsigned int ssrc) {
   }
 
   mRecvStreamConfig.rtp.remote_ssrc = ssrc;
+  mRecvStreamConfig.rtp.rtx_ssrc = rtxSsrc;
   mStsThread->Dispatch(NS_NewRunnableFunction(
       "WebrtcVideoConduit::WaitingForInitialSsrcNoMore",
       [this, self = RefPtr<WebrtcVideoConduit>(this)]() mutable {
@@ -1046,21 +1056,23 @@ bool WebrtcVideoConduit::UnsetRemoteSSRC(uint32_t ssrc) {
     return true;
   }
 
-  if (our_ssrc != ssrc) {
+  if (our_ssrc != ssrc && mRecvStreamConfig.rtp.rtx_ssrc != ssrc) {
     return true;
   }
 
-  while (our_ssrc == ssrc) {
+  mRecvStreamConfig.rtp.rtx_ssrc = 0;
+
+  do {
     our_ssrc = GenerateRandomSSRC();
     if (our_ssrc == 0) {
       return false;
     }
-  }
+  } while (our_ssrc == ssrc);
 
   
   
   
-  SetRemoteSSRCLocked(our_ssrc);
+  SetRemoteSSRCLocked(our_ssrc, 0);
   return true;
 }
 
@@ -1554,6 +1566,13 @@ MediaConduitErrorCode WebrtcVideoConduit::ConfigureRecvMediaCodecs(
       mRecvStreamConfig.rtp.red_payload_type = -1;
     }
 
+    mRecvStreamConfig.rtp.rtx_associated_payload_types.clear();
+    for (auto& codec : recv_codecs) {
+      if (codec->RtxPayloadTypeIsSet()) {
+        mRecvStreamConfig.rtp.AddRtxBinding(codec->mRTXPayloadType,
+                                            codec->mType);
+      }
+    }
     
     mRecvSSRC = mRecvStreamConfig.rtp.remote_ssrc;
 
@@ -1602,7 +1621,6 @@ MediaConduitErrorCode WebrtcVideoConduit::ConfigureRecvMediaCodecs(
     
     mRecvCodecList.SwapElements(recv_codecs);
     recv_codecs.Clear();
-    mRecvStreamConfig.rtp.rtx_associated_payload_types.clear();
 
     DeleteRecvStream();
     return StartReceivingLocked();
@@ -2019,8 +2037,11 @@ MediaConduitErrorCode WebrtcVideoConduit::ReceivedRTPPacket(const void* data,
             
             
             WebrtcGmpPCHandleSetter setter(mPCHandle);
+            
+            
+            
             SetRemoteSSRC(
-                ssrc);  
+                ssrc, 0);  
             
             mStsThread->Dispatch(NS_NewRunnableFunction(
                 "WebrtcVideoConduit::QueuedPacketsHandler",
