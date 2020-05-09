@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "nsMacPreferencesReader.h"
 
@@ -15,6 +15,9 @@ struct StringWriteFunc : public JSONWriteFunc {
   nsAString& mString;
   explicit StringWriteFunc(nsAString& aStr) : mString(aStr) {}
   void Write(const char* aStr) override { mString.Append(NS_ConvertUTF8toUTF16(aStr)); }
+  void Write(const char* aStr, size_t aLen) override {
+    mString.Append(NS_ConvertUTF8toUTF16(aStr, aLen));
+  }
 };
 
 static void EvaluateDict(JSONWriter* aWriter, NSDictionary<NSString*, id>* aDict);

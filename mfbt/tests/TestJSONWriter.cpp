@@ -23,7 +23,12 @@ struct StringWriteFunc : public JSONWriteFunc {
   StringWriteFunc() : mPtr(mBuf) {}
 
   void Write(const char* aStr) override {
-    char* last = mPtr + strlen(aStr);  
+    size_t len = strlen(aStr);
+    Write(aStr, len);
+  }
+
+  void Write(const char* aStr, size_t aLen) override {
+    char* last = mPtr + aLen;  
 
     
     MOZ_RELEASE_ASSERT(last < mBuf + kLen);
