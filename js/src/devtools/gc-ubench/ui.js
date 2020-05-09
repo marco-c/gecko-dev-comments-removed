@@ -13,19 +13,10 @@ var stroke = {
   initialMajor: "rgb(180,60,255)",
 };
 
-
 var numSamples = 500;
-var sampleIndex = 0;
-var sampleTime = 16; 
-var gHistogram = new Map(); 
 
-var delays = new Array(numSamples);
-var gcs = new Array(numSamples);
-var minorGCs = new Array(numSamples);
-var majorGCs = new Array(numSamples);
-var slices = new Array(numSamples);
-var gcBytes = new Array(numSamples);
-var mallocBytes = new Array(numSamples);
+var gHistogram = new Map(); 
+var gPerf = new FrameHistory(numSamples);
 
 var latencyGraph;
 var memoryGraph;
@@ -34,51 +25,6 @@ var memoryCtx;
 
 var loadState = "(init)"; 
 var testState = "idle"; 
-
-class FrameTimer {
-  constructor() {
-    
-    
-    
-    this.start = undefined;
-
-    
-    this.prev = undefined;
-
-    
-    this.stopped = 0;
-  }
-
-  is_stopped() {
-    return this.stopped != 0;
-  }
-
-  start_recording(now = performance.now()) {
-    this.start = this.prev = now;
-  }
-
-  on_frame_finished(now = performance.now()) {
-    const delay = now - this.prev;
-    this.prev = now;
-    return delay;
-  }
-
-  pause(now = performance.now()) {
-    this.stopped = now;
-    
-    
-    this.prev = now - this.prev;
-  }
-
-  resume(now = performance.now()) {
-    this.prev = now - this.prev;
-    const stop_duration = now - this.stopped;
-    this.start += stop_duration;
-    this.stopped = 0;
-  }
-}
-
-var gFrameTimer = new FrameTimer();
 
 function parse_units(v) {
   if (!v.length) {
@@ -220,9 +166,9 @@ LatencyGraph.prototype.draw = function() {
     worstpos = 0;
   ctx.beginPath();
   for (let i = 0; i < numSamples; i++) {
-    ctx.lineTo(this.xpos(i), this.ypos(delays[i]));
-    if (delays[i] >= worst) {
-      worst = delays[i];
+    ctx.lineTo(this.xpos(i), this.ypos(gPerf.delays[i]));
+    if (gPerf.delays[i] >= worst) {
+      worst = gPerf.delays[i];
       worstpos = i;
     }
   }
@@ -233,14 +179,14 @@ LatencyGraph.prototype.draw = function() {
     ctx.strokeStyle = stroke.gcslice;
     let idx = sampleIndex % numSamples;
     const count = {
-      major: majorGCs[idx],
+      major: gPerf.majorGCs[idx],
       minor: 0,
-      slice: slices[idx],
+      slice: gPerf.slices[idx],
     };
     for (let i = 0; i < numSamples; i++) {
       idx = (sampleIndex + i) % numSamples;
-      const isMajorStart = count.major < majorGCs[idx];
-      if (count.slice < slices[idx]) {
+      const isMajorStart = count.major < gPerf.majorGCs[idx];
+      if (count.slice < gPerf.slices[idx]) {
         if (isMajorStart) {
           ctx.strokeStyle = stroke.initialMajor;
         }
@@ -252,22 +198,22 @@ LatencyGraph.prototype.draw = function() {
           ctx.strokeStyle = stroke.gcslice;
         }
       }
-      count.major = majorGCs[idx];
-      count.slice = slices[idx];
+      count.major = gPerf.majorGCs[idx];
+      count.slice = gPerf.slices[idx];
     }
 
     ctx.strokeStyle = stroke.minor;
     idx = sampleIndex % numSamples;
-    count.minor = gcs[idx];
+    count.minor = gPerf.gcs[idx];
     for (let i = 0; i < numSamples; i++) {
       idx = (sampleIndex + i) % numSamples;
-      if (count.minor < minorGCs[idx]) {
+      if (count.minor < gPerf.minorGCs[idx]) {
         ctx.beginPath();
         ctx.moveTo(this.xpos(idx), 0);
         ctx.lineTo(this.xpos(idx), 20);
         ctx.stroke();
       }
-      count.minor = minorGCs[idx];
+      count.minor = gPerf.minorGCs[idx];
     }
   }
 
@@ -283,7 +229,14 @@ LatencyGraph.prototype.draw = function() {
   
   ctx.beginPath();
   var where = sampleIndex % numSamples;
-  ctx.arc(this.xpos(where), this.ypos(delays[where]), 5, 0, Math.PI * 2, true);
+  ctx.arc(
+    this.xpos(where),
+    this.ypos(gPerf.delays[where]),
+    5,
+    0,
+    Math.PI * 2,
+    true
+  );
   ctx.fill();
   ctx.fillStyle = "rgb(0,0,0)";
 
@@ -345,12 +298,12 @@ MemoryGraph.prototype.draw = function() {
   var worst = 0,
     worstpos = 0;
   for (let i = 0; i < numSamples; i++) {
-    if (gcBytes[i] >= worst) {
-      worst = gcBytes[i];
+    if (gPerf.gcBytes[i] >= worst) {
+      worst = gPerf.gcBytes[i];
       worstpos = i;
     }
-    if (gcBytes[i] < this.bestEver) {
-      this.bestEver = gcBytes[i];
+    if (gPerf.gcBytes[i] < this.bestEver) {
+      this.bestEver = gPerf.gcBytes[i];
     }
   }
 
@@ -385,15 +338,22 @@ MemoryGraph.prototype.draw = function() {
 
   ctx.beginPath();
   var where = sampleIndex % numSamples;
-  ctx.arc(this.xpos(where), this.ypos(gcBytes[where]), 5, 0, Math.PI * 2, true);
+  ctx.arc(
+    this.xpos(where),
+    this.ypos(gPerf.gcBytes[where]),
+    5,
+    0,
+    Math.PI * 2,
+    true
+  );
   ctx.fill();
 
   ctx.beginPath();
   for (var i = 0; i < numSamples; i++) {
     if (i == (sampleIndex + 1) % numSamples) {
-      ctx.moveTo(this.xpos(i), this.ypos(gcBytes[i]));
+      ctx.moveTo(this.xpos(i), this.ypos(gPerf.gcBytes[i]));
     } else {
-      ctx.lineTo(this.xpos(i), this.ypos(gcBytes[i]));
+      ctx.lineTo(this.xpos(i), this.ypos(gPerf.gcBytes[i]));
     }
     if (i == where) {
       ctx.stroke();
@@ -408,9 +368,9 @@ function onUpdateDisplayChanged() {
   const do_graph = document.getElementById("do-graph");
   if (do_graph.checked) {
     window.requestAnimationFrame(handler);
-    gFrameTimer.resume();
+    gPerf.resume();
   } else {
-    gFrameTimer.pause();
+    gPerf.pause();
   }
   update_load_state_indicator();
 }
@@ -424,7 +384,7 @@ function onDoLoadChange() {
 
 var previous = 0;
 function handler(timestamp) {
-  if (gFrameTimer.is_stopped()) {
+  if (gPerf.is_stopped()) {
     return;
   }
 
@@ -443,35 +403,9 @@ function handler(timestamp) {
       " sec";
   }
 
-  const delay = gFrameTimer.on_frame_finished(timestamp);
+  const delay = gPerf.on_frame(timestamp);
 
   update_histogram(gHistogram, delay);
-
-  
-  var t = timestamp - gFrameTimer.start;
-  var newIndex = Math.round(t / sampleTime);
-  while (sampleIndex < newIndex) {
-    sampleIndex++;
-    var idx = sampleIndex % numSamples;
-    delays[idx] = delay;
-    if (features.trackingSizes) {
-      gcBytes[idx] = performance.mozMemory.gcBytes;
-    }
-    if (features.showingGCs) {
-      gcs[idx] = performance.mozMemory.gcNumber;
-      minorGCs[idx] = performance.mozMemory.minorGCCount;
-      majorGCs[idx] = performance.mozMemory.majorGCCount;
-
-      
-      
-      
-      
-      
-      
-      slices[idx] =
-        performance.mozMemory.sliceCount || performance.mozMemory.gcNumber;
-    }
-  }
 
   latencyGraph.draw();
   if (memoryGraph) {
@@ -509,10 +443,7 @@ function summarize(arr) {
 }
 
 function reset_draw_state() {
-  for (var i = 0; i < numSamples; i++) {
-    delays[i] = 0;
-  }
-  sampleIndex = 0;
+  gPerf.reset();
 }
 
 function onunload() {
@@ -577,7 +508,7 @@ function onload() {
   trackHeapSizes(document.getElementById("track-sizes").checked);
 
   update_load_state_indicator();
-  gFrameTimer.start_recording();
+  gPerf.start();
 
   
   reset_draw_state();
@@ -603,7 +534,7 @@ function start_test_cycle(tests_to_run) {
 function update_load_state_indicator() {
   if (!gLoadMgr.load_running()) {
     loadState = "(none)";
-  } else if (gFrameTimer.is_stopped() || gLoadMgr.paused) {
+  } else if (gPerf.is_stopped() || gLoadMgr.paused) {
     loadState = "(inactive)";
   } else {
     loadState = "(active)";
