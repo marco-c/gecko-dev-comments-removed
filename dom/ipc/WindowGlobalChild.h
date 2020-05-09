@@ -107,6 +107,9 @@ class WindowGlobalChild final : public WindowGlobalActor,
 
   void InitWindowGlobal(nsGlobalWindowInner* aWindow);
 
+  
+  void OnNewDocument(Document* aNewDocument);
+
   nsISupports* GetParentObject();
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;

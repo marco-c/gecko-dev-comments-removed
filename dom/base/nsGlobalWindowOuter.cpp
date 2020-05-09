@@ -2429,38 +2429,16 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
     newInnerWindow->mChromeEventHandler = mChromeEventHandler;
   }
 
-  
-  
-  WindowGlobalChild* wgc = mInnerWindow->GetWindowGlobalChild();
-  wgc->SetDocumentURI(aDocument->GetDocumentURI());
-
-  wgc->SetDocumentPrincipal(aDocument->NodePrincipal());
-
-  wgc->SendUpdateDocumentCspSettings(
-      aDocument->GetBlockAllMixedContent(false),
-      aDocument->GetUpgradeInsecureRequests(false));
-  wgc->SendUpdateSandboxFlags(aDocument->GetSandboxFlags());
-  net::CookieJarSettingsArgs csArgs;
-  net::CookieJarSettings::Cast(aDocument->CookieJarSettings())
-      ->Serialize(csArgs);
-  if (!wgc->SendUpdateCookieJarSettings(csArgs)) {
-    NS_WARNING(
-        "Failed to update document's cookie jar settings on the "
-        "WindowGlobalParent");
+  if (!aState) {
+    
+    
+    
+    mInnerWindow->GetWindowGlobalChild()->OnNewDocument(aDocument);
   }
 
+  
   RefPtr<BrowsingContext> bc = GetBrowsingContext();
   bc->SetCurrentInnerWindowId(mInnerWindow->WindowID());
-
-  
-  nsCOMPtr<nsIChannel> mixedChannel;
-  mDocShell->GetMixedContentChannel(getter_AddRefs(mixedChannel));
-  
-  
-  
-  if (mixedChannel && (mixedChannel == aDocument->GetChannel())) {
-    wgc->WindowContext()->SetAllowMixedContent(true);
-  }
 
   
   
@@ -2512,20 +2490,6 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
 
   bool isThirdPartyTrackingResourceWindow =
       nsContentUtils::IsThirdPartyTrackingResourceWindow(newInnerWindow);
-
-  
-  if (newInnerWindow) {
-    WindowContext::Transaction txn;
-    txn.SetCookieBehavior(
-        Some(aDocument->CookieJarSettings()->GetCookieBehavior()));
-    txn.SetIsOnContentBlockingAllowList(
-        aDocument->CookieJarSettings()->GetIsOnContentBlockingAllowList());
-    txn.SetIsThirdPartyWindow(nsContentUtils::IsThirdPartyWindowOrChannel(
-        newInnerWindow, nullptr, nullptr));
-    txn.SetIsThirdPartyTrackingResourceWindow(
-        isThirdPartyTrackingResourceWindow);
-    txn.Commit(newInnerWindow->GetWindowContext());
-  }
 
   mHasStorageAccess = false;
   nsIURI* uri = aDocument->GetDocumentURI();
