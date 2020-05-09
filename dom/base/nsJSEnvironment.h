@@ -165,8 +165,16 @@ class AsyncErrorReporter final : public mozilla::Runnable {
   
   void SerializeStack(JSContext* aCx, JS::Handle<JSObject*> aStack);
 
+  
+  
+  void SetException(JSContext* aCx, JS::Handle<JS::Value> aException);
+
  protected:
   NS_IMETHOD Run() override;
+
+  
+  JS::PersistentRootedValue mException;
+  bool mHasException = false;
 
   RefPtr<xpc::ErrorReport> mReport;
   

@@ -101,11 +101,15 @@ class nsScriptError final : public nsScriptErrorBase {
 
 class nsScriptErrorWithStack : public nsScriptErrorBase {
  public:
-  nsScriptErrorWithStack(JS::HandleObject aStack,
+  nsScriptErrorWithStack(JS::Handle<mozilla::Maybe<JS::Value>> aException,
+                         JS::HandleObject aStack,
                          JS::HandleObject aStackGlobal);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(nsScriptErrorWithStack)
+
+  NS_IMETHOD GetHasException(bool*) override;
+  NS_IMETHOD GetException(JS::MutableHandleValue) override;
 
   NS_IMETHOD GetStack(JS::MutableHandleValue) override;
   NS_IMETHOD GetStackGlobal(JS::MutableHandleValue) override;
@@ -113,11 +117,25 @@ class nsScriptErrorWithStack : public nsScriptErrorBase {
 
  private:
   virtual ~nsScriptErrorWithStack();
+
+  
+  JS::Heap<JS::Value> mException;
+  bool mHasException;
+
   
   
   JS::Heap<JSObject*> mStack;
   
   JS::Heap<JSObject*> mStackGlobal;
 };
+
+
+
+
+
+
+already_AddRefed<nsScriptErrorBase> CreateScriptError(
+    nsGlobalWindowInner* win, JS::Handle<mozilla::Maybe<JS::Value>> aException,
+    JS::HandleObject aStack, JS::HandleObject aStackGlobal);
 
 #endif 

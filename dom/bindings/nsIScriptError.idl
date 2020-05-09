@@ -88,6 +88,16 @@ interface nsIScriptError : nsIConsoleMessage
 
     readonly attribute boolean isFromChromeContext;
 
+    
+    
+    
+    
+    attribute jsval exception;
+
+    
+    
+    readonly attribute boolean hasException;
+
     attribute jsval stack;
 
     

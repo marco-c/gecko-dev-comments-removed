@@ -600,7 +600,9 @@ class ErrorReport : public ErrorBase {
   
   
   
-  void LogToConsoleWithStack(JS::HandleObject aStack,
+  void LogToConsoleWithStack(nsGlobalWindowInner* aWin,
+                             JS::Handle<mozilla::Maybe<JS::Value>> aException,
+                             JS::HandleObject aStack,
                              JS::HandleObject aStackGlobal);
 
   
