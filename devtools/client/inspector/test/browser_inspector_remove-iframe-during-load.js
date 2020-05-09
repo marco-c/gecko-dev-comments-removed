@@ -27,6 +27,7 @@ add_task(async function() {
 
   
   info("Creating and removing an iframe.");
+  const onMarkupLoaded = inspector.once("markuploaded");
   testActor.eval(
     "new " +
       function() {
@@ -40,6 +41,9 @@ add_task(async function() {
     !(await testActor.hasNode("iframe")),
     "The after-load iframe should have been removed."
   );
+
+  info("Waiting for markup-view to load.");
+  await onMarkupLoaded;
 
   
   ok(!(await testActor.hasNode("iframe")), "Iframe has been removed.");

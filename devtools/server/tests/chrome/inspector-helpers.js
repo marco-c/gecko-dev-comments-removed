@@ -107,6 +107,32 @@ function promiseDone(currentPromise) {
   });
 }
 
+
+
+function isNewRoot(change) {
+  return change.type === "newRoot";
+}
+
+
+
+function waitForMutation(walker, test, mutations = []) {
+  return new Promise(resolve => {
+    for (const change of mutations) {
+      if (test(change)) {
+        resolve(mutations);
+      }
+    }
+
+    walker.once("mutations", newMutations => {
+      waitForMutation(walker, test, mutations.concat(newMutations)).then(
+        finalMutations => {
+          resolve(finalMutations);
+        }
+      );
+    });
+  });
+}
+
 var _tests = [];
 function addTest(test) {
   _tests.push(test);
