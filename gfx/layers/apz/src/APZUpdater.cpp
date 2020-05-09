@@ -373,8 +373,8 @@ void APZUpdater::RunOnUpdaterThread(LayersId aLayersId,
     return;
   }
 
-  if (CompositorThread()) {
-    CompositorThread()->Dispatch(task.forget());
+  if (MessageLoop* loop = CompositorThreadHolder::Loop()) {
+    loop->PostTask(task.forget());
   } else {
     
     NS_WARNING("Dropping task posted to updater thread");

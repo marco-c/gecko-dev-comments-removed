@@ -4,29 +4,30 @@
 
 
 #include "CompositorThread.h"
-
-#include "CompositorBridgeParent.h"
 #include "MainThreadUtils.h"
-#include "VRManagerParent.h"
-#include "mozilla/BackgroundHangMonitor.h"
+#include "nsThreadUtils.h"
+#include "CompositorBridgeParent.h"
 #include "mozilla/layers/CanvasTranslator.h"
 #include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/layers/ImageBridgeParent.h"
 #include "mozilla/media/MediaSystemResourceService.h"
-#include "nsThread.h"
-#include "nsThreadUtils.h"
+#include "VRManagerParent.h"
 
 namespace mozilla {
 namespace layers {
 
 static StaticRefPtr<CompositorThreadHolder> sCompositorThreadHolder;
 static bool sFinishedCompositorShutDown = false;
-static mozilla::BackgroundHangMonitor* sBackgroundHangMonitor;
 
-nsISerialEventTarget* CompositorThread() {
+base::Thread* CompositorThread() {
   return sCompositorThreadHolder
              ? sCompositorThreadHolder->GetCompositorThread()
              : nullptr;
+}
+
+
+MessageLoop* CompositorThreadHolder::Loop() {
+  return CompositorThread() ? CompositorThread()->message_loop() : nullptr;
 }
 
 CompositorThreadHolder* CompositorThreadHolder::GetSingleton() {
@@ -40,44 +41,57 @@ CompositorThreadHolder::CompositorThreadHolder()
 
 CompositorThreadHolder::~CompositorThreadHolder() {
   MOZ_ASSERT(NS_IsMainThread());
+  if (mCompositorThread) {
+    DestroyCompositorThread(mCompositorThread);
+  }
+}
+
+
+void CompositorThreadHolder::DestroyCompositorThread(
+    base::Thread* aCompositorThread) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  MOZ_ASSERT(!sCompositorThreadHolder,
+             "We shouldn't be destroying the compositor thread yet.");
+
+  delete aCompositorThread;
   sFinishedCompositorShutDown = true;
 }
 
- already_AddRefed<nsIThread>
-CompositorThreadHolder::CreateCompositorThread() {
+ base::Thread* CompositorThreadHolder::CreateCompositorThread() {
   MOZ_ASSERT(NS_IsMainThread());
 
   MOZ_ASSERT(!sCompositorThreadHolder,
              "The compositor thread has already been started!");
 
-  nsCOMPtr<nsIThread> compositorThread;
-  nsresult rv = NS_NewNamedThread(
-      "Compositor", getter_AddRefs(compositorThread),
-      NS_NewRunnableFunction(
-          "CompositorThreadHolder::CompositorThreadHolderSetup", []() {
-            sBackgroundHangMonitor = new mozilla::BackgroundHangMonitor(
-                "Compositor",
-                
+  base::Thread* compositorThread = new base::Thread("Compositor");
+
+  base::Thread::Options options;
+  
+
+
+  options.transient_hang_timeout = 128;  
+  
+
+
+  options.permanent_hang_timeout = 2048;  
+#if defined(_WIN32)
+  
 
 
 
-                128,
-                
+  options.message_loop_type = MessageLoop::TYPE_UI;
+#endif
 
-
-                2048);
-            nsCOMPtr<nsIThread> thread = NS_GetCurrentThread();
-            static_cast<nsThread*>(thread.get())->SetUseHangMonitor(true);
-          }));
-
-  if (NS_FAILED(rv)) {
+  if (!compositorThread->StartWithOptions(options)) {
+    delete compositorThread;
     return nullptr;
   }
 
   CompositorBridgeParent::Setup();
   ImageBridgeParent::Setup();
 
-  return compositorThread.forget();
+  return compositorThread;
 }
 
 void CompositorThreadHolder::Start() {
@@ -111,19 +125,7 @@ void CompositorThreadHolder::Shutdown() {
   CompositorManagerParent::Shutdown();
   CanvasTranslator::Shutdown();
 
-  
-  
-  
-  CompositorThread()->Dispatch(NS_NewRunnableFunction(
-      "CompositorThreadHolder::Shutdown",
-      [backgroundHangMonitor = UniquePtr<mozilla::BackgroundHangMonitor>(
-           sBackgroundHangMonitor)]() {
-        nsCOMPtr<nsIThread> thread = NS_GetCurrentThread();
-        static_cast<nsThread*>(thread.get())->SetUseHangMonitor(false);
-      }));
-
   sCompositorThreadHolder = nullptr;
-  sBackgroundHangMonitor = nullptr;
 
   
   
@@ -134,12 +136,8 @@ void CompositorThreadHolder::Shutdown() {
 
 
 bool CompositorThreadHolder::IsInCompositorThread() {
-  if (!CompositorThread()) {
-    return false;
-  }
-  bool in = false;
-  MOZ_ALWAYS_SUCCEEDS(CompositorThread()->IsOnCurrentThread(&in));
-  return in;
+  return CompositorThread() &&
+         CompositorThread()->thread_id() == PlatformThread::CurrentId();
 }
 
 }  

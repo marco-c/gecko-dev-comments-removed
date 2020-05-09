@@ -6,11 +6,12 @@
 #ifndef mozilla_layers_CompositorThread_h
 #define mozilla_layers_CompositorThread_h
 
+#include "base/basictypes.h"       
+#include "base/platform_thread.h"  
+#include "base/thread.h"           
+#include "base/message_loop.h"
 #include "nsISupportsImpl.h"
 #include "ThreadSafeRefcountingWithMainThreadDestruction.h"
-
-class nsISerialEventTarget;
-class nsIThread;
 
 namespace mozilla {
 namespace layers {
@@ -22,9 +23,7 @@ class CompositorThreadHolder final {
  public:
   CompositorThreadHolder();
 
-  nsISerialEventTarget* GetCompositorThread() const {
-    return mCompositorThread;
-  }
+  base::Thread* GetCompositorThread() const { return mCompositorThread; }
 
   static CompositorThreadHolder* GetSingleton();
 
@@ -41,20 +40,23 @@ class CompositorThreadHolder final {
 
   static void Shutdown();
 
+  static MessageLoop* Loop();
+
   
   static bool IsInCompositorThread();
 
  private:
   ~CompositorThreadHolder();
 
-  nsCOMPtr<nsIThread> mCompositorThread;
+  base::Thread* const mCompositorThread;
 
-  static already_AddRefed<nsIThread> CreateCompositorThread();
+  static base::Thread* CreateCompositorThread();
+  static void DestroyCompositorThread(base::Thread* aCompositorThread);
 
   friend class CompositorBridgeParent;
 };
 
-nsISerialEventTarget* CompositorThread();
+base::Thread* CompositorThread();
 
 }  
 }  

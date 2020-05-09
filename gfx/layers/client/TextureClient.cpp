@@ -5,61 +5,57 @@
 
 
 #include "mozilla/layers/TextureClient.h"
-
 #include <stdint.h>  
-
-#include "BufferTexture.h"
-#include "IPDLActor.h"
-#include "ImageContainer.h"  
-#include "Layers.h"          
-#include "LayersLogging.h"   
-#include "MainThreadUtils.h"
+#include "Layers.h"  
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"  
-#include "gfxUtils.h"     
+#include "MainThreadUtils.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/Mutex.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/DataSurfaceHelpers.h"  
-#include "mozilla/gfx/Logging.h"             
 #include "mozilla/gfx/gfxVars.h"
-#include "mozilla/ipc/CrossProcessSemaphore.h"
 #include "mozilla/ipc/SharedMemory.h"  
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/ISurfaceAllocator.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/ImageDataSerializer.h"
-#include "mozilla/layers/PTextureChild.h"
 #include "mozilla/layers/PaintThread.h"
-#include "mozilla/layers/ShadowLayers.h"
-#include "mozilla/layers/TextureClientOGL.h"
 #include "mozilla/layers/TextureClientRecycleAllocator.h"
 #include "mozilla/layers/TextureRecorded.h"
+#include "mozilla/Mutex.h"
 #include "nsDebug.h"          
-#include "nsISerialEventTarget.h"
 #include "nsISupportsImpl.h"  
-#include "nsPrintfCString.h"  
+#include "ImageContainer.h"   
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/Logging.h"  
+#include "mozilla/layers/TextureClientOGL.h"
+#include "mozilla/layers/PTextureChild.h"
+#include "mozilla/gfx/DataSurfaceHelpers.h"  
+#include "nsPrintfCString.h"                 
+#include "LayersLogging.h"                   
+#include "gfxUtils.h"                        
+#include "IPDLActor.h"
+#include "BufferTexture.h"
+#include "mozilla/layers/ShadowLayers.h"
+#include "mozilla/ipc/CrossProcessSemaphore.h"
 
 #ifdef XP_WIN
-#  include "gfx2DGlue.h"
-#  include "gfxWindowsPlatform.h"
 #  include "mozilla/gfx/DeviceManagerDx.h"
 #  include "mozilla/layers/TextureD3D11.h"
 #  include "mozilla/layers/TextureDIB.h"
+#  include "gfxWindowsPlatform.h"
+#  include "gfx2DGlue.h"
 #endif
 #ifdef MOZ_X11
-#  include "GLXLibrary.h"
 #  include "mozilla/layers/TextureClientX11.h"
+#  include "GLXLibrary.h"
 #endif
 #ifdef MOZ_WAYLAND
 #  include <gtk/gtkx.h>
-
-#  include "gfxPlatformGtk.h"
-#  include "mozilla/layers/WaylandDMABUFTextureClientOGL.h"
 #  include "mozilla/widget/nsWaylandDisplay.h"
+#  include "mozilla/layers/WaylandDMABUFTextureClientOGL.h"
+#  include "gfxPlatformGtk.h"
 #endif
 
 #ifdef XP_MACOSX
@@ -494,11 +490,11 @@ void DeallocateTextureClient(TextureDeallocParams params) {
   }
 
   TextureChild* actor = params.actor;
-  nsCOMPtr<nsISerialEventTarget> ipdlThread;
+  MessageLoop* ipdlMsgLoop = nullptr;
 
   if (params.allocator) {
-    ipdlThread = params.allocator->GetThread();
-    if (!ipdlThread) {
+    ipdlMsgLoop = params.allocator->GetMessageLoop();
+    if (!ipdlMsgLoop) {
       
       
       gfxCriticalError() << "Texture deallocated too late during shutdown";
@@ -507,19 +503,19 @@ void DeallocateTextureClient(TextureDeallocParams params) {
   }
 
   
-  if (ipdlThread && !ipdlThread->IsOnCurrentThread()) {
+  if (ipdlMsgLoop && MessageLoop::current() != ipdlMsgLoop) {
     if (params.syncDeallocation) {
       bool done = false;
       ReentrantMonitor barrier("DeallocateTextureClient");
       ReentrantMonitorAutoEnter autoMon(barrier);
-      ipdlThread->Dispatch(NewRunnableFunction(
+      ipdlMsgLoop->PostTask(NewRunnableFunction(
           "DeallocateTextureClientSyncProxyRunnable",
           DeallocateTextureClientSyncProxy, params, &barrier, &done));
       while (!done) {
         barrier.Wait();
       }
     } else {
-      ipdlThread->Dispatch(NewRunnableFunction(
+      ipdlMsgLoop->PostTask(NewRunnableFunction(
           "DeallocateTextureClientRunnable", DeallocateTextureClient, params));
     }
     
@@ -529,7 +525,7 @@ void DeallocateTextureClient(TextureDeallocParams params) {
   
   
 
-  if (!ipdlThread) {
+  if (!ipdlMsgLoop) {
     
     
     
@@ -982,14 +978,15 @@ static void CancelTextureClientNotifyNotUsed(uint64_t aTextureId,
   if (!aAllocator) {
     return;
   }
-  nsCOMPtr<nsISerialEventTarget> thread = aAllocator->GetThread();
-  if (!thread) {
+  MessageLoop* msgLoop = nullptr;
+  msgLoop = aAllocator->GetMessageLoop();
+  if (!msgLoop) {
     return;
   }
-  if (thread->IsOnCurrentThread()) {
+  if (MessageLoop::current() == msgLoop) {
     aAllocator->CancelWaitForNotifyNotUsed(aTextureId);
   } else {
-    thread->Dispatch(NewRunnableFunction(
+    msgLoop->PostTask(NewRunnableFunction(
         "CancelTextureClientNotifyNotUsedRunnable",
         CancelTextureClientNotifyNotUsed, aTextureId, aAllocator));
   }
@@ -1020,8 +1017,9 @@ void TextureClient::SetRecycleAllocator(
 }
 
 bool TextureClient::InitIPDLActor(CompositableForwarder* aForwarder) {
-  MOZ_ASSERT(aForwarder && aForwarder->GetTextureForwarder()->GetThread() ==
-                               mAllocator->GetThread());
+  MOZ_ASSERT(aForwarder &&
+             aForwarder->GetTextureForwarder()->GetMessageLoop() ==
+                 mAllocator->GetMessageLoop());
 
   if (mActor && !mActor->IPCOpen()) {
     return false;
@@ -1114,8 +1112,8 @@ bool TextureClient::InitIPDLActor(CompositableForwarder* aForwarder) {
 
 bool TextureClient::InitIPDLActor(KnowsCompositor* aKnowsCompositor) {
   MOZ_ASSERT(aKnowsCompositor &&
-             aKnowsCompositor->GetTextureForwarder()->GetThread() ==
-                 mAllocator->GetThread());
+             aKnowsCompositor->GetTextureForwarder()->GetMessageLoop() ==
+                 mAllocator->GetMessageLoop());
   TextureForwarder* fwd = aKnowsCompositor->GetTextureForwarder();
   if (mActor && !mActor->mDestroyed) {
     CompositableForwarder* currentFwd = mActor->mCompositableForwarder;
