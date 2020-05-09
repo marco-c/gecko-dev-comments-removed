@@ -161,17 +161,10 @@ def compute_manifest_runtimes(suites, platform):
                 path = path.split(':', 1)[-1]
 
             if suite in EXCEED_LIMIT:
-                
-                
-                prefix = 'testing/web-platform/tests'
-                path = path.lstrip('/')
-
-                if path.startswith('_mozilla'):
-                    prefix = 'testing/web-platform/mozilla/tests'
-                    path = path.lstrip('_mozilla/')
-
-                
-                path = os.path.join(prefix, path.split('/')[0])
+                depth = 2
+                if path.startswith('/_mozilla'):
+                    depth = 3
+                path = os.path.join('/', *path.split('/')[:depth])
 
                 
                 
