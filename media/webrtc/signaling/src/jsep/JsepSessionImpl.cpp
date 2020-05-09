@@ -1943,6 +1943,8 @@ void JsepSessionImpl::SetupDefaultCodecs() {
   mSupportedCodecs.emplace_back(
       new JsepAudioCodecDescription("101", "telephone-event", 8000, 1));
 
+  bool useRtx =
+      Preferences::GetBool("media.peerconnection.video.use_rtx", false);
   
   
   UniquePtr<JsepVideoCodecDescription> vp8(
@@ -1950,7 +1952,9 @@ void JsepSessionImpl::SetupDefaultCodecs() {
   
   vp8->mConstraints.maxFs = 12288;  
   vp8->mConstraints.maxFps = 60;
-  vp8->EnableRtx("124");
+  if (useRtx) {
+    vp8->EnableRtx("124");
+  }
   mSupportedCodecs.push_back(std::move(vp8));
 
   UniquePtr<JsepVideoCodecDescription> vp9(
@@ -1958,7 +1962,9 @@ void JsepSessionImpl::SetupDefaultCodecs() {
   
   vp9->mConstraints.maxFs = 12288;  
   vp9->mConstraints.maxFps = 60;
-  vp9->EnableRtx("125");
+  if (useRtx) {
+    vp9->EnableRtx("125");
+  }
   mSupportedCodecs.push_back(std::move(vp9));
 
   UniquePtr<JsepVideoCodecDescription> h264_1(
@@ -1966,7 +1972,9 @@ void JsepSessionImpl::SetupDefaultCodecs() {
   h264_1->mPacketizationMode = 1;
   
   h264_1->mProfileLevelId = 0x42E00D;
-  h264_1->EnableRtx("127");
+  if (useRtx) {
+    h264_1->EnableRtx("127");
+  }
   mSupportedCodecs.push_back(std::move(h264_1));
 
   UniquePtr<JsepVideoCodecDescription> h264_0(
@@ -1974,7 +1982,9 @@ void JsepSessionImpl::SetupDefaultCodecs() {
   h264_0->mPacketizationMode = 0;
   
   h264_0->mProfileLevelId = 0x42E00D;
-  h264_0->EnableRtx("98");
+  if (useRtx) {
+    h264_0->EnableRtx("98");
+  }
   mSupportedCodecs.push_back(std::move(h264_0));
 
   UniquePtr<JsepVideoCodecDescription> ulpfec(new JsepVideoCodecDescription(
