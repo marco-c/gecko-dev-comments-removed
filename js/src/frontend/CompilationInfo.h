@@ -31,7 +31,7 @@ using FunctionType = mozilla::Variant<JSFunction*, ScriptStencilBase>;
 
 
 
-struct MOZ_RAII CompilationInfo {
+struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
   JSContext* cx;
   const JS::ReadOnlyCompileOptions& options;
 
@@ -40,6 +40,10 @@ struct MOZ_RAII CompilationInfo {
   AutoKeepAtoms keepAtoms;
 
   Directives directives;
+
+  
+  
+  FunctionBox* traceListHead = nullptr;
 
   
   
@@ -74,7 +78,8 @@ struct MOZ_RAII CompilationInfo {
   
   CompilationInfo(JSContext* cx, LifoAllocScope& alloc,
                   const JS::ReadOnlyCompileOptions& options)
-      : cx(cx),
+      : JS::CustomAutoRooter(cx),
+        cx(cx),
         options(options),
         keepAtoms(cx),
         directives(options.forceStrictMode()),
@@ -96,6 +101,8 @@ struct MOZ_RAII CompilationInfo {
   MOZ_MUST_USE bool assignSource(JS::SourceText<Unit>& sourceBuffer) {
     return sourceObject->source()->assignSource(cx, options, sourceBuffer);
   }
+
+  void trace(JSTracer* trc) final;
 
   
   
