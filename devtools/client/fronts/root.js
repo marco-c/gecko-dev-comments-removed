@@ -238,7 +238,17 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     }
 
     const descriptorFront = await super.getTab(packet);
-    return descriptorFront.getTarget(filter);
+
+    
+    if (filter?.tab?.tagName == "tab") {
+      
+      
+      
+      
+      descriptorFront.setLocalTab(filter.tab);
+    }
+
+    return descriptorFront.getTarget();
   }
 
   
