@@ -276,7 +276,6 @@ class Query {
     this.providers = providers;
     this.started = false;
     this.canceled = false;
-    this.complete = false;
 
     
     
@@ -293,37 +292,55 @@ class Query {
     this.started = true;
 
     
-    let providers = [];
+    let activeProviders = [];
+    let activePromises = [];
     let maxPriority = -1;
     for (let provider of this.providers) {
-      if (await provider.tryMethod("isActive", this.context)) {
-        let priority = provider.tryMethod("getPriority", this.context);
-        if (priority >= maxPriority) {
-          
-          if (priority > maxPriority) {
-            
-            
-            
-            providers.length = 0;
-            maxPriority = priority;
-          }
-          providers.push(provider);
-        }
-      }
+      activePromises.push(
+        
+        
+        
+        Promise.resolve(provider.tryMethod("isActive", this.context))
+          .then(isActive => {
+            if (isActive && !this.canceled) {
+              let priority = provider.tryMethod("getPriority", this.context);
+              if (priority >= maxPriority) {
+                
+                if (priority > maxPriority) {
+                  
+                  
+                  
+                  activeProviders.length = 0;
+                  maxPriority = priority;
+                }
+                activeProviders.push(provider);
+              }
+            }
+          })
+          .catch(Cu.reportError)
+      );
     }
 
     
-    let promises = [];
-    let delayStarted = false;
-    for (let provider of providers) {
-      if (this.canceled) {
-        break;
+    
+    
+    await Promise.all(activePromises);
+
+    if (this.canceled) {
+      this.controller = null;
+      return;
+    }
+
+    
+    let queryPromises = [];
+    for (let provider of activeProviders) {
+      if (provider.type == UrlbarUtils.PROVIDER_TYPE.IMMEDIATE) {
+        queryPromises.push(
+          provider.tryMethod("startQuery", this.context, this.add.bind(this))
+        );
+        continue;
       }
-      if (
-        provider.type != UrlbarUtils.PROVIDER_TYPE.IMMEDIATE &&
-        !delayStarted
-      ) {
-        delayStarted = true;
+      if (!this._sleepTimer) {
         
         
         
@@ -332,26 +349,30 @@ class Query {
           time: UrlbarPrefs.get("delay"),
           logger,
         });
-        await this._sleepTimer.promise;
       }
-      promises.push(
-        provider.tryMethod("startQuery", this.context, this.add.bind(this))
+      queryPromises.push(
+        this._sleepTimer.promise
+          .then(() => {
+            if (this.canceled) {
+              return undefined;
+            }
+            return provider.tryMethod(
+              "startQuery",
+              this.context,
+              this.add.bind(this)
+            );
+          })
+          .catch(Cu.reportError)
       );
     }
 
-    logger.info(`Queried ${promises.length} providers`);
-    if (promises.length) {
-      await Promise.all(promises.map(p => p.catch(Cu.reportError)));
+    logger.info(`Queried ${queryPromises.length} providers`);
+    await Promise.all(queryPromises);
 
-      if (this._chunkTimer) {
-        
-        await this._chunkTimer.fire();
-      }
+    if (!this.canceled && this._chunkTimer) {
+      
+      await this._chunkTimer.fire();
     }
-
-    
-    
-    this.complete = true;
 
     
     this.controller = null;
@@ -411,42 +432,47 @@ class Query {
     match.providerName = provider.name;
     this.context.results.push(match);
 
-    let notifyResults = () => {
-      if (this._chunkTimer) {
-        this._chunkTimer.cancel().catch(Cu.reportError);
-        delete this._chunkTimer;
-      }
-      this.muxer.sort(this.context);
+    this._notifyResultsFromProvider(provider);
+  }
 
-      
-      
-      logger.debug(
-        `Cropping ${this.context.results.length} matches to ${this.context.maxResults}`
-      );
-      let resultCount = this.context.maxResults;
-      for (let i = 0; i < this.context.results.length; i++) {
-        resultCount -= UrlbarUtils.getSpanForResult(this.context.results[i]);
-        if (resultCount < 0) {
-          this.context.results.splice(i, this.context.results.length - i);
-          break;
-        }
-      }
-
-      this.controller.receiveResults(this.context);
-    };
-
+  _notifyResultsFromProvider(provider) {
     
     
     if (provider.type == UrlbarUtils.PROVIDER_TYPE.IMMEDIATE) {
-      notifyResults();
+      this._notifyResults();
     } else if (!this._chunkTimer) {
       this._chunkTimer = new SkippableTimer({
         name: "Query chunk timer",
-        callback: notifyResults,
+        callback: () => this._notifyResults(),
         time: CHUNK_MATCHES_DELAY_MS,
         logger,
       });
     }
+  }
+
+  _notifyResults() {
+    this.muxer.sort(this.context);
+
+    if (this._chunkTimer) {
+      this._chunkTimer.cancel().catch(Cu.reportError);
+      this._chunkTimer = null;
+    }
+
+    
+    
+    logger.debug(
+      `Cropping ${this.context.results.length} matches to ${this.context.maxResults}`
+    );
+    let resultCount = this.context.maxResults;
+    for (let i = 0; i < this.context.results.length; i++) {
+      resultCount -= UrlbarUtils.getSpanForResult(this.context.results[i]);
+      if (resultCount < 0) {
+        this.context.results.splice(i, this.context.results.length - i);
+        break;
+      }
+    }
+
+    this.controller.receiveResults(this.context);
   }
 }
 
