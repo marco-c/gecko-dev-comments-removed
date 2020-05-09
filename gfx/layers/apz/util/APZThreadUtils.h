@@ -50,6 +50,14 @@ class APZThreadUtils {
 
 
   static bool IsControllerThread();
+
+  
+
+
+
+
+  static void PostDelayedTask(already_AddRefed<Runnable> aRunnable,
+                              int aDelayMs);
 };
 
 
