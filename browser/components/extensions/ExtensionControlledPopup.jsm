@@ -252,7 +252,7 @@ class ExtensionControlledPopup {
 
     
     let doc = win.document;
-    let panel = doc.getElementById("extension-notification-panel");
+    let panel = ExtensionControlledPopup._getAndMaybeCreatePanel(doc);
     let popupnotification = doc.getElementById(this.popupnotificationId);
     let urlBarWasFocused = win.gURLBar.focused;
 
@@ -323,7 +323,6 @@ class ExtensionControlledPopup {
       anchorButton = action || doc.getElementById("PanelUI-menu-button");
     }
     let anchor = anchorButton.icon;
-    panel.hidden = false;
     popupnotification.show();
     panel.openPopup(anchor);
   }
@@ -425,5 +424,15 @@ class ExtensionControlledPopup {
         resolve();
       }
     });
+  }
+
+  static _getAndMaybeCreatePanel(doc) {
+    
+    let template = doc.getElementById("extensionNotificationTemplate");
+    if (template) {
+      template.replaceWith(template.content);
+    }
+
+    return doc.getElementById("extension-notification-panel");
   }
 }
