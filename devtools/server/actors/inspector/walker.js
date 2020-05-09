@@ -395,12 +395,20 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
   },
 
   _isRootDocumentReady() {
-    if (!this.rootDoc) {
-      return false;
+    if (this.rootDoc) {
+      const { readyState } = this.rootDoc;
+      if (readyState == "interactive" || readyState == "complete") {
+        return true;
+      }
     }
 
-    const { readyState } = this.rootDoc;
-    return readyState == "interactive" || readyState == "complete";
+    
+    
+    
+    const webProgress = this.rootDoc.defaultView.docShell.QueryInterface(
+      Ci.nsIWebProgress
+    );
+    return !webProgress.isLoadingDocument;
   },
 
   
