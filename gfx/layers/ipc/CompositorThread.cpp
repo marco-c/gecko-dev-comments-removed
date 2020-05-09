@@ -19,15 +19,10 @@ namespace layers {
 static StaticRefPtr<CompositorThreadHolder> sCompositorThreadHolder;
 static bool sFinishedCompositorShutDown = false;
 
-base::Thread* CompositorThread() {
+nsISerialEventTarget* CompositorThread() {
   return sCompositorThreadHolder
              ? sCompositorThreadHolder->GetCompositorThread()
              : nullptr;
-}
-
-
-MessageLoop* CompositorThreadHolder::Loop() {
-  return CompositorThread() ? CompositorThread()->message_loop() : nullptr;
 }
 
 CompositorThreadHolder* CompositorThreadHolder::GetSingleton() {
@@ -41,57 +36,40 @@ CompositorThreadHolder::CompositorThreadHolder()
 
 CompositorThreadHolder::~CompositorThreadHolder() {
   MOZ_ASSERT(NS_IsMainThread());
-  if (mCompositorThread) {
-    DestroyCompositorThread(mCompositorThread);
-  }
-}
-
-
-void CompositorThreadHolder::DestroyCompositorThread(
-    base::Thread* aCompositorThread) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  MOZ_ASSERT(!sCompositorThreadHolder,
-             "We shouldn't be destroying the compositor thread yet.");
-
-  delete aCompositorThread;
   sFinishedCompositorShutDown = true;
 }
 
- base::Thread* CompositorThreadHolder::CreateCompositorThread() {
+ already_AddRefed<nsIThread>
+CompositorThreadHolder::CreateCompositorThread() {
   MOZ_ASSERT(NS_IsMainThread());
 
   MOZ_ASSERT(!sCompositorThreadHolder,
              "The compositor thread has already been started!");
 
-  base::Thread* compositorThread = new base::Thread("Compositor");
+  nsCOMPtr<nsIThread> compositorThread;
+  nsresult rv =
+      NS_NewNamedThread("Compositor", getter_AddRefs(compositorThread));
 
-  base::Thread::Options options;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
 
-
-  options.transient_hang_timeout = 128;  
-  
-
-
-  options.permanent_hang_timeout = 2048;  
-#if defined(_WIN32)
-  
-
-
-
-  options.message_loop_type = MessageLoop::TYPE_UI;
-#endif
-
-  if (!compositorThread->StartWithOptions(options)) {
-    delete compositorThread;
+  if (NS_FAILED(rv)) {
     return nullptr;
   }
 
   CompositorBridgeParent::Setup();
   ImageBridgeParent::Setup();
 
-  return compositorThread;
+  return compositorThread.forget();
 }
 
 void CompositorThreadHolder::Start() {
@@ -136,8 +114,12 @@ void CompositorThreadHolder::Shutdown() {
 
 
 bool CompositorThreadHolder::IsInCompositorThread() {
-  return CompositorThread() &&
-         CompositorThread()->thread_id() == PlatformThread::CurrentId();
+  if (!CompositorThread()) {
+    return false;
+  }
+  bool in = false;
+  MOZ_ALWAYS_SUCCEEDS(CompositorThread()->IsOnCurrentThread(&in));
+  return in;
 }
 
 }  

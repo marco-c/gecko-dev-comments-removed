@@ -551,7 +551,7 @@ class AsyncPluginSurfaceManager : public IGPUVideoSurfaceManager {
     if (!InImageBridgeChildThread()) {
       SynchronousTask task("AsyncPluginSurfaceManager readback sync");
       RefPtr<gfx::SourceSurface> result;
-      ImageBridgeChild::GetSingleton()->GetMessageLoop()->PostTask(
+      ImageBridgeChild::GetSingleton()->GetThread()->Dispatch(
           NewRunnableFunction("AsyncPluginSurfaceManager readback",
                               &DoSyncReadback, &pluginSD, &result, &task));
       task.Wait();
@@ -565,7 +565,7 @@ class AsyncPluginSurfaceManager : public IGPUVideoSurfaceManager {
       const SurfaceDescriptorGPUVideo& aSD) override {
     SurfaceDescriptorPlugin pluginSD = aSD;
     if (!InImageBridgeChildThread()) {
-      ImageBridgeChild::GetSingleton()->GetMessageLoop()->PostTask(
+      ImageBridgeChild::GetSingleton()->GetThread()->Dispatch(
           NewRunnableFunction("AsyncPluginSurfaceManager dealloc", &DoDealloc,
                               &pluginSD));
       return;
@@ -739,7 +739,7 @@ mozilla::ipc::IPCResult PluginInstanceParent::RecvInitDXGISurface(
   
   SurfaceDescriptorPlugin sd;
   SynchronousTask task("SendMakeAsyncPluginSurfaces sync");
-  ImageBridgeChild::GetSingleton()->GetMessageLoop()->PostTask(
+  ImageBridgeChild::GetSingleton()->GetThread()->Dispatch(
       NewRunnableFunction("SendingMakeAsyncPluginSurfaces", &InitDXGISurface,
                           format, size, &sd, &task));
   task.Wait();
@@ -781,9 +781,8 @@ mozilla::ipc::IPCResult PluginInstanceParent::RecvFinalizeDXGISurface(
   
   
   
-  ImageBridgeChild::GetSingleton()->GetMessageLoop()->PostTask(
-      NewRunnableFunction("SendingRemoveAsyncPluginSurface",
-                          &FinalizeDXGISurface, asi.mSD));
+  ImageBridgeChild::GetSingleton()->GetThread()->Dispatch(NewRunnableFunction(
+      "SendingRemoveAsyncPluginSurface", &FinalizeDXGISurface, asi.mSD));
 
   mAsyncSurfaceMap.remove(asiIt);
 #endif
@@ -897,9 +896,8 @@ mozilla::ipc::IPCResult PluginInstanceParent::RecvShowDirectDXGISurface(
 
   
   SynchronousTask task("SendUpdateAsyncPluginSurface sync");
-  ImageBridgeChild::GetSingleton()->GetMessageLoop()->PostTask(
-      NewRunnableFunction("SendingUpdateAsyncPluginSurface", &CopyDXGISurface,
-                          asi.mSD, &task));
+  ImageBridgeChild::GetSingleton()->GetThread()->Dispatch(NewRunnableFunction(
+      "SendingUpdateAsyncPluginSurface", &CopyDXGISurface, asi.mSD, &task));
   task.Wait();
 
   
