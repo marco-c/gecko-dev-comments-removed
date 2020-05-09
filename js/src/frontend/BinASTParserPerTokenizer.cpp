@@ -87,9 +87,8 @@ template <typename Tok>
 BinASTParserPerTokenizer<Tok>::BinASTParserPerTokenizer(
     JSContext* cx, CompilationInfo& compilationInfo,
     const JS::ReadOnlyCompileOptions& options,
-    HandleScriptSourceObject sourceObject,
     Handle<BaseScript*> lazyScript )
-    : BinASTParserBase(cx, compilationInfo, sourceObject),
+    : BinASTParserBase(cx, compilationInfo),
       options_(options),
       lazyScript_(cx, lazyScript),
       handler_(cx, compilationInfo.allocScope.alloc(), nullptr,
@@ -417,9 +416,9 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::finishLazyFunction(
   
   
   
-  BINJS_TRY_DECL(
-      lazy, BaseScript::CreateRawLazy(cx_,  0, fun,
-                                      sourceObject_, extent, immutableFlags));
+  BINJS_TRY_DECL(lazy, BaseScript::CreateRawLazy(cx_,  0, fun,
+                                                 compilationInfo_.sourceObject,
+                                                 extent, immutableFlags));
 
   MOZ_ASSERT(lazy->isBinAST());
   fun->initScript(lazy);
