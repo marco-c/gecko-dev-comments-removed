@@ -37,6 +37,23 @@ nsresult BrowserBridgeParent::InitWithProcess(
   RefPtr<CanonicalBrowsingContext> browsingContext =
       aWindowInit.browsingContext().get_canonical();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  CanonicalBrowsingContext* ancestor = browsingContext->GetParent();
+  while (ancestor) {
+    if (NS_WARN_IF(ancestor->IsDiscarded())) {
+      return NS_ERROR_UNEXPECTED;
+    }
+    ancestor = ancestor->GetParent();
+  }
+
   MutableTabContext tabContext;
   tabContext.SetTabContext(Manager()->ChromeOuterWindowID(),
                            Manager()->ShowFocusRings(), aPresentationURL,
