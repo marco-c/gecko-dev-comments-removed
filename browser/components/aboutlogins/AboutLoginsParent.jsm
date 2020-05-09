@@ -354,11 +354,7 @@ class AboutLoginsParent extends JSWindowActorParent {
             return;
           }
           if (!token.hasPassword && OS_AUTH_ENABLED) {
-            if (AppConstants.platform == "macosx") {
-              
-              
-              messageId += "-macosx";
-            }
+            messageId += "-" + AppConstants.platform;
             let [
               messageText,
               captionText,
