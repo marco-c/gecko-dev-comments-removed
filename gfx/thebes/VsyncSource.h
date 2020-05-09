@@ -16,6 +16,8 @@
 namespace mozilla {
 class RefreshTimerVsyncDispatcher;
 class CompositorVsyncDispatcher;
+class VsyncObserver;
+struct VsyncEvent;
 
 class VsyncIdType {};
 typedef layers::BaseTransactionId<VsyncIdType> VsyncId;
@@ -33,9 +35,9 @@ class VsyncSource {
  public:
   
   class Display {
+    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Display)
    public:
     Display();
-    virtual ~Display();
 
     
     
@@ -47,6 +49,7 @@ class VsyncSource {
     
     
     virtual void NotifyVsync(TimeStamp aVsyncTimestamp);
+    void NotifyGenericObservers(VsyncEvent aEvent);
 
     RefPtr<RefreshTimerVsyncDispatcher> GetRefreshTimerVsyncDispatcher();
 
@@ -58,6 +61,9 @@ class VsyncSource {
         CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
     void DisableCompositorVsyncDispatcher(
         CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
+    void AddGenericObserver(VsyncObserver* aObserver);
+    void RemoveGenericObserver(VsyncObserver* aObserver);
+
     void MoveListenersToNewSource(const RefPtr<VsyncSource>& aNewSource);
     void NotifyRefreshTimerVsyncStatus(bool aEnable);
     virtual TimeDuration GetVsyncRate();
@@ -67,6 +73,9 @@ class VsyncSource {
     virtual void DisableVsync() = 0;
     virtual bool IsVsyncEnabled() = 0;
     virtual void Shutdown() = 0;
+
+   protected:
+    virtual ~Display();
 
    private:
     void UpdateVsyncStatus();
@@ -78,7 +87,11 @@ class VsyncSource {
     nsTArray<RefPtr<CompositorVsyncDispatcher>>
         mRegisteredCompositorVsyncDispatchers;
     RefPtr<RefreshTimerVsyncDispatcher> mRefreshTimerVsyncDispatcher;
+    nsTArray<RefPtr<VsyncObserver>>
+        mGenericObservers;  
     VsyncId mVsyncId;
+    VsyncId mLastVsyncIdSentToMainThread;     
+    VsyncId mLastMainThreadProcessedVsyncId;  
   };
 
   void EnableCompositorVsyncDispatcher(
@@ -89,6 +102,14 @@ class VsyncSource {
       CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
   void DeregisterCompositorVsyncDispatcher(
       CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
+
+  
+  
+  
+  
+  
+  void AddGenericObserver(VsyncObserver* aObserver);
+  void RemoveGenericObserver(VsyncObserver* aObserver);
 
   void MoveListenersToNewSource(const RefPtr<VsyncSource>& aNewSource);
 
