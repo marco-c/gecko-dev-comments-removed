@@ -21,8 +21,14 @@ namespace dom {
 
 class WindowGlobalActor : public nsISupports {
  public:
+  
+  
   static WindowGlobalInit AboutBlankInitializer(
       dom::BrowsingContext* aBrowsingContext, nsIPrincipal* aPrincipal);
+
+  
+  
+  static WindowGlobalInit WindowInitializer(nsGlobalWindowInner* aWindow);
 
  protected:
   virtual ~WindowGlobalActor() = default;

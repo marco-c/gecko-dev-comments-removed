@@ -150,13 +150,12 @@ class WindowGlobalParent final : public WindowContext,
 
   already_AddRefed<Promise> GetSecurityInfo(ErrorResult& aRv);
 
-  
-  
-  WindowGlobalParent(const WindowGlobalInit& aInit, bool aInProcess);
+  static already_AddRefed<WindowGlobalParent> CreateDisconnected(
+      const WindowGlobalInit& aInit, bool aInProcess = false);
 
   
   
-  void Init(const WindowGlobalInit& aInit);
+  void Init() final;
 
   nsIGlobalObject* GetParentObject();
   JSObject* WrapObject(JSContext* aCx,
@@ -234,6 +233,10 @@ class WindowGlobalParent final : public WindowContext,
                                     ShareResolver&& aResolver);
 
  private:
+  WindowGlobalParent(CanonicalBrowsingContext* aBrowsingContext,
+                     uint64_t aInnerWindowId, uint64_t aOuterWindowId,
+                     bool aInProcess, FieldTuple&& aFields);
+
   ~WindowGlobalParent();
 
   
