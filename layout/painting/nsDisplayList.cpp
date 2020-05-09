@@ -1192,15 +1192,33 @@ void nsDisplayListBuilder::MarkFramesForDisplayList(
     if (ViewportFrame* viewportFrame = do_QueryFrame(aDirtyFrame)) {
       if (IsForEventDelivery() && ShouldBuildAsyncZoomContainer() &&
           viewportFrame->PresContext()->IsRootContentDocumentCrossProcess()) {
+        if (viewportFrame->PresShell()->GetRootScrollFrame()) {
 #ifdef DEBUG
-        for (nsIFrame* f : aFrames) {
-          MOZ_ASSERT(ViewportUtils::IsZoomedContentRoot(f));
+          for (nsIFrame* f : aFrames) {
+            MOZ_ASSERT(ViewportUtils::IsZoomedContentRoot(f));
+          }
+#endif
+          visibleRect = ViewportUtils::VisualToLayout(
+              visibleRect, viewportFrame->PresShell());
+          dirtyRect = ViewportUtils::VisualToLayout(dirtyRect,
+                                                    viewportFrame->PresShell());
+        }
+#ifdef DEBUG
+        else {
+          
+          
+          
+          
+          for (nsIFrame* f : aFrames) {
+            MOZ_ASSERT(!ViewportUtils::IsZoomedContentRoot(f) &&
+                       f->GetParent() == aDirtyFrame &&
+                       f->StyleDisplay()->mPosition ==
+                           StylePositionProperty::Fixed);
+          }
+          
+          
         }
 #endif
-        visibleRect = ViewportUtils::VisualToLayout(visibleRect,
-                                                    viewportFrame->PresShell());
-        dirtyRect = ViewportUtils::VisualToLayout(dirtyRect,
-                                                  viewportFrame->PresShell());
       }
     }
 
