@@ -2,10 +2,10 @@
 
 
 
-#ifndef mozilla_media_mp4parse_rust_mp4parse_h
-#define mozilla_media_mp4parse_rust_mp4parse_h
+#ifndef mp4parse_rust_mp4parse_h
+#define mp4parse_rust_mp4parse_h
 
-#include "mp4parse_ffi_generated.h" 
+#include "mp4parse_ffi_generated.h"  
 
 
 
