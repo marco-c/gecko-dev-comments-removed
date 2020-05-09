@@ -474,7 +474,7 @@ BrowserTabList.prototype._checkListening = function() {
   this._listenForEventsIf(
     this._actorByBrowser.size > 0,
     "_listeningForTabClose",
-    ["TabClose", "TabRemotenessChange"]
+    ["TabClose"]
   );
 
   
@@ -641,17 +641,6 @@ BrowserTabList.prototype.handleEvent = DevToolsUtils.makeInfallible(function(
       }
       break;
     }
-    case "TabRemotenessChange": {
-      
-      const actor = this._actorByBrowser.get(browser);
-      if (actor) {
-        this._actorByBrowser.delete(browser);
-        
-        this._notifyListChanged();
-        this._checkListening();
-      }
-      break;
-    }
     case "TabAttrModified": {
       
       
@@ -714,7 +703,6 @@ BrowserTabList.prototype.onOpenWindow = DevToolsUtils.makeInfallible(function(
     }
     if (this._listeningForTabClose) {
       window.addEventListener("TabClose", this);
-      window.addEventListener("TabRemotenessChange", this);
     }
     if (this._listeningForTitleChange) {
       window.messageManager.addMessageListener("DOMTitleChanged", this);
