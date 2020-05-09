@@ -282,6 +282,7 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
     return nullptr;
   }
 
+  
   compilationInfo_.traceListHead = funbox;
   handler_.setFunctionBox(funNode, funbox);
 
@@ -324,6 +325,7 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
     return nullptr;
   }
 
+  
   compilationInfo.traceListHead = funbox;
   handler_.setFunctionBox(funNode, funbox);
 
@@ -1878,18 +1880,19 @@ static bool MaybePublishFunction(JSContext* cx,
   return CreateLazyScript(cx, compilationInfo, stencil, fun, funbox);
 }
 
-bool ParserBase::publishDeferredFunctions(FunctionTree* root) {
-  if (root) {
-    auto visitor = [](ParserBase* parser, FunctionTree* tree) {
-      FunctionBox* funbox = tree->funbox();
-      if (!funbox) {
-        return true;
-      }
-      return MaybePublishFunction(parser->cx_, parser->compilationInfo_,
-                                  funbox);
-    };
-    return root->visitRecursively(this->cx_, this, visitor);
+bool CompilationInfo::publishDeferredFunctions() {
+  
+  
+  
+  
+
+  for (FunctionBox* funbox = traceListHead; funbox;
+       funbox = funbox->traceLink()) {
+    if (!MaybePublishFunction(cx, *this, funbox)) {
+      return false;
+    }
   }
+
   return true;
 }
 
