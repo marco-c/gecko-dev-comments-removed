@@ -240,14 +240,6 @@ ParseContext::ParseContext(JSContext* cx, ParseContext*& parent,
       scriptId_(compilationInfo.usedNames.nextScriptId()),
       superScopeNeedsHomeObject_(false) {
   if (isFunctionBox()) {
-    
-    
-    
-    
-    if (!this->functionBox()->useAsmOrInsideUseAsm()) {
-      tree.emplace(compilationInfo.treeHolder);
-    }
-
     if (functionBox()->isNamedLambda()) {
       namedLambdaScope_.emplace(cx, parent, compilationInfo.usedNames);
     }
@@ -264,11 +256,6 @@ bool ParseContext::init() {
   JSContext* cx = sc()->cx_;
 
   if (isFunctionBox()) {
-    if (tree) {
-      if (!tree->init(cx, this->functionBox())) {
-        return false;
-      }
-    }
     
     
     
