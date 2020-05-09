@@ -58,6 +58,12 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsITelemetry"
 );
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "jwcrypto",
+  "resource://services-crypto/jwcrypto.jsm"
+);
+
 XPCOMUtils.defineLazyModuleGetters(this, {
   ClientID: "resource://gre/modules/ClientID.jsm",
   CoveragePing: "resource://gre/modules/CoveragePing.jsm",
@@ -409,6 +415,14 @@ var Impl = {
 
 
 
+
+
+
+
+
+
+
+
   assemblePing: function assemblePing(aType, aPayload, aOptions = {}) {
     this._log.trace(
       "assemblePing - Type " + aType + ", aOptions " + JSON.stringify(aOptions)
@@ -478,6 +492,14 @@ var Impl = {
 
 
 
+
+
+
+
+
+
+
+
   async _submitPingLogic(aType, aPayload, aOptions) {
     
     
@@ -492,8 +514,54 @@ var Impl = {
       this._clientID = await ClientID.getClientID();
     }
 
-    const pingData = this.assemblePing(aType, aPayload, aOptions);
+    let pingData = this.assemblePing(aType, aPayload, aOptions);
     this._log.trace("submitExternalPing - ping assembled, id: " + pingData.id);
+
+    if (aOptions.useEncryption === true) {
+      try {
+        if (!aOptions.publicKey) {
+          throw new Error("Public key is required when using encryption.");
+        }
+
+        if (
+          !(
+            aOptions.schemaName &&
+            aOptions.schemaNamespace &&
+            aOptions.schemaVersion
+          )
+        ) {
+          throw new Error(
+            "Schema name, namespace, and version are required when using encryption."
+          );
+        }
+
+        const payload = {};
+        payload.encryptedData = await jwcrypto.generateJWE(
+          aOptions.publicKey,
+          new TextEncoder("utf-8").encode(JSON.stringify(aPayload))
+        );
+
+        payload.schemaVersion = aOptions.schemaVersion;
+        payload.schemaName = aOptions.schemaName;
+        payload.schemaNamespace = aOptions.schemaNamespace;
+
+        payload.encryptionKeyId = aOptions.encryptionKeyId;
+
+        if (aOptions.addPioneerId === true) {
+          
+          payload.pioneerId = Services.prefs.getStringPref(
+            "toolkit.telemetry.pioneerId"
+          );
+          payload.studyName = aOptions.studyName;
+        }
+
+        pingData.payload = payload;
+      } catch (e) {
+        this._log.error("_submitPingLogic - Unable to encrypt ping", e);
+        
+        throw e;
+      }
+    }
 
     
     
@@ -517,6 +585,14 @@ var Impl = {
   },
 
   
+
+
+
+
+
+
+
+
 
 
 
