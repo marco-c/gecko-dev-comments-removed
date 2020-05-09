@@ -21,6 +21,7 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Casting.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/Range.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
@@ -1885,8 +1886,15 @@ bool CompilationInfo::publishDeferredFunctions() {
   
   
 
+  mozilla::DebugOnly<size_t> prevIndex = size_t(-1);
+
   for (FunctionBox* funbox = traceListHead; funbox;
        funbox = funbox->traceLink()) {
+    
+    
+    MOZ_ASSERT(prevIndex > funbox->index());
+    prevIndex = funbox->index();
+
     if (!MaybePublishFunction(cx, *this, funbox)) {
       return false;
     }
@@ -2214,6 +2222,10 @@ bool GeneralParser<ParseHandler, Unit>::matchOrInsertSemicolon(
 
 bool ParserBase::leaveInnerFunction(ParseContext* outerpc) {
   MOZ_ASSERT(pc_ != outerpc);
+
+  
+  MOZ_ASSERT_IF(outerpc->isFunctionBox(),
+                outerpc->functionBox()->index() < pc_->functionBox()->index());
 
   
   
@@ -2598,6 +2610,10 @@ bool Parser<FullParseHandler, Unit>::skipLazyInnerFunction(
   }
 
   funbox->initFromLazyFunction(fun);
+
+  
+  MOZ_ASSERT_IF(pc_->isFunctionBox(),
+                pc_->functionBox()->index() < funbox->index());
 
   
   
