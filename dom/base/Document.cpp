@@ -5721,6 +5721,26 @@ void Document::SetCookie(const nsAString& aCookie, ErrorResult& aRv) {
   }
 
   
+  nsCOMPtr<nsIURI> principalURI;
+  auto* basePrin = BasePrincipal::Cast(NodePrincipal());
+  basePrin->GetURI(getter_AddRefs(principalURI));
+
+  if (!principalURI) {
+    
+    
+
+    return;
+  }
+
+  nsCOMPtr<nsIChannel> channel(mChannel);
+  if (!channel) {
+    channel = CreateDummyChannelForCookies(principalURI);
+    if (!channel) {
+      return;
+    }
+  }
+
+  
   nsCOMPtr<nsICookieService> service =
       do_GetService(NS_COOKIESERVICE_CONTRACTID);
   if (!service) {
@@ -5728,7 +5748,7 @@ void Document::SetCookie(const nsAString& aCookie, ErrorResult& aRv) {
   }
 
   NS_ConvertUTF16toUTF8 cookie(aCookie);
-  nsresult rv = service->SetCookieStringFromDocument(this, cookie);
+  nsresult rv = service->SetCookieString(principalURI, cookie, channel);
 
   
   if (NS_FAILED(rv)) {
@@ -5741,6 +5761,45 @@ void Document::SetCookie(const nsAString& aCookie, ErrorResult& aRv) {
     observerService->NotifyObservers(ToSupports(this), "document-set-cookie",
                                      nsString(aCookie).get());
   }
+}
+
+already_AddRefed<nsIChannel> Document::CreateDummyChannelForCookies(
+    nsIURI* aContentURI) {
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!mChannel);
+
+  
+  
+  nsCOMPtr<nsIChannel> channel;
+  NS_NewChannel(getter_AddRefs(channel), aContentURI, this,
+                nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
+                nsIContentPolicy::TYPE_INVALID);
+  nsCOMPtr<nsIPrivateBrowsingChannel> pbChannel = do_QueryInterface(channel);
+  nsCOMPtr<nsIDocShell> docShell(mDocumentContainer);
+  nsCOMPtr<nsILoadContext> loadContext = do_QueryInterface(docShell);
+  if (!pbChannel || !loadContext) {
+    return nullptr;
+  }
+  pbChannel->SetPrivate(loadContext->UsePrivateBrowsing());
+
+  
+  
+  
+  
+  
+  
+  bool parentDocHasStoragePermissin =
+      mParentDocument ? mParentDocument->HasStoragePermission() : false;
+
+  nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+  Unused << loadInfo->SetHasStoragePermission(parentDocHasStoragePermissin);
+
+  return channel.forget();
 }
 
 ReferrerPolicy Document::GetReferrerPolicy() const {

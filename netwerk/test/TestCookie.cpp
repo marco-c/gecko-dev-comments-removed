@@ -107,6 +107,16 @@ void SetACookie(nsICookieService* aCookieService, const char* aSpec,
   SetACookieInternal(aCookieService, aSpec, aCookieString, true);
 }
 
+void SetACookieNoHttp(nsICookieService* aCookieService, const char* aSpec,
+                      const char* aCookieString) {
+  nsCOMPtr<nsIURI> uri;
+  NS_NewURI(getter_AddRefs(uri), aSpec);
+
+  nsresult rv = aCookieService->SetCookieString(
+      uri, nsDependentCString(aCookieString), nullptr);
+  EXPECT_TRUE(NS_SUCCEEDED(rv));
+}
+
 
 void GetACookie(nsICookieService* aCookieService, const char* aSpec,
                 nsACString& aCookie) {
@@ -615,6 +625,52 @@ TEST(TestCookie, TestCookieMain)
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL,
                           "test7=path; test6=path; test3=path; test1=path; "
                           "test5=path; test4=path; test2=path; test8=path"));
+
+  
+
+  
+  SetACookieNoHttp(cookieService, "http://httponly.test/",
+                   "test=httponly; httponly");
+  GetACookie(cookieService, "http://httponly.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
+  
+  SetACookie(cookieService, "http://httponly.test/", "test=httponly; httponly");
+  GetACookie(cookieService, "http://httponly.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=httponly"));
+  
+  GetACookieNoHttp(cookieService, "http://httponly.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
+  
+  SetACookie(cookieService, "http://httponly.test/", "test=httponly; httponly");
+  SetACookieNoHttp(cookieService, "http://httponly.test/", "test=not-httponly");
+  GetACookie(cookieService, "http://httponly.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=httponly"));
+  
+  GetACookieNoHttp(cookieService, "http://httponly.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
+  
+  SetACookie(cookieService, "http://httponly.test/", "test=httponly; httponly");
+  SetACookieNoHttp(cookieService, "http://httponly.test/",
+                   "test=httponly; max-age=-1");
+  GetACookie(cookieService, "http://httponly.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=httponly"));
+  
+  SetACookie(cookieService, "http://httponly.test/",
+             "test=httponly; httponly; max-age=-1");
+  GetACookie(cookieService, "http://httponly.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
+  
+  SetACookie(cookieService, "http://httponly.test/", "test=httponly; httponly");
+  SetACookie(cookieService, "http://httponly.test/", "test=not-httponly");
+  GetACookieNoHttp(cookieService, "http://httponly.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=not-httponly"));
+  
+  
+  SetACookie(cookieService, "http://httponly.test/", "test=not-httponly");
+  SetACookieNoHttp(cookieService, "http://httponly.test/",
+                   "test=httponly; httponly");
+  GetACookieNoHttp(cookieService, "http://httponly.test/", cookie);
+  EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=not-httponly"));
 
   
 

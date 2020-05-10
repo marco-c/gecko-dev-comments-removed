@@ -5,23 +5,13 @@
 
 #include "Cookie.h"
 #include "CookieCommons.h"
-#include "CookieService.h"
-#include "mozilla/ContentBlocking.h"
-#include "mozilla/ConsoleReportCollector.h"
 #include "mozilla/ContentBlockingNotifier.h"
-#include "mozilla/dom/nsMixedContentBlocker.h"
-#include "mozilla/net/CookieJarSettings.h"
-#include "mozIThirdPartyUtil.h"
-#include "nsContentUtils.h"
 #include "nsICookiePermission.h"
 #include "nsICookieService.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsScriptSecurityManager.h"
 
 namespace mozilla {
-
-using dom::Document;
-
 namespace net {
 
 
@@ -74,7 +64,7 @@ bool CookieCommons::PathMatches(Cookie* aCookie, const nsACString& aPath) {
 
 
 nsresult CookieCommons::GetBaseDomain(nsIEffectiveTLDService* aTLDService,
-                                      nsIURI* aHostURI, nsACString& aBaseDomain,
+                                      nsIURI* aHostURI, nsCString& aBaseDomain,
                                       bool& aRequireHostMatch) {
   
   
@@ -100,18 +90,6 @@ nsresult CookieCommons::GetBaseDomain(nsIEffectiveTLDService* aTLDService,
   }
 
   return NS_OK;
-}
-
-nsresult CookieCommons::GetBaseDomain(nsIPrincipal* aPrincipal,
-                                      nsACString& aBaseDomain) {
-  MOZ_ASSERT(aPrincipal);
-
-  
-  if (aPrincipal->SchemeIs("file")) {
-    return aPrincipal->GetAsciiHost(aBaseDomain);
-  }
-
-  return aPrincipal->GetBaseDomain(aBaseDomain);
 }
 
 
@@ -152,9 +130,10 @@ nsresult CookieCommons::GetBaseDomainFromHost(
   return rv;
 }
 
-namespace {
 
-void NotifyRejectionToObservers(nsIURI* aHostURI, CookieOperation aOperation) {
+void CookieCommons::NotifyRejected(nsIURI* aHostURI, nsIChannel* aChannel,
+                                   uint32_t aRejectedReason,
+                                   CookieOperation aOperation) {
   if (aOperation == OPERATION_WRITE) {
     nsCOMPtr<nsIObserverService> os = services::GetObserverService();
     if (os) {
@@ -163,15 +142,6 @@ void NotifyRejectionToObservers(nsIURI* aHostURI, CookieOperation aOperation) {
   } else {
     MOZ_ASSERT(aOperation == OPERATION_READ);
   }
-}
-
-}  
-
-
-void CookieCommons::NotifyRejected(nsIURI* aHostURI, nsIChannel* aChannel,
-                                   uint32_t aRejectedReason,
-                                   CookieOperation aOperation) {
-  NotifyRejectionToObservers(aHostURI, aOperation);
 
   ContentBlockingNotifier::OnDecision(
       aChannel, ContentBlockingNotifier::BlockingDecision::eBlock,
@@ -238,24 +208,12 @@ bool CookieCommons::CheckCookiePermission(nsIChannel* aChannel,
     return false;
   }
 
-  return CheckCookiePermission(channelPrincipal, cookieJarSettings,
-                               aCookieData);
-}
-
-
-bool CookieCommons::CheckCookiePermission(
-    nsIPrincipal* aPrincipal, nsICookieJarSettings* aCookieJarSettings,
-    CookieStruct& aCookieData) {
-  MOZ_ASSERT(aPrincipal);
-  MOZ_ASSERT(aCookieJarSettings);
-
-  if (!aPrincipal->GetIsContentPrincipal()) {
+  if (!channelPrincipal->GetIsContentPrincipal()) {
     return true;
   }
 
   uint32_t cookiePermission = nsICookiePermission::ACCESS_DEFAULT;
-  nsresult rv =
-      aCookieJarSettings->CookiePermission(aPrincipal, &cookiePermission);
+  rv = cookieJarSettings->CookiePermission(channelPrincipal, &cookiePermission);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return true;
   }
@@ -297,153 +255,6 @@ bool CookieCommons::CheckCookiePermission(
   }
 
   return true;
-}
-
-namespace {
-
-CookieStatus CookieStatusForWindow(nsPIDOMWindowInner* aWindow,
-                                   nsIURI* aDocumentURI) {
-  MOZ_ASSERT(aWindow);
-  MOZ_ASSERT(aDocumentURI);
-
-  if (!nsContentUtils::IsThirdPartyWindowOrChannel(aWindow, nullptr,
-                                                   aDocumentURI)) {
-    return STATUS_ACCEPTED;
-  }
-
-  if (StaticPrefs::network_cookie_thirdparty_sessionOnly()) {
-    return STATUS_ACCEPT_SESSION;
-  }
-
-  if (StaticPrefs::network_cookie_thirdparty_nonsecureSessionOnly() &&
-      !nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aDocumentURI)) {
-    return STATUS_ACCEPT_SESSION;
-  }
-
-  return STATUS_ACCEPTED;
-}
-
-}  
-
-
-already_AddRefed<Cookie> CookieCommons::CreateCookieFromDocument(
-    Document* aDocument, const nsACString& aCookieString,
-    int64_t currentTimeInUsec, nsIEffectiveTLDService* aTLDService,
-    mozIThirdPartyUtil* aThirdPartyUtil,
-    std::function<bool(const nsACString&, const OriginAttributes&)>&&
-        aHasExistingCookiesLambda,
-    nsIURI** aDocumentURI, nsACString& aBaseDomain, OriginAttributes& aAttrs) {
-  nsCOMPtr<nsIPrincipal> storagePrincipal =
-      aDocument->EffectiveStoragePrincipal();
-  MOZ_ASSERT(storagePrincipal);
-
-  nsCOMPtr<nsIURI> principalURI;
-  auto* basePrincipal = BasePrincipal::Cast(aDocument->NodePrincipal());
-  basePrincipal->GetURI(getter_AddRefs(principalURI));
-  if (NS_WARN_IF(!principalURI)) {
-    
-    
-    return nullptr;
-  }
-
-  nsAutoCString baseDomain;
-  bool requireHostMatch = false;
-  nsresult rv = CookieCommons::GetBaseDomain(aTLDService, principalURI,
-                                             baseDomain, requireHostMatch);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
-
-  nsPIDOMWindowInner* innerWindow = aDocument->GetInnerWindow();
-  if (NS_WARN_IF(!innerWindow)) {
-    return nullptr;
-  }
-
-  
-  uint32_t dummyRejectedReason = 0;
-  if (aDocument->CookieJarSettings()->GetLimitForeignContexts() &&
-      !aHasExistingCookiesLambda(baseDomain,
-                                 storagePrincipal->OriginAttributesRef()) &&
-      !ContentBlocking::ShouldAllowAccessFor(innerWindow, principalURI,
-                                             &dummyRejectedReason)) {
-    return nullptr;
-  }
-
-  bool isForeignAndNotAddon = false;
-  if (!BasePrincipal::Cast(aDocument->NodePrincipal())->AddonPolicy()) {
-    rv = aThirdPartyUtil->IsThirdPartyWindow(
-        innerWindow->GetOuterWindow(), principalURI, &isForeignAndNotAddon);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      isForeignAndNotAddon = true;
-    }
-  }
-
-  
-  
-  CookieStatus cookieStatus = CookieStatusForWindow(innerWindow, principalURI);
-  MOZ_ASSERT(cookieStatus == STATUS_ACCEPTED ||
-             cookieStatus == STATUS_ACCEPT_SESSION);
-
-  
-  
-  RefPtr<ConsoleReportCollector> crc = new ConsoleReportCollector();
-  auto scopeExit = MakeScopeExit([&] { crc->FlushConsoleReports(aDocument); });
-
-  nsCString cookieString(aCookieString);
-
-  CookieStruct cookieData;
-  bool canSetCookie = false;
-  CookieService::CanSetCookie(principalURI, baseDomain, cookieData,
-                              requireHostMatch, cookieStatus, cookieString,
-                              false, isForeignAndNotAddon, crc, canSetCookie);
-
-  if (!canSetCookie) {
-    return nullptr;
-  }
-
-  
-  if (!CookieCommons::CheckCookiePermission(aDocument->NodePrincipal(),
-                                            aDocument->CookieJarSettings(),
-                                            cookieData)) {
-    NotifyRejectionToObservers(principalURI, OPERATION_WRITE);
-    ContentBlockingNotifier::OnDecision(
-        innerWindow, ContentBlockingNotifier::BlockingDecision::eBlock,
-        nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION);
-    return nullptr;
-  }
-
-  RefPtr<Cookie> cookie =
-      Cookie::Create(cookieData, storagePrincipal->OriginAttributesRef());
-  MOZ_ASSERT(cookie);
-
-  cookie->SetLastAccessed(currentTimeInUsec);
-  cookie->SetCreationTime(
-      Cookie::GenerateUniqueCreationTime(currentTimeInUsec));
-
-  aBaseDomain = baseDomain;
-  aAttrs = storagePrincipal->OriginAttributesRef();
-  principalURI.forget(aDocumentURI);
-
-  return cookie.forget();
-}
-
-
-already_AddRefed<nsICookieJarSettings> CookieCommons::GetCookieJarSettings(
-    nsIChannel* aChannel) {
-  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-  if (aChannel) {
-    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-    nsresult rv =
-        loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      cookieJarSettings = CookieJarSettings::GetBlockingAll();
-    }
-  } else {
-    cookieJarSettings = CookieJarSettings::Create();
-  }
-
-  MOZ_ASSERT(cookieJarSettings);
-  return cookieJarSettings.forget();
 }
 
 }  

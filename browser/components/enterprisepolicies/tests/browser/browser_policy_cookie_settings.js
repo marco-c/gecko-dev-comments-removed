@@ -69,8 +69,8 @@ async function test_cookie_settings({
     Ci.nsIHttpChannelInternal
   ).forceAllowThirdPartyCookie = true;
   Services.cookies.removeAll();
-  Services.cookies.setCookieStringFromHttp(firstPartyURI, "key=value", channel);
-  Services.cookies.setCookieStringFromHttp(thirdPartyURI, "key=value", channel);
+  Services.cookies.setCookieString(firstPartyURI, "key=value", channel);
+  Services.cookies.setCookieString(thirdPartyURI, "key=value", channel);
 
   let expectedFirstPartyCookies = 1;
   let expectedThirdPartyCookies = 1;
@@ -94,7 +94,7 @@ async function test_cookie_settings({
   
   
   Services.cookies.removeAll();
-  Services.cookies.setCookieStringFromHttp(
+  Services.cookies.setCookieString(
     firstPartyURI,
     "key=value; max-age=1000",
     channel

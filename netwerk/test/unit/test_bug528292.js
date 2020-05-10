@@ -42,7 +42,7 @@ function inChildProcess() {
   );
 }
 
-add_task(async () => {
+function run_test() {
   
   httpServer = new HttpServer();
   httpServer.registerPathHandler(preRedirectPath, preRedirectHandler);
@@ -65,6 +65,8 @@ add_task(async () => {
 
   
   
+  
+  
   var chan = NetUtil.newChannel({
     uri: preRedirectURL,
     loadUsingSystemPrincipal: true,
@@ -77,22 +79,16 @@ add_task(async () => {
   
   
   var postRedirectURI = ioService.newURI(postRedirectURL);
-
-  const contentPage = await CookieXPCShellUtils.loadContentPage(
-    postRedirectURI.spec
-  );
-  await contentPage.spawn(
-    sentCookieVal,
-    
-    cookie => (content.document.cookie = cookie)
-  );
-  await contentPage.close();
+  Cc["@mozilla.org/cookieService;1"]
+    .getService(Ci.nsICookieService)
+    .setCookieString(postRedirectURI, sentCookieVal, chan);
 
   
-  await new Promise(resolve => {
-    chan.asyncOpen(new ChannelListener(resolve, null));
-  });
+  chan.asyncOpen(new ChannelListener(finish_test, null));
+  do_test_pending();
+}
 
+function finish_test(event) {
   Assert.equal(receivedCookieVal, sentCookieVal);
   httpServer.stop(do_test_finished);
-});
+}

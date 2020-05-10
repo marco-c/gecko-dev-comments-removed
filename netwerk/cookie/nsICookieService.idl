@@ -8,7 +8,6 @@
 interface nsIURI;
 interface nsIChannel;
 interface nsIPrincipal;
-webidl Document;
 
 
 
@@ -132,7 +131,15 @@ interface nsICookieService : nsISupports
 
 
 
-  void setCookieStringFromDocument(in Document aDocument, in ACString aCookie);
+
+
+
+
+
+
+
+  void setCookieString(in nsIURI aURI, in ACString aCookie,
+                       in nsIChannel aChannel);
 
   
 

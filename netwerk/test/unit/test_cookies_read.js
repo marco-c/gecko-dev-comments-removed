@@ -5,18 +5,28 @@
 
 "use strict";
 
+var test_generator = do_run_test();
+
 var CMAX = 1000; 
 
-add_task(async () => {
+function run_test() {
+  do_test_pending();
+  test_generator.next();
+}
+
+function finish_test() {
+  executeSoon(function() {
+    test_generator.return();
+    do_test_finished();
+  });
+}
+
+function* do_run_test() {
   
   let profile = do_get_profile();
 
   
   Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
-  Services.prefs.setBoolPref(
-    "network.cookieJarSettings.unblocked_for_testing",
-    true
-  );
 
   
   
@@ -28,26 +38,19 @@ add_task(async () => {
   Assert.ok(do_get_cookie_file(profile).exists());
   let db = new CookieDatabaseConnection(do_get_cookie_file(profile), 11);
 
-  let uri = NetUtil.newURI("http://foo.com/");
-  let channel = NetUtil.newChannel({
-    uri,
-    loadUsingSystemPrincipal: true,
-    contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
-  });
   for (let i = 0; i < CMAX; ++i) {
     let uri = NetUtil.newURI("http://" + i + ".com/");
-    Services.cookies.setCookieStringFromHttp(
-      uri,
-      "oh=hai; max-age=1000",
-      channel
-    );
+    Services.cookies.setCookieString(uri, "oh=hai; max-age=1000", null);
   }
 
   Assert.equal(do_count_cookies(), CMAX);
 
   
   while (do_count_cookies_in_db(db.db) < CMAX) {
-    await new Promise(resolve => executeSoon(resolve));
+    executeSoon(function() {
+      do_run_generator(test_generator);
+    });
+    yield;
   }
 
   
@@ -58,7 +61,8 @@ add_task(async () => {
   db.close();
 
   
-  await promise_close_profile();
+  do_close_profile(test_generator);
+  yield;
   do_load_profile();
 
   
@@ -78,7 +82,8 @@ add_task(async () => {
   }
 
   
-  await promise_close_profile();
+  do_close_profile(test_generator);
+  yield;
   do_load_profile();
 
   
@@ -95,15 +100,18 @@ add_task(async () => {
   Assert.equal(do_count_cookies(), CMAX - 200);
 
   
-  await promise_close_profile();
+  do_close_profile(test_generator);
+  yield;
   do_load_profile();
 
   
   Assert.equal(do_count_cookies(), CMAX - 200);
 
   
-  await promise_close_profile();
-  await promise_load_profile();
+  do_close_profile(test_generator);
+  yield;
+  do_load_profile(test_generator);
+  yield;
 
   
   Assert.equal(do_count_cookies(), CMAX - 200);
@@ -111,4 +119,6 @@ add_task(async () => {
     let host = i.toString() + ".com";
     Assert.equal(Services.cookiemgr.countCookiesFromHost(host), 1);
   }
-});
+
+  finish_test();
+}

@@ -21,25 +21,29 @@
 "use strict";
 
 let profile;
+let sub_generator;
 let cookie;
 
-add_task(async () => {
+var test_generator = do_run_test();
+
+function run_test() {
+  do_test_pending();
+  do_run_generator(test_generator);
+}
+
+function finish_test() {
+  executeSoon(function() {
+    test_generator.return();
+    do_test_finished();
+  });
+}
+
+function* do_run_test() {
   
   profile = do_get_profile();
 
   
   Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
-  Services.prefs.setBoolPref(
-    "network.cookieJarSettings.unblocked_for_testing",
-    true
-  );
-
-  
-  const hosts = ["foo.com", "hither.com", "haithur.com", "bar.com"];
-  for (let i = 0; i < 3000; ++i) {
-    hosts.push(i + ".com");
-  }
-  CookieXPCShellUtils.createServer({ hosts });
 
   
   Assert.ok(!do_get_cookie_file(profile).exists());
@@ -61,12 +65,28 @@ add_task(async () => {
     false
   );
 
-  await run_test_1();
-  await run_test_2();
-  await run_test_3();
-  await run_test_4();
-  await run_test_5();
-});
+  sub_generator = run_test_1(test_generator);
+  sub_generator.next();
+  yield;
+
+  sub_generator = run_test_2(test_generator);
+  sub_generator.next();
+  yield;
+
+  sub_generator = run_test_3(test_generator);
+  sub_generator.next();
+  yield;
+
+  sub_generator = run_test_4(test_generator);
+  sub_generator.next();
+  yield;
+
+  sub_generator = run_test_5(test_generator);
+  sub_generator.next();
+  yield;
+
+  finish_test();
+}
 
 function do_get_backup_file(profile) {
   let file = profile.clone();
@@ -111,20 +131,14 @@ function do_corrupt_db(file) {
   return size;
 }
 
-async function run_test_1() {
+function* run_test_1(generator) {
   
-  const contentPage = await CookieXPCShellUtils.loadContentPage(
-    "http://foo.com/"
-  );
-  await contentPage.spawn(
-    null,
-    
-    () => (content.document.cookie = "oh=hai; max-age=1000")
-  );
-  await contentPage.close();
+  let uri = NetUtil.newURI("http://foo.com/");
+  Services.cookies.setCookieString(uri, "oh=hai; max-age=1000", null);
 
   
-  await promise_close_profile();
+  do_close_profile(sub_generator);
+  yield;
 
   
   
@@ -132,7 +146,8 @@ async function run_test_1() {
   Assert.equal(do_count_cookies_in_db(db.db), 1);
 
   
-  await promise_load_profile();
+  do_load_profile(sub_generator);
+  yield;
 
   
   db.insertCookie(cookie);
@@ -168,16 +183,22 @@ async function run_test_1() {
   
   for (let i = 0; i < 10; ++i) {
     Assert.equal(Services.cookiemgr.countCookiesFromHost(cookie.host), 1);
-    await new Promise(resolve => executeSoon(resolve));
+    executeSoon(function() {
+      do_run_generator(sub_generator);
+    });
+    yield;
   }
 
   
   if (!isRebuildingDone) {
     Services.obs.removeObserver(rebuildingObserve, "cookie-db-rebuilding");
-    await new _promise_observer("cookie-db-rebuilding");
+    new _observer(sub_generator, "cookie-db-rebuilding");
+    yield;
   }
-
-  await new Promise(resolve => executeSoon(resolve));
+  executeSoon(function() {
+    do_run_generator(sub_generator);
+  });
+  yield;
 
   
   Assert.equal(Services.cookiemgr.countCookiesFromHost("foo.com"), 1);
@@ -185,7 +206,8 @@ async function run_test_1() {
   Assert.equal(do_count_cookies(), 2);
 
   
-  await promise_close_profile();
+  do_close_profile(sub_generator);
+  yield;
 
   
   
@@ -204,39 +226,30 @@ async function run_test_1() {
   Assert.equal(dbcookie.value, "hallo");
 
   
-  await promise_close_profile();
+  do_close_profile(sub_generator);
+  yield;
 
   
   do_get_cookie_file(profile).remove(false);
   do_get_backup_file(profile).remove(false);
   Assert.ok(!do_get_cookie_file(profile).exists());
   Assert.ok(!do_get_backup_file(profile).exists());
+  do_run_generator(generator);
 }
 
-async function run_test_2() {
+function* run_test_2(generator) {
   
   do_load_profile();
-
   Services.cookies.runInTransaction(_ => {
-    let uri = NetUtil.newURI("http://foo.com/");
-    const channel = NetUtil.newChannel({
-      uri,
-      loadUsingSystemPrincipal: true,
-      contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
-    });
-
     for (let i = 0; i < 3000; ++i) {
       let uri = NetUtil.newURI("http://" + i + ".com/");
-      Services.cookies.setCookieStringFromHttp(
-        uri,
-        "oh=hai; max-age=1000",
-        channel
-      );
+      Services.cookies.setCookieString(uri, "oh=hai; max-age=1000", null);
     }
   });
 
   
-  await promise_close_profile();
+  do_close_profile(sub_generator);
+  yield;
 
   
   let size = do_corrupt_db(do_get_cookie_file(profile));
@@ -253,7 +266,8 @@ async function run_test_2() {
   Assert.equal(do_count_cookies(), 0);
 
   
-  await promise_close_profile();
+  do_close_profile(sub_generator);
+  yield;
 
   
   Assert.ok(do_get_backup_file(profile).exists());
@@ -266,16 +280,18 @@ async function run_test_2() {
   Assert.equal(do_count_cookies(), 0);
 
   
-  await promise_close_profile();
+  do_close_profile(sub_generator);
+  yield;
 
   
   do_get_cookie_file(profile).remove(false);
   do_get_backup_file(profile).remove(false);
   Assert.ok(!do_get_cookie_file(profile).exists());
   Assert.ok(!do_get_backup_file(profile).exists());
+  do_run_generator(generator);
 }
 
-async function run_test_3() {
+function* run_test_3(generator) {
   
   
   Services.prefs.setIntPref("network.cookie.maxPerHost", 3000);
@@ -283,36 +299,27 @@ async function run_test_3() {
   
   do_load_profile();
   Services.cookies.runInTransaction(_ => {
-    let uri = NetUtil.newURI("http://hither.com/");
-    let channel = NetUtil.newChannel({
-      uri,
-      loadUsingSystemPrincipal: true,
-      contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
-    });
     for (let i = 0; i < 10; ++i) {
-      Services.cookies.setCookieStringFromHttp(
+      let uri = NetUtil.newURI("http://hither.com/");
+      Services.cookies.setCookieString(
         uri,
         "oh" + i + "=hai; max-age=1000",
-        channel
+        null
       );
     }
-    uri = NetUtil.newURI("http://haithur.com/");
-    channel = NetUtil.newChannel({
-      uri,
-      loadUsingSystemPrincipal: true,
-      contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
-    });
     for (let i = 10; i < 3000; ++i) {
-      Services.cookies.setCookieStringFromHttp(
+      let uri = NetUtil.newURI("http://haithur.com/");
+      Services.cookies.setCookieString(
         uri,
         "oh" + i + "=hai; max-age=1000",
-        channel
+        null
       );
     }
   });
 
   
-  await promise_close_profile();
+  do_close_profile(sub_generator);
+  yield;
 
   
   let size = do_corrupt_db(do_get_cookie_file(profile));
@@ -329,8 +336,8 @@ async function run_test_3() {
   Assert.equal(Services.cookiemgr.countCookiesFromHost("haithur.com"), 0);
 
   
-  await promise_close_profile();
-
+  do_close_profile(sub_generator);
+  yield;
   let db = Services.storage.openDatabase(do_get_cookie_file(profile));
   Assert.equal(do_count_cookies_in_db(db, "hither.com"), 0);
   Assert.equal(do_count_cookies_in_db(db), 0);
@@ -352,8 +359,8 @@ async function run_test_3() {
   Assert.equal(do_count_cookies(), 0);
 
   
-  await promise_close_profile();
-
+  do_close_profile(sub_generator);
+  yield;
   db = Services.storage.openDatabase(do_get_cookie_file(profile));
   Assert.equal(do_count_cookies_in_db(db), 0);
   db.close();
@@ -367,30 +374,22 @@ async function run_test_3() {
   do_get_backup_file(profile).remove(false);
   Assert.ok(!do_get_cookie_file(profile).exists());
   Assert.ok(!do_get_backup_file(profile).exists());
+  do_run_generator(generator);
 }
 
-async function run_test_4() {
+function* run_test_4(generator) {
   
   do_load_profile();
   Services.cookies.runInTransaction(_ => {
-    let uri = NetUtil.newURI("http://foo.com/");
-    let channel = NetUtil.newChannel({
-      uri,
-      loadUsingSystemPrincipal: true,
-      contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
-    });
     for (let i = 0; i < 3000; ++i) {
       let uri = NetUtil.newURI("http://" + i + ".com/");
-      Services.cookies.setCookieStringFromHttp(
-        uri,
-        "oh=hai; max-age=1000",
-        channel
-      );
+      Services.cookies.setCookieString(uri, "oh=hai; max-age=1000", null);
     }
   });
 
   
-  await promise_close_profile();
+  do_close_profile(sub_generator);
+  yield;
 
   
   let size = do_corrupt_db(do_get_cookie_file(profile));
@@ -407,22 +406,16 @@ async function run_test_4() {
 
   
   
-  const contentPage = await CookieXPCShellUtils.loadContentPage(
-    "http://0.com/"
-  );
-  await contentPage.spawn(
-    null,
-    
-    () => (content.document.cookie = "oh2=hai; max-age=1000")
-  );
-  await contentPage.close();
+  let uri = NetUtil.newURI("http://0.com/");
+  Services.cookies.setCookieString(uri, "oh2=hai; max-age=1000", null);
 
   
   Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
   Assert.equal(do_count_cookies(), 1);
 
   
-  await promise_close_profile();
+  do_close_profile(sub_generator);
+  yield;
 
   
   Assert.ok(do_get_backup_file(profile).exists());
@@ -434,42 +427,32 @@ async function run_test_4() {
   Assert.equal(do_count_cookies(), 1);
 
   
-  await promise_close_profile();
+  do_close_profile(sub_generator);
+  yield;
 
   
   do_get_cookie_file(profile).remove(false);
   do_get_backup_file(profile).remove(false);
   Assert.ok(!do_get_cookie_file(profile).exists());
   Assert.ok(!do_get_backup_file(profile).exists());
+  do_run_generator(generator);
 }
 
-async function run_test_5() {
+function* run_test_5(generator) {
   
   do_load_profile();
   Services.cookies.runInTransaction(_ => {
     let uri = NetUtil.newURI("http://bar.com/");
-    const channel = NetUtil.newChannel({
-      uri,
-      loadUsingSystemPrincipal: true,
-      contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
-    });
-    Services.cookies.setCookieStringFromHttp(
-      uri,
-      "oh=hai; path=/; max-age=1000",
-      channel
-    );
+    Services.cookies.setCookieString(uri, "oh=hai; path=/; max-age=1000", null);
     for (let i = 0; i < 3000; ++i) {
       let uri = NetUtil.newURI("http://" + i + ".com/");
-      Services.cookies.setCookieStringFromHttp(
-        uri,
-        "oh=hai; max-age=1000",
-        channel
-      );
+      Services.cookies.setCookieString(uri, "oh=hai; max-age=1000", null);
     }
   });
 
   
-  await promise_close_profile();
+  do_close_profile(sub_generator);
+  yield;
 
   
   let size = do_corrupt_db(do_get_cookie_file(profile));
@@ -507,11 +490,13 @@ async function run_test_5() {
 
   
   
-  await promise_close_profile();
+  do_close_profile(sub_generator);
+  yield;
 
   
   do_get_cookie_file(profile).remove(false);
   do_get_backup_file(profile).remove(false);
   Assert.ok(!do_get_cookie_file(profile).exists());
   Assert.ok(!do_get_backup_file(profile).exists());
+  do_run_generator(generator);
 }
