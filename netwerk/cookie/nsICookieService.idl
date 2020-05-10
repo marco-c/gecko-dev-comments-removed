@@ -150,26 +150,6 @@ interface nsICookieService : nsISupports
 
 
 
-
-  void setCookieString(in nsIURI aURI, in ACString aCookie,
-                       in nsIChannel aChannel);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   void setCookieStringFromHttp(in nsIURI aURI, in ACString aCookie,
                                in nsIChannel aChannel);
 
