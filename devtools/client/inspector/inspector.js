@@ -166,7 +166,6 @@ function Inspector(toolbox) {
   this.onHostChanged = this.onHostChanged.bind(this);
   this.onMarkupLoaded = this.onMarkupLoaded.bind(this);
   this.onNewSelection = this.onNewSelection.bind(this);
-  this.onResourceAvailable = this.onResourceAvailable.bind(this);
   this.onRootNodeAvailable = this.onRootNodeAvailable.bind(this);
   this.onPanelWindowResize = this.onPanelWindowResize.bind(this);
   this.onShowBoxModelHighlighterForNode = this.onShowBoxModelHighlighterForNode.bind(
@@ -201,10 +200,6 @@ Inspector.prototype = {
       this._onTargetDestroyed
     );
 
-    await this.toolbox.resourceWatcher.watch(
-      [this.toolbox.resourceWatcher.TYPES.ROOT_NODE],
-      this.onResourceAvailable
-    );
     
     
     this.previousURL = this.currentTarget.url;
@@ -227,6 +222,8 @@ Inspector.prototype = {
       this._getCssProperties(),
       this._getAccessibilityFront(),
     ]);
+
+    this.walker.watchRootNode(this.onRootNodeAvailable);
   },
 
   _onTargetDestroyed({ type, targetFront, isTopLevel }) {
@@ -1279,16 +1276,6 @@ Inspector.prototype = {
         this.onEyeDropperButtonClicked
       );
       this.eyeDropperButton = null;
-    }
-  },
-
-  onResourceAvailable: function({ resourceType, targetFront, resource }) {
-    if (resourceType === this.toolbox.resourceWatcher.TYPES.ROOT_NODE) {
-      
-      
-      
-      
-      this.onRootNodeAvailable();
     }
   },
 
