@@ -23,8 +23,27 @@ void NSPRLogModulesParser(
   Tokenizer parser(aLogModules, kDelimiters, kAdditionalWordChars);
   nsAutoCString moduleName;
 
+  Tokenizer::Token rustModSep =
+      parser.AddCustomToken("::", Tokenizer::CASE_SENSITIVE);
+
+  auto readModuleName = [&](nsAutoCString& moduleName) -> bool {
+    moduleName.Truncate();
+    nsDependentCSubstring sub;
+    parser.Record();
+    
+    if (!parser.ReadWord(sub)) {
+      return false;
+    }
+    
+    while (parser.Check(rustModSep) && parser.ReadWord(sub)) {
+    }
+    
+    parser.Claim(moduleName, Tokenizer::INCLUDE_LAST);
+    return true;
+  };
+
   
-  while (parser.ReadWord(moduleName)) {
+  while (readModuleName(moduleName)) {
     
     LogLevel logLevel = LogLevel::Error;
     int32_t levelValue = 0;

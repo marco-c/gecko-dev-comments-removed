@@ -612,6 +612,22 @@ void LogModule::SetIsSync(bool aIsSync) {
   sLogModuleManager->SetIsSync(aIsSync);
 }
 
+
+
+
+extern "C" void set_rust_log_level(const char* name, uint8_t level);
+
+void LogModule::SetLevel(LogLevel level) {
+  mLevel = level;
+
+  
+  
+  
+  if (strstr(mName, "::")) {
+    set_rust_log_level(mName, static_cast<uint8_t>(level));
+  }
+}
+
 void LogModule::Init(int argc, char* argv[]) {
   
   
@@ -646,6 +662,24 @@ void LogModule::Printv(LogLevel aLevel, const TimeStamp* aStart,
 
   
   sLogModuleManager->Print(Name(), aLevel, aStart, aFmt, aArgs);
+}
+
+}  
+
+extern "C" {
+
+
+
+void ExternMozLog(const char* aModule, mozilla::LogLevel aLevel,
+                  const char* aMsg) {
+  MOZ_ASSERT(sLogModuleManager != nullptr);
+
+  LogModule* m = sLogModuleManager->CreateOrGetModule(aModule);
+  if (MOZ_LOG_TEST(m, aLevel)) {
+    va_list va;
+    empty_va(&va);
+    m->Printv(aLevel, aMsg, va);
+  }
 }
 
 }  

@@ -129,7 +129,7 @@ class LogModule {
   
 
 
-  void SetLevel(LogLevel level) { mLevel = level; }
+  void SetLevel(LogLevel level);
 
   
 
