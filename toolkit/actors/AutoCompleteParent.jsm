@@ -300,7 +300,12 @@ class AutoCompleteParent extends JSWindowActorParent {
     
     results.reduce((accumulated, r) => {
       
-      let truncatedStyle = r.style.substring(0, 15);
+      
+      
+      let truncatedStyle = r.style.substring(
+        0,
+        r.style === "loginWithOrigin" ? 5 : 15
+      );
       accumulated[truncatedStyle] = (accumulated[truncatedStyle] || 0) + 1;
       return accumulated;
     }, rawExtraData);

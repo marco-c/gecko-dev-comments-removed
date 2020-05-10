@@ -233,6 +233,10 @@ class ImportableLoginsAutocompleteItem extends AutocompleteItem {
     this.label = browserId;
     this.comment = hostname;
   }
+
+  removeFromStorage() {
+    Services.telemetry.recordEvent("exp_import", "event", "delete", this.label);
+  }
 }
 
 class LoginsFooterAutocompleteItem extends AutocompleteItem {
@@ -362,6 +366,18 @@ function LoginAutoCompleteResult(
   if (this.matchCount > 0) {
     this.searchResult = Ci.nsIAutoCompleteResult.RESULT_SUCCESS;
     this.defaultIndex = 0;
+    
+    
+    Services.telemetry.recordEvent(
+      "exp_import",
+      "impression",
+      "popup",
+      (importable?.browsers?.length ?? 0) + "",
+      {
+        loginsCount: logins.length + "",
+        searchLength: aSearchString.length + "",
+      }
+    );
   } else if (hidingFooterOnPWFieldAutoOpened) {
     
     
@@ -755,11 +771,23 @@ let gAutoCompleteListener = {
           "PasswordManager:OpenMigrationWizard",
           selectedRowComment
         );
+        Services.telemetry.recordEvent(
+          "exp_import",
+          "event",
+          "enter",
+          selectedRowComment
+        );
         break;
       case "loginsFooter":
         loginManager.sendAsyncMessage("PasswordManager:OpenPreferences", {
           entryPoint: "autocomplete",
         });
+        Services.telemetry.recordEvent(
+          "exp_import",
+          "event",
+          "enter",
+          "loginsFooter"
+        );
         break;
     }
   },
