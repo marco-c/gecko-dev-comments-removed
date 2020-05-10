@@ -1635,6 +1635,9 @@ nsresult nsCocoaWindow::DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransi
     
     
     [mWindow toggleFullScreen:nil];
+    
+    
+    [mWindow orderFront:nil];
   } else {
     NSDisableScreenUpdates();
     
@@ -2579,20 +2582,6 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
   }
 
   mGeckoWindow->ReportMoveEvent();
-}
-
-- (NSArray<NSWindow*>*)customWindowsToEnterFullScreenForWindow:(NSWindow*)window {
-  return AlwaysUsesNativeFullScreen() ? @[ window ] : nil;
-}
-
-- (void)window:(NSWindow*)window
-    startCustomAnimationToEnterFullScreenOnScreen:(NSScreen*)screen
-                                     withDuration:(NSTimeInterval)duration {
-  
-  
-  
-  
-  [window setFrame:[screen frame] display:YES];
 }
 
 - (void)windowWillEnterFullScreen:(NSNotification*)notification {
