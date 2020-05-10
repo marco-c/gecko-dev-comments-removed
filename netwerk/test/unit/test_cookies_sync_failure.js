@@ -50,6 +50,10 @@ function* do_run_test() {
 
   
   Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
+  Services.prefs.setBoolPref(
+    "network.cookieJarSettings.unblocked_for_testing",
+    true
+  );
 
   
   cookieFile = profile.clone();
@@ -170,9 +174,19 @@ function* run_test_1(generator) {
   
   create_garbage_file(cookieFile);
 
-  
   let uri = NetUtil.newURI("http://foo.com/");
-  Services.cookies.setCookieString(uri, "oh=hai; max-age=1000", null);
+  const channel = NetUtil.newChannel({
+    uri,
+    loadUsingSystemPrincipal: true,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
+  });
+
+  
+  Services.cookies.setCookieStringFromHttp(
+    uri,
+    "oh=hai; max-age=1000",
+    channel
+  );
 
   
   do_close_profile(sub_generator);
@@ -198,7 +212,16 @@ function* run_test_2(generator) {
   
   do_load_profile();
   let uri = NetUtil.newURI("http://foo.com/");
-  Services.cookies.setCookieString(uri, "oh=hai; max-age=1000", null);
+  const channel = NetUtil.newChannel({
+    uri,
+    loadUsingSystemPrincipal: true,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
+  });
+  Services.cookies.setCookieStringFromHttp(
+    uri,
+    "oh=hai; max-age=1000",
+    channel
+  );
 
   
   do_close_profile(sub_generator);

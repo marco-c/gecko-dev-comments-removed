@@ -7,23 +7,13 @@
 
 "use strict";
 
-var test_generator = do_run_test();
-
-function run_test() {
-  do_test_pending();
-  test_generator.next();
-}
-
-function finish_test() {
-  executeSoon(function() {
-    test_generator.return();
-    do_test_finished();
-  });
-}
-
-function* do_run_test() {
+add_task(async () => {
   
   let profile = do_get_profile();
+
+  CookieXPCShellUtils.createServer({
+    hosts: ["foo.com", "bar.com", "third.com"],
+  });
 
   
   
@@ -55,36 +45,32 @@ function* do_run_test() {
     true
   );
 
-  do_set_cookies(uri1, channel1, false, [1, 2, 3]);
-  do_set_cookies(uri2, channel2, true, [1, 2, 3]);
+  await do_set_cookies(uri1, channel1, false, [1, 2]);
+  await do_set_cookies(uri2, channel2, true, [1, 2]);
 
   
-  do_close_profile(test_generator);
-  yield;
+  await promise_close_profile();
   do_load_profile();
-  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 3);
+  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 2);
   Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 0);
 
   
   
   
-  do_close_profile();
+  await promise_close_profile();
   do_load_profile();
-  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 3);
+  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 2);
   Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 0);
 
   
   Services.prefs.setIntPref("network.cookie.lifetimePolicy", 2);
   Services.cookies.removeAll();
-  do_set_cookies(uri1, channel1, false, [1, 2, 3]);
-  do_set_cookies(uri2, channel2, true, [1, 2, 3]);
+  await do_set_cookies(uri1, channel1, false, [1, 2]);
+  await do_set_cookies(uri2, channel2, true, [1, 2]);
 
   
-  do_close_profile(test_generator);
-  yield;
+  await promise_close_profile();
   do_load_profile();
   Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 0);
   Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 0);
-
-  finish_test();
-}
+});
