@@ -726,7 +726,7 @@
 
 
  \
-    MACRO(ToNumeric, to_numeric, NULL, 1, 1, 1, JOF_BYTE) \
+    MACRO(ToNumeric, to_numeric, NULL, 1, 1, 1, JOF_BYTE|JOF_IC) \
     
 
 
@@ -1381,17 +1381,6 @@
 
  \
     MACRO(CheckIsObj, check_is_obj, NULL, 2, 1, 1, JOF_UINT8) \
-    
-
-
-
-
-
-
-
-
- \
-    MACRO(CheckIsCallable, check_is_callable, NULL, 2, 1, 1, JOF_UINT8) \
     
 
 
@@ -3671,6 +3660,7 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(237)                                   \
   MACRO(238)                                   \
   MACRO(239)                                   \
   MACRO(240)                                   \

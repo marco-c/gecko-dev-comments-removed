@@ -70,53 +70,34 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   
-
   
-  NoScriptRval = 1 << 0,
-
-  
-  SelfHosted = 1 << 1,
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  TreatAsRunOnce = 1 << 2,
-
-  
-  ForceStrict = 1 << 3,
-
-  
-  IsForEval = 1 << 4,
+  IsForEval = 1 << 0,
+  IsModule = 1 << 1,
+  IsFunction = 1 << 2,
 
   
   
-  IsModule = 1 << 5,
+  
+  SelfHosted = 1 << 3,
 
   
-  IsFunction = 1 << 6,
   
+  
+  ForceStrict = 1 << 4,
+
+  
+  
+  
+  HasNonSyntacticScope = 1 << 5,
 
   
   
   
   
-
-  
-  Strict = 1 << 7,
+  NoScriptRval = 1 << 6,
 
   
   
@@ -135,7 +116,34 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   
-  BindingsAccessedDynamically = 1 << 8,
+  TreatAsRunOnce = 1 << 7,
+  
+
+  
+  
+  
+  
+
+  
+  
+  
+  Strict = 1 << 8,
+
+  
+  
+  HasModuleGoal = 1 << 9,
+
+  
+  
+  
+  
+  HasInnerFunctions = 1 << 10,
+
+  
+  
+  
+  
+  HasDirectEval = 1 << 11,
 
   
   
@@ -144,41 +152,47 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   
-  FunHasExtensibleScope = 1 << 9,
+  
+  
+  BindingsAccessedDynamically = 1 << 12,
 
   
   
   
-  HasCallSiteObj = 1 << 10,
+  
+  
+  HasCallSiteObj = 1 << 13,
 
   
   
-  HasModuleGoal = 1 << 11,
 
   
   
-  FunctionHasThisBinding = 1 << 12,
+  
+  
+  
+  IsAsync = 1 << 14,
+  IsGenerator = 1 << 15,
 
   
   
-  HasMappedArgsObj = 1 << 13,
+  
+  
+  FunHasExtensibleScope = 1 << 16,
 
   
   
-  HasInnerFunctions = 1 << 14,
-
-  NeedsHomeObject = 1 << 15,
-  IsDerivedClassConstructor = 1 << 16,
+  
+  FunctionHasThisBinding = 1 << 17,
 
   
   
-  IsLikelyConstructorWrapper = 1 << 17,
+  
+  NeedsHomeObject = 1 << 18,
 
   
-  IsGenerator = 1 << 18,
-
   
-  IsAsync = 1 << 19,
+  IsDerivedClassConstructor = 1 << 19,
 
   
   HasRest = 1 << 20,
@@ -186,57 +200,61 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ArgumentsHasVarBinding = 1 << 21,
+  NeedsFunctionEnvironmentObjects = 1 << 21,
 
   
   
   
-  AlwaysNeedsArgsObj = 1 << 22,
+  
+  FunctionHasExtraBodyVarScope = 1 << 22,
 
+  
+  
+  
+  
+  
+  
   
   ShouldDeclareArguments = 1 << 23,
 
   
-  HasDirectEval = 1 << 24,
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ArgumentsHasVarBinding = 1 << 24,
 
   
   
   
   
-  FunctionHasExtraBodyVarScope = 1 << 25,
-
   
-  NeedsFunctionEnvironmentObjects = 1 << 26,
-  
+  AlwaysNeedsArgsObj = 1 << 25,
 
   
   
   
-  
+  HasMappedArgsObj = 1 << 26,
 
   
   
-  
-  HasNonSyntacticScope = 1 << 27,
+  IsLikelyConstructorWrapper = 1 << 27,
 };
 
 enum class MutableScriptFlagsEnum : uint32_t {
@@ -245,18 +263,20 @@ enum class MutableScriptFlagsEnum : uint32_t {
   WarmupResets_MASK = 0xFF,
 
   
+  HasRunOnce = 1 << 8,
 
   
-  HasRunOnce = 1 << 9,
+  HasBeenCloned = 1 << 9,
 
   
-  HasBeenCloned = 1 << 10,
+  HasScriptCounts = 1 << 10,
 
   
-  HasScriptCounts = 1 << 12,
+  HasDebugScript = 1 << 11,
 
   
-  HasDebugScript = 1 << 13,
+  NeedsArgsAnalysis = 1 << 12,
+  NeedsArgsObj = 1 << 13,
 
   
   
@@ -265,38 +285,41 @@ enum class MutableScriptFlagsEnum : uint32_t {
   AllowRelazify = 1 << 14,
 
   
+  SpewEnabled = 1 << 15,
 
   
-  FailedBoundsCheck = 1 << 15,
-
   
-  FailedShapeGuard = 1 << 16,
-
-  HadFrequentBailouts = 1 << 17,
-  HadOverflowBailout = 1 << 18,
+  
 
   
   
   
   
-  BaselineDisabled = 1 << 19,
-  IonDisabled = 1 << 20,
+  BaselineDisabled = 1 << 16,
+  IonDisabled = 1 << 17,
 
   
-  Uninlineable = 1 << 21,
+  FailedBoundsCheck = 1 << 18,
 
   
-  InvalidatedIdempotentCache = 1 << 22,
+  FailedShapeGuard = 1 << 19,
 
   
-  FailedLexicalCheck = 1 << 23,
+  HadFrequentBailouts = 1 << 20,
 
   
-  NeedsArgsAnalysis = 1 << 24,
-  NeedsArgsObj = 1 << 25,
+  
+  HadOverflowBailout = 1 << 21,
 
   
-  SpewEnabled = 1 << 26,
+  
+  Uninlineable = 1 << 22,
+
+  
+  InvalidatedIdempotentCache = 1 << 23,
+
+  
+  FailedLexicalCheck = 1 << 24,
 };
 
 }  

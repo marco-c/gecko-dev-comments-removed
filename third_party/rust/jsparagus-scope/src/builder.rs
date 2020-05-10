@@ -678,7 +678,7 @@ impl FunctionExpressionScopeBuilder {
 
                 ScopeData::Lexical(data)
             }
-            None => ScopeData::AliasPrevious,
+            None => ScopeData::Alias(enclosing),
         }
     }
 }
@@ -1148,7 +1148,7 @@ impl FunctionParametersScopeBuilder {
 
             
             
-            ScopeData::AliasPrevious
+            ScopeData::Alias(self.scope_index)
         }
         
         else {
@@ -1253,7 +1253,7 @@ impl FunctionParametersScopeBuilder {
 
                 ScopeData::Lexical(data)
             } else {
-                ScopeData::AliasPrevious
+                ScopeData::Alias(body_scope_builder.var_scope_index)
             };
 
         

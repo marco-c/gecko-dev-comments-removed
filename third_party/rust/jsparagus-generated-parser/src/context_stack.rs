@@ -44,11 +44,6 @@ pub enum BindingKind {
 
     
     Class,
-
-    
-    
-    
-    Label,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -107,8 +102,32 @@ impl BreakOrContinueIndex {
     }
 }
 
-pub struct ContextMetadata {
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum LabelKind {
+    Other,
+
+    Function,
+
+    Loop,
+
+    LabelledLabel,
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct LabelInfo {
+    pub name: SourceAtomSetIndex,
     
+    pub offset: usize,
+    pub kind: LabelKind,
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct LabelIndex {
+    pub index: usize,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct ContextMetadata {
     
     
     
@@ -138,6 +157,8 @@ pub struct ContextMetadata {
     
     
     breaks_and_continues: Vec<ControlInfo>,
+
+    labels: Vec<LabelInfo>,
 }
 
 impl ContextMetadata {
@@ -145,6 +166,7 @@ impl ContextMetadata {
         Self {
             bindings: Vec::new(),
             breaks_and_continues: Vec::new(),
+            labels: Vec::new(),
         }
     }
 
@@ -158,6 +180,10 @@ impl ContextMetadata {
 
     pub fn push_break_or_continue(&mut self, control: ControlInfo) {
         self.breaks_and_continues.push(control);
+    }
+
+    pub fn push_label(&mut self, label: LabelInfo) {
+        self.labels.push(label);
     }
 
     
@@ -216,6 +242,27 @@ impl ContextMetadata {
         self.bindings.truncate(index.index)
     }
 
+    pub fn labels_from(&self, index: LabelIndex) -> Skip<Iter<'_, LabelInfo>> {
+        self.labels.iter().skip(index.index)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn mark_label_kind_at_offset(&mut self, from: usize, kind: LabelKind) {
+        let maybe_label = self.find_label_at_offset(from);
+        if let Some(info) = maybe_label {
+            info.kind = kind
+        } else {
+            panic!("Tried to mark a non-existant label");
+        }
+    }
+
     
     
     
@@ -230,9 +277,7 @@ impl ContextMetadata {
 
         let mut j = i;
         while j < len {
-            if self.bindings[j].kind == BindingKind::Var
-                || self.bindings[j].kind == BindingKind::Label
-            {
+            if self.bindings[j].kind == BindingKind::Var {
                 self.bindings[i] = self.bindings[j];
                 i += 1;
             }
@@ -240,6 +285,25 @@ impl ContextMetadata {
         }
 
         self.bindings.truncate(i)
+    }
+
+    
+    pub fn find_first_label(&mut self, offset: usize) -> LabelIndex {
+        let mut i = self.labels.len();
+        for info in self.labels.iter_mut().rev() {
+            if info.offset < offset {
+                break;
+            }
+            i -= 1;
+        }
+        LabelIndex { index: i }
+    }
+
+    
+    
+    
+    pub fn pop_labels_from(&mut self, index: LabelIndex) {
+        self.labels.truncate(index.index)
     }
 
     pub fn breaks_and_continues_from(
@@ -328,5 +392,14 @@ impl ContextMetadata {
 
     pub fn find_break_or_continue_at(&self, index: BreakOrContinueIndex) -> Option<&ControlInfo> {
         self.breaks_and_continues.get(index.index)
+    }
+
+    pub fn find_label_index_at_offset(&self, offset: usize) -> Option<LabelIndex> {
+        let index = self.labels.iter().position(|info| info.offset == offset);
+        index.map(|index| LabelIndex { index })
+    }
+
+    pub fn find_label_at_offset(&mut self, offset: usize) -> Option<&mut LabelInfo> {
+        self.labels.iter_mut().find(|info| info.offset == offset)
     }
 }

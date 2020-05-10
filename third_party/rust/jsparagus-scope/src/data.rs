@@ -371,7 +371,8 @@ pub enum ScopeData {
     
     
     
-    AliasPrevious,
+    
+    Alias(ScopeIndex),
 
     Global(GlobalScopeData),
     Var(VarScopeData),
@@ -515,7 +516,7 @@ impl ScopeDataMap {
 
     pub fn is_alias(&mut self, index: ScopeIndex) -> bool {
         match self.scopes.get(index) {
-            ScopeData::AliasPrevious => true,
+            ScopeData::Alias(_) => true,
             _ => false,
         }
     }

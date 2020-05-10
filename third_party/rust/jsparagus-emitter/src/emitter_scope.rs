@@ -26,7 +26,6 @@ pub enum NameLocation {
 
 
 
-
 #[derive(Debug)]
 struct GlobalEmitterScope {
     cache: HashMap<SourceAtomSetIndex, NameLocation>,
