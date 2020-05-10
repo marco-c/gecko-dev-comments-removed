@@ -12,6 +12,7 @@
 #include "nsWeakReference.h"
 
 #include "Cookie.h"
+#include "CookieCommons.h"
 
 #include "nsString.h"
 #include "nsIMemoryReporter.h"
@@ -31,18 +32,6 @@ namespace net {
 class CookiePersistentStorage;
 class CookiePrivateStorage;
 class CookieStorage;
-
-
-enum CookieStatus {
-  STATUS_ACCEPTED,
-  STATUS_ACCEPT_SESSION,
-  STATUS_REJECTED,
-  
-  
-  
-  
-  STATUS_REJECTED_WITH_ERROR
-};
 
 
 

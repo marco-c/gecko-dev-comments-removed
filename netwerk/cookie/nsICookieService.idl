@@ -8,6 +8,7 @@
 interface nsIURI;
 interface nsIChannel;
 interface nsIPrincipal;
+webidl Document;
 
 
 
@@ -120,6 +121,18 @@ interface nsICookieService : nsISupports
 
 
   ACString getCookieStringFromHttp(in nsIURI aURI, in nsIChannel aChannel);
+
+  
+
+
+
+
+
+
+
+
+
+  void setCookieStringFromDocument(in Document aDocument, in ACString aCookie);
 
   
 
