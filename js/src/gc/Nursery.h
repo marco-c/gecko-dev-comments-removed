@@ -242,7 +242,9 @@ class Nursery {
     return allocateCell(zone, size, JS::TraceKind::String);
   }
 
-  static size_t nurseryCellHeaderSize() { return sizeof(gc::NurseryCellHeader); }
+  static size_t nurseryCellHeaderSize() {
+    return sizeof(gc::NurseryCellHeader);
+  }
 
   
   void* allocateBuffer(JS::Zone* zone, size_t nbytes);

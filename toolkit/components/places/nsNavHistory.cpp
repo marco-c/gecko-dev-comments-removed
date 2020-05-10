@@ -897,8 +897,7 @@ nsNavHistory::CanAddURI(nsIURI* aURI, bool* canAdd) {
 
 
 
-nsresult
-nsNavHistory::CanAddURIToHistory(nsIURI* aURI, bool* aCanAdd) {
+nsresult nsNavHistory::CanAddURIToHistory(nsIURI* aURI, bool* aCanAdd) {
   
   *aCanAdd = false;
 

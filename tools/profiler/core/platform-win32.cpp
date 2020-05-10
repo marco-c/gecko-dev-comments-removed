@@ -298,4 +298,4 @@ MFBT_API void InitializeWin64ProfilerHooks();
 
 using mozilla::baseprofiler::InitializeWin64ProfilerHooks;
 
-#endif    
+#endif  

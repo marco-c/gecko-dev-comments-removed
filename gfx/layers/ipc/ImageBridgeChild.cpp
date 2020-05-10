@@ -38,7 +38,7 @@
 #include "nsTArray.h"                
 #include "nsTArrayForwardDeclare.h"  
 #include "nsThread.h"
-#include "nsThreadUtils.h"           
+#include "nsThreadUtils.h"  
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"  
 #include "mozilla/layers/TextureClient.h"

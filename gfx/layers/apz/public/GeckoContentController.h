@@ -7,13 +7,13 @@
 #ifndef mozilla_layers_GeckoContentController_h
 #define mozilla_layers_GeckoContentController_h
 
-#include "InputData.h"                           
-#include "LayersTypes.h"                         
-#include "Units.h"                               
-#include "mozilla/Assertions.h"                  
-#include "mozilla/Attributes.h"                  
-#include "mozilla/DefineEnum.h"                  
-#include "mozilla/EventForwards.h"               
+#include "InputData.h"              
+#include "LayersTypes.h"            
+#include "Units.h"                  
+#include "mozilla/Assertions.h"     
+#include "mozilla/Attributes.h"     
+#include "mozilla/DefineEnum.h"     
+#include "mozilla/EventForwards.h"  
 #include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/MatrixMessage.h"        
 #include "mozilla/layers/RepaintRequest.h"       

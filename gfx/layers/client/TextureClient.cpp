@@ -38,7 +38,7 @@
 #include "mozilla/layers/TextureClientOGL.h"
 #include "mozilla/layers/TextureClientRecycleAllocator.h"
 #include "mozilla/layers/TextureRecorded.h"
-#include "nsDebug.h"          
+#include "nsDebug.h"  
 #include "nsISerialEventTarget.h"
 #include "nsISupportsImpl.h"  
 #include "nsPrintfCString.h"  
