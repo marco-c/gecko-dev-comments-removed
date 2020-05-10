@@ -46,6 +46,8 @@ namespace mozilla {
 
 using namespace dom;
 
+using ChildBlockBoundary = HTMLEditUtils::ChildBlockBoundary;
+
 nsresult HTMLEditor::SetInlinePropertyAsAction(nsAtom& aProperty,
                                                nsAtom* aAttribute,
                                                const nsAString& aValue,
@@ -880,10 +882,10 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   
-  nsIContent* leftmostChildOfNextNode =
-      GetLeftmostChild(splitResult.GetNextNode());
-  EditorDOMPoint atStartOfNextNode(leftmostChildOfNextNode
-                                       ? leftmostChildOfNextNode
+  nsIContent* firstLeafChildOfNextNode = HTMLEditUtils::GetFirstLeafChild(
+      *splitResult.GetNextNode(), ChildBlockBoundary::Ignore);
+  EditorDOMPoint atStartOfNextNode(firstLeafChildOfNextNode
+                                       ? firstLeafChildOfNextNode
                                        : splitResult.GetNextNode(),
                                    0);
   RefPtr<HTMLBRElement> brElement;
@@ -938,11 +940,13 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   
-  nsIContent* leftmostChild =
-      GetLeftmostChild(splitResultAtStartOfNextNode.GetPreviousNode());
+  nsIContent* firstLeafChildOfPreviousNode = HTMLEditUtils::GetFirstLeafChild(
+      *splitResultAtStartOfNextNode.GetPreviousNode(),
+      ChildBlockBoundary::Ignore);
   EditorDOMPoint pointToPutCaret(
-      leftmostChild ? leftmostChild
-                    : splitResultAtStartOfNextNode.GetPreviousNode(),
+      firstLeafChildOfPreviousNode
+          ? firstLeafChildOfPreviousNode
+          : splitResultAtStartOfNextNode.GetPreviousNode(),
       0);
   
   

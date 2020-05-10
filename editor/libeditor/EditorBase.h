@@ -1698,13 +1698,6 @@ class EditorBase : public nsIEditor,
   
 
 
-
-  nsIContent* GetLeftmostChild(nsINode* aCurrentNode,
-                               bool bNoBlockCrossing = false) const;
-
-  
-
-
   bool IsRoot(nsINode* inNode) const;
   bool IsEditorRoot(nsINode* aNode) const;
 

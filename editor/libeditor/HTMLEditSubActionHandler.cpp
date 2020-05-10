@@ -7859,8 +7859,9 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
     
     if (wsScannerAtStart.EndsByOtherBlockElement()) {
       
-      nsINode* child = GetLeftmostChild(
-          wsScannerAtStart.EndReasonOtherBlockElementPtr(), true);
+      nsINode* child = HTMLEditUtils::GetFirstLeafChild(
+          *wsScannerAtStart.EndReasonOtherBlockElementPtr(),
+          ChildBlockBoundary::TreatAsLeaf);
       if (child) {
         newStartPoint.Set(child);
       }
@@ -9243,7 +9244,8 @@ nsresult HTMLEditor::SplitParagraph(
 
   
   
-  nsCOMPtr<nsIContent> child = GetLeftmostChild(&aParentDivOrP, true);
+  nsCOMPtr<nsIContent> child = HTMLEditUtils::GetFirstLeafChild(
+      aParentDivOrP, ChildBlockBoundary::TreatAsLeaf);
   if (child && (child->IsText() || HTMLEditUtils::IsContainerNode(*child))) {
     nsresult rv = CollapseSelectionToStartOf(*child);
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {

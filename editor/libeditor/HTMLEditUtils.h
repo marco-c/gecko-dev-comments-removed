@@ -225,6 +225,26 @@ class HTMLEditUtils final {
 
 
 
+  static nsIContent* GetFirstLeafChild(nsINode& aNode,
+                                       ChildBlockBoundary aChildBlockBoundary) {
+    for (nsIContent* content = aNode.GetFirstChild(); content;
+         content = content->GetFirstChild()) {
+      if (aChildBlockBoundary == ChildBlockBoundary::TreatAsLeaf &&
+          HTMLEditUtils::IsBlockElement(*content)) {
+        return content;
+      }
+      if (!content->HasChildren()) {
+        return content;
+      }
+    }
+    return nullptr;
+  }
+
+  
+
+
+
+
   static Element* GetAncestorBlockElement(
       const nsIContent& aContent, const nsINode* aAncestorLimiter = nullptr) {
     MOZ_ASSERT(
