@@ -2041,6 +2041,11 @@ class nsIWidget : public nsISupports {
   
 
 
+  virtual void ClearCachedWebrenderResources() {}
+
+  
+
+
 
   virtual RefPtr<mozilla::gfx::VsyncSource> GetVsyncSource() { return nullptr; }
 
