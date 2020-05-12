@@ -79,7 +79,7 @@ void CacheStreamControlParent::OpenStream(const nsID& aId,
   
   
   
-  mStreamList->GetManager()->ExecuteOpenStream(this, std::move(aResolver), aId);
+  mStreamList->GetManager().ExecuteOpenStream(this, std::move(aResolver), aId);
 }
 
 void CacheStreamControlParent::NoteClosedAfterForget(const nsID& aId) {
@@ -101,7 +101,7 @@ void CacheStreamControlParent::ActorDestroy(ActorDestroyReason aReason) {
   if (!mStreamList) {
     return;
   }
-  mStreamList->GetManager()->RemoveListener(this);
+  mStreamList->GetManager().RemoveListener(this);
   mStreamList->RemoveStreamControl(this);
   mStreamList->NoteClosedAll();
   mStreamList = nullptr;

@@ -1,12 +1,13 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/dom/cache/Context.h"
 
 #include "mozilla/AutoRestore.h"
+#include "mozilla/dom/SafeRefPtr.h"
 #include "mozilla/dom/cache/Action.h"
 #include "mozilla/dom/cache/FileUtils.h"
 #include "mozilla/dom/cache/Manager.h"
@@ -28,13 +29,13 @@ class NullAction final : public Action {
 
   virtual void RunOnTarget(Resolver* aResolver, const QuotaInfo&,
                            Data*) override {
-    // Resolve success immediately.  This Action does no actual work.
+    
     MOZ_DIAGNOSTIC_ASSERT(aResolver);
     aResolver->Resolve(NS_OK);
   }
 };
 
-}  // namespace
+}  
 
 namespace mozilla {
 namespace dom {
@@ -66,32 +67,33 @@ class Context::Data final : public Action::Data {
 
  private:
   ~Data() {
-    // We could proxy release our data here, but instead just assert.  The
-    // Context code should guarantee that we are destroyed on the target
-    // thread once the connection is initialized.  If we're not, then
-    // QuotaManager might race and try to clear the origin out from under us.
+    
+    
+    
+    
     MOZ_ASSERT_IF(mConnection, mTarget->IsOnCurrentThread());
   }
 
   nsCOMPtr<nsISerialEventTarget> mTarget;
   nsCOMPtr<mozIStorageConnection> mConnection;
 
-  // Threadsafe counting because we're created on the PBackground thread
-  // and destroyed on the target IO thread.
+  
+  
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Context::Data)
 };
 
-// Executed to perform the complicated dance of steps necessary to initialize
-// the QuotaManager.  This must be performed for each origin before any disk
-// IO occurrs.
+
+
+
 class Context::QuotaInitRunnable final : public nsIRunnable,
                                          public OpenDirectoryListener {
  public:
-  QuotaInitRunnable(Context* aContext, Manager* aManager, Data* aData,
-                    nsISerialEventTarget* aTarget, Action* aInitAction)
+  QuotaInitRunnable(Context* aContext, SafeRefPtr<Manager> aManager,
+                    Data* aData, nsISerialEventTarget* aTarget,
+                    Action* aInitAction)
       : mContext(aContext),
         mThreadsafeHandle(aContext->CreateThreadsafeHandle()),
-        mManager(aManager),
+        mManager(std::move(aManager)),
         mData(aData),
         mTarget(aTarget),
         mInitAction(aInitAction),
@@ -129,7 +131,7 @@ class Context::QuotaInitRunnable final : public nsIRunnable,
 
   void OpenDirectory();
 
-  // OpenDirectoryListener methods
+  
   virtual void DirectoryLockAcquired(DirectoryLock* aLock) override;
 
   virtual void DirectoryLockFailed() override;
@@ -198,7 +200,7 @@ class Context::QuotaInitRunnable final : public nsIRunnable,
 
   RefPtr<Context> mContext;
   RefPtr<ThreadsafeHandle> mThreadsafeHandle;
-  RefPtr<Manager> mManager;
+  SafeRefPtr<Manager> mManager;
   RefPtr<Data> mData;
   nsCOMPtr<nsISerialEventTarget> mTarget;
   RefPtr<Action> mInitAction;
@@ -220,15 +222,15 @@ void Context::QuotaInitRunnable::OpenDirectory() {
                         mState == STATE_OPEN_DIRECTORY);
   MOZ_DIAGNOSTIC_ASSERT(QuotaManager::Get());
 
-  // QuotaManager::OpenDirectory() will hold a reference to us as
-  // a listener.  We will then get DirectoryLockAcquired() on the owning
-  // thread when it is safe to access our storage directory.
+  
+  
+  
   mState = STATE_WAIT_FOR_DIRECTORY_LOCK;
   RefPtr<DirectoryLock> pendingDirectoryLock =
       QuotaManager::Get()->OpenDirectory(PERSISTENCE_TYPE_DEFAULT,
                                          mQuotaInfo.mGroup, mQuotaInfo.mOrigin,
                                          quota::Client::DOMCACHE,
-                                         /* aExclusive */ false, this);
+                                          false, this);
 }
 
 void Context::QuotaInitRunnable::DirectoryLockAcquired(DirectoryLock* aLock) {
@@ -270,63 +272,63 @@ void Context::QuotaInitRunnable::DirectoryLockFailed() {
 
 NS_IMPL_ISUPPORTS(mozilla::dom::cache::Context::QuotaInitRunnable, nsIRunnable);
 
-// The QuotaManager init state machine is represented in the following diagram:
-//
-//    +---------------+
-//    |     Start     |      Resolve(error)
-//    | (Orig Thread) +---------------------+
-//    +-------+-------+                     |
-//            |                             |
-// +----------v-----------+                 |
-// |       GetInfo        |  Resolve(error) |
-// |    (Main Thread)     +-----------------+
-// +----------+-----------+                 |
-//            |                             |
-// +----------v-----------+                 |
-// |  CreateQuotaManager  |  Resolve(error) |
-// |    (Orig Thread)     +-----------------+
-// +----------+-----------+                 |
-//            |                             |
-// +----------v-----------+                 |
-// |    OpenDirectory     |  Resolve(error) |
-// |    (Orig Thread)     +-----------------+
-// +----------+-----------+                 |
-//            |                             |
-// +----------v-----------+                 |
-// | WaitForDirectoryLock |  Resolve(error) |
-// |    (Orig Thread)     +-----------------+
-// +----------+-----------+                 |
-//            |                             |
-// +----------v------------+                |
-// |EnsureOriginInitialized| Resolve(error) |
-// |   (Quota IO Thread)   +----------------+
-// +----------+------------+                |
-//            |                             |
-// +----------v------------+                |
-// |     RunOnTarget       | Resolve(error) |
-// |   (Target Thread)     +----------------+
-// +----------+------------+                |
-//            |                             |
-//  +---------v---------+            +------v------+
-//  |      Running      |            |  Completing |
-//  | (Target Thread)   +------------>(Orig Thread)|
-//  +-------------------+            +------+------+
-//                                          |
-//                                    +-----v----+
-//                                    | Complete |
-//                                    +----------+
-//
-// The initialization process proceeds through the main states.  If an error
-// occurs, then we transition to Completing state back on the original thread.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 NS_IMETHODIMP
 Context::QuotaInitRunnable::Run() {
-  // May run on different threads depending on the state.  See individual
-  // state cases for thread assertions.
+  
+  
 
   RefPtr<SyncResolver> resolver = new SyncResolver();
 
   switch (mState) {
-    // -----------------------------------
+    
     case STATE_GET_INFO: {
       MOZ_ASSERT(NS_IsMainThread());
 
@@ -350,7 +352,7 @@ Context::QuotaInitRunnable::Run() {
           mInitiatingEventTarget->Dispatch(this, nsIThread::DISPATCH_NORMAL));
       break;
     }
-    // ----------------------------------
+    
     case STATE_CREATE_QUOTA_MANAGER: {
       NS_ASSERT_OWNINGTHREAD(QuotaInitRunnable);
 
@@ -368,7 +370,7 @@ Context::QuotaInitRunnable::Run() {
       QuotaManager::GetOrCreate(this);
       break;
     }
-    // ----------------------------------
+    
     case STATE_OPEN_DIRECTORY: {
       NS_ASSERT_OWNINGTHREAD(QuotaInitRunnable);
 
@@ -380,7 +382,7 @@ Context::QuotaInitRunnable::Run() {
       OpenDirectory();
       break;
     }
-    // ----------------------------------
+    
     case STATE_ENSURE_ORIGIN_INITIALIZED: {
       AssertIsOnIOThread();
 
@@ -405,41 +407,41 @@ Context::QuotaInitRunnable::Run() {
       MOZ_ALWAYS_SUCCEEDS(mTarget->Dispatch(this, nsIThread::DISPATCH_NORMAL));
       break;
     }
-    // -------------------
+    
     case STATE_RUN_ON_TARGET: {
       MOZ_ASSERT(mTarget->IsOnCurrentThread());
 
       mState = STATE_RUNNING;
 
-      // Execute the provided initialization Action.  The Action must Resolve()
-      // before returning.
+      
+      
       mInitAction->RunOnTarget(resolver, mQuotaInfo, mData);
       MOZ_DIAGNOSTIC_ASSERT(resolver->Resolved());
 
       mData = nullptr;
 
-      // If the database was opened, then we should always succeed when creating
-      // the marker file.  If it wasn't opened successfully, then no need to
-      // create a marker file anyway.
+      
+      
+      
       if (NS_SUCCEEDED(resolver->Result())) {
         MOZ_ALWAYS_SUCCEEDS(CreateMarkerFile(mQuotaInfo));
       }
 
       break;
     }
-    // -------------------
+    
     case STATE_COMPLETING: {
       NS_ASSERT_OWNINGTHREAD(QuotaInitRunnable);
       mInitAction->CompleteOnInitiatingThread(mResult);
       mContext->OnQuotaInit(mResult, mQuotaInfo, mDirectoryLock.forget());
       mState = STATE_COMPLETE;
 
-      // Explicitly cleanup here as the destructor could fire on any of
-      // the threads we have bounced through.
+      
+      
       Clear();
       break;
     }
-    // -----
+    
     case STATE_WAIT_FOR_DIRECTORY_LOCK:
     default: {
       MOZ_CRASH("unexpected state in QuotaInitRunnable");
@@ -453,9 +455,9 @@ Context::QuotaInitRunnable::Run() {
   return NS_OK;
 }
 
-// Runnable wrapper around Action objects dispatched on the Context.  This
-// runnable executes the Action on the appropriate threads while the Context
-// is initialized.
+
+
+
 class Context::ActionRunnable final : public nsIRunnable,
                                       public Action::Resolver,
                                       public Context::Activity {
@@ -472,10 +474,10 @@ class Context::ActionRunnable final : public nsIRunnable,
         mResult(NS_OK),
         mExecutingRunOnTarget(false) {
     MOZ_DIAGNOSTIC_ASSERT(mContext);
-    // mData may be nullptr
+    
     MOZ_DIAGNOSTIC_ASSERT(mTarget);
     MOZ_DIAGNOSTIC_ASSERT(mAction);
-    // mQuotaInfo.mDir may be nullptr if QuotaInitRunnable failed
+    
     MOZ_DIAGNOSTIC_ASSERT(mInitiatingThread);
   }
 
@@ -508,21 +510,21 @@ class Context::ActionRunnable final : public nsIRunnable,
 
     mResult = aRv;
 
-    // We ultimately must complete on the initiating thread, but bounce through
-    // the current thread again to ensure that we don't destroy objects and
-    // state out from under the currently running action's stack.
+    
+    
+    
     mState = STATE_RESOLVING;
 
-    // If we were resolved synchronously within Action::RunOnTarget() then we
-    // can avoid a thread bounce and just resolve once RunOnTarget() returns.
-    // The Run() method will handle this by looking at mState after
-    // RunOnTarget() returns.
+    
+    
+    
+    
     if (mExecutingRunOnTarget) {
       return;
     }
 
-    // Otherwise we are in an asynchronous resolve.  And must perform a thread
-    // bounce to run on the target thread again.
+    
+    
     MOZ_ALWAYS_SUCCEEDS(mTarget->Dispatch(this, nsIThread::DISPATCH_NORMAL));
   }
 
@@ -560,7 +562,7 @@ class Context::ActionRunnable final : public nsIRunnable,
   State mState;
   nsresult mResult;
 
-  // Only accessible on target thread;
+  
   bool mExecutingRunOnTarget;
 
  public:
@@ -570,49 +572,49 @@ class Context::ActionRunnable final : public nsIRunnable,
 
 NS_IMPL_ISUPPORTS(mozilla::dom::cache::Context::ActionRunnable, nsIRunnable);
 
-// The ActionRunnable has a simpler state machine.  It basically needs to run
-// the action on the target thread and then complete on the original thread.
-//
-//   +-------------+
-//   |    Start    |
-//   |(Orig Thread)|
-//   +-----+-------+
-//         |
-// +-------v---------+
-// |  RunOnTarget    |
-// |Target IO Thread)+---+ Resolve()
-// +-------+---------+   |
-//         |             |
-// +-------v----------+  |
-// |     Running      |  |
-// |(Target IO Thread)|  |
-// +------------------+  |
-//         | Resolve()   |
-// +-------v----------+  |
-// |     Resolving    <--+                   +-------------+
-// |                  |                      |  Completing |
-// |(Target IO Thread)+---------------------->(Orig Thread)|
-// +------------------+                      +-------+-----+
-//                                                   |
-//                                                   |
-//                                              +----v---+
-//                                              |Complete|
-//                                              +--------+
-//
-// Its important to note that synchronous actions will effectively Resolve()
-// out of the Running state immediately.  Asynchronous Actions may remain
-// in the Running state for some time, but normally the ActionRunnable itself
-// does not see any execution there.  Its all handled internal to the Action.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 NS_IMETHODIMP
 Context::ActionRunnable::Run() {
   switch (mState) {
-    // ----------------------
+    
     case STATE_RUN_ON_TARGET: {
       MOZ_ASSERT(mTarget->IsOnCurrentThread());
       MOZ_DIAGNOSTIC_ASSERT(!mExecutingRunOnTarget);
 
-      // Note that we are calling RunOnTarget().  This lets us detect
-      // if Resolve() is called synchronously.
+      
+      
       AutoRestore<bool> executingRunOnTarget(mExecutingRunOnTarget);
       mExecutingRunOnTarget = true;
 
@@ -621,41 +623,41 @@ Context::ActionRunnable::Run() {
 
       mData = nullptr;
 
-      // Resolve was called synchronously from RunOnTarget().  We can
-      // immediately move to completing now since we are sure RunOnTarget()
-      // completed.
+      
+      
+      
       if (mState == STATE_RESOLVING) {
-        // Use recursion instead of switch case fall-through...  Seems slightly
-        // easier to understand.
+        
+        
         Run();
       }
 
       break;
     }
-    // -----------------
+    
     case STATE_RESOLVING: {
       MOZ_ASSERT(mTarget->IsOnCurrentThread());
-      // The call to Action::RunOnTarget() must have returned now if we
-      // are running on the target thread again.  We may now proceed
-      // with completion.
+      
+      
+      
       mState = STATE_COMPLETING;
-      // Shutdown must be delayed until all Contexts are destroyed.  Crash
-      // for this invariant violation.
+      
+      
       MOZ_ALWAYS_SUCCEEDS(
           mInitiatingThread->Dispatch(this, nsIThread::DISPATCH_NORMAL));
       break;
     }
-    // -------------------
+    
     case STATE_COMPLETING: {
       NS_ASSERT_OWNINGTHREAD(ActionRunnable);
       mAction->CompleteOnInitiatingThread(mResult);
       mState = STATE_COMPLETE;
-      // Explicitly cleanup here as the destructor could fire on any of
-      // the threads we have bounced through.
+      
+      
       Clear();
       break;
     }
-    // -----------------
+    
     default: {
       MOZ_CRASH("unexpected state in ActionRunnable");
       break;
@@ -670,8 +672,8 @@ void Context::ThreadsafeHandle::AllowToClose() {
     return;
   }
 
-  // Dispatch is guaranteed to succeed here because we block shutdown until
-  // all Contexts have been destroyed.
+  
+  
   nsCOMPtr<nsIRunnable> runnable = NewRunnableMethod(
       "dom::cache::Context::ThreadsafeHandle::AllowToCloseOnOwningThread", this,
       &ThreadsafeHandle::AllowToCloseOnOwningThread);
@@ -685,8 +687,8 @@ void Context::ThreadsafeHandle::InvalidateAndAllowToClose() {
     return;
   }
 
-  // Dispatch is guaranteed to succeed here because we block shutdown until
-  // all Contexts have been destroyed.
+  
+  
   nsCOMPtr<nsIRunnable> runnable = NewRunnableMethod(
       "dom::cache::Context::ThreadsafeHandle::"
       "InvalidateAndAllowToCloseOnOwningThread",
@@ -701,16 +703,16 @@ Context::ThreadsafeHandle::ThreadsafeHandle(Context* aContext)
       mOwningEventTarget(GetCurrentThreadSerialEventTarget()) {}
 
 Context::ThreadsafeHandle::~ThreadsafeHandle() {
-  // Normally we only touch mStrongRef on the owning thread.  This is safe,
-  // however, because when we do use mStrongRef on the owning thread we are
-  // always holding a strong ref to the ThreadsafeHandle via the owning
-  // runnable.  So we cannot run the ThreadsafeHandle destructor simultaneously.
+  
+  
+  
+  
   if (!mStrongRef || mOwningEventTarget->IsOnCurrentThread()) {
     return;
   }
 
-  // Dispatch is guaranteed to succeed here because we block shutdown until
-  // all Contexts have been destroyed.
+  
+  
   NS_ProxyRelease("Context::ThreadsafeHandle::mStrongRef", mOwningEventTarget,
                   mStrongRef.forget());
 }
@@ -718,34 +720,34 @@ Context::ThreadsafeHandle::~ThreadsafeHandle() {
 void Context::ThreadsafeHandle::AllowToCloseOnOwningThread() {
   MOZ_ASSERT(mOwningEventTarget->IsOnCurrentThread());
 
-  // A Context "closes" when its ref count drops to zero.  Dropping this
-  // strong ref is necessary, but not sufficient for the close to occur.
-  // Any outstanding IO will continue and keep the Context alive.  Once
-  // the Context is idle, it will be destroyed.
+  
+  
+  
+  
 
-  // First, tell the context to flush any target thread shared data.  This
-  // data must be released on the target thread prior to running the Context
-  // destructor.  This will schedule an Action which ensures that the
-  // ~Context() is not immediately executed when we drop the strong ref.
+  
+  
+  
+  
   if (mStrongRef) {
     mStrongRef->DoomTargetData();
   }
 
-  // Now drop our strong ref and let Context finish running any outstanding
-  // Actions.
+  
+  
   mStrongRef = nullptr;
 }
 
 void Context::ThreadsafeHandle::InvalidateAndAllowToCloseOnOwningThread() {
   MOZ_ASSERT(mOwningEventTarget->IsOnCurrentThread());
-  // Cancel the Context through the weak reference.  This means we can
-  // allow the Context to close by dropping the strong ref, but then
-  // still cancel ongoing IO if necessary.
+  
+  
+  
   if (mWeakRef) {
     mWeakRef->Invalidate();
   }
-  // We should synchronously have AllowToCloseOnOwningThread called when
-  // the Context is canceled.
+  
+  
   MOZ_DIAGNOSTIC_ASSERT(!mStrongRef);
 }
 
@@ -757,19 +759,20 @@ void Context::ThreadsafeHandle::ContextDestroyed(Context* aContext) {
   mWeakRef = nullptr;
 }
 
-// static
-already_AddRefed<Context> Context::Create(Manager* aManager,
+
+already_AddRefed<Context> Context::Create(SafeRefPtr<Manager> aManager,
                                           nsISerialEventTarget* aTarget,
                                           Action* aInitAction,
                                           Context* aOldContext) {
-  RefPtr<Context> context = new Context(aManager, aTarget, aInitAction);
+  RefPtr<Context> context =
+      new Context(std::move(aManager), aTarget, aInitAction);
   context->Init(aOldContext);
   return context.forget();
 }
 
-Context::Context(Manager* aManager, nsISerialEventTarget* aTarget,
+Context::Context(SafeRefPtr<Manager> aManager, nsISerialEventTarget* aTarget,
                  Action* aInitAction)
-    : mManager(aManager),
+    : mManager(std::move(aManager)),
       mTarget(aTarget),
       mData(new Data(aTarget)),
       mState(STATE_CONTEXT_PREINIT),
@@ -799,15 +802,15 @@ void Context::Dispatch(Action* aAction) {
 void Context::CancelAll() {
   NS_ASSERT_OWNINGTHREAD(Context);
 
-  // In PREINIT state we have not dispatch the init action yet.  Just
-  // forget it.
+  
+  
   if (mState == STATE_CONTEXT_PREINIT) {
     MOZ_DIAGNOSTIC_ASSERT(!mInitRunnable);
     mInitAction = nullptr;
 
-    // In INIT state we have dispatched the runnable, but not received the
-    // async completion yet.  Cancel the runnable, but don't forget about it
-    // until we get OnQuotaInit() callback.
+    
+    
+    
   } else if (mState == STATE_CONTEXT_INIT) {
     mInitRunnable->Cancel();
   }
@@ -844,14 +847,14 @@ void Context::AllowToClose() {
 void Context::CancelForCacheId(CacheId aCacheId) {
   NS_ASSERT_OWNINGTHREAD(Context);
 
-  // Remove matching pending actions
+  
   for (int32_t i = mPendingActions.Length() - 1; i >= 0; --i) {
     if (mPendingActions[i].mAction->MatchesCacheId(aCacheId)) {
       mPendingActions.RemoveElementAt(i);
     }
   }
 
-  // Cancel activities and let them remove themselves
+  
   ActivityList::ForwardIterator iter(mActivityList);
   while (iter.HasMore()) {
     Activity* activity = iter.GetNext();
@@ -870,7 +873,7 @@ Context::~Context() {
     mThreadsafeHandle->ContextDestroyed(this);
   }
 
-  // Note, this may set the mOrphanedData flag.
+  
   mManager->RemoveContext(this);
 
   if (mQuotaInfo.mDir && !mOrphanedData) {
@@ -896,15 +899,15 @@ void Context::Init(Context* aOldContext) {
 void Context::Start() {
   NS_ASSERT_OWNINGTHREAD(Context);
 
-  // Previous context closing delayed our start, but then we were canceled.
-  // In this case, just do nothing here.
+  
+  
   if (mState == STATE_CONTEXT_CANCELED) {
     MOZ_DIAGNOSTIC_ASSERT(!mInitRunnable);
     MOZ_DIAGNOSTIC_ASSERT(!mInitAction);
-    // If we can't initialize the quota subsystem we will never be able to
-    // clear our shared data object via the target IO thread.  Instead just
-    // clear it here to maintain the invariant that the shared data is
-    // cleared before Context destruction.
+    
+    
+    
+    
     mData = nullptr;
     return;
   }
@@ -912,17 +915,17 @@ void Context::Start() {
   MOZ_DIAGNOSTIC_ASSERT(mState == STATE_CONTEXT_PREINIT);
   MOZ_DIAGNOSTIC_ASSERT(!mInitRunnable);
 
-  mInitRunnable =
-      new QuotaInitRunnable(this, mManager, mData, mTarget, mInitAction);
+  mInitRunnable = new QuotaInitRunnable(this, mManager.clonePtr(), mData,
+                                        mTarget, mInitAction);
   mInitAction = nullptr;
 
   mState = STATE_CONTEXT_INIT;
 
   nsresult rv = mInitRunnable->Dispatch();
   if (NS_FAILED(rv)) {
-    // Shutdown must be delayed until all Contexts are destroyed.  Shutdown
-    // must also prevent any new Contexts from being constructed.  Crash
-    // for this invariant violation.
+    
+    
+    
     MOZ_CRASH("Failed to dispatch QuotaInitRunnable.");
   }
 }
@@ -939,8 +942,8 @@ void Context::DispatchAction(Action* aAction, bool aDoomData) {
 
   nsresult rv = runnable->Dispatch();
   if (NS_FAILED(rv)) {
-    // Shutdown must be delayed until all Contexts are destroyed.  Crash
-    // for this invariant violation.
+    
+    
     MOZ_CRASH("Failed to dispatch ActionRunnable to target thread.");
   }
   AddActivity(runnable);
@@ -955,15 +958,15 @@ void Context::OnQuotaInit(nsresult aRv, const QuotaInfo& aQuotaInfo,
 
   mQuotaInfo = aQuotaInfo;
 
-  // Always save the directory lock to ensure QuotaManager does not shutdown
-  // before the Context has gone away.
+  
+  
   MOZ_DIAGNOSTIC_ASSERT(!mDirectoryLock);
   mDirectoryLock = aDirectoryLock;
 
-  // If we opening the context failed, but we were not explicitly canceled,
-  // still treat the entire context as canceled.  We don't want to allow
-  // new actions to be dispatched.  We also cannot leave the context in
-  // the INIT state after failing to open.
+  
+  
+  
+  
   if (NS_FAILED(aRv)) {
     mState = STATE_CONTEXT_CANCELED;
   }
@@ -974,7 +977,7 @@ void Context::OnQuotaInit(nsresult aRv, const QuotaInfo& aQuotaInfo,
     }
     mPendingActions.Clear();
     mThreadsafeHandle->AllowToClose();
-    // Context will destruct after return here and last ref is released.
+    
     return;
   }
 
@@ -1003,7 +1006,7 @@ void Context::RemoveActivity(Activity* aActivity) {
 
 void Context::NoteOrphanedData() {
   NS_ASSERT_OWNINGTHREAD(Context);
-  // This may be called more than once
+  
   mOrphanedData = true;
 }
 
@@ -1027,20 +1030,20 @@ void Context::DoomTargetData() {
   NS_ASSERT_OWNINGTHREAD(Context);
   MOZ_DIAGNOSTIC_ASSERT(mData);
 
-  // We are about to drop our reference to the Data.  We need to ensure that
-  // the ~Context() destructor does not run until contents of Data have been
-  // released on the Target thread.
+  
+  
+  
 
-  // Dispatch a no-op Action.  This will hold the Context alive through a
-  // roundtrip to the target thread and back to the owning thread.  The
-  // ref to the Data object is cleared on the owning thread after creating
-  // the ActionRunnable, but before dispatching it.
+  
+  
+  
+  
   RefPtr<Action> action = new NullAction();
-  DispatchAction(action, true /* doomed data */);
+  DispatchAction(action, true );
 
   MOZ_DIAGNOSTIC_ASSERT(!mData);
 }
 
-}  // namespace cache
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
+}  
