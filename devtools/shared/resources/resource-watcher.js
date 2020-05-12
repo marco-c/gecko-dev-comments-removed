@@ -33,6 +33,11 @@ class ResourceWatcher {
     this._destroyedListeners = new EventEmitter();
 
     this._listenerCount = new Map();
+
+    
+    
+    
+    this._previouslyListenedTypes = new Set();
   }
 
   get contentToolboxFissionPrefValue() {
@@ -221,12 +226,41 @@ class ResourceWatcher {
 
 
   async _startListening(resourceType) {
+    const isDocumentEvent =
+      resourceType === ResourceWatcher.TYPES.DOCUMENT_EVENTS;
+
     let listeners = this._listenerCount.get(resourceType) || 0;
     listeners++;
-    this._listenerCount.set(resourceType, listeners);
     if (listeners > 1) {
-      return;
+      
+      
+      if (isDocumentEvent) {
+        
+        
+        
+        return;
+      }
+
+      throw new Error(
+        `The ResourceWatcher is already listening to "${resourceType}", ` +
+          "the client should call `watch` only once per resource type."
+      );
     }
+
+    const wasListening = this._previouslyListenedTypes.has(resourceType);
+    if (wasListening && !isDocumentEvent) {
+      
+      
+      
+      throw new Error(
+        `The ResourceWatcher previously watched "${resourceType}" ` +
+          "and doesn't support watching again on a previous resource."
+      );
+    }
+
+    this._listenerCount.set(resourceType, listeners);
+    this._previouslyListenedTypes.add(resourceType);
+
     
     
     
@@ -283,6 +317,7 @@ class ResourceWatcher {
     if (listeners > 0) {
       return;
     }
+
     
     
     for (const targetType of this.targetList.ALL_TYPES) {
