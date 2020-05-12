@@ -3855,11 +3855,12 @@ void nsIFrame::BuildDisplayListForStackingContext(
   if (clipCapturedBy ==
       ContainerItemType::OwnLayerForTransformWithRoundedClip) {
     clipState.Restore();
-    resultList.AppendNewToTop<nsDisplayOwnLayer>(
-        aBuilder, this, &resultList, aBuilder->CurrentActiveScrolledRoot(),
+    resultList.AppendNewToTopWithIndex<nsDisplayOwnLayer>(
+        aBuilder, this,
+         nsDisplayOwnLayer::OwnLayerForTransformWithRoundedClip,
+        &resultList, aBuilder->CurrentActiveScrolledRoot(),
         nsDisplayOwnLayerFlags::None, ScrollbarData{},
-         false, false,
-        nsDisplayOwnLayer::OwnLayerForTransformWithRoundedClip);
+         false, false);
     ct.TrackContainer(resultList.GetTop());
   }
 
@@ -11255,9 +11256,10 @@ void nsIFrame::CreateOwnLayerIfNeeded(nsDisplayListBuilder* aBuilder,
                                       bool* aCreatedContainerItem) {
   if (GetContent() && GetContent()->IsXULElement() &&
       GetContent()->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::layer)) {
-    aList->AppendNewToTop<nsDisplayOwnLayer>(
-        aBuilder, this, aList, aBuilder->CurrentActiveScrolledRoot(),
-        nsDisplayOwnLayerFlags::None, ScrollbarData{}, true, false, aType);
+    aList->AppendNewToTopWithIndex<nsDisplayOwnLayer>(
+        aBuilder, this,  aType, aList,
+        aBuilder->CurrentActiveScrolledRoot(), nsDisplayOwnLayerFlags::None,
+        ScrollbarData{}, true, false);
     if (aCreatedContainerItem) {
       *aCreatedContainerItem = true;
     }
