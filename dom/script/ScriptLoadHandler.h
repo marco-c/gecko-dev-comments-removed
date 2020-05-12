@@ -98,6 +98,9 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver {
 
   
   mozilla::UniquePtr<mozilla::Decoder> mDecoder;
+
+  
+  bool mPreloadStartNotified = false;
 };
 
 }  

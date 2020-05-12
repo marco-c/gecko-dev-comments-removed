@@ -1226,6 +1226,9 @@ nsresult ScriptLoader::RestartLoad(ScriptLoadRequest* aRequest) {
   TRACE_FOR_TEST(aRequest->Element(), "scriptloader_fallback");
 
   
+  aRequest->NotifyRestart(mDocument);
+
+  
   
   aRequest->mProgress = ScriptLoadRequest::Progress::eLoading_Source;
   nsresult rv = StartLoad(aRequest);
@@ -1371,20 +1374,17 @@ nsresult ScriptLoader::StartLoad(ScriptLoadRequest* aRequest) {
   LOG(("ScriptLoadRequest (%p): mode=%u tracking=%d", aRequest,
        unsigned(aRequest->mScriptMode), aRequest->IsTracking()));
 
-  nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(channel));
-  if (cos) {
-    if (aRequest->IsLinkPreloadScript()) {
-      
-      
-      
-      
-      
-      
-      cos->AddClassFlags(nsIClassOfService::Unblocked);
-      if (nsCOMPtr<nsISupportsPriority> sp = do_QueryInterface(channel)) {
-        sp->AdjustPriority(nsISupportsPriority::PRIORITY_HIGHEST);
-      }
-    } else if (aRequest->mScriptFromHead && aRequest->IsBlockingScript()) {
+  if (aRequest->IsLinkPreloadScript()) {
+    
+    
+    
+    
+    
+    
+    ScriptLoadRequest::PrioritizeAsPreload(channel);
+    ScriptLoadRequest::AddLoadBackgroundFlag(channel);
+  } else if (nsCOMPtr<nsIClassOfService> cos = do_QueryInterface(channel)) {
+    if (aRequest->mScriptFromHead && aRequest->IsBlockingScript()) {
       
       
       cos->AddClassFlags(nsIClassOfService::Leader);
@@ -1470,6 +1470,12 @@ nsresult ScriptLoader::StartLoad(ScriptLoadRequest* aRequest) {
 
   rv = channel->AsyncOpen(loader);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  auto key = PreloadHashKey::CreateAsScript(
+      aRequest->mURI, aRequest->CORSMode(), aRequest->mKind,
+      aRequest->ReferrerPolicy());
+  aRequest->NotifyOpen(&key, channel, mDocument,
+                       aRequest->IsLinkPreloadScript());
 
   if (aRequest->IsModuleRequest()) {
     
@@ -1915,6 +1921,10 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
 
   
   ReportPreloadErrorsToConsole(request);
+
+  
+  
+  request->NotifyUsage();
 
   return request;
 }

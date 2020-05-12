@@ -25,6 +25,7 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/Utf8.h"  
 #include "mozilla/Vector.h"
+#include "ScriptKind.h"
 
 class nsIURI;
 
