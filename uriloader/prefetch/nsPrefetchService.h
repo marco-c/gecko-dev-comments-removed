@@ -74,7 +74,6 @@ class nsPrefetchService final : public nsIPrefetchService,
   int32_t mStopCount;
   bool mHaveProcessed;
   bool mPrefetchDisabled;
-  bool mPreloadDisabled;
 
   
   

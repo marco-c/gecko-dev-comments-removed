@@ -1849,8 +1849,6 @@ pref("network.ftp.idleConnectionTimeout", 300);
 
 pref("network.prefetch-next", true);
 
-pref("network.preload", false);
-
 
 
 
