@@ -384,7 +384,6 @@ class PrintingChild extends ActorChild {
     
     
     printSettings.title = contentWindow.document.title;
-    let printCancelled = false;
 
     
     
@@ -400,9 +399,7 @@ class PrintingChild extends ActorChild {
     } catch (e) {
       
       
-      if (e.result == Cr.NS_ERROR_ABORT) {
-        printCancelled = true;
-      } else {
+      if (e.result != Cr.NS_ERROR_ABORT) {
         Cu.reportError(`In Printing:Print:Done handler, got unexpected rv
                         ${e.result}.`);
         this.mm.sendAsyncMessage("Printing:Error", {
@@ -410,26 +407,6 @@ class PrintingChild extends ActorChild {
           nsresult: e.result,
         });
       }
-    }
-
-    if (
-      (!printCancelled || printSettings.saveOnCancel) &&
-      this.shouldSavePrintSettings
-    ) {
-      let PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
-        Ci.nsIPrintSettingsService
-      );
-
-      PSSVC.savePrintSettingsToPrefs(
-        printSettings,
-        true,
-        printSettings.kInitSaveAll
-      );
-      PSSVC.savePrintSettingsToPrefs(
-        printSettings,
-        false,
-        printSettings.kInitSavePrinterName
-      );
     }
   }
 
