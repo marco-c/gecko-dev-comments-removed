@@ -70,7 +70,9 @@ class PreloadHashKey : public nsURIHashKey {
       const dom::ReferrerPolicy& aReferrerPolicy);
 
   
-  
+  static PreloadHashKey CreateAsFont(
+      nsIURI* aURI, const CORSMode aCORSMode,
+      const dom::ReferrerPolicy& aReferrerPolicy);
 
   KeyType GetKey() const { return const_cast<PreloadHashKey*>(this); }
   KeyTypePointer GetKeyPointer() const { return this; }
