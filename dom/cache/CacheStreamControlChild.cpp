@@ -110,14 +110,15 @@ void CacheStreamControlChild::OpenStream(const nsID& aId,
   
   
   
-  RefPtr<CacheWorkerRef> holder = GetWorkerRef();
+  const SafeRefPtr<CacheWorkerRef> holder = GetWorkerRefPtr().clonePtr();
 
   SendOpenStream(aId)->Then(
       GetCurrentThreadSerialEventTarget(), __func__,
-      [aResolver, holder](RefPtr<nsIInputStream>&& aOptionalStream) {
+      [aResolver,
+       holder = holder.clonePtr()](RefPtr<nsIInputStream>&& aOptionalStream) {
         aResolver(nsCOMPtr<nsIInputStream>(std::move(aOptionalStream)));
       },
-      [aResolver, holder](ResponseRejectReason&& aReason) {
+      [aResolver, holder = holder.clonePtr()](ResponseRejectReason&& aReason) {
         aResolver(nullptr);
       });
 }

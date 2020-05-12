@@ -13,16 +13,20 @@ namespace mozilla {
 namespace dom {
 namespace cache {
 
-void ActorChild::SetWorkerRef(CacheWorkerRef* aWorkerRef) {
+void ActorChild::SetWorkerRef(SafeRefPtr<CacheWorkerRef> aWorkerRef) {
   
   
   
   if (mWorkerRef) {
+    
+    
+    
+
     MOZ_DIAGNOSTIC_ASSERT(mWorkerRef == aWorkerRef);
     return;
   }
 
-  mWorkerRef = aWorkerRef;
+  mWorkerRef = std::move(aWorkerRef);
   if (mWorkerRef) {
     mWorkerRef->AddActor(this);
   }
@@ -36,7 +40,9 @@ void ActorChild::RemoveWorkerRef() {
   }
 }
 
-CacheWorkerRef* ActorChild::GetWorkerRef() const { return mWorkerRef; }
+const SafeRefPtr<CacheWorkerRef>& ActorChild::GetWorkerRefPtr() const {
+  return mWorkerRef;
+}
 
 bool ActorChild::WorkerRefNotified() const {
   return mWorkerRef && mWorkerRef->Notified();

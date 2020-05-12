@@ -31,7 +31,7 @@ class CacheOpChild final : public PCacheOpChild,
  private:
   
   
-  CacheOpChild(CacheWorkerRef* aWorkerRef, nsIGlobalObject* aGlobal,
+  CacheOpChild(SafeRefPtr<CacheWorkerRef> aWorkerRef, nsIGlobalObject* aGlobal,
                nsISupports* aParent, Promise* aPromise);
   ~CacheOpChild();
 
