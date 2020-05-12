@@ -43,7 +43,7 @@ WorkerNavigator::WorkerNavigator(const NavigatorProperties& aProperties,
                                  bool aOnline)
     : mProperties(aProperties), mOnline(aOnline) {}
 
-WorkerNavigator::~WorkerNavigator() {}
+WorkerNavigator::~WorkerNavigator() = default;
 
 
 already_AddRefed<WorkerNavigator> WorkerNavigator::Create(bool aOnLine) {
@@ -65,7 +65,7 @@ JSObject* WorkerNavigator::WrapObject(JSContext* aCx,
 
 void WorkerNavigator::SetLanguages(const nsTArray<nsString>& aLanguages) {
   WorkerNavigator_Binding::ClearCachedLanguagesValue(this);
-  mProperties.mLanguages = aLanguages;
+  mProperties.mLanguages = aLanguages.Clone();
 }
 
 void WorkerNavigator::GetAppName(nsString& aAppName,
