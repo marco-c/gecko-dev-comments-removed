@@ -51,11 +51,6 @@ loader.lazyImporter(
   "AddonManager",
   "resource://gre/modules/AddonManager.jsm"
 );
-loader.lazyImporter(
-  this,
-  "AppConstants",
-  "resource://gre/modules/AppConstants.jsm"
-);
 
 
 
@@ -179,15 +174,6 @@ exports.createRootActor = function createRootActor(connection) {
 
 
 
-
-
-
-
-
-
-
-
-
 function BrowserTabList(connection) {
   this._connection = connection;
 
@@ -231,7 +217,7 @@ function BrowserTabList(connection) {
   
   this._testing = false;
 
-  this._onAndroidDocumentEvent = this._onAndroidDocumentEvent.bind(this);
+  this._onPageTitleChangedEvent = this._onPageTitleChangedEvent.bind(this);
 }
 
 BrowserTabList.prototype.constructor = BrowserTabList;
@@ -489,31 +475,12 @@ BrowserTabList.prototype._checkListening = function() {
   
 
 
-
-
-
-  this._listenForMessagesIf(
+  this._listenForEventsIf(
     this._onListChanged && this._mustNotify,
     "_listeningForTitleChange",
-    ["DOMTitleChanged"]
+    ["pagetitlechanged"],
+    this._onPageTitleChangedEvent
   );
-
-  
-
-
-
-
-
-
-
-  if (AppConstants.platform === "android") {
-    this._listenForEventsIf(
-      this._onListChanged && this._mustNotify,
-      "_listeningForAndroidDocument",
-      ["DOMTitleChanged"],
-      this._onAndroidDocumentEvent
-    );
-  }
 };
 
 
@@ -549,59 +516,15 @@ BrowserTabList.prototype._listenForEventsIf = function(
 
 
 
-
-
-
-
-
-
-
-
-BrowserTabList.prototype._listenForMessagesIf = function(
-  shouldListen,
-  guard,
-  messageNames
-) {
-  if (!shouldListen !== !this[guard]) {
-    const op = shouldListen ? "addMessageListener" : "removeMessageListener";
-    for (const win of Services.wm.getEnumerator(
-      DevToolsServer.chromeWindowType
-    )) {
-      for (const name of messageNames) {
-        win.messageManager[op](name, this);
-      }
-    }
-    this[guard] = shouldListen;
-  }
-};
-
-
-
-
-BrowserTabList.prototype._onAndroidDocumentEvent = function(event) {
+BrowserTabList.prototype._onPageTitleChangedEvent = function(event) {
   switch (event.type) {
-    case "DOMTitleChanged": {
+    case "pagetitlechanged": {
       const window = event.currentTarget.ownerGlobal;
       this._onDOMTitleChanged(window.browser);
       break;
     }
   }
 };
-
-
-
-
-BrowserTabList.prototype.receiveMessage = DevToolsUtils.makeInfallible(function(
-  message
-) {
-  const browser = message.target;
-  switch (message.name) {
-    case "DOMTitleChanged": {
-      this._onDOMTitleChanged(browser);
-      break;
-    }
-  }
-});
 
 
 
@@ -622,7 +545,6 @@ BrowserTabList.prototype._onDOMTitleChanged = DevToolsUtils.makeInfallible(
 BrowserTabList.prototype.handleEvent = DevToolsUtils.makeInfallible(function(
   event
 ) {
-  
   
   
   const browser = event.target.linkedBrowser || event.target;

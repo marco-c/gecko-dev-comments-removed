@@ -26,32 +26,6 @@ sendAsyncMessage("Content:BrowserChildReady", {
   time: Services.telemetry.msSystemNow(),
 });
 
-addEventListener(
-  "DOMTitleChanged",
-  function(aEvent) {
-    if (
-      !aEvent.isTrusted ||
-      
-      
-      content.closed
-    ) {
-      return;
-    }
-    
-    docShell.QueryInterface(Ci.nsIWebNavigation);
-    if (
-      
-      
-      
-      docShell.document != aEvent.target
-    ) {
-      return;
-    }
-    sendAsyncMessage("DOMTitleChanged", { title: content.document.title });
-  },
-  false
-);
-
 
 
 
