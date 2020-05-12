@@ -4328,6 +4328,7 @@ pref("urlclassifier.disallow_completions", "goog-downloadwhite-digest256,base-tr
 
 
 pref("urlclassifier.trackingAnnotationSkipURLs", "google.com/recaptcha/,*.google.com/recaptcha/");
+pref("privacy.rejectForeign.allowList", "");
 
 
 pref("urlclassifier.gethashnoise", 4);
