@@ -831,8 +831,8 @@ TEST(ThreadUtils, IdleTaskRunner)
   }));
 
   
-  
   runner1->Cancel();
+  runner2->Cancel();
 }
 
 
