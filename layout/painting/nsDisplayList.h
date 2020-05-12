@@ -2075,7 +2075,7 @@ template <typename T>
 MOZ_ALWAYS_INLINE T* MakeClone(nsDisplayListBuilder* aBuilder, const T* aItem) {
   T* item = new (aBuilder) T(aBuilder, *aItem);
   item->SetType(T::ItemType());
-  item->SetPerFrameKey(item->CalculatePerFrameKey());
+  item->SetPerFrameIndex(item->CalculatePerFrameKey());
   return item;
 }
 
@@ -2113,7 +2113,7 @@ MOZ_ALWAYS_INLINE T* MakeDisplayItemWithIndex(nsDisplayListBuilder* aBuilder,
     item->SetType(type);
   }
 
-  item->SetPerFrameKey(item->CalculatePerFrameKey());
+  item->SetPerFrameIndex(aIndex);
   item->SetExtraPageForPageNum(aBuilder->GetBuildingExtraPagesForPageNum());
 
   nsPaintedDisplayItem* paintedItem = item->AsPaintedDisplayItem();
@@ -2281,8 +2281,8 @@ class nsDisplayItemBase : public nsDisplayItemLink {
     
     
     return (static_cast<uint32_t>(mExtraPageForPageNum)
-            << (TYPE_BITS + (sizeof(mKey) * 8))) |
-           (static_cast<uint32_t>(mKey) << TYPE_BITS) |
+            << (TYPE_BITS + (sizeof(mPerFrameIndex) * 8))) |
+           (static_cast<uint32_t>(mPerFrameIndex) << TYPE_BITS) |
            static_cast<uint32_t>(mType);
   }
 
@@ -2392,7 +2392,7 @@ class nsDisplayItemBase : public nsDisplayItemLink {
         mItemFlags(aOther.mItemFlags),
         mType(aOther.mType),
         mExtraPageForPageNum(aOther.mExtraPageForPageNum),
-        mKey(aOther.mKey) {
+        mPerFrameIndex(aOther.mPerFrameIndex) {
     MOZ_COUNT_CTOR(nsDisplayItemBase);
   }
 
@@ -2404,7 +2404,7 @@ class nsDisplayItemBase : public nsDisplayItemLink {
   }
 
   void SetType(const DisplayItemType aType) { mType = aType; }
-  void SetPerFrameKey(const uint16_t aKey) { mKey = aKey; }
+  void SetPerFrameIndex(const uint16_t aIndex) { mPerFrameIndex = aIndex; }
 
   
   
@@ -2435,7 +2435,7 @@ class nsDisplayItemBase : public nsDisplayItemLink {
   mozilla::EnumSet<ItemBaseFlag, uint8_t> mItemFlags;  
   DisplayItemType mType;                               
   uint8_t mExtraPageForPageNum = 0;                    
-  uint16_t mKey;                                       
+  uint16_t mPerFrameIndex;                             
   OldListIndex mOldListIndex;                          
   uintptr_t mOldList = 0;                              
 
