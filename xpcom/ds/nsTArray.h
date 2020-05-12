@@ -269,82 +269,20 @@ extern nsTArrayHeader sEmptyTArrayHeader;
 
 namespace detail {
 
-
-
-
-
-
-
-template <typename E>
-struct SpecializableIsCopyConstructible {
-  static constexpr bool Value = std::is_copy_constructible_v<E>;
-};
-
-#define MOZ_DECLARE_COPY_CONSTRUCTIBLE(E)      \
-  namespace detail {                           \
-  template <>                                  \
-  struct SpecializableIsCopyConstructible<E> { \
-    static constexpr bool Value = true;        \
-  };                                           \
-  }
-#define MOZ_DECLARE_NON_COPY_CONSTRUCTIBLE(E)  \
-  namespace detail {                           \
-  template <>                                  \
-  struct SpecializableIsCopyConstructible<E> { \
-    static constexpr bool Value = false;       \
-  };                                           \
-  }
-
-template <typename E>
-constexpr bool SpecializableIsCopyConstructibleValue =
-    SpecializableIsCopyConstructible<E>::Value;
-
-
-
-
-
-template <typename E, typename Impl, typename Alloc,
-          bool IsCopyConstructible = false>
-class nsTArray_CopyEnabler;
-
-template <typename E, typename Impl, typename Alloc>
-class nsTArray_CopyEnabler<E, Impl, Alloc, false> {
+class nsTArray_CopyDisabler {
  public:
-  nsTArray_CopyEnabler() = default;
+  nsTArray_CopyDisabler() = default;
 
-  nsTArray_CopyEnabler(const nsTArray_CopyEnabler&) = delete;
-  nsTArray_CopyEnabler& operator=(const nsTArray_CopyEnabler&) = delete;
-};
-
-template <typename E, typename Impl, typename Alloc>
-class nsTArray_CopyEnabler<E, Impl, Alloc, true> {
- public:
-  nsTArray_CopyEnabler() = default;
-
-  nsTArray_CopyEnabler(const nsTArray_CopyEnabler& aOther) {
-    static_cast<Impl*>(this)->template AppendElementsInternal<Alloc>(
-        static_cast<const Impl&>(aOther).Elements(),
-        static_cast<const Impl&>(aOther).Length());
-  }
-
-  nsTArray_CopyEnabler& operator=(const nsTArray_CopyEnabler& aOther) {
-    if (this != &aOther) {
-      static_cast<Impl*>(this)->template ReplaceElementsAtInternal<Alloc>(
-          0, static_cast<Impl*>(this)->Length(),
-          static_cast<const Impl&>(aOther).Elements(),
-          static_cast<const Impl&>(aOther).Length());
-    }
-    return *this;
-  }
+  nsTArray_CopyDisabler(const nsTArray_CopyDisabler&) = delete;
+  nsTArray_CopyDisabler& operator=(const nsTArray_CopyDisabler&) = delete;
 };
 
 }  
 
 
 
-template <class E, class Derived, typename Alloc>
-struct nsTArray_SafeElementAtHelper
-    : public ::detail::nsTArray_CopyEnabler<E, Derived, Alloc> {
+template <class E, class Derived>
+struct nsTArray_SafeElementAtHelper : public ::detail::nsTArray_CopyDisabler {
   typedef E* elem_type;
   typedef size_t index_type;
 
@@ -355,9 +293,9 @@ struct nsTArray_SafeElementAtHelper
   const elem_type& SafeElementAt(index_type aIndex) const;
 };
 
-template <class E, class Derived, typename Alloc>
-struct nsTArray_SafeElementAtHelper<E*, Derived, Alloc>
-    : public ::detail::nsTArray_CopyEnabler<E*, Derived, Alloc> {
+template <class E, class Derived>
+struct nsTArray_SafeElementAtHelper<E*, Derived>
+    : public ::detail::nsTArray_CopyDisabler {
   typedef E* elem_type;
   
   typedef size_t index_type;
@@ -377,9 +315,9 @@ struct nsTArray_SafeElementAtHelper<E*, Derived, Alloc>
 
 
 
-template <class E, class Derived, typename Alloc>
+template <class E, class Derived>
 struct nsTArray_SafeElementAtSmartPtrHelper
-    : public ::detail::nsTArray_CopyEnabler<E, Derived, Alloc> {
+    : public ::detail::nsTArray_CopyDisabler {
   typedef typename E::element_type* elem_type;
   typedef const typename E::element_type* const_elem_type;
   typedef size_t index_type;
@@ -405,24 +343,23 @@ struct nsTArray_SafeElementAtSmartPtrHelper
 template <class T>
 class nsCOMPtr;
 
-template <class E, class Derived, typename Alloc>
-struct nsTArray_SafeElementAtHelper<nsCOMPtr<E>, Derived, Alloc>
-    : public nsTArray_SafeElementAtSmartPtrHelper<nsCOMPtr<E>, Derived, Alloc> {
-};
+template <class E, class Derived>
+struct nsTArray_SafeElementAtHelper<nsCOMPtr<E>, Derived>
+    : public nsTArray_SafeElementAtSmartPtrHelper<nsCOMPtr<E>, Derived> {};
 
-template <class E, class Derived, typename Alloc>
-struct nsTArray_SafeElementAtHelper<RefPtr<E>, Derived, Alloc>
-    : public nsTArray_SafeElementAtSmartPtrHelper<RefPtr<E>, Derived, Alloc> {};
+template <class E, class Derived>
+struct nsTArray_SafeElementAtHelper<RefPtr<E>, Derived>
+    : public nsTArray_SafeElementAtSmartPtrHelper<RefPtr<E>, Derived> {};
 
 namespace mozilla {
 template <class T>
 class OwningNonNull;
 }  
 
-template <class E, class Derived, typename Alloc>
-struct nsTArray_SafeElementAtHelper<mozilla::OwningNonNull<E>, Derived, Alloc>
+template <class E, class Derived>
+struct nsTArray_SafeElementAtHelper<mozilla::OwningNonNull<E>, Derived>
     : public nsTArray_SafeElementAtSmartPtrHelper<mozilla::OwningNonNull<E>,
-                                                  Derived, Alloc> {};
+                                                  Derived> {};
 
 
 extern "C" void Gecko_EnsureTArrayCapacity(void* aArray, size_t aCapacity,
@@ -839,33 +776,8 @@ struct MOZ_NEEDS_MEMMOVABLE_TYPE nsTArray_RelocationStrategy {
     using Type = nsTArray_RelocateUsingMoveConstructor<T<S>>;       \
   };
 
-MOZ_DECLARE_COPY_CONSTRUCTIBLE(nsTString<char>)
-MOZ_DECLARE_COPY_CONSTRUCTIBLE(nsTString<char16_t>)
-
-MOZ_DECLARE_COPY_CONSTRUCTIBLE(mozilla::a11y::BatchData)
 
 
-
-MOZ_DECLARE_NON_COPY_CONSTRUCTIBLE(mozilla::ipc::AutoIPCStream)
-MOZ_DECLARE_COPY_CONSTRUCTIBLE(mozilla::ipc::ContentSecurityPolicy)
-MOZ_DECLARE_COPY_CONSTRUCTIBLE(mozilla::layers::Animation)
-MOZ_DECLARE_COPY_CONSTRUCTIBLE(mozilla::layers::FrameStats)
-MOZ_DECLARE_COPY_CONSTRUCTIBLE(mozilla::layers::PropertyAnimationGroup)
-#define MOZ_NSTARRAY_COMMA ,
-MOZ_DECLARE_COPY_CONSTRUCTIBLE(
-    mozilla::dom::binding_detail::RecordEntry<
-        nsTString<char> MOZ_NSTARRAY_COMMA
-            mozilla::dom::Nullable<mozilla::dom::OwningUTF8StringOrDouble>>)
-MOZ_DECLARE_COPY_CONSTRUCTIBLE(mozilla::dom::binding_detail::RecordEntry<
-                               nsTString<char16_t> MOZ_NSTARRAY_COMMA
-                                   mozilla::dom::OwningStringOrBooleanOrObject>)
-#undef MOZ_NSTARRAY_COMMA
-MOZ_DECLARE_COPY_CONSTRUCTIBLE(mozilla::dom::MessagePortIdentifier)
-MOZ_DECLARE_COPY_CONSTRUCTIBLE(mozilla::dom::MozPluginParameter)
-MOZ_DECLARE_COPY_CONSTRUCTIBLE(mozilla::dom::OwningFileOrDirectory)
-MOZ_DECLARE_COPY_CONSTRUCTIBLE(mozilla::dom::Pref)
-MOZ_DECLARE_COPY_CONSTRUCTIBLE(mozilla::dom::ResponsiveImageCandidate)
-MOZ_DECLARE_COPY_CONSTRUCTIBLE(mozilla::dom::ServiceWorkerRegistrationData)
 
 MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR_FOR_TEMPLATE(JS::Heap)
 MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR_FOR_TEMPLATE(std::function)
@@ -898,9 +810,8 @@ MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(mozilla::SourceBufferTask)
 
 
 
-template <class E, class Derived, typename Alloc>
-struct nsTArray_TypedBase
-    : public nsTArray_SafeElementAtHelper<E, Derived, Alloc> {};
+template <class E, class Derived>
+struct nsTArray_TypedBase : public nsTArray_SafeElementAtHelper<E, Derived> {};
 
 
 
@@ -913,9 +824,9 @@ struct nsTArray_TypedBase
 
 
 
-template <class E, class Derived, typename Alloc>
-struct nsTArray_TypedBase<JS::Heap<E>, Derived, Alloc>
-    : public nsTArray_SafeElementAtHelper<JS::Heap<E>, Derived, Alloc> {
+template <class E, class Derived>
+struct nsTArray_TypedBase<JS::Heap<E>, Derived>
+    : public nsTArray_SafeElementAtHelper<JS::Heap<E>, Derived> {
   operator const nsTArray<E>&() {
     static_assert(sizeof(E) == sizeof(JS::Heap<E>),
                   "JS::Heap<E> must be binary compatible with E.");
@@ -1037,17 +948,8 @@ template <class E, class Alloc>
 class nsTArray_Impl
     : public nsTArray_base<Alloc,
                            typename nsTArray_RelocationStrategy<E>::Type>,
-      public nsTArray_TypedBase<E, nsTArray_Impl<E, Alloc>,
-                                Alloc>  
-                                        
-                                        
-                                        
-                                        
-{
+      public nsTArray_TypedBase<E, nsTArray_Impl<E, Alloc>> {
  private:
-  friend class ::detail::nsTArray_CopyEnabler<E, nsTArray_Impl<E, Alloc>,
-                                              Alloc>;
-
   friend class nsTArray<E>;
 
   typedef nsTArrayFallibleAllocator FallibleAlloc;
@@ -1061,8 +963,7 @@ class nsTArray_Impl
   typedef E elem_type;
   typedef nsTArray_Impl<E, Alloc> self_type;
   typedef nsTArrayElementTraits<E> elem_traits;
-  typedef nsTArray_SafeElementAtHelper<E, self_type, Alloc>
-      safeelementat_helper_type;
+  typedef nsTArray_SafeElementAtHelper<E, self_type> safeelementat_helper_type;
   typedef mozilla::ArrayIterator<elem_type&, nsTArray<E>> iterator;
   typedef mozilla::ArrayIterator<const elem_type&, nsTArray<E>> const_iterator;
   typedef mozilla::ReverseIterator<iterator> reverse_iterator;
