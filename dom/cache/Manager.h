@@ -122,7 +122,7 @@ class Manager final : public SafeRefCounted<Manager> {
   enum State { Open, Closing };
 
   static Result<SafeRefPtr<Manager>, nsresult> AcquireCreateIfNonExistent(
-      ManagerId* aManagerId);
+      const SafeRefPtr<ManagerId>& aManagerId);
 
   
   static void ShutdownAll();
@@ -153,7 +153,7 @@ class Manager final : public SafeRefCounted<Manager> {
   void AddRefBodyId(const nsID& aBodyId);
   void ReleaseBodyId(const nsID& aBodyId);
 
-  already_AddRefed<ManagerId> GetManagerId() const;
+  const ManagerId& GetManagerId() const;
 
   
   
@@ -212,7 +212,7 @@ class Manager final : public SafeRefCounted<Manager> {
 
   void MaybeAllowContextToClose();
 
-  RefPtr<ManagerId> mManagerId;
+  SafeRefPtr<ManagerId> mManagerId;
   nsCOMPtr<nsIThread> mIOThread;
 
   
@@ -270,7 +270,8 @@ class Manager final : public SafeRefCounted<Manager> {
   struct ConstructorGuard {};
 
  public:
-  Manager(ManagerId* aManagerId, nsIThread* aIOThread, const ConstructorGuard&);
+  Manager(SafeRefPtr<ManagerId> aManagerId, nsIThread* aIOThread,
+          const ConstructorGuard&);
   ~Manager();
 
   NS_DECL_OWNINGTHREAD
