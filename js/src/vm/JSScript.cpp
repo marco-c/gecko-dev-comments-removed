@@ -4277,7 +4277,11 @@ bool JSScript::fullyInitFromStencil(JSContext* cx,
   
   MOZ_ASSERT(stencil.natoms <= INDEX_LIMIT);
 
-  script->addToImmutableFlags(stencil.immutableFlags);
+  
+  
+  MOZ_ASSERT_IF(!script->isBinAST(),
+                script->immutableFlags() == stencil.immutableFlags);
+  script->resetImmutableFlags(stencil.immutableFlags);
 
   
   script->resetArgsUsageAnalysis();
