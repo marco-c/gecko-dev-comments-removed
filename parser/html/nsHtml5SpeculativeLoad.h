@@ -30,7 +30,8 @@ enum eHtml5SpeculativeLoad {
   eSpeculativeLoadManifest,
   eSpeculativeLoadSetDocumentCharset,
   eSpeculativeLoadSetDocumentMode,
-  eSpeculativeLoadPreconnect
+  eSpeculativeLoadPreconnect,
+  eSpeculativeLoadFetch
 };
 
 class nsHtml5SpeculativeLoad {
@@ -89,6 +90,25 @@ class nsHtml5SpeculativeLoad {
     aSizes.ToString(
         mTypeOrCharsetSourceOrDocumentModeOrMetaCSPOrSizesOrIntegrity);
     mIsLinkPreload = aLinkPreload;
+  }
+
+  inline void InitFetch(nsHtml5String aUrl, nsHtml5String aCrossOrigin,
+                        nsHtml5String aReferrerPolicy) {
+    MOZ_ASSERT(mOpCode == eSpeculativeLoadUninitialized,
+               "Trying to reinitialize a speculative load!");
+    mOpCode = eSpeculativeLoadFetch;
+    aUrl.ToString(mUrlOrSizes);
+    aCrossOrigin.ToString(mCrossOriginOrMedia);
+    nsString
+        referrerPolicy;  
+    aReferrerPolicy.ToString(referrerPolicy);
+    mReferrerPolicyOrIntegrity.Assign(
+        nsContentUtils::TrimWhitespace<nsContentUtils::IsHTMLWhitespace>(
+            referrerPolicy));
+
+    
+    
+    mIsLinkPreload = true;
   }
 
   

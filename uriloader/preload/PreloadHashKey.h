@@ -62,6 +62,13 @@ class PreloadHashKey : public nsURIHashKey {
       dom::ReferrerPolicy const& aReferrerPolicy);
 
   
+  static PreloadHashKey CreateAsFetch(
+      nsIURI* aURI, const CORSMode aCORSMode,
+      const dom::ReferrerPolicy& aReferrerPolicy);
+  static PreloadHashKey CreateAsFetch(
+      nsIURI* aURI, const nsAString& aCrossOrigin,
+      const dom::ReferrerPolicy& aReferrerPolicy);
+
   
   
 
