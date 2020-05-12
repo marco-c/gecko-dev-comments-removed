@@ -298,7 +298,7 @@ void GamepadManager::NewConnectionEvent(uint32_t aIndex, bool aConnected) {
 
   
   
-  nsTArray<RefPtr<nsGlobalWindowInner>> listeners(mListeners);
+  nsTArray<RefPtr<nsGlobalWindowInner>> listeners(mListeners.Clone());
 
   if (aConnected) {
     for (uint32_t i = 0; i < listeners.Length(); i++) {
@@ -479,7 +479,7 @@ void GamepadManager::Update(const GamepadChangeEvent& aEvent) {
 
   
   
-  nsTArray<RefPtr<nsGlobalWindowInner>> listeners(mListeners);
+  nsTArray<RefPtr<nsGlobalWindowInner>> listeners(mListeners.Clone());
 
   for (uint32_t i = 0; i < listeners.Length(); i++) {
     
