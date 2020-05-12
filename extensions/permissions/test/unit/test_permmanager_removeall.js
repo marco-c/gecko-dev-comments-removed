@@ -14,6 +14,9 @@ add_task(async function test() {
   Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
 
   
+  Assert.ok(pm.all.length === 0);
+
+  
   var file = dir.clone();
   file.append("permissions.sqlite");
 
