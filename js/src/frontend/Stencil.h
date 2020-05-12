@@ -378,6 +378,11 @@ class ScriptStencil : public ScriptStencilBase {
 
   
   
+  JSScript* intoScript(JSContext* cx, CompilationInfo& compilationInfo,
+                       SourceExtent extent);
+
+  
+  
   virtual void initAtomMap(GCPtrAtom* atoms) const = 0;
 };
 
