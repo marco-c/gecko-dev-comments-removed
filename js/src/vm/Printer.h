@@ -8,6 +8,7 @@
 #define vm_Printer_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Range.h"
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -205,6 +206,13 @@ extern bool QuoteString(Sprinter* sp, JSString* str, char quote = '\0');
 
 
 extern bool JSONQuoteString(Sprinter* sp, JSString* str);
+
+
+enum class QuoteTarget { String, JSON };
+
+template <QuoteTarget target, typename CharT>
+bool QuoteString(Sprinter* sp, const mozilla::Range<const CharT> chars,
+                 char quote = '\0');
 
 }  
 
