@@ -789,10 +789,14 @@ WebSocketImpl::OnAcknowledge(nsISupports* aContext, uint32_t aSize) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  mWebSocket->mOutgoingBufferedAmount -= aSize;
-  if (!mWebSocket->mOutgoingBufferedAmount.isValid()) {
+  CheckedUint64 outgoingBufferedAmount = mWebSocket->mOutgoingBufferedAmount;
+  outgoingBufferedAmount -= aSize;
+  if (!outgoingBufferedAmount.isValid()) {
     return NS_ERROR_UNEXPECTED;
   }
+
+  mWebSocket->mOutgoingBufferedAmount = outgoingBufferedAmount;
+  MOZ_RELEASE_ASSERT(mWebSocket->mOutgoingBufferedAmount.isValid());
 
   return NS_OK;
 }
@@ -2200,7 +2204,7 @@ void WebSocket::SetReadyState(uint16_t aReadyState) {
 }
 
 
-uint32_t WebSocket::BufferedAmount() const {
+uint64_t WebSocket::BufferedAmount() const {
   AssertIsOnTargetThread();
   MOZ_RELEASE_ASSERT(mOutgoingBufferedAmount.isValid());
   return mOutgoingBufferedAmount.value();
@@ -2309,12 +2313,16 @@ void WebSocket::Send(nsIInputStream* aMsgStream, const nsACString& aMsgString,
     return;
   }
 
-  
-  mOutgoingBufferedAmount += aMsgLength;
-  if (!mOutgoingBufferedAmount.isValid()) {
+  CheckedUint64 outgoingBufferedAmount = mOutgoingBufferedAmount;
+  outgoingBufferedAmount += aMsgLength;
+  if (!outgoingBufferedAmount.isValid()) {
     aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
     return;
   }
+
+  
+  mOutgoingBufferedAmount = outgoingBufferedAmount;
+  MOZ_RELEASE_ASSERT(mOutgoingBufferedAmount.isValid());
 
   if (readyState == CLOSING || readyState == CLOSED) {
     return;

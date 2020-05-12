@@ -105,7 +105,7 @@ class WebSocket final : public DOMEventTargetHelper {
   uint16_t ReadyState();
 
   
-  uint32_t BufferedAmount() const;
+  uint64_t BufferedAmount() const;
 
   
   IMPL_EVENT_HANDLER(open)
@@ -179,7 +179,7 @@ class WebSocket final : public DOMEventTargetHelper {
   bool mKeepingAlive;
   bool mCheckMustKeepAlive;
 
-  CheckedUint32 mOutgoingBufferedAmount;
+  CheckedUint64 mOutgoingBufferedAmount;
 
   
   nsString mURI;
