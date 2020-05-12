@@ -9,6 +9,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Link.h"
+#include "mozilla/WeakPtr.h"
 #include "nsGenericHTMLElement.h"
 #include "nsStyleLinkElement.h"
 #include "nsDOMTokenList.h"
@@ -185,11 +186,24 @@ class HTMLLinkElement final : public nsGenericHTMLElement,
                      const nsAttrValue* aOldValue);
   void CancelPrefetchOrPreload();
 
+  void StartPreload(nsContentPolicyType policyType);
+  void CancelPreload();
+
+  
+  
+  static bool IsCSSMimeTypeAttributeForLinkElement(
+      const mozilla::dom::Element&);
+
   
   Maybe<SheetInfo> GetStyleSheetInfo() final;
 
   RefPtr<nsDOMTokenList> mRelList;
   RefPtr<nsDOMTokenList> mSizes;
+
+  
+  
+  
+  WeakPtr<PreloaderBase> mPreload;
 
   
   
