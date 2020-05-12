@@ -533,7 +533,6 @@ pref("media.videocontrols.picture-in-picture.video-toggle.min-video-secs", 45);
   pref("media.getusermedia.agc_enabled", true);
   pref("media.getusermedia.agc", 1); 
   pref("media.getusermedia.hpf_enabled", true);
-  pref("media.getusermedia.aecm_output_routing", 3); 
   
   pref("media.navigator.audio.full_duplex", true);
 #endif // MOZ_WEBRTC
@@ -582,8 +581,6 @@ pref("media.cubeb.logging_level", "");
 #if defined(XP_MACOSX)
   pref("media.cubeb.backend", "audiounit-rust");
 #endif
-
-pref("media.cubeb.output_voice_routing", true);
 
 
 pref("media.audiograph.single_thread.enabled", true);
