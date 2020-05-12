@@ -385,6 +385,11 @@ pub trait BlobImageHandler: Send {
 
     
     
+    
+    fn create_similar(&self) -> Box<dyn BlobImageHandler>;
+
+    
+    
     fn prepare_resources(
         &mut self,
         services: &dyn BlobImageResources,
