@@ -494,7 +494,7 @@ class SendMessageEventRunnable final : public ExtendableEventWorkerRunnable {
     
     if (!deserializationFailed) {
       init.mData = messageData;
-      init.mPorts = ports;
+      init.mPorts = std::move(ports);
     }
 
     init.mSource.SetValue().SetAsClient() =
@@ -816,7 +816,7 @@ class SendPushEventRunnable final
       : ExtendableFunctionalEventWorkerRunnable(aWorkerPrivate, aKeepAliveToken,
                                                 aRegistration),
         mMessageId(aMessageId),
-        mData(aData) {
+        mData(aData ? Some(aData->Clone()) : Nothing()) {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(aWorkerPrivate);
     MOZ_ASSERT(aWorkerPrivate->IsServiceWorker());

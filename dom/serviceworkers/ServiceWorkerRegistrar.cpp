@@ -304,7 +304,7 @@ void ServiceWorkerRegistrar::RemoveAll() {
     MOZ_ASSERT(mDataLoaded);
 
     
-    data = mData;
+    data = mData.Clone();
 
     deleted = !mData.IsEmpty();
     mData.Clear();

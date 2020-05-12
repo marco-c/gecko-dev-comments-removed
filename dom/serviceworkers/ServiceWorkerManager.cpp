@@ -1174,7 +1174,7 @@ ServiceWorkerManager::SendPushEvent(const nsACString& aOriginAttributes,
     
     
     return SendPushEvent(aOriginAttributes, aScope, EmptyString(),
-                         Some(aDataBytes));
+                         Some(aDataBytes.Clone()));
   }
   MOZ_ASSERT(optional_argc == 0);
   return SendPushEvent(aOriginAttributes, aScope, EmptyString(), Nothing());
@@ -3054,7 +3054,8 @@ ServiceWorkerManager::PropagateUnregister(
 
 void ServiceWorkerManager::NotifyListenersOnRegister(
     nsIServiceWorkerRegistrationInfo* aInfo) {
-  nsTArray<nsCOMPtr<nsIServiceWorkerManagerListener>> listeners(mListeners);
+  nsTArray<nsCOMPtr<nsIServiceWorkerManagerListener>> listeners(
+      mListeners.Clone());
   for (size_t index = 0; index < listeners.Length(); ++index) {
     listeners[index]->OnRegister(aInfo);
   }
@@ -3062,7 +3063,8 @@ void ServiceWorkerManager::NotifyListenersOnRegister(
 
 void ServiceWorkerManager::NotifyListenersOnUnregister(
     nsIServiceWorkerRegistrationInfo* aInfo) {
-  nsTArray<nsCOMPtr<nsIServiceWorkerManagerListener>> listeners(mListeners);
+  nsTArray<nsCOMPtr<nsIServiceWorkerManagerListener>> listeners(
+      mListeners.Clone());
   for (size_t index = 0; index < listeners.Length(); ++index) {
     listeners[index]->OnUnregister(aInfo);
   }
