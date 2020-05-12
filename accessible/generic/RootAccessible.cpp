@@ -145,7 +145,7 @@ const char* const kEventTypes[] = {
     
     "RadioStateChange", "popupshown", "popuphiding", "DOMMenuInactive",
     "DOMMenuItemActive", "DOMMenuItemInactive", "DOMMenuBarActive",
-    "DOMMenuBarInactive", "scroll", "overflow", "underflow"};
+    "DOMMenuBarInactive", "scroll"};
 
 nsresult RootAccessible::AddEventListeners() {
   
@@ -446,19 +446,6 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
                             accessible);
   }
 #endif
-  else if (eventType.EqualsLiteral("overflow") ||
-           eventType.EqualsLiteral("underflow")) {
-    
-    
-    if (accessible->IsContent() && !accessible->GetContent()->IsFocusable()) {
-      
-      
-      RefPtr<AccEvent> event = new AccStateChangeEvent(
-          accessible, states::FOCUSABLE,
-          (accessible->NativeInteractiveState() & states::FOCUSABLE) != 0);
-      targetDocument->FireDelayedEvent(event);
-    }
-  }
 }
 
 
