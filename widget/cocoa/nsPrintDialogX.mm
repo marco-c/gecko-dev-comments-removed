@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/gfx/PrintTargetCG.h"
@@ -44,13 +44,13 @@ nsPrintDialogServiceX::Show(nsPIDOMWindowOuter* aParent, nsIPrintSettings* aSett
   nsCOMPtr<nsIPrintSettingsService> printSettingsSvc =
       do_GetService("@mozilla.org/gfx/printsettings-service;1");
 
-  // Set the printer name and then read the saved printer settings
-  // from prefs. Reading printer-specific prefs requires the printer
-  // name to be set.
+  
+  
+  
   settingsX->SetPrinterNameFromPrintInfo();
   printSettingsSvc->InitPrintSettingsFromPrefs(settingsX, true, nsIPrintSettings::kInitSaveAll);
 
-  // Set the print job title
+  
   nsAutoString docName;
   nsresult rv = aSettings->GetTitle(docName);
   if (NS_SUCCEEDED(rv)) {
@@ -67,9 +67,9 @@ nsPrintDialogServiceX::Show(nsPIDOMWindowOuter* aParent, nsIPrintSettings* aSett
 
   NSPrintInfo* printInfo = settingsX->GetCocoaPrintInfo();
 
-  // Put the print info into the current print operation, since that's where
-  // [panel runModal] will look for it. We create the view because otherwise
-  // we'll get unrelated warnings printed to the console.
+  
+  
+  
   NSView* tmpView = [[NSView alloc] init];
   NSPrintOperation* printOperation = [NSPrintOperation printOperationWithView:tmpView
                                                                     printInfo:printInfo];
@@ -84,7 +84,7 @@ nsPrintDialogServiceX::Show(nsPIDOMWindowOuter* aParent, nsIPrintSettings* aSett
   [panel addAccessoryController:viewController];
   [viewController release];
 
-  // Show the dialog.
+  
   nsCocoaUtils::PrepareForNativeAppModalDialog();
   int button = [panel runModal];
   nsCocoaUtils::CleanUpAfterNativeAppModalDialog();
@@ -102,13 +102,13 @@ nsPrintDialogServiceX::Show(nsPIDOMWindowOuter* aParent, nsIPrintSettings* aSett
   settingsX->SetCocoaPrintInfo(copy);
   settingsX->InitUnwriteableMargin();
 
-  // Save settings unless saving is pref'd off
+  
   if (Preferences::GetBool("print.save_print_settings", false)) {
     printSettingsSvc->SavePrintSettingsToPrefs(settingsX, true,
                                                nsIPrintSettings::kInitSaveNativeData);
   }
 
-  // Get coordinate space resolution for converting paper size units to inches
+  
   NSWindow* win = [[NSApplication sharedApplication] mainWindow];
   if (win) {
     NSDictionary* devDesc = [win deviceDescription];
@@ -121,10 +121,10 @@ nsPrintDialogServiceX::Show(nsPIDOMWindowOuter* aParent, nsIPrintSettings* aSett
     }
   }
 
-  // Export settings.
+  
   [viewController exportSettings];
 
-  // If "ignore scaling" is checked, overwrite scaling factor with 1.
+  
   bool isShrinkToFitChecked;
   settingsX->GetShrinkToFit(&isShrinkToFitChecked);
   if (isShrinkToFitChecked) {
@@ -132,16 +132,16 @@ nsPrintDialogServiceX::Show(nsPIDOMWindowOuter* aParent, nsIPrintSettings* aSett
     if (dict) {
       [dict setObject:[NSNumber numberWithFloat:1] forKey:NSPrintScalingFactor];
     }
-    // Set the scaling factor to 100% in the NSPrintInfo
-    // object so that it will not affect the paper size
-    // retrieved from the PMPageFormat routines.
+    
+    
+    
     [copy setScalingFactor:1.0];
   } else {
     aSettings->SetScaling([copy scalingFactor]);
   }
 
-  // Set the adjusted paper size now that we've updated
-  // the scaling factor.
+  
+  
   settingsX->InitAdjustedPaperSize();
 
   [copy release];
@@ -184,12 +184,21 @@ nsPrintDialogServiceX::ShowPageSetup(nsPIDOMWindowOuter* aParent, nsIPrintSettin
   int button = [pageLayout runModalWithPrintInfo:printInfo];
   nsCocoaUtils::CleanUpAfterNativeAppModalDialog();
 
-  return button == NSFileHandlingPanelOKButton ? NS_OK : NS_ERROR_ABORT;
+  if (button == NSFileHandlingPanelOKButton) {
+    nsCOMPtr<nsIPrintSettingsService> printSettingsService =
+        do_GetService("@mozilla.org/gfx/printsettings-service;1");
+    if (printSettingsService && Preferences::GetBool("print.save_print_settings", false)) {
+      printSettingsService->SavePrintSettingsToPrefs(aNSSettings, true,
+                                                     nsIPrintSettings::kInitSaveNativeData);
+    }
+    return NS_OK;
+  }
+  return NS_ERROR_ABORT;
 
   NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
 }
 
-// Accessory view
+
 
 @interface PrintPanelAccessoryView (Private)
 
@@ -234,7 +243,7 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
 
 @implementation PrintPanelAccessoryView
 
-// Public methods
+
 
 - (id)initWithSettings:(nsIPrintSettings*)aSettings {
   [super initWithFrame:NSMakeRect(0, 0, 540, 185)];
@@ -264,7 +273,7 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
   [super dealloc];
 }
 
-// Localization
+
 
 - (void)initBundle {
   nsCOMPtr<nsIStringBundleService> bundleSvc = do_GetService(NS_STRINGBUNDLE_CONTRACTID);
@@ -279,12 +288,12 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
   NSMutableString* s =
       [NSMutableString stringWithUTF8String:NS_ConvertUTF16toUTF8(intlString).get()];
 
-  // Remove all underscores (they're used in the GTK dialog for accesskeys).
+  
   [s replaceOccurrencesOfString:@"_" withString:@"" options:0 range:NSMakeRange(0, [s length])];
   return s;
 }
 
-// Widget helpers
+
 
 - (NSTextField*)label:(const char*)aLabel
             withFrame:(NSRect)aRect
@@ -348,13 +357,13 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
   return list;
 }
 
-// Build sections
+
 
 - (void)addOptionsSection {
-  // Title
+  
   [self addLabel:"optionsTitleMac" withFrame:NSMakeRect(0, 155, 151, 22)];
 
-  // "Print Selection Only"
+  
   mPrintSelectionOnlyCheckbox = [self checkboxWithLabel:"selectionOnly"
                                                andFrame:NSMakeRect(156, 155, 0, 0)];
 
@@ -370,7 +379,7 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
 
   [self addSubview:mPrintSelectionOnlyCheckbox];
 
-  // "Shrink To Fit"
+  
   mShrinkToFitCheckbox = [self checkboxWithLabel:"shrinkToFit" andFrame:NSMakeRect(156, 133, 0, 0)];
 
   bool shrinkToFit;
@@ -381,10 +390,10 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
 }
 
 - (void)addAppearanceSection {
-  // Title
+  
   [self addLabel:"appearanceTitleMac" withFrame:NSMakeRect(0, 103, 151, 22)];
 
-  // "Print Background Colors"
+  
   mPrintBGColorsCheckbox = [self checkboxWithLabel:"printBGColors"
                                           andFrame:NSMakeRect(156, 103, 0, 0)];
 
@@ -394,7 +403,7 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
 
   [self addSubview:mPrintBGColorsCheckbox];
 
-  // "Print Background Images"
+  
   mPrintBGImagesCheckbox = [self checkboxWithLabel:"printBGImages"
                                           andFrame:NSMakeRect(156, 81, 0, 0)];
 
@@ -405,14 +414,14 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
 }
 
 - (void)addHeaderFooterSection {
-  // Labels
+  
   [self addLabel:"pageHeadersTitleMac" withFrame:NSMakeRect(0, 44, 151, 22)];
   [self addLabel:"pageFootersTitleMac" withFrame:NSMakeRect(0, 0, 151, 22)];
   [self addCenteredLabel:"left" withFrame:NSMakeRect(156, 22, 100, 22)];
   [self addCenteredLabel:"center" withFrame:NSMakeRect(256, 22, 100, 22)];
   [self addCenteredLabel:"right" withFrame:NSMakeRect(356, 22, 100, 22)];
 
-  // Lists
+  
   nsString sel;
 
   mSettings->GetHeaderStrLeft(sel);
@@ -446,7 +455,7 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
   [self addSubview:mFooterRightList];
 }
 
-// Export settings
+
 
 - (const char*)headerFooterStringForList:(NSPopUpButton*)aList {
   NSInteger index = [aList indexOfSelectedItem];
@@ -476,7 +485,7 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
   mSettings->SetFooterStrRight(NS_ConvertUTF8toUTF16(headerFooterStr));
 }
 
-// Summary
+
 
 - (NSString*)summaryValueForCheckbox:(NSButton*)aCheckbox {
   if (![aCheckbox isEnabled]) return [self localizedString:"summaryNAValue"];
@@ -544,7 +553,7 @@ static const char sHeaderFooterTags[][4] = {"", "&T", "&U", "&D", "&P", "&PT"};
 
 @end
 
-// Accessory controller
+
 
 @implementation PrintPanelAccessoryController
 
