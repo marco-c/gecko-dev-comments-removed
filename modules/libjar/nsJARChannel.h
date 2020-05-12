@@ -104,6 +104,9 @@ class nsJARChannel final : public nsIJARChannel,
   nsCOMPtr<nsIURI> mJarBaseURI;
   nsCString mJarEntry;
   nsCString mInnerJarEntry;
+
+  
+  nsCOMPtr<nsIEventTarget> mWorker;
 };
 
 #endif  
