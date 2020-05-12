@@ -423,24 +423,6 @@ nsresult nsPrintSettingsService::ReadPrefs(nsIPrintSettings* aPS,
     if (success) {
       success = (sizeUnit != nsIPrintSettings::kPaperSizeInches) ||
                 (width < 100.0) || (height < 100.0);
-#if defined(XP_WIN)
-      
-      
-      
-      if (sizeUnit == nsIPrintSettings::kPaperSizeMillimeters && height >= 0L &&
-          height < 25L && width >= 0L && width < 25L) {
-        
-        
-        
-        const char* paperSizeTypePref =
-            GetPrefName("print_paper_size_type", aPrinterName);
-        if (Preferences::HasUserValue(paperSizeTypePref)) {
-          saveSanitizedSizePrefs = true;
-          height = -1L;
-          width = -1L;
-        }
-      }
-#endif
     }
 
     if (success) {
