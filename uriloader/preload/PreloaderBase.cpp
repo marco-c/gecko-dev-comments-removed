@@ -83,7 +83,14 @@ void PreloaderBase::AddLoadBackgroundFlag(nsIChannel* aChannel) {
 
 void PreloaderBase::NotifyOpen(PreloadHashKey* aKey, nsIChannel* aChannel,
                                dom::Document* aDocument, bool aIsPreload) {
-  
+  if (aDocument && !aDocument->Preloads().RegisterPreload(aKey, this)) {
+    
+    
+    
+    MOZ_ASSERT(!aIsPreload);
+    aDocument->Preloads().DeregisterPreload(aKey);
+    aDocument->Preloads().RegisterPreload(aKey, this);
+  }
 
   mChannel = aChannel;
   mKey = *aKey;
@@ -130,7 +137,7 @@ void PreloaderBase::NotifyUsage() {
 
 void PreloaderBase::NotifyRestart(dom::Document* aDocument,
                                   PreloaderBase* aNewPreloader) {
-  
+  aDocument->Preloads().DeregisterPreload(&mKey);
   mKey = PreloadHashKey();
 
   if (aNewPreloader) {
@@ -207,6 +214,13 @@ void PreloaderBase::RemoveLinkPreloadNode(nsINode* aNode) {
 
   if (mNodes.Length() == 0 && !mIsUsed) {
     
+    
+    RefPtr<PreloaderBase> self(this);
+
+    dom::Document* doc = aNode->OwnerDoc();
+    if (doc) {
+      doc->Preloads().DeregisterPreload(&mKey);
+    }
 
     if (mChannel) {
       mChannel->Cancel(NS_BINDING_ABORTED);

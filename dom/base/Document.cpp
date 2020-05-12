@@ -10486,6 +10486,9 @@ void Document::Destroy() {
   
   mReadyForIdle = nullptr;
   mOrientationPendingPromise = nullptr;
+
+  
+  mPreloadService.ClearAllPreloads();
 }
 
 void Document::RemovedFromDocShell() {
