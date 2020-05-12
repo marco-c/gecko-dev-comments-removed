@@ -17,7 +17,7 @@ import type { ThunkArgs } from "../types";
 
 
 
-function inHouseContainsPosition(a: Object, b: Object) {
+function inHouseContainsPosition(a: Object, b: Object): boolean {
   const bColumn = b.column || 0;
   const startsBefore =
     a.start.line < b.line ||

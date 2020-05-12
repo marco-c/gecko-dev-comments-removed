@@ -16,10 +16,11 @@ import { validateThreadContext } from "../../utils/context";
 import type { OriginalScope } from "../../utils/pause/mapScopes";
 import type { ThreadContext, Frame, Scope, Preview } from "../../types";
 import type { ThunkArgs } from "../types";
+import type { SourceScope } from "../../workers/parser/getScopes";
 
 
 
-function getLocalScopeLevels(originalAstScopes): number {
+function getLocalScopeLevels(originalAstScopes: SourceScope[]): number {
   let levels = 0;
   while (
     originalAstScopes[levels] &&

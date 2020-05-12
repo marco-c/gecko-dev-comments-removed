@@ -11,7 +11,7 @@ import {
 
 import type { ThunkArgs } from "../../types";
 
-function validateActionContext(getState, action) {
+function validateActionContext(getState, action): void {
   if (action.type == "COMMAND" && action.status == "done") {
     
     

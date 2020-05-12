@@ -37,6 +37,7 @@ import type {
   SourceLocation,
   Context,
 } from "../../types";
+import type { State } from "../../reducers/types";
 
 
 
@@ -62,7 +63,7 @@ import type {
 
 
 
-function clientSetBreakpoint(client, state, breakpoint: Breakpoint) {
+function clientSetBreakpoint(client, state: State, breakpoint: Breakpoint) {
   const breakpointLocation = makeBreakpointLocation(
     state,
     breakpoint.generatedLocation
@@ -72,7 +73,7 @@ function clientSetBreakpoint(client, state, breakpoint: Breakpoint) {
 
 function clientRemoveBreakpoint(
   client,
-  state,
+  state: State,
   generatedLocation: SourceLocation
 ) {
   const breakpointLocation = makeBreakpointLocation(state, generatedLocation);
