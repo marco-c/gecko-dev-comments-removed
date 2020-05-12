@@ -1265,6 +1265,7 @@ nsEventStatus AsyncPanZoomController::HandleGestureEvent(
         case PinchGestureInput::PINCHGESTURE_SCALE:
           rv = OnScale(pinchGestureInput);
           break;
+        case PinchGestureInput::PINCHGESTURE_FINGERLIFTED:
         case PinchGestureInput::PINCHGESTURE_END:
           rv = OnScaleEnd(pinchGestureInput);
           break;
@@ -1751,8 +1752,8 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(
 
   mPinchEventBuffer.clear();
 
-  
-  if (aEvent.mLocalFocusPoint != PinchGestureInput::BothFingersLifted()) {
+  if (aEvent.mType == PinchGestureInput::PINCHGESTURE_FINGERLIFTED) {
+    
     if (mZoomConstraints.mAllowZoom) {
       mPanDirRestricted = false;
       StartTouch(aEvent.mLocalFocusPoint, aEvent.mTime);

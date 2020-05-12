@@ -440,6 +440,13 @@ class PinchGestureInput : public InputData {
     PinchGestureType, (
       PINCHGESTURE_START,
       PINCHGESTURE_SCALE,
+      
+      
+      
+      PINCHGESTURE_FINGERLIFTED,
+      
+      
+      
       PINCHGESTURE_END
   ));
   
@@ -458,6 +465,7 @@ class PinchGestureInput : public InputData {
   
   PinchGestureType mType;
 
+  
   
   
   
@@ -485,20 +493,6 @@ class PinchGestureInput : public InputData {
   ScreenCoord mPreviousSpan;
 
   bool mHandledByAPZ;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  template <typename Units = ParentLayerPixel>
-  static gfx::PointTyped<Units> BothFingersLifted() {
-    return gfx::PointTyped<Units>{-1, -1};
-  }
 };
 
 
