@@ -1801,9 +1801,7 @@ var AddonManagerInternal = {
 
 
 
-
-
-  getInstallForFile(aFile, aMimetype, aTelemetryInfo, aUseSystemLocation) {
+  getInstallForFile(aFile, aMimetype, aTelemetryInfo) {
     if (!gStarted) {
       throw Components.Exception(
         "AddonManager is not initialized",
@@ -1831,8 +1829,7 @@ var AddonManagerInternal = {
           provider,
           "getInstallForFile",
           aFile,
-          aTelemetryInfo,
-          aUseSystemLocation
+          aTelemetryInfo
         );
 
         if (install) {
@@ -1842,25 +1839,6 @@ var AddonManagerInternal = {
 
       return null;
     })();
-  },
-
-  
-
-
-
-
-
-
-  uninstallSystemProfileAddon(aID) {
-    if (!gStarted) {
-      throw Components.Exception(
-        "AddonManager is not initialized",
-        Cr.NS_ERROR_NOT_INITIALIZED
-      );
-    }
-    return AddonManagerInternal._getProviderByName(
-      "XPIProvider"
-    ).uninstallSystemProfileAddon(aID);
   },
 
   
@@ -3979,22 +3957,12 @@ var AddonManager = {
     return AddonManagerInternal.getInstallForURL(aUrl, aOptions);
   },
 
-  getInstallForFile(
-    aFile,
-    aMimetype,
-    aTelemetryInfo,
-    aUseSystemLocation = false
-  ) {
+  getInstallForFile(aFile, aMimetype, aTelemetryInfo) {
     return AddonManagerInternal.getInstallForFile(
       aFile,
       aMimetype,
-      aTelemetryInfo,
-      aUseSystemLocation
+      aTelemetryInfo
     );
-  },
-
-  uninstallSystemProfileAddon(aID) {
-    return AddonManagerInternal.uninstallSystemProfileAddon(aID);
   },
 
   
