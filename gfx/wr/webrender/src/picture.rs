@@ -100,7 +100,7 @@ use api::{DebugFlags, RasterSpace, ImageKey, ColorF, ColorU, PrimitiveFlags};
 use api::{ImageRendering, ColorDepth, YuvColorSpace, YuvFormat};
 use api::units::*;
 use crate::box_shadow::BLUR_SAMPLE_SCALE;
-use crate::clip::{ClipStore, ClipChainInstance, ClipDataHandle, ClipChainId};
+use crate::clip::{ClipStore, ClipChainInstance, ClipChainId, ClipInstance};
 use crate::spatial_tree::{ROOT_SPATIAL_NODE_INDEX,
     SpatialTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace
 };
@@ -2310,7 +2310,7 @@ pub struct TileCacheInstance {
     
     
     
-    pub shared_clips: Vec<ClipDataHandle>,
+    pub shared_clips: Vec<ClipInstance>,
     
     
     shared_clip_chain: ClipChainId,
@@ -2367,7 +2367,7 @@ impl TileCacheInstance {
         slice_flags: SliceFlags,
         spatial_node_index: SpatialNodeIndex,
         background_color: Option<ColorF>,
-        shared_clips: Vec<ClipDataHandle>,
+        shared_clips: Vec<ClipInstance>,
         shared_clip_chain: ClipChainId,
         fb_config: &FrameBuilderConfig,
     ) -> Self {
@@ -3270,10 +3270,9 @@ impl TileCacheInstance {
 
             
             
-            let clip_node = &data_stores.clip[clip_instance.handle];
-            if clip_node.item.spatial_node_index != self.spatial_node_index
-                && !prim_info.spatial_nodes.contains(&clip_node.item.spatial_node_index) {
-                prim_info.spatial_nodes.push(clip_node.item.spatial_node_index);
+            if clip_instance.spatial_node_index != self.spatial_node_index
+                && !prim_info.spatial_nodes.contains(&clip_instance.spatial_node_index) {
+                prim_info.spatial_nodes.push(clip_instance.spatial_node_index);
             }
         }
 
