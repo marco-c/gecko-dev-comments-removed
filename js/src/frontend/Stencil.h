@@ -378,11 +378,6 @@ class ScriptStencil : public ScriptStencilBase {
 
   
   
-  virtual bool finishGCThings(JSContext* cx,
-                              mozilla::Span<JS::GCCellPtr> output) const = 0;
-
-  
-  
   virtual void initAtomMap(GCPtrAtom* atoms) const = 0;
 };
 
