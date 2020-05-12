@@ -229,7 +229,8 @@ void PreloaderBase::RemoveLinkPreloadNode(nsINode* aNode) {
 }
 
 void PreloaderBase::NotifyNodeEvent(nsINode* aNode) {
-  
+  PreloadService::NotifyNodeEvent(
+      aNode, mShouldFireLoadEvent || NS_SUCCEEDED(*mOnStopStatus));
 }
 
 nsresult PreloaderBase::AsyncConsume(nsIStreamListener* aListener) {

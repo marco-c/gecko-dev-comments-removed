@@ -6,10 +6,20 @@
 #ifndef PreloadService_h__
 #define PreloadService_h__
 
+#include "nsIContentPolicy.h"
+#include "nsIReferrerInfo.h"
+#include "nsIURI.h"
 #include "nsRefPtrHashtable.h"
 #include "PreloaderBase.h"
 
 namespace mozilla {
+
+namespace dom {
+
+class HTMLLinkElement;
+class Document;
+
+}  
 
 
 
@@ -20,6 +30,8 @@ namespace mozilla {
 
 class PreloadService {
  public:
+  explicit PreloadService(dom::Document* aDocument) : mDocument(aDocument) {}
+
   
   
   
@@ -42,8 +54,28 @@ class PreloadService {
   
   already_AddRefed<PreloaderBase> LookupPreload(PreloadHashKey* aKey) const;
 
+  void SetSpeculationBase(nsIURI* aURI) { mSpeculationBaseURI = aURI; }
+  already_AddRefed<nsIURI> GetPreloadURI(const nsAString& aURL);
+
+  already_AddRefed<PreloaderBase> PreloadLinkElement(
+      dom::HTMLLinkElement* aLinkElement, nsContentPolicyType aPolicyType,
+      nsIReferrerInfo* aReferrerInfo);
+
+  static void NotifyNodeEvent(nsINode* aNode, bool aSuccess);
+
+ private:
+  dom::ReferrerPolicy PreloadReferrerPolicy(const nsAString& aReferrerPolicy);
+  bool CheckReferrerURIScheme(nsIReferrerInfo* aReferrerInfo);
+  nsIURI* BaseURIForPreload();
+
  private:
   nsRefPtrHashtable<PreloadHashKey, PreloaderBase> mPreloads;
+
+  
+  dom::Document* mDocument;
+
+  
+  nsCOMPtr<nsIURI> mSpeculationBaseURI;
 };
 
 }  
