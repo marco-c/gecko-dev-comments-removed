@@ -971,7 +971,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  RefPtr<AsyncPanZoomController> mApzcForInputBlock;
+  RefPtr<AsyncPanZoomController> mApzcForTouchBlock;
   
 
 
