@@ -41,7 +41,13 @@ class ShutdownError extends IndexedDBError {
 
 
 
-function bulkOperationHelper(store, reject, operation, list, listIndex = 0) {
+function bulkOperationHelper(
+  store,
+  { reject, completion },
+  operation,
+  list,
+  listIndex = 0
+) {
   try {
     const CHUNK_LENGTH = 250;
     const max = Math.min(listIndex + CHUNK_LENGTH, list.length);
@@ -54,11 +60,13 @@ function bulkOperationHelper(store, reject, operation, list, listIndex = 0) {
       request.onsuccess = bulkOperationHelper.bind(
         null,
         store,
-        reject,
+        { reject, completion },
         operation,
         list,
         listIndex
       );
+    } else if (completion) {
+      completion();
     }
     
   } catch (e) {
@@ -82,13 +90,16 @@ function bulkOperationHelper(store, reject, operation, list, listIndex = 0) {
 
 
 
-function executeIDB(db, storeName, mode, callback, desc) {
-  const transaction = db.transaction([storeName], mode);
+function executeIDB(db, storeNames, mode, callback, desc) {
+  if (!Array.isArray(storeNames)) {
+    storeNames = [storeNames];
+  }
+  const transaction = db.transaction(storeNames, mode);
   let promise = new Promise((resolve, reject) => {
-    const store = transaction.objectStore(storeName);
+    let stores = storeNames.map(name => transaction.objectStore(name));
     let result;
     let rejectWrapper = e => {
-      reject(new IndexedDBError(e, desc || "execute()", storeName));
+      reject(new IndexedDBError(e, desc || "execute()", storeNames.join(", ")));
       try {
         transaction.abort();
       } catch (ex) {
@@ -106,6 +117,10 @@ function executeIDB(db, storeName, mode, callback, desc) {
         )
       );
     transaction.oncomplete = event => resolve(result);
+    
+    if (stores.length == 1) {
+      stores = stores[0];
+    }
     try {
       
       
@@ -116,7 +131,7 @@ function executeIDB(db, storeName, mode, callback, desc) {
       
       
       
-      result = callback(store, rejectWrapper);
+      result = callback(stores, rejectWrapper);
     } catch (e) {
       rejectWrapper(e);
     }

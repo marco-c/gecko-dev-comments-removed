@@ -20,6 +20,8 @@ importScripts(
 const IDB_RECORDS_STORE = "records";
 const IDB_TIMESTAMPS_STORE = "timestamps";
 
+let gShutdown = false;
+
 const Agent = {
   
 
@@ -64,6 +66,9 @@ const Agent = {
 
   async importJSONDump(bucket, collection) {
     const { data: records } = await loadJSONDump(bucket, collection);
+    if (gShutdown) {
+      throw new Error("Can't import when we've started shutting down.");
+    }
     await importDumpIDB(bucket, collection, records);
     return records.length;
   },
@@ -107,6 +112,25 @@ const Agent = {
     const hashStr = Array.from(hashBytes, toHex).join("");
     return hashStr == hash;
   },
+
+  async prepareShutdown() {
+    gShutdown = true;
+    
+    
+    let transactions = Array.from(gPendingTransactions);
+    for (let transaction of transactions) {
+      try {
+        transaction.abort();
+      } catch (ex) {
+        
+        
+      }
+    }
+  },
+
+  _test_only_import(bucket, collection, records) {
+    return importDumpIDB(bucket, collection, records);
+  },
 };
 
 
@@ -140,9 +164,14 @@ async function loadJSONDump(bucket, collection) {
     
     return { data: [] };
   }
+  if (gShutdown) {
+    throw new Error("Can't import when we've started shutting down.");
+  }
   
   return response.json();
 }
+
+let gPendingTransactions = new Set();
 
 
 
@@ -159,29 +188,46 @@ async function importDumpIDB(bucket, collection, records) {
   const db = await IDBHelpers.openIDB(false );
 
   
-  
-  const cid = bucket + "/" + collection;
-  
-  records.forEach(item => {
-    item._cid = cid;
-  });
-  await IDBHelpers.executeIDB(
-    db,
-    IDB_RECORDS_STORE,
-    "readwrite",
-    (store, rejectTransaction) => {
-      IDBHelpers.bulkOperationHelper(store, rejectTransaction, "put", records);
+  try {
+    if (gShutdown) {
+      throw new Error("Can't import when we've started shutting down.");
     }
-  ).promise;
 
-  
-  const timestamp =
-    records.length === 0
-      ? 0
-      : Math.max(...records.map(record => record.last_modified));
-  await IDBHelpers.executeIDB(db, IDB_TIMESTAMPS_STORE, "readwrite", store =>
-    store.put({ cid, value: timestamp })
-  ).promise;
-  
-  db.close();
+    
+    
+    const cid = bucket + "/" + collection;
+    
+    records.forEach(item => {
+      item._cid = cid;
+    });
+    
+    const timestamp =
+      records.length === 0
+        ? 0
+        : Math.max(...records.map(record => record.last_modified));
+    let { transaction, promise } = IDBHelpers.executeIDB(
+      db,
+      [IDB_RECORDS_STORE, IDB_TIMESTAMPS_STORE],
+      "readwrite",
+      ([recordsStore, timestampStore], rejectTransaction) => {
+        IDBHelpers.bulkOperationHelper(
+          recordsStore,
+          {
+            reject: rejectTransaction,
+            completion() {
+              timestampStore.put({ cid, value: timestamp });
+            },
+          },
+          "put",
+          records
+        );
+      }
+    );
+    gPendingTransactions.add(transaction);
+    promise = promise.finally(() => gPendingTransactions.delete(transaction));
+    await promise;
+  } finally {
+    
+    db.close();
+  }
 }

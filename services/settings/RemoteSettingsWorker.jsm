@@ -56,11 +56,16 @@ class Worker {
   }
 
   async _execute(method, args = [], options = {}) {
-    if (gShutdown) {
+    
+    if (gShutdown && method != "prepareShutdown") {
       throw new RemoteSettingsWorkerError("Remote Settings has shut down.");
     }
-    const { mustComplete = false } = options;
+    
+    if (method == "prepareShutdown" && !this.worker) {
+      return null;
+    }
 
+    const { mustComplete = false } = options;
     
     if (!this.worker) {
       this.worker = new ChromeWorker(this.source);
@@ -93,6 +98,11 @@ class Worker {
 
   _onWorkerMessage(event) {
     const { callbackId, result, error } = event.data;
+    
+    
+    if (!this.callbacks.has(callbackId)) {
+      return;
+    }
     const { resolve, reject } = this.callbacks.get(callbackId);
     if (error) {
       reject(new RemoteSettingsWorkerError(error));
@@ -140,6 +150,8 @@ class Worker {
     }
     
     
+    
+    this._execute("prepareShutdown");
   }
 
   stop() {
