@@ -709,6 +709,10 @@ class Span {
     return {First(aSplitPoint), Last(Length() - aSplitPoint)};
   }
 
+  constexpr Span<std::add_const_t<ElementType>, Extent> AsConst() const {
+    return {Elements(), Length()};
+  }
+
  private:
   
   
