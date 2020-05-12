@@ -314,6 +314,13 @@ bool StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
   }
   bool disabled = StorageDisabledByAntiTrackingInternal(
       aWindow, aChannel, aPrincipal, aURI, cookieJarSettings, aRejectedReason);
+
+  
+  
+  if (aWindow && aURI && aURI->SchemeIs("chrome")) {
+    return disabled;
+  }
+
   if (aWindow) {
     ContentBlockingNotifier::OnDecision(
         aWindow,
