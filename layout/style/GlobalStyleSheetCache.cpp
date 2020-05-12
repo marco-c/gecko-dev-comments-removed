@@ -386,16 +386,32 @@ void GlobalStyleSheetCache::InitSharedSheetsInParent() {
       Servo_SharedMemoryBuilder_Create(
           header->mBuffer, kSharedMemorySize - offsetof(Header, mBuffer)));
 
+  nsCString message;
+
   
-#define STYLE_SHEET(identifier_, url_, shared_)            \
-  if (shared_) {                                           \
-    StyleSheet* sheet = identifier_##Sheet();              \
-    size_t i = size_t(UserAgentStyleSheetID::identifier_); \
-    URLExtraData::sShared[i] = sheet->URLData();           \
-    header->mSheets[i] = sheet->ToShared(builder.get());   \
+  
+  
+  
+  
+#define STYLE_SHEET(identifier_, url_, shared_)                             \
+  if (shared_) {                                                            \
+    StyleSheet* sheet = identifier_##Sheet();                               \
+    size_t i = size_t(UserAgentStyleSheetID::identifier_);                  \
+    URLExtraData::sShared[i] = sheet->URLData();                            \
+    header->mSheets[i] = sheet->ToShared(builder.get(), message);           \
+    if (!header->mSheets[i]) {                                              \
+      CrashReporter::AppendAppNotesToCrashReport(NS_LITERAL_CSTRING("\n") + \
+                                                 message);                  \
+      Telemetry::Accumulate(                                                \
+          Telemetry::SHARED_MEMORY_UA_SHEETS_TOSHMEM_SUCCEEDED, false);     \
+      return;                                                               \
+    }                                                                       \
   }
 #include "mozilla/UserAgentStyleSheetList.h"
 #undef STYLE_SHEET
+
+  Telemetry::Accumulate(Telemetry::SHARED_MEMORY_UA_SHEETS_TOSHMEM_SUCCEEDED,
+                        true);
 
   
   

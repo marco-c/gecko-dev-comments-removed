@@ -1414,8 +1414,8 @@ void StyleSheet::SetSharedContents(const ServoCssRules* aSharedRules) {
   
 }
 
-const ServoCssRules* StyleSheet::ToShared(
-    RawServoSharedMemoryBuilder* aBuilder) {
+const ServoCssRules* StyleSheet::ToShared(RawServoSharedMemoryBuilder* aBuilder,
+                                          nsCString& aErrorMessage) {
   
   
   MOZ_ASSERT(GetReferrerInfo()->ReferrerPolicy() == ReferrerPolicy::_empty);
@@ -1425,7 +1425,18 @@ const ServoCssRules* StyleSheet::ToShared(
   MOZ_ASSERT(Inner().mIntegrity.IsEmpty());
   MOZ_ASSERT(Principal()->IsSystemPrincipal());
 
-  return Servo_SharedMemoryBuilder_AddStylesheet(aBuilder, Inner().mContents);
+  const ServoCssRules* rules = Servo_SharedMemoryBuilder_AddStylesheet(
+      aBuilder, Inner().mContents, &aErrorMessage);
+
+#ifdef DEBUG
+  if (!rules) {
+    
+    printf_stderr("%s\n", aErrorMessage.get());
+    MOZ_CRASH("UA style sheet contents failed shared memory requirements");
+  }
+#endif
+
+  return rules;
 }
 
 bool StyleSheet::IsReadOnly() const {

@@ -442,7 +442,9 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   
   
-  const ServoCssRules* ToShared(RawServoSharedMemoryBuilder* aBuilder);
+  
+  const ServoCssRules* ToShared(RawServoSharedMemoryBuilder* aBuilder,
+                                nsCString& aErrorMessage);
 
   
   
