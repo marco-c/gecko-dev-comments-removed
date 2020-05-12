@@ -398,6 +398,12 @@ interface nsIContentPolicy : nsISupports
 
 
 
+  const nsContentPolicyType TYPE_INTERNAL_FONT_PRELOAD = 51;
+
+  
+
+
+
 
 
 
