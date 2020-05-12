@@ -84,10 +84,8 @@ class nsAccUtils {
 
 
 
-
   static void SetLiveContainerAttributes(nsIPersistentProperties* aAttributes,
-                                         nsIContent* aStartContent,
-                                         mozilla::dom::Element* aTopEl);
+                                         nsIContent* aStartContent);
 
   
 

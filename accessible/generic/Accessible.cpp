@@ -1006,30 +1006,7 @@ already_AddRefed<nsIPersistentProperties> Accessible::NativeAttributes() {
   
   
   
-  
-  
-  nsIContent* startContent = mContent;
-  while (startContent) {
-    dom::Document* doc = startContent->GetComposedDoc();
-    if (!doc) break;
-
-    nsAccUtils::SetLiveContainerAttributes(attributes, startContent,
-                                           doc->GetRootElement());
-
-    
-    nsCOMPtr<nsIDocShellTreeItem> docShellTreeItem = doc->GetDocShell();
-    if (!docShellTreeItem) break;
-
-    nsCOMPtr<nsIDocShellTreeItem> sameTypeParent;
-    docShellTreeItem->GetInProcessSameTypeParent(
-        getter_AddRefs(sameTypeParent));
-    if (!sameTypeParent || sameTypeParent == docShellTreeItem) break;
-
-    dom::Document* parentDoc = doc->GetInProcessParentDocument();
-    if (!parentDoc) break;
-
-    startContent = parentDoc->FindContentForSubDocument(doc);
-  }
+  nsAccUtils::SetLiveContainerAttributes(attributes, mContent);
 
   if (!mContent->IsElement()) return attributes.forget();
 
