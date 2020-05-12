@@ -51,7 +51,7 @@ class FetchUtil final {
 
   static nsresult SetRequestReferrer(nsIPrincipal* aPrincipal, Document* aDoc,
                                      nsIHttpChannel* aChannel,
-                                     InternalRequest* aRequest);
+                                     InternalRequest& aRequest);
 
   
 

@@ -32,7 +32,7 @@ class FetchEventOpProxyChild final : public PFetchEventOpProxyChild {
   void Initialize(const ServiceWorkerFetchEventOpArgs& aArgs);
 
   
-  RefPtr<InternalRequest> ExtractInternalRequest();
+  SafeRefPtr<InternalRequest> ExtractInternalRequest();
 
  private:
   ~FetchEventOpProxyChild() = default;
@@ -45,7 +45,7 @@ class FetchEventOpProxyChild final : public PFetchEventOpProxyChild {
   RefPtr<FetchEventOp> mOp;
 
   
-  RefPtr<InternalRequest> mInternalRequest;
+  SafeRefPtr<InternalRequest> mInternalRequest;
 };
 
 }  

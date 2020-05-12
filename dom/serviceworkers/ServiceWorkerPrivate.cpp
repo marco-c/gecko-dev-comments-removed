@@ -1422,7 +1422,7 @@ class FetchEventRunnable : public ExtendableFunctionalEventWorkerRunnable,
       result.SuppressException();
       return false;
     }
-    RefPtr<InternalRequest> internalReq = new InternalRequest(
+    auto internalReq = MakeSafeRefPtr<InternalRequest>(
         mSpec, mFragment, mMethod, internalHeaders.forget(), mCacheMode,
         mRequestMode, mRequestRedirect, mRequestCredentials, mReferrer,
         mReferrerPolicy, mContentPolicyType, mIntegrity);
@@ -1449,7 +1449,8 @@ class FetchEventRunnable : public ExtendableFunctionalEventWorkerRunnable,
 
     
     
-    RefPtr<Request> request = new Request(global, internalReq, nullptr);
+    RefPtr<Request> request =
+        new Request(global, internalReq.clonePtr(), nullptr);
 
     MOZ_ASSERT_IF(internalReq->IsNavigationRequest(),
                   request->Redirect() == RequestRedirect::Manual);

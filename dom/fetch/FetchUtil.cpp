@@ -111,14 +111,14 @@ bool FetchUtil::ExtractHeader(nsACString::const_iterator& aStart,
 
 nsresult FetchUtil::SetRequestReferrer(nsIPrincipal* aPrincipal, Document* aDoc,
                                        nsIHttpChannel* aChannel,
-                                       InternalRequest* aRequest) {
+                                       InternalRequest& aRequest) {
   MOZ_ASSERT(NS_IsMainThread());
 
   nsresult rv = NS_OK;
   nsAutoString referrer;
-  aRequest->GetReferrer(referrer);
+  aRequest.GetReferrer(referrer);
 
-  ReferrerPolicy policy = aRequest->ReferrerPolicy_();
+  ReferrerPolicy policy = aRequest.ReferrerPolicy_();
   nsCOMPtr<nsIReferrerInfo> referrerInfo;
   if (referrer.IsEmpty()) {
     
@@ -150,7 +150,7 @@ nsresult FetchUtil::SetRequestReferrer(nsIPrincipal* aPrincipal, Document* aDoc,
   
   
   
-  aRequest->SetReferrer(computedReferrerSpec);
+  aRequest.SetReferrer(computedReferrerSpec);
 
   return NS_OK;
 }

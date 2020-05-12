@@ -973,7 +973,7 @@ class MessageEventOp final : public ExtendableEventOp {
     
     if (!deserializationFailed) {
       init.mData = messageData;
-      init.mPorts = ports;
+      init.mPorts = std::move(ports);
     }
 
     init.mSource.SetValue().SetAsClient() = new Client(
@@ -1503,7 +1503,8 @@ nsresult FetchEventOp::DispatchFetchEvent(JSContext* aCx,
 
 
 
-  RefPtr<InternalRequest> internalRequest = mActor->ExtractInternalRequest();
+  SafeRefPtr<InternalRequest> internalRequest =
+      mActor->ExtractInternalRequest();
 
   
 
@@ -1521,7 +1522,7 @@ nsresult FetchEventOp::DispatchFetchEvent(JSContext* aCx,
 
 
   RefPtr<Request> request =
-      new Request(globalObjectAsSupports, internalRequest, nullptr);
+      new Request(globalObjectAsSupports, internalRequest.clonePtr(), nullptr);
   MOZ_ASSERT_IF(internalRequest->IsNavigationRequest(),
                 request->Redirect() == RequestRedirect::Manual);
 
