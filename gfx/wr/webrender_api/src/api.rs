@@ -985,8 +985,6 @@ pub enum DebugCommand {
 
 pub enum ApiMsg {
     
-    UpdateResources(Vec<ResourceUpdate>),
-    
     GetGlyphDimensions(
         font::FontInstanceKey,
         Vec<font::GlyphIndex>,
@@ -1032,7 +1030,6 @@ pub enum ApiMsg {
 impl fmt::Debug for ApiMsg {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str(match *self {
-            ApiMsg::UpdateResources(..) => "ApiMsg::UpdateResources",
             ApiMsg::GetGlyphDimensions(..) => "ApiMsg::GetGlyphDimensions",
             ApiMsg::GetGlyphIndices(..) => "ApiMsg::GetGlyphIndices",
             ApiMsg::CloneApi(..) => "ApiMsg::CloneApi",
@@ -1515,16 +1512,6 @@ impl RenderApi {
     
     pub fn generate_blob_image_key(&self) -> BlobImageKey {
         BlobImageKey(self.generate_image_key())
-    }
-
-    
-    pub fn update_resources(&self, resources: Vec<ResourceUpdate>) {
-        if resources.is_empty() {
-            return;
-        }
-        self.api_sender
-            .send(ApiMsg::UpdateResources(resources))
-            .unwrap();
     }
 
     
