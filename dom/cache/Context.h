@@ -63,7 +63,7 @@ class Manager;
 
 
 
-class Context final {
+class Context final : public SafeRefCounted<Context> {
   typedef mozilla::dom::quota::DirectoryLock DirectoryLock;
 
  public:
@@ -77,7 +77,7 @@ class Context final {
     void InvalidateAndAllowToClose();
 
    private:
-    explicit ThreadsafeHandle(Context* aContext);
+    explicit ThreadsafeHandle(SafeRefPtr<Context> aContext);
     ~ThreadsafeHandle();
 
     
@@ -87,11 +87,11 @@ class Context final {
     void AllowToCloseOnOwningThread();
     void InvalidateAndAllowToCloseOnOwningThread();
 
-    void ContextDestroyed(Context* aContext);
+    void ContextDestroyed(Context& aContext);
 
     
     
-    RefPtr<Context> mStrongRef;
+    SafeRefPtr<Context> mStrongRef;
 
     
     
@@ -117,10 +117,10 @@ class Context final {
   
   
   
-  static already_AddRefed<Context> Create(SafeRefPtr<Manager> aManager,
-                                          nsISerialEventTarget* aTarget,
-                                          Action* aInitAction,
-                                          Context* aOldContext);
+  static SafeRefPtr<Context> Create(SafeRefPtr<Manager> aManager,
+                                    nsISerialEventTarget* aTarget,
+                                    Action* aInitAction,
+                                    Maybe<Context&> aOldContext);
 
   
   
@@ -178,10 +178,7 @@ class Context final {
     RefPtr<Action> mAction;
   };
 
-  Context(SafeRefPtr<Manager> aManager, nsISerialEventTarget* aTarget,
-          Action* aInitAction);
-  ~Context();
-  void Init(Context* aOldContext);
+  void Init(Maybe<Context&> aOldContext);
   void Start();
   void DispatchAction(Action* aAction, bool aDoomData = false);
   void OnQuotaInit(nsresult aRv, const QuotaInfo& aQuotaInfo,
@@ -189,7 +186,7 @@ class Context final {
 
   already_AddRefed<ThreadsafeHandle> CreateThreadsafeHandle();
 
-  void SetNextContext(Context* aNextContext);
+  void SetNextContext(SafeRefPtr<Context> aNextContext);
 
   void DoomTargetData();
 
@@ -214,10 +211,16 @@ class Context final {
   RefPtr<ThreadsafeHandle> mThreadsafeHandle;
 
   RefPtr<DirectoryLock> mDirectoryLock;
-  RefPtr<Context> mNextContext;
+  SafeRefPtr<Context> mNextContext;
 
  public:
-  NS_INLINE_DECL_REFCOUNTING(cache::Context)
+  
+  Context(SafeRefPtr<Manager> aManager, nsISerialEventTarget* aTarget,
+          Action* aInitAction);
+  ~Context();
+
+  NS_DECL_OWNINGTHREAD
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(cache::Context)
 };
 
 }  

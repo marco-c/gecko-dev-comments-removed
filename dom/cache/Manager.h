@@ -130,7 +130,7 @@ class Manager final : public SafeRefCounted<Manager> {
   void RemoveListener(Listener* aListener);
 
   
-  void RemoveContext(Context* aContext);
+  void RemoveContext(Context& aContext);
 
   
   
