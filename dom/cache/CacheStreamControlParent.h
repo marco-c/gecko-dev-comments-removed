@@ -31,7 +31,7 @@ class CacheStreamControlParent final : public PCacheStreamControlParent,
   CacheStreamControlParent();
   ~CacheStreamControlParent();
 
-  void SetStreamList(StreamList* aStreamList);
+  void SetStreamList(SafeRefPtr<StreamList> aStreamList);
   void Close(const nsID& aId);
   void CloseAll();
   void Shutdown();
@@ -68,7 +68,7 @@ class CacheStreamControlParent final : public PCacheStreamControlParent,
   
   
   
-  RefPtr<StreamList> mStreamList;
+  SafeRefPtr<StreamList> mStreamList;
 
   NS_DECL_OWNINGTHREAD
 };
