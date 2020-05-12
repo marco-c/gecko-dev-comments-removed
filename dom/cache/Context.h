@@ -69,21 +69,19 @@ class Context final : public SafeRefCounted<Context> {
  public:
   
   
-  class ThreadsafeHandle final {
+  class ThreadsafeHandle final : public AtomicSafeRefCounted<ThreadsafeHandle> {
     friend class Context;
 
    public:
+    explicit ThreadsafeHandle(SafeRefPtr<Context> aContext);
+    ~ThreadsafeHandle();
+
+    MOZ_DECLARE_REFCOUNTED_TYPENAME(cache::Context::ThreadsafeHandle)
+
     void AllowToClose();
     void InvalidateAndAllowToClose();
 
    private:
-    explicit ThreadsafeHandle(SafeRefPtr<Context> aContext);
-    ~ThreadsafeHandle();
-
-    
-    ThreadsafeHandle(const ThreadsafeHandle&) = delete;
-    ThreadsafeHandle& operator=(const ThreadsafeHandle&) = delete;
-
     void AllowToCloseOnOwningThread();
     void InvalidateAndAllowToCloseOnOwningThread();
 
@@ -99,8 +97,6 @@ class Context final : public SafeRefCounted<Context> {
     Context* mWeakRef;
 
     nsCOMPtr<nsISerialEventTarget> mOwningEventTarget;
-
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(cache::Context::ThreadsafeHandle)
   };
 
   
@@ -184,7 +180,7 @@ class Context final : public SafeRefCounted<Context> {
   void OnQuotaInit(nsresult aRv, const QuotaInfo& aQuotaInfo,
                    already_AddRefed<DirectoryLock> aDirectoryLock);
 
-  already_AddRefed<ThreadsafeHandle> CreateThreadsafeHandle();
+  SafeRefPtr<ThreadsafeHandle> CreateThreadsafeHandle();
 
   void SetNextContext(SafeRefPtr<Context> aNextContext);
 
@@ -208,7 +204,7 @@ class Context final : public SafeRefCounted<Context> {
   
   
   
-  RefPtr<ThreadsafeHandle> mThreadsafeHandle;
+  SafeRefPtr<ThreadsafeHandle> mThreadsafeHandle;
 
   RefPtr<DirectoryLock> mDirectoryLock;
   SafeRefPtr<Context> mNextContext;
