@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+const {
+  LegacyWorkersWatcher,
+} = require("devtools/shared/resources/legacy-target-watchers/legacy-workers-watcher");
+
+class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
+  _supportWorkerTarget(workerTarget) {
+    return workerTarget.isServiceWorker;
+  }
+}
+
+module.exports = { LegacyServiceWorkersWatcher };
