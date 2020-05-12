@@ -2907,7 +2907,11 @@ class Document : public nsINode,
 
 
   void MaybePreLoadImage(nsIURI* uri, const nsAString& aCrossOriginAttr,
-                         ReferrerPolicyEnum aReferrerPolicy, bool aIsImgSet);
+                         ReferrerPolicyEnum aReferrerPolicy, bool aIsImgSet,
+                         bool aLinkPreload);
+  void PreLoadImage(nsIURI* uri, const nsAString& aCrossOriginAttr,
+                    ReferrerPolicyEnum aReferrerPolicy, bool aIsImgSet,
+                    bool aLinkPreload);
 
   
 

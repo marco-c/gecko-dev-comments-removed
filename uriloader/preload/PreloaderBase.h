@@ -47,6 +47,8 @@ class PreloaderBase : public SupportsWeakPtr<PreloaderBase>,
   
   
   
+  void NotifyOpen(PreloadHashKey* aKey, dom::Document* aDocument,
+                  bool aIsPreload);
   void NotifyOpen(PreloadHashKey* aKey, nsIChannel* aChannel,
                   dom::Document* aDocument, bool aIsPreload);
 
@@ -62,6 +64,9 @@ class PreloaderBase : public SupportsWeakPtr<PreloaderBase>,
   
   void NotifyStart(nsIRequest* aRequest);
   void NotifyStop(nsIRequest* aRequest, nsresult aStatus);
+  
+  
+  void NotifyStop(nsresult aStatus);
 
   
   
@@ -108,7 +113,6 @@ class PreloaderBase : public SupportsWeakPtr<PreloaderBase>,
   virtual ~PreloaderBase();
 
  private:
-  void NotifyStop(nsresult aStatus);
   void NotifyNodeEvent(nsINode* aNode);
 
   

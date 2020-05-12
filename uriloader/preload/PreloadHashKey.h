@@ -57,6 +57,10 @@ class PreloadHashKey : public nsURIHashKey {
   static PreloadHashKey CreateAsStyle(css::SheetLoadData& aSheetLoadData);
 
   
+  static PreloadHashKey CreateAsImage(
+      nsIURI* aURI, nsIPrincipal* aPrincipal, CORSMode aCORSMode,
+      dom::ReferrerPolicy const& aReferrerPolicy);
+
   
   
   
@@ -83,13 +87,13 @@ class PreloadHashKey : public nsURIHashKey {
 
   CORSMode mCORSMode = CORS_NONE;
   enum dom::ReferrerPolicy mReferrerPolicy = dom::ReferrerPolicy::_empty;
+  nsCOMPtr<nsIPrincipal> mPrincipal;
 
   struct {
     dom::ScriptKind mScriptKind = dom::ScriptKind::eClassic;
   } mScript;
 
   struct {
-    nsCOMPtr<nsIPrincipal> mPrincipal;
     nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
     css::SheetParsingMode mParsingMode = css::eAuthorSheetFeatures;
   } mStyle;

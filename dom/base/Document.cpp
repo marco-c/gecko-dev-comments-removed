@@ -11310,16 +11310,9 @@ already_AddRefed<nsIURI> Document::ResolvePreloadImage(
   return uri.forget();
 }
 
-void Document::MaybePreLoadImage(nsIURI* uri, const nsAString& aCrossOriginAttr,
-                                 enum ReferrerPolicy aReferrerPolicy,
-                                 bool aIsImgSet) {
-  
-  
-  
-  if (nsContentUtils::IsImageInCache(uri, this)) {
-    return;
-  }
-
+void Document::PreLoadImage(nsIURI* aUri, const nsAString& aCrossOriginAttr,
+                            ReferrerPolicyEnum aReferrerPolicy, bool aIsImgSet,
+                            bool aLinkPreload) {
   nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL |
                           nsContentUtils::CORSModeToLoadImageFlags(
                               Element::StringToCORSMode(aCrossOriginAttr));
@@ -11331,19 +11324,48 @@ void Document::MaybePreLoadImage(nsIURI* uri, const nsAString& aCrossOriginAttr,
   nsCOMPtr<nsIReferrerInfo> referrerInfo =
       ReferrerInfo::CreateFromDocumentAndPolicyOverride(this, aReferrerPolicy);
 
-  
   RefPtr<imgRequestProxy> request;
   nsresult rv = nsContentUtils::LoadImage(
-      uri, static_cast<nsINode*>(this), this, NodePrincipal(), 0, referrerInfo,
-      nullptr,  
-      loadFlags, NS_LITERAL_STRING("img"), getter_AddRefs(request), policyType);
+      aUri, static_cast<nsINode*>(this), this, NodePrincipal(), 0, referrerInfo,
+      nullptr , loadFlags,
+      aLinkPreload ? NS_LITERAL_STRING("link") : NS_LITERAL_STRING("img"),
+      getter_AddRefs(request), policyType, false , aLinkPreload);
 
   
   
   
-  if (NS_SUCCEEDED(rv)) {
-    mPreloadingImages.Put(uri, std::move(request));
+  if (!aLinkPreload && NS_SUCCEEDED(rv)) {
+    mPreloadingImages.Put(aUri, std::move(request));
   }
+}
+
+void Document::MaybePreLoadImage(nsIURI* aUri,
+                                 const nsAString& aCrossOriginAttr,
+                                 ReferrerPolicyEnum aReferrerPolicy,
+                                 bool aIsImgSet, bool aLinkPreload) {
+  if (aLinkPreload) {
+    
+    
+    PreloadHashKey key = PreloadHashKey::CreateAsImage(
+        aUri, NodePrincipal(), dom::Element::StringToCORSMode(aCrossOriginAttr),
+        aReferrerPolicy);
+    if (!mPreloadService.PreloadExists(&key)) {
+      PreLoadImage(aUri, aCrossOriginAttr, aReferrerPolicy, aIsImgSet,
+                   aLinkPreload);
+    }
+    return;
+  }
+
+  
+  
+  
+  if (nsContentUtils::IsImageInCache(aUri, this)) {
+    return;
+  }
+
+  
+  PreLoadImage(aUri, aCrossOriginAttr, aReferrerPolicy, aIsImgSet,
+               aLinkPreload);
 }
 
 void Document::MaybePreconnect(nsIURI* aOrigURI, mozilla::CORSMode aCORSMode) {

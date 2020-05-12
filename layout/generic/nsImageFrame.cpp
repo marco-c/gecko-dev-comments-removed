@@ -2473,6 +2473,7 @@ nsresult nsImageFrame::LoadIcon(const nsAString& aSpec,
       nullptr, 
       loadFlags, nullptr, contentPolicyType, EmptyString(),
       false, 
+      false, 
       aRequest);
 }
 
