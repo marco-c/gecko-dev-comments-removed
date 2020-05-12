@@ -143,13 +143,12 @@ class LegacyImplementationWorkers {
     
     const listener = this._workerListChanged.bind(this, targetFront);
     this.targetsListeners.set(targetFront, listener);
+
     
     
-    if (targetFront.isParentProcess) {
-      this.rootFront.on("workerListChanged", listener);
-    } else {
-      targetFront.on("workerListChanged", listener);
-    }
+    const front = targetFront.isParentProcess ? this.rootFront : targetFront;
+    front.on("workerListChanged", listener);
+
     
     await this._workerListChanged(targetFront);
   }
@@ -169,19 +168,28 @@ class LegacyImplementationWorkers {
     this.targetsListeners.delete(targetFront);
   }
 
-  async _workerListChanged(targetFront) {
-    let workers;
+  _supportWorkerTarget(workerTarget) {
     
-    if (targetFront.isParentProcess) {
-      
-      
-      
-      ({ workers } = await this.rootFront.listWorkers());
-    } else {
-      
-      
-      ({ workers } = await targetFront.listWorkers());
-    }
+    
+    
+    
+    
+    return (
+      workerTarget.isDedicatedWorker &&
+      !workerTarget.url.startsWith(
+        "resource://gre/modules/subprocess/subprocess_worker"
+      )
+    );
+  }
+
+  async _workerListChanged(targetFront) {
+    
+    
+    
+    
+    
+    const front = targetFront.isParentProcess ? this.rootFront : targetFront;
+    const { workers } = await front.listWorkers();
 
     
     const existingTargets = this.targetsByProcess.get(targetFront);
@@ -196,23 +204,20 @@ class LegacyImplementationWorkers {
         existingTargets.delete(target);
       }
     }
-    const promises = workers
+
+    const promises = [];
+    for (const workerTarget of workers) {
+      if (
+        !this._supportWorkerTarget(workerTarget) ||
+        existingTargets.has(workerTarget)
+      ) {
+        continue;
+      }
+
       
-      
-      
-      
-      .filter(
-        workerTarget =>
-          !workerTarget.url.startsWith(
-            "resource://gre/modules/subprocess/subprocess_worker"
-          )
-      )
-      .filter(workerTarget => !existingTargets.has(workerTarget))
-      .map(async workerTarget => {
-        
-        existingTargets.add(workerTarget);
-        await this.onTargetAvailable(workerTarget);
-      });
+      existingTargets.add(workerTarget);
+      promises.push(this.onTargetAvailable(workerTarget));
+    }
 
     await Promise.all(promises);
   }
@@ -259,6 +264,18 @@ class LegacyImplementationWorkers {
       this.targetsByProcess.delete(this.target);
       this.targetsListeners.delete(this.target);
     }
+  }
+}
+
+class LegacyImplementationSharedWorkers extends LegacyImplementationWorkers {
+  _supportWorkerTarget(workerTarget) {
+    return workerTarget.isSharedWorker;
+  }
+}
+
+class LegacyImplementationServiceWorkers extends LegacyImplementationWorkers {
+  _supportWorkerTarget(workerTarget) {
+    return workerTarget.isServiceWorker;
   }
 }
 
@@ -320,6 +337,16 @@ class TargetList {
         this._onTargetDestroyed
       ),
       worker: new LegacyImplementationWorkers(
+        this,
+        this._onTargetAvailable,
+        this._onTargetDestroyed
+      ),
+      shared_worker: new LegacyImplementationSharedWorkers(
+        this,
+        this._onTargetAvailable,
+        this._onTargetDestroyed
+      ),
+      service_worker: new LegacyImplementationServiceWorkers(
         this,
         this._onTargetAvailable,
         this._onTargetDestroyed
@@ -414,6 +441,18 @@ class TargetList {
     if (this.listenForWorkers && !types.includes(TargetList.TYPES.WORKER)) {
       types.push(TargetList.TYPES.WORKER);
     }
+    if (
+      this.listenForWorkers &&
+      !types.includes(TargetList.TYPES.SHARED_WORKER)
+    ) {
+      types.push(TargetList.TYPES.SHARED_WORKER);
+    }
+    if (
+      this.listenForWorkers &&
+      !types.includes(TargetList.TYPES.SERVICE_WORKER)
+    ) {
+      types.push(TargetList.TYPES.SERVICE_WORKER);
+    }
     
     
     
@@ -474,14 +513,27 @@ class TargetList {
     const { typeName } = target;
     if (typeName == "browsingContextTarget") {
       return TargetList.TYPES.FRAME;
-    } else if (
+    }
+
+    if (
       typeName == "contentProcessTarget" ||
       typeName == "parentProcessTarget"
     ) {
       return TargetList.TYPES.PROCESS;
-    } else if (typeName == "workerTarget") {
+    }
+
+    if (typeName == "workerTarget") {
+      if (target.isSharedWorker) {
+        return TargetList.TYPES.SHARED_WORKER;
+      }
+
+      if (target.isServiceWorker) {
+        return TargetList.TYPES.SERVICE_WORKER;
+      }
+
       return TargetList.TYPES.WORKER;
     }
+
     throw new Error("Unsupported target typeName: " + typeName);
   }
 
@@ -645,6 +697,8 @@ TargetList.TYPES = TargetList.prototype.TYPES = {
   PROCESS: "process",
   FRAME: "frame",
   WORKER: "worker",
+  SHARED_WORKER: "shared_worker",
+  SERVICE_WORKER: "service_worker",
 };
 TargetList.ALL_TYPES = TargetList.prototype.ALL_TYPES = Object.values(
   TargetList.TYPES
