@@ -104,18 +104,9 @@ WebVTTListener::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   }
 
   LOG("OnStopRequest");
-  if (NS_FAILED(aStatus)) {
-    LOG("Got error status");
-    mElement->SetReadyState(TextTrackReadyState::FailedToLoad);
-  }
   
   mParserWrapper->Flush();
-  if (mElement->ReadyState() != TextTrackReadyState::FailedToLoad) {
-    mElement->SetReadyState(TextTrackReadyState::Loaded);
-  }
-
-  mElement->CancelChannelAndListener();
-
+  mElement->LoadResourceEnd(aStatus);
   return aStatus;
 }
 

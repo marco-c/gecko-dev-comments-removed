@@ -102,6 +102,10 @@ class HTMLTrackElement final : public nsGenericHTMLElement {
   void CancelChannelAndListener();
 
   
+  
+  void LoadResourceEnd(nsresult aStatus);
+
+  
   void MaybeDispatchLoadResource();
 
  protected:
@@ -126,7 +130,7 @@ class HTMLTrackElement final : public nsGenericHTMLElement {
   
   
   void LoadResource(RefPtr<WebVTTListener>&& aWebVTTListener);
-  bool mLoadResourceDispatched;
+  bool mIsLoadingResource;
 
   void MaybeClearAllCues();
 

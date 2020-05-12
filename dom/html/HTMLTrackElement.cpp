@@ -116,7 +116,7 @@ NS_IMPL_ISUPPORTS(WindowDestroyObserver, nsIObserver);
 HTMLTrackElement::HTMLTrackElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)),
-      mLoadResourceDispatched(false),
+      mIsLoadingResource(false),
       mWindowDestroyObserver(nullptr) {
   nsISupports* parentObject = OwnerDoc()->GetParentObject();
   NS_ENSURE_TRUE_VOID(parentObject);
@@ -230,6 +230,8 @@ void HTMLTrackElement::SetSrc(const nsAString& aSrc, ErrorResult& aError) {
     mChannel->Cancel(NS_BINDING_ABORTED);
     mChannel = nullptr;
   }
+  
+  mIsLoadingResource = false;
 
   MaybeDispatchLoadResource();
 }
@@ -252,6 +254,13 @@ void HTMLTrackElement::MaybeDispatchLoadResource() {
 
   
   
+  
+  if (mIsLoadingResource) {
+    return;
+  }
+
+  
+  
   if (mTrack->Mode() == TextTrackMode::Disabled) {
     LOG("Do not load resource for disable track");
     return;
@@ -270,19 +279,16 @@ void HTMLTrackElement::MaybeDispatchLoadResource() {
   }
 
   
-  if (!mLoadResourceDispatched) {
-    RefPtr<WebVTTListener> listener = new WebVTTListener(this);
-    RefPtr<Runnable> r = NewRunnableMethod<RefPtr<WebVTTListener>>(
-        "dom::HTMLTrackElement::LoadResource", this,
-        &HTMLTrackElement::LoadResource, std::move(listener));
-    nsContentUtils::RunInStableState(r.forget());
-    mLoadResourceDispatched = true;
-  }
+  RefPtr<WebVTTListener> listener = new WebVTTListener(this);
+  RefPtr<Runnable> r = NewRunnableMethod<RefPtr<WebVTTListener>>(
+      "dom::HTMLTrackElement::LoadResource", this,
+      &HTMLTrackElement::LoadResource, std::move(listener));
+  nsContentUtils::RunInStableState(r.forget());
+  mIsLoadingResource = true;
 }
 
 void HTMLTrackElement::LoadResource(RefPtr<WebVTTListener>&& aWebVTTListener) {
   LOG("LoadResource");
-  mLoadResourceDispatched = false;
 
   nsAutoString src;
   if (!GetAttr(kNameSpaceID_None, nsGkAtoms::src, src) || src.IsEmpty()) {
@@ -509,6 +515,21 @@ void HTMLTrackElement::DispatchTestEvent(const nsAString& aName) {
     return;
   }
   DispatchTrustedEvent(aName);
+}
+
+void HTMLTrackElement::LoadResourceEnd(nsresult aStatus) {
+  if (NS_FAILED(aStatus)) {
+    LOG("Load failed");
+    return SetReadyState(TextTrackReadyState::FailedToLoad);
+  }
+
+  if (ReadyState() == TextTrackReadyState::FailedToLoad) {
+    return;
+  }
+
+  SetReadyState(TextTrackReadyState::Loaded);
+  CancelChannelAndListener();
+  mIsLoadingResource = false;
 }
 
 }  
