@@ -7,24 +7,6 @@ const TEST_URI =
   "http://example.com/browser/devtools/client/webconsole/" +
   "test/browser/test-eval-sources.html";
 
-async function clickFirstStackElement(hud, message, needsExpansion) {
-  if (needsExpansion) {
-    const button = message.querySelector(".collapse-button");
-    ok(button, "has button");
-    button.click();
-  }
-
-  let frame;
-  await waitUntil(() => {
-    frame = message.querySelector(".frame");
-    return !!frame;
-  });
-
-  EventUtils.sendMouseEvent({ type: "mousedown" }, frame);
-
-  await once(hud, "source-in-debugger-opened");
-}
-
 
 
 
@@ -61,3 +43,21 @@ add_task(async function() {
     "expected source url"
   );
 });
+
+async function clickFirstStackElement(hud, message, needsExpansion) {
+  if (needsExpansion) {
+    const button = message.querySelector(".collapse-button");
+    ok(button, "has button");
+    button.click();
+  }
+
+  let frame;
+  await waitUntil(() => {
+    frame = message.querySelector(".stacktrace .frame");
+    return !!frame;
+  });
+
+  const onSourceOpenedInDebugger = once(hud, "source-in-debugger-opened");
+  EventUtils.sendMouseEvent({ type: "mousedown" }, frame);
+  await onSourceOpenedInDebugger;
+}
