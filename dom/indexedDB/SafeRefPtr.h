@@ -420,6 +420,15 @@ struct CopyablePtr<SafeRefPtr<T>> {
 
 }  
 
+namespace dom {
+
+template <class T, class S>
+inline RefPtr<T> StrongOrRawPtr(SafeRefPtr<S>&& aPtr) {
+  return AsRefPtr(std::move(aPtr));
+}
+
+}  
+
 }  
 
 
