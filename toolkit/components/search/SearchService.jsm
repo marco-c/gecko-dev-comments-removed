@@ -2678,7 +2678,7 @@ SearchService.prototype = {
     let { IconDetails } = ExtensionParent;
 
     
-    let icons = extension.manifest.icons;
+    let icons = manifest.icons;
     let iconList = [];
     if (icons) {
       iconList = Object.entries(icons).map(icon => {
@@ -2735,7 +2735,7 @@ SearchService.prototype = {
     let params = {
       name: searchProvider.name.trim(),
       shortName,
-      description: extension.manifest.description,
+      description: manifest.description,
       searchForm: searchProvider.search_form,
       
       
