@@ -115,7 +115,7 @@ void WaylandVsyncSource::WaylandDisplay::Notify() {
 }
 
 void WaylandVsyncSource::WaylandDisplay::SetupFrameCallback() {
-  struct wl_surface* surface = moz_container_wayland_get_surface(mContainer);
+  struct wl_surface* surface = moz_container_get_wl_surface(mContainer);
   if (!surface) {
     
     
