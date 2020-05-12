@@ -1283,7 +1283,6 @@ pub enum ScrollClamping {
 
 
 
-#[derive(Clone)]
 pub struct RenderApiSender {
     api_sender: Sender<ApiMsg>,
 
@@ -1433,8 +1432,10 @@ impl RenderApi {
     }
 
     
-    pub fn clone_sender(&self) -> RenderApiSender {
-        RenderApiSender::new(self.api_sender.clone())
+    pub fn create_sender(&self) -> RenderApiSender {
+        RenderApiSender::new(
+            self.api_sender.clone(),
+        )
     }
 
     
