@@ -118,10 +118,17 @@ const PREF_SELECTED_LWT = "lightweightThemes.selectedThemeID";
 const TOOLKIT_ID = "toolkit@mozilla.org";
 
 
+
+
 const XPI_INTERNAL_SYMBOLS = [
   "BOOTSTRAP_REASONS",
+  "DIR_STAGE",
+  "DIR_TRASH",
+  "KEY_APP_PROFILE",
   "KEY_APP_SYSTEM_ADDONS",
   "KEY_APP_SYSTEM_DEFAULTS",
+  "KEY_APP_SYSTEM_PROFILE",
+  "KEY_PROFILEDIR",
   "PREF_BRANCH_INSTALLED_ADDON",
   "PREF_SYSTEM_ADDON_SET",
   "TEMPORARY_ADDON_SUFFIX",
@@ -181,13 +188,7 @@ const PREF_XPI_SIGNATURES_DEV_ROOT = "xpinstall.signatures.dev-root";
 const PREF_INSTALL_REQUIREBUILTINCERTS =
   "extensions.install.requireBuiltInCerts";
 
-const KEY_PROFILEDIR = "ProfD";
 const KEY_TEMPDIR = "TmpD";
-
-const KEY_APP_PROFILE = "app-profile";
-
-const DIR_STAGE = "staged";
-const DIR_TRASH = "trash";
 
 
 
@@ -841,16 +842,26 @@ function getSignedStatus(aRv, aCert, aAddonID) {
 
 function shouldVerifySignedState(aAddon) {
   
-  if (aAddon.location.name == KEY_APP_SYSTEM_ADDONS) {
-    return true;
-  }
+  
+  
+  
+  
+  
 
   
   if (aAddon.location.name == KEY_APP_SYSTEM_DEFAULTS) {
     return false;
   }
 
-  if (aAddon.location.scope & AppConstants.MOZ_UNSIGNED_SCOPES) {
+  
+  if (aAddon.location.isSystem) {
+    return true;
+  }
+
+  if (
+    aAddon.location.isBuiltin ||
+    aAddon.location.scope & AppConstants.MOZ_UNSIGNED_SCOPES
+  ) {
     return false;
   }
 
@@ -4180,8 +4191,20 @@ var XPIInstall = {
 
 
 
+
+
   async getInstallForURL(aUrl, aOptions) {
-    let location = XPIStates.getLocation(KEY_APP_PROFILE);
+    let locationName = aOptions.useSystemLocation
+      ? KEY_APP_SYSTEM_PROFILE
+      : KEY_APP_PROFILE;
+    let location = XPIStates.getLocation(locationName);
+    if (!location) {
+      throw Components.Exception(
+        "Invalid location name",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
+
     let url = Services.io.newURI(aUrl);
 
     if (url instanceof Ci.nsIFileURL) {
@@ -4204,8 +4227,21 @@ var XPIInstall = {
 
 
 
-  async getInstallForFile(aFile, aInstallTelemetryInfo) {
-    let install = await createLocalInstall(aFile, null, aInstallTelemetryInfo);
+
+
+  async getInstallForFile(
+    aFile,
+    aInstallTelemetryInfo,
+    aUseSystemLocation = false
+  ) {
+    let location = XPIStates.getLocation(
+      aUseSystemLocation ? KEY_APP_SYSTEM_PROFILE : KEY_APP_PROFILE
+    );
+    let install = await createLocalInstall(
+      aFile,
+      location,
+      aInstallTelemetryInfo
+    );
     return install ? install.wrapper : null;
   },
 
