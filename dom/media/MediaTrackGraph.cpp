@@ -3659,6 +3659,25 @@ double MediaTrackGraphImpl::AudioOutputLatency() {
   return mAudioOutputLatency;
 }
 
+double MediaTrackGraphImpl::AudioInputLatency() {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mAudioInputLatency != 0.0) {
+    return mAudioInputLatency;
+  }
+  MonitorAutoLock lock(mMonitor);
+  if (CurrentDriver()->AsAudioCallbackDriver()) {
+    mAudioInputLatency = CurrentDriver()
+                             ->AsAudioCallbackDriver()
+                             ->AudioInputLatency()
+                             .ToSeconds();
+  } else {
+    
+    mAudioInputLatency = 0.0;
+  }
+
+  return mAudioInputLatency;
+}
+
 bool MediaTrackGraph::IsNonRealtime() const {
   return !static_cast<const MediaTrackGraphImpl*>(this)->mRealtime;
 }
