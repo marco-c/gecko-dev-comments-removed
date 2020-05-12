@@ -5720,6 +5720,10 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
       return false;
     }
 
+    
+    
+    funbox->exposeScript = true;
+
     if (!funbox->emitBytecode) {
       return fe.emitLazy();
       

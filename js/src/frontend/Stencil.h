@@ -384,9 +384,6 @@ class ScriptStencil : public ScriptStencilBase {
   
   
   virtual void initAtomMap(GCPtrAtom* atoms) const = 0;
-
-  
-  virtual void finishInnerFunctions() const = 0;
 };
 
 } 

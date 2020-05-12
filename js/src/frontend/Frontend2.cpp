@@ -169,9 +169,6 @@ class SmooshScriptStencil : public ScriptStencil {
     return true;
   }
 
- public:
-  virtual void finishInnerFunctions() const override {}
-
  private:
   
   

@@ -4308,11 +4308,6 @@ bool JSScript::fullyInitFromStencil(JSContext* cx,
     }
   }
 
-  
-  
-  
-  stencil.finishInnerFunctions();
-
 #ifdef JS_STRUCTURED_SPEW
   
   

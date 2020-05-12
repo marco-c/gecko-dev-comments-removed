@@ -340,6 +340,17 @@ class FunctionBox : public SharedContext {
   bool wasEmitted : 1;
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  bool exposeScript : 1;
+
+  
   bool isAnnexB : 1;
 
   
