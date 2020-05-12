@@ -33,11 +33,6 @@ class ResourceWatcher {
     this._destroyedListeners = new EventEmitter();
 
     this._listenerCount = new Map();
-
-    
-    
-    
-    this._previouslyListenedTypes = new Set();
   }
 
   get contentToolboxFissionPrefValue() {
@@ -226,41 +221,12 @@ class ResourceWatcher {
 
 
   async _startListening(resourceType) {
-    const isDocumentEvent =
-      resourceType === ResourceWatcher.TYPES.DOCUMENT_EVENTS;
-
     let listeners = this._listenerCount.get(resourceType) || 0;
     listeners++;
-    if (listeners > 1) {
-      
-      
-      if (isDocumentEvent) {
-        
-        
-        
-        return;
-      }
-
-      throw new Error(
-        `The ResourceWatcher is already listening to "${resourceType}", ` +
-          "the client should call `watch` only once per resource type."
-      );
-    }
-
-    const wasListening = this._previouslyListenedTypes.has(resourceType);
-    if (wasListening && !isDocumentEvent) {
-      
-      
-      
-      throw new Error(
-        `The ResourceWatcher previously watched "${resourceType}" ` +
-          "and doesn't support watching again on a previous resource."
-      );
-    }
-
     this._listenerCount.set(resourceType, listeners);
-    this._previouslyListenedTypes.add(resourceType);
-
+    if (listeners > 1) {
+      return;
+    }
     
     
     
@@ -317,7 +283,6 @@ class ResourceWatcher {
     if (listeners > 0) {
       return;
     }
-
     
     
     for (const targetType of this.targetList.ALL_TYPES) {
@@ -350,7 +315,6 @@ ResourceWatcher.TYPES = ResourceWatcher.prototype.TYPES = {
   ERROR_MESSAGES: "error-messages",
   PLATFORM_MESSAGES: "platform-messages",
   DOCUMENT_EVENTS: "document-events",
-  ROOT_NODE: "root-node",
 };
 module.exports = { ResourceWatcher };
 
@@ -380,6 +344,4 @@ const LegacyListeners = {
     webConsoleFront.on("documentEvent", onAvailable);
     await webConsoleFront.startListeners(["DocumentEvents"]);
   },
-  [ResourceWatcher.TYPES
-    .ROOT_NODE]: require("devtools/shared/resources/legacy-listeners/root-node"),
 };
