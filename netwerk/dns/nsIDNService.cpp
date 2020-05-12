@@ -3,15 +3,18 @@
 
 
 
+#include "MainThreadUtils.h"
 #include "mozilla/Preferences.h"
 #include "nsIDNService.h"
 #include "nsReadableUtils.h"
 #include "nsCRT.h"
+#include "nsServiceManagerUtils.h"
 #include "nsUnicharUtils.h"
 #include "nsUnicodeProperties.h"
 #include "nsUnicodeScriptCodes.h"
 #include "harfbuzz/hb.h"
 #include "punycode.h"
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Utf8.h"
 
@@ -25,6 +28,7 @@ const bool kIDNA2008_TransitionalProcessing = false;
 #include "ICUUtils.h"
 #include "unicode/uscript.h"
 
+using namespace mozilla;
 using namespace mozilla::unicode;
 using namespace mozilla::net;
 using mozilla::Preferences;

@@ -3,6 +3,8 @@
 
 
 
+#include "nsCharSeparatedTokenizer.h"
+#include "nsComponentManagerUtils.h"
 #include "nsICaptivePortalService.h"
 #include "nsIParentalControlsService.h"
 #include "nsINetworkLinkService.h"
@@ -14,6 +16,7 @@
 
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/Telemetry.h"
 #include "mozilla/Tokenizer.h"
 
 static const char kOpenCaptivePortalLoginEvent[] = "captive-portal-login";

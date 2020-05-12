@@ -5,6 +5,7 @@
 
 
 #include "GetAddrInfo.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/net/DNS.h"
 #include "prnetdb.h"
 #include "nsHostResolver.h"
