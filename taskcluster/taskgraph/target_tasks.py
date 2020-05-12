@@ -569,15 +569,11 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
 
         
         if 'browsertime' in try_name and 'pgo' in platform:
-            if 'speedometer-fenix' in try_name:
+            if 'speedometer' in try_name:
+                return True
+            if '-live' in try_name:
                 return True
             return False
-
-        
-        if 'browsertime' in try_name \
-                and 'pgo' in platform \
-                and '-live' in try_name:
-            return True
 
         
         if platform and 'android' not in platform:
