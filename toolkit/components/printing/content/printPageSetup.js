@@ -505,6 +505,11 @@ function onAccept() {
     gPrintSettingsInterface.kInitSaveShrinkToFit |
     gPrintSettingsInterface.kInitSaveScaling;
 
+  
+  
+  
+  
+  
   gPrintService.savePrintSettingsToPrefs(gPrintSettings, true, flags);
 }
 

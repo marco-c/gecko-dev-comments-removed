@@ -92,6 +92,10 @@ nsPrintDialogServiceWin::ShowPageSetup(nsPIDOMWindowOuter* aParent,
     return status == 0 ? NS_ERROR_ABORT : NS_OK;
   }
 
+  
+  
+  
+
   return rv;
 }
 
