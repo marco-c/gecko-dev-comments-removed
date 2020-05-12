@@ -3074,8 +3074,8 @@ static void AppendToTop(nsDisplayListBuilder* aBuilder,
   } else {
     
     
-    newItem = MakeDisplayItem<nsDisplayWrapList>(aBuilder, aSourceFrame,
-                                                 aSource, asr, false, 1);
+    newItem = MakeDisplayItemWithIndex<nsDisplayWrapList>(
+        aBuilder, aSourceFrame, 1, aSource, asr, false);
   }
   if (!newItem) {
     return;
@@ -3824,9 +3824,10 @@ void ScrollFrameHelper::MaybeAddTopLayerItems(nsDisplayListBuilder* aBuilder,
 
         
         
-        nsDisplayWrapList* wrapList = MakeDisplayItem<nsDisplayWrapList>(
-            aBuilder, viewportFrame, &topLayerList,
-            aBuilder->CurrentActiveScrolledRoot(), false, 2);
+        nsDisplayWrapList* wrapList =
+            MakeDisplayItemWithIndex<nsDisplayWrapList>(
+                aBuilder, viewportFrame, 2, &topLayerList,
+                aBuilder->CurrentActiveScrolledRoot(), false);
         if (wrapList) {
           wrapList->SetOverrideZIndex(
               std::numeric_limits<decltype(wrapList->ZIndex())>::max());
