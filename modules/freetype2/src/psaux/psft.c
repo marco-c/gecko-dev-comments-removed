@@ -313,7 +313,7 @@
     FT_Error   error = FT_Err_Ok;
     CF2_Font   font;
 
-    FT_Bool    is_t1 = decoder->builder.is_t1;
+    FT_Bool  is_t1 = decoder->builder.is_t1;
 
 
     FT_ASSERT( decoder &&
@@ -385,7 +385,7 @@
       FT_ZERO( &buf );
       buf.start =
       buf.ptr   = charstring_base;
-      buf.end   = charstring_base + charstring_len;
+      buf.end   = FT_OFFSET( charstring_base, charstring_len );
 
       FT_ZERO( &transform );
 
@@ -697,7 +697,7 @@
     FT_ASSERT( charstring + len >= charstring );
 
     buf->start = charstring;
-    buf->end   = charstring + len;
+    buf->end   = FT_OFFSET( charstring, len );
     buf->ptr   = buf->start;
 
     return FT_Err_Ok;
@@ -820,7 +820,7 @@
       
       
       if ( decoder->locals_len )
-        buf->end = buf->start + decoder->locals_len[idx];
+        buf->end = FT_OFFSET( buf->start, decoder->locals_len[idx] );
       else
       {
         

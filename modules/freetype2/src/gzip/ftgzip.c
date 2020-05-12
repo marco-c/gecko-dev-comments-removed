@@ -746,7 +746,17 @@
     stream.zfree  = (free_func) ft_gzip_free;
     stream.opaque = memory;
 
+    
+
+
+
+
+#ifdef FT_CONFIG_OPTION_SYSTEM_ZLIB
     err = inflateInit2( &stream, MAX_WBITS|32 );
+#else
+    err = inflateInit2( &stream, MAX_WBITS );
+#endif
+
     if ( err != Z_OK )
       return FT_THROW( Invalid_Argument );
 

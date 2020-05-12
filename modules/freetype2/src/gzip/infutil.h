@@ -86,7 +86,7 @@ struct inflate_blocks_state {
 
 
 #ifndef NO_INFLATE_MASK
-local uInt inflate_mask[17];
+local const uInt inflate_mask[17];
 #endif
 
 

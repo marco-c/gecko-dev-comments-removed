@@ -371,18 +371,18 @@
                                     sfnt + table->OrigOffset, &output_len,
                                     stream->cursor, table->CompLength );
         if ( error )
-          goto Exit;
+          goto Exit1;
         if ( output_len != table->OrigLength )
         {
           FT_ERROR(( "woff_font_open: compressed table length mismatch\n" ));
           error = FT_THROW( Invalid_Table );
-          goto Exit;
+          goto Exit1;
         }
 
 #else 
 
         error = FT_THROW( Unimplemented_Feature );
-        goto Exit;
+        goto Exit1;
 
 #endif 
       }
@@ -424,6 +424,10 @@
     }
 
     return error;
+
+  Exit1:
+    FT_FRAME_EXIT();
+    goto Exit;
   }
 
 

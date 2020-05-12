@@ -166,6 +166,9 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
   typedef struct  FT_Palette_Data_ {
     FT_UShort         num_palettes;
     const FT_UShort*  palette_name_ids;

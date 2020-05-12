@@ -330,7 +330,7 @@
     builder->left_bearing.x = 0;
     builder->left_bearing.y = 0;
 
-    builder->pos_x = adx - asb;
+    builder->pos_x = SUB_LONG( adx, asb );
     builder->pos_y = ady;
 
     
@@ -529,6 +529,9 @@
     hinter = (T2_Hints_Funcs)builder->hints_funcs;
 
     builder->path_begun = 0;
+
+    if ( !charstring_base )
+      return FT_Err_Ok;
 
     zone->base           = charstring_base;
     limit = zone->limit  = charstring_base + charstring_len;

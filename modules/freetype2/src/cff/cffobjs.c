@@ -1020,7 +1020,7 @@
 #ifndef FT_CONFIG_OPTION_NO_GLYPH_NAMES
       
       
-      if ( dict->cid_registry == 0xFFFFU )
+      if ( dict->cid_registry == 0xFFFFU && !cff2 )
         cffface->face_flags |= FT_FACE_FLAG_GLYPH_NAMES;
 #endif
 

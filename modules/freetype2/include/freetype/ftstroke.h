@@ -132,9 +132,6 @@ FT_BEGIN_HEADER
 
 
 
-
-
-
   typedef enum  FT_Stroker_LineJoin_
   {
     FT_STROKER_LINEJOIN_ROUND          = 0,
@@ -275,6 +272,11 @@ FT_BEGIN_HEADER
 
 
   
+
+
+
+
+
 
 
 

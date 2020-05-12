@@ -308,6 +308,22 @@ FT_BEGIN_HEADER
 
 
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -873,10 +889,12 @@ FT_BEGIN_HEADER
 
 
 
+#ifdef AF_CONFIG_OPTION_CJK
 #define AF_CONFIG_OPTION_INDIC
+#endif
 
 
-
+  
 
 
 

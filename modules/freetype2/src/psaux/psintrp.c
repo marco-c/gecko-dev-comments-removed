@@ -1433,6 +1433,13 @@
                       lastError = error2; 
                       goto exit;
                     }
+
+                    
+                    
+
+                    left_bearing = *decoder->builder.left_bearing;
+                    advance      = *decoder->builder.advance;
+
                     cf2_interpT2CharString( font,
                                             &component,
                                             callbacks,
@@ -1446,8 +1453,11 @@
                     
                     
 
-                    left_bearing = *decoder->builder.left_bearing;
-                    advance      = *decoder->builder.advance;
+                    if ( !haveWidth )
+                    {
+                      left_bearing = *decoder->builder.left_bearing;
+                      advance      = *decoder->builder.advance;
+                    }
 
                     decoder->builder.left_bearing->x = 0;
                     decoder->builder.left_bearing->y = 0;
