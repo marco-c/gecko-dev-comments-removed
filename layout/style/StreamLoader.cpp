@@ -7,6 +7,7 @@
 #include "mozilla/css/StreamLoader.h"
 
 #include "mozilla/Encoding.h"
+#include "mozilla/ScopeExit.h"
 #include "nsIChannel.h"
 #include "nsIInputStream.h"
 
@@ -29,8 +30,19 @@ StreamLoader::~StreamLoader() {
 NS_IMPL_ISUPPORTS(StreamLoader, nsIStreamListener)
 
 
+void StreamLoader::PrioritizeAsPreload(nsIChannel* aChannel) {
+  if (nsCOMPtr<nsISupportsPriority> sp = do_QueryInterface(aChannel)) {
+    sp->AdjustPriority(nsISupportsPriority::PRIORITY_HIGHEST);
+  }
+}
+
+void StreamLoader::PrioritizeAsPreload() { PrioritizeAsPreload(Channel()); }
+
+
 NS_IMETHODIMP
 StreamLoader::OnStartRequest(nsIRequest* aRequest) {
+  NotifyStart(aRequest);
+
   
   
   
@@ -57,6 +69,9 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   mOnStopRequestCalled = true;
 #endif
 
+  nsresult rv = mStatus;
+  auto notifyStop = MakeScopeExit([&] { NotifyStop(aRequest, rv); });
+
   
   nsCString utf8String;
   {
@@ -73,9 +88,14 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
       return mStatus;
     }
 
-    nsresult rv = mSheetLoadData->VerifySheetReadyToParse(aStatus, mBOMBytes,
-                                                          bytes, channel);
+    rv = mSheetLoadData->VerifySheetReadyToParse(aStatus, mBOMBytes, bytes,
+                                                 channel);
     if (rv != NS_OK_PARSE_SHEET) {
+      
+      
+      
+      
+      rv = NS_ERROR_NOT_AVAILABLE;
       return rv;
     }
 
@@ -116,6 +136,7 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   
   mSheetLoadData->mLoader->ParseSheet(utf8String, *mSheetLoadData,
                                       Loader::AllowAsyncParse::Yes);
+
   return NS_OK;
 }
 

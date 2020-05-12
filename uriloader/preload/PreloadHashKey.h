@@ -6,6 +6,7 @@
 #define PreloadHashKey_h__
 
 #include "mozilla/CORSMode.h"
+#include "mozilla/css/SheetLoadData.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/ScriptKind.h"
 #include "nsURIHashKey.h"
@@ -39,6 +40,7 @@ class PreloadHashKey : public nsURIHashKey {
 
   PreloadHashKey& operator=(const PreloadHashKey& aOther);
 
+  
   static PreloadHashKey CreateAsScript(
       nsIURI* aURI, const CORSMode& aCORSMode,
       const dom::ScriptKind& aScriptKind,
@@ -48,6 +50,12 @@ class PreloadHashKey : public nsURIHashKey {
       const dom::ReferrerPolicy& aReferrerPolicy);
 
   
+  static PreloadHashKey CreateAsStyle(nsIURI* aURI, nsIPrincipal* aPrincipal,
+                                      nsIReferrerInfo* aReferrerInfo,
+                                      CORSMode aCORSMode,
+                                      css::SheetParsingMode aParsingMode);
+  static PreloadHashKey CreateAsStyle(css::SheetLoadData& aSheetLoadData);
+
   
   
   
@@ -79,6 +87,12 @@ class PreloadHashKey : public nsURIHashKey {
   struct {
     dom::ScriptKind mScriptKind = dom::ScriptKind::eClassic;
   } mScript;
+
+  struct {
+    nsCOMPtr<nsIPrincipal> mPrincipal;
+    nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
+    css::SheetParsingMode mParsingMode = css::eAuthorSheetFeatures;
+  } mStyle;
 };
 
 }  
