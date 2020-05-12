@@ -545,7 +545,6 @@ async function exchangeOfferAnswer(caller, callee) {
   await exchangeOffer(caller, callee);
   await exchangeAnswer(caller, callee);
 }
-const doSignalingHandshake = exchangeOfferAnswer;
 
 
 async function exchangeAnswerAndListenToOntrack(t, caller, callee) {

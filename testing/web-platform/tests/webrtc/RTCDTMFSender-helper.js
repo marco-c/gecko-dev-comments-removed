@@ -26,7 +26,7 @@ function createDtmfSender(pc = new RTCPeerConnection()) {
     const pc2 = new RTCPeerConnection();
     Object.defineProperty(pc, 'otherPc', { value: pc2 });
     exchangeIceCandidates(pc, pc2);
-    return doSignalingHandshake(pc, pc2);
+    return exchangeOfferAnswer(pc, pc2);
   }).then(() => {
     if (!('canInsertDTMF' in dtmfSender)) {
       return Promise.resolve();
