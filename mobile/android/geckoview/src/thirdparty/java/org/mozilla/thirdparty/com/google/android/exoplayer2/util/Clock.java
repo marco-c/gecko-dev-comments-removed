@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package org.mozilla.thirdparty.com.google.android.exoplayer2.util;
+
+
+
+
+
+public interface Clock {
+
+  
+
+
+
+
+  long elapsedRealtime();
+
+}

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package org.mozilla.thirdparty.com.google.android.exoplayer2.util;
+
+
+
+
+public final class SystemClock implements Clock {
+
+  @Override
+  public long elapsedRealtime() {
+    return android.os.SystemClock.elapsedRealtime();
+  }
+
+}

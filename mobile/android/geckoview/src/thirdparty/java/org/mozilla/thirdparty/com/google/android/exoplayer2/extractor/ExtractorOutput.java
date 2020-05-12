@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor;
+
+
+
+
+public interface ExtractorOutput {
+
+  
+
+
+
+
+
+
+
+
+
+  TrackOutput track(int id, int type);
+
+  
+
+
+
+  void endTracks();
+
+  
+
+
+
+
+  void seekMap(SeekMap seekMap);
+
+}

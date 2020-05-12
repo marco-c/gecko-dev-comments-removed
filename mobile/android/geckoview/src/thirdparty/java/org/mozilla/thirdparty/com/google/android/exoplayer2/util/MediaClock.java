@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package org.mozilla.thirdparty.com.google.android.exoplayer2.util;
+
+import org.mozilla.thirdparty.com.google.android.exoplayer2.PlaybackParameters;
+
+
+
+
+public interface MediaClock {
+
+  
+
+
+  long getPositionUs();
+
+  
+
+
+
+
+
+
+  PlaybackParameters setPlaybackParameters(PlaybackParameters playbackParameters);
+
+  
+
+
+  PlaybackParameters getPlaybackParameters();
+
+}
