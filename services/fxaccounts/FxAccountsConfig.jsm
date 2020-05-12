@@ -77,35 +77,35 @@ var FxAccountsConfig = {
   async promiseForceSigninURI(entrypoint, extraParams = {}) {
     return this._buildURL("force_auth", {
       extraParams: { entrypoint, service: SYNC_PARAM, ...extraParams },
-      addAccountIdentifiers: true,
+      addEmailAddress: true,
     });
   },
 
   async promiseManageURI(entrypoint, extraParams = {}) {
     return this._buildURL("settings", {
       extraParams: { entrypoint, ...extraParams },
-      addAccountIdentifiers: true,
+      addEmailAddress: true,
     });
   },
 
   async promiseChangeAvatarURI(entrypoint, extraParams = {}) {
     return this._buildURL("settings/avatar/change", {
       extraParams: { entrypoint, ...extraParams },
-      addAccountIdentifiers: true,
+      addEmailAddress: true,
     });
   },
 
   async promiseManageDevicesURI(entrypoint, extraParams = {}) {
     return this._buildURL("settings/clients", {
       extraParams: { entrypoint, ...extraParams },
-      addAccountIdentifiers: true,
+      addEmailAddress: true,
     });
   },
 
   async promiseConnectDeviceURI(entrypoint, extraParams = {}) {
     return this._buildURL("connect_another_device", {
       extraParams: { entrypoint, service: SYNC_PARAM, ...extraParams },
-      addAccountIdentifiers: true,
+      addEmailAddress: true,
     });
   },
 
@@ -140,13 +140,11 @@ var FxAccountsConfig = {
 
 
 
+
+
   async _buildURL(
     path,
-    {
-      includeDefaultParams = true,
-      extraParams = {},
-      addAccountIdentifiers = false,
-    }
+    { includeDefaultParams = true, extraParams = {}, addEmailAddress = false }
   ) {
     await this.ensureConfigured();
     const url = new URL(path, ROOT_URL);
@@ -160,12 +158,12 @@ var FxAccountsConfig = {
     for (let [k, v] of Object.entries(params)) {
       url.searchParams.append(k, v);
     }
-    if (addAccountIdentifiers) {
+    if (addEmailAddress) {
+      
       const accountData = await this.getSignedInUser();
       if (!accountData) {
-        return null;
+        throw new Error("Unable to append email to url, user is not available");
       }
-      url.searchParams.append("uid", accountData.uid);
       url.searchParams.append("email", accountData.email);
     }
     return url.href;
