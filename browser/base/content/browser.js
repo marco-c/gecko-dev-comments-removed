@@ -569,7 +569,7 @@ Object.defineProperty(this, "gReduceMotion", {
   },
 });
 
-var gReduceMotionSetting = true;
+let gReduceMotionSetting = true;
 
 var gReduceMotionOverride;
 

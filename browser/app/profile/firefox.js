@@ -404,8 +404,6 @@ pref("permissions.desktop-notification.notNow.enabled", false);
 
 pref("permissions.fullscreen.allowed", false);
 
-pref("permissions.postPrompt.animate", true);
-
 
 
 pref("browser.link.open_newwindow", 3);

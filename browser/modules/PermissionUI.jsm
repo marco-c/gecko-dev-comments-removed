@@ -97,17 +97,6 @@ XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
   );
 });
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "animationsEnabled",
-  "toolkit.cosmeticAnimations.enabled"
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "postPromptAnimationEnabled",
-  "permissions.postPrompt.animate"
-);
-
 var PermissionUI = {};
 
 
@@ -568,7 +557,8 @@ var PermissionPromptPrototype = {
       popupNotificationActions.push(action);
     }
 
-    if (animationsEnabled && postPromptAnimationEnabled) {
+    
+    if (!chromeWin.gReduceMotion) {
       let anchor = chromeWin.document.getElementById(this.anchorID);
       
       anchor.addEventListener(
