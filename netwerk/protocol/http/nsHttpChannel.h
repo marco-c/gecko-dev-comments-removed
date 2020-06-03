@@ -618,6 +618,10 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   nsCOMPtr<nsICacheEntry> mAltDataCacheEntry;
+
+  nsCOMPtr<nsIURI> mCacheEntryURI;
+  nsCString mCacheIdExtension;
+
   
   AutoClose<nsIInputStream> mCacheInputStream;
   RefPtr<nsInputStreamPump> mCachePump;
@@ -808,6 +812,11 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   nsresult MaybeRaceCacheWithNetwork();
+
+  
+  
+  
+  void MaybeCreateCacheEntryWhenRCWN();
 
   nsresult TriggerNetworkWithDelay(uint32_t aDelay);
   nsresult TriggerNetwork();
