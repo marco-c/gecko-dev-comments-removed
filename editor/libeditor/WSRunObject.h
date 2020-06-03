@@ -436,10 +436,16 @@ class MOZ_STACK_CLASS WSRunScanner {
           mIsStartOfHardLine(StartOfHardLine::No),
           mIsEndOfHardLine(EndOfHardLine::No) {}
 
-    EditorRawDOMPoint StartPoint() const {
+    EditorDOMPoint StartPoint() const {
+      return EditorDOMPoint(mStartNode, mStartOffset);
+    }
+    EditorDOMPoint EndPoint() const {
+      return EditorDOMPoint(mEndNode, mEndOffset);
+    }
+    EditorRawDOMPoint RawStartPoint() const {
       return EditorRawDOMPoint(mStartNode, mStartOffset);
     }
-    EditorRawDOMPoint EndPoint() const {
+    EditorRawDOMPoint RawEndPoint() const {
       return EditorRawDOMPoint(mEndNode, mEndOffset);
     }
 
@@ -797,18 +803,6 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
  protected:
   MOZ_CAN_RUN_SCRIPT nsresult PrepareToDeleteRangePriv(WSRunObject* aEndObject);
   MOZ_CAN_RUN_SCRIPT nsresult PrepareToSplitAcrossBlocksPriv();
-
-  
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult DeleteRange(const EditorDOMPoint& aStartPoint,
-                                          const EditorDOMPoint& aEndPoint);
 
   
 

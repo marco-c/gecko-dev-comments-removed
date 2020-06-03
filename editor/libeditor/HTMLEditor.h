@@ -2016,6 +2016,16 @@ class HTMLEditor final : public TextEditor,
 
 
 
+
+  template <typename EditorDOMPointType>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  DeleteTextAndTextNodesWithTransaction(const EditorDOMPointType& aStartPoint,
+                                        const EditorDOMPointType& aEndPoint);
+
+  
+
+
+
   template <typename PT, typename CT>
   Element* GetInvisibleBRElementAt(const EditorDOMPointBase<PT, CT>& aPoint);
 
