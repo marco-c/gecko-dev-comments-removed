@@ -26,6 +26,9 @@ function getCleanedPacket(key, packet) {
     .replace(/\\\'/g, `\'`);
 
   cleanTimeStamp(packet);
+  
+  
+  delete packet.targetFront;
 
   if (!stubPackets.has(safeKey)) {
     return packet;

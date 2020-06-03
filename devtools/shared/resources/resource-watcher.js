@@ -208,6 +208,11 @@ class ResourceWatcher {
 
 
   _onResourceAvailable(targetFront, resourceType, resource) {
+    
+    if (!resource.targetFront) {
+      resource.targetFront = targetFront;
+    }
+
     this._availableListeners.emit(resourceType, {
       resourceType,
       targetFront,
