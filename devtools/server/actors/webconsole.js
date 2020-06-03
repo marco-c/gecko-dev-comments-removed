@@ -1718,6 +1718,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       notes: notesArray,
       chromeContext: pageError.isFromChromeContext,
       cssSelectors: pageError.cssSelectors,
+      isPromiseRejection: pageError.isPromiseRejection,
     };
 
     
