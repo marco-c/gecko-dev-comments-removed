@@ -219,9 +219,6 @@ class UrlbarInput {
 
     this.editor.newlineHandling =
       Ci.nsIEditor.eNewlinesStripSurroundingWhitespace;
-
-    this._setOpenViewOnFocus();
-    Services.prefs.addObserver("browser.urlbar.openViewOnFocus", this);
   }
 
   
@@ -355,14 +352,6 @@ class UrlbarInput {
     } catch (ex) {}
 
     return uri;
-  }
-
-  observe(subject, topic, data) {
-    switch (data) {
-      case "browser.urlbar.openViewOnFocus":
-        this._setOpenViewOnFocus();
-        break;
-    }
   }
 
   
@@ -1280,15 +1269,6 @@ class UrlbarInput {
     });
   }
 
-  _setOpenViewOnFocus() {
-    
-    
-    
-    this.openViewOnFocus = Services.prefs.getBoolPref(
-      "browser.urlbar.openViewOnFocus"
-    );
-  }
-
   _setValue(val, allowTrim) {
     
     let originalUrl = ReaderMode.getOriginalUrlObjectForDisplay(val);
@@ -2160,7 +2140,7 @@ class UrlbarInput {
 
     if (!this.view.isOpen) {
       this.view.clear();
-    } else if (!value && !this.openViewOnFocus) {
+    } else if (!value && !UrlbarPrefs.get("suggest.topsites")) {
       this.view.clear();
       this.view.close();
       return;
@@ -2421,12 +2401,6 @@ class UrlbarInput {
   _on_aftercustomization() {
     this._initCopyCutController();
     this._initPasteAndGo();
-  }
-
-  _on_unload() {
-    
-    
-    Services.prefs.removeObserver("browser.urlbar.openViewOnFocus", this);
   }
 }
 

@@ -100,6 +100,7 @@ class ProviderTopSites extends UrlbarProvider {
     
     
     if (
+      !UrlbarPrefs.get("suggest.topsites") ||
       !Services.prefs.getBoolPref(
         "browser.newtabpage.activity-stream.feeds.system.topsites",
         false

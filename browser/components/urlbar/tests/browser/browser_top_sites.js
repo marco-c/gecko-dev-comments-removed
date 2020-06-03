@@ -405,4 +405,21 @@ add_task(async function topSitesDisabled() {
   });
   await checkDoesNotOpenOnFocus();
   await SpecialPowers.popPrefEnv();
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.suggest.topsites", false]],
+  });
+  await checkDoesNotOpenOnFocus();
+  await SpecialPowers.popPrefEnv();
+
+  
+  let privateWin = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+  await checkDoesNotOpenOnFocus(privateWin);
+  await BrowserTestUtils.closeWindow(privateWin);
+
+  await PlacesUtils.bookmarks.eraseEverything();
+  await PlacesUtils.history.clear();
 });

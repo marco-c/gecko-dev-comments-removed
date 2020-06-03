@@ -124,6 +124,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
+  ["suggest.topsites", true],
+
+  
+  
   ["switchTabs.adoptIntoActiveWindow", false],
 
   
