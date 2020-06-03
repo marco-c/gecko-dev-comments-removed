@@ -49,7 +49,7 @@ add_task(async function() {
     Services.obs.notifyObservers(null, "profile-before-change");
 
     
-    Assert.equal(12, getDBVersion(destFile));
+    Assert.equal(11, getDBVersion(destFile));
 
     
     Assert.ok(!indexExists(destFile, "moz_basedomain"));
