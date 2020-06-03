@@ -222,16 +222,6 @@ const accessibilitySpec = generateActorSpec({
     shutdown: {
       type: "shutdown",
     },
-    
-    "can-be-disabled-change": {
-      type: "canBeDisabledChange",
-      canBeDisabled: Arg(0, "boolean"),
-    },
-    
-    "can-be-enabled-change": {
-      type: "canBeEnabledChange",
-      canBeEnabled: Arg(0, "boolean"),
-    },
   },
 
   methods: {
@@ -252,16 +242,6 @@ const accessibilitySpec = generateActorSpec({
       response: {
         simulator: RetVal("nullable:simulator"),
       },
-    },
-    
-    enable: {
-      request: {},
-      response: {},
-    },
-    
-    disable: {
-      request: {},
-      response: {},
     },
   },
 });

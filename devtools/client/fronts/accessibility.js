@@ -272,11 +272,6 @@ class AccessibilityFront extends FrontClassWithSpec(accessibilitySpec) {
     this.before("shutdown", this.shutdown.bind(this));
 
     
-    this.before("can-be-enabled-change", this.canBeEnabled.bind(this));
-    
-    this.before("can-be-disabled-change", this.canBeDisabled.bind(this));
-
-    
     
     this.formAttributeName = "accessibilityActor";
   }
@@ -294,12 +289,7 @@ class AccessibilityFront extends FrontClassWithSpec(accessibilitySpec) {
   async bootstrap() {
     this.accessibleWalkerFront = await super.getWalker();
     this.simulatorFront = await super.getSimulator();
-    
-    ({
-      enabled: this.enabled,
-      canBeEnabled: this.canBeEnabled,
-      canBeDisabled: this.canBeDisabled,
-    } = await super.bootstrap());
+    ({ enabled: this.enabled } = await super.bootstrap());
   }
 
   init() {
@@ -308,16 +298,6 @@ class AccessibilityFront extends FrontClassWithSpec(accessibilitySpec) {
 
   shutdown() {
     this.enabled = false;
-  }
-
-  
-  canBeEnabled(canBeEnabled) {
-    this.canBeEnabled = canBeEnabled;
-  }
-
-  
-  canBeDisabled(canBeDisabled) {
-    this.canBeDisabled = canBeDisabled;
   }
 }
 
