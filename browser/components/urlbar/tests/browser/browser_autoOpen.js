@@ -5,7 +5,6 @@
 
 async function checkOpensOnFocus(win = window) {
   
-  
   win.gURLBar.blur();
   win.gURLBar.focus();
   Assert.ok(!win.gURLBar.view.isOpen, "check urlbar panel is not open");
@@ -29,9 +28,6 @@ async function checkOpensOnFocus(win = window) {
 }
 
 add_task(async function setUp() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.openViewOnFocus", true]],
-  });
   
   await PlacesTestUtils.addVisits([
     {

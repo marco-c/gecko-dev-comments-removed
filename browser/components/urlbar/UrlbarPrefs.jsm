@@ -92,9 +92,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["openintab", false],
 
   
-  ["openViewOnFocus", true],
-
-  
   
   
   ["restyleSearches", false],

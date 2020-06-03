@@ -7,6 +7,18 @@
 "use strict";
 
 add_task(async function test() {
+  await runTest();
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.suggest.topsites", false]],
+  });
+  info("Running the test with autoOpen disabled.");
+  await runTest();
+  await SpecialPowers.popPrefEnv();
+});
+
+async function runTest() {
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesUtils.history.clear();
   await PlacesTestUtils.addVisits([
@@ -43,10 +55,9 @@ add_task(async function test() {
   }
 
   await deleteInput();
-  if (!gURLBar.openViewOnFocus) {
-    gURLBar.view.close();
-  }
-});
+  
+  gURLBar.view.close();
+}
 
 async function checkResults() {
   Assert.equal(await UrlbarTestUtils.getResultCount(window), 2);
@@ -59,7 +70,7 @@ async function checkResults() {
 }
 
 async function deleteInput() {
-  if (gURLBar.openViewOnFocus) {
+  if (UrlbarPrefs.get("suggest.topsites")) {
     
     while (gURLBar.value.length) {
       EventUtils.synthesizeKey("KEY_Backspace");

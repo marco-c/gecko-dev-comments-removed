@@ -212,9 +212,8 @@ var tests = [
         gURLBar.select();
         EventUtils.sendString("*");
         EventUtils.synthesizeKey("KEY_Backspace");
-        if (gURLBar.openViewOnFocus) {
-          gURLBar.view.close();
-        }
+        
+        gURLBar.view.close();
 
         
         let notShowing = TestUtils.topicObserved(
