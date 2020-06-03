@@ -261,11 +261,8 @@ void nsRangeFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     return;
   }
 
-  
-  
-  
-  if (IsThemed(disp) && !PresContext()->Theme()->ThemeWantsButtonInnerFocusRing(
-                            disp->mAppearance)) {
+  if (IsThemed(disp) &&
+      PresContext()->Theme()->ThemeDrawsFocusForWidget(disp->mAppearance)) {
     return;  
   }
 

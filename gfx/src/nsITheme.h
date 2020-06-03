@@ -216,17 +216,6 @@ class nsITheme : public nsISupports {
   
 
 
-
-
-
-
-  virtual bool ThemeWantsButtonInnerFocusRing(StyleAppearance aAppearance) {
-    return !ThemeDrawsFocusForWidget(aAppearance);
-  }
-
-  
-
-
   virtual bool ThemeNeedsComboboxDropmarker() = 0;
 };
 

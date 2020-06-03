@@ -910,15 +910,7 @@ bool nsNativeBasicTheme::WidgetIsContainer(StyleAppearance aAppearance) {
 }
 
 bool nsNativeBasicTheme::ThemeDrawsFocusForWidget(StyleAppearance aAppearance) {
-  switch (aAppearance) {
-    
-    
-    case StyleAppearance::Checkbox:
-    case StyleAppearance::Radio:
-      return false;
-    default:
-      return true;
-  }
+  return true;
 }
 
 bool nsNativeBasicTheme::ThemeNeedsComboboxDropmarker() { return true; }
