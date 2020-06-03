@@ -236,6 +236,10 @@ class nsAttrValue {
   
   bool Equals(const nsAString& aValue, nsCaseTreatment aCaseSensitive) const;
   bool Equals(const nsAtom* aValue, nsCaseTreatment aCaseSensitive) const;
+  bool HasPrefix(const nsAString& aValue, nsCaseTreatment aCaseSensitive) const;
+  bool HasSuffix(const nsAString& aValue, nsCaseTreatment aCaseSensitive) const;
+  bool HasSubstring(const nsAString& aValue,
+                    nsCaseTreatment aCaseSensitive) const;
 
   
 
@@ -507,6 +511,10 @@ class nsAttrValue {
   
   int32_t EnumTableEntryToValue(const EnumTable* aEnumTable,
                                 const EnumTable* aTableEntry);
+
+  template <typename F>
+  bool SubstringCheck(const nsAString& aValue,
+                      nsCaseTreatment aCaseSensitive) const;
 
   static MiscContainer* AllocMiscContainer();
   static void DeallocMiscContainer(MiscContainer* aCont);
