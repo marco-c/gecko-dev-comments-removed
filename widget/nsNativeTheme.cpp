@@ -62,40 +62,16 @@ EventStates nsNativeTheme::GetContentState(nsIFrame* aFrame,
     }
   }
 
-  if (isXULCheckboxRadio && aAppearance == StyleAppearance::Radio) {
-    if (IsFocused(aFrame)) {
-      flags |= NS_EVENT_STATE_FOCUS;
-      nsPIDOMWindowOuter* window =
-          aFrame->GetContent()->OwnerDoc()->GetWindow();
-      if (window && window->ShouldShowFocusRing()) {
-        flags |= NS_EVENT_STATE_FOCUSRING;
-      }
+  if (isXULCheckboxRadio && aAppearance == StyleAppearance::Radio &&
+      IsFocused(aFrame)) {
+    flags |= NS_EVENT_STATE_FOCUS;
+    nsPIDOMWindowOuter* window =
+        aFrame->GetContent()->OwnerDoc()->GetWindow();
+    if (window && window->ShouldShowFocusRing()) {
+      flags |= NS_EVENT_STATE_FOCUSRING;
     }
   }
 
-  
-  
-  
-#if defined(XP_MACOSX)
-  
-  if (aAppearance == StyleAppearance::MenulistTextfield ||
-      aAppearance == StyleAppearance::NumberInput ||
-      aAppearance == StyleAppearance::Textfield ||
-      aAppearance == StyleAppearance::Textarea ||
-      aAppearance == StyleAppearance::Searchfield ||
-      aAppearance == StyleAppearance::Listbox) {
-    return flags;
-  }
-#endif
-#if defined(XP_WIN)
-  
-  if (aAppearance == StyleAppearance::Button) return flags;
-#endif
-#if defined(XP_MACOSX) || defined(XP_WIN)
-  if (!flags.HasState(NS_EVENT_STATE_FOCUSRING)) {
-    flags &= ~NS_EVENT_STATE_FOCUS;
-  }
-#endif
   return flags;
 }
 
