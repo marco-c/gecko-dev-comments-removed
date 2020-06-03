@@ -66,9 +66,6 @@ enum class TypeCode {
   AnyRef = 0x6f,  
 
   
-  NullRef = 0x6e,  
-
-  
   OptRef = 0x6c,
 
   

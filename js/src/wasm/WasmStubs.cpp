@@ -1108,7 +1108,6 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
             break;
           }
           case RefType::Func:
-          case RefType::Null:
           case RefType::TypeIndex: {
             
             MOZ_CRASH("unexpected argument type when calling from the jit");
@@ -1275,8 +1274,6 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
       case ValType::Ref: {
         switch (results[0].refTypeKind()) {
           case RefType::Func:
-            
-          case RefType::Null:
             
           case RefType::Any:
             
@@ -1574,8 +1571,6 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
       case wasm::ValType::Ref:
         switch (results[0].refTypeKind()) {
           case wasm::RefType::Func:
-            
-          case wasm::RefType::Null:
             
           case wasm::RefType::Any:
             
@@ -2107,15 +2102,6 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
                       funcImportIndex);
             GenPrintPtr(DebugChannel::Import, masm, ReturnReg);
             break;
-          case RefType::Null:
-            masm.call(SymbolicAddress::CallImport_NullRef);
-            masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg,
-                              throwLabel);
-            masm.loadPtr(argv, ReturnReg);
-            GenPrintf(DebugChannel::Import, masm, "wasm-import[%u]; returns ",
-                      funcImportIndex);
-            GenPrintPtr(DebugChannel::Import, masm, ReturnReg);
-            break;
           case RefType::TypeIndex:
             MOZ_CRASH("No Ref support here yet");
         }
@@ -2349,7 +2335,6 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
             GenPrintPtr(DebugChannel::Import, masm, ReturnReg);
             break;
           case RefType::Func:
-          case RefType::Null:
           case RefType::TypeIndex:
             MOZ_CRASH("typed reference returned by import (jit exit) NYI");
         }
@@ -2455,7 +2440,6 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
                                 throwLabel);
               break;
             case RefType::Func:
-            case RefType::Null:
             case RefType::TypeIndex:
               MOZ_CRASH("Unsupported convert type");
           }
