@@ -7091,7 +7091,7 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
 
 
 
-  bool IsLeafOf3DContext() {
+  bool IsLeafOf3DContext() const {
     return (IsTransformSeparator() ||
             (!mFrame->Extend3DContext() && Combines3DTransformWithAncestors()));
   }
@@ -7099,7 +7099,7 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
 
 
 
-  bool IsParticipating3DContext() {
+  bool IsParticipating3DContext() const {
     return mFrame->Extend3DContext() || Combines3DTransformWithAncestors();
   }
 
