@@ -8,7 +8,6 @@
 
 #include <utility>
 
-#include "js/Exception.h"  
 #include "jsapi.h"
 
 #include "nsCOMPtr.h"
@@ -1052,14 +1051,16 @@ class MOZ_STACK_CLASS FetchEventOp::AutoCancel {
     MOZ_ASSERT(!aRv.Failed());
 
     
-    JS::ExceptionStack exnStack(aCx);
-    if (!JS::StealPendingExceptionStack(aCx, &exnStack)) {
+    JS::Rooted<JS::Value> exn(aCx);
+    if (!JS_GetPendingException(aCx, &exn)) {
       return;
     }
 
+    JS_ClearPendingException(aCx);
+
     
-    JS::ErrorReportBuilder report(aCx);
-    if (!report.init(aCx, exnStack, JS::ErrorReportBuilder::WithSideEffects)) {
+    js::ErrorReport report(aCx);
+    if (!report.init(aCx, exn, js::ErrorReport::WithSideEffects)) {
       JS_ClearPendingException(aCx);
       return;
     }

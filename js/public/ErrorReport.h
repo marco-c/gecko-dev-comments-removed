@@ -28,8 +28,6 @@
 
 #include "js/AllocPolicy.h"        
 #include "js/CharacterEncoding.h"  
-#include "js/Exception.h"          
-#include "js/RootingAPI.h"         
 #include "js/UniquePtr.h"          
 #include "js/Vector.h"             
 
@@ -266,95 +264,5 @@ class JSErrorReport : public JSErrorBase {
  private:
   void freeLinebuf();
 };
-
-namespace JS {
-
-struct MOZ_STACK_CLASS JS_PUBLIC_API ErrorReportBuilder {
-  explicit ErrorReportBuilder(JSContext* cx);
-  ~ErrorReportBuilder();
-
-  enum SniffingBehavior { WithSideEffects, NoSideEffects };
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool init(JSContext* cx, const JS::ExceptionStack& exnStack,
-            SniffingBehavior sniffingBehavior);
-
-  JSErrorReport* report() const { return reportp; }
-
-  const JS::ConstUTF8CharsZ toStringResult() const { return toStringResult_; }
-
- private:
-  
-  
-  
-  
-  
-  
-  bool populateUncaughtExceptionReportUTF8(JSContext* cx,
-                                           JS::HandleObject stack, ...);
-  bool populateUncaughtExceptionReportUTF8VA(JSContext* cx,
-                                             JS::HandleObject stack,
-                                             va_list ap);
-
-  
-  void ReportAddonExceptionToTelemetry(JSContext* cx);
-
-  
-  JSErrorReport* reportp;
-
-  
-  JSErrorReport ownedReport;
-
-  
-  JS::RootedObject exnObject;
-
-  
-  JS::UniqueChars filename;
-
-  
-  
-  
-  JS::ConstUTF8CharsZ toStringResult_;
-  JS::UniqueChars toStringResultBytesStorage;
-};
-
-
-
-extern JS_PUBLIC_API void PrintError(JSContext* cx, FILE* file,
-                                     JSErrorReport* report,
-                                     bool reportWarnings);
-
-extern JS_PUBLIC_API void PrintError(JSContext* cx, FILE* file,
-                                     const JS::ErrorReportBuilder& builder,
-                                     bool reportWarnings);
-
-}  
 
 #endif 

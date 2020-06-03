@@ -18,13 +18,13 @@
 
 #include "js/CompilationAndEvaluation.h"  
 #include "js/CompileOptions.h"            
-#include "js/ErrorReport.h"               
 #include "js/Exception.h"                 
 #include "js/RootingAPI.h"                
 #include "js/SourceText.h"                
 #include "js/Value.h"                     
 #include "shell/jsshell.h"  
 #include "vm/Interpreter.h"
+#include "vm/JSContext.h"  
 #include "vm/TypedArrayObject.h"
 
 #include "vm/ArrayBufferObject-inl.h"
@@ -38,12 +38,13 @@ static void CrashOnPendingException() {
     JS::ExceptionStack exnStack(gCx);
     (void)JS::StealPendingExceptionStack(gCx, &exnStack);
 
-    JS::ErrorReportBuilder report(gCx);
-    if (!report.init(gCx, exnStack, JS::ErrorReportBuilder::WithSideEffects)) {
-      fprintf(stderr, "out of memory initializing JS::ErrorReportBuilder\n");
+    js::ErrorReport report(gCx);
+    if (!report.init(gCx, exnStack, js::ErrorReport::WithSideEffects)) {
+      fprintf(stderr, "out of memory initializing ErrorReport\n");
       fflush(stderr);
     } else {
-      JS::PrintError(gCx, stderr, report, js::shell::reportWarnings);
+      js::PrintError(gCx, stderr, report.toStringResult(), report.report(),
+                     js::shell::reportWarnings);
       if (!js::shell::PrintStackTrace(gCx, exnStack.stack())) {
         fputs("(Unable to print stack trace)\n", stderr);
       }
