@@ -488,6 +488,8 @@ class UrlbarInput {
 
     
     
+    
+    
 
     
     if (this._resultForCurrentValue) {
@@ -499,27 +501,22 @@ class UrlbarInput {
     
     
     
-
     
     
-    
-    
-    
-
     let browser = this.window.gBrowser.selectedBrowser;
     let lastLocationChange = browser.lastLocationChange;
-    UrlbarUtils.getShortcutOrURIAndPostData(url).then(data => {
+    UrlbarUtils.getHeuristicResultFor(url).then(newResult => {
       
       
       if (
         where != "current" ||
         browser.lastLocationChange == lastLocationChange
       ) {
-        openParams.postData = data.postData;
-        openParams.allowInheritPrincipal = data.mayInheritPrincipal;
-        this._loadURL(data.url, where, openParams, null, browser);
+        this.pickResult(newResult, event, null, browser);
       }
     });
+    
+    
   }
 
   handleRevert() {
@@ -551,7 +548,13 @@ class UrlbarInput {
 
 
 
-  pickResult(result, event, element = null) {
+
+  pickResult(
+    result,
+    event,
+    element = null,
+    browser = this.window.gBrowser.selectedBrowser
+  ) {
     let originalUntrimmedValue = this.untrimmedValue;
     let isCanonized = this.setValueFromResult(result, event);
     let where = this._whereToOpen(event);
@@ -572,7 +575,7 @@ class UrlbarInput {
         selIndex,
         selType: "canonized",
       });
-      this._loadURL(this.value, where, openParams);
+      this._loadURL(this.value, where, openParams, browser);
       return;
     }
 
@@ -714,12 +717,15 @@ class UrlbarInput {
 
         
         
-        if (!this.isPrivate && !result.payload.inPrivateWindow) {
+        
+        
+        let value = result.payload.suggestion || result.payload.query;
+        if (!this.isPrivate && !result.payload.inPrivateWindow && value) {
           FormHistory.update(
             {
               op: "bump",
               fieldname: this.formHistoryName,
-              value: result.payload.suggestion || result.payload.query,
+              value,
             },
             {
               handleError(error) {
@@ -804,10 +810,16 @@ class UrlbarInput {
       selType: this.controller.engagementEvent.typeFromElement(element),
     });
 
-    this._loadURL(url, where, openParams, {
-      source: result.source,
-      type: result.type,
-    });
+    this._loadURL(
+      url,
+      where,
+      openParams,
+      {
+        source: result.source,
+        type: result.type,
+      },
+      browser
+    );
   }
 
   
