@@ -802,6 +802,33 @@ impl<'a, Impl: 'a + SelectorImpl> SelectorIter<'a, Impl> {
             self.next_sequence().is_none()
     }
 
+    #[inline]
+    pub(crate) fn matches_for_stateless_pseudo_element(&mut self) -> bool {
+        let first = match self.next() {
+            Some(c) => c,
+            
+            
+            None => return true,
+        };
+        self.matches_for_stateless_pseudo_element_internal(first)
+    }
+
+    #[inline(never)]
+    fn matches_for_stateless_pseudo_element_internal(&mut self, first: &Component<Impl>) -> bool {
+        if !first.matches_for_stateless_pseudo_element() {
+            return false;
+        }
+        for component in self {
+            
+            
+            
+            if !component.matches_for_stateless_pseudo_element() {
+                return false;
+            }
+        }
+        true
+    }
+
     
     #[inline]
     pub fn selector_length(&self) -> usize {
@@ -1076,7 +1103,7 @@ impl<Impl: SelectorImpl> Component<Impl> {
     
     
     
-    pub(crate) fn matches_for_stateless_pseudo_element(&self) -> bool {
+    fn matches_for_stateless_pseudo_element(&self) -> bool {
         debug_assert!(
             self.maybe_allowed_after_pseudo_element(),
             "Someone messed up pseudo-element parsing: {:?}",

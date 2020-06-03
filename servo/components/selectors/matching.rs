@@ -322,13 +322,8 @@ where
             },
         }
 
-        for component in &mut iter {
-            
-            
-            
-            if !component.matches_for_stateless_pseudo_element() {
-                return false;
-            }
+        if !iter.matches_for_stateless_pseudo_element() {
+            return false;
         }
 
         
