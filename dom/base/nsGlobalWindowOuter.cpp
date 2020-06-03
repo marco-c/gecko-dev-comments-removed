@@ -2401,7 +2401,10 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
     newInnerWindow->mChromeEventHandler = mChromeEventHandler;
   }
 
-  if (!aState) {
+  if (!aState && reUseInnerWindow) {
+    
+    
+    
     
     
     
