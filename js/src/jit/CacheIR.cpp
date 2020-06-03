@@ -5149,13 +5149,43 @@ AttachDecision CallIRGenerator::tryAttachMathAbs(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
-AttachDecision CallIRGenerator::tryAttachMathRound(HandleFunction callee) {
+AttachDecision CallIRGenerator::tryAttachMathFloor(HandleFunction callee) {
   
-  if (argc_ != 1) {
+  if (argc_ != 1 || !args_[0].isNumber()) {
     return AttachDecision::NoAction;
   }
 
-  if (!args_[0].isNumber()) {
+  
+  double res = math_floor_impl(args_[0].toNumber());
+  int32_t unused;
+  bool resultIsInt32 = mozilla::NumberIsInt32(res, &unused);
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  ValOperandId argumentId =
+      writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  NumberOperandId numberId = writer.guardIsNumber(argumentId);
+
+  if (resultIsInt32) {
+    writer.mathFloorToInt32Result(numberId);
+  } else {
+    writer.mathFunctionNumberResult(numberId, UnaryMathFunction::Floor);
+  }
+
+  writer.typeMonitorResult();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
+
+  trackAttached("MathFloor");
+  return AttachDecision::Attach;
+}
+
+AttachDecision CallIRGenerator::tryAttachMathRound(HandleFunction callee) {
+  
+  if (argc_ != 1 || !args_[0].isNumber()) {
     return AttachDecision::NoAction;
   }
 
@@ -5423,6 +5453,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
     
     case InlinableNative::MathAbs:
       return tryAttachMathAbs(callee);
+    case InlinableNative::MathFloor:
+      return tryAttachMathFloor(callee);
     case InlinableNative::MathRound:
       return tryAttachMathRound(callee);
     case InlinableNative::MathSqrt:
