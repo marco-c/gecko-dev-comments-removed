@@ -961,6 +961,7 @@ void RegExpShared::traceChildren(JSTracer* trc) {
     for (auto& comp : compilationArray) {
       TraceNullableEdge(trc, &comp.jitCode, "RegExpShared code");
     }
+    TraceNullableEdge(trc, &groupsTemplate_, "RegExpShared groups template");
   }
 #else
   for (auto& comp : compilationArray) {
@@ -985,6 +986,13 @@ void RegExpShared::finalize(JSFreeOp* fop) {
       fop->free_(this, comp.byteCode, length, MemoryUse::RegExpSharedBytecode);
     }
   }
+#ifdef ENABLE_NEW_REGEXP
+  if (namedCaptureIndices_) {
+    size_t length = numNamedCaptures() * sizeof(uint32_t);
+    fop->free_(this, namedCaptureIndices_, length,
+               MemoryUse::RegExpSharedNamedCaptureData);
+  }
+#endif
   tables.~JitCodeTables();
 }
 
@@ -1124,6 +1132,66 @@ void RegExpShared::useRegExpMatch(size_t pairCount) {
   kind_ = RegExpShared::Kind::RegExp;
   pairCount_ = pairCount;
   ticks_ = jit::JitOptions.regexpWarmUpThreshold;
+}
+
+
+bool RegExpShared::initializeNamedCaptures(JSContext* cx, HandleRegExpShared re,
+                                           HandleNativeObject namedCaptures) {
+  MOZ_ASSERT(re->kind() == RegExpShared::Kind::RegExp);
+  MOZ_ASSERT(!re->groupsTemplate_);
+  MOZ_ASSERT(!re->namedCaptureIndices_);
+
+  
+  
+  
+  
+  
+  uint32_t numNamedCaptures = namedCaptures->getDenseInitializedLength() / 2;
+
+  
+  RootedPlainObject templateObject(
+      cx, NewObjectWithGivenProto<PlainObject>(cx, nullptr));
+  if (!templateObject) {
+    return false;
+  }
+
+  
+  Rooted<TaggedProto> proto(cx, templateObject->taggedProto());
+  ObjectGroup* group = ObjectGroupRealm::makeGroup(
+      cx, templateObject->realm(), templateObject->getClass(), proto);
+  if (!group) {
+    return false;
+  }
+  templateObject->setGroup(group);
+
+  
+  RootedValue dummyString(cx, StringValue(cx->runtime()->emptyString));
+  for (uint32_t i = 0; i < numNamedCaptures; i++) {
+    RootedString name(cx, namedCaptures->getDenseElement(i * 2).toString());
+    RootedId id(cx, NameToId(name->asAtom().asPropertyName()));
+    if (!NativeDefineDataProperty(cx, templateObject, id, dummyString,
+                                  JSPROP_ENUMERATE)) {
+      return false;
+    }
+  }
+
+  
+  uint32_t arraySize = numNamedCaptures * sizeof(uint32_t);
+  uint32_t* captureIndices = static_cast<uint32_t*>(js_malloc(arraySize));
+  if (!captureIndices) {
+    return false;
+  }
+
+  
+  for (uint32_t i = 0; i < numNamedCaptures; i++) {
+    captureIndices[i] = namedCaptures->getDenseElement(i * 2 + 1).toInt32();
+  }
+
+  re->numNamedCaptures_ = numNamedCaptures;
+  re->groupsTemplate_ = templateObject;
+  re->namedCaptureIndices_ = captureIndices;
+  js::AddCellMemory(re, arraySize, MemoryUse::RegExpSharedNamedCaptureData);
+  return true;
 }
 
 void RegExpShared::tierUpTick() {
