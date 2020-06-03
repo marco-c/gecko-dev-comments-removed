@@ -22,8 +22,8 @@ function mainThreadBusy(duration) {
 
 
 
-function verifyEvent(entry, eventType, targetId, isFirst=false, minDuration=104) {
-  assert_true(entry.cancelable);
+function verifyEvent(entry, eventType, targetId, isFirst=false, minDuration=104, notCancelable=false) {
+  assert_equals(entry.cancelable, !notCancelable, 'cancelable property');
   assert_equals(entry.name, eventType);
   assert_equals(entry.entryType, 'event');
   assert_greater_than_equal(entry.duration, minDuration,
@@ -122,51 +122,119 @@ async function testDuration(t, id, numEntries, dur, fastDur, slowDur) {
   return Promise.all([observerPromise, clicksPromise]);
 }
 
-function applyAction(actions, eventType, target) {
+
+
+
+function applyAction(eventType, target) {
+  const actions = new test_driver.Actions();
   if (eventType === 'auxclick') {
     actions.pointerMove(0, 0, {origin: target})
     .pointerDown({button: actions.ButtonType.MIDDLE})
     .pointerUp({button: actions.ButtonType.MIDDLE});
+  } else if (eventType === 'click' || eventType === 'mousedown' || eventType === 'mouseup'
+      || eventType === 'pointerdown' || eventType === 'pointerup'
+      || eventType === 'touchstart' || eventType === 'touchend') {
+    actions.pointerMove(0, 0, {origin: target})
+    .pointerDown()
+    .pointerUp();
+  } else if (eventType === 'contextmenu') {
+    actions.pointerMove(0, 0, {origin: target})
+    .pointerDown({button: actions.ButtonType.RIGHT})
+    .pointerUp({button: actions.ButtonType.RIGHT});
+  } else if (eventType === 'dblclick') {
+    actions.pointerMove(0, 0, {origin: target})
+    .pointerDown()
+    .pointerUp()
+    .pointerDown()
+    .pointerUp()
+    
+    .pointerMove(0, 0)
+    .pointerDown()
+    .pointerUp();
+  } else if (eventType === 'mouseenter' || eventType === 'mouseover'
+      || eventType === 'pointerenter' || eventType === 'pointerover') {
+    
+    actions.pointerMove(0, 0)
+    .pointerMove(0, 0, {origin: target});
+  } else if (eventType === 'mouseleave' || eventType === 'mouseout'
+      || eventType === 'pointerleave' || eventType === 'pointerout') {
+    actions.pointerMove(0, 0, {origin: target})
+    .pointerMove(0, 0);
   } else {
     assert_unreached('The event type ' + eventType + ' is not supported.');
   }
+  return actions.send();
+}
+
+function requiresListener(eventType) {
+  return ['mouseenter', 'mouseleave', 'pointerdown', 'pointerenter', 'pointerleave', 'pointerout', 'pointerover', 'pointerup'].includes(eventType);
+}
+
+function notCancelable(eventType) {
+  return ['mouseenter', 'mouseleave', 'pointerenter', 'pointerleave'].includes(eventType);
 }
 
 
 
-async function testEventType(t, eventType) {
+
+async function testEventType(t, eventType, looseCount=false) {
   assert_implements(window.EventCounts, "Event Counts isn't supported");
   assert_equals(performance.eventCounts.get(eventType), 0);
   const target = document.getElementById('target');
-  const actions = new test_driver.Actions();
+  if (requiresListener(eventType)) {
+    target.addEventListener(eventType, () =>{});
+  }
+  assert_equals(performance.eventCounts.get(eventType), 0, 'No events yet.');
   
-  applyAction(actions, eventType, target);
-  applyAction(actions, eventType, target);
-  await actions.send();
-  assert_equals(performance.eventCounts.get('auxclick'), 2);
+  await applyAction(eventType, target);
+  await applyAction(eventType, target);
+  if (looseCount) {
+    assert_greater_than_equal(performance.eventCounts.get(eventType), 2,
+        `Should have at least 2 ${eventType} events`)
+  } else {
+    assert_equals(performance.eventCounts.get(eventType), 2, `Should have 2 ${eventType} events`);
+  }
   
   const durationThreshold = 16;
   
   target.addEventListener(eventType, () => {
     mainThreadBusy(durationThreshold + 4);
   });
-  return new Promise(async resolve => {
+  const observerPromise = new Promise(async resolve => {
     new PerformanceObserver(t.step_func(entryList => {
       let eventTypeEntries = entryList.getEntriesByName(eventType);
       if (eventTypeEntries.length === 0)
         return;
 
-      assert_equals(eventTypeEntries.length, 1);
-      verifyEvent(eventTypeEntries[0],
+      let entry = null;
+      if (!looseCount) {
+        entry = eventTypeEntries[0];
+        assert_equals(eventTypeEntries.length, 1);
+      } else {
+        
+        eventTypeEntries.forEach(e => {
+          if (e.target === document.getElementById('target'))
+            entry = e;
+        });
+        if (!entry)
+          return;
+      }
+      verifyEvent(entry,
                   eventType,
                   'target',
                   false ,
-                  durationThreshold);
-      assert_equals(performance.eventCounts.get(eventType), 3);
+                  durationThreshold,
+                  notCancelable(eventType));
+      if (looseCount) {
+        assert_greater_than_equal(performance.eventCounts.get(eventType), 3,
+            `Should have at least 3 ${eventType} events`)
+      } else {
+        assert_equals(performance.eventCounts.get(eventType), 3, `Should have 3 ${eventType} events`);
+      }
       resolve();
     })).observe({type: 'event', durationThreshold: durationThreshold});
-    
-    applyAction(actions, eventType, target);
-    actions.send();
   });
+  
+  let actionPromise = applyAction(eventType, target);
+  return Promise.all([actionPromise, observerPromise]);
 }
