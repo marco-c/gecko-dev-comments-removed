@@ -596,7 +596,8 @@ class FunctionBox : public SharedContext {
     
     
     
-    extent.sourceEnd = extent.toStringEnd = end;
+    extent.sourceEnd = end;
+    extent.toStringEnd = end;
   }
 
   void setArgCount(uint16_t args) { nargs_ = args; }

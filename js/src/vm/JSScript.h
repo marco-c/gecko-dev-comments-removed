@@ -1816,25 +1816,16 @@ class BaseScript : public gc::TenuredCell {
                                                 js::StringBuffer& buf);
 
 #if defined(JS_BUILD_BINAST)
-  
-  
-  
-  
-  
-  
-  void setPositions(uint32_t sourceStart, uint32_t sourceEnd,
-                    uint32_t toStringStart, uint32_t toStringEnd) {
-    MOZ_ASSERT(toStringStart <= sourceStart);
-    MOZ_ASSERT(sourceStart <= sourceEnd);
-    MOZ_ASSERT(sourceEnd <= toStringEnd);
-
-    extent_.sourceStart = sourceStart;
-    extent_.sourceEnd = sourceEnd;
-    extent_.toStringStart = toStringStart;
-    extent_.toStringEnd = toStringEnd;
+  void setStart(uint32_t offset, uint32_t line, uint32_t column) {
+    extent_.sourceStart = offset;
+    extent_.lineno = line;
+    extent_.column = column;
   }
 
-  void setColumn(uint32_t column) { extent_.column = column; }
+  void setEnd(uint32_t end) {
+    extent_.sourceEnd = end;
+    extent_.toStringEnd = end;
+  }
 #endif
 
   void setToStringEnd(uint32_t toStringEnd) {
