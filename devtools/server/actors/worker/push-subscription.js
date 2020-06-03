@@ -19,11 +19,15 @@ const PushSubscriptionActor = protocol.ActorClassWithSpec(
 
     form() {
       const subscription = this._subscription;
+
+      
+      
+      
+      
+      
       return {
         actor: this.actorID,
         endpoint: subscription.endpoint,
-        pushCount: subscription.pushCount,
-        lastPush: subscription.lastPush,
         quota: subscription.quota,
       };
     },
