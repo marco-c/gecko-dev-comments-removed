@@ -289,6 +289,20 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+        public @NonNull Builder loginAutofillEnabled(final boolean enabled) {
+            getSettings().setLoginAutofillEnabled(enabled);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+
+
 
 
 
@@ -483,6 +497,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             "browser.ui.zoom.force-user-scalable", false);
      final Pref<Boolean> mUseMultiprocess = new Pref<>(
             "browser.tabs.remote.autostart", true);
+     final Pref<Boolean> mAutofillLogins = new Pref<Boolean>(
+        "signon.autofillForms", true);
 
      boolean mDebugPause;
      boolean mUseMaxScreenDepth;
@@ -1084,6 +1100,30 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
     public @NonNull GeckoRuntimeSettings setForceUserScalableEnabled(final boolean flag) {
         mForceUserScalable.commit(flag);
+        return this;
+    }
+
+    
+
+
+
+
+    public boolean getLoginAutofillEnabled() {
+        return mAutofillLogins.get();
+    }
+
+    
+
+
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setLoginAutofillEnabled(
+            final boolean enabled) {
+        mAutofillLogins.commit(enabled);
         return this;
     }
 
