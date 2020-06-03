@@ -240,24 +240,33 @@ add_task(async function testUserInteractionHeuristic() {
         ifr.contentWindow.postMessage({ callback: msg.blockingCallback }, "*");
       });
 
-      let windowClosed = new content.Promise(resolve => {
-        Services.ww.registerNotification(function notification(
-          aSubject,
-          aTopic,
-          aData
-        ) {
-          if (aTopic == "domwindowclosed") {
-            Services.ww.unregisterNotification(notification);
-            resolve();
-          }
-        });
-      });
-
       info("Opening a window from the iframe.");
-      ifr.contentWindow.open(obj.popup);
+      await SpecialPowers.spawn(ifr, [obj.popup], async popup => {
+        let windowClosed = new content.Promise(resolve => {
+          Services.ww.registerNotification(function notification(
+            aSubject,
+            aTopic,
+            aData
+          ) {
+            
+            
+            
+            if (
+              aTopic == "domwindowclosed" &&
+              aSubject.document.documentURI ==
+                "https://tracking.example.org/browser/toolkit/components/antitracking/test/browser/3rdPartyOpenUI.html"
+            ) {
+              Services.ww.unregisterNotification(notification);
+              resolve();
+            }
+          });
+        });
 
-      info("Let's wait for the window to be closed");
-      await windowClosed;
+        content.open(popup);
+
+        info("Let's wait for the window to be closed");
+        await windowClosed;
+      });
 
       info("The 3rd party content should have access to first party storage.");
       await new content.Promise(resolve => {
@@ -343,24 +352,32 @@ add_task(async function testUserInteractionHeuristic() {
         ifr.contentWindow.postMessage({ callback: msg.blockingCallback }, "*");
       });
 
-      let windowClosed = new content.Promise(resolve => {
-        Services.ww.registerNotification(function notification(
-          aSubject,
-          aTopic,
-          aData
-        ) {
-          if (aTopic == "domwindowclosed") {
-            Services.ww.unregisterNotification(notification);
-            resolve();
-          }
-        });
-      });
-
       info("Opening a window from the iframe.");
-      ifr.contentWindow.open(obj.popup);
+      await SpecialPowers.spawn(ifr, [obj.popup], async popup => {
+        let windowClosed = new content.Promise(resolve => {
+          Services.ww.registerNotification(function notification(
+            aSubject,
+            aTopic,
+            aData
+          ) {
+            
+            
+            if (
+              aTopic == "domwindowclosed" &&
+              aSubject.document.documentURI ==
+                "https://tracking.example.org/browser/toolkit/components/antitracking/test/browser/3rdPartyOpenUI.html"
+            ) {
+              Services.ww.unregisterNotification(notification);
+              resolve();
+            }
+          });
+        });
 
-      info("Let's wait for the window to be closed");
-      await windowClosed;
+        content.open(popup);
+
+        info("Let's wait for the window to be closed");
+        await windowClosed;
+      });
 
       info("The 3rd party content should have access to first party storage.");
       await new content.Promise(resolve => {
