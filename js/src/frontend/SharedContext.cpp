@@ -381,6 +381,18 @@ void FunctionBox::finish() {
       script->setFieldInitializers(*fieldInitializers);
     }
   }
+
+  
+  
+  if (function()->displayAtom() == nullptr) {
+    if (hasInferredName()) {
+      function()->setInferredName(atom_);
+    }
+
+    if (hasGuessedAtom()) {
+      function()->setGuessedAtom(atom_);
+    }
+  }
 }
 
 

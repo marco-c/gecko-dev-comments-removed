@@ -528,16 +528,10 @@ class FunctionBox : public SharedContext {
   void setInferredName(JSAtom* atom) {
     atom_ = atom;
     flags_.setInferredName();
-    if (hasFunction()) {
-      function()->setInferredName(atom);
-    }
   }
   void setGuessedAtom(JSAtom* atom) {
     atom_ = atom;
     flags_.setGuessedAtom();
-    if (hasFunction()) {
-      function()->setGuessedAtom(atom);
-    }
   }
 
   void setAlwaysNeedsArgsObj() {
@@ -611,12 +605,7 @@ class FunctionBox : public SharedContext {
   size_t nargs() { return nargs_; }
 
   
-  
-  void synchronizeArgCount() {
-    if (hasFunction()) {
-      function()->setArgCount(nargs_);
-    }
-  }
+  void synchronizeArgCount() { function()->setArgCount(nargs_); }
 
   bool setTypeForScriptedFunction(JSContext* cx) {
     RootedFunction fun(cx, function());
