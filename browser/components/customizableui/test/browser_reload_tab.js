@@ -4,12 +4,12 @@
 
 
 add_task(async function reload_tab() {
-  let customizationContainer = document.getElementById(
-    "customization-container"
-  );
   let initialTab = gBrowser.selectedTab;
   let customizeTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   gCustomizeMode.setTab(customizeTab);
+  let customizationContainer = document.getElementById(
+    "customization-container"
+  );
 
   is(
     customizationContainer.clientWidth,
