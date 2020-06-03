@@ -699,6 +699,13 @@ static uint32_t GetSpoofedVersion() {
   
   
   
+
+  if (firefoxVersion < 78) {
+    
+    
+    return 68;
+  }
+
   uint32_t spoofedVersion =
       firefoxVersion - ((firefoxVersion - kKnownEsrVersion) % 13);
 
