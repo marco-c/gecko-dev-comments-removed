@@ -244,7 +244,10 @@ var TabModalPrompt = class {
 
     
     
-    if (!args.showAlertOrigin) {
+    if (
+      args.modalType == Ci.nsIPrompt.MODAL_TYPE_CONTENT &&
+      args.showCallerOrigin
+    ) {
       this.ui.infoTitle.removeAttribute("hidden");
     }
 
