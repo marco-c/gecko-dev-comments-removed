@@ -171,6 +171,17 @@ nsCString ImageCacheKey::GetIsolationKey(Document* aDocument, nsIURI* aURI) {
   }
 
   
+  if (StaticPrefs::privacy_partition_network_state()) {
+    OriginAttributes oa;
+    StoragePrincipalHelper::GetOriginAttributesForNetworkState(aDocument, oa);
+
+    nsAutoCString suffix;
+    oa.CreateSuffix(suffix);
+
+    return std::move(suffix);
+  }
+
+  
   
   if (nsContentUtils::IsThirdPartyWindowOrChannel(aDocument->GetInnerWindow(),
                                                   nullptr, nullptr)) {
