@@ -784,6 +784,12 @@ class MDefinition : public MNode {
   
   MDefinition* maybeSingleDefUse() const;
 
+  
+  
+  
+  
+  MDefinition* maybeMostRecentDefUse() const;
+
   void addUse(MUse* use) {
     MOZ_ASSERT(use->producer() == this);
     uses_.pushFront(use);

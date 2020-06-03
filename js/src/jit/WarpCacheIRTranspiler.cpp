@@ -1157,19 +1157,61 @@ bool WarpCacheIRTranspiler::emitTypeMonitorResult() {
 
 bool WarpCacheIRTranspiler::emitReturnFromIC() { return true; }
 
+static void MaybeSetImplicitlyUsed(uint32_t numInstructionIdsBefore,
+                                   MDefinition* input) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (input->isImplicitlyUsed()) {
+    
+    return;
+  }
+
+  
+  
+  MDefinition* inputUse = input->maybeMostRecentDefUse();
+  if (inputUse && inputUse->id() >= numInstructionIdsBefore) {
+    return;
+  }
+
+  
+  input->setImplicitlyUsed();
+}
+
 bool jit::TranspileCacheIRToMIR(MIRGenerator& mirGen, BytecodeLocation loc,
                                 MBasicBlock* current,
                                 const WarpCacheIR* snapshot,
                                 const MDefinitionStackVector& inputs) {
+  uint32_t numInstructionIdsBefore = mirGen.graph().getNumInstructionIds();
+
   WarpCacheIRTranspiler transpiler(mirGen, loc, current, nullptr, snapshot);
-  return transpiler.transpile(inputs);
+  if (!transpiler.transpile(inputs)) {
+    return false;
+  }
+
+  for (MDefinition* input : inputs) {
+    MaybeSetImplicitlyUsed(numInstructionIdsBefore, input);
+  }
+
+  return true;
 }
 
 bool jit::TranspileCacheIRToMIR(MIRGenerator& mirGen, BytecodeLocation loc,
                                 MBasicBlock* current,
                                 const WarpCacheIR* snapshot,
                                 CallInfo& callInfo) {
-  WarpCacheIRTranspiler transpiler(mirGen, loc, current, &callInfo, snapshot);
+  uint32_t numInstructionIdsBefore = mirGen.graph().getNumInstructionIds();
 
   
   auto* argc = MConstant::New(mirGen.alloc(), Int32Value(callInfo.argc()));
@@ -1179,5 +1221,15 @@ bool jit::TranspileCacheIRToMIR(MIRGenerator& mirGen, BytecodeLocation loc,
   if (!inputs.append(argc)) {
     return false;
   }
-  return transpiler.transpile(inputs);
+
+  WarpCacheIRTranspiler transpiler(mirGen, loc, current, &callInfo, snapshot);
+  if (!transpiler.transpile(inputs)) {
+    return false;
+  }
+
+  auto maybeSetFlag = [numInstructionIdsBefore](MDefinition* def) {
+    MaybeSetImplicitlyUsed(numInstructionIdsBefore, def);
+  };
+  callInfo.forEachCallOperand(maybeSetFlag);
+  return true;
 }
