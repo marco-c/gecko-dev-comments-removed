@@ -366,7 +366,7 @@ static void SetupABIArguments(MacroAssembler& masm, const FuncExport& fe,
           case MIRType::Float32:
             masm.loadFloat32(src, iter->fpu());
             break;
-          case MIRType::Int8x16:
+          case MIRType::Simd128:
 #ifdef ENABLE_WASM_SIMD
             
             
@@ -413,7 +413,7 @@ static void SetupABIArguments(MacroAssembler& masm, const FuncExport& fe,
                                                  iter->offsetFromArgBase()));
             break;
           }
-          case MIRType::Int8x16: {
+          case MIRType::Simd128: {
 #ifdef ENABLE_WASM_SIMD
             
             
@@ -1642,7 +1642,7 @@ static void StackCopy(MacroAssembler& masm, MIRType type, Register scratch,
     GenPrintF64(DebugChannel::Import, masm, fpscratch);
     masm.storeDouble(fpscratch, dst);
 #ifdef ENABLE_WASM_SIMD
-  } else if (type == MIRType::Int8x16) {
+  } else if (type == MIRType::Simd128) {
     ScratchSimd128Scope fpscratch(masm);
     masm.loadUnalignedSimd128(src, fpscratch);
     GenPrintV128(DebugChannel::Import, masm, fpscratch);
@@ -1762,7 +1762,7 @@ static void FillArgumentArrayForExit(
             GenPrintF32(DebugChannel::Import, masm, srcReg);
             masm.storeFloat32(srcReg, dst);
           }
-        } else if (type == MIRType::Int8x16) {
+        } else if (type == MIRType::Simd128) {
           
           
           
@@ -1817,7 +1817,7 @@ static void FillArgumentArrayForExit(
             masm.canonicalizeDouble(dscratch);
             GenPrintF64(DebugChannel::Import, masm, dscratch);
             masm.boxDouble(dscratch, dst);
-          } else if (type == MIRType::Int8x16) {
+          } else if (type == MIRType::Simd128) {
             
             
             
