@@ -248,7 +248,6 @@ option(env='PYTHON3', nargs=1, help='Python 3 interpreter (3.5 or later)')
 @imports(_from='mozbuild.configure.util', _import='LineIO')
 @imports(_from='mozbuild.virtualenv', _import='VirtualenvManager')
 @imports(_from='mozbuild.virtualenv', _import='verify_python_version')
-@imports(_from='mozbuild.virtualenv', _import='PY3')
 @imports(_from='mozbuild.pythonutil', _import='find_python3_executable')
 @imports(_from='mozbuild.pythonutil', _import='python_executable_version')
 @imports(_from='six', _import='ensure_text')
@@ -361,30 +360,23 @@ def virtualenv_python3(env_python, build_env, mozconfig, help):
 
     python = normsep(manager.python_path)
 
-    
-    
-    
-    
-    
-    
-    if PY3:
-        if not normsep(sys.executable).startswith(normsep(virtualenvs_root)):
-            log.debug("python3: executing as %s, should be running as %s" % (
-                sys.executable, manager.python_path))
-            log.info('Re-executing in the virtualenv')
-            if env_python:
-                del os.environ['PYTHON3']
-            
-            
-            
-            os.environ['PYTHONEXECUTABLE'] = python
-            
-            
-            sys.exit(subprocess.call([python] + sys.argv))
-
+    if not normsep(sys.executable).startswith(normsep(virtualenvs_root)):
+        log.debug("python3: executing as %s, should be running as %s" % (
+            sys.executable, manager.python_path))
+        log.info('Re-executing in the virtualenv')
+        if env_python:
+            del os.environ['PYTHON3']
         
-        if not distutils.sysconfig.get_python_lib():
-            die('Could not determine python site packages directory')
+        
+        
+        os.environ['PYTHONEXECUTABLE'] = python
+        
+        
+        sys.exit(subprocess.call([python] + sys.argv))
+
+    
+    if not distutils.sysconfig.get_python_lib():
+        die('Could not determine python site packages directory')
 
     str_version = '.'.join(str(v) for v in version)
 
