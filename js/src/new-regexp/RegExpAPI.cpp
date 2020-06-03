@@ -253,14 +253,6 @@ bool CheckPatternSyntax(JSContext* cx, TokenStreamAnyChars& ts,
     ReportSyntaxError(ts, result, chars.begin().get(), chars.length());
     return false;
   }
-  if (!result.capture_name_map.is_null()) {
-    
-    
-    
-    result.error = RegExpError::kInvalidCaptureGroupName;
-    ReportSyntaxError(ts, result, chars.begin().get(), chars.length());
-    return false;
-  }
   return true;
 }
 
@@ -269,14 +261,6 @@ bool CheckPatternSyntax(JSContext* cx, TokenStreamAnyChars& ts,
   FlatStringReader reader(cx, pattern);
   RegExpCompileData result;
   if (!CheckPatternSyntaxImpl(cx, &reader, flags, &result)) {
-    ReportSyntaxError(ts, result, pattern);
-    return false;
-  }
-  if (!result.capture_name_map.is_null()) {
-    
-    
-    
-    result.error = RegExpError::kInvalidCaptureGroupName;
     ReportSyntaxError(ts, result, pattern);
     return false;
   }
