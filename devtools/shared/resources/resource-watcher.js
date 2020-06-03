@@ -32,12 +32,9 @@ class ResourceWatcher {
     this._availableListeners = new EventEmitter();
     this._destroyedListeners = new EventEmitter();
 
+    
+    this._cache = [];
     this._listenerCount = new Map();
-
-    
-    
-    
-    this._previouslyListenedTypes = new Set();
   }
 
   get contentToolboxFissionPrefValue() {
@@ -69,7 +66,7 @@ class ResourceWatcher {
 
 
   async watchResources(resources, options) {
-    const { ignoreExistingResources = false } = options;
+    const { onAvailable, ignoreExistingResources = false } = options;
 
     
     
@@ -79,15 +76,12 @@ class ResourceWatcher {
     await this._watchAllTargets();
 
     for (const resource of resources) {
-      if (ignoreExistingResources) {
-        
-        
-        await this._startListening(resource);
-        this._registerListeners(resource, options);
-      } else {
-        this._registerListeners(resource, options);
-        await this._startListening(resource);
-      }
+      await this._startListening(resource);
+      this._registerListeners(resource, options);
+    }
+
+    if (!ignoreExistingResources) {
+      await this._forwardCachedResources(resources, onAvailable);
     }
   }
 
@@ -168,7 +162,13 @@ class ResourceWatcher {
 
 
 
-  async _onTargetAvailable({ targetFront }) {
+  async _onTargetAvailable({ targetFront, isTargetSwitching }) {
+    if (isTargetSwitching) {
+      this._onWillNavigate(targetFront);
+    }
+
+    targetFront.on("will-navigate", () => this._onWillNavigate(targetFront));
+
     
     for (const resourceType of Object.values(ResourceWatcher.TYPES)) {
       
@@ -218,6 +218,8 @@ class ResourceWatcher {
         targetFront,
         resource,
       });
+
+      this._cache.push(resource);
     }
   }
 
@@ -228,11 +230,27 @@ class ResourceWatcher {
 
 
   _onResourceDestroyed(targetFront, resourceType, resource) {
+    const index = this._cache.indexOf(resource);
+    if (index >= 0) {
+      this._cache.splice(index, 1);
+    }
+
     this._destroyedListeners.emit(resourceType, {
       resourceType,
       targetFront,
       resource,
     });
+  }
+
+  _onWillNavigate(targetFront) {
+    if (targetFront.isTopLevel) {
+      this._cache = [];
+      return;
+    }
+
+    this._cache = this._cache.filter(
+      cachedResource => cachedResource.targetFront !== targetFront
+    );
   }
 
   
@@ -245,41 +263,13 @@ class ResourceWatcher {
 
 
   async _startListening(resourceType) {
-    const isDocumentEvent =
-      resourceType === ResourceWatcher.TYPES.DOCUMENT_EVENT;
-
     let listeners = this._listenerCount.get(resourceType) || 0;
     listeners++;
-    if (listeners > 1) {
-      
-      
-      if (isDocumentEvent) {
-        
-        
-        
-        this._listenerCount.set(resourceType, listeners);
-        return;
-      }
-
-      throw new Error(
-        `The ResourceWatcher is already listening to "${resourceType}", ` +
-          "the client should call `watchResources` only once per resource type."
-      );
-    }
-
-    const wasListening = this._previouslyListenedTypes.has(resourceType);
-    if (wasListening && !isDocumentEvent) {
-      
-      
-      
-      throw new Error(
-        `The ResourceWatcher previously watched "${resourceType}" ` +
-          "and doesn't support watching again on a previous resource."
-      );
-    }
-
     this._listenerCount.set(resourceType, listeners);
-    this._previouslyListenedTypes.add(resourceType);
+
+    if (listeners > 1) {
+      return;
+    }
 
     
     
@@ -290,6 +280,18 @@ class ResourceWatcher {
       promises.push(this._watchResourcesForTarget(target, resourceType));
     }
     await Promise.all(promises);
+  }
+
+  async _forwardCachedResources(resourceTypes, onAvailable) {
+    for (const resource of this._cache) {
+      if (resourceTypes.includes(resource.resourceType)) {
+        await onAvailable({
+          resourceType: resource.resourceType,
+          targetFront: resource.targetFront,
+          resource,
+        });
+      }
+    }
   }
 
   
@@ -322,6 +324,11 @@ class ResourceWatcher {
     if (listeners > 0) {
       return;
     }
+
+    
+    this._cache = this._cache.filter(
+      cachedResource => cachedResource.resourceType !== resourceType
+    );
 
     
     
