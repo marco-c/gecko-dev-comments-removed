@@ -11,7 +11,8 @@
 #include "LayersLogging.h"   
 #include "mozilla/gfx/2D.h"  
 #include "mozilla/gfx/gfxVars.h"
-#include "mozilla/ipc/Shmem.h"                             
+#include "mozilla/ipc/Shmem.h"  
+#include "mozilla/layers/AsyncImagePipelineManager.h"
 #include "mozilla/layers/CompositableTransactionParent.h"  
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/Compositor.h"         
@@ -472,10 +473,21 @@ void TextureHost::DestroyRenderTexture(
 }
 
 void TextureHost::EnsureRenderTexture(
-    const wr::ExternalImageId& aExternalImageId) {
-  MOZ_ASSERT(mExternalImageId.isNothing());
-  mExternalImageId = Some(aExternalImageId);
-  CreateRenderTexture(aExternalImageId);
+    const wr::MaybeExternalImageId& aExternalImageId) {
+  if (aExternalImageId.isNothing()) {
+    
+    if (mExternalImageId.isSome()) {
+      
+      return;
+    }
+    mExternalImageId =
+        Some(AsyncImagePipelineManager::GetNextExternalImageId());
+  } else {
+    
+    MOZ_ASSERT(mExternalImageId.isNothing());
+    mExternalImageId = aExternalImageId;
+  }
+  CreateRenderTexture(mExternalImageId.ref());
 }
 
 void TextureHost::PrintInfo(std::stringstream& aStream, const char* aPrefix) {

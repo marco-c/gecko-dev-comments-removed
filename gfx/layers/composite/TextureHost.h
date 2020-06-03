@@ -648,7 +648,7 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
         "No CreateRenderTexture() implementation for this TextureHost type.");
   }
 
-  void EnsureRenderTexture(const wr::ExternalImageId& aExternalImageId);
+  void EnsureRenderTexture(const wr::MaybeExternalImageId& aExternalImageId);
 
   
   
