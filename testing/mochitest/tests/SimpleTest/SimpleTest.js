@@ -965,11 +965,7 @@ SimpleTest.waitForFocus = function(callback, targetWindow, expectBlankPage) {
       }
 
       
-      if (isChildProcess) {
-        focused = focusedWindow() == childDesiredWindow;
-      } else {
-        focused = SpecialPowers.compare(focusedWindow(), childDesiredWindow);
-      }
+      focused = focusedWindow() == childDesiredWindow;
       if (!focused) {
         info("must wait for focus");
         childDesiredWindow.addEventListener("focus", focusedOrLoaded, true);
