@@ -1328,6 +1328,8 @@ pref("trailhead.firstrun.branches", "join-dynamic");
 
 pref("browser.aboutwelcome.enabled", true);
 
+pref("browser.aboutwelcome.overrideContent", "");
+
 
 pref("browser.messaging-system.whatsNewPanel.enabled", true);
 
