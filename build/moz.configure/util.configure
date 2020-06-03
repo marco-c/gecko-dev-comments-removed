@@ -409,7 +409,9 @@ def dependable(obj):
         return obj
     if isfunction(obj):
         return depends(when=True)(obj)
-    return depends(when=True)(lambda: obj)
+    
+    
+    return depends('--help', when=True)(lambda _: obj)
 
 
 always = dependable(True)
