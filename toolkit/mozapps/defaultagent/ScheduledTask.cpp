@@ -12,6 +12,7 @@
 #include <taskschd.h>
 
 #include "mozilla/RefPtr.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 
@@ -43,6 +44,12 @@ HRESULT RegisterTask(const wchar_t* uniqueToken,
   
   RemoveTask(uniqueToken);
 
+  
+  
+  
+  
+  bool createdFolder = false;
+
   HRESULT hr = S_OK;
   RefPtr<ITaskService> scheduler;
   ENSURE(CoCreateInstance(CLSID_TaskScheduler, nullptr, CLSCTX_INPROC_SERVER,
@@ -61,12 +68,23 @@ HRESULT RegisterTask(const wchar_t* uniqueToken,
                                    getter_AddRefs(taskFolder)))) {
     hr = rootFolder->CreateFolder(vendorBStr.get(), VARIANT{},
                                   getter_AddRefs(taskFolder));
-    
-    if (FAILED(hr) && hr != HRESULT_FROM_WIN32(ERROR_ALREADY_EXISTS)) {
+    if (SUCCEEDED(hr)) {
+      createdFolder = true;
+    } else if (hr != HRESULT_FROM_WIN32(ERROR_ALREADY_EXISTS)) {
+      
       LOG_ERROR(hr);
       return hr;
     }
   }
+
+  auto cleanupFolder =
+      mozilla::MakeScopeExit([hr, createdFolder, &rootFolder, &vendorBStr] {
+        if (createdFolder && FAILED(hr)) {
+          
+          
+          rootFolder->DeleteFolder(vendorBStr.get(), 0);
+        }
+      });
 
   RefPtr<ITaskDefinition> newTask;
   ENSURE(scheduler->NewTask(0, getter_AddRefs(newTask)));
