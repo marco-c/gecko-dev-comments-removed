@@ -35,6 +35,12 @@
     NS_WARNING(str.get());                                                   \
   } while (0)
 
+#define UNKNOWN_FILE_WARNING(_leafName)                                       \
+  NS_WARNING(                                                                 \
+      nsPrintfCString("Something (%s) in the directory that doesn't belong!", \
+                      NS_ConvertUTF16toUTF8(_leafName).get())                 \
+          .get())
+
 
 #ifdef NIGHTLY_BUILD
 #  define REPORT_TELEMETRY_INIT_ERR(_key, _label)   \
