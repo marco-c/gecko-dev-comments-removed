@@ -2341,7 +2341,7 @@ WebRenderCommandBuilder::GenerateFallbackData(
 
         if (isInvalidated) {
           
-          if (!helper.UpdateImage(aBuilder.GetRenderRoot())) {
+          if (!helper.UpdateImage()) {
             return nullptr;
           }
         } else {
