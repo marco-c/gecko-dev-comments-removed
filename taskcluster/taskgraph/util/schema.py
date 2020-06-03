@@ -201,7 +201,7 @@ OptimizationSchema = voluptuous.Any(
     {'always': None},
     
     {'build': list(schedules.ALL_COMPONENTS)},
-    {'build-fuzzing': list(schedules.ALL_COMPONENTS)},
+    {'build-fuzzing': None},
     
     
     {'index-search': [text_type]},
