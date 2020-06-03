@@ -590,10 +590,6 @@ class WebRenderBridgeParent final
   VsyncId mSkippedCompositeId;
   TimeStamp mMostRecentComposite;
 
-  
-  
-  Mutex mRenderRootRectMutex;
-
   Maybe<wr::RenderRoot> mRenderRoot;
 #if defined(MOZ_WIDGET_ANDROID)
   UiCompositorControllerParent* mScreenPixelsTarget;
