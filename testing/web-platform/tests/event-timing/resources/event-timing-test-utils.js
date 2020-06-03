@@ -184,6 +184,26 @@ function notCancelable(eventType) {
 
 
 
+function testCounts(t, resolve, looseCount, eventType, expectedCount) {
+  const counts = performance.eventCounts.get(eventType);
+  if (counts < expectedCount) {
+    t.step_timeout(() => {
+      testCounts(t, resolve, looseCount, eventType, expectedCount);
+    }, 10);
+    return;
+  }
+  if (looseCount) {
+    assert_greater_than_equal(performance.eventCounts.get(eventType), expectedCount,
+        `Should have at least ${expectedCount} ${eventType} events`)
+  } else {
+    assert_equals(performance.eventCounts.get(eventType), expectedCount,
+        `Should have ${expectedCount} ${eventType} events`);
+  }
+  resolve();
+}
+
+
+
 
 
 async function testEventType(t, eventType, looseCount=false) {
@@ -197,13 +217,9 @@ async function testEventType(t, eventType, looseCount=false) {
   
   await applyAction(eventType, target);
   await applyAction(eventType, target);
-  if (looseCount) {
-    assert_greater_than_equal(performance.eventCounts.get(eventType), 2,
-        `Should have at least 2 ${eventType} events`)
-  } else {
-    assert_equals(performance.eventCounts.get(eventType), 2,
-        `Should have 2 ${eventType} events`);
-  }
+  await new Promise(t.step_func(resolve => {
+    testCounts(t, resolve, looseCount, eventType, 2);
+  }));
   
   const durationThreshold = 16;
   
@@ -236,14 +252,9 @@ async function testEventType(t, eventType, looseCount=false) {
                   false ,
                   durationThreshold,
                   notCancelable(eventType));
-      if (looseCount) {
-        assert_greater_than_equal(performance.eventCounts.get(eventType), 3,
-            `Should have at least 3 ${eventType} events`)
-      } else {
-        assert_equals(performance.eventCounts.get(eventType), 3,
-            `Should have 3 ${eventType} events`);
-      }
-      resolve();
+      
+      
+      testCounts(t, resolve, looseCount, eventType, 3);
     })).observe({type: 'event', durationThreshold: durationThreshold});
   });
   
