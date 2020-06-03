@@ -13,6 +13,8 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const NS_ERROR_DOM_QUOTA_EXCEEDED_ERR = 0x80530016;
+
 XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionCommon: "resource://gre/modules/ExtensionCommon.jsm",
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.jsm",
@@ -58,9 +60,14 @@ ExtensionStorageApiCallback.prototype = {
     e.code = code;
     Cu.reportError(e);
     
-    this.reject(
-      new ExtensionUtils.ExtensionError("An unexpected error occurred")
-    );
+    
+    let sanitized =
+      code == NS_ERROR_DOM_QUOTA_EXCEEDED_ERR
+        ? 
+          `QuotaExceededError: storage.sync API call exceeded its quota limitations.`
+        : 
+          "An unexpected error occurred";
+    this.reject(new ExtensionUtils.ExtensionError(sanitized));
   },
 
   onChanged(json) {
@@ -116,6 +123,14 @@ class ExtensionStorageSync {
 
   get(extension, spec, context) {
     return this._promisify(storageSvc.get, extension, JSON.stringify(spec));
+  }
+
+  getBytesInUse(extension, keys, context) {
+    return this._promisify(
+      storageSvc.getBytesInUse,
+      extension,
+      JSON.stringify(keys)
+    );
   }
 
   addOnChangedListener(extension, listener, context) {
