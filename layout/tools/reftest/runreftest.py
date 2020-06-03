@@ -50,8 +50,12 @@ try:
     from marionette_harness import Marionette
 except ImportError as e:  
     
+    
+    
+    e_save = ImportError(str(e))
+
     def reraise_(*args, **kwargs):
-        raise(e)  
+        raise(e_save)  
     Marionette = reraise_
 
 from output import OutputHandler, ReftestFormatter
@@ -234,7 +238,7 @@ class ReftestResolver(object):
                     manifests[manifest] = set()
                 manifests[manifest].add(filter_str)
         manifests_by_url = {}
-        for key in manifests.iterkeys():
+        for key in manifests.keys():
             id = os.path.relpath(os.path.abspath(os.path.dirname(key)), options.topsrcdir)
             id = id.replace(os.sep, posixpath.sep)
             if None in manifests[key]:
