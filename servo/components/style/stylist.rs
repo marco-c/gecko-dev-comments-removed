@@ -1318,12 +1318,6 @@ impl Stylist {
         use crate::font_metrics::get_metrics_provider_for_product;
 
         let block = declarations.read_with(guards.author);
-        let iter_declarations = || {
-            block
-                .declaration_importance_iter()
-                .map(|(declaration, _)| (declaration, Origin::Author))
-        };
-
         let metrics = get_metrics_provider_for_product();
 
         
@@ -1332,12 +1326,14 @@ impl Stylist {
         
         
         
-        properties::apply_declarations::<E, _, _>(
+        properties::apply_declarations::<E, _>(
             &self.device,
              None,
             self.rule_tree.root(),
             guards,
-            iter_declarations,
+            block
+                .declaration_importance_iter()
+                .map(|(declaration, _)| (declaration, Origin::Author)),
             Some(parent_style),
             Some(parent_style),
             Some(parent_style),
