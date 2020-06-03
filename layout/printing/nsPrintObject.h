@@ -50,6 +50,12 @@ class nsPrintObject {
   void SetPrintAsIs(bool aAsIs);
 
   
+
+
+
+  void EnablePrinting(bool aEnable);
+
+  
   nsCOMPtr<nsIDocShell> mDocShell;
   nsCOMPtr<nsIDocShellTreeOwner> mTreeOwner;
   RefPtr<mozilla::dom::Document> mDocument;

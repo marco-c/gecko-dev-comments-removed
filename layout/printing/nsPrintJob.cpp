@@ -1220,20 +1220,6 @@ bool nsPrintJob::IsThereAnIFrameSelected(nsIDocShell* aDocShell,
 }
 
 
-
-
-void nsPrintJob::SetPrintPO(nsPrintObject* aPO, bool aPrint) {
-  NS_ASSERTION(aPO, "Pointer is null!");
-
-  
-  aPO->mDontPrint = !aPrint;
-
-  for (const UniquePtr<nsPrintObject>& kid : aPO->mKids) {
-    SetPrintPO(kid.get(), aPrint);
-  }
-}
-
-
 void nsPrintJob::GetDisplayTitleAndURL(Document& aDoc,
                                        nsIPrintSettings* aSettings,
                                        DocTitleDefault aTitleDefault,
@@ -1692,7 +1678,7 @@ nsresult nsPrintJob::ReflowDocList(const UniquePtr<nsPrintObject>& aPO,
     nsIFrame* frame =
         aPO->mContent ? aPO->mContent->GetPrimaryFrame() : nullptr;
     if (!frame || !frame->StyleVisibility()->IsVisible()) {
-      SetPrintPO(aPO.get(), false);
+      aPO->EnablePrinting(false);
       aPO->mInvisible = true;
       return NS_OK;
     }
@@ -1953,7 +1939,7 @@ nsresult nsPrintJob::SetRootView(nsPrintObject* aPO, bool& doReturn,
     
     
     if (!frame) {
-      SetPrintPO(aPO, false);
+      aPO->EnablePrinting(false);
       doReturn = true;
       return NS_OK;
     }
@@ -2699,7 +2685,7 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
   if (treatAsNonFrameset &&
       (printRangeType == nsIPrintSettings::kRangeAllPages ||
        printRangeType == nsIPrintSettings::kRangeSpecifiedPageRange)) {
-    SetPrintPO(printData->mPrintObject.get(), true);
+    printData->mPrintObject->EnablePrinting(true);
 
     
     
@@ -2727,7 +2713,7 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
         po->SetPrintAsIs(true);
 
         
-        SetPrintPO(po, true);
+        po->EnablePrinting(true);
 
         
         
@@ -2752,7 +2738,7 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
         nsCOMPtr<nsPIDOMWindowOuter> domWin = po->mDocShell->GetWindow();
         if (IsThereARangeSelection(domWin)) {
           printData->mCurrentFocusWin = std::move(domWin);
-          SetPrintPO(po, true);
+          po->EnablePrinting(true);
           break;
         }
       }
@@ -2762,7 +2748,7 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
 
   if (printRangeType != nsIPrintSettings::kRangeSelection) {
     printData->mPrintObject->SetPrintAsIs(true);
-    SetPrintPO(printData->mPrintObject.get(), true);
+    printData->mPrintObject->EnablePrinting(true);
     return NS_OK;
   }
 
@@ -2780,7 +2766,7 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
       }
 
       
-      SetPrintPO(po, true);
+      po->EnablePrinting(true);
     }
   }
 
