@@ -2,10 +2,22 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
-const { Changeset, SyncEngine } = ChromeUtils.import(
+const { Changeset, SyncEngine, Tracker } = ChromeUtils.import(
   "resource://services-sync/engines.js"
 );
 const { RawCryptoWrapper } = ChromeUtils.import(
@@ -18,12 +30,11 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
 });
 
-var EXPORTED_SYMBOLS = [
-  "BridgedEngine",
-  "BridgedStore",
-  "BridgedTracker",
-  "BridgedRecord",
-];
+var EXPORTED_SYMBOLS = ["BridgedEngine"];
+
+
+
+
 
 
 
@@ -61,48 +72,6 @@ class BridgedStore {
 
 
 
-
-class BridgedTracker {
-  constructor(name, engine) {
-    if (!engine) {
-      throw new Error("Tracker must be associated with an Engine instance.");
-    }
-
-    this._log = Log.repository.getLogger(`Sync.Engine.${name}.Tracker`);
-    this.score = 0;
-    this.asyncObserver = Async.asyncObserver(this, this._log);
-  }
-
-  get ignoreAll() {
-    return false;
-  }
-
-  set ignoreAll(value) {}
-
-  async onEngineEnabledChanged(engineEnabled) {
-    
-  }
-
-  resetScore() {
-    this.score = 0;
-  }
-
-  start() {
-    
-  }
-
-  async stop() {
-    
-  }
-
-  async clearChangedIDs() {
-    
-  }
-
-  async finalize() {
-    
-  }
-}
 
 
 
@@ -236,6 +205,10 @@ class LogAdapter {
 
 
 
+
+
+
+
 function BridgedEngine(bridge, name, service) {
   SyncEngine.call(this, name, service);
 
@@ -245,9 +218,30 @@ function BridgedEngine(bridge, name, service) {
 
 BridgedEngine.prototype = {
   __proto__: SyncEngine.prototype,
-  _recordObj: BridgedRecord,
-  _storeObj: BridgedStore,
-  _trackerObj: BridgedTracker,
+
+  
+
+
+
+  _trackerObj: Tracker,
+
+  
+  get _recordObj() {
+    return BridgedRecord;
+  },
+
+  set _recordObj(obj) {
+    throw new TypeError("Don't override the record class for bridged engines");
+  },
+
+  
+  get _storeObj() {
+    return BridgedStore;
+  },
+
+  set _storeObj(obj) {
+    throw new TypeError("Don't override the store class for bridged engines");
+  },
 
   
   get version() {
