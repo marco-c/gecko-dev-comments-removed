@@ -308,7 +308,7 @@ var FullScreen = {
         Services.prefs.getBoolPref("full-screen-api.macos-native-full-screen");
       if (
         (alwaysUsesNativeFullscreen || !document.fullscreenElement) &&
-        this.useLionFullScreen
+        AppConstants.platform == "macosx"
       ) {
         document.documentElement.setAttribute("OSXLionFullscreen", true);
       }
@@ -659,7 +659,7 @@ var FullScreen = {
     }
 
     
-    if (trackMouse && !this.useLionFullScreen) {
+    if (trackMouse && AppConstants.platform != "macosx") {
       let rect = gBrowser.tabpanels.getBoundingClientRect();
       this._mouseTargetRect = {
         top: rect.top + 50,
@@ -686,7 +686,7 @@ var FullScreen = {
       return;
     }
     
-    if (this.useLionFullScreen) {
+    if (AppConstants.platform == "macosx") {
       return;
     }
 
@@ -783,7 +783,7 @@ var FullScreen = {
     
     
     
-    if (this.useLionFullScreen) {
+    if (AppConstants.platform == "macosx") {
       return;
     }
 
@@ -812,16 +812,5 @@ XPCOMUtils.defineLazyGetter(FullScreen, "_permissionNotificationIDs", () => {
       .map(value => value.prototype.notificationID)
       
       .concat(["webRTC-shareDevices"])
-  );
-});
-
-XPCOMUtils.defineLazyGetter(FullScreen, "useLionFullScreen", () => {
-  
-  
-  
-  
-  return (
-    AppConstants.isPlatformAndVersionAtLeast("macosx", 11) &&
-    document.documentElement.getAttribute("fullscreenbutton") == "true"
   );
 });
