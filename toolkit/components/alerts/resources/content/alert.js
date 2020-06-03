@@ -211,7 +211,9 @@ function onAlertLoad() {
 
   
   if (!gRequireInteraction) {
-    if (!Services.prefs.getBoolPref("toolkit.cosmeticAnimations.enabled")) {
+    if (
+      !Services.prefs.getBoolPref("toolkit.cosmeticAnimations.enabled", true)
+    ) {
       setTimeout(function() {
         window.close();
       }, ALERT_DURATION_IMMEDIATE);
