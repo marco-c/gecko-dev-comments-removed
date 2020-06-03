@@ -983,6 +983,7 @@ nsUnknownContentTypeDialog.prototype = {
   },
 
   onOK(aEvent) {
+    let shouldLogAction = this.dialogElement("basicBox").collapsed;
     
     if (this.useOtherHandler) {
       var helperApp = this.helperAppChoice();
@@ -1012,6 +1013,7 @@ nsUnknownContentTypeDialog.prototype = {
 
         
         aEvent.preventDefault();
+        shouldLogAction = false;
       }
     }
 
@@ -1023,10 +1025,12 @@ nsUnknownContentTypeDialog.prototype = {
     
     
     
+    let action;
     try {
       var needUpdate = this.updateMIMEInfo();
 
       if (this.dialogElement("save").selected) {
+        action = "SAVE";
         
         
         this._saveToDiskTimer = Cc["@mozilla.org/timer;1"].createInstance(
@@ -1034,6 +1038,7 @@ nsUnknownContentTypeDialog.prototype = {
         );
         this._saveToDiskTimer.initWithCallback(this, 0, nsITimer.TYPE_ONE_SHOT);
       } else {
+        action = this.getOpenWithActionForTelemetry();
         this.mLauncher.launchWithApplication(this.handleInternally);
       }
 
@@ -1048,11 +1053,19 @@ nsUnknownContentTypeDialog.prototype = {
       ) {
         this.updateHelperAppPref();
       }
-    } catch (e) {}
+    } catch (e) {
+    } finally {
+      if (shouldLogAction) {
+        this.logActionInTelemetryIfExtensionIsPDF(action);
+      }
+    }
+
     this.onUnload();
   },
 
   onCancel() {
+    this.logActionInTelemetryIfExtensionIsPDF("CANCEL");
+
     
     this.mLauncher.setWebProgressListener(null);
 
@@ -1243,17 +1256,80 @@ nsUnknownContentTypeDialog.prototype = {
     let browsingContext = this.mDialog.BrowsingContext.get(
       this.mLauncher.browsingContextId
     );
+    let primaryExtension = "";
+    try {
+      
+      
+      primaryExtension = this.mLauncher.MIMEInfo.primaryExtension;
+    } catch (e) {}
     return (
       !browsingContext?.currentWindowGlobal?.documentPrincipal?.URI?.schemeIs(
         "resource"
       ) &&
-      this.mLauncher.MIMEInfo.primaryExtension == "pdf" &&
+      primaryExtension == "pdf" &&
       !Services.prefs.getBoolPref("pdfjs.disabled", true) &&
       Services.prefs.getBoolPref(
         "browser.helperApps.showOpenOptionForPdfJS",
         false
       )
     );
+  },
+
+  getOpenWithActionForTelemetry() {
+    if (this.handleInternally) {
+      return "OPEN_WITH_INTERNAL_HANDLER";
+    }
+    let name = this.mLauncher.MIMEInfo.preferredApplicationHandler?.name;
+    let { defaultDescription } = this.mLauncher.MIMEInfo;
+    if (name) {
+      name = name.toLowerCase();
+      
+      let delimeter = AppConstants.platform == "linux" ? "-" : ".";
+      name = name.substring(0, name.indexOf(delimeter));
+    } else if (defaultDescription.includes("Edge")) {
+      name = "msedge";
+    } else if (defaultDescription.includes("Chrome")) {
+      name = "chrome";
+    } else if (defaultDescription == "Preview") {
+      name = "preview";
+    }
+    switch (name) {
+      case "acrobat":
+      case "acrord32":
+      case "adobe acrobat reader dc":
+        return "OPEN_WITH_ACROBAT";
+      case "chrome":
+        
+        return "OPEN_WITH_CHROMIUM";
+      case "foxitreader":
+        return "OPEN_WITH_FOXIT";
+      case "msedge":
+        return "OPEN_WITH_MSEDGE";
+      case "preview":
+        return "OPEN_WITH_PREVIEW";
+      case undefined:
+        if (
+          this.mLauncher.MIMEInfo.preferredAction ==
+          this.mLauncher.MIMEInfo.useSystemDefault
+        ) {
+          return "OPEN_WITH_SYSTEM_DEFAULT";
+        }
+      
+      default:
+        return "OPEN_WITH_OTHER";
+    }
+  },
+
+  logActionInTelemetryIfExtensionIsPDF(action) {
+    try {
+      if (this.mLauncher.MIMEInfo.primaryExtension == "pdf") {
+        Services.telemetry.keyedScalarAdd(
+          "unknowncontenttype.pdf_action",
+          action,
+          1
+        );
+      }
+    } catch (ex) {}
   },
 
   
