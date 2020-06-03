@@ -82,8 +82,6 @@ class VRManagerParent final : public PVRManagerParent {
 
   static void RegisterVRManagerInCompositorThread(VRManagerParent* aVRManager);
 
-  static void ShutdownInternal();
-
   
   
   RefPtr<VRManagerParent> mSelfRef;
