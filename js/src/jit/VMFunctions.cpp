@@ -478,6 +478,10 @@ bool ArrayPushDense(JSContext* cx, HandleArrayObject arr, HandleValue v,
 
   
   
+  MOZ_ASSERT(IsTypeInferenceEnabled());
+
+  
+  
   
   
   MOZ_ASSERT(adi.shouldSetReturnOverride());

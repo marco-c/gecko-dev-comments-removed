@@ -10395,6 +10395,23 @@ void CodeGenerator::emitArrayPush(LInstruction* lir, Register obj,
   masm.load32(Address(elementsTemp, ObjectElements::offsetOfLength()), length);
 
   
+  if (!IsTypeInferenceEnabled()) {
+    
+    bailoutCmp32(Assembler::Equal, length, Imm32(INT32_MAX), lir->snapshot());
+  }
+
+#ifdef DEBUG
+  
+  Label success;
+  Address elementsFlags(elementsTemp, ObjectElements::offsetOfFlags());
+  masm.branchTest32(Assembler::Zero, elementsFlags,
+                    Imm32(ObjectElements::COPY_ON_WRITE), &success);
+  masm.assumeUnreachable(
+      "ArrayPush must not be used with copy-on-write elements");
+  masm.bind(&success);
+#endif
+
+  
   Address initLength(elementsTemp, ObjectElements::offsetOfInitializedLength());
   masm.branch32(Assembler::NotEqual, initLength, length, ool->entry());
 
