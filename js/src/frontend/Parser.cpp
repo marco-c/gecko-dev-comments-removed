@@ -1763,6 +1763,15 @@ bool PerHandlerParser<SyntaxParseHandler>::finishFunction(
   }
 
   FunctionBox* funbox = pc_->functionBox();
+  ScriptStencil& stencil = funbox->functionStencil().get();
+
+  
+  using ImmutableFlags = ImmutableScriptFlagsEnum;
+  stencil.immutableFlags = funbox->immutableFlags();
+  stencil.immutableFlags.setFlag(ImmutableFlags::HasMappedArgsObj,
+                                 funbox->hasMappedArgsObj());
+  stencil.immutableFlags.setFlag(ImmutableFlags::IsLikelyConstructorWrapper,
+                                 funbox->isLikelyConstructorWrapper());
 
   
   
@@ -1782,8 +1791,7 @@ bool PerHandlerParser<SyntaxParseHandler>::finishFunction(
     return false;
   }
 
-  ScriptThingsVector& gcthings = funbox->functionStencil().get().gcThings;
-
+  ScriptThingsVector& gcthings = stencil.gcThings;
   if (!gcthings.reserve(ngcthings.value())) {
     return false;
   }
@@ -1816,20 +1824,11 @@ static bool CreateLazyScript(JSContext* cx, CompilationInfo& compilationInfo,
                              HandleFunction function, FunctionBox* funbox) {
   MOZ_ASSERT(function);
 
-  using ImmutableFlags = ImmutableScriptFlagsEnum;
-  ImmutableScriptFlags immutableFlags = funbox->immutableFlags();
-
-  
-  immutableFlags.setFlag(ImmutableFlags::HasMappedArgsObj,
-                         funbox->hasMappedArgsObj());
-  immutableFlags.setFlag(ImmutableFlags::IsLikelyConstructorWrapper,
-                         funbox->isLikelyConstructorWrapper());
-
   const ScriptThingsVector& gcthings = stencil.get().gcThings;
   Rooted<BaseScript*> lazy(
-      cx, BaseScript::CreateRawLazy(cx, gcthings.length(), function,
-                                    compilationInfo.sourceObject,
-                                    funbox->extent, immutableFlags));
+      cx, BaseScript::CreateRawLazy(
+              cx, gcthings.length(), function, compilationInfo.sourceObject,
+              funbox->extent, stencil.get().immutableFlags));
   if (!lazy) {
     return false;
   }
