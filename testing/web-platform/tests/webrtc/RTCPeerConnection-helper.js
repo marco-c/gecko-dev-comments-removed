@@ -671,6 +671,18 @@ function findTransceiverForSender(pc, sender) {
   return null;
 }
 
+function preferCodec(transceiver, mimeType, sdpFmtpLine) {
+  const {codecs} = RTCRtpSender.getCapabilities(transceiver.receiver.track.kind);
+  
+  const selectedCodecIndex = codecs.findIndex(c => {
+    return c.mimeType === mimeType && (c.sdpFmtpLine === sdpFmtpLine || !sdpFmtpLine);
+  });
+  const selectedCodec = codecs[selectedCodecIndex];
+  codecs.slice(selectedCodecIndex, 1);
+  codecs.unshift(selectedCodec);
+  return transceiver.setCodecPreferences(codecs);
+}
+
 
 class UniqueSet extends Set {
   constructor(items) {
