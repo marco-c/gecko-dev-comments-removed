@@ -378,20 +378,29 @@ class WebConsoleUI {
 
 
 
-  async _onTargetAvailable({ targetFront }) {
+
+
+
+
+
+
+
+
+
+  async _onTargetAvailable({ type, targetFront, isTopLevel }) {
     const dispatchTargetAvailable = () => {
       const store = this.wrapper && this.wrapper.getStore();
       if (store) {
         this.wrapper.getStore().dispatch({
           type: constants.TARGET_AVAILABLE,
-          targetType: targetFront.targetType,
+          targetType: type,
         });
       }
     };
 
     
     
-    if (targetFront.isTopLevel) {
+    if (isTopLevel) {
       const fissionSupport = Services.prefs.getBoolPref(
         constants.PREFS.FEATURES.BROWSER_TOOLBOX_FISSION
       );
@@ -416,9 +425,8 @@ class WebConsoleUI {
       isContentToolbox &&
       Services.prefs.getBoolPref("devtools.contenttoolbox.fission");
     if (
-      targetFront.targetType != this.hud.targetList.TYPES.PROCESS &&
-      (targetFront.targetType != this.hud.targetList.TYPES.FRAME ||
-        !listenForFrames)
+      type != this.hud.targetList.TYPES.PROCESS &&
+      (type != this.hud.targetList.TYPES.FRAME || !listenForFrames)
     ) {
       return;
     }
@@ -434,8 +442,8 @@ class WebConsoleUI {
 
 
 
-  _onTargetDestroyed({ targetFront }) {
-    if (targetFront.isTopLevel) {
+  _onTargetDestroyed({ type, targetFront, isTopLevel }) {
+    if (isTopLevel) {
       this.proxy.disconnect();
       this.proxy = null;
     } else {

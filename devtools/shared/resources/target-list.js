@@ -127,22 +127,28 @@ class TargetList {
 
     
     const targetType = this.getTargetType(targetFront);
+    const isTopLevel = targetFront == this.targetFront;
 
     targetFront.setTargetType(targetType);
-    targetFront.setIsTopLevel(targetFront == this.targetFront);
+    targetFront.setIsTopLevel(isTopLevel);
 
     this._targets.add(targetFront);
 
     
     await this._createListeners.emitAsync(targetType, {
+      type: targetType,
       targetFront,
+      isTopLevel,
       isTargetSwitching,
     });
   }
 
   _onTargetDestroyed(targetFront, isTargetSwitching = false) {
-    this._destroyListeners.emit(targetFront.targetType, {
+    const targetType = targetFront.targetType;
+    this._destroyListeners.emit(targetType, {
+      type: targetType,
       targetFront,
+      isTopLevel: targetFront.isTopLevel,
       isTargetSwitching,
     });
     this._targets.delete(targetFront);
@@ -303,6 +309,8 @@ class TargetList {
 
 
 
+
+
   async watchTargets(types, onAvailable, onDestroy) {
     if (typeof onAvailable != "function") {
       throw new Error(
@@ -319,7 +327,9 @@ class TargetList {
           
           
           await onAvailable({
+            type: targetFront.targetType,
             targetFront,
+            isTopLevel: targetFront == this.targetFront,
             isTargetSwitching: false,
           });
         } catch (e) {

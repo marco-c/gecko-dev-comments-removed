@@ -141,7 +141,16 @@ class ResourceWatcher {
 
 
 
-  async _onTargetAvailable({ targetFront }) {
+
+
+
+
+
+
+
+
+
+  async _onTargetAvailable({ type, targetFront, isTopLevel }) {
     
     for (const resourceType of Object.values(ResourceWatcher.TYPES)) {
       
@@ -149,7 +158,12 @@ class ResourceWatcher {
         continue;
       }
       
-      await this._watchResourcesForTarget(targetFront, resourceType);
+      await this._watchResourcesForTarget(
+        type,
+        targetFront,
+        isTopLevel,
+        resourceType
+      );
     }
   }
 
@@ -157,7 +171,7 @@ class ResourceWatcher {
 
 
 
-  _onTargetDestroyed({ targetFront }) {
+  _onTargetDestroyed({ type, targetFront }) {
     
     
     
@@ -255,7 +269,14 @@ class ResourceWatcher {
     for (const targetType of this.targetList.ALL_TYPES) {
       
       for (const target of this.targetList.getAllTargets(targetType)) {
-        promises.push(this._watchResourcesForTarget(target, resourceType));
+        promises.push(
+          this._watchResourcesForTarget(
+            targetType,
+            target,
+            target == this.targetList.targetFront,
+            resourceType
+          )
+        );
       }
     }
     await Promise.all(promises);
@@ -265,7 +286,7 @@ class ResourceWatcher {
 
 
 
-  _watchResourcesForTarget(targetFront, resourceType) {
+  _watchResourcesForTarget(targetType, targetFront, isTopLevel, resourceType) {
     const onAvailable = this._onResourceAvailable.bind(
       this,
       targetFront,
@@ -273,7 +294,9 @@ class ResourceWatcher {
     );
     return LegacyListeners[resourceType]({
       targetList: this.targetList,
+      targetType,
       targetFront,
+      isTopLevel,
       isFissionEnabledOnContentToolbox: this.contentToolboxFissionPrefValue,
       onAvailable,
     });
@@ -344,11 +367,13 @@ const LegacyListeners = {
     .PLATFORM_MESSAGES]: require("devtools/shared/resources/legacy-listeners/platform-messages"),
   async [ResourceWatcher.TYPES.DOCUMENT_EVENTS]({
     targetList,
+    targetType,
     targetFront,
+    isTopLevel,
     onAvailable,
   }) {
     
-    if (!targetFront.isTopLevel) {
+    if (!isTopLevel) {
       return;
     }
 

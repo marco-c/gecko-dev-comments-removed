@@ -722,8 +722,8 @@ Toolbox.prototype = {
 
 
 
-  async _onTargetAvailable({ targetFront }) {
-    if (targetFront.isTopLevel) {
+  async _onTargetAvailable({ type, targetFront, isTopLevel }) {
+    if (isTopLevel) {
       
       
       targetFront.on("will-navigate", this._onWillNavigate);
@@ -736,19 +736,19 @@ Toolbox.prototype = {
       });
     }
 
-    await this._attachTarget(targetFront);
+    await this._attachTarget({ type, targetFront, isTopLevel });
 
     if (this.hostType !== Toolbox.HostType.PAGE) {
       await this.store.dispatch(registerTarget(targetFront));
     }
 
-    if (targetFront.isTopLevel) {
+    if (isTopLevel) {
       this.emit("top-target-attached");
     }
   },
 
-  _onTargetDestroyed({ targetFront }) {
-    if (targetFront.isTopLevel) {
+  _onTargetDestroyed({ type, targetFront, isTopLevel }) {
+    if (isTopLevel) {
       this.detachTarget();
     }
 
@@ -764,7 +764,7 @@ Toolbox.prototype = {
 
 
 
-  async _attachTarget(targetFront) {
+  async _attachTarget({ type, targetFront, isTopLevel }) {
     await targetFront.attach();
 
     
@@ -775,13 +775,10 @@ Toolbox.prototype = {
     
     
     
-    if (
-      targetFront.isTopLevel ||
-      targetFront.targetType != TargetList.TYPES.FRAME
-    ) {
+    if (isTopLevel || type != TargetList.TYPES.FRAME) {
       const threadFront = await this._attachAndResumeThread(targetFront);
       this._startThreadFrontListeners(threadFront);
-      if (targetFront.isTopLevel) {
+      if (isTopLevel) {
         this._threadFront = threadFront;
       }
     }
