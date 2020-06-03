@@ -463,8 +463,7 @@ class RestyleManager {
 
 
 
-  bool ProcessPostTraversal(Element* aElement,
-                            ServoRestyleState& aRestyleState,
+  bool ProcessPostTraversal(Element* aElement, ServoRestyleState& aRestyleState,
                             ServoPostTraversalFlags aFlags);
 
   struct TextPostTraversalState;

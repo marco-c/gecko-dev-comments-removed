@@ -95,8 +95,7 @@ nsresult net_GetFileFromURLSpec(const nsACString& aURL, nsIFile** result) {
   
   if (path.CharAt(0) == '\\') path.Cut(0, 1);
 
-  if (IsUtf8(path))
-    rv = localFile->InitWithPath(NS_ConvertUTF8toUTF16(path));
+  if (IsUtf8(path)) rv = localFile->InitWithPath(NS_ConvertUTF8toUTF16(path));
   
   
   
