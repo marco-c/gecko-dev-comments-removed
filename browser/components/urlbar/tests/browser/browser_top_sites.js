@@ -31,6 +31,30 @@ async function addTestVisits() {
   });
 }
 
+async function checkDoesNotOpenOnFocus(win = window) {
+  
+  win.gURLBar.blur();
+  win.gURLBar.focus();
+  Assert.ok(!win.gURLBar.view.isOpen, "check urlbar panel is not open");
+  win.gURLBar.blur();
+
+  
+  win.document.getElementById("Browser:OpenLocation").doCommand();
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 500));
+  Assert.ok(!win.gURLBar.view.isOpen, "check urlbar panel is not open");
+  win.gURLBar.blur();
+
+  
+  EventUtils.synthesizeMouseAtCenter(win.gURLBar.inputField, {});
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 500));
+  Assert.ok(!win.gURLBar.view.isOpen, "check urlbar panel is not open");
+  win.gURLBar.blur();
+}
+
 add_task(async function init() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -379,60 +403,6 @@ add_task(async function topSitesDisabled() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.newtabpage.activity-stream.feeds.system.topsites", false]],
   });
-
-  
-  let urlCount = 5;
-  for (let i = 0; i < urlCount; i++) {
-    await PlacesTestUtils.addVisits(`http://example.com/${i}`);
-  }
-
-  
-  await UrlbarTestUtils.promisePopupOpen(window, () => {
-    if (gURLBar.getAttribute("pageproxystate") == "invalid") {
-      gURLBar.handleRevert();
-    }
-    EventUtils.synthesizeMouseAtCenter(window.gURLBar.inputField, {});
-  });
-  Assert.ok(window.gURLBar.view.isOpen, "UrlbarView should be open.");
-  await UrlbarTestUtils.promiseSearchComplete(window);
-
-  
-  
-  Assert.equal(
-    UrlbarTestUtils.getResultCount(window),
-    urlCount,
-    "The number of results should be the same as the number of URLs added"
-  );
-
-  for (let i = 0; i < urlCount; i++) {
-    let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
-    Assert.equal(
-      result.url,
-      `http://example.com/${urlCount - i - 1}`,
-      `Expected URL at index ${i}`
-    );
-    Assert.equal(
-      result.source,
-      UrlbarUtils.RESULT_SOURCE.HISTORY,
-      "The result should be from history"
-    );
-    Assert.equal(
-      result.type,
-      UrlbarUtils.RESULT_TYPE.URL,
-      "The result should be a URL"
-    );
-    Assert.strictEqual(
-      result.heuristic,
-      false,
-      "The result should not be heuristic"
-    );
-  }
-
-  await UrlbarTestUtils.promisePopupClose(window, () => {
-    window.gURLBar.blur();
-  });
-
-  await PlacesUtils.bookmarks.eraseEverything();
-  await PlacesUtils.history.clear();
+  await checkDoesNotOpenOnFocus();
   await SpecialPowers.popPrefEnv();
 });

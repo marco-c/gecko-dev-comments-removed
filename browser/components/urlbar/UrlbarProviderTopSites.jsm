@@ -70,14 +70,7 @@ class ProviderTopSites extends UrlbarProvider {
 
 
   isActive(queryContext) {
-    return (
-      UrlbarPrefs.get("openViewOnFocus") &&
-      !queryContext.searchString &&
-      Services.prefs.getBoolPref(
-        "browser.newtabpage.activity-stream.feeds.system.topsites",
-        true
-      )
-    );
+    return UrlbarPrefs.get("openViewOnFocus") && !queryContext.searchString;
   }
 
   
@@ -98,6 +91,23 @@ class ProviderTopSites extends UrlbarProvider {
 
 
   async startQuery(queryContext, addCallback) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (
+      !Services.prefs.getBoolPref(
+        "browser.newtabpage.activity-stream.feeds.system.topsites",
+        false
+      )
+    ) {
+      return;
+    }
+
     let sites = AboutNewTab.getTopSites();
 
     let instance = {};
