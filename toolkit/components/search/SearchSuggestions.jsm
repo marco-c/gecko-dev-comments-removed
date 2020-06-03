@@ -59,7 +59,7 @@ SuggestAutoComplete.prototype = {
 
     
     for (let i = 0; i < results.local.length; ++i) {
-      finalResults.push(results.local[i]);
+      finalResults.push(results.local[i].value);
       finalComments.push("");
     }
 
@@ -68,7 +68,11 @@ SuggestAutoComplete.prototype = {
       
       let comments = new Array(results.remote.length).fill("");
       
-      finalResults = finalResults.concat(results.remote);
+      
+      let nonTailEntries = results.remote.filter(
+        e => !e.matchPrefix && !e.tail
+      );
+      finalResults = finalResults.concat(nonTailEntries.map(e => e.value));
       finalComments = finalComments.concat(comments);
     }
 

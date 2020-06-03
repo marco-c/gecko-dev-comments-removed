@@ -272,6 +272,15 @@ let ContentSearch = {
     
     this._currentSuggestion = { controller, browser };
     let suggestions = await controller.fetch(searchString, priv, engine);
+
+    
+    suggestions.local = suggestions.local.map(e => e.value);
+    
+    let nonTailEntries = suggestions.remote.filter(
+      e => !e.matchPrefix && !e.tail
+    );
+    suggestions.remote = nonTailEntries.map(e => e.value);
+
     this._currentSuggestion = null;
 
     
