@@ -83,8 +83,10 @@ class MediaController final
 
   
   
-  void NotifyMediaPlaybackChanged(MediaPlaybackState aState);
-  void NotifyMediaAudibleChanged(MediaAudibleState aState);
+  void NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
+                                  MediaPlaybackState aState);
+  void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
+                                 MediaAudibleState aState);
 
  private:
   ~MediaController();
