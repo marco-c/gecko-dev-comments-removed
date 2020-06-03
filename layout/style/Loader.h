@@ -206,7 +206,7 @@ class Loader final {
       nsIURI*, SheetParsingMode = eAuthorSheetFeatures,
       UseSystemPrincipal = UseSystemPrincipal::No);
 
-  enum class IsPreload {
+  enum class IsPreload : uint8_t {
     No,
     
     
