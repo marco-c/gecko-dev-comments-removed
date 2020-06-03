@@ -102,11 +102,8 @@ impl Store {
 
     
     
-    pub fn wipe_all(&self) -> Result<()> {
-        let tx = self.db.unchecked_transaction()?;
-        api::wipe_all(&tx)?;
-        tx.commit()?;
-        Ok(())
+    pub fn get_bytes_in_use(&self, ext_id: &str, keys: JsonValue) -> Result<usize> {
+        api::get_bytes_in_use(&self.db, ext_id, keys)
     }
 
     

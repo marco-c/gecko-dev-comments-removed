@@ -10,9 +10,14 @@ use serde_json::{Map, Value as JsonValue};
 use sql_support::{self, ConnExt};
 
 
-const QUOTA_BYTES: usize = 102_400;
-const QUOTA_BYTES_PER_ITEM: usize = 8_192;
-const MAX_ITEMS: usize = 512;
+
+
+
+
+
+pub const SYNC_QUOTA_BYTES: usize = 102_400;
+pub const SYNC_QUOTA_BYTES_PER_ITEM: usize = 8_192;
+pub const SYNC_MAX_ITEMS: usize = 512;
 
 
 
@@ -81,7 +86,7 @@ fn save_to_db(tx: &Transaction<'_>, ext_id: &str, val: &JsonValue) -> Result<()>
     } else {
         
         let sval = val.to_string();
-        if sval.len() > QUOTA_BYTES {
+        if sval.len() > SYNC_QUOTA_BYTES {
             return Err(ErrorKind::QuotaError(QuotaReason::TotalBytes).into());
         }
         log::trace!("saving data for '{}': writing", ext_id);
@@ -163,6 +168,14 @@ impl Serialize for StorageChanges {
 
 
 
+pub fn get_quota_size_of(key: &str, v: &JsonValue) -> usize {
+    
+    
+    key.len() + v.to_string().len()
+}
+
+
+
 
 pub fn set(tx: &Transaction<'_>, ext_id: &str, val: JsonValue) -> Result<StorageChanges> {
     let val_map = match val {
@@ -178,12 +191,12 @@ pub fn set(tx: &Transaction<'_>, ext_id: &str, val: JsonValue) -> Result<Storage
     
     for (k, v) in val_map.into_iter() {
         let old_value = current.remove(&k);
-        if current.len() >= MAX_ITEMS {
+        if current.len() >= SYNC_MAX_ITEMS {
             return Err(ErrorKind::QuotaError(QuotaReason::MaxItems).into());
         }
         
         
-        if k.len() + v.to_string().len() >= QUOTA_BYTES_PER_ITEM {
+        if get_quota_size_of(&k, &v) > SYNC_QUOTA_BYTES_PER_ITEM {
             return Err(ErrorKind::QuotaError(QuotaReason::ItemBytes).into());
         }
         let change = StorageValueChange {
@@ -295,21 +308,29 @@ pub fn clear(tx: &Transaction<'_>, ext_id: &str) -> Result<StorageChanges> {
 }
 
 
-
-
-
-
-
-
-pub fn wipe_all(tx: &Transaction<'_>) -> Result<()> {
+pub fn get_bytes_in_use(conn: &Connection, ext_id: &str, keys: JsonValue) -> Result<usize> {
+    let maybe_existing = get_from_db(conn, ext_id)?;
+    let existing = match maybe_existing {
+        None => return Ok(0),
+        Some(v) => v,
+    };
     
-    tx.execute_batch(
-        "DELETE FROM storage_sync_data; DELETE FROM storage_sync_mirror; DELETE FROM meta;",
-    )?;
-    Ok(())
+    let keys: Vec<&str> = match &keys {
+        JsonValue::Null => existing.keys().map(|v| v.as_str()).collect(),
+        JsonValue::String(name) => vec![name.as_str()],
+        JsonValue::Array(names) => names.iter().filter_map(|v| v.as_str()).collect(),
+        
+        _ => return Ok(0),
+    };
+    
+    let mut size = 0;
+    for key in keys.into_iter() {
+        if let Some(v) = existing.get(key) {
+            size += get_quota_size_of(key, &v);
+        }
+    }
+    Ok(size)
 }
-
-
 
 #[cfg(test)]
 mod tests {
@@ -509,7 +530,7 @@ mod tests {
         let mut db = new_mem_db();
         let tx = db.transaction()?;
         let ext_id = "xyz";
-        for i in 1..MAX_ITEMS + 1 {
+        for i in 1..SYNC_MAX_ITEMS + 1 {
             set(
                 &tx,
                 &ext_id,
@@ -531,10 +552,15 @@ mod tests {
         let ext_id = "xyz";
         
         
-        let val = "x".repeat(QUOTA_BYTES_PER_ITEM - 5);
+        
+        let val = "x".repeat(SYNC_QUOTA_BYTES_PER_ITEM - 5);
 
         
         set(&tx, &ext_id, json!({ "x": val }))?;
+        assert_eq!(
+            get_bytes_in_use(&tx, &ext_id, json!("x"))?,
+            SYNC_QUOTA_BYTES_PER_ITEM - 2
+        );
 
         
         let e = set(&tx, &ext_id, json!({ "xxxx": val })).unwrap_err();
@@ -545,36 +571,35 @@ mod tests {
         Ok(())
     }
 
-    fn query_count(conn: &Connection, table: &str) -> u32 {
-        conn.query_row_and_then(
-            &format!("SELECT COUNT(*) FROM {};", table),
-            rusqlite::NO_PARAMS,
-            |row| row.get::<_, u32>(0),
-        )
-        .expect("should work")
-    }
-
     #[test]
-    fn test_wipe() -> Result<()> {
-        use crate::db::put_meta;
-
+    fn test_get_bytes_in_use() -> Result<()> {
         let mut db = new_mem_db();
         let tx = db.transaction()?;
-        set(&tx, "ext-a", json!({ "x": "y" }))?;
-        set(&tx, "ext-b", json!({ "y": "x" }))?;
-        put_meta(&tx, "meta", &"meta-meta".to_string())?;
-        tx.execute(
-            "INSERT INTO storage_sync_mirror (guid, ext_id, data)
-                    VALUES ('guid', 'ext-a', null)",
-            rusqlite::NO_PARAMS,
-        )?;
-        assert_eq!(query_count(&tx, "storage_sync_data"), 2);
-        assert_eq!(query_count(&tx, "storage_sync_mirror"), 1);
-        assert_eq!(query_count(&tx, "meta"), 1);
-        wipe_all(&tx)?;
-        assert_eq!(query_count(&tx, "storage_sync_data"), 0);
-        assert_eq!(query_count(&tx, "storage_sync_mirror"), 0);
-        assert_eq!(query_count(&tx, "meta"), 0);
+        let ext_id = "xyz";
+
+        assert_eq!(get_bytes_in_use(&tx, &ext_id, json!(null))?, 0);
+
+        set(&tx, &ext_id, json!({ "a": "a" }))?; 
+        set(&tx, &ext_id, json!({ "b": "bb" }))?; 
+        set(&tx, &ext_id, json!({ "c": "ccc" }))?; 
+        set(&tx, &ext_id, json!({ "n": 999_999 }))?; 
+
+        assert_eq!(get_bytes_in_use(&tx, &ext_id, json!("x"))?, 0);
+        assert_eq!(get_bytes_in_use(&tx, &ext_id, json!("a"))?, 4);
+        assert_eq!(get_bytes_in_use(&tx, &ext_id, json!("b"))?, 5);
+        assert_eq!(get_bytes_in_use(&tx, &ext_id, json!("c"))?, 6);
+        assert_eq!(get_bytes_in_use(&tx, &ext_id, json!("n"))?, 7);
+
+        assert_eq!(get_bytes_in_use(&tx, &ext_id, json!(["a"]))?, 4);
+        assert_eq!(get_bytes_in_use(&tx, &ext_id, json!(["a", "x"]))?, 4);
+        assert_eq!(get_bytes_in_use(&tx, &ext_id, json!(["a", "b"]))?, 9);
+        assert_eq!(get_bytes_in_use(&tx, &ext_id, json!(["a", "c"]))?, 10);
+
+        assert_eq!(
+            get_bytes_in_use(&tx, &ext_id, json!(["a", "b", "c", "n"]))?,
+            22
+        );
+        assert_eq!(get_bytes_in_use(&tx, &ext_id, json!(null))?, 22);
         Ok(())
     }
 }

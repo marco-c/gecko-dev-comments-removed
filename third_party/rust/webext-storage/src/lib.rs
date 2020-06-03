@@ -13,17 +13,8 @@ pub mod store;
 mod sync;
 
 
+pub use sync::STORAGE_VERSION;
 
-
-pub fn delme_demo_usage() -> error::Result<()> {
-    use serde_json::json;
-
-    let store = store::Store::new("webext-storage.db")?;
-    store.set("ext-id", json!({}))?;
-    store.get("ext-id", json!({}))?;
-    store.remove("ext-id", json!({}))?;
-    store.clear("ext-id")?;
-    
-    store.wipe_all()?;
-    Ok(())
-}
+pub use api::SYNC_MAX_ITEMS;
+pub use api::SYNC_QUOTA_BYTES;
+pub use api::SYNC_QUOTA_BYTES_PER_ITEM;

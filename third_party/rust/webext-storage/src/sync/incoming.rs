@@ -13,7 +13,7 @@ use sync_guid::Guid as SyncGuid;
 
 use crate::error::*;
 
-use super::{merge, JsonMap, Record};
+use super::{merge, remove_matching_keys, JsonMap, Record};
 
 
 
@@ -216,9 +216,29 @@ pub fn plan_incoming(s: IncomingState) -> IncomingAction {
                         data: incoming_data,
                     }
                 }
-                (DataState::Deleted, _, _) => {
+                (DataState::Deleted, DataState::Exists(local_data), DataState::Exists(mirror)) => {
                     
                     
+                    
+                    let result = remove_matching_keys(local_data, &mirror);
+                    if result.is_empty() {
+                        
+                        
+                        IncomingAction::DeleteLocally
+                    } else {
+                        IncomingAction::Merge { data: result }
+                    }
+                }
+                (DataState::Deleted, DataState::Exists(local_data), DataState::Deleted) => {
+                    
+                    
+                    
+                    
+                    
+                    
+                    IncomingAction::Merge { data: local_data }
+                }
+                (DataState::Deleted, DataState::Deleted, _) => {
                     
                     
                     IncomingAction::DeleteLocally
@@ -236,14 +256,18 @@ pub fn plan_incoming(s: IncomingState) -> IncomingAction {
                     
                     merge(incoming_data, local_data, None)
                 }
-                (DataState::Exists(_), DataState::Deleted) => {
-                    
-                    
-                    IncomingAction::DeleteLocally
-                }
                 (DataState::Deleted, DataState::Exists(local_data)) => {
                     
-                    IncomingAction::TakeRemote { data: local_data }
+                    
+                    
+                    
+                    IncomingAction::Merge { data: local_data }
+                }
+                (DataState::Exists(incoming_data), DataState::Deleted) => {
+                    
+                    IncomingAction::TakeRemote {
+                        data: incoming_data,
+                    }
                 }
                 (DataState::Deleted, DataState::Deleted) => {
                     
@@ -292,11 +316,12 @@ pub fn apply_actions(
             
             IncomingAction::TakeRemote { data } => {
                 tx.execute_named_cached(
-                    "UPDATE storage_sync_data SET data = :data, sync_change_counter = 0 WHERE ext_id = :ext_id",
+                    "INSERT OR REPLACE INTO storage_sync_data(ext_id, data, sync_change_counter)
+                        VALUES (:ext_id, :data, 0)",
                     &[
                         (":ext_id", &item.ext_id),
                         (":data", &serde_json::Value::Object(data)),
-                    ]
+                    ],
                 )?;
             }
 
