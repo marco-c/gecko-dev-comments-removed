@@ -159,9 +159,13 @@ class XPCShellTestThread(Thread):
         self.log = kwargs.get('log')
         self.app_dir_key = kwargs.get('app_dir_key')
         self.interactive = kwargs.get('interactive')
-        self.prefsFile = kwargs.get('prefsFile')
+        self.rootPrefsFile = kwargs.get('rootPrefsFile')
+        self.extraPrefs = kwargs.get('extraPrefs')
         self.verboseIfFails = kwargs.get('verboseIfFails')
         self.headless = kwargs.get('headless')
+
+        
+        self.prefsFile = self.rootPrefsFile
 
         
         
@@ -346,6 +350,39 @@ class XPCShellTestThread(Thread):
         self.log.info("xpcshell return code: %s" % self.getReturnCode(proc))
         self.postCheck(proc)
         self.clean_temp_dirs(self.test_object['path'])
+
+    def updateTestPrefsFile(self):
+        
+        
+        
+        
+        if 'prefs' in self.test_object:
+            
+            
+            
+            
+            localTempDir = mkdtemp(prefix='xpc-other-', dir=self._rootTempDir)
+
+            filename = 'user.js'
+            interpolation = {'server': 'dummyserver'}
+            profile = Profile(profile=localTempDir, restore=False)
+            profile.merge(self._rootTempDir, interpolation=interpolation)
+
+            prefs = self.test_object['prefs'].strip().split()
+            name = self.test_object['id']
+            self.log.info(
+                "%s: Per-test extra prefs will be set:\n  {}".format(
+                    '\n  '.join(prefs)) % name
+            )
+
+            profile.set_preferences(parse_preferences(prefs), filename=filename)
+            
+            
+            profile.set_preferences(parse_preferences(self.extraPrefs), filename=filename)
+            return os.path.join(profile.profile, filename)
+
+        
+        return self.rootPrefsFile
 
     def buildCmdTestFile(self, name):
         """
@@ -653,6 +690,9 @@ class XPCShellTestThread(Thread):
         self.profileDir = self.setupProfileDir()
         self.tempDir = self.setupTempDir()
         self.mozInfoJSPath = self.setupMozinfoJS()
+
+        
+        self.prefsFile = self.updateTestPrefsFile()
 
         
         
@@ -970,13 +1010,20 @@ class XPCShellTests(object):
 
     def buildPrefsFile(self, extraPrefs):
         
-        profile_data_dir = os.path.join(SCRIPT_DIR, 'profile_data')
 
+        
+        
+        profile_data_dir = os.path.join(SCRIPT_DIR, 'profile_data')
         
         
         
         if build:
             path = os.path.join(build.topsrcdir, 'testing', 'profiles')
+            if os.path.isdir(path):
+                profile_data_dir = path
+        
+        if not os.path.isdir(profile_data_dir):
+            path = os.path.abspath(os.path.join(SCRIPT_DIR, '..', 'profiles'))
             if os.path.isdir(path):
                 profile_data_dir = path
 
@@ -1485,7 +1532,8 @@ class XPCShellTests(object):
             'log': self.log,
             'interactive': self.interactive,
             'app_dir_key': appDirKey,
-            'prefsFile': self.prefsFile,
+            'rootPrefsFile': self.prefsFile,
+            'extraPrefs': options.get('extraPrefs') or [],
             'verboseIfFails': self.verboseIfFails,
             'headless': self.headless,
         }
