@@ -37,6 +37,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPrefs_page_load.h"
 #include "mozilla/StaticPtr.h"
 #include "nsIURIFixup.h"
@@ -359,6 +360,9 @@ void BrowsingContext::CreateFromIPC(BrowsingContext::IPCInitializer&& aInit,
   }
 
   context->mWindowless = aInit.mWindowless;
+  if (aInit.mHasSessionHistory) {
+    context->InitSessionHistory();
+  }
 
   
   
@@ -1835,6 +1839,7 @@ BrowsingContext::IPCInitializer BrowsingContext::GetIPCInitializer() {
   init.mUseRemoteTabs = mUseRemoteTabs;
   init.mUseRemoteSubframes = mUseRemoteSubframes;
   init.mOriginAttributes = mOriginAttributes;
+  init.mHasSessionHistory = mChildSessionHistory != nullptr;
   init.mFields = mFields.Fields();
   return init;
 }
@@ -2277,14 +2282,18 @@ void BrowsingContext::InitSessionHistory() {
 }
 
 ChildSHistory* BrowsingContext::GetChildSessionHistory() {
-  
-  
-  
-  
-  
-  return mChildSessionHistory && mChildSessionHistory->IsInProcess()
-             ? mChildSessionHistory.get()
-             : nullptr;
+  if (!StaticPrefs::fission_sessionHistoryInParent()) {
+    
+    
+    
+    
+    
+    return mChildSessionHistory && mChildSessionHistory->IsInProcess()
+               ? mChildSessionHistory.get()
+               : nullptr;
+  }
+
+  return mChildSessionHistory;
 }
 
 void BrowsingContext::CreateChildSHistory() {

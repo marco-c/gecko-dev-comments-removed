@@ -148,6 +148,8 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
     RefPtr<nsDocShellLoadState> mLoadState;
   };
 
+  static void LoadURIs(nsTArray<LoadEntryResult>& aLoadResults);
+
   
   
   
