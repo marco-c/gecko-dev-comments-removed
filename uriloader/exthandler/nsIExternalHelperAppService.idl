@@ -139,8 +139,7 @@ interface nsIHelperAppLauncher : nsICancelable
 
 
 
-
-  void launchWithApplication(in boolean aHandleInternally);
+  void launchWithApplication();
 
   
 
@@ -176,9 +175,4 @@ interface nsIHelperAppLauncher : nsICancelable
 
 
   readonly attribute int64_t contentLength;
-
-  
-
-
-  readonly attribute uint64_t browsingContextId;
 };

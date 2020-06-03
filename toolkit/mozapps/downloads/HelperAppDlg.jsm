@@ -552,7 +552,7 @@ nsUnknownContentTypeDialog.prototype = {
       
       this.dialogElement("mode").selectedItem = this.dialogElement("save");
     } else {
-      this.initInteractiveControls();
+      this.initAppAndSaveToDiskValues();
 
       
       
@@ -573,6 +573,12 @@ nsUnknownContentTypeDialog.prototype = {
       
       
 
+      
+      
+      
+      
+
+      
       if (shouldntRememberChoice) {
         rememberChoice.checked = false;
         rememberChoice.hidden = true;
@@ -583,6 +589,12 @@ nsUnknownContentTypeDialog.prototype = {
             this.nsIMIMEInfo.handleInternally;
       }
       this.toggleRememberChoice(rememberChoice);
+
+      
+      var openHandler = this.dialogElement("openHandler");
+      openHandler.remove();
+      var openHandlerBox = this.dialogElement("openHandlerBox");
+      openHandlerBox.appendChild(openHandler);
     }
 
     this.mDialog.setTimeout(function() {
@@ -622,6 +634,7 @@ nsUnknownContentTypeDialog.prototype = {
     this.dialogElement("mode").focus();
   },
 
+  
   initIntro(url, filename, displayname) {
     this.dialogElement("location").value = displayname;
     this.dialogElement("location").setAttribute("realname", filename);
@@ -727,6 +740,7 @@ nsUnknownContentTypeDialog.prototype = {
     }
   },
 
+  
   getPath(aFile) {
     if (AppConstants.platform == "macosx") {
       return aFile.leafName || aFile.path;
@@ -734,7 +748,8 @@ nsUnknownContentTypeDialog.prototype = {
     return aFile.path;
   },
 
-  initInteractiveControls() {
+  
+  initAppAndSaveToDiskValues() {
     var modeGroup = this.dialogElement("mode");
 
     
@@ -786,10 +801,6 @@ nsUnknownContentTypeDialog.prototype = {
     openHandler.selectedIndex = 0;
     var defaultOpenHandler = this.dialogElement("defaultHandler");
 
-    if (this.shouldShowInternalHandlerOption()) {
-      this.dialogElement("handleInternally").hidden = false;
-    }
-
     if (
       this.mLauncher.MIMEInfo.preferredAction ==
       this.nsIMIMEInfo.useSystemDefault
@@ -805,13 +816,6 @@ nsUnknownContentTypeDialog.prototype = {
         otherHandler && !otherHandler.hidden
           ? otherHandler
           : defaultOpenHandler;
-    } else if (
-      !this.dialogElement("handleInternally").hidden &&
-      this.mLauncher.MIMEInfo.preferredAction ==
-        this.nsIMIMEInfo.handleInternally
-    ) {
-      
-      modeGroup.selectedItem = this.dialogElement("handleInternally");
     } else {
       
       modeGroup.selectedItem = this.dialogElement("save");
@@ -855,10 +859,6 @@ nsUnknownContentTypeDialog.prototype = {
       this.dialogElement("open").selected &&
       this.dialogElement("openHandler").selectedIndex == 0
     );
-  },
-
-  get handleInternally() {
-    return this.dialogElement("handleInternally").selected;
   },
 
   toggleRememberChoice(aCheckbox) {
@@ -937,7 +937,7 @@ nsUnknownContentTypeDialog.prototype = {
       if (needUpdate) {
         this.mLauncher.MIMEInfo.preferredAction = this.nsIMIMEInfo.useSystemDefault;
       }
-    } else if (this.useOtherHandler) {
+    } else {
       
       
       needUpdate =
@@ -982,8 +982,8 @@ nsUnknownContentTypeDialog.prototype = {
     hs.store(handlerInfo);
   },
 
+  
   onOK(aEvent) {
-    let shouldLogAction = this.dialogElement("basicBox").collapsed;
     
     if (this.useOtherHandler) {
       var helperApp = this.helperAppChoice();
@@ -1013,7 +1013,6 @@ nsUnknownContentTypeDialog.prototype = {
 
         
         aEvent.preventDefault();
-        shouldLogAction = false;
       }
     }
 
@@ -1025,12 +1024,10 @@ nsUnknownContentTypeDialog.prototype = {
     
     
     
-    let action;
     try {
       var needUpdate = this.updateMIMEInfo();
 
       if (this.dialogElement("save").selected) {
-        action = "SAVE";
         
         
         this._saveToDiskTimer = Cc["@mozilla.org/timer;1"].createInstance(
@@ -1038,8 +1035,7 @@ nsUnknownContentTypeDialog.prototype = {
         );
         this._saveToDiskTimer.initWithCallback(this, 0, nsITimer.TYPE_ONE_SHOT);
       } else {
-        action = this.getOpenWithActionForTelemetry();
-        this.mLauncher.launchWithApplication(this.handleInternally);
+        this.mLauncher.launchWithApplication();
       }
 
       
@@ -1053,19 +1049,12 @@ nsUnknownContentTypeDialog.prototype = {
       ) {
         this.updateHelperAppPref();
       }
-    } catch (e) {
-    } finally {
-      if (shouldLogAction) {
-        this.logActionInTelemetryIfExtensionIsPDF(action);
-      }
-    }
-
+    } catch (e) {}
     this.onUnload();
   },
 
+  
   onCancel() {
-    this.logActionInTelemetryIfExtensionIsPDF("CANCEL");
-
     
     this.mLauncher.setWebProgressListener(null);
 
@@ -1095,6 +1084,7 @@ nsUnknownContentTypeDialog.prototype = {
     }
   },
 
+  
   dialogElement(id) {
     return this.mDialog.document.getElementById(id);
   },
@@ -1248,88 +1238,6 @@ nsUnknownContentTypeDialog.prototype = {
     }
 
     this.finishChooseApp();
-  },
-
-  shouldShowInternalHandlerOption() {
-    
-    
-    let browsingContext = this.mDialog.BrowsingContext.get(
-      this.mLauncher.browsingContextId
-    );
-    let primaryExtension = "";
-    try {
-      
-      
-      primaryExtension = this.mLauncher.MIMEInfo.primaryExtension;
-    } catch (e) {}
-    return (
-      !browsingContext?.currentWindowGlobal?.documentPrincipal?.URI?.schemeIs(
-        "resource"
-      ) &&
-      primaryExtension == "pdf" &&
-      !Services.prefs.getBoolPref("pdfjs.disabled", true) &&
-      Services.prefs.getBoolPref(
-        "browser.helperApps.showOpenOptionForPdfJS",
-        false
-      )
-    );
-  },
-
-  getOpenWithActionForTelemetry() {
-    if (this.handleInternally) {
-      return "OPEN_WITH_INTERNAL_HANDLER";
-    }
-    let name = this.mLauncher.MIMEInfo.preferredApplicationHandler?.name;
-    let { defaultDescription } = this.mLauncher.MIMEInfo;
-    if (name) {
-      name = name.toLowerCase();
-      
-      let delimeter = AppConstants.platform == "linux" ? "-" : ".";
-      name = name.substring(0, name.indexOf(delimeter));
-    } else if (defaultDescription.includes("Edge")) {
-      name = "msedge";
-    } else if (defaultDescription.includes("Chrome")) {
-      name = "chrome";
-    } else if (defaultDescription == "Preview") {
-      name = "preview";
-    }
-    switch (name) {
-      case "acrobat":
-      case "acrord32":
-      case "adobe acrobat reader dc":
-        return "OPEN_WITH_ACROBAT";
-      case "chrome":
-        
-        return "OPEN_WITH_CHROMIUM";
-      case "foxitreader":
-        return "OPEN_WITH_FOXIT";
-      case "msedge":
-        return "OPEN_WITH_MSEDGE";
-      case "preview":
-        return "OPEN_WITH_PREVIEW";
-      case undefined:
-        if (
-          this.mLauncher.MIMEInfo.preferredAction ==
-          this.mLauncher.MIMEInfo.useSystemDefault
-        ) {
-          return "OPEN_WITH_SYSTEM_DEFAULT";
-        }
-      
-      default:
-        return "OPEN_WITH_OTHER";
-    }
-  },
-
-  logActionInTelemetryIfExtensionIsPDF(action) {
-    try {
-      if (this.mLauncher.MIMEInfo.primaryExtension == "pdf") {
-        Services.telemetry.keyedScalarAdd(
-          "unknowncontenttype.pdf_action",
-          action,
-          1
-        );
-      }
-    } catch (ex) {}
   },
 
   

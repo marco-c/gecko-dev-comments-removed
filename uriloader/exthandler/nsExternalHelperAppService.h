@@ -311,11 +311,6 @@ class nsExternalAppHandler final : public nsIStreamListener,
   
 
 
-  bool mHandleInternally;
-
-  
-
-
 
 
   uint32_t mReason;
@@ -388,7 +383,7 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
 
 
-  nsresult CreateFailedTransfer();
+  nsresult CreateFailedTransfer(bool aIsPrivateBrowsing);
 
   
 
