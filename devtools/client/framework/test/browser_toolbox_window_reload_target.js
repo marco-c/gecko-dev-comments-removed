@@ -9,6 +9,12 @@
 
 
 requestLongerTimeout(10);
+const { PromiseTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PromiseTestUtils.jsm"
+);
+
+
+PromiseTestUtils.whitelistRejectionsGlobally(/Page has navigated/);
 
 const TEST_URL =
   "data:text/html;charset=utf-8," +

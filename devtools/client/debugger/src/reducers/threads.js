@@ -54,7 +54,11 @@ export default function update(
     case "INSERT_THREADS":
       return {
         ...state,
-        threads: [...state.threads, ...action.threads],
+        threads: [
+          ...state.threads,
+          
+          ...action.threads.filter(thread => thread.type != "mainThread"),
+        ],
       };
     case "REMOVE_THREADS":
       const { threads } = action;

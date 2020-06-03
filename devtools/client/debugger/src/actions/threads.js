@@ -90,7 +90,8 @@ export function updateThreads() {
     const threads = await client.fetchThreads();
     validateContext(getState(), cx);
 
-    const currentThreads = getThreads(getState());
+    
+    const currentThreads = getAllThreads(getState());
 
     const addedThreads = differenceBy(threads, currentThreads, t => t.actor);
     const removedThreads = differenceBy(currentThreads, threads, t => t.actor);
