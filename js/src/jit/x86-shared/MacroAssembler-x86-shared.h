@@ -868,6 +868,22 @@ class MacroAssemblerX86Shared : public Assembler {
     j(Assembler::NotEqual, fail);
   }
 
+  void truncateDoubleToInt32(FloatRegister src, Register dest, Label* fail) {
+    
+    
+    
+    
+    vcvttsd2si(src, dest);
+    cmp32(dest, Imm32(1));
+    j(Assembler::Overflow, fail);
+  }
+  void truncateFloat32ToInt32(FloatRegister src, Register dest, Label* fail) {
+    
+    vcvttss2si(src, dest);
+    cmp32(dest, Imm32(1));
+    j(Assembler::Overflow, fail);
+  }
+
   inline void clampIntToUint8(Register reg);
 
   bool maybeInlineDouble(double d, FloatRegister dest) {

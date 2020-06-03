@@ -99,19 +99,14 @@ class CodeGeneratorX86Shared : public CodeGeneratorShared {
     bailoutIf(Assembler::Zero, snapshot);
   }
   void bailoutCvttsd2si(FloatRegister src, Register dest, LSnapshot* snapshot) {
-    
-    
-    
-    
-    masm.vcvttsd2si(src, dest);
-    masm.cmp32(dest, Imm32(1));
-    bailoutIf(Assembler::Overflow, snapshot);
+    Label bail;
+    masm.truncateDoubleToInt32(src, dest, &bail);
+    bailoutFrom(&bail, snapshot);
   }
   void bailoutCvttss2si(FloatRegister src, Register dest, LSnapshot* snapshot) {
-    
-    masm.vcvttss2si(src, dest);
-    masm.cmp32(dest, Imm32(1));
-    bailoutIf(Assembler::Overflow, snapshot);
+    Label bail;
+    masm.truncateFloat32ToInt32(src, dest, &bail);
+    bailoutFrom(&bail, snapshot);
   }
 
   bool generateOutOfLineCode();
