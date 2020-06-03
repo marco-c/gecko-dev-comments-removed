@@ -5073,10 +5073,7 @@ bool Document::QueryCommandState(const nsAString& aHTMLCommandName,
       return currentValue.EqualsLiteral("justify");
     }
     default:
-      
-      
-      
-      return params->GetBool("state_all");
+      break;
   }
 
   
