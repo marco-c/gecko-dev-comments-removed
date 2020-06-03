@@ -208,19 +208,50 @@ where
     ToShmem,
 )]
 #[repr(C, u8)]
-pub enum GenericAspectRatio<N> {
+pub enum PreferredRatio<N> {
+    
+    #[css(skip)]
+    None,
     
     Ratio(#[css(field_bound)] Ratio<N>),
+}
+
+
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C)]
+pub struct GenericAspectRatio<N> {
     
-    Auto,
+    #[animation(constant)]
+    #[css(represents_keyword)]
+    pub auto: bool,
+    
+    #[css(field_bound)]
+    pub ratio: PreferredRatio<N>,
 }
 
 pub use self::GenericAspectRatio as AspectRatio;
 
-impl<R> AspectRatio<R> {
+impl<N> AspectRatio<N> {
     
     #[inline]
     pub fn auto() -> Self {
-        AspectRatio::Auto
+        AspectRatio {
+            auto: true,
+            ratio: PreferredRatio::None,
+        }
     }
 }
