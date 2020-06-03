@@ -572,14 +572,13 @@ inline bool operator!=(const nsFrameList::Iterator& aIter1,
 }
 
 namespace mozilla {
-namespace layout {
 
 
 
 
 
 
-class AutoFrameListPtr {
+class MOZ_RAII AutoFrameListPtr final {
  public:
   AutoFrameListPtr(nsPresContext* aPresContext, nsFrameList* aFrameList)
       : mPresContext(aPresContext), mFrameList(aFrameList) {}
@@ -592,7 +591,7 @@ class AutoFrameListPtr {
   nsFrameList* mFrameList;
 };
 
-namespace detail {
+namespace layout::detail {
 union AlignedFrameListBytes {
   void* ptr;
   char bytes[sizeof(nsFrameList)];
@@ -600,7 +599,6 @@ union AlignedFrameListBytes {
 extern const AlignedFrameListBytes gEmptyFrameListBytes;
 }  
 
-}  
 }  
 
  inline const nsFrameList& nsFrameList::EmptyList() {
