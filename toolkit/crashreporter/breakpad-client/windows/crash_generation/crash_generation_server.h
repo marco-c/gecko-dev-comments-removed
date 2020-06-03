@@ -57,6 +57,9 @@ class CrashGenerationServer {
                                               const ClientInfo& client_info,
                                               const std::wstring& file_path);
 
+  typedef void (*OnClientDumpWrittenCallback)(void* context,
+                                              const ClientInfo& client_info);
+
   typedef void (*OnClientExitedCallback)(void* context,
                                          const ClientInfo& client_info);
 
@@ -82,12 +85,14 @@ class CrashGenerationServer {
   
   
   
+  
   CrashGenerationServer(const std::wstring& pipe_name,
                         SECURITY_ATTRIBUTES* pipe_sec_attrs,
                         OnClientConnectedCallback connect_callback,
                         void* connect_context,
                         OnClientDumpRequestCallback dump_callback,
                         void* dump_context,
+                        OnClientDumpWrittenCallback written_callback,
                         OnClientExitedCallback exit_callback,
                         void* exit_context,
                         OnClientUploadRequestCallback upload_request_callback,
@@ -255,6 +260,9 @@ class CrashGenerationServer {
 
   
   void* dump_context_;
+
+  
+  OnClientDumpWrittenCallback written_callback_;
 
   
   OnClientExitedCallback exit_callback_;

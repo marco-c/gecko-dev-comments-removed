@@ -273,15 +273,18 @@ CrashGenerationServer::ClientEvent(short revents)
     return true;
   }
 
+  ClientInfo info(crashing_pid, this);
   if (dump_callback_) {
-    ClientInfo info(crashing_pid, this);
-
     dump_callback_(dump_context_, info, minidump_filename);
   }
 
   
   
   close(signal_fd);
+
+  if (exit_callback_) {
+    exit_callback_(exit_context_, info);
+  }
 
   return true;
 }
