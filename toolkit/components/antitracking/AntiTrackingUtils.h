@@ -59,6 +59,9 @@ class AntiTrackingUtils final {
 
   
   
+  
+  
+  
   static bool HasStoragePermissionInParent(nsIChannel* aChannel);
 
   
