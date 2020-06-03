@@ -1602,7 +1602,6 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
   
   
   
-  bool leftCheck = false;
   bool rightCheck = false;
 
   
@@ -1624,16 +1623,12 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
         atPreviousCharOfPreviousCharOfEndOfRun.IsSet() &&
         !atPreviousCharOfPreviousCharOfEndOfRun.IsEndOfContainer() &&
         atPreviousCharOfPreviousCharOfEndOfRun.IsCharASCIISpace();
-    if (atPreviousCharOfPreviousCharOfEndOfRun.IsSet()) {
-      if (atPreviousCharOfPreviousCharOfEndOfRun.IsEndOfContainer() ||
-          !atPreviousCharOfPreviousCharOfEndOfRun.IsCharASCIISpace()) {
-        leftCheck = true;
-      }
-    } else if (aRun->StartsFromNormalText() ||
-               aRun->StartsFromSpecialContent()) {
-      leftCheck = true;
-    }
-    if (leftCheck || isPreviousCharASCIIWhitespace) {
+    bool maybeNBSPFollowingVisibleContent =
+        (atPreviousCharOfPreviousCharOfEndOfRun.IsSet() &&
+         !isPreviousCharASCIIWhitespace) ||
+        (!atPreviousCharOfPreviousCharOfEndOfRun.IsSet() &&
+         (aRun->StartsFromNormalText() || aRun->StartsFromSpecialContent()));
+    if (maybeNBSPFollowingVisibleContent || isPreviousCharASCIIWhitespace) {
       
       
       if (aRun->EndsByNormalText() || aRun->EndsBySpecialContent() ||
@@ -1689,42 +1684,47 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
           rightCheck = true;
         }
       }
-    }
-    if (leftCheck && rightCheck) {
-      
-      AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
-      nsresult rv =
-          MOZ_KnownLive(mHTMLEditor)
-              .InsertTextIntoTextNodeWithTransaction(
-                  NS_LITERAL_STRING(" "), atPreviousCharOfEndOfRun, true);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "EditorBase::InsertTextIntoTextNodeWithTransaction() failed");
-        return rv;
-      }
 
-      
-      NS_ASSERTION(!atPreviousCharOfEndOfRun.IsEndOfContainer() &&
-                       !atPreviousCharOfEndOfRun.IsAtLastContent(),
-                   "The text node was modified by mutation event listener");
-      if (!atPreviousCharOfEndOfRun.IsEndOfContainer() &&
-          !atPreviousCharOfEndOfRun.IsAtLastContent()) {
-        NS_ASSERTION(atPreviousCharOfEndOfRun.IsNextCharNBSP(),
-                     "Trying to remove an NBSP, but it's gone from the "
-                     "expected position");
-        EditorDOMPointInText atNextCharOfPreviousCharOfEndOfRun =
-            atPreviousCharOfEndOfRun.NextPoint();
-        nsresult rv = MOZ_KnownLive(mHTMLEditor)
-                          .DeleteTextAndTextNodesWithTransaction(
-                              atNextCharOfPreviousCharOfEndOfRun,
-                              atNextCharOfPreviousCharOfEndOfRun.NextPoint());
+      if (maybeNBSPFollowingVisibleContent && rightCheck) {
+        
+        AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
+        nsresult rv =
+            MOZ_KnownLive(mHTMLEditor)
+                .InsertTextIntoTextNodeWithTransaction(
+                    NS_LITERAL_STRING(" "), atPreviousCharOfEndOfRun, true);
         if (NS_FAILED(rv)) {
           NS_WARNING(
-              "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
+              "EditorBase::InsertTextIntoTextNodeWithTransaction() failed");
           return rv;
         }
+
+        
+        NS_ASSERTION(!atPreviousCharOfEndOfRun.IsEndOfContainer() &&
+                         !atPreviousCharOfEndOfRun.IsAtLastContent(),
+                     "The text node was modified by mutation event listener");
+        if (!atPreviousCharOfEndOfRun.IsEndOfContainer() &&
+            !atPreviousCharOfEndOfRun.IsAtLastContent()) {
+          NS_ASSERTION(atPreviousCharOfEndOfRun.IsNextCharNBSP(),
+                       "Trying to remove an NBSP, but it's gone from the "
+                       "expected position");
+          EditorDOMPointInText atNextCharOfPreviousCharOfEndOfRun =
+              atPreviousCharOfEndOfRun.NextPoint();
+          nsresult rv = MOZ_KnownLive(mHTMLEditor)
+                            .DeleteTextAndTextNodesWithTransaction(
+                                atNextCharOfPreviousCharOfEndOfRun,
+                                atNextCharOfPreviousCharOfEndOfRun.NextPoint());
+          if (NS_FAILED(rv)) {
+            NS_WARNING(
+                "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
+            return rv;
+          }
+        }
+        return NS_OK;
       }
-    } else if (!mPRE && isPreviousCharASCIIWhitespace && rightCheck) {
+    }
+
+    if (!mPRE && !maybeNBSPFollowingVisibleContent &&
+        isPreviousCharASCIIWhitespace && rightCheck) {
       
       
       
