@@ -270,7 +270,8 @@ static uint32_t DefaultFeatures() {
 static uint32_t StartupExtraDefaultFeatures() {
   
   
-  return ProfilerFeature::MainThreadIO;
+  return ProfilerFeature::MainThreadIO | ProfilerFeature::FileIO |
+         ProfilerFeature::FileIOAll;
 }
 
 
@@ -712,6 +713,13 @@ class ActivePS {
       aFeatures |= ProfilerFeature::Threads;
     }
 
+    
+    if (aFeatures & ProfilerFeature::FileIOAll) {
+      aFeatures |= ProfilerFeature::MainThreadIO | ProfilerFeature::FileIO;
+    } else if (aFeatures & ProfilerFeature::FileIO) {
+      aFeatures |= ProfilerFeature::MainThreadIO;
+    }
+
     return aFeatures;
   }
 
@@ -735,7 +743,9 @@ class ActivePS {
         
         
         mSamplerThread(NewSamplerThread(aLock, mGeneration, aInterval)),
-        mInterposeObserver(ProfilerFeature::HasMainThreadIO(aFeatures)
+        mInterposeObserver((ProfilerFeature::HasMainThreadIO(aFeatures) ||
+                            ProfilerFeature::HasFileIO(aFeatures) ||
+                            ProfilerFeature::HasFileIOAll(aFeatures))
                                ? new ProfilerIOInterposeObserver()
                                : nullptr),
         mIsPaused(false)
@@ -2709,7 +2719,7 @@ static void PrintUsageThenExit(int aExitCode) {
       PROFILER_MAX_INTERVAL);
 
 #define PRINT_FEATURE(n_, str_, Name_, desc_)                                  \
-  printf("    %c %6u: \"%s\" (%s)\n", FeatureCategory(ProfilerFeature::Name_), \
+  printf("    %c %7u: \"%s\" (%s)\n", FeatureCategory(ProfilerFeature::Name_), \
          ProfilerFeature::Name_, str_, desc_);
 
   PROFILER_FOR_EACH_FEATURE(PRINT_FEATURE)
