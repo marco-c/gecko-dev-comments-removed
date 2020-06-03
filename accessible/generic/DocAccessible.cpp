@@ -2652,7 +2652,11 @@ void DocAccessible::ARIAActiveDescendantIDMaybeMoved(dom::Element* aElm) {
 void DocAccessible::SetRoleMapEntryForDoc(dom::Element* aElement) {
   const nsRoleMapEntry* entry = aria::GetRoleMap(aElement);
   if (!entry || entry->role == roles::APPLICATION ||
-      entry->role == roles::DIALOG) {
+      entry->role == roles::DIALOG ||
+      
+      
+      (entry->role == roles::ALERT &&
+       !nsCoreUtils::IsContentDocument(mDocumentNode))) {
     SetRoleMapEntry(entry);
     return;
   }
