@@ -245,11 +245,11 @@ interface nsIPrincipal : nsISerializable
 
     readonly attribute ACString hostPort;
 
-        
+    
 
 
 
-    [noscript] readonly attribute ACString asciiHost;
+    readonly attribute ACString asciiHost;
 
     
 
