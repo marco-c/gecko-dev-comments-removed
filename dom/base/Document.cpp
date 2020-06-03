@@ -15667,7 +15667,7 @@ already_AddRefed<mozilla::dom::Promise> Document::HasStorageAccess(
   nsGlobalWindowOuter* outer = nullptr;
   if (inner) {
     outer = nsGlobalWindowOuter::Cast(inner->GetOuterWindow());
-    promise->MaybeResolve(outer->HasStorageAccess());
+    promise->MaybeResolve(outer->IsStorageAccessPermissionGranted());
   } else {
     promise->MaybeRejectWithUndefined();
   }
@@ -15729,7 +15729,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
     return promise.forget();
   }
 
-  if (outer->HasStorageAccess()) {
+  if (outer->IsStorageAccessPermissionGranted()) {
     promise->MaybeResolveWithUndefined();
     return promise.forget();
   }
@@ -15806,7 +15806,6 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   
   
-
   if (CookieJarSettings()->GetRejectThirdPartyContexts()) {
     
     if (StorageDisabledByAntiTracking(this, nullptr)) {
@@ -15910,11 +15909,11 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
                 
                 
                 
-                outer->SetHasStorageAccess(true);
+                outer->SetStorageAccessPermissionGranted(true);
                 promise->MaybeResolveWithUndefined();
               },
               [outer, promise] {
-                outer->SetHasStorageAccess(false);
+                outer->SetStorageAccessPermissionGranted(false);
                 promise->MaybeRejectWithUndefined();
               });
 
@@ -15922,7 +15921,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
     }
   }
 
-  outer->SetHasStorageAccess(true);
+  outer->SetStorageAccessPermissionGranted(true);
   promise->MaybeResolveWithUndefined();
   return promise.forget();
 }
@@ -16234,12 +16233,12 @@ nsICookieJarSettings* Document::CookieJarSettings() {
   return mCookieJarSettings;
 }
 
-bool Document::HasStoragePermission() {
+bool Document::HasStorageAccessPermissionGranted() {
   
   
   
   nsPIDOMWindowInner* inner = GetInnerWindow();
-  if (inner && inner->HasStorageAccessGranted()) {
+  if (inner && inner->HasStorageAccessPermissionGranted()) {
     return true;
   }
 
@@ -16414,6 +16413,10 @@ void Document::AddPendingFrameStaticClone(nsFrameLoaderOwner* aElement,
   PendingFrameStaticClone* clone = mPendingFrameStaticClones.AppendElement();
   clone->mElement = aElement;
   clone->mStaticCloneOf = aStaticCloneOf;
+}
+
+bool Document::UseRegularPrincipal() const {
+  return EffectiveStoragePrincipal() == NodePrincipal();
 }
 
 }  

@@ -674,7 +674,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   void ParentWindowChanged() {
     
-    mHasStorageAccess = false;
+    mStorageAccessPermissionGranted = false;
   }
 
  public:
@@ -869,9 +869,11 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   bool IsInModalState();
 
-  bool HasStorageAccess() const { return mHasStorageAccess; }
-  void SetHasStorageAccess(bool aHasStorageAccess) {
-    mHasStorageAccess = aHasStorageAccess;
+  bool IsStorageAccessPermissionGranted() const {
+    return mStorageAccessPermissionGranted;
+  }
+  void SetStorageAccessPermissionGranted(bool aStorageAccessPermissionGranted) {
+    mStorageAccessPermissionGranted = aStorageAccessPermissionGranted;
   }
 
   
@@ -1036,6 +1038,9 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   void MaybeAllowStorageForOpenedWindow(nsIURI* aURI);
 
+  bool CheckStorageAccessPermission(Document* aDocument,
+                                    nsGlobalWindowInner* aInnerWindow);
+
  public:
   
   virtual nsresult Dispatch(mozilla::TaskCategory aCategory,
@@ -1079,7 +1084,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   bool mTopLevelOuterContentWindow : 1;
 
   
-  bool mHasStorageAccess : 1;
+  bool mStorageAccessPermissionGranted : 1;
 
   nsCOMPtr<nsIScriptContext> mContext;
   nsCOMPtr<nsIControllers> mControllers;
