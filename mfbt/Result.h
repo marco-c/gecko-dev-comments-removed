@@ -446,6 +446,7 @@ class MOZ_MUST_USE_TYPE Result final {
 
 
 
+
   template <typename F>
   auto map(F f) -> Result<decltype(f(*((V*)nullptr))), E> {
     using RetResult = Result<decltype(f(*((V*)nullptr))), E>;
@@ -484,7 +485,6 @@ class MOZ_MUST_USE_TYPE Result final {
   }
 
   
-
 
 
 
