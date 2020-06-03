@@ -3,211 +3,381 @@
 
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 const { webrtcUI } = ChromeUtils.import("resource:///modules/webrtcUI.jsm");
 
-const BUNDLE_URL = "chrome://browser/locale/webrtcIndicator.properties";
-var gStringBundle;
+ChromeUtils.defineModuleGetter(
+  this,
+  "SitePermissions",
+  "resource:///modules/SitePermissions.jsm"
+);
 
-function init(event) {
-  gStringBundle = Services.strings.createBundle(BUNDLE_URL);
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "gScreenManager",
+  "@mozilla.org/gfx/screenmanager;1",
+  "nsIScreenManager"
+);
 
-  let brand = Services.strings.createBundle(
-    "chrome://branding/locale/brand.properties"
-  );
-  let brandShortName = brand.GetStringFromName("brandShortName");
-  document.title = gStringBundle.formatStringFromName(
-    "webrtcIndicator.windowtitle",
-    [brandShortName]
-  );
 
-  for (let id of ["audioVideoButton", "screenSharePopup"]) {
-    let popup = document.getElementById(id);
-    popup.addEventListener("popupshowing", onPopupMenuShowing);
-    popup.addEventListener("popuphiding", onPopupMenuHiding);
-    popup.addEventListener("command", onPopupMenuCommand);
-  }
 
-  let fxButton = document.getElementById("firefoxButton");
-  fxButton.addEventListener("click", onFirefoxButtonClick);
-  fxButton.addEventListener("mousedown", PositionHandler);
 
-  updateIndicatorState();
-
-  
-  
-  
-  let ev = new CustomEvent("AlertActive", { bubbles: true, cancelable: true });
-  document.documentElement.dispatchEvent(ev);
-}
 
 function updateIndicatorState() {
-  
-  if (!gStringBundle) {
-    return;
-  }
-
-  updateWindowAttr("sharingvideo", webrtcUI.showCameraIndicator);
-  updateWindowAttr("sharingaudio", webrtcUI.showMicrophoneIndicator);
-  updateWindowAttr("sharingscreen", webrtcUI.showScreenSharingIndicator);
-
-  
-  let shareTypes = [];
-  if (webrtcUI.showCameraIndicator) {
-    shareTypes.push("Camera");
-  }
-  if (webrtcUI.showMicrophoneIndicator) {
-    shareTypes.push("Microphone");
-  }
-
-  let audioVideoButton = document.getElementById("audioVideoButton");
-  if (shareTypes.length) {
-    let stringId =
-      "webrtcIndicator.sharing" + shareTypes.join("And") + ".tooltip";
-    audioVideoButton.setAttribute(
-      "tooltiptext",
-      gStringBundle.GetStringFromName(stringId)
-    );
-  } else {
-    audioVideoButton.removeAttribute("tooltiptext");
-  }
-
-  
-  let screenShareButton = document.getElementById("screenShareButton");
-  if (webrtcUI.showScreenSharingIndicator) {
-    let stringId =
-      "webrtcIndicator.sharing" +
-      webrtcUI.showScreenSharingIndicator +
-      ".tooltip";
-    screenShareButton.setAttribute(
-      "tooltiptext",
-      gStringBundle.GetStringFromName(stringId)
-    );
-  } else {
-    screenShareButton.removeAttribute("tooltiptext");
-  }
-
-  
-  
-  window.sizeToContent();
-  PositionHandler.adjustPosition();
+  WebRTCIndicator.updateIndicatorState();
 }
 
-function updateWindowAttr(attr, value) {
-  let docEl = document.documentElement;
-  if (value) {
-    docEl.setAttribute(attr, "true");
-  } else {
-    docEl.removeAttribute(attr);
-  }
-}
 
-function onPopupMenuShowing(event) {
-  let popup = event.target;
 
-  let activeStreams;
-  if (popup.getAttribute("type") == "Devices") {
-    activeStreams = webrtcUI.getActiveStreams(true, true, false);
-  } else {
-    activeStreams = webrtcUI.getActiveStreams(false, false, true);
-  }
-  if (activeStreams.length) {
-    let index = activeStreams.length - 1;
-    webrtcUI.showSharingDoorhanger(activeStreams[index]);
-    event.preventDefault();
-    return;
-  }
 
-  for (let stream of activeStreams) {
-    let item = document.createElement("menuitem");
-    item.setAttribute("label", stream.browser.contentTitle || stream.uri);
-    item.setAttribute("tooltiptext", stream.uri);
-    item.stream = stream;
-    popup.appendChild(item);
-  }
-}
+const WebRTCIndicator = {
+  init(event) {
+    addEventListener("load", this);
 
-function onPopupMenuHiding(event) {
-  let popup = event.target;
-  while (popup.firstChild) {
-    popup.firstChild.remove();
-  }
-}
-
-function onPopupMenuCommand(event) {
-  webrtcUI.showSharingDoorhanger(event.target.stream);
-}
-
-function onFirefoxButtonClick(event) {
-  event.target.blur();
-  let activeStreams = webrtcUI.getActiveStreams(true, true, true);
-  activeStreams[0].browser.ownerGlobal.focus();
-}
-
-var PositionHandler = {
-  positionCustomized: false,
-  threshold: 10,
-  adjustPosition() {
-    if (!this.positionCustomized) {
-      
-      
-      
-      let primaryScreen = Cc["@mozilla.org/gfx/screenmanager;1"].getService(
-        Ci.nsIScreenManager
-      ).primaryScreen;
-      let widthDevPix = {};
-      primaryScreen.GetRect({}, {}, widthDevPix, {});
-      let availTopDevPix = {};
-      primaryScreen.GetAvailRect({}, availTopDevPix, {}, {});
-      let scaleFactor = primaryScreen.defaultCSSScaleFactor;
-      let widthCss = widthDevPix.value / scaleFactor;
-      window.moveTo(
-        (widthCss - document.documentElement.clientWidth) / 2,
-        availTopDevPix.value / scaleFactor
-      );
-    } else {
-      
-      this.setXPosition(window.screenX);
-    }
-  },
-  setXPosition(desiredX) {
     
-    desiredX = Math.max(desiredX, screen.availLeft);
+    
+    
+    this.positionCustomized = false;
+
+    this.updatingIndicatorState = false;
+    this.loaded = false;
+  },
+
+  
+
+
+
+  updateIndicatorState(initialLayout = false) {
+    
+    
+    
+    
+    if (!this.loaded) {
+      return;
+    }
+
+    
+    
+    
+    this.updatingIndicatorState = true;
+
+    this.updateWindowAttr("sharingvideo", webrtcUI.showCameraIndicator);
+    this.updateWindowAttr("sharingaudio", webrtcUI.showMicrophoneIndicator);
+    this.updateWindowAttr(
+      "sharingscreen",
+      webrtcUI.showScreenSharingIndicator.startsWith("Screen")
+    );
+
+    
+    
+
+    
+    
+    let sharingWindow = webrtcUI.showScreenSharingIndicator.startsWith(
+      "Window"
+    );
+    this.updateWindowAttr("sharingwindow", sharingWindow);
+
+    if (sharingWindow) {
+      
+      
+      let activeStreams = webrtcUI.getActiveStreams(
+        false ,
+        false ,
+        false ,
+        true 
+      );
+      let hasBrowserWindow = activeStreams.some(stream => {
+        return stream.devices.some(device => device.scary);
+      });
+
+      this.updateWindowAttr("sharingbrowserwindow", hasBrowserWindow);
+      this.sharingBrowserWindow = hasBrowserWindow;
+    } else {
+      this.updateWindowAttr("sharingbrowserwindow");
+      this.sharingBrowserWindow = false;
+    }
+
+    
+    
+    window.sizeToContent();
+
+    this.ensureOnScreen();
+
+    if (!this.positionCustomized) {
+      this.centerOnPrimaryDisplay();
+    }
+    this.updatingIndicatorState = false;
+  },
+
+  
+
+
+
+
+  ensureOnScreen() {
+    let desiredX = Math.max(window.screenX, screen.availLeft);
     let maxX =
       screen.availLeft +
       screen.availWidth -
       document.documentElement.clientWidth;
-    window.moveTo(Math.min(desiredX, maxX), screen.availTop);
+    window.moveTo(Math.min(desiredX, maxX), window.screenY);
   },
-  handleEvent(aEvent) {
-    switch (aEvent.type) {
-      case "mousedown":
-        if (aEvent.button != 0 || aEvent.defaultPrevented) {
-          return;
+
+  
+
+
+
+  centerOnPrimaryDisplay() {
+    
+    
+    
+    
+    let {
+      height: windowHeight,
+      width: windowWidth,
+    } = window.windowUtils.getBoundsWithoutFlushing(document.documentElement);
+
+    
+    
+    
+    let screen = gScreenManager.primaryScreen;
+    let scaleFactor = screen.contentsScaleFactor / screen.defaultCSSScaleFactor;
+
+    let widthDevPix = {};
+    screen.GetRectDisplayPix({}, {}, widthDevPix, {});
+    let screenWidth = widthDevPix.value * scaleFactor;
+
+    let availTopDevPix = {};
+    let availHeightDevPix = {};
+    screen.GetAvailRectDisplayPix({}, availTopDevPix, {}, availHeightDevPix);
+
+    let availHeight =
+      (availTopDevPix.value + availHeightDevPix.value) * scaleFactor;
+    
+    
+    
+    
+    
+    window.moveTo((screenWidth - windowWidth) / 2, availHeight - windowHeight);
+  },
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "load": {
+        this.onLoad(event);
+        break;
+      }
+      case "click": {
+        this.onClick(event);
+        break;
+      }
+      case "MozUpdateWindowPos": {
+        if (!this.updatingIndicatorState) {
+          
+          
+          this.positionCustomized = true;
         }
-
-        this._startMouseX = aEvent.screenX;
-        this._startWindowX = window.screenX;
-        this._deltaX = this._startMouseX - this._startWindowX;
-
-        window.addEventListener("mousemove", this);
-        window.addEventListener("mouseup", this);
         break;
+      }
+    }
+  },
 
-      case "mousemove":
-        let moveOffset = Math.abs(aEvent.screenX - this._startMouseX);
-        if (this._dragFullyStarted || moveOffset > this.threshold) {
-          this.setXPosition(aEvent.screenX - this._deltaX);
-          this._dragFullyStarted = true;
+  onLoad() {
+    this.loaded = true;
+
+    this.updateIndicatorState(true );
+    this.centerOnPrimaryDisplay();
+
+    window.addEventListener("click", this);
+    window.windowRoot.addEventListener("MozUpdateWindowPos", this);
+
+    
+    
+    
+    let ev = new CustomEvent("AlertActive", {
+      bubbles: true,
+      cancelable: true,
+    });
+    document.documentElement.dispatchEvent(ev);
+    this.loaded = true;
+  },
+
+  onClick(event) {
+    switch (event.target.id) {
+      case "stop-sharing-screen": {
+        let activeStreams = webrtcUI.getActiveStreams(
+          false ,
+          false ,
+          true ,
+          false 
+        );
+        this.stopSharingScreen(activeStreams);
+        break;
+      }
+      case "stop-sharing-window": {
+        let activeStreams = webrtcUI.getActiveStreams(
+          false ,
+          false ,
+          false ,
+          true 
+        );
+        if (this.sharingBrowserWindow) {
+          let browserWindowStreams = activeStreams.filter(stream => {
+            return stream.devices.some(device => device.scary);
+          });
+          this.stopSharingScreen(browserWindowStreams);
+        } else {
+          this.stopSharingScreen(activeStreams);
         }
         break;
-
-      case "mouseup":
-        this._dragFullyStarted = false;
-        window.removeEventListener("mousemove", this);
-        window.removeEventListener("mouseup", this);
-        this.positionCustomized =
-          Math.abs(this._startWindowX - window.screenX) >= this.threshold;
+      }
+      case "microphone-button":
+      
+      case "camera-button": {
+        
+        let activeStreams = webrtcUI.getActiveStreams(
+          true ,
+          true ,
+          false 
+        );
+        this.showSharingDoorhanger(activeStreams);
         break;
+      }
+      case "minimize": {
+        window.minimize();
+        break;
+      }
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+  stopSharingScreen(activeStreams) {
+    if (!activeStreams.length) {
+      return;
+    }
+
+    
+    
+    let chosenStream = activeStreams[activeStreams.length - 1];
+    let { browser } = chosenStream;
+
+    
+    
+    
+    
+    
+    let gBrowser = browser.getTabBrowser();
+    if (!gBrowser) {
+      Cu.reportError("Can't stop sharing screen - cannot find gBrowser.");
+      return;
+    }
+
+    let tab = gBrowser.getTabForBrowser(browser);
+    if (!tab) {
+      Cu.reportError("Can't stop sharing screen - cannot find tab.");
+      return;
+    }
+
+    let permissions = SitePermissions.getAllPermissionDetailsForBrowser(
+      browser
+    );
+
+    let webrtcState = tab._sharingState.webRTC;
+    let windowId = `screen:${webrtcState.windowId}`;
+    
+    
+    if (webrtcState.screen) {
+      let found = false;
+      for (let permission of permissions) {
+        if (permission.id != "screen") {
+          continue;
+        }
+        found = true;
+        permission.sharingState = webrtcState.screen;
+        break;
+      }
+      if (!found) {
+        
+        
+        
+        permissions.push({
+          id: "screen",
+          state: SitePermissions.ALLOW,
+          scope: SitePermissions.SCOPE_REQUEST,
+          sharingState: webrtcState.screen,
+        });
+      }
+    }
+
+    let permission = permissions.find(perm => {
+      return perm.id == "screen";
+    });
+
+    if (!permission) {
+      Cu.reportError(
+        "Can't stop sharing screen - cannot find screen permission."
+      );
+      return;
+    }
+
+    let bc = webrtcState.browsingContext;
+    bc.currentWindowGlobal
+      .getActor("WebRTC")
+      .sendAsyncMessage("webrtc:StopSharing", windowId);
+    webrtcUI.forgetActivePermissionsFromBrowser(browser);
+
+    SitePermissions.removeFromPrincipal(
+      browser.contentPrincipal,
+      permission.id,
+      browser
+    );
+  },
+
+  
+
+
+
+
+
+
+
+  showSharingDoorhanger(activeStreams) {
+    if (!activeStreams.length) {
+      return;
+    }
+
+    let index = activeStreams.length - 1;
+    webrtcUI.showSharingDoorhanger(activeStreams[index]);
+  },
+
+  
+
+
+
+
+
+
+
+
+  updateWindowAttr(attr, value) {
+    let docEl = document.documentElement;
+    if (value) {
+      docEl.setAttribute(attr, "true");
+    } else {
+      docEl.removeAttribute(attr);
     }
   },
 };
+
+WebRTCIndicator.init();

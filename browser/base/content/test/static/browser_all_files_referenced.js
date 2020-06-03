@@ -234,6 +234,10 @@ var whitelist = [
   { file: "resource://app/localization/en-US/preview/popup-notifications.ftl" },
 
   
+  
+  { file: "chrome://browser/content/webrtcIndicator.ftl" },
+
+  
   { file: "resource://gre/modules/RustFxAccount.js" },
 ];
 
