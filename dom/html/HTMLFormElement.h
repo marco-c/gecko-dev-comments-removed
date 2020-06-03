@@ -465,6 +465,12 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
 
 
+  nsresult SubmitDialog(DialogFormSubmission* aFormSubmission);
+
+  
+
+
+
 
 
 
