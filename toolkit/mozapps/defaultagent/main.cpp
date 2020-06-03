@@ -107,6 +107,9 @@ static void RemoveAllRegistryEntries() {
 
 
 
+
+
+
 int wmain(int argc, wchar_t** argv) {
   if (argc < 2 || !argv[1]) {
     return E_INVALIDARG;
@@ -123,11 +126,14 @@ int wmain(int argc, wchar_t** argv) {
 
   
   
-  if (!wcscmp(argv[1], L"unregister-task")) {
+  if (!wcscmp(argv[1], L"uninstall") || !wcscmp(argv[1], L"unregister-task")) {
     if (argc < 3 || !argv[2]) {
       return E_INVALIDARG;
     }
-    RemoveAllRegistryEntries();
+
+    if (!wcscmp(argv[1], L"uninstall")) {
+      RemoveAllRegistryEntries();
+    }
     return RemoveTask(argv[2]);
   }
 
