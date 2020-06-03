@@ -555,9 +555,9 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   virtual nsISerialEventTarget* EventTargetFor(
       mozilla::TaskCategory aCategory) const = 0;
 
-  void SaveStorageAccessGranted();
+  void SaveStorageAccessGranted(const nsACString& aPermissionKey);
 
-  bool HasStorageAccessGranted();
+  bool HasStorageAccessGranted(const nsACString& aPermissionKey);
 
   nsIPrincipal* GetDocumentContentBlockingAllowListPrincipal() const;
 
@@ -654,8 +654,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
   
   
-  
-  bool mStorageAccessGranted;
+  nsTArray<nsCString> mStorageAccessGranted;
 
   
   
