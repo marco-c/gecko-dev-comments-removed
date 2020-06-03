@@ -447,7 +447,6 @@ class HeadersPanel extends Component {
           
           member: Object.assign({}, member, { open: false }),
           mode: MODE.TINY,
-          cropLimit: 60,
           noGrip: true,
         })
       ),
