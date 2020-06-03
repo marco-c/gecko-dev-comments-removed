@@ -6,11 +6,10 @@ add_task(async function testDirtyEnable() {
   
   
   setFailingHeuristics();
+  let prefPromise = TestUtils.waitForPrefChange(prefs.DOH_DISABLED_PREF);
   Preferences.set(prefs.TRR_MODE_PREF, 2);
   Preferences.set(prefs.DOH_ENABLED_PREF, true);
-  await BrowserTestUtils.waitForCondition(() => {
-    return Preferences.get(prefs.DOH_DISABLED_PREF, false);
-  });
+  await prefPromise;
   is(
     Preferences.get(prefs.DOH_DISABLED_PREF, false),
     true,
