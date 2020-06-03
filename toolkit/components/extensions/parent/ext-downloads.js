@@ -25,6 +25,11 @@ ChromeUtils.defineModuleGetter(
   "FileUtils",
   "resource://gre/modules/FileUtils.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "DownloadLastDir",
+  "resource://gre/modules/DownloadLastDir.jsm"
+);
 
 var { EventEmitter, ignoreEvent } = ExtensionCommon;
 
@@ -746,6 +751,24 @@ this.downloads = class extends ExtensionAPI {
             }
 
             
+            const downloadLastDir = new DownloadLastDir(
+              null,
+              options.incognito
+            );
+
+            async function getLastDirectory() {
+              return new Promise(resolve => {
+                downloadLastDir.getFileAsync(extension.baseURI, file => {
+                  resolve(file);
+                });
+              });
+            }
+
+            function saveLastDirectory(lastDir) {
+              downloadLastDir.setFile(extension.baseURI, lastDir);
+            }
+
+            
             
             
             const window = global.windowTracker.getTopWindow().window;
@@ -753,11 +776,24 @@ this.downloads = class extends ExtensionAPI {
             const ext = basename.match(/\.([^.]+)$/);
 
             
+            
+            
+            const pathSep = AppConstants.platform === "win" ? "\\" : "/";
+            const lastFilePickerDirectory =
+              !filename || !filename.includes(pathSep)
+                ? await getLastDirectory()
+                : undefined;
+
+            
             const picker = Cc["@mozilla.org/filepicker;1"].createInstance(
               Ci.nsIFilePicker
             );
             picker.init(window, null, Ci.nsIFilePicker.modeSave);
-            picker.displayDirectory = new FileUtils.File(dir);
+            if (lastFilePickerDirectory) {
+              picker.displayDirectory = lastFilePickerDirectory;
+            } else {
+              picker.displayDirectory = new FileUtils.File(dir);
+            }
             picker.appendFilters(Ci.nsIFilePicker.filterAll);
             picker.defaultString = basename;
 
@@ -770,6 +806,7 @@ this.downloads = class extends ExtensionAPI {
                 if (result === Ci.nsIFilePicker.returnCancel) {
                   reject({ message: "Download canceled by the user" });
                 } else {
+                  saveLastDirectory(picker.file.parent);
                   resolve(picker.file.path);
                 }
               });

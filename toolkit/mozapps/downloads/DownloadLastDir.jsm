@@ -31,6 +31,9 @@ const nsIFile = Ci.nsIFile;
 var EXPORTED_SYMBOLS = ["DownloadLastDir"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { PrivateBrowsingUtils } = ChromeUtils.import(
+  "resource://gre/modules/PrivateBrowsingUtils.jsm"
+);
 
 let nonPrivateLoadContext = Cu.createLoadContext();
 let privateLoadContext = Cu.createPrivateLoadContext();
@@ -85,14 +88,22 @@ function isContentPrefEnabled() {
 
 var gDownloadLastDirFile = readLastDirPref();
 
-function DownloadLastDir(aWindow) {
-  let loadContext = aWindow.docShell.QueryInterface(Ci.nsILoadContext);
+
+function DownloadLastDir(aWindow, aForcePrivate) {
+  let isPrivate = false;
+  if (aWindow === null) {
+    isPrivate = aForcePrivate || PrivateBrowsingUtils.permanentPrivateBrowsing;
+  } else {
+    let loadContext = aWindow.docShell.QueryInterface(Ci.nsILoadContext);
+    isPrivate = loadContext.usePrivateBrowsing;
+  }
+
   
   
   
-  this.fakeContext = loadContext.usePrivateBrowsing
-    ? privateLoadContext
-    : nonPrivateLoadContext;
+  
+  
+  this.fakeContext = isPrivate ? privateLoadContext : nonPrivateLoadContext;
 }
 
 DownloadLastDir.prototype = {
