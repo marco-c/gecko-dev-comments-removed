@@ -189,7 +189,15 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/anyhow/1.0.28")]
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/anyhow/1.0.30")]
 #![cfg_attr(backtrace, feature(backtrace))]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![cfg_attr(not(feature = "std"), no_std)]
