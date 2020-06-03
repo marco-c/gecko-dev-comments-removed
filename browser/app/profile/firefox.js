@@ -1661,6 +1661,8 @@ pref("privacy.userContext.newTabContainerOnLeftClick.enabled", false);
 
 pref("privacy.webrtc.allowSilencingNotifications", false);
 
+pref("privacy.webrtc.legacyGlobalIndicator", true);
+
 
 pref("browser.tabs.remote.autostart", true);
 pref("browser.tabs.remote.desktopbehavior", true);
