@@ -1,5 +1,7 @@
 
 
+
+
 import buildconfig
 
 
@@ -55,6 +57,17 @@ service('URIFixup', 'nsIURIFixup',
         "@mozilla.org/docshell/uri-fixup;1")
 service('Bits', 'nsIBits',
         "@mozilla.org/bits;1")
+
+
+
+
+
+
+
+
+
+
+
 
 service('AppInfoService', 'nsIXULRuntime',
         "@mozilla.org/xre/app-info;1")
