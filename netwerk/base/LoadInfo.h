@@ -173,7 +173,8 @@ class LoadInfo final : public nsILoadInfo {
            uint32_t aHttpsOnlyStatus, bool aHasValidUserGestureActivation,
            bool aAllowDeprecatedSystemRequests, bool aParserCreatedScript,
            bool aHasStoragePermission, uint32_t aRequestBlockingReason,
-           nsINode* aLoadingContext);
+           nsINode* aLoadingContext,
+           nsILoadInfo::CrossOriginEmbedderPolicy aLoadingEmbedderPolicy);
   LoadInfo(const LoadInfo& rhs);
 
   NS_IMETHOD GetRedirects(JSContext* aCx,
@@ -280,6 +281,12 @@ class LoadInfo final : public nsILoadInfo {
   
   
   bool mIsFromProcessingFrameAttributes;
+
+  
+  
+  
+  
+  nsILoadInfo::CrossOriginEmbedderPolicy mLoadingEmbedderPolicy;
 };
 
 }  

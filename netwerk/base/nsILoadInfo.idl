@@ -1315,4 +1315,14 @@ interface nsILoadInfo : nsISupports
     EMBEDDER_POLICY_NULL = 0,
     EMBEDDER_POLICY_REQUIRE_CORP = 1,
   };
+
+  
+
+
+
+
+
+
+  [infallible] attribute nsILoadInfo_CrossOriginEmbedderPolicy
+        loadingEmbedderPolicy;
 };

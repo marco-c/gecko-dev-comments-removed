@@ -7605,12 +7605,10 @@ nsresult nsHttpChannel::ProcessCrossOriginEmbedderPolicyHeader() {
   }
 
   
-  RefPtr<WindowContext> ctx =
-      WindowContext::GetById(mLoadInfo->GetInnerWindowID());
-  if (ctx &&
-      mLoadInfo->GetExternalContentPolicyType() ==
+  if (mLoadInfo->GetExternalContentPolicyType() ==
           nsIContentPolicy::TYPE_SUBDOCUMENT &&
-      ctx->GetEmbedderPolicy() != nsILoadInfo::EMBEDDER_POLICY_NULL &&
+      mLoadInfo->GetLoadingEmbedderPolicy() !=
+          nsILoadInfo::EMBEDDER_POLICY_NULL &&
       resultPolicy != nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP) {
     return NS_ERROR_BLOCKED_BY_POLICY;
   }
@@ -7648,13 +7646,10 @@ nsresult nsHttpChannel::ProcessCrossOriginResourcePolicyHeader() {
   
   
   if (StaticPrefs::browser_tabs_remote_useCrossOriginEmbedderPolicy()) {
-    RefPtr<WindowContext> ctx =
-        WindowContext::GetById(mLoadInfo->GetInnerWindowID());
-
     
     
-    if (content.IsEmpty() && ctx &&
-        ctx->GetEmbedderPolicy() == nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP) {
+    if (content.IsEmpty() && mLoadInfo->GetLoadingEmbedderPolicy() ==
+                                 nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP) {
       content = NS_LITERAL_CSTRING("same-origin");
     }
   }
