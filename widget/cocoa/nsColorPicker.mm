@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #import <Cocoa/Cocoa.h>
 
@@ -35,8 +35,8 @@ static unsigned int HexStrToInt(NSString* str) {
 }
 - (id)initWithPicker:(nsColorPicker*)aPicker;
 - (void)open:(NSColor*)aInitialColor title:(NSString*)aTitle;
-- (void)retarget:(nsColorPicker*)aPicker;
 - (void)colorChanged:(NSColorPanel*)aPanel;
+- (void)windowWillClose:(NSNotification*)aNotification;
 @end
 
 @implementation NSColorPanelWrapper
@@ -65,11 +65,6 @@ static unsigned int HexStrToInt(NSString* str) {
   mColorPicker->Done();
 }
 
-- (void)retarget:(nsColorPicker*)aPicker {
-  mColorPicker->DoneWithRetarget();
-  mColorPicker = aPicker;
-}
-
 - (void)dealloc {
   [mColorPanel setTarget:nil];
   [mColorPanel setAction:nil];
@@ -84,8 +79,6 @@ static unsigned int HexStrToInt(NSString* str) {
 
 NS_IMPL_ISUPPORTS(nsColorPicker, nsIColorPicker)
 
-NSColorPanelWrapper* nsColorPicker::sColorPanelWrapper = nullptr;
-
 nsColorPicker::~nsColorPicker() {}
 
 NS_IMETHODIMP
@@ -94,18 +87,11 @@ nsColorPicker::Init(mozIDOMWindowProxy* aParent, const nsAString& aTitle,
   MOZ_ASSERT(NS_IsMainThread(), "Color pickers can only be opened from main thread currently");
   mTitle = aTitle;
   mColor = aInitialColor;
-
-  if (sColorPanelWrapper) {
-    // Update current wrapper to target the new input instead
-    [sColorPanelWrapper retarget:this];
-  } else {
-    // Create a brand new color panel wrapper
-    sColorPanelWrapper = [[NSColorPanelWrapper alloc] initWithPicker:this];
-  }
+  mColorPanelWrapper = [[NSColorPanelWrapper alloc] initWithPicker:this];
   return NS_OK;
 }
 
-/* static */ NSColor* nsColorPicker::GetNSColorFromHexString(const nsAString& aColor) {
+ NSColor* nsColorPicker::GetNSColorFromHexString(const nsAString& aColor) {
   NSString* str = nsCocoaUtils::ToNSString(aColor);
 
   double red = HexStrToInt([str substringWithRange:NSMakeRange(1, 2)]) / 255.0;
@@ -115,7 +101,7 @@ nsColorPicker::Init(mozIDOMWindowProxy* aParent, const nsAString& aTitle,
   return [NSColor colorWithDeviceRed:red green:green blue:blue alpha:1.0];
 }
 
-/* static */ void nsColorPicker::GetHexStringFromNSColor(NSColor* aColor, nsAString& aResult) {
+ void nsColorPicker::GetHexStringFromNSColor(NSColor* aColor, nsAString& aResult) {
   CGFloat redFloat, greenFloat, blueFloat;
 
   NSColor* color = aColor;
@@ -137,7 +123,7 @@ nsColorPicker::Open(nsIColorPickerShownCallback* aCallback) {
   MOZ_ASSERT(aCallback);
   mCallback = aCallback;
 
-  [sColorPanelWrapper open:GetNSColorFromHexString(mColor) title:nsCocoaUtils::ToNSString(mTitle)];
+  [mColorPanelWrapper open:GetNSColorFromHexString(mColor) title:nsCocoaUtils::ToNSString(mTitle)];
 
   NS_ADDREF_THIS();
 
@@ -149,14 +135,10 @@ void nsColorPicker::Update(NSColor* aColor) {
   mCallback->Update(mColor);
 }
 
-void nsColorPicker::DoneWithRetarget() {
+void nsColorPicker::Done() {
+  [mColorPanelWrapper release];
+  mColorPanelWrapper = nullptr;
   mCallback->Done(EmptyString());
   mCallback = nullptr;
   NS_RELEASE_THIS();
-}
-
-void nsColorPicker::Done() {
-  [sColorPanelWrapper release];
-  sColorPanelWrapper = nullptr;
-  DoneWithRetarget();
 }
