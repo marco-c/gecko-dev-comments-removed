@@ -102,6 +102,13 @@ const TOPIC_INTL_LOCALE_CHANGED = "intl:app-locales-changed";
 const USE_REMOTE_L10N_PREF =
   "browser.newtabpage.activity-stream.asrouter.useRemoteL10n";
 
+
+
+
+const REACH_EVENT_GROUPS = ["cfr"];
+const REACH_EVENT_CATEGORY = "messaging_experiments";
+const REACH_EVENT_METHOD = "reach";
+
 const MessageLoaderUtils = {
   STARTPAGE_VERSION,
   REMOTE_LOADER_CACHE_KEY: "RemoteLoaderCache",
@@ -340,22 +347,47 @@ const MessageLoaderUtils = {
       MessageLoaderUtils.reportError(e);
       return [];
     }
-    return provider.messageGroups
-      .map(group => {
-        let experimentData;
-        try {
-          experimentData = ExperimentAPI.getExperiment({ group });
-        } catch (e) {
-          MessageLoaderUtils.reportError(e);
-          return [];
-        }
-        if (experimentData && experimentData.branch) {
-          return experimentData.branch.value;
-        }
 
-        return [];
-      })
-      .flat();
+    let experiments = [];
+    for (const group of provider.messageGroups) {
+      let experimentData;
+      try {
+        experimentData = ExperimentAPI.getExperiment({ group });
+      } catch (e) {
+        MessageLoaderUtils.reportError(e);
+        continue;
+      }
+
+      if (experimentData && experimentData.branch) {
+        experiments.push(experimentData.branch.value);
+
+        if (!REACH_EVENT_GROUPS.includes(group)) {
+          continue;
+        }
+        
+        
+        
+        
+        const branches =
+          (await ExperimentAPI.getAllBranches(experimentData.slug)) || [];
+        for (const branch of branches) {
+          if (
+            branch.slug !== experimentData.branch.slug &&
+            branch.value.trigger
+          ) {
+            experiments.push({
+              group,
+              forReachEvent: true,
+              experimentSlug: experimentData.slug,
+              branchSlug: branch.slug,
+              ...branch.value,
+            });
+          }
+        }
+      }
+    }
+
+    return experiments;
   },
 
   _handleRemoteSettingsUndesiredEvent(event, providerId, dispatchToAS) {
@@ -1962,6 +1994,19 @@ class _ASRouter {
     await this._sendMessageToTarget(message, target);
   }
 
+  _recordReachEvent(message) {
+    
+    const underscored = message.group.split("-").join("_");
+    const extra = { branches: message.branchSlug };
+    Services.telemetry.recordEvent(
+      REACH_EVENT_CATEGORY,
+      REACH_EVENT_METHOD,
+      underscored,
+      message.experimentSlug,
+      extra
+    );
+  }
+
   async sendTriggerMessage(target, trigger) {
     await this.loadMessagesFromAllProviders();
 
@@ -1972,14 +2017,32 @@ class _ASRouter {
 
     const telemetryObject = { port: target.portID };
     TelemetryStopwatch.start("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
-    const message = await this.handleMessageRequest({
-      triggerId: trigger.id,
-      triggerParam: trigger.param,
-      triggerContext: trigger.context,
-    });
+    
+    const messages =
+      (await this.handleMessageRequest({
+        triggerId: trigger.id,
+        triggerParam: trigger.param,
+        triggerContext: trigger.context,
+        returnAll: true,
+      })) || [];
     TelemetryStopwatch.finish("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
 
-    await this._sendMessageToTarget(message, target, trigger);
+    
+    
+    const nonReachMessages = [];
+    for (const message of messages) {
+      if (message.forReachEvent) {
+        this._recordReachEvent(message);
+      } else {
+        nonReachMessages.push(message);
+      }
+    }
+
+    await this._sendMessageToTarget(
+      nonReachMessages[0] || null,
+      target,
+      trigger
+    );
   }
 
   renderWNMessages(browserWindow, messageIds) {

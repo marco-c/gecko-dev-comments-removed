@@ -12,8 +12,6 @@
 
 const EXPORTED_SYMBOLS = ["ExperimentManager", "_ExperimentManager"];
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -26,9 +24,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Sampling: "resource://gre/modules/components-utils/Sampling.jsm",
   TelemetryEvents: "resource://normandy/lib/TelemetryEvents.jsm",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
-  RemoteSettings: "resource://services-settings/remote-settings.js",
-  requestIdleCallback: "resource://gre/modules/Timer.jsm",
-  ASRouterTargeting: "resource://activity-stream/lib/ASRouterTargeting.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(this, "log", () => {
@@ -45,20 +40,6 @@ const EVENT_TELEMETRY_STUDY_TYPE = "preference_study";
 const TELEMETRY_EXPERIMENT_TYPE_PREFIX = "normandy-";
 
 const DEFAULT_EXPERIMENT_TYPE = "messaging_experiment";
-
-
-
-
-
-
-
-
-const REACH_EVENT_GROUPS = ["cfr"];
-const REACH_EVENT_CATEGORY = "messaging_experiments";
-const REACH_EVENT_METHOD = "reach";
-
-
-const COLLECTION_ID = "messaging-experiments";
 
 
 
@@ -140,10 +121,6 @@ class _ExperimentManager {
           Cu.reportError(err);
         }
       }
-    }
-
-    if (activeExperiments.length) {
-      requestIdleCallback(() => this.sendReachEvents());
     }
 
     this.sessions.delete(sourceToCheck);
@@ -321,88 +298,6 @@ class _ExperimentManager {
 
     const index = await Sampling.ratioSample(input, ratios);
     return branches[index];
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  async sendReachEvents(remoteSettingsClient) {
-    let recipes;
-
-    for (const group of REACH_EVENT_GROUPS) {
-      const experiment = this.store.getExperimentForGroup(group);
-      if (!experiment) {
-        log.debug("Skipping sending Reach events for no active experiment");
-        continue;
-      }
-
-      
-      
-      
-      if (!recipes) {
-        try {
-          const client = remoteSettingsClient || RemoteSettings(COLLECTION_ID);
-          
-          recipes = await client.get({ syncIfEmpty: false });
-        } catch (e) {
-          log.debug(
-            "Reach events not recorded, error getting recipes from remote settings"
-          );
-          return;
-        }
-      }
-
-      const recipe = recipes.find(
-        recipe => recipe.arguments.slug === experiment.slug
-      );
-      if (!recipe) {
-        log.debug(
-          "Can't find experiment recipe, skipping sending Reach events"
-        );
-        continue;
-      }
-
-      
-      let qualifiedBranches = [];
-      for (const branch of recipe.arguments.branches) {
-        if (
-          branch.value?.content?.targeting &&
-          Boolean(
-            await ASRouterTargeting.isMatch(
-              branch.value.content.targeting,
-              this.filterContext,
-              err => {
-                log.debug("Targeting failed because of an error");
-                Cu.reportError(err);
-              }
-            )
-          )
-        ) {
-          qualifiedBranches.push(branch.slug);
-        }
-      }
-
-      if (qualifiedBranches.length) {
-        
-        const underscored = group.split("-").join("_");
-        const extra = { branches: qualifiedBranches.join(";") };
-        Services.telemetry.recordEvent(
-          REACH_EVENT_CATEGORY,
-          REACH_EVENT_METHOD,
-          underscored,
-          experiment.slug,
-          extra
-        );
-      }
-    }
   }
 }
 
