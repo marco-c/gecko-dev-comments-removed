@@ -808,7 +808,7 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
                          JSValueType type);
 
   
-  void unboxGCThingForPreBarrierTrampoline(const Address& src, Register dest) {
+  void unboxGCThingForGCBarrier(const Address& src, Register dest) {
     movl(payloadOf(src), dest);
   }
 

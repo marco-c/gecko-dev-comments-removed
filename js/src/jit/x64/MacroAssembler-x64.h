@@ -847,9 +847,14 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
   
   
   
-  void unboxGCThingForPreBarrierTrampoline(const Address& src, Register dest) {
+  void unboxGCThingForGCBarrier(const Address& src, Register dest) {
     movq(ImmWord(JS::detail::ValueGCThingPayloadMask), dest);
     andq(Operand(src), dest);
+  }
+  void unboxGCThingForGCBarrier(const ValueOperand& src, Register dest) {
+    MOZ_ASSERT(src.valueReg() != dest);
+    movq(ImmWord(JS::detail::ValueGCThingPayloadMask), dest);
+    andq(src.valueReg(), dest);
   }
 
   
