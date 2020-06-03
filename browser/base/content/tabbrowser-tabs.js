@@ -944,6 +944,15 @@
       return document.documentElement.getAttribute("customizing") == "true";
     }
 
+    
+    
+    
+    _selectNewTab(aNewTab, aFallbackDir, aWrap) {
+      if (!gSharedTabWarning.willShowSharedTabWarning(aNewTab)) {
+        super._selectNewTab(aNewTab, aFallbackDir, aWrap);
+      }
+    }
+
     _initializeArrowScrollbox() {
       let arrowScrollbox = this.arrowScrollbox;
       arrowScrollbox.shadowRoot.addEventListener(
