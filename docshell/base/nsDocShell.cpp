@@ -145,7 +145,6 @@
 #include "nsITransportSecurityInfo.h"
 #include "nsIUploadChannel.h"
 #include "nsIURIFixup.h"
-#include "nsIURIMutator.h"
 #include "nsIURILoader.h"
 #include "nsIViewSourceChannel.h"
 #include "nsIWebBrowserChrome.h"
@@ -5900,8 +5899,6 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
   
   
   
-  
-  
   if (url && NS_FAILED(aStatus)) {
     if (aStatus == NS_ERROR_FILE_NOT_FOUND ||
         aStatus == NS_ERROR_FILE_ACCESS_DENIED ||
@@ -5969,8 +5966,7 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
       return NS_OK;
     }
 
-    if ((aStatus == NS_ERROR_UNKNOWN_HOST || aStatus == NS_ERROR_NET_RESET ||
-         aStatus == NS_ERROR_CONNECTION_REFUSED) &&
+    if ((aStatus == NS_ERROR_UNKNOWN_HOST || aStatus == NS_ERROR_NET_RESET) &&
         ((mLoadType == LOAD_NORMAL && isTopFrame) || mAllowKeywordFixup)) {
       
       
@@ -6064,7 +6060,6 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
       
       
       
-      
       if (aStatus == NS_ERROR_UNKNOWN_HOST || aStatus == NS_ERROR_NET_RESET) {
         bool doCreateAlternate = true;
 
@@ -6106,23 +6101,6 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
                 getter_AddRefs(newPostData), getter_AddRefs(newURI));
           }
         }
-      } else if (aStatus == NS_ERROR_CONNECTION_REFUSED &&
-                 Preferences::GetBool("browser.fixup.fallback-to-https",
-                                      false)) {
-        
-        if (SchemeIsHTTP(url)) {
-          int32_t port = 0;
-          url->GetPort(&port);
-
-          
-          if (port == -1) {
-            newURI = nullptr;
-            newPostData = nullptr;
-            Unused << NS_MutateURI(url)
-                          .SetScheme(NS_LITERAL_CSTRING("https"))
-                          .Finalize(getter_AddRefs(newURI));
-          }
-        }
       }
 
       
@@ -6146,35 +6124,6 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
           MOZ_ASSERT(loadInfo, "loadInfo is required on all channels");
           nsCOMPtr<nsIPrincipal> triggeringPrincipal =
               loadInfo->TriggeringPrincipal();
-
-          
-          
-          
-          
-          if (SchemeIsHTTP(url)) {
-            int32_t port = 0;
-            rv = url->GetPort(&port);
-
-            
-            if (NS_SUCCEEDED(rv) && port == -1) {
-              nsCOMPtr<nsIURI> httpsURI;
-              rv = NS_MutateURI(url)
-                       .SetScheme(NS_LITERAL_CSTRING("https"))
-                       .Finalize(getter_AddRefs(httpsURI));
-
-              if (NS_SUCCEEDED(rv)) {
-                nsCOMPtr<nsIIOService> ios = do_GetIOService();
-                if (ios) {
-                  nsCOMPtr<nsISpeculativeConnect> speculativeService =
-                      do_QueryInterface(ios);
-                  if (speculativeService) {
-                    speculativeService->SpeculativeConnect(
-                        httpsURI, triggeringPrincipal, nullptr);
-                  }
-                }
-              }
-            }
-          }
 
           LoadURIOptions loadURIOptions;
           loadURIOptions.mTriggeringPrincipal = triggeringPrincipal;
