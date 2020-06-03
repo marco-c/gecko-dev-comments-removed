@@ -42,8 +42,7 @@ def gradle(log, topsrcdir=None, topobjdir=None, tasks=[], extra_args=[], verbose
     sys.path.insert(0, os.path.join(topsrcdir, 'mobile', 'android'))
     from gradle import gradle_lock
 
-    with gradle_lock(topobjdir, max_wait_seconds=GRADLE_LOCK_MAX_WAIT_SECONDS), \
-            open(os.devnull, 'wb') as devnull:
+    with gradle_lock(topobjdir, max_wait_seconds=GRADLE_LOCK_MAX_WAIT_SECONDS):
         cmd_args = [sys.executable, os.path.join(topsrcdir, 'mach'),
                     'gradle', '--verbose', '--'] + \
             tasks + \
@@ -54,7 +53,7 @@ def gradle(log, topsrcdir=None, topobjdir=None, tasks=[], extra_args=[], verbose
 
         
         
-        proc = subprocess.Popen(cmd_args, cwd=topsrcdir, stdout=devnull, stderr=devnull)
+        proc = subprocess.Popen(cmd_args, cwd=topsrcdir)
         status = None
         
         
