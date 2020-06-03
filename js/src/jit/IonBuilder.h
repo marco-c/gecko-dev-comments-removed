@@ -735,6 +735,7 @@ class MOZ_STACK_CLASS IonBuilder {
 
   
   InliningResult inlineDataViewGet(CallInfo& callInfo, Scalar::Type type);
+  InliningResult inlineDataViewSet(CallInfo& callInfo, Scalar::Type type);
 
   
   InliningResult inlineNewIterator(CallInfo& callInfo, MNewIterator::Type type);

@@ -2754,6 +2754,12 @@ MDefinition::TruncateKind MStoreUnboxedScalar::operandTruncateKind(
   return (index == 2 && isIntegerWrite()) ? Truncate : NoTruncate;
 }
 
+MDefinition::TruncateKind MStoreDataViewElement::operandTruncateKind(
+    size_t index) const {
+  
+  return (index == 2 && isIntegerWrite()) ? Truncate : NoTruncate;
+}
+
 MDefinition::TruncateKind MStoreTypedArrayElementHole::operandTruncateKind(
     size_t index) const {
   
