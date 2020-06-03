@@ -475,6 +475,18 @@ class Query {
 
     
     
+    
+    
+    
+    
+    
+    
+    if (!this.context.results.length) {
+      return;
+    }
+
+    
+    
     logger.debug(
       `Cropping ${this.context.results.length} results to ${this.context.maxResults}`
     );
