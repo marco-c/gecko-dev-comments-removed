@@ -68,7 +68,7 @@ def download_task_history_data(cache_dir):
     
     
     duration_data = list()
-    for line in r.content.splitlines():
+    for line in r.text.splitlines():
         duration_data.append(json.loads(line))
 
     
