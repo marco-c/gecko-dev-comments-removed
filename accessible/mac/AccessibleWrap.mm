@@ -32,7 +32,17 @@ mozAccessible* AccessibleWrap::GetNativeObject() {
   if (!mNativeInited && !mNativeObject) {
     
     
-    if (!IsXULTooltip() && !IsDefunct() && !AncestorIsFlat()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    Accessible* parent = Parent();
+    bool mustBePruned = parent && nsAccUtils::MustPrune(parent);
+    if (!IsXULTooltip() && !IsDefunct() && !mustBePruned) {
       uintptr_t accWrap = reinterpret_cast<uintptr_t>(this);
       mNativeObject = [[GetNativeType() alloc] initWithAccessible:accWrap];
     }
@@ -156,25 +166,6 @@ nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
 
 
 
-
-bool AccessibleWrap::AncestorIsFlat() {
-  
-  
-  
-  
-  
-  
-  
-
-  Accessible* parent = Parent();
-  while (parent) {
-    if (nsAccUtils::MustPrune(parent)) return true;
-
-    parent = parent->Parent();
-  }
-  
-  return false;
-}
 
 Class a11y::GetTypeFromRole(roles::Role aRole) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;

@@ -55,11 +55,6 @@ class AccessibleWrap : public Accessible {
   
 
 
-  bool AncestorIsFlat();
-
-  
-
-
 #if defined(__OBJC__)
   mozAccessible* GetNativeObject();
 #else
