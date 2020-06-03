@@ -75,7 +75,8 @@ body.high-contrast #progress_background {
 
 
 body.high-contrast #progress_bar {
-  border: 10px solid;
+  
+  border-top: 20px solid;
   box-sizing: border-box;
 }
 
