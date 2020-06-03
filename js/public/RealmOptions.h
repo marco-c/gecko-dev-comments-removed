@@ -228,6 +228,12 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
+  bool getIteratorHelpersEnabled() const { return iteratorHelpers_; }
+  RealmCreationOptions& setIteratorHelpersEnabled(bool flag) {
+    iteratorHelpers_ = flag;
+    return *this;
+  }
+
   
   
   
@@ -267,6 +273,7 @@ class JS_PUBLIC_API RealmCreationOptions {
   bool weakRefs_ = false;
   bool toSource_ = false;
   bool propertyErrorMessageFix_ = false;
+  bool iteratorHelpers_ = false;
   bool secureContext_ = false;
 };
 
