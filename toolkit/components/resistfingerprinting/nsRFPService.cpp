@@ -822,7 +822,7 @@ void nsRFPService::UpdateRFPPref() {
       }
       
       
-      tz = ToNewCString(tzValue);
+      tz = ToNewCString(tzValue, mozilla::fallible);
       if (tz != nullptr) {
         PR_SetEnv(tz);
       }

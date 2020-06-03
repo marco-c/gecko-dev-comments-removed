@@ -2575,7 +2575,7 @@ nsresult SetRestartArgs(int argc, char** argv) {
 
     
     
-    env = ToNewCString(envVar);
+    env = ToNewCString(envVar, mozilla::fallible);
     if (!env) return NS_ERROR_OUT_OF_MEMORY;
 
     PR_SetEnv(env);
@@ -2588,7 +2588,7 @@ nsresult SetRestartArgs(int argc, char** argv) {
 
   
   
-  env = ToNewCString(envVar);
+  env = ToNewCString(envVar, mozilla::fallible);
   if (!env) return NS_ERROR_OUT_OF_MEMORY;
 
   PR_SetEnv(env);

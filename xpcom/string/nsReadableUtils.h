@@ -276,7 +276,13 @@ inline void LossyAppendUTF8toLatin1(const nsACString& aSource,
 
 
 
+
 char* ToNewCString(const nsAString& aSource);
+
+
+char* ToNewCString(const nsAString& aSource,
+                   const mozilla::fallible_t& aFallible);
+
 
 
 
@@ -291,6 +297,9 @@ char* ToNewCString(const nsAString& aSource);
 
 char* ToNewCString(const nsACString& aSource);
 
+
+char* ToNewCString(const nsACString& aSource,
+                   const mozilla::fallible_t& aFallible);
 
 
 
@@ -311,6 +320,10 @@ char* ToNewCString(const nsACString& aSource);
 char* ToNewUTF8String(const nsAString& aSource, uint32_t* aUTF8Count = nullptr);
 
 
+char* ToNewUTF8String(const nsAString& aSource, uint32_t* aUTF8Count,
+                      const mozilla::fallible_t& aFallible);
+
+
 
 
 
@@ -324,6 +337,10 @@ char* ToNewUTF8String(const nsAString& aSource, uint32_t* aUTF8Count = nullptr);
 
 
 char16_t* ToNewUnicode(const nsAString& aSource);
+
+
+char16_t* ToNewUnicode(const nsAString& aSource,
+                       const mozilla::fallible_t& aFallible);
 
 
 
@@ -345,6 +362,10 @@ char16_t* ToNewUnicode(const nsAString& aSource);
 char16_t* ToNewUnicode(const nsACString& aSource);
 
 
+char16_t* ToNewUnicode(const nsACString& aSource,
+                       const mozilla::fallible_t& aFallible);
+
+
 
 
 
@@ -363,6 +384,10 @@ char16_t* ToNewUnicode(const nsACString& aSource);
 
 char16_t* UTF8ToNewUnicode(const nsACString& aSource,
                            uint32_t* aUTF16Count = nullptr);
+
+
+char16_t* UTF8ToNewUnicode(const nsACString& aSource, uint32_t* aUTF16Count,
+                           const mozilla::fallible_t& aFallible);
 
 
 

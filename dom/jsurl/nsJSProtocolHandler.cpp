@@ -324,7 +324,7 @@ nsresult nsJSThunk::EvaluateScript(
       
       
       
-      bytes = ToNewCString(result);
+      bytes = ToNewCString(result, mozilla::fallible);
       bytesLen = result.Length();
       charset = &isoCharset;
     } else {

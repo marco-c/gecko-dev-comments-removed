@@ -931,7 +931,7 @@ nsresult mozJSComponentLoader::ObjectForLocation(
   }
 
   
-  *aLocation = ToNewCString(nativePath);
+  *aLocation = ToNewCString(nativePath, mozilla::fallible);
   if (!*aLocation) {
     aObject.set(nullptr);
     aTableScript.set(nullptr);
