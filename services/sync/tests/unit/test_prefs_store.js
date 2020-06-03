@@ -23,6 +23,12 @@ AddonTestUtils.createAppInfo(
 );
 AddonTestUtils.overrideCertDB();
 
+
+
+
+
+do_disable_fast_shutdown();
+
 add_task(async function run_test() {
   _("Test fixtures.");
   

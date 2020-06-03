@@ -6,6 +6,12 @@ const { Preferences } = ChromeUtils.import(
 );
 const { Service } = ChromeUtils.import("resource://services-sync/service.js");
 
+
+
+
+
+do_disable_fast_shutdown();
+
 add_task(async function run_test() {
   let engine = Service.engineManager.get("prefs");
   let tracker = engine._tracker;
