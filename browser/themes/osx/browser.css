@@ -246,6 +246,12 @@
   font-size: 1.25em;
 }
 
+@supports -moz-bool-pref("browser.urlbar.update2.expandTextOnFocus") {
+  #urlbar[breakout-extend] {
+    font-size: 1.36em;
+  }
+}
+
 
 
 #urlbar-input {
@@ -253,6 +259,8 @@
 }
 
 %include ../shared/identity-block/identity-block.inc.css
+%include ../shared/notification-icons.inc.css
+%include ../shared/addon-notification.inc.css
 
 #pageAction-urlbar-shareURL,
 #pageAction-panel-shareURL {
@@ -261,13 +269,7 @@
 
 
 
-%include ../shared/autocomplete.inc.css
-
-#PopupAutoComplete > richlistbox > richlistitem[originaltype~="datalist-first"] {
-  border-top: 1px solid #C7C7C7;
-}
-
-%include ../shared/urlbar-autocomplete.inc.css
+%include ../shared/urlbarView.inc.css
 
 :root {
   --urlbar-popup-url-color: hsl(210, 77%, 47%);
@@ -280,10 +282,12 @@
   --panel-disabled-color: #737373;
 }
 
-@supports -moz-bool-pref("browser.urlbar.update2.expandTextOnFocus") {
-  #urlbar[breakout-extend] {
-    font-size: 1.36em;
-  }
+
+
+%include ../shared/autocomplete.inc.css
+
+#PopupAutoComplete > richlistbox > richlistitem[originaltype~="datalist-first"] {
+  border-top: 1px solid #C7C7C7;
 }
 
 #BMB_bookmarksPopup[side="top"],
@@ -580,8 +584,6 @@
   color: HighlightText !important;
 }
 
-%include ../shared/notification-icons.inc.css
-
 
 
 %include ../shared/translation/infobar.inc.css
@@ -690,8 +692,6 @@ menulist.translate-infobar-element::part(dropmarker) {
   display: -moz-box;
   list-style-image: url("chrome://global/skin/icons/arrow-dropdown-12.svg");
 }
-
-%include ../shared/addon-notification.inc.css
 
 
 
