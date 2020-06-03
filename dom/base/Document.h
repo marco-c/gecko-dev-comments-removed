@@ -2021,6 +2021,8 @@ class Document : public nsINode,
   void NotifyLoading(bool aNewParentIsLoading, const ReadyState& aCurrentState,
                      ReadyState aNewState);
 
+  void NotifyAbortedLoad();
+
   
   
   void ContentStateChanged(nsIContent* aContent, EventStates aStateMask);
@@ -4585,6 +4587,13 @@ class Document : public nsINode,
 
   
   bool mIsRunningExecCommand : 1;
+
+  
+  
+  
+  
+  
+  bool mSetCompleteAfterDOMContentLoaded : 1;
 
   uint8_t mPendingFullscreenRequests;
 
