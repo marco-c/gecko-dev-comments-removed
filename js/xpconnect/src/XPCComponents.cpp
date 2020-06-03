@@ -1334,6 +1334,12 @@ nsXPCComponents_Utils::ReportError(HandleValue error, HandleValue stack,
   const uint64_t innerWindowID = win ? win->WindowID() : 0;
 
   Rooted<Maybe<Value>> exception(cx, Some(error));
+  if (!innerWindowID) {
+    
+    
+    
+    exception = Nothing();
+  }
 
   nsCOMPtr<nsIScriptError> scripterr;
   RootedObject errorObj(cx, error.isObject() ? &error.toObject() : nullptr);

@@ -523,9 +523,10 @@ void AutoJSAPI::ReportException() {
         xpc::FindExceptionStackForConsoleReport(inner, exnStack.exception(),
                                                 exnStack.stack(), &stack,
                                                 &stackGlobal);
-        JS::Rooted<Maybe<JS::Value>> exception(cx(),
-                                               Some(exnStack.exception()));
-        xpcReport->LogToConsoleWithStack(inner, exception, stack, stackGlobal);
+        
+        
+        xpcReport->LogToConsoleWithStack(inner, JS::NothingHandleValue, stack,
+                                         stackGlobal);
       }
     } else {
       
