@@ -11,10 +11,10 @@ loadScripts(
   { name: "states.js", dir: MOCHITESTS_DIR }
 );
 
-function getMacAccessible(id) {
+function getMacAccessible(accOrElmOrID) {
   return new Promise(resolve => {
     let intervalId = setInterval(() => {
-      let acc = getAccessible(id);
+      let acc = getAccessible(accOrElmOrID);
       if (acc) {
         clearInterval(intervalId);
         resolve(
@@ -102,4 +102,60 @@ add_task(async () => {
 
   
   await Promise.all(newTabs.map(t => BrowserTestUtils.removeTab(t)));
+});
+
+
+
+
+add_task(async () => {
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "about:license",
+    },
+    async browser => {
+      let root = await getMacAccessible(document);
+      let rootChildCount = () => root.getAttributeValue("AXChildren").length;
+
+      
+      
+      
+      
+      
+      
+      is(rootChildCount(), 5, "Root with no popups has 5 children");
+
+      
+      const menu = document.getElementById("contentAreaContextMenu");
+      EventUtils.synthesizeMouseAtCenter(document.body, {
+        type: "contextmenu",
+      });
+      await BrowserTestUtils.waitForPopupEvent(menu, "shown");
+
+      
+      is(rootChildCount(), 6, "Root has 6 children");
+
+      
+      EventUtils.synthesizeKey("KEY_Escape");
+      await BrowserTestUtils.waitForPopupEvent(menu, "hidden");
+
+      
+      is(rootChildCount(), 5, "Root has 5 children");
+
+      
+      const identityPopup = document.getElementById("identity-popup");
+      document.getElementById("identity-box").click();
+      await BrowserTestUtils.waitForPopupEvent(identityPopup, "shown");
+
+      
+      is(rootChildCount(), 6, "Root has 6 children");
+
+      
+      EventUtils.synthesizeKey("KEY_Escape");
+      await BrowserTestUtils.waitForPopupEvent(identityPopup, "hidden");
+
+      
+      is(rootChildCount(), 5, "Root has 5 children");
+    }
+  );
 });
