@@ -30,6 +30,9 @@ class xpcAccessibleMacInterface : public nsIAccessibleMacInterface {
   NS_DECL_NSIACCESSIBLEMACINTERFACE
 
   
+  id GetNativeMacAccessible() const final;
+
+  
   
   
   static void FireEvent(id aNativeObj, id aNotification);
@@ -46,6 +49,11 @@ class xpcAccessibleMacInterface : public nsIAccessibleMacInterface {
   
   nsresult NSObjectToJsValue(id aObj, JSContext* aCx,
                              JS::MutableHandleValue aResult);
+
+  
+  
+  id JsValueToNSObject(JS::HandleValue aValue, JSContext* aCx,
+                       nsresult* aResult);
   id mNativeObject;
 
  private:
