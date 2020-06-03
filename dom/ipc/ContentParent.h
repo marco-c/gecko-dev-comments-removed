@@ -54,15 +54,16 @@
 
 
 
+#define PREALLOC_REMOTE_TYPE "prealloc"
 #define DEFAULT_REMOTE_TYPE "web"
-#define FISSION_WEB_REMOTE_TYPE "webIsolated"
 #define FILE_REMOTE_TYPE "file"
 #define EXTENSION_REMOTE_TYPE "extension"
 #define PRIVILEGEDABOUT_REMOTE_TYPE "privilegedabout"
 #define PRIVILEGEDMOZILLA_REMOTE_TYPE "privilegedmozilla"
+
+
+#define FISSION_WEB_REMOTE_TYPE "webIsolated"
 #define WITH_COOP_COEP_REMOTE_TYPE_PREFIX "webCOOP+COEP="
-
-
 #define LARGE_ALLOCATION_REMOTE_TYPE "webLargeAllocation"
 
 class nsConsoleService;
@@ -160,6 +161,8 @@ class ContentParent final
       mozilla::MozPromise<RefPtr<ContentParent>, LaunchError, false>;
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_CONTENTPARENT_IID)
+
+  static LogModule* GetLog();
 
   
 
@@ -789,6 +792,11 @@ class ContentParent final
   
 
 
+  bool HasActiveWorkerOrJSPlugin();
+
+  
+
+
 
   bool ShouldKeepProcessAlive();
 
@@ -1342,6 +1350,8 @@ class ContentParent final
   TimeStamp mLaunchYieldTS;   
   TimeStamp mActivateTS;
   ContentParent* mOpener;
+
+  bool mIsAPreallocBlocker;  
 
   nsString mRemoteType;
 

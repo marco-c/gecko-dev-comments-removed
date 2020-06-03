@@ -37,8 +37,9 @@ class PreallocatedProcessManager final {
 
 
 
-  static void AddBlocker(ContentParent* aParent);
-  static void RemoveBlocker(ContentParent* aParent);
+  static void AddBlocker(const nsAString& aRemoteType, ContentParent* aParent);
+  static void RemoveBlocker(const nsAString& aRemoteType,
+                            ContentParent* aParent);
 
   
 
@@ -50,10 +51,16 @@ class PreallocatedProcessManager final {
 
 
 
+  static already_AddRefed<ContentParent> Take(const nsAString& aRemoteType);
 
-  static already_AddRefed<ContentParent> Take();
+  
+
+
+
+
 
   static bool Provide(ContentParent* aParent);
+  static void Erase(ContentParent* aParent);
 
  private:
   PreallocatedProcessManager();
