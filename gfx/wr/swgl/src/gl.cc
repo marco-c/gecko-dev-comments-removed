@@ -3329,37 +3329,91 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
 
 
 
-template <int SIDE>
-static int clip_near_far(int nump, Point3D* p, Interpolants* interp) {
+
+template <XYZW AXIS>
+static int clip_side(int nump, Point3D* p, Interpolants* interp, Point3D* outP,
+                     Interpolants* outInterp) {
   int numClip = 0;
   Point3D prev = p[nump - 1];
   Interpolants prevInterp = interp[nump - 1];
-  float prevDist = SIDE * prev.z - prev.w;
+  float prevCoord = prev.select(AXIS);
+  
+  
+  int prevSide = prevCoord < -prev.w ? -1 : (prevCoord > prev.w ? 1 : 0);
   
   
   for (int i = 0; i < nump; i++) {
     Point3D cur = p[i];
     Interpolants curInterp = interp[i];
-    float curDist = SIDE * cur.z - cur.w;
-    if (curDist < 0.0f && prevDist < 0.0f) {
-      
-      p[numClip] = cur;
-      interp[numClip] = curInterp;
-      numClip++;
-    } else if (curDist < 0.0f || prevDist < 0.0f) {
+    float curCoord = cur.select(AXIS);
+    int curSide = curCoord < -cur.w ? -1 : (curCoord > cur.w ? 1 : 0);
+    
+    if (curSide != prevSide) {
       
       
       
-      float k = prevDist / (prevDist - curDist);
-      p[numClip] = prev + (cur - prev) * k;
-      interp[numClip] = prevInterp + (curInterp - prevInterp) * k;
+      if (prevSide) {
+        
+        
+        
+        assert(numClip < nump + 2);
+        float prevDist = prevCoord - prevSide * prev.w;
+        float curDist = curCoord - prevSide * cur.w;
+        float k = prevDist / (prevDist - curDist);
+        outP[numClip] = prev + (cur - prev) * k;
+        outInterp[numClip] = prevInterp + (curInterp - prevInterp) * k;
+        numClip++;
+      }
+      if (curSide) {
+        
+        
+        
+        assert(numClip < nump + 2);
+        float prevDist = prevCoord - curSide * prev.w;
+        float curDist = curCoord - curSide * cur.w;
+        float k = prevDist / (prevDist - curDist);
+        outP[numClip] = prev + (cur - prev) * k;
+        outInterp[numClip] = prevInterp + (curInterp - prevInterp) * k;
+        numClip++;
+      }
+    }
+    if (!curSide) {
+      
+      assert(numClip < nump + 2);
+      outP[numClip] = cur;
+      outInterp[numClip] = curInterp;
       numClip++;
     }
     prev = cur;
     prevInterp = curInterp;
-    prevDist = curDist;
+    prevCoord = curCoord;
+    prevSide = curSide;
   }
   return numClip;
+}
+
+
+
+static inline void draw_perspective_clipped(int nump, Point3D* p_clip,
+                                            Interpolants* interp_clip,
+                                            Texture& colortex, int layer,
+                                            Texture& depthtex) {
+  
+  ClipRect clipRect(colortex);
+  if (!clipRect.overlaps(nump, p_clip)) {
+    return;
+  }
+
+  
+  if (colortex.internal_format == GL_RGBA8) {
+    draw_perspective_spans<uint32_t>(nump, p_clip, interp_clip, colortex,
+                                     layer, depthtex, clipRect);
+  } else if (colortex.internal_format == GL_R8) {
+    draw_perspective_spans<uint8_t>(nump, p_clip, interp_clip, colortex,
+                                    layer, depthtex, clipRect);
+  } else {
+    assert(false);
+  }
 }
 
 
@@ -3374,63 +3428,81 @@ static int clip_near_far(int nump, Point3D* p, Interpolants* interp) {
 
 
 static void draw_perspective(int nump,
-                             Interpolants interp_outs[6],
+                             Interpolants interp_outs[4],
                              Texture& colortex, int layer,
                              Texture& depthtex) {
   
-  Point3D p[6];
   vec4 pos = vertex_shader->gl_Position;
   vec3_scalar scale =
     vec3_scalar(ctx->viewport.width(), ctx->viewport.height(), 1) * 0.5f;
   vec3_scalar offset =
     vec3_scalar(ctx->viewport.x0, ctx->viewport.y0, 0.0f) + scale;
-  if (test_none(pos.z < -pos.w || pos.z > pos.w)) {
+  if (test_none(pos.z <= -pos.w || pos.z >= pos.w)) {
     
     
     Float w = 1.0f / pos.w;
     vec3 screen = pos.sel(X, Y, Z) * w * scale + offset;
-    p[0] = Point3D(screen.x.x, screen.y.x, screen.z.x, w.x);
-    p[1] = Point3D(screen.x.y, screen.y.y, screen.z.y, w.y);
-    p[2] = Point3D(screen.x.z, screen.y.z, screen.z.z, w.z);
-    p[3] = Point3D(screen.x.w, screen.y.w, screen.z.w, w.w);
+    Point3D p[4] = {
+        {screen.x.x, screen.y.x, screen.z.x, w.x},
+        {screen.x.y, screen.y.y, screen.z.y, w.y},
+        {screen.x.z, screen.y.z, screen.z.z, w.z},
+        {screen.x.w, screen.y.w, screen.z.w, w.w}
+    };
+    draw_perspective_clipped(nump, p, interp_outs, colortex, layer, depthtex);
   } else {
     
-    p[0] = Point3D(pos.x.x, pos.y.x, pos.z.x, pos.w.x);
-    p[1] = Point3D(pos.x.y, pos.y.y, pos.z.y, pos.w.y);
-    p[2] = Point3D(pos.x.z, pos.y.z, pos.z.z, pos.w.z);
-    p[3] = Point3D(pos.x.w, pos.y.w, pos.z.w, pos.w.w);
     
-    nump = clip_near_far<-1>(nump, p, interp_outs);
+    Point3D p[4] = {
+        {pos.x.x, pos.y.x, pos.z.x, pos.w.x},
+        {pos.x.y, pos.y.y, pos.z.y, pos.w.y},
+        {pos.x.z, pos.y.z, pos.z.z, pos.w.z},
+        {pos.x.w, pos.y.w, pos.z.w, pos.w.w}
+    };
+    
+    Point3D p_clip[4 + 6];
+    Interpolants interp_clip[4 + 6];
+    
+    nump = clip_side<Z>(nump, p, interp_outs, p_clip, interp_clip);
+    
     if (nump < 3) {
       return;
     }
     
-    nump = clip_near_far<1>(nump, p, interp_outs);
-    if (nump < 3) {
-      return;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for (int i = 0; i < nump; i++) {
+      
+      if (p_clip[i].w <= 0.0f) {
+        
+        Point3D p_tmp[4 + 6];
+        Interpolants interp_tmp[4 + 6];
+        nump = clip_side<X>(nump, p_clip, interp_clip, p_tmp, interp_tmp);
+        if (nump < 3) return;
+        nump = clip_side<Y>(nump, p_tmp, interp_tmp, p_clip, interp_clip);
+        if (nump < 3) return;
+        
+        
+        break;
+      }
     }
     
     for (int i = 0; i < nump; i++) {
-      float w = 1.0f / p[i].w;
-      p[i] = Point3D(p[i].sel(X, Y, Z) * w * scale + offset, w);
+      float w = 1.0f / p_clip[i].w;
+      p_clip[i] = Point3D(p_clip[i].sel(X, Y, Z) * w * scale + offset, w);
     }
-  }
-
-  
-  ClipRect clipRect(colortex);
-  if (!clipRect.overlaps(nump, p)) {
-    return;
-  }
-
-  
-  if (colortex.internal_format == GL_RGBA8) {
-    draw_perspective_spans<uint32_t>(nump, p, interp_outs, colortex, layer,
-                                     depthtex, clipRect);
-  } else if (colortex.internal_format == GL_R8) {
-    draw_perspective_spans<uint8_t>(nump, p, interp_outs, colortex, layer,
-                                    depthtex, clipRect);
-  } else {
-    assert(false);
+    draw_perspective_clipped(nump, p_clip, interp_clip, colortex, layer,
+                             depthtex);
   }
 }
 
@@ -3439,7 +3511,7 @@ static void draw_quad(int nump, Texture& colortex, int layer,
   
   
   
-  Interpolants interp_outs[6];
+  Interpolants interp_outs[4];
   vertex_shader->run_primitive((char*)interp_outs, sizeof(Interpolants));
   vec4 pos = vertex_shader->gl_Position;
   
