@@ -567,11 +567,19 @@ class HeapObject : public Object {
 
 
 
-
 class FixedArray : public HeapObject {
  public:
-  inline void set(uint32_t index, Object value) {}
-  inline static FixedArray cast(Object object) { MOZ_CRASH("TODO"); }
+  inline void set(uint32_t index, Object value) {
+    inner()->setDenseElement(index, value.value());
+  }
+  inline static FixedArray cast(Object object) {
+    FixedArray f;
+    f.setValue(object.value());
+    return f;
+  }
+  js::NativeObject* inner() {
+    return &value().toObject().as<js::NativeObject>();
+  }
 };
 
 
