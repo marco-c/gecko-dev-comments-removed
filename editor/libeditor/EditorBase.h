@@ -1699,14 +1699,14 @@ class EditorBase : public nsIEditor,
   
 
 
-  bool IsRoot(nsINode* inNode) const;
-  bool IsEditorRoot(nsINode* aNode) const;
+  bool IsRoot(const nsINode* inNode) const;
+  bool IsEditorRoot(const nsINode* aNode) const;
 
   
 
 
-  bool IsDescendantOfRoot(nsINode* inNode) const;
-  bool IsDescendantOfEditorRoot(nsINode* aNode) const;
+  bool IsDescendantOfRoot(const nsINode* inNode) const;
+  bool IsDescendantOfEditorRoot(const nsINode* aNode) const;
 
   
 
