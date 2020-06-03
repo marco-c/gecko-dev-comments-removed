@@ -634,6 +634,10 @@ class ICStub {
 
   
   
+  uint32_t getEnteredCount() const;
+
+  
+  
   
   
   bool allocatedInFallbackSpace() const {
