@@ -1187,12 +1187,31 @@ bool WarpCacheIRTranspiler::emitCallFunction(ObjOperandId calleeId,
 #endif
 
   
-  MOZ_ASSERT(flags.getArgFormat() == CallFlags::Standard);
-
-  
   
   
   callInfo_->setCallee(callee);
+
+  MOZ_ASSERT(flags.getArgFormat() == CallFlags::Standard ||
+             flags.getArgFormat() == CallFlags::FunCall);
+
+  if (flags.getArgFormat() == CallFlags::FunCall) {
+    MOZ_ASSERT(!callInfo_->constructing());
+
+    
+    
+
+    if (callInfo_->argc() == 0) {
+      
+      auto* undef = constant(UndefinedValue());
+      callInfo_->setThis(undef);
+    } else {
+      
+      callInfo_->setThis(callInfo_->getArg(0));
+
+      
+      callInfo_->removeArg(0);
+    }
+  }
 
   
   
