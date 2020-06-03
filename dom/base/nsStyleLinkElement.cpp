@@ -65,7 +65,8 @@ nsStyleLinkElement::SheetInfo::SheetInfo(
 nsStyleLinkElement::SheetInfo::~SheetInfo() = default;
 
 nsStyleLinkElement::nsStyleLinkElement()
-    : mUpdatesEnabled(true),
+    : mDontLoadStyle(false),
+      mUpdatesEnabled(true),
       mLineNumber(1),
       mColumnNumber(1) {}
 
@@ -130,12 +131,25 @@ void nsStyleLinkElement::SetStyleSheet(StyleSheet* aStyleSheet) {
   }
 }
 
+StyleSheet* nsStyleLinkElement::GetStyleSheet() { return mStyleSheet; }
+
+void nsStyleLinkElement::InitStyleLinkElement(bool aDontLoadStyle) {
+  mDontLoadStyle = aDontLoadStyle;
+}
+
 void nsStyleLinkElement::SetEnableUpdates(bool aEnableUpdates) {
   mUpdatesEnabled = aEnableUpdates;
 }
 
 void nsStyleLinkElement::GetCharset(nsAString& aCharset) {
   aCharset.Truncate();
+}
+
+
+void nsStyleLinkElement::OverrideBaseURI(nsIURI* aNewBaseURI) {
+  MOZ_ASSERT_UNREACHABLE(
+      "Base URI can't be overriden in this implementation "
+      "of nsIStyleSheetLinkingElement.");
 }
 
 
@@ -262,7 +276,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(Document* aOldDocument,
   }
 
   
-  if (!mUpdatesEnabled || doc->IsStaticDocument()) {
+  if (mDontLoadStyle || !mUpdatesEnabled || doc->IsStaticDocument()) {
     return Update{};
   }
 

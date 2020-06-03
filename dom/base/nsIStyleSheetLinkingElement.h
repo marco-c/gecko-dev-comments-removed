@@ -132,6 +132,21 @@ class nsIStyleSheetLinkingElement : public nsISupports {
 
 
 
+  virtual mozilla::StyleSheet* GetStyleSheet() = 0;
+
+  
+
+
+
+
+
+  virtual void InitStyleLinkElement(bool aDontLoadStyle) = 0;
+
+  
+
+
+
+
 
   virtual mozilla::Result<Update, nsresult> UpdateStyleSheet(
       nsICSSLoaderObserver* aObserver) = 0;
@@ -152,6 +167,15 @@ class nsIStyleSheetLinkingElement : public nsISupports {
 
 
   virtual void GetCharset(nsAString& aCharset) = 0;
+
+  
+
+
+
+
+
+
+  virtual void OverrideBaseURI(nsIURI* aNewBaseURI) = 0;
 
   
   

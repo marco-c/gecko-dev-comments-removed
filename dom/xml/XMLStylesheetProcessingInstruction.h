@@ -48,13 +48,7 @@ class XMLStylesheetProcessingInstruction final : public ProcessingInstruction {
   virtual void UnbindFromTree(bool aNullParent = true) override;
 
   
-
-
-
-
-
-
-  void OverrideBaseURI(nsIURI* aNewBaseURI);
+  virtual void OverrideBaseURI(nsIURI* aNewBaseURI) override;
 
   
   void GetCharset(nsAString& aCharset) override;
