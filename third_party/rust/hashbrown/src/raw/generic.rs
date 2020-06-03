@@ -27,11 +27,7 @@ pub const BITMASK_MASK: BitMaskWord = 0x8080_8080_8080_8080_u64 as GroupWord;
 
 #[inline]
 fn repeat(byte: u8) -> GroupWord {
-    let repeat = GroupWord::from(byte);
-    let repeat = repeat | repeat.wrapping_shl(8);
-    let repeat = repeat | repeat.wrapping_shl(16);
-    
-    repeat | repeat.wrapping_shl(32)
+    GroupWord::from_ne_bytes([byte; Group::WIDTH])
 }
 
 

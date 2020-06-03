@@ -202,39 +202,10 @@ impl<K: Clone, V: Clone, S: Clone> Clone for HashMap<K, V, S> {
     }
 
     fn clone_from(&mut self, source: &Self) {
-        
-        
-        let hash_builder = source.hash_builder.clone();
-
-        #[cfg(not(feature = "nightly"))]
-        {
-            self.table.clone_from(&source.table);
-        }
-        #[cfg(feature = "nightly")]
-        {
-            trait HashClone<S> {
-                fn clone_from(&mut self, source: &Self, hash_builder: &S);
-            }
-            impl<K: Clone, V: Clone, S> HashClone<S> for HashMap<K, V, S> {
-                default fn clone_from(&mut self, source: &Self, _hash_builder: &S) {
-                    self.table.clone_from(&source.table);
-                }
-            }
-            impl<K: Clone, V: Clone, S> HashClone<S> for HashMap<K, V, S>
-            where
-                K: Eq + Hash,
-                S: BuildHasher,
-            {
-                fn clone_from(&mut self, source: &Self, hash_builder: &S) {
-                    self.table
-                        .clone_from_with_hasher(&source.table, |x| make_hash(hash_builder, &x.0));
-                }
-            }
-            HashClone::clone_from(self, source, &hash_builder);
-        }
+        self.table.clone_from(&source.table);
 
         
-        self.hash_builder = hash_builder;
+        self.hash_builder.clone_from(&source.hash_builder);
     }
 }
 
@@ -2298,6 +2269,36 @@ impl<'a, K, V, S> Entry<'a, K, V, S> {
         match self {
             Entry::Occupied(entry) => entry.into_mut(),
             Entry::Vacant(entry) => entry.insert(default()),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn or_insert_with_key<F: FnOnce(&K) -> V>(self, default: F) -> &'a mut V
+    where
+        K: Hash,
+        S: BuildHasher,
+    {
+        match self {
+            Entry::Occupied(entry) => entry.into_mut(),
+            Entry::Vacant(entry) => {
+                let value = default(entry.key());
+                entry.insert(value)
+            }
         }
     }
 
