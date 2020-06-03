@@ -9,6 +9,7 @@
 
 from __future__ import absolute_import, print_function
 from subprocess import Popen, PIPE
+import atexit
 import os
 import platform
 import re
@@ -63,6 +64,14 @@ def fixSymbols(line, jsonMode=False, slowWarning=False, breakpadSymsDir=None, hi
         stderr = open(os.devnull) if hide_errors else None
 
         fix_stacks = Popen(args, stdin=PIPE, stdout=PIPE, stderr=stderr)
+
+        
+        
+        
+        def cleanup(fix_stacks):
+            fix_stacks.stdin.close()
+            fix_stacks.terminate()
+        atexit.register(cleanup, fix_stacks)
 
         if slowWarning:
             print("Initializing stack-fixing for the first stack frame, this may take a while...")
