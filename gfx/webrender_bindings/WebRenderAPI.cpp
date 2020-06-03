@@ -1174,7 +1174,16 @@ void DisplayListBuilder::PushClearRectWithComplexRegion(
   WRDL_LOG("PushClearRectWithComplexRegion b=%s c=%s\n", mWrState,
            Stringify(aBounds).c_str(), Stringify(clip).c_str());
 
-  auto clipId = DefineRoundedRectClip(aRegion);
+  
+  
+  
+  
+  
+  
+  
+  
+  AutoTArray<wr::ComplexClipRegion, 1> clips;
+  auto clipId = DefineClip(Nothing(), aBounds, &clips);
   auto spaceAndClip = WrSpaceAndClip{mCurrentSpaceAndClipChain.space, clipId};
 
   wr_dp_push_clear_rect_with_parent_clip(mWrState, aBounds, clip,
