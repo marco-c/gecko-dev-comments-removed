@@ -604,9 +604,19 @@ if (typeof Mozilla == "undefined") {
 
 
 
-  Mozilla.UITour.showFirefoxAccounts = function(extraURLCampaignParams, email) {
+
+
+
+
+
+
+
+
+
+
+  Mozilla.UITour.showFirefoxAccounts = function(extraURLParams, email) {
     _sendEvent("showFirefoxAccounts", {
-      extraURLCampaignParams: JSON.stringify(extraURLCampaignParams),
+      extraURLParams: JSON.stringify(extraURLParams),
       email,
     });
   };
@@ -632,9 +642,10 @@ if (typeof Mozilla == "undefined") {
 
 
 
-  Mozilla.UITour.showConnectAnotherDevice = function(extraURLCampaignParams) {
+
+  Mozilla.UITour.showConnectAnotherDevice = function(extraURLParams) {
     _sendEvent("showConnectAnotherDevice", {
-      extraURLCampaignParams: JSON.stringify(extraURLCampaignParams),
+      extraURLParams: JSON.stringify(extraURLParams),
     });
   };
 

@@ -530,13 +530,10 @@ var UITour = {
           .then(uri => {
             const url = new URL(uri);
             
-            if (
-              !this._populateCampaignParams(url, data.extraURLCampaignParams)
-            ) {
+            if (!this._populateURLParams(url, data.extraURLParams)) {
               log.warn("showFirefoxAccounts: invalid campaign args specified");
               return;
             }
-
             
             browser.loadURI(url.href, {
               triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
@@ -551,7 +548,7 @@ var UITour = {
         FxAccounts.config.promiseConnectDeviceURI("uitour").then(uri => {
           const url = new URL(uri);
           
-          if (!this._populateCampaignParams(url, data.extraURLCampaignParams)) {
+          if (!this._populateURLParams(url, data.extraURLParams)) {
             log.warn(
               "showConnectAnotherDevice: invalid campaign args specified"
             );
@@ -782,49 +779,69 @@ var UITour = {
   
   
   
-  _populateCampaignParams(url, extraURLCampaignParams) {
+  
+  _populateURLParams(url, extraURLParams) {
+    const FLOW_ID_LENGTH = 64;
+    const FLOW_BEGIN_TIME_LENGTH = 13;
+
     
-    if (typeof extraURLCampaignParams == "undefined") {
+    if (typeof extraURLParams == "undefined") {
       
       return true;
     }
-    if (typeof extraURLCampaignParams != "string") {
-      log.warn(
-        "_populateCampaignParams: extraURLCampaignParams is not a string"
-      );
+    if (typeof extraURLParams != "string") {
+      log.warn("_populateURLParams: extraURLParams is not a string");
       return false;
     }
-    let campaignParams;
+    let urlParams;
     try {
-      if (extraURLCampaignParams) {
-        campaignParams = JSON.parse(extraURLCampaignParams);
-        if (typeof campaignParams != "object") {
+      if (extraURLParams) {
+        urlParams = JSON.parse(extraURLParams);
+        if (typeof urlParams != "object") {
           log.warn(
-            "_populateCampaignParams: extraURLCampaignParams is not a stringified object"
+            "_populateURLParams: extraURLParams is not a stringified object"
           );
           return false;
         }
       }
     } catch (ex) {
-      log.warn(
-        "_populateCampaignParams: extraURLCampaignParams is not a JSON object"
-      );
+      log.warn("_populateURLParams: extraURLParams is not a JSON object");
       return false;
     }
-    if (campaignParams) {
+    if (urlParams) {
+      
+      
+      
+      
+      
+      if (
+        (urlParams.flow_begin_time &&
+          urlParams.flow_begin_time.toString().length !==
+            FLOW_BEGIN_TIME_LENGTH) ||
+        (urlParams.flow_id && urlParams.flow_id.length !== FLOW_ID_LENGTH)
+      ) {
+        log.warn(
+          "_populateURLParams: flow parameters are not properly structured"
+        );
+        return false;
+      }
+
       
       
       let reSimpleString = /^[-_a-zA-Z0-9]*$/;
-      for (let name in campaignParams) {
-        let value = campaignParams[name];
+      for (let name in urlParams) {
+        let value = urlParams[name];
+        const validName =
+          name.startsWith("utm_") ||
+          name === "flow_begin_time" ||
+          name === "flow_id" ||
+          name === "device_id";
         if (
           typeof name != "string" ||
-          typeof value != "string" ||
-          !name.startsWith("utm_") ||
-          !value.length ||
+          !validName ||
           !reSimpleString.test(name)
         ) {
-          log.warn("_populateCampaignParams: invalid campaign param specified");
+          log.warn("_populateURLParams: invalid campaign param specified");
           return false;
         }
         url.searchParams.append(name, value);
@@ -832,7 +849,6 @@ var UITour = {
     }
     return true;
   },
-
   
 
 
