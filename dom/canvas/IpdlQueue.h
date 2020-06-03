@@ -44,26 +44,6 @@ class IpdlQueue;
 template <typename Derived>
 class SyncConsumerActor;
 
-enum IpdlQueueProtocol {
-  
-
-
-  kAsync,
-  
-
-
-
-
-
-
-  kBufferedAsync,
-  
-
-
-
-  kSync
-};
-
 constexpr uint64_t kIllegalQueueId = 0;
 inline uint64_t NewIpdlQueueId() {
   static std::atomic<uint64_t> sNextIpdlQueueId = 1;
@@ -90,53 +70,31 @@ static constexpr size_t kMaxIpdlQueueArgSize = 256 * 1024;
 template <typename Derived>
 class AsyncProducerActor {
  public:
-  virtual bool TransmitIpdlQueueData(IpdlQueueProtocol aProtocol,
-                                     IpdlQueueBuffer&& aData) {
-    MOZ_ASSERT((aProtocol == IpdlQueueProtocol::kAsync) ||
-               (aProtocol == IpdlQueueProtocol::kBufferedAsync));
-
-    if (mResponseBuffers || (aProtocol == IpdlQueueProtocol::kBufferedAsync)) {
-      
-      auto& buffers = mResponseBuffers ? *mResponseBuffers : mAsyncBuffers;
-
+  virtual bool TransmitIpdlQueueData(bool aSendSync, IpdlQueueBuffer&& aData) {
+    MOZ_ASSERT(aSendSync == false);
+    if (mResponseBuffers) {
       
       
       const uint64_t id = aData.id;
-      for (auto& elt : buffers) {
+      for (auto& elt : *mResponseBuffers) {
         if (elt.id == id) {
           elt.data.AppendElements(aData.data);
           return true;
         }
       }
-      buffers.AppendElement(std::move(aData));
+      mResponseBuffers->AppendElement(std::move(aData));
       return true;
     }
 
     
-    
-    FlushAsyncCache();
-
     Derived* self = static_cast<Derived*>(this);
-    return self->SendTransmitIpdlQueueData(std::move(aData));
-  }
-
-  
-  bool FlushAsyncCache() {
-    Derived* self = static_cast<Derived*>(this);
-    for (auto& elt : mAsyncBuffers) {
-      if (!elt.data.IsEmpty()) {
-        if (!self->SendTransmitIpdlQueueData(std::move(elt))) {
-          return false;
-        }
-      }
-    }
-    mAsyncBuffers.Clear();
-    return true;
+    return self->SendTransmitIpdlQueueData(
+        std::forward<const IpdlQueueBuffer>(aData));
   }
 
   template <typename... Args>
-  IpdlQueueProtocol GetIpdlQueueProtocol(const Args&...) {
-    return IpdlQueueProtocol::kAsync;
+  bool ShouldSendSync(const Args&...) {
+    return false;
   }
 
  protected:
@@ -145,9 +103,6 @@ class AsyncProducerActor {
   void SetResponseBuffers(IpdlQueueBuffers* aResponse) {
     MOZ_ASSERT(!mResponseBuffers);
     mResponseBuffers = aResponse;
-
-    
-    *mResponseBuffers = std::move(mAsyncBuffers);
   }
 
   void ClearResponseBuffers() {
@@ -155,22 +110,17 @@ class AsyncProducerActor {
     mResponseBuffers = nullptr;
   }
 
-  
   IpdlQueueBuffers* mResponseBuffers = nullptr;
-  
-  
-  IpdlQueueBuffers mAsyncBuffers;
 };
 
 template <typename Derived>
 class SyncProducerActor : public AsyncProducerActor<Derived> {
  public:
-  bool TransmitIpdlQueueData(IpdlQueueProtocol aProtocol,
-                             IpdlQueueBuffer&& aData) override {
+  bool TransmitIpdlQueueData(bool aSendSync, IpdlQueueBuffer&& aData) override {
     Derived* self = static_cast<Derived*>(this);
-    if (mResponseBuffers || (aProtocol != IpdlQueueProtocol::kSync)) {
+    if (mResponseBuffers || !aSendSync) {
       return AsyncProducerActor<Derived>::TransmitIpdlQueueData(
-          aProtocol, std::forward<IpdlQueueBuffer>(aData));
+          aSendSync, std::forward<IpdlQueueBuffer>(aData));
     }
 
     IpdlQueueBuffers responses;
@@ -249,20 +199,6 @@ class SyncConsumerActor : public AsyncConsumerActor<Derived> {
     actor->SetResponseBuffers(aResponse);
     auto clearResponseBuffer =
         MakeScopeExit([&] { actor->ClearResponseBuffers(); });
-
-    
-    
-    
-    auto ResponseBufferIsEmpty = [&] {
-      for (auto& elt : *aResponse) {
-        if (elt.id == id) {
-          return elt.data.IsEmpty();
-        }
-      }
-      return true;
-    };
-    MOZ_ASSERT(ResponseBufferIsEmpty());
-
     return actor->RunQueue(id) ? IPC_OK() : IPC_FAIL_NO_REASON(actor);
   }
 };
@@ -297,13 +233,13 @@ class IpdlProducer final : public SupportsWeakPtr<IpdlProducer<_Actor>> {
     MOZ_ASSERT(mSerializedData.IsEmpty());
     auto self = *this;
     auto clearData = MakeScopeExit([&] { self.mSerializedData.Clear(); });
-    const IpdlQueueProtocol protocol = mActor->GetIpdlQueueProtocol(aArgs...);
+    const bool toSendSync = mActor->ShouldSendSync(aArgs...);
     QueueStatus status = SerializeAllArgs(std::forward<Args>(aArgs)...);
     if (status != QueueStatus::kSuccess) {
       return status;
     }
     return mActor->TransmitIpdlQueueData(
-               protocol, IpdlQueueBuffer(mId, std::move(mSerializedData)))
+               toSendSync, IpdlQueueBuffer(mId, std::move(mSerializedData)))
                ? QueueStatus::kSuccess
                : QueueStatus::kFatalError;
   }
