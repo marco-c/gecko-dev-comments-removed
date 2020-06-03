@@ -130,7 +130,7 @@ async function submitFormAndGetResults(
         );
         
         field.value = "###";
-        WrapPrivileged.wrap(field).setUserInput(value);
+        WrapPrivileged.wrap(field, this).setUserInput(value);
         await gotInput;
       } catch (ex) {
         throw new Error(
