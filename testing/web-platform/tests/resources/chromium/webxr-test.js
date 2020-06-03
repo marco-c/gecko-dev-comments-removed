@@ -825,7 +825,7 @@ class MockRuntime {
                                                         .filter(input_source => input_source.profiles_.includes(subscription.profileName));
 
       for (const input_source of matching_input_sources) {
-        const mojo_from_native_origin = this._getMojoFromInputSource(mojo_from_viewer, input_source);
+        const mojo_from_native_origin = input_source._getMojoFromInputSource(mojo_from_viewer);
 
         const [mojo_ray_origin, mojo_ray_direction] = this._transformRayToMojoSpace(
           subscription.ray,
@@ -1014,29 +1014,6 @@ class MockRuntime {
     }
   }
 
-  _getMojoFromInputSource(mojo_from_viewer, input_source) {
-    if (input_source.target_ray_mode_ === 'gaze') {  
-      
-      
-      return mojo_from_viewer;
-    } else if (input_source.target_ray_mode_ === 'tracked-pointer') {  
-      
-      
-      return XRMathHelper.mul4x4(
-        input_source.mojo_from_input_.matrix,
-        input_source.input_from_pointer_.matrix);
-    } else if (input_source.target_ray_mode_ === 'screen') { 
-      
-      
-      
-      return XRMathHelper.mul4x4(
-        mojo_from_viewer,
-        input_source.input_from_pointer_.matrix);
-    } else {
-      return null;
-    }
-  }
-
   _getMojoFromViewer() {
     const transform = {
       position: [
@@ -1054,15 +1031,6 @@ class MockRuntime {
   }
 
   _getMojoFromNativeOrigin(nativeOriginInformation) {
-    const identity = function() {
-      return [
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
-      ];
-    };
-
     const mojo_from_viewer = this._getMojoFromViewer();
 
     if (nativeOriginInformation.$tag == device.mojom.XRNativeOriginInformation.Tags.inputSourceId) {
@@ -1070,12 +1038,12 @@ class MockRuntime {
         return null;
       } else {
         const inputSource = this.input_sources_.get(nativeOriginInformation.inputSourceId);
-        return this._getMojoFromInputSource(mojo_from_viewer, inputSource);
+        return inputSource._getMojoFromInputSource(mojo_from_viewer);
       }
     } else if (nativeOriginInformation.$tag == device.mojom.XRNativeOriginInformation.Tags.referenceSpaceCategory) {
       switch (nativeOriginInformation.referenceSpaceCategory) {
         case device.mojom.XRReferenceSpaceCategory.LOCAL:
-          return identity();
+          return XRMathHelper.identity();
         case device.mojom.XRReferenceSpaceCategory.LOCAL_FLOOR:
           if (this.stageParameters_ == null || this.stageParameters_.standingTransform == null) {
             console.warn("Standing transform not available.");
@@ -1166,9 +1134,14 @@ class MockXRInputSource {
 
   setGripOrigin(transform, emulatedPosition = false) {
     
-    this.mojo_from_input_ = new gfx.mojom.Transform();
-    this.mojo_from_input_.matrix = getMatrixFromTransform(transform);
+    this.mojo_from_input_ = composeGFXTransform(transform);
     this.emulated_position_ = emulatedPosition;
+
+    
+    
+    
+    
+    this.desc_dirty_ = true;
   }
 
   clearGripOrigin() {
@@ -1176,14 +1149,14 @@ class MockXRInputSource {
     if (this.mojo_from_input_ != null) {
       this.mojo_from_input_ = null;
       this.emulated_position_ = false;
+      this.desc_dirty_ = true;
     }
   }
 
   setPointerOrigin(transform, emulatedPosition = false) {
     
     this.desc_dirty_ = true;
-    this.input_from_pointer_ = new gfx.mojom.Transform();
-    this.input_from_pointer_.matrix = getMatrixFromTransform(transform);
+    this.mojo_from_pointer_ = composeGFXTransform(transform);
     this.emulated_position_ = emulatedPosition;
   }
 
@@ -1362,7 +1335,39 @@ class MockXRInputSource {
           break;
       }
 
-      input_desc.inputFromPointer = this.input_from_pointer_;
+      
+      
+      
+      
+      
+      let mojo_from_input = XRMathHelper.identity();
+      switch (this.target_ray_mode_) {
+        case 'gaze':
+        case 'screen':
+          
+          
+          mojo_from_input = this.pairedDevice_._getMojoFromViewer();
+          break;
+        case 'tracked-pointer':
+          
+          
+          
+          if (this.mojo_from_input_) {
+            mojo_from_input = this.mojo_from_input_.matrix;
+          }
+          break;
+        default:
+          throw new Error('Unhandled target ray mode ' + this.target_ray_mode_);
+      }
+
+      
+      
+      
+      
+      let input_from_mojo = XRMathHelper.inverse(mojo_from_input);
+      input_desc.inputFromPointer = new gfx.mojom.Transform();
+      input_desc.inputFromPointer.matrix =
+        XRMathHelper.mul4x4(input_from_mojo, this.mojo_from_pointer_.matrix);
 
       input_desc.profiles = this.profiles_;
 
@@ -1466,6 +1471,10 @@ class MockXRInputSource {
       default:
         return -1;
     }
+  }
+
+  _getMojoFromInputSource(mojo_from_viewer) {
+    return this.mojo_from_pointer_.matrix;
   }
 }
 
