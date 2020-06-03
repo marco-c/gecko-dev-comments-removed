@@ -1137,11 +1137,12 @@ static bool ShouldMatchFocusVisible(const Element& aElement,
 }
 
 
+
 static bool ShouldShowFocusRingForElement(Element& aElement, int32_t aFlags) {
   if (aFlags & nsIFocusManager::FLAG_SHOWRING) {
     return true;
   }
-#ifndef XP_WIN
+#if defined(XP_MACOS) || defined(ANDROID)
   if (aFlags & nsIFocusManager::FLAG_BYMOUSE) {
     return !nsContentUtils::ContentIsLink(&aElement) &&
            !aElement.IsAnyOfHTMLElements(nsGkAtoms::video, nsGkAtoms::audio);
