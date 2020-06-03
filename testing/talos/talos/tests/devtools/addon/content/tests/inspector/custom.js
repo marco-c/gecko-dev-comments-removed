@@ -32,6 +32,8 @@ module.exports = async function() {
 
   await selectNodeWithManyRulesAndLog(toolbox);
 
+  await selectNodeWithManyVariablesAndLog(toolbox);
+
   await collapseExpandAllAndLog(toolbox);
 
   await closeToolboxAndLog("custom.inspector", toolbox);
@@ -135,6 +137,30 @@ async function selectNodeWithManyRulesAndLog(toolbox) {
   dump("Move the selection to a node with no rules\n");
   test = runTest("custom.inspector.manyrules.deselectnode");
   await selectNodeFront(inspector, referenceNodeFront);
+  test.done();
+
+  await selectNodeFront(inspector, initialNodeFront);
+}
+
+
+
+
+
+async function selectNodeWithManyVariablesAndLog(toolbox) {
+  let inspector = toolbox.getPanel("inspector");
+  let initialNodeFront = inspector.selection.nodeFront;
+
+  
+  let root = await getRootNodeFront(inspector);
+  let testNodeFront = await inspector.walker.querySelector(
+    root,
+    ".many-css-variables"
+  );
+
+  
+  dump("Selecting .many-css-variables test node front\n");
+  let test = runTest("custom.inspector.manycssvariables.selectnode");
+  await selectNodeFront(inspector, testNodeFront);
   test.done();
 
   await selectNodeFront(inspector, initialNodeFront);
