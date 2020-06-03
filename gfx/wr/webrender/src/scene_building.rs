@@ -1964,6 +1964,8 @@ impl<'a> SceneBuilder<'a> {
             true,
         );
 
+        let has_filters = current_pic_index != filtered_pic_index;
+
         current_pic_index = filtered_pic_index;
         cur_instance = filtered_instance;
 
@@ -2034,7 +2036,7 @@ impl<'a> SceneBuilder<'a> {
         
         let trailing_children_instance = match self.sc_stack.last_mut() {
             
-            Some(ref parent_sc) if parent_sc.is_3d() => {
+            Some(ref parent_sc) if !has_filters && parent_sc.is_3d() => {
                 Some(cur_instance)
             }
             
