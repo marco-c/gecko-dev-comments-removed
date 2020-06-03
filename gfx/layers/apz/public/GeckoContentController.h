@@ -7,6 +7,7 @@
 #ifndef mozilla_layers_GeckoContentController_h
 #define mozilla_layers_GeckoContentController_h
 
+#include "GeckoContentControllerTypes.h"
 #include "InputData.h"              
 #include "LayersTypes.h"            
 #include "Units.h"                  
@@ -28,6 +29,8 @@ namespace layers {
 
 class GeckoContentController {
  public:
+  using APZStateChange = GeckoContentController_APZStateChange;
+  using TapType = GeckoContentController_TapType;
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GeckoContentController)
 
   
@@ -49,30 +52,6 @@ class GeckoContentController {
 
 
   virtual void RequestContentRepaint(const RepaintRequest& aRequest) = 0;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  MOZ_DEFINE_ENUM_CLASS_AT_CLASS_SCOPE(
-    TapType, (
-      eSingleTap,
-      eDoubleTap,
-      eSecondTap,
-      eLongTap,
-      eLongTapUp
-  ));
-  
 
   
 
@@ -125,34 +104,6 @@ class GeckoContentController {
 
 
   virtual void DispatchToRepaintThread(already_AddRefed<Runnable> aTask) = 0;
-
-  
-  MOZ_DEFINE_ENUM_CLASS_AT_CLASS_SCOPE(
-    APZStateChange, (
-      
-
-
-      eTransformBegin,
-      
-
-
-      eTransformEnd,
-      
-
-
-
-      eStartTouch,
-      
-
-
-      eStartPanning,
-      
-
-
-
-      eEndTouch
-  ));
-  
 
   
 

@@ -10,6 +10,7 @@
 #include "mozilla/dom/BrowserParent.h"               
 #include "mozilla/layers/APZCCallbackHelper.h"       
 #include "mozilla/layers/APZInputBridgeChild.h"      
+#include "mozilla/layers/GeckoContentController.h"   
 #include "mozilla/layers/RemoteCompositorSession.h"  
 
 namespace mozilla {
