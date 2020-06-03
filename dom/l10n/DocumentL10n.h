@@ -15,10 +15,7 @@ namespace dom {
 
 enum class DocumentL10nState {
   
-  Uninitialized = 0,
-
-  
-  Activated,
+  Constructed = 0,
 
   
   
@@ -47,12 +44,10 @@ class DocumentL10n final : public DOMLocalization {
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DocumentL10n, DOMLocalization)
 
-  static RefPtr<DocumentL10n> Create(Document* aDocument);
-
-  void Activate(const bool aLazy);
+  static RefPtr<DocumentL10n> Create(Document* aDocument, const bool aSync);
 
  protected:
-  explicit DocumentL10n(Document* aDocument);
+  explicit DocumentL10n(Document* aDocument, const bool aSync);
   bool Init();
 
   virtual ~DocumentL10n() = default;
