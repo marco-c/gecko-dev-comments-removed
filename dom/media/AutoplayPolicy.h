@@ -38,6 +38,10 @@ class AutoplayPolicy {
 
   
   static bool IsAllowedToPlay(const AudioContext& aContext);
+
+  
+  
+  static uint32_t GetSiteAutoplayPermission(nsIPrincipal* aPrincipal);
 };
 
 

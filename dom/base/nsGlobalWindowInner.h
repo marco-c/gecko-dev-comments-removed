@@ -1204,6 +1204,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   void FireFrameLoadEvent();
 
+  void UpdateAutoplayPermission();
+
  public:
   
   virtual nsresult Dispatch(mozilla::TaskCategory aCategory,
