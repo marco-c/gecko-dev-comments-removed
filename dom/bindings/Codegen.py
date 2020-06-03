@@ -778,7 +778,7 @@ class CGPrototypeJSClass(CGThing):
               ${prototypeID},
               ${depth},
               ${hooks},
-              "[object ${name}Prototype]",
+              nullptr,
               ${protoGetter}
             };
             """,
@@ -884,11 +884,11 @@ class CGInterfaceObjectJSClass(CGThing):
                 classString = "Object"
             else:
                 classString = classString[0]
-            toStringResult = "[object %s]" % classString
+            funToString = "nullptr"
             objectOps = "JS_NULL_OBJECT_OPS"
         else:
             classString = "Function"
-            toStringResult = ("function %s() {\\n    [native code]\\n}" %
+            funToString = ("\"function %s() {\\n    [native code]\\n}\"" %
                               self.descriptor.interface.identifier.name)
             
             
@@ -910,7 +910,7 @@ class CGInterfaceObjectJSClass(CGThing):
               ${prototypeID},
               ${depth},
               ${hooks},
-              "${toStringResult}",
+              ${funToString},
               ${protoGetter}
             };
             """,
@@ -922,7 +922,7 @@ class CGInterfaceObjectJSClass(CGThing):
             needsHasInstance=toStringBool(needsHasInstance),
             prototypeID=prototypeID,
             depth=depth,
-            toStringResult=toStringResult,
+            funToString=funToString,
             protoGetter=protoGetter)
         return ret
 

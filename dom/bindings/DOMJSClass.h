@@ -479,7 +479,7 @@ struct DOMIfaceAndProtoJSClass {
 
   
   
-  const char* mToString;
+  const char* mFunToString;
 
   ProtoGetter mGetParentProto;
 
