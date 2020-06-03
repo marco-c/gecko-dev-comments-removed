@@ -10,6 +10,9 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -567,6 +570,7 @@ var E10SUtils = {
 
   getRemoteTypeForPrincipal(
     aPrincipal,
+    aOriginalURI,
     aMultiProcess,
     aRemoteSubframes,
     aPreferredRemoteType = DEFAULT_REMOTE_TYPE,
@@ -579,23 +583,29 @@ var E10SUtils = {
 
     
     
-    if (aPrincipal.isSystemPrincipal || aPrincipal.isExpandedPrincipal) {
-      throw Components.Exception("", Cr.NS_ERROR_UNEXPECTED);
-    }
+    let useOriginalURI =
+      aOriginalURI.scheme == "about" || aOriginalURI.scheme == "chrome";
 
-    
-    
-    
-    if (aPrincipal.isNullPrincipal) {
-      if (
-        (aRemoteSubframes && useSeparateDataUriProcess) ||
-        aPreferredRemoteType == NOT_REMOTE
-      ) {
-        return WEB_REMOTE_TYPE;
+    if (!useOriginalURI) {
+      
+      
+      if (aPrincipal.isSystemPrincipal || aPrincipal.isExpandedPrincipal) {
+        throw Components.Exception("", Cr.NS_ERROR_UNEXPECTED);
       }
-      return aPreferredRemoteType;
-    }
 
+      
+      
+      
+      if (aPrincipal.isNullPrincipal) {
+        if (
+          (aRemoteSubframes && useSeparateDataUriProcess) ||
+          aPreferredRemoteType == NOT_REMOTE
+        ) {
+          return WEB_REMOTE_TYPE;
+        }
+        return aPreferredRemoteType;
+      }
+    }
     
     
     
@@ -603,8 +613,9 @@ var E10SUtils = {
       aCurrentPrincipal && aCurrentPrincipal.isContentPrincipal
         ? aCurrentPrincipal.URI
         : null;
+
     return E10SUtils.getRemoteTypeForURIObject(
-      aPrincipal.URI,
+      useOriginalURI ? aOriginalURI : aPrincipal.URI,
       aMultiProcess,
       aRemoteSubframes,
       aPreferredRemoteType,
@@ -812,7 +823,6 @@ var E10SUtils = {
     
     
     if (
-      currentRemoteType != NOT_REMOTE &&
       requiredRemoteType != NOT_REMOTE &&
       uriObject &&
       (remoteSubframes || documentChannel) &&
@@ -844,7 +854,6 @@ var E10SUtils = {
 
     if (
       (aRemoteSubframes || documentChannel) &&
-      remoteType != NOT_REMOTE &&
       wantRemoteType != NOT_REMOTE &&
       documentChannelPermittedForURI(aURI)
     ) {
@@ -881,9 +890,11 @@ var E10SUtils = {
     
     
     
+    
+    
     if (
+      AppConstants.MOZ_WIDGET_TOOLKIT != "android" &&
       (useRemoteSubframes || documentChannel) &&
-      remoteType != NOT_REMOTE &&
       wantRemoteType != NOT_REMOTE &&
       documentChannelPermittedForURI(aURI)
     ) {
