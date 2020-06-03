@@ -87,7 +87,7 @@ add_task(async function() {
   ok(!entries[0].children, "no children collected");
 
   
-  browser.messageManager.sendAsyncMessage("ss-test:click", { id: "lnk" });
+  await BrowserTestUtils.synthesizeMouseAtCenter("#lnk", {}, browser);
   await promiseBrowserLoaded(browser, false );
 
   await TabStateFlusher.flush(browser);

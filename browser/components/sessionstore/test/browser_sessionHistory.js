@@ -14,11 +14,14 @@ add_task(async function test_load_start() {
   let browser = tab.linkedBrowser;
   await promiseBrowserLoaded(browser);
 
-  
-  await BrowserTestUtils.loadURI(browser, "about:mozilla");
+  const PAGE = "http://example.com/";
 
   
-  await promiseContentMessage(browser, "ss-test:OnHistoryReplaceEntry");
+  let historyReplacePromise = promiseOnHistoryReplaceEntryInChild(browser);
+  await BrowserTestUtils.loadURI(browser, PAGE);
+
+  
+  await historyReplacePromise;
   await promiseRemoveTabAndSessionState(tab);
 
   
@@ -27,7 +30,7 @@ add_task(async function test_load_start() {
   await promiseTabRestored(tab);
 
   
-  is(browser.currentURI.spec, "about:mozilla", "url is correct");
+  is(browser.currentURI.spec, PAGE, "url is correct");
 
   
   gBrowser.removeTab(tab);
@@ -53,8 +56,13 @@ add_task(async function test_hashchange() {
   is(entries.length, 1, "there is one shistory entry");
 
   
-  browser.messageManager.sendAsyncMessage("ss-test:click", { id: "a" });
-  await promiseContentMessage(browser, "ss-test:hashchange");
+  let eventPromise = BrowserTestUtils.waitForContentEvent(
+    browser,
+    "hashchange",
+    true
+  );
+  await BrowserTestUtils.synthesizeMouseAtCenter("#a", {}, browser);
+  await eventPromise;
 
   
   await TabStateFlusher.flush(browser);
@@ -122,7 +130,7 @@ add_task(async function test_subframes() {
   is(entries[0].children.length, 1, "the entry has one child");
 
   
-  browser.messageManager.sendAsyncMessage("ss-test:click", { id: "a1" });
+  await BrowserTestUtils.synthesizeMouseAtCenter("#a1", {}, browser);
   await promiseBrowserLoaded(browser, false );
 
   
@@ -136,8 +144,13 @@ add_task(async function test_subframes() {
   await promiseBrowserLoaded(browser, false );
 
   
-  browser.messageManager.sendAsyncMessage("ss-test:click", { id: "a2" });
-  await promiseContentMessage(browser, "ss-test:hashchange");
+  let eventPromise = BrowserTestUtils.waitForContentEvent(
+    browser,
+    "hashchange",
+    true
+  );
+  await BrowserTestUtils.synthesizeMouseAtCenter("#a2", {}, browser);
+  await eventPromise;
 
   
   await TabStateFlusher.flush(browser);
