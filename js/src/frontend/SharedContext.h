@@ -349,6 +349,10 @@ class FunctionBox : public SharedContext {
   bool wasEmitted : 1;
 
   
+  
+  bool isSingleton : 1;
+
+  
   bool isAnnexB : 1;
 
   
@@ -614,9 +618,9 @@ class FunctionBox : public SharedContext {
     }
   }
 
-  bool setTypeForScriptedFunction(JSContext* cx, bool singleton) {
+  bool setTypeForScriptedFunction(JSContext* cx) {
     RootedFunction fun(cx, function());
-    return JSFunction::setTypeForScriptedFunction(cx, fun, singleton);
+    return JSFunction::setTypeForScriptedFunction(cx, fun, isSingleton);
   }
 
   size_t index() { return funcDataIndex_; }

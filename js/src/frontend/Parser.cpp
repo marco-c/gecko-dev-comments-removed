@@ -1899,6 +1899,30 @@ bool CompilationInfo::publishDeferredFunctions() {
 
 
 
+
+static bool SetTypeForExposedFunctions(JSContext* cx, FunctionBox* listHead) {
+  for (FunctionBox* funbox = listHead; funbox; funbox = funbox->traceLink()) {
+    if (!funbox->isInterpreted()) {
+      continue;
+    }
+
+    
+    
+    if (!funbox->wasEmitted) {
+      continue;
+    }
+
+    if (!funbox->setTypeForScriptedFunction(cx)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+
+
 static bool InstantiateScriptStencils(JSContext* cx,
                                       CompilationInfo& compilationInfo,
                                       FunctionBox* listHead) {
@@ -1944,6 +1968,10 @@ static bool InstantiateTopLevel(JSContext* cx,
 }
 
 bool CompilationInfo::instantiateStencils() {
+  if (!SetTypeForExposedFunctions(cx, traceListHead)) {
+    return false;
+  }
+
   if (!InstantiateScriptStencils(cx, *this, traceListHead)) {
     return false;
   }

@@ -5689,10 +5689,7 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
     
     
     
-    bool isSingleton = checkRunOnceContext();
-    if (!funbox->setTypeForScriptedFunction(cx, isSingleton)) {
-      return false;
-    }
+    funbox->isSingleton = checkRunOnceContext();
 
     if (!funbox->emitBytecode) {
       return fe.emitLazy();
