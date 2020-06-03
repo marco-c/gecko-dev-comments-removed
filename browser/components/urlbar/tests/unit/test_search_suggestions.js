@@ -1247,9 +1247,13 @@ add_task(async function avoid_url_suggestions() {
   await cleanUpSuggestions();
 });
 
-add_task(async function restrict_suggestions_after_low_results() {
+add_task(async function restrict_suggestions_after_no_results() {
+  
+  
+  
+  Services.prefs.setIntPref("browser.urlbar.maxCharsForSearchSuggestions", 4);
   setSuggestionsFn(searchStr => {
-    return [searchStr + "s"];
+    return [];
   });
 
   const query = "hello";
@@ -1258,10 +1262,6 @@ add_task(async function restrict_suggestions_after_low_results() {
     context,
     matches: [
       makeSearchResult(context, { engineName: ENGINE_NAME, heuristic: true }),
-      makeSearchResult(context, {
-        engineName: ENGINE_NAME,
-        suggestion: `${query}s`,
-      }),
     ],
   });
 
@@ -1276,6 +1276,7 @@ add_task(async function restrict_suggestions_after_low_results() {
     ],
   });
 
+  Services.prefs.clearUserPref("browser.urlbar.maxCharsForSearchSuggestions");
   await cleanUpSuggestions();
 });
 

@@ -130,6 +130,10 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
   }
 }
 
+function convertToUtf8(str) {
+  return String.fromCharCode(...new TextEncoder().encode(str));
+}
+
 
 
 
@@ -232,6 +236,56 @@ async function addTestSuggestionsEngine(suggestionsFn = null) {
 
 
 
+async function addTestTailSuggestionsEngine(suggestionsFn = null) {
+  
+  let server = makeTestServer(9001);
+  server.registerPathHandler("/suggest", (req, resp) => {
+    
+    
+    let searchStr = decodeURIComponent(req.queryString.replace(/\+/g, " "));
+    let suggestions = suggestionsFn
+      ? suggestionsFn(searchStr)
+      : [
+          "what time is it in t",
+          ["what is the time today texas"].concat(
+            ["toronto", "tunisia"].map(s => searchStr + s.slice(1))
+          ),
+          [],
+          {
+            "google:irrelevantparameter": [],
+            "google:suggestdetail": [{}].concat(
+              ["toronto", "tunisia"].map(s => ({
+                mp: "… ",
+                t: s,
+              }))
+            ),
+          },
+        ];
+    let data = suggestions;
+    let jsonString = JSON.stringify(data);
+    
+    
+    
+    
+    let stringOfUtf8Bytes = convertToUtf8(jsonString);
+    resp.setHeader("Content-Type", "application/json", false);
+    resp.write(stringOfUtf8Bytes);
+  });
+  let engine = await addTestEngine("engine-tail-suggestions.xml", server);
+  return engine;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -249,6 +303,7 @@ function makeSearchResult(
   queryContext,
   {
     suggestion,
+    tail,
     engineName,
     alias,
     query,
@@ -274,6 +329,7 @@ function makeSearchResult(
     ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
       engine: [engineName, UrlbarUtils.HIGHLIGHT.TYPED],
       suggestion: [suggestion, UrlbarUtils.HIGHLIGHT.SUGGESTED],
+      tail: [tail, UrlbarUtils.HIGHLIGHT.SUGGESTED],
       keyword: [alias, UrlbarUtils.HIGHLIGHT.TYPED],
       
       query: [

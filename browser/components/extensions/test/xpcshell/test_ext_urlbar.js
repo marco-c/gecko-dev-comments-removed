@@ -286,6 +286,7 @@ add_task(async function test_onProviderResultsRequested() {
         query: "test",
         engine: "Test engine",
         suggestion: undefined,
+        tail: undefined,
         keyword: undefined,
         isSearchHistory: false,
         icon: "",
