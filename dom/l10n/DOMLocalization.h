@@ -85,7 +85,10 @@ class DOMLocalization : public intl::Localization {
 
 
 
-  void ApplyTranslations(nsTArray<nsCOMPtr<Element>>& aElements,
+
+
+
+  bool ApplyTranslations(nsTArray<nsCOMPtr<Element>>& aElements,
                          nsTArray<Nullable<L10nMessage>>& aTranslations,
                          nsXULPrototypeDocument* aProto, ErrorResult& aRv);
 

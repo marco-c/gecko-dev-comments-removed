@@ -3780,7 +3780,10 @@ class Document : public nsINode,
 
 
 
-  void InitialTranslationCompleted();
+
+
+
+  void InitialTranslationCompleted(bool aL10nCached);
 
   
 
