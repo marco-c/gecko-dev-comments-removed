@@ -11,7 +11,6 @@
 
 #include "mozilla/DefineEnum.h"                  
 #include "mozilla/layers/ScrollableLayerGuid.h"  
-#include "mozilla/webrender/WebRenderTypes.h"    
 #include "mozilla/Variant.h"                     
 #include "mozilla/Maybe.h"                       
 
