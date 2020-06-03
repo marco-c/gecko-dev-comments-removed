@@ -791,8 +791,12 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult InsertNBSPAndRemoveFollowingASCIIWhitespaces(
-      const EditorDOMPointInText& aPoint);
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult ReplaceASCIIWhitespacesWithOneNBSP(
+      const EditorDOMPointInText& aPointAtASCIIWhitespace);
 
   
 
