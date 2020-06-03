@@ -650,28 +650,22 @@ class ICFallbackStub : public ICStub {
   
 
   
-  ICEntry* icEntry_;
+  ICEntry* icEntry_ = nullptr;
 
   
-  ICState state_;
+  ICState state_{};
 
   
   
   
   
-  uint32_t enteredCount_;
+  uint32_t enteredCount_ = 0;
 
   ICFallbackStub(Kind kind, TrampolinePtr stubCode)
-      : ICStub(kind, ICStub::Fallback, stubCode.value),
-        icEntry_(nullptr),
-        state_(),
-        enteredCount_(0) {}
+      : ICStub(kind, ICStub::Fallback, stubCode.value) {}
 
   ICFallbackStub(Kind kind, Trait trait, TrampolinePtr stubCode)
-      : ICStub(kind, trait, stubCode.value),
-        icEntry_(nullptr),
-        state_(),
-        enteredCount_(0) {
+      : ICStub(kind, trait, stubCode.value) {
     MOZ_ASSERT(trait == ICStub::Fallback || trait == ICStub::MonitoredFallback);
   }
 
@@ -704,29 +698,9 @@ class ICFallbackStub : public ICStub {
 
   ICStubIterator beginChain() { return ICStubIterator(this); }
 
-  bool hasStub(ICStub::Kind kind) const {
-    for (ICStubConstIterator iter = beginChainConst(); !iter.atEnd(); iter++) {
-      if (iter->kind() == kind) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  unsigned numStubsWithKind(ICStub::Kind kind) const {
-    unsigned count = 0;
-    for (ICStubConstIterator iter = beginChainConst(); !iter.atEnd(); iter++) {
-      if (iter->kind() == kind) {
-        count++;
-      }
-    }
-    return count;
-  }
-
   void discardStubs(JSContext* cx);
 
   void unlinkStub(Zone* zone, ICStub* prev, ICStub* stub);
-  void unlinkStubsWithKind(JSContext* cx, ICStub::Kind kind);
 
   
   
