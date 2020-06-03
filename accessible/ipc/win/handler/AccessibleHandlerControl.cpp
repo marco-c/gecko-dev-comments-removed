@@ -118,7 +118,18 @@ IMPL_IUNKNOWN1(AccessibleHandlerControl, IHandlerControl)
 HRESULT
 AccessibleHandlerControl::Invalidate() {
   ++mCacheGen;
-  mAccessibleCache.clear();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  AccessibleCache oldCache;
+  mAccessibleCache.swap(oldCache);
   return S_OK;
 }
 
