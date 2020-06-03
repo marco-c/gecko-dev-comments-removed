@@ -76,6 +76,18 @@ nsWebHandlerApp.prototype = {
     let privateAllowed = !policy || policy.privateBrowsingAllowed;
 
     
+    
+    
+    
+    
+    if (aBrowsingContext && aBrowsingContext != aBrowsingContext.top) {
+      let { scheme } = aURI;
+      if (!scheme.startsWith("web+") && !scheme.startsWith("ext+")) {
+        aBrowsingContext = null;
+      }
+    }
+
+    
     if (aBrowsingContext) {
       if (aBrowsingContext.usePrivateBrowsing && !privateAllowed) {
         throw Components.Exception(
