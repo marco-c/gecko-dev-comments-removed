@@ -5,6 +5,7 @@
 
 #include "AccessibleWrap.h"
 #include "ProxyAccessible.h"
+#include "Platform.h"
 
 #import <Cocoa/Cocoa.h>
 
@@ -23,6 +24,14 @@ namespace mozilla {
 namespace a11y {
 
 inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
+  if (!ShouldA11yBeEnabled()) {
+    
+    
+    
+    
+    return aObject;
+  }
+
   return [aObject hasRepresentedView] ? [aObject representedView] : aObject;
 }
 
