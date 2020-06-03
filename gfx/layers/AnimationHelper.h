@@ -8,7 +8,8 @@
 #define mozilla_layers_AnimationHelper_h
 
 #include "mozilla/dom/Nullable.h"
-#include "mozilla/ComputedTimingFunction.h"    
+#include "mozilla/ComputedTimingFunction.h"  
+#include "mozilla/layers/AnimationStorageData.h"
 #include "mozilla/layers/LayersMessages.h"     
 #include "mozilla/webrender/WebRenderTypes.h"  
 #include "mozilla/TimeStamp.h"                 
@@ -28,50 +29,6 @@ namespace layers {
 class Animation;
 
 typedef nsTArray<layers::Animation> AnimationArray;
-
-struct PropertyAnimation {
-  struct SegmentData {
-    RefPtr<RawServoAnimationValue> mStartValue;
-    RefPtr<RawServoAnimationValue> mEndValue;
-    Maybe<mozilla::ComputedTimingFunction> mFunction;
-    float mStartPortion;
-    float mEndPortion;
-    dom::CompositeOperation mStartComposite;
-    dom::CompositeOperation mEndComposite;
-  };
-  nsTArray<SegmentData> mSegments;
-  TimingParams mTiming;
-
-  
-  
-  
-  dom::Nullable<double> mProgressOnLastCompose;
-  uint64_t mCurrentIterationOnLastCompose = 0;
-  
-  
-  uint32_t mSegmentIndexOnLastCompose = 0;
-  dom::Nullable<double> mPortionInSegmentOnLastCompose;
-
-  TimeStamp mOriginTime;
-  Maybe<TimeDuration> mStartTime;
-  TimeDuration mHoldTime;
-  float mPlaybackRate;
-  dom::IterationCompositeOperation mIterationComposite;
-  bool mIsNotPlaying;
-};
-
-struct PropertyAnimationGroup {
-  nsCSSPropertyID mProperty;
-
-  nsTArray<PropertyAnimation> mAnimations;
-  RefPtr<RawServoAnimationValue> mBaseStyle;
-
-  bool IsEmpty() const { return mAnimations.IsEmpty(); }
-  void Clear() {
-    mAnimations.Clear();
-    mBaseStyle = nullptr;
-  }
-};
 
 struct AnimationTransform {
   
@@ -113,20 +70,6 @@ struct AnimatedValue final {
 
  private:
   AnimatedValueType mValue;
-};
-
-struct AnimationStorageData {
-  nsTArray<PropertyAnimationGroup> mAnimation;
-  Maybe<TransformData> mTransformData;
-  RefPtr<gfx::Path> mCachedMotionPath;
-
-  AnimationStorageData() = default;
-  AnimationStorageData(AnimationStorageData&& aOther) = default;
-  AnimationStorageData& operator=(AnimationStorageData&& aOther) = default;
-
-  
-  AnimationStorageData(const AnimationStorageData& aOther) = delete;
-  AnimationStorageData& operator=(const AnimationStorageData& aOther) = delete;
 };
 
 

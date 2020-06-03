@@ -12,6 +12,7 @@
 #include "mozilla/Array.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/FunctionRef.h"
+#include "mozilla/layers/AnimationStorageData.h"
 #include "mozilla/layers/LayersMessages.h"  
 
 struct RawServoAnimationValue;
@@ -85,15 +86,15 @@ class AnimationInfo final {
   
   AnimationArray& GetAnimations() { return mAnimations; }
   nsTArray<PropertyAnimationGroup>& GetPropertyAnimationGroups() {
-    return mPropertyAnimationGroups;
+    return mStorageData.mAnimation;
   }
   const Maybe<TransformData>& GetTransformData() const {
-    return mTransformData;
+    return mStorageData.mTransformData;
   }
   bool ApplyPendingUpdatesForThisTransaction();
   bool HasTransformAnimation() const;
 
-  gfx::Path* CachedMotionPath() { return mCachedMotionPath; }
+  gfx::Path* CachedMotionPath() { return mStorageData.mCachedMotionPath; }
 
   
   
@@ -153,17 +154,7 @@ class AnimationInfo final {
 
   uint64_t mCompositorAnimationsId;
   
-  
-  
-  
-  
-  
-  
-  
-  nsTArray<PropertyAnimationGroup> mPropertyAnimationGroups;
-  Maybe<TransformData> mTransformData;
-  
-  RefPtr<gfx::Path> mCachedMotionPath;
+  AnimationStorageData mStorageData;
   
   
   Maybe<uint64_t> mAnimationGeneration;
