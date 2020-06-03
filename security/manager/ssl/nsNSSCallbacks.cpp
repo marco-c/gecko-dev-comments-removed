@@ -273,6 +273,9 @@ OCSPRequest::Run() {
   loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
 
   
+  loadInfo->SetAllowDeprecatedSystemRequests(true);
+
+  
   
   
   
