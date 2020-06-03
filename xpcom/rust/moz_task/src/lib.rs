@@ -46,6 +46,7 @@ extern "C" {
         name: *const libc::c_char,
         target: *mut *const nsISerialEventTarget,
     ) -> nsresult;
+    fn NS_DispatchBackgroundTask(event: *const nsIRunnable, flags: u32) -> nsresult;
 }
 
 pub fn get_current_thread() -> Result<RefPtr<nsIThread>, nsresult> {
@@ -70,10 +71,40 @@ pub fn is_current_thread(thread: &nsIThread) -> bool {
     unsafe { NS_IsCurrentThread(thread.coerce()) }
 }
 
+
+
 pub fn create_background_task_queue(
     name: &'static CStr,
 ) -> Result<RefPtr<nsISerialEventTarget>, nsresult> {
     getter_addrefs(|p| unsafe { NS_CreateBackgroundTaskQueue(name.as_ptr(), p) })
+}
+
+
+
+#[inline]
+pub fn dispatch_background_task(runnable: RefPtr<nsIRunnable>) -> Result<(), nsresult> {
+    dispatch_background_task_with_options(runnable, DispatchOptions::default())
+}
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn dispatch_background_task_with_options(
+    runnable: RefPtr<nsIRunnable>,
+    options: DispatchOptions,
+) -> Result<(), nsresult> {
+    
+    
+    
+    unsafe { NS_DispatchBackgroundTask(runnable.coerce(), options.flags()) }.to_result()
 }
 
 
