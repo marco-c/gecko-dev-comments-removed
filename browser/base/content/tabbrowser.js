@@ -2546,6 +2546,13 @@
       }
 
       
+      
+      document
+        .getElementById("History:UndoCloseTab")
+        .setAttribute("data-l10n-args", JSON.stringify({ tabCount: 1 }));
+      SessionStore.setLastClosedTabCount(window, 1);
+
+      
       if (this.selectedTab.owner) {
         this.selectedTab.owner = null;
       }
@@ -3294,6 +3301,7 @@
         return;
       }
 
+      let initialTabCount = tabs.length;
       this._clearMultiSelectionLocked = true;
 
       
@@ -3329,6 +3337,17 @@
 
       this._clearMultiSelectionLocked = false;
       this.avoidSingleSelectedTab();
+      let closedTabsCount =
+        initialTabCount - tabs.filter(t => !t.closing).length;
+      
+      
+      document
+        .getElementById("History:UndoCloseTab")
+        .setAttribute(
+          "data-l10n-args",
+          JSON.stringify({ tabCount: closedTabsCount })
+        );
+      SessionStore.setLastClosedTabCount(window, closedTabsCount);
     },
 
     removeCurrentTab(aParams) {
