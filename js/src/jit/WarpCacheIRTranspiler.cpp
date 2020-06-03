@@ -28,7 +28,7 @@ class MOZ_RAII WarpCacheIRTranspiler : public WarpBuilderShared {
   
   MDefinitionStackVector operands_;
 
-  const CallInfo* callInfo_;
+  CallInfo* callInfo_;
 
 #ifdef DEBUG
   
@@ -111,7 +111,7 @@ class MOZ_RAII WarpCacheIRTranspiler : public WarpBuilderShared {
 
  public:
   WarpCacheIRTranspiler(MIRGenerator& mirGen, BytecodeLocation loc,
-                        MBasicBlock* current, const CallInfo* callInfo,
+                        MBasicBlock* current, CallInfo* callInfo,
                         const WarpCacheIR* snapshot)
       : WarpBuilderShared(mirGen, current),
         loc_(loc),
@@ -980,6 +980,68 @@ bool WarpCacheIRTranspiler::emitLoadArgumentFixedSlot(ValOperandId resultId,
   return defineOperand(resultId, callInfo_->fun());
 }
 
+bool WarpCacheIRTranspiler::emitLoadArgumentDynamicSlot(ValOperandId resultId,
+                                                        Int32OperandId argcId,
+                                                        uint8_t slotIndex) {
+#ifdef DEBUG
+  MDefinition* argc = getOperand(argcId);
+  MOZ_ASSERT(argc->toConstant()->toInt32() ==
+             static_cast<int32_t>(callInfo_->argc()));
+#endif
+
+  slotIndex += callInfo_->argc();
+  return emitLoadArgumentFixedSlot(resultId, slotIndex);
+}
+
+bool WarpCacheIRTranspiler::emitCallNativeFunction(ObjOperandId calleeId,
+                                                   Int32OperandId argcId,
+                                                   CallFlags flags,
+                                                   bool ignoresReturnValue) {
+  MDefinition* callee = getOperand(calleeId);
+#ifdef DEBUG
+  MDefinition* argc = getOperand(argcId);
+  MOZ_ASSERT(argc->toConstant()->toInt32() ==
+             static_cast<int32_t>(callInfo_->argc()));
+#endif
+
+  
+  
+  
+  
+  
+  JSFunction* target = nullptr;
+  if (callee->isGuardObjectIdentity()) {
+    auto* guard = callee->toGuardObjectIdentity();
+    target = &guard->expected()->toConstant()->toObject().as<JSFunction>();
+    MOZ_ASSERT(target->isNative());
+  }
+
+  
+  
+  bool needsThisCheck = false;
+  if (callInfo_->constructing()) {
+    MOZ_ASSERT(flags.isConstructing());
+
+    callInfo_->thisArg()->setImplicitlyUsedUnchecked();
+    
+    callInfo_->setThis(constant(MagicValue(JS_IS_CONSTRUCTING)));
+  }
+
+  MCall* call = makeCall(*callInfo_, needsThisCheck, target);
+  if (!call) {
+    return false;
+  }
+
+  if (flags.isSameRealm()) {
+    call->setNotCrossRealm();
+  }
+
+  addEffectful(call);
+  pushResult(call);
+
+  return resumeAfter(call);
+}
+
 bool WarpCacheIRTranspiler::emitTypeMonitorResult() {
   MOZ_ASSERT(pushedResult_, "Didn't push result MDefinition");
   return true;
@@ -998,7 +1060,7 @@ bool jit::TranspileCacheIRToMIR(MIRGenerator& mirGen, BytecodeLocation loc,
 bool jit::TranspileCacheIRToMIR(MIRGenerator& mirGen, BytecodeLocation loc,
                                 MBasicBlock* current,
                                 const WarpCacheIR* snapshot,
-                                const CallInfo& callInfo) {
+                                CallInfo& callInfo) {
   WarpCacheIRTranspiler transpiler(mirGen, loc, current, &callInfo, snapshot);
 
   
