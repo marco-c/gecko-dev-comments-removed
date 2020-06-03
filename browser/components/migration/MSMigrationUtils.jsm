@@ -727,7 +727,8 @@ Cookies.prototype = {
         false, 
         expireTime,
         {},
-        Ci.nsICookie.SAMESITE_NONE
+        Ci.nsICookie.SAMESITE_NONE,
+        Ci.nsICookie.SCHEME_UNSET
       );
     }
   },
