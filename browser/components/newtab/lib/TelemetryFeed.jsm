@@ -622,8 +622,13 @@ this.TelemetryFeed = class TelemetryFeed {
       case "snippets_user_event":
         event = await this.applySnippetsPolicy(event);
         break;
-      
+      case "badge_user_event":
       case "whats-new-panel_user_event":
+        event = await this.applyWhatsNewPolicy(event);
+        break;
+      case "moments_user_event":
+        event = await this.applyMomentsPolicy(event);
+        break;
       case "onboarding_user_event":
         event = await this.applyOnboardingPolicy(event, session);
         break;
@@ -655,6 +660,38 @@ this.TelemetryFeed = class TelemetryFeed {
     }
     delete ping.action;
     return { ping, pingType: "cfr" };
+  }
+
+  
+
+
+
+  async applyWhatsNewPolicy(ping) {
+    ping.client_id = await this.telemetryClientId;
+    ping.browser_session_id = browserSessionId;
+    
+    delete ping.action;
+    return { ping, pingType: "whats-new-panel" };
+  }
+
+  
+
+
+
+
+
+  async applyMomentsPolicy(ping) {
+    if (
+      UpdateUtils.getUpdateChannel(true) === "release" &&
+      !this.isInCFRCohort
+    ) {
+      ping.message_id = "n/a";
+      ping.impression_id = this._impressionId;
+    } else {
+      ping.client_id = await this.telemetryClientId;
+    }
+    delete ping.action;
+    return { ping, pingType: "moments" };
   }
 
   
