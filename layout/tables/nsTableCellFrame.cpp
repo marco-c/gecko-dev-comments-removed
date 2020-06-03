@@ -546,10 +546,7 @@ nsMargin nsTableCellFrame::GetBorderOverflow() { return nsMargin(0, 0, 0, 0); }
 
 void nsTableCellFrame::BlockDirAlignChild(WritingMode aWM, nscoord aMaxAscent) {
   
-  const LogicalMargin borderPadding =
-      GetLogicalUsedBorderAndPadding(GetWritingMode())
-          .ApplySkipSides(GetLogicalSkipSides())
-          .ConvertTo(aWM, GetWritingMode());
+  LogicalMargin borderPadding = GetLogicalUsedBorderAndPadding(aWM);
 
   nscoord bStartInset = borderPadding.BStart(aWM);
   nscoord bEndInset = borderPadding.BEnd(aWM);
@@ -818,8 +815,21 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
   WritingMode wm = aReflowInput.GetWritingMode();
   LogicalSize availSize = aReflowInput.AvailableSize();
 
-  LogicalMargin borderPadding =
-      aReflowInput.ComputedLogicalPadding() + GetBorderWidth(wm);
+  LogicalMargin borderPadding = aReflowInput.ComputedLogicalPadding();
+  LogicalMargin border = GetBorderWidth(wm);
+  borderPadding += border;
+
+  
+  availSize.ISize(wm) -= borderPadding.IStartEnd(wm);
+  if (NS_UNCONSTRAINEDSIZE != availSize.BSize(wm)) {
+    availSize.BSize(wm) -= borderPadding.BStartEnd(wm);
+  }
+
+  
+  
+  if (availSize.BSize(wm) < 0) {
+    availSize.BSize(wm) = 1;
+  }
 
   ReflowOutput kidSize(wm);
   kidSize.ClearSize();
@@ -843,37 +853,6 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
       DISPLAY_REFLOW_CHANGE();
     }
   }
-
-  
-  
-  
-  
-  
-  
-  
-  borderPadding.ApplySkipSides(PreReflowBlockLevelLogicalSkipSides());
-
-  availSize.ISize(wm) -= borderPadding.IStartEnd(wm);
-
-  
-  
-  if (NS_UNCONSTRAINEDSIZE != availSize.BSize(wm)) {
-    availSize.BSize(wm) -= borderPadding.BStart(wm);
-
-    if (aReflowInput.mStyleBorder->mBoxDecorationBreak ==
-        StyleBoxDecorationBreak::Clone) {
-      
-      
-      availSize.BSize(wm) -= borderPadding.BEnd(wm);
-    }
-  }
-
-  
-  
-  
-  
-  availSize.BSize(wm) =
-      std::max(availSize.BSize(wm), nsPresContext::CSSPixelsToAppUnits(1));
 
   WritingMode kidWM = firstKid->GetWritingMode();
   ReflowInput kidReflowInput(aPresContext, aReflowInput, firstKid,
@@ -952,13 +931,7 @@ void nsTableCellFrame::Reflow(nsPresContext* aPresContext,
   cellSize.BSize(wm) = kidSize.BSize(wm);
 
   if (NS_UNCONSTRAINEDSIZE != cellSize.BSize(wm)) {
-    cellSize.BSize(wm) += borderPadding.BStart(wm);
-
-    if (aStatus.IsComplete() ||
-        aReflowInput.mStyleBorder->mBoxDecorationBreak ==
-            StyleBoxDecorationBreak::Clone) {
-      cellSize.BSize(wm) += borderPadding.BEnd(wm);
-    }
+    cellSize.BSize(wm) += borderPadding.BStartEnd(wm);
   }
 
   
