@@ -6,6 +6,7 @@
 
 #include "Common.h"
 #include "AnimationSurfaceProvider.h"
+#include "DecodePool.h"
 #include "Decoder.h"
 #include "DecoderFactory.h"
 #include "decoders/nsBMPDecoder.h"
@@ -92,7 +93,7 @@ static void CheckDecoderResults(const ImageTestCase& aTestCase,
 template <typename Func>
 void WithSingleChunkDecode(const ImageTestCase& aTestCase,
                            const Maybe<IntSize>& aOutputSize,
-                           Func aResultChecker) {
+                           bool aUseDecodePool, Func aResultChecker) {
   nsCOMPtr<nsIInputStream> inputStream = LoadFile(aTestCase.mPath);
   ASSERT_TRUE(inputStream != nullptr);
 
@@ -117,17 +118,26 @@ void WithSingleChunkDecode(const ImageTestCase& aTestCase,
   RefPtr<IDecodingTask> task =
       new AnonymousDecodingTask(WrapNotNull(decoder),  false);
 
-  
-  task->Run();
+  if (aUseDecodePool) {
+    DecodePool::Singleton()->AsyncRun(task.get());
+
+    while (!decoder->GetDecodeDone()) {
+      task->Resume();
+    }
+  } else {  
+    task->Run();
+  }
 
   
   aResultChecker(decoder);
 }
 
-static void CheckDecoderSingleChunk(const ImageTestCase& aTestCase) {
-  WithSingleChunkDecode(aTestCase, Nothing(), [&](image::Decoder* aDecoder) {
-    CheckDecoderResults(aTestCase, aDecoder);
-  });
+static void CheckDecoderSingleChunk(const ImageTestCase& aTestCase,
+                                    bool aUseDecodePool = false) {
+  WithSingleChunkDecode(aTestCase, Nothing(), aUseDecodePool,
+                        [&](image::Decoder* aDecoder) {
+                          CheckDecoderResults(aTestCase, aDecoder);
+                        });
 }
 
 template <typename Func>
@@ -232,7 +242,8 @@ static void CheckDownscaleDuringDecode(const ImageTestCase& aTestCase) {
   IntSize outputSize(20, 20);
 
   WithSingleChunkDecode(
-      aTestCase, Some(outputSize), [&](image::Decoder* aDecoder) {
+      aTestCase, Some(outputSize),  false,
+      [&](image::Decoder* aDecoder) {
         RefPtr<SourceSurface> surface = CheckDecoderState(aTestCase, aDecoder);
 
         
@@ -655,6 +666,13 @@ TEST_F(ImageDecoders, WebPTransparentNoAlphaHeaderSingleChunk) {
 
 TEST_F(ImageDecoders, AVIFSingleChunk) {
   CheckDecoderSingleChunk(GreenAVIFTestCase());
+}
+
+
+
+
+TEST_F(ImageDecoders, AVIFStackCheck) {
+  CheckDecoderSingleChunk(StackCheckAVIFTestCase(),  true);
 }
 
 TEST_F(ImageDecoders, AVIFDelayedChunk) {

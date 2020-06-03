@@ -2,6 +2,8 @@
 
 
 
+
+
 #ifndef MEDIA_BASE_YUV_CONVERT_H_
 #define MEDIA_BASE_YUV_CONVERT_H_
 
@@ -17,7 +19,8 @@ namespace gfx {
 enum YUVType {
   YV12 = 0,           
   YV16 = 1,           
-  YV24 = 2            
+  YV24 = 2,           
+  Y8 = 3              
 };
 
 
