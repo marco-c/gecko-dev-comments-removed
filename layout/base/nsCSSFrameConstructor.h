@@ -359,6 +359,19 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   already_AddRefed<ComputedStyle> ResolveComputedStyle(nsIContent* aContent);
 
+  enum class ItemFlag : uint8_t {
+    
+    
+    AllowPageBreak,
+    IsGeneratedContent,
+    IsWithinSVGText,
+    AllowTextPathChild,
+    
+    IsAnonymousContentCreatorContent,
+  };
+
+  using ItemFlags = mozilla::EnumSet<ItemFlag>;
+
   
   
   
@@ -369,7 +382,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                  bool aSuppressWhiteSpaceOptimizations,
                                  const InsertionPoint& aInsertion,
                                  FrameConstructionItemList& aItems,
-                                 uint32_t aFlags = 0);
+                                 ItemFlags = {});
 
   
   
@@ -386,7 +399,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                    bool aSuppressWhiteSpaceOptimizations,
                                    nsContainerFrame* aParentFrame,
                                    FrameConstructionItemList& aItems,
-                                   uint32_t aFlags = 0);
+                                   ItemFlags = {});
 
   
   
@@ -749,18 +762,18 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   const FrameConstructionData* FindDataForContent(nsIContent&, ComputedStyle&,
                                                   nsIFrame* aParentFrame,
-                                                  uint32_t aFlags);
+                                                  ItemFlags aFlags);
 
   
   static const FrameConstructionData* FindTextData(const Text&,
                                                    nsIFrame* aParentFrame);
   const FrameConstructionData* FindElementData(const Element&, ComputedStyle&,
                                                nsIFrame* aParentFrame,
-                                               uint32_t aFlags);
+                                               ItemFlags aFlags);
   const FrameConstructionData* FindElementTagData(const Element&,
                                                   ComputedStyle&,
                                                   nsIFrame* aParentFrame,
-                                                  uint32_t aFlags);
+                                                  ItemFlags aFlags);
 
   
 
@@ -1376,27 +1389,12 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   
   
-#define ITEM_ALLOW_XBL_BASE 0x1
-  
-
-#define ITEM_ALLOW_PAGE_BREAK 0x2
-  
-#define ITEM_IS_GENERATED_CONTENT 0x4
-  
-#define ITEM_IS_WITHIN_SVG_TEXT 0x8
-  
-#define ITEM_ALLOWS_TEXT_PATH_CHILD 0x10
-  
-#define ITEM_IS_ANONYMOUSCONTENTCREATOR_CONTENT 0x20
-  
-  
   
   void AddFrameConstructionItemsInternal(nsFrameConstructorState& aState,
                                          nsIContent* aContent,
                                          nsContainerFrame* aParentFrame,
                                          bool aSuppressWhiteSpaceOptimizations,
-                                         ComputedStyle* aComputedStyle,
-                                         uint32_t aFlags,
+                                         ComputedStyle*, ItemFlags,
                                          FrameConstructionItemList& aItems);
 
   
@@ -1545,7 +1543,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   void AddFCItemsForAnonymousContent(
       nsFrameConstructorState& aState, nsContainerFrame* aFrame,
       const nsTArray<nsIAnonymousContentCreator::ContentInfo>& aAnonymousItems,
-      FrameConstructionItemList& aItemsToConstruct, uint32_t aExtraFlags = 0);
+      FrameConstructionItemList& aItemsToConstruct, ItemFlags aExtraFlags = {});
 
   
 
