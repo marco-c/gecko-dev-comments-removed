@@ -51,10 +51,10 @@ struct ActionSubrecordHeader
     return_trace (likely (c->check_struct (this)));
   }
 
-  HBUINT16 	actionClass; 	
+  HBUINT16	actionClass;	
 
-  HBUINT16 	actionType; 	
-  HBUINT16 	actionLength;	
+  HBUINT16	actionType;	
+  HBUINT16	actionLength;	
 
   public:
   DEFINE_SIZE_STATIC (6);
@@ -70,11 +70,11 @@ struct DecompositionAction
 
   ActionSubrecordHeader
 		header;
-  HBFixed		lowerLimit; 	
+  HBFixed	lowerLimit;	
 
-  HBFixed		upperLimit; 	
+  HBFixed	upperLimit;	
 
-  HBUINT16 	order;		
+  HBUINT16	order;		
 
 
 
@@ -118,14 +118,14 @@ struct ConditionalAddGlyphAction
   protected:
   ActionSubrecordHeader
 		header;
-  HBFixed 	substThreshold; 
+  HBFixed	substThreshold; 
 
 
-  HBGlyphID 	addGlyph; 	
+  HBGlyphID	addGlyph;	
 
 
 
-  HBGlyphID 	substGlyph; 	
+  HBGlyphID	substGlyph;	
 
 
   public:
@@ -143,16 +143,16 @@ struct DuctileGlyphAction
   protected:
   ActionSubrecordHeader
 		header;
-  HBUINT32 	variationAxis;	
+  HBUINT32	variationAxis;	
 
 
-  HBFixed 	minimumLimit; 	
+  HBFixed	minimumLimit;	
 
 
-  HBFixed 	noStretchValue; 
+  HBFixed	noStretchValue; 
 
 
-  HBFixed 	maximumLimit; 	
+  HBFixed	maximumLimit;	
 
   public:
   DEFINE_SIZE_STATIC (22);
@@ -169,8 +169,8 @@ struct RepeatedAddGlyphAction
   protected:
   ActionSubrecordHeader
 		header;
-  HBUINT16 	flags;		
-  HBGlyphID 	glyph;		
+  HBUINT16	flags;		
+  HBGlyphID	glyph;		
 
   public:
   DEFINE_SIZE_STATIC (10);
@@ -271,14 +271,14 @@ struct JustWidthDeltaEntry
   };
 
   protected:
-  HBFixed		beforeGrowLimit;
+  HBFixed	beforeGrowLimit;
 
-  HBFixed		beforeShrinkLimit;
+  HBFixed	beforeShrinkLimit;
 				
 
-  HBFixed		afterGrowLimit;	
+  HBFixed	afterGrowLimit;	
 
-  HBFixed		afterShrinkLimit;
+  HBFixed	afterShrinkLimit;
 				
 
 
@@ -361,7 +361,7 @@ struct JustificationHeader
   OffsetTo<JustificationCategory>
 		justClassTable;	
   OffsetTo<WidthDeltaCluster>
-  		wdcTable;	
+		wdcTable;	
 
 
 
@@ -372,7 +372,7 @@ struct JustificationHeader
 
 
   Lookup<OffsetTo<WidthDeltaCluster>>
-  		lookupTable;	
+		lookupTable;	
 
 
 
@@ -397,7 +397,7 @@ struct just
   protected:
   FixedVersion<>version;	
 
-  HBUINT16	format; 	
+  HBUINT16	format;		
   OffsetTo<JustificationHeader>
 		horizData;	
 

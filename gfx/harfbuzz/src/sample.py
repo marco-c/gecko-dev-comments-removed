@@ -1,27 +1,12 @@
 
-# -*- coding: utf-8 -*-
-
-from __future__ import print_function, division, absolute_import
 
 import sys
 import array
 from gi.repository import HarfBuzz as hb
 from gi.repository import GLib
 
-
-try:
-	unicode
-except NameError:
-	unicode = str
-
-def tounicode(s, encoding='utf-8'):
-	if not isinstance(s, unicode):
-		return s.decode(encoding)
-	else:
-		return s
-
 fontdata = open (sys.argv[1], 'rb').read ()
-text = tounicode(sys.argv[2])
+text = sys.argv[2]
 
 
 blob = hb.glib_blob_create (GLib.Bytes.new (fontdata))

@@ -126,9 +126,10 @@ struct maxp
   }
 
   protected:
-  FixedVersion<>version;		
+  FixedVersion<>version;
 
-  HBUINT16	numGlyphs;		
+  HBUINT16	numGlyphs;
+			
 
   public:
   DEFINE_SIZE_STATIC (6);

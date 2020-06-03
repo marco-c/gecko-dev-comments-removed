@@ -54,34 +54,37 @@ struct _hea
   }
 
   public:
-  FixedVersion<>version;		
-  FWORD		ascender;		
-  FWORD		descender;		
-  FWORD		lineGap;		
-  UFWORD	advanceMax;		
+  FixedVersion<>version;	
+  FWORD		ascender;	
+  FWORD		descender;	
+  FWORD		lineGap;	
+  UFWORD	advanceMax;	
 
-  FWORD		minLeadingBearing;	
+  FWORD		minLeadingBearing;
+				
 
-  FWORD		minTrailingBearing;	
-
-
-  FWORD		maxExtent;		
-
-  HBINT16		caretSlopeRise;		
+  FWORD		minTrailingBearing;
+				
 
 
-  HBINT16		caretSlopeRun;		
-  HBINT16		caretOffset;		
+  FWORD		maxExtent;	
+
+  HBINT16	caretSlopeRise;	
+
+
+  HBINT16	caretSlopeRun;	
+  HBINT16	caretOffset;	
 
 
 
 
-  HBINT16		reserved1;		
-  HBINT16		reserved2;		
-  HBINT16		reserved3;		
-  HBINT16		reserved4;		
-  HBINT16		metricDataFormat;	
-  HBUINT16	numberOfLongMetrics;	
+  HBINT16	reserved1;	
+  HBINT16	reserved2;	
+  HBINT16	reserved3;	
+  HBINT16	reserved4;	
+  HBINT16	metricDataFormat;
+  HBUINT16	numberOfLongMetrics;
+				
 
   public:
   DEFINE_SIZE_STATIC (36);

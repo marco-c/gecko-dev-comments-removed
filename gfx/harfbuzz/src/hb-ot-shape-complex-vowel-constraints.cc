@@ -13,6 +13,7 @@
 
 
 
+
 #include "hb.hh"
 
 #ifndef HB_NO_OT_SHAPE
@@ -204,6 +205,22 @@ _hb_preprocess_text_vowel_constraints (const hb_ot_shape_plan_t *plan HB_UNUSED,
 	  case 0x0B0Fu: case 0x0B13u:
 	    matched = 0x0B57u == buffer->cur (1).codepoint;
 	    break;
+	}
+	buffer->next_glyph ();
+	if (matched) _output_with_dotted_circle (buffer);
+      }
+      processed = true;
+      break;
+
+    case HB_SCRIPT_TAMIL:
+      for (buffer->idx = 0; buffer->idx + 1 < count && buffer->successful;)
+      {
+	bool matched = false;
+	if (0x0B85u == buffer->cur ().codepoint &&
+	    0x0BC2u == buffer->cur (1).codepoint)
+	{
+	  buffer->next_glyph ();
+	  _output_dotted_circle (buffer);
 	}
 	buffer->next_glyph ();
 	if (matched) _output_with_dotted_circle (buffer);
