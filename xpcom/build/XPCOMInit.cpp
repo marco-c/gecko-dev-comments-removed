@@ -649,6 +649,17 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
     NS_ProcessPendingEvents(thread);
 
+    if (observerService) {
+      mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownLoaders);
+      observerService->Shutdown();
+    }
+
+    
+    
+    
+    
+    mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownFinal);
+
     
     
     
@@ -662,17 +673,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     BackgroundHangMonitor().NotifyActivity();
 
     mozilla::dom::JSExecutionManager::Shutdown();
-
-    if (observerService) {
-      mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownLoaders);
-      observerService->Shutdown();
-    }
   }
-
-  
-  
-  
-  mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownFinal);
 
   AbstractThread::ShutdownMainThread();
 
