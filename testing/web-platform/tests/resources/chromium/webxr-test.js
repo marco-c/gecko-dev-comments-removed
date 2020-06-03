@@ -1527,21 +1527,4 @@ class MockXRPresentationProvider {
   }
 }
 
-
-
-
-const XRTest = new ChromeXRTest();
-
-
-
-
-if ((typeof legacy_vr_test === 'undefined') || !legacy_vr_test) {
-  
-  
-  
-  if (navigator.xr) {
-    navigator.xr.test = XRTest;
-  }
-} else {
-  navigator.vr = { test: XRTest };
-}
+navigator.xr.test = new ChromeXRTest();
