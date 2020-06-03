@@ -77,8 +77,11 @@ impl StorageSyncArea {
         let task = PuntTask::new(Arc::downgrade(&*self.store()?), punt, callback)?;
         let runnable = TaskRunnable::new(name, Box::new(task))?;
         
-        runnable
-            .dispatch_with_options(self.queue.coerce(), DispatchOptions::new().may_block(true))?;
+        TaskRunnable::dispatch_with_options(
+            runnable,
+            self.queue.coerce(),
+            DispatchOptions::new().may_block(true),
+        )?;
         Ok(())
     }
 
@@ -242,13 +245,6 @@ impl StorageSyncArea {
                 store.interrupt();
                 
                 
-                
-                
-                
-                
-                
-                
-                
                 teardown(&self.queue, store, callback)?;
             }
             None => return Err(Error::AlreadyTornDown),
@@ -264,7 +260,11 @@ fn teardown(
 ) -> Result<()> {
     let task = TeardownTask::new(store, callback)?;
     let runnable = TaskRunnable::new(TeardownTask::name(), Box::new(task))?;
-    runnable.dispatch_with_options(queue.coerce(), DispatchOptions::new().may_block(true))?;
+    TaskRunnable::dispatch_with_options(
+        runnable,
+        queue.coerce(),
+        DispatchOptions::new().may_block(true),
+    )?;
     Ok(())
 }
 
