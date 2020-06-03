@@ -191,13 +191,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-
-
-
-
   void SampleForWebRender(wr::TransactionWrapper& aTxn,
                           const TimeStamp& aSampleTime,
-                          wr::RenderRoot aRenderRoot,
                           const wr::WrPipelineIdEpochs* aEpochsBeingRendered);
 
   
@@ -205,8 +200,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  bool AdvanceAnimations(Maybe<wr::RenderRoot> aRenderRoot,
-                         const TimeStamp& aSampleTime);
+  bool AdvanceAnimations(const TimeStamp& aSampleTime);
 
   
 
@@ -738,7 +732,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
       LayersId aLayersId);
 
   bool AdvanceAnimationsInternal(const MutexAutoLock& aProofOfMapLock,
-                                 Maybe<wr::RenderRoot> aRenderRoot,
                                  const TimeStamp& aSampleTime);
 
   using ClippedCompositionBoundsMap =
