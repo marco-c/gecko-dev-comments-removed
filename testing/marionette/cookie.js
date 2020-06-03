@@ -104,7 +104,12 @@ cookie.fromJSON = function(json) {
 
 
 
-cookie.add = function(newCookie, { restrictToHost = null } = {}) {
+
+
+cookie.add = function(
+  newCookie,
+  { restrictToHost = null, protocol = null } = {}
+) {
   assert.string(newCookie.name, "Cookie name must be string");
   assert.string(newCookie.value, "Cookie value must be string");
 
@@ -168,6 +173,19 @@ cookie.add = function(newCookie, { restrictToHost = null } = {}) {
     }
   }
 
+  let schemeType = Ci.nsICookie.SCHEME_UNSET;
+  switch (protocol) {
+    case "http:":
+      schemeType = Ci.nsICookie.SCHEME_HTTP;
+      break;
+    case "https:":
+      schemeType = Ci.nsICookie.SCHEME_HTTPS;
+      break;
+    default:
+      
+      break;
+  }
+
   
   
   
@@ -184,7 +202,8 @@ cookie.add = function(newCookie, { restrictToHost = null } = {}) {
       newCookie.session,
       newCookie.expiry,
       {} ,
-      Ci.nsICookie.SAMESITE_NONE
+      Ci.nsICookie.SAMESITE_NONE,
+      schemeType
     );
   } catch (e) {
     throw new UnableToSetCookieError(e);
