@@ -219,23 +219,10 @@ static inline bool IsAutoOrEnumOnBSize(const StyleSize& aSize, bool aIsInline) {
       : (isize_)
 
 
-enum class AxisTrackerFlags {
-  eNoFlags = 0x0,
-
-  
-  
-  
-  
-  eAllowBottomToTopChildOrdering = 0x1
-};
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(AxisTrackerFlags)
-
-
 class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
  public:
   FlexboxAxisTracker(const nsFlexContainerFrame* aFlexContainer,
-                     const WritingMode& aWM,
-                     AxisTrackerFlags aFlags = AxisTrackerFlags::eNoFlags);
+                     const WritingMode& aWM);
 
   
   LogicalAxis MainAxis() const { return mMainAxis; }
@@ -347,11 +334,6 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
                           : LogicalSize(mWM, aCrossSize, aMainSize);
   }
 
-  
-  
-  
-  bool AreAxesInternallyReversed() const { return mAreAxesInternallyReversed; }
-
   bool IsMainAxisHorizontal() const {
     
     
@@ -386,11 +368,6 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
   
   
   bool mIsCrossAxisReversed = false;
-
-  
-  
-  
-  bool mAreAxesInternallyReversed = false;
 };
 
 
@@ -1006,8 +983,6 @@ class nsFlexContainerFrame::FlexLine final {
 
 
 
-
-
   nscoord FirstBaselineOffset() const { return mFirstBaselineOffset; }
 
   
@@ -1164,8 +1139,7 @@ static mozilla::StyleAlignFlags SimplifyAlignOrJustifyContentForOneItem(
 StyleAlignFlags nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
     const ReflowInput& aChildRI, LogicalAxis aLogicalAxis) const {
   WritingMode wm = GetWritingMode();
-  const FlexboxAxisTracker axisTracker(
-      this, wm, AxisTrackerFlags::eAllowBottomToTopChildOrdering);
+  const FlexboxAxisTracker axisTracker(this, wm);
 
   
   
@@ -3099,24 +3073,6 @@ MainAxisPositionTracker::MainAxisPositionTracker(
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aAxisTracker.AreAxesInternallyReversed()) {
-    if (mJustifyContent.primary == StyleAlignFlags::FLEX_START) {
-      mJustifyContent.primary = StyleAlignFlags::FLEX_END;
-    } else if (mJustifyContent.primary == StyleAlignFlags::FLEX_END) {
-      mJustifyContent.primary = StyleAlignFlags::FLEX_START;
-    }
-  }
-
-  
   if (mJustifyContent.primary == StyleAlignFlags::LEFT ||
       mJustifyContent.primary == StyleAlignFlags::RIGHT) {
     if (aAxisTracker.IsColumnOriented()) {
@@ -3308,18 +3264,6 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
   }
 
   
-  
-  
-  
-  if (aAxisTracker.AreAxesInternallyReversed()) {
-    if (mAlignContent.primary == StyleAlignFlags::FLEX_START) {
-      mAlignContent.primary = StyleAlignFlags::FLEX_END;
-    } else if (mAlignContent.primary == StyleAlignFlags::FLEX_END) {
-      mAlignContent.primary = StyleAlignFlags::FLEX_START;
-    }
-  }
-
-  
   if (mAlignContent.primary == StyleAlignFlags::START) {
     mAlignContent.primary = aAxisTracker.IsCrossAxisReversed()
                                 ? StyleAlignFlags::FLEX_END
@@ -3476,14 +3420,8 @@ void FlexLine::ComputeCrossSizeAndBaseline(
   
   
   
-  
-  mFirstBaselineOffset = aAxisTracker.AreAxesInternallyReversed()
-                             ? crossEndToFurthestFirstBaseline
-                             : crossStartToFurthestFirstBaseline;
-
-  mLastBaselineOffset = aAxisTracker.AreAxesInternallyReversed()
-                            ? crossStartToFurthestLastBaseline
-                            : crossEndToFurthestLastBaseline;
+  mFirstBaselineOffset = crossStartToFurthestFirstBaseline;
+  mLastBaselineOffset = crossEndToFurthestLastBaseline;
 
   
   
@@ -3594,16 +3532,6 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
   }
 
   
-  
-  if (aAxisTracker.AreAxesInternallyReversed()) {
-    if (alignSelf == StyleAlignFlags::FLEX_START) {
-      alignSelf = StyleAlignFlags::FLEX_END;
-    } else if (alignSelf == StyleAlignFlags::FLEX_END) {
-      alignSelf = StyleAlignFlags::FLEX_START;
-    }
-  }
-
-  
   if (alignSelf == StyleAlignFlags::SELF_START ||
       alignSelf == StyleAlignFlags::SELF_END) {
     const LogicalAxis logCrossAxis =
@@ -3648,12 +3576,9 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
     
     
     
-    
-    
     const mozilla::Side baselineAlignStartSide =
-        aAxisTracker.AreAxesInternallyReversed() == useFirst
-            ? aAxisTracker.CrossAxisPhysicalEndSide()
-            : aAxisTracker.CrossAxisPhysicalStartSide();
+        useFirst ? aAxisTracker.CrossAxisPhysicalStartSide()
+                 : aAxisTracker.CrossAxisPhysicalEndSide();
 
     nscoord itemBaselineOffset = aItem.BaselineOffsetFromOuterCrossEdge(
         baselineAlignStartSide, useFirst);
@@ -3668,15 +3593,15 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
     
     nscoord baselineDiff = lineBaselineOffset - itemBaselineOffset;
 
-    if (aAxisTracker.AreAxesInternallyReversed() == useFirst) {
+    if (useFirst) {
+      
+      
+      mPosition += baselineDiff;
+    } else {
       
       mPosition += aLine.LineCrossSize() - aItem.OuterCrossSize();
       
       mPosition -= baselineDiff;
-    } else {
-      
-      
-      mPosition += baselineDiff;
     }
   } else {
     MOZ_ASSERT_UNREACHABLE("Unexpected align-self value");
@@ -3684,33 +3609,12 @@ void SingleLineCrossAxisPositionTracker::EnterAlignPackingSpace(
 }
 
 FlexboxAxisTracker::FlexboxAxisTracker(
-    const nsFlexContainerFrame* aFlexContainer, const WritingMode& aWM,
-    AxisTrackerFlags aFlags)
+    const nsFlexContainerFrame* aFlexContainer, const WritingMode& aWM)
     : mWM(aWM) {
   if (IsLegacyBox(aFlexContainer)) {
     InitAxesFromLegacyProps(aFlexContainer);
   } else {
     InitAxesFromModernProps(aFlexContainer);
-  }
-
-  
-  
-  
-  
-  static bool sPreventBottomToTopChildOrdering = true;
-
-  
-  
-  if (!(aFlags & AxisTrackerFlags::eAllowBottomToTopChildOrdering) &&
-      sPreventBottomToTopChildOrdering) {
-    
-    
-    if (MainAxisPhysicalStartSide() == eSideBottom ||
-        CrossAxisPhysicalStartSide() == eSideBottom) {
-      mAreAxesInternallyReversed = true;
-      mIsMainAxisReversed = !mIsMainAxisReversed;
-      mIsCrossAxisReversed = !mIsCrossAxisReversed;
-    }
   }
 }
 
@@ -3956,16 +3860,6 @@ void nsFlexContainerFrame::GenerateFlexLines(
       curLine = ConstructNewFlexLine();
     }
     itemIdxInContainer++;
-  }
-
-  
-  
-  
-  if (aAxisTracker.AreAxesInternallyReversed()) {
-    for (FlexLine& line : aLines) {
-      line.Items().Reverse();
-    }
-    aLines.Reverse();
   }
 }
 
@@ -4680,14 +4574,10 @@ void nsFlexContainerFrame::ComputeFlexDirections(
 
   aContainerInfo.mMainAxisDirection =
       ConvertPhysicalStartSideToFlexPhysicalDirection(
-          aAxisTracker.AreAxesInternallyReversed()
-              ? aAxisTracker.MainAxisPhysicalEndSide()
-              : aAxisTracker.MainAxisPhysicalStartSide());
+          aAxisTracker.MainAxisPhysicalStartSide());
   aContainerInfo.mCrossAxisDirection =
       ConvertPhysicalStartSideToFlexPhysicalDirection(
-          aAxisTracker.AreAxesInternallyReversed()
-              ? aAxisTracker.CrossAxisPhysicalEndSide()
-              : aAxisTracker.CrossAxisPhysicalStartSide());
+          aAxisTracker.CrossAxisPhysicalStartSide());
 }
 
 void nsFlexContainerFrame::UpdateFlexLineAndItemInfo(
@@ -4958,17 +4848,15 @@ void nsFlexContainerFrame::DoFlexLayout(
   
   
   
-  if (!aAxisTracker.AreAxesInternallyReversed()) {
-    nscoord firstLineBaselineOffset = aLines[0].FirstBaselineOffset();
-    if (firstLineBaselineOffset == nscoord_MIN) {
-      
-      
-      aFlexContainerAscent = nscoord_MIN;
-    } else {
-      aFlexContainerAscent = ComputePhysicalAscentFromFlexRelativeAscent(
-          crossAxisPosnTracker.Position() + firstLineBaselineOffset,
-          aContentBoxCrossSize, aReflowInput, aAxisTracker);
-    }
+  if (nscoord firstLineBaselineOffset = aLines[0].FirstBaselineOffset();
+      firstLineBaselineOffset == nscoord_MIN) {
+    
+    
+    aFlexContainerAscent = nscoord_MIN;
+  } else {
+    aFlexContainerAscent = ComputePhysicalAscentFromFlexRelativeAscent(
+        crossAxisPosnTracker.Position() + firstLineBaselineOffset,
+        aContentBoxCrossSize, aReflowInput, aAxisTracker);
   }
 
   const auto justifyContent =
@@ -5021,23 +4909,6 @@ void nsFlexContainerFrame::DoFlexLayout(
     }
     ++lineIndex;
   }
-
-  
-  
-  
-  
-  if (aAxisTracker.AreAxesInternallyReversed()) {
-    nscoord lastLineBaselineOffset = aLines.LastElement().FirstBaselineOffset();
-    if (lastLineBaselineOffset == nscoord_MIN) {
-      
-      
-      aFlexContainerAscent = nscoord_MIN;
-    } else {
-      aFlexContainerAscent = ComputePhysicalAscentFromFlexRelativeAscent(
-          crossAxisPosnTracker.Position() - lastLineBaselineOffset,
-          aContentBoxCrossSize, aReflowInput, aAxisTracker);
-    }
-  }
 }
 
 std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
@@ -5064,12 +4935,8 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
 
   
   
-  
   const FlexItem* firstItem =
-      aAxisTracker.AreAxesInternallyReversed()
-          ? (aLines.LastElement().IsEmpty() ? nullptr
-                                            : &aLines.LastElement().LastItem())
-          : (aLines[0].IsEmpty() ? nullptr : &aLines[0].FirstItem());
+      aLines[0].IsEmpty() ? nullptr : &aLines[0].FirstItem();
 
   
   nscoord maxBlockEndEdgeOfChildren = containerContentBoxOrigin.B(flexWM);
