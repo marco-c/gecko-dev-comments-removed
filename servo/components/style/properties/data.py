@@ -688,6 +688,7 @@ class PropertyRestrictions:
     def first_letter(data):
         props = set([
             "color",
+            "opacity",
             "float",
             "initial-letter",
 
@@ -722,6 +723,7 @@ class PropertyRestrictions:
         props = set([
             
             "color",
+            "opacity",
 
             
             "-moz-osx-font-smoothing",
