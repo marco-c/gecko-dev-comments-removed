@@ -2,7 +2,7 @@
 
 
 
-#include "GeneratedJNIWrappers.h"
+#include "mozilla/java/HardwareCodecCapabilityUtilsWrappers.h"
 #include "MediaInfo.h"
 #include "OpusDecoder.h"
 #include "RemoteDataDecoder.h"
