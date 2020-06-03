@@ -6,10 +6,6 @@
 
 var EXPORTED_SYMBOLS = ["AboutReaderChild"];
 
-const { ActorChild } = ChromeUtils.import(
-  "resource://gre/modules/ActorChild.jsm"
-);
-
 ChromeUtils.defineModuleGetter(
   this,
   "AboutReader",
@@ -26,25 +22,38 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/Readerable.jsm"
 );
 
-class AboutReaderChild extends ActorChild {
-  constructor(dispatcher) {
-    super(dispatcher);
+class AboutReaderChild extends JSWindowActorChild {
+  constructor() {
+    super();
 
+    this._reader = null;
     this._articlePromise = null;
     this._isLeavingReaderableReaderMode = false;
+  }
+
+  willDestroy() {
+    this.cancelPotentialPendingReadabilityCheck();
+    this.readerModeHidden();
+  }
+
+  readerModeHidden() {
+    if (this._reader) {
+      this._reader.clearActor();
+    }
+    this._reader = null;
   }
 
   receiveMessage(message) {
     switch (message.name) {
       case "Reader:ToggleReaderMode":
         if (!this.isAboutReader) {
-          this._articlePromise = ReaderMode.parseDocument(
-            this.content.document
-          ).catch(Cu.reportError);
-          ReaderMode.enterReaderMode(this.mm.docShell, this.content);
+          this._articlePromise = ReaderMode.parseDocument(this.document).catch(
+            Cu.reportError
+          );
+          ReaderMode.enterReaderMode(this.docShell, this.contentWindow);
         } else {
           this._isLeavingReaderableReaderMode = this.isReaderableAboutReader;
-          ReaderMode.leaveReaderMode(this.mm.docShell, this.content);
+          ReaderMode.leaveReaderMode(this.docShell, this.contentWindow);
         }
         break;
 
@@ -52,37 +61,40 @@ class AboutReaderChild extends ActorChild {
         this.updateReaderButton(!!(message.data && message.data.isArticle));
         break;
     }
+
+    
+    if (this._reader) {
+      this._reader.receiveMessage(message);
+    }
   }
 
   get isAboutReader() {
-    if (!this.content) {
+    if (!this.document) {
       return false;
     }
-    return this.content.document.documentURI.startsWith("about:reader");
+    return this.document.documentURI.startsWith("about:reader");
   }
 
   get isReaderableAboutReader() {
-    return (
-      this.isAboutReader &&
-      !this.content.document.documentElement.dataset.isError
-    );
+    return this.isAboutReader && !this.document.documentElement.dataset.isError;
   }
 
   handleEvent(aEvent) {
-    if (aEvent.originalTarget.defaultView != this.content) {
+    if (aEvent.originalTarget.defaultView != this.contentWindow) {
       return;
     }
 
     switch (aEvent.type) {
-      case "AboutReaderContentLoaded":
+      case "DOMContentLoaded":
         if (!this.isAboutReader) {
+          this.updateReaderButton();
           return;
         }
 
-        if (this.content.document.body) {
+        if (this.document.body) {
           
-          this.mm.sendAsyncMessage("Reader:UpdateReaderButton");
-          new AboutReader(this.mm, this.content, this._articlePromise);
+          this.sendAsyncMessage("Reader:UpdateReaderButton");
+          this._reader = new AboutReader(this, this._articlePromise);
           this._articlePromise = null;
         }
         break;
@@ -92,7 +104,7 @@ class AboutReaderChild extends ActorChild {
         
         
         
-        this.mm.sendAsyncMessage("Reader:UpdateReaderButton", {
+        this.sendAsyncMessage("Reader:UpdateReaderButton", {
           isArticle: this._isLeavingReaderableReaderMode,
         });
         if (this._isLeavingReaderableReaderMode) {
@@ -107,9 +119,6 @@ class AboutReaderChild extends ActorChild {
           this.updateReaderButton();
         }
         break;
-      case "DOMContentLoaded":
-        this.updateReaderButton();
-        break;
     }
   }
 
@@ -123,9 +132,9 @@ class AboutReaderChild extends ActorChild {
     if (
       !Readerable.isEnabledForParseOnLoad ||
       this.isAboutReader ||
-      !this.content ||
-      !(this.content.document instanceof this.content.HTMLDocument) ||
-      this.content.document.mozSyntheticDocument
+      !this.contentWindow ||
+      !(this.document instanceof this.contentWindow.HTMLDocument) ||
+      this.document.mozSyntheticDocument
     ) {
       return;
     }
@@ -135,11 +144,14 @@ class AboutReaderChild extends ActorChild {
 
   cancelPotentialPendingReadabilityCheck() {
     if (this._pendingReadabilityCheck) {
-      this.mm.removeEventListener(
-        "MozAfterPaint",
-        this._pendingReadabilityCheck
-      );
+      if (this._listenerWindow) {
+        this._listenerWindow.removeEventListener(
+          "MozAfterPaint",
+          this._pendingReadabilityCheck
+        );
+      }
       delete this._pendingReadabilityCheck;
+      delete this._listenerWindow;
     }
   }
 
@@ -153,7 +165,12 @@ class AboutReaderChild extends ActorChild {
       this,
       forceNonArticle
     );
-    this.mm.addEventListener("MozAfterPaint", this._pendingReadabilityCheck);
+
+    this._listenerWindow = this.contentWindow.windowRoot;
+    this.contentWindow.windowRoot.addEventListener(
+      "MozAfterPaint",
+      this._pendingReadabilityCheck
+    );
   }
 
   onPaintWhenWaitedFor(forceNonArticle, event) {
@@ -167,14 +184,24 @@ class AboutReaderChild extends ActorChild {
     }
 
     this.cancelPotentialPendingReadabilityCheck();
+
     
     
-    if (Readerable.isProbablyReaderable(this.content.document)) {
-      this.mm.sendAsyncMessage("Reader:UpdateReaderButton", {
+    let document;
+    try {
+      document = this.document;
+    } catch (ex) {
+      return;
+    }
+
+    
+    
+    if (Readerable.isProbablyReaderable(document)) {
+      this.sendAsyncMessage("Reader:UpdateReaderButton", {
         isArticle: true,
       });
     } else if (forceNonArticle) {
-      this.mm.sendAsyncMessage("Reader:UpdateReaderButton", {
+      this.sendAsyncMessage("Reader:UpdateReaderButton", {
         isArticle: false,
       });
     }
