@@ -129,13 +129,7 @@ void MediaController::NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
     return;
   }
   MediaStatusManager::NotifyMediaPlaybackChanged(aBrowsingContextId, aState);
-
-  
-  if (ShouldActivateController()) {
-    Activate();
-  } else if (ShouldDeactivateController()) {
-    Deactivate();
-  }
+  UpdateActivatedStateIfNeeded();
 }
 
 void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
@@ -149,6 +143,7 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
   if (IsAudible() == oldAudible) {
     return;
   }
+  UpdateActivatedStateIfNeeded();
 
   
   
@@ -163,7 +158,7 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
 
 bool MediaController::ShouldActivateController() const {
   MOZ_ASSERT(!mShutdown);
-  return IsAnyMediaBeingControlled() && !mIsRegisteredToService;
+  return IsAnyMediaBeingControlled() && IsAudible() && !mIsRegisteredToService;
 }
 
 bool MediaController::ShouldDeactivateController() const {
@@ -219,6 +214,14 @@ void MediaController::HandleActualPlaybackStateChanged() {
 
 bool MediaController::IsInPictureInPictureMode() const {
   return mIsInPictureInPictureMode;
+}
+
+void MediaController::UpdateActivatedStateIfNeeded() {
+  if (ShouldActivateController()) {
+    Activate();
+  } else if (ShouldDeactivateController()) {
+    Deactivate();
+  }
 }
 
 }  
