@@ -37,6 +37,17 @@ XPCOMUtils.defineLazyGetter(this, "storageSvc", () =>
 );
 
 
+XPCOMUtils.defineLazyGetter(
+  this,
+  "extensionStorageSyncKinto",
+  () =>
+    ChromeUtils.import(
+      "resource://gre/modules/ExtensionStorageSyncKinto.jsm",
+      {}
+    ).extensionStorageSync
+);
+
+
 
 function ExtensionStorageApiCallback(resolve, reject, extId, changeCallback) {
   this.resolve = resolve;
@@ -59,15 +70,7 @@ ExtensionStorageApiCallback.prototype = {
     let e = new Error(message);
     e.code = code;
     Cu.reportError(e);
-    
-    
-    let sanitized =
-      code == NS_ERROR_DOM_QUOTA_EXCEEDED_ERR
-        ? 
-          `QuotaExceededError: storage.sync API call exceeded its quota limitations.`
-        : 
-          "An unexpected error occurred";
-    this.reject(new ExtensionUtils.ExtensionError(sanitized));
+    this.reject(e);
   },
 
   onChanged(json) {
@@ -85,52 +88,79 @@ ExtensionStorageApiCallback.prototype = {
 class ExtensionStorageSync {
   constructor() {
     this.listeners = new Map();
+    
+    
+    
+    this.migrationOk = true;
   }
 
   
   
   
   
-  async _promisify(fn, extension, ...args) {
+  async _promisify(fnName, extension, context, ...args) {
     let extId = extension.id;
     if (prefPermitsStorageSync !== true) {
       throw new ExtensionUtils.ExtensionError(
         `Please set ${STORAGE_SYNC_ENABLED_PREF} to true in about:config`
       );
     }
-    return new Promise((resolve, reject) => {
-      let callback = new ExtensionStorageApiCallback(
-        resolve,
-        reject,
-        extId,
-        (extId, changes) => this.notifyListeners(extId, changes)
-      );
-      fn(extId, ...args, callback);
-    });
+
+    if (this.migrationOk) {
+      
+      try {
+        return await new Promise((resolve, reject) => {
+          let callback = new ExtensionStorageApiCallback(
+            resolve,
+            reject,
+            extId,
+            (extId, changes) => this.notifyListeners(extId, changes)
+          );
+          let sargs = args.map(JSON.stringify);
+          storageSvc[fnName](extId, ...sargs, callback);
+        });
+      } catch (ex) {
+        if (ex.code != Cr.NS_ERROR_CANNOT_CONVERT_DATA) {
+          
+          
+          
+          let sanitized =
+            ex.code == NS_ERROR_DOM_QUOTA_EXCEEDED_ERR
+              ? 
+                `QuotaExceededError: storage.sync API call exceeded its quota limitations.`
+              : 
+                "An unexpected error occurred";
+          throw new ExtensionUtils.ExtensionError(sanitized);
+        }
+        
+        Cu.reportError(
+          "migration of extension-storage failed - will fall back to kinto"
+        );
+        this.migrationOk = false;
+      }
+    }
+    
+    return extensionStorageSyncKinto[fnName](extension, ...args, context);
   }
 
   set(extension, items, context) {
-    return this._promisify(storageSvc.set, extension, JSON.stringify(items));
+    return this._promisify("set", extension, context, items);
   }
 
   remove(extension, keys, context) {
-    return this._promisify(storageSvc.remove, extension, JSON.stringify(keys));
+    return this._promisify("remove", extension, context, keys);
   }
 
   clear(extension, context) {
-    return this._promisify(storageSvc.clear, extension);
+    return this._promisify("clear", extension, context);
   }
 
   get(extension, spec, context) {
-    return this._promisify(storageSvc.get, extension, JSON.stringify(spec));
+    return this._promisify("get", extension, context, spec);
   }
 
   getBytesInUse(extension, keys, context) {
-    return this._promisify(
-      storageSvc.getBytesInUse,
-      extension,
-      JSON.stringify(keys)
-    );
+    return this._promisify("getBytesInUse", extension, context, keys);
   }
 
   addOnChangedListener(extension, listener, context) {

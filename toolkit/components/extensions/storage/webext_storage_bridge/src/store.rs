@@ -3,6 +3,7 @@
 
 
 use std::{
+    fs::remove_file,
     mem,
     path::PathBuf,
     sync::{Mutex, MutexGuard},
@@ -19,6 +20,11 @@ use crate::error::{Error, Result};
 pub struct LazyStoreConfig {
     
     pub path: PathBuf,
+    
+    
+    
+    
+    pub kinto_path: PathBuf,
 }
 
 
@@ -68,7 +74,7 @@ impl LazyStore {
             .store
             .get_or_try_init(|| match self.config.get() {
                 Some(config) => {
-                    let store = Store::new(&config.path)?;
+                    let store = init_store(config)?;
                     let handle = store.interrupt_handle();
                     Ok(InterruptStore {
                         inner: Mutex::new(store),
@@ -187,5 +193,53 @@ impl BridgedEngine for LazyStore {
 
     fn wipe(&self) -> Result<()> {
         Ok(self.get()?.bridged_engine().wipe()?)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+fn init_store(config: &LazyStoreConfig) -> Result<Store> {
+    let should_migrate = config.kinto_path.exists() && !config.path.exists();
+    let store = Store::new(&config.path)?;
+    if should_migrate {
+        match store.migrate(&config.kinto_path) {
+            Ok(num) => {
+                
+                println!("extension-storage: migrated {} records", num);
+                Ok(store)
+            }
+            Err(e) => {
+                println!("extension-storage: migration failure: {}", e);
+                if let Err((store, e)) = store.close() {
+                    
+                    println!(
+                        "extension-storage: failed to close the store after migration failure: {}",
+                        e
+                    );
+                    
+                    
+                    mem::drop(store);
+                }
+                if let Err(e) = remove_file(&config.path) {
+                    
+                    
+                    
+                    
+                    println!("Failed to remove file after failed migration: {}", e);
+                }
+                Err(Error::MigrationFailed(e))
+            }
+        }
+    } else {
+        Ok(store)
     }
 }
