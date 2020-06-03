@@ -274,12 +274,6 @@ const startupPhases = {
     },
     {
       
-      path: "XCurProcD:extensions",
-      condition: WIN,
-      stat: 1,
-    },
-    {
-      
       path: "UAppData:",
       ignoreIfUnused: true, 
       
@@ -448,11 +442,6 @@ const startupPhases = {
       ignoreIfUnused: true,
       stat: 1,
       close: 1,
-    },
-    {
-      path: "XCurProcD:extensions",
-      condition: WIN,
-      stat: 1,
     },
   ],
 
