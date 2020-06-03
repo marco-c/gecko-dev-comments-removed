@@ -1712,9 +1712,6 @@ pref("browser.tabs.crashReporting.email", "");
 
 pref("extensions.experiments.enabled", false);
 
-
-pref("dom.ipc.cpows.forbid-unsafe-from-browser", true);
-
 #if defined(XP_WIN)
   
   pref("dom.ipc.processPriorityManager.enabled", true);
