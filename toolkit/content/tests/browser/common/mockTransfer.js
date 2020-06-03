@@ -68,6 +68,7 @@ MockTransfer.prototype = {
 
   
   init() {},
+  initWithBrowsingContext() {},
   setSha256Hash() {},
   setSignatureInfo() {},
 };
