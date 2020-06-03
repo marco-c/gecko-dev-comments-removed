@@ -294,7 +294,8 @@ class BrowserTestUtilsChild extends JSWindowActorChild {
         
         let cur = target;
         do {
-          let frame = cur.ownerGlobal.frameElement;
+          
+          let frame = cur.ownerDocument.defaultView.frameElement;
           let rect = frame.getBoundingClientRect();
 
           left += rect.left;

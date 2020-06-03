@@ -35,12 +35,15 @@ export default class MenuButton extends HTMLElement {
   handleEvent(event) {
     switch (event.type) {
       case "blur": {
-        if (
-          event.explicitOriginalTarget &&
-          event.explicitOriginalTarget.closest(".menu") == this._menu
-        ) {
-          
-          return;
+        if (event.explicitOriginalTarget) {
+          let node = event.explicitOriginalTarget;
+          if (node.nodeType == Node.TEXT_NODE) {
+            node = node.parentElement;
+          }
+          if (node.closest(".menu") == this._menu) {
+            
+            return;
+          }
         }
         this._hideMenu();
         break;
