@@ -1,7 +1,7 @@
 use crate::function::FunctionCreationDataIndex;
 use crate::regexp::RegExpIndex;
+use crate::scope::ScopeIndex;
 use ast::source_atom_set::SourceAtomSetIndex;
-use scope::data::ScopeIndex;
 
 
 

@@ -1,11 +1,10 @@
-use crate::stencil::ScriptStencilIndex;
+use crate::script::ScriptStencilIndex;
 use ast::source_atom_set::SourceAtomSetIndex;
 
 #[derive(Debug)]
 pub struct FunctionFlags {
     flags: u16,
 }
-
 
 
 

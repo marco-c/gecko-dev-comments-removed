@@ -8,10 +8,10 @@
 
 
 use crate::builder::ScopeDataMapBuilder;
-use crate::data::ScopeDataMap;
 use ast::arena;
 use ast::associated_data::AssociatedData;
 use ast::{types::*, visit::Pass};
+use stencil::scope::ScopeDataMap;
 
 
 pub struct ScopeDataMapAndFunctionMap<'alloc> {

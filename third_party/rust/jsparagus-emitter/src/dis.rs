@@ -1,6 +1,6 @@
-use crate::opcode::Opcode;
 use std::convert::TryFrom;
 use std::fmt::Write;
+use stencil::opcode::Opcode;
 
 
 pub fn dis(bc: &[u8]) -> String {
