@@ -17,6 +17,9 @@ NS_IMPL_ISUPPORTS(BackstagePass, nsIXPCScriptable, nsIGlobalObject,
                   nsIClassInfo, nsIScriptObjectPrincipal,
                   nsISupportsWeakReference)
 
+BackstagePass::BackstagePass()
+    : mPrincipal(nsContentUtils::GetSystemPrincipal()), mWrapper(nullptr) {}
+
 
 
 
@@ -142,12 +145,5 @@ BackstagePass::PreCreate(nsISupports* nativeObj, JSContext* cx,
   if (jsglobal) {
     *parentObj = jsglobal;
   }
-  return NS_OK;
-}
-
-nsresult NS_NewBackstagePass(BackstagePass** ret) {
-  RefPtr<BackstagePass> bsp =
-      new BackstagePass(nsContentUtils::GetSystemPrincipal());
-  bsp.forget(ret);
   return NS_OK;
 }
