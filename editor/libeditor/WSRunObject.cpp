@@ -1600,11 +1600,6 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
   }
 
   
-  
-  
-  bool rightCheck = false;
-
-  
   if (!aRun->IsVisibleAndMiddleOfHardLine()) {
     return NS_ERROR_FAILURE;
   }
@@ -1628,13 +1623,13 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
          !isPreviousCharASCIIWhitespace) ||
         (!atPreviousCharOfPreviousCharOfEndOfRun.IsSet() &&
          (aRun->StartsFromNormalText() || aRun->StartsFromSpecialContent()));
+    bool followedByVisibleContentOrBRElement = false;
     if (maybeNBSPFollowingVisibleContent || isPreviousCharASCIIWhitespace) {
       
       
-      if (aRun->EndsByNormalText() || aRun->EndsBySpecialContent() ||
-          aRun->EndsByBRElement()) {
-        rightCheck = true;
-      }
+      followedByVisibleContentOrBRElement = aRun->EndsByNormalText() ||
+                                            aRun->EndsBySpecialContent() ||
+                                            aRun->EndsByBRElement();
       if (aRun->EndsByBlockBoundary() && mScanStartPoint.IsInContentNode()) {
         bool insertBRElement = HTMLEditUtils::IsBlockElement(
             *mScanStartPoint.ContainerAsContent());
@@ -1681,11 +1676,12 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
               GetPreviousEditableCharPoint(aRun->RawEndPoint());
           atPreviousCharOfPreviousCharOfEndOfRun =
               GetPreviousEditableCharPoint(atPreviousCharOfEndOfRun);
-          rightCheck = true;
+          followedByVisibleContentOrBRElement = true;
         }
       }
 
-      if (maybeNBSPFollowingVisibleContent && rightCheck) {
+      if (maybeNBSPFollowingVisibleContent &&
+          followedByVisibleContentOrBRElement) {
         
         AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
         nsresult rv =
@@ -1724,7 +1720,7 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
     }
 
     if (!mPRE && !maybeNBSPFollowingVisibleContent &&
-        isPreviousCharASCIIWhitespace && rightCheck) {
+        isPreviousCharASCIIWhitespace && followedByVisibleContentOrBRElement) {
       
       
       
