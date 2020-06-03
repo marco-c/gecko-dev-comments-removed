@@ -27,4 +27,30 @@
   
   id<mozView, mozAccessible> mParallelView;  
 }
+
+
+- (id)initWithAccessible:(mozilla::a11y::AccessibleOrProxy)aAccOrProxy;
+
+#pragma mark - MOXAccessible
+
+
+- (NSNumber*)moxMain;
+
+
+- (NSNumber*)moxMinimized;
+
+
+- (id)moxParent;
+
+#pragma mark - mozAccessible/widget
+
+
+- (BOOL)hasRepresentedView;
+
+
+- (id)representedView;
+
+
+- (BOOL)isRoot;
+
 @end
