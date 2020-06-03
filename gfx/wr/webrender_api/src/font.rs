@@ -2,7 +2,6 @@
 
 
 
-use app_units::Au;
 #[cfg(target_os = "macos")]
 use core_foundation::string::CFString;
 #[cfg(target_os = "macos")]
@@ -24,6 +23,45 @@ use crate::color::ColorU;
 use crate::units::LayoutPoint;
 
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, Deserialize, Serialize)]
+pub struct FontSize(pub f32);
+
+impl Ord for FontSize {
+    fn cmp(&self, other: &FontSize) -> Ordering {
+        self.partial_cmp(other).unwrap_or(Ordering::Equal)
+    }
+}
+
+impl Eq for FontSize {}
+
+impl Hash for FontSize {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.to_bits().hash(state);
+    }
+}
+
+impl From<f32> for FontSize {
+    fn from(size: f32) -> Self { FontSize(size) }
+}
+
+impl From<FontSize> for f32 {
+    fn from(size: FontSize) -> Self { size.0 }
+}
+
+impl FontSize {
+    pub fn zero() -> Self { FontSize(0.0) }
+
+    pub fn from_f32_px(size: f32) -> Self { FontSize(size) }
+
+    pub fn to_f32_px(&self) -> f32 { self.0 }
+
+    pub fn from_f64_px(size: f64) -> Self { FontSize(size as f32) }
+
+    pub fn to_f64_px(&self) -> f64 { self.0 as f64 }
+}
+
+
 
 
 
@@ -36,7 +74,7 @@ pub struct BaseFontInstance {
     
     pub font_key: FontKey,
     
-    pub size: Au,
+    pub size: FontSize,
     
     pub bg_color: ColorU,
     
@@ -79,7 +117,7 @@ impl SharedFontInstanceMap {
         match self.map.read().unwrap().get(&key) {
             Some(instance) => Some(FontInstanceData {
                 font_key: instance.font_key,
-                size: instance.size,
+                size: instance.size.into(),
                 options: Some(FontInstanceOptions {
                   render_mode: instance.render_mode,
                   flags: instance.flags,
@@ -109,7 +147,7 @@ impl SharedFontInstanceMap {
         &mut self,
         instance_key: FontInstanceKey,
         font_key: FontKey,
-        size: Au,
+        size: f32,
         options: Option<FontInstanceOptions>,
         platform_options: Option<FontInstancePlatformOptions>,
         variations: Vec<FontVariation>,
@@ -125,7 +163,7 @@ impl SharedFontInstanceMap {
         let instance = Arc::new(BaseFontInstance {
             instance_key,
             font_key,
-            size,
+            size: size.into(),
             bg_color,
             render_mode,
             flags,
@@ -525,7 +563,7 @@ impl FontInstanceKey {
 #[derive(Clone)]
 pub struct FontInstanceData {
     pub font_key: FontKey,
-    pub size: Au,
+    pub size: f32,
     pub options: Option<FontInstanceOptions>,
     pub platform_options: Option<FontInstancePlatformOptions>,
     pub variations: Vec<FontVariation>,
