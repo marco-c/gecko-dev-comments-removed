@@ -261,9 +261,7 @@ class WebRenderBridgeParent final
 
 
 
-  void ScheduleGenerateFrame(const Maybe<wr::RenderRoot>& aRenderRoot);
-  void ScheduleGenerateFrame(const wr::RenderRootSet& aRenderRoots);
-  void ScheduleGenerateFrameAllRenderRoots();
+  void ScheduleGenerateFrame();
 
   
 
