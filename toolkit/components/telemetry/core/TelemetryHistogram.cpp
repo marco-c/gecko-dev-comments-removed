@@ -753,8 +753,7 @@ nsresult internal_GetHistogramAndSamples(const StaticMutexAutoLock& aLock,
   }
 
   
-  base::Histogram::SampleSet ss;
-  h->SnapshotSample(&ss);
+  base::Histogram::SampleSet ss = h->SnapshotSample();
 
   
   for (size_t i = 0; i < bucketCount; i++) {
