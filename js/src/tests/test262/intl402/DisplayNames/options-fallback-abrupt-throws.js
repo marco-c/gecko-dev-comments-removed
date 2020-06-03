@@ -34,7 +34,6 @@
 
 
 
-
 var options = {};
 Object.defineProperty(options, 'fallback', {
   get() { throw new Test262Error(); },

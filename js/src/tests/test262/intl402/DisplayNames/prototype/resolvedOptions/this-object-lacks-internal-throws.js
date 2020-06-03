@@ -15,7 +15,6 @@
 
 
 
-
 var resolvedOptions = Intl.DisplayNames.prototype.resolvedOptions;
 
 assert.throws(TypeError, function() {

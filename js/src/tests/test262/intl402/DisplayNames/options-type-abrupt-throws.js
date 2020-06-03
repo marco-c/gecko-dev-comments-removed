@@ -34,7 +34,6 @@
 
 
 
-
 var options = {};
 Object.defineProperty(options, 'type', {
   get() { throw new Test262Error(); },

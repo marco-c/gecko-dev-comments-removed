@@ -1,0 +1,14 @@
+
+
+
+
+
+if (typeof addIntlExtras === "function") {
+    let intlExtras = {};
+    addIntlExtras(intlExtras);
+
+    Object.defineProperty(Intl, "DisplayNames", {
+        value: intlExtras.DisplayNames,
+        writable: true, enumerable: false, configurable: true
+    });
+}

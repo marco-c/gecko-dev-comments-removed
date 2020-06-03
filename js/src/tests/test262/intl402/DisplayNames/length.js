@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(Intl.DisplayNames, "length", {
   value: 0,
   enumerable: false,

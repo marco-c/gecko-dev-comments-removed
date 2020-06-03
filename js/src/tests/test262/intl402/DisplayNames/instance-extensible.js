@@ -30,7 +30,6 @@
 
 
 
-
 var obj = new Intl.DisplayNames();
 
 assert(Object.isExtensible(obj));

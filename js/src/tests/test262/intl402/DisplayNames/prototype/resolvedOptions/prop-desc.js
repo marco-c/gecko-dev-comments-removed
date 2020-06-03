@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(
   typeof Intl.DisplayNames.prototype.resolvedOptions,
   "function",

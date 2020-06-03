@@ -16,7 +16,6 @@
 
 
 
-
 var obj = new Intl.DisplayNames();
 
 assert.sameValue(Object.getPrototypeOf(obj), Intl.DisplayNames.prototype);

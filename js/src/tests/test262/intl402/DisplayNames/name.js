@@ -19,7 +19,6 @@
 
 
 
-
 verifyProperty(Intl.DisplayNames, "name", {
   value: "DisplayNames",
   writable: false,

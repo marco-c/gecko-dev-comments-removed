@@ -54,7 +54,6 @@
 
 
 
-
 var styles = ['narrow', 'short', 'long'];
 
 styles.forEach(style => {

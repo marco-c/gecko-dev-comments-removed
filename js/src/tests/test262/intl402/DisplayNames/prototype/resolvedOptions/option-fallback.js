@@ -54,7 +54,6 @@
 
 
 
-
 var fallbacks = ['code', 'none'];
 
 fallbacks.forEach(fallback => {

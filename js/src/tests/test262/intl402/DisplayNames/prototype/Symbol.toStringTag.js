@@ -13,7 +13,6 @@
 
 
 
-
 verifyProperty(Intl.DisplayNames.prototype, Symbol.toStringTag, {
   value: "Intl.DisplayNames",
   writable: false,

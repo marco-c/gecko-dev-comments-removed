@@ -21,7 +21,6 @@
 
 
 
-
 assert.throws(TypeError, () => {
   new Intl.DisplayNames('en', null);
 }, 'null');

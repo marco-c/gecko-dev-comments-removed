@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(typeof Intl.DisplayNames, "function", "`typeof Intl.DisplayNames` is `'function'`");
 
 verifyProperty(Intl, "DisplayNames", {

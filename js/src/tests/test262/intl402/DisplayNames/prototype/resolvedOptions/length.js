@@ -23,7 +23,6 @@
 
 
 
-
 verifyProperty(Intl.DisplayNames.prototype.resolvedOptions, "length", {
   value: 0,
   enumerable: false,

@@ -13,7 +13,6 @@
 
 
 
-
 verifyProperty(Intl.DisplayNames, "prototype", {
   writable: false,
   enumerable: false,

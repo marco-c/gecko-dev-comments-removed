@@ -34,7 +34,6 @@
 
 
 
-
 var options = {
   type: {
     toString() {

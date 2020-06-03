@@ -8,7 +8,6 @@
 
 
 
-
 var proto = Object.getPrototypeOf(Intl.DisplayNames);
 
 assert.sameValue(proto, Function.prototype);

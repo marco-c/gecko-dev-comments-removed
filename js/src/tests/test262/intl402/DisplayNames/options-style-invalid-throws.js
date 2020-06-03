@@ -36,7 +36,6 @@
 
 
 
-
 var options = {
   style: 'small'
 };

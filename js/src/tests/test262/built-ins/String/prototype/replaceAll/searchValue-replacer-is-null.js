@@ -25,7 +25,6 @@
 
 
 
-
 var searchValue = {};
 searchValue[Symbol.replace] = null;
 searchValue.toString = function() { return "2"; };

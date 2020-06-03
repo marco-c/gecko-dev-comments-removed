@@ -30,7 +30,6 @@
 
 
 
-
 var options = {
   style: {
     toString() {

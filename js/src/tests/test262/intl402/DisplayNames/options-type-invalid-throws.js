@@ -40,7 +40,6 @@
 
 
 
-
 var options = {
   type: 'lang'
 };

@@ -19,7 +19,6 @@
 
 
 
-
 verifyProperty(Intl.DisplayNames.prototype.resolvedOptions, "name", {
   value: "resolvedOptions",
   writable: false,

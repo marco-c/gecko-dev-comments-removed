@@ -54,7 +54,6 @@
 
 
 
-
 var types = ['language', 'region', 'script', 'currency'];
 
 types.forEach(type => {
