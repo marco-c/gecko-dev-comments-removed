@@ -190,27 +190,137 @@ function simulateGATTDisconnectionAndWait(device, fake_peripheral) {
 }
 
 
+let fake_central = null;
 
-
-
-
-
-async function setUpHealthThermometerAndHeartRateDevices() {
-  let fake_central =
-      await navigator.bluetooth.test.simulateCentral({state: 'powered-on'});
-  return Promise.all([
-    fake_central.simulatePreconnectedPeripheral({
-      address: '09:09:09:09:09:09',
-      name: 'Health Thermometer',
-      knownServiceUUIDs: ['generic_access', 'health_thermometer'],
-    }),
-    fake_central.simulatePreconnectedPeripheral({
-      address: '08:08:08:08:08:08',
-      name: 'Heart Rate',
-      knownServiceUUIDs: ['generic_access', 'heart_rate'],
-    })
-  ]);
+async function initializeFakeCentral({state = 'powered-on'}) {
+  if (!fake_central) {
+    fake_central = await navigator.bluetooth.test.simulateCentral({state});
+  }
 }
+
+
+
+
+
+
+
+let FakeDeviceOptions;
+
+
+
+
+
+let SetupOptions;
+
+
+
+
+
+const fakeDeviceOptionsDefault = {
+  address: '00:00:00:00:00:00',
+  name: 'LE Device',
+  knownServiceUUIDs: [],
+  connectable: false,
+  serviceDiscoveryComplete: false,
+};
+
+
+
+
+
+
+
+
+let FakeDevice;
+
+
+
+
+
+
+
+
+
+
+
+
+function createSetupOptions(setupOptionsDefault, setupOptionsOverride) {
+  
+  
+  let fakeDeviceOptions = Object.assign(
+      {...setupOptionsDefault.fakeDeviceOptions},
+      setupOptionsOverride.fakeDeviceOptions);
+  let requestDeviceOptions = Object.assign(
+      {...setupOptionsDefault.requestDeviceOptions},
+      setupOptionsOverride.requestDeviceOptions);
+
+  return {fakeDeviceOptions, requestDeviceOptions};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function setUpPreconnectedFakeDevice(setupOptionsOverride) {
+  await initializeFakeCentral({state: 'powered-on'});
+
+  let setupOptions = createSetupOptions(
+      {fakeDeviceOptions: fakeDeviceOptionsDefault}, setupOptionsOverride);
+
+  
+  let preconnectedDevice = {};
+  preconnectedDevice.fake_peripheral =
+      await fake_central.simulatePreconnectedPeripheral({
+        address: setupOptions.fakeDeviceOptions.address,
+        name: setupOptions.fakeDeviceOptions.name,
+        knownServiceUUIDs: setupOptions.fakeDeviceOptions.knownServiceUUIDs,
+      });
+
+  if (setupOptions.fakeDeviceOptions.connectable) {
+    await preconnectedDevice.fake_peripheral.setNextGATTConnectionResponse(
+        {code: HCI_SUCCESS});
+  }
+
+  
+  preconnectedDevice.fake_services = new Map();
+  for (let service of setupOptions.fakeDeviceOptions.knownServiceUUIDs) {
+    let fake_service = await preconnectedDevice.fake_peripheral.addFakeService(
+        {uuid: service});
+    preconnectedDevice.fake_services.set(service, fake_service);
+  }
+
+  
+  if (setupOptions.requestDeviceOptions) {
+    preconnectedDevice.device =
+        await requestDeviceWithTrustedClick(setupOptions.requestDeviceOptions);
+  }
+
+  
+  if (setupOptions.fakeDeviceOptions.serviceDiscoveryComplete) {
+    await preconnectedDevice.fake_peripheral.setNextGATTDiscoveryResponse(
+        {code: HCI_SUCCESS});
+  }
+
+  return preconnectedDevice;
+}
+
+
+
+
+
 
 
 
@@ -227,9 +337,8 @@ async function setUpPreconnectedDevice({
   name = 'LE Device',
   knownServiceUUIDs = []
 }) {
-  let fake_central =
-      await navigator.bluetooth.test.simulateCentral({state: 'powered-on'})
-  return fake_central.simulatePreconnectedPeripheral({
+  await initializeFakeCentral({state: 'powered-on'});
+  return await fake_central.simulatePreconnectedPeripheral({
     address: address,
     name: name,
     knownServiceUUIDs: knownServiceUUIDs,
@@ -239,51 +348,64 @@ async function setUpPreconnectedDevice({
 
 
 
+const blocklistFakeDeviceOptionsDefault = {
+  address: '11:11:11:11:11:11',
+  name: 'Blocklist Device',
+  knownServiceUUIDs: ['generic_access', blocklist_test_service_uuid],
+  connectable: true,
+  serviceDiscoveryComplete: true
+};
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function getBlocklistDevice(options = {
+const blocklistRequestDeviceOptionsDefault = {
   filters: [{services: [blocklist_test_service_uuid]}]
-}) {
-  let fake_peripheral = await setUpPreconnectedDevice({
-    address: '11:11:11:11:11:11',
-    name: 'Blocklist Device',
-    knownServiceUUIDs: ['generic_access', blocklist_test_service_uuid],
-  })
-  let device = await requestDeviceWithTrustedClick(options);
-  await fake_peripheral.setNextGATTConnectionResponse({
-    code: HCI_SUCCESS,
-  });
-  await device.gatt.connect();
-  let fake_blocklist_test_service = await fake_peripheral.addFakeService({
-    uuid: blocklist_test_service_uuid,
-  });
+};
+
+
+const blocklistSetupOptionsDefault = {
+  fakeDeviceOptions: blocklistFakeDeviceOptionsDefault,
+  requestDeviceOptions: blocklistRequestDeviceOptionsDefault
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function getBlocklistDevice(setupOptionsOverride = {}) {
+  let setupOptions =
+      createSetupOptions(blocklistSetupOptionsDefault, setupOptionsOverride);
+  let fakeDevice = await setUpPreconnectedFakeDevice(setupOptions);
+  await fakeDevice.device.gatt.connect();
+
+  let fake_blocklist_test_service =
+      fakeDevice.fake_services.get(blocklist_test_service_uuid);
+
   let fake_blocklist_exclude_reads_characteristic =
       await fake_blocklist_test_service.addFakeCharacteristic({
         uuid: blocklist_exclude_reads_characteristic_uuid,
@@ -294,6 +416,7 @@ async function getBlocklistDevice(options = {
         uuid: 'gap.peripheral_privacy_flag',
         properties: ['read', 'write'],
       });
+
   let fake_blocklist_descriptor =
       await fake_blocklist_exclude_writes_characteristic.addFakeDescriptor(
           {uuid: blocklist_test_descriptor_uuid});
@@ -303,10 +426,9 @@ async function getBlocklistDevice(options = {
   let fake_blocklist_exclude_writes_descriptor =
       await fake_blocklist_exclude_writes_characteristic.addFakeDescriptor(
           {uuid: 'gatt.client_characteristic_configuration'});
-  await fake_peripheral.setNextGATTDiscoveryResponse({code: HCI_SUCCESS});
   return {
-    device,
-    fake_peripheral,
+    device: fakeDevice.device,
+    fake_peripheral: fakeDevice.fake_peripheral,
     fake_blocklist_test_service,
     fake_blocklist_exclude_reads_characteristic,
     fake_blocklist_exclude_writes_characteristic,
@@ -465,6 +587,29 @@ async function getBlocklistExcludeWritesDescriptor() {
 
 
 
+const connectedHIDFakeDeviceOptionsDefault = {
+  address: '10:10:10:10:10:10',
+  name: 'HID Device',
+  knownServiceUUIDs: [
+    'generic_access',
+    'device_information',
+    'human_interface_device',
+  ],
+  connectable: true,
+  serviceDiscoveryComplete: false
+};
+
+
+const connectedHIDRequestDeviceOptionsDefault = {
+  filters: [{services: ['device_information']}],
+  optionalServices: ['human_interface_device']
+};
+
+
+const connectedHIDSetupOptionsDefault = {
+  fakeDeviceOptions: connectedHIDFakeDeviceOptionsDefault,
+  requestDeviceOptions: connectedHIDRequestDeviceOptionsDefault
+};
 
 
 
@@ -473,37 +618,26 @@ async function getBlocklistExcludeWritesDescriptor() {
 
 
 
-async function getConnectedHIDDevice(options) {
-  let fake_peripheral = await setUpPreconnectedDevice({
-    address: '10:10:10:10:10:10',
-    name: 'HID Device',
-    knownServiceUUIDs: [
-      'generic_access',
-      'device_information',
-      'human_interface_device',
-    ],
+
+
+async function getConnectedHIDDevice(
+    requestDeviceOptionsOverride, fakeDeviceOptionsOverride) {
+  let setupOptions = createSetupOptions(connectedHIDSetupOptionsDefault, {
+    fakeDeviceOptions: fakeDeviceOptionsOverride,
+    requestDeviceOptions: requestDeviceOptionsOverride
   });
-  let device = await requestDeviceWithTrustedClick(options);
-  await fake_peripheral.setNextGATTConnectionResponse({
-    code: HCI_SUCCESS,
-  });
-  await device.gatt.connect();
-  await fake_peripheral.addFakeService({
-    uuid: 'generic_access',
-  });
-  let dev_info = await fake_peripheral.addFakeService({
-    uuid: 'device_information',
-  });
+
+  let fakeDevice = await setUpPreconnectedFakeDevice(setupOptions);
+  await fakeDevice.device.gatt.connect();
+
   
   
+  let dev_info = fakeDevice.fake_services.get('device_information');
   await dev_info.addFakeCharacteristic({
     uuid: 'serial_number_string',
     properties: ['read'],
   });
-  await fake_peripheral.addFakeService({
-    uuid: 'human_interface_device',
-  });
-  return {device, fake_peripheral};
+  return fakeDevice;
 }
 
 
@@ -520,10 +654,8 @@ async function getConnectedHIDDevice(options) {
 
 
 async function getHIDDevice(options) {
-  let result = await getConnectedHIDDevice(options);
-  await result.fake_peripheral.setNextGATTDiscoveryResponse({
-    code: HCI_SUCCESS,
-  });
+  let result =
+      await getConnectedHIDDevice(options, {serviceDiscoveryComplete: true});
   return result;
 }
 
@@ -912,4 +1044,26 @@ async function getUserDescriptionDescriptor() {
     descriptor,
     fake_descriptor: result.fake_user_description,
   });
+}
+
+
+
+
+
+
+
+async function setUpHealthThermometerAndHeartRateDevices() {
+  await initializeFakeCentral({state: 'powered-on'});
+  return Promise.all([
+    fake_central.simulatePreconnectedPeripheral({
+      address: '09:09:09:09:09:09',
+      name: 'Health Thermometer',
+      knownServiceUUIDs: ['generic_access', 'health_thermometer'],
+    }),
+    fake_central.simulatePreconnectedPeripheral({
+      address: '08:08:08:08:08:08',
+      name: 'Heart Rate',
+      knownServiceUUIDs: ['generic_access', 'heart_rate'],
+    })
+  ]);
 }
