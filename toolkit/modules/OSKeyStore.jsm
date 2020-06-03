@@ -103,7 +103,7 @@ var OSKeyStore = {
   async _reauthInTests() {
     
     
-    log.debug("_ensureReauth: _testReauth: ", this._testReauth);
+    log.debug("_reauthInTests: _testReauth: ", this._testReauth);
     switch (this._testReauth) {
       case "pass":
         Services.obs.notifyObservers(
@@ -201,9 +201,6 @@ var OSKeyStore = {
       ) {
         unlockPromise = this._reauthInTests();
       } else if (this.canReauth()) {
-        
-        
-
         
         
         unlockPromise = osReauthenticator
