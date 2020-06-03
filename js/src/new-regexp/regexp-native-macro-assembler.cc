@@ -281,9 +281,13 @@ void SMRegExpMacroAssembler::CheckNotBackReferenceImpl(int start_reg,
     
 
     
+    
+    
     LiveGeneralRegisterSet volatileRegs(GeneralRegisterSet::Volatile());
+    volatileRegs.addUnchecked(current_position_);
     volatileRegs.takeUnchecked(temp1_);
     volatileRegs.takeUnchecked(temp2_);
+    volatileRegs.takeUnchecked(current_character_);
     masm_.PushRegsInMask(volatileRegs);
 
     
