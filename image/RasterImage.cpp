@@ -1914,7 +1914,10 @@ OrientedIntRect RasterImage::ToOriented(UnorientedIntRect aRect) const {
   
   Angle angle = Orientation::InvertAngle(UsedOrientation().rotation);
   Rotate(rect, size.ToUnknownSize(), angle);
-  Flip(rect, size.ToUnknownSize(), UsedOrientation().flip);
+
+  
+  
+  Flip(rect, mSize.ToUnknownSize(), UsedOrientation().flip);
 
   return OrientedIntRect::FromUnknownRect(rect);
 }
