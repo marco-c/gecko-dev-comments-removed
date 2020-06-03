@@ -76,8 +76,16 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
       contentType == nsIContentPolicy::TYPE_STYLESHEET ||
       contentType == nsIContentPolicy::TYPE_DTD ||
       contentType == nsIContentPolicy::TYPE_XBL;
-  if (aURI->SchemeIs("resource") && !isImgOrStyleOrDTDorXBL) {
-    return true;
+  if (aURI->SchemeIs("resource")) {
+    nsAutoCString uriSpec;
+    aURI->GetSpec(uriSpec);
+    
+    if (StringBeginsWith(uriSpec, NS_LITERAL_CSTRING("resource://pdf.js/"))) {
+      return false;
+    }
+    if (!isImgOrStyleOrDTDorXBL) {
+      return true;
+    }
   }
   if (aURI->SchemeIs("chrome") && !isImgOrStyleOrDTDorXBL) {
     return true;
