@@ -148,12 +148,6 @@ void VRDisplayClient::FireEvents() {
   }
 
   
-  if (mLastEventFrameId != mDisplayInfo.mFrameId) {
-    mLastEventFrameId = mDisplayInfo.mFrameId;
-    StartFrame();
-  }
-
-  
   
   
   if (mAPIMode == VRAPIMode::WebVR) {
@@ -165,6 +159,12 @@ void VRDisplayClient::FireEvents() {
     if (inputs) {
       inputs->Update(session);
     }
+  }
+
+  
+  if (mLastEventFrameId != mDisplayInfo.mFrameId) {
+    mLastEventFrameId = mDisplayInfo.mFrameId;
+    StartFrame();
   }
 }
 
