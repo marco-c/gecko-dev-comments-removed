@@ -24,6 +24,7 @@
 #include "mozilla/CSSPropFlags.h"
 #include "mozilla/EnumTypeTraits.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/gfx/gfxVarReceiver.h"
 #include "nsXULAppAPI.h"
 
 
@@ -137,6 +138,11 @@ class nsCSSProps {
 
   static void RecomputeEnabledState(const char* aPrefName,
                                     void* aClosure = nullptr);
+
+  
+
+
+  static mozilla::gfx::gfxVarReceiver& GfxVarReceiver();
 
   static const nsCSSPropertyID* SubpropertyEntryFor(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(eCSSProperty_COUNT_no_shorthands <= aProperty &&
