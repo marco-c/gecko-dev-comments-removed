@@ -27,7 +27,7 @@ struct RegExpCompileData {
 
   
   
-  Object code;
+  Handle<Object> code;
 
   
   
