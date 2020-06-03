@@ -481,6 +481,7 @@ void CookieStorage::AddCookie(const nsACString& aBaseDomain,
           oldCookie->IsSession() == aCookie->IsSession() &&
           oldCookie->IsHttpOnly() == aCookie->IsHttpOnly() &&
           oldCookie->SameSite() == aCookie->SameSite() &&
+          oldCookie->SchemeMap() == aCookie->SchemeMap() &&
           
           
           
@@ -490,6 +491,10 @@ void CookieStorage::AddCookie(const nsACString& aBaseDomain,
         UpdateCookieOldestTime(oldCookie);
         return;
       }
+
+      
+      
+      MergeCookieSchemeMap(oldCookie, aCookie);
 
       
       RemoveCookieFromList(exactIter);
@@ -587,6 +592,11 @@ void CookieStorage::UpdateCookieOldestTime(Cookie* aCookie) {
   if (aCookie->LastAccessed() < mCookieOldestTime) {
     mCookieOldestTime = aCookie->LastAccessed();
   }
+}
+
+void CookieStorage::MergeCookieSchemeMap(Cookie* aOldCookie,
+                                         Cookie* aNewCookie) {
+  aNewCookie->SetSchemeMap(aOldCookie->SchemeMap() | aNewCookie->SchemeMap());
 }
 
 void CookieStorage::AddCookieToList(const nsACString& aBaseDomain,
