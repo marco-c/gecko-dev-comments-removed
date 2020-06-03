@@ -264,9 +264,12 @@ already_AddRefed<Element> WSRunObject::InsertBreak(
       }
     } else if (beforeRun->IsVisibleAndMiddleOfHardLine()) {
       
-      nsresult rv = ReplacePreviousNBSPIfUnnecessary(beforeRun, pointToInsert);
+      nsresult rv = MaybeReplacePreviousNBSPWithASCIIWhitespace(*beforeRun,
+                                                                pointToInsert);
       if (NS_FAILED(rv)) {
-        NS_WARNING("WSRunObject::ReplacePreviousNBSPIfUnnecessary() failed");
+        NS_WARNING(
+            "WSRunObject::MaybeReplacePreviousNBSPWithASCIIWhitespace() "
+            "failed");
         return nullptr;
       }
     }
@@ -330,11 +333,12 @@ nsresult WSRunObject::InsertText(Document& aDocument,
     } else if (afterRun->IsVisibleAndMiddleOfHardLine()) {
       
       
-      nsresult rv = CheckLeadingNBSP(
-          afterRun, MOZ_KnownLive(pointToInsert.GetContainer()),
-          pointToInsert.Offset());
+      nsresult rv = MaybeReplaceInclusiveNextNBSPWithASCIIWhitespace(
+          *afterRun, pointToInsert);
       if (NS_FAILED(rv)) {
-        NS_WARNING("WSRunObject::CheckLeadingNBSP() failed");
+        NS_WARNING(
+            "WSRunObject::MaybeReplaceInclusiveNextNBSPWithASCIIWhitespace() "
+            "failed");
         return rv;
       }
     }
@@ -356,9 +360,12 @@ nsresult WSRunObject::InsertText(Document& aDocument,
     } else if (beforeRun->IsVisibleAndMiddleOfHardLine()) {
       
       
-      nsresult rv = ReplacePreviousNBSPIfUnnecessary(beforeRun, pointToInsert);
+      nsresult rv = MaybeReplacePreviousNBSPWithASCIIWhitespace(*beforeRun,
+                                                                pointToInsert);
       if (NS_FAILED(rv)) {
-        NS_WARNING("WSRunObject::ReplacePreviousNBSPIfUnnecessary() failed");
+        NS_WARNING(
+            "WSRunObject::MaybeReplacePreviousNBSPWithASCIIWhitespace() "
+            "failed");
         return rv;
       }
     }
@@ -1772,11 +1779,8 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
   return NS_OK;
 }
 
-nsresult WSRunObject::ReplacePreviousNBSPIfUnnecessary(
-    WSFragment* aRun, const EditorDOMPoint& aPoint) {
-  if (NS_WARN_IF(!aRun) || NS_WARN_IF(!aPoint.IsSet())) {
-    return NS_ERROR_INVALID_ARG;
-  }
+nsresult WSRunObject::MaybeReplacePreviousNBSPWithASCIIWhitespace(
+    const WSFragment& aRun, const EditorDOMPoint& aPoint) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
   
@@ -1784,30 +1788,25 @@ nsresult WSRunObject::ReplacePreviousNBSPIfUnnecessary(
   
   
   
-  bool canConvert = false;
   EditorDOMPointInText atPreviousChar = GetPreviousEditableCharPoint(aPoint);
-  if (atPreviousChar.IsSet() && !atPreviousChar.IsEndOfContainer() &&
-      atPreviousChar.IsCharNBSP()) {
-    EditorDOMPointInText atPreviousCharOfPreviousChar =
-        GetPreviousEditableCharPoint(atPreviousChar);
-    if (atPreviousCharOfPreviousChar.IsSet()) {
-      if (atPreviousCharOfPreviousChar.IsEndOfContainer() ||
-          !atPreviousCharOfPreviousChar.IsCharASCIISpace()) {
-        
-        
-        canConvert = true;
-      }
-    } else if (aRun->StartsFromNormalText() ||
-               aRun->StartsFromSpecialContent()) {
-      
-      
-      
-      
-      canConvert = true;
-    }
+  if (!atPreviousChar.IsSet() || atPreviousChar.IsEndOfContainer() ||
+      !atPreviousChar.IsCharNBSP()) {
+    return NS_OK;
   }
 
-  if (!canConvert) {
+  EditorDOMPointInText atPreviousCharOfPreviousChar =
+      GetPreviousEditableCharPoint(atPreviousChar);
+  if (atPreviousCharOfPreviousChar.IsSet()) {
+    
+    
+    if (!atPreviousCharOfPreviousChar.IsEndOfContainer() &&
+        atPreviousCharOfPreviousChar.IsCharASCIISpace()) {
+      return NS_OK;
+    }
+  }
+  
+  
+  else if (!aRun.StartsFromNormalText() && !aRun.StartsFromSpecialContent()) {
     return NS_OK;
   }
 
@@ -1816,89 +1815,96 @@ nsresult WSRunObject::ReplacePreviousNBSPIfUnnecessary(
   nsresult rv = MOZ_KnownLive(mHTMLEditor)
                     .InsertTextIntoTextNodeWithTransaction(
                         NS_LITERAL_STRING(" "), atPreviousChar, true);
+  if (NS_WARN_IF(mHTMLEditor.Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
   if (NS_FAILED(rv)) {
     NS_WARNING("EditorBase::InsertTextIntoTextNodeWithTransaction() failed");
     return rv;
   }
 
   
-  NS_ASSERTION(
-      !atPreviousChar.IsEndOfContainer() && !atPreviousChar.IsAtLastContent(),
-      "The text node was modified by mutation event listener");
-  if (!atPreviousChar.IsEndOfContainer() && !atPreviousChar.IsAtLastContent()) {
-    NS_ASSERTION(
-        atPreviousChar.IsNextCharNBSP(),
-        "Trying to remove an NBSP, but it's gone from the expected position");
-    EditorDOMPointInText atNextCharOfPreviousChar = atPreviousChar.NextPoint();
-    nsresult rv =
-        MOZ_KnownLive(mHTMLEditor)
-            .DeleteTextAndTextNodesWithTransaction(
-                atNextCharOfPreviousChar, atNextCharOfPreviousChar.NextPoint());
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-    return rv;
-  }
-
-  return NS_OK;
-}
-
-nsresult WSRunObject::CheckLeadingNBSP(WSFragment* aRun, nsINode* aNode,
-                                       int32_t aOffset) {
-  
-  
-  
-  
-  bool canConvert = false;
-  EditorDOMPointInText atNextChar =
-      GetInclusiveNextEditableCharPoint(EditorRawDOMPoint(aNode, aOffset));
-  if (!atNextChar.IsSet() || NS_WARN_IF(atNextChar.IsEndOfContainer())) {
+  if (atPreviousChar.IsEndOfContainer() || atPreviousChar.IsAtLastContent()) {
+    NS_WARNING("The text node was modified by mutation event listener");
     return NS_OK;
   }
 
-  if (atNextChar.IsCharNBSP()) {
-    EditorDOMPointInText atNextCharOfNextCharOfNBSP =
-        GetInclusiveNextEditableCharPoint(atNextChar.NextPoint());
-    if (atNextCharOfNextCharOfNBSP.IsSet()) {
-      if (atNextCharOfNextCharOfNBSP.IsEndOfContainer() ||
-          !atNextCharOfNextCharOfNBSP.IsCharASCIISpace()) {
-        canConvert = true;
-      }
-    } else if (aRun->EndsByNormalText() || aRun->EndsBySpecialContent() ||
-               aRun->EndsByBRElement()) {
-      canConvert = true;
-    }
-  }
-  if (canConvert) {
-    
-    AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
-    nsresult rv = MOZ_KnownLive(mHTMLEditor)
-                      .InsertTextIntoTextNodeWithTransaction(
-                          NS_LITERAL_STRING(" "), atNextChar, true);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("EditorBase::InsertTextIntoTextNodeWithTransaction() failed");
-      return rv;
-    }
+  
+  NS_ASSERTION(
+      atPreviousChar.IsNextCharNBSP(),
+      "Trying to remove an NBSP, but it's gone from the expected position");
+  EditorDOMPointInText atNextCharOfPreviousChar = atPreviousChar.NextPoint();
+  rv = MOZ_KnownLive(mHTMLEditor)
+           .DeleteTextAndTextNodesWithTransaction(
+               atNextCharOfPreviousChar, atNextCharOfPreviousChar.NextPoint());
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
+  return rv;
+}
 
+nsresult WSRunObject::MaybeReplaceInclusiveNextNBSPWithASCIIWhitespace(
+    const WSFragment& aRun, const EditorDOMPoint& aPoint) {
+  MOZ_ASSERT(aPoint.IsSetAndValid());
+
+  
+  
+  
+  
+  EditorDOMPointInText atNextChar = GetInclusiveNextEditableCharPoint(aPoint);
+  if (!atNextChar.IsSet() || NS_WARN_IF(atNextChar.IsEndOfContainer()) ||
+      !atNextChar.IsCharNBSP()) {
+    return NS_OK;
+  }
+
+  EditorDOMPointInText atNextCharOfNextCharOfNBSP =
+      GetInclusiveNextEditableCharPoint(atNextChar.NextPoint());
+  if (atNextCharOfNextCharOfNBSP.IsSet()) {
     
-    NS_ASSERTION(
-        !atNextChar.IsEndOfContainer() && !atNextChar.IsAtLastContent(),
-        "The text node was modified by mutation event listener");
-    if (!atNextChar.IsEndOfContainer() && !atNextChar.IsAtLastContent()) {
-      NS_ASSERTION(
-          atNextChar.IsNextCharNBSP(),
-          "Trying to remove an NBSP, but it's gone from the expected position");
-      EditorDOMPointInText atNextCharOfNextChar = atNextChar.NextPoint();
-      rv = MOZ_KnownLive(mHTMLEditor)
-               .DeleteTextAndTextNodesWithTransaction(
-                   atNextCharOfNextChar, atNextCharOfNextChar.NextPoint());
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
-      return rv;
+    
+    if (!atNextCharOfNextCharOfNBSP.IsEndOfContainer() &&
+        atNextCharOfNextCharOfNBSP.IsCharASCIISpace()) {
+      return NS_OK;
     }
   }
-  return NS_OK;
+  
+  
+  else if (!aRun.EndsByNormalText() && !aRun.EndsBySpecialContent() &&
+           !aRun.EndsByBRElement()) {
+    return NS_OK;
+  }
+
+  
+  AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
+  nsresult rv = MOZ_KnownLive(mHTMLEditor)
+                    .InsertTextIntoTextNodeWithTransaction(
+                        NS_LITERAL_STRING(" "), atNextChar, true);
+  if (NS_WARN_IF(mHTMLEditor.Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditorBase::InsertTextIntoTextNodeWithTransaction() failed");
+    return rv;
+  }
+
+  
+  if (atNextChar.IsEndOfContainer() || atNextChar.IsAtLastContent()) {
+    NS_WARNING("The text node was modified by mutation event listener");
+    return NS_OK;
+  }
+
+  
+  NS_ASSERTION(
+      atNextChar.IsNextCharNBSP(),
+      "Trying to remove an NBSP, but it's gone from the expected position");
+  EditorDOMPointInText atNextCharOfNextChar = atNextChar.NextPoint();
+  rv = MOZ_KnownLive(mHTMLEditor)
+           .DeleteTextAndTextNodesWithTransaction(
+               atNextCharOfNextChar, atNextCharOfNextChar.NextPoint());
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
+  return rv;
 }
 
 nsresult WSRunObject::Scrub() {
