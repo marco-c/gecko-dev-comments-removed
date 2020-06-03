@@ -7790,10 +7790,8 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
     return result;
   }
 
-  float viewportRatioX =
-      StaticPrefs::layout_animation_prerender_viewport_ratio_limit_x();
-  float viewportRatioY =
-      StaticPrefs::layout_animation_prerender_viewport_ratio_limit_y();
+  float viewportRatio =
+      StaticPrefs::layout_animation_prerender_viewport_ratio_limit();
   uint32_t absoluteLimitX =
       StaticPrefs::layout_animation_prerender_absolute_limit_x();
   uint32_t absoluteLimitY =
@@ -7802,8 +7800,9 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
   
   
   
-  nsSize relativeLimit(nscoord(refSize.width * viewportRatioX),
-                       nscoord(refSize.height * viewportRatioY));
+  nscoord maxLength = std::max(nscoord(refSize.width * viewportRatio),
+                               nscoord(refSize.height * viewportRatio));
+  nsSize relativeLimit(maxLength, maxLength);
   nsSize absoluteLimit(
       aFrame->PresContext()->DevPixelsToAppUnits(absoluteLimitX),
       aFrame->PresContext()->DevPixelsToAppUnits(absoluteLimitY));
