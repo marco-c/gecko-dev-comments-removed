@@ -167,12 +167,21 @@ function applyAction(eventType, target) {
 }
 
 function requiresListener(eventType) {
-  return ['mouseenter', 'mouseleave', 'pointerdown', 'pointerenter', 'pointerleave', 'pointerout', 'pointerover', 'pointerup'].includes(eventType);
+  return ['mouseenter',
+          'mouseleave',
+          'pointerdown',
+          'pointerenter',
+          'pointerleave',
+          'pointerout',
+          'pointerover',
+          'pointerup'
+        ].includes(eventType);
 }
 
 function notCancelable(eventType) {
   return ['mouseenter', 'mouseleave', 'pointerenter', 'pointerleave'].includes(eventType);
 }
+
 
 
 
@@ -192,7 +201,8 @@ async function testEventType(t, eventType, looseCount=false) {
     assert_greater_than_equal(performance.eventCounts.get(eventType), 2,
         `Should have at least 2 ${eventType} events`)
   } else {
-    assert_equals(performance.eventCounts.get(eventType), 2, `Should have 2 ${eventType} events`);
+    assert_equals(performance.eventCounts.get(eventType), 2,
+        `Should have 2 ${eventType} events`);
   }
   
   const durationThreshold = 16;
@@ -212,6 +222,7 @@ async function testEventType(t, eventType, looseCount=false) {
         assert_equals(eventTypeEntries.length, 1);
       } else {
         
+        
         eventTypeEntries.forEach(e => {
           if (e.target === document.getElementById('target'))
             entry = e;
@@ -229,7 +240,8 @@ async function testEventType(t, eventType, looseCount=false) {
         assert_greater_than_equal(performance.eventCounts.get(eventType), 3,
             `Should have at least 3 ${eventType} events`)
       } else {
-        assert_equals(performance.eventCounts.get(eventType), 3, `Should have 3 ${eventType} events`);
+        assert_equals(performance.eventCounts.get(eventType), 3,
+            `Should have 3 ${eventType} events`);
       }
       resolve();
     })).observe({type: 'event', durationThreshold: durationThreshold});
