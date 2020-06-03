@@ -3788,6 +3788,21 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     if (!mWillBuildScrollableLayer) {
+      
+      
+      
+      
+      
+      
+      
+      bool provideScrollInfoForAPZ = IsMaybeScrollingActive();
+      if (aBuilder->ShouldBuildScrollInfoItemsForHoisting()) {
+        
+        
+        
+        provideScrollInfoForAPZ = false;
+      }
+
       if (aBuilder->BuildCompositorHitTestInfo()) {
         nsDisplayCompositorHitTestInfo* hitInfo =
             MakeDisplayItemWithIndex<nsDisplayCompositorHitTestInfo>(
@@ -3795,6 +3810,12 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         if (hitInfo) {
           AppendInternalItemToTop(scrolledContent, hitInfo, Some(INT32_MAX));
         }
+      }
+      if (provideScrollInfoForAPZ) {
+        nsDisplayScrollInfoLayer* scrollInfo =
+            MakeDisplayItem<nsDisplayScrollInfoLayer>(aBuilder, mScrolledFrame,
+                                                      mOuter, info, area);
+        AppendInternalItemToTop(scrolledContent, scrollInfo, Nothing());
       }
     }
 
