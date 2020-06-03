@@ -15,7 +15,7 @@ loader.lazyRequireGetter(
 
 loader.lazyRequireGetter(
   this,
-  "hasCSSVariable",
+  "getCSSVariables",
   "devtools/client/inspector/rules/utils/utils",
   true
 );
@@ -60,8 +60,11 @@ class TextProperty {
     this.cssProperties = this.elementStyle.ruleView.cssProperties;
     this.panelDoc = this.elementStyle.ruleView.inspector.panelDoc;
     this.userProperties = this.elementStyle.store.userProperties;
+    
+    this.usedVariables = new Set();
 
     this.updateComputed();
+    this.updateUsedVariables();
   }
 
   get computedProperties() {
@@ -143,6 +146,18 @@ class TextProperty {
 
 
 
+  updateUsedVariables() {
+    this.usedVariables.clear();
+
+    for (const variable of getCSSVariables(this.value)) {
+      this.usedVariables.add(variable);
+    }
+  }
+
+  
+
+
+
 
 
 
@@ -156,6 +171,7 @@ class TextProperty {
     }
 
     if (changed) {
+      this.updateUsedVariables();
       this.updateEditor();
     }
   }
@@ -164,10 +180,10 @@ class TextProperty {
     if (value !== this.value || force) {
       this.userProperties.setProperty(this.rule.domRule, this.name, value);
     }
-
-    return this.rule
-      .setPropertyValue(this, value, priority)
-      .then(() => this.updateEditor());
+    return this.rule.setPropertyValue(this, value, priority).then(() => {
+      this.updateUsedVariables();
+      this.updateEditor();
+    });
   }
 
   
@@ -180,6 +196,7 @@ class TextProperty {
   updateValue(value) {
     if (value !== this.value) {
       this.value = value;
+      this.updateUsedVariables();
       this.updateEditor();
     }
   }
@@ -288,7 +305,7 @@ class TextProperty {
 
 
   hasCSSVariable(name) {
-    return hasCSSVariable(this.value, name);
+    return this.usedVariables.has(name);
   }
 }
 

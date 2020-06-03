@@ -149,7 +149,7 @@ function getNodeInfo(node, elementStyle) {
     type = VIEW_NODE_VARIABLE_TYPE;
     value = {
       property: getPropertyNameAndValue(node).name,
-      value: node.textContent,
+      value: node.textContent.trim(),
       enabled: declaration.enabled,
       overridden: declaration.overridden,
       pseudoElement: rule.pseudoElement,
@@ -289,12 +289,45 @@ function getShapePoint(node) {
 
 
 
+function getCSSVariables(propertyValue = "") {
+  const variables = [];
+  const parts = propertyValue.split(/var\(\s*--/);
+
+  if (parts.length) {
+    
+    for (let i = 1; i < parts.length; i++) {
+      
+      
+      
+      
+      
+      const variable = parts[i].split(/[,)\s+]/).shift();
+
+      if (variable) {
+        
+        variables.push(`--${variable}`);
+      }
+    }
+  }
+
+  return variables;
+}
+
+
+
+
+
+
+
+
+
+
 function hasCSSVariable(propertyValue, variableName) {
-  const regex = new RegExp(`(^|\\W)var\\(${variableName}\\s*[,)]`);
-  return regex.test(propertyValue);
+  return getCSSVariables(propertyValue).includes(variableName);
 }
 
 module.exports = {
+  getCSSVariables,
   getNodeInfo,
   getRuleFromNode,
   hasCSSVariable,
