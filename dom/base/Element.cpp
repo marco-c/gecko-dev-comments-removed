@@ -3399,6 +3399,35 @@ void Element::GetAnimationsUnsorted(Element* aElement,
   }
 }
 
+void Element::CloneAnimationsFrom(const Element& aOther) {
+  AnimationTimeline* const timeline = OwnerDoc()->Timeline();
+  MOZ_ASSERT(timeline, "Timeline has not been set on the document yet");
+  
+  
+  for (PseudoStyleType pseudoType :
+       {PseudoStyleType::NotPseudo, PseudoStyleType::before,
+        PseudoStyleType::after, PseudoStyleType::marker}) {
+    
+    
+    if (EffectSet* const effects =
+            EffectSet::GetEffectSet(&aOther, pseudoType)) {
+      EffectSet* const clonedEffects =
+          EffectSet::GetOrCreateEffectSet(this, pseudoType);
+      for (KeyframeEffect* const effect : *effects) {
+        
+        RefPtr<KeyframeEffect> clonedEffect = new KeyframeEffect(
+            OwnerDoc(), OwningAnimationTarget{this, pseudoType}, *effect);
+
+        
+        RefPtr<Animation> clonedAnimation = Animation::ClonePausedAnimation(
+            OwnerDoc()->GetParentObject(), *effect->GetAnimation(),
+            *clonedEffect, *timeline);
+        clonedEffects->AddEffect(*clonedEffect);
+      }
+    }
+  }
+}
+
 void Element::GetInnerHTML(nsAString& aInnerHTML, OOMReporter& aError) {
   GetMarkup(false, aInnerHTML);
 }

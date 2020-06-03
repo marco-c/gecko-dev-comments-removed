@@ -3273,6 +3273,12 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
   if (aDeep && aNode->IsElement()) {
     if (aClone) {
       if (clone->OwnerDoc()->IsStaticDocument()) {
+        
+        
+        
+        clone->AsElement()->CloneAnimationsFrom(*aNode->AsElement());
+
+        
         ShadowRoot* originalShadowRoot = aNode->AsElement()->GetShadowRoot();
         if (originalShadowRoot) {
           RefPtr<ShadowRoot> newShadowRoot =

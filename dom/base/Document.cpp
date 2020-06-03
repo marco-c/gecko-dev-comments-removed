@@ -11050,6 +11050,16 @@ nsresult Document::CloneDocHelper(Document* clone) const {
     }
 
     clone->SetContainer(mDocumentContainer);
+
+    
+    
+    MOZ_ASSERT(!clone->GetNavigationTiming(),
+               "Navigation time was already set?");
+    MOZ_ASSERT(mTiming,
+               "Timing should have been setup before making a static clone");
+    RefPtr<nsDOMNavigationTiming> timing =
+        mTiming->CloneNavigationTime(nsDocShell::Cast(clone->GetDocShell()));
+    clone->SetNavigationTiming(timing);
   }
 
   

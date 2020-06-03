@@ -107,6 +107,12 @@ bool EffectCompositor::AllowCompositorAnimationsOnFrame(
 bool FindAnimationsForCompositor(
     const nsIFrame* aFrame, const nsCSSPropertyIDSet& aPropertySet,
     nsTArray<RefPtr<dom::Animation>>* aMatches ) {
+  
+  
+  if (aFrame->PresContext()->IsPrintingOrPrintPreview()) {
+    return false;
+  }
+
   MOZ_ASSERT(
       aPropertySet.IsSubsetOf(LayerAnimationInfo::GetCSSPropertiesFor(
           DisplayItemType::TYPE_TRANSFORM)) ||
@@ -428,8 +434,6 @@ bool EffectCompositor::GetServoAnimationRule(
     const dom::Element* aElement, PseudoStyleType aPseudoType,
     CascadeLevel aCascadeLevel, RawServoAnimationValueMap* aAnimationValues) {
   MOZ_ASSERT(aAnimationValues);
-  MOZ_ASSERT(mPresContext && mPresContext->IsDynamic(),
-             "Should not be in print preview");
   
   MOZ_ASSERT(nsContentUtils::GetPresShellForContent(aElement),
              "Should not be trying to run animations on elements in documents"

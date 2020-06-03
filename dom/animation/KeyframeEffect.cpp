@@ -1420,7 +1420,7 @@ bool KeyframeEffect::CanThrottle() const {
     return false;
   }
 
-  nsIFrame* frame = GetStyleFrame();
+  nsIFrame* const frame = GetStyleFrame();
   if (!frame) {
     
     
@@ -1429,6 +1429,11 @@ bool KeyframeEffect::CanThrottle() const {
     
     
     return true;
+  }
+
+  
+  if (frame->PresContext()->IsPrintingOrPrintPreview()) {
+    return false;
   }
 
   if (CanThrottleIfNotVisible(*frame)) {
