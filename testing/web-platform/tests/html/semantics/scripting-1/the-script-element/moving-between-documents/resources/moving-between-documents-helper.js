@@ -30,7 +30,6 @@ function createDocument(documentType, result, inlineOrExternal, type, hasBlockin
   });
 }
 
-window.scriptErrorEventFired = false;
 window.didExecute = undefined;
 
 
@@ -84,11 +83,12 @@ window.didExecute = undefined;
 
 
 
-async function runTest(timing, destType, result, inlineOrExternal, type) {
-  if (result === "fetch-error" && inlineOrExternal === "inline") {
-    return;
-  }
 
+
+
+
+
+async function runTest(timing, destType, result, inlineOrExternal, type) {
   const description =
       `Move ${result} ${inlineOrExternal} ${type} script ` +
       `to ${destType} ${timing}`;
@@ -112,19 +112,19 @@ async function runTest(timing, destType, result, inlineOrExternal, type) {
   const [destWindow, destDocument] = await createDocument(
       destType, null, null, null, hasBlockingStylesheet);
 
-  let scriptErrorEventFired = false;
+  const scriptOnLoad =
+    tScriptLoadEvent.unreached_func("Script load event fired unexpectedly");
   const scriptOnError = (event) => {
     
     
     event.stopPropagation();
 
-    tScriptErrorEvent.unreached_func("Event fired unexpectedly")();
+    tScriptErrorEvent.unreached_func("Script error evennt fired unexpectedly")();
   };
 
   sourceWindow.didExecute = false;
   sourceWindow.t = t;
-  sourceWindow.tScriptLoadEvent = tScriptLoadEvent;
-  sourceWindow.tScriptErrorEvent = tScriptErrorEvent;
+  sourceWindow.scriptOnLoad = scriptOnLoad;
   sourceWindow.scriptOnError = scriptOnError;
   sourceWindow.onerror = tWindowErrorEvent.unreached_func(
       "Window error event shouldn't fired on source window");
@@ -132,8 +132,7 @@ async function runTest(timing, destType, result, inlineOrExternal, type) {
 
   destWindow.didExecute = false;
   destWindow.t = t;
-  destWindow.tScriptLoadEvent = tScriptLoadEvent;
-  destWindow.tScriptErrorEvent = tScriptErrorEvent;
+  destWindow.scriptOnLoad = scriptOnLoad;
   destWindow.scriptOnError = scriptOnError;
   destWindow.onerror = tWindowErrorEvent.unreached_func(
       "Window error event shouldn't fired on destination window");
@@ -158,10 +157,14 @@ async function runTest(timing, destType, result, inlineOrExternal, type) {
 
   
   if (timing === "after-prepare") {
-   destDocument.body.appendChild(
+    
+    
+    destDocument.body.appendChild(
       sourceDocument.querySelector("streaming-element"));
-  }
-  else if (timing === "move-back") {
+  } else if (timing === "move-back") {
+    
+    
+    
     sourceDocument.body.appendChild(
       destDocument.querySelector("streaming-element"));
   }
@@ -205,8 +208,6 @@ async_test(t => {
   t.step_timeout(() => {
       assert_equals(window.didExecute, undefined,
         "The script must not have executed in the top-level window");
-      assert_false(window.scriptErrorEventFired,
-        "Top-level window's scriptErrorEventFired should be untouched");
       t.done();
     },
     4000);
