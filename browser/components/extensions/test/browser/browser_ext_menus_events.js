@@ -33,6 +33,7 @@ async function testShowHideEvent({
   doCloseMenu,
   expectedShownEvent,
   expectedShownEventWithPermissions = null,
+  forceTabToBackground = false,
 }) {
   async function background() {
     function awaitMessage(expectedId) {
@@ -102,6 +103,9 @@ async function testShowHideEvent({
     browser.test.sendMessage("onShown-event-data2", shownEvents[1]);
   }
 
+  const someOtherTab = gBrowser.selectedTab;
+  
+  
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, PAGE);
 
   let extension = ExtensionTestUtils.loadExtension({
@@ -122,7 +126,11 @@ async function testShowHideEvent({
   extension.sendMessage("create-params", menuCreateParams);
   let menuId = await extension.awaitMessage("menu-registered");
 
-  await doOpenMenu(extension);
+  if (forceTabToBackground) {
+    gBrowser.selectedTab = someOtherTab;
+  }
+
+  await doOpenMenu(extension, tab);
   extension.sendMessage("assert-menu-shown");
   let shownEvent = await extension.awaitMessage("onShown-event-data");
 
@@ -141,7 +149,7 @@ async function testShowHideEvent({
       permissions: [],
       origins: [PAGE_HOST_PATTERN],
     });
-    await doOpenMenu(extension);
+    await doOpenMenu(extension, tab);
     extension.sendMessage("optional-menu-shown-with-permissions");
     let shownEvent2 = await extension.awaitMessage("onShown-event-data2");
     Assert.deepEqual(
@@ -345,8 +353,15 @@ add_task(async function test_show_hide_browserAction_popup() {
   });
 });
 
-add_task(async function test_show_hide_tab() {
+
+async function testShowHideTabMenu({
+  doOpenTabContextMenu,
+  doCloseTabContextMenu,
+}) {
   await testShowHideEvent({
+    
+    
+    forceTabToBackground: true,
     menuCreateParams: {
       title: "tab menu item",
       contexts: ["tab"],
@@ -362,13 +377,84 @@ add_task(async function test_show_hide_tab() {
       editable: false,
       pageUrl: PAGE,
     },
-    async doOpenMenu() {
-      await openTabContextMenu();
+    async doOpenMenu(extension, contextTab) {
+      await doOpenTabContextMenu(contextTab);
     },
     async doCloseMenu() {
+      await doCloseTabContextMenu();
+    },
+  });
+}
+
+add_task(async function test_show_hide_tab() {
+  await testShowHideTabMenu({
+    async doOpenTabContextMenu(contextTab) {
+      await openTabContextMenu(contextTab);
+    },
+    async doCloseTabContextMenu() {
       await closeTabContextMenu();
     },
   });
+});
+
+
+
+
+add_task(async function test_show_hide_tab_via_tab_panel() {
+  const tabContainer = document.getElementById("tabbrowser-tabs");
+  let shouldAddOverflow = !tabContainer.hasAttribute("overflow");
+  const revertTabContainerAttribute = () => {
+    if (shouldAddOverflow) {
+      
+      tabContainer.removeAttribute("overflow");
+      
+      shouldAddOverflow = false;
+    }
+  };
+  if (shouldAddOverflow) {
+    
+    tabContainer.setAttribute("overflow", "true");
+    
+    registerCleanupFunction(revertTabContainerAttribute);
+  }
+
+  const allTabsView = document.getElementById("allTabsMenu-allTabsView");
+
+  await testShowHideTabMenu({
+    async doOpenTabContextMenu(contextTab) {
+      
+      let allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(
+        allTabsView,
+        "ViewShown"
+      );
+      gTabsPanel.showAllTabsPanel();
+      await allTabsPopupShownPromise;
+
+      
+      let index = Array.prototype.findIndex.call(
+        gTabsPanel.allTabsViewTabs.children,
+        toolbaritem => toolbaritem.tab === contextTab
+      );
+      ok(index !== -1, "sanity check: tabs panel has item for the tab");
+
+      
+      await openChromeContextMenu(
+        "tabContextMenu",
+        `.all-tabs-item:nth-child(${index + 1})`
+      );
+    },
+    async doCloseTabContextMenu() {
+      await closeTabContextMenu();
+      let allTabsPopupHiddenPromise = BrowserTestUtils.waitForEvent(
+        allTabsView.panelMultiView,
+        "PanelMultiViewHidden"
+      );
+      gTabsPanel.hideAllTabsPanel();
+      await allTabsPopupHiddenPromise;
+    },
+  });
+
+  revertTabContainerAttribute();
 });
 
 add_task(async function test_show_hide_tools_menu() {
