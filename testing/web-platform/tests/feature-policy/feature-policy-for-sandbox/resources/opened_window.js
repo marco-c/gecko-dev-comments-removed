@@ -1,7 +1,9 @@
-var feature = window.location.search.substr(1);
-var state = document.featurePolicy.allowsFeature(feature);
+const features = window.location.search.substr(1).split("&");
+const states = features
+  .map(feature => [feature, document.featurePolicy.allowsFeature(feature)]);
+
 
 
 
 window.opener.parent.postMessage(
-    {type: "feature", feature: feature, state: state}, "*");
+    {type: "features", states: states}, "*");
