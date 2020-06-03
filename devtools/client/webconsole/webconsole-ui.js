@@ -332,7 +332,7 @@ class WebConsoleUI {
     );
 
     const resourceWatcher = this.hud.resourceWatcher;
-    await resourceWatcher.watch(
+    await resourceWatcher.watchResources(
       [
         resourceWatcher.TYPES.CONSOLE_MESSAGES,
         resourceWatcher.TYPES.ERROR_MESSAGES,

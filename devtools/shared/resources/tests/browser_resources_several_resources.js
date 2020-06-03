@@ -39,8 +39,10 @@ add_task(async function() {
     }
   };
 
-  info("Call watch([CONSOLE_MESSAGES, ROOT_NODE], ...)");
-  await resourceWatcher.watch([CONSOLE_MESSAGES, ROOT_NODE], { onAvailable });
+  info("Call watchResources([CONSOLE_MESSAGES, ROOT_NODE], ...)");
+  await resourceWatcher.watchResources([CONSOLE_MESSAGES, ROOT_NODE], {
+    onAvailable,
+  });
 
   info("Use console.log in the content page");
   logInTab(tab, "test");
@@ -58,7 +60,7 @@ add_task(async function() {
   await waitUntil(() => receivedMessages === 2);
 
   info("Stop watching ROOT_NODE resources");
-  await resourceWatcher.unwatch([ROOT_NODE], { onAvailable });
+  await resourceWatcher.unwatchResources([ROOT_NODE], { onAvailable });
 
   
   
@@ -72,7 +74,7 @@ add_task(async function() {
   await waitUntil(() => receivedMessages === 3);
 
   info("Stop watching CONSOLE_MESSAGES resources");
-  await resourceWatcher.unwatch([CONSOLE_MESSAGES], { onAvailable });
+  await resourceWatcher.unwatchResources([CONSOLE_MESSAGES], { onAvailable });
   await logInTab(tab, "test-again");
 
   

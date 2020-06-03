@@ -68,7 +68,7 @@ class ResourceWatcher {
 
 
 
-  async watch(resources, options) {
+  async watchResources(resources, options) {
     const { ignoreExistingResources = false } = options;
 
     
@@ -95,7 +95,7 @@ class ResourceWatcher {
 
 
 
-  unwatch(resources, options) {
+  unwatchResources(resources, options) {
     const { onAvailable, onDestroyed } = options;
 
     for (const resource of resources) {
@@ -262,7 +262,7 @@ class ResourceWatcher {
 
       throw new Error(
         `The ResourceWatcher is already listening to "${resourceType}", ` +
-          "the client should call `watch` only once per resource type."
+          "the client should call `watchResources` only once per resource type."
       );
     }
 
