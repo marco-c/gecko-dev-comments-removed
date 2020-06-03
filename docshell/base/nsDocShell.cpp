@@ -464,7 +464,7 @@ already_AddRefed<nsDocShell> nsDocShell::Create(
   RefPtr<nsDocShell> ds = new nsDocShell(aBrowsingContext, aContentWindowID);
 
   
-  rv = ds->nsDocLoader::InitWithBrowsingContext(aBrowsingContext);
+  rv = ds->nsDocLoader::Init();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return nullptr;
   }

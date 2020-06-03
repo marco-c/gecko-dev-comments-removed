@@ -454,11 +454,6 @@ bool DocumentLoadListener::Open(
     timedChannel->SetAsyncOpen(aAsyncOpenTime);
   }
 
-  if (nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel)) {
-    Unused << httpChannel->SetRequestContextID(
-        browsingContext->GetRequestContextId());
-  }
-
   
   
   
