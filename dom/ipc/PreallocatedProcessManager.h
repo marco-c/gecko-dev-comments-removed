@@ -28,10 +28,14 @@ class ContentParent;
 
 
 
+class PreallocatedProcessManagerImpl;
+
 class PreallocatedProcessManager final {
   typedef mozilla::dom::ContentParent ContentParent;
 
  public:
+  static PreallocatedProcessManagerImpl* GetPPMImpl();
+
   
 
 
