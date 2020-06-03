@@ -353,7 +353,6 @@ class ScriptStencilBase {
   ScriptThingsVector gcThings;
 
   
-  uint32_t natoms = 0;
   js::UniquePtr<js::ImmutableScriptData> immutableScriptData = nullptr;
 
   explicit ScriptStencilBase(JSContext* cx) : gcThings(cx) {}
@@ -378,10 +377,6 @@ class ScriptStencil : public ScriptStencilBase {
   
   JSScript* intoScript(JSContext* cx, CompilationInfo& compilationInfo,
                        SourceExtent extent);
-
-  
-  
-  virtual void initAtomMap(GCPtrAtom* atoms) const = 0;
 };
 
 } 

@@ -911,58 +911,22 @@ static XDRResult XDRImmutableScriptData(XDRState<mode>* xdr,
   return Ok();
 }
 
-RuntimeScriptData::RuntimeScriptData(uint32_t natoms) : natoms_(natoms) {
-  
-  Offset cursor = sizeof(RuntimeScriptData);
-
-  
-  initElements<GCPtrAtom>(cursor, natoms);
-  cursor += natoms * sizeof(GCPtrAtom);
-
-  
-  MOZ_ASSERT(this->natoms() == natoms);
-
-  
-  MOZ_ASSERT(endOffset() == cursor);
-}
-
 template <XDRMode mode>
 
 XDRResult RuntimeScriptData::XDR(XDRState<mode>* xdr, HandleScript script) {
-  uint32_t natoms = 0;
-
   JSContext* cx = xdr->cx();
   RuntimeScriptData* rsd = nullptr;
 
   if (mode == XDR_ENCODE) {
     rsd = script->sharedData();
-
-    natoms = rsd->natoms();
   }
 
-  MOZ_TRY(xdr->codeUint32(&natoms));
-
   if (mode == XDR_DECODE) {
-    if (!script->createScriptData(cx, natoms)) {
+    if (!script->createScriptData(cx)) {
       return xdr->fail(JS::TranscodeResult_Throw);
     }
 
     rsd = script->sharedData();
-  }
-
-  {
-    RootedAtom atom(cx);
-    GCPtrAtom* vector = rsd->atoms();
-
-    for (uint32_t i = 0; i != natoms; ++i) {
-      if (mode == XDR_ENCODE) {
-        atom = vector[i];
-      }
-      MOZ_TRY(XDRAtom(xdr, &atom));
-      if (mode == XDR_DECODE) {
-        vector[i].init(atom);
-      }
-    }
   }
 
   MOZ_TRY(XDRImmutableScriptData<mode>(xdr, rsd->isd_));
@@ -3968,36 +3932,10 @@ js::UniquePtr<ImmutableScriptData> js::ImmutableScriptData::new_(
   return result;
 }
 
-RuntimeScriptData* js::RuntimeScriptData::new_(JSContext* cx, uint32_t natoms) {
-  
-  CheckedInt<Offset> size = sizeof(RuntimeScriptData);
-  size += CheckedInt<Offset>(natoms) * sizeof(GCPtrAtom);
-  if (!size.isValid()) {
-    ReportAllocationOverflow(cx);
-    return nullptr;
-  }
-
-  
-  void* raw = cx->pod_malloc<uint8_t>(size.value());
-  MOZ_ASSERT(uintptr_t(raw) % alignof(RuntimeScriptData) == 0);
-  if (!raw) {
-    return nullptr;
-  }
-
-  
-  
-  RuntimeScriptData* result = new (raw) RuntimeScriptData(natoms);
-
-  
-  MOZ_ASSERT(result->endOffset() == size.value());
-
-  return result;
-}
-
-bool JSScript::createScriptData(JSContext* cx, uint32_t natoms) {
+bool JSScript::createScriptData(JSContext* cx) {
   MOZ_ASSERT(!sharedData_);
 
-  RefPtr<RuntimeScriptData> rsd(RuntimeScriptData::new_(cx, natoms));
+  RefPtr<RuntimeScriptData> rsd(cx->new_<RuntimeScriptData>());
   if (!rsd) {
     return false;
   }
@@ -4294,7 +4232,7 @@ bool JSScript::fullyInitFromStencil(JSContext* cx,
   });
 
   
-  MOZ_ASSERT(stencil.natoms <= INDEX_LIMIT);
+  MOZ_ASSERT(stencil.gcThings.length() <= INDEX_LIMIT);
 
   
   
@@ -4872,10 +4810,6 @@ static JSScript* CopyScriptImpl(JSContext* cx, HandleScript src,
   }
 
   
-  
-  if (cx->zone() != src->zoneFromAnyThread()) {
-    src->sharedData()->markForCrossZone(cx);
-  }
   dst->initSharedData(src->sharedData());
 
   return dst;
@@ -5041,30 +4975,12 @@ js::UniquePtr<ImmutableScriptData> ImmutableScriptData::new_(
 bool RuntimeScriptData::InitFromStencil(JSContext* cx, js::HandleScript script,
                                         frontend::ScriptStencil& stencil) {
   
-  if (!script->createScriptData(cx, stencil.natoms)) {
+  if (!script->createScriptData(cx)) {
     return false;
   }
-  js::RuntimeScriptData* data = script->sharedData();
-
-  
-  stencil.initAtomMap(data->atoms());
 
   script->initImmutableScriptData(std::move(stencil.immutableScriptData));
   return true;
-}
-
-void RuntimeScriptData::traceChildren(JSTracer* trc) {
-  MOZ_ASSERT(refCount() != 0);
-
-  for (uint32_t i = 0; i < natoms(); ++i) {
-    TraceNullableEdge(trc, &atoms()[i], "atom");
-  }
-}
-
-void RuntimeScriptData::markForCrossZone(JSContext* cx) {
-  for (uint32_t i = 0; i < natoms(); ++i) {
-    cx->markAtom(atoms()[i]);
-  }
 }
 
 void ScriptWarmUpData::trace(JSTracer* trc) {

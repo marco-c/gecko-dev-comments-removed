@@ -1476,37 +1476,31 @@ class alignas(uintptr_t) PrivateScriptData final : public TrailingArray {
 };
 
 
-class alignas(uintptr_t) RuntimeScriptData final : public TrailingArray {
+
+
+
+
+
+
+
+
+class RuntimeScriptData {
   
   
   
   mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent> refCount_ = {};
 
-  uint32_t natoms_ = 0;
-
   js::UniquePtr<ImmutableScriptData> isd_ = nullptr;
 
-  
   
 
   friend class ::JSScript;
 
- private:
-  
-  Offset atomsOffset() { return offsetOfAtoms(); }
-  Offset endOffset() const {
-    uintptr_t size = natoms_ * sizeof(GCPtrAtom);
-    return offsetOfAtoms() + size;
-  }
-
-  
-  explicit RuntimeScriptData(uint32_t natoms);
-
  public:
+  RuntimeScriptData() = default;
+
   
   struct Hasher;
-
-  static RuntimeScriptData* new_(JSContext* cx, uint32_t natoms);
 
   uint32_t refCount() const { return refCount_; }
   void AddRef() { refCount_++; }
@@ -1519,31 +1513,13 @@ class alignas(uintptr_t) RuntimeScriptData final : public TrailingArray {
     }
   }
 
-  uint32_t natoms() const { return natoms_; }
-  GCPtrAtom* atoms() {
-    Offset offset = offsetOfAtoms();
-    return offsetToPointer<GCPtrAtom>(offset);
-  }
-
-  mozilla::Span<const GCPtrAtom> atomsSpan() const {
-    Offset offset = offsetOfAtoms();
-    return mozilla::MakeSpan(offsetToPointer<GCPtrAtom>(offset), natoms_);
-  }
-
-  static constexpr size_t offsetOfAtoms() { return sizeof(RuntimeScriptData); }
-
   static constexpr size_t offsetOfISD() {
     return offsetof(RuntimeScriptData, isd_);
   }
 
-  void traceChildren(JSTracer* trc);
-
   template <XDRMode mode>
   static MOZ_MUST_USE XDRResult XDR(js::XDRState<mode>* xdr,
                                     js::HandleScript script);
-
-  
-  void markForCrossZone(JSContext* cx);
 
   static bool InitFromStencil(JSContext* cx, js::HandleScript script,
                               js::frontend::ScriptStencil& stencil);
@@ -1564,16 +1540,11 @@ struct RuntimeScriptData::Hasher {
 
   static HashNumber hash(const Lookup& l) {
     mozilla::Span<const uint8_t> immutableData = l->isd_->immutableData();
-
-    HashNumber h =
-        mozilla::HashBytes(immutableData.data(), immutableData.size());
-    return mozilla::AddToHash(
-        h, mozilla::HashBytes(l->atoms(), l->natoms() * sizeof(GCPtrAtom)));
+    return mozilla::HashBytes(immutableData.data(), immutableData.size());
   }
 
   static bool match(RuntimeScriptData* entry, const Lookup& lookup) {
-    return (entry->atomsSpan() == lookup->atomsSpan()) &&
-           (entry->isd_->immutableData() == lookup->isd_->immutableData());
+    return (entry->isd_->immutableData() == lookup->isd_->immutableData());
   }
 };
 
@@ -2558,7 +2529,7 @@ class JSScript : public js::BaseScript {
  private:
   bool createJitScript(JSContext* cx);
 
-  bool createScriptData(JSContext* cx, uint32_t natoms);
+  bool createScriptData(JSContext* cx);
   void initImmutableScriptData(js::UniquePtr<js::ImmutableScriptData>&& data) {
     MOZ_ASSERT(!sharedData_->isd_);
     sharedData_->isd_ = std::move(data);

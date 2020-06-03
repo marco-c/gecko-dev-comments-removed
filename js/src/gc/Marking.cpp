@@ -1156,10 +1156,6 @@ void BaseScript::traceChildren(JSTracer* trc) {
     data_->trace(trc);
   }
 
-  if (sharedData_) {
-    sharedData_->traceChildren(trc);
-  }
-
   
   
   
