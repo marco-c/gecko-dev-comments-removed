@@ -1014,8 +1014,6 @@ class nsFlexContainerFrame::FlexLine final {
 
   nscoord MainGapSize() const { return mMainGapSize; }
 
-  inline void SetMainGapSize(nscoord aNewSize) { mMainGapSize = aNewSize; }
-
   
   
   
@@ -1058,7 +1056,7 @@ class nsFlexContainerFrame::FlexLine final {
   nscoord mLastBaselineOffset = nscoord_MIN;
 
   
-  nscoord mMainGapSize = 0;
+  const nscoord mMainGapSize;
 };
 
 
@@ -2467,8 +2465,6 @@ class MOZ_STACK_CLASS CrossAxisPositionTracker : public PositionTracker {
   
   void TraverseLine(FlexLine& aLine) { mPosition += aLine.LineCrossSize(); }
 
-  inline void SetCrossGapSize(nscoord aNewSize) { mCrossGapSize = aNewSize; }
-
   
   
   
@@ -2483,7 +2479,7 @@ class MOZ_STACK_CLASS CrossAxisPositionTracker : public PositionTracker {
   uint32_t mNumPackingSpacesRemaining = 0;
   StyleContentDistribution mAlignContent = {StyleAlignFlags::AUTO};
 
-  nscoord mCrossGapSize = 0;
+  const nscoord mCrossGapSize;
 };
 
 
@@ -4945,24 +4941,6 @@ void nsFlexContainerFrame::DoFlexLayout(
       IsLegacyBox(aReflowInput.mFrame)
           ? ConvertLegacyStyleToJustifyContent(StyleXUL())
           : aReflowInput.mStylePosition->mJustifyContent;
-
-  
-  
-  if (aReflowInput.ComputedBSize() == NS_UNCONSTRAINEDSIZE &&
-      aReflowInput.mStylePosition->mRowGap.IsLengthPercentage() &&
-      aReflowInput.mStylePosition->mRowGap.AsLengthPercentage().HasPercent()) {
-    bool rowIsCross = aAxisTracker.IsRowOriented();
-    nscoord newBlockGapSize = nsLayoutUtils::ResolveGapToLength(
-        aReflowInput.mStylePosition->mRowGap,
-        rowIsCross ? aContentBoxCrossSize : aContentBoxMainSize);
-    if (rowIsCross) {
-      crossAxisPosnTracker.SetCrossGapSize(newBlockGapSize);
-    } else {
-      for (FlexLine& line : aLines) {
-        line.SetMainGapSize(newBlockGapSize);
-      }
-    }
-  }
 
   lineIndex = 0;
   for (FlexLine& line : aLines) {
