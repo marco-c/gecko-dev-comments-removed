@@ -240,7 +240,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  void FinishReplacementChannelSetup(bool aSucceeded);
+  void FinishReplacementChannelSetup(nsresult aResult);
 
   
   
