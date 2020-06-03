@@ -15,9 +15,6 @@ add_task(async function setup() {
   engine = Service.engineManager.get("passwords");
   store = engine._store;
   tracker = engine._tracker;
-
-  
-  tracker.persistChangedIDs = false;
 });
 
 add_task(async function test_tracking() {

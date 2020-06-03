@@ -220,16 +220,6 @@ FormAutofillTracker.prototype = {
     }
   },
 
-  
-  
-  get ignoreAll() {
-    return false;
-  },
-
-  
-  
-  set ignoreAll(value) {},
-
   onStart() {
     Services.obs.addObserver(this, "formautofill-storage-changed");
   },
@@ -237,31 +227,6 @@ FormAutofillTracker.prototype = {
   onStop() {
     Services.obs.removeObserver(this, "formautofill-storage-changed");
   },
-
-  
-  
-  persistChangedIDs: false,
-
-  
-  get changedIDs() {
-    throw new Error("changedIDs isn't meaningful for this engine");
-  },
-
-  set changedIDs(obj) {
-    throw new Error("changedIDs isn't meaningful for this engine");
-  },
-
-  addChangedID(id, when) {
-    throw new Error("Don't add IDs to the autofill tracker");
-  },
-
-  removeChangedID(id) {
-    throw new Error("Don't remove IDs from the autofill tracker");
-  },
-
-  
-  
-  clearChangedIDs() {},
 };
 
 

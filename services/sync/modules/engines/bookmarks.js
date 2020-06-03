@@ -1388,20 +1388,6 @@ function BookmarksTracker(name, engine) {
 BookmarksTracker.prototype = {
   __proto__: Tracker.prototype,
 
-  
-  
-  get ignoreAll() {
-    return false;
-  },
-
-  
-  
-  set ignoreAll(value) {},
-
-  
-  
-  persistChangedIDs: false,
-
   onStart() {
     PlacesUtils.bookmarks.addObserver(this, true);
     this._placesListener = new PlacesWeakCallbackWrapper(
@@ -1427,25 +1413,8 @@ BookmarksTracker.prototype = {
     Svc.Obs.remove("bookmarks-restore-failed", this);
   },
 
-  
-  addChangedID(id, when) {
-    throw new Error("Don't add IDs to the bookmarks tracker");
-  },
-
-  removeChangedID(id) {
-    throw new Error("Don't remove IDs from the bookmarks tracker");
-  },
-
-  
-  
-  clearChangedIDs() {},
-
   async getChangedIDs() {
     return PlacesSyncUtils.bookmarks.pullChanges();
-  },
-
-  set changedIDs(obj) {
-    throw new Error("Don't set initial changed bookmark IDs");
   },
 
   observe(subject, topic, data) {
@@ -1477,7 +1446,6 @@ BookmarksTracker.prototype = {
 
   QueryInterface: ChromeUtils.generateQI([
     Ci.nsINavBookmarkObserver,
-    Ci.nsINavBookmarkObserver_MOZILLA_1_9_1_ADDITIONS,
     Ci.nsISupportsWeakReference,
   ]),
 

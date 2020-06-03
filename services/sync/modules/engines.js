@@ -6,6 +6,7 @@ var EXPORTED_SYMBOLS = [
   "EngineManager",
   "SyncEngine",
   "Tracker",
+  "LegacyTracker",
   "Store",
   "Changeset",
 ];
@@ -56,31 +57,34 @@ function ensureDirectory(path) {
 
 
 
-
 function Tracker(name, engine) {
   if (!engine) {
     throw new Error("Tracker must be associated with an Engine instance.");
   }
 
   name = name || "Unnamed";
-  this.name = this.file = name.toLowerCase();
+  this.name = name.toLowerCase();
   this.engine = engine;
 
   this._log = Log.repository.getLogger(`Sync.Engine.${name}.Tracker`);
 
   this._score = 0;
-  this._ignored = [];
-  this._storage = new JSONFile({
-    path: Utils.jsonFilePath("changes/" + this.file),
-    dataPostProcessor: json => this._dataPostProcessor(json),
-    beforeSave: () => this._beforeSave(),
-  });
-  this.ignoreAll = false;
 
   this.asyncObserver = Async.asyncObserver(this, this._log);
 }
 
 Tracker.prototype = {
+  
+  
+  
+  get ignoreAll() {
+    return false;
+  },
+
+  
+  
+  set ignoreAll(value) {},
+
   
 
 
@@ -95,16 +99,6 @@ Tracker.prototype = {
     return this._score;
   },
 
-  
-  _dataPostProcessor(json) {
-    return (typeof json == "object" && json) || {};
-  },
-
-  
-  _beforeSave() {
-    return ensureDirectory(this._storage.path);
-  },
-
   set score(value) {
     this._score = value;
     Observers.notify("weave:engine:score:updated", this.name);
@@ -115,7 +109,131 @@ Tracker.prototype = {
     this._score = 0;
   },
 
-  persistChangedIDs: true,
+  
+  
+  async getChangedIDs() {
+    throw new TypeError("This tracker doesn't store changed IDs");
+  },
+
+  
+  async addChangedID(id, when) {
+    throw new TypeError("Can't add changed ID to this tracker");
+  },
+
+  
+  async removeChangedID(...ids) {
+    throw new TypeError("Can't remove changed IDs from this tracker");
+  },
+
+  
+  
+  clearChangedIDs() {},
+
+  _now() {
+    return Date.now() / 1000;
+  },
+
+  _isTracking: false,
+
+  start() {
+    if (!this.engineIsEnabled()) {
+      return;
+    }
+    this._log.trace("start().");
+    if (!this._isTracking) {
+      this.onStart();
+      this._isTracking = true;
+    }
+  },
+
+  async stop() {
+    this._log.trace("stop().");
+    if (this._isTracking) {
+      await this.asyncObserver.promiseObserversComplete();
+      this.onStop();
+      this._isTracking = false;
+    }
+  },
+
+  
+  onStart() {},
+  onStop() {},
+  async observe(subject, topic, data) {},
+
+  engineIsEnabled() {
+    if (!this.engine) {
+      
+      return true;
+    }
+    return this.engine.enabled;
+  },
+
+  
+
+
+
+
+
+  async onEngineEnabledChanged(engineEnabled) {
+    if (engineEnabled == this._isTracking) {
+      return;
+    }
+
+    if (engineEnabled) {
+      this.start();
+    } else {
+      await this.stop();
+      this.clearChangedIDs();
+    }
+  },
+
+  async finalize() {
+    await this.stop();
+  },
+};
+
+
+
+
+
+
+
+
+
+
+function LegacyTracker(name, engine) {
+  Tracker.call(this, name, engine);
+
+  this._ignored = [];
+  this.file = this.name;
+  this._storage = new JSONFile({
+    path: Utils.jsonFilePath("changes/" + this.file),
+    dataPostProcessor: json => this._dataPostProcessor(json),
+    beforeSave: () => this._beforeSave(),
+  });
+  this._ignoreAll = false;
+}
+
+LegacyTracker.prototype = {
+  __proto__: Tracker.prototype,
+
+  get ignoreAll() {
+    return this._ignoreAll;
+  },
+
+  set ignoreAll(value) {
+    this._ignoreAll = value;
+  },
+
+  
+  _dataPostProcessor(json) {
+    return (typeof json == "object" && json) || {};
+  },
+
+  
+  _beforeSave() {
+    return ensureDirectory(this._storage.path);
+  },
 
   async getChangedIDs() {
     await this._storage.load();
@@ -123,10 +241,6 @@ Tracker.prototype = {
   },
 
   _saveChangedIDs() {
-    if (!this.persistChangedIDs) {
-      this._log.debug("Not saving changedIDs.");
-      return;
-    }
     this._storage.saveSoon();
   },
 
@@ -196,72 +310,20 @@ Tracker.prototype = {
         delete changedIDs[id];
       }
     }
-    await this._saveChangedIDs();
+    this._saveChangedIDs();
     return true;
   },
 
-  async clearChangedIDs() {
+  clearChangedIDs() {
     this._log.trace("Clearing changed ID list");
     this._storage.data = {};
-    await this._saveChangedIDs();
-  },
-
-  _now() {
-    return Date.now() / 1000;
-  },
-
-  _isTracking: false,
-
-  start() {
-    if (!this.engineIsEnabled()) {
-      return;
-    }
-    this._log.trace("start().");
-    if (!this._isTracking) {
-      this.onStart();
-      this._isTracking = true;
-    }
-  },
-
-  async stop() {
-    this._log.trace("stop().");
-    if (this._isTracking) {
-      await this.asyncObserver.promiseObserversComplete();
-      this.onStop();
-      this._isTracking = false;
-    }
-  },
-
-  
-  onStart() {},
-  onStop() {},
-  async observe(subject, topic, data) {},
-
-  engineIsEnabled() {
-    if (!this.engine) {
-      
-      return true;
-    }
-    return this.engine.enabled;
-  },
-
-  async onEngineEnabledChanged(engineEnabled) {
-    if (engineEnabled == this._isTracking) {
-      return;
-    }
-
-    if (engineEnabled) {
-      this.start();
-    } else {
-      await this.stop();
-      await this.clearChangedIDs();
-    }
+    this._saveChangedIDs();
   },
 
   async finalize() {
     
     
-    await this.stop();
+    await super.finalize();
     this._saveChangedIDs();
     await this._storage.finalize();
   },
@@ -720,10 +782,7 @@ function SyncEngine(name, service) {
     this,
     "_enabled",
     `services.sync.engine.${this.prefName}`,
-    false,
-    (data, previous, latest) =>
-      
-      this._tracker.onEngineEnabledChanged(latest)
+    false
   );
   XPCOMUtils.defineLazyPreferenceGetter(
     this,
@@ -768,6 +827,8 @@ function SyncEngine(name, service) {
   
   
   this._needWeakUpload = new Map();
+
+  this.asyncObserver = Async.asyncObserver(this, this._log);
 }
 
 
@@ -840,6 +901,7 @@ SyncEngine.prototype = {
   async initialize() {
     await this._toFetchStorage.load();
     await this._previousFailedStorage.load();
+    Svc.Prefs.observe(`engine.${this.prefName}`, this.asyncObserver);
     this._log.debug("SyncEngine initialized", this.name);
   },
 
@@ -896,6 +958,18 @@ SyncEngine.prototype = {
   
   stopTracking() {
     return this._tracker.stop();
+  },
+
+  
+  
+  
+  async observe(subject, topic, data) {
+    if (
+      topic == "nsPref:changed" &&
+      data == `services.sync.engine.${this.prefName}`
+    ) {
+      await this._tracker.onEngineEnabledChanged(this._enabled);
+    }
   },
 
   async sync() {
@@ -1117,7 +1191,7 @@ SyncEngine.prototype = {
     this._modified.replace(initialChanges);
     
     
-    await this._tracker.clearChangedIDs();
+    this._tracker.clearChangedIDs();
     this._tracker.resetScore();
 
     this._log.info(
@@ -2113,7 +2187,7 @@ SyncEngine.prototype = {
     this._tracker.ignoreAll = true;
     await this._store.wipe();
     this._tracker.ignoreAll = false;
-    await this._tracker.clearChangedIDs();
+    this._tracker.clearChangedIDs();
   },
 
   
@@ -2126,6 +2200,8 @@ SyncEngine.prototype = {
   },
 
   async finalize() {
+    Svc.Prefs.ignore(`engine.${this.prefName}`, this.asyncObserver);
+    await this.asyncObserver.promiseObserversComplete();
     await this._tracker.finalize();
     await this._toFetchStorage.finalize();
     await this._previousFailedStorage.finalize();

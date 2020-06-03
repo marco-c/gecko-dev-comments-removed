@@ -62,9 +62,6 @@ add_task(async function setup() {
   store = engine._store;
   tracker = engine._tracker;
 
-  
-  tracker.persistChangedIDs = false;
-
   await cleanup();
 });
 
