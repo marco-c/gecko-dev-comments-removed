@@ -161,20 +161,6 @@ function maybeGetElementFromDocumentByText(document, text) {
 
 
 
-
-function getIframeDocument() {
-  const iframe = document.getElementById("PanelUI-profilerIframe");
-  if (!iframe) {
-    throw new Error(
-      "This function assumes the profiler iframe is already present."
-    );
-  }
-  return iframe.contentDocument;
-}
-
-
-
-
 async function makeSureProfilerPopupIsEnabled() {
   info("Make sure the profiler popup is enabled.");
 
@@ -315,39 +301,6 @@ async function waitForTabTitle(title) {
     logPeriodically(`> Waiting for the tab title to change.`);
     return false;
   });
-}
-
-
-
-
-async function closePopup() {
-  const iframe = document.querySelector("#PanelUI-profilerIframe");
-
-  if (!iframe) {
-    throw new Error(
-      "Could not find the profiler iframe when attempting to close the popup. Was it " +
-        "already closed?"
-    );
-  }
-
-  const panel = iframe.closest("panel");
-  if (!panel) {
-    throw new Error(
-      "Could not find the closest panel to the profiler's iframe."
-    );
-  }
-
-  info("Hide the profiler popup.");
-  panel.hidePopup();
-
-  info("Wait for the profiler popup to be completely hidden.");
-  while (true) {
-    if (!iframe.ownerDocument.contains(iframe)) {
-      info("The iframe was removed.");
-      return;
-    }
-    await tick();
-  }
 }
 
 
