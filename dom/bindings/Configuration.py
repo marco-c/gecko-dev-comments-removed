@@ -542,34 +542,11 @@ class Descriptor(DescriptorProvider):
 
         
         
-        
-        self.extendedAttributes = {'all': {}, 'getterOnly': {}, 'setterOnly': {}}
-
-        def addExtendedAttribute(attribute, config):
-            def add(key, members, attribute):
-                for member in members:
-                    self.extendedAttributes[key].setdefault(member, []).append(attribute)
-
-            if isinstance(config, dict):
-                for key in ['all', 'getterOnly', 'setterOnly']:
-                    add(key, config.get(key, []), attribute)
-            elif isinstance(config, list):
-                add('all', config, attribute)
-            else:
-                assert isinstance(config, str)
-                if config == '*':
-                    iface = self.interface
-                    while iface:
-                        add('all', map(lambda m: m.name, iface.members), attribute)
-                        iface = iface.parent
-                else:
-                    add('all', [config], attribute)
-
         if self.interface.isJSImplemented():
-            addExtendedAttribute('implicitJSContext', ['constructor'])
+            self.implicitJSContext = ['constructor']
         else:
-            for attribute in ['implicitJSContext']:
-                addExtendedAttribute(attribute, desc.get(attribute, {}))
+            self.implicitJSContext = desc.get('implicitJSContext', [])
+        assert isinstance(self.implicitJSContext, list)
 
         self._binaryNames = {}
 
@@ -668,6 +645,9 @@ class Descriptor(DescriptorProvider):
         throws = self.interface.isJSImplemented() or member.getExtendedAttribute("Throws")
         canOOM = member.getExtendedAttribute("CanOOM")
         needsSubjectPrincipal = member.getExtendedAttribute("NeedsSubjectPrincipal")
+        attrs = []
+        if name in self.implicitJSContext:
+            attrs.append('implicitJSContext')
         if member.isMethod():
             
             
@@ -676,7 +656,6 @@ class Descriptor(DescriptorProvider):
                     throws = True
                 elif methodReturnsJSObject(member):
                     canOOM = True
-            attrs = self.extendedAttributes['all'].get(name, [])
             maybeAppendInfallibleToAttrs(attrs, throws)
             maybeAppendCanOOMToAttrs(attrs, canOOM)
             maybeAppendNeedsSubjectPrincipalToAttrs(attrs,
@@ -685,8 +664,6 @@ class Descriptor(DescriptorProvider):
 
         assert member.isAttr()
         assert bool(getter) != bool(setter)
-        key = 'getterOnly' if getter else 'setterOnly'
-        attrs = self.extendedAttributes['all'].get(name, []) + self.extendedAttributes[key].get(name, [])
         if throws is None:
             throwsAttr = "GetterThrows" if getter else "SetterThrows"
             throws = member.getExtendedAttribute(throwsAttr)
