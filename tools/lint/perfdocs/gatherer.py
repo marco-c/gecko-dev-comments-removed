@@ -44,10 +44,10 @@ class Gatherer(object):
 
         :return dict: The perfdocs tree containing all
             framework perfdoc entries. See `fetch_perfdocs_tree`
-            for information on the data strcture.
+            for information on the data structure.
         '''
         if self._perfdocs_tree:
-            return self.perfdocs_tree
+            return self._perfdocs_tree
         else:
             self.fetch_perfdocs_tree()
             return self._perfdocs_tree
@@ -118,7 +118,7 @@ class Gatherer(object):
             framework["yml_path"],
             self.workspace_dir
         )
-        framework["test_list"] = framework_gatherer.get_suite_list()
+        framework["test_list"] = framework_gatherer.get_test_list()
 
         self._test_list.append(framework)
         return framework
