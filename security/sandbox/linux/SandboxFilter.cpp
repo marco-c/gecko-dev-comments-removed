@@ -478,6 +478,9 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         
       case __NR_clock_nanosleep:
       case __NR_clock_getres:
+#ifdef __NR_clock_gettime64
+      case __NR_clock_gettime64:
+#endif
       case __NR_clock_gettime: {
         
         
