@@ -19,7 +19,6 @@ class GeckoChildProcessHost;
 
 
 
-
 enum class ProcType {
   
   Web,
@@ -43,7 +42,6 @@ enum class ProcType {
 #ifdef MOZ_ENABLE_FORKSERVER
   ForkServer,
 #endif
-  Preallocated,
   
   Unknown,
   Max = Unknown,
