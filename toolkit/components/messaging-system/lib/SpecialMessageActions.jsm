@@ -19,11 +19,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 const SpecialMessageActions = {
   
-  blockMessageById() {
-    throw new Error("ASRouter not intialized yet");
-  },
-
-  
 
 
 
@@ -147,8 +142,8 @@ const SpecialMessageActions = {
         );
         break;
       case "PIN_CURRENT_TAB":
-        let tab = window.gBrowser.selectedTab;
-        window.gBrowser.pinTab(tab);
+        let tab = browser.selectedTab;
+        browser.pinTab(tab);
         window.ConfirmationHint.show(tab, "pinTab", {
           showDescription: true,
         });
@@ -175,17 +170,6 @@ const SpecialMessageActions = {
         break;
       case "OPEN_AWESOME_BAR":
         window.gURLBar.search("");
-        break;
-      case "DISABLE_STP_DOORHANGERS":
-        await this.blockMessageById([
-          "SOCIAL_TRACKING_PROTECTION",
-          "FINGERPRINTERS_PROTECTION",
-          "CRYPTOMINERS_PROTECTION",
-        ]);
-        break;
-      case "CANCEL":
-        
-        
         break;
       default:
         throw new Error(
