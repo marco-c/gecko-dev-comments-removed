@@ -365,6 +365,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     AllowPageBreak,
     IsGeneratedContent,
     IsWithinSVGText,
+    
     AllowTextPathChild,
     
     IsAnonymousContentCreatorContent,
