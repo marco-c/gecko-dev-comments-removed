@@ -2,8 +2,8 @@
 
 
 
-#ifndef DOM_MEDIA_MEDIASESSION_MEDIASESSIONCONTROLLER_H_
-#define DOM_MEDIA_MEDIASESSION_MEDIASESSIONCONTROLLER_H_
+#ifndef DOM_MEDIA_MEDIACONTROL_MEDIASTATUSMANAGER_H_
+#define DOM_MEDIA_MEDIACONTROL_MEDIASTATUSMANAGER_H_
 
 #include "mozilla/dom/MediaMetadata.h"
 #include "mozilla/dom/MediaSessionBinding.h"
@@ -91,9 +91,13 @@ class IMediaInfoUpdater {
 
 
 
-class MediaSessionController : public IMediaInfoUpdater {
+
+
+
+
+class MediaStatusManager : public IMediaInfoUpdater {
  public:
-  explicit MediaSessionController(uint64_t aBrowsingContextId);
+  explicit MediaStatusManager(uint64_t aBrowsingContextId);
 
   
   void NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
@@ -124,7 +128,7 @@ class MediaSessionController : public IMediaInfoUpdater {
   MediaSessionPlaybackState GetState() const;
 
  protected:
-  ~MediaSessionController() = default;
+  ~MediaStatusManager() = default;
   virtual void HandleActualPlaybackStateChanged() = 0;
 
   uint64_t mTopLevelBrowsingContextId;
@@ -170,7 +174,7 @@ class MediaSessionController : public IMediaInfoUpdater {
 
   nsDataHashtable<nsUint64HashKey, MediaSessionInfo> mMediaSessionInfoMap;
   MediaEventProducer<MediaMetadataBase> mMetadataChangedEvent;
-  MediaPlaybackStatus mMediaStatusDelegate;
+  MediaPlaybackStatus mPlaybackStatusDelegate;
 };
 
 }  
