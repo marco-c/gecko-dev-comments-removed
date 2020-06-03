@@ -58,6 +58,7 @@ void HTMLDialogElement::Show() {
   }
   ErrorResult ignored;
   SetOpen(true, ignored);
+  FocusDialog();
   ignored.SuppressException();
 }
 
@@ -92,7 +93,78 @@ void HTMLDialogElement::ShowModal(ErrorResult& aError) {
   }
 
   SetOpen(true, aError);
+  FocusDialog();
+
   aError.SuppressException();
+}
+
+void HTMLDialogElement::FocusDialog() {
+  
+  
+  
+  if (RefPtr<Document> doc = GetComposedDoc()) {
+    doc->FlushPendingNotifications(FlushType::Frames);
+  }
+
+  Element* control = nullptr;
+  nsIContent* child = GetFirstChild();
+  while (child) {
+    if (child->IsElement()) {
+      nsIFrame* frame = child->GetPrimaryFrame();
+      if (frame && frame->IsFocusable()) {
+        if (child->AsElement()->HasAttr(kNameSpaceID_None,
+                                        nsGkAtoms::autofocus)) {
+          
+          
+          
+          control = child->AsElement();
+          break;
+        }
+        
+        
+        if (!control) {
+          control = child->AsElement();
+        }
+      }
+    }
+    child = child->GetNextNode(this);
+  }
+  
+  if (!control) {
+    control = this;
+  }
+
+  
+  ErrorResult rv;
+  nsIFrame* frame = control->GetPrimaryFrame();
+  if (frame && frame->IsFocusable()) {
+    control->Focus(FocusOptions(), CallerType::NonSystem, rv);
+    if (rv.Failed()) {
+      return;
+    }
+  } else {
+    nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+    if (fm) {
+      
+      fm->ClearFocus(OwnerDoc()->GetWindow());
+    }
+  }
+
+  
+  
+  
+  
+  BrowsingContext* bc = control->OwnerDoc()->GetBrowsingContext();
+  if (bc && bc->SameOriginWithTop()) {
+    nsCOMPtr<nsIDocShell> docShell = bc->Top()->GetDocShell();
+    if (docShell) {
+      if (Document* topDocument = docShell->GetDocument()) {
+        
+        
+        topDocument->SetAutoFocusFired();
+      }
+    }
+  }
 }
 
 JSObject* HTMLDialogElement::WrapNode(JSContext* aCx,
