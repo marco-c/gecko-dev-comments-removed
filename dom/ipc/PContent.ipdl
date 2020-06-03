@@ -988,6 +988,8 @@ parent:
 
     async OpenNotificationSettings(Principal principal);
 
+    async AddMixedContentSecurityState(MaybeDiscardedWindowContext aContext, uint32_t aStateFlags);
+
     
     
     

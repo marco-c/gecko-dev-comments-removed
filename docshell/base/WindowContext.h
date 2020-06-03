@@ -92,6 +92,12 @@ class WindowContext : public nsISupports, public nsWrapperCache {
 
   static void CreateFromIPC(IPCInitializer&& aInit);
 
+  
+  
+  
+  
+  void AddMixedContentSecurityState(uint32_t aStateFlags);
+
  protected:
   WindowContext(BrowsingContext* aBrowsingContext, uint64_t aInnerWindowId,
                 uint64_t aOuterWindowId, bool aInProcess, FieldTuple&& aFields);

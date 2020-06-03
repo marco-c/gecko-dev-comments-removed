@@ -1147,9 +1147,6 @@ class nsDocShell final : public nsDocLoader,
   mozilla::UniquePtr<nsDocShellEditorData> mEditorData;
 
   
-  nsCOMPtr<nsISecureBrowserUI> mSecurityUI;
-
-  
   
   
   

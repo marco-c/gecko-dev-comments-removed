@@ -160,17 +160,6 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
 
   NS_ENSURE_SUCCESS(docShellAsWin->Create(), nullptr);
 
-  
-  
-  
-  
-  nsCOMPtr<nsISecureBrowserUI> securityUI =
-      do_CreateInstance(NS_SECURE_BROWSER_UI_CONTRACTID);
-  if (NS_WARN_IF(!securityUI)) {
-    return nullptr;
-  }
-  securityUI->Init(docShell);
-
   docShellTreeOwner->AddToWatcher();  
   docShellTreeOwner->AddChromeListeners();
 

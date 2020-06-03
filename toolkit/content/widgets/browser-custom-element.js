@@ -361,8 +361,6 @@
 
       this._unselectedTabHoverMessageListenerCount = 0;
 
-      this._securityUI = null;
-
       this.urlbarChangeTracker = {
         _startedLoadSinceLastUserTyping: false,
 
@@ -894,36 +892,7 @@
     }
 
     get securityUI() {
-      if (this.isRemoteBrowser) {
-        if (!this._securityUI) {
-          
-          
-          if (!this.messageManager) {
-            return null;
-          }
-
-          let jsm = "resource://gre/modules/RemoteSecurityUI.jsm";
-          let RemoteSecurityUI = ChromeUtils.import(jsm, {}).RemoteSecurityUI;
-          this._securityUI = new RemoteSecurityUI();
-        }
-
-        
-        var ptr = Cc[
-          "@mozilla.org/supports-interface-pointer;1"
-        ].createInstance(Ci.nsISupportsInterfacePointer);
-        ptr.data = this._securityUI;
-        return ptr.data.QueryInterface(Ci.nsISecureBrowserUI);
-      }
-
-      if (!this.docShell.securityUI) {
-        const SECUREBROWSERUI_CONTRACTID = "@mozilla.org/secure_browser_ui;1";
-        var securityUI = Cc[SECUREBROWSERUI_CONTRACTID].createInstance(
-          Ci.nsISecureBrowserUI
-        );
-        securityUI.init(this.docShell);
-      }
-
-      return this.docShell.securityUI;
+      return this.browsingContext.secureBrowserUI;
     }
 
     set userTypedValue(val) {
@@ -1346,16 +1315,6 @@
           default:
             break;
         }
-      }
-    }
-
-    updateSecurityUIForSecurityChange(aSecurityInfo, aState, aIsSecureContext) {
-      if (this.isRemoteBrowser && this.messageManager) {
-        
-        
-        
-        void this.securityUI;
-        this._securityUI._update(aSecurityInfo, aState, aIsSecureContext);
       }
     }
 
