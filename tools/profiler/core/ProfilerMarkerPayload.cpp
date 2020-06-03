@@ -250,7 +250,7 @@ void FileIOMarkerPayload::StreamPayload(SpliceableJSONWriter& aWriter,
     aWriter.StringProperty("filename", mFilename.get());
   }
   if (mIOThreadId.isSome()) {
-    
+    aWriter.IntProperty("threadId", *mIOThreadId);
   }
 }
 
