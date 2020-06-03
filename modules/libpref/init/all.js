@@ -1585,11 +1585,6 @@ pref("network.sts.max_time_for_pr_close_during_shutdown", 5000);
 pref("network.sts.pollable_event_timeout", 6);
 
 
-
-
-pref("network.http.network_access_on_socket_process.enabled", false);
-
-
 pref("network.security.esni.enabled", false);
 
 
@@ -2290,6 +2285,8 @@ pref("security.notification_enable_delay", 500);
   
   pref("security.disallow_non_local_systemprincipal_in_tests", false);
 #endif
+
+pref("security.cancel_non_local_systemprincipal", true);
 
 
 pref("security.sri.enable", true);
