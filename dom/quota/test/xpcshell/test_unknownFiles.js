@@ -8,6 +8,7 @@
 
 
 
+
 async function testSteps() {
   const principal = getPrincipal("http://example.com");
 
@@ -65,6 +66,15 @@ async function testSteps() {
       await requestFinished(request);
     }
   }
+
+  info("Testing initTemporaryStorage functionality");
+
+  await testFunctionality(async function() {
+    info("Initializing temporary storage");
+
+    request = initTemporaryStorage();
+    await requestFinished(request);
+  });
 
   info("Testing initStorageAndOrigin functionality");
 
