@@ -7,10 +7,8 @@
 
 
 
-const { ExtensionBlocklistMLBF } = ChromeUtils.import(
-  "resource://gre/modules/Blocklist.jsm",
-  null
-);
+Services.prefs.setBoolPref("extensions.blocklist.useMLBF", true);
+const ExtensionBlocklistMLBF = getExtensionBlocklistMLBF();
 
 
 ExtensionBlocklistMLBF.ensureInitialized();
