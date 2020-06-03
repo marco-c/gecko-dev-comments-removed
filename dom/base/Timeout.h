@@ -15,7 +15,6 @@
 #include "nsGlobalWindowInner.h"
 #include "nsCycleCollectionParticipant.h"
 #include "GeckoProfiler.h"
-#include "nsDataHashtable.h"
 
 class nsIEventTarget;
 class nsIPrincipal;
@@ -29,7 +28,7 @@ namespace dom {
 
 
 
-class Timeout final : protected LinkedListElement<RefPtr<Timeout>> {
+class Timeout final : public LinkedListElement<RefPtr<Timeout>> {
  public:
   Timeout();
 
@@ -39,45 +38,6 @@ class Timeout final : protected LinkedListElement<RefPtr<Timeout>> {
   enum class Reason : uint8_t {
     eTimeoutOrInterval,
     eIdleCallbackTimeout,
-  };
-
-  struct TimeoutIdAndReason {
-    uint32_t mId;
-    Reason mReason;
-  };
-
-  class TimeoutHashKey : public PLDHashEntryHdr {
-   public:
-    typedef const TimeoutIdAndReason& KeyType;
-    typedef const TimeoutIdAndReason* KeyTypePointer;
-
-    explicit TimeoutHashKey(KeyTypePointer aKey) : mValue(*aKey) {}
-    TimeoutHashKey(TimeoutHashKey&& aOther)
-        : PLDHashEntryHdr(std::move(aOther)),
-          mValue(std::move(aOther.mValue)) {}
-    ~TimeoutHashKey() = default;
-
-    KeyType GetKey() const { return mValue; }
-    bool KeyEquals(KeyTypePointer aKey) const {
-      return aKey->mId == mValue.mId && aKey->mReason == mValue.mReason;
-    }
-
-    static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
-    static PLDHashNumber HashKey(KeyTypePointer aKey) {
-      return aKey->mId | (static_cast<uint8_t>(aKey->mReason) << 31);
-    }
-    enum { ALLOW_MEMMOVE = true };
-
-   private:
-    const TimeoutIdAndReason mValue;
-  };
-
-  class TimeoutSet : public nsDataHashtable<TimeoutHashKey, Timeout*> {
-   public:
-    NS_INLINE_DECL_REFCOUNTING(TimeoutSet);
-
-   private:
-    ~TimeoutSet() = default;
   };
 
   void SetWhenOrTimeRemaining(const TimeStamp& aBaseTime,
@@ -90,35 +50,6 @@ class Timeout final : protected LinkedListElement<RefPtr<Timeout>> {
 
   
   const TimeDuration& TimeRemaining() const;
-
-  void SetTimeoutContainer(TimeoutSet* aTimeouts) {
-    MOZ_ASSERT(mTimeoutId != 0);
-    TimeoutIdAndReason key = {mTimeoutId, mReason};
-    if (mTimeouts) {
-      mTimeouts->Remove(key);
-    }
-    mTimeouts = aTimeouts;
-    if (mTimeouts) {
-      mTimeouts->Put(key, this);
-    }
-  }
-
-  
-  
-  Timeout* getNext() { return LinkedListElement<RefPtr<Timeout>>::getNext(); }
-
-  void setNext(Timeout* aNext) {
-    return LinkedListElement<RefPtr<Timeout>>::setNext(aNext);
-  }
-
-  Timeout* getPrevious() {
-    return LinkedListElement<RefPtr<Timeout>>::getPrevious();
-  }
-
-  void remove() {
-    SetTimeoutContainer(nullptr);
-    LinkedListElement<RefPtr<Timeout>>::remove();
-  }
 
 #ifdef MOZ_GECKO_PROFILER
   UniqueProfilerBacktrace TakeProfilerBacktrace() { return std::move(mCause); }
@@ -139,7 +70,7 @@ class Timeout final : protected LinkedListElement<RefPtr<Timeout>> {
   
   TimeStamp mSubmitTime;
 
-  ~Timeout() { SetTimeoutContainer(nullptr); }
+  ~Timeout() = default;
 
  public:
   
@@ -152,8 +83,6 @@ class Timeout final : protected LinkedListElement<RefPtr<Timeout>> {
 
   
   RefPtr<TimeoutHandler> mScriptHandler;
-
-  RefPtr<TimeoutSet> mTimeouts;
 
   
   TimeDuration mInterval;
@@ -193,10 +122,6 @@ class Timeout final : protected LinkedListElement<RefPtr<Timeout>> {
 
   
   bool mIsInterval;
-
- protected:
-  friend class LinkedList<RefPtr<Timeout>>;
-  friend class LinkedListElement<RefPtr<Timeout>>;
 };
 
 }  

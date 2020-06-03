@@ -521,10 +521,9 @@ nsresult TimeoutManager::SetTimeout(TimeoutHandler* aHandler, int32_t interval,
 
   Timeouts::SortBy sort(mWindow.IsFrozen() ? Timeouts::SortBy::TimeRemaining
                                            : Timeouts::SortBy::TimeWhen);
-
-  timeout->mTimeoutId = GetTimeoutId(aReason);
   mTimeouts.Insert(timeout, sort);
 
+  timeout->mTimeoutId = GetTimeoutId(aReason);
   *aReturn = timeout->mTimeoutId;
 
   MOZ_LOG(
@@ -558,31 +557,35 @@ bool TimeoutManager::ClearTimeoutInternal(int32_t aTimerId,
   uint32_t timerId = (uint32_t)aTimerId;
   Timeouts& timeouts = aIsIdle ? mIdleTimeouts : mTimeouts;
   RefPtr<TimeoutExecutor>& executor = aIsIdle ? mIdleExecutor : mExecutor;
+  bool firstTimeout = true;
   bool deferredDeletion = false;
+  bool cleared = false;
 
-  Timeout* timeout = timeouts.GetTimeout(aTimerId, aReason);
-  if (!timeout) {
+  timeouts.ForEachAbortable([&](Timeout* aTimeout) {
+    MOZ_LOG(gTimeoutLog, LogLevel::Debug,
+            ("Clear%s(TimeoutManager=%p, timeout=%p, aTimerId=%u, ID=%u)\n",
+             aTimeout->mIsInterval ? "Interval" : "Timeout", this, aTimeout,
+             timerId, aTimeout->mTimeoutId));
+
+    if (aTimeout->mTimeoutId == timerId && aTimeout->mReason == aReason) {
+      if (aTimeout->mRunning) {
+        
+
+
+        aTimeout->mIsInterval = false;
+        deferredDeletion = true;
+      } else {
+        
+        aTimeout->remove();
+      }
+      cleared = true;
+      return true;  
+    }
+
+    firstTimeout = false;
+
     return false;
-  }
-  bool firstTimeout = timeout == timeouts.GetFirst();
-
-  MOZ_LOG(gTimeoutLog, LogLevel::Debug,
-          ("%s(TimeoutManager=%p, timeout=%p, ID=%u)\n",
-           timeout->mReason == Timeout::Reason::eIdleCallbackTimeout
-               ? "CancelIdleCallback"
-               : timeout->mIsInterval ? "ClearInterval" : "ClearTimeout",
-           this, timeout, timeout->mTimeoutId));
-
-  if (timeout->mRunning) {
-    
-
-
-    timeout->mIsInterval = false;
-    deferredDeletion = true;
-  } else {
-    
-    timeout->remove();
-  }
+  });
 
   
   
@@ -593,7 +596,7 @@ bool TimeoutManager::ClearTimeoutInternal(int32_t aTimerId,
   
   
   if (!firstTimeout || deferredDeletion || mWindow.IsSuspended()) {
-    return true;
+    return cleared;
   }
 
   
@@ -608,7 +611,7 @@ bool TimeoutManager::ClearTimeoutInternal(int32_t aTimerId,
       MOZ_ALWAYS_SUCCEEDS(MaybeSchedule(nextTimeout->When()));
     }
   }
-  return true;
+  return cleared;
 }
 
 void TimeoutManager::RunTimeout(const TimeStamp& aNow,
@@ -1085,7 +1088,6 @@ void TimeoutManager::Timeouts::Insert(Timeout* aTimeout, SortBy aSortBy) {
 
   
   if (prevSibling) {
-    aTimeout->SetTimeoutContainer(mTimeouts);
     prevSibling->setNext(aTimeout);
   } else {
     InsertFront(aTimeout);
