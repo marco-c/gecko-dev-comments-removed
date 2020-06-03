@@ -1,7 +1,6 @@
 
 
 
-ChromeUtils.import("resource://testing-common/TelemetryTestUtils.jsm", this);
 ChromeUtils.import("resource://testing-common/LoginTestUtils.jsm", this);
 
 EXPECTED_BREACH = {

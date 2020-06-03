@@ -46,9 +46,7 @@ add_task(async function test_open_feedback() {
     await BrowserTestUtils.synthesizeMouseAtCenter("menu-button", {}, browser);
     await SpecialPowers.spawn(browser, [], async () => {
       return ContentTaskUtils.waitForCondition(() => {
-        let menuButton = Cu.waiveXrays(
-          content.document.querySelector("menu-button")
-        );
+        let menuButton = content.document.querySelector("menu-button");
         return !menuButton.shadowRoot.querySelector(".menu").hidden;
       }, "waiting for menu to open");
     });
@@ -62,9 +60,7 @@ add_task(async function test_open_feedback() {
       browser,
       [selector],
       async menuItemSelector => {
-        let menuButton = Cu.waiveXrays(
-          content.document.querySelector("menu-button")
-        );
+        let menuButton = content.document.querySelector("menu-button");
         let prefsItem = menuButton.shadowRoot.querySelector(menuItemSelector);
         return prefsItem.getBoundingClientRect();
       }

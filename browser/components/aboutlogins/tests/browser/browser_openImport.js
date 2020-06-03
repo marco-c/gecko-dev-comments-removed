@@ -1,7 +1,20 @@
 
 
 
+let { TelemetryTestUtils } = ChromeUtils.import(
+  "resource://testing-common/TelemetryTestUtils.jsm"
+);
+
 add_task(async function setup() {
+  await TestUtils.waitForCondition(() => {
+    Services.telemetry.clearEvents();
+    let events = Services.telemetry.snapshotEvents(
+      Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
+      true
+    ).content;
+    return !events || !events.length;
+  }, "Waiting for content telemetry events to get cleared");
+
   let aboutLoginsTab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: "about:logins",
@@ -25,23 +38,23 @@ add_task(async function test_open_import() {
     }, "waiting for menu to open");
   });
 
-  
-  
-  
-  
-  
-  let { x, y } = await SpecialPowers.spawn(browser, [], async () => {
-    let menuButton = Cu.waiveXrays(
-      content.document.querySelector("menu-button")
-    );
-    let prefsItem = menuButton.shadowRoot.querySelector(".menuitem-import");
-    return prefsItem.getBoundingClientRect();
-  });
-  await BrowserTestUtils.synthesizeMouseAtPoint(x + 5, y + 5, {}, browser);
+  function getImportItem() {
+    let menuButton = window.document.querySelector("menu-button");
+    return menuButton.shadowRoot.querySelector(".menuitem-import");
+  }
+  await BrowserTestUtils.synthesizeMouseAtCenter(getImportItem, {}, browser);
 
   info("waiting for Import to get opened");
   let importWindow = await promiseImportWindow;
   ok(true, "Import opened");
+
+  
+  await LoginTestUtils.telemetry.waitForEventCount(2);
+  TelemetryTestUtils.assertEvents(
+    [["pwmgr", "mgmt_menu_item_used", "import_from_browser"]],
+    { category: "pwmgr", method: "mgmt_menu_item_used" },
+    { process: "content" }
+  );
 
   importWindow.close();
 });
