@@ -30,6 +30,12 @@ NS_IMETHODIMP PreloaderBase::RedirectSink::AsyncOnChannelRedirect(
     nsIAsyncVerifyRedirectCallback* aCallback) {
   mRedirectChannel = aNewChannel;
 
+  
+  nsCOMPtr<nsIURI> uri;
+  aNewChannel->GetOriginalURI(getter_AddRefs(uri));
+  mPreloader->mRedirectRecords.AppendElement(
+      RedirectRecord(aFlags, uri.forget()));
+
   if (mCallbacks) {
     nsCOMPtr<nsIChannelEventSink> sink(do_GetInterface(mCallbacks));
     if (sink) {
@@ -113,8 +119,8 @@ void PreloaderBase::NotifyOpen(PreloadHashKey* aKey, nsIChannel* aChannel,
   mChannel->SetNotificationCallbacks(sink);
 }
 
-void PreloaderBase::NotifyUsage() {
-  if (!mIsUsed && mChannel) {
+void PreloaderBase::NotifyUsage(LoadBackground aLoadBackground) {
+  if (!mIsUsed && mChannel && aLoadBackground == LoadBackground::Drop) {
     nsLoadFlags loadFlags;
     mChannel->GetLoadFlags(&loadFlags);
 
@@ -144,12 +150,15 @@ void PreloaderBase::NotifyUsage() {
   
 }
 
-void PreloaderBase::NotifyRestart(dom::Document* aDocument,
-                                  PreloaderBase* aNewPreloader) {
+void PreloaderBase::RemoveSelf(dom::Document* aDocument) {
   if (aDocument) {
     aDocument->Preloads().DeregisterPreload(&mKey);
   }
+}
 
+void PreloaderBase::NotifyRestart(dom::Document* aDocument,
+                                  PreloaderBase* aNewPreloader) {
+  RemoveSelf(aDocument);
   mKey = PreloadHashKey();
 
   if (aNewPreloader) {
@@ -229,7 +238,7 @@ void PreloaderBase::RemoveLinkPreloadNode(nsINode* aNode) {
     
     
     RefPtr<PreloaderBase> self(this);
-    aNode->OwnerDoc()->Preloads().DeregisterPreload(&mKey);
+    RemoveSelf(aNode->OwnerDoc());
 
     if (mChannel) {
       mChannel->Cancel(NS_BINDING_ABORTED);
@@ -246,6 +255,21 @@ nsresult PreloaderBase::AsyncConsume(nsIStreamListener* aListener) {
   
   
   return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+
+
+nsCString PreloaderBase::RedirectRecord::Spec() const {
+  nsCOMPtr<nsIURI> noFragment;
+  NS_GetURIWithoutRef(mURI, getter_AddRefs(noFragment));
+  MOZ_ASSERT(noFragment);
+  return noFragment->GetSpecOrDefault();
+}
+
+nsCString PreloaderBase::RedirectRecord::Fragment() const {
+  nsCString fragment;
+  mURI->GetRef(fragment);
+  return fragment;
 }
 
 }  

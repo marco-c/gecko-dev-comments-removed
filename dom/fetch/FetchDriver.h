@@ -162,6 +162,16 @@ class FetchDriver final : public nsIStreamListener,
   RefPtr<AlternativeDataStreamListener> mAltDataListener;
   bool mOnStopRequestCalled;
 
+  
+  
+  bool mFromPreload = false;
+  
+  
+  
+  
+  
+  bool mAborted = false;
+
 #ifdef DEBUG
   bool mResponseAvailableCalled;
   bool mFetchCalled;
@@ -173,6 +183,10 @@ class FetchDriver final : public nsIStreamListener,
   FetchDriver(const FetchDriver&) = delete;
   FetchDriver& operator=(const FetchDriver&) = delete;
   ~FetchDriver();
+
+  already_AddRefed<PreloaderBase> FindPreload(nsIURI* aURI);
+
+  void UpdateReferrerInfoFromNewChannel(nsIChannel* aChannel);
 
   nsresult HttpFetch(
       const nsACString& aPreferredAlternativeDataType = EmptyCString());

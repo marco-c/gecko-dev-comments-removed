@@ -79,9 +79,16 @@ class PreloaderBase : public SupportsWeakPtr<PreloaderBase>,
   
   
   
-  void NotifyUsage();
+  
+  
+  
+  enum class LoadBackground { Keep, Drop };
+  void NotifyUsage(LoadBackground aLoadBackground = LoadBackground::Drop);
   
   bool IsUsed() const { return mIsUsed; }
+
+  
+  void RemoveSelf(dom::Document* aDocument);
 
   
   
@@ -108,6 +115,23 @@ class PreloaderBase : public SupportsWeakPtr<PreloaderBase>,
   
   void AddLinkPreloadNode(nsINode* aNode);
   void RemoveLinkPreloadNode(nsINode* aNode);
+
+  
+  class RedirectRecord {
+   public:
+    RedirectRecord(uint32_t aFlags, already_AddRefed<nsIURI> aURI)
+        : mFlags(aFlags), mURI(aURI) {}
+
+    uint32_t Flags() const { return mFlags; }
+    nsCString Spec() const;
+    nsCString Fragment() const;
+
+   private:
+    uint32_t mFlags;
+    nsCOMPtr<nsIURI> mURI;
+  };
+
+  const nsTArray<RedirectRecord>& Redirects() { return mRedirectRecords; }
 
  protected:
   virtual ~PreloaderBase();
@@ -145,6 +169,9 @@ class PreloaderBase : public SupportsWeakPtr<PreloaderBase>,
   
   
   nsTArray<nsWeakPtr> mNodes;
+
+  
+  nsTArray<RedirectRecord> mRedirectRecords;
 
   
   nsCOMPtr<nsIChannel> mChannel;

@@ -356,6 +356,84 @@ FetchDriver::~FetchDriver() {
   MOZ_ASSERT(mResponseAvailableCalled);
 }
 
+already_AddRefed<PreloaderBase> FetchDriver::FindPreload(nsIURI* aURI) {
+  
+  
+  
+
+  if (!mDocument) {
+    
+    return nullptr;
+  }
+  CORSMode cors;
+  switch (mRequest->Mode()) {
+    case RequestMode::No_cors:
+      cors = CORSMode::CORS_NONE;
+      break;
+    case RequestMode::Cors:
+      cors = mRequest->GetCredentialsMode() == RequestCredentials::Include
+                 ? CORSMode::CORS_USE_CREDENTIALS
+                 : CORSMode::CORS_ANONYMOUS;
+      break;
+    default:
+      
+      
+      return nullptr;
+  }
+  if (!mRequest->Headers()->HasOnlySimpleHeaders()) {
+    
+    return nullptr;
+  }
+  if (!mRequest->GetIntegrity().IsEmpty()) {
+    
+    return nullptr;
+  }
+  if (mRequest->GetCacheMode() != RequestCache::Default) {
+    
+    return nullptr;
+  }
+  if (mRequest->SkipServiceWorker()) {
+    
+    return nullptr;
+  }
+  if (mRequest->GetRedirectMode() != RequestRedirect::Follow) {
+    
+    return nullptr;
+  }
+  nsAutoCString method;
+  mRequest->GetMethod(method);
+  if (!method.EqualsLiteral("GET")) {
+    
+    
+    return nullptr;
+  }
+
+  
+
+  
+  
+  auto preloadKey =
+      PreloadHashKey::CreateAsFetch(aURI, cors, mRequest->ReferrerPolicy_());
+  return mDocument->Preloads().LookupPreload(&preloadKey);
+}
+
+void FetchDriver::UpdateReferrerInfoFromNewChannel(nsIChannel* aChannel) {
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
+  if (!httpChannel) {
+    return;
+  }
+
+  nsCOMPtr<nsIReferrerInfo> referrerInfo = httpChannel->GetReferrerInfo();
+  if (!referrerInfo) {
+    return;
+  }
+
+  nsAutoString computedReferrerSpec;
+  mRequest->SetReferrerPolicy(referrerInfo->ReferrerPolicy());
+  Unused << referrerInfo->GetComputedReferrerSpec(computedReferrerSpec);
+  mRequest->SetReferrer(computedReferrerSpec);
+}
+
 nsresult FetchDriver::Fetch(AbortSignalImpl* aSignalImpl,
                             FetchDriverObserver* aObserver) {
   AssertIsOnMainThread();
@@ -436,6 +514,38 @@ nsresult FetchDriver::HttpFetch(
     if (!method.EqualsLiteral("GET")) {
       return NS_ERROR_DOM_NETWORK_ERR;
     }
+  }
+
+  RefPtr<PreloaderBase> fetchPreload = FindPreload(uri);
+  if (fetchPreload) {
+    fetchPreload->RemoveSelf(mDocument);
+    fetchPreload->NotifyUsage(PreloaderBase::LoadBackground::Keep);
+
+    rv = fetchPreload->AsyncConsume(this);
+    if (NS_SUCCEEDED(rv)) {
+      mFromPreload = true;
+
+      mChannel = fetchPreload->Channel();
+      if (mChannel) {
+        
+        mChannel->SetNotificationCallbacks(this);
+      }
+
+      
+      for (const auto& redirect : fetchPreload->Redirects()) {
+        if (redirect.Flags() & nsIChannelEventSink::REDIRECT_INTERNAL) {
+          mRequest->SetURLForInternalRedirect(redirect.Flags(), redirect.Spec(),
+                                              redirect.Fragment());
+        } else {
+          mRequest->AddURL(redirect.Spec(), redirect.Fragment());
+        }
+      }
+
+      return NS_OK;
+    }
+
+    
+    fetchPreload = nullptr;
   }
 
   
@@ -788,6 +898,16 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) {
   
   
   
+
+  if (mFromPreload && !mChannel) {
+    if (mAborted) {
+      aRequest->Cancel(NS_BINDING_ABORTED);
+      return NS_BINDING_ABORTED;
+    }
+
+    mChannel = do_QueryInterface(aRequest);
+    UpdateReferrerInfoFromNewChannel(mChannel);
+  }
 
   if (!mChannel) {
     MOZ_ASSERT(!mObserver);
@@ -1357,19 +1477,7 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
 
   
   
-  if (newHttpChannel) {
-    nsAutoString computedReferrerSpec;
-    nsCOMPtr<nsIReferrerInfo> referrerInfo = newHttpChannel->GetReferrerInfo();
-    if (referrerInfo) {
-      mRequest->SetReferrerPolicy(referrerInfo->ReferrerPolicy());
-      Unused << referrerInfo->GetComputedReferrerSpec(computedReferrerSpec);
-    }
-
-    
-    
-    
-    mRequest->SetReferrer(computedReferrerSpec);
-  }
+  UpdateReferrerInfoFromNewChannel(aNewChannel);
 
   aCallback->OnRedirectVerifyCallback(NS_OK);
   return NS_OK;
@@ -1487,6 +1595,8 @@ void FetchDriver::Abort() {
     mChannel->Cancel(NS_BINDING_ABORTED);
     mChannel = nullptr;
   }
+
+  mAborted = true;
 }
 
 }  
