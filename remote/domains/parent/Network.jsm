@@ -143,6 +143,23 @@ class Network extends Domain {
 
 
 
+  emulateNetworkConditions(options = {}) {
+    const { offline } = options;
+
+    if (typeof offline != "boolean") {
+      throw new TypeError("offline: boolean value expected");
+    }
+
+    Services.io.offline = offline;
+  }
+
+  
+
+
+
+
+
+
 
 
 
