@@ -6379,8 +6379,8 @@ void nsCSSFrameConstructor::CheckBitsForLazyFrameConstruction(
 
 
 
-bool nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
-                                                 nsIContent* aChild) {
+void nsCSSFrameConstructor::ConstructLazily(Operation aOperation,
+                                            nsIContent* aChild) {
   MOZ_ASSERT(aChild->GetParent());
 
   
@@ -6388,7 +6388,7 @@ bool nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
   Element* parent = aChild->GetFlattenedTreeParentElement();
   if (!parent) {
     
-    return true;
+    return;
   }
 
   if (Servo_Element_IsDisplayNone(parent)) {
@@ -6397,7 +6397,7 @@ bool nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
     
     
     
-    return true;
+    return;
   }
 
   
@@ -6423,8 +6423,6 @@ bool nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
 
   CheckBitsForLazyFrameConstruction(parent);
   parent->NoteDescendantsNeedFramesForServo();
-
-  return true;
 }
 
 void nsCSSFrameConstructor::IssueSingleInsertNofications(
@@ -6627,14 +6625,9 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
   }
 
   if (aInsertionKind == InsertionKind::Async) {
-    if (MaybeConstructLazily(CONTENTAPPEND, aFirstNewContent)) {
-      LazilyStyleNewChildRange(aFirstNewContent, nullptr);
-      return;
-    }
-    
-    
-    
-    StyleNewChildRange(aFirstNewContent, nullptr);
+    ConstructLazily(CONTENTAPPEND, aFirstNewContent);
+    LazilyStyleNewChildRange(aFirstNewContent, nullptr);
+    return;
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
@@ -6985,14 +6978,9 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
   }
 
   if (aInsertionKind == InsertionKind::Async) {
-    if (MaybeConstructLazily(CONTENTINSERT, aStartChild)) {
-      LazilyStyleNewChildRange(aStartChild, aEndChild);
-      return;
-    }
-    
-    
-    
-    StyleNewChildRange(aStartChild, aEndChild);
+    ConstructLazily(CONTENTINSERT, aStartChild);
+    LazilyStyleNewChildRange(aStartChild, aEndChild);
+    return;
   }
 
   bool isAppend, isRangeInsertSafe;

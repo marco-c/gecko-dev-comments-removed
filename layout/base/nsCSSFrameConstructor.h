@@ -109,7 +109,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   
   
-  bool MaybeConstructLazily(Operation aOperation, nsIContent* aChild);
+  void ConstructLazily(Operation aOperation, nsIContent* aChild);
 
 #ifdef DEBUG
   void CheckBitsForLazyFrameConstruction(nsIContent* aParent);
@@ -193,24 +193,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
  public:
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
