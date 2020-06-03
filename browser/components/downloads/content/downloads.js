@@ -1070,7 +1070,7 @@ DownloadsViewItem.prototype = {
   },
 
   downloadsCmd_open() {
-    this.download.launch().catch(Cu.reportError);
+    DownloadsCommon.openDownload(this.download).catch(Cu.reportError);
 
     
     
