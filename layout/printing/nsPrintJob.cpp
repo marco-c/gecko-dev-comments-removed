@@ -465,11 +465,12 @@ static nsresult EnsureSettingsHasPrinterNameSet(
   }
 
   
+  
   nsCOMPtr<nsIPrintSettingsService> printSettingsService =
       do_GetService(sPrintSettingsServiceContractID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = printSettingsService->GetDefaultPrinterName(printerName);
+  rv = printSettingsService->GetLastUsedPrinterName(printerName);
   if (NS_SUCCEEDED(rv) && !printerName.IsEmpty()) {
     rv = aPrintSettings->SetPrinterName(printerName);
   }

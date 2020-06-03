@@ -5215,7 +5215,7 @@ void nsGlobalWindowOuter::PrintOuter(ErrorResult& aError) {
       nsAutoString printerName;
       printSettings->GetPrinterName(printerName);
 
-      bool shouldGetDefaultPrinterName = printerName.IsEmpty();
+      bool shouldGetLastUsedPrinterName = printerName.IsEmpty();
 #  ifdef MOZ_X11
       
       
@@ -5224,11 +5224,11 @@ void nsGlobalWindowOuter::PrintOuter(ErrorResult& aError) {
       
       
       if (!XRE_IsParentProcess()) {
-        shouldGetDefaultPrinterName = false;
+        shouldGetLastUsedPrinterName = false;
       }
 #  endif
-      if (shouldGetDefaultPrinterName) {
-        printSettingsService->GetDefaultPrinterName(printerName);
+      if (shouldGetLastUsedPrinterName) {
+        printSettingsService->GetLastUsedPrinterName(printerName);
         printSettings->SetPrinterName(printerName);
       }
       printSettingsService->InitPrintSettingsFromPrinter(printerName,

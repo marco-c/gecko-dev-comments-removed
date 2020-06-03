@@ -133,7 +133,7 @@ nsresult PrintingParent::ShowPrintDialog(PBrowserParent* aParent,
   bool printToFile = false;
   MOZ_ALWAYS_SUCCEEDS(settings->GetPrintToFile(&printToFile));
   if (!printToFile && printerName.IsEmpty()) {
-    mPrintSettingsSvc->GetDefaultPrinterName(printerName);
+    mPrintSettingsSvc->GetLastUsedPrinterName(printerName);
     settings->SetPrinterName(printerName);
   }
   mPrintSettingsSvc->InitPrintSettingsFromPrinter(printerName, settings);
