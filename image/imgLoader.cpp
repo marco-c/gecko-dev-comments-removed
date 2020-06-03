@@ -1795,6 +1795,13 @@ bool imgLoader::ValidateRequestWithNewChannel(
   rv = newChannel->AsyncOpen(listener);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     req->CancelAndForgetObserver(rv);
+    
+    
+    
+    req->NotifyStart(newChannel);
+    
+    
+    req->NotifyStop(rv);
     return false;
   }
 
@@ -2201,14 +2208,20 @@ nsresult imgLoader::LoadImage(
               ("[this=%p] imgLoader::LoadImage -- preloaded [proxy=%p]"
                " [document=%p]\n",
                this, proxy.get(), aLoadingDocument));
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      proxy->RemoveSelf(aLoadingDocument);
       proxy->NotifyUsage();
-      
-      
-      
-      
-      
-      
-      
+
       imgRequest* request = proxy->GetOwner();
       nsresult rv =
           CreateNewProxyForRequest(request, aURI, aLoadGroup, aLoadingDocument,
