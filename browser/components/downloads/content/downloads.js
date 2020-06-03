@@ -981,24 +981,20 @@ XPCOMUtils.defineConstant(this, "DownloadsView", DownloadsView);
 
 
 
-function DownloadsViewItem(download, aElement) {
-  this.download = download;
-  this.element = aElement;
-  this.element._shell = this;
 
-  this.element.setAttribute("type", "download");
-  this.element.classList.add("download-state");
+class DownloadsViewItem extends DownloadsViewUI.DownloadElementShell {
+  constructor(download, aElement) {
+    super();
 
-  this.isPanel = true;
-}
+    this.download = download;
+    this.element = aElement;
+    this.element._shell = this;
 
-DownloadsViewItem.prototype = {
-  __proto__: DownloadsViewUI.DownloadElementShell.prototype,
+    this.element.setAttribute("type", "download");
+    this.element.classList.add("download-state");
 
-  
-
-
-  _element: null,
+    this.isPanel = true;
+  }
 
   onChanged() {
     let newState = DownloadsCommon.stateOfDownload(this.download);
@@ -1008,7 +1004,7 @@ DownloadsViewItem.prototype = {
     } else {
       this._updateStateInner();
     }
-  },
+  }
 
   isCommandEnabled(aCommand) {
     switch (aCommand) {
@@ -1044,33 +1040,33 @@ DownloadsViewItem.prototype = {
       this,
       aCommand
     );
-  },
+  }
 
   doCommand(aCommand) {
     if (this.isCommandEnabled(aCommand)) {
       this[aCommand]();
     }
-  },
+  }
 
   
 
   downloadsCmd_unblock() {
     DownloadsPanel.hidePanel();
     this.confirmUnblock(window, "unblock");
-  },
+  }
 
   downloadsCmd_chooseUnblock() {
     DownloadsPanel.hidePanel();
     this.confirmUnblock(window, "chooseUnblock");
-  },
+  }
 
   downloadsCmd_unblockAndOpen() {
     DownloadsPanel.hidePanel();
     this.unblockAndOpenDownload().catch(Cu.reportError);
-  },
+  }
 
   downloadsCmd_open() {
-    DownloadsCommon.openDownload(this.download).catch(Cu.reportError);
+    super.downloadsCmd_open();
 
     
     
@@ -1078,7 +1074,7 @@ DownloadsViewItem.prototype = {
     
     
     DownloadsPanel.hidePanel();
-  },
+  }
 
   downloadsCmd_show() {
     let file = new FileUtils.File(this.download.target.path);
@@ -1090,30 +1086,30 @@ DownloadsViewItem.prototype = {
     
     
     DownloadsPanel.hidePanel();
-  },
+  }
 
   downloadsCmd_showBlockedInfo() {
     DownloadsBlockedSubview.toggle(
       this.element,
       ...this.rawBlockedTitleAndDetails
     );
-  },
+  }
 
   downloadsCmd_openReferrer() {
     openURL(this.download.source.referrerInfo.originalReferrer);
-  },
+  }
 
   downloadsCmd_copyLocation() {
     DownloadsCommon.copyDownloadLink(this.download);
-  },
+  }
 
   downloadsCmd_doDefault() {
     let defaultCommand = this.currentDefaultCommandName;
     if (defaultCommand && this.isCommandEnabled(defaultCommand)) {
       this.doCommand(defaultCommand);
     }
-  },
-};
+  }
+}
 
 
 
