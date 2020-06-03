@@ -52,7 +52,7 @@ class IDBCursor : public nsISupports, public nsWrapperCache {
   using Type = IDBCursorType;
 
  protected:
-  InitializedOnce<const NotNull<indexedDB::BackgroundCursorChildBase*>>
+  InitializedOnceNotNull<indexedDB::BackgroundCursorChildBase* const>
       mBackgroundActor;
 
   
@@ -241,7 +241,7 @@ class IDBTypedCursor : public IDBCursor {
     
     
     return *static_cast<indexedDB::BackgroundCursorChild<CursorType>*>(
-        mBackgroundActor->get());
+        *mBackgroundActor);
   }
 
   bool IsSourceDeleted() const;
