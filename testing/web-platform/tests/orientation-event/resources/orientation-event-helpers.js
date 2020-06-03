@@ -91,7 +91,15 @@ function generateOrientationData(alpha, beta, gamma, absolute) {
 
 async function setMockSensorDataForType(sensorProvider, sensorType, mockDataArray) {
   const createdSensor = await sensorProvider.getCreatedSensor(sensorType);
-  return createdSensor.setSensorReading([mockDataArray]);
+  
+  
+  
+  
+  
+  
+  
+  
+  return createdSensor.setSensorReadingImmediately([mockDataArray]);
 }
 
 
