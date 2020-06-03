@@ -176,4 +176,9 @@ interface nsIHelperAppLauncher : nsICancelable
 
 
   readonly attribute int64_t contentLength;
+
+  
+
+
+  readonly attribute uint64_t browsingContextId;
 };
