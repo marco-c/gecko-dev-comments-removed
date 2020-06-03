@@ -5,7 +5,7 @@
 
 
 #include "nsHapticFeedback.h"
-#include "GeneratedJNIWrappers.h"
+#include "mozilla/java/GeckoAppShellWrappers.h"
 
 using namespace mozilla;
 

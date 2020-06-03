@@ -4,8 +4,8 @@
 
 
 
-#include "GeneratedJNIWrappers.h"
-#include "GeneratedJNINatives.h"
+#include "mozilla/java/AndroidGamepadManagerNatives.h"
+#include "mozilla/java/GeckoAppShellWrappers.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
