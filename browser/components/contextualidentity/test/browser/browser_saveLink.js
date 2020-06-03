@@ -13,7 +13,13 @@ add_task(async function setup() {
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [["privacy.userContext.enabled", true]],
+    set: [
+      ["privacy.userContext.enabled", true],
+      
+      
+      
+      ["network.cookie.sameSite.schemeful", false],
+    ],
   });
 });
 
