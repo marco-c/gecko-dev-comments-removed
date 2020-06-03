@@ -4831,6 +4831,19 @@ public class GeckoSession implements Parcelable {
             return null;
         }
 
+        
+
+
+
+
+
+
+
+
+
+
+
+
         @UiThread
         default @Nullable GeckoResult<PromptResponse> onBeforeUnloadPrompt(
                 @NonNull final GeckoSession session,
