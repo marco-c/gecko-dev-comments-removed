@@ -9,6 +9,7 @@
 
 #include "mozilla/dom/GamepadBinding.h"
 
+#include <map>
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 
@@ -115,6 +116,7 @@ class GamepadPlatformService final {
   
   
   nsTArray<GamepadChangeEvent> mPendingEvents;
+  std::map<uint32_t, GamepadAdded> mGamepadAdded;
 };
 
 }  
