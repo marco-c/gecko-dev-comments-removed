@@ -188,6 +188,15 @@ body:not(.loaded) .toolbar-container {
 }
 
 
+.top-anchor {
+  position: absolute;
+  top: 0;
+  width: 0;
+  height: 5px;
+  pointer-events: none;
+}
+
+
 
 .header {
   text-align: start;
