@@ -4732,7 +4732,8 @@ AttachDecision TypeOfIRGenerator::tryAttachPrimitive(ValOperandId valId) {
     writer.guardType(valId, val_.type());
   }
 
-  writer.loadStringResult(TypeName(js::TypeOfValue(val_), cx_->names()));
+  writer.loadConstantStringResult(
+      TypeName(js::TypeOfValue(val_), cx_->names()));
   writer.returnFromIC();
   trackAttached("Primitive");
   return AttachDecision::Attach;
@@ -5023,6 +5024,35 @@ AttachDecision CallIRGenerator::tryAttachIsSuspendedGenerator(
   cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
 
   trackAttached("IsSuspendedGenerator");
+  return AttachDecision::Attach;
+}
+
+AttachDecision CallIRGenerator::tryAttachToString(HandleFunction callee) {
+  
+  
+  if (argc_ != 1 || !args_[0].isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  StringOperandId strId = writer.guardToString(argId);
+
+  
+  writer.loadStringResult(strId);
+
+  
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("ToString");
   return AttachDecision::Attach;
 }
 
@@ -5338,6 +5368,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
     
     case InlinableNative::IntrinsicIsSuspendedGenerator:
       return tryAttachIsSuspendedGenerator(callee);
+    case InlinableNative::IntrinsicToString:
+      return tryAttachToString(callee);
 
     
     case InlinableNative::StringCharCodeAt:
