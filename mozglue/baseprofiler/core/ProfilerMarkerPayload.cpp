@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BaseProfilerMarkerPayload.h"
 
@@ -23,64 +23,64 @@ static UniquePtr<ProfilerMarkerPayload> DeserializeNothing(
   return nullptr;
 }
 
-
-
-
+// Number of currently-registered deserializers.
+// Starting at 1 for the initial `DeserializeNothing`.
+// static
 Atomic<ProfilerMarkerPayload::DeserializerTagAtomic, ReleaseAcquire>
     ProfilerMarkerPayload::sDeserializerCount{1};
 
-
-
-
+// Initialize `sDeserializers` with `DeserializeNothing` at index 0, all others
+// are nullptrs.
+// static
 ProfilerMarkerPayload::Deserializer
     ProfilerMarkerPayload::sDeserializers[DeserializerMax] = {
         DeserializeNothing};
 
-
+// static
 ProfilerMarkerPayload::DeserializerTag
 ProfilerMarkerPayload::TagForDeserializer(
     ProfilerMarkerPayload::Deserializer aDeserializer) {
   if (!aDeserializer) {
     return 0;
   }
-  
+  // Start first search at index 0.
   DeserializerTagAtomic start = 0;
   for (;;) {
-    
+    // Read the current count of deserializers.
     const DeserializerTagAtomic tagCount = sDeserializerCount;
     if (tagCount == 0) {
-      
-      
+      // Someone else is currently writing into the array, loop around until we
+      // get a valid count.
       continue;
     }
     for (DeserializerTagAtomic i = start; i < tagCount; ++i) {
       if (sDeserializers[i] == aDeserializer) {
-        
+        // Deserializer already registered, return its tag.
         return static_cast<ProfilerMarkerPayload::DeserializerTag>(i);
       }
     }
-    
-    
+    // Not found yet, let's register this new deserializer.
+    // Make sure we haven't reached the limit yet.
     MOZ_RELEASE_ASSERT(tagCount < DeserializerMax);
-    
-    
-    
+    // Reserve `tagCount` as an index, if not already claimed:
+    // If `sDeserializerCount` is still at our previously-read `tagCount`,
+    // replace it with a special 0 value to indicate a write.
     if (sDeserializerCount.compareExchange(tagCount, 0)) {
-      
+      // Here we own the `tagCount` index, write the deserializer there.
       sDeserializers[tagCount] = aDeserializer;
-      
+      // And publish by writing the real new count (1 past our index).
       sDeserializerCount = tagCount + 1;
       return static_cast<ProfilerMarkerPayload::DeserializerTag>(tagCount);
     }
-    
-    
-    
-    
+    // Someone else beat us to grab an index, and it could be for the same
+    // deserializer! So let's just try searching starting from our recorded
+    // `tagCount` (and maybe attempting again to register). It should be rare
+    // enough and quick enough that it won't impact performances.
     start = tagCount;
   }
 }
 
-
+// static
 ProfilerMarkerPayload::Deserializer ProfilerMarkerPayload::DeserializerForTag(
     ProfilerMarkerPayload::DeserializerTag aTag) {
   MOZ_RELEASE_ASSERT(aTag < DeserializerMax);
@@ -121,7 +121,7 @@ void ProfilerMarkerPayload::SerializeTagAndCommonProps(
   aEntryWriter.WriteObject(mCommonProps.mInnerWindowID);
 }
 
-
+// static
 ProfilerMarkerPayload::CommonProps
 ProfilerMarkerPayload::DeserializeCommonProps(
     ProfileBufferEntryReader& aEntryReader) {
@@ -140,11 +140,11 @@ void ProfilerMarkerPayload::StreamCommonProps(
   WriteTime(aWriter, aProcessStartTime, mCommonProps.mStartTime, "startTime");
   WriteTime(aWriter, aProcessStartTime, mCommonProps.mEndTime, "endTime");
   if (mCommonProps.mInnerWindowID) {
-    
-    
-    
-    
-    
+    // Here, we are converting uint64_t to double. Both Browsing Context and
+    // Inner Window IDs are creating using
+    // `nsContentUtils::GenerateProcessSpecificId`, which is specifically
+    // designed to only use 53 of the 64 bits to be lossless when passed into
+    // and out of JS as a double.
     aWriter.DoubleProperty("innerWindowID", mCommonProps.mInnerWindowID.ref());
   }
   if (mCommonProps.mStack) {
@@ -188,7 +188,7 @@ void TracingMarkerPayload::SerializeTagAndPayload(
   aEntryWriter.WriteObject(mKind);
 }
 
-
+// static
 UniquePtr<ProfilerMarkerPayload> TracingMarkerPayload::Deserialize(
     ProfileBufferEntryReader& aEntryReader) {
   ProfilerMarkerPayload::CommonProps props =
@@ -255,7 +255,7 @@ void FileIOMarkerPayload::SerializeTagAndPayload(
   aEntryWriter.WriteObject(mFilename);
 }
 
-
+// static
 UniquePtr<ProfilerMarkerPayload> FileIOMarkerPayload::Deserialize(
     ProfileBufferEntryReader& aEntryReader) {
   ProfilerMarkerPayload::CommonProps props =
@@ -324,7 +324,7 @@ void UserTimingMarkerPayload::SerializeTagAndPayload(
   aEntryWriter.WriteObject(mEndMark);
 }
 
-
+// static
 UniquePtr<ProfilerMarkerPayload> UserTimingMarkerPayload::Deserialize(
     ProfileBufferEntryReader& aEntryReader) {
   ProfilerMarkerPayload::CommonProps props =
@@ -400,7 +400,7 @@ void TextMarkerPayload::SerializeTagAndPayload(
   aEntryWriter.WriteObject(mText);
 }
 
-
+// static
 UniquePtr<ProfilerMarkerPayload> TextMarkerPayload::Deserialize(
     ProfileBufferEntryReader& aEntryReader) {
   ProfilerMarkerPayload::CommonProps props =
@@ -445,7 +445,7 @@ void LogMarkerPayload::SerializeTagAndPayload(
   aEntryWriter.WriteObject(mText);
 }
 
-
+// static
 UniquePtr<ProfilerMarkerPayload> LogMarkerPayload::Deserialize(
     ProfileBufferEntryReader& aEntryReader) {
   ProfilerMarkerPayload::CommonProps props =
@@ -462,6 +462,52 @@ void LogMarkerPayload::StreamPayload(SpliceableJSONWriter& aWriter,
   StreamCommonProps("Log", aWriter, aProcessStartTime, aUniqueStacks);
   aWriter.StringProperty("name", mText.c_str());
   aWriter.StringProperty("module", mModule.c_str());
+}
+
+MediaSampleMarkerPayload::MediaSampleMarkerPayload(
+    const int64_t aSampleStartTimeUs, const int64_t aSampleEndTimeUs)
+    : mSampleStartTimeUs(aSampleStartTimeUs),
+      mSampleEndTimeUs(aSampleEndTimeUs) {}
+
+MediaSampleMarkerPayload::MediaSampleMarkerPayload(
+    CommonProps&& aCommonProps, const int64_t aSampleStartTimeUs,
+    const int64_t aSampleEndTimeUs)
+    : ProfilerMarkerPayload(std::move(aCommonProps)),
+      mSampleStartTimeUs(aSampleStartTimeUs),
+      mSampleEndTimeUs(aSampleEndTimeUs) {}
+
+ProfileBufferEntryWriter::Length
+MediaSampleMarkerPayload::TagAndSerializationBytes() const {
+  return CommonPropsTagAndSerializationBytes() +
+         ProfileBufferEntryWriter::SumBytes(mSampleStartTimeUs,
+                                            mSampleEndTimeUs);
+}
+
+void MediaSampleMarkerPayload::SerializeTagAndPayload(
+    ProfileBufferEntryWriter& aEntryWriter) const {
+  static const DeserializerTag tag = TagForDeserializer(Deserialize);
+  SerializeTagAndCommonProps(tag, aEntryWriter);
+  aEntryWriter.WriteObject(mSampleStartTimeUs);
+  aEntryWriter.WriteObject(mSampleEndTimeUs);
+}
+
+/* static */
+UniquePtr<ProfilerMarkerPayload> MediaSampleMarkerPayload::Deserialize(
+    ProfileBufferEntryReader& aEntryReader) {
+  ProfilerMarkerPayload::CommonProps props =
+      DeserializeCommonProps(aEntryReader);
+  auto sampleStartTimeUs = aEntryReader.ReadObject<int64_t>();
+  auto sampleEndTimeUs = aEntryReader.ReadObject<int64_t>();
+  return UniquePtr<ProfilerMarkerPayload>(new MediaSampleMarkerPayload(
+      std::move(props), sampleStartTimeUs, sampleEndTimeUs));
+}
+
+void MediaSampleMarkerPayload::StreamPayload(
+    SpliceableJSONWriter& aWriter, const TimeStamp& aProcessStartTime,
+    UniqueStacks& aUniqueStacks) const {
+  StreamCommonProps("MediaSample", aWriter, aProcessStartTime, aUniqueStacks);
+  aWriter.IntProperty("sampleStartTimeUs", mSampleStartTimeUs);
+  aWriter.IntProperty("sampleEndTimeUs", mSampleEndTimeUs);
 }
 
 HangMarkerPayload::HangMarkerPayload(const TimeStamp& aStartTime,
@@ -484,7 +530,7 @@ void HangMarkerPayload::SerializeTagAndPayload(
   SerializeTagAndCommonProps(tag, aEntryWriter);
 }
 
-
+// static
 UniquePtr<ProfilerMarkerPayload> HangMarkerPayload::Deserialize(
     ProfileBufferEntryReader& aEntryReader) {
   ProfilerMarkerPayload::CommonProps props =
@@ -520,7 +566,7 @@ void LongTaskMarkerPayload::SerializeTagAndPayload(
   SerializeTagAndCommonProps(tag, aEntryWriter);
 }
 
-
+// static
 UniquePtr<ProfilerMarkerPayload> LongTaskMarkerPayload::Deserialize(
     ProfileBufferEntryReader& aEntryReader) {
   ProfilerMarkerPayload::CommonProps props =
@@ -537,5 +583,5 @@ void LongTaskMarkerPayload::StreamPayload(SpliceableJSONWriter& aWriter,
   aWriter.StringProperty("category", "LongTask");
 }
 
-}  
-}  
+}  // namespace baseprofiler
+}  // namespace mozilla
