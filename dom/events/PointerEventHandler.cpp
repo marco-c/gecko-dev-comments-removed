@@ -483,6 +483,25 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
     WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
     
     
+    Document* doc = aShell->GetDocument();
+    if (!doc) {
+      return;
+    }
+
+    nsCOMPtr<nsIDocShell> docShell = doc->GetDocShell();
+    if (!docShell) {
+      return;
+    }
+
+    BrowsingContext* bc = doc->GetBrowsingContext();
+    if (docShell->GetTouchEventsOverride() ==
+            nsIDocShell::TOUCHEVENTS_OVERRIDE_ENABLED &&
+        bc && bc->InRDMPane()) {
+      return;
+    }
+
+    
+    
     
     if (!mouseEvent->convertToPointer ||
         !aEvent->IsAllowedToDispatchDOMEvent()) {
