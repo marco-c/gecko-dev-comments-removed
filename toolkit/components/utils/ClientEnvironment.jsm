@@ -15,6 +15,8 @@ ChromeUtils.defineModuleGetter(this, "UpdateUtils", "resource://gre/modules/Upda
 ChromeUtils.defineModuleGetter(this, "AppConstants", "resource://gre/modules/AppConstants.jsm");
 ChromeUtils.defineModuleGetter(this, "AttributionCode", "resource:///modules/AttributionCode.jsm");
 ChromeUtils.defineModuleGetter(this, "WindowsVersionInfo", "resource://gre/modules/components-utils/WindowsVersionInfo.jsm");
+ChromeUtils.defineModuleGetter(this, "NormandyUtils", "resource://normandy/lib/NormandyUtils.jsm");
+
 
 
 var EXPORTED_SYMBOLS = ["ClientEnvironmentBase"];
@@ -88,6 +90,16 @@ class ClientEnvironmentBase {
         return prop == "main";
       },
     });
+  }
+
+  
+  static get randomizationId() {
+    let id = Services.prefs.getCharPref("app.normandy.user_id", "");
+    if (!id) {
+      id = NormandyUtils.generateUuid();
+      Services.prefs.setCharPref("app.normandy.user_id", id);
+    }
+    return id;
   }
 
   static get version() {
