@@ -2979,12 +2979,7 @@ class nsLayoutUtils {
 
 
 
-
-
-
-
-  static nsRect ComputePartialPrerenderArea(nsIFrame* aFrame,
-                                            const nsRect& aDirtyRect,
+  static nsRect ComputePartialPrerenderArea(const nsRect& aDirtyRect,
                                             const nsRect& aOverflow,
                                             const nsSize& aPrerenderSize);
 

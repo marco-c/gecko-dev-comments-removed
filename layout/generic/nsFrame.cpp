@@ -3325,10 +3325,14 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
     switch (decision.mDecision) {
       case nsDisplayTransform::PrerenderDecision::Full:
-      case nsDisplayTransform::PrerenderDecision::Partial:
         allowAsyncAnimation = true;
         visibleRect = dirtyRect;
         break;
+      case nsDisplayTransform::PrerenderDecision::Partial:
+        allowAsyncAnimation = true;
+        visibleRect = dirtyRect;
+        [[fallthrough]];
+        
       case nsDisplayTransform::PrerenderDecision::No: {
         
         
