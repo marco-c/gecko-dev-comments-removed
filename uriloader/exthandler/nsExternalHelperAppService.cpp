@@ -484,9 +484,6 @@ static const nsExtraMimeTypeEntry extraMimeEntries[] = {
 #ifdef MOZ_WIDGET_ANDROID
     {"application/vnd.android.package-archive", "apk", "Android Package"},
 #endif
-
-    
-    
     {IMAGE_ART, "art", "ART Image"},
     {IMAGE_BMP, "bmp", "BMP Image"},
     {IMAGE_GIF, "gif", "GIF Image"},
@@ -499,7 +496,6 @@ static const nsExtraMimeTypeEntry extraMimeEntries[] = {
     {IMAGE_SVG_XML, "svg", "Scalable Vector Graphics"},
     {IMAGE_WEBP, "webp", "WebP Image"},
     {IMAGE_AVIF, "avif", "AV1 Image File"},
-
     {MESSAGE_RFC822, "eml", "RFC-822 data"},
     {TEXT_PLAIN, "txt,text", "Text File"},
     {APPLICATION_JSON, "json", "JavaScript Object Notation"},
@@ -2523,20 +2519,6 @@ NS_IMETHODIMP nsExternalHelperAppService::GetFromTypeAndExtension(
   
   
   
-  
-  
-  
-  if (!typeToUse.Equals(APPLICATION_OCTET_STREAM,
-                        nsCaseInsensitiveCStringComparator())) {
-    rv = FillMIMEInfoForMimeTypeFromExtras(typeToUse, !found, *_retval);
-    LOG(("Searched extras (by type), rv 0x%08" PRIX32 "\n",
-         static_cast<uint32_t>(rv)));
-    found = found || NS_SUCCEEDED(rv);
-  }
-
-  
-  
-  
   nsCOMPtr<nsIHandlerService> handlerSvc =
       do_GetService(NS_HANDLERSERVICE_CONTRACTID);
   if (handlerSvc) {
@@ -2551,39 +2533,51 @@ NS_IMETHODIMP nsExternalHelperAppService::GetFromTypeAndExtension(
     }
 
     found = found || NS_SUCCEEDED(rv);
-  }
 
-  
-  
-  if (!found && !aFileExt.IsEmpty()) {
-    rv = FillMIMEInfoForExtensionFromExtras(aFileExt, *_retval);
-    LOG(("Searched extras (by ext), rv 0x%08" PRIX32 "\n",
-         static_cast<uint32_t>(rv)));
-
-    if (handlerSvc) {
+    if (!found || NS_FAILED(rv)) {
       
-      nsAutoCString overrideType;
-      rv = handlerSvc->GetTypeFromExtension(aFileExt, overrideType);
-      if (NS_SUCCEEDED(rv) && !overrideType.IsEmpty()) {
-        
-        
-        
-        rv = handlerSvc->FillHandlerInfo(*_retval, overrideType);
-        LOG(("Data source: Via ext: retval 0x%08" PRIx32 "\n",
-             static_cast<uint32_t>(rv)));
-        found = found || NS_SUCCEEDED(rv);
+      if (!aFileExt.IsEmpty()) {
+        nsAutoCString overrideType;
+        rv = handlerSvc->GetTypeFromExtension(aFileExt, overrideType);
+        if (NS_SUCCEEDED(rv) && !overrideType.IsEmpty()) {
+          
+          
+          
+          rv = handlerSvc->FillHandlerInfo(*_retval, overrideType);
+          LOG(("Data source: Via ext: retval 0x%08" PRIx32 "\n",
+               static_cast<uint32_t>(rv)));
+          found = found || NS_SUCCEEDED(rv);
+        }
       }
     }
   }
 
   
-  
-  if (!found && !aFileExt.IsEmpty()) {
+  if (!found) {
+    rv = NS_ERROR_FAILURE;
     
-    nsAutoCString desc(aFileExt);
-    desc.AppendLiteral(" File");
-    (*_retval)->SetDescription(NS_ConvertASCIItoUTF16(desc));
-    LOG(("Falling back to 'File' file description\n"));
+    
+    
+    
+    if (!typeToUse.Equals(APPLICATION_OCTET_STREAM,
+                          nsCaseInsensitiveCStringComparator()))
+      rv = FillMIMEInfoForMimeTypeFromExtras(typeToUse, *_retval);
+    LOG(("Searched extras (by type), rv 0x%08" PRIX32 "\n",
+         static_cast<uint32_t>(rv)));
+    
+    if (NS_FAILED(rv) && !aFileExt.IsEmpty()) {
+      rv = FillMIMEInfoForExtensionFromExtras(aFileExt, *_retval);
+      LOG(("Searched extras (by ext), rv 0x%08" PRIX32 "\n",
+           static_cast<uint32_t>(rv)));
+    }
+    
+    if (NS_FAILED(rv) && !aFileExt.IsEmpty()) {
+      
+      nsAutoCString desc(aFileExt);
+      desc.AppendLiteral(" File");
+      (*_retval)->SetDescription(NS_ConvertASCIItoUTF16(desc));
+      LOG(("Falling back to 'File' file description\n"));
+    }
   }
 
   
@@ -2766,8 +2760,7 @@ NS_IMETHODIMP nsExternalHelperAppService::GetTypeFromFile(
 }
 
 nsresult nsExternalHelperAppService::FillMIMEInfoForMimeTypeFromExtras(
-    const nsACString& aContentType, bool aForceFillDesc,
-    nsIMIMEInfo* aMIMEInfo) {
+    const nsACString& aContentType, nsIMIMEInfo* aMIMEInfo) {
   NS_ENSURE_ARG(aMIMEInfo);
 
   NS_ENSURE_ARG(!aContentType.IsEmpty());
@@ -2775,26 +2768,14 @@ nsresult nsExternalHelperAppService::FillMIMEInfoForMimeTypeFromExtras(
   
   nsAutoCString MIMEType(aContentType);
   ToLowerCase(MIMEType);
-  for (auto entry : extraMimeEntries) {
-    if (MIMEType.Equals(entry.mMimeType)) {
+  int32_t numEntries = ArrayLength(extraMimeEntries);
+  for (int32_t index = 0; index < numEntries; index++) {
+    if (MIMEType.Equals(extraMimeEntries[index].mMimeType)) {
       
-      nsDependentCString extensions(entry.mFileExtensions);
-      nsACString::const_iterator start, end;
-      extensions.BeginReading(start);
-      extensions.EndReading(end);
-      while (start != end) {
-        nsACString::const_iterator cursor = start;
-        mozilla::Unused << FindCharInReadable(',', cursor, end);
-        aMIMEInfo->AppendExtension(Substring(start, cursor));
-        
-        start = cursor != end ? ++cursor : cursor;
-      }
-
-      nsAutoString desc;
-      aMIMEInfo->GetDescription(desc);
-      if (aForceFillDesc || desc.IsEmpty()) {
-        aMIMEInfo->SetDescription(NS_ConvertASCIItoUTF16(entry.mDescription));
-      }
+      aMIMEInfo->SetFileExtensions(
+          nsDependentCString(extraMimeEntries[index].mFileExtensions));
+      aMIMEInfo->SetDescription(
+          NS_ConvertASCIItoUTF16(extraMimeEntries[index].mDescription));
       return NS_OK;
     }
   }
@@ -2807,7 +2788,7 @@ nsresult nsExternalHelperAppService::FillMIMEInfoForExtensionFromExtras(
   nsAutoCString type;
   bool found = GetTypeFromExtras(aExtension, type);
   if (!found) return NS_ERROR_NOT_AVAILABLE;
-  return FillMIMEInfoForMimeTypeFromExtras(type, true, aMIMEInfo);
+  return FillMIMEInfoForMimeTypeFromExtras(type, aMIMEInfo);
 }
 
 bool nsExternalHelperAppService::GetTypeFromExtras(const nsACString& aExtension,
