@@ -12,7 +12,7 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const PropertiesView = createFactory(
   require("devtools/client/netmonitor/src/components/request-details/PropertiesView")
 );
-
+const { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
 const {
   parseQueryString,
 } = require("devtools/client/netmonitor/src/utils/request-utils");
@@ -54,11 +54,15 @@ const { div, span, tr, td } = dom;
 
 
 
+
+
+
 class UrlPreview extends Component {
   static get propTypes() {
     return {
       url: PropTypes.string,
       method: PropTypes.string,
+      address: PropTypes.string,
     };
   }
 
@@ -72,7 +76,7 @@ class UrlPreview extends Component {
     const {
       member: { name },
     } = props;
-    if (name == "query") {
+    if (name == "query" || name == "remote") {
       return tr(
         { key: name, className: "treeRow stringRow" },
         td(
@@ -132,29 +136,29 @@ class UrlPreview extends Component {
       
       return "[...]";
     }
-    
-    return level == 1 ? value : `"${value}"`;
+
+    return value;
   }
 
   parseUrl(url) {
-    const { method } = this.props;
+    const { method, address } = this.props;
     const { host, protocol, pathname, search } = new URL(url);
 
     const urlObject = {
       [method]: {
         scheme: protocol.replace(":", ""),
-        host: host,
+        host,
         filename: pathname,
       },
     };
 
     const expandedNodes = new Set();
-    
-    expandedNodes.add(`/${method}/query`);
 
     
     if (search.length) {
       const params = parseQueryString(search);
+      
+      expandedNodes.add(`/${method}/query`);
       urlObject[method].query = params.reduce((map, obj) => {
         const value = map[obj.name];
         if (value || value === "") {
@@ -168,6 +172,14 @@ class UrlPreview extends Component {
         }
         return map;
       }, {});
+    }
+
+    if (address) {
+      
+      expandedNodes.add(`/${method}/remote`);
+      urlObject[method].remote = {
+        [L10N.getStr("netmonitor.headers.address")]: address,
+      };
     }
 
     return {
