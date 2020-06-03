@@ -1578,9 +1578,6 @@ pref("network.sts.max_time_for_pr_close_during_shutdown", 5000);
 pref("network.sts.pollable_event_timeout", 6);
 
 
-pref("network.security.esni.enabled", false);
-
-
 pref("network.websocket.max-message-size", 2147483647);
 
 
