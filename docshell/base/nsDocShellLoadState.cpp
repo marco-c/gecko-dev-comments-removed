@@ -204,7 +204,7 @@ nsresult nsDocShellLoadState::CreateFromPendingChannel(
 }
 
 nsresult nsDocShellLoadState::CreateFromLoadURIOptions(
-    nsISupports* aConsumer, const nsAString& aURI,
+    BrowsingContext* aBrowsingContext, const nsAString& aURI,
     const LoadURIOptions& aLoadURIOptions, nsDocShellLoadState** aResult) {
   uint32_t loadFlags = aLoadURIOptions.mLoadFlags;
 
@@ -255,15 +255,7 @@ nsresult nsDocShellLoadState::CreateFromLoadURIOptions(
       loadFlags &= ~nsIWebNavigation::LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
     }
     
-    nsCOMPtr<nsILoadContext> loadContext = do_QueryInterface(aConsumer);
-    if (!loadContext) {
-      if (RefPtr<Element> element = do_QueryObject(aConsumer)) {
-        loadContext = do_QueryInterface(element->OwnerDoc()->GetDocShell());
-      }
-    }
-    
-    MOZ_ASSERT(loadContext, "We should always have a LoadContext here.");
-    if (loadContext && loadContext->UsePrivateBrowsing()) {
+    if (aBrowsingContext->UsePrivateBrowsing()) {
       fixupFlags |= nsIURIFixup::FIXUP_FLAG_PRIVATE_CONTEXT;
     }
 
@@ -274,7 +266,7 @@ nsresult nsDocShellLoadState::CreateFromLoadURIOptions(
       
       rv = NS_OK;
       fixupInfo->GetPreferredURI(getter_AddRefs(uri));
-      fixupInfo->SetConsumer(aConsumer);
+      fixupInfo->SetConsumer(aBrowsingContext);
     }
 
     if (fixupStream) {

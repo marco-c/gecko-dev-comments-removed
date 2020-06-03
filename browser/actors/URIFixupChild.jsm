@@ -13,14 +13,7 @@ const { ActorChild } = ChromeUtils.import(
 class URIFixupChild extends ActorChild {
   observe(subject) {
     let fixupInfo = subject.QueryInterface(Ci.nsIURIFixupInfo);
-    if (!fixupInfo.consumer) {
-      return;
-    }
-
-    
-    let parent = fixupInfo.consumer.QueryInterface(Ci.nsIDocShellTreeItem)
-      .sameTypeRootTreeItem;
-    if (parent != this.mm.docShell) {
+    if (!fixupInfo.consumer || fixupInfo.consumer != this.browsingContext) {
       return;
     }
 
