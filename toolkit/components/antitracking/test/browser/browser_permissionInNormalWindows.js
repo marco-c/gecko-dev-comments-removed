@@ -10,23 +10,81 @@ AntiTracking.runTest(
   
   async _ => {
     try {
-      let Services = SpecialPowers.Services;
       
-      
-      let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-        "https://tracking.example.org/"
-      );
-      for (let perm of Services.perms.getAllForPrincipal(principal)) {
+      let chromeScript = SpecialPowers.loadChromeScript(_ => {
         
-        if (!perm.type.startsWith("3rdPartyStorage^")) {
-          continue;
-        }
-        is(
-          perm.expireType,
-          Services.perms.EXPIRE_TIME,
-          "Permission must expire at a specific time"
+        addMessageListener("go", _ => {
+          const { Services } = ChromeUtils.import(
+            "resource://gre/modules/Services.jsm"
+          );
+
+          function ok(what, msg) {
+            
+            sendAsyncMessage("ok", { what: !!what, msg });
+          }
+
+          function is(a, b, msg) {
+            ok(a === b, msg);
+          }
+
+          
+          
+          let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+            "http://example.net/"
+          );
+
+          for (let perm of Services.perms.getAllForPrincipal(principal)) {
+            
+            if (!perm.type.startsWith("3rdPartyStorage^")) {
+              continue;
+            }
+            is(
+              perm.expireType,
+              Services.perms.EXPIRE_TIME,
+              "Permission must expire at a specific time"
+            );
+            ok(perm.expireTime > 0, "Permission must have a expiry time");
+          }
+
+          
+          sendAsyncMessage("done");
+        });
+      });
+
+      chromeScript.addMessageListener("ok", obj => {
+        ok(obj.what, obj.msg);
+      });
+
+      await new Promise(resolve => {
+        chromeScript.addMessageListener("done", _ => {
+          chromeScript.destroy();
+          resolve();
+        });
+
+        chromeScript.sendAsyncMessage("go");
+      });
+
+      
+      
+      
+      if (!SpecialPowers.useRemoteSubframes) {
+        let Services = SpecialPowers.Services;
+        let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+          "http://example.net/"
         );
-        ok(perm.expireTime > 0, "Permission must have a expiry time");
+
+        for (let perm of Services.perms.getAllForPrincipal(principal)) {
+          
+          if (!perm.type.startsWith("3rdPartyStorage^")) {
+            continue;
+          }
+          is(
+            perm.expireType,
+            Services.perms.EXPIRE_TIME,
+            "Permission must expire at a specific time"
+          );
+          ok(perm.expireTime > 0, "Permission must have a expiry time");
+        }
       }
     } catch (e) {
       alert(e);
