@@ -6740,11 +6740,13 @@ nsresult nsHttpChannel::BeginConnect() {
   rv = mURI->GetScheme(scheme);
   if (NS_SUCCEEDED(rv)) rv = mURI->GetAsciiHost(host);
   if (NS_SUCCEEDED(rv)) rv = mURI->GetPort(&port);
-  if (NS_SUCCEEDED(rv)) mURI->GetUsername(mUsername);
   if (NS_SUCCEEDED(rv)) rv = mURI->GetAsciiSpec(mSpec);
   if (NS_FAILED(rv)) {
     return rv;
   }
+
+  
+  Unused << NS_WARN_IF(NS_FAILED(mURI->GetUsername(mUsername)));
 
   
   if (host.IsEmpty()) {
