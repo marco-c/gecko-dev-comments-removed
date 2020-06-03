@@ -2640,6 +2640,12 @@ public class GeckoSession implements Parcelable {
                 res = delegate.onAlertPrompt(session, prompt);
                 break;
             }
+            case "beforeUnload": {
+                final PromptDelegate.BeforeUnloadPrompt prompt =
+                    new PromptDelegate.BeforeUnloadPrompt();
+                res = delegate.onBeforeUnloadPrompt(session, prompt);
+                break;
+            }
             case "button": {
                 final PromptDelegate.ButtonPrompt prompt =
                     new PromptDelegate.ButtonPrompt(title, msg);
@@ -3876,6 +3882,30 @@ public class GeckoSession implements Parcelable {
 
 
 
+        class BeforeUnloadPrompt extends BasePrompt {
+            protected BeforeUnloadPrompt() {
+                super(null);
+            }
+
+            
+
+
+
+
+
+
+
+            @UiThread
+            public @NonNull PromptResponse confirm(final @Nullable AllowOrDeny allowOrDeny) {
+                ensureResult().putBoolean("allow", allowOrDeny != AllowOrDeny.DENY);
+                return super.confirm();
+            }
+        }
+
+        
+
+
+
         public class AlertPrompt extends BasePrompt {
             
 
@@ -4829,6 +4859,14 @@ public class GeckoSession implements Parcelable {
         @UiThread
         default @Nullable GeckoResult<PromptResponse> onAlertPrompt(@NonNull final GeckoSession session,
                                                                     @NonNull final AlertPrompt prompt) {
+            return null;
+        }
+
+        @UiThread
+        default @Nullable GeckoResult<PromptResponse> onBeforeUnloadPrompt(
+                @NonNull final GeckoSession session,
+                @NonNull final BeforeUnloadPrompt prompt
+        ) {
             return null;
         }
 
