@@ -158,11 +158,11 @@ class MessagePortIdentifierRunnable final : public WorkerRunnable {
 
 
 
-class ReleaseWorkerRunnable final : public WorkerRunnable {
+class ReleaseWorkerRunnable final : public WorkerControlRunnable {
  public:
   ReleaseWorkerRunnable(RefPtr<WorkerPrivate>&& aWorkerPrivate,
                         RefPtr<WeakWorkerRef>&& aWeakRef)
-      : WorkerRunnable(aWorkerPrivate),
+      : WorkerControlRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount),
         mWorkerPrivate(std::move(aWorkerPrivate)),
         mWeakRef(std::move(aWeakRef)) {
     MOZ_ASSERT(mWorkerPrivate);
@@ -512,8 +512,17 @@ void RemoteWorkerChild::InitializeOnWorker() {
     NS_ProxyRelease(__func__, mOwningEventTarget, self.forget());
   });
 
+  
+  
+  
+  
+  
+  RefPtr<StrongWorkerRef> strongRef =
+      StrongWorkerRef::Create(workerPrivate, __func__);
+
   RefPtr<WeakWorkerRef> workerRef = WeakWorkerRef::Create(
-      workerPrivate, [selfWeakRef = std::move(selfWeakRef)]() mutable {
+      workerPrivate, [selfWeakRef = std::move(selfWeakRef),
+                      strongRef = std::move(strongRef)]() mutable {
         RefPtr<RemoteWorkerChild> self(selfWeakRef);
 
         if (NS_WARN_IF(!self)) {
