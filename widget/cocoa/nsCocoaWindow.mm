@@ -487,6 +487,14 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aB
     SetPopupWindowLevel();
     [mWindow setBackgroundColor:[NSColor clearColor]];
     [mWindow setOpaque:NO];
+
+    
+    
+    
+    
+    NSWindowCollectionBehavior behavior = [mWindow collectionBehavior];
+    behavior |= NSWindowCollectionBehaviorMoveToActiveSpace;
+    [mWindow setCollectionBehavior:behavior];
   } else {
     
     
@@ -955,6 +963,17 @@ void nsCocoaWindow::Show(bool bState) {
   [mWindow setBeingShown:NO];
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+
+
+
+
+
+bool nsCocoaWindow::NeedsRecreateToReshow() {
+  
+  
+  return (mWindowType == eWindowType_popup) && ([[NSScreen screens] count] > 1);
 }
 
 struct ShadowParams {

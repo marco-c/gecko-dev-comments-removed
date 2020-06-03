@@ -245,8 +245,8 @@ nsPopupLevel nsMenuPopupFrame::PopupLevel(bool aIsNoAutoHide) const {
 
 void nsMenuPopupFrame::EnsureWidget(bool aRecreate) {
   nsView* ourView = GetView();
-  if (aRecreate) {
-    auto* widget = GetWidget();
+  auto* widget = GetWidget();
+  if (aRecreate || (widget && widget->NeedsRecreateToReshow())) {
     if (widget) {
       
       
