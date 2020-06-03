@@ -128,6 +128,22 @@ function getIssueItem(property, element) {
 
 
 
+
+async function togglePropStatusOnRuleView(inspector, ruleIndex, propIndex) {
+  const ruleView = inspector.getPanel("ruleview").view;
+  const rule = getRuleViewRuleEditor(ruleView, ruleIndex).rule;
+  const textProp = rule.textProps[propIndex];
+  const onRuleviewChanged = ruleView.once("ruleview-changed");
+  textProp.editor.enable.click();
+  await onRuleviewChanged;
+}
+
+
+
+
+
+
+
 function waitForUpdateSelectedNodeAction(store) {
   return waitForDispatch(store, COMPATIBILITY_UPDATE_SELECTED_NODE_COMPLETE);
 }
