@@ -49,9 +49,14 @@ class WaylandDMABufSurface {
     SURFACE_NV12,
   };
 
+  
+  
+  
+  
   static already_AddRefed<WaylandDMABufSurface> CreateDMABufSurface(
       const mozilla::layers::SurfaceDescriptor& aDesc);
 
+  
   virtual bool Serialize(
       mozilla::layers::SurfaceDescriptor& aOutDescriptor) = 0;
 
@@ -82,6 +87,35 @@ class WaylandDMABufSurface {
   void FenceWait();
   void FenceDelete();
 
+  
+  
+  
+  void SetUID(uint32_t aUID) { mUID = aUID; };
+  uint32_t GetUID() const { return mUID; };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void GlobalRefCountCreate();
+
+  
+  
+  bool IsGlobalRefSet() const;
+
+  
+  void GlobalRefAdd();
+  void GlobalRefRelease();
+
   WaylandDMABufSurface(SurfaceType aSurfaceType);
 
  protected:
@@ -89,7 +123,10 @@ class WaylandDMABufSurface {
   virtual void ReleaseSurface() = 0;
   bool FenceCreate(int aFd);
 
-  virtual ~WaylandDMABufSurface() { FenceDelete(); };
+  void GlobalRefCountImport(int aFd);
+  void GlobalRefCountDelete();
+
+  virtual ~WaylandDMABufSurface();
 
   SurfaceType mSurfaceType;
   uint64_t mBufferModifier;
@@ -102,6 +139,9 @@ class WaylandDMABufSurface {
 
   EGLSyncKHR mSync;
   RefPtr<mozilla::gl::GLContext> mGL;
+
+  int mGlobalRefCountFd;
+  uint32_t mUID;
 };
 
 class WaylandDMABufSurfaceRGBA : public WaylandDMABufSurface {
