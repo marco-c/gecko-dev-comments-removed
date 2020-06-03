@@ -404,7 +404,7 @@ void Selection::SetCaretBidiLevel(const Nullable<int16_t>& aCaretBidiLevel,
 
 
 
-static nsresult GetTableSelectionType(const nsRange& aRange,
+static nsresult GetTableSelectionMode(const nsRange& aRange,
                                       TableSelectionMode* aTableSelectionType) {
   if (!aTableSelectionType) {
     return NS_ERROR_NULL_POINTER;
@@ -467,7 +467,7 @@ MOZ_CAN_RUN_SCRIPT static nsresult GetTableCellLocationFromRange(
   *aRow = 0;
   *aCol = 0;
 
-  nsresult result = GetTableSelectionType(aRange, aSelectionType);
+  nsresult result = GetTableSelectionMode(aRange, aSelectionType);
   if (NS_FAILED(result)) return result;
 
   
