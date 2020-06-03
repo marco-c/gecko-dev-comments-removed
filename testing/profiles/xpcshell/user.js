@@ -10,7 +10,6 @@ user_pref("extensions.webextensions.warnings-as-errors", true);
 
 
 user_pref("geo.provider.testing", true);
-user_pref("geo.provider.network.compare.url", "");
 user_pref("media.gmp-manager.updateEnabled", false);
 user_pref("media.gmp-manager.url.override", "http://%(server)s/dummy-gmp-manager.xml");
 user_pref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy");
