@@ -284,7 +284,6 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
     return nullptr;
   }
 
-  
   compilationInfo_.traceListHead = funbox;
   handler_.setFunctionBox(funNode, funbox);
 
@@ -329,7 +328,6 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
     return nullptr;
   }
 
-  
   compilationInfo.traceListHead = funbox;
   handler_.setFunctionBox(funNode, funbox);
 
@@ -1844,41 +1842,20 @@ static bool CreateLazyScript(JSContext* cx, CompilationInfo& compilationInfo,
   return true;
 }
 
-static bool MaybePublishFunction(JSContext* cx,
+
+static bool InstantiateFunctions(JSContext* cx,
                                  CompilationInfo& compilationInfo,
-                                 FunctionBox* funbox) {
-  if (funbox->hasFunction()) {
-    return true;
-  }
-
-  RootedFunction fun(cx, funbox->createFunction(cx));
-  if (!fun) {
-    return false;
-  }
-  funbox->initializeFunction(fun);
-
-  return true;
-}
-
-static bool PublishDeferredFunctions(JSContext* cx,
-                                     CompilationInfo& compilationInfo,
-                                     FunctionBox* listHead) {
-  
-  
-  
-  
-
-  mozilla::DebugOnly<size_t> prevIndex = size_t(-1);
-
+                                 FunctionBox* listHead) {
   for (FunctionBox* funbox = listHead; funbox; funbox = funbox->traceLink()) {
-    
-    
-    MOZ_ASSERT(prevIndex > funbox->index());
-    prevIndex = funbox->index();
+    if (funbox->hasFunction()) {
+      continue;
+    }
 
-    if (!MaybePublishFunction(cx, compilationInfo, funbox)) {
+    RootedFunction fun(cx, funbox->createFunction(cx));
+    if (!fun) {
       return false;
     }
+    funbox->initializeFunction(fun);
   }
 
   return true;
@@ -2004,7 +1981,7 @@ static void LinkEnclosingLazyScript(FunctionBox* listHead) {
 }
 
 bool CompilationInfo::instantiateStencils() {
-  if (!PublishDeferredFunctions(cx, *this, traceListHead)) {
+  if (!InstantiateFunctions(cx, *this, traceListHead)) {
     return false;
   }
 
