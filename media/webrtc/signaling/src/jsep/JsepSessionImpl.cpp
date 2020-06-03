@@ -406,6 +406,8 @@ std::vector<SdpExtmapAttributeList::Extmap> JsepSessionImpl::GetRtpExtensions(
         
         AddVideoRtpExtension(webrtc::RtpExtension::kRtpStreamIdUri,
                              SdpDirectionAttribute::kSendonly);
+        AddVideoRtpExtension(webrtc::RtpExtension::kRepairedRtpStreamIdUri,
+                             SdpDirectionAttribute::kSendonly);
       }
       break;
     default:;
