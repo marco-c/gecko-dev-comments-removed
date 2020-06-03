@@ -3,8 +3,11 @@
 
 "use strict";
 
+
+Services.prefs.setBoolPref("webextensions.storage.sync.kinto", true);
+
 const { EncryptionRemoteTransformer } = ChromeUtils.import(
-  "resource://gre/modules/ExtensionStorageSync.jsm",
+  "resource://gre/modules/ExtensionStorageSyncKinto.jsm",
   null
 );
 const { CryptoUtils } = ChromeUtils.import(
