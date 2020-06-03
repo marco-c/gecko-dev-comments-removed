@@ -22,6 +22,8 @@ class JS_PUBLIC_API JSObject;
 
 namespace js {
 
+class SavedFrame;
+
 enum PromiseSlots {
   
   PromiseSlot_Flags = 0,
@@ -172,7 +174,8 @@ class PromiseObject : public NativeObject {
                                   JS::Handle<PromiseObject*> promise,
                                   JS::Handle<JS::Value> rejectionValue);
 
-  static void onSettled(JSContext* cx, JS::Handle<PromiseObject*> promise);
+  static void onSettled(JSContext* cx, JS::Handle<PromiseObject*> promise,
+                        JS::Handle<js::SavedFrame*> rejectionStack);
 
   double allocationTime();
   double resolutionTime();

@@ -469,7 +469,16 @@ class PromiseDebugInfo : public NativeObject {
     return getFixedSlot(Slot_ResolutionSite).toObjectOrNull();
   }
 
-  static void setResolutionInfo(JSContext* cx, Handle<PromiseObject*> promise) {
+  
+  
+  
+  
+  
+  static void setResolutionInfo(JSContext* cx, Handle<PromiseObject*> promise,
+                                HandleSavedFrame unwrappedRejectionStack) {
+    MOZ_ASSERT_IF(unwrappedRejectionStack,
+                  promise->state() == JS::PromiseState::Rejected);
+
     if (!ShouldCaptureDebugInfo(cx)) {
       return;
     }
@@ -508,11 +517,20 @@ class PromiseDebugInfo : public NativeObject {
       return;
     }
 
-    RootedObject stack(cx);
-    if (!JS::CaptureCurrentStack(cx, &stack,
-                                 JS::StackCapture(JS::AllFrames()))) {
-      cx->clearPendingException();
-      return;
+    RootedObject stack(cx, unwrappedRejectionStack);
+    if (stack) {
+      
+      
+      if (!cx->compartment()->wrap(cx, &stack)) {
+        cx->clearPendingException();
+        return;
+      }
+    } else {
+      if (!JS::CaptureCurrentStack(cx, &stack,
+                                   JS::StackCapture(JS::AllFrames()))) {
+        cx->clearPendingException();
+        return;
+      }
     }
 
     debugInfo->setFixedSlot(Slot_ResolutionSite, ObjectOrNullValue(stack));
@@ -561,19 +579,20 @@ JSObject* PromiseObject::resolutionSite() {
 
 
 
-static bool MaybeGetAndClearException(JSContext* cx, MutableHandleValue rval) {
+static bool MaybeGetAndClearExceptionAndStack(JSContext* cx,
+                                              MutableHandleValue rval,
+                                              MutableHandleSavedFrame stack) {
   if (!cx->isExceptionPending()) {
     return false;
   }
 
-  return GetAndClearException(cx, rval);
+  return GetAndClearExceptionAndStack(cx, rval, stack);
 }
 
-static MOZ_MUST_USE bool RunRejectFunction(JSContext* cx,
-                                           HandleObject onRejectedFunc,
-                                           HandleValue result,
-                                           HandleObject promiseObj,
-                                           UnhandledRejectionBehavior behavior);
+static MOZ_MUST_USE bool RunRejectFunction(
+    JSContext* cx, HandleObject onRejectedFunc, HandleValue result,
+    HandleObject promiseObj, HandleSavedFrame unwrappedRejectionStack,
+    UnhandledRejectionBehavior behavior);
 
 
 
@@ -583,11 +602,12 @@ static bool AbruptRejectPromise(JSContext* cx, CallArgs& args,
                                 HandleObject promiseObj, HandleObject reject) {
   
   RootedValue reason(cx);
-  if (!MaybeGetAndClearException(cx, &reason)) {
+  RootedSavedFrame stack(cx);
+  if (!MaybeGetAndClearExceptionAndStack(cx, &reason, &stack)) {
     return false;
   }
 
-  if (!RunRejectFunction(cx, reject, reason, promiseObj,
+  if (!RunRejectFunction(cx, reject, reason, promiseObj, stack,
                          UnhandledRejectionBehavior::Report)) {
     return false;
   }
@@ -896,14 +916,14 @@ static bool IsSettledMaybeWrappedPromise(JSObject* promise) {
 }
 
 
-static MOZ_MUST_USE bool RejectMaybeWrappedPromise(JSContext* cx,
-                                                   HandleObject promiseObj,
-                                                   HandleValue reason);
+static MOZ_MUST_USE bool RejectMaybeWrappedPromise(
+    JSContext* cx, HandleObject promiseObj, HandleValue reason,
+    HandleSavedFrame unwrappedRejectionStack);
 
 
-static MOZ_MUST_USE bool RejectPromiseInternal(JSContext* cx,
-                                               Handle<PromiseObject*> promise,
-                                               HandleValue reason);
+static MOZ_MUST_USE bool RejectPromiseInternal(
+    JSContext* cx, Handle<PromiseObject*> promise, HandleValue reason,
+    HandleSavedFrame unwrappedRejectionStack = nullptr);
 
 
 static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
@@ -941,7 +961,7 @@ static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  if (!RejectMaybeWrappedPromise(cx, promise, reasonVal)) {
+  if (!RejectMaybeWrappedPromise(cx, promise, reasonVal, nullptr)) {
     return false;
   }
   args.rval().setUndefined();
@@ -983,12 +1003,13 @@ static MOZ_MUST_USE bool ResolvePromiseInternal(JSContext* cx,
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_CANNOT_RESOLVE_PROMISE_WITH_ITSELF);
     RootedValue selfResolutionError(cx);
-    if (!MaybeGetAndClearException(cx, &selfResolutionError)) {
+    RootedSavedFrame stack(cx);
+    if (!MaybeGetAndClearExceptionAndStack(cx, &selfResolutionError, &stack)) {
       return false;
     }
 
     
-    return RejectMaybeWrappedPromise(cx, promise, selfResolutionError);
+    return RejectMaybeWrappedPromise(cx, promise, selfResolutionError, stack);
   }
 
   
@@ -997,8 +1018,9 @@ static MOZ_MUST_USE bool ResolvePromiseInternal(JSContext* cx,
       GetProperty(cx, resolution, resolution, cx->names().then, &thenVal);
 
   RootedValue error(cx);
+  RootedSavedFrame errorStack(cx);
   if (!status) {
-    if (!MaybeGetAndClearException(cx, &error)) {
+    if (!MaybeGetAndClearExceptionAndStack(cx, &error, &errorStack)) {
       return false;
     }
   }
@@ -1014,7 +1036,7 @@ static MOZ_MUST_USE bool ResolvePromiseInternal(JSContext* cx,
 
   
   if (!status) {
-    return RejectMaybeWrappedPromise(cx, promise, error);
+    return RejectMaybeWrappedPromise(cx, promise, error, errorStack);
   }
 
   
@@ -1245,14 +1267,20 @@ static MOZ_MUST_USE bool TriggerPromiseReactions(JSContext* cx,
                                                  HandleValue valueOrReason);
 
 
-static MOZ_MUST_USE bool ResolvePromise(JSContext* cx,
-                                        Handle<PromiseObject*> promise,
-                                        HandleValue valueOrReason,
-                                        JS::PromiseState state) {
+
+
+
+
+
+static MOZ_MUST_USE bool ResolvePromise(
+    JSContext* cx, Handle<PromiseObject*> promise, HandleValue valueOrReason,
+    JS::PromiseState state,
+    HandleSavedFrame unwrappedRejectionStack = nullptr) {
   
   MOZ_ASSERT(promise->state() == JS::PromiseState::Pending);
   MOZ_ASSERT(state == JS::PromiseState::Fulfilled ||
              state == JS::PromiseState::Rejected);
+  MOZ_ASSERT_IF(unwrappedRejectionStack, state == JS::PromiseState::Rejected);
 
   
   
@@ -1279,7 +1307,7 @@ static MOZ_MUST_USE bool ResolvePromise(JSContext* cx,
 
   
   
-  PromiseObject::onSettled(cx, promise);
+  PromiseObject::onSettled(cx, promise, unwrappedRejectionStack);
 
   
   
@@ -1287,10 +1315,11 @@ static MOZ_MUST_USE bool ResolvePromise(JSContext* cx,
 }
 
 
-static MOZ_MUST_USE bool RejectPromiseInternal(JSContext* cx,
-                                               Handle<PromiseObject*> promise,
-                                               HandleValue reason) {
-  return ResolvePromise(cx, promise, reason, JS::PromiseState::Rejected);
+static MOZ_MUST_USE bool RejectPromiseInternal(
+    JSContext* cx, Handle<PromiseObject*> promise, HandleValue reason,
+    HandleSavedFrame unwrappedRejectionStack) {
+  return ResolvePromise(cx, promise, reason, JS::PromiseState::Rejected,
+                        unwrappedRejectionStack);
 }
 
 
@@ -1484,9 +1513,9 @@ static bool GetCapabilitiesExecutor(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
-static MOZ_MUST_USE bool RejectMaybeWrappedPromise(JSContext* cx,
-                                                   HandleObject promiseObj,
-                                                   HandleValue reason_) {
+static MOZ_MUST_USE bool RejectMaybeWrappedPromise(
+    JSContext* cx, HandleObject promiseObj, HandleValue reason_,
+    HandleSavedFrame unwrappedRejectionStack) {
   Rooted<PromiseObject*> promise(cx);
   RootedValue reason(cx, reason_);
 
@@ -1532,7 +1561,8 @@ static MOZ_MUST_USE bool RejectMaybeWrappedPromise(JSContext* cx,
     }
   }
 
-  return ResolvePromise(cx, promise, reason, JS::PromiseState::Rejected);
+  return ResolvePromise(cx, promise, reason, JS::PromiseState::Rejected,
+                        unwrappedRejectionStack);
 }
 
 
@@ -1616,6 +1646,7 @@ static MOZ_MUST_USE bool DefaultResolvingPromiseReactionJob(
   
   ResolutionMode resolutionMode = ResolveMode;
   RootedValue handlerResult(cx, UndefinedValue());
+  RootedSavedFrame unwrappedRejectionStack(cx);
   if (promiseToResolve->state() == JS::PromiseState::Pending) {
     RootedValue argument(cx, reaction->handlerArg());
 
@@ -1629,7 +1660,8 @@ static MOZ_MUST_USE bool DefaultResolvingPromiseReactionJob(
 
     if (!ok) {
       resolutionMode = RejectMode;
-      if (!MaybeGetAndClearException(cx, &handlerResult)) {
+      if (!MaybeGetAndClearExceptionAndStack(cx, &handlerResult,
+                                             &unwrappedRejectionStack)) {
         return false;
       }
     }
@@ -1648,6 +1680,7 @@ static MOZ_MUST_USE bool DefaultResolvingPromiseReactionJob(
   callee = reaction->getFixedSlot(ReactionRecordSlot_Reject).toObjectOrNull();
 
   return RunRejectFunction(cx, callee, handlerResult, promiseObj,
+                           unwrappedRejectionStack,
                            reaction->unhandledRejectionBehavior());
 }
 
@@ -1837,6 +1870,8 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
   RootedValue handlerResult(cx);
   ResolutionMode resolutionMode = ResolveMode;
 
+  RootedSavedFrame unwrappedRejectionStack(cx);
+
   
   if (handlerVal.isInt32()) {
     int32_t handlerNum = handlerVal.toInt32();
@@ -1870,7 +1905,8 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
     
     if (!Call(cx, handlerVal, UndefinedHandleValue, argument, &handlerResult)) {
       resolutionMode = RejectMode;
-      if (!MaybeGetAndClearException(cx, &handlerResult)) {
+      if (!MaybeGetAndClearExceptionAndStack(cx, &handlerResult,
+                                             &unwrappedRejectionStack)) {
         return false;
       }
     }
@@ -1889,6 +1925,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
   callee = reaction->getFixedSlot(ReactionRecordSlot_Reject).toObjectOrNull();
 
   return RunRejectFunction(cx, callee, handlerResult, promiseObj,
+                           unwrappedRejectionStack,
                            reaction->unhandledRejectionBehavior());
 }
 
@@ -1941,7 +1978,9 @@ static bool PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  if (!MaybeGetAndClearException(cx, &rval)) {
+  
+  RootedSavedFrame stack(cx);
+  if (!MaybeGetAndClearExceptionAndStack(cx, &rval, &stack)) {
     return false;
   }
 
@@ -1990,7 +2029,8 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
 
   
   RootedValue exception(cx);
-  if (!MaybeGetAndClearException(cx, &exception)) {
+  RootedSavedFrame stack(cx);
+  if (!MaybeGetAndClearExceptionAndStack(cx, &exception, &stack)) {
     return false;
   }
 
@@ -2003,7 +2043,8 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
     return true;
   }
 
-  return RejectPromiseInternal(cx, promise.as<PromiseObject>(), exception);
+  return RejectPromiseInternal(cx, promise.as<PromiseObject>(), exception,
+                               stack);
 }
 
 
@@ -2410,7 +2451,9 @@ PromiseObject* PromiseObject::create(JSContext* cx, HandleObject executor,
   
   if (!success) {
     RootedValue exceptionVal(cx);
-    if (!MaybeGetAndClearException(cx, &exceptionVal)) {
+    
+    RootedSavedFrame stack(cx);
+    if (!MaybeGetAndClearExceptionAndStack(cx, &exceptionVal, &stack)) {
       return nullptr;
     }
 
@@ -2756,7 +2799,8 @@ static MOZ_MUST_USE bool RunFulfillFunction(JSContext* cx,
 
 static MOZ_MUST_USE bool RunRejectFunction(
     JSContext* cx, HandleObject onRejectedFunc, HandleValue result,
-    HandleObject promiseObj, UnhandledRejectionBehavior behavior) {
+    HandleObject promiseObj, HandleSavedFrame unwrappedRejectionStack,
+    UnhandledRejectionBehavior behavior) {
   cx->check(onRejectedFunc);
   cx->check(result);
   cx->check(promiseObj);
@@ -2783,7 +2827,8 @@ static MOZ_MUST_USE bool RunRejectFunction(
       return true;
     }
 
-    return RejectPromiseInternal(cx, temporaryPromise, result);
+    return RejectPromiseInternal(cx, temporaryPromise, result,
+                                 unwrappedRejectionStack);
   }
 
   
@@ -2794,7 +2839,7 @@ static MOZ_MUST_USE bool RunRejectFunction(
 
   
   if (PromiseHasAnyFlag(*promise, PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS)) {
-    return RejectPromiseInternal(cx, promise, result);
+    return RejectPromiseInternal(cx, promise, result, unwrappedRejectionStack);
   }
 
   
@@ -3774,11 +3819,12 @@ static bool PromiseAnyRejectElementFunction(JSContext* cx, unsigned argc,
     ThrowAggregateError(cx, errors, promiseObj);
 
     RootedValue reason(cx);
-    if (!MaybeGetAndClearException(cx, &reason)) {
+    RootedSavedFrame stack(cx);
+    if (!MaybeGetAndClearExceptionAndStack(cx, &reason, &stack)) {
       return false;
     }
 
-    if (!RunRejectFunction(cx, rejectFun, reason, promiseObj,
+    if (!RunRejectFunction(cx, rejectFun, reason, promiseObj, stack,
                            UnhandledRejectionBehavior::Report)) {
       return false;
     }
@@ -3904,16 +3950,20 @@ static MOZ_MUST_USE JSObject* CommonStaticResolveRejectImpl(
     return nullptr;
   }
 
-  
-  
-  
-  
   HandleObject promise = capability.promise();
-  if (!(mode == ResolveMode
-            ? RunFulfillFunction(cx, capability.resolve(), argVal, promise)
-            : RunRejectFunction(cx, capability.reject(), argVal, promise,
-                                UnhandledRejectionBehavior::Report))) {
-    return nullptr;
+  if (mode == ResolveMode) {
+    
+    
+    if (!RunFulfillFunction(cx, capability.resolve(), argVal, promise)) {
+      return nullptr;
+    }
+  } else {
+    
+    
+    if (!RunRejectFunction(cx, capability.reject(), argVal, promise, nullptr,
+                           UnhandledRejectionBehavior::Report)) {
+      return nullptr;
+    }
   }
 
   
@@ -5581,8 +5631,9 @@ bool PromiseObject::reject(JSContext* cx, Handle<PromiseObject*> promise,
 }
 
 
-void PromiseObject::onSettled(JSContext* cx, Handle<PromiseObject*> promise) {
-  PromiseDebugInfo::setResolutionInfo(cx, promise);
+void PromiseObject::onSettled(JSContext* cx, Handle<PromiseObject*> promise,
+                              HandleSavedFrame unwrappedRejectionStack) {
+  PromiseDebugInfo::setResolutionInfo(cx, promise, unwrappedRejectionStack);
 
   if (promise->state() == JS::PromiseState::Rejected &&
       promise->isUnhandled()) {
