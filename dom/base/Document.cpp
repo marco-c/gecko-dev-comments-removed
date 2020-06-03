@@ -3964,7 +3964,7 @@ void Document::OnParsingCompleted() {
   }
 }
 
-void Document::InitialTranslationCompleted(bool aL10nCached) {
+void Document::InitialTranslationCompleted() {
   if (mDocumentL10n && mDocumentL10n->mBlockingLayout) {
     
     
@@ -3978,7 +3978,7 @@ void Document::InitialTranslationCompleted(bool aL10nCached) {
 
   nsXULPrototypeDocument* proto = GetPrototype();
   if (proto) {
-    proto->SetIsL10nCached(aL10nCached);
+    proto->SetIsL10nCached();
   }
 }
 
