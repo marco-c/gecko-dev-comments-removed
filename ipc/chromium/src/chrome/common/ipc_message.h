@@ -289,6 +289,9 @@ class Message : public Pickle {
   }
 
   
+  void AssertAsLargeAsHeader() const;
+
+  
   static void Log(const Message* msg, std::wstring* l) {}
 
   static int HeaderSizeFromData(const char* range_start,
