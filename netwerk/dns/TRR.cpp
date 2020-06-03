@@ -874,13 +874,9 @@ nsresult TRR::DohDecode(nsCString& aHost) {
     }
 
     
-    
-    bool responseMatchesQuestion =
-        (qname.Length() == aHost.Length() ||
-         (aHost.Length() == qname.Length() + 1 && aHost.Last() == '.')) &&
-        qname.Compare(aHost.BeginReading(), true, qname.Length()) == 0;
-
-    if (responseMatchesQuestion) {
+    if (qname.Equals(aHost) ||
+        (aHost.Length() == qname.Length() + 1 && aHost.Last() == '.' &&
+         StringBeginsWith(aHost, qname))) {
       
       
       
@@ -923,7 +919,6 @@ nsresult TRR::DohDecode(nsCString& aHost) {
               return rv;
             }
             if (!qname.IsEmpty()) {
-              ToLowerCase(qname);
               mCname = qname;
               LOG(("TRR::DohDecode CNAME host %s => %s\n", host.get(),
                    mCname.get()));
