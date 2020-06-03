@@ -1155,6 +1155,7 @@ nsExternalAppHandler::nsExternalAppHandler(
       mStopRequestIssued(false),
       mIsFileChannel(false),
       mShouldCloseWindow(false),
+      mHandleInternally(false),
       mReason(aReason),
       mTempFileIsExecutable(false),
       mTimeDownloadStarted(0),
@@ -1734,7 +1735,7 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
 #endif
     if (action == nsIMIMEInfo::useHelperApp ||
         action == nsIMIMEInfo::useSystemDefault) {
-      rv = LaunchWithApplication();
+      rv = LaunchWithApplication(mHandleInternally);
     } else {
       rv = PromptForSaveDestination();
     }
@@ -2102,11 +2103,10 @@ nsresult nsExternalAppHandler::CreateTransfer() {
   rv = NS_NewFileURI(getter_AddRefs(target), mFinalFileDestination);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCOMPtr<nsIChannel> channel = do_QueryInterface(mRequest);
-
   rv = transfer->Init(mSourceUrl, target, EmptyString(), mMimeInfo,
                       mTimeDownloadStarted, mTempFile, this,
-                      channel && NS_UsePrivateBrowsing(channel));
+                      channel && NS_UsePrivateBrowsing(channel),
+                      mHandleInternally);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -2164,7 +2164,8 @@ nsresult nsExternalAppHandler::CreateFailedTransfer(bool aIsPrivateBrowsing) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = transfer->Init(mSourceUrl, pseudoTarget, EmptyString(), mMimeInfo,
-                      mTimeDownloadStarted, nullptr, this, aIsPrivateBrowsing);
+                      mTimeDownloadStarted, nullptr, this, aIsPrivateBrowsing,
+                      mHandleInternally);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -2291,8 +2292,11 @@ nsresult nsExternalAppHandler::ContinueSave(nsIFile* aNewFileLocation) {
 
 
 
-NS_IMETHODIMP nsExternalAppHandler::LaunchWithApplication() {
+NS_IMETHODIMP nsExternalAppHandler::LaunchWithApplication(
+    bool aHandleInternally) {
   if (mCanceled) return NS_OK;
+
+  mHandleInternally = aHandleInternally;
 
   
   

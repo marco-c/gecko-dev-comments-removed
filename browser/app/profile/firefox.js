@@ -372,7 +372,7 @@ pref("browser.download.autohideButton", true);
 
 
 
-pref("browser.helperApps.showOpenOptionForPdfJS", true);
+pref("browser.helperApps.showOpenOptionForPdfJS", false);
 
 
 pref("browser.search.searchEnginesURL",      "https://addons.mozilla.org/%LOCALE%/firefox/search-engines/");

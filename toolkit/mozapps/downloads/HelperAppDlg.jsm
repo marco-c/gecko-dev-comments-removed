@@ -857,6 +857,10 @@ nsUnknownContentTypeDialog.prototype = {
     );
   },
 
+  get handleInternally() {
+    return this.dialogElement("handleInternally").selected;
+  },
+
   toggleRememberChoice(aCheckbox) {
     this.dialogElement("settingsChange").hidden = !aCheckbox.checked;
     this.mDialog.sizeToContent();
@@ -933,7 +937,7 @@ nsUnknownContentTypeDialog.prototype = {
       if (needUpdate) {
         this.mLauncher.MIMEInfo.preferredAction = this.nsIMIMEInfo.useSystemDefault;
       }
-    } else {
+    } else if (this.useOtherHandler) {
       
       
       needUpdate =
@@ -1030,7 +1034,7 @@ nsUnknownContentTypeDialog.prototype = {
         );
         this._saveToDiskTimer.initWithCallback(this, 0, nsITimer.TYPE_ONE_SHOT);
       } else {
-        this.mLauncher.launchWithApplication();
+        this.mLauncher.launchWithApplication(this.handleInternally);
       }
 
       

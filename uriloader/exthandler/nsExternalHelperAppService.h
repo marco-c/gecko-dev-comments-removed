@@ -311,6 +311,11 @@ class nsExternalAppHandler final : public nsIStreamListener,
   
 
 
+  bool mHandleInternally;
+
+  
+
+
 
 
   uint32_t mReason;
