@@ -4568,13 +4568,24 @@ static nsSize GetScrollPortSizeExcludingHeadersAndFooters(
 }
 
 nsSize ScrollFrameHelper::GetPageScrollAmount() const {
-  nsSize lineScrollAmount = GetLineScrollAmount();
+  nsSize effectiveScrollPortSize;
 
-  
-  
-  nsSize effectiveScrollPortSize = GetScrollPortSizeExcludingHeadersAndFooters(
-      mOuter, mIsRoot ? mOuter->PresShell()->GetRootFrame() : nullptr,
-      mScrollPort);
+  PresShell* presShell = mOuter->PresShell();
+  if (mIsRoot && presShell->IsVisualViewportSizeSet()) {
+    
+    
+    
+    
+    effectiveScrollPortSize = presShell->GetVisualViewportSize();
+  } else {
+    
+    
+    effectiveScrollPortSize = GetScrollPortSizeExcludingHeadersAndFooters(
+        mOuter, mIsRoot ? mOuter->PresShell()->GetRootFrame() : nullptr,
+        mScrollPort);
+  }
+
+  nsSize lineScrollAmount = GetLineScrollAmount();
 
   
   
