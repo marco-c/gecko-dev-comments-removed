@@ -70,7 +70,8 @@ let originalRequestLongerTimeout = requestLongerTimeout;
 
 requestLongerTimeout = function AntiTrackingRequestLongerTimeout(factor) {
   let ccovMultiplier = AppConstants.MOZ_CODE_COVERAGE ? 2 : 1;
-  originalRequestLongerTimeout(ccovMultiplier * factor);
+  let fissionMultiplier = SpecialPowers.useRemoteSubframes ? 2 : 1;
+  originalRequestLongerTimeout(ccovMultiplier * fissionMultiplier * factor);
 };
 
 requestLongerTimeout(3);
