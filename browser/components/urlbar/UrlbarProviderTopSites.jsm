@@ -70,17 +70,12 @@ class ProviderTopSites extends UrlbarProvider {
 
 
   isActive(queryContext) {
-    
-    
-    
-    
-    
     return (
       UrlbarPrefs.get("openViewOnFocus") &&
       !queryContext.searchString &&
       Services.prefs.getBoolPref(
-        "browser.newtabpage.activity-stream.feeds.topsites",
-        false
+        "browser.newtabpage.activity-stream.feeds.system.topsites",
+        true
       )
     );
   }

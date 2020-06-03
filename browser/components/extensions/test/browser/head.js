@@ -71,9 +71,13 @@ function loadTestSubscript(filePath) {
 }
 
 
+
 Services.prefs
   .getDefaultBranch("browser.newtabpage.activity-stream.")
   .setBoolPref("feeds.topsites", false);
+Services.prefs
+  .getDefaultBranch("browser.newtabpage.activity-stream.")
+  .setBoolPref("feeds.system.topsites", false);
 
 {
   

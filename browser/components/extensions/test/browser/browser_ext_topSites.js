@@ -20,8 +20,8 @@ async function updateTopSites(condition) {
   
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.newtabpage.activity-stream.feeds.topsites", false],
-      ["browser.newtabpage.activity-stream.feeds.topsites", true],
+      ["browser.newtabpage.activity-stream.feeds.system.topsites", false],
+      ["browser.newtabpage.activity-stream.feeds.system.topsites", true],
     ],
   });
 
@@ -70,8 +70,8 @@ add_task(async function setup() {
         "https://www.youtube.com/,https://www.facebook.com/,https://www.amazon.com/,https://www.reddit.com/,https://www.wikipedia.org/,https://twitter.com/",
       ],
       
-      ["browser.newtabpage.activity-stream.feeds.topsites", false],
-      ["browser.newtabpage.activity-stream.feeds.topsites", true],
+      ["browser.newtabpage.activity-stream.feeds.system.topsites", false],
+      ["browser.newtabpage.activity-stream.feeds.system.topsites", true],
       [
         "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts",
         true,
@@ -218,6 +218,55 @@ add_task(async function test_topSites_newtab_visits() {
     "got topSites newtab links"
   );
 
+  await extension.unload();
+  await PlacesUtils.history.clear();
+});
+
+
+add_task(async function test_topSites_newtab_ignored() {
+  let extension = await loadExtension();
+  
+  
+  
+  for (let i = 0; i < 5; i++) {
+    await PlacesTestUtils.addVisits([
+      "http://example-1.com/",
+      "http://example-2.com/",
+    ]);
+  }
+  await PlacesTestUtils.addVisits("http://example-1.com/");
+
+  
+  await updateTopSites(sites => {
+    return sites && sites[1] && sites[1].url == "http://example-1.com/";
+  });
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.newtabpage.activity-stream.feeds.system.topsites", false]],
+  });
+
+  let expectedResults = [
+    {
+      type: "url",
+      url: "http://example-1.com/",
+      title: "test visit for http://example-1.com/",
+      favicon: null,
+    },
+    {
+      type: "url",
+      url: "http://example-2.com/",
+      title: "test visit for http://example-2.com/",
+      favicon: null,
+    },
+  ];
+
+  Assert.deepEqual(
+    expectedResults,
+    await getSites(extension, { newtab: true }),
+    "Got top-frecency links from Places"
+  );
+
+  await SpecialPowers.popPrefEnv();
   await extension.unload();
   await PlacesUtils.history.clear();
 });
