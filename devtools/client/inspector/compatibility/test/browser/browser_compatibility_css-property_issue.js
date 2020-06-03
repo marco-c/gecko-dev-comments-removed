@@ -5,7 +5,7 @@
 
 
 
-const MDNCompatibility = require("devtools/client/inspector/compatibility/lib/MDNCompatibility");
+const MDNCompatibility = require("devtools/shared/compatibility/MDNCompatibility");
 
 const TEST_URI = `
   <style>
