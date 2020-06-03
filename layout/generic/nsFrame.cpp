@@ -7295,6 +7295,15 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(ViewportType aViewportType,
                                 nsDisplayTransform::OFFSET_BY_ORIGIN);
     }
 
+    
+    
+    
+    *aOutAncestor = nsLayoutUtils::GetCrossDocParentFrame(this);
+    nsPoint delta = GetOffsetToCrossDoc(*aOutAncestor);
+    
+    result.PostTranslate(NSAppUnitsToFloatPixels(delta.x, scaleFactor),
+                         NSAppUnitsToFloatPixels(delta.y, scaleFactor), 0.0f);
+
     if (zoomedContentRoot) {
       Matrix4x4 layoutToVisual;
       ScrollableLayerGuid::ViewID targetScrollId =
@@ -7313,12 +7322,6 @@ Matrix4x4Flagged nsIFrame::GetTransformMatrix(ViewportType aViewportType,
       }
       result = result * layoutToVisual;
     }
-
-    *aOutAncestor = nsLayoutUtils::GetCrossDocParentFrame(this);
-    nsPoint delta = GetOffsetToCrossDoc(*aOutAncestor);
-    
-    result.PostTranslate(NSAppUnitsToFloatPixels(delta.x, scaleFactor),
-                         NSAppUnitsToFloatPixels(delta.y, scaleFactor), 0.0f);
 
     return result;
   }
