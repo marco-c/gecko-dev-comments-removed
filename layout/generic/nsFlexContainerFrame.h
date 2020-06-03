@@ -113,6 +113,11 @@ class nsFlexContainerFrame final : public nsContainerFrame {
   void Init(nsIContent* aContent, nsContainerFrame* aParent,
             nsIFrame* aPrevInFlow) override;
 
+  bool IsFrameOfType(uint32_t aFlags) const override {
+    return nsContainerFrame::IsFrameOfType(
+        aFlags & ~(nsIFrame::eCanContainOverflowContainers));
+  }
+
   void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                         const nsDisplayListSet& aLists) override;
 
@@ -537,8 +542,9 @@ class nsFlexContainerFrame final : public nsContainerFrame {
       const nscoord aContentBoxCrossSize,
       const mozilla::LogicalSize& aAvailableSizeForItems,
       const mozilla::LogicalMargin& aBorderPadding,
-      const nscoord aConsumedBSize, nscoord& aFlexContainerAscent,
-      nsTArray<FlexLine>& aLines, nsTArray<nsIFrame*>& aPlaceholders,
+      const nscoord aSumOfPrevInFlowsChildrenBlockSize,
+      nscoord& aFlexContainerAscent, nsTArray<FlexLine>& aLines,
+      nsTArray<nsIFrame*>& aPlaceholders,
       const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis);
 
   
