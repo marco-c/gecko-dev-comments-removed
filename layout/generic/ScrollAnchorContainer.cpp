@@ -636,7 +636,7 @@ ScrollAnchorContainer::ExamineAnchorCandidate(nsIFrame* aFrame) const {
 
 nsIFrame* ScrollAnchorContainer::FindAnchorIn(nsIFrame* aFrame) const {
   
-  for (const auto& [list, listID] : aFrame->GetChildLists()) {
+  for (const auto& [list, listID] : aFrame->ChildLists()) {
     
     
     

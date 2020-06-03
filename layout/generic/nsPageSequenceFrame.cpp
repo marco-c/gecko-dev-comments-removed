@@ -405,7 +405,7 @@ static void GetPrintCanvasElementsInFrame(
   if (!aFrame) {
     return;
   }
-  for (const auto& childList : aFrame->GetChildLists()) {
+  for (const auto& childList : aFrame->ChildLists()) {
     for (nsIFrame* child : childList.mList) {
       
       nsHTMLCanvasFrame* canvasFrame = do_QueryFrame(child);

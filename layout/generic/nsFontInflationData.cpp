@@ -320,7 +320,7 @@ void nsFontInflationData::ScanTextIn(nsIFrame* aFrame) {
   
   
 
-  for (const auto& childList : aFrame->GetChildLists()) {
+  for (const auto& childList : aFrame->ChildLists()) {
     for (nsIFrame* kid : childList.mList) {
       if (kid->GetStateBits() & NS_FRAME_FONT_INFLATION_FLOW_ROOT) {
         

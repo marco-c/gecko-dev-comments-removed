@@ -922,7 +922,7 @@ static bool ContainingBlockChangeAffectsDescendants(
   
   MOZ_ASSERT_IF(aIsFixedPosContainingBlock, aIsAbsPosContainingBlock);
 
-  for (const auto& childList : aFrame->GetChildLists()) {
+  for (const auto& childList : aFrame->ChildLists()) {
     for (nsIFrame* f : childList.mList) {
       if (f->IsPlaceholderFrame()) {
         nsIFrame* outOfFlow = nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
@@ -1102,7 +1102,7 @@ static void SyncViewsAndInvalidateDescendants(nsIFrame* aFrame,
 
   aFrame->SyncFrameViewProperties();
 
-  for (const auto& [list, listID] : aFrame->GetChildLists()) {
+  for (const auto& [list, listID] : aFrame->ChildLists()) {
     for (nsIFrame* child : list) {
       if (!(child->GetStateBits() & NS_FRAME_OUT_OF_FLOW)) {
         
@@ -1172,7 +1172,7 @@ static void AddSubtreeToOverflowTracker(
     aOverflowChangedTracker.AddFrame(aFrame,
                                      OverflowChangedTracker::CHILDREN_CHANGED);
   }
-  for (const auto& childList : aFrame->GetChildLists()) {
+  for (const auto& childList : aFrame->ChildLists()) {
     for (nsIFrame* child : childList.mList) {
       AddSubtreeToOverflowTracker(child, aOverflowChangedTracker);
     }
@@ -3562,7 +3562,7 @@ void RestyleManager::ReparentFrameDescendants(nsIFrame* aFrame,
     
     return;
   }
-  for (const auto& childList : aFrame->GetChildLists()) {
+  for (const auto& childList : aFrame->ChildLists()) {
     for (nsIFrame* child : childList.mList) {
       
       if (!(child->GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&

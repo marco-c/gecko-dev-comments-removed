@@ -526,7 +526,7 @@ void nsBlockFrame::List(FILE* out, const char* aPrefix,
   
   
   ChildListIDs skip = {kPrincipalList, kOverflowList};
-  for (const auto& [list, listID] : nsIFrame::GetChildLists()) {
+  for (const auto& [list, listID] : nsIFrame::ChildLists()) {
     if (skip.contains(listID)) {
       continue;
     }

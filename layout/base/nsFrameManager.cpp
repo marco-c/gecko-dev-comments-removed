@@ -163,7 +163,7 @@ void nsFrameManager::CaptureFrameState(nsIFrame* aFrame,
   CaptureFrameStateFor(aFrame, aState);
 
   
-  for (const auto& childList : aFrame->GetChildLists()) {
+  for (const auto& childList : aFrame->ChildLists()) {
     for (nsIFrame* child : childList.mList) {
       if (child->GetStateBits() & NS_FRAME_OUT_OF_FLOW) {
         
@@ -233,7 +233,7 @@ void nsFrameManager::RestoreFrameState(nsIFrame* aFrame,
   RestoreFrameStateFor(aFrame, aState);
 
   
-  for (const auto& childList : aFrame->GetChildLists()) {
+  for (const auto& childList : aFrame->ChildLists()) {
     for (nsIFrame* child : childList.mList) {
       RestoreFrameState(child, aState);
     }
