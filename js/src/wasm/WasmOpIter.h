@@ -48,25 +48,25 @@ class StackType {
 
   explicit StackType(const ValType& t) : tc_(t.packed()) {
     MOZ_ASSERT(IsValid(tc_));
-    MOZ_ASSERT(!isBottom());
+    MOZ_ASSERT(!isTVar());
   }
 
-  static StackType bottom() { return StackType(PackTypeCode(TypeCode::Limit)); }
+  static StackType tvar() { return StackType(PackTypeCode(TypeCode::Limit)); }
 
-  bool isBottom() const {
+  bool isTVar() const {
     MOZ_ASSERT(IsValid(tc_));
     return UnpackTypeCodeType(tc_) == TypeCode::Limit;
   }
 
   ValType valType() const {
     MOZ_ASSERT(IsValid(tc_));
-    MOZ_ASSERT(!isBottom());
+    MOZ_ASSERT(!isTVar());
     return ValType(tc_);
   }
 
-  bool isValidForOldSelect() const {
+  bool isValidForUntypedSelect() const {
     MOZ_ASSERT(IsValid(tc_));
-    if (isBottom()) {
+    if (isTVar()) {
       return true;
     }
     switch (valType().kind()) {
@@ -230,7 +230,7 @@ class TypeAndValueT {
   mozilla::CompactPair<StackType, Value> tv_;
 
  public:
-  TypeAndValueT() : tv_(StackType::bottom(), Value()) {}
+  TypeAndValueT() : tv_(StackType::tvar(), Value()) {}
   explicit TypeAndValueT(StackType type) : tv_(type, Value()) {}
   explicit TypeAndValueT(ValType type) : tv_(StackType(type), Value()) {}
   TypeAndValueT(StackType type, Value value) : tv_(type, value) {}
@@ -298,7 +298,6 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   MOZ_MUST_USE bool popWithType(ValType expected, Value* value);
   MOZ_MUST_USE bool popWithType(ResultType expected, ValueVector* values);
   MOZ_MUST_USE bool popThenPushType(ResultType expected, ValueVector* values);
-  MOZ_MUST_USE bool ensureTopHasType(ResultType expected, ValueVector* values);
 
   MOZ_MUST_USE bool pushControl(LabelKind kind, BlockType type);
   MOZ_MUST_USE bool checkStackAtEndOfBlock(ResultType* type,
@@ -627,7 +626,7 @@ inline bool OpIter<Policy>::popStackType(StackType* type, Value* value) {
     
     
     if (block.polymorphicBase()) {
-      *type = StackType::bottom();
+      *type = StackType::tvar();
       *value = Value();
 
       
@@ -654,7 +653,7 @@ inline bool OpIter<Policy>::popWithType(ValType expectedType, Value* value) {
     return false;
   }
 
-  return stackType.isBottom() ||
+  return stackType.isTVar() ||
          checkIsSubtypeOf(stackType.valType(), expectedType);
 }
 
@@ -690,7 +689,7 @@ inline bool OpIter<Policy>::popThenPushType(ResultType expected,
   Control& block = controlStack_.back();
 
   size_t expectedLength = expected.length();
-  if (!values->resize(expectedLength)) {
+  if (values && !values->resize(expectedLength)) {
     return false;
   }
 
@@ -701,7 +700,12 @@ inline bool OpIter<Policy>::popThenPushType(ResultType expected,
     
     size_t reverseIndex = expectedLength - i - 1;
     ValType expectedType = expected[reverseIndex];
-    Value* value = &(*values)[reverseIndex];
+    auto collectValue = [&](const Value& v) {
+      if (values) {
+        (*values)[reverseIndex] = v;
+      }
+    };
+
     size_t currentValueStackLength = valueStack_.length() - i;
 
     MOZ_ASSERT(currentValueStackLength >= block.valueStackBase());
@@ -719,77 +723,12 @@ inline bool OpIter<Policy>::popThenPushType(ResultType expected,
         return false;
       }
 
-      *value = Value();
-    } else {
-      TypeAndValue& observed = valueStack_[currentValueStackLength - 1];
-
-      if (observed.type().isBottom()) {
-        observed.typeRef() = StackType(expectedType);
-        *value = Value();
-      } else {
-        if (!checkIsSubtypeOf(observed.type().valType(), expectedType)) {
-          return false;
-        }
-
-        *value = observed.value();
-      }
-    }
-  }
-  return true;
-}
-
-
-
-
-
-
-
-
-template <typename Policy>
-inline bool OpIter<Policy>::ensureTopHasType(ResultType expected,
-                                             ValueVector* values) {
-  if (expected.empty()) {
-    return true;
-  }
-
-  Control& block = controlStack_.back();
-
-  size_t expectedLength = expected.length();
-  if (values && !values->resize(expectedLength)) {
-    return false;
-  }
-
-  for (size_t i = 0; i != expectedLength; i++) {
-    
-    
-    
-    
-    size_t reverseIndex = expectedLength - i - 1;
-    ValType expectedType = expected[reverseIndex];
-    auto collectValue = [&](const Value& v) {
-      if (values) {
-        (*values)[reverseIndex] = v;
-      }
-    };
-    size_t currentValueStackLength = valueStack_.length() - i;
-
-    MOZ_ASSERT(currentValueStackLength >= block.valueStackBase());
-    if (currentValueStackLength == block.valueStackBase()) {
-      if (!block.polymorphicBase()) {
-        return failEmptyStack();
-      }
-
-      
-      if (!valueStack_.insert(valueStack_.begin() + currentValueStackLength,
-                              TypeAndValue(StackType::bottom()))) {
-        return false;
-      }
-
       collectValue(Value());
     } else {
       TypeAndValue& observed = valueStack_[currentValueStackLength - 1];
 
-      if (observed.type().isBottom()) {
+      if (observed.type().isTVar()) {
+        observed.typeRef() = StackType(expectedType);
         collectValue(Value());
       } else {
         if (!checkIsSubtypeOf(observed.type().valType(), expectedType)) {
@@ -800,7 +739,6 @@ inline bool OpIter<Policy>::ensureTopHasType(ResultType expected,
       }
     }
   }
-
   return true;
 }
 
@@ -1149,7 +1087,7 @@ inline bool OpIter<Policy>::checkBrTableEntry(uint32_t* relativeDepth,
     branchValues = nullptr;
   }
 
-  return ensureTopHasType(*type, branchValues);
+  return popThenPushType(*type, branchValues);
 }
 
 template <typename Policy>
@@ -1498,13 +1436,14 @@ inline bool OpIter<Policy>::readSelect(bool typed, StackType* type,
     return false;
   }
 
-  if (!falseType.isValidForOldSelect() || !trueType.isValidForOldSelect()) {
+  if (!falseType.isValidForUntypedSelect() ||
+      !trueType.isValidForUntypedSelect()) {
     return fail("invalid types for old-style 'select'");
   }
 
-  if (falseType.isBottom()) {
+  if (falseType.isTVar()) {
     *type = trueType;
-  } else if (trueType.isBottom() || falseType == trueType) {
+  } else if (trueType.isTVar() || falseType == trueType) {
     *type = falseType;
   } else {
     return fail("select operand types must match");
