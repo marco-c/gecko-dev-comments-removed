@@ -124,7 +124,7 @@ static mozilla::LazyLogModule gSriPRLog("SRI");
   PR_END_MACRO
 
 
-static const char* const gStateStrings[] = {"Unknown", "NeedsParser", "Pending",
+static const char* const gStateStrings[] = {"NeedsParser", "Pending",
                                             "Loading", "Complete"};
 
 namespace mozilla {
