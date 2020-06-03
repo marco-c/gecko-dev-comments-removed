@@ -3,7 +3,7 @@
 
 
 #ifdef FREEBL_NO_DEPEND
-#include "stubs.h"
+#include "../stubs.h"
 #endif
 
 #include <stdio.h>

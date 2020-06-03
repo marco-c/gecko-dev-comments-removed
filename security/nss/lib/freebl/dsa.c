@@ -313,13 +313,14 @@ DSA_NewKeyFromSeed(const PQGParams *params,
 
 static SECStatus
 dsa_SignDigest(DSAPrivateKey *key, SECItem *signature, const SECItem *digest,
-               const unsigned char *kb)
+               const unsigned char *kbytes)
 {
     mp_int p, q, g; 
     mp_int x, k;    
     mp_int r, s;    
     mp_int t;       
     mp_int ar;      
+    mp_digit fuzz;  
     mp_err err = MP_OKAY;
     SECStatus rv = SECSuccess;
     unsigned int dsa_subprime_len, dsa_signature_len, offset;
@@ -373,6 +374,7 @@ dsa_SignDigest(DSAPrivateKey *key, SECItem *signature, const SECItem *digest,
     CHECK_MPI_OK(mp_init(&s));
     CHECK_MPI_OK(mp_init(&t));
     CHECK_MPI_OK(mp_init(&ar));
+
     
 
 
@@ -380,14 +382,28 @@ dsa_SignDigest(DSAPrivateKey *key, SECItem *signature, const SECItem *digest,
     SECITEM_TO_MPINT(key->params.subPrime, &q);
     SECITEM_TO_MPINT(key->params.base, &g);
     SECITEM_TO_MPINT(key->privateValue, &x);
-    OCTETS_TO_MPINT(kb, &k, dsa_subprime_len);
+    OCTETS_TO_MPINT(kbytes, &k, dsa_subprime_len);
+
+    
+
+    if (RNG_GenerateGlobalRandomBytes(&fuzz, sizeof(mp_digit)) != SECSuccess) {
+        PORT_SetError(SEC_ERROR_NEED_RANDOM);
+        rv = SECFailure;
+        goto cleanup;
+    }
+    fuzz |= 1ULL << ((sizeof(mp_digit) * PR_BITS_PER_BYTE - 1));
     
 
 
 
 
-    CHECK_MPI_OK(mp_exptmod(&g, &k, &p, &r)); 
-    CHECK_MPI_OK(mp_mod(&r, &q, &r));         
+    CHECK_MPI_OK(mp_mul_d(&q, fuzz, &t)); 
+    CHECK_MPI_OK(mp_add(&k, &t, &t));     
+    
+    CHECK_MPI_OK(mp_exptmod(&g, &t, &p, &r)); 
+    
+    CHECK_MPI_OK(mp_mod(&r, &q, &r)); 
+
     
 
 
@@ -411,15 +427,24 @@ dsa_SignDigest(DSAPrivateKey *key, SECItem *signature, const SECItem *digest,
     
     CHECK_MPI_OK(mp_mul(&k, &ar, &k));       
     CHECK_MPI_OK(mp_mulmod(&k, &t, &q, &k)); 
-    CHECK_MPI_OK(mp_invmod(&k, &q, &k));     
-    CHECK_MPI_OK(mp_mulmod(&k, &t, &q, &k)); 
-    SECITEM_TO_MPINT(localDigest, &s);       
     
-    CHECK_MPI_OK(mp_mul(&x, &ar, &x));        
-    CHECK_MPI_OK(mp_mulmod(&x, &r, &q, &x));  
+    CHECK_MPI_OK(mp_invmod(&k, &q, &k)); 
+    
+    CHECK_MPI_OK(mp_mulmod(&k, &t, &q, &k)); 
+    
+    SECITEM_TO_MPINT(localDigest, &s); 
+    
+    CHECK_MPI_OK(mp_mul(&x, &ar, &x)); 
+    
+    CHECK_MPI_OK(mp_mulmod(&x, &r, &q, &x)); 
+    
     CHECK_MPI_OK(mp_mulmod(&s, &ar, &q, &t)); 
-    CHECK_MPI_OK(mp_add(&t, &x, &s));         
-    CHECK_MPI_OK(mp_mulmod(&s, &k, &q, &s));  
+    
+    CHECK_MPI_OK(mp_add(&t, &x, &s)); 
+    
+    CHECK_MPI_OK(mp_mulmod(&s, &k, &q, &s)); 
+    
+
     
 
 
