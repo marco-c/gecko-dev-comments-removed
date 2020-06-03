@@ -731,14 +731,17 @@ Download.prototype = {
 
 
 
-  launch() {
+
+
+
+  launch(options = {}) {
     if (!this.succeeded) {
       return Promise.reject(
         new Error("launch can only be called if the download succeeded")
       );
     }
 
-    return DownloadIntegration.launchDownload(this);
+    return DownloadIntegration.launchDownload(this, options);
   },
 
   
