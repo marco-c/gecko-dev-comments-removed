@@ -876,9 +876,13 @@ nsresult TRR::DohDecode(nsCString& aHost) {
     }
 
     
-    if (qname.Equals(aHost) ||
-        (aHost.Length() == qname.Length() + 1 && aHost.Last() == '.' &&
-         StringBeginsWith(aHost, qname))) {
+    
+    bool responseMatchesQuestion =
+        (qname.Length() == aHost.Length() ||
+         (aHost.Length() == qname.Length() + 1 && aHost.Last() == '.')) &&
+        qname.Compare(aHost.BeginReading(), true, qname.Length()) == 0;
+
+    if (responseMatchesQuestion) {
       
       
       
