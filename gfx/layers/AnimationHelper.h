@@ -68,6 +68,26 @@ struct AnimatedValue final {
 
   explicit AnimatedValue(nscolor aValue) : mValue(AsVariant(aValue)) {}
 
+  void SetTransform(gfx::Matrix4x4&& aTransformInDevSpace,
+                    gfx::Matrix4x4&& aFrameTransform,
+                    const TransformData& aData) {
+    MOZ_ASSERT(mValue.is<AnimationTransform>());
+    AnimationTransform& previous = mValue.as<AnimationTransform>();
+    previous.mTransformInDevSpace = std::move(aTransformInDevSpace);
+    previous.mFrameTransform = std::move(aFrameTransform);
+    if (previous.mData != aData) {
+      previous.mData = aData;
+    }
+  }
+  void SetOpacity(float aOpacity) {
+    MOZ_ASSERT(mValue.is<float>());
+    mValue.as<float>() = aOpacity;
+  }
+  void SetColor(nscolor aColor) {
+    MOZ_ASSERT(mValue.is<nscolor>());
+    mValue.as<nscolor>() = aColor;
+  }
+
  private:
   AnimatedValueType mValue;
 };
@@ -97,19 +117,25 @@ class CompositorAnimationStorage final {
 
 
 
-  void SetAnimatedValue(uint64_t aId, gfx::Matrix4x4&& aTransformInDevSpace,
+
+
+
+  void SetAnimatedValue(uint64_t aId, AnimatedValue* aPreviousValue,
+                        gfx::Matrix4x4&& aTransformInDevSpace,
                         gfx::Matrix4x4&& aFrameTransform,
                         const TransformData& aData);
 
   
 
 
-  void SetAnimatedValue(uint64_t aId, const float& aOpacity);
+  void SetAnimatedValue(uint64_t aId, AnimatedValue* aPreviousValue,
+                        float aOpacity);
 
   
 
 
-  void SetAnimatedValue(uint64_t aId, nscolor aColor);
+  void SetAnimatedValue(uint64_t aId, AnimatedValue* aPreviousValue,
+                        nscolor aColor);
 
   
 
