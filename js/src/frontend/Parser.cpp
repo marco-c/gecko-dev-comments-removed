@@ -1984,7 +1984,12 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneFunction(
   if (!funbox) {
     return null();
   }
-  funbox->initStandaloneFunction(enclosingScope);
+
+  
+  
+  
+  MOZ_ASSERT(enclosingScope->is<GlobalScope>());
+  funbox->initWithEnclosingScope(enclosingScope, fun->flags(), syntaxKind);
 
   SourceParseContext funpc(this, funbox, newDirectives);
   if (!funpc.init()) {
@@ -3097,7 +3102,8 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneLazyFunction(
     return null();
   }
   funbox->initFromLazyFunction(fun);
-  funbox->initWithEnclosingScope(fun);
+  funbox->initWithEnclosingScope(fun->enclosingScope(), fun->flags(),
+                                 syntaxKind);
 
   Directives newDirectives = directives;
   SourceParseContext funpc(this, funbox, &newDirectives);
