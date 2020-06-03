@@ -811,9 +811,9 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
 
   
   
-  if (StaticPrefs::security_mixed_content_block_display_content() &&
-      classification == eMixedDisplay) {
-    if (allowMixedContent) {
+  if (classification == eMixedDisplay) {
+    if (!StaticPrefs::security_mixed_content_block_display_content() ||
+        allowMixedContent) {
       LogMixedContentMessage(classification, aContentLocation, topInnerWindowID,
                              eUserOverride, requestingLocation);
       *aDecision = nsIContentPolicy::ACCEPT;
@@ -854,11 +854,12 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
       rootDoc->SetHasMixedDisplayContentBlocked(true);
       state |= nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT;
     }
-  } else if (StaticPrefs::security_mixed_content_block_active_content() &&
-             classification == eMixedScript) {
+  } else {
+    MOZ_ASSERT(classification == eMixedScript);
     
     
-    if (allowMixedContent) {
+    if (!StaticPrefs::security_mixed_content_block_active_content() ||
+        allowMixedContent) {
       LogMixedContentMessage(classification, aContentLocation, topInnerWindowID,
                              eUserOverride, requestingLocation);
       *aDecision = nsIContentPolicy::ACCEPT;
@@ -904,71 +905,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
       
       state |= nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT;
     }
-  } else {
-    
-
-    
-    LogMixedContentMessage(classification, aContentLocation, topInnerWindowID,
-                           eUserOverride, requestingLocation);
-
-    if (classification == eMixedScript) {
-      
-      
-      if (rootDoc->GetHasMixedActiveContentLoaded()) {
-        return NS_OK;
-      }
-      rootDoc->SetHasMixedActiveContentLoaded(true);
-
-      
-      
-      if (rootHasSecureConnection) {
-        
-        state = state >> 4 << 4;
-        
-        state |= nsIWebProgressListener::STATE_IS_BROKEN;
-
-        
-        
-        if (rootDoc->GetHasMixedDisplayContentLoaded()) {
-          state |= nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT;
-        }
-
-        state |= nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT;
-      } else {
-        
-        state |= nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT;
-      }
-    } else if (classification == eMixedDisplay) {
-      
-      
-      if (rootDoc->GetHasMixedDisplayContentLoaded()) {
-        return NS_OK;
-      }
-      rootDoc->SetHasMixedDisplayContentLoaded(true);
-
-      
-      
-      if (rootHasSecureConnection) {
-        
-        state = state >> 4 << 4;
-        
-        state |= nsIWebProgressListener::STATE_IS_BROKEN;
-
-        
-        
-        if (rootDoc->GetHasMixedActiveContentLoaded()) {
-          state |= nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT;
-        }
-
-        state |= nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT;
-      } else {
-        
-        state |= nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT;
-      }
-    }
-
-    *aDecision = ACCEPT;
-    return NS_OK;
   }
 
   nsDocShell* nativeDocShell = nsDocShell::Cast(docShell);
