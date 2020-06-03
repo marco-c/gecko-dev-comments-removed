@@ -1371,17 +1371,13 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   bool isLastPartOfMultiPart = false;
 
   RefPtr<HttpBaseChannel> chan = do_QueryObject(aRequest);
-
-  nsCOMPtr<nsIMultiPartChannel> multiPartChannel;
   if (!chan) {
-    multiPartChannel = do_QueryInterface(aRequest);
+    nsCOMPtr<nsIMultiPartChannel> multiPartChannel =
+        do_QueryInterface(aRequest);
     if (multiPartChannel) {
       mIsMultiPart = true;
       nsCOMPtr<nsIChannel> baseChannel;
       multiPartChannel->GetBaseChannel(getter_AddRefs(baseChannel));
-
-      
-      
       chan = do_QueryObject(baseChannel);
 
       uint32_t partID = 0;
@@ -1496,10 +1492,10 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
     cleanedUpResponseHead = *responseHead;
     cleanedUpResponseHead.ClearHeader(nsHttp::Set_Cookie);
     if (multiPartID) {
-      
-      MOZ_ASSERT(multiPartChannel);
+      nsCOMPtr<nsIChannel> chan = do_QueryInterface(aRequest);
+      MOZ_ASSERT(chan);
       nsAutoCString contentType;
-      multiPartChannel->GetContentType(contentType);
+      chan->GetContentType(contentType);
       cleanedUpResponseHead.SetContentType(contentType);
     }
     responseHead = &cleanedUpResponseHead;
