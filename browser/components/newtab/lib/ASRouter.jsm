@@ -38,6 +38,12 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 XPCOMUtils.defineLazyServiceGetters(this, {
   BrowserHandler: ["@mozilla.org/browser/clh;1", "nsIBrowserHandler"],
 });
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "multiStageAboutWelcome",
+  "browser.aboutwelcome.overrideContent",
+  ""
+);
 const { actionTypes: at, actionCreators: ac } = ChromeUtils.import(
   "resource://activity-stream/common/Actions.jsm"
 );
@@ -1937,6 +1943,28 @@ class _ASRouter {
     this.onMessage({ data: action, target });
   }
 
+  hasMultiStageAboutWelcome() {
+    
+    
+    
+    let experimentData;
+    try {
+      experimentData = ExperimentAPI.getExperiment({
+        group: "aboutwelcome",
+      });
+    } catch (e) {
+      Cu.reportError(e);
+    }
+
+    return !!(
+      multiStageAboutWelcome ||
+      (experimentData &&
+        experimentData.branch &&
+        experimentData.branch.value &&
+        experimentData.branch.value.template === "multistage")
+    );
+  }
+
   async sendNewTabMessage(target, options = {}) {
     const { endpoint } = options;
     let message;
@@ -1962,10 +1990,12 @@ class _ASRouter {
       const telemetryObject = { port: target.portID };
       TelemetryStopwatch.start("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
       
-      message = await this.handleMessageRequest({
-        template: "extended_triplets",
-      });
-
+      
+      if (!this.hasMultiStageAboutWelcome()) {
+        message = await this.handleMessageRequest({
+          template: "extended_triplets",
+        });
+      }
       
       if (!message) {
         message = await this.handleMessageRequest({ provider: "snippets" });
