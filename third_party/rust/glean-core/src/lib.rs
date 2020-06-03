@@ -196,7 +196,7 @@ impl Glean {
             event_data_store,
             core_metrics: CoreMetrics::new(),
             internal_pings: InternalPings::new(),
-            upload_manager: PingUploadManager::new(&cfg.data_path),
+            upload_manager: PingUploadManager::new(&cfg.data_path, false),
             data_path: PathBuf::from(cfg.data_path),
             application_id,
             ping_registry: HashMap::new(),
@@ -470,8 +470,12 @@ impl Glean {
     
     
     
-    pub fn get_upload_task(&self) -> PingUploadTask {
-        self.upload_manager.get_upload_task()
+    
+    
+    
+    
+    pub fn get_upload_task(&self, log_ping: bool) -> PingUploadTask {
+        self.upload_manager.get_upload_task(log_ping)
     }
 
     

@@ -18,6 +18,11 @@ use chrono::{DateTime, FixedOffset, TimeZone};
 
 
 
+pub type Datetime = DateTime<FixedOffset>;
+
+
+
+
 
 #[derive(Debug)]
 pub struct DatetimeMetric {
@@ -101,7 +106,7 @@ impl DatetimeMetric {
     
     
     
-    pub fn set(&self, glean: &Glean, value: Option<DateTime<FixedOffset>>) {
+    pub fn set(&self, glean: &Glean, value: Option<Datetime>) {
         if !self.should_record(glean) {
             return;
         }
@@ -121,11 +126,7 @@ impl DatetimeMetric {
     
     
     
-    pub(crate) fn get_value(
-        &self,
-        glean: &Glean,
-        storage_name: &str,
-    ) -> Option<DateTime<FixedOffset>> {
+    pub(crate) fn get_value(&self, glean: &Glean, storage_name: &str) -> Option<Datetime> {
         match StorageManager.snapshot_metric(
             glean.storage(),
             storage_name,

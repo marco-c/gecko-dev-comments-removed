@@ -7,7 +7,7 @@ use futures::Poll;
 use tokio_io::{AsyncRead, AsyncWrite};
 
 use super::bufread;
-use bufreader::BufReader;
+use crate::bufreader::BufReader;
 
 
 
@@ -42,7 +42,7 @@ pub struct ZlibEncoder<R> {
 impl<R: Read> ZlibEncoder<R> {
     
     
-    pub fn new(r: R, level: ::Compression) -> ZlibEncoder<R> {
+    pub fn new(r: R, level: crate::Compression) -> ZlibEncoder<R> {
         ZlibEncoder {
             inner: bufread::ZlibEncoder::new(BufReader::new(r), level),
         }

@@ -7,8 +7,8 @@ use futures::Poll;
 #[cfg(feature = "tokio")]
 use tokio_io::{AsyncRead, AsyncWrite};
 
-use zio;
-use {Compress, Decompress};
+use crate::zio;
+use crate::{Compress, Decompress};
 
 
 
@@ -46,7 +46,7 @@ pub struct ZlibEncoder<R> {
 impl<R: BufRead> ZlibEncoder<R> {
     
     
-    pub fn new(r: R, level: ::Compression) -> ZlibEncoder<R> {
+    pub fn new(r: R, level: crate::Compression) -> ZlibEncoder<R> {
         ZlibEncoder {
             obj: r,
             data: Compress::new(level, true),

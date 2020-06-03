@@ -7,8 +7,8 @@ use futures::Poll;
 #[cfg(feature = "tokio")]
 use tokio_io::{AsyncRead, AsyncWrite};
 
-use zio;
-use {Compress, Decompress};
+use crate::zio;
+use crate::{Compress, Decompress};
 
 
 
@@ -50,7 +50,7 @@ pub struct DeflateEncoder<R> {
 impl<R: BufRead> DeflateEncoder<R> {
     
     
-    pub fn new(r: R, level: ::Compression) -> DeflateEncoder<R> {
+    pub fn new(r: R, level: crate::Compression) -> DeflateEncoder<R> {
         DeflateEncoder {
             obj: r,
             data: Compress::new(level, false),

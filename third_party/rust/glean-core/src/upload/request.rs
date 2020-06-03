@@ -7,7 +7,9 @@
 use std::collections::HashMap;
 
 use chrono::prelude::{DateTime, Utc};
+use flate2::{read::GzDecoder, write::GzEncoder, Compression};
 use serde_json::{self, Value as JsonValue};
+use std::io::prelude::*;
 
 
 #[derive(PartialEq, Debug, Clone)]
@@ -18,7 +20,9 @@ pub struct PingRequest {
     
     pub path: String,
     
-    pub body: JsonValue,
+    
+    
+    pub body: Vec<u8>,
     
     pub headers: HashMap<&'static str, String>,
 }
@@ -29,11 +33,19 @@ impl PingRequest {
     
     
     pub fn new(document_id: &str, path: &str, body: JsonValue) -> Self {
+        
+        
+        let original_as_string = body.to_string();
+        let gzipped_content = Self::gzip_content(path, original_as_string.as_bytes());
+        let add_gzip_header = gzipped_content.is_some();
+        let body = gzipped_content.unwrap_or_else(|| original_as_string.into_bytes());
+        let body_len = body.len();
+
         Self {
             document_id: document_id.into(),
             path: path.into(),
             body,
-            headers: Self::create_request_headers(),
+            headers: Self::create_request_headers(add_gzip_header, body_len),
         }
     }
 
@@ -48,7 +60,36 @@ impl PingRequest {
     }
 
     
-    fn create_request_headers() -> HashMap<&'static str, String> {
+    
+    
+    
+    pub fn pretty_body(&self) -> Option<String> {
+        let mut gz = GzDecoder::new(&self.body[..]);
+        let mut s = String::with_capacity(self.body.len());
+
+        gz.read_to_string(&mut s)
+            .ok()
+            .map(|_| &s[..])
+            .or_else(|| std::str::from_utf8(&self.body).ok())
+            .and_then(|payload| serde_json::from_str::<JsonValue>(payload).ok())
+            .and_then(|json| serde_json::to_string_pretty(&json).ok())
+    }
+
+    
+    fn gzip_content(path: &str, content: &[u8]) -> Option<Vec<u8>> {
+        let mut gzipper = GzEncoder::new(Vec::new(), Compression::default());
+
+        
+        if let Err(e) = gzipper.write_all(content) {
+            log::error!("Failed to write to the gzipper: {} - {:?}", path, e);
+            return None;
+        }
+
+        gzipper.finish().ok()
+    }
+
+    
+    fn create_request_headers(is_gzipped: bool, body_len: usize) -> HashMap<&'static str, String> {
         let mut headers = HashMap::new();
         let date: DateTime<Utc> = Utc::now();
         headers.insert("Date", date.to_string());
@@ -57,6 +98,10 @@ impl PingRequest {
             "Content-Type",
             "application/json; charset=utf-8".to_string(),
         );
+        headers.insert("Content-Length", body_len.to_string());
+        if is_gzipped {
+            headers.insert("Content-Encoding", "gzip".to_string());
+        }
         headers.insert("X-Client-Version", crate::GLEAN_VERSION.to_string());
         headers
     }
