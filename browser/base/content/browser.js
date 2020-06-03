@@ -9219,35 +9219,6 @@ if (AppConstants.NIGHTLY_BUILD) {
 
       newFissionWindow.hidden = gFissionBrowser;
       newNonFissionWindow.hidden = !gFissionBrowser;
-
-      if (!Cu.isInAutomation) {
-        
-        
-        this.checkFissionWithoutWebRender();
-      }
-    },
-
-    
-    checkFissionWithoutWebRender() {
-      let isFissionEnabled = Services.prefs.getBoolPref("fission.autostart");
-      if (!isFissionEnabled) {
-        return;
-      }
-
-      let isWebRenderEnabled = Cc["@mozilla.org/gfx/info;1"].getService(
-        Ci.nsIGfxInfo
-      ).WebRenderEnabled;
-
-      if (isWebRenderEnabled) {
-        return;
-      }
-      
-      window.gNotificationBox.appendNotification(
-        "You are running with Fission enabled but without WebRender. This combination is untested, so use at your own risk.",
-        "warning-fission-without-webrender-notification",
-        "chrome://global/skin/icons/question-16.png",
-        window.gNotificationBox.PRIORITY_WARNING_LOW
-      );
     },
   };
 }
