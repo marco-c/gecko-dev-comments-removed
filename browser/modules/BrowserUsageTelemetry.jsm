@@ -119,19 +119,21 @@ const URLBAR_SELECTED_RESULT_METHODS = {
 const MINIMUM_TAB_COUNT_INTERVAL_MS = 5 * 60 * 1000; 
 
 function getOpenTabsAndWinsCounts() {
+  let loadedTabCount = 0;
   let tabCount = 0;
   let winCount = 0;
 
   for (let win of Services.wm.getEnumerator("navigator:browser")) {
     winCount++;
     tabCount += win.gBrowser.tabs.length;
+    for (const tab of win.gBrowser.tabs) {
+      if (tab.getAttribute("pending") !== "true") {
+        loadedTabCount += 1;
+      }
+    }
   }
 
-  return { tabCount, winCount };
-}
-
-function getTabCount() {
-  return getOpenTabsAndWinsCounts().tabCount;
+  return { loadedTabCount, tabCount, winCount };
 }
 
 function getPinnedTabsCount() {
@@ -264,7 +266,7 @@ let URICountListener = {
     Services.telemetry.scalarAdd(TOTAL_URI_COUNT_SCALAR_NAME, 1);
 
     
-    BrowserUsageTelemetry._recordTabCount();
+    BrowserUsageTelemetry._recordTabCounts(getOpenTabsAndWinsCounts());
 
     
     
@@ -332,6 +334,7 @@ let BrowserUsageTelemetry = {
 
   init() {
     this._lastRecordTabCount = 0;
+    this._lastRecordLoadedTabCount = 0;
     this._setupAfterRestore();
     this._inited = true;
   },
@@ -384,7 +387,7 @@ let BrowserUsageTelemetry = {
   handleEvent(event) {
     switch (event.type) {
       case "TabOpen":
-        this._onTabOpen();
+        this._onTabOpen(getOpenTabsAndWinsCounts());
         break;
       case "TabPinned":
         this._onTabPinned();
@@ -398,6 +401,9 @@ let BrowserUsageTelemetry = {
         
         let browser = event.target.linkedBrowser;
         URICountListener.addRestoredURI(browser, browser.currentURI);
+
+        const { loadedTabCount } = getOpenTabsAndWinsCounts();
+        this._recordTabCounts({ loadedTabCount });
         break;
     }
   },
@@ -688,15 +694,12 @@ let BrowserUsageTelemetry = {
 
 
 
-
-  _onTabOpen(tabCount = 0) {
-    
-    tabCount = tabCount || getOpenTabsAndWinsCounts().tabCount;
+  _onTabOpen({ tabCount, loadedTabCount }) {
     
     Services.telemetry.scalarAdd(TAB_OPEN_EVENT_COUNT_SCALAR_NAME, 1);
     Services.telemetry.scalarSetMaximum(MAX_TAB_COUNT_SCALAR_NAME, tabCount);
 
-    this._recordTabCount(tabCount);
+    this._recordTabCounts({ tabCount, loadedTabCount });
   },
 
   _onTabPinned(target) {
@@ -742,22 +745,41 @@ let BrowserUsageTelemetry = {
 
       
       
-      this._onTabOpen(counts.tabCount);
+      this._onTabOpen(counts);
     };
     win.addEventListener("load", onLoad);
   },
 
-  _recordTabCount(tabCount) {
+  
+
+
+
+
+
+
+
+
+
+
+  _recordTabCounts({ tabCount, loadedTabCount }) {
     let currentTime = Date.now();
     if (
-      currentTime >
-      this._lastRecordTabCount + MINIMUM_TAB_COUNT_INTERVAL_MS
+      tabCount !== undefined &&
+      currentTime > this._lastRecordTabCount + MINIMUM_TAB_COUNT_INTERVAL_MS
     ) {
-      if (tabCount === undefined) {
-        tabCount = getTabCount();
-      }
       Services.telemetry.getHistogramById("TAB_COUNT").add(tabCount);
       this._lastRecordTabCount = currentTime;
+    }
+
+    if (
+      loadedTabCount !== undefined &&
+      currentTime >
+        this._lastRecordLoadedTabCount + MINIMUM_TAB_COUNT_INTERVAL_MS
+    ) {
+      Services.telemetry
+        .getHistogramById("LOADED_TAB_COUNT")
+        .add(loadedTabCount);
+      this._lastRecordLoadedTabCount = currentTime;
     }
   },
 };
