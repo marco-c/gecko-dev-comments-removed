@@ -4,7 +4,8 @@
 
 
 #include "AndroidAlerts.h"
-#include "GeneratedJNIWrappers.h"
+#include "mozilla/java/GeckoRuntimeWrappers.h"
+#include "mozilla/java/WebNotificationWrappers.h"
 #include "nsAlertsUtils.h"
 
 namespace mozilla {

@@ -2,8 +2,9 @@
 
 
 
+#include "mozilla/java/ClipboardWrappers.h"
+#include "mozilla/java/GeckoAppShellWrappers.h"
 #include "nsClipboard.h"
-#include "GeneratedJNIWrappers.h"
 #include "nsISupportsPrimitives.h"
 #include "nsCOMPtr.h"
 #include "nsComponentManagerUtils.h"

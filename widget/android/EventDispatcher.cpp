@@ -15,6 +15,7 @@
 
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/java/EventCallbackWrappers.h"
 
 
 #if defined(__clang__)

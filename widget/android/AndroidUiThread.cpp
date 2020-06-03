@@ -4,9 +4,9 @@
 
 
 #include "base/message_loop.h"
-#include "GeneratedJNIWrappers.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/EventQueue.h"
+#include "mozilla/java/GeckoThreadWrappers.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
