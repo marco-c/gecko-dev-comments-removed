@@ -49,6 +49,8 @@ var webrtcUI = {
         "privacy.webrtc.legacyGlobalIndicator",
         true
       );
+
+      Services.telemetry.setEventRecordingEnabled("webrtc.ui", true);
     }
   },
 
@@ -72,11 +74,23 @@ var webrtcUI = {
   SHARING_SCREEN: 2,
 
   
-  sharedWindows: new WeakSet(),
+  sharedBrowserWindows: new WeakSet(),
+
+  
   sharingScreen: false,
+
   allowedSharedBrowsers: new WeakSet(),
   allowTabSwitchesForSession: false,
   tabSwitchCountForSession: 0,
+
+  
+  sharingDisplay: false,
+
+  
+  
+  
+  
+  sharingDisplaySessionId: 0,
 
   
   perTabIndicators: new Map(),
@@ -301,24 +315,34 @@ var webrtcUI = {
       };
     }
 
+    let wasSharingDisplay = this.sharingDisplay;
+
     
     
     
     let sharingBrowserWindow = false;
     let sharedWindowRawDeviceIds = new Set();
+    this.sharingDisplay = false;
     this.sharingScreen = false;
     let suppressNotifications = false;
 
+    
+    
+    
     for (let stream of this._streams) {
       let { state } = stream;
       suppressNotifications |= state.suppressNotifications;
 
       for (let device of state.devices) {
+        let mediaSource = device.mediaSource;
+
+        if (mediaSource == "window" || mediaSource == "screen") {
+          this.sharingDisplay = true;
+        }
+
         if (!device.scary) {
           continue;
         }
-
-        let mediaSource = device.mediaSource;
 
         if (mediaSource == "window") {
           sharedWindowRawDeviceIds.add(device.rawId);
@@ -337,7 +361,9 @@ var webrtcUI = {
       }
     }
 
-    this.sharedWindows = new WeakSet();
+    
+    
+    this.sharedBrowserWindows = new WeakSet();
 
     for (let win of BrowserWindowTracker.orderedWindows) {
       let rawDeviceId;
@@ -350,7 +376,7 @@ var webrtcUI = {
         continue;
       }
       if (sharedWindowRawDeviceIds.has(rawDeviceId)) {
-        this.sharedWindows.add(win);
+        this.sharedBrowserWindows.add(win);
 
         
         
@@ -359,6 +385,42 @@ var webrtcUI = {
         this.allowedSharedBrowsers.add(selectedBrowser.permanentKey);
 
         sharingBrowserWindow = true;
+      }
+    }
+
+    
+    
+    
+    
+    if (!wasSharingDisplay && this.sharingDisplay) {
+      this.sharingDisplaySessionId++;
+    }
+
+    
+    
+    
+    
+    if (aData.devices) {
+      
+      
+      
+      let silence_notifs = suppressNotifications ? "true" : "false";
+      for (let device of aData.devices) {
+        if (device.mediaSource == "screen") {
+          this.recordEvent("share_display", "screen", {
+            silence_notifs,
+          });
+        } else if (device.mediaSource == "window") {
+          if (device.scary) {
+            this.recordEvent("share_display", "browser_window", {
+              silence_notifs,
+            });
+          } else {
+            this.recordEvent("share_display", "window", {
+              silence_notifs,
+            });
+          }
+        }
       }
     }
 
@@ -587,7 +649,7 @@ var webrtcUI = {
   getWindowShareState(window) {
     if (this.sharingScreen) {
       return this.SHARING_SCREEN;
-    } else if (this.sharedWindows.has(window)) {
+    } else if (this.sharedBrowserWindows.has(window)) {
       return this.SHARING_WINDOW;
     }
     return this.SHARING_NONE;
@@ -613,10 +675,15 @@ var webrtcUI = {
     }
 
     this.tabSwitchCountForSession++;
-    return (
+    let shouldShow =
       !this.allowTabSwitchesForSession &&
-      !this.allowedSharedBrowsers.has(browser.permanentKey)
-    );
+      !this.allowedSharedBrowsers.has(browser.permanentKey);
+
+    if (shouldShow) {
+      this.recordEvent("tab_switch_warning", "tab_switch_warning");
+    }
+
+    return shouldShow;
   },
 
   allowSharedTabSwitch(tab, allowForSession) {
@@ -625,6 +692,20 @@ var webrtcUI = {
     this.allowedSharedBrowsers.add(browser.permanentKey);
     gBrowser.selectedTab = tab;
     this.allowTabSwitchesForSession = allowForSession;
+
+    if (allowForSession) {
+      this.recordEvent("allow_all_tabs", "allow_all_tabs");
+    }
+  },
+
+  recordEvent(type, object, args = {}) {
+    Services.telemetry.recordEvent(
+      "webrtc.ui",
+      type,
+      object,
+      this.sharingDisplaySessionId.toString(),
+      args
+    );
   },
 };
 
