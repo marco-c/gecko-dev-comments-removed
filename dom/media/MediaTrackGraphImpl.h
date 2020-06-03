@@ -333,17 +333,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  void IncrementSuspendCount(MediaTrack* aTrack);
-  
-
-
-
-  void DecrementSuspendCount(MediaTrack* aTrack);
-
-  
-
-
-
   void SuspendOrResumeTracks(dom::AudioContextOperation aAudioContextOperation,
                              const nsTArray<MediaTrack*>& aTrackSet);
 

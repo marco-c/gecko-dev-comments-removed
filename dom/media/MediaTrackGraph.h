@@ -482,8 +482,16 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
   bool IsSuspended() const { return mSuspendedCount > 0; }
+  
+
+
+
   void IncrementSuspendCount();
-  void DecrementSuspendCount();
+  
+
+
+
+  virtual void DecrementSuspendCount();
 
  protected:
   
@@ -922,6 +930,7 @@ class ProcessedMediaTrack : public MediaTrack {
   void InputSuspended(MediaInputPort* aPort);
   void InputResumed(MediaInputPort* aPort);
   void DestroyImpl() override;
+  void DecrementSuspendCount() override;
   
 
 
