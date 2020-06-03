@@ -2962,6 +2962,18 @@ static void WarnIfSandboxIneffective(nsIDocShell* aDocShell,
   
   
   
+  if (aSandboxFlags != SANDBOXED_NONE &&
+      !(aSandboxFlags & SANDBOXED_TOPLEVEL_NAVIGATION) &&
+      !(aSandboxFlags & SANDBOXED_TOPLEVEL_NAVIGATION_USER_ACTIVATION)) {
+    nsCOMPtr<nsIURI> iframeUri;
+    nsContentUtils::ReportToConsole(
+        nsIScriptError::warningFlag, NS_LITERAL_CSTRING("Iframe Sandbox"),
+        aDocShell->GetDocument(), nsContentUtils::eSECURITY_PROPERTIES,
+        "BothAllowTopNavigationAndUserActivationPresent");
+  }
+  
+  
+  
   
   
   if (aSandboxFlags & SANDBOXED_NAVIGATION &&
