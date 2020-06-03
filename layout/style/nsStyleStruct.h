@@ -122,8 +122,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
 
   
   
-  
-  bool mAllowZoomAndMinSize;
+  bool mAllowZoom;
 
   
   nscoord mScriptUnconstrainedSize;
