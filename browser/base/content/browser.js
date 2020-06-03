@@ -2218,6 +2218,7 @@ var gBrowserInit = {
         
         
         
+        
         let userContextId =
           window.arguments[5] != undefined
             ? window.arguments[5]
@@ -6106,7 +6107,7 @@ nsBrowserAccess.prototype = {
       case Ci.nsIBrowserDOMWindow.OPEN_NEWWINDOW:
         
         
-        var url = aURI ? aURI.spec : "about:blank";
+        var url = aURI && aURI.spec;
         let features = "all,dialog=no";
         if (isPrivate) {
           features += ",private";
@@ -6129,13 +6130,9 @@ nsBrowserAccess.prototype = {
             null,
             aTriggeringPrincipal,
             null,
-            aCsp
+            aCsp,
+            aOpenWindowInfo
           );
-          
-          
-          
-          
-          
           
           
           
@@ -6153,7 +6150,7 @@ nsBrowserAccess.prototype = {
         
         
         
-        let forceNotRemote = aOpenWindowInfo && !aOpenWindowInfo.remote;
+        let forceNotRemote = aOpenWindowInfo && !aOpenWindowInfo.isRemote;
         let userContextId = aOpenWindowInfo
           ? aOpenWindowInfo.originAttributes.userContextId
           : Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID;
@@ -6177,8 +6174,7 @@ nsBrowserAccess.prototype = {
         break;
       default:
         
-        browsingContext =
-          window.content && BrowsingContext.getFromWindow(window.content);
+        browsingContext = window.gBrowser.selectedBrowser.browsingContext;
         if (aURI) {
           let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
           if (isExternal) {

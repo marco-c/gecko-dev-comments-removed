@@ -24,6 +24,17 @@ class BrowserParent;
 
 
 
+[uuid(0524ee06-7f4c-4cd3-ab80-084562745cad)]
+interface nsIBrowsingContextReadyCallback : nsISupports
+{
+  void browsingContextReady(in BrowsingContext bc);
+};
+
+
+
+
+
+
 [scriptable, builtinclass, uuid(30359edb-126c-4f65-ae80-07fb158697f9)]
 interface nsIOpenWindowInfo : nsISupports {
   
@@ -48,4 +59,8 @@ interface nsIOpenWindowInfo : nsISupports {
 
   [notxpcom, nostdcall, binaryname(GetOriginAttributes)]
   const_OriginAttributes binaryGetOriginAttributes();
+
+  
+  [notxpcom, nostdcall]
+  nsIBrowsingContextReadyCallback browsingContextReadyCallback();
 };

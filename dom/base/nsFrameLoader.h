@@ -465,6 +465,10 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   bool EnsureBrowsingContextAttached();
 
+  
+  
+  void InvokeBrowsingContextReadyCallback();
+
   RefPtr<mozilla::dom::BrowsingContext> mPendingBrowsingContext;
   nsCOMPtr<nsIURI> mURIToLoad;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
