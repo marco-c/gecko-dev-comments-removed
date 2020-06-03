@@ -93,6 +93,27 @@ class SearchSuggestionEntry {
   get tail() {
     return this._tail;
   }
+
+  get tailOffsetIndex() {
+    if (!this._tail) {
+      return -1;
+    }
+
+    let offsetIndex = this._value.lastIndexOf(this._tail);
+    if (offsetIndex + this._tail.length < this._value.length) {
+      
+      
+      let lastWordIndex = this._value.lastIndexOf(" ");
+      if (this._tail.startsWith(this._value.substring(lastWordIndex))) {
+        offsetIndex = lastWordIndex;
+      } else {
+        
+        offsetIndex = -1;
+      }
+    }
+
+    return offsetIndex;
+  }
 }
 
 
