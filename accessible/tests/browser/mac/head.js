@@ -40,3 +40,10 @@ function waitForMacEvent(notificationType, filter) {
     Services.obs.addObserver(eventObserver, "accessible-mac-event");
   });
 }
+
+function NSRange(location, length) {
+  return {
+    valueType: "NSRange",
+    value: [location, length],
+  };
+}
