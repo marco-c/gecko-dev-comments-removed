@@ -304,19 +304,21 @@ void AssertLoadingPrincipalAndClientInfoMatch(
   }
 
   
-  nsCOMPtr<nsIPrincipal> clientPrincipal(aLoadingClientInfo.GetPrincipal());
-  if (aLoadingPrincipal->Equals(clientPrincipal)) {
-    return;
+  auto clientPrincipalOrErr(aLoadingClientInfo.GetPrincipal());
+  if (clientPrincipalOrErr.isOk()) {
+    nsCOMPtr<nsIPrincipal> clientPrincipal = clientPrincipalOrErr.unwrap();
+    if (aLoadingPrincipal->Equals(clientPrincipal)) {
+      return;
+    }
+    
+    nsAutoCString loadingOrigin;
+    MOZ_ALWAYS_SUCCEEDS(aLoadingPrincipal->GetOrigin(loadingOrigin));
+
+    nsAutoCString clientOrigin;
+    MOZ_ALWAYS_SUCCEEDS(clientPrincipal->GetOrigin(clientOrigin));
+
+    MOZ_DIAGNOSTIC_ASSERT(loadingOrigin == clientOrigin);
   }
-
-  
-  nsAutoCString loadingOrigin;
-  MOZ_ALWAYS_SUCCEEDS(aLoadingPrincipal->GetOrigin(loadingOrigin));
-
-  nsAutoCString clientOrigin;
-  MOZ_ALWAYS_SUCCEEDS(clientPrincipal->GetOrigin(clientOrigin));
-
-  MOZ_DIAGNOSTIC_ASSERT(loadingOrigin == clientOrigin);
 #endif
 }
 

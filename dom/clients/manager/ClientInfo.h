@@ -95,8 +95,7 @@ class ClientInfo final {
   bool IsPrivateBrowsing() const;
 
   
-  
-  nsCOMPtr<nsIPrincipal> GetPrincipal() const;
+  Result<nsCOMPtr<nsIPrincipal>, nsresult> GetPrincipal() const;
 
   const Maybe<mozilla::ipc::CSPInfo>& GetCspInfo() const;
   void SetCspInfo(const mozilla::ipc::CSPInfo& aCSPInfo);

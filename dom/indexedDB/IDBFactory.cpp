@@ -595,10 +595,11 @@ RefPtr<IDBOpenDBRequest> IDBFactory::OpenInternal(
   if (NS_IsMainThread()) {
     
     
-    nsCOMPtr<nsIPrincipal> principal = PrincipalInfoToPrincipal(principalInfo);
-    if (principal) {
+    auto principalOrErr = PrincipalInfoToPrincipal(principalInfo);
+    if (principalOrErr.isOk()) {
       nsAutoString addonId;
-      Unused << NS_WARN_IF(NS_FAILED(principal->GetAddonId(addonId)));
+      Unused << NS_WARN_IF(
+          NS_FAILED(principalOrErr.unwrap()->GetAddonId(addonId)));
       isAddon = !addonId.IsEmpty();
     }
   }

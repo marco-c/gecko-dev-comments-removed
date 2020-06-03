@@ -67,8 +67,8 @@ class PrincipalInfo;
 
 
 
-already_AddRefed<nsIPrincipal> PrincipalInfoToPrincipal(
-    const PrincipalInfo& aPrincipalInfo, nsresult* aOptionalResult = nullptr);
+Result<nsCOMPtr<nsIPrincipal>, nsresult> PrincipalInfoToPrincipal(
+    const PrincipalInfo& aPrincipalInfo);
 
 
 
