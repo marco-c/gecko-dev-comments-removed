@@ -32,6 +32,11 @@
 #  undef Complex
 #endif
 
+#ifdef CurrentTime
+#  undef CurrentTime
+#  define X11CurrentTime 0L
+#endif
+
 
 
 #ifdef True
