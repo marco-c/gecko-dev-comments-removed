@@ -18,6 +18,7 @@
 #include "nsIOService.h"
 #include "nsISeekableStream.h"
 #include "nsURLHelper.h"
+#include "ProxyConfigLookup.h"
 #include "TRRLoadInfo.h"
 #include "ReferrerInfo.h"
 #include "TRR.h"
@@ -207,29 +208,13 @@ nsresult TRRServiceChannel::ResolveProxy() {
 
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsresult rv;
-  nsCOMPtr<nsIChannel> channel;
-  rv = NS_NewChannel(getter_AddRefs(channel), mURI,
-                     nsContentUtils::GetSystemPrincipal(),
-                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                     nsIContentPolicy::TYPE_OTHER);
-  if (NS_SUCCEEDED(rv)) {
-    nsCOMPtr<nsIProtocolProxyService> pps =
-        do_GetService(NS_PROTOCOLPROXYSERVICE_CONTRACTID, &rv);
-    if (NS_SUCCEEDED(rv)) {
-      
-      
-      
-      nsCOMPtr<nsIProtocolProxyService2> pps2 = do_QueryInterface(pps);
-      if (pps2) {
-        rv = pps2->AsyncResolve2(channel, mProxyResolveFlags, this, nullptr,
-                                 getter_AddRefs(mProxyRequest));
-      } else {
-        rv = pps->AsyncResolve(channel, mProxyResolveFlags, this, nullptr,
-                               getter_AddRefs(mProxyRequest));
-      }
-    }
-  }
+  
+  RefPtr<TRRServiceChannel> self = this;
+  nsresult rv = ProxyConfigLookup::Create(
+      [self](nsIProxyInfo* aProxyInfo, nsresult aStatus) {
+        self->OnProxyAvailable(nullptr, nullptr, aProxyInfo, aStatus);
+      },
+      mURI, mProxyResolveFlags);
 
   if (NS_FAILED(rv)) {
     if (!mCurrentEventTarget->IsOnCurrentThread()) {
@@ -952,6 +937,8 @@ TRRServiceChannel::OnStartRequest(nsIRequest* request) {
 
       if (httpStatus == 300 || httpStatus == 301 || httpStatus == 302 ||
           httpStatus == 303 || httpStatus == 307 || httpStatus == 308) {
+        Telemetry::AccumulateCategorical(
+            Telemetry::LABELS_DNS_TRR_REDIRECTED::Redirected);
         nsresult rv = SyncProcessRedirection(httpStatus);
         if (NS_SUCCEEDED(rv)) {
           return rv;
@@ -961,6 +948,8 @@ TRRServiceChannel::OnStartRequest(nsIRequest* request) {
         DoNotifyListener();
         return rv;
       }
+      Telemetry::AccumulateCategorical(
+          Telemetry::LABELS_DNS_TRR_REDIRECTED::None);
     } else {
       NS_WARNING("No response head in OnStartRequest");
     }
