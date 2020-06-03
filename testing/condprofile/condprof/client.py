@@ -92,6 +92,9 @@ def _check_profile(profile_dir):
             
             cleaned_prefs["extensions.startupScanScopes"] = 1
 
+            
+            cleaned_prefs["profile.conditioned"] = True
+
         with open(js_file, "w") as f:
             Preferences.write(f, cleaned_prefs)
 
