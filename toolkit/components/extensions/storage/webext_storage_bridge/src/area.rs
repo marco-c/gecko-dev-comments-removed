@@ -6,7 +6,9 @@ use std::{
     cell::{Ref, RefCell},
     convert::TryInto,
     ffi::OsString,
-    mem, str,
+    mem,
+    path::PathBuf,
+    str,
     sync::Arc,
 };
 
@@ -27,6 +29,29 @@ use xpcom::{
 use crate::error::{Error, Result};
 use crate::punt::{Punt, PuntTask, TeardownTask};
 use crate::store::{LazyStore, LazyStoreConfig};
+
+fn path_from_nsifile(file: &nsIFile) -> Result<PathBuf> {
+    let mut raw_path = nsString::new();
+    
+    
+    
+    
+    unsafe { file.GetPath(&mut *raw_path) }.to_result()?;
+    let native_path = {
+        
+        
+        #[cfg(windows)]
+        {
+            use std::os::windows::prelude::*;
+            OsString::from_wide(&*raw_path)
+        }
+        
+        
+        #[cfg(not(windows))]
+        OsString::from(String::from_utf16(&*raw_path)?)
+    };
+    Ok(native_path.into())
+}
 
 
 
@@ -87,32 +112,15 @@ impl StorageSyncArea {
 
     xpcom_method!(
         configure => Configure(
-            database_file: *const nsIFile
+            database_file: *const nsIFile,
+            kinto_file: *const nsIFile
         )
     );
     
-    fn configure(&self, database_file: &nsIFile) -> Result<()> {
-        let mut raw_path = nsString::new();
-        
-        
-        
-        
-        unsafe { database_file.GetPath(&mut *raw_path) }.to_result()?;
-        let native_path = {
-            
-            
-            #[cfg(windows)]
-            {
-                use std::os::windows::prelude::*;
-                OsString::from_wide(&*raw_path)
-            }
-            
-            
-            #[cfg(not(windows))]
-            OsString::from(String::from_utf16(&*raw_path)?)
-        };
+    fn configure(&self, database_file: &nsIFile, kinto_file: &nsIFile) -> Result<()> {
         self.store()?.configure(LazyStoreConfig {
-            path: native_path.into(),
+            path: path_from_nsifile(database_file)?,
+            kinto_path: path_from_nsifile(kinto_file)?,
         })?;
         Ok(())
     }
