@@ -41,7 +41,6 @@
 #include "nsIBrowser.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsISharePicker.h"
-#include "mozilla/Telemetry.h"
 
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
@@ -91,12 +90,6 @@ already_AddRefed<WindowGlobalParent> WindowGlobalParent::CreateDisconnected(
   wgp->mDocumentURI = aInit.documentURI();
   wgp->mDocContentBlockingAllowListPrincipal =
       aInit.contentBlockingAllowListPrincipal();
-  wgp->mBlockAllMixedContent = aInit.blockAllMixedContent();
-  wgp->mUpgradeInsecureRequests = aInit.upgradeInsecureRequests();
-  wgp->mSandboxFlags = aInit.sandboxFlags();
-  wgp->mSecurityInfo = aInit.securityInfo();
-  net::CookieJarSettings::Deserialize(aInit.cookieJarSettings(),
-                                      getter_AddRefs(wgp->mCookieJarSettings));
   MOZ_RELEASE_ASSERT(wgp->mDocumentPrincipal, "Must have a valid principal");
 
   return wgp.forget();
@@ -596,12 +589,6 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvUpdateCookieJarSettings(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult WindowGlobalParent::RecvUpdateDocumentSecurityInfo(
-    nsITransportSecurityInfo* aSecurityInfo) {
-  mSecurityInfo = aSecurityInfo;
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult WindowGlobalParent::RecvShare(
     IPCWebShareData&& aData, WindowGlobalParent::ShareResolver&& aResolver) {
   
@@ -725,43 +712,6 @@ already_AddRefed<Promise> WindowGlobalParent::GetSecurityInfo(
 }
 
 void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
-  if (GetBrowsingContext()->IsTopContent() &&
-      !mDocumentPrincipal->SchemeIs("about")) {
-    
-    uint32_t pageLoaded = 1;
-    Accumulate(Telemetry::MIXED_CONTENT_UNBLOCK_COUNTER, pageLoaded);
-
-    
-    enum {
-      NO_MIXED_CONTENT = 0,  
-      MIXED_DISPLAY_CONTENT =
-          1,  
-      MIXED_ACTIVE_CONTENT =
-          2,  
-      MIXED_DISPLAY_AND_ACTIVE_CONTENT = 3  
-                                            
-    };
-
-    bool hasMixedDisplay =
-        mMixedContentSecurityState &
-        (nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT |
-         nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT);
-    bool hasMixedActive =
-        mMixedContentSecurityState &
-        (nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT |
-         nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT);
-
-    uint32_t mixedContentLevel = NO_MIXED_CONTENT;
-    if (hasMixedDisplay && hasMixedActive) {
-      mixedContentLevel = MIXED_DISPLAY_AND_ACTIVE_CONTENT;
-    } else if (hasMixedActive) {
-      mixedContentLevel = MIXED_ACTIVE_CONTENT;
-    } else if (hasMixedDisplay) {
-      mixedContentLevel = MIXED_DISPLAY_CONTENT;
-    }
-    Accumulate(Telemetry::MIXED_CONTENT_PAGE_LOAD, mixedContentLevel);
-  }
-
   
   
   nsTArray<RefPtr<dom::BrowsingContext>> toDiscard;
@@ -871,27 +821,6 @@ bool WindowGlobalParent::ShouldTrackSiteOriginTelemetry() {
   }
 
   return DocumentPrincipal()->GetIsContentPrincipal();
-}
-
-void WindowGlobalParent::AddMixedContentSecurityState(uint32_t aStateFlags) {
-  MOZ_ASSERT(TopWindowContext() == this);
-  MOZ_ASSERT((aStateFlags &
-              (nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT |
-               nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT |
-               nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT |
-               nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT)) ==
-                 aStateFlags,
-             "Invalid flags specified!");
-
-  if ((mMixedContentSecurityState & aStateFlags) == aStateFlags) {
-    return;
-  }
-
-  mMixedContentSecurityState |= aStateFlags;
-
-  if (GetBrowsingContext()->GetCurrentWindowGlobal() == this) {
-    GetBrowsingContext()->UpdateSecurityStateForLocationOrMixedContentChange();
-  }
 }
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(WindowGlobalParent, WindowContext,

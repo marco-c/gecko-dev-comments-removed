@@ -34,7 +34,6 @@
 #include "mozilla/LoadInfo.h"
 #include "nsISiteSecurityService.h"
 #include "prnetdb.h"
-#include "nsQueryObject.h"
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Logging.h"
@@ -45,7 +44,6 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/net/DNS.h"
-#include "mozilla/net/DocumentLoadListener.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -137,9 +135,7 @@ nsMixedContentBlocker::AsyncOnChannelRedirect(
   
   nsCOMPtr<nsIParentChannel> is_ipc_channel;
   NS_QueryNotificationCallbacks(aNewChannel, is_ipc_channel);
-  RefPtr<net::DocumentLoadListener> docListener =
-      do_QueryObject(is_ipc_channel);
-  if (is_ipc_channel && !docListener) {
+  if (is_ipc_channel) {
     return NS_OK;
   }
 
@@ -642,14 +638,17 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
 
+  nsCOMPtr<nsIDocShell> docShell =
+      NS_CP_GetDocShellFromContext(requestingContext);
   
   
-  if (XRE_IsParentProcess() && !requestingWindow &&
+  if (XRE_IsParentProcess() && !docShell &&
       (contentType == TYPE_IMAGE || contentType == TYPE_MEDIA)) {
     *aDecision = ACCEPT;
     return NS_OK;
   }
   
+  NS_ENSURE_TRUE(docShell, NS_OK);
   NS_ENSURE_TRUE(requestingWindow, NS_OK);
 
   if (isHttpScheme && aLoadInfo->GetUpgradeInsecureRequests()) {
@@ -719,6 +718,44 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
       *aDecision = nsIContentPolicy::ACCEPT;
       return NS_OK;
     }
+  }
+
+  
+  nsCOMPtr<nsIDocShell> rootShell = topWC->GetBrowsingContext()->GetDocShell();
+  nsCOMPtr<Document> rootDoc = rootShell ? rootShell->GetDocument() : nullptr;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (StaticPrefs::fission_autostart()) {
+    if (!rootShell || !rootDoc) {
+      if (classification == eMixedDisplay) {
+        *aDecision = nsIContentPolicy::ACCEPT;
+        return NS_OK;
+      }
+      
+      
+      if (!StaticPrefs::security_mixed_content_block_active_content()) {
+        *aDecision = nsIContentPolicy::ACCEPT;
+        return NS_OK;
+      }
+      *aDecision = nsIContentPolicy::REJECT_REQUEST;
+      return NS_OK;
+    }
+  }
+
+  nsCOMPtr<nsISecureBrowserUI> securityUI;
+  rootShell->GetSecurityUI(getter_AddRefs(securityUI));
+  
+  
+  if (!securityUI) {
+    *aDecision = nsIContentPolicy::ACCEPT;
+    return NS_OK;
   }
 
   OriginAttributes originAttributes;
@@ -807,9 +844,38 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
                              : eUserOverride,
                          requestingLocation);
 
+  if (rootDoc->GetMixedContentFlags() == newState) {
+    return NS_OK;
+  }
+
   
-  
-  topWC->AddMixedContentSecurityState(newState);
+  rootDoc->AddMixedContentFlags(newState);
+
+  uint32_t state = nsIWebProgressListener::STATE_IS_BROKEN;
+  MOZ_ALWAYS_SUCCEEDS(securityUI->GetState(&state));
+
+  if (*aDecision == nsIContentPolicy::ACCEPT && rootHasSecureConnection) {
+    
+    state = state >> 4 << 4;
+    
+    state |= nsIWebProgressListener::STATE_IS_BROKEN;
+
+    
+    
+    if (rootDoc->GetHasMixedDisplayContentLoaded()) {
+      state |= nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT;
+    }
+
+    
+    
+    if (rootDoc->GetHasMixedActiveContentLoaded()) {
+      state |= nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT;
+    }
+  }
+
+  state |= newState;
+  nsDocShell* nativeDocShell = nsDocShell::Cast(docShell);
+  nativeDocShell->nsDocLoader::OnSecurityChange(requestingContext, state);
   return NS_OK;
 }
 
