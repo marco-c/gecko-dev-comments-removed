@@ -58,11 +58,20 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "keyword.enabled",
   true
 );
-
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "alternateEnabled",
   "browser.fixup.alternate.enabled",
+  true
+);
+
+
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "defaultToSearch",
+  "browser.fixup.defaultToSearch",
   true
 );
 
@@ -87,6 +96,13 @@ XPCOMUtils.defineLazyGetter(
 
 
 XPCOMUtils.defineLazyGetter(this, "asciiAlphaRegex", () => /[a-z]/i);
+
+
+XPCOMUtils.defineLazyGetter(
+  this,
+  "uriLikeRegex",
+  () => /(:\d{1,5}([?#/]|$)|\/.*[?#])/
+);
 
 
 XPCOMUtils.defineLazyGetter(this, "numberRegex", () => /^[0-9]+(\.[0-9]+)?$/);
@@ -398,10 +414,23 @@ URIFixup.prototype = {
     }
 
     
+    
+    let suffixInfo;
+    function checkSuffix(info) {
+      if (!suffixInfo) {
+        suffixInfo = checkAndFixPublicSuffix(info);
+      }
+      return suffixInfo;
+    }
+
+    
     if (
       keywordEnabled &&
       fixupFlags & FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP &&
       !inputHadDuffProtocol &&
+      
+      
+      (!defaultToSearch || !checkSuffix(info).suffix) &&
       keywordURIFixup(uriString, info, isPrivateContext, postData)
     ) {
       return info;
@@ -409,7 +438,7 @@ URIFixup.prototype = {
 
     if (
       info.fixedURI &&
-      (!info.fixupChangedProtocol || checkAndFixPublicSuffix(info))
+      (!info.fixupChangedProtocol || !checkSuffix(info).hasUnknownSuffix)
     ) {
       return info;
     }
@@ -643,35 +672,46 @@ function isDomainWhitelisted(asciiHost) {
 
 
 
+
+
 function checkAndFixPublicSuffix(info) {
   let uri = info.fixedURI;
-  let asciiHost = uri.asciiHost;
+  let asciiHost = uri?.asciiHost;
   if (
     !asciiHost ||
-    
-    asciiHost.endsWith(".com") ||
-    asciiHost.endsWith(".net") ||
-    asciiHost.endsWith(".org") ||
-    asciiHost.endsWith(".ru") ||
-    asciiHost.endsWith(".de") ||
     !asciiHost.includes(".") ||
     asciiHost.endsWith(".") ||
     isDomainWhitelisted(asciiHost)
   ) {
-    return true;
+    return { suffix: "", hasUnknownSuffix: false };
+  }
+
+  
+  if (
+    asciiHost.endsWith(".com") ||
+    asciiHost.endsWith(".net") ||
+    asciiHost.endsWith(".org") ||
+    asciiHost.endsWith(".ru") ||
+    asciiHost.endsWith(".de")
+  ) {
+    return {
+      suffix: asciiHost.substring(asciiHost.lastIndexOf(".") + 1),
+      hasUnknownSuffix: false,
+    };
   }
   try {
-    if (Services.eTLD.getKnownPublicSuffix(uri)) {
-      return true;
+    let suffix = Services.eTLD.getKnownPublicSuffix(uri);
+    if (suffix) {
+      return { suffix, hasUnknownSuffix: false };
     }
   } catch (ex) {
-    return true;
+    return { suffix: "", hasUnknownSuffix: false };
   }
   
   
   let suffix = Services.eTLD.getPublicSuffix(uri);
   if (!suffix || numberRegex.test(suffix)) {
-    return true;
+    return { suffix: "", hasUnknownSuffix: false };
   }
   for (let [typo, fixed] of [
     ["ocm", "com"],
@@ -700,10 +740,10 @@ function checkAndFixPublicSuffix(info) {
       if (updatePreferredURI) {
         info.preferredURI = info.fixedURI;
       }
-      return true;
+      return { suffix: fixed, hasUnknownSuffix: false };
     }
   }
-  return false;
+  return { suffix: "", hasUnknownSuffix: true };
 }
 
 function tryKeywordFixupForURIInfo(
@@ -864,6 +904,91 @@ function fixupURIProtocol(uriString) {
 
 
 function keywordURIFixup(uriString, fixupInfo, isPrivateContext, postData) {
+  if (!defaultToSearch) {
+    return keywordURIFixupLegacy(
+      uriString,
+      fixupInfo,
+      isPrivateContext,
+      postData
+    );
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+  if (uriString.startsWith("?")) {
+    return tryKeywordFixupForURIInfo(
+      fixupInfo.originalInput,
+      fixupInfo,
+      isPrivateContext,
+      postData
+    );
+  }
+
+  
+  if (IPv4LikeRegex.test(uriString) || IPv6LikeRegex.test(uriString)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  let asciiHost = fixupInfo.fixedURI?.asciiHost;
+  if (
+    asciiHost &&
+    (isDomainWhitelisted(asciiHost) ||
+      (asciiHost.endsWith(".") &&
+        asciiHost.indexOf(".") != asciiHost.length - 1))
+  ) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  let userPass = fixupInfo.fixedURI?.userPass;
+  if (
+    !uriLikeRegex.test(uriString) &&
+    !(userPass && /^[^\s@]+@/.test(uriString))
+  ) {
+    return tryKeywordFixupForURIInfo(
+      fixupInfo.originalInput,
+      fixupInfo,
+      isPrivateContext,
+      postData
+    );
+  }
+
+  return false;
+}
+
+
+
+
+
+function keywordURIFixupLegacy(
+  uriString,
+  fixupInfo,
+  isPrivateContext,
+  postData
+) {
   
   
   

@@ -44,5 +44,7 @@ add_task(async function test() {
   await testVal(" test", true);
   await testVal("test.test", true);
   await testVal("test test", false);
-  await testVal("test/test", false); 
+  
+  
+  await testVal("test/test", false);
 });
