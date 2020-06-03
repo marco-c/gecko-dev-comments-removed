@@ -662,18 +662,20 @@ impl FontContext {
                 cg_context.set_text_matrix(&CG_AFFINE_TRANSFORM_IDENTITY);
             }
 
-            if extra_strikes > 0 {
-                let strikes = 1 + extra_strikes;
-                let glyphs = vec![glyph; strikes];
-                let origins = (0..strikes).map(|i| {
-                    CGPoint {
-                        x: draw_origin.x + i as f64 * pixel_step,
-                        y: draw_origin.y,
-                    }
-                }).collect::<Vec<_>>();
-                ct_font.draw_glyphs(&glyphs, &origins, cg_context.clone());
-            } else {
-                ct_font.draw_glyphs(&[glyph], &[draw_origin], cg_context.clone());
+            ct_font.draw_glyphs(&[glyph], &[draw_origin], cg_context.clone());
+
+            
+            
+            
+            
+            
+            
+            for i in 1 ..= extra_strikes {
+                let origin = CGPoint {
+                    x: draw_origin.x + i as f64 * pixel_step,
+                    y: draw_origin.y,
+                };
+                ct_font.draw_glyphs(&[glyph], &[origin], cg_context.clone());
             }
         }
 
