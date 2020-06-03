@@ -122,7 +122,6 @@ function doGetProtocolFlags(aURI) {
 
 
 
-
 function openUILink(
   url,
   event,
