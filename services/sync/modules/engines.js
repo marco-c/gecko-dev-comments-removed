@@ -1996,10 +1996,6 @@ SyncEngine.prototype = {
 
   async _syncCleanup() {
     this._needWeakUpload.clear();
-    if (!this._modified) {
-      return;
-    }
-
     try {
       
       await this.trackRemainingChanges();
