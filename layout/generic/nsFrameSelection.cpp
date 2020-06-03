@@ -1344,6 +1344,34 @@ void nsFrameSelection::StopAutoScrollTimer() {
 }
 
 
+nsINode* nsFrameSelection::TableSelection::IsContentInActivelyEditableTableCell(
+    nsPresContext* aContext, nsIContent* aContent) {
+  if (!aContext) {
+    return nullptr;
+  }
+
+  RefPtr<HTMLEditor> htmlEditor = nsContentUtils::GetHTMLEditor(aContext);
+  if (!htmlEditor) {
+    return nullptr;
+  }
+
+  nsINode* inclusiveTableCellAncestor =
+      GetClosestInclusiveTableCellAncestor(aContent);
+  if (!inclusiveTableCellAncestor) {
+    return nullptr;
+  }
+
+  const Element* editorHostNode = htmlEditor->GetActiveEditingHost();
+  if (!editorHostNode) {
+    return nullptr;
+  }
+
+  const bool editableCell =
+      inclusiveTableCellAncestor->IsInclusiveDescendantOf(editorHostNode);
+  return editableCell ? inclusiveTableCellAncestor : nullptr;
+}
+
+
 
 
 nsresult nsFrameSelection::TakeFocus(nsIContent* const aNewFocus,
@@ -1424,27 +1452,18 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* const aNewFocus,
       
 
       NS_ENSURE_STATE(mPresShell);
-      bool editableCell = false;
-      mTableSelection.mClosestInclusiveTableCellAncestor = nullptr;
       RefPtr<nsPresContext> context = mPresShell->GetPresContext();
-      if (context) {
-        RefPtr<HTMLEditor> htmlEditor = nsContentUtils::GetHTMLEditor(context);
-        if (htmlEditor) {
-          nsINode* inclusiveTableCellAncestor =
-              GetClosestInclusiveTableCellAncestor(aNewFocus);
-          nsCOMPtr<nsINode> editorHostNode = htmlEditor->GetActiveEditingHost();
-          editableCell = inclusiveTableCellAncestor && editorHostNode &&
-                         inclusiveTableCellAncestor->IsInclusiveDescendantOf(
-                             editorHostNode);
-          if (editableCell) {
-            mTableSelection.mClosestInclusiveTableCellAncestor =
-                inclusiveTableCellAncestor;
+      mTableSelection.mClosestInclusiveTableCellAncestor = nullptr;
+      if (nsINode* inclusiveTableCellAncestor =
+              TableSelection::IsContentInActivelyEditableTableCell(context,
+                                                                   aNewFocus)) {
+        mTableSelection.mClosestInclusiveTableCellAncestor =
+            inclusiveTableCellAncestor;
 #ifdef DEBUG_TABLE_SELECTION
-            printf(" * TakeFocus - Collapsing into new cell\n");
+        printf(" * TakeFocus - Collapsing into new cell\n");
 #endif
-          }
-        }
       }
+
       break;
     }
     case FocusMode::kExtendSelection: {

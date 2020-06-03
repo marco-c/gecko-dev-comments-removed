@@ -906,6 +906,14 @@ class nsFrameSelection final {
                     mozilla::dom::Selection& aNormalSelection);
 
     
+
+
+
+
+    static nsINode* IsContentInActivelyEditableTableCell(
+        nsPresContext* aContext, nsIContent* aContent);
+
+    
     MOZ_CAN_RUN_SCRIPT_BOUNDARY
     nsresult SelectBlockOfCells(nsIContent* aStartCell, nsIContent* aEndCell,
                                 mozilla::dom::Selection& aNormalSelection);
