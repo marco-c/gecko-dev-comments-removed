@@ -414,6 +414,12 @@ function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue,
                 if (capN !== undefined)
                     ToString(capN);
             }
+            
+            
+            var namedCaptures = result.groups;
+            if (namedCaptures !== undefined)
+                ToObject(namedCaptures);
+
             replacement = replaceValue;
         }
 
@@ -435,6 +441,7 @@ function RegExpReplaceSlowPath(rx, S, lengthS, replaceValue,
     
     return accumulatedResult + Substring(S, nextSourcePosition, lengthS - nextSourcePosition);
 }
+
 
 
 
@@ -466,31 +473,43 @@ function RegExpGetComplexReplacement(result, matched, S, position,
     }
 
     
+    var namedCaptures = result.groups;
+
+    
     if (functionalReplace) {
         
         
-        switch (nCaptures) {
-          case 0:
-            return ToString(replaceValue(SPREAD(captures, 1), position, S));
-          case 1:
-            return ToString(replaceValue(SPREAD(captures, 2), position, S));
-          case 2:
-            return ToString(replaceValue(SPREAD(captures, 3), position, S));
-          case 3:
-            return ToString(replaceValue(SPREAD(captures, 4), position, S));
-          case 4:
-            return ToString(replaceValue(SPREAD(captures, 5), position, S));
-          default:
-            
-            _DefineDataProperty(captures, capturesLength++, position);
-            _DefineDataProperty(captures, capturesLength++, S);
-            return ToString(callFunction(std_Function_apply, replaceValue, undefined, captures));
+        if (namedCaptures === undefined) {
+            switch (nCaptures) {
+              case 0:
+                return ToString(replaceValue(SPREAD(captures, 1), position, S));
+              case 1:
+                return ToString(replaceValue(SPREAD(captures, 2), position, S));
+              case 2:
+                return ToString(replaceValue(SPREAD(captures, 3), position, S));
+              case 3:
+                return ToString(replaceValue(SPREAD(captures, 4), position, S));
+              case 4:
+                return ToString(replaceValue(SPREAD(captures, 5), position, S));
+            }
         }
+        
+        _DefineDataProperty(captures, capturesLength++, position);
+        _DefineDataProperty(captures, capturesLength++, S);
+        if (namedCaptures !== undefined) {
+            _DefineDataProperty(captures, capturesLength++, namedCaptures);
+        }
+        return ToString(callFunction(std_Function_apply, replaceValue, undefined, captures));
     }
 
     
-    return RegExpGetSubstitution(captures, S, position, replaceValue, firstDollarIndex);
+    if (namedCaptures !== undefined) {
+        namedCaptures = ToObject(namedCaptures);
+    }
+    return RegExpGetSubstitution(captures, S, position, replaceValue, firstDollarIndex,
+                                 namedCaptures);
 }
+
 
 
 
@@ -505,17 +524,22 @@ function RegExpGetFunctionalReplacement(result, S, position, replaceValue) {
     assert(result.length >= 1, "RegExpMatcher doesn't return an empty array");
     var nCaptures = result.length - 1;
 
-    switch (nCaptures) {
-      case 0:
-        return ToString(replaceValue(SPREAD(result, 1), position, S));
-      case 1:
-        return ToString(replaceValue(SPREAD(result, 2), position, S));
-      case 2:
-        return ToString(replaceValue(SPREAD(result, 3), position, S));
-      case 3:
-        return ToString(replaceValue(SPREAD(result, 4), position, S));
-      case 4:
-        return ToString(replaceValue(SPREAD(result, 5), position, S));
+    
+    var namedCaptures = result.groups;
+
+    if (namedCaptures === undefined) {
+        switch (nCaptures) {
+          case 0:
+            return ToString(replaceValue(SPREAD(result, 1), position, S));
+          case 1:
+            return ToString(replaceValue(SPREAD(result, 2), position, S));
+          case 2:
+            return ToString(replaceValue(SPREAD(result, 3), position, S));
+          case 3:
+            return ToString(replaceValue(SPREAD(result, 4), position, S));
+          case 4:
+            return ToString(replaceValue(SPREAD(result, 5), position, S));
+        }
     }
 
     
@@ -529,6 +553,11 @@ function RegExpGetFunctionalReplacement(result, S, position, replaceValue) {
     
     _DefineDataProperty(captures, nCaptures + 1, position);
     _DefineDataProperty(captures, nCaptures + 2, S);
+
+    
+    if (namedCaptures !== undefined) {
+        _DefineDataProperty(captures, nCaptures + 3, namedCaptures);
+    }
 
     
     return ToString(callFunction(std_Function_apply, replaceValue, undefined, captures));

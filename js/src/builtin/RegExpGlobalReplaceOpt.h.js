@@ -78,7 +78,14 @@ function FUNC_NAME(rx, S, lengthS, replaceValue, flags
 #if defined(FUNCTIONAL)
         replacement = RegExpGetFunctionalReplacement(result, S, position, replaceValue);
 #elif defined(SUBSTITUTION)
-        replacement = RegExpGetSubstitution(result, S, position, replaceValue, firstDollarIndex);
+        
+        var namedCaptures = result.groups;
+        if (namedCaptures !== undefined) {
+            namedCaptures = ToObject(namedCaptures);
+        }
+        
+        replacement = RegExpGetSubstitution(result, S, position, replaceValue,
+                                            firstDollarIndex, namedCaptures);
 #elif defined(ELEMBASE)
         if (IsObject(elemBase)) {
             var prop = GetStringDataProperty(elemBase, matched);
