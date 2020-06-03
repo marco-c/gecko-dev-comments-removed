@@ -556,8 +556,6 @@ ContentBlocking::CompleteAllowAccessFor(
       AntiTrackingUtils::GetInnerWindow(aParentContext);
   MOZ_ASSERT(parentInner);
 
-  nsGlobalWindowInner::Cast(parentInner)->StorageAccessGranted();
-
   
   
   
@@ -711,8 +709,10 @@ void ContentBlocking::UpdateAllowAccessOnCurrentProcess(
       Unused << AntiTrackingUtils::GetPrincipalAndTrackingOrigin(
           aContext, nullptr, origin);
 
-      if (behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER &&
-          !AntiTrackingUtils::IsFirstLevelSubContext(aContext)) {
+      
+      if ((aParentContext != aContext) &&
+          (behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER &&
+           !AntiTrackingUtils::IsFirstLevelSubContext(aContext))) {
         return;
       }
 
