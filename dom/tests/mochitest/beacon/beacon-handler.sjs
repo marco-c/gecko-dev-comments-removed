@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 const CC = Components.Constructor;
 const BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
@@ -11,7 +11,7 @@ const BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
 
 function DEBUG(str)
 {
-  // dump("********** " + str + "\n");
+  
 }
 
 function setOurState(data) {
@@ -24,7 +24,7 @@ function setOurState(data) {
 function getOurState() {
   var data;
   getObjectState("beacon-handler", function(x) {
-    // x can be null if no one has set any state yet
+    
     if (x) {
       data = x.wrappedJSObject.data;
     }
@@ -55,6 +55,13 @@ function handleRequest(request, response) {
     response.setHeader("Content-Type", "application/json", false);
     switch (request.queryString) {
     case "getLastBeacon":
+      
+      var originHeader = request.getHeader("origin");
+      response.setHeader("Access-Control-Allow-Headers", "content-type", false);
+      response.setHeader("Access-Control-Allow-Methods", "POST, GET", false);
+      response.setHeader("Access-Control-Allow-Origin", originHeader, false);
+      response.setHeader("Access-Control-Allow-Credentials", "true", false);
+
       var state = getOurState();
       if (state === "unblocked") {
         finishControlResponse(response);
@@ -83,7 +90,7 @@ function handleRequest(request, response) {
 
     var data = "";
     for (var i=0; i < bytes.length; i++) {
-      // We are only passing strings at this point.
+      
       if (bytes[i] < 32) continue;
       var charcode = String.fromCharCode(bytes[i]);
       data += charcode;
@@ -94,12 +101,12 @@ function handleRequest(request, response) {
       mimetype = request.getHeader("Content-Type");
     }
 
-    // check to see if this is form data.
+    
     if (mimetype.indexOf("multipart/form-data") != -1) {
 
-      // trim the mime type to make testing easier.
+      
       mimetype = "multipart/form-data";
-      // Extract only the form-data name.
+      
 
       var pattern = /; name=\"(.+)\";/;
       data = data.split(pattern)[1];
