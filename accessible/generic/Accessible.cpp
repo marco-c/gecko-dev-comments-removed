@@ -2026,6 +2026,15 @@ void Accessible::BindToParent(Accessible* aParent, uint32_t aIndexInParent) {
   mContextFlags |=
       static_cast<uint32_t>((mParent->IsAlert() || mParent->IsInsideAlert())) &
       eInsideAlert;
+
+  
+  TableCellAccessible* cell = AsTableCell();
+  if (cell && Role() == roles::COLUMNHEADER) {
+    TableAccessible* table = cell->Table();
+    if (table) {
+      table->GetHeaderCache().Clear();
+    }
+  }
 }
 
 

@@ -184,6 +184,18 @@ class TableAccessible {
 
   virtual Accessible* AsAccessible() = 0;
 
+  typedef nsRefPtrHashtable<nsPtrHashKey<const TableCellAccessible>, Accessible>
+      HeaderCache;
+
+  
+
+
+
+
+
+
+  HeaderCache& GetHeaderCache() { return mHeaderCache; }
+
  protected:
   
 
@@ -194,6 +206,9 @@ class TableAccessible {
 
 
   Accessible* CellInRowAt(Accessible* aRow, int32_t aColumn);
+
+ private:
+  HeaderCache mHeaderCache;
 };
 
 }  

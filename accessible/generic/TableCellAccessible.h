@@ -60,6 +60,9 @@ class TableCellAccessible {
 
 
   virtual bool Selected() = 0;
+
+ private:
+  Accessible* PrevColHeader();
 };
 
 }  

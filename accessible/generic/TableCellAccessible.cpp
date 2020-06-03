@@ -34,24 +34,67 @@ void TableCellAccessible::RowHeaderCells(nsTArray<Accessible*>* aCells) {
   }
 }
 
-void TableCellAccessible::ColHeaderCells(nsTArray<Accessible*>* aCells) {
-  uint32_t rowIdx = RowIdx(), colIdx = ColIdx();
+Accessible* TableCellAccessible::PrevColHeader() {
   TableAccessible* table = Table();
-  if (!table) return;
+  if (!table) {
+    return nullptr;
+  }
 
-  
+  TableAccessible::HeaderCache& cache = table->GetHeaderCache();
+  bool inCache = false;
+  Accessible* cachedHeader = cache.GetWeak(this, &inCache);
+  if (inCache) {
+    
+    
+    
+    if (!cachedHeader || !cachedHeader->IsDefunct()) {
+      return cachedHeader;
+    }
+  }
+
+  uint32_t rowIdx = RowIdx(), colIdx = ColIdx();
   for (uint32_t curRowIdx = rowIdx - 1; curRowIdx < rowIdx; curRowIdx--) {
     Accessible* cell = table->CellAt(curRowIdx, colIdx);
-    if (!cell) continue;
-
+    if (!cell) {
+      continue;
+    }
     
     TableCellAccessible* tableCell = cell->AsTableCell();
-    NS_ASSERTION(tableCell, "cell should be a table cell!");
-    if (!tableCell) continue;
+    MOZ_ASSERT(tableCell, "cell should be a table cell!");
+    if (!tableCell) {
+      continue;
+    }
+
+    
+    cachedHeader = cache.GetWeak(tableCell, &inCache);
+    if (inCache && cell->Role() != roles::COLUMNHEADER) {
+      if (!cachedHeader || !cachedHeader->IsDefunct()) {
+        
+        cache.Put(this, RefPtr<Accessible>(cachedHeader));
+        return cachedHeader;
+      }
+    }
 
     
     
-    if (tableCell->RowIdx() == curRowIdx && cell->Role() == roles::COLUMNHEADER)
-      aCells->AppendElement(cell);
+    if (cell->Role() != roles::COLUMNHEADER ||
+        tableCell->RowIdx() != curRowIdx) {
+      continue;
+    }
+
+    
+    cache.Put(this, RefPtr<Accessible>(cell));
+    return cell;
+  }
+
+  
+  cache.Put(this, RefPtr<Accessible>(nullptr));
+  return nullptr;
+}
+
+void TableCellAccessible::ColHeaderCells(nsTArray<Accessible*>* aCells) {
+  for (Accessible* cell = PrevColHeader(); cell;
+       cell = cell->AsTableCell()->PrevColHeader()) {
+    aCells->AppendElement(cell);
   }
 }
