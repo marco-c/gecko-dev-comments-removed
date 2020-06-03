@@ -426,18 +426,16 @@ def get_raptor_test_list(args, oskey):
             LOG.info("setting page-timeout to %d as specified on cmd line" % args.page_timeout)
             next_test['page_timeout'] = args.page_timeout
 
-        
-        
         _running_cold = False
-        if args.browsertime is True:
-            if args.cold is True:
-                _running_cold = True
-            else:
-                
-                next_test['browser_cycles'] = 1
+
+        
+        if args.cold or next_test.get("cold") == "true":
+            
+            
+            _running_cold = True
         else:
-            if next_test.get("cold", "false") == "true":
-                _running_cold = True
+            
+            next_test['browser_cycles'] = 1
 
         if _running_cold:
             
