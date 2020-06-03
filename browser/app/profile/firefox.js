@@ -2260,12 +2260,16 @@ pref("devtools.responsive.metaViewport.enabled", true);
 pref("devtools.responsive.userAgent", "");
 
 
-
 #if defined(NIGHTLY_BUILD)
   pref("devtools.responsive.showUserAgentInput", true);
-  pref("devtools.responsive.browserUI.enabled", true);
 #else
   pref("devtools.responsive.showUserAgentInput", false);
+#endif
+
+
+#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
+  pref("devtools.responsive.browserUI.enabled", true);
+#else
   pref("devtools.responsive.browserUI.enabled", false);
 #endif
 
