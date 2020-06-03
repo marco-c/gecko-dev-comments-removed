@@ -5150,18 +5150,22 @@ AttachDecision CallIRGenerator::tryAttachSpecialCaseCallNative(
     return AttachDecision::NoAction;
   }
 
-  
-  if (callee->native() == js::array_push) {
-    return tryAttachArrayPush();
-  }
-  if (callee->native() == js::array_join) {
-    return tryAttachArrayJoin();
-  }
-  if (callee->native() == intrinsic_IsSuspendedGenerator) {
-    return tryAttachIsSuspendedGenerator();
+  if (!callee->hasJitInfo() ||
+      callee->jitInfo()->type() != JSJitInfo::InlinableNative) {
+    return AttachDecision::NoAction;
   }
 
-  return AttachDecision::NoAction;
+  
+  switch (callee->jitInfo()->inlinableNative) {
+    case InlinableNative::ArrayPush:
+      return tryAttachArrayPush();
+    case InlinableNative::ArrayJoin:
+      return tryAttachArrayJoin();
+    case InlinableNative::IntrinsicIsSuspendedGenerator:
+      return tryAttachIsSuspendedGenerator();
+    default:
+      return AttachDecision::NoAction;
+  }
 }
 
 
