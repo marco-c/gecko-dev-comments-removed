@@ -1,36 +1,30 @@
 
 
 
+"use strict";
+
+var EXPORTED_SYMBOLS = ["GeckoViewPermission"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  EventDispatcher: "resource://gre/modules/Messaging.jsm",
   GeckoViewUtils: "resource://gre/modules/GeckoViewUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
 
 
-const PERM_ACCESS_COARSE_LOCATION = "android.permission.ACCESS_COARSE_LOCATION";
 const PERM_ACCESS_FINE_LOCATION = "android.permission.ACCESS_FINE_LOCATION";
 const PERM_CAMERA = "android.permission.CAMERA";
 const PERM_RECORD_AUDIO = "android.permission.RECORD_AUDIO";
 
-function GeckoViewPermission() {
-  this.wrappedJSObject = this;
-}
+class GeckoViewPermission {
+  constructor() {
+    this.wrappedJSObject = this;
+  }
 
-GeckoViewPermission.prototype = {
-  classID: Components.ID("{42f3c238-e8e8-4015-9ca2-148723a8afcf}"),
-
-  QueryInterface: ChromeUtils.generateQI([
-    Ci.nsIObserver,
-    Ci.nsIContentPermissionPrompt,
-  ]),
-
-  _appPermissions: {},
+  _appPermissions = {};
 
   
   observe(aSubject, aTopic, aData) {
@@ -48,7 +42,7 @@ GeckoViewPermission.prototype = {
         break;
       }
     }
-  },
+  }
 
   receiveMessage(aMsg) {
     switch (aMsg.name) {
@@ -68,7 +62,7 @@ GeckoViewPermission.prototype = {
         break;
       }
     }
-  },
+  }
 
   handleMediaAskDevicePermission(aType, aCallback) {
     const perms = [];
@@ -93,7 +87,7 @@ GeckoViewPermission.prototype = {
       
       callback();
     }
-  },
+  }
 
   handleMediaRequest(aRequest) {
     const constraints = aRequest.getConstraints();
@@ -197,7 +191,7 @@ GeckoViewPermission.prototype = {
         Cu.reportError("Media device error: " + error);
         denyRequest();
       });
-  },
+  }
 
   handlePeerConnectionRequest(aRequest) {
     Services.obs.notifyObservers(
@@ -205,11 +199,11 @@ GeckoViewPermission.prototype = {
       "PeerConnection:response:allow",
       aRequest.callID
     );
-  },
+  }
 
   checkAppPermissions(aPerms) {
     return aPerms.every(perm => this._appPermissions[perm]);
-  },
+  }
 
   getAppPermissions(aDispatcher, aPerms) {
     const perms = aPerms.filter(perm => !this._appPermissions[perm]);
@@ -229,7 +223,7 @@ GeckoViewPermission.prototype = {
         }
         return granted;
       });
-  },
+  }
 
   prompt(aRequest) {
     
@@ -289,7 +283,13 @@ GeckoViewPermission.prototype = {
         
         aRequest = undefined;
       });
-  },
-};
+  }
+}
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([GeckoViewPermission]);
+GeckoViewPermission.prototype.classID = Components.ID(
+  "{42f3c238-e8e8-4015-9ca2-148723a8afcf}"
+);
+GeckoViewPermission.prototype.QueryInterface = ChromeUtils.generateQI([
+  Ci.nsIObserver,
+  Ci.nsIContentPermissionPrompt,
+]);

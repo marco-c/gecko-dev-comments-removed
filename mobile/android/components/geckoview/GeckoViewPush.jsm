@@ -1,12 +1,10 @@
 
 
 
-
 "use strict";
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
+var EXPORTED_SYMBOLS = ["PushService"];
+
 const { GeckoViewUtils } = ChromeUtils.import(
   "resource://gre/modules/GeckoViewUtils.jsm"
 );
@@ -54,34 +52,24 @@ function scopeWithAttrs(scope, attrs) {
   return scope + ChromeUtils.originAttributesToSuffix(attrs);
 }
 
-function PushService() {
-  this.wrappedJSObject = this;
-}
+class PushService {
+  constructor() {
+    this.wrappedJSObject = this;
+  }
 
-PushService.prototype = {
-  classID: Components.ID("{a54d84d7-98a4-4fec-b664-e42e512ae9cc}"),
-  contractID: "@mozilla.org/push/Service;1",
-  QueryInterface: ChromeUtils.generateQI([
-    Ci.nsIObserver,
-    Ci.nsISupportsWeakReference,
-    Ci.nsIPushService,
-    Ci.nsIPushQuotaManager,
-    Ci.nsIPushErrorReporter,
-  ]),
-
-  pushTopic: OBSERVER_TOPIC_PUSH,
-  subscriptionChangeTopic: OBSERVER_TOPIC_SUBSCRIPTION_CHANGE,
-  subscriptionModifiedTopic: OBSERVER_TOPIC_SUBSCRIPTION_MODIFIED,
+  pushTopic = OBSERVER_TOPIC_PUSH;
+  subscriptionChangeTopic = OBSERVER_TOPIC_SUBSCRIPTION_CHANGE;
+  subscriptionModifiedTopic = OBSERVER_TOPIC_SUBSCRIPTION_MODIFIED;
 
   
 
-  observe(subject, topic, data) {},
+  observe(subject, topic, data) {}
 
   
 
   subscribe(scope, principal, callback) {
     this.subscribeWithKey(scope, principal, null, callback);
-  },
+  }
 
   async subscribeWithKey(scope, principal, appServerKey, callback) {
     try {
@@ -109,7 +97,7 @@ PushService.prototype = {
     } catch (e) {
       callback.onPushSubscription(Cr.NS_ERROR_FAILURE, null);
     }
-  },
+  }
 
   async unsubscribe(scope, principal, callback) {
     try {
@@ -122,7 +110,7 @@ PushService.prototype = {
     } catch (e) {
       callback.onUnsubscribe(Cr.NS_ERROR_FAILURE, false);
     }
-  },
+  }
 
   async getSubscription(scope, principal, callback) {
     try {
@@ -144,45 +132,55 @@ PushService.prototype = {
     } catch (e) {
       callback.onPushSubscription(Cr.NS_ERROR_FAILURE, null);
     }
-  },
+  }
 
   clearForDomain(domain, callback) {
     callback.onClear(Cr.NS_OK);
-  },
+  }
 
   
 
-  notificationForOriginShown(origin) {},
+  notificationForOriginShown(origin) {}
 
-  notificationForOriginClosed(origin) {},
+  notificationForOriginClosed(origin) {}
 
   
 
-  reportDeliveryError(messageId, reason) {},
-};
-
-
-function PushSubscription(props) {
-  this._props = props;
+  reportDeliveryError(messageId, reason) {}
 }
 
-PushSubscription.prototype = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIPushSubscription]),
+PushService.prototype.classID = Components.ID(
+  "{a54d84d7-98a4-4fec-b664-e42e512ae9cc}"
+);
+PushService.prototype.contractID = "@mozilla.org/push/Service;1";
+PushService.prototype.QueryInterface = ChromeUtils.generateQI([
+  Ci.nsIObserver,
+  Ci.nsISupportsWeakReference,
+  Ci.nsIPushService,
+  Ci.nsIPushQuotaManager,
+  Ci.nsIPushErrorReporter,
+]);
+
+
+class PushSubscription {
+  constructor(props) {
+    this._props = props;
+  }
 
   
   get endpoint() {
     return this._props.endpoint;
-  },
+  }
 
   
   get lastPush() {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
-  },
+  }
 
   
   get pushCount() {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
-  },
+  }
 
   
 
@@ -190,7 +188,7 @@ PushSubscription.prototype = {
 
   get quota() {
     return -1;
-  },
+  }
 
   
 
@@ -199,12 +197,12 @@ PushSubscription.prototype = {
 
   get isSystemSubscription() {
     return false;
-  },
+  }
 
   
   get p256dhPrivateKey() {
     throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
-  },
+  }
 
   
 
@@ -212,7 +210,7 @@ PushSubscription.prototype = {
 
   quotaApplies() {
     return false;
-  },
+  }
 
   
 
@@ -221,7 +219,7 @@ PushSubscription.prototype = {
 
   isExpired() {
     return false;
-  },
+  }
 
   
 
@@ -240,14 +238,16 @@ PushSubscription.prototype = {
         return this._getRawKey(this._props.appServerKey);
     }
     return [];
-  },
+  }
 
   _getRawKey(key) {
     if (!key) {
       return [];
     }
     return new Uint8Array(key);
-  },
-};
+  }
+}
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([PushService]);
+PushSubscription.prototype.QueryInterface = ChromeUtils.generateQI([
+  Ci.nsIPushSubscription,
+]);

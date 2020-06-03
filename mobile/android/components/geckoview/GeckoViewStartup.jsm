@@ -1,6 +1,9 @@
 
 
 
+"use strict";
+
+var EXPORTED_SYMBOLS = ["GeckoViewStartup"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -45,13 +48,7 @@ const JSWINDOWACTORS = {
   },
 };
 
-function GeckoViewStartup() {}
-
-GeckoViewStartup.prototype = {
-  classID: Components.ID("{8e993c34-fdd6-432c-967e-f995d888777f}"),
-
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
-
+class GeckoViewStartup {
   
   observe(aSubject, aTopic, aData) {
     debug`observe: ${aTopic}`;
@@ -234,7 +231,7 @@ GeckoViewStartup.prototype = {
         break;
       }
     }
-  },
+  }
 
   onEvent(aEvent, aData, aCallback) {
     debug`onEvent ${aEvent}`;
@@ -271,7 +268,12 @@ GeckoViewStartup.prototype = {
         );
         break;
     }
-  },
-};
+  }
+}
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([GeckoViewStartup]);
+GeckoViewStartup.prototype.classID = Components.ID(
+  "{8e993c34-fdd6-432c-967e-f995d888777f}"
+);
+GeckoViewStartup.prototype.QueryInterface = ChromeUtils.generateQI([
+  Ci.nsIObserver,
+]);
