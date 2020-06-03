@@ -696,35 +696,10 @@ class IntermediatePreloads {
   }
 }
 
-function filterToDate(filter) {
-  return new Date(filter.details.name.replace(/-(full|diff)$/, ""));
-}
-
-
 
 
 function compareFilters(filterA, filterB) {
-  let timeA = filterToDate(filterA);
-  let timeB = filterToDate(filterB);
-  
-  
-  if (timeA < timeB) {
-    return -1;
-  }
-  if (timeA == timeB) {
-    let incrementalA = filterA.details.name.includes("-diff");
-    let incrementalB = filterB.details.name.includes("-diff");
-    if (incrementalA == incrementalB) {
-      return 0;
-    }
-    
-    if (!incrementalA) {
-      return -1;
-    }
-  }
-  
-  
-  return 1;
+  return filterA.effectiveTimestamp - filterB.effectiveTimestamp;
 }
 
 class CRLiteFilters {
@@ -775,8 +750,23 @@ class CRLiteFilters {
         filter.incremental && compareFilters(filter, fullFilter) > 0
     );
     incrementalFilters.sort(compareFilters);
+    
+    let parentIdMap = {};
+    for (let filter of incrementalFilters) {
+      if (filter.parent in parentIdMap) {
+        log.debug(`filter with parent id ${filter.parent} already seen?`);
+      } else {
+        parentIdMap[filter.parent] = filter;
+      }
+    }
+    let filtersToDownload = [];
+    let nextFilter = fullFilter;
+    while (nextFilter) {
+      filtersToDownload.push(nextFilter);
+      nextFilter = parentIdMap[nextFilter.id];
+    }
     let filtersDownloaded = [];
-    for (let filter of [fullFilter].concat(incrementalFilters)) {
+    for (let filter of filtersToDownload) {
       try {
         
         let localURI = await this.client.attachments.download(filter);
@@ -784,8 +774,8 @@ class CRLiteFilters {
         let bytes = new Uint8Array(buffer);
         log.debug(`Downloaded ${filter.details.name}: ${bytes.length} bytes`);
         filtersDownloaded.push(filter.details.name);
-        if (filter.details.name.endsWith("-full")) {
-          let timestamp = filterToDate(filter).getTime() / 1000;
+        if (!filter.incremental) {
+          let timestamp = Math.floor(filter.effectiveTimestamp / 1000);
           log.debug(`setting CRLite filter timestamp to ${timestamp}`);
           const certList = Cc["@mozilla.org/security/certstorage;1"].getService(
             Ci.nsICertStorage
@@ -798,7 +788,7 @@ class CRLiteFilters {
           });
         } else {
           log.debug(
-            "downloaded filter diff, but we don't support consuming them yet."
+            "downloaded incremental filter, but we don't support consuming them yet."
           );
         }
       } catch (e) {
