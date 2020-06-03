@@ -1863,20 +1863,14 @@ void nsHttpChannel::UpdateAntiTrackingInfo() {
 
   AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(this);
 
+  
+  
   if (mLoadInfo->GetExternalContentPolicyType() ==
       nsIContentPolicy::TYPE_DOCUMENT) {
     nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
     Unused << mLoadInfo->GetCookieJarSettings(
         getter_AddRefs(cookieJarSettings));
 
-    
-    
-    
-    mozilla::net::CookieJarSettings::Cast(cookieJarSettings)
-        ->UpdateIsOnContentBlockingAllowList(this);
-
-    
-    
     mozilla::net::CookieJarSettings::Cast(cookieJarSettings)
         ->SetFirstPartyDomain(mURI);
   }
