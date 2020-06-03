@@ -26,6 +26,7 @@ STATIC_ASSERT(1 << BYTECODE_SHIFT > BYTECODE_MASK);
 
 
 
+
 #define BYTECODE_ITERATOR(V)                                                   \
   V(BREAK, 0, 4)              /* bc8                                        */ \
   V(PUSH_CP, 1, 4)            /* bc8 pad24                                  */ \

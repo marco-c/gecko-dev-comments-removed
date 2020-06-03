@@ -236,6 +236,15 @@ class RegExpNode : public ZoneObject {
     eats_at_least_ = eats_at_least;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  void SetDoNotInline() { trace_count_ = kMaxCopiesCodeGenerated; }
+
   BoyerMooreLookahead* bm_info(bool not_at_start) {
     return bm_info_[not_at_start ? 1 : 0];
   }
