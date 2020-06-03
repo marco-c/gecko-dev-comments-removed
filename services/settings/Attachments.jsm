@@ -64,6 +64,7 @@ class LazyRecordAndBuffer {
     const record = await this.getRecord();
     return (
       record &&
+      record.last_modified === requestedRecord.last_modified &&
       record.attachment.size === requestedRecord.attachment.size &&
       record.attachment.hash === requestedRecord.attachment.hash
     );
@@ -225,7 +226,20 @@ class Downloader {
     
 
     
-    if (fallbackToCache && (await cacheInfo.getRecord())) {
+    const cacheRecord = fallbackToCache && (await cacheInfo.getRecord());
+    if (cacheRecord) {
+      const dumpRecord = fallbackToDump && (await dumpInfo.getRecord());
+      if (dumpRecord?.last_modified >= cacheRecord.last_modified) {
+        
+        
+        try {
+          return { ...(await dumpInfo.getResult()), _source: "dump_fallback" };
+        } catch (e) {
+          
+          Cu.reportError(e);
+        }
+      }
+
       try {
         return { ...(await cacheInfo.getResult()), _source: "cache_fallback" };
       } catch (e) {
