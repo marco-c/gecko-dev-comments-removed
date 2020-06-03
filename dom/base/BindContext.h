@@ -44,6 +44,13 @@ struct MOZ_STACK_CLASS BindContext final {
   bool SubtreeRootChanges() const { return mSubtreeRootChanges; }
 
   
+  
+  
+  
+  
+  bool AllowsAutoFocus() const;
+
+  
   explicit BindContext(nsINode& aParent)
       : mDoc(*aParent.OwnerDoc()),
         mInComposedDoc(aParent.IsInComposedDoc()),
@@ -74,6 +81,10 @@ struct MOZ_STACK_CLASS BindContext final {
   }
 
  private:
+  
+  
+  bool IsSameOriginAsTop() const;
+
   Document& mDoc;
 
   const bool mInComposedDoc;
