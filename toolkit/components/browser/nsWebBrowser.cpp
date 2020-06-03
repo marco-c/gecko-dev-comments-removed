@@ -154,7 +154,9 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
   
   
 
-  docShell->InitSessionHistory();
+  if (aBrowsingContext->IsTop()) {
+    aBrowsingContext->InitSessionHistory();
+  }
 
   NS_ENSURE_SUCCESS(docShellAsWin->Create(), nullptr);
 

@@ -423,10 +423,6 @@ nsDocShell::~nsDocShell() {
 
   Destroy();
 
-  if (mSessionHistory) {
-    mSessionHistory->LegacySHistory()->ClearRootBrowsingContext();
-  }
-
   if (mContentViewer) {
     mContentViewer->Close(nullptr);
     mContentViewer->Destroy();
@@ -544,7 +540,7 @@ void nsDocShell::DestroyChildren() {
 
 NS_IMPL_CYCLE_COLLECTION_WEAK_PTR_INHERITED(nsDocShell, nsDocLoader,
                                             mScriptGlobal, mInitialClientSource,
-                                            mSessionHistory, mBrowsingContext,
+                                            mBrowsingContext,
                                             mChromeEventHandler)
 
 NS_IMPL_ADDREF_INHERITED(nsDocShell, nsDocLoader)
@@ -2955,8 +2951,8 @@ nsresult nsDocShell::AddChildSHEntryInternal(nsISHEntry* aCloneRef,
                                              uint32_t aLoadType,
                                              bool aCloneChildren) {
   nsresult rv = NS_OK;
-  if (mSessionHistory) {
-    rv = mSessionHistory->LegacySHistory()->AddChildSHEntryHelper(
+  if (GetSessionHistory()) {
+    rv = GetSessionHistory()->LegacySHistory()->AddChildSHEntryHelper(
         aCloneRef, aNewEntry, mBrowsingContext, aCloneChildren);
   } else {
     
@@ -3010,13 +3006,8 @@ nsresult nsDocShell::AddChildSHEntryToParent(nsISHEntry* aNewEntry,
 
 NS_IMETHODIMP
 nsDocShell::RemoveFromSessionHistory() {
-  nsCOMPtr<nsIDocShellTreeItem> root;
-  GetInProcessSameTypeRootTreeItem(getter_AddRefs(root));
-  nsCOMPtr<nsIWebNavigation> rootAsWebnav = do_QueryInterface(root);
-  if (!rootAsWebnav) {
-    return NS_OK;
-  }
-  RefPtr<ChildSHistory> sessionHistory = rootAsWebnav->GetSessionHistory();
+  RefPtr<ChildSHistory> sessionHistory =
+      mBrowsingContext->Top()->GetChildSessionHistory();
   if (!sessionHistory) {
     return NS_OK;
   }
@@ -4084,25 +4075,9 @@ nsDocShell::GetCurrentURI(nsIURI** aURI) {
 }
 
 NS_IMETHODIMP
-nsDocShell::InitSessionHistory() {
-  MOZ_ASSERT(!mIsBeingDestroyed);
-
-  
-  
-  nsCOMPtr<nsIDocShellTreeItem> root;
-  GetInProcessSameTypeRootTreeItem(getter_AddRefs(root));
-  if (root != this) {
-    return NS_ERROR_FAILURE;
-  }
-
-  mSessionHistory = new ChildSHistory(this);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsDocShell::GetSessionHistoryXPCOM(nsISupports** aSessionHistory) {
   NS_ENSURE_ARG_POINTER(aSessionHistory);
-  RefPtr<ChildSHistory> shistory = mSessionHistory;
+  RefPtr<ChildSHistory> shistory = GetSessionHistory();
   shistory.forget(aSessionHistory);
   return NS_OK;
 }
@@ -4323,12 +4298,11 @@ nsDocShell::Destroy() {
     mScriptGlobal = nullptr;
   }
 
-  if (mSessionHistory) {
+  if (GetSessionHistory()) {
     
     
     
-    mSessionHistory->EvictLocalContentViewers();
-    mSessionHistory = nullptr;
+    GetSessionHistory()->EvictLocalContentViewers();
   }
 
   if (mWillChangeProcess) {
@@ -7522,13 +7496,13 @@ nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,
 
     
     
-    if (mSessionHistory && !mLSHE) {
-      int32_t idx = mSessionHistory->LegacySHistory()->GetRequestedIndex();
+    ChildSHistory* shistory = GetSessionHistory();
+    if (shistory && !mLSHE) {
+      int32_t idx = shistory->LegacySHistory()->GetRequestedIndex();
       if (idx == -1) {
-        idx = mSessionHistory->Index();
+        idx = shistory->Index();
       }
-      mSessionHistory->LegacySHistory()->GetEntryAtIndex(idx,
-                                                         getter_AddRefs(mLSHE));
+      shistory->LegacySHistory()->GetEntryAtIndex(idx, getter_AddRefs(mLSHE));
     }
 
     mLoadType = LOAD_ERROR_PAGE;
@@ -8448,11 +8422,11 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   
 
 
-  if (mSessionHistory) {
-    int32_t index = mSessionHistory->Index();
+  ChildSHistory* shistory = GetSessionHistory();
+  if (shistory) {
+    int32_t index = shistory->Index();
     nsCOMPtr<nsISHEntry> shEntry;
-    mSessionHistory->LegacySHistory()->GetEntryAtIndex(index,
-                                                       getter_AddRefs(shEntry));
+    shistory->LegacySHistory()->GetEntryAtIndex(index, getter_AddRefs(shEntry));
     NS_ENSURE_TRUE(shEntry, NS_ERROR_FAILURE);
     shEntry->SetTitle(mTitle);
   }
@@ -10098,11 +10072,8 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
 
   
   
-  RefPtr<ChildSHistory> rootSH = mSessionHistory;
-  if (!rootSH) {
-    
-    rootSH = GetRootSessionHistory();
-  }
+  RefPtr<ChildSHistory> rootSH =
+      mBrowsingContext->Top()->GetChildSessionHistory();
   if (!rootSH) {
     updateSHistory = false;
     updateGHistory = false;  
@@ -10205,11 +10176,11 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
                                 aPrincipalToInherit, aStoragePrincipalToInherit,
                                 aCsp, aCloneSHChildren, getter_AddRefs(mLSHE));
     }
-  } else if (mSessionHistory && mLSHE && mURIResultedInDocument) {
+  } else if (GetSessionHistory() && mLSHE && mURIResultedInDocument) {
     
     
 
-    mSessionHistory->LegacySHistory()->EnsureCorrectEntryAtCurrIndex(mLSHE);
+    GetSessionHistory()->LegacySHistory()->EnsureCorrectEntryAtCurrIndex(mLSHE);
   }
 
   
@@ -10848,11 +10819,11 @@ nsresult nsDocShell::AddToSessionHistory(
                 loadReplace, referrerInfo, srcdoc, srcdocEntry, baseURI,
                 saveLayoutState, expired);
 
-  if (root == static_cast<nsIDocShellTreeItem*>(this) && mSessionHistory) {
+  if (root == static_cast<nsIDocShellTreeItem*>(this) && GetSessionHistory()) {
     bool shouldPersist = ShouldAddToSessionHistory(aURI, aChannel);
     Maybe<int32_t> previousEntryIndex;
     Maybe<int32_t> loadedEntryIndex;
-    rv = mSessionHistory->LegacySHistory()->AddToRootSessionHistory(
+    rv = GetSessionHistory()->LegacySHistory()->AddToRootSessionHistory(
         aCloneChildren, mOSHE, mBrowsingContext, entry, mLoadType,
         shouldPersist, &previousEntryIndex, &loadedEntryIndex);
 
@@ -12261,9 +12232,9 @@ nsDocShell::ResumeRedirectedLoad(uint64_t aIdentifier, int32_t aHistoryIndex) {
 
         
         
-        if (aHistoryIndex >= 0 && self->mSessionHistory) {
+        if (aHistoryIndex >= 0 && self->GetSessionHistory()) {
           nsCOMPtr<nsISHistory> legacySHistory =
-              self->mSessionHistory->LegacySHistory();
+              self->GetSessionHistory()->LegacySHistory();
 
           nsCOMPtr<nsISHEntry> entry;
           nsresult rv = legacySHistory->GetEntryAtIndex(aHistoryIndex,

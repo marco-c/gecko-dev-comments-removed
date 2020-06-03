@@ -61,6 +61,7 @@ namespace dom {
 class BrowsingContent;
 class BrowsingContextGroup;
 class CanonicalBrowsingContext;
+class ChildSHistory;
 class ContentParent;
 class Element;
 template <typename>
@@ -132,7 +133,11 @@ class WindowProxyHolder;
   FIELD(WatchedByDevToolsInternal, bool)                                     \
   FIELD(TextZoom, float)                                                     \
   /* See nsIRequest for possible flags. */                                   \
-  FIELD(DefaultLoadFlags, uint32_t)
+  FIELD(DefaultLoadFlags, uint32_t)                                          \
+  /* Signals that session history is enabled for this browsing context tree. \
+   * This is only ever set to true on the top BC, so consumers need to get   \
+   * the value from the top BC! */                                           \
+  FIELD(HasSessionHistory, bool)
 
 
 
@@ -597,6 +602,13 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   const OriginAttributes& OriginAttributesRef() { return mOriginAttributes; }
   nsresult SetOriginAttributes(const OriginAttributes& aAttrs);
 
+  
+  void InitSessionHistory();
+
+  
+  
+  ChildSHistory* GetChildSessionHistory();
+
  protected:
   virtual ~BrowsingContext();
   BrowsingContext(WindowContext* aParentWindow, BrowsingContextGroup* aGroup,
@@ -737,6 +749,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool CanSet(FieldIndex<IDX_UseGlobalHistory>, const bool& aUseGlobalHistory,
               ContentParent* aSource);
 
+  void DidSet(FieldIndex<IDX_HasSessionHistory>, bool aOldValue);
+
   template <size_t I, typename T>
   bool CanSet(FieldIndex<I>, const T&, ContentParent*) {
     return true;
@@ -760,6 +774,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   bool CheckOnlyEmbedderCanSet(ContentParent* aSource);
+
+  void CreateChildSHistory();
 
   
   const Type mType;
@@ -855,7 +871,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   mozilla::LinkedList<DeprioritizedLoadRunner> mDeprioritizedLoadRunner;
 
-  RefPtr<dom::SessionStorageManager> mSessionStorageManager;
+  RefPtr<SessionStorageManager> mSessionStorageManager;
+  RefPtr<ChildSHistory> mChildSessionHistory;
 };
 
 
