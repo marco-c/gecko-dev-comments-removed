@@ -1388,6 +1388,11 @@ class QuotaUsageRequestBase : public NormalOriginOperationBase,
   virtual void GetResponse(UsageRequestResponse& aResponse) = 0;
 
  private:
+  mozilla::Result<UsageInfo, nsresult> GetUsageForOriginEntries(
+      QuotaManager& aQuotaManager, PersistenceType aPersistenceType,
+      const nsACString& aGroup, const nsACString& aOrigin,
+      nsIDirectoryEnumerator& aEntries, bool aInitialized);
+
   void SendResults() override;
 
   
@@ -9053,93 +9058,106 @@ Result<UsageInfo, nsresult> QuotaUsageRequestBase::GetUsageForOrigin(
     return Err(rv);
   }
 
+  if (!exists || mCanceled) {
+    return UsageInfo();
+  }
+
+  
+  
+  bool initialized;
+
+  if (aPersistenceType == PERSISTENCE_TYPE_PERSISTENT) {
+    initialized = aQuotaManager.IsOriginInitialized(aOrigin);
+  } else {
+    initialized = aQuotaManager.IsTemporaryStorageInitialized();
+  }
+
+  nsCOMPtr<nsIDirectoryEnumerator> entries;
+  rv = directory->GetDirectoryEntries(getter_AddRefs(entries));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return Err(rv);
+  }
+
+  return GetUsageForOriginEntries(aQuotaManager, aPersistenceType, aGroup,
+                                  aOrigin, *entries, initialized);
+}
+
+Result<UsageInfo, nsresult> QuotaUsageRequestBase::GetUsageForOriginEntries(
+    QuotaManager& aQuotaManager, PersistenceType aPersistenceType,
+    const nsACString& aGroup, const nsACString& aOrigin,
+    nsIDirectoryEnumerator& aEntries, const bool aInitialized) {
+  AssertIsOnIOThread();
+
   UsageInfo usageInfo;
 
-  
-  
-  if (exists && !mCanceled) {
-    bool initialized;
-
-    if (aPersistenceType == PERSISTENCE_TYPE_PERSISTENT) {
-      initialized = aQuotaManager.IsOriginInitialized(aOrigin);
-    } else {
-      initialized = aQuotaManager.IsTemporaryStorageInitialized();
-    }
-
-    nsCOMPtr<nsIDirectoryEnumerator> entries;
-    rv = directory->GetDirectoryEntries(getter_AddRefs(entries));
+  nsresult rv;
+  nsCOMPtr<nsIFile> file;
+  while (NS_SUCCEEDED((rv = aEntries.GetNextFile(getter_AddRefs(file)))) &&
+         file && !mCanceled) {
+    bool isDirectory;
+    rv = file->IsDirectory(&isDirectory);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return Err(rv);
     }
 
-    nsCOMPtr<nsIFile> file;
-    while (NS_SUCCEEDED((rv = entries->GetNextFile(getter_AddRefs(file)))) &&
-           file && !mCanceled) {
-      bool isDirectory;
-      rv = file->IsDirectory(&isDirectory);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return Err(rv);
-      }
-
-      nsString leafName;
-      rv = file->GetLeafName(leafName);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return Err(rv);
-      }
-
-      if (!isDirectory) {
-        
-        
-        
-        
-        if (IsOriginMetadata(leafName)) {
-          continue;
-        }
-
-        if (IsTempMetadata(leafName)) {
-          if (!initialized) {
-            rv = file->Remove( false);
-            if (NS_WARN_IF(NS_FAILED(rv))) {
-              return Err(rv);
-            }
-          }
-
-          continue;
-        }
-
-        if (IsOSMetadata(leafName) || IsDotFile(leafName)) {
-          continue;
-        }
-
-        
-        
-        UNKNOWN_FILE_WARNING(leafName);
-        continue;
-      }
-
-      Client::Type clientType;
-      bool ok = Client::TypeFromText(leafName, clientType, fallible);
-      if (!ok) {
-        
-        
-        UNKNOWN_FILE_WARNING(leafName);
-        continue;
-      }
-
-      Client* client = aQuotaManager.GetClient(clientType);
-      MOZ_ASSERT(client);
-
-      if (initialized) {
-        rv = client->GetUsageForOrigin(aPersistenceType, aGroup, aOrigin,
-                                       mCanceled, &usageInfo);
-      } else {
-        rv = client->InitOrigin(aPersistenceType, aGroup, aOrigin, mCanceled,
-                                &usageInfo);
-      }
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return Err(rv);
-      }
+    nsString leafName;
+    rv = file->GetLeafName(leafName);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return Err(rv);
     }
+
+    if (!isDirectory) {
+      
+      
+      
+      
+      if (IsTempMetadata(leafName)) {
+        if (!aInitialized) {
+          rv = file->Remove( false);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return Err(rv);
+          }
+        }
+
+        continue;
+      }
+
+      if (IsOriginMetadata(leafName) || IsOSMetadata(leafName) ||
+          IsDotFile(leafName)) {
+        continue;
+      }
+
+      
+      
+      UNKNOWN_FILE_WARNING(leafName);
+      continue;
+    }
+
+    Client::Type clientType;
+    bool ok = Client::TypeFromText(leafName, clientType, fallible);
+    if (!ok) {
+      
+      
+      UNKNOWN_FILE_WARNING(leafName);
+      continue;
+    }
+
+    Client* client = aQuotaManager.GetClient(clientType);
+    MOZ_ASSERT(client);
+
+    if (aInitialized) {
+      rv = client->GetUsageForOrigin(aPersistenceType, aGroup, aOrigin,
+                                     mCanceled, &usageInfo);
+    } else {
+      rv = client->InitOrigin(aPersistenceType, aGroup, aOrigin, mCanceled,
+                              &usageInfo);
+    }
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return Err(rv);
+    }
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return Err(rv);
   }
 
   return usageInfo;
