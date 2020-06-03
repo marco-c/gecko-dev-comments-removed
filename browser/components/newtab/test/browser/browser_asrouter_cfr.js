@@ -195,14 +195,6 @@ function trigger_cfr_panel(
   }
 
   clearNotifications();
-  if (recommendation.template === "milestone_message") {
-    return CFRPageActions.showMilestone(
-      browser,
-      recommendation,
-      
-      ASRouter.dispatch
-    );
-  }
   return CFRPageActions.addRecommendation(
     browser,
     trigger,
