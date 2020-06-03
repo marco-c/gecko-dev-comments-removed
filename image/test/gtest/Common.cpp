@@ -53,6 +53,9 @@ AutoInitializeImageLib::AutoInitializeImageLib() {
   gfxPlatform::GetPlatform();
 
   
+  gfxPlatform::SetCMSModeOverride(eCMSMode_All);
+
+  
   
   
   SpinPendingEvents();
