@@ -176,6 +176,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
+
   void ForceShutDown();
 
   
@@ -902,7 +903,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   }
 
   
-
 
 
 
