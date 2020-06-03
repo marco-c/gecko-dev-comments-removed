@@ -28,7 +28,8 @@
 #include "js/CharacterEncoding.h"
 #include "js/Class.h"
 #include "js/Conversions.h"
-#include "js/Exception.h"  
+#include "js/ErrorReport.h"  
+#include "js/Exception.h"    
 #include "js/SavedFrameAPI.h"
 #include "js/UniquePtr.h"
 #include "js/Value.h"
@@ -287,7 +288,7 @@ void js::ErrorToException(JSContext* cx, JSErrorReport* reportp,
   
   
   if (cx->realm()->isSelfHostingRealm()) {
-    PrintError(cx, stderr, JS::ConstUTF8CharsZ(), reportp, true);
+    JS::PrintError(cx, stderr, JS::ConstUTF8CharsZ(), reportp, true);
     return;
   }
 

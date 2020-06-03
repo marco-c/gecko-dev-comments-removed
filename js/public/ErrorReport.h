@@ -265,4 +265,15 @@ class JSErrorReport : public JSErrorBase {
   void freeLinebuf();
 };
 
+namespace JS {
+
+
+
+extern JS_PUBLIC_API void PrintError(JSContext* cx, FILE* file,
+                                     ConstUTF8CharsZ toStringResult,
+                                     JSErrorReport* report,
+                                     bool reportWarnings);
+
+}  
+
 #endif 

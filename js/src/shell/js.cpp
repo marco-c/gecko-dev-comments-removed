@@ -106,6 +106,7 @@
 #include "js/ContextOptions.h"  
 #include "js/Debug.h"
 #include "js/Equality.h"                 
+#include "js/ErrorReport.h"              
 #include "js/Exception.h"                
 #include "js/experimental/SourceHook.h"  
 #include "js/GCVector.h"
@@ -9741,7 +9742,8 @@ js::shell::AutoReportException::~AutoReportException() {
   MOZ_ASSERT(!report.report()->isWarning());
 
   FILE* fp = ErrorFilePointer();
-  PrintError(cx, fp, report.toStringResult(), report.report(), reportWarnings);
+  JS::PrintError(cx, fp, report.toStringResult(), report.report(),
+                 reportWarnings);
   JS_ClearPendingException(cx);
 
   if (!PrintStackTrace(cx, exnStack.stack())) {
@@ -9781,7 +9783,7 @@ void js::shell::WarningReporter(JSContext* cx, JSErrorReport* report) {
   }
 
   
-  PrintError(cx, fp, JS::ConstUTF8CharsZ(), report, reportWarnings);
+  JS::PrintError(cx, fp, JS::ConstUTF8CharsZ(), report, reportWarnings);
 }
 
 static bool global_enumerate(JSContext* cx, JS::HandleObject obj,
