@@ -9,6 +9,7 @@
 
 #include "ContentMediaController.h"
 #include "MediaEventSource.h"
+#include "MediaPlaybackStatus.h"
 #include "mozilla/dom/MediaSessionController.h"
 #include "mozilla/LinkedList.h"
 #include "nsDataHashtable.h"
@@ -75,7 +76,7 @@ class MediaController final
   void Shutdown();
 
   bool IsAudible() const;
-  uint64_t ControlledMediaNum() const;
+  bool IsAnyMediaBeingControlled() const;
   MediaSessionPlaybackState GetState() const;
 
   void SetDeclaredPlaybackState(uint64_t aSessionContextId,
@@ -93,13 +94,12 @@ class MediaController final
 
   void UpdateMediaControlKeysEventToContentMediaIfNeeded(
       MediaControlKeysEvent aEvent);
-  void IncreaseControlledMediaNum();
-  void DecreaseControlledMediaNum();
-  void IncreasePlayingControlledMediaNum();
-  void DecreasePlayingControlledMediaNum();
 
   void Activate();
   void Deactivate();
+
+  bool ShouldActivateController() const;
+  bool ShouldDeactivateController() const;
 
   void SetGuessedPlayState(MediaSessionPlaybackState aState);
 
@@ -108,12 +108,10 @@ class MediaController final
   
   void UpdateActualPlaybackState();
 
-  MediaAudibleState mAudibleState = MediaAudibleState::eInaudible;
   bool mIsRegisteredToService = false;
-  int64_t mControlledMediaNum = 0;
-  int64_t mPlayingControlledMediaNum = 0;
   bool mShutdown = false;
   bool mIsInPictureInPictureMode = false;
+  MediaPlaybackStatus mMediaStatus;
 
   
   

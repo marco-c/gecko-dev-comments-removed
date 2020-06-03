@@ -88,7 +88,7 @@ void MediaController::UpdateMediaControlKeysEventToContentMediaIfNeeded(
     MediaControlKeysEvent aEvent) {
   
   
-  if (!ControlledMediaNum() || mShutdown) {
+  if (!IsAnyMediaBeingControlled() || mShutdown) {
     return;
   }
   
@@ -114,8 +114,6 @@ void MediaController::Shutdown() {
   
   
   Deactivate();
-  mControlledMediaNum = 0;
-  mPlayingControlledMediaNum = 0;
   mShutdown = true;
 }
 
@@ -124,14 +122,17 @@ void MediaController::NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
   if (mShutdown) {
     return;
   }
-  if (aState == MediaPlaybackState::eStarted) {
-    IncreaseControlledMediaNum();
-  } else if (aState == MediaPlaybackState::eStopped) {
-    DecreaseControlledMediaNum();
-  } else if (aState == MediaPlaybackState::ePlayed) {
-    IncreasePlayingControlledMediaNum();
-  } else if (aState == MediaPlaybackState::ePaused) {
-    DecreasePlayingControlledMediaNum();
+  mMediaStatus.UpdateMediaPlaybackState(aBrowsingContextId, aState);
+
+  
+  if (ShouldActivateController()) {
+    Activate();
+  } else if (ShouldDeactivateController()) {
+    Deactivate();
+  } else if (mMediaStatus.IsPlaying()) {
+    SetGuessedPlayState(MediaSessionPlaybackState::Playing);
+  } else if (!mMediaStatus.IsPlaying()) {
+    SetGuessedPlayState(MediaSessionPlaybackState::Paused);
   }
 }
 
@@ -140,63 +141,36 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
   if (mShutdown) {
     return;
   }
-  mAudibleState = aState;
+
+  bool oldAudible = IsAudible();
+  mMediaStatus.UpdateMediaAudibleState(aBrowsingContextId, aState);
+  if (IsAudible() == oldAudible) {
+    return;
+  }
+
+  
+  
   RefPtr<MediaControlService> service = MediaControlService::GetService();
   MOZ_ASSERT(service);
-  if (mAudibleState == MediaAudibleState::eAudible) {
+  if (IsAudible()) {
     service->GetAudioFocusManager().RequestAudioFocus(this);
   } else {
     service->GetAudioFocusManager().RevokeAudioFocus(this);
   }
 }
 
-void MediaController::IncreaseControlledMediaNum() {
+bool MediaController::ShouldActivateController() const {
   MOZ_ASSERT(!mShutdown);
-  MOZ_DIAGNOSTIC_ASSERT(mControlledMediaNum >= 0);
-  mControlledMediaNum++;
-  LOG("Increase controlled media num to %" PRId64, mControlledMediaNum);
-  if (mControlledMediaNum == 1) {
-    Activate();
-  }
+  return IsAnyMediaBeingControlled() && !mIsRegisteredToService;
 }
 
-void MediaController::DecreaseControlledMediaNum() {
+bool MediaController::ShouldDeactivateController() const {
   MOZ_ASSERT(!mShutdown);
-  MOZ_DIAGNOSTIC_ASSERT(mControlledMediaNum >= 1);
-  mControlledMediaNum--;
-  LOG("Decrease controlled media num to %" PRId64, mControlledMediaNum);
-  if (mControlledMediaNum == 0) {
-    Deactivate();
-  }
+  return !IsAnyMediaBeingControlled() && mIsRegisteredToService;
 }
-
-void MediaController::IncreasePlayingControlledMediaNum() {
-  MOZ_ASSERT(!mShutdown);
-  MOZ_ASSERT(mPlayingControlledMediaNum >= 0);
-  mPlayingControlledMediaNum++;
-  LOG("Increase playing controlled media num to %" PRId64,
-      mPlayingControlledMediaNum);
-  MOZ_ASSERT(mPlayingControlledMediaNum <= mControlledMediaNum,
-             "The number of playing media should not exceed the number of "
-             "controlled media!");
-  if (mPlayingControlledMediaNum == 1) {
-    SetGuessedPlayState(MediaSessionPlaybackState::Playing);
-  }
-}
-
-void MediaController::DecreasePlayingControlledMediaNum() {
-  MOZ_ASSERT(!mShutdown);
-  mPlayingControlledMediaNum--;
-  LOG("Decrease playing controlled media num to %" PRId64,
-      mPlayingControlledMediaNum);
-  MOZ_ASSERT(mPlayingControlledMediaNum >= 0);
-  if (mPlayingControlledMediaNum == 0) {
-    SetGuessedPlayState(MediaSessionPlaybackState::Paused);
-  }
-}
-
 
 void MediaController::Activate() {
+  LOG("Activate");
   MOZ_ASSERT(!mShutdown);
   RefPtr<MediaControlService> service = MediaControlService::GetService();
   if (service && !mIsRegisteredToService) {
@@ -206,6 +180,7 @@ void MediaController::Activate() {
 }
 
 void MediaController::Deactivate() {
+  LOG("Deactivate");
   MOZ_ASSERT(!mShutdown);
   RefPtr<MediaControlService> service = MediaControlService::GetService();
   if (service) {
@@ -274,11 +249,11 @@ MediaSessionPlaybackState MediaController::GetState() const {
 
 bool MediaController::IsAudible() const {
   return mGuessedPlaybackState == MediaSessionPlaybackState::Playing &&
-         mAudibleState == MediaAudibleState::eAudible;
+         mMediaStatus.IsAudible();
 }
 
-uint64_t MediaController::ControlledMediaNum() const {
-  return mControlledMediaNum;
+bool MediaController::IsAnyMediaBeingControlled() const {
+  return mMediaStatus.IsAnyMediaBeingControlled();
 }
 
 }  
