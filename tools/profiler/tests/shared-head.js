@@ -11,7 +11,7 @@
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const defaultSettings = {
-  entries: 1000000, 
+  entries: 8 * 1024 * 1024, 
   interval: 1, 
   features: ["threads"],
   threads: ["GeckoMain"],
