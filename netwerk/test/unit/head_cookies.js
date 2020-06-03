@@ -7,10 +7,12 @@
 "use strict";
 
 const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-
 const { CookieXPCShellUtils } = ChromeUtils.import(
   "resource://testing-common/CookieXPCShellUtils.jsm"
 );
+
+
+Services.prefs.setCharPref("permissions.manager.defaultsUrl", "");
 
 CookieXPCShellUtils.init(this);
 
