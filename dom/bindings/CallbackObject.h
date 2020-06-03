@@ -94,7 +94,7 @@ class CallbackObject : public nsISupports {
   
   
   
-  JS::Handle<JSObject*> CallbackOrNull() const {
+  JSObject* CallbackOrNull() const {
     mCallback.exposeToActiveJS();
     return CallbackPreserveColor();
   }
@@ -120,22 +120,9 @@ class CallbackObject : public nsISupports {
 
 
 
-
-
-
-
-
-
-
-  JS::Handle<JSObject*> CallbackPreserveColor() const {
-    
-    
-    
-    return JS::Handle<JSObject*>::fromMarkedLocation(mCallback.address());
-  }
-  JS::Handle<JSObject*> CallbackGlobalPreserveColor() const {
-    
-    return JS::Handle<JSObject*>::fromMarkedLocation(mCallbackGlobal.address());
+  JSObject* CallbackPreserveColor() const { return mCallback.unbarrieredGet(); }
+  JSObject* CallbackGlobalPreserveColor() const {
+    return mCallbackGlobal.unbarrieredGet();
   }
 
   
@@ -143,7 +130,7 @@ class CallbackObject : public nsISupports {
 
 
 
-  JS::Handle<JSObject*> CallbackKnownNotGray() const {
+  JSObject* CallbackKnownNotGray() const {
     JS::AssertObjectIsNotGray(mCallback);
     return CallbackPreserveColor();
   }
@@ -618,9 +605,7 @@ class MOZ_RAII MOZ_IS_SMARTPTR_TO_REFCOUNTED RootedCallback
   void operator=(decltype(nullptr) arg) { this->get().operator=(arg); }
 
   
-  JS::Handle<JSObject*> CallbackOrNull() const {
-    return this->get()->CallbackOrNull();
-  }
+  JSObject* CallbackOrNull() const { return this->get()->CallbackOrNull(); }
 
   JSObject* Callback(JSContext* aCx) const {
     return this->get()->Callback(aCx);
