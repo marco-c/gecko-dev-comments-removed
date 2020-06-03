@@ -69,6 +69,7 @@ for (let [key, val] of Object.entries({
     contentGfxInfo: null,
     focusFilterMode: "all",
     compareRetainedDisplayLists: false,
+    isCoverageBuild: false,
 
     browser: undefined,
     
