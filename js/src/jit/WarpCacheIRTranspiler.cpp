@@ -598,7 +598,7 @@ bool WarpCacheIRTranspiler::emitLoadTypedArrayElementResult(
 
   auto* load = MLoadUnboxedScalar::New(alloc(), elements, index, elementType);
   
-  load->setResultType(MIRTypeForTypedArrayRead(elementType, true));
+  load->setResultType(MIRTypeForArrayBufferViewRead(elementType, true));
   add(load);
 
   pushResult(load);

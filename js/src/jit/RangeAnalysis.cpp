@@ -1726,7 +1726,7 @@ void MFilterTypeSet::computeRange(TempAllocator& alloc) {
   setRange(new (alloc) Range(getOperand(0)));
 }
 
-static Range* GetTypedArrayRange(TempAllocator& alloc, Scalar::Type type) {
+static Range* GetArrayBufferViewRange(TempAllocator& alloc, Scalar::Type type) {
   switch (type) {
     case Scalar::Uint8Clamped:
     case Scalar::Uint8:
@@ -1758,7 +1758,13 @@ static Range* GetTypedArrayRange(TempAllocator& alloc, Scalar::Type type) {
 void MLoadUnboxedScalar::computeRange(TempAllocator& alloc) {
   
   
-  setRange(GetTypedArrayRange(alloc, storageType()));
+  setRange(GetArrayBufferViewRange(alloc, storageType()));
+}
+
+void MLoadDataViewElement::computeRange(TempAllocator& alloc) {
+  
+  
+  setRange(GetArrayBufferViewRange(alloc, storageType()));
 }
 
 void MArrayLength::computeRange(TempAllocator& alloc) {

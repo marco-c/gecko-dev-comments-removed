@@ -12,6 +12,8 @@
 
 #include "mozilla/Maybe.h"
 
+#include "jsfriendapi.h"
+
 #include "jit/BaselineInspector.h"
 #include "jit/BytecodeAnalysis.h"
 #include "jit/IonAnalysis.h"
@@ -519,6 +521,11 @@ class MOZ_STACK_CLASS IonBuilder {
 
   
   
+  void addDataViewData(MDefinition* obj, Scalar::Type type, MDefinition** index,
+                       MInstruction** elements);
+
+  
+  
   MInstruction* addTypedArrayByteOffset(MDefinition* obj);
 
   AbortReasonOr<Ok> improveThisTypesForCall();
@@ -725,6 +732,9 @@ class MOZ_STACK_CLASS IonBuilder {
 
   
   InliningResult inlineBoolean(CallInfo& callInfo);
+
+  
+  InliningResult inlineDataViewGet(CallInfo& callInfo, Scalar::Type type);
 
   
   InliningResult inlineNewIterator(CallInfo& callInfo, MNewIterator::Type type);
