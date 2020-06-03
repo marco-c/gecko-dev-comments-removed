@@ -552,7 +552,7 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  nsFrameList* StealOverflowFrames() {
+  [[nodiscard]] nsFrameList* StealOverflowFrames() {
     nsFrameList* list = TakeProperty(OverflowProperty());
     NS_ASSERTION(!list || !list->IsEmpty(), "Unexpected empty overflow list");
     return list;
@@ -744,7 +744,10 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  nsFrameList* RemovePropTableFrames(FrameListPropertyDescriptor aProperty);
+
+
+  [[nodiscard]] nsFrameList* RemovePropTableFrames(
+      FrameListPropertyDescriptor aProperty);
 
   
 
