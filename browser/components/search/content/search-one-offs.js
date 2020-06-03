@@ -580,10 +580,10 @@ class SearchOneOffs {
     if (tooManyEngines) {
       
       let button = document.createXULElement("toolbarbutton");
-      list.appendChild(button);
       button.classList.add("addengine-menu-button", "addengine-item");
       button.setAttribute("badged", "true");
       button.setAttribute("type", "menu");
+      button.setAttribute("wantdropmarker", "true");
       button.setAttribute(
         "label",
         this.bundle.GetStringFromName("cmd_addFoundEngineMenu")
@@ -598,6 +598,7 @@ class SearchOneOffs {
       if (engine.icon) {
         button.setAttribute("image", engine.icon);
       }
+      list.appendChild(button);
 
       
       list = document.createXULElement("menupopup");
