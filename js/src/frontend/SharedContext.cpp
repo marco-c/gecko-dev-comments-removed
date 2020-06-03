@@ -217,9 +217,7 @@ FunctionBox::FunctionBox(JSContext* cx, FunctionBox* traceListHead,
       funcDataIndex_(index),
       flags_(flags),
       emitBytecode(false),
-      emitLazy(false),
       wasEmitted(false),
-      exposeScript(false),
       isAnnexB(false),
       useAsm(false),
       isAsmJSModule_(false),
@@ -368,7 +366,10 @@ void FunctionBox::setAsmJSModule(JSFunction* function) {
 }
 
 void FunctionBox::finish() {
-  if (!emitBytecode) {
+  if (emitBytecode || isAsmJSModule()) {
+    
+    MOZ_ASSERT(!enclosingScope_);
+  } else {
     
     function()->setEnclosingScope(enclosingScope_.getExistingScope());
     function()->baseScript()->initTreatAsRunOnce(treatAsRunOnce());
@@ -376,9 +377,6 @@ void FunctionBox::finish() {
     if (fieldInitializers) {
       function()->baseScript()->setFieldInitializers(*fieldInitializers);
     }
-  } else {
-    
-    MOZ_ASSERT(!enclosingScope_);
   }
 }
 

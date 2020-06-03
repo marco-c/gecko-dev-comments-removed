@@ -1710,8 +1710,10 @@ bool PerHandlerParser<FullParseHandler>::finishFunction(
 
   FunctionBox* funbox = pc_->functionBox();
 
-  
-  funbox->emitBytecode = true;
+  if (funbox->isInterpreted()) {
+    
+    funbox->emitBytecode = true;
+  }
 
   bool hasParameterExprs = funbox->hasParameterExprs;
 
@@ -1761,9 +1763,6 @@ bool PerHandlerParser<SyntaxParseHandler>::finishFunction(
   }
 
   FunctionBox* funbox = pc_->functionBox();
-
-  
-  funbox->emitLazy = true;
 
   
   
@@ -1860,20 +1859,13 @@ static bool MaybePublishFunction(JSContext* cx,
     return true;
   }
 
-  
-  
-  
-  if (!funbox->emitLazy && !funbox->emitBytecode) {
-    return true;
-  }
-
   RootedFunction fun(cx, funbox->createFunction(cx));
   if (!fun) {
     return false;
   }
   funbox->initializeFunction(fun);
 
-  if (!funbox->emitLazy) {
+  if (funbox->emitBytecode || funbox->isAsmJSModule()) {
     return true;
   }
 
@@ -1907,7 +1899,7 @@ bool CompilationInfo::publishDeferredFunctions() {
 void CompilationInfo::finishFunctions() {
   for (FunctionBox* funbox = traceListHead; funbox;
        funbox = funbox->traceLink()) {
-    if (funbox->exposeScript) {
+    if (funbox->wasEmitted) {
       funbox->finish();
     }
   }

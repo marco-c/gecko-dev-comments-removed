@@ -344,20 +344,13 @@ class FunctionBox : public SharedContext {
   uint16_t nargs_ = 0;        
 
   
+  
   bool emitBytecode : 1;
-  bool emitLazy : 1;
-  bool wasEmitted : 1;
 
   
   
   
-  
-  
-  
-  
-  
-  
-  bool exposeScript : 1;
+  bool wasEmitted : 1;
 
   
   bool isAnnexB : 1;
