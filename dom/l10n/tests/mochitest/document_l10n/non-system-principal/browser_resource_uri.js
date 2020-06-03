@@ -24,9 +24,17 @@ L10nRegistry.registerSource(mockSource);
 registerCleanupFunction(() => {
   protocol.setSubstitution("l10n-test", null);
   L10nRegistry.removeSource("test");
+  SpecialPowers.pushPrefEnv({
+    set: [["dom.ipc.processPrelaunch.enabled", true]],
+  });
 });
 
 add_task(async () => {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.ipc.processPrelaunch.enabled", false]],
+  });
   await BrowserTestUtils.withNewTab(
     "resource://l10n-test/test.html",
     async browser => {
