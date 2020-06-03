@@ -16204,7 +16204,7 @@ bool Document::HasStoragePermission() {
   
   
   nsPIDOMWindowInner* inner = GetInnerWindow();
-  if (ContentBlocking::HasStorageAccessGranted(inner)) {
+  if (inner && inner->HasStorageAccessGranted()) {
     return true;
   }
 
