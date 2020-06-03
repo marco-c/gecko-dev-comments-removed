@@ -55,6 +55,28 @@ const ExperimentAPI = {
   getValue(options) {
     return this.getExperiment(options)?.branch.value;
   },
+
+  
+
+
+
+
+
+
+
+
+  on(eventName, callback) {
+    this._store.on(eventName, callback);
+  },
+
+  
+
+
+
+
+  off(eventName, callback) {
+    this._store.off(eventName, callback);
+  },
 };
 
 XPCOMUtils.defineLazyGetter(ExperimentAPI, "_store", function() {
