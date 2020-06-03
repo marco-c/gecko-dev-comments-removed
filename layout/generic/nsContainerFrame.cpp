@@ -1741,7 +1741,18 @@ bool nsContainerFrame::PushIncompleteChildren(
     MergeSortedOverflow(incompleteList);
   }
   if (!overflowIncompleteList.IsEmpty()) {
-    MergeSortedExcessOverflowContainers(overflowIncompleteList);
+    
+    
+    
+    auto* nif = static_cast<nsContainerFrame*>(GetNextInFlow());
+    nsFrameList* oc =
+        nif ? nif->GetPropTableFrames(OverflowContainersProperty()) : nullptr;
+    if (oc) {
+      ReparentFrames(overflowIncompleteList, this, nif);
+      MergeSortedFrameLists(*oc, overflowIncompleteList, GetContent());
+    } else {
+      MergeSortedExcessOverflowContainers(overflowIncompleteList);
+    }
   }
   return true;
 }
