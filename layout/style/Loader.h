@@ -239,10 +239,9 @@ class Loader final {
 
 
   Result<RefPtr<StyleSheet>, nsresult> LoadSheet(
-      nsIURI* aURI, IsPreload, nsIPrincipal* aOriginPrincipal,
-      const Encoding* aPreloadEncoding, nsIReferrerInfo* aReferrerInfo,
-      nsICSSLoaderObserver* aObserver, CORSMode aCORSMode = CORS_NONE,
-      const nsAString& aIntegrity = EmptyString());
+      nsIURI* aURI, IsPreload, const Encoding* aPreloadEncoding,
+      nsIReferrerInfo* aReferrerInfo, nsICSSLoaderObserver* aObserver,
+      CORSMode = CORS_NONE, const nsAString& aIntegrity = EmptyString());
 
   
 
@@ -375,10 +374,9 @@ class Loader final {
 
   Result<RefPtr<StyleSheet>, nsresult> InternalLoadNonDocumentSheet(
       nsIURI* aURL, IsPreload, SheetParsingMode aParsingMode,
-      UseSystemPrincipal, nsIPrincipal* aOriginPrincipal,
-      const Encoding* aPreloadEncoding, nsIReferrerInfo* aReferrerInfo,
-      nsICSSLoaderObserver* aObserver, CORSMode aCORSMode,
-      const nsAString& aIntegrity);
+      UseSystemPrincipal, const Encoding* aPreloadEncoding,
+      nsIReferrerInfo* aReferrerInfo, nsICSSLoaderObserver* aObserver,
+      CORSMode aCORSMode, const nsAString& aIntegrity);
 
   
   
