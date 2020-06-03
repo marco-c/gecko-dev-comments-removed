@@ -90,8 +90,22 @@ KeyframeEffect::KeyframeEffect(Document* aDocument,
                                const KeyframeEffectParams& aOptions)
     : AnimationEffect(aDocument, std::move(aTiming)),
       mTarget(std::move(aTarget)),
-      mEffectOptions(aOptions),
-      mCumulativeChangeHint(nsChangeHint(0)) {}
+      mEffectOptions(aOptions) {}
+
+KeyframeEffect::KeyframeEffect(Document* aDocument,
+                               OwningAnimationTarget&& aTarget,
+                               const KeyframeEffect& aOther)
+    : AnimationEffect(aDocument, TimingParams{aOther.SpecifiedTiming()}),
+      mTarget(std::move(aTarget)),
+      mEffectOptions{aOther.IterationComposite(), aOther.Composite(),
+                     mTarget.mPseudoType},
+      mKeyframes(aOther.mKeyframes.Clone()),
+      mProperties(aOther.mProperties.Clone()),
+      mBaseValues(aOther.mBaseValues.Count()) {
+  for (auto iter = aOther.mBaseValues.ConstIter(); !iter.Done(); iter.Next()) {
+    mBaseValues.Put(iter.Key(), RefPtr{iter.Data()});
+  }
+}
 
 JSObject* KeyframeEffect::WrapObject(JSContext* aCx,
                                      JS::Handle<JSObject*> aGivenProto) {
@@ -1033,23 +1047,12 @@ already_AddRefed<KeyframeEffect> KeyframeEffect::Constructor(
   
   
   
-  RefPtr<KeyframeEffect> effect = new KeyframeEffect(
-      doc, OwningAnimationTarget(aSource.mTarget),
-      TimingParams(aSource.SpecifiedTiming()), aSource.mEffectOptions);
+  RefPtr<KeyframeEffect> effect =
+      new KeyframeEffect(doc, OwningAnimationTarget{aSource.mTarget}, aSource);
   
   
   effect->mCumulativeChangeHint = aSource.mCumulativeChangeHint;
 
-  
-  
-  
-  effect->mKeyframes = aSource.mKeyframes.Clone();
-  effect->mProperties = aSource.mProperties.Clone();
-  for (auto iter = aSource.mBaseValues.ConstIter(); !iter.Done(); iter.Next()) {
-    
-    
-    effect->mBaseValues.Put(iter.Key(), RefPtr{iter.Data()});
-  }
   return effect.forget();
 }
 
