@@ -911,6 +911,7 @@ bool nsNativeBasicTheme::WidgetIsContainer(StyleAppearance aAppearance) {
 
 bool nsNativeBasicTheme::ThemeDrawsFocusForWidget(StyleAppearance aAppearance) {
   switch (aAppearance) {
+    case StyleAppearance::Range:
     
     
     case StyleAppearance::Checkbox:

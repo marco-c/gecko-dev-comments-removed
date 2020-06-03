@@ -879,16 +879,6 @@ input[type=range] {
 
 
 
-input[type=range]::-moz-focus-outer {
-  border: 1px dotted black;
-}
-
-
-
-
-
-
-
 
 
 
