@@ -986,13 +986,9 @@ pub enum DebugCommand {
 
 pub enum ApiMsg {
     
-    GetGlyphDimensions(
-        font::FontInstanceKey,
-        Vec<font::GlyphIndex>,
-        Sender<Vec<Option<font::GlyphDimensions>>>,
-    ),
+    GetGlyphDimensions(font::GlyphDimensionRequest),
     
-    GetGlyphIndices(font::FontKey, String, Sender<Vec<Option<u32>>>),
+    GetGlyphIndices(font::GlyphIndexRequest),
     
     CloneApi(Sender<IdNamespace>),
     
@@ -1487,20 +1483,28 @@ impl RenderApi {
     
     pub fn get_glyph_dimensions(
         &self,
-        font: font::FontInstanceKey,
+        key: font::FontInstanceKey,
         glyph_indices: Vec<font::GlyphIndex>,
     ) -> Vec<Option<font::GlyphDimensions>> {
-        let (tx, rx) = channel();
-        let msg = ApiMsg::GetGlyphDimensions(font, glyph_indices, tx);
+        let (sender, rx) = channel();
+        let msg = ApiMsg::GetGlyphDimensions(font::GlyphDimensionRequest {
+            key,
+            glyph_indices,
+            sender
+        });
         self.api_sender.send(msg).unwrap();
         rx.recv().unwrap()
     }
 
     
     
-    pub fn get_glyph_indices(&self, font_key: font::FontKey, text: &str) -> Vec<Option<u32>> {
-        let (tx, rx) = channel();
-        let msg = ApiMsg::GetGlyphIndices(font_key, text.to_string(), tx);
+    pub fn get_glyph_indices(&self, key: font::FontKey, text: &str) -> Vec<Option<u32>> {
+        let (sender, rx) = channel();
+        let msg = ApiMsg::GetGlyphIndices(font::GlyphIndexRequest {
+            key,
+            text: text.to_string(),
+            sender,
+        });
         self.api_sender.send(msg).unwrap();
         rx.recv().unwrap()
     }
