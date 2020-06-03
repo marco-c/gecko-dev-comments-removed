@@ -774,7 +774,7 @@ nsINode* nsINode::RemoveChild(nsINode& aOldChild, ErrorResult& aError) {
 
   
   
-  if (aOldChild.AsContent()->IsRootOfNativeAnonymousSubtree() ||
+  if (aOldChild.IsRootOfNativeAnonymousSubtree() ||
       aOldChild.GetParentNode() != this) {
     
     aError.ThrowNotFoundError(
@@ -2301,8 +2301,7 @@ void nsINode::EnsurePreInsertionValidity1(ErrorResult& aError) {
 void nsINode::EnsurePreInsertionValidity2(bool aReplace, nsINode& aNewChild,
                                           nsINode* aRefChild,
                                           ErrorResult& aError) {
-  if (aNewChild.IsContent() &&
-      aNewChild.AsContent()->IsRootOfNativeAnonymousSubtree()) {
+  if (aNewChild.IsRootOfNativeAnonymousSubtree()) {
     
     
     

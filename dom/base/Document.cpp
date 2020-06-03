@@ -9273,7 +9273,7 @@ nsINode* Document::AdoptNode(nsINode& aAdoptedNode, ErrorResult& rv) {
     case COMMENT_NODE:
     case DOCUMENT_TYPE_NODE: {
       
-      if (adoptedNode->AsContent()->IsRootOfNativeAnonymousSubtree()) {
+      if (adoptedNode->IsRootOfNativeAnonymousSubtree()) {
         rv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
         return nullptr;
       }
