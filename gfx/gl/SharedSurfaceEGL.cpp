@@ -13,6 +13,10 @@
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "SharedSurface.h"
 
+#if defined(MOZ_WIDGET_ANDROID)
+#  include "mozilla/java/SurfaceAllocatorWrappers.h"
+#endif  
+
 namespace mozilla {
 namespace gl {
 
