@@ -25,7 +25,8 @@ use crate::error::{Error, Result};
 use crate::store::LazyStore;
 
 
-pub enum StorageOp {
+
+pub enum Punt {
     
     Get { ext_id: String, keys: JsonValue },
     
@@ -38,33 +39,34 @@ pub enum StorageOp {
     GetBytesInUse { ext_id: String, keys: JsonValue },
 }
 
-impl StorageOp {
+impl Punt {
     
     
     pub fn name(&self) -> &'static str {
         match self {
-            StorageOp::Get { .. } => "webext_storage::get",
-            StorageOp::Set { .. } => "webext_storage::set",
-            StorageOp::Remove { .. } => "webext_storage::remove",
-            StorageOp::Clear { .. } => "webext_storage::clear",
-            StorageOp::GetBytesInUse { .. } => "webext_storage::get_bytes_in_use",
+            Punt::Get { .. } => "webext_storage::get",
+            Punt::Set { .. } => "webext_storage::set",
+            Punt::Remove { .. } => "webext_storage::remove",
+            Punt::Clear { .. } => "webext_storage::clear",
+            Punt::GetBytesInUse { .. } => "webext_storage::get_bytes_in_use",
         }
     }
 }
 
 
+
 #[derive(Default)]
-pub struct StorageResult {
+pub struct PuntResult {
     pub changes: Option<String>,
     pub value: Option<String>,
 }
 
-impl StorageResult {
+impl PuntResult {
     
     
     
     pub fn with_changes<T: Borrow<S>, S: Serialize>(changes: T) -> Result<Self> {
-        Ok(StorageResult {
+        Ok(PuntResult {
             changes: Some(serde_json::to_string(changes.borrow())?),
             value: None,
         })
@@ -73,7 +75,7 @@ impl StorageResult {
     
     
     pub fn with_value<T: Borrow<S>, S: Serialize>(value: T) -> Result<Self> {
-        Ok(StorageResult {
+        Ok(PuntResult {
             changes: None,
             value: Some(serde_json::to_string(value.borrow())?),
         })
@@ -83,7 +85,7 @@ impl StorageResult {
 
 
 
-pub struct StorageTask {
+pub struct PuntTask {
     name: &'static str,
     
     
@@ -91,25 +93,25 @@ pub struct StorageTask {
     
     
     store: Weak<LazyStore>,
-    op: AtomicRefCell<Option<StorageOp>>,
+    punt: AtomicRefCell<Option<Punt>>,
     callback: ThreadPtrHandle<mozIExtensionStorageCallback>,
-    result: AtomicRefCell<Result<StorageResult>>,
+    result: AtomicRefCell<Result<PuntResult>>,
 }
 
-impl StorageTask {
+impl PuntTask {
     
     
     
     pub fn new(
         store: Weak<LazyStore>,
-        op: StorageOp,
+        punt: Punt,
         callback: &mozIExtensionStorageCallback,
     ) -> Result<Self> {
-        let name = op.name();
+        let name = punt.name();
         Ok(Self {
             name,
             store,
-            op: AtomicRefCell::new(Some(op)),
+            punt: AtomicRefCell::new(Some(punt)),
             callback: ThreadPtrHolder::new(
                 cstr!("mozIExtensionStorageCallback"),
                 RefPtr::new(callback),
@@ -132,31 +134,31 @@ impl StorageTask {
     }
 
     
-    fn run_with_op(&self, op: StorageOp) -> Result<StorageResult> {
-        Ok(match op {
-            StorageOp::Set { ext_id, value } => {
-                StorageResult::with_changes(self.store()?.get()?.set(&ext_id, value)?)
+    fn inner_run(&self, punt: Punt) -> Result<PuntResult> {
+        Ok(match punt {
+            Punt::Set { ext_id, value } => {
+                PuntResult::with_changes(self.store()?.get()?.set(&ext_id, value)?)
             }
-            StorageOp::Get { ext_id, keys } => {
-                StorageResult::with_value(self.store()?.get()?.get(&ext_id, keys)?)
+            Punt::Get { ext_id, keys } => {
+                PuntResult::with_value(self.store()?.get()?.get(&ext_id, keys)?)
             }
-            StorageOp::Remove { ext_id, keys } => {
-                StorageResult::with_changes(self.store()?.get()?.remove(&ext_id, keys)?)
+            Punt::Remove { ext_id, keys } => {
+                PuntResult::with_changes(self.store()?.get()?.remove(&ext_id, keys)?)
             }
-            StorageOp::Clear { ext_id } => {
-                StorageResult::with_changes(self.store()?.get()?.clear(&ext_id)?)
+            Punt::Clear { ext_id } => {
+                PuntResult::with_changes(self.store()?.get()?.clear(&ext_id)?)
             }
-            StorageOp::GetBytesInUse { ext_id, keys } => {
-                StorageResult::with_value(self.store()?.get()?.get_bytes_in_use(&ext_id, keys)?)
+            Punt::GetBytesInUse { ext_id, keys } => {
+                PuntResult::with_value(self.store()?.get()?.get_bytes_in_use(&ext_id, keys)?)
             }
         }?)
     }
 }
 
-impl Task for StorageTask {
+impl Task for PuntTask {
     fn run(&self) {
-        *self.result.borrow_mut() = match mem::take(&mut *self.op.borrow_mut()) {
-            Some(op) => self.run_with_op(op),
+        *self.result.borrow_mut() = match self.punt.borrow_mut().take() {
+            Some(punt) => self.inner_run(punt),
             
             
             None => Err(Error::AlreadyRan(self.name)),
@@ -171,7 +173,7 @@ impl Task for StorageTask {
             &mut *self.result.borrow_mut(),
             Err(Error::AlreadyRan(self.name)),
         ) {
-            Ok(StorageResult { changes, value }) => {
+            Ok(PuntResult { changes, value }) => {
                 
                 
                 if let (Some(listener), Some(json)) = (
@@ -225,7 +227,7 @@ impl TeardownTask {
     }
 
     
-    fn run_with_store(&self, store: Arc<LazyStore>) -> Result<()> {
+    fn inner_run(&self, store: Arc<LazyStore>) -> Result<()> {
         
         
         
@@ -251,8 +253,8 @@ impl TeardownTask {
 
 impl Task for TeardownTask {
     fn run(&self) {
-        *self.result.borrow_mut() = match mem::take(&mut *self.store.borrow_mut()) {
-            Some(store) => self.run_with_store(store),
+        *self.result.borrow_mut() = match self.store.borrow_mut().take() {
+            Some(store) => self.inner_run(store),
             None => Err(Error::AlreadyRan(Self::name())),
         };
     }
