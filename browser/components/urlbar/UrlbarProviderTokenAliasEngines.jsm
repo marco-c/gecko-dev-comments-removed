@@ -50,7 +50,7 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
 
 
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.IMMEDIATE;
+    return UrlbarUtils.PROVIDER_TYPE.PROFILE;
   }
 
   get PRIORITY() {

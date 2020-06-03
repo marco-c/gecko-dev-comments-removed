@@ -16,6 +16,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   Log: "resource://gre/modules/Log.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
+  UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
   UrlbarMuxer: "resource:///modules/UrlbarUtils.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
@@ -25,6 +26,9 @@ XPCOMUtils.defineLazyGetter(this, "logger", () =>
 );
 
 function groupFromResult(result) {
+  if (result.heuristic) {
+    return UrlbarUtils.RESULT_GROUP.HEURISTIC;
+  }
   switch (result.type) {
     case UrlbarUtils.RESULT_TYPE.SEARCH:
       return result.payload.suggestion
@@ -54,162 +58,141 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
 
 
+
+
+
+
+
+
   sort(context) {
     
-    context.results = this._dedupeSearchHistoryAndSuggestions(context.results);
+    
+    
+    
+    
+    
+
+    
+    for (let providerName of context.activeProviders) {
+      let provider = UrlbarProvidersManager.getProvider(providerName);
+
+      
+      
+      
+      if (
+        provider.type == UrlbarUtils.PROVIDER_TYPE.HEURISTIC &&
+        !context.heuristicResult
+      ) {
+        return false;
+      }
+    }
+
+    let heuristicResultQuery;
+    if (
+      context.heuristicResult &&
+      context.heuristicResult.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+      context.heuristicResult.payload.query
+    ) {
+      heuristicResultQuery = context.heuristicResult.payload.query.toLocaleLowerCase();
+    }
+
+    
+    let canShowPrivateSearch = context.results.length > 1;
+    let resultsWithSuggestedIndex = [];
 
     
     
-    
-    
-    
-    
-    
-    
-    let searchInPrivateWindowIndex = context.results.findIndex(
-      r => r.type == UrlbarUtils.RESULT_TYPE.SEARCH && r.payload.inPrivateWindow
-    );
-    if (
-      searchInPrivateWindowIndex != -1 &&
-      (context.results.length == 1 ||
-        context.results.some(
-          r =>
-            r.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
-            r.payload.keywordOffer ||
-            (r.heuristic && r.payload.keyword)
-        ))
-    ) {
+    for (let result of context.results) {
       
-      context.results.splice(searchInPrivateWindowIndex, 1);
+      
+      
+      if (
+        result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
+        result.payload.keywordOffer ||
+        (result.heuristic && result.payload.keyword)
+      ) {
+        canShowPrivateSearch = false;
+        break;
+      }
     }
-    if (!context.results.length) {
-      return;
+
+    
+    let unsortedResults = [];
+    for (let result of context.results) {
+      
+      if (
+        result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+        result.payload.inPrivateWindow &&
+        !canShowPrivateSearch
+      ) {
+        continue;
+      }
+
+      
+      if (result.suggestedIndex >= 0) {
+        resultsWithSuggestedIndex.push(result);
+        continue;
+      }
+
+      
+      if (
+        result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+        result.payload.suggestion &&
+        result.payload.suggestion.toLocaleLowerCase() === heuristicResultQuery
+      ) {
+        continue;
+      }
+
+      
+      unsortedResults.push(result);
     }
+
     
     
-    let heuristicResult = context.results.find(r => r.heuristic);
     let buckets =
-      heuristicResult && heuristicResult.type == UrlbarUtils.RESULT_TYPE.SEARCH
+      context.heuristicResult &&
+      context.heuristicResult.type == UrlbarUtils.RESULT_TYPE.SEARCH
         ? UrlbarPrefs.get("matchBucketsSearch")
         : UrlbarPrefs.get("matchBuckets");
     logger.debug(`Buckets: ${buckets}`);
+
     
-    
-    
-    let reshuffleResults = context.results
-      .filter(r => r.suggestedIndex >= 0)
-      .sort((a, b) => a.suggestedIndex - b.suggestedIndex);
     let sortedResults = [];
-    
-    let handled = new Set();
-    for (let [group, slots] of buckets) {
+    let handledResults = new Set();
+    let count = Math.min(unsortedResults.length, context.maxResults);
+    for (let b = 0; handledResults.size < count && b < buckets.length; b++) {
+      let [group, slotCount] = buckets[b];
       
-      for (let result of context.results) {
-        if (slots == 0) {
-          
-          break;
-        }
-        if (handled.has(result)) {
-          
-          continue;
-        }
-
-        if (
-          group == UrlbarUtils.RESULT_GROUP.HEURISTIC &&
-          result == heuristicResult
-        ) {
-          
-          sortedResults.unshift(result);
-          handled.add(result);
-          slots--;
-        } else if (group == groupFromResult(result)) {
-          
-          
-          if (result.suggestedIndex < 0) {
-            sortedResults.push(result);
-          }
-          handled.add(result);
-          slots--;
-        }
-      }
-    }
-    for (let result of reshuffleResults) {
-      if (sortedResults.length >= result.suggestedIndex) {
-        sortedResults.splice(result.suggestedIndex, 0, result);
-      } else {
-        sortedResults.push(result);
-      }
-    }
-    context.results = sortedResults;
-  }
-
-  
-
-
-
-
-
-
-
-  _dedupeSearchHistoryAndSuggestions(results) {
-    if (
-      !UrlbarPrefs.get("restyleSearches") ||
-      !UrlbarPrefs.get("browser.search.suggest.enabled") ||
-      !UrlbarPrefs.get("suggest.searches")
-    ) {
-      return results;
-    }
-
-    let suggestionResults = [];
-    
-    
-    
-    let historyEnginesBySuggestion = new Map();
-    for (let i = 0; i < results.length; i++) {
-      let result = results[i];
-      if (
-        !result.heuristic &&
-        groupFromResult(result) == UrlbarUtils.RESULT_GROUP.SUGGESTION
+      for (
+        let i = 0;
+        slotCount && handledResults.size < count && i < unsortedResults.length;
+        i++
       ) {
-        if (result.payload.isSearchHistory) {
-          let historyEngines = historyEnginesBySuggestion.get(
-            result.payload.suggestion
-          );
-          if (!historyEngines) {
-            historyEngines = new Set();
-            historyEnginesBySuggestion.set(
-              result.payload.suggestion,
-              historyEngines
-            );
-          }
-          historyEngines.add(result.payload.engine);
-        } else {
-          
-          suggestionResults.unshift([result, i]);
-        }
-      }
-    }
-    for (
-      let i = 0;
-      historyEnginesBySuggestion.size && i < suggestionResults.length;
-      i++
-    ) {
-      let [result, index] = suggestionResults[i];
-      let historyEngines = historyEnginesBySuggestion.get(
-        result.payload.suggestion
-      );
-      if (historyEngines && historyEngines.has(result.payload.engine)) {
-        
-        
-        results.splice(index, 1);
-        historyEngines.delete(result.payload.engine);
-        if (!historyEngines.size) {
-          historyEnginesBySuggestion.delete(result.payload.suggestion);
+        let result = unsortedResults[i];
+        if (!handledResults.has(result) && group == groupFromResult(result)) {
+          sortedResults.push(result);
+          handledResults.add(result);
+          slotCount--;
         }
       }
     }
 
-    return results;
+    
+    
+    
+    resultsWithSuggestedIndex.sort(
+      (a, b) => a.suggestedIndex - b.suggestedIndex
+    );
+    for (let result of resultsWithSuggestedIndex) {
+      let index =
+        result.suggestedIndex <= sortedResults.length
+          ? result.suggestedIndex
+          : sortedResults.length;
+      sortedResults.splice(index, 0, result);
+    }
+
+    context.results = sortedResults;
+    return true;
   }
 }
 

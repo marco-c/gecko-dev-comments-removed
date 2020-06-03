@@ -3,6 +3,14 @@
 
 "use strict";
 
+add_task(async function setup() {
+  
+  
+  
+  await AddonTestUtils.promiseStartupManager();
+  await PlacesSearchAutocompleteProvider.ensureReady();
+});
+
 add_task(async function test_muxer() {
   Assert.throws(
     () => UrlbarProvidersManager.registerMuxer(),

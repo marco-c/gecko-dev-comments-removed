@@ -55,7 +55,7 @@ var localMuxerModules = {
 
 
 
-const CHUNK_MATCHES_DELAY_MS = 16;
+const CHUNK_RESULTS_DELAY_MS = 16;
 
 const DEFAULT_MUXER = "UnifiedComplete";
 
@@ -101,11 +101,18 @@ class ProvidersManager {
       throw new Error(`Unknown provider type ${provider.type}`);
     }
     logger.info(`Registering provider ${provider.name}`);
-    if (provider.type == UrlbarUtils.PROVIDER_TYPE.IMMEDIATE) {
-      this.providers.unshift(provider);
-    } else {
-      this.providers.push(provider);
+    let index = -1;
+    if (provider.type == UrlbarUtils.PROVIDER_TYPE.HEURISTIC) {
+      
+      
+      index = this.providers.findIndex(
+        p => p.type != UrlbarUtils.PROVIDER_TYPE.HEURISTIC
+      );
     }
+    if (index < 0) {
+      index = this.providers.length;
+    }
+    this.providers.splice(index, 0, provider);
   }
 
   
@@ -331,36 +338,48 @@ class Query {
       return;
     }
 
+    this.context.activeProviders = new Set(activeProviders.map(p => p.name));
+
     
     let queryPromises = [];
     for (let provider of activeProviders) {
-      if (provider.type == UrlbarUtils.PROVIDER_TYPE.IMMEDIATE) {
-        queryPromises.push(
-          provider.tryMethod("startQuery", this.context, this.add.bind(this))
+      let promise;
+      if (provider.type == UrlbarUtils.PROVIDER_TYPE.HEURISTIC) {
+        promise = provider.tryMethod(
+          "startQuery",
+          this.context,
+          this.add.bind(this)
         );
-        continue;
-      }
-      if (!this._sleepTimer) {
-        
-        
-        
-        this._sleepTimer = new SkippableTimer({
-          name: "Query provider timer",
-          time: UrlbarPrefs.get("delay"),
-          logger,
+      } else {
+        if (!this._sleepTimer) {
+          
+          
+          
+          this._sleepTimer = new SkippableTimer({
+            name: "Query provider timer",
+            time: UrlbarPrefs.get("delay"),
+            logger,
+          });
+        }
+        promise = this._sleepTimer.promise.then(() => {
+          if (this.canceled) {
+            return undefined;
+          }
+          return provider.tryMethod(
+            "startQuery",
+            this.context,
+            this.add.bind(this)
+          );
         });
       }
       queryPromises.push(
-        this._sleepTimer.promise
+        promise
+          .catch(Cu.reportError)
           .then(() => {
-            if (this.canceled) {
-              return undefined;
+            if (!this.canceled) {
+              this.context.activeProviders.delete(provider.name);
+              this._notifyResultsFromProvider(provider);
             }
-            return provider.tryMethod(
-              "startQuery",
-              this.context,
-              this.add.bind(this)
-            );
           })
           .catch(Cu.reportError)
       );
@@ -403,7 +422,7 @@ class Query {
 
 
 
-  add(provider, match) {
+  add(provider, result) {
     if (!(provider instanceof UrlbarProvider)) {
       throw new Error("Invalid provider passed to the add callback");
     }
@@ -413,24 +432,27 @@ class Query {
     }
     
     
-    if (!this.acceptableSources.includes(match.source) && !match.heuristic) {
+    if (!this.acceptableSources.includes(result.source) && !result.heuristic) {
       return;
     }
 
     
     
     if (
-      match.type != UrlbarUtils.RESULT_TYPE.KEYWORD &&
-      match.payload.url &&
-      match.payload.url.startsWith("javascript:") &&
+      result.type != UrlbarUtils.RESULT_TYPE.KEYWORD &&
+      result.payload.url &&
+      result.payload.url.startsWith("javascript:") &&
       !this.context.searchString.startsWith("javascript:") &&
       UrlbarPrefs.get("filter.javascript")
     ) {
       return;
     }
 
-    match.providerName = provider.name;
-    this.context.results.push(match);
+    result.providerName = provider.name;
+    this.context.results.push(result);
+    if (result.heuristic) {
+      this.context.heuristicResult = result;
+    }
 
     this._notifyResultsFromProvider(provider);
   }
@@ -438,20 +460,23 @@ class Query {
   _notifyResultsFromProvider(provider) {
     
     
-    if (provider.type == UrlbarUtils.PROVIDER_TYPE.IMMEDIATE) {
+    if (provider.type == UrlbarUtils.PROVIDER_TYPE.HEURISTIC) {
       this._notifyResults();
     } else if (!this._chunkTimer) {
       this._chunkTimer = new SkippableTimer({
         name: "Query chunk timer",
         callback: () => this._notifyResults(),
-        time: CHUNK_MATCHES_DELAY_MS,
+        time: CHUNK_RESULTS_DELAY_MS,
         logger,
       });
     }
   }
 
   _notifyResults() {
-    this.muxer.sort(this.context);
+    if (!this.muxer.sort(this.context) || !this.context.results.length) {
+      
+      return;
+    }
 
     if (this._chunkTimer) {
       this._chunkTimer.cancel().catch(Cu.reportError);
@@ -461,7 +486,7 @@ class Query {
     
     
     logger.debug(
-      `Cropping ${this.context.results.length} matches to ${this.context.maxResults}`
+      `Cropping ${this.context.results.length} results to ${this.context.maxResults}`
     );
     let resultCount = this.context.maxResults;
     for (let i = 0; i < this.context.results.length; i++) {

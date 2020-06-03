@@ -49,7 +49,7 @@ var UrlbarUtils = {
   PROVIDER_TYPE: {
     
     
-    IMMEDIATE: 1,
+    HEURISTIC: 1,
     
     PROFILE: 2,
     
