@@ -10,12 +10,15 @@ const TEST_URI =
   "data:text/html;charset=utf-8,Test editor mode toggle keyboard shortcut";
 const EDITOR_PREF = "devtools.webconsole.input.editor";
 
+
+requestLongerTimeout(2);
+
 add_task(async function() {
   
   await pushPref(EDITOR_PREF, false);
   let hud = await openNewTabAndConsole(TEST_URI);
 
-  const INPUT_VALUE = "hello";
+  const INPUT_VALUE = "`hello`";
   setInputValue(hud, INPUT_VALUE);
 
   is(isEditorModeEnabled(hud), false, "The console isn't in editor mode");
@@ -26,6 +29,8 @@ add_task(async function() {
   is(getInputValue(hud), INPUT_VALUE, "The input value wasn't cleared");
 
   info("Close the console and reopen it");
+  
+  await waitForEagerEvaluationResult(hud, `"hello"`);
   await closeConsole();
   hud = await openConsole();
   is(isEditorModeEnabled(hud), true, "Editor mode is still enabled");
@@ -49,6 +54,9 @@ add_task(async function() {
   await toggleLayout(hud);
   await onPopupClosed;
   ok(!popup.isOpen, "Auto complete popup is hidden on switching editor modes.");
+
+  
+  await waitForEagerEvaluationResult(hud, /ReferenceError/);
 
   Services.prefs.clearUserPref(EDITOR_PREF);
 });
