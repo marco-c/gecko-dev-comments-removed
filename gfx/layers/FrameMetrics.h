@@ -885,7 +885,6 @@ struct ScrollMetadata {
         mIsAutoDirRootContentRTL(false),
         mForceDisableApz(false),
         mResolutionUpdated(false),
-        mIsRDMTouchSimulationActive(false),
         mOverscrollBehavior() {}
 
   bool operator==(const ScrollMetadata& aOther) const {
@@ -901,7 +900,6 @@ struct ScrollMetadata {
            mIsAutoDirRootContentRTL == aOther.mIsAutoDirRootContentRTL &&
            mForceDisableApz == aOther.mForceDisableApz &&
            mResolutionUpdated == aOther.mResolutionUpdated &&
-           mIsRDMTouchSimulationActive == aOther.mIsRDMTouchSimulationActive &&
            mDisregardedDirection == aOther.mDisregardedDirection &&
            mOverscrollBehavior == aOther.mOverscrollBehavior;
   }
@@ -981,13 +979,6 @@ struct ScrollMetadata {
   void SetResolutionUpdated(bool aUpdated) { mResolutionUpdated = aUpdated; }
   bool IsResolutionUpdated() const { return mResolutionUpdated; }
 
-  void SetIsRDMTouchSimulationActive(bool aValue) {
-    mIsRDMTouchSimulationActive = aValue;
-  }
-  bool GetIsRDMTouchSimulationActive() const {
-    return mIsRDMTouchSimulationActive;
-  }
-
   
   
   Maybe<ScrollDirection> GetDisregardedDirection() const {
@@ -1063,12 +1054,6 @@ struct ScrollMetadata {
   
   
   bool mResolutionUpdated : 1;
-
-  
-  
-  
-  
-  bool mIsRDMTouchSimulationActive : 1;
 
   
   

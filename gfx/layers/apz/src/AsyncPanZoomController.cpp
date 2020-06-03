@@ -1009,14 +1009,7 @@ bool AsyncPanZoomController::ArePointerEventsConsumable(
 nsEventStatus AsyncPanZoomController::HandleDragEvent(
     const MouseInput& aEvent, const AsyncDragMetrics& aDragMetrics,
     CSSCoord aInitialThumbPos) {
-  
-  
-  
-  
-  
-  
-  if (!StaticPrefs::apz_drag_enabled() ||
-      mScrollMetadata.GetIsRDMTouchSimulationActive()) {
+  if (!StaticPrefs::apz_drag_enabled()) {
     return nsEventStatus_eIgnore;
   }
 
@@ -4657,8 +4650,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
         aScrollMetadata.IsAutoDirRootContentRTL());
     Metrics().SetIsScrollInfoLayer(aLayerMetrics.IsScrollInfoLayer());
     mScrollMetadata.SetForceDisableApz(aScrollMetadata.IsApzForceDisabled());
-    mScrollMetadata.SetIsRDMTouchSimulationActive(
-        aScrollMetadata.GetIsRDMTouchSimulationActive());
     mScrollMetadata.SetDisregardedDirection(
         aScrollMetadata.GetDisregardedDirection());
     mScrollMetadata.SetOverscrollBehavior(
