@@ -278,3 +278,26 @@ where
         <Self as num_traits::Zero>::is_zero(self)
     }
 }
+
+
+
+pub trait One {
+    
+    fn one() -> Self;
+
+    
+    fn is_one(&self) -> bool;
+}
+
+impl<T> One for T
+where
+    T: num_traits::One + PartialEq,
+{
+    fn one() -> Self {
+        <Self as num_traits::One>::one()
+    }
+
+    fn is_one(&self) -> bool {
+        *self == One::one()
+    }
+}

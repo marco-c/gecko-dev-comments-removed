@@ -10,6 +10,7 @@
 #define mozilla_ServoStyleConstsInlines_h
 
 #include "mozilla/ServoStyleConsts.h"
+#include "mozilla/AspectRatio.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/URLExtraData.h"
 #include "nsGkAtoms.h"
@@ -966,6 +967,18 @@ template <>
 Maybe<StyleImage::ActualCropRect> StyleImage::ComputeActualCropRect() const;
 template <>
 void StyleImage::ResolveImage(dom::Document&, const StyleImage*);
+
+template <>
+inline AspectRatio StyleRatio<StyleNonNegativeNumber>::ToLayoutRatio()
+    const {
+  
+  
+  
+  
+  
+  
+  return AspectRatio::FromSize(_0, _1);
+}
 
 }  
 

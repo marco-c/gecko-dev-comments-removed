@@ -12,13 +12,14 @@ use crate::selector_map::PrecomputedHashMap;
 use crate::str::HTML_SPACE_CHARACTERS;
 use crate::values::computed::LengthPercentage as ComputedLengthPercentage;
 use crate::values::computed::{Context, Percentage, ToComputedValue};
+use crate::values::generics::position::AspectRatio as GenericAspectRatio;
 use crate::values::generics::position::Position as GenericPosition;
 use crate::values::generics::position::PositionComponent as GenericPositionComponent;
 use crate::values::generics::position::PositionOrAuto as GenericPositionOrAuto;
+use crate::values::generics::position::Ratio as GenericRatio;
 use crate::values::generics::position::ZIndex as GenericZIndex;
-use crate::values::specified::{AllowQuirks, Integer, LengthPercentage};
-use crate::Atom;
-use crate::Zero;
+use crate::values::specified::{AllowQuirks, Integer, LengthPercentage, NonNegativeNumber};
+use crate::{Atom, One, Zero};
 use cssparser::Parser;
 use selectors::parser::SelectorParseErrorKind;
 use servo_arc::Arc;
@@ -877,3 +878,46 @@ impl GridTemplateAreas {
 
 
 pub type ZIndex = GenericZIndex<Integer>;
+
+
+pub type AspectRatio = GenericAspectRatio<NonNegativeNumber>;
+
+
+impl Parse for AspectRatio {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        if input
+            .try(|input| input.expect_ident_matching("auto"))
+            .is_ok()
+        {
+            return Ok(AspectRatio::Auto);
+        }
+
+        GenericRatio::parse(context, input).map(AspectRatio::Ratio)
+    }
+}
+
+
+impl Parse for GenericRatio<NonNegativeNumber> {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        let a = NonNegativeNumber::parse(context, input)?;
+        let b = match input.try_parse(|input| input.expect_delim('/')) {
+            Ok(()) => NonNegativeNumber::parse(context, input)?,
+            _ => One::one(),
+        };
+
+        
+        
+        
+        
+        if a.is_zero() && b.is_zero() {
+            return Ok(GenericRatio(One::one(), Zero::zero()));
+        }
+        return Ok(GenericRatio(a, b));
+    }
+}

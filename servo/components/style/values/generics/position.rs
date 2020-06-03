@@ -5,6 +5,10 @@
 
 
 
+use crate::One;
+use std::fmt::{self, Write};
+use style_traits::{CssWriter, ToCss};
+
 
 #[derive(
     Animate,
@@ -148,5 +152,76 @@ impl<Integer> ZIndex<Integer> {
             ZIndex::Integer(n) => n,
             ZIndex::Auto => auto,
         }
+    }
+}
+
+
+
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C)]
+pub struct Ratio<N>(pub N, pub N);
+
+impl<N> ToCss for Ratio<N>
+where
+    N: ToCss + One + std::cmp::PartialEq,
+{
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        self.0.to_css(dest)?;
+        
+        if !self.1.is_one() {
+            dest.write_str(" / ")?;
+            self.1.to_css(dest)?;
+        }
+        Ok(())
+    }
+}
+
+
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C, u8)]
+pub enum GenericAspectRatio<N> {
+    
+    Ratio(#[css(field_bound)] Ratio<N>),
+    
+    Auto,
+}
+
+pub use self::GenericAspectRatio as AspectRatio;
+
+impl<R> AspectRatio<R> {
+    
+    #[inline]
+    pub fn auto() -> Self {
+        AspectRatio::Auto
     }
 }

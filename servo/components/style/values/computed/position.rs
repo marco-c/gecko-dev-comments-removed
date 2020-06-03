@@ -7,7 +7,8 @@
 
 
 
-use crate::values::computed::{Integer, LengthPercentage, Percentage};
+use crate::values::computed::{Integer, LengthPercentage, NonNegativeNumber, Percentage};
+use crate::values::generics::position::AspectRatio as GenericAspectRatio;
 use crate::values::generics::position::Position as GenericPosition;
 use crate::values::generics::position::PositionComponent as GenericPositionComponent;
 use crate::values::generics::position::PositionOrAuto as GenericPositionOrAuto;
@@ -68,3 +69,6 @@ impl GenericPositionComponent for LengthPercentage {
 
 
 pub type ZIndex = GenericZIndex<Integer>;
+
+
+pub type AspectRatio = GenericAspectRatio<NonNegativeNumber>;
