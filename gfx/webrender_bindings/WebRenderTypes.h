@@ -81,30 +81,6 @@ typedef EnumSet<RenderRoot, uint8_t> RenderRootSet;
 
 const Array<RenderRoot, kRenderRootCount> kRenderRoots(RenderRoot::Default);
 
-template <typename T>
-class RenderRootArray : public Array<T, kRenderRootCount> {
-  typedef Array<T, kRenderRootCount> Super;
-
- public:
-  RenderRootArray() {
-    if (IsPod<T>::value) {
-      
-      PodArrayZero(*this);
-    }  
-  }
-
-  T& operator[](wr::RenderRoot aIndex) {
-    return (*(Super*)this)[(size_t)aIndex];
-  }
-
-  const T& operator[](wr::RenderRoot aIndex) const {
-    return (*(Super*)this)[(size_t)aIndex];
-  }
-
-  T& operator[](size_t aIndex) = delete;
-  const T& operator[](size_t aIndex) const = delete;
-};
-
 RenderRoot RenderRootFromId(DocumentId id);
 
 inline DebugFlags NewDebugFlags(uint32_t aFlags) { return {aFlags}; }
