@@ -272,7 +272,7 @@ int32_t nsScrollbarFrame::MoveToNewPosition() {
     return curpos;
   }
   
-  for (const auto& childList : nsIFrame::ChildLists()) {
+  for (const auto& childList : ChildLists()) {
     for (nsIFrame* f : childList.mList) {
       nsSliderFrame* sliderFrame = do_QueryFrame(f);
       if (sliderFrame) {
