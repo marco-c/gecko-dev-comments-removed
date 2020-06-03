@@ -133,6 +133,8 @@ class TRRServiceChannel : public HttpBaseChannel,
       nsIURI* aNewURI, nsIChannel* aNewChannel, bool aPreserveMethod,
       uint32_t aRedirectFlags) override;
 
+  virtual bool SameOriginWithOriginalUri(nsIURI* aURI) override;
+
   
   bool mTopWindowOriginComputed;
 

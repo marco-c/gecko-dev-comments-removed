@@ -568,7 +568,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
   
   
-  bool SameOriginWithOriginalUri(nsIURI* aURI);
+  virtual bool SameOriginWithOriginalUri(nsIURI* aURI);
 
   
   nsIPrincipal* GetURIPrincipal();
