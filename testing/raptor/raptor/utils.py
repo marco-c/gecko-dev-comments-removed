@@ -60,20 +60,13 @@ def transform_subtest(str_to_transform, subtest_name):
     return str_to_transform.replace('{subtest}', subtest_name)
 
 
-def view_gecko_profile(ffox_bin):
+def view_gecko_profile_from_raptor():
     
     LOG_GECKO = RaptorLogger(component='raptor-view-gecko-profile')
 
-    if sys.platform.startswith('win') and not ffox_bin.endswith(".exe"):
-        ffox_bin = ffox_bin + ".exe"
-
-    if not os.path.exists(ffox_bin):
-        LOG_GECKO.info("unable to find Firefox bin, cannot launch view-gecko-profile")
-        return
-
     profile_zip = os.environ.get('RAPTOR_LATEST_GECKO_PROFILE_ARCHIVE', None)
     if profile_zip is None or not os.path.exists(profile_zip):
-        LOG_GECKO.info("No local talos gecko profiles were found so not "
+        LOG_GECKO.info("No local raptor gecko profiles were found so not "
                        "launching profiler.firefox.com")
         return
 
@@ -91,7 +84,6 @@ def view_gecko_profile(ffox_bin):
 
     command = [sys.executable,
                view_gp,
-               '-b', ffox_bin,
                '-p', profile_zip]
 
     LOG_GECKO.info('Auto-loading this profile in perfhtml.io: %s' % profile_zip)
@@ -100,9 +92,7 @@ def view_gecko_profile(ffox_bin):
     
     
     try:
-        view_profile = subprocess.Popen(command,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE)
+        view_profile = subprocess.Popen(command)
         
     except Exception as e:
         LOG_GECKO.info("failed to launch view-gecko-profile tool, exeption: %s" % e)
