@@ -94,8 +94,7 @@
 #endif
 
 #if defined(GP_OS_android)
-#  include "GeneratedJNINatives.h"
-#  include "GeneratedJNIWrappers.h"
+#  include "mozilla/java/GeckoJavaSamplerNatives.h"
 #endif
 
 
