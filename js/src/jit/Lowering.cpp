@@ -405,7 +405,7 @@ bool LIRGenerator::lowerCallArguments(MCall* call) {
 }
 
 void LIRGenerator::visitCall(MCall* call) {
-  MOZ_ASSERT(call->getFunction()->type() == MIRType::Object);
+  MOZ_ASSERT(call->getCallee()->type() == MIRType::Object);
 
   
   if (!lowerCallArguments(call)) {
@@ -445,13 +445,13 @@ void LIRGenerator::visitCall(MCall* call) {
                                       tempFixed(vpReg), tempFixed(tmpReg));
     } else {
       lir = new (alloc())
-          LCallKnown(useFixedAtStart(call->getFunction(), CallTempReg0),
+          LCallKnown(useFixedAtStart(call->getCallee(), CallTempReg0),
                      tempFixed(CallTempReg2));
     }
   } else {
     
     lir = new (alloc())
-        LCallGeneric(useFixedAtStart(call->getFunction(), CallTempReg0),
+        LCallGeneric(useFixedAtStart(call->getCallee(), CallTempReg0),
                      tempFixed(CallTempReg1), tempFixed(CallTempReg2));
   }
   defineReturn(lir, call);

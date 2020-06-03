@@ -2664,8 +2664,7 @@ class WrappedFunction : public TempObject {
 class MCall : public MVariadicInstruction, public CallPolicy::Data {
  private:
   
-  
-  static const size_t FunctionOperandIndex = 0;
+  static const size_t CalleeOperandIndex = 0;
   static const size_t NumNonArgumentOperands = 1;
 
  protected:
@@ -2707,9 +2706,7 @@ class MCall : public MVariadicInstruction, public CallPolicy::Data {
                     bool ignoresReturnValue, bool isDOMCall,
                     DOMObjectKind objectKind);
 
-  void initFunction(MDefinition* func) {
-    initOperand(FunctionOperandIndex, func);
-  }
+  void initCallee(MDefinition* func) { initOperand(CalleeOperandIndex, func); }
 
   bool needsArgCheck() const { return needsArgCheck_; }
   void disableArgCheck() { needsArgCheck_ = false; }
@@ -2726,9 +2723,9 @@ class MCall : public MVariadicInstruction, public CallPolicy::Data {
     needsThisCheck_ = true;
   }
 
-  MDefinition* getFunction() const { return getOperand(FunctionOperandIndex); }
-  void replaceFunction(MInstruction* newfunc) {
-    replaceOperand(FunctionOperandIndex, newfunc);
+  MDefinition* getCallee() const { return getOperand(CalleeOperandIndex); }
+  void replaceCallee(MInstruction* newfunc) {
+    replaceOperand(CalleeOperandIndex, newfunc);
   }
 
   void addArg(size_t argnum, MDefinition* arg);
