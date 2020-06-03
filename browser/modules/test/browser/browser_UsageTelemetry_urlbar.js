@@ -41,6 +41,8 @@ function searchInAwesomebar(value, win = window) {
 
 
 
+
+
 async function clickURLBarSuggestion(resultTitle, button = 1) {
   await UrlbarTestUtils.promiseSearchComplete(window);
 
@@ -61,9 +63,10 @@ async function clickURLBarSuggestion(resultTitle, button = 1) {
           button: 2,
         });
       }
-      return;
+      return i;
     }
   }
+  return -1;
 }
 
 
@@ -787,7 +790,7 @@ add_task(async function test_formHistory_click() {
     let p = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
     await searchInAwesomebar("foo");
     info("Clicking the form history.");
-    await clickURLBarSuggestion("foobar");
+    let foobarIndex = await clickURLBarSuggestion("foobar");
     await p;
 
     
@@ -827,7 +830,7 @@ add_task(async function test_formHistory_click() {
     );
 
     
-    TelemetryTestUtils.assertHistogram(resultIndexHist, 2, 1);
+    TelemetryTestUtils.assertHistogram(resultIndexHist, foobarIndex, 1);
 
     TelemetryTestUtils.assertHistogram(
       resultTypeHist,
@@ -838,7 +841,7 @@ add_task(async function test_formHistory_click() {
     TelemetryTestUtils.assertKeyedHistogramValue(
       resultIndexByTypeHist,
       "formhistory",
-      2,
+      foobarIndex,
       1
     );
 
