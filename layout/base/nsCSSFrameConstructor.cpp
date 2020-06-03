@@ -6379,28 +6379,9 @@ void nsCSSFrameConstructor::CheckBitsForLazyFrameConstruction(
 
 
 
-
-
-
-
 bool nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
                                                  nsIContent* aChild) {
   MOZ_ASSERT(aChild->GetParent());
-  if (aOperation == CONTENTINSERT) {
-    MOZ_ASSERT(!aChild->IsRootOfAnonymousSubtree());
-    if (aChild->IsXULElement()) {
-      return false;
-    }
-  } else {  
-    MOZ_ASSERT(aOperation == CONTENTAPPEND,
-               "operation should be either insert or append");
-    for (nsIContent* child = aChild; child; child = child->GetNextSibling()) {
-      MOZ_ASSERT(!child->IsRootOfAnonymousSubtree());
-      if (child->IsXULElement()) {
-        return false;
-      }
-    }
-  }
 
   
   
