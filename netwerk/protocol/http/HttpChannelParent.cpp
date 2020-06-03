@@ -1485,10 +1485,13 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
     cleanedUpResponseHead = *responseHead;
     cleanedUpResponseHead.ClearHeader(nsHttp::Set_Cookie);
     if (multiPartID) {
-      nsCOMPtr<nsIChannel> chan = do_QueryInterface(aRequest);
-      MOZ_ASSERT(chan);
+      nsCOMPtr<nsIChannel> multiPartChannel = do_QueryInterface(aRequest);
+      
+      
+      
+      MOZ_ASSERT(multiPartChannel);
       nsAutoCString contentType;
-      chan->GetContentType(contentType);
+      multiPartChannel->GetContentType(contentType);
       cleanedUpResponseHead.SetContentType(contentType);
     }
     responseHead = &cleanedUpResponseHead;
