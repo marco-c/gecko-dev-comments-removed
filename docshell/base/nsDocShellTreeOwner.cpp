@@ -1241,10 +1241,18 @@ void ChromeTooltipListener::sTooltipCallback(nsITimer* aTimer,
                                              void* aChromeTooltipListener) {
   auto self = static_cast<ChromeTooltipListener*>(aChromeTooltipListener);
   if (self && self->mPossibleTooltipNode) {
+    
+    auto cleanup = MakeScopeExit([&] { self->mPossibleTooltipNode = nullptr; });
     if (!self->mPossibleTooltipNode->IsInComposedDoc()) {
-      
-      self->mPossibleTooltipNode = nullptr;
       return;
+    }
+    
+    Document* doc = self->mPossibleTooltipNode->OwnerDoc();
+    while (doc) {
+      if (!doc->IsCurrentActiveDocument()) {
+        return;
+      }
+      doc = doc->GetInProcessParentDocument();
     }
 
     
@@ -1270,8 +1278,6 @@ void ChromeTooltipListener::sTooltipCallback(nsITimer* aTimer,
     }
 
     if (!widget || !docShell || !docShell->GetIsActive()) {
-      
-      self->mPossibleTooltipNode = nullptr;
       return;
     }
 
@@ -1304,8 +1310,5 @@ void ChromeTooltipListener::sTooltipCallback(nsITimer* aTimer,
             self->mPossibleTooltipNode->OwnerDoc()->GetDocShell());
       }
     }
-
-    
-    self->mPossibleTooltipNode = nullptr;
   }
 }
