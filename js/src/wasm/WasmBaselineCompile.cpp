@@ -2088,6 +2088,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
     popBytes(currentStackHeight() - end);
   }
 
+  
   void shuffleStackResultsTowardFP(uint32_t srcHeight, uint32_t destHeight,
                                    uint32_t bytes, Register temp) {
     MOZ_ASSERT(destHeight < srcHeight);
@@ -2110,6 +2111,8 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
     }
   }
 
+  
+  
   void shuffleStackResultsTowardFP(StackHeight srcHeight,
                                    StackHeight destHeight, uint32_t bytes,
                                    Register temp) {
@@ -2119,9 +2122,10 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
     uint32_t dest = computeHeightWithStackResults(destHeight, bytes);
     MOZ_ASSERT(src <= currentStackHeight());
     MOZ_ASSERT(dest <= currentStackHeight());
-    shuffleStackResultsTowardFP(src - bytes, dest - bytes, bytes, temp);
+    shuffleStackResultsTowardFP(src, dest, bytes, temp);
   }
 
+  
   void shuffleStackResultsTowardSP(uint32_t srcHeight, uint32_t destHeight,
                                    uint32_t bytes, Register temp) {
     MOZ_ASSERT(destHeight > srcHeight);
