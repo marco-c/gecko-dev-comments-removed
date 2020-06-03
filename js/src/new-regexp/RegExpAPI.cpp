@@ -480,16 +480,16 @@ bool CompilePattern(JSContext* cx, MutableHandleRegExpShared re,
         return true;
       }
     }
-    
-    uint32_t pairCount = data.capture_count + 1;
-    re->useRegExpMatch(pairCount);
-
     if (!data.capture_name_map.is_null()) {
       RootedNativeObject namedCaptures(cx, data.capture_name_map->inner());
       if (!RegExpShared::initializeNamedCaptures(cx, re, namedCaptures)) {
         return false;
       }
     }
+    
+    
+    uint32_t pairCount = data.capture_count + 1;
+    re->useRegExpMatch(pairCount);
   }
 
   MOZ_ASSERT(re->kind() == RegExpShared::Kind::RegExp);
