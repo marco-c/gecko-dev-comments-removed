@@ -15,6 +15,7 @@
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/PermissionManager.h"
+#include "mozIThirdPartyUtil.h"
 #include "nsIChannel.h"
 #include "nsIPermission.h"
 #include "nsIURI.h"
@@ -565,4 +566,46 @@ void AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(nsIChannel* aChannel) {
 
     loadInfo->SetIsThirdPartyContextToTopWindow(isThirdParty);
   }
+}
+
+
+bool AntiTrackingUtils::IsThirdPartyChannel(nsIChannel* aChannel) {
+  MOZ_ASSERT(aChannel);
+
+  
+  bool thirdParty = true;
+
+  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil = services::GetThirdPartyUtil();
+  if (!thirdPartyUtil) {
+    return thirdParty;
+  }
+
+  
+  nsresult rv =
+      thirdPartyUtil->IsThirdPartyChannel(aChannel, nullptr, &thirdParty);
+  if (NS_FAILED(rv)) {
+    
+    thirdParty = true;
+  }
+
+  
+  
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  return thirdParty && loadInfo->GetIsThirdPartyContextToTopWindow();
+}
+
+
+bool AntiTrackingUtils::IsThirdPartyWindow(nsPIDOMWindowInner* aWindow,
+                                           nsIURI* aURI) {
+  MOZ_ASSERT(aWindow);
+  MOZ_ASSERT(aURI);
+
+  
+  bool thirdParty = true;
+
+  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil = services::GetThirdPartyUtil();
+  Unused << thirdPartyUtil->IsThirdPartyWindow(aWindow->GetOuterWindow(), aURI,
+                                               &thirdParty);
+
+  return thirdParty;
 }

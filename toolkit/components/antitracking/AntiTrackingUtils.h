@@ -105,6 +105,17 @@ class AntiTrackingUtils final {
   
   
   static void ComputeIsThirdPartyToTopWindow(nsIChannel* aChannel);
+
+  
+  
+  
+  
+  static bool IsThirdPartyChannel(nsIChannel* aChannel);
+
+  
+  
+  
+  static bool IsThirdPartyWindow(nsPIDOMWindowInner* aWindow, nsIURI* aURI);
 };
 
 }  
