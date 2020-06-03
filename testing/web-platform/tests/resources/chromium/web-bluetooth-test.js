@@ -14,6 +14,23 @@ function toMojoCentralState(state) {
 }
 
 
+
+function writeTypeToString(writeType) {
+  switch (writeType) {
+    case bluetooth.mojom.WriteType.kNone:
+      return 'none';
+    case bluetooth.mojom.WriteType.kWriteDefaultDeprecated:
+      return 'default-deprecated';
+    case bluetooth.mojom.WriteType.kWriteWithResponse:
+      return 'with-response';
+    case bluetooth.mojom.WriteType.kWriteWithoutResponse:
+      return 'without-response';
+    default:
+      throw `Unknown bluetooth.mojom.WriteType: ${writeType}`;
+  }
+}
+
+
 function canonicalizeAndConvertToMojoUUID(uuids) {
   let canonicalUUIDs = uuids.map(val => ({uuid: BluetoothUUID.getService(val)}));
   return canonicalUUIDs;
@@ -450,14 +467,17 @@ class FakeRemoteGATTCharacteristic {
 
   
   
+  
+  
+  
   async getLastWrittenValue() {
-    let {success, value} =
-      await this.fake_central_ptr_.getLastWrittenCharacteristicValue(
-          ...this.ids_);
+    let {success, value, writeType} =
+        await this.fake_central_ptr_.getLastWrittenCharacteristicValue(
+            ...this.ids_);
 
     if (!success) throw 'getLastWrittenCharacteristicValue failed';
 
-    return value;
+    return {lastValue: value, lastWriteType: writeTypeToString(writeType)};
   }
 
   
