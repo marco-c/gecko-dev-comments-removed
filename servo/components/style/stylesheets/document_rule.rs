@@ -264,10 +264,6 @@ impl DocumentCondition {
             return true;
         }
 
-        if !pref!("layout.css.moz-document.url-prefix-hack.enabled") {
-            return false;
-        }
-
         
         
         
