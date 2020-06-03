@@ -68,10 +68,7 @@ class MediaController final
                                   MediaPlaybackState aState) override;
   void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
                                  MediaAudibleState aState) override;
-
-  
-  
-  void SetIsInPictureInPictureMode(bool aIsInPictureInPictureMode);
+  void SetIsInPictureInPictureMode(bool aIsInPictureInPictureMode) override;
 
   
   

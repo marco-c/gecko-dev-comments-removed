@@ -196,9 +196,9 @@ void MediaSession::NotifyMetadataUpdated() {
     return;
   }
   
-  if (RefPtr<MediaController> controller =
+  if (RefPtr<IMediaInfoUpdater> updater =
           currentBC->Canonical()->GetMediaController()) {
-    controller->UpdateMetadata(currentBC->Id(), metadata);
+    updater->UpdateMetadata(currentBC->Id(), metadata);
   }
 }
 

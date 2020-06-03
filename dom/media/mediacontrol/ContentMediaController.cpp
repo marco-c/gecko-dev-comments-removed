@@ -167,9 +167,9 @@ void ContentMediaController::NotifyPictureInPictureModeChanged(
   } else {
     
     
-    if (RefPtr<MediaController> controller =
+    if (RefPtr<IMediaInfoUpdater> updater =
             bc->Canonical()->GetMediaController()) {
-      controller->SetIsInPictureInPictureMode(aEnabled);
+      updater->SetIsInPictureInPictureMode(aEnabled);
     }
   }
 }

@@ -58,6 +58,19 @@ class IMediaInfoUpdater {
   
   virtual void SetDeclaredPlaybackState(uint64_t aSessionContextId,
                                         MediaSessionPlaybackState aState) = 0;
+
+  
+  
+  virtual void NotifySessionCreated(uint64_t aSessionContextId) = 0;
+  virtual void NotifySessionDestroyed(uint64_t aSessionContextId) = 0;
+
+  
+  virtual void UpdateMetadata(uint64_t aSessionContextId,
+                              const Maybe<MediaMetadataBase>& aMetadata) = 0;
+
+  
+  
+  virtual void SetIsInPictureInPictureMode(bool aIsInPictureInPictureMode) = 0;
 };
 
 
@@ -89,17 +102,10 @@ class MediaSessionController : public IMediaInfoUpdater {
                                  MediaAudibleState aState) override;
   void SetDeclaredPlaybackState(uint64_t aSessionContextId,
                                 MediaSessionPlaybackState aState) override;
-
-  
-  
-  
-  void NotifySessionCreated(uint64_t aSessionContextId);
-  void NotifySessionDestroyed(uint64_t aSessionContextId);
-
-  
-  
+  void NotifySessionCreated(uint64_t aSessionContextId) override;
+  void NotifySessionDestroyed(uint64_t aSessionContextId) override;
   void UpdateMetadata(uint64_t aSessionContextId,
-                      const Maybe<MediaMetadataBase>& aMetadata);
+                      const Maybe<MediaMetadataBase>& aMetadata) override;
 
   
   
