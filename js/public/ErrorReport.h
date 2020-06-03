@@ -303,14 +303,6 @@ struct MOZ_STACK_CLASS JS_PUBLIC_API ErrorReportBuilder {
 
 
 
-
-
-
-
-  bool init(JSContext* cx, JS::HandleValue exn,
-            SniffingBehavior sniffingBehavior,
-            JS::HandleObject fallbackStack = nullptr);
-
   bool init(JSContext* cx, const JS::ExceptionStack& exnStack,
             SniffingBehavior sniffingBehavior);
 
@@ -326,9 +318,9 @@ struct MOZ_STACK_CLASS JS_PUBLIC_API ErrorReportBuilder {
   
   
   bool populateUncaughtExceptionReportUTF8(JSContext* cx,
-                                           JS::HandleObject fallbackStack, ...);
+                                           JS::HandleObject stack, ...);
   bool populateUncaughtExceptionReportUTF8VA(JSContext* cx,
-                                             JS::HandleObject fallbackStack,
+                                             JS::HandleObject stack,
                                              va_list ap);
 
   
