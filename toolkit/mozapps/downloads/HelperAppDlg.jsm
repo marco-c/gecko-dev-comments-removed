@@ -573,12 +573,6 @@ nsUnknownContentTypeDialog.prototype = {
       
       
 
-      
-      
-      
-      
-
-      
       if (shouldntRememberChoice) {
         rememberChoice.checked = false;
         rememberChoice.hidden = true;
@@ -589,12 +583,6 @@ nsUnknownContentTypeDialog.prototype = {
             this.nsIMIMEInfo.handleInternally;
       }
       this.toggleRememberChoice(rememberChoice);
-
-      
-      var openHandler = this.dialogElement("openHandler");
-      openHandler.remove();
-      var openHandlerBox = this.dialogElement("openHandlerBox");
-      openHandlerBox.appendChild(openHandler);
     }
 
     this.mDialog.setTimeout(function() {
