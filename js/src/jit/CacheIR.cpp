@@ -7198,8 +7198,8 @@ AttachDecision BinaryArithIRGenerator::tryAttachBitwise() {
       return writer.guardToBoolean(id);
     }
     MOZ_ASSERT(val.isDouble());
-    writer.guardType(id, ValueType::Double);
-    return writer.truncateDoubleToUInt32(id);
+    NumberOperandId numId = writer.guardIsNumber(id);
+    return writer.truncateDoubleToUInt32(numId);
   };
 
   Int32OperandId lhsIntId = guardToInt32(lhsId, lhs_);
