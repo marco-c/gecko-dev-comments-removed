@@ -285,17 +285,12 @@ var SaveToPocket = {
       PocketOverlay.shutdown();
       Services.obs.addObserver(this, "browser-delayed-startup-finished");
     } else {
+      AboutReaderParent.broadcastAsyncMessage(
+        "Reader:AddButton",
+        this._readerButtonData
+      );
       Services.obs.removeObserver(this, "browser-delayed-startup-finished");
       PocketOverlay.startup();
-      
-      
-      
-      if (this._readerButtonData.title) {
-        AboutReaderParent.broadcastAsyncMessage(
-          "Reader:AddButton",
-          this._readerButtonData
-        );
-      }
     }
     this.updateElements(newValue);
   },
@@ -325,13 +320,6 @@ var SaveToPocket = {
     }
     switch (message.name) {
       case "Reader:OnSetup": {
-        
-        
-        if (!this._readerButtonData.title) {
-          let doc = message.target.ownerDocument;
-          let button = doc.getElementById("pocket-button");
-          this._readerButtonData.title = button.getAttribute("tooltiptext");
-        }
         
         message.target.sendMessageToActor(
           "Reader:AddButton",
