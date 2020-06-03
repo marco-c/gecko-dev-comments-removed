@@ -55,8 +55,7 @@ class MediaResource : public DecoderDoctorLifeLogger<MediaResource> {
   
   
   
-  NS_METHOD_(MozExternalRefCountType) AddRef(void);
-  NS_METHOD_(MozExternalRefCountType) Release(void);
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DESTROY(MediaResource, Destroy());
 
   
   
@@ -120,8 +119,6 @@ class MediaResource : public DecoderDoctorLifeLogger<MediaResource> {
 
  private:
   void Destroy();
-  mozilla::ThreadSafeAutoRefCnt mRefCnt;
-  NS_DECL_OWNINGTHREAD
 };
 
 
