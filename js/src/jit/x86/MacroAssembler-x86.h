@@ -833,6 +833,10 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
 
   void notBoolean(const ValueOperand& val) { xorl(Imm32(1), val.payloadReg()); }
 
+  template <typename T>
+  void fallibleUnboxPtrImpl(const T& src, Register dest, JSValueType type,
+                            Label* fail);
+
   
   
   
