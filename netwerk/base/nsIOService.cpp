@@ -1021,42 +1021,9 @@ nsresult nsIOService::NewChannelFromURIWithProxyFlagsInternal(
     const Maybe<ClientInfo>& aLoadingClientInfo,
     const Maybe<ServiceWorkerDescriptor>& aController, uint32_t aSecurityFlags,
     uint32_t aContentPolicyType, uint32_t aSandboxFlags, nsIChannel** result) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsILoadInfo> loadInfo;
-
-  
-  
-  if (aLoadingNode || aLoadingPrincipal ||
-      aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) {
-    loadInfo = new LoadInfo(aLoadingPrincipal, aTriggeringPrincipal,
-                            aLoadingNode, aSecurityFlags, aContentPolicyType,
-                            aLoadingClientInfo, aController, aSandboxFlags);
-  }
-  if (!loadInfo) {
-    JSContext* cx = nsContentUtils::GetCurrentJSContext();
-    
-    
-    if (cx) {
-      JS::UniqueChars chars = xpc_PrintJSStack(cx,
-                                               false,
-                                               false,
-                                               false);
-      nsDependentCString stackTrace(chars.get());
-      CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::Bug_1541161,
-                                         stackTrace);
-    }
-    MOZ_DIAGNOSTIC_ASSERT(false,
-                          "Please pass security info when creating a channel");
-    return NS_ERROR_INVALID_ARG;
-  }
+  nsCOMPtr<nsILoadInfo> loadInfo = new LoadInfo(
+      aLoadingPrincipal, aTriggeringPrincipal, aLoadingNode, aSecurityFlags,
+      aContentPolicyType, aLoadingClientInfo, aController, aSandboxFlags);
   return NewChannelFromURIWithProxyFlagsInternal(aURI, aProxyURI, aProxyFlags,
                                                  loadInfo, result);
 }
@@ -1066,6 +1033,9 @@ nsresult nsIOService::NewChannelFromURIWithProxyFlagsInternal(
     nsILoadInfo* aLoadInfo, nsIChannel** result) {
   nsresult rv;
   NS_ENSURE_ARG_POINTER(aURI);
+  
+  MOZ_ASSERT(aLoadInfo, "can not create channel without aLoadInfo");
+  NS_ENSURE_ARG_POINTER(aLoadInfo);
 
   nsAutoCString scheme;
   rv = aURI->GetScheme(scheme);
@@ -1090,20 +1060,16 @@ nsresult nsIOService::NewChannelFromURIWithProxyFlagsInternal(
   if (NS_FAILED(rv)) return rv;
 
   
-  if (aLoadInfo) {
-    
-    
-    nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-    if (aLoadInfo != loadInfo) {
-      MOZ_ASSERT(false, "newly created channel must have a loadinfo attached");
-      return NS_ERROR_UNEXPECTED;
-    }
+  nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+  if (aLoadInfo != loadInfo) {
+    MOZ_ASSERT(false, "newly created channel must have a loadinfo attached");
+    return NS_ERROR_UNEXPECTED;
+  }
 
-    
-    
-    if (loadInfo->GetLoadingSandboxed()) {
-      channel->SetOwner(nullptr);
-    }
+  
+  
+  if (loadInfo->GetLoadingSandboxed()) {
+    channel->SetOwner(nullptr);
   }
 
   
