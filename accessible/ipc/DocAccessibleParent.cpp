@@ -604,7 +604,7 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
       IDispatchHolder docHolder(std::move(docPtr));
       if (bridge->SendSetEmbeddedDocAccessibleCOMProxy(docHolder)) {
 #  if defined(MOZ_SANDBOX)
-        mDocProxyStream = docHolder.GetPreservedStream();
+        aChildDoc->mDocProxyStream = docHolder.GetPreservedStream();
 #  endif  
       }
       
