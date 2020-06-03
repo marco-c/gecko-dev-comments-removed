@@ -21,6 +21,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   IgnoreLists: "resource://gre/modules/IgnoreLists.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   Region: "resource://gre/modules/Region.jsm",
+  RemoteSettings: "resource://services-settings/remote-settings.js",
   SearchEngine: "resource://gre/modules/SearchEngine.jsm",
   SearchEngineSelector: "resource://gre/modules/SearchEngineSelector.jsm",
   SearchStaticData: "resource://gre/modules/SearchStaticData.jsm",
@@ -50,6 +51,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
     Services.search.reInit();
   }
 );
+
+XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
+  return console.createInstance({
+    prefix: "SearchService",
+    maxLogLevel: SearchUtils.loggingEnabled ? "Debug" : "Warn",
+  });
+});
 
 
 XPCOMUtils.defineLazyGetter(this, "gEncoder", function() {
@@ -599,6 +607,9 @@ SearchService.prototype = {
   _metaData: {},
 
   
+  _defaultOverrideAllowlist: null,
+
+  
   
   
   get _separatePrivateDefault() {
@@ -842,32 +853,6 @@ SearchService.prototype = {
     return false;
   },
 
-  async _getSearchDefaultOverrideAllowlist() {
-    return [];
-  },
-
-  async _canOverrideDefault(extension, appProvidedExtensionId) {
-    const overrideTable = await this._getSearchDefaultOverrideAllowlist();
-
-    let entry = overrideTable.find(e => e.thirdPartyId == extension.id);
-    if (!entry) {
-      return false;
-    }
-
-    if (appProvidedExtensionId != entry.overridesId) {
-      return false;
-    }
-    let searchProvider =
-      extension.manifest.chrome_settings_overrides.search_provider;
-    return entry.urls.some(
-      e =>
-        searchProvider.search_url == e.search_url &&
-        searchProvider.search_form == e.search_form &&
-        searchProvider.search_url_get_params == e.search_url_get_params &&
-        searchProvider.search_url_post_params == e.search_url_post_params
-    );
-  },
-
   async maybeSetAndOverrideDefault(extension) {
     let searchProvider =
       extension.manifest.chrome_settings_overrides.search_provider;
@@ -881,6 +866,10 @@ SearchService.prototype = {
       SearchUtils.DEFAULT_TAG
     );
 
+    if (!this._defaultOverrideAllowlist) {
+      this._defaultOverrideAllowlist = new SearchDefaultOverrideAllowlistHandler();
+    }
+
     if (
       extension.startupReason === "ADDON_INSTALL" ||
       extension.startupReason === "ADDON_ENABLE"
@@ -889,7 +878,16 @@ SearchService.prototype = {
       if (this.defaultEngine.name == searchProvider.name) {
         return false;
       }
-      if (!(await this._canOverrideDefault(extension, engine._extensionID))) {
+      if (
+        !(await this._defaultOverrideAllowlist.canOverride(
+          extension,
+          engine._extensionID
+        ))
+      ) {
+        logConsole.debug(
+          "Allowing default engine to be set to app-provided.",
+          extension.id
+        );
         
         
         return true;
@@ -897,15 +895,26 @@ SearchService.prototype = {
       if (extension.startupReason === "ADDON_INSTALL") {
         
         engine.overrideWithExtension(params);
+        logConsole.debug(
+          "Allowing default engine to be set to app-provided and overridden.",
+          extension.id
+        );
         return true;
       }
     }
 
     if (
       engine.getAttr("overriddenBy") == extension.id &&
-      (await this._canOverrideDefault(extension, engine._extensionID))
+      (await this._defaultOverrideAllowlist.canOverride(
+        extension,
+        engine._extensionID
+      ))
     ) {
       engine.overrideWithExtension(params);
+      logConsole.debug(
+        "Re-enabling overriding of core extension by",
+        extension.id
+      );
       return true;
     }
 
@@ -3882,5 +3891,82 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/widget/idleservice;1",
   "nsIIdleService"
 );
+
+
+
+
+class SearchDefaultOverrideAllowlistHandler {
+  
+
+
+
+  constructor(listener) {
+    this._remoteConfig = RemoteSettings(SearchUtils.SETTINGS_ALLOWLIST_KEY);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async canOverride(extension, appProvidedExtensionId) {
+    const overrideTable = await this._getAllowlist();
+
+    let entry = overrideTable.find(e => e.thirdPartyId == extension.id);
+    if (!entry) {
+      return false;
+    }
+
+    if (appProvidedExtensionId != entry.overridesId) {
+      return false;
+    }
+
+    let searchProvider =
+      extension.manifest.chrome_settings_overrides.search_provider;
+
+    return entry.urls.some(
+      e =>
+        searchProvider.search_url == e.search_url &&
+        searchProvider.search_form == e.search_form &&
+        searchProvider.search_url_get_params == e.search_url_get_params &&
+        searchProvider.search_url_post_params == e.search_url_post_params
+    );
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async _getAllowlist() {
+    let result = [];
+    try {
+      result = await this._remoteConfig.get();
+    } catch (ex) {
+      
+      
+      Cu.reportError(ex);
+    }
+    logConsole.debug("Allow list is:", result);
+    return result;
+  }
+}
 
 var EXPORTED_SYMBOLS = ["SearchService"];
