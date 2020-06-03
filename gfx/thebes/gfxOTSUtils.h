@@ -129,10 +129,16 @@ class MOZ_STACK_CLASS gfxOTSContext : public ots::OTSContext {
   }
 
   static size_t GuessSanitizedFontSize(size_t aLength,
-                                       gfxUserFontType aFontType) {
+                                       gfxUserFontType aFontType,
+                                       bool aStrict = true) {
     switch (aFontType) {
       case GFX_USERFONT_UNKNOWN:
-        return 0;
+        
+        
+        
+        
+        
+        return aStrict || !aLength ? 0 : (aLength * 3) / 2;
       case GFX_USERFONT_WOFF:
         return aLength * 2;
       case GFX_USERFONT_WOFF2:
@@ -142,10 +148,11 @@ class MOZ_STACK_CLASS gfxOTSContext : public ots::OTSContext {
     }
   }
 
-  static size_t GuessSanitizedFontSize(const uint8_t* aData, size_t aLength) {
+  static size_t GuessSanitizedFontSize(const uint8_t* aData, size_t aLength,
+                                       bool aStrict = true) {
     gfxUserFontType fontType =
         gfxFontUtils::DetermineFontDataType(aData, aLength);
-    return GuessSanitizedFontSize(aLength, fontType);
+    return GuessSanitizedFontSize(aLength, fontType, aStrict);
   }
 
  private:
