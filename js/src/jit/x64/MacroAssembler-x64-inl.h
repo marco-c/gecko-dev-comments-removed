@@ -759,53 +759,6 @@ void MacroAssembler::anyTrueSimd128(FloatRegister src, Register dest) {
   cmovCCl(NonZero, one, dest);
 }
 
-
-
-void MacroAssembler::allTrueInt8x16(FloatRegister src, Register dest) {
-  ScratchSimd128Scope xtmp(*this);
-  
-  vpxor(xtmp, xtmp, xtmp);
-  
-  
-  vpcmpeqb(Operand(src), xtmp, xtmp);
-  
-  vpmovmskb(xtmp, dest);
-  
-  testl(dest, dest);
-  setCC(Zero, dest);
-  movzbl(dest, dest);
-}
-
-void MacroAssembler::allTrueInt16x8(FloatRegister src, Register dest) {
-  ScratchSimd128Scope xtmp(*this);
-  
-  vpxor(xtmp, xtmp, xtmp);
-  
-  
-  vpcmpeqw(Operand(src), xtmp, xtmp);
-  
-  vpmovmskb(xtmp, dest);
-  
-  testl(dest, dest);
-  setCC(Zero, dest);
-  movzbl(dest, dest);
-}
-
-void MacroAssembler::allTrueInt32x4(FloatRegister src, Register dest) {
-  ScratchSimd128Scope xtmp(*this);
-  
-  vpxor(xtmp, xtmp, xtmp);
-  
-  
-  vpcmpeqd(Operand(src), xtmp, xtmp);
-  
-  vpmovmskb(xtmp, dest);
-  
-  testl(dest, dest);
-  setCC(Zero, dest);
-  movzbl(dest, dest);
-}
-
 void MacroAssembler::mulInt64x2(FloatRegister rhs, FloatRegister lhsDest,
                                 Register64 temp) {
   ScratchRegisterScope t1(*this);

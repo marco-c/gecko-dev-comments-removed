@@ -1212,6 +1212,53 @@ void MacroAssembler::shuffleInt8x16(uint8_t lanes[16], FloatRegister rhs,
 
 
 
+void MacroAssembler::allTrueInt8x16(FloatRegister src, Register dest) {
+  ScratchSimd128Scope xtmp(*this);
+  
+  vpxor(xtmp, xtmp, xtmp);
+  
+  
+  vpcmpeqb(Operand(src), xtmp, xtmp);
+  
+  vpmovmskb(xtmp, dest);
+  
+  testl(dest, dest);
+  setCC(Zero, dest);
+  movzbl(dest, dest);
+}
+
+void MacroAssembler::allTrueInt16x8(FloatRegister src, Register dest) {
+  ScratchSimd128Scope xtmp(*this);
+  
+  vpxor(xtmp, xtmp, xtmp);
+  
+  
+  vpcmpeqw(Operand(src), xtmp, xtmp);
+  
+  vpmovmskb(xtmp, dest);
+  
+  testl(dest, dest);
+  setCC(Zero, dest);
+  movzbl(dest, dest);
+}
+
+void MacroAssembler::allTrueInt32x4(FloatRegister src, Register dest) {
+  ScratchSimd128Scope xtmp(*this);
+  
+  vpxor(xtmp, xtmp, xtmp);
+  
+  
+  vpcmpeqd(Operand(src), xtmp, xtmp);
+  
+  vpmovmskb(xtmp, dest);
+  
+  testl(dest, dest);
+  setCC(Zero, dest);
+  movzbl(dest, dest);
+}
+
+
+
 void MacroAssembler::swizzleInt8x16(FloatRegister rhs, FloatRegister lhsDest,
                                     FloatRegister temp) {
   ScratchSimd128Scope scratch(*this);
