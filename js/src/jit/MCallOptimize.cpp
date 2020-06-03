@@ -675,6 +675,32 @@ IonBuilder::InliningResult IonBuilder::inlineNativeGetter(CallInfo& callInfo,
   }
 
   
+  if (DataViewObject::isOriginalByteLengthGetter(native)) {
+    const JSClass* clasp = thisTypes->getKnownClass(constraints());
+    if (clasp != &DataViewObject::class_) {
+      return InliningStatus_NotInlined;
+    }
+
+    auto* length = MArrayBufferViewLength::New(alloc(), thisArg);
+    current->add(length);
+    current->push(length);
+    return InliningStatus_Inlined;
+  }
+
+  
+  if (DataViewObject::isOriginalByteOffsetGetter(native)) {
+    const JSClass* clasp = thisTypes->getKnownClass(constraints());
+    if (clasp != &DataViewObject::class_) {
+      return InliningStatus_NotInlined;
+    }
+
+    auto* byteOffset = MArrayBufferViewByteOffset::New(alloc(), thisArg);
+    current->add(byteOffset);
+    current->push(byteOffset);
+    return InliningStatus_Inlined;
+  }
+
+  
   RegExpFlags mask = RegExpFlag::NoFlags;
   if (RegExpObject::isOriginalFlagGetter(native, &mask)) {
     const JSClass* clasp = thisTypes->getKnownClass(constraints());
