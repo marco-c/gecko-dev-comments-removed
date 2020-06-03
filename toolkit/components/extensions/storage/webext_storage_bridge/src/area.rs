@@ -298,6 +298,14 @@ impl StorageSyncArea {
         Ok(STORAGE_VERSION.try_into().unwrap())
     }
 
+    
+    
+    
+    xpcom_method!(get_allow_skipped_record => GetAllowSkippedRecord() -> bool);
+    fn get_allow_skipped_record(&self) -> Result<bool> {
+        Ok(true)
+    }
+
     xpcom_method!(
         get_last_sync => GetLastSync(
             callback: *const mozIBridgedSyncEngineCallback

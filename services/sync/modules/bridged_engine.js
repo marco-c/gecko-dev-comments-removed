@@ -254,8 +254,16 @@ BridgedEngine.prototype = {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
   get allowSkippedRecord() {
-    return false;
+    return this._bridge.allowSkippedRecord;
   },
 
   
