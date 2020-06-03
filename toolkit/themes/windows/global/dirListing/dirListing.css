@@ -35,6 +35,11 @@ a:hover {
   text-decoration: underline;
 }
 
+
+td:first-child > a {
+  white-space: pre;
+}
+
 p {
   font-size: 110%;
 }
