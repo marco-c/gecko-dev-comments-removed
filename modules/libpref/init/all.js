@@ -2295,6 +2295,8 @@ pref("security.notification_enable_delay", 500);
   pref("security.disallow_non_local_systemprincipal_in_tests", false);
 #endif
 
+pref("security.cancel_non_local_systemprincipal", true);
+
 
 pref("security.sri.enable", true);
 
