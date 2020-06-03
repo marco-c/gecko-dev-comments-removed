@@ -4,6 +4,10 @@
 
 "use strict";
 
+const {
+  ResourceWatcher,
+} = require("devtools/shared/resources/resource-watcher");
+
 module.exports = async function({ targetList, targetFront, onAvailable }) {
   
   
@@ -27,28 +31,29 @@ module.exports = async function({ targetList, targetFront, onAvailable }) {
   
   
   
-  const { messages } = await webConsoleFront.getCachedMessages([
+  let { messages } = await webConsoleFront.getCachedMessages([
     webConsoleFront.traits.newCacheStructure ? "LogMessage" : "PageError",
   ]);
 
+  
+  
+  messages = messages.filter(message => {
+    return (
+      webConsoleFront.traits.newCacheStructure || message._type === "LogMessage"
+    );
+  });
+
   for (const message of messages) {
     
-    
-    if (
-      !webConsoleFront.traits.newCacheStructure &&
-      message._type !== "LogMessage"
-    ) {
-      continue;
-    }
-
-    
     if (message._type) {
-      message.type = "logMessage";
       delete message._type;
     }
-
-    onAvailable(message);
+    message.resourceType = ResourceWatcher.TYPES.PLATFORM_MESSAGE;
   }
+  onAvailable(messages);
 
-  webConsoleFront.on("logMessage", onAvailable);
+  webConsoleFront.on("logMessage", message => {
+    message.resourceType = ResourceWatcher.TYPES.PLATFORM_MESSAGE;
+    onAvailable([message]);
+  });
 };

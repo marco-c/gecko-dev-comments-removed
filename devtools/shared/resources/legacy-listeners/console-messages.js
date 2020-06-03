@@ -4,6 +4,10 @@
 
 "use strict";
 
+const {
+  ResourceWatcher,
+} = require("devtools/shared/resources/resource-watcher");
+
 module.exports = async function({
   targetList,
   targetFront,
@@ -33,20 +37,25 @@ module.exports = async function({
 
   
   
-  const { messages } = await webConsoleFront.getCachedMessages(["ConsoleAPI"]);
+  let { messages } = await webConsoleFront.getCachedMessages(["ConsoleAPI"]);
 
-  for (let message of messages) {
+  messages = messages.map(message => {
+    
     
     if (message._type) {
-      
-      message = {
+      return {
         message,
-        type: "consoleAPICall",
+        resourceType: ResourceWatcher.TYPES.CONSOLE_MESSAGE,
       };
     }
-    onAvailable(message);
-  }
+    message.resourceType = ResourceWatcher.TYPES.CONSOLE_MESSAGE;
+    return message;
+  });
+  onAvailable(messages);
 
   
-  webConsoleFront.on("consoleAPICall", onAvailable);
+  webConsoleFront.on("consoleAPICall", message => {
+    message.resourceType = ResourceWatcher.TYPES.CONSOLE_MESSAGE;
+    onAvailable([message]);
+  });
 };

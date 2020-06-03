@@ -204,20 +204,21 @@ class ResourceWatcher {
 
 
 
+  _onResourceAvailable(targetFront, resources) {
+    for (const resource of resources) {
+      
+      if (!resource.targetFront) {
+        resource.targetFront = targetFront;
+      }
+      const { resourceType } = resource;
 
-
-
-  _onResourceAvailable(targetFront, resourceType, resource) {
-    
-    if (!resource.targetFront) {
-      resource.targetFront = targetFront;
+      this._availableListeners.emit(resourceType, {
+        
+        resourceType,
+        targetFront,
+        resource,
+      });
     }
-
-    this._availableListeners.emit(resourceType, {
-      resourceType,
-      targetFront,
-      resource,
-    });
   }
 
   
@@ -296,11 +297,7 @@ class ResourceWatcher {
 
 
   _watchResourcesForTarget(targetFront, resourceType) {
-    const onAvailable = this._onResourceAvailable.bind(
-      this,
-      targetFront,
-      resourceType
-    );
+    const onAvailable = this._onResourceAvailable.bind(this, targetFront);
     return LegacyListeners[resourceType]({
       targetList: this.targetList,
       targetFront,
@@ -381,7 +378,10 @@ const LegacyListeners = {
     }
 
     const webConsoleFront = await targetFront.getFront("console");
-    webConsoleFront.on("documentEvent", onAvailable);
+    webConsoleFront.on("documentEvent", event => {
+      event.resourceType = ResourceWatcher.TYPES.DOCUMENT_EVENT;
+      onAvailable([event]);
+    });
     await webConsoleFront.startListeners(["DocumentEvents"]);
   },
   [ResourceWatcher.TYPES
