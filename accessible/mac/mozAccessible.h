@@ -136,6 +136,17 @@ static const uintptr_t IS_PROXY = 1;
 
 - (void)invalidateState;
 
+
+
+
+- (BOOL)ignoreWithParent:(mozAccessible*)parent;
+
+
+
+
+
+- (BOOL)ignoreChild:(mozAccessible*)child;
+
 #pragma mark -
 
 
@@ -168,11 +179,6 @@ static const uintptr_t IS_PROXY = 1;
 
 
 - (id)accessibilityAttributeValue:(NSString*)attribute;
-
-
-
-
-- (NSUInteger)accessibilityArrayAttributeCount:(NSString*)attribute;
 
 - (BOOL)accessibilityIsAttributeSettable:(NSString*)attribute;
 - (void)accessibilitySetValue:(id)value forAttribute:(NSString*)attribute;
