@@ -305,19 +305,18 @@ NS_IMPL_ISUPPORTS(LowEventsReporter, nsIMemoryReporter)
 
 
 
-class nsJemallocFreeDirtyPagesRunnable final : public nsIRunnable {
-  ~nsJemallocFreeDirtyPagesRunnable() {}
+class nsJemallocFreeDirtyPagesRunnable final : public Runnable {
+  ~nsJemallocFreeDirtyPagesRunnable() = default;
 
 #if defined(XP_WIN)
   void OptimizeSystemHeap();
 #endif
 
  public:
-  NS_DECL_ISUPPORTS
   NS_DECL_NSIRUNNABLE
-};
 
-NS_IMPL_ISUPPORTS(nsJemallocFreeDirtyPagesRunnable, nsIRunnable)
+  nsJemallocFreeDirtyPagesRunnable() : Runnable("nsJemallocFreeDirtyPagesRunnable") {}
+};
 
 NS_IMETHODIMP
 nsJemallocFreeDirtyPagesRunnable::Run() {
@@ -354,7 +353,7 @@ void nsJemallocFreeDirtyPagesRunnable::OptimizeSystemHeap() {
 
 
 class nsMemoryPressureWatcher final : public nsIObserver {
-  ~nsMemoryPressureWatcher() {}
+  ~nsMemoryPressureWatcher() = default;
 
  public:
   NS_DECL_ISUPPORTS
