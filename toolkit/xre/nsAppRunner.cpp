@@ -3596,6 +3596,13 @@ static void PR_CALLBACK ReadAheadDlls_ThreadStart(void* arg) {
   UniquePtr<wchar_t[]> greDir(static_cast<wchar_t*>(arg));
 
   
+  
+  
+  
+  
+  
+#  ifdef NIGHTLY_BUILD
+  
   ReadAheadPackagedDll(L"libegl.dll", greDir.get());
   ReadAheadPackagedDll(L"libGLESv2.dll", greDir.get());
   ReadAheadPackagedDll(L"nssckbi.dll", greDir.get());
@@ -3605,6 +3612,21 @@ static void PR_CALLBACK ReadAheadDlls_ThreadStart(void* arg) {
   
   ReadAheadSystemDll(L"DWrite.dll");
   ReadAheadSystemDll(L"D3DCompiler_47.dll");
+#  else
+  
+  
+  ReadAheadSystemDll(L"DataExchange.dll");
+  ReadAheadSystemDll(L"twinapi.appcore.dll");
+
+  
+  ReadAheadSystemDll(L"twinapi.dll");
+
+  
+  ReadAheadSystemDll(L"ExplorerFrame.dll");
+
+  
+  ReadAheadSystemDll(L"WinTypes.dll");
+#  endif
 }
 #endif
 
