@@ -43,8 +43,11 @@ def gradle(log, topsrcdir=None, topobjdir=None, tasks=[], extra_args=[], verbose
     from gradle import gradle_lock
 
     with gradle_lock(topobjdir, max_wait_seconds=GRADLE_LOCK_MAX_WAIT_SECONDS):
+        
+        
+        
         cmd_args = [sys.executable, os.path.join(topsrcdir, 'mach'),
-                    'gradle', '--verbose', '--'] + \
+                    'gradle', '--verbose', '-Pandroid-lint', '--'] + \
             tasks + \
             extra_args
 
