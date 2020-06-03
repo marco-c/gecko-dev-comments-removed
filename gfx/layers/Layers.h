@@ -897,7 +897,12 @@ class Layer {
 
 
 
-    CONTENT_BACKFACE_HIDDEN = 0x80
+    CONTENT_BACKFACE_HIDDEN = 0x80,
+
+    
+
+
+    CONTENT_SNAP_TO_GRID = 0x100
   };
   
 

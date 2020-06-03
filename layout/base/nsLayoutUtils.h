@@ -1056,6 +1056,13 @@ class nsLayoutUtils {
 
 
 
+
+  static bool ShouldSnapToGrid(const nsIFrame* aFrame);
+
+  
+
+
+
   static nsRect GetRectRelativeToFrame(mozilla::dom::Element* aElement,
                                        nsIFrame* aFrame);
 

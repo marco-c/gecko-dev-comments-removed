@@ -2592,6 +2592,11 @@ void nsLayoutUtils::PostTranslate(Matrix4x4& aTransform, const nsPoint& aOrigin,
   aTransform.PostTranslate(gfxOrigin);
 }
 
+bool nsLayoutUtils::ShouldSnapToGrid(const nsIFrame* aFrame) {
+  return !aFrame || !aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT) ||
+         aFrame->IsSVGOuterSVGAnonChildFrame();
+}
+
 
 
 bool nsLayoutUtils::FrameHasDisplayPort(nsIFrame* aFrame,

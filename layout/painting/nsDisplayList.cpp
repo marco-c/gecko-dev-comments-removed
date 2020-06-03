@@ -7579,14 +7579,6 @@ Matrix4x4 nsDisplayTransform::GetResultingTransformMatrix(
                                              aAppUnitsPerPixel, aFlags);
 }
 
-static bool ShouldRoundTransformOrigin(const nsIFrame* aFrame) {
-  
-  
-  
-  return !aFrame || !aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT) ||
-         aFrame->IsSVGOuterSVGAnonChildFrame();
-}
-
 Matrix4x4 nsDisplayTransform::GetResultingTransformMatrixInternal(
     const FrameTransformProperties& aProperties, TransformReferenceBox& aRefBox,
     const nsPoint& aOrigin, float aAppUnitsPerPixel, uint32_t aFlags) {
@@ -7606,7 +7598,7 @@ Matrix4x4 nsDisplayTransform::GetResultingTransformMatrixInternal(
       frame &&
       frame->IsSVGTransformed(&svgTransform, &parentsChildrenOnlyTransform);
 
-  bool shouldRound = ShouldRoundTransformOrigin(frame);
+  bool shouldRound = nsLayoutUtils::ShouldSnapToGrid(frame);
 
   
 
@@ -7925,7 +7917,7 @@ Matrix4x4 nsDisplayTransform::GetTransformForRendering(
       *aOutOrigin = LayoutDevicePoint::FromAppUnits(ToReferenceFrame(), scale);
 
       
-      if (ShouldRoundTransformOrigin(mFrame)) {
+      if (nsLayoutUtils::ShouldSnapToGrid(mFrame)) {
         aOutOrigin->Round();
       }
       return GetResultingTransformMatrix(mFrame, nsPoint(0, 0), scale,
