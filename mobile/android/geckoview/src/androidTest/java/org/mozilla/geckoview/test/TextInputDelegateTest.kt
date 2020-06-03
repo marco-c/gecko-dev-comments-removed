@@ -791,4 +791,24 @@ class TextInputDelegateTest : BaseSessionTest() {
 
         assertText("commit abc", ic, "abc")
     }
+
+    
+    @WithDisplay(width = 512, height = 512) 
+    @Test fun inputConnection_bug1593683() {
+        setupContent("")
+
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+
+        setComposingText(ic, "foo", 1)
+        assertTextAndSelectionAt("Can set the composing text", ic, "foo", 3)
+        
+        pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
+        pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
+        pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
+        assertSelection("IME caret is moved to top", ic, 0, 0,  false)
+
+        setComposingText(ic, "bar", 1)
+        finishComposingText(ic)
+        assertText("commit abc", ic, "bar")
+    }
 }
