@@ -176,7 +176,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-
   void ForceShutDown();
 
   
@@ -624,12 +623,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   Watchable<GraphTime>& CurrentTime() override;
 
-  
-
-
-
-  void InterruptJS();
-
   class TrackSet {
    public:
     class iterator {
@@ -909,15 +902,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-
-
-  bool mForceShutDownReceived = false;
-  
-
-
-
-
-  bool mInterruptJSCalled = false;
+  bool mForceShutDown;
 
   
 
@@ -931,14 +916,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   bool mPostedRunInStableStateEvent;
-
-  
-
-
-
-
-
-  JSContext* mJSContext = nullptr;
 
   
 

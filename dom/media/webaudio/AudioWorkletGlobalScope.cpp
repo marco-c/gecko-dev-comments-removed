@@ -40,10 +40,6 @@ AudioWorkletGlobalScope::AudioWorkletGlobalScope(AudioWorkletImpl* aImpl)
 
 bool AudioWorkletGlobalScope::WrapGlobalObject(
     JSContext* aCx, JS::MutableHandle<JSObject*> aReflector) {
-  
-  
-  mImpl->DestinationTrack()->Graph()->NotifyJSContext(aCx);
-
   JS::RealmOptions options;
 
   

@@ -1026,7 +1026,7 @@ class MediaTrackGraph {
   AbstractThread* AbstractMainThread();
 
   
-  void ForceShutDown();
+  static void DestroyNonRealtimeInstance(MediaTrackGraph* aGraph);
 
   virtual nsresult OpenAudioInput(CubebUtils::AudioDeviceID aID,
                                   AudioDataListener* aListener) = 0;
@@ -1095,12 +1095,6 @@ class MediaTrackGraph {
 
 
   void StartNonRealtimeProcessing(uint32_t aTicksToProcess);
-
-  
-
-
-
-  void NotifyJSContext(JSContext* aCx);
 
   
 
