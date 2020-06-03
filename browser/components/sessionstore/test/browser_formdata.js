@@ -26,8 +26,13 @@ add_task(async function test_formdata() {
     await promiseBrowserLoaded(browser);
 
     
-    await setInputValue(browser, { id: "txt", value: OUTER_VALUE });
-    await setInputValue(browser, { id: "txt", value: INNER_VALUE, frame: 0 });
+    await setPropertyOfFormField(browser, "#txt", "value", OUTER_VALUE);
+    await setPropertyOfFormField(
+      browser.browsingContext.children[0],
+      "#txt",
+      "value",
+      INNER_VALUE
+    );
 
     
     await promiseRemoveTabAndSessionState(tab);
@@ -84,7 +89,7 @@ add_task(async function test_url_check() {
   await promiseBrowserLoaded(browser);
 
   
-  function restoreStateWithURL(url) {
+  async function restoreStateWithURL(url) {
     let state = {
       entries: [{ url: URL, triggeringPrincipal_base64 }],
       formdata: { id: { input: VALUE } },
@@ -94,9 +99,8 @@ add_task(async function test_url_check() {
       state.formdata.url = url;
     }
 
-    return promiseTabState(tab, state).then(() =>
-      getInputValue(browser, "input")
-    );
+    await promiseTabState(tab, state);
+    return getPropertyOfFormField(browser, "#input", "value");
   }
 
   
@@ -203,7 +207,7 @@ add_task(async function test_design_mode() {
   await promiseTabRestored(tab);
 
   
-  let html = await getInnerHTML(browser);
+  let html = await getPropertyOfFormField(browser, "body", "innerHTML");
   let expected = "<h1>mmozilla</h1><script>document.designMode='on'</script>";
   is(html, expected, "editable document has been restored correctly");
 
@@ -214,22 +218,10 @@ add_task(async function test_design_mode() {
   await promiseTabRestored(tab);
 
   
-  html = await getInnerHTML(browser);
+  html = await getPropertyOfFormField(browser, "body", "innerHTML");
   expected = "<h1>mmozilla</h1><script>document.designMode='on'</script>";
   is(html, expected, "editable document has been restored correctly");
 
   
   gBrowser.removeTab(tab);
 });
-
-function getInputValue(browser, id) {
-  return sendMessage(browser, "ss-test:getInputValue", { id });
-}
-
-function setInputValue(browser, data) {
-  return sendMessage(browser, "ss-test:setInputValue", data);
-}
-
-function getInnerHTML(browser) {
-  return sendMessage(browser, "ss-test:getInnerHTML", { selector: "body" });
-}
