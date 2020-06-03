@@ -1149,7 +1149,7 @@ public class GeckoSession implements Parcelable {
         @WrapForJNI(calledFrom = "gecko")
         private GeckoResult<Boolean> onLoadRequest(final @NonNull String uri, final int windowType,
                                                    final int flags, final @Nullable String triggeringUri,
-                                                   final boolean hasUserGesture) {
+                                                   final boolean hasUserGesture, final boolean isTopLevel) {
             final GeckoSession session = (mOwner == null) ? null : mOwner.get();
             if (session == null) {
                 
@@ -1170,7 +1170,9 @@ public class GeckoSession implements Parcelable {
                     final String trigger = TextUtils.isEmpty(triggeringUri) ? null : triggeringUri;
                     final NavigationDelegate.LoadRequest req = new NavigationDelegate.LoadRequest(uri,
                             trigger, windowType, flags, hasUserGesture, false );
-                    final GeckoResult<AllowOrDeny> reqResponse = delegate.onLoadRequest(session, req);
+                    final GeckoResult<AllowOrDeny> reqResponse = isTopLevel ?
+                            delegate.onLoadRequest(session, req) :
+                            delegate.onSubframeLoadRequest(session, req);
 
                     if (reqResponse == null) {
                         res.complete(false);
@@ -3702,6 +3704,24 @@ public class GeckoSession implements Parcelable {
         @UiThread
         default @Nullable GeckoResult<AllowOrDeny> onLoadRequest(@NonNull GeckoSession session,
                                                                  @NonNull LoadRequest request) {
+            return null;
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+        @UiThread
+        default @Nullable GeckoResult<AllowOrDeny> onSubframeLoadRequest(@NonNull GeckoSession session,
+                                                                         @NonNull LoadRequest request) {
             return null;
         }
 
