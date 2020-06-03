@@ -426,11 +426,6 @@ pub struct FontInstance {
     pub render_mode: FontRenderMode,
     pub flags: FontInstanceFlags,
     pub color: ColorU,
-    pub transform_glyphs: bool,
-    
-    
-    
-    pub texture_padding: bool,
     
     
     pub size: FontSize,
@@ -469,8 +464,6 @@ impl FontInstance {
     ) -> Self {
         FontInstance {
             transform: FontTransform::identity(),
-            transform_glyphs: false,
-            texture_padding: false,
             color,
             size: base.size,
             base,
@@ -484,8 +477,6 @@ impl FontInstance {
     ) -> Self {
         FontInstance {
             transform: FontTransform::identity(),
-            transform_glyphs: false,
-            texture_padding: false,
             color: ColorU::new(0, 0, 0, 255),
             size: base.size,
             render_mode: base.render_mode,
@@ -494,12 +485,20 @@ impl FontInstance {
         }
     }
 
+    pub fn use_texture_padding(&self) -> bool {
+        self.flags.contains(FontInstanceFlags::TEXTURE_PADDING)
+    }
+
+    pub fn use_transform_glyphs(&self) -> bool {
+        self.flags.contains(FontInstanceFlags::TRANSFORM_GLYPHS)
+    }
+
     pub fn get_alpha_glyph_format(&self) -> GlyphFormat {
-        if !self.transform_glyphs { GlyphFormat::Alpha } else { GlyphFormat::TransformedAlpha }
+        if self.use_transform_glyphs() { GlyphFormat::TransformedAlpha } else { GlyphFormat::Alpha }
     }
 
     pub fn get_subpixel_glyph_format(&self) -> GlyphFormat {
-        if !self.transform_glyphs { GlyphFormat::Subpixel } else { GlyphFormat::TransformedSubpixel }
+        if self.use_transform_glyphs() { GlyphFormat::TransformedSubpixel } else { GlyphFormat::Subpixel }
     }
 
     pub fn disable_subpixel_aa(&mut self) {

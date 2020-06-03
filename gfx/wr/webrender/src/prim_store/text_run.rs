@@ -2,7 +2,7 @@
 
 
 
-use api::{ColorF, GlyphInstance, RasterSpace, Shadow};
+use api::{ColorF, FontInstanceFlags, GlyphInstance, RasterSpace, Shadow};
 use api::units::{LayoutToWorldTransform, LayoutVector2D, PictureRect};
 use crate::scene_building::{CreateShadow, IsVisible};
 use crate::frame_builder::FrameBuildingState;
@@ -248,6 +248,8 @@ impl TextRunPrimitive {
         
         
         
+        
+        
         let (use_subpixel_aa, transform_glyphs, texture_padding, oversized) = if raster_space != RasterSpace::Screen ||
             transform.has_perspective_component() || !transform.has_2d_inverse()
         {
@@ -309,20 +311,26 @@ impl TextRunPrimitive {
             snap_to_device.snap_vector(&self.reference_frame_relative_offset)
         };
 
+        let mut flags = specified_font.flags;
+        if transform_glyphs {
+            flags |= FontInstanceFlags::TRANSFORM_GLYPHS;
+        }
+        if texture_padding {
+            flags |= FontInstanceFlags::TEXTURE_PADDING;
+        }
+
         
         
         let cache_dirty =
             self.used_font.transform != font_transform ||
             self.used_font.size != device_font_size.into() ||
-            self.used_font.transform_glyphs != transform_glyphs ||
-            self.used_font.texture_padding != texture_padding;
+            self.used_font.flags != flags;
 
         
         self.used_font = FontInstance {
             transform: font_transform,
-            transform_glyphs,
-            texture_padding,
             size: device_font_size.into(),
+            flags,
             ..specified_font.clone()
         };
 
