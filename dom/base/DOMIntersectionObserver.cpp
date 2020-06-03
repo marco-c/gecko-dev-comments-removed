@@ -618,13 +618,10 @@ void DOMIntersectionObserver::Update(Document* aDocument,
     
     
     int32_t thresholdIndex = -1;
-
-    
     
     if (isIntersecting) {
       thresholdIndex = mThresholds.IndexOfFirstElementGt(intersectionRatio);
       if (thresholdIndex == 0) {
-        
         
         
         
@@ -638,14 +635,11 @@ void DOMIntersectionObserver::Update(Document* aDocument,
 
     
     if (target->UpdateIntersectionObservation(this, thresholdIndex)) {
-      
-      
-      
       QueueIntersectionObserverEntry(
           target, time,
           origin == BrowsingContextOrigin::Similar ? Some(rootBounds)
                                                    : Nothing(),
-          targetRect, intersectionRect, thresholdIndex > 0, intersectionRatio);
+          targetRect, intersectionRect, intersectionRatio);
     }
   }
 }
@@ -653,7 +647,7 @@ void DOMIntersectionObserver::Update(Document* aDocument,
 void DOMIntersectionObserver::QueueIntersectionObserverEntry(
     Element* aTarget, DOMHighResTimeStamp time, const Maybe<nsRect>& aRootRect,
     const nsRect& aTargetRect, const Maybe<nsRect>& aIntersectionRect,
-    bool aIsIntersecting, double aIntersectionRatio) {
+    double aIntersectionRatio) {
   RefPtr<DOMRect> rootBounds;
   if (aRootRect.isSome()) {
     rootBounds = new DOMRect(this);
@@ -667,7 +661,7 @@ void DOMIntersectionObserver::QueueIntersectionObserverEntry(
   }
   RefPtr<DOMIntersectionObserverEntry> entry = new DOMIntersectionObserverEntry(
       this, time, rootBounds.forget(), boundingClientRect.forget(),
-      intersectionRect.forget(), aIsIntersecting, aTarget,
+      intersectionRect.forget(), aIntersectionRect.isSome(), aTarget,
       aIntersectionRatio);
   mQueuedEntries.AppendElement(entry.forget());
 }
