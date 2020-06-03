@@ -4,6 +4,15 @@
 
 
 
+
+a {
+  color: var(--theme-highlight-blue);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+
+
 #storage-tree {
   min-width: 220px;
   max-width: 500px;
@@ -24,7 +33,12 @@
 }
 
 
+
+
 #storage-table {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   -moz-user-focus: normal;
 }
 

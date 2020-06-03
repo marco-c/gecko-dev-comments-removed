@@ -104,10 +104,11 @@ function TableWidget(node, options = {}) {
   this.afterScroll = this.afterScroll.bind(this);
   this.tbody.addEventListener("scroll", this.onScroll.bind(this));
 
-  this.placeholder = this.document.createXULElement("label");
+  
+  this.placeholder = this.document.createElement("div");
   this.placeholder.className = "plain table-widget-empty-text";
-  this.placeholder.setAttribute("flex", "1");
   this._parent.appendChild(this.placeholder);
+  this.setPlaceholder(this.emptyText);
 
   this.items = new Map();
   this.columns = new Map();
@@ -121,8 +122,6 @@ function TableWidget(node, options = {}) {
 
   if (initialColumns) {
     this.setColumns(initialColumns, uniqueId);
-  } else if (this.emptyText) {
-    this.setPlaceholderText(this.emptyText);
   }
 
   this.bindSelectedRow = id => {
@@ -658,8 +657,28 @@ TableWidget.prototype = {
   
 
 
-  setPlaceholderText: function(text) {
-    this.placeholder.setAttribute("value", text);
+
+
+
+
+
+
+  setPlaceholder: function(l10nID, learnMoreURL) {
+    if (learnMoreURL) {
+      let placeholderLink = this.placeholder.firstElementChild;
+      if (!placeholderLink) {
+        placeholderLink = this.document.createElement("a");
+        placeholderLink.setAttribute("target", "_blank");
+        placeholderLink.setAttribute("data-l10n-name", "learn-more-link");
+        this.placeholder.appendChild(placeholderLink);
+      }
+      placeholderLink.setAttribute("href", learnMoreURL);
+    } else {
+      
+      this.placeholder.firstElementChild?.remove();
+    }
+
+    this.document.l10n.setAttributes(this.placeholder, l10nID);
   },
 
   
@@ -955,7 +974,7 @@ TableWidget.prototype = {
       column.clear();
     }
     this.tbody.setAttribute("empty", "empty");
-    this.setPlaceholderText(this.emptyText);
+    this.setPlaceholder(this.emptyText);
 
     this.selectedRow = null;
 

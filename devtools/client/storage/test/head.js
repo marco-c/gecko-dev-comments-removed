@@ -545,9 +545,16 @@ async function selectTreeItem(ids) {
 
   
   info(`Selecting "${ids}".`);
-  const updated = gUI.once("store-objects-updated");
-  gUI.tree.selectedItem = ids;
-  await updated;
+  if (ids.length > 1) {
+    const updated = gUI.once("store-objects-updated");
+    gUI.tree.selectedItem = ids;
+    await updated;
+  } else {
+    
+    
+    
+    gUI.tree.selectedItem = ids;
+  }
 }
 
 
