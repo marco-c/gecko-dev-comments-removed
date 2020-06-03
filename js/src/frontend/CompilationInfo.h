@@ -29,6 +29,36 @@ using FunctionType = mozilla::Variant<JSFunction*, ScriptStencilBase>;
 
 
 
+struct ScopeContext {
+  
+  
+  bool allowNewTarget = false;
+  bool allowSuperProperty = false;
+  bool allowSuperCall = false;
+  bool allowArguments = true;
+
+  
+  
+  ThisBinding thisBinding = ThisBinding::Global;
+
+  
+  
+  bool inWith = false;
+
+  explicit ScopeContext(Scope* scope, JSObject* enclosingEnv = nullptr) {
+    computeAllowSyntax(scope);
+    computeThisBinding(scope, enclosingEnv);
+    computeInWith(scope);
+  }
+
+ private:
+  void computeAllowSyntax(Scope* scope);
+  void computeThisBinding(Scope* scope, JSObject* environment = nullptr);
+  void computeInWith(Scope* scope);
+};
+
+
+
 
 struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
   JSContext* cx;
@@ -39,6 +69,8 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
   AutoKeepAtoms keepAtoms;
 
   Directives directives;
+
+  ScopeContext scopeContext;
 
   
   
@@ -76,12 +108,15 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
 
   
   CompilationInfo(JSContext* cx, LifoAllocScope& alloc,
-                  const JS::ReadOnlyCompileOptions& options)
+                  const JS::ReadOnlyCompileOptions& options,
+                  Scope* enclosingScope = nullptr,
+                  JSObject* enclosingEnv = nullptr)
       : JS::CustomAutoRooter(cx),
         cx(cx),
         options(options),
         keepAtoms(cx),
         directives(options.forceStrictMode()),
+        scopeContext(enclosingScope, enclosingEnv),
         script(cx),
         lazy(cx),
         usedNames(cx),
