@@ -10,7 +10,7 @@ async function test() {
   waitForExplicitFinish(); 
   Harness.installConfirmCallback = confirm_install;
   Harness.installEndedCallback = install => {
-    install.cancel();
+    return install.addon.uninstall();
   };
   Harness.installsCompletedCallback = finish_test;
   Harness.finalContentEvent = "InstallComplete";
