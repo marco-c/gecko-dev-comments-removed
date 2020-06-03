@@ -2272,6 +2272,11 @@ var gBrowserInit = {
 
     scheduleIdleTask(() => {
       
+      gTabsPanel.init();
+    });
+
+    scheduleIdleTask(() => {
+      
       let reduceMotionQuery = window.matchMedia(
         "(prefers-reduced-motion: reduce)"
       );
