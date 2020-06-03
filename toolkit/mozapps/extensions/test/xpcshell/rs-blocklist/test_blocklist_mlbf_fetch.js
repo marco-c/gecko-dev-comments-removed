@@ -173,7 +173,9 @@ add_task(async function handle_database_corruption() {
   
   
 
-  await AddonTestUtils.loadBlocklistRawData({ extensionsMLBF: [] });
+  
+  
+  await AddonTestUtils.loadBlocklistRawData({ extensionsMLBF: [{}] });
   
   await checkBlocklistWorks();
 

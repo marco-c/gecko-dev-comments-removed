@@ -66,7 +66,10 @@ add_task(async function test_initialization() {
 
 
 add_task(async function test_without_mlbf() {
-  await AddonTestUtils.loadBlocklistRawData({ extensionsMLBF: [] });
+  
+  
+  
+  await AddonTestUtils.loadBlocklistRawData({ extensionsMLBF: [{}] });
   assertTelemetryScalars({
     "blocklist.mlbf_enabled": true,
     "blocklist.mlbf_stashes": true,
