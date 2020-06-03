@@ -1805,6 +1805,59 @@ nsISerialEventTarget* GetMainThreadSerialEventTarget();
 
 size_t GetNumberOfProcessors();
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+class LogTaskBase {
+ public:
+  LogTaskBase() = delete;
+
+  
+  static void LogDispatch(T* aEvent);
+
+  
+  
+  
+  
+  class MOZ_RAII Run {
+   public:
+    Run() = delete;
+    explicit Run(T* aEvent, bool aWillRunAgain = false);
+    ~Run();
+
+    
+    
+    void WillRunAgain() { mWillRunAgain = true; }
+
+   private:
+    T* mEvent;
+    bool mWillRunAgain = false;
+  };
+};
+
+typedef LogTaskBase<nsIRunnable> LogRunnable;
+
+
+
 }  
 
 #endif  

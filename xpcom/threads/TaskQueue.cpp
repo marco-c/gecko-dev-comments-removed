@@ -105,6 +105,7 @@ nsresult TaskQueue::DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
   
   uint32_t retainFlags = mShouldRetainFlags ? aFlags : 0;
 
+  LogRunnable::LogDispatch(aRunnable);
   mTasks.push({std::move(aRunnable), retainFlags});
 
   if (mIsRunning) {
@@ -198,22 +199,26 @@ nsresult TaskQueue::Runner::Run() {
   }
   MOZ_ASSERT(event.event);
 
-  
-  
-  
-  
-  
   {
-    AutoTaskGuard g(mQueue);
-    event.event->Run();
-  }
+    LogRunnable::Run log(event.event);
 
-  
-  
-  
-  
-  
-  event.event = nullptr;
+    
+    
+    
+    
+    
+    {
+      AutoTaskGuard g(mQueue);
+      event.event->Run();
+    }
+
+    
+    
+    
+    
+    
+    event.event = nullptr;
+  }
 
   {
     MonitorAutoLock mon(mQueue->mQueueMonitor);

@@ -250,7 +250,11 @@ class ThrottledEventQueue::Inner final : public nsISupports {
     }
 
     
+    LogRunnable::Run log(event);
     Unused << event->Run();
+
+    
+    event = nullptr;
   }
 
  public:
@@ -343,7 +347,9 @@ class ThrottledEventQueue::Inner final : public nsISupports {
 
     
     
-    mEventQueue.PutEvent(std::move(aEvent), EventQueuePriority::Normal, lock);
+    nsCOMPtr<nsIRunnable> event(aEvent);
+    LogRunnable::LogDispatch(event);
+    mEventQueue.PutEvent(event.forget(), EventQueuePriority::Normal, lock);
     return NS_OK;
   }
 

@@ -95,7 +95,9 @@ nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
       spawnThread = true;
     }
 
-    mEvents.PutEvent(std::move(aEvent), EventQueuePriority::Normal, lock);
+    nsCOMPtr<nsIRunnable> event(aEvent);
+    LogRunnable::LogDispatch(event);
+    mEvents.PutEvent(event.forget(), EventQueuePriority::Normal, lock);
     mEventsAvailable.Notify();
     stackSize = mStackSize;
   }
@@ -294,7 +296,10 @@ nsThreadPool::Run() {
       
       current->SetRunningEventDelay(delay, TimeStamp::Now());
 
+      LogRunnable::Run log(event);
       event->Run();
+      
+      event = nullptr;
     }
   } while (!exitThread);
 

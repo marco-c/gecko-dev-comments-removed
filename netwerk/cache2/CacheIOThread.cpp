@@ -308,6 +308,8 @@ nsresult CacheIOThread::DispatchInternal(
   }
 #endif
 
+  LogRunnable::LogDispatch(runnable.get());
+
   if (NS_WARN_IF(!runnable)) return NS_ERROR_NULL_POINTER;
 
   mMonitor.AssertCurrentThreadOwns();
@@ -531,6 +533,8 @@ void CacheIOThread::LoopOneLevel(uint32_t aLevel) {
       
       mRerunCurrentEvent = false;
 
+      LogRunnable::Run log(events[index].get());
+
       events[index]->Run();
 
       MOZ_ASSERT(mBlockingIOWatcher);
@@ -539,6 +543,7 @@ void CacheIOThread::LoopOneLevel(uint32_t aLevel) {
       if (mRerunCurrentEvent) {
         
         
+        log.WillRunAgain();
         returnEvents = true;
         break;
       }

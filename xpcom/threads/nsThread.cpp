@@ -1068,10 +1068,12 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
 
   if (mIsInLocalExecutionMode) {
     EventQueuePriority priority;
-    if (const nsCOMPtr<nsIRunnable> event =
+    if (nsCOMPtr<nsIRunnable> event =
             mEvents->GetEvent(reallyWait, &priority)) {
       *aResult = true;
+      LogRunnable::Run log(event);
       event->Run();
+      event = nullptr;
     } else {
       *aResult = false;
     }
@@ -1156,6 +1158,8 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
 
       LOG(("THRD(%p) running [%p]\n", this, event.get()));
 
+      LogRunnable::Run log(event);
+
       
       
       DelayForChaosMode(ChaosFeature::TaskRunning, 1000);
@@ -1209,6 +1213,9 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
       mEvents->DidRunEvent();
 
       mPerformanceCounterState.RunnableDidRun(std::move(snapshot));
+
+      
+      event = nullptr;
     } else {
       mLastEventDelay = TimeDuration();
       mLastEventStart = TimeStamp();
