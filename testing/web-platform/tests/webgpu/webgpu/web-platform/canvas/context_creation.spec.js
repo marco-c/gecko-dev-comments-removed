@@ -2,11 +2,11 @@
 
 
 
-export const description = ``;
+export const description = '';
 import { Fixture } from '../../../common/framework/fixture.js';
-import { TestGroup } from '../../../common/framework/test_group.js';
-export const g = new TestGroup(Fixture);
-g.test('canvas element getContext returns GPUCanvasContext', async t => {
+import { makeTestGroup } from '../../../common/framework/test_group.js';
+export const g = makeTestGroup(Fixture);
+g.test('canvas_element_getContext_returns_GPUCanvasContext').fn(async t => {
   if (typeof document === 'undefined') {
     
     t.skip('DOM is not available to create canvas element');

@@ -2,90 +2,300 @@
 
 
 
-import { stringifyPublicParams } from './params_utils.js';
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+import { compareQueries, Ordering } from './query/compare.js';
+import { TestQueryMultiCase, TestQuerySingleCase, TestQueryMultiFile, TestQueryMultiTest } from './query/query.js';
+import { stringifySingleParam } from './query/stringify_params.js';
+import { assert } from './util/util.js'; 
 
 
-function* iteratePath(path, terminator) {
-  const parts = path.split('/');
 
-  if (parts.length > 1) {
-    let partial = parts[0] + '/';
-    yield partial;
 
-    for (let i = 1; i < parts.length - 1; ++i) {
-      partial += parts[i] + '/';
-      yield partial;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export class TestTree {
+  constructor(root) {
+    _defineProperty(this, "root", void 0);
+
+    this.root = root;
+  }
+
+  iterateCollapsedQueries() {
+    return TestTree.iterateSubtreeCollapsedQueries(this.root);
+  }
+
+  iterateLeaves() {
+    return TestTree.iterateSubtreeLeaves(this.root);
+  }
+
+  toString() {
+    return TestTree.subtreeToString('(root)', this.root, '');
+  }
+
+  static *iterateSubtreeCollapsedQueries(subtree) {
+    for (const [, child] of subtree.children) {
+      if ('children' in child && !child.collapsible) {
+        yield* TestTree.iterateSubtreeCollapsedQueries(child);
+      } else {
+        yield child.query;
+      }
+    }
+  }
+
+  static *iterateSubtreeLeaves(subtree) {
+    for (const [, child] of subtree.children) {
+      if ('children' in child) {
+        yield* TestTree.iterateSubtreeLeaves(child);
+      } else {
+        yield child;
+      }
+    }
+  }
+
+  static subtreeToString(name, tree, indent) {
+    const collapsible = 'run' in tree ? '>' : tree.collapsible ? '+' : '-';
+    let s = indent + `${collapsible} ${JSON.stringify(name)} => ` + `${tree.query}        ${JSON.stringify(tree.query)}`;
+
+    if ('children' in tree) {
+      if (tree.description !== undefined) {
+        s += indent + `\n    | ${JSON.stringify(tree.description)}`;
+      }
+
+      for (const [name, child] of tree.children) {
+        s += '\n' + TestTree.subtreeToString(name, child, indent + '  ');
+      }
+    }
+
+    return s;
+  }
+
+} 
+
+export async function loadTreeForQuery(loader, queryToLoad, subqueriesToExpand) {
+  const suite = queryToLoad.suite;
+  const specs = await loader.listing(suite);
+  const subqueriesToExpandEntries = Array.from(subqueriesToExpand.entries());
+  const seenSubqueriesToExpand = new Array(subqueriesToExpand.length);
+  seenSubqueriesToExpand.fill(false);
+
+  const isCollapsible = subquery => subqueriesToExpandEntries.every(([i, toExpand]) => {
+    const ordering = compareQueries(toExpand, subquery); 
+
+    if (ordering === Ordering.Equal) seenSubqueriesToExpand[i] = true;
+    return ordering !== Ordering.StrictSubset;
+  }); 
+  
+  
+  
+
+
+  let foundCase = false; 
+
+  const subtreeL0 = makeTreeForSuite(suite);
+  isCollapsible(subtreeL0.query); 
+
+  for (const entry of specs) {
+    if (entry.file.length === 0 && 'readme' in entry) {
+      
+      assert(subtreeL0.description === undefined);
+      subtreeL0.description = entry.readme.trim();
+      continue;
+    }
+
+    {
+      const queryL1 = new TestQueryMultiFile(suite, entry.file);
+      const orderingL1 = compareQueries(queryL1, queryToLoad);
+
+      if (orderingL1 === Ordering.Unordered) {
+        
+        continue;
+      }
+    }
+
+    if ('readme' in entry) {
+      
+      
+      
+      
+      
+      const readmeSubtree = addSubtreeForDirPath(subtreeL0, entry.file);
+      assert(readmeSubtree.description === undefined);
+      readmeSubtree.description = entry.readme.trim();
+      continue;
     } 
 
 
-    if (parts[parts.length - 1] === '') {
-      return;
+    const spec = await loader.importSpecFile(queryToLoad.suite, entry.file);
+    const description = spec.description.trim(); 
+
+    const subtreeL1 = addSubtreeForFilePath(subtreeL0, entry.file, description, isCollapsible); 
+    
+
+    for (const t of spec.g.iterate()) {
+      {
+        const queryL3 = new TestQuerySingleCase(suite, entry.file, t.id.test, t.id.params);
+        const orderingL3 = compareQueries(queryL3, queryToLoad);
+
+        if (orderingL3 === Ordering.Unordered || orderingL3 === Ordering.StrictSuperset) {
+          
+          continue;
+        }
+      } 
+
+      const subtreeL2 = addSubtreeForTestPath(subtreeL1, t.id.test, isCollapsible); 
+
+      addLeafForCase(subtreeL2, t, isCollapsible);
+      foundCase = true;
     }
   }
 
-  yield path + terminator;
+  const tree = new TestTree(subtreeL0);
+
+  for (const [i, sq] of subqueriesToExpandEntries) {
+    const seen = seenSubqueriesToExpand[i];
+    assert(seen, `subqueriesToExpand entry did not match anything \
+(can happen due to overlap with another subquery): ${sq.toString()}`);
+  }
+
+  assert(foundCase, 'Query does not match any cases'); 
+
+  return tree;
 }
 
-export function treeFromFilterResults(log, listing) {
-  function getOrInsert(n, k) {
-    const children = n.children;
-
-    if (children.has(k)) {
-      return children.get(k);
-    }
-
-    const v = {
-      children: new Map()
-    };
-    children.set(k, v);
-    return v;
-  }
-
-  const tree = {
-    children: new Map()
+function makeTreeForSuite(suite) {
+  return {
+    query: new TestQueryMultiFile(suite, []),
+    children: new Map(),
+    collapsible: false
   };
+}
 
-  for (const f of listing) {
-    const files = getOrInsert(tree, f.id.suite + ':');
+function addSubtreeForDirPath(tree, file) {
+  const subqueryFile = []; 
+  
 
-    if (f.id.path === '') {
-      
-      files.description = f.spec.description.trim();
-      continue;
-    }
-
-    let tests = files;
-
-    for (const path of iteratePath(f.id.path, ':')) {
-      tests = getOrInsert(tests, f.id.suite + ':' + path);
-    }
-
-    if (f.spec.description) {
-      
-      tests.description = f.spec.description.trim();
-    }
-
-    if (!('g' in f.spec)) {
-      
-      continue;
-    }
-
-    const [tRec] = log.record(f.id);
-    const fId = f.id.suite + ':' + f.id.path;
-
-    for (const t of f.spec.g.iterate(tRec)) {
-      let cases = tests;
-
-      for (const path of iteratePath(t.id.test, '~')) {
-        cases = getOrInsert(cases, fId + ':' + path);
-      }
-
-      const p = stringifyPublicParams(t.id.params);
-      cases.children.set(fId + ':' + t.id.test + '=' + p, {
-        runCase: t
-      });
-    }
+  for (const part of file) {
+    subqueryFile.push(part);
+    tree = getOrInsertSubtree(part, tree, () => {
+      const query = new TestQueryMultiFile(tree.query.suite, subqueryFile);
+      return {
+        query,
+        collapsible: false
+      };
+    });
   }
 
   return tree;
+}
+
+function addSubtreeForFilePath(tree, file, description, checkCollapsible) {
+  
+  
+  tree = addSubtreeForDirPath(tree, file); 
+
+  const subtree = getOrInsertSubtree('', tree, () => {
+    const query = new TestQueryMultiTest(tree.query.suite, tree.query.filePathParts, []);
+    return {
+      query,
+      description,
+      collapsible: checkCollapsible(query)
+    };
+  });
+  return subtree;
+}
+
+function addSubtreeForTestPath(tree, test, isCollapsible) {
+  const subqueryTest = []; 
+  
+
+  for (const part of test) {
+    subqueryTest.push(part);
+    tree = getOrInsertSubtree(part, tree, () => {
+      const query = new TestQueryMultiTest(tree.query.suite, tree.query.filePathParts, subqueryTest);
+      return {
+        query,
+        collapsible: isCollapsible(query)
+      };
+    });
+  } 
+
+
+  return getOrInsertSubtree('', tree, () => {
+    const query = new TestQueryMultiCase(tree.query.suite, tree.query.filePathParts, subqueryTest, {});
+    return {
+      query,
+      collapsible: isCollapsible(query)
+    };
+  });
+}
+
+function addLeafForCase(tree, t, checkCollapsible) {
+  const query = tree.query;
+  let name = '';
+  const subqueryParams = {}; 
+  
+
+  for (const [k, v] of Object.entries(t.id.params)) {
+    name = stringifySingleParam(k, v);
+    subqueryParams[k] = v;
+    tree = getOrInsertSubtree(name, tree, () => {
+      const subquery = new TestQueryMultiCase(query.suite, query.filePathParts, query.testPathParts, subqueryParams);
+      return {
+        query: subquery,
+        collapsible: checkCollapsible(subquery)
+      };
+    });
+  } 
+
+
+  const subquery = new TestQuerySingleCase(query.suite, query.filePathParts, query.testPathParts, subqueryParams);
+  checkCollapsible(subquery); 
+
+  insertLeaf(tree, subquery, t);
+}
+
+function getOrInsertSubtree(key, parent, createSubtree) {
+  let v;
+  const child = parent.children.get(key);
+
+  if (child !== undefined) {
+    assert('children' in child); 
+
+    v = child;
+  } else {
+    v = { ...createSubtree(),
+      children: new Map()
+    };
+    parent.children.set(key, v);
+  }
+
+  return v;
+}
+
+function insertLeaf(parent, query, t) {
+  const key = '';
+  const leaf = {
+    query,
+    run: rec => t.run(rec)
+  };
+  assert(!parent.children.has(key));
+  parent.children.set(key, leaf);
 }

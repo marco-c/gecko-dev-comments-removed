@@ -7,7 +7,7 @@ Examples of writing CTS tests with various features.
 
 Start here when looking for examples of basic framework usage.
 `;
-import { TestGroup } from '../common/framework/test_group.js';
+import { makeTestGroup } from '../common/framework/test_group.js';
 import { GPUTest } from './gpu_test.js'; 
 
 
@@ -18,10 +18,10 @@ import { GPUTest } from './gpu_test.js';
 
 
 
-export const g = new TestGroup(GPUTest); 
+export const g = makeTestGroup(GPUTest); 
 
-g.test('test name', t => {});
-g.test('basic', t => {
+g.test('test_name').fn(t => {});
+g.test('basic').fn(t => {
   t.expect(true);
   t.expect(true, 'true should be true');
   t.shouldThrow( 
@@ -31,7 +31,7 @@ g.test('basic', t => {
   }, 
   'function should throw Error');
 });
-g.test('basic/async', async t => {
+g.test('basic,async').fn(async t => {
   
   t.shouldReject( 
   'TypeError', 
@@ -50,9 +50,7 @@ g.test('basic/async', async t => {
 
 
 
-g.test('basic/params', t => {
-  t.expect(t.params.x + t.params.y === t.params._result);
-}).params([{
+g.test('basic,params').params([{
   x: 2,
   y: 4,
   _result: 6
@@ -61,15 +59,17 @@ g.test('basic/params', t => {
   x: -10,
   y: 18,
   _result: 8
-}]); 
+}]).fn(t => {
+  t.expect(t.params.x + t.params.y === t.params._result);
+}); 
 
-g.test('gpu/async', async t => {
+g.test('gpu,async').fn(async t => {
   const fence = t.queue.createFence();
   t.queue.signal(fence, 2);
   await fence.onCompletion(1);
   t.expect(fence.getCompletedValue() === 2);
 });
-g.test('gpu/buffers', async t => {
+g.test('gpu,buffers').fn(async t => {
   const data = new Uint32Array([0, 1234, 0]);
   const [src, map] = t.device.createBufferMapped({
     size: 12,

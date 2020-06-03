@@ -4,38 +4,22 @@
 
 
 
-
-export function getStackTrace(e) {
+export function extractImportantStackTrace(e) {
   if (!e.stack) {
     return '';
   }
 
-  const parts = e.stack.split('\n');
-  const stack = [];
-  const moreStack = [];
-  let found = false;
-  const commonRegex = /[\/\\](webgpu|unittests)[\/\\]/;
+  const lines = e.stack.split('\n');
 
-  for (let i = 0; i < parts.length; ++i) {
-    const part = parts[i].trim();
-    const isSuites = commonRegex.test(part); 
+  for (let i = lines.length - 1; i >= 0; --i) {
+    const line = lines[i];
 
-    if (found && !isSuites) {
-      moreStack.push(part);
-    }
-
-    if (isSuites) {
-      if (moreStack.length) {
-        stack.push(...moreStack);
-        moreStack.length = 0;
-      }
-
-      stack.push(part);
-      found = true;
+    if (line.indexOf('.spec.') !== -1) {
+      return lines.slice(0, i + 1).join('\n');
     }
   }
 
-  return stack.join('\n');
+  return e.stack;
 } 
 
 

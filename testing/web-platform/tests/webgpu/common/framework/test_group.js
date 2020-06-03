@@ -4,12 +4,20 @@
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-import { allowedTestNameCharacters } from './allowed_characters.js';
-import { extractPublicParams, paramsEquals } from './params_utils.js';
-import { checkPublicParamType } from './url_query.js';
+import { extractPublicParams, publicParamsEquals } from './params_utils.js';
+import { kPathSeparator } from './query/separators.js';
+import { stringifyPublicParams } from './query/stringify_params.js';
+import { validQueryPart } from './query/validQueryPart.js';
 import { assert } from './util/util.js';
-const validNames = new RegExp('^[' + allowedTestNameCharacters + ']+$');
-export class TestGroup {
+export function makeTestGroup(fixture) {
+  return new TestGroup(fixture);
+} 
+
+export function makeTestGroupForUnitTesting(fixture) {
+  return new TestGroup(fixture);
+}
+
+class TestGroup {
   constructor(fixture) {
     _defineProperty(this, "fixture", void 0);
 
@@ -20,14 +28,13 @@ export class TestGroup {
     this.fixture = fixture;
   }
 
-  *iterate(log) {
+  *iterate() {
     for (const test of this.tests) {
-      yield* test.iterate(log);
+      yield* test.iterate();
     }
   }
 
   checkName(name) {
-    assert(validNames.test(name), `Invalid test name ${name}; must match [${validNames}]+`);
     assert( 
     
     name === decodeURIComponent(name), `Not decodeURIComponent-idempotent: ${name} !== ${decodeURIComponent(name)}`);
@@ -36,86 +43,98 @@ export class TestGroup {
   } 
 
 
-  test(name, fn) {
-    
-    assert(name.indexOf('_') === -1, 'Invalid test name ${name}: contains underscore (use space)');
-    name = name.replace(/ /g, '_');
+  test(name) {
     this.checkName(name);
-    const test = new Test(name, this.fixture, fn);
+    const parts = name.split(kPathSeparator);
+
+    for (const p of parts) {
+      assert(validQueryPart.test(p), `Invalid test name part ${p}; must match ${validQueryPart}`);
+    }
+
+    const test = new TestBuilder(parts, this.fixture);
     this.tests.push(test);
     return test;
   }
 
-} 
+  checkCaseNamesAndDuplicates() {
+    for (const test of this.tests) {
+      test.checkCaseNamesAndDuplicates();
+    }
+  }
 
-class Test {
-  constructor(name, fixture, fn) {
-    _defineProperty(this, "name", void 0);
+}
+
+class TestBuilder {
+  constructor(testPath, fixture) {
+    _defineProperty(this, "testPath", void 0);
 
     _defineProperty(this, "fixture", void 0);
 
-    _defineProperty(this, "fn", void 0);
+    _defineProperty(this, "testFn", void 0);
 
-    _defineProperty(this, "cases", null);
+    _defineProperty(this, "cases", undefined);
 
-    this.name = name;
+    this.testPath = testPath;
     this.fixture = fixture;
-    this.fn = fn;
   }
 
-  params(specs) {
-    assert(this.cases === null, 'test case is already parameterized');
-    const cases = Array.from(specs);
-    const seen = []; 
+  fn(fn) {
+    this.testFn = fn;
+  }
 
-    for (const spec of cases) {
-      const publicParams = extractPublicParams(spec); 
+  checkCaseNamesAndDuplicates() {
+    if (this.cases === undefined) {
+      return;
+    } 
+
+
+    const seen = [];
+
+    for (const testcase of this.cases) {
       
-
-      for (const v of Object.values(publicParams)) {
-        checkPublicParamType(v);
-      }
-
-      assert(!seen.some(x => paramsEquals(x, publicParams)), 'Duplicate test case params');
-      seen.push(publicParams);
+      const testcaseString = stringifyPublicParams(testcase);
+      assert(!seen.some(x => publicParamsEquals(x, testcase)), `Duplicate public test case params: ${testcaseString}`);
+      seen.push(testcase);
     }
-
-    this.cases = cases;
   }
 
-  *iterate(rec) {
-    for (const params of this.cases || [null]) {
-      yield new RunCaseSpecific(rec, this.name, params, this.fixture, this.fn);
+  params(casesIterable) {
+    assert(this.cases === undefined, 'test case is already parameterized');
+    this.cases = Array.from(casesIterable);
+    return this;
+  }
+
+  *iterate() {
+    assert(this.testFn !== undefined, 'internal error');
+
+    for (const params of this.cases || [{}]) {
+      yield new RunCaseSpecific(this.testPath, params, this.fixture, this.testFn);
     }
   }
 
 }
 
 class RunCaseSpecific {
-  constructor(recorder, test, params, fixture, fn) {
+  constructor(testPath, params, fixture, fn) {
     _defineProperty(this, "id", void 0);
 
     _defineProperty(this, "params", void 0);
-
-    _defineProperty(this, "recorder", void 0);
 
     _defineProperty(this, "fixture", void 0);
 
     _defineProperty(this, "fn", void 0);
 
     this.id = {
-      test,
-      params: params ? extractPublicParams(params) : null
+      test: testPath,
+      params: extractPublicParams(params)
     };
     this.params = params;
-    this.recorder = recorder;
     this.fixture = fixture;
     this.fn = fn;
   }
 
-  async run(debug) {
-    const [rec, res] = this.recorder.record(this.id.test, this.id.params);
-    rec.start(debug);
+  async run(rec) {
+    rec.start();
 
     try {
       const inst = new this.fixture(rec, this.params || {});
@@ -131,16 +150,11 @@ class RunCaseSpecific {
       
       
       
+      
       rec.threw(ex);
     }
 
     rec.finish();
-    return res;
-  }
-
-  injectResult(result) {
-    const [, res] = this.recorder.record(this.id.test, this.id.params);
-    Object.assign(res, result);
   }
 
 }
