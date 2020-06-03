@@ -74,17 +74,37 @@ void ProfileBuffer::CollectCodeLocation(
   if (aStr) {
     
     size_t strLen = strlen(aStr) + 1;  
-    for (size_t j = 0; j < strLen;) {
+    
+    
+    const bool tooBig = strLen > kMaxFrameKeyLength;
+    if (tooBig) {
+      strLen = kMaxFrameKeyLength;
+    }
+    char chars[ProfileBufferEntry::kNumChars];
+    for (size_t j = 0;; j += ProfileBufferEntry::kNumChars) {
       
-      char chars[ProfileBufferEntry::kNumChars];
       size_t len = ProfileBufferEntry::kNumChars;
-      if (j + len >= strLen) {
+      const bool last = j + len >= strLen;
+      if (last) {
+        
         len = strLen - j;
+        if (tooBig) {
+          
+          
+          len = std::max(len, size_t(4));
+          chars[len - 4] = '.';
+          chars[len - 3] = '.';
+          chars[len - 2] = '.';
+          chars[len - 1] = '\0';
+          
+          len -= 4;
+        }
       }
       memcpy(chars, &aStr[j], len);
-      j += ProfileBufferEntry::kNumChars;
-
       AddEntry(ProfileBufferEntry::DynamicStringFragment(chars));
+      if (last) {
+        break;
+      }
     }
   }
 
@@ -229,8 +249,6 @@ void ProfileBufferCollector::CollectProfilingStackFrame(
     
     if (ProfilerFeature::HasPrivacy(mFeatures) && !isChromeJSEntry) {
       dynamicString = "(private)";
-    } else if (strlen(dynamicString) >= ProfileBuffer::kMaxFrameKeyLength) {
-      dynamicString = "(too long)";
     }
   }
 
