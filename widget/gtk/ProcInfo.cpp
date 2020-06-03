@@ -82,24 +82,24 @@ class StatReader {
     nsresult rv = NS_OK;
     
     switch (aIndex) {
-      case 15:
+      case 13:
         
         
         aInfo.cpuUser = GetCPUTime(aToken, &rv);
         NS_ENSURE_SUCCESS(rv, rv);
         break;
-      case 16:
+      case 14:
         
         
         aInfo.cpuKernel = GetCPUTime(aToken, &rv);
         NS_ENSURE_SUCCESS(rv, rv);
         break;
-      case 24:
+      case 22:
         
         aInfo.virtualMemorySize = Get64Value(aToken, &rv);
         NS_ENSURE_SUCCESS(rv, rv);
         break;
-      case 25:
+      case 23:
         
         
         aInfo.residentSetSize = Get64Value(aToken, &rv);
