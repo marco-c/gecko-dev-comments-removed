@@ -10,21 +10,45 @@
 #include "FFmpegLibWrapper.h"
 #include "FFmpegDataDecoder.h"
 #include "SimpleMap.h"
+#ifdef MOZ_WAYLAND_USE_VAAPI
+#  include "mozilla/widget/WaylandDMABufSurface.h"
+#  include <list>
+#endif
 
 namespace mozilla {
 
 #ifdef MOZ_WAYLAND_USE_VAAPI
-class VAAPIFrameHolder {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class VAAPIFrameHolder final {
  public:
-  VAAPIFrameHolder(FFmpegLibWrapper* aLib, AVBufferRef* aVAAPIDeviceContext,
-                   AVBufferRef* aAVHWFramesContext, AVBufferRef* aHWFrame);
+  VAAPIFrameHolder(FFmpegLibWrapper* aLib, WaylandDMABufSurface* aSurface,
+                   AVCodecContext* aAVCodecContext, AVFrame* aAVFrame);
   ~VAAPIFrameHolder();
 
+  
+  
+  bool IsUsed() const { return mSurface->IsGlobalRefSet(); }
+
  private:
-  FFmpegLibWrapper* mLib;
-  AVBufferRef* mVAAPIDeviceContext;
+  const FFmpegLibWrapper* mLib;
+  const RefPtr<WaylandDMABufSurface> mSurface;
   AVBufferRef* mAVHWFramesContext;
-  AVBufferRef* mHWFrame;
+  AVBufferRef* mHWAVBuffer;
 };
 #endif
 
@@ -97,6 +121,8 @@ class FFmpegVideoDecoder<LIBAV_VER>
 
   MediaResult CreateImageVAAPI(int64_t aOffset, int64_t aPts, int64_t aDuration,
                                MediaDataDecoder::DecodedData& aResults);
+  void ReleaseUnusedVAAPIFrames();
+  void ReleaseAllVAAPIFrames();
 #endif
 
   
@@ -112,6 +138,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
   AVBufferRef* mVAAPIDeviceContext;
   const bool mDisableHardwareDecoding;
   VADisplay mDisplay;
+  std::list<UniquePtr<VAAPIFrameHolder>> mFrameHolders;
 #endif
   RefPtr<KnowsCompositor> mImageAllocator;
   RefPtr<ImageContainer> mImageContainer;
