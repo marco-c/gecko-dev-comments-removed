@@ -113,6 +113,9 @@ class BrowserConsole extends WebConsole {
       
       this._telemetry.toolClosed("browserconsole", -1, this);
 
+      
+      await Promise.all(this.ui.getAllProxies().map(proxy => proxy._connecter));
+
       await this.targetList.stopListening();
       await super.destroy();
       await this.currentTarget.destroy();
