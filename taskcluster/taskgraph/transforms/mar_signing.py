@@ -125,13 +125,13 @@ def make_task_description(config, jobs):
         else:
             upstream_artifacts = generate_complete_artifacts(dep_job, config.kind)
 
-        is_nightly = job.get(
-            'nightly',  
+        is_shippable = job.get(
+            'shippable',  
             dep_job.attributes.get(
-                'nightly',  
-                dep_job.attributes.get('shippable')))  
+                'shippable',  
+                dep_job.attributes.get('nightly')))  
         signing_cert_scope = get_signing_cert_scope_per_platform(
-            build_platform, is_nightly, config
+            build_platform, is_shippable, config
         )
 
         scopes = [signing_cert_scope]
