@@ -77,6 +77,13 @@ interface nsIAccessible : nsISupports
   
 
 
+
+
+  readonly attribute long long uniqueID;
+
+  
+
+
   readonly attribute Node DOMNode;
 
   
