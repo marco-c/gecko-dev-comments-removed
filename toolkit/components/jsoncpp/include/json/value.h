@@ -3,8 +3,8 @@
 
 
 
-#ifndef CPPTL_JSON_H_INCLUDED
-#define CPPTL_JSON_H_INCLUDED
+#ifndef JSON_H_INCLUDED
+#define JSON_H_INCLUDED
 
 #if !defined(JSON_IS_AMALGAMATION)
 #include "forwards.h"
@@ -21,20 +21,30 @@
 #endif
 #endif
 
+
+
+
+#if !defined(JSONCPP_TEMPLATE_DELETE)
+#if defined(__clang__) && defined(__apple_build_version__)
+#if __apple_build_version__ <= 8000042
+#define JSONCPP_TEMPLATE_DELETE
+#endif
+#elif defined(__clang__)
+#if __clang_major__ == 3 && __clang_minor__ <= 8
+#define JSONCPP_TEMPLATE_DELETE
+#endif
+#endif
+#if !defined(JSONCPP_TEMPLATE_DELETE)
+#define JSONCPP_TEMPLATE_DELETE = delete
+#endif
+#endif
+
 #include <array>
 #include <exception>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
-
-#ifndef JSON_USE_CPPTL_SMALLMAP
-#include <map>
-#else
-#include <cpptl/smallmap.h>
-#endif
-#ifdef JSON_USE_CPPTL
-#include <cpptl/forwards.h>
-#endif
 
 
 
@@ -57,8 +67,8 @@ namespace Json {
 class JSON_API Exception : public std::exception {
 public:
   Exception(String msg);
-  ~Exception() JSONCPP_NOEXCEPT override;
-  char const* what() const JSONCPP_NOEXCEPT override;
+  ~Exception() noexcept override;
+  char const* what() const noexcept override;
 
 protected:
   String msg_;
@@ -134,11 +144,6 @@ enum PrecisionType {
 
 
 
-
-
-
-
-
 class JSON_API StaticString {
 public:
   explicit StaticString(const char* czstring) : c_str_(czstring) {}
@@ -189,21 +194,21 @@ class JSON_API Value {
   friend class ValueIteratorBase;
 
 public:
-  typedef std::vector<String> Members;
-  typedef ValueIterator iterator;
-  typedef ValueConstIterator const_iterator;
-  typedef Json::UInt UInt;
-  typedef Json::Int Int;
+  using Members = std::vector<String>;
+  using iterator = ValueIterator;
+  using const_iterator = ValueConstIterator;
+  using UInt = Json::UInt;
+  using Int = Json::Int;
 #if defined(JSON_HAS_INT64)
-  typedef Json::UInt64 UInt64;
-  typedef Json::Int64 Int64;
+  using UInt64 = Json::UInt64;
+  using Int64 = Json::Int64;
 #endif 
-  typedef Json::LargestInt LargestInt;
-  typedef Json::LargestUInt LargestUInt;
-  typedef Json::ArrayIndex ArrayIndex;
+  using LargestInt = Json::LargestInt;
+  using LargestUInt = Json::LargestUInt;
+  using ArrayIndex = Json::ArrayIndex;
 
   
-  typedef std::string value_type;
+  using value_type = std::string;
 
 #if JSON_USE_NULLREF
   
@@ -287,11 +292,7 @@ private:
   };
 
 public:
-#ifndef JSON_USE_CPPTL_SMALLMAP
   typedef std::map<CZString, Value> ObjectValues;
-#else
-  typedef CppTL::SmallMap<CZString, Value> ObjectValues;
-#endif 
 #endif 
 
 public:
@@ -340,9 +341,6 @@ public:
 
   Value(const StaticString& value);
   Value(const String& value);
-#ifdef JSON_USE_CPPTL
-  Value(const CppTL::ConstString& value);
-#endif
   Value(bool value);
   Value(const Value& other);
   Value(Value&& other);
@@ -384,9 +382,6 @@ public:
 
 
   bool getString(char const** begin, char const** end) const;
-#ifdef JSON_USE_CPPTL
-  CppTL::ConstString asConstString() const;
-#endif
   Int asInt() const;
   UInt asUInt() const;
 #if defined(JSON_HAS_INT64)
@@ -413,8 +408,8 @@ public:
   bool isObject() const;
 
   
-  template <typename T> T as() const = delete;
-  template <typename T> bool is() const = delete;
+  template <typename T> T as() const JSONCPP_TEMPLATE_DELETE;
+  template <typename T> bool is() const JSONCPP_TEMPLATE_DELETE;
 
   bool isConvertibleTo(ValueType other) const;
 
@@ -426,7 +421,7 @@ public:
   bool empty() const;
 
   
-  JSONCPP_OP_EXPLICIT operator bool() const;
+  explicit operator bool() const;
 
   
   
@@ -468,8 +463,10 @@ public:
   
   Value& append(const Value& value);
   Value& append(Value&& value);
+
   
-  bool insert(ArrayIndex index, Value newValue);
+  bool insert(ArrayIndex index, const Value& newValue);
+  bool insert(ArrayIndex index, Value&& newValue);
 
   
   
@@ -498,13 +495,6 @@ public:
 
 
   Value& operator[](const StaticString& key);
-#ifdef JSON_USE_CPPTL
-  
-  Value& operator[](const CppTL::ConstString& key);
-  
-  
-  const Value& operator[](const CppTL::ConstString& key) const;
-#endif
   
   
   Value get(const char* key, const Value& defaultValue) const;
@@ -517,11 +507,6 @@ public:
   
   
   Value get(const String& key, const Value& defaultValue) const;
-#ifdef JSON_USE_CPPTL
-  
-  
-  Value get(const CppTL::ConstString& key, const Value& defaultValue) const;
-#endif
   
   
   
@@ -567,10 +552,6 @@ public:
   bool isMember(const String& key) const;
   
   bool isMember(const char* begin, const char* end) const;
-#ifdef JSON_USE_CPPTL
-  
-  bool isMember(const CppTL::ConstString& key) const;
-#endif
 
   
   
@@ -578,11 +559,6 @@ public:
   
   
   Members getMemberNames() const;
-
-  
-  
-  
-  
 
   
   JSONCPP_DEPRECATED("Use setComment(String const&) instead.")
@@ -706,11 +682,6 @@ template <> inline float Value::as<float>() const { return asFloat(); }
 template <> inline const char* Value::as<const char*>() const {
   return asCString();
 }
-#ifdef JSON_USE_CPPTL
-template <> inline CppTL::ConstString Value::as<CppTL::ConstString>() const {
-  return asConstString();
-}
-#endif
 
 
 
@@ -757,8 +728,8 @@ public:
   Value& make(Value& root) const;
 
 private:
-  typedef std::vector<const PathArgument*> InArgs;
-  typedef std::vector<PathArgument> Args;
+  using InArgs = std::vector<const PathArgument*>;
+  using Args = std::vector<PathArgument>;
 
   void makePath(const String& path, const InArgs& in);
   void addPathInArg(const String& path, const InArgs& in,
@@ -773,10 +744,10 @@ private:
 
 class JSON_API ValueIteratorBase {
 public:
-  typedef std::bidirectional_iterator_tag iterator_category;
-  typedef unsigned int size_t;
-  typedef int difference_type;
-  typedef ValueIteratorBase SelfType;
+  using iterator_category = std::bidirectional_iterator_tag;
+  using size_t = unsigned int;
+  using difference_type = int;
+  using SelfType = ValueIteratorBase;
 
   bool operator==(const SelfType& other) const { return isEqual(other); }
 
@@ -849,12 +820,12 @@ class JSON_API ValueConstIterator : public ValueIteratorBase {
   friend class Value;
 
 public:
-  typedef const Value value_type;
+  using value_type = const Value;
   
   
-  typedef const Value& reference;
-  typedef const Value* pointer;
-  typedef ValueConstIterator SelfType;
+  using reference = const Value&;
+  using pointer = const Value*;
+  using SelfType = ValueConstIterator;
 
   ValueConstIterator();
   ValueConstIterator(ValueIterator const& other);
@@ -900,12 +871,12 @@ class JSON_API ValueIterator : public ValueIteratorBase {
   friend class Value;
 
 public:
-  typedef Value value_type;
-  typedef unsigned int size_t;
-  typedef int difference_type;
-  typedef Value& reference;
-  typedef Value* pointer;
-  typedef ValueIterator SelfType;
+  using value_type = Value;
+  using size_t = unsigned int;
+  using difference_type = int;
+  using reference = Value&;
+  using pointer = Value*;
+  using SelfType = ValueIterator;
 
   ValueIterator();
   explicit ValueIterator(const ValueConstIterator& other);
@@ -960,4 +931,4 @@ inline void swap(Value& a, Value& b) { a.swap(b); }
 #pragma warning(pop)
 #endif 
 
-#endif
+#endif 

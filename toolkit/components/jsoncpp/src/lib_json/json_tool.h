@@ -71,7 +71,7 @@ enum {
 };
 
 
-typedef char UIntToStringBuffer[uintToStringBufferSize];
+using UIntToStringBuffer = char[uintToStringBufferSize];
 
 
 

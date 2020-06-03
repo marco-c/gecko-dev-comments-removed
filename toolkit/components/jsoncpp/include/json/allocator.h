@@ -3,8 +3,8 @@
 
 
 
-#ifndef CPPTL_JSON_ALLOCATOR_H_INCLUDED
-#define CPPTL_JSON_ALLOCATOR_H_INCLUDED
+#ifndef JSON_ALLOCATOR_H_INCLUDED
+#define JSON_ALLOCATOR_H_INCLUDED
 
 #include <cstring>
 #include <memory>
@@ -67,7 +67,7 @@ public:
   }
 
   
-  SecureAllocator() = default;
+  SecureAllocator() {}
   template <typename U> SecureAllocator(const SecureAllocator<U>&) {}
   template <typename U> struct rebind { using other = SecureAllocator<U>; };
 };

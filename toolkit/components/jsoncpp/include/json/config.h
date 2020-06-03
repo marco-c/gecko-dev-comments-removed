@@ -16,16 +16,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #ifndef JSON_USE_EXCEPTION
 #define JSON_USE_EXCEPTION 1
 #endif
@@ -40,28 +30,22 @@
 
 
 
-#ifdef JSON_IN_CPPTL
-#include <cpptl/config.h>
-#ifndef JSON_USE_CPPTL
-#define JSON_USE_CPPTL 1
-#endif
-#endif
 
-#ifdef JSON_IN_CPPTL
-#define JSON_API CPPTL_API
-#elif defined(JSON_DLL_BUILD)
+#if defined(JSON_DLL_BUILD)
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #define JSON_API __declspec(dllexport)
 #define JSONCPP_DISABLE_DLL_INTERFACE_WARNING
 #elif defined(__GNUC__) || defined(__clang__)
 #define JSON_API __attribute__((visibility("default")))
 #endif 
+
 #elif defined(JSON_DLL)
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #define JSON_API __declspec(dllimport)
 #define JSONCPP_DISABLE_DLL_INTERFACE_WARNING
 #endif 
 #endif 
+
 #if !defined(JSON_API)
 #define JSON_API
 #endif
@@ -89,20 +73,6 @@ extern JSON_API int msvc_pre1900_c99_snprintf(char* outBuf, size_t size,
 
 
 #define JSONCPP_OVERRIDE override
-
-#if __cplusplus >= 201103L
-#define JSONCPP_NOEXCEPT noexcept
-#define JSONCPP_OP_EXPLICIT explicit
-#elif defined(_MSC_VER) && _MSC_VER < 1900
-#define JSONCPP_NOEXCEPT throw()
-#define JSONCPP_OP_EXPLICIT explicit
-#elif defined(_MSC_VER) && _MSC_VER >= 1900
-#define JSONCPP_NOEXCEPT noexcept
-#define JSONCPP_OP_EXPLICIT explicit
-#else
-#define JSONCPP_NOEXCEPT throw()
-#define JSONCPP_OP_EXPLICIT
-#endif
 
 #ifdef __clang__
 #if __has_extension(attribute_deprecated_with_message)
@@ -135,23 +105,23 @@ extern JSON_API int msvc_pre1900_c99_snprintf(char* outBuf, size_t size,
 #endif 
 
 namespace Json {
-typedef int Int;
-typedef unsigned int UInt;
+using Int = int;
+using UInt = unsigned int;
 #if defined(JSON_NO_INT64)
-typedef int LargestInt;
-typedef unsigned int LargestUInt;
+using LargestInt = int;
+using LargestUInt = unsigned int;
 #undef JSON_HAS_INT64
 #else                 
 
 #if defined(_MSC_VER) 
-typedef __int64 Int64;
-typedef unsigned __int64 UInt64;
+using Int64 = __int64;
+using UInt64 = unsigned __int64;
 #else                 
-typedef int64_t Int64;
-typedef uint64_t UInt64;
+using Int64 = int64_t;
+using UInt64 = uint64_t;
 #endif                
-typedef Int64 LargestInt;
-typedef UInt64 LargestUInt;
+using LargestInt = Int64;
+using LargestUInt = UInt64;
 #define JSON_HAS_INT64
 #endif 
 
