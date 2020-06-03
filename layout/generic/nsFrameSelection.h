@@ -72,7 +72,7 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct {
 
   nsPeekOffsetStruct(
       nsSelectionAmount aAmount, nsDirection aDirection, int32_t aStartOffset,
-      nsPoint aDesiredPos, bool aJumpLines, bool aScrollViewStop,
+      nsPoint aDesiredCaretPos, bool aJumpLines, bool aScrollViewStop,
       bool aIsKeyboardSelect, bool aVisual, bool aExtend,
       ForceEditableRegion = ForceEditableRegion::No,
       mozilla::EWordMovementType aWordMovementType = mozilla::eDefaultBehavior,
@@ -111,7 +111,7 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct {
   
   
   
-  const nsPoint mDesiredPos;
+  const nsPoint mDesiredCaretPos;
 
   
   
@@ -820,7 +820,7 @@ class nsFrameSelection final {
   mozilla::Result<nsPeekOffsetStruct, nsresult> PeekOffsetForCaretMove(
       nsDirection aDirection, bool aContinueSelection,
       const nsSelectionAmount aAmount, CaretMovementStyle aMovementStyle,
-      const nsPoint& aDesiredPos) const;
+      const nsPoint& aDesiredCaretPos) const;
 
   
 
@@ -856,12 +856,12 @@ class nsFrameSelection final {
     }
   }
 
-  nsresult FetchDesiredPos(
-      nsPoint& aDesiredPos);  
-                              
-  void InvalidateDesiredPos();  
-                                
-  void SetDesiredPos(nsPoint aPos);  
+  nsresult FetchDesiredCaretPos(
+      nsPoint& aDesiredCaretPos);  
+                                   
+  void InvalidateDesiredCaretPos();  
+                                     
+  void SetDesiredCaretPos(nsPoint aPos);  
 
   bool IsBatching() const { return mBatching.mCounter > 0; }
 
@@ -1004,12 +1004,12 @@ class nsFrameSelection final {
   nsBidiLevel mKbdBidiLevel = NSBIDI_LTR;
 
   
-  struct DesiredPos {
+  struct DesiredCaretPos {
     nsPoint mValue;
     bool mIsSet = false;
   };
 
-  DesiredPos mDesiredPos;
+  DesiredCaretPos mDesiredCaretPos;
 
   struct DelayedMouseEvent {
     bool mIsValid = false;
