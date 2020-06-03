@@ -4,11 +4,6 @@
 
 
 
-var features = {
-  trackingSizes: "mozMemory" in performance,
-  showingGCs: "mozMemory" in performance,
-};
-
 
 var FrameTimer = class {
   constructor() {
@@ -28,24 +23,24 @@ var FrameTimer = class {
     return this.stopped != 0;
   }
 
-  start_recording(now = performance.now()) {
+  start_recording(now = gHost.now()) {
     this.start = this.prev = now;
   }
 
-  on_frame_finished(now = performance.now()) {
+  on_frame_finished(now = gHost.now()) {
     const delay = now - this.prev;
     this.prev = now;
     return delay;
   }
 
-  pause(now = performance.now()) {
+  pause(now = gHost.now()) {
     this.stopped = now;
     
     
     this.prev = now - this.prev;
   }
 
-  resume(now = performance.now()) {
+  resume(now = gHost.now()) {
     this.prev = now - this.prev;
     const stop_duration = now - this.stopped;
     this.start += stop_duration;
@@ -78,7 +73,7 @@ var FrameHistory = class {
     this.reset();
   }
 
-  start(now = performance.now()) {
+  start(now = gHost.now()) {
     this._frameTimer.start_recording(now);
   }
 
@@ -114,7 +109,7 @@ var FrameHistory = class {
     return this.findMax(this.delays);
   }
 
-  on_frame(now = performance.now()) {
+  on_frame(now = gHost.now()) {
     const delay = this._frameTimer.on_frame_finished(now);
 
     
@@ -124,23 +119,14 @@ var FrameHistory = class {
       sampleIndex++;
       var idx = sampleIndex % this._numSamples;
       this.delays[idx] = delay;
-      if (features.trackingSizes) {
-        this.gcBytes[idx] = performance.mozMemory.gc.gcBytes;
-        this.mallocBytes[idx] = performance.mozMemory.gc.zone.mallocBytes;
+      if (gHost.features.haveMemorySizes) {
+        this.gcBytes[idx] = gHost.gcBytes;
+        this.mallocBytes[idx] = gHost.mallocBytes;
       }
-      if (features.showingGCs) {
-        this.gcs[idx] = performance.mozMemory.gc.gcNumber;
-        this.minorGCs[idx] = performance.mozMemory.gc.minorGCCount;
-        this.majorGCs[idx] = performance.mozMemory.gc.majorGCCount;
-
-        
-        
-        
-        
-        
-        
-        this.slices[idx] =
-          performance.mozMemory.gc.sliceCount || performance.mozMemory.gc.gcNumber;
+      if (gHost.features.haveGCCounts) {
+        this.minorGCs[idx] = gHost.minorGCCount;
+        this.majorGCs[idx] = gHost.majorGCCount;
+        this.slices[idx] = gHost.GCSliceCount;
       }
     }
 
