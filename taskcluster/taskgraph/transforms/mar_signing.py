@@ -128,8 +128,7 @@ def make_task_description(config, jobs):
         is_shippable = job.get(
             'shippable',  
             dep_job.attributes.get(
-                'shippable',  
-                dep_job.attributes.get('nightly')))  
+                'shippable'))  
         signing_cert_scope = get_signing_cert_scope_per_platform(
             build_platform, is_shippable, config
         )
