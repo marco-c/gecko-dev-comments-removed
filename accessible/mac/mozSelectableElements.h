@@ -7,30 +7,103 @@
 #import "mozAccessible.h"
 
 @interface mozSelectableAccessible : mozAccessible
+
 - (NSArray*)selectableChildren;
-- (NSArray*)selectedChildren;
+
+
+- (void)moxSetSelectedChildren:(NSArray*)selectedChildren;
+
+
+- (NSArray*)moxSelectedChildren;
+
 @end
 
 @interface mozSelectableChildAccessible : mozAccessible
-@property(getter=isSelected) BOOL selected;
+
+
+- (NSNumber*)moxSelected;
+
+
+- (void)moxSetSelected:(NSNumber*)selected;
+
 @end
 
 @interface mozTabGroupAccessible : mozSelectableAccessible
+
+
+- (NSArray*)moxTabs;
+
+
+- (NSArray*)moxContents;
+
+
+- (id)moxValue;
+
 @end
 
 @interface mozTabAccessible : mozSelectableChildAccessible
+
+
+- (NSString*)moxRoleDescription;
+
+
+- (id)moxValue;
+
 @end
 
 @interface mozListboxAccessible : mozSelectableAccessible
+
+
+- (BOOL)ignoreChild:(mozAccessible*)child;
+
+
+- (BOOL)disableChild:(mozAccessible*)child;
+
+
+- (NSString*)moxOrientation;
+
 @end
 
 @interface mozOptionAccessible : mozSelectableChildAccessible
+
+
+- (NSString*)moxTitle;
+
+
+- (id)moxValue;
+
 @end
 
 @interface mozMenuAccessible : mozSelectableAccessible {
   BOOL mIsOpened;
 }
+
+
+- (NSString*)moxTitle;
+
+
+- (NSString*)moxLabel;
+
+
+- (void)moxPostNotification:(NSString*)notification;
+
+
+- (void)expire;
+
 @end
 
 @interface mozMenuItemAccessible : mozSelectableChildAccessible
+
+
+- (NSString*)moxLabel;
+
+
+- (NSString*)moxMenuItemMarkChar;
+
+
+- (NSNumber*)moxSelected;
+
+
+- (void)handleAccessibleEvent:(uint32_t)eventType;
+
 @end
