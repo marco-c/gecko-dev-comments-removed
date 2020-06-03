@@ -708,9 +708,12 @@ void Animation::CommitStyles(ErrorResult& aRv) {
   }
 
   
+  RefPtr<Document> doc = target.mElement->GetComposedDoc();
+
   
   
-  if (Document* doc = target.mElement->GetComposedDoc()) {
+  
+  if (doc) {
     doc->FlushPendingNotifications(FlushType::Frames);
   }
   if (!target.mElement->IsRendered()) {
