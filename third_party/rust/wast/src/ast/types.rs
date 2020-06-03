@@ -12,14 +12,7 @@ pub enum ValType<'a> {
     V128,
     I8,
     I16,
-    Funcref,
-    Anyref,
-    Nullref,
-    Exnref,
-    Ref(ast::Index<'a>),
-    Optref(ast::Index<'a>),
-    Eqref,
-    I31ref,
+    Ref(RefType<'a>),
     Rtt(ast::Index<'a>),
 }
 
@@ -49,52 +42,27 @@ impl<'a> Parse<'a> for ValType<'a> {
             Ok(ValType::I16)
         } else if l.peek::<kw::funcref>() {
             parser.parse::<kw::funcref>()?;
-            Ok(ValType::Funcref)
+            Ok(ValType::Ref(RefType::Func))
         } else if l.peek::<kw::anyfunc>() {
             parser.parse::<kw::anyfunc>()?;
-            Ok(ValType::Funcref)
+            Ok(ValType::Ref(RefType::Func))
+        } else if l.peek::<kw::externref>() {
+            parser.parse::<kw::externref>()?;
+            Ok(ValType::Ref(RefType::Extern))
         } else if l.peek::<kw::anyref>() {
+            
+            
             parser.parse::<kw::anyref>()?;
-            Ok(ValType::Anyref)
-        } else if l.peek::<kw::nullref>() {
-            parser.parse::<kw::nullref>()?;
-            Ok(ValType::Nullref)
+            Ok(ValType::Ref(RefType::Extern))
         } else if l.peek::<ast::LParen>() {
             parser.parens(|p| {
                 let mut l = parser.lookahead1();
                 if l.peek::<kw::r#ref>() {
                     p.parse::<kw::r#ref>()?;
-
-                    let mut l = parser.lookahead1();
-                    if l.peek::<kw::func>() {
-                        parser.parse::<kw::func>()?;
-                        Ok(ValType::Funcref)
-                    } else if l.peek::<kw::any>() {
-                        parser.parse::<kw::any>()?;
-                        Ok(ValType::Anyref)
-                    } else if l.peek::<kw::null>() {
-                        parser.parse::<kw::null>()?;
-                        Ok(ValType::Nullref)
-                    } else if l.peek::<kw::exn>() {
-                        parser.parse::<kw::exn>()?;
-                        Ok(ValType::Exnref)
-                    } else if l.peek::<kw::eq>() {
-                        parser.parse::<kw::eq>()?;
-                        Ok(ValType::Eqref)
-                    } else if l.peek::<kw::i31>() {
-                        parser.parse::<kw::i31>()?;
-                        Ok(ValType::I31ref)
-                    } else if l.peek::<kw::opt>() {
-                        parser.parse::<kw::opt>()?;
-                        Ok(ValType::Optref(parser.parse()?))
-                    } else if l.peek::<ast::Index>() {
-                        Ok(ValType::Ref(parser.parse()?))
-                    } else {
-                        Err(l.error())
-                    }
+                    Ok(ValType::Ref(p.parse()?))
                 } else if l.peek::<kw::optref>() {
                     p.parse::<kw::optref>()?;
-                    Ok(ValType::Optref(parser.parse()?))
+                    Ok(ValType::Ref(RefType::OptType(parser.parse()?)))
                 } else if l.peek::<kw::rtt>() {
                     p.parse::<kw::rtt>()?;
                     Ok(ValType::Rtt(parser.parse()?))
@@ -104,13 +72,80 @@ impl<'a> Parse<'a> for ValType<'a> {
             })
         } else if l.peek::<kw::exnref>() {
             parser.parse::<kw::exnref>()?;
-            Ok(ValType::Exnref)
+            Ok(ValType::Ref(RefType::Exn))
         } else if l.peek::<kw::eqref>() {
             parser.parse::<kw::eqref>()?;
-            Ok(ValType::Eqref)
+            Ok(ValType::Ref(RefType::Eq))
         } else if l.peek::<kw::i31ref>() {
             parser.parse::<kw::i31ref>()?;
-            Ok(ValType::I31ref)
+            Ok(ValType::Ref(RefType::I31))
+        } else {
+            Err(l.error())
+        }
+    }
+}
+
+
+#[allow(missing_docs)]
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
+pub enum RefType<'a> {
+    
+    
+    Func,
+    
+    
+    
+    Extern,
+    
+    
+    Exn,
+    
+    
+    Eq,
+    
+    
+    I31,
+    
+    
+    Type(ast::Index<'a>),
+    
+    
+    OptType(ast::Index<'a>),
+}
+
+impl<'a> From<TableElemType> for RefType<'a> {
+    fn from(elem: TableElemType) -> Self {
+        match elem {
+            TableElemType::Funcref => RefType::Func,
+            TableElemType::Externref => RefType::Extern,
+            TableElemType::Exnref => RefType::Exn,
+        }
+    }
+}
+
+impl<'a> Parse<'a> for RefType<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        let mut l = parser.lookahead1();
+        if l.peek::<kw::func>() {
+            parser.parse::<kw::func>()?;
+            Ok(RefType::Func)
+        } else if l.peek::<kw::r#extern>() {
+            parser.parse::<kw::r#extern>()?;
+            Ok(RefType::Extern)
+        } else if l.peek::<kw::exn>() {
+            parser.parse::<kw::exn>()?;
+            Ok(RefType::Exn)
+        } else if l.peek::<kw::eq>() {
+            parser.parse::<kw::eq>()?;
+            Ok(RefType::Eq)
+        } else if l.peek::<kw::i31>() {
+            parser.parse::<kw::i31>()?;
+            Ok(RefType::I31)
+        } else if l.peek::<kw::opt>() {
+            parser.parse::<kw::opt>()?;
+            Ok(RefType::OptType(parser.parse()?))
+        } else if l.peek::<ast::Index>() {
+            Ok(RefType::Type(parser.parse()?))
         } else {
             Err(l.error())
         }
@@ -146,16 +181,12 @@ impl<'a> Parse<'a> for GlobalType<'a> {
 }
 
 
-
-
 #[derive(Copy, Clone, Debug)]
 pub enum TableElemType {
     
     Funcref,
     
-    Anyref,
-    
-    Nullref,
+    Externref,
     
     Exnref,
 }
@@ -172,11 +203,13 @@ impl<'a> Parse<'a> for TableElemType {
             parser.parse::<kw::funcref>()?;
             Ok(TableElemType::Funcref)
         } else if l.peek::<kw::anyref>() {
+            
+            
             parser.parse::<kw::anyref>()?;
-            Ok(TableElemType::Anyref)
-        } else if l.peek::<kw::nullref>() {
-            parser.parse::<kw::nullref>()?;
-            Ok(TableElemType::Nullref)
+            Ok(TableElemType::Externref)
+        } else if l.peek::<kw::externref>() {
+            parser.parse::<kw::externref>()?;
+            Ok(TableElemType::Externref)
         } else if l.peek::<kw::exnref>() {
             parser.parse::<kw::exnref>()?;
             Ok(TableElemType::Exnref)
@@ -190,7 +223,7 @@ impl Peek for TableElemType {
     fn peek(cursor: Cursor<'_>) -> bool {
         kw::funcref::peek(cursor)
             || kw::anyref::peek(cursor)
-            || kw::nullref::peek(cursor)
+            || kw::externref::peek(cursor)
             ||  kw::anyfunc::peek(cursor)
             || kw::exnref::peek(cursor)
     }

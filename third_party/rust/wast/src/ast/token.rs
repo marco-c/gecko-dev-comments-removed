@@ -13,6 +13,11 @@ pub struct Span {
 
 impl Span {
     
+    pub fn from_offset(offset: usize) -> Self {
+        Span { offset }
+    }
+
+    
     
     
     
