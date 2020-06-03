@@ -110,24 +110,24 @@ class PerftestTests(MachCommandBase):
 
         
         _setup_path()
-
         try:
-            import black  
+            import coverage  
         except ImportError:
-            
-            
-            
             pydeps = Path(self.topsrcdir, "third_party", "python")
+            vendors = ["coverage"]
+            pypis = ["flake8"]
 
-            for name in (
-                
-                str(pydeps / "pyrsistent"),
-                str(pydeps / "attrs"),
-                "coverage",
-                "black",
-                "flake8",
-            ):
-                install_package(self.virtualenv_manager, name)
+            
+            if not ON_TRY:
+                pypis.append("black")
+
+            
+            for dep in pypis:
+                install_package(self.virtualenv_manager, dep)
+
+            
+            for dep in vendors:
+                install_package(self.virtualenv_manager, str(Path(pydeps, dep)))
 
         here = Path(__file__).parent.resolve()
         if not ON_TRY:
@@ -135,7 +135,8 @@ class PerftestTests(MachCommandBase):
             assert self._run_python_script("black", str(here))
 
         
-        assert self._run_python_script("flake8", str(here))
+        if not (ON_TRY and sys.platform == "darwin"):
+            assert self._run_python_script("flake8", str(here))
 
         
         
