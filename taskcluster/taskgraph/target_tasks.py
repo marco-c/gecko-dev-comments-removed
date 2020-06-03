@@ -574,12 +574,19 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
             platform = task.task.get('extra').get('treeherder-platform')
             try_name = task.label
 
+        def _run_live_site():
+            for test in LIVE_SITES:
+                if try_name.endswith(test) or try_name.endswith(test + "-e10s"):
+                    return True
+            return False
+
         
         if '-chrome' in try_name:
             if 'android' in platform:
                 
                 if 'shippable' in platform:
-                    return True
+                    if '-live' in try_name:
+                        return _run_live_site()
                 else:
                     return False
             else:
@@ -608,9 +615,7 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
             if '-live' in try_name:
                 
                 
-                for test in LIVE_SITES:
-                    if try_name.endswith(test) or try_name.endswith(test + "-e10s"):
-                        return True
+                return _run_live_site()
             return False
 
         
