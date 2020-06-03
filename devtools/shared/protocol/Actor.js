@@ -102,6 +102,11 @@ class Actor extends Pool {
       
       error: error.error || error.name || "unknownError",
       message: error.message,
+      
+      
+      fileName: error.fileName || error.filename,
+      lineNumber: error.lineNumber,
+      columnNumber: error.columnNumber,
     });
   }
 
