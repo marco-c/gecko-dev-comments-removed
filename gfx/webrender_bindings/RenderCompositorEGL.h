@@ -37,6 +37,12 @@ class RenderCompositorEGL : public RenderCompositor {
 
   CompositorCapabilities GetCompositorCapabilities() override;
 
+  
+  bool UsePartialPresent() override;
+  bool RequestFullRender() override;
+  uint32_t GetMaxPartialPresentRects() override;
+  bool ShouldDrawPreviousPartialPresentRegions() override;
+
  protected:
   EGLSurface CreateEGLSurface();
 
@@ -47,6 +53,8 @@ class RenderCompositorEGL : public RenderCompositor {
   
   LayoutDeviceIntSize mEGLSurfaceSize;
 #endif
+
+  EGLint mBufferAge;
 };
 
 }  

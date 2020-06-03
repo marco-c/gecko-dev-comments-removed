@@ -186,6 +186,10 @@ pub enum CompositorConfig {
         
         
         max_partial_present_rects: usize,
+        
+        
+        
+        draw_previous_partial_present_regions: bool,
     },
     
     
@@ -218,6 +222,7 @@ impl Default for CompositorConfig {
     fn default() -> Self {
         CompositorConfig::Draw {
             max_partial_present_rects: 0,
+            draw_previous_partial_present_regions: false,
         }
     }
 }
@@ -233,6 +238,8 @@ pub enum CompositorKind {
     Draw {
         
         max_partial_present_rects: usize,
+        
+        draw_previous_partial_present_regions: bool,
     },
     
     Native {
@@ -248,6 +255,7 @@ impl Default for CompositorKind {
     fn default() -> Self {
         CompositorKind::Draw {
             max_partial_present_rects: 0,
+            draw_previous_partial_present_regions: false,
         }
     }
 }
