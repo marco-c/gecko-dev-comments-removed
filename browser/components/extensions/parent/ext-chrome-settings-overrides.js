@@ -267,7 +267,7 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
   static async onUninstall(id) {
     let searchStartupPromise = pendingSearchSetupTasks.get(id);
     if (searchStartupPromise) {
-      await searchStartupPromise;
+      await searchStartupPromise.catch(Cu.reportError);
     }
     
     
@@ -423,7 +423,7 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
       } else {
         
         
-        this.setDefault(engineName);
+        await this.setDefault(engineName);
       }
     }
   }
