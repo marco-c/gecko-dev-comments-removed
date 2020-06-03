@@ -565,7 +565,7 @@ bool CanonicalBrowsingContext::AttemptLoadURIInParent(
   
   
   
-  if (GetWatchedByDevtools()) {
+  if (WatchedByDevTools()) {
     return false;
   }
 

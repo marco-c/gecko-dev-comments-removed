@@ -1310,9 +1310,6 @@ class nsDocShell final : public nsDocLoader,
   bool mWillChangeProcess : 1;
 
   
-  bool mWatchedByDevtools : 1;
-
-  
   
   bool mIsNavigating : 1;
 
