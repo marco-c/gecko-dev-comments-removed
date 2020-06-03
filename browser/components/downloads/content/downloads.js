@@ -981,20 +981,24 @@ XPCOMUtils.defineConstant(this, "DownloadsView", DownloadsView);
 
 
 
+function DownloadsViewItem(download, aElement) {
+  this.download = download;
+  this.element = aElement;
+  this.element._shell = this;
 
-class DownloadsViewItem extends DownloadsViewUI.DownloadElementShell {
-  constructor(download, aElement) {
-    super();
+  this.element.setAttribute("type", "download");
+  this.element.classList.add("download-state");
 
-    this.download = download;
-    this.element = aElement;
-    this.element._shell = this;
+  this.isPanel = true;
+}
 
-    this.element.setAttribute("type", "download");
-    this.element.classList.add("download-state");
+DownloadsViewItem.prototype = {
+  __proto__: DownloadsViewUI.DownloadElementShell.prototype,
 
-    this.isPanel = true;
-  }
+  
+
+
+  _element: null,
 
   onChanged() {
     let newState = DownloadsCommon.stateOfDownload(this.download);
@@ -1004,7 +1008,7 @@ class DownloadsViewItem extends DownloadsViewUI.DownloadElementShell {
     } else {
       this._updateStateInner();
     }
-  }
+  },
 
   isCommandEnabled(aCommand) {
     switch (aCommand) {
@@ -1040,33 +1044,33 @@ class DownloadsViewItem extends DownloadsViewUI.DownloadElementShell {
       this,
       aCommand
     );
-  }
+  },
 
   doCommand(aCommand) {
     if (this.isCommandEnabled(aCommand)) {
       this[aCommand]();
     }
-  }
+  },
 
   
 
   downloadsCmd_unblock() {
     DownloadsPanel.hidePanel();
     this.confirmUnblock(window, "unblock");
-  }
+  },
 
   downloadsCmd_chooseUnblock() {
     DownloadsPanel.hidePanel();
     this.confirmUnblock(window, "chooseUnblock");
-  }
+  },
 
   downloadsCmd_unblockAndOpen() {
     DownloadsPanel.hidePanel();
     this.unblockAndOpenDownload().catch(Cu.reportError);
-  }
+  },
 
   downloadsCmd_open() {
-    super.downloadsCmd_open();
+    this.download.launch().catch(Cu.reportError);
 
     
     
@@ -1074,7 +1078,7 @@ class DownloadsViewItem extends DownloadsViewUI.DownloadElementShell {
     
     
     DownloadsPanel.hidePanel();
-  }
+  },
 
   downloadsCmd_show() {
     let file = new FileUtils.File(this.download.target.path);
@@ -1086,30 +1090,30 @@ class DownloadsViewItem extends DownloadsViewUI.DownloadElementShell {
     
     
     DownloadsPanel.hidePanel();
-  }
+  },
 
   downloadsCmd_showBlockedInfo() {
     DownloadsBlockedSubview.toggle(
       this.element,
       ...this.rawBlockedTitleAndDetails
     );
-  }
+  },
 
   downloadsCmd_openReferrer() {
     openURL(this.download.source.referrerInfo.originalReferrer);
-  }
+  },
 
   downloadsCmd_copyLocation() {
     DownloadsCommon.copyDownloadLink(this.download);
-  }
+  },
 
   downloadsCmd_doDefault() {
     let defaultCommand = this.currentDefaultCommandName;
     if (defaultCommand && this.isCommandEnabled(defaultCommand)) {
       this.doCommand(defaultCommand);
     }
-  }
-}
+  },
+};
 
 
 

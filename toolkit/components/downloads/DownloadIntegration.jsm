@@ -787,21 +787,8 @@ var DownloadIntegration = {
     
     
     if (mimeInfo) {
-      const PDF_CONTENT_TYPE = "application/pdf";
-      
-      if (
-        mimeInfo.type == PDF_CONTENT_TYPE &&
-        !mimeInfo.alwaysAskBeforeHandling &&
-        mimeInfo.preferredAction === Ci.nsIHandlerInfo.handleInternally
-        
-      ) {
-        DownloadUIHelper.loadFileIn(file, {
-          isPrivate: aDownload.source.isPrivate,
-        });
-        return;
-      }
-
       mimeInfo.preferredAction = Ci.nsIMIMEInfo.useSystemDefault;
+
       try {
         this.launchFile(file, mimeInfo);
         return;
