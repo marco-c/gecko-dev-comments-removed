@@ -133,6 +133,8 @@ async function callRequestStorageAccess(callback, expectFail) {
   ) {
     
     
+    
+    
     await waitUntilPermission(
       "http://example.net/browser/toolkit/components/antitracking/test/browser/page.html",
       "3rdPartyStorage^" + window.origin
@@ -142,27 +144,21 @@ async function callRequestStorageAccess(callback, expectFail) {
   return [threw, rejected];
 }
 
-
-function createPrincipal(url) {
-  let oa = {};
-  if (SpecialPowers.isContentWindowPrivate(window)) {
-    oa.privateBrowsingId = 1;
-  }
-  return SpecialPowers.Services.scriptSecurityManager.createContentPrincipal(
-    SpecialPowers.Services.io.newURI(url),
-    oa
-  );
-}
-
 async function waitUntilPermission(url, name) {
-  let principal = createPrincipal(url);
+  let originAttributes = SpecialPowers.isContentWindowPrivate(window)
+    ? { privateBrowsingId: 1 }
+    : {};
   await new Promise(resolve => {
-    let id = setInterval(_ => {
+    let id = setInterval(async _ => {
       if (
-        SpecialPowers.Services.perms.testPermissionFromPrincipal(
-          principal,
-          name
-        ) == SpecialPowers.Services.perms.ALLOW_ACTION
+        await SpecialPowers.testPermission(
+          name,
+          SpecialPowers.Services.perms.ALLOW_ACTION,
+          {
+            url,
+            originAttributes,
+          }
+        )
       ) {
         clearInterval(id);
         resolve();
