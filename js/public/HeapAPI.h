@@ -8,6 +8,7 @@
 #define js_HeapAPI_h
 
 #include <limits.h>
+#include <type_traits>
 
 #include "jspubtd.h"
 
@@ -335,14 +336,14 @@ class JS_FRIEND_API GCCellPtr {
   }
 
   
-  template <typename T>
+  template <typename T, typename = std::enable_if_t<JS::IsBaseTraceType_v<T>>>
   bool is() const {
     return kind() == JS::MapTypeToTraceKind<T>::kind;
   }
 
   
   
-  template <typename T>
+  template <typename T, typename = std::enable_if_t<JS::IsBaseTraceType_v<T>>>
   T& as() const {
     MOZ_ASSERT(kind() == JS::MapTypeToTraceKind<T>::kind);
     
