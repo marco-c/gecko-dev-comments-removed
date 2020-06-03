@@ -1,0 +1,5 @@
+
+
+cls_expect = (watcher, expectation) => {
+  assert_equals(watcher.score, expectation.score);
+};
