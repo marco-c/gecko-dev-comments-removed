@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsPrintSettingsServiceX.h"
 
@@ -99,7 +99,7 @@ nsresult nsPrintSettingsServiceX::SerializeToPrintDataParent(nsIPrintSettings* a
   float widthScale, heightScale;
   settingsX->GetInchesScale(&widthScale, &heightScale);
   if (orientation == nsIPrintSettings::kLandscapeOrientation) {
-    // switch widths and heights
+    
     data->widthScale() = heightScale;
     data->heightScale() = widthScale;
     data->paperWidth() = paperSize.height / heightScale;
@@ -112,9 +112,6 @@ nsresult nsPrintSettingsServiceX::SerializeToPrintDataParent(nsIPrintSettings* a
   }
 
   data->numCopies() = [[dict objectForKey:NSPrintCopies] intValue];
-  data->printAllPages() = [[dict objectForKey:NSPrintAllPages] boolValue];
-  data->startPageRange() = [[dict objectForKey:NSPrintFirstPage] intValue];
-  data->endPageRange() = [[dict objectForKey:NSPrintLastPage] intValue];
   data->mustCollate() = [[dict objectForKey:NSPrintMustCollate] boolValue];
   data->printReversed() = [[dict objectForKey:NSPrintReversePageOrder] boolValue];
   data->pagesAcross() = [[dict objectForKey:NSPrintPagesAcross] unsignedShortValue];
@@ -168,7 +165,7 @@ nsresult nsPrintSettingsServiceX::_CreatePrintSettings(nsIPrintSettings** _retva
   nsresult rv;
   *_retval = nullptr;
 
-  nsPrintSettingsX* printSettings = new nsPrintSettingsX;  // does not initially ref count
+  nsPrintSettingsX* printSettings = new nsPrintSettingsX;  
   NS_ENSURE_TRUE(printSettings, NS_ERROR_OUT_OF_MEMORY);
   NS_ADDREF(*_retval = printSettings);
 
