@@ -383,14 +383,7 @@ class Loader final {
   
   
   
-  
-  
-  
-  nsresult PostLoadEvent(nsIURI* aURI, StyleSheet* aSheet,
-                         nsICSSLoaderObserver* aObserver,
-                         IsAlternate aWasAlternate, MediaMatched aMediaMatched,
-                         nsIReferrerInfo* aReferrerInfo,
-                         nsIStyleSheetLinkingElement* aElement);
+  nsresult PostLoadEvent(RefPtr<SheetLoadData>);
 
   
   void StartDeferredLoads();
