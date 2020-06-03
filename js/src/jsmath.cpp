@@ -64,6 +64,7 @@ static bool math_function(JSContext* cx, HandleValue val,
 
   
   
+  
   double z = F(x);
   res.setDouble(z);
   return true;
