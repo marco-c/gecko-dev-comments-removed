@@ -1027,16 +1027,15 @@ static bool ProcessFrameInternal(nsIFrame* aFrame,
 
     MOZ_ASSERT(currentFrame);
 
-    nsIContent* content = currentFrame->GetContent();
-    nsRect displayPort;
-    const bool hasDisplayPort =
-        content && nsLayoutUtils::GetDisplayPort(content, &displayPort);
-
-    if (hasDisplayPort) {
+    if (nsLayoutUtils::FrameHasDisplayPort(currentFrame)) {
       CRR_LOG("Frame belongs to displayport frame %p\n", currentFrame);
       nsIScrollableFrame* sf = do_QueryFrame(currentFrame);
       MOZ_ASSERT(sf);
-
+      nsRect displayPort;
+      DebugOnly<bool> hasDisplayPort = nsLayoutUtils::GetDisplayPort(
+          currentFrame->GetContent(), &displayPort,
+          DisplayportRelativeTo::ScrollPort);
+      MOZ_ASSERT(hasDisplayPort);
       
       nsRect r = aOverflow - sf->GetScrollPortRect().TopLeft();
       r.IntersectRect(r, displayPort);
