@@ -159,6 +159,15 @@ void MacroAssembler::xorPtr(Imm32 imm, Register dest) { xorl(imm, dest); }
 
 
 
+void MacroAssembler::swap64(Register64 reg) {
+  bswapl(reg.low);
+  bswapl(reg.high);
+  xchgl(reg.low, reg.high);
+}
+
+
+
+
 void MacroAssembler::addPtr(Register src, Register dest) { addl(src, dest); }
 
 void MacroAssembler::addPtr(Imm32 imm, Register dest) { addl(imm, dest); }

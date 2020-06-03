@@ -71,6 +71,17 @@ void MacroAssembler::xor32(Imm32 imm, Register dest) { ma_xor(dest, imm); }
 
 
 
+void MacroAssembler::swap16SignExtend(Register reg) { MOZ_CRASH("NYI"); }
+
+void MacroAssembler::swap16ZeroExtend(Register reg) { MOZ_CRASH("NYI"); }
+
+void MacroAssembler::swap32(Register reg) { MOZ_CRASH("NYI"); }
+
+void MacroAssembler::swap64(Register64 reg) { MOZ_CRASH("NYI"); }
+
+
+
+
 void MacroAssembler::add32(Register src, Register dest) {
   as_addu(dest, dest, src);
 }

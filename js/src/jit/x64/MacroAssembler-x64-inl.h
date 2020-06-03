@@ -133,6 +133,11 @@ void MacroAssembler::xor64(const Operand& src, Register64 dest) {
 
 
 
+void MacroAssembler::swap64(Register64 reg) { bswapq(reg.reg); }
+
+
+
+
 void MacroAssembler::addPtr(Register src, Register dest) { addq(src, dest); }
 
 void MacroAssembler::addPtr(Imm32 imm, Register dest) { addq(imm, dest); }

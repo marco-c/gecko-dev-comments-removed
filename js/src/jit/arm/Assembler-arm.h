@@ -1378,6 +1378,10 @@ class Assembler : public AssemblerShared {
   BufferOffset as_orr(Register dest, Register src1, Operand2 op2,
                       SBit s = LeaveCC, Condition c = Always);
   
+  BufferOffset as_rev(Register dest, Register src, Condition c = Always);
+  BufferOffset as_rev16(Register dest, Register src, Condition c = Always);
+  BufferOffset as_revsh(Register dest, Register src, Condition c = Always);
+  
   BufferOffset as_adc(Register dest, Register src1, Operand2 op2,
                       SBit s = LeaveCC, Condition c = Always);
   BufferOffset as_add(Register dest, Register src1, Operand2 op2,
