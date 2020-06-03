@@ -23,18 +23,6 @@ XPCOMUtils.defineLazyServiceGetter(
 const kBrowserURL = AppConstants.BROWSER_CHROME_URL;
 
 class WebRTCChild extends JSWindowActorChild {
-  actorCreated() {
-    
-    
-    
-    
-    
-    
-    
-    
-    this.suppressNotifications = false;
-  }
-
   
   static handleEvent(aEvent) {
     let contentWindow = aEvent.target.defaultView;
@@ -107,9 +95,6 @@ class WebRTCChild extends JSWindowActorChild {
           "getUserMedia:response:allow",
           callID
         );
-
-        this.suppressNotifications = !!aMessage.data.suppressNotifications;
-
         break;
       }
       case "webrtc:Deny":
@@ -416,7 +401,6 @@ function updateIndicators(aSubject, aTopic, aData) {
   if (actor) {
     let tabState = getTabStateForContentWindow(contentWindow, false);
     tabState.windowId = getInnerWindowIDForWindow(contentWindow);
-    tabState.suppressNotifications = actor.suppressNotifications;
 
     actor.sendAsyncMessage("webrtc:UpdateIndicators", tabState);
   }

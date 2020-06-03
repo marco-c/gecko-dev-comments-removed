@@ -1650,10 +1650,6 @@ pref("privacy.userContext.extension", "");
 pref("privacy.userContext.newTabContainerOnLeftClick.enabled", false);
 
 
-
-pref("privacy.webrtc.allowSilencingNotifications", false);
-
-
 pref("browser.tabs.remote.autostart", true);
 pref("browser.tabs.remote.desktopbehavior", true);
 

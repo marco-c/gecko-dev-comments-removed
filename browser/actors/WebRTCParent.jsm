@@ -480,10 +480,6 @@ function prompt(aActor, aBrowser, aRequest) {
 
   let chromeDoc = aBrowser.ownerDocument;
   let stringBundle = chromeDoc.defaultView.gNavigatorBundle;
-  let localization = new Localization(
-    ["branding/brand.ftl", "preview/popup-notifications.ftl"],
-    true
-  );
 
   
   
@@ -533,113 +529,37 @@ function prompt(aActor, aBrowser, aRequest) {
     callback() {},
   };
 
-  let notificationSilencingEnabled = Services.prefs.getBoolPref(
-    "privacy.webrtc.allowSilencingNotifications"
-  );
-
-  let secondaryActions = [];
-  if (notificationSilencingEnabled && sharingScreen) {
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let convertAttributesToObjects = messages => {
-      return messages.map(msg => {
-        return msg.attributes.reduce((acc, attribute) => {
-          acc[attribute.name] = attribute.value;
-          return acc;
-        }, {});
-      });
-    };
-
-    let [notNow, never] = convertAttributesToObjects(
-      localization.formatMessagesSync([
-        { id: "popup-screen-sharing-not-now" },
-        { id: "popup-screen-sharing-never" },
-      ])
-    );
-
-    secondaryActions = [
-      {
-        label: notNow.label,
-        accessKey: notNow.accesskey,
-        callback(aState) {
-          aActor.denyRequest(aRequest);
+  let secondaryActions = [
+    {
+      label: stringBundle.getString("getUserMedia.dontAllow.label"),
+      accessKey: stringBundle.getString("getUserMedia.dontAllow.accesskey"),
+      callback(aState) {
+        aActor.denyRequest(aRequest);
+        let scope = SitePermissions.SCOPE_TEMPORARY;
+        if (aState && aState.checkboxChecked) {
+          scope = SitePermissions.SCOPE_PERSISTENT;
+        }
+        if (audioDevices.length) {
           SitePermissions.setForPrincipal(
             principal,
-            "screen",
+            "microphone",
             SitePermissions.BLOCK,
-            SitePermissions.SCOPE_TEMPORARY,
+            scope,
             notification.browser
           );
-        },
-      },
-      {
-        label: never.label,
-        accessKey: never.accesskey,
-        callback(aState) {
-          aActor.denyRequest(aRequest);
+        }
+        if (videoDevices.length) {
           SitePermissions.setForPrincipal(
             principal,
-            "screen",
+            sharingScreen ? "screen" : "camera",
             SitePermissions.BLOCK,
-            SitePermissions.SCOPE_PERSISTENT,
+            scope,
             notification.browser
           );
-        },
+        }
       },
-    ];
-  } else {
-    secondaryActions = [
-      {
-        label: stringBundle.getString("getUserMedia.dontAllow.label"),
-        accessKey: stringBundle.getString("getUserMedia.dontAllow.accesskey"),
-        callback(aState) {
-          aActor.denyRequest(aRequest);
-          let scope = SitePermissions.SCOPE_TEMPORARY;
-          if (aState && aState.checkboxChecked) {
-            scope = SitePermissions.SCOPE_PERSISTENT;
-          }
-          if (audioDevices.length) {
-            SitePermissions.setForPrincipal(
-              principal,
-              "microphone",
-              SitePermissions.BLOCK,
-              scope,
-              notification.browser
-            );
-          }
-          if (videoDevices.length) {
-            SitePermissions.setForPrincipal(
-              principal,
-              sharingScreen ? "screen" : "camera",
-              SitePermissions.BLOCK,
-              scope,
-              notification.browser
-            );
-          }
-        },
-      },
-    ];
-  }
+    },
+  ];
 
   let productName = gBrandBundle.GetStringFromName("brandShortName");
 
@@ -973,15 +893,7 @@ function prompt(aActor, aBrowser, aRequest) {
       }
 
       this.mainAction.callback = async function(aState) {
-        let remember = false;
-        let silenceNotifications = false;
-
-        if (notificationSilencingEnabled && sharingScreen) {
-          silenceNotifications = aState && aState.checkboxChecked;
-        } else {
-          remember = aState && aState.checkboxChecked;
-        }
-
+        let remember = aState && aState.checkboxChecked;
         let allowedDevices = [];
         let perms = Services.perms;
         if (videoDevices.length) {
@@ -1087,7 +999,6 @@ function prompt(aActor, aBrowser, aRequest) {
           callID: aRequest.callID,
           windowID: aRequest.windowID,
           devices: allowedDevices,
-          suppressNotifications: silenceNotifications,
         });
       };
 
@@ -1133,38 +1044,19 @@ function prompt(aActor, aBrowser, aRequest) {
         "getUserMedia.reasonForNoPermanentAllow.insecure";
     }
 
-    if (notificationSilencingEnabled && sharingScreen) {
-      let [
-        silenceNotifications,
-        silenceNotificationsWarning,
-      ] = localization.formatMessagesSync([
-        { id: "popup-silence-notifications-checkbox" },
-        { id: "popup-silence-notifications-checkbox-warning" },
-      ]);
-
-      options.checkbox = {
-        label: silenceNotifications.value,
-        checked: false,
-        checkedState: {
-          disableMainAction: false,
-          warningLabel: silenceNotificationsWarning.value,
-        },
-      };
-    } else {
-      options.checkbox = {
-        label: stringBundle.getString("getUserMedia.remember"),
-        checked: principal.isAddonOrExpandedAddonPrincipal,
-        checkedState: reasonForNoPermanentAllow
-          ? {
-              disableMainAction: true,
-              warningLabel: stringBundle.getFormattedString(
-                reasonForNoPermanentAllow,
-                [productName]
-              ),
-            }
-          : undefined,
-      };
-    }
+    options.checkbox = {
+      label: stringBundle.getString("getUserMedia.remember"),
+      checked: principal.isAddonOrExpandedAddonPrincipal,
+      checkedState: reasonForNoPermanentAllow
+        ? {
+            disableMainAction: true,
+            warningLabel: stringBundle.getFormattedString(
+              reasonForNoPermanentAllow,
+              [productName]
+            ),
+          }
+        : undefined,
+    };
   }
 
   let iconType = "Devices";
