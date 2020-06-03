@@ -827,28 +827,27 @@ def findTestMediaDevices(log):
     pactl = spawn.find_executable("pactl")
 
     if not pactl:
-        log.error('Could not find pactl on system')
-        return None
+        log.critical('Could not find pactl on system')
 
+    
+    
+    try:
+        o = subprocess.check_output(
+            [pactl, 'load-module', 'module-null-sink']
+        )
+    except subprocess.CalledProcessError:
+        log.critical('Could not load module-null-sink')
+
+    
     try:
         o = subprocess.check_output(
             [pactl, 'list', 'short', 'modules'])
     except subprocess.CalledProcessError:
-        log.error('Could not list currently loaded modules')
-        return None
+        log.critical('Could not list currently loaded modules')
 
-    null_sink = filter(lambda x: 'module-null-sink' in x, o.splitlines())
-
-    if not null_sink:
-        try:
-            subprocess.check_call([
-                pactl,
-                'load-module',
-                'module-null-sink'
-            ])
-        except subprocess.CalledProcessError:
-            log.error('Could not load module-null-sink')
-            return None
+    
+    if 'module-null-sink' not in o:
+        log.critical('Failed to load module-null-sink, cannot run media tests')
 
     
     info['audio'] = 'Monitor of Null Output'
@@ -1869,13 +1868,20 @@ toolbar#nav-bar {
 
     def merge_base_profiles(self, options, category):
         """Merge extra profile data from testing/profiles."""
-        profile_data_dir = os.path.join(SCRIPT_DIR, 'profile_data')
 
+        
+        
+        profile_data_dir = os.path.join(SCRIPT_DIR, 'profile_data')
         
         
         
         if build_obj:
             path = os.path.join(build_obj.topsrcdir, 'testing', 'profiles')
+            if os.path.isdir(path):
+                profile_data_dir = path
+        
+        if not os.path.isdir(profile_data_dir):
+            path = os.path.abspath(os.path.join(SCRIPT_DIR, '..', 'profiles'))
             if os.path.isdir(path):
                 profile_data_dir = path
 
