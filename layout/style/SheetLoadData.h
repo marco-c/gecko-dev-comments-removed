@@ -180,7 +180,11 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
   bool mLoadFailed : 1;
 
   
-  const IsPreload mIsPreload : 2;
+  
+  
+  
+  
+  const IsPreload mIsPreload;
 
   
   
