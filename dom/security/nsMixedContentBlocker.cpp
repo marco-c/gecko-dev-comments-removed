@@ -844,39 +844,12 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
                              : eUserOverride,
                          requestingLocation);
 
-  
-  
-  
-  bool stateChanged =
-      ((newState & nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT) ==
-       rootDoc->GetHasMixedActiveContentLoaded()) ||
-      ((newState &
-        nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT) ==
-       rootDoc->GetHasMixedActiveContentBlocked()) ||
-      ((newState &
-        nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT) ==
-       rootDoc->GetHasMixedDisplayContentLoaded()) ||
-      ((newState &
-        nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT) ==
-       rootDoc->GetHasMixedDisplayContentBlocked());
-
-  if (!stateChanged) {
+  if (rootDoc->GetMixedContentFlags() == newState) {
     return NS_OK;
   }
 
   
-  if (newState & nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT) {
-    rootDoc->SetHasMixedActiveContentLoaded(true);
-  }
-  if (newState & nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT) {
-    rootDoc->SetHasMixedActiveContentBlocked(true);
-  }
-  if (newState & nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT) {
-    rootDoc->SetHasMixedDisplayContentLoaded(true);
-  }
-  if (newState & nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT) {
-    rootDoc->SetHasMixedDisplayContentBlocked(true);
-  }
+  rootDoc->AddMixedContentFlags(newState);
 
   uint32_t state = nsIWebProgressListener::STATE_IS_BROKEN;
   MOZ_ALWAYS_SUCCEEDS(securityUI->GetState(&state));
