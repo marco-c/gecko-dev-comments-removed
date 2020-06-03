@@ -38,12 +38,14 @@ using mozilla::dom::Promise;
 #  include <ntsecapi.h>
 #  include <wincred.h>
 #  include <windows.h>
+#  include "nsIWindowsRegKey.h"  
 #  define SECURITY_WIN32
 #  include <security.h>
 #  include <shlwapi.h>
 #  if !defined(__MINGW32__)
 #    include <Lm.h>
-#  endif  
+#    undef ACCESS_READ  // nsWindowsRegKey defines its own ACCESS_READ
+#  endif                
 struct HandleCloser {
   typedef HANDLE pointer;
   void operator()(HANDLE h) {
@@ -126,6 +128,34 @@ Maybe<int64_t> GetPasswordLastChanged(const WCHAR* username) {
 #  endif
 }
 
+bool IsAutoAdminLogonEnabled() {
+  
+  nsresult rv;
+  nsCOMPtr<nsIWindowsRegKey> regKey =
+      do_CreateInstance("@mozilla.org/windows-registry-key;1", &rv);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+
+  rv = regKey->Open(
+      nsIWindowsRegKey::ROOT_KEY_LOCAL_MACHINE,
+      NS_LITERAL_STRING(
+          "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon"),
+      nsIWindowsRegKey::ACCESS_READ);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+
+  nsAutoString value;
+  rv = regKey->ReadStringValue(NS_LITERAL_STRING("AutoAdminLogon"), value);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+  regKey->Close();
+
+  return value.Equals(NS_LITERAL_STRING("1"));
+}
+
 
 
 static nsresult ReauthenticateUserWindows(
@@ -133,8 +163,10 @@ static nsresult ReauthenticateUserWindows(
     const WindowsHandle& hwndParent,
      bool& reauthenticated,
      bool& isBlankPassword,
-     int64_t& prefLastChanged) {
+     int64_t& prefLastChanged,
+     bool& isAutoAdminLogonEnabled) {
   reauthenticated = false;
+  isAutoAdminLogonEnabled = false;
 
   
   DWORD usernameLength = CREDUI_MAX_USERNAME_LENGTH + 1;
@@ -195,6 +227,8 @@ static nsresult ReauthenticateUserWindows(
     
     isBlankPassword = false;
   }
+
+  isAutoAdminLogonEnabled = IsAutoAdminLogonEnabled();
 
   
   DWORD err = 0;
@@ -319,11 +353,13 @@ static nsresult ReauthenticateUser(const nsAString& prompt,
                                    const WindowsHandle& hwndParent,
                                     bool& reauthenticated,
                                     bool& isBlankPassword,
-                                    int64_t& prefLastChanged) {
+                                    int64_t& prefLastChanged,
+                                    bool& isAutoAdminLogonEnabled) {
   reauthenticated = false;
 #if defined(XP_WIN)
   return ReauthenticateUserWindows(prompt, caption, hwndParent, reauthenticated,
-                                   isBlankPassword, prefLastChanged);
+                                   isBlankPassword, prefLastChanged,
+                                   isAutoAdminLogonEnabled);
 #elif defined(XP_MACOSX)
   return ReauthenticateUserMacOS(prompt, reauthenticated, isBlankPassword);
 #endif  
@@ -338,9 +374,10 @@ static void BackgroundReauthenticateUser(RefPtr<Promise>& aPromise,
                                          int64_t prefLastChanged) {
   nsAutoCString recovery;
   bool reauthenticated;
-  nsresult rv =
-      ReauthenticateUser(aMessageText, aCaptionText, hwndParent,
-                         reauthenticated, isBlankPassword, prefLastChanged);
+  bool isAutoAdminLogonEnabled;
+  nsresult rv = ReauthenticateUser(aMessageText, aCaptionText, hwndParent,
+                                   reauthenticated, isBlankPassword,
+                                   prefLastChanged, isAutoAdminLogonEnabled);
 
   nsTArray<int32_t> prefLastChangedUpdates;
 #if defined(XP_WIN)
@@ -354,9 +391,12 @@ static void BackgroundReauthenticateUser(RefPtr<Promise>& aPromise,
   prefLastChangedUpdates.AppendElement(prefLastChangedLo);
 #endif
 
-  nsTArray<int32_t> results(2);
+  nsTArray<int32_t> results;
   results.AppendElement(reauthenticated);
   results.AppendElement(isBlankPassword);
+#if defined(XP_WIN)
+  results.AppendElement(isAutoAdminLogonEnabled);
+#endif
   nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
       "BackgroundReauthenticateUserResolve",
       [rv, results = std::move(results),
