@@ -2328,3 +2328,13 @@ panelview[mainview] #PanelUI-whatsNew-content {
 #PanelUI-profiler-presets[disabled="true"]::part(label-box) {
   opacity: 0.5;
 }
+
+
+
+
+description#PanelUI-profiler-locked {
+  padding: 16px;
+  line-height: 1.5;
+  
+  max-width: 310px;
+}
