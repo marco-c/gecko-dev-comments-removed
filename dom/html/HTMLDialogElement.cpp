@@ -167,6 +167,31 @@ void HTMLDialogElement::FocusDialog() {
   }
 }
 
+void HTMLDialogElement::QueueCancelDialog() {
+  
+  OwnerDoc()
+      ->EventTargetFor(TaskCategory::UI)
+      ->Dispatch(NewRunnableMethod("HTMLDialogElement::RunCancelDialogSteps",
+                                   this,
+                                   &HTMLDialogElement::RunCancelDialogSteps));
+}
+
+void HTMLDialogElement::RunCancelDialogSteps() {
+  
+  
+  bool defaultAction = true;
+  nsContentUtils::DispatchTrustedEvent(
+      OwnerDoc(), this, NS_LITERAL_STRING("cancel"), CanBubble::eNo,
+      Cancelable::eYes, &defaultAction);
+
+  
+  
+  if (defaultAction) {
+    Optional<nsAString> retValue;
+    Close(retValue);
+  }
+}
+
 JSObject* HTMLDialogElement::WrapNode(JSContext* aCx,
                                       JS::Handle<JSObject*> aGivenProto) {
   return HTMLDialogElement_Binding::Wrap(aCx, this, aGivenProto);

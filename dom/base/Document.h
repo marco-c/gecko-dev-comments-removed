@@ -1881,6 +1881,9 @@ class Document : public nsINode,
   bool SetFullscreenElement(Element* aElement);
 
   
+  void TryCancelDialog();
+
+  
 
 
 
