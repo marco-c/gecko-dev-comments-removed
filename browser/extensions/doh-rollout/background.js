@@ -654,6 +654,8 @@ const setup = {
       } catch (e) {
         
       }
+
+      await browser.experiments.doorhanger.cancel();
     }
   });
 
