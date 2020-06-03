@@ -217,9 +217,8 @@ class ShadowLayerForwarder final : public LayersIPCActor,
   bool DestroyInTransaction(PTextureChild* aTexture) override;
   bool DestroyInTransaction(const CompositableHandle& aHandle);
 
-  void RemoveTextureFromCompositable(
-      CompositableClient* aCompositable, TextureClient* aTexture,
-      const Maybe<wr::RenderRoot>& aRenderRoot) override;
+  void RemoveTextureFromCompositable(CompositableClient* aCompositable,
+                                     TextureClient* aTexture) override;
 
   
 
@@ -233,8 +232,7 @@ class ShadowLayerForwarder final : public LayersIPCActor,
 
 
   void UseTextures(CompositableClient* aCompositable,
-                   const nsTArray<TimedTextureClient>& aTextures,
-                   const Maybe<wr::RenderRoot>& aRenderRoot) override;
+                   const nsTArray<TimedTextureClient>& aTextures) override;
   void UseComponentAlphaTextures(CompositableClient* aCompositable,
                                  TextureClient* aClientOnBlack,
                                  TextureClient* aClientOnWhite) override;
