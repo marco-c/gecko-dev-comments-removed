@@ -20,6 +20,8 @@ class nsIURI;
 namespace mozilla {
 namespace dom {
 class BrowsingContext;
+class CanonicalBrowsingContext;
+class WindowGlobalParent;
 }  
 
 class AntiTrackingUtils final {
@@ -90,6 +92,15 @@ class AntiTrackingUtils final {
   
   
   static uint32_t GetCookieBehavior(dom::BrowsingContext* aBrowsingContext);
+
+  
+  
+  
+  
+  
+  static already_AddRefed<dom::WindowGlobalParent>
+  GetTopWindowExcludingExtensionAccessibleContentFrames(
+      dom::CanonicalBrowsingContext* aBrowsingContext, nsIURI* aURIBeingLoaded);
 };
 
 }  

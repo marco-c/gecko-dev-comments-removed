@@ -8,6 +8,7 @@
 
 #include "AntiTrackingLog.h"
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/WindowGlobalParent.h"
@@ -468,6 +469,7 @@ bool AntiTrackingUtils::GetPrincipalAndTrackingOrigin(
   return true;
 };
 
+
 bool AntiTrackingUtils::IsFirstLevelSubContext(
     BrowsingContext* aBrowsingContext) {
   MOZ_ASSERT(aBrowsingContext);
@@ -495,4 +497,37 @@ uint32_t AntiTrackingUtils::GetCookieBehavior(
   }
 
   return *win->GetCookieBehavior();
+}
+
+
+already_AddRefed<WindowGlobalParent>
+AntiTrackingUtils::GetTopWindowExcludingExtensionAccessibleContentFrames(
+    CanonicalBrowsingContext* aBrowsingContext, nsIURI* aURIBeingLoaded) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(aBrowsingContext);
+
+  CanonicalBrowsingContext* bc = aBrowsingContext;
+  RefPtr<WindowGlobalParent> prev;
+  while (RefPtr<WindowGlobalParent> parent = bc->GetParentWindowContext()) {
+    CanonicalBrowsingContext* parentBC = parent->BrowsingContext();
+
+    nsIPrincipal* parentPrincipal = parent->DocumentPrincipal();
+    nsIURI* uri = prev ? prev->GetDocumentURI() : aURIBeingLoaded;
+
+    
+    
+    
+    
+    if (uri &&
+        BasePrincipal::Cast(parentPrincipal)->AddonAllowsLoad(uri, true)) {
+      break;
+    }
+
+    bc = parentBC;
+    prev = parent;
+  }
+  if (!prev) {
+    prev = bc->GetCurrentWindowGlobal();
+  }
+  return prev.forget();
 }
