@@ -421,8 +421,6 @@ class FunctionBox : public SharedContext {
     initWithEnclosingParseContext(enclosing, fun->flags(), kind);
   }
 
-  void initFieldInitializer(ParseContext* enclosing, FunctionFlags flags);
-
   void setEnclosingScopeForInnerLazyFunction(
       const AbstractScopePtr& enclosingScope);
   void finish();
@@ -449,6 +447,7 @@ class FunctionBox : public SharedContext {
   IMMUTABLE_FLAG_GETTER_SETTER(isGenerator, IsGenerator)
   IMMUTABLE_FLAG_GETTER_SETTER(funHasExtensibleScope, FunHasExtensibleScope)
   IMMUTABLE_FLAG_GETTER_SETTER(functionHasThisBinding, FunctionHasThisBinding)
+  
   
   
   IMMUTABLE_FLAG_GETTER_SETTER(hasRest, HasRest)
@@ -564,6 +563,14 @@ class FunctionBox : public SharedContext {
   void setDerivedClassConstructor() {
     MOZ_ASSERT(flags_.isClassConstructor());
     setFlag(ImmutableFlags::IsDerivedClassConstructor);
+  }
+
+  bool isFieldInitializer() const {
+    return hasFlag(ImmutableFlags::IsFieldInitializer);
+  }
+  void setFieldInitializer() {
+    MOZ_ASSERT(flags_.isMethod());
+    setFlag(ImmutableFlags::IsFieldInitializer);
   }
 
   bool hasSimpleParameterList() const {
