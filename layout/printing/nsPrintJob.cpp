@@ -2708,34 +2708,7 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
   MOZ_ASSERT(printRangeType == nsIPrintSettings::kRangeSelection);
 
   
-  if (printData->mCurrentFocusWin) {
-    
-    nsPrintObject* po = FindPrintObjectByDOMWin(printData->mPrintObject.get(),
-                                                printData->mCurrentFocusWin);
-    if (po) {
-      
-      po->SetPrintAsIs(true);
-
-      
-      po->EnablePrinting(true);
-
-      
-      
-      
-      
-      
-      
-      
-      nsPIDOMWindowOuter* domWin =
-          po->mDocument->GetOriginalDocument()->GetWindow();
-      if (!IsThereARangeSelection(domWin)) {
-        printRangeType = nsIPrintSettings::kRangeAllPages;
-        printData->mPrintSettings->SetPrintRange(printRangeType);
-      }
-      PR_PL(("PrintRange:         %s \n", gPrintRangeStr[printRangeType]));
-      return NS_OK;
-    }
-  } else {
+  if (!printData->mCurrentFocusWin) {
     for (uint32_t i = 0; i < printData->mPrintDocList.Length(); i++) {
       nsPrintObject* po = printData->mPrintDocList.ElementAt(i);
       NS_ASSERTION(po, "nsPrintObject can't be null!");
@@ -2749,24 +2722,33 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
     return NS_OK;
   }
 
-  if ((printData->mIsParentAFrameSet && printData->mCurrentFocusWin) ||
-      printData->mIsIFrameSelected) {
-    nsPrintObject* po = FindPrintObjectByDOMWin(printData->mPrintObject.get(),
-                                                printData->mCurrentFocusWin);
-    if (po) {
-      
-      
-      
-      if (po->mKids.Length() > 0) {
-        
-        po->SetPrintAsIs(true);
-      }
-
-      
-      po->EnablePrinting(true);
-    }
+  
+  nsPrintObject* po = FindPrintObjectByDOMWin(printData->mPrintObject.get(),
+                                              printData->mCurrentFocusWin);
+  if (!po) {
+    return NS_OK;
   }
 
+  
+  po->SetPrintAsIs(true);
+
+  
+  po->EnablePrinting(true);
+
+  
+  
+  
+  
+  
+  
+  
+  nsPIDOMWindowOuter* domWin =
+      po->mDocument->GetOriginalDocument()->GetWindow();
+  if (!IsThereARangeSelection(domWin)) {
+    printRangeType = nsIPrintSettings::kRangeAllPages;
+    printData->mPrintSettings->SetPrintRange(printRangeType);
+  }
+  PR_PL(("PrintRange:         %s \n", gPrintRangeStr[printRangeType]));
   return NS_OK;
 }
 
