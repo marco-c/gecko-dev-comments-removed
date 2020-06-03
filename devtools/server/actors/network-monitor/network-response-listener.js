@@ -524,6 +524,12 @@ NetworkResponseListener.prototype = {
       
     }
 
+    
+    
+    if (this.request.canceled && !reason) {
+      reason = "unknown";
+    }
+
     this.httpActivity.owner.addResponseContent(response, {
       discardResponseBody: this.httpActivity.discardResponseBody,
       truncated: this.truncated,
