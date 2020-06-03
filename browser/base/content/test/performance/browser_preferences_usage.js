@@ -227,6 +227,27 @@ add_task(async function navigate_around() {
         min: 50,
         max: 51,
       };
+    } else if (AppConstants.platform == "win") {
+      
+      
+      whitelist["gfx.canvas.azure.backends"] = {
+        min: 100,
+        max: 101,
+      };
+      whitelist["gfx.content.azure.backends"] = {
+        min: 100,
+        max: 101,
+      };
+      
+      
+      whitelist["security.sandbox.content.read_path_whitelist"] = {
+        min: 50,
+        max: 51,
+      };
+      whitelist["security.sandbox.logging.enabled"] = {
+        min: 50,
+        max: 51,
+      };
     }
   }
 
