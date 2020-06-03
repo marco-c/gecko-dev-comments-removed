@@ -10320,6 +10320,9 @@ class DeserializeIndexValueHelper final : public Runnable {
   void DispatchAndWait(ErrorResult& aRv) {
     
     
+#if 0
+    
+    
     if (!mCloneReadInfo.Data().Size()) {
       AutoJSAPI jsapi;
       jsapi.Init();
@@ -10332,6 +10335,7 @@ class DeserializeIndexValueHelper final : public Runnable {
                                             &mUpdateInfoArray, &aRv);
       return;
     }
+#endif
 
     
 
