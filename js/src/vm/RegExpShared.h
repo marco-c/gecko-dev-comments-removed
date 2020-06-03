@@ -378,6 +378,7 @@ class RegExpRealm {
 
 
 
+
   WeakHeapPtr<Shape*> optimizableRegExpPrototypeShape_;
 
   
@@ -398,6 +399,18 @@ class RegExpRealm {
   static const size_t MatchResultObjectInputSlot = 1;
 #ifdef ENABLE_NEW_REGEXP
   static const size_t MatchResultObjectGroupsSlot = 2;
+#endif
+
+  static size_t offsetOfMatchResultObjectIndexSlot() {
+    return sizeof(Value) * MatchResultObjectIndexSlot;
+  }
+  static size_t offsetOfMatchResultObjectInputSlot() {
+    return sizeof(Value) * MatchResultObjectInputSlot;
+  }
+#ifdef ENABLE_NEW_REGEXP
+  static size_t offsetOfMatchResultObjectGroupsSlot() {
+    return sizeof(Value) * MatchResultObjectGroupsSlot;
+  }
 #endif
 
   
