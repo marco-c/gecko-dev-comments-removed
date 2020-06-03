@@ -1,6 +1,6 @@
 
 import mozunit
-import mock
+from unittest import mock
 
 from mozperftest.tests.support import EXAMPLE_TEST, get_running_env, temp_dir, BT_DATA
 from mozperftest.environment import METRICS

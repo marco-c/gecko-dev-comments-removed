@@ -4,7 +4,7 @@
 
 from pathlib import Path
 import mozunit
-import mock
+from unittest import mock
 import pytest
 
 from mozperftest.environment import MachEnvironment
@@ -43,7 +43,7 @@ def test_layers():
 
 def test_context():
     mach, metadata, env = get_running_env()
-    env.layers = [mock.MagicMock(), mock.MagicMock()]
+    env.layers = [mock.MagicMock(), mock.MagicMock(), mock.MagicMock()]
     with env:
         env.run(metadata)
 
@@ -63,12 +63,29 @@ class Failure:
         raise FailureException()
 
 
+def create_mock():
+    m = mock.Mock()
+
+    
+    def enter(self):
+        self.setup()
+        return self
+
+    def exit(self, type, value, traceback):
+        self.teardown()
+
+    m.__enter__ = enter
+    m.__exit__ = exit
+    m.__call__ = mock.Mock()
+    return m
+
+
 def test_exception_return():
     
     hooks = str(Path(HERE, "data", "hook.py"))
     mach, metadata, env = get_running_env(hooks=hooks)
-    last_layer = mock.MagicMock()
-    env.layers = [mock.MagicMock(), Failure(), last_layer]
+    last_layer = create_mock()
+    env.layers = [create_mock(), Failure(), last_layer]
     with env:
         env.run(metadata)
     last_layer.assert_not_called()
@@ -78,8 +95,8 @@ def test_exception_resume():
     
     hooks = str(Path(HERE, "data", "hook_resume.py"))
     mach, metadata, env = get_running_env(hooks=hooks)
-    last_layer = mock.MagicMock()
-    env.layers = [mock.MagicMock(), Failure(), last_layer]
+    last_layer = create_mock()
+    env.layers = [create_mock(), Failure(), last_layer]
     with env:
         env.run(metadata)
     last_layer.assert_called()
@@ -89,11 +106,35 @@ def test_exception_raised():
     
     hooks = str(Path(HERE, "data", "hook_raises.py"))
     mach, metadata, env = get_running_env(hooks=hooks)
-    last_layer = mock.MagicMock()
-    env.layers = [mock.MagicMock(), Failure(), last_layer]
+    last_layer = create_mock()
+    env.layers = [create_mock(), Failure(), last_layer]
     with env, pytest.raises(FailureException):
         env.run(metadata)
-    last_layer.assert_not_called()
+    last_layer.__call__.assert_not_called()
+
+
+def test_metrics_last():
+    mach, metadata, env = get_running_env()
+
+    system = create_mock()
+    browser = create_mock()
+
+    
+    
+    class M:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args, **kw):
+            return
+
+        def __call__(self, metadata):
+            system.teardown.assert_called()
+            browser.teardown.assert_called()
+
+    env.layers = [system, browser, M()]
+    with env:
+        env.run(metadata)
 
 
 if __name__ == "__main__":

@@ -88,15 +88,28 @@ class MachEnvironment:
 
     def run(self, metadata):
         has_exc_handler = self.has_hook("on_exception")
-        for layer in self.layers:
+
+        
+        for layer in self.layers[:-1]:
+            with layer:
+                try:
+                    metadata = layer(metadata)
+                except Exception as e:
+                    if has_exc_handler:
+                        
+                        
+                        
+                        
+                        if not self.run_hook("on_exception", layer, e):
+                            return metadata
+                    else:
+                        raise
+        
+        with self.layers[METRICS] as metrics:
             try:
-                metadata = layer(metadata)
+                metadata = metrics(metadata)
             except Exception as e:
                 if has_exc_handler:
-                    
-                    
-                    
-                    
                     if not self.run_hook("on_exception", layer, e):
                         return metadata
                 else:

@@ -4,7 +4,7 @@
 
 import sys
 import mozunit
-import mock
+from unittest import mock
 import pytest
 from pathlib import Path
 import shutil

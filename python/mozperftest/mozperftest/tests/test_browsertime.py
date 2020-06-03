@@ -1,7 +1,7 @@
 
 import os
 import mozunit
-import mock
+from unittest import mock
 import shutil
 import string
 import random
