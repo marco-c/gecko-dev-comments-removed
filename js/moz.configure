@@ -549,21 +549,6 @@ set_define('ENABLE_WASM_REFTYPES', depends_if('--enable-wasm-reftypes')(lambda x
 
 
 
-@depends(milestone.is_nightly)
-def default_wasm_bigint(is_nightly):
-    return is_nightly
-
-js_option('--enable-wasm-bigint',
-          default=default_wasm_bigint,
-          help='{Enable|Disable} WebAssembly I64/BigInt conversion')
-
-set_config('ENABLE_WASM_BIGINT', depends_if('--enable-wasm-bigint')(lambda x: True))
-set_define('ENABLE_WASM_BIGINT', depends_if('--enable-wasm-bigint')(lambda x: True))
-
-
-
-
-
 @depends(milestone.is_nightly, '--enable-wasm-reftypes')
 def default_wasm_gc(is_nightly, reftypes):
     if reftypes and is_nightly:

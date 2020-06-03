@@ -107,9 +107,6 @@ bool GcTypesAvailable(JSContext* cx);
 bool MultiValuesAvailable(JSContext* cx);
 
 
-bool I64BigIntConversionAvailable(JSContext* cx);
-
-
 bool ThreadsAvailable(JSContext* cx);
 
 

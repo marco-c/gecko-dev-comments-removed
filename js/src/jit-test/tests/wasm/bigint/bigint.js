@@ -343,7 +343,6 @@ function testGlobalBadImportLiteral() {
 
 
 
-
 function testGlobalBadImportNumber() {
   assertErrorMessage(
     () =>
