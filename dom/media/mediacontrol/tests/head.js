@@ -30,7 +30,7 @@ async function createTabAndLoad(url, inputWindow = null) {
 
 
 function generateMediaControlKeyEvent(event) {
-  const playbackStateChanged = waitUntilMainMediaControllerPlaybackChanged();
+  const playbackStateChanged = waitUntilDisplayedPlaybackChanged();
   ChromeUtils.generateMediaControlKeysTestEvent(event);
   return playbackStateChanged;
 }
@@ -59,10 +59,7 @@ function playMedia(tab, elementId) {
       return video.play();
     }
   );
-  return Promise.all([
-    playPromise,
-    waitUntilMainMediaControllerPlaybackChanged(),
-  ]);
+  return Promise.all([playPromise, waitUntilDisplayedPlaybackChanged()]);
 }
 
 
@@ -90,10 +87,7 @@ function pauseMedia(tab, elementId) {
       video.pause();
     }
   );
-  return Promise.all([
-    pausePromise,
-    waitUntilMainMediaControllerPlaybackChanged(),
-  ]);
+  return Promise.all([pausePromise, waitUntilDisplayedPlaybackChanged()]);
 }
 
 
@@ -228,8 +222,8 @@ function isCurrentMetadataEqualTo(metadata) {
 
 
 
-function waitUntilMainMediaControllerPlaybackChanged() {
-  return BrowserUtils.promiseObserved("main-media-controller-playback-changed");
+function waitUntilDisplayedPlaybackChanged() {
+  return BrowserUtils.promiseObserved("media-displayed-playback-changed");
 }
 
 
