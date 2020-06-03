@@ -464,6 +464,24 @@ class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS Maybe
 
 
 
+
+  T extract() {
+    MOZ_DIAGNOSTIC_ASSERT(isSome());
+    auto v = std::move(mStorage.val);
+    reset();
+    return v;
+  }
+
+  
+
+
+
+  Maybe<T> take() { return std::exchange(*this, Nothing()); }
+
+  
+
+
+
   template <typename V>
   constexpr T valueOr(V&& aDefault) const {
     if (isSome()) {
