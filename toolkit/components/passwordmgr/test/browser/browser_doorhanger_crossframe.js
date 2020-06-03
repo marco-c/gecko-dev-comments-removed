@@ -31,14 +31,19 @@ function checkFormFields(browsingContext, prefix, username, password) {
   );
 }
 
-function listenForNotifications(count) {
+function listenForNotifications(count, expectedFormOrigin) {
   return new Promise(resolve => {
     let notifications = [];
     LoginManagerParent.setListenerForTests((msg, data) => {
       if (msg == "FormProcessed") {
         notifications.push("FormProcessed: " + data.browsingContext.id);
       } else if (msg == "FormSubmit") {
-        notifications.push("FormSubmit: " + data.usernameField.name);
+        is(
+          data.origin,
+          expectedFormOrigin,
+          "Message origin should match expected"
+        );
+        notifications.push("FormSubmit: " + data.data.usernameField.name);
       }
       if (notifications.length == count) {
         resolve(notifications);
@@ -91,7 +96,7 @@ async function submitSomeCrossSiteFrames(locationMode) {
 
   
   
-  notifyPromise = listenForNotifications(1);
+  notifyPromise = listenForNotifications(1, "https://test2.example.org");
   info("submit page after changing inner form");
 
   await SpecialPowers.spawn(outerFrameBC, [], () => {
@@ -133,7 +138,7 @@ async function submitSomeCrossSiteFrames(locationMode) {
   await checkFormFields(innerFrameBC2, "inner", "inner", "innerpass");
 
   
-  notifyPromise = listenForNotifications(1);
+  notifyPromise = listenForNotifications(1, "https://test1.example.com");
   info("submit page after changing outer form");
 
   await SpecialPowers.spawn(outerFrameBC2, [locationMode], doClick => {
