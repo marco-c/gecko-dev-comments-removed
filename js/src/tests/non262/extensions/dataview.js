@@ -1550,20 +1550,10 @@ function test(sharedMem) {
 
     
     
-    
-    assertEq(Object.prototype.toString.apply(Uint8Array.prototype), "[object Uint8ArrayPrototype]");
-    assertEq(Object.prototype.toString.apply(Float32Array.prototype), "[object Float32ArrayPrototype]");
-
-    
-    
-    
-    
-    
-    checkThrowTODO(() => {
-      var typedArrayPrototype = Object.getPrototypeOf(Float32Array.prototype);
-      assertEq(Object.prototype.toString.apply(typedArrayPrototype),
-               "[object ???]");
-    }, TypeError);
+    assertEq(Object.prototype.toString.apply(Uint8Array.prototype), "[object Object]");
+    assertEq(Object.prototype.toString.apply(Float32Array.prototype), "[object Object]");
+    var typedArrayPrototype = Object.getPrototypeOf(Float32Array.prototype);
+    assertEq(Object.prototype.toString.apply(typedArrayPrototype), "[object Object]");
 
     
     checkThrow(() => DataView.prototype.byteLength, TypeError);

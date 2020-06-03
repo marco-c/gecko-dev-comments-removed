@@ -648,7 +648,9 @@ bool js::obj_toString(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  
+  if (!builtinTag) {
+    builtinTag = cx->names().objectObject;
+  }
 
   
   RootedValue tag(cx);
@@ -659,21 +661,6 @@ bool js::obj_toString(JSContext* cx, unsigned argc, Value* vp) {
 
   
   if (!tag.isString()) {
-    
-    if (!builtinTag) {
-      const char* className = GetObjectClassName(cx, obj);
-      StringBuffer sb(cx);
-      if (!sb.append("[object ") || !sb.append(className, strlen(className)) ||
-          !sb.append(']')) {
-        return false;
-      }
-
-      builtinTag = sb.finishAtom();
-      if (!builtinTag) {
-        return false;
-      }
-    }
-
     args.rval().setString(builtinTag);
     return true;
   }
