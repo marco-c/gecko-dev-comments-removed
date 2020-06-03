@@ -22,9 +22,9 @@ function mainThreadBusy(duration) {
 
 
 
-function verifyClickEvent(entry, targetId, isFirst=false, minDuration=104) {
+function verifyEvent(entry, eventType, targetId, isFirst=false, minDuration=104) {
   assert_true(entry.cancelable);
-  assert_equals(entry.name, 'mousedown');
+  assert_equals(entry.name, eventType);
   assert_equals(entry.entryType, 'event');
   assert_greater_than_equal(entry.duration, minDuration,
       "The entry's duration should be greater than or equal to " + minDuration + " ms.");
@@ -50,6 +50,10 @@ function verifyClickEvent(entry, targetId, isFirst=false, minDuration=104) {
   }
   if (targetId)
     assert_equals(entry.target, document.getElementById(targetId));
+}
+
+function verifyClickEvent(entry, targetId, isFirst=false, minDuration=104) {
+  verifyEvent(entry, 'mousedown', targetId, isFirst, minDuration);
 }
 
 function wait() {
@@ -116,4 +120,53 @@ async function testDuration(t, id, numEntries, dur, fastDur, slowDur) {
     resolve();
   });
   return Promise.all([observerPromise, clicksPromise]);
+}
+
+function applyAction(actions, eventType, target) {
+  if (eventType === 'auxclick') {
+    actions.pointerMove(0, 0, {origin: target})
+    .pointerDown({button: actions.ButtonType.MIDDLE})
+    .pointerUp({button: actions.ButtonType.MIDDLE});
+  } else {
+    assert_unreached('The event type ' + eventType + ' is not supported.');
+  }
+}
+
+
+
+async function testEventType(t, eventType) {
+  assert_implements(window.EventCounts, "Event Counts isn't supported");
+  assert_equals(performance.eventCounts.get(eventType), 0);
+  const target = document.getElementById('target');
+  const actions = new test_driver.Actions();
+  
+  applyAction(actions, eventType, target);
+  applyAction(actions, eventType, target);
+  await actions.send();
+  assert_equals(performance.eventCounts.get('auxclick'), 2);
+  
+  const durationThreshold = 16;
+  
+  target.addEventListener(eventType, () => {
+    mainThreadBusy(durationThreshold + 4);
+  });
+  return new Promise(async resolve => {
+    new PerformanceObserver(t.step_func(entryList => {
+      let eventTypeEntries = entryList.getEntriesByName(eventType);
+      if (eventTypeEntries.length === 0)
+        return;
+
+      assert_equals(eventTypeEntries.length, 1);
+      verifyEvent(eventTypeEntries[0],
+                  eventType,
+                  'target',
+                  false ,
+                  durationThreshold);
+      assert_equals(performance.eventCounts.get(eventType), 3);
+      resolve();
+    })).observe({type: 'event', durationThreshold: durationThreshold});
+    
+    applyAction(actions, eventType, target);
+    actions.send();
+  });
 }
