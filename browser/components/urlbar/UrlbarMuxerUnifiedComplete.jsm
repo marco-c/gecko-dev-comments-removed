@@ -102,17 +102,31 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     
     
+    
+    let canShowTailSuggestions = true;
+
+    
+    
     for (let result of context.results) {
       
       
       
       if (
-        result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
-        result.payload.keywordOffer ||
-        (result.heuristic && result.payload.keyword)
+        canShowPrivateSearch &&
+        (result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
+          result.payload.keywordOffer ||
+          (result.heuristic && result.payload.keyword))
       ) {
         canShowPrivateSearch = false;
-        break;
+      }
+
+      if (
+        canShowTailSuggestions &&
+        !result.heuristic &&
+        (result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
+          (!result.payload.inPrivateWindow && !result.payload.tail))
+      ) {
+        canShowTailSuggestions = false;
       }
     }
 
@@ -139,6 +153,15 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
         result.payload.suggestion &&
         result.payload.suggestion.toLocaleLowerCase() === heuristicResultQuery
+      ) {
+        continue;
+      }
+
+      
+      if (
+        !canShowTailSuggestions &&
+        groupFromResult(result) == UrlbarUtils.RESULT_GROUP.SUGGESTION &&
+        result.payload.tail
       ) {
         continue;
       }

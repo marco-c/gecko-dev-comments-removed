@@ -173,6 +173,7 @@ var PlacesTestUtils = Object.freeze({
 
 
 
+
   async addBookmarkWithDetails(aBookmarkObj) {
     await PlacesUtils.bookmarks.insert({
       parentGuid: PlacesUtils.bookmarks.unfiledGuid,

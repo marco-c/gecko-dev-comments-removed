@@ -276,7 +276,6 @@ add_task(async function test_onProviderResultsRequested() {
   
   let expectedResults = [
     
-    
     {
       type: UrlbarUtils.RESULT_TYPE.SEARCH,
       source: UrlbarUtils.RESULT_SOURCE.SEARCH,

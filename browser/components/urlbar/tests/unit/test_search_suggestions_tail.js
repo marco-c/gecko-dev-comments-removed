@@ -151,7 +151,8 @@ add_task(async function basic_tail() {
 
 
 
-add_task(async function mixed_results() {
+
+add_task(async function mixed_suggestions() {
   
   
   setSuggestionsFn(searchStr => {
@@ -185,20 +186,71 @@ add_task(async function mixed_results() {
         suggestion: "what is the time today texas",
         tail: undefined,
       }),
-      makeSearchResult(context, {
-        engineName: ENGINE_NAME,
-        suggestion: query + "oronto",
-        tail: "toronto",
-      }),
-      makeSearchResult(context, {
-        engineName: ENGINE_NAME,
-        suggestion: query + "unisia",
-        tail: "tunisia",
-      }),
     ],
   });
   await cleanUpSuggestions();
 });
+
+
+
+
+
+add_task(async function mixed_results() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: Services.io.newURI("http://example.com/1"),
+      title: "what time is",
+    },
+  ]);
+
+  await PlacesUtils.bookmarks.insert({
+    parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+    url: "http://example.com/2",
+    title: "what time is",
+  });
+
+  
+  const query = "what time is";
+  let context = createContext(query, { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, { engineName: ENGINE_NAME, heuristic: true }),
+      makeBookmarkResult(context, {
+        uri: "http://example.com/2",
+        title: "what time is",
+      }),
+      makeVisitResult(context, {
+        uri: "http://example.com/1",
+        title: "what time is",
+      }),
+    ],
+  });
+
+  
+  
+  const tQuery = "what time is it in t";
+  context = createContext(tQuery, { isPrivate: false });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, { engineName: ENGINE_NAME, heuristic: true }),
+      makeSearchResult(context, {
+        engineName: ENGINE_NAME,
+        suggestion: tQuery + "oronto",
+        tail: "toronto",
+      }),
+      makeSearchResult(context, {
+        engineName: ENGINE_NAME,
+        suggestion: tQuery + "unisia",
+        tail: "tunisia",
+      }),
+    ],
+  });
+
+  await cleanUpSuggestions();
+});
+
 
 
 
@@ -218,11 +270,6 @@ add_task(async function dedupe_local() {
         engineName: ENGINE_NAME,
         suggestion: query + "oronto",
         tail: undefined,
-      }),
-      makeSearchResult(context, {
-        engineName: ENGINE_NAME,
-        suggestion: query + "unisia",
-        tail: "tunisia",
       }),
     ],
   });

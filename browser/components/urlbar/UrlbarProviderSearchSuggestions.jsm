@@ -20,6 +20,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   SearchSuggestionController:
     "resource://gre/modules/SearchSuggestionController.jsm",
   Services: "resource://gre/modules/Services.jsm",
+  SkippableTimer: "resource:///modules/UrlbarUtils.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
   UrlbarResult: "resource:///modules/UrlbarResult.jsm",
@@ -359,6 +360,16 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       this._lastLowResultsSearchSuggestion = searchString;
     }
 
+    
+    
+    
+    
+    let tailTimer = new SkippableTimer({
+      name: "ProviderSearchSuggestions",
+      time: 100,
+      logger,
+    });
+
     let results = [];
     for (let suggestion of suggestions) {
       if (
@@ -380,6 +391,10 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       if (UrlbarPrefs.get("richSuggestions.tail")) {
         tail = suggestion.entry.tail;
         tailPrefix = suggestion.entry.matchPrefix;
+      }
+
+      if (!tail) {
+        await tailTimer.fire().catch(Cu.reportError);
       }
 
       try {
@@ -414,6 +429,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       }
     }
 
+    await tailTimer.promise;
     return results;
   }
 
