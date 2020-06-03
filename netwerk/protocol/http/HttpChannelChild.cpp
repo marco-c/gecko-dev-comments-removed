@@ -2280,7 +2280,7 @@ HttpChannelChild::Cancel(nsresult aStatus) {
     mCanceled = true;
     mStatus = aStatus;
     if (RemoteChannelExists()) {
-      SendCancel(aStatus, mLoadInfo->GetRequestBlockingReason());
+      SendCancel(aStatus);
     }
 
     
