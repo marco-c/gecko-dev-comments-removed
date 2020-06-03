@@ -14,7 +14,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ReverseIterator.h"
 
-#if defined(DEBUG) || defined(MOZ_DUMP_PAINTING)
+#if defined(DEBUG) || defined(MOZ_DUMP_PAINTING) || defined(MOZ_LAYOUT_DEBUGGER)
 
 
 #  define DEBUG_FRAME_DUMP 1
