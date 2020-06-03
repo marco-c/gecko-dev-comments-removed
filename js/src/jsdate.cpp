@@ -58,6 +58,7 @@ using mozilla::Atomic;
 using mozilla::BitwiseCast;
 using mozilla::IsAsciiAlpha;
 using mozilla::IsAsciiDigit;
+using mozilla::IsAsciiLowercaseAlpha;
 using mozilla::IsFinite;
 using mozilla::IsNaN;
 using mozilla::NumbersAreIdentical;
@@ -613,52 +614,6 @@ static double MakeTime(double hour, double min, double sec, double ms) {
 
 
 
-static const char* const wtb[] = {
-    
-    "am", "pm",
-    "monday", "tuesday", "wednesday", "thursday", "friday",
-    "saturday", "sunday",
-    "january", "february", "march", "april", "may", "june",
-    "july", "august", "september", "october", "november", "december",
-    "gmt", "ut", "utc",
-    "est", "edt",
-    "cst", "cdt",
-    "mst", "mdt",
-    "pst", "pdt"
-    
-    
-};
-
-static const int ttb[] = {
-    
-    -1, -2, 0, 0, 0, 0, 0, 0, 0,       
-    2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
-    10000 + 0, 10000 + 0, 10000 + 0,   
-    10000 + 5 * 60, 10000 + 4 * 60,    
-    10000 + 6 * 60, 10000 + 5 * 60,    
-    10000 + 7 * 60, 10000 + 6 * 60,    
-    10000 + 8 * 60, 10000 + 7 * 60     
-    
-};
-
-template <typename CharT>
-static bool RegionMatches(const char* s1, int s1off, const CharT* s2, int s2off,
-                          int count) {
-  while (count > 0 && s1[s1off] && s2[s2off]) {
-    if (unicode::ToLowerCase(s1[s1off]) != unicode::ToLowerCase(s2[s2off])) {
-      break;
-    }
-
-    s1off++;
-    s2off++;
-    count--;
-  }
-
-  return count == 0;
-}
-
-
-
 
 static bool date_UTC(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -1059,6 +1014,61 @@ done:
 #undef NEED_NDIGITS_OR_LESS
 }
 
+struct CharsAndAction {
+  const char* chars;
+  int action;
+};
+
+static constexpr CharsAndAction keywords[] = {
+  
+  
+  { "am", -1 },
+  { "pm", -2 },
+  
+  { "monday", 0 },
+  { "tuesday", 0 },
+  { "wednesday", 0 },
+  { "thursday", 0 },
+  { "friday", 0 },
+  { "saturday", 0 },
+  { "sunday", 0 },
+  
+  { "january", 1 },
+  { "february", 2 },
+  { "march", 3 },
+  { "april", 4, },
+  { "may", 5 },
+  { "june", 6 },
+  { "july", 7 },
+  { "august", 8 },
+  { "september", 9 },
+  { "october", 10 },
+  { "november", 11 },
+  { "december", 12 },
+  
+  { "gmt", 10000 + 0 },
+  { "ut", 10000 + 0 },
+  { "utc", 10000 + 0 },
+  { "est", 10000 + 5 * 60 },
+  { "edt", 10000 + 4 * 60 },
+  { "cst", 10000 + 6 * 60 },
+  { "cdt", 10000 + 5 * 60 },
+  { "mst", 10000 + 7 * 60 },
+  { "mdt", 10000 + 6 * 60 },
+  { "pst", 10000 + 8 * 60 },
+  { "pdt", 10000 + 7 * 60 },
+  
+};
+
+template <size_t N>
+constexpr size_t MinKeywordLength(const CharsAndAction (&keywords)[N]) {
+  size_t min = size_t(-1);
+  for (const CharsAndAction& keyword : keywords) {
+    min = std::min(min, std::char_traits<char>::length(keyword.chars));
+  }
+  return min;
+}
+
 template <typename CharT>
 static bool ParseDate(const CharT* s, size_t length, ClippedTime* result) {
   if (ParseISOStyleDate(s, length, result)) {
@@ -1085,21 +1095,40 @@ static bool ParseDate(const CharT* s, size_t length, ClippedTime* result) {
   bool seenFullYear = false;
   bool negativeYear = false;
 
-  size_t i = 0;
-  while (i < length) {
-    int c = s[i];
-    i++;
-    if (c <= ' ' || c == ',' || c == '-') {
-      if (c == '-' && '0' <= s[i] && s[i] <= '9') {
+  size_t index = 0;
+  while (index < length) {
+    int c = s[index];
+    index++;
+
+    
+    if (c <= ' ' || c == ',') {
+      continue;
+    }
+
+    
+    if (c == '/' || c == ':' || c == '+') {
+      prevc = c;
+      continue;
+    }
+
+    
+    
+    if (c == '-') {
+      if (index < length && IsAsciiDigit(s[index])) {
         prevc = c;
       }
       continue;
     }
-    if (c == '(') { 
+
+    
+    
+    
+    
+    if (c == '(') {
       int depth = 1;
-      while (i < length) {
-        c = s[i];
-        i++;
+      while (index < length) {
+        c = s[index];
+        index++;
         if (c == '(') {
           depth++;
         } else if (c == ')') {
@@ -1110,14 +1139,20 @@ static bool ParseDate(const CharT* s, size_t length, ClippedTime* result) {
       }
       continue;
     }
-    if ('0' <= c && c <= '9') {
-      size_t partStart = i - 1;
+
+    
+    if (IsAsciiDigit(c)) {
+      size_t partStart = index - 1;
       uint32_t u = c - '0';
-      while (i < length && '0' <= (c = s[i]) && c <= '9') {
+      while (index < length) {
+        c = s[index];
+        if (!IsAsciiDigit(c)) {
+          break;
+        }
         u = u * 10 + (c - '0');
-        i++;
+        index++;
       }
-      size_t partLength = i - partStart;
+      size_t partLength = index - partStart;
 
       int n = int(u);
 
@@ -1162,7 +1197,7 @@ static bool ParseDate(const CharT* s, size_t length, ClippedTime* result) {
 
         tzOffset = n;
       } else if (prevc == '/' && mon >= 0 && mday >= 0 && year < 0) {
-        if (c <= ' ' || c == ',' || c == '/' || i >= length) {
+        if (c <= ' ' || c == ',' || c == '/' || index >= length) {
           year = n;
         } else {
           return false;
@@ -1187,7 +1222,8 @@ static bool ParseDate(const CharT* s, size_t length, ClippedTime* result) {
         } else {
           return false;
         }
-      } else if (i < length && c != ',' && c > ' ' && c != '-' && c != '(') {
+      } else if (index < length && c != ',' && c > ' ' && c != '-' &&
+                 c != '(') {
         return false;
       } else if (seenPlusMinus && n < 60) { 
         if (tzOffset < 0) {
@@ -1209,79 +1245,126 @@ static bool ParseDate(const CharT* s, size_t length, ClippedTime* result) {
       } else {
         return false;
       }
+
       prevc = 0;
-    } else if (c == '/' || c == ':' || c == '+' || c == '-') {
-      prevc = c;
-    } else {
-      size_t st = i - 1;
-      while (i < length) {
-        c = s[i];
+      continue;
+    }
+
+    
+    
+    
+    if (IsAsciiAlpha(c)) {
+      size_t start = index - 1;
+      while (index < length) {
+        c = s[index];
         if (!IsAsciiAlpha(c)) {
           break;
         }
-        i++;
+        index++;
       }
 
-      if (i <= st + 1) {
+      
+      constexpr size_t MinLength = MinKeywordLength(keywords);
+      if (index - start < MinLength) {
         return false;
       }
 
-      int k;
-      for (k = ArrayLength(wtb); --k >= 0;) {
-        if (RegionMatches(wtb[k], 0, s, st, i - st)) {
-          int action = ttb[k];
-          if (action != 0) {
-            if (action < 0) {
-              
+      auto IsPrefixOfKeyword = [](const CharT* s, size_t len,
+                                  const char* keyword) {
+        while (len > 0 && *keyword) {
+          MOZ_ASSERT(IsAsciiAlpha(*s));
+          MOZ_ASSERT(IsAsciiLowercaseAlpha(*keyword));
 
-
-
-              MOZ_ASSERT(action == -1 || action == -2);
-              if (hour > 12 || hour < 0) {
-                return false;
-              }
-
-              if (action == -1 && hour == 12) 
-                hour = 0;
-              else if (action == -2 && hour != 12) 
-                hour += 12;
-            } else if (action <= 13) { 
-              
-
-
-
-              if (seenMonthName) {
-                return false;
-              }
-
-              seenMonthName = true;
-              int temp =  (action - 2) + 1;
-
-              if (mon < 0) {
-                mon = temp;
-              } else if (mday < 0) {
-                mday = mon;
-                mon = temp;
-              } else if (year < 0) {
-                year = mon;
-                mon = temp;
-              } else {
-                return false;
-              }
-            } else {
-              tzOffset = action - 10000;
-            }
+          if (unicode::ToLowerCase(static_cast<Latin1Char>(*s)) != *keyword) {
+            break;
           }
+
+          s++, keyword++;
+          len--;
+        }
+
+        return len == 0;
+      };
+
+      size_t k = ArrayLength(keywords);
+      while (k-- > 0) {
+        const CharsAndAction& keyword = keywords[k];
+
+        
+        
+        if (!IsPrefixOfKeyword(s + start, index - start, keyword.chars)) {
+          continue;
+        }
+
+        int action = keyword.action;
+
+        
+        
+        if (action == 0) {
           break;
         }
+
+        
+
+        
+        
+        if (action < 0) {
+          MOZ_ASSERT(action == -1 || action == -2);
+          if (hour > 12 || hour < 0) {
+            return false;
+          }
+
+          if (action == -1 && hour == 12) {
+            hour = 0;
+          } else if (action == -2 && hour != 12) {
+            hour += 12;
+          }
+
+          break;
+        }
+
+        
+        
+        
+        
+        if (action <= 12) {
+          if (seenMonthName) {
+            return false;
+          }
+
+          seenMonthName = true;
+
+          if (mon < 0) {
+            mon = action;
+          } else if (mday < 0) {
+            mday = mon;
+            mon = action;
+          } else if (year < 0) {
+            year = mon;
+            mon = action;
+          } else {
+            return false;
+          }
+
+          break;
+        }
+
+        
+        MOZ_ASSERT(action >= 10000);
+        tzOffset = action - 10000;
+        break;
       }
 
-      if (k < 0) {
+      if (k == size_t(-1)) {
         return false;
       }
 
       prevc = 0;
+      continue;
     }
+
+    
+    return false;
   }
 
   if (year < 0 || mon < 0 || mday < 0) {
