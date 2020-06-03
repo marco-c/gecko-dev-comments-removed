@@ -2336,10 +2336,10 @@ void ClientAuthDataRunnable::RunOnTargetThread() {
   
   
   const nsACString& hostname = mInfo.HostName();
-  nsCOMPtr<nsIClientAuthRememberService> cars = nullptr;
+  nsCOMPtr<nsIClientAuthRemember> cars = nullptr;
 
   if (mInfo.ProviderTlsFlags() == 0) {
-    cars = do_GetService(NS_CLIENTAUTHREMEMBERSERVICE_CONTRACTID);
+    cars = do_GetService(NS_CLIENTAUTHREMEMBER_CONTRACTID);
   }
 
   if (cars) {
