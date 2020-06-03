@@ -64,8 +64,12 @@ class ResourceWatcher {
 
 
 
+
+
+
+
   async watch(resources, options) {
-    const { onAvailable, onDestroyed } = options;
+    const { ignoreExistingResources = false } = options;
 
     
     
@@ -75,11 +79,15 @@ class ResourceWatcher {
     await this._watchAllTargets();
 
     for (const resource of resources) {
-      this._availableListeners.on(resource, onAvailable);
-      if (onDestroyed) {
-        this._destroyedListeners.on(resource, onDestroyed);
+      if (ignoreExistingResources) {
+        
+        
+        await this._startListening(resource);
+        this._registerListeners(resource, options);
+      } else {
+        this._registerListeners(resource, options);
+        await this._startListening(resource);
       }
-      await this._startListening(resource);
     }
   }
 
@@ -105,6 +113,20 @@ class ResourceWatcher {
     }
     if (listeners <= 0) {
       this._unwatchAllTargets();
+    }
+  }
+
+  
+
+
+
+
+
+
+  _registerListeners(resource, { onAvailable, onDestroyed }) {
+    this._availableListeners.on(resource, onAvailable);
+    if (onDestroyed) {
+      this._destroyedListeners.on(resource, onDestroyed);
     }
   }
 
