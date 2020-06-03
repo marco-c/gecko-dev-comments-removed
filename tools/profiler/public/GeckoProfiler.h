@@ -309,19 +309,19 @@ bool IsThreadRegistered();
 
 
 static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_ENTRIES =
-#  if !defined(ARCH_ARMV6)
+#  if !defined(GP_PLAT_arm_android)
     mozilla::MakePowerOfTwo32<8 * 1024 * 1024>();  
 #  else
-    mozilla::MakePowerOfTwo32<512 * 1024>();  // 512k entries = 4MB
+    mozilla::MakePowerOfTwo32<2 * 1024 * 1024>();  // 2M entries = 16MB
 #  endif
 
 
 
 static constexpr mozilla::PowerOfTwo32 PROFILER_DEFAULT_STARTUP_ENTRIES =
-#  if !defined(ARCH_ARMV6)
+#  if !defined(GP_PLAT_arm_android)
     mozilla::MakePowerOfTwo32<64 * 1024 * 1024>();  
 #  else
-    mozilla::MakePowerOfTwo32<512 * 1024>();  
+    mozilla::MakePowerOfTwo32<8 * 1024 * 1024>();  
 #  endif
 
 #  define PROFILER_DEFAULT_DURATION 20 /* seconds, for tests only */
