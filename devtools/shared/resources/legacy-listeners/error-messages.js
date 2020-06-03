@@ -38,19 +38,29 @@ module.exports = async function({
   
   const { messages } = await webConsoleFront.getCachedMessages(["PageError"]);
 
-  for (const message of messages) {
+  for (let message of messages) {
     
     
     if (
       !webConsoleFront.traits.newCacheStructure &&
+      message._type &&
       message._type !== "PageError"
     ) {
       continue;
     }
 
     
+    if (message._type) {
+      
+      message = {
+        pageError: message,
+        type: "pageError",
+      };
+    }
+
     
-    onAvailable({ pageError: message });
+    
+    onAvailable(message);
   }
 
   webConsoleFront.on("pageError", onAvailable);

@@ -40,6 +40,13 @@ module.exports = async function({ targetList, targetFront, onAvailable }) {
     ) {
       continue;
     }
+
+    
+    if (message._type) {
+      message.type = "logMessage";
+      delete message._type;
+    }
+
     onAvailable(message);
   }
 

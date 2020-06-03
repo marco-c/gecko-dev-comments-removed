@@ -80,7 +80,7 @@ async function generateNetworkEventStubs() {
       
       const packet = {
         networkInfo: {
-          _type: res.networkInfo._type,
+          type: res.networkInfo.type,
           actor: res.networkInfo.actor,
           request: res.networkInfo.request,
           response: res.networkInfo.response,
