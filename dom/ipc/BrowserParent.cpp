@@ -1169,7 +1169,6 @@ void BrowserParent::Deactivate(bool aWindowLowering) {
     UnsetTopLevelWebFocus(this);  
   }
   if (!mIsDestroyed) {
-    BrowserParent::UnsetLastMouseRemoteTarget(this);
     Unused << Manager()->SendDeactivate(this);
   }
 }
@@ -1394,7 +1393,16 @@ void BrowserParent::SendRealMouseEvent(WidgetMouseEvent& aEvent) {
   
   
   if (aEvent.mReason == WidgetMouseEvent::eReal) {
-    sLastMouseRemoteTarget = this;
+    if (aEvent.mMessage == eMouseExitFromWidget) {
+      
+      
+      
+      BrowserParent::UnsetLastMouseRemoteTarget(this);
+    } else {
+      
+      MOZ_ASSERT_IF(sLastMouseRemoteTarget, sLastMouseRemoteTarget == this);
+      sLastMouseRemoteTarget = this;
+    }
   }
 
   aEvent.mRefPoint = TransformParentToChild(aEvent.mRefPoint);
