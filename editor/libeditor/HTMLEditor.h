@@ -3243,10 +3243,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-    
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY CellIndexes(Element& aCellElement,
-                                            PresShell* aPresShell,
-                                            ErrorResult& aRv)
+    MOZ_CAN_RUN_SCRIPT CellIndexes(Element& aCellElement, PresShell* aPresShell,
+                                   ErrorResult& aRv)
         : mRow(-1), mColumn(-1) {
       MOZ_ASSERT(!aRv.Failed());
       Update(aCellElement, aPresShell, aRv);
@@ -3257,10 +3255,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-    
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY void Update(Element& aCellElement,
-                                            PresShell* aPresShell,
-                                            ErrorResult& aRv);
+    MOZ_CAN_RUN_SCRIPT void Update(Element& aCellElement, PresShell* aPresShell,
+                                   ErrorResult& aRv);
 
     
 
@@ -3272,10 +3268,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-    
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY CellIndexes(HTMLEditor& aHTMLEditor,
-                                            Selection& aSelection,
-                                            ErrorResult& aRv)
+    MOZ_CAN_RUN_SCRIPT CellIndexes(HTMLEditor& aHTMLEditor,
+                                   Selection& aSelection, ErrorResult& aRv)
         : mRow(-1), mColumn(-1) {
       Update(aHTMLEditor, aSelection, aRv);
     }
@@ -3286,10 +3280,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-    
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY void Update(HTMLEditor& aHTMLEditor,
-                                            Selection& aSelection,
-                                            ErrorResult& aRv);
+    MOZ_CAN_RUN_SCRIPT void Update(HTMLEditor& aHTMLEditor,
+                                   Selection& aSelection, ErrorResult& aRv);
 
     bool operator==(const CellIndexes& aOther) const {
       return mRow == aOther.mRow && mColumn == aOther.mColumn;
@@ -3315,8 +3307,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-    CellAndIndexes(HTMLEditor& aHTMLEditor, Selection& aSelection,
-                   ErrorResult& aRv) {
+    MOZ_CAN_RUN_SCRIPT CellAndIndexes(HTMLEditor& aHTMLEditor,
+                                      Selection& aSelection, ErrorResult& aRv) {
       Update(aHTMLEditor, aSelection, aRv);
     }
 
@@ -3326,8 +3318,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-    void Update(HTMLEditor& aHTMLEditor, Selection& aSelection,
-                ErrorResult& aRv);
+    MOZ_CAN_RUN_SCRIPT void Update(HTMLEditor& aHTMLEditor,
+                                   Selection& aSelection, ErrorResult& aRv);
   };
 
   struct MOZ_STACK_CLASS CellData final {
@@ -4111,9 +4103,11 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  nsresult GetCellContext(Element** aTable, Element** aCell,
-                          nsINode** aCellParent, int32_t* aCellOffset,
-                          int32_t* aRowIndex, int32_t* aColIndex);
+  MOZ_CAN_RUN_SCRIPT nsresult GetCellContext(Element** aTable, Element** aCell,
+                                             nsINode** aCellParent,
+                                             int32_t* aCellOffset,
+                                             int32_t* aRowIndex,
+                                             int32_t* aColIndex);
 
   nsresult GetCellSpansAt(Element* aTable, int32_t aRowIndex, int32_t aColIndex,
                           int32_t& aActualRowSpan, int32_t& aActualColSpan);
