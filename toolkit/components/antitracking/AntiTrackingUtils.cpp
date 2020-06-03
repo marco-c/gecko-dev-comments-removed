@@ -256,6 +256,15 @@ bool AntiTrackingUtils::CheckStoragePermission(nsIPrincipal* aPrincipal,
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
 
+  auto policyType = loadInfo->GetExternalContentPolicyType();
+
+  
+  
+  
+  if (policyType == nsIContentPolicy::TYPE_DOCUMENT) {
+    return false;
+  }
+
   nsresult rv =
       loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -271,25 +280,34 @@ bool AntiTrackingUtils::CheckStoragePermission(nsIPrincipal* aPrincipal,
   
   
   
+  
   if (!net::CookieJarSettings::IsRejectThirdPartyContexts(cookieBehavior)) {
     return false;
   }
 
-  nsCOMPtr<nsIPrincipal> targetPrincipal =
+  RefPtr<BrowsingContext> bc;
+  rv = loadInfo->GetTargetBrowsingContext(getter_AddRefs(bc));
+  if (NS_WARN_IF(NS_FAILED(rv)) || !bc) {
+    return false;
+  }
+
+  uint64_t targetWindowId =
       (cookieBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
        rejectForeignWithExceptions)
-          ? loadInfo->GetTopLevelStorageAreaPrincipal()
-          : loadInfo->GetTopLevelPrincipal();
+          ? GetTopLevelStorageAreaWindowId(bc)
+          : GetTopLevelAntiTrackingWindowId(bc);
+  nsCOMPtr<nsIPrincipal> targetPrincipal;
 
-  if (!targetPrincipal) {
-    if (loadInfo->GetTopLevelPrincipal()) {
-      
-      
-      
-      
+  if (targetWindowId) {
+    RefPtr<WindowGlobalParent> wgp =
+        WindowGlobalParent::GetByInnerWindowId(targetWindowId);
+
+    if (NS_WARN_IF(!wgp)) {
       return false;
     }
 
+    targetPrincipal = wgp->DocumentPrincipal();
+  } else {
     
     targetPrincipal = loadInfo->GetLoadingPrincipal();
   }
