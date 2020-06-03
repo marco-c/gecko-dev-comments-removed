@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DocAccessible.h"
 #include "nsObjCExceptions.h"
@@ -30,16 +30,16 @@ mozAccessible* AccessibleWrap::GetNativeObject() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
   if (!mNativeInited && !mNativeObject) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // We don't creat OSX accessibles for xul tooltips, defunct accessibles,
+    // or pruned children.
+    //
+    // We also don't create a native object if we're child of a "flat" accessible;
+    // for example, on OS X buttons shouldn't have any children, because that
+    // makes the OS confused.
+    //
+    // To maintain a scripting environment where the XPCOM accessible hierarchy
+    // look the same on all platforms, we still let the C++ objects be created
+    // though.
     Accessible* parent = Parent();
     bool mustBePruned = parent && nsAccUtils::MustPrune(parent);
     if (!IsXULTooltip() && !IsDefunct() && !mustBePruned) {
@@ -58,8 +58,8 @@ void AccessibleWrap::GetNativeInterface(void** aOutInterface) {
   *aOutInterface = static_cast<void*>(GetNativeObject());
 }
 
-
-
+// overridden in subclasses to create the right kind of object. by default we create a generic
+// 'mozAccessible' node.
 Class AccessibleWrap::GetNativeType() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
@@ -76,14 +76,14 @@ Class AccessibleWrap::GetNativeType() {
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
-
-
-
+// this method is very important. it is fired when an accessible object "dies". after this point
+// the object might still be around (because some 3rd party still has a ref to it), but it is
+// in fact 'dead'.
 void AccessibleWrap::Shutdown() {
-  
+  // this ensure we will not try to re-create the native object.
   mNativeInited = true;
 
-  
+  // we really intend to access the member directly.
   if (mNativeObject) {
     [mNativeObject expire];
     [mNativeObject release];
@@ -128,8 +128,8 @@ nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
     case nsIAccessibleEvent::EVENT_SELECTION_ADD:
     case nsIAccessibleEvent::EVENT_SELECTION_REMOVE: {
       AccSelChangeEvent* selEvent = downcast_accEvent(aEvent);
-      
-      
+      // The "widget" is the selected widget's container. In OSX
+      // it is the target of the selection changed event.
       if (Accessible* accessible = selEvent->Widget()) {
         accessible->GetNativeInterface((void**)&nativeAcc);
         if (!nativeAcc) {
@@ -163,8 +163,8 @@ nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
   NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// AccessibleWrap protected
 
 Class a11y::GetTypeFromRole(roles::Role aRole) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
@@ -181,10 +181,8 @@ Class a11y::GetTypeFromRole(roles::Role aRole) {
 
     case roles::CHECKBUTTON:
     case roles::TOGGLE_BUTTON:
-      return [mozCheckboxAccessible class];
-
     case roles::RADIOBUTTON:
-      return [mozRadioButtonAccessible class];
+      return [mozCheckboxAccessible class];
 
     case roles::SPINBUTTON:
     case roles::SLIDER:
@@ -200,7 +198,7 @@ Class a11y::GetTypeFromRole(roles::Role aRole) {
     case roles::CAPTION:
     case roles::ACCEL_LABEL:
     case roles::PASSWORD_TEXT:
-      
+      // normal textfield (static or editable)
       return [mozTextAccessible class];
 
     case roles::TEXT_LEAF:

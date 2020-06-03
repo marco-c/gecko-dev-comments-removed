@@ -83,19 +83,6 @@ class Pivot final {
   Accessible* mRoot;
 };
 
-
-
-
-class PivotRoleRule final : public PivotRule {
- public:
-  explicit PivotRoleRule(mozilla::a11y::role aRole);
-
-  virtual uint16_t Match(Accessible* aAccessible) override;
-
- private:
-  mozilla::a11y::role mRole;
-};
-
 }  
 }  
 
