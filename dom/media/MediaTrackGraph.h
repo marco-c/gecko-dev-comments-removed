@@ -1100,6 +1100,12 @@ class MediaTrackGraph {
 
 
 
+  void NotifyJSContext(JSContext* aCx);
+
+  
+
+
+
 
 
 
