@@ -892,15 +892,13 @@ SearchService.prototype = {
         
         return true;
       }
-      if (extension.startupReason === "ADDON_INSTALL") {
-        
-        engine.overrideWithExtension(params);
-        logConsole.debug(
-          "Allowing default engine to be set to app-provided and overridden.",
-          extension.id
-        );
-        return true;
-      }
+      
+      engine.overrideWithExtension(params);
+      logConsole.debug(
+        "Allowing default engine to be set to app-provided and overridden.",
+        extension.id
+      );
+      return true;
     }
 
     if (
