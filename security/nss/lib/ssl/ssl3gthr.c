@@ -611,6 +611,46 @@ ssl3_GatherAppDataRecord(sslSocket *ss, int flags)
     return rv;
 }
 
+static SECStatus
+ssl_HandleZeroRttRecordData(sslSocket *ss, const PRUint8 *data, unsigned int len)
+{
+    PORT_Assert(ss->sec.isServer);
+    if (ss->ssl3.hs.zeroRttState == ssl_0rtt_accepted) {
+        sslBuffer buf = { CONST_CAST(PRUint8, data), len, len, PR_TRUE };
+        return tls13_HandleEarlyApplicationData(ss, &buf);
+    }
+    if (ss->ssl3.hs.zeroRttState == ssl_0rtt_ignored &&
+        ss->ssl3.hs.zeroRttIgnore != ssl_0rtt_ignore_none) {
+        
+        return SECSuccess;
+    }
+    PORT_SetError(SSL_ERROR_RX_UNEXPECTED_APPLICATION_DATA);
+    return SECFailure;
+}
+
+
+static PRBool
+ssl_IsApplicationDataPermitted(sslSocket *ss, PRUint16 epoch)
+{
+    
+    if (epoch == 0) {
+        return PR_FALSE;
+    }
+    if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3) {
+        return ss->firstHsDone;
+    }
+    
+    if (epoch >= TrafficKeyApplicationData) {
+        return ss->firstHsDone;
+    }
+    
+
+    if (epoch == TrafficKeyEarlyApplicationData) {
+        return ss->sec.isServer;
+    }
+    return PR_FALSE;
+}
+
 SECStatus
 SSLExp_RecordLayerData(PRFileDesc *fd, PRUint16 epoch,
                        SSLContentType contentType,
@@ -637,8 +677,8 @@ SSLExp_RecordLayerData(PRFileDesc *fd, PRUint16 epoch,
         goto early_loser; 
     }
 
-    
-    if (contentType == ssl_ct_application_data && !ss->firstHsDone) {
+    if (contentType == ssl_ct_application_data &&
+        !ssl_IsApplicationDataPermitted(ss, epoch)) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         goto early_loser;
     }
@@ -649,7 +689,18 @@ SSLExp_RecordLayerData(PRFileDesc *fd, PRUint16 epoch,
     if (epoch < ss->ssl3.crSpec->epoch) {
         epochError = SEC_ERROR_INVALID_ARGS; 
     } else if (epoch > ss->ssl3.crSpec->epoch) {
-        epochError = PR_WOULD_BLOCK_ERROR; 
+        
+
+
+        if (ss->version >= SSL_LIBRARY_VERSION_TLS_1_3 &&
+            ss->opt.suppressEndOfEarlyData &&
+            ss->sec.isServer &&
+            ss->ssl3.crSpec->epoch == TrafficKeyEarlyApplicationData &&
+            epoch == TrafficKeyHandshake) {
+            epochError = 0;
+        } else {
+            epochError = PR_WOULD_BLOCK_ERROR; 
+        }
     } else {
         epochError = 0; 
     }
@@ -660,11 +711,18 @@ SSLExp_RecordLayerData(PRFileDesc *fd, PRUint16 epoch,
     }
 
     
-    ssl_Get1stHandshakeLock(ss);
     rv = ssl_Do1stHandshake(ss);
     if (rv != SECSuccess && PORT_GetError() != PR_WOULD_BLOCK_ERROR) {
+        goto early_loser;
+    }
+
+    
+    if (ss->version >= SSL_LIBRARY_VERSION_TLS_1_3 &&
+        epoch == TrafficKeyEarlyApplicationData &&
+        contentType == ssl_ct_application_data) {
+        rv = ssl_HandleZeroRttRecordData(ss, data, len);
         ssl_Release1stHandshakeLock(ss);
-        return SECFailure;
+        return rv;
     }
 
     

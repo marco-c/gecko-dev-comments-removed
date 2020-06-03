@@ -327,6 +327,25 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
 
 #define SSL_ENABLE_DELEGATED_CREDENTIALS 40
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define SSL_SUPPRESS_END_OF_EARLY_DATA 41
+
 #ifdef SSL_DEPRECATED_FUNCTION
 
 SSL_IMPORT SECStatus SSL_Enable(PRFileDesc *fd, int option, PRIntn on);

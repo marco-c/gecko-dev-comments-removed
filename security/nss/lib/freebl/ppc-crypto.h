@@ -5,7 +5,8 @@
 #ifndef PPC_CRYPTO_H
 #define PPC_CRYPTO_H 1
 
-#if defined(__powerpc64__) && !defined(NSS_DISABLE_ALTIVEC)
+#if defined(__powerpc64__) && defined(__ALTIVEC__) && \
+    !defined(NSS_DISABLE_ALTIVEC)
 #include "altivec-types.h"
 
 
@@ -21,7 +22,7 @@
 
 
 #if (defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 8)) && \
-    defined(IS_LITTLE_ENDIAN)
+    defined(IS_LITTLE_ENDIAN) && defined(__VSX__)
 #define USE_PPC_CRYPTO
 #endif
 

@@ -39,9 +39,9 @@ mp_err mpl_lsh(const mp_int *a, mp_int *b, mp_digit d);
 
 
 
-mp_err mpl_num_set(mp_int *a, int *num);   
-mp_err mpl_num_clear(mp_int *a, int *num); 
-mp_err mpl_parity(mp_int *a);              
+mp_err mpl_num_set(mp_int *a, unsigned int *num);   
+mp_err mpl_num_clear(mp_int *a, unsigned int *num); 
+mp_err mpl_parity(mp_int *a);                       
 
 
 
