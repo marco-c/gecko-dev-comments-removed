@@ -1355,6 +1355,8 @@ void nsXULPopupManager::FirePopupShowingEvent(nsIContent* aPopup,
   mRangeParentContent = nullptr;
   mRangeOffset = 0;
 
+  aPopup->OwnerDoc()->FlushPendingNotifications(FlushType::Frames);
+
   
   popupFrame = do_QueryFrame(aPopup->GetPrimaryFrame());
   if (popupFrame) {
@@ -1384,6 +1386,7 @@ void nsXULPopupManager::FirePopupHidingEvent(
     nsIContent* aPopup, nsIContent* aNextPopup, nsIContent* aLastPopup,
     nsPresContext* aPresContext, nsPopupType aPopupType, bool aDeselectMenu,
     bool aIsCancel) {
+  nsCOMPtr<nsIContent> popup = aPopup;
   RefPtr<PresShell> presShell = aPresContext->PresShell();
   mozilla::Unused << presShell;  
                                  
@@ -1410,6 +1413,8 @@ void nsXULPopupManager::FirePopupHidingEvent(
       }
     }
   }
+
+  aPopup->OwnerDoc()->FlushPendingNotifications(FlushType::Frames);
 
   
   nsMenuPopupFrame* popupFrame = do_QueryFrame(aPopup->GetPrimaryFrame());
