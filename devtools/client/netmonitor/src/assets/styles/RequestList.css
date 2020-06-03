@@ -525,8 +525,12 @@
   opacity: var(--table-icon-opacity, 1);
 }
 
-.request-list-item.blocked {
-  color: var(--timing-blocked-color);
+
+
+
+
+.request-list-item:not(.selected).blocked {
+  color: var(--timing-blocked-color) !important;
 }
 
 
