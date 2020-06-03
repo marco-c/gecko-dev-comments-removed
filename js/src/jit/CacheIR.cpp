@@ -1816,8 +1816,10 @@ AttachDecision GetPropIRGenerator::tryAttachTypedArrayLength(HandleObject obj,
   maybeEmitIdGuard(id);
   
   
+  
+  
   EmitCallGetterResultGuards(writer, obj, holder, shape, objId, mode_);
-  writer.loadTypedArrayLengthResult(objId);
+  writer.loadTypedArrayLengthResult(objId, &fun);
   writer.returnFromIC();
 
   trackAttached("TypedArrayLength");
