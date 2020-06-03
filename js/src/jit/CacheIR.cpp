@@ -5061,6 +5061,65 @@ AttachDecision CallIRGenerator::tryAttachToString(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachToObject(HandleFunction callee) {
+  
+  
+  if (argc_ != 1 || !args_[0].isObject()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ObjOperandId objId = writer.guardToObject(argId);
+
+  
+  writer.loadObjectResult(objId);
+
+  
+  writer.typeMonitorResult();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
+
+  trackAttached("ToObject");
+  return AttachDecision::Attach;
+}
+
+AttachDecision CallIRGenerator::tryAttachToInteger(HandleFunction callee) {
+  
+  
+  
+  
+  if (argc_ != 1 || !args_[0].isInt32()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  Int32OperandId int32Id = writer.guardToInt32(argId);
+
+  
+  writer.loadInt32Result(int32Id);
+
+  
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("ToInteger");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachStringChar(HandleFunction callee,
                                                     StringChar kind) {
   
@@ -5477,6 +5536,10 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachIsSuspendedGenerator(callee);
     case InlinableNative::IntrinsicToString:
       return tryAttachToString(callee);
+    case InlinableNative::IntrinsicToObject:
+      return tryAttachToObject(callee);
+    case InlinableNative::IntrinsicToInteger:
+      return tryAttachToInteger(callee);
 
     
     case InlinableNative::StringCharCodeAt:
