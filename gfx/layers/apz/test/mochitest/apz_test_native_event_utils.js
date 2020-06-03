@@ -721,15 +721,41 @@ function* pinchZoomInTouchSequence(focusX, focusY) {
 
 
 
+function promiseTopic(aTopic) {
+  return new Promise((resolve, reject) => {
+    SpecialPowers.Services.obs.addObserver(function observer(
+      subject,
+      topic,
+      data
+    ) {
+      try {
+        SpecialPowers.Services.obs.removeObserver(observer, topic);
+        resolve([subject, data]);
+      } catch (ex) {
+        SpecialPowers.Services.obs.removeObserver(observer, topic);
+        reject(ex);
+      }
+    },
+    aTopic);
+  });
+}
 
-function* pinchZoomInWithTouch(testDriver, focusX, focusY) {
+
+
+
+async function pinchZoomInWithTouch(focusX, focusY) {
   
+  let transformEndPromise = promiseTopic("APZ:TransformEnd");
+
   
-  SpecialPowers.Services.obs.addObserver(testDriver, "APZ:TransformEnd");
-  yield* pinchZoomInTouchSequence(focusX, focusY);
+  let generator = pinchZoomInTouchSequence(focusX, focusY);
+  while (true) {
+    let yieldResult = generator.next();
+    if (yieldResult.done) {
+      break;
+    }
+  }
+
   
-  yield true;
-  
-  
-  SpecialPowers.Services.obs.removeObserver(testDriver, "APZ:TransformEnd");
+  await transformEndPromise;
 }

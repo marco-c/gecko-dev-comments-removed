@@ -286,6 +286,13 @@ function waitForApzFlushedRepaints(aCallback) {
 }
 
 
+async function promiseApzFlushedRepaints() {
+  await promiseAllPaintsDone();
+  await promiseApzRepaintsFlushed();
+  await promiseAllPaintsDone();
+}
+
+
 
 
 
