@@ -922,6 +922,8 @@ void BaselineInterpreterCodeGen::pushScriptNameArg(Register scratch1,
 static gc::Cell* GetScriptGCThing(JSScript* script, jsbytecode* pc,
                                   ScriptGCThingType type) {
   switch (type) {
+    case ScriptGCThingType::Atom:
+      return script->getAtom(pc);
     case ScriptGCThingType::RegExp:
       return script->getRegExp(pc);
     case ScriptGCThingType::Function:
@@ -960,6 +962,13 @@ void BaselineInterpreterCodeGen::loadScriptGCThing(ScriptGCThingType type,
 
   
   switch (type) {
+    case ScriptGCThingType::Atom:
+      
+      
+      static_assert(uintptr_t(TraceKind::String) == 2,
+                    "Unexpected tag bits for string GCCellPtr");
+      masm.xorPtr(Imm32(2), dest);
+      break;
     case ScriptGCThingType::RegExp:
     case ScriptGCThingType::Function:
       

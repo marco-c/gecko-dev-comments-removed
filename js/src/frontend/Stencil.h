@@ -327,12 +327,12 @@ class EmptyGlobalScopeType {};
 
 
 class NullScriptThing {};
-using ClosedOverBinding = JSAtom*;
+using ScriptAtom = JSAtom*;
 
 
 
 using ScriptThingVariant =
-    mozilla::Variant<ClosedOverBinding, NullScriptThing, BigIntIndex,
+    mozilla::Variant<ScriptAtom, NullScriptThing, BigIntIndex,
                      ObjLiteralCreationData, RegExpIndex, ScopeIndex,
                      FunctionIndex, EmptyGlobalScopeType>;
 
