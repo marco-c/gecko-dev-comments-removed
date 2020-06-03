@@ -1269,24 +1269,15 @@ struct BitfieldHelper {
 
 
 
-
-void WriteParams(Message* aMsg);
-
-template <typename T0, typename... Tn>
-static void WriteParams(Message* aMsg, const T0& aArg,
-                        const Tn&... aRemainingArgs) {
-  WriteParam(aMsg, aArg);                
-  WriteParams(aMsg, aRemainingArgs...);  
+template <typename... Ts>
+static void WriteParams(Message* aMsg, const Ts&... aArgs) {
+  (WriteParam(aMsg, aArgs), ...);
 }
 
-
-bool ReadParams(const Message* aMsg, PickleIterator* aIter);
-
-template <typename T0, typename... Tn>
-static bool ReadParams(const Message* aMsg, PickleIterator* aIter, T0& aArg,
-                       Tn&... aRemainingArgs) {
-  return ReadParam(aMsg, aIter, &aArg) &&             
-         ReadParams(aMsg, aIter, aRemainingArgs...);  
+template <typename... Ts>
+static bool ReadParams(const Message* aMsg, PickleIterator* aIter,
+                       Ts&... aArgs) {
+  return (ReadParam(aMsg, aIter, &aArgs) && ...);
 }
 
 
