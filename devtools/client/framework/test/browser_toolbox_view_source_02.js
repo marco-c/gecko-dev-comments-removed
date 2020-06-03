@@ -20,6 +20,12 @@ async function viewSource() {
 
   assertSelectedLocationInDebugger(debuggerPanel, 2, undefined);
 
+  
+  
+  
+  info("Wait for all pending requests to settle on the DevToolsClient");
+  await toolbox.target.client.waitForRequestsToSettle();
+
   await closeToolboxAndTab(toolbox);
   finish();
 }

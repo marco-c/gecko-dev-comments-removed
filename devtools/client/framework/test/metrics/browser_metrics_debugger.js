@@ -54,4 +54,10 @@ add_task(async function() {
     loaders,
     panelName: "debugger",
   });
+
+  
+  
+  
+  info("Wait for all pending requests to settle on the DevToolsClient");
+  await toolbox.target.client.waitForRequestsToSettle();
 });
