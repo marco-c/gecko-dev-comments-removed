@@ -190,6 +190,12 @@ const WasmHelpers = {};
     WasmHelpers.isSingleStepProfilingEnabled = enabled;
 })();
 
+
+
+
+var matched = {};
+var unmatched = {};
+
 WasmHelpers._normalizeStack = (stack, preciseStacks) => {
     var wasmFrameTypes = [
         {re:/^jit call to int64 wasm function$/,                          sub:"i64>"},
@@ -215,13 +221,24 @@ WasmHelpers._normalizeStack = (stack, preciseStacks) => {
 
     var framesIn = stack.split(',');
     var framesOut = [];
+  outer:
     for (let frame of framesIn) {
+        if (unmatched[frame])
+            continue;
+        let probe = matched[frame];
+        if (probe !== undefined) {
+            framesOut.push(probe);
+            continue;
+        }
         for (let {re, sub} of wasmFrameTypes) {
             if (re.test(frame)) {
-                framesOut.push(frame.replace(re, sub));
-                break;
+                let repr = frame.replace(re, sub);
+                framesOut.push(repr);
+                matched[frame] = repr;
+                continue outer;
             }
         }
+        unmatched[frame] = true;
     }
 
     return framesOut.join(',');
