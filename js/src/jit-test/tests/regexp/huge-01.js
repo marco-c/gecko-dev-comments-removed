@@ -10,9 +10,7 @@ function g(N, p) {
         
         
         
-        assertEq(e.message.includes("regexp too big") ||
-		 e.message.includes("Stack overflow") ||
-		 e.message.includes("too much recursion"), true);
+        assertEq(e.message.includes("regexp too big") || e.message.includes("Stack overflow"), true);
     }
 }
 

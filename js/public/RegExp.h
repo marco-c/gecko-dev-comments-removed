@@ -80,16 +80,6 @@ extern JS_PUBLIC_API RegExpFlags GetRegExpFlags(JSContext* cx,
 extern JS_PUBLIC_API JSString* GetRegExpSource(JSContext* cx,
                                                Handle<JSObject*> obj);
 
-
-
-
-
-
-extern JS_PUBLIC_API bool CheckRegExpSyntax(JSContext* cx,
-                                            const char16_t* chars,
-                                            size_t length, RegExpFlags flags,
-                                            MutableHandle<Value> error);
-
 }  
 
 #endif  
