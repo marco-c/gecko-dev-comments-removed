@@ -77,8 +77,14 @@ function matchRequest(channel, filters) {
     !flags.testing &&
     channel.loadInfo &&
     channel.loadInfo.loadingDocument === null &&
-    channel.loadInfo.loadingPrincipal ===
-      Services.scriptSecurityManager.getSystemPrincipal()
+    (channel.loadInfo.loadingPrincipal ===
+      Services.scriptSecurityManager.getSystemPrincipal() ||
+      
+      
+      
+      
+      channel.loadInfo.internalContentPolicyType ===
+        Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET)
   ) {
     return false;
   }
