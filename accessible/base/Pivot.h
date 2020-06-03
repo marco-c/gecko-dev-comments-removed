@@ -7,6 +7,7 @@
 #define mozilla_a11y_Pivot_h_
 
 #include <stdint.h>
+#include "Role.h"
 #include "mozilla/dom/ChildIterator.h"
 
 namespace mozilla {
@@ -81,6 +82,19 @@ class Pivot final {
   HyperTextAccessible* SearchForText(Accessible* aAnchor, bool aBackward);
 
   Accessible* mRoot;
+};
+
+
+
+
+class PivotRoleRule final : public PivotRule {
+ public:
+  explicit PivotRoleRule(role aRole);
+
+  virtual uint16_t Match(Accessible* aAccessible) override;
+
+ private:
+  role mRole;
 };
 
 }  
