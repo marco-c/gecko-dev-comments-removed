@@ -19,15 +19,18 @@
 #include "nsIStreamListener.h"
 #include "nsIRedirectHistoryEntry.h"
 #include "nsReadableUtils.h"
+#include "nsIXPConnect.h"
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/Components.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TelemetryComms.h"
 #include "xpcpublic.h"
@@ -731,6 +734,9 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
     MOZ_LOG(sCSMLog, LogLevel::Verbose,
             ("  initalSecurityChecksDone: %s\n",
              aLoadInfo->GetInitialSecurityCheckDone() ? "true" : "false"));
+    MOZ_LOG(sCSMLog, LogLevel::Verbose,
+            ("  allowDeprecatedSystemRequests: %s\n",
+             aLoadInfo->GetAllowDeprecatedSystemRequests() ? "true" : "false"));
 
     
     nsCOMPtr<nsIContentSecurityPolicy> csp = aLoadInfo->GetCsp();
@@ -766,18 +772,9 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
       !loadInfo->GetLoadingPrincipal()->IsSystemPrincipal()) {
     return NS_OK;
   }
-
-  nsCOMPtr<nsIURI> finalURI;
-  NS_GetFinalChannelURI(aChannel, getter_AddRefs(finalURI));
-
+  
+  
   if (loadInfo->GetAllowDeprecatedSystemRequests()) {
-    return NS_OK;
-  }
-  
-  
-  if (!nsContentUtils::SchemeIs(finalURI, "http") &&
-      !nsContentUtils::SchemeIs(finalURI, "https") &&
-      !nsContentUtils::SchemeIs(finalURI, "ftp")) {
     return NS_OK;
   }
 
@@ -787,33 +784,64 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
   
   
   
+  if ((contentPolicyType == nsIContentPolicy::TYPE_FETCH) ||
+      (contentPolicyType == nsIContentPolicy::TYPE_XMLHTTPREQUEST) ||
+      (contentPolicyType == nsIContentPolicy::TYPE_WEBSOCKET) ||
+      (contentPolicyType == nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD) ||
+      (contentPolicyType == nsIContentPolicy::TYPE_IMAGE)) {
+    return NS_OK;
+  }
+
+  
+  nsCOMPtr<nsIURI> finalURI;
+  NS_GetFinalChannelURI(aChannel, getter_AddRefs(finalURI));
+  bool isUiResource = false;
+  if (NS_SUCCEEDED(NS_URIChainHasFlags(
+          finalURI, nsIProtocolHandler::URI_IS_UI_RESOURCE, &isUiResource)) &&
+      isUiResource) {
+    return NS_OK;
+  }
   
   
+  while (finalURI && finalURI->SchemeIs("view-source")) {
+    nsCOMPtr<nsINestedURI> nested = do_QueryInterface(finalURI);
+    if (nested) {
+      nested->GetInnerURI(getter_AddRefs(finalURI));
+    }
+  }
   
-  if (contentPolicyType == nsIContentPolicy::TYPE_SCRIPT) {
-    if (StaticPrefs::
-            dom_security_skip_remote_script_assertion_in_system_priv_context()) {
+  
+  bool cancelNonLocalSystemPrincipal = StaticPrefs::
+      security_cancel_non_local_loads_triggered_by_systemprincipal();
+
+  
+  if (!finalURI && cancelNonLocalSystemPrincipal) {
+    aChannel->Cancel(NS_ERROR_CONTENT_BLOCKED);
+    return NS_ERROR_CONTENT_BLOCKED;
+  }
+  
+  if (finalURI->SchemeIs("file")) {
+    if ((contentPolicyType == nsIContentPolicy::TYPE_STYLESHEET) ||
+        (contentPolicyType == nsIContentPolicy::TYPE_OTHER)) {
       return NS_OK;
     }
-    nsAutoCString scriptSpec;
-    finalURI->GetSpec(scriptSpec);
-    MOZ_LOG(
-        sCSMLog, LogLevel::Warning,
-        ("Do not load remote scripts into system privileged contexts, url: %s",
-         scriptSpec.get()));
-    MOZ_ASSERT(false,
-               "Do not load remote scripts into system privileged contexts");
-    
-    
+  }
+  
+  
+  
+  
+  if (finalURI->SchemeIs("jar") || finalURI->SchemeIs("about") ||
+      finalURI->SchemeIs("moz-extension")) {
     return NS_OK;
   }
 
-  if ((contentPolicyType != nsIContentPolicy::TYPE_DOCUMENT) &&
-      (contentPolicyType != nsIContentPolicy::TYPE_SUBDOCUMENT)) {
-    return NS_OK;
-  }
-
-  if (xpc::AreNonLocalConnectionsDisabled()) {
+  
+  
+  
+  
+  
+  if (xpc::AreNonLocalConnectionsDisabled() ||
+      mozilla::EnvHasValue("MOZ_MARIONETTE")) {
     bool disallowSystemPrincipalRemoteDocuments = Preferences::GetBool(
         "security.disallow_non_local_systemprincipal_in_tests");
     if (disallowSystemPrincipalRemoteDocuments) {
@@ -828,13 +856,16 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
 
   nsAutoCString requestedURL;
   finalURI->GetAsciiSpec(requestedURL);
-  MOZ_LOG(
-      sCSMLog, LogLevel::Warning,
-      ("SystemPrincipal must not load remote documents. URL: %s", requestedURL)
-          .get());
-  MOZ_ASSERT(false, "SystemPrincipal must not load remote documents.");
-  aChannel->Cancel(NS_ERROR_CONTENT_BLOCKED);
-  return NS_ERROR_CONTENT_BLOCKED;
+  MOZ_LOG(sCSMLog, LogLevel::Warning,
+          ("SystemPrincipal must not load remote documents. URL: %s, type %d",
+           requestedURL.get(), contentPolicyType));
+
+  if (cancelNonLocalSystemPrincipal) {
+    MOZ_ASSERT(false, "SystemPrincipal must not load remote documents.");
+    aChannel->Cancel(NS_ERROR_CONTENT_BLOCKED);
+    return NS_ERROR_CONTENT_BLOCKED;
+  }
+  return NS_OK;
 }
 
 
