@@ -3,10 +3,8 @@
 
 from scipy.stats import gmean
 
-from ..transformer import Transformer
 
-
-class GeomeanTransformer(Transformer):
+class GeomeanTransformer:
     """Transforms perfherder data into the standardized data format.
     """
 

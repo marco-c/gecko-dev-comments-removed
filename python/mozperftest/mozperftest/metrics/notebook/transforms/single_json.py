@@ -1,11 +1,10 @@
 
 
 
-from ..transformer import Transformer
 from ..utilities import flat
 
 
-class SingleJsonRetriever(Transformer):
+class SingleJsonRetriever:
     """Transforms perfherder data into the standardized data format.
     """
 

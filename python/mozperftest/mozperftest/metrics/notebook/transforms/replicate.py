@@ -1,10 +1,9 @@
 
 
 
-from ..transformer import Transformer
 
 
-class ReplicateRetriever(Transformer):
+class ReplicateRetriever:
     entry_number = 0
 
     def merge(self, data):
