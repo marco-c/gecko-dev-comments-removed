@@ -255,12 +255,21 @@ class Page extends ContentProcessDomain {
     });
   }
 
-  _onScriptLoaded(name) {
+  
+
+
+
+
+
+
+  _onScriptLoaded(name, options = {}) {
+    const { windowId, window } = options;
+
     const Runtime = this.session.domains.get("Runtime");
     for (const world of this.worldsToEvaluateOnLoad) {
       Runtime._onContextCreated("context-created", {
-        windowId: this.content.windowUtils.currentInnerWindowID,
-        window: this.content,
+        windowId,
+        window,
         isDefault: false,
         contextName: world,
         contextType: "isolated",

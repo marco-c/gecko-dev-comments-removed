@@ -89,7 +89,7 @@ class ContextObserver {
         this.emit("context-created", { windowId: id, window });
         
         executeSoon(() => {
-          this.emit("script-loaded");
+          this.emit("script-loaded", { windowId: id, window });
         });
         break;
 
@@ -101,7 +101,7 @@ class ContextObserver {
         
         
         this.emit("context-created", { windowId: id, window });
-        this.emit("script-loaded");
+        this.emit("script-loaded", { windowId: id, window });
         break;
 
       case "pagehide":
