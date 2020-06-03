@@ -29,6 +29,12 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/AsyncShutdown.jsm"
 );
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "SharedUtils",
+  "resource://services-settings/SharedUtils.jsm"
+);
+
 
 
 
@@ -179,7 +185,9 @@ class Worker {
   }
 
   async checkContentHash(buffer, size, hash) {
-    return this._execute("checkContentHash", [buffer, size, hash]);
+    
+    
+    return SharedUtils.checkContentHash(buffer, size, hash);
   }
 }
 
