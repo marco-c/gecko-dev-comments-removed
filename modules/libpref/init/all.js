@@ -1316,8 +1316,6 @@ pref("network.protocol-handler.expose-all", true);
 
 pref("network.manage-offline-status", true);
 
-pref("network.offline-mirrors-connectivity", false);
-
 
 pref("network.http.version", "1.1");      
 
@@ -4566,11 +4564,6 @@ pref("dom.maxHardwareConcurrency", 16);
 #if !defined(RELEASE_OR_BETA)
   pref("osfile.reset_worker_delay", 30000);
 #endif
-
-
-
-
-pref("security.data_uri.block_toplevel_data_uri_navigations", true);
 
 pref("dom.storageManager.prompt.testing", false);
 pref("dom.storageManager.prompt.testing.allow", false);

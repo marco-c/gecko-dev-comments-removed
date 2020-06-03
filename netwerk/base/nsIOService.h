@@ -101,7 +101,6 @@ class nsIOService final : public nsIIOService,
   bool IsLinkUp();
 
   static bool IsDataURIUniqueOpaqueOrigin();
-  static bool BlockToplevelDataUriNavigations();
 
   
   
@@ -200,9 +199,6 @@ class nsIOService final : public nsIIOService,
   mozilla::Atomic<bool, mozilla::Relaxed> mOfflineForProfileChange;
   bool mManageLinkStatus;
   bool mConnectivity;
-  
-  
-  bool mOfflineMirrorsConnectivity;
 
   
   
@@ -227,8 +223,6 @@ class nsIOService final : public nsIIOService,
 
   Mutex mMutex;
   nsTArray<int32_t> mRestrictedPortList;
-
-  static bool sBlockToplevelDataUriNavigations;
 
   uint32_t mTotalRequests;
   uint32_t mCacheWon;

@@ -58,7 +58,7 @@ bool nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
   
   
   
-  if (!mozilla::net::nsIOService::BlockToplevelDataUriNavigations()) {
+  if (!StaticPrefs::security_data_uri_block_toplevel_data_uri_navigations()) {
     return true;
   }
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
