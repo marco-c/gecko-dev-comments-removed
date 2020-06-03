@@ -96,6 +96,9 @@ class Cookie final : public nsICookie {
   
   
   inline void SetCreationTime(int64_t aTime) { mData.creationTime() = aTime; }
+  inline void SetSchemeMap(uint8_t aSchemeMap) {
+    mData.schemeMap() = aSchemeMap;
+  }
 
   bool IsStale() const;
 
