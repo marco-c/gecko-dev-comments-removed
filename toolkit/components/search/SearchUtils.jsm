@@ -26,18 +26,6 @@ var SearchUtils = {
   
 
 
-
-  SETTINGS_IGNORELIST_KEY: "hijack-blocklists",
-
-  
-
-
-
-  SETTINGS_ALLOWLIST_KEY: "search-default-override-allowlist",
-
-  
-
-
   TOPIC_SEARCH_SERVICE: "browser-search-service",
 
   
@@ -79,6 +67,12 @@ var SearchUtils = {
   
   
   DEFAULT_QUERY_CHARSET: "ISO-8859-1",
+
+  
+
+
+
+  SETTINGS_IGNORELIST_KEY: "hijack-blocklists",
 
   
   DEFAULT_TAG: "default",
