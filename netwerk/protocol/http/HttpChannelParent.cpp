@@ -807,12 +807,19 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvResume() {
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult HttpChannelParent::RecvCancel(const nsresult& status) {
+mozilla::ipc::IPCResult HttpChannelParent::RecvCancel(
+    const nsresult& status, const uint32_t& requestBlockingReason) {
   LOG(("HttpChannelParent::RecvCancel [this=%p]\n", this));
 
   
   if (mChannel) {
     mChannel->Cancel(status);
+
+    if (MOZ_UNLIKELY(requestBlockingReason !=
+                     nsILoadInfo::BLOCKING_REASON_NONE)) {
+      nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+      loadInfo->SetRequestBlockingReason(requestBlockingReason);
+    }
 
     
     
@@ -939,11 +946,11 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvRedirect2Verify(
   
   
   
-  if (MOZ_UNLIKELY(aSourceRequestBlockingReason) && mChannel) {
+  if (MOZ_UNLIKELY(aSourceRequestBlockingReason !=
+                   nsILoadInfo::BLOCKING_REASON_NONE) &&
+      mChannel) {
     nsCOMPtr<nsILoadInfo> sourceLoadInfo = mChannel->LoadInfo();
-    if (sourceLoadInfo) {
-      sourceLoadInfo->SetRequestBlockingReason(aSourceRequestBlockingReason);
-    }
+    sourceLoadInfo->SetRequestBlockingReason(aSourceRequestBlockingReason);
   }
 
   
