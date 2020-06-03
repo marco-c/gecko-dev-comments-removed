@@ -351,6 +351,13 @@ typedef enum {
 
 
 
+struct ButtonLayout {
+  WidgetNodeType mType;
+  bool mAtRight;
+};
+
+
+
 
 
 
@@ -610,8 +617,7 @@ const ToolbarButtonGTKMetrics* GetToolbarButtonMetrics(
 
 
 
-int GetGtkHeaderBarButtonLayout(WidgetNodeType* aButtonLayout,
-                                int aMaxButtonNums,
+int GetGtkHeaderBarButtonLayout(ButtonLayout* aButtonLayout, int aMaxButtonNums,
                                 bool* aReversedButtonsPlacement);
 
 

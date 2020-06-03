@@ -309,6 +309,29 @@ class LookAndFeel {
 
 
     eIntID_AllPointerCapabilities,
+    
+
+
+
+
+
+    eLookAndFeel_GTKCSDCloseButtonPosition,
+
+    
+
+
+
+
+
+    eLookAndFeel_GTKCSDMinimizeButtonPosition,
+
+    
+
+
+
+
+
+    eLookAndFeel_GTKCSDMaximizeButtonPosition,
   };
 
   
