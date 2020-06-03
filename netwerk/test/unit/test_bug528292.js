@@ -78,15 +78,10 @@ add_task(async () => {
   
   var postRedirectURI = ioService.newURI(postRedirectURL);
 
-  const contentPage = await CookieXPCShellUtils.loadContentPage(
-    postRedirectURI.spec
+  await CookieXPCShellUtils.setCookieToDocument(
+    postRedirectURI.spec,
+    sentCookieVal
   );
-  await contentPage.spawn(
-    sentCookieVal,
-    
-    cookie => (content.document.cookie = cookie)
-  );
-  await contentPage.close();
 
   
   await new Promise(resolve => {

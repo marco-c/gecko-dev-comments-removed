@@ -113,15 +113,10 @@ function do_corrupt_db(file) {
 
 async function run_test_1() {
   
-  const contentPage = await CookieXPCShellUtils.loadContentPage(
-    "http://foo.com/"
+  await CookieXPCShellUtils.setCookieToDocument(
+    "http://foo.com/",
+    "oh=hai; max-age=1000"
   );
-  await contentPage.spawn(
-    null,
-    
-    () => (content.document.cookie = "oh=hai; max-age=1000")
-  );
-  await contentPage.close();
 
   
   await promise_close_profile();
@@ -407,15 +402,10 @@ async function run_test_4() {
 
   
   
-  const contentPage = await CookieXPCShellUtils.loadContentPage(
-    "http://0.com/"
+  await CookieXPCShellUtils.setCookieToDocument(
+    "http://0.com/",
+    "oh2=hai; max-age=1000"
   );
-  await contentPage.spawn(
-    null,
-    
-    () => (content.document.cookie = "oh2=hai; max-age=1000")
-  );
-  await contentPage.close();
 
   
   Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 1);

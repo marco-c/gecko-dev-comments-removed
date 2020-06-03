@@ -33,7 +33,28 @@ const CookieXPCShellUtils = {
     return server;
   },
 
-  async loadContentPage(uri) {
-    return ExtensionTestUtils.loadContentPage(uri);
+  async loadContentPage(uri, options = {}) {
+    return ExtensionTestUtils.loadContentPage(uri, options);
+  },
+
+  async getCookieStringFromDocument(uri, options = {}) {
+    const contentPage = await this.loadContentPage(uri, options);
+    const cookies = await contentPage.spawn(
+      null,
+      
+      () => content.document.cookie
+    );
+    await contentPage.close();
+    return cookies;
+  },
+
+  async setCookieToDocument(uri, set, options = {}) {
+    const contentPage = await this.loadContentPage(uri, options);
+    await contentPage.spawn(
+      set,
+      
+      cookies => (content.document.cookie = cookies)
+    );
+    await contentPage.close();
   },
 };
