@@ -102,7 +102,7 @@ assertEq(log,
          "get:exec,call:exec," +
          "get:result[0]," +
          "get:exec,call:exec," +
-         "get:result[length],get:result[0],get:result[index],");
+         "get:result[length],get:result[0],get:result[index],get:result[groups],");
 
 
 reset();
@@ -120,7 +120,7 @@ assertEq(log,
          "get:result[0]," +
          "get:lastIndex,set:lastIndex," +
          "get:exec,call:exec," +
-         "get:result[length],get:result[0],get:result[index],");
+         "get:result[length],get:result[0],get:result[index],get:result[groups],");
 
 
 
@@ -158,11 +158,11 @@ assertEq(log,
          "get:result[0]," +
          "get:lastIndex,set:lastIndex," +
          "get:exec,call:exec," +
-         "get:result[length],get:result[0],get:result[index]," +
-         "get:result[length],get:result[0],get:result[index]," +
-         "get:result[length],get:result[0],get:result[index]," +
-         "get:result[length],get:result[0],get:result[index]," +
-         "get:result[length],get:result[0],get:result[index],");
+         "get:result[length],get:result[0],get:result[index],get:result[groups]," +
+         "get:result[length],get:result[0],get:result[index],get:result[groups]," +
+         "get:result[length],get:result[0],get:result[index],get:result[groups]," +
+         "get:result[length],get:result[0],get:result[index],get:result[groups]," +
+         "get:result[length],get:result[0],get:result[index],get:result[groups],");
 
 
 reset();
@@ -180,7 +180,7 @@ assertEq(log,
          "get:result[0]," +
          "get:exec,call:exec," +
          "get:result[length],get:result[0],get:result[index]," +
-         "get:result[1],get:result[2],");
+         "get:result[1],get:result[2],get:result[groups],");
 
 
 
@@ -200,7 +200,7 @@ assertEq(log,
          "get:lastIndex,set:lastIndex," +
          "get:exec,call:exec," +
          "get:result[length],get:result[0],get:result[index]," +
-         "get:result[1],get:result[2],");
+         "get:result[1],get:result[2],get:result[groups],");
 
 
 
@@ -231,7 +231,7 @@ assertEq(log,
          "get:lastIndex,set:lastIndex," +
          "get:exec,call:exec," +
          "get:result[length],get:result[0],get:result[index]," +
-         "get:result[1],get:result[2]," +
+         "get:result[1],get:result[2],get:result[groups]," +
          "call:replaceFunc,");
 
 
@@ -252,8 +252,8 @@ assertEq(log,
          "get:exec,call:exec," +
          "get:result[0]," +
          "get:exec,call:exec," +
-         "get:result[length],get:result[0],get:result[index]," +
-         "get:result[length],get:result[0],get:result[index],");
+         "get:result[length],get:result[0],get:result[index],get:result[groups]," +
+         "get:result[length],get:result[0],get:result[index],get:result[groups],");
 
 
 reset();
@@ -270,7 +270,7 @@ assertEq(log,
          "get:exec,call:exec," +
          "get:result[0]," +
          "get:exec,call:exec," +
-         "get:result[length],get:result[0],get:result[index],");
+         "get:result[length],get:result[0],get:result[index],get:result[groups],");
 
 
 reset();
@@ -287,7 +287,7 @@ assertEq(log,
          "get:exec,call:exec," +
          "get:result[0]," +
          "get:exec,call:exec," +
-         "get:result[length],get:result[0],get:result[index],");
+         "get:result[length],get:result[0],get:result[index],get:result[groups],");
 
 
 reset();
@@ -301,7 +301,7 @@ assertEq(ret, "a_XYZ_AbcABC");
 assertEq(log,
          "get:global," +
          "get:exec,call:exec," +
-         "get:result[length],get:result[0],get:result[index],");
+         "get:result[length],get:result[0],get:result[index],get:result[groups],");
 
 stopObserve();
 
