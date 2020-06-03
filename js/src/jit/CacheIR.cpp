@@ -4819,7 +4819,15 @@ CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
       typeCheckInfo_(cx,  true),
       cacheIRStubKind_(BaselineCacheIRStubKind::Regular) {}
 
-AttachDecision CallIRGenerator::tryAttachArrayPush() {
+void CallIRGenerator::emitNativeCalleeGuard(HandleFunction callee) {
+  ValOperandId calleeValId =
+      writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_);
+  ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
+  JSNative native = callee->native();
+  writer.guardSpecificNativeFunction(calleeObjId, native);
+}
+
+AttachDecision CallIRGenerator::tryAttachArrayPush(HandleFunction callee) {
   
   if (argc_ != 1 || !thisval_.isObject()) {
     return AttachDecision::NoAction;
@@ -4865,10 +4873,7 @@ AttachDecision CallIRGenerator::tryAttachArrayPush() {
   writer.guardSpecificInt32Immediate(argcId, 1);
 
   
-  ValOperandId calleeValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_);
-  ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
-  writer.guardSpecificNativeFunction(calleeObjId, js::array_push);
+  emitNativeCalleeGuard(callee);
 
   
   ValOperandId thisValId =
@@ -4904,7 +4909,7 @@ AttachDecision CallIRGenerator::tryAttachArrayPush() {
   return AttachDecision::Attach;
 }
 
-AttachDecision CallIRGenerator::tryAttachArrayJoin() {
+AttachDecision CallIRGenerator::tryAttachArrayJoin(HandleFunction callee) {
   
   if (argc_ > 1) {
     return AttachDecision::NoAction;
@@ -4945,10 +4950,7 @@ AttachDecision CallIRGenerator::tryAttachArrayJoin() {
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  ValOperandId calleeValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_);
-  ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
-  writer.guardSpecificNativeFunction(calleeObjId, js::array_join);
+  emitNativeCalleeGuard(callee);
 
   if (argc_ == 1) {
     
@@ -4979,7 +4981,7 @@ AttachDecision CallIRGenerator::tryAttachArrayJoin() {
   return AttachDecision::Attach;
 }
 
-AttachDecision CallIRGenerator::tryAttachIsSuspendedGenerator() {
+AttachDecision CallIRGenerator::tryAttachIsSuspendedGenerator(HandleFunction callee) {
   
   
   
@@ -5158,11 +5160,11 @@ AttachDecision CallIRGenerator::tryAttachSpecialCaseCallNative(
   
   switch (callee->jitInfo()->inlinableNative) {
     case InlinableNative::ArrayPush:
-      return tryAttachArrayPush();
+      return tryAttachArrayPush(callee);
     case InlinableNative::ArrayJoin:
-      return tryAttachArrayJoin();
+      return tryAttachArrayJoin(callee);
     case InlinableNative::IntrinsicIsSuspendedGenerator:
-      return tryAttachIsSuspendedGenerator();
+      return tryAttachIsSuspendedGenerator(callee);
     default:
       return AttachDecision::NoAction;
   }
