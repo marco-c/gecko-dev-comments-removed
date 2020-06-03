@@ -463,6 +463,9 @@ function UITourTest(usingAddTask = false) {
     Services.perms.ALLOW_ACTION
   );
 
+  UITour.getHighlightContainerAndMaybeCreate(window.document);
+  UITour.getTooltipAndMaybeCreate(window.document);
+
   
   
   if (!usingAddTask) {

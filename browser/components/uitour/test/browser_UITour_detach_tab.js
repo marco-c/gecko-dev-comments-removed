@@ -74,8 +74,8 @@ var tests = [
     await browserStartupDeferred.promise;
 
     
-    let newWindowHighlight = gContentWindow.document.getElementById(
-      "UITourHighlight"
+    let newWindowHighlight = UITour.getHighlightAndMaybeCreate(
+      gContentWindow.document
     );
     await elementVisiblePromise(newWindowHighlight, "new window highlight");
 
