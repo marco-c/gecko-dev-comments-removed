@@ -157,7 +157,20 @@ async function triggerErrors(tab) {
       expectUncaughtException();
     }
 
-    await triggerError(tab.linkedBrowser, expression);
+    await ContentTask.spawn(tab.linkedBrowser, expression, function frameScript(
+      expr
+    ) {
+      const document = content.document;
+      const container = document.createElement("script");
+      document.body.appendChild(container);
+      container.textContent = expr;
+      container.remove();
+    });
+    
+    
+
+    
+    await new Promise(res => setTimeout(res, 10));
   }
 }
 
