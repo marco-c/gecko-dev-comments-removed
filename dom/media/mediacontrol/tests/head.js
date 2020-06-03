@@ -219,6 +219,35 @@ function isCurrentMetadataEqualTo(metadata) {
 
 
 
+async function isUsingDefaultMetadata(tab, options = {}) {
+  let metadata = ChromeUtils.getCurrentActiveMediaMetadata();
+  if (options.isPrivateBrowsing) {
+    is(
+      metadata.title,
+      "Firefox is playing media",
+      "Using generic title to not expose sensitive information"
+    );
+  } else {
+    await SpecialPowers.spawn(tab.linkedBrowser, [metadata.title], title => {
+      is(
+        title,
+        content.document.title,
+        "Using website title as a default title"
+      );
+    });
+  }
+  is(metadata.artwork.length, 1, "Default metada contains one artwork");
+  ok(
+    metadata.artwork[0].src.includes("defaultFavicon.svg"),
+    "Using default favicon as a default art work"
+  );
+}
+
+
+
+
+
+
 
 
 
@@ -233,9 +262,24 @@ function waitUntilDisplayedPlaybackChanged() {
 
 
 
+
+function waitUntilDisplayedMetadataChanged() {
+  return BrowserUtils.promiseObserved("media-displayed-metadata-changed");
+}
+
+
+
+
+
+
+
+
 function waitUntilMainMediaControllerChanged() {
   return BrowserUtils.promiseObserved("main-media-controller-changed");
 }
+
+
+
 
 
 
