@@ -44,6 +44,12 @@ class nsPrintObject {
   void DestroyPresentation();
 
   
+
+
+
+  void SetPrintAsIs(bool aAsIs);
+
+  
   nsCOMPtr<nsIDocShell> mDocShell;
   nsCOMPtr<nsIDocShellTreeOwner> mTreeOwner;
   RefPtr<mozilla::dom::Document> mDocument;

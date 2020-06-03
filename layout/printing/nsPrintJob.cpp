@@ -297,19 +297,6 @@ static nsresult GetSeqFrameAndCountPagesInternal(
 
 
 
-static void SetPrintAsIs(nsPrintObject* aPO, bool aAsIs = true) {
-  NS_ASSERTION(aPO, "Pointer is null!");
-
-  aPO->mPrintAsIs = aAsIs;
-  for (const UniquePtr<nsPrintObject>& kid : aPO->mKids) {
-    SetPrintAsIs(kid.get(), aAsIs);
-  }
-}
-
-
-
-
-
 
 
 
@@ -355,7 +342,7 @@ static void MapContentForPO(const UniquePtr<nsPrintObject>& aPO,
         } else {
           
           po->mFrameType = eIFrame;
-          SetPrintAsIs(po, true);
+          po->SetPrintAsIs(true);
           NS_ASSERTION(po->mParent, "The root must be a parent");
           po->mParent->mPrintAsIs = true;
         }
@@ -2720,7 +2707,7 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
       for (const UniquePtr<nsPrintObject>& po :
            printData->mPrintObject->mKids) {
         NS_ASSERTION(po, "nsPrintObject can't be null!");
-        SetPrintAsIs(po.get());
+        po->SetPrintAsIs(true);
       }
     }
     PR_PL(("PrintRange:         %s \n", gPrintRangeStr[printRangeType]));
@@ -2737,7 +2724,7 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
                                                   printData->mCurrentFocusWin);
       if (po) {
         
-        SetPrintAsIs(po);
+        po->SetPrintAsIs(true);
 
         
         SetPrintPO(po, true);
@@ -2774,7 +2761,7 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
   }
 
   if (printRangeType != nsIPrintSettings::kRangeSelection) {
-    SetPrintAsIs(printData->mPrintObject.get());
+    printData->mPrintObject->SetPrintAsIs(true);
     SetPrintPO(printData->mPrintObject.get(), true);
     return NS_OK;
   }
@@ -2789,7 +2776,7 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
       
       if (po->mKids.Length() > 0) {
         
-        SetPrintAsIs(po);
+        po->SetPrintAsIs(true);
       }
 
       
