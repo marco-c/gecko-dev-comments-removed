@@ -359,10 +359,11 @@ class AliasSet {
     WasmHeap = 1 << 7,        
     WasmHeapMeta = 1 << 8,    
                               
-    TypedArrayLengthOrOffset = 1 << 9,  
-    WasmGlobalCell = 1 << 10,           
-    WasmTableElement = 1 << 11,         
-    WasmStackResult = 1 << 12,  
+    ArrayBufferViewLengthOrOffset =
+        1 << 9,                  
+    WasmGlobalCell = 1 << 10,    
+    WasmTableElement = 1 << 11,  
+    WasmStackResult = 1 << 12,   
 
     
     
@@ -7228,16 +7229,16 @@ class MGetNextEntryForIterator
 };
 
 
-class MTypedArrayLength : public MUnaryInstruction,
-                          public SingleObjectPolicy::Data {
-  explicit MTypedArrayLength(MDefinition* obj)
+class MArrayBufferViewLength : public MUnaryInstruction,
+                               public SingleObjectPolicy::Data {
+  explicit MArrayBufferViewLength(MDefinition* obj)
       : MUnaryInstruction(classOpcode, obj) {
     setResultType(MIRType::Int32);
     setMovable();
   }
 
  public:
-  INSTRUCTION_HEADER(TypedArrayLength)
+  INSTRUCTION_HEADER(ArrayBufferViewLength)
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, object))
 
@@ -7245,23 +7246,23 @@ class MTypedArrayLength : public MUnaryInstruction,
     return congruentIfOperandsEqual(ins);
   }
   AliasSet getAliasSet() const override {
-    return AliasSet::Load(AliasSet::TypedArrayLengthOrOffset);
+    return AliasSet::Load(AliasSet::ArrayBufferViewLengthOrOffset);
   }
 
   void computeRange(TempAllocator& alloc) override;
 };
 
 
-class MTypedArrayByteOffset : public MUnaryInstruction,
-                              public SingleObjectPolicy::Data {
-  explicit MTypedArrayByteOffset(MDefinition* obj)
+class MArrayBufferViewByteOffset : public MUnaryInstruction,
+                                   public SingleObjectPolicy::Data {
+  explicit MArrayBufferViewByteOffset(MDefinition* obj)
       : MUnaryInstruction(classOpcode, obj) {
     setResultType(MIRType::Int32);
     setMovable();
   }
 
  public:
-  INSTRUCTION_HEADER(TypedArrayByteOffset)
+  INSTRUCTION_HEADER(ArrayBufferViewByteOffset)
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, object))
 
@@ -7269,23 +7270,23 @@ class MTypedArrayByteOffset : public MUnaryInstruction,
     return congruentIfOperandsEqual(ins);
   }
   AliasSet getAliasSet() const override {
-    return AliasSet::Load(AliasSet::TypedArrayLengthOrOffset);
+    return AliasSet::Load(AliasSet::ArrayBufferViewLengthOrOffset);
   }
 
   void computeRange(TempAllocator& alloc) override;
 };
 
 
-class MTypedArrayElements : public MUnaryInstruction,
-                            public SingleObjectPolicy::Data {
-  explicit MTypedArrayElements(MDefinition* object)
+class MArrayBufferViewElements : public MUnaryInstruction,
+                                 public SingleObjectPolicy::Data {
+  explicit MArrayBufferViewElements(MDefinition* object)
       : MUnaryInstruction(classOpcode, object) {
     setResultType(MIRType::Elements);
     setMovable();
   }
 
  public:
-  INSTRUCTION_HEADER(TypedArrayElements)
+  INSTRUCTION_HEADER(ArrayBufferViewElements)
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, object))
 
@@ -7296,7 +7297,7 @@ class MTypedArrayElements : public MUnaryInstruction,
     return AliasSet::Load(AliasSet::ObjectFields);
   }
 
-  ALLOW_CLONE(MTypedArrayElements)
+  ALLOW_CLONE(MArrayBufferViewElements)
 };
 
 

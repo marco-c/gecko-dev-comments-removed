@@ -54,6 +54,16 @@ class ArrayBufferViewObject : public NativeObject {
   
   static constexpr size_t DATA_SLOT = 3;
 
+  static constexpr int lengthOffset() {
+    return NativeObject::getFixedSlotOffset(LENGTH_SLOT);
+  }
+  static constexpr int byteOffsetOffset() {
+    return NativeObject::getFixedSlotOffset(BYTEOFFSET_SLOT);
+  }
+  static constexpr int dataOffset() {
+    return NativeObject::getPrivateDataOffset(DATA_SLOT);
+  }
+
  private:
   void* dataPointerEither_() const {
     

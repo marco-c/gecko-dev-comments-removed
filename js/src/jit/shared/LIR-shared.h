@@ -3801,11 +3801,11 @@ class LGetNextEntryForIterator : public LInstructionHelper<1, 2, 3> {
 };
 
 
-class LTypedArrayLength : public LInstructionHelper<1, 1, 0> {
+class LArrayBufferViewLength : public LInstructionHelper<1, 1, 0> {
  public:
-  LIR_HEADER(TypedArrayLength)
+  LIR_HEADER(ArrayBufferViewLength)
 
-  explicit LTypedArrayLength(const LAllocation& obj)
+  explicit LArrayBufferViewLength(const LAllocation& obj)
       : LInstructionHelper(classOpcode) {
     setOperand(0, obj);
   }
@@ -3814,11 +3814,11 @@ class LTypedArrayLength : public LInstructionHelper<1, 1, 0> {
 };
 
 
-class LTypedArrayByteOffset : public LInstructionHelper<1, 1, 0> {
+class LArrayBufferViewByteOffset : public LInstructionHelper<1, 1, 0> {
  public:
-  LIR_HEADER(TypedArrayByteOffset)
+  LIR_HEADER(ArrayBufferViewByteOffset)
 
-  explicit LTypedArrayByteOffset(const LAllocation& obj)
+  explicit LArrayBufferViewByteOffset(const LAllocation& obj)
       : LInstructionHelper(classOpcode) {
     setOperand(0, obj);
   }
@@ -3827,11 +3827,11 @@ class LTypedArrayByteOffset : public LInstructionHelper<1, 1, 0> {
 };
 
 
-class LTypedArrayElements : public LInstructionHelper<1, 1, 0> {
+class LArrayBufferViewElements : public LInstructionHelper<1, 1, 0> {
  public:
-  LIR_HEADER(TypedArrayElements)
+  LIR_HEADER(ArrayBufferViewElements)
 
-  explicit LTypedArrayElements(const LAllocation& object)
+  explicit LArrayBufferViewElements(const LAllocation& object)
       : LInstructionHelper(classOpcode) {
     setOperand(0, object);
   }
