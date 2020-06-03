@@ -338,11 +338,7 @@ void gfxConfigManager::ConfigureWebRender() {
   if (mWrPartialPresent) {
     if (mFeatureWr->IsEnabled()) {
       mFeatureWrPartial->EnableByDefault();
-      if (mWrPictureCaching) {
-        
-        
-        mFeatureWrPartial->UserEnable("Enabled");
-      } else {
+      if (!mWrPictureCaching) {
         mFeatureWrPartial->ForceDisable(
             FeatureStatus::Unavailable, "Picture caching is disabled",
             NS_LITERAL_CSTRING("FEATURE_FAILURE_PICTURE_CACHING_DISABLED"));
