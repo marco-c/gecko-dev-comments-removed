@@ -326,13 +326,19 @@ struct MetadataCacheablePod {
   Maybe<uint32_t> startFuncIndex;
   Maybe<uint32_t> nameCustomSectionIndex;
   bool filenameIsURL;
+  bool bigIntEnabled;
+  bool v128Enabled;
+  bool omitsBoundsChecks;
 
   explicit MetadataCacheablePod(ModuleKind kind)
       : kind(kind),
         memoryUsage(MemoryUsage::None),
         minMemoryLength(0),
         globalDataLength(0),
-        filenameIsURL(false) {}
+        filenameIsURL(false),
+        bigIntEnabled(false),
+        v128Enabled(false),
+        omitsBoundsChecks(false) {}
 };
 
 typedef uint8_t ModuleHash[8];
@@ -345,7 +351,6 @@ struct Metadata : public ShareableBase<Metadata>, public MetadataCacheablePod {
   TableDescVector tables;
   CacheableChars filename;
   CacheableChars sourceMapURL;
-  bool omitsBoundsChecks;
 
   
   
@@ -359,12 +364,6 @@ struct Metadata : public ShareableBase<Metadata>, public MetadataCacheablePod {
   FuncArgTypesVector debugFuncArgTypes;
   FuncReturnTypesVector debugFuncReturnTypes;
   ModuleHash debugHash;
-
-  
-  bool bigIntEnabled;
-
-  
-  bool v128Enabled;
 
   explicit Metadata(ModuleKind kind = ModuleKind::Wasm)
       : MetadataCacheablePod(kind), debugEnabled(false), debugHash() {}
