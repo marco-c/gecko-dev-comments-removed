@@ -551,7 +551,8 @@ void moz_gtk_get_arrow_size(WidgetNodeType widgetType, gint* width,
 
 
 
-void moz_gtk_get_entry_min_height(gint* height);
+void moz_gtk_get_entry_min_height(gint* min_content_height,
+                                  gint* border_padding_height);
 
 
 
