@@ -10,6 +10,10 @@
 #include "nsILoadGroup.h"
 #include "nsIInterfaceRequestorUtils.h"
 
+
+
+constexpr static bool kCancelAndRemovePreloadOnZeroReferences = false;
+
 namespace mozilla {
 
 PreloaderBase::RedirectSink::RedirectSink(PreloaderBase* aPreloader,
@@ -217,15 +221,12 @@ void PreloaderBase::RemoveLinkPreloadNode(nsINode* aNode) {
   nsWeakPtr node = do_GetWeakReference(aNode);
   mNodes.RemoveElement(node);
 
-  if (mNodes.Length() == 0 && !mIsUsed) {
+  if (kCancelAndRemovePreloadOnZeroReferences && mNodes.Length() == 0 &&
+      !mIsUsed) {
     
     
     RefPtr<PreloaderBase> self(this);
-
-    dom::Document* doc = aNode->OwnerDoc();
-    if (doc) {
-      doc->Preloads().DeregisterPreload(&mKey);
-    }
+    aNode->OwnerDoc()->Preloads().DeregisterPreload(&mKey);
 
     if (mChannel) {
       mChannel->Cancel(NS_BINDING_ABORTED);
