@@ -317,7 +317,16 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
     const bool isEnterOrSpaceKey =
         mKeyNameIndex == KEY_NAME_INDEX_Enter || mKeyCode == NS_VK_SPACE;
     return (PseudoCharCode() || isEnterOrSpaceKey) &&
-           !isCombiningWithOperationKeys;
+           (!isCombiningWithOperationKeys ||
+            
+            
+            
+            
+            
+            ((mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_C ||
+              mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_V ||
+              mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_X) &&
+             IsAccel()));
   }
 
   
