@@ -1729,9 +1729,9 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
       
       
       
-      MOZ_DIAGNOSTIC_ASSERT(mForceShutDown ||
-                            LifecycleStateRef() <
-                                LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP);
+      MOZ_DIAGNOSTIC_ASSERT(LifecycleStateRef() <
+                                LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP ||
+                            mForceShutDown);
     }
 
     if (LifecycleStateRef() == LIFECYCLE_THREAD_NOT_STARTED) {
