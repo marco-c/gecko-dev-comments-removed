@@ -1502,7 +1502,9 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
         
         
         
-        hint &= ~nsChangeHint_UpdatePostTransformOverflow;
+        
+        hint &= ~(nsChangeHint_UpdatePostTransformOverflow |
+                  nsChangeHint_UpdateTransformLayer);
       }
 
       if ((hint & nsChangeHint_UpdateTransformLayer) &&
