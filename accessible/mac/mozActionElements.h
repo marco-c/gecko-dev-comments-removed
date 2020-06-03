@@ -8,17 +8,40 @@
 
 
 
-@interface mozButtonAccessible : mozAccessible {
-}
-- (BOOL)hasPopup;
+@interface mozButtonAccessible : mozAccessible
+
+
+- (NSNumber*)moxHasPopup;
+
+
+- (NSString*)moxPopupValue;
+
 @end
 
 @interface mozPopupButtonAccessible : mozButtonAccessible
+
+
+- (NSString*)moxTitle;
+
+
+- (BOOL)moxBlockSelector:(SEL)selector;
+
+
+- (NSArray*)moxChildren;
+
+
+- (void)stateChanged:(uint64_t)state isEnabled:(BOOL)enabled;
+
+
+- (BOOL)ignoreWithParent:(mozAccessible*)parent;
+
 @end
 
 @interface mozCheckboxAccessible : mozButtonAccessible
 
-- (int)isChecked;
+
+- (id)moxValue;
+
 @end
 
 
@@ -26,11 +49,25 @@
 
 @interface mozPaneAccessible : mozAccessible
 
+
+- (NSArray*)moxChildren;
+
 @end
 
 
 
 
 @interface mozIncrementableAccessible : mozAccessible
+
+
+- (void)moxPerformIncrement;
+
+
+- (void)moxPerformDecrement;
+
+
+- (void)handleAccessibleEvent:(uint32_t)eventType;
+
+- (void)changeValueBySteps:(int)factor;
 
 @end
