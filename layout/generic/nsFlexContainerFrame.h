@@ -497,16 +497,18 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
+
   void PopulateReflowOutput(
       ReflowOutput& aReflowOutput, const ReflowInput& aReflowInput,
       nsReflowStatus& aStatus, const mozilla::LogicalSize& aContentBoxSize,
       const mozilla::LogicalMargin& aBorderPadding,
       const nscoord aConsumedBSize, const bool aMayNeedNextInFlow,
-      const nscoord aMaxBlockEndEdgeOfChildren, const bool aAreChildrenComplete,
+      const nscoord aMaxBlockEndEdgeOfChildren, const bool aAnyChildIncomplete,
       nscoord aFlexContainerAscent, nsTArray<FlexLine>& aLines,
       const FlexboxAxisTracker& aAxisTracker);
 
   
+
 
 
 
