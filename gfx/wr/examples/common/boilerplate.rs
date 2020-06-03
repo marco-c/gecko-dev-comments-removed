@@ -235,9 +235,18 @@ pub fn main_wrapper<E: Example>(
         };
         match win_event {
             winit::WindowEvent::CloseRequested => return winit::ControlFlow::Break,
-            
             winit::WindowEvent::AxisMotion { .. } |
-            winit::WindowEvent::CursorMoved { .. } => return winit::ControlFlow::Continue,
+            winit::WindowEvent::CursorMoved { .. } => {
+                custom_event = example.on_event(
+                        win_event,
+                        &mut api,
+                        document_id,
+                    );
+                
+                if !custom_event {
+                    return winit::ControlFlow::Continue;
+                }
+            },
             winit::WindowEvent::KeyboardInput {
                 input: winit::KeyboardInput {
                     state: winit::ElementState::Pressed,
