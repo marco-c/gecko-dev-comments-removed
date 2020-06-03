@@ -388,7 +388,7 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
 
 
-  nsresult CreateFailedTransfer(bool aIsPrivateBrowsing);
+  nsresult CreateFailedTransfer();
 
   
 
