@@ -33,19 +33,25 @@ StackingContextHelper::StackingContextHelper(
   mOrigin = aParentSC.mOrigin + aBounds.TopLeft();
   
   
-  gfx::Matrix transform2d;
-  if (aParams.mBoundTransform &&
-      aParams.mBoundTransform->CanDraw2D(&transform2d) &&
-      aParams.reference_frame_kind != wr::WrReferenceFrameKind::Perspective &&
-      !aContainerFrame->Combines3DTransformWithAncestors()) {
-    mInheritedTransform = transform2d * aParentSC.mInheritedTransform;
 
-    int32_t apd = aContainerFrame->PresContext()->AppUnitsPerDevPixel();
-    nsRect r = LayoutDevicePixel::ToAppUnits(aBounds, apd);
-    mScale = FrameLayerBuilder::ChooseScale(
-        aContainerFrame, aContainerItem, r, aParentSC.mScale.width,
-        aParentSC.mScale.height, mInheritedTransform,
-         true);
+  if (aParams.mBoundTransform) {
+    gfx::Matrix transform2d;
+    bool canDraw2D = aParams.mBoundTransform->CanDraw2D(&transform2d);
+    if (canDraw2D &&
+        aParams.reference_frame_kind != wr::WrReferenceFrameKind::Perspective &&
+        !aContainerFrame->Combines3DTransformWithAncestors()) {
+      mInheritedTransform = transform2d * aParentSC.mInheritedTransform;
+
+      int32_t apd = aContainerFrame->PresContext()->AppUnitsPerDevPixel();
+      nsRect r = LayoutDevicePixel::ToAppUnits(aBounds, apd);
+      mScale = FrameLayerBuilder::ChooseScale(
+          aContainerFrame, aContainerItem, r, aParentSC.mScale.width,
+          aParentSC.mScale.height, mInheritedTransform,
+           true);
+    } else {
+      mScale = gfx::Size(1.0f, 1.0f);
+      mInheritedTransform = gfx::Matrix::Scaling(1.f, 1.f);
+    }
 
     if (aParams.mAnimated) {
       mSnappingSurfaceTransform =
@@ -54,6 +60,7 @@ StackingContextHelper::StackingContextHelper(
       mSnappingSurfaceTransform =
           transform2d * aParentSC.mSnappingSurfaceTransform;
     }
+
   } else {
     mInheritedTransform = aParentSC.mInheritedTransform;
     mScale = aParentSC.mScale;
