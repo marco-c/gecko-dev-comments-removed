@@ -3881,18 +3881,7 @@ nsRect ScrollFrameHelper::RestrictToRootDisplayPort(
   bool hasDisplayPort =
       rootFrame->GetContent() &&
       nsLayoutUtils::GetDisplayPort(rootFrame->GetContent(), &rootDisplayPort);
-  if (hasDisplayPort) {
-    
-    
-    
-    if (nsIContent* content = rootFrame->GetContent()) {
-      if (void* property =
-              content->GetProperty(nsGkAtoms::apzCallbackTransform)) {
-        rootDisplayPort -=
-            CSSPoint::ToAppUnits(*static_cast<CSSPoint*>(property));
-      }
-    }
-  } else {
+  if (!hasDisplayPort) {
     
     
     nsRect rootCompBounds =
