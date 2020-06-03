@@ -11,7 +11,7 @@ const special_type = "application/x-our-special-type";
   test_read_dir_1,
   test_read_dir_2,
   test_upload_file,
-  test_load_replace,
+  test_load_shelllink,
   do_test_finished,
 ].forEach(f => add_test(f));
 
@@ -261,24 +261,20 @@ function test_upload_file() {
   chan.asyncOpen(new FileStreamListener(on_upload_complete));
 }
 
-function test_load_replace() {
+function test_load_shelllink() {
   
-  if (mozinfo.os == "win") {
-    dump("*** test_load_replace\n");
-    let file = do_get_file("data/system_root.lnk", false);
-    var chan = new_file_channel(file);
+  dump("*** test_load_shelllink\n");
+  let file = do_get_file("data/system_root.lnk", false);
+  var chan = new_file_channel(file);
 
-    
-    Assert.notEqual(chan.URI.pathQueryRef, chan.originalURI.pathQueryRef);
+  
+  Assert.equal(chan.URI.pathQueryRef, chan.originalURI.pathQueryRef);
 
-    
-    var ios = Cc["@mozilla.org/network/io-service;1"].getService(
-      Ci.nsIIOService
-    );
-    Assert.equal(
-      chan.originalURI.pathQueryRef,
-      ios.newFileURI(file).pathQueryRef
-    );
-  }
+  
+  var ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
+  Assert.equal(
+    chan.originalURI.pathQueryRef,
+    ios.newFileURI(file).pathQueryRef
+  );
   run_next_test();
 }

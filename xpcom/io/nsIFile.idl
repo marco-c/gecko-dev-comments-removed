@@ -386,16 +386,6 @@ interface nsIFile : nsISupports
 
 
 
-
-
-
-
-    attribute boolean followLinks;
-
-    
-
-
-
     const unsigned long OS_READAHEAD = 0x40000000;
 
     

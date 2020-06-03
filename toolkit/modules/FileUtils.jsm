@@ -39,13 +39,8 @@ var FileUtils = {
 
 
 
-  getFile: function FileUtils_getFile(key, pathArray, followLinks) {
-    var file = this.getDir(
-      key,
-      pathArray.slice(0, -1),
-      pathArray.length > 1,
-      followLinks
-    );
+  getFile: function FileUtils_getFile(key, pathArray) {
+    var file = this.getDir(key, pathArray.slice(0, -1), pathArray.length > 1);
     file.append(pathArray[pathArray.length - 1]);
     return file;
   },
@@ -63,9 +58,7 @@ var FileUtils = {
 
 
 
-
-
-  getDir: function FileUtils_getDir(key, pathArray, shouldCreate, followLinks) {
+  getDir: function FileUtils_getDir(key, pathArray, shouldCreate) {
     var dir = gDirService.get(key, Ci.nsIFile);
     for (var i = 0; i < pathArray.length; ++i) {
       dir.append(pathArray[i]);
@@ -82,9 +75,6 @@ var FileUtils = {
       }
     }
 
-    if (!followLinks) {
-      dir.followLinks = false;
-    }
     return dir;
   },
 
