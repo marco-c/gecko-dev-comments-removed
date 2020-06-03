@@ -803,7 +803,15 @@ BlobURLProtocolHandler::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
   }
 
   if (blobURL->Revoked()) {
+#ifdef MOZ_WIDGET_ANDROID
+    
+    
+    if (aLoadInfo && !aLoadInfo->TriggeringPrincipal()->IsSystemPrincipal()) {
+      return NS_OK;
+    }
+#else
     return NS_OK;
+#endif
   }
 
   
