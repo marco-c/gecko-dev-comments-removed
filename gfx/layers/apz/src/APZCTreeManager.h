@@ -556,6 +556,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
     
     HitTestResult(HitTestResult&&) = default;
     HitTestResult& operator=(HitTestResult&&) = default;
+    bool TargetIsConfirmedRoot() const;
   };
 
   
