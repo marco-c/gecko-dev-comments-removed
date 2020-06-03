@@ -2745,15 +2745,13 @@ MDefinition::TruncateKind MToDouble::operandTruncateKind(size_t index) const {
 MDefinition::TruncateKind MStoreUnboxedScalar::operandTruncateKind(
     size_t index) const {
   
-  
-  return (truncateInput() && index == 2 && isIntegerWrite()) ? Truncate
-                                                             : NoTruncate;
+  return (index == 2 && isIntegerWrite()) ? Truncate : NoTruncate;
 }
 
 MDefinition::TruncateKind MStoreTypedArrayElementHole::operandTruncateKind(
     size_t index) const {
   
-  return index == 3 && isIntegerWrite() ? Truncate : NoTruncate;
+  return (index == 3 && isIntegerWrite()) ? Truncate : NoTruncate;
 }
 
 MDefinition::TruncateKind MDiv::operandTruncateKind(size_t index) const {
