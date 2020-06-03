@@ -202,14 +202,15 @@ static bool IsObjectEscaped(MInstruction* ins, JSObject* objDefault) {
       case MDefinition::Opcode::Slots: {
 #ifdef DEBUG
         
+        
         MSlots* ins = def->toSlots();
         MOZ_ASSERT(ins->object() != 0);
         for (MUseIterator i(ins->usesBegin()); i != ins->usesEnd(); i++) {
           
           
           MDefinition* def = (*i)->consumer()->toDefinition();
-          MOZ_ASSERT(def->op() == MDefinition::Opcode::StoreSlot ||
-                     def->op() == MDefinition::Opcode::LoadSlot);
+          MOZ_ASSERT(def->op() == MDefinition::Opcode::StoreDynamicSlot ||
+                     def->op() == MDefinition::Opcode::LoadDynamicSlot);
         }
 #endif
         break;
@@ -309,8 +310,8 @@ class ObjectMemoryView : public MDefinitionVisitorDefaultNoop {
   void visitStoreFixedSlot(MStoreFixedSlot* ins);
   void visitLoadFixedSlot(MLoadFixedSlot* ins);
   void visitPostWriteBarrier(MPostWriteBarrier* ins);
-  void visitStoreSlot(MStoreSlot* ins);
-  void visitLoadSlot(MLoadSlot* ins);
+  void visitStoreDynamicSlot(MStoreDynamicSlot* ins);
+  void visitLoadDynamicSlot(MLoadDynamicSlot* ins);
   void visitGuardShape(MGuardShape* ins);
   void visitGuardObjectGroup(MGuardObjectGroup* ins);
   void visitFunctionEnvironment(MFunctionEnvironment* ins);
@@ -555,7 +556,7 @@ void ObjectMemoryView::visitPostWriteBarrier(MPostWriteBarrier* ins) {
   ins->block()->discard(ins);
 }
 
-void ObjectMemoryView::visitStoreSlot(MStoreSlot* ins) {
+void ObjectMemoryView::visitStoreDynamicSlot(MStoreDynamicSlot* ins) {
   
   MSlots* slots = ins->slots()->toSlots();
   if (slots->object() != obj_) {
@@ -586,7 +587,7 @@ void ObjectMemoryView::visitStoreSlot(MStoreSlot* ins) {
   ins->block()->discard(ins);
 }
 
-void ObjectMemoryView::visitLoadSlot(MLoadSlot* ins) {
+void ObjectMemoryView::visitLoadDynamicSlot(MLoadDynamicSlot* ins) {
   
   MSlots* slots = ins->slots()->toSlots();
   if (slots->object() != obj_) {

@@ -5049,38 +5049,39 @@ class LCallBindVar : public LInstructionHelper<1, 1, 0> {
 };
 
 
-class LLoadSlotV : public LInstructionHelper<BOX_PIECES, 1, 0> {
+class LLoadDynamicSlotV : public LInstructionHelper<BOX_PIECES, 1, 0> {
  public:
-  LIR_HEADER(LoadSlotV)
+  LIR_HEADER(LoadDynamicSlotV)
 
-  explicit LLoadSlotV(const LAllocation& in) : LInstructionHelper(classOpcode) {
+  explicit LLoadDynamicSlotV(const LAllocation& in)
+      : LInstructionHelper(classOpcode) {
     setOperand(0, in);
   }
-  const MLoadSlot* mir() const { return mir_->toLoadSlot(); }
+  const MLoadDynamicSlot* mir() const { return mir_->toLoadDynamicSlot(); }
 };
 
 
 
 
-class LLoadSlotT : public LInstructionHelper<1, 1, 0> {
+class LLoadDynamicSlotT : public LInstructionHelper<1, 1, 0> {
  public:
-  LIR_HEADER(LoadSlotT)
+  LIR_HEADER(LoadDynamicSlotT)
 
-  explicit LLoadSlotT(const LAllocation& slots)
+  explicit LLoadDynamicSlotT(const LAllocation& slots)
       : LInstructionHelper(classOpcode) {
     setOperand(0, slots);
   }
   const LAllocation* slots() { return getOperand(0); }
   const LDefinition* output() { return this->getDef(0); }
-  const MLoadSlot* mir() const { return mir_->toLoadSlot(); }
+  const MLoadDynamicSlot* mir() const { return mir_->toLoadDynamicSlot(); }
 };
 
 
-class LStoreSlotV : public LInstructionHelper<0, 1 + BOX_PIECES, 0> {
+class LStoreDynamicSlotV : public LInstructionHelper<0, 1 + BOX_PIECES, 0> {
  public:
-  LIR_HEADER(StoreSlotV)
+  LIR_HEADER(StoreDynamicSlotV)
 
-  LStoreSlotV(const LAllocation& slots, const LBoxAllocation& value)
+  LStoreDynamicSlotV(const LAllocation& slots, const LBoxAllocation& value)
       : LInstructionHelper(classOpcode) {
     setOperand(0, slots);
     setBoxOperand(Value, value);
@@ -5088,7 +5089,7 @@ class LStoreSlotV : public LInstructionHelper<0, 1 + BOX_PIECES, 0> {
 
   static const size_t Value = 1;
 
-  const MStoreSlot* mir() const { return mir_->toStoreSlot(); }
+  const MStoreDynamicSlot* mir() const { return mir_->toStoreDynamicSlot(); }
   const LAllocation* slots() { return getOperand(0); }
 };
 
@@ -5098,16 +5099,16 @@ class LStoreSlotV : public LInstructionHelper<0, 1 + BOX_PIECES, 0> {
 
 
 
-class LStoreSlotT : public LInstructionHelper<0, 2, 0> {
+class LStoreDynamicSlotT : public LInstructionHelper<0, 2, 0> {
  public:
-  LIR_HEADER(StoreSlotT)
+  LIR_HEADER(StoreDynamicSlotT)
 
-  LStoreSlotT(const LAllocation& slots, const LAllocation& value)
+  LStoreDynamicSlotT(const LAllocation& slots, const LAllocation& value)
       : LInstructionHelper(classOpcode) {
     setOperand(0, slots);
     setOperand(1, value);
   }
-  const MStoreSlot* mir() const { return mir_->toStoreSlot(); }
+  const MStoreDynamicSlot* mir() const { return mir_->toStoreDynamicSlot(); }
   const LAllocation* slots() { return getOperand(0); }
   const LAllocation* value() { return getOperand(1); }
 };
