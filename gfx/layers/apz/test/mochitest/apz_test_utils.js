@@ -1083,3 +1083,40 @@ var ApzCleanup = {
     }
   },
 };
+
+
+
+
+
+
+
+function promiseOneEvent(eventTarget, eventType, filter) {
+  return new Promise((resolve, reject) => {
+    eventTarget.addEventListener(eventType, function listener(e) {
+      let success = false;
+      if (filter == null) {
+        success = true;
+      } else if (typeof filter == "function") {
+        try {
+          success = filter(e);
+        } catch (ex) {
+          dump(
+            `ERROR: Filter passed to promiseOneEvent threw exception: ${ex}\n`
+          );
+          reject();
+          return;
+        }
+      } else {
+        dump(
+          "ERROR: Filter passed to promiseOneEvent was neither null nor a function\n"
+        );
+        reject();
+        return;
+      }
+      if (success) {
+        eventTarget.removeEventListener(eventType, listener);
+        resolve(e);
+      }
+    });
+  });
+}

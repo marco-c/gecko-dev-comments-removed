@@ -1,3 +1,6 @@
+
+
+
 function fission_subtest_init() {
   
   
@@ -18,43 +21,6 @@ function fission_subtest_init() {
 
 
 
-function promiseOneEvent(eventType, filter) {
-  return new Promise((resolve, reject) => {
-    window.addEventListener(eventType, function listener(e) {
-      let success = false;
-      if (filter == null) {
-        success = true;
-      } else if (typeof filter == "function") {
-        try {
-          success = filter(e);
-        } catch (ex) {
-          dump(
-            `ERROR: Filter passed to promiseOneEvent threw exception: ${ex}\n`
-          );
-          reject();
-          return;
-        }
-      } else {
-        dump(
-          "ERROR: Filter passed to promiseOneEvent was neither null nor a function\n"
-        );
-        reject();
-        return;
-      }
-      if (success) {
-        window.removeEventListener(eventType, listener);
-        resolve(e);
-      }
-    });
-  });
-}
-
-
-
-
-
-
-
 function loadOOPIFrame(iframeElementId, iframePage) {
   return async function() {
     if (window.location.href.startsWith("https://example.com/")) {
@@ -66,7 +32,7 @@ function loadOOPIFrame(iframeElementId, iframePage) {
 
     let url =
       "https://example.com/browser/gfx/layers/apz/test/mochitest/" + iframePage;
-    let loadPromise = promiseOneEvent("OOPIF:Load", function(e) {
+    let loadPromise = promiseOneEvent(window, "OOPIF:Load", function(e) {
       return typeof e.data.content == "string" && e.data.content == url;
     });
     let elem = document.getElementById(iframeElementId);
