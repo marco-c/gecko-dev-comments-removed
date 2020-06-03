@@ -1669,12 +1669,6 @@ void AppWindow::SyncAttributesToWidget() {
   NS_ENSURE_TRUE_VOID(mWindow);
 
   
-  windowElement->GetAttribute(NS_LITERAL_STRING("fullscreenbutton"), attr);
-  mWindow->SetShowsFullScreenButton(attr.LowerCaseEqualsLiteral("true"));
-
-  NS_ENSURE_TRUE_VOID(mWindow);
-
-  
   windowElement->GetAttribute(NS_LITERAL_STRING("macanimationtype"), attr);
   if (attr.EqualsLiteral("document")) {
     mWindow->SetWindowAnimationType(nsIWidget::eDocumentWindowAnimation);
