@@ -58,10 +58,9 @@ void MediaSession::SetPlaybackState(
     return;
   }
   
-  if (RefPtr<MediaController> controller =
+  if (RefPtr<IMediaInfoUpdater> updater =
           currentBC->Canonical()->GetMediaController()) {
-    controller->SetDeclaredPlaybackState(currentBC->Id(),
-                                         mDeclaredPlaybackState);
+    updater->SetDeclaredPlaybackState(currentBC->Id(), mDeclaredPlaybackState);
   }
 }
 

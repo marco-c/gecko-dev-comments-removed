@@ -82,13 +82,11 @@ class MediaController final
   void Shutdown();
 
   bool IsAudible() const;
-  MediaSessionPlaybackState GetState() const;
-
-  void SetDeclaredPlaybackState(uint64_t aSessionContextId,
-                                MediaSessionPlaybackState aState) override;
 
  private:
   ~MediaController();
+
+  void HandleActualPlaybackStateChanged() override;
 
   void UpdateMediaControlKeysEventToContentMediaIfNeeded(
       MediaControlKeysEvent aEvent);
@@ -99,32 +97,9 @@ class MediaController final
   bool ShouldActivateController() const;
   bool ShouldDeactivateController() const;
 
-  void SetGuessedPlayState(MediaSessionPlaybackState aState);
-
-  
-  
-  
-  void UpdateActualPlaybackState();
-
   bool mIsRegisteredToService = false;
   bool mShutdown = false;
   bool mIsInPictureInPictureMode = false;
-
-  
-  
-  
-  
-  
-  
-  
-  MediaSessionPlaybackState mGuessedPlaybackState =
-      MediaSessionPlaybackState::None;
-
-  
-  
-  
-  MediaSessionPlaybackState mActualPlaybackState =
-      MediaSessionPlaybackState::None;
 };
 
 }  

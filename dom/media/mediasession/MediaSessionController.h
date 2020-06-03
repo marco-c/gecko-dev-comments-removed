@@ -53,6 +53,11 @@ class IMediaInfoUpdater {
   
   virtual void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
                                          MediaAudibleState aState) = 0;
+
+  
+  
+  virtual void SetDeclaredPlaybackState(uint64_t aSessionContextId,
+                                        MediaSessionPlaybackState aState) = 0;
 };
 
 
@@ -82,6 +87,8 @@ class MediaSessionController : public IMediaInfoUpdater {
                                   MediaPlaybackState aState) override;
   void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
                                  MediaAudibleState aState) override;
+  void SetDeclaredPlaybackState(uint64_t aSessionContextId,
+                                MediaSessionPlaybackState aState) override;
 
   
   
@@ -109,16 +116,12 @@ class MediaSessionController : public IMediaInfoUpdater {
   }
 
   
-  
-  virtual void SetDeclaredPlaybackState(uint64_t aSessionContextId,
-                                        MediaSessionPlaybackState aState);
-
-  
-  
-  MediaSessionPlaybackState GetCurrentDeclaredPlaybackState() const;
+  MediaSessionPlaybackState GetState() const;
 
  protected:
   ~MediaSessionController() = default;
+  virtual void HandleActualPlaybackStateChanged() = 0;
+
   uint64_t mTopLevelBCId;
   Maybe<uint64_t> mActiveMediaSessionContextId;
 
@@ -130,6 +133,35 @@ class MediaSessionController : public IMediaInfoUpdater {
   void FillMissingTitleAndArtworkIfNeeded(MediaMetadataBase& aMetadata) const;
 
   void UpdateActiveMediaSessionContextId();
+
+  
+  
+  void SetGuessedPlayState(MediaSessionPlaybackState aState);
+
+  
+  
+  
+  void UpdateActualPlaybackState();
+
+  
+  
+  MediaSessionPlaybackState GetCurrentDeclaredPlaybackState() const;
+
+  
+  
+  
+  
+  
+  
+  
+  MediaSessionPlaybackState mGuessedPlaybackState =
+      MediaSessionPlaybackState::None;
+
+  
+  
+  
+  MediaSessionPlaybackState mActualPlaybackState =
+      MediaSessionPlaybackState::None;
 
   nsDataHashtable<nsUint64HashKey, MediaSessionInfo> mMediaSessionInfoMap;
   MediaEventProducer<MediaMetadataBase> mMetadataChangedEvent;

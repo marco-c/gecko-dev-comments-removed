@@ -130,10 +130,6 @@ void MediaController::NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
     Activate();
   } else if (ShouldDeactivateController()) {
     Deactivate();
-  } else if (IsMediaPlaying()) {
-    SetGuessedPlayState(MediaSessionPlaybackState::Playing);
-  } else if (!IsMediaPlaying()) {
-    SetGuessedPlayState(MediaSessionPlaybackState::Paused);
   }
 }
 
@@ -193,39 +189,6 @@ void MediaController::Deactivate() {
   }
 }
 
-void MediaController::SetDeclaredPlaybackState(
-    uint64_t aSessionContextId, MediaSessionPlaybackState aState) {
-  MediaSessionController::SetDeclaredPlaybackState(aSessionContextId, aState);
-  UpdateActualPlaybackState();
-}
-
-void MediaController::SetGuessedPlayState(MediaSessionPlaybackState aState) {
-  if (mShutdown || mGuessedPlaybackState == aState) {
-    return;
-  }
-  LOG("SetGuessedPlayState : '%s'", ToMediaSessionPlaybackStateStr(aState));
-  mGuessedPlaybackState = aState;
-  UpdateActualPlaybackState();
-}
-
-void MediaController::UpdateActualPlaybackState() {
-  
-  
-  MediaSessionPlaybackState newState =
-      GetCurrentDeclaredPlaybackState() == MediaSessionPlaybackState::Playing
-          ? MediaSessionPlaybackState::Playing
-          : mGuessedPlaybackState;
-  if (mActualPlaybackState == newState) {
-    return;
-  }
-  mActualPlaybackState = newState;
-  LOG("UpdateActualPlaybackState : '%s'",
-      ToMediaSessionPlaybackStateStr(mActualPlaybackState));
-  if (RefPtr<MediaControlService> service = MediaControlService::GetService()) {
-    service->NotifyControllerPlaybackStateChanged(this);
-  }
-}
-
 void MediaController::SetIsInPictureInPictureMode(
     bool aIsInPictureInPictureMode) {
   if (mIsInPictureInPictureMode == aIsInPictureInPictureMode) {
@@ -240,18 +203,20 @@ void MediaController::SetIsInPictureInPictureMode(
   }
 }
 
+void MediaController::HandleActualPlaybackStateChanged() {
+  
+  
+  
+  if (RefPtr<MediaControlService> service = MediaControlService::GetService()) {
+    service->NotifyControllerPlaybackStateChanged(this);
+  }
+}
+
 bool MediaController::IsInPictureInPictureMode() const {
   return mIsInPictureInPictureMode;
 }
 
-MediaSessionPlaybackState MediaController::GetState() const {
-  return mActualPlaybackState;
-}
-
-bool MediaController::IsAudible() const {
-  return mGuessedPlaybackState == MediaSessionPlaybackState::Playing &&
-         IsMediaAudible();
-}
+bool MediaController::IsAudible() const { return IsMediaAudible(); }
 
 }  
 }  
