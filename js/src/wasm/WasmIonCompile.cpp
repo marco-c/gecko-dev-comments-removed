@@ -657,13 +657,18 @@ class FunctionCompiler {
                rhs->type() == MIRType::Int32);
 
     if (op == wasm::SimdOp::I64x2ShrS) {
-      
-      
-      MConstant* mask = MConstant::New(alloc(), Int32Value(63));
-      curBlock_->add(mask);
-      MBitAnd* maskedShift = MBitAnd::New(alloc(), rhs, mask, MIRType::Int32);
-      curBlock_->add(maskedShift);
-      rhs = maskedShift;
+      if (!rhs->isConstant()) {
+        
+        
+        
+        
+        
+        MConstant* mask = MConstant::New(alloc(), Int32Value(63));
+        curBlock_->add(mask);
+        MBitAnd* maskedShift = MBitAnd::New(alloc(), rhs, mask, MIRType::Int32);
+        curBlock_->add(maskedShift);
+        rhs = maskedShift;
+      }
     }
 
     auto* ins = MWasmShiftSimd128::New(alloc(), lhs, rhs, op);

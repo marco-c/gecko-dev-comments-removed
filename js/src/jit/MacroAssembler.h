@@ -2133,49 +2133,92 @@ class MacroAssembler : public MacroAssemblerSpecific {
       DEFINED_ON(x86_shared);
 
   
+  
 
   inline void leftShiftInt8x16(Register rhs, FloatRegister lhsDest,
                                Register temp1, FloatRegister temp2)
       DEFINED_ON(x86_shared);
 
+  inline void leftShiftInt8x16(Imm32 count, FloatRegister src,
+                               FloatRegister dest) DEFINED_ON(x86_shared);
+
   inline void leftShiftInt16x8(Register rhs, FloatRegister lhsDest,
                                Register temp) DEFINED_ON(x86_shared);
+
+  inline void leftShiftInt16x8(Imm32 count, FloatRegister src,
+                               FloatRegister dest) DEFINED_ON(x86_shared);
 
   inline void leftShiftInt32x4(Register rhs, FloatRegister lhsDest,
                                Register temp) DEFINED_ON(x86_shared);
 
+  inline void leftShiftInt32x4(Imm32 count, FloatRegister src,
+                               FloatRegister dest) DEFINED_ON(x86_shared);
+
   inline void leftShiftInt64x2(Register rhs, FloatRegister lhsDest,
                                Register temp) DEFINED_ON(x86_shared);
 
+  inline void leftShiftInt64x2(Imm32 count, FloatRegister src,
+                               FloatRegister dest) DEFINED_ON(x86_shared);
+
+  
   
 
   inline void rightShiftInt8x16(Register rhs, FloatRegister lhsDest,
                                 Register temp1, FloatRegister temp2)
       DEFINED_ON(x86_shared);
 
+  inline void rightShiftInt8x16(Imm32 count, FloatRegister src,
+                                FloatRegister dest, FloatRegister temp)
+      DEFINED_ON(x86_shared);
+
   inline void unsignedRightShiftInt8x16(Register rhs, FloatRegister lhsDest,
                                         Register temp1, FloatRegister temp2)
+      DEFINED_ON(x86_shared);
+
+  inline void unsignedRightShiftInt8x16(Imm32 count, FloatRegister src,
+                                        FloatRegister dest)
       DEFINED_ON(x86_shared);
 
   inline void rightShiftInt16x8(Register rhs, FloatRegister lhsDest,
                                 Register temp) DEFINED_ON(x86_shared);
 
+  inline void rightShiftInt16x8(Imm32 count, FloatRegister src,
+                                FloatRegister dest) DEFINED_ON(x86_shared);
+
   inline void unsignedRightShiftInt16x8(Register rhs, FloatRegister lhsDest,
                                         Register temp) DEFINED_ON(x86_shared);
+
+  inline void unsignedRightShiftInt16x8(Imm32 count, FloatRegister src,
+                                        FloatRegister dest)
+      DEFINED_ON(x86_shared);
 
   inline void rightShiftInt32x4(Register rhs, FloatRegister lhsDest,
                                 Register temp) DEFINED_ON(x86_shared);
 
+  inline void rightShiftInt32x4(Imm32 count, FloatRegister src,
+                                FloatRegister dest) DEFINED_ON(x86_shared);
+
   inline void unsignedRightShiftInt32x4(Register rhs, FloatRegister lhsDest,
                                         Register temp) DEFINED_ON(x86_shared);
+
+  inline void unsignedRightShiftInt32x4(Imm32 count, FloatRegister src,
+                                        FloatRegister dest)
+      DEFINED_ON(x86_shared);
 
   
   
   inline void rightShiftInt64x2(Register rhs, FloatRegister lhsDest)
       DEFINED_ON(x64);
 
+  inline void rightShiftInt64x2(Imm32 count, FloatRegister src,
+                                FloatRegister dest) DEFINED_ON(x64);
+
   inline void unsignedRightShiftInt64x2(Register rhs, FloatRegister lhsDest,
                                         Register temp) DEFINED_ON(x86_shared);
+
+  inline void unsignedRightShiftInt64x2(Imm32 count, FloatRegister src,
+                                        FloatRegister dest)
+      DEFINED_ON(x86_shared);
 
   
 
