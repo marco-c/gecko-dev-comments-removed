@@ -681,7 +681,10 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   
   void ForceGlobalReflow();
 
-  void RebuildLocalFonts();
+  
+  
+  
+  void RebuildLocalFonts(bool aForgetLocalFaces = false);
 
   void ResolveGenericFontNames(mozilla::StyleGenericFontFamily aGenericType,
                                eFontPrefLang aPrefLang,

@@ -549,9 +549,11 @@ void gfxPlatformFontList::SetVisibilityLevel() {
 
 void gfxPlatformFontList::FontListChanged() {
   MOZ_ASSERT(!XRE_IsParentProcess());
-  if (SharedFontList() && SharedFontList()->NumLocalFaces()) {
+  if (SharedFontList()) {
     
-    RebuildLocalFonts();
+    
+    
+    RebuildLocalFonts( true);
   }
   ForceGlobalReflow();
 }
@@ -2106,9 +2108,13 @@ void gfxPlatformFontList::ForceGlobalReflow() {
   gfxPlatform::ForceGlobalReflow();
 }
 
-void gfxPlatformFontList::RebuildLocalFonts() {
+void gfxPlatformFontList::RebuildLocalFonts(bool aForgetLocalFaces) {
   for (auto it = mUserFontSetList.Iter(); !it.Done(); it.Next()) {
-    it.Get()->GetKey()->RebuildLocalRules();
+    auto* fontset = it.Get()->GetKey();
+    if (aForgetLocalFaces) {
+      fontset->ForgetLocalFaces();
+    }
+    fontset->RebuildLocalRules();
   }
 }
 
