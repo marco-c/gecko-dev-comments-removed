@@ -84,6 +84,12 @@ async function testSteps() {
 
     
     
+    createUnknownFileIn(
+      `${originRelativePath}/idb/2320029346mByDIdnedxe.files`
+    );
+    createUnknownFileIn(
+      `${originRelativePath}/idb/2320029346mByDIdnedxe.files/journals`
+    );
   }
 
   
