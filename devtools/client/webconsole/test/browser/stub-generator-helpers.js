@@ -14,6 +14,28 @@ const CHROME_PREFIX = "chrome://mochitests/content/browser/";
 const STUBS_FOLDER = "devtools/client/webconsole/test/node/fixtures/stubs/";
 const STUBS_UPDATE_ENV = "WEBCONSOLE_STUBS_UPDATE";
 
+async function createResourceWatcherForTab(tab) {
+  
+  const {
+    ResourceWatcher,
+  } = require("devtools/shared/resources/resource-watcher");
+  const { TargetList } = require("devtools/shared/resources/target-list");
+  const { TargetFactory } = require("devtools/client/framework/target");
+
+  const target = await TargetFactory.forTab(tab);
+  const targetList = new TargetList(target.client.mainRoot, target);
+
+  await target.attach();
+  
+  
+  const threadFront = await target.attachThread({});
+  
+  await threadFront.resume();
+
+  await targetList.startListening();
+  return new ResourceWatcher(targetList);
+}
+
 
 function getCleanedPacket(key, packet) {
   const { stubPackets } = require(CHROME_PREFIX + STUBS_FOLDER + "index");
@@ -510,6 +532,7 @@ function parsePacketAndCreateFronts(packet) {
 
 module.exports = {
   STUBS_UPDATE_ENV,
+  createResourceWatcherForTab,
   getStubFile,
   getCleanedPacket,
   getSerializedPacket,

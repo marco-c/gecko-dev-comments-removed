@@ -343,29 +343,7 @@ class WebConsoleUI {
   }
 
   _onResourceAvailable({ resourceType, targetFront, resource }) {
-    const resourceWatcher = this.hud.resourceWatcher;
-    if (resourceType == resourceWatcher.TYPES.CONSOLE_MESSAGE) {
-      
-      
-      resource.type = "consoleAPICall";
-      this.wrapper.dispatchMessageAdd(resource);
-      return;
-    }
-
-    if (resourceType == resourceWatcher.TYPES.ERROR_MESSAGE) {
-      
-      
-      resource.type = "pageError";
-      this.wrapper.dispatchMessageAdd(resource);
-      return;
-    }
-
-    if (resourceType == resourceWatcher.TYPES.PLATFORM_MESSAGE) {
-      
-      
-      resource.type = "logMessage";
-      this.wrapper.dispatchMessageAdd(resource);
-    }
+    this.wrapper.dispatchMessageAdd(resource);
   }
 
   
