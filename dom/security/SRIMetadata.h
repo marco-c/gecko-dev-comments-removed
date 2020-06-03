@@ -67,6 +67,17 @@ class SRIMetadata final {
 
   const nsString& GetIntegrityString() const { return mIntegrityString; }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool CanTrustBeDelegatedTo(const SRIMetadata& aOther) const;
+
  private:
   CopyableTArray<nsCString> mHashes;
   nsString mIntegrityString;

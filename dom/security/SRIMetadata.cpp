@@ -153,5 +153,39 @@ void SRIMetadata::GetHashType(int8_t* outType, uint32_t* outLength) const {
   *outType = mAlgorithmType;
 }
 
+bool SRIMetadata::CanTrustBeDelegatedTo(const SRIMetadata& aOther) const {
+  if (IsEmpty()) {
+    
+    return true;
+  }
+
+  if (aOther.IsEmpty()) {
+    
+    return false;
+  }
+
+  if (mAlgorithmType < aOther.mAlgorithmType) {
+    
+    
+    return true;
+  }
+  if (mAlgorithmType > aOther.mAlgorithmType) {
+    
+    return false;
+  }
+
+  for (const auto& hash : mHashes) {
+    if (!aOther.mHashes.Contains(hash)) {
+      
+      
+      
+      
+      return false;
+    }
+  }
+
+  return true;
+}
+
 }  
 }  
