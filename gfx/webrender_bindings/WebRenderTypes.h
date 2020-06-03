@@ -65,21 +65,6 @@ struct ExternalImageKeyPair {
 
 WindowId NewWindowId();
 
-MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
-    RenderRoot, uint8_t,
-    (
-        
-        
-        
-        
-        
-        
-        Default));
-
-typedef EnumSet<RenderRoot, uint8_t> RenderRootSet;
-
-RenderRoot RenderRootFromId(DocumentId id);
-
 inline DebugFlags NewDebugFlags(uint32_t aFlags) { return {aFlags}; }
 
 inline Maybe<wr::ImageFormat> SurfaceFormatToImageFormat(
