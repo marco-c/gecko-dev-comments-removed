@@ -209,4 +209,4 @@ class DebianBootstrapper(
 
         
         assert res == 1
-        self.run_as_root(['pip', 'install', '--upgrade', 'Mercurial'])
+        self.run_as_root(['pip3', 'install', '--upgrade', 'Mercurial'])
