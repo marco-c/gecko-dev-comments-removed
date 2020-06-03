@@ -237,7 +237,6 @@ class ActorReadyGeckoProfilerInterface {
 
 
 
-
   getSupportedFeatures() {
     if (!IS_SUPPORTED_PLATFORM) {
       return [];

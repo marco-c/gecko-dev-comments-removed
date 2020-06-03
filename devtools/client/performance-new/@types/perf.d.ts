@@ -60,9 +60,6 @@ export interface PerfFront {
   on: (type: string, listener: () => void) => void;
   off: (type: string, listener: () => void) => void;
   destroy: () => void,
-  
-
-
   getSupportedFeatures: () => MaybePromise<string[]>
 }
 
@@ -228,10 +225,7 @@ export interface InitializedValues {
   
   getSymbolTableGetter: (profile: MinimallyTypedGeckoProfile) => GetSymbolTableCallback;
   
-  
-  
-  
-  supportedFeatures: string[] | null
+  supportedFeatures: string[]
   
   
   openAboutProfiling?: () => void,
@@ -288,7 +282,7 @@ export type Action =
       openRemoteDevTools?: () => void,
       recordingSettingsFromPreferences: RecordingStateFromPreferences;
       getSymbolTableGetter: (profile: MinimallyTypedGeckoProfile) => GetSymbolTableCallback;
-      supportedFeatures: string[] | null;
+      supportedFeatures: string[];
     }
   | {
       type: "CHANGE_PRESET";
@@ -303,7 +297,7 @@ export interface InitializeStoreValues {
   presets: Presets;
   pageContext: PageContext;
   recordingPreferences: RecordingStateFromPreferences;
-  supportedFeatures: string[] | null;
+  supportedFeatures: string[];
   getSymbolTableGetter: (profile: MinimallyTypedGeckoProfile) => GetSymbolTableCallback;
   openAboutProfiling?: () => void;
   openRemoteDevTools?: () => void;
