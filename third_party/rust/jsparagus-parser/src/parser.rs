@@ -1,5 +1,6 @@
 use crate::queue_stack::QueueStack;
 use crate::simulator::Simulator;
+use ast::arena;
 use ast::SourceLocation;
 use generated_parser::{
     full_actions, AstBuilder, AstBuilderDelegate, ErrorCode, ParseError, ParserTrait, Result,
@@ -118,7 +119,7 @@ impl<'alloc> Parser<'alloc> {
         *self.state_stack.last().unwrap()
     }
 
-    pub fn write_token(&mut self, token: &Token) -> Result<'alloc, ()> {
+    pub fn write_token(&mut self, token: arena::Box<'alloc, Token>) -> Result<'alloc, ()> {
         json_trace!({
             "method": "write_token",
             "is_on_new_line": token.is_on_new_line,
@@ -126,9 +127,10 @@ impl<'alloc> Parser<'alloc> {
             "end": token.loc.end,
         });
         
+        let term = Term::Terminal(token.terminal_id);
         let accept = self.shift(TermValue {
-            term: Term::Terminal(token.terminal_id),
-            value: StackValue::Token(self.handler.alloc(token.clone())),
+            term,
+            value: StackValue::Token(token),
         })?;
         
         
@@ -146,7 +148,7 @@ impl<'alloc> Parser<'alloc> {
         let token = Token::basic_token(TerminalId::End, loc);
         let accept = self.shift(TermValue {
             term: Term::Terminal(TerminalId::End),
-            value: StackValue::Token(self.handler.alloc(token.clone())),
+            value: StackValue::Token(self.handler.alloc(token)),
         })?;
         
         
@@ -232,11 +234,7 @@ impl<'alloc> Parser<'alloc> {
     }
 
     pub fn can_accept_terminal(&self, t: TerminalId) -> bool {
-        let bogus_loc = SourceLocation::new(0, 0);
-        let result = self
-            .simulator()
-            .write_token(&Token::basic_token(t, bogus_loc))
-            .is_ok();
+        let result = self.simulator().write_token(t).is_ok();
         json_trace!({
             "can_accept": result,
             "terminal": format!("{:?}", t),
