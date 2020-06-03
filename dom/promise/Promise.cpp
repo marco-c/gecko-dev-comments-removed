@@ -513,10 +513,6 @@ void Promise::ReportRejectedPromise(JSContext* aCx, JS::HandleObject aPromise) {
 
   MOZ_ASSERT(JS::GetPromiseState(aPromise) == JS::PromiseState::Rejected);
 
-  JS::Rooted<JS::Value> result(aCx, JS::GetPromiseResult(aPromise));
-
-  RefPtr<xpc::ErrorReport> xpcReport = new xpc::ErrorReport();
-
   bool isChrome = false;
   nsGlobalWindowInner* win = nullptr;
   uint64_t innerWindowID = 0;
@@ -537,11 +533,17 @@ void Promise::ReportRejectedPromise(JSContext* aCx, JS::HandleObject aPromise) {
     }
   }
 
+  JS::Rooted<JS::Value> result(aCx, JS::GetPromiseResult(aPromise));
+  
+  JS::Rooted<JSObject*> resolutionSite(aCx,
+                                       JS::GetPromiseResolutionSite(aPromise));
+
   
   
   
   
   
+  RefPtr<xpc::ErrorReport> xpcReport = new xpc::ErrorReport();
   {
     Maybe<JSAutoRealm> ar;
     JS::Rooted<JS::Value> unwrapped(aCx, result);
@@ -557,7 +559,8 @@ void Promise::ReportRejectedPromise(JSContext* aCx, JS::HandleObject aPromise) {
          NS_SUCCEEDED(UNWRAP_OBJECT(Exception, &unwrapped, exn)))) {
       xpcReport->Init(aCx, exn, isChrome, innerWindowID);
     } else {
-      JS::ExceptionStack exnStack(aCx, unwrapped, nullptr);
+      
+      JS::ExceptionStack exnStack(aCx, unwrapped, resolutionSite);
       if (!report.init(aCx, exnStack, JS::ErrorReportBuilder::NoSideEffects)) {
         JS_ClearPendingException(aCx);
         return;
@@ -574,6 +577,9 @@ void Promise::ReportRejectedPromise(JSContext* aCx, JS::HandleObject aPromise) {
     if (!win->IsDying()) {
       
       event->SetException(aCx, result);
+      if (resolutionSite) {
+        event->SerializeStack(aCx, resolutionSite);
+      }
     }
     win->Dispatch(mozilla::TaskCategory::Other, event.forget());
   } else {
