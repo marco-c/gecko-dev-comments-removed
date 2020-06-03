@@ -1029,10 +1029,15 @@ var Policies = {
 
   Homepage: {
     onBeforeUIStartup(manager, param) {
+      if ("StartPage" in param && param.StartPage == "none") {
+        
+        
+        param.URL = new URL("about:blank");
+      }
       
       
       
-      if (param.URL) {
+      if ("URL" in param) {
         let homepages = param.URL.href;
         if (param.Additional && param.Additional.length) {
           homepages += "|" + param.Additional.map(url => url.href).join("|");
@@ -1059,17 +1064,20 @@ var Policies = {
       if (param.StartPage) {
         let prefValue;
         switch (param.StartPage) {
-          case "none":
-            prefValue = 0;
-            break;
           case "homepage":
+          case "homepage-locked":
+          case "none":
             prefValue = 1;
             break;
           case "previous-session":
             prefValue = 3;
             break;
         }
-        setDefaultPref("browser.startup.page", prefValue, param.Locked);
+        setDefaultPref(
+          "browser.startup.page",
+          prefValue,
+          param.StartPage == "homepage-locked"
+        );
       }
     },
   },
