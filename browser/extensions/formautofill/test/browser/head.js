@@ -10,7 +10,6 @@
 
 
 
-
 "use strict";
 
 ChromeUtils.import("resource://gre/modules/OSKeyStore.jsm", this);
@@ -51,7 +50,6 @@ const SYNC_ADDRESSES_PREF = "services.sync.engine.addresses";
 const SYNC_CREDITCARDS_PREF = "services.sync.engine.creditcards";
 const SYNC_CREDITCARDS_AVAILABLE_PREF =
   "services.sync.engine.creditcards.available";
-const DEFAULT_REGION_PREF = "browser.search.region";
 
 const TEST_ADDRESS_1 = {
   "given-name": "John",
