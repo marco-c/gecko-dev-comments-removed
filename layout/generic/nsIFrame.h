@@ -1662,7 +1662,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  AutoTArray<ChildList, 4> GetCrossDocChildLists();
+  AutoTArray<ChildList, 4> CrossDocChildLists();
 
   
   static const ChildListID kPrincipalList = mozilla::layout::kPrincipalList;
