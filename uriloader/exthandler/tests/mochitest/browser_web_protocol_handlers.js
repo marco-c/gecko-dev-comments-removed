@@ -45,10 +45,31 @@ add_task(async function() {
   );
   handlerSvc.store(protoInfo);
 
-  
-  let link = "#link";
   const expectedURL =
     "https://example.com/foobar?uri=web%2Btestprotocol%3Atest";
+
+  
+  await SpecialPowers.spawn(browser, [], async function() {
+    let iframe = content.document.createElement("iframe");
+    iframe.src = `data:text/html,<a href="web+testprotocol:test">Click me</a>`;
+    content.document.body.append(iframe);
+    
+    await ContentTaskUtils.waitForEvent(iframe, "load");
+    iframe.contentDocument.querySelector("a").click();
+  });
+  let kidContext = browser.browsingContext.children[0];
+  await TestUtils.waitForCondition(() => {
+    let spec = kidContext.currentWindowGlobal?.documentURI?.spec || "";
+    return spec == expectedURL;
+  });
+  is(
+    kidContext.currentWindowGlobal.documentURI.spec,
+    expectedURL,
+    "Should load in frame."
+  );
+
+  
+  let link = "#link";
 
   let promiseTabOpened = BrowserTestUtils.waitForNewTab(gBrowser, expectedURL);
   await BrowserTestUtils.synthesizeMouseAtCenter(link, { button: 1 }, browser);

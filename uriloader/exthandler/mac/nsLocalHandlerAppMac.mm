@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #import <CoreFoundation/CoreFoundation.h>
 #import <ApplicationServices/ApplicationServices.h>
@@ -10,7 +10,7 @@
 #include "nsILocalFileMac.h"
 #include "nsIURI.h"
 
-// We override this to make sure app bundles display their pretty name (without .app suffix)
+
 NS_IMETHODIMP nsLocalHandlerAppMac::GetName(nsAString& aName) {
   if (mExecutable) {
     nsCOMPtr<nsILocalFileMac> macFile = do_QueryInterface(mExecutable);
@@ -24,13 +24,13 @@ NS_IMETHODIMP nsLocalHandlerAppMac::GetName(nsAString& aName) {
   return nsLocalHandlerApp::GetName(aName);
 }
 
-/**
- * mostly copy/pasted from nsMacShellService.cpp (which is in browser/,
- * so we can't depend on it here).  This code probably really wants to live
- * somewhere more central (see bug 389922).
- */
+
+
+
+
+
 NS_IMETHODIMP
-nsLocalHandlerAppMac::LaunchWithURI(nsIURI* aURI, nsIInterfaceRequestor* aWindowContext) {
+nsLocalHandlerAppMac::LaunchWithURI(nsIURI* aURI, mozilla::dom::BrowsingContext* aBrowsingContext) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
 
   nsresult rv;
