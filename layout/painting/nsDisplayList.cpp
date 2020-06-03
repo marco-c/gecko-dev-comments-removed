@@ -7779,7 +7779,13 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
   
   
   nsRect overflow = aFrame->GetVisualOverflowRectRelativeToSelf();
-  if (aDirtyRect->Contains(overflow)) {
+  
+  
+  
+  nsRect untransformedDirtyRect = *aDirtyRect;
+  UntransformRect(*aDirtyRect, overflow, aFrame, &untransformedDirtyRect);
+  if (untransformedDirtyRect.Contains(overflow)) {
+    *aDirtyRect = untransformedDirtyRect;
     result.mDecision = PrerenderDecision::Full;
     return result;
   }
@@ -7822,7 +7828,7 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
 
   if (StaticPrefs::layout_animation_prerender_partial()) {
     *aDirtyRect = nsLayoutUtils::ComputePartialPrerenderArea(
-        aFrame, *aDirtyRect, overflow, maxSize);
+        aFrame, untransformedDirtyRect, overflow, maxSize);
     result.mDecision = PrerenderDecision::Partial;
     return result;
   }
