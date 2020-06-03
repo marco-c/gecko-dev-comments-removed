@@ -4,6 +4,10 @@ var { WebRequest } = ChromeUtils.import(
   "resource://gre/modules/WebRequest.jsm"
 );
 
+var { ExtensionParent } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionParent.jsm"
+);
+
 const server = createHttpServer({ hosts: ["example.com"] });
 server.registerPathHandler("/", (request, response) => {
   response.setStatusLine(request.httpVersion, 200, "OK");
@@ -69,6 +73,12 @@ function onResponseStarted(details) {
   ok(found, "Saw cookie header");
   equal(countAfter, 1, "onResponseStarted hit once");
 }
+
+add_task(async function setup() {
+  
+  
+  await ExtensionParent.apiManager.lazyInit();
+});
 
 add_task(async function filter_urls() {
   
