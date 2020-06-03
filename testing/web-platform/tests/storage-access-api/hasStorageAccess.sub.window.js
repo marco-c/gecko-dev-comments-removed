@@ -55,7 +55,7 @@ if (topLevelDocument) {
   RunTestsInIFrame("hasStorageAccess.sub.window.html?testCase=same-origin-frame&rootdocument=false");
 
   
-  RunTestsInIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/hasStorageAccess.sub.window.html?testCase=cross-origin-frame&allowed=false&rootdocument=false");
+  RunTestsInIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/hasStorageAccess.sub.window.html?testCase=cross-origin-frame&rootdocument=false");
 
   
   
@@ -63,5 +63,5 @@ if (topLevelDocument) {
 
   
   
-  RunTestsInNestedIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/hasStorageAccess.sub.window.html?testCase=nested-cross-origin-frame&allowed=false&rootdocument=false");
+  RunTestsInNestedIFrame("http://{{domains[www]}}:{{ports[http][0]}}/storage-access-api/hasStorageAccess.sub.window.html?testCase=nested-cross-origin-frame&rootdocument=false");
 }
