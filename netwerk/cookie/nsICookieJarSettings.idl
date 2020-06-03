@@ -42,6 +42,11 @@ interface nsICookieJarSettings : nsISupports
   
 
 
+  readonly attribute AString firstPartyDomain;
+
+  
+
+
 
 
   unsigned long cookiePermission(in nsIPrincipal aPrincipal);
