@@ -179,7 +179,8 @@ inline HashNumber AddUintptrToHash<8>(HashNumber aHash, uintptr_t aValue) {
 
 
 template <typename T, bool TypeIsNotIntegral = !std::is_integral_v<T>,
-          typename U = std::enable_if_t<TypeIsNotIntegral>>
+          bool TypeIsNotEnum = !std::is_enum_v<T>,
+          std::enable_if_t<TypeIsNotIntegral && TypeIsNotEnum, int> = 0>
 MOZ_MUST_USE inline HashNumber AddToHash(HashNumber aHash, T aA) {
   
 
@@ -204,9 +205,17 @@ MOZ_MUST_USE inline HashNumber AddToHash(HashNumber aHash, A* aA) {
 
 
 
-template <typename T, typename U = std::enable_if_t<std::is_integral_v<T>>>
+template <typename T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
 MOZ_MUST_USE constexpr HashNumber AddToHash(HashNumber aHash, T aA) {
   return detail::AddUintptrToHash<sizeof(T)>(aHash, aA);
+}
+
+template <typename T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
+MOZ_MUST_USE constexpr HashNumber AddToHash(HashNumber aHash, T aA) {
+  
+  using UnderlyingType = typename std::underlying_type<T>::type;
+  return detail::AddUintptrToHash<sizeof(UnderlyingType)>(
+      aHash, static_cast<UnderlyingType>(aA));
 }
 
 template <typename A, typename... Args>
