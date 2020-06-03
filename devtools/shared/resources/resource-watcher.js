@@ -284,11 +284,9 @@ class ResourceWatcher {
     
     
     const promises = [];
-    for (const targetType of this.targetList.ALL_TYPES) {
-      
-      for (const target of this.targetList.getAllTargets(targetType)) {
-        promises.push(this._watchResourcesForTarget(target, resourceType));
-      }
+    const targets = this.targetList.getAllTargets(this.targetList.ALL_TYPES);
+    for (const target of targets) {
+      promises.push(this._watchResourcesForTarget(target, resourceType));
     }
     await Promise.all(promises);
   }
@@ -330,18 +328,16 @@ class ResourceWatcher {
 
     
     
-    for (const targetType of this.targetList.ALL_TYPES) {
-      
-      for (const target of this.targetList.getAllTargets(targetType)) {
-        this._unwatchResourcesForTarget(targetType, target, resourceType);
-      }
+    const targets = this.targetList.getAllTargets(this.targetList.ALL_TYPES);
+    for (const target of targets) {
+      this._unwatchResourcesForTarget(target, resourceType);
     }
   }
 
   
 
 
-  _unwatchResourcesForTarget(targetType, targetFront, resourceType) {
+  _unwatchResourcesForTarget(targetFront, resourceType) {
     
     
     

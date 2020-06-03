@@ -38,14 +38,14 @@ async function testProcesses(targetList, target) {
 
   
   const originalProcessesCount = Services.ppmm.childCount - 1;
-  const processes = await targetList.getAllTargets(TargetList.TYPES.PROCESS);
+  const processes = await targetList.getAllTargets([TargetList.TYPES.PROCESS]);
   is(
     processes.length,
     originalProcessesCount,
     "Get a target for all content processes"
   );
 
-  const processes2 = await targetList.getAllTargets(TargetList.TYPES.PROCESS);
+  const processes2 = await targetList.getAllTargets([TargetList.TYPES.PROCESS]);
   is(
     processes2.length,
     originalProcessesCount,
@@ -179,7 +179,7 @@ async function testProcesses(targetList, target) {
   );
 
   
-  const processes3 = await targetList.getAllTargets(TargetList.TYPES.PROCESS);
+  const processes3 = await targetList.getAllTargets([TargetList.TYPES.PROCESS]);
   is(
     processes3.length,
     processCountAfterTabOpen - 1,

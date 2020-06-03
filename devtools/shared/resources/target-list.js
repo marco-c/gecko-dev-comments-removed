@@ -370,13 +370,15 @@ class TargetList {
 
 
 
-  getAllTargets(type) {
-    if (!type) {
-      throw new Error("getAllTargets expects a 'type' argument");
+
+
+  getAllTargets(types) {
+    if (!types?.length) {
+      throw new Error("getAllTargets expects a non-empty array of types");
     }
 
     const targets = [...this._targets].filter(target =>
-      this._matchTargetType(type, target)
+      types.some(type => this._matchTargetType(type, target))
     );
 
     return targets;
@@ -392,7 +394,7 @@ class TargetList {
 
   async getAllFronts(targetType, frontType) {
     const fronts = [];
-    const targets = this.getAllTargets(targetType);
+    const targets = this.getAllTargets([targetType]);
     for (const target of targets) {
       const front = await target.getFront(frontType);
       fronts.push(front);

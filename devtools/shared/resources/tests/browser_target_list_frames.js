@@ -40,14 +40,14 @@ async function testBrowserFrames(mainRoot) {
   await targetList.startListening();
 
   
-  const frames = await targetList.getAllTargets(TargetList.TYPES.FRAME);
+  const frames = await targetList.getAllTargets([TargetList.TYPES.FRAME]);
   const hasBrowserDocument = frames.find(
     frameTarget => frameTarget.url == window.location.href
   );
   ok(hasBrowserDocument, "retrieve the target for the browser document");
 
   
-  const frames2 = await targetList.getAllTargets(TargetList.TYPES.FRAME);
+  const frames2 = await targetList.getAllTargets([TargetList.TYPES.FRAME]);
   is(frames2.length, frames.length, "retrieved the same number of frames");
 
   function sortFronts(f1, f2) {
@@ -120,7 +120,7 @@ async function testTabFrames(mainRoot) {
   await targetList.startListening();
 
   
-  const frames = await targetList.getAllTargets(TargetList.TYPES.FRAME);
+  const frames = await targetList.getAllTargets([TargetList.TYPES.FRAME]);
   is(frames.length, 1, "retrieved only the top level document");
 
   

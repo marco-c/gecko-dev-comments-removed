@@ -45,13 +45,13 @@ async function testPreffedOffMainProcess(mainRoot, mainProcess) {
   
   
   
-  const processes = await targetList.getAllTargets(TargetList.TYPES.PROCESS);
+  const processes = await targetList.getAllTargets([TargetList.TYPES.PROCESS]);
   is(
     processes.length,
     0,
     "We only get a frame target for the top level target"
   );
-  const frames = await targetList.getAllTargets(TargetList.TYPES.FRAME);
+  const frames = await targetList.getAllTargets([TargetList.TYPES.FRAME]);
   is(frames.length, 1, "We get only one frame when preffed-off");
   is(
     frames[0],
@@ -110,10 +110,10 @@ async function testPreffedOffTab(mainRoot) {
 
   await targetList.startListening();
 
-  const processes = await targetList.getAllTargets(TargetList.TYPES.PROCESS);
+  const processes = await targetList.getAllTargets([TargetList.TYPES.PROCESS]);
   is(processes.length, 0, "Tabs don't expose any process");
   
-  const frames = await targetList.getAllTargets(TargetList.TYPES.FRAME);
+  const frames = await targetList.getAllTargets([TargetList.TYPES.FRAME]);
   is(frames.length, 1, "We get only one frame when preffed-off");
   is(frames[0], target, "The target is the top level one via getAllTargets");
 

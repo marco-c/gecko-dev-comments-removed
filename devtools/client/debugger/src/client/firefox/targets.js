@@ -215,7 +215,7 @@ async function listProcessTargets(args: Args): Promise<*> {
   
   
   
-  return targetList.getAllTargets(targetList.TYPES.PROCESS);
+  return targetList.getAllTargets([targetList.TYPES.PROCESS]);
 }
 
 export async function updateTargets(args: Args): Promise<*> {
