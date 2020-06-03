@@ -8,7 +8,6 @@
 #include "DocumentLoadListener.h"
 
 #include "mozilla/AntiTrackingUtils.h"
-#include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/MozPromiseInlines.h"  
 #include "mozilla/StaticPrefs_fission.h"
@@ -413,15 +412,6 @@ bool DocumentLoadListener::Open(
       
       
       topWindowURI = uriBeingLoaded;
-
-      
-      
-      
-      nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-      Unused << loadInfo->GetCookieJarSettings(
-          getter_AddRefs(cookieJarSettings));
-      net::CookieJarSettings::Cast(cookieJarSettings)
-          ->UpdateIsOnContentBlockingAllowList(mChannel);
     } else if (RefPtr<WindowGlobalParent> topWindow = AntiTrackingUtils::
                    GetTopWindowExcludingExtensionAccessibleContentFrames(
                        browsingContext, uriBeingLoaded)) {

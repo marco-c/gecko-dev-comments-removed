@@ -22,10 +22,9 @@ var normalOrigin, trackingOrigin;
 
 
 const PARAM_LOAD_BYPASS_URL_CLASSIFIER = 1 << 0;
-const PARAM_CONTENT_POLICY_TYPE_DOCUMENT = 1 << 1;
-const PARAM_TRIGGERING_PRINCIPAL_SYSTEM = 1 << 2;
-const PARAM_CAP_BE_CONSERVATIVE = 1 << 3;
-const PARAM_MAX = 1 << 4;
+const PARAM_TRIGGERING_PRINCIPAL_SYSTEM = 1 << 1;
+const PARAM_CAP_BE_CONSERVATIVE = 1 << 2;
+const PARAM_MAX = 1 << 3;
 
 function getParameters(bitFlags) {
   var params = {
@@ -37,10 +36,6 @@ function getParameters(bitFlags) {
 
   if (bitFlags & PARAM_TRIGGERING_PRINCIPAL_SYSTEM) {
     params.loadFlags = Ci.nsIChannel.LOAD_BYPASS_URL_CLASSIFIER;
-  }
-
-  if (bitFlags & PARAM_CONTENT_POLICY_TYPE_DOCUMENT) {
-    params.contentType = Ci.nsIContentPolicy.TYPE_DOCUMENT;
   }
 
   if (bitFlags & PARAM_TRIGGERING_PRINCIPAL_SYSTEM) {

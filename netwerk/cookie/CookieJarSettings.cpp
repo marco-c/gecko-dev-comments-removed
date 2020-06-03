@@ -431,19 +431,22 @@ void CookieJarSettings::UpdateIsOnContentBlockingAllowList(
   MOZ_ASSERT(bc->IsTop());
 #endif
 
-  nsCOMPtr<nsIURI> uriBeingLoaded =
-      AntiTrackingUtils::MaybeGetDocumentURIBeingLoaded(aChannel);
-  nsCOMPtr<nsIPrincipal> contentBlockingAllowListPrincipal;
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = aChannel->GetURI(getter_AddRefs(uri));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
 
   
   
   
   
   
+  nsCOMPtr<nsIPrincipal> contentBlockingAllowListPrincipal;
   OriginAttributes attrs;
   loadInfo->GetOriginAttributes(&attrs);
   ContentBlockingAllowList::RecomputePrincipal(
-      uriBeingLoaded, attrs, getter_AddRefs(contentBlockingAllowListPrincipal));
+      uri, attrs, getter_AddRefs(contentBlockingAllowListPrincipal));
 
   if (!contentBlockingAllowListPrincipal ||
       !contentBlockingAllowListPrincipal->GetIsContentPrincipal()) {
