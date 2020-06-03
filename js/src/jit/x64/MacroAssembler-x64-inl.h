@@ -756,13 +756,18 @@ void MacroAssembler::spectreBoundsCheck32(Register index, const Address& length,
 
 
 
+
+
+
 void MacroAssembler::anyTrueSimd128(FloatRegister src, Register dest) {
   ScratchRegisterScope one(*this);
   movl(Imm32(1), one);
   movl(Imm32(0), dest);
-  vptest(src, src);  
+  vptest(src, src);
   cmovCCl(NonZero, one, dest);
 }
+
+
 
 void MacroAssembler::mulInt64x2(FloatRegister rhs, FloatRegister lhsDest,
                                 Register64 temp) {
@@ -778,6 +783,8 @@ void MacroAssembler::mulInt64x2(FloatRegister rhs, FloatRegister lhsDest,
   vpinsrq(1, t1, lhsDest, lhsDest);
 }
 
+
+
 void MacroAssembler::rightShiftInt64x2(Register rhs, FloatRegister lhsDest) {
   ScratchRegisterScope scratch(*this);
 
@@ -791,15 +798,21 @@ void MacroAssembler::rightShiftInt64x2(Register rhs, FloatRegister lhsDest) {
   vpinsrq(1, scratch, lhsDest, lhsDest);
 }
 
+
+
 void MacroAssembler::extractLaneInt64x2(uint32_t lane, FloatRegister src,
                                         Register64 dest) {
   vpextrq(lane, src, dest.reg);
 }
 
+
+
 void MacroAssembler::replaceLaneInt64x2(unsigned lane, Register64 rhs,
                                         FloatRegister lhsDest) {
   vpinsrq(lane, rhs.reg, lhsDest, lhsDest);
 }
+
+
 
 void MacroAssembler::splatX2(Register64 src, FloatRegister dest) {
   vpinsrq(0, src.reg, dest, dest);

@@ -1114,8 +1114,6 @@ void MacroAssembler::memoryBarrier(MemoryBarrierBits barrier) {
 
 
 
-
-
 void MacroAssembler::moveSimd128(FloatRegister src, FloatRegister dest) {
   MacroAssemblerX86Shared::moveSimd128Int(src, dest);
 }
@@ -1225,7 +1223,7 @@ void MacroAssembler::replaceLaneFloat64x2(unsigned lane, FloatRegister rhs,
 
 
 
-void MacroAssembler::shuffleInt8x16(uint8_t lanes[16], FloatRegister rhs,
+void MacroAssembler::shuffleInt8x16(const uint8_t lanes[16], FloatRegister rhs,
                                     FloatRegister lhsDest, FloatRegister temp) {
   MacroAssemblerX86Shared::shuffleInt8x16(
       lhsDest, rhs, lhsDest, mozilla::Some(temp), mozilla::Nothing(), lanes);
