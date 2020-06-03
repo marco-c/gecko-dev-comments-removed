@@ -456,45 +456,6 @@ static nsresult GetTableSelectionMode(const nsRange& aRange,
   return NS_OK;
 }
 
-MOZ_CAN_RUN_SCRIPT static nsresult GetTableCellLocationFromRange(
-    const nsRange& aRange, TableSelectionMode* aSelectionType, int32_t* aRow,
-    int32_t* aCol) {
-  if (!aSelectionType || !aRow || !aCol) {
-    return NS_ERROR_NULL_POINTER;
-  }
-
-  *aSelectionType = TableSelectionMode::None;
-  *aRow = 0;
-  *aCol = 0;
-
-  nsresult result = GetTableSelectionMode(aRange, aSelectionType);
-  if (NS_FAILED(result)) return result;
-
-  
-  
-  if (*aSelectionType != TableSelectionMode::Cell) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  nsCOMPtr<nsIContent> child = aRange.GetChildAtStartOffset();
-  if (!child) return NS_ERROR_FAILURE;
-
-  
-  
-  if (RefPtr<PresShell> presShell = child->OwnerDoc()->GetPresShell()) {
-    presShell->FlushPendingNotifications(FlushType::Frames);
-  }
-
-  
-  nsITableCellLayout* cellLayout = nsFrameSelection::GetCellLayout(child);
-  if (!cellLayout) return NS_ERROR_FAILURE;
-
-  return cellLayout->GetCellIndexes(*aRow, *aCol);
-}
-
 nsresult Selection::MaybeAddTableCellRange(nsRange& aRange, bool* aDidAddRange,
                                            int32_t* aOutIndex) {
   if (!aDidAddRange || !aOutIndex) {
@@ -506,12 +467,9 @@ nsresult Selection::MaybeAddTableCellRange(nsRange& aRange, bool* aDidAddRange,
 
   if (!mFrameSelection) return NS_OK;
 
-  nsresult result;
-
   
-  int32_t newRow, newCol;
   TableSelectionMode tableMode;
-  result = GetTableCellLocationFromRange(aRange, &tableMode, &newRow, &newCol);
+  nsresult result = GetTableSelectionMode(aRange, &tableMode);
   if (NS_FAILED(result)) return result;
 
   

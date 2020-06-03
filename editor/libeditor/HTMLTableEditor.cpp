@@ -1127,7 +1127,8 @@ nsresult HTMLEditor::DeleteTableCellWithTransaction(
 
   
   
-  CellIndexes firstCellIndexes(*firstSelectedCellElement, error);
+  const RefPtr<PresShell> presShell{GetPresShell()};
+  CellIndexes firstCellIndexes(*firstSelectedCellElement, presShell, error);
   if (error.Failed()) {
     NS_WARNING("CellIndexes failed");
     return error.StealNSResult();
@@ -1162,7 +1163,7 @@ nsresult HTMLEditor::DeleteTableCellWithTransaction(
           if (!cell) {
             break;
           }
-          CellIndexes nextSelectedCellIndexes(*cell, error);
+          CellIndexes nextSelectedCellIndexes(*cell, presShell, error);
           if (error.Failed()) {
             NS_WARNING("CellIndexes failed");
             return error.StealNSResult();
@@ -1219,7 +1220,7 @@ nsresult HTMLEditor::DeleteTableCellWithTransaction(
           if (!cell) {
             break;
           }
-          CellIndexes nextSelectedCellIndexes(*cell, error);
+          CellIndexes nextSelectedCellIndexes(*cell, presShell, error);
           if (error.Failed()) {
             NS_WARNING("CellIndexes failed");
             return error.StealNSResult();
@@ -1269,7 +1270,7 @@ nsresult HTMLEditor::DeleteTableCellWithTransaction(
       return NS_OK;
     }
 
-    CellIndexes nextCellIndexes(*nextCell, error);
+    CellIndexes nextCellIndexes(*nextCell, presShell, error);
     if (error.Failed()) {
       NS_WARNING("CellIndexes failed");
       return error.StealNSResult();
@@ -1346,7 +1347,8 @@ nsresult HTMLEditor::DeleteTableCellContentsWithTransaction() {
   }
 
   if (firstSelectedCellElement) {
-    CellIndexes firstCellIndexes(*firstSelectedCellElement, error);
+    const RefPtr<PresShell> presShell{GetPresShell()};
+    CellIndexes firstCellIndexes(*firstSelectedCellElement, presShell, error);
     if (error.Failed()) {
       NS_WARNING("CellIndexes failed");
       return error.StealNSResult();
@@ -1458,7 +1460,8 @@ nsresult HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
   MOZ_ASSERT(SelectionRefPtr()->RangeCount());
 
   if (firstSelectedCellElement && SelectionRefPtr()->RangeCount() > 1) {
-    CellIndexes firstCellIndexes(*firstSelectedCellElement, error);
+    const RefPtr<PresShell> presShell{GetPresShell()};
+    CellIndexes firstCellIndexes(*firstSelectedCellElement, presShell, error);
     if (error.Failed()) {
       NS_WARNING("CellIndexes failed");
       return error.StealNSResult();
@@ -1488,9 +1491,10 @@ nsresult HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
 
   
   
+  const RefPtr<PresShell> presShell{GetPresShell()};
   for (cell = firstSelectedCellElement; cell;) {
     if (cell != firstSelectedCellElement) {
-      CellIndexes cellIndexes(*cell, error);
+      CellIndexes cellIndexes(*cell, presShell, error);
       if (error.Failed()) {
         NS_WARNING("CellIndexes failed");
         return error.StealNSResult();
@@ -1510,7 +1514,7 @@ nsresult HTMLEditor::DeleteSelectedTableColumnsWithTransaction(
       if (!cell) {
         break;
       }
-      CellIndexes cellIndexes(*cell, error);
+      CellIndexes cellIndexes(*cell, presShell, error);
       if (error.Failed()) {
         NS_WARNING("CellIndexes failed");
         return error.StealNSResult();
@@ -1714,7 +1718,8 @@ nsresult HTMLEditor::DeleteSelectedTableRowsWithTransaction(
 
   if (firstSelectedCellElement && SelectionRefPtr()->RangeCount() > 1) {
     
-    CellIndexes firstCellIndexes(*firstSelectedCellElement, error);
+    const RefPtr<PresShell> presShell{GetPresShell()};
+    CellIndexes firstCellIndexes(*firstSelectedCellElement, presShell, error);
     if (error.Failed()) {
       NS_WARNING("CellIndexes failed");
       return error.StealNSResult();
@@ -1758,9 +1763,10 @@ nsresult HTMLEditor::DeleteSelectedTableRowsWithTransaction(
 
   
   
+  const RefPtr<PresShell> presShell{GetPresShell()};
   for (cell = firstSelectedCellElement; cell;) {
     if (cell != firstSelectedCellElement) {
-      CellIndexes cellIndexes(*cell, error);
+      CellIndexes cellIndexes(*cell, presShell, error);
       if (error.Failed()) {
         NS_WARNING("CellIndexes failed");
         return error.StealNSResult();
@@ -1780,7 +1786,7 @@ nsresult HTMLEditor::DeleteSelectedTableRowsWithTransaction(
       if (!cell) {
         break;
       }
-      CellIndexes cellIndexes(*cell, error);
+      CellIndexes cellIndexes(*cell, presShell, error);
       if (error.Failed()) {
         NS_WARNING("CellIndexes failed");
         return error.StealNSResult();
@@ -3431,7 +3437,8 @@ NS_IMETHODIMP HTMLEditor::GetCellIndexes(Element* aCellElement,
   }
 
   ErrorResult error;
-  CellIndexes cellIndexes(*aCellElement, error);
+  const RefPtr<PresShell> presShell{GetPresShell()};
+  CellIndexes cellIndexes(*aCellElement, presShell, error);
   if (error.Failed()) {
     NS_WARNING("CellIndexes failed");
     return EditorBase::ToGenericNSResult(error.StealNSResult());
@@ -3456,16 +3463,26 @@ void HTMLEditor::CellIndexes::Update(HTMLEditor& aHTMLEditor,
     aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
-  Update(*cellElement, aRv);
+
+  RefPtr<PresShell> presShell{aHTMLEditor.GetPresShell()};
+  Update(*cellElement, presShell, aRv);
   NS_WARNING_ASSERTION(!aRv.Failed(), "CellIndexes::Update() failed");
 }
 
-void HTMLEditor::CellIndexes::Update(Element& aCellElement, ErrorResult& aRv) {
+void HTMLEditor::CellIndexes::Update(Element& aCellElement,
+                                     PresShell* aPresShell, ErrorResult& aRv) {
   MOZ_ASSERT(!aRv.Failed());
 
   
   
   
+  if (NS_WARN_IF(!aPresShell)) {
+    aRv.Throw(NS_ERROR_INVALID_ARG);
+    return;
+  }
+
+  aPresShell->FlushPendingNotifications(FlushType::Frames);
+
   nsIFrame* frameOfCell = aCellElement.GetPrimaryFrame();
   if (!frameOfCell) {
     NS_WARNING("There was no layout information of aCellElement");
@@ -3845,7 +3862,8 @@ nsresult HTMLEditor::GetCellContext(Element** aTable, Element** aCell,
   
   if (aRowIndex || aColumnIndex) {
     ErrorResult error;
-    CellIndexes cellIndexes(*cell, error);
+    const RefPtr<PresShell> presShell{GetPresShell()};
+    CellIndexes cellIndexes(*cell, presShell, error);
     if (error.Failed()) {
       NS_WARNING("CellIndexes failed");
       return error.StealNSResult();
@@ -4073,7 +4091,8 @@ void HTMLEditor::CellAndIndexes::Update(HTMLEditor& aHTMLEditor,
     return;
   }
 
-  mIndexes.Update(*mElement, aRv);
+  const RefPtr<PresShell> presShell{aHTMLEditor.GetPresShell()};
+  mIndexes.Update(*mElement, presShell, aRv);
   NS_WARNING_ASSERTION(!aRv.Failed(), "CellIndexes::Update() failed");
 }
 
@@ -4345,11 +4364,12 @@ NS_IMETHODIMP HTMLEditor::GetSelectedCellsType(Element* aElement,
   
   nsTArray<int32_t> indexArray;
 
+  const RefPtr<PresShell> presShell{GetPresShell()};
   bool allCellsInRowAreSelected = false;
   bool allCellsInColAreSelected = false;
   IgnoredErrorResult ignoredError;
   while (selectedCell) {
-    CellIndexes selectedCellIndexes(*selectedCell, error);
+    CellIndexes selectedCellIndexes(*selectedCell, presShell, error);
     if (error.Failed()) {
       NS_WARNING("CellIndexes failed");
       return EditorBase::ToGenericNSResult(error.StealNSResult());
@@ -4387,7 +4407,7 @@ NS_IMETHODIMP HTMLEditor::GetSelectedCellsType(Element* aElement,
   ignoredError.SuppressException();
 
   while (selectedCell) {
-    CellIndexes selectedCellIndexes(*selectedCell, error);
+    CellIndexes selectedCellIndexes(*selectedCell, presShell, error);
     if (error.Failed()) {
       NS_WARNING("CellIndexes failed");
       return EditorBase::ToGenericNSResult(error.StealNSResult());

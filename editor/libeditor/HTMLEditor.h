@@ -3243,10 +3243,13 @@ class HTMLEditor final : public TextEditor,
 
 
 
-    CellIndexes(Element& aCellElement, ErrorResult& aRv)
+    
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY CellIndexes(Element& aCellElement,
+                                            PresShell* aPresShell,
+                                            ErrorResult& aRv)
         : mRow(-1), mColumn(-1) {
       MOZ_ASSERT(!aRv.Failed());
-      Update(aCellElement, aRv);
+      Update(aCellElement, aPresShell, aRv);
     }
 
     
@@ -3254,7 +3257,10 @@ class HTMLEditor final : public TextEditor,
 
 
 
-    void Update(Element& aCellElement, ErrorResult& aRv);
+    
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY void Update(Element& aCellElement,
+                                            PresShell* aPresShell,
+                                            ErrorResult& aRv);
 
     
 
@@ -3266,8 +3272,10 @@ class HTMLEditor final : public TextEditor,
 
 
 
-    CellIndexes(HTMLEditor& aHTMLEditor, Selection& aSelection,
-                ErrorResult& aRv)
+    
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY CellIndexes(HTMLEditor& aHTMLEditor,
+                                            Selection& aSelection,
+                                            ErrorResult& aRv)
         : mRow(-1), mColumn(-1) {
       Update(aHTMLEditor, aSelection, aRv);
     }
@@ -3278,8 +3286,10 @@ class HTMLEditor final : public TextEditor,
 
 
 
-    void Update(HTMLEditor& aHTMLEditor, Selection& aSelection,
-                ErrorResult& aRv);
+    
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY void Update(HTMLEditor& aHTMLEditor,
+                                            Selection& aSelection,
+                                            ErrorResult& aRv);
 
     bool operator==(const CellIndexes& aOther) const {
       return mRow == aOther.mRow && mColumn == aOther.mColumn;
