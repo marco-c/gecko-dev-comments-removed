@@ -670,6 +670,17 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
+  void NoteNewChildren(ChildListID aListID, const nsFrameList& aFrameList);
+
+  
+
+
+  bool DrainAndMergeSelfOverflowList();
+
+  
+
+
+
 
 
   static void ReparentFloatsForInlineChild(nsIFrame* aOurBlock,

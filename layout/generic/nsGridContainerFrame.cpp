@@ -9257,19 +9257,7 @@ void nsGridContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 }
 
 bool nsGridContainerFrame::DrainSelfOverflowList() {
-  
-  
-  
-  
-  AutoFrameListPtr overflowFrames(PresContext(), StealOverflowFrames());
-  if (overflowFrames) {
-    MergeSortedFrameLists(mFrames, *overflowFrames, GetContent());
-    
-    
-    AddStateBits(NS_STATE_GRID_HAS_CHILD_NIFS);
-    return true;
-  }
-  return false;
+  return DrainAndMergeSelfOverflowList();
 }
 
 void nsGridContainerFrame::AppendFrames(ChildListID aListID,
@@ -9483,27 +9471,6 @@ void nsGridContainerFrame::ExtraContainerFrameInfo(nsACString& aTo) const {
 }
 
 #endif
-
-void nsGridContainerFrame::NoteNewChildren(ChildListID aListID,
-                                           const nsFrameList& aFrameList) {
-#ifdef DEBUG
-  ChildListIDs supportedLists = {kAbsoluteList, kFixedList, kPrincipalList,
-                                 kNoReflowPrincipalList};
-  
-  
-  supportedLists += kBackdropList;
-  MOZ_ASSERT(supportedLists.contains(aListID), "unexpected child list");
-#endif
-
-  mozilla::PresShell* presShell = PresShell();
-  for (auto pif = GetPrevInFlow(); pif; pif = pif->GetPrevInFlow()) {
-    if (aListID == kPrincipalList) {
-      pif->AddStateBits(NS_STATE_GRID_DID_PUSH_ITEMS);
-    }
-    presShell->FrameNeedsReflow(pif, IntrinsicDirty::TreeChange,
-                                NS_FRAME_IS_DIRTY);
-  }
-}
 
  nsGridContainerFrame::FindItemInGridOrderResult
 nsGridContainerFrame::FindFirstItemInGridOrder(
