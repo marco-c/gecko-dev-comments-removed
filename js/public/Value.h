@@ -119,21 +119,21 @@ static_assert(sizeof(JSValueTag) == sizeof(uint32_t),
               "compiler typed enum support is apparently buggy");
 
 enum JSValueShiftedTag : uint64_t {
+  
   JSVAL_SHIFTED_TAG_MAX_DOUBLE =
-      ((((uint64_t)JSVAL_TAG_MAX_DOUBLE) << JSVAL_TAG_SHIFT) | 0xFFFFFFFF),
-  JSVAL_SHIFTED_TAG_INT32 = (((uint64_t)JSVAL_TAG_INT32) << JSVAL_TAG_SHIFT),
+      ((uint64_t(JSVAL_TAG_MAX_DOUBLE) << JSVAL_TAG_SHIFT) | 0xFFFFFFFF),
+  JSVAL_SHIFTED_TAG_INT32 = (uint64_t(JSVAL_TAG_INT32) << JSVAL_TAG_SHIFT),
   JSVAL_SHIFTED_TAG_UNDEFINED =
-      (((uint64_t)JSVAL_TAG_UNDEFINED) << JSVAL_TAG_SHIFT),
-  JSVAL_SHIFTED_TAG_NULL = (((uint64_t)JSVAL_TAG_NULL) << JSVAL_TAG_SHIFT),
-  JSVAL_SHIFTED_TAG_BOOLEAN =
-      (((uint64_t)JSVAL_TAG_BOOLEAN) << JSVAL_TAG_SHIFT),
-  JSVAL_SHIFTED_TAG_MAGIC = (((uint64_t)JSVAL_TAG_MAGIC) << JSVAL_TAG_SHIFT),
-  JSVAL_SHIFTED_TAG_STRING = (((uint64_t)JSVAL_TAG_STRING) << JSVAL_TAG_SHIFT),
-  JSVAL_SHIFTED_TAG_SYMBOL = (((uint64_t)JSVAL_TAG_SYMBOL) << JSVAL_TAG_SHIFT),
+      (uint64_t(JSVAL_TAG_UNDEFINED) << JSVAL_TAG_SHIFT),
+  JSVAL_SHIFTED_TAG_NULL = (uint64_t(JSVAL_TAG_NULL) << JSVAL_TAG_SHIFT),
+  JSVAL_SHIFTED_TAG_BOOLEAN = (uint64_t(JSVAL_TAG_BOOLEAN) << JSVAL_TAG_SHIFT),
+  JSVAL_SHIFTED_TAG_MAGIC = (uint64_t(JSVAL_TAG_MAGIC) << JSVAL_TAG_SHIFT),
+  JSVAL_SHIFTED_TAG_STRING = (uint64_t(JSVAL_TAG_STRING) << JSVAL_TAG_SHIFT),
+  JSVAL_SHIFTED_TAG_SYMBOL = (uint64_t(JSVAL_TAG_SYMBOL) << JSVAL_TAG_SHIFT),
   JSVAL_SHIFTED_TAG_PRIVATE_GCTHING =
-      (((uint64_t)JSVAL_TAG_PRIVATE_GCTHING) << JSVAL_TAG_SHIFT),
-  JSVAL_SHIFTED_TAG_BIGINT = (((uint64_t)JSVAL_TAG_BIGINT) << JSVAL_TAG_SHIFT),
-  JSVAL_SHIFTED_TAG_OBJECT = (((uint64_t)JSVAL_TAG_OBJECT) << JSVAL_TAG_SHIFT)
+      (uint64_t(JSVAL_TAG_PRIVATE_GCTHING) << JSVAL_TAG_SHIFT),
+  JSVAL_SHIFTED_TAG_BIGINT = (uint64_t(JSVAL_TAG_BIGINT) << JSVAL_TAG_SHIFT),
+  JSVAL_SHIFTED_TAG_OBJECT = (uint64_t(JSVAL_TAG_OBJECT) << JSVAL_TAG_SHIFT)
 };
 
 static_assert(sizeof(JSValueShiftedTag) == sizeof(uint64_t),
@@ -150,6 +150,10 @@ constexpr JSValueTag ValueTypeToTag(JSValueType type) {
   return static_cast<JSValueTag>(JSVAL_TAG_CLEAR | type);
 }
 
+constexpr bool ValueIsDouble(uint64_t bits) {
+  return uint32_t(bits >> JSVAL_TAG_SHIFT) <= uint32_t(JSVAL_TAG_CLEAR);
+}
+
 constexpr JSValueTag ValueUpperExclPrimitiveTag = JSVAL_TAG_OBJECT;
 constexpr JSValueTag ValueUpperInclNumberTag = JSVAL_TAG_INT32;
 constexpr JSValueTag ValueLowerInclGCThingTag = JSVAL_TAG_STRING;
@@ -158,6 +162,10 @@ constexpr JSValueTag ValueLowerInclGCThingTag = JSVAL_TAG_STRING;
 
 constexpr JSValueTag ValueTypeToTag(JSValueType type) {
   return static_cast<JSValueTag>(JSVAL_TAG_MAX_DOUBLE | type);
+}
+
+constexpr bool ValueIsDouble(uint64_t bits) {
+  return bits <= JSVAL_SHIFTED_TAG_MAX_DOUBLE;
 }
 
 constexpr uint64_t ValueTagMask = 0xFFFF'8000'0000'0000;
@@ -265,36 +273,19 @@ namespace JS {
 
 namespace detail {
 
-constexpr int CanonicalizedNaNSignBit = 0;
-constexpr uint64_t CanonicalizedNaNSignificand = 0x8000000000000;
-
-constexpr uint64_t CanonicalizedNaNBits =
-    mozilla::SpecificNaNBits<double, detail::CanonicalizedNaNSignBit,
-                             detail::CanonicalizedNaNSignificand>::value;
 
 constexpr int InfinitySignBit = 0;
 constexpr uint64_t InfinityBits =
     mozilla::InfinityBits<double, detail::InfinitySignBit>::value;
 
-}  
 
 
 
 
 
 
-
-static MOZ_ALWAYS_INLINE double GenericNaN() {
-  return mozilla::SpecificNaN<double>(detail::CanonicalizedNaNSignBit,
-                                      detail::CanonicalizedNaNSignificand);
-}
-
-static inline double CanonicalizeNaN(double d) {
-  if (MOZ_UNLIKELY(mozilla::IsNaN(d))) {
-    return GenericNaN();
-  }
-  return d;
-}
+constexpr int CanonicalizedNaNSignBit = 0;
+constexpr uint64_t CanonicalizedNaNSignificand = 0x8000000000000;
 
 #if defined(__sparc__)
 
@@ -302,6 +293,28 @@ static inline double CanonicalizeNaN(double d) {
 
 #  define JS_NONCANONICAL_HARDWARE_NAN
 #endif
+
+constexpr uint64_t CanonicalizedNaNBits =
+    mozilla::SpecificNaNBits<double, detail::CanonicalizedNaNSignBit,
+                             detail::CanonicalizedNaNSignificand>::value;
+}  
+
+
+static MOZ_ALWAYS_INLINE double GenericNaN() {
+  static_assert(detail::ValueIsDouble(detail::CanonicalizedNaNBits),
+                "Canonical NaN must be compatible with JS::Value");
+
+  return mozilla::BitwiseCast<double>(detail::CanonicalizedNaNBits);
+}
+
+
+
+static MOZ_ALWAYS_INLINE double CanonicalizeNaN(double d) {
+  if (MOZ_UNLIKELY(mozilla::IsNaN(d))) {
+    return GenericNaN();
+  }
+  return d;
+}
 
 
 
@@ -577,14 +590,7 @@ class alignas(8) Value {
     return asBits_ == bitsFromTagAndPayload(JSVAL_TAG_INT32, uint32_t(i32));
   }
 
-  bool isDouble() const {
-#if defined(JS_NUNBOX32)
-    return uint32_t(toTag()) <= uint32_t(JSVAL_TAG_CLEAR);
-#elif defined(JS_PUNBOX64)
-    return (asBits_ | mozilla::FloatingPoint<double>::kSignBit) <=
-           JSVAL_SHIFTED_TAG_MAX_DOUBLE;
-#endif
-  }
+  bool isDouble() const { return detail::ValueIsDouble(asBits_); }
 
   bool isNumber() const {
 #if defined(JS_NUNBOX32)
@@ -1192,7 +1198,8 @@ class MutableWrappedPtrOperations<JS::Value, Wrapper>
   void setUndefined() { set(JS::UndefinedValue()); }
   void setInt32(int32_t i) { set(JS::Int32Value(i)); }
   void setDouble(double d) { set(JS::DoubleValue(d)); }
-  void setNaN() { setDouble(JS::GenericNaN()); }
+  void setNaN() { set(JS::NaNValue()); }
+  void setInfinity() { set(JS::InfinityValue()); }
   void setBoolean(bool b) { set(JS::BooleanValue(b)); }
   void setMagic(JSWhyMagic why) { set(JS::MagicValue(why)); }
   void setNumber(uint32_t ui) { set(JS::NumberValue(ui)); }
