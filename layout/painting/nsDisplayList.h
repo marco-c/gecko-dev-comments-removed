@@ -6112,25 +6112,6 @@ class nsDisplaySubDocument : public nsDisplayOwnLayer {
 
 
 
-class nsDisplayResolution : public nsDisplaySubDocument {
- public:
-  nsDisplayResolution(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                      nsSubDocumentFrame* aSubDocFrame, nsDisplayList* aList,
-                      nsDisplayOwnLayerFlags aFlags);
-  MOZ_COUNTED_DTOR_OVERRIDE(nsDisplayResolution)
-
-  NS_DISPLAY_DECL_NAME("Resolution", TYPE_RESOLUTION)
-
-  already_AddRefed<Layer> BuildLayer(
-      nsDisplayListBuilder* aBuilder, LayerManager* aManager,
-      const ContainerLayerParameters& aContainerParameters) override;
-};
-
-
-
-
-
-
 class nsDisplayStickyPosition : public nsDisplayOwnLayer {
  public:
   nsDisplayStickyPosition(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,

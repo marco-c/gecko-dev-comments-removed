@@ -5297,21 +5297,6 @@ void PresShell::SetRenderingState(const RenderingState& aState) {
     }
   }
 
-  
-  
-  
-  
-  if (mResolution.valueOr(1.0) != aState.mResolution.valueOr(1.0) &&
-      (mResolution.valueOr(1.0) == 1.0 ||
-       aState.mResolution.valueOr(1.0) == 1.0)) {
-    if (nsIFrame* frame = GetRootFrame()) {
-      frame = nsLayoutUtils::GetCrossDocParentFrame(frame);
-      if (frame) {
-        frame->InvalidateFrame();
-      }
-    }
-  }
-
   mRenderingStateFlags = aState.mRenderingStateFlags;
   mResolution = aState.mResolution;
 }
