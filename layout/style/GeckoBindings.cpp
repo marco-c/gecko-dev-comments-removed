@@ -1356,7 +1356,8 @@ nscoord Gecko_nsStyleFont_ComputeMinSize(const nsStyleFont* aFont,
                                          const Document* aDocument) {
   
   
-  if (aFont->mSize == 0 || nsContentUtils::IsChromeDoc(aDocument)) {
+  if (aFont->mSize == 0 || !aFont->mAllowZoomAndMinSize ||
+      nsContentUtils::IsChromeDoc(aDocument)) {
     return 0;
   }
 
