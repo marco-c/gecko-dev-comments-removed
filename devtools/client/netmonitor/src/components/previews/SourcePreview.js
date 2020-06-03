@@ -89,8 +89,10 @@ class SourcePreview extends Component {
   updateEditor(mode, text) {
     
     
-    this.editor.setMode(null);
-    this.editor.setText(text);
+    if (this?.editor?.hasCodeMirror) {
+      this.editor.setMode(null);
+      this.editor.setText(text);
+    }
 
     if (this.editorSetModeTimeout) {
       clearTimeout(this.editorSetModeTimeout);
