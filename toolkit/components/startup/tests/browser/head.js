@@ -13,18 +13,6 @@ function waitForOnBeforeUnloadDialog(browser, callback) {
   browser.addEventListener(
     "DOMWillOpenModalDialog",
     function onModalDialog(event) {
-      if (Cu.isCrossProcessWrapper(event.target)) {
-        
-        
-        return;
-      }
-
-      browser.removeEventListener(
-        "DOMWillOpenModalDialog",
-        onModalDialog,
-        true
-      );
-
       SimpleTest.waitForCondition(
         () => Services.focus.activeWindow == browser.ownerGlobal,
         function() {
@@ -35,6 +23,6 @@ function waitForOnBeforeUnloadDialog(browser, callback) {
         "Waited too long for window with dialog to focus"
       );
     },
-    true
+    { capture: true, once: true }
   );
 }

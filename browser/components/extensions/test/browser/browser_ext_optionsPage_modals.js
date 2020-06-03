@@ -50,22 +50,11 @@ add_task(async function test_tab_options_modals() {
     aboutAddonsBrowser.addEventListener(
       "DOMWillOpenModalDialog",
       function onModalDialog(event) {
-        if (Cu.isCrossProcessWrapper(event.target)) {
-          
-          
-          return;
-        }
-
-        aboutAddonsBrowser.removeEventListener(
-          "DOMWillOpenModalDialog",
-          onModalDialog,
-          true
-        );
         
         
         SimpleTest.executeSoon(resolve);
       },
-      true
+      { once: true, capture: true }
     );
   });
 

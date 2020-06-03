@@ -1035,22 +1035,17 @@ LoginManagerAuthPrompter.prototype = {
 
 
   _getChromeWindow(aWindow) {
-    
-    if (!Cu.isCrossProcessWrapper(aWindow)) {
-      let browser = aWindow.docShell.chromeEventHandler;
-      if (!browser) {
-        return null;
-      }
-
-      let chromeWin = browser.ownerGlobal;
-      if (!chromeWin) {
-        return null;
-      }
-
-      return { win: chromeWin, browser };
+    let browser = aWindow.docShell.chromeEventHandler;
+    if (!browser) {
+      return null;
     }
 
-    return null;
+    let chromeWin = browser.ownerGlobal;
+    if (!chromeWin) {
+      return null;
+    }
+
+    return { win: chromeWin, browser };
   },
 
   _getNotifyWindow() {

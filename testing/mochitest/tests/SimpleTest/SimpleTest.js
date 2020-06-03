@@ -1006,14 +1006,11 @@ SimpleTest.waitForFocus = function(callback, targetWindow, expectBlankPage) {
   
   
   var c = Object.getOwnPropertyDescriptor(window, "Components");
-  var Cu, Ci;
+  var Ci;
   if (c && c.value && !c.writable) {
-    
-    Cu = Components.utils;
     
     Ci = Components.interfaces;
   } else {
-    Cu = SpecialPowers.Cu;
     Ci = SpecialPowers.Ci;
   }
 
@@ -1024,13 +1021,6 @@ SimpleTest.waitForFocus = function(callback, targetWindow, expectBlankPage) {
     targetWindow.localName == "browser"
   ) {
     browser = targetWindow;
-  }
-
-  var isWrapper = Cu.isCrossProcessWrapper(targetWindow);
-  if (isWrapper) {
-    throw new Error(
-      "Can't pass CPOW to SimpleTest.focus as the content window."
-    );
   }
 
   if (browser && browser.isRemoteBrowser) {
