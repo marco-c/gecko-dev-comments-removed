@@ -160,19 +160,6 @@ inline uint8_t saturated_cast<uint8_t, int>(int x) {
   return (x >= 0) ? ((x < 255) ? uint8_t(x) : 255) : 0;
 }
 
-
-
-
-template <typename T, typename U>
-inline constexpr bool IsInRange(T value, U lower_limit, U higher_limit) {
-  using unsigned_T = typename std::make_unsigned<T>::type;
-  
-  return static_cast<unsigned_T>(static_cast<unsigned_T>(value) -
-                                 static_cast<unsigned_T>(lower_limit)) <=
-         static_cast<unsigned_T>(static_cast<unsigned_T>(higher_limit) -
-                                 static_cast<unsigned_T>(lower_limit));
-}
-
 #define LAZY_INSTANCE_INITIALIZER { mozilla::Nothing() }
 
 template <typename T>
@@ -518,8 +505,6 @@ class Object {
     return JS::Value::fromRawBits(asBits_);
   }
 
-  inline static Object cast(Object object) { return object; }
-
  protected:
   void setValue(const JS::Value& val) {
     asBits_ = val.asRawBits();
@@ -649,6 +634,11 @@ class MOZ_NONHEAP_CLASS Handle {
   template <typename S,
             typename = std::enable_if_t<std::is_convertible_v<S*, T*>>>
   inline Handle(Handle<S> handle) : location_(handle.location_) {}
+
+  template <typename S>
+  inline static const Handle<T> cast(Handle<S> that) {
+    return Handle<T>(that.location_);
+  }
 
   inline bool is_null() const { return location_ == nullptr; }
 
@@ -916,13 +906,6 @@ class JSRegExp : public HeapObject {
   }
 
   
-  static int RegistersForCaptureCount(int count) { return (count + 1) * 2; }
-
-  inline int MaxRegisterCount() const {
-    return inner()->getMaxRegisters();
-  }
-
-  
   
   
 
@@ -980,7 +963,6 @@ using Factory = Isolate;
 class Isolate {
  public:
   Isolate(JSContext* cx) : cx_(cx) {}
-  ~Isolate();
   bool init();
 
   
