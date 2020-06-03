@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 EXPORTS.mozilla += [
     'GenericRefCounted.h',
@@ -129,7 +129,7 @@ if CONFIG['MOZ_ENABLE_SKIA']:
         'SourceSurfaceSkia.cpp',
     ]
     if CONFIG['CC_TYPE'] == 'clang':
-        # Suppress warnings from Skia header files.
+        
         SOURCES['DrawTargetSkia.cpp'].flags += ['-Wno-implicit-fallthrough']
         SOURCES['PathSkia.cpp'].flags += ['-Wno-implicit-fallthrough']
         SOURCES['SourceSurfaceSkia.cpp'].flags += ['-Wno-implicit-fallthrough']
@@ -138,7 +138,7 @@ if CONFIG['MOZ_ENABLE_SKIA']:
         'HelpersSkia.h',
     ]
 
-# Are we targeting x86 or x64?  If so, build SSE2 files.
+
 if CONFIG['INTEL_ARCHITECTURE']:
     SOURCES += [
         'BlurSSE2.cpp',
@@ -150,8 +150,8 @@ if CONFIG['INTEL_ARCHITECTURE']:
         'SwizzleSSSE3.cpp',
     ]
     DEFINES['USE_SSE2'] = True
-    # The file uses SSE2 intrinsics, so it needs special compile flags on some
-    # compilers.
+    
+    
     SOURCES['BlurSSE2.cpp'].flags += CONFIG['SSE2_FLAGS']
     SOURCES['FilterProcessingSSE2.cpp'].flags += CONFIG['SSE2_FLAGS']
     SOURCES['ImageScalingSSE2.cpp'].flags += CONFIG['SSE2_FLAGS']
@@ -189,6 +189,7 @@ UNIFIED_SOURCES += [
     'ImageScaling.cpp',
     'JobScheduler.cpp',
     'Matrix.cpp',
+    'NativeFontResource.cpp',
     'Path.cpp',
     'PathCairo.cpp',
     'PathCapture.cpp',
@@ -207,7 +208,7 @@ UNIFIED_SOURCES += [
 ]
 
 SOURCES += [
-    'Factory.cpp', # Need to suppress warnings in Skia header files.
+    'Factory.cpp', 
     'InlineTranslator.cpp',
 ]
 

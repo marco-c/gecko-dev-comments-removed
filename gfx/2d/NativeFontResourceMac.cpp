@@ -46,7 +46,7 @@ already_AddRefed<NativeFontResourceMac> NativeFontResourceMac::Create(
 
   
   RefPtr<NativeFontResourceMac> fontResource =
-      new NativeFontResourceMac(fontRef);
+      new NativeFontResourceMac(fontRef, aDataLength);
 
   return fontResource.forget();
 }
