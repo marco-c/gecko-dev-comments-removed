@@ -1360,6 +1360,11 @@ nsDataObj ::GetFileContentsInternetShortcut(FORMATETC& aFE, STGMEDIUM& aSTG) {
   ::GlobalUnlock(globalMem.get());
 
   if (aFE.tymed & TYMED_ISTREAM) {
+    if (!mIsInOperation) {
+      
+      
+      event = nullptr;
+    }
     RefPtr<IStream> stream =
         new CMemStream(globalMem.disown(), totalLen, event.forget());
     stream.forget(&aSTG.pstm);
