@@ -232,6 +232,9 @@ var whitelist = [
   
   
   { file: "resource://app/localization/en-US/preview/popup-notifications.ftl" },
+
+  
+  { file: "resource://gre/modules/RustFxAccount.js" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
