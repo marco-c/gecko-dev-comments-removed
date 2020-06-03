@@ -322,14 +322,13 @@ where
             },
         }
 
-        
-        
-        if let Some(s) = iter.next() {
-            debug_assert!(
-                matches!(*s, Component::NonTSPseudoClass(..)),
-                "Someone messed up pseudo-element parsing"
-            );
-            return false;
+        for component in &mut iter {
+            
+            
+            
+            if !component.matches_for_stateless_pseudo_element() {
+                return false;
+            }
         }
 
         

@@ -871,22 +871,28 @@ where
             
             
             
-            let pseudo_selector = next_invalidation
+            let pseudo = next_invalidation
                 .dependency
                 .selector
                 .iter_raw_parse_order_from(next_invalidation.offset)
-                .skip_while(|c| matches!(**c, Component::NonTSPseudoClass(..)))
+                .flat_map(|c| {
+                    if let Component::PseudoElement(ref pseudo) = *c {
+                        return Some(pseudo);
+                    }
+
+                    
+                    
+                    debug_assert!(
+                        c.maybe_allowed_after_pseudo_element(),
+                        "Someone seriously messed up selector parsing: \
+                         {:?} at offset {:?}: {:?}",
+                        next_invalidation.dependency, next_invalidation.offset, c,
+                    );
+
+                    None
+                })
                 .next()
                 .unwrap();
-
-            let pseudo = match *pseudo_selector {
-                Component::PseudoElement(ref pseudo) => pseudo,
-                _ => unreachable!(
-                    "Someone seriously messed up selector parsing: \
-                     {:?} at offset {:?}: {:?}",
-                    next_invalidation.dependency, next_invalidation.offset, pseudo_selector,
-                ),
-            };
 
             
             
