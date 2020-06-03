@@ -31,9 +31,10 @@ set_config('MOZ_RUST_DEFAULT_FLAGS', rust_flags)
 js_option('--disable-new-pass-manager',
           help='Use the legacy LLVM pass manager in clang builds')
 
-@depends('--enable-new-pass-manager', c_compiler, host, target, 'MOZ_PGO', lto.enabled,
-         enable_fuzzing)
-def new_pass_manager_flags(enabled, compiler, host, target, pgo, lto, enable_fuzzing):
+@depends('--enable-new-pass-manager', c_compiler, host, target, 'MOZ_PGO',
+         lto.enabled, enable_fuzzing, ubsan)
+def new_pass_manager_flags(enabled, compiler, host, target, pgo, lto,
+                           enable_fuzzing, ubsan):
     if host.os == 'OSX':
         
         
@@ -49,6 +50,10 @@ def new_pass_manager_flags(enabled, compiler, host, target, pgo, lto, enable_fuz
         
         return None
     if enable_fuzzing and compiler.version < '10.0.0':
+        
+        return None
+    if ubsan and compiler.version >= '10.0.0':
+        
         
         return None
     if enabled and compiler.version >= '9.0.0':
