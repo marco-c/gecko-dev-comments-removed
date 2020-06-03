@@ -59,7 +59,10 @@ public class WebExtension {
     public final @Nullable MetaData metaData;
 
     
-    final boolean isBuiltIn;
+
+
+
+    public final boolean isBuiltIn;
 
     
  interface DelegateController {
