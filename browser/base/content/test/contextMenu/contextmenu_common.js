@@ -354,6 +354,8 @@ let lastElementSelector = null;
 
 
 
+
+
 async function test_contextmenu(selector, menuItems, options = {}) {
   contextMenu = document.getElementById("contentAreaContextMenu");
   is(contextMenu.state, "closed", "checking if popup is closed");
@@ -472,6 +474,8 @@ async function test_contextmenu(selector, menuItems, options = {}) {
     info("Completed postCheckContextMenuFn");
   }
 
-  contextMenu.hidePopup();
-  await awaitPopupHidden;
+  if (!options.keepMenuOpen) {
+    contextMenu.hidePopup();
+    await awaitPopupHidden;
+  }
 }
