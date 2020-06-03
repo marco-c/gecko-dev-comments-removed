@@ -455,6 +455,17 @@ CookieService::SetCookieStringFromDocument(Document* aDocument,
     return NS_OK;
   }
 
+  nsPIDOMWindowInner* innerWindow = aDocument->GetInnerWindow();
+  if (NS_WARN_IF(!innerWindow)) {
+    return NS_OK;
+  }
+
+  if (nsContentUtils::IsThirdPartyWindowOrChannel(innerWindow, nullptr,
+                                                  nullptr) &&
+      !CookieCommons::ShouldIncludeCrossSiteCookieForDocument(cookie)) {
+    return NS_OK;
+  }
+
   
   PickStorage(attrs)->AddCookie(baseDomain, attrs, cookie, currentTimeInUsec,
                                 documentURI, aCookieString, false);
