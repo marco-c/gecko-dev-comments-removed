@@ -1076,7 +1076,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
           mSuppressWhiteSpaceOptimizations(aSuppressWhiteSpaceOptimizations),
           mIsText(false),
           mIsGeneratedContent(false),
-          mIsAnonymousContentCreatorContent(false),
           mIsRootPopupgroup(false),
           mIsAllInline(false),
           mIsBlock(false),
@@ -1137,8 +1136,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     
     
     bool mIsGeneratedContent : 1;
-    
-    bool mIsAnonymousContentCreatorContent : 1;
     
     bool mIsRootPopupgroup : 1;
     
