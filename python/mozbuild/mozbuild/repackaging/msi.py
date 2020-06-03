@@ -31,9 +31,8 @@ def update_wsx(wfile, pvalues):
         parsed.insertBefore(entry, root)
     
     new_w_file = wfile + ".new"
-    fh = open(new_w_file, "wb")
-    parsed.writexml(fh)
-    fh.close()
+    with open(new_w_file, "w") as fh:
+        parsed.writexml(fh)
     shutil.move(new_w_file, wfile)
     return wfile
 
