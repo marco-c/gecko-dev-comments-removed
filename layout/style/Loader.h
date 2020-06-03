@@ -398,7 +398,7 @@ class Loader final {
 
   
   
-  nsresult LoadSheet(SheetLoadData&, SheetState, IsPreload);
+  nsresult LoadSheet(SheetLoadData&, SheetState);
 
   enum class AllowAsyncParse {
     Yes,
