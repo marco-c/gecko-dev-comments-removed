@@ -157,20 +157,6 @@ enum CheckboxValue {
 
 @implementation mozCheckboxAccessible
 
-- (NSString*)accessibilityActionDescription:(NSString*)action {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
-
-  if ([action isEqualToString:NSAccessibilityPressAction]) {
-    if ([self isChecked] != kUnchecked) return @"uncheck checkbox";  
-
-    return @"check checkbox";  
-  }
-
-  return nil;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
-}
-
 - (int)isChecked {
   
   uint64_t state = [self stateWithMask:(states::CHECKED | states::PRESSED | states::MIXED)];

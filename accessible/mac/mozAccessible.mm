@@ -602,18 +602,10 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
   
   
   
+  
+  
   if (count) {
-    nsAutoString name;
-    if (accWrap) {
-      accWrap->ActionNameAt(0, name);
-    } else if (proxy) {
-      proxy->ActionNameAt(0, name);
-    }
-    if (name.EqualsLiteral("select")) {
-      [actions addObject:NSAccessibilityPickAction];
-    } else {
-      [actions addObject:NSAccessibilityPressAction];
-    }
+    [actions addObject:NSAccessibilityPressAction];
   }
 
   
