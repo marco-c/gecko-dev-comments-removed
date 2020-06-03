@@ -682,6 +682,14 @@ static uint32_t GetSpoofedVersion() {
   uint32_t firefoxVersion = appVersion.ToInteger(&rv);
   NS_ENSURE_SUCCESS(rv, kKnownEsrVersion);
 
+  
+  
+  
+  
+  if (firefoxVersion < kKnownEsrVersion) {
+    return kKnownEsrVersion;
+  }
+
 #ifdef DEBUG
   
   
@@ -699,13 +707,6 @@ static uint32_t GetSpoofedVersion() {
   
   
   
-
-  if (firefoxVersion < 78) {
-    
-    
-    return 68;
-  }
-
   uint32_t spoofedVersion =
       firefoxVersion - ((firefoxVersion - kKnownEsrVersion) % 13);
 
