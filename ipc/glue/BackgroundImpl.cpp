@@ -98,7 +98,6 @@ class ParentImpl final : public BackgroundParentImpl {
 
  private:
   class ShutdownObserver;
-  class ShutdownBackgroundThreadRunnable;
   class ForceCloseBackgroundActorsRunnable;
   class ConnectActorRunnable;
   class CreateActorHelper;
@@ -549,20 +548,6 @@ class ParentImpl::ShutdownObserver final : public nsIObserver {
 
  private:
   ~ShutdownObserver() { AssertIsOnMainThread(); }
-};
-
-class ParentImpl::ShutdownBackgroundThreadRunnable final : public Runnable {
- public:
-  ShutdownBackgroundThreadRunnable()
-      : Runnable("Background::ParentImpl::ShutdownBackgroundThreadRunnable") {
-    AssertIsInMainOrSocketProcess();
-    AssertIsOnMainThread();
-  }
-
- private:
-  ~ShutdownBackgroundThreadRunnable() = default;
-
-  NS_DECL_NSIRUNNABLE
 };
 
 class ParentImpl::ForceCloseBackgroundActorsRunnable final : public Runnable {
@@ -1368,9 +1353,17 @@ void ParentImpl::ShutdownBackgroundThread() {
     }
 
     
-    nsCOMPtr<nsIRunnable> shutdownRunnable =
-        new ShutdownBackgroundThreadRunnable();
-    MOZ_ALWAYS_SUCCEEDS(thread->Dispatch(shutdownRunnable, NS_DISPATCH_NORMAL));
+    MOZ_ALWAYS_SUCCEEDS(thread->Dispatch(
+        NS_NewRunnableFunction(
+            "Background::ParentImpl::ShutdownBackgroundThreadRunnable",
+            []() {
+              
+              
+              
+              
+              sBackgroundPRThread.compareExchange(PR_GetCurrentThread(),
+                                                  nullptr);
+            })));
 
     MOZ_ALWAYS_SUCCEEDS(thread->Shutdown());
   }
@@ -1464,18 +1457,6 @@ ParentImpl::ShutdownObserver::Observe(nsISupports* aSubject, const char* aTopic,
   ChildImpl::Shutdown();
 
   ShutdownBackgroundThread();
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-ParentImpl::ShutdownBackgroundThreadRunnable::Run() {
-  AssertIsInMainOrSocketProcess();
-
-  
-  
-  
-  sBackgroundPRThread.compareExchange(PR_GetCurrentThread(), nullptr);
 
   return NS_OK;
 }
