@@ -900,7 +900,10 @@ impl Parse for AspectRatio {
 }
 
 
-impl Parse for GenericRatio<NonNegativeNumber> {
+pub type Ratio = GenericRatio<NonNegativeNumber>;
+
+
+impl Parse for Ratio {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,

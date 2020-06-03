@@ -15,9 +15,8 @@ use crate::parser::{Parse, ParserContext};
 #[cfg(feature = "servo")]
 use crate::servo::media_queries::MEDIA_FEATURES;
 use crate::str::{starts_with_ignore_ascii_case, string_as_ascii_lowercase};
+use crate::values::computed::position::Ratio;
 use crate::values::computed::{self, ToComputedValue};
-#[cfg(feature = "gecko")]
-use crate::values::specified::NonNegativeNumber;
 use crate::values::specified::{Integer, Length, Number, Resolution};
 use crate::values::{serialize_atom_identifier, CSSFloat};
 use crate::{Atom, Zero};
@@ -25,30 +24,6 @@ use cssparser::{Parser, Token};
 use std::cmp::{Ordering, PartialOrd};
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
-
-
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToShmem)]
-pub struct AspectRatio(pub CSSFloat, pub CSSFloat);
-
-impl ToCss for AspectRatio {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: fmt::Write,
-    {
-        self.0.to_css(dest)?;
-        dest.write_str(" / ")?;
-        self.1.to_css(dest)
-    }
-}
-
-impl PartialOrd for AspectRatio {
-    fn partial_cmp(&self, other: &AspectRatio) -> Option<Ordering> {
-        f64::partial_cmp(
-            &(self.0 as f64 * other.1 as f64),
-            &(self.1 as f64 * other.0 as f64),
-        )
-    }
-}
 
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToShmem)]
@@ -271,11 +246,11 @@ impl MediaFeatureExpression {
         &MEDIA_FEATURES[self.feature_index]
     }
 
-    /// Parse a media expression of the form:
-    ///
-    /// ```
-    /// (media-feature: media-value)
-    /// ```
+    
+    
+    
+    
+    
     pub fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -284,8 +259,8 @@ impl MediaFeatureExpression {
         input.parse_nested_block(|input| Self::parse_in_parenthesis_block(context, input))
     }
 
-    /// Parse a media feature expression where we've already consumed the
-    /// parenthesis.
+    
+    
     pub fn parse_in_parenthesis_block<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -342,12 +317,12 @@ impl MediaFeatureExpression {
         let operator = input.try(consume_operation_or_colon);
         let operator = match operator {
             Err(..) => {
-                // If there's no colon, this is a media query of the
-                // form '(<feature>)', that is, there's no value
-                // specified.
-                //
-                // Gecko doesn't allow ranged expressions without a
-                // value, so just reject them here too.
+                
+                
+                
+                
+                
+                
                 if range.is_some() {
                     return Err(
                         input.new_custom_error(StyleParseErrorKind::RangedExpressionWithNoValue)
@@ -388,7 +363,7 @@ impl MediaFeatureExpression {
         Ok(Self::new(feature_index, Some(value), range_or_operator))
     }
 
-    /// Returns whether this media query evaluates to true for the given device.
+    
     pub fn matches(&self, device: &Device, quirks_mode: QuirksMode) -> bool {
         let value = self.value.as_ref();
 
@@ -440,33 +415,33 @@ impl MediaFeatureExpression {
     }
 }
 
-/// A value found or expected in a media expression.
-///
-/// FIXME(emilio): How should calc() serialize in the Number / Integer /
-/// BoolInteger / NumberRatio case, as computed or as specified value?
-///
-/// If the first, this would need to store the relevant values.
-///
-/// See: https://github.com/w3c/csswg-drafts/issues/1968
+
+
+
+
+
+
+
+
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub enum MediaExpressionValue {
-    /// A length.
+    
     Length(Length),
-    /// A (non-negative) integer.
+    
     Integer(u32),
-    /// A floating point value.
+    
     Float(CSSFloat),
-    /// A boolean value, specified as an integer (i.e., either 0 or 1).
+    
     BoolInteger(bool),
-    /// A single non-negative number or two non-negative numbers separated by '/',
-    /// with optional whitespace on either side of the '/'.
-    NumberRatio(AspectRatio),
-    /// A resolution.
+    
+    
+    NumberRatio(Ratio),
+    
     Resolution(Resolution),
-    /// An enumerated value, defined by the variant keyword table in the
-    /// feature's `mData` member.
+    
+    
     Enumerated(KeywordDiscriminant),
-    /// An identifier.
+    
     Ident(Atom),
 }
 
@@ -517,24 +492,14 @@ impl MediaExpressionValue {
                 MediaExpressionValue::Float(number.get())
             },
             Evaluator::NumberRatio(..) => {
-                #[cfg(feature = "gecko")]
-                {
-                    if static_prefs::pref!("layout.css.aspect-ratio-number.enabled") {
-                        let a = NonNegativeNumber::parse(context, input)?.0.get();
-                        let b = match input.try_parse(|input| input.expect_delim('/')) {
-                            Ok(()) => NonNegativeNumber::parse(context, input)?.0.get(),
-                            _ => 1.0,
-                        };
-                        return Ok(MediaExpressionValue::NumberRatio(AspectRatio(a, b)));
-                    }
-                }
+                use crate::values::generics::position::Ratio as GenericRatio;
+                use crate::values::generics::NonNegative;
+                use crate::values::specified::position::Ratio;
 
-                let a = Integer::parse_positive(context, input)?;
-                input.expect_delim('/')?;
-                let b = Integer::parse_positive(context, input)?;
-                MediaExpressionValue::NumberRatio(AspectRatio(
-                    a.value() as CSSFloat,
-                    b.value() as CSSFloat,
+                let ratio = Ratio::parse(context, input)?;
+                MediaExpressionValue::NumberRatio(GenericRatio(
+                    NonNegative(ratio.0.get()),
+                    NonNegative(ratio.1.get()),
                 ))
             },
             Evaluator::Resolution(..) => {

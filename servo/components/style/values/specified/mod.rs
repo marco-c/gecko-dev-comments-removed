@@ -383,7 +383,7 @@ impl One for NonNegativeNumber {
 
     #[inline]
     fn is_one(&self) -> bool {
-        self.0.get() == 1.0
+        self.get() == 1.0
     }
 }
 
@@ -391,6 +391,12 @@ impl NonNegativeNumber {
     
     pub fn new(val: CSSFloat) -> Self {
         NonNegative::<Number>(Number::new(val.max(0.)))
+    }
+
+    
+    #[inline]
+    pub fn get(&self) -> f32 {
+        self.0.get()
     }
 }
 
