@@ -365,13 +365,7 @@ class ScriptStencilBase {
 
 class ScriptStencil : public ScriptStencilBase {
  public:
-  using ImmutableFlags = ImmutableScriptFlagsEnum;
-
   explicit ScriptStencil(JSContext* cx) : ScriptStencilBase(cx) {}
-
-  bool isFunction() const {
-    return immutableFlags.hasFlag(ImmutableFlags::IsFunction);
-  }
 
   
   

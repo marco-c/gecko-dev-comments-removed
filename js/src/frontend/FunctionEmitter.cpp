@@ -9,7 +9,6 @@
 #include "mozilla/Assertions.h"  
 
 #include "builtin/ModuleObject.h"          
-#include "frontend/BCEScriptStencil.h"     
 #include "frontend/BytecodeEmitter.h"      
 #include "frontend/FunctionSyntaxKind.h"   
 #include "frontend/ModuleSharedContext.h"  
@@ -706,16 +705,13 @@ bool FunctionScriptEmitter::initScript() {
 
   JSContext* cx = bce_->cx;
 
-  js::UniquePtr<ImmutableScriptData> immutableScriptData =
-      bce_->createImmutableScriptData(cx);
-  if (!immutableScriptData) {
+  ScriptStencil stencil(cx);
+  if (!bce_->intoScriptStencil(&stencil)) {
     return false;
   }
 
   if (bce_->emitterMode == BytecodeEmitter::LazyFunction) {
-    BCEScriptStencil stencil(*bce_, std::move(immutableScriptData));
     RootedScript script(cx, JSScript::CastFromLazy(bce_->compilationInfo.lazy));
-
     if (!JSScript::fullyInitFromStencil(cx, bce_->compilationInfo, script,
                                         stencil)) {
       return false;
@@ -724,8 +720,6 @@ bool FunctionScriptEmitter::initScript() {
     bce_->outputScript = script;
   } else {
     SourceExtent extent = funbox_->getScriptExtent();
-    BCEScriptStencil stencil(*bce_, std::move(immutableScriptData));
-
     RootedScript script(cx,
                         stencil.intoScript(cx, bce_->compilationInfo, extent));
     if (!script) {

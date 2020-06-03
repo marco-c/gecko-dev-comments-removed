@@ -27,7 +27,6 @@
 
 #include "ds/Nestable.h"  
 #include "frontend/AbstractScopePtr.h"
-#include "frontend/BCEScriptStencil.h"           
 #include "frontend/BytecodeControlStructures.h"  
 #include "frontend/CallOrNewEmitter.h"           
 #include "frontend/CForEmitter.h"                
@@ -2427,15 +2426,12 @@ bool BytecodeEmitter::emitScript(ParseNode* body) {
     return false;
   }
 
-  js::UniquePtr<ImmutableScriptData> immutableScriptData =
-      createImmutableScriptData(cx);
-  if (!immutableScriptData) {
-    return false;
-  }
-
   
   SourceExtent extent = sc->getScriptExtent();
-  BCEScriptStencil stencil(*this, std::move(immutableScriptData));
+  ScriptStencil stencil(cx);
+  if (!intoScriptStencil(&stencil)) {
+    return false;
+  }
   outputScript = stencil.intoScript(cx, compilationInfo, extent);
 
   return !!outputScript;
@@ -10763,4 +10759,47 @@ bool BytecodeEmitter::newSrcNoteOperand(ptrdiff_t operand) {
   };
 
   return SrcNoteWriter::writeOperand(operand, allocator);
+}
+
+bool BytecodeEmitter::intoScriptStencil(ScriptStencil* stencil) {
+  using ImmutableFlags = ImmutableScriptFlagsEnum;
+
+  js::UniquePtr<ImmutableScriptData> immutableScriptData =
+      createImmutableScriptData(cx);
+  if (!immutableScriptData) {
+    return false;
+  }
+
+  stencil->immutableFlags = sc->immutableFlags();
+
+  MOZ_ASSERT(outermostScope().hasOnChain(ScopeKind::NonSyntactic) ==
+             sc->hasNonSyntacticScope());
+
+  stencil->gcThings = perScriptData().gcThingList().stealGCThings();
+
+  
+  stencil->immutableScriptData = std::move(immutableScriptData);
+
+  
+  if (sc->isFunctionBox()) {
+    FunctionBox* funbox = sc->asFunctionBox();
+    stencil->functionIndex.emplace(funbox->index());
+    stencil->fieldInitializers = funbox->fieldInitializers;
+
+    
+    
+    stencil->immutableFlags.setFlag(ImmutableFlags::HasMappedArgsObj,
+                                    funbox->hasMappedArgsObj());
+
+    
+    
+    
+    if (emitterMode != BytecodeEmitter::LazyFunction) {
+      stencil->immutableFlags.setFlag(
+          ImmutableFlags::IsLikelyConstructorWrapper,
+          funbox->isLikelyConstructorWrapper());
+    }
+  } 
+
+  return true;
 }
