@@ -13,6 +13,9 @@ pub mod store;
 mod sync;
 
 
+pub use sync::STORAGE_VERSION;
+
+
 
 
 pub fn delme_demo_usage() -> error::Result<()> {
@@ -23,7 +26,5 @@ pub fn delme_demo_usage() -> error::Result<()> {
     store.get("ext-id", json!({}))?;
     store.remove("ext-id", json!({}))?;
     store.clear("ext-id")?;
-    
-    store.wipe_all()?;
     Ok(())
 }
