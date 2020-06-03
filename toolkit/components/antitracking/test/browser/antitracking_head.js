@@ -516,8 +516,9 @@ this.AntiTracking = {
       
       
       if (
+        !options.dontResetExpectedBlockingNotifications &&
         options.expectedBlockingNotifications ==
-        Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER
+          Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER
       ) {
         if (
           !(await AntiTracking._isThirdPartyPageClassifiedAsTracker(
