@@ -104,9 +104,37 @@ import org.mozilla.gecko.util.GeckoBundle;
 
 
 
-public class LoginStorage {
-    private static final String LOGTAG = "LoginStorage";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+public class Autocomplete {
+    private static final String LOGTAG = "Autocomplete";
     private static final boolean DEBUG = false;
+
+    protected Autocomplete() {}
 
     
 
@@ -171,8 +199,8 @@ public class LoginStorage {
             origin = bundle.getString(ORIGIN_KEY);
             formActionOrigin = bundle.getString(FORM_ACTION_ORIGIN_KEY);
             httpRealm = bundle.getString(HTTP_REALM_KEY);
-            username = bundle.getString(USERNAME_KEY);
-            password = bundle.getString(PASSWORD_KEY);
+            username = bundle.getString(USERNAME_KEY, "");
+            password = bundle.getString(PASSWORD_KEY, "");
         }
 
         @Override
@@ -315,6 +343,8 @@ public class LoginStorage {
 
 
         public static final int PASSWORD = 1;
+
+        protected UsedField() {}
     }
 
     
@@ -324,7 +354,7 @@ public class LoginStorage {
 
 
 
-    public interface Delegate {
+    public interface LoginStorageDelegate {
         
 
 
@@ -351,8 +381,6 @@ public class LoginStorage {
 
 
 
-
-
         @UiThread
         default void onLoginSave(@NonNull LoginEntry login) {}
 
@@ -372,34 +400,240 @@ public class LoginStorage {
                 @LSUsedField int usedFields) {}
     }
 
-     final static class Proxy implements BundleEventListener {
+    
+
+
+
+
+    public abstract static class Option<T> {
+         static final String VALUE_KEY = "value";
+         static final String HINT_KEY = "hint";
+
+        public final @NonNull T value;
+        public final int hint;
+
+        public Option(final @NonNull T value, final int hint) {
+            this.value = value;
+            this.hint = hint;
+        }
+
+        @AnyThread
+         abstract @NonNull GeckoBundle toBundle();
+    }
+
+    
+
+
+
+    public abstract static class SaveOption<T> extends Option<T> {
+
+        public SaveOption(final @NonNull T value, final int hint) {
+            super(value, hint);
+        }
+    }
+
+    
+
+
+
+    public abstract static class SelectOption<T> extends Option<T> {
+        public SelectOption(
+                final @NonNull T value,
+                final int hint) {
+            super(value, hint);
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder builder = new StringBuilder("SelectOption {");
+            builder
+                .append("value=").append(value).append(", ")
+                .append("hint=").append(hint)
+                .append("}");
+            return builder.toString();
+        }
+    }
+
+    
+
+
+    public static class LoginSaveOption extends SaveOption<LoginEntry> {
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef(flag = true,
+                value = { Hint.NONE, Hint.GENERATED, Hint.LOW_CONFIDENCE })
+         @interface LoginSaveHint {}
+
+        
+
+
+        public static class Hint {
+            public static final int NONE = 0;
+
+            
+
+
+
+            public static final int GENERATED = 1 << 0;
+
+            
+
+
+
+
+
+
+            public static final int LOW_CONFIDENCE = 1 << 1;
+
+            protected Hint() {}
+        }
+
+        
+
+
+
+
+
+         LoginSaveOption(
+                final @NonNull LoginEntry value,
+                final @LoginSaveHint int hint) {
+            super(value, hint);
+        }
+
+        
+
+
+
+
+        public LoginSaveOption(final @NonNull LoginEntry value) {
+            this(value, Hint.NONE);
+        }
+
+        @Override
+         @NonNull GeckoBundle toBundle() {
+            final GeckoBundle bundle = new GeckoBundle(2);
+            bundle.putBundle(VALUE_KEY, value.toBundle());
+            bundle.putInt(HINT_KEY, hint);
+            return bundle;
+        }
+    }
+
+    
+
+
+    public static class LoginSelectOption extends SelectOption<LoginEntry> {
+        @Retention(RetentionPolicy.SOURCE)
+        @IntDef(flag = true,
+                value = { Hint.NONE, Hint.GENERATED, Hint.INSECURE_FORM,
+                          Hint.DUPLICATE_USERNAME, Hint.MATCHING_ORIGIN })
+         @interface LoginSelectHint {}
+
+        
+
+
+        public static class Hint {
+            public static final int NONE = 0;
+
+            
+
+
+
+
+            public static final int GENERATED = 1 << 0;
+
+            
+
+
+
+
+
+            public static final int INSECURE_FORM = 1 << 1;
+
+            
+
+
+
+
+
+            public static final int DUPLICATE_USERNAME = 1 << 2;
+
+            
+
+
+
+
+            public static final int MATCHING_ORIGIN = 1 << 3;
+        }
+
+        
+
+
+
+
+
+         LoginSelectOption(
+                final @NonNull LoginEntry value,
+                final @LoginSelectHint int hint) {
+            super(value, hint);
+        }
+
+        
+
+
+
+
+        public LoginSelectOption(final @NonNull LoginEntry value) {
+            this(value, Hint.NONE);
+        }
+
+         static @NonNull LoginSelectOption fromBundle(
+                final @NonNull GeckoBundle bundle) {
+            final int hint = bundle.getInt("hint");
+            final LoginEntry value = new LoginEntry(bundle.getBundle("value"));
+
+            return new LoginSelectOption(value, hint);
+        }
+
+        @Override
+         @NonNull GeckoBundle toBundle() {
+            final GeckoBundle bundle = new GeckoBundle(2);
+            bundle.putBundle(VALUE_KEY, value.toBundle());
+            bundle.putInt(HINT_KEY, hint);
+            return bundle;
+        }
+    }
+
+     final static class LoginStorageProxy implements BundleEventListener {
         private static final String LOGTAG = "LoginStorageProxy";
 
-        private static final String FETCH_EVENT = "GeckoView:LoginStorage:Fetch";
-        private static final String SAVE_EVENT = "GeckoView:LoginStorage:Save";
-        private static final String USED_EVENT = "GeckoView:LoginStorage:Used";
+        private static final String FETCH_LOGIN_EVENT =
+            "GeckoView:Autocomplete:Fetch:Login";
+        private static final String SAVE_LOGIN_EVENT =
+            "GeckoView:Autocomplete:Save:Login";
+        private static final String USED_LOGIN_EVENT =
+            "GeckoView:Autocomplete:Used:Login";
 
-        private @Nullable Delegate mDelegate;
+        private @Nullable LoginStorageDelegate mDelegate;
 
-        public Proxy() {}
+        public LoginStorageProxy() {}
 
         private void registerListener() {
             EventDispatcher.getInstance().registerUiThreadListener(
                     this,
-                    FETCH_EVENT,
-                    SAVE_EVENT,
-                    USED_EVENT);
+                    FETCH_LOGIN_EVENT,
+                    SAVE_LOGIN_EVENT,
+                    USED_LOGIN_EVENT);
         }
 
         private void unregisterListener() {
             EventDispatcher.getInstance().unregisterUiThreadListener(
                     this,
-                    FETCH_EVENT,
-                    SAVE_EVENT,
-                    USED_EVENT);
+                    FETCH_LOGIN_EVENT,
+                    SAVE_LOGIN_EVENT,
+                    USED_LOGIN_EVENT);
         }
 
-        public synchronized void setDelegate(final @Nullable Delegate delegate) {
+        public synchronized void setDelegate(
+                final @Nullable LoginStorageDelegate delegate) {
             if (mDelegate == null && delegate != null) {
                 registerListener();
             } else if (mDelegate != null && delegate == null) {
@@ -409,7 +643,7 @@ public class LoginStorage {
             mDelegate = delegate;
         }
 
-        public synchronized @Nullable Delegate getDelegate() {
+        public synchronized @Nullable LoginStorageDelegate getDelegate() {
             return mDelegate;
         }
 
@@ -424,14 +658,14 @@ public class LoginStorage {
 
             if (mDelegate == null) {
                 if (callback != null) {
-                    callback.sendError("No LoginStorage delegate attached");
+                    callback.sendError("No LoginStorageDelegate attached");
                 }
                 return;
             }
 
-            if (FETCH_EVENT.equals(event)) {
+            if (FETCH_LOGIN_EVENT.equals(event)) {
                 final String domain = message.getString("domain");
-                final GeckoResult<LoginStorage.LoginEntry[]> result =
+                final GeckoResult<Autocomplete.LoginEntry[]> result =
                     mDelegate.onLoginFetch(domain);
 
                 if (result == null) {
@@ -443,6 +677,7 @@ public class LoginStorage {
                     logins -> {
                         if (logins == null) {
                             callback.sendSuccess(new GeckoBundle[0]);
+                            return;
                         }
 
                         
@@ -455,12 +690,12 @@ public class LoginStorage {
                         callback.sendSuccess(loginBundles);
                     },
                     exception -> callback.sendError(exception.getMessage()));
-            } else if (SAVE_EVENT.equals(event)) {
+            } else if (SAVE_LOGIN_EVENT.equals(event)) {
                 final GeckoBundle loginBundle = message.getBundle("login");
                 final LoginEntry login = new LoginEntry(loginBundle);
 
                 mDelegate.onLoginSave(login);
-            } else if (USED_EVENT.equals(event)) {
+            } else if (USED_LOGIN_EVENT.equals(event)) {
                 final GeckoBundle loginBundle = message.getBundle("login");
                 final LoginEntry login = new LoginEntry(loginBundle);
                 final int fields = message.getInt("usedFields");

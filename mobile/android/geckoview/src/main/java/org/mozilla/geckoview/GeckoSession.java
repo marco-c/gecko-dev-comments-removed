@@ -2761,8 +2761,7 @@ public class GeckoSession implements Parcelable {
                 res = delegate.onSharePrompt(session, prompt);
                 break;
             }
-            case "loginStorage": {
-                final int lsType = message.getInt("lsType");
+            case "Autocomplete:Save:Login": {
                 final int hint = message.getInt("hint");
                 final GeckoBundle[] loginBundles =
                     message.getBundleArray("logins");
@@ -2771,17 +2770,44 @@ public class GeckoSession implements Parcelable {
                     break;
                 }
 
-                final LoginStorage.LoginEntry[] logins =
-                    new LoginStorage.LoginEntry[loginBundles.length];
+                final Autocomplete.LoginSaveOption[] options =
+                    new Autocomplete.LoginSaveOption[loginBundles.length];
 
-                for (int i = 0; i < logins.length; ++i) {
-                    logins[i] = new LoginStorage.LoginEntry(loginBundles[i]);
+                for (int i = 0; i < options.length; ++i) {
+                    options[i] = new Autocomplete.LoginSaveOption(
+                            new Autocomplete.LoginEntry(loginBundles[i]),
+                            hint);
                 }
 
-                final PromptDelegate.LoginStoragePrompt prompt =
-                    new PromptDelegate.LoginStoragePrompt(lsType, hint, logins);
+                final PromptDelegate.AutocompleteRequest
+                    <Autocomplete.LoginSaveOption> request =
+                    new PromptDelegate.AutocompleteRequest<>(options);
 
-                res = delegate.onLoginStoragePrompt(session, prompt);
+                res = delegate.onLoginSave(session, request);
+                break;
+            }
+            case "Autocomplete:Select:Login": {
+                final GeckoBundle[] optionBundles =
+                    message.getBundleArray("options");
+
+                if (optionBundles == null) {
+                    break;
+                }
+
+                final Autocomplete.LoginSelectOption[] options =
+                    new Autocomplete.LoginSelectOption[optionBundles.length];
+
+                for (int i = 0; i < options.length; ++i) {
+                    options[i] = Autocomplete.LoginSelectOption.fromBundle(
+                        optionBundles[i]);
+                }
+
+                final PromptDelegate.AutocompleteRequest
+                    <Autocomplete.LoginSelectOption> request =
+                    new PromptDelegate.AutocompleteRequest<>(options);
+
+                res = delegate.onLoginSelect(session, request);
+
                 break;
             }
             default: {
@@ -4755,88 +4781,31 @@ public class GeckoSession implements Parcelable {
 
 
 
-        public class LoginStoragePrompt extends BasePrompt {
-            @Retention(RetentionPolicy.SOURCE)
-            @IntDef({ Type.SAVE })
-             @interface LoginStorageType {}
-
-            
-            
-
-
-            public static class Type {
-                public static final int SAVE = 1;
-
-                protected Type() {}
-            }
-
-            @Retention(RetentionPolicy.SOURCE)
-            @IntDef(flag = true,
-                    value = { Hint.NONE })
-             @interface LoginStorageHint {}
-
-            public static class Hint {
-                public static final int NONE = 0;
-
-                protected Hint() {}
-            }
-
-            
-
-
-            public final @LoginStorageType int type;
-
+        public class AutocompleteRequest<T extends Autocomplete.Option<?>>
+                extends BasePrompt {
             
 
 
 
+            public final @NonNull T[] options;
 
-            public final @LoginStorageHint int hint;
-
-            
-
-
-
-
-            public final @NonNull LoginStorage.LoginEntry[] logins;
-
-            protected LoginStoragePrompt(
-                    final @LoginStorageType int type,
-                    final @LoginStorageHint int hint,
-                    final @NonNull LoginStorage.LoginEntry[] logins) {
+            protected AutocompleteRequest(final @NonNull T[] options) {
                 super(null);
-
-                this.type = type;
-                this.hint = hint;
-                this.logins = logins;
+                this.options = options;
             }
 
             
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
             @UiThread
             public @NonNull PromptResponse confirm(
-                    final @NonNull LoginStorage.LoginEntry login) {
-                ensureResult().putBundle("login", login.toBundle());
+                    final @NonNull Autocomplete.Option<?> selection) {
+                ensureResult().putBundle("selection", selection.toBundle());
                 return super.confirm();
             }
 
             
-
-
 
 
 
@@ -5019,10 +4988,47 @@ public class GeckoSession implements Parcelable {
 
 
 
+
+
+
+
+
+
+
+
+
         @UiThread
-        default @Nullable GeckoResult<PromptResponse> onLoginStoragePrompt(
+        default @Nullable GeckoResult<PromptResponse> onLoginSave(
                 @NonNull final GeckoSession session,
-                @NonNull final LoginStoragePrompt prompt) {
+                @NonNull final AutocompleteRequest<Autocomplete.LoginSaveOption>
+                    request) {
+            return null;
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        @UiThread
+        default @Nullable GeckoResult<PromptResponse> onLoginSelect(
+                @NonNull final GeckoSession session,
+                @NonNull final AutocompleteRequest<Autocomplete.LoginSelectOption>
+                    request) {
             return null;
         }
     }
