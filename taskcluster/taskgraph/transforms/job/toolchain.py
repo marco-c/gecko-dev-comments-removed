@@ -75,6 +75,8 @@ toolchain_run_schema = Schema({
 def get_digest_data(config, run, taskdesc):
     files = list(run.pop('resources', []))
     
+    files.append('taskcluster/taskgraph/transforms/job/toolchain.py')
+    
     files.append('taskcluster/scripts/misc/{}'.format(run['script']))
     
     tooltool_manifest = taskdesc['worker']['env'].get('TOOLTOOL_MANIFEST')
