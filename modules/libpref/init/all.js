@@ -3954,6 +3954,9 @@ pref("network.psl.onUpdate_notify", false);
 #else
   
   pref("geo.provider.network.url", "https://location.services.mozilla.com/v1/geolocate?key=%MOZILLA_API_KEY%");
+  
+  
+  pref("geo.provider.network.compare.url", "https://www.googleapis.com/geolocation/v1/geolocate?key=%GOOGLE_LOCATION_SERVICE_API_KEY%");
 #endif
 
 
