@@ -555,19 +555,15 @@ impl Zero for Integer {
     }
 }
 
-impl num_traits::One for Integer {
+impl One for Integer {
     #[inline]
     fn one() -> Self {
         Self::new(1)
     }
-}
 
-
-impl ::std::ops::Mul<Integer> for Integer {
-    type Output = Self;
-
-    fn mul(self, other: Self) -> Self {
-        Self::new(self.value * other.value)
+    #[inline]
+    fn is_one(&self) -> bool {
+        self.value() == 1
     }
 }
 
