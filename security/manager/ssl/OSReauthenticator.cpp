@@ -156,6 +156,53 @@ bool IsAutoAdminLogonEnabled() {
   return value.Equals(NS_LITERAL_STRING("1"));
 }
 
+bool IsRequireSignonEnabled() {
+  
+  nsresult rv;
+  nsCOMPtr<nsIWindowsRegKey> regKey =
+      do_CreateInstance("@mozilla.org/windows-registry-key;1", &rv);
+  if (NS_FAILED(rv)) {
+    return true;
+  }
+
+  rv = regKey->Open(
+      nsIWindowsRegKey::ROOT_KEY_LOCAL_MACHINE,
+      NS_LITERAL_STRING("System\\CurrentControlSet\\Control\\Power\\User\\Power"
+                        "Schemes"),
+      nsIWindowsRegKey::ACCESS_READ);
+  if (NS_FAILED(rv)) {
+    return true;
+  }
+
+  nsAutoString activePowerScheme;
+  rv = regKey->ReadStringValue(NS_LITERAL_STRING("ActivePowerScheme"),
+                               activePowerScheme);
+  if (NS_FAILED(rv)) {
+    return true;
+  }
+  regKey->Close();
+
+  rv = regKey->Open(
+      nsIWindowsRegKey::ROOT_KEY_LOCAL_MACHINE,
+      NS_LITERAL_STRING("System\\CurrentControlSet\\Control\\Power\\User\\Power"
+                        "Schemes\\") +
+          activePowerScheme +
+          NS_LITERAL_STRING("\\0e796bdb-100d-47d6-a2d5-f7d2daa51f51"),
+      nsIWindowsRegKey::ACCESS_READ);
+  if (NS_FAILED(rv)) {
+    return true;
+  }
+
+  uint32_t value;
+  rv = regKey->ReadIntValue(NS_LITERAL_STRING("ACSettingIndex"), &value);
+  if (NS_FAILED(rv)) {
+    return true;
+  }
+  regKey->Close();
+
+  return !!value;
+}
+
 
 
 static nsresult ReauthenticateUserWindows(
@@ -164,9 +211,11 @@ static nsresult ReauthenticateUserWindows(
      bool& reauthenticated,
      bool& isBlankPassword,
      int64_t& prefLastChanged,
-     bool& isAutoAdminLogonEnabled) {
+     bool& isAutoAdminLogonEnabled,
+     bool& isRequireSignonEnabled) {
   reauthenticated = false;
   isAutoAdminLogonEnabled = false;
+  isRequireSignonEnabled = true;
 
   
   DWORD usernameLength = CREDUI_MAX_USERNAME_LENGTH + 1;
@@ -229,6 +278,8 @@ static nsresult ReauthenticateUserWindows(
   }
 
   isAutoAdminLogonEnabled = IsAutoAdminLogonEnabled();
+
+  isRequireSignonEnabled = IsRequireSignonEnabled();
 
   
   DWORD err = 0;
@@ -354,12 +405,13 @@ static nsresult ReauthenticateUser(const nsAString& prompt,
                                     bool& reauthenticated,
                                     bool& isBlankPassword,
                                     int64_t& prefLastChanged,
-                                    bool& isAutoAdminLogonEnabled) {
+                                    bool& isAutoAdminLogonEnabled,
+                                    bool& isRequireSignonEnabled) {
   reauthenticated = false;
 #if defined(XP_WIN)
-  return ReauthenticateUserWindows(prompt, caption, hwndParent, reauthenticated,
-                                   isBlankPassword, prefLastChanged,
-                                   isAutoAdminLogonEnabled);
+  return ReauthenticateUserWindows(
+      prompt, caption, hwndParent, reauthenticated, isBlankPassword,
+      prefLastChanged, isAutoAdminLogonEnabled, isRequireSignonEnabled);
 #elif defined(XP_MACOSX)
   return ReauthenticateUserMacOS(prompt, reauthenticated, isBlankPassword);
 #endif  
@@ -375,9 +427,10 @@ static void BackgroundReauthenticateUser(RefPtr<Promise>& aPromise,
   nsAutoCString recovery;
   bool reauthenticated;
   bool isAutoAdminLogonEnabled;
-  nsresult rv = ReauthenticateUser(aMessageText, aCaptionText, hwndParent,
-                                   reauthenticated, isBlankPassword,
-                                   prefLastChanged, isAutoAdminLogonEnabled);
+  bool isRequireSignonEnabled;
+  nsresult rv = ReauthenticateUser(
+      aMessageText, aCaptionText, hwndParent, reauthenticated, isBlankPassword,
+      prefLastChanged, isAutoAdminLogonEnabled, isRequireSignonEnabled);
 
   nsTArray<int32_t> prefLastChangedUpdates;
 #if defined(XP_WIN)
@@ -396,6 +449,7 @@ static void BackgroundReauthenticateUser(RefPtr<Promise>& aPromise,
   results.AppendElement(isBlankPassword);
 #if defined(XP_WIN)
   results.AppendElement(isAutoAdminLogonEnabled);
+  results.AppendElement(isRequireSignonEnabled);
 #endif
   nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
       "BackgroundReauthenticateUserResolve",
