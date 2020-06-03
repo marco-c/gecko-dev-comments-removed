@@ -5,7 +5,7 @@ from __future__ import absolute_import
 
 import json
 import re
-import urllib2
+import six
 from mozlog import get_proxy_logger
 
 LOG = get_proxy_logger("profiler")
@@ -18,14 +18,15 @@ gLibNameRE = re.compile("[0-9a-zA-Z_+\-\.]*$")
 
 MAX_FORWARDED_REQUESTS = 3
 
-"""
-Symbolication is broken when using type 'str' in python 2.7, so we use 'basestring'.
-But for python 3.0 compatibility, 'basestring' isn't defined, but the 'str' type works.
-So we force 'basestring' to 'str'.
-"""
-try:
-    basestring
-except NameError:
+if six.PY2:
+    
+    from urllib2 import urlopen, Request
+else:
+    
+    from urllib.request import urlopen, Request
+    
+    
+    
     basestring = str
 
 
@@ -197,9 +198,9 @@ class SymbolicationRequest:
                 }
                 requestJson = json.dumps(requestObj)
                 headers = {"Content-Type": "application/json"}
-                requestHandle = urllib2.Request(url, requestJson, headers)
+                requestHandle = Request(url, requestJson, headers)
                 try:
-                    response = urllib2.urlopen(requestHandle)
+                    response = urlopen(requestHandle)
                 except Exception as e:
                     if requestVersion == 4:
                         
