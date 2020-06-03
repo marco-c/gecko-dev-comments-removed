@@ -924,7 +924,9 @@ class JSRegExp : public HeapObject {
   }
 
   
-  static int RegistersForCaptureCount(int count) { return (count + 1) * 2; }
+  static constexpr int RegistersForCaptureCount(int count) {
+    return (count + 1) * 2;
+  }
 
   inline int MaxRegisterCount() const {
     return inner()->getMaxRegisters();
@@ -935,7 +937,7 @@ class JSRegExp : public HeapObject {
   
 
   
-  static constexpr int kMaxCaptures = 1 << 16;
+  static constexpr int kMaxCaptures = (1 << 15) - 1;
 
   
   
