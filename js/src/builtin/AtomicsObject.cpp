@@ -11,44 +11,9 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "builtin/AtomicsObject.h"
 
 #include "mozilla/Atomics.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Maybe.h"
@@ -1051,6 +1016,3 @@ static const ClassSpec AtomicsClassSpec = {CreateAtomicsObject, nullptr,
 const JSClass AtomicsObject::class_ = {
     "Atomics", JSCLASS_HAS_CACHED_PROTO(JSProto_Atomics), JS_NULL_CLASS_OPS,
     &AtomicsClassSpec};
-
-#undef CXX11_ATOMICS
-#undef GNU_ATOMICS
