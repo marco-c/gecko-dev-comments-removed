@@ -73,6 +73,15 @@ const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
     this._workerList = null;
     this._workerTargetActorPool = null;
     this._onWorkerListChanged = this._onWorkerListChanged.bind(this);
+
+    
+    
+    
+    
+    
+    
+    this.destroy = this.destroy.bind(this);
+    Services.obs.addObserver(this.destroy, "xpcom-shutdown");
   },
 
   get isRootActor() {
@@ -181,6 +190,9 @@ const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
   },
 
   destroy: function() {
+    if (!this.actorID) {
+      return;
+    }
     Actor.prototype.destroy.call(this);
 
     
@@ -198,6 +210,8 @@ const ContentProcessTargetActor = ActorClassWithSpec(contentProcessTargetSpec, {
       this._dbg.disable();
       this._dbg = null;
     }
+
+    Services.obs.removeObserver(this.destroy, "xpcom-shutdown");
   },
 });
 
