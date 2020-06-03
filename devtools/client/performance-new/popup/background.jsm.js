@@ -35,6 +35,7 @@ const AppConstants = ChromeUtils.import(
 
 
 
+
 const ENTRIES_PREF = "devtools.performance.recording.entries";
 
 const INTERVAL_PREF = "devtools.performance.recording.interval";
@@ -69,10 +70,12 @@ const lazy = createLazyLoaders({
     require("devtools/shared/performance-new/recording-utils"),
   CustomizableUI: () =>
     ChromeUtils.import("resource:///modules/CustomizableUI.jsm"),
+  PerfSymbolication: () =>
+    ChromeUtils.import(
+      "resource://devtools/client/performance-new/symbolication.jsm.js"
+    ),
   PreferenceManagement: () =>
     require("devtools/client/performance-new/preference-management"),
-  ProfilerGetSymbols: () =>
-    ChromeUtils.import("resource://gre/modules/ProfilerGetSymbols.jsm"),
   ProfilerMenuButton: () =>
     ChromeUtils.import(
       "resource://devtools/client/performance-new/popup/menu-button.jsm.js"
@@ -141,19 +144,17 @@ const symbolCache = new Map();
 
 
 
-async function getSymbolsFromThisBrowser(debugName, breakpadId) {
+
+async function getSymbolsFromThisBrowser(pageContext, debugName, breakpadId) {
   if (symbolCache.size === 0) {
     
     for (const lib of Services.profiler.sharedLibraries) {
-      symbolCache.set(`${lib.debugName}/${lib.breakpadId}`, {
-        path: lib.path,
-        debugPath: lib.debugPath,
-      });
+      symbolCache.set(`${lib.debugName}/${lib.breakpadId}`, lib);
     }
   }
 
-  const cachedLibInfo = symbolCache.get(`${debugName}/${breakpadId}`);
-  if (!cachedLibInfo) {
+  const cachedLib = symbolCache.get(`${debugName}/${breakpadId}`);
+  if (!cachedLib) {
     throw new Error(
       `The library ${debugName} ${breakpadId} is not in the ` +
         "Services.profiler.sharedLibraries list, so the local path for it is not known " +
@@ -164,19 +165,10 @@ async function getSymbolsFromThisBrowser(debugName, breakpadId) {
     );
   }
 
-  const { path, debugPath } = cachedLibInfo;
-  const { OS } = lazy.OS();
-  if (!OS.Path.split(path).absolute) {
-    throw new Error(
-      "Services.profiler.sharedLibraries did not contain an absolute path for " +
-        `the library ${debugName} ${breakpadId}, so symbols for this library can not ` +
-        "be obtained."
-    );
-  }
-
-  const { ProfilerGetSymbols } = lazy.ProfilerGetSymbols();
-
-  return ProfilerGetSymbols.getSymbolTable(path, debugPath, breakpadId);
+  const lib = cachedLib;
+  const objdirs = getObjdirPrefValue(pageContext);
+  const { getSymbolTableMultiModal } = lazy.PerfSymbolication();
+  return getSymbolTableMultiModal(lib, objdirs);
 }
 
 
@@ -184,7 +176,8 @@ async function getSymbolsFromThisBrowser(debugName, breakpadId) {
 
 
 
-async function captureProfile() {
+
+async function captureProfile(pageContext) {
   if (!Services.profiler.IsActive()) {
     
     return;
@@ -203,7 +196,9 @@ async function captureProfile() {
     );
 
   const receiveProfile = lazy.BrowserModule().receiveProfile;
-  receiveProfile(profile, getSymbolsFromThisBrowser);
+  receiveProfile(profile, (debugName, breakpadId) => {
+    return getSymbolsFromThisBrowser(pageContext, debugName, breakpadId);
+  });
 
   Services.profiler.StopProfiler();
 }
@@ -317,13 +312,22 @@ function getPrefPostfix(pageContext) {
 
 
 
+function getObjdirPrefValue(pageContext) {
+  const postfix = getPrefPostfix(pageContext);
+  return _getArrayOfStringsHostPref(OBJDIRS_PREF + postfix);
+}
+
+
+
+
+
 
 function getRecordingPreferences(pageContext, supportedFeatures) {
   const postfix = getPrefPostfix(pageContext);
 
   
   
-  const objdirs = _getArrayOfStringsHostPref(OBJDIRS_PREF + postfix);
+  const objdirs = getObjdirPrefValue(pageContext);
   const presetName = Services.prefs.getCharPref(PRESET_PREF + postfix);
 
   

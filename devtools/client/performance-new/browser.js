@@ -31,6 +31,10 @@ const lazy = createLazyLoaders({
   OS: () => ChromeUtils.import("resource://gre/modules/osfile.jsm"),
   ProfilerGetSymbols: () =>
     ChromeUtils.import("resource://gre/modules/ProfilerGetSymbols.jsm"),
+  PerfSymbolication: () =>
+    ChromeUtils.import(
+      "resource://devtools/client/performance-new/symbolication.jsm.js"
+    ),
 });
 
 const TRANSFER_EVENT = "devtools:perf-html-transfer-profile";
@@ -183,100 +187,6 @@ function createLibraryMap(profile) {
 
 
 
-async function getSymbolTableFromDebuggee(perfFront, path, breakpadId) {
-  const [addresses, index, buffer] = await perfFront.getSymbolTable(
-    path,
-    breakpadId
-  );
-  
-  
-  return [
-    new Uint32Array(addresses),
-    new Uint32Array(index),
-    new Uint8Array(buffer),
-  ];
-}
-
-
-
-
-
-async function doesFileExistAtPath(path) {
-  const { OS } = lazy.OS();
-  try {
-    const result = await OS.File.stat(path);
-    return !result.isDir;
-  } catch (e) {
-    if (e instanceof OS.File.Error && e.becauseNoSuchFile) {
-      return false;
-    }
-    throw e;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function getSymbolTableFromLocalBinary(objdirs, filename, breakpadId) {
-  const { OS } = lazy.OS();
-  const candidatePaths = [];
-  for (const objdirPath of objdirs) {
-    
-    candidatePaths.push(OS.Path.join(objdirPath, "dist", "bin", filename));
-    
-    
-    
-    
-    candidatePaths.push(OS.Path.join(objdirPath, filename));
-  }
-
-  for (const path of candidatePaths) {
-    if (await doesFileExistAtPath(path)) {
-      const { ProfilerGetSymbols } = lazy.ProfilerGetSymbols();
-      try {
-        return await ProfilerGetSymbols.getSymbolTable(path, path, breakpadId);
-      } catch (e) {
-        
-        
-        
-        
-      }
-    }
-  }
-  throw new Error("Could not find any matching binary.");
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -285,48 +195,15 @@ function createMultiModalGetSymbolTableFn(profile, getObjdirs, perfFront) {
   const libraryGetter = createLibraryMap(profile);
 
   return async function getSymbolTable(debugName, breakpadId) {
-    const result = libraryGetter(debugName, breakpadId);
-    if (!result) {
+    const lib = libraryGetter(debugName, breakpadId);
+    if (!lib) {
       throw new Error(
         `Could not find the library for "${debugName}", "${breakpadId}".`
       );
     }
-    const { name, path, debugPath } = result;
-    if (await doesFileExistAtPath(path)) {
-      const { ProfilerGetSymbols } = lazy.ProfilerGetSymbols();
-      
-      
-      
-      return ProfilerGetSymbols.getSymbolTable(path, debugPath, breakpadId);
-    }
-    
-    
-    
-    try {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      const objdirs = getObjdirs();
-      return await getSymbolTableFromLocalBinary(objdirs, name, breakpadId);
-    } catch (e) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      return getSymbolTableFromDebuggee(perfFront, path, breakpadId);
-    }
+    const objdirs = getObjdirs();
+    const { getSymbolTableMultiModal } = lazy.PerfSymbolication();
+    return getSymbolTableMultiModal(lib, objdirs, perfFront);
   };
 }
 

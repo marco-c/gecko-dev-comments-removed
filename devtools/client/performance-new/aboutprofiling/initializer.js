@@ -104,7 +104,10 @@ async function gInit(perfFront, pageContext, openRemoteDevTools) {
 
       
       
-      getSymbolTableGetter: () => getSymbolsFromThisBrowser,
+      getSymbolTableGetter: () => {
+        return (debugName, breakpadId) =>
+          getSymbolsFromThisBrowser(pageContext, debugName, breakpadId);
+      },
       pageContext,
       openRemoteDevTools,
     })
