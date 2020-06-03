@@ -79,6 +79,10 @@ startupRecorder.prototype = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
 
   record(name) {
+    if (!Services.prefs.getBoolPref("browser.startup.record", false)) {
+      return;
+    }
+
     Services.profiler.AddMarker("startupRecorder:" + name);
     this.data.code[name] = {
       components: Cu.loadedComponents,
@@ -98,12 +102,6 @@ startupRecorder.prototype = {
 
   observe(subject, topic, data) {
     if (topic == "app-startup") {
-      if (!Services.prefs.getBoolPref("browser.startup.record", false)) {
-        this._resolve();
-        this._resolve = null;
-        return;
-      }
-
       
       
       
@@ -114,7 +112,6 @@ startupRecorder.prototype = {
         "image-drawing",
         firstPaintNotification,
         "sessionstore-windows-restored",
-        "browser-startup-idle-tasks-finished",
       ];
       for (let t of topics) {
         Services.obs.addObserver(this, t);
@@ -148,7 +145,10 @@ startupRecorder.prototype = {
 
     Services.obs.removeObserver(this, topic);
 
-    if (topic == firstPaintNotification) {
+    if (
+      topic == firstPaintNotification &&
+      Services.prefs.getBoolPref("browser.startup.record", false)
+    ) {
       
       
       win = subject;
@@ -162,45 +162,63 @@ startupRecorder.prototype = {
     }
 
     if (topic == "sessionstore-windows-restored") {
+      if (!Services.prefs.getBoolPref("browser.startup.record", false)) {
+        this._resolve();
+        this._resolve = null;
+        return;
+      }
+
       
       
       
       Services.tm.dispatchToMainThread(
         this.record.bind(this, "before handling user events")
       );
-    } else if (topic == "browser-startup-idle-tasks-finished") {
-      this.record("before becoming idle");
-      Services.obs.removeObserver(this, "image-drawing");
-      Services.obs.removeObserver(this, "image-loading");
-      win.removeEventListener("MozAfterPaint", afterPaintListener);
-      win = null;
-      this.data.frames = paints;
-      this.data.prefStats = {};
-      if (AppConstants.DEBUG) {
-        Services.prefs.readStats(
-          (key, value) => (this.data.prefStats[key] = value)
+
+      
+      
+      (function waitForIdle(callback, count = 10) {
+        if (count) {
+          Services.tm.idleDispatchToMainThread(() =>
+            waitForIdle(callback, count - 1)
+          );
+        } else {
+          callback();
+        }
+      })(() => {
+        this.record("before becoming idle");
+        Services.obs.removeObserver(this, "image-drawing");
+        Services.obs.removeObserver(this, "image-loading");
+        win.removeEventListener("MozAfterPaint", afterPaintListener);
+        win = null;
+        this.data.frames = paints;
+        this.data.prefStats = {};
+        if (AppConstants.DEBUG) {
+          Services.prefs.readStats(
+            (key, value) => (this.data.prefStats[key] = value)
+          );
+        }
+        paints = null;
+
+        let env = Cc["@mozilla.org/process/environment;1"].getService(
+          Ci.nsIEnvironment
         );
-      }
-      paints = null;
+        if (!env.exists("MOZ_PROFILER_STARTUP")) {
+          this._resolve();
+          this._resolve = null;
+          return;
+        }
 
-      let env = Cc["@mozilla.org/process/environment;1"].getService(
-        Ci.nsIEnvironment
-      );
-      if (!env.exists("MOZ_PROFILER_STARTUP")) {
-        this._resolve();
-        this._resolve = null;
-        return;
-      }
+        Services.profiler.getProfileDataAsync().then(profileData => {
+          this.data.profile = profileData;
+          
+          
+          
+          Services.profiler.StopProfiler();
 
-      Services.profiler.getProfileDataAsync().then(profileData => {
-        this.data.profile = profileData;
-        
-        
-        
-        Services.profiler.StopProfiler();
-
-        this._resolve();
-        this._resolve = null;
+          this._resolve();
+          this._resolve = null;
+        });
       });
     } else {
       const topicsToNames = {

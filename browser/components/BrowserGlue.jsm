@@ -2385,6 +2385,13 @@ BrowserGlue.prototype = {
       
       {
         task: () => {
+          Services.obs.notifyObservers(null, "marionette-startup-requested");
+        },
+      },
+
+      
+      {
+        task: () => {
           let enabledPref = "doh-rollout.trrRace.enabled";
           let completePref = "doh-rollout.trrRace.complete";
 
@@ -2409,22 +2416,6 @@ BrowserGlue.prototype = {
           }
         },
       },
-
-      
-      {
-        task: () => {
-          
-          
-          ChromeUtils.idleDispatch(() => {
-            Services.obs.notifyObservers(
-              null,
-              "browser-startup-idle-tasks-finished"
-            );
-            Services.obs.notifyObservers(null, "marionette-startup-requested");
-          });
-        },
-      },
-      
     ];
 
     for (let task of idleTasks) {
