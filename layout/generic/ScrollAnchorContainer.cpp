@@ -366,6 +366,20 @@ void ScrollAnchorContainer::AdjustmentMade(nscoord aAdjustment) {
 void ScrollAnchorContainer::SuppressAdjustments() {
   ANCHOR_LOG("Received a scroll anchor suppression for %p.\n", this);
   mSuppressAnchorAdjustment = true;
+
+  
+  
+  
+  
+  
+  
+  
+  if (!mAnchorNode && !CanMaintainAnchor()) {
+    if (ScrollAnchorContainer* container = FindFor(Frame())) {
+      ANCHOR_LOG(" > Forwarding to parent anchor\n");
+      container->SuppressAdjustments();
+    }
+  }
 }
 
 void ScrollAnchorContainer::InvalidateAnchor(ScheduleSelection aSchedule) {
@@ -374,6 +388,7 @@ void ScrollAnchorContainer::InvalidateAnchor(ScheduleSelection aSchedule) {
   if (mAnchorNode) {
     SetAnchorFlags(mScrollFrame->mScrolledFrame, mAnchorNode, false);
   } else if (mScrollFrame->mScrolledFrame->IsInScrollAnchorChain()) {
+    ANCHOR_LOG(" > Forwarding to parent anchor\n");
     
     
     
