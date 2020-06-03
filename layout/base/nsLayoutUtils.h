@@ -3167,12 +3167,13 @@ template <typename SizeType>
   
   
   
-  float ratio = (float)sizeForViewportUnits.height / sizeForViewportUnits.width;
+  float vhExpansionRatio = (float)sizeForViewportUnits.height /
+                           aPresContext->GetVisibleArea().height;
 
-  MOZ_ASSERT(aSize.height <=
-             NSCoordSaturatingNonnegativeMultiply(aSize.width, ratio));
-  return SizeType(aSize.width,
-                  NSCoordSaturatingNonnegativeMultiply(aSize.width, ratio));
+  MOZ_ASSERT(aSize.height <= NSCoordSaturatingNonnegativeMultiply(
+                                 aSize.height, vhExpansionRatio));
+  return SizeType(aSize.width, NSCoordSaturatingNonnegativeMultiply(
+                                   aSize.height, vhExpansionRatio));
 }
 
 template <typename T>

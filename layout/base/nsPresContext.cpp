@@ -252,6 +252,12 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
   
   
   mFontStats = MakeUnique<FontMatchingStats>();
+
+  if (StaticPrefs::layout_dynamic_toolbar_max_height() > 0) {
+    
+    
+    mDynamicToolbarMaxHeight = StaticPrefs::layout_dynamic_toolbar_max_height();
+  }
 }
 
 static const char* gExactCallbackPrefs[] = {
