@@ -808,10 +808,8 @@ class HTMLInputElement final : public TextControlElement,
 
   bool MozIsTextField(bool aExcludePassword);
 
+  MOZ_CAN_RUN_SCRIPT nsIEditor* GetEditorForBindings();
   
-
-
-  MOZ_CAN_RUN_SCRIPT nsIEditor* GetEditor();
   bool HasEditor();
 
   bool IsInputEventTarget() const { return IsSingleLineTextControl(false); }

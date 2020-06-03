@@ -271,10 +271,7 @@ class HTMLTextAreaElement final : public TextControlElement,
   
   nsresult GetControllers(nsIControllers** aResult);
 
-  MOZ_CAN_RUN_SCRIPT nsIEditor* GetEditor() {
-    MOZ_ASSERT(mState);
-    return mState->GetTextEditor();
-  }
+  MOZ_CAN_RUN_SCRIPT nsIEditor* GetEditorForBindings();
   bool HasEditor() {
     MOZ_ASSERT(mState);
     return !!mState->GetTextEditorWithoutCreation();

@@ -2240,7 +2240,13 @@ void HTMLInputElement::SetUserInput(const nsAString& aValue,
   }
 }
 
-nsIEditor* HTMLInputElement::GetEditor() { return GetTextEditorFromState(); }
+nsIEditor* HTMLInputElement::GetEditorForBindings() {
+  if (!GetPrimaryFrame()) {
+    
+    GetPrimaryFrame(FlushType::Frames);
+  }
+  return GetTextEditorFromState();
+}
 
 bool HTMLInputElement::HasEditor() { return !!GetTextEditorWithoutCreation(); }
 
