@@ -4,6 +4,7 @@
 
 
 #include "nsISupports.idl"
+#include "nsICookie.idl"
 
 %{ C++
 namespace mozilla {
@@ -12,9 +13,6 @@ class OriginAttributes;
 %}
 
 [ptr] native OriginAttributesPtr(mozilla::OriginAttributes);
-
-interface nsICookie;
-interface nsIFile;
 
 
 
@@ -127,7 +125,8 @@ interface nsICookieManager : nsISupports
            in boolean     aIsSession,
            in int64_t     aExpiry,
            in jsval aOriginAttributes,
-           in int32_t aSameSite);
+           in int32_t aSameSite,
+           in nsICookie_schemeType aSchemeMap);
 
   [notxpcom]
   nsresult addNative(in AUTF8String aHost,
@@ -139,7 +138,8 @@ interface nsICookieManager : nsISupports
                      in boolean     aIsSession,
                      in int64_t     aExpiry,
                      in OriginAttributesPtr aOriginAttributes,
-                     in int32_t aSameSite);
+                     in int32_t aSameSite,
+                     in nsICookie_schemeType aSchemeMap);
 
   
 
