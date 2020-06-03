@@ -425,16 +425,12 @@ class MachCommands(MachCommandBase):
 
         overall = None
         for (flavor, subsuite), tests in sorted(suites.items()):
-            suite_name, suite = get_suite_definition(flavor, subsuite)
+            _, suite = get_suite_definition(flavor, subsuite)
             if 'test_paths' in suite['kwargs']:
                 del suite['kwargs']['test_paths']
 
             harness_args = kwargs.copy()
             harness_args.update(suite['kwargs'])
-            
-            
-            
-            harness_args.update({'suite_name': suite_name})
 
             result = run_mochitest(
                 self._mach_context,

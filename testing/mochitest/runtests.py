@@ -1494,11 +1494,8 @@ toolbar#nav-bar {
                         self.log.error("runtime file %s not found!" % runtime_file)
                         sys.exit(1)
 
-                    
-                    
                     with open(runtime_file, 'r') as f:
-                        runtimes = json.load(f).get(options.suite_name, {})
-
+                        runtimes = json.loads(f.read())
                     filters.append(
                         chunk_by_runtime(options.thisChunk,
                                          options.totalChunks,
