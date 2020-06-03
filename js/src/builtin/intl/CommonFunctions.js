@@ -706,6 +706,7 @@ function initializeIntlObject(obj, type, lazyData) {
     assert(IsObject(obj), "Non-object passed to initializeIntlObject");
     assert((type === "Collator" && GuardToCollator(obj) !== null) ||
            (type === "DateTimeFormat" && GuardToDateTimeFormat(obj) !== null) ||
+           (type === "DisplayNames" && GuardToDisplayNames(obj) !== null) ||
            (type === "ListFormat" && GuardToListFormat(obj) !== null) ||
            (type === "NumberFormat" && GuardToNumberFormat(obj) !== null) ||
            (type === "PluralRules" && GuardToPluralRules(obj) !== null) ||
@@ -713,6 +714,12 @@ function initializeIntlObject(obj, type, lazyData) {
            "type must match the object's class");
     assert(IsObject(lazyData), "non-object lazy data");
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -775,6 +782,7 @@ function getIntlObjectInternals(obj) {
     assert(IsObject(obj), "getIntlObjectInternals called with non-Object");
     assert(GuardToCollator(obj) !== null ||
            GuardToDateTimeFormat(obj) !== null ||
+           GuardToDisplayNames(obj) !== null ||
            GuardToListFormat(obj) !== null ||
            GuardToNumberFormat(obj) !== null ||
            GuardToPluralRules(obj) !== null ||
@@ -787,6 +795,7 @@ function getIntlObjectInternals(obj) {
     assert(hasOwn("type", internals), "missing type");
     assert((internals.type === "Collator" && GuardToCollator(obj) !== null) ||
            (internals.type === "DateTimeFormat" && GuardToDateTimeFormat(obj) !== null) ||
+           (internals.type === "DisplayNames" && GuardToDisplayNames(obj) !== null) ||
            (internals.type === "ListFormat" && GuardToListFormat(obj) !== null) ||
            (internals.type === "NumberFormat" && GuardToNumberFormat(obj) !== null) ||
            (internals.type === "PluralRules" && GuardToPluralRules(obj) !== null) ||
@@ -816,6 +825,8 @@ function getInternals(obj) {
         internalProps = resolveCollatorInternals(internals.lazyData);
     else if (type === "DateTimeFormat")
         internalProps = resolveDateTimeFormatInternals(internals.lazyData);
+    else if (type === "DisplayNames")
+      internalProps = resolveDisplayNamesInternals(internals.lazyData);
     else if (type === "ListFormat")
         internalProps = resolveListFormatInternals(internals.lazyData);
     else if (type === "NumberFormat")
