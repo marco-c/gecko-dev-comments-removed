@@ -95,7 +95,7 @@
 
 
 use api::{MixBlendMode, PipelineId, PremultipliedColorF, FilterPrimitiveKind};
-use api::{PropertyBinding, PropertyBindingId, FilterPrimitive, FontRenderMode};
+use api::{PropertyBinding, PropertyBindingId, FilterPrimitive};
 use api::{DebugFlags, RasterSpace, ImageKey, ColorF, ColorU, PrimitiveFlags};
 use api::{ImageRendering, ColorDepth, YuvColorSpace, YuvFormat};
 use api::units::*;
@@ -185,6 +185,7 @@ pub enum SubpixelMode {
     
     
     Conditional {
+        allowed_rect: PictureRect,
         excluded_rects: Vec<PictureRect>,
     },
 }
@@ -2484,7 +2485,6 @@ impl TileCacheInstance {
         
         
         self.backdrop = BackdropInfo::empty();
-        self.subpixel_mode = SubpixelMode::Allow;
 
         self.map_local_to_surface = SpaceMapper::new(
             self.spatial_node_index,
@@ -3476,29 +3476,6 @@ impl TileCacheInstance {
                     generation: resource_cache.get_image_generation(border_data.request.key),
                 });
             }
-            PrimitiveInstanceKind::TextRun { data_handle, .. } => {
-                
-                
-                if self.subpixel_mode == SubpixelMode::Allow && !self.is_opaque() {
-                    let run_data = &data_stores.text_run[data_handle];
-
-                    
-                    
-                    
-                    let subpx_requested = match run_data.font.render_mode {
-                        FontRenderMode::Subpixel => true,
-                        FontRenderMode::Alpha | FontRenderMode::Mono => false,
-                    };
-
-                    
-                    
-                    if on_picture_surface
-                        && subpx_requested
-                        && !self.backdrop.opaque_rect.contains_rect(&pic_clip_rect) {
-                        self.subpixel_mode = SubpixelMode::Deny;
-                    }
-                }
-            }
             PrimitiveInstanceKind::Clear { .. } => {
                 backdrop_candidate = Some(BackdropInfo {
                     opaque_rect: pic_clip_rect,
@@ -3540,6 +3517,7 @@ impl TileCacheInstance {
             }
             PrimitiveInstanceKind::LineDecoration { .. } |
             PrimitiveInstanceKind::NormalBorder { .. } |
+            PrimitiveInstanceKind::TextRun { .. } |
             PrimitiveInstanceKind::Backdrop { .. } => {
                 
             }
@@ -3659,6 +3637,47 @@ impl TileCacheInstance {
         pt.end_level();
     }
 
+    fn calculate_subpixel_mode(&self) -> SubpixelMode {
+        
+        if self.is_opaque() {
+            return SubpixelMode::Allow;
+        }
+
+        
+        if !self.backdrop.opaque_rect.is_well_formed_and_nonempty() {
+            return SubpixelMode::Deny;
+        }
+
+        
+        
+        
+        if self.backdrop.opaque_rect.contains_rect(&self.local_rect) {
+            return SubpixelMode::Allow;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        let excluded_rects = self.external_surfaces
+            .iter()
+            .map(|s| {
+                s.local_rect
+            })
+            .collect();
+
+        SubpixelMode::Conditional {
+            allowed_rect: self.backdrop.opaque_rect,
+            excluded_rects,
+        }
+    }
+
     
     
     
@@ -3668,27 +3687,7 @@ impl TileCacheInstance {
         frame_state: &mut FrameVisibilityState,
     ) {
         self.dirty_region.clear();
-
-        
-        
-        
-        
-        
-        
-        
-        
-        if !self.external_surfaces.is_empty() && self.subpixel_mode == SubpixelMode::Allow {
-            let excluded_rects = self.external_surfaces
-                .iter()
-                .map(|s| {
-                    s.local_rect
-                })
-                .collect();
-
-            self.subpixel_mode = SubpixelMode::Conditional {
-                excluded_rects,
-            };
-        }
+        self.subpixel_mode = self.calculate_subpixel_mode();
 
         let map_pic_to_world = SpaceMapper::new_with_target(
             ROOT_SPATIAL_NODE_INDEX,
@@ -5689,15 +5688,17 @@ impl PicturePrimitive {
                 
                 SubpixelMode::Allow
             }
-            (SubpixelMode::Allow, SubpixelMode::Conditional { excluded_rects }) => {
+            (SubpixelMode::Allow, SubpixelMode::Conditional { allowed_rect, excluded_rects }) => {
                 
                 SubpixelMode::Conditional {
-                    excluded_rects: excluded_rects,
+                    allowed_rect,
+                    excluded_rects,
                 }
             }
-            (SubpixelMode::Conditional { excluded_rects }, SubpixelMode::Allow) => {
+            (SubpixelMode::Conditional { allowed_rect, excluded_rects }, SubpixelMode::Allow) => {
                 
                 SubpixelMode::Conditional {
+                    allowed_rect: *allowed_rect,
                     excluded_rects: excluded_rects.clone(),
                 }
             }

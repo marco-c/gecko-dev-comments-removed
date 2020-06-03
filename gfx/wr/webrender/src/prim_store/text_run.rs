@@ -330,10 +330,11 @@ impl TextRunPrimitive {
         let mut allow_subpixel = match subpixel_mode {
             SubpixelMode::Allow => true,
             SubpixelMode::Deny => false,
-            SubpixelMode::Conditional { excluded_rects } => {
+            SubpixelMode::Conditional { allowed_rect, excluded_rects } => {
                 
                 
                 
+                allowed_rect.contains_rect(&prim_rect) &&
                 excluded_rects.iter().all(|rect| !rect.intersects(&prim_rect))
             }
         };
