@@ -351,6 +351,9 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
             pendingSearchSetupTasks.get(extension.id) === searchStartupPromise
           ) {
             pendingSearchSetupTasks.delete(extension.id);
+            
+            
+            ExtensionParent.apiManager.emit("searchEngineProcessed", extension);
           }
         }
       );
