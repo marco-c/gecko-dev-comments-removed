@@ -131,11 +131,8 @@ class SharedContext {
 
  public:
   
+  
   SourceExtent extent = {};
-
-  
-  
-  mozilla::Maybe<SourceExtent> scriptExtent = {};
 
  protected:
   
@@ -242,8 +239,6 @@ class SharedContext {
     localStrict = strict;
     return retVal;
   }
-
-  SourceExtent getScriptExtent() { return scriptExtent.refOr(extent); }
 };
 
 class MOZ_STACK_CLASS GlobalSharedContext : public SharedContext {
@@ -291,7 +286,8 @@ inline EvalSharedContext* SharedContext::asEvalContext() {
   return static_cast<EvalSharedContext*>(this);
 }
 
-enum class HasHeritage : bool { No, Yes };
+enum class HasHeritage { No, Yes };
+enum class TopLevelFunction { No, Yes };
 
 class FunctionBox : public SharedContext {
   friend struct GCThingList;

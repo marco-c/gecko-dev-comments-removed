@@ -100,6 +100,11 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
 
   
   
+  JS::Rooted<ScriptStencil> topLevel;
+  SourceExtent topLevelExtent = {};
+
+  
+  
   
   
   
@@ -140,6 +145,7 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
         bigIntData(cx),
         functions(cx),
         funcData(cx),
+        topLevel(cx),
         scopeCreationData(cx),
         sourceObject(cx) {}
 
@@ -156,7 +162,7 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
   }
 
   MOZ_MUST_USE bool publishDeferredFunctions();
-  void finishFunctions();
+  MOZ_MUST_USE bool instantiateStencils();
 
   void trace(JSTracer* trc) final;
 

@@ -1896,13 +1896,72 @@ bool CompilationInfo::publishDeferredFunctions() {
   return true;
 }
 
-void CompilationInfo::finishFunctions() {
+
+
+
+static bool InstantiateScriptStencils(JSContext* cx,
+                                      CompilationInfo& compilationInfo,
+                                      FunctionBox* listHead) {
+  for (FunctionBox* funbox = listHead; funbox; funbox = funbox->traceLink()) {
+    if (!funbox->emitBytecode) {
+      continue;
+    }
+
+    
+    
+    if (!funbox->wasEmitted) {
+      continue;
+    }
+
+    RootedScript script(
+        cx,
+        JSScript::fromStencil(cx, compilationInfo,
+                              funbox->functionStencil().get(), funbox->extent));
+    if (!script) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+
+static bool InstantiateTopLevel(JSContext* cx,
+                                CompilationInfo& compilationInfo) {
+  ScriptStencil& stencil = compilationInfo.topLevel.get();
+  MOZ_ASSERT(stencil.immutableScriptData);
+
+  if (compilationInfo.lazy) {
+    compilationInfo.script = JSScript::CastFromLazy(compilationInfo.lazy);
+    return JSScript::fullyInitFromStencil(cx, compilationInfo,
+                                          compilationInfo.script, stencil);
+  }
+
+  compilationInfo.script = JSScript::fromStencil(
+      cx, compilationInfo, stencil, compilationInfo.topLevelExtent);
+  return !!compilationInfo.script;
+}
+
+bool CompilationInfo::instantiateStencils() {
+  if (!InstantiateScriptStencils(cx, *this, traceListHead)) {
+    return false;
+  }
+
+  if (!InstantiateTopLevel(cx, *this)) {
+    return false;
+  }
+
+  
+
   for (FunctionBox* funbox = traceListHead; funbox;
        funbox = funbox->traceLink()) {
     if (funbox->wasEmitted) {
       funbox->finish();
     }
   }
+
+  return true;
 }
 
 static YieldHandling GetYieldHandling(GeneratorKind generatorKind) {

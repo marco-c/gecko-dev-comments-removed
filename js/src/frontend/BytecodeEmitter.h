@@ -79,17 +79,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   BytecodeEmitter* const parent = nullptr;
 
-  
-  JS::Rooted<JSScript*> outputScript;
-
- public:
-  
-  JSScript* getResultScript() {
-    MOZ_ASSERT(outputScript);
-    return outputScript;
-  }
-
- private:
   BytecodeSection bytecodeSection_;
 
  public:
@@ -374,7 +363,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool getNslots(uint32_t* nslots);
 
   
-  enum class TopLevelFunction { No, Yes };
   MOZ_MUST_USE bool emitFunctionScript(FunctionNode* funNode,
                                        TopLevelFunction isTopLevel);
 
