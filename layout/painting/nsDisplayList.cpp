@@ -7986,7 +7986,9 @@ bool nsDisplayTransform::CreateWebRenderCommands(
     
     
     
-    position.Round();
+    if (nsLayoutUtils::ShouldSnapToGrid(mFrame)) {
+      position.Round();
+    }
   }
 
   

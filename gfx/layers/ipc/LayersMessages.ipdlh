@@ -167,8 +167,6 @@ struct TransformData {
   float inheritedYScale;
   
   bool hasPerspectiveParent;
-  
-  bool snapToGrid;
   MotionPathData? motionPathData;
 };
 
