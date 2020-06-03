@@ -713,7 +713,7 @@ function getGlobalIndicator() {
   if (!webrtcUI.useLegacyGlobalIndicator) {
     const INDICATOR_CHROME_URI =
       "chrome://browser/content/webrtcIndicator.xhtml";
-    let features = "chrome,titlebar=yes,alwaysontop,minimizable=yes";
+    let features = "chrome,titlebar=no,alwaysontop,minimizable=yes,popup=yes";
 
     
     if (!AppConstants.MOZ_WIDGET_GTK) {
