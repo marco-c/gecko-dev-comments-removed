@@ -4884,9 +4884,6 @@ AttachDecision CallIRGenerator::tryAttachArrayPush(HandleFunction callee) {
   Int32OperandId argcId(writer.setInputOperandId(0));
 
   
-  writer.guardSpecificInt32Immediate(argcId, 1);
-
-  
   emitNativeCalleeGuard(callee);
 
   
@@ -4958,6 +4955,8 @@ AttachDecision CallIRGenerator::tryAttachArrayJoin(HandleFunction callee) {
   }
 
   
+  
+
   
 
   
@@ -5040,7 +5039,6 @@ AttachDecision CallIRGenerator::tryAttachStringChar(HandleFunction callee,
 
   
   Int32OperandId argcId(writer.setInputOperandId(0));
-  writer.guardSpecificInt32Immediate(argcId, 1);
 
   
   emitNativeCalleeGuard(callee);
