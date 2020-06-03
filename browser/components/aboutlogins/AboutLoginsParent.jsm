@@ -354,7 +354,7 @@ class AboutLoginsParent extends JSWindowActorParent {
             return;
           }
           if (!token.hasPassword && OS_AUTH_ENABLED) {
-            let messageText = { value: "" };
+            let messageText = { value: "NOT SUPPORTED" };
             let captionText = { value: "" };
             
             
