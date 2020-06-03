@@ -139,7 +139,8 @@ class TimeoutManager final {
 
  private:
   struct Timeouts {
-    explicit Timeouts(const TimeoutManager& aManager) : mManager(aManager) {}
+    explicit Timeouts(const TimeoutManager& aManager)
+        : mManager(aManager), mTimeouts(new Timeout::TimeoutSet()) {}
 
     
     
@@ -152,9 +153,18 @@ class TimeoutManager final {
     const Timeout* GetLast() const { return mTimeoutList.getLast(); }
     Timeout* GetLast() { return mTimeoutList.getLast(); }
     bool IsEmpty() const { return mTimeoutList.isEmpty(); }
-    void InsertFront(Timeout* aTimeout) { mTimeoutList.insertFront(aTimeout); }
-    void InsertBack(Timeout* aTimeout) { mTimeoutList.insertBack(aTimeout); }
-    void Clear() { mTimeoutList.clear(); }
+    void InsertFront(Timeout* aTimeout) {
+      aTimeout->SetTimeoutContainer(mTimeouts);
+      mTimeoutList.insertFront(aTimeout);
+    }
+    void InsertBack(Timeout* aTimeout) {
+      aTimeout->SetTimeoutContainer(mTimeouts);
+      mTimeoutList.insertBack(aTimeout);
+    }
+    void Clear() {
+      mTimeouts->Clear();
+      mTimeoutList.clear();
+    }
 
     template <class Callable>
     void ForEach(Callable c) {
@@ -176,6 +186,11 @@ class TimeoutManager final {
       return false;
     }
 
+    Timeout* GetTimeout(uint32_t aTimeoutId, Timeout::Reason aReason) {
+      Timeout::TimeoutIdAndReason key = {aTimeoutId, aReason};
+      return mTimeouts->Get(key);
+    }
+
    private:
     
     
@@ -186,6 +201,11 @@ class TimeoutManager final {
     
     
     TimeoutList mTimeoutList;
+
+    
+    
+    
+    RefPtr<Timeout::TimeoutSet> mTimeouts;
   };
 
   
