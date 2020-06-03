@@ -1048,91 +1048,55 @@ class Document : public nsINode,
   
 
 
-  bool GetHasMixedActiveContentLoaded() {
-    return mMixedContentFlags &
-           nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT;
-  }
+  bool GetHasMixedActiveContentLoaded() { return mHasMixedActiveContentLoaded; }
 
   
 
 
   void SetHasMixedActiveContentLoaded(bool aHasMixedActiveContentLoaded) {
-    if (aHasMixedActiveContentLoaded) {
-      mMixedContentFlags |=
-          nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT;
-    } else {
-      mMixedContentFlags &=
-          ~nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT;
-    }
+    mHasMixedActiveContentLoaded = aHasMixedActiveContentLoaded;
   }
 
   
 
 
   bool GetHasMixedActiveContentBlocked() {
-    return mMixedContentFlags &
-           nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT;
+    return mHasMixedActiveContentBlocked;
   }
 
   
 
 
   void SetHasMixedActiveContentBlocked(bool aHasMixedActiveContentBlocked) {
-    if (aHasMixedActiveContentBlocked) {
-      mMixedContentFlags |=
-          nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT;
-    } else {
-      mMixedContentFlags &=
-          ~nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT;
-    }
+    mHasMixedActiveContentBlocked = aHasMixedActiveContentBlocked;
   }
 
   
 
 
   bool GetHasMixedDisplayContentLoaded() {
-    return mMixedContentFlags &
-           nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT;
+    return mHasMixedDisplayContentLoaded;
   }
 
   
 
 
   void SetHasMixedDisplayContentLoaded(bool aHasMixedDisplayContentLoaded) {
-    if (aHasMixedDisplayContentLoaded) {
-      mMixedContentFlags |=
-          nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT;
-    } else {
-      mMixedContentFlags &=
-          ~nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT;
-    }
+    mHasMixedDisplayContentLoaded = aHasMixedDisplayContentLoaded;
   }
 
   
 
 
   bool GetHasMixedDisplayContentBlocked() {
-    return mMixedContentFlags &
-           nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT;
+    return mHasMixedDisplayContentBlocked;
   }
 
   
 
 
   void SetHasMixedDisplayContentBlocked(bool aHasMixedDisplayContentBlocked) {
-    if (aHasMixedDisplayContentBlocked) {
-      mMixedContentFlags |=
-          nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT;
-    } else {
-      mMixedContentFlags &=
-          ~nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT;
-    }
-  }
-
-  uint32_t GetMixedContentFlags() const { return mMixedContentFlags; }
-
-  void AddMixedContentFlags(uint32_t aMixedContentFlags) {
-    mMixedContentFlags |= aMixedContentFlags;
+    mHasMixedDisplayContentBlocked = aHasMixedDisplayContentBlocked;
   }
 
   
@@ -4380,8 +4344,6 @@ class Document : public nsINode,
   
   RefPtr<PermissionDelegateHandler> mPermissionDelegateHandler;
 
-  uint32_t mMixedContentFlags = 0;
-
   
   bool mBidiEnabled : 1;
   
@@ -4474,6 +4436,22 @@ class Document : public nsINode,
   
   
   bool mMayHaveAnimationObservers : 1;
+
+  
+  
+  bool mHasMixedActiveContentLoaded : 1;
+
+  
+  
+  bool mHasMixedActiveContentBlocked : 1;
+
+  
+  
+  bool mHasMixedDisplayContentLoaded : 1;
+
+  
+  
+  bool mHasMixedDisplayContentBlocked : 1;
 
   
   bool mHasCSP : 1;
