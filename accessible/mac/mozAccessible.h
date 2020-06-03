@@ -154,8 +154,7 @@ static const uintptr_t IS_PROXY = 1;
 
 
 
-
-- (BOOL)accessibilityIsIgnored;
+- (BOOL)isAccessibilityElement;
 
 
 - (id)accessibilityHitTest:(NSPoint)point;

@@ -341,7 +341,7 @@ nsresult xpcAccessibleMacInterface::NSObjectToJsValue(id aObj, JSContext* aCx,
     return NSObjectToJsValue(
         @[ [NSNumber numberWithDouble:size.width], [NSNumber numberWithDouble:size.height] ], aCx,
         aResult);
-  } else if ([aObj respondsToSelector:@selector(accessibilityIsIgnored)]) {
+  } else if ([aObj respondsToSelector:@selector(isAccessibilityElement)]) {
     
     
     nsCOMPtr<nsIAccessibleMacInterface> obj = new xpcAccessibleMacInterface(aObj);

@@ -43,7 +43,7 @@
 - (id)accessibilityHitTest:(NSPoint)point;
 
 
-- (BOOL)accessibilityIsIgnored;
+- (BOOL)isAccessibilityElement;
 
 
 - (id)accessibilityFocusedUIElement;
