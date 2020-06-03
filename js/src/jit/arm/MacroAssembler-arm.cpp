@@ -5765,6 +5765,16 @@ void MacroAssembler::speculationBarrier() {
   as_csdb();
 }
 
+void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
+                                         FloatRegister temp, Label* fail) {
+  roundf(src, dest, fail, temp);
+}
+
+void MacroAssembler::roundDoubleToInt32(FloatRegister src, Register dest,
+                                        FloatRegister temp, Label* fail) {
+  round(src, dest, fail, temp);
+}
+
 
 
 void MacroAssemblerARM::wasmTruncateToInt32(FloatRegister input,
