@@ -1,7 +1,6 @@
 "use strict";
 
-const TEST_HTTP_URL = "http://example.com";
-const TEST_HTTPS_URL = "https://example.com";
+const TEST_URL = "http://example.com";
 const MAX_EXPIRY = Math.pow(2, 62);
 
 function getSingleCookie() {
@@ -10,7 +9,7 @@ function getSingleCookie() {
   return cookies[0];
 }
 
-async function verifyRestore(url, sameSiteSetting) {
+async function verifyRestore(sameSiteSetting) {
   Services.cookies.removeAll();
 
   
@@ -19,13 +18,13 @@ async function verifyRestore(url, sameSiteSetting) {
     set: [["browser.sessionstore.interval", 0]],
   });
 
-  let tab = BrowserTestUtils.addTab(gBrowser, url);
+  let tab = BrowserTestUtils.addTab(gBrowser, TEST_URL);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   
   let r = Math.floor(Math.random() * MAX_EXPIRY);
   Services.cookies.add(
-    url,
+    TEST_URL,
     "/",
     "name" + r,
     "value" + r,
@@ -34,10 +33,7 @@ async function verifyRestore(url, sameSiteSetting) {
     true,
     MAX_EXPIRY,
     {},
-    sameSiteSetting,
-    url.startsWith("https:")
-      ? Ci.nsICookie.SCHEME_HTTPS
-      : Ci.nsICookie.SCHEME_HTTP
+    sameSiteSetting
   );
   await TabStateFlusher.flush(tab.linkedBrowser);
 
@@ -62,12 +58,6 @@ async function verifyRestore(url, sameSiteSetting) {
     "cookie same-site flag successfully restored"
   );
 
-  is(
-    cookie2.schemeMap,
-    cookie.schemeMap,
-    "cookie schemeMap flag successfully restored"
-  );
-
   
   Services.cookies.removeAll();
   BrowserTestUtils.removeTab(gBrowser.tabs[1]);
@@ -79,11 +69,7 @@ async function verifyRestore(url, sameSiteSetting) {
 
 add_task(async function() {
   
-  await verifyRestore(TEST_HTTP_URL, Ci.nsICookie.SAMESITE_NONE);
-  await verifyRestore(TEST_HTTP_URL, Ci.nsICookie.SAMESITE_LAX);
-  await verifyRestore(TEST_HTTP_URL, Ci.nsICookie.SAMESITE_STRICT);
-
-  await verifyRestore(TEST_HTTPS_URL, Ci.nsICookie.SAMESITE_NONE);
-  await verifyRestore(TEST_HTTPS_URL, Ci.nsICookie.SAMESITE_LAX);
-  await verifyRestore(TEST_HTTPS_URL, Ci.nsICookie.SAMESITE_STRICT);
+  await verifyRestore(Ci.nsICookie.SAMESITE_NONE);
+  await verifyRestore(Ci.nsICookie.SAMESITE_LAX);
+  await verifyRestore(Ci.nsICookie.SAMESITE_STRICT);
 });
