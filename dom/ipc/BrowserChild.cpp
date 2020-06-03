@@ -1465,10 +1465,10 @@ mozilla::ipc::IPCResult BrowserChild::RecvMouseEvent(
   
   RefPtr<BrowserChild> kungFuDeathGrip(this);
   RefPtr<PresShell> presShell = GetTopLevelPresShell();
-  APZCCallbackHelper::DispatchMouseEvent(
-      presShell, aType, CSSPoint(aX, aY), aButton, aClickCount, aModifiers,
-      false, MouseEvent_Binding::MOZ_SOURCE_UNKNOWN,
-      0 );
+  APZCCallbackHelper::DispatchMouseEvent(presShell, aType, CSSPoint(aX, aY),
+                                         aButton, aClickCount, aModifiers,
+                                         MouseEvent_Binding::MOZ_SOURCE_UNKNOWN,
+                                         0 );
   return IPC_OK();
 }
 
