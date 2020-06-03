@@ -3405,6 +3405,9 @@ class Document : public nsINode,
   
   bool FullscreenEnabled(CallerType aCallerType);
   Element* GetTopLayerTop();
+
+  bool DoesTopLayerContain(const Element* aElement) const;
+
   
   Element* GetUnretargetedFullScreenElement();
   bool Fullscreen() { return !!GetFullscreenElement(); }
