@@ -308,16 +308,31 @@ function listenForSSRCs(t, receiver) {
 
 
 
-async function createDataChannelPair(
-  pc1 = new RTCPeerConnection(),
-  pc2 = new RTCPeerConnection()) {
-  const pair = [pc1, pc2].map(pc =>
-      pc.createDataChannel('', {negotiated: true, id: 0}));
-  const bothOpen = Promise.all(pair.map(dc => new Promise((r, e) => {
-    dc.onopen = r;
-    dc.onerror = ({error}) => e(error);
-  })));
+async function createDataChannelPair(t, options,
+                                     pc1 = createPeerConnectionWithCleanup(t),
+                                     pc2 = createPeerConnectionWithCleanup(t)) {
+  let pair = [], bothOpen;
   try {
+    if (options.negotiated) {
+      pair = [pc1, pc2].map(pc => pc.createDataChannel('', options));
+      bothOpen = Promise.all(pair.map(dc => new Promise((r, e) => {
+        dc.onopen = r;
+        dc.onerror = ({error}) => e(error);
+      })));
+    } else {
+      pair = [pc1.createDataChannel('', options)];
+      bothOpen = Promise.all([
+        new Promise((r, e) => {
+          pair[0].onopen = r;
+          pair[0].onerror = ({error}) => e(error);
+        }),
+        new Promise((r, e) => pc2.ondatachannel = ({channel}) => {
+          pair[1] = channel;
+          channel.onopen = r;
+          channel.onerror = ({error}) => e(error);
+        })
+      ]);
+    }
     exchangeIceCandidates(pc1, pc2);
     await exchangeOfferAnswer(pc1, pc2);
     await bothOpen;
