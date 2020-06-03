@@ -739,7 +739,7 @@ bool profiler_is_locked_on_current_thread();
 
 MFBT_API void profiler_add_marker_for_thread(
     int aThreadId, ProfilingCategoryPair aCategoryPair, const char* aMarkerName,
-    UniquePtr<ProfilerMarkerPayload> aPayload);
+    const ProfilerMarkerPayload& aPayload);
 
 enum TracingKind {
   TRACING_EVENT,
