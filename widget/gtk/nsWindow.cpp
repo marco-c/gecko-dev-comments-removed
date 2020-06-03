@@ -7873,7 +7873,8 @@ bool nsWindow::HideTitlebarByDefault() {
   if (hideTitlebar) {
     hideTitlebar =
         (strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr ||
-         strstr(currentDesktop, "GNOME") != nullptr);
+         strstr(currentDesktop, "GNOME") != nullptr ||
+         strstr(currentDesktop, "Pantheon") != nullptr);
   }
 
   
