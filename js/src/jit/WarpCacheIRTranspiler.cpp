@@ -1046,7 +1046,7 @@ bool WarpCacheIRTranspiler::emitArrayPush(ObjOperandId objId,
 bool WarpCacheIRTranspiler::emitLoadArgumentFixedSlot(ValOperandId resultId,
                                                       uint8_t slotIndex) {
   
-  MOZ_ASSERT(loc_.is(JSOp::Call) || loc_.is(JSOp::CallIgnoresRv));
+  MOZ_ASSERT(!loc_.isSpreadOp());
 
   
   
@@ -1103,6 +1103,9 @@ bool WarpCacheIRTranspiler::emitCallNativeFunction(ObjOperandId calleeId,
 #  endif
 
   
+  MOZ_ASSERT(flags.getArgFormat() == CallFlags::Standard);
+
+  
   
   
   
@@ -1140,6 +1143,12 @@ bool WarpCacheIRTranspiler::emitCallNativeFunction(ObjOperandId calleeId,
   return resumeAfter(call);
 }
 #endif
+
+bool WarpCacheIRTranspiler::emitMetaTwoByte(MetaTwoByteKind kind,
+                                            uint32_t functionObjectOffset,
+                                            uint32_t templateObjectOffset) {
+  return true;
+}
 
 bool WarpCacheIRTranspiler::emitTypeMonitorResult() {
   MOZ_ASSERT(pushedResult_, "Didn't push result MDefinition");
