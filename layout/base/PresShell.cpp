@@ -6965,6 +6965,24 @@ bool PresShell::EventHandler::MaybeFlushPendingNotifications(
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+static ViewportType ViewportTypeForInputEventsRelativeToRoot() {
+#ifdef MOZ_WIDGET_ANDROID
+  return ViewportType::Layout;
+#else
+  return ViewportType::Visual;
+#endif
+}
+
 nsIFrame* PresShell::EventHandler::GetFrameToHandleNonTouchEvent(
     nsIFrame* aRootFrameToHandleEvent, WidgetGUIEvent* aGUIEvent) {
   MOZ_ASSERT(aGUIEvent);
@@ -6973,7 +6991,7 @@ nsIFrame* PresShell::EventHandler::GetFrameToHandleNonTouchEvent(
   ViewportType viewportType = ViewportType::Layout;
   if (aRootFrameToHandleEvent->Type() == LayoutFrameType::Viewport &&
       aRootFrameToHandleEvent->PresContext()->IsRootContentDocument()) {
-    viewportType = ViewportType::Visual;
+    viewportType = ViewportTypeForInputEventsRelativeToRoot();
   }
   RelativeTo relativeTo{aRootFrameToHandleEvent, viewportType};
   nsPoint eventPoint =
