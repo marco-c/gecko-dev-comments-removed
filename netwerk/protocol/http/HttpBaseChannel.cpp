@@ -4769,6 +4769,14 @@ HttpBaseChannel::GetCrossOriginOpenerPolicy(
   return NS_OK;
 }
 
+NS_IMETHODIMP
+HttpBaseChannel::HasCrossOriginOpenerPolicyMismatch(bool* aIsMismatch) {
+  
+  MOZ_ASSERT(XRE_IsParentProcess());
+  *aIsMismatch = mHasCrossOriginOpenerPolicyMismatch;
+  return NS_OK;
+}
+
 void HttpBaseChannel::MaybeFlushConsoleReports() {
   
   

@@ -484,12 +484,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   void ProcessSecurityReport(nsresult status);
 
   
-  
-  bool HasCrossOriginOpenerPolicyMismatch() {
-    return mHasCrossOriginOpenerPolicyMismatch;
-  }
-
-  
 
 
 
