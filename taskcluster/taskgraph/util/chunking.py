@@ -57,7 +57,7 @@ def guess_mozinfo_from_task(task):
 def get_runtimes(platform):
     base = os.path.join(GECKO, 'testing', 'runtimes', 'manifest-runtimes-{}.json')
     for key in ('android', 'windows'):
-        if platform in key:
+        if key in platform:
             path = base.format(key)
             break
     else:
@@ -72,112 +72,139 @@ def get_tests(flavor, subsuite):
     return list(resolver.resolve_tests(flavor=flavor, subsuite=subsuite))
 
 
-def tests_by_top_directory(tests, depth):
-    """Given a list of test objects, return a dictionary of test paths keyed by
-    the top level group.
+
+
+
+wpt_group_translation = defaultdict(set)
+
+
+def get_wpt_group(test):
+    """Get the group for a web-platform-test that matches those created by the
+    WPT harness.
 
     Args:
-        tests (list): List of test objects for the particular suite and subsuite.
-        depth (int, optional): The maximum depth to consider when grouping tests.
+        test (dict): The test object to compute the group for.
 
     Returns:
-        results (dict): Dictionary representation of test paths grouped by the
-            top level group name.
+        str: Label representing the group name.
     """
-    results = defaultdict(list)
+    depth = 3
 
+    path = os.path.dirname(test['name'])
     
     
-    for t in tests:
+    
+    
+    while path.count('/') >= depth + 1:
+        path = os.path.dirname(path)
 
-        path = os.path.dirname(t['name'])
-        
-        
-        
-        
-        while path.count('/') >= depth + 1:
-            path = os.path.dirname(path)
-
-        results[t["manifest"]].append(path)
-    return results
+    return path
 
 
 @memoize
-def get_chunked_manifests(flavor, subsuite, chunks, mozinfo):
-    """Compute which manifests should run in which chunks with the given category
-    of tests.
+def get_manifests(flavor, subsuite, mozinfo):
+    """Compute which manifests should run for the given flavor, subsuite and mozinfo.
+
+    This function returns skipped manifests separately so that more balanced
+    chunks can be achieved by only considering "active" manifests in the
+    chunking algorithm.
 
     Args:
         flavor (str): The suite to run. Values are defined by the 'build_flavor' key
             in `moztest.resolve.TEST_SUITES`.
         subsuite (str): The subsuite to run or 'undefined' to denote no subsuite.
-        chunks (int): Number of chunks to split manifests across.
         mozinfo (frozenset): Set of data in the form of (<key>, <value>) used
                              for filtering.
 
     Returns:
-        A list of manifests where each item contains the manifest that should
-        run in the corresponding chunk.
+        A tuple of two manifest lists. The first is the set of active manifests (will
+        run at least one test. The second is a list of skipped manifests (all tests are
+        skipped).
     """
     mozinfo = dict(mozinfo)
     
     tests = get_tests(flavor, subsuite)
 
-    if flavor == 'web-platform-tests':
-        paths = tests_by_top_directory(tests, depth=3)
+    if flavor == "web-platform-tests":
+        manifests = set()
+        for t in tests:
+            group = get_wpt_group(t)
+            wpt_group_translation[t['manifest']].add(group)
+            manifests.add(t['manifest'])
 
-        
-        runtimes = get_runtimes(mozinfo['os'])
-        runtimes = [(k, v) for k, v in runtimes.items()
-                    if k.startswith('/') and not os.path.splitext(k)[-1]]
+        return {"active": list(manifests), "skipped": []}
 
-        
-        chunked_manifests = [[[], 0] for _ in range(chunks)]
+    manifests = set(chunk_by_runtime.get_manifest(t) for t in tests)
 
-        
-        for key, rt in sorted(runtimes, key=lambda x: x[1], reverse=True):
-            
-            
-            chunked_manifests.sort(key=lambda x: (x[1], len(x[0])))
-            test_paths = set(paths[key])
-            if test_paths:
-                
-                
-                
-                
-                
-                
-                chunked_manifests[0][0].extend(test_paths)
-                chunked_manifests[0][1] += rt
-                
-                paths.pop(key)
+    
+    m = TestManifest()
+    m.tests = tests
+    tests = m.active_tests(disabled=False, exists=False, **mozinfo)
+    active = set(chunk_by_runtime.get_manifest(t) for t in tests)
+    skipped = manifests - active
+    return {"active": list(active), "skipped": list(skipped)}
 
-        
-        
-        for test_paths in paths.values():
-            chunked_manifests.sort(key=lambda x: (x[1], len(x[0])))
-            chunked_manifests[0][0].extend(set(test_paths))
 
+def chunk_manifests(flavor, platform, chunks, manifests):
+    """Run the chunking algorithm.
+
+    Args:
+        platform (str): Platform used to find runtime info.
+        chunks (int): Number of chunks to split manifests into.
+        manifests(list): Manifests to chunk.
+
+    Returns:
+        A list of length `chunks` where each item contains a list of manifests
+        that run in that chunk.
+    """
+
+    if flavor != "web-platform-tests":
+        return [
+            c[1] for c in chunk_by_runtime(
+                None,
+                chunks,
+                get_runtimes(platform)
+            ).get_chunked_manifests(manifests)
+        ]
+
+    paths = {k: v for k, v in wpt_group_translation.items() if k in manifests}
+
+    
+    runtimes = get_runtimes(platform)
+    runtimes = [(k, v) for k, v in runtimes.items()
+                if k.startswith('/') and not os.path.splitext(k)[-1]
+                if k in manifests]
+
+    
+    chunked_manifests = [[[], 0] for _ in range(chunks)]
+
+    
+    for key, rt in sorted(runtimes, key=lambda x: x[1], reverse=True):
+        
         
         chunked_manifests.sort(key=lambda x: (x[1], len(x[0])))
+        test_paths = paths[key]
+        if test_paths:
+            
+            
+            
+            
+            
+            
+            chunked_manifests[0][0].extend(test_paths)
+            chunked_manifests[0][1] += rt
+            
+            paths.pop(key)
 
-        
-        chunked_manifests = [c[0] for c in chunked_manifests]
-    else:
-        chunker = chunk_by_runtime(None, chunks, get_runtimes(mozinfo['os']))
-        all_manifests = set(chunker.get_manifest(t) for t in tests)
+    
+    
+    for test_paths in paths.values():
+        chunked_manifests.sort(key=lambda x: (x[1], len(x[0])))
+        chunked_manifests[0][0].extend(test_paths)
 
-        
-        m = TestManifest()
-        m.tests = tests
-        tests = m.active_tests(disabled=False, exists=False, **mozinfo)
-        active_manifests = set(chunker.get_manifest(t) for t in tests)
+    
+    chunked_manifests.sort(key=lambda x: (x[1], len(x[0])))
 
-        
-        chunked_manifests = [c[1] for c in chunker.get_chunked_manifests(active_manifests)]
-
-        
-        
-        skipped_manifests = all_manifests - active_manifests
-        chunked_manifests[0].extend(skipped_manifests)
+    
+    chunked_manifests = [c[0] for c in chunked_manifests]
     return chunked_manifests
