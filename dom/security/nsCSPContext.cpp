@@ -1008,9 +1008,17 @@ nsresult nsCSPContext::GatherSecurityPolicyViolationEventData(
 
   
   if (aBlockedURI) {
+    
+    
+    
+    nsCOMPtr<nsIURI> uriToReport;
+    if (aViolatedDirective.EqualsLiteral("frame-src")) {
+      uriToReport = aBlockedURI;
+    } else {
+      uriToReport = aOriginalURI ? aOriginalURI : aBlockedURI;
+    }
     nsAutoCString reportBlockedURI;
-    StripURIForReporting(aOriginalURI ? aOriginalURI : aBlockedURI, mSelfURI,
-                         reportBlockedURI);
+    StripURIForReporting(uriToReport, mSelfURI, reportBlockedURI);
     aViolationEventInit.mBlockedURI = NS_ConvertUTF8toUTF16(reportBlockedURI);
   } else {
     aViolationEventInit.mBlockedURI = NS_ConvertUTF8toUTF16(aBlockedString);
