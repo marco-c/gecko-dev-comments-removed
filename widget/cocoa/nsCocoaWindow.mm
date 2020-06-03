@@ -166,8 +166,7 @@ nsCocoaWindow::nsCocoaWindow()
       mAlwaysOnTop(false),
       mAspectRatioLocked(false),
       mNumModalDescendents(0),
-      mWindowAnimationBehavior(NSWindowAnimationBehaviorDefault),
-      mWasShown(false) {
+      mWindowAnimationBehavior(NSWindowAnimationBehaviorDefault) {
   if ([NSWindow respondsToSelector:@selector(setAllowsAutomaticWindowTabbing:)]) {
     
     
@@ -488,14 +487,6 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aB
     SetPopupWindowLevel();
     [mWindow setBackgroundColor:[NSColor clearColor]];
     [mWindow setOpaque:NO];
-
-    
-    
-    
-    
-    NSWindowCollectionBehavior behavior = [mWindow collectionBehavior];
-    behavior |= NSWindowCollectionBehaviorMoveToActiveSpace;
-    [mWindow setCollectionBehavior:behavior];
   } else {
     
     
@@ -763,9 +754,6 @@ void nsCocoaWindow::Show(bool bState) {
   if (bState && [mWindow isBeingShown]) return;
 
   [mWindow setBeingShown:bState];
-  if (bState && !mWasShown) {
-    mWasShown = true;
-  }
 
   nsIWidget* parentWidget = mParent;
   nsCOMPtr<nsPIWidgetCocoa> piParentWidget(do_QueryInterface(parentWidget));
@@ -967,17 +955,6 @@ void nsCocoaWindow::Show(bool bState) {
   [mWindow setBeingShown:NO];
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
-
-
-
-
-
-bool nsCocoaWindow::NeedsRecreateToReshow() {
-  
-  
-  return (mWindowType == eWindowType_popup) && mWasShown && ([[NSScreen screens] count] > 1);
 }
 
 struct ShadowParams {
