@@ -82,8 +82,8 @@ using mozilla::FilePreferences::kPathSeparator;
 
 namespace {
 
-nsresult NewLocalFile(const nsAString& aPath, bool aFollowLinks,
-                      bool aUseDOSDevicePathSyntax, nsIFile** aResult) {
+nsresult NewLocalFile(const nsAString& aPath, bool aUseDOSDevicePathSyntax,
+                      nsIFile** aResult) {
   RefPtr<nsLocalFile> file = new nsLocalFile();
 
   file->SetUseDOSDevicePathSyntax(aUseDOSDevicePathSyntax);
@@ -231,23 +231,6 @@ class nsDriveEnumerator : public nsSimpleEnumerator,
 
 
 
-static nsresult ResolveShellLink(const WCHAR* aIn, WCHAR* aOut) {
-  RefPtr<IPersistFile> persistFile;
-  RefPtr<IShellLinkW> shellLink;
-  
-  if (FAILED(CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER,
-                              IID_IShellLinkW, getter_AddRefs(shellLink))) ||
-      FAILED(shellLink->QueryInterface(IID_IPersistFile,
-                                       getter_AddRefs(persistFile))) ||
-      FAILED(persistFile->Load(aIn, STGM_READ)) ||
-      FAILED(shellLink->Resolve(nullptr, SLR_NO_UI)) ||
-      FAILED(shellLink->GetPath(aOut, MAX_PATH, nullptr, SLGP_UNCPRIORITY))) {
-    return NS_ERROR_FAILURE;
-  }
-  return NS_OK;
-}
-
-
 
 static nsresult ConvertWinError(DWORD aWinErr) {
   nsresult rv;
@@ -315,15 +298,6 @@ static __int64 MyFileSeek64(HANDLE aHandle, __int64 aDistance,
   }
 
   return li.QuadPart;
-}
-
-static bool IsShortcutPath(const nsAString& aPath) {
-  
-  
-  
-  MOZ_ASSERT(!aPath.IsEmpty(), "don't pass an empty string");
-  int32_t len = aPath.Length();
-  return len >= 4 && (StringTail(aPath, 4).LowerCaseEqualsASCII(".lnk"));
 }
 
 
@@ -734,13 +708,10 @@ NS_IMPL_ISUPPORTS_INHERITED(nsDirEnumerator, nsSimpleEnumerator,
 
 
 nsLocalFile::nsLocalFile()
-    : mDirty(true),
-      mResolveDirty(true),
-      mFollowSymlinks(false),
-      mUseDOSDevicePathSyntax(false) {}
+    : mDirty(true), mResolveDirty(true), mUseDOSDevicePathSyntax(false) {}
 
 nsLocalFile::nsLocalFile(const nsAString& aFilePath)
-    : mFollowSymlinks(false), mUseDOSDevicePathSyntax(false) {
+    : mUseDOSDevicePathSyntax(false) {
   InitWithPath(aFilePath);
 }
 
@@ -776,28 +747,8 @@ NS_IMPL_ISUPPORTS(nsLocalFile, nsIFile, nsILocalFileWin)
 nsLocalFile::nsLocalFile(const nsLocalFile& aOther)
     : mDirty(true),
       mResolveDirty(true),
-      mFollowSymlinks(aOther.mFollowSymlinks),
       mUseDOSDevicePathSyntax(aOther.mUseDOSDevicePathSyntax),
       mWorkingPath(aOther.mWorkingPath) {}
-
-
-
-nsresult nsLocalFile::ResolveShortcut() {
-  mResolvedPath.SetLength(MAX_PATH);
-  if (mResolvedPath.Length() != MAX_PATH) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
-  wchar_t* resolvedPath = mResolvedPath.get();
-
-  
-  nsresult rv = ResolveShellLink(mWorkingPath.get(), resolvedPath);
-
-  size_t len = NS_FAILED(rv) ? 0 : wcslen(resolvedPath);
-  mResolvedPath.SetLength(len);
-
-  return rv;
-}
 
 
 
@@ -830,31 +781,8 @@ nsresult nsLocalFile::ResolveAndStat() {
   }
 
   
-  
-  if (!mFollowSymlinks || mFileInfo64.type != PR_FILE_FILE ||
-      !IsShortcutPath(mWorkingPath)) {
-    mDirty = false;
-    mResolveDirty = false;
-    return NS_OK;
-  }
 
-  
-  
-  
-  
-  rv = ResolveShortcut();
-  if (NS_FAILED(rv)) {
-    mResolvedPath.Assign(mWorkingPath);
-    return rv;
-  }
   mResolveDirty = false;
-
-  
-  rv = GetFileInfo(mResolvedPath, &mFileInfo64);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   mDirty = false;
   return NS_OK;
 }
@@ -881,21 +809,6 @@ nsresult nsLocalFile::Resolve() {
   mResolvedPath.Assign(mWorkingPath);
 
   
-  
-  if (!mFollowSymlinks || !IsShortcutPath(mWorkingPath)) {
-    mResolveDirty = false;
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  nsresult rv = ResolveShortcut();
-  if (NS_FAILED(rv)) {
-    mResolvedPath.Assign(mWorkingPath);
-    return rv;
-  }
 
   mResolveDirty = false;
   return NS_OK;
@@ -1107,12 +1020,7 @@ nsLocalFile::OpenNSPRFileDesc(int32_t aFlags, int32_t aMode,
 
 NS_IMETHODIMP
 nsLocalFile::OpenANSIFileDesc(const char* aMode, FILE** aResult) {
-  nsresult rv = Resolve();
-  if (NS_FAILED(rv) && rv != NS_ERROR_FILE_NOT_FOUND) {
-    return rv;
-  }
-
-  *aResult = _wfopen(mResolvedPath.get(), NS_ConvertASCIItoUTF16(aMode).get());
+  *aResult = _wfopen(mWorkingPath.get(), NS_ConvertASCIItoUTF16(aMode).get());
   if (*aResult) {
     return NS_OK;
   }
@@ -1153,14 +1061,9 @@ nsLocalFile::Create(uint32_t aType, uint32_t aAttributes) {
     return NS_ERROR_FILE_UNKNOWN_TYPE;
   }
 
-  nsresult rv = Resolve();
-  if (NS_FAILED(rv) && rv != NS_ERROR_FILE_NOT_FOUND) {
-    return rv;
-  }
-
   auto* createFunc = (aType == NORMAL_FILE_TYPE ? do_create : do_mkdir);
 
-  rv = createFunc(this, mResolvedPath, aAttributes);
+  nsresult rv = createFunc(this, mWorkingPath, aAttributes);
 
   if (NS_SUCCEEDED(rv) || NS_ERROR_FILE_ALREADY_EXISTS == rv) {
     return rv;
@@ -1179,7 +1082,7 @@ nsLocalFile::Create(uint32_t aType, uint32_t aAttributes) {
   
   
 
-  wchar_t* path = char16ptr_t(mResolvedPath.BeginWriting());
+  wchar_t* path = char16ptr_t(mWorkingPath.BeginWriting());
 
   if (path[0] == L'\\' && path[1] == L'\\') {
     
@@ -1202,7 +1105,7 @@ nsLocalFile::Create(uint32_t aType, uint32_t aAttributes) {
     while (slash) {
       *slash = L'\0';
 
-      if (!::CreateDirectoryW(mResolvedPath.get(), nullptr)) {
+      if (!::CreateDirectoryW(mWorkingPath.get(), nullptr)) {
         rv = ConvertWinError(GetLastError());
         if (NS_ERROR_FILE_NOT_FOUND == rv &&
             NS_ERROR_FILE_ACCESS_DENIED == directoryCreateError) {
@@ -1230,7 +1133,7 @@ nsLocalFile::Create(uint32_t aType, uint32_t aAttributes) {
     return directoryCreateError;
   }
 
-  return createFunc(this, mResolvedPath, aAttributes);
+  return createFunc(this, mWorkingPath, aAttributes);
 }
 
 NS_IMETHODIMP
@@ -1298,12 +1201,7 @@ nsresult nsLocalFile::OpenNSPRFileDescMaybeShareDelete(int32_t aFlags,
                                                        int32_t aMode,
                                                        bool aShareDelete,
                                                        PRFileDesc** aResult) {
-  nsresult rv = Resolve();
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  return OpenFile(mResolvedPath, aFlags, aMode, aShareDelete, aResult);
+  return OpenFile(mWorkingPath, aFlags, aMode, aShareDelete, aResult);
 }
 
 #define TOUPPER(u) (((u) >= L'a' && (u) <= L'z') ? (u) - (L'a' - L'A') : (u))
@@ -1533,15 +1431,9 @@ typedef struct {
 
 NS_IMETHODIMP
 nsLocalFile::GetVersionInfoField(const char* aField, nsAString& aResult) {
-  nsresult rv = Resolve();
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  nsresult rv = NS_ERROR_FAILURE;
 
-  rv = NS_ERROR_FAILURE;
-
-  const WCHAR* path =
-      mFollowSymlinks ? mResolvedPath.get() : mWorkingPath.get();
+  const WCHAR* path = mWorkingPath.get();
 
   DWORD dummy;
   DWORD size = ::GetFileVersionInfoSizeW(path, &dummy);
@@ -2127,16 +2019,8 @@ NS_IMETHODIMP
 nsLocalFile::Load(PRLibrary** aResult) {
   
   CHECK_mWorkingPath();
-
-  bool isFile;
-  nsresult rv = IsFile(&isFile);
-
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  if (!isFile) {
-    return NS_ERROR_FILE_IS_DIRECTORY;
+  if (NS_WARN_IF(!aResult)) {
+    return NS_ERROR_INVALID_ARG;
   }
 
 #ifdef NS_BUILD_REFCNT_LOGGING
@@ -2144,7 +2028,7 @@ nsLocalFile::Load(PRLibrary** aResult) {
 #endif
 
   PRLibSpec libSpec;
-  libSpec.value.pathname_u = mResolvedPath.get();
+  libSpec.value.pathname_u = mWorkingPath.get();
   libSpec.type = PR_LibSpec_PathnameU;
   *aResult = PR_LoadLibraryWithFlags(libSpec, 0);
 
@@ -2282,17 +2166,7 @@ nsLocalFile::SetLastModifiedTime(PRTime aLastModifiedTime) {
   
   CHECK_mWorkingPath();
 
-  nsresult rv = Resolve();
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
-  
-  
-  
-
-  rv = SetModDate(aLastModifiedTime, mResolvedPath.get());
+  nsresult rv = SetModDate(aLastModifiedTime, mWorkingPath.get());
   if (NS_SUCCEEDED(rv)) {
     MakeDirty();
   }
@@ -2302,15 +2176,7 @@ nsLocalFile::SetLastModifiedTime(PRTime aLastModifiedTime) {
 
 NS_IMETHODIMP
 nsLocalFile::SetLastModifiedTimeOfLink(PRTime aLastModifiedTime) {
-  
-  
-
-  nsresult rv = SetModDate(aLastModifiedTime, mWorkingPath.get());
-  if (NS_SUCCEEDED(rv)) {
-    MakeDirty();
-  }
-
-  return rv;
+  return SetLastModifiedTime(aLastModifiedTime);
 }
 
 nsresult nsLocalFile::SetModDate(PRTime aLastModifiedTime,
@@ -2513,13 +2379,8 @@ nsLocalFile::SetFileSize(int64_t aFileSize) {
   
   CHECK_mWorkingPath();
 
-  nsresult rv = Resolve();
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   HANDLE hFile =
-      ::CreateFileW(mResolvedPath.get(),    
+      ::CreateFileW(mWorkingPath.get(),     
                     GENERIC_WRITE,          
                     FILE_SHARE_READ,        
                     nullptr,                
@@ -2532,7 +2393,7 @@ nsLocalFile::SetFileSize(int64_t aFileSize) {
 
   
   
-  rv = NS_ERROR_FAILURE;
+  nsresult rv = NS_ERROR_FAILURE;
   aFileSize = MyFileSeek64(hFile, aFileSize, FILE_BEGIN);
   if (aFileSize != -1 && SetEndOfFile(hFile)) {
     MakeDirty();
@@ -2611,9 +2472,8 @@ nsLocalFile::GetParent(nsIFile** aParent) {
   }
 
   nsCOMPtr<nsIFile> localFile;
-  nsresult rv =
-      NewLocalFile(parentPath, mFollowSymlinks, mUseDOSDevicePathSyntax,
-                   getter_AddRefs(localFile));
+  nsresult rv = NewLocalFile(parentPath, mUseDOSDevicePathSyntax,
+                             getter_AddRefs(localFile));
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -2831,22 +2691,7 @@ nsLocalFile::IsSymlink(bool* aResult) {
   }
 
   
-  if (!IsShortcutPath(mWorkingPath)) {
-    *aResult = false;
-    return NS_OK;
-  }
-
-  
-  nsresult rv = ResolveAndStat();
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
-  
-  
-  
-  *aResult = true;
+  *aResult = false;
   return NS_OK;
 }
 
@@ -3096,13 +2941,7 @@ nsLocalFile::Launch() {
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  nsresult rv = Resolve();
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  
-  _bstr_t execPath(mResolvedPath.get());
+  _bstr_t execPath(mWorkingPath.get());
 
   _variant_t args;
   
@@ -3115,7 +2954,7 @@ nsLocalFile::Launch() {
   
   wchar_t* workingDirectoryPtr = nullptr;
   WCHAR workingDirectory[MAX_PATH + 1] = {L'\0'};
-  wcsncpy(workingDirectory, mResolvedPath.get(), MAX_PATH);
+  wcsncpy(workingDirectory, mWorkingPath.get(), MAX_PATH);
   if (PathRemoveFileSpecW(workingDirectory)) {
     workingDirectoryPtr = workingDirectory;
   } else {
@@ -3157,7 +2996,8 @@ nsLocalFile::Launch() {
 
   static const char* const onlyExeExt[] = {".exe"};
   bool isExecutable;
-  rv = LookupExtensionIn(onlyExeExt, ArrayLength(onlyExeExt), &isExecutable);
+  nsresult rv =
+      LookupExtensionIn(onlyExeExt, ArrayLength(onlyExeExt), &isExecutable);
   if (NS_FAILED(rv)) {
     isExecutable = false;
   }
@@ -3178,7 +3018,7 @@ nsLocalFile::Launch() {
   seinfo.fMask = SEE_MASK_ASYNCOK;
   seinfo.hwnd = GetMostRecentNavigatorHWND();
   seinfo.lpVerb = nullptr;
-  seinfo.lpFile = mResolvedPath.get();
+  seinfo.lpFile = mWorkingPath.get();
   seinfo.lpParameters = nullptr;
   seinfo.lpDirectory = workingDirectoryPtr;
   seinfo.nShow = SW_SHOWNORMAL;
@@ -3425,7 +3265,7 @@ nsDriveEnumerator::GetNext(nsISupports** aNext) {
   mStartOfCurrentDrive = ++driveEnd;
 
   nsIFile* file;
-  nsresult rv = NewLocalFile(drive, false, mUseDOSDevicePathSyntax, &file);
+  nsresult rv = NewLocalFile(drive, mUseDOSDevicePathSyntax, &file);
 
   *aNext = file;
   return rv;

@@ -63,7 +63,6 @@ class nsLocalFile final : public nsILocalFileWin {
 
   bool mDirty;  
   bool mResolveDirty;
-  bool mFollowSymlinks;  
 
   bool mUseDOSDevicePathSyntax;
 
@@ -91,7 +90,6 @@ class nsLocalFile final : public nsILocalFileWin {
 
   nsresult ResolveAndStat();
   nsresult Resolve();
-  nsresult ResolveShortcut();
 
   void EnsureShortPath();
 
