@@ -7,11 +7,9 @@
 
 
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
+ChromeUtils.import("resource:///modules/TRRPerformance.jsm", this);
 
-const kCommitSelectionPref = "doh-rollout.trr-selection.commit-result";
 const kDryRunResultPref = "doh-rollout.trr-selection.dry-run-result";
-const kRolloutURIPref = "doh-rollout.uri";
-const kTRRListPref = "network.trr.resolvers";
 
 const TRRSELECT_TELEMETRY_CATEGORY = "security.doh.trrPerformance";
 
@@ -24,18 +22,7 @@ this.trrselect = class trrselect extends ExtensionAPI {
         trrselect: {
           async dryRun() {
             if (Services.prefs.prefHasUserValue(kDryRunResultPref)) {
-              
-              
-              let dryRunResult = Services.prefs.getCharPref(kDryRunResultPref);
-              let defaultTRRs = JSON.parse(
-                Services.prefs.getDefaultBranch("").getCharPref(kTRRListPref)
-              );
-              let dryRunResultIsValid = defaultTRRs.some(
-                trr => trr.url == dryRunResult
-              );
-              if (dryRunResultIsValid) {
-                return;
-              }
+              return;
             }
 
             let setDryRunResultAndRecordTelemetry = trr => {
@@ -55,12 +42,6 @@ this.trrselect = class trrselect extends ExtensionAPI {
               return;
             }
 
-            
-            
-            
-            let { TRRRacer } = ChromeUtils.import(
-              "resource:///modules/TRRPerformance.jsm"
-            );
             await new Promise(resolve => {
               let racer = new TRRRacer(() => {
                 setDryRunResultAndRecordTelemetry(racer.getFastestTRR(true));
@@ -68,24 +49,6 @@ this.trrselect = class trrselect extends ExtensionAPI {
               });
               racer.run();
             });
-          },
-
-          async run() {
-            if (Services.prefs.prefHasUserValue(kRolloutURIPref)) {
-              return;
-            }
-
-            await this.dryRun();
-
-            
-            if (!Services.prefs.getBoolPref(kCommitSelectionPref, false)) {
-              return;
-            }
-
-            Services.prefs.setCharPref(
-              kRolloutURIPref,
-              Services.prefs.getCharPref(kDryRunResultPref)
-            );
           },
         },
       },
