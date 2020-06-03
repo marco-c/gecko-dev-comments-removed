@@ -44,6 +44,11 @@ var _Services = ChromeUtils.import("resource://gre/modules/Services.jsm", null)
   .Services;
 _register_modules_protocol_handler();
 
+var _AppConstants = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm",
+  null
+).AppConstants;
+
 var _PromiseTestUtils = ChromeUtils.import(
   "resource://testing-common/PromiseTestUtils.jsm",
   null
@@ -677,6 +682,23 @@ function _execute_test() {
   } finally {
     
     _PromiseTestUtils.uninit();
+  }
+
+  
+  if (
+    runningInParent &&
+    !_AppConstants.RELEASE_OR_BETA &&
+    !_AppConstants.DEBUG &&
+    !_AppConstants.MOZ_CODE_COVERAGE &&
+    !_AppConstants.ASAN &&
+    !_AppConstants.TSAN
+  ) {
+    
+    _Services.prefs.setBoolPref(
+      "security.turn_off_all_security_so_that_viruses_can_take_over_this_computer",
+      true
+    );
+    Cu.exitIfInAutomation();
   }
 }
 
@@ -1656,11 +1678,6 @@ try {
 
 
 try {
-  let _AppConstants = ChromeUtils.import(
-    "resource://gre/modules/AppConstants.jsm",
-    null
-  ).AppConstants;
-
   
   
   if (runningInParent && _AppConstants.MOZ_UPDATE_CHANNEL == "default") {
