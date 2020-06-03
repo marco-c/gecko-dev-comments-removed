@@ -1161,6 +1161,13 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
     }
   } else {
     
+
+    
+    
+    if (aStatus == NS_BINDING_ABORTED &&
+        mDocument->GetReadyStateEnum() == Document::READYSTATE_INTERACTIVE) {
+      mDocument->SetReadyStateInternal(Document::READYSTATE_COMPLETE);
+    }
   }
 
   
@@ -1172,7 +1179,10 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
   
   
   
-  if (mDocument && mDocument->IsCurrentActiveDocument()) {
+  
+  
+  if (mDocument && mDocument->IsCurrentActiveDocument() &&
+      aStatus != NS_BINDING_ABORTED) {
     
     window = mDocument->GetWindow();
     if (window) {
