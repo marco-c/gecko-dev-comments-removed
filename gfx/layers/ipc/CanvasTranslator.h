@@ -242,6 +242,11 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   UniquePtr<gfx::DataSourceSurface::ScopedMap> GetPreparedMap(
       gfx::ReferencePtr aSurface);
 
+  
+
+
+  gfx::BackendType GetBackendType() { return mBackendType; }
+
  private:
   explicit CanvasTranslator(
       already_AddRefed<CanvasThreadHolder> aCanvasThreadHolder);
@@ -277,6 +282,9 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   UniquePtr<CanvasEventRingBuffer> mStream;
   TextureType mTextureType = TextureType::Unknown;
   UniquePtr<TextureData> mReferenceTextureData;
+  
+  
+  gfx::BackendType mBackendType = gfx::BackendType::NONE;
   typedef std::unordered_map<void*, UniquePtr<TextureData>> TextureMap;
   TextureMap mTextureDatas;
   nsRefPtrHashtable<nsPtrHashKey<void>, gfx::DataSourceSurface> mDataSurfaces;
