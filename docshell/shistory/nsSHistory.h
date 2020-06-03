@@ -64,10 +64,6 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
     nsISHEntry* destTreeRoot;    
     nsISHEntry* destTreeParent;  
                                  
-    uint64_t otherPid;  
-                        
-    
-    nsTArray<EntriesAndBrowsingContextData>* entriesToUpdate;
   };
 
   explicit nsSHistory(mozilla::dom::BrowsingContext* aRootBC);
@@ -108,11 +104,10 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   
   
   
-  static nsresult CloneAndReplace(
-      nsISHEntry* aSrcEntry, mozilla::dom::BrowsingContext* aOwnerBC,
-      uint32_t aCloneID, nsISHEntry* aReplaceEntry, bool aCloneChildren,
-      nsISHEntry** aDestEntry, uint64_t aOtherPid,
-      nsTArray<EntriesAndBrowsingContextData>* aEntriesToUpdate);
+  static nsresult CloneAndReplace(nsISHEntry* aSrcEntry,
+                                  mozilla::dom::BrowsingContext* aOwnerBC,
+                                  uint32_t aCloneID, nsISHEntry* aReplaceEntry,
+                                  bool aCloneChildren, nsISHEntry** aDestEntry);
 
   
   static nsresult CloneAndReplaceChild(nsISHEntry* aEntry,
@@ -132,26 +127,12 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
                                      WalkHistoryEntriesFunc aCallback,
                                      void* aData);
 
-  nsresult AddToRootSessionHistory(
-      bool aCloneChildren, nsISHEntry* aOSHE,
-      mozilla::dom::BrowsingContext* aBC, nsISHEntry* aEntry,
-      uint32_t aLoadType, bool aShouldPersist, uint64_t aOtherPid,
-      mozilla::Maybe<int32_t>* aPreviousEntryIndex,
-      mozilla::Maybe<int32_t>* aLoadedEntryIndex,
-      nsTArray<EntriesAndBrowsingContextData>* aEntriesToUpdate,
-      int32_t* aEntriesPurged);
-
-  nsresult AddChildSHEntryHelper(
-      nsISHEntry* aCloneRef, nsISHEntry* aNewEntry,
-      mozilla::dom::BrowsingContext* aBC, bool aCloneChildren,
-      uint64_t aOtherPid,
-      nsTArray<EntriesAndBrowsingContextData>* aEntriesToUpdate,
-      int32_t* aEntriesPurged, nsISHEntry** aNextEntry);
+  nsresult AddChildSHEntryHelper(nsISHEntry* aCloneRef, nsISHEntry* aNewEntry,
+                                 mozilla::dom::BrowsingContext* aBC,
+                                 bool aCloneChildren, nsISHEntry** aNextEntry);
 
   nsTArray<nsCOMPtr<nsISHEntry>>& Entries() { return mEntries; }
 
-  nsresult AddEntry(nsISHEntry* aSHEntry, bool aPersist,
-                    int32_t* aEntriesPurged);
   void RemoveEntries(nsTArray<nsID>& aIDs, int32_t aStartIndex,
                      bool* aDidRemove);
 
@@ -237,11 +218,9 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   
   
   
-  static void HandleEntriesToSwapInDocShell(
-      mozilla::dom::BrowsingContext* aBC, nsISHEntry* aOldEntry,
-      nsISHEntry* aNewEntry,
-      nsTArray<EntriesAndBrowsingContextData>* aEntriesToUpdate,
-      uint64_t aOtherPid);
+  static void HandleEntriesToSwapInDocShell(mozilla::dom::BrowsingContext* aBC,
+                                            nsISHEntry* aOldEntry,
+                                            nsISHEntry* aNewEntry);
 
  protected:
   

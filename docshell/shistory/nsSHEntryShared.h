@@ -54,10 +54,10 @@ class SHEntrySharedParentState {
   void NotifyListenersContentViewerEvicted();
 
  protected:
-  SHEntrySharedParentState(nsISHistory* aSHistory, uint64_t aID);
-  SHEntrySharedParentState(SHEntrySharedParentState* aDuplicate, uint64_t aID)
-      : SHEntrySharedParentState(aDuplicate->mSHistory, aID) {}
-  SHEntrySharedParentState(nsIWeakReference* aSHistory, uint64_t aID);
+  explicit SHEntrySharedParentState(nsISHistory* aSHistory);
+  explicit SHEntrySharedParentState(SHEntrySharedParentState* aDuplicate)
+      : SHEntrySharedParentState(aDuplicate->mSHistory) {}
+  explicit SHEntrySharedParentState(nsIWeakReference* aSHistory);
   virtual ~SHEntrySharedParentState();
   NS_INLINE_DECL_VIRTUAL_REFCOUNTING_WITH_DESTROY(SHEntrySharedParentState,
                                                   Destroy())
@@ -104,8 +104,6 @@ class SHEntrySharedParentState {
 
 class SHEntrySharedChildState {
  protected:
-  SHEntrySharedChildState();
-
   void CopyFrom(SHEntrySharedChildState* aSource);
 
  public:
@@ -117,16 +115,11 @@ class SHEntrySharedChildState {
   
   nsCOMPtr<nsIContentViewer> mContentViewer;
   RefPtr<mozilla::dom::Document> mDocument;
-  
-  nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
   nsCOMPtr<nsISupports> mWindowState;
   
   nsCOMPtr<nsIMutableArray> mRefreshURIList;
   nsExpirationState mExpirationState;
   UniquePtr<nsDocShellEditorData> mEditorData;
-
-  
-  bool mSaveLayoutState;
 };
 
 }  
@@ -149,7 +142,7 @@ class nsSHEntryShared final : public nsIBFCacheEntry,
 
   using SHEntrySharedParentState::SHEntrySharedParentState;
 
-  already_AddRefed<nsSHEntryShared> Duplicate(uint64_t aNewSharedID);
+  already_AddRefed<nsSHEntryShared> Duplicate();
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIBFCACHEENTRY
@@ -166,7 +159,7 @@ class nsSHEntryShared final : public nsIBFCacheEntry,
  private:
   ~nsSHEntryShared();
 
-  friend class nsLegacySHEntry;
+  friend class nsSHEntry;
 
   void RemoveFromExpirationTracker();
   void SyncPresentationState();
