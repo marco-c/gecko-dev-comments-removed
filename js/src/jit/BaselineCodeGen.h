@@ -111,9 +111,6 @@ class BaselineCodeGen {
   void loadGlobalThisValue(ValueOperand dest);
 
   
-  void loadScriptAtom(Register index, Register dest);
-
-  
   void computeFrameSize(Register dest);
 
   void prepareVMCall();
