@@ -102,6 +102,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["restyleSearches", false],
 
   
+  ["richSuggestions.tail", false],
+
+  
   
   
   ["searchTips.test.ignoreShowLimits", false],

@@ -49,6 +49,55 @@ function uuid() {
 
 
 
+
+
+class SearchSuggestionEntry {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  constructor(value, { matchPrefix, tail } = {}) {
+    this._value = value;
+    this._matchPrefix = matchPrefix;
+    this._tail = tail;
+  }
+
+  
+
+
+
+
+
+  equals(otherEntry) {
+    return otherEntry.value == this.value;
+  }
+
+  get value() {
+    return this._value;
+  }
+
+  get matchPrefix() {
+    return this._matchPrefix;
+  }
+
+  get tail() {
+    return this._tail;
+  }
+}
+
+
+
+
 var gFirstPartyDomains = new Map();
 
 
@@ -126,6 +175,10 @@ SearchSuggestionController.prototype = {
   },
 
   
+
+
+
+
 
 
 
@@ -430,6 +483,7 @@ SearchSuggestionController.prototype = {
     }
 
     if (
+      !Array.isArray(serverResults) ||
       !serverResults[0] ||
       this._searchString.localeCompare(serverResults[0], undefined, {
         sensitivity: "base",
@@ -441,7 +495,10 @@ SearchSuggestionController.prototype = {
       );
       return;
     }
-    let results = serverResults[1] || [];
+
+    
+    
+    let results = serverResults.slice(1) || [];
     deferredResponse.resolve({ result: results });
   },
 
@@ -482,17 +539,33 @@ SearchSuggestionController.prototype = {
       formHistoryResult: null,
     };
 
-    for (let result of suggestResults) {
+    for (let resultData of suggestResults) {
       if (typeof result === "string") {
         
-        Cu.reportError("SearchSuggestionController: " + result);
-      } else if (result.formHistoryResult) {
+        Cu.reportError(
+          "SearchSuggestionController found an unexpected string value: " +
+            resultData
+        );
+      } else if (resultData.formHistoryResult) {
         
-        results.formHistoryResult = result.formHistoryResult;
-        results.local = result.result || [];
-      } else {
+        results.formHistoryResult = resultData.formHistoryResult;
+        if (resultData.result) {
+          results.local = resultData.result.map(
+            s => new SearchSuggestionEntry(s)
+          );
+        }
+      } else if (resultData.result) {
         
-        results.remote = result.result || [];
+        let richSuggestionData = this._getRichSuggestionData(resultData.result);
+        let fullTextSuggestions = resultData.result[0];
+        for (let i = 0; i < fullTextSuggestions.length; ++i) {
+          results.remote.push(
+            this._newSearchSuggestionEntry(
+              fullTextSuggestions[i],
+              richSuggestionData?.[i]
+            )
+          );
+        }
       }
     }
 
@@ -505,8 +578,9 @@ SearchSuggestionController.prototype = {
     
     if (results.remote.length && results.local.length) {
       for (let i = 0; i < results.local.length; ++i) {
-        let term = results.local[i];
-        let dupIndex = results.remote.indexOf(term);
+        let dupIndex = results.remote.findIndex(e =>
+          e.equals(results.local[i])
+        );
         if (dupIndex != -1) {
           results.remote.splice(dupIndex, 1);
         }
@@ -525,6 +599,58 @@ SearchSuggestionController.prototype = {
     this._reset();
 
     return results;
+  },
+
+  
+
+
+
+
+
+
+
+  _getRichSuggestionData(remoteResultData) {
+    if (!remoteResultData || !Array.isArray(remoteResultData)) {
+      return undefined;
+    }
+
+    for (let entry of remoteResultData) {
+      if (
+        typeof entry == "object" &&
+        entry.hasOwnProperty("google:suggestdetail")
+      ) {
+        let richData = entry["google:suggestdetail"];
+        if (
+          Array.isArray(richData) &&
+          richData.length == remoteResultData[0].length
+        ) {
+          return richData;
+        }
+      }
+    }
+    return undefined;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _newSearchSuggestionEntry(suggestion, richSuggestionData) {
+    if (richSuggestionData) {
+      
+      return new SearchSuggestionEntry(suggestion, {
+        matchPrefix: richSuggestionData?.mp,
+        tail: richSuggestionData?.t,
+      });
+    }
+    
+    return new SearchSuggestionEntry(suggestion);
   },
 
   _reset() {
