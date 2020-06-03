@@ -61,3 +61,7 @@ function addAutofocus(selector, position = "afterbegin") {
 
 
 initPage();
+
+
+let event = new CustomEvent("AboutNetErrorLoad", { bubbles: true });
+document.dispatchEvent(event);
