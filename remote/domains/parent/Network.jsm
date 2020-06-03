@@ -377,12 +377,13 @@ class Network extends Domain {
   }
 
   _onRequest(eventName, httpChannel, data) {
+    const wrappedChannel = ChannelWrapper.get(httpChannel);
     const topFrame = getLoadContext(httpChannel).topFrameElement;
     const request = {
       url: httpChannel.URI.spec,
       urlFragment: undefined,
       method: httpChannel.requestMethod,
-      headers: [],
+      headers: headersAsObject(data.headers),
       postData: undefined,
       hasPostData: false,
       mixedContentType: undefined,
@@ -390,32 +391,18 @@ class Network extends Domain {
       referrerPolicy: undefined,
       isLinkPreload: false,
     };
-    let loaderId = undefined;
-    let causeType = Ci.nsIContentPolicy.TYPE_OTHER;
-    let causeUri = topFrame.currentURI.spec;
-    if (httpChannel.loadInfo) {
-      causeType = httpChannel.loadInfo.externalContentPolicyType;
-      const { loadingPrincipal } = httpChannel.loadInfo;
-      if (loadingPrincipal && loadingPrincipal.URI) {
-        causeUri = loadingPrincipal.URI.spec;
-      }
-      if (causeType == Ci.nsIContentPolicy.TYPE_DOCUMENT) {
-        
-        
-        loaderId = String(httpChannel.channelId);
-      }
-    }
     this.emit("Network.requestWillBeSent", {
-      requestId: String(httpChannel.channelId),
-      loaderId,
-      documentURL: causeUri,
+      requestId: data.requestId,
+      loaderId: data.loaderId,
+      documentURL: wrappedChannel.documentURL || httpChannel.URI.spec,
       request,
-      timestamp: undefined,
+      timestamp: Date.now() / 1000,
       wallTime: undefined,
       initiator: undefined,
       redirectResponse: undefined,
-      type: LOAD_CAUSE_STRINGS[causeType] || "unknown",
-      frameId: topFrame.browsingContext.id.toString(),
+      type: LOAD_CAUSE_STRINGS[data.cause] || "unknown",
+      
+      frameId: topFrame.browsingContext?.id.toString(),
       hasUserGesture: undefined,
     });
   }
@@ -438,4 +425,39 @@ function getLoadContext(httpChannel) {
     }
   } catch (e) {}
   return loadContext;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function headersAsObject(headers) {
+  const rv = {};
+  headers.forEach(({ name, value }) => {
+    name = name.toLowerCase();
+    if (rv[name]) {
+      const separator = [
+        "set-cookie",
+        "www-authenticate",
+        "proxy-authenticate",
+      ].includes(name)
+        ? "\n"
+        : ",";
+      rv[name] += `${separator}${value}`;
+    } else {
+      rv[name] = value;
+    }
+  });
+  return rv;
 }
