@@ -1809,18 +1809,23 @@ void nsContainerFrame::NormalizeChildLists() {
 void nsContainerFrame::NoteNewChildren(ChildListID aListID,
                                        const nsFrameList& aFrameList) {
 #ifdef DEBUG
-  ChildListIDs supportedLists = {kAbsoluteList, kFixedList, kPrincipalList,
-                                 kNoReflowPrincipalList};
+  ChildListIDs supportedLists = {kAbsoluteList, kFixedList, kPrincipalList};
   
   
   supportedLists += kBackdropList;
   MOZ_ASSERT(supportedLists.contains(aListID), "unexpected child list");
 #endif
 
+  MOZ_ASSERT(IsFlexOrGridContainer(),
+             "Only Flex / Grid containers can call this!");
+
   mozilla::PresShell* presShell = PresShell();
-  for (auto pif = GetPrevInFlow(); pif; pif = pif->GetPrevInFlow()) {
+  const auto didPushItemsBit = IsFlexContainerFrame()
+                                   ? NS_STATE_FLEX_DID_PUSH_ITEMS
+                                   : NS_STATE_GRID_DID_PUSH_ITEMS;
+  for (auto* pif = GetPrevInFlow(); pif; pif = pif->GetPrevInFlow()) {
     if (aListID == kPrincipalList) {
-      pif->AddStateBits(NS_STATE_GRID_DID_PUSH_ITEMS);
+      pif->AddStateBits(didPushItemsBit);
     }
     presShell->FrameNeedsReflow(pif, IntrinsicDirty::TreeChange,
                                 NS_FRAME_IS_DIRTY);
@@ -1982,6 +1987,10 @@ bool nsContainerFrame::DrainSelfOverflowList() {
 }
 
 bool nsContainerFrame::DrainAndMergeSelfOverflowList() {
+  MOZ_ASSERT(IsFlexOrGridContainer(),
+             "Only Flex / Grid containers can call this!");
+
+  
   
   
   
@@ -1991,7 +2000,9 @@ bool nsContainerFrame::DrainAndMergeSelfOverflowList() {
     MergeSortedFrameLists(mFrames, *overflowFrames, GetContent());
     
     
-    AddStateBits(NS_STATE_GRID_HAS_CHILD_NIFS);
+    
+    AddStateBits(IsFlexContainerFrame() ? NS_STATE_FLEX_HAS_CHILD_NIFS
+                                        : NS_STATE_GRID_HAS_CHILD_NIFS);
     return true;
   }
   return false;
