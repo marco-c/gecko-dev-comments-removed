@@ -33,10 +33,6 @@ TextureHost* GPUVideoTextureHost::EnsureWrappedTextureHost() {
     return mWrappedTextureHost;
   }
 
-  
-  
-  
-  
   auto& sd = static_cast<SurfaceDescriptorRemoteDecoder&>(mDescriptor);
   mWrappedTextureHost =
       VideoBridgeParent::GetSingleton(sd.source())->LookupTexture(sd.handle());
