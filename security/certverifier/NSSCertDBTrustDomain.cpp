@@ -42,6 +42,7 @@
 #include "pk11pub.h"
 #include "prerror.h"
 #include "secerr.h"
+#include "secder.h"
 
 #include "TrustOverrideUtils.h"
 #include "TrustOverride-AppleGoogleDigiCertData.inc"
@@ -1155,6 +1156,43 @@ static Result CheckForStartComOrWoSign(const UniqueCERTCertList& certChain) {
   return Success;
 }
 
+nsresult isDistrustedCertificateChain(const UniqueCERTCertList& certList,
+                                      bool& isDistrusted) {
+  
+  isDistrusted = true;
+
+  
+  const CERTCertificate* certRoot = CERT_LIST_TAIL(certList)->cert;
+  const CERTCertificate* certLeaf = CERT_LIST_HEAD(certList)->cert;
+
+  
+  if (!certRoot->distrust) {
+    isDistrusted = false;
+    return NS_OK;
+  }
+
+  
+  
+  PRTime certRootDistrustAfter;
+  PRTime certLeafNotBefore;
+
+  SECStatus rv1 = DER_DecodeTimeChoice(
+      &certRootDistrustAfter, &certRoot->distrust->serverDistrustAfter);
+  SECStatus rv2 =
+      DER_DecodeTimeChoice(&certLeafNotBefore, &certLeaf->validity.notBefore);
+
+  if ((rv1 != SECSuccess) || (rv2 != SECSuccess)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  if (certLeafNotBefore <= certRootDistrustAfter) {
+    isDistrusted = false;
+  }
+  return NS_OK;
+}
+
 Result NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
                                           const CertPolicyId& requiredPolicy) {
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
@@ -1215,6 +1253,19 @@ Result NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
     }
     if (!chainHasValidPins) {
       return Result::ERROR_KEY_PINNING_FAILURE;
+    }
+  }
+
+  
+  
+  if (isBuiltInRoot) {
+    bool isDistrusted;
+    nsrv = isDistrustedCertificateChain(certList, isDistrusted);
+    if (NS_FAILED(nsrv)) {
+      return Result::FATAL_ERROR_LIBRARY_FAILURE;
+    }
+    if (isDistrusted) {
+      return Result::ERROR_UNTRUSTED_ISSUER;
     }
   }
 
