@@ -491,6 +491,18 @@ interface nsILoadInfo : nsISupports
 
 
 
+
+
+
+
+  [infallible] attribute boolean isThirdPartyContextToTopWindow;
+
+  
+
+
+
+
+
   [infallible] readonly attribute unsigned long cookiePolicy;
 
   
