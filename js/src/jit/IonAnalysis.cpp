@@ -4933,29 +4933,8 @@ bool jit::FoldLoadsWithUnbox(MIRGenerator* mir, MIRGraph& graph) {
       
       
       
-      if (load->isLoadElement() && load->toLoadElement()->needsHoleCheck()) {
-        if (!unbox->fallible()) {
-          continue;
-        }
-        
-        
-        if (load->hasOneUse()) {
-          load->toLoadElement()->disableHoleCheck();
-        }
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (unbox->type() != MIRType::Int32 && unbox->type() != MIRType::Double &&
-          unbox->type() != MIRType::Boolean) {
+      if (load->isLoadElement() && load->toLoadElement()->needsHoleCheck() &&
+          !unbox->fallible()) {
         continue;
       }
 
