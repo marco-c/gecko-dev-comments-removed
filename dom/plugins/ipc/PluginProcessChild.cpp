@@ -4,16 +4,16 @@
 
 
 
-#include "mozilla/ipc/IOThreadChild.h"
 #include "mozilla/plugins/PluginProcessChild.h"
 
-#include "prlink.h"
-
+#include "ClearOnShutdown.h"
 #include "base/command_line.h"
 #include "base/string_util.h"
+#include "mozilla/AbstractThread.h"
+#include "mozilla/ipc/IOThreadChild.h"
 #include "nsDebugImpl.h"
 #include "nsThreadManager.h"
-#include "ClearOnShutdown.h"
+#include "prlink.h"
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 #  include "mozilla/SandboxSettings.h"
@@ -195,6 +195,7 @@ void PluginProcessChild::CleanUp() {
 #endif
 
   mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownFinal);
+  AbstractThread::ShutdownMainThread();
 }
 
 }  

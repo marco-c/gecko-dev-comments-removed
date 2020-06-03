@@ -52,7 +52,7 @@ class AbstractThread : public nsISerialEventTarget {
 
   
   static already_AddRefed<AbstractThread> CreateXPCOMThreadWrapper(
-      nsIThread* aThread, bool aRequireTailDispatch);
+      nsIThread* aThread, bool aRequireTailDispatch, bool aOnThread = false);
 
   NS_DECL_THREADSAFE_ISUPPORTS
 
@@ -113,6 +113,7 @@ class AbstractThread : public nsISerialEventTarget {
   
   static void InitTLS();
   static void InitMainThread();
+  static void ShutdownMainThread();
 
   void DispatchStateChange(already_AddRefed<nsIRunnable> aRunnable);
 
