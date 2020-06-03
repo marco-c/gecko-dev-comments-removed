@@ -198,7 +198,7 @@
 #include "nsSandboxFlags.h"
 #include "nsSHEntry.h"
 #include "nsSHistory.h"
-#include "SHEntryChild.h"
+#include "nsSHEntry.h"
 #include "nsStructuredCloneContainer.h"
 #include "nsSubDocumentFrame.h"
 #include "nsView.h"
@@ -10707,9 +10707,7 @@ nsresult nsDocShell::AddToSessionHistory(
     NS_ENSURE_TRUE(webnav, NS_ERROR_FAILURE);
 
     RefPtr<ChildSHistory> shistory = webnav->GetSessionHistory();
-    entry = CreateSHEntryForDocShell(shistory ? shistory->LegacySHistory()
-                                              : nullptr);
-    NS_ENSURE_TRUE(entry, NS_ERROR_FAILURE);
+    entry = new nsSHEntry(shistory ? shistory->LegacySHistory() : nullptr);
   }
 
   
@@ -10997,24 +10995,6 @@ void nsDocShell::SetHistoryEntryAndUpdateBC(const Maybe<nsISHEntry*>& aLSHE,
   if (aOSHE.isSome()) {
     deathGripOldOSHE = SetHistoryEntry(&mOSHE, aOSHE.value());
     MOZ_ASSERT(mOSHE.get() == aOSHE.value());
-  }
-
-  
-  
-  if ((!StaticPrefs::fission_sessionHistoryInParent() &&
-       XRE_IsContentProcess()) ||
-      mBrowsingContext->IsDiscarded()) {
-    return;
-  }
-  if (XRE_IsParentProcess()) {
-    
-    mBrowsingContext->Canonical()->UpdateSHEntries(mLSHE, mOSHE);
-  } else {
-    ContentChild* cc = ContentChild::GetSingleton();
-    
-    cc->SendUpdateSHEntriesInBC(static_cast<SHEntryChild*>(mLSHE.get()),
-                                static_cast<SHEntryChild*>(mOSHE.get()),
-                                mBrowsingContext);
   }
 }
 
