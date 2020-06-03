@@ -29,7 +29,6 @@ const SWAPPED_BROWSER_STATE = [
   "_securityUI",
   "_documentURI",
   "_documentContentType",
-  "_contentTitle",
   "_characterSet",
   "_contentPrincipal",
   "_isSyntheticDocument",
@@ -102,7 +101,6 @@ function tunnelToInnerBrowser(outer, inner) {
       if (webProgress?.isTopLevel) {
         inner._documentURI = outer._documentURI;
         inner._documentContentType = outer._documentContentType;
-        inner._contentTitle = outer._contentTitle;
         inner._characterSet = outer._characterSet;
         inner._contentPrincipal = outer._contentPrincipal;
         inner._isSyntheticDocument = outer._isSyntheticDocument;
@@ -457,7 +455,6 @@ MessageManagerTunnel.prototype = {
     
     "PageStyle:StyleSheets",
     
-    "DOMTitleChanged",
     "InPermitUnload",
     "PermitUnload",
     
