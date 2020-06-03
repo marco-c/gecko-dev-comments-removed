@@ -319,10 +319,6 @@ impl SpatialNode {
 
                 if info.invertible {
                     
-                    let source_transform_is_animated = match info.source_transform {
-                        PropertyBinding::Value(..) => false,
-                        PropertyBinding::Binding(..) => true,
-                    };
                     let source_transform = LayoutFastTransform::from(
                         scene_properties.resolve_layout_transform(&info.source_transform)
                     );
@@ -374,8 +370,10 @@ impl SpatialNode {
                             Some(ref scale_offset) => {
                                 
                                 
+                                
+                                
                                 let mut maybe_snapped = scale_offset.clone();
-                                if source_transform_is_animated {
+                                if info.kind == ReferenceFrameKind::Zoom {
                                     maybe_snapped.offset = snap_offset(
                                         scale_offset.offset,
                                         state.coordinate_system_relative_scale_offset.scale,
