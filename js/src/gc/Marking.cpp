@@ -129,9 +129,6 @@ using mozilla::PodCopy;
 
 
 
-
-
-
 #if defined(DEBUG)
 template <typename T>
 static inline bool IsThingPoisoned(T* thing) {
