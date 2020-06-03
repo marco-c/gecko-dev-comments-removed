@@ -35,7 +35,6 @@ inline NSString* ToNSString(id aValue) {
 }
 
 @interface mozTextAccessible ()
-- (NSString*)subrole;
 - (NSString*)selectedText;
 - (NSValue*)selectedTextRange;
 - (NSValue*)visibleCharacterRange;
@@ -97,7 +96,7 @@ inline NSString* ToNSString(id aValue) {
     
     
     
-    if ([[self role] isEqualToString:NSAccessibilityStaticTextRole]) {
+    if ([[self moxRole] isEqualToString:NSAccessibilityStaticTextRole]) {
       NSString* selectedText = [self selectedText];
       return (selectedText && [selectedText length]) ? selectedText : [self text];
     }
@@ -349,7 +348,7 @@ inline NSString* ToNSString(id aValue) {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-- (NSString*)subrole {
+- (NSString*)moxSubrole {
   if (mRole == roles::PASSWORD_TEXT) return NSAccessibilitySecureTextFieldSubrole;
 
   if (mRole == roles::ENTRY) {
@@ -372,7 +371,7 @@ inline NSString* ToNSString(id aValue) {
     return NO;
   }
 
-  if ([[self role] isEqualToString:NSAccessibilityStaticTextRole]) {
+  if ([[self moxRole] isEqualToString:NSAccessibilityStaticTextRole]) {
     return YES;
   }
 
@@ -592,12 +591,12 @@ inline NSString* ToNSString(id aValue) {
 - (id)accessibilityAttributeValue:(NSString*)attribute {
   if ([attribute isEqualToString:NSAccessibilityTitleAttribute]) return nil;
 
-  if ([attribute isEqualToString:NSAccessibilityValueAttribute]) return [self title];
+  if ([attribute isEqualToString:NSAccessibilityValueAttribute]) return [self moxTitle];
 
   return [super accessibilityAttributeValue:attribute];
 }
 
-- (NSString*)accessibilityLabel {
+- (NSString*)moxLabel {
   return nil;
 }
 

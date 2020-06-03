@@ -66,7 +66,7 @@
 - (NSArray*)selectableChildren {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
-  return [[self children]
+  return [[self moxChildren]
       filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(mozAccessible* child,
                                                                         NSDictionary* bindings) {
         return [child isKindOfClass:[mozSelectableChildAccessible class]];
@@ -81,7 +81,7 @@
 - (NSArray*)selectedChildren {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
-  return [[self children]
+  return [[self moxChildren]
       filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(mozAccessible* child,
                                                                         NSDictionary* bindings) {
         
@@ -171,13 +171,13 @@
 }
 
 - (id)accessibilityAttributeValue:(NSString*)attribute {
-  if ([attribute isEqualToString:NSAccessibilityContentsAttribute]) return [super children];
+  if ([attribute isEqualToString:NSAccessibilityContentsAttribute]) return [super moxChildren];
   if ([attribute isEqualToString:NSAccessibilityTabsAttribute]) return [self selectableChildren];
 
   return [super accessibilityAttributeValue:attribute];
 }
 
-- (id)value {
+- (id)moxValue {
   
   
   return [[self selectedChildren] firstObject];
@@ -187,7 +187,7 @@
 
 @implementation mozTabAccessible
 
-- (NSString*)roleDescription {
+- (NSString*)moxRoleDescription {
   return utils::LocalizedString(NS_LITERAL_STRING("tab"));
 }
 
@@ -199,7 +199,7 @@
   return [super accessibilityActionDescription:action];
 }
 
-- (id)value {
+- (id)moxValue {
   
   return [NSNumber numberWithBool:[self isSelected]];
 }
@@ -240,24 +240,24 @@
 
 @implementation mozOptionAccessible
 
-- (NSString*)title {
+- (NSString*)moxTitle {
   return @"";
 }
 
-- (id)value {
+- (id)moxValue {
   
-  return [super title];
+  return [super moxTitle];
 }
 
 @end
 
 @implementation mozMenuAccessible
 
-- (NSString*)title {
+- (NSString*)moxTitle {
   return @"";
 }
 
-- (NSString*)accessibilityLabel {
+- (NSString*)moxLabel {
   return @"";
 }
 
@@ -285,7 +285,7 @@
 
 @implementation mozMenuItemAccessible
 
-- (NSString*)accessibilityLabel {
+- (NSString*)moxLabel {
   return @"";
 }
 
@@ -338,7 +338,7 @@
   switch (eventType) {
     case nsIAccessibleEvent::EVENT_FOCUS:
       
-      mozAccessible* parent = (mozAccessible*)[self parent];
+      mozAccessible* parent = (mozAccessible*)[self moxParent];
       [parent moxPostNotification:NSAccessibilitySelectedChildrenChangedNotification];
       break;
   }

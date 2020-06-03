@@ -63,53 +63,10 @@ inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrPr
 - (mozilla::a11y::AccessibleOrProxy)geckoAccessible;
 
 
-- (id<mozAccessible>)parent;
-
-
-- (NSArray*)children;
-
-
-- (NSValue*)size;
-
-
-- (NSValue*)position;
-
-
-- (NSString*)role;
-
-
-
-- (NSString*)subrole;
-
-
-- (NSString*)roleDescription;
-
-
-- (NSWindow*)window;
-
-
-- (id)value;
-
-
-- (NSString*)title;
-
-
-- (NSString*)help;
-
-
-- (NSString*)orientation;
-
-- (BOOL)isEnabled;
+- (void)dealloc;
 
 
 - (BOOL)disableChild:(mozAccessible*)child;
-
-
-- (BOOL)isFocused;
-- (BOOL)canBeFocused;
-
-
-- (BOOL)focus;
 
 
 
@@ -141,14 +98,21 @@ inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrPr
 
 - (BOOL)ignoreChild:(mozAccessible*)child;
 
-#pragma mark -
+#pragma mark - mozAccessible protocol / widget
 
 
-
-- (void)expire;
-- (BOOL)isExpired;
+- (BOOL)hasRepresentedView;
 
 
+- (id)representedView;
+
+
+- (BOOL)isRoot;
+
+#pragma mark - MOXAccessible protocol
+
+
+- (BOOL)moxBlockSelector:(SEL)selector;
 
 
 - (id)moxHitTest:(NSPoint)point;
@@ -159,16 +123,96 @@ inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrPr
 
 
 
+- (id<mozAccessible>)moxParent;
+
+
+- (NSArray*)moxChildren;
+
+
+- (NSValue*)moxSize;
+
+
+- (NSValue*)moxPosition;
+
+
+- (NSString*)moxRole;
+
+
+- (NSString*)moxSubrole;
+
+
+- (NSString*)moxRoleDescription;
+
+
+- (NSWindow*)moxWindow;
+
+
+- (id)moxValue;
+
+
+- (NSString*)moxTitle;
+
+
+- (NSString*)moxLabel;
+
+
+- (NSString*)moxHelp;
+
+
+- (NSNumber*)moxEnabled;
+
+
+- (NSNumber*)moxFocused;
+
+
+- (NSNumber*)moxSelected;
+
+
+- (NSString*)moxARIACurrent;
+
+
+- (id)moxTitleUIElement;
+
+
+- (NSString*)moxDOMIdentifier;
+
+
+- (NSNumber*)moxRequired;
+
+
+- (void)moxSetFocused:(NSNumber*)focused;
+
+
+- (void)moxPerformScrollToVisible;
+
+
+- (void)moxPerformShowMenu;
+
+
+- (void)moxPerformPress;
+
+#pragma mark -
+
+
+
+
+- (void)expire;
+
+- (BOOL)isExpired;
+
+
+
+
+
 - (BOOL)isAccessibilityElement;
 
 
 
+
 - (NSArray*)accessibilityAttributeNames;
+- (NSArray*)additionalAccessibilityAttributeNames;
 
 
-- (id)accessibilityAttributeValue:(NSString*)attribute;
-
-- (BOOL)accessibilityIsAttributeSettable:(NSString*)attribute;
-- (void)accessibilitySetValue:(id)value forAttribute:(NSString*)attribute;
+- (NSString*)description;
 
 @end
