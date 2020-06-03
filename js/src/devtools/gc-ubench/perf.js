@@ -125,12 +125,12 @@ class FrameHistory {
       var idx = sampleIndex % this._numSamples;
       this.delays[idx] = delay;
       if (features.trackingSizes) {
-        this.gcBytes[idx] = performance.mozMemory.gcBytes;
+        this.gcBytes[idx] = performance.mozMemory.gc.gcBytes;
       }
       if (features.showingGCs) {
-        this.gcs[idx] = performance.mozMemory.gcNumber;
-        this.minorGCs[idx] = performance.mozMemory.minorGCCount;
-        this.majorGCs[idx] = performance.mozMemory.majorGCCount;
+        this.gcs[idx] = performance.mozMemory.gc.gcNumber;
+        this.minorGCs[idx] = performance.mozMemory.gc.minorGCCount;
+        this.majorGCs[idx] = performance.mozMemory.gc.majorGCCount;
 
         
         
@@ -139,7 +139,7 @@ class FrameHistory {
         
         
         this.slices[idx] =
-          performance.mozMemory.sliceCount || performance.mozMemory.gcNumber;
+          performance.mozMemory.gc.sliceCount || performance.mozMemory.gc.gcNumber;
       }
     }
 
