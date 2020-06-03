@@ -35,13 +35,12 @@ var ShortcutUtils = {
   DUPLICATE_MODIFIER: "duplicate_modifier",
   MODIFIER_REQUIRED: "modifier_required",
 
+  MOVE_TAB_FORWARD: "MOVE_TAB_FORWARD",
+  MOVE_TAB_BACKWARD: "MOVE_TAB_BACKWARD",
   CLOSE_TAB: "CLOSE_TAB",
   CYCLE_TABS: "CYCLE_TABS",
-  TOGGLE_CARET_BROWSING: "TOGGLE_CARET_BROWSING",
-  MOVE_TAB_BACKWARD: "MOVE_TAB_BACKWARD",
-  MOVE_TAB_FORWARD: "MOVE_TAB_FORWARD",
-  NEXT_TAB: "NEXT_TAB",
   PREVIOUS_TAB: "PREVIOUS_TAB",
+  NEXT_TAB: "NEXT_TAB",
 
   
 
@@ -313,18 +312,11 @@ var ShortcutUtils = {
 
 
 
-  
   getSystemActionForEvent(event, { rtl } = {}) {
     switch (event.keyCode) {
       case event.DOM_VK_TAB:
         if (event.ctrlKey && !event.altKey && !event.metaKey) {
           return ShortcutUtils.CYCLE_TABS;
-        }
-        break;
-      case event.DOM_VK_F7:
-        
-        if (event.shiftKey) {
-          return ShortcutUtils.TOGGLE_CARET_BROWSING;
         }
         break;
       case event.DOM_VK_PAGE_UP:
