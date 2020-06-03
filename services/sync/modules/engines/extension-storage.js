@@ -4,33 +4,82 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["ExtensionStorageEngine"];
+var EXPORTED_SYMBOLS = [
+  "ExtensionStorageEngineKinto",
+  "ExtensionStorageEngineBridge",
+];
 
-const { SCORE_INCREMENT_MEDIUM, MULTI_DEVICE_THRESHOLD } = ChromeUtils.import(
-  "resource://services-sync/constants.js"
-);
-const { SyncEngine, Tracker } = ChromeUtils.import(
-  "resource://services-sync/engines.js"
-);
-const { Svc } = ChromeUtils.import("resource://services-sync/util.js");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
-ChromeUtils.defineModuleGetter(
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  BridgedEngine: "resource://services-sync/bridged_engine.js",
+  extensionStorageSync: "resource://gre/modules/ExtensionStorageSyncKinto.jsm",
+  Svc: "resource://services-sync/util.js",
+  SyncEngine: "resource://services-sync/engines.js",
+  Tracker: "resource://services-sync/engines.js",
+  SCORE_INCREMENT_MEDIUM: "resource://services-sync/constants.js",
+  MULTI_DEVICE_THRESHOLD: "resource://services-sync/constants.js",
+});
+
+XPCOMUtils.defineLazyServiceGetter(
   this,
-  "extensionStorageSync",
-  "resource://gre/modules/ExtensionStorageSyncKinto.jsm"
+  "StorageSyncService",
+  "@mozilla.org/extensions/storage/sync;1",
+  "nsIInterfaceRequestor"
 );
 
 
 
+function isEngineEnabled() {
+  
+  
+  
+  
+  
+  
+  const forced = Svc.Prefs.get("engine.extension-storage.force", undefined);
+  if (forced !== undefined) {
+    return forced;
+  }
+  return Svc.Prefs.get("engine.addons", false);
+}
+
+
+function ExtensionStorageEngineBridge(service) {
+  let bridge = StorageSyncService.getInterface(Ci.mozIBridgedSyncEngine);
+  BridgedEngine.call(this, bridge, "Extension-Storage", service);
+}
+
+ExtensionStorageEngineBridge.prototype = {
+  __proto__: BridgedEngine.prototype,
+  syncPriority: 10,
+  
+  _skipPercentageChance: 100,
+
+  get enabled() {
+    return isEngineEnabled();
+  },
+};
 
 
 
 
 
 
-function ExtensionStorageEngine(service) {
+
+
+
+
+
+
+
+
+
+
+
+function ExtensionStorageEngineKinto(service) {
   SyncEngine.call(this, "Extension-Storage", service);
   XPCOMUtils.defineLazyPreferenceGetter(
     this,
@@ -39,7 +88,7 @@ function ExtensionStorageEngine(service) {
     0
   );
 }
-ExtensionStorageEngine.prototype = {
+ExtensionStorageEngineKinto.prototype = {
   __proto__: SyncEngine.prototype,
   _trackerObj: ExtensionStorageTracker,
   
@@ -54,20 +103,7 @@ ExtensionStorageEngine.prototype = {
   },
 
   get enabled() {
-    
-    
-    
-    
-    
-    
-    const forced = Svc.Prefs.get(
-      "engine." + this.prefName + ".force",
-      undefined
-    );
-    if (forced !== undefined) {
-      return forced;
-    }
-    return Svc.Prefs.get("engine.addons", false);
+    return isEngineEnabled();
   },
 
   _wipeClient() {

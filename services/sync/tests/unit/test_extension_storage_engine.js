@@ -3,123 +3,76 @@
 
 "use strict";
 
-const { ExtensionStorageEngine } = ChromeUtils.import(
-  "resource://services-sync/engines/extension-storage.js"
-);
-const { Service } = ChromeUtils.import("resource://services-sync/service.js");
-const { extensionStorageSync } = ChromeUtils.import(
-  "resource://gre/modules/ExtensionStorageSyncKinto.jsm"
-);
-
-let engine;
-
-function mock(options) {
-  let calls = [];
-  let ret = function() {
-    calls.push(arguments);
-    return options.returns;
-  };
-  Object.setPrototypeOf(ret, {
-    __proto__: Function.prototype,
-    get calls() {
-      return calls;
-    },
-  });
-  return ret;
-}
-
-function setSkipChance(v) {
-  Services.prefs.setIntPref(
-    "services.sync.extension-storage.skipPercentageChance",
-    v
-  );
-}
-
-add_task(async function setup() {
-  await Service.engineManager.register(ExtensionStorageEngine);
-  engine = Service.engineManager.get("extension-storage");
-  do_get_profile(); 
-  loadWebExtensionTestFunctions();
-  setSkipChance(0);
+XPCOMUtils.defineLazyModuleGetters(this, {
+  BridgedRecord: "resource://services-sync/bridged_engine.js",
+  extensionStorageSync: "resource://gre/modules/ExtensionStorageSync.jsm",
+  ExtensionStorageEngineBridge:
+    "resource://services-sync/engines/extension-storage.js",
+  Service: "resource://services-sync/service.js",
 });
 
-add_task(async function test_calling_sync_calls__sync() {
-  let oldSync = ExtensionStorageEngine.prototype._sync;
-  let syncMock = (ExtensionStorageEngine.prototype._sync = mock({
-    returns: true,
-  }));
-  try {
-    
-    
-    
-    await engine.sync();
-  } finally {
-    ExtensionStorageEngine.prototype._sync = oldSync;
-  }
-  equal(syncMock.calls.length, 1);
-});
+Services.prefs.setBoolPref("webextensions.storage.sync.kinto", false); 
+Services.prefs.setStringPref("webextensions.storage.sync.log.level", "debug");
 
-add_task(async function test_sync_skip() {
+
+
+
+add_task(async function test_engine() {
+  let engine = new ExtensionStorageEngineBridge(Service);
+  Assert.equal(engine.version, 1);
+
+  Assert.deepEqual(await engine.getSyncID(), null);
+  await engine.resetLocalSyncID();
+  Assert.notEqual(await engine.getSyncID(), null);
+
+  Assert.equal(await engine.getLastSync(), 0);
+  
+  await engine.setLastSync(1234.567);
+  
+  Assert.equal(await engine.getLastSync(), 1234.57);
+  await engine.setLastSync(0);
+
+  
+  await extensionStorageSync.set({ id: "ext-2" }, { ext_2_key: "ext_2_value" });
+  
+  let server = await serverForFoo(engine);
   try {
+    await SyncTestingInfrastructure(server);
+
+    info("Add server records");
+    let foo = server.user("foo");
+    let collection = foo.collection("extension-storage");
+    let now = new_timestamp();
+
+    collection.insert(
+      "fakeguid0000",
+      encryptPayload({
+        id: "fakeguid0000",
+        extId: "ext-1",
+        data: JSON.stringify({ foo: "bar" }),
+      }),
+      now
+    );
+
+    info("Sync the engine");
+    await sync_engine_and_validate_telem(engine, false);
+
     
-    for (let i = 0; i < 10; ++i) {
-      setSkipChance(100);
-      engine._tracker._score = 0;
-      ok(
-        !engine.shouldSkipSync("user"),
-        "Should allow explicitly requested syncs"
-      );
-      ok(!engine.shouldSkipSync("startup"), "Should allow startup syncs");
-      ok(
-        engine.shouldSkipSync("schedule"),
-        "Should skip scheduled syncs if skipProbability is 100"
-      );
-      engine._tracker._score = MULTI_DEVICE_THRESHOLD;
-      ok(
-        !engine.shouldSkipSync("schedule"),
-        "should allow scheduled syncs if tracker score is high"
-      );
-      engine._tracker._score = 0;
-      setSkipChance(0);
-      ok(
-        !engine.shouldSkipSync("schedule"),
-        "Should allow scheduled syncs if probability is 0"
-      );
-    }
-  } finally {
-    engine._tracker._score = 0;
-    setSkipChance(0);
-  }
-});
-
-add_task(async function test_calling_wipeClient_calls_clearAll() {
-  let oldClearAll = extensionStorageSync.clearAll;
-  let clearMock = (extensionStorageSync.clearAll = mock({
-    returns: Promise.resolve(),
-  }));
-  try {
-    await engine.wipeClient();
-  } finally {
-    extensionStorageSync.clearAll = oldClearAll;
-  }
-  equal(clearMock.calls.length, 1);
-});
-
-add_task(async function test_calling_sync_calls_ext_storage_sync() {
-  const extension = { id: "my-extension" };
-  let oldSync = extensionStorageSync.syncAll;
-  let syncMock = (extensionStorageSync.syncAll = mock({
-    returns: Promise.resolve(),
-  }));
-  try {
-    await withSyncContext(async function(context) {
-      
-      await extensionStorageSync.set(extension, { a: "b" }, context);
-
-      await engine._sync();
+    Assert.deepEqual(await extensionStorageSync.get({ id: "ext-1" }, null), {
+      foo: "bar",
     });
+
+    
+    let payloads = collection.payloads();
+    Assert.equal(payloads.length, 2);
+    
+    let newPayload =
+      payloads[0].id == "fakeguid0000" ? payloads[1] : payloads[0];
+    Assert.equal(newPayload.data, `{"ext_2_key":"ext_2_value"}`);
+    
+    greater(await engine.getLastSync(), 0, "Should update last sync time");
   } finally {
-    extensionStorageSync.syncAll = oldSync;
+    await promiseStopServer(server);
+    await engine.finalize();
   }
-  Assert.ok(syncMock.calls.length >= 1);
 });
