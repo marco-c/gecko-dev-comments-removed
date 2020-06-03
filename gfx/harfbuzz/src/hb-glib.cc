@@ -45,10 +45,6 @@
 
 
 
-
-
-
-
 #if !GLIB_CHECK_VERSION(2,29,14)
 static const hb_script_t
 glib_script_to_script[] =
@@ -173,17 +169,6 @@ glib_script_to_script[] =
 };
 #endif
 
-
-
-
-
-
-
-
-
-
-
-
 hb_script_t
 hb_glib_script_to_script (GUnicodeScript script)
 {
@@ -199,17 +184,6 @@ hb_glib_script_to_script (GUnicodeScript script)
   return HB_SCRIPT_UNKNOWN;
 #endif
 }
-
-
-
-
-
-
-
-
-
-
-
 
 GUnicodeScript
 hb_glib_script_from_script (hb_script_t script)
@@ -399,16 +373,6 @@ void free_static_glib_funcs ()
 }
 #endif
 
-
-
-
-
-
-
-
-
-
-
 hb_unicode_funcs_t *
 hb_glib_get_unicode_funcs ()
 {
@@ -424,12 +388,6 @@ _hb_g_bytes_unref (void *data)
 {
   g_bytes_unref ((GBytes *) data);
 }
-
-
-
-
-
-
 
 
 

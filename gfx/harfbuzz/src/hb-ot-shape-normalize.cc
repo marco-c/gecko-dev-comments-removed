@@ -334,7 +334,7 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
     {
       unsigned int end;
       for (end = buffer->idx + 1; end < count; end++)
-	if (unlikely (_hb_glyph_info_is_unicode_mark (&buffer->info[end])))
+	if (unlikely (HB_UNICODE_GENERAL_CATEGORY_IS_MARK (_hb_glyph_info_get_general_category (&buffer->info[end]))))
 	  break;
 
       if (end < count)
@@ -360,7 +360,7 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
 
       
       for (end = buffer->idx + 1; end < count; end++)
-	if (!_hb_glyph_info_is_unicode_mark(&buffer->info[end]))
+	if (!HB_UNICODE_GENERAL_CATEGORY_IS_MARK (_hb_glyph_info_get_general_category (&buffer->info[end])))
 	  break;
 
       
@@ -435,7 +435,7 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
 
 
 
-	  _hb_glyph_info_is_unicode_mark(&buffer->cur()))
+	  HB_UNICODE_GENERAL_CATEGORY_IS_MARK (_hb_glyph_info_get_general_category (&buffer->cur())))
       {
 	if (
 

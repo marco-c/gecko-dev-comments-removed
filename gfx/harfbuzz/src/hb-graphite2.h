@@ -33,14 +33,6 @@
 HB_BEGIN_DECLS
 
 
-
-
-
-
-
-
-
-
 #define HB_GRAPHITE2_TAG_SILF HB_TAG('S','i','l','f')
 
 

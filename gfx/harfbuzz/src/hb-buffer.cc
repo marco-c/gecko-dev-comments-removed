@@ -438,6 +438,13 @@ hb_buffer_t::set_masks (hb_mask_t    value,
   if (!mask)
     return;
 
+  if (cluster_start == 0 && cluster_end == (unsigned int)-1) {
+    unsigned int count = len;
+    for (unsigned int i = 0; i < count; i++)
+      info[i].mask = (info[i].mask & not_mask) | value;
+    return;
+  }
+
   unsigned int count = len;
   for (unsigned int i = 0; i < count; i++)
     if (cluster_start <= info[i].cluster && info[i].cluster < cluster_end)
@@ -448,13 +455,27 @@ void
 hb_buffer_t::reverse_range (unsigned int start,
 			    unsigned int end)
 {
+  unsigned int i, j;
+
   if (end - start < 2)
     return;
 
-  hb_array_t<hb_glyph_info_t> (info, len).reverse (start, end);
+  for (i = start, j = end - 1; i < j; i++, j--) {
+    hb_glyph_info_t t;
+
+    t = info[i];
+    info[i] = info[j];
+    info[j] = t;
+  }
 
   if (have_positions) {
-    hb_array_t<hb_glyph_position_t> (pos, len).reverse (start, end);
+    for (i = start, j = end - 1; i < j; i++, j--) {
+      hb_glyph_position_t t;
+
+      t = pos[i];
+      pos[i] = pos[j];
+      pos[j] = t;
+    }
   }
 }
 
@@ -591,7 +612,7 @@ done:
 void
 hb_buffer_t::unsafe_to_break_impl (unsigned int start, unsigned int end)
 {
-  unsigned int cluster = UINT_MAX;
+  unsigned int cluster = (unsigned int) -1;
   cluster = _unsafe_to_break_find_min_cluster (info, start, end, cluster);
   _unsafe_to_break_set_mask (info, start, end, cluster);
 }
@@ -607,7 +628,7 @@ hb_buffer_t::unsafe_to_break_from_outbuffer (unsigned int start, unsigned int en
   assert (start <= out_len);
   assert (idx <= end);
 
-  unsigned int cluster = UINT_MAX;
+  unsigned int cluster = (unsigned int) -1;
   cluster = _unsafe_to_break_find_min_cluster (out_info, start, out_len, cluster);
   cluster = _unsafe_to_break_find_min_cluster (info, idx, end, cluster);
   _unsafe_to_break_set_mask (out_info, start, out_len, cluster);
@@ -715,7 +736,7 @@ hb_buffer_create ()
 hb_buffer_t *
 hb_buffer_get_empty ()
 {
-  return const_cast<hb_buffer_t *> (&Null (hb_buffer_t));
+  return const_cast<hb_buffer_t *> (&Null(hb_buffer_t));
 }
 
 
@@ -1839,8 +1860,18 @@ hb_buffer_normalize_glyphs (hb_buffer_t *buffer)
 
   bool backward = HB_DIRECTION_IS_BACKWARD (buffer->props.direction);
 
-  foreach_cluster (buffer, start, end)
-    normalize_glyphs_cluster (buffer, start, end, backward);
+  unsigned int count = buffer->len;
+  if (unlikely (!count)) return;
+  hb_glyph_info_t *info = buffer->info;
+
+  unsigned int start = 0;
+  unsigned int end;
+  for (end = start + 1; end < count; end++)
+    if (info[start].cluster != info[end].cluster) {
+      normalize_glyphs_cluster (buffer, start, end, backward);
+      start = end;
+    }
+  normalize_glyphs_cluster (buffer, start, end, backward);
 }
 
 void

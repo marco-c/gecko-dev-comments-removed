@@ -48,7 +48,7 @@ struct MathValueRecord
   }
 
   protected:
-  HBINT16		value;		
+  HBINT16			value;		
   OffsetTo<Device>	deviceTable;	
 
 
@@ -279,8 +279,7 @@ struct MathKern
   protected:
   HBUINT16	heightCount;
   UnsizedArrayOf<MathValueRecord>
-		mathValueRecordsZ;
-				
+		mathValueRecordsZ;	
 
 
 
@@ -346,14 +345,11 @@ struct MathKernInfo
   }
 
   protected:
-  OffsetTo<Coverage>
-		mathKernCoverage;
-				
+  OffsetTo<Coverage>		mathKernCoverage;    
 
 
-  ArrayOf<MathKernInfoRecord>
-		mathKernInfoRecords;
-				
+  ArrayOf<MathKernInfoRecord>	mathKernInfoRecords; 
+
 
 
 
@@ -475,21 +471,19 @@ struct MathGlyphPartRecord
   }
 
   protected:
-  HBGlyphID	glyph;		
-  HBUINT16	startConnectorLength;
-				
+  HBGlyphID   glyph;		  
+  HBUINT16    startConnectorLength; 
 
 
 
-  HBUINT16	endConnectorLength;
-				
+  HBUINT16    endConnectorLength;   
 
 
 
-  HBUINT16	fullAdvance;	
+  HBUINT16    fullAdvance;	  
 
 
-  PartFlags	partFlags;	
+  PartFlags partFlags;		  
 
   public:
   DEFINE_SIZE_STATIC (10);
@@ -528,13 +522,10 @@ struct MathGlyphAssembly
   }
 
   protected:
-  MathValueRecord
-		italicsCorrection;
-				
+  MathValueRecord	   italicsCorrection; 
 
 
-  ArrayOf<MathGlyphPartRecord>
-		partRecords;	
+  ArrayOf<MathGlyphPartRecord> partRecords;   
 
 
 
@@ -654,22 +645,19 @@ struct MathVariants
   }
 
   protected:
-  HBUINT16	minConnectorOverlap;
-				
+  HBUINT16	     minConnectorOverlap; 
 
 
-  OffsetTo<Coverage> vertGlyphCoverage;
-				
+  OffsetTo<Coverage> vertGlyphCoverage;   
 
 
-  OffsetTo<Coverage> horizGlyphCoverage;
-				
+  OffsetTo<Coverage> horizGlyphCoverage;  
 
 
-  HBUINT16	vertGlyphCount;	
+  HBUINT16	     vertGlyphCount;      
 
 
-  HBUINT16	horizGlyphCount;
+  HBUINT16	     horizGlyphCount;     
 
 
 
@@ -677,7 +665,7 @@ struct MathVariants
 
 
   UnsizedArrayOf<OffsetTo<MathGlyphConstruction>>
-			glyphConstruction;
+ 			glyphConstruction;
 
   public:
   DEFINE_SIZE_ARRAY (10, glyphConstruction);
@@ -714,14 +702,11 @@ struct MATH
   const MathVariants &get_variants () const    { return this+mathVariants; }
 
   protected:
-  FixedVersion<>version;	
+  FixedVersion<>version;		
 
-  OffsetTo<MathConstants>
-		mathConstants;	
-  OffsetTo<MathGlyphInfo>
-		mathGlyphInfo;	
-  OffsetTo<MathVariants>
-		mathVariants;	
+  OffsetTo<MathConstants> mathConstants;
+  OffsetTo<MathGlyphInfo> mathGlyphInfo;
+  OffsetTo<MathVariants>  mathVariants;	
 
   public:
   DEFINE_SIZE_STATIC (10);

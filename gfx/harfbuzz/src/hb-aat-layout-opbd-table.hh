@@ -160,8 +160,8 @@ struct opbd
 
 
   union {
-  opbdFormat0	format0;
-  opbdFormat1	format1;
+  opbdFormat0 format0;
+  opbdFormat1 format1;
   } u;
   public:
   DEFINE_SIZE_MIN (8);

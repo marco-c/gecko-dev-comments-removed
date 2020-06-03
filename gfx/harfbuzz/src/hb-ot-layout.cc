@@ -399,6 +399,27 @@ OT::GSUB::is_blacklisted (hb_blob_t *blob HB_UNUSED,
 #ifdef HB_NO_OT_LAYOUT_BLACKLIST
   return false;
 #endif
+
+#ifndef HB_NO_AAT_SHAPE
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  if (unlikely (face->table.OS2->achVendID == HB_TAG ('M','U','T','F') &&
+		face->table.morx->has_data ()))
+    return true;
+#endif
+
   return false;
 }
 
@@ -419,7 +440,7 @@ get_gsubgpos_table (hb_face_t *face,
   switch (table_tag) {
     case HB_OT_TAG_GSUB: return *face->table.GSUB->table;
     case HB_OT_TAG_GPOS: return *face->table.GPOS->table;
-    default:             return Null (OT::GSUBGPOS);
+    default:             return Null(OT::GSUBGPOS);
   }
 }
 
@@ -764,7 +785,7 @@ hb_ot_layout_language_get_required_feature_index (hb_face_t    *face,
 						  hb_tag_t      table_tag,
 						  unsigned int  script_index,
 						  unsigned int  language_index,
-						  unsigned int *feature_index )
+						  unsigned int *feature_index)
 {
   return hb_ot_layout_language_get_required_feature (face,
 						     table_tag,
@@ -796,8 +817,8 @@ hb_ot_layout_language_get_required_feature (hb_face_t    *face,
 					    hb_tag_t      table_tag,
 					    unsigned int  script_index,
 					    unsigned int  language_index,
-					    unsigned int *feature_index ,
-					    hb_tag_t     *feature_tag   )
+					    unsigned int *feature_index,
+					    hb_tag_t     *feature_tag)
 {
   const OT::GSUBGPOS &g = get_gsubgpos_table (face, table_tag);
   const OT::LangSys &l = g.get_script (script_index).get_lang_sys (language_index);
@@ -983,7 +1004,7 @@ struct hb_collect_features_context_t
 				 hb_set_t  *feature_indexes_)
     : g (get_gsubgpos_table (face, table_tag)),
       feature_indexes (feature_indexes_),
-      script_count (0),langsys_count (0), feature_index_count (0) {}
+      script_count(0),langsys_count(0) {}
 
   bool visited (const OT::Script &s)
   {
@@ -1012,12 +1033,6 @@ struct hb_collect_features_context_t
     return visited (l, visited_langsys);
   }
 
-  bool visited_feature_indices (unsigned count)
-  {
-    feature_index_count += count;
-    return feature_index_count > HB_MAX_FEATURE_INDICES;
-  }
-
   private:
   template <typename T>
   bool visited (const T &p, hb_set_t &visited_set)
@@ -1039,7 +1054,6 @@ struct hb_collect_features_context_t
   hb_set_t visited_langsys;
   unsigned int script_count;
   unsigned int langsys_count;
-  unsigned int feature_index_count;
 };
 
 static void
@@ -1052,11 +1066,10 @@ langsys_collect_features (hb_collect_features_context_t *c,
   if (!features)
   {
     
-    if (l.has_required_feature () && !c->visited_feature_indices (1))
+    if (l.has_required_feature ())
       c->feature_indexes->add (l.get_required_feature_index ());
 
-    if (!c->visited_feature_indices (l.featureIndex.len))
-      l.add_feature_indexes_to (c->feature_indexes);
+    l.add_feature_indexes_to (c->feature_indexes);
   }
   else
   {
@@ -1199,75 +1212,7 @@ hb_ot_layout_collect_lookups (hb_face_t      *face,
   for (hb_codepoint_t feature_index = HB_SET_VALUE_INVALID;
        hb_set_next (&feature_indexes, &feature_index);)
     g.get_feature (feature_index).add_lookup_indexes_to (lookup_indexes);
-
-  g.feature_variation_collect_lookups (&feature_indexes, lookup_indexes);
 }
-
-#ifdef HB_EXPERIMENTAL_API
-
-
-
-
-
-
-
-
-
-
-
-void
-hb_ot_layout_closure_lookups (hb_face_t      *face,
-			      hb_tag_t        table_tag,
-			      const hb_set_t *glyphs,
-			      hb_set_t       *lookup_indexes )
-{
-  hb_set_t visited_lookups, inactive_lookups;
-  OT::hb_closure_lookups_context_t c (face, glyphs, &visited_lookups, &inactive_lookups);
-
-  for (unsigned lookup_index : + hb_iter (lookup_indexes))
-  {
-    switch (table_tag)
-    {
-      case HB_OT_TAG_GSUB:
-      {
-	const OT::SubstLookup& l = face->table.GSUB->table->get_lookup (lookup_index);
-	l.closure_lookups (&c, lookup_index);
-	break;
-      }
-      case HB_OT_TAG_GPOS:
-      {
-	const OT::PosLookup& l = face->table.GPOS->table->get_lookup (lookup_index);
-	l.closure_lookups (&c, lookup_index);
-	break;
-      }
-    }
-  }
-
-  hb_set_union (lookup_indexes, &visited_lookups);
-  hb_set_subtract (lookup_indexes, &inactive_lookups);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-void
-hb_ot_layout_closure_features (hb_face_t      *face,
-			       hb_tag_t        table_tag,
-			       const hb_map_t *lookup_indexes, 
-			       hb_set_t       *feature_indexes )
-{
-  const OT::GSUBGPOS &g = get_gsubgpos_table (face, table_tag);
-  g.closure_features (lookup_indexes, feature_indexes);
-}
-#endif
 
 
 #ifndef HB_NO_LAYOUT_COLLECT_GLYPHS
@@ -1513,8 +1458,8 @@ hb_ot_layout_delete_glyphs_inplace (hb_buffer_t *buffer,
 
 void
 hb_ot_layout_lookup_substitute_closure (hb_face_t    *face,
-					unsigned int  lookup_index,
-					hb_set_t     *glyphs )
+				        unsigned int  lookup_index,
+				        hb_set_t     *glyphs )
 {
   hb_map_t done_lookups;
   OT::hb_closure_context_t c (face, glyphs, &done_lookups);
@@ -1549,7 +1494,7 @@ hb_ot_layout_lookups_substitute_closure (hb_face_t      *face,
   do
   {
     glyphs_length = glyphs->get_population ();
-    if (lookups)
+    if (lookups != nullptr)
     {
       for (hb_codepoint_t lookup_index = HB_SET_VALUE_INVALID; hb_set_next (lookups, &lookup_index);)
 	gsub.get_lookup (lookup_index).closure (&c, lookup_index);

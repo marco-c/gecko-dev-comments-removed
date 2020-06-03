@@ -57,20 +57,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 hb_script_t
 hb_icu_script_to_script (UScriptCode script)
 {
@@ -79,16 +65,6 @@ hb_icu_script_to_script (UScriptCode script)
 
   return hb_script_from_string (uscript_getShortName (script), -1);
 }
-
-
-
-
-
-
-
-
-
-
 
 UScriptCode
 hb_icu_script_from_script (hb_script_t script)
@@ -373,16 +349,6 @@ void free_static_icu_funcs ()
   static_icu_funcs.free_instance ();
 }
 #endif
-
-
-
-
-
-
-
-
-
-
 
 hb_unicode_funcs_t *
 hb_icu_get_unicode_funcs ()

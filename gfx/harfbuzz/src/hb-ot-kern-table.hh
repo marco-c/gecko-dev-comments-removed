@@ -86,25 +86,20 @@ struct KernSubTableFormat3
   }
 
   protected:
-  KernSubTableHeader
-		header;
-  HBUINT16	glyphCount;	
-  HBUINT8	kernValueCount;	
-  HBUINT8	leftClassCount;	
-  HBUINT8	rightClassCount;
-  HBUINT8	flags;		
-  UnsizedArrayOf<FWORD>
-		kernValueZ;	
+  KernSubTableHeader	header;
+  HBUINT16		glyphCount;	
+  HBUINT8		kernValueCount;	
+  HBUINT8		leftClassCount;	
+  HBUINT8		rightClassCount;
+  HBUINT8		flags;		
+  UnsizedArrayOf<FWORD>	kernValueZ;	
 
 #if 0
-  UnsizedArrayOf<HBUINT8>
-		leftClass;	
+  UnsizedArrayOf<HBUINT8>leftClass;	
 
-  UnsizedArrayOf<HBUINT8>
-		rightClass;	
+  UnsizedArrayOf<HBUINT8>rightClass;	
 
-  UnsizedArrayOf<HBUINT8>kernIndex;
-				
+  UnsizedArrayOf<HBUINT8>kernIndex;	
 
 #endif
   public:

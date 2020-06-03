@@ -326,8 +326,8 @@ DECLARE_NULL_INSTANCE (hb_unicode_funcs_t);
 
 
 
-#define HB_MODIFIED_COMBINING_CLASS_CCC84 4 /* length mark */
-#define HB_MODIFIED_COMBINING_CLASS_CCC91 5 /* ai length mark */
+#define HB_MODIFIED_COMBINING_CLASS_CCC84 5 /* length mark */
+#define HB_MODIFIED_COMBINING_CLASS_CCC91 6 /* ai length mark */
 
 
 

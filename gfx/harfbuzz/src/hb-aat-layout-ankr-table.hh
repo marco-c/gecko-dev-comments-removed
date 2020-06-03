@@ -66,7 +66,7 @@ struct ankr
   {
     const NNOffsetTo<GlyphAnchors> *offset = (this+lookupTable).get_value (glyph_id, num_glyphs);
     if (!offset)
-      return Null (Anchor);
+      return Null(Anchor);
     const GlyphAnchors &anchors = &(this+anchorData) + *offset;
     return anchors[i];
   }
@@ -81,7 +81,7 @@ struct ankr
   }
 
   protected:
-  HBUINT16	version;	
+  HBUINT16	version; 	
   HBUINT16	flags;		
   LOffsetTo<Lookup<NNOffsetTo<GlyphAnchors>>>
 		lookupTable;	

@@ -4,10 +4,19 @@
 
 
 
+
+
+from __future__ import print_function, division, absolute_import
+
 import io
 import re
 import sys
 
+try:
+  reload(sys)
+  sys.setdefaultencoding('utf-8')
+except NameError:
+  pass  
 
 print ("""static OS2Range _hb_os2_unicode_ranges[] =
 {""")

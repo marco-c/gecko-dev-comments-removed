@@ -169,7 +169,7 @@ struct hmtxvmtx
 
       num_advances = T::is_horizontal ? face->table.hhea->numberOfLongMetrics : face->table.vhea->numberOfLongMetrics;
 
-      table = hb_sanitize_context_t ().reference_table<hmtxvmtx> (face, T::tableTag);
+      table = hb_sanitize_context_t().reference_table<hmtxvmtx> (face, T::tableTag);
 
       
       unsigned int len = table.get_length ();
@@ -186,7 +186,7 @@ struct hmtxvmtx
 	table = hb_blob_get_empty ();
       }
 
-      var_table = hb_sanitize_context_t ().reference_table<HVARVVAR> (face, T::variationsTag);
+      var_table = hb_sanitize_context_t().reference_table<HVARVVAR> (face, T::variationsTag);
     }
 
     void fini ()
@@ -216,7 +216,7 @@ struct hmtxvmtx
 	return side_bearing;
 
       if (var_table.get_length ())
-	return side_bearing + var_table->get_side_bearing_var (glyph, font->coords, font->num_coords); 
+        return side_bearing + var_table->get_side_bearing_var (glyph, font->coords, font->num_coords); 
 
       return _glyf_get_side_bearing_var (font, glyph, T::tableTag == HB_OT_TAG_vmtx);
 #else
@@ -250,7 +250,7 @@ struct hmtxvmtx
 	return advance;
 
       if (var_table.get_length ())
-	return advance + roundf (var_table->get_advance_var (glyph, font)); 
+	return advance + roundf (var_table->get_advance_var (font, glyph)); 
 
       return _glyf_get_advance_var (font, glyph, T::tableTag == HB_OT_TAG_vmtx);
 #else
@@ -295,8 +295,7 @@ struct hmtxvmtx
   };
 
   protected:
-  UnsizedArrayOf<LongMetric>
-		longMetricZ;	
+  UnsizedArrayOf<LongMetric>longMetricZ;
 
 
 
@@ -305,7 +304,6 @@ struct hmtxvmtx
 
 
 
-				
 
 
 

@@ -48,8 +48,8 @@ struct GaspRange
   }
 
   public:
-  HBUINT16	rangeMaxPPEM;	
-  HBUINT16	rangeGaspBehavior;
+  HBUINT16 	rangeMaxPPEM;	
+  HBUINT16 	rangeGaspBehavior;
 				
   public:
   DEFINE_SIZE_STATIC (4);

@@ -107,8 +107,11 @@ struct hdmx
     this->numRecords = it.len ();
     this->sizeDeviceRecord = DeviceRecord::get_size (it ? (*it).second.len () : 0);
 
-    for (const hb_item_type<Iterator>& _ : +it)
-      c->start_embed<DeviceRecord> ()->serialize (c, _.first, _.second);
+    + it
+    | hb_apply ([c] (const hb_item_type<Iterator>& _) {
+		  c->start_embed<DeviceRecord> ()->serialize (c, _.first, _.second);
+		})
+    ;
 
     return_trace (c->successful);
   }
@@ -131,10 +134,10 @@ struct hdmx
 	  auto row =
 	    + hb_range (c->plan->num_output_glyphs ())
 	    | hb_map (c->plan->reverse_glyph_map)
-	    | hb_map ([this, c, device_record] (hb_codepoint_t _)
+	    | hb_map ([=] (hb_codepoint_t _)
 		      {
 			if (c->plan->is_empty_glyph (_))
-			  return Null (HBUINT8);
+			  return Null(HBUINT8);
 			return device_record->widthsZ.as_array (get_num_glyphs ()) [_];
 		      })
 	    ;
@@ -161,12 +164,10 @@ struct hdmx
   }
 
   protected:
-  HBUINT16	version;	
-  HBUINT16	numRecords;	
-  HBUINT32	sizeDeviceRecord;
-				
-  DeviceRecord	firstDeviceRecord;
-				
+  HBUINT16		version;		
+  HBUINT16		numRecords;		
+  HBUINT32		sizeDeviceRecord;	
+  DeviceRecord		firstDeviceRecord;	
   public:
   DEFINE_SIZE_MIN (8);
 };

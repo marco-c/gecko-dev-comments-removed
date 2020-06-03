@@ -453,7 +453,7 @@ _hb_rename_font (hb_blob_t *blob, wchar_t *new_name)
 
   hb_blob_destroy (blob);
   return hb_blob_create ((const char *) new_sfnt_data, new_length,
-			 HB_MEMORY_MODE_WRITABLE, new_sfnt_data, free);
+			 HB_MEMORY_MODE_WRITABLE, nullptr, free);
 }
 
 hb_uniscribe_face_data_t *
@@ -583,32 +583,12 @@ _hb_uniscribe_shaper_font_data_destroy (hb_uniscribe_font_data_t *data)
   free (data);
 }
 
-
-
-
-
-
-
-
-
-
-
 LOGFONTW *
 hb_uniscribe_font_get_logfontw (hb_font_t *font)
 {
   const hb_uniscribe_font_data_t *data =  font->data.uniscribe;
   return data ? &data->log_font : nullptr;
 }
-
-
-
-
-
-
-
-
-
-
 
 HFONT
 hb_uniscribe_font_get_hfont (hb_font_t *font)

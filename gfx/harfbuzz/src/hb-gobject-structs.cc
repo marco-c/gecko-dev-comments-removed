@@ -41,15 +41,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
 #include <glib.h>
 #if !GLIB_CHECK_VERSION(2,29,16)
 #undef __GNUC__

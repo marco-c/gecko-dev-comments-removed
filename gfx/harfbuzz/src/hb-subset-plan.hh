@@ -42,16 +42,12 @@ struct hb_subset_plan_t
   bool drop_hints : 1;
   bool desubroutinize : 1;
   bool retain_gids : 1;
-  bool name_legacy : 1;
 
   
   hb_set_t *unicodes;
 
   
   hb_set_t *name_ids;
-
-  
-  hb_set_t *name_languages;
 
   
   hb_set_t *drop_tables;
@@ -70,14 +66,6 @@ struct hb_subset_plan_t
   unsigned int _num_output_glyphs;
   hb_set_t *_glyphset;
   hb_set_t *_glyphset_gsub;
-
-  
-  hb_map_t *gsub_lookups;
-  hb_map_t *gpos_lookups;
-
-  
-  hb_map_t *gsub_features;
-  hb_map_t *gpos_features;
 
  public:
 
