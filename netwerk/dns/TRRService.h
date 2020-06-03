@@ -6,11 +6,11 @@
 #ifndef TRRService_h_
 #define TRRService_h_
 
-#include "mozilla/Atomics.h"
 #include "mozilla/DataStorage.h"
 #include "nsHostResolver.h"
 #include "nsIObserver.h"
 #include "nsWeakReference.h"
+#include "TRRServiceBase.h"
 
 class nsDNSService;
 class nsIPrefBranch;
@@ -22,7 +22,8 @@ namespace net {
 class TRRServiceChild;
 class TRRServiceParent;
 
-class TRRService : public nsIObserver,
+class TRRService : public TRRServiceBase,
+                   public nsIObserver,
                    public nsITimerCallback,
                    public nsSupportsWeakReference,
                    public AHostResolver {
@@ -37,7 +38,6 @@ class TRRService : public nsIObserver,
   bool Enabled(nsIRequest::TRRMode aMode);
   bool IsConfirmed() { return mConfirmationState == CONFIRM_OK; }
 
-  uint32_t Mode() { return mMode; }
   bool AllowRFC1918() { return mRfc1918; }
   bool UseGET() { return mUseGET; }
   bool EarlyAAAA() { return mEarlyAAAA; }
@@ -104,36 +104,17 @@ class TRRService : public nsIObserver,
   
   
   
-  bool MaybeSetPrivateURI(const nsACString& aURI);
-  
-  
-  
-  
-  
-  
-  
-  void CheckURIPrefs();
-  void ProcessURITemplate(nsACString& aURI);
+  bool MaybeSetPrivateURI(const nsACString& aURI) override;
   void ClearEntireCache();
 
-  static uint32_t ModeFromPrefs();
-
   bool mInitialized;
-  Atomic<uint32_t, Relaxed> mMode;
   Atomic<uint32_t, Relaxed> mTRRBlacklistExpireTime;
-
-  
-  nsCString mURIPref;
-  bool mURIPrefHasUserValue = false;
-  nsCString mRolloutURIPref;
 
   Mutex mLock;
 
-  nsCString mPrivateURI;   
   nsCString mPrivateCred;  
   nsCString mConfirmationNS;
   nsCString mBootstrapAddr;
-  bool mURISetByDetection = false;
 
   Atomic<bool, Relaxed> mWaitForCaptive;  
                                           
