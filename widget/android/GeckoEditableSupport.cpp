@@ -905,6 +905,7 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
     }
 
     if (!mIMEKeyEvents.IsEmpty()) {
+      bool ignoreNextKeyPress = false;
       for (uint32_t i = 0; i < mIMEKeyEvents.Length(); i++) {
         const auto event = mIMEKeyEvents[i]->AsKeyboardEvent();
         
@@ -913,7 +914,16 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
         status = nsEventStatus_eIgnore;
         if (event->mMessage != eKeyPress) {
           mDispatcher->DispatchKeyboardEvent(event->mMessage, *event, status);
+          
+          
+          ignoreNextKeyPress = event->mMessage == eKeyDown &&
+                               status == nsEventStatus_eConsumeNoDefault;
         } else {
+          if (ignoreNextKeyPress) {
+            
+            ignoreNextKeyPress = false;
+            continue;
+          }
           mDispatcher->MaybeDispatchKeypressEvents(*event, status);
           if (status == nsEventStatus_eConsumeNoDefault) {
             textChanged = true;
