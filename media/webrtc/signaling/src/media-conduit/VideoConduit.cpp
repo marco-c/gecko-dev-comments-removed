@@ -2247,9 +2247,6 @@ MediaConduitErrorCode WebrtcVideoConduit::StartReceivingLocked() {
 
 bool WebrtcVideoConduit::SendRtp(const uint8_t* packet, size_t length,
                                  const webrtc::PacketOptions& options) {
-  
-  
-  
   CSFLogVerbose(LOGTAG, "%s Sent RTP Packet seq %d, len %lu, SSRC %u (0x%x)",
                 __FUNCTION__, (uint16_t)ntohs(*((uint16_t*)&packet[2])),
                 (unsigned long)length,
@@ -2261,6 +2258,10 @@ bool WebrtcVideoConduit::SendRtp(const uint8_t* packet, size_t length,
       NS_FAILED(mTransmitterTransport->SendRtpPacket(packet, length))) {
     CSFLogError(LOGTAG, "%s RTP Packet Send Failed ", __FUNCTION__);
     return false;
+  }
+  if (options.packet_id >= 0) {
+    int64_t now_ms = PR_Now() / 1000;
+    mCall->Call()->OnSentPacket({options.packet_id, now_ms});
   }
   return true;
 }
