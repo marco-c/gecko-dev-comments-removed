@@ -780,6 +780,13 @@ MFBT_API void profiler_add_marker_for_thread(
     int aThreadId, ProfilingCategoryPair aCategoryPair, const char* aMarkerName,
     const ProfilerMarkerPayload& aPayload);
 
+
+
+
+MFBT_API void profiler_add_marker_for_mainthread(
+    ProfilingCategoryPair aCategoryPair, const char* aMarkerName,
+    const ProfilerMarkerPayload& aPayload);
+
 enum TracingKind {
   TRACING_EVENT,
   TRACING_INTERVAL_START,

@@ -838,6 +838,13 @@ void profiler_add_marker_for_thread(int aThreadId,
                                     const char* aMarkerName,
                                     const ProfilerMarkerPayload& aPayload);
 
+
+
+
+void profiler_add_marker_for_mainthread(JS::ProfilingCategoryPair aCategoryPair,
+                                        const char* aMarkerName,
+                                        const ProfilerMarkerPayload& aPayload);
+
 enum class NetworkLoadType { LOAD_START, LOAD_STOP, LOAD_REDIRECT };
 
 #  define PROFILER_ADD_NETWORK_MARKER(uri, pri, channel, type, start, end,  \
