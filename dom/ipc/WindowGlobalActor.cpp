@@ -18,10 +18,33 @@ namespace mozilla {
 namespace dom {
 
 
+static nsILoadInfo::CrossOriginEmbedderPolicy InheritedPolicy(
+    dom::BrowsingContext* aBrowsingContext) {
+  WindowContext* inherit = aBrowsingContext->GetParentWindowContext();
+  if (inherit) {
+    return inherit->GetEmbedderPolicy();
+  }
 
-static WindowGlobalInit BaseInitializer(dom::BrowsingContext* aBrowsingContext,
-                                        uint64_t aInnerWindowId,
-                                        uint64_t aOuterWindowId) {
+  RefPtr<dom::BrowsingContext> opener = aBrowsingContext->GetOpener();
+  if (!opener) {
+    return nsILoadInfo::EMBEDDER_POLICY_NULL;
+  }
+  
+  
+  inherit = opener->GetCurrentWindowContext();
+
+  if (!inherit) {
+    return nsILoadInfo::EMBEDDER_POLICY_NULL;
+  }
+
+  return inherit->GetEmbedderPolicy();
+}
+
+
+
+WindowGlobalInit WindowGlobalActor::BaseInitializer(
+    dom::BrowsingContext* aBrowsingContext, uint64_t aInnerWindowId,
+    uint64_t aOuterWindowId) {
   MOZ_DIAGNOSTIC_ASSERT(aBrowsingContext);
 
   WindowGlobalInit init;
@@ -32,6 +55,8 @@ static WindowGlobalInit BaseInitializer(dom::BrowsingContext* aBrowsingContext,
 
   
   
+  mozilla::Get<WindowContext::IDX_EmbedderPolicy>(ctx.mFields) =
+      InheritedPolicy(aBrowsingContext);
   return init;
 }
 

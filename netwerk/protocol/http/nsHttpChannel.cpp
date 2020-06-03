@@ -7531,15 +7531,6 @@ nsresult nsHttpChannel::ProcessCrossOriginEmbedderPolicyHeader() {
     return NS_OK;
   }
 
-  RefPtr<mozilla::dom::BrowsingContext> ctx;
-  mLoadInfo->GetBrowsingContext(getter_AddRefs(ctx));
-
-  if (!ctx) {
-    return NS_OK;
-  }
-
-  nsILoadInfo::CrossOriginEmbedderPolicy documentPolicy =
-      ctx->GetEmbedderPolicy();
   nsILoadInfo::CrossOriginEmbedderPolicy resultPolicy =
       nsILoadInfo::EMBEDDER_POLICY_NULL;
   rv = GetResponseEmbedderPolicy(&resultPolicy);
@@ -7548,23 +7539,14 @@ nsresult nsHttpChannel::ProcessCrossOriginEmbedderPolicyHeader() {
   }
 
   
-  if (mLoadInfo->GetExternalContentPolicyType() ==
+  RefPtr<WindowContext> ctx =
+      WindowContext::GetById(mLoadInfo->GetInnerWindowID());
+  if (ctx &&
+      mLoadInfo->GetExternalContentPolicyType() ==
           nsIContentPolicy::TYPE_SUBDOCUMENT &&
-      documentPolicy != nsILoadInfo::EMBEDDER_POLICY_NULL &&
+      ctx->GetEmbedderPolicy() != nsILoadInfo::EMBEDDER_POLICY_NULL &&
       resultPolicy != nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP) {
     return NS_ERROR_BLOCKED_BY_POLICY;
-  }
-
-  
-  
-  RefPtr<mozilla::dom::BrowsingContext> frameCtx = ctx;
-  if (mLoadInfo->GetExternalContentPolicyType() ==
-      nsIContentPolicy::TYPE_SUBDOCUMENT) {
-    mLoadInfo->GetFrameBrowsingContext(getter_AddRefs(frameCtx));
-  }
-
-  if (frameCtx && !frameCtx->IsDiscarded()) {
-    frameCtx->SetEmbedderPolicy(resultPolicy);
   }
 
   return NS_OK;
@@ -7600,8 +7582,8 @@ nsresult nsHttpChannel::ProcessCrossOriginResourcePolicyHeader() {
   
   
   if (StaticPrefs::browser_tabs_remote_useCrossOriginEmbedderPolicy()) {
-    RefPtr<mozilla::dom::BrowsingContext> ctx;
-    mLoadInfo->GetBrowsingContext(getter_AddRefs(ctx));
+    RefPtr<WindowContext> ctx =
+        WindowContext::GetById(mLoadInfo->GetInnerWindowID());
 
     
     

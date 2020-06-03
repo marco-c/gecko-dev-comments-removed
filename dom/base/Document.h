@@ -1139,6 +1139,11 @@ class Document : public nsINode,
 
   uint32_t GetSandboxFlags() const { return mSandboxFlags; }
 
+  Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> GetEmbedderPolicyFromHTTP()
+      const {
+    return mEmbedderPolicyFromHTTP;
+  }
+
   
 
 
@@ -1529,6 +1534,7 @@ class Document : public nsINode,
   friend class nsUnblockOnloadEvent;
 
   nsresult InitCSP(nsIChannel* aChannel);
+  nsresult InitCOEP(nsIChannel* aChannel);
 
   nsresult InitFeaturePolicy(nsIChannel* aChannel);
 
@@ -4704,6 +4710,9 @@ class Document : public nsINode,
   
   
   uint32_t mSandboxFlags;
+
+  
+  Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> mEmbedderPolicyFromHTTP;
 
   nsCString mContentLanguage;
 
