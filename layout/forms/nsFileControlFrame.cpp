@@ -212,7 +212,6 @@ static already_AddRefed<Element> MakeAnonButton(Document* aDoc,
   
   
   button->SetIsNativeAnonymousRoot();
-  button->SetPseudoElementType(PseudoStyleType::fileChooserButton);
 
   
   nsAutoString buttonTxt;
