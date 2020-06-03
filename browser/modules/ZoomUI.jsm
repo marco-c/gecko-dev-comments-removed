@@ -145,12 +145,17 @@ async function updateZoomUI(aBrowser, aAnimate = false) {
   
   
   
+  
 
   urlbarZoomButton.hidden =
     defaultZoom == zoomFactor ||
     (aBrowser.currentURI.spec == "about:blank" &&
       (!aBrowser.contentPrincipal ||
         aBrowser.contentPrincipal.isNullPrincipal)) ||
+    (aBrowser.contentPrincipal &&
+      aBrowser.contentPrincipal.URI &&
+      aBrowser.contentPrincipal.URI.spec ==
+        "resource://pdf.js/web/viewer.html") ||
     (customizableZoomControls &&
       customizableZoomControls.getAttribute("cui-areatype") == "toolbar");
 
@@ -164,7 +169,7 @@ async function updateZoomUI(aBrowser, aAnimate = false) {
     customizableZoomReset.setAttribute("label", label);
   }
   if (!urlbarZoomButton.hidden) {
-    if (aAnimate) {
+    if (aAnimate && !win.gReduceMotion) {
       urlbarZoomButton.setAttribute("animate", "true");
     } else {
       urlbarZoomButton.removeAttribute("animate");
