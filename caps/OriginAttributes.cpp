@@ -22,10 +22,8 @@ using dom::URLParams;
 
 void OriginAttributes::SetFirstPartyDomain(const bool aIsTopLevelDocument,
                                            nsIURI* aURI, bool aForced) {
-  bool isFirstPartyEnabled = IsFirstPartyEnabled();
-
   
-  if ((!isFirstPartyEnabled || !aIsTopLevelDocument) && !aForced) {
+  if ((!IsFirstPartyEnabled() || !aIsTopLevelDocument) && !aForced) {
     return;
   }
 
@@ -108,11 +106,10 @@ void OriginAttributes::SetFirstPartyDomain(const bool aIsTopLevelDocument,
 }
 
 void OriginAttributes::SetFirstPartyDomain(const bool aIsTopLevelDocument,
-                                           const nsAString& aDomain) {
-  bool isFirstPartyEnabled = IsFirstPartyEnabled();
-
+                                           const nsAString& aDomain,
+                                           bool aForced) {
   
-  if (!isFirstPartyEnabled || !aIsTopLevelDocument) {
+  if ((!IsFirstPartyEnabled() || !aIsTopLevelDocument) && !aForced) {
     return;
   }
 

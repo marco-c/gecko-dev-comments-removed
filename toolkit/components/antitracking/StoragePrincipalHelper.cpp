@@ -47,6 +47,17 @@ bool ChooseOriginAttributes(nsIChannel* aChannel, OriginAttributes& aAttrs,
     }
   }
 
+  nsAutoString domain;
+  Unused << cjs->GetFirstPartyDomain(domain);
+
+  if (!domain.IsEmpty()) {
+    aAttrs.SetFirstPartyDomain(false, domain, true );
+    return true;
+  }
+
+  
+  
+  
   nsCOMPtr<nsIPrincipal> toplevelPrincipal = loadInfo->GetTopLevelPrincipal();
   if (!toplevelPrincipal) {
     return false;
