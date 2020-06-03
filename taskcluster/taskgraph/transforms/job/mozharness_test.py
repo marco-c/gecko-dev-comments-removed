@@ -27,6 +27,7 @@ from taskgraph.transforms.job.common import (
 )
 
 VARIANTS = [
+    'nightly',
     'shippable',
     'devedition',
     'pgo',
@@ -59,7 +60,7 @@ def test_packages_url(taskdesc):
     
     test = taskdesc['run']['test']
     if 'android' in test['test-platform'] and (
-            get_variant(test['test-platform']) in ('shippable', )):
+            get_variant(test['test-platform']) in ("nightly", 'shippable')):
         head, tail = os.path.split(artifact_url)
         artifact_url = os.path.join(head, 'en-US', tail)
     return artifact_url

@@ -141,10 +141,9 @@ task_description_schema = Schema({
         'job-name': text_type,
 
         
-        'type': Any('generic', 'l10n',
-                    'shippable', 'shippable-l10n',
-                    'android-shippable', 'android-shippable-with-multi-l10n',
-                    'shippable-with-multi-l10n'),
+        'type': Any('generic', 'nightly', 'l10n', 'nightly-with-multi-l10n',
+                    'nightly-l10n', 'shippable', 'shippable-l10n',
+                    'android-nightly', 'android-nightly-with-multi-l10n'),
 
         
         
@@ -245,11 +244,25 @@ V2_TRUNK_ROUTE_TEMPLATES = [
     "index.{trust-domain}.v2.trunk.revision.{branch_rev}.{product}.{job-name}",
 ]
 
+V2_NIGHTLY_TEMPLATES = [
+    "index.{trust-domain}.v2.{project}.nightly.latest.{product}.{job-name}",
+    "index.{trust-domain}.v2.{project}.nightly.{build_date}.revision.{branch_rev}.{product}.{job-name}",  
+    "index.{trust-domain}.v2.{project}.nightly.{build_date}.latest.{product}.{job-name}",
+    "index.{trust-domain}.v2.{project}.nightly.revision.{branch_rev}.{product}.{job-name}",
+]
+
 V2_SHIPPABLE_TEMPLATES = [
     "index.{trust-domain}.v2.{project}.shippable.latest.{product}.{job-name}",
     "index.{trust-domain}.v2.{project}.shippable.{build_date}.revision.{branch_rev}.{product}.{job-name}",  
     "index.{trust-domain}.v2.{project}.shippable.{build_date}.latest.{product}.{job-name}",
     "index.{trust-domain}.v2.{project}.shippable.revision.{branch_rev}.{product}.{job-name}",
+]
+
+V2_NIGHTLY_L10N_TEMPLATES = [
+    "index.{trust-domain}.v2.{project}.nightly.latest.{product}-l10n.{job-name}.{locale}",
+    "index.{trust-domain}.v2.{project}.nightly.{build_date}.revision.{branch_rev}.{product}-l10n.{job-name}.{locale}",  
+    "index.{trust-domain}.v2.{project}.nightly.{build_date}.latest.{product}-l10n.{job-name}.{locale}",  
+    "index.{trust-domain}.v2.{project}.nightly.revision.{branch_rev}.{product}-l10n.{job-name}.{locale}",  
 ]
 
 V2_SHIPPABLE_L10N_TEMPLATES = [
@@ -1526,6 +1539,32 @@ def add_generic_index_routes(config, task):
     return task
 
 
+@index_builder('nightly')
+def add_nightly_index_routes(config, task):
+    index = task.get('index')
+    routes = task.setdefault('routes', [])
+
+    verify_index(config, index)
+
+    subs = config.params.copy()
+    subs['job-name'] = index['job-name']
+    subs['build_date_long'] = time.strftime("%Y.%m.%d.%Y%m%d%H%M%S",
+                                            time.gmtime(config.params['build_date']))
+    subs['build_date'] = time.strftime("%Y.%m.%d",
+                                       time.gmtime(config.params['build_date']))
+    subs['product'] = index['product']
+    subs['trust-domain'] = config.graph_config['trust-domain']
+    subs['branch_rev'] = get_branch_rev(config)
+
+    for tpl in V2_NIGHTLY_TEMPLATES:
+        routes.append(tpl.format(**subs))
+
+    
+    task = add_l10n_index_routes(config, task, force_locale="en-US")
+
+    return task
+
+
 @index_builder('shippable')
 def add_shippable_index_routes(config, task):
     index = task.get('index')
@@ -1549,12 +1588,16 @@ def add_shippable_index_routes(config, task):
     
     task = add_shippable_l10n_index_routes(config, task, force_locale="en-US")
 
+    
+    if 'nightly' in config.params['target_tasks_method']:
+        add_nightly_index_routes(config, task)
+
     return task
 
 
-@index_builder('shippable-with-multi-l10n')
-def add_shippable_multi_index_routes(config, task):
-    task = add_shippable_index_routes(config, task)
+@index_builder('nightly-with-multi-l10n')
+def add_nightly_multi_index_routes(config, task):
+    task = add_nightly_index_routes(config, task)
     task = add_l10n_index_routes(config, task, force_locale="multi")
     return task
 
@@ -1636,6 +1679,47 @@ def add_shippable_l10n_index_routes(config, task, force_locale=None):
         for tpl in V2_SHIPPABLE_L10N_TEMPLATES:
             routes.append(tpl.format(locale=locale, **subs))
 
+    
+    if 'nightly' in config.params['target_tasks_method']:
+        add_nightly_l10n_index_routes(config, task, force_locale)
+
+    return task
+
+
+@index_builder('nightly-l10n')
+def add_nightly_l10n_index_routes(config, task, force_locale=None):
+    index = task.get('index')
+    routes = task.setdefault('routes', [])
+
+    verify_index(config, index)
+
+    subs = config.params.copy()
+    subs['job-name'] = index['job-name']
+    subs['build_date_long'] = time.strftime("%Y.%m.%d.%Y%m%d%H%M%S",
+                                            time.gmtime(config.params['build_date']))
+    subs['build_date'] = time.strftime("%Y.%m.%d",
+                                       time.gmtime(config.params['build_date']))
+    subs['product'] = index['product']
+    subs['trust-domain'] = config.graph_config['trust-domain']
+    subs['branch_rev'] = get_branch_rev(config)
+
+    locales = task['attributes'].get('chunk_locales',
+                                     task['attributes'].get('all_locales'))
+    
+    if task['attributes'].get('locale'):
+        locales = [task['attributes']['locale']]
+
+    if force_locale:
+        
+        locales = [force_locale]
+
+    if not locales:
+        raise Exception("Error: Unable to use l10n index for tasks without locales")
+
+    for locale in locales:
+        for tpl in V2_NIGHTLY_L10N_TEMPLATES:
+            routes.append(tpl.format(locale=locale, **subs))
+
     return task
 
 
@@ -1659,17 +1743,17 @@ def add_geckoview_index_routes(config, task):
     return task
 
 
-@index_builder('android-shippable')
-def add_android_shippable_index_routes(config, task):
-    task = add_shippable_index_routes(config, task)
+@index_builder('android-nightly')
+def add_android_nightly_index_routes(config, task):
+    task = add_nightly_index_routes(config, task)
     task = add_geckoview_index_routes(config, task)
 
     return task
 
 
-@index_builder('android-shippable-with-multi-l10n')
-def add_android_shippable_multi_index_routes(config, task):
-    task = add_shippable_multi_index_routes(config, task)
+@index_builder('android-nightly-with-multi-l10n')
+def add_android_nightly_multi_index_routes(config, task):
+    task = add_nightly_multi_index_routes(config, task)
     task = add_geckoview_index_routes(config, task)
 
     return task
