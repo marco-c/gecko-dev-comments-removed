@@ -3874,18 +3874,12 @@ static void ThrowAggregateError(JSContext* cx,
 
   
   RootedSavedFrame stack(cx);
-  if (error.isObject() && error.toObject().is<ErrorObject>()) {
-    Rooted<ErrorObject*> errorObj(cx, &error.toObject().as<ErrorObject>());
-    MOZ_ASSERT(errorObj->type() == JSEXN_AGGREGATEERR);
-
-    RootedValue errorsVal(cx, JS::ObjectValue(*errors.unwrappedArray()));
-    if (!NativeDefineDataProperty(cx, errorObj, cx->names().errors, errorsVal,
-                                  0)) {
-      return;
-    }
+  if (error.isObject() && error.toObject().is<AggregateErrorObject>()) {
+    auto* aggregateError = &error.toObject().as<AggregateErrorObject>();
+    aggregateError->setAggregateErrors(errors.unwrappedArray());
 
     
-    if (JSObject* errorStack = errorObj->stack()) {
+    if (JSObject* errorStack = aggregateError->stack()) {
       stack = &errorStack->as<SavedFrame>();
     }
   }
