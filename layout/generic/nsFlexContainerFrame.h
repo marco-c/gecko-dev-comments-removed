@@ -108,6 +108,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
   class CachedBAxisMeasurement;
   class CachedFlexItemData;
   struct SharedFlexData;
+  class FlexItemIterator;
 
   
   void Init(nsIContent* aContent, nsContainerFrame* aParent,
