@@ -749,7 +749,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     }
   }
 
-  uint32_t state = nsIWebProgressListener::STATE_IS_BROKEN;
   nsCOMPtr<nsISecureBrowserUI> securityUI;
   rootShell->GetSecurityUI(getter_AddRefs(securityUI));
   
@@ -758,7 +757,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     *aDecision = nsIContentPolicy::ACCEPT;
     return NS_OK;
   }
-  MOZ_ALWAYS_SUCCEEDS(securityUI->GetState(&state));
 
   OriginAttributes originAttributes;
   if (loadingPrincipal) {
@@ -807,17 +805,12 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   }
 
   uint32_t newState = 0;
-  bool broken = false;
-
   
   
   if (classification == eMixedDisplay) {
     if (!StaticPrefs::security_mixed_content_block_display_content() ||
         allowMixedContent) {
       *aDecision = nsIContentPolicy::ACCEPT;
-      if (rootHasSecureConnection) {
-        broken = true;
-      }
       
       
       newState |= nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT;
@@ -832,11 +825,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     if (!StaticPrefs::security_mixed_content_block_active_content() ||
         allowMixedContent) {
       *aDecision = nsIContentPolicy::ACCEPT;
-
-      if (rootHasSecureConnection) {
-        broken = true;
-      }
-
       
       
       newState |= nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT;
@@ -890,7 +878,10 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     rootDoc->SetHasMixedDisplayContentBlocked(true);
   }
 
-  if (broken) {
+  uint32_t state = nsIWebProgressListener::STATE_IS_BROKEN;
+  MOZ_ALWAYS_SUCCEEDS(securityUI->GetState(&state));
+
+  if (*aDecision == nsIContentPolicy::ACCEPT && rootHasSecureConnection) {
     
     state = state >> 4 << 4;
     
