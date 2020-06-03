@@ -263,19 +263,7 @@ class ExtensionBaseContextChild extends BaseContext {
 }
 
 defineLazyGetter(ExtensionBaseContextChild.prototype, "messenger", function() {
-  let filter = { extensionId: this.extension.id };
-  let optionalFilter = {};
-  
-  
-  
-  
-  return new Messenger(
-    this,
-    [Services.cpmm, this.messageManager],
-    this.sender,
-    filter,
-    optionalFilter
-  );
+  return new Messenger(this, this.sender);
 });
 
 class ExtensionPageContextChild extends ExtensionBaseContextChild {

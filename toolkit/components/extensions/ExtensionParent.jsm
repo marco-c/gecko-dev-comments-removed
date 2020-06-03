@@ -30,7 +30,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionData: "resource://gre/modules/Extension.jsm",
   ExtensionActivityLog: "resource://gre/modules/ExtensionActivityLog.jsm",
   GeckoViewConnection: "resource://gre/modules/GeckoViewWebExtension.jsm",
-  MessageChannel: "resource://gre/modules/MessageChannel.jsm",
   MessageManagerProxy: "resource://gre/modules/MessageManagerProxy.jsm",
   NativeApp: "resource://gre/modules/NativeMessaging.jsm",
   OS: "resource://gre/modules/osfile.jsm",
@@ -77,6 +76,9 @@ var {
   promiseObserved,
 } = ExtensionUtils;
 
+const ERROR_NO_RECEIVERS =
+  "Could not establish connection. Receiving end does not exist.";
+
 const BASE_SCHEMA = "chrome://extensions/content/schemas/manifest.json";
 const CATEGORY_EXTENSION_MODULES = "webextension-modules";
 const CATEGORY_EXTENSION_SCHEMAS = "webextension-schemas";
@@ -88,7 +90,6 @@ schemaURLs.add("chrome://extensions/content/schemas/experiments.json");
 
 let GlobalManager;
 let ParentAPIManager;
-let ProxyMessenger;
 let StartupCache;
 
 const global = this;
@@ -253,7 +254,8 @@ let apiManager = new (class extends SchemaAPIManager {
 })();
 
 
-const NativeMessenger = {
+
+const ProxyMessenger = {
   
 
 
@@ -263,11 +265,11 @@ const NativeMessenger = {
   ports: new Map(),
 
   init() {
-    this.conduit = new BroadcastConduit(NativeMessenger, {
-      id: "NativeMessenger",
+    this.conduit = new BroadcastConduit(ProxyMessenger, {
+      id: "ProxyMessenger",
       reportOnClosed: "portId",
-      recv: ["PortConnect", "PortMessage", "NativeMessage"],
-      cast: ["PortConnect", "PortMessage", "PortDisconnect"],
+      recv: ["PortConnect", "PortMessage", "NativeMessage", "RuntimeMessage"],
+      cast: ["PortConnect", "PortMessage", "PortDisconnect", "RuntimeMessage"],
     });
   },
 
@@ -293,57 +295,62 @@ const NativeMessenger = {
     return this.openNative(nativeApp, sender).sendMessage(holder);
   },
 
-  
-  async connect(kind, portId, extensionId, sender, arg) {
-    let resolvePort;
-    
-    this.ports.set(portId, new Promise(res => (resolvePort = res)));
+  getSender(extension, source) {
+    let { extensionId, envType, frameId, url, actor, id } = source;
+    let sender = { id: extensionId, envType, frameId, url, contextId: id };
+    let target = actor.browsingContext.top.embedderElement;
+    apiManager.global.tabGetSender(extension, target, sender);
+    return sender;
+  },
 
-    let target = sender.actor.browsingContext.top.embedderElement;
-    let extension = GlobalManager.extensionMap.get(extensionId);
-    if (extension.wakeupBackground) {
-      await extension.wakeupBackground();
+  getTopBrowsingContextId(tabId) {
+    
+    let tab = apiManager.global.tabTracker.getTab(tabId, null);
+    if ((tab.browser || tab).getAttribute("pending") === "true") {
+      
+      throw new ExtensionError(ERROR_NO_RECEIVERS);
+    }
+    let browser = tab.linkedBrowser || tab.browser;
+    return browser.browsingContext.id;
+  },
+
+  
+  async normalizeArgs(arg, sender) {
+    arg.extensionId = arg.extensionId || sender.extensionId;
+    let extension = GlobalManager.extensionMap.get(arg.extensionId);
+    await extension.wakeupBackground?.();
+
+    arg.sender = this.getSender(extension, sender);
+    arg.topBC = arg.tabId && this.getTopBrowsingContextId(arg.tabId);
+    return arg.tabId ? "tab" : "messenger";
+  },
+
+  async recvRuntimeMessage(arg, { sender }) {
+    arg.firstResponse = true;
+    let kind = await this.normalizeArgs(arg, sender);
+    let result = await this.conduit.castRuntimeMessage(kind, arg);
+    return result ? result[0] : Promise.reject({ message: ERROR_NO_RECEIVERS });
+  },
+
+  async recvPortConnect(arg, { sender }) {
+    if (arg.native) {
+      let port = this.openNative(arg.name, sender).onConnect(arg.portId, this);
+      this.ports.set(arg.portId, port);
+      return;
     }
 
-    sender = {
-      id: sender.extensionId,
-      envType: sender.envType,
-      frameId: sender.frameId,
-      url: sender.actor.manager.documentURI.spec,
-      contextId: sender.id,
-    };
-    apiManager.global.tabGetSender(extension, target, sender);
+    
+    let resolvePort;
+    this.ports.set(arg.portId, new Promise(res => (resolvePort = res)));
 
-    arg = { portId, extensionId, sender, ...arg };
+    let kind = await this.normalizeArgs(arg, sender);
     let all = await this.conduit.castPortConnect(kind, arg);
     resolvePort();
 
     
     if (!all.some(x => x.value)) {
-      throw new ExtensionError(
-        "Could not establish connection. Receiving end does not exist."
-      );
+      throw new ExtensionError(ERROR_NO_RECEIVERS);
     }
-  },
-
-  recvPortConnect({ name, portId, native, ...args }, { sender }) {
-    if (native) {
-      let port = this.openNative(name, sender).onConnect(portId, this);
-      this.ports.set(portId, port);
-      return;
-    }
-
-    let { extensionId, tabId, frameId } = args;
-    if (extensionId) {
-      
-      return this.connect("messenger", portId, extensionId, sender, { name });
-    }
-
-    
-    let tab = apiManager.global.tabTracker.getTab(tabId, null);
-    let browser = tab.linkedBrowser || tab.browser;
-    let arg = { name, frameId, topBC: browser.browsingContext.id };
-    return this.connect("tab", portId, sender.extensionId, sender, arg);
   },
 
   async recvPortMessage({ holder }, { sender }) {
@@ -371,132 +378,7 @@ const NativeMessenger = {
     this.ports.delete(portId);
   },
 };
-NativeMessenger.init();
-
-
-
-
-ProxyMessenger = {
-  _initialized: false,
-
-  init() {
-    if (this._initialized) {
-      return;
-    }
-    this._initialized = true;
-
-    
-    
-    
-    
-    
-    
-    
-    let messageManagers = [Services.mm, Services.ppmm];
-    MessageChannel.addListener(messageManagers, "Extension:Message", this);
-  },
-
-  async receiveMessage({
-    target,
-    messageName,
-    sender,
-    recipient,
-    data,
-    responseType,
-  }) {
-    const noHandlerError = {
-      result: MessageChannel.RESULT_NO_HANDLER,
-      message: "No matching message handler for the given recipient.",
-    };
-
-    let extension = GlobalManager.extensionMap.get(sender.extensionId);
-
-    if (extension && extension.wakeupBackground) {
-      await extension.wakeupBackground();
-    }
-
-    let receiverMM = this.getMessageManagerForRecipient(recipient)
-      .messageManager;
-
-    if (!extension || !receiverMM) {
-      return Promise.reject(noHandlerError);
-    }
-
-    if (messageName == "Extension:Message" && apiManager.global.tabGetSender) {
-      apiManager.global.tabGetSender(extension, target, sender);
-    }
-
-    let promise = MessageChannel.sendMessage(receiverMM, messageName, data, {
-      sender,
-      recipient,
-      responseType,
-    });
-
-    return promise;
-  },
-
-  
-
-
-
-
-
-
-
-  getMessageManagerForRecipient(recipient) {
-    
-    if ("tabId" in recipient) {
-      
-      
-      let tab = apiManager.global.tabTracker.getTab(recipient.tabId, null);
-      if (!tab) {
-        return { messageManager: null, xulBrowser: null };
-      }
-
-      
-      
-      let node = tab.browser || tab;
-      if (node.getAttribute("pending") === "true") {
-        return { messageManager: null, xulBrowser: null };
-      }
-
-      let browser = tab.linkedBrowser || tab.browser;
-
-      
-      
-      
-      
-      
-      if (browser.currentURI.specIgnoringRef === "about:addons") {
-        let htmlBrowser = browser.contentDocument.getElementById(
-          "html-view-browser"
-        );
-        
-        
-        let optionsBrowser =
-          htmlBrowser.contentDocument.getElementById("addon-inline-options") ||
-          browser.contentDocument.querySelector(".inline-options-browser");
-        if (optionsBrowser) {
-          browser = optionsBrowser;
-        }
-      }
-
-      return { messageManager: browser.messageManager, xulBrowser: browser };
-    }
-
-    
-    let extension = GlobalManager.extensionMap.get(recipient.extensionId);
-    if (extension) {
-      
-      return {
-        messageManager: extension.parentMessageManager,
-        xulBrowser: null,
-      };
-    }
-
-    return { messageManager: null, xulBrowser: null };
-  },
-};
+ProxyMessenger.init();
 
 
 GlobalManager = {
@@ -507,7 +389,6 @@ GlobalManager = {
 
   init(extension) {
     if (this.extensionMap.size == 0) {
-      ProxyMessenger.init();
       apiManager.on("extension-browser-inserted", this._onExtensionBrowser);
       this.initialized = true;
       Services.ppmm.addMessageListener(
