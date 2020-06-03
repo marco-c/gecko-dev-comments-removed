@@ -43,18 +43,14 @@ class NodeOffsetRange {
  private:
   NodeOffset mBegin;
   NodeOffset mEnd;
-  bool mEmpty;
 
  public:
-  NodeOffsetRange() : mEmpty(true) {}
-  NodeOffsetRange(NodeOffset b, NodeOffset e)
-      : mBegin(b), mEnd(e), mEmpty(false) {}
+  NodeOffsetRange() {}
+  NodeOffsetRange(NodeOffset b, NodeOffset e) : mBegin(b), mEnd(e) {}
 
   NodeOffset Begin() const { return mBegin; }
 
   NodeOffset End() const { return mEnd; }
-
-  bool Empty() const { return mEmpty; }
 };
 
 
@@ -113,8 +109,8 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
   
   
   
-  nsresult GetNextWord(nsAString& aText, NodeOffsetRange* aNodeOffsetRange,
-                       bool* aSkipChecking);
+  bool GetNextWord(nsAString& aText, NodeOffsetRange* aNodeOffsetRange,
+                   bool* aSkipChecking);
 
   
   
