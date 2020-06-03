@@ -134,7 +134,8 @@ class WebrtcVideoConduit
 
 
   MediaConduitErrorCode ConfigureSendMediaCodec(
-      const VideoCodecConfig* codecInfo) override;
+      const VideoCodecConfig* codecInfo,
+      const RtpRtcpConfig& aRtpRtcpConfig) override;
 
   
 
@@ -147,7 +148,8 @@ class WebrtcVideoConduit
 
 
   MediaConduitErrorCode ConfigureRecvMediaCodecs(
-      const std::vector<UniquePtr<VideoCodecConfig>>& codecConfigList) override;
+      const std::vector<UniquePtr<VideoCodecConfig>>& codecConfigList,
+      const RtpRtcpConfig& aRtpRtcpConfig) override;
 
   
 

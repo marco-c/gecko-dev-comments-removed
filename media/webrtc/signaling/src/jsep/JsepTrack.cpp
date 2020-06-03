@@ -7,7 +7,6 @@
 #include "signaling/src/jsep/JsepTrackEncoding.h"
 
 #include <algorithm>
-#include <iostream>
 
 namespace mozilla {
 void JsepTrack::GetNegotiatedPayloadTypes(
@@ -354,6 +353,16 @@ void JsepTrack::CreateEncodings(
     const std::vector<UniquePtr<JsepCodecDescription>>& negotiatedCodecs,
     JsepTrackNegotiatedDetails* negotiatedDetails) {
   negotiatedDetails->mTias = remote.GetBandwidth("TIAS");
+
+  webrtc::RtcpMode rtcpMode = webrtc::RtcpMode::kCompound;
+  
+  if (remote.GetMediaType() == SdpMediaSection::kVideo &&
+      remote.GetAttributeList().HasAttribute(
+          SdpAttribute::kRtcpRsizeAttribute)) {
+    rtcpMode = webrtc::RtcpMode::kReducedSize;
+  }
+  negotiatedDetails->mRtpRtcpConf = RtpRtcpConfig(rtcpMode);
+
   
 
   std::vector<std::pair<SdpRidAttributeList::Rid, bool>> rids;
