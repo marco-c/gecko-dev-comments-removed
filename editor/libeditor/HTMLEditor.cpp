@@ -3364,15 +3364,7 @@ nsresult HTMLEditor::ReplaceTextWithTransaction(
 
   if (!mActionListeners.IsEmpty()) {
     for (auto& listener : mActionListeners.Clone()) {
-      
-      
-      
       DebugOnly<nsresult> rvIgnored =
-          listener->DidDeleteText(&aTextNode, aOffset, aLength, rv);
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rvIgnored),
-          "nsIEditActionListener::WillDeleteText() failed, but ignored");
-      rvIgnored =
           listener->DidInsertText(&aTextNode, aOffset, aStringToInsert, rv);
       NS_WARNING_ASSERTION(
           NS_SUCCEEDED(rvIgnored),
