@@ -29,7 +29,7 @@ def run(message='{msg}', push=True, closed_tree=False, try_config=None):
     
     
     try_config.setdefault('optimize-strategies',
-                          'taskgraph.optimize:tryselect.bugbug_reduced')
+                          'taskgraph.optimize:tryselect.bugbug_debug_disperse')
 
     task_config = {
         'version': 2,
