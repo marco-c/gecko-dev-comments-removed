@@ -131,6 +131,45 @@ add_task(async function testPluginData() {
 
     ok(!stored(null), "All data cleared");
     BrowserTestUtils.removeTab(tab);
+
+    
+
+    
+    tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+    await promiseUpdatePluginBindings(gBrowser.selectedBrowser);
+
+    ok(
+      stored(["foo.com", "bar.com", "baz.com", "qux.com"]),
+      "Data stored for sites"
+    );
+
+    extension.sendMessage(method, { hostnames: ["bar.com", "baz.com"] });
+    await extension.awaitMessage("pluginDataRemoved");
+
+    ok(stored(["foo.com", "qux.com"]), "Data stored for sites");
+    ok(!stored(["bar.com"]), "Data cleared for bar.com");
+    ok(!stored(["baz.com"]), "Data cleared for baz.com");
+    BrowserTestUtils.removeTab(tab);
+
+    
+
+    
+    tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+    await promiseUpdatePluginBindings(gBrowser.selectedBrowser);
+
+    ok(
+      stored(["foo.com", "bar.com", "baz.com", "qux.com"]),
+      "Data stored for sites"
+    );
+
+    extension.sendMessage(method, { hostnames: [] });
+    await extension.awaitMessage("pluginDataRemoved");
+
+    ok(
+      stored(["foo.com", "bar.com", "baz.com", "qux.com"]),
+      "Data stored for sites"
+    );
+    BrowserTestUtils.removeTab(tab);
   }
 
   PLUGIN_TAG.enabledState = Ci.nsIPluginTag.STATE_ENABLED;
