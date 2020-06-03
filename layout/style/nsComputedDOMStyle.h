@@ -41,7 +41,6 @@ class nsDOMCSSValueList;
 struct nsMargin;
 class nsROCSSPrimitiveValue;
 class nsStyleGradient;
-struct nsStyleImage;
 
 class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
                                  public nsStubMutationObserver {
@@ -180,11 +179,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   already_AddRefed<CSSValue> GetPaddingWidthFor(mozilla::Side aSide);
 
-  already_AddRefed<CSSValue> GetBorderStyleFor(mozilla::Side aSide);
-
   already_AddRefed<CSSValue> GetBorderWidthFor(mozilla::Side aSide);
-
-  already_AddRefed<CSSValue> GetBorderColorFor(mozilla::Side aSide);
 
   already_AddRefed<CSSValue> GetMarginWidthFor(mozilla::Side aSide);
 
