@@ -104,11 +104,6 @@ class CompositorAnimationStorage final {
   
 
 
-  void SetAnimatedValue(uint64_t aId, gfx::Matrix4x4&& aTransformInDevSpace);
-
-  
-
-
   void SetAnimatedValue(uint64_t aId, const float& aOpacity);
 
   
