@@ -152,6 +152,8 @@
   -moz-context-properties: fill;
   fill: currentColor;
   color: inherit;
+  
+  outline: none;
 }
 
 .touch .controlBar > .button {
