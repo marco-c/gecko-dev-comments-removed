@@ -417,9 +417,6 @@ nsresult nsPrintSettingsService::ReadPrefs(nsIPrintSettings* aPS,
     
     
     
-#if defined(XP_WIN)
-    bool saveSanitizedSizePrefs = false;
-#endif
     if (success) {
       success = (sizeUnit != nsIPrintSettings::kPaperSizeInches) ||
                 (width < 100.0) || (height < 100.0);
@@ -434,12 +431,6 @@ nsresult nsPrintSettingsService::ReadPrefs(nsIPrintSettings* aPS,
       DUMP_DBL(kReadStr, kPrintPaperHeight, height);
       aPS->SetPaperName(str);
       DUMP_STR(kReadStr, kPrintPaperName, str.get());
-#if defined(XP_WIN)
-      if (saveSanitizedSizePrefs) {
-        SavePrintSettingsToPrefs(aPS, !aPrinterName.IsEmpty(),
-                                 nsIPrintSettings::kInitSavePaperSize);
-      }
-#endif
     }
   }
 
@@ -683,20 +674,6 @@ nsresult nsPrintSettingsService::WritePrefs(nsIPrintSettings* aPS,
       WritePrefDouble(GetPrefName(kPrintPaperHeight, aPrinterName), height);
       DUMP_STR(kWriteStr, kPrintPaperName, name.get());
       Preferences::SetString(GetPrefName(kPrintPaperName, aPrinterName), name);
-#if defined(XP_WIN)
-      
-      
-      
-      
-      
-      if (height == -1L && width == -1L) {
-        const char* paperSizeTypePref =
-            GetPrefName("print_paper_size_type", aPrinterName);
-        if (Preferences::HasUserValue(paperSizeTypePref)) {
-          Preferences::ClearUser(paperSizeTypePref);
-        }
-      }
-#endif
     }
   }
 
