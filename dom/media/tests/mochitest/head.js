@@ -419,11 +419,6 @@ function pushPrefs(...p) {
 }
 
 function setupEnvironment() {
-  if (!window.SimpleTest) {
-    
-    return;
-  }
-
   var defaultMochitestPrefs = {
     set: [
       ["media.peerconnection.enabled", true],
@@ -470,25 +465,6 @@ function setupEnvironment() {
   
   
   SpecialPowers.exactGC();
-}
-
-
-
-
-function run_test(is_initiator, timeout) {
-  var options = { is_local: is_initiator, is_remote: !is_initiator };
-
-  setTimeout(() => {
-    unexpectedEventArrived(
-      new Error("PeerConnectionTest timed out after " + timeout + "s")
-    );
-  }, timeout);
-
-  
-  var s = document.createElement("script");
-  s.src = "/test.js";
-  s.onload = () => setTestOptions(options);
-  document.head.appendChild(s);
 }
 
 function runTestWhenReady(testFunc) {
