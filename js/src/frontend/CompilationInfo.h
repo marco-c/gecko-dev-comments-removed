@@ -25,8 +25,6 @@
 namespace js {
 namespace frontend {
 
-using FunctionType = mozilla::Variant<JSFunction*, ScriptStencil>;
-
 
 
 struct ScopeContext {
@@ -97,7 +95,8 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
 
   
   
-  JS::RootedVector<FunctionType> funcData;
+  JS::RootedVector<JSFunction*> functions;
+  JS::RootedVector<ScriptStencil> funcData;
 
   
   
@@ -129,6 +128,7 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
         allocScope(alloc),
         regExpData(cx),
         bigIntData(cx),
+        functions(cx),
         funcData(cx),
         scopeCreationData(cx),
         sourceObject(cx) {}

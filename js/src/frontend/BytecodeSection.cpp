@@ -118,12 +118,11 @@ bool js::frontend::EmitScriptThingsVector(JSContext* cx,
     }
 
     bool operator()(const FunctionIndex& index) {
-      MutableHandle<FunctionType> data = compilationInfo.funcData[index];
       
       
       
       
-      output[i] = JS::GCCellPtr(data.as<JSFunction*>());
+      output[i] = JS::GCCellPtr(compilationInfo.functions[index]);
       return true;
     }
 
