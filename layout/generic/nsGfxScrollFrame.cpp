@@ -3557,9 +3557,6 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
   }
 
-  ScrollableLayerGuid::ViewID scrollId =
-      nsLayoutUtils::FindOrCreateIDFor(mScrolledFrame->GetContent());
-
   {
     
     
@@ -3567,9 +3564,10 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     nsDisplayListBuilder::AutoCurrentScrollParentIdSetter idSetter(
-        aBuilder, couldBuildLayer && mScrolledFrame->GetContent()
-                      ? scrollId
-                      : aBuilder->GetCurrentScrollParentId());
+        aBuilder,
+        couldBuildLayer && mScrolledFrame->GetContent()
+            ? nsLayoutUtils::FindOrCreateIDFor(mScrolledFrame->GetContent())
+            : aBuilder->GetCurrentScrollParentId());
 
     DisplayListClipState::AutoSaveRestore clipState(aBuilder);
     
@@ -3752,12 +3750,15 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     nsDisplayList resultList;
     set.SerializeWithCorrectZOrder(&resultList, mOuter->GetContent());
 
+    mozilla::layers::FrameMetrics::ViewID viewID =
+        nsLayoutUtils::FindOrCreateIDFor(mScrolledFrame->GetContent());
+
     DisplayListClipState::AutoSaveRestore clipState(aBuilder);
     clipState.ClipContentDescendants(clipRect, haveRadii ? radii : nullptr);
 
     set.Content()->AppendNewToTop<nsDisplayAsyncZoom>(
         aBuilder, mOuter, &resultList, aBuilder->CurrentActiveScrolledRoot(),
-        scrollId);
+        viewID);
   }
 
   nsDisplayListCollection scrolledContent(aBuilder);
@@ -3787,48 +3788,13 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     if (!mWillBuildScrollableLayer) {
-      
-      
-      
-      
-      
-      
-      
-      bool provideScrollInfoForAPZ = IsMaybeScrollingActive();
-      if (aBuilder->ShouldBuildScrollInfoItemsForHoisting()) {
-        
-        
-        
-        provideScrollInfoForAPZ = false;
-      }
-
       if (aBuilder->BuildCompositorHitTestInfo()) {
         nsDisplayCompositorHitTestInfo* hitInfo =
             MakeDisplayItemWithIndex<nsDisplayCompositorHitTestInfo>(
                 aBuilder, mScrolledFrame, 1, info, Some(area));
         if (hitInfo) {
-          if (provideScrollInfoForAPZ) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            hitInfo->SetInactiveScrollTarget(scrollId);
-          }
           AppendInternalItemToTop(scrolledContent, hitInfo, Some(INT32_MAX));
         }
-      }
-      if (provideScrollInfoForAPZ) {
-        nsDisplayScrollInfoLayer* scrollInfo =
-            MakeDisplayItem<nsDisplayScrollInfoLayer>(aBuilder, mScrolledFrame,
-                                                      mOuter, info, area);
-        AppendInternalItemToTop(scrolledContent, scrollInfo, Nothing());
       }
     }
 
