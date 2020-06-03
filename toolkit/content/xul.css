@@ -240,6 +240,7 @@ tooltip {
 }
 
 @supports -moz-bool-pref("xul.panel-animations.enabled") {
+@media (prefers-reduced-motion: no-preference) {
 %ifdef MOZ_WIDGET_COCOA
   
 
@@ -303,6 +304,7 @@ tooltip {
     transform: none;
   }
 %endif
+}
 }
 
 panel[type="arrow"][animating] {
