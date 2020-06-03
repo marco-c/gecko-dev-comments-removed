@@ -130,9 +130,9 @@ DomPanel.prototype = {
     this.refresh();
   },
 
-  onTargetAvailable: function({ isTopLevel, isTargetSwitching }) {
+  onTargetAvailable: function({ targetFront }) {
     
-    if (!isTopLevel) {
+    if (!targetFront.isTopLevel) {
       return;
     }
 
