@@ -245,7 +245,7 @@ class ResourceWatcher {
 
   async _startListening(resourceType) {
     const isDocumentEvent =
-      resourceType === ResourceWatcher.TYPES.DOCUMENT_EVENTS;
+      resourceType === ResourceWatcher.TYPES.DOCUMENT_EVENT;
 
     let listeners = this._listenerCount.get(resourceType) || 0;
     listeners++;
@@ -356,10 +356,10 @@ class ResourceWatcher {
 }
 
 ResourceWatcher.TYPES = ResourceWatcher.prototype.TYPES = {
-  CONSOLE_MESSAGES: "console-messages",
-  ERROR_MESSAGES: "error-messages",
-  PLATFORM_MESSAGES: "platform-messages",
-  DOCUMENT_EVENTS: "document-events",
+  CONSOLE_MESSAGE: "console-message",
+  ERROR_MESSAGE: "error-message",
+  PLATFORM_MESSAGE: "platform-message",
+  DOCUMENT_EVENT: "document-event",
   ROOT_NODE: "root-node",
 };
 module.exports = { ResourceWatcher };
@@ -369,12 +369,12 @@ module.exports = { ResourceWatcher };
 
 const LegacyListeners = {
   [ResourceWatcher.TYPES
-    .CONSOLE_MESSAGES]: require("devtools/shared/resources/legacy-listeners/console-messages"),
+    .CONSOLE_MESSAGE]: require("devtools/shared/resources/legacy-listeners/console-messages"),
   [ResourceWatcher.TYPES
-    .ERROR_MESSAGES]: require("devtools/shared/resources/legacy-listeners/error-messages"),
+    .ERROR_MESSAGE]: require("devtools/shared/resources/legacy-listeners/error-messages"),
   [ResourceWatcher.TYPES
-    .PLATFORM_MESSAGES]: require("devtools/shared/resources/legacy-listeners/platform-messages"),
-  async [ResourceWatcher.TYPES.DOCUMENT_EVENTS]({
+    .PLATFORM_MESSAGE]: require("devtools/shared/resources/legacy-listeners/platform-messages"),
+  async [ResourceWatcher.TYPES.DOCUMENT_EVENT]({
     targetList,
     targetFront,
     onAvailable,

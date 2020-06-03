@@ -74,7 +74,7 @@ add_task(async function() {
     }
   };
 
-  await resourceWatcher.watchResources([ResourceWatcher.TYPES.ERROR_MESSAGES], {
+  await resourceWatcher.watchResources([ResourceWatcher.TYPES.ERROR_MESSAGE], {
     onAvailable,
   });
 
@@ -97,7 +97,7 @@ add_task(async function() {
 });
 
 add_task(async function() {
-  info("Test ignoreExistingResources option for ERROR_MESSAGES");
+  info("Test ignoreExistingResources option for ERROR_MESSAGE");
 
   
   
@@ -117,7 +117,7 @@ add_task(async function() {
   await triggerErrors(tab);
 
   const availableResources = [];
-  await resourceWatcher.watchResources([ResourceWatcher.TYPES.ERROR_MESSAGES], {
+  await resourceWatcher.watchResources([ResourceWatcher.TYPES.ERROR_MESSAGE], {
     onAvailable: ({ resource }) => availableResources.push(resource),
     ignoreExistingResources: true,
   });

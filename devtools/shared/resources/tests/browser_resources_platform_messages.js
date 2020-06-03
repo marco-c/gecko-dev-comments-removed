@@ -66,7 +66,7 @@ add_task(async function() {
   };
 
   await resourceWatcher.watchResources(
-    [ResourceWatcher.TYPES.PLATFORM_MESSAGES],
+    [ResourceWatcher.TYPES.PLATFORM_MESSAGE],
     {
       onAvailable,
     }
@@ -88,7 +88,7 @@ add_task(async function() {
 });
 
 add_task(async function() {
-  info("Test ignoreExistingResources option for PLATFORM_MESSAGES");
+  info("Test ignoreExistingResources option for PLATFORM_MESSAGE");
 
   
   
@@ -109,7 +109,7 @@ add_task(async function() {
 
   const availableResources = [];
   await resourceWatcher.watchResources(
-    [ResourceWatcher.TYPES.PLATFORM_MESSAGES],
+    [ResourceWatcher.TYPES.PLATFORM_MESSAGE],
     {
       onAvailable: ({ resource }) => {
         if (!expectedMessages.includes(resource.message)) {
