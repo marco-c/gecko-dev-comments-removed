@@ -418,6 +418,21 @@ add_task(async function topSitesDisabled() {
     private: true,
   });
   await checkDoesNotOpenOnFocus(privateWin);
+
+  
+  
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window: privateWin,
+    waitForFocus,
+    value: "example",
+  });
+  privateWin.gURLBar.select();
+  EventUtils.synthesizeKey("KEY_Backspace", {}, privateWin);
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 500));
+  Assert.ok(!privateWin.gURLBar.view.isOpen, "check urlbar panel is not open");
+
   await BrowserTestUtils.closeWindow(privateWin);
 
   await PlacesUtils.bookmarks.eraseEverything();
