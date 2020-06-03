@@ -139,7 +139,8 @@ const startupPhases = {
     },
     {
       name: "PLayerTransaction::Msg_GetTextureFactoryIdentifier",
-      condition: !MAC && !WEBRENDER,
+      condition: (!MAC && !WEBRENDER) || (WIN && WEBRENDER),
+      ignoreIfUnused: true, 
       maxCount: 1,
     },
     {
@@ -185,13 +186,6 @@ const startupPhases = {
       maxCount: 1,
     },
     {
-      
-      name: "PLayerTransaction::Msg_GetTextureFactoryIdentifier",
-      condition: WIN && WEBRENDER,
-      ignoreIfUnused: true, 
-      maxCount: 1,
-    },
-    {
       name: "PWebRenderBridge::Msg_EnsureConnected",
       condition: WIN && WEBRENDER,
       ignoreIfUnused: true,
@@ -224,7 +218,7 @@ const startupPhases = {
     {
       
       name: "PLayerTransaction::Msg_GetTextureFactoryIdentifier",
-      condition: WIN && WEBRENDER,
+      condition: WIN,
       ignoreIfUnused: true, 
       maxCount: 1,
     },
@@ -236,13 +230,13 @@ const startupPhases = {
     },
     {
       name: "PCompositorBridge::Msg_Initialize",
-      condition: WIN && WEBRENDER,
+      condition: WIN,
       ignoreIfUnused: true, 
       maxCount: 1,
     },
     {
       name: "PCompositorWidget::Msg_Initialize",
-      condition: WIN && WEBRENDER,
+      condition: WIN,
       ignoreIfUnused: true, 
       maxCount: 1,
     },
