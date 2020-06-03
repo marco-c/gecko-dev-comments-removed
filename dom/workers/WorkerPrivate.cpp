@@ -3712,6 +3712,15 @@ bool WorkerPrivate::AddWorkerRef(WorkerRef* aWorkerRef,
     if (mStatus >= aFailStatus) {
       return false;
     }
+
+    
+    
+    
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT_IF(aWorkerRef->IsPreventingShutdown(),
+                             mStatus >= WorkerStatus::Running);
   }
 
   MOZ_ASSERT(!data->mWorkerRefs.Contains(aWorkerRef),
