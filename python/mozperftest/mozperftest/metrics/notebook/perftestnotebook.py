@@ -75,20 +75,13 @@ class PerftestNotebook(object):
         elif isinstance(file_grouping, dict):
             
             
-            print("awljdlkwad")
             raise Exception(
                 "Artifact downloader tooling is disabled for the time being."
             )
         elif isinstance(file_grouping, str):
             
-            filepath = files
-
-            newf = [f for f in pathlib.Path(filepath).rglob("*.json")]
-            if not newf:
-                
-                
-                newf = [f for f in pathlib.Path(filepath).rglob("*")]
-
+            filepath = file_grouping
+            newf = [f.resolve().as_posix() for f in pathlib.Path(filepath).rglob("*")]
             files = newf
         else:
             raise Exception(
