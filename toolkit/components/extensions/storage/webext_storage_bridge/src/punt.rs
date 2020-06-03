@@ -37,6 +37,9 @@ pub enum Punt {
     Clear { ext_id: String },
     
     GetBytesInUse { ext_id: String, keys: JsonValue },
+    
+    
+    FetchPendingSyncChanges,
 }
 
 impl Punt {
@@ -49,6 +52,7 @@ impl Punt {
             Punt::Remove { .. } => "webext_storage::remove",
             Punt::Clear { .. } => "webext_storage::clear",
             Punt::GetBytesInUse { .. } => "webext_storage::get_bytes_in_use",
+            Punt::FetchPendingSyncChanges => "webext_storage::fetch_pending_sync_changes",
         }
     }
 }
@@ -56,27 +60,45 @@ impl Punt {
 
 
 #[derive(Default)]
-pub struct PuntResult {
-    pub changes: Option<String>,
-    pub value: Option<String>,
+struct PuntResult {
+    changes: Vec<Change>,
+    value: Option<String>,
+}
+
+
+struct Change {
+    ext_id: String,
+    json: String,
 }
 
 impl PuntResult {
     
     
     
-    pub fn with_changes<T: Borrow<S>, S: Serialize>(changes: T) -> Result<Self> {
+    fn with_change<T: Borrow<S>, S: Serialize>(ext_id: &str, changes: T) -> Result<Self> {
         Ok(PuntResult {
-            changes: Some(serde_json::to_string(changes.borrow())?),
+            changes: vec![Change {
+                ext_id: ext_id.into(),
+                json: serde_json::to_string(changes.borrow())?,
+            }],
             value: None,
         })
     }
 
     
     
-    pub fn with_value<T: Borrow<S>, S: Serialize>(value: T) -> Result<Self> {
+    fn with_changes(changes: Vec<Change>) -> Self {
+        PuntResult {
+            changes,
+            value: None,
+        }
+    }
+
+    
+    
+    fn with_value<T: Borrow<S>, S: Serialize>(value: T) -> Result<Self> {
         Ok(PuntResult {
-            changes: None,
+            changes: Vec::new(),
             value: Some(serde_json::to_string(value.borrow())?),
         })
     }
@@ -137,21 +159,32 @@ impl PuntTask {
     fn inner_run(&self, punt: Punt) -> Result<PuntResult> {
         Ok(match punt {
             Punt::Set { ext_id, value } => {
-                PuntResult::with_changes(self.store()?.get()?.set(&ext_id, value)?)
+                PuntResult::with_change(&ext_id, self.store()?.get()?.set(&ext_id, value)?)?
             }
             Punt::Get { ext_id, keys } => {
-                PuntResult::with_value(self.store()?.get()?.get(&ext_id, keys)?)
+                PuntResult::with_value(self.store()?.get()?.get(&ext_id, keys)?)?
             }
             Punt::Remove { ext_id, keys } => {
-                PuntResult::with_changes(self.store()?.get()?.remove(&ext_id, keys)?)
+                PuntResult::with_change(&ext_id, self.store()?.get()?.remove(&ext_id, keys)?)?
             }
             Punt::Clear { ext_id } => {
-                PuntResult::with_changes(self.store()?.get()?.clear(&ext_id)?)
+                PuntResult::with_change(&ext_id, self.store()?.get()?.clear(&ext_id)?)?
             }
             Punt::GetBytesInUse { ext_id, keys } => {
-                PuntResult::with_value(self.store()?.get()?.get_bytes_in_use(&ext_id, keys)?)
+                PuntResult::with_value(self.store()?.get()?.get_bytes_in_use(&ext_id, keys)?)?
             }
-        }?)
+            Punt::FetchPendingSyncChanges => PuntResult::with_changes(
+                self.store()?
+                    .get()?
+                    .get_synced_changes()?
+                    .into_iter()
+                    .map(|info| Change {
+                        ext_id: info.ext_id,
+                        json: info.changes,
+                    })
+                    .collect(),
+            ),
+        })
     }
 }
 
@@ -176,12 +209,13 @@ impl Task for PuntTask {
             Ok(PuntResult { changes, value }) => {
                 
                 
-                if let (Some(listener), Some(json)) = (
-                    callback.query_interface::<mozIExtensionStorageListener>(),
-                    changes,
-                ) {
-                    
-                    let _ = unsafe { listener.OnChanged(&*nsCString::from(json)) };
+                if let Some(listener) = callback.query_interface::<mozIExtensionStorageListener>() {
+                    for Change { ext_id, json } in changes {
+                        
+                        let _ = unsafe {
+                            listener.OnChanged(&*nsCString::from(ext_id), &*nsCString::from(json))
+                        };
+                    }
                 }
                 let result = value.map(nsCString::from).into_variant();
                 unsafe { callback.HandleSuccess(result.coerce()) }
