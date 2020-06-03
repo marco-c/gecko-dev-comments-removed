@@ -228,9 +228,6 @@ var whitelist = [
 
   
   { file: "resource://app/localization/en-US/browser/screenshots.ftl" },
-
-  
-  { file: "resource://services-sync/bridged_engine.js" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
