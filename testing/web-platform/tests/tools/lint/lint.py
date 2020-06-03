@@ -617,7 +617,7 @@ broken_python_metadata = re.compile(br"#\s*META:")
 
 def check_global_metadata(value):
     
-    global_values = {item.strip() for item in value.split(b",") if item.strip()}
+    global_values = {item.strip().decode("utf8") for item in value.split(b",") if item.strip()}
 
     
     for global_value in global_values:
