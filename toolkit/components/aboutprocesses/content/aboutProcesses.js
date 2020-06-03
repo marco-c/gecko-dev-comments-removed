@@ -72,15 +72,18 @@ var State = {
   _latest: null,
 
   async _promiseSnapshot() {
+    let date = Cu.now();
     let main = await ChromeUtils.requestProcInfo();
+    main.date = date;
 
     let processes = new Map();
     processes.set(main.pid, main);
     for (let child of main.children) {
+      child.date = date;
       processes.set(child.pid, child);
     }
 
-    return { processes, date: Cu.now() };
+    return { processes, date };
   },
 
   
@@ -142,8 +145,7 @@ var State = {
 
 
 
-
-  _getProcessDelta(cur, prev, deltaT) {
+  _getProcessDelta(cur, prev) {
     let result = {
       pid: cur.pid,
       filename: cur.filename,
@@ -175,6 +177,7 @@ var State = {
     for (let thread of prev.threads) {
       prevThreads.set(thread.tid, thread);
     }
+    let deltaT = (cur.date - prev.date) * MS_PER_NS;
     let threads = cur.threads.map(curThread => {
       let prevThread = prevThreads.get(curThread.tid);
       if (!prevThread) {
@@ -196,7 +199,6 @@ var State = {
     
     
 
-    let previous = this._buffer[Math.max(this._buffer.length - 2, 0)];
     let current = this._latest;
     let counters = [];
 
@@ -213,14 +215,10 @@ var State = {
       }
       if (oldest) {
         
-        delta = this._getProcessDelta(
-          cur,
-          oldest,
-          (current.date - previous.date) * MS_PER_NS
-        );
+        delta = this._getProcessDelta(cur, oldest);
       } else {
         
-        delta = this._getProcessDelta(cur, null, null);
+        delta = this._getProcessDelta(cur, null);
       }
       counters.push(delta);
     }
