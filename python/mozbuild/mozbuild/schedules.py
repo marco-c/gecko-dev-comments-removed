@@ -36,6 +36,7 @@ INCLUSIVE_COMPONENTS = sorted(INCLUSIVE_COMPONENTS)
 
 
 
+
 EXCLUSIVE_COMPONENTS = [
     
     'android',
@@ -58,15 +59,17 @@ EXCLUSIVE_COMPONENTS = [
     'xpcshell',
     'xpcshell-coverage',
     'web-platform-tests',
-    'web-platform-tests-crashtest',
-    'web-platform-tests-reftest',
-    'web-platform-tests-wdspec',
     
+    'crashtest',
     'mochitest-a11y',
     'mochitest-browser-chrome',
     'mochitest-chrome',
     'mochitest-plain',
-    'crashtest',
+    'web-platform-tests-crashtest',
+    'web-platform-tests-reftest',
+    'web-platform-tests-wdspec',
+    
+    'webrender',
 ]
 EXCLUSIVE_COMPONENTS = sorted(EXCLUSIVE_COMPONENTS)
 ALL_COMPONENTS = INCLUSIVE_COMPONENTS + EXCLUSIVE_COMPONENTS
