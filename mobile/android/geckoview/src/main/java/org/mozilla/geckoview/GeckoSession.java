@@ -4798,6 +4798,12 @@ public class GeckoSession implements Parcelable {
 
 
 
+
+
+
+
+
+
             @UiThread
             public @NonNull PromptResponse confirm(
                     final @NonNull Autocomplete.Option<?> selection) {
@@ -4806,6 +4812,9 @@ public class GeckoSession implements Parcelable {
             }
 
             
+
+
+
 
 
 
