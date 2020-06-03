@@ -61,6 +61,7 @@
 
 #include "mozilla/AbstractThread.h"
 #include "mozilla/FilePreferences.h"
+#include "mozilla/IOInterposer.h"
 #include "mozilla/RDDProcessImpl.h"
 #include "mozilla/UniquePtr.h"
 
@@ -643,6 +644,8 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
     
     
 
+    Maybe<IOInterposerInit> ioInterposerGuard;
+
     
     MessageLoop uiMessageLoop(uiLoopType);
     {
@@ -685,6 +688,7 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
           break;
 
         case GeckoProcessType_Socket:
+          ioInterposerGuard.emplace();
           process = MakeUnique<net::SocketProcessImpl>(parentPID);
           break;
 
