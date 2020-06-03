@@ -1922,10 +1922,70 @@ class MacroAssembler : public MacroAssemblerSpecific {
       DEFINED_ON(x86_shared);
 
   
+  
 
+  
   inline void shuffleInt8x16(const uint8_t lanes[16], FloatRegister rhs,
                              FloatRegister lhsDest, FloatRegister temp)
       DEFINED_ON(x86_shared);
+
+  
+  inline void blendInt8x16(const uint8_t lanes[16], FloatRegister rhs,
+                           FloatRegister lhsDest, FloatRegister temp)
+      DEFINED_ON(x86_shared);
+
+  
+  inline void blendInt16x8(const uint16_t lanes[8], FloatRegister rhs,
+                           FloatRegister lhsDest) DEFINED_ON(x86_shared);
+
+  inline void interleaveHighInt8x16(FloatRegister rhs, FloatRegister lhsDest)
+      DEFINED_ON(x86_shared);
+
+  inline void interleaveHighInt16x8(FloatRegister rhs, FloatRegister lhsDest)
+      DEFINED_ON(x86_shared);
+
+  inline void interleaveHighInt32x4(FloatRegister rhs, FloatRegister lhsDest)
+      DEFINED_ON(x86_shared);
+
+  inline void interleaveLowInt8x16(FloatRegister rhs, FloatRegister lhsDest)
+      DEFINED_ON(x86_shared);
+
+  inline void interleaveLowInt16x8(FloatRegister rhs, FloatRegister lhsDest)
+      DEFINED_ON(x86_shared);
+
+  inline void interleaveLowInt32x4(FloatRegister rhs, FloatRegister lhsDest)
+      DEFINED_ON(x86_shared);
+
+  
+
+  
+  inline void permuteInt8x16(const uint8_t lanes[16], FloatRegister src,
+                             FloatRegister dest) DEFINED_ON(x86_shared);
+
+  
+  inline void permuteHighInt16x8(const uint16_t lanes[4], FloatRegister src,
+                                 FloatRegister dest) DEFINED_ON(x86_shared);
+
+  
+  inline void permuteLowInt16x8(const uint16_t lanes[4], FloatRegister src,
+                                FloatRegister dest) DEFINED_ON(x86_shared);
+
+  
+  inline void permuteInt32x4(const uint32_t lanes[4], FloatRegister src,
+                             FloatRegister dest) DEFINED_ON(x86_shared);
+
+  
+  inline void concatAndRightShiftInt8x16(FloatRegister rhs,
+                                         FloatRegister lhsDest, uint32_t shift)
+      DEFINED_ON(x86_shared);
+
+  
+
+  inline void leftShiftSimd128(Imm32 count, FloatRegister src,
+                               FloatRegister dest) DEFINED_ON(x86_shared);
+
+  inline void rightShiftSimd128(Imm32 count, FloatRegister src,
+                                FloatRegister dest) DEFINED_ON(x86_shared);
 
   
 

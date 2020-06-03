@@ -281,14 +281,47 @@ class LWasmVariableShiftSimd128 : public LInstructionHelper<1, 2, 2> {
 
 class LWasmShuffleSimd128 : public LInstructionHelper<1, 2, 1> {
  public:
+  
+  enum Op {
+    
+    
+    BLEND_8x16,
+
+    
+    
+    BLEND_16x8,
+
+    
+    
+    CONCAT_RIGHT_SHIFT_8x16,
+
+    
+    
+    
+    INTERLEAVE_HIGH_8x16,
+    INTERLEAVE_HIGH_16x8,
+    INTERLEAVE_HIGH_32x4,
+    INTERLEAVE_LOW_8x16,
+    INTERLEAVE_LOW_16x8,
+    INTERLEAVE_LOW_32x4,
+
+    
+    SHUFFLE_BLEND_8x16,
+  };
+
+ private:
+  Op op_;
+  SimdConstant control_;
+
+ public:
   LIR_HEADER(WasmShuffleSimd128)
 
   static constexpr uint32_t LhsDest = 0;
   static constexpr uint32_t Rhs = 1;
 
   LWasmShuffleSimd128(const LAllocation& lhsDest, const LAllocation& rhs,
-                      const LDefinition& temp)
-      : LInstructionHelper(classOpcode) {
+                      const LDefinition& temp, Op op, SimdConstant control)
+      : LInstructionHelper(classOpcode), op_(op), control_(control) {
     setOperand(LhsDest, lhsDest);
     setOperand(Rhs, rhs);
     setTemp(0, temp);
@@ -296,10 +329,79 @@ class LWasmShuffleSimd128 : public LInstructionHelper<1, 2, 1> {
 
   const LAllocation* lhsDest() { return getOperand(LhsDest); }
   const LAllocation* rhs() { return getOperand(Rhs); }
-  const SimdConstant control() {
-    return mir_->toWasmShuffleSimd128()->control();
-  }
   const LDefinition* temp() { return getTemp(0); }
+  Op op() { return op_; }
+  SimdConstant control() { return control_; }
+};
+
+
+class LWasmPermuteSimd128 : public LInstructionHelper<1, 1, 0> {
+ public:
+  
+  
+  
+  
+  
+  
+  enum Op {
+    
+    
+    BROADCAST_8x16,
+
+    
+    
+    BROADCAST_16x8,
+
+    
+    MOVE,
+
+    
+    
+    PERMUTE_8x16,
+
+    
+    
+    
+    PERMUTE_16x8,
+
+    
+    PERMUTE_32x4,
+
+    
+    ROTATE_RIGHT_8x16,
+
+    
+    
+    SHIFT_RIGHT_8x16,
+
+    
+    
+    SHIFT_LEFT_8x16,
+  };
+
+  enum Perm16x8Action {
+    SWAP_QWORDS = 1,  
+    PERM_LOW = 2,     
+    PERM_HIGH = 4     
+  };
+
+ private:
+  Op op_;
+  SimdConstant control_;
+
+ public:
+  LIR_HEADER(WasmPermuteSimd128)
+
+  static constexpr uint32_t Src = 0;
+
+  LWasmPermuteSimd128(const LAllocation& src, Op op, SimdConstant control)
+      : LInstructionHelper(classOpcode), op_(op), control_(control) {
+    setOperand(Src, src);
+  }
+
+  const LAllocation* src() { return getOperand(Src); }
+  Op op() { return op_; }
+  SimdConstant control() { return control_; }
 };
 
 class LWasmReplaceLaneSimd128 : public LInstructionHelper<1, 2, 0> {
