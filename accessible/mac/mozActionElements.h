@@ -13,6 +13,9 @@
 - (BOOL)hasPopup;
 @end
 
+@interface mozPopupButtonAccessible : mozButtonAccessible
+@end
+
 @interface mozCheckboxAccessible : mozButtonAccessible
 
 - (int)isChecked;
