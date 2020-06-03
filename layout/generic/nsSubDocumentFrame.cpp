@@ -1421,8 +1421,8 @@ bool nsDisplayRemote::CreateWebRenderCommands(
     
     RefPtr<WebRenderRemoteData> userData =
         aManager->CommandBuilder()
-            .CreateOrRecycleWebRenderUserData<WebRenderRemoteData>(
-                this, aBuilder.GetRenderRoot(), nullptr);
+            .CreateOrRecycleWebRenderUserData<WebRenderRemoteData>(this,
+                                                                   nullptr);
     userData->SetRemoteBrowser(remoteBrowser);
   }
 
