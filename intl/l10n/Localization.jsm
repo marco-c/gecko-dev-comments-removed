@@ -233,14 +233,16 @@ class Localization {
 
 
 
-  activate(sync, eager, generateBundles = defaultGenerateBundles, generateBundlesSync = defaultGenerateBundlesSync) {
+
+
+  activate(resourceIds, sync, eager, generateBundles = defaultGenerateBundles, generateBundlesSync = defaultGenerateBundlesSync) {
     if (this.bundles) {
       throw new Error("Attempt to initialize an already initialized instance.");
     }
     this.generateBundles = generateBundles;
     this.generateBundlesSync = generateBundlesSync;
     this.isSync = sync;
-    this.regenerateBundles(eager);
+    this.regenerateBundles(resourceIds, eager);
   }
 
   setIsSync(isSync) {
@@ -253,42 +255,6 @@ class Localization {
     } else {
       return CachedAsyncIterable.from(iterable);
     }
-  }
-
-  
-
-
-  addResourceId(resourceId) {
-    this.resourceIds.push(resourceId);
-    this.onChange();
-    return this.resourceIds.length;
-  }
-
-  
-
-
-  removeResourceId(resourceId) {
-    this.resourceIds = this.resourceIds.filter(r => r !== resourceId);
-    this.onChange();
-    return this.resourceIds.length;
-  }
-
-  
-
-
-  addResourceIds(resourceIds) {
-    this.resourceIds.push(...resourceIds);
-    this.onChange();
-    return this.resourceIds.length;
-  }
-
-  
-
-
-  removeResourceIds(resourceIds) {
-    this.resourceIds = this.resourceIds.filter(r => !resourceIds.includes(r));
-    this.onChange();
-    return this.resourceIds.length;
   }
 
   
@@ -494,9 +460,13 @@ class Localization {
     return val;
   }
 
-  onChange() {
+  
+
+
+
+  onChange(resourceIds) {
     if (this.bundles) {
-      this.regenerateBundles(false);
+      this.regenerateBundles(resourceIds, false);
     }
   }
 
@@ -506,7 +476,11 @@ class Localization {
 
 
 
-  regenerateBundles(eager = false) {
+
+
+  regenerateBundles(resourceIds, eager = false) {
+    
+    this.resourceIds = resourceIds;
     let generateMessages = this.isSync ? this.generateBundlesSync : this.generateBundles;
     this.bundles = this.cached(generateMessages(this.resourceIds));
     if (eager) {
