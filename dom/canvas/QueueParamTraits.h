@@ -275,13 +275,6 @@ class ConsumerView {
         mStatus(QueueStatus::kSuccess) {}
 
   
-  
-  
-  
-  using PcqReadBytesVariant =
-      Variant<QueueStatus, RefPtr<mozilla::ipc::SharedMemoryBasic>, void*>;
-
-  
 
 
 
@@ -291,25 +284,6 @@ class ConsumerView {
   inline QueueStatus Read(T* dest, size_t count) {
     return Read(reinterpret_cast<void*>(dest), count * sizeof(T));
   }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  template <typename Matcher>
-  inline QueueStatus ReadVariant(size_t aBufferSize, Matcher&& aMatcher);
 
   
 
@@ -358,18 +332,13 @@ QueueStatus ProducerView<T>::Write(const void* aBuffer, size_t aBufferSize) {
     return mStatus;
   }
 
-  if (NeedsSharedMemory(aBufferSize, mProducer->Size())) {
-    auto smem = MakeRefPtr<mozilla::ipc::SharedMemoryBasic>();
-    if (!smem->Create(aBufferSize) || !smem->Map(aBufferSize)) {
-      return QueueStatus::kFatalError;
+  if (mProducer->NeedsSharedMemory(aBufferSize)) {
+    mozilla::ipc::Shmem shmem;
+    QueueStatus status = mProducer->AllocShmem(&shmem, aBufferSize, aBuffer);
+    if (!IsSuccess(status)) {
+      return status;
     }
-    mozilla::ipc::SharedMemoryBasic::Handle handle;
-    if (!smem->ShareToProcess(mProducer->mOtherPid, &handle)) {
-      return QueueStatus::kFatalError;
-    }
-    memcpy(smem->memory(), aBuffer, aBufferSize);
-    smem->CloseHandle();
-    return WriteParam(handle);
+    return WriteParam(std::move(shmem));
   }
 
   return mProducer->WriteObject(mRead, mWrite, aBuffer, aBufferSize);
@@ -377,87 +346,41 @@ QueueStatus ProducerView<T>::Write(const void* aBuffer, size_t aBufferSize) {
 
 template <typename T>
 size_t ProducerView<T>::MinSizeBytes(size_t aNBytes) {
-  return NeedsSharedMemory(aNBytes, mProducer->Size())
-             ? MinSizeParam((mozilla::ipc::SharedMemoryBasic::Handle*)nullptr)
+  return mProducer->NeedsSharedMemory(aNBytes)
+             ? MinSizeParam((mozilla::ipc::Shmem*)nullptr)
              : aNBytes;
 }
 
 template <typename T>
 QueueStatus ConsumerView<T>::Read(void* aBuffer, size_t aBufferSize) {
-  struct PcqReadBytesMatcher {
-    QueueStatus operator()(RefPtr<mozilla::ipc::SharedMemoryBasic>& smem) {
-      MOZ_ASSERT(smem);
-      QueueStatus ret;
-      if (smem->memory()) {
-        if (mBuffer) {
-          memcpy(mBuffer, smem->memory(), mBufferSize);
-        }
-        ret = QueueStatus::kSuccess;
-      } else {
-        ret = QueueStatus::kFatalError;
-      }
-      
-      
-      smem->CloseHandle();
-      return ret;
-    }
-    QueueStatus operator()() {
-      return mConsumer.ReadObject(mRead, mWrite, mBuffer, mBufferSize);
-    }
-
-    Consumer& mConsumer;
-    size_t* mRead;
-    size_t mWrite;
-    void* mBuffer;
-    size_t mBufferSize;
-  };
-
   MOZ_ASSERT(aBufferSize > 0);
   if (!mStatus) {
     return mStatus;
   }
 
-  return ReadVariant(aBufferSize,
-                     PcqReadBytesMatcher{*(this->mConsumer), mRead, mWrite,
-                                         aBuffer, aBufferSize});
-}
-
-template <typename T>
-template <typename Matcher>
-QueueStatus ConsumerView<T>::ReadVariant(size_t aBufferSize,
-                                         Matcher&& aMatcher) {
-  if (!mStatus) {
-    return mStatus;
-  }
-
-  if (NeedsSharedMemory(aBufferSize, mConsumer->Size())) {
-    
-    mozilla::ipc::SharedMemoryBasic::Handle handle;
-    if (!ReadParam(&handle)) {
-      return GetStatus();
+  if (mConsumer->NeedsSharedMemory(aBufferSize)) {
+    mozilla::ipc::Shmem shmem;
+    QueueStatus status = ReadParam(&shmem);
+    if (!IsSuccess(status)) {
+      return status;
     }
 
-    
-    
-    
-    
-    
-    auto sharedMem = MakeRefPtr<mozilla::ipc::SharedMemoryBasic>();
-    if (!sharedMem->IsHandleValid(handle) ||
-        !sharedMem->SetHandle(handle,
-                              mozilla::ipc::SharedMemory::RightsReadWrite) ||
-        !sharedMem->Map(aBufferSize)) {
+    if ((shmem.Size<uint8_t>() != aBufferSize) || (!shmem.get<uint8_t>())) {
       return QueueStatus::kFatalError;
     }
-    return aMatcher(sharedMem);
+
+    if (aBuffer) {
+      memcpy(aBuffer, shmem.get<uint8_t>(), aBufferSize);
+    }
+    return QueueStatus::kSuccess;
   }
-  return aMatcher();
+  return mConsumer->ReadObject(mRead, mWrite, aBuffer, aBufferSize);
 }
 
 template <typename T>
 size_t ConsumerView<T>::MinSizeBytes(size_t aNBytes) {
-  return NeedsSharedMemory(aNBytes, mConsumer->Size())
-             ? MinSizeParam((mozilla::ipc::SharedMemoryBasic::Handle*)nullptr)
+  return mConsumer->NeedsSharedMemory(aNBytes)
+             ? MinSizeParam((mozilla::ipc::Shmem*)nullptr)
              : aNBytes;
 }
 
@@ -1035,50 +958,6 @@ struct QueueParamTraits<UniquePtr<T>> {
 
 
 
-
-#if defined(OS_WIN)
-template <>
-struct IsTriviallySerializable<base::SharedMemoryHandle> : std::true_type {};
-#elif defined(OS_POSIX)
-
-template <>
-struct QueueParamTraits<base::FileDescriptor> {
-  using ParamType = base::FileDescriptor;
-
-  template <typename U>
-  static QueueStatus Write(ProducerView<U>& aProducerView,
-                           const ParamType& aArg) {
-    
-    
-    
-    return aProducerView.WriteParam(aArg.fd > 0 ? aArg.fd : -1);
-  }
-
-  template <typename U>
-  static QueueStatus Read(ConsumerView<U>& aConsumerView, ParamType* aArg) {
-    int fd;
-    if (!aConsumerView.ReadParam(aArg ? &fd : nullptr)) {
-      return aConsumerView.GetStatus();
-    }
-
-    if (aArg) {
-      aArg->fd = fd;
-      aArg->auto_close = false;  
-    }
-    return QueueStatus::kSuccess;
-  }
-
-  template <typename View>
-  static size_t MinSize(View& aView, const ParamType* aArg) {
-    return aView.MinSizeParam(aArg ? &aArg->fd : nullptr);
-  }
-};
-#endif
-
-
-
-
-
 template <typename U>
 struct PcqVariantWriter {
   ProducerView<U>& mView;
@@ -1175,6 +1054,45 @@ struct QueueParamTraits<Variant<Types...>> {
     const Tag* tag = aArg ? &aArg->tag : nullptr;
     return aView.MinSizeParam(tag) +
            MinSizeVariant<sizeof...(Types), View>::MinSize(aView, tag, aArg);
+  }
+};
+
+template <>
+struct QueueParamTraits<mozilla::ipc::Shmem> {
+  using ParamType = mozilla::ipc::Shmem;
+
+  template <typename U>
+  static QueueStatus Write(ProducerView<U>& aProducerView, ParamType&& aParam) {
+    if (!aProducerView.WriteParam(
+            aParam.Id(mozilla::ipc::Shmem::PrivateIPDLCaller()))) {
+      return aProducerView.GetStatus();
+    }
+
+    aParam.RevokeRights(mozilla::ipc::Shmem::PrivateIPDLCaller());
+    aParam.forget(mozilla::ipc::Shmem::PrivateIPDLCaller());
+  }
+
+  template <typename U>
+  static QueueStatus Read(ConsumerView<U>& aConsumerView, ParamType* aResult) {
+    ParamType::id_t id;
+    if (!aConsumerView.ReadParam(&id)) {
+      return aConsumerView.GetStatus();
+    }
+
+    mozilla::ipc::Shmem::SharedMemory* rawmem =
+        aConsumerView.LookupSharedMemory(id);
+    if (!rawmem) {
+      return QueueStatus::kFatalError;
+    }
+
+    *aResult = mozilla::ipc::Shmem(mozilla::ipc::Shmem::PrivateIPDLCaller(),
+                                   rawmem, id);
+    return QueueStatus::kSuccess;
+  }
+
+  template <typename View>
+  static size_t MinSize(View& aView, const ParamType* aArg) {
+    return aView.template MinSizeParam<ParamType::id_t>();
   }
 };
 
