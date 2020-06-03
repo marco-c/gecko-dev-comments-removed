@@ -24,6 +24,8 @@ namespace net {
 
 
 
+
+
 nsHttpResponseHead::nsHttpResponseHead(const nsHttpResponseHead& aOther)
     : mRecursiveMutex("nsHttpResponseHead.mRecursiveMutex"),
       mInVisitHeaders(false) {
