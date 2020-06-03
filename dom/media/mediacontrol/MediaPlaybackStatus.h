@@ -28,6 +28,13 @@ namespace dom {
 
 
 
+
+
+
+
+
+
+
 class MediaPlaybackStatus final {
  public:
   void UpdateMediaPlaybackState(uint64_t aContextId, MediaPlaybackState aState);
@@ -36,6 +43,8 @@ class MediaPlaybackStatus final {
   bool IsPlaying() const;
   bool IsAudible() const;
   bool IsAnyMediaBeingControlled() const;
+
+  Maybe<uint64_t> GetAudioFocusOwnerContextId() const;
 
  private:
   
@@ -90,8 +99,15 @@ class MediaPlaybackStatus final {
   ContextMediaInfo& GetNotNullContextInfo(uint64_t aContextId);
   void DestroyContextInfo(uint64_t aContextId);
 
+  void ChooseNewContextToOwnAudioFocus();
+  void SetOwningAudioFocusContextId(Maybe<uint64_t>&& aContextId);
+  bool IsContextOwningAudioFocus(uint64_t aContextId) const;
+  bool ShouldRequestAudioFocusForInfo(const ContextMediaInfo& aInfo) const;
+  bool ShouldAbandonAudioFocusForInfo(const ContextMediaInfo& aInfo) const;
+
   
   nsDataHashtable<nsUint64HashKey, UniquePtr<ContextMediaInfo>> mContextInfoMap;
+  Maybe<uint64_t> mOwningAudioFocusContextId;
 };
 
 }  
