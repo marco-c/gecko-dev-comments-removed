@@ -226,14 +226,25 @@ body.dark blockquote {
 
 
 .toolbar-container {
-  position: fixed;
+  position: sticky;
   z-index: 1;
-  top: var(--body-padding);
-  bottom: 0;
-  inset-inline-start: 0;
+  top: 32px;
+  height: 0; 
+
   
-  font-size: var(--font-size);
-  width: max(var(--body-padding), calc((100% - var(--content-width)) / 2));
+
+
+
+  margin-left: calc(-1 * var(--body-padding));
+  width: max(var(--body-padding), calc((100% - var(--content-width)) / 2 + var(--body-padding)));
+  font-size: var(--font-size); 
+}
+
+
+
+.toolbar-container[dir=rtl] {
+  margin-left: auto;
+  margin-right: calc(-1 * var(--body-padding));
 }
 
 .toolbar {
@@ -243,7 +254,6 @@ body.dark blockquote {
   box-shadow: 0 2px 8px var(--toolbar-box-shadow);
 
   width: 32px; 
-  float: inline-end; 
 
   
 
@@ -256,7 +266,11 @@ body.dark blockquote {
   
 
 
-  margin-inline-end: min(calc(50% - 17px - var(--inline-padding)), 96px);
+
+
+
+
+  margin-inline-start: max(calc(50% - 17px - var(--inline-padding)), calc(100% - 96px - 34px - 2 * var(--inline-padding)));
 
   font-family: Helvetica, Arial, sans-serif;
   list-style: none;
@@ -282,6 +296,15 @@ body.dark blockquote {
   .toolbar-container.scrolled .toolbar:not(:hover) .button {
     opacity: 0.6;
   }
+
+  .toolbar-container.transition-location {
+    transition-duration: 250ms;
+    transition-property: width;
+  }
+}
+
+.toolbar-container.overlaps .button {
+  opacity: 0.1;
 }
 
 .dropdown-open .toolbar {
