@@ -7,7 +7,7 @@ const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { span } = require("devtools/client/shared/vendor/react-dom-factories");
 
 
-const { getGripType, isGrip, wrapRender } = require("./rep-utils");
+const { getGripType, isGrip, wrapRender, ELLIPSIS } = require("./rep-utils");
 
 
 
@@ -29,7 +29,12 @@ function RegExp(props) {
 }
 
 function getSource(grip) {
-  return grip.displayString;
+  const { displayString } = grip;
+  if (displayString?.type === "longString") {
+    return `${displayString.initial}${ELLIPSIS}`;
+  }
+
+  return displayString;
 }
 
 
