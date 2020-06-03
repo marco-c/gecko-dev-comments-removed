@@ -64,6 +64,7 @@ namespace dom {
 class ClientInfo;
 class ClientSource;
 class EventTarget;
+class SessionHistoryInfo;
 }  
 namespace net {
 class LoadInfo;
@@ -1131,6 +1132,11 @@ class nsDocShell final : public nsDocLoader,
   
   
   nsCOMPtr<nsISHEntry> mLSHE;
+
+  
+  mozilla::UniquePtr<mozilla::dom::SessionHistoryInfo> mActiveEntry;
+  mozilla::UniquePtr<mozilla::dom::SessionHistoryInfo> mLoadingEntry;
+  uint64_t mLoadingEntryId;
 
   
   

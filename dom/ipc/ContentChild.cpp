@@ -3450,6 +3450,10 @@ mozilla::ipc::IPCResult ContentChild::RecvCrossProcessRedirect(
     loadState->SetLoadType(aArgs.loadStateLoadType());
   }
 
+  if (aArgs.sessionHistoryInfo().isSome()) {
+    loadState->SetSessionHistoryInfo(aArgs.sessionHistoryInfo().ref());
+  }
+
   RefPtr<ChildProcessChannelListener> processListener =
       ChildProcessChannelListener::GetSingleton();
   

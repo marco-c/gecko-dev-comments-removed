@@ -1282,6 +1282,10 @@ class ContentParent final
   mozilla::ipc::IPCResult RecvAbortOtherOrientationPendingPromises(
       const MaybeDiscarded<BrowsingContext>& aContext);
 
+  mozilla::ipc::IPCResult RecvHistoryCommit(
+      const MaybeDiscarded<BrowsingContext>& aContext,
+      uint64_t aSessionHistoryEntryID);
+
   
   
   void MaybeEnableRemoteInputEventQueue();
