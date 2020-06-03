@@ -1497,8 +1497,15 @@ bool js::SuppressDeletedElement(JSContext* cx, HandleObject obj,
   return SuppressDeletedPropertyHelper(cx, obj, str);
 }
 
+static const JSFunctionSpec iterator_static_methods[] = {JS_FS_END};
+
 static const JSFunctionSpec iterator_proto_methods[] = {
     JS_SELF_HOSTED_SYM_FN(iterator, "IteratorIdentity", 0, 0), JS_FS_END};
+
+static const JSPropertySpec iterator_proto_properties[] = {
+    JS_STRING_SYM_PS(toStringTag, js_Iterator_str, JSPROP_READONLY),
+    JS_PS_END,
+};
 
 
 bool GlobalObject::initIteratorProto(JSContext* cx,
@@ -1598,3 +1605,60 @@ bool GlobalObject::initRegExpStringIteratorProto(JSContext* cx,
   global->setReservedSlot(REGEXP_STRING_ITERATOR_PROTO, ObjectValue(*proto));
   return true;
 }
+
+
+
+
+static bool IteratorConstructor(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  if (!ThrowIfNotConstructing(cx, args, js_Iterator_str)) {
+    return false;
+  }
+  
+  
+  if (args.callee() == args.newTarget().toObject()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BOGUS_CONSTRUCTOR, js_Iterator_str);
+    return false;
+  }
+
+  
+  RootedObject proto(cx);
+  if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_Iterator, &proto)) {
+    return false;
+  }
+
+  JSObject* obj = NewObjectWithClassProto<IteratorObject>(cx, proto);
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
+}
+
+static const ClassSpec IteratorObjectClassSpec = {
+    GenericCreateConstructor<IteratorConstructor, 0, gc::AllocKind::FUNCTION>,
+    GenericCreatePrototype<IteratorObject>,
+    iterator_static_methods,
+    nullptr,
+    iterator_proto_methods,
+    iterator_proto_properties,
+    nullptr,
+};
+
+const JSClass IteratorObject::class_ = {
+    js_Iterator_str,
+    JSCLASS_HAS_CACHED_PROTO(JSProto_Iterator),
+    JS_NULL_CLASS_OPS,
+    &IteratorObjectClassSpec,
+};
+
+const JSClass IteratorObject::protoClass_ = {
+    js_Iterator_str,
+    JSCLASS_HAS_CACHED_PROTO(JSProto_Iterator),
+    JS_NULL_CLASS_OPS,
+    &IteratorObjectClassSpec,
+};

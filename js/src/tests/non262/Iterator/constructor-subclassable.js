@@ -1,0 +1,12 @@
+
+
+
+
+
+class TestIterator extends Iterator {
+}
+
+assertEq(new TestIterator() instanceof Iterator, true);
+
+if (typeof reportCompare === 'function')
+  reportCompare(0, 0);

@@ -432,6 +432,16 @@ extern PlainObject* CreateIterResultObject(JSContext* cx, HandleValue value,
 
 enum class IteratorKind { Sync, Async };
 
+
+
+
+
+class IteratorObject : public NativeObject {
+ public:
+  static const JSClass class_;
+  static const JSClass protoClass_;
+};
+
 } 
 
 #endif 
