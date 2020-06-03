@@ -200,6 +200,12 @@ SharedSurface_SurfaceTexture::SharedSurface_SurfaceTexture(
       mEglSurface(eglSurface) {}
 
 SharedSurface_SurfaceTexture::~SharedSurface_SurfaceTexture() {
+  if (mOrigEglSurface) {
+    
+    
+    
+    UnlockProd();
+  }
   GLContextProviderEGL::DestroyEGLSurface(mEglSurface);
   java::SurfaceAllocator::DisposeSurface(mSurface);
 }
