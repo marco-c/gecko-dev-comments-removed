@@ -2517,8 +2517,9 @@ static void locked_profiler_stream_json_for_this_process(
       
       
       
+      
       mozilla::ProfileBufferChunkManagerWithLocalLimit chunkManager(
-          8 * 1024 * 1024, 1024 * 1024);
+          64 * 1024 * 1024, 1024 * 1024);
       ProfileChunkedBuffer bufferManager(
           ProfileChunkedBuffer::ThreadSafety::WithoutMutex, chunkManager);
       ProfileBuffer javaBuffer(bufferManager);
@@ -4261,8 +4262,9 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
   if (ActivePS::FeatureJava(aLock)) {
     int javaInterval = interval;
     
-    if (javaInterval < 10) {
-      javaInterval = 10;
+    
+    if (javaInterval < 1) {
+      javaInterval = 1;
     }
     
     
