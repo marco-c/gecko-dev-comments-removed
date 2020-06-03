@@ -435,10 +435,6 @@ bool DocumentLoadListener::Open(
     httpBaseChannel->SetTopWindowURI(topWindowURI);
   }
 
-  
-  Unused << loadInfo->SetHasStoragePermission(
-      AntiTrackingUtils::HasStoragePermissionInParent(mChannel));
-
   nsCOMPtr<nsIIdentChannel> identChannel = do_QueryInterface(mChannel);
   if (identChannel && aChannelId) {
     Unused << identChannel->SetChannelId(*aChannelId);
