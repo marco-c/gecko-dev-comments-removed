@@ -743,7 +743,7 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   
   
   if (NSS_IsInitialized()) {
-    nsNSSComponent::ClearSSLExternalAndInternalSessionCacheNative();
+    nsNSSComponent::DoClearSSLExternalAndInternalSessionCache();
     if (NSS_Shutdown() != SECSuccess) {
       
       

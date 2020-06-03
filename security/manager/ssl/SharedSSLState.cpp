@@ -81,7 +81,7 @@ void ClearPrivateSSLState() {
   
   
   if (runnable->mShouldClearSessionCache) {
-    nsNSSComponent::ClearSSLExternalAndInternalSessionCacheNative();
+    nsNSSComponent::DoClearSSLExternalAndInternalSessionCache();
   }
 }
 
