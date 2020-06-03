@@ -178,6 +178,14 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
 
   
   
+  
+  
+  
+  
+  bool mIsLinkPreload : 1;
+
+  
+  
   nsCOMPtr<nsIStyleSheetLinkingElement> mOwningElement;
 
   
