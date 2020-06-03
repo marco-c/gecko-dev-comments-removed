@@ -1601,11 +1601,19 @@ class nsContentUtils {
 
 
 
-  static nsresult DispatchEventOnlyToChrome(Document* aDoc,
-                                            nsISupports* aTarget,
-                                            const nsAString& aEventName,
-                                            CanBubble, Cancelable,
-                                            bool* aDefaultAction = nullptr);
+
+  static nsresult DispatchEventOnlyToChrome(
+      Document* aDoc, nsISupports* aTarget, const nsAString& aEventName,
+      CanBubble, Cancelable, Composed aComposed = Composed::eDefault,
+      bool* aDefaultAction = nullptr);
+
+  static nsresult DispatchEventOnlyToChrome(
+      Document* aDoc, nsISupports* aTarget, const nsAString& aEventName,
+      CanBubble aCanBubble, Cancelable aCancelable, bool* aDefaultAction) {
+    return DispatchEventOnlyToChrome(aDoc, aTarget, aEventName, aCanBubble,
+                                     aCancelable, Composed::eDefault,
+                                     aDefaultAction);
+  }
 
   
 

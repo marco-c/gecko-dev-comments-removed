@@ -4179,11 +4179,19 @@ already_AddRefed<BrowsingContext> nsGlobalWindowOuter::GetChildWindow(
       mBrowsingContext->FindChildWithName(aName, *mBrowsingContext));
 }
 
-bool nsGlobalWindowOuter::DispatchCustomEvent(const nsAString& aEventName) {
+bool nsGlobalWindowOuter::DispatchCustomEvent(
+    const nsAString& aEventName, ChromeOnlyDispatch aChromeOnlyDispatch) {
   bool defaultActionEnabled = true;
-  nsContentUtils::DispatchTrustedEvent(mDoc, ToSupports(this), aEventName,
-                                       CanBubble::eYes, Cancelable::eYes,
-                                       &defaultActionEnabled);
+
+  if (aChromeOnlyDispatch == ChromeOnlyDispatch::eYes) {
+    nsContentUtils::DispatchEventOnlyToChrome(
+        mDoc, ToSupports(this), aEventName, CanBubble::eYes, Cancelable::eYes,
+        &defaultActionEnabled);
+  } else {
+    nsContentUtils::DispatchTrustedEvent(mDoc, ToSupports(this), aEventName,
+                                         CanBubble::eYes, Cancelable::eYes,
+                                         &defaultActionEnabled);
+  }
 
   return defaultActionEnabled;
 }
@@ -4671,9 +4679,11 @@ bool nsGlobalWindowOuter::SetWidgetFullscreen(FullscreenReason aReason,
 
 void nsGlobalWindowOuter::FullscreenWillChange(bool aIsFullscreen) {
   if (aIsFullscreen) {
-    DispatchCustomEvent(NS_LITERAL_STRING("willenterfullscreen"));
+    DispatchCustomEvent(NS_LITERAL_STRING("willenterfullscreen"),
+                        ChromeOnlyDispatch::eYes);
   } else {
-    DispatchCustomEvent(NS_LITERAL_STRING("willexitfullscreen"));
+    DispatchCustomEvent(NS_LITERAL_STRING("willexitfullscreen"),
+                        ChromeOnlyDispatch::eYes);
   }
 }
 
@@ -4708,7 +4718,8 @@ void nsGlobalWindowOuter::FinishFullscreenChange(bool aIsFullscreen) {
 
   
   
-  DispatchCustomEvent(NS_LITERAL_STRING("fullscreen"));
+  DispatchCustomEvent(NS_LITERAL_STRING("fullscreen"),
+                      ChromeOnlyDispatch::eYes);
 
   if (!NS_WARN_IF(!IsChromeWindow())) {
     if (RefPtr<PresShell> presShell =
@@ -6112,7 +6123,8 @@ void nsGlobalWindowOuter::CloseOuter(bool aTrustedCaller) {
   bool wasInClose = mInClose;
   mInClose = true;
 
-  if (!DispatchCustomEvent(NS_LITERAL_STRING("DOMWindowClose"))) {
+  if (!DispatchCustomEvent(NS_LITERAL_STRING("DOMWindowClose"),
+                           ChromeOnlyDispatch::eYes)) {
     
     
 
@@ -6145,7 +6157,8 @@ void nsGlobalWindowOuter::ForceClose() {
 
   mInClose = true;
 
-  DispatchCustomEvent(NS_LITERAL_STRING("DOMWindowClose"));
+  DispatchCustomEvent(NS_LITERAL_STRING("DOMWindowClose"),
+                      ChromeOnlyDispatch::eYes);
 
   FinalClose();
 }
