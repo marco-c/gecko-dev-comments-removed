@@ -287,29 +287,6 @@ class WebRenderBridgeParent final
 
   void RemoveEpochDataPriorTo(const wr::Epoch& aRenderedEpoch);
 
-  void PushDeferredPipelineData(RenderRootDeferredData&& aDeferredData);
-
-  
-
-
-
-
-  bool MaybeHandleDeferredPipelineData(
-      wr::RenderRoot aRenderRoot, const nsTArray<wr::PipelineId>& aPipelineIds,
-      const TimeStamp& aTxnStartTime);
-
-  
-
-
-
-  bool MaybeHandleDeferredPipelineDataForPipeline(
-      wr::RenderRoot aRenderRoot, wr::PipelineId aPipelineId,
-      const TimeStamp& aTxnStartTime);
-
-  bool HandleDeferredPipelineData(
-      nsTArray<RenderRootDeferredData>& aDeferredData,
-      const TimeStamp& aTxnStartTime);
-
   bool IsRootWebRenderBridgeParent() const;
   LayersId GetLayersId() const;
 
@@ -355,8 +332,6 @@ class WebRenderBridgeParent final
 
   explicit WebRenderBridgeParent(const wr::PipelineId& aPipelineId);
   virtual ~WebRenderBridgeParent();
-
-  void RemoveDeferredPipeline(wr::PipelineId aPipelineId);
 
   bool ProcessEmptyTransactionUpdates(RenderRootUpdates& aUpdates,
                                       bool* aScheduleComposite);
@@ -519,25 +494,6 @@ class WebRenderBridgeParent final
   wr::PipelineId mPipelineId;
   RefPtr<widget::CompositorWidget> mWidget;
   RefPtr<wr::WebRenderAPI> mApi;
-  
-  
-  
-  
-  
-  
-  nsDataHashtable<nsUint64HashKey, wr::RenderRoot> mPipelineRenderRoots;
-  
-  
-  
-  
-  nsTHashtable<nsUint64HashKey> mChildPipelines;
-  
-  
-  
-  
-  
-  nsDataHashtable<nsUint64HashKey, nsTArray<RenderRootDeferredData>>
-      mPipelineDeferredUpdates;
   RefPtr<AsyncImagePipelineManager> mAsyncImageManager;
   RefPtr<CompositorVsyncScheduler> mCompositorScheduler;
   RefPtr<CompositorAnimationStorage> mAnimStorage;
