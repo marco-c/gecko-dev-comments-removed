@@ -1675,20 +1675,20 @@ bool GlobalHelperThreadState::canStartCompressionTask(
 }
 
 void GlobalHelperThreadState::startHandlingCompressionTasks(
-    const AutoLockHelperThreadState& lock) {
-  scheduleCompressionTasks(lock);
+    const AutoLockHelperThreadState& lock, ScheduleCompressionTask schedule) {
+  scheduleCompressionTasks(lock, schedule);
   if (canStartCompressionTask(lock)) {
     notifyOne(PRODUCER, lock);
   }
 }
 
 void GlobalHelperThreadState::scheduleCompressionTasks(
-    const AutoLockHelperThreadState& lock) {
+    const AutoLockHelperThreadState& lock, ScheduleCompressionTask schedule) {
   auto& pending = compressionPendingList(lock);
   auto& worklist = compressionWorklist(lock);
 
   for (size_t i = 0; i < pending.length(); i++) {
-    if (pending[i]->shouldStart()) {
+    if (pending[i]->shouldStart() || schedule != ScheduleCompressionTask::GC) {
       
       
       Unused << worklist.append(std::move(pending[i]));
@@ -2369,12 +2369,16 @@ void js::RunPendingSourceCompressions(JSRuntime* runtime) {
     return;
   }
 
-  HelperThreadState().startHandlingCompressionTasks(lock);
+  HelperThreadState().startHandlingCompressionTasks(
+      lock, GlobalHelperThreadState::ScheduleCompressionTask::API);
 
   
   while (!HelperThreadState().compressionWorklist(lock).empty()) {
     HelperThreadState().wait(lock, GlobalHelperThreadState::CONSUMER);
   }
+
+  
+  HelperThreadState().waitForAllThreadsLocked(lock);
 
   AttachFinishedCompressions(runtime, lock);
 }
