@@ -653,25 +653,7 @@ impl SpatialTree {
                         }
                         ScrollFrameKind::Explicit => {
                             
-                            
-                            
-                            
-                            if info.scrollable_size.width > 0.0 ||
-                               info.scrollable_size.height > 0.0 {
-                                
-                                
-                                
-                                
-                                
-                                
-                                
-                                if info.viewport_rect.size.width > 128.0 &&
-                                   info.viewport_rect.size.height > 128.0 {
-                                    
-                                    
-                                    scroll_root = node_index;
-                                }
-                            }
+                            scroll_root = node_index;
                         }
                     }
                 }
