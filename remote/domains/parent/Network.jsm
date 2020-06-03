@@ -165,6 +165,25 @@ class Network extends Domain {
 
 
 
+  async getAllCookies(options = {}) {
+    const cookies = [];
+    for (const cookie of Services.cookies.cookies) {
+      cookies.push(_buildCookie(cookie));
+    }
+
+    return { cookies };
+  }
+
+  
+
+
+
+
+
+
+
+
+
 
   async getCookies(options = {}) {
     
@@ -192,29 +211,7 @@ class Network extends Domain {
           continue;
         }
 
-        const data = {
-          name: cookie.name,
-          value: cookie.value,
-          domain: cookie.host,
-          path: cookie.path,
-          expires: cookie.isSession ? -1 : cookie.expiry,
-          
-          size: cookie.name.length + cookie.value.length,
-          httpOnly: cookie.isHttpOnly,
-          secure: cookie.isSecure,
-          session: cookie.isSession,
-        };
-
-        if (cookie.sameSite) {
-          const sameSiteMap = new Map([
-            [Ci.nsICookie.SAMESITE_LAX, "Lax"],
-            [Ci.nsICookie.SAMESITE_STRICT, "Strict"],
-          ]);
-
-          data.sameSite = sameSiteMap.get(cookie.sameSite);
-        }
-
-        cookies.push(data);
+        cookies.push(_buildCookie(cookie));
       }
     }
 
@@ -460,6 +457,40 @@ function getLoadContext(httpChannel) {
     }
   } catch (e) {}
   return loadContext;
+}
+
+
+
+
+
+
+
+
+
+function _buildCookie(cookie) {
+  const data = {
+    name: cookie.name,
+    value: cookie.value,
+    domain: cookie.host,
+    path: cookie.path,
+    expires: cookie.isSession ? -1 : cookie.expiry,
+    
+    size: cookie.name.length + cookie.value.length,
+    httpOnly: cookie.isHttpOnly,
+    secure: cookie.isSecure,
+    session: cookie.isSession,
+  };
+
+  if (cookie.sameSite) {
+    const sameSiteMap = new Map([
+      [Ci.nsICookie.SAMESITE_LAX, "Lax"],
+      [Ci.nsICookie.SAMESITE_STRICT, "Strict"],
+    ]);
+
+    data.sameSite = sameSiteMap.get(cookie.sameSite);
+  }
+
+  return data;
 }
 
 
