@@ -365,9 +365,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   nsISiteSecurityService* GetSSService();
 
   
-  uint32_t Get32BitsOfPseudoRandom();
-
-  
   void OnFailedOpeningRequest(nsIHttpChannel* chan) {
     NotifyObservers(chan, NS_HTTP_ON_FAILED_OPENING_REQUEST_TOPIC);
   }
