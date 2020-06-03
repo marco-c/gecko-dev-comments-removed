@@ -274,9 +274,10 @@ var FullZoom = {
 
     
     
+    
     if (this._isPDFViewer(browser)) {
       this._applyPrefToZoom(
-        undefined,
+        1,
         browser,
         this._notifyOnLocationChange.bind(this, browser)
       );
@@ -333,7 +334,7 @@ var FullZoom = {
   async reduce() {
     let browser = gBrowser.selectedBrowser;
     if (browser.currentURI.spec.startsWith("about:reader")) {
-      browser.messageManager.sendAsyncMessage("Reader:ZoomOut");
+      browser.sendMessageToActor("Reader:ZoomOut", {}, "AboutReader");
     } else if (this._isPDFViewer(browser)) {
       browser.messageManager.sendAsyncMessage("PDFJS:ZoomOut");
     } else {
@@ -350,7 +351,7 @@ var FullZoom = {
   async enlarge() {
     let browser = gBrowser.selectedBrowser;
     if (browser.currentURI.spec.startsWith("about:reader")) {
-      browser.messageManager.sendAsyncMessage("Reader:ZoomIn");
+      browser.sendMessageToActor("Reader:ZoomIn", {}, "AboutReader");
     } else if (this._isPDFViewer(browser)) {
       browser.messageManager.sendAsyncMessage("PDFJS:ZoomIn");
     } else {
@@ -370,7 +371,7 @@ var FullZoom = {
   changeZoomBy(aBrowser, aValue) {
     if (aBrowser.currentURI.spec.startsWith("about:reader")) {
       const message = aValue > 0 ? "Reader::ZoomIn" : "Reader:ZoomOut";
-      aBrowser.messageManager.sendAsyncMessage(message);
+      aBrowser.sendMessageToActor(message, {}, "AboutReader");
       return;
     } else if (this._isPDFViewer(aBrowser)) {
       const message = aValue > 0 ? "PDFJS::ZoomIn" : "PDFJS:ZoomOut";
@@ -409,15 +410,19 @@ var FullZoom = {
 
 
   reset: function FullZoom_reset(browser = gBrowser.selectedBrowser) {
+    let forceValue;
     if (browser.currentURI.spec.startsWith("about:reader")) {
-      browser.messageManager.sendAsyncMessage("Reader:ResetZoom");
+      browser.sendMessageToActor("Reader:ResetZoom", {}, "AboutReader");
     } else if (this._isPDFViewer(browser)) {
       browser.messageManager.sendAsyncMessage("PDFJS:ZoomReset");
+      
+      
+      forceValue = 1;
     }
     let token = this._getBrowserToken(browser);
     let result = ZoomUI.getGlobalValue().then(value => {
       if (token.isCurrent) {
-        ZoomManager.setZoomForBrowser(browser, value);
+        ZoomManager.setZoomForBrowser(browser, forceValue || value);
         this._ignorePendingZoomAccesses(browser);
       }
     });
