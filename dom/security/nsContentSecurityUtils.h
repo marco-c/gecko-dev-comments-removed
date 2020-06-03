@@ -22,6 +22,14 @@ typedef std::pair<nsCString, mozilla::Maybe<nsString>> FilenameTypeAndDetails;
 
 class nsContentSecurityUtils {
  public:
+  
+  
+  
+  
+  
+  static bool IsConsideredSameOriginForUIR(nsIPrincipal* aTriggeringPrincipal,
+                                           nsIPrincipal* aResultPrincipal);
+
   static FilenameTypeAndDetails FilenameToFilenameType(
       const nsString& fileName, bool collectAdditionalExtensionData);
   static bool IsEvalAllowed(JSContext* cx, bool aIsSystemPrincipal,
