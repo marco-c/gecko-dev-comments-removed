@@ -1157,12 +1157,28 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
     return false;
   }
 
+  nsCOMPtr<nsIInputStream> in;
+  nsAutoCString contentTypeWithCharset;
+  nsAutoCString charset;
+  uint64_t length = 0;
+  if (aBody) {
+    aRv = aBody->GetAsStream(getter_AddRefs(in), &length,
+                             contentTypeWithCharset, charset);
+    if (NS_WARN_IF(aRv.Failed())) {
+      return false;
+    }
+  }
+
+  nsSecurityFlags securityFlags = nsILoadInfo::SEC_COOKIES_INCLUDE;
   
-  nsSecurityFlags securityFlags =
-      aType == eBeaconTypeBlob
-          ? nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS
-          : nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS;
-  securityFlags |= nsILoadInfo::SEC_COOKIES_INCLUDE;
+  
+  if (aBody && !contentTypeWithCharset.IsVoid() &&
+      !nsContentUtils::IsCORSSafelistedRequestHeader(
+          NS_LITERAL_CSTRING("content-type"), contentTypeWithCharset)) {
+    securityFlags |= nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS;
+  } else {
+    securityFlags |= nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS;
+  }
 
   nsCOMPtr<nsIChannel> channel;
   rv = NS_NewChannel(getter_AddRefs(channel), uri, doc, securityFlags,
@@ -1184,18 +1200,7 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
   rv = httpChannel->SetReferrerInfoWithoutClone(referrerInfo);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
-  nsCOMPtr<nsIInputStream> in;
-  nsAutoCString contentTypeWithCharset;
-  nsAutoCString charset;
-  uint64_t length = 0;
-
   if (aBody) {
-    aRv = aBody->GetAsStream(getter_AddRefs(in), &length,
-                             contentTypeWithCharset, charset);
-    if (NS_WARN_IF(aRv.Failed())) {
-      return false;
-    }
-
     nsCOMPtr<nsIUploadChannel2> uploadChannel = do_QueryInterface(channel);
     if (!uploadChannel) {
       aRv.Throw(NS_ERROR_FAILURE);
