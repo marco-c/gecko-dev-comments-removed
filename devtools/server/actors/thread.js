@@ -84,64 +84,6 @@ loader.lazyRequireGetter(
   true
 );
 
-const PROMISE_REACTIONS = new WeakMap();
-function cacheReactionsForFrame(frame) {
-  if (frame.asyncPromise) {
-    const reactions = frame.asyncPromise.getPromiseReactions();
-    const existingReactions = PROMISE_REACTIONS.get(frame.asyncPromise);
-    if (
-      reactions.length > 0 &&
-      (!existingReactions || reactions.length > existingReactions.length)
-    ) {
-      PROMISE_REACTIONS.set(frame.asyncPromise, reactions);
-    }
-  }
-}
-
-function createStepForReactionTracking(onStep) {
-  return function() {
-    cacheReactionsForFrame(this);
-    return onStep ? onStep.apply(this, arguments) : undefined;
-  };
-}
-
-const getAsyncParentFrame = frame => {
-  if (!frame.asyncPromise) {
-    return null;
-  }
-
-  
-  
-  
-  let reactions =
-    PROMISE_REACTIONS.get(frame.asyncPromise) ||
-    frame.asyncPromise.getPromiseReactions();
-
-  while (true) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!(reactions[0] instanceof Debugger.Object)) {
-      break;
-    }
-
-    reactions = reactions[0].getPromiseReactions();
-  }
-
-  if (reactions[0] instanceof Debugger.Frame) {
-    return reactions[0];
-  }
-  return null;
-};
-
 
 
 
@@ -865,6 +807,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
       packet.why = reason;
 
+      if (this.suspendedFrame) {
+        this.suspendedFrame.onStep = undefined;
+        this.suspendedFrame.onPop = undefined;
+        this.suspendedFrame = undefined;
+      }
+
       if (!sourceActor) {
         
         
@@ -923,7 +871,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     const thread = this;
     return function(completion) {
       
-      if (steppingType != "finish" && (completion.await || completion.yield)) {
+      if (completion.await || completion.yield) {
         thread.suspendedFrame = this;
         thread.dbg.onEnterFrame = undefined;
         return undefined;
@@ -939,9 +887,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         );
       }
 
-      
-      
-      thread.suspendedFrame = this;
       thread._attachSteppingHooks(this, "next", completion);
       return undefined;
     };
@@ -1121,7 +1066,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
           }
         
         case "finish":
-          stepFrame.onStep = createStepForReactionTracking(stepFrame.onStep);
           stepFrame.onPop = onPop;
           break;
       }
@@ -1134,12 +1078,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   _clearSteppingHooks: function() {
-    if (this.suspendedFrame) {
-      this.suspendedFrame.onStep = undefined;
-      this.suspendedFrame.onPop = undefined;
-      this.suspendedFrame = undefined;
-    }
-
     let frame = this.youngestFrame;
     if (frame?.onStack) {
       while (frame) {
@@ -1276,9 +1214,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
   _getNextStepFrame: function(frame) {
     const endOfFrame = frame.reportedPop;
-    const stepFrame = endOfFrame
-      ? frame.older || getAsyncParentFrame(frame)
-      : frame;
+    const stepFrame = endOfFrame ? frame.older : frame;
     if (!stepFrame || !stepFrame.script) {
       return null;
     }
@@ -1321,9 +1257,31 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         this._options.shouldIncludeAsyncLiveFrames &&
         currentFrame.asyncPromise
       ) {
-        const asyncFrame = getAsyncParentFrame(currentFrame);
-        if (asyncFrame) {
-          frame = asyncFrame;
+        
+        
+        
+        let reactions = currentFrame.asyncPromise.getPromiseReactions();
+        while (true) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          if (!(reactions[0] instanceof Debugger.Object)) {
+            break;
+          }
+
+          reactions = reactions[0].getPromiseReactions();
+        }
+
+        if (reactions[0] instanceof Debugger.Frame) {
+          frame = reactions[0];
         }
       }
     };
