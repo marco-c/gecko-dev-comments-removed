@@ -576,7 +576,15 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
       mRemoteBrowser->ResumeLoad(mPendingSwitchID);
       mPendingSwitchID = 0;
     } else {
-      mRemoteBrowser->LoadURL(mURIToLoad);
+      
+      
+      
+      
+      if (mTriggeringPrincipal) {
+        mRemoteBrowser->LoadURL(mURIToLoad, mTriggeringPrincipal);
+      } else {
+        mRemoteBrowser->LoadURL(mURIToLoad, mOwnerContent->NodePrincipal());
+      }
     }
 
     if (!mRemoteBrowserShown) {
