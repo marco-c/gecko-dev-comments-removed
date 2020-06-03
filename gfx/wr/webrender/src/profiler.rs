@@ -312,6 +312,10 @@ impl AverageIntProfileCounter {
         self.accum += 1;
     }
 
+    pub fn get_accum(&mut self) -> u64{
+        self.accum
+    }
+
     
     
     pub fn get(&self) -> usize {
