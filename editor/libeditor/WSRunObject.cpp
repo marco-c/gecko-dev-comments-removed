@@ -720,7 +720,7 @@ nsIContent* WSRunScanner::GetEditableBlockParentOrTopmotEditableInlineContent(
   
   
   nsIContent* editableBlockParentOrTopmotEditableInlineContent = nullptr;
-  for (nsIContent* content : InclusiveAncestorsOfType<nsIContent>(*aContent)) {
+  for (nsIContent* content : aContent->InclusiveAncestorsOfType<nsIContent>()) {
     if (!EditorUtils::IsEditableContent(*content, EditorType::HTML)) {
       break;
     }

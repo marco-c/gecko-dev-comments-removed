@@ -392,7 +392,7 @@ nsIContent* nsINode::GetTextEditorRootContent(TextEditor** aTextEditor) {
   if (aTextEditor) {
     *aTextEditor = nullptr;
   }
-  for (auto* element : InclusiveAncestorsOfType<nsGenericHTMLElement>(*this)) {
+  for (auto* element : InclusiveAncestorsOfType<nsGenericHTMLElement>()) {
     RefPtr<TextEditor> textEditor = element->GetTextEditorInternal();
     if (!textEditor) {
       continue;
@@ -908,7 +908,7 @@ void nsINode::LookupPrefix(const nsAString& aNamespaceURI, nsAString& aPrefix) {
     
     
     
-    for (Element* element : InclusiveAncestorsOfType<Element>(*nsElement)) {
+    for (Element* element : nsElement->InclusiveAncestorsOfType<Element>()) {
       uint32_t attrCount = element->GetAttrCount();
 
       for (uint32_t i = 0; i < attrCount; ++i) {

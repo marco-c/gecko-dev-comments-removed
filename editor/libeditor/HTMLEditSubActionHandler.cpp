@@ -1011,7 +1011,7 @@ AlignStateAtSelection::AlignStateAtSelection(HTMLEditor& aHTMLEditor,
   }
 
   for (nsIContent* containerContent :
-       InclusiveAncestorsOfType<nsIContent>(*editTargetContent)) {
+       editTargetContent->InclusiveAncestorsOfType<nsIContent>()) {
     
     
     
@@ -8869,8 +8869,7 @@ nsIContent* HTMLEditor::GetMostAncestorInlineElement(nsINode& aNode) const {
 
   
   nsIContent* topMostInlineContent = aNode.AsContent();
-  for (nsIContent* content :
-       InclusiveAncestorsOfType<nsIContent>(*aNode.GetParent())) {
+  for (nsIContent* content : aNode.AncestorsOfType<nsIContent>()) {
     if (content == host || !HTMLEditUtils::IsInlineElement(*content)) {
       break;
     }

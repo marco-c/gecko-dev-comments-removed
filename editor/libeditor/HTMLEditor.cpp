@@ -2516,7 +2516,7 @@ Element* HTMLEditor::GetInclusiveAncestorByTagNameInternal(
 
   bool lookForLink = IsLinkTag(aTagName);
   bool lookForNamedAnchor = IsNamedAnchorTag(aTagName);
-  for (Element* element : InclusiveAncestorsOfType<Element>(*currentElement)) {
+  for (Element* element : currentElement->InclusiveAncestorsOfType<Element>()) {
     
     
     
@@ -3065,8 +3065,7 @@ nsresult HTMLEditor::RemoveEmptyInclusiveAncestorInlineElements(
   }
 
   OwningNonNull<nsIContent> content = aContent;
-  for (nsIContent* parentContent :
-       InclusiveAncestorsOfType<nsIContent>(*aContent.GetParent())) {
+  for (nsIContent* parentContent : aContent.AncestorsOfType<nsIContent>()) {
     if (HTMLEditUtils::IsBlockElement(*parentContent) ||
         parentContent->Length() != 1 ||
         !HTMLEditUtils::IsSimplyEditableNode(*parentContent) ||
