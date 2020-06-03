@@ -232,9 +232,15 @@ _cairo_quartz_create_cgimage (cairo_format_t format,
 	    return NULL;
     }
 
+    
+    
+    
+    
+    
+    size_t size = (height - 1) * stride + cairo_format_stride_for_width (format, width);
     dataProvider = CGDataProviderCreateWithData (releaseInfo,
 						 data,
-						 height * stride,
+						 size,
 						 releaseCallback);
 
     if (!dataProvider) {
