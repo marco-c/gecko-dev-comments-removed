@@ -197,7 +197,7 @@ nsIContent::IMEState nsIContent::GetDesiredIMEState() {
     
     
     if (!IsElement() ||
-        !AsElement()->State().HasState(NS_EVENT_STATE_MOZ_READWRITE)) {
+        !AsElement()->State().HasState(NS_EVENT_STATE_READWRITE)) {
       return IMEState(IMEState::DISABLED);
     }
   }
@@ -1019,12 +1019,6 @@ bool nsIContent::IsFocusable(int32_t* aTabIndex, bool aWithMouse) {
   
   
   if (focusable || (aTabIndex && *aTabIndex != -1)) {
-    if (nsContentUtils::IsUserFocusIgnored(this)) {
-      if (aTabIndex) {
-        *aTabIndex = -1;
-      }
-      return false;
-    }
     return focusable;
   }
   return false;

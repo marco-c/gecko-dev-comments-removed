@@ -1742,7 +1742,7 @@ bool IMEStateManager::IsEditable(nsINode* node) {
   }
   
   if (node->IsElement() &&
-      node->AsElement()->State().HasState(NS_EVENT_STATE_MOZ_READWRITE)) {
+      node->AsElement()->State().HasState(NS_EVENT_STATE_READWRITE)) {
     return true;
   }
   return false;
