@@ -312,7 +312,13 @@ class LoginManagerParent extends JSWindowActorParent {
 
 
 
-  async fillForm({ browser, loginFormOrigin, login, inputElementIdentifier }) {
+  async fillForm({
+    browser,
+    loginFormOrigin,
+    login,
+    inputElementIdentifier,
+    style,
+  }) {
     let recipes = [];
     if (loginFormOrigin) {
       let formHost;
@@ -339,6 +345,7 @@ class LoginManagerParent extends JSWindowActorParent {
       originMatches,
       logins: jsLogins,
       recipes,
+      style,
     });
   }
 
@@ -517,7 +524,7 @@ class LoginManagerParent extends JSWindowActorParent {
           Services.logins.getLoginSavingEnabled(formOrigin)))
     ) {
       generatedPassword = this.getGeneratedPassword();
-      let potentialConflictingLogins = LoginHelper.searchLoginsWithObject({
+      let potentialConflictingLogins = await Services.logins.searchLoginsAsync({
         origin: formOrigin,
         formActionOrigin: actionOrigin,
         httpRealm: null,

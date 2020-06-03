@@ -966,7 +966,6 @@ nsresult nsFormFillController::HandleFocus(HTMLInputElement* aInput) {
     return NS_OK;
   }
 
-#ifndef ANDROID
   
   
   
@@ -992,7 +991,6 @@ nsresult nsFormFillController::HandleFocus(HTMLInputElement* aInput) {
     mPasswordPopupAutomaticallyOpened = true;
     ShowPopup();
   }
-#endif
 
   return NS_OK;
 }
