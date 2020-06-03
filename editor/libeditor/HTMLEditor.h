@@ -697,6 +697,14 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult ReplaceTextWithTransaction(
+      dom::Text& aTextNode, uint32_t aOffset, uint32_t aLength,
+      const nsAString& aStringToInsert);
+
+  
+
+
+
 
 
 

@@ -75,7 +75,7 @@ NS_IMETHODIMP InsertTextTransaction::DoTransaction() {
   
   
   editorBase->RangeUpdaterRef().SelAdjInsertText(textNode, mOffset,
-                                                 mStringToInsert);
+                                                 mStringToInsert.Length());
 
   return NS_OK;
 }
