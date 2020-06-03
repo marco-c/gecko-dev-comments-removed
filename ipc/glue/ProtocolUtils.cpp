@@ -651,7 +651,9 @@ int32_t IToplevelProtocol::Register(IProtocol* aRouted) {
     MutexAutoLock lock(mEventTargetMutex);
     if (nsCOMPtr<nsIEventTarget> target =
             mEventTargetMap.Lookup(manager->Id())) {
-      mEventTargetMap.AddWithID(target, id);
+      MOZ_ASSERT(!mEventTargetMap.Contains(id),
+                 "Don't insert with an existing ID");
+      mEventTargetMap.Put(id, target);
     }
   }
 
@@ -661,7 +663,8 @@ int32_t IToplevelProtocol::Register(IProtocol* aRouted) {
 int32_t IToplevelProtocol::RegisterID(IProtocol* aRouted, int32_t aId) {
   aRouted->SetId(aId);
   aRouted->ActorConnected();
-  mActorMap.AddWithID(aRouted, aId);
+  MOZ_ASSERT(!mActorMap.Contains(aId), "Don't insert with an existing ID");
+  mActorMap.Put(aId, aRouted);
   return aId;
 }
 
@@ -706,7 +709,8 @@ Shmem::SharedMemory* IToplevelProtocol::CreateSharedMemory(
 
   *aId = shmem.Id(Shmem::PrivateIPDLCaller());
   Shmem::SharedMemory* rawSegment = segment.get();
-  mShmemMap.AddWithID(segment.forget().take(), *aId);
+  MOZ_ASSERT(!mShmemMap.Contains(*aId), "Don't insert with an existing ID");
+  mShmemMap.Put(*aId, segment.forget().take());
   return rawSegment;
 }
 
@@ -759,7 +763,8 @@ bool IToplevelProtocol::ShmemCreated(const Message& aMsg) {
   if (!rawmem) {
     return false;
   }
-  mShmemMap.AddWithID(rawmem.forget().take(), id);
+  MOZ_ASSERT(!mShmemMap.Contains(id), "Don't insert with an existing ID");
+  mShmemMap.Put(id, rawmem.forget().take());
   return true;
 }
 
@@ -798,16 +803,11 @@ already_AddRefed<nsIEventTarget> IToplevelProtocol::GetMessageEventTarget(
 #ifdef DEBUG
     
     
-    
-    
-    
-    
     nsCOMPtr<nsIEventTarget> existingTgt = mEventTargetMap.Lookup(handle.mId);
     MOZ_ASSERT(existingTgt == target || existingTgt == nullptr);
-    mEventTargetMap.RemoveIfPresent(handle.mId);
 #endif 
 
-    mEventTargetMap.AddWithID(target, handle.mId);
+    mEventTargetMap.Put(handle.mId, target);
   }
 
   return target.forget();
@@ -848,16 +848,7 @@ void IToplevelProtocol::SetEventTargetForActorInternal(
 
   MutexAutoLock lock(mEventTargetMutex);
   
-  
-  bool replace = false;
-#ifdef DEBUG
-  replace = mEventTargetMap.Lookup(id) != nullptr;
-#endif
-  if (replace) {
-    mEventTargetMap.ReplaceWithID(aEventTarget, id);
-  } else {
-    mEventTargetMap.AddWithID(aEventTarget, id);
-  }
+  mEventTargetMap.Put(id, aEventTarget);
 }
 
 void IToplevelProtocol::ReplaceEventTargetForActor(
