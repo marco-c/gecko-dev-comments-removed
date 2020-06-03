@@ -1216,9 +1216,8 @@ RefPtr<TransportFlow> MediaTransportHandlerSTS::CreateTransportFlow(
   
   
   
-  std::set<std::string> alpn;
-  std::string alpnDefault = "";
-  alpn.insert("c-webrtc");
+  std::set<std::string> alpn = {"c-webrtc"};
+  std::string alpnDefault;
   if (!aPrivacyRequested) {
     alpnDefault = "webrtc";
     alpn.insert(alpnDefault);
