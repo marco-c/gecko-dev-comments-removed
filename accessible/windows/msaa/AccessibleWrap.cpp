@@ -211,6 +211,29 @@ AccessibleWrap::get_accParent(IDispatch __RPC_FAR* __RPC_FAR* ppdispParent) {
         (nsWinUtils::IsWindowEmulationStarted() &&
          nsCoreUtils::IsTabDocument(doc->DocumentNode()))) {
       HWND hwnd = static_cast<HWND>(doc->GetNativeWindow());
+      if (XRE_IsParentProcess() && hwnd && !doc->ParentDocument()) {
+        nsIFrame* frame = GetFrame();
+        if (frame) {
+          nsIWidget* widget = frame->GetNearestWidget();
+          if (widget->WindowType() == eWindowType_child &&
+              !widget->GetParent()) {
+            
+            
+            
+            
+            
+            
+            
+            
+            HWND parentHwnd = ::GetParent(hwnd);
+            if (parentHwnd) {
+              MOZ_ASSERT(::GetWindowLongW(parentHwnd, GWL_STYLE) & WS_POPUP,
+                         "Parent HWND should be a popup!");
+              hwnd = parentHwnd;
+            }
+          }
+        }
+      }
       if (hwnd &&
           SUCCEEDED(::AccessibleObjectFromWindow(
               hwnd, OBJID_WINDOW, IID_IAccessible, (void**)ppdispParent))) {
