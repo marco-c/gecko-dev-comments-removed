@@ -98,6 +98,7 @@ async function listWorkerTargets(args: Args): Promise<*> {
       serviceWorkerRegistrations = registrations.filter(front =>
         sameOrigin(front.url, currentTarget.url)
       );
+      await pauseMatchingServiceWorkers({ devToolsClient, currentTarget });
     }
   }
 
@@ -134,39 +135,42 @@ async function listWorkerTargets(args: Args): Promise<*> {
   return workers;
 }
 
-async function getAllProcessTargets(args): Promise<*> {
-  const { devToolsClient } = args;
+
+async function pauseMatchingServiceWorkers({ devToolsClient, currentTarget }) {
+  
+  
+  const origin = new URL(currentTarget.url).origin;
+  
+  
+  
+  
+  
   const processes = await devToolsClient.mainRoot.listProcesses();
-  return Promise.all(
+  const targets = await Promise.all(
     processes
       .filter(descriptor => !descriptor.isParent)
       .map(descriptor => descriptor.getTarget())
   );
+  try {
+    await Promise.all(
+      targets.map(t => t.pauseMatchingServiceWorkers({ origin }))
+    );
+  } catch (e) {
+    
+    
+    
+    
+  }
 }
 
 async function listProcessTargets(args: Args): Promise<*> {
   const { targetList } = args;
-  const currentTarget = targetList.targetFront;
-  if (!attachAllTargets(currentTarget)) {
-    if (currentTarget.url && features.windowlessServiceWorkers) {
-      
-      
-      try {
-        const origin = new URL(currentTarget.url).origin;
-        const targets = await getAllProcessTargets(args);
-        await Promise.all(
-          targets.map(t => t.pauseMatchingServiceWorkers({ origin }))
-        );
-      } catch (e) {
-        
-        
-        
-      }
-    }
-    return [];
-  }
-
-  return getAllProcessTargets(args);
+  
+  
+  
+  
+  
+  return targetList.getAllTargets(targetList.TYPES.PROCESS);
 }
 
 export async function updateTargets(args: Args): Promise<*> {

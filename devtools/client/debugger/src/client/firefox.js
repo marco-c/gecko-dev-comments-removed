@@ -98,6 +98,10 @@ async function onTargetAvailable({
   await actions.newGeneratedSources(sources);
 
   await clientCommands.checkIfAlreadyPaused();
+
+  
+  
+  await actions.updateThreads();
 }
 
 function onTargetDestroyed({ targetFront, isTopLevel }): void {
@@ -106,6 +110,9 @@ function onTargetDestroyed({ targetFront, isTopLevel }): void {
     targetFront.off("navigate", actions.navigated);
     removeEventsTopTarget(targetFront);
   }
+  
+  
+  actions.updateThreads();
 }
 
 export { clientCommands, clientEvents };
