@@ -856,12 +856,8 @@ class nsFrameSelection final {
     }
   }
 
-  nsresult FetchDesiredCaretPos(
-      nsPoint& aDesiredCaretPos);  
-                                   
   void InvalidateDesiredCaretPos();  
                                      
-  void SetDesiredCaretPos(nsPoint aPos);  
 
   bool IsBatching() const { return mBatching.mCounter > 0; }
 
@@ -1003,10 +999,19 @@ class nsFrameSelection final {
 
   nsBidiLevel mKbdBidiLevel = NSBIDI_LTR;
 
-  
-  struct DesiredCaretPos {
-    nsPoint mValue;
+  class DesiredCaretPos {
+   public:
+    
+    nsresult FetchPos(nsPoint& aDesiredCaretPos,
+                      const mozilla::PresShell& aPresShell,
+                      mozilla::dom::Selection& aNormalSelection) const;
+
+    void Set(const nsPoint& aPos);
+
     bool mIsSet = false;
+
+   private:
+    nsPoint mValue;
   };
 
   DesiredCaretPos mDesiredCaretPos;
