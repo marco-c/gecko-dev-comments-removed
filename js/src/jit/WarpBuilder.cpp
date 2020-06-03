@@ -1632,6 +1632,11 @@ bool WarpBuilder::buildCallOp(BytecodeLocation loc) {
   }
 
   
+  if (auto* snapshot = getOpSnapshot<WarpCacheIR>(loc)) {
+    return TranspileCacheIRToMIR(mirGen_, loc, current, snapshot, callInfo);
+  }
+
+  
 
   bool needsThisCheck = false;
   if (callInfo.constructing()) {
