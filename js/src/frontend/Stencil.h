@@ -362,11 +362,6 @@ class ScriptStencil {
   
   
   void trace(JSTracer* trc);
-
-  
-  
-  JSScript* intoScript(JSContext* cx, CompilationInfo& compilationInfo,
-                       SourceExtent extent);
 };
 
 } 
