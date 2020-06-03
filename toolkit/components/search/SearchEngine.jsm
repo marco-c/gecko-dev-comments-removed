@@ -1919,7 +1919,12 @@ SearchEngine.prototype = {
 
 
   get telemetryId() {
-    return this._telemetryId || this.identifier || `other-${this.name}`;
+    let telemetryId =
+      this._telemetryId || this.identifier || `other-${this.name}`;
+    if (this.getAttr("overriddenBy")) {
+      return telemetryId + "-addon";
+    }
+    return telemetryId;
   },
 
   
