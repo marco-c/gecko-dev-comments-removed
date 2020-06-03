@@ -648,6 +648,8 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
         "No CreateRenderTexture() implementation for this TextureHost type.");
   }
 
+  static void DestroyRenderTexture(const wr::ExternalImageId& aExternalImageId);
+
   
   
   virtual uint32_t NumSubTextures() { return 1; }
@@ -788,8 +790,6 @@ class BufferTextureHost : public TextureHost {
 
   void CreateRenderTexture(
       const wr::ExternalImageId& aExternalImageId) override;
-
-  static void DestroyRenderTexture(const wr::ExternalImageId& aExternalImageId);
 
   uint32_t NumSubTextures() override;
 
