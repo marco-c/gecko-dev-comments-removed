@@ -474,6 +474,9 @@ bool nsAccUtils::IsARIALive(const Accessible* aAccessible) {
   
   
   nsIContent* ancestor = aAccessible->GetContent();
+  if (!ancestor) {
+    return false;
+  }
   dom::Document* doc = ancestor->GetComposedDoc();
   if (!doc) {
     return false;
