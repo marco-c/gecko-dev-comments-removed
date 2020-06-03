@@ -72,7 +72,7 @@ public class GeckoJavaSampler {
             
             
             mSampleCount = Math.min(aSampleCount, 100000);
-            mSamples = new Sample[aSampleCount];
+            mSamples = new Sample[mSampleCount];
             mSamplePos = 0;
 
             
