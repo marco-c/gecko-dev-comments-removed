@@ -357,25 +357,6 @@ class WebRenderBridgeParent final
   explicit WebRenderBridgeParent(const wr::PipelineId& aPipelineId);
   virtual ~WebRenderBridgeParent();
 
-  
-  
-  
-  
-  
-  
-  wr::RenderRoot RenderRootForExternal(wr::RenderRoot aRenderRoot) {
-    if (IsRootWebRenderBridgeParent()) {
-      return aRenderRoot;
-    } else {
-      MOZ_ASSERT(aRenderRoot == wr::RenderRoot::Default);
-      return *mRenderRoot;
-    }
-  }
-
-  
-  
-  bool RenderRootIsValid(wr::RenderRoot aRenderRoot);
-
   void RemoveDeferredPipeline(wr::PipelineId aPipelineId);
 
   bool ProcessEmptyTransactionUpdates(RenderRootUpdates& aUpdates,
