@@ -250,6 +250,13 @@ class StoragePrincipalHelper final {
 
   static bool GetRegularPrincipalOriginAttributes(
       nsILoadGroup* aLoadGroup, OriginAttributes& aAttributes);
+
+  
+  
+  static bool GetOriginAttributesForNetworkState(nsIChannel* aChanel,
+                                                 OriginAttributes& aAttributes);
+  static void GetOriginAttributesForNetworkState(dom::Document* aDocument,
+                                                 OriginAttributes& aAttributes);
 };
 
 }  
