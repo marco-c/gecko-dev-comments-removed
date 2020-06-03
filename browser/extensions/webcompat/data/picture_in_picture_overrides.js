@@ -29,6 +29,9 @@ let AVAILABLE_PIP_OVERRIDES;
     "https://*.laracasts.com/*": TOGGLE_POLICIES.ONE_QUARTER,
 
     
+    "https://*.netflix.com/browse": TOGGLE_POLICIES.HIDDEN,
+
+    
     "https://*.twitch.tv/*": TOGGLE_POLICIES.ONE_QUARTER,
     "https://*.twitch.tech/*": TOGGLE_POLICIES.ONE_QUARTER,
     "https://*.twitch.a2z.com/*": TOGGLE_POLICIES.ONE_QUARTER,
