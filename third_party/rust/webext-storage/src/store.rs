@@ -5,6 +5,7 @@
 use crate::api::{self, StorageChanges};
 use crate::db::StorageDb;
 use crate::error::*;
+use crate::migration::migrate;
 use crate::sync;
 use std::path::Path;
 use std::result;
@@ -115,6 +116,26 @@ impl Store {
     
     pub fn close(self) -> result::Result<(), (Store, Error)> {
         self.db.close().map_err(|(db, err)| (Store { db }, err))
+    }
+
+    
+    
+    
+    
+    
+    pub fn get_synced_changes(&self) -> Result<Vec<sync::SyncedExtensionChange>> {
+        sync::get_synced_changes(&self.db)
+    }
+
+    
+    
+    
+    
+    pub fn migrate(&self, filename: impl AsRef<Path>) -> Result<usize> {
+        let tx = self.db.unchecked_transaction()?;
+        let result = migrate(&tx, filename.as_ref())?;
+        tx.commit()?;
+        Ok(result)
     }
 }
 

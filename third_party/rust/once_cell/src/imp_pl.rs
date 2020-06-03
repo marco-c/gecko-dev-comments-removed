@@ -1,6 +1,8 @@
 use std::{
     cell::UnsafeCell,
+    mem::{self, MaybeUninit},
     panic::{RefUnwindSafe, UnwindSafe},
+    ptr,
     sync::atomic::{AtomicBool, Ordering},
 };
 
@@ -9,7 +11,7 @@ use parking_lot::{lock_api::RawMutex as _RawMutex, RawMutex};
 pub(crate) struct OnceCell<T> {
     mutex: Mutex,
     is_initialized: AtomicBool,
-    pub(crate) value: UnsafeCell<Option<T>>,
+    value: UnsafeCell<MaybeUninit<T>>,
 }
 
 
@@ -28,7 +30,7 @@ impl<T> OnceCell<T> {
         OnceCell {
             mutex: Mutex::new(),
             is_initialized: AtomicBool::new(false),
-            value: UnsafeCell::new(None),
+            value: UnsafeCell::new(MaybeUninit::uninit()),
         }
     }
 
@@ -56,12 +58,75 @@ impl<T> OnceCell<T> {
             
             
             let value = f()?;
-            let slot: &mut Option<T> = unsafe { &mut *self.value.get() };
-            debug_assert!(slot.is_none());
-            *slot = Some(value);
+            
+            
+            unsafe { self.as_mut_ptr().write(value) };
             self.is_initialized.store(true, Ordering::Release);
         }
         Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) unsafe fn get_unchecked(&self) -> &T {
+        debug_assert!(self.is_initialized());
+        &*self.as_ptr()
+    }
+
+    
+    
+    pub(crate) fn get_mut(&mut self) -> Option<&mut T> {
+        if self.is_initialized() {
+            
+            Some(unsafe { &mut *self.as_mut_ptr() })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    pub(crate) fn into_inner(self) -> Option<T> {
+        if !self.is_initialized() {
+            return None;
+        }
+
+        
+        let value: T = unsafe { ptr::read(self.as_ptr()) };
+
+        
+        
+        mem::forget(self);
+
+        Some(value)
+    }
+
+    fn as_ptr(&self) -> *const T {
+        unsafe {
+            let slot: &MaybeUninit<T> = &*self.value.get();
+            slot.as_ptr()
+        }
+    }
+
+    fn as_mut_ptr(&self) -> *mut T {
+        unsafe {
+            let slot: &mut MaybeUninit<T> = &mut *self.value.get();
+            slot.as_mut_ptr()
+        }
+    }
+}
+
+impl<T> Drop for OnceCell<T> {
+    fn drop(&mut self) {
+        if self.is_initialized() {
+            
+            unsafe { ptr::drop_in_place(self.as_mut_ptr()) };
+        }
     }
 }
 
@@ -92,9 +157,8 @@ impl Drop for MutexGuard<'_> {
 }
 
 #[test]
-#[cfg(target_pointer_width = "64")]
 fn test_size() {
     use std::mem::size_of;
 
-    assert_eq!(size_of::<OnceCell<u32>>(), 3 * size_of::<u32>());
+    assert_eq!(size_of::<OnceCell<bool>>(), 2 * size_of::<bool>() + size_of::<u8>());
 }

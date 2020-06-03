@@ -221,6 +221,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(feature = "std")]
@@ -236,13 +246,15 @@ mod imp;
 pub mod unsync {
     use core::{
         cell::{Cell, UnsafeCell},
-        fmt,
+        fmt, mem,
         ops::{Deref, DerefMut},
     };
 
     #[cfg(feature = "std")]
     use std::panic::{RefUnwindSafe, UnwindSafe};
 
+    
+    
     
     
     
@@ -459,6 +471,27 @@ pub mod unsync {
         
         
         
+        
+        pub fn take(&mut self) -> Option<T> {
+            mem::replace(self, Self::default()).into_inner()
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         pub fn into_inner(self) -> Option<T> {
             
             
@@ -569,8 +602,7 @@ pub mod unsync {
 pub mod sync {
     use std::{
         cell::Cell,
-        fmt,
-        hint::unreachable_unchecked,
+        fmt, mem,
         ops::{Deref, DerefMut},
         panic::RefUnwindSafe,
     };
@@ -674,8 +706,7 @@ pub mod sync {
         
         
         pub fn get_mut(&mut self) -> Option<&mut T> {
-            
-            unsafe { &mut *self.0.value.get() }.as_mut()
+            self.0.get_mut()
         }
 
         
@@ -686,18 +717,10 @@ pub mod sync {
         
         
         pub unsafe fn get_unchecked(&self) -> &T {
-            debug_assert!(self.0.is_initialized());
-            let slot: &Option<T> = &*self.0.value.get();
-            match slot {
-                Some(value) => value,
-                
-                None => {
-                    debug_assert!(false);
-                    unreachable_unchecked()
-                }
-            }
+            self.0.get_unchecked()
         }
 
+        
         
         
         
@@ -822,13 +845,33 @@ pub mod sync {
         
         
         
+        
+        
+        pub fn take(&mut self) -> Option<T> {
+            mem::replace(self, Self::default()).into_inner()
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         pub fn into_inner(self) -> Option<T> {
-            
-            
-            self.0.value.into_inner()
+            self.0.into_inner()
         }
     }
 
+    
     
     
     

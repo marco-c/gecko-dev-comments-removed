@@ -5,6 +5,7 @@
 
 use std::{
     cell::{Cell, UnsafeCell},
+    hint::unreachable_unchecked,
     marker::PhantomData,
     panic::{RefUnwindSafe, UnwindSafe},
     sync::atomic::{AtomicBool, AtomicUsize, Ordering},
@@ -21,7 +22,7 @@ pub(crate) struct OnceCell<T> {
     
     
     
-    pub(crate) value: UnsafeCell<Option<T>>,
+    value: UnsafeCell<Option<T>>,
 }
 
 
@@ -90,21 +91,58 @@ impl<T> OnceCell<T> {
     {
         let mut f = Some(f);
         let mut res: Result<(), E> = Ok(());
-        let slot = &self.value;
+        let slot: *mut Option<T> = self.value.get();
         initialize_inner(&self.state_and_queue, &mut || {
             let f = f.take().unwrap();
             match f() {
                 Ok(value) => {
-                    unsafe { *slot.get() = Some(value) };
+                    unsafe { *slot = Some(value) };
                     true
                 }
-                Err(e) => {
-                    res = Err(e);
+                Err(err) => {
+                    res = Err(err);
                     false
                 }
             }
         });
         res
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) unsafe fn get_unchecked(&self) -> &T {
+        debug_assert!(self.is_initialized());
+        let slot: &Option<T> = &*self.value.get();
+        match slot {
+            Some(value) => value,
+            
+            None => {
+                debug_assert!(false);
+                unreachable_unchecked()
+            }
+        }
+    }
+
+    
+    
+    pub(crate) fn get_mut(&mut self) -> Option<&mut T> {
+        
+        unsafe { &mut *self.value.get() }.as_mut()
+    }
+
+    
+    
+    #[inline]
+    pub(crate) fn into_inner(self) -> Option<T> {
+        
+        
+        
+        self.value.into_inner()
     }
 }
 

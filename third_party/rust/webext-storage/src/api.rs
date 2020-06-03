@@ -115,39 +115,37 @@ fn remove_from_db(tx: &Transaction<'_>, ext_id: &str) -> Result<()> {
 #[serde(rename_all = "camelCase")]
 pub struct StorageValueChange {
     #[serde(skip_serializing)]
-    key: String,
+    pub key: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    old_value: Option<JsonValue>,
+    pub old_value: Option<JsonValue>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    new_value: Option<JsonValue>,
+    pub new_value: Option<JsonValue>,
 }
 
 
 
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct StorageChanges {
     changes: Vec<StorageValueChange>,
 }
 
 impl StorageChanges {
-    fn new() -> Self {
-        Self {
-            changes: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 
-    fn with_capacity(n: usize) -> Self {
+    pub fn with_capacity(n: usize) -> Self {
         Self {
             changes: Vec::with_capacity(n),
         }
     }
 
-    fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.changes.is_empty()
     }
 
-    fn push(&mut self, change: StorageValueChange) {
+    pub fn push(&mut self, change: StorageValueChange) {
         self.changes.push(change)
     }
 }
