@@ -746,16 +746,19 @@ nsresult WSRunScanner::GetWSNodes() {
 
   while (!mStartNode) {
     
-    nsCOMPtr<nsIContent> priorNode = GetPreviousWSNode(
-        start, *editableBlockParentOrTopmotEditableInlineContent);
-    if (priorNode) {
-      if (HTMLEditUtils::IsBlockElement(*priorNode)) {
+    nsIContent* previousLeafContentOrBlock =
+        HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+            start, *editableBlockParentOrTopmotEditableInlineContent,
+            mEditingHost);
+    if (previousLeafContentOrBlock) {
+      if (HTMLEditUtils::IsBlockElement(*previousLeafContentOrBlock)) {
         mStartNode = start.GetContainer();
         mStartOffset = start.Offset();
         mStartReason = WSType::OtherBlockBoundary;
-        mStartReasonContent = priorNode;
-      } else if (priorNode->IsText() && priorNode->IsEditable()) {
-        RefPtr<Text> textNode = priorNode->AsText();
+        mStartReasonContent = previousLeafContentOrBlock;
+      } else if (previousLeafContentOrBlock->IsText() &&
+                 previousLeafContentOrBlock->IsEditable()) {
+        RefPtr<Text> textNode = previousLeafContentOrBlock->AsText();
         mNodeArray.InsertElementAt(0, textNode);
         const nsTextFragment* textFrag = &textNode->TextFragment();
         uint32_t len = textNode->TextLength();
@@ -763,7 +766,7 @@ nsresult WSRunScanner::GetWSNodes() {
         if (len < 1) {
           
           
-          start.Set(priorNode, 0);
+          start.Set(previousLeafContentOrBlock, 0);
         } else {
           for (int32_t pos = len - 1; pos >= 0; pos--) {
             
@@ -797,12 +800,12 @@ nsresult WSRunScanner::GetWSNodes() {
         
         mStartNode = start.GetContainer();
         mStartOffset = start.Offset();
-        if (priorNode->IsHTMLElement(nsGkAtoms::br)) {
+        if (previousLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)) {
           mStartReason = WSType::BRElement;
         } else {
           mStartReason = WSType::SpecialContent;
         }
-        mStartReasonContent = priorNode;
+        mStartReasonContent = previousLeafContentOrBlock;
       }
     } else {
       
@@ -852,17 +855,20 @@ nsresult WSRunScanner::GetWSNodes() {
 
   while (!mEndNode) {
     
-    nsCOMPtr<nsIContent> nextNode =
-        GetNextWSNode(end, *editableBlockParentOrTopmotEditableInlineContent);
-    if (nextNode) {
-      if (HTMLEditUtils::IsBlockElement(*nextNode)) {
+    nsIContent* nextLeafContentOrBlock =
+        HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
+            end, *editableBlockParentOrTopmotEditableInlineContent,
+            mEditingHost);
+    if (nextLeafContentOrBlock) {
+      if (HTMLEditUtils::IsBlockElement(*nextLeafContentOrBlock)) {
         
         mEndNode = end.GetContainer();
         mEndOffset = end.Offset();
         mEndReason = WSType::OtherBlockBoundary;
-        mEndReasonContent = nextNode;
-      } else if (nextNode->IsText() && nextNode->IsEditable()) {
-        RefPtr<Text> textNode = nextNode->AsText();
+        mEndReasonContent = nextLeafContentOrBlock;
+      } else if (nextLeafContentOrBlock->IsText() &&
+                 nextLeafContentOrBlock->IsEditable()) {
+        RefPtr<Text> textNode = nextLeafContentOrBlock->AsText();
         mNodeArray.AppendElement(textNode);
         const nsTextFragment* textFrag = &textNode->TextFragment();
         uint32_t len = textNode->TextLength();
@@ -905,12 +911,12 @@ nsresult WSRunScanner::GetWSNodes() {
         
         mEndNode = end.GetContainer();
         mEndOffset = end.Offset();
-        if (nextNode->IsHTMLElement(nsGkAtoms::br)) {
+        if (nextLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)) {
           mEndReason = WSType::BRElement;
         } else {
           mEndReason = WSType::SpecialContent;
         }
-        mEndReasonContent = nextNode;
+        mEndReasonContent = nextLeafContentOrBlock;
       }
     } else {
       
@@ -1086,102 +1092,6 @@ void WSRunScanner::InitializeWithSingleFragment(
   mStartRun->SetEndBy(mEndReason);
 
   mEndRun = mStartRun;
-}
-
-nsIContent* WSRunScanner::GetPreviousWSNode(const EditorDOMPoint& aPoint,
-                                            nsIContent& aBlockParent) const {
-  
-  
-  
-  MOZ_ASSERT(aPoint.IsSet());
-
-  if (aPoint.IsInTextNode()) {
-    return HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-        *aPoint.ContainerAsText(), aBlockParent, mEditingHost);
-  }
-  if (!aPoint.IsInContentNode()) {
-    return nullptr;
-  }
-  if (!HTMLEditUtils::IsContainerNode(*aPoint.ContainerAsContent())) {
-    return HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-        *aPoint.ContainerAsContent(), aBlockParent, mEditingHost);
-  }
-
-  if (aPoint.IsStartOfContainer()) {
-    if (aPoint.GetContainer() == &aBlockParent) {
-      
-      return nullptr;
-    }
-
-    
-    return HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-        *aPoint.ContainerAsContent(), aBlockParent, mEditingHost);
-  }
-
-  nsCOMPtr<nsIContent> previousContent = aPoint.GetPreviousSiblingOfChild();
-  if (NS_WARN_IF(!previousContent)) {
-    return nullptr;
-  }
-
-  
-  if (HTMLEditUtils::IsBlockElement(*previousContent)) {
-    return previousContent;
-  }
-  if (HTMLEditUtils::IsContainerNode(*previousContent)) {
-    
-    if (nsIContent* child = HTMLEditUtils::GetLastLeafChild(
-            *previousContent, ChildBlockBoundary::Ignore)) {
-      return child;
-    }
-  }
-  
-  return previousContent;
-}
-
-nsIContent* WSRunScanner::GetNextWSNode(const EditorDOMPoint& aPoint,
-                                        nsIContent& aBlockParent) const {
-  
-  
-  
-  MOZ_ASSERT(aPoint.IsSet());
-
-  if (aPoint.IsInTextNode()) {
-    return HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-        *aPoint.ContainerAsText(), aBlockParent, mEditingHost);
-  }
-  if (!aPoint.IsInContentNode()) {
-    return nullptr;
-  }
-  if (!HTMLEditUtils::IsContainerNode(*aPoint.ContainerAsContent())) {
-    return HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-        *aPoint.ContainerAsContent(), aBlockParent, mEditingHost);
-  }
-
-  nsCOMPtr<nsIContent> nextContent = aPoint.GetChild();
-  if (!nextContent) {
-    if (aPoint.GetContainer() == &aBlockParent) {
-      
-      return nullptr;
-    }
-
-    
-    return HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-        *aPoint.ContainerAsContent(), aBlockParent, mEditingHost);
-  }
-
-  
-  if (HTMLEditUtils::IsBlockElement(*nextContent)) {
-    return nextContent;
-  }
-  if (HTMLEditUtils::IsContainerNode(*nextContent)) {
-    
-    if (nsIContent* child = HTMLEditUtils::GetFirstLeafChild(
-            *nextContent, ChildBlockBoundary::Ignore)) {
-      return child;
-    }
-  }
-  
-  return nextContent;
 }
 
 nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
