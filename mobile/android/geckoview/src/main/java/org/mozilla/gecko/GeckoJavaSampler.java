@@ -71,7 +71,7 @@ public class GeckoJavaSampler {
             mInterval = Math.max(1, aInterval);
             
             
-            mSampleCount = Math.min(aSampleCount, 100000);
+            mSampleCount = Math.min(aSampleCount, 120000);
             mSamples = new Sample[mSampleCount];
             mSamplePos = 0;
 
