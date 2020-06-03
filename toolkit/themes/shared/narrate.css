@@ -4,7 +4,9 @@
 
 
 
-
+:root {
+  --blue-60: #0060df;
+}
 .narrating {
   position: relative;
   z-index: 1;
