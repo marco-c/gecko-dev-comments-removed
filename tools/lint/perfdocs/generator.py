@@ -103,6 +103,7 @@ class Generator(object):
                                 test_name, tests[test_name]
                             )
                     )
+                documentation.append('')
 
             
             framework_rst = re.sub(
