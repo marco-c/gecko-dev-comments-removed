@@ -285,6 +285,9 @@ var UrlbarUtils = {
 
 
 
+
+
+
   getTokenMatches(tokens, str, highlightType) {
     str = str.toLocaleLowerCase();
     
@@ -308,6 +311,20 @@ var UrlbarUtils = {
         if (index < 0) {
           break;
         }
+
+        if (highlightType == UrlbarUtils.HIGHLIGHT.SUGGESTED) {
+          
+          
+          let previousSpaceIndex = str.lastIndexOf(" ", index) + 1;
+          if (index != previousSpaceIndex) {
+            index += needle.length;
+            
+            
+            found = true;
+            continue;
+          }
+        }
+
         hits.fill(
           highlightType == this.HIGHLIGHT.SUGGESTED ? 0 : 1,
           index,
@@ -335,6 +352,13 @@ var UrlbarUtils = {
         while (index < str.length) {
           let hay = str.substr(index, needle.length);
           if (compareIgnoringDiacritics(needle, hay) === 0) {
+            if (highlightType == UrlbarUtils.HIGHLIGHT.SUGGESTED) {
+              let previousSpaceIndex = str.lastIndexOf(" ", index) + 1;
+              if (index != previousSpaceIndex) {
+                index += needle.length;
+                continue;
+              }
+            }
             hits.fill(
               highlightType == this.HIGHLIGHT.SUGGESTED ? 0 : 1,
               index,

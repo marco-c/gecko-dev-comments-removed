@@ -107,7 +107,7 @@ add_task(async function searchSuggestions() {
   
   
   let searchTerm = "foo ";
-  let expectedSearches = [searchTerm, "foofoo ", "foo bar"];
+  let expectedSearches = [searchTerm, "foo foo", "foo bar"];
   for (let i = 0; i < length; i++) {
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     if (result.type === UrlbarUtils.RESULT_TYPE.SEARCH) {
