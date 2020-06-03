@@ -1226,14 +1226,9 @@ void nsFlexContainerFrame::InsertFrames(
 
 void nsFlexContainerFrame::RemoveFrame(ChildListID aListID,
                                        nsIFrame* aOldFrame) {
-#ifdef DEBUG
-  ChildListIDs supportedLists = {kAbsoluteList, kFixedList, kPrincipalList,
-                                 kNoReflowPrincipalList};
-  
-  
-  supportedLists += kBackdropList;
-  MOZ_ASSERT(supportedLists.contains(aListID), "unexpected child list");
+  MOZ_ASSERT(aListID == kPrincipalList, "unexpected child list");
 
+#ifdef DEBUG
   SetDidPushItemsBitIfNeeded(aListID, aOldFrame);
 #endif
 

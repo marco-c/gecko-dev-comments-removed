@@ -1808,14 +1808,7 @@ void nsContainerFrame::NormalizeChildLists() {
 
 void nsContainerFrame::NoteNewChildren(ChildListID aListID,
                                        const nsFrameList& aFrameList) {
-#ifdef DEBUG
-  ChildListIDs supportedLists = {kAbsoluteList, kFixedList, kPrincipalList};
-  
-  
-  supportedLists += kBackdropList;
-  MOZ_ASSERT(supportedLists.contains(aListID), "unexpected child list");
-#endif
-
+  MOZ_ASSERT(aListID == kPrincipalList, "unexpected child list");
   MOZ_ASSERT(IsFlexOrGridContainer(),
              "Only Flex / Grid containers can call this!");
 
@@ -1824,9 +1817,7 @@ void nsContainerFrame::NoteNewChildren(ChildListID aListID,
                                    ? NS_STATE_FLEX_DID_PUSH_ITEMS
                                    : NS_STATE_GRID_DID_PUSH_ITEMS;
   for (auto* pif = GetPrevInFlow(); pif; pif = pif->GetPrevInFlow()) {
-    if (aListID == kPrincipalList) {
-      pif->AddStateBits(didPushItemsBit);
-    }
+    pif->AddStateBits(didPushItemsBit);
     presShell->FrameNeedsReflow(pif, IntrinsicDirty::TreeChange,
                                 NS_FRAME_IS_DIRTY);
   }
