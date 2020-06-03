@@ -65,20 +65,19 @@ ChromeUtils.defineModuleGetter(
   "resource://testing-common/ContentTaskUtils.jsm"
 );
 
-
-
-Cu.forcePermissiveCOWs();
+Cu.crashIfNotInAutomation();
 
 function bindDOMWindowUtils(aWindow) {
-  return aWindow && WrapPrivileged.wrap(aWindow.windowUtils);
+  return aWindow && WrapPrivileged.wrap(aWindow.windowUtils, aWindow);
 }
 
 
 
 
 
-function SPConsoleListener(callback) {
+function SPConsoleListener(callback, contentWindow) {
   this.callback = callback;
+  this.contentWindow = contentWindow;
 }
 
 SPConsoleListener.prototype = {
@@ -129,7 +128,7 @@ SPConsoleListener.prototype = {
     
     
     Services.tm.dispatchToMainThread(() => {
-      this.callback.call(undefined, m);
+      this.callback.call(undefined, Cu.cloneInto(m, this.contentWindow));
     });
 
     if (!m.isScriptError && !m.isConsoleEvent && m.message === "SENTINEL") {
@@ -149,7 +148,6 @@ class SpecialPowersChild extends JSWindowActorChild {
     super();
 
     this._windowID = null;
-    this.DOMWindowUtils = null;
 
     this._encounteredCrashDumpFiles = [];
     this._unexpectedCrashDumpFiles = {};
@@ -159,7 +157,7 @@ class SpecialPowersChild extends JSWindowActorChild {
     Object.defineProperty(this, "Components", {
       configurable: true,
       enumerable: true,
-      value: this.getFullComponents(),
+      value: Components,
     });
     this._createFilesOnError = null;
     this._createFilesOnSuccess = null;
@@ -181,6 +179,19 @@ class SpecialPowersChild extends JSWindowActorChild {
 
     this._nextExtensionID = 0;
     this._extensionListeners = null;
+
+    WrapPrivileged.disableAutoWrap(
+      this.unwrap,
+      this.isWrapper,
+      this.wrapCallback,
+      this.wrapCallbackObject,
+      this.setWrapped,
+      this.nondeterministicGetWeakMapKeys,
+      this.snapshotWindowWithOptions,
+      this.snapshotWindow,
+      this.snapshotRect,
+      this.getDOMRequestService
+    );
   }
 
   observe(aSubject, aTopic, aData) {
@@ -196,10 +207,14 @@ class SpecialPowersChild extends JSWindowActorChild {
     let window = this.contentWindow;
     if (!window.wrappedJSObject.SpecialPowers) {
       this._windowID = window.windowUtils.currentInnerWindowID;
-      this.DOMWindowUtils = bindDOMWindowUtils(window);
 
       window.SpecialPowers = this;
-      window.wrappedJSObject.SpecialPowers = this;
+      if (window !== window.wrappedJSObject) {
+        window.wrappedJSObject.SpecialPowers = WrapPrivileged.wrap(
+          this,
+          window
+        );
+      }
       if (this.IsInNestedFrame) {
         this.addPermission("allowXULXBL", true, window.document);
       }
@@ -343,7 +358,7 @@ class SpecialPowersChild extends JSWindowActorChild {
 
 
   wrap(obj) {
-    return WrapPrivileged.wrap(obj);
+    return obj;
   }
   unwrap(obj) {
     return WrapPrivileged.unwrap(obj);
@@ -355,15 +370,22 @@ class SpecialPowersChild extends JSWindowActorChild {
   
 
 
+  wrapFor(obj, win) {
+    return WrapPrivileged.wrap(obj, win);
+  }
+
+  
+
+
 
 
 
 
   wrapCallback(func) {
-    return WrapPrivileged.wrapCallback(func);
+    return WrapPrivileged.wrapCallback(func, this.contentWindow);
   }
   wrapCallbackObject(obj) {
-    return WrapPrivileged.wrapCallbackObject(obj);
+    return WrapPrivileged.wrapCallbackObject(obj, this.contentWindow);
   }
 
   
@@ -421,7 +443,7 @@ class SpecialPowersChild extends JSWindowActorChild {
   
   createFiles(fileRequests, onCreation, onError) {
     return this.sendQuery("SpecialPowers.CreateFiles", fileRequests).then(
-      onCreation,
+      files => onCreation(Cu.cloneInto(files, this.contentWindow)),
       onError
     );
   }
@@ -485,13 +507,9 @@ class SpecialPowersChild extends JSWindowActorChild {
     var window = this.contentWindow;
     var mc = new window.MessageChannel();
     sb.port = mc.port1;
-    try {
-      let blob = new Blob([str], { type: "application/javascript" });
-      let blobUrl = URL.createObjectURL(blob);
-      Services.scriptloader.loadSubScript(blobUrl, sb);
-    } catch (e) {
-      throw WrapPrivileged.wrap(e);
-    }
+    let blob = new Blob([str], { type: "application/javascript" });
+    let blobUrl = URL.createObjectURL(blob);
+    Services.scriptloader.loadSubScript(blobUrl, sb);
 
     return mc.port2;
   }
@@ -625,7 +643,7 @@ class SpecialPowersChild extends JSWindowActorChild {
     };
     this._addMessageListener("SPChromeScriptMessage", chromeScript);
 
-    return this.wrap(chromeScript);
+    return chromeScript;
   }
 
   async importInMainProcess(importString) {
@@ -639,42 +657,39 @@ class SpecialPowersChild extends JSWindowActorChild {
   }
 
   get Services() {
-    return WrapPrivileged.wrap(Services);
-  }
-
-  
-
-
-  getFullComponents() {
-    return Components;
+    return Services;
   }
 
   
 
 
   get Cc() {
-    return WrapPrivileged.wrap(this.getFullComponents().classes);
+    return Cc;
   }
   get Ci() {
-    return WrapPrivileged.wrap(this.getFullComponents().interfaces);
+    return Ci;
   }
   get Cu() {
-    return WrapPrivileged.wrap(this.getFullComponents().utils);
+    return Cu;
   }
   get Cr() {
-    return WrapPrivileged.wrap(this.getFullComponents().results);
+    return Cr;
   }
 
   get addProfilerMarker() {
     return ChromeUtils.addProfilerMarker;
   }
 
+  get DOMWindowUtils() {
+    return this.contentWindow.windowUtils;
+  }
+
   getDOMWindowUtils(aWindow) {
-    if (aWindow == this.contentWindow && this.DOMWindowUtils != null) {
-      return this.DOMWindowUtils;
+    if (aWindow == this.contentWindow) {
+      return aWindow.windowUtils;
     }
 
-    return bindDOMWindowUtils(aWindow);
+    return bindDOMWindowUtils(Cu.unwaiveXrays(aWindow));
   }
 
   async toggleMuteState(aMuted, aWindow) {
@@ -690,15 +705,15 @@ class SpecialPowersChild extends JSWindowActorChild {
   getNoXULDOMParser() {
     
     
-    return WrapPrivileged.wrap(new DOMParser());
+    return new DOMParser();
   }
 
   get InspectorUtils() {
-    return WrapPrivileged.wrap(InspectorUtils);
+    return InspectorUtils;
   }
 
   get PromiseDebugging() {
-    return WrapPrivileged.wrap(PromiseDebugging);
+    return PromiseDebugging;
   }
 
   async waitForCrashes(aExpectingProcessCrash) {
@@ -802,7 +817,7 @@ class SpecialPowersChild extends JSWindowActorChild {
     for (var p in inPermissions) {
       var permission = inPermissions[p];
       var originalValue = Ci.nsIPermissionManager.UNKNOWN_ACTION;
-      var context = Cu.unwaiveXrays(permission.context); 
+      var context = WrapPrivileged.unwrap(Cu.unwaiveXrays(permission.context)); 
       
       if (
         await this.testPermission(
@@ -1077,7 +1092,10 @@ class SpecialPowersChild extends JSWindowActorChild {
       typeof obs == "object" &&
       obs.observe.name != "SpecialPowersCallbackWrapper"
     ) {
-      obs.observe = WrapPrivileged.wrapCallback(obs.observe);
+      obs.observe = WrapPrivileged.wrapCallback(
+        Cu.unwaiveXrays(obs.observe),
+        this.contentWindow
+      );
     }
     Services.obs.addObserver(obs, notification, weak);
   }
@@ -1104,7 +1122,10 @@ class SpecialPowersChild extends JSWindowActorChild {
       typeof obs == "object" &&
       obs.observe.name != "SpecialPowersCallbackWrapper"
     ) {
-      obs.observe = WrapPrivileged.wrapCallback(obs.observe);
+      obs.observe = WrapPrivileged.wrapCallback(
+        Cu.unwaiveXrays(obs.observe),
+        this.contentWindow
+      );
     }
     let asyncObs = (...args) => {
       Services.tm.dispatchToMainThread(() => {
@@ -1254,7 +1275,7 @@ class SpecialPowersChild extends JSWindowActorChild {
   get formHistory() {
     let tmp = {};
     ChromeUtils.import("resource://gre/modules/FormHistory.jsm", tmp);
-    return WrapPrivileged.wrap(tmp.FormHistory);
+    return tmp.FormHistory;
   }
   getFormFillController(window) {
     return Cc["@mozilla.org/satchel/form-fill-controller;1"].getService(
@@ -1304,7 +1325,7 @@ class SpecialPowersChild extends JSWindowActorChild {
   
   
   registerConsoleListener(callback) {
-    let listener = new SPConsoleListener(callback);
+    let listener = new SPConsoleListener(callback, this.contentWindow);
     Services.console.registerListener(listener);
 
     
@@ -1444,7 +1465,7 @@ class SpecialPowersChild extends JSWindowActorChild {
   }
 
   gc() {
-    this.DOMWindowUtils.garbageCollect();
+    this.contentWindow.windowUtils.garbageCollect();
   }
 
   forceGC() {
@@ -1490,7 +1511,11 @@ class SpecialPowersChild extends JSWindowActorChild {
   }
 
   nondeterministicGetWeakMapKeys(m) {
-    return ChromeUtils.nondeterministicGetWeakMapKeys(m);
+    let keys = ChromeUtils.nondeterministicGetWeakMapKeys(m);
+    if (!keys) {
+      return undefined;
+    }
+    return this.contentWindow.Array.from(keys);
   }
 
   getMemoryReports() {
@@ -1589,7 +1614,7 @@ class SpecialPowersChild extends JSWindowActorChild {
         return serv[prop].apply(serv, arguments);
       };
     }
-    return res;
+    return Cu.cloneInto(res, this.contentWindow, { cloneFunctions: true });
   }
 
   addCategoryEntry(category, entry, value, persists, replace) {
@@ -2118,9 +2143,7 @@ class SpecialPowersChild extends JSWindowActorChild {
 
   createChromeCache(name, url) {
     let principal = this._getPrincipalFromArg(url);
-    return WrapPrivileged.wrap(
-      new this.contentWindow.CacheStorage(name, principal)
-    );
+    return new this.contentWindow.CacheStorage(name, principal);
   }
 
   loadChannelAndReturnStatus(url, loadUsingSystemPrincipal) {
@@ -2197,12 +2220,13 @@ class SpecialPowersChild extends JSWindowActorChild {
     walker.showAnonymousContent = showAnonymousContent;
     walker.init(node.ownerDocument, NodeFilter.SHOW_ALL);
     walker.currentNode = node;
+    let contentWindow = this.contentWindow;
     return {
       get firstChild() {
-        return WrapPrivileged.wrap(walker.firstChild());
+        return WrapPrivileged.wrap(walker.firstChild(), contentWindow);
       },
       get lastChild() {
-        return WrapPrivileged.wrap(walker.lastChild());
+        return WrapPrivileged.wrap(walker.lastChild(), contentWindow);
       },
     };
   }
@@ -2281,11 +2305,11 @@ class SpecialPowersChild extends JSWindowActorChild {
     let wrapCallback = results => {
       Services.tm.dispatchToMainThread(() => {
         if (typeof callback == "function") {
-          callback(WrapPrivileged.wrap(results));
+          callback(WrapPrivileged.wrap(results, this.contentWindow));
         } else {
           callback.onClassifyComplete.call(
             undefined,
-            WrapPrivileged.wrap(results)
+            WrapPrivileged.wrap(results, this.contentWindow)
           );
         }
       });

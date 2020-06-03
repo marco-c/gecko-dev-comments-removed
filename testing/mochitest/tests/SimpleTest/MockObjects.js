@@ -33,32 +33,36 @@ MockObjectRegisterer.prototype = {
 
 
   register: function MOR_register() {
-    if (this._originalCID)
-      throw new Exception("Invalid object state when calling register()");
+    if (this._originalCID) {
+      throw new Error("Invalid object state when calling register()");
+    }
 
     
     var isChrome = location.protocol == "chrome:";
     var providedConstructor = this._replacementCtor;
     this._mockFactory = {
       createInstance: function MF_createInstance(aOuter, aIid) {
-        if (aOuter != null)
+        if (aOuter != null) {
           throw SpecialPowers.Cr.NS_ERROR_NO_AGGREGATION;
-        var inst = new providedConstructor();
-        if (!isChrome) {
-          var QI = inst.QueryInterface;
-          inst = SpecialPowers.wrapCallbackObject(inst);
-          inst.QueryInterface = QI;
         }
-        return inst.QueryInterface(aIid);
-      }
+        var inst = new providedConstructor().QueryInterface(aIid);
+        if (!isChrome) {
+          inst = SpecialPowers.wrapCallbackObject(inst);
+        }
+        return inst;
+      },
     };
     if (!isChrome) {
       this._mockFactory = SpecialPowers.wrapCallbackObject(this._mockFactory);
     }
 
-    var retVal = SpecialPowers.swapFactoryRegistration(null, this._contractID, this._mockFactory);
-    if ('error' in retVal) {
-      throw new Exception("ERROR: " + retVal.error);
+    var retVal = SpecialPowers.swapFactoryRegistration(
+      null,
+      this._contractID,
+      this._mockFactory
+    );
+    if ("error" in retVal) {
+      throw new Error("ERROR: " + retVal.error);
     } else {
       this._originalCID = retVal.originalCID;
     }
@@ -68,8 +72,9 @@ MockObjectRegisterer.prototype = {
 
 
   unregister: function MOR_unregister() {
-    if (!this._originalCID)
-      throw new Exception("Invalid object state when calling unregister()");
+    if (!this._originalCID) {
+      throw new Error("Invalid object state when calling unregister()");
+    }
 
     
     SpecialPowers.swapFactoryRegistration(this._originalCID, this._contractID);
@@ -89,5 +94,5 @@ MockObjectRegisterer.prototype = {
   
 
 
-  _mockFactory: null
-}
+  _mockFactory: null,
+};

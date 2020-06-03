@@ -618,14 +618,6 @@ bool mozJSComponentLoader::ReuseGlobal(nsIURI* aURI) {
     return false;
   }
 
-  
-  
-  
-  
-  if (FindInReadable(NS_LITERAL_CSTRING("resource://specialpowers/"), spec)) {
-    return false;
-  }
-
   return true;
 }
 
