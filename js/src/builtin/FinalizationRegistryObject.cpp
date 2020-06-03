@@ -326,6 +326,7 @@ bool FinalizationRegistryObject::construct(JSContext* cx, unsigned argc,
                    recordsToBeCleanedUp.release(),
                    MemoryUse::FinalizationRegistryRecordVector);
   registry->initReservedSlot(IsQueuedForCleanupSlot, BooleanValue(false));
+  registry->initReservedSlot(IsCleanupJobActiveSlot, BooleanValue(false));
 
   if (!cx->runtime()->gc.addFinalizationRegistry(cx, registry)) {
     return false;
@@ -438,6 +439,10 @@ bool FinalizationRegistryObject::isQueuedForCleanup() const {
   return getReservedSlot(IsQueuedForCleanupSlot).toBoolean();
 }
 
+bool FinalizationRegistryObject::isCleanupJobActive() const {
+  return getReservedSlot(IsCleanupJobActiveSlot).toBoolean();
+}
+
 void FinalizationRegistryObject::queueRecordToBeCleanedUp(
     FinalizationRecordObject* record) {
   AutoEnterOOMUnsafeRegion oomUnsafe;
@@ -449,6 +454,11 @@ void FinalizationRegistryObject::queueRecordToBeCleanedUp(
 void FinalizationRegistryObject::setQueuedForCleanup(bool value) {
   MOZ_ASSERT(value != isQueuedForCleanup());
   setReservedSlot(IsQueuedForCleanupSlot, BooleanValue(value));
+}
+
+void FinalizationRegistryObject::setCleanupJobActive(bool value) {
+  MOZ_ASSERT(value != isCleanupJobActive());
+  setReservedSlot(IsCleanupJobActiveSlot, BooleanValue(value));
 }
 
 
@@ -696,6 +706,10 @@ bool FinalizationRegistryObject::cleanupSome(JSContext* cx, unsigned argc,
 
   
   
+  
+  
+  
+  
   if (!args.thisv().isObject() ||
       !args.thisv().toObject().is<FinalizationRegistryObject>()) {
     JS_ReportErrorNumberASCII(
@@ -704,8 +718,15 @@ bool FinalizationRegistryObject::cleanupSome(JSContext* cx, unsigned argc,
     return false;
   }
 
+  
+  
   RootedFinalizationRegistryObject registry(
       cx, &args.thisv().toObject().as<FinalizationRegistryObject>());
+  if (registry->isCleanupJobActive()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BAD_CLEANUP_STATE);
+    return false;
+  }
 
   
   
@@ -726,12 +747,43 @@ bool FinalizationRegistryObject::cleanupSome(JSContext* cx, unsigned argc,
 }
 
 
+bool FinalizationRegistryObject::hasRegisteredRecordsToBeCleanedUp(
+    HandleFinalizationRegistryObject registry) {
+  FinalizationRecordVector* records = registry->recordsToBeCleanedUp();
+  size_t initialLength = records->length();
+  if (initialLength == 0) {
+    return false;
+  }
+
+  for (FinalizationRecordObject* record : *records) {
+    if (record->isActive()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
 
 
 bool FinalizationRegistryObject::cleanupQueuedRecords(
     JSContext* cx, HandleFinalizationRegistryObject registry,
     HandleObject callbackArg) {
   MOZ_ASSERT(cx->compartment() == registry->compartment());
+
+  
+  if (!hasRegisteredRecordsToBeCleanedUp(registry)) {
+    return true;
+  }
+
+  
+  
+  Rooted<FinalizationIteratorObject*> iterator(
+      cx, FinalizationIteratorObject::create(cx, registry));
+  if (!iterator) {
+    return false;
+  }
 
   
   
@@ -746,32 +798,191 @@ bool FinalizationRegistryObject::cleanupQueuedRecords(
 
   
   
-  
-  
-  
-  
+  registry->setCleanupJobActive(true);
 
-  RootedValue heldValue(cx);
-  RootedValue rval(cx);
   FinalizationRecordVector* records = registry->recordsToBeCleanedUp();
-  FinalizationRecordSet* activeRecords = registry->activeRecords();
-  while (!records->empty()) {
-    FinalizationRecordObject* record = records->popCopy();
+#ifdef DEBUG
+  size_t initialLength = records->length();
+#endif
 
-    
-    if (!record->isActive()) {
-      continue;
-    }
+  
+  RootedValue iteratorVal(cx, ObjectValue(*iterator));
+  RootedValue rval(cx);
+  bool ok = Call(cx, callback, UndefinedHandleValue, iteratorVal, &rval);
 
-    heldValue.set(record->heldValue());
-
-    activeRecords->remove(record);
-    record->clear();
-
-    if (!Call(cx, callback, UndefinedHandleValue, heldValue, &rval)) {
-      return false;
-    }
+  
+  size_t index = iterator->index();
+  MOZ_ASSERT(index <= records->length());
+  MOZ_ASSERT(initialLength <= records->length());
+  if (index > 0) {
+    records->erase(records->begin(), records->begin() + index);
   }
 
+  
+  
+  registry->setCleanupJobActive(false);
+
+  
+  iterator->clearFinalizationRegistry();
+
+  return ok;
+}
+
+
+
+
+const JSClass FinalizationIteratorObject::class_ = {
+    "FinalizationRegistryCleanupIterator",
+    JSCLASS_HAS_RESERVED_SLOTS(SlotCount), JS_NULL_CLASS_OPS,
+    JS_NULL_CLASS_SPEC};
+
+const JSFunctionSpec FinalizationIteratorObject::methods_[] = {
+    JS_FN(js_next_str, next, 0, 0), JS_FS_END};
+
+const JSPropertySpec FinalizationIteratorObject::properties_[] = {
+    JS_STRING_SYM_PS(toStringTag, "FinalizationRegistry Cleanup Iterator",
+                     JSPROP_READONLY),
+    JS_PS_END};
+
+
+bool GlobalObject::initFinalizationIteratorProto(JSContext* cx,
+                                                 Handle<GlobalObject*> global) {
+  Rooted<JSObject*> base(
+      cx, GlobalObject::getOrCreateIteratorPrototype(cx, global));
+  if (!base) {
+    return false;
+  }
+  RootedPlainObject proto(
+      cx, GlobalObject::createBlankPrototypeInheriting<PlainObject>(cx, base));
+  if (!proto) {
+    return false;
+  }
+  if (!JS_DefineFunctions(cx, proto, FinalizationIteratorObject::methods_) ||
+      !JS_DefineProperties(cx, proto,
+                           FinalizationIteratorObject::properties_)) {
+    return false;
+  }
+  global->setReservedSlot(FINALIZATION_ITERATOR_PROTO, ObjectValue(*proto));
+  return true;
+}
+
+ FinalizationIteratorObject* FinalizationIteratorObject::create(
+    JSContext* cx, HandleFinalizationRegistryObject registry) {
+  MOZ_ASSERT(registry);
+
+  RootedObject proto(cx, GlobalObject::getOrCreateFinalizationIteratorPrototype(
+                             cx, cx->global()));
+  if (!proto) {
+    return nullptr;
+  }
+
+  FinalizationIteratorObject* iterator =
+      NewObjectWithGivenProto<FinalizationIteratorObject>(cx, proto);
+  if (!iterator) {
+    return nullptr;
+  }
+
+  iterator->initReservedSlot(FinalizationRegistrySlot, ObjectValue(*registry));
+  iterator->initReservedSlot(IndexSlot, Int32Value(0));
+
+  return iterator;
+}
+
+FinalizationRegistryObject* FinalizationIteratorObject::finalizationRegistry()
+    const {
+  Value value = getReservedSlot(FinalizationRegistrySlot);
+  if (value.isUndefined()) {
+    return nullptr;
+  }
+  return &value.toObject().as<FinalizationRegistryObject>();
+}
+
+size_t FinalizationIteratorObject::index() const {
+  int32_t i = getReservedSlot(IndexSlot).toInt32();
+  MOZ_ASSERT(i >= 0);
+  return size_t(i);
+}
+
+void FinalizationIteratorObject::setIndex(size_t i) {
+  MOZ_ASSERT(i <= INT32_MAX);
+  setReservedSlot(IndexSlot, Int32Value(int32_t(i)));
+}
+
+void FinalizationIteratorObject::clearFinalizationRegistry() {
+  MOZ_ASSERT(finalizationRegistry());
+  setReservedSlot(FinalizationRegistrySlot, UndefinedValue());
+}
+
+
+
+
+bool FinalizationIteratorObject::next(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  
+  
+  
+  if (!args.thisv().isObject() ||
+      !args.thisv().toObject().is<FinalizationIteratorObject>()) {
+    JS_ReportErrorNumberASCII(
+        cx, GetErrorMessage, nullptr, JSMSG_NOT_A_FINALIZATION_ITERATOR,
+        "Receiver of FinalizationRegistryCleanupIterator.next call");
+    return false;
+  }
+
+  RootedFinalizationIteratorObject iterator(
+      cx, &args.thisv().toObject().as<FinalizationIteratorObject>());
+
+  
+  
+  
+  RootedFinalizationRegistryObject registry(cx,
+                                            iterator->finalizationRegistry());
+  if (!registry) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_STALE_FINALIZATION_REGISTRY_ITERATOR);
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  FinalizationRecordVector* records = registry->recordsToBeCleanedUp();
+  size_t index = iterator->index();
+  MOZ_ASSERT(index <= records->length());
+
+  
+  while (index < records->length() && index < INT32_MAX &&
+         !(*records)[index]->isActive()) {
+    index++;
+    iterator->setIndex(index);
+  }
+
+  if (index < records->length() && index < INT32_MAX) {
+    RootedFinalizationRecordObject record(cx, (*records)[index]);
+    RootedValue heldValue(cx, record->heldValue());
+    PlainObject* result = CreateIterResultObject(cx, heldValue, false);
+    if (!result) {
+      return false;
+    }
+
+    registry->activeRecords()->remove(record);
+    record->clear();
+    iterator->setIndex(index + 1);
+
+    args.rval().setObject(*result);
+    return true;
+  }
+
+  
+  PlainObject* result = CreateIterResultObject(cx, UndefinedHandleValue, true);
+  if (!result) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
   return true;
 }
