@@ -2,29 +2,17 @@
 
 
 
+
 'use strict';
 
 
 
-const idl = `
-dictionary RelatedApplication {
-  required USVString platform;
-  USVString url;
-  DOMString id;
-  USVString version;
-};
-
-[Exposed=Window]
-partial interface Navigator {
-  [SecureContext] Promise<sequence<RelatedApplication>> getInstalledRelatedApps();
-};`;
-
-test(t => {
-  const idl_array = new IdlArray();
-  idl_array.add_untested_idls("interface Navigator {};");
-  idl_array.add_idls(idl);
-  idl_array.add_objects({
-    Navigator: ['navigator'],
-  });
-  idl_array.test();
-}, 'IDL test for getInstalledRelatedApps');
+idl_test(
+  ['get-installed-related-apps'],
+  ['html'],
+  idl_array => {
+    idl_array.add_objects({
+      Navigator: ['navigator'],
+    });
+  }
+)
