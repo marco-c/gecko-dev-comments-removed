@@ -271,6 +271,10 @@ struct DocShellLoadStateInit
 
   MaybeDiscardedBrowsingContext SourceBrowsingContext;
 
+  
+  
+  uint32_t TriggeringSandboxFlags;
+
   nsCString? OriginalURIString;
   int32_t? CancelContentJSEpoch;
 
