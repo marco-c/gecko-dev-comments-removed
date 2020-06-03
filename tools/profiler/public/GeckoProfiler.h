@@ -237,6 +237,22 @@ class RacyFeatures {
 
   static void SetUnpaused() { sActiveAndFeatures &= ~Paused; }
 
+  static mozilla::Maybe<uint32_t> FeaturesIfActive() {
+    if (uint32_t af = sActiveAndFeatures; af & Active) {
+      
+      return Some(af & ~(Active | Paused));
+    }
+    return Nothing();
+  }
+
+  static mozilla::Maybe<uint32_t> FeaturesIfActiveAndUnpaused() {
+    if (uint32_t af = sActiveAndFeatures; (af & (Active | Paused)) == Active) {
+      
+      return Some(af & ~Active);
+    }
+    return Nothing();
+  }
+
   static bool IsActive() { return uint32_t(sActiveAndFeatures) & Active; }
 
   static bool IsActiveWithFeature(uint32_t aFeature) {
@@ -530,6 +546,20 @@ bool profiler_thread_is_sleeping();
 
 
 uint32_t profiler_get_available_features();
+
+
+
+
+inline mozilla::Maybe<uint32_t> profiler_features_if_active() {
+  return mozilla::profiler::detail::RacyFeatures::FeaturesIfActive();
+}
+
+
+
+
+inline mozilla::Maybe<uint32_t> profiler_features_if_active_and_unpaused() {
+  return mozilla::profiler::detail::RacyFeatures::FeaturesIfActiveAndUnpaused();
+}
 
 
 
