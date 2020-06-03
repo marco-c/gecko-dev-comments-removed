@@ -1275,6 +1275,12 @@ NS_IMETHODIMP nsExternalAppHandler::GetContentLength(int64_t* aContentLength) {
   return NS_OK;
 }
 
+NS_IMETHODIMP nsExternalAppHandler::GetBrowsingContextId(
+    uint64_t* aBrowsingContextId) {
+  *aBrowsingContextId = mBrowsingContext->Id();
+  return NS_OK;
+}
+
 void nsExternalAppHandler::RetargetLoadNotifications(nsIRequest* request) {
   
   
