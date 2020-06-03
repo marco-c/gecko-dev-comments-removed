@@ -92,10 +92,6 @@
 
 
 
-
-
-
-
 #include "ImageLogging.h"
 #include "nsBMPDecoder.h"
 
@@ -498,8 +494,6 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadInfoHeaderSize(
 
   bool bihSizeOk = mH.mBIHSize == InfoHeaderLength::WIN_V2 ||
                    mH.mBIHSize == InfoHeaderLength::WIN_V3 ||
-                   mH.mBIHSize == InfoHeaderLength::WIN_V3_NT ||
-                   mH.mBIHSize == InfoHeaderLength::WIN_V3_NT_ALPHA ||
                    mH.mBIHSize == InfoHeaderLength::WIN_V4 ||
                    mH.mBIHSize == InfoHeaderLength::WIN_V5 ||
                    (mH.mBIHSize >= InfoHeaderLength::OS2_V2_MIN &&
@@ -617,8 +611,6 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadInfoHeaderRest(
        
        
        (mH.mBIHSize == InfoHeaderLength::WIN_V3 ||
-        mH.mBIHSize == InfoHeaderLength::WIN_V3_NT ||
-        mH.mBIHSize == InfoHeaderLength::WIN_V3_NT_ALPHA ||
         mH.mBIHSize == InfoHeaderLength::WIN_V4 ||
         mH.mBIHSize == InfoHeaderLength::WIN_V5) &&
        (mH.mBpp == 16 || mH.mBpp == 32));
@@ -641,7 +633,7 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadInfoHeaderRest(
   size_t bitFieldsLengthStillToRead = 0;
   if (mH.mCompression == Compression::BITFIELDS) {
     
-    if (mH.mBIHSize >= InfoHeaderLength::WIN_V3_NT) {
+    if (mH.mBIHSize >= InfoHeaderLength::WIN_V4) {
       
       
       mBitFields.ReadFromHeader(aData + 36,  true);
@@ -1047,7 +1039,8 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadPixelRow(
       break;
 
     case 32:
-      if (mH.mCompression == Compression::RGB && mIsWithinICO) {
+      if (mH.mCompression == Compression::RGB && mIsWithinICO &&
+          mH.mBpp == 32) {
         
         
         
