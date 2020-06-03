@@ -345,13 +345,6 @@ class FirefoxConnector {
   
 
 
-  getBlockedUrls() {
-    return this.webConsoleFront.getBlockedUrls();
-  }
-
-  
-
-
 
 
   setBlockedUrls(urls) {

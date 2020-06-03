@@ -949,14 +949,6 @@ NetworkObserver.prototype = {
 
 
 
-  getBlockedUrls() {
-    return this.blockedURLs;
-  },
-
-  
-
-
-
 
 
 
