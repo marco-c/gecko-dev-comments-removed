@@ -416,9 +416,14 @@ fn clamp_blur_radius(blur_radius: f32, scale_factors: (f32, f32)) -> f32 {
     
     
     let largest_scale_factor = f32::max(scale_factors.0, scale_factors.1);
-    let adjusted_blur_radius = blur_radius * largest_scale_factor;
-    let clamped_blur_radius = f32::min(adjusted_blur_radius, MAX_BLUR_RADIUS);
-    clamped_blur_radius / largest_scale_factor
+    let scaled_blur_radius = blur_radius * largest_scale_factor;
+
+    if scaled_blur_radius > MAX_BLUR_RADIUS {
+        MAX_BLUR_RADIUS / largest_scale_factor
+    } else {
+        
+        blur_radius
+    }
 }
 
 
