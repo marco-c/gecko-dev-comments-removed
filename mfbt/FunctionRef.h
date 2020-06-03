@@ -17,6 +17,7 @@
 
 #include <cstddef>      
 #include <type_traits>  
+#include <utility>      
 
 
 
@@ -135,7 +136,7 @@ class FunctionRef<Ret(Params...)> {
   static Ret CallFunctionPointer(const Payload& aPayload,
                                  Params... aParams) noexcept {
     auto func = reinterpret_cast<RealFuncPtr>(aPayload.mFuncPtr);
-    return static_cast<Ret>(func(static_cast<Params>(aParams)...));
+    return static_cast<Ret>(func(std::forward<Params>(aParams)...));
   }
 
   template <typename Ret2, typename... Params2>
@@ -178,6 +179,11 @@ class FunctionRef<Ret(Params...)> {
   MOZ_IMPLICIT FunctionRef(Callable& aCallable) noexcept
       : mAdaptor([](const Payload& aPayload, Params... aParams) {
           auto& func = *static_cast<Callable*>(aPayload.mObject);
+          
+          
+          
+          
+          
           return static_cast<Ret>(func(static_cast<Params>(aParams)...));
         }) {
     ::new (KnownNotNull, &mPayload.mObject) void*(&aCallable);
@@ -208,7 +214,7 @@ class FunctionRef<Ret(Params...)> {
 
   
   Ret operator()(Params... params) const {
-    return mAdaptor(mPayload, static_cast<Params>(params)...);
+    return mAdaptor(mPayload, std::forward<Params>(params)...);
   }
 
   
