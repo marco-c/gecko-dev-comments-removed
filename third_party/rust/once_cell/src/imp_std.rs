@@ -4,9 +4,10 @@
 
 
 use std::{
-    cell::{Cell, UnsafeCell},
+    cell::UnsafeCell,
     marker::PhantomData,
     panic::{RefUnwindSafe, UnwindSafe},
+    ptr,
     sync::atomic::{AtomicBool, AtomicUsize, Ordering},
     thread::{self, Thread},
 };
@@ -15,7 +16,7 @@ use std::{
 pub(crate) struct OnceCell<T> {
     
     
-    state_and_queue: AtomicUsize,
+    state: AtomicUsize,
     _marker: PhantomData<*mut Waiter>,
     
     
@@ -46,25 +47,23 @@ const COMPLETE: usize = 0x2;
 const STATE_MASK: usize = 0x3;
 
 
-#[repr(align(4))] 
 struct Waiter {
-    thread: Cell<Option<Thread>>,
+    thread: Option<Thread>,
     signaled: AtomicBool,
-    next: *const Waiter,
+    next: *mut Waiter,
 }
 
 
 
-
-struct WaiterQueue<'a> {
-    state_and_queue: &'a AtomicUsize,
-    set_state_on_drop_to: usize,
+struct Finish<'a> {
+    failed: bool,
+    my_state: &'a AtomicUsize,
 }
 
 impl<T> OnceCell<T> {
     pub(crate) const fn new() -> OnceCell<T> {
         OnceCell {
-            state_and_queue: AtomicUsize::new(INCOMPLETE),
+            state: AtomicUsize::new(INCOMPLETE),
             _marker: PhantomData,
             value: UnsafeCell::new(None),
         }
@@ -77,7 +76,7 @@ impl<T> OnceCell<T> {
         
         
         
-        self.state_and_queue.load(Ordering::Acquire) == COMPLETE
+        self.state.load(Ordering::Acquire) == COMPLETE
     }
 
     
@@ -91,7 +90,7 @@ impl<T> OnceCell<T> {
         let mut f = Some(f);
         let mut res: Result<(), E> = Ok(());
         let slot = &self.value;
-        initialize_inner(&self.state_and_queue, &mut || {
+        initialize_inner(&self.state, &mut || {
             let f = f.take().unwrap();
             match f() {
                 Ok(value) => {
@@ -109,85 +108,101 @@ impl<T> OnceCell<T> {
 }
 
 
+fn initialize_inner(my_state: &AtomicUsize, init: &mut dyn FnMut() -> bool) -> bool {
+    
+    
+    
+    let mut state = my_state.load(Ordering::SeqCst);
 
-fn initialize_inner(my_state_and_queue: &AtomicUsize, init: &mut dyn FnMut() -> bool) -> bool {
-    let mut state_and_queue = my_state_and_queue.load(Ordering::Acquire);
-
-    loop {
-        match state_and_queue {
+    'outer: loop {
+        match state {
+            
+            
             COMPLETE => return true,
+
+            
+            
+            
             INCOMPLETE => {
-                let old = my_state_and_queue.compare_and_swap(
-                    state_and_queue,
-                    RUNNING,
-                    Ordering::Acquire,
-                );
-                if old != state_and_queue {
-                    state_and_queue = old;
+                let old = my_state.compare_and_swap(state, RUNNING, Ordering::SeqCst);
+                if old != state {
+                    state = old;
                     continue;
                 }
-                let mut waiter_queue = WaiterQueue {
-                    state_and_queue: my_state_and_queue,
-                    set_state_on_drop_to: INCOMPLETE, 
-                };
-                let success = init();
 
                 
-                waiter_queue.set_state_on_drop_to = if success { COMPLETE } else { INCOMPLETE };
+                
+                
+                
+                
+                let mut complete = Finish { failed: true, my_state };
+                let success = init();
+                
+                complete.failed = !success;
                 return success;
             }
+
+            
+            
+            
+            
+            
             _ => {
-                assert!(state_and_queue & STATE_MASK == RUNNING);
-                wait(&my_state_and_queue, state_and_queue);
-                state_and_queue = my_state_and_queue.load(Ordering::Acquire);
+                assert!(state & STATE_MASK == RUNNING);
+                let mut node = Waiter {
+                    thread: Some(thread::current()),
+                    signaled: AtomicBool::new(false),
+                    next: ptr::null_mut(),
+                };
+                let me = &mut node as *mut Waiter as usize;
+                assert!(me & STATE_MASK == 0);
+
+                while state & STATE_MASK == RUNNING {
+                    node.next = (state & !STATE_MASK) as *mut Waiter;
+                    let old = my_state.compare_and_swap(state, me | RUNNING, Ordering::SeqCst);
+                    if old != state {
+                        state = old;
+                        continue;
+                    }
+
+                    
+                    
+                    
+                    while !node.signaled.load(Ordering::SeqCst) {
+                        thread::park();
+                    }
+                    state = my_state.load(Ordering::SeqCst);
+                    continue 'outer;
+                }
             }
         }
     }
 }
 
-
-fn wait(state_and_queue: &AtomicUsize, mut current_state: usize) {
-    loop {
-        if current_state & STATE_MASK != RUNNING {
-            return;
-        }
-
-        let node = Waiter {
-            thread: Cell::new(Some(thread::current())),
-            signaled: AtomicBool::new(false),
-            next: (current_state & !STATE_MASK) as *const Waiter,
-        };
-        let me = &node as *const Waiter as usize;
-
-        let old = state_and_queue.compare_and_swap(current_state, me | RUNNING, Ordering::Release);
-        if old != current_state {
-            current_state = old;
-            continue;
-        }
-
-        while !node.signaled.load(Ordering::Acquire) {
-            thread::park();
-        }
-        break;
-    }
-}
-
-
-impl Drop for WaiterQueue<'_> {
+impl Drop for Finish<'_> {
     fn drop(&mut self) {
-        let state_and_queue =
-            self.state_and_queue.swap(self.set_state_on_drop_to, Ordering::AcqRel);
+        
+        
+        let queue = if self.failed {
+            
+            self.my_state.swap(INCOMPLETE, Ordering::SeqCst)
+        } else {
+            self.my_state.swap(COMPLETE, Ordering::SeqCst)
+        };
+        assert_eq!(queue & STATE_MASK, RUNNING);
 
-        assert_eq!(state_and_queue & STATE_MASK, RUNNING);
-
+        
+        
+        
+        
         unsafe {
-            let mut queue = (state_and_queue & !STATE_MASK) as *const Waiter;
+            let mut queue = (queue & !STATE_MASK) as *mut Waiter;
             while !queue.is_null() {
                 let next = (*queue).next;
-                let thread = (*queue).thread.replace(None).unwrap();
-                (*queue).signaled.store(true, Ordering::Release);
-                queue = next;
+                let thread = (*queue).thread.take().unwrap();
+                (*queue).signaled.store(true, Ordering::SeqCst);
                 thread.unpark();
+                queue = next;
             }
         }
     }
@@ -197,6 +212,7 @@ impl Drop for WaiterQueue<'_> {
 #[cfg(test)]
 mod tests {
     use std::panic;
+    #[cfg(not(miri))] 
     use std::{sync::mpsc::channel, thread};
 
     use super::OnceCell;
@@ -219,7 +235,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)] 
+    #[cfg(not(miri))] 
     fn stampede_once() {
         static O: OnceCell<()> = OnceCell::new();
         static mut RUN: bool = false;
@@ -256,6 +272,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(miri))] 
     fn poison_bad() {
         static O: OnceCell<()> = OnceCell::new();
 
@@ -277,7 +294,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)] 
+    #[cfg(not(miri))] 
     fn wait_for_force_to_finish() {
         static O: OnceCell<()> = OnceCell::new();
 
@@ -312,13 +329,5 @@ mod tests {
 
         assert!(t1.join().is_ok());
         assert!(t2.join().is_ok());
-    }
-
-    #[test]
-    #[cfg(target_pointer_width = "64")]
-    fn test_size() {
-        use std::mem::size_of;
-
-        assert_eq!(size_of::<OnceCell<u32>>(), 4 * size_of::<u32>());
     }
 }
