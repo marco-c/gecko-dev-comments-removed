@@ -1290,29 +1290,44 @@ void nsTextControlFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   nsDisplayList* content = aLists.Content();
   nsDisplayListSet set(content, content, content, content, content, content);
 
-  for (nsIFrame* kid = mFrames.FirstChild(); kid; kid = kid->GetNextSibling()) {
+  
+  
+  
+  
+  
+  
+  auto clipToRoot = [&](Maybe<DisplayListClipState::AutoSaveRestore>& aClip) {
+    if (mRootNode) {
+      if (auto* root = mRootNode->GetPrimaryFrame()) {
+        aClip.emplace(aBuilder);
+        nsRect rootBox(aBuilder->ToReferenceFrame(root), root->GetSize());
+        aClip->ClipContentDescendants(rootBox);
+      }
+    }
+  };
+
+  
+  
+  if (mPlaceholderDiv && control->GetPlaceholderVisibility() &&
+      mPlaceholderDiv->GetPrimaryFrame()) {
+    Maybe<DisplayListClipState::AutoSaveRestore> overlayTextClip;
+    clipToRoot(overlayTextClip);
+    auto* kid = mPlaceholderDiv->GetPrimaryFrame();
+    MOZ_ASSERT(kid->GetParent() == this);
+    BuildDisplayListForChild(aBuilder, kid, set, 0);
+  }
+
+  for (auto* kid : mFrames) {
     nsIContent* kidContent = kid->GetContent();
     Maybe<DisplayListClipState::AutoSaveRestore> overlayTextClip;
-    if (kidContent == mPlaceholderDiv && !control->GetPlaceholderVisibility()) {
-      continue;
+    if (kidContent == mPlaceholderDiv) {
+      continue;  
     }
     if (kidContent == mPreviewDiv && !control->GetPreviewVisibility()) {
       continue;
     }
-    
-    
-    
-    
-    
-    
-    if (kidContent == mPlaceholderDiv || kidContent == mPreviewDiv) {
-      if (mRootNode) {
-        if (auto* root = mRootNode->GetPrimaryFrame()) {
-          overlayTextClip.emplace(aBuilder);
-          nsRect rootBox(aBuilder->ToReferenceFrame(root), root->GetSize());
-          overlayTextClip->ClipContentDescendants(rootBox);
-        }
-      }
+    if (kidContent == mPreviewDiv) {
+      clipToRoot(overlayTextClip);
     }
     BuildDisplayListForChild(aBuilder, kid, set, 0);
   }
