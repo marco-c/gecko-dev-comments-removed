@@ -827,27 +827,28 @@ def findTestMediaDevices(log):
     pactl = spawn.find_executable("pactl")
 
     if not pactl:
-        log.critical('Could not find pactl on system')
+        log.error('Could not find pactl on system')
+        return None
 
-    
-    
-    try:
-        o = subprocess.check_output(
-            [pactl, 'load-module', 'module-null-sink']
-        )
-    except subprocess.CalledProcessError:
-        log.critical('Could not load module-null-sink')
-
-    
     try:
         o = subprocess.check_output(
             [pactl, 'list', 'short', 'modules'])
     except subprocess.CalledProcessError:
-        log.critical('Could not list currently loaded modules')
+        log.error('Could not list currently loaded modules')
+        return None
 
-    
-    
-    
+    null_sink = filter(lambda x: 'module-null-sink' in x, o.splitlines())
+
+    if not null_sink:
+        try:
+            subprocess.check_call([
+                pactl,
+                'load-module',
+                'module-null-sink'
+            ])
+        except subprocess.CalledProcessError:
+            log.error('Could not load module-null-sink')
+            return None
 
     
     info['audio'] = 'Monitor of Null Output'
