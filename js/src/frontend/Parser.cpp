@@ -2792,6 +2792,8 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
   Directives newDirectives = directives;
 
   Position start(this->compilationInfo_.keepAtoms, tokenStream);
+  CompilationInfo::RewindToken startObj =
+      this->compilationInfo_.getRewindToken();
 
   
   
@@ -2817,6 +2819,7 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
 
     
     tokenStream.rewind(start);
+    this->compilationInfo_.rewind(startObj);
 
     
     
@@ -2868,6 +2871,8 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
     }
 
     UsedNameTracker::RewindToken token = usedNames_.getRewindToken();
+    CompilationInfo::RewindToken startObj =
+        this->compilationInfo_.getRewindToken();
 
     
     
@@ -2905,6 +2910,7 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
         
         syntaxParser->clearAbortedSyntaxParse();
         usedNames_.rewind(token);
+        this->compilationInfo_.rewind(startObj);
         MOZ_ASSERT_IF(!syntaxParser->cx_->isHelperThreadContext(),
                       !syntaxParser->cx_->isExceptionPending());
         break;
@@ -8675,6 +8681,10 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::assignExpr(
 
   if (isArrow) {
     
+    
+    
+    
+    
     tokenStream.rewind(start);
 
     TokenKind next;
@@ -11012,5 +11022,13 @@ template class Parser<FullParseHandler, Utf8Unit>;
 template class Parser<SyntaxParseHandler, Utf8Unit>;
 template class Parser<FullParseHandler, char16_t>;
 template class Parser<SyntaxParseHandler, char16_t>;
+
+CompilationInfo::RewindToken CompilationInfo::getRewindToken() {
+  return RewindToken{traceListHead};
+}
+
+void CompilationInfo::rewind(const CompilationInfo::RewindToken& pos) {
+  traceListHead = pos.funbox;
+}
 
 }  

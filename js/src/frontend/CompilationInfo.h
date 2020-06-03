@@ -112,6 +112,16 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
   JS::Rooted<ScriptSourceObject*> sourceObject;
 
   
+  
+  
+  struct RewindToken {
+    FunctionBox* funbox = nullptr;
+  };
+
+  RewindToken getRewindToken();
+  void rewind(const RewindToken& pos);
+
+  
   CompilationInfo(JSContext* cx, LifoAllocScope& alloc,
                   const JS::ReadOnlyCompileOptions& options,
                   Scope* enclosingScope = nullptr,
