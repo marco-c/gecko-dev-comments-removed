@@ -36,10 +36,8 @@
 #include "mozilla/Sprintf.h"
 #include "nsSocketTransportService2.h"
 #include "nsNetUtil.h"
-#include "nsICacheEntry.h"
-#include "nsICacheStorageService.h"
-#include "nsICacheStorage.h"
 #include "CacheControlParser.h"
+#include "CachePushChecker.h"
 #include "LoadContextInfo.h"
 #include "TCPFastOpenLayer.h"
 #include "nsQueryObject.h"
@@ -2033,13 +2031,7 @@ nsresult Http2Session::RecvPushPromise(Http2Session* self) {
     
     
     
-    nsCOMPtr<nsICacheStorageService> css =
-        do_GetService("@mozilla.org/netwerk/cache-storage-service;1");
-    mozilla::OriginAttributes oa;
-    pushedWeak->GetOriginAttributes(&oa);
-    RefPtr<LoadContextInfo> lci = GetLoadContextInfo(false, oa);
-    nsCOMPtr<nsICacheStorage> ds;
-    css->DiskCacheStorage(lci, false, getter_AddRefs(ds));
+
     
     nsAutoCString spec;
     spec.Assign(pushedWeak->Origin());
@@ -2055,22 +2047,26 @@ nsresult Http2Session::RecvPushPromise(Http2Session* self) {
     if (NS_SUCCEEDED(Http2Stream::MakeOriginURL(spec, pushedURL))) {
       LOG3(("Http2Session::RecvPushPromise %p check disk cache for entry",
             self));
-      RefPtr<CachePushCheckCallback> cpcc = new CachePushCheckCallback(
-          self, promisedID,
-          static_cast<Http2PushedStream*>(pushedWeak.get())
-              ->GetRequestString());
-      if (NS_FAILED(ds->AsyncOpenURI(
-              pushedURL, EmptyCString(),
-              nsICacheStorage::OPEN_READONLY | nsICacheStorage::OPEN_SECRETLY,
-              cpcc))) {
+      mozilla::OriginAttributes oa;
+      pushedWeak->GetOriginAttributes(&oa);
+      RefPtr<Http2Session> session = self;
+      auto callback = [session, promisedID](bool aAccepted) {
+        MOZ_ASSERT(OnSocketThread());
+
+        if (!aAccepted) {
+          session->CleanupStream(promisedID, NS_ERROR_FAILURE,
+                                 Http2Session::REFUSED_STREAM_ERROR);
+        }
+      };
+      RefPtr<CachePushChecker> checker = new CachePushChecker(
+          pushedURL, oa,
+          static_cast<Http2PushedStream*>(pushedWeak.get())->GetRequestString(),
+          std::move(callback));
+      if (NS_FAILED(checker->DoCheck())) {
         LOG3(
             ("Http2Session::RecvPushPromise %p failed to open cache entry for "
              "push check",
              self));
-      } else if (!pushedWeak) {
-        
-        
-        return NS_OK;
       }
     }
   }
@@ -2082,173 +2078,6 @@ nsresult Http2Session::RecvPushPromise(Http2Session* self) {
   uint8_t priorityWeight = pushedWeak->PriorityWeight();
   self->SendPriorityFrame(promisedID, priorityDependency, priorityWeight);
   self->ResetDownstreamState();
-  return NS_OK;
-}
-
-NS_IMPL_ISUPPORTS(Http2Session::CachePushCheckCallback,
-                  nsICacheEntryOpenCallback);
-
-Http2Session::CachePushCheckCallback::CachePushCheckCallback(
-    Http2Session* session, uint32_t promisedID, const nsACString& requestString)
-    : mPromisedID(promisedID) {
-  mSession = session;
-  mRequestHead.ParseHeaderSet(requestString.BeginReading());
-}
-
-NS_IMETHODIMP
-Http2Session::CachePushCheckCallback::OnCacheEntryCheck(
-    nsICacheEntry* entry, nsIApplicationCache* appCache, uint32_t* result) {
-  MOZ_ASSERT(OnSocketThread(), "Not on socket thread?!");
-
-  
-  
-  
-  *result = nsICacheEntryOpenCallback::ENTRY_NOT_WANTED;
-
-  bool isForcedValid = false;
-  entry->GetIsForcedValid(&isForcedValid);
-
-  nsHttpResponseHead cachedResponseHead;
-  nsresult rv =
-      nsHttp::GetHttpResponseHeadFromCacheEntry(entry, &cachedResponseHead);
-  if (NS_FAILED(rv)) {
-    
-    
-    return NS_OK;
-  }
-
-  if ((cachedResponseHead.Status() / 100) != 2) {
-    
-    
-    return NS_OK;
-  }
-
-  
-  nsCString buf;
-  rv = entry->GetMetaDataElement("request-method", getter_Copies(buf));
-  if (NS_FAILED(rv)) {
-    
-    return NS_OK;
-  }
-  nsAutoCString pushedMethod;
-  mRequestHead.Method(pushedMethod);
-  if (!buf.Equals(pushedMethod)) {
-    
-    return NS_OK;
-  }
-
-  int64_t size, contentLength;
-  rv = nsHttp::CheckPartial(entry, &size, &contentLength, &cachedResponseHead);
-  if (NS_FAILED(rv)) {
-    
-    return NS_OK;
-  }
-
-  if (size == int64_t(-1) || contentLength != size) {
-    
-    return NS_OK;
-  }
-
-  nsAutoCString requestedETag;
-  if (NS_FAILED(mRequestHead.GetHeader(nsHttp::If_Match, requestedETag))) {
-    
-    return NS_OK;
-  }
-  if (!requestedETag.IsEmpty()) {
-    nsAutoCString cachedETag;
-    if (NS_FAILED(cachedResponseHead.GetHeader(nsHttp::ETag, cachedETag))) {
-      
-      return NS_OK;
-    }
-    if (!requestedETag.Equals(cachedETag)) {
-      
-      return NS_OK;
-    }
-  }
-
-  nsAutoCString imsString;
-  Unused << mRequestHead.GetHeader(nsHttp::If_Modified_Since, imsString);
-  if (!buf.IsEmpty()) {
-    uint32_t ims = buf.ToInteger(&rv);
-    uint32_t lm;
-    rv = cachedResponseHead.GetLastModifiedValue(&lm);
-    if (NS_SUCCEEDED(rv) && lm && lm < ims) {
-      
-      return NS_OK;
-    }
-  }
-
-  nsAutoCString cacheControlRequestHeader;
-  Unused << mRequestHead.GetHeader(nsHttp::Cache_Control,
-                                   cacheControlRequestHeader);
-  CacheControlParser cacheControlRequest(cacheControlRequestHeader);
-  if (cacheControlRequest.NoStore()) {
-    
-    return NS_OK;
-  }
-
-  nsCString cachedAuth;
-  rv = entry->GetMetaDataElement("auth", getter_Copies(cachedAuth));
-  if (NS_SUCCEEDED(rv)) {
-    uint32_t lastModifiedTime;
-    rv = entry->GetLastModified(&lastModifiedTime);
-    if (NS_SUCCEEDED(rv)) {
-      if ((gHttpHandler->SessionStartTime() > lastModifiedTime) &&
-          !cachedAuth.IsEmpty()) {
-        
-        return NS_OK;
-      }
-
-      if (cachedAuth.IsEmpty() &&
-          mRequestHead.HasHeader(nsHttp::Authorization)) {
-        
-        
-        return NS_OK;
-      }
-    }
-  }
-
-  bool weaklyFramed, isImmutable;
-  nsHttp::DetermineFramingAndImmutability(entry, &cachedResponseHead, true,
-                                          &weaklyFramed, &isImmutable);
-
-  
-  uint32_t lastModifiedTime;
-  rv = entry->GetLastModified(&lastModifiedTime);
-  if (NS_FAILED(rv)) {
-    
-    return NS_OK;
-  }
-
-  
-  
-  bool fromPreviousSession =
-      (gHttpHandler->SessionStartTime() > lastModifiedTime);
-
-  bool validationRequired = nsHttp::ValidationRequired(
-      isForcedValid, &cachedResponseHead, 0 , false,
-      isImmutable, false, mRequestHead, entry, cacheControlRequest,
-      fromPreviousSession);
-
-  if (validationRequired) {
-    
-    
-    return NS_OK;
-  }
-
-  
-  
-  mSession->CleanupStream(mPromisedID, NS_ERROR_FAILURE,
-                          Http2Session::REFUSED_STREAM_ERROR);
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-Http2Session::CachePushCheckCallback::OnCacheEntryAvailable(
-    nsICacheEntry* entry, bool isNew, nsIApplicationCache* appCache,
-    nsresult result) {
-  
   return NS_OK;
 }
 
