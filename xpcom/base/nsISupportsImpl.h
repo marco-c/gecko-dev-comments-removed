@@ -625,30 +625,31 @@ class ThreadSafeAutoRefCnt {
 #define NS_INLINE_DECL_REFCOUNTING(_class, ...) \
   NS_INLINE_DECL_REFCOUNTING_WITH_DESTROY(_class, delete (this), __VA_ARGS__)
 
-#define NS_INLINE_DECL_THREADSAFE_REFCOUNTING_META(_class, _decl, ...) \
- public:                                                               \
-  _decl(MozExternalRefCountType) AddRef(void) __VA_ARGS__ {            \
-    MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(_class)                         \
-    MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");               \
-    nsrefcnt count = ++mRefCnt;                                        \
-    NS_LOG_ADDREF(this, count, #_class, sizeof(*this));                \
-    return (nsrefcnt)count;                                            \
-  }                                                                    \
-  _decl(MozExternalRefCountType) Release(void) __VA_ARGS__ {           \
-    MOZ_ASSERT(int32_t(mRefCnt) > 0, "dup release");                   \
-    nsrefcnt count = --mRefCnt;                                        \
-    NS_LOG_RELEASE(this, count, #_class);                              \
-    if (count == 0) {                                                  \
-      delete (this);                                                   \
-      return 0;                                                        \
-    }                                                                  \
-    return count;                                                      \
-  }                                                                    \
-  using HasThreadSafeRefCnt = std::true_type;                          \
-                                                                       \
- protected:                                                            \
-  ::mozilla::ThreadSafeAutoRefCnt mRefCnt;                             \
-                                                                       \
+#define NS_INLINE_DECL_THREADSAFE_REFCOUNTING_META(_class, _decl, _destroy, \
+                                                   ...)                     \
+ public:                                                                    \
+  _decl(MozExternalRefCountType) AddRef(void) __VA_ARGS__ {                 \
+    MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(_class)                              \
+    MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");                    \
+    nsrefcnt count = ++mRefCnt;                                             \
+    NS_LOG_ADDREF(this, count, #_class, sizeof(*this));                     \
+    return (nsrefcnt)count;                                                 \
+  }                                                                         \
+  _decl(MozExternalRefCountType) Release(void) __VA_ARGS__ {                \
+    MOZ_ASSERT(int32_t(mRefCnt) > 0, "dup release");                        \
+    nsrefcnt count = --mRefCnt;                                             \
+    NS_LOG_RELEASE(this, count, #_class);                                   \
+    if (count == 0) {                                                       \
+      _destroy;                                                             \
+      return 0;                                                             \
+    }                                                                       \
+    return count;                                                           \
+  }                                                                         \
+  using HasThreadSafeRefCnt = std::true_type;                               \
+                                                                            \
+ protected:                                                                 \
+  ::mozilla::ThreadSafeAutoRefCnt mRefCnt;                                  \
+                                                                            \
  public:
 
 
@@ -659,15 +660,43 @@ class ThreadSafeAutoRefCnt {
 
 
 
-#define NS_INLINE_DECL_THREADSAFE_REFCOUNTING(_class, ...) \
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_META(_class, NS_METHOD_, __VA_ARGS__)
+
+
+
+#define NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DESTROY(_class, _destroy, \
+                                                           ...)              \
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_META(_class, NS_METHOD_, _destroy,   \
+                                             __VA_ARGS__)
+
+
+
+
+
+#define NS_INLINE_DECL_THREADSAFE_VIRTUAL_REFCOUNTING_WITH_DESTROY(         \
+    _class, _destroy, ...)                                                  \
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_META(_class, NS_IMETHOD_, _destroy, \
+                                             __VA_ARGS__)
+
+
+
+
+
+
+
+
+
+
+#define NS_INLINE_DECL_THREADSAFE_REFCOUNTING(_class, ...)                  \
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DESTROY(_class, delete (this), \
+                                                     __VA_ARGS__)
 
 
 
 
 
 #define NS_INLINE_DECL_THREADSAFE_VIRTUAL_REFCOUNTING(_class, ...) \
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_META(_class, NS_IMETHOD_, __VA_ARGS__)
+  NS_INLINE_DECL_THREADSAFE_VIRTUAL_REFCOUNTING_WITH_DESTROY(      \
+      _class, delete (this), __VA_ARGS__)
 
 
 
