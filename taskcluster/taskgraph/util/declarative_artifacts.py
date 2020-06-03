@@ -61,5 +61,5 @@ def get_geckoview_artifact_id(config, platform, update_channel=None):
         
         
         
-        update_channel = '-nigthly-{}'.format(config.params['project'])
+        update_channel = '-nightly-{}'.format(config.params['project'])
     return _ARTIFACT_ID_PER_PLATFORM[platform].format(update_channel=update_channel)
