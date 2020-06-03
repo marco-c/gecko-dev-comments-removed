@@ -2108,7 +2108,7 @@ nsMenuFrame* nsMenuPopupFrame::FindMenuWithShortcut(KeyboardEvent* aKeyEvent,
     }
 
     if (StringBeginsWith(textKey, incrementalString,
-                         nsCaseInsensitiveStringComparator())) {
+                         nsCaseInsensitiveStringComparator)) {
       
       nsMenuFrame* menu = do_QueryFrame(currFrame);
       if (menu) {

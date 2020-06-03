@@ -539,7 +539,7 @@ EditorSpellCheck::SetCurrentDictionary(const nsAString& aDictionary) {
       if (!aDictionary.IsEmpty() &&
           (mPreferredLang.IsEmpty() ||
            !mPreferredLang.Equals(aDictionary,
-                                  nsCaseInsensitiveStringComparator()))) {
+                                  nsCaseInsensitiveStringComparator))) {
         
         
         
@@ -676,11 +676,11 @@ void EditorSpellCheck::BuildDictionaryList(const nsAString& aDictName,
         equals = aDictName.Equals(dictStr);
         break;
       case DICT_COMPARE_CASE_INSENSITIVE:
-        equals = aDictName.Equals(dictStr, nsCaseInsensitiveStringComparator());
+        equals = aDictName.Equals(dictStr, nsCaseInsensitiveStringComparator);
         break;
       case DICT_COMPARE_DASHMATCH:
         equals = nsStyleUtil::DashMatchCompare(
-            dictStr, aDictName, nsCaseInsensitiveStringComparator());
+            dictStr, aDictName, nsCaseInsensitiveStringComparator);
         break;
     }
     if (equals) {
@@ -868,7 +868,7 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
     
     if (!preferredDict.IsEmpty() &&
         nsStyleUtil::DashMatchCompare(preferredDict, langCode,
-                                      nsDefaultStringComparator())) {
+                                      nsTDefaultStringComparator)) {
 #ifdef DEBUG_DICT
       printf(
           "***** Trying preference value |%s| since it matches language code\n",

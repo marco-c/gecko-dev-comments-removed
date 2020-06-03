@@ -1403,7 +1403,7 @@ nsresult HttpBaseChannel::nsContentEncodings::PrepareForNext(void) {
   
   
   if (Substring(mCurStart, mCurEnd)
-          .Equals("identity", nsCaseInsensitiveCStringComparator())) {
+          .Equals("identity", nsCaseInsensitiveCStringComparator)) {
     mCurEnd = mCurStart;
     return PrepareForNext();
   }

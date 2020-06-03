@@ -375,7 +375,7 @@ bool HTMLEditor::IsSimpleModifiableNode(nsIContent* aContent, nsAtom* aProperty,
     if (element->IsHTMLElement(aProperty) &&
         IsOnlyAttribute(element, aAttribute) &&
         element->GetAttr(kNameSpaceID_None, aAttribute, attrValue) &&
-        attrValue.Equals(*aValue, nsCaseInsensitiveStringComparator())) {
+        attrValue.Equals(*aValue, nsCaseInsensitiveStringComparator)) {
       
       
       

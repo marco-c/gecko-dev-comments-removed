@@ -148,7 +148,7 @@ nsresult Statement::initialize(Connection* aDBConnection,
   
   
   
-  const nsCaseInsensitiveCStringComparator c;
+  auto c = nsCaseInsensitiveCStringComparator;
   nsACString::const_iterator start, end, e;
   aSQLStatement.BeginReading(start);
   aSQLStatement.EndReading(end);

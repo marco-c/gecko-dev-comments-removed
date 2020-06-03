@@ -728,7 +728,7 @@ NS_IMETHODIMP nsExternalHelperAppService::CreateListener(
   
   nsCOMPtr<nsIMIMEInfo> mimeInfo;
   if (aMimeContentType.Equals(APPLICATION_GUESS_FROM_EXT,
-                              nsCaseInsensitiveCStringComparator())) {
+                              nsCaseInsensitiveCStringComparator)) {
     nsAutoCString mimeType;
     if (!fileExtension.IsEmpty()) {
       mimeSvc->GetFromTypeAndExtension(EmptyCString(), fileExtension,
@@ -1325,7 +1325,7 @@ void nsExternalAppHandler::EnsureTempFileExtension(const nsString& aFileExt) {
   if (mTempFileExtension.Length() > 1) {
     
     if (aFileExt.Equals(mTempFileExtension,
-                        nsCaseInsensitiveStringComparator())) {
+                        nsCaseInsensitiveStringComparator)) {
       
       mTempFileExtension.Truncate();
     }
@@ -2560,7 +2560,7 @@ NS_IMETHODIMP nsExternalHelperAppService::GetFromTypeAndExtension(
     
     
     if (!typeToUse.Equals(APPLICATION_OCTET_STREAM,
-                          nsCaseInsensitiveCStringComparator()))
+                          nsCaseInsensitiveCStringComparator))
       rv = FillMIMEInfoForMimeTypeFromExtras(typeToUse, *_retval);
     LOG(("Searched extras (by type), rv 0x%08" PRIX32 "\n",
          static_cast<uint32_t>(rv)));
@@ -2806,7 +2806,7 @@ bool nsExternalHelperAppService::GetTypeFromExtras(const nsACString& aExtension,
     while (start != end) {
       FindCharInReadable(',', iter, end);
       if (Substring(start, iter)
-              .Equals(aExtension, nsCaseInsensitiveCStringComparator())) {
+              .Equals(aExtension, nsCaseInsensitiveCStringComparator)) {
         aMIMEType = extraMimeEntries[index].mMimeType;
         return true;
       }

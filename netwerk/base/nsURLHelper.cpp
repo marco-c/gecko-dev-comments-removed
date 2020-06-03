@@ -719,7 +719,7 @@ static void net_ParseMediaType(const nsACString& aMediaTypeStr,
     
     bool eq = !aContentType.IsEmpty() &&
               aContentType.Equals(Substring(type, typeEnd),
-                                  nsCaseInsensitiveCStringComparator());
+                                  nsCaseInsensitiveCStringComparator);
     if (!eq) {
       aContentType.Assign(type, typeEnd - type);
       ToLowerCase(aContentType);

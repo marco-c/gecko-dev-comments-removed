@@ -298,7 +298,7 @@ nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
         nsDependentString dllName(aData);
 
         if (StringEndsWith(dllName, NS_LITERAL_STRING("uiautomationcore.dll"),
-                           nsCaseInsensitiveStringComparator())) {
+                           nsCaseInsensitiveStringComparator)) {
           InitUIADetection();
 
           

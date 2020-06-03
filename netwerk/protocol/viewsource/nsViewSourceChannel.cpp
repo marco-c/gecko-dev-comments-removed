@@ -889,13 +889,13 @@ nsViewSourceChannel::GetResponseHeader(const nsACString& aHeader,
   if (!mHttpChannel) return NS_ERROR_NULL_POINTER;
 
   if (!aHeader.Equals(NS_LITERAL_CSTRING("Content-Type"),
-                      nsCaseInsensitiveCStringComparator()) &&
+                      nsCaseInsensitiveCStringComparator) &&
       !aHeader.Equals(NS_LITERAL_CSTRING("Content-Security-Policy"),
-                      nsCaseInsensitiveCStringComparator()) &&
+                      nsCaseInsensitiveCStringComparator) &&
       !aHeader.Equals(NS_LITERAL_CSTRING("Content-Security-Policy-Report-Only"),
-                      nsCaseInsensitiveCStringComparator()) &&
+                      nsCaseInsensitiveCStringComparator) &&
       !aHeader.Equals(NS_LITERAL_CSTRING("X-Frame-Options"),
-                      nsCaseInsensitiveCStringComparator())) {
+                      nsCaseInsensitiveCStringComparator)) {
     
     
     

@@ -11,8 +11,6 @@
 #include "nsUnicharUtils.h"
 #include "nsContentUtils.h"  
 
-typedef nsCaseInsensitiveStringComparator txCaseInsensitiveStringComparator;
-
 
 
 

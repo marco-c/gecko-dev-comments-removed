@@ -88,7 +88,7 @@ bool nsMIMEInfoAndroid::GetMimeInfoForFileExt(const nsACString& aFileExt,
 
   
   if (mimeType.Equals(nsDependentCString("*/*"),
-                      nsCaseInsensitiveCStringComparator()))
+                      nsCaseInsensitiveCStringComparator))
     return false;
 
   bool found = GetMimeInfoForMimeType(mimeType, aMimeInfo);
@@ -266,7 +266,7 @@ nsMIMEInfoAndroid::ExtensionExists(const nsACString& aExtension,
   
   
   *aRetVal = !mimeType.Equals(nsDependentCString("*/*"),
-                              nsCaseInsensitiveCStringComparator());
+                              nsCaseInsensitiveCStringComparator);
   return NS_OK;
 }
 

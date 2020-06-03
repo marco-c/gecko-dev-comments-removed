@@ -479,14 +479,14 @@ nsresult GfxInfo::GetFeatureStatusImpl(
         
         
         bool isWhitelisted =
-            cModel.Equals("LT28h", nsCaseInsensitiveCStringComparator()) ||
+            cModel.Equals("LT28h", nsCaseInsensitiveCStringComparator) ||
             cManufacturer.Equals("samsung",
-                                 nsCaseInsensitiveCStringComparator()) ||
+                                 nsCaseInsensitiveCStringComparator) ||
             cModel.Equals(
                 "galaxy nexus",
-                nsCaseInsensitiveCStringComparator());  
-                                                        
-                                                        
+                nsCaseInsensitiveCStringComparator);  
+                                                      
+                                                      
 
         if (cModel.Find("SGH-I717", true) != -1 ||
             cModel.Find("SGH-I727", true) != -1 ||
@@ -554,7 +554,7 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       NS_LossyConvertUTF16toASCII model(mModel);
       bool isBlocked =
           
-          model.Equals("GT-N8013", nsCaseInsensitiveCStringComparator());
+          model.Equals("GT-N8013", nsCaseInsensitiveCStringComparator);
 
       if (isBlocked) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;

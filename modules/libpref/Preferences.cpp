@@ -4254,7 +4254,7 @@ static nsresult pref_LoadPrefsInDir(nsIFile* aDir,
 
     
     if (StringEndsWith(leafName, NS_LITERAL_CSTRING(".js"),
-                       nsCaseInsensitiveCStringComparator())) {
+                       nsCaseInsensitiveCStringComparator)) {
       bool shouldParse = true;
 
       

@@ -2040,7 +2040,7 @@ void HTMLInputElement::MozSetFileNameArray(const Sequence<nsString>& aFileNames,
     nsCOMPtr<nsIFile> file;
 
     if (StringBeginsWith(aFileNames[i], NS_LITERAL_STRING("file:"),
-                         nsASCIICaseInsensitiveStringComparator())) {
+                         nsASCIICaseInsensitiveStringComparator)) {
       
       
       NS_GetFileFromURLSpec(NS_ConvertUTF16toUTF8(aFileNames[i]),

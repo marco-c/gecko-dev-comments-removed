@@ -85,7 +85,7 @@ bool ImageCacheKey::operator==(const ImageCacheKey& aOther) const {
   
   
   if (!mIsolationKey.Equals(aOther.mIsolationKey,
-                            nsCaseInsensitiveCStringComparator())) {
+                            nsCaseInsensitiveCStringComparator)) {
     return false;
   }
   

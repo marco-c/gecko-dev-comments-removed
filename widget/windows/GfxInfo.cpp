@@ -302,7 +302,7 @@ uint32_t ParseIDFromDeviceID(const nsAString& key, const char* prefix,
     id.Cut(0, start + strlen(prefix));
     id.Truncate(length);
   }
-  if (id.Equals(L"QCOM", nsCaseInsensitiveStringComparator())) {
+  if (id.Equals(L"QCOM", nsCaseInsensitiveStringComparator)) {
     
     
     return 0x5143;
@@ -1949,22 +1949,22 @@ nsresult GfxInfo::GetFeatureStatusImpl(
     if (OnlyAllowFeatureOnWhitelistedVendor(aFeature) &&
         !adapterVendorID.Equals(
             GfxDriverInfo::GetDeviceVendor(DeviceVendor::Intel),
-            nsCaseInsensitiveStringComparator()) &&
+            nsCaseInsensitiveStringComparator) &&
         !adapterVendorID.Equals(
             GfxDriverInfo::GetDeviceVendor(DeviceVendor::NVIDIA),
-            nsCaseInsensitiveStringComparator()) &&
+            nsCaseInsensitiveStringComparator) &&
         !adapterVendorID.Equals(
             GfxDriverInfo::GetDeviceVendor(DeviceVendor::ATI),
-            nsCaseInsensitiveStringComparator()) &&
+            nsCaseInsensitiveStringComparator) &&
         !adapterVendorID.Equals(
             GfxDriverInfo::GetDeviceVendor(DeviceVendor::Microsoft),
-            nsCaseInsensitiveStringComparator()) &&
+            nsCaseInsensitiveStringComparator) &&
         !adapterVendorID.Equals(
             GfxDriverInfo::GetDeviceVendor(DeviceVendor::Parallels),
-            nsCaseInsensitiveStringComparator()) &&
+            nsCaseInsensitiveStringComparator) &&
         !adapterVendorID.Equals(
             GfxDriverInfo::GetDeviceVendor(DeviceVendor::Qualcomm),
-            nsCaseInsensitiveStringComparator()) &&
+            nsCaseInsensitiveStringComparator) &&
         
         
         
