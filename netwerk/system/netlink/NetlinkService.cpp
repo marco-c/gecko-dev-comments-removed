@@ -879,6 +879,9 @@ void NetlinkService::OnAddrMessage(struct nlmsghdr* aNlh) {
   }
 
   
+  linkInfo->UpdateStatus();
+
+  
   if (mInitialScanFinished) {
     
     mSendNetworkChangeEvent = true;
