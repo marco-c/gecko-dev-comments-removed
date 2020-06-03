@@ -167,11 +167,14 @@ void PreloaderBase::NotifyRestart(dom::Document* aDocument,
 }
 
 void PreloaderBase::NotifyStart(nsIRequest* aRequest) {
-  if (!SameCOMIdentity(aRequest, mChannel)) {
+  
+  
+  
+  if (mChannel && !SameCOMIdentity(aRequest, mChannel)) {
     return;
   }
 
-  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel);
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest);
   if (!httpChannel) {
     return;
   }
