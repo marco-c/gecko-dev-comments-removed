@@ -59,7 +59,6 @@ void gfxConfigManager::Init() {
       DeviceManagerDx::Get()->CheckHardwareStretchingSupport();
   mScaledResolution = HasScaledResolution();
   mIsWin10OrLater = IsWin10OrLater();
-  mIsWindows = true;
   mWrCompositorDCompRequired = true;
 #else
   mHwStretchingSupport = true;
@@ -73,7 +72,6 @@ void gfxConfigManager::Init() {
   mIsNightly = true;
 #endif
   mSafeMode = gfxPlatform::InSafeMode();
-  mDwmCompositionEnabled = gfxVars::DwmCompositionEnabled();
 
   mGfxInfo = services::GetGfxInfo();
 
@@ -269,13 +267,6 @@ void gfxConfigManager::ConfigureWebRender() {
     mFeatureWr->ForceDisable(FeatureStatus::UnavailableInSafeMode,
                              "Safe-mode is enabled",
                              NS_LITERAL_CSTRING("FEATURE_FAILURE_SAFE_MODE"));
-  }
-
-  
-  
-  if (mIsWindows && !mIsWin10OrLater && !mDwmCompositionEnabled) {
-    mFeatureWr->ForceDisable(FeatureStatus::Unavailable, "No DWM composition",
-                             NS_LITERAL_CSTRING("FEATURE_FAILURE_NO_DWM_COMP"));
   }
 
   mFeatureWrAngle->DisableByDefault(
