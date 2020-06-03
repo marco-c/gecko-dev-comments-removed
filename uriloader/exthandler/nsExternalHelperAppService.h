@@ -119,7 +119,9 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
 
 
 
+
   nsresult FillMIMEInfoForMimeTypeFromExtras(const nsACString& aContentType,
+                                             bool aOverwriteDescription,
                                              nsIMIMEInfo* aMIMEInfo);
   
 
