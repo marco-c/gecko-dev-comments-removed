@@ -2,11 +2,15 @@
 
 
 import os
+import sys
 from functools import partial
 import subprocess
 
 from mach.decorators import CommandProvider, Command
 from mozbuild.base import MachCommandBase, MachCommandConditions as conditions
+
+
+_TRY_PLATFORMS = {"g5": "perftest-android-hw-g5", "p2": "perftest-android-hw-p2"}
 
 
 def get_perftest_parser():
@@ -25,6 +29,39 @@ class Perftest(MachCommandBase):
         parser=get_perftest_parser,
     )
     def run_perftest(self, **kwargs):
+        push_to_try = kwargs.pop("push_to_try", False)
+        if push_to_try:
+            from pathlib import Path
+
+            sys.path.append(str(Path(self.topsrcdir, "tools", "tryselect")))
+
+            from tryselect.push import push_to_try
+
+            platform = kwargs.pop("try_platform")
+            if platform not in _TRY_PLATFORMS:
+                
+                
+                
+                raise NotImplementedError("%r not supported yet" % platform)
+
+            perftest_parameters = {}
+            parser = get_perftest_parser()()
+            for name, value in kwargs.items():
+                
+                if parser.get_default(name) == value:
+                    continue
+                perftest_parameters[name] = value
+
+            parameters = {"try_options": {"perftest": perftest_parameters}}
+            try_config = {"tasks": [_TRY_PLATFORMS[platform]]}
+            parameters["try_task_config"] = try_config
+            parameters["try_mode"] = "try_task_config"
+
+            task_config = {"parameters": parameters, "version": 2}
+            push_to_try("perftest", "perftest", try_task_config=task_config)
+            return
+
+        
         MachCommandBase._activate_virtualenv(self)
 
         from mozperftest.runner import run_tests
