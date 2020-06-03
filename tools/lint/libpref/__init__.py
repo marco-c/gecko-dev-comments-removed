@@ -18,6 +18,7 @@ from mozlint.pathutils import expand_exclusions
 IGNORE_PREFS = {
     'devtools.console.stdout.chrome',   
     'devtools.console.stdout.content',  
+    'devtools.browsertoolbox.fission',  
     'fission.autostart',                
     'browser.dom.window.dump.enabled',  
     'apz.fling_curve_function_y2',      
