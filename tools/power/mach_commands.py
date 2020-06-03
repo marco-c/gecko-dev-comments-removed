@@ -65,7 +65,8 @@ class MachCommands(MachCommandBase):
                                          '--show-process-coalition',
                                          '--show-process-gpu',
                                          '-n', '1',
-                                         '-i', interval])
+                                         '-i', interval],
+                                        universal_newlines=True)
 
         
         
