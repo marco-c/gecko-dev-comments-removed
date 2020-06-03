@@ -1107,6 +1107,29 @@ function validateFileName(aFileName) {
   return processed;
 }
 
+
+
+const kImageExtensions = new Set([
+  "art",
+  "bmp",
+  "gif",
+  "ico",
+  "cur",
+  "jpeg",
+  "jpg",
+  "jfif",
+  "pjpeg",
+  "pjp",
+  "png",
+  "apng",
+  "tiff",
+  "tif",
+  "xbm",
+  "svg",
+  "webp",
+  "avif",
+]);
+
 function getNormalizedLeafName(aFile, aDefaultExtension) {
   if (!aDefaultExtension) {
     return aFile;
@@ -1122,7 +1145,17 @@ function getNormalizedLeafName(aFile, aDefaultExtension) {
 
   
   var i = aFile.lastIndexOf(".");
-  if (aFile.substr(i + 1) != aDefaultExtension) {
+  let previousExtension = aFile.substr(i + 1);
+  if (previousExtension != aDefaultExtension) {
+    
+    
+    
+    
+    
+    
+    if (kImageExtensions.has(previousExtension)) {
+      return aFile.substr(0, i + 1) + aDefaultExtension;
+    }
     return aFile + "." + aDefaultExtension;
   }
 
