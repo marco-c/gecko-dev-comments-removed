@@ -669,7 +669,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-  void UpdateAllowSacrificingSubpixelAA();
+  void UpdateForceSubpixelAAWherePossible();
 
   
 

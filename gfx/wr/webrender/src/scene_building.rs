@@ -3667,7 +3667,7 @@ impl FlattenedStackingContext {
                         (_, ROOT_SPATIAL_NODE_INDEX) => {
                             
                             
-                            if !quality_settings.allow_sacrificing_subpixel_aa {
+                            if quality_settings.force_subpixel_aa_where_possible {
                                 return false;
                             }
 

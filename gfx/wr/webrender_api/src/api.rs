@@ -37,14 +37,15 @@ pub struct QualitySettings {
     
     
     
-    pub allow_sacrificing_subpixel_aa: bool,
+    pub force_subpixel_aa_where_possible: bool,
 }
 
 impl Default for QualitySettings {
     fn default() -> Self {
         QualitySettings {
             
-            allow_sacrificing_subpixel_aa: true,
+            
+            force_subpixel_aa_where_possible: false,
         }
     }
 }

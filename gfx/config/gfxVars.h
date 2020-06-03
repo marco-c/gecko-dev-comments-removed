@@ -61,7 +61,7 @@ class gfxVarReceiver;
   _(RemoteCanvasEnabled, bool, false)                              \
   _(UseDoubleBufferingWithCompositor, bool, false)                 \
   _(UseGLSwizzle, bool, true)                                      \
-  _(AllowSacrificingSubpixelAA, bool, false)                       \
+  _(ForceSubpixelAAWherePossible, bool, false)                     \
   _(DwmCompositionEnabled, bool, true)
 
 
