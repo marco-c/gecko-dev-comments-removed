@@ -19,6 +19,7 @@
 #include "DocAccessibleChild.h"
 #include "EventTree.h"
 #include "GeckoProfiler.h"
+#include "Pivot.h"
 #include "Relation.h"
 #include "Role.h"
 #include "RootAccessible.h"
@@ -1682,8 +1683,39 @@ Relation Accessible::RelationByType(RelationType aType) const {
       return Relation(
           new RelatedAccIterator(Document(), mContent, nsGkAtoms::aria_flowto));
 
-    case RelationType::MEMBER_OF:
+    case RelationType::MEMBER_OF: {
+      if (Role() == roles::RADIOBUTTON) {
+        
+
+
+        Relation rel = Relation();
+        Accessible* currParent = Parent();
+        while (currParent && currParent->Role() != roles::RADIO_GROUP) {
+          currParent = currParent->Parent();
+        }
+
+        if (currParent && currParent->Role() == roles::RADIO_GROUP) {
+          
+
+
+
+          Pivot p = Pivot(currParent);
+          PivotRoleRule rule(roles::RADIOBUTTON);
+          Accessible* match = currParent;
+          while ((match = p.Next(match, rule))) {
+            rel.AppendTarget(match);
+          }
+        }
+
+        
+
+
+
+        return rel;
+      }
+
       return Relation(mDoc, GetAtomicRegion());
+    }
 
     case RelationType::SUBWINDOW_OF:
     case RelationType::EMBEDS:

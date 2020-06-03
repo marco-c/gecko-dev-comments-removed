@@ -83,6 +83,19 @@ class Pivot final {
   Accessible* mRoot;
 };
 
+
+
+
+class PivotRoleRule final : public PivotRule {
+ public:
+  explicit PivotRoleRule(role aRole);
+
+  virtual uint16_t Match(Accessible* aAccessible) override;
+
+ private:
+  role mRole;
+};
+
 }  
 }  
 
