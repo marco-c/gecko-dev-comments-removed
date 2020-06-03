@@ -1906,12 +1906,20 @@ impl PrimitiveStore {
 
                     
                     
-                    frame_state.push_surface(surface_index, &tile_cache.shared_clips);
+                    frame_state.push_surface(
+                        surface_index,
+                        &tile_cache.shared_clips,
+                        frame_context.spatial_tree,
+                    );
                     frame_state.tile_cache = Some(tile_cache);
                 }
                 _ => {
                     if is_composite {
-                        frame_state.push_surface(surface_index, &[]);
+                        frame_state.push_surface(
+                            surface_index,
+                            &[],
+                            frame_context.spatial_tree,
+                        );
                     }
                 }
             }

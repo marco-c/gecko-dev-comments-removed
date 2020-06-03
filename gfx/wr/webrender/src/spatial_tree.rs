@@ -631,15 +631,30 @@ impl SpatialTree {
         while node_index != ROOT_SPATIAL_NODE_INDEX {
             let node = &self.spatial_nodes[node_index.0 as usize];
             match node.node_type {
-                SpatialNodeType::ReferenceFrame(..) |
-                SpatialNodeType::StickyFrame(..) => {
-                    
+                SpatialNodeType::ReferenceFrame(ref info) => {
+                    match info.kind {
+                        ReferenceFrameKind::Zoom => {
+                            
+                        }
+                        ReferenceFrameKind::Transform |
+                        ReferenceFrameKind::Perspective { .. } => {
+                            
+                            
+                            scroll_root = ROOT_SPATIAL_NODE_INDEX;
+                        }
+                    }
                 }
+                SpatialNodeType::StickyFrame(..) => {}
                 SpatialNodeType::ScrollFrame(ref info) => {
-                    
-                    
-                    if let ScrollFrameKind::Explicit = info.frame_kind {
-                        scroll_root = node_index;
+                    match info.frame_kind {
+                        ScrollFrameKind::PipelineRoot => {
+                            
+                            break;
+                        }
+                        ScrollFrameKind::Explicit => {
+                            
+                            scroll_root = node_index;
+                        }
                     }
                 }
             }

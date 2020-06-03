@@ -711,7 +711,11 @@ pub struct ReferenceFrameDisplayListItem {
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub enum ReferenceFrameKind {
+    
+    Zoom,
+    
     Transform,
+    
     Perspective {
         scrolling_relative_to: Option<ExternalScrollId>,
     }

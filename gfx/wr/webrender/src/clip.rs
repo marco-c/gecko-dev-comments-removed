@@ -98,7 +98,7 @@ use api::units::*;
 use api::image_tiling::{self, Repetition};
 use crate::border::{ensure_no_corner_overlap, BorderRadiusAu};
 use crate::box_shadow::{BLUR_SAMPLE_SCALE, BoxShadowClipSource, BoxShadowCacheKey};
-use crate::spatial_tree::{ROOT_SPATIAL_NODE_INDEX, SpatialTree, SpatialNodeIndex};
+use crate::spatial_tree::{ROOT_SPATIAL_NODE_INDEX, SpatialTree, SpatialNodeIndex, CoordinateSystemId};
 use crate::ellipse::Ellipse;
 use crate::gpu_cache::{GpuCache, GpuCacheHandle, ToGpuBlocks};
 use crate::gpu_types::{BoxShadowStretchMode};
@@ -884,8 +884,27 @@ impl ClipChainStack {
     
     pub fn push_surface(
         &mut self,
-        shared_clips: &[ClipInstance],
+        maybe_shared_clips: &[ClipInstance],
+        spatial_tree: &SpatialTree,
     ) {
+        let mut shared_clips = Vec::new();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        for clip in maybe_shared_clips {
+            let spatial_node = &spatial_tree.spatial_nodes[clip.spatial_node_index.0 as usize];
+            if spatial_node.coordinate_system_id == CoordinateSystemId::root() {
+                shared_clips.push(*clip);
+            }
+        }
+
         let level = ClipChainLevel {
             shared_clips: shared_clips.to_vec(),
             first_clip_index: self.clips.len(),
