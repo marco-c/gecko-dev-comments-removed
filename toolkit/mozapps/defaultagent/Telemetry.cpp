@@ -100,8 +100,6 @@ static TelemetryFieldResult GetPreviousDefaultBrowser(
   
   
   
-  
-  
 
   
   
@@ -123,8 +121,6 @@ static TelemetryFieldResult GetPreviousDefaultBrowser(
   }
   std::wstring currentDefaultRegistryValueName(installPath.get());
   currentDefaultRegistryValueName.append(L"|CurrentDefault");
-  std::wstring previousDefaultRegistryValueName(installPath.get());
-  previousDefaultRegistryValueName.append(L"|PreviousDefault");
 
   
   
@@ -135,46 +131,20 @@ static TelemetryFieldResult GetPreviousDefaultBrowser(
                    currentDefaultRegistryValueName.c_str(), RRF_RT_REG_SZ,
                    nullptr, &oldCurrentDefault, &regStrLen);
   if (ls != ERROR_SUCCESS) {
-    RegSetKeyValueW(HKEY_CURRENT_USER, AGENT_REGKEY_NAME,
-                    currentDefaultRegistryValueName.c_str(), REG_SZ,
-                    wCurrentDefault.get(), currentDefaultLen * sizeof(wchar_t));
     wcsncpy_s(oldCurrentDefault, MAX_PATH, wCurrentDefault.get(), _TRUNCATE);
   }
 
   
-  wchar_t oldPreviousDefault[MAX_PATH + 1] = L"";
-  regStrLen = MAX_PATH + 1;
-  ls = RegGetValueW(HKEY_CURRENT_USER, AGENT_REGKEY_NAME,
-                    previousDefaultRegistryValueName.c_str(), RRF_RT_REG_SZ,
-                    nullptr, &oldPreviousDefault, &regStrLen);
-  if (ls != ERROR_SUCCESS) {
-    RegSetKeyValueW(HKEY_CURRENT_USER, AGENT_REGKEY_NAME,
-                    previousDefaultRegistryValueName.c_str(), REG_SZ,
-                    wCurrentDefault.get(), currentDefaultLen * sizeof(wchar_t));
-    wcsncpy_s(oldPreviousDefault, MAX_PATH, wCurrentDefault.get(), _TRUNCATE);
-  }
-
-  
-  
-  std::wstring previousDefault(oldPreviousDefault);
-  if (wcsnicmp(oldCurrentDefault, wCurrentDefault.get(), currentDefaultLen)) {
-    previousDefault = oldCurrentDefault;
-
-    RegSetKeyValueW(HKEY_CURRENT_USER, AGENT_REGKEY_NAME,
-                    previousDefaultRegistryValueName.c_str(), REG_SZ,
-                    oldCurrentDefault,
-                    (wcslen(oldCurrentDefault) + 1) * sizeof(wchar_t));
-    RegSetKeyValueW(HKEY_CURRENT_USER, AGENT_REGKEY_NAME,
-                    currentDefaultRegistryValueName.c_str(), REG_SZ,
-                    wCurrentDefault.get(), currentDefaultLen * sizeof(wchar_t));
-  }
+  RegSetKeyValueW(HKEY_CURRENT_USER, AGENT_REGKEY_NAME,
+                  currentDefaultRegistryValueName.c_str(), REG_SZ,
+                  wCurrentDefault.get(), currentDefaultLen * sizeof(wchar_t));
 
   
   int previousDefaultLen = WideCharToMultiByte(
-      CP_UTF8, 0, previousDefault.c_str(), -1, nullptr, 0, nullptr, nullptr);
+      CP_UTF8, 0, oldCurrentDefault, -1, nullptr, 0, nullptr, nullptr);
   mozilla::UniquePtr<char[]> narrowPreviousDefault =
       mozilla::MakeUnique<char[]>(previousDefaultLen);
-  WideCharToMultiByte(CP_UTF8, 0, previousDefault.c_str(), -1,
+  WideCharToMultiByte(CP_UTF8, 0, oldCurrentDefault, -1,
                       narrowPreviousDefault.get(), previousDefaultLen, nullptr,
                       nullptr);
   return std::string(narrowPreviousDefault.get());
