@@ -112,9 +112,9 @@ void ContentMediaController::NotifyPlaybackStateChanged(
   } else {
     
     
-    if (RefPtr<MediaController> controller =
+    if (RefPtr<IMediaInfoUpdater> updater =
             bc->Canonical()->GetMediaController()) {
-      controller->NotifyMediaPlaybackChanged(bc->Id(), aState);
+      updater->NotifyMediaPlaybackChanged(bc->Id(), aState);
     }
   }
 }
@@ -140,9 +140,9 @@ void ContentMediaController::NotifyAudibleStateChanged(
   } else {
     
     
-    if (RefPtr<MediaController> controller =
+    if (RefPtr<IMediaInfoUpdater> updater =
             bc->Canonical()->GetMediaController()) {
-      controller->NotifyMediaAudibleChanged(bc->Id(), aState);
+      updater->NotifyMediaAudibleChanged(bc->Id(), aState);
     }
   }
 }

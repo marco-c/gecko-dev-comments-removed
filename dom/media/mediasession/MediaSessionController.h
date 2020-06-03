@@ -41,25 +41,47 @@ class MediaSessionInfo {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MediaSessionController {
- public:
+class IMediaInfoUpdater {
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
-  explicit MediaSessionController(uint64_t aContextId);
+  
+  
+  virtual void NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
+                                          MediaPlaybackState aState) = 0;
+
+  
+  
+  virtual void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
+                                         MediaAudibleState aState) = 0;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MediaSessionController : public IMediaInfoUpdater {
+ public:
+  explicit MediaSessionController(uint64_t aBrowsingContextId);
+
+  
+  void NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
+                                  MediaPlaybackState aState) override;
+  void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
+                                 MediaAudibleState aState) override;
 
   
   
@@ -77,6 +99,10 @@ class MediaSessionController {
   
   MediaMetadataBase GetCurrentMediaMetadata() const;
   uint64_t Id() const { return mTopLevelBCId; }
+
+  bool IsMediaAudible() const;
+  bool IsMediaPlaying() const;
+  bool IsAnyMediaBeingControlled() const;
 
   MediaEventSource<MediaMetadataBase>& MetadataChangedEvent() {
     return mMetadataChangedEvent;
@@ -107,6 +133,7 @@ class MediaSessionController {
 
   nsDataHashtable<nsUint64HashKey, MediaSessionInfo> mMediaSessionInfoMap;
   MediaEventProducer<MediaMetadataBase> mMetadataChangedEvent;
+  MediaPlaybackStatus mMediaStatusDelegate;
 };
 
 }  

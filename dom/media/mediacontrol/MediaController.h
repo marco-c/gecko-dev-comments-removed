@@ -64,6 +64,12 @@ class MediaController final
   void SeekForward();
 
   
+  void NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
+                                  MediaPlaybackState aState) override;
+  void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
+                                 MediaAudibleState aState) override;
+
+  
   
   void SetIsInPictureInPictureMode(bool aIsInPictureInPictureMode);
 
@@ -76,18 +82,10 @@ class MediaController final
   void Shutdown();
 
   bool IsAudible() const;
-  bool IsAnyMediaBeingControlled() const;
   MediaSessionPlaybackState GetState() const;
 
   void SetDeclaredPlaybackState(uint64_t aSessionContextId,
                                 MediaSessionPlaybackState aState) override;
-
-  
-  
-  void NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
-                                  MediaPlaybackState aState);
-  void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
-                                 MediaAudibleState aState);
 
  private:
   ~MediaController();
@@ -111,7 +109,6 @@ class MediaController final
   bool mIsRegisteredToService = false;
   bool mShutdown = false;
   bool mIsInPictureInPictureMode = false;
-  MediaPlaybackStatus mMediaStatus;
 
   
   
