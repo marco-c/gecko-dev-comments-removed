@@ -116,16 +116,17 @@ function getFormattedHelpData() {
 
 
 function saveScreenshot(window, args = {}, value) {
-  
-  if (!value.data) {
-    return [];
-  }
-
   if (args.help) {
     const message = getFormattedHelpData();
     
     return [message];
   }
+
+  
+  if (!value.data) {
+    return [];
+  }
+
   simulateCameraShutter(window);
   return save(args, value);
 }
