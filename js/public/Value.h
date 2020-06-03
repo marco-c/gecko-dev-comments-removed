@@ -294,15 +294,33 @@ constexpr uint64_t CanonicalizedNaNSignificand = 0x8000000000000;
 #  define JS_NONCANONICAL_HARDWARE_NAN
 #endif
 
+#if defined(__mips__) && !defined(__mips_nan_2008)
+
+
+
+
+
+
+
+
+#  define JS_RUNTIME_CANONICAL_NAN
+#endif
+
+#if defined(JS_RUNTIME_CANONICAL_NAN)
+extern uint64_t CanonicalizedNaNBits;
+#else
 constexpr uint64_t CanonicalizedNaNBits =
     mozilla::SpecificNaNBits<double, detail::CanonicalizedNaNSignBit,
                              detail::CanonicalizedNaNSignificand>::value;
+#endif
 }  
 
 
 static MOZ_ALWAYS_INLINE double GenericNaN() {
+#if !defined(JS_RUNTIME_CANONICAL_NAN)
   static_assert(detail::ValueIsDouble(detail::CanonicalizedNaNBits),
                 "Canonical NaN must be compatible with JS::Value");
+#endif
 
   return mozilla::BitwiseCast<double>(detail::CanonicalizedNaNBits);
 }
@@ -906,7 +924,7 @@ static inline Value CanonicalizedDoubleValue(double d) {
   return Value::fromDouble(CanonicalizeNaN(d));
 }
 
-static inline constexpr Value NaNValue() {
+static inline Value NaNValue() {
   return Value::fromRawBits(detail::CanonicalizedNaNBits);
 }
 
