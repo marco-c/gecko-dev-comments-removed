@@ -980,7 +980,9 @@ void WSRunScanner::GetRuns() {
   
   
   
-  mPRE = EditorBase::IsPreformatted(mScanStartPoint.GetContainer());
+  mPRE =
+      mScanStartPoint.IsInContentNode() &&
+      EditorUtils::IsContentPreformatted(*mScanStartPoint.ContainerAsContent());
   
   
   if (mPRE ||

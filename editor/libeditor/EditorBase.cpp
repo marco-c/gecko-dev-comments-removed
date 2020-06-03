@@ -30,7 +30,6 @@
 #include "mozilla/BasePrincipal.h"            
 #include "mozilla/CheckedInt.h"               
 #include "mozilla/ComposerCommandsUpdater.h"  
-#include "mozilla/ComputedStyle.h"            
 #include "mozilla/CSSEditUtils.h"             
 #include "mozilla/EditAction.h"               
 #include "mozilla/EditorDOMPoint.h"           
@@ -79,7 +78,6 @@
 #include "nsCaseTreatment.h"
 #include "nsCharTraits.h"              
 #include "nsComponentManagerUtils.h"   
-#include "nsComputedDOMStyle.h"        
 #include "nsContentUtils.h"            
 #include "nsDOMString.h"               
 #include "nsDebug.h"                   
@@ -3172,36 +3170,6 @@ nsresult EditorBase::GetEndChildNode(const Selection& aSelection,
 
   NS_IF_ADDREF(*aEndNode = range->GetChildAtEndOffset());
   return NS_OK;
-}
-
-
-
-
-
-
-bool EditorBase::IsPreformatted(nsINode* aNode) {
-  if (NS_WARN_IF(!aNode)) {
-    return false;
-  }
-  
-  
-  Element* element = aNode->GetAsElementOrParentElement();
-  if (!element) {
-    return false;
-  }
-
-  RefPtr<ComputedStyle> elementStyle =
-      nsComputedDOMStyle::GetComputedStyleNoFlush(element, nullptr);
-  if (!elementStyle) {
-    
-    
-    
-    return false;
-  }
-
-  const nsStyleText* styleText = elementStyle->StyleText();
-
-  return styleText->WhiteSpaceIsSignificant();
 }
 
 nsresult EditorBase::EnsureNoPaddingBRElementForEmptyEditor() {

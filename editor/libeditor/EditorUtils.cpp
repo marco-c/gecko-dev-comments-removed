@@ -3,22 +3,25 @@
 
 
 
-#include "mozilla/EditorUtils.h"
+#include "EditorUtils.h"
 
+#include "mozilla/ComputedStyle.h"
 #include "mozilla/ContentIterator.h"
 #include "mozilla/EditorDOMPoint.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/TextEditor.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
 #include "nsContentUtils.h"
 #include "nsComponentManagerUtils.h"
+#include "nsComputedDOMStyle.h"
 #include "nsError.h"
 #include "nsIContent.h"
-#include "mozilla/dom/Document.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsINode.h"
+#include "nsStyleStruct.h"
 
 class nsISupports;
 class nsRange;
@@ -228,6 +231,27 @@ void EditorUtils::MaskString(nsString& aString, Text* aText,
       ++i;
     }
   }
+}
+
+
+bool EditorUtils::IsContentPreformatted(nsIContent& aContent) {
+  
+  
+  Element* element = aContent.GetAsElementOrParentElement();
+  if (!element) {
+    return false;
+  }
+
+  RefPtr<ComputedStyle> elementStyle =
+      nsComputedDOMStyle::GetComputedStyleNoFlush(element, nullptr);
+  if (!elementStyle) {
+    
+    
+    
+    return false;
+  }
+
+  return elementStyle->StyleText()->WhiteSpaceIsSignificant();
 }
 
 }  

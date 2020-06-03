@@ -1455,7 +1455,8 @@ EditActionResult HTMLEditor::HandleInsertText(
   }
 
   EditorDOMPoint pointToInsert(firstRange->StartRef());
-  if (NS_WARN_IF(!pointToInsert.IsSet())) {
+  if (NS_WARN_IF(!pointToInsert.IsSet()) ||
+      NS_WARN_IF(!pointToInsert.IsInContentNode())) {
     return EditActionHandled(NS_ERROR_FAILURE);
   }
   MOZ_ASSERT(pointToInsert.IsSetAndValid());
@@ -1523,7 +1524,8 @@ EditActionResult HTMLEditor::HandleInsertText(
 
   
   
-  bool isPRE = EditorBase::IsPreformatted(pointToInsert.GetContainer());
+  bool isPRE =
+      EditorUtils::IsContentPreformatted(*pointToInsert.ContainerAsContent());
 
   
   
@@ -8146,8 +8148,8 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineEndPoint(
     }
 
     
-    if (EditorBase::IsPreformatted(nextEditableContent) &&
-        nextEditableContent->IsText()) {
+    if (nextEditableContent->IsText() &&
+        EditorUtils::IsContentPreformatted(*nextEditableContent)) {
       nsAutoString textContent;
       nextEditableContent->GetAsText()->GetData(textContent);
       int32_t newlinePos = textContent.FindChar(nsCRT::LF);

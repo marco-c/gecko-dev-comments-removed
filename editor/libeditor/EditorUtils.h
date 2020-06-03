@@ -859,6 +859,12 @@ class EditorUtils final {
 
 
 
+  static bool IsContentPreformatted(nsIContent& aContent);
+
+  
+
+
+
 
 
 

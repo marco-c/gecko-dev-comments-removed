@@ -1744,8 +1744,6 @@ class EditorBase : public nsIEditor,
 
   nsresult CollapseSelectionToEnd();
 
-  static bool IsPreformatted(nsINode* aNode);
-
   
 
 
