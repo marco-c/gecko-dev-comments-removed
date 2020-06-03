@@ -161,6 +161,11 @@ void PerformanceObserver::Observe(const PerformanceObserverInit& aOptions,
   const Optional<nsString>& maybeType = aOptions.mType;
   const Optional<bool>& maybeBuffered = aOptions.mBuffered;
 
+  if (!mPerformance) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
+
   if (!maybeEntryTypes.WasPassed() && !maybeType.WasPassed()) {
     
     aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
