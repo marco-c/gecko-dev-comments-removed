@@ -645,6 +645,13 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
+
+    Action RecordTelemetryAndComputeActionFor(const WidgetWheelEvent* aEvent);
+
+    
+
+
+
     bool NeedToComputeLineOrPageDelta(const WidgetWheelEvent* aEvent);
 
     
