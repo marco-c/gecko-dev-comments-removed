@@ -655,6 +655,60 @@ WebConsoleCommands._registerOriginal("screenshot", function(owner, args = {}) {
 
 
 
+
+WebConsoleCommands._registerOriginal("block", function(owner, args = {}) {
+  if (!args.url) {
+    owner.helperResult = {
+      type: "error",
+      message: "webconsole.messages.commands.blockArgMissing",
+    };
+    return;
+  }
+
+  owner.helperResult = (async () => {
+    await owner.consoleActor.blockRequest(args);
+
+    return {
+      type: "blockURL",
+      args,
+    };
+  })();
+});
+
+
+
+
+
+
+
+
+
+WebConsoleCommands._registerOriginal("unblock", function(owner, args = {}) {
+  if (!args.url) {
+    owner.helperResult = {
+      type: "error",
+      message: "webconsole.messages.commands.blockArgMissing",
+    };
+    return;
+  }
+
+  owner.helperResult = (async () => {
+    await owner.consoleActor.unblockRequest(args);
+
+    return {
+      type: "unblockURL",
+      args,
+    };
+  })();
+});
+
+
+
+
+
+
+
+
 function addWebConsoleCommands(owner) {
   
   
