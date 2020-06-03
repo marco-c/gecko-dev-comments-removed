@@ -4845,13 +4845,11 @@ already_AddRefed<SourceSurface> PresShell::PaintRangePaintInfo(
   if (!pc || aArea.width == 0 || aArea.height == 0) return nullptr;
 
   
-  nsIntRect pixelArea = aArea.ToOutsidePixels(pc->AppUnitsPerDevPixel());
+  LayoutDeviceIntRect pixelArea = LayoutDeviceIntRect::FromAppUnitsToOutside(
+      aArea, pc->AppUnitsPerDevPixel());
 
   
   float scale = 1.0;
-  nsIntRect rootScreenRect =
-      GetRootFrame()->GetScreenRectInAppUnits().ToNearestPixels(
-          pc->AppUnitsPerDevPixel());
 
   nsRect maxSize;
   pc->DeviceContext()->GetClientRect(maxSize);
@@ -4903,6 +4901,7 @@ already_AddRefed<SourceSurface> PresShell::PaintRangePaintInfo(
     for (const UniquePtr<RangePaintInfo>& rangeInfo : aItems) {
       resolutionScale = std::max(resolutionScale, rangeInfo->mResolution);
     }
+    float unclampedResolution = resolutionScale;
     
     
     
@@ -4917,13 +4916,33 @@ already_AddRefed<SourceSurface> PresShell::PaintRangePaintInfo(
     MOZ_ASSERT(resolutionScale >= 1.0);
     resolutionScale = std::max(1.0f, resolutionScale);
 
-    
-    nscoord left = rootScreenRect.x + pixelArea.x;
-    nscoord top = rootScreenRect.y + pixelArea.y;
-    aScreenRect->x = NSToIntFloor(aPoint.x - float(aPoint.x - left) * scale);
-    aScreenRect->y = NSToIntFloor(aPoint.y - float(aPoint.y - top) * scale);
-
     scale *= resolutionScale;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    LayoutDevicePoint visualPoint = ViewportUtils::ToScreenRelativeVisual(
+        LayoutDevicePoint(pixelArea.TopLeft()), pc);
+    
+    
+    
+    
+    
+    float scaleRelativeToNormalContent = scale / unclampedResolution;
+    aScreenRect->x = NSToIntFloor(aPoint.x - float(aPoint.x - visualPoint.x) *
+                                                 scaleRelativeToNormalContent);
+    aScreenRect->y = NSToIntFloor(aPoint.y - float(aPoint.y - visualPoint.y) *
+                                                 scaleRelativeToNormalContent);
+
     pixelArea.width = NSToIntFloor(float(pixelArea.width) * scale);
     pixelArea.height = NSToIntFloor(float(pixelArea.height) * scale);
     if (!pixelArea.width || !pixelArea.height) {
@@ -4931,8 +4950,9 @@ already_AddRefed<SourceSurface> PresShell::PaintRangePaintInfo(
     }
   } else {
     
-    aScreenRect->MoveTo(rootScreenRect.x + pixelArea.x,
-                        rootScreenRect.y + pixelArea.y);
+    LayoutDevicePoint visualPoint = ViewportUtils::ToScreenRelativeVisual(
+        LayoutDevicePoint(pixelArea.TopLeft()), pc);
+    aScreenRect->MoveTo(RoundedToInt(visualPoint));
   }
   aScreenRect->width = pixelArea.width;
   aScreenRect->height = pixelArea.height;
