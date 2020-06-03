@@ -350,7 +350,7 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameLocal(
 mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameRemote(
     const MaybeDiscarded<dom::BrowsingContext>& aFrameContext,
     ManagedEndpoint<PBrowserBridgeChild>&& aEndpoint, const TabId& aTabId,
-    MakeFrameRemoteResolver&& aResolve) {
+    const LayersId& aLayersId, MakeFrameRemoteResolver&& aResolve) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsContentProcess());
 
   MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
@@ -358,6 +358,10 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameRemote(
 
   
   aResolve(true);
+
+  if (!aLayersId.IsValid()) {
+    return IPC_FAIL(this, "Received an invalid LayersId");
+  }
 
   
   
@@ -370,7 +374,7 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameRemote(
   
   
   RefPtr<BrowserBridgeChild> bridge =
-      new BrowserBridgeChild(frameContext, aTabId);
+      new BrowserBridgeChild(frameContext, aTabId, aLayersId);
   RefPtr<BrowserChild> manager = GetBrowserChild();
   if (NS_WARN_IF(
           !manager->BindPBrowserBridgeEndpoint(std::move(aEndpoint), bridge))) {

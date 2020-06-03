@@ -28,8 +28,12 @@ BrowserBridgeParent::BrowserBridgeParent() = default;
 BrowserBridgeParent::~BrowserBridgeParent() { Destroy(); }
 
 nsresult BrowserBridgeParent::InitWithProcess(
-    ContentParent* aContentParent, const nsString& aPresentationURL,
-    const WindowGlobalInit& aWindowInit, uint32_t aChromeFlags, TabId aTabId) {
+    BrowserParent* aParentBrowser, ContentParent* aContentParent,
+    const nsString& aPresentationURL, const WindowGlobalInit& aWindowInit,
+    uint32_t aChromeFlags, TabId aTabId) {
+  MOZ_ASSERT(!CanSend(),
+             "This should be called before the object is connected to IPC");
+
   RefPtr<CanonicalBrowsingContext> browsingContext =
       CanonicalBrowsingContext::Get(aWindowInit.context().mBrowsingContextId);
   if (!browsingContext || browsingContext->IsDiscarded()) {
@@ -54,9 +58,9 @@ nsresult BrowserBridgeParent::InitWithProcess(
   }
 
   MutableTabContext tabContext;
-  tabContext.SetTabContext(Manager()->ChromeOuterWindowID(),
-                           Manager()->ShowFocusRings(), aPresentationURL,
-                           Manager()->GetMaxTouchPoints());
+  tabContext.SetTabContext(aParentBrowser->ChromeOuterWindowID(),
+                           aParentBrowser->ShowFocusRings(), aPresentationURL,
+                           aParentBrowser->GetMaxTouchPoints());
 
   
   
@@ -105,13 +109,10 @@ nsresult BrowserBridgeParent::InitWithProcess(
 
   
   mBrowserParent = std::move(browserParent);
-  mBrowserParent->SetOwnerElement(Manager()->GetOwnerElement());
+  mBrowserParent->SetOwnerElement(aParentBrowser->GetOwnerElement());
   mBrowserParent->InitRendering();
 
   windowParent->Init();
-
-  
-  Unused << SendSetLayersId(mBrowserParent->GetLayersId());
   return NS_OK;
 }
 

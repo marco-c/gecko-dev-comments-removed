@@ -403,15 +403,6 @@ void CanonicalBrowsingContext::PendingRemotenessChange::Complete(
     chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
   }
 
-  TabId tabId(nsContentUtils::GenerateTabId());
-  RefPtr<BrowserBridgeParent> bridge = new BrowserBridgeParent();
-  ManagedEndpoint<PBrowserBridgeChild> endpoint =
-      embedderBrowser->OpenPBrowserBridgeEndpoint(bridge);
-  if (NS_WARN_IF(!endpoint.IsValid())) {
-    Cancel(NS_ERROR_UNEXPECTED);
-    return;
-  }
-
   RefPtr<WindowGlobalParent> oldWindow = target->GetCurrentWindowGlobal();
   RefPtr<BrowserParent> oldBrowser =
       oldWindow ? oldWindow->GetBrowserParent() : nullptr;
@@ -442,18 +433,6 @@ void CanonicalBrowsingContext::PendingRemotenessChange::Complete(
     oldBrowser->Destroy();
   }
 
-  
-  
-  {
-    auto callback = [wasRemote, resetInFlightId](auto) {
-      if (!wasRemote) {
-        resetInFlightId();
-      }
-    };
-    embedderWindow->SendMakeFrameRemote(target, std::move(endpoint), tabId,
-                                        callback, callback);
-  }
-
   nsCOMPtr<nsIPrincipal> initialPrincipal =
       NullPrincipal::CreateWithInheritedAttributes(
           target->OriginAttributesRef(),
@@ -462,15 +441,38 @@ void CanonicalBrowsingContext::PendingRemotenessChange::Complete(
       WindowGlobalActor::AboutBlankInitializer(target, initialPrincipal);
 
   
-  
-  nsresult rv = bridge->InitWithProcess(aContentParent, EmptyString(),
-                                        windowInit, chromeFlags, tabId);
+  TabId tabId(nsContentUtils::GenerateTabId());
+  RefPtr<BrowserBridgeParent> bridge = new BrowserBridgeParent();
+  nsresult rv =
+      bridge->InitWithProcess(embedderBrowser, aContentParent, EmptyString(),
+                              windowInit, chromeFlags, tabId);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     Cancel(rv);
     return;
   }
 
+  
+  
   RefPtr<BrowserParent> newBrowser = bridge->GetBrowserParent();
+  {
+    auto callback = [wasRemote, resetInFlightId](auto) {
+      if (!wasRemote) {
+        resetInFlightId();
+      }
+    };
+
+    ManagedEndpoint<PBrowserBridgeChild> endpoint =
+        embedderBrowser->OpenPBrowserBridgeEndpoint(bridge);
+    if (NS_WARN_IF(!endpoint.IsValid())) {
+      Cancel(NS_ERROR_UNEXPECTED);
+      return;
+    }
+    embedderWindow->SendMakeFrameRemote(target, std::move(endpoint), tabId,
+                                        newBrowser->GetLayersId(), callback,
+                                        callback);
+  }
+
+  
   newBrowser->ResumeLoad(mPendingSwitchId);
 
   
