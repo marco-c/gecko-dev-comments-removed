@@ -52,6 +52,10 @@ char* GetForcedOutputDevice();
 
 void SetInCommunication(bool aInCommunication);
 
+
+
+bool RouteOutputAsVoice();
+
 #  ifdef MOZ_WIDGET_ANDROID
 uint32_t AndroidGetAudioOutputSampleRate();
 uint32_t AndroidGetAudioOutputFramesPerBuffer();
