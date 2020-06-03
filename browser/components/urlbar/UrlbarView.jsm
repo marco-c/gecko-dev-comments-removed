@@ -511,8 +511,7 @@ class UrlbarView {
       );
 
       
-      
-      this.input.maybeClearAutofillPlaceholder(firstResult);
+      this.input.onFirstResult(firstResult);
     }
 
     if (
