@@ -814,12 +814,13 @@ bool nsDisplayListBuilder::ShouldRebuildDisplayListDueToPrefChange() {
   return false;
 }
 
-bool nsDisplayListBuilder::MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame,
-                                                        nsIFrame* aFrame) {
+bool nsDisplayListBuilder::MarkOutOfFlowFrameForDisplay(
+    nsIFrame* aDirtyFrame, nsIFrame* aFrame, const nsRect& aVisibleRect,
+    const nsRect& aDirtyRect) {
   MOZ_ASSERT(aFrame->GetParent() == aDirtyFrame);
   nsRect dirty;
   nsRect visible = OutOfFlowDisplayData::ComputeVisibleRectForFrame(
-      this, aFrame, GetVisibleRect(), GetDirtyRect(), &dirty);
+      this, aFrame, aVisibleRect, aDirtyRect, &dirty);
   if (!(aFrame->GetStateBits() & NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO) &&
       visible.IsEmpty()) {
     return false;
@@ -1157,6 +1158,45 @@ void nsDisplayListBuilder::ClearFixedBackgroundDisplayData() {
 
 void nsDisplayListBuilder::MarkFramesForDisplayList(
     nsIFrame* aDirtyFrame, const nsFrameList& aFrames) {
+  nsRect visibleRect = GetVisibleRect();
+  nsRect dirtyRect = GetDirtyRect();
+
+  
+  
+  
+  if (ViewportFrame* viewportFrame = do_QueryFrame(aDirtyFrame)) {
+    if (IsForEventDelivery() && ShouldBuildAsyncZoomContainer() &&
+        viewportFrame->PresContext()->IsRootContentDocumentCrossProcess()) {
+      if (viewportFrame->PresShell()->GetRootScrollFrame()) {
+#ifdef DEBUG
+        for (nsIFrame* f : aFrames) {
+          MOZ_ASSERT(ViewportUtils::IsZoomedContentRoot(f));
+        }
+#endif
+        visibleRect = ViewportUtils::VisualToLayout(visibleRect,
+                                                    viewportFrame->PresShell());
+        dirtyRect = ViewportUtils::VisualToLayout(dirtyRect,
+                                                  viewportFrame->PresShell());
+      }
+#ifdef DEBUG
+      else {
+        
+        
+        
+        
+        for (nsIFrame* f : aFrames) {
+          MOZ_ASSERT(!ViewportUtils::IsZoomedContentRoot(f) &&
+                     f->GetParent() == aDirtyFrame &&
+                     f->StyleDisplay()->mPosition ==
+                         StylePositionProperty::Fixed);
+        }
+        
+        
+      }
+#endif
+    }
+  }
+
   bool markedFrames = false;
   for (nsIFrame* e : aFrames) {
     
@@ -1170,7 +1210,7 @@ void nsDisplayListBuilder::MarkFramesForDisplayList(
         }
       }
     }
-    if (MarkOutOfFlowFrameForDisplay(aDirtyFrame, e)) {
+    if (MarkOutOfFlowFrameForDisplay(aDirtyFrame, e, visibleRect, dirtyRect)) {
       markedFrames = true;
     }
   }
@@ -1183,44 +1223,6 @@ void nsDisplayListBuilder::MarkFramesForDisplayList(
     const DisplayItemClipChain* combinedClipChain =
         mClipState.GetCurrentCombinedClipChain(this);
     const ActiveScrolledRoot* asr = mCurrentActiveScrolledRoot;
-    nsRect visibleRect = GetVisibleRect();
-    nsRect dirtyRect = GetDirtyRect();
-
-    
-    
-    
-    if (ViewportFrame* viewportFrame = do_QueryFrame(aDirtyFrame)) {
-      if (IsForEventDelivery() && ShouldBuildAsyncZoomContainer() &&
-          viewportFrame->PresContext()->IsRootContentDocumentCrossProcess()) {
-        if (viewportFrame->PresShell()->GetRootScrollFrame()) {
-#ifdef DEBUG
-          for (nsIFrame* f : aFrames) {
-            MOZ_ASSERT(ViewportUtils::IsZoomedContentRoot(f));
-          }
-#endif
-          visibleRect = ViewportUtils::VisualToLayout(
-              visibleRect, viewportFrame->PresShell());
-          dirtyRect = ViewportUtils::VisualToLayout(dirtyRect,
-                                                    viewportFrame->PresShell());
-        }
-#ifdef DEBUG
-        else {
-          
-          
-          
-          
-          for (nsIFrame* f : aFrames) {
-            MOZ_ASSERT(!ViewportUtils::IsZoomedContentRoot(f) &&
-                       f->GetParent() == aDirtyFrame &&
-                       f->StyleDisplay()->mPosition ==
-                           StylePositionProperty::Fixed);
-          }
-          
-          
-        }
-#endif
-      }
-    }
 
     OutOfFlowDisplayData* data = new OutOfFlowDisplayData(
         clipChain, combinedClipChain, asr, visibleRect, dirtyRect);
