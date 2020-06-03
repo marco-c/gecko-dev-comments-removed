@@ -46,7 +46,6 @@
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/net/DNS.h"
 #include "mozilla/net/DocumentLoadListener.h"
-#include "mozilla/net/DocumentChannel.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -141,16 +140,6 @@ nsMixedContentBlocker::AsyncOnChannelRedirect(
   RefPtr<net::DocumentLoadListener> docListener =
       do_QueryObject(is_ipc_channel);
   if (is_ipc_channel && !docListener) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  
-  
-  if (RefPtr<net::DocumentChannel> docChannel = do_QueryObject(aOldChannel)) {
     return NS_OK;
   }
 
