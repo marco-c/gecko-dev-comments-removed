@@ -1873,7 +1873,9 @@ static bool MaybePublishFunction(JSContext* cx,
                           funbox);
 }
 
-bool CompilationInfo::publishDeferredFunctions() {
+static bool PublishDeferredFunctions(JSContext* cx,
+                                     CompilationInfo& compilationInfo,
+                                     FunctionBox* listHead) {
   
   
   
@@ -1881,14 +1883,13 @@ bool CompilationInfo::publishDeferredFunctions() {
 
   mozilla::DebugOnly<size_t> prevIndex = size_t(-1);
 
-  for (FunctionBox* funbox = traceListHead; funbox;
-       funbox = funbox->traceLink()) {
+  for (FunctionBox* funbox = listHead; funbox; funbox = funbox->traceLink()) {
     
     
     MOZ_ASSERT(prevIndex > funbox->index());
     prevIndex = funbox->index();
 
-    if (!MaybePublishFunction(cx, *this, funbox)) {
+    if (!MaybePublishFunction(cx, compilationInfo, funbox)) {
       return false;
     }
   }
@@ -1968,6 +1969,10 @@ static bool InstantiateTopLevel(JSContext* cx,
 }
 
 bool CompilationInfo::instantiateStencils() {
+  if (!PublishDeferredFunctions(cx, *this, traceListHead)) {
+    return false;
+  }
+
   if (!SetTypeForExposedFunctions(cx, traceListHead)) {
     return false;
   }
