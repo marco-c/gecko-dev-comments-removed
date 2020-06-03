@@ -129,24 +129,8 @@ HistoryDownloadElementShell.prototype = {
 
   
   
-  doDefaultCommand(event) {
+  doDefaultCommand() {
     let command = this.currentDefaultCommandName;
-    if (
-      command == "downloadsCmd_open" &&
-      event &&
-      (event.shiftKey || event.ctrlKey || event.metaKey || event.button == 1)
-    ) {
-      
-      
-      let browserWin = BrowserWindowTracker.getTopWindow();
-      let openWhere = browserWin
-        ? browserWin.whereToOpenLink(event, false, true)
-        : "window";
-      if (["window", "tabshifted", "tab"].includes(openWhere)) {
-        command += ":" + openWhere;
-      }
-    }
-
     if (command && this.isCommandEnabled(command)) {
       this.doCommand(command);
     }
@@ -730,7 +714,7 @@ DownloadsPlacesView.prototype = {
       if (selectedElements.length == 1) {
         let element = selectedElements[0];
         if (element._shell) {
-          element._shell.doDefaultCommand(aEvent);
+          element._shell.doDefaultCommand();
         }
       }
     } else if (aEvent.charCode == " ".charCodeAt(0)) {
@@ -755,7 +739,7 @@ DownloadsPlacesView.prototype = {
 
     let element = selectedElements[0];
     if (element._shell) {
-      element._shell.doDefaultCommand(aEvent);
+      element._shell.doDefaultCommand();
     }
   },
 
