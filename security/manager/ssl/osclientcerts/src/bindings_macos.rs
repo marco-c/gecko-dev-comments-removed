@@ -17,7 +17,11 @@ pub type SecKeyAlgorithm = CFStringRef;
 extern "C" {
     
     pub fn SecCertificateGetTypeID() -> CFTypeID;
-    pub fn SecTrustCreateWithCertificates(certificates: SecCertificateRef, policies: SecPolicyRef, trust: *mut SecTrustRef) -> OSStatus;
+    pub fn SecTrustCreateWithCertificates(
+        certificates: SecCertificateRef,
+        policies: SecPolicyRef,
+        trust: *mut SecTrustRef,
+    ) -> OSStatus;
     pub fn SecIdentityGetTypeID() -> CFTypeID;
     pub fn SecIdentityCopyCertificate(
         identityRef: SecIdentityRef,
