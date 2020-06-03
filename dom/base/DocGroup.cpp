@@ -105,16 +105,13 @@ already_AddRefed<DocGroup> DocGroup::Create(
 }
 
 
-nsresult DocGroup::GetKey(nsIPrincipal* aPrincipal, nsACString& aKey) {
+nsresult DocGroup::GetKey(nsIPrincipal* aPrincipal, bool aCrossOriginIsolated,
+                          nsACString& aKey) {
   
   
-  nsresult rv = aPrincipal->GetBaseDomain(aKey);
+  nsresult rv = aCrossOriginIsolated ? aPrincipal->GetOrigin(aKey)
+                                     : aPrincipal->GetSiteOrigin(aKey);
   if (NS_FAILED(rv)) {
-    
-    
-    
-    
-    
     aKey.Truncate();
   }
 
@@ -250,7 +247,7 @@ RefPtr<PerformanceInfoPromise> DocGroup::ReportPerformanceInfo() {
       ->Then(
           mainThread, __func__,
           [self, host, pid, windowID, duration, isTopLevel,
-           items](const PerformanceMemoryInfo& aMemoryInfo) {
+           items = std::move(items)](const PerformanceMemoryInfo& aMemoryInfo) {
             PerformanceInfo info =
                 PerformanceInfo(host, pid, windowID, duration,
                                 self->mPerformanceCounter->GetID(), false,

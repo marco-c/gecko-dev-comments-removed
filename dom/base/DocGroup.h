@@ -47,7 +47,8 @@ class DocGroup final {
   
   
   static MOZ_MUST_USE nsresult GetKey(nsIPrincipal* aPrincipal,
-                                      nsACString& aString);
+                                      bool aCrossOriginIsolated,
+                                      nsACString& aKey);
 
   bool MatchesKey(const nsACString& aKey) { return aKey == mKey; }
 
