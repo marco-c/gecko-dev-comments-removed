@@ -50,6 +50,11 @@ add_task(async function() {
     "nestedimg",
   ]);
 
+  const filesLoaded = setupFileServer();
+  
+  
+  await new Promise(resolve => executeSoon(resolve));
+
   
   
   
@@ -65,11 +70,6 @@ add_task(async function() {
     true
   );
 
-  const filesLoaded = setupFileServer();
-  
-  
-  await new Promise(resolve => executeSoon(resolve));
-
   
   await SpecialPowers.spawn(browser, [], async function() {
     let openInsecureButton = content.document.getElementById("openInsecure");
@@ -84,7 +84,7 @@ add_task(async function() {
     let doc = content.document;
     ok(
       !doc.documentURI.startsWith("http://expired.example.com"),
-      "Page should load with after exception button was clicked."
+      "Page should load normally after exception button was clicked."
     );
   });
 
