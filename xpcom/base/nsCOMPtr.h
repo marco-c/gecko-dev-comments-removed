@@ -1507,4 +1507,20 @@ RefPtr<T> ToRefPtr(nsCOMPtr<T>&& aObj) {
   return aObj.forget();
 }
 
+
+template <typename R>
+auto ResultRefAsParam(nsCOMPtr<R>& aResult) {
+  return getter_AddRefs(aResult);
+}
+
+namespace mozilla::detail {
+template <typename T>
+struct outparam_as_pointer;
+
+template <typename T>
+struct outparam_as_pointer<nsGetterAddRefs<T>> {
+  using type = T**;
+};
+}  
+
 #endif  
