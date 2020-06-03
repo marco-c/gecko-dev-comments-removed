@@ -47,7 +47,8 @@
     }
 
     get _allowAnimation() {
-      return Services.prefs.getBoolPref("toolkit.cosmeticAnimations.enabled");
+      return window.matchMedia("(prefers-reduced-motion: no-preference)")
+        .matches;
     }
 
     get allNotifications() {
@@ -222,12 +223,14 @@
     }
 
     removeNotification(aItem, aSkipAnimation) {
+      if (!aItem.parentNode) {
+        return;
+      }
       if (aItem == this.currentNotification) {
         this.removeCurrentNotification(aSkipAnimation);
       } else if (aItem != this._closedNotification) {
         this._removeNotificationElement(aItem);
       }
-      return aItem;
     }
 
     _removeNotificationElement(aChild) {
@@ -412,6 +415,9 @@
     }
 
     close() {
+      if (!this.parentNode) {
+        return;
+      }
       this.control.removeNotification(this);
     }
 
