@@ -801,13 +801,12 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   
   MapContentToWebShells(printData->mPrintObject, printData->mPrintObject);
 
-  printData->mIsIFrameSelected = IsThereAnIFrameSelected(
+  bool isIFrameSelected = IsThereAnIFrameSelected(
       docShell, printData->mCurrentFocusWin, printData->mIsParentAFrameSet);
 
   
   printData->mPrintSettings->SetPrintOptions(
-      nsIPrintSettings::kEnableSelectionRB,
-      isSelection || printData->mIsIFrameSelected);
+      nsIPrintSettings::kEnableSelectionRB, isSelection || isIFrameSelected);
 
   bool printingViaParent =
       XRE_IsContentProcess() && Preferences::GetBool("print.print_via_parent");

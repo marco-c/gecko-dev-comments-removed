@@ -67,7 +67,6 @@ class nsPrintData {
   
   nsTArray<nsPrintObject*> mPrintDocList;
 
-  bool mIsIFrameSelected;
   bool mIsParentAFrameSet;
   bool mOnStartSent;
   bool mIsAborted;          
