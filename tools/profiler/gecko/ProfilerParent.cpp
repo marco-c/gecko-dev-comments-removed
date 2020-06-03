@@ -318,7 +318,11 @@ void ProfilerParentTracker::EnsureInstance() {
   }
 
   sInstance = MakeUnique<ProfilerParentTracker>();
-  ClearOnShutdown(&sInstance);
+
+  
+  
+  
+  ClearOnShutdown(&sInstance, ShutdownPhase::ShutdownThreads);
 }
 
 
