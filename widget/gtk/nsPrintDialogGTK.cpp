@@ -1035,12 +1035,11 @@ nsPrintDialogServiceGTK::ShowPageSetup(nsPIDOMWindowOuter* aParent,
   g_object_unref(newPageSetup);
 
   if (psService)
-    
-    
-    
-    
-    psService->SavePrintSettingsToPrefs(aNSSettings, true,
-                                        nsIPrintSettings::kInitSaveAll);
+    psService->SavePrintSettingsToPrefs(
+        aNSSettings, true,
+        nsIPrintSettings::kInitSaveOrientation |
+            nsIPrintSettings::kInitSavePaperSize |
+            nsIPrintSettings::kInitSaveUnwriteableMargins);
 
   return NS_OK;
 }
