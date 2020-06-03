@@ -9810,13 +9810,19 @@ CSSPoint nsLayoutUtils::GetCumulativeApzCallbackTransform(nsIFrame* aFrame) {
 
 
 nsRect nsLayoutUtils::ComputePartialPrerenderArea(
-    const nsRect& aDirtyRect, const nsRect& aOverflow,
+    nsIFrame* aFrame, const nsRect& aDirtyRect, const nsRect& aOverflow,
     const nsSize& aPrerenderSize) {
+  const gfxSize scale = GetTransformToAncestorScale(aFrame);
+  nsSize prerenderSize = aPrerenderSize;
+  if (scale.width != 0 && scale.height != 0) {
+    prerenderSize.width /= scale.width;
+    prerenderSize.height /= scale.height;
+  }
   
   
   
-  nscoord xExcess = std::max(aPrerenderSize.width - aDirtyRect.width, 0);
-  nscoord yExcess = std::max(aPrerenderSize.height - aDirtyRect.height, 0);
+  nscoord xExcess = std::max(prerenderSize.width - aDirtyRect.width, 0);
+  nscoord yExcess = std::max(prerenderSize.height - aDirtyRect.height, 0);
   nsRect result = aDirtyRect;
   result.Inflate(xExcess / 2, yExcess / 2);
   return result.MoveInsideAndClamp(aOverflow);
