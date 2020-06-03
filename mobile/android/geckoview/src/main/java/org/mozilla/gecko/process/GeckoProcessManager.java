@@ -521,6 +521,32 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
             });
     }
 
+    private void acceptUnbindFailure(@NonNull final GeckoResult<Void> unbindResult,
+                                     @NonNull final GeckoResult<Integer> finalResult,
+                                     final RemoteException exception,
+                                     @NonNull final GeckoProcessType type,
+                                     final boolean isRetry) {
+        unbindResult.accept(null, error -> {
+            final StringBuilder builder = new StringBuilder("Failed to unbind");
+            if (isRetry) {
+                builder.append(": ");
+            } else {
+                builder.append(" before child restart: ");
+            }
+
+            builder.append(error.toString());
+            if (exception != null) {
+                builder.append("; In response to RemoteException: ");
+                builder.append(exception.toString());
+            }
+
+            builder.append("; Type = ");
+            builder.append(type.toString());
+
+            finalResult.completeExceptionally(new RuntimeException(builder.toString()));
+        });
+    }
+
     private void start(final GeckoResult<Integer> result,
                        final ChildConnection connection,
                        final IChildProcess child,
@@ -575,7 +601,11 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
         
         final GeckoResult<Void> unbindResult = connection.unbind();
 
+        
+        acceptUnbindFailure(unbindResult, result, exception, type, isRetry);
+
         if (isRetry) {
+            
             Log.e(LOGTAG, "Cannot restart child " + type.toString());
             final StringBuilder builder = new StringBuilder("Cannot restart child.");
             if (prevException != null) {
@@ -590,28 +620,21 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
                 builder.append(" No exceptions thrown; type = ");
                 builder.append(type.toString());
             }
-            result.completeExceptionally(new RuntimeException(builder.toString()));
+
+            final RuntimeException completionException = new RuntimeException(builder.toString());
+            unbindResult.accept(v -> {
+                result.completeExceptionally(completionException);
+            });
             return;
         }
 
-        final RemoteException captureException = exception;
+        
         Log.w(LOGTAG, "Attempting to kill running child " + type.toString());
+        final RemoteException captureException = exception;
         unbindResult.accept(v -> {
             start(result, type, args, extras, flags, prefsFd, prefMapFd, ipcFd,
                   crashFd, crashAnnotationFd,  true, captureException);
-        }, error -> {
-                final StringBuilder builder = new StringBuilder("Failed to unbind before child restart: ");
-                builder.append(error.toString());
-                if (captureException != null) {
-                    builder.append("; In response to RemoteException: ");
-                    builder.append(captureException.toString());
-                }
-
-                builder.append("; Type = ");
-                builder.append(type.toString());
-
-                result.completeExceptionally(new RuntimeException(builder.toString()));
-            });
+        });
     }
 
 } 
