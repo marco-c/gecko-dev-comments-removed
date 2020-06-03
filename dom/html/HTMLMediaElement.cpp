@@ -425,7 +425,6 @@ class HTMLMediaElement::MediaControlEventListener final
       
       return;
     }
-    NotifyMediaStoppedPlaying();
     NotifyPlaybackStateChanged(MediaPlaybackState::eStopped);
 
     
@@ -508,63 +507,20 @@ class HTMLMediaElement::MediaControlEventListener final
     }
   }
 
-  void UpdateOwnerBrowsingContextIfNeeded() {
-    
-    if (!IsStarted()) {
-      return;
-    }
-
-    BrowsingContext* currentBC = GetCurrentBrowsingContext();
-    MOZ_ASSERT(currentBC && mOwnerBrowsingContext);
-    
-    if (currentBC == mOwnerBrowsingContext) {
-      return;
-    }
-    MEDIACONTROL_LOG("Change browsing context from %" PRIu64 " to %" PRIu64,
-                     mOwnerBrowsingContext->Id(), currentBC->Id());
-    
-    
-    
-    
-    
-    
-    
-    
-    bool wasInPlayingState = mState == MediaPlaybackState::ePlayed;
-    Stop();
-    bool rv = Start();
-    MOZ_ASSERT(rv, "Failed to start for new browsing context");
-    if (wasInPlayingState) {
-      NotifyMediaStartedPlaying();
-    }
-  }
-
   BrowsingContext* GetBrowsingContext() const override {
-    return mOwnerBrowsingContext;
+    nsPIDOMWindowInner* window = Owner()->OwnerDoc()->GetInnerWindow();
+    return window ? window->GetBrowsingContext() : nullptr;
   }
 
  private:
   ~MediaControlEventListener() = default;
 
-  
-  
-  
-  BrowsingContext* GetCurrentBrowsingContext() const {
-    nsPIDOMWindowInner* window = Owner()->OwnerDoc()->GetInnerWindow();
-    return window ? window->GetBrowsingContext() : nullptr;
-  }
-
   bool InitMediaAgent() {
     MOZ_ASSERT(NS_IsMainThread());
-    BrowsingContext* currentBC = GetCurrentBrowsingContext();
-    mControlAgent = ContentMediaAgent::Get(currentBC);
+    mControlAgent = ContentMediaAgent::Get(GetBrowsingContext());
     if (!mControlAgent) {
       return false;
     }
-    mOwnerBrowsingContext = currentBC;
-    MOZ_ASSERT(mOwnerBrowsingContext);
-    MEDIACONTROL_LOG("Init agent in browsing context %" PRIu64,
-                     mOwnerBrowsingContext->Id());
     mControlAgent->AddReceiver(this);
     return true;
   }
@@ -596,7 +552,6 @@ class HTMLMediaElement::MediaControlEventListener final
   RefPtr<ContentMediaAgent> mControlAgent;
   bool mIsPictureInPictureEnabled = false;
   bool mIsOwnerAudible = false;
-  BrowsingContext* MOZ_NON_OWNING_REF mOwnerBrowsingContext = nullptr;
 };
 
 class HTMLMediaElement::MediaStreamTrackListener
@@ -3381,6 +3336,7 @@ void HTMLMediaElement::SetVolumeInternal() {
 
   NotifyAudioPlaybackChanged(
       AudioChannelService::AudibleChangedReasons::eVolumeChanged);
+  StartListeningMediaControlEventIfNeeded();
 }
 
 void HTMLMediaElement::SetMuted(bool aMuted) {
@@ -4688,9 +4644,6 @@ nsresult HTMLMediaElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   }
 
   NotifyDecoderActivityChanges();
-  if (mMediaControlEventListener) {
-    mMediaControlEventListener->UpdateOwnerBrowsingContextIfNeeded();
-  }
 
   return rv;
 }
@@ -7275,6 +7228,7 @@ void HTMLMediaElement::SetAudibleState(bool aAudible) {
     mIsAudioTrackAudible = aAudible;
     NotifyAudioPlaybackChanged(
         AudioChannelService::AudibleChangedReasons::eDataAudibleChanged);
+    StartListeningMediaControlEventIfNeeded();
   }
 }
 
@@ -7363,6 +7317,7 @@ void HTMLMediaElement::SetMediaInfo(const MediaInfo& aInfo) {
     mAudioChannelWrapper->AudioCaptureTrackChangeIfNeeded();
   }
   UpdateWakeLock();
+  StartListeningMediaControlEventIfNeeded();
 }
 
 void HTMLMediaElement::AudioCaptureTrackChange(bool aCapture) {
@@ -7806,6 +7761,17 @@ void HTMLMediaElement::StartListeningMediaControlEventIfNeeded() {
   
   
   
+  
+  
+  
+  if (!IsAudible() || ComputedVolume() == 0.0f) {
+    MEDIACONTROL_LOG("Not listening because media is inaudible");
+    return;
+  }
+
+  
+  
+  
   if (Duration() <
       StaticPrefs::media_mediacontrol_eligible_media_duration_s()) {
     MEDIACONTROL_LOG("Not listening because media's duration %f is too short.",
@@ -7845,6 +7811,7 @@ void HTMLMediaElement::StartListeningMediaControlEventIfNeeded() {
 
 void HTMLMediaElement::StopListeningMediaControlEventIfNeeded() {
   if (mMediaControlEventListener && mMediaControlEventListener->IsStarted()) {
+    mMediaControlEventListener->NotifyMediaStoppedPlaying();
     mMediaControlEventListener->Stop();
   }
 }

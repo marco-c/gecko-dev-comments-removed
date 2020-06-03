@@ -30,7 +30,7 @@ async function createTabAndLoad(url, inputWindow = null) {
 
 
 function generateMediaControlKeyEvent(event) {
-  const playbackStateChanged = waitUntilDisplayedPlaybackChanged();
+  const playbackStateChanged = waitUntilMainMediaControllerPlaybackChanged();
   ChromeUtils.generateMediaControlKeysTestEvent(event);
   return playbackStateChanged;
 }
@@ -59,7 +59,10 @@ function playMedia(tab, elementId) {
       return video.play();
     }
   );
-  return Promise.all([playPromise, waitUntilDisplayedPlaybackChanged()]);
+  return Promise.all([
+    playPromise,
+    waitUntilMainMediaControllerPlaybackChanged(),
+  ]);
 }
 
 
@@ -87,7 +90,10 @@ function pauseMedia(tab, elementId) {
       video.pause();
     }
   );
-  return Promise.all([pausePromise, waitUntilDisplayedPlaybackChanged()]);
+  return Promise.all([
+    pausePromise,
+    waitUntilMainMediaControllerPlaybackChanged(),
+  ]);
 }
 
 
@@ -219,52 +225,11 @@ function isCurrentMetadataEqualTo(metadata) {
 
 
 
-async function isUsingDefaultMetadata(tab, options = {}) {
-  let metadata = ChromeUtils.getCurrentActiveMediaMetadata();
-  if (options.isPrivateBrowsing) {
-    is(
-      metadata.title,
-      "Firefox is playing media",
-      "Using generic title to not expose sensitive information"
-    );
-  } else {
-    await SpecialPowers.spawn(tab.linkedBrowser, [metadata.title], title => {
-      is(
-        title,
-        content.document.title,
-        "Using website title as a default title"
-      );
-    });
-  }
-  is(metadata.artwork.length, 1, "Default metada contains one artwork");
-  ok(
-    metadata.artwork[0].src.includes("defaultFavicon.svg"),
-    "Using default favicon as a default art work"
-  );
-}
 
 
 
-
-
-
-
-
-
-function waitUntilDisplayedPlaybackChanged() {
-  return BrowserUtils.promiseObserved("media-displayed-playback-changed");
-}
-
-
-
-
-
-
-
-
-
-function waitUntilDisplayedMetadataChanged() {
-  return BrowserUtils.promiseObserved("media-displayed-metadata-changed");
+function waitUntilMainMediaControllerPlaybackChanged() {
+  return BrowserUtils.promiseObserved("main-media-controller-playback-changed");
 }
 
 
@@ -277,9 +242,6 @@ function waitUntilDisplayedMetadataChanged() {
 function waitUntilMainMediaControllerChanged() {
   return BrowserUtils.promiseObserved("main-media-controller-changed");
 }
-
-
-
 
 
 
