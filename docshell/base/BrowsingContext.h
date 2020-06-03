@@ -517,6 +517,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   
   WindowProxyHolder Window();
+  BrowsingContext* GetBrowsingContext() { return this; };
   BrowsingContext* Self() { return this; }
   void Location(JSContext* aCx, JS::MutableHandle<JSObject*> aLocation,
                 ErrorResult& aError);
