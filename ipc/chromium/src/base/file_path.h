@@ -71,7 +71,6 @@
 
 #include "base/basictypes.h"
 #include "base/compiler_specific.h"
-#include "base/hash_tables.h"
 
 
 
@@ -244,26 +243,6 @@ class FilePath {
 #  define FILE_PATH_LITERAL(x) x
 #elif defined(OS_WIN)
 #  define FILE_PATH_LITERAL(x) L##x
-#endif  
-
-
-#if defined(COMPILER_GCC) && !defined(ANDROID)
-namespace __gnu_cxx {
-
-template <>
-struct hash<FilePath> {
-  size_t operator()(const FilePath& f) const {
-    return hash<FilePath::StringType>()(f.value());
-  }
-};
-
-}  
-#elif defined(COMPILER_MSVC)
-namespace stdext {
-
-inline size_t hash_value(const FilePath& f) { return hash_value(f.value()); }
-
-}  
 #endif  
 
 #endif  
