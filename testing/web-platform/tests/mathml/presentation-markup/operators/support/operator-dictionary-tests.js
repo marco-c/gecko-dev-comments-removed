@@ -187,60 +187,32 @@ symmetric for "${parsedKey.characters}" (${parsedKey.form}): \
         div.style.display = "none";
     },
 
-    "accent": function(json, key) {
-        let parsedKey = splitKey(key);
-        let entry = json.dictionary[key];
-        let epsilon = 1;
-
-        
-        assert_true(MathMLFeatureDetection.has_mover());
-        var defaultValue = defaultPropertyValue(entry, "accent");
-        document.body.insertAdjacentHTML("beforeend", `<div>\
-accent for "${parsedKey.characters}" (${parsedKey.form}): \
-<math>\
-  <mover>\
-    <mn>&nbsp;</mn>\
-    <mo form="${parsedKey.form}">${parsedKey.characters}</mo>\
-  </mover>\
-</math>\
- VS \
-<math>\
-  <mover>\
-    <mn>&nbsp;</mn>\
-    <mo form="${parsedKey.form}" accent="${defaultValue}">${parsedKey.characters}</mo>\
-  </mover>\
-</math>\
-</div>`);
-        var div = document.body.lastElementChild;
-        var movers = div.getElementsByTagName("mover");
-        function gapBetweenBaseAndScript(mover) {
-            return mover.children[0].getBoundingClientRect().top -
-                mover.children[1].getBoundingClientRect().bottom;
-        }
-        var gap = gapBetweenBaseAndScript(movers[0])
-        var gapRef = gapBetweenBaseAndScript(movers[1])
-        assert_approx_equals(gap, gapRef, epsilon, `Accent property for ${key} should be '${defaultValue}'`);
-        div.style.display = "none";
-    },
-
-    run: function(json, name) {
+    run: function(json, name, fileIndex) {
         
         
         
         
         
         const entryPerChunk = 50
+        const filesPerProperty = 6
 
         var counter = 0;
         var test;
 
         for (key in json.dictionary) {
 
-            if (counter % entryPerChunk === 0) {
+            
+            if (counter % filesPerProperty != fileIndex) {
+                counter++;
+                continue;
+            }
+
+            var counterInFile = (counter - fileIndex) / filesPerProperty;
+            if (counterInFile % entryPerChunk === 0) {
                 
                 
                 if (test) test.done();
-                test = async_test(`Operator dictionary chunk ${1 + counter / entryPerChunk} - ${name}`);
+                test = async_test(`Operator dictionary chunk ${1 + counterInFile / entryPerChunk} - ${name}`);
             }
 
             test.step(function() {
