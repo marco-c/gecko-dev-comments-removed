@@ -11,16 +11,7 @@ import subprocess
 import glob
 
 from mozboot.base import BaseBootstrapper
-from mozboot.linux_common import (
-    ClangStaticAnalysisInstall,
-    FixStacksInstall,
-    LucetcInstall,
-    MinidumpStackwalkInstall,
-    NodeInstall,
-    SccacheInstall,
-    StyloInstall,
-    WasiSysrootInstall,
-)
+from mozboot.linux_common import LinuxBootstrapper
 
 
 
@@ -30,14 +21,7 @@ if sys.version_info < (3,):
 
 
 class ArchlinuxBootstrapper(
-        ClangStaticAnalysisInstall,
-        FixStacksInstall,
-        LucetcInstall,
-        MinidumpStackwalkInstall,
-        NodeInstall,
-        SccacheInstall,
-        StyloInstall,
-        WasiSysrootInstall,
+        LinuxBootstrapper,
         BaseBootstrapper):
     '''Archlinux experimental bootstrapper.'''
 
