@@ -550,11 +550,10 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
 
+
   template <typename PT, typename CT>
-  EditorDOMPointInText GetNextCharPoint(
+  EditorDOMPointInText GetInclusiveNextEditableCharPoint(
       const EditorDOMPointBase<PT, CT>& aPoint) const;
-  EditorDOMPointInText GetNextCharPointFromPointInText(
-      const EditorDOMPointInText& aPoint) const;
 
   
 
@@ -563,13 +562,8 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
 
-
-
   template <typename PT, typename CT>
-  EditorDOMPointInText LookForNextCharPointWithinAllTextNodes(
-      const EditorDOMPointBase<PT, CT>& aPoint) const;
-  template <typename PT, typename CT>
-  EditorDOMPointInText LookForPreviousCharPointWithinAllTextNodes(
+  EditorDOMPointInText GetPreviousEditableCharPoint(
       const EditorDOMPointBase<PT, CT>& aPoint) const;
 
   nsresult GetWSNodes();
@@ -581,14 +575,6 @@ class MOZ_STACK_CLASS WSRunScanner {
   nsIContent* GetEditableBlockParentOrTopmotEditableInlineContent(
       nsIContent* aContent) const;
 
-  
-
-
-
-
-  template <typename PT, typename CT>
-  EditorDOMPointInText GetPreviousCharPoint(
-      const EditorDOMPointBase<PT, CT>& aPoint) const;
   EditorDOMPointInText GetPreviousCharPointFromPointInText(
       const EditorDOMPointInText& aPoint) const;
 
@@ -600,9 +586,6 @@ class MOZ_STACK_CLASS WSRunScanner {
       WSFragment::Visible aIsVisible,
       WSFragment::StartOfHardLine aIsStartOfHardLine,
       WSFragment::EndOfHardLine aIsEndOfHardLine);
-
-  
-  nsTArray<RefPtr<dom::Text>> mNodeArray;
 
   
   EditorDOMPoint mScanStartPoint;

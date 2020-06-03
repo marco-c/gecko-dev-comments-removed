@@ -226,12 +226,12 @@ already_AddRefed<Element> WSRunObject::InsertBreak(
       
       
       EditorDOMPointInText atNextCharOfInsertionPoint =
-          GetNextCharPoint(pointToInsert);
+          GetInclusiveNextEditableCharPoint(pointToInsert);
       if (atNextCharOfInsertionPoint.IsSet() &&
           !atNextCharOfInsertionPoint.IsEndOfContainer() &&
           atNextCharOfInsertionPoint.IsCharASCIISpace()) {
         EditorDOMPointInText atPreviousCharOfNextCharOfInsertionPoint =
-            GetPreviousCharPointFromPointInText(atNextCharOfInsertionPoint);
+            GetPreviousEditableCharPoint(atNextCharOfInsertionPoint);
         if (!atPreviousCharOfNextCharOfInsertionPoint.IsSet() ||
             atPreviousCharOfNextCharOfInsertionPoint.IsEndOfContainer() ||
             !atPreviousCharOfNextCharOfInsertionPoint.IsCharASCIISpace()) {
@@ -377,7 +377,7 @@ nsresult WSRunObject::InsertText(Document& aDocument,
         theString.SetCharAt(kNBSP, 0);
       } else if (beforeRun->IsVisible()) {
         EditorDOMPointInText atPreviousChar =
-            GetPreviousCharPoint(pointToInsert);
+            GetPreviousEditableCharPoint(pointToInsert);
         if (atPreviousChar.IsSet() && !atPreviousChar.IsEndOfContainer() &&
             atPreviousChar.IsCharASCIISpace()) {
           theString.SetCharAt(kNBSP, 0);
@@ -397,7 +397,8 @@ nsresult WSRunObject::InsertText(Document& aDocument,
       if (afterRun->IsEndOfHardLine()) {
         theString.SetCharAt(kNBSP, lastCharIndex);
       } else if (afterRun->IsVisible()) {
-        EditorDOMPointInText atNextChar = GetNextCharPoint(pointToInsert);
+        EditorDOMPointInText atNextChar =
+            GetInclusiveNextEditableCharPoint(pointToInsert);
         if (atNextChar.IsSet() && !atNextChar.IsEndOfContainer() &&
             atNextChar.IsCharASCIISpace()) {
           theString.SetCharAt(kNBSP, lastCharIndex);
@@ -455,7 +456,7 @@ nsresult WSRunObject::InsertText(Document& aDocument,
 
 nsresult WSRunObject::DeleteWSBackward() {
   EditorDOMPointInText atPreviousCharOfStart =
-      GetPreviousCharPoint(mScanStartPoint);
+      GetPreviousEditableCharPoint(mScanStartPoint);
   if (!atPreviousCharOfStart.IsSet() ||
       atPreviousCharOfStart.IsEndOfContainer()) {
     return NS_OK;
@@ -531,7 +532,8 @@ nsresult WSRunObject::DeleteWSBackward() {
 }
 
 nsresult WSRunObject::DeleteWSForward() {
-  EditorDOMPointInText atNextCharOfStart = GetNextCharPoint(mScanStartPoint);
+  EditorDOMPointInText atNextCharOfStart =
+      GetInclusiveNextEditableCharPoint(mScanStartPoint);
   if (!atNextCharOfStart.IsSet() || atNextCharOfStart.IsEndOfContainer()) {
     return NS_OK;
   }
@@ -616,7 +618,8 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
   
   for (; run; run = run->mLeft) {
     if (run->IsVisibleAndMiddleOfHardLine()) {
-      EditorDOMPointInText atPreviousChar = GetPreviousCharPoint(aPoint);
+      EditorDOMPointInText atPreviousChar =
+          GetPreviousEditableCharPoint(aPoint);
       
       if (atPreviousChar.IsSet() && !atPreviousChar.IsContainerEmpty()) {
         MOZ_ASSERT(!atPreviousChar.IsEndOfContainer());
@@ -651,7 +654,8 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
   
   for (; run; run = run->mRight) {
     if (run->IsVisibleAndMiddleOfHardLine()) {
-      EditorDOMPointInText atNextChar = GetNextCharPoint(aPoint);
+      EditorDOMPointInText atNextChar =
+          GetInclusiveNextEditableCharPoint(aPoint);
       
       if (atNextChar.IsSet() && !atNextChar.IsContainerEmpty()) {
         return WSScanResult(
@@ -745,7 +749,6 @@ nsresult WSRunScanner::GetWSNodes() {
   
   if (Text* textNode = mScanStartPoint.GetContainerAsText()) {
     const nsTextFragment* textFrag = &textNode->TextFragment();
-    mNodeArray.InsertElementAt(0, textNode);
     if (!mScanStartPoint.IsStartOfContainer()) {
       for (uint32_t i = mScanStartPoint.Offset(); i; i--) {
         
@@ -791,7 +794,6 @@ nsresult WSRunScanner::GetWSNodes() {
       } else if (previousLeafContentOrBlock->IsText() &&
                  previousLeafContentOrBlock->IsEditable()) {
         RefPtr<Text> textNode = previousLeafContentOrBlock->AsText();
-        mNodeArray.InsertElementAt(0, textNode);
         const nsTextFragment* textFrag = &textNode->TextFragment();
         uint32_t len = textNode->TextLength();
 
@@ -901,7 +903,6 @@ nsresult WSRunScanner::GetWSNodes() {
       } else if (nextLeafContentOrBlock->IsText() &&
                  nextLeafContentOrBlock->IsEditable()) {
         RefPtr<Text> textNode = nextLeafContentOrBlock->AsText();
-        mNodeArray.AppendElement(textNode);
         const nsTextFragment* textFrag = &textNode->TextFragment();
         uint32_t len = textNode->TextLength();
 
@@ -1169,7 +1170,8 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
         
         
         EditorDOMPointInText nextCharOfStartOfEnd =
-            aEndObject->GetNextCharPoint(aEndObject->mScanStartPoint);
+            aEndObject->GetInclusiveNextEditableCharPoint(
+                aEndObject->mScanStartPoint);
         if (nextCharOfStartOfEnd.IsSet() &&
             !nextCharOfStartOfEnd.IsEndOfContainer() &&
             nextCharOfStartOfEnd.IsCharASCIISpace()) {
@@ -1211,7 +1213,7 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
       
       
       EditorDOMPointInText atPreviousCharOfStart =
-          GetPreviousCharPoint(mScanStartPoint);
+          GetPreviousEditableCharPoint(mScanStartPoint);
       if (atPreviousCharOfStart.IsSet() &&
           !atPreviousCharOfStart.IsEndOfContainer() &&
           atPreviousCharOfStart.IsCharASCIISpace()) {
@@ -1249,7 +1251,8 @@ nsresult WSRunObject::PrepareToSplitAcrossBlocksPriv() {
   if (afterRun && afterRun->IsVisibleAndMiddleOfHardLine()) {
     
     
-    EditorDOMPointInText atNextCharOfStart = GetNextCharPoint(mScanStartPoint);
+    EditorDOMPointInText atNextCharOfStart =
+        GetInclusiveNextEditableCharPoint(mScanStartPoint);
     if (atNextCharOfStart.IsSet() && !atNextCharOfStart.IsEndOfContainer() &&
         atNextCharOfStart.IsCharASCIISpace()) {
       
@@ -1271,7 +1274,7 @@ nsresult WSRunObject::PrepareToSplitAcrossBlocksPriv() {
     
     
     EditorDOMPointInText atPreviousCharOfStart =
-        GetPreviousCharPoint(mScanStartPoint);
+        GetPreviousEditableCharPoint(mScanStartPoint);
     if (atPreviousCharOfStart.IsSet() &&
         !atPreviousCharOfStart.IsEndOfContainer() &&
         atPreviousCharOfStart.IsCharASCIISpace()) {
@@ -1296,83 +1299,139 @@ nsresult WSRunObject::PrepareToSplitAcrossBlocksPriv() {
 }
 
 template <typename PT, typename CT>
-EditorDOMPointInText WSRunScanner::GetNextCharPoint(
+EditorDOMPointInText WSRunScanner::GetInclusiveNextEditableCharPoint(
     const EditorDOMPointBase<PT, CT>& aPoint) const {
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
-  size_t index = aPoint.IsInTextNode()
-                     ? mNodeArray.IndexOf(aPoint.GetContainer())
-                     : decltype(mNodeArray)::NoIndex;
-  if (index == decltype(mNodeArray)::NoIndex) {
-    
-    return LookForNextCharPointWithinAllTextNodes(aPoint);
+  if (NS_WARN_IF(!aPoint.IsInContentNode()) ||
+      NS_WARN_IF(!mScanStartPoint.IsInContentNode())) {
+    return EditorDOMPointInText();
   }
-  return GetNextCharPointFromPointInText(
-      EditorDOMPointInText(mNodeArray[index], aPoint.Offset()));
+
+  EditorRawDOMPoint point;
+  if (nsIContent* child = aPoint.GetChild()) {
+    nsIContent* leafContent = child->HasChildren()
+                                  ? HTMLEditUtils::GetFirstLeafChild(
+                                        *child, ChildBlockBoundary::Ignore)
+                                  : child;
+    if (NS_WARN_IF(!leafContent)) {
+      return EditorDOMPointInText();
+    }
+    point.Set(leafContent, 0);
+  } else {
+    point = aPoint;
+  }
+
+  
+  
+  
+  if (point.IsInTextNode() && point.GetContainer()->IsEditable() &&
+      !point.IsEndOfContainer()) {
+    return EditorDOMPointInText(point.ContainerAsText(), point.Offset());
+  }
+
+  if (point.GetContainer() == mEndReasonContent) {
+    return EditorDOMPointInText();
+  }
+
+  nsIContent* editableBlockParentOrTopmotEditableInlineContent =
+      GetEditableBlockParentOrTopmotEditableInlineContent(
+          mScanStartPoint.ContainerAsContent());
+  if (NS_WARN_IF(!editableBlockParentOrTopmotEditableInlineContent)) {
+    
+    editableBlockParentOrTopmotEditableInlineContent =
+        mScanStartPoint.ContainerAsContent();
+  }
+
+  for (nsIContent* nextContent =
+           HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
+               *point.ContainerAsContent(),
+               *editableBlockParentOrTopmotEditableInlineContent, mEditingHost);
+       nextContent;
+       nextContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
+           *nextContent, *editableBlockParentOrTopmotEditableInlineContent,
+           mEditingHost)) {
+    if (!nextContent->IsText() || !nextContent->IsEditable()) {
+      if (nextContent == mEndReasonContent) {
+        break;  
+      }
+      continue;
+    }
+    return EditorDOMPointInText(nextContent->AsText(), 0);
+  }
+  return EditorDOMPointInText();
 }
 
 template <typename PT, typename CT>
-EditorDOMPointInText WSRunScanner::GetPreviousCharPoint(
+EditorDOMPointInText WSRunScanner::GetPreviousEditableCharPoint(
     const EditorDOMPointBase<PT, CT>& aPoint) const {
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
-  size_t index = aPoint.IsInTextNode()
-                     ? mNodeArray.IndexOf(aPoint.GetContainer())
-                     : decltype(mNodeArray)::NoIndex;
-  if (index == decltype(mNodeArray)::NoIndex) {
-    
-    return LookForPreviousCharPointWithinAllTextNodes(aPoint);
-  }
-  return GetPreviousCharPointFromPointInText(
-      EditorDOMPointInText(mNodeArray[index], aPoint.Offset()));
-}
-
-EditorDOMPointInText WSRunScanner::GetNextCharPointFromPointInText(
-    const EditorDOMPointInText& aPoint) const {
-  MOZ_ASSERT(aPoint.IsSet());
-
-  size_t index = mNodeArray.IndexOf(aPoint.GetContainer());
-  if (index == decltype(mNodeArray)::NoIndex) {
-    
+  if (NS_WARN_IF(!aPoint.IsInContentNode()) ||
+      NS_WARN_IF(!mScanStartPoint.IsInContentNode())) {
     return EditorDOMPointInText();
   }
 
-  if (aPoint.IsSetAndValid() && !aPoint.IsEndOfContainer()) {
-    
-    return aPoint;
-  }
-
-  if (index + 1 == mNodeArray.Length()) {
-    return EditorDOMPointInText();
+  EditorRawDOMPoint point;
+  if (nsIContent* previousChild = aPoint.GetPreviousSiblingOfChild()) {
+    nsIContent* leafContent =
+        previousChild->HasChildren()
+            ? HTMLEditUtils::GetLastLeafChild(*previousChild,
+                                              ChildBlockBoundary::Ignore)
+            : previousChild;
+    if (NS_WARN_IF(!leafContent)) {
+      return EditorDOMPointInText();
+    }
+    point.SetToEndOf(leafContent);
+  } else {
+    point = aPoint;
   }
 
   
-  return EditorDOMPointInText(mNodeArray[index + 1], 0);
-}
-
-EditorDOMPointInText WSRunScanner::GetPreviousCharPointFromPointInText(
-    const EditorDOMPointInText& aPoint) const {
-  MOZ_ASSERT(aPoint.IsSet());
-
-  size_t index = mNodeArray.IndexOf(aPoint.GetContainer());
-  if (index == decltype(mNodeArray)::NoIndex) {
-    
-    return EditorDOMPointInText();
-  }
-
-  if (!aPoint.IsStartOfContainer()) {
-    return aPoint.PreviousPoint();
-  }
-
-  if (!index) {
-    return EditorDOMPointInText();
-  }
-
   
-  return EditorDOMPointInText(mNodeArray[index - 1],
-                              mNodeArray[index - 1]->TextLength()
-                                  ? mNodeArray[index - 1]->TextLength() - 1
-                                  : 0);
+  
+  
+  if (point.IsInTextNode() && point.GetContainer()->IsEditable() &&
+      !point.IsStartOfContainer()) {
+    return EditorDOMPointInText(point.ContainerAsText(), point.Offset() - 1);
+  }
+
+  if (point.GetContainer() == mStartReasonContent) {
+    return EditorDOMPointInText();
+  }
+
+  nsIContent* editableBlockParentOrTopmotEditableInlineContent =
+      GetEditableBlockParentOrTopmotEditableInlineContent(
+          mScanStartPoint.ContainerAsContent());
+  if (NS_WARN_IF(!editableBlockParentOrTopmotEditableInlineContent)) {
+    
+    editableBlockParentOrTopmotEditableInlineContent =
+        mScanStartPoint.ContainerAsContent();
+  }
+
+  for (nsIContent* previousContent =
+           HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+               *point.ContainerAsContent(),
+               *editableBlockParentOrTopmotEditableInlineContent, mEditingHost);
+       previousContent;
+       previousContent =
+           HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+               *previousContent,
+               *editableBlockParentOrTopmotEditableInlineContent,
+               mEditingHost)) {
+    if (!previousContent->IsText() || !previousContent->IsEditable()) {
+      if (previousContent == mStartReasonContent) {
+        break;  
+      }
+      continue;
+    }
+    return EditorDOMPointInText(
+        previousContent->AsText(),
+        previousContent->AsText()->TextLength()
+            ? previousContent->AsText()->TextLength() - 1
+            : 0);
+  }
+  return EditorDOMPointInText();
 }
 
 nsresult WSRunObject::InsertNBSPAndRemoveFollowingASCIIWhitespaces(
@@ -1432,7 +1491,7 @@ WSRunObject::GetASCIIWhitespacesBounds(
   EditorDOMPointInText start, end;
 
   if (aDir & eAfter) {
-    EditorDOMPointInText atNextChar = GetNextCharPoint(aPoint);
+    EditorDOMPointInText atNextChar = GetInclusiveNextEditableCharPoint(aPoint);
     if (atNextChar.IsSet()) {
       
       start = end = atNextChar;
@@ -1444,7 +1503,7 @@ WSRunObject::GetASCIIWhitespacesBounds(
       
       for (; atNextChar.IsSet() && !atNextChar.IsEndOfContainer() &&
              atNextChar.IsCharASCIISpace();
-           atNextChar = GetNextCharPointFromPointInText(atNextChar)) {
+           atNextChar = GetInclusiveNextEditableCharPoint(atNextChar)) {
         
         end = atNextChar = atNextChar.NextPoint();
       }
@@ -1452,7 +1511,7 @@ WSRunObject::GetASCIIWhitespacesBounds(
   }
 
   if (aDir & eBefore) {
-    EditorDOMPointInText atPreviousChar = GetPreviousCharPoint(aPoint);
+    EditorDOMPointInText atPreviousChar = GetPreviousEditableCharPoint(aPoint);
     if (atPreviousChar.IsSet()) {
       
       start = atPreviousChar.NextPoint();
@@ -1467,8 +1526,7 @@ WSRunObject::GetASCIIWhitespacesBounds(
       
       for (; atPreviousChar.IsSet() && !atPreviousChar.IsEndOfContainer() &&
              atPreviousChar.IsCharASCIISpace();
-           atPreviousChar =
-               GetPreviousCharPointFromPointInText(atPreviousChar)) {
+           atPreviousChar = GetPreviousEditableCharPoint(atPreviousChar)) {
         start = atPreviousChar;
       }
     }
@@ -1529,104 +1587,6 @@ char16_t WSRunScanner::GetCharAt(Text* aTextNode, int32_t aOffset) const {
   return aTextNode->TextFragment().CharAt(aOffset);
 }
 
-template <typename PT, typename CT>
-EditorDOMPointInText WSRunScanner::LookForNextCharPointWithinAllTextNodes(
-    const EditorDOMPointBase<PT, CT>& aPoint) const {
-  
-
-  MOZ_ASSERT(aPoint.IsSetAndValid());
-
-  
-  uint32_t numNodes = mNodeArray.Length();
-
-  if (!numNodes) {
-    
-    return EditorDOMPointInText();
-  }
-
-  
-  
-  uint32_t firstNum = 0, curNum = numNodes / 2, lastNum = numNodes;
-  while (curNum != lastNum) {
-    Text* curNode = mNodeArray[curNum];
-    int16_t cmp = *nsContentUtils::ComparePoints(aPoint.ToRawRangeBoundary(),
-                                                 RawRangeBoundary(curNode, 0u));
-    if (cmp < 0) {
-      lastNum = curNum;
-    } else {
-      firstNum = curNum + 1;
-    }
-    curNum = (lastNum - firstNum) / 2 + firstNum;
-    MOZ_ASSERT(firstNum <= curNum && curNum <= lastNum, "Bad binary search");
-  }
-
-  
-  
-  
-  if (curNum == mNodeArray.Length()) {
-    
-    
-    
-    return GetNextCharPointFromPointInText(
-        EditorDOMPointInText::AtEndOf(mNodeArray[curNum - 1]));
-  }
-
-  
-  return GetNextCharPointFromPointInText(
-      EditorDOMPointInText(mNodeArray[curNum], 0));
-}
-
-template <typename PT, typename CT>
-EditorDOMPointInText WSRunScanner::LookForPreviousCharPointWithinAllTextNodes(
-    const EditorDOMPointBase<PT, CT>& aPoint) const {
-  
-
-  MOZ_ASSERT(aPoint.IsSetAndValid());
-
-  
-  uint32_t numNodes = mNodeArray.Length();
-
-  if (!numNodes) {
-    
-    return EditorDOMPointInText();
-  }
-
-  uint32_t firstNum = 0, curNum = numNodes / 2, lastNum = numNodes;
-  int16_t cmp = 0;
-
-  
-  
-  while (curNum != lastNum) {
-    Text* curNode = mNodeArray[curNum];
-    cmp = *nsContentUtils::ComparePoints(aPoint.ToRawRangeBoundary(),
-                                         RawRangeBoundary(curNode, 0u));
-    if (cmp < 0) {
-      lastNum = curNum;
-    } else {
-      firstNum = curNum + 1;
-    }
-    curNum = (lastNum - firstNum) / 2 + firstNum;
-    MOZ_ASSERT(firstNum <= curNum && curNum <= lastNum, "Bad binary search");
-  }
-
-  
-  
-  
-  if (curNum == mNodeArray.Length()) {
-    
-    
-    
-    return GetPreviousCharPointFromPointInText(
-        EditorDOMPointInText::AtEndOf(mNodeArray[curNum - 1]));
-  }
-
-  
-  
-  
-  return GetPreviousCharPointFromPointInText(
-      EditorDOMPointInText(mNodeArray[curNum], 0));
-}
-
 nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
   if (NS_WARN_IF(!aRun)) {
     return NS_ERROR_INVALID_ARG;
@@ -1646,14 +1606,14 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
 
   
   EditorDOMPointInText atPreviousCharOfEndOfRun =
-      GetPreviousCharPoint(aRun->EndPoint());
+      GetPreviousEditableCharPoint(aRun->RawEndPoint());
   if (atPreviousCharOfEndOfRun.IsSet() &&
       !atPreviousCharOfEndOfRun.IsEndOfContainer() &&
       atPreviousCharOfEndOfRun.IsCharNBSP()) {
     
     
     EditorDOMPointInText atPreviousCharOfPreviousCharOfEndOfRun =
-        GetPreviousCharPointFromPointInText(atPreviousCharOfEndOfRun);
+        GetPreviousEditableCharPoint(atPreviousCharOfEndOfRun);
     if (atPreviousCharOfPreviousCharOfEndOfRun.IsSet()) {
       if (atPreviousCharOfPreviousCharOfEndOfRun.IsEndOfContainer() ||
           !atPreviousCharOfPreviousCharOfEndOfRun.IsCharASCIISpace()) {
@@ -1714,9 +1674,10 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
             return NS_ERROR_FAILURE;
           }
 
-          atPreviousCharOfEndOfRun = GetPreviousCharPoint(aRun->EndPoint());
+          atPreviousCharOfEndOfRun =
+              GetPreviousEditableCharPoint(aRun->RawEndPoint());
           atPreviousCharOfPreviousCharOfEndOfRun =
-              GetPreviousCharPointFromPointInText(atPreviousCharOfEndOfRun);
+              GetPreviousEditableCharPoint(atPreviousCharOfEndOfRun);
           rightCheck = true;
         }
       }
@@ -1824,11 +1785,11 @@ nsresult WSRunObject::ReplacePreviousNBSPIfUnnecessary(
   
   
   bool canConvert = false;
-  EditorDOMPointInText atPreviousChar = GetPreviousCharPoint(aPoint);
+  EditorDOMPointInText atPreviousChar = GetPreviousEditableCharPoint(aPoint);
   if (atPreviousChar.IsSet() && !atPreviousChar.IsEndOfContainer() &&
       atPreviousChar.IsCharNBSP()) {
     EditorDOMPointInText atPreviousCharOfPreviousChar =
-        GetPreviousCharPointFromPointInText(atPreviousChar);
+        GetPreviousEditableCharPoint(atPreviousChar);
     if (atPreviousCharOfPreviousChar.IsSet()) {
       if (atPreviousCharOfPreviousChar.IsEndOfContainer() ||
           !atPreviousCharOfPreviousChar.IsCharASCIISpace()) {
@@ -1890,14 +1851,14 @@ nsresult WSRunObject::CheckLeadingNBSP(WSFragment* aRun, nsINode* aNode,
   
   bool canConvert = false;
   EditorDOMPointInText atNextChar =
-      GetNextCharPoint(EditorRawDOMPoint(aNode, aOffset));
+      GetInclusiveNextEditableCharPoint(EditorRawDOMPoint(aNode, aOffset));
   if (!atNextChar.IsSet() || NS_WARN_IF(atNextChar.IsEndOfContainer())) {
     return NS_OK;
   }
 
   if (atNextChar.IsCharNBSP()) {
     EditorDOMPointInText atNextCharOfNextCharOfNBSP =
-        GetNextCharPointFromPointInText(atNextChar.NextPoint());
+        GetInclusiveNextEditableCharPoint(atNextChar.NextPoint());
     if (atNextCharOfNextCharOfNBSP.IsSet()) {
       if (atNextCharOfNextCharOfNBSP.IsEndOfContainer() ||
           !atNextCharOfNextCharOfNBSP.IsCharASCIISpace()) {
