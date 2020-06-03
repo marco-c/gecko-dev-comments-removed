@@ -24,7 +24,7 @@
 #define GCM_TAG_LEN_BYTES 16
 
 #define PRIO_TAG "PrioPacket"
-#define AAD_LEN (strlen(PRIO_TAG) + CURVE25519_KEY_LEN + GCM_IV_LEN_BYTES)
+#define AAD_LEN (sizeof(PRIO_TAG) - 1 + CURVE25519_KEY_LEN + GCM_IV_LEN_BYTES)
 
 
 

@@ -59,11 +59,14 @@
   } while (0);
 
 
-#define UP_CHECK(s)                                                            \
+
+#define UP_CHECKC(s)                                                           \
   do {                                                                         \
     int r = (s);                                                               \
-    if (r != MSGPACK_UNPACK_SUCCESS && r != MSGPACK_UNPACK_EXTRA_BYTES)        \
-      return SECFailure;                                                       \
+    if (r != MSGPACK_UNPACK_SUCCESS && r != MSGPACK_UNPACK_EXTRA_BYTES) {      \
+      rv = SECFailure;                                                         \
+      goto cleanup;                                                            \
+    }                                                                          \
   } while (0);
 
 
