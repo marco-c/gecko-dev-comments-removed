@@ -4,6 +4,8 @@
 
 
 
+use std::collections::HashMap;
+
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value as JsonValue};
@@ -26,6 +28,7 @@ mod timespan;
 mod timing_distribution;
 mod uuid;
 
+pub use crate::event_database::RecordedEvent;
 use crate::histogram::{Functional, Histogram, PrecomputedExponential, PrecomputedLinear};
 use crate::util::get_iso_time_string;
 use crate::CommonMetricData;
@@ -56,6 +59,18 @@ pub use self::timespan::TimespanMetric;
 pub use self::timing_distribution::TimerId;
 pub use self::timing_distribution::TimingDistributionMetric;
 pub use self::uuid::UuidMetric;
+
+
+#[derive(Debug, Serialize)]
+pub struct DistributionData {
+    
+    
+    
+    pub values: HashMap<u64, u64>,
+
+    
+    pub sum: u64,
+}
 
 
 

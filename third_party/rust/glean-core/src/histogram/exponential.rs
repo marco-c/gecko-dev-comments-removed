@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 
 use super::{Bucketing, Histogram};
 
+use crate::util::floating_point_context::FloatingPointContext;
+
 
 
 
@@ -19,6 +21,9 @@ use super::{Bucketing, Histogram};
 
 
 fn exponential_range(min: u64, max: u64, bucket_count: usize) -> Vec<u64> {
+    
+    let _fpc = FloatingPointContext::new();
+
     let log_max = (max as f64).ln();
 
     let mut ranges = Vec::with_capacity(bucket_count);

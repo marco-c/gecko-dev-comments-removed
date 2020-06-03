@@ -84,18 +84,6 @@ pub trait Bucketing {
     fn ranges(&self) -> &[u64];
 }
 
-
-
-impl Bucketing for Box<dyn Bucketing> {
-    fn sample_to_bucket_minimum(&self, sample: u64) -> u64 {
-        (**self).sample_to_bucket_minimum(sample)
-    }
-
-    fn ranges(&self) -> &[u64] {
-        (**self).ranges()
-    }
-}
-
 impl<B: Bucketing> Histogram<B> {
     
     pub fn bucket_count(&self) -> usize {
@@ -147,17 +135,5 @@ impl<B: Bucketing> Histogram<B> {
             }
         }
         res
-    }
-}
-
-impl<B: Bucketing + 'static> Histogram<B> {
-    
-    pub fn boxed(self) -> Histogram<Box<dyn Bucketing>> {
-        Histogram {
-            values: self.values,
-            count: self.count,
-            sum: self.sum,
-            bucketing: Box::new(self.bucketing),
-        }
     }
 }

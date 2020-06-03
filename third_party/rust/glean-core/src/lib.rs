@@ -16,7 +16,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use chrono::{DateTime, FixedOffset};
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use once_cell::sync::OnceCell;
 use std::sync::Mutex;
 use uuid::Uuid;
@@ -36,8 +36,8 @@ mod internal_pings;
 pub mod metrics;
 pub mod ping;
 pub mod storage;
-#[cfg(feature = "upload")]
-mod upload;
+mod system;
+pub mod upload;
 mod util;
 
 pub use crate::common_metric_data::{CommonMetricData, Lifetime};
@@ -50,17 +50,14 @@ use crate::internal_pings::InternalPings;
 use crate::metrics::{Metric, MetricType, PingType};
 use crate::ping::PingMaker;
 use crate::storage::StorageManager;
-#[cfg(feature = "upload")]
-use crate::upload::{PingUploadManager, PingUploadTask};
+use crate::upload::{PingUploadManager, PingUploadTask, UploadResult};
 use crate::util::{local_now_with_offset, sanitize_application_id};
 
+const GLEAN_VERSION: &str = env!("CARGO_PKG_VERSION");
 const GLEAN_SCHEMA_VERSION: u32 = 1;
 const DEFAULT_MAX_EVENTS: usize = 500;
-lazy_static! {
-    static ref KNOWN_CLIENT_ID: Uuid =
-        Uuid::parse_str("c0ffeec0-ffee-c0ff-eec0-ffeec0ffeec0").unwrap();
-}
-
+static KNOWN_CLIENT_ID: Lazy<Uuid> =
+    Lazy::new(|| Uuid::parse_str("c0ffeec0-ffee-c0ff-eec0-ffeec0ffeec0").unwrap());
 
 pub(crate) const INTERNAL_STORAGE: &str = "glean_internal_info";
 
@@ -78,17 +75,31 @@ pub(crate) const DELETION_REQUEST_PINGS_DIRECTORY: &str = "deletion_request";
 static GLEAN: OnceCell<Mutex<Glean>> = OnceCell::new();
 
 
-
-
-pub fn global_glean() -> &'static Mutex<Glean> {
-    GLEAN.get().unwrap()
+pub fn global_glean() -> Option<&'static Mutex<Glean>> {
+    GLEAN.get()
 }
 
 
 pub fn setup_glean(glean: Glean) -> Result<()> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if GLEAN.get().is_none() {
-        GLEAN.set(Mutex::new(glean)).unwrap();
+        if GLEAN.set(Mutex::new(glean)).is_err() {
+            log::error!(
+                "Global Glean object is initialized already. This probably happened concurrently."
+            )
+        }
     } else {
+        
+        
+        
         let mut lock = GLEAN.get().unwrap().lock().unwrap();
         *lock = glean;
     }
@@ -161,7 +172,6 @@ pub struct Glean {
     start_time: DateTime<FixedOffset>,
     max_events: usize,
     is_first_run: bool,
-    #[cfg(feature = "upload")]
     upload_manager: PingUploadManager,
 }
 
@@ -171,7 +181,7 @@ impl Glean {
     
     
     pub fn new(cfg: Configuration) -> Result<Self> {
-        log::info!("Creating new Glean");
+        log::info!("Creating new Glean v{}", GLEAN_VERSION);
 
         let application_id = sanitize_application_id(&cfg.application_id);
 
@@ -186,7 +196,6 @@ impl Glean {
             event_data_store,
             core_metrics: CoreMetrics::new(),
             internal_pings: InternalPings::new(),
-            #[cfg(feature = "upload")]
             upload_manager: PingUploadManager::new(&cfg.data_path),
             data_path: PathBuf::from(cfg.data_path),
             application_id,
@@ -195,7 +204,38 @@ impl Glean {
             max_events: cfg.max_events.unwrap_or(DEFAULT_MAX_EVENTS),
             is_first_run: false,
         };
-        glean.on_change_upload_enabled(cfg.upload_enabled);
+
+        
+        
+        if cfg.upload_enabled {
+            
+            
+            glean.on_upload_enabled();
+        } else {
+            
+            
+            
+            
+            
+            
+            
+            match glean
+                .core_metrics
+                .client_id
+                .get_value(&glean, "glean_client_info")
+            {
+                None => glean.clear_metrics(),
+                Some(uuid) => {
+                    if uuid != *KNOWN_CLIENT_ID {
+                        
+                        
+                        glean.upload_enabled = true;
+                        glean.on_upload_disabled();
+                    }
+                }
+            }
+        }
+
         Ok(glean)
     }
 
@@ -249,6 +289,8 @@ impl Glean {
             
             self.is_first_run = true;
         }
+
+        self.set_application_lifetime_core_metrics();
     }
 
     
@@ -286,15 +328,11 @@ impl Glean {
         log::info!("Upload enabled: {:?}", flag);
 
         if self.upload_enabled != flag {
-            
-            if !flag {
-                if let Err(err) = self.internal_pings.deletion_request.submit(self, None) {
-                    log::error!("Failed to submit deletion-request ping on optout: {}", err);
-                }
+            if flag {
+                self.on_upload_enabled();
+            } else {
+                self.on_upload_disabled();
             }
-
-            self.upload_enabled = flag;
-            self.on_change_upload_enabled(flag);
             true
         } else {
             false
@@ -314,23 +352,32 @@ impl Glean {
     
     
     
+    fn on_upload_enabled(&mut self) {
+        self.upload_enabled = true;
+        self.initialize_core_metrics();
+    }
+
     
     
     
     
-    fn on_change_upload_enabled(&mut self, flag: bool) {
-        if flag {
-            self.initialize_core_metrics();
-        } else {
-            self.clear_metrics();
+    
+    
+    
+    fn on_upload_disabled(&mut self) {
+        
+        
+        if let Err(err) = self.internal_pings.deletion_request.submit(self, None) {
+            log::error!("Failed to submit deletion-request ping on optout: {}", err);
         }
+        self.clear_metrics();
+        self.upload_enabled = false;
     }
 
     
     fn clear_metrics(&mut self) {
         
         
-        #[cfg(feature = "upload")]
         let _lock = self.upload_manager.clear_ping_queue();
 
         
@@ -421,7 +468,8 @@ impl Glean {
     
     
     
-    #[cfg(feature = "upload")]
+    
+    
     pub fn get_upload_task(&self) -> PingUploadTask {
         self.upload_manager.get_upload_task()
     }
@@ -432,8 +480,7 @@ impl Glean {
     
     
     
-    #[cfg(feature = "upload")]
-    pub fn process_ping_upload_response(&self, uuid: &str, status: u16) {
+    pub fn process_ping_upload_response(&self, uuid: &str, status: UploadResult) {
         self.upload_manager
             .process_ping_upload_response(uuid, status);
     }
@@ -481,7 +528,7 @@ impl Glean {
     
     pub fn submit_ping(&self, ping: &PingType, reason: Option<&str>) -> Result<bool> {
         if !self.is_upload_enabled() {
-            log::error!("Glean must be enabled before sending pings.");
+            log::error!("Glean disabled: not submitting any pings.");
             return Ok(false);
         }
 
@@ -508,7 +555,6 @@ impl Glean {
                     return Err(e.into());
                 }
 
-                #[cfg(feature = "upload")]
                 self.upload_manager
                     .enqueue_ping(&doc_id, &url_path, content);
 
@@ -612,6 +658,11 @@ impl Glean {
     }
 
     
+    fn set_application_lifetime_core_metrics(&self) {
+        self.core_metrics.os.set(self, system::OS);
+    }
+
+    
     
     
     pub fn clear_application_lifetime_metrics(&self) {
@@ -619,6 +670,9 @@ impl Glean {
         if let Some(data) = self.data_store.as_ref() {
             data.clear_lifetime(Lifetime::Application);
         }
+
+        
+        self.set_application_lifetime_core_metrics();
     }
 
     

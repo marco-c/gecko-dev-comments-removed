@@ -30,6 +30,7 @@ impl PingType {
     
     
     
+    
     pub fn new<A: Into<String>>(
         name: A,
         include_client_id: bool,

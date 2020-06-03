@@ -49,11 +49,11 @@ fn serializer_should_correctly_serialize_timing_distribution() {
         let id = metric.set_start(0);
         metric.set_stop_and_accumulate(&glean, id, duration);
 
-        let val = metric
+        let snapshot = metric
             .test_get_value(&glean, "store1")
             .expect("Value should be stored");
 
-        assert_eq!(val.sum(), duration);
+        assert_eq!(snapshot.sum, duration);
     }
 
     
@@ -167,22 +167,21 @@ fn the_accumulate_samples_api_correctly_stores_timing_values() {
     
     metric.accumulate_samples_signed(&glean, [1, 2, 3].to_vec());
 
-    let val = metric
+    let snapshot = metric
         .test_get_value(&glean, "store1")
         .expect("Value should be stored");
 
     let seconds_to_nanos = 1000 * 1000 * 1000;
 
     
-    assert_eq!(val.sum(), 6 * seconds_to_nanos);
-    assert_eq!(val.count(), 3);
+    assert_eq!(snapshot.sum, 6 * seconds_to_nanos);
 
     
     
     
-    assert_eq!(1, val.values()[&984_625_593]);
-    assert_eq!(1, val.values()[&1_969_251_187]);
-    assert_eq!(1, val.values()[&2_784_941_737]);
+    assert_eq!(1, snapshot.values[&984_625_593]);
+    assert_eq!(1, snapshot.values[&1_969_251_187]);
+    assert_eq!(1, snapshot.values[&2_784_941_737]);
 
     
     assert!(test_get_num_recorded_errors(
@@ -213,18 +212,17 @@ fn the_accumulate_samples_api_correctly_handles_negative_values() {
     
     metric.accumulate_samples_signed(&glean, [-1, 1, 2, 3].to_vec());
 
-    let val = metric
+    let snapshot = metric
         .test_get_value(&glean, "store1")
         .expect("Value should be stored");
 
     
-    assert_eq!(val.sum(), 6);
-    assert_eq!(val.count(), 3);
+    assert_eq!(snapshot.sum, 6);
 
     
-    assert_eq!(1, val.values()[&1]);
-    assert_eq!(1, val.values()[&2]);
-    assert_eq!(1, val.values()[&3]);
+    assert_eq!(1, snapshot.values[&1]);
+    assert_eq!(1, snapshot.values[&2]);
+    assert_eq!(1, snapshot.values[&3]);
 
     
     assert_eq!(
@@ -260,18 +258,17 @@ fn the_accumulate_samples_api_correctly_handles_overflowing_values() {
     
     metric.accumulate_samples_signed(&glean, [overflowing_val, 1, 2, 3].to_vec());
 
-    let val = metric
+    let snapshot = metric
         .test_get_value(&glean, "store1")
         .expect("Value should be stored");
 
     
-    assert_eq!(val.sum(), MAX_SAMPLE_TIME + 6);
-    assert_eq!(val.count(), 4);
+    assert_eq!(snapshot.sum, MAX_SAMPLE_TIME + 6);
 
     
-    assert_eq!(1, val.values()[&1]);
-    assert_eq!(1, val.values()[&2]);
-    assert_eq!(1, val.values()[&3]);
+    assert_eq!(1, snapshot.values[&1]);
+    assert_eq!(1, snapshot.values[&2]);
+    assert_eq!(1, snapshot.values[&3]);
 
     
     assert_eq!(
@@ -312,7 +309,7 @@ fn large_nanoseconds_values() {
         .expect("Value should be stored");
 
     
-    assert_eq!(val.sum() as u64, time);
+    assert_eq!(val.sum, time);
 }
 
 #[test]

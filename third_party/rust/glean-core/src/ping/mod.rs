@@ -135,9 +135,8 @@ impl PingMaker {
 
     fn get_client_info(&self, glean: &Glean, include_client_id: bool) -> JsonValue {
         
-        let version = env!("CARGO_PKG_VERSION");
         let mut map = json!({
-            "telemetry_sdk_build": version,
+            "telemetry_sdk_build": crate::GLEAN_VERSION,
         });
 
         

@@ -24,17 +24,17 @@ pub struct StorageManager;
 
 fn snapshot_labeled_metrics(
     snapshot: &mut HashMap<String, HashMap<String, JsonValue>>,
-    metric_name: &str,
+    metric_id: &str,
     metric: &Metric,
 ) {
     let ping_section = format!("labeled_{}", metric.ping_section());
     let map = snapshot.entry(ping_section).or_insert_with(HashMap::new);
 
-    let mut s = metric_name.splitn(2, '/');
-    let metric_name = s.next().unwrap(); 
+    let mut s = metric_id.splitn(2, '/');
+    let metric_id = s.next().unwrap(); 
     let label = s.next().unwrap(); 
 
-    let obj = map.entry(metric_name.into()).or_insert_with(|| json!({}));
+    let obj = map.entry(metric_id.into()).or_insert_with(|| json!({}));
     let obj = obj.as_object_mut().unwrap(); 
     obj.insert(label.into(), metric.as_json());
 }
@@ -82,15 +82,15 @@ impl StorageManager {
     ) -> Option<JsonValue> {
         let mut snapshot: HashMap<String, HashMap<String, JsonValue>> = HashMap::new();
 
-        let mut snapshotter = |metric_name: &[u8], metric: &Metric| {
-            let metric_name = String::from_utf8_lossy(metric_name).into_owned();
-            if metric_name.contains('/') {
-                snapshot_labeled_metrics(&mut snapshot, &metric_name, &metric);
+        let mut snapshotter = |metric_id: &[u8], metric: &Metric| {
+            let metric_id = String::from_utf8_lossy(metric_id).into_owned();
+            if metric_id.contains('/') {
+                snapshot_labeled_metrics(&mut snapshot, &metric_id, &metric);
             } else {
                 let map = snapshot
                     .entry(metric.ping_section().into())
                     .or_insert_with(HashMap::new);
-                map.insert(metric_name, metric.as_json());
+                map.insert(metric_id, metric.as_json());
             }
         };
 
@@ -132,9 +132,9 @@ impl StorageManager {
     ) -> Option<Metric> {
         let mut snapshot: Option<Metric> = None;
 
-        let mut snapshotter = |metric_name: &[u8], metric: &Metric| {
-            let metric_name = String::from_utf8_lossy(metric_name).into_owned();
-            if metric_name == metric_id {
+        let mut snapshotter = |id: &[u8], metric: &Metric| {
+            let id = String::from_utf8_lossy(id).into_owned();
+            if id == metric_id {
                 snapshot = Some(metric.clone())
             }
         };
@@ -177,10 +177,10 @@ impl StorageManager {
     ) -> Option<JsonValue> {
         let mut snapshot: HashMap<String, JsonValue> = HashMap::new();
 
-        let mut snapshotter = |metric_name: &[u8], metric: &Metric| {
-            let metric_name = String::from_utf8_lossy(metric_name).into_owned();
-            if metric_name.ends_with("#experiment") {
-                let name = metric_name.splitn(2, '#').next().unwrap(); 
+        let mut snapshotter = |metric_id: &[u8], metric: &Metric| {
+            let metric_id = String::from_utf8_lossy(metric_id).into_owned();
+            if metric_id.ends_with("#experiment") {
+                let name = metric_id.splitn(2, '#').next().unwrap(); 
                 snapshot.insert(name.to_string(), metric.as_json());
             }
         };

@@ -13,7 +13,6 @@ use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 
 use serde::{Deserialize, Serialize};
-use serde_json;
 use serde_json::{json, Value as JsonValue};
 
 use crate::CommonMetricData;
@@ -22,18 +21,33 @@ use crate::Result;
 
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
-pub struct RecordedEventData {
+pub struct RecordedEvent {
+    
+    
+    
     pub timestamp: u64,
+
+    
+    
+    
     pub category: String,
+
+    
+    
+    
     pub name: String,
+
+    
+    
+    
     #[serde(skip_serializing_if = "Option::is_none")]
     pub extra: Option<HashMap<String, String>>,
 }
 
-impl RecordedEventData {
+impl RecordedEvent {
     
-    pub fn serialize_relative(&self, timestamp_offset: u64) -> JsonValue {
-        json!(&RecordedEventData {
+    fn serialize_relative(&self, timestamp_offset: u64) -> JsonValue {
+        json!(&RecordedEvent {
             timestamp: self.timestamp - timestamp_offset,
             category: self.category.clone(),
             name: self.name.clone(),
@@ -59,7 +73,7 @@ pub struct EventDatabase {
     
     pub path: PathBuf,
     
-    event_stores: RwLock<HashMap<String, Vec<RecordedEventData>>>,
+    event_stores: RwLock<HashMap<String, Vec<RecordedEvent>>>,
     
     file_lock: RwLock<()>,
 }
@@ -124,7 +138,7 @@ impl EventDatabase {
                     store_name,
                     file.lines()
                         .filter_map(|line| line.ok())
-                        .filter_map(|line| serde_json::from_str::<RecordedEventData>(&line).ok())
+                        .filter_map(|line| serde_json::from_str::<RecordedEvent>(&line).ok())
                         .collect(),
                 );
             }
@@ -140,7 +154,7 @@ impl EventDatabase {
 
         let mut ping_sent = false;
         for store_name in store_names {
-            if let Err(err) = glean.submit_ping_by_name(&store_name, None) {
+            if let Err(err) = glean.submit_ping_by_name(&store_name, Some("startup")) {
                 log::error!(
                     "Error flushing existing events to the '{}' ping: {}",
                     store_name,
@@ -174,7 +188,7 @@ impl EventDatabase {
     ) {
         
         
-        let event = RecordedEventData {
+        let event = RecordedEvent {
             timestamp,
             category: meta.category.to_string(),
             name: meta.name.to_string(),
@@ -199,7 +213,7 @@ impl EventDatabase {
         
         
         for store_name in stores_to_submit {
-            if let Err(err) = glean.submit_ping_by_name(store_name, None) {
+            if let Err(err) = glean.submit_ping_by_name(store_name, Some("max_capacity")) {
                 log::error!(
                     "Got more than {} events, but could not send {} ping: {}",
                     glean.get_max_events(),
@@ -320,8 +334,8 @@ impl EventDatabase {
         &'a self,
         meta: &'a CommonMetricData,
         store_name: &str,
-    ) -> Option<Vec<RecordedEventData>> {
-        let value: Vec<RecordedEventData> = self
+    ) -> Option<Vec<RecordedEvent>> {
+        let value: Vec<RecordedEvent> = self
             .event_stores
             .read()
             .unwrap() 
@@ -367,7 +381,7 @@ mod test {
 
     #[test]
     fn stable_serialization() {
-        let event_empty = RecordedEventData {
+        let event_empty = RecordedEvent {
             timestamp: 2,
             category: "cat".to_string(),
             name: "name".to_string(),
@@ -376,7 +390,7 @@ mod test {
 
         let mut data = HashMap::new();
         data.insert("a key".to_string(), "a value".to_string());
-        let event_data = RecordedEventData {
+        let event_data = RecordedEvent {
             timestamp: 2,
             category: "cat".to_string(),
             name: "name".to_string(),
@@ -414,7 +428,7 @@ mod test {
 }
         "#;
 
-        let event_empty = RecordedEventData {
+        let event_empty = RecordedEvent {
             timestamp: 2,
             category: "cat".to_string(),
             name: "name".to_string(),
@@ -423,7 +437,7 @@ mod test {
 
         let mut data = HashMap::new();
         data.insert("a key".to_string(), "a value".to_string());
-        let event_data = RecordedEventData {
+        let event_data = RecordedEvent {
             timestamp: 2,
             category: "cat".to_string(),
             name: "name".to_string(),
