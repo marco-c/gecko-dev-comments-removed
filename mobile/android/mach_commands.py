@@ -254,6 +254,18 @@ REMOVED/DEPRECATED: Use 'mach lint --linter android-checkstyle'.""")
         import mozfile
 
         
+        
+        keep_files = [".git", ".gitignore", "_site", "CODE_OF_CONDUCT.md",
+                      "Gemfile.lock", "README.md"]
+        for filename in os.listdir(repo_path):
+            if filename not in keep_files:
+                filepath = mozpath.join(repo_path, filename)
+                mozfile.remove(filepath)
+
+        src_path = mozpath.join(self.topsrcdir, 'mobile', 'android', 'docs', 'geckoview')
+        os.system("rsync -aruz {}/ {}/".format(src_path, repo_path))
+
+        
         src_tar = mozpath.join(self.topobjdir, 'gradle', 'build', 'mobile', 'android',
                                'geckoview', 'libs', 'geckoview-javadoc.jar')
         dst_path = mozpath.join(repo_path, javadoc_path.format(**fmt))
