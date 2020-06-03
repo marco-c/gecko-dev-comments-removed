@@ -127,6 +127,14 @@ observe(null, "nsPref:changed", PREF_SHOW_REMOTE_TABS);
 
 var PlacesRemoteTabsAutocompleteProvider = {
   
+
+
+
+
+
+
+
+
   async getMatches(searchString, maxMatches) {
     
     if (
@@ -145,7 +153,11 @@ var PlacesRemoteTabsAutocompleteProvider = {
     let matches = [];
     let tabsData = await ensureItems();
     for (let { tab, client } of tabsData) {
-      if (re.test(tab.url) || (tab.title && re.test(tab.title))) {
+      if (
+        !searchString ||
+        re.test(tab.url) ||
+        (tab.title && re.test(tab.title))
+      ) {
         matches.push({
           url: tab.url,
           title: tab.title,
