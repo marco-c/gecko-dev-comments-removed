@@ -234,13 +234,8 @@ class Localization {
 
 
 
-  activate(resourceIds, isSync, eager, generateBundles = defaultGenerateBundles, generateBundlesSync = defaultGenerateBundlesSync) {
-    if (this.bundles) {
-      throw new Error("Attempt to initialize an already initialized instance.");
-    }
-    this.generateBundles = generateBundles;
-    this.generateBundlesSync = generateBundlesSync;
-    this.regenerateBundles(resourceIds, isSync, eager);
+  activate(resourceIds, isSync, eager, generateBundles, generateBundlesSync) {
+    this.regenerateBundles(resourceIds, isSync, eager, generateBundles, generateBundlesSync);
   }
 
   cached(iterable, isSync) {
@@ -263,7 +258,9 @@ class Localization {
 
 
 
-  async formatWithFallback(keys, method) {
+
+
+  async formatWithFallback(resourceIds, keys, method) {
     if (!this.bundles) {
       throw new Error("Attempt to format on an uninitialized instance.");
     }
@@ -284,7 +281,7 @@ class Localization {
     }
 
     if (!hasAtLeastOneBundle) {
-      maybeReportErrorToGecko(`[fluent] Request for keys failed because no resource bundles got generated.\n keys: ${JSON.stringify(keys)}.\n resourceIds: ${JSON.stringify(this.resourceIds)}.`);
+      maybeReportErrorToGecko(`[fluent] Request for keys failed because no resource bundles got generated.\n keys: ${JSON.stringify(keys)}.\n resourceIds: ${JSON.stringify(resourceIds)}.`);
     }
 
     return translations;
@@ -302,7 +299,9 @@ class Localization {
 
 
 
-  formatWithFallbackSync(keys, method) {
+
+
+  formatWithFallbackSync(resourceIds, keys, method) {
     if (!this.bundles) {
       throw new Error("Attempt to format on an uninitialized instance.");
     }
@@ -324,7 +323,7 @@ class Localization {
     }
 
     if (!hasAtLeastOneBundle) {
-      maybeReportErrorToGecko(`[fluent] Request for keys failed because no resource bundles got generated.\n keys: ${JSON.stringify(keys)}.\n resourceIds: ${JSON.stringify(this.resourceIds)}.`);
+      maybeReportErrorToGecko(`[fluent] Request for keys failed because no resource bundles got generated.\n keys: ${JSON.stringify(keys)}.\n resourceIds: ${JSON.stringify(resourceIds)}.`);
     }
 
     return translations;
@@ -357,8 +356,10 @@ class Localization {
 
 
 
-  formatMessages(keys) {
-    return this.formatWithFallback(keys, messageFromBundle);
+
+
+  formatMessages(resourceIds, keys) {
+    return this.formatWithFallback(resourceIds, keys, messageFromBundle);
   }
 
   
@@ -370,44 +371,10 @@ class Localization {
 
 
 
-  formatMessagesSync(keys) {
-    return this.formatWithFallbackSync(keys, messageFromBundle);
-  }
-
-  
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  formatValues(keys) {
-    return this.formatWithFallback(keys, valueFromBundle);
-  }
-
-  
-
-
-
-
-
-
-
-
-  formatValuesSync(keys) {
-    return this.formatWithFallbackSync(keys, valueFromBundle);
+  formatMessagesSync(resourceIds, keys) {
+    return this.formatWithFallbackSync(resourceIds, keys, messageFromBundle);
   }
 
   
@@ -431,9 +398,51 @@ class Localization {
 
 
 
+  formatValues(resourceIds, keys) {
+    return this.formatWithFallback(resourceIds, keys, valueFromBundle);
+  }
 
-  async formatValue(id, args) {
-    const [val] = await this.formatValues([{id, args}]);
+  
+
+
+
+
+
+
+
+
+
+
+  formatValuesSync(resourceIds, keys) {
+    return this.formatWithFallbackSync(resourceIds, keys, valueFromBundle);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async formatValue(resourceIds, id, args) {
+    const [val] = await this.formatValues(resourceIds, [{id, args}]);
     return val;
   }
 
@@ -446,8 +455,11 @@ class Localization {
 
 
 
-  formatValueSync(id, args) {
-    const [val] = this.formatValuesSync([{id, args}]);
+
+
+
+  formatValueSync(resourceIds, id, args) {
+    const [val] = this.formatValuesSync(resourceIds, [{id, args}]);
     return val;
   }
 
@@ -455,9 +467,13 @@ class Localization {
 
 
 
-  onChange(resourceIds, isSync) {
+
+
+
+
+  onChange(resourceIds, isSync, generateBundles, generateBundlesSync) {
     if (this.bundles) {
-      this.regenerateBundles(resourceIds, isSync, false);
+      this.regenerateBundles(resourceIds, isSync, false, generateBundles, generateBundlesSync);
     }
   }
 
@@ -469,11 +485,14 @@ class Localization {
 
 
 
-  regenerateBundles(resourceIds, isSync, eager = false) {
+
+
+
+
+  regenerateBundles(resourceIds, isSync, eager = false, generateBundles = defaultGenerateBundles, generateBundlesSync = defaultGenerateBundlesSync) {
     
-    this.resourceIds = resourceIds;
-    let generateMessages = isSync ? this.generateBundlesSync : this.generateBundles;
-    this.bundles = this.cached(generateMessages(this.resourceIds), isSync);
+    let generateMessages = isSync ? generateBundlesSync : generateBundles;
+    this.bundles = this.cached(generateMessages(resourceIds), isSync);
     if (eager) {
       
       
