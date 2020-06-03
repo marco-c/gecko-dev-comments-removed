@@ -224,7 +224,7 @@ impl<'a> Context<'a> {
         
         
         
-        if self.style().get_font().gecko.mAllowZoomAndMinSize {
+        if self.style().get_font().gecko.mAllowZoom {
             self.device().zoom_text(Au::from(size)).into()
         } else {
             size
