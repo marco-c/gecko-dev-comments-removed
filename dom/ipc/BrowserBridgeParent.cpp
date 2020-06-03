@@ -29,8 +29,7 @@ BrowserBridgeParent::~BrowserBridgeParent() { Destroy(); }
 
 nsresult BrowserBridgeParent::InitWithProcess(
     BrowserParent* aParentBrowser, ContentParent* aContentParent,
-    const nsString& aPresentationURL, const WindowGlobalInit& aWindowInit,
-    uint32_t aChromeFlags, TabId aTabId) {
+    const WindowGlobalInit& aWindowInit, uint32_t aChromeFlags, TabId aTabId) {
   MOZ_ASSERT(!CanSend(),
              "This should be called before the object is connected to IPC");
 
@@ -57,11 +56,6 @@ nsresult BrowserBridgeParent::InitWithProcess(
     ancestor = ancestor->GetParent();
   }
 
-  MutableTabContext tabContext;
-  tabContext.SetTabContext(aParentBrowser->ChromeOuterWindowID(),
-                           aParentBrowser->ShowFocusRings(), aPresentationURL,
-                           aParentBrowser->GetMaxTouchPoints());
-
   
   
   browsingContext->Group()->EnsureSubscribed(aContentParent);
@@ -69,7 +63,7 @@ nsresult BrowserBridgeParent::InitWithProcess(
 
   
   auto browserParent = MakeRefPtr<BrowserParent>(
-      aContentParent, aTabId, tabContext, browsingContext, aChromeFlags);
+      aContentParent, aTabId, *aParentBrowser, browsingContext, aChromeFlags);
   browserParent->SetBrowserBridgeParent(this);
 
   
@@ -99,7 +93,7 @@ nsresult BrowserBridgeParent::InitWithProcess(
   
   bool ok = aContentParent->SendConstructBrowser(
       std::move(childEp), std::move(windowChildEp), aTabId,
-      tabContext.AsIPCTabContext(), aWindowInit, aChromeFlags,
+      browserParent->AsIPCTabContext(), aWindowInit, aChromeFlags,
       aContentParent->ChildID(), aContentParent->IsForBrowser(),
        false);
   if (NS_WARN_IF(!ok)) {

@@ -955,13 +955,6 @@ nsresult ContentChild::ProvideWindowCommon(
 
   
   
-  MutableTabContext newTabContext;
-  newTabContext.SetTabContext(
-      aTabOpener->ChromeOuterWindowID(), aTabOpener->ShowFocusRings(),
-      aTabOpener->PresentationURL(), aTabOpener->MaxTouchPoints());
-
-  
-  
   
   
   
@@ -979,7 +972,7 @@ nsresult ContentChild::ProvideWindowCommon(
     return NS_ERROR_ABORT;
   }
 
-  auto newChild = MakeRefPtr<BrowserChild>(this, tabId, newTabContext,
+  auto newChild = MakeRefPtr<BrowserChild>(this, tabId, *aTabOpener,
                                            browsingContext, aChromeFlags,
                                             true);
 
