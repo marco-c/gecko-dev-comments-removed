@@ -6,6 +6,9 @@
 var EXPORTED_SYMBOLS = ["OSKeyStoreTestUtils"];
 
 ChromeUtils.import("resource://gre/modules/OSKeyStore.jsm", this);
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 ChromeUtils.defineModuleGetter(
   this,
   "UpdateUtils",
@@ -15,6 +18,10 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { TestUtils } = ChromeUtils.import(
   "resource://testing-common/TestUtils.jsm"
 );
+
+
+
+const isCanaryBuildForOSKeyStore = AppConstants.DEBUG;
 
 var OSKeyStoreTestUtils = {
   TEST_ONLY_REAUTH: "toolkit.osKeyStore.unofficialBuildOnlyLogin",
@@ -41,7 +48,8 @@ var OSKeyStoreTestUtils = {
 
   canTestOSKeyStoreLogin() {
     return (
-      UpdateUtils.getUpdateChannel(false) == "default" && OSKeyStore.canReauth()
+      UpdateUtils.getUpdateChannel(false) == "default" &&
+      !isCanaryBuildForOSKeyStore
     );
   },
 
