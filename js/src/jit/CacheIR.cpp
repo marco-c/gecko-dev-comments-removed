@@ -5195,6 +5195,34 @@ AttachDecision CallIRGenerator::tryAttachIsCallable(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachIsConstructor(HandleFunction callee) {
+  
+  if (argc_ != 1 || !args_[0].isObject()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ObjOperandId objId = writer.guardToObject(argId);
+
+  
+  writer.isConstructorResult(objId);
+
+  
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("IsConstructor");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachStringChar(HandleFunction callee,
                                                     StringChar kind) {
   
@@ -5635,6 +5663,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachIsObject(callee);
     case InlinableNative::IntrinsicIsCallable:
       return tryAttachIsCallable(callee);
+    case InlinableNative::IntrinsicIsConstructor:
+      return tryAttachIsConstructor(callee);
 
     
     case InlinableNative::StringCharCodeAt:
