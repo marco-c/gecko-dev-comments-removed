@@ -316,7 +316,8 @@ class FunctionBox : public SharedContext {
   VarScope::Data* extraVarScopeBindings_ = nullptr;
 
   
-  JSAtom* explicitName_ = nullptr;
+  
+  JSAtom* atom_ = nullptr;
 
   
   
@@ -518,7 +519,31 @@ class FunctionBox : public SharedContext {
 
   FunctionFlags::FunctionKind kind() { return flags_.kind(); }
 
-  JSAtom* explicitName() const { return explicitName_; }
+  bool hasInferredName() const { return flags_.hasInferredName(); }
+  bool hasGuessedAtom() const { return flags_.hasGuessedAtom(); }
+
+  JSAtom* displayAtom() const { return atom_; }
+  JSAtom* explicitName() const {
+    return (hasInferredName() || hasGuessedAtom()) ? nullptr : atom_;
+  }
+
+  
+  
+  
+  void setInferredName(JSAtom* atom) {
+    atom_ = atom;
+    flags_.setInferredName();
+    if (hasFunction()) {
+      function()->setInferredName(atom);
+    }
+  }
+  void setGuessedAtom(JSAtom* atom) {
+    atom_ = atom;
+    flags_.setGuessedAtom();
+    if (hasFunction()) {
+      function()->setGuessedAtom(atom);
+    }
+  }
 
   void setAlwaysNeedsArgsObj() {
     MOZ_ASSERT(argumentsHasVarBinding());
@@ -594,12 +619,6 @@ class FunctionBox : public SharedContext {
     RootedFunction fun(cx, function());
     return JSFunction::setTypeForScriptedFunction(cx, fun, singleton);
   }
-
-  void setInferredName(JSAtom* atom) { function()->setInferredName(atom); }
-
-  JSAtom* inferredName() const { return function()->inferredName(); }
-
-  bool hasInferredName() const { return function()->hasInferredName(); }
 
   size_t index() { return funcDataIndex_; }
 
