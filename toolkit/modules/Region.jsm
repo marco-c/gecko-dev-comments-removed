@@ -11,7 +11,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AppConstants: "resource://gre/modules/AppConstants.jsm",
   LocationHelper: "resource://gre/modules/LocationHelper.jsm",
   Services: "resource://gre/modules/Services.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
@@ -40,19 +39,14 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "geoSpecificDefaults",
-  "browser.search.geoSpecificDefaults",
-  false
-);
-
 const log = console.createInstance({
   prefix: "Region.jsm",
   maxLogLevel: loggingEnabled ? "All" : "Warn",
 });
 
-const REGION_PREF = "browser.search.region";
+function timeout(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 
 
@@ -65,29 +59,6 @@ class RegionDetector {
   
   
   fetchController = null;
-  
-  REGION_TOPIC = "browser-region";
-  
-  REGION_UPDATED = "region-updated";
-  
-  TELEMETRY = {
-    SUCCESS: 0,
-    NO_RESULT: 1,
-    TIMEOUT: 2,
-    ERROR: 3,
-  };
-
-  
-
-
-
-  init() {
-    let region = Services.prefs.getCharPref(REGION_PREF, null);
-    if (!region) {
-      Services.tm.idleDispatchToMainThread(this._fetchRegion.bind(this));
-    }
-    this._home = region;
-  }
 
   
 
@@ -95,142 +66,15 @@ class RegionDetector {
 
 
 
-  get home() {
-    return this._home;
-  }
-
-  
-
-
-
-
-
-  async _fetchRegion() {
-    if (!geoSpecificDefaults) {
-      return null;
-    }
-    let startTime = Date.now();
-    let telemetryResult = this.TELEMETRY.SUCCESS;
-    let result = null;
-
-    try {
-      result = await Promise.race([
-        this._getRegion(),
-        timeout(regionFetchTimeout),
-      ]);
-    } catch (err) {
-      telemetryResult = this.TELEMETRY[err.message] || this.TELEMETRY.ERROR;
-      log.error("Failed to fetch region", err);
-    }
-
-    let took = Date.now() - startTime;
-    if (result) {
-      await this._storeRegion(result);
-    }
-    Services.telemetry
-      .getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_TIME_MS")
-      .add(took);
-
-    Services.telemetry
-      .getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_RESULT")
-      .add(telemetryResult);
-
-    return result;
-  }
-
-  
-
-
-
-
-
-  async _storeRegion(region) {
-    let prefix = "SEARCH_SERVICE";
-    let isTimezoneUS = isUSTimezone();
-    
-    
-    
-    if (region != "US" || isTimezoneUS) {
-      log.info("Saving home region:", region);
-      this._setRegion(region, true);
-    }
-
-    
-    if (region == "US" && !isTimezoneUS) {
-      log.info("storeRegion mismatch - US Region, non-US timezone");
-      Services.telemetry
-        .getHistogramById(`${prefix}_US_COUNTRY_MISMATCHED_TIMEZONE`)
-        .add(1);
-    }
-    if (region != "US" && isTimezoneUS) {
-      log.info("storeRegion mismatch - non-US Region, US timezone");
-      Services.telemetry
-        .getHistogramById(`${prefix}_US_TIMEZONE_MISMATCHED_COUNTRY`)
-        .add(1);
-    }
-    
-    
-    
-    let platformCC = await Services.sysinfo.countryCode;
-    if (platformCC) {
-      let probeUSMismatched, probeNonUSMismatched;
-      switch (AppConstants.platform) {
-        case "macosx":
-          probeUSMismatched = `${prefix}_US_COUNTRY_MISMATCHED_PLATFORM_OSX`;
-          probeNonUSMismatched = `${prefix}_NONUS_COUNTRY_MISMATCHED_PLATFORM_OSX`;
-          break;
-        case "win":
-          probeUSMismatched = "${prefix}_US_COUNTRY_MISMATCHED_PLATFORM_WIN";
-          probeNonUSMismatched = `${prefix}_NONUS_COUNTRY_MISMATCHED_PLATFORM_WIN`;
-          break;
-        default:
-          log.error(
-            "Platform " +
-              Services.appinfo.OS +
-              " has system country code but no search service telemetry probes"
-          );
-          break;
-      }
-      if (probeUSMismatched && probeNonUSMismatched) {
-        if (region == "US" || platformCC == "US") {
-          
-          Services.telemetry
-            .getHistogramById(probeUSMismatched)
-            .add(region != platformCC);
-        } else {
-          
-          Services.telemetry
-            .getHistogramById(probeNonUSMismatched)
-            .add(region != platformCC);
-        }
-      }
-    }
-  }
-
-  
-
-
-
-
-
-  _setRegion(region = "", notify = false) {
-    this._home = region;
-    Services.prefs.setCharPref("browser.search.region", region);
-    if (notify) {
-      Services.obs.notifyObservers(
-        null,
-        this.REGION_TOPIC,
-        this.REGION_UPDATED,
-        region
-      );
-    }
+  async getHomeRegion() {
+    return Promise.race([this._getRegion(), this._timeout()]);
   }
 
   
 
 
   async _getRegion() {
-    log.info("_getRegion called");
+    log.info("getRegion called");
     this.fetchController = new AbortController();
     let fetchOpts = {
       headers: { "Content-Type": "application/json" },
@@ -252,11 +96,11 @@ class RegionDetector {
     try {
       let res = await req.json();
       this.fetchController = null;
-      log.info("_getRegion returning ", res.country_code);
-      return res.country_code;
+      log.info("getRegion returning " + res.country_code);
+      return { country_code: res.country_code };
     } catch (err) {
       log.error("Error fetching region", err);
-      throw new Error("NO_RESULT");
+      throw new Error("region-fetch-no-result");
     }
   }
 
@@ -270,7 +114,7 @@ class RegionDetector {
     if (this.fetchController) {
       this.fetchController.abort();
     }
-    throw new Error("TIMEOUT");
+    throw new Error("region-fetch-timeout");
   }
 
   async _fetchWifiData() {
@@ -305,26 +149,3 @@ class RegionDetector {
 }
 
 let Region = new RegionDetector();
-Region.init();
-
-function timeout(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-
-function isUSTimezone() {
-  
-  
-
-  
-  
-
-  
-  
-
-  
-  
-
-  let UTCOffset = new Date().getTimezoneOffset();
-  return UTCOffset >= 150 && UTCOffset <= 600;
-}
