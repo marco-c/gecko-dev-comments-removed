@@ -138,11 +138,6 @@ class BackgroundHangMonitor {
   
 
 
-  static bool IsDisabled();
-
-  
-
-
 
 
 

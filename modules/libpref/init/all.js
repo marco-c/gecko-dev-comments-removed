@@ -824,8 +824,6 @@ pref("toolkit.telemetry.unified", true);
 
 pref("toolkit.asyncshutdown.log", false);
 
-pref("toolkit.content-background-hang-monitor.disabled", false);
-
 
 
 
