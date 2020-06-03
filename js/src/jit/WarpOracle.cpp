@@ -675,12 +675,19 @@ AbortReasonOr<Ok> WarpOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
     return Ok();
   }
 
-  if (!stub->next()->isFallback()) {
+  
+  
+  
+  for (ICStub* next = stub->next(); next; next = next->next()) {
+    if (next->getEnteredCount() == 0) {
+      continue;
+    }
+
     [[maybe_unused]] unsigned line, column;
     LineNumberAndColumn(script, loc, &line, &column);
 
-    
-    JitSpew(JitSpew_WarpTranspiler, "multiple stubs for JSOp::%s @ %s:%u:%u",
+    JitSpew(JitSpew_WarpTranspiler,
+            "multiple active stubs for JSOp::%s @ %s:%u:%u",
             CodeName(loc.getOp()), script->filename(), line, column);
     return Ok();
   }
