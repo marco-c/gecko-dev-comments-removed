@@ -63,7 +63,10 @@ class ResourceWatcher {
 
 
 
-  async watch(resources, onAvailable, onDestroyed) {
+
+  async watch(resources, options) {
+    const { onAvailable, onDestroyed } = options;
+
     
     
     
@@ -84,7 +87,9 @@ class ResourceWatcher {
 
 
 
-  unwatch(resources, onAvailable, onDestroyed) {
+  unwatch(resources, options) {
+    const { onAvailable, onDestroyed } = options;
+
     for (const resource of resources) {
       this._availableListeners.off(resource, onAvailable);
       if (onDestroyed) {

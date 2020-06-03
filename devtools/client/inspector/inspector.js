@@ -203,7 +203,7 @@ Inspector.prototype = {
 
     await this.toolbox.resourceWatcher.watch(
       [this.toolbox.resourceWatcher.TYPES.ROOT_NODE],
-      this.onResourceAvailable
+      { onAvailable: this.onResourceAvailable }
     );
     
     
