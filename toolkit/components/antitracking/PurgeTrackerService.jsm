@@ -34,6 +34,10 @@ PurgeTrackerService.prototype = {
 
   
   
+  _firstIteration: true,
+
+  
+  
   _trackingState: new Map(),
   
 
@@ -108,6 +112,44 @@ PurgeTrackerService.prototype = {
     );
   },
 
+  submitTelemetry() {
+    let { numPurged, notPurged, durationIntervals } = this._telemetryData;
+    let now = Date.now();
+    let lastPurge = Number(
+      Services.prefs.getStringPref("privacy.purge_trackers.last_purge", now)
+    );
+
+    let intervalHistogram = Services.telemetry.getHistogramById(
+      "COOKIE_PURGING_INTERVAL_HOURS"
+    );
+    let hoursBetween = Math.floor((now - lastPurge) / 1000 / 60 / 60);
+    intervalHistogram.add(hoursBetween);
+
+    Services.prefs.setIntPref(
+      "privacy.purge_trackers.last_purge",
+      now.toString()
+    );
+
+    let purgedHistogram = Services.telemetry.getHistogramById(
+      "COOKIE_PURGING_ORIGINS_PURGED"
+    );
+    purgedHistogram.add(numPurged);
+
+    let notPurgedHistogram = Services.telemetry.getHistogramById(
+      "COOKIE_PURGING_TRACKERS_WITH_USER_INTERACTION"
+    );
+    notPurgedHistogram.add(notPurged);
+
+    let duration = durationIntervals
+      .map(([start, end]) => end - start)
+      .reduce((acc, cur) => acc + cur, 0);
+
+    let durationHistogram = Services.telemetry.getHistogramById(
+      "COOKIE_PURGING_DURATION_MS"
+    );
+    durationHistogram.add(duration);
+  },
+
   
 
 
@@ -139,6 +181,19 @@ PurgeTrackerService.prototype = {
       "privacy.purge_trackers.max_purge_count",
       100
     );
+
+    if (this._firstIteration) {
+      this._telemetryData = {
+        durationIntervals: [],
+        numPurged: 0,
+        notPurged: 0,
+      };
+    }
+
+    
+    
+    
+    let duration = [Cu.now()];
 
     
 
@@ -187,14 +242,18 @@ PurgeTrackerService.prototype = {
       saved_date = cookie.creationTime;
     }
 
-    let startDate = Date.now() - THREE_DAYS_MS;
-    let storagePrincipals = gStorageActivityService.getActiveOrigins(
-      startDate * 1000,
-      Date.now() * 1000
-    );
+    
+    
+    if (this._firstIteration) {
+      let startDate = Date.now() - THREE_DAYS_MS;
+      let storagePrincipals = gStorageActivityService.getActiveOrigins(
+        startDate * 1000,
+        Date.now() * 1000
+      );
 
-    for (let principal of storagePrincipals.enumerate()) {
-      maybeClearPrincipals.set(principal.origin, principal);
+      for (let principal of storagePrincipals.enumerate()) {
+        maybeClearPrincipals.set(principal.origin, principal);
+      }
     }
 
     let feature = gClassifier.getFeatureByName("tracking-annotation");
@@ -204,10 +263,17 @@ PurgeTrackerService.prototype = {
       return;
     }
 
-    let baseDomainsWithInteraction = new Set();
+    let baseDomainsWithInteraction = new Map();
     for (let perm of Services.perms.getAllWithTypePrefix("storageAccessAPI")) {
-      baseDomainsWithInteraction.add(perm.principal.baseDomain);
+      baseDomainsWithInteraction.set(
+        perm.principal.baseDomain,
+        perm.expireTime
+      );
     }
+
+    let permissionAgeHistogram = Services.telemetry.getHistogramById(
+      "COOKIE_PURGING_TRACKERS_USER_INTERACTION_REMAINING_DAYS"
+    );
 
     for (let principal of maybeClearPrincipals.values()) {
       
@@ -237,7 +303,27 @@ PurgeTrackerService.prototype = {
               resolve
             );
           });
+          this._telemetryData.numPurged++;
           LOG(`Data deleted from: `, principal.origin);
+        }
+      } else if (Services.telemetry.canRecordPrereleaseData) {
+        
+        
+        
+        
+        let isTracker = await this.isTracker(principal, feature);
+        if (isTracker) {
+          let expireTimeMs = baseDomainsWithInteraction.get(
+            principal.baseDomain
+          );
+
+          
+          let timeRemaining = Math.floor(
+            (expireTimeMs - Date.now()) / 1000 / 60 / 60 / 24
+          );
+          permissionAgeHistogram.add(timeRemaining);
+
+          this._telemetryData.notPurged++;
         }
       }
     }
@@ -247,14 +333,20 @@ PurgeTrackerService.prototype = {
       saved_date
     );
 
+    duration.push(Cu.now());
+    this._telemetryData.durationIntervals.push(duration);
+
     
     if (!cookies.length || cookies.length < 100) {
       LOG("All cookie purging finished, resetting list until tomorrow.");
       this.resetPurgeList();
+      this.submitTelemetry();
+      this._firstIteration = true;
       return;
     }
 
     LOG("Batch finished, queueing next batch.");
+    this._firstIteration = false;
     Services.tm.idleDispatchToMainThread(() => {
       this.purgeTrackingCookieJars();
     });
