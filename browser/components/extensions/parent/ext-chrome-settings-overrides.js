@@ -376,12 +376,8 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
 
     let engineName = searchProvider.name.trim();
     if (searchProvider.is_default) {
-      let engine = Services.search.getEngineByName(engineName);
-      if (engine && engine.isAppProvided) {
-        
-        
+      if (await Services.search.maybeSetAndOverrideDefault(extension)) {
         await this.setDefault(engineName);
-        
         return;
       }
     }

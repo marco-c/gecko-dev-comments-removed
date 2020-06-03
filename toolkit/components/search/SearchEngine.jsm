@@ -1482,7 +1482,33 @@ SearchEngine.prototype = {
     this._locale = params.locale;
     this._orderHint = params.orderHint;
     this._telemetryId = params.telemetryId;
+    this._name = engineName;
+    if (params.shortName) {
+      this._shortName = params.shortName;
+    }
+    this._definedAlias = params.alias?.trim() || null;
+    this._description = params.description;
+    if (params.iconURL) {
+      this._setIcon(params.iconURL, true);
+    }
+    
+    if (params.icons) {
+      for (let icon of params.icons) {
+        this._addIconToMap(icon.size, icon.size, icon.url);
+      }
+    }
+    this._setUrls(params);
+  },
 
+  
+
+
+
+
+
+
+
+  _setUrls(params) {
     this._initEngineURLFromMetaData(SearchUtils.URL_TYPE.SEARCH, {
       method: (params.searchPostParams && "POST") || params.method || "GET",
       template: params.template,
@@ -1508,22 +1534,7 @@ SearchEngine.prototype = {
       }
     }
 
-    this._name = engineName;
-    if (params.shortName) {
-      this._shortName = params.shortName;
-    }
-    this._definedAlias = params.alias?.trim() || null;
-    this._description = params.description;
     this.__searchForm = params.searchForm;
-    if (params.iconURL) {
-      this._setIcon(params.iconURL, true);
-    }
-    
-    if (params.icons) {
-      for (let icon of params.icons) {
-        this._addIconToMap(icon.size, icon.size, icon.url);
-      }
-    }
   },
 
   
@@ -1538,6 +1549,42 @@ SearchEngine.prototype = {
     this._iconMapObj = null;
     this._initFromMetadata(params.name, params);
     SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  overrideWithExtension(params) {
+    this._overriddenData = {
+      urls: this._urls,
+      queryCharset: this._queryCharset,
+      searchForm: this.__searchForm,
+    };
+    this._urls = [];
+    this.setAttr("overriddenBy", params.extensionID);
+    this._setUrls(params);
+    SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
+  },
+
+  
+
+
+  removeExtensionOverride() {
+    if (this.getAttr("overriddenBy")) {
+      this._urls = this._overriddenData.urls;
+      this._queryCharset = this._overriddenData.queryCharset;
+      this.__searchForm = this._overriddenData.searchForm;
+      delete this._overriddenData;
+      this.clearAttr("overriddenBy");
+      SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
+    }
   },
 
   
@@ -1844,6 +1891,10 @@ SearchEngine.prototype = {
 
   getAttr(name) {
     return this._metaData[name] || undefined;
+  },
+
+  clearAttr(name) {
+    delete this._metaData[name];
   },
 
   
