@@ -2143,6 +2143,9 @@ pref("devtools.netmonitor.har.enableAutoExportToFile", false);
 pref("devtools.netmonitor.features.webSockets", true);
 
 
+pref("devtools.netmonitor.features.serverSentEvents", false);
+
+
 pref("devtools.storage.enabled", true);
 
 

@@ -55,6 +55,14 @@ class FirefoxDataProvider {
     this.onWebSocketClosed = this.onWebSocketClosed.bind(this);
     this.onFrameSent = this.onFrameSent.bind(this);
     this.onFrameReceived = this.onFrameReceived.bind(this);
+
+    this.onEventSourceConnectionOpened = this.onEventSourceConnectionOpened.bind(
+      this
+    );
+    this.onEventSourceConnectionClosed = this.onEventSourceConnectionClosed.bind(
+      this
+    );
+    this.onEventReceived = this.onEventReceived.bind(this);
   }
 
   
@@ -786,6 +794,30 @@ class FirefoxDataProvider {
     });
     this.emitForTests(TEST_EVENTS.RECEIVED_EVENT_STACKTRACE, response.from);
     return payload.stacktrace;
+  }
+
+  
+
+
+  async onEventSourceConnectionOpened(httpChannelId) {
+    
+    
+    
+    if (this.actionsEnabled && this.actions.updateMimeType) {
+      
+      await this.actions.updateMimeType(
+        httpChannelId,
+        "text/event-stream",
+        true
+      );
+    }
+  }
+
+  async onEventSourceConnectionClosed(httpChannelId) {}
+
+  async onEventReceived(httpChannelId, data) {
+    
+    this.addFrame(httpChannelId, data);
   }
 
   
