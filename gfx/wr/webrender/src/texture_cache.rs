@@ -40,10 +40,6 @@ const TEXTURE_REGION_PIXELS: usize =
 
 
 
-const RECLAIM_THRESHOLD_BYTES: usize = 16 * 512 * 512 * 4;
-
-
-
 #[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -282,22 +278,6 @@ impl SharedTextures {
                 1,
             ),
         }
-    }
-
-    
-    fn size_in_bytes(&self) -> usize {
-        self.array_alpha8_linear.size_in_bytes() +
-        self.array_alpha16_linear.size_in_bytes() +
-        self.array_color8_linear.size_in_bytes() +
-        self.array_color8_nearest.size_in_bytes()
-    }
-
-    
-    fn reclaimable_region_bytes(&self) -> usize {
-        self.array_alpha8_linear.reclaimable_region_bytes() +
-        self.array_alpha16_linear.reclaimable_region_bytes() +
-        self.array_color8_linear.reclaimable_region_bytes() +
-        self.array_color8_nearest.reclaimable_region_bytes()
     }
 
     
@@ -669,10 +649,6 @@ pub struct TextureCache {
     now: FrameStamp,
 
     
-    
-    reached_reclaim_threshold: Option<SystemTime>,
-
-    
     entries: FreeList<CacheEntry, CacheEntryMarker>,
 
     
@@ -747,7 +723,6 @@ impl TextureCache {
                 &mut next_texture_id,
                 &mut pending_updates,
             ),
-            reached_reclaim_threshold: None,
             entries: FreeList::new(),
             max_texture_size,
             max_texture_layers,
@@ -847,8 +822,7 @@ impl TextureCache {
                                  mem::replace(&mut self.doc_data, PerDocumentData::new()));
     }
 
-    pub fn prepare_for_frames(&mut self, time: SystemTime) {
-        self.maybe_reclaim_shared_memory(time);
+    pub fn prepare_for_frames(&mut self, _: SystemTime) {
     }
 
     pub fn bookkeep_after_frames(&mut self) {
@@ -865,58 +839,6 @@ impl TextureCache {
         profile_scope!("begin_frame");
         self.now = stamp;
         self.set_doc_data();
-        self.maybe_do_periodic_gc();
-    }
-
-    fn maybe_reclaim_shared_memory(&mut self, time: SystemTime) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        debug_assert!(!self.now.is_valid());
-        if self.shared_textures.reclaimable_region_bytes() >= RECLAIM_THRESHOLD_BYTES {
-            self.reached_reclaim_threshold.get_or_insert(time);
-        } else {
-            self.reached_reclaim_threshold = None;
-        }
-        if let Some(t) = self.reached_reclaim_threshold {
-            let dur = time.duration_since(t).unwrap_or_default();
-            if dur >= Duration::from_secs(5) {
-                self.clear_shared();
-                self.reached_reclaim_threshold = None;
-            }
-        }
-    }
-
-    
-    
-    
-    
-    fn maybe_do_periodic_gc(&mut self) {
-        debug_assert!(self.now.is_valid());
-
-        
-        
-        
-        
-        let time_since_last_gc = self.now.time()
-            .duration_since(self.doc_data.last_shared_cache_expiration.time())
-            .unwrap_or_default();
-        let do_periodic_gc = time_since_last_gc >= Duration::from_secs(5) &&
-            self.shared_textures.size_in_bytes() >= RECLAIM_THRESHOLD_BYTES * 2;
-        if do_periodic_gc {
-            let threshold = EvictionThresholdBuilder::new(self.now)
-                .max_frames(1)
-                .max_time_s(10)
-                .build();
-            self.maybe_expire_old_shared_entries(threshold);
-        }
     }
 
     pub fn end_frame(&mut self, texture_cache_profile: &mut TextureCacheProfileCounters) {
@@ -1745,13 +1667,6 @@ impl TextureArray {
         let bpp = self.formats.internal.bytes_per_pixel() as usize;
         let num_regions: usize = self.units.iter().map(|u| u.regions.len()).sum();
         num_regions * TEXTURE_REGION_PIXELS * bpp
-    }
-
-    
-    fn reclaimable_region_bytes(&self) -> usize {
-        let bpp = self.formats.internal.bytes_per_pixel() as usize;
-        let empty_regions: usize = self.units.iter().map(|u| u.empty_regions).sum();
-        empty_regions * TEXTURE_REGION_PIXELS * bpp
     }
 
     fn clear(&mut self, updates: &mut TextureUpdateList) {
