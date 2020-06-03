@@ -104,13 +104,17 @@ void gfxScriptItemizer::fixup(Script newScriptCode) {
   }
 }
 
+static inline bool CanMergeWithContext(Script aScript) {
+  return aScript <= Script::INHERITED || aScript == Script::UNKNOWN;
+}
+
 
 
 
 static inline bool SameScript(Script runScript, Script currCharScript,
                               uint32_t aCurrCh) {
-  return runScript <= Script::INHERITED ||
-         currCharScript <= Script::INHERITED || currCharScript == runScript ||
+  return CanMergeWithContext(runScript) ||
+         CanMergeWithContext(currCharScript) || currCharScript == runScript ||
          IsClusterExtender(aCurrCh) || HasScript(aCurrCh, runScript);
 }
 
@@ -188,7 +192,7 @@ bool gfxScriptItemizer::Next(uint32_t& aRunStart, uint32_t& aRunLimit,
     }
 
     if (SameScript(scriptCode, sc, ch)) {
-      if (scriptCode <= Script::INHERITED && sc > Script::INHERITED) {
+      if (CanMergeWithContext(scriptCode) && !CanMergeWithContext(sc)) {
         scriptCode = sc;
         fixup(scriptCode);
       }
