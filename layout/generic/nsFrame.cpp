@@ -2627,10 +2627,16 @@ void nsFrame::DisplayOutlineUnconditional(nsDisplayListBuilder* aBuilder,
 
   
   
-  
-  
-  if (outline.mOutlineStyle.IsAuto() && IsThemed()) {
-    return;
+  if (outline.mOutlineStyle.IsAuto()) {
+    auto* disp = StyleDisplay();
+    
+    
+    
+    if (IsThemed(disp) &&
+        (PresContext()->Theme()->ThemeDrawsFocusForWidget(disp->mAppearance) ||
+         disp->mAppearance != StyleAppearance::Range)) {
+      return;
+    }
   }
 
   aLists.Outlines()->AppendNewToTop<nsDisplayOutline>(aBuilder, this);
