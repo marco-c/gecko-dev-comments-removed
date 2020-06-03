@@ -289,29 +289,20 @@ def main(log, args):
     
     
     
-    similarity = None
-    if "android" in os.getenv("TC_PLATFORM", ""):
-        try:
-            from similarity import calculate_similarity
-            similarity = calculate_similarity(jobs_json, fetch_dir, OUTPUT_DIR, log)
-        except Exception:
-            log.info("Failed to calculate similarity score", exc_info=True)
-
-    if similarity:
-        suites[0]["subtests"].append({
-            "name": "Similarity3D",
-            "value": similarity[0],
-            "replicates": [similarity[0]],
-            "lowerIsBetter": False,
-            "unit": "a.u.",
-        })
-        suites[0]["subtests"].append({
-            "name": "Similarity2D",
-            "value": similarity[1],
-            "replicates": [similarity[1]],
-            "lowerIsBetter": False,
-            "unit": "a.u.",
-        })
+    try:
+        from similarity import calculate_similarity
+        for name, value in calculate_similarity(jobs_json, fetch_dir, OUTPUT_DIR).items():
+            if value is None:
+                continue
+            suites[0]["subtests"].append({
+                "name": name,
+                "value": value,
+                "replicates": [value],
+                "lowerIsBetter": False,
+                "unit": "a.u.",
+            })
+    except Exception:
+        log.info("Failed to calculate similarity score", exc_info=True)
 
     
     

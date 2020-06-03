@@ -5,8 +5,9 @@
 These transformations take a task description for a visual metrics task and
 add the necessary environment variables to run on the given inputs.
 """
-
 from __future__ import absolute_import, print_function, unicode_literals
+import os
+
 from taskgraph.transforms.base import TransformSequence
 
 
@@ -33,7 +34,11 @@ def run_visual_metrics(config, jobs):
 
             
             
-            job['worker'].setdefault('env', {})['TC_PLATFORM'] = platform
+            job['worker'].setdefault('env', {})['TC_LABEL'] = dep_job.label
+
+            
+            
+            job['worker']['env']['TC_GROUP_ID'] = os.getenv("TC_GROUP_ID", "")
 
             
             
