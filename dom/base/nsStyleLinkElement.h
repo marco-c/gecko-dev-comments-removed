@@ -42,7 +42,6 @@ class nsStyleLinkElement : public nsIStyleSheetLinkingElement {
 
   
   void SetStyleSheet(mozilla::StyleSheet* aStyleSheet) override;
-  mozilla::StyleSheet* GetStyleSheet() override;
   void InitStyleLinkElement(bool aDontLoadStyle) override;
 
   mozilla::Result<Update, nsresult> UpdateStyleSheet(
@@ -101,7 +100,9 @@ class nsStyleLinkElement : public nsIStyleSheetLinkingElement {
                                          nsString& aTitle, nsString& aMedia);
 
   
-  static bool IsCSSMimeTypeAttribute(const mozilla::dom::Element&);
+  
+  static bool IsCSSMimeTypeAttributeForStyleElement(
+      const mozilla::dom::Element&);
 
   virtual mozilla::Maybe<SheetInfo> GetStyleSheetInfo() = 0;
 
