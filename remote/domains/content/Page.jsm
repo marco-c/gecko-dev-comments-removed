@@ -285,53 +285,39 @@ class Page extends ContentProcessDomain {
   }
 
   handleEvent({ type, target }) {
-    const isFrame = target.defaultView != this.content;
-
-    if (isFrame) {
+    if (target.defaultView != this.content) {
       
       return;
     }
 
-    const timestamp = Date.now();
+    const timestamp = Date.now() / 1000;
     const frameId = target.defaultView.docShell.browsingContext.id.toString();
     const url = target.location.href;
+    const loaderId =
+      this._lastRequest?.frameId == frameId
+        ? this._lastRequest?.loaderId
+        : null;
 
     switch (type) {
       case "DOMContentLoaded":
         this.emit("Page.domContentEventFired", { timestamp });
-        if (!isFrame) {
-          this.emitLifecycleEvent(
-            frameId,
-             null,
-            "DOMContentLoaded",
-            timestamp
-          );
-        }
+        this.emitLifecycleEvent(
+          frameId,
+          loaderId,
+          "DOMContentLoaded",
+          timestamp
+        );
         break;
 
       case "pagehide":
         
         this.emit("Page.frameStartedLoading", { frameId });
-        if (!isFrame) {
-          this.emitLifecycleEvent(
-            frameId,
-             null,
-            "init",
-            timestamp
-          );
-        }
+        this.emitLifecycleEvent(frameId, loaderId, "init", timestamp);
         break;
 
       case "load":
         this.emit("Page.loadEventFired", { timestamp });
-        if (!isFrame) {
-          this.emitLifecycleEvent(
-            frameId,
-             null,
-            "load",
-            timestamp
-          );
-        }
+        this.emitLifecycleEvent(frameId, loaderId, "load", timestamp);
 
         
         this.emit("Page.navigatedWithinDocument", { frameId, url });
@@ -340,14 +326,13 @@ class Page extends ContentProcessDomain {
 
       case "readystatechange":
         if (this.content.document.readState === "loading") {
-          this.emitLifecycleEvent(
-            frameId,
-             null,
-            "init",
-            timestamp
-          );
+          this.emitLifecycleEvent(frameId, loaderId, "init", timestamp);
         }
     }
+  }
+
+  _updateLoaderId(data) {
+    this._lastRequest = data;
   }
 
   _contentRect() {
