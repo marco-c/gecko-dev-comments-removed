@@ -27,20 +27,42 @@ std::string getAbsolutePath(const std::string &Filename);
 
 
 
+
+
+
 struct AutoLockFile {
-  int FileDescriptor = -1;
+  
+  std::string Filename;
 
 #if defined(_WIN32) || defined(_WIN64)
+  
   HANDLE Handle = NULL;
+#else
+  
+  
+  
+  
+  int FileDescriptor = -1;
 #endif
 
-  AutoLockFile(const std::string &Filename);
+  
+  
+  
+  AutoLockFile(const std::string &SrcFile, const std::string &DstFile);
   ~AutoLockFile();
 
+  
   bool success();
 
-  FILE *openFile(const char *Mode);
-  bool truncateFile(size_t Length);
+  
+  
+  FILE *openFile();
+  
+  
+  FILE *openTmp();
+  
+  
+  bool moveTmp();
 };
 
 #endif
