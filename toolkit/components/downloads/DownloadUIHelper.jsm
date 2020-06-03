@@ -73,9 +73,17 @@ var DownloadUIHelper = {
 
 
 
+
+
   loadFileIn(
     file,
-    { chromeWindow: browserWin, openWhere = "tab", isPrivate } = {}
+    {
+      chromeWindow: browserWin,
+      openWhere = "tab",
+      isPrivate,
+      userContextId = 0,
+      browsingContextId = 0,
+    } = {}
   ) {
     let fileURI = Services.io.newFileURI(file);
     let allowPrivate =
@@ -117,9 +125,12 @@ var DownloadUIHelper = {
     }
 
     
+    let browsingContext = browserWin?.BrowsingContext.get(browsingContextId);
     browserWin.openTrustedLinkIn(fileURI.spec, openWhere, {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
       private: isPrivate,
+      userContextId,
+      openerBrowser: browsingContext?.top?.embedderElement,
     });
   },
 };

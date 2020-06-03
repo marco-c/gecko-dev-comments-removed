@@ -784,65 +784,39 @@ var DownloadIntegration = {
       mimeInfo.preferredAction = Ci.nsIMIMEInfo.useHelperApp;
 
       this.launchFile(file, mimeInfo);
+      
+      
+      
+      aDownload.launchWhenSucceeded = false;
       return;
     }
 
-    if (aDownload.handleInternally) {
-      let win = Services.wm.getMostRecentBrowserWindow();
-      let browsingContext =
-        win && win.BrowsingContext.get(aDownload.source.browsingContextId);
-      win = Services.wm.getOuterWindowWithId(
-        browsingContext &&
-          browsingContext.embedderWindowGlobal &&
-          browsingContext.embedderWindowGlobal.outerWindowId
-      );
-      let fileURI = Services.io.newFileURI(file);
-      if (win) {
-        
-        
-        win.openTrustedLinkIn(fileURI.spec, "tab", {
-          triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-          userContextId: aDownload.source.userContextId,
-          openerBrowser: browsingContext?.top?.embedderElement,
-        });
-        return;
-      }
-      let features = "chrome,dialog=no,all";
-      if (aDownload.source.isPrivate) {
-        features += ",private";
-      }
-      let args = Cc["@mozilla.org/supports-string;1"].createInstance(
-        Ci.nsISupportsString
-      );
-      args.data = fileURI.spec;
-      win = Services.ww.openWindow(
-        null,
-        AppConstants.BROWSER_CHROME_URL,
-        "_blank",
-        features,
-        args
-      );
+    const PDF_CONTENT_TYPE = "application/pdf";
+    if (
+      aDownload.handleInternally ||
+      (mimeInfo &&
+        mimeInfo.type == PDF_CONTENT_TYPE &&
+        !mimeInfo.alwaysAskBeforeHandling &&
+        mimeInfo.preferredAction === Ci.nsIHandlerInfo.handleInternally &&
+        !aDownload.launchWhenSucceeded)
+    ) {
+      DownloadUIHelper.loadFileIn(file, {
+        browsingContextId: aDownload.source.browsingContextId,
+        isPrivate: aDownload.source.isPrivate,
+        openWhere,
+        userContextId: aDownload.source.userContextId,
+      });
       return;
     }
+
+    
+    
+    
+    aDownload.launchWhenSucceeded = false;
 
     
     
     if (mimeInfo) {
-      const PDF_CONTENT_TYPE = "application/pdf";
-      
-      if (
-        mimeInfo.type == PDF_CONTENT_TYPE &&
-        !mimeInfo.alwaysAskBeforeHandling &&
-        mimeInfo.preferredAction === Ci.nsIHandlerInfo.handleInternally
-        
-      ) {
-        DownloadUIHelper.loadFileIn(file, {
-          isPrivate: aDownload.source.isPrivate,
-          openWhere,
-        });
-        return;
-      }
-
       mimeInfo.preferredAction = Ci.nsIMIMEInfo.useSystemDefault;
       try {
         this.launchFile(file, mimeInfo);
