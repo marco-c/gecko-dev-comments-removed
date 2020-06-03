@@ -254,7 +254,7 @@ public:
     speex_resample(resampling_in_buffer.data(), &in_len,
                    resampling_out_buffer.data(), &out_len);
 
-    assert(out_len == output_frame_count);
+    
 
     
 
