@@ -152,6 +152,8 @@ BrowserParent* BrowserParent::sFocus = nullptr;
 
 BrowserParent* BrowserParent::sTopLevelWebFocus = nullptr;
 
+BrowserParent* BrowserParent::sLastMouseRemoteTarget = nullptr;
+
 
 
 #define NOTIFY_FLAG_SHIFT 16
@@ -233,6 +235,11 @@ void BrowserParent::InitializeStatics() { MOZ_ASSERT(XRE_IsParentProcess()); }
 
 
 BrowserParent* BrowserParent::GetFocused() { return sFocus; }
+
+
+BrowserParent* BrowserParent::GetLastMouseRemoteTarget() {
+  return sLastMouseRemoteTarget;
+}
 
 
 BrowserParent* BrowserParent::GetFrom(nsFrameLoader* aFrameLoader) {
@@ -588,6 +595,7 @@ void BrowserParent::RemoveWindowListeners() {
 
 void BrowserParent::DestroyInternal() {
   UnsetTopLevelWebFocus(this);
+  UnsetLastMouseRemoteTarget(this);
 
   RemoveWindowListeners();
 
@@ -661,6 +669,7 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
   
   
   BrowserParent::UnsetTopLevelWebFocus(this);
+  BrowserParent::UnsetLastMouseRemoteTarget(this);
 
   if (why == AbnormalShutdown) {
     
@@ -1157,6 +1166,7 @@ void BrowserParent::Deactivate(bool aWindowLowering) {
     UnsetTopLevelWebFocus(this);  
   }
   if (!mIsDestroyed) {
+    BrowserParent::UnsetLastMouseRemoteTarget(this);
     Unused << Manager()->SendDeactivate(this);
   }
 }
@@ -1377,6 +1387,15 @@ void BrowserParent::SendRealMouseEvent(WidgetMouseEvent& aEvent) {
   if (mIsDestroyed) {
     return;
   }
+
+  
+  
+  
+  
+  if (aEvent.mReason == WidgetMouseEvent::eReal) {
+    sLastMouseRemoteTarget = this;
+  }
+
   aEvent.mRefPoint = TransformParentToChild(aEvent.mRefPoint);
 
   nsCOMPtr<nsIWidget> widget = GetWidget();
@@ -3138,6 +3157,13 @@ BrowserParent* BrowserParent::UpdateFocus() {
 void BrowserParent::UnsetTopLevelWebFocusAll() {
   if (sTopLevelWebFocus) {
     UnsetTopLevelWebFocus(sTopLevelWebFocus);
+  }
+}
+
+
+void BrowserParent::UnsetLastMouseRemoteTarget(BrowserParent* aBrowserParent) {
+  if (sLastMouseRemoteTarget == aBrowserParent) {
+    sLastMouseRemoteTarget = nullptr;
   }
 }
 
