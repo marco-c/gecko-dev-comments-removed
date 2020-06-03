@@ -5,6 +5,7 @@
 
 
 include "mozilla/dom/DocShellMessageUtils.h";
+include "mozilla/ipc/TransportSecurityInfoUtils.h";
 
 include protocol PBrowser;
 include protocol PInProcess;
@@ -21,6 +22,7 @@ using nscolor from "nsColor.h";
 using refcounted class nsDocShellLoadState from "nsDocShellLoadState.h";
 using mozilla::dom::TabId from "mozilla/dom/ipc/IdType.h";
 using mozilla::layers::LayersId from "mozilla/layers/LayersTypes.h";
+using refcounted class nsITransportSecurityInfo from "nsITransportSecurityInfo.h";
 
 namespace mozilla {
 namespace dom {
@@ -113,6 +115,8 @@ parent:
 
   
   async UpdateHttpsOnlyStatus(uint32_t aHttpsOnlyStatus);
+
+  async UpdateDocumentSecurityInfo(nsITransportSecurityInfo aSecurityInfo);
 
   
   async SetIsInitialDocument(bool aIsInitialDocument);
