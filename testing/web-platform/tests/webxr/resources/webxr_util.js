@@ -48,6 +48,18 @@ function xr_promise_test(name, func, properties) {
 
 
 
+
+
+function requestSkipAnimationFrame(session, callback) {
+ session.requestAnimationFrame(() => {
+  session.requestAnimationFrame(callback);
+ });
+}
+
+
+
+
+
 function xr_session_promise_test(
     name, func, fakeDeviceInit, sessionMode, sessionInit, properties, glcontextPropertiesParam, gllayerPropertiesParam) {
   let testDeviceController;
