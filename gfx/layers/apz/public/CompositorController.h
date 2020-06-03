@@ -21,11 +21,7 @@ class CompositorController {
   
 
 
-
-
-
-  virtual void ScheduleRenderOnCompositorThread(
-      const wr::RenderRootSet& aRenderRoots) = 0;
+  virtual void ScheduleRenderOnCompositorThread() = 0;
   virtual void ScheduleHideAllPluginWindows() = 0;
   virtual void ScheduleShowAllPluginWindows() = 0;
 
