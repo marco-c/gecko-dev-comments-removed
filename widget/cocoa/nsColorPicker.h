@@ -26,6 +26,11 @@ class nsColorPicker final : public nsIColorPicker {
 
   
   void Update(NSColor* aColor);
+  
+  
+  void DoneWithRetarget();
+  
+  
   void Done();
 
  private:
@@ -34,7 +39,7 @@ class nsColorPicker final : public nsIColorPicker {
   static NSColor* GetNSColorFromHexString(const nsAString& aColor);
   static void GetHexStringFromNSColor(NSColor* aColor, nsAString& aResult);
 
-  NSColorPanelWrapper* mColorPanelWrapper;
+  static NSColorPanelWrapper* sColorPanelWrapper;
 
   nsString mTitle;
   nsString mColor;
