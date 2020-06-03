@@ -255,6 +255,9 @@ document.addEventListener("DOMContentLoaded", e => {
       document
         .querySelector(".etp-card .card-title")
         .setAttribute("data-l10n-id", "etp-card-title-custom-not-blocking");
+      document
+        .getElementById("report-summary")
+        .setAttribute("data-l10n-id", "protection-report-page-summary");
       document.querySelector(".etp-card").classList.add("custom-not-blocking");
 
       
