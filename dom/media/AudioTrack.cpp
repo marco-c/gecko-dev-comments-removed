@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/dom/AudioStreamTrack.h"
 #include "mozilla/dom/AudioTrack.h"
 #include "mozilla/dom/AudioTrackBinding.h"
 #include "mozilla/dom/AudioTrackList.h"
