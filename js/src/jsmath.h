@@ -15,7 +15,36 @@
 
 namespace js {
 
-using UnaryFunType = double (*)(double);
+using UnaryMathFunctionType = double (*)(double);
+
+
+
+
+enum class UnaryMathFunction : uint8_t {
+  Log,
+  Sin,
+  Cos,
+  Exp,
+  Tan,
+  ACos,
+  ASin,
+  ATan,
+  Log10,
+  Log2,
+  Log1P,
+  ExpM1,
+  CosH,
+  SinH,
+  TanH,
+  ACosH,
+  ASinH,
+  ATanH,
+  Trunc,
+  Cbrt,
+  Floor,
+  Ceil,
+  Round,
+};
 
 
 
