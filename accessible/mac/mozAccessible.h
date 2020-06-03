@@ -6,11 +6,10 @@
 #include "AccessibleWrap.h"
 #include "ProxyAccessible.h"
 #include "AccessibleOrProxy.h"
-#include "Platform.h"
 
 #import <Cocoa/Cocoa.h>
 
-#import "mozAccessibleProtocol.h"
+#import "MOXAccessibleBase.h"
 
 @class mozRootAccessible;
 
@@ -23,18 +22,6 @@
 
 namespace mozilla {
 namespace a11y {
-
-inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
-  if (!ShouldA11yBeEnabled()) {
-    
-    
-    
-    
-    return aObject;
-  }
-
-  return [aObject hasRepresentedView] ? [aObject representedView] : aObject;
-}
 
 inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrProxy aAccOrProxy) {
   MOZ_ASSERT(!aAccOrProxy.IsNull(), "Cannot get native from null accessible");
@@ -51,7 +38,7 @@ inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrPr
 }  
 }  
 
-@interface mozAccessible : NSObject <mozAccessible> {
+@interface mozAccessible : MOXAccessibleBase {
   
 
 
@@ -129,9 +116,6 @@ inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrPr
 - (void)handleAccessibleEvent:(uint32_t)eventType;
 
 
-- (void)postNotification:(NSString*)notification;
-
-
 - (id)childAt:(uint32_t)i;
 
 
@@ -164,24 +148,18 @@ inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrPr
 - (void)expire;
 - (BOOL)isExpired;
 
-#ifdef DEBUG
-- (void)printHierarchy;
-- (void)printHierarchyWithLevel:(unsigned)numSpaces;
 
-- (void)sanityCheckChildren;
-- (void)sanityCheckChildren:(NSArray*)theChildren;
-#endif
+
+
+- (id)moxHitTest:(NSPoint)point;
+
+
+- (id)moxFocusedUIElement;
 
 
 
 
 - (BOOL)isAccessibilityElement;
-
-
-- (id)accessibilityHitTest:(NSPoint)point;
-
-
-- (id)accessibilityFocusedUIElement;
 
 
 

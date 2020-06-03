@@ -10,7 +10,6 @@
 
 #include "Accessible-inl.h"
 #include "nsAccUtils.h"
-#include "xpcAccessibleMacInterface.h"
 #include "nsIPersistentProperties2.h"
 #include "DocAccessibleParent.h"
 #include "Relation.h"
@@ -202,7 +201,7 @@ using namespace mozilla::a11y;
   if ([additionalAttributes count])
     objectAttributes = [objectAttributes arrayByAddingObjectsFromArray:additionalAttributes];
 
-  return objectAttributes;
+  return [objectAttributes arrayByAddingObjectsFromArray:[super accessibilityAttributeNames]];
 
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
@@ -452,10 +451,7 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
       break;
   }
 
-#ifdef DEBUG
-  NSLog(@"!!! %@ can't respond to attribute %@", self, attribute);
-#endif
-  return nil;
+  return [super accessibilityAttributeValue:attribute];
 
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
@@ -465,7 +461,7 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
 
   if ([attribute isEqualToString:NSAccessibilityFocusedAttribute]) return [self canBeFocused];
 
-  return NO;
+  return [super accessibilityIsAttributeSettable:attribute];
 
   NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(NO);
 }
@@ -478,13 +474,16 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
 #endif
 
   
-  if ([attribute isEqualToString:NSAccessibilityFocusedAttribute] && [value boolValue])
+  if ([attribute isEqualToString:NSAccessibilityFocusedAttribute] && [value boolValue]) {
     [self focus];
+  } else {
+    [super accessibilitySetValue:value forAttribute:attribute];
+  }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-- (id)accessibilityHitTest:(NSPoint)point {
+- (id)moxHitTest:(NSPoint)point {
   
   
   
@@ -502,7 +501,7 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
   }
 
   
-  return GetObjectOrRepresentedView(self);
+  return self;
 }
 
 - (NSArray*)accessibilityActionNames {
@@ -538,13 +537,7 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
   [actions addObject:NSAccessibilityScrollToVisibleAction];
   [actions addObject:NSAccessibilityShowMenuAction];
 
-  return actions;
-}
-
-- (NSString*)accessibilityActionDescription:(NSString*)action {
-  
-  
-  return NSAccessibilityActionDescription(action);
+  return [actions arrayByAddingObjectsFromArray:[super accessibilityActionNames]];
 }
 
 - (BOOL)providesLabelNotTitle {
@@ -633,7 +626,7 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
     
     widget->SynthesizeNativeMouseEvent(p, NSRightMouseDown, 0, nullptr);
 
-  } else {
+  } else if ([action isEqualToString:NSAccessibilityPressAction]) {
     if (acc) {
       acc->DoAction(0);
     } else if (proxy) {
@@ -641,10 +634,12 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
     }
     
     [self invalidateState];
+  } else {
+    [super accessibilityPerformAction:action];
   }
 }
 
-- (id)accessibilityFocusedUIElement {
+- (id)moxFocusedUIElement {
   if ([self isExpired]) {
     return nil;
   }
@@ -675,11 +670,11 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
   }
 
   if ([focusedChild isAccessibilityElement]) {
-    return GetObjectOrRepresentedView(focusedChild);
+    return focusedChild;
   }
 
   
-  return GetObjectOrRepresentedView(self);
+  return self;
 }
 
 #pragma mark -
@@ -1216,44 +1211,26 @@ struct RoleDescrComparator {
 - (void)handleAccessibleEvent:(uint32_t)eventType {
   switch (eventType) {
     case nsIAccessibleEvent::EVENT_FOCUS:
-      [self postNotification:NSAccessibilityFocusedUIElementChangedNotification];
+      [self moxPostNotification:NSAccessibilityFocusedUIElementChangedNotification];
       break;
     case nsIAccessibleEvent::EVENT_DOCUMENT_LOAD_COMPLETE:
-      [self postNotification:NSAccessibilityFocusedUIElementChangedNotification];
-      [self postNotification:@"AXLoadComplete"];
-      [self postNotification:@"AXLayoutComplete"];
+      [self moxPostNotification:NSAccessibilityFocusedUIElementChangedNotification];
+      [self moxPostNotification:@"AXLoadComplete"];
+      [self moxPostNotification:@"AXLayoutComplete"];
       break;
     case nsIAccessibleEvent::EVENT_MENUPOPUP_START:
-      [self postNotification:@"AXMenuOpened"];
+      [self moxPostNotification:@"AXMenuOpened"];
       break;
     case nsIAccessibleEvent::EVENT_MENUPOPUP_END:
-      [self postNotification:@"AXMenuClosed"];
+      [self moxPostNotification:@"AXMenuClosed"];
       break;
     case nsIAccessibleEvent::EVENT_SELECTION:
     case nsIAccessibleEvent::EVENT_SELECTION_ADD:
     case nsIAccessibleEvent::EVENT_SELECTION_REMOVE:
     case nsIAccessibleEvent::EVENT_SELECTION_WITHIN:
-      [self postNotification:NSAccessibilitySelectedChildrenChangedNotification];
+      [self moxPostNotification:NSAccessibilitySelectedChildrenChangedNotification];
       break;
   }
-}
-
-- (void)postNotification:(NSString*)notification {
-  
-  xpcAccessibleMacInterface::FireEvent(self, notification);
-
-  if (gfxPlatform::IsHeadless()) {
-    
-    
-    return;
-  }
-
-  if (![self isAccessibilityElement]) {
-    
-    return;
-  }
-
-  NSAccessibilityPostNotification(GetObjectOrRepresentedView(self), notification);
 }
 
 - (NSWindow*)window {
@@ -1278,10 +1255,6 @@ struct RoleDescrComparator {
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
-- (BOOL)accessibilityNotifiesWhenDestroyed {
-  return YES;
-}
-
 - (void)expire {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -1289,7 +1262,7 @@ struct RoleDescrComparator {
 
   mGeckoAccessible.SetBits(0);
 
-  [self postNotification:NSAccessibilityUIElementDestroyedNotification];
+  [self moxPostNotification:NSAccessibilityUIElementDestroyedNotification];
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -1297,79 +1270,5 @@ struct RoleDescrComparator {
 - (BOOL)isExpired {
   return !mGeckoAccessible.AsAccessible() && !mGeckoAccessible.AsProxy();
 }
-
-#pragma mark -
-#pragma mark Debug methods
-#pragma mark -
-
-#ifdef DEBUG
-
-
-
-- (void)sanityCheckChildren:(NSArray*)children {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  NSEnumerator* iter = [children objectEnumerator];
-  mozAccessible* curObj = nil;
-
-  NSLog(@"sanity checking %@", self);
-
-  while ((curObj = [iter nextObject])) {
-    id realSelf = GetObjectOrRepresentedView(self);
-    NSLog(@"checking %@", realSelf);
-    NSAssert2([curObj parent] == realSelf,
-              @"!!! %@ not returning %@ as AXParent, even though it is a AXChild of it!", curObj,
-              realSelf);
-  }
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
-- (void)sanityCheckChildren {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  [self sanityCheckChildren:[self children]];
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
-- (void)printHierarchy {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  [self printHierarchyWithLevel:0];
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
-- (void)printHierarchyWithLevel:(unsigned)level {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  NSAssert(![self isExpired], @"!!! trying to print hierarchy of expired object!");
-
-  
-  NSMutableString* indent = [NSMutableString stringWithCapacity:level];
-  unsigned i = 0;
-  for (; i < level; i++) [indent appendString:@" "];
-
-  NSLog(@"%@(#%i) %@", indent, level, self);
-
-  
-  NSArray* children = [self children];
-  if (!children) return;
-
-  [self sanityCheckChildren];
-
-  NSEnumerator* iter = [children objectEnumerator];
-  mozAccessible* object = nil;
-
-  while (iter && (object = [iter nextObject]))
-    
-    
-    [object printHierarchyWithLevel:(level + 1)];
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
-#endif 
 
 @end

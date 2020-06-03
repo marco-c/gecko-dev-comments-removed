@@ -1,7 +1,7 @@
-/* -*- Mode: Objective-C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #import "mozActionElements.h"
 
@@ -16,7 +16,7 @@
 using namespace mozilla::a11y;
 
 enum CheckboxValue {
-  // these constants correspond to the values in the OS
+  
   kUnchecked = 0,
   kChecked = 1,
   kMixed = 2
@@ -30,18 +30,18 @@ enum CheckboxValue {
   static NSArray* attributes = nil;
   if (!attributes) {
     attributes = [[NSArray alloc]
-        initWithObjects:NSAccessibilityParentAttribute,  // required
-                        NSAccessibilityRoleAttribute,    // required
+        initWithObjects:NSAccessibilityParentAttribute,  
+                        NSAccessibilityRoleAttribute,    
                         NSAccessibilityRoleDescriptionAttribute,
-                        NSAccessibilityPositionAttribute,           // required
-                        NSAccessibilitySizeAttribute,               // required
-                        NSAccessibilityWindowAttribute,             // required
-                        NSAccessibilityPositionAttribute,           // required
-                        NSAccessibilityTopLevelUIElementAttribute,  // required
+                        NSAccessibilityPositionAttribute,           
+                        NSAccessibilitySizeAttribute,               
+                        NSAccessibilityWindowAttribute,             
+                        NSAccessibilityPositionAttribute,           
+                        NSAccessibilityTopLevelUIElementAttribute,  
                         NSAccessibilityHelpAttribute,
-                        NSAccessibilityEnabledAttribute,  // required
-                        NSAccessibilityFocusedAttribute,  // required
-                        NSAccessibilityTitleAttribute,    // required
+                        NSAccessibilityEnabledAttribute,  
+                        NSAccessibilityFocusedAttribute,  
+                        NSAccessibilityTitleAttribute,    
                         NSAccessibilityChildrenAttribute, NSAccessibilityDescriptionAttribute,
                         NSAccessibilityRequiredAttribute, NSAccessibilityHasPopupAttribute,
                         NSAccessibilityPopupValueAttribute,
@@ -83,7 +83,7 @@ enum CheckboxValue {
 
 @implementation mozPopupButtonAccessible
 - (NSString*)title {
-  // Popup buttons don't have titles.
+  
   return @"";
 }
 
@@ -91,9 +91,9 @@ enum CheckboxValue {
   static NSMutableArray* supportedAttributes = nil;
   if (!supportedAttributes) {
     supportedAttributes = [[super accessibilityAttributeNames] mutableCopy];
-    // We need to remove AXHasPopup from a AXPopupButton for it to be reported
-    // as a popup button. Otherwise VO reports it as a button that has a popup
-    // which is not consistent with Safari.
+    
+    
+    
     [supportedAttributes removeObject:NSAccessibilityHasPopupAttribute];
     [supportedAttributes addObject:NSAccessibilityValueAttribute];
   }
@@ -105,9 +105,9 @@ enum CheckboxValue {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
   if ([attribute isEqualToString:NSAccessibilityHasPopupAttribute]) {
-    // We need to null on AXHasPopup for it to be reported as a popup button.
-    // Otherwise VO reports it as a button that has a popup which is not
-    // consistent with Safari.
+    
+    
+    
     return nil;
   }
 
@@ -118,7 +118,7 @@ enum CheckboxValue {
 
 - (NSArray*)children {
   if ([self stateWithMask:states::EXPANDED] == 0) {
-    // If the popup button is collapsed don't return its children.
+    
     return @[];
   }
 
@@ -129,10 +129,10 @@ enum CheckboxValue {
   [super stateChanged:state isEnabled:enabled];
 
   if (state == states::EXPANDED) {
-    // If the EXPANDED state is updated, fire AXMenu events on the
-    // popups child which is the actual menu.
+    
+    
     if (mozAccessible* popup = (mozAccessible*)[self childAt:0]) {
-      [popup postNotification:(enabled ? @"AXMenuOpened" : @"AXMenuClosed")];
+      [popup moxPostNotification:(enabled ? @"AXMenuOpened" : @"AXMenuClosed")];
     }
   }
 }
@@ -140,11 +140,11 @@ enum CheckboxValue {
 - (BOOL)ignoreWithParent:(mozAccessible*)parent {
   if (Accessible* acc = mGeckoAccessible.AsAccessible()) {
     if (acc->IsContent() && acc->GetContent()->IsXULElement(nsGkAtoms::menulist)) {
-      // The way select elements work is that content has a COMBOBOX accessible, when it is clicked
-      // it expands a COMBOBOX in our top-level main XUL window. The latter COMBOBOX is a stand-in
-      // for the content one while it is expanded.
-      // XXX: VO focus behaves weirdly if we expose the dummy XUL COMBOBOX in the tree.
-      // We are only interested in its menu child.
+      
+      
+      
+      
+      
       return YES;
     }
   }
@@ -157,7 +157,7 @@ enum CheckboxValue {
 @implementation mozCheckboxAccessible
 
 - (int)isChecked {
-  // check if we're checked or in a mixed state
+  
   uint64_t state = [self stateWithMask:(states::CHECKED | states::PRESSED | states::MIXED)];
   if (state & (states::CHECKED | states::PRESSED)) {
     return kChecked;
@@ -187,8 +187,8 @@ enum CheckboxValue {
     return 0;
   }
 
-  // By default this calls -[[mozAccessible children] count].
-  // Since we don't cache mChildren. This is faster.
+  
+  
   if ([attribute isEqualToString:NSAccessibilityChildrenAttribute]) {
     return mGeckoAccessible.ChildCount() ? 1 : 0;
   }
@@ -252,11 +252,11 @@ enum CheckboxValue {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-/*
- * Updates the accessible's current value by (factor * step).
- * If incrementing factor should be positive, if decrementing
- * factor should be negative.
- */
+
+
+
+
+
 
 - (void)changeValueBySteps:(int)factor {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
@@ -272,10 +272,10 @@ enum CheckboxValue {
     double newVal = proxy->CurValue() + (proxy->Step() * factor);
     double min = proxy->MinValue();
     double max = proxy->MaxValue();
-    // Because min and max are not required attributes, we first check
-    // if the value is undefined. If this check fails,
-    // the value is defined, and we we verify our new value falls
-    // within the bound (inclusive).
+    
+    
+    
+    
     if ((IsNaN(min) || newVal >= min) && (IsNaN(max) || newVal <= max)) {
       proxy->SetCurValue(newVal);
     }
@@ -288,7 +288,7 @@ enum CheckboxValue {
   switch (eventType) {
     case nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE:
     case nsIAccessibleEvent::EVENT_VALUE_CHANGE:
-      [self postNotification:NSAccessibilityValueChangedNotification];
+      [self moxPostNotification:NSAccessibilityValueChangedNotification];
       break;
     default:
       [super handleAccessibleEvent:eventType];

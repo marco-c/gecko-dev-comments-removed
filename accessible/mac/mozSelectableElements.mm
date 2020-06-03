@@ -261,8 +261,8 @@
   return @"";
 }
 
-- (void)postNotification:(NSString*)notification {
-  [super postNotification:notification];
+- (void)moxPostNotification:(NSString*)notification {
+  [super moxPostNotification:notification];
 
   if ([notification isEqualToString:@"AXMenuOpened"]) {
     mIsOpened = YES;
@@ -275,7 +275,7 @@
   if (mIsOpened) {
     
     
-    [self postNotification:@"AXMenuClosed"];
+    [self moxPostNotification:@"AXMenuClosed"];
   }
 
   [super expire];
@@ -339,7 +339,7 @@
     case nsIAccessibleEvent::EVENT_FOCUS:
       
       mozAccessible* parent = (mozAccessible*)[self parent];
-      [parent postNotification:NSAccessibilitySelectedChildrenChangedNotification];
+      [parent moxPostNotification:NSAccessibilitySelectedChildrenChangedNotification];
       break;
   }
 

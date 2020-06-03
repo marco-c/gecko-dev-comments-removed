@@ -1,0 +1,19 @@
+
+
+
+
+
+@protocol MOXAccessible
+
+
+
+- (id _Nullable)moxHitTest:(NSPoint)point;
+
+
+
+- (id _Nullable)moxFocusedUIElement;
+
+
+- (void)moxPostNotification:(NSString* _Nonnull)notification;
+
+@end
