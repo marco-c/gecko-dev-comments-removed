@@ -156,6 +156,8 @@ impl GlyphRasterizer {
             job
         }
 
+        tracy_plot!("glyphs requested", glyphs.len() as f64);
+
         
         
         if !self.enable_multithreading || glyphs.len() < 8 {

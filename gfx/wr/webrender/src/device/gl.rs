@@ -59,12 +59,14 @@ pub fn total_gpu_bytes_allocated() -> usize {
 
 fn record_gpu_alloc(num_bytes: usize) {
     GPU_BYTES_ALLOCATED.fetch_add(num_bytes, Ordering::Relaxed);
+    tracy_plot!("gpu_alloc bytes", num_bytes as f64);
 }
 
 
 fn record_gpu_free(num_bytes: usize) {
     let old = GPU_BYTES_ALLOCATED.fetch_sub(num_bytes, Ordering::Relaxed);
     assert!(old >= num_bytes, "Freeing {} bytes but only {} allocated", num_bytes, old);
+    tracy_plot!("gpu_free bytes", num_bytes as f64);
 }
 
 impl GpuFrameId {
