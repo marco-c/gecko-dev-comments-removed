@@ -14,6 +14,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   ExtensionSearchHandler: "resource://gre/modules/ExtensionSearchHandler.jsm",
+  FormHistory: "resource://gre/modules/FormHistory.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   ReaderMode: "resource://gre/modules/ReaderMode.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -35,6 +36,7 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIClipboardHelper"
 );
 
+const DEFAULT_FORM_HISTORY_NAME = "searchbar-history";
 const SEARCH_BUTTON_ID = "urlbar-search-button";
 
 let getBoundsWithoutFlushing = element =>
@@ -92,6 +94,7 @@ class UrlbarInput {
     });
     this.view = new UrlbarView(this);
     this.valueIsTyped = false;
+    this.formHistoryName = DEFAULT_FORM_HISTORY_NAME;
     this.lastQueryContextPromise = Promise.resolve();
     this._actionOverrideKeyCount = 0;
     this._autofillPlaceholder = "";
@@ -678,10 +681,28 @@ class UrlbarInput {
 
         const actionDetails = {
           isSuggestion: !!result.payload.suggestion,
+          isFormHistory: result.source == UrlbarUtils.RESULT_SOURCE.HISTORY,
           alias: result.payload.keyword,
         };
         const engine = Services.search.getEngineByName(result.payload.engine);
         this._recordSearch(engine, event, actionDetails);
+
+        
+        
+        if (!this.isPrivate && !result.payload.inPrivateWindow) {
+          FormHistory.update(
+            {
+              op: "bump",
+              fieldname: this.formHistoryName,
+              value: result.payload.suggestion || result.payload.query,
+            },
+            {
+              handleError(error) {
+                Cu.reportError(`Error saving form history: ${error}`);
+              },
+            }
+          );
+        }
         break;
       }
       case UrlbarUtils.RESULT_TYPE.TIP: {
@@ -942,6 +963,7 @@ class UrlbarInput {
           "usercontextid"
         ),
         currentPage: this.window.gBrowser.currentURI.spec,
+        formHistoryName: this.formHistoryName,
         allowSearchSuggestions:
           !event ||
           !UrlbarUtils.isPasteEvent(event) ||
@@ -1499,6 +1521,8 @@ class UrlbarInput {
   }
 
   
+
+
 
 
 
@@ -2476,9 +2500,12 @@ function losslessDecodeURI(aURI) {
   
   
   
+  
+  
+  
   value = value.replace(
     
-    /[\u0000-\u001f\u007f-\u00a0\u2028\u2029\u2800\ufffc]|[\r\n\t]|\s(?=\s)|\s$/g,
+    /[\u0000-\u001f\u007f-\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u2800\u3000\ufffc]|[\r\n\t]|\u0020(?=\u0020)|\s$/g,
     encodeURIComponent
   );
 

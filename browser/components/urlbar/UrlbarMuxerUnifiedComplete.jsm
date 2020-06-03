@@ -15,8 +15,9 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
   Log: "resource://gre/modules/Log.jsm",
+  PlacesSearchAutocompleteProvider:
+    "resource://gre/modules/PlacesSearchAutocompleteProvider.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
-  UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
   UrlbarMuxer: "resource:///modules/UrlbarUtils.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
@@ -60,10 +61,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
 
 
-
-
-
-
   sort(context) {
     
     
@@ -71,21 +68,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
     
     
-
-    
-    for (let providerName of context.activeProviders) {
-      let provider = UrlbarProvidersManager.getProvider(providerName);
-
-      
-      
-      
-      if (
-        provider.type == UrlbarUtils.PROVIDER_TYPE.HEURISTIC &&
-        !context.heuristicResult
-      ) {
-        return false;
-      }
-    }
 
     let heuristicResultQuery;
     if (
@@ -96,14 +78,15 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       heuristicResultQuery = context.heuristicResult.payload.query.toLocaleLowerCase();
     }
 
-    
     let canShowPrivateSearch = context.results.length > 1;
-    let resultsWithSuggestedIndex = [];
-
-    
-    
-    
     let canShowTailSuggestions = true;
+    let resultsWithSuggestedIndex = [];
+    let formHistoryResults = new Set();
+    let formHistorySuggestions = new Set();
+    let maxFormHistoryCount = Math.min(
+      UrlbarPrefs.get("maxHistoricalSearchSuggestions"),
+      context.maxResults
+    );
 
     
     
@@ -120,6 +103,24 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         canShowPrivateSearch = false;
       }
 
+      
+      
+      
+      
+      if (
+        result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+        result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
+        formHistoryResults.size < maxFormHistoryCount &&
+        result.payload.lowerCaseSuggestion &&
+        result.payload.lowerCaseSuggestion != heuristicResultQuery
+      ) {
+        formHistoryResults.add(result);
+        formHistorySuggestions.add(result.payload.lowerCaseSuggestion);
+      }
+
+      
+      
+      
       if (
         canShowTailSuggestions &&
         !result.heuristic &&
@@ -151,8 +152,20 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       
       if (
         result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
-        result.payload.suggestion &&
-        result.payload.suggestion.toLocaleLowerCase() === heuristicResultQuery
+        result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
+        !formHistoryResults.has(result)
+      ) {
+        continue;
+      }
+
+      
+      
+      
+      if (
+        result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+        result.source == UrlbarUtils.RESULT_SOURCE.SEARCH &&
+        result.payload.lowerCaseSuggestion &&
+        result.payload.lowerCaseSuggestion === heuristicResultQuery
       ) {
         continue;
       }
@@ -164,6 +177,41 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         result.payload.tail
       ) {
         continue;
+      }
+
+      
+      
+      if (
+        result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
+        result.type == UrlbarUtils.RESULT_TYPE.URL
+      ) {
+        let submission;
+        try {
+          
+          
+          
+          submission = PlacesSearchAutocompleteProvider.parseSubmissionURL(
+            result.payload.url
+          );
+        } catch (error) {}
+        if (submission) {
+          let resultQuery = submission.terms.toLocaleLowerCase();
+          if (
+            heuristicResultQuery === resultQuery ||
+            formHistorySuggestions.has(resultQuery)
+          ) {
+            
+            
+            
+            let [newSerpURL] = UrlbarUtils.getSearchQueryUrl(
+              submission.engine,
+              resultQuery
+            );
+            if (this._serpURLsHaveSameParams(newSerpURL, result.payload.url)) {
+              continue;
+            }
+          }
+        }
       }
 
       
@@ -215,6 +263,39 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     }
 
     context.results = sortedResults;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  _serpURLsHaveSameParams(url1, url2) {
+    let params1 = new URL(url1).searchParams;
+    let params2 = new URL(url2).searchParams;
+    
+    
+    for (let params of [params1, params2]) {
+      params.delete("client");
+    }
+    
+    for (let [p1, p2] of [
+      [params1, params2],
+      [params2, params1],
+    ]) {
+      for (let [key, value] of p1) {
+        if (!p2.getAll(key).includes(value)) {
+          return false;
+        }
+      }
+    }
     return true;
   }
 }

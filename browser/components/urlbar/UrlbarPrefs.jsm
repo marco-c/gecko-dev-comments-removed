@@ -82,8 +82,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["maxCharsForSearchSuggestions", 20],
 
   
-  
-  
   ["maxHistoricalSearchSuggestions", 0],
 
   

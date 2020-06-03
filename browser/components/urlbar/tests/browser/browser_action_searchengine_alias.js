@@ -39,6 +39,7 @@ add_task(async function() {
       
     }
     await PlacesUtils.history.clear();
+    await UrlbarTestUtils.formHistory.clear();
   });
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({

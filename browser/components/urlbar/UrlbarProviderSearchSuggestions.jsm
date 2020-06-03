@@ -116,35 +116,43 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
 
   isActive(queryContext) {
+    
+    
     if (
+      !queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.SEARCH) ||
+      (queryContext.restrictSource &&
+        queryContext.restrictSource != UrlbarUtils.RESULT_SOURCE.SEARCH)
+    ) {
+      return false;
+    }
+
+    
+    if (!queryContext.searchString.trim()) {
+      return false;
+    }
+
+    return this._formHistoryCount || this._allowRemoteSuggestions(queryContext);
+  }
+
+  _allowRemoteSuggestions(queryContext) {
+    
+    
+    if (
+      !queryContext.allowSearchSuggestions ||
+      !UrlbarPrefs.get("suggest.searches") ||
       !UrlbarPrefs.get("browser.search.suggest.enabled") ||
-      !UrlbarPrefs.get("suggest.searches")
-    ) {
-      return false;
-    }
-
-    if (!queryContext.allowSearchSuggestions) {
-      return false;
-    }
-
-    if (
-      queryContext.isPrivate &&
-      !UrlbarPrefs.get("browser.search.suggest.enabled.private")
+      (queryContext.isPrivate &&
+        !UrlbarPrefs.get("browser.search.suggest.enabled.private"))
     ) {
       return false;
     }
 
     
     
-    if (!queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.SEARCH)) {
-      return false;
-    }
-
-    if (
-      queryContext.restrictSource &&
-      queryContext.restrictSource != UrlbarUtils.RESULT_SOURCE.SEARCH
-    ) {
-      return false;
+    
+    
+    if (queryContext.searchString.startsWith("@")) {
+      return true;
     }
 
     
@@ -159,17 +167,11 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     }
 
     
-    
-    
-    if (queryContext.searchString.startsWith("@")) {
-      return true;
-    }
-
-    
     if (queryContext.searchString.length < 2) {
       return false;
     }
 
+    
     
     if (
       queryContext.tokens.length == 1 &&
@@ -181,13 +183,19 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     
     
     
-    return !queryContext.tokens.some(t => {
-      return (
-        t.type == UrlbarTokenizer.TYPE.POSSIBLE_URL ||
-        (t.type == UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN &&
-          !UrlbarTokenizer.REGEXP_SINGLE_WORD_HOST.test(t.value))
-      );
-    });
+    if (
+      queryContext.tokens.some(
+        t =>
+          t.type == UrlbarTokenizer.TYPE.POSSIBLE_URL ||
+          (t.type == UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN &&
+            !UrlbarTokenizer.REGEXP_SINGLE_WORD_HOST.test(t.value))
+      )
+    ) {
+      return false;
+    }
+
+    
+    return true;
   }
 
   
@@ -281,7 +289,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       alias
     );
 
-    if (!this.queries.has(queryContext)) {
+    if (!results || !this.queries.has(queryContext)) {
       return;
     }
 
@@ -316,18 +324,39 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     this.queries.delete(queryContext);
   }
 
+  get _formHistoryCount() {
+    let count = UrlbarPrefs.get("maxHistoricalSearchSuggestions");
+    if (!count) {
+      return 0;
+    }
+    
+    
+    
+    
+    
+    
+    
+    return count + 1;
+  }
+
   async _fetchSearchSuggestions(queryContext, engine, searchString, alias) {
     if (!engine || !searchString) {
       return null;
     }
 
     this._suggestionsController = new SearchSuggestionController();
-    this._suggestionsController.maxLocalResults = UrlbarPrefs.get(
-      "maxHistoricalSearchSuggestions"
-    );
-    this._suggestionsController.maxRemoteResults =
-      queryContext.maxResults -
-      UrlbarPrefs.get("maxHistoricalSearchSuggestions");
+    this._suggestionsController.formHistoryParam = queryContext.formHistoryName;
+    this._suggestionsController.maxLocalResults = this._formHistoryCount;
+
+    let allowRemote = this._allowRemoteSuggestions(queryContext);
+
+    
+    
+    
+    
+    this._suggestionsController.maxRemoteResults = allowRemote
+      ? queryContext.maxResults + 1
+      : 0;
 
     this._suggestionsFetchCompletePromise = this._suggestionsController.fetch(
       searchString,
@@ -344,17 +373,28 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       return null;
     }
 
-    let suggestions = [];
-    suggestions.push(
-      ...fetchData.local.map(e => ({ entry: e, historical: true })),
-      ...fetchData.remote.map(e => ({ entry: e, historical: false }))
-    );
+    let results = [];
+
+    for (let entry of fetchData.local) {
+      results.push(
+        new UrlbarResult(
+          UrlbarUtils.RESULT_TYPE.SEARCH,
+          UrlbarUtils.RESULT_SOURCE.HISTORY,
+          ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+            engine: engine.name,
+            suggestion: [entry.value, UrlbarUtils.HIGHLIGHT.SUGGESTED],
+            lowerCaseSuggestion: entry.value.toLocaleLowerCase(),
+          })
+        )
+      );
+    }
 
     
     
     
     if (
-      !suggestions.length &&
+      allowRemote &&
+      !fetchData.remote.length &&
       searchString.length > UrlbarPrefs.get("maxCharsForSearchSuggestions")
     ) {
       this._lastLowResultsSearchSuggestion = searchString;
@@ -370,27 +410,22 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       logger,
     });
 
-    let results = [];
-    for (let suggestion of suggestions) {
-      if (
-        !suggestion ||
-        suggestion.entry.value == searchString ||
-        looksLikeUrl(suggestion.entry.value)
-      ) {
+    for (let entry of fetchData.remote) {
+      if (looksLikeUrl(entry.value)) {
         continue;
       }
 
-      if (suggestion.entry.tail && suggestion.entry.tailOffsetIndex < 0) {
+      if (entry.tail && entry.tailOffsetIndex < 0) {
         Cu.reportError(
-          `Error in tail suggestion parsing. Value: ${suggestion.entry.value}, tail: ${suggestion.entry.tail}.`
+          `Error in tail suggestion parsing. Value: ${entry.value}, tail: ${entry.tail}.`
         );
         continue;
       }
 
       let tail, tailPrefix;
       if (UrlbarPrefs.get("richSuggestions.tail")) {
-        tail = suggestion.entry.tail;
-        tailPrefix = suggestion.entry.matchPrefix;
+        tail = entry.tail;
+        tailPrefix = entry.matchPrefix;
       }
 
       if (!tail) {
@@ -404,21 +439,15 @@ class ProviderSearchSuggestions extends UrlbarProvider {
             UrlbarUtils.RESULT_SOURCE.SEARCH,
             ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
               engine: [engine.name, UrlbarUtils.HIGHLIGHT.TYPED],
-              suggestion: [
-                suggestion.entry.value,
-                UrlbarUtils.HIGHLIGHT.SUGGESTED,
-              ],
+              suggestion: [entry.value, UrlbarUtils.HIGHLIGHT.SUGGESTED],
+              lowerCaseSuggestion: entry.value.toLocaleLowerCase(),
               tailPrefix,
               tail: [tail, UrlbarUtils.HIGHLIGHT.SUGGESTED],
-              tailOffsetIndex: suggestion.entry.tailOffsetIndex,
+              tailOffsetIndex: entry.tailOffsetIndex,
               keyword: [alias ? alias : undefined, UrlbarUtils.HIGHLIGHT.TYPED],
               query: [searchString.trim(), UrlbarUtils.HIGHLIGHT.NONE],
               isSearchHistory: false,
-              icon: [
-                engine.iconURI && !suggestion.entry.value
-                  ? engine.iconURI.spec
-                  : "",
-              ],
+              icon: [engine.iconURI && !entry.value ? engine.iconURI.spec : ""],
               keywordOffer: UrlbarUtils.KEYWORD_OFFER.NONE,
             })
           )

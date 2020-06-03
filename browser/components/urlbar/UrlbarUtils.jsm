@@ -98,6 +98,7 @@ var UrlbarUtils = {
   
   ICON: {
     
+    HISTORY: "chrome://browser/skin/history.svg",
     SEARCH_GLASS: "chrome://browser/skin/search-glass.svg",
     TIP: "chrome://browser/skin/tip.svg",
   },
@@ -618,13 +619,16 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       icon: {
         type: "string",
       },
-      isPinned: {
-        type: "boolean",
-      },
       inPrivateWindow: {
         type: "boolean",
       },
+      isPinned: {
+        type: "boolean",
+      },
       isPrivateEngine: {
+        type: "boolean",
+      },
+      isSearchHistory: {
         type: "boolean",
       },
       keyword: {
@@ -633,11 +637,11 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       keywordOffer: {
         type: "number", 
       },
-      query: {
+      lowerCaseSuggestion: {
         type: "string",
       },
-      isSearchHistory: {
-        type: "boolean",
+      query: {
+        type: "string",
       },
       suggestion: {
         type: "string",
@@ -858,6 +862,8 @@ class UrlbarQueryContext {
 
 
 
+
+
   constructor(options = {}) {
     this._checkRequiredOptions(options, [
       "allowAutofill",
@@ -874,11 +880,12 @@ class UrlbarQueryContext {
 
     
     for (let [prop, checkFn, defaultValue] of [
+      ["allowSearchSuggestions", v => true, true],
+      ["currentPage", v => typeof v == "string" && !!v.length],
+      ["engineName", v => typeof v == "string" && !!v.length],
+      ["formHistoryName", v => typeof v == "string" && !!v.length],
       ["providers", v => Array.isArray(v) && v.length],
       ["sources", v => Array.isArray(v) && v.length],
-      ["engineName", v => typeof v == "string" && !!v.length],
-      ["currentPage", v => typeof v == "string" && !!v.length],
-      ["allowSearchSuggestions", v => true, true],
     ]) {
       if (prop in options) {
         if (!checkFn(options[prop])) {

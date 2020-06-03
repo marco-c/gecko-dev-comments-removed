@@ -49,6 +49,7 @@ add_task(async function startup() {
     false
   );
   await AddonTestUtils.promiseStartupManager();
+  await UrlbarTestUtils.initXPCShellDependencies();
 
   
   

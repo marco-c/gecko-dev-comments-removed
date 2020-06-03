@@ -3,14 +3,6 @@
 
 "use strict";
 
-add_task(async function setup() {
-  
-  
-  
-  await AddonTestUtils.promiseStartupManager();
-  await PlacesSearchAutocompleteProvider.ensureReady();
-});
-
 add_task(async function test_filtering_disable_only_source() {
   let match = new UrlbarResult(
     UrlbarUtils.RESULT_TYPE.TAB_SWITCH,

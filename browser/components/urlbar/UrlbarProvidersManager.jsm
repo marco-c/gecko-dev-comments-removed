@@ -338,30 +338,27 @@ class Query {
       return;
     }
 
-    this.context.activeProviders = new Set(activeProviders.map(p => p.name));
-
     
     let queryPromises = [];
     for (let provider of activeProviders) {
-      let promise;
       if (provider.type == UrlbarUtils.PROVIDER_TYPE.HEURISTIC) {
-        promise = provider.tryMethod(
-          "startQuery",
-          this.context,
-          this.add.bind(this)
+        queryPromises.push(
+          provider.tryMethod("startQuery", this.context, this.add.bind(this))
         );
-      } else {
-        if (!this._sleepTimer) {
-          
-          
-          
-          this._sleepTimer = new SkippableTimer({
-            name: "Query provider timer",
-            time: UrlbarPrefs.get("delay"),
-            logger,
-          });
-        }
-        promise = this._sleepTimer.promise.then(() => {
+        continue;
+      }
+      if (!this._sleepTimer) {
+        
+        
+        
+        this._sleepTimer = new SkippableTimer({
+          name: "Query provider timer",
+          time: UrlbarPrefs.get("delay"),
+          logger,
+        });
+      }
+      queryPromises.push(
+        this._sleepTimer.promise.then(() => {
           if (this.canceled) {
             return undefined;
           }
@@ -370,18 +367,7 @@ class Query {
             this.context,
             this.add.bind(this)
           );
-        });
-      }
-      queryPromises.push(
-        promise
-          .catch(Cu.reportError)
-          .then(() => {
-            if (!this.canceled) {
-              this.context.activeProviders.delete(provider.name);
-              this._notifyResultsFromProvider(provider);
-            }
-          })
-          .catch(Cu.reportError)
+        })
       );
     }
 
@@ -432,7 +418,14 @@ class Query {
     }
     
     
-    if (!this.acceptableSources.includes(result.source) && !result.heuristic) {
+    if (
+      !this.acceptableSources.includes(result.source) &&
+      !result.heuristic &&
+      
+      (result.type != UrlbarUtils.RESULT_TYPE.SEARCH ||
+        result.source != UrlbarUtils.RESULT_SOURCE.HISTORY ||
+        !this.acceptableSources.includes(UrlbarUtils.RESULT_SOURCE.SEARCH))
+    ) {
       return;
     }
 
@@ -473,10 +466,7 @@ class Query {
   }
 
   _notifyResults() {
-    if (!this.muxer.sort(this.context) || !this.context.results.length) {
-      
-      return;
-    }
+    this.muxer.sort(this.context);
 
     if (this._chunkTimer) {
       this._chunkTimer.cancel().catch(Cu.reportError);

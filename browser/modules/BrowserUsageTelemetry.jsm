@@ -96,7 +96,7 @@ const URLBAR_SELECTED_RESULT_TYPES = {
   "preloaded-top-site": 11,
   tip: 12,
   topsite: 13,
-  
+  formhistory: 14,
   
 };
 
@@ -433,6 +433,8 @@ let BrowserUsageTelemetry = {
 
 
 
+
+
   recordSearch(tabbrowser, engine, source, details = {}) {
     if (!shouldRecordSearchCount(tabbrowser)) {
       return;
@@ -541,7 +543,11 @@ let BrowserUsageTelemetry = {
     }
 
     
-    if (details.isSuggestion) {
+    if (details.isFormHistory) {
+      
+      this._recordSearch(engine, sourceName, "formhistory");
+      return;
+    } else if (details.isSuggestion) {
       
       this._recordSearch(engine, sourceName, "suggestion");
       return;

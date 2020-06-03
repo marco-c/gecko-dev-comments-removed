@@ -10,10 +10,16 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AddonTestUtils: "resource://testing-common/AddonTestUtils.jsm",
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   BrowserTestUtils: "resource://testing-common/BrowserTestUtils.jsm",
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
+  FormHistory: "resource://gre/modules/FormHistory.jsm",
+  PlacesSearchAutocompleteProvider:
+    "resource://gre/modules/PlacesSearchAutocompleteProvider.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
+  TestUtils: "resource://testing-common/TestUtils.jsm",
   UrlbarController: "resource:///modules/UrlbarController.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
@@ -369,6 +375,183 @@ var UrlbarTestUtils = {
         options
       )
     );
+  },
+
+  
+
+
+
+  async initXPCShellDependencies() {
+    
+    
+    Cc["@mozilla.org/satchel/form-history-startup;1"]
+      .getService(Ci.nsIObserver)
+      .observe(null, "profile-after-change", null);
+
+    
+    
+    
+    try {
+      await AddonTestUtils.promiseStartupManager();
+    } catch (error) {
+      if (!error.message.includes("already started")) {
+        throw error;
+      }
+    }
+    await PlacesSearchAutocompleteProvider.ensureReady();
+  },
+};
+
+UrlbarTestUtils.formHistory = {
+  
+
+
+
+
+
+
+
+  async update(
+    updateObject = {},
+    window = BrowserWindowTracker.getTopWindow()
+  ) {
+    await new Promise((resolve, reject) => {
+      FormHistory.update(
+        Object.assign(
+          {
+            fieldname: this.getFormHistoryName(window),
+          },
+          updateObject
+        ),
+        {
+          handleError(error) {
+            reject(error);
+          },
+          handleCompletion(errored) {
+            if (!errored) {
+              resolve();
+            }
+          },
+        }
+      );
+    });
+  },
+
+  
+
+
+
+
+
+
+
+  async add(values = [], window = BrowserWindowTracker.getTopWindow()) {
+    for (let value of values) {
+      await this.update(
+        {
+          value,
+          op: "bump",
+        },
+        window
+      );
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+  async remove(values = [], window = BrowserWindowTracker.getTopWindow()) {
+    for (let value of values) {
+      await this.update(
+        {
+          value,
+          op: "remove",
+        },
+        window
+      );
+    }
+  },
+
+  
+
+
+
+
+
+
+  async clear(window = BrowserWindowTracker.getTopWindow()) {
+    await this.update({ op: "remove" }, window);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  search(criteria = {}, window = BrowserWindowTracker.getTopWindow()) {
+    return new Promise((resolve, reject) => {
+      let results = [];
+      FormHistory.search(
+        null,
+        Object.assign(
+          {
+            fieldname: this.getFormHistoryName(window),
+          },
+          criteria
+        ),
+        {
+          handleResult(result) {
+            results.push(result);
+          },
+          handleError(error) {
+            reject(error);
+          },
+          handleCompletion(errored) {
+            if (!errored) {
+              resolve(results);
+            }
+          },
+        }
+      );
+    });
+  },
+
+  
+
+
+
+
+
+
+
+  promiseChanged(change = null) {
+    return TestUtils.topicObserved(
+      "satchel-storage-changed",
+      (subject, data) => !change || data == "formhistory-" + change
+    );
+  },
+
+  
+
+
+
+
+
+
+
+  getFormHistoryName(window = BrowserWindowTracker.getTopWindow()) {
+    return window ? window.gURLBar.formHistoryName : "searchbar-history";
   },
 };
 
