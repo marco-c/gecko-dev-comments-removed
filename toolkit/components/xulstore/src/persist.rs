@@ -77,6 +77,82 @@ fn observe_xpcom_shutdown() {
     .unwrap_or_else(|err| error!("error observing XPCOM shutdown: {}", err));
 }
 
+
+
+
+fn sync_persist() -> XULStoreResult<()> {
+    let db = get_database()?;
+    let mut writer = db.env.write()?;
+
+    
+    
+    
+    
+    let writes = CHANGES.lock()?.take();
+
+    
+    
+    
+    let writes = writes.ok_or(XULStoreError::Unavailable)?;
+
+    for (key, value) in writes.iter() {
+        match value {
+            Some(val) => db.store.put(&mut writer, &key, &Value::Str(val))?,
+            None => {
+                match db.store.delete(&mut writer, &key) {
+                    Ok(_) => (),
+
+                    
+                    
+                    
+                    
+                    Err(RkvStoreError::LmdbError(LmdbError::NotFound)) => {
+                        warn!("tried to remove key that isn't in the store");
+                    }
+
+                    Err(err) => return Err(err.into()),
+                }
+            }
+        }
+    }
+
+    writer.commit()?;
+
+    Ok(())
+}
+
+pub(crate) fn flush_writes() ->XULStoreResult<()> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let _lock = PERSIST.lock()?;
+    match sync_persist() {
+        Ok(_) => (),
+
+        
+        
+        Err(XULStoreError::Unavailable) => {
+            info!("Unable to persist xulstore");
+        }
+
+        Err(err) => return Err(err.into())
+    }
+    Ok(())
+}
+
 pub(crate) fn clear_on_shutdown() {
     (|| -> XULStoreResult<()> {
         THREAD.lock()?.take();
@@ -134,45 +210,7 @@ impl Task for PersistTask {
             
             
             let _lock = PERSIST.lock()?;
-
-            let db = get_database()?;
-            let mut writer = db.env.write()?;
-
-            
-            
-            
-            
-            let writes = CHANGES.lock()?.take();
-
-            
-            
-            
-            let writes = writes.ok_or(XULStoreError::Unavailable)?;
-
-            for (key, value) in writes.iter() {
-                match value {
-                    Some(val) => db.store.put(&mut writer, &key, &Value::Str(val))?,
-                    None => {
-                        match db.store.delete(&mut writer, &key) {
-                            Ok(_) => (),
-
-                            
-                            
-                            
-                            
-                            Err(RkvStoreError::LmdbError(LmdbError::NotFound)) => {
-                                warn!("tried to remove key that isn't in the store");
-                            }
-
-                            Err(err) => return Err(err.into()),
-                        }
-                    }
-                }
-            }
-
-            writer.commit()?;
-
-            Ok(())
+            sync_persist()
         }()));
     }
 
