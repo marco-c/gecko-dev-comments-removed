@@ -19,6 +19,7 @@
 #include "mozilla/EventStateManager.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
+#include "mozilla/dom/ContentParent.h"
 
 #include "base/basictypes.h"
 
@@ -1347,22 +1348,19 @@ void nsPresContext::ThemeChangedInternal() {
     
     
     image::SurfaceCacheUtils::DiscardAll();
+
+    if (XRE_IsParentProcess()) {
+      nsTArray<ContentParent*> cp;
+      ContentParent::GetAll(cp);
+      auto cache = LookAndFeel::GetIntCache();
+      for (ContentParent* c : cp) {
+        Unused << c->SendThemeChanged(cache);
+      }
+    }
   }
 
   RefreshSystemMetrics();
   PreferenceSheet::Refresh();
-
-  
-  
-  if (nsPIDOMWindowOuter* window = mDocument->GetWindow()) {
-    if (RefPtr<nsPIWindowRoot> topLevelWin = window->GetTopWindowRoot()) {
-      topLevelWin->EnumerateBrowsers(
-          [](nsIRemoteTab* aBrowserParent, void*) {
-            aBrowserParent->NotifyThemeChanged();
-          },
-          nullptr);
-    }
-  }
 }
 
 void nsPresContext::SysColorChanged() {

@@ -539,6 +539,12 @@ child:
 
     async NotifyVisited(VisitedQueryResult[] uri);
 
+    
+
+
+
+    async ThemeChanged(LookAndFeelInt[] lookAndFeelIntCache);
+
     async PreferenceUpdate(Pref pref);
     async VarUpdate(GfxVarUpdate var);
 

@@ -937,12 +937,6 @@ child:
 
 
 
-    async ThemeChanged(LookAndFeelInt[] lookAndFeelIntCache);
-
-    
-
-
-
     async SafeAreaInsetsChanged(ScreenIntMargin aSafeAreaInsets);
 
     

@@ -1119,17 +1119,6 @@ void BrowserParent::SizeModeChanged(const nsSizeMode& aSizeMode) {
   }
 }
 
-void BrowserParent::ThemeChanged() {
-  if (!mIsDestroyed) {
-    
-    
-    
-    
-    
-    Unused << SendThemeChanged(LookAndFeel::GetIntCache());
-  }
-}
-
 #if defined(MOZ_WIDGET_ANDROID)
 void BrowserParent::DynamicToolbarMaxHeightChanged(ScreenIntCoord aHeight) {
   if (!mIsDestroyed) {
