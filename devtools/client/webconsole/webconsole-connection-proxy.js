@@ -59,10 +59,6 @@ class WebConsoleConnectionProxy {
       return this._connecter;
     }
 
-    if (!this.target.client) {
-      return Promise.reject("target was destroyed");
-    }
-
     this.target.on("will-navigate", this._onTabWillNavigate);
     this.target.on("navigate", this._onTabNavigated);
 
@@ -86,7 +82,7 @@ class WebConsoleConnectionProxy {
 
       this._addWebConsoleFrontEventListeners();
 
-      if (this.webConsoleFront && !this.webConsoleFront.hasNativeConsoleAPI) {
+      if (!this.webConsoleFront.hasNativeConsoleAPI) {
         await this.webConsoleUI.logWarningAboutReplacedAPI();
       }
     })();
@@ -118,10 +114,6 @@ class WebConsoleConnectionProxy {
 
 
   _attachConsole() {
-    if (!this.webConsoleFront) {
-      return null;
-    }
-
     const listeners = ["NetworkActivity"];
     
     
@@ -139,10 +131,6 @@ class WebConsoleConnectionProxy {
 
 
   _addWebConsoleFrontEventListeners() {
-    if (!this.webConsoleFront) {
-      return;
-    }
-
     this.webConsoleFront.on("networkEvent", this._onNetworkEvent);
     this.webConsoleFront.on("networkEventUpdate", this._onNetworkEventUpdate);
     this.webConsoleFront.on(
@@ -180,20 +168,13 @@ class WebConsoleConnectionProxy {
 
 
   _getNetworkMessages() {
-    if (!this.webConsoleFront) {
-      return [];
-    }
-
     return Array.from(this.webConsoleFront.getNetworkEvents());
   }
 
   _clearLogpointMessages(logpointId) {
-    
-    if (!this.webConsoleUI?.wrapper) {
-      return;
+    if (this.webConsoleUI) {
+      this.webConsoleUI.wrapper.dispatchClearLogpointMessages(logpointId);
     }
-
-    this.webConsoleUI.wrapper.dispatchClearLogpointMessages(logpointId);
   }
 
   
@@ -205,6 +186,9 @@ class WebConsoleConnectionProxy {
 
 
   _onNetworkEvent(networkInfo) {
+    if (!this.webConsoleUI) {
+      return;
+    }
     this.dispatchMessageAdd(networkInfo);
   }
 
@@ -217,6 +201,9 @@ class WebConsoleConnectionProxy {
 
 
   _onNetworkEventUpdate(response) {
+    if (!this.webConsoleUI) {
+      return;
+    }
     this.dispatchMessageUpdate(response.networkInfo, response);
   }
 
@@ -244,10 +231,6 @@ class WebConsoleConnectionProxy {
 
 
   _onTabNavigated(packet) {
-    
-    if (!this.webConsoleUI) {
-      return;
-    }
     this.webConsoleUI.handleTabNavigated(packet);
   }
 
@@ -259,10 +242,6 @@ class WebConsoleConnectionProxy {
 
 
   _onTabWillNavigate(packet) {
-    
-    if (!this.webConsoleUI) {
-      return;
-    }
     this.webConsoleUI.handleTabWillNavigate(packet);
   }
 
@@ -270,10 +249,6 @@ class WebConsoleConnectionProxy {
 
 
   dispatchMessageAdd(packet) {
-    
-    if (!this.webConsoleUI?.wrapper) {
-      return;
-    }
     this.webConsoleUI.wrapper.dispatchMessageAdd(packet);
   }
 
@@ -281,10 +256,6 @@ class WebConsoleConnectionProxy {
 
 
   dispatchMessagesAdd(packets) {
-    
-    if (!this.webConsoleUI?.wrapper) {
-      return;
-    }
     this.webConsoleUI.wrapper.dispatchMessagesAdd(packets);
   }
 
@@ -293,7 +264,7 @@ class WebConsoleConnectionProxy {
 
   dispatchMessageUpdate(networkInfo, response) {
     
-    if (!this.webConsoleUI?.wrapper) {
+    if (!this.webConsoleUI) {
       return;
     }
     this.webConsoleUI.wrapper.dispatchMessageUpdate(networkInfo, response);
