@@ -637,6 +637,12 @@ class nsIWidget : public nsISupports {
   
 
 
+
+  virtual bool NeedsRecreateToReshow() { return false; }
+
+  
+
+
   virtual void SetModal(bool aModal) = 0;
 
   
