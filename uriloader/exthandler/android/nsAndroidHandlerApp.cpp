@@ -3,8 +3,8 @@
 
 
 
+#include "mozilla/java/GeckoAppShellWrappers.h"
 #include "nsAndroidHandlerApp.h"
-#include "GeneratedJNIWrappers.h"
 
 using namespace mozilla;
 
