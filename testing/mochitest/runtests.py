@@ -438,7 +438,7 @@ else:
         except OSError as err:
             
             
-            if err.errno == errno.ESRCH or err.errno == errno.ECHILD:
+            if err.errno in (errno.ESRCH, errno.ECHILD, errno.EPERM):
                 return False
             raise
 
