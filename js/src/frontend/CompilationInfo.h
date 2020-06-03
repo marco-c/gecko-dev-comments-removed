@@ -45,16 +45,22 @@ struct ScopeContext {
   
   bool inWith = false;
 
+  
+  
+  mozilla::Maybe<FieldInitializers> fieldInitializers = {};
+
   explicit ScopeContext(Scope* scope, JSObject* enclosingEnv = nullptr) {
     computeAllowSyntax(scope);
     computeThisBinding(scope, enclosingEnv);
     computeInWith(scope);
+    computeExternalInitializers(scope);
   }
 
  private:
   void computeAllowSyntax(Scope* scope);
   void computeThisBinding(Scope* scope, JSObject* environment = nullptr);
   void computeInWith(Scope* scope);
+  void computeExternalInitializers(Scope* scope);
 };
 
 

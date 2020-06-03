@@ -282,8 +282,6 @@ class ScopeCreationData {
 
   
   bool isArrow() const;
-  bool isClassConstructor() const;
-  const FieldInitializers& fieldInitializers() const;
 
   bool hasScope() const { return scope_ != nullptr; }
 
