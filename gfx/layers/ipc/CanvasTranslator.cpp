@@ -270,6 +270,11 @@ void CanvasTranslator::BeginTransaction() { mIsInTransaction = true; }
 
 void CanvasTranslator::Flush() {
 #if defined(XP_WIN)
+  
+  if (!mDevice) {
+    return;
+  }
+
   gfx::AutoSerializeWithMoz2D serializeWithMoz2D(
       GetReferenceDrawTarget()->GetBackendType());
   RefPtr<ID3D11DeviceContext> deviceContext;
