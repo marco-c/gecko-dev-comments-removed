@@ -1,0 +1,287 @@
+
+
+
+
+
+#ifndef mozilla_dom_LinkStyle_h
+#define mozilla_dom_LinkStyle_h
+
+#include "nsINode.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/StyleSheet.h"
+#include "mozilla/Result.h"
+#include "mozilla/Unused.h"
+#include "nsTArray.h"
+
+class nsIContent;
+class nsICSSLoaderObserver;
+class nsIPrincipal;
+class nsIURI;
+
+namespace mozilla {
+
+namespace dom {
+
+class Document;
+class ShadowRoot;
+
+
+class LinkStyle {
+ public:
+  enum class ForceUpdate : uint8_t {
+    No,
+    Yes,
+  };
+
+  enum class Completed : uint8_t {
+    No,
+    Yes,
+  };
+
+  enum class HasAlternateRel : uint8_t {
+    No,
+    Yes,
+  };
+
+  enum class IsAlternate : uint8_t {
+    No,
+    Yes,
+  };
+
+  enum class IsInline : uint8_t {
+    No,
+    Yes,
+  };
+
+  enum class IsExplicitlyEnabled : uint8_t {
+    No,
+    Yes,
+  };
+
+  enum class MediaMatched : uint8_t {
+    Yes,
+    No,
+  };
+
+  struct Update {
+   private:
+    bool mWillNotify;
+    bool mIsAlternate;
+    bool mMediaMatched;
+
+   public:
+    Update() : mWillNotify(false), mIsAlternate(false), mMediaMatched(false) {}
+
+    Update(Completed aCompleted, IsAlternate aIsAlternate,
+           MediaMatched aMediaMatched)
+        : mWillNotify(aCompleted == Completed::No),
+          mIsAlternate(aIsAlternate == IsAlternate::Yes),
+          mMediaMatched(aMediaMatched == MediaMatched::Yes) {}
+
+    bool WillNotify() const { return mWillNotify; }
+
+    bool ShouldBlock() const {
+      if (!mWillNotify) {
+        return false;
+      }
+
+      return !mIsAlternate && mMediaMatched;
+    }
+  };
+
+  static LinkStyle* FromNode(nsINode& aNode) { return aNode.AsLinkStyle(); }
+  static const LinkStyle* FromNode(const nsINode& aNode) {
+    return aNode.AsLinkStyle();
+  }
+
+  static LinkStyle* FromNodeOrNull(nsINode* aNode) {
+    return aNode ? FromNode(*aNode) : nullptr;
+  }
+
+  static const LinkStyle* FromNodeOrNull(const nsINode* aNode) {
+    return aNode ? FromNode(*aNode) : nullptr;
+  }
+
+  enum RelValue {
+    ePREFETCH = 0x00000001,
+    eDNS_PREFETCH = 0x00000002,
+    eSTYLESHEET = 0x00000004,
+    eNEXT = 0x00000008,
+    eALTERNATE = 0x00000010,
+    ePRECONNECT = 0x00000020,
+    
+    ePRELOAD = 0x00000080
+  };
+
+  
+  static uint32_t ParseLinkTypes(const nsAString& aTypes);
+
+  void UpdateStyleSheetInternal() {
+    Unused << UpdateStyleSheetInternal(nullptr, nullptr);
+  }
+
+  struct MOZ_STACK_CLASS SheetInfo {
+    nsIContent* mContent;
+    
+    nsCOMPtr<nsIURI> mURI;
+
+    
+    
+    nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+    nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
+    mozilla::CORSMode mCORSMode;
+    nsString mTitle;
+    nsString mMedia;
+    nsString mIntegrity;
+    nsString mNonce;
+
+    bool mHasAlternateRel;
+    bool mIsInline;
+    IsExplicitlyEnabled mIsExplicitlyEnabled;
+
+    SheetInfo(const mozilla::dom::Document&, nsIContent*,
+              already_AddRefed<nsIURI> aURI,
+              already_AddRefed<nsIPrincipal> aTriggeringPrincipal,
+              already_AddRefed<nsIReferrerInfo> aReferrerInfo,
+              mozilla::CORSMode, const nsAString& aTitle,
+              const nsAString& aMedia, const nsAString& aIntegrity,
+              const nsAString& aNonce, HasAlternateRel, IsInline,
+              IsExplicitlyEnabled);
+
+    ~SheetInfo();
+  };
+
+  virtual nsIContent& AsContent() = 0;
+  virtual Maybe<SheetInfo> GetStyleSheetInfo() = 0;
+
+  
+
+
+
+
+
+
+  void SetStyleSheet(StyleSheet* aStyleSheet);
+
+  
+
+
+
+
+
+  Result<Update, nsresult> UpdateStyleSheet(nsICSSLoaderObserver*);
+
+  
+
+
+
+
+
+  void SetEnableUpdates(bool aEnableUpdates) {
+    mUpdatesEnabled = aEnableUpdates;
+  }
+
+  
+
+
+
+
+
+
+  virtual void GetCharset(nsAString& aCharset);
+
+  
+  
+  
+  void SetLineNumber(uint32_t aLineNumber) { mLineNumber = aLineNumber; }
+
+  
+
+
+
+
+
+  uint32_t GetLineNumber() const { return mLineNumber; }
+
+  
+  
+  
+  void SetColumnNumber(uint32_t aColumnNumber) {
+    mColumnNumber = aColumnNumber;
+  }
+
+  
+
+
+
+
+
+  uint32_t GetColumnNumber() const { return mColumnNumber; }
+
+  StyleSheet* GetSheet() const { return mStyleSheet; }
+
+ protected:
+  LinkStyle();
+  virtual ~LinkStyle();
+
+  
+  
+  
+  
+  
+  static void GetTitleAndMediaForElement(const mozilla::dom::Element&,
+                                         nsString& aTitle, nsString& aMedia);
+
+  
+  
+  static bool IsCSSMimeTypeAttributeForStyleElement(const Element&);
+
+  
+  void Unlink();
+  void Traverse(nsCycleCollectionTraversalCallback& cb);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  Result<Update, nsresult> UpdateStyleSheetInternal(
+      Document* aOldDocument, ShadowRoot* aOldShadowRoot,
+      ForceUpdate = ForceUpdate::No);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  Result<Update, nsresult> DoUpdateStyleSheet(Document* aOldDocument,
+                                              ShadowRoot* aOldShadowRoot,
+                                              nsICSSLoaderObserver*,
+                                              ForceUpdate);
+
+  RefPtr<mozilla::StyleSheet> mStyleSheet;
+  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+  bool mUpdatesEnabled;
+  uint32_t mLineNumber;
+  uint32_t mColumnNumber;
+};
+
+}  
+
+}  
+
+#endif  

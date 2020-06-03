@@ -36,8 +36,8 @@ static_assert(eAuthorSheetFeatures == 0 && eUserSheetFeatures == 1 &&
               "in SheetLoadData::mParsingMode");
 
 class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
-  using MediaMatched = nsIStyleSheetLinkingElement::MediaMatched;
-  using IsAlternate = nsIStyleSheetLinkingElement::IsAlternate;
+  using MediaMatched = dom::LinkStyle::MediaMatched;
+  using IsAlternate = dom::LinkStyle::IsAlternate;
   using IsPreload = Loader::IsPreload;
   using UseSystemPrincipal = Loader::UseSystemPrincipal;
 
@@ -47,8 +47,7 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
  public:
   
   SheetLoadData(Loader* aLoader, const nsAString& aTitle, nsIURI* aURI,
-                StyleSheet* aSheet, bool aSyncLoad,
-                nsIStyleSheetLinkingElement* aOwningElement,
+                StyleSheet* aSheet, bool aSyncLoad, nsINode* aOwningNode,
                 IsAlternate aIsAlternate, MediaMatched aMediaMatched,
                 IsPreload aIsPreload, nsICSSLoaderObserver* aObserver,
                 nsIPrincipal* aLoaderPrincipal, nsIReferrerInfo* aReferrerInfo,
@@ -188,7 +187,7 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
 
   
   
-  const nsCOMPtr<nsIStyleSheetLinkingElement> mOwningElement;
+  const nsCOMPtr<nsINode> mOwningNode;
 
   
   const nsCOMPtr<nsICSSLoaderObserver> mObserver;

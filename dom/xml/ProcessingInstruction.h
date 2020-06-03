@@ -10,25 +10,23 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/CharacterData.h"
 #include "nsAString.h"
-#include "nsStyleLinkElement.h"
 
 class nsIPrincipal;
 class nsIURI;
 
 namespace mozilla {
+
+class StyleSheet;
+
 namespace dom {
 
-class ProcessingInstruction : public CharacterData, public nsStyleLinkElement {
+class ProcessingInstruction : public CharacterData {
  public:
   ProcessingInstruction(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
                         const nsAString& aData);
 
-  
-  
-  NS_DECL_ISUPPORTS_INHERITED
-
   virtual already_AddRefed<CharacterData> CloneDataNode(
-      mozilla::dom::NodeInfo* aNodeInfo, bool aCloneText) const override;
+      dom::NodeInfo* aNodeInfo, bool aCloneText) const override;
 
 #ifdef DEBUG
   virtual void List(FILE* out, int32_t aIndent) const override;
@@ -38,6 +36,9 @@ class ProcessingInstruction : public CharacterData, public nsStyleLinkElement {
 
   
   void GetTarget(nsAString& aTarget) { aTarget = NodeName(); }
+  
+  
+  StyleSheet* GetSheet() const;
 
   NS_IMPL_FROMNODE_HELPER(ProcessingInstruction, IsProcessingInstruction())
 
@@ -56,11 +57,7 @@ class ProcessingInstruction : public CharacterData, public nsStyleLinkElement {
 
   bool GetAttrValue(nsAtom* aName, nsAString& aValue);
 
-  virtual JSObject* WrapNode(JSContext* aCx,
-                             JS::Handle<JSObject*> aGivenProto) override;
-
-  
-  Maybe<SheetInfo> GetStyleSheetInfo() override;
+  JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 };
 
 }  

@@ -9,9 +9,9 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Link.h"
+#include "mozilla/dom/LinkStyle.h"
 #include "mozilla/WeakPtr.h"
 #include "nsGenericHTMLElement.h"
-#include "nsStyleLinkElement.h"
 #include "nsDOMTokenList.h"
 
 namespace mozilla {
@@ -22,7 +22,7 @@ namespace dom {
 
 
 class HTMLLinkElement final : public nsGenericHTMLElement,
-                              public nsStyleLinkElement,
+                              public LinkStyle,
                               public Link {
  public:
   explicit HTMLLinkElement(
@@ -207,6 +207,8 @@ class HTMLLinkElement final : public nsGenericHTMLElement,
       const mozilla::dom::Element&);
 
   
+  nsIContent& AsContent() final { return *this; }
+  const LinkStyle* AsLinkStyle() const final { return this; }
   Maybe<SheetInfo> GetStyleSheetInfo() final;
 
   RefPtr<nsDOMTokenList> mRelList;
