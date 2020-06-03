@@ -1612,7 +1612,7 @@ bool WarpBuilder::buildCallOp(BytecodeLocation loc) {
   bool needsThisCheck = false;
   if (callInfo.constructing()) {
     
-    MDefinition* callee = callInfo.fun();
+    MDefinition* callee = callInfo.callee();
     MDefinition* newTarget = callInfo.getNewTarget();
     MCreateThis* createThis = MCreateThis::New(alloc(), callee, newTarget);
     current->add(createThis);

@@ -256,7 +256,7 @@ IonBuilder::InliningResult IonBuilder::inlineNativeCall(CallInfo& callInfo,
 
   
   
-  if (callInfo.constructing() && callInfo.getNewTarget() != callInfo.fun()) {
+  if (callInfo.constructing() && callInfo.getNewTarget() != callInfo.callee()) {
     return InliningStatus_NotInlined;
   }
 
@@ -756,7 +756,7 @@ IonBuilder::InliningResult IonBuilder::inlineMathFunction(
     return InliningStatus_NotInlined;
   }
 
-  callInfo.fun()->setImplicitlyUsedUnchecked();
+  callInfo.callee()->setImplicitlyUsedUnchecked();
   callInfo.thisArg()->setImplicitlyUsedUnchecked();
 
   MMathFunction* ins =
