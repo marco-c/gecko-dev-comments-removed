@@ -5,7 +5,7 @@
 import buildconfig
 import collections
 import re
-import StringIO
+from six import StringIO
 import sys
 
 def read_conf(conf_filename):
@@ -39,7 +39,7 @@ def read_conf(conf_filename):
                         'name': name,
                         'desc': desc }
                 continue
-            raise ValueError('error parsing %s at line %d' % (conf_filename, line_num))
+            raise ValueError('error parsing %s at line %d' % (conf_filename, line_num + 1))
 
     return parse_counters(stream)
 
