@@ -2,16 +2,19 @@
 
 
 
+#ifdef MOZ_MAINTENANCE_SERVICE
 BOOL StartServiceUpdate(LPCWSTR installDir);
 DWORD LaunchServiceSoftwareUpdateCommand(int argc, LPCWSTR* argv);
 BOOL WriteStatusFailure(LPCWSTR updateDirPath, int errorCode);
 DWORD WaitForServiceStop(LPCWSTR serviceName, DWORD maxWaitSeconds);
-DWORD WaitForProcessExit(LPCWSTR filename, DWORD maxSeconds);
-DWORD IsProcessRunning(LPCWSTR filename);
 BOOL DoesFallbackKeyExist();
 BOOL IsLocalFile(LPCWSTR file, BOOL& isLocal);
 DWORD StartServiceCommand(int argc, LPCWSTR* argv);
 BOOL IsUnpromptedElevation(BOOL& isUnpromptedElevation);
+#endif
+
+DWORD WaitForProcessExit(LPCWSTR filename, DWORD maxSeconds);
+DWORD IsProcessRunning(LPCWSTR filename);
 BOOL GetSecureOutputDirectoryPath(LPWSTR outBuf);
 BOOL GetSecureOutputFilePath(LPCWSTR patchDirPath, LPCWSTR fileExt,
                              LPWSTR outBuf);
@@ -20,15 +23,17 @@ void RemoveSecureOutputFiles(LPCWSTR patchDirPath);
 
 #define PATCH_DIR_PATH L"\\updates\\0"
 
-#define SVC_NAME L"MozillaMaintenance"
+#ifdef MOZ_MAINTENANCE_SERVICE
+#  define SVC_NAME L"MozillaMaintenance"
 
-#define BASE_SERVICE_REG_KEY L"SOFTWARE\\Mozilla\\MaintenanceService"
-
-
-
+#  define BASE_SERVICE_REG_KEY L"SOFTWARE\\Mozilla\\MaintenanceService"
 
 
 
 
-#define TEST_ONLY_FALLBACK_KEY_PATH \
-  BASE_SERVICE_REG_KEY L"\\3932ecacee736d366d6436db0f55bce4"
+
+
+
+#  define TEST_ONLY_FALLBACK_KEY_PATH \
+    BASE_SERVICE_REG_KEY L"\\3932ecacee736d366d6436db0f55bce4"
+#endif

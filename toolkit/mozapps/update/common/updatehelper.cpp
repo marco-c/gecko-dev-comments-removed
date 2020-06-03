@@ -6,23 +6,26 @@
 
 
 #include <tlhelp32.h>
-#ifndef ONLY_SERVICE_LAUNCHING
 
-#  include <stdio.h>
-#  include <direct.h>
+#include <stdio.h>
+#include <direct.h>
+#include "shlobj.h"
+
+
+#include <shlwapi.h>
+
+#include "updatehelper.h"
+#include "updateutils_win.h"
+
+#ifdef MOZ_MAINTENANCE_SERVICE
 #  include "mozilla/UniquePtr.h"
 #  include "pathhash.h"
-#  include "shlobj.h"
 #  include "registrycertificates.h"
 #  include "uachelper.h"
-#  include "updatehelper.h"
-#  include "updateutils_win.h"
-
-
-#  include <shlwapi.h>
 
 using mozilla::MakeUnique;
 using mozilla::UniquePtr;
+#endif
 
 BOOL PathGetSiblingFilePath(LPWSTR destinationBuffer, LPCWSTR siblingFilePath,
                             LPCWSTR newFileName);
@@ -251,6 +254,7 @@ void RemoveSecureOutputFiles(LPCWSTR patchDirPath) {
   }
 }
 
+#ifdef MOZ_MAINTENANCE_SERVICE
 
 
 
@@ -353,8 +357,6 @@ BOOL StartServiceUpdate(LPCWSTR installDir) {
   return svcUpdateProcessStarted;
 }
 
-#endif
-
 
 
 
@@ -408,8 +410,6 @@ StartServiceCommand(int argc, LPCWSTR* argv) {
   CloseServiceHandle(serviceManager);
   return lastError;
 }
-
-#ifndef ONLY_SERVICE_LAUNCHING
 
 
 
@@ -479,8 +479,6 @@ BOOL WriteStatusFailure(LPCWSTR patchDirPath, int errorCode) {
 
   return TRUE;
 }
-
-#endif
 
 
 
@@ -610,8 +608,7 @@ WaitForServiceStop(LPCWSTR serviceName, DWORD maxWaitSeconds) {
   CloseServiceHandle(serviceManager);
   return lastServiceState;
 }
-
-#ifndef ONLY_SERVICE_LAUNCHING
+#endif
 
 
 
@@ -676,6 +673,7 @@ WaitForProcessExit(LPCWSTR filename, DWORD maxSeconds) {
   return applicationRunningError;
 }
 
+#ifdef MOZ_MAINTENANCE_SERVICE
 
 
 
@@ -692,8 +690,6 @@ BOOL DoesFallbackKeyExist() {
   RegCloseKey(testOnlyFallbackKey);
   return TRUE;
 }
-
-#endif
 
 
 
@@ -764,3 +760,4 @@ BOOL IsUnpromptedElevation(BOOL& isUnpromptedElevation) {
 
   return success;
 }
+#endif

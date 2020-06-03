@@ -1948,7 +1948,9 @@ void PatchIfFile::Finish(int status) {
 #  include "nsWindowsRestart.cpp"
 #  include "nsWindowsHelpers.h"
 #  include "uachelper.h"
-#  include "pathhash.h"
+#  ifdef MOZ_MAINTENANCE_SERVICE
+#    include "pathhash.h"
+#  endif
 
 
 
@@ -2239,7 +2241,7 @@ static bool IsUpdateStatusPendingService() {
 }
 #endif
 
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_MAINTENANCE_SERVICE)
 
 
 
@@ -2448,7 +2450,7 @@ static int ProcessReplaceRequest() {
   return 0;
 }
 
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_MAINTENANCE_SERVICE)
 static void WaitForServiceFinishThread(void* param) {
   
   
@@ -2652,6 +2654,7 @@ int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv,
         fprintf(stderr, "The post update process was not launched");
       }
 
+#  ifdef MOZ_MAINTENANCE_SERVICE
       
       
       
@@ -2662,6 +2665,7 @@ int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv,
       if (!sUsingService) {
         StartServiceUpdate(gInstallDirPath);
       }
+#  endif
     }
     EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 0);
 #elif XP_MACOSX
@@ -3175,6 +3179,7 @@ int NS_main(int argc, NS_tchar** argv) {
         return 1;
       }
 
+#  ifdef MOZ_MAINTENANCE_SERVICE
       
       
       
@@ -3208,9 +3213,9 @@ int NS_main(int argc, NS_tchar** argv) {
                             &baseKey) == ERROR_SUCCESS) {
             RegCloseKey(baseKey);
           } else {
-#  ifdef TEST_UPDATER
+#    ifdef TEST_UPDATER
             useService = testOnlyFallbackKeyExists;
-#  endif
+#    endif
             if (!useService) {
               lastFallbackError = FALLBACKKEY_NOKEY_ERROR;
             }
@@ -3289,6 +3294,7 @@ int NS_main(int argc, NS_tchar** argv) {
           lastFallbackError = FALLBACKKEY_LAUNCH_ERROR;
         }
       }
+#  endif
 
       
       
@@ -3305,6 +3311,7 @@ int NS_main(int argc, NS_tchar** argv) {
         return 0;
       }
 
+#  ifdef MOZ_MAINTENANCE_SERVICE
       
       
       
@@ -3322,6 +3329,7 @@ int NS_main(int argc, NS_tchar** argv) {
           }
         }
       }
+#  endif
 
       
       
