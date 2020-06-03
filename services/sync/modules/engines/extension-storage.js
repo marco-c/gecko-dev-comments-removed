@@ -30,20 +30,35 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIInterfaceRequestor"
 );
 
+const PREF_FORCE_ENABLE = "engine.extension-storage.force";
 
 
-function isEngineEnabled() {
+
+function getEngineEnabled() {
   
   
   
   
   
   
-  const forced = Svc.Prefs.get("engine.extension-storage.force", undefined);
+  const forced = Svc.Prefs.get(PREF_FORCE_ENABLE, undefined);
   if (forced !== undefined) {
     return forced;
   }
   return Svc.Prefs.get("engine.addons", false);
+}
+
+function setEngineEnabled(enabled) {
+  
+  
+  
+  
+  
+  
+  
+  if (Svc.Prefs.has(PREF_FORCE_ENABLE)) {
+    Svc.Prefs.set(PREF_FORCE_ENABLE, enabled);
+  }
 }
 
 
@@ -59,7 +74,10 @@ ExtensionStorageEngineBridge.prototype = {
   _skipPercentageChance: 100,
 
   get enabled() {
-    return isEngineEnabled();
+    return getEngineEnabled();
+  },
+  set enabled(enabled) {
+    setEngineEnabled(enabled);
   },
 };
 
@@ -103,7 +121,13 @@ ExtensionStorageEngineKinto.prototype = {
   },
 
   get enabled() {
-    return isEngineEnabled();
+    return getEngineEnabled();
+  },
+  
+  
+  
+  set enabled(enabled) {
+    setEngineEnabled(enabled);
   },
 
   _wipeClient() {
