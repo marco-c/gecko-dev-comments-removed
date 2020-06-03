@@ -1512,17 +1512,6 @@ pref("network.http.enforce-framing.strict_chunked_encoding", true);
 pref("network.http.max_response_header_size", 393216);
 
 
-pref("network.http.rcwn.enabled", true);
-pref("network.http.rcwn.cache_queue_normal_threshold", 8);
-pref("network.http.rcwn.cache_queue_priority_threshold", 2);
-
-
-pref("network.http.rcwn.small_resource_size_kb", 256);
-
-pref("network.http.rcwn.min_wait_before_racing_ms", 0);
-pref("network.http.rcwn.max_wait_before_racing_ms", 500);
-
-
 
 pref("network.http.focused_window_transaction_ratio", "0.9");
 
