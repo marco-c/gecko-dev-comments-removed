@@ -1,0 +1,9 @@
+
+
+
+
+pub use crate::*;
+
+extern "C" {
+    pub fn SECOID_FindOIDByTag(tagnum: u32 ) -> *mut SECOidData;
+}
