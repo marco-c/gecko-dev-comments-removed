@@ -100,8 +100,12 @@ class CompatibilityView {
 
   _onChangeAdded({ selector }) {
     if (!this._isAvailable()) {
+      
+      this._isChangeAddedWhileHidden = true;
       return;
     }
+
+    this._isChangeAddedWhileHidden = false;
 
     
     
@@ -119,8 +123,28 @@ class CompatibilityView {
   }
 
   _onPanelSelected() {
-    this._onSelectedNodeChanged();
-    this._onTopLevelTargetChanged();
+    const {
+      selectedNode,
+      topLevelTarget,
+    } = this.inspector.store.getState().compatibility;
+
+    
+    if (
+      this.inspector.selection.nodeFront !== selectedNode ||
+      this._isChangeAddedWhileHidden
+    ) {
+      this._onSelectedNodeChanged();
+    }
+
+    
+    if (
+      this.inspector.toolbox.target !== topLevelTarget ||
+      this._isChangeAddedWhileHidden
+    ) {
+      this._onTopLevelTargetChanged();
+    }
+
+    this._isChangeAddedWhileHidden = false;
   }
 
   _onSelectedNodeChanged() {
