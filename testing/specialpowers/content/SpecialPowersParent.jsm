@@ -608,6 +608,30 @@ class SpecialPowersParent extends JSWindowActorParent {
     }
   }
 
+  _spawnChrome(task, args, caller, imports) {
+    let sb = new SpecialPowersSandbox(
+      null,
+      data => {
+        this.sendAsyncMessage("Assert", data);
+      },
+      { imports }
+    );
+
+    for (let [global, prop] of Object.entries({
+      windowGlobalParent: "manager",
+      browsingContext: "browsingContext",
+    })) {
+      Object.defineProperty(sb.sandbox, global, {
+        get: () => {
+          return this[prop];
+        },
+        enumerable: true,
+      });
+    }
+
+    return sb.execute(task, args, caller);
+  }
+
   
 
 
@@ -1118,6 +1142,12 @@ class SpecialPowersParent extends JSWindowActorParent {
         return spParent
           .sendQuery("Spawn", { task, args, caller, taskId, imports })
           .finally(() => spParent._taskActors.delete(taskId));
+      }
+
+      case "SpawnChrome": {
+        let { task, args, caller, imports } = aMessage.data;
+
+        return this._spawnChrome(task, args, caller, imports);
       }
 
       case "Snapshot": {

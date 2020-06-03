@@ -19,6 +19,30 @@
 var helpers = require("../helpers");
 var frameScriptEnv = require("../environments/frame-script");
 
+
+
+
+
+var sandboxGlobals = [
+  "Assert",
+  "Blob",
+  "BrowsingContext",
+  "ChromeUtils",
+  "ContentTaskUtils",
+  "EventUtils",
+  "Services",
+  "TextDecoder",
+  "TextEncoder",
+  "URL",
+  "assert",
+  "info",
+  "is",
+  "isnot",
+  "ok",
+  "todo",
+  "todo_is",
+];
+
 module.exports = function(context) {
   
   
@@ -39,31 +63,18 @@ module.exports = function(context) {
     "CallExpression[callee.object.name='SpecialPowers'][callee.property.name='spawn']": function(
       node
     ) {
-      
-      
-      
-      
+      let globals = [...sandboxGlobals, "SpecialPowers", "content", "docShell"];
+      for (let global of globals) {
+        helpers.addVarToScope(global, context.getScope(), false);
+      }
+    },
+    "CallExpression[callee.object.name='SpecialPowers'][callee.property.name='spawnChrome']": function(
+      node
+    ) {
       let globals = [
-        "Assert",
-        "Blob",
-        "BrowsingContext",
-        "ChromeUtils",
-        "ContentTaskUtils",
-        "EventUtils",
-        "Services",
-        "SpecialPowers",
-        "TextDecoder",
-        "TextEncoder",
-        "URL",
-        "assert",
-        "content",
-        "docShell",
-        "info",
-        "is",
-        "isnot",
-        "ok",
-        "todo",
-        "todo_is",
+        ...sandboxGlobals,
+        "browsingContext",
+        "windowGlobalParent",
       ];
       for (let global of globals) {
         helpers.addVarToScope(global, context.getScope(), false);

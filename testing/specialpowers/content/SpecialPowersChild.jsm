@@ -1696,6 +1696,21 @@ class SpecialPowersChild extends JSWindowActorChild {
     });
   }
 
+  
+
+
+
+
+
+  spawnChrome(args, task) {
+    return this.sendQuery("SpawnChrome", {
+      args,
+      task: String(task),
+      caller: Cu.getFunctionSourceLocation(task),
+      imports: this._spawnTaskImports,
+    });
+  }
+
   snapshotContext(target, rect, background) {
     let browsingContext = this._browsingContextForTarget(target);
 
