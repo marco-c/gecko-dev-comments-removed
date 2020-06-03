@@ -3474,11 +3474,6 @@ impl TileCacheInstance {
                     generation: resource_cache.get_image_generation(border_data.request.key),
                 });
             }
-            PrimitiveInstanceKind::PushClipChain |
-            PrimitiveInstanceKind::PopClipChain => {
-                
-                return None;
-            }
             PrimitiveInstanceKind::TextRun { data_handle, .. } => {
                 
                 
