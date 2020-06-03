@@ -6,9 +6,6 @@
 
 var EXPORTED_SYMBOLS = ["AboutReader"];
 
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
-);
 const { ReaderMode } = ChromeUtils.import(
   "resource://gre/modules/ReaderMode.jsm"
 );
@@ -43,9 +40,6 @@ const zoomOnCtrl =
   Services.prefs.getIntPref("mousewheel.with_control.action", 3) == 3;
 const zoomOnMeta =
   Services.prefs.getIntPref("mousewheel.with_meta.action", 1) == 3;
-
-const gIsFirefoxDesktop =
-  Services.appinfo.ID == "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}";
 
 var AboutReader = function(actor, articlePromise) {
   let win = actor.contentWindow;
@@ -126,8 +120,6 @@ var AboutReader = function(actor, articlePromise) {
 
   Services.obs.addObserver(this, "inner-window-destroyed");
 
-  doc.addEventListener("visibilitychange", this);
-
   this._setupStyleDropdown();
   this._setupButton(
     "close-button",
@@ -135,10 +127,8 @@ var AboutReader = function(actor, articlePromise) {
     "aboutReader.toolbar.close"
   );
 
-  if (gIsFirefoxDesktop) {
-    
-    this._actor.sendAsyncMessage("Reader:OnSetup");
-  }
+  
+  this._actor.sendAsyncMessage("Reader:OnSetup");
 
   let colorSchemeValues = JSON.parse(
     Services.prefs.getCharPref("reader.color_scheme.values")
@@ -242,8 +232,6 @@ AboutReader.prototype = {
     ".content p > a:only-child > img:only-child, " +
     ".content .wp-caption img, " +
     ".content figure img",
-
-  PLATFORM_HAS_CACHE: AppConstants.platform == "android",
 
   FONT_SIZE_MIN: 1,
 
@@ -433,14 +421,6 @@ AboutReader.prototype = {
         }
         break;
 
-      case "devicelight":
-        this._handleDeviceLight(aEvent.value);
-        break;
-
-      case "visibilitychange":
-        this._handleVisibilityChange();
-        break;
-
       case "pagehide":
         this._closeDropdowns();
 
@@ -481,18 +461,12 @@ AboutReader.prototype = {
       size = 10 + 2 * this._fontSize;
     }
 
-    let readerBody = this._doc.querySelector("body");
+    let readerBody = this._doc.body;
     readerBody.style.setProperty("--font-size", size + "px");
     return AsyncPrefs.set("reader.font_size", this._fontSize);
   },
 
   _setupFontSizeButtons() {
-    
-    let sampleText = this._doc.querySelector(".font-size-sample");
-    sampleText.textContent = gStrings.GetStringFromName(
-      "aboutReader.fontTypeSample"
-    );
-
     let plusButton = this._doc.querySelector(".plus-button");
     let minusButton = this._doc.querySelector(".minus-button");
 
@@ -723,78 +697,6 @@ AboutReader.prototype = {
     );
   },
 
-  _handleDeviceLight(newLux) {
-    
-    let luxValuesSize = 10;
-    
-    this._luxValues.unshift(newLux);
-    
-    this._totalLux += newLux;
-
-    
-    if (this._luxValues.length < luxValuesSize) {
-      
-      if (this._luxValues.length == 1) {
-        this._updateColorScheme(newLux);
-      }
-      return;
-    }
-    
-    let averageLuxValue = this._totalLux / luxValuesSize;
-
-    this._updateColorScheme(averageLuxValue);
-    
-    let oldLux = this._luxValues.pop();
-    
-    this._totalLux -= oldLux;
-  },
-
-  _handleVisibilityChange() {
-    let colorScheme = Services.prefs.getCharPref("reader.color_scheme");
-    if (colorScheme != "auto") {
-      return;
-    }
-
-    
-    this._enableAmbientLighting(!this._doc.hidden);
-  },
-
-  
-  _enableAmbientLighting(enable) {
-    if (enable) {
-      this._win.addEventListener("devicelight", this);
-      this._luxValues = [];
-      this._totalLux = 0;
-    } else {
-      this._win.removeEventListener("devicelight", this);
-      delete this._luxValues;
-      delete this._totalLux;
-    }
-  },
-
-  _updateColorScheme(luxValue) {
-    
-    let upperBoundDark = 50;
-    
-    let lowerBoundLight = 10;
-    
-    let colorChangeThreshold = 20;
-
-    
-    if (
-      (this._colorScheme === "dark" && luxValue < upperBoundDark) ||
-      (this._colorScheme === "light" && luxValue > lowerBoundLight)
-    ) {
-      return;
-    }
-
-    if (luxValue < colorChangeThreshold) {
-      this._setColorScheme("dark");
-    } else {
-      this._setColorScheme("light");
-    }
-  },
-
   _setColorScheme(newColorScheme) {
     
     if (this._colorScheme === newColorScheme || newColorScheme === "auto") {
@@ -812,9 +714,7 @@ AboutReader.prototype = {
   },
 
   
-  
   _setColorSchemePref(colorSchemePref) {
-    this._enableAmbientLighting(colorSchemePref === "auto");
     this._setColorScheme(colorSchemePref);
 
     AsyncPrefs.set("reader.color_scheme", colorSchemePref);
