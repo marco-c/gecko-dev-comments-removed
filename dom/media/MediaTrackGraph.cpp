@@ -2753,7 +2753,9 @@ void SourceMediaTrack::End() {
   mUpdateTrack->mEnded = true;
   if (auto graph = GraphImpl()) {
     MonitorAutoLock lock(graph->GetMonitor());
-    graph->EnsureNextIteration();
+    if (graph->CurrentDriver()) {  
+      graph->EnsureNextIteration();
+    }
   }
 }
 
