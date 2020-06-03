@@ -29,7 +29,7 @@ async function testSteps() {
   
   
   
-  installPackage("clearStorageForPrincipal_profile");
+  installPackage("clearStoragesForPrincipal_profile");
 
   let request;
   let file;
