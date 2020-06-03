@@ -646,6 +646,7 @@ class MOZ_RAII CacheIRCompiler {
   friend class AutoSaveLiveRegisters;
   friend class AutoCallVM;
   friend class AutoScratchFloatRegister;
+  friend class AutoAvailableFloatRegister;
 
   enum class Mode { Baseline, Ion };
 
@@ -832,6 +833,10 @@ class MOZ_RAII CacheIRCompiler {
     MOZ_ASSERT(stubFieldPolicy_ == StubFieldPolicy::Constant);
     return jsid::fromRawBits(readStubWord(offset, StubField::Type::Id));
   }
+
+#ifdef DEBUG
+  void assertFloatRegisterAvailable(FloatRegister reg);
+#endif
 
  public:
   
@@ -1037,6 +1042,28 @@ class MOZ_RAII AutoScratchFloatRegister {
 
   FloatRegister get() const { return FloatReg0; }
   operator FloatRegister() const { return FloatReg0; }
+};
+
+
+
+
+class MOZ_RAII AutoAvailableFloatRegister {
+  FloatRegister reg_;
+
+  AutoAvailableFloatRegister(const AutoAvailableFloatRegister&) = delete;
+  void operator=(const AutoAvailableFloatRegister&) = delete;
+
+ public:
+  explicit AutoAvailableFloatRegister(CacheIRCompiler& compiler,
+                                      FloatRegister reg)
+      : reg_(reg) {
+#ifdef DEBUG
+    compiler.assertFloatRegisterAvailable(reg);
+#endif
+  }
+
+  FloatRegister get() const { return reg_; }
+  operator FloatRegister() const { return reg_; }
 };
 
 

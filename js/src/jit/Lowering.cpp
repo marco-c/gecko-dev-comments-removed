@@ -4175,11 +4175,7 @@ void LIRGenerator::visitSetPropertyCache(MSetPropertyCache* ins) {
   gen->setNeedsOverrecursedCheck();
 
   
-  
-  LDefinition tempD = LDefinition::BogusTemp();
-  if (IsElemPC(ins->resumePoint()->pc())) {
-    tempD = tempFixed(FloatReg0);
-  }
+  LDefinition tempD = tempFixed(FloatReg0);
 
   LInstruction* lir = new (alloc()) LSetPropertyCache(
       useRegister(ins->object()), useBoxOrTypedOrConstant(id, useConstId),
