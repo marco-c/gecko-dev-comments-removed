@@ -1009,7 +1009,20 @@ bool AsyncPanZoomController::ArePointerEventsConsumable(
 nsEventStatus AsyncPanZoomController::HandleDragEvent(
     const MouseInput& aEvent, const AsyncDragMetrics& aDragMetrics,
     CSSCoord aInitialThumbPos) {
-  if (!StaticPrefs::apz_drag_enabled()) {
+  
+  
+  
+  
+  
+  
+  bool isRDMTouchSimulationActive = false;
+  {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    isRDMTouchSimulationActive =
+        mScrollMetadata.GetIsRDMTouchSimulationActive();
+  }
+
+  if (!StaticPrefs::apz_drag_enabled() || isRDMTouchSimulationActive) {
     return nsEventStatus_eIgnore;
   }
 
