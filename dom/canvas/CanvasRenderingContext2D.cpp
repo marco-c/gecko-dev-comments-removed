@@ -17,6 +17,7 @@
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/dom/GeneratePlaceholderCanvasData.h"
 #include "SVGObserverUtils.h"
 #include "nsPresContext.h"
 
@@ -5095,20 +5096,27 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
   }
 
   do {
+    uint8_t* randomData;
+    if (usePlaceholder) {
+      
+      
+      
+      randomData = TryToGenerateRandomDataForPlaceholderCanvasData();
+    }
+
     JS::AutoCheckCannotGC nogc;
     bool isShared;
     uint8_t* data = JS_GetUint8ClampedArrayData(darray, &isShared, nogc);
     MOZ_ASSERT(!isShared);  
 
+    if (usePlaceholder) {
+      FillPlaceholderCanvas(randomData, len.value(), data);
+      break;
+    }
+
     uint32_t srcStride = rawData.mStride;
     uint8_t* src =
         rawData.mData + srcReadRect.y * srcStride + srcReadRect.x * 4;
-
-    
-    if (usePlaceholder) {
-      memset(data, 0xFF, len.value());
-      break;
-    }
 
     uint8_t* dst = data + dstWriteRect.y * (aWidth * 4) + dstWriteRect.x * 4;
 
