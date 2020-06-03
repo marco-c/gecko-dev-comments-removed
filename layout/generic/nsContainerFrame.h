@@ -654,6 +654,19 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
+
+
+
+
+
+  void NormalizeChildLists();
+
+  
+
+
+
+
+
   static void ReparentFloatsForInlineChild(nsIFrame* aOurBlock,
                                            nsIFrame* aFrame,
                                            bool aReparentSiblings);
@@ -725,6 +738,22 @@ class nsContainerFrame : public nsSplittableFrame {
   bool ResolvedOrientationIsVertical();
 
   
+
+#ifdef DEBUG
+  
+  
+  void SanityCheckChildListsBeforeReflow() const;
+
+  
+  
+  void SetDidPushItemsBitIfNeeded(ChildListID aListID, nsIFrame* aOldFrame);
+
+  
+  
+  
+  
+  bool mDidPushItemsBitMayLie{false};
+#endif
 
   nsFrameList mFrames;
 };

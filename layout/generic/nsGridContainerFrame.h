@@ -360,8 +360,6 @@ class nsGridContainerFrame final : public nsContainerFrame {
       const mozilla::StyleOwnedSlice<mozilla::StyleCustomIdent>;
   void AddImplicitNamedAreas(mozilla::Span<LineNameList>);
 
-  void NormalizeChildLists();
-
   
 
 
@@ -447,10 +445,6 @@ class nsGridContainerFrame final : public nsContainerFrame {
       const nsTArray<GridItemInfo>& aGridItems, LineRange GridArea::*aMajor,
       LineRange GridArea::*aMinor, uint32_t aFragmentStartTrack,
       uint32_t aFirstExcludedTrack);
-
-#ifdef DEBUG
-  void SanityCheckGridItemsBeforeReflow() const;
-#endif  
 
   
 
@@ -554,13 +548,6 @@ class nsGridContainerFrame final : public nsContainerFrame {
 
   
   PerLogicalAxis<PerBaseline<nscoord>> mBaseline;
-
-#ifdef DEBUG
-  
-  
-  
-  bool mDidPushItemsBitMayLie{false};
-#endif
 };
 
 #endif 
