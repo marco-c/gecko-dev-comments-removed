@@ -40,6 +40,7 @@ use api::{BuiltDisplayListIter, DisplayItem};
 
 
 
+#[derive(Clone, Debug)]
 pub struct TransactionTimings {
     pub builder_start_time_ns: u64,
     pub builder_end_time_ns: u64,
