@@ -59,7 +59,8 @@ class PreallocatedProcessManager final {
 
 
 
-  static bool Provide(const nsAString& aRemoteType, ContentParent* aParent);
+  static bool Provide(ContentParent* aParent);
+  static void Erase(ContentParent* aParent);
 
  private:
   PreallocatedProcessManager();
