@@ -286,6 +286,10 @@ extern "C" const char* __tsan_default_suppressions() {
          "mutex:GLContextGLX::~GLContextGLX\n"
 
          
+         
+         "mutex:libEGL_mesa.so\n"
+
+         
          "race:third_party/rust/parking_lot_core/*\n"
 
          
