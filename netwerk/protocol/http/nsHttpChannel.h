@@ -483,10 +483,6 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   void ProcessSecurityReport(nsresult status);
 
-  nsresult ProcessCrossOriginEmbedderPolicyHeader();
-  nsresult ProcessCrossOriginResourcePolicyHeader();
-
-  nsresult ComputeCrossOriginOpenerPolicyMismatch();
   
   
   bool HasCrossOriginOpenerPolicyMismatch() {
@@ -741,10 +737,6 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   uint32_t mTopWindowOriginComputed : 1;
-
-  
-  
-  uint32_t mHasCrossOriginOpenerPolicyMismatch : 1;
 
   
   

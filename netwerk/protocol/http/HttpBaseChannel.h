@@ -600,6 +600,12 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
   bool IsBrowsingContextDiscarded() const;
 
+  nsresult ProcessCrossOriginEmbedderPolicyHeader();
+
+  nsresult ProcessCrossOriginResourcePolicyHeader();
+
+  nsresult ComputeCrossOriginOpenerPolicyMismatch();
+
   friend class PrivateBrowsingChannel<HttpBaseChannel>;
   friend class InterceptFailedOnStop;
 
@@ -886,6 +892,10 @@ class HttpBaseChannel : public nsHashPropertyBag,
   void RemoveAsNonTailRequest();
 
   void EnsureTopLevelOuterContentWindowId();
+
+  
+  
+  uint32_t mHasCrossOriginOpenerPolicyMismatch : 1;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(HttpBaseChannel, HTTP_BASE_CHANNEL_IID)

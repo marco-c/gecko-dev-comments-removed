@@ -23,11 +23,14 @@
 #include "mozilla/InputStreamLengthHelper.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PerformanceStorage.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/net/PartiallySeekableInputStream.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
@@ -235,7 +238,8 @@ HttpBaseChannel::HttpBaseChannel()
       mAltDataForChild(false),
       mDisableAltDataCache(false),
       mForceMainDocumentChannel(false),
-      mPendingInputStreamLengthOperation(false) {
+      mPendingInputStreamLengthOperation(false),
+      mHasCrossOriginOpenerPolicyMismatch(0) {
   this->mSelfAddr.inet = {};
   this->mPeerAddr.inet = {};
   LOG(("Creating HttpBaseChannel @%p\n", this));
@@ -2113,6 +2117,244 @@ bool HttpBaseChannel::IsBrowsingContextDiscarded() const {
   }
 
   return false;
+}
+
+
+nsresult HttpBaseChannel::ProcessCrossOriginEmbedderPolicyHeader() {
+  nsresult rv;
+  if (!StaticPrefs::browser_tabs_remote_useCrossOriginEmbedderPolicy()) {
+    return NS_OK;
+  }
+
+  
+  if (mLoadInfo->GetExternalContentPolicyType() !=
+          nsIContentPolicy::TYPE_DOCUMENT &&
+      mLoadInfo->GetExternalContentPolicyType() !=
+          nsIContentPolicy::TYPE_SUBDOCUMENT) {
+    return NS_OK;
+  }
+
+  nsILoadInfo::CrossOriginEmbedderPolicy resultPolicy =
+      nsILoadInfo::EMBEDDER_POLICY_NULL;
+  rv = GetResponseEmbedderPolicy(&resultPolicy);
+  if (NS_FAILED(rv)) {
+    return NS_OK;
+  }
+
+  
+  if (mLoadInfo->GetExternalContentPolicyType() ==
+          nsIContentPolicy::TYPE_SUBDOCUMENT &&
+      mLoadInfo->GetLoadingEmbedderPolicy() !=
+          nsILoadInfo::EMBEDDER_POLICY_NULL &&
+      resultPolicy != nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP) {
+    return NS_ERROR_BLOCKED_BY_POLICY;
+  }
+
+  return NS_OK;
+}
+
+
+nsresult HttpBaseChannel::ProcessCrossOriginResourcePolicyHeader() {
+  
+  uint32_t corsMode;
+  MOZ_ALWAYS_SUCCEEDS(GetCorsMode(&corsMode));
+  if (corsMode != nsIHttpChannelInternal::CORS_MODE_NO_CORS) {
+    return NS_OK;
+  }
+
+  
+  if (mLoadInfo->GetExternalContentPolicyType() ==
+          nsIContentPolicy::TYPE_DOCUMENT ||
+      mLoadInfo->GetExternalContentPolicyType() ==
+          nsIContentPolicy::TYPE_SUBDOCUMENT) {
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(mLoadInfo->GetLoadingPrincipal(),
+             "Resources should always have a LoadingPrincipal");
+  if (!mResponseHead) {
+    return NS_OK;
+  }
+
+  nsAutoCString content;
+  Unused << mResponseHead->GetHeader(nsHttp::Cross_Origin_Resource_Policy,
+                                     content);
+
+  
+  
+  if (StaticPrefs::browser_tabs_remote_useCrossOriginEmbedderPolicy()) {
+    
+    
+    if (content.IsEmpty() && mLoadInfo->GetLoadingEmbedderPolicy() ==
+                                 nsILoadInfo::EMBEDDER_POLICY_REQUIRE_CORP) {
+      content = NS_LITERAL_CSTRING("same-origin");
+    }
+  }
+
+  if (content.IsEmpty()) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIPrincipal> channelOrigin;
+  nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
+      this, getter_AddRefs(channelOrigin));
+
+  
+  
+  if (content.EqualsLiteral("same-origin")) {
+    if (!channelOrigin->Equals(mLoadInfo->GetLoadingPrincipal())) {
+      return NS_ERROR_DOM_CORP_FAILED;
+    }
+    return NS_OK;
+  }
+  if (content.EqualsLiteral("same-site")) {
+    nsAutoCString documentBaseDomain;
+    nsAutoCString resourceBaseDomain;
+    mLoadInfo->GetLoadingPrincipal()->GetBaseDomain(documentBaseDomain);
+    channelOrigin->GetBaseDomain(resourceBaseDomain);
+    if (documentBaseDomain != resourceBaseDomain) {
+      return NS_ERROR_DOM_CORP_FAILED;
+    }
+
+    nsCOMPtr<nsIURI> resourceURI = channelOrigin->GetURI();
+    if (!mLoadInfo->GetLoadingPrincipal()->SchemeIs("https") &&
+        resourceURI->SchemeIs("https")) {
+      return NS_ERROR_DOM_CORP_FAILED;
+    }
+
+    return NS_OK;
+  }
+
+  return NS_OK;
+}
+
+
+
+
+static bool CompareCrossOriginOpenerPolicies(
+    nsILoadInfo::CrossOriginOpenerPolicy documentPolicy,
+    nsIPrincipal* documentOrigin,
+    nsILoadInfo::CrossOriginOpenerPolicy resultPolicy,
+    nsIPrincipal* resultOrigin) {
+  if (documentPolicy == nsILoadInfo::OPENER_POLICY_UNSAFE_NONE &&
+      resultPolicy == nsILoadInfo::OPENER_POLICY_UNSAFE_NONE) {
+    return true;
+  }
+
+  if (documentPolicy == nsILoadInfo::OPENER_POLICY_UNSAFE_NONE ||
+      resultPolicy == nsILoadInfo::OPENER_POLICY_UNSAFE_NONE) {
+    return false;
+  }
+
+  if (documentPolicy == resultPolicy && documentOrigin->Equals(resultOrigin)) {
+    return true;
+  }
+
+  return false;
+}
+
+
+
+nsresult HttpBaseChannel::ComputeCrossOriginOpenerPolicyMismatch() {
+  mHasCrossOriginOpenerPolicyMismatch = false;
+  if (!StaticPrefs::browser_tabs_remote_useCrossOriginOpenerPolicy()) {
+    return NS_OK;
+  }
+
+  
+  if (mLoadInfo->GetExternalContentPolicyType() !=
+      nsIContentPolicy::TYPE_DOCUMENT) {
+    return NS_OK;
+  }
+
+  
+  if (!mResponseHead) {
+    
+    
+    return NS_OK;
+  }
+
+  RefPtr<mozilla::dom::BrowsingContext> ctx;
+  mLoadInfo->GetBrowsingContext(getter_AddRefs(ctx));
+
+  
+  if (!ctx) {
+    return NS_OK;
+  }
+
+  
+  nsILoadInfo::CrossOriginOpenerPolicy documentPolicy = ctx->GetOpenerPolicy();
+  nsILoadInfo::CrossOriginOpenerPolicy resultPolicy =
+      nsILoadInfo::OPENER_POLICY_UNSAFE_NONE;
+  Unused << ComputeCrossOriginOpenerPolicy(documentPolicy, &resultPolicy);
+  mComputedCrossOriginOpenerPolicy = resultPolicy;
+
+  
+  
+  if (resultPolicy != nsILoadInfo::OPENER_POLICY_UNSAFE_NONE &&
+      GetHasNonEmptySandboxingFlag()) {
+    LOG((
+        "HttpBaseChannel::ComputeCrossOriginOpenerPolicyMismatch network error "
+        "for non empty sandboxing and non null COOP"));
+    return NS_ERROR_BLOCKED_BY_POLICY;
+  }
+
+  
+  if (!ctx->Canonical()->GetCurrentWindowGlobal()) {
+    return NS_OK;
+  }
+
+  
+  nsCOMPtr<nsIPrincipal> documentOrigin =
+      ctx->Canonical()->GetCurrentWindowGlobal()->DocumentPrincipal();
+  nsCOMPtr<nsIPrincipal> resultOrigin;
+
+  nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
+      this, getter_AddRefs(resultOrigin));
+
+  bool compareResult = CompareCrossOriginOpenerPolicies(
+      documentPolicy, documentOrigin, resultPolicy, resultOrigin);
+
+  if (LOG_ENABLED()) {
+    LOG(
+        ("HttpBaseChannel::HasCrossOriginOpenerPolicyMismatch - "
+         "doc:%d result:%d - compare:%d\n",
+         documentPolicy, resultPolicy, compareResult));
+    nsAutoCString docOrigin;
+    nsCOMPtr<nsIURI> uri = documentOrigin->GetURI();
+    uri->GetSpec(docOrigin);
+    nsAutoCString resOrigin;
+    uri = resultOrigin->GetURI();
+    uri->GetSpec(resOrigin);
+    LOG(("doc origin:%s - res origin: %s\n", docOrigin.get(), resOrigin.get()));
+  }
+
+  if (compareResult) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+
+  if (documentPolicy != nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_ALLOW_POPUPS) {
+    mHasCrossOriginOpenerPolicyMismatch = true;
+    return NS_OK;
+  }
+
+  if (resultPolicy != nsILoadInfo::OPENER_POLICY_UNSAFE_NONE) {
+    mHasCrossOriginOpenerPolicyMismatch = true;
+    return NS_OK;
+  }
+
+  if (!ctx->Canonical()->GetCurrentWindowGlobal()->IsInitialDocument()) {
+    mHasCrossOriginOpenerPolicyMismatch = true;
+    return NS_OK;
+  }
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
