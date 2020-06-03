@@ -389,11 +389,6 @@ URIFixup.prototype = {
         info.fixupChangedProtocol = true;
         maybeSetAlternateFixedURI(info, fixupFlags);
         info.preferredURI = info.fixedURI;
-        
-        
-        if (uriString.endsWith("/")) {
-          return info;
-        }
       }
     }
 

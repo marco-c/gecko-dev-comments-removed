@@ -24,59 +24,48 @@ async function checkShortcutLoading(modifierKeys) {
 
   
   
-  let original = UrlbarUtils.getHeuristicResultFor;
   sandbox
-    .stub(UrlbarUtils, "getHeuristicResultFor")
-    .callsFake(async searchString => {
-      await deferred.promise;
-      return original.call(this, searchString);
-    });
+    .stub(UrlbarUtils, "getShortcutOrURIAndPostData")
+    .callsFake(() => deferred.promise);
 
-  
-  
-  
   gURLBar.focus();
-  gURLBar.value = "example.com";
+  gURLBar.value = "search";
   gURLBar.userTypedValue = true;
   EventUtils.synthesizeKey("KEY_Enter", modifierKeys);
 
   Assert.ok(
-    UrlbarUtils.getHeuristicResultFor.calledOnce,
-    "should have called getHeuristicResultFor"
+    UrlbarUtils.getShortcutOrURIAndPostData.calledOnce,
+    "should have called getShortcutOrURIAndPostData"
   );
 
-  
   BrowserTestUtils.loadURI(tab.linkedBrowser, "about:license");
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  Assert.equal(gBrowser.visibleTabs.length, 2, "Should have 2 tabs");
 
-  
-  deferred.resolve();
+  let openedTab;
+  function listener(event) {
+    openedTab = event.target;
+  }
+  window.addEventListener("TabOpen", listener);
+
+  deferred.resolve({
+    url: "https://example.com/1/",
+    postData: {},
+    mayInheritPrincipal: true,
+  });
+
+  await deferred.promise;
+
   if (modifierKeys) {
-    let openedTab = await new Promise(resolve => {
-      window.addEventListener(
-        "TabOpen",
-        event => {
-          resolve(event.target);
-        },
-        { once: true }
-      );
-    });
-    await BrowserTestUtils.browserLoaded(openedTab.linkedBrowser);
-    Assert.ok(
-      openedTab.linkedBrowser.currentURI.spec.includes("example.com"),
-      "Should have attempted to open the shortcut page"
-    );
+    Assert.ok(openedTab, "Should have attempted to open the shortcut page");
     BrowserTestUtils.removeTab(openedTab);
+  } else {
+    Assert.ok(
+      !openedTab,
+      "Should have not attempted to open the shortcut page"
+    );
   }
 
-  Assert.equal(
-    tab.linkedBrowser.currentURI.spec,
-    "about:license",
-    "Tab url should not have changed"
-  );
-  Assert.equal(gBrowser.visibleTabs.length, 2, "Should still have 2 tabs");
-
+  window.removeEventListener("TabOpen", listener);
   BrowserTestUtils.removeTab(tab);
   sandbox.restore();
 }
