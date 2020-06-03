@@ -345,10 +345,11 @@ class Loader final {
 
   std::tuple<RefPtr<StyleSheet>, SheetState> CreateSheet(
       const SheetInfo& aInfo, nsIPrincipal* aLoaderPrincipal,
-      css::SheetParsingMode aParsingMode, bool aSyncLoad) {
+      css::SheetParsingMode aParsingMode, bool aSyncLoad,
+      IsPreload aIsPreload) {
     return CreateSheet(aInfo.mURI, aInfo.mContent, aLoaderPrincipal,
                        aParsingMode, aInfo.mCORSMode, aInfo.mReferrerInfo,
-                       aInfo.mIntegrity, aSyncLoad);
+                       aInfo.mIntegrity, aSyncLoad, aIsPreload);
   }
 
   
@@ -357,7 +358,7 @@ class Loader final {
   std::tuple<RefPtr<StyleSheet>, SheetState> CreateSheet(
       nsIURI* aURI, nsIContent* aLinkingContent, nsIPrincipal* aLoaderPrincipal,
       css::SheetParsingMode, CORSMode, nsIReferrerInfo* aLoadingReferrerInfo,
-      const nsAString& aIntegrity, bool aSyncLoad);
+      const nsAString& aIntegrity, bool aSyncLoad, IsPreload aIsPreload);
 
   
   
