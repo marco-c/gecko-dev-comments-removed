@@ -95,7 +95,7 @@ class PerftestTests(MachCommandBase):
 
         from mozperftest.utils import install_package
 
-        for name in ("pytest", "coverage", "black"):
+        for name in ("pytest", "coverage", "black", "flake8"):
             install_package(self.virtualenv_manager, name)
 
         from pathlib import Path
@@ -106,9 +106,13 @@ class PerftestTests(MachCommandBase):
         pytest = venv_bin / "pytest"
         coverage = venv_bin / "coverage"
         black = venv_bin / "black"
+        flake8 = venv_bin / "flake8"
 
         
         assert self._run_script(black, str(HERE))
+
+        
+        assert self._run_script(flake8, str(HERE))
 
         
         old_value = os.environ.get("COVERAGE_RCFILE")
