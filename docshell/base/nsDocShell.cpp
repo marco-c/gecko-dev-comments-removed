@@ -8960,7 +8960,7 @@ bool nsDocShell::CanLoadInParentProcess(nsIURI* aURI) {
   }
   
   if (xpc::IsInAutomation() &&
-      Preferences::GetBool("security.allow_unsafe_parent_loads", false)) {
+      StaticPrefs::security_allow_unsafe_parent_loads()) {
     return true;
   }
   return false;
