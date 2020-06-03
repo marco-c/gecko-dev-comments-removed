@@ -7,7 +7,6 @@
 
 
 #include "xpcprivate.h"
-#include "mozilla/jsipc/CrossProcessObjectWrappers.h"
 #include "nsWrapperCacheInlines.h"
 #include "XPCLog.h"
 #include "js/Array.h"  
@@ -1535,19 +1534,6 @@ bool CallMethodHelper::ConvertIndependentParam(uint8_t i) {
                            mCallContext);
     }
     param_iid = inner.GetInterface()->IID();
-  }
-
-  
-  
-  if (src.isObject() && jsipc::IsWrappedCPOW(&src.toObject()) &&
-      type.Tag() == nsXPTType::T_INTERFACE &&
-      !param_iid.Equals(NS_GET_IID(nsISupports))) {
-    
-    nsCOMPtr<nsIXPConnectWrappedJS> wrappedJS(do_QueryInterface(mCallee));
-    if (!wrappedJS) {
-      ThrowBadParam(NS_ERROR_XPC_CANT_PASS_CPOW_TO_NATIVE, i, mCallContext);
-      return false;
-    }
   }
 
   nsresult err;

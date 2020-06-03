@@ -30,7 +30,6 @@
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/PrimitiveConversions.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/jsipc/CrossProcessObjectWrappers.h"
 
 using namespace xpc;
 using namespace mozilla;
@@ -45,22 +44,6 @@ using namespace JS;
 #endif  
 
 #define ILLEGAL_CHAR_RANGE(c) (0 != ((c)&0x80))
-
-
-
-static JSObject* UnwrapNativeCPOW(nsISupports* wrapper) {
-  nsCOMPtr<nsIXPConnectWrappedJS> underware = do_QueryInterface(wrapper);
-  if (underware) {
-    
-    
-    JS::AutoSuppressGCAnalysis nogc;
-    JSObject* mainObj = underware->GetJSObject();
-    if (mainObj && mozilla::jsipc::IsWrappedCPOW(mainObj)) {
-      return mainObj;
-    }
-  }
-  return nullptr;
-}
 
 
 
@@ -954,19 +937,6 @@ bool XPCConvert::NativeInterface2JSObject(JSContext* cx, MutableHandleValue d,
       d.setObjectOrNull(flat);
       return true;
     }
-  }
-
-  
-  
-  
-  
-  RootedObject cpow(cx, UnwrapNativeCPOW(aHelper.Object()));
-  if (cpow) {
-    if (!JS_WrapObject(cx, &cpow)) {
-      return false;
-    }
-    d.setObject(*cpow);
-    return true;
   }
 
   

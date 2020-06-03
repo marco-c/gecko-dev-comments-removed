@@ -16,7 +16,6 @@
 #include "XPCMaps.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "jsfriendapi.h"
-#include "mozilla/jsipc/CrossProcessObjectWrappers.h"
 #include "mozilla/Likely.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/MaybeCrossOriginObject.h"
@@ -544,10 +543,7 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
   else if (originIsChrome && !targetIsChrome) {
     
     
-    
-    if ((IdentifyStandardInstance(obj) == JSProto_Function ||
-         (jsipc::IsCPOW(obj) && JS::IsCallable(obj) &&
-          XRE_IsContentProcess()))) {
+    if ((IdentifyStandardInstance(obj) == JSProto_Function)) {
       wrapper = &FilteringWrapper<CrossCompartmentSecurityWrapper,
                                   OpaqueWithCall>::singleton;
     }

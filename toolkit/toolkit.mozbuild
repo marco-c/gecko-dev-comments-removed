@@ -1,8 +1,8 @@
-# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 include('/js/app.mozbuild')
 
@@ -43,13 +43,13 @@ if CONFIG['MOZ_SANDBOX']:
     DIRS += ['/security/sandbox']
 
 DIRS += [
-    # Depends on NSS and NSPR
+    
     '/security/certverifier',
-    # Depends on certverifier
+    
     '/security/apps',
 ]
 
-# the signing related bits of libmar depend on nss
+
 if CONFIG['MOZ_UPDATER']:
     DIRS += ['/modules/libmar']
 
@@ -70,11 +70,10 @@ if CONFIG['MOZ_UPDATER'] and CONFIG['OS_TARGET'] != 'Android':
         '/other-licenses/bsdiff',
     ]
 
-# Gecko/Core components.
+
 
 DIRS += [
     '/ipc',
-    '/js/ipc',
     '/hal',
     '/js/xpconnect',
     '/modules/libjar',
@@ -123,9 +122,9 @@ if CONFIG['ACCESSIBILITY']:
 else:
     DIRS += ['/accessible/ipc']
 
-# toolkit
 
-# This must precede xpfe.
+
+
 if CONFIG['MOZ_JPROF']:
     DIRS += ['/tools/jprof']
 
@@ -192,7 +191,7 @@ if CONFIG['ENABLE_TESTS']:
         '/testing/extensions',
     ]
 
-    # The file id utility requires breakpad libraries.
+    
     if CONFIG['MOZ_CRASHREPORTER']:
         DIRS += ['/testing/tools/fileid']
 

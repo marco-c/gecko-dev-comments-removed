@@ -438,8 +438,6 @@ DIRECT_CALL_OVERRIDES = {
 
 VIRTUAL_CALL_CLASSES = set([
     
-    ("PJavaScript", "child"),
-    ("PJavaScript", "parent"),
     ("PMedia", "parent"),
     ("PTexture", "parent"),
 
