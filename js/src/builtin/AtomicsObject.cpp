@@ -89,13 +89,14 @@ static bool ReportOutOfRange(JSContext* cx) {
 
 
 
-static bool GetSharedTypedArray(JSContext* cx, HandleValue v, bool waitable,
-                                MutableHandle<TypedArrayObject*> viewp) {
+static bool ValidateSharedIntegerTypedArray(
+    JSContext* cx, HandleValue typedArray, bool waitable,
+    MutableHandle<TypedArrayObject*> unwrappedTypedArray) {
   
 
   
   auto* unwrapped = UnwrapAndTypeCheckValue<TypedArrayObject>(
-      cx, v, [cx]() { ReportBadArrayType(cx); });
+      cx, typedArray, [cx]() { ReportBadArrayType(cx); });
   if (!unwrapped) {
     return false;
   }
@@ -131,30 +132,30 @@ static bool GetSharedTypedArray(JSContext* cx, HandleValue v, bool waitable,
   }
 
   
-  viewp.set(unwrapped);
+  unwrappedTypedArray.set(unwrapped);
   return true;
 }
 
 
 
-static bool GetTypedArrayIndex(JSContext* cx, HandleValue v,
-                               Handle<TypedArrayObject*> view,
-                               uint32_t* offset) {
+static bool ValidateAtomicAccess(JSContext* cx,
+                                 Handle<TypedArrayObject*> typedArray,
+                                 HandleValue requestIndex, uint32_t* index) {
   
 
   
-  uint64_t index;
-  if (!ToIndex(cx, v, &index)) {
+  uint64_t accessIndex;
+  if (!ToIndex(cx, requestIndex, &accessIndex)) {
     return false;
   }
 
   
-  if (index >= view->length()) {
+  if (accessIndex >= typedArray->length()) {
     return ReportOutOfRange(cx);
   }
 
   
-  *offset = uint32_t(index);
+  *index = uint32_t(accessIndex);
   return true;
 }
 
@@ -262,35 +263,35 @@ struct ArrayOps<uint64_t> {
 template <typename Op>
 bool AtomicAccess(JSContext* cx, HandleValue obj, HandleValue index, Op op) {
   
-  Rooted<TypedArrayObject*> unwrappedView(cx);
-  if (!GetSharedTypedArray(cx, obj, false, &unwrappedView)) {
+  Rooted<TypedArrayObject*> unwrappedTypedArray(cx);
+  if (!ValidateSharedIntegerTypedArray(cx, obj, false, &unwrappedTypedArray)) {
     return false;
   }
 
   
-  uint32_t offset;
-  if (!GetTypedArrayIndex(cx, index, unwrappedView, &offset)) {
+  uint32_t intIndex;
+  if (!ValidateAtomicAccess(cx, unwrappedTypedArray, index, &intIndex)) {
     return false;
   }
 
-  SharedMem<void*> viewData = unwrappedView->dataPointerShared();
-  switch (unwrappedView->type()) {
+  SharedMem<void*> typedArrayData = unwrappedTypedArray->dataPointerShared();
+  switch (unwrappedTypedArray->type()) {
     case Scalar::Int8:
-      return op(viewData.cast<int8_t*>() + offset);
+      return op(typedArrayData.cast<int8_t*>() + intIndex);
     case Scalar::Uint8:
-      return op(viewData.cast<uint8_t*>() + offset);
+      return op(typedArrayData.cast<uint8_t*>() + intIndex);
     case Scalar::Int16:
-      return op(viewData.cast<int16_t*>() + offset);
+      return op(typedArrayData.cast<int16_t*>() + intIndex);
     case Scalar::Uint16:
-      return op(viewData.cast<uint16_t*>() + offset);
+      return op(typedArrayData.cast<uint16_t*>() + intIndex);
     case Scalar::Int32:
-      return op(viewData.cast<int32_t*>() + offset);
+      return op(typedArrayData.cast<int32_t*>() + intIndex);
     case Scalar::Uint32:
-      return op(viewData.cast<uint32_t*>() + offset);
+      return op(typedArrayData.cast<uint32_t*>() + intIndex);
     case Scalar::BigInt64:
-      return op(viewData.cast<int64_t*>() + offset);
+      return op(typedArrayData.cast<int64_t*>() + intIndex);
     case Scalar::BigUint64:
-      return op(viewData.cast<uint64_t*>() + offset);
+      return op(typedArrayData.cast<uint64_t*>() + intIndex);
     case Scalar::Float32:
     case Scalar::Float64:
     case Scalar::Uint8Clamped:
@@ -602,7 +603,7 @@ FutexThread::WaitResult js::atomics_wait_impl(
 
 template <typename T>
 static bool DoAtomicsWait(JSContext* cx,
-                          Handle<TypedArrayObject*> unwrappedView,
+                          Handle<TypedArrayObject*> unwrappedTypedArray,
                           uint32_t index, T value, HandleValue timeoutv,
                           MutableHandleValue r) {
   mozilla::Maybe<mozilla::TimeDuration> timeout;
@@ -625,13 +626,14 @@ static bool DoAtomicsWait(JSContext* cx,
   }
 
   
-  Rooted<SharedArrayBufferObject*> unwrappedSab(cx,
-                                                unwrappedView->bufferShared());
+  Rooted<SharedArrayBufferObject*> unwrappedSab(
+      cx, unwrappedTypedArray->bufferShared());
 
   
-  uint32_t offset = unwrappedView->dataPointerShared().cast<uint8_t*>().unwrap(
-                        ) -
-                    unwrappedSab->dataPointerShared().unwrap();
+  uint32_t offset =
+      unwrappedTypedArray->dataPointerShared().cast<uint8_t*>().unwrap(
+          ) -
+      unwrappedSab->dataPointerShared().unwrap();
 
   
   
@@ -668,20 +670,20 @@ bool js::atomics_wait(JSContext* cx, unsigned argc, Value* vp) {
   MutableHandleValue r = args.rval();
 
   
-  Rooted<TypedArrayObject*> unwrappedView(cx);
-  if (!GetSharedTypedArray(cx, objv, true, &unwrappedView)) {
+  Rooted<TypedArrayObject*> unwrappedTypedArray(cx);
+  if (!ValidateSharedIntegerTypedArray(cx, objv, true, &unwrappedTypedArray)) {
     return false;
   }
-  MOZ_ASSERT(unwrappedView->type() == Scalar::Int32 ||
-             unwrappedView->type() == Scalar::BigInt64);
+  MOZ_ASSERT(unwrappedTypedArray->type() == Scalar::Int32 ||
+             unwrappedTypedArray->type() == Scalar::BigInt64);
 
   
   uint32_t intIndex;
-  if (!GetTypedArrayIndex(cx, index, unwrappedView, &intIndex)) {
+  if (!ValidateAtomicAccess(cx, unwrappedTypedArray, index, &intIndex)) {
     return false;
   }
 
-  if (unwrappedView->type() == Scalar::Int32) {
+  if (unwrappedTypedArray->type() == Scalar::Int32) {
     
     int32_t value;
     if (!ToInt32(cx, valv, &value)) {
@@ -689,10 +691,10 @@ bool js::atomics_wait(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     
-    return DoAtomicsWait(cx, unwrappedView, intIndex, value, timeoutv, r);
+    return DoAtomicsWait(cx, unwrappedTypedArray, intIndex, value, timeoutv, r);
   }
 
-  MOZ_ASSERT(unwrappedView->type() == Scalar::BigInt64);
+  MOZ_ASSERT(unwrappedTypedArray->type() == Scalar::BigInt64);
 
   
   RootedBigInt value(cx, ToBigInt(cx, valv));
@@ -701,8 +703,8 @@ bool js::atomics_wait(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  return DoAtomicsWait(cx, unwrappedView, intIndex, BigInt::toInt64(value),
-                       timeoutv, r);
+  return DoAtomicsWait(cx, unwrappedTypedArray, intIndex,
+                       BigInt::toInt64(value), timeoutv, r);
 }
 
 
@@ -756,16 +758,16 @@ bool js::atomics_notify(JSContext* cx, unsigned argc, Value* vp) {
   MutableHandleValue r = args.rval();
 
   
-  Rooted<TypedArrayObject*> unwrappedView(cx);
-  if (!GetSharedTypedArray(cx, objv, true, &unwrappedView)) {
+  Rooted<TypedArrayObject*> unwrappedTypedArray(cx);
+  if (!ValidateSharedIntegerTypedArray(cx, objv, true, &unwrappedTypedArray)) {
     return false;
   }
-  MOZ_ASSERT(unwrappedView->type() == Scalar::Int32 ||
-             unwrappedView->type() == Scalar::BigInt64);
+  MOZ_ASSERT(unwrappedTypedArray->type() == Scalar::Int32 ||
+             unwrappedTypedArray->type() == Scalar::BigInt64);
 
   
   uint32_t intIndex;
-  if (!GetTypedArrayIndex(cx, index, unwrappedView, &intIndex)) {
+  if (!ValidateAtomicAccess(cx, unwrappedTypedArray, index, &intIndex)) {
     return false;
   }
 
@@ -785,18 +787,19 @@ bool js::atomics_notify(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  Rooted<SharedArrayBufferObject*> unwrappedSab(cx,
-                                                unwrappedView->bufferShared());
+  Rooted<SharedArrayBufferObject*> unwrappedSab(
+      cx, unwrappedTypedArray->bufferShared());
 
   
-  uint32_t offset = unwrappedView->dataPointerShared().cast<uint8_t*>().unwrap(
-                        ) -
-                    unwrappedSab->dataPointerShared().unwrap();
+  uint32_t offset =
+      unwrappedTypedArray->dataPointerShared().cast<uint8_t*>().unwrap(
+          ) -
+      unwrappedSab->dataPointerShared().unwrap();
 
   
   
   
-  uint32_t elementSize = Scalar::byteSize(unwrappedView->type());
+  uint32_t elementSize = Scalar::byteSize(unwrappedTypedArray->type());
   uint32_t indexedPosition = intIndex * elementSize + offset;
 
   
