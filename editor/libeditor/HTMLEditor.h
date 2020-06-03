@@ -1029,7 +1029,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  nsIContent* GetPreviousHTMLElementOrTextInternal(nsINode& aNode,
+  nsIContent* GetPreviousHTMLElementOrTextInternal(const nsINode& aNode,
                                                    bool aNoBlockCrossing) const;
   template <typename PT, typename CT>
   nsIContent* GetPreviousHTMLElementOrTextInternal(
@@ -1098,7 +1098,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  nsIContent* GetNextHTMLElementOrTextInternal(nsINode& aNode,
+  nsIContent* GetNextHTMLElementOrTextInternal(const nsINode& aNode,
                                                bool aNoBlockCrossing) const;
   template <typename PT, typename CT>
   nsIContent* GetNextHTMLElementOrTextInternal(
