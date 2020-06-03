@@ -93,6 +93,10 @@ AccessibilityView.prototype = {
 
 
 
+
+
+
+
   async initialize({
     supports,
     fluentBundles,
@@ -107,6 +111,8 @@ AccessibilityView.prototype = {
     resetAccessiblity,
     startListeningForLifecycleEvents,
     stopListeningForLifecycleEvents,
+    highlightAccessible,
+    unhighlightAccessible,
   }) {
     
     await this.store.dispatch(reset(resetAccessiblity, supports));
@@ -124,6 +130,8 @@ AccessibilityView.prototype = {
       resetAccessiblity,
       startListeningForLifecycleEvents,
       stopListeningForLifecycleEvents,
+      highlightAccessible,
+      unhighlightAccessible,
     });
     
     const provider = createElement(Provider, { store: this.store }, mainFrame);
