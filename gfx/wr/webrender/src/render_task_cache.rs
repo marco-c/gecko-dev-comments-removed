@@ -82,6 +82,7 @@ impl RenderTaskCache {
         &mut self,
         texture_cache: &mut TextureCache,
     ) {
+        profile_scope!("begin_frame");
         
         
         
