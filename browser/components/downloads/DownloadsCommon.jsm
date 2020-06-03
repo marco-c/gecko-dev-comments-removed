@@ -38,11 +38,9 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   NetUtil: "resource://gre/modules/NetUtil.jsm",
   PluralForm: "resource://gre/modules/PluralForm.jsm",
-  AppConstants: "resource://gre/modules/AppConstants.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   DownloadHistory: "resource://gre/modules/DownloadHistory.jsm",
   Downloads: "resource://gre/modules/Downloads.jsm",
-  DownloadUIHelper: "resource://gre/modules/DownloadUIHelper.jsm",
   DownloadUtils: "resource://gre/modules/DownloadUtils.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
@@ -438,63 +436,15 @@ var DownloadsCommon = {
 
 
 
-  openDownloadedFile(aFile, aMimeInfo, aOwnerWindow) {
-    if (!(aFile instanceof Ci.nsIFile)) {
-      throw new Error("aFile must be a nsIFile object");
-    }
-    if (aMimeInfo && !(aMimeInfo instanceof Ci.nsIMIMEInfo)) {
-      throw new Error("Invalid value passed for aMimeInfo");
-    }
-    if (!(aOwnerWindow instanceof Ci.nsIDOMWindow)) {
-      throw new Error("aOwnerWindow must be a dom-window object");
-    }
 
-    let isWindowsExe =
-      AppConstants.platform == "win" &&
-      aFile.leafName.toLowerCase().endsWith(".exe");
-
-    let promiseShouldLaunch;
+  async openDownload(download) {
     
-    if (aFile.isExecutable() && !isWindowsExe) {
-      
-      
-      promiseShouldLaunch = DownloadUIHelper.getPrompter(
-        aOwnerWindow
-      ).confirmLaunchExecutable(aFile.path);
-    } else {
-      promiseShouldLaunch = Promise.resolve(true);
+
+    
+    if (typeof download.launch !== "function") {
+      download = await Downloads.createDownload(download);
     }
-
-    promiseShouldLaunch
-      .then(shouldLaunch => {
-        if (!shouldLaunch) {
-          return;
-        }
-
-        
-        try {
-          if (
-            aMimeInfo &&
-            aMimeInfo.preferredAction == aMimeInfo.useHelperApp
-          ) {
-            aMimeInfo.launchWithFile(aFile);
-            return;
-          }
-        } catch (ex) {}
-
-        
-        
-        try {
-          aFile.launch();
-        } catch (ex) {
-          
-          
-          Cc["@mozilla.org/uriloader/external-protocol-service;1"]
-            .getService(Ci.nsIExternalProtocolService)
-            .loadURI(NetUtil.newURI(aFile));
-        }
-      })
-      .catch(Cu.reportError);
+    return download.launch().catch(ex => Cu.reportError(ex));
   },
 
   
