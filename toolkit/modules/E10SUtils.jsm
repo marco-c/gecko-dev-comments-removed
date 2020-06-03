@@ -870,10 +870,7 @@ var E10SUtils = {
 
     let remoteType = Services.appinfo.remoteType;
 
-    
-    
-    
-    if (aDocShell.sameTypeParent) {
+    if (aDocShell.browsingContext.parent) {
       return true;
     }
 
