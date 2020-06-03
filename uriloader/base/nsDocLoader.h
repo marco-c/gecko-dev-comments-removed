@@ -31,6 +31,7 @@
 namespace mozilla {
 namespace dom {
 class BrowserBridgeChild;
+class BrowsingContext;
 }  
 }  
 
@@ -61,6 +62,8 @@ class nsDocLoader : public nsIDocumentLoader,
   nsDocLoader();
 
   [[nodiscard]] virtual nsresult Init();
+  [[nodiscard]] nsresult InitWithBrowsingContext(
+      mozilla::dom::BrowsingContext* aBrowsingContext);
 
   static already_AddRefed<nsDocLoader> GetAsDocLoader(nsISupports* aSupports);
   
