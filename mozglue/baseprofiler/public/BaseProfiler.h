@@ -549,24 +549,61 @@ MFBT_API Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 #  ifdef PROFILER_RUNTIME_STATS
-struct StaticBaseProfilerStats {
+
+
+
+class StaticBaseProfilerStats {
+ public:
   explicit StaticBaseProfilerStats(const char* aName) : mName(aName) {}
+
   ~StaticBaseProfilerStats() {
-    long long n = static_cast<long long>(mNumberDurations);
+    
+    using ULL = unsigned long long;
+    ULL n = static_cast<ULL>(mNumberDurations);
     if (n != 0) {
-      long long sumNs = static_cast<long long>(mSumDurationsNs);
-      printf("Profiler stats `%s`: %lld ns / %lld = %lld ns\n", mName, sumNs, n,
-             sumNs / n);
+      ULL sumNs = static_cast<ULL>(mSumDurationsNs);
+      printf(
+          "[%d] Profiler stats `%s`: %llu ns / %llu = %llu ns, max %llu ns\n",
+          profiler_current_process_id(), mName, sumNs, n, sumNs / n,
+          static_cast<ULL>(mLongestDurationNs));
     } else {
-      printf("Profiler stats `%s`: (nothing)\n", mName);
+      printf("[%d] Profiler stats `%s`: (nothing)\n",
+             profiler_current_process_id(), mName);
     }
   }
-  Atomic<long long> mSumDurationsNs{0};
-  Atomic<long long> mNumberDurations{0};
+
+  void AddDurationFrom(TimeStamp aStart) {
+    DurationNs duration = static_cast<DurationNs>(
+        (TimeStamp::NowUnfuzzed() - aStart).ToMicroseconds() * 1000 + 0.5);
+    mSumDurationsNs += duration;
+    ++mNumberDurations;
+    
+    for (;;) {
+      DurationNs longest = mLongestDurationNs;
+      if (MOZ_LIKELY(longest >= duration)) {
+        
+        break;
+      }
+      if (MOZ_LIKELY(mLongestDurationNs.compareExchange(longest, duration))) {
+        
+        break;
+      }
+      
+      
+    }
+  }
 
  private:
+  using DurationNs = uint64_t;
+  using Count = uint32_t;
+
+  Atomic<DurationNs> mSumDurationsNs{0};
+  Atomic<DurationNs> mLongestDurationNs{0};
+  Atomic<Count> mNumberDurations{0};
   const char* mName;
 };
+
+
 
 class MOZ_RAII AutoProfilerStats {
  public:
@@ -576,11 +613,7 @@ class MOZ_RAII AutoProfilerStats {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
   }
 
-  ~AutoProfilerStats() {
-    mStats.mSumDurationsNs += int64_t(
-        (TimeStamp::NowUnfuzzed() - mStart).ToMicroseconds() * 1000 + 0.5);
-    ++mStats.mNumberDurations;
-  }
+  ~AutoProfilerStats() { mStats.AddDurationFrom(mStart); }
 
  private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
@@ -588,6 +621,12 @@ class MOZ_RAII AutoProfilerStats {
   StaticBaseProfilerStats& mStats;
   TimeStamp mStart;
 };
+
+
+
+
+
+
 
 #    define AUTO_PROFILER_STATS(name)                                      \
       static ::mozilla::baseprofiler::StaticBaseProfilerStats sStat##name( \
