@@ -119,14 +119,6 @@ class RtpPacket {
   rtc::ArrayView<uint8_t> AllocateRawExtension(int id, size_t length);
 
   
-  
-  rtc::ArrayView<const uint8_t> FindExtension(ExtensionType type) const;
-
-  
-  
-  rtc::ArrayView<uint8_t> AllocateExtension(ExtensionType type, size_t length);
-
-  
   uint8_t* SetPayloadSize(size_t size_bytes);
   
   uint8_t* AllocatePayload(size_t size_bytes);
@@ -142,6 +134,14 @@ class RtpPacket {
   
   
   bool ParseBuffer(const uint8_t* buffer, size_t size);
+
+  
+  
+  rtc::ArrayView<const uint8_t> FindExtension(ExtensionType type) const;
+
+  
+  
+  rtc::ArrayView<uint8_t> AllocateExtension(ExtensionType type, size_t length);
 
   uint8_t* WriteAt(size_t offset);
   void WriteAt(size_t offset, uint8_t byte);

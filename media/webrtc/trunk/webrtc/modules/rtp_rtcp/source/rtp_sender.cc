@@ -1193,63 +1193,14 @@ bool RTPSender::SetFecParameters(const FecProtectionParams& delta_params,
   return true;
 }
 
-static void CopyHeaderAndExtensionsToRtxPacket(const RtpPacketToSend& packet,
-                                               RtpPacketToSend* rtx_packet) {
-  
-  
-  
-  
-  rtx_packet->SetMarker(packet.Marker());
-  rtx_packet->SetTimestamp(packet.Timestamp());
-
-  
-  
-  
-  const std::vector<uint32_t> csrcs = packet.Csrcs();
-  rtx_packet->SetCsrcs(csrcs);
-  for (int extension_num = kRtpExtensionNone + 1;
-       extension_num < kRtpExtensionNumberOfExtensions; ++extension_num) {
-    auto extension = static_cast<RTPExtensionType>(extension_num);
-
-    
-    
-    
-    if (extension == kRtpExtensionMid ||
-        extension == kRtpExtensionRtpStreamId) {
-      continue;
-    }
-
-    rtc::ArrayView<const uint8_t> source = packet.FindExtension(extension);
-
-    
-    
-    
-    if (source.empty()) {
-      continue;
-    }
-
-    rtc::ArrayView<uint8_t> destination =
-        rtx_packet->AllocateExtension(extension, source.size());
-
-    
-    
-    
-    
-    if (destination.empty() || source.size() != destination.size()) {
-      continue;
-    }
-
-    std::memcpy(destination.begin(), source.begin(), destination.size());
-  }
-}
-
 std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
     const RtpPacketToSend& packet) {
   
   
   std::unique_ptr<RtpPacketToSend> rtx_packet(new RtpPacketToSend(
-      &rtp_header_extension_map_, max_packet_size_));
+      &rtp_header_extension_map_, packet.size() + kRtxHeaderSize));
   
+  rtx_packet->CopyHeaderFrom(packet);
   {
     rtc::CritScope lock(&send_critsect_);
     if (!sending_media_)
@@ -1268,18 +1219,8 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
 
     
     rtx_packet->SetSsrc(*ssrc_rtx_);
-
-    CopyHeaderAndExtensionsToRtxPacket(packet, rtx_packet.get());
-
-    
-    if (rtp_header_extension_map_.IsRegistered(kRtpExtensionRtpStreamId) &&
-        rtp_header_extension_map_.IsRegistered(kRtpExtensionRepairedRtpStreamId)) {
-      std::string rid;
-      if (packet.GetExtension<RtpStreamId>(&rid)) {
-        rtx_packet->SetExtension<RepairedRtpStreamId>(rid);
-      }
-    }
   }
+
   uint8_t* rtx_payload =
       rtx_packet->AllocatePayload(packet.payload_size() + kRtxHeaderSize);
   RTC_DCHECK(rtx_payload);
