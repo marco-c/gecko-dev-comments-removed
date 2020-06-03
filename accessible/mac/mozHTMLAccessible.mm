@@ -16,12 +16,12 @@
 
 - (NSString*)title {
   nsAutoString title;
-  if (AccessibleWrap* accWrap = [self getGeckoAccessible]) {
+  if (Accessible* acc = mGeckoAccessible.AsAccessible()) {
     mozilla::ErrorResult rv;
     
     
-    accWrap->GetContent()->GetTextContent(title, rv);
-  } else if (ProxyAccessible* proxy = [self getProxyAccessible]) {
+    acc->GetContent()->GetTextContent(title, rv);
+  } else if (ProxyAccessible* proxy = mGeckoAccessible.AsProxy()) {
     proxy->Title(title);
   }
 
@@ -30,9 +30,9 @@
 
 - (id)value {
   GroupPos groupPos;
-  if (AccessibleWrap* accWrap = [self getGeckoAccessible]) {
-    groupPos = accWrap->GroupPosition();
-  } else if (ProxyAccessible* proxy = [self getProxyAccessible]) {
+  if (Accessible* acc = mGeckoAccessible.AsAccessible()) {
+    groupPos = acc->GroupPosition();
+  } else if (ProxyAccessible* proxy = mGeckoAccessible.AsProxy()) {
     groupPos = proxy->GroupPosition();
   }
 
@@ -49,7 +49,9 @@
 
 - (NSArray*)accessibilityAttributeNames {
   
-  if (![self getGeckoAccessible] && ![self getProxyAccessible]) return [NSArray array];
+  if ([self isExpired]) {
+    return @[];
+  }
 
   if (![self stateWithMask:states::LINKED]) {
     
@@ -89,9 +91,9 @@
 
 - (NSURL*)url {
   nsAutoString value;
-  if (AccessibleWrap* accWrap = [self getGeckoAccessible]) {
-    accWrap->Value(value);
-  } else if (ProxyAccessible* proxy = [self getProxyAccessible]) {
+  if (Accessible* acc = mGeckoAccessible.AsAccessible()) {
+    acc->Value(value);
+  } else if (ProxyAccessible* proxy = mGeckoAccessible.AsProxy()) {
     proxy->Value(value);
   }
 

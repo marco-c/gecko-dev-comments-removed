@@ -1,8 +1,8 @@
-/* -*- Mode: Objective-C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #import "MacUtils.h"
 
@@ -15,10 +15,40 @@ namespace mozilla {
 namespace a11y {
 namespace utils {
 
-/**
- * Get a localized string from the a11y string bundle.
- * Return nil if not found.
- */
+
+static inline NSMutableArray* ConvertToNSArray(nsTArray<Accessible*>& aArray) {
+  NSMutableArray* nativeArray = [[NSMutableArray alloc] init];
+
+  
+  size_t totalCount = aArray.Length();
+  for (size_t i = 0; i < totalCount; i++) {
+    Accessible* curAccessible = aArray.ElementAt(i);
+    mozAccessible* curNative = GetNativeFromGeckoAccessible(curAccessible);
+    if (curNative) [nativeArray addObject:GetObjectOrRepresentedView(curNative)];
+  }
+
+  return nativeArray;
+}
+
+
+static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray) {
+  NSMutableArray* nativeArray = [[NSMutableArray alloc] init];
+
+  
+  size_t totalCount = aArray.Length();
+  for (size_t i = 0; i < totalCount; i++) {
+    ProxyAccessible* curAccessible = aArray.ElementAt(i);
+    mozAccessible* curNative = GetNativeFromGeckoAccessible(curAccessible);
+    if (curNative) [nativeArray addObject:GetObjectOrRepresentedView(curNative)];
+  }
+
+  return nativeArray;
+}
+
+
+
+
+
 NSString* LocalizedString(const nsString& aString) {
   nsString text;
 
@@ -29,10 +59,10 @@ NSString* LocalizedString(const nsString& aString) {
 
 NSString* GetAccAttr(mozAccessible* aNativeAccessible, const char* aAttrName) {
   nsAutoString result;
-  if (AccessibleWrap* accWrap = [aNativeAccessible getGeckoAccessible]) {
-    nsCOMPtr<nsIPersistentProperties> attributes = accWrap->Attributes();
+  if (Accessible* acc = [aNativeAccessible geckoAccessible].AsAccessible()) {
+    nsCOMPtr<nsIPersistentProperties> attributes = acc->Attributes();
     attributes->GetStringProperty(nsCString(aAttrName), result);
-  } else if (ProxyAccessible* proxy = [aNativeAccessible getProxyAccessible]) {
+  } else if (ProxyAccessible* proxy = [aNativeAccessible geckoAccessible].AsProxy()) {
     AutoTArray<Attribute, 10> attrs;
     proxy->Attributes(&attrs);
     for (size_t i = 0; i < attrs.Length(); i++) {

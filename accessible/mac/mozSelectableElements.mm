@@ -142,10 +142,10 @@
     return;
   }
 
-  if (AccessibleWrap* accWrap = [self getGeckoAccessible]) {
-    accWrap->SetSelected(selected);
-  } else if (ProxyAccessible* proxy = [self getProxyAccessible]) {
-    proxy->SetSelected(selected);
+  if (Accessible* acc = mGeckoAccessible.AsAccessible()) {
+    acc->SetSelected(selected);
+  } else {
+    mGeckoAccessible.AsProxy()->SetSelected(selected);
   }
 
   
@@ -306,17 +306,16 @@
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
   if ([attribute isEqualToString:@"AXMenuItemMarkChar"]) {
-    AccessibleWrap* accWrap = [self getGeckoAccessible];
-    if (accWrap && accWrap->IsContent() &&
-        accWrap->GetContent()->IsXULElement(nsGkAtoms::menuitem)) {
+    Accessible* acc = mGeckoAccessible.AsAccessible();
+    if (acc && acc->IsContent() && acc->GetContent()->IsXULElement(nsGkAtoms::menuitem)) {
       
       
       
       
       
-      if (accWrap->ChildCount() == 1 && accWrap->FirstChild()->Role() == roles::STATICTEXT) {
+      if (acc->ChildCount() == 1 && acc->FirstChild()->Role() == roles::STATICTEXT) {
         nsAutoString marker;
-        accWrap->FirstChild()->Name(marker);
+        acc->FirstChild()->Name(marker);
         if (marker.Length() == 1) {
           return nsCocoaUtils::ToNSString(marker);
         }

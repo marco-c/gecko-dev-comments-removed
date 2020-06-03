@@ -16,6 +16,12 @@ namespace a11y {
 namespace utils {
 
 
+static inline NSMutableArray* ConvertToNSArray(nsTArray<Accessible*>& aArray);
+
+
+static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray);
+
+
 
 
 

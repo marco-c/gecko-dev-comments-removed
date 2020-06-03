@@ -5,6 +5,7 @@
 
 #include "AccessibleWrap.h"
 #include "ProxyAccessible.h"
+#include "AccessibleOrProxy.h"
 #include "Platform.h"
 
 #import <Cocoa/Cocoa.h>
@@ -35,27 +36,27 @@ inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
   return [aObject hasRepresentedView] ? [aObject representedView] : aObject;
 }
 
-inline mozAccessible* GetNativeFromGeckoAccessible(Accessible* aAccessible) {
-  mozAccessible* native = nil;
-  aAccessible->GetNativeInterface((void**)&native);
-  return native;
-}
+inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrProxy aAccOrProxy) {
+  MOZ_ASSERT(!aAccOrProxy.IsNull(), "Cannot get native from null accessible");
+  if (Accessible* acc = aAccOrProxy.AsAccessible()) {
+    mozAccessible* native = nil;
+    acc->GetNativeInterface((void**)&native);
+    return native;
+  }
 
-inline mozAccessible* GetNativeFromProxy(const ProxyAccessible* aProxy) {
-  return reinterpret_cast<mozAccessible*>(aProxy->GetWrapper());
+  ProxyAccessible* proxy = aAccOrProxy.AsProxy();
+  return reinterpret_cast<mozAccessible*>(proxy->GetWrapper());
 }
 
 }  
 }  
-
-
-static const uintptr_t IS_PROXY = 1;
 
 @interface mozAccessible : NSObject <mozAccessible> {
   
 
 
-  uintptr_t mGeckoAccessible;
+
+  mozilla::a11y::AccessibleOrProxy mGeckoAccessible;
 
   
 
@@ -69,13 +70,10 @@ static const uintptr_t IS_PROXY = 1;
 }
 
 
-- (mozilla::a11y::AccessibleWrap*)getGeckoAccessible;
+- (id)initWithAccessible:(mozilla::a11y::AccessibleOrProxy)aAccOrProxy;
 
 
-- (mozilla::a11y::ProxyAccessible*)getProxyAccessible;
-
-
-- (id)initWithAccessible:(uintptr_t)aGeckoObj;
+- (mozilla::a11y::AccessibleOrProxy)geckoAccessible;
 
 
 - (id<mozAccessible>)parent;
