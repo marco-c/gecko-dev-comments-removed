@@ -107,9 +107,9 @@ class nsMixedContentEvent : public Runnable {
     
     
     
-    nsresult stateRV = NS_ERROR_FAILURE;
     if (securityUI) {
-      stateRV = securityUI->GetState(&state);
+      nsresult stateRV = securityUI->GetState(&state);
+      MOZ_ASSERT(NS_SUCCEEDED(stateRV));
     }
 
     if (mType == eMixedScript) {
@@ -142,12 +142,10 @@ class nsMixedContentEvent : public Runnable {
                nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT));
         } else {
           
-          if (NS_SUCCEEDED(stateRV)) {
-            nativeDocShell->nsDocLoader::OnSecurityChange(
-                mContext,
-                (state |
-                 nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT));
-          }
+          nativeDocShell->nsDocLoader::OnSecurityChange(
+              mContext,
+              (state |
+               nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT));
         }
       }
 
@@ -182,12 +180,10 @@ class nsMixedContentEvent : public Runnable {
                nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT));
         } else {
           
-          if (NS_SUCCEEDED(stateRV)) {
-            nativeDocShell->nsDocLoader::OnSecurityChange(
-                mContext,
-                (state |
-                 nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT));
-          }
+          nativeDocShell->nsDocLoader::OnSecurityChange(
+              mContext,
+              (state |
+               nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT));
         }
       }
     }
@@ -907,7 +903,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     *aDecision = nsIContentPolicy::ACCEPT;
     return NS_OK;
   }
-  nsresult stateRV = securityUI->GetState(&state);
+  MOZ_ALWAYS_SUCCEEDS(securityUI->GetState(&state));
 
   OriginAttributes originAttributes;
   if (loadingPrincipal) {
@@ -990,25 +986,24 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
       } else {
         
         
-        if (NS_SUCCEEDED(stateRV)) {
-          nativeDocShell->nsDocLoader::OnSecurityChange(
-              requestingContext,
-              (state |
-               nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT));
-        }
+        nativeDocShell->nsDocLoader::OnSecurityChange(
+            requestingContext,
+            (state |
+             nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT));
       }
     } else {
       *aDecision = nsIContentPolicy::REJECT_REQUEST;
       LogMixedContentMessage(classification, aContentLocation, topInnerWindowID,
                              eBlocked, requestingLocation);
-      if (!rootDoc->GetHasMixedDisplayContentBlocked() &&
-          NS_SUCCEEDED(stateRV)) {
-        rootDoc->SetHasMixedDisplayContentBlocked(true);
-        nativeDocShell->nsDocLoader::OnSecurityChange(
-            requestingContext,
-            (state |
-             nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT));
+      if (rootDoc->GetHasMixedDisplayContentBlocked()) {
+        return NS_OK;
       }
+
+      rootDoc->SetHasMixedDisplayContentBlocked(true);
+      nativeDocShell->nsDocLoader::OnSecurityChange(
+          requestingContext,
+          (state |
+           nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT));
     }
     return NS_OK;
 
@@ -1048,12 +1043,10 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
       } else {
         
         
-        if (NS_SUCCEEDED(stateRV)) {
-          nativeDocShell->nsDocLoader::OnSecurityChange(
-              requestingContext,
-              (state |
-               nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT));
-        }
+        nativeDocShell->nsDocLoader::OnSecurityChange(
+            requestingContext,
+            (state |
+             nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT));
         return NS_OK;
       }
     } else {
@@ -1071,12 +1064,9 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
 
       
       
-      if (NS_SUCCEEDED(stateRV)) {
-        nativeDocShell->nsDocLoader::OnSecurityChange(
-            requestingContext,
-            (state |
-             nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT));
-      }
+      nativeDocShell->nsDocLoader::OnSecurityChange(
+          requestingContext,
+          (state | nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT));
       return NS_OK;
     }
   } else {
