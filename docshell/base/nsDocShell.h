@@ -64,7 +64,6 @@ namespace dom {
 class ClientInfo;
 class ClientSource;
 class EventTarget;
-class SessionHistoryInfo;
 }  
 namespace net {
 class LoadInfo;
@@ -663,10 +662,6 @@ class nsDocShell final : public nsDocLoader,
   void SetHistoryEntryAndUpdateBC(const Maybe<nsISHEntry*>& aLSHE,
                                   const Maybe<nsISHEntry*>& aOSHE);
 
-  mozilla::dom::ChildSHistory* GetSessionHistory() {
-    return mBrowsingContext->GetChildSessionHistory();
-  }
-
   
   
   
@@ -1132,11 +1127,6 @@ class nsDocShell final : public nsDocLoader,
   
   
   nsCOMPtr<nsISHEntry> mLSHE;
-
-  
-  mozilla::UniquePtr<mozilla::dom::SessionHistoryInfo> mActiveEntry;
-  mozilla::UniquePtr<mozilla::dom::SessionHistoryInfo> mLoadingEntry;
-  uint64_t mLoadingEntryId;
 
   
   

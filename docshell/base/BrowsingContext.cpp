@@ -37,7 +37,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Services.h"
-#include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPrefs_page_load.h"
 #include "mozilla/StaticPtr.h"
 #include "nsIURIFixup.h"
@@ -360,9 +359,6 @@ void BrowsingContext::CreateFromIPC(BrowsingContext::IPCInitializer&& aInit,
   }
 
   context->mWindowless = aInit.mWindowless;
-  if (aInit.mHasSessionHistory) {
-    context->InitSessionHistory();
-  }
 
   
   
@@ -408,9 +404,6 @@ void BrowsingContext::SetDocShell(nsIDocShell* aDocShell) {
   mDocShell = aDocShell;
   mDanglingRemoteOuterProxies = !mIsInProcess;
   mIsInProcess = true;
-  if (mChildSessionHistory) {
-    mChildSessionHistory->SetIsInProcess(true);
-  }
 }
 
 
@@ -524,10 +517,6 @@ void BrowsingContext::Attach(bool aFromIPC, ContentParent* aOriginProcess) {
     PopupBlocker::RegisterOpenPopupSpam();
   }
 
-  if (IsTop() && GetHasSessionHistory()) {
-    CreateChildSHistory();
-  }
-
   if (XRE_IsContentProcess() && !aFromIPC) {
     
     ContentChild::GetSingleton()->SendCreateBrowsingContext(
@@ -637,11 +626,6 @@ void BrowsingContext::PrepareForProcessChange() {
   
   
   mDocShell = nullptr;
-  if (mChildSessionHistory) {
-    
-    
-    mChildSessionHistory->SetIsInProcess(false);
-  }
 
   if (!mWindowProxy) {
     return;
@@ -1402,16 +1386,16 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(BrowsingContext)
     tmp->mFields.SetWithoutSyncing<IDX_IsPopupSpam>(false);
   }
 
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(
-      mDocShell, mParentWindow, mGroup, mEmbedderElement, mWindowContexts,
-      mCurrentWindowContext, mSessionStorageManager, mChildSessionHistory)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocShell, mParentWindow, mGroup,
+                                  mEmbedderElement, mWindowContexts,
+                                  mCurrentWindowContext, mSessionStorageManager)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(BrowsingContext)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(
       mDocShell, mParentWindow, mGroup, mEmbedderElement, mWindowContexts,
-      mCurrentWindowContext, mSessionStorageManager, mChildSessionHistory)
+      mCurrentWindowContext, mSessionStorageManager)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 class RemoteLocationProxy
@@ -1790,7 +1774,6 @@ BrowsingContext::IPCInitializer BrowsingContext::GetIPCInitializer() {
   init.mUseRemoteTabs = mUseRemoteTabs;
   init.mUseRemoteSubframes = mUseRemoteSubframes;
   init.mOriginAttributes = mOriginAttributes;
-  init.mHasSessionHistory = mChildSessionHistory != nullptr;
   init.mFields = mFields.Fields();
   return init;
 }
@@ -2214,55 +2197,6 @@ void BrowsingContext::AddDeprioritizedLoadRunner(nsIRunnable* aRunner) {
   NS_DispatchToCurrentThreadQueue(
       runner.forget(), StaticPrefs::page_load_deprioritization_period(),
       EventQueuePriority::Idle);
-}
-
-void BrowsingContext::InitSessionHistory() {
-  MOZ_ASSERT(!IsDiscarded());
-  MOZ_ASSERT(IsTop());
-  MOZ_ASSERT(EverAttached());
-
-  if (!GetHasSessionHistory()) {
-    SetHasSessionHistory(true);
-
-    
-    
-    
-    
-    mChildSessionHistory->SetIsInProcess(mDocShell);
-  }
-}
-
-ChildSHistory* BrowsingContext::GetChildSessionHistory() {
-  if (!StaticPrefs::fission_sessionHistoryInParent()) {
-    
-    
-    
-    
-    
-    return mChildSessionHistory && mChildSessionHistory->IsInProcess()
-               ? mChildSessionHistory.get()
-               : nullptr;
-  }
-
-  return mChildSessionHistory;
-}
-
-void BrowsingContext::CreateChildSHistory() {
-  MOZ_ASSERT(IsTop());
-
-  
-  
-  
-  
-  mChildSessionHistory = new ChildSHistory(this);
-}
-
-void BrowsingContext::DidSet(FieldIndex<IDX_HasSessionHistory>,
-                             bool aOldValue) {
-  MOZ_ASSERT(GetHasSessionHistory() || !aOldValue,
-             "We don't support turning off session history.");
-
-  CreateChildSHistory();
 }
 
 }  
