@@ -877,11 +877,13 @@ class gfxTextRun : public gfxShapedText {
   nsTextFrameUtils::Flags
       mFlags2;  
 
-  bool mSkipDrawing;  
-                      
-                      
+  bool mDontSkipDrawing;  
+                          
+                          
   bool mReleasedFontGroup;  
                             
+  bool mReleasedFontGroupSkippedDrawing;  
+                                          
   bool mHasGlyphRunArray;   
                             
 
