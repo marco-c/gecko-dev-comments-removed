@@ -74,6 +74,9 @@ var webrtcUI = {
   
   sharedWindows: new WeakSet(),
   sharingScreen: false,
+  allowedSharedBrowsers: new WeakSet(),
+  allowTabSwitchesForSession: false,
+  tabSwitchCountForSession: 0,
 
   
   perTabIndicators: new Map(),
@@ -298,9 +301,14 @@ var webrtcUI = {
       };
     }
 
+    
+    
+    
+    let sharingBrowserWindow = false;
     let sharedWindowRawDeviceIds = new Set();
     this.sharingScreen = false;
     let suppressNotifications = false;
+
     for (let stream of this._streams) {
       let { state } = stream;
       suppressNotifications |= state.suppressNotifications;
@@ -317,6 +325,15 @@ var webrtcUI = {
         } else if (mediaSource == "screen") {
           this.sharingScreen = true;
         }
+
+        
+        
+        
+        
+        
+        
+        let browser = stream.topBrowsingContext.embedderElement;
+        this.allowedSharedBrowsers.add(browser.permanentKey);
       }
     }
 
@@ -334,7 +351,26 @@ var webrtcUI = {
       }
       if (sharedWindowRawDeviceIds.has(rawDeviceId)) {
         this.sharedWindows.add(win);
+
+        
+        
+        
+        let selectedBrowser = win.gBrowser.selectedBrowser;
+        this.allowedSharedBrowsers.add(selectedBrowser.permanentKey);
+
+        sharingBrowserWindow = true;
       }
+    }
+
+    
+    
+    
+    
+    
+    if (!this.sharingScreen && !sharingBrowserWindow) {
+      this.allowedSharedBrowsers = new WeakSet();
+      this.allowTabSwitchesForSession = false;
+      this.tabSwitchCountForSession = 0;
     }
 
     if (
@@ -555,6 +591,40 @@ var webrtcUI = {
       return this.SHARING_WINDOW;
     }
     return this.SHARING_NONE;
+  },
+
+  tabAddedWhileSharing(tab) {
+    this.allowedSharedBrowsers.add(tab.linkedBrowser.permanentKey);
+  },
+
+  shouldShowSharedTabWarning(tab) {
+    let browser = tab.linkedBrowser;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!this.tabSwitchCountForSession) {
+      this.allowedSharedBrowsers.add(browser.permanentKey);
+    }
+
+    this.tabSwitchCountForSession++;
+    return (
+      !this.allowTabSwitchesForSession &&
+      !this.allowedSharedBrowsers.has(browser.permanentKey)
+    );
+  },
+
+  allowSharedTabSwitch(tab, allowForSession) {
+    let browser = tab.linkedBrowser;
+    let gBrowser = browser.getTabBrowser();
+    this.allowedSharedBrowsers.add(browser.permanentKey);
+    gBrowser.selectedTab = tab;
+    this.allowTabSwitchesForSession = allowForSession;
   },
 };
 

@@ -1664,6 +1664,9 @@ pref("privacy.webrtc.allowSilencingNotifications", false);
 pref("privacy.webrtc.legacyGlobalIndicator", true);
 
 
+pref("privacy.webrtc.sharedTabWarning", false);
+
+
 pref("browser.tabs.remote.autostart", true);
 pref("browser.tabs.remote.desktopbehavior", true);
 
