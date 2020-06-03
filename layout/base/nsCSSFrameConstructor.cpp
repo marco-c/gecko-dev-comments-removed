@@ -4623,12 +4623,6 @@ already_AddRefed<ComputedStyle> nsCSSFrameConstructor::ResolveComputedStyle(
   
   
   
-  
-  
-  
-  
-  
-  
   auto* parentStyle =
       const_cast<ComputedStyle*>(Servo_Element_GetMaybeOutOfDateStyle(parent));
   MOZ_ASSERT(parentStyle,
@@ -5159,7 +5153,6 @@ void nsCSSFrameConstructor::AddFrameConstructionItems(
 
 
 
-
 static bool ShouldSuppressFrameInSelect(const nsIContent* aParent,
                                         const nsIContent& aChild) {
   if (!aParent ||
@@ -5364,7 +5357,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
       AddFrameConstructionItems(aState, child, aSuppressWhiteSpaceOptimizations,
                                 insertion, aItems, aFlags);
     }
-    aItems.SetParentHasNoXBLChildren(!iter.ShadowDOMInvolved());
+    aItems.SetParentHasNoShadowDOM(!iter.ShadowDOMInvolved());
 
     CreateGeneratedContentItem(aState, aParentFrame, *aContent->AsElement(),
                                *aComputedStyle, PseudoStyleType::after, aItems);
@@ -5600,7 +5593,7 @@ void nsCSSFrameConstructor::ConstructFramesFromItem(
     
     if (AtLineBoundary(aIter) &&
         !computedStyle->StyleText()->WhiteSpaceOrNewlineIsSignificant() &&
-        aIter.List()->ParentHasNoXBLChildren() &&
+        aIter.List()->ParentHasNoShadowDOM() &&
         !(aState.mAdditionalStateBits & NS_FRAME_GENERATED_CONTENT) &&
         (item.mFCData->mBits & FCDATA_IS_LINE_PARTICIPANT) &&
         !(item.mFCData->mBits & FCDATA_IS_SVG_TEXT) &&
@@ -6198,9 +6191,6 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
   *aIsAppend = false;
 
   
-  
-  
-  
   FlattenedChildIterator iter(aInsertion->mContainer);
   if (iter.ShadowDOMInvolved() || !aChild->IsRootOfNativeAnonymousSubtree()) {
     
@@ -6705,13 +6695,12 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
   LayoutFrameType frameType = parentFrame->Type();
 
   FlattenedChildIterator iter(insertion.mContainer);
-  const bool haveNoXBLChildren =
+  const bool haveNoShadowDOM =
       !iter.ShadowDOMInvolved() || !iter.GetNextChild();
 
   AutoFrameConstructionItemList items(this);
   if (aFirstNewContent->GetPreviousSibling() &&
-      GetParentType(frameType) == eTypeBlock && haveNoXBLChildren) {
-    
+      GetParentType(frameType) == eTypeBlock && haveNoShadowDOM) {
     
     
     
@@ -6760,7 +6749,7 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
   }
   
   
-  items.SetParentHasNoXBLChildren(haveNoXBLChildren);
+  items.SetParentHasNoShadowDOM(haveNoShadowDOM);
 
   nsFrameList frameList;
   ConstructFramesFromItemList(state, items, parentFrame,
@@ -7115,9 +7104,10 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
   AutoFrameConstructionItemList items(this);
   ParentType parentType = GetParentType(frameType);
   FlattenedChildIterator iter(insertion.mContainer);
-  bool haveNoXBLChildren = !iter.ShadowDOMInvolved() || !iter.GetNextChild();
+  const bool haveNoShadowDOM =
+      !iter.ShadowDOMInvolved() || !iter.GetNextChild();
   if (aStartChild->GetPreviousSibling() && parentType == eTypeBlock &&
-      haveNoXBLChildren) {
+      haveNoShadowDOM) {
     
     
     
@@ -7138,7 +7128,7 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
     }
   }
 
-  if (aEndChild && parentType == eTypeBlock && haveNoXBLChildren) {
+  if (aEndChild && parentType == eTypeBlock && haveNoShadowDOM) {
     
     
     
@@ -7363,6 +7353,7 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
     childFrame = nullptr;
   }
 
+  
   
   
   
@@ -8793,8 +8784,7 @@ void nsCSSFrameConstructor::CreateNeededAnonFlexOrGridItems(
     newItem->mChildItems.SetLineBoundaryAtEnd(true);
     
     
-    newItem->mChildItems.SetParentHasNoXBLChildren(
-        aItems.ParentHasNoXBLChildren());
+    newItem->mChildItems.SetParentHasNoShadowDOM(aItems.ParentHasNoShadowDOM());
 
     
     
@@ -9279,8 +9269,8 @@ void nsCSSFrameConstructor::WrapItemsInPseudoParent(
   }
   
   
-  newItem->mChildItems.SetParentHasNoXBLChildren(
-      aIter.List()->ParentHasNoXBLChildren());
+  newItem->mChildItems.SetParentHasNoShadowDOM(
+      aIter.List()->ParentHasNoShadowDOM());
 
   
   
@@ -9315,7 +9305,7 @@ void nsCSSFrameConstructor::CreateNeededPseudoSiblings(
       
       aParentFrame->GetContent(), pseudoStyle.forget(), true);
   newItem->mIsAllInline = true;
-  newItem->mChildItems.SetParentHasNoXBLChildren(true);
+  newItem->mChildItems.SetParentHasNoShadowDOM(true);
   iter.InsertItem(newItem);
 }
 
@@ -9557,7 +9547,7 @@ void nsCSSFrameConstructor::ProcessChildren(
         ClearLazyBits(child, child->GetNextSibling());
       }
     }
-    itemsToConstruct.SetParentHasNoXBLChildren(!iter.ShadowDOMInvolved());
+    itemsToConstruct.SetParentHasNoShadowDOM(!iter.ShadowDOMInvolved());
 
     if (aCanHaveGeneratedContent) {
       

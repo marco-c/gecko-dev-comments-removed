@@ -96,8 +96,8 @@ nsresult nsGfxButtonControlFrame::GetDefaultLabel(nsAString& aString) const {
 nsresult nsGfxButtonControlFrame::GetLabel(nsString& aLabel) {
   
   
-  dom::HTMLInputElement* elt = dom::HTMLInputElement::FromNode(mContent);
-  if (elt && elt->HasAttr(kNameSpaceID_None, nsGkAtoms::value)) {
+  auto* elt = dom::HTMLInputElement::FromNode(mContent);
+  if (elt && elt->HasAttr(nsGkAtoms::value)) {
     elt->GetValue(aLabel, dom::CallerType::System);
   } else {
     

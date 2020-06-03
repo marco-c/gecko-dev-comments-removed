@@ -70,16 +70,14 @@ void InspectorUtils::GetAllStyleSheets(GlobalObject& aGlobalObject,
       }
     }
 
-    AutoTArray<StyleSheet*, 32> xblSheetArray;
-    styleSet->AppendAllNonDocumentAuthorSheets(xblSheetArray);
+    AutoTArray<StyleSheet*, 32> nonDocumentSheets;
+    styleSet->AppendAllNonDocumentAuthorSheets(nonDocumentSheets);
 
     
     
-    
     nsTHashtable<nsPtrHashKey<StyleSheet>> sheetSet;
-    for (StyleSheet* sheet : xblSheetArray) {
-      if (!sheetSet.Contains(sheet)) {
-        sheetSet.PutEntry(sheet);
+    for (StyleSheet* sheet : nonDocumentSheets) {
+      if (sheetSet.EnsureInserted(sheet)) {
         aResult.AppendElement(sheet);
       }
     }
@@ -90,6 +88,7 @@ void InspectorUtils::GetAllStyleSheets(GlobalObject& aGlobalObject,
     aResult.AppendElement(aDocument.SheetAt(i));
   }
 
+  
   
   
 }

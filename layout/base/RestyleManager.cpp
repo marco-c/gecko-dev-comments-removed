@@ -2971,6 +2971,8 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
   
   
   
+  
+  
   mInStyleRefresh = true;
   if (mHaveNonAnimationRestyles) {
     ++mAnimationGeneration;

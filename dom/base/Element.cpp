@@ -1824,7 +1824,6 @@ void Element::UnbindFromTree(bool aNullParent) {
        child = child->GetNextSibling()) {
     
     
-    
     child->UnbindFromTree(false);
   }
 

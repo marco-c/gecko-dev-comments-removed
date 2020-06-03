@@ -815,12 +815,12 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     void SetLineBoundaryAtEnd(bool aBoundary) {
       mLineBoundaryAtEnd = aBoundary;
     }
-    void SetParentHasNoXBLChildren(bool aHasNoXBLChildren) {
-      mParentHasNoXBLChildren = aHasNoXBLChildren;
+    void SetParentHasNoShadowDOM(bool aValue) {
+      mParentHasNoShadowDOM = aValue;
     }
     bool HasLineBoundaryAtStart() { return mLineBoundaryAtStart; }
     bool HasLineBoundaryAtEnd() { return mLineBoundaryAtEnd; }
-    bool ParentHasNoXBLChildren() { return mParentHasNoXBLChildren; }
+    bool ParentHasNoShadowDOM() { return mParentHasNoShadowDOM; }
     bool IsEmpty() const { return mItems.isEmpty(); }
     bool AnyItemsNeedBlockParent() const { return mLineParticipantCount != 0; }
     bool AreAllItemsInline() const { return mInlineCount == mItemCount; }
@@ -982,7 +982,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
           mItemCount(0),
           mLineBoundaryAtStart(false),
           mLineBoundaryAtEnd(false),
-          mParentHasNoXBLChildren(false) {
+          mParentHasNoShadowDOM(false) {
       MOZ_COUNT_CTOR(FrameConstructionItemList);
       memset(mDesiredParentCounts, 0, sizeof(mDesiredParentCounts));
     }
@@ -1038,7 +1038,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     
     bool mLineBoundaryAtEnd;
     
-    bool mParentHasNoXBLChildren;
+    bool mParentHasNoShadowDOM;
   };
 
   
@@ -1432,9 +1432,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   
   
-  
-  
-  
   static const FrameConstructionData* FindXULTagData(const Element&,
                                                      ComputedStyle&);
   
@@ -1544,6 +1541,9 @@ class nsCSSFrameConstructor final : public nsFrameManager {
       FrameConstructionItemList& aItemsToConstruct, ItemFlags aExtraFlags = {});
 
   
+
+
+
 
 
 
