@@ -266,6 +266,8 @@ async function doTestForAllTabsFavicon(aTestPage, aFaviconHost, aFaviconURL) {
   
   clearAllImageCaches();
 
+  gTabsPanel.init();
+
   
   let allTabsView = document.getElementById("allTabsMenu-allTabsView");
   let allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(

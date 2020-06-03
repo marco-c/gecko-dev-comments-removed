@@ -320,6 +320,8 @@ async function doTestForAllTabsFavicon(
 
   assertIconIsData(tabInfo.tab);
 
+  gTabsPanel.init();
+
   
   let allTabsView = document.getElementById("allTabsMenu-allTabsView");
   let allTabsPopupShownPromise = BrowserTestUtils.waitForEvent(
