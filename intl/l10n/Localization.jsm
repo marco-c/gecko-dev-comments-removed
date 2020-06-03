@@ -219,7 +219,6 @@ class Localization {
     this.resourceIds = [];
     this.generateBundles = undefined;
     this.generateBundlesSync = undefined;
-    this.isSync = undefined;
     this.bundles = undefined;
   }
 
@@ -235,22 +234,17 @@ class Localization {
 
 
 
-  activate(resourceIds, sync, eager, generateBundles = defaultGenerateBundles, generateBundlesSync = defaultGenerateBundlesSync) {
+  activate(resourceIds, isSync, eager, generateBundles = defaultGenerateBundles, generateBundlesSync = defaultGenerateBundlesSync) {
     if (this.bundles) {
       throw new Error("Attempt to initialize an already initialized instance.");
     }
     this.generateBundles = generateBundles;
     this.generateBundlesSync = generateBundlesSync;
-    this.isSync = sync;
-    this.regenerateBundles(resourceIds, eager);
+    this.regenerateBundles(resourceIds, isSync, eager);
   }
 
-  setIsSync(isSync) {
-    this.isSync = isSync;
-  }
-
-  cached(iterable) {
-    if (this.isSync) {
+  cached(iterable, isSync) {
+    if (isSync) {
       return CachedSyncIterable.from(iterable);
     } else {
       return CachedAsyncIterable.from(iterable);
@@ -309,9 +303,6 @@ class Localization {
 
 
   formatWithFallbackSync(keys, method) {
-    if (!this.isSync) {
-      throw new Error("Can't use sync formatWithFallback when state is async.");
-    }
     if (!this.bundles) {
       throw new Error("Attempt to format on an uninitialized instance.");
     }
@@ -464,9 +455,9 @@ class Localization {
 
 
 
-  onChange(resourceIds) {
+  onChange(resourceIds, isSync) {
     if (this.bundles) {
-      this.regenerateBundles(resourceIds, false);
+      this.regenerateBundles(resourceIds, isSync, false);
     }
   }
 
@@ -478,11 +469,11 @@ class Localization {
 
 
 
-  regenerateBundles(resourceIds, eager = false) {
+  regenerateBundles(resourceIds, isSync, eager = false) {
     
     this.resourceIds = resourceIds;
-    let generateMessages = this.isSync ? this.generateBundlesSync : this.generateBundles;
-    this.bundles = this.cached(generateMessages(this.resourceIds));
+    let generateMessages = isSync ? this.generateBundlesSync : this.generateBundles;
+    this.bundles = this.cached(generateMessages(this.resourceIds), isSync);
     if (eager) {
       
       
