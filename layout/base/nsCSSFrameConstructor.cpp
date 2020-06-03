@@ -6379,16 +6379,35 @@ void nsCSSFrameConstructor::CheckBitsForLazyFrameConstruction(
 
 
 
-void nsCSSFrameConstructor::ConstructLazily(Operation aOperation,
-                                            nsIContent* aChild) {
+
+
+
+
+bool nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
+                                                 nsIContent* aChild) {
   MOZ_ASSERT(aChild->GetParent());
+  if (aOperation == CONTENTINSERT) {
+    MOZ_ASSERT(!aChild->IsRootOfAnonymousSubtree());
+    if (aChild->IsXULElement()) {
+      return false;
+    }
+  } else {  
+    MOZ_ASSERT(aOperation == CONTENTAPPEND,
+               "operation should be either insert or append");
+    for (nsIContent* child = aChild; child; child = child->GetNextSibling()) {
+      MOZ_ASSERT(!child->IsRootOfAnonymousSubtree());
+      if (child->IsXULElement()) {
+        return false;
+      }
+    }
+  }
 
   
   
   Element* parent = aChild->GetFlattenedTreeParentElement();
   if (!parent) {
     
-    return;
+    return true;
   }
 
   if (Servo_Element_IsDisplayNone(parent)) {
@@ -6397,7 +6416,7 @@ void nsCSSFrameConstructor::ConstructLazily(Operation aOperation,
     
     
     
-    return;
+    return true;
   }
 
   
@@ -6423,6 +6442,8 @@ void nsCSSFrameConstructor::ConstructLazily(Operation aOperation,
 
   CheckBitsForLazyFrameConstruction(parent);
   parent->NoteDescendantsNeedFramesForServo();
+
+  return true;
 }
 
 void nsCSSFrameConstructor::IssueSingleInsertNofications(
@@ -6625,9 +6646,14 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
   }
 
   if (aInsertionKind == InsertionKind::Async) {
-    ConstructLazily(CONTENTAPPEND, aFirstNewContent);
-    LazilyStyleNewChildRange(aFirstNewContent, nullptr);
-    return;
+    if (MaybeConstructLazily(CONTENTAPPEND, aFirstNewContent)) {
+      LazilyStyleNewChildRange(aFirstNewContent, nullptr);
+      return;
+    }
+    
+    
+    
+    StyleNewChildRange(aFirstNewContent, nullptr);
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
@@ -6978,9 +7004,14 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
   }
 
   if (aInsertionKind == InsertionKind::Async) {
-    ConstructLazily(CONTENTINSERT, aStartChild);
-    LazilyStyleNewChildRange(aStartChild, aEndChild);
-    return;
+    if (MaybeConstructLazily(CONTENTINSERT, aStartChild)) {
+      LazilyStyleNewChildRange(aStartChild, aEndChild);
+      return;
+    }
+    
+    
+    
+    StyleNewChildRange(aStartChild, aEndChild);
   }
 
   bool isAppend, isRangeInsertSafe;
