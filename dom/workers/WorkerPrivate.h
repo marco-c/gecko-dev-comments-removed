@@ -933,8 +933,7 @@ class WorkerPrivate : public RelativeTimeline {
 
 
 
-
-  Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> GetEmbedderPolicy() const;
+  nsILoadInfo::CrossOriginEmbedderPolicy GetEmbedderPolicy() const;
 
   
   
@@ -953,6 +952,8 @@ class WorkerPrivate : public RelativeTimeline {
   
   bool MatchEmbedderPolicy(
       nsILoadInfo::CrossOriginEmbedderPolicy aPolicy) const;
+
+  nsILoadInfo::CrossOriginEmbedderPolicy GetOwnerEmbedderPolicy() const;
 
  private:
   WorkerPrivate(
@@ -1059,7 +1060,13 @@ class WorkerPrivate : public RelativeTimeline {
 
   UniquePtr<ClientSource> CreateClientSource();
 
-  Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> GetOwnerEmbedderPolicy() const;
+  
+  
+  
+  
+  
+  
+  void EnsureOwnerEmbedderPolicy();
 
   class EventTarget;
   friend class EventTarget;
@@ -1308,6 +1315,7 @@ class WorkerPrivate : public RelativeTimeline {
   
   
   Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> mEmbedderPolicy;
+  Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> mOwnerEmbedderPolicy;
 };
 
 class AutoSyncLoopHolder {
