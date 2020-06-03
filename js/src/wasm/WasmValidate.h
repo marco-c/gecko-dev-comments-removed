@@ -238,18 +238,16 @@ struct ModuleEnvironment {
     if (one == two) {
       return true;
     }
-    
-    if (two.isAnyRef()) {
-      return true;
-    }
-    
-    if (one.isNullRef()) {
-      return two.isNullable();
-    }
 #if defined(ENABLE_WASM_GC)
-    
-    if (gcTypesEnabled() && isStructType(one) && isStructType(two)) {
-      return isStructPrefixOf(two, one);
+    if (gcTypesEnabled()) {
+      
+      if (isStructType(one) && two.isAnyRef()) {
+        return true;
+      }
+      
+      if (isStructType(one) && isStructType(two)) {
+        return isStructPrefixOf(two, one);
+      }
     }
 #endif
     return false;
