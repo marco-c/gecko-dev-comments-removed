@@ -290,6 +290,7 @@ class RacyFeatures {
 };
 
 bool IsThreadBeingProfiled();
+bool IsThreadRegistered();
 
 }  
 }  
@@ -534,6 +535,14 @@ inline bool profiler_can_accept_markers() {
 inline bool profiler_thread_is_being_profiled() {
   return profiler_is_active() &&
          mozilla::profiler::detail::IsThreadBeingProfiled();
+}
+
+
+
+
+inline bool profiler_is_active_and_thread_is_registered() {
+  return profiler_is_active() &&
+         mozilla::profiler::detail::IsThreadRegistered();
 }
 
 
