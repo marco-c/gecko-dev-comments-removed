@@ -4291,10 +4291,6 @@ pref("urlclassifier.gethashnoise", 4);
 
 pref("urlclassifier.gethash.timeout_ms", 5000);
 
-pref("urlclassifier.update.response_timeout_ms", 30000);
-
-pref("urlclassifier.update.timeout_ms", 90000);
-
 
 pref("urlclassifier.alternate_error_page", "blocked");
 
