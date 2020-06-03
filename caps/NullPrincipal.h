@@ -17,6 +17,7 @@
 #include "nsCOMPtr.h"
 
 #include "mozilla/BasePrincipal.h"
+#include "gtest/MozGtestFriend.h"
 
 class nsIDocShell;
 class nsIURI;
@@ -106,11 +107,15 @@ class NullPrincipal final : public BasePrincipal {
   nsCOMPtr<nsIURI> mURI;
 
  private:
+  FRIEND_TEST(OriginAttributes, NullPrincipal);
+
   
   
   
   
-  void Init(const OriginAttributes& aOriginAttributes, bool aIsFirstParty);
+  
+  nsresult Init(const OriginAttributes& aOriginAttributes, bool aIsFirstParty,
+                nsIURI* aURI = nullptr);
 };
 
 }  
