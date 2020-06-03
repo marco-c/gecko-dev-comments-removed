@@ -501,6 +501,9 @@ class MochitestServer(object):
         
         env["TSAN_OPTIONS"] = "report_bugs=0"
 
+        
+        env["MOZ_DISABLE_SOCKET_PROCESS"] = "1"
+
         if mozinfo.isWin:
             env["PATH"] = env["PATH"] + ";" + str(self._xrePath)
 
