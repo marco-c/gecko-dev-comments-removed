@@ -42,7 +42,7 @@ NS_IMETHODIMP
 nsHTTPSOnlyStreamListener::OnStopRequest(nsIRequest* request,
                                          nsresult aStatus) {
   
-  if (aStatus != NS_ERROR_UNKNOWN_HOST) {
+  if (nsHTTPSOnlyUtils::CouldBeHttpsOnlyError(aStatus)) {
     RecordUpgradeTelemetry(request, aStatus);
     LogUpgradeFailure(request, aStatus);
   }

@@ -251,6 +251,9 @@ LoadInfo::LoadInfo(
         aLoadingContext->OwnerDoc()->UserHasInteracted();
 
     
+    mHttpsOnlyStatus |= aLoadingContext->OwnerDoc()->HttpsOnlyStatus();
+
+    
     
     
     
@@ -715,6 +718,8 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
     mOriginAttributes.SyncAttributesWithPrivateBrowsing(
         parentBC->UsePrivateBrowsing());
   }
+
+  mHttpsOnlyStatus |= parentWGP->HttpsOnlyStatus();
 
   
   

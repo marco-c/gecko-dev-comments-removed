@@ -872,6 +872,11 @@ class Document : public nsINode,
   
 
 
+  uint32_t HttpsOnlyStatus() const { return mHttpsOnlyStatus; }
+
+  
+
+
 
   const nsTArray<uint64_t>& AncestorOuterWindowIDs() const {
     return mAncestorOuterWindowIDs;
@@ -4921,6 +4926,10 @@ class Document : public nsINode,
 
   
   uint32_t mUpdateNestLevel;
+
+  
+  
+  uint32_t mHttpsOnlyStatus;
 
   enum ViewportType : uint8_t {
     DisplayWidthHeight,

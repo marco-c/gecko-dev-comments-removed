@@ -40,6 +40,14 @@ class nsHTTPSOnlyUtils {
 
 
 
+  static bool CouldBeHttpsOnlyError(nsresult aError);
+
+  
+
+
+
+
+
 
 
 
