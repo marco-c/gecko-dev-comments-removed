@@ -749,9 +749,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     }
   }
 
-  uint64_t topInnerWindowID =
-      docShell->GetBrowsingContext()->GetTopWindowContext()->Id();
-
   uint32_t state = nsIWebProgressListener::STATE_IS_BROKEN;
   nsCOMPtr<nsISecureBrowserUI> securityUI;
   rootShell->GetSecurityUI(getter_AddRefs(securityUI));
@@ -817,8 +814,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   if (classification == eMixedDisplay) {
     if (!StaticPrefs::security_mixed_content_block_display_content() ||
         allowMixedContent) {
-      LogMixedContentMessage(classification, aContentLocation, topInnerWindowID,
-                             eUserOverride, requestingLocation);
       *aDecision = nsIContentPolicy::ACCEPT;
       if (rootHasSecureConnection) {
         broken = true;
@@ -828,8 +823,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
       newState |= nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT;
     } else {
       *aDecision = nsIContentPolicy::REJECT_REQUEST;
-      LogMixedContentMessage(classification, aContentLocation, topInnerWindowID,
-                             eBlocked, requestingLocation);
       newState |= nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT;
     }
   } else {
@@ -838,8 +831,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     
     if (!StaticPrefs::security_mixed_content_block_active_content() ||
         allowMixedContent) {
-      LogMixedContentMessage(classification, aContentLocation, topInnerWindowID,
-                             eUserOverride, requestingLocation);
       *aDecision = nsIContentPolicy::ACCEPT;
 
       if (rootHasSecureConnection) {
@@ -853,13 +844,17 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
       
       
       *aDecision = nsIContentPolicy::REJECT_REQUEST;
-      LogMixedContentMessage(classification, aContentLocation, topInnerWindowID,
-                             eBlocked, requestingLocation);
       
       
       newState |= nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT;
     }
   }
+
+  LogMixedContentMessage(classification, aContentLocation, topWC->Id(),
+                         (*aDecision == nsIContentPolicy::REJECT_REQUEST)
+                             ? eBlocked
+                             : eUserOverride,
+                         requestingLocation);
 
   
   
