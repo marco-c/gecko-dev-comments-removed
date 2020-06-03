@@ -630,10 +630,7 @@ static bool DoAtomicsWait(JSContext* cx,
       cx, unwrappedTypedArray->bufferShared());
 
   
-  uint32_t offset =
-      unwrappedTypedArray->dataPointerShared().cast<uint8_t*>().unwrap(
-          ) -
-      unwrappedSab->dataPointerShared().unwrap();
+  uint32_t offset = unwrappedTypedArray->byteOffset();
 
   
   
@@ -791,10 +788,7 @@ bool js::atomics_notify(JSContext* cx, unsigned argc, Value* vp) {
       cx, unwrappedTypedArray->bufferShared());
 
   
-  uint32_t offset =
-      unwrappedTypedArray->dataPointerShared().cast<uint8_t*>().unwrap(
-          ) -
-      unwrappedSab->dataPointerShared().unwrap();
+  uint32_t offset = unwrappedTypedArray->byteOffset();
 
   
   
