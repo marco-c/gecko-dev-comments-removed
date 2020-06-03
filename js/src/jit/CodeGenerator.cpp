@@ -5075,8 +5075,6 @@ void CodeGenerator::visitPostWriteBarrierCommonV(LPostBarrierType* lir,
   maybeEmitGlobalBarrierCheck(lir->object(), ool);
 
   ValueOperand value = ToValue(lir, LPostBarrierType::Input);
-  
-  
   masm.branchValueIsNurseryCell(Assembler::Equal, value, temp, ool->entry());
 
   masm.bind(ool->rejoin());
