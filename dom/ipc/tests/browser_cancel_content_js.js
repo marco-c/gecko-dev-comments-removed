@@ -11,14 +11,12 @@ const TEST_PAGE =
 const NEXT_PAGE = "https://example.org/";
 const JS_URI = "javascript:void(document.title = 'foo')";
 
-function sleep(ms) {
-  
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 async function test_navigation(nextPage, cancelContentJSPref, shouldCancel) {
   await SpecialPowers.pushPrefEnv({
-    set: [["dom.ipc.cancel_content_js_when_navigating", cancelContentJSPref]],
+    set: [
+      ["dom.ipc.cancel_content_js_when_navigating", cancelContentJSPref],
+      ["dom.max_script_run_time", 20],
+    ],
   });
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
@@ -34,8 +32,9 @@ async function test_navigation(nextPage, cancelContentJSPref, shouldCancel) {
   });
 
   
-  
-  await sleep(1000);
+  await ContentTask.spawn(tab.linkedBrowser, [], function() {
+    content.dispatchEvent(new content.Event("StartLongLoop"));
+  });
 
   info(
     `navigating to ${nextPage} with cancel content JS ${
