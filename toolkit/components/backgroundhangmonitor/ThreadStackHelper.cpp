@@ -142,8 +142,7 @@ void ThreadStackHelper::GetStack(HangStack& aStack, nsACString& aRunnableName,
 
   
   
-  profiler_suspend_and_sample_thread(mThreadId, ProfilerFeature::Privacy, *this,
-                                     aStackWalk);
+  profiler_suspend_and_sample_thread(mThreadId, 0, *this, aStackWalk);
 
   
   

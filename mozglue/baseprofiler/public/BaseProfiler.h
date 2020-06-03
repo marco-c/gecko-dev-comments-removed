@@ -125,43 +125,40 @@ class SpliceableJSONWriter;
     MACRO(6, "noiostacks", NoIOStacks,                                         \
           "File I/O markers do not capture stacks, to reduce overhead")        \
                                                                                \
-    MACRO(7, "privacy", Privacy,                                               \
-          "Do not include user-identifiable information")                      \
-                                                                               \
-    MACRO(8, "screenshots", Screenshots,                                       \
+    MACRO(7, "screenshots", Screenshots,                                       \
           "Take a snapshot of the window on every composition")                \
                                                                                \
-    MACRO(9, "seqstyle", SequentialStyle,                                      \
+    MACRO(8, "seqstyle", SequentialStyle,                                      \
           "Disable parallel traversal in styling")                             \
                                                                                \
-    MACRO(10, "stackwalk", StackWalk,                                          \
+    MACRO(9, "stackwalk", StackWalk,                                           \
           "Walk the C++ stack, not available on all platforms")                \
                                                                                \
-    MACRO(11, "tasktracer", TaskTracer,                                        \
+    MACRO(10, "tasktracer", TaskTracer,                                        \
           "Start profiling with feature TaskTracer")                           \
                                                                                \
-    MACRO(12, "threads", Threads, "Profile the registered secondary threads")  \
+    MACRO(11, "threads", Threads, "Profile the registered secondary threads")  \
                                                                                \
-    MACRO(13, "trackopts", TrackOptimizations,                                 \
+    MACRO(12, "trackopts", TrackOptimizations,                                 \
           "Have the JavaScript engine track JIT optimizations")                \
                                                                                \
-    MACRO(14, "jstracer", JSTracer, "Enable tracing of the JavaScript engine") \
+    MACRO(13, "jstracer", JSTracer, "Enable tracing of the JavaScript engine") \
                                                                                \
-    MACRO(15, "jsallocations", JSAllocations,                                  \
+    MACRO(14, "jsallocations", JSAllocations,                                  \
           "Have the JavaScript engine track allocations")                      \
                                                                                \
-    MACRO(16, "nostacksampling", NoStackSampling,                              \
+    MACRO(15, "nostacksampling", NoStackSampling,                              \
           "Disable all stack sampling: Cancels \"js\", \"leaf\", "             \
           "\"stackwalk\" and labels")                                          \
                                                                                \
-    MACRO(17, "preferencereads", PreferenceReads,                              \
+    MACRO(16, "preferencereads", PreferenceReads,                              \
           "Track when preferences are read")                                   \
                                                                                \
-    MACRO(18, "nativeallocations", NativeAllocations,                          \
+    MACRO(17, "nativeallocations", NativeAllocations,                          \
           "Collect the stacks from a smaller subset of all native "            \
           "allocations, biasing towards collecting larger allocations")        \
                                                                                \
-    MACRO(19, "ipcmessages", IPCMessages,                                      \
+    MACRO(18, "ipcmessages", IPCMessages,                                      \
           "Have the IPC layer track cross-process messages")
 
 struct ProfilerFeature {
@@ -207,9 +204,7 @@ class RacyFeatures {
 
   MFBT_API static bool IsActiveWithFeature(uint32_t aFeature);
 
-  MFBT_API static bool IsActiveWithoutPrivacy();
-
-  MFBT_API static bool IsActiveAndUnpausedWithoutPrivacy();
+  MFBT_API static bool IsActiveAndUnpaused();
 
  private:
   static constexpr uint32_t Active = 1u << 31;
@@ -417,8 +412,7 @@ inline bool profiler_is_active() {
 
 
 inline bool profiler_can_accept_markers() {
-  return baseprofiler::detail::RacyFeatures::
-      IsActiveAndUnpausedWithoutPrivacy();
+  return baseprofiler::detail::RacyFeatures::IsActiveAndUnpaused();
 }
 
 
@@ -746,7 +740,6 @@ class MOZ_RAII AutoProfilerStats {
 
 
 
-
 #  define BASE_PROFILER_ADD_MARKER(markerName, categoryPair)             \
     do {                                                                 \
       AUTO_PROFILER_STATS(base_add_marker);                              \
@@ -800,7 +793,6 @@ enum TracingKind {
   TRACING_INTERVAL_START,
   TRACING_INTERVAL_END,
 };
-
 
 
 
