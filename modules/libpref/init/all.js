@@ -1822,10 +1822,6 @@ pref("network.dns.skipTRR-when-parental-control-enabled", true);
 pref("network.standard-url.max-length", 1048576);
 
 
-
-pref("network.standard-url.punycode-host", true);
-
-
 pref("network.ftp.idleConnectionTimeout", 300);
 
 
