@@ -454,8 +454,6 @@ class nsDocShell final : public nsDocLoader,
     return static_cast<nsDocShell*>(aDocShell);
   }
 
-  static bool CanLoadInParentProcess(nsIURI* aURI);
-
   
   
   bool IsForceReloading();

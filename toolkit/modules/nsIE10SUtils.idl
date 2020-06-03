@@ -7,7 +7,6 @@
 #include "nsISupports.idl"
 
 interface nsIPrincipal;
-interface nsIURI;
 
 
 
@@ -29,11 +28,7 @@ interface nsIE10SUtils : nsISupports {
 
 
 
-
-
-
   AString getRemoteTypeForPrincipal(in nsIPrincipal aPrincipal,
-                                    in nsIURI aChannelOriginalURI,
                                     in boolean aMultiProcess,
                                     in boolean aRemoteSubframes,
                                     in AString aPreferredRemoteType,
