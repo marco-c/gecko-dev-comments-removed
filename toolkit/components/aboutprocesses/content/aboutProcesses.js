@@ -684,7 +684,9 @@ var Control = {
     let process = row.process;
     this._sortThreads(process.threads);
     for (let thread of process.threads) {
-      View.appendThreadRow(thread);
+      
+      let elt = View.appendThreadRow(thread);
+      elt.thread = thread;
     }
   },
   _sortThreads(threads) {
