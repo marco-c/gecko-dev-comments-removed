@@ -16,10 +16,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
     "resource://messaging-system/experiments/ExperimentStore.jsm",
   ExperimentManager:
     "resource://messaging-system/experiments/ExperimentManager.jsm",
+  RemoteSettings: "resource://services-settings/remote-settings.js",
 });
 
 const IS_MAIN_PROCESS =
   Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT;
+
+const COLLECTION_ID = "messaging-experiments";
 
 const ExperimentAPI = {
   
@@ -77,8 +80,69 @@ const ExperimentAPI = {
   off(eventName, callback) {
     this._store.off(eventName, callback);
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async getRecipe(slug) {
+    if (!IS_MAIN_PROCESS) {
+      throw new Error(
+        "getRecipe() should only be called from the main process"
+      );
+    }
+
+    let recipe;
+
+    try {
+      [recipe] = await this._remoteSettingsClient.get({
+        
+        syncIfEmpty: false,
+        filters: {
+          "arguments.slug": slug,
+        },
+      });
+    } catch (e) {
+      Cu.reportError(e);
+      recipe = undefined;
+    }
+
+    return recipe;
+  },
+
+  
+
+
+
+
+
+
+
+
+  async getAllBranches(slug) {
+    if (!IS_MAIN_PROCESS) {
+      throw new Error(
+        "getAllBranches() should only be called from the main process"
+      );
+    }
+
+    const recipe = await this.getRecipe(slug);
+    return recipe?.arguments.branches;
+  },
 };
 
 XPCOMUtils.defineLazyGetter(ExperimentAPI, "_store", function() {
   return IS_MAIN_PROCESS ? ExperimentManager.store : new ExperimentStore();
+});
+
+XPCOMUtils.defineLazyGetter(ExperimentAPI, "_remoteSettingsClient", function() {
+  return RemoteSettings(COLLECTION_ID);
 });
