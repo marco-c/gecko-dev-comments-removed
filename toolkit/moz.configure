@@ -965,14 +965,17 @@ set_config('ENABLE_MARIONETTE', marionette)
 
 
 
-@depends('--enable-tests', target, cross_compiling, hazard_analysis, asan)
-def geckodriver_default(enable_tests, target, cross_compile, hazard, asan):
+
+@depends('--enable-tests', target, cross_compiling, hazard_analysis, asan, 'MOZ_AUTOMATION')
+def geckodriver_default(enable_tests, target, cross_compile, hazard, asan, automation):
     if not enable_tests:
         return False
     
     if target.os == 'WINNT' and target.cpu == 'aarch64':
         return False
     if hazard or target.os == 'Android' or (asan and cross_compile):
+        return False
+    if automation:
         return False
     return True
 
