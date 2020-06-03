@@ -1497,14 +1497,22 @@ nsresult ScriptLoader::StartLoad(ScriptLoadRequest* aRequest) {
   rv = NS_NewIncrementalStreamLoader(getter_AddRefs(loader), handler);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = channel->AsyncOpen(loader);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   auto key = PreloadHashKey::CreateAsScript(
       aRequest->mURI, aRequest->CORSMode(), aRequest->mKind,
       aRequest->ReferrerPolicy());
   aRequest->NotifyOpen(&key, channel, mDocument,
                        aRequest->IsLinkPreloadScript());
+
+  rv = channel->AsyncOpen(loader);
+
+  if (NS_FAILED(rv)) {
+    
+    
+    aRequest->NotifyStart(channel);
+    aRequest->NotifyStop(rv);
+  }
+
+  NS_ENSURE_SUCCESS(rv, rv);
 
   if (aRequest->IsModuleRequest()) {
     
@@ -1966,6 +1974,10 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
   
   
   request->NotifyUsage();
+  
+  
+  
+  request->RemoveSelf(mDocument);
 
   return request;
 }
