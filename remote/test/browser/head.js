@@ -568,10 +568,22 @@ class RecordEvents {
 
 
 
+
+  filter(predicate) {
+    return this.events.filter(predicate);
+  }
+
+  
+
+
+
+
+
+
   findEvent(eventName) {
     const event = this.events.find(el => el.eventName == eventName);
     if (event) {
-      return event.payload;
+      return event;
     }
     return {};
   }
@@ -585,9 +597,7 @@ class RecordEvents {
 
 
   findEvents(eventName) {
-    return this.events
-      .filter(event => event.eventName == eventName)
-      .map(event => event.payload);
+    return this.events.filter(event => event.eventName == eventName);
   }
 
   

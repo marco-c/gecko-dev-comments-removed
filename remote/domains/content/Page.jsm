@@ -37,6 +37,13 @@ class Page extends ContentProcessDomain {
     this.scriptsToEvaluateOnLoad = new Map();
     this.worldsToEvaluateOnLoad = new Set();
 
+    
+    
+    
+    
+    
+    this.frameIdToLoaderId = new Map();
+
     this._onFrameAttached = this._onFrameAttached.bind(this);
     this._onFrameDetached = this._onFrameDetached.bind(this);
     this._onFrameNavigated = this._onFrameNavigated.bind(this);
@@ -309,13 +316,10 @@ class Page extends ContentProcessDomain {
       return;
     }
 
-    const timestamp = Date.now() / 1000;
     const frameId = target.defaultView.docShell.browsingContext.id.toString();
+    const loaderId = this.frameIdToLoaderId.get(frameId);
+    const timestamp = Date.now() / 1000;
     const url = target.location.href;
-    const loaderId =
-      this._lastRequest?.frameId == frameId
-        ? this._lastRequest?.loaderId
-        : null;
 
     switch (type) {
       case "DOMContentLoaded":
@@ -351,7 +355,9 @@ class Page extends ContentProcessDomain {
   }
 
   _updateLoaderId(data) {
-    this._lastRequest = data;
+    const { frameId, loaderId } = data;
+
+    this.frameIdToLoaderId.set(frameId, loaderId);
   }
 
   _contentRect() {
