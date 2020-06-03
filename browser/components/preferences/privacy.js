@@ -1933,13 +1933,14 @@ var gPrivacyPane = {
 
   async changeMasterPassword() {
     
-    if (!LoginHelper.isMasterPasswordSet() && OS_AUTH_ENABLED) {
-      let messageId = "master-password-os-auth-dialog-message";
-      if (AppConstants.platform == "macosx") {
-        
-        
-        messageId += "-macosx";
-      }
+    
+    if (
+      !LoginHelper.isMasterPasswordSet() &&
+      OS_AUTH_ENABLED &&
+      AppConstants.platform != "linux"
+    ) {
+      let messageId =
+        "master-password-os-auth-dialog-message-" + AppConstants.platform;
       let [messageText, captionText] = await L10n.formatMessages([
         {
           id: messageId,
