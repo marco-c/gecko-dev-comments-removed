@@ -172,6 +172,25 @@ void PrintToConsole(const char* aFmt, ...) {
   va_end(args);
 }
 
+constexpr static bool ValidateFeatures() {
+  int expectedFeatureNumber = 0;
+
+  
+#define CHECK_FEATURE(n_, str_, Name_, desc_) \
+  if ((n_) != expectedFeatureNumber) {        \
+    return false;                             \
+  }                                           \
+  ++expectedFeatureNumber;
+
+  BASE_PROFILER_FOR_EACH_FEATURE(CHECK_FEATURE)
+
+#undef CHECK_FEATURE
+
+  return true;
+}
+
+static_assert(ValidateFeatures(), "Feature list is invalid");
+
 
 static uint32_t AvailableFeatures() {
   uint32_t features = 0;
