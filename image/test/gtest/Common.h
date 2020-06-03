@@ -138,6 +138,12 @@ struct ImageTestCase {
     return self;
   }
 
+  ImageTestCase WithFlags(uint32_t aFlags) const {
+    ImageTestCase self = *this;
+    self.mFlags = aFlags;
+    return self;
+  }
+
   BGRAColor ChooseColor(const BGRAColor& aColor) const {
     
     
