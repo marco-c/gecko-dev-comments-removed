@@ -5941,26 +5941,16 @@ impl PicturePrimitive {
                 false
             };
 
-            let surface_to_parent_transform = frame_context.spatial_tree
-                .get_relative_transform(surface_spatial_node_index, parent_raster_node_index);
-
             
             
-            let establishes_raster_root = has_svg_filter || surface_to_parent_transform.is_perspective();
+            let establishes_raster_root = has_svg_filter || frame_context.spatial_tree
+                .get_relative_transform(surface_spatial_node_index, parent_raster_node_index)
+                .is_perspective();
 
-            let (raster_spatial_node_index, device_pixel_scale) = if establishes_raster_root {
-                
-                
-                let scale_factors = surface_to_parent_transform.scale_factors();
-
-                
-                
-                let scaling_factor = scale_factors.0.max(scale_factors.1).max(1.0);
-
-                let device_pixel_scale = frame_context.global_device_pixel_scale * Scale::new(scaling_factor);
-                (surface_spatial_node_index, device_pixel_scale)
+            let raster_spatial_node_index = if establishes_raster_root {
+                surface_spatial_node_index
             } else {
-                (parent_raster_node_index, frame_context.global_device_pixel_scale)
+                parent_raster_node_index
             };
 
             let scale_factors = frame_context
@@ -6012,7 +6002,7 @@ impl PicturePrimitive {
                 inflation_factor,
                 frame_context.global_screen_world_rect,
                 &frame_context.spatial_tree,
-                device_pixel_scale,
+                frame_context.global_device_pixel_scale,
                 scale_factors,
             );
 
