@@ -747,7 +747,7 @@ nsresult WSRunScanner::GetWSNodes() {
   while (!mStartNode) {
     
     nsCOMPtr<nsIContent> priorNode = GetPreviousWSNode(
-        start, editableBlockParentOrTopmotEditableInlineContent);
+        start, *editableBlockParentOrTopmotEditableInlineContent);
     if (priorNode) {
       if (HTMLEditUtils::IsBlockElement(*priorNode)) {
         mStartNode = start.GetContainer();
@@ -1088,88 +1088,34 @@ void WSRunScanner::InitializeWithSingleFragment(
   mEndRun = mStartRun;
 }
 
-nsIContent* WSRunScanner::GetPreviousWSNodeInner(nsINode* aStartNode,
-                                                 nsINode* aBlockParent) const {
-  
-  
-  
-  MOZ_ASSERT(aStartNode && aBlockParent);
-
-  if (aStartNode == mEditingHost) {
-    NS_WARNING(
-        "WSRunScanner::GetPreviousWSNodeInner() was called with editing host");
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIContent> previousContent = aStartNode->GetPreviousSibling();
-  OwningNonNull<nsINode> curNode = *aStartNode;
-  while (!previousContent) {
-    
-    nsCOMPtr<nsINode> curParent = curNode->GetParentNode();
-    if (!curParent) {
-      NS_WARNING("Reached orphan node while climbing up the DOM tree");
-      return nullptr;
-    }
-    if (curParent == aBlockParent) {
-      
-      
-      return nullptr;
-    }
-    if (curParent == mEditingHost) {
-      NS_WARNING("Reached editing host while climbing up the DOM tree");
-      return nullptr;
-    }
-    
-    previousContent = curParent->GetPreviousSibling();
-    curNode = curParent;
-  }
-
-  if (!previousContent) {
-    return nullptr;
-  }
-
-  
-  if (HTMLEditUtils::IsBlockElement(*previousContent)) {
-    return previousContent;
-  }
-  if (HTMLEditUtils::IsContainerNode(*previousContent)) {
-    
-    if (nsIContent* child = HTMLEditUtils::GetLastLeafChild(
-            *previousContent, ChildBlockBoundary::Ignore)) {
-      return child;
-    }
-  }
-  
-  return previousContent;
-}
-
 nsIContent* WSRunScanner::GetPreviousWSNode(const EditorDOMPoint& aPoint,
-                                            nsINode* aBlockParent) const {
+                                            nsIContent& aBlockParent) const {
   
   
   
-  MOZ_ASSERT(aPoint.IsSet() && aBlockParent);
+  MOZ_ASSERT(aPoint.IsSet());
 
   if (aPoint.IsInTextNode()) {
-    return GetPreviousWSNodeInner(aPoint.GetContainer(), aBlockParent);
+    return HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+        *aPoint.ContainerAsText(), aBlockParent, mEditingHost);
   }
-  if (!aPoint.IsInContentNode() ||
-      !HTMLEditUtils::IsContainerNode(*aPoint.ContainerAsContent())) {
-    return GetPreviousWSNodeInner(aPoint.GetContainer(), aBlockParent);
+  if (!aPoint.IsInContentNode()) {
+    return nullptr;
+  }
+  if (!HTMLEditUtils::IsContainerNode(*aPoint.ContainerAsContent())) {
+    return HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+        *aPoint.ContainerAsContent(), aBlockParent, mEditingHost);
   }
 
-  if (!aPoint.Offset()) {
-    if (aPoint.GetContainer() == aBlockParent) {
+  if (aPoint.IsStartOfContainer()) {
+    if (aPoint.GetContainer() == &aBlockParent) {
       
       return nullptr;
     }
 
     
-    return GetPreviousWSNodeInner(aPoint.GetContainer(), aBlockParent);
-  }
-
-  if (NS_WARN_IF(!aPoint.IsInContentNode())) {
-    return nullptr;
+    return HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
+        *aPoint.ContainerAsContent(), aBlockParent, mEditingHost);
   }
 
   nsCOMPtr<nsIContent> previousContent = aPoint.GetPreviousSiblingOfChild();
