@@ -317,13 +317,14 @@ CookieService::GetCookieStringFromDocument(Document* aDocument,
   
   bool potentiallyTurstworthy = principal->GetIsOriginPotentiallyTrustworthy();
 
+  bool thirdParty = true;
   nsPIDOMWindowInner* innerWindow = aDocument->GetInnerWindow();
-  if (NS_WARN_IF(!innerWindow)) {
-    return NS_OK;
+  
+  
+  if (innerWindow) {
+    thirdParty = nsContentUtils::IsThirdPartyWindowOrChannel(innerWindow,
+                                                             nullptr, nullptr);
   }
-
-  bool thirdParty = nsContentUtils::IsThirdPartyWindowOrChannel(
-      innerWindow, nullptr, nullptr);
 
   bool stale = false;
   nsTArray<Cookie*> cookieList;
@@ -455,13 +456,16 @@ CookieService::SetCookieStringFromDocument(Document* aDocument,
     return NS_OK;
   }
 
+  bool thirdParty = true;
   nsPIDOMWindowInner* innerWindow = aDocument->GetInnerWindow();
-  if (NS_WARN_IF(!innerWindow)) {
-    return NS_OK;
+  
+  
+  if (innerWindow) {
+    thirdParty = nsContentUtils::IsThirdPartyWindowOrChannel(innerWindow,
+                                                             nullptr, nullptr);
   }
 
-  if (nsContentUtils::IsThirdPartyWindowOrChannel(innerWindow, nullptr,
-                                                  nullptr) &&
+  if (thirdParty &&
       !CookieCommons::ShouldIncludeCrossSiteCookieForDocument(cookie)) {
     return NS_OK;
   }
