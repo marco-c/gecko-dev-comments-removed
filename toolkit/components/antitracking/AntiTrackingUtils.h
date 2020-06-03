@@ -101,6 +101,10 @@ class AntiTrackingUtils final {
   static already_AddRefed<dom::WindowGlobalParent>
   GetTopWindowExcludingExtensionAccessibleContentFrames(
       dom::CanonicalBrowsingContext* aBrowsingContext, nsIURI* aURIBeingLoaded);
+
+  
+  
+  static void ComputeIsThirdPartyToTopWindow(nsIChannel* aChannel);
 };
 
 }  
