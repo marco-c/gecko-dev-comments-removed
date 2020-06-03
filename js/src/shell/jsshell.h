@@ -97,7 +97,6 @@ extern int sArgc;
 extern char** sArgv;
 
 
-extern bool enableDeferredMode;
 extern bool enableCodeCoverage;
 extern bool enableDisassemblyDumps;
 extern bool offthreadCompilation;
