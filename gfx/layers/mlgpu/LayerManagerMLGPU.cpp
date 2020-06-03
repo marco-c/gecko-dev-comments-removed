@@ -212,7 +212,6 @@ void LayerManagerMLGPU::BeginTransactionWithDrawTarget(
 
   mTarget = aTarget;
   mTargetRect = aRect;
-  return;
 }
 
 
