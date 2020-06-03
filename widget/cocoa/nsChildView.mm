@@ -2807,6 +2807,19 @@ NSEvent* gLastDragMouseDownEvent = nil;
     return;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  if (mGestureState == eGestureState_RotateGesture && [anEvent phase] != NSEventPhaseBegan) {
+    
+    return;
+  }
+  mGestureState = eGestureState_MagnifyGesture;
+
   NSPoint locationInWindow = nsCocoaUtils::EventLocationForWindow(anEvent, [self window]);
   ScreenPoint position =
       ViewAs<ScreenPixel>([self convertWindowCoordinatesRoundDown:locationInWindow],
@@ -2831,6 +2844,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
     }
     case NSEventPhaseEnded: {
       pinchGestureType = PinchGestureInput::PINCHGESTURE_END;
+      mGestureState = eGestureState_None;
       break;
     }
     default: {
