@@ -47,8 +47,8 @@ class ExecutionContext {
 
     
     
-    const { windowUtils } = debuggee;
-    this.windowId = windowUtils.currentInnerWindowID;
+    this.window = debuggee;
+    this.windowId = debuggee.windowUtils.currentInnerWindowID;
     this.id = id;
     this.frameId = debuggee.docShell.browsingContext.id.toString();
     this.isDefault = isDefault;

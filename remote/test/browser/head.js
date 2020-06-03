@@ -280,6 +280,25 @@ async function loadURL(url, expectedURL = undefined) {
 
 
 
+async function enableRuntime(client) {
+  const { Runtime } = client;
+
+  
+  await Runtime.enable();
+  info("Runtime domain has been enabled");
+
+  
+  const { context } = await Runtime.executionContextCreated();
+  ok(!!context.id, "The execution context has an id");
+  ok(context.auxData.isDefault, "The execution context is the default one");
+  ok(!!context.auxData.frameId, "The execution context has a frame id set");
+
+  return context;
+}
+
+
+
+
 function getContentProperty(prop) {
   info(`Retrieve ${prop} on the content window`);
   return SpecialPowers.spawn(

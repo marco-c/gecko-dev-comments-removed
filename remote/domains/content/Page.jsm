@@ -13,9 +13,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { ContentProcessDomain } = ChromeUtils.import(
   "chrome://remote/content/domains/ContentProcessDomain.jsm"
 );
-const { UnsupportedError } = ChromeUtils.import(
-  "chrome://remote/content/Error.jsm"
-);
 
 XPCOMUtils.defineLazyServiceGetter(
   this,
@@ -191,16 +188,35 @@ class Page extends ContentProcessDomain {
 
 
 
+
+
+
+
   createIsolatedWorld(options = {}) {
     const { frameId, worldName } = options;
-    if (frameId && frameId != this.docShell.browsingContext.id.toString()) {
-      throw new UnsupportedError("frameId not supported");
+
+    if (typeof frameId != "string") {
+      throw new TypeError("frameId: string value expected");
     }
+
+    if (!["undefined", "string"].includes(typeof worldName)) {
+      throw new TypeError("worldName: string value expected");
+    }
+
     const Runtime = this.session.domains.get("Runtime");
+    const contexts = Runtime._getContextsForFrame(frameId);
+    if (contexts.length == 0) {
+      throw new Error("No frame for given id found");
+    }
+
+    const defaultContext = Runtime._getDefaultContextForWindow(
+      contexts[0].windowId
+    );
+    const window = defaultContext.window;
 
     const executionContextId = Runtime._onContextCreated("context-created", {
-      windowId: this.content.windowUtils.currentInnerWindowID,
-      window: this.content,
+      windowId: window.windowUtils.currentInnerWindowID,
+      window,
       isDefault: false,
       contextName: worldName,
       contextType: "isolated",
