@@ -3863,6 +3863,33 @@ void nsFlexContainerFrame::GenerateFlexLines(
   }
 }
 
+void nsFlexContainerFrame::GenerateFlexLines(const SharedFlexData& aData,
+                                             nsTArray<FlexLine>& aLines) {
+  MOZ_ASSERT(GetPrevInFlow(), "This should be called by non-first-in-flows!");
+
+  
+  aLines.AppendElement(FlexLine(0));
+
+  
+  
+  CSSOrderAwareFrameIterator iter(
+      this, kPrincipalList, CSSOrderAwareFrameIterator::eSkipPlaceholders,
+      CSSOrderAwareFrameIterator::eUnknownOrder, OrderingPropertyForIter(this));
+
+  
+  for (; !iter.AtEnd(); iter.Next()) {
+    nsIFrame* const child = *iter;
+    nsIFrame* const childFirstInFlow = child->FirstInFlow();
+    for (const FlexLine& line : aData.mLines) {
+      for (const FlexItem& item : line.Items()) {
+        if (item.Frame() == childFirstInFlow) {
+          aLines[0].Items().AppendElement(item.CloneFor(child));
+        }
+      }
+    }
+  }
+}
+
 
 
 
@@ -4260,29 +4287,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   } else {
     auto* data = FirstInFlow()->GetProperty(SharedFlexData::Prop());
 
-    
-    lines.AppendElement(FlexLine(0));
-
-    
-    
-    CSSOrderAwareFrameIterator iter(
-        this, kPrincipalList, CSSOrderAwareFrameIterator::eSkipPlaceholders,
-        CSSOrderAwareFrameIterator::eUnknownOrder,
-        OrderingPropertyForIter(this));
-
-    
-    for (; !iter.AtEnd(); iter.Next()) {
-      nsIFrame* const child = *iter;
-      nsIFrame* const childFirstInFlow = child->FirstInFlow();
-      for (const FlexLine& line : data->mLines) {
-        for (const FlexItem& item : line.Items()) {
-          if (item.Frame() == childFirstInFlow) {
-            lines[0].Items().AppendElement(item.CloneFor(child));
-          }
-        }
-      }
-    }
-
+    GenerateFlexLines(*data, lines);
     contentBoxMainSize = data->mContentBoxMainSize;
     contentBoxCrossSize = data->mContentBoxCrossSize;
   }

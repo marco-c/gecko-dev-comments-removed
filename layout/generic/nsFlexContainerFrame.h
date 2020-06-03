@@ -420,6 +420,14 @@ class nsFlexContainerFrame final : public nsContainerFrame {
                          nsTArray<nsIFrame*>& aPlaceholders,
                          nsTArray<FlexLine>& aLines);
 
+  
+
+
+
+
+  void GenerateFlexLines(const SharedFlexData& aData,
+                         nsTArray<FlexLine>& aLines);
+
   nscoord GetMainSizeFromReflowInput(const ReflowInput& aReflowInput,
                                      const FlexboxAxisTracker& aAxisTracker);
 
