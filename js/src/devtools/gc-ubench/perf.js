@@ -10,7 +10,7 @@ var features = {
 };
 
 
-class FrameTimer {
+var FrameTimer = class {
   constructor() {
     
     
@@ -51,7 +51,7 @@ class FrameTimer {
     this.start += stop_duration;
     this.stopped = 0;
   }
-}
+};
 
 
 var sampleTime = 16.666667; 
@@ -59,7 +59,7 @@ var sampleIndex = 0;
 
 
 
-class FrameHistory {
+var FrameHistory = class {
   constructor(numSamples) {
     
     this._frameTimer = new FrameTimer();
@@ -158,4 +158,4 @@ class FrameHistory {
   is_stopped() {
     return this._frameTimer.is_stopped();
   }
-}
+};
