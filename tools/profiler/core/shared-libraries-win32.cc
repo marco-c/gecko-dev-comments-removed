@@ -12,6 +12,7 @@
 #include "nsWindowsHelpers.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
+#include "mozilla/WindowsProcessMitigations.h"
 #include "mozilla/WindowsVersion.h"
 #include "nsNativeCharsetUtils.h"
 #include "nsPrintfCString.h"
@@ -182,6 +183,11 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
     }
 #endif  
 
+    
+    
+    bool canGetPdbInfo = (!mozilla::IsEafPlusEnabled() ||
+                          !moduleNameStr.LowerCaseEqualsLiteral("ntdll.dll"));
+
     nsCString breakpadId;
     
     
@@ -205,7 +211,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
     if (handleLock &&
         sizeof(vmemInfo) ==
             VirtualQuery(module.lpBaseOfDll, &vmemInfo, sizeof(vmemInfo)) &&
-        vmemInfo.State == MEM_COMMIT &&
+        vmemInfo.State == MEM_COMMIT && canGetPdbInfo &&
         GetPdbInfo((uintptr_t)module.lpBaseOfDll, pdbSig, pdbAge, &pdbName)) {
       MOZ_ASSERT(breakpadId.IsEmpty());
       breakpadId.AppendPrintf(

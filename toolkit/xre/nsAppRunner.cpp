@@ -101,6 +101,7 @@
 #  include <math.h>
 #  include "cairo/cairo-features.h"
 #  include "mozilla/WindowsDllBlocklist.h"
+#  include "mozilla/WindowsProcessMitigations.h"
 #  include "mozilla/WinHeaderOnlyUtils.h"
 #  include "mozilla/mscom/ProcessRuntime.h"
 #  include "mozilla/widget/AudioSession.h"
@@ -4764,7 +4765,12 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   
   
   
-  mozilla::ipc::GeckoChildProcessHost::CacheNtDllThunk();
+  
+  
+  
+  if (!mozilla::IsEafPlusEnabled()) {
+    mozilla::ipc::GeckoChildProcessHost::CacheNtDllThunk();
+  }
 
   
   
