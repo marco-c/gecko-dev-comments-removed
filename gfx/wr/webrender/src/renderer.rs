@@ -5887,6 +5887,13 @@ impl Renderer {
                                                          None);
                             }
 
+                            
+                            
+                            
+                            
+                            
+                            results.dirty_rects.push(frame.device_rect);
+
                             self.draw_color_target(
                                 draw_target,
                                 main_target,
