@@ -356,7 +356,12 @@ class LoginManagerPrompter {
       ) {
         
         log.debug("persistData: Touch matched login", loginToUpdate.guid);
-        Services.logins.recordPasswordUse(loginToUpdate);
+        Services.logins.recordPasswordUse(
+          loginToUpdate,
+          PrivateBrowsingUtils.isBrowserPrivate(browser),
+          loginToUpdate.username ? "form_password" : "form_login",
+          !!autoFilledLoginGuid
+        );
       } else {
         log.debug("persistData: Update matched login", loginToUpdate.guid);
         this._updateLogin(loginToUpdate, login);
@@ -747,6 +752,10 @@ class LoginManagerPrompter {
     propBag.setProperty("timePasswordChanged", now);
     propBag.setProperty("timeLastUsed", now);
     propBag.setProperty("timesUsedIncrement", 1);
+    
+    
+    
+    
     Services.logins.modifyLogin(login, propBag);
   }
 

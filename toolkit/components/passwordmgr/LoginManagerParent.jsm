@@ -665,11 +665,12 @@ class LoginManagerParent extends JSWindowActorParent {
     }
   ) {
     function recordLoginUse(login) {
-      if (!browser || PrivateBrowsingUtils.isBrowserPrivate(browser)) {
-        
-        return;
-      }
-      Services.logins.recordPasswordUse(login);
+      Services.logins.recordPasswordUse(
+        login,
+        browser && PrivateBrowsingUtils.isBrowserPrivate(browser),
+        login.username ? "form_login" : "form_password",
+        !!autoFilledLoginGuid
+      );
     }
 
     
