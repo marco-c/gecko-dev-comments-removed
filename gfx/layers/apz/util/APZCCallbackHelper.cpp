@@ -889,6 +889,11 @@ void APZCCallbackHelper::NotifyPinchGesture(
   }
 
   WidgetSimpleGestureEvent event(true, msg, aWidget);
+  
+  
+  
+  
+  
   event.mDelta = aSpanChange;
   event.mModifiers = aModifiers;
   DispatchWidgetEvent(event);

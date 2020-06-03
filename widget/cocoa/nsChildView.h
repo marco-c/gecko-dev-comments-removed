@@ -157,17 +157,12 @@ class WidgetRenderingContext;
   
   
   
-  
-  
-  
-  
   enum {
     eGestureState_None,
     eGestureState_StartGesture,
     eGestureState_MagnifyGesture,
     eGestureState_RotateGesture
   } mGestureState;
-  float mCumulativeMagnification;
   float mCumulativeRotation;
 
 #ifdef __LP64__
