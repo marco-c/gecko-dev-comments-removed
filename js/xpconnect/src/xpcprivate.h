@@ -1182,6 +1182,11 @@ class XPCNativeSet final {
 
 
 
+
+
+
+
+
 class XPCWrappedNativeProto final {
  public:
   static XPCWrappedNativeProto* GetNewOrUsed(JSContext* cx,
