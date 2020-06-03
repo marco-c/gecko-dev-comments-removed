@@ -69,7 +69,15 @@ const PREF_PDFJS_ISDEFAULT_CACHE_STATE = "pdfjs.enabledCache.state";
 
 
 
-let ACTORS = {
+
+let JSPROCESSACTORS = {};
+
+
+
+
+
+
+let JSWINDOWACTORS = {
   AboutLogins: {
     parent: {
       moduleURI: "resource:///actors/AboutLoginsParent.jsm",
@@ -1176,7 +1184,8 @@ BrowserGlue.prototype = {
     os.addObserver(this, "handlersvc-store-initialized");
     os.addObserver(this, "shield-init-complete");
 
-    ActorManagerParent.addActors(ACTORS);
+    ActorManagerParent.addJSProcessActors(JSPROCESSACTORS);
+    ActorManagerParent.addJSWindowActors(JSWINDOWACTORS);
     ActorManagerParent.addLegacyActors(LEGACY_ACTORS);
     ActorManagerParent.flush();
 

@@ -33,7 +33,15 @@ const { DefaultMap } = ExtensionUtils;
 
 
 
-let ACTORS = {
+let JSPROCESSACTORS = {};
+
+
+
+
+
+
+
+let JSWINDOWACTORS = {
   AudioPlayback: {
     parent: {
       moduleURI: "resource://gre/actors/AudioPlaybackParent.jsm",
@@ -569,7 +577,20 @@ var ActorManagerParent = {
   
   singletons: new DefaultMap(() => new ActorSet(null, "Child")),
 
-  addActors(actors) {
+  _addActors(actors, kind) {
+    let register, unregister;
+    switch (kind) {
+      case "JSProcessActor":
+        register = ChromeUtils.registerProcessActor;
+        unregister = ChromeUtils.unregisterProcessActor;
+        break;
+      case "JSWindowActor":
+        register = ChromeUtils.registerWindowActor;
+        unregister = ChromeUtils.unregisterWindowActor;
+        break;
+      default:
+        throw new Error("Invalid JSActor kind " + kind);
+    }
     for (let [actorName, actor] of Object.entries(actors)) {
       
       
@@ -582,9 +603,9 @@ var ActorManagerParent = {
           false,
           (prefName, prevValue, isEnabled) => {
             if (isEnabled) {
-              ChromeUtils.registerWindowActor(actorName, actor);
+              register(actorName, actor);
             } else {
-              ChromeUtils.unregisterWindowActor(actorName, actor);
+              unregister(actorName, actor);
             }
           }
         );
@@ -593,8 +614,15 @@ var ActorManagerParent = {
         }
       }
 
-      ChromeUtils.registerWindowActor(actorName, actor);
+      register(actorName, actor);
     }
+  },
+
+  addJSProcessActors(actors) {
+    this._addActors(actors, "JSProcessActor");
+  },
+  addJSWindowActors(actors) {
+    this._addActors(actors, "JSWindowActor");
   },
 
   addLegacyActors(actors) {
@@ -636,5 +664,6 @@ var ActorManagerParent = {
   },
 };
 
-ActorManagerParent.addActors(ACTORS);
+ActorManagerParent.addJSProcessActors(JSPROCESSACTORS);
+ActorManagerParent.addJSWindowActors(JSWINDOWACTORS);
 ActorManagerParent.addLegacyActors(LEGACY_ACTORS);

@@ -46,7 +46,7 @@ async function registerWatcher(watcher, watchedBrowsingContextID) {
   watchers.set(prefix, watcher);
   if (watchers.size == 1) {
     
-    ActorManagerParent.addActors({
+    ActorManagerParent.addJSWindowActors({
       DevToolsFrame: {
         parent: {
           moduleURI:
