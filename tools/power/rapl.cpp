@@ -294,30 +294,57 @@ class RAPL {
 
     
     
+    
+    
+    
+    
     switch (cpuModel) {
-      case 60:  
-      case 69:  
-      case 70:  
-      case 61:  
-        
-        mIsGpuSupported = true;
-        mIsRamSupported = true;
-        break;
-
-      case 42:  
-      case 58:  
+      case 0x2a:  
+      case 0x3a:  
         
         mIsGpuSupported = true;
         mIsRamSupported = false;
         break;
 
-      case 63:  
-        mHasRamUnitsQuirk = true;
-        [[fallthrough]];
-      case 45:  
-      case 62:  
+      case 0x3f:  
+      case 0x4f:  
+      case 0x55:  
+      case 0x56:  
         
         mIsGpuSupported = false;
+        mIsRamSupported = true;
+        mHasRamUnitsQuirk = true;
+        break;
+
+      case 0x2d:  
+      case 0x3e:  
+        
+        mIsGpuSupported = false;
+        mIsRamSupported = true;
+        break;
+
+      case 0x3c:  
+      case 0x3d:  
+      case 0x45:  
+      case 0x46:  
+      case 0x47:  
+        
+        mIsGpuSupported = true;
+        mIsRamSupported = true;
+        break;
+
+      case 0x4e:  
+      case 0x5e:  
+      case 0x8e:  
+      case 0x9e:  
+      case 0x66:  
+      case 0x7d:  
+      case 0x7e:  
+      case 0xa5:  
+      case 0xa6:  
+        
+        
+        mIsGpuSupported = true;
         mIsRamSupported = true;
         break;
 
