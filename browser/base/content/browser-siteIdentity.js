@@ -714,7 +714,7 @@ var gIdentityHandler = {
           gBrowser.selectedBrowser.documentURI.scheme == "chrome"))
     ) {
       
-      this._identityBox.className = "localResource";
+      this._identityBox.className = "unknownIdentity";
     } else {
       
       let warnOnInsecure =
