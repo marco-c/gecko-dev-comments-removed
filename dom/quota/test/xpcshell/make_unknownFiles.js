@@ -92,8 +92,7 @@ async function testSteps() {
 
     database.close();
 
-    
-    
+    createUnknownFileIn(`${originRelativePath}/idb`);
     createUnknownFileIn(
       `${originRelativePath}/idb/2320029346mByDIdnedxe.files`
     );
