@@ -14,11 +14,13 @@ if PYPY or sys.version_info[:2] >= (3, 6):
     ordered_dict = dict
 else:
     from collections import OrderedDict
+
     ordered_dict = OrderedDict
 
 
 if PY2:
     from UserDict import IterableUserDict
+    from collections import Mapping, Sequence  
 
     
     
@@ -39,38 +41,45 @@ if PY2:
 
         def __setitem__(self, key, val):
             
-            raise TypeError("'mappingproxy' object does not support item "
-                            "assignment")
+            raise TypeError(
+                "'mappingproxy' object does not support item assignment"
+            )
 
         def update(self, _):
             
-            raise AttributeError("'mappingproxy' object has no attribute "
-                                 "'update'")
+            raise AttributeError(
+                "'mappingproxy' object has no attribute 'update'"
+            )
 
         def __delitem__(self, _):
             
-            raise TypeError("'mappingproxy' object does not support item "
-                            "deletion")
+            raise TypeError(
+                "'mappingproxy' object does not support item deletion"
+            )
 
         def clear(self):
             
-            raise AttributeError("'mappingproxy' object has no attribute "
-                                 "'clear'")
+            raise AttributeError(
+                "'mappingproxy' object has no attribute 'clear'"
+            )
 
         def pop(self, key, default=None):
             
-            raise AttributeError("'mappingproxy' object has no attribute "
-                                 "'pop'")
+            raise AttributeError(
+                "'mappingproxy' object has no attribute 'pop'"
+            )
 
         def popitem(self):
             
-            raise AttributeError("'mappingproxy' object has no attribute "
-                                 "'popitem'")
+            raise AttributeError(
+                "'mappingproxy' object has no attribute 'popitem'"
+            )
 
         def setdefault(self, key, default=None):
             
-            raise AttributeError("'mappingproxy' object has no attribute "
-                                 "'setdefault'")
+            raise AttributeError(
+                "'mappingproxy' object has no attribute 'setdefault'"
+            )
 
         def __repr__(self):
             
@@ -81,7 +90,28 @@ if PY2:
         res.data.update(d)  
         return res
 
-else:
+    def just_warn(*args, **kw):  
+        """
+        We only warn on Python 3 because we are not aware of any concrete
+        consequences of not setting the cell on Python 2.
+        """
+
+
+else:  
+    from collections.abc import Mapping, Sequence  
+
+    def just_warn(*args, **kw):
+        """
+        We only warn on Python 3 because we are not aware of any concrete
+        consequences of not setting the cell on Python 2.
+        """
+        warnings.warn(
+            "Missing ctypes.  Some features like bare super() or accessing "
+            "__class__ will not work with slotted classes.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+
     def isclass(klass):
         return isinstance(klass, type)
 
@@ -99,27 +129,8 @@ def import_ctypes():
     Moved into a function for testability.
     """
     import ctypes
+
     return ctypes
-
-
-if not PY2:
-    def just_warn(*args, **kw):
-        """
-        We only warn on Python 3 because we are not aware of any concrete
-        consequences of not setting the cell on Python 2.
-        """
-        warnings.warn(
-            "Missing ctypes.  Some features like bare super() or accessing "
-            "__class__ will not work with slots classes.",
-            RuntimeWarning,
-            stacklevel=2,
-        )
-else:
-    def just_warn(*args, **kw):  
-        """
-        We only warn on Python 3 because we are not aware of any concrete
-        consequences of not setting the cell on Python 2.
-        """
 
 
 def make_set_closure_cell():
@@ -127,8 +138,10 @@ def make_set_closure_cell():
     Moved into a function for testability.
     """
     if PYPY:  
+
         def set_closure_cell(cell, value):
             cell.__setstate__((value,))
+
     else:
         try:
             ctypes = import_ctypes()

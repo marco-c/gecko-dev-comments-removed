@@ -21,8 +21,9 @@ def find_version(*file_paths):
     string inside.
     """
     version_file = read(*file_paths)
-    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
-                              version_file, re.M)
+    version_match = re.search(
+        r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M
+    )
     if version_match:
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
@@ -34,25 +35,25 @@ def find_version(*file_paths):
 
 
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.doctest",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.todo",
 ]
 
 
 
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 
-master_doc = 'index'
+master_doc = "index"
 
 
-project = u'attrs'
-copyright = u'2015, Hynek Schlawack'
+project = u"attrs"
+copyright = u"2015, Hynek Schlawack"
 
 
 
@@ -65,13 +66,13 @@ version = release.rsplit(u".", 1)[0]
 
 
 
-exclude_patterns = ['_build']
+exclude_patterns = ["_build"]
 
 
 add_function_parentheses = True
 
 
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 
 
@@ -84,6 +85,7 @@ html_theme_options = {
     "head_font_family": '"Avenir Next", Calibri, "PT Sans", sans-serif',
     "font_size": "18px",
     "page_width": "980px",
+    "show_relbars": True,
 }
 
 
@@ -98,7 +100,7 @@ html_logo = "_static/attrs_logo.svg"
 
 
 
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 
 html_domain_indices = True
@@ -124,15 +126,14 @@ html_show_copyright = True
 
 
 
-htmlhelp_basename = 'attrsdoc'
+htmlhelp_basename = "attrsdoc"
 
 
 
 
 
 man_pages = [
-    ('index', 'attrs', u'attrs Documentation',
-     [u'Hynek Schlawack'], 1)
+    ("index", "attrs", u"attrs Documentation", [u"Hynek Schlawack"], 1)
 ]
 
 
@@ -142,14 +143,18 @@ man_pages = [
 
 
 texinfo_documents = [
-    ('index', 'attrs', u'attrs Documentation',
-     u'Hynek Schlawack', 'attrs', 'One line description of project.',
-     'Miscellaneous'),
+    (
+        "index",
+        "attrs",
+        u"attrs Documentation",
+        u"Hynek Schlawack",
+        "attrs",
+        "One line description of project.",
+        "Miscellaneous",
+    )
 ]
 
-intersphinx_mapping = {
-    "https://docs.python.org/3": None,
-}
+intersphinx_mapping = {"https://docs.python.org/3": None}
 
 
-suppress_warnings = ['image.nonlocal_uri']
+suppress_warnings = ["image.nonlocal_uri"]
