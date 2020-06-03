@@ -9,6 +9,7 @@
 
 
 
+
 import { prefs, features } from "../utils/prefs";
 
 import type { Source, SourceLocation, Range } from "../types";
@@ -39,6 +40,7 @@ export type UIState = {
   conditionalPanelLocation: null | SourceLocation,
   isLogPoint: boolean,
   inlinePreviewEnabled: boolean,
+  sourceMapsEnabled: boolean,
 };
 
 export const createUIState = (): UIState => ({
@@ -55,6 +57,7 @@ export const createUIState = (): UIState => ({
   viewport: null,
   cursorPosition: null,
   inlinePreviewEnabled: features.inlinePreview,
+  sourceMapsEnabled: prefs.clientSourceMapsEnabled,
 });
 
 function update(state: UIState = createUIState(), action: Action): UIState {
@@ -71,6 +74,11 @@ function update(state: UIState = createUIState(), action: Action): UIState {
     case "TOGGLE_INLINE_PREVIEW": {
       features.inlinePreview = action.value;
       return { ...state, inlinePreviewEnabled: action.value };
+    }
+
+    case "TOGGLE_SOURCE_MAPS_ENABLED": {
+      prefs.clientSourceMapsEnabled = action.value;
+      return { ...state, sourceMapsEnabled: action.value };
     }
 
     case "SET_ORIENTATION": {
