@@ -9,7 +9,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 import json
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 from manifestparser import TestManifest
 from manifestparser.filters import chunk_by_runtime
@@ -67,7 +67,7 @@ def get_runtimes(platform, suite_name):
         path = base.format('unix')
 
     with open(path, 'r') as fh:
-        return json.load(fh).get(suite_name, {})
+        return json.load(fh).get(suite_name)
 
 
 @memoize
@@ -162,55 +162,62 @@ def chunk_manifests(flavor, subsuite, platform, chunks, manifests):
     """
     
     
+    
     suite_name, _ = get_suite_definition(flavor, subsuite)
+    runtimes = get_runtimes(platform, suite_name)
 
     if flavor != "web-platform-tests":
         return [
             c[1] for c in chunk_by_runtime(
                 None,
                 chunks,
-                get_runtimes(platform, suite_name)
+                runtimes
             ).get_chunked_manifests(manifests)
         ]
 
     paths = {k: v for k, v in wpt_group_translation.items() if k in manifests}
 
     
-    runtimes = get_runtimes(platform, suite_name)
-    runtimes = [(k, v) for k, v in runtimes.items()
-                if k.startswith('/') and not os.path.splitext(k)[-1]
-                if k in manifests]
+    
+    runtimes = OrderedDict(sorted(runtimes.items(), key=lambda x: x[1], reverse=True))
 
     
     chunked_manifests = [[[], 0] for _ in range(chunks)]
 
     
-    for key, rt in sorted(runtimes, key=lambda x: x[1], reverse=True):
+    
+    
+    for key, rt in runtimes.items():
         
         
         chunked_manifests.sort(key=lambda x: (x[1], len(x[0])))
+
+        
         test_paths = paths[key]
+
         if test_paths:
             
             
-            
-            
-            
-            
             chunked_manifests[0][0].extend(test_paths)
+            
             chunked_manifests[0][1] += rt
             
             paths.pop(key)
-
-    
-    
-    for test_paths in paths.values():
-        chunked_manifests.sort(key=lambda x: (x[1], len(x[0])))
-        chunked_manifests[0][0].extend(test_paths)
+            
+            runtimes.pop(key)
 
     
     chunked_manifests.sort(key=lambda x: (x[1], len(x[0])))
 
     
-    chunked_manifests = [c[0] for c in chunked_manifests]
-    return chunked_manifests
+    
+    
+    for index, key in enumerate(paths.keys()):
+        
+        chunked_manifests[index % chunks][0].append(key)
+
+    
+    chunked_manifests.sort(key=lambda x: (x[1], len(x[0])))
+
+    
+    return [c[0] for c in chunked_manifests]
