@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsLookAndFeel.h"
 #include "nsCocoaFeatures.h"
@@ -19,7 +19,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-// This must be included last:
+
 #include "nsObjCExceptions.h"
 
 enum { mozNSScrollerStyleLegacy = 0, mozNSScrollerStyleOverlay = 1 };
@@ -29,7 +29,7 @@ typedef NSInteger mozNSScrollerStyle;
 + (mozNSScrollerStyle)preferredScrollerStyle;
 @end
 
-// Available from 10.12 onwards; test availability at runtime before using
+
 @interface NSWorkspace (AvailableSinceSierra)
 @property(readonly) BOOL accessibilityDisplayShouldReduceMotion;
 @end
@@ -98,15 +98,11 @@ static nscolor GetColorFromNSColorWithAlpha(NSColor* aColor, float alpha) {
 void nsLookAndFeel::NativeInit() { EnsureInit(); }
 
 void nsLookAndFeel::RefreshImpl() {
-  if (mShouldRetainCacheForTest) {
-    return;
-  }
-
   nsXPLookAndFeel::RefreshImpl();
 
-  // We should only clear the cache if we're in the main browser process.
-  // Otherwise, we should wait for the parent to inform us of new values
-  // to cache via LookAndFeel::SetIntCache.
+  
+  
+  
   if (XRE_IsParentProcess()) {
     mUseOverlayScrollbarsCached = false;
     mAllowOverlayScrollbarsOverlapCached = false;
@@ -114,22 +110,22 @@ void nsLookAndFeel::RefreshImpl() {
     mSystemUsesDarkThemeCached = false;
   }
 
-  // Fetch colors next time they are requested.
+  
   mInitialized = false;
 }
 
-// Turns an opaque selection color into a partially transparent selection color,
-// which usually leads to better contrast with the text color and which should
-// look more visually appealing in most contexts.
-// The idea is that the text and its regular, non-selected background are
-// usually chosen in such a way that they contrast well. Making the selection
-// color partially transparent causes the selection color to mix with the text's
-// regular background, so the end result will often have better contrast with
-// the text than an arbitrary opaque selection color.
-// The motivating example for this is the URL bar text field in the dark theme:
-// White text on a light blue selection color has very bad contrast, whereas
-// white text on dark blue (which what you get if you mix partially-transparent
-// light blue with the black textbox background) has much better contrast.
+
+
+
+
+
+
+
+
+
+
+
+
 nscolor nsLookAndFeel::ProcessSelectionBackground(nscolor aColor) {
   uint16_t hue, sat, value;
   uint8_t alpha;
@@ -138,12 +134,12 @@ nscolor nsLookAndFeel::ProcessSelectionBackground(nscolor aColor) {
   int factor = 2;
   alpha = alpha / factor;
   if (sat > 0) {
-    // The color is not a shade of grey, restore the saturation taken away by
-    // the transparency.
+    
+    
     sat = mozilla::clamped(sat * factor, 0, 255);
   } else {
-    // The color is a shade of grey, find the value that looks equivalent
-    // on a white background with the given opacity.
+    
+    
     value = mozilla::clamped(255 - (255 - value) * factor, 0, 255);
   }
   NS_HSV2RGB(resultColor, hue, sat, value, alpha);
@@ -189,12 +185,12 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor) {
     case ColorID::TextSelectBackground:
       aColor = ProcessSelectionBackground(mColorTextSelectBackground);
       break;
-    // This is used to gray out the selection when it's not focused. Used with
-    // nsISelectionController::SELECTION_DISABLED.
+    
+    
     case ColorID::TextSelectBackgroundDisabled:
       aColor = ProcessSelectionBackground(mColorTextSelectBackgroundDisabled);
       break;
-    case ColorID::Highlight:  // CSS2 color
+    case ColorID::Highlight:  
       aColor = mColorHighlight;
       break;
     case ColorID::MozMenuhover:
@@ -203,7 +199,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor) {
     case ColorID::TextSelectForeground:
       aColor = mColorTextSelectForeground;
       break;
-    case ColorID::Highlighttext:  // CSS2 color
+    case ColorID::Highlighttext:  
     case ColorID::MozMenuhovertext:
       aColor = mColorMenuHoverText;
       break;
@@ -231,24 +227,24 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor) {
       aColor = NS_RGB(0xff, 0, 0);
       break;
 
-      //
-      // css2 system colors http://www.w3.org/TR/REC-CSS2/ui.html#system-colors
-      //
-      // It's really hard to effectively map these to the Appearance Manager properly,
-      // since they are modeled word for word after the win32 system colors and don't have any
-      // real counterparts in the Mac world. I'm sure we'll be tweaking these for
-      // years to come.
-      //
-      // Thanks to mpt26@student.canterbury.ac.nz for the hardcoded values that form the defaults
-      //  if querying the Appearance Manager fails ;)
-      //
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
     case ColorID::MozMacButtonactivetext:
     case ColorID::MozMacDefaultbuttontext:
       if (mHasColorButtonText) {
         aColor = mColorButtonText;
         break;
       }
-      // Otherwise fall through and return the regular button text:
+      
       [[fallthrough]];
     case ColorID::Buttontext:
     case ColorID::MozButtonhovertext:
@@ -374,29 +370,29 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor) {
     case ColorID::MozCellhighlight:
     case ColorID::MozHtmlCellhighlight:
     case ColorID::MozMacSecondaryhighlight:
-      // For inactive list selection
+      
       aColor = mColorCellHighlight;
       break;
     case ColorID::MozEventreerow:
-      // Background color of even list rows.
+      
       aColor = mColorEvenTreeRow;
       break;
     case ColorID::MozOddtreerow:
-      // Background color of odd list rows.
+      
       aColor = mColorOddTreeRow;
       break;
     case ColorID::MozNativehyperlinktext:
-      // There appears to be no available system defined color. HARDCODING to the appropriate color.
+      
       aColor = NS_RGB(0x14, 0x4F, 0xAE);
       break;
-    // The following colors are supposed to be used as font-smoothing background
-    // colors, in the chrome-only -moz-font-smoothing-background-color property.
-    // This property is used for text on "vibrant" -moz-appearances.
-    // The colors have been obtained from the system on 10.12.6 using the
-    // program at https://bugzilla.mozilla.org/attachment.cgi?id=8907533 .
-    // We could obtain them at runtime, but doing so may be expensive and
-    // requires the use of the private API
-    // -[NSVisualEffectView fontSmoothingBackgroundColor].
+    
+    
+    
+    
+    
+    
+    
+    
     case ColorID::MozMacVibrancyLight:
     case ColorID::MozMacVibrantTitlebarLight:
     case ColorID::MozMacSourceList:
@@ -446,8 +442,8 @@ nsresult nsLookAndFeel::GetIntImpl(IntID aID, int32_t& aResult) {
       aResult = 0;
       break;
     case eIntID_SelectTextfieldsOnKeyFocus:
-      // Select textfield content when focused by kbd
-      // used by EventStateManager::sTextfieldSelectModel
+      
+      
       aResult = 1;
       break;
     case eIntID_SubmenuDelay:
@@ -457,7 +453,7 @@ nsresult nsLookAndFeel::GetIntImpl(IntID aID, int32_t& aResult) {
       aResult = 500;
       break;
     case eIntID_MenusCanOverlapOSBar:
-      // xul popups are not allowed to overlap the menubar.
+      
       aResult = 0;
       break;
     case eIntID_SkipNavigatingDisabledMenuItem:
@@ -571,11 +567,11 @@ nsresult nsLookAndFeel::GetIntImpl(IntID aID, int32_t& aResult) {
       aResult = mSystemUsesDarkTheme;
       break;
     case eIntID_PrefersReducedMotion:
-      // Without native event loops,
-      // NSWorkspace.accessibilityDisplayShouldReduceMotion returns stale
-      // information, so we get the information only on the parent processes
-      // or when it's the initial query on child processes.  Otherwise we will
-      // get the info via LookAndFeel::SetIntCache on child processes.
+      
+      
+      
+      
+      
       if (!mPrefersReducedMotionCached &&
           [[NSWorkspace sharedWorkspace]
               respondsToSelector:@selector(accessibilityDisplayShouldReduceMotion)]) {
@@ -624,8 +620,8 @@ bool nsLookAndFeel::SystemWantsOverlayScrollbars() {
 bool nsLookAndFeel::AllowOverlayScrollbarsOverlap() { return (UseOverlayScrollbars()); }
 
 bool nsLookAndFeel::SystemWantsDarkTheme() {
-  // This returns true if the macOS system appearance is set to dark mode on
-  // 10.14+, false otherwise.
+  
+  
   if (!nsCocoaFeatures::OnMojaveOrLater()) {
     return false;
   }
@@ -635,7 +631,7 @@ bool nsLookAndFeel::SystemWantsDarkTheme() {
 bool nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName, gfxFontStyle& aFontStyle) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
 
-  // hack for now
+  
   if (aID == eFont_Window || aID == eFont_Document) {
     aFontStyle.style = mozilla::FontSlantStyle::Normal();
     aFontStyle.weight = mozilla::FontWeight::Normal();

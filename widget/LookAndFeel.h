@@ -526,15 +526,6 @@ class LookAndFeel {
 
   static nsTArray<LookAndFeelInt> GetIntCache();
   static void SetIntCache(const nsTArray<LookAndFeelInt>& aLookAndFeelIntCache);
-  
-
-
-
-  static void SetShouldRetainCacheForTest(bool aValue);
-
-  static void SetPrefersReducedMotionOverrideForTest(bool aValue);
-
-  static void ResetPrefersReducedMotionOverrideForTest();
 };
 
 }  

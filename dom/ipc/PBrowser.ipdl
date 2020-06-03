@@ -681,9 +681,6 @@ parent:
     sync SetSystemFont(nsCString aFontName);
     sync GetSystemFont() returns (nsCString retval);
 
-    sync SetPrefersReducedMotionOverrideForTest(bool aValue);
-    sync ResetPrefersReducedMotionOverrideForTest();
-
     
 
 

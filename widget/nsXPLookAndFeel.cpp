@@ -1083,31 +1083,4 @@ void LookAndFeel::SetIntCache(
   return nsLookAndFeel::GetInstance()->SetIntCacheImpl(aLookAndFeelIntCache);
 }
 
-
-void LookAndFeel::SetShouldRetainCacheForTest(bool aValue) {
-  nsLookAndFeel::GetInstance()->SetShouldRetainCacheImplForTest(aValue);
-}
-
-
-void LookAndFeel::SetPrefersReducedMotionOverrideForTest(bool aValue) {
-  
-  
-  
-  
-  SetShouldRetainCacheForTest(true);
-
-  int32_t value = aValue ? 1 : 0;
-
-  AutoTArray<LookAndFeelInt, 1> lookAndFeelCache;
-  lookAndFeelCache.AppendElement(
-      LookAndFeelInt{.id = eIntID_PrefersReducedMotion, .value = value});
-
-  SetIntCache(lookAndFeelCache);
-}
-
-
-void LookAndFeel::ResetPrefersReducedMotionOverrideForTest() {
-  SetShouldRetainCacheForTest(false);
-}
-
 }  

@@ -492,9 +492,6 @@ class nsChildView final : public nsBaseWidget {
 
   void SwipeFinished();
 
-  nsresult SetPrefersReducedMotionOverrideForTest(bool aValue) override;
-  nsresult ResetPrefersReducedMotionOverrideForTest() override;
-
   
   
   
