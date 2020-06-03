@@ -221,10 +221,4 @@ bool net_IsValidIPv4Addr(const nsACString& aAddr);
 
 bool net_IsValidIPv6Addr(const nsACString& aAddr);
 
-
-
-
-
-int32_t net_GetURLMaxLength();
-
 #endif  

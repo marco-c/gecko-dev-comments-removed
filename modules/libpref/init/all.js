@@ -1819,9 +1819,6 @@ pref("network.dns.resolver-thread-extra-idle-time-seconds", 60);
 pref("network.dns.skipTRR-when-parental-control-enabled", true);
 
 
-pref("network.standard-url.max-length", 1048576);
-
-
 pref("network.ftp.idleConnectionTimeout", 300);
 
 
