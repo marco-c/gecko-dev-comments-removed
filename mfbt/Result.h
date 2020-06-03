@@ -416,6 +416,21 @@ class MOZ_MUST_USE_TYPE Result final {
 
 
 
+  GenericErrorResult<E> propagateErr() {
+    MOZ_ASSERT(isErr());
+    return GenericErrorResult<E>{mImpl.unwrapErr()};
+  }
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
@@ -499,8 +514,7 @@ class MOZ_MUST_USE_TYPE Result final {
   template <typename F, typename = std::enable_if_t<detail::IsResult<
                             decltype((*((F*)nullptr))(*((V*)nullptr)))>::value>>
   auto andThen(F f) -> decltype(f(*((V*)nullptr))) {
-    return MOZ_LIKELY(isOk()) ? f(unwrap())
-                              : GenericErrorResult<E>(unwrapErr());
+    return MOZ_LIKELY(isOk()) ? f(unwrap()) : propagateErr();
   }
 };
 
@@ -535,12 +549,12 @@ inline GenericErrorResult<E> Err(E&& aErrorValue) {
 
 
 
-#define MOZ_TRY(expr)                                       \
-  do {                                                      \
-    auto mozTryTempResult_ = ::mozilla::ToResult(expr);     \
-    if (MOZ_UNLIKELY(mozTryTempResult_.isErr())) {          \
-      return ::mozilla::Err(mozTryTempResult_.unwrapErr()); \
-    }                                                       \
+#define MOZ_TRY(expr)                                   \
+  do {                                                  \
+    auto mozTryTempResult_ = ::mozilla::ToResult(expr); \
+    if (MOZ_UNLIKELY(mozTryTempResult_.isErr())) {      \
+      return mozTryTempResult_.propagateErr();          \
+    }                                                   \
   } while (0)
 
 
@@ -550,13 +564,13 @@ inline GenericErrorResult<E> Err(E&& aErrorValue) {
 
 
 
-#define MOZ_TRY_VAR(target, expr)                              \
-  do {                                                         \
-    auto mozTryVarTempResult_ = (expr);                        \
-    if (MOZ_UNLIKELY(mozTryVarTempResult_.isErr())) {          \
-      return ::mozilla::Err(mozTryVarTempResult_.unwrapErr()); \
-    }                                                          \
-    (target) = mozTryVarTempResult_.unwrap();                  \
+#define MOZ_TRY_VAR(target, expr)                     \
+  do {                                                \
+    auto mozTryVarTempResult_ = (expr);               \
+    if (MOZ_UNLIKELY(mozTryVarTempResult_.isErr())) { \
+      return mozTryVarTempResult_.propagateErr();     \
+    }                                                 \
+    (target) = mozTryVarTempResult_.unwrap();         \
   } while (0)
 
 #endif  
