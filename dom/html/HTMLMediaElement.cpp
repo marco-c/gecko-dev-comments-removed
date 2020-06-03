@@ -425,6 +425,7 @@ class HTMLMediaElement::MediaControlEventListener final
       
       return;
     }
+    NotifyMediaStoppedPlaying();
     NotifyPlaybackStateChanged(MediaPlaybackState::eStopped);
 
     
@@ -507,20 +508,62 @@ class HTMLMediaElement::MediaControlEventListener final
     }
   }
 
+  void UpdateOwnerBrowsingContextIfNeeded() {
+    
+    if (!IsStarted()) {
+      return;
+    }
+
+    BrowsingContext* currentBC = GetCurrentBrowsingContext();
+    MOZ_ASSERT(currentBC && mOwnerBrowsingContext);
+    
+    if (currentBC == mOwnerBrowsingContext) {
+      return;
+    }
+    MEDIACONTROL_LOG("Change browsing context from %" PRIu64 " to %" PRIu64,
+                     mOwnerBrowsingContext->Id(), currentBC->Id());
+    
+    
+    
+    
+    
+    
+    
+    
+    bool wasInPlayingState = mState == MediaPlaybackState::ePlayed;
+    Stop();
+    Unused << Start();
+    if (wasInPlayingState) {
+      NotifyMediaStartedPlaying();
+    }
+  }
+
   BrowsingContext* GetBrowsingContext() const override {
-    nsPIDOMWindowInner* window = Owner()->OwnerDoc()->GetInnerWindow();
-    return window ? window->GetBrowsingContext() : nullptr;
+    return mOwnerBrowsingContext;
   }
 
  private:
   ~MediaControlEventListener() = default;
 
+  
+  
+  
+  BrowsingContext* GetCurrentBrowsingContext() const {
+    nsPIDOMWindowInner* window = Owner()->OwnerDoc()->GetInnerWindow();
+    return window ? window->GetBrowsingContext() : nullptr;
+  }
+
   bool InitMediaAgent() {
     MOZ_ASSERT(NS_IsMainThread());
-    mControlAgent = ContentMediaAgent::Get(GetBrowsingContext());
+    BrowsingContext* currentBC = GetCurrentBrowsingContext();
+    mControlAgent = ContentMediaAgent::Get(currentBC);
     if (!mControlAgent) {
       return false;
     }
+    mOwnerBrowsingContext = currentBC;
+    MOZ_ASSERT(mOwnerBrowsingContext);
+    MEDIACONTROL_LOG("Init agent in browsing context %" PRIu64,
+                     mOwnerBrowsingContext->Id());
     mControlAgent->AddReceiver(this);
     return true;
   }
@@ -552,6 +595,7 @@ class HTMLMediaElement::MediaControlEventListener final
   RefPtr<ContentMediaAgent> mControlAgent;
   bool mIsPictureInPictureEnabled = false;
   bool mIsOwnerAudible = false;
+  BrowsingContext* MOZ_NON_OWNING_REF mOwnerBrowsingContext = nullptr;
 };
 
 class HTMLMediaElement::MediaStreamTrackListener
@@ -4643,6 +4687,9 @@ nsresult HTMLMediaElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   }
 
   NotifyDecoderActivityChanges();
+  if (mMediaControlEventListener) {
+    mMediaControlEventListener->UpdateOwnerBrowsingContextIfNeeded();
+  }
 
   return rv;
 }
@@ -7797,7 +7844,6 @@ void HTMLMediaElement::StartListeningMediaControlEventIfNeeded() {
 
 void HTMLMediaElement::StopListeningMediaControlEventIfNeeded() {
   if (mMediaControlEventListener && mMediaControlEventListener->IsStarted()) {
-    mMediaControlEventListener->NotifyMediaStoppedPlaying();
     mMediaControlEventListener->Stop();
   }
 }
