@@ -3557,6 +3557,9 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
   }
 
+  ScrollableLayerGuid::ViewID scrollId =
+      nsLayoutUtils::FindOrCreateIDFor(mScrolledFrame->GetContent());
+
   {
     
     
@@ -3564,10 +3567,9 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     nsDisplayListBuilder::AutoCurrentScrollParentIdSetter idSetter(
-        aBuilder,
-        couldBuildLayer && mScrolledFrame->GetContent()
-            ? nsLayoutUtils::FindOrCreateIDFor(mScrolledFrame->GetContent())
-            : aBuilder->GetCurrentScrollParentId());
+        aBuilder, couldBuildLayer && mScrolledFrame->GetContent()
+                      ? scrollId
+                      : aBuilder->GetCurrentScrollParentId());
 
     DisplayListClipState::AutoSaveRestore clipState(aBuilder);
     
@@ -3750,15 +3752,12 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     nsDisplayList resultList;
     set.SerializeWithCorrectZOrder(&resultList, mOuter->GetContent());
 
-    mozilla::layers::FrameMetrics::ViewID viewID =
-        nsLayoutUtils::FindOrCreateIDFor(mScrolledFrame->GetContent());
-
     DisplayListClipState::AutoSaveRestore clipState(aBuilder);
     clipState.ClipContentDescendants(clipRect, haveRadii ? radii : nullptr);
 
     set.Content()->AppendNewToTop<nsDisplayAsyncZoom>(
         aBuilder, mOuter, &resultList, aBuilder->CurrentActiveScrolledRoot(),
-        viewID);
+        scrollId);
   }
 
   nsDisplayListCollection scrolledContent(aBuilder);
@@ -3808,6 +3807,20 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
             MakeDisplayItemWithIndex<nsDisplayCompositorHitTestInfo>(
                 aBuilder, mScrolledFrame, 1, info, Some(area));
         if (hitInfo) {
+          if (provideScrollInfoForAPZ) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            hitInfo->SetInactiveScrollTarget(scrollId);
+          }
           AppendInternalItemToTop(scrolledContent, hitInfo, Some(INT32_MAX));
         }
       }
