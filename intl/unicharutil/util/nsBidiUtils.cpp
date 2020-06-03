@@ -55,12 +55,11 @@ char16_t HandleNumberInChar(char16_t aChar, bool aPrevCharArabic,
       
       
       if (aPrevCharArabic) {
-        if (aNumFlag == IBMBIDI_NUMERAL_PERSIANCONTEXT)
-          return NUM_TO_PERSIAN(aChar);
-        else
-          return NUM_TO_HINDI(aChar);
-      } else
-        return NUM_TO_ARABIC(aChar);
+        return aNumFlag == IBMBIDI_NUMERAL_PERSIANCONTEXT
+                   ? NUM_TO_PERSIAN(aChar)
+                   : NUM_TO_HINDI(aChar);
+      }
+      return NUM_TO_ARABIC(aChar);
     case IBMBIDI_NUMERAL_NOMINAL:
     default:
       return aChar;
