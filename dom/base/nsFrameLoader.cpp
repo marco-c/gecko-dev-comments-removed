@@ -83,6 +83,7 @@
 #include "mozilla/dom/MozFrameLoaderOwnerBinding.h"
 #include "mozilla/dom/SessionStoreListener.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/dom/XULFrameElement.h"
 #include "mozilla/gfx/CrossProcessPaint.h"
 #include "nsGenericHTMLFrameElement.h"
 #include "GeckoProfiler.h"
@@ -295,6 +296,10 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   GetFrameName(aOwner, frameName);
 
   
+  uint64_t browserId = parentBC->GetBrowserId();
+  RefPtr<XULFrameElement> xulFrame = XULFrameElement::FromNode(aOwner);
+
+  
   
   
   
@@ -302,15 +307,39 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   
   if (IsTopContent(parentBC, aOwner)) {
     
-    return BrowsingContext::CreateDetached(nullptr, opener, frameName,
-                                           BrowsingContext::Type::Content);
+    if (xulFrame && xulFrame->BrowserId() != 0) {
+      
+      
+      browserId = xulFrame->BrowserId();
+
+      
+      
+      
+      MOZ_DIAGNOSTIC_ASSERT(browserId != parentBC->GetBrowserId());
+    } else {
+      browserId = nsContentUtils::GenerateBrowserId();
+
+      if (xulFrame) {
+        xulFrame->SetBrowserId(browserId);
+      }
+    }
+
+    
+    return BrowsingContext::CreateDetached(
+        nullptr, opener, frameName, BrowsingContext::Type::Content, browserId);
   }
 
   MOZ_ASSERT(!aOpenWindowInfo,
              "Can't have openWindowInfo for non-toplevel context");
 
+  if (xulFrame) {
+    MOZ_DIAGNOSTIC_ASSERT(xulFrame->BrowserId() == 0 ||
+                          xulFrame->BrowserId() == browserId);
+    xulFrame->SetBrowserId(browserId);
+  }
+
   return BrowsingContext::CreateDetached(parentInner, nullptr, frameName,
-                                         parentBC->GetType());
+                                         parentBC->GetType(), browserId);
 }
 
 static bool InitialLoadIsRemote(Element* aOwner) {
@@ -1256,6 +1285,17 @@ nsresult nsFrameLoader::SwapWithOtherRemoteLoader(
   MaybeUpdatePrimaryBrowserParent(eBrowserParentRemoved);
   aOther->MaybeUpdatePrimaryBrowserParent(eBrowserParentRemoved);
 
+  RefPtr<XULFrameElement> ourXulFrame = XULFrameElement::FromNode(ourContent);
+  RefPtr<XULFrameElement> otherXulFrame =
+      XULFrameElement::FromNode(otherContent);
+  if (ourXulFrame && otherXulFrame) {
+    
+    
+    uint64_t browserId = otherXulFrame->BrowserId();
+    otherXulFrame->SetBrowserId(ourXulFrame->BrowserId());
+    ourXulFrame->SetBrowserId(browserId);
+  }
+
   SetOwnerContent(otherContent);
   aOther->SetOwnerContent(ourContent);
 
@@ -1670,6 +1710,17 @@ nsresult nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   SetTreeOwnerAndChromeEventHandlerOnDocshellTree(
       otherDocshell, ourOwner,
       ourBc->IsContent() ? ourChromeEventHandler.get() : nullptr);
+
+  RefPtr<XULFrameElement> ourXulFrame = XULFrameElement::FromNode(ourContent);
+  RefPtr<XULFrameElement> otherXulFrame =
+      XULFrameElement::FromNode(otherContent);
+  if (ourXulFrame && otherXulFrame) {
+    
+    
+    uint64_t browserId = otherXulFrame->BrowserId();
+    otherXulFrame->SetBrowserId(ourXulFrame->BrowserId());
+    ourXulFrame->SetBrowserId(browserId);
+  }
 
   
   
