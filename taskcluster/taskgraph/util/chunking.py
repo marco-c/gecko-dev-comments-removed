@@ -9,6 +9,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 import json
 
+from collections import defaultdict
+
 from manifestparser import TestManifest
 from manifestparser.filters import chunk_by_runtime
 from mozbuild.util import memoize
@@ -70,6 +72,42 @@ def get_tests(flavor, subsuite):
     return list(resolver.resolve_tests(flavor=flavor, subsuite=subsuite))
 
 
+def tests_by_top_directory(tests, depth):
+    """Given a list of test objects, return a dictionary of test paths keyed by
+    the top level group.
+
+    Args:
+        tests (list): List of test objects for the particular suite and subsuite.
+        depth (int, optional): The maximum depth to consider when grouping tests.
+
+    Returns:
+        results (dict): Dictionary representation of test paths grouped by the
+            top level group name.
+    """
+    results = defaultdict(list)
+
+    
+    
+    for t in tests:
+
+        path = os.path.dirname(t['name'])
+        
+        
+        
+        
+        while path.count('/') >= depth + 1:
+            path = os.path.dirname(path)
+
+        
+        
+        
+        components = 3 if t['name'].startswith('/_mozilla') else 2
+        key = '/'.join(t['name'].split('/')[:components])
+
+        results[key].append(path)
+    return results
+
+
 @memoize
 def get_chunked_manifests(flavor, subsuite, chunks, mozinfo):
     """Compute which manifests should run in which chunks with the given category
@@ -88,23 +126,64 @@ def get_chunked_manifests(flavor, subsuite, chunks, mozinfo):
         run in the corresponding chunk.
     """
     mozinfo = dict(mozinfo)
-    chunker = chunk_by_runtime(None, chunks, get_runtimes(mozinfo['os']))
-
     
     tests = get_tests(flavor, subsuite)
-    all_manifests = set(chunker.get_manifest(t) for t in tests)
 
-    
-    m = TestManifest()
-    m.tests = tests
-    tests = m.active_tests(disabled=False, exists=False, **mozinfo)
-    active_manifests = set(chunker.get_manifest(t) for t in tests)
+    if flavor == 'web-platform-tests':
+        paths = tests_by_top_directory(tests, 3)
 
-    
-    chunked_manifests = [c[1] for c in chunker.get_chunked_manifests(active_manifests)]
+        
+        runtimes = get_runtimes(mozinfo['os'])
+        runtimes = [(k, v) for k, v in runtimes.items()
+                    if k.startswith('/') and not os.path.splitext(k)[-1]]
 
-    
-    
-    skipped_manifests = all_manifests - active_manifests
-    chunked_manifests[0].extend(skipped_manifests)
+        
+        chunked_manifests = [[[], 0] for _ in range(chunks)]
+
+        
+        for key, rt in sorted(runtimes, key=lambda x: x[1], reverse=True):
+            
+            
+            chunked_manifests.sort(key=lambda x: (x[1], len(x[0])))
+            test_paths = set(paths[key])
+            if test_paths:
+                
+                
+                
+                
+                
+                
+                chunked_manifests[0][0].extend(test_paths)
+                chunked_manifests[0][1] += rt
+                
+                paths.pop(key)
+
+        
+        
+        for test_paths in paths.values():
+            chunked_manifests.sort(key=lambda x: (x[1], len(x[0])))
+            chunked_manifests[0][0].extend(set(test_paths))
+
+        
+        chunked_manifests.sort(key=lambda x: (x[1], len(x[0])))
+
+        
+        chunked_manifests = [c[0] for c in chunked_manifests]
+    else:
+        chunker = chunk_by_runtime(None, chunks, get_runtimes(mozinfo['os']))
+        all_manifests = set(chunker.get_manifest(t) for t in tests)
+
+        
+        m = TestManifest()
+        m.tests = tests
+        tests = m.active_tests(disabled=False, exists=False, **mozinfo)
+        active_manifests = set(chunker.get_manifest(t) for t in tests)
+
+        
+        chunked_manifests = [c[1] for c in chunker.get_chunked_manifests(active_manifests)]
+
+        
+        
+        skipped_manifests = all_manifests - active_manifests
+        chunked_manifests[0].extend(skipped_manifests)
     return chunked_manifests
