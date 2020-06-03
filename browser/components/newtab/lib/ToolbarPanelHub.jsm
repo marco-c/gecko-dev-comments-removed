@@ -60,7 +60,7 @@ class _ToolbarPanelHub {
     await waitForInitialized;
     
     
-    this.enableAppmenuButton();
+    await this.enableAppmenuButton();
 
     this.state = {
       protectionPanelMessageSeen: Services.prefs.getBoolPref(
