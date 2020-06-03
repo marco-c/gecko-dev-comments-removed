@@ -108,6 +108,9 @@ static const uintptr_t IS_PROXY = 1;
 - (BOOL)isEnabled;
 
 
+- (BOOL)disableChild:(mozAccessible*)child;
+
+
 - (BOOL)isFocused;
 - (BOOL)canBeFocused;
 
