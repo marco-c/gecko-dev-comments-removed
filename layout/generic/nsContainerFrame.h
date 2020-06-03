@@ -538,7 +538,11 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  inline nsFrameList* GetOverflowFrames() const;
+  nsFrameList* GetOverflowFrames() const {
+    nsFrameList* list = GetProperty(OverflowProperty());
+    NS_ASSERTION(!list || !list->IsEmpty(), "Unexpected empty overflow list");
+    return list;
+  }
 
   
 
@@ -548,17 +552,29 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  inline nsFrameList* StealOverflowFrames();
+  nsFrameList* StealOverflowFrames() {
+    nsFrameList* list = TakeProperty(OverflowProperty());
+    NS_ASSERTION(!list || !list->IsEmpty(), "Unexpected empty overflow list");
+    return list;
+  }
 
   
 
 
-  void SetOverflowFrames(const nsFrameList& aOverflowFrames);
+  void SetOverflowFrames(const nsFrameList& aOverflowFrames) {
+    MOZ_ASSERT(aOverflowFrames.NotEmpty(), "Shouldn't be called");
+    SetProperty(OverflowProperty(),
+                new (PresShell()) nsFrameList(aOverflowFrames));
+  }
 
   
 
 
-  inline void DestroyOverflowList();
+  void DestroyOverflowList() {
+    nsFrameList* list = RemovePropTableFrames(OverflowProperty());
+    MOZ_ASSERT(list && list->IsEmpty());
+    list->Delete(PresShell());
+  }
 
   
 
@@ -986,24 +1002,6 @@ class nsOverflowContinuationTracker {
   
   bool mWalkOOFFrames;
 };
-
-inline nsFrameList* nsContainerFrame::GetOverflowFrames() const {
-  nsFrameList* list = GetProperty(OverflowProperty());
-  NS_ASSERTION(!list || !list->IsEmpty(), "Unexpected empty overflow list");
-  return list;
-}
-
-inline nsFrameList* nsContainerFrame::StealOverflowFrames() {
-  nsFrameList* list = TakeProperty(OverflowProperty());
-  NS_ASSERTION(!list || !list->IsEmpty(), "Unexpected empty overflow list");
-  return list;
-}
-
-inline void nsContainerFrame::DestroyOverflowList() {
-  nsFrameList* list = RemovePropTableFrames(OverflowProperty());
-  MOZ_ASSERT(list && list->IsEmpty());
-  list->Delete(PresShell());
-}
 
 
 #ifdef DEBUG
