@@ -56,6 +56,11 @@ void SetInCommunication(bool aInCommunication);
 
 bool RouteOutputAsVoice();
 
+
+
+
+bool EstimatedRoundTripLatencyDefaultDevices(double* aMean, double* aStdDev);
+
 #  ifdef MOZ_WIDGET_ANDROID
 uint32_t AndroidGetAudioOutputSampleRate();
 uint32_t AndroidGetAudioOutputFramesPerBuffer();
