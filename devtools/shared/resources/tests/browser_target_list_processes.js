@@ -62,22 +62,22 @@ async function testProcesses(targetList, target) {
 
   
   const targets = new Set();
-  const onAvailable = ({ type, targetFront, isTopLevel }) => {
+  const onAvailable = ({ targetFront }) => {
     if (targets.has(targetFront)) {
       ok(false, "The same target is notified multiple times via onAvailable");
     }
     is(
-      type,
+      targetFront.targetType,
       TargetList.TYPES.PROCESS,
       "We are only notified about process targets"
     );
     ok(
-      targetFront == target ? isTopLevel : !isTopLevel,
-      "isTopLevel argument is correct"
+      targetFront == target ? targetFront.isTopLevel : !targetFront.isTopLevel,
+      "isTopLevel property is correct"
     );
     targets.add(targetFront);
   };
-  const onDestroyed = ({ type, targetFront, isTopLevel }) => {
+  const onDestroyed = ({ targetFront }) => {
     if (!targets.has(targetFront)) {
       ok(
         false,
@@ -85,12 +85,12 @@ async function testProcesses(targetList, target) {
       );
     }
     is(
-      type,
+      targetFront.targetType,
       TargetList.TYPES.PROCESS,
       "We are only notified about process targets"
     );
     ok(
-      !isTopLevel,
+      !targetFront.isTopLevel,
       "We are never notified about the top level target destruction"
     );
     targets.delete(targetFront);
@@ -115,7 +115,7 @@ async function testProcesses(targetList, target) {
   const previousTargets = new Set(targets);
   
   const onProcessCreated = new Promise(resolve => {
-    const onAvailable2 = ({ type, targetFront, isTopLevel }) => {
+    const onAvailable2 = ({ targetFront }) => {
       if (previousTargets.has(targetFront)) {
         return;
       }
@@ -139,7 +139,7 @@ async function testProcesses(targetList, target) {
   
   const onProcessDestroyed = new Promise(resolve => {
     const onAvailable3 = () => {};
-    const onDestroyed3 = ({ type, targetFront, isTopLevel }) => {
+    const onDestroyed3 = ({ targetFront }) => {
       resolve(targetFront);
       targetList.unwatchTargets(
         [TargetList.TYPES.PROCESS],

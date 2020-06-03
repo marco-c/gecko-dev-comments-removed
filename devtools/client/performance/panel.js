@@ -117,10 +117,8 @@ PerformancePanel.prototype = {
 
 
 
-
-
-  async _handleTargetAvailable({ targetFront, isTopLevel }) {
-    if (isTopLevel) {
+  async _handleTargetAvailable({ targetFront }) {
+    if (targetFront.isTopLevel) {
       const { PerformanceController, PerformanceView } = this.panelWin;
       const performanceFront = await targetFront.getFront("performance");
 

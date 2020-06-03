@@ -279,10 +279,10 @@ class StorageUI {
     );
   }
 
-  async _onTargetAvailable({ type, targetFront, isTopLevel }) {
+  async _onTargetAvailable({ targetFront }) {
     
     
-    if (!isTopLevel) {
+    if (!targetFront.isTopLevel) {
       return;
     }
 
@@ -324,10 +324,10 @@ class StorageUI {
     }
   }
 
-  _onTargetDestroyed({ type, targetFront, isTopLevel }) {
+  _onTargetDestroyed({ targetFront }) {
     
     
-    if (!isTopLevel) {
+    if (!targetFront.isTopLevel) {
       return;
     }
 

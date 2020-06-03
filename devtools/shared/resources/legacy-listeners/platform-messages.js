@@ -4,17 +4,13 @@
 
 "use strict";
 
-module.exports = async function({
-  targetList,
-  targetType,
-  targetFront,
-  isTopLevel,
-  onAvailable,
-}) {
+module.exports = async function({ targetList, targetFront, onAvailable }) {
   
   
   
-  const isAllowed = isTopLevel || targetType === targetList.TYPES.PROCESS;
+  const isAllowed =
+    targetFront.isTopLevel ||
+    targetFront.targetType === targetList.TYPES.PROCESS;
   if (!isAllowed) {
     return;
   }
