@@ -110,8 +110,9 @@ void MobileViewportManager::ResolutionUpdated(
     return;
   }
 
-  if (!mPainted &&
-      aOrigin == mozilla::ResolutionChangeOrigin::MainThreadRestore) {
+  if ((!mPainted &&
+       aOrigin == mozilla::ResolutionChangeOrigin::MainThreadRestore) ||
+      aOrigin == mozilla::ResolutionChangeOrigin::Test) {
     
     
     SetRestoreResolution(mContext->GetResolution());
