@@ -272,6 +272,10 @@ def test_bugbug_fallback(monkeypatch, responses, params):
 
     opt = BugBugPushSchedules(0.5, fallback=True)
     assert opt.should_remove_task(default_tasks[0], params, None)
+
+    
+    responses.reset()
+
     assert not opt.should_remove_task(default_tasks[1], params, None)
 
 
