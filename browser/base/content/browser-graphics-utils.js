@@ -41,12 +41,4 @@ var gGfxUtils = {
   toggleWebrenderCaptureSequence() {
     window.windowUtils.wrToggleCaptureSequence();
   },
-
-  
-
-
-  toggleTransactionLogging() {
-    window.windowUtils.setTransactionLogging(!this._isTransactionLogging);
-    this._isTransactionLogging = !this._isTransactionLogging;
-  },
 };

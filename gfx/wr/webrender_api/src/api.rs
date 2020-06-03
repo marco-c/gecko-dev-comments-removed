@@ -966,8 +966,6 @@ pub enum DebugCommand {
     
     SimulateLongLowPrioritySceneBuild(u32),
     
-    SetTransactionLogging(bool),
-    
     SetPictureTileSize(Option<DeviceIntSize>),
 }
 
