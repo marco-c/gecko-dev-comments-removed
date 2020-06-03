@@ -331,9 +331,6 @@ CookieServiceChild::GetCookieStringFromDocument(Document* aDocument,
 
   nsCOMPtr<nsIPrincipal> principal = aDocument->EffectiveStoragePrincipal();
 
-  nsICookie::schemeType schemeType =
-      CookieCommons::PrincipalToSchemeType(principal);
-
   nsAutoCString baseDomain;
   nsresult rv = CookieCommons::GetBaseDomain(principal, baseDomain);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -388,10 +385,6 @@ CookieServiceChild::GetCookieStringFromDocument(Document* aDocument,
 
     
     if (cookie->IsSecure() && !isPotentiallyTrustworthy) {
-      continue;
-    }
-
-    if (!CookieCommons::MaybeCompareScheme(cookie, schemeType)) {
       continue;
     }
 
