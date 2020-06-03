@@ -5,12 +5,15 @@
 
 const {
   STUBS_UPDATE_ENV,
-  createResourceWatcherForTab,
   getStubFile,
   getCleanedPacket,
   getSerializedPacket,
   writeStubsToFile,
 } = require("chrome://mochitests/content/browser/devtools/client/webconsole/test/browser/stub-generator-helpers");
+
+const {
+  ResourceWatcher,
+} = require("devtools/shared/resources/resource-watcher");
 
 const TEST_URI =
   "http://example.com/browser/devtools/client/webconsole/test/browser/test-console-api.html";
@@ -62,8 +65,8 @@ add_task(async function() {
 async function generateConsoleApiStubs() {
   const stubs = new Map();
 
-  const tab = await addTab(TEST_URI);
-  const resourceWatcher = await createResourceWatcherForTab(tab);
+  const hud = await openNewTabAndConsole(TEST_URI);
+  const resourceWatcher = new ResourceWatcher(hud.targetList);
 
   
   
@@ -112,6 +115,13 @@ async function generateConsoleApiStubs() {
   resourceWatcher.unwatchResources([resourceWatcher.TYPES.CONSOLE_MESSAGE], {
     onAvailable: onConsoleMessage,
   });
+
+  
+  
+  const {
+    START_IGNORE_ACTION,
+  } = require("devtools/client/shared/redux/middleware/ignore");
+  await hud.ui.wrapper.getStore().dispatch(START_IGNORE_ACTION);
 
   return stubs;
 }
