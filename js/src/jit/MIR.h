@@ -2839,9 +2839,8 @@ class MApplyArgs : public MTernaryInstruction,
 };
 
 
-class MApplyArray
-    : public MTernaryInstruction,
-      public MixPolicy<ObjectPolicy<0>, ObjectPolicy<1>, BoxPolicy<2>>::Data {
+class MApplyArray : public MTernaryInstruction,
+                    public MixPolicy<ObjectPolicy<0>, BoxPolicy<2>>::Data {
  protected:
   
   WrappedFunction* target_;
@@ -2851,6 +2850,7 @@ class MApplyArray
   MApplyArray(WrappedFunction* target, MDefinition* fun, MDefinition* elements,
               MDefinition* self)
       : MTernaryInstruction(classOpcode, fun, elements, self), target_(target) {
+    MOZ_ASSERT(elements->type() == MIRType::Elements);
     setResultType(MIRType::Value);
   }
 
@@ -2881,9 +2881,9 @@ class MApplyArray
 };
 
 
-class MConstructArray : public MQuaternaryInstruction,
-                        public MixPolicy<ObjectPolicy<0>, ObjectPolicy<1>,
-                                         BoxPolicy<2>, ObjectPolicy<3>>::Data {
+class MConstructArray
+    : public MQuaternaryInstruction,
+      public MixPolicy<ObjectPolicy<0>, BoxPolicy<2>, ObjectPolicy<3>>::Data {
   
   WrappedFunction* target_;
   bool maybeCrossRealm_ = true;
@@ -2894,6 +2894,7 @@ class MConstructArray : public MQuaternaryInstruction,
       : MQuaternaryInstruction(classOpcode, fun, elements, thisValue,
                                newTarget),
         target_(target) {
+    MOZ_ASSERT(elements->type() == MIRType::Elements);
     setResultType(MIRType::Value);
   }
 
@@ -7532,8 +7533,7 @@ class MSpectreMaskIndex
 
 
 
-class MLoadElement : public MBinaryInstruction,
-                     public SingleObjectPolicy::Data {
+class MLoadElement : public MBinaryInstruction, public NoTypePolicy::Data {
   bool needsHoleCheck_;
   bool loadDoubles_;
 
@@ -7586,8 +7586,7 @@ class MLoadElement : public MBinaryInstruction,
 
 
 
-class MLoadElementHole : public MTernaryInstruction,
-                         public SingleObjectPolicy::Data {
+class MLoadElementHole : public MTernaryInstruction, public NoTypePolicy::Data {
   bool needsNegativeIntCheck_;
   bool needsHoleCheck_;
 
@@ -7674,10 +7673,9 @@ class MLoadElementFromState : public MBinaryInstruction,
 };
 
 
-class MStoreElement
-    : public MTernaryInstruction,
-      public MStoreElementCommon,
-      public MixPolicy<SingleObjectPolicy, NoFloatPolicy<2>>::Data {
+class MStoreElement : public MTernaryInstruction,
+                      public MStoreElementCommon,
+                      public NoFloatPolicy<2>::Data {
   bool needsHoleCheck_;
 
   MStoreElement(MDefinition* elements, MDefinition* index, MDefinition* value,
@@ -7886,7 +7884,7 @@ enum MemoryBarrierRequirement {
 
 
 class MLoadUnboxedScalar : public MBinaryInstruction,
-                           public SingleObjectPolicy::Data {
+                           public NoTypePolicy::Data {
   int32_t offsetAdjustment_ = 0;
   Scalar::Type storageType_;
   bool requiresBarrier_;
@@ -9030,8 +9028,7 @@ class MGuardSpecificAtom : public MUnaryInstruction,
 };
 
 
-class MLoadDynamicSlot : public MUnaryInstruction,
-                         public SingleObjectPolicy::Data {
+class MLoadDynamicSlot : public MUnaryInstruction, public NoTypePolicy::Data {
   uint32_t slot_;
 
   MLoadDynamicSlot(MDefinition* slots, uint32_t slot)
@@ -9157,9 +9154,8 @@ class MHomeObject : public MUnaryInstruction, public SingleObjectPolicy::Data {
 };
 
 
-class MStoreDynamicSlot
-    : public MBinaryInstruction,
-      public MixPolicy<ObjectPolicy<0>, NoFloatPolicy<1>>::Data {
+class MStoreDynamicSlot : public MBinaryInstruction,
+                          public NoFloatPolicy<1>::Data {
   uint32_t slot_;
   MIRType slotType_;
   bool needsBarrier_;
@@ -10833,8 +10829,7 @@ class MGuardSharedTypedArray : public MUnaryInstruction,
 
 class MCompareExchangeTypedArrayElement
     : public MQuaternaryInstruction,
-      public MixPolicy<ObjectPolicy<0>, UnboxedInt32Policy<1>,
-                       TruncateToInt32Policy<2>,
+      public MixPolicy<UnboxedInt32Policy<1>, TruncateToInt32Policy<2>,
                        TruncateToInt32Policy<3>>::Data {
   Scalar::Type arrayType_;
 
@@ -10845,6 +10840,7 @@ class MCompareExchangeTypedArrayElement
                                              MDefinition* newval)
       : MQuaternaryInstruction(classOpcode, elements, index, oldval, newval),
         arrayType_(arrayType) {
+    MOZ_ASSERT(elements->type() == MIRType::Elements);
     setGuard();  
   }
 
@@ -10865,14 +10861,14 @@ class MCompareExchangeTypedArrayElement
 
 class MAtomicExchangeTypedArrayElement
     : public MTernaryInstruction,
-      public MixPolicy<ObjectPolicy<0>, UnboxedInt32Policy<1>,
-                       TruncateToInt32Policy<2>>::Data {
+      public MixPolicy<UnboxedInt32Policy<1>, TruncateToInt32Policy<2>>::Data {
   Scalar::Type arrayType_;
 
   MAtomicExchangeTypedArrayElement(MDefinition* elements, MDefinition* index,
                                    MDefinition* value, Scalar::Type arrayType)
       : MTernaryInstruction(classOpcode, elements, index, value),
         arrayType_(arrayType) {
+    MOZ_ASSERT(elements->type() == MIRType::Elements);
     MOZ_ASSERT(arrayType <= Scalar::Uint32);
     setGuard();  
   }
@@ -10893,8 +10889,7 @@ class MAtomicExchangeTypedArrayElement
 
 class MAtomicTypedArrayElementBinop
     : public MTernaryInstruction,
-      public MixPolicy<ObjectPolicy<0>, UnboxedInt32Policy<1>,
-                       TruncateToInt32Policy<2>>::Data {
+      public MixPolicy<UnboxedInt32Policy<1>, TruncateToInt32Policy<2>>::Data {
  private:
   AtomicOp op_;
   Scalar::Type arrayType_;
@@ -10907,6 +10902,7 @@ class MAtomicTypedArrayElementBinop
       : MTernaryInstruction(classOpcode, elements, index, value),
         op_(op),
         arrayType_(arrayType) {
+    MOZ_ASSERT(elements->type() == MIRType::Elements);
     setGuard();  
   }
 
