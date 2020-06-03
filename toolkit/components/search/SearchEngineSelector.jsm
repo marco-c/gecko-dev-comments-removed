@@ -13,7 +13,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   RemoteSettings: "resource://services-settings/remote-settings.js",
-  RemoteSettingsClient: "resource://services-settings/RemoteSettingsClient.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
@@ -132,21 +131,22 @@ class SearchEngineSelector {
 
   async _getConfiguration(firstTime = true) {
     let result = [];
+    let failed = false;
     try {
       result = await this._remoteConfig.get();
     } catch (ex) {
-      if (
-        ex instanceof RemoteSettingsClient.InvalidSignatureError &&
-        firstTime
-      ) {
-        
-        await this._remoteConfig.db.clear();
-        
-        return this._getConfiguration(false);
-      }
+      logConsole.error(ex);
+      failed = true;
+    }
+    if (!result.length) {
+      logConsole.error("Received empty search configuration!");
+      failed = true;
+    }
+    
+    if (firstTime && failed) {
+      await this._remoteConfig.db.clear();
       
-      
-      Cu.reportError(ex);
+      return this._getConfiguration(false);
     }
     return result;
   }
