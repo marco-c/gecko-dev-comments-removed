@@ -184,6 +184,7 @@ const BlocklistTelemetry = {
 
 
 
+
   async recordRSBlocklistLastModified(blocklistType, remoteSettingsClient) {
     
     
@@ -193,20 +194,29 @@ const BlocklistTelemetry = {
     }
 
     let lastModified = await remoteSettingsClient.getLastModified();
+    BlocklistTelemetry.recordTimeScalar(
+      "lastModified_rs_" + blocklistType,
+      lastModified
+    );
+  },
 
-    if (lastModified > 0) {
+  
+
+
+
+
+
+
+
+
+  recordTimeScalar(telemetryKey, time) {
+    if (time > 0) {
       
       
-      lastModified = new Date(lastModified).toUTCString();
-      Services.telemetry.scalarSet(
-        `blocklist.lastModified_rs_${blocklistType}`,
-        lastModified
-      );
+      let dateString = new Date(time).toUTCString();
+      Services.telemetry.scalarSet("blocklist." + telemetryKey, dateString);
     } else {
-      Services.telemetry.scalarSet(
-        `blocklist.lastModified_rs_${blocklistType}`,
-        "Missing Date"
-      );
+      Services.telemetry.scalarSet("blocklist." + telemetryKey, "Missing Date");
     }
   },
 };
@@ -1444,9 +1454,10 @@ this.ExtensionBlocklistMLBF = {
           })
           
           .sort((a, b) => b.stash_time - a.stash_time)
-          .map(({ stash }) => ({
+          .map(({ stash, stash_time }) => ({
             blocked: new Set(stash.blocked),
             unblocked: new Set(stash.unblocked),
+            stash_time,
           }));
       } else {
         mlbfRecord = mlbfRecords.find(
@@ -1471,11 +1482,35 @@ this.ExtensionBlocklistMLBF = {
       .then(() => {
         if (!isUpdateReplaced()) {
           this._updatePromise = null;
+          this._recordPostUpdateTelemetry();
         }
         return this._updatePromise;
       });
     this._updatePromise = updatePromise;
     return updatePromise;
+  },
+
+  
+  
+  _recordPostUpdateTelemetry() {
+    BlocklistTelemetry.recordRSBlocklistLastModified(
+      "addons_mlbf",
+      this._client
+    );
+    BlocklistTelemetry.recordTimeScalar(
+      "mlbf_generation_time",
+      this._mlbfData?.generationTime
+    );
+    
+    let stashes = this._stashes || [];
+    BlocklistTelemetry.recordTimeScalar(
+      "mlbf_stash_time_oldest",
+      stashes[stashes.length - 1]?.stash_time
+    );
+    BlocklistTelemetry.recordTimeScalar(
+      "mlbf_stash_time_newest",
+      stashes[0]?.stash_time
+    );
   },
 
   ensureInitialized() {
@@ -1497,6 +1532,7 @@ this.ExtensionBlocklistMLBF = {
       PREF_BLOCKLIST_USE_MLBF_STASHES,
       false
     );
+    Services.telemetry.scalarSet("blocklist.mlbf_stashes", this.stashesEnabled);
   },
 
   shutdown() {
@@ -1576,6 +1612,8 @@ this.ExtensionBlocklistMLBF = {
       }
     }
 
+    
+    
     let { signedDate } = addon;
     if (!signedDate) {
       
@@ -1787,6 +1825,10 @@ let Blocklist = {
               ExtensionBlocklistMLBF._initialized &&
               !ExtensionBlocklistMLBF._didShutdown
             ) {
+              Services.telemetry.scalarSet(
+                "blocklist.mlbf_stashes",
+                ExtensionBlocklistMLBF.stashesEnabled
+              );
               ExtensionBlocklistMLBF._onUpdate();
             }
             break;
@@ -1823,8 +1865,10 @@ let Blocklist = {
   _chooseExtensionBlocklistImplementationFromPref() {
     if (Services.prefs.getBoolPref(PREF_BLOCKLIST_USE_MLBF, false)) {
       this.ExtensionBlocklist = ExtensionBlocklistMLBF;
+      Services.telemetry.scalarSet("blocklist.mlbf_enabled", true);
     } else {
       this.ExtensionBlocklist = ExtensionBlocklistRS;
+      Services.telemetry.scalarSet("blocklist.mlbf_enabled", false);
     }
   },
 
