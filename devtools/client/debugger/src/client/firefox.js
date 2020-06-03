@@ -86,17 +86,6 @@ async function onTargetAvailable({
     targetFront.isWebExtension
   );
 
-  
-  
-  
-  
-  
-  
-  
-  
-  const sources = await clientCommands.fetchSources();
-  await actions.newGeneratedSources(sources);
-
   await actions.addTarget(targetFront);
 
   await clientCommands.checkIfAlreadyPaused();
