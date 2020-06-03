@@ -114,6 +114,10 @@ void AccessibleWrap::Shutdown() {
     
     unk = static_cast<IAccessibleHyperlink*>(this);
     mscom::Interceptor::DisconnectRemotesForTarget(unk);
+    for (auto& assocUnk : mAssociatedCOMObjectsForDisconnection) {
+      mscom::Interceptor::DisconnectRemotesForTarget(assocUnk);
+    }
+    mAssociatedCOMObjectsForDisconnection.Clear();
   }
 
   Accessible::Shutdown();

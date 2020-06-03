@@ -173,6 +173,20 @@ class AccessibleWrap : public Accessible,
   static void UpdateSystemCaretFor(ProxyAccessible* aProxy,
                                    const LayoutDeviceIntRect& aCaretRect);
 
+  
+
+
+
+
+
+  void AssociateCOMObjectForDisconnection(IUnknown* aObject) {
+    
+    
+    if (XRE_IsContentProcess()) {
+      mAssociatedCOMObjectsForDisconnection.AppendElement(aObject);
+    }
+  }
+
  private:
   static void UpdateSystemCaretFor(HWND aCaretWnd,
                                    const LayoutDeviceIntRect& aCaretRect);
@@ -289,6 +303,8 @@ class AccessibleWrap : public Accessible,
   };
 
   static StaticAutoPtr<nsTArray<HandlerControllerData>> sHandlerControllers;
+
+  nsTArray<RefPtr<IUnknown>> mAssociatedCOMObjectsForDisconnection;
 };
 
 static inline AccessibleWrap* WrapperFor(const ProxyAccessible* aProxy) {
