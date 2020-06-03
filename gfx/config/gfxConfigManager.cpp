@@ -274,8 +274,7 @@ void gfxConfigManager::ConfigureWebRender() {
   
   
   if (mIsWindows && !mIsWin10OrLater && !mDwmCompositionEnabled) {
-    mFeatureWr->ForceDisable(FeatureStatus::Unavailable,
-                             "No DWM composition",
+    mFeatureWr->ForceDisable(FeatureStatus::Unavailable, "No DWM composition",
                              NS_LITERAL_CSTRING("FEATURE_FAILURE_NO_DWM_COMP"));
   }
 

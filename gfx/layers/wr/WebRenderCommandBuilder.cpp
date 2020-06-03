@@ -616,9 +616,8 @@ struct DIGroup {
         
         
         aResources.SetBlobImageVisibleArea(
-            *mKey,
-            ViewAs<ImagePixel>(mVisibleRect,
-                               PixelCastJustification::LayerIsImage));
+            *mKey, ViewAs<ImagePixel>(mVisibleRect,
+                                      PixelCastJustification::LayerIsImage));
         mLastVisibleRect = mVisibleRect;
         PushImage(aBuilder, itemBounds);
       }
@@ -1158,7 +1157,7 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
   nsDisplayItem* item = aList->GetBottom();
   nsDisplayItem* startOfCurrentGroup = item;
   RenderRootStateManager* manager =
-    aCommandBuilder->mManager->GetRenderRootStateManager();
+      aCommandBuilder->mManager->GetRenderRootStateManager();
   while (item) {
     if (IsItemProbablyActive(item, aBuilder, aResources, aSc, manager,
                              mDisplayListBuilder)) {

@@ -969,8 +969,7 @@ template <>
 void StyleImage::ResolveImage(dom::Document&, const StyleImage*);
 
 template <>
-inline AspectRatio StyleRatio<StyleNonNegativeNumber>::ToLayoutRatio()
-    const {
+inline AspectRatio StyleRatio<StyleNonNegativeNumber>::ToLayoutRatio() const {
   
   
   

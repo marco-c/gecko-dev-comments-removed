@@ -359,7 +359,6 @@ nsresult PrototypeDocumentContentSink::CreateAndInsertPI(
 nsresult PrototypeDocumentContentSink::InsertXMLStylesheetPI(
     const nsXULPrototypePI* aProtoPI, nsINode* aParent, nsINode* aBeforeThis,
     XMLStylesheetProcessingInstruction* aPINode) {
-
   nsresult rv;
 
   

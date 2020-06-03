@@ -307,7 +307,8 @@
 
   if ([attribute isEqualToString:@"AXMenuItemMarkChar"]) {
     AccessibleWrap* accWrap = [self getGeckoAccessible];
-    if (accWrap && accWrap->IsContent() && accWrap->GetContent()->IsXULElement(nsGkAtoms::menuitem)) {
+    if (accWrap && accWrap->IsContent() &&
+        accWrap->GetContent()->IsXULElement(nsGkAtoms::menuitem)) {
       
       
       

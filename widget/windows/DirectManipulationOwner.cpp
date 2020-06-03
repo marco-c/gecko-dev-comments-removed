@@ -11,18 +11,18 @@
 #if !defined(__MINGW32__) && !defined(__MINGW64__)
 
 
-#if defined(_WIN32_WINNT)
-#  undef _WIN32_WINNT
-#  define _WIN32_WINNT _WIN32_WINNT_WIN8
-#endif  
-#if defined(NTDDI_VERSION)
-#  undef NTDDI_VERSION
-#  define NTDDI_VERSION NTDDI_WIN8
-#endif  
+#  if defined(_WIN32_WINNT)
+#    undef _WIN32_WINNT
+#    define _WIN32_WINNT _WIN32_WINNT_WIN8
+#  endif  
+#  if defined(NTDDI_VERSION)
+#    undef NTDDI_VERSION
+#    define NTDDI_VERSION NTDDI_WIN8
+#  endif  
 
-#include "directmanipulation.h"
+#  include "directmanipulation.h"
 
-#endif 
+#endif  
 
 namespace mozilla {
 namespace widget {
@@ -337,7 +337,7 @@ void DManipEventHandler::Update() {
   }
 }
 
-#endif 
+#endif  
 
 void DirectManipulationOwner::Update() {
 #if !defined(__MINGW32__) && !defined(__MINGW64__)
@@ -451,7 +451,7 @@ void DManipEventHandler::SendPan(Phase aPhase, float x, float y,
   }
 }
 
-#endif 
+#endif  
 
 void DirectManipulationOwner::Init(const LayoutDeviceIntRect& aBounds) {
 #if !defined(__MINGW32__) && !defined(__MINGW64__)
@@ -568,7 +568,7 @@ void DirectManipulationOwner::Init(const LayoutDeviceIntRect& aBounds) {
     mDmHandler = nullptr;
     return;
   }
-#endif 
+#endif  
 }
 
 void DirectManipulationOwner::ResizeViewport(
@@ -640,7 +640,7 @@ void DirectManipulationOwner::Destroy() {
   mDmViewport = nullptr;
   mDmUpdateManager = nullptr;
   mDmManager = nullptr;
-#endif 
+#endif  
   mWindow = nullptr;
 }
 
