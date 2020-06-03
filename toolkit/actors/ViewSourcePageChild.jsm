@@ -167,8 +167,6 @@ class ViewSourcePageChild extends JSWindowActorChild {
 
 
   onPageShow(event) {
-    this.contentWindow.focus();
-
     
     
     if (
