@@ -251,13 +251,14 @@ nsScriptSecurityManager::GetChannelResultStoragePrincipal(
     return rv;
   }
 
-  return StoragePrincipalHelper::Create(aChannel, principal, aPrincipal);
+  return StoragePrincipalHelper::Create(
+      aChannel, principal,  false, aPrincipal);
 }
 
 NS_IMETHODIMP
 nsScriptSecurityManager::GetChannelResultPrincipals(
     nsIChannel* aChannel, nsIPrincipal** aPrincipal,
-    nsIPrincipal** aStoragePrincipal) {
+    nsIPrincipal** aPartitionedPrincipal) {
   nsresult rv = GetChannelResultPrincipal(aChannel, aPrincipal,
                                            false);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -269,12 +270,12 @@ nsScriptSecurityManager::GetChannelResultPrincipals(
     
     
     nsCOMPtr<nsIPrincipal> copy = *aPrincipal;
-    copy.forget(aStoragePrincipal);
+    copy.forget(aPartitionedPrincipal);
     return NS_OK;
   }
 
-  return StoragePrincipalHelper::Create(aChannel, *aPrincipal,
-                                        aStoragePrincipal);
+  return StoragePrincipalHelper::Create(
+      aChannel, *aPrincipal,  true, aPartitionedPrincipal);
 }
 
 nsresult nsScriptSecurityManager::GetChannelResultPrincipal(

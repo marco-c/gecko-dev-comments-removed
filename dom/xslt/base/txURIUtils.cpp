@@ -46,7 +46,7 @@ void URIUtils::resolveHref(const nsAString& href, const nsAString& base,
 void URIUtils::ResetWithSource(Document* aNewDoc, nsINode* aSourceNode) {
   nsCOMPtr<Document> sourceDoc = aSourceNode->OwnerDoc();
   nsIPrincipal* sourcePrincipal = sourceDoc->NodePrincipal();
-  nsIPrincipal* sourceStoragePrincipal = sourceDoc->EffectiveStoragePrincipal();
+  nsIPrincipal* sourcePartitionedPrincipal = sourceDoc->PartitionedPrincipal();
 
   
   nsCOMPtr<nsILoadGroup> loadGroup = sourceDoc->GetDocumentLoadGroup();
@@ -67,7 +67,7 @@ void URIUtils::ResetWithSource(Document* aNewDoc, nsINode* aSourceNode) {
   }
 
   aNewDoc->Reset(channel, loadGroup);
-  aNewDoc->SetPrincipals(sourcePrincipal, sourceStoragePrincipal);
+  aNewDoc->SetPrincipals(sourcePrincipal, sourcePartitionedPrincipal);
   aNewDoc->SetBaseURI(sourceDoc->GetDocBaseURI());
 
   
