@@ -549,6 +549,12 @@ public class WebExtension {
 
 
 
+        @Nullable
+        public final String cookieStoreId;
+        
+
+
+
 
 
         @Nullable
@@ -581,6 +587,7 @@ public class WebExtension {
         
         protected CreateTabDetails() {
             active = null;
+            cookieStoreId = null;
             discarded = null;
             index = null;
             openInReaderMode = null;
@@ -590,6 +597,7 @@ public class WebExtension {
 
          CreateTabDetails(final GeckoBundle bundle) {
             active = bundle.getBooleanObject("active");
+            cookieStoreId = bundle.getString("cookieStoreId");
             discarded = bundle.getBooleanObject("discarded");
             index = bundle.getInteger("index");
             openInReaderMode = bundle.getBooleanObject("openInReaderMode");
