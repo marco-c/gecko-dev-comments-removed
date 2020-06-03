@@ -4,7 +4,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sstream>
+
+
 #include <iostream>
+#include <functional>
+#include <locale>
+
+
+#if defined( _WIN32 )
+#include <windows.h>
+#endif
 
 
 
@@ -49,97 +58,96 @@ bool StringHasSuffixCaseSensitive( const std::string &sString, const std::string
 
 
 
+
+
+
+
+#if defined( _WIN32 )
 std::string UTF16to8(const wchar_t * in)
 {
-	std::string out;
-	unsigned int codepoint = 0;
-	for ( ; in && *in != 0; ++in )
+	int retLength = ::WideCharToMultiByte(CP_UTF8, 0, in, -1, nullptr, 0, nullptr, nullptr);
+	if (retLength == 0)
 	{
-		if (*in >= 0xd800 && *in <= 0xdbff)
-			codepoint = ((*in - 0xd800) << 10) + 0x10000;
-		else
-		{
-			if (*in >= 0xdc00 && *in <= 0xdfff)
-				codepoint |= *in - 0xdc00;
-			else
-				codepoint = *in;
-
-			if (codepoint <= 0x7f)
-				out.append(1, static_cast<char>(codepoint));
-			else if (codepoint <= 0x7ff)
-			{
-				out.append(1, static_cast<char>(0xc0 | ((codepoint >> 6) & 0x1f)));
-				out.append(1, static_cast<char>(0x80 | (codepoint & 0x3f)));
-			}
-			else if (codepoint <= 0xffff)
-			{
-				out.append(1, static_cast<char>(0xe0 | ((codepoint >> 12) & 0x0f)));
-				out.append(1, static_cast<char>(0x80 | ((codepoint >> 6) & 0x3f)));
-				out.append(1, static_cast<char>(0x80 | (codepoint & 0x3f)));
-			}
-			else
-			{
-				out.append(1, static_cast<char>(0xf0 | ((codepoint >> 18) & 0x07)));
-				out.append(1, static_cast<char>(0x80 | ((codepoint >> 12) & 0x3f)));
-				out.append(1, static_cast<char>(0x80 | ((codepoint >> 6) & 0x3f)));
-				out.append(1, static_cast<char>(0x80 | (codepoint & 0x3f)));
-			}
-			codepoint = 0;
-		}
+		return std::string();
 	}
-	return out;
+
+	char* retString = new char[retLength];
+	::WideCharToMultiByte(CP_UTF8, 0, in, -1, retString, retLength, nullptr, nullptr);
+
+	std::string retStringValue(retString);
+
+	delete[] retString;
+
+	return retStringValue;
+
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
 }
+
+std::string UTF16to8( const std::wstring & in ) { return UTF16to8( in.c_str() ); }
+
 
 std::wstring UTF8to16(const char * in)
 {
-	std::wstring out;
-	unsigned int codepoint = 0;
-	int following = 0;
-	for ( ; in && *in != 0; ++in )
+	int retLength = ::MultiByteToWideChar(CP_UTF8, 0, in, -1, nullptr, 0);
+	if (retLength == 0)
 	{
-		unsigned char ch = *in;
-		if (ch <= 0x7f)
-		{
-			codepoint = ch;
-			following = 0;
-		}
-		else if (ch <= 0xbf)
-		{
-			if (following > 0)
-			{
-				codepoint = (codepoint << 6) | (ch & 0x3f);
-				--following;
-			}
-		}
-		else if (ch <= 0xdf)
-		{
-			codepoint = ch & 0x1f;
-			following = 1;
-		}
-		else if (ch <= 0xef)
-		{
-			codepoint = ch & 0x0f;
-			following = 2;
-		}
-		else
-		{
-			codepoint = ch & 0x07;
-			following = 3;
-		}
-		if (following == 0)
-		{
-			if (codepoint > 0xffff)
-			{
-				out.append(1, static_cast<wchar_t>(0xd800 + (codepoint >> 10)));
-				out.append(1, static_cast<wchar_t>(0xdc00 + (codepoint & 0x03ff)));
-			}
-			else
-				out.append(1, static_cast<wchar_t>(codepoint));
-			codepoint = 0;
-		}
+		return std::wstring();
 	}
-	return out;
+
+	wchar_t* retString = new wchar_t[retLength];
+	::MultiByteToWideChar(CP_UTF8, 0, in, -1, retString, retLength);
+
+	std::wstring retStringValue(retString);
+
+	delete[] retString;
+
+	return retStringValue;
+
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
 }
+
+std::wstring UTF8to16( const std::string & in ) { return UTF8to16( in.c_str() ); }
+#endif
+
+
+#if defined( _WIN32 )
+
+
+
+std::string DefaultACPtoUTF8( const char *pszStr )
+{
+	if ( GetACP() == CP_UTF8 )
+	{
+		return pszStr;
+	}
+	else
+	{
+		std::vector<wchar_t> vecBuf( strlen( pszStr ) + 1 ); 
+		MultiByteToWideChar( CP_ACP, MB_PRECOMPOSED, pszStr, -1, vecBuf.data(), (int) vecBuf.size() );
+		return UTF16to8( vecBuf.data() );
+	}
+}
+#endif
+
+
 
 
 void strcpy_safe( char *pchBuffer, size_t unBufferSizeBytes, const char *pchSource )
@@ -147,7 +155,6 @@ void strcpy_safe( char *pchBuffer, size_t unBufferSizeBytes, const char *pchSour
 	strncpy( pchBuffer, pchSource, unBufferSizeBytes - 1 );
 	pchBuffer[unBufferSizeBytes - 1] = '\0';
 }
-
 
 
 
@@ -214,6 +221,7 @@ uint32_t ReturnStdString( const std::string & sValue, char *pchBuffer, uint32_t 
 
 
 
+
 uint64_t StringToUint64( const std::string & sValue )
 {
 	return strtoull( sValue.c_str(), NULL, 0 );
@@ -249,7 +257,26 @@ int iHexCharToInt( char cValue )
 
 
 
-void V_URLEncodeInternal( char *pchDest, int nDestLen, const char *pchSource, int nSourceLen, bool bUsePlusForSpace )
+
+
+static bool CharNeedsEscape_Component( const char c )
+{
+	return (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z') && !(c >= '0' && c <= '9')
+		&& c != '-' && c != '_' && c != '.');
+}
+static bool CharNeedsEscape_FullPath( const char c )
+{
+	return (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z') && !(c >= '0' && c <= '9')
+		&& c != '-' && c != '_' && c != '.' && c != '/' && c != ':' );
+}
+
+
+
+
+
+
+void V_URLEncodeInternal( char *pchDest, int nDestLen, const char *pchSource, int nSourceLen, 
+	bool bUsePlusForSpace, std::function< bool(const char)> fnNeedsEscape )
 {
 	
 	
@@ -267,9 +294,7 @@ void V_URLEncodeInternal( char *pchDest, int nDestLen, const char *pchSource, in
 		
 		
 		
-		if ( !( pchSource[i] >= 'a' && pchSource[i] <= 'z' ) && !( pchSource[i] >= 'A' && pchSource[i] <= 'Z' ) && !(pchSource[i] >= '0' && pchSource[i] <= '9' )
-			 && pchSource[i] != '-' && pchSource[i] != '_' && pchSource[i] != '.'	
-		)
+		if ( fnNeedsEscape( pchSource[i] ) )
 		{
 			if ( bUsePlusForSpace && pchSource[i] == ' ' )
 			{
@@ -397,9 +422,19 @@ size_t V_URLDecodeInternal( char *pchDecodeDest, int nDecodeDestLen, const char 
 
 void V_URLEncode( char *pchDest, int nDestLen, const char *pchSource, int nSourceLen )
 {
-	return V_URLEncodeInternal( pchDest, nDestLen, pchSource, nSourceLen, true );
+	return V_URLEncodeInternal( pchDest, nDestLen, pchSource, nSourceLen, true, CharNeedsEscape_Component );
 }
 
+
+void V_URLEncodeNoPlusForSpace( char *pchDest, int nDestLen, const char *pchSource, int nSourceLen )
+{
+	return V_URLEncodeInternal( pchDest, nDestLen, pchSource, nSourceLen, false, CharNeedsEscape_Component );
+}
+
+void V_URLEncodeFullPath( char *pchDest, int nDestLen, const char *pchSource, int nSourceLen )
+{
+	return V_URLEncodeInternal( pchDest, nDestLen, pchSource, nSourceLen, false, CharNeedsEscape_FullPath );
+}
 
 
 
@@ -412,6 +447,11 @@ void V_URLEncode( char *pchDest, int nDestLen, const char *pchSource, int nSourc
 size_t V_URLDecode( char *pchDecodeDest, int nDecodeDestLen, const char *pchEncodedSource, int nEncodedSourceLen )
 {
 	return V_URLDecodeInternal( pchDecodeDest, nDecodeDestLen, pchEncodedSource, nEncodedSourceLen, true );
+}
+
+size_t V_URLDecodeNoPlusForSpace( char *pchDecodeDest, int nDecodeDestLen, const char *pchEncodedSource, int nEncodedSourceLen )
+{
+	return V_URLDecodeInternal( pchDecodeDest, nDecodeDestLen, pchEncodedSource, nEncodedSourceLen, false );
 }
 
 
@@ -446,4 +486,86 @@ std::vector<std::string> TokenizeString( const std::string & sString, char cToke
 	}
 	return vecStrings;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

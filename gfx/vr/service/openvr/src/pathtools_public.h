@@ -14,6 +14,9 @@ std::string Path_GetWorkingDirectory();
 bool Path_SetWorkingDirectory( const std::string & sPath );
 
 
+std::string Path_GetTemporaryDirectory();
+
+
 std::string Path_GetThisModulePath();
 
 
@@ -65,6 +68,10 @@ std::string Path_Join(
 std::string Path_Compact( const std::string & sRawPath, char slash = 0 );
 
 
+
+bool Path_IsSamePath( const std::string & sPath1, const std::string & sPath2 );
+
+
 std::string Path_RemoveTrailingSlash( const std::string & sRawPath, char slash = 0 );
 
 
@@ -81,6 +88,9 @@ std::string Path_FindParentDirectoryRecursively( const std::string &strStartDire
 std::string Path_FindParentSubDirectoryRecursively( const std::string &strStartDirectory, const std::string &strDirectoryName );
 
 
+bool Path_MakeWritable( const std::string &strFilename );
+
+
 unsigned char * Path_ReadBinaryFile( const std::string &strFilename, int *pSize );
 uint32_t  Path_ReadBinaryFile( const std::string &strFilename, unsigned char *pBuffer, uint32_t unSize );
 bool Path_WriteBinaryFile( const std::string &strFilename, unsigned char *pData, unsigned nSize );
@@ -89,13 +99,17 @@ bool Path_WriteStringToTextFile( const std::string &strFilename, const char *pch
 bool Path_WriteStringToTextFileAtomic( const std::string &strFilename, const char *pchData );
 
 
-std::string Path_FilePathToUrl( const std::string & sRelativePath, const std::string & sBasePath );
+
+
 
 
 std::string Path_UrlToFilePath( const std::string & sFileUrl );
 
 
 std::string GetUserDocumentsPath();
+
+
+bool Path_UnlinkFile( const std::string &strFilename );
 
 #ifndef MAX_UNICODE_PATH
 	#define MAX_UNICODE_PATH 32767
@@ -123,6 +137,10 @@ std::string GetUserDocumentsPath();
 #define PROGRAM_EXT ""
 #if defined( LINUX32 )
 #define PLATSUBDIR	"linux32"
+#elif defined( ANDROIDARM64 )
+#define PLATSUBDIR	"androidarm64" 
+#elif defined( LINUXARM64 )
+#define PLATSUBDIR	"linuxarm64" 
 #else
 #define PLATSUBDIR	"linux64"
 #endif

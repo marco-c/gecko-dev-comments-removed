@@ -15,11 +15,24 @@ bool StringHasSuffix( const std::string &sString, const std::string &sSuffix );
 bool StringHasSuffixCaseSensitive( const std::string &sString, const std::string &sSuffix );
 
 
-std::string UTF16to8(const wchar_t * in);
+#if defined( _WIN32 )
+
+std::string UTF16to8( const wchar_t * in );
+std::string UTF16to8( const std::wstring & in );
 
 
 std::wstring UTF8to16(const char * in);
+std::wstring UTF8to16( const std::string & in );
 #define Utf16FromUtf8 UTF8to16
+#endif
+
+#if defined( _WIN32 )
+std::string DefaultACPtoUTF8( const char *pszStr );
+#endif
+
+
+bool RepairUTF8( const char *begin, const char *end, std::string & sOutputUtf8 );
+bool RepairUTF8( const std::string & sInputUtf8, std::string & sOutputUtf8 );
 
 
 void strcpy_safe( char *pchBuffer, size_t unBufferSizeBytes, const char *pchSource );
@@ -101,6 +114,7 @@ uint32_t ReturnStdString( const std::string & sValue, char *pchBuffer, uint32_t 
 
 
 
+
 uint64_t StringToUint64( const std::string & sValue );
 
 
@@ -113,6 +127,13 @@ uint64_t StringToUint64( const std::string & sValue );
 void V_URLEncode( char *pchDest, int nDestLen, const char *pchSource, int nSourceLen );
 
 
+void V_URLEncodeNoPlusForSpace( char *pchDest, int nDestLen, const char *pchSource, int nSourceLen );
+
+
+void V_URLEncodeFullPath( char *pchDest, int nDestLen, const char *pchSource, int nSourceLen );
+
+
+
 
 
 
@@ -121,6 +142,9 @@ void V_URLEncode( char *pchDest, int nDestLen, const char *pchSource, int nSourc
 
 
 size_t V_URLDecode( char *pchDecodeDest, int nDecodeDestLen, const char *pchEncodedSource, int nEncodedSourceLen );
+
+
+size_t V_URLDecodeNoPlusForSpace( char *pchDecodeDest, int nDecodeDestLen, const char *pchEncodedSource, int nEncodedSourceLen );
 
 
 
