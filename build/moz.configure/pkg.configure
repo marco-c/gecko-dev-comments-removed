@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 
 @depends(toolchain_prefix, when=compile_environment)
@@ -19,23 +19,23 @@ pkg_config = check_prog('PKG_CONFIG', pkg_config, allow_missing=True)
 def pkg_config_version(pkg_config):
     return Version(check_cmd_output(pkg_config, '--version').rstrip())
 
-# Locates the given module using pkg-config.
-# - `var` determines the name of variables to set when the package is found.
-#   <var>_CFLAGS and <var>_LIBS are set with corresponding values.
-# - `package_desc` package name and version requirement string, list of
-#   strings describing packages to locate, or depends function that will
-#   resolve to such a string or list of strings.
-# - `when` a depends function that will determine whether to perform
-#   any checks (default is to always perform checks).
-# - `allow_missing` If set, failure to fulfill the package description
-#   will not result in an error or logged message, and any error message
-#   will be returned to the caller.
-#   Returns `True` when the package description is fulfilled.
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @template
 def pkg_check_modules(var, package_desc, when=always,
-                      allow_missing=False):
+                      allow_missing=False, config=True):
     if isinstance(package_desc, (tuple, list)):
         package_desc = ' '.join(package_desc)
     package_desc = dependable(package_desc)
@@ -61,8 +61,8 @@ def pkg_check_modules(var, package_desc, when=always,
     @imports('sys')
     @imports(_from='mozbuild.configure.util', _import='LineIO')
     def package(pkg_config, package_desc, allow_missing):
-        # package_desc may start as a depends function, so we can't use
-        # @checking here.
+        
+        
         log.info("checking for %s... " % package_desc)
         retcode, stdout, stderr = get_cmd_output(
             pkg_config, '--errors-to-stdout', '--print-errors', package_desc)
@@ -86,14 +86,15 @@ def pkg_check_modules(var, package_desc, when=always,
     @checking('%s_LIBS' % var, callback=lambda t: ' '.join(t))
     def pkg_libs(pkg_config, package_desc):
         libs = check_cmd_output(pkg_config, '--libs', package_desc)
-        # Remove evil flags like -Wl,--export-dynamic
+        
         return tuple(libs.replace('-Wl,--export-dynamic', '').split())
 
     @depends(pkg_cflags, pkg_libs, when=package)
     def pkg_info(cflags, libs):
         return namespace(cflags=cflags, libs=libs)
 
-    set_config('%s_CFLAGS' % var, pkg_cflags)
-    set_config('%s_LIBS' % var, pkg_libs)
+    if config:
+        set_config('%s_CFLAGS' % var, pkg_cflags)
+        set_config('%s_LIBS' % var, pkg_libs)
 
     return pkg_info
