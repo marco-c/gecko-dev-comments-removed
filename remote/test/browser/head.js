@@ -446,17 +446,21 @@ class RecordEvents {
 
 
 
+
+
   addRecorder(options = {}) {
     const {
       event,
       eventName,
-      messageFn = () => `Received ${eventName}`,
+      messageFn = () => `Recorded ${eventName}`,
+      callback,
     } = options;
 
     const promise = new Promise(resolve => {
       const unsubscribe = event(payload => {
         info(messageFn(payload));
-        this.events.push({ eventName, payload });
+        this.events.push({ eventName, payload, index: this.events.length });
+        callback?.({ eventName, payload, index: this.events.length - 1 });
         if (this.events.length > this.total) {
           this.subscriptions.delete(unsubscribe);
           unsubscribe();
@@ -467,6 +471,33 @@ class RecordEvents {
     });
 
     this.promises.add(promise);
+  }
+
+  
+
+
+
+
+
+
+
+  addPromise(step) {
+    let callback;
+    const promise = new Promise(resolve => {
+      callback = value => {
+        resolve();
+        info(`Recorded ${step}`);
+        this.events.push({
+          eventName: step,
+          payload: value,
+          index: this.events.length,
+        });
+        return value;
+      };
+    });
+
+    this.promises.add(promise);
+    return callback;
   }
 
   
@@ -512,5 +543,20 @@ class RecordEvents {
     return this.events
       .filter(event => event.eventName == eventName)
       .map(event => event.payload);
+  }
+
+  
+
+
+
+
+
+
+  indexOf(eventName) {
+    const event = this.events.find(el => el.eventName == eventName);
+    if (event) {
+      return event.index;
+    }
+    return -1;
   }
 }
