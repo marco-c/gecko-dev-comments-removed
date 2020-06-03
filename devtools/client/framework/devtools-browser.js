@@ -57,6 +57,12 @@ loader.lazyRequireGetter(
   "ResponsiveUIManager",
   "devtools/client/responsive/manager"
 );
+loader.lazyRequireGetter(
+  this,
+  "toggleEnableDevToolsPopup",
+  "devtools/client/framework/enable-devtools-popup",
+  true
+);
 loader.lazyImporter(
   this,
   "BrowserToolboxLauncher",
@@ -70,6 +76,10 @@ const L10N = new LocalizationHelper(
 
 const BROWSER_STYLESHEET_URL = "chrome://devtools/skin/devtools-browser.css";
 
+
+
+
+const DEVTOOLS_F12_DISABLED_PREF = "devtools.experiment.f12.shortcut_disabled";
 
 
 
@@ -299,8 +309,25 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     
     switch (key.id) {
       case "toggleToolbox":
-      case "toggleToolboxF12":
         await gDevToolsBrowser.toggleToolboxCommand(window.gBrowser, startTime);
+        break;
+      case "toggleToolboxF12":
+        
+        
+        
+        const isF12Disabled = Services.prefs.getBoolPref(
+          DEVTOOLS_F12_DISABLED_PREF,
+          false
+        );
+
+        if (isF12Disabled) {
+          toggleEnableDevToolsPopup(window.document, startTime);
+        } else {
+          await gDevToolsBrowser.toggleToolboxCommand(
+            window.gBrowser,
+            startTime
+          );
+        }
         break;
       case "browserToolbox":
         BrowserToolboxLauncher.init();
@@ -494,7 +521,7 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
     }
 
     debugService.activationHandler = function(window) {
-      const chromeWindow = window.docShell.rootTreeItem.domWindow;
+      const chromeWindow = window.browsingContext.topChromeWindow;
 
       let setupFinished = false;
       slowScriptDebugHandler(chromeWindow.gBrowser.selectedTab, () => {

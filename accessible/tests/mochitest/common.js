@@ -992,7 +992,7 @@ function shortenString(aString, aMaxLength) {
 
 
 function getMainChromeWindow(aWindow) {
-  return aWindow.docShell.rootTreeItem.domWindow;
+  return aWindow.browsingContext.topChromeWindow;
 }
 
 
