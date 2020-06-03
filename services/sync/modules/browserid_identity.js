@@ -502,11 +502,19 @@ this.BrowserIDManager.prototype = {
       "X-KeyId": key.kid,
     };
 
-    return this._tokenServerClient.getTokenFromOAuthToken(
-      this._tokenServerUrl,
-      token,
-      headers
-    );
+    return this._tokenServerClient
+      .getTokenFromOAuthToken(this._tokenServerUrl, token, headers)
+      .catch(async err => {
+        if (err.response || err.response.status === 401) {
+          
+          
+          
+          await fxa.removeCachedOAuthToken({ token });
+        }
+
+        
+        throw err;
+      });
   },
 
   

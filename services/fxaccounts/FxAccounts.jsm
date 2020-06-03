@@ -1676,6 +1676,17 @@ FxAccountsInternal.prototype = {
     });
   },
 
+  
+
+
+
+
+
+
+
+
+
+
   removeCachedOAuthToken(options) {
     if (!options.token || typeof options.token !== "string") {
       throw this._error(
