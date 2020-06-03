@@ -110,6 +110,13 @@ function matchRequest(channel, filters) {
         
         
       }
+    } else if (
+      channel.loadInfo &&
+      channel.loadInfo.topOuterWindowID == filters.outerWindowID
+    ) {
+      
+      
+      return true;
     }
   }
 
@@ -144,8 +151,8 @@ function NetworkObserver(filters, owner) {
   this.filters = filters;
   this.owner = owner;
 
-  this.openRequests = new Map();
-  this.openResponses = new Map();
+  this.openRequests = new WeakMap();
+  this.openResponses = new WeakMap();
 
   this.blockedURLs = [];
 
@@ -227,7 +234,7 @@ NetworkObserver.prototype = {
     this.responsePipeSegmentSize = Services.prefs.getIntPref(
       "network.buffer.cache.size"
     );
-    this.interceptedChannels = new Set();
+    this.interceptedChannels = new WeakSet();
 
     if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT) {
       gActivityDistributor.addObserver(this);
@@ -320,14 +327,37 @@ NetworkObserver.prototype = {
       return;
     }
 
-    const timedChannel = subject.QueryInterface(Ci.nsITimedChannel);
-    const httpActivity = this.createOrGetActivityObject(timedChannel);
+    const channel = subject.QueryInterface(Ci.nsIHttpChannel);
+    if (!matchRequest(channel, this.filters)) {
+      return;
+    }
 
-    
-    
-    const serverTimings = this._extractServerTimings(timedChannel);
+    let id;
+    let reason;
+
+    try {
+      const request = subject.QueryInterface(Ci.nsIHttpChannel);
+      const properties = request.QueryInterface(Ci.nsIPropertyBag);
+      reason = request.loadInfo.requestBlockingReason;
+      id = properties.getProperty("cancelledByExtension");
+    } catch (err) {
+      
+    }
+
+    const httpActivity = this.createOrGetActivityObject(channel);
+    const serverTimings = this._extractServerTimings(channel);
     if (httpActivity.owner) {
+      
+      
       httpActivity.owner.addSeverTimings(serverTimings);
+    } else {
+      
+      
+      
+      this._createNetworkEvent(subject, {
+        blockedReason: reason,
+        blockingExtension: id,
+      });
     }
   },
 
@@ -345,7 +375,6 @@ NetworkObserver.prototype = {
     
     
     
-
     if (
       !this.owner ||
       (topic != "http-on-examine-response" &&
@@ -628,7 +657,14 @@ NetworkObserver.prototype = {
 
   _createNetworkEvent: function(
     channel,
-    { timestamp, extraStringData, fromCache, fromServiceWorker, blockedReason }
+    {
+      timestamp,
+      extraStringData,
+      fromCache,
+      fromServiceWorker,
+      blockedReason,
+      blockingExtension,
+    }
   ) {
     const httpActivity = this.createOrGetActivityObject(channel);
 
@@ -665,10 +701,12 @@ NetworkObserver.prototype = {
     
     
     
-    event.isThirdPartyTrackingResource = !!(
-      channel.isThirdPartyTrackingResource() &&
-      (channel.thirdPartyClassificationFlags & tpFlagsMask) == 0
-    );
+    if (channel instanceof Ci.nsIClassifiedChannel) {
+      event.isThirdPartyTrackingResource = !!(
+        channel.isThirdPartyTrackingResource() &&
+        (channel.thirdPartyClassificationFlags & tpFlagsMask) == 0
+      );
+    }
     const referrerInfo = channel.referrerInfo;
     event.referrerPolicy = referrerInfo
       ? referrerInfo.getReferrerPolicyString()
@@ -767,6 +805,9 @@ NetworkObserver.prototype = {
       }
     } else {
       event.blockedReason = blockedReason;
+      if (blockingExtension) {
+        event.blockingExtension = blockingExtension;
+      }
     }
 
     httpActivity.owner = this.owner.onNetworkEvent(event);
@@ -1060,7 +1101,6 @@ NetworkObserver.prototype = {
         serverTimings
       );
     }
-    this.openRequests.delete(httpActivity.channel);
   },
 
   _getBlockedTiming: function(timings) {
@@ -1462,9 +1502,6 @@ NetworkObserver.prototype = {
       "service-worker-synthesized-response"
     );
 
-    this.interceptedChannels.clear();
-    this.openRequests.clear();
-    this.openResponses.clear();
     this.owner = null;
     this.filters = null;
     this._throttler = null;
