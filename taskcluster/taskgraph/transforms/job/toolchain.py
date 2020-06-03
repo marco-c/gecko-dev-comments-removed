@@ -83,6 +83,8 @@ def get_digest_data(config, run, taskdesc):
     
     data = [hash_paths(GECKO, files)]
 
+    data.append(taskdesc['attributes']['toolchain-artifact'])
+
     
     
     
