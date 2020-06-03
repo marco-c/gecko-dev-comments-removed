@@ -40,18 +40,16 @@ nsresult FetchPreloader::OpenChannel(PreloadHashKey* aKey, nsIURI* aURI,
   nsCOMPtr<nsIChannel> channel;
 
   auto notify = MakeScopeExit([&]() {
-    if (NS_WARN_IF(NS_FAILED(rv)) && channel) {
+    if (NS_FAILED(rv)) {
       
       
       NotifyStart(channel);
-      NotifyStop(channel, rv);
+      
+      
+      
+      NotifyStop(rv);
     }
   });
-
-  rv = CheckContentPolicy(aURI, aDocument);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
 
   nsCOMPtr<nsILoadGroup> loadGroup = aDocument->GetDocumentLoadGroup();
   nsCOMPtr<nsPIDOMWindowOuter> window = aDocument->GetWindow();
@@ -64,6 +62,14 @@ nsresult FetchPreloader::OpenChannel(PreloadHashKey* aKey, nsIURI* aURI,
   rv = CreateChannel(getter_AddRefs(channel), aURI, aCORSMode, aReferrerPolicy,
                      aDocument, loadGroup, prompter);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  rv = CheckContentPolicy(aURI, aDocument);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
   PrioritizeAsPreload(channel);
   AddLoadBackgroundFlag(channel);
