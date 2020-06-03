@@ -646,6 +646,8 @@ class AudioCallbackDriver : public GraphDriver,
 
   
   TimeDuration AudioOutputLatency();
+  
+  TimeDuration AudioInputLatency();
 
  private:
   
@@ -751,7 +753,10 @@ class AudioCallbackDriver : public GraphDriver,
     
     Running,
     
-    Stopping
+    Stopping,
+    
+
+    Errored,
   };
   Atomic<AudioStreamState> mAudioStreamState;
   
