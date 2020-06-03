@@ -38,8 +38,27 @@ function getDefaultTargetBrowsers() {
     for (const version in releases) {
       const { status } = releases[version];
 
-      if (TARGET_BROWSER_STATUS.includes(status)) {
-        targets.push({ id, name, version, status });
+      if (!TARGET_BROWSER_STATUS.includes(status)) {
+        continue;
+      }
+
+      
+      
+      
+      
+      const target = { id, name, version, status };
+      const index = targets.findIndex(
+        t => target.id === t.id && target.status === t.status
+      );
+
+      if (index < 0) {
+        targets.push(target);
+        continue;
+      }
+
+      const existingTarget = targets[index];
+      if (parseFloat(existingTarget.version) < parseFloat(target.version)) {
+        targets[index] = target;
       }
     }
   }
