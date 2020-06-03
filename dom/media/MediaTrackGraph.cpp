@@ -287,50 +287,56 @@ bool MediaTrackGraphImpl::AudioTrackPresent() {
   return audioTrackPresent;
 }
 
-void MediaTrackGraphImpl::UpdateTrackOrder() {
+void MediaTrackGraphImpl::CheckDriver() {
   MOZ_ASSERT(OnGraphThread());
+  
+  
+  if (!mRealtime || Switching()) {
+    return;
+  }
+
+  AudioCallbackDriver* audioCallbackDriver =
+      CurrentDriver()->AsAudioCallbackDriver();
   bool audioTrackPresent = AudioTrackPresent();
-  uint32_t graphOutputChannelCount = AudioOutputChannelCount();
 
   
   
-  
-
-  if (!audioTrackPresent && mRealtime &&
-      CurrentDriver()->AsAudioCallbackDriver()) {
-    if (CurrentDriver()->AsAudioCallbackDriver()->IsStarted() && !Switching()) {
+  if (!audioTrackPresent) {
+    if (audioCallbackDriver && audioCallbackDriver->IsStarted()) {
       SwitchAtNextIteration(
           new SystemClockDriver(this, CurrentDriver(), mSampleRate));
     }
+    return;
   }
 
-  if (audioTrackPresent && mRealtime &&
-      !CurrentDriver()->AsAudioCallbackDriver() && !Switching() &&
-      graphOutputChannelCount > 0) {
-    AudioCallbackDriver* driver = new AudioCallbackDriver(
-        this, CurrentDriver(), mSampleRate, graphOutputChannelCount,
-        AudioInputChannelCount(), mOutputDeviceID, mInputDeviceID,
-        AudioInputDevicePreference());
-    SwitchAtNextIteration(driver);
-  }
-
-  
-  
-  
-  
-  
-  
-  if (CurrentDriver()->AsAudioCallbackDriver() && !Switching()) {
-    if (graphOutputChannelCount !=
-        CurrentDriver()->AsAudioCallbackDriver()->OutputChannelCount()) {
+  uint32_t graphOutputChannelCount = AudioOutputChannelCount();
+  if (!audioCallbackDriver) {
+    if (graphOutputChannelCount > 0) {
       AudioCallbackDriver* driver = new AudioCallbackDriver(
           this, CurrentDriver(), mSampleRate, graphOutputChannelCount,
           AudioInputChannelCount(), mOutputDeviceID, mInputDeviceID,
           AudioInputDevicePreference());
       SwitchAtNextIteration(driver);
     }
+    return;
   }
 
+  
+  
+  
+  
+  
+  
+  if (graphOutputChannelCount != audioCallbackDriver->OutputChannelCount()) {
+    AudioCallbackDriver* driver = new AudioCallbackDriver(
+        this, CurrentDriver(), mSampleRate, graphOutputChannelCount,
+        AudioInputChannelCount(), mOutputDeviceID, mInputDeviceID,
+        AudioInputDevicePreference());
+    SwitchAtNextIteration(driver);
+  }
+}
+
+void MediaTrackGraphImpl::UpdateTrackOrder() {
   if (!mTrackOrderDirty) {
     return;
   }
@@ -1151,6 +1157,7 @@ void MediaTrackGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions) {
   
   MOZ_ASSERT(aEndBlockingDecisions >= mStateComputedTime);
 
+  CheckDriver();
   UpdateTrackOrder();
 
   bool ensureNextIteration = false;

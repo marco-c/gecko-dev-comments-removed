@@ -344,6 +344,10 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
 
+  void CheckDriver();
+
+  
+
 
 
   void UpdateTrackOrder();
