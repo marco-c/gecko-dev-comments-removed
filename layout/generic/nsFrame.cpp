@@ -8893,9 +8893,7 @@ nsresult nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos) {
         if (peekSearchState != FOUND) {
           bool movedOverNonSelectable = false;
           result = current->GetFrameFromDirection(
-              aPos->mDirection, aPos->mVisual, aPos->mJumpLines,
-              aPos->mScrollViewStop, aPos->mForceEditableRegion, &current,
-              &offset, &jumpedLine, &movedOverNonSelectable);
+              *aPos, &current, &offset, &jumpedLine, &movedOverNonSelectable);
           if (NS_FAILED(result)) return result;
 
           
@@ -8993,10 +8991,9 @@ nsresult nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos) {
           nsIFrame* nextFrame;
           int32_t nextFrameOffset;
           bool jumpedLine, movedOverNonSelectableText;
-          result = current->GetFrameFromDirection(
-              aPos->mDirection, aPos->mVisual, aPos->mJumpLines,
-              aPos->mScrollViewStop, aPos->mForceEditableRegion, &nextFrame,
-              &nextFrameOffset, &jumpedLine, &movedOverNonSelectableText);
+          result = current->GetFrameFromDirection(*aPos, &nextFrame,
+                                                  &nextFrameOffset, &jumpedLine,
+                                                  &movedOverNonSelectableText);
           
           
           if (NS_FAILED(result) ||
@@ -9472,6 +9469,17 @@ nsresult nsIFrame::GetFrameFromDirection(
   }
   *aOutFrame = traversedFrame;
   return NS_OK;
+}
+
+nsresult nsIFrame::GetFrameFromDirection(const nsPeekOffsetStruct& aPos,
+                                         nsIFrame** aOutFrame,
+                                         int32_t* aOutOffset,
+                                         bool* aOutJumpedLine,
+                                         bool* aOutMovedOverNonSelectableText) {
+  return GetFrameFromDirection(aPos.mDirection, aPos.mVisual, aPos.mJumpLines,
+                               aPos.mScrollViewStop, aPos.mForceEditableRegion,
+                               aOutFrame, aOutOffset, aOutJumpedLine,
+                               aOutMovedOverNonSelectableText);
 }
 
 nsView* nsIFrame::GetClosestView(nsPoint* aOffset) const {

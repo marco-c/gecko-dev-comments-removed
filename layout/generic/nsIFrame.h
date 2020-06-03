@@ -3602,6 +3602,11 @@ class nsIFrame : public nsQueryFrame {
                                  bool* aOutJumpedLine,
                                  bool* aOutMovedOverNonSelectableText);
 
+  nsresult GetFrameFromDirection(const nsPeekOffsetStruct& aPos,
+                                 nsIFrame** aOutFrame, int32_t* aOutOffset,
+                                 bool* aOutJumpedLine,
+                                 bool* aOutMovedOverNonSelectableText);
+
   
 
 
