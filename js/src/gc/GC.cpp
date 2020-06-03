@@ -903,6 +903,7 @@ GCRuntime::GCRuntime(JSRuntime* rt)
 #endif
       lastMarkSlice(false),
       safeToYield(true),
+      markOnBackgroundThreadDuringSweeping(false),
       sweepOnBackgroundThread(false),
       requestSliceAfterBackgroundTask(false),
       lifoBlocksToFree((size_t)JSContext::TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE),
@@ -4291,8 +4292,8 @@ void GCRuntime::updateMemoryCountersOnGCStart() {
 
 template <class ZoneIterT>
 IncrementalProgress GCRuntime::markWeakReferences(
-    gcstats::PhaseKind phase, SliceBudget& incrementalBudget) {
-  gcstats::AutoPhase ap1(stats(), phase);
+    SliceBudget& incrementalBudget) {
+  gcstats::AutoPhase ap1(stats(), gcstats::PhaseKind::SWEEP_MARK_WEAK);
 
   auto unlimited = SliceBudget::unlimited();
   SliceBudget& budget =
@@ -4345,8 +4346,8 @@ IncrementalProgress GCRuntime::markWeakReferences(
 }
 
 IncrementalProgress GCRuntime::markWeakReferencesInCurrentGroup(
-    gcstats::PhaseKind phase, SliceBudget& budget) {
-  return markWeakReferences<SweepGroupZonesIter>(phase, budget);
+    SliceBudget& budget) {
+  return markWeakReferences<SweepGroupZonesIter>(budget);
 }
 
 template <class ZoneIterT>
@@ -4366,9 +4367,9 @@ void GCRuntime::markGrayRoots(gcstats::PhaseKind phase) {
   }
 }
 
-IncrementalProgress GCRuntime::markAllWeakReferences(gcstats::PhaseKind phase,
-                                                     SliceBudget& budget) {
-  return markWeakReferences<GCZonesIter>(phase, budget);
+IncrementalProgress GCRuntime::markAllWeakReferences() {
+  SliceBudget budget = SliceBudget::unlimited();
+  return markWeakReferences<GCZonesIter>(budget);
 }
 
 void GCRuntime::markAllGrayReferences(gcstats::PhaseKind phase) {
@@ -4857,10 +4858,8 @@ static inline void MaybeCheckWeakMapMarking(GCRuntime* gc) {
 
 IncrementalProgress GCRuntime::markGrayReferencesInCurrentGroup(
     JSFreeOp* fop, SliceBudget& budget) {
-  
-  if (joinSweepMarkTask() == NotFinished) {
-    return NotFinished;
-  }
+  MOZ_ASSERT(!markOnBackgroundThreadDuringSweeping);
+  MOZ_ASSERT(marker.isDrained());
 
   MOZ_ASSERT(marker.markColor() == MarkColor::Black);
 
@@ -4902,8 +4901,7 @@ IncrementalProgress GCRuntime::markGrayReferencesInCurrentGroup(
   }
 #endif
 
-  if (markUntilBudgetExhausted(budget, gcstats::PhaseKind::SWEEP_MARK_GRAY) ==
-      NotFinished) {
+  if (markUntilBudgetExhausted(budget) == NotFinished) {
     return NotFinished;
   }
   marker.setMainStackColor(MarkColor::Black);
@@ -4912,18 +4910,15 @@ IncrementalProgress GCRuntime::markGrayReferencesInCurrentGroup(
 
 IncrementalProgress GCRuntime::endMarkingSweepGroup(JSFreeOp* fop,
                                                     SliceBudget& budget) {
-  
-  if (joinSweepMarkTask() == NotFinished) {
-    return NotFinished;
-  }
+  MOZ_ASSERT(!markOnBackgroundThreadDuringSweeping);
+  MOZ_ASSERT(marker.isDrained());
 
   MOZ_ASSERT(marker.markColor() == MarkColor::Black);
   MOZ_ASSERT(!HasIncomingCrossCompartmentPointers(rt));
 
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_MARK);
 
-  if (markWeakReferencesInCurrentGroup(gcstats::PhaseKind::SWEEP_MARK_WEAK,
-                                       budget) == NotFinished) {
+  if (markWeakReferencesInCurrentGroup(budget) == NotFinished) {
     return NotFinished;
   }
 
@@ -4931,8 +4926,7 @@ IncrementalProgress GCRuntime::endMarkingSweepGroup(JSFreeOp* fop,
   marker.setMainStackColor(MarkColor::Gray);
 
   
-  if (markWeakReferencesInCurrentGroup(gcstats::PhaseKind::SWEEP_MARK_GRAY_WEAK,
-                                       budget) == NotFinished) {
+  if (markWeakReferencesInCurrentGroup(budget) == NotFinished) {
     return NotFinished;
   }
 
@@ -5382,6 +5376,7 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JSFreeOp* fop,
   MOZ_ASSERT(!sweepZone);
 
   safeToYield = true;
+  markOnBackgroundThreadDuringSweeping = CanUseExtraThreads();
 
   return Finished;
 }
@@ -5407,6 +5402,10 @@ IncrementalProgress GCRuntime::endSweepingSweepGroup(JSFreeOp* fop,
   if (joinSweepMarkTask() == NotFinished) {
     return NotFinished;
   }
+
+  
+  
+  markOnBackgroundThreadDuringSweeping = false;
 
   {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::FINALIZE_END);
@@ -5461,6 +5460,7 @@ void GCRuntime::beginSweepPhase(JS::GCReason reason, AutoGCSession& session) {
 
 
   MOZ_ASSERT(!abortSweepAfterCurrentGroup);
+  MOZ_ASSERT(!markOnBackgroundThreadDuringSweeping);
 
   releaseHeldRelocatedArenas();
 
@@ -5517,7 +5517,9 @@ bool ArenaLists::foregroundFinalize(JSFreeOp* fop, AllocKind thingKind,
 }
 
 void js::gc::SweepMarkTask::run() {
-  gc->sweepMarkResult = gc->markUntilBudgetExhausted(this->budget);
+  
+  gc->sweepMarkResult =
+      gc->markUntilBudgetExhausted(this->budget, GCMarker::DontReportMarkTime);
 }
 
 IncrementalProgress GCRuntime::joinSweepMarkTask() {
@@ -5527,13 +5529,7 @@ IncrementalProgress GCRuntime::joinSweepMarkTask() {
 }
 
 IncrementalProgress GCRuntime::markUntilBudgetExhausted(
-    SliceBudget& sliceBudget, gcstats::PhaseKind phase) {
-  gcstats::AutoPhase ap(stats(), phase);
-  return markUntilBudgetExhausted(sliceBudget);
-}
-
-IncrementalProgress GCRuntime::markUntilBudgetExhausted(
-    SliceBudget& sliceBudget) {
+    SliceBudget& sliceBudget, GCMarker::ShouldReportMarkTime reportTime) {
   
 
 #ifdef DEBUG
@@ -5544,7 +5540,8 @@ IncrementalProgress GCRuntime::markUntilBudgetExhausted(
     return NotFinished;
   }
 
-  return marker.markUntilBudgetExhausted(sliceBudget) ? Finished : NotFinished;
+  return marker.markUntilBudgetExhausted(sliceBudget, reportTime) ? Finished
+                                                                  : NotFinished;
 }
 
 void GCRuntime::drainMarkStack() {
@@ -6114,22 +6111,36 @@ IncrementalProgress GCRuntime::performSweepActions(SliceBudget& budget) {
   
   
   
+  
+  
+  
+
   MOZ_ASSERT(initialState <= State::Sweep);
   MOZ_ASSERT_IF(initialState != State::Sweep, marker.isDrained());
   MOZ_ASSERT(!sweepMarkTaskStarted);
+
   if (initialState == State::Sweep && !marker.isDrained()) {
-    AutoLockHelperThreadState lock;
-    MOZ_ASSERT(sweepMarkTask.isIdle(lock));
-    sweepMarkTask.setBudget(budget);
-    sweepMarkTask.startOrRunIfIdle(lock);
-    sweepMarkTaskStarted = true;
+    if (markOnBackgroundThreadDuringSweeping) {
+      AutoLockHelperThreadState lock;
+      MOZ_ASSERT(sweepMarkTask.isIdle(lock));
+      sweepMarkTask.setBudget(budget);
+      sweepMarkTask.startOrRunIfIdle(lock);
+      sweepMarkTaskStarted = true;
+    } else {
+      gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_MARK);
+      if (markUntilBudgetExhausted(budget) == NotFinished) {
+        return NotFinished;
+      }
+    }
   }
+
+  
 
   SweepAction::Args args{this, &fop, budget};
   IncrementalProgress progress = sweepActions->run(args);
 
   if (sweepMarkTaskStarted) {
-    joinTask(sweepMarkTask, gcstats::PhaseKind::SWEEP_MARK);
+    joinSweepMarkTask();
     sweepMarkTaskStarted = false;
     if (sweepMarkResult == NotFinished) {
       progress = NotFinished;
@@ -6164,6 +6175,8 @@ bool GCRuntime::allCCVisibleZonesWereCollected() {
 }
 
 void GCRuntime::endSweepPhase(bool destroyingRuntime) {
+  MOZ_ASSERT(!markOnBackgroundThreadDuringSweeping);
+
   sweepActions->assertFinished();
 
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP);
@@ -6610,9 +6623,11 @@ void GCRuntime::incrementalSlice(SliceBudget& budget,
     case State::Mark:
       rt->mainContextFromOwnThread()->traceWrapperGCRooters(&marker);
 
-      if (markUntilBudgetExhausted(budget, gcstats::PhaseKind::MARK) ==
-          NotFinished) {
-        break;
+      {
+        gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK);
+        if (markUntilBudgetExhausted(budget) == NotFinished) {
+          break;
+        }
       }
 
       MOZ_ASSERT(marker.isDrained());

@@ -735,20 +735,17 @@ class GCRuntime {
   void findDeadCompartments();
 
   friend class SweepMarkTask;
-  IncrementalProgress markUntilBudgetExhausted(SliceBudget& sliceBudget,
-                                               gcstats::PhaseKind phase);
-  IncrementalProgress markUntilBudgetExhausted(SliceBudget& sliceBudget);
+  IncrementalProgress markUntilBudgetExhausted(
+      SliceBudget& sliceBudget,
+      GCMarker::ShouldReportMarkTime reportTime = GCMarker::ReportMarkTime);
   void drainMarkStack();
   template <class ZoneIterT>
-  IncrementalProgress markWeakReferences(gcstats::PhaseKind phase,
-                                         SliceBudget& budget);
-  IncrementalProgress markWeakReferencesInCurrentGroup(gcstats::PhaseKind phase,
-                                                       SliceBudget& budget);
+  IncrementalProgress markWeakReferences(SliceBudget& budget);
+  IncrementalProgress markWeakReferencesInCurrentGroup(SliceBudget& budget);
   template <class ZoneIterT>
   void markGrayRoots(gcstats::PhaseKind phase);
   void markBufferedGrayRoots(JS::Zone* zone);
-  IncrementalProgress markAllWeakReferences(gcstats::PhaseKind phase,
-                                            SliceBudget& budget);
+  IncrementalProgress markAllWeakReferences();
   void markAllGrayReferences(gcstats::PhaseKind phase);
 
   void beginSweepPhase(JS::GCReason reason, AutoGCSession& session);
@@ -1016,6 +1013,11 @@ class GCRuntime {
 
   
   MainThreadData<bool> safeToYield;
+
+  
+  
+  
+  MainThreadData<bool> markOnBackgroundThreadDuringSweeping;
 
   
   MainThreadData<bool> sweepOnBackgroundThread;
