@@ -648,7 +648,8 @@ child:
                                     
                                     SystemFontListEntry[] systemFontList,
                                     SharedMemoryHandle? sharedUASheetHandle,
-                                    uintptr_t sharedUASheetAddress);
+                                    uintptr_t sharedUASheetAddress,
+                                    SharedMemoryHandle[] sharedFontListBlocks);
 
     
     async LastPrivateDocShellDestroyed();

@@ -222,6 +222,8 @@ class FontList {
 
 
 
+
+
   void ShareShmBlockToProcess(uint32_t aIndex, base::ProcessId aPid,
                               base::SharedMemoryHandle* aOut) {
     MOZ_RELEASE_ASSERT(mReadOnlyShmems.Length() == mBlocks.Length());
@@ -233,6 +235,14 @@ class FontList {
       MOZ_CRASH("failed to share block");
     }
   }
+
+  
+
+
+
+
+  void ShareBlocksToProcess(nsTArray<base::SharedMemoryHandle>* aBlocks,
+                            base::ProcessId aPid);
 
   
 

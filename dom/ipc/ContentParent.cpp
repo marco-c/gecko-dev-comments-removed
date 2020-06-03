@@ -2360,6 +2360,12 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
 
   
   
+  nsTArray<SharedMemoryHandle> sharedFontListBlocks;
+  gfxPlatformFontList::PlatformFontList()->ShareFontListToProcess(
+      &sharedFontListBlocks, OtherPid());
+
+  
+  
   auto* sheetCache = GlobalStyleSheetCache::Singleton();
   if (StyleSheet* ucs = sheetCache->GetUserContentSheet()) {
     xpcomInit.userContentSheetURL() = ucs->GetSheetURI();
@@ -2401,9 +2407,9 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
     sharedUASheetAddress = 0;
   }
 
-  Unused << SendSetXPCOMProcessAttributes(xpcomInit, initialData, lnfCache,
-                                          fontList, sharedUASheetHandle,
-                                          sharedUASheetAddress);
+  Unused << SendSetXPCOMProcessAttributes(
+      xpcomInit, initialData, lnfCache, fontList, sharedUASheetHandle,
+      sharedUASheetAddress, sharedFontListBlocks);
 
   ipc::WritableSharedMap* sharedData =
       nsFrameMessageManager::sParentProcessManager->SharedData();

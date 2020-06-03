@@ -540,7 +540,8 @@ class ContentChild final : public PContentChild,
       nsTArray<LookAndFeelInt>&& aLookAndFeelIntCache,
       nsTArray<SystemFontListEntry>&& aFontList,
       const Maybe<base::SharedMemoryHandle>& aSharedUASheetHandle,
-      const uintptr_t& aSharedUASheetAddress);
+      const uintptr_t& aSharedUASheetAddress,
+      nsTArray<base::SharedMemoryHandle>&& aSharedFontListBlocks);
 
   mozilla::ipc::IPCResult RecvProvideAnonymousTemporaryFile(
       const uint64_t& aID, const FileDescOrError& aFD);
@@ -576,6 +577,10 @@ class ContentChild final : public PContentChild,
   
   nsTArray<mozilla::dom::SystemFontListEntry>& SystemFontList() {
     return mFontList;
+  }
+
+  nsTArray<base::SharedMemoryHandle>& SharedFontListBlocks() {
+    return mSharedFontListBlocks;
   }
 
   
@@ -813,6 +818,8 @@ class ContentChild final : public PContentChild,
   nsTArray<mozilla::dom::SystemFontListEntry> mFontList;
   
   nsTArray<LookAndFeelInt> mLookAndFeelCache;
+  
+  nsTArray<base::SharedMemoryHandle> mSharedFontListBlocks;
 
   
 
