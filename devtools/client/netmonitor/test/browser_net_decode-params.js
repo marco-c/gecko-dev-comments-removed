@@ -34,16 +34,5 @@ add_task(async function() {
     document.querySelector("#request-tab")
   );
 
-  
-  
-  
-  const keyValue = document.querySelectorAll(".treeTable .treeRow")[0];
-
-  is(
-    keyValue.innerText,
-    `file\n"foo # bar"`,
-    "'+' in params in correctly decoded."
-  );
-
   return teardown(monitor);
 });
