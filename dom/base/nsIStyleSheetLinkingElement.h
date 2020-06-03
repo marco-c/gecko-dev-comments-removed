@@ -127,15 +127,6 @@ class nsIStyleSheetLinkingElement : public nsISupports {
 
   virtual void SetStyleSheet(mozilla::StyleSheet* aStyleSheet) = 0;
 
-
-  
-
-
-
-
-
-  virtual void InitStyleLinkElement(bool aDontLoadStyle) = 0;
-
   
 
 
