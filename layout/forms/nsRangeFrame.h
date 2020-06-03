@@ -88,10 +88,6 @@ class nsRangeFrame final : public nsContainerFrame,
         aFlags & ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock));
   }
 
-  ComputedStyle* GetAdditionalComputedStyle(int32_t aIndex) const override;
-  void SetAdditionalComputedStyle(int32_t aIndex,
-                                  ComputedStyle* aComputedStyle) override;
-
   
 
 
@@ -179,11 +175,6 @@ class nsRangeFrame final : public nsContainerFrame,
 
 
   nsCOMPtr<Element> mThumbDiv;
-
-  
-
-
-  RefPtr<ComputedStyle> mOuterFocusStyle;
 
   class DummyTouchListener final : public nsIDOMEventListener {
    private:
