@@ -106,7 +106,7 @@ assertEq(validFuncRefText('(global funcref (ref.func $referenced))', 'anyref') i
 assertEq(validFuncRefText('(export "referenced" (func $referenced))', 'anyref') instanceof WebAssembly.Instance, true);
 
 
-assertEq(validFuncRefText('(start $referenced)', 'anyref') instanceof WebAssembly.Instance, true);
+assertErrorMessage(() => validFuncRefText('(start $referenced)', 'anyref'), WebAssembly.CompileError, /function index is not declared in a section before the code section/);
 
 
 
