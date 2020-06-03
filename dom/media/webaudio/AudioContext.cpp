@@ -741,7 +741,7 @@ nsISerialEventTarget* AudioContext::GetMainThread() const {
 
 void AudioContext::DisconnectFromOwner() {
   mIsDisconnecting = true;
-  Shutdown();
+  OnWindowDestroy();
   DOMEventTargetHelper::DisconnectFromOwner();
 }
 
@@ -759,7 +759,7 @@ void AudioContext::BindToOwner(nsIGlobalObject* aNew) {
   }
 }
 
-void AudioContext::Shutdown() {
+void AudioContext::OnWindowDestroy() {
   
   if (!mIsShutDown) {
     MaybeUpdateAutoplayTelemetryWhenShutdown();
@@ -788,9 +788,18 @@ void AudioContext::Shutdown() {
   
   ShutdownWorklet();
 
-  
-  if (mIsOffline && mDestination) {
-    mDestination->OfflineShutdown();
+  if (mDestination) {
+    
+    
+    
+    
+    
+    Graph()->ForceShutDown();
+    
+    
+    if (mIsOffline) {
+      mDestination->OfflineShutdown();
+    }
   }
 }
 
