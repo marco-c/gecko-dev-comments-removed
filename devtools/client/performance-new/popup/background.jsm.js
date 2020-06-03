@@ -182,6 +182,11 @@ async function captureProfile(pageContext) {
     
     return;
   }
+  if (Services.profiler.IsPaused()) {
+    
+    return;
+  }
+
   
   
   Services.profiler.PauseSampling();
@@ -250,6 +255,11 @@ function stopProfiler() {
 
 
 function toggleProfiler(pageContext) {
+  if (Services.profiler.IsPaused()) {
+    
+    
+    return;
+  }
   if (Services.profiler.IsActive()) {
     stopProfiler();
   } else {
