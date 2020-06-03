@@ -9808,21 +9808,57 @@ CSSPoint nsLayoutUtils::GetCumulativeApzCallbackTransform(nsIFrame* aFrame) {
   return delta;
 }
 
+static nsSize ComputeMaxSizeForPartialPrerender(nsIFrame* aFrame,
+                                                nsSize aMaxSize) {
+  Matrix4x4Flagged transform = nsLayoutUtils::GetTransformToAncestor(
+      RelativeTo{aFrame},
+      RelativeTo{nsLayoutUtils::GetDisplayRootFrame(aFrame)});
+
+  Matrix transform2D;
+  if (!transform.Is2D(&transform2D)) {
+    return aMaxSize;
+  }
+
+  gfx::Rect result(0, 0, aMaxSize.width, aMaxSize.height);
+  gfx::Size scale = transform2D.ScaleFactors(true);
+  if (scale.width != 0 && scale.height != 0) {
+    result.width /= scale.width;
+    result.height /= scale.height;
+  }
+
+  
+  transform2D._31 = 0.0f;
+  transform2D._32 = 0.0f;
+
+  
+  if (scale.width != 0 && scale.height != 0) {
+    transform2D._11 /= scale.width;
+    transform2D._12 /= scale.width;
+    transform2D._21 /= scale.height;
+    transform2D._22 /= scale.height;
+  }
+
+  
+  
+  
+  
+  result = transform2D.TransformBounds(result);
+  return nsSize(result.width, result.height);
+}
+
 
 nsRect nsLayoutUtils::ComputePartialPrerenderArea(
     nsIFrame* aFrame, const nsRect& aDirtyRect, const nsRect& aOverflow,
     const nsSize& aPrerenderSize) {
-  const gfxSize scale = GetTransformToAncestorScale(aFrame);
-  nsSize prerenderSize = aPrerenderSize;
-  if (scale.width != 0 && scale.height != 0) {
-    prerenderSize.width /= scale.width;
-    prerenderSize.height /= scale.height;
-  }
+  nsSize maxSizeForPartialPrerender =
+      ComputeMaxSizeForPartialPrerender(aFrame, aPrerenderSize);
   
   
   
-  nscoord xExcess = std::max(prerenderSize.width - aDirtyRect.width, 0);
-  nscoord yExcess = std::max(prerenderSize.height - aDirtyRect.height, 0);
+  nscoord xExcess =
+      std::max(maxSizeForPartialPrerender.width - aDirtyRect.width, 0);
+  nscoord yExcess =
+      std::max(maxSizeForPartialPrerender.height - aDirtyRect.height, 0);
   nsRect result = aDirtyRect;
   result.Inflate(xExcess / 2, yExcess / 2);
   return result.MoveInsideAndClamp(aOverflow);
