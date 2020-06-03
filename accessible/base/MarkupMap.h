@@ -66,7 +66,7 @@ MARKUPMAP(
     [](Element* aElement, Accessible* aContext) -> Accessible* {
       
       
-      if (aElement->IsInAnonymousSubtree()) {
+      if (aElement->IsInNativeAnonymousSubtree()) {
         return nullptr;
       }
       

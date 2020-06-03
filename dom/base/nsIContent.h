@@ -191,16 +191,6 @@ class nsIContent : public nsINode {
 
 
 
-
-
-  bool IsRootOfAnonymousSubtree() const {
-    return IsRootOfNativeAnonymousSubtree();
-  }
-
-  
-
-
-
   inline bool IsInHTMLDocument() const;
 
   

@@ -1300,16 +1300,6 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-
-
-
-  bool IsInAnonymousSubtree() const { return IsInNativeAnonymousSubtree(); }
-
-  
-
-
-
-
   nsIContent* GetClosestNativeAnonymousSubtreeRoot() const {
     if (!IsInNativeAnonymousSubtree()) {
       return nullptr;

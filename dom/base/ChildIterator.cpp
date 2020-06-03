@@ -101,7 +101,7 @@ void FlattenedChildIterator::Init(bool aIgnoreXBL) {
 
 bool ExplicitChildIterator::Seek(const nsIContent* aChildToFind) {
   if (aChildToFind->GetParent() == mParent &&
-      !aChildToFind->IsRootOfAnonymousSubtree()) {
+      !aChildToFind->IsRootOfNativeAnonymousSubtree()) {
     
     
     mChild = const_cast<nsIContent*>(aChildToFind);

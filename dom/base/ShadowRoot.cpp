@@ -663,7 +663,7 @@ void ShadowRoot::MaybeUnslotHostChild(nsIContent& aChild) {
     return;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(!aChild.IsRootOfAnonymousSubtree(),
+  MOZ_DIAGNOSTIC_ASSERT(!aChild.IsRootOfNativeAnonymousSubtree(),
                         "How did aChild end up assigned to a slot?");
   
   
@@ -679,7 +679,7 @@ void ShadowRoot::MaybeSlotHostChild(nsIContent& aChild) {
   MOZ_ASSERT(aChild.GetParent() == GetHost());
   
   
-  if (aChild.IsRootOfAnonymousSubtree()) {
+  if (aChild.IsRootOfNativeAnonymousSubtree()) {
     return;
   }
 

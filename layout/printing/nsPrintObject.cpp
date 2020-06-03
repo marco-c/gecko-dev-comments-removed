@@ -70,7 +70,7 @@ static nsINode* GetCorrespondingNodeInDocument(const nsINode* aOrigNode,
   MOZ_ASSERT(aOrigNode);
 
   
-  if (aOrigNode->IsInAnonymousSubtree() || aOrigNode->IsInShadowTree()) {
+  if (aOrigNode->IsInNativeAnonymousSubtree() || aOrigNode->IsInShadowTree()) {
     return nullptr;
   }
 

@@ -1379,7 +1379,7 @@ static bool IsFocused(nsIContent* aContent) {
   
   
   
-  while (aContent && aContent->IsInAnonymousSubtree()) {
+  while (aContent && aContent->IsInNativeAnonymousSubtree()) {
     aContent = aContent->GetParent();
   }
 

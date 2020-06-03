@@ -246,7 +246,7 @@ dom::Element* IDRefsIterator::GetElem(nsIContent* aContent,
                                       const nsAString& aID) {
   
   
-  if (!aContent->IsInAnonymousSubtree()) {
+  if (!aContent->IsInNativeAnonymousSubtree()) {
     dom::DocumentOrShadowRoot* docOrShadowRoot =
         aContent->GetUncomposedDocOrConnectedShadowRoot();
     if (docOrShadowRoot) {

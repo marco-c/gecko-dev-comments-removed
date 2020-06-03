@@ -1082,7 +1082,7 @@ bool mozInlineSpellChecker::ShouldSpellCheckNode(TextEditor* aTextEditor,
     
     
     
-    if (content->IsInAnonymousSubtree()) {
+    if (content->IsInNativeAnonymousSubtree()) {
       nsIContent* node = content->GetParent();
       while (node && node->IsInNativeAnonymousSubtree()) {
         node = node->GetParent();
