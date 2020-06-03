@@ -84,7 +84,7 @@ uint32_t BackgroundFileSaver::sTelemetryMaxThreadCount = 0;
 
 BackgroundFileSaver::BackgroundFileSaver()
     : mControlEventTarget(nullptr),
-      mWorkerThread(nullptr),
+      mBackgroundET(nullptr),
       mPipeOutputStream(nullptr),
       mPipeInputStream(nullptr),
       mObserver(nullptr),
@@ -125,7 +125,7 @@ nsresult BackgroundFileSaver::Init() {
   mControlEventTarget = GetCurrentThreadEventTarget();
   NS_ENSURE_TRUE(mControlEventTarget, NS_ERROR_NOT_INITIALIZED);
 
-  rv = NS_NewNamedThread("BgFileSaver", getter_AddRefs(mWorkerThread));
+  rv = NS_CreateBackgroundTaskQueue("BgFileSaver", getter_AddRefs(mBackgroundET));
   NS_ENSURE_SUCCESS(rv, rv);
 
   sThreadCount++;
@@ -286,10 +286,10 @@ nsresult BackgroundFileSaver::GetWorkerThreadAttention(
 
   if (!mAsyncCopyContext) {
     
-    rv = mWorkerThread->Dispatch(
+    rv = mBackgroundET->Dispatch(
         NewRunnableMethod("net::BackgroundFileSaver::ProcessAttention", this,
                           &BackgroundFileSaver::ProcessAttention),
-        NS_DISPATCH_NORMAL);
+        NS_DISPATCH_EVENT_MAY_BLOCK);
     NS_ENSURE_SUCCESS(rv, rv);
   } else if (aShouldInterruptCopy) {
     
@@ -588,7 +588,7 @@ nsresult BackgroundFileSaver::ProcessStateChange() {
   {
     MutexAutoLock lock(mLock);
 
-    rv = NS_AsyncCopy(mPipeInputStream, outputStream, mWorkerThread,
+    rv = NS_AsyncCopy(mPipeInputStream, outputStream, mBackgroundET,
                       NS_ASYNCCOPY_VIA_READSEGMENTS, 4096, AsyncCopyCallback,
                       this, false, true, getter_AddRefs(mAsyncCopyContext),
                       GetProgressCallback());
@@ -734,7 +734,7 @@ nsresult BackgroundFileSaver::NotifySaveComplete() {
   
   
   
-  mWorkerThread->Shutdown();
+  mBackgroundET = nullptr;
 
   sThreadCount--;
 
