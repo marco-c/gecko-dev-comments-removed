@@ -12,6 +12,39 @@
 
 using namespace mozilla::a11y;
 
+@interface NSObject (MOXAccessible)
+
+
+
+
+
+- (BOOL)isMozAccessible;
+
+
+
+- (BOOL)hasMozAccessibles;
+
+@end
+
+@implementation NSObject (MOXAccessible)
+
+- (BOOL)isMozAccessible {
+  return [self conformsToProtocol:@protocol(mozAccessible)];
+}
+
+- (BOOL)hasMozAccessibles {
+  return [self isKindOfClass:[NSArray class]] && [[(NSArray*)self firstObject] isMozAccessible];
+}
+
+@end
+
+
+@interface MOXAccessibleBase ()
+
+- (BOOL)isSelectorSupported:(SEL)selector;
+
+@end
+
 @implementation MOXAccessibleBase
 
 #pragma mark - mozAccessible/widget
@@ -32,35 +65,156 @@ using namespace mozilla::a11y;
 
 - (NSArray*)accessibilityAttributeNames {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
-  return @[];
+
+  if ([self isExpired]) {
+    return nil;
+  }
+
+  static NSMutableDictionary* attributesForEachClass = nil;
+
+  if (!attributesForEachClass) {
+    attributesForEachClass = [[NSMutableDictionary alloc] init];
+  }
+
+  NSMutableArray* attributes =
+      attributesForEachClass [[self class]] ?: [[NSMutableArray alloc] init];
+
+  NSDictionary* getters = mac::AttributeGetters();
+  if (![attributes count]) {
+    
+    
+    for (NSString* attribute in getters) {
+      SEL selector = NSSelectorFromString(getters[attribute]);
+      if ([self isSelectorSupported:selector]) {
+        [attributes addObject:attribute];
+      }
+    }
+
+    
+    
+    
+    
+    
+  }
+
+  return attributes;
+
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
 - (id)accessibilityAttributeValue:(NSString*)attribute {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
-  return nil;
+  if ([self isExpired]) {
+    return nil;
+  }
+
+  id value = nil;
+  NSDictionary* getters = mac::AttributeGetters();
+  if (getters[attribute]) {
+    SEL selector = NSSelectorFromString(getters[attribute]);
+    if ([self isSelectorSupported:selector]) {
+      value = [self performSelector:selector];
+    }
+  }
+
+  if ([value isMozAccessible]) {
+    
+    
+    value = GetObjectOrRepresentedView(value);
+    return [value isAccessibilityElement] ? value : nil;
+  }
+
+  if ([value hasMozAccessibles]) {
+    
+    
+    NSUInteger arrSize = [value count];
+    NSMutableArray* arr = [[NSMutableArray alloc] initWithCapacity:arrSize];
+    for (NSUInteger i = 0; i < arrSize; i++) {
+      id<mozAccessible> mozAcc = GetObjectOrRepresentedView(value[i]);
+      if ([mozAcc isAccessibilityElement]) {
+        [arr addObject:mozAcc];
+      }
+    }
+
+    return arr;
+  }
+
+  return value;
+
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
 - (BOOL)accessibilityIsAttributeSettable:(NSString*)attribute {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
-  return NO;
+
+  if ([self isExpired]) {
+    return NO;
+  }
+
+  NSDictionary* setters = mac::AttributeSetters();
+  if (setters[attribute]) {
+    SEL selector = NSSelectorFromString(setters[attribute]);
+    return ([self isSelectorSupported:selector]);
+  }
+
   NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(NO);
 }
 
 - (void)accessibilitySetValue:(id)value forAttribute:(NSString*)attribute {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  if ([self isExpired]) {
+    return;
+  }
+
+  NSDictionary* setters = mac::AttributeSetters();
+  if (setters[attribute]) {
+    SEL selector = NSSelectorFromString(setters[attribute]);
+    if ([self isSelectorSupported:selector]) {
+      [self performSelector:selector withObject:value];
+    }
+  }
+
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 - (NSArray*)accessibilityActionNames {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
-  return @[];
+
+  if ([self isExpired]) {
+    return nil;
+  }
+
+  NSMutableArray* actionNames = [[NSMutableArray alloc] init];
+
+  NSDictionary* actions = mac::Actions();
+  for (NSString* action in actions) {
+    SEL selector = NSSelectorFromString(actions[action]);
+    if ([self isSelectorSupported:selector]) {
+      [actionNames addObject:action];
+    }
+  }
+
+  return actionNames;
+
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
 - (void)accessibilityPerformAction:(NSString*)action {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  if ([self isExpired]) {
+    return;
+  }
+
+  NSDictionary* actions = mac::Actions();
+  if (actions[action]) {
+    SEL selector = NSSelectorFromString(actions[action]);
+    if ([self isSelectorSupported:selector]) {
+      [self performSelector:selector];
+    }
+  }
+
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
@@ -132,6 +286,10 @@ using namespace mozilla::a11y;
   NSAccessibilityPostNotification(GetObjectOrRepresentedView(self), notification);
 }
 
+- (BOOL)moxBlockSelector:(SEL)selector {
+  return NO;
+}
+
 #pragma mark -
 
 - (BOOL)isExpired {
@@ -144,6 +302,12 @@ using namespace mozilla::a11y;
   mIsExpired = YES;
 
   [self moxPostNotification:NSAccessibilityUIElementDestroyedNotification];
+}
+
+#pragma mark - Private
+
+- (BOOL)isSelectorSupported:(SEL)selector {
+  return [self respondsToSelector:selector] && ![self moxBlockSelector:selector];
 }
 
 @end
