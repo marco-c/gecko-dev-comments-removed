@@ -17,8 +17,8 @@ PUSH_ENDPOINT = "{head_repository}/json-pushes/?startID={push_id_start}&endID={p
 
 
 @register_strategy('backstop', args=(10, 60))
-@register_strategy("push-interval-10", args=(10, 0))
-@register_strategy("push-interval-25", args=(25, 0))
+@register_strategy("push-interval-10", args=(10, 0, False))
+@register_strategy("push-interval-25", args=(25, 0, False))
 class Backstop(OptimizationStrategy):
     """Ensures that no task gets left behind.
 
@@ -28,10 +28,14 @@ class Backstop(OptimizationStrategy):
         push_interval (int): Number of pushes
         time_interval (int): Minutes between forced schedules.
                              Use 0 to disable.
+        test_optimization (bool): Boolean flag to indicate if the strategy is
+                              to be applied as part of the test optimization
+                              strategy.
     """
-    def __init__(self, push_interval, time_interval):
+    def __init__(self, push_interval, time_interval, test_optimization=True):
         self.push_interval = push_interval
         self.time_interval = time_interval
+        self.test_optimization = test_optimization
 
         
         self.push_dates = defaultdict(dict)
@@ -43,10 +47,16 @@ class Backstop(OptimizationStrategy):
         pushid = int(params['pushlog_id'])
         pushdate = int(params['pushdate'])
 
-        
-        
         if project != 'autoland':
-            return True
+            if self.test_optimization:
+                
+                
+                
+                return True
+            
+            
+            
+            return False
 
         
         if pushid % self.push_interval == 0:
