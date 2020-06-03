@@ -1970,12 +1970,13 @@ BrowserGlue.prototype = {
 
     let exceptions = 0;
     for (let permission of Services.perms.all) {
-      let uri = permission.principal.URI;
       
       if (
         permission.type == "cookie" &&
         permission.capability == Ci.nsICookiePermission.ACCESS_SESSION &&
-        (uri.scheme == "http" || uri.scheme == "https" || uri.scheme == "file")
+        ["http", "https", "file"].some(scheme =>
+          permission.principal.schemeIs(scheme)
+        )
       ) {
         exceptions++;
       }
