@@ -1,6 +1,96 @@
 
-let NS_OSX_PICTURE_DOCUMENTS_DIR = "Pct";
-let NS_MAC_USER_LIB_DIR = "ULibDir";
+const NS_OSX_PICTURE_DOCUMENTS_DIR = "Pct";
+
+
+
+
+
+const kPythonPath = "/usr/bin/python";
+const kDesktopCheckerScriptPath =
+  "browser/browser/components/shell/test/mac_desktop_image.py";
+const kDefaultBackgroundImage_10_14 =
+  "/Library/Desktop Pictures/Solid Colors/Teal.png";
+const kDefaultBackgroundImage_10_15 =
+  "/System/Library/Desktop Pictures/Solid Colors/Teal.png";
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  FileUtils: "resource://gre/modules/FileUtils.jsm",
+});
+
+function getPythonExecutableFile() {
+  let python = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+  python.initWithPath(kPythonPath);
+  return python;
+}
+
+function createProcess() {
+  return Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
+}
+
+
+
+
+function setDesktopBackgroundCLI(imagePath) {
+  let setBackgroundProcess = createProcess();
+  setBackgroundProcess.init(getPythonExecutableFile());
+  let args = [
+    kDesktopCheckerScriptPath,
+    "--verbose",
+    "--set-background-image",
+    imagePath,
+  ];
+  setBackgroundProcess.run(true, args, args.length);
+  return setBackgroundProcess.exitValue;
+}
+
+
+
+
+
+function checkDesktopBackgroundCLI(imagePath) {
+  let checkBackgroundProcess = createProcess();
+  checkBackgroundProcess.init(getPythonExecutableFile());
+  let args = [
+    kDesktopCheckerScriptPath,
+    "--verbose",
+    "--check-background-image",
+    imagePath,
+  ];
+  checkBackgroundProcess.run(true, args, args.length);
+  return checkBackgroundProcess.exitValue;
+}
+
+
+function setAndCheckDesktopBackgroundCLI(imagePath) {
+  Assert.ok(FileUtils.File(imagePath).exists(), `${imagePath} exists`);
+
+  let setExitCode = setDesktopBackgroundCLI(imagePath);
+  Assert.ok(setExitCode == 0, `Setting background via CLI to ${imagePath}`);
+
+  let checkExitCode = checkDesktopBackgroundCLI(imagePath);
+  Assert.ok(checkExitCode == 0, `Checking background via CLI is ${imagePath}`);
+}
+
+
+
+function restoreDefaultBackground() {
+  let defaultBackgroundPath;
+  if (AppConstants.isPlatformAndVersionAtLeast("macosx", 19)) {
+    defaultBackgroundPath = kDefaultBackgroundImage_10_15;
+  } else {
+    defaultBackgroundPath = kDefaultBackgroundImage_10_14;
+  }
+  setAndCheckDesktopBackgroundCLI(defaultBackgroundPath);
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -15,34 +105,37 @@ add_task(async function() {
       let dirSvc = Cc["@mozilla.org/file/directory_service;1"].getService(
         Ci.nsIDirectoryServiceProvider
       );
-
-      let desktopBackgroundDb = dirSvc.getFile(NS_MAC_USER_LIB_DIR, {});
-      desktopBackgroundDb.append("Application Support");
-      desktopBackgroundDb.append("Dock");
-      let desktopBackgroundDbBackup = desktopBackgroundDb.clone();
-      desktopBackgroundDb.append("desktoppicture.db");
-      desktopBackgroundDbBackup.append("desktoppicture.db.backup");
-
-      ok(
-        desktopBackgroundDb.exists(),
-        "Desktop background database must exist for test to run."
+      let uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].getService(
+        Ci.nsIUUIDGenerator
       );
-
-      if (desktopBackgroundDbBackup.exists()) {
-        desktopBackgroundDbBackup.remove(false);
-      }
-
-      desktopBackgroundDb.copyTo(null, desktopBackgroundDbBackup.leafName);
-
-      let wpFile = dirSvc.getFile(NS_OSX_PICTURE_DOCUMENTS_DIR, {});
-      wpFile.append("logo.png");
-      if (wpFile.exists()) {
-        wpFile.remove(false);
-      }
-
-      let shell = Cc["@mozilla.org/browser/shell-service;1"].getService(
+      let shellSvc = Cc["@mozilla.org/browser/shell-service;1"].getService(
         Ci.nsIShellService
       );
+
+      
+      
+      
+      
+      restoreDefaultBackground();
+
+      
+      
+      
+      
+      let uuid = uuidGenerator
+        .generateUUID()
+        .toString()
+        .replace(/\W/g, "");
+
+      
+      
+      
+      
+      let backgroundImage = dirSvc.getFile(NS_OSX_PICTURE_DOCUMENTS_DIR, {});
+      backgroundImage.append(uuid + ".png");
+      if (backgroundImage.exists()) {
+        backgroundImage.remove(false);
+      }
 
       
       
@@ -51,25 +144,29 @@ add_task(async function() {
         !gBrowser.selectedBrowser.isRemoteBrowser,
         "image can be accessed synchronously from the parent process"
       );
-
       let image = gBrowser.selectedBrowser.contentDocument.images[0];
-      shell.setDesktopBackground(image, 0, "logo.png");
 
-      await BrowserTestUtils.waitForCondition(() => wpFile.exists());
-      info("Desktop background was written to disk.");
-
-      desktopBackgroundDbBackup.moveTo(null, desktopBackgroundDb.leafName);
-      wpFile.remove(false);
+      info(`Setting/saving desktop background to ${backgroundImage.path}`);
 
       
-      let killall = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-      killall.initWithPath("/usr/bin/killall");
-      let dockArg = ["Dock"];
-      let process = Cc["@mozilla.org/process/util;1"].createInstance(
-        Ci.nsIProcess
+      shellSvc.setDesktopBackground(image, 0, backgroundImage.leafName);
+
+      await BrowserTestUtils.waitForCondition(() => backgroundImage.exists());
+      info(`${backgroundImage.path} downloaded`);
+      Assert.ok(
+        FileUtils.File(backgroundImage.path).exists(),
+        `${backgroundImage.path} exists`
       );
-      process.init(killall);
-      process.run(true, dockArg, 1);
+
+      
+      let exitCode = checkDesktopBackgroundCLI(backgroundImage.path);
+      Assert.ok(exitCode == 0, `background should be ${backgroundImage.path}`);
+
+      
+      restoreDefaultBackground();
+
+      
+      backgroundImage.remove(false);
     }
   );
 });
