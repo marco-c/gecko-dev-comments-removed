@@ -791,14 +791,6 @@ already_AddRefed<nsIEventTarget> IToplevelProtocol::GetMessageEventTarget(
       return nullptr;
     }
 
-    
-    
-    
-    if (!target) {
-      MutexAutoUnlock unlock(mEventTargetMutex);
-      target = GetConstructedEventTarget(aMsg);
-    }
-
 #ifdef DEBUG
     
     
@@ -812,11 +804,6 @@ already_AddRefed<nsIEventTarget> IToplevelProtocol::GetMessageEventTarget(
 #endif 
 
     mEventTargetMap.AddWithID(target, handle.mId);
-  } else if (!target) {
-    
-    lock.reset();
-
-    target = GetSpecificMessageEventTarget(aMsg);
   }
 
   return target.forget();
