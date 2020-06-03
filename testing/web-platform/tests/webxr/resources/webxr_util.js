@@ -18,15 +18,25 @@ function xr_promise_test(name, func, properties) {
     
     xr_debug(name, 'setup');
 
-    if (isChromiumBased) {
-      
-      await loadChromiumResources;
-      xr_debug = navigator.xr.test.Debug;
+    if (!navigator.xr.test) {
+      if (isChromiumBased) {
+        
+        await loadChromiumResources();
+      } else if (isWebKitBased) {
+        
+        await setupWebKitWebXRTestAPI();
+      }
     }
 
-    if (isWebKitBased) {
+    
+    
+    
+    
+    
+    if (!navigator.xr.test) {
       
-      await setupWebKitWebXRTestAPI;
+      
+      return Promise.reject("No navigator.xr.test object found, even after attempted load");
     }
 
     
@@ -175,13 +185,7 @@ function forEachWebxrObject(callback) {
 }
 
 
-let loadChromiumResources = Promise.resolve().then(() => {
-  if (!isChromiumBased) {
-    
-    
-    return;
-  }
-
+function loadChromiumResources() {
   let chromiumResources = [
     '/gen/layout_test_data/mojo/public/js/mojo_bindings.js',
     '/gen/mojo/public/mojom/base/time.mojom.js',
@@ -217,18 +221,17 @@ let loadChromiumResources = Promise.resolve().then(() => {
       document.head.appendChild(script);
   });
 
+  chain = chain.then(() => {
+    xr_debug = navigator.xr.test.Debug;
+  });
+
   return chain;
-});
+}
 
-let setupWebKitWebXRTestAPI = Promise.resolve().then(() => {
-  if (!isWebKitBased) {
-    
-    return;
-  }
-
+function setupWebKitWebXRTestAPI() {
   
   
   
   navigator.xr.test = internals.xrTest;
   return Promise.resolve();
-});
+}
