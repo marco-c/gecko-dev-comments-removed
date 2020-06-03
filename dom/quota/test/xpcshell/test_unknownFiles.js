@@ -32,6 +32,29 @@ async function testSteps() {
         path: "storage/default/http+++foobar.com/foo",
         dir: true,
       },
+
+      
+      
+
+
+
+
+
+
+      {
+        path: "storage/default/http+++foobar.com/cache/foo.bar",
+        dir: false,
+      },
+
+      {
+        path: "storage/default/http+++foobar.com/sdb/foo.bar",
+        dir: false,
+      },
+
+      {
+        path: "storage/default/http+++foobar.com/ls/foo.bar",
+        dir: false,
+      },
     ];
 
     for (const createOriginDirectory of [false, true]) {
