@@ -364,7 +364,6 @@ nsresult PrototypeDocumentContentSink::InsertXMLStylesheetPI(
 
   nsresult rv;
 
-  ssle->InitStyleLinkElement(false);
   
   
   ssle->SetEnableUpdates(false);
