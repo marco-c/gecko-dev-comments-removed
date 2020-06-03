@@ -63,9 +63,6 @@ class WebSocket final : public DOMEventTargetHelper {
   virtual JSObject* WrapObject(JSContext* cx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
-  
-  void BindToOwner(nsIGlobalObject* aNew) override;
-
  public:  
   
   static bool PrefEnabled(JSContext* aCx = nullptr,

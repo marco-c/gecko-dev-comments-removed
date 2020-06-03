@@ -48,8 +48,6 @@ class DOMEventTargetHelper : public dom::EventTarget,
         mOwnerWindow(nullptr),
         mHasOrHasHadOwnerWindow(false),
         mIsKeptAlive(false) {
-    
-    
     nsIGlobalObject* global = aWindow ? aWindow->AsGlobal() : nullptr;
     BindToOwnerInternal(global);
   }
@@ -58,8 +56,6 @@ class DOMEventTargetHelper : public dom::EventTarget,
         mOwnerWindow(nullptr),
         mHasOrHasHadOwnerWindow(false),
         mIsKeptAlive(false) {
-    
-    
     BindToOwnerInternal(aGlobalObject);
   }
   explicit DOMEventTargetHelper(DOMEventTargetHelper* aOther)
@@ -67,8 +63,6 @@ class DOMEventTargetHelper : public dom::EventTarget,
         mOwnerWindow(nullptr),
         mHasOrHasHadOwnerWindow(false),
         mIsKeptAlive(false) {
-    
-    
     if (!aOther) {
       BindToOwnerInternal(static_cast<nsIGlobalObject*>(nullptr));
       return;
@@ -150,19 +144,6 @@ class DOMEventTargetHelper : public dom::EventTarget,
   
   
   mozilla::dom::Document* GetDocumentIfCurrent() const;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual void BindToOwner(nsIGlobalObject* aOwner);
-
-  void BindToOwner(nsPIDOMWindowInner* aOwner);
-  void BindToOwner(DOMEventTargetHelper* aOther);
 
   virtual void DisconnectFromOwner();
   using EventTarget::GetParentObject;

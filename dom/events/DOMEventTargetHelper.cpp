@@ -97,30 +97,6 @@ DOMEventTargetHelper::~DOMEventTargetHelper() {
   ReleaseWrapper(this);
 }
 
-void DOMEventTargetHelper::BindToOwner(nsPIDOMWindowInner* aOwner) {
-  
-  
-  
-  nsIGlobalObject* global = aOwner ? aOwner->AsGlobal() : nullptr;
-  BindToOwner(global);
-}
-
-void DOMEventTargetHelper::BindToOwner(nsIGlobalObject* aOwner) {
-  BindToOwnerInternal(aOwner);
-}
-
-void DOMEventTargetHelper::BindToOwner(DOMEventTargetHelper* aOther) {
-  
-  
-  
-  if (!aOther) {
-    BindToOwner(static_cast<nsIGlobalObject*>(nullptr));
-    return;
-  }
-  BindToOwner(aOther->GetParentObject());
-  mHasOrHasHadOwnerWindow = aOther->HasOrHasHadOwner();
-}
-
 void DOMEventTargetHelper::DisconnectFromOwner() {
   if (mParentObject) {
     mParentObject->RemoveEventTargetObject(this);
