@@ -31,76 +31,6 @@ CSPService::~CSPService() = default;
 
 NS_IMPL_ISUPPORTS(CSPService, nsIContentPolicy, nsIChannelEventSink)
 
-
-bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
-  nsContentPolicyType contentType =
-      nsContentUtils::InternalContentPolicyTypeToExternal(aContentType);
-
-  
-  
-  
-  
-  if (contentType == nsIContentPolicy::TYPE_CSP_REPORT ||
-      contentType == nsIContentPolicy::TYPE_REFRESH ||
-      contentType == nsIContentPolicy::TYPE_DOCUMENT) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  if (aURI->SchemeIs("data") || aURI->SchemeIs("blob") ||
-      aURI->SchemeIs("filesystem")) {
-    return true;
-  }
-
-  
-  
-  
-  if (aURI->SchemeIs("about") || aURI->SchemeIs("javascript")) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  bool isImgOrStyleOrDTD = contentType == nsIContentPolicy::TYPE_IMAGE ||
-                           contentType == nsIContentPolicy::TYPE_STYLESHEET ||
-                           contentType == nsIContentPolicy::TYPE_DTD;
-  if (aURI->SchemeIs("resource")) {
-    nsAutoCString uriSpec;
-    aURI->GetSpec(uriSpec);
-    
-    if (StringBeginsWith(uriSpec, NS_LITERAL_CSTRING("resource://pdf.js/"))) {
-      return false;
-    }
-    if (!isImgOrStyleOrDTD) {
-      return true;
-    }
-  }
-  if (aURI->SchemeIs("chrome") && !isImgOrStyleOrDTD) {
-    return true;
-  }
-  if (aURI->SchemeIs("moz-icon")) {
-    return true;
-  }
-  bool match;
-  nsresult rv = NS_URIChainHasFlags(
-      aURI, nsIProtocolHandler::URI_IS_LOCAL_RESOURCE, &match);
-  if (NS_SUCCEEDED(rv) && match) {
-    return false;
-  }
-  
-  return true;
-}
-
  nsresult CSPService::ConsultCSP(nsIURI* aContentLocation,
                                              nsILoadInfo* aLoadInfo,
                                              const nsACString& aMimeTypeGuess,
@@ -132,7 +62,7 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   
   
   if (!StaticPrefs::security_csp_enable() ||
-      !subjectToCSP(aContentLocation, contentType)) {
+      !CSP_SubjectToCSP(aContentLocation, contentType)) {
     return NS_OK;
   }
 
@@ -314,7 +244,7 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
   
   nsContentPolicyType policyType = aLoadInfo->InternalContentPolicyType();
   if (!StaticPrefs::security_csp_enable() ||
-      !subjectToCSP(aNewURI, policyType)) {
+      !CSP_SubjectToCSP(aNewURI, policyType)) {
     return NS_OK;
   }
 

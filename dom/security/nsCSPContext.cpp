@@ -1627,6 +1627,14 @@ nsCSPContext::Permits(Element* aTriggeringElement,
     return NS_ERROR_FAILURE;
   }
 
+  
+  
+  
+  if (!CSP_SubjectToCSP(aURI, nsIContentPolicy::TYPE_OTHER)) {
+    *outPermits = true;
+    return NS_OK;
+  }
+
   *outPermits =
       permitsInternal(aDir, aTriggeringElement, aCSPEventListener, aURI,
                       nullptr,        

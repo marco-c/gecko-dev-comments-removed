@@ -188,6 +188,9 @@ inline CSPKeyword CSP_UTF16KeywordToEnum(const nsAString& aKey) {
   return CSP_LAST_KEYWORD_VALUE;
 }
 
+
+bool CSP_SubjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType);
+
 nsresult CSP_AppendCSPFromHeader(nsIContentSecurityPolicy* aCsp,
                                  const nsAString& aHeaderValue,
                                  bool aReportOnly);
