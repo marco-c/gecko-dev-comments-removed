@@ -90,3 +90,21 @@ function checkValue(name, value, expected) {
     checkObject(value, expected);
   }
 }
+
+
+
+
+async function triggerError(browser, expression) {
+  await ContentTask.spawn(browser, expression, function frameScript(expr) {
+    const document = content.document;
+    const container = document.createElement("script");
+    document.body.appendChild(container);
+    container.textContent = expr;
+    container.remove();
+  });
+  
+  
+
+  
+  await new Promise(res => setTimeout(res, 10));
+}
