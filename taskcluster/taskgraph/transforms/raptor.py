@@ -31,7 +31,7 @@ raptor_description_schema = Schema({
     Optional('raptor-test'): text_type,
     Optional('raptor-subtests'): optionally_keyed_by(
         'app',
-        [text_type]
+        list
     ),
     Optional('activity'): optionally_keyed_by(
         'app',
@@ -175,8 +175,8 @@ def split_raptor_subtests(config, tests):
 
             
             chunked = deepcopy(test)
-            chunked['raptor-test'] = subtest
             chunked['chunk-number'] = chunk_number
+            chunked['subtest'] = subtest
 
             yield chunked
 
@@ -188,6 +188,8 @@ def handle_keyed_by(config, tests):
         'limit-platforms',
         'activity',
         'binary-path',
+        'fetches.fetch',
+        'fission-run-on-projects',
         'max-run-time',
         'run-on-projects',
         'target',
@@ -202,6 +204,7 @@ def handle_keyed_by(config, tests):
 
 @transforms.add
 def split_pageload(config, tests):
+    
     for test in tests:
         pageload = test.pop('pageload', 'warm')
 
@@ -213,16 +216,10 @@ def split_pageload(config, tests):
             orig = deepcopy(test)
             yield orig
 
-        assert 'raptor-test' in test
+        assert 'subtest' in test
         test['description'] += " using cold pageload"
 
-        
-        
-        
-        if test['test-name'].startswith('browsertime-tp6'):
-            test['cold'] = True
-        else:
-            test['raptor-test'] += '-cold'
+        test['cold'] = True
 
         test['max-run-time'] = 3000
         test['test-name'] += '-cold'
@@ -235,24 +232,47 @@ def split_pageload(config, tests):
 
 
 @transforms.add
-def split_browsertime_page_load_by_url(config, tests):
+def split_page_load_by_url(config, tests):
     for test in tests:
         
         
         chunk_number = test.pop('chunk-number', None)
-        if not chunk_number:
+        subtest = test.pop('subtest', None)
+
+        if not chunk_number or not subtest:
             yield test
             continue
 
+        if isinstance(subtest, list):
+            subtest, subtest_symbol = subtest
+        else:
+            subtest_symbol = subtest
+            subtest = subtest
+
+        if len(subtest_symbol) > 10:
+            raise Exception(
+                "Treeherder symbol %s is lager than 10 char! Please use a different symbol."
+                % subtest_symbol)
+
+        if test['test-name'].startswith('browsertime-tp6'):
+            test['raptor-test'] = subtest
+        else:
+            
+            test['raptor-test'] = 'raptor-tp6-' + subtest + "-{}".format(test['app'])
+
         
-        test['test-name'] += "-{}".format(test['raptor-test'])
-        test['try-name'] += "-{}".format(test['raptor-test'])
+        test['test-name'] += "-{}".format(subtest)
+        test['try-name'] += "-{}".format(subtest)
 
         
         group, symbol = split_symbol(test['treeherder-symbol'])
-        symbol += "-{}".format(chunk_number)
+
+        symbol = subtest_symbol
+        if test.get("cold"):
+            symbol += "-c"
+
         test['treeherder-symbol'] = join_symbol(group, symbol)
-        test['description'] += "-{}".format(test['raptor-test'])
+        test['description'] += " on {}".format(subtest)
 
         yield test
 
@@ -280,10 +300,8 @@ def add_extra_options(config, tests):
         if 'app' in test:
             extra_options.append('--app={}'.format(test.pop('app')))
 
-        
-        if test['test-name'].startswith('browsertime-tp6'):
-            if test.pop('cold', False) is True:
-                extra_options.append('--cold')
+        if test.pop('cold', False) is True:
+            extra_options.append('--cold')
 
         if 'activity' in test:
             extra_options.append('--activity={}'.format(test.pop('activity')))
