@@ -38,8 +38,6 @@ const {
 
 Services.prefs.setBoolPref("devtools.accessibility.enabled", true);
 
-Services.prefs.setBoolPref("devtools.accessibility.auto-init.enabled", false);
-
 const SIMULATION_MENU_BUTTON_ID = "#simulation-menu-button";
 const TREE_FILTERS_MENU_ID = "accessibility-tree-filters-menu";
 const PREFS_MENU_ID = "accessibility-tree-filters-prefs-menu";
@@ -79,20 +77,21 @@ async function initA11y() {
 
 
 
-function shutdownA11y() {
-  if (!Services.appinfo.accessibilityEnabled) {
-    return Promise.resolve();
-  }
-
-  
-  Cu.forceGC();
-  Cu.forceCC();
-  Cu.forceShrinkingGC();
-
+function waitForAccessibilityShutdown() {
   return new Promise(resolve => {
+    if (!Services.appinfo.accessibilityEnabled) {
+      resolve();
+      return;
+    }
+
     const observe = (subject, topic, data) => {
       if (data === "0") {
         Services.obs.removeObserver(observe, "a11y-init-or-shutdown");
+        
+        ok(
+          !Services.appinfo.accessibilityEnabled,
+          "Accessibility disabled in this process"
+        );
         resolve();
       }
     };
@@ -101,12 +100,24 @@ function shutdownA11y() {
     
     
     Services.obs.addObserver(observe, "a11y-init-or-shutdown");
+
+    
+    SpecialPowers.gc();
+    SpecialPowers.forceShrinkingGC();
+    SpecialPowers.forceCC();
   });
+}
+
+
+
+
+async function shutdownAccessibility(browser) {
+  await waitForAccessibilityShutdown();
+  await SpecialPowers.spawn(browser, [], waitForAccessibilityShutdown);
 }
 
 registerCleanupFunction(async () => {
   info("Cleaning up...");
-  await shutdownA11y();
   Services.prefs.clearUserPref("devtools.accessibility.auto-init.enabled");
   Services.prefs.clearUserPref("devtools.accessibility.enabled");
 });
@@ -152,23 +163,6 @@ async function addTestTab(url) {
     doc,
     store,
   };
-}
-
-
-
-
-
-async function disableAccessibilityInspector(env) {
-  const { doc, win, panel } = env;
-  
-  
-  const shutdown = panel.accessibilityProxy.accessibilityFront.once("shutdown");
-  const disableButton = await BrowserTestUtils.waitForCondition(
-    () => doc.getElementById("accessibility-disable-button"),
-    "Wait for the disable button."
-  );
-  EventUtils.sendMouseEvent({ type: "click" }, disableButton, win);
-  await shutdown;
 }
 
 
@@ -813,12 +807,33 @@ function addA11yPanelTestsTask(tests, uri, msg, options) {
 
 
 
+async function closeTabToolboxAccessibility(tab = gBrowser.selectedTab) {
+  if (TargetFactory.isKnownTab(tab)) {
+    const target = await TargetFactory.forTab(tab);
+    if (target) {
+      await gDevTools.closeToolbox(target);
+    }
+  }
+
+  await shutdownAccessibility(gBrowser.getBrowserForTab(tab));
+  await removeTab(tab);
+  await new Promise(resolve => setTimeout(resolve, 0));
+}
+
+
+
+
+
+
+
+
+
 function addA11YPanelTask(msg, uri, task, options = {}) {
   add_task(async function a11YPanelTask() {
     info(msg);
     const env = await addTestTab(buildURL(uri, options));
     await task(env);
-    await disableAccessibilityInspector(env);
+    await closeTabToolboxAccessibility(env.tab);
   });
 }
 
