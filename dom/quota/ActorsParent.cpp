@@ -5303,8 +5303,7 @@ nsresult QuotaManager::InitializeOrigin(PersistenceType aPersistenceType,
     UsageInfo usageInfo;
     rv = mClients[clientType]->InitOrigin(aPersistenceType, aGroup, aOrigin,
                                            Atomic<bool>(false),
-                                          trackQuota ? &usageInfo : nullptr,
-                                           false);
+                                          trackQuota ? &usageInfo : nullptr);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       
       RECORD_IN_NIGHTLY(statusKeeper, rv);
@@ -9149,7 +9148,7 @@ nsresult QuotaUsageRequestBase::GetUsageForOrigin(
                                        mCanceled, aUsageInfo);
       } else {
         rv = client->InitOrigin(aPersistenceType, aGroup, aOrigin, mCanceled,
-                                aUsageInfo,  true);
+                                aUsageInfo);
       }
       NS_ENSURE_SUCCESS(rv, rv);
     }
