@@ -57,9 +57,9 @@ class UrlClassifierFeatureBase : public nsIUrlClassifierFeature,
   void InitializePreferences();
   void ShutdownPreferences();
 
- private:
   nsCString mName;
 
+ private:
   nsCString mPrefSkipHosts;
 
   
