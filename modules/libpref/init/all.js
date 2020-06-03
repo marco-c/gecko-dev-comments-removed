@@ -4060,18 +4060,6 @@ pref("dom.webnotifications.requireinteraction.count", 3);
 pref("alerts.showFavicons", false);
 
 
-
-
-
-
-
-#if defined(XP_WIN)
-  pref("alerts.useSystemBackend", false);
-#else
-  pref("alerts.useSystemBackend", true);
-#endif
-
-
 #ifdef XP_MACOSX
   
   pref("full-screen-api.macos-native-full-screen", false);
