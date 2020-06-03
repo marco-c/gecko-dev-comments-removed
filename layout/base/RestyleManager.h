@@ -463,7 +463,7 @@ class RestyleManager {
 
 
 
-  bool ProcessPostTraversal(Element* aElement, ComputedStyle* aParentContext,
+  bool ProcessPostTraversal(Element* aElement,
                             ServoRestyleState& aRestyleState,
                             ServoPostTraversalFlags aFlags);
 
