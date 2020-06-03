@@ -71,11 +71,9 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   
   
   
-  bool isImgOrStyleOrDTDorXBL =
-      contentType == nsIContentPolicy::TYPE_IMAGE ||
-      contentType == nsIContentPolicy::TYPE_STYLESHEET ||
-      contentType == nsIContentPolicy::TYPE_DTD ||
-      contentType == nsIContentPolicy::TYPE_XBL;
+  bool isImgOrStyleOrDTD = contentType == nsIContentPolicy::TYPE_IMAGE ||
+                           contentType == nsIContentPolicy::TYPE_STYLESHEET ||
+                           contentType == nsIContentPolicy::TYPE_DTD;
   if (aURI->SchemeIs("resource")) {
     nsAutoCString uriSpec;
     aURI->GetSpec(uriSpec);
@@ -83,11 +81,11 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
     if (StringBeginsWith(uriSpec, NS_LITERAL_CSTRING("resource://pdf.js/"))) {
       return false;
     }
-    if (!isImgOrStyleOrDTDorXBL) {
+    if (!isImgOrStyleOrDTD) {
       return true;
     }
   }
-  if (aURI->SchemeIs("chrome") && !isImgOrStyleOrDTDorXBL) {
+  if (aURI->SchemeIs("chrome") && !isImgOrStyleOrDTD) {
     return true;
   }
   if (aURI->SchemeIs("moz-icon")) {

@@ -111,8 +111,6 @@ interface nsIContentPolicy : nsISupports
 
 
 
-  const nsContentPolicyType TYPE_XBL = 9;
-
   
 
 

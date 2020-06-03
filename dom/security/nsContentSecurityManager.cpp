@@ -346,8 +346,6 @@ static nsresult DoCORSChecks(nsIChannel* aChannel, nsILoadInfo* aLoadInfo,
                      "can not perform CORS checks without a listener");
 
   
-  
-  
   if (aLoadInfo->TriggeringPrincipal()->IsSystemPrincipal()) {
     return NS_OK;
   }
@@ -419,11 +417,6 @@ static nsresult DoContentSecurityChecks(nsIChannel* aChannel,
 
     case nsIContentPolicy::TYPE_REFRESH: {
       MOZ_ASSERT(false, "contentPolicyType not supported yet");
-      break;
-    }
-
-    case nsIContentPolicy::TYPE_XBL: {
-      mimeTypeGuess = EmptyCString();
       break;
     }
 
@@ -1058,7 +1051,6 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
     return NS_OK;
   }
 
-  
   
   if (loadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
       loadInfo->GetExternalContentPolicyType() !=
