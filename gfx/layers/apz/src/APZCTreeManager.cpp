@@ -1960,21 +1960,24 @@ APZEventResult APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput) {
     
     
     
-    if (mApzcForTouchBlock && mApzcForTouchBlock->IsInPanningState() &&
-        BuildOverscrollHandoffChain(mApzcForTouchBlock)
+    if (mTouchBlockHitResult.mTargetApzc &&
+        mTouchBlockHitResult.mTargetApzc->IsInPanningState() &&
+        BuildOverscrollHandoffChain(mTouchBlockHitResult.mTargetApzc)
             ->HasOverscrolledApzc()) {
       if (mRetainedTouchIdentifier == -1) {
-        mRetainedTouchIdentifier = mApzcForTouchBlock->GetLastTouchIdentifier();
+        mRetainedTouchIdentifier =
+            mTouchBlockHitResult.mTargetApzc->GetLastTouchIdentifier();
       }
       result.mStatus = nsEventStatus_eConsumeNoDefault;
       return result;
     }
 
-    mHitResultForInputBlock = CompositorHitTestInvisibleToHit;
     HitTestResult hit = GetTouchInputBlockAPZC(aInput, &touchBehaviors);
-    mApzcForTouchBlock = hit.mTargetApzc;
-    mHitResultForInputBlock = hit.mHitResult;
-    mFixedPosSidesForInputBlock = hit.mFixedPosSides;
+    
+    mTouchBlockHitResult = HitTestResult();
+    mTouchBlockHitResult.mTargetApzc = hit.mTargetApzc;
+    mTouchBlockHitResult.mHitResult = hit.mHitResult;
+    mTouchBlockHitResult.mFixedPosSides = hit.mFixedPosSides;
     if (hit.mLayersId.IsValid()) {
       
       
@@ -2002,9 +2005,9 @@ APZEventResult APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput) {
         break;
       }
     }
-  } else if (mApzcForTouchBlock) {
+  } else if (mTouchBlockHitResult.mTargetApzc) {
     APZCTM_LOG("Re-using APZC %p as continuation of event block\n",
-               mApzcForTouchBlock.get());
+               mTouchBlockHitResult.mTargetApzc.get());
   }
 
   if (mInScrollbarTouchDrag) {
@@ -2037,18 +2040,20 @@ APZEventResult APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput) {
       }
     }
 
-    if (mApzcForTouchBlock) {
-      MOZ_ASSERT(mHitResultForInputBlock != CompositorHitTestInvisibleToHit);
+    if (mTouchBlockHitResult.mTargetApzc) {
+      MOZ_ASSERT(mTouchBlockHitResult.mHitResult !=
+                 CompositorHitTestInvisibleToHit);
 
-      mApzcForTouchBlock->GetGuid(&result.mTargetGuid);
-      result.mTargetIsRoot = mApzcForTouchBlock->IsRootContent();
+      mTouchBlockHitResult.mTargetApzc->GetGuid(&result.mTargetGuid);
+      result.mTargetIsRoot = mTouchBlockHitResult.mTargetApzc->IsRootContent();
       result.mStatus = mInputQueue->ReceiveInputEvent(
-          mApzcForTouchBlock, TargetConfirmationFlags{mHitResultForInputBlock},
-          aInput, &result.mInputBlockId,
+          mTouchBlockHitResult.mTargetApzc,
+          TargetConfirmationFlags{mTouchBlockHitResult.mHitResult}, aInput,
+          &result.mInputBlockId,
           touchBehaviors.IsEmpty() ? Nothing()
                                    : Some(std::move(touchBehaviors)));
       result.mHitRegionWithApzAwareListeners =
-          MayHaveApzAwareListeners(mHitResultForInputBlock);
+          MayHaveApzAwareListeners(mTouchBlockHitResult.mHitResult);
 
       
       
@@ -2057,9 +2062,9 @@ APZEventResult APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput) {
       
       
       ScreenToParentLayerMatrix4x4 transformToApzc =
-          GetScreenToApzcTransform(mApzcForTouchBlock);
+          GetScreenToApzcTransform(mTouchBlockHitResult.mTargetApzc);
       ParentLayerToScreenMatrix4x4 transformToGecko =
-          GetApzcToGeckoTransform(mApzcForTouchBlock);
+          GetApzcToGeckoTransform(mTouchBlockHitResult.mTargetApzc);
       ScreenToScreenMatrix4x4 outTransform = transformToApzc * transformToGecko;
 
       for (size_t i = 0; i < aInput.mTouches.Length(); i++) {
@@ -2071,12 +2076,13 @@ APZEventResult APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput) {
           return result;
         }
         touchData.mScreenPoint = *untransformedScreenPoint;
-        if (mFixedPosSidesForInputBlock != SideBits::eNone) {
+        if (mTouchBlockHitResult.mFixedPosSides != SideBits::eNone) {
           MutexAutoLock lock(mMapLock);
           touchData.mScreenPoint -=
               RoundedToInt(AsyncCompositionManager::ComputeFixedMarginsOffset(
                   GetCompositorFixedLayerMargins(lock),
-                  mFixedPosSidesForInputBlock, mGeckoFixedLayerMargins));
+                  mTouchBlockHitResult.mFixedPosSides,
+                  mGeckoFixedLayerMargins));
         }
       }
     }
@@ -2087,8 +2093,7 @@ APZEventResult APZCTreeManager::ProcessTouchInput(MultiTouchInput& aInput) {
   
   
   if (mTouchCounter.GetActiveTouchCount() == 0) {
-    mApzcForTouchBlock = nullptr;
-    mHitResultForInputBlock = CompositorHitTestInvisibleToHit;
+    mTouchBlockHitResult = HitTestResult();
     mRetainedTouchIdentifier = -1;
     mInScrollbarTouchDrag = false;
   }
@@ -2115,7 +2120,7 @@ APZEventResult APZCTreeManager::ProcessTouchInputForScrollbarDrag(
     MultiTouchInput& aTouchInput,
     const HitTestingTreeNodeAutoLock& aScrollThumbNode) {
   MOZ_ASSERT(mRetainedTouchIdentifier == -1);
-  MOZ_ASSERT(mApzcForTouchBlock);
+  MOZ_ASSERT(mTouchBlockHitResult.mTargetApzc);
   MOZ_ASSERT(aTouchInput.mTouches.Length() == 1);
 
   
@@ -2138,16 +2143,18 @@ APZEventResult APZCTreeManager::ProcessTouchInputForScrollbarDrag(
 
   APZEventResult result;
   result.mStatus = mInputQueue->ReceiveInputEvent(
-      mApzcForTouchBlock, targetConfirmed, mouseInput, &result.mInputBlockId);
+      mTouchBlockHitResult.mTargetApzc, targetConfirmed, mouseInput,
+      &result.mInputBlockId);
 
   
   
   if (aScrollThumbNode) {
-    SetupScrollbarDrag(mouseInput, aScrollThumbNode, mApzcForTouchBlock.get());
+    SetupScrollbarDrag(mouseInput, aScrollThumbNode,
+                       mTouchBlockHitResult.mTargetApzc.get());
   }
 
-  mApzcForTouchBlock->GetGuid(&result.mTargetGuid);
-  result.mTargetIsRoot = mApzcForTouchBlock->IsRootContent();
+  mTouchBlockHitResult.mTargetApzc->GetGuid(&result.mTargetGuid);
+  result.mTargetIsRoot = mTouchBlockHitResult.mTargetApzc->IsRootContent();
 
   
   
@@ -3361,12 +3368,12 @@ Maybe<ScreenIntPoint> APZCTreeManager::ConvertToGecko(
   Maybe<ScreenIntPoint> geckoPoint =
       UntransformBy(transformScreenToGecko, aPoint);
   if (geckoPoint) {
-    if (mFixedPosSidesForInputBlock != SideBits::eNone) {
+    if (mTouchBlockHitResult.mFixedPosSides != SideBits::eNone) {
       MutexAutoLock mapLock(mMapLock);
       *geckoPoint -=
           RoundedToInt(AsyncCompositionManager::ComputeFixedMarginsOffset(
               GetCompositorFixedLayerMargins(mapLock),
-              mFixedPosSidesForInputBlock, mGeckoFixedLayerMargins));
+              mTouchBlockHitResult.mFixedPosSides, mGeckoFixedLayerMargins));
     }
   }
   return geckoPoint;

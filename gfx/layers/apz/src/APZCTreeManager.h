@@ -964,18 +964,10 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  RefPtr<AsyncPanZoomController> mApzcForTouchBlock;
-  
-
-
-  gfx::CompositorHitTestInfo mHitResultForInputBlock;
-  
 
 
 
-
-
-  SideBits mFixedPosSidesForInputBlock = SideBits::eNone;
+  HitTestResult mTouchBlockHitResult;
   
 
 
