@@ -1263,10 +1263,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   
   
-  bool mShowFocusRingForContent : 1;
-
-  
-  
   bool mFocusByKeyOccurred : 1;
 
   
