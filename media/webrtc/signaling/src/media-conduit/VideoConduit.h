@@ -68,6 +68,7 @@ class WebrtcVideoDecoder : public VideoDecoder, public webrtc::VideoDecoder {};
 class WebrtcVideoConduit
     : public VideoSessionConduit,
       public webrtc::RtcpEventObserver,
+      public webrtc::RtpPacketSinkInterface,
       public webrtc::Transport,
       public webrtc::VideoEncoderFactory,
       public rtc::VideoSinkInterface<webrtc::VideoFrame>,
@@ -280,12 +281,21 @@ class WebrtcVideoConduit
                              Maybe<double>* aOutRttSec) override;
   bool GetRTCPSenderReport(unsigned int* packetsSent,
                            uint64_t* bytesSent) override;
+
+  void GetRtpSources(nsTArray<dom::RTCRtpSourceEntry>& outSources) override;
+
   uint64_t MozVideoLatencyAvg();
 
   void DisableSsrcChanges() override {
     ASSERT_ON_THREAD(mStsThread);
     mAllowSsrcChange = false;
   }
+
+  
+
+
+
+  void OnRtpPacket(const webrtc::RtpPacketReceived& packet) override;
 
   Maybe<RefPtr<VideoSessionConduit>> AsVideoSessionConduit() override {
     return Some(RefPtr<VideoSessionConduit>(this));
@@ -651,6 +661,9 @@ class WebrtcVideoConduit
 
   
   mozilla::RtcpEventObserver* mRtcpEventObserver = nullptr;
+
+  
+  RefPtr<RtpSourceObserver> mRtpSourceObserver;
 };
 }  
 
