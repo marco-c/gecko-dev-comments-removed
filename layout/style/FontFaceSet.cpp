@@ -592,7 +592,7 @@ nsresult FontFaceSet::StartLoad(gfxUserFontEntry* aUserFontEntry,
 
     
     
-    mDocument->Preloads().DeregisterPreload(&preloadKey);
+    preload->RemoveSelf(mDocument);
   } else {
     
     rv = NS_ERROR_FAILURE;
