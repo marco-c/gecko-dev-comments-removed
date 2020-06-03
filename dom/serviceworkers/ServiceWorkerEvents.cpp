@@ -508,8 +508,8 @@ class MOZ_STACK_CLASS AutoCancel {
     JS_ClearPendingException(aCx);
 
     
-    js::ErrorReport report(aCx);
-    if (!report.init(aCx, exn, js::ErrorReport::WithSideEffects)) {
+    JS::ErrorReportBuilder report(aCx);
+    if (!report.init(aCx, exn, JS::ErrorReportBuilder::WithSideEffects)) {
       JS_ClearPendingException(aCx);
       return;
     }
