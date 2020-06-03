@@ -11591,16 +11591,20 @@ CompositorHitTestInfo nsIFrame::GetCompositorHitTestInfo(
     nsIFrame* touchActionFrame = this;
     if (nsIScrollableFrame* scrollFrame =
             nsLayoutUtils::GetScrollableFrameFor(this)) {
-      touchActionFrame = do_QueryFrame(scrollFrame);
-      
-      
-      
-      
-      
-      CompositorHitTestInfo panMask(
-          CompositorHitTestFlags::eTouchActionPanXDisabled,
-          CompositorHitTestFlags::eTouchActionPanYDisabled);
-      inheritedTouchAction -= panMask;
+      ScrollStyles ss = scrollFrame->GetScrollStyles();
+      if (ss.mVertical != StyleOverflow::Hidden ||
+          ss.mHorizontal != StyleOverflow::Hidden) {
+        touchActionFrame = do_QueryFrame(scrollFrame);
+        
+        
+        
+        
+        
+        CompositorHitTestInfo panMask(
+            CompositorHitTestFlags::eTouchActionPanXDisabled,
+            CompositorHitTestFlags::eTouchActionPanYDisabled);
+        inheritedTouchAction -= panMask;
+      }
     }
 
     result += inheritedTouchAction;
