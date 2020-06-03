@@ -519,7 +519,7 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
   SizeSpec sizeSpec;
   CalcSizeSpec(features, sizeSpec);
 
-  uint32_t chromeFlags = CalculateChromeFlagsForChild(features, sizeSpec);
+  uint32_t chromeFlags = CalculateChromeFlagsForContent(features, sizeSpec);
 
   if (isPrivateBrowsingWindow) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
@@ -702,13 +702,12 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   
   
   if (isCallerChrome && XRE_IsParentProcess()) {
-    chromeFlags = CalculateChromeFlagsForParent(aParent, features, sizeSpec,
-                                                aDialog, uriToLoadIsChrome,
-                                                hasChromeParent, aCalledFromJS);
+    chromeFlags = CalculateChromeFlagsForSystem(
+        features, sizeSpec, aDialog, uriToLoadIsChrome, hasChromeParent);
   } else {
     MOZ_DIAGNOSTIC_ASSERT(parentBC && parentBC->IsContent(),
                           "content caller must provide content parent");
-    chromeFlags = CalculateChromeFlagsForChild(features, sizeSpec);
+    chromeFlags = CalculateChromeFlagsForContent(features, sizeSpec);
 
     if (aDialog) {
       MOZ_ASSERT(XRE_IsParentProcess());
@@ -1788,7 +1787,7 @@ bool nsWindowWatcher::ShouldOpenPopup(const WindowFeatures& aFeatures,
 
 
 
-uint32_t nsWindowWatcher::CalculateChromeFlagsForChild(
+uint32_t nsWindowWatcher::CalculateChromeFlagsForContent(
     const WindowFeatures& aFeatures, const SizeSpec& aSizeSpec) {
   if (aFeatures.IsEmpty()) {
     return nsIWebBrowserChrome::CHROME_ALL;
@@ -1810,12 +1809,9 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForChild(
 
 
 
-
-
-uint32_t nsWindowWatcher::CalculateChromeFlagsForParent(
-    mozIDOMWindowProxy* aParent, const WindowFeatures& aFeatures,
-    const SizeSpec& aSizeSpec, bool aDialog, bool aChromeURL,
-    bool aHasChromeParent, bool aCalledFromJS) {
+uint32_t nsWindowWatcher::CalculateChromeFlagsForSystem(
+    const WindowFeatures& aFeatures, const SizeSpec& aSizeSpec, bool aDialog,
+    bool aChromeURL, bool aHasChromeParent) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(nsContentUtils::LegacyIsCallerChromeOrNativeCode());
 
