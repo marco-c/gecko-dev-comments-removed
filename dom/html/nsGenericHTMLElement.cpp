@@ -16,6 +16,7 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/TextEditor.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_layout.h"
 
 #include "nscore.h"
@@ -1658,13 +1659,44 @@ nsIContent::IMEState nsGenericHTMLFormElement::GetDesiredIMEState() {
   return state;
 }
 
+static bool IsSameOriginAsTop(const BindContext& aContext,
+                              const nsGenericHTMLFormElement* aElement) {
+  MOZ_ASSERT(aElement);
+
+  BrowsingContext* browsingContext = aContext.OwnerDoc().GetBrowsingContext();
+  if (!browsingContext) {
+    return false;
+  }
+
+  nsPIDOMWindowOuter* topWindow = browsingContext->Top()->GetDOMWindow();
+  if (!topWindow) {
+    
+    return false;
+  }
+
+  Document* topLevelDocument = topWindow->GetExtantDoc();
+  if (!topLevelDocument) {
+    return false;
+  }
+
+  return NS_SUCCEEDED(
+      nsContentUtils::CheckSameOrigin(topLevelDocument, aElement));
+}
+
 nsresult nsGenericHTMLFormElement::BindToTree(BindContext& aContext,
                                               nsINode& aParent) {
   nsresult rv = nsGenericHTMLElement::BindToTree(aContext, aParent);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (IsAutofocusable() && HasAttr(nsGkAtoms::autofocus) &&
-      aContext.AllowsAutoFocus()) {
+  
+  
+  
+  
+  
+  
+  if (IsAutofocusable() && HasAttr(kNameSpaceID_None, nsGkAtoms::autofocus) &&
+      StaticPrefs::browser_autofocus() && IsInUncomposedDoc() &&
+      IsSameOriginAsTop(aContext, this)) {
     aContext.OwnerDoc().SetAutoFocusElement(this);
   }
 
