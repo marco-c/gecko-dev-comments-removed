@@ -183,10 +183,6 @@ gfxFontCache::gfxFontCache(nsIEventTarget* aEventTarget)
     obs->AddObserver(new Observer, "memory-pressure", false);
   }
 
-#ifdef EARLY_BETA_OR_EARLIER
-  
-  
-  
   nsIEventTarget* target = nullptr;
   if (XRE_IsContentProcess() && NS_IsMainThread()) {
     target = aEventTarget;
@@ -196,7 +192,6 @@ gfxFontCache::gfxFontCache(nsIEventTarget* aEventTarget)
                               SHAPED_WORD_TIMEOUT_SECONDS * 1000,
                               nsITimer::TYPE_REPEATING_SLACK,
                               "gfxFontCache::gfxFontCache", target);
-#endif
 }
 
 gfxFontCache::~gfxFontCache() {
