@@ -154,15 +154,6 @@ class nsIStyleSheetLinkingElement : public nsISupports {
   virtual void GetCharset(nsAString& aCharset) = 0;
 
   
-
-
-
-
-
-
-  virtual void OverrideBaseURI(nsIURI* aNewBaseURI) = 0;
-
-  
   
   
   virtual void SetLineNumber(uint32_t aLineNumber) = 0;
