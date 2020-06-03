@@ -396,6 +396,10 @@ var BrowserTestUtils = {
 
 
 
+
+
+
+
   browserLoaded(
     browser,
     includeSubFrames = false,
