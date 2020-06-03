@@ -63,10 +63,7 @@ add_task(async function check_openArticleURL() {
   
   
   await ContentTask.spawn(win.gBrowser.selectedBrowser, null, async () => {
-    let readerActor = content.windowGlobalChild.getActor("AboutReader");
-    readerActor.sendAsyncMessage("Reader:UpdateReaderButton", {
-      isArticle: true,
-    });
+    sendAsyncMessage("Reader:UpdateReaderButton", { isArticle: true });
   });
 
   await listenerTriggered.then(data =>
