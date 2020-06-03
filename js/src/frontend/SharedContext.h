@@ -92,7 +92,13 @@ class Directives {
 
 
 
-enum class ThisBinding : uint8_t { Global, Function, Module };
+
+enum class ThisBinding : uint8_t {
+  Global,
+  Module,
+  Function,
+  DerivedConstructor
+};
 
 class GlobalSharedContext;
 class EvalSharedContext;
@@ -141,7 +147,6 @@ class SharedContext {
   bool allowSuperCall_ : 1;
   bool allowArguments_ : 1;
   bool inWith_ : 1;
-  bool needsThisTDZChecks_ : 1;
 
   
   bool localStrict : 1;
@@ -207,6 +212,13 @@ class SharedContext {
   CompilationInfo& compilationInfo() const { return compilationInfo_; }
 
   ThisBinding thisBinding() const { return thisBinding_; }
+  bool hasFunctionThisBinding() const {
+    return thisBinding() == ThisBinding::Function ||
+           thisBinding() == ThisBinding::DerivedConstructor;
+  }
+  bool needsThisTDZChecks() const {
+    return thisBinding() == ThisBinding::DerivedConstructor;
+  }
 
   bool isSelfHosted() const { return selfHosted(); }
   bool allowNewTarget() const { return allowNewTarget_; }
@@ -214,7 +226,6 @@ class SharedContext {
   bool allowSuperCall() const { return allowSuperCall_; }
   bool allowArguments() const { return allowArguments_; }
   bool inWith() const { return inWith_; }
-  bool needsThisTDZChecks() const { return needsThisTDZChecks_; }
 
   bool hasExplicitUseStrict() const { return hasExplicitUseStrict_; }
   void setExplicitUseStrict() { hasExplicitUseStrict_ = true; }
