@@ -36,10 +36,8 @@ static_assert(eAuthorSheetFeatures == 0 && eUserSheetFeatures == 1 &&
               "in SheetLoadData::mParsingMode");
 
 class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
-  using MediaMatched = nsIStyleSheetLinkingElement::MediaMatched;
-  using IsAlternate = nsIStyleSheetLinkingElement::IsAlternate;
-  using IsPreload = Loader::IsPreload;
-  using UseSystemPrincipal = Loader::UseSystemPrincipal;
+  typedef nsIStyleSheetLinkingElement::MediaMatched MediaMatched;
+  typedef nsIStyleSheetLinkingElement::IsAlternate IsAlternate;
 
  protected:
   virtual ~SheetLoadData();
@@ -50,9 +48,8 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
                 StyleSheet* aSheet, bool aSyncLoad,
                 nsIStyleSheetLinkingElement* aOwningElement,
                 IsAlternate aIsAlternate, MediaMatched aMediaMatched,
-                IsPreload aIsPreload, nsICSSLoaderObserver* aObserver,
-                nsIPrincipal* aLoaderPrincipal, nsIReferrerInfo* aReferrerInfo,
-                nsINode* aRequestingNode);
+                nsICSSLoaderObserver* aObserver, nsIPrincipal* aLoaderPrincipal,
+                nsIReferrerInfo* aReferrerInfo, nsINode* aRequestingNode);
 
   
   SheetLoadData(Loader* aLoader, nsIURI* aURI, StyleSheet* aSheet,
@@ -62,7 +59,7 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
 
   
   SheetLoadData(Loader* aLoader, nsIURI* aURI, StyleSheet* aSheet,
-                bool aSyncLoad, UseSystemPrincipal, IsPreload,
+                bool aSyncLoad, bool aUseSystemPrincipal,
                 const Encoding* aPreloadEncoding,
                 nsICSSLoaderObserver* aObserver, nsIPrincipal* aLoaderPrincipal,
                 nsIReferrerInfo* aReferrerInfo, nsINode* aRequestingNode);
@@ -86,11 +83,11 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
 
   
   
-  const RefPtr<Loader> mLoader;
+  RefPtr<Loader> mLoader;
 
   
   
-  const nsString mTitle;
+  nsString mTitle;
 
   
   const Encoding* mEncoding;
@@ -102,14 +99,14 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
   uint32_t mLineNumber;
 
   
-  const RefPtr<StyleSheet> mSheet;
+  RefPtr<StyleSheet> mSheet;
 
   
   RefPtr<SheetLoadData> mNext;
 
   
   
-  const RefPtr<SheetLoadData> mParentData;
+  RefPtr<SheetLoadData> mParentData;
 
   
   uint32_t mPendingChildren;
@@ -117,12 +114,12 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
   
   
   
-  const bool mSyncLoad : 1;
+  bool mSyncLoad : 1;
 
   
   
   
-  const bool mIsNonDocumentSheet : 1;
+  bool mIsNonDocumentSheet : 1;
 
   
   
@@ -148,16 +145,16 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
 
   
   
-  const bool mWasAlternate : 1;
+  bool mWasAlternate : 1;
 
   
   
-  const bool mMediaMatched : 1;
+  bool mMediaMatched : 1;
 
   
   
   
-  const bool mUseSystemPrincipal : 1;
+  bool mUseSystemPrincipal : 1;
 
   
   
@@ -184,27 +181,28 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
   
   
   
-  const IsPreload mIsPreload;
+  
+  bool mIsLinkPreload : 1;
 
   
   
-  const nsCOMPtr<nsIStyleSheetLinkingElement> mOwningElement;
+  nsCOMPtr<nsIStyleSheetLinkingElement> mOwningElement;
 
   
-  const nsCOMPtr<nsICSSLoaderObserver> mObserver;
+  nsCOMPtr<nsICSSLoaderObserver> mObserver;
 
   
-  const nsCOMPtr<nsIPrincipal> mLoaderPrincipal;
+  nsCOMPtr<nsIPrincipal> mLoaderPrincipal;
 
   
-  const nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
+  nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
 
   
-  const nsCOMPtr<nsINode> mRequestingNode;
+  nsCOMPtr<nsINode> mRequestingNode;
 
   
   
-  const Encoding* const mPreloadEncoding;
+  const Encoding* mPreloadEncoding;
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   
@@ -224,13 +222,11 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
     }
   }
 
-  bool IsLinkPreload() const { return mIsPreload == IsPreload::FromLink; }
-
  private:
   void FireLoadEvent(nsIThreadInternal* aThread);
 };
 
-using SheetLoadDataHolder = nsMainThreadPtrHolder<SheetLoadData>;
+typedef nsMainThreadPtrHolder<SheetLoadData> SheetLoadDataHolder;
 
 }  
 }  

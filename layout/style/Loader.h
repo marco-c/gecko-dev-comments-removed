@@ -206,7 +206,7 @@ class Loader final {
       nsIURI*, SheetParsingMode = eAuthorSheetFeatures,
       UseSystemPrincipal = UseSystemPrincipal::No);
 
-  enum class IsPreload : uint8_t {
+  enum class IsPreload {
     No,
     
     
@@ -398,7 +398,7 @@ class Loader final {
 
   
   
-  nsresult LoadSheet(SheetLoadData&, SheetState);
+  nsresult LoadSheet(SheetLoadData&, SheetState, IsPreload);
 
   enum class AllowAsyncParse {
     Yes,
