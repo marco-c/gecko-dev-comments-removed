@@ -85,7 +85,7 @@ void WebRenderCanvasRendererAsync::Destroy() {
 void WebRenderCanvasRendererAsync::
     UpdateCompositableClientForEmptyTransaction() {
   bool wasDirty = IsDirty();
-  UpdateCompositableClient(mManager->GetRenderRoot());
+  UpdateCompositableClient();
   if (wasDirty && mPipelineId.isSome()) {
     
     

@@ -368,8 +368,7 @@ void ImageBridgeChild::UpdateAsyncCanvasRendererNow(
   }
 
   BeginTransaction();
-  
-  aWrapper->GetCanvasClient()->Updated(wr::RenderRoot::Default);
+  aWrapper->GetCanvasClient()->Updated();
   EndTransaction();
 }
 

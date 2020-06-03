@@ -135,7 +135,7 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
         }
         WebRenderCanvasRendererAsync* data = canvasData->GetCanvasRenderer();
         MOZ_ASSERT(data);
-        data->UpdateCompositableClient(aBuilder.GetRenderRoot());
+        data->UpdateCompositableClient();
 
         
         
