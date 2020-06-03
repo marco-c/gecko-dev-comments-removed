@@ -163,7 +163,7 @@ class ProvidersManager {
 
 
 
-  async startQuery(queryContext, controller) {
+  async startQuery(queryContext, controller = null) {
     logger.info(`Query start ${queryContext.searchString}`);
 
     
@@ -487,7 +487,9 @@ class Query {
       }
     }
 
-    this.controller.receiveResults(this.context);
+    if (this.controller) {
+      this.controller.receiveResults(this.context);
+    }
   }
 }
 
