@@ -30,23 +30,12 @@ class IDMap {
   
   typedef typename HashTable::const_iterator const_iterator;
 
-  IDMap() : next_id_(1) {}
-  IDMap(const IDMap& other) : next_id_(other.next_id_), data_(other.data_) {}
+  IDMap() {}
+  IDMap(const IDMap& other) : data_(other.data_) {}
 
   const_iterator begin() const { return data_.begin(); }
   const_iterator end() const { return data_.end(); }
 
-  
-  int32_t Add(const T& data) {
-    int32_t this_id = next_id_;
-    DCHECK(data_.find(this_id) == data_.end()) << "Inserting duplicate item";
-    data_[this_id] = data;
-    next_id_++;
-    return this_id;
-  }
-
-  
-  
   
   
   void AddWithID(const T& data, int32_t id) {
@@ -75,8 +64,6 @@ class IDMap {
     data_[id] = data;
   }
 
-  bool IsEmpty() const { return data_.empty(); }
-
   void Clear() { data_.clear(); }
 
   bool HasData(const T& data) const {
@@ -92,12 +79,7 @@ class IDMap {
     return i->second;
   }
 
-  size_t size() const { return data_.size(); }
-
  protected:
-  
-  int32_t next_id_;
-
   HashTable data_;
 };
 
