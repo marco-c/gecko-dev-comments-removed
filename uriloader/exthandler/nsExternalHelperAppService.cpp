@@ -1687,13 +1687,6 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
   }
 
   
-  if (!alwaysAsk) {
-    alwaysAsk = action != nsIMIMEInfo::saveToDisk &&
-                action != nsIMIMEInfo::useHelperApp &&
-                action != nsIMIMEInfo::useSystemDefault;
-  }
-
-  
   
   if (mForceSave) {
     alwaysAsk = false;
