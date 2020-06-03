@@ -1418,6 +1418,20 @@ bool LanguageTagParser::parseBaseName(JSContext* cx,
   return false;
 }
 
+JS::Result<bool> LanguageTagParser::tryParseBaseName(JSContext* cx,
+                                                     JSLinearString* locale,
+                                                     LanguageTag& tag) {
+  JS::AutoCheckCannotGC nogc;
+  LocaleChars localeChars = StringChars(locale, nogc);
+  LanguageTagParser ts(localeChars, locale->length());
+  Token tok = ts.nextToken();
+
+  
+  bool ok;
+  MOZ_TRY_VAR(ok, parseBaseName(cx, ts, tag, tok));
+  return ok && tok.isNone();
+}
+
 
 
 JS::Result<bool> LanguageTagParser::parseTransformExtension(

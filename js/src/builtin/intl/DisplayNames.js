@@ -54,9 +54,21 @@ function resolveDisplayNamesInternals(lazyDisplayNamesData) {
                           lazyDisplayNamesData.opt,
                           DisplayNames.relevantExtensionKeys,
                           localeData);
+    
+    internalProps.style = lazyDisplayNamesData.style;
+
+    
+    internalProps.type = lazyDisplayNamesData.type;
+
+    
+    internalProps.fallback = lazyDisplayNamesData.fallback;
 
     
     internalProps.locale = r.locale;
+
+    if (mozExtensions) {
+        internalProps.calendar = r.ca;
+    }
 
     
     
@@ -136,6 +148,41 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
     var matcher = GetOption(options, "localeMatcher", "string", ["lookup", "best fit"], "best fit");
     opt.localeMatcher = matcher;
 
+    if (mozExtensions) {
+        var calendar = GetOption(options, "calendar", "string", undefined, undefined);
+
+        if (calendar !== undefined) {
+            calendar = intl_ValidateAndCanonicalizeUnicodeExtensionType(calendar, "calendar");
+        }
+
+        opt.ca = calendar;
+    }
+
+    
+    var style = GetOption(options, "style", "string", ["narrow", "short", "long"], "long");
+
+    
+    lazyDisplayNamesData.style = style;
+
+    
+    var type;
+    if (mozExtensions) {
+        type = GetOption(options, "type", "string",
+                         ["language", "region", "script", "currency", "weekday", "month",
+                          "quarter", "dayPeriod", "dateTimeField"], "language");
+    } else {
+        type = GetOption(options, "type", "string",
+                         ["language", "region", "script", "currency"], "language");
+    }
+
+    
+    lazyDisplayNamesData.type = type;
+
+    
+    var fallback = GetOption(options, "fallback", "string", ["code", "none"], "code");
+
+    
+    lazyDisplayNamesData.fallback = fallback;
 
     
     
@@ -175,7 +222,30 @@ function Intl_DisplayNames_of(code) {
   var internals = getDisplayNamesInternals(displayNames);
 
   
-  return;
+  
+  var {locale, calendar = "", style, type} = internals;
+
+  code = ToString(code);
+
+  
+  var name = intl_ComputeDisplayName(displayNames, locale, calendar, style, type, code);
+
+  
+  
+  
+  if (name !== "") {
+      return name;
+  }
+
+  
+  if (internals.fallback === "code") {
+      
+      
+      return code;
+  }
+
+  
+  return undefined;
 }
 
 
@@ -196,7 +266,14 @@ function Intl_DisplayNames_resolvedOptions() {
     
     var options = {
         locale: internals.locale,
+        style: internals.style,
+        type: internals.type,
+        fallback: internals.fallback,
     };
+
+    if (hasOwn("calendar", internals)) {
+        options.calendar = internals.calendar;
+    }
 
     
     return options;

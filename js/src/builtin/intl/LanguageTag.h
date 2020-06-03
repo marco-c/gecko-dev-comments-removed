@@ -705,6 +705,14 @@ class MOZ_STACK_CLASS LanguageTagParser final {
                             LanguageTag& tag);
 
   
+  
+  
+  
+  static JS::Result<bool> tryParseBaseName(JSContext* cx,
+                                           JSLinearString* locale,
+                                           LanguageTag& tag);
+
+  
   static bool canParseUnicodeExtension(mozilla::Span<const char> extension);
 
   
