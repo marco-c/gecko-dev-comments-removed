@@ -101,15 +101,6 @@ impl Store {
     }
 
     
-    
-    pub fn wipe_all(&self) -> Result<()> {
-        let tx = self.db.unchecked_transaction()?;
-        api::wipe_all(&tx)?;
-        tx.commit()?;
-        Ok(())
-    }
-
-    
     pub fn bridged_engine(&self) -> sync::BridgedEngine<'_> {
         sync::BridgedEngine::new(&self.db)
     }
