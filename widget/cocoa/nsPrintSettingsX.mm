@@ -273,8 +273,7 @@ nsPrintSettingsX::SetScaling(double aScaling) {
   
   
   if (XRE_IsParentProcess()) {
-    NSMutableDictionary* printInfoDict = [mPrintInfo dictionary];
-    [printInfoDict setObject:[NSNumber numberWithFloat:aScaling] forKey:NSPrintScalingFactor];
+    [mPrintInfo setScalingFactor:CGFloat(aScaling)];
   } else {
     nsPrintSettings::SetScaling(aScaling);
   }
@@ -291,12 +290,8 @@ nsPrintSettingsX::GetScaling(double* aScaling) {
   
   
   if (XRE_IsParentProcess()) {
-    NSDictionary* printInfoDict = [mPrintInfo dictionary];
-
-    *aScaling = [[printInfoDict objectForKey:NSPrintScalingFactor] doubleValue];
-
     
-    *aScaling = round(*aScaling * 100.0) / 100.0;
+    *aScaling = round(double([mPrintInfo scalingFactor]) * 100.0) / 100.0;
   } else {
     nsPrintSettings::GetScaling(aScaling);
   }
@@ -316,11 +311,22 @@ nsPrintSettingsX::SetToFileName(const nsAString& aToFileName) {
     return nsPrintSettings::SetToFileName(aToFileName);
   }
 
-  NSMutableDictionary* printInfoDict = [mPrintInfo dictionary];
-
   if (!aToFileName.IsEmpty()) {
     NSURL* jobSavingURL = [NSURL fileURLWithPath:nsCocoaUtils::ToNSString(aToFileName)];
     if (jobSavingURL) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      NSMutableDictionary* printInfoDict = [mPrintInfo dictionary];
       [printInfoDict setObject:NSPrintSaveJob forKey:NSPrintJobDisposition];
       [printInfoDict setObject:jobSavingURL forKey:NSPrintJobSavingURL];
     }
@@ -356,13 +362,10 @@ nsPrintSettingsX::SetOrientation(int32_t aOrientation) {
   
   
   if (XRE_IsParentProcess()) {
-    NSMutableDictionary* printInfoDict = [mPrintInfo dictionary];
     if (aOrientation == nsIPrintSettings::kPortraitOrientation) {
-      [printInfoDict setObject:[NSNumber numberWithInt:NSPaperOrientationPortrait]
-                        forKey:NSPrintOrientation];
+      [mPrintInfo setOrientation:NSPaperOrientationPortrait];
     } else {
-      [printInfoDict setObject:[NSNumber numberWithInt:NSPaperOrientationLandscape]
-                        forKey:NSPrintOrientation];
+      [mPrintInfo setOrientation:NSPaperOrientationLandscape];
     }
   } else {
     nsPrintSettings::SetOrientation(aOrientation);
@@ -382,9 +385,7 @@ nsPrintSettingsX::SetUnwriteableMarginTop(double aUnwriteableMarginTop) {
   
   
   if (XRE_IsParentProcess()) {
-    NSMutableDictionary* printInfoDict = [mPrintInfo dictionary];
-    [printInfoDict setObject:[NSNumber numberWithDouble:aUnwriteableMarginTop]
-                      forKey:NSPrintTopMargin];
+    [mPrintInfo setTopMargin:aUnwriteableMarginTop];
   }
 
   return NS_OK;
@@ -401,9 +402,7 @@ nsPrintSettingsX::SetUnwriteableMarginLeft(double aUnwriteableMarginLeft) {
   
   
   if (XRE_IsParentProcess()) {
-    NSMutableDictionary* printInfoDict = [mPrintInfo dictionary];
-    [printInfoDict setObject:[NSNumber numberWithDouble:aUnwriteableMarginLeft]
-                      forKey:NSPrintLeftMargin];
+    [mPrintInfo setLeftMargin:aUnwriteableMarginLeft];
   }
 
   return NS_OK;
@@ -420,9 +419,7 @@ nsPrintSettingsX::SetUnwriteableMarginBottom(double aUnwriteableMarginBottom) {
   
   
   if (XRE_IsParentProcess()) {
-    NSMutableDictionary* printInfoDict = [mPrintInfo dictionary];
-    [printInfoDict setObject:[NSNumber numberWithDouble:aUnwriteableMarginBottom]
-                      forKey:NSPrintBottomMargin];
+    [mPrintInfo setBottomMargin:aUnwriteableMarginBottom];
   }
 
   return NS_OK;
@@ -439,9 +436,7 @@ nsPrintSettingsX::SetUnwriteableMarginRight(double aUnwriteableMarginRight) {
   
   
   if (XRE_IsParentProcess()) {
-    NSMutableDictionary* printInfoDict = [mPrintInfo dictionary];
-    [printInfoDict setObject:[NSNumber numberWithDouble:aUnwriteableMarginRight]
-                      forKey:NSPrintRightMargin];
+    [mPrintInfo setRightMargin:aUnwriteableMarginRight];
   }
 
   return NS_OK;
@@ -459,15 +454,10 @@ int nsPrintSettingsX::GetCocoaUnit(int16_t aGeckoUnit) {
 nsresult nsPrintSettingsX::SetCocoaPaperSize(double aWidth, double aHeight) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
 
-  NSSize paperSize;
-  NSMutableDictionary* printInfoDict = [mPrintInfo dictionary];
   if ([mPrintInfo orientation] == NSPaperOrientationPortrait) {
-    
-    paperSize = NSMakeSize(aWidth, aHeight);
-    [printInfoDict setObject:[NSValue valueWithSize:paperSize] forKey:NSPrintPaperSize];
+    [mPrintInfo setPaperSize:NSMakeSize(aWidth, aHeight)];
   } else {
-    paperSize = NSMakeSize(aHeight, aWidth);
-    [printInfoDict setObject:[NSValue valueWithSize:paperSize] forKey:NSPrintPaperSize];
+    [mPrintInfo setPaperSize:NSMakeSize(aHeight, aWidth)];
   }
   return NS_OK;
 
@@ -483,8 +473,7 @@ void nsPrintSettingsX::SetPrinterNameFromPrintInfo() {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(mPrintInfo);
 
-  NSMutableDictionary* printInfoDict = [mPrintInfo dictionary];
-  NSString* nsPrinterNameValue = [printInfoDict objectForKey:@"NSPrinterName"];
+  NSString* nsPrinterNameValue = [[mPrintInfo printer] name];
   if (nsPrinterNameValue) {
     nsAutoString printerName;
     nsCocoaUtils::GetStringForNSString(nsPrinterNameValue, printerName);
