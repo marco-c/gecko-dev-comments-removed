@@ -2,7 +2,7 @@ import hashlib
 import re
 import os
 from collections import deque
-from six import binary_type, iteritems, text_type
+from six import binary_type, ensure_text, iteritems, text_type
 from six.moves.urllib.parse import urljoin
 from fnmatch import fnmatch
 
@@ -190,24 +190,21 @@ class SourceFile(object):
                          ("css", "CSS2", "archive"),
                          ("css", "common")}  
 
-    def __init__(self, tests_root, rel_path, url_base, hash=None, contents=None):
+    def __init__(self, tests_root, rel_path_str, url_base, hash=None, contents=None):
         
         """Object representing a file in a source tree.
 
         :param tests_root: Path to the root of the source tree
-        :param rel_path: File path relative to tests_root
+        :param rel_path_str: File path relative to tests_root
         :param url_base: Base URL used when converting file paths to urls
         :param contents: Byte array of the contents of the file or ``None``.
         """
 
+        rel_path = ensure_text(rel_path_str)
         assert not os.path.isabs(rel_path), rel_path
-
         if os.name == "nt":
             
-            if isinstance(rel_path, binary_type):
-                rel_path = rel_path.replace(b"/", b"\\")
-            else:
-                rel_path = rel_path.replace(u"/", u"\\")
+            rel_path = rel_path.replace(u"/", u"\\")
 
         dir_path, filename = os.path.split(rel_path)
         name, ext = os.path.splitext(filename)
@@ -218,7 +215,7 @@ class SourceFile(object):
 
         meta_flags = name.split(".")[1:]
 
-        self.tests_root = tests_root  
+        self.tests_root = ensure_text(tests_root)  
         self.rel_path = rel_path  
         self.dir_path = dir_path  
         self.filename = filename  
