@@ -11,8 +11,15 @@ const NS_ERROR_FILE_NO_DEVICE_SPACE = Cr.NS_ERROR_FILE_NO_DEVICE_SPACE;
 const loggingEnabled = false;
 
 var testGenerator;
+var childScriptPaths = [];
 
 loadScript("dom/quota/test/common/xpcshell.js");
+
+
+
+function loadChildScript(path) {
+  childScriptPaths.push(depth + path);
+}
 
 function log(msg) {
   if (loggingEnabled) {
@@ -33,15 +40,34 @@ function todo(cond, msg) {
 }
 
 function run_test() {
-  runTest();
-}
+  let testHarnessGenerator;
 
-if (!this.runTest) {
-  this.runTest = function() {
-    do_get_profile();
+  function nextTestHarnessStep(val) {
+    testHarnessGenerator.next(val);
+  }
 
-    enableStorageTesting();
-    enableTesting();
+  function* testHarnessSteps() {
+    do_test_pending("testHarnessSteps");
+
+    if (Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
+      do_get_profile();
+
+      enableStorageTesting();
+      enableTesting();
+
+      registerCleanupFunction(function() {
+        resetStorageTesting();
+        resetTesting();
+      });
+
+      if (childScriptPaths.length) {
+        
+        
+        
+        run_test_in_child(childScriptPaths[0]).then(nextTestHarnessStep);
+        yield undefined;
+      }
+    }
 
     Cu.importGlobalProperties(["indexedDB", "File", "Blob", "FileReader"]);
 
@@ -53,13 +79,6 @@ if (!this.runTest) {
       "There should be a testSteps function"
     );
     if (testSteps.constructor.name === "AsyncFunction") {
-      
-      
-      registerCleanupFunction(function() {
-        resetStorageTesting();
-        resetTesting();
-      });
-
       add_task(testSteps);
 
       
@@ -71,20 +90,22 @@ if (!this.runTest) {
         "Unsupported function type"
       );
 
-      do_test_pending();
+      do_test_pending("testSteps");
 
       testGenerator = testSteps();
       testGenerator.next();
     }
-  };
+
+    do_test_finished("testHarnessSteps");
+  }
+
+  testHarnessGenerator = testHarnessSteps();
+  testHarnessGenerator.next();
 }
 
 function finishTest() {
-  resetStorageTesting();
-  resetTesting();
-
   executeSoon(function() {
-    do_test_finished();
+    do_test_finished("testSteps");
   });
 }
 
