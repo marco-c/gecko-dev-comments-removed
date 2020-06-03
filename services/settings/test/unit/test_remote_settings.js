@@ -178,13 +178,18 @@ add_task(async function test_sync_event_is_sent_even_if_up_to_date() {
     
     return;
   }
+  
+  
+  await clientWithDump._importJSONDump();
+  const uptodateTimestamp = await clientWithDump.db.getLastModified();
+  await clear_state();
+
+  
   const startHistogram = getUptakeTelemetrySnapshot(clientWithDump.identifier);
   let received;
   clientWithDump.on("sync", ({ data }) => (received = data));
-  
-  const timestamp = 1000000000000; 
 
-  await clientWithDump.maybeSync(timestamp);
+  await clientWithDump.maybeSync(uptodateTimestamp);
 
   ok(received.current.length > 0, "Dump records are listed as created");
   equal(received.current.length, received.created.length);
@@ -415,7 +420,8 @@ add_task(
     
     
     
-    await clientWithDump.maybeSync(42);
+    const uptodateTimestamp = await clientWithDump.db.getLastModified();
+    await clientWithDump.maybeSync(uptodateTimestamp);
     let metadata = await clientWithDump.db.getMetadata();
     ok(!metadata, "metadata was not fetched");
 

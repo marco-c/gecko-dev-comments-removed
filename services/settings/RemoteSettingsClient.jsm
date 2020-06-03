@@ -291,6 +291,8 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
+
+
   async getLastModified() {
     let timestamp = -1;
     try {
@@ -484,11 +486,10 @@ class RemoteSettingsClient extends EventEmitter {
           Cu.reportError(e);
         }
       }
-
       let syncResult;
       try {
         
-        if (expectedTimestamp <= collectionLastModified) {
+        if (expectedTimestamp == collectionLastModified) {
           console.debug(`${this.identifier} local data is up-to-date`);
           reportStatus = UptakeTelemetry.STATUS.UP_TO_DATE;
 
@@ -526,6 +527,7 @@ class RemoteSettingsClient extends EventEmitter {
             deleted: [],
           };
         } else {
+          
           
           
           const startSyncDB = Cu.now() * 1000;
