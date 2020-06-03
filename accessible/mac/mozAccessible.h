@@ -207,12 +207,6 @@ inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrPr
 - (BOOL)isAccessibilityElement;
 
 
-
-
-- (NSArray*)accessibilityAttributeNames;
-- (NSArray*)additionalAccessibilityAttributeNames;
-
-
 - (NSString*)description;
 
 @end

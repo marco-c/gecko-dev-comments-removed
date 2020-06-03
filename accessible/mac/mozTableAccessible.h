@@ -7,49 +7,103 @@
 
 #import "mozAccessible.h"
 
-@interface mozColumnContainer : NSObject {
+@interface mozColumnContainer : MOXAccessibleBase {
   uint32_t mIndex;
   mozAccessible* mParent;
   NSMutableArray* mChildren;
 }
 
-- (id)initWithIndex:(uint32_t)aIndex andParent:(id<mozAccessible>)aParent;
-- (NSString*)accessibilityRole;
-- (NSString*)accessibilityRoleDescription;
-- (mozAccessible*)accessibilityParent;
-- (NSArray*)accessibilityChildren;
-- (BOOL)isAccessibilityElement;
-- (void)invalidateChildren;
+
+- (id)initWithIndex:(uint32_t)aIndex andParent:(mozAccessible*)aParent;
+
+
+- (NSString*)moxRole;
+
+
+- (NSString*)moxRoleDescription;
+
+
+- (mozAccessible*)moxParent;
+
+
+- (NSArray*)moxChildren;
+
+
 - (void)dealloc;
+
+
 - (void)expire;
+
+
 - (BOOL)isExpired;
-- (BOOL)accessibilityNotifiesWhenDestroyed;
+
+- (void)invalidateChildren;
+
 @end
 
 @interface mozTablePartAccessible : mozAccessible
-- (id)accessibilityAttributeValue:(NSString*)attribute;
-- (BOOL)isLayoutTablePart;
+
+
+- (NSString*)moxTitle;
+
+
 - (NSString*)moxRole;
+
+- (BOOL)isLayoutTablePart;
+
 @end
 
 @interface mozTableAccessible : mozTablePartAccessible {
   NSMutableArray* mColContainers;
 }
-- (NSArray*)moxChildren;
-- (NSArray*)additionalAccessibilityAttributeNames;
-- (id)accessibilityAttributeValue:(NSString*)attribute;
+
 - (void)invalidateColumns;
+
+
 - (void)handleAccessibleEvent:(uint32_t)eventType;
+
+
 - (void)dealloc;
+
+
+- (NSNumber*)moxRowCount;
+
+
+- (NSNumber*)moxColumnCount;
+
+
+- (NSArray*)moxRows;
+
+
+- (NSArray*)moxColumns;
+
+
+- (NSArray*)moxChildren;
+
 @end
 
 @interface mozTableRowAccessible : mozTablePartAccessible
-- (NSArray*)additionalAccessibilityAttributeNames;
+
+
 - (void)handleAccessibleEvent:(uint32_t)eventType;
-- (id)accessibilityAttributeValue:(NSString*)attribute;
+
+
+- (NSNumber*)moxIndex;
+
 @end
 
 @interface mozTableCellAccessible : mozTablePartAccessible
-- (NSArray*)additionalAccessibilityAttributeNames;
-- (id)accessibilityAttributeValue:(NSString*)attribute;
+
+
+- (NSValue*)moxRowIndexRange;
+
+
+- (NSValue*)moxColumnIndexRange;
+
+
+- (NSArray*)moxRowHeaderUIElements;
+
+
+- (NSArray*)moxColumnHeaderUIElements;
+
 @end
