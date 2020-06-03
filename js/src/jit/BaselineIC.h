@@ -661,26 +661,17 @@ class ICFallbackStub : public ICStub {
   
   uint32_t enteredCount_;
 
-  
-  
-  
-  
-  
-  ICStub** lastStubPtrAddr_;
-
   ICFallbackStub(Kind kind, TrampolinePtr stubCode)
       : ICStub(kind, ICStub::Fallback, stubCode.value),
         icEntry_(nullptr),
         state_(),
-        enteredCount_(0),
-        lastStubPtrAddr_(nullptr) {}
+        enteredCount_(0) {}
 
   ICFallbackStub(Kind kind, Trait trait, TrampolinePtr stubCode)
       : ICStub(kind, trait, stubCode.value),
         icEntry_(nullptr),
         state_(),
-        enteredCount_(0),
-        lastStubPtrAddr_(nullptr) {
+        enteredCount_(0) {
     MOZ_ASSERT(trait == ICStub::Fallback || trait == ICStub::MonitoredFallback);
   }
 
@@ -694,21 +685,16 @@ class ICFallbackStub : public ICStub {
   
   
   
-  
   void fixupICEntry(ICEntry* icEntry) {
     MOZ_ASSERT(icEntry_ == nullptr);
-    MOZ_ASSERT(lastStubPtrAddr_ == nullptr);
     icEntry_ = icEntry;
-    lastStubPtrAddr_ = icEntry_->addressOfFirstStub();
   }
 
   
   void addNewStub(ICStub* stub) {
-    MOZ_ASSERT(*lastStubPtrAddr_ == this);
     MOZ_ASSERT(stub->next() == nullptr);
-    stub->setNext(this);
-    *lastStubPtrAddr_ = stub;
-    lastStubPtrAddr_ = stub->addressOfNext();
+    stub->setNext(icEntry_->firstStub());
+    icEntry_->setFirstStub(stub);
     state_.trackAttached();
   }
 
