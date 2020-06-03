@@ -3623,6 +3623,18 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void typeOfObject(Register objReg, Register scratch, Label* slow,
                     Label* isObject, Label* isCallable, Label* isUndefined);
 
+  
+  void isCallable(Register obj, Register output, Label* isProxy) {
+    isCallableOrConstructor(true, obj, output, isProxy);
+  }
+  void isConstructor(Register obj, Register output, Label* isProxy) {
+    isCallableOrConstructor(false, obj, output, isProxy);
+  }
+
+ private:
+  void isCallableOrConstructor(bool isCallable, Register obj, Register output,
+                               Label* isProxy);
+
  public:
   
   void generateBailoutTail(Register scratch, Register bailoutInfo);
