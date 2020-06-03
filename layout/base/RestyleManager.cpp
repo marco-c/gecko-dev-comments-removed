@@ -922,9 +922,8 @@ static bool ContainingBlockChangeAffectsDescendants(
   
   MOZ_ASSERT_IF(aIsFixedPosContainingBlock, aIsAbsPosContainingBlock);
 
-  for (nsIFrame::ChildListIterator lists(aFrame); !lists.IsDone();
-       lists.Next()) {
-    for (nsIFrame* f : lists.CurrentList()) {
+  for (const auto& childList : aFrame->GetChildLists()) {
+    for (nsIFrame* f : childList.mList) {
       if (f->IsPlaceholderFrame()) {
         nsIFrame* outOfFlow = nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
         
@@ -1103,9 +1102,8 @@ static void SyncViewsAndInvalidateDescendants(nsIFrame* aFrame,
 
   aFrame->SyncFrameViewProperties();
 
-  nsIFrame::ChildListIterator lists(aFrame);
-  for (; !lists.IsDone(); lists.Next()) {
-    for (nsIFrame* child : lists.CurrentList()) {
+  for (const auto& [list, listID] : aFrame->GetChildLists()) {
+    for (nsIFrame* child : list) {
       if (!(child->GetStateBits() & NS_FRAME_OUT_OF_FLOW)) {
         
         if (child->IsPlaceholderFrame()) {
@@ -1113,7 +1111,7 @@ static void SyncViewsAndInvalidateDescendants(nsIFrame* aFrame,
           nsIFrame* outOfFlowFrame =
               nsPlaceholderFrame::GetRealFrameForPlaceholder(child);
           DoApplyRenderingChangeToTree(outOfFlowFrame, aChange);
-        } else if (lists.CurrentID() == nsIFrame::kPopupList) {
+        } else if (listID == nsIFrame::kPopupList) {
           DoApplyRenderingChangeToTree(child, aChange);
         } else {  
           SyncViewsAndInvalidateDescendants(child, aChange);
@@ -1174,9 +1172,8 @@ static void AddSubtreeToOverflowTracker(
     aOverflowChangedTracker.AddFrame(aFrame,
                                      OverflowChangedTracker::CHILDREN_CHANGED);
   }
-  nsIFrame::ChildListIterator lists(aFrame);
-  for (; !lists.IsDone(); lists.Next()) {
-    for (nsIFrame* child : lists.CurrentList()) {
+  for (const auto& childList : aFrame->GetChildLists()) {
+    for (nsIFrame* child : childList.mList) {
       AddSubtreeToOverflowTracker(child, aOverflowChangedTracker);
     }
   }
@@ -3565,9 +3562,8 @@ void RestyleManager::ReparentFrameDescendants(nsIFrame* aFrame,
     
     return;
   }
-  nsIFrame::ChildListIterator lists(aFrame);
-  for (; !lists.IsDone(); lists.Next()) {
-    for (nsIFrame* child : lists.CurrentList()) {
+  for (const auto& childList : aFrame->GetChildLists()) {
+    for (nsIFrame* child : childList.mList) {
       
       if (!(child->GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&
           child != aProviderChild) {
