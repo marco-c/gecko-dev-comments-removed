@@ -15,7 +15,6 @@
 
 
 
-
 assert(compareArray(["fst", "snd"],
              Object.getOwnPropertyNames(
                  /(?<fst>.)|(?<snd>.)/u.exec("abcd").groups)));

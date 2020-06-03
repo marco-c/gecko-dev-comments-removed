@@ -15,7 +15,6 @@
 
 
 
-
 let source = "(?<fst>.)(?<snd>.)";
 let alternateSource = "(?<fst>.)|(?<snd>.)";
 

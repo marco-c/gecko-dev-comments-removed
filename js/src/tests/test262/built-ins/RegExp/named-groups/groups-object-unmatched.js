@@ -15,7 +15,6 @@
 
 
 
-
 const re = /(?<a>a).|(?<x>x)/;
 const result = re.exec("ab");
 assert.sameValue(Object.getPrototypeOf(result), Array.prototype);

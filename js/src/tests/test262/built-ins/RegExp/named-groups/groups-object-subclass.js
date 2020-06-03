@@ -15,7 +15,6 @@
 
 
 
-
 class FakeRegExp extends RegExp {
   exec(subject) {
     const fakeResult = ["ab", "a"];

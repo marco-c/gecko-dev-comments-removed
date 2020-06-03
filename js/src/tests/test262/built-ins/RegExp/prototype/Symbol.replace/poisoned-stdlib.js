@@ -7,7 +7,6 @@
 
 
 
-
 assert(delete Array.prototype.concat);
 assert(delete Array.prototype.push);
 assert(delete Array.prototype[Symbol.iterator]);

@@ -7,7 +7,6 @@
 
 
 
-
 assert.throws(SyntaxError, () => eval("/(?<a\uD801>.)/"), "Lead");
 assert.throws(SyntaxError, () => eval("/(?<a\uDCA4>.)/"), "Trail");
 assert.throws(SyntaxError, () => eval("/(?<a\uD801>.)/u"), "Lead with u flag");

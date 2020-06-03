@@ -22,7 +22,6 @@
 
 
 
-
 assert(compareArray(["bab", "b"], "bab".match(/(?<b>.).\k<b>/u)));
 assert.sameValue(null, "baa".match(/(?<b>.).\k<b>/u));
 

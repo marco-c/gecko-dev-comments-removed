@@ -15,7 +15,6 @@
 
 
 
-
 const re = /./;
 const result = re.exec("a");
 assert.sameValue(Object.getPrototypeOf(result), Array.prototype);

@@ -9,7 +9,6 @@
 
 
 
-
 assert(compareArray(["f", "c"], "abcdef".match(/(?<=(?<a>\w){3})f/u)));
 assert.sameValue("c", "abcdef".match(/(?<=(?<a>\w){3})f/u).groups.a);
 assert.sameValue("b", "abcdef".match(/(?<=(?<a>\w){4})f/u).groups.a);
