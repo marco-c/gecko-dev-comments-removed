@@ -3,6 +3,8 @@
 
 
 
+loadChildScript("dom/quota/test/xpcshell/test_listOrigins.js");
+
 async function testSteps() {
   const origins = [
     "https://example.com",
