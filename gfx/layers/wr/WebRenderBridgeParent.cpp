@@ -1983,28 +1983,23 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvClearCachedResources() {
     return IPC_OK();
   }
 
-  for (auto renderRoot : wr::kRenderRoots) {
-    if (renderRoot == wr::RenderRoot::Default) {
-      if (mRenderRoot) {
-        
-        wr::TransactionBuilder txn;
-        txn.SetLowPriority(true);
-        txn.ClearDisplayList(GetNextWrEpoch(), mPipelineId);
-        txn.Notify(wr::Checkpoint::SceneBuilt,
-                   MakeUnique<ScheduleObserveLayersUpdate>(
-                       mCompositorBridge, GetLayersId(),
-                       mChildLayersObserverEpoch, false));
-        mApi->SendTransaction(txn);
-      } else {
-        if (RefPtr<WebRenderBridgeParent> root =
-                GetRootWebRenderBridgeParent()) {
-          root->RemoveDeferredPipeline(mPipelineId);
-        }
-      }
+  if (mRenderRoot) {
+    
+    wr::TransactionBuilder txn;
+    txn.SetLowPriority(true);
+    txn.ClearDisplayList(GetNextWrEpoch(), mPipelineId);
+    txn.Notify(wr::Checkpoint::SceneBuilt,
+               MakeUnique<ScheduleObserveLayersUpdate>(
+                   mCompositorBridge, GetLayersId(), mChildLayersObserverEpoch,
+                   false));
+    mApi->SendTransaction(txn);
+  } else {
+    if (RefPtr<WebRenderBridgeParent> root = GetRootWebRenderBridgeParent()) {
+      root->RemoveDeferredPipeline(mPipelineId);
     }
   }
-  
 
+  
   ScheduleGenerateFrame();
 
   
@@ -2082,13 +2077,9 @@ void WebRenderBridgeParent::InvalidateRenderedFrame() {
     return;
   }
 
-  for (auto renderRoot : wr::kRenderRoots) {
-    if (renderRoot == wr::RenderRoot::Default) {
-      wr::TransactionBuilder fastTxn( false);
-      fastTxn.InvalidateRenderedFrame();
-      mApi->SendTransaction(fastTxn);
-    }
-  }
+  wr::TransactionBuilder fastTxn( false);
+  fastTxn.InvalidateRenderedFrame();
+  mApi->SendTransaction(fastTxn);
 }
 
 void WebRenderBridgeParent::ScheduleForcedGenerateFrame() {
