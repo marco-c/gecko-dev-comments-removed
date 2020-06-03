@@ -572,6 +572,9 @@ void Promise::ReportRejectedPromise(JSContext* aCx, JS::HandleObject aPromise) {
   }
 
   
+  xpcReport->mIsPromiseRejection = true;
+
+  
   RefPtr<AsyncErrorReporter> event = new AsyncErrorReporter(xpcReport);
   if (win) {
     if (!win->IsDying()) {

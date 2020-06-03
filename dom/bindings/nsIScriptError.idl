@@ -89,6 +89,11 @@ interface nsIScriptError : nsIConsoleMessage
     readonly attribute boolean isFromChromeContext;
 
     
+    readonly attribute boolean isPromiseRejection;
+
+    [noscript] void initIsPromiseRejection(in bool isPromiseRejection);
+
+    
     
     
     
