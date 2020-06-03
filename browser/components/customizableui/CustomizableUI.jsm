@@ -1464,7 +1464,10 @@ var CustomizableUIInternal = {
 
     while (++nodeIndex < placements.length) {
       let nextNodeId = placements[nodeIndex];
-      let nextNode = aNode.ownerDocument.getElementById(nextNodeId);
+      
+      
+      
+      let nextNode = aAreaNode.ownerDocument.getElementById(nextNodeId);
       
       
       
@@ -1861,7 +1864,9 @@ var CustomizableUIInternal = {
       return;
     }
 
-    let document = aShortcutNode.ownerDocument;
+    
+    
+    let { document } = aShortcutNode.ownerGlobal;
     let shortcutId = aShortcutNode.getAttribute("key");
     let shortcut;
     if (shortcutId) {
@@ -4354,7 +4359,9 @@ var CustomizableUI = {
       "style",
     ];
 
-    let doc = aSubview.ownerDocument;
+    
+    
+    let doc = aSubview.ownerGlobal.document;
     let fragment = doc.createDocumentFragment();
     for (let menuChild of aMenuItems) {
       if (menuChild.hidden) {
@@ -4662,7 +4669,7 @@ function XULWidgetSingleWrapper(aWidgetId, aNode, aDocument) {
     }
     if (aNode) {
       
-      if (aNode.ownerDocument.contains(aNode)) {
+      if (aNode.isConnected) {
         return aNode;
       }
       
@@ -5293,7 +5300,9 @@ OverflowableToolbar.prototype = {
     while (++loopIndex < placements.length) {
       let nextNodeId = placements[loopIndex];
       if (loopIndex > nodeIndex) {
-        let nextNode = aNode.ownerDocument.getElementById(nextNodeId);
+        
+        
+        let nextNode = this._toolbar.ownerDocument.getElementById(nextNodeId);
         
         
         
