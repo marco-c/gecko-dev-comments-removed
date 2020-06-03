@@ -46,7 +46,26 @@ class UrlbarValueFormatter {
     return this.urlbarInput.querySelector("#urlbar-scheme");
   }
 
-  update() {
+  async update() {
+    
+    
+    
+    
+    
+    
+    
+    if (!this.window.gBrowserInit.delayedStartupFinished) {
+      return;
+    }
+    if (!Services.search.isInitialized) {
+      let instance = (this._updateInstance = {});
+      await Services.search.init();
+      if (this._updateInstance != instance) {
+        return;
+      }
+      delete this._updateInstance;
+    }
+
     
     this.urlbarInput.removeAttribute("domaindir");
     this.scheme.value = "";
