@@ -284,6 +284,10 @@ class MachCommands(MachCommandBase):
         from mozlog.handlers import StreamHandler
         from moztest.resolve import get_suite_definition
 
+        
+        
+        self._activate_virtualenv()
+
         buildapp = None
         for app in SUPPORTED_APPS:
             if conditions.is_buildapp_in(self, apps=[app]):
