@@ -382,12 +382,10 @@ class RemoteSettingsClient extends EventEmitter {
       let metadata = await this.db.getMetadata();
       if (syncIfEmpty && ObjectUtils.isEmpty(metadata)) {
         
-        console.debug(
-          `${this.identifier} Required metadata, fetching from server.`
-        );
-        metadata = await this.httpClient().getData();
-        await this.db.saveMetadata(metadata);
+        await this.sync({ loadDump: false });
+        metadata = await this.db.getMetadata();
       }
+      
       await this._validateCollectionSignature(
         localRecords,
         timestamp,
