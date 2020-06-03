@@ -22,11 +22,6 @@
 @end
 
 
-@interface mozRadioButtonAccessible : mozCheckboxAccessible
-- (id)accessibilityAttributeValue:(NSString*)attribute;
-@end
-
-
 
 
 @interface mozPaneAccessible : mozAccessible
