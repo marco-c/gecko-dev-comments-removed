@@ -71,8 +71,33 @@ class ShmSegmentsReader {
 
   bool Read(const layers::OffsetRange& aRange, wr::Vec<uint8_t>& aInto);
 
+  
+  
+  
+  Maybe<Range<uint8_t>> GetReadPointer(const layers::OffsetRange& aRange);
+
+  
+  
+  
+  Maybe<Range<uint8_t>> GetReadPointerOrCopy(const layers::OffsetRange& aRange,
+                                             wr::Vec<uint8_t>& aInto) {
+    if (Maybe<Range<uint8_t>> ptr = GetReadPointer(aRange)) {
+      return ptr;
+    } else {
+      size_t initialLength = aInto.Length();
+      if (Read(aRange, aInto)) {
+        return Some(Range<uint8_t>(aInto.Data() + initialLength,
+                                   aInto.Length() - initialLength));
+      } else {
+        return Nothing();
+      }
+    }
+  }
+
  protected:
   bool ReadLarge(const layers::OffsetRange& aRange, wr::Vec<uint8_t>& aInto);
+
+  Maybe<Range<uint8_t>> GetReadPointerLarge(const layers::OffsetRange& aRange);
 
   const nsTArray<layers::RefCountedShmem>& mSmallAllocs;
   const nsTArray<mozilla::ipc::Shmem>& mLargeAllocs;
@@ -87,9 +112,8 @@ class IpcResourceUpdateQueue {
   
   
   
-  explicit IpcResourceUpdateQueue(
-      layers::WebRenderBridgeChild* aAllocator,
-      size_t aChunkSize = 57328);
+  explicit IpcResourceUpdateQueue(layers::WebRenderBridgeChild* aAllocator,
+                                  size_t aChunkSize = 57328);
 
   IpcResourceUpdateQueue(IpcResourceUpdateQueue&& aOther) noexcept;
   IpcResourceUpdateQueue& operator=(IpcResourceUpdateQueue&& aOther) noexcept;
