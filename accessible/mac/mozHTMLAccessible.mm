@@ -41,55 +41,13 @@
 
 @end
 
-@interface mozLinkAccessible ()
-- (NSURL*)url;
-@end
-
 @implementation mozLinkAccessible
-
-- (NSArray*)accessibilityAttributeNames {
-  
-  if ([self isExpired]) {
-    return @[];
-  }
-
-  if (![self stateWithMask:states::LINKED]) {
-    
-    return [super accessibilityAttributeNames];
-  }
-
-  static NSMutableArray* attributes = nil;
-
-  if (!attributes) {
-    attributes = [[super accessibilityAttributeNames] mutableCopy];
-    [attributes addObject:NSAccessibilityURLAttribute];
-    [attributes addObject:@"AXVisited"];
-  }
-
-  return attributes;
-}
-
-- (id)accessibilityAttributeValue:(NSString*)attribute {
-  if ([self stateWithMask:states::LINKED]) {
-    
-    if ([attribute isEqualToString:NSAccessibilityURLAttribute]) return [self url];
-    if ([attribute isEqualToString:@"AXVisited"]) {
-      return [NSNumber numberWithBool:[self stateWithMask:states::TRAVERSED] != 0];
-    }
-  }
-
-  return [super accessibilityAttributeValue:attribute];
-}
-
-- (NSString*)customDescription {
-  return @"";
-}
 
 - (NSString*)moxValue {
   return @"";
 }
 
-- (NSURL*)url {
+- (NSURL*)moxURL {
   nsAutoString value;
   if (Accessible* acc = mGeckoAccessible.AsAccessible()) {
     acc->Value(value);
@@ -101,6 +59,10 @@
   if (!urlString) return nil;
 
   return [NSURL URLWithString:urlString];
+}
+
+- (NSNumber*)moxVisited {
+  return @([self stateWithMask:states::TRAVERSED] != 0);
 }
 
 - (NSString*)moxRole {

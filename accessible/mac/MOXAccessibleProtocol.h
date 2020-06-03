@@ -97,7 +97,7 @@
 - (NSString* _Nullable)moxDOMIdentifier;
 
 
-- (NSURL* _Nullable)moxUrl;
+- (NSURL* _Nullable)moxURL;
 
 
 - (NSString* _Nullable)moxPopupValue;
