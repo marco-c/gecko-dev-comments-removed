@@ -121,7 +121,25 @@ class UptakeTelemetry {
 
 
 
+
+
+
+
+
   static get STATUS() {
+    return {
+      ...UptakeTelemetry.HISTOGRAM_LABELS,
+      
+      SHUTDOWN_ERROR: "shutdown_error",
+      CORRUPTION_ERROR: "corruption_error",
+    };
+  }
+
+  
+
+
+
+  static get HISTOGRAM_LABELS() {
     return {
       UP_TO_DATE: "up_to_date",
       SUCCESS: "success",
@@ -199,10 +217,13 @@ class UptakeTelemetry {
     }
 
     
-    
-    Services.telemetry
-      .getKeyedHistogramById(TELEMETRY_HISTOGRAM_ID)
-      .add(source, status);
+    if (Object.values(UptakeTelemetry.HISTOGRAM_LABELS).includes(status)) {
+      
+      
+      Services.telemetry
+        .getKeyedHistogramById(TELEMETRY_HISTOGRAM_ID)
+        .add(source, status);
+    }
   }
 }
 

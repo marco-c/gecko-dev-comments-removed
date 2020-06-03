@@ -9,6 +9,9 @@ const { RemoteSettings } = ChromeUtils.import(
 const { UptakeTelemetry } = ChromeUtils.import(
   "resource://services-common/uptake-telemetry.js"
 );
+const { TelemetryTestUtils } = ChromeUtils.import(
+  "resource://testing-common/TelemetryTestUtils.jsm"
+);
 
 const PREF_SETTINGS_SERVER = "services.settings.server";
 const PREF_SIGNATURE_ROOT = "security.content.signature.root_hash";
@@ -590,6 +593,7 @@ add_task(async function test_check_synchronization_with_signatures() {
   
   
   await client.db.clear();
+  await client.db.saveMetadata({ signature: { x5u, signature: "abc" } });
   await client.db.create(
     { ...RECORD2, last_modified: 1234567890, serialNumber: "abc" },
     { synced: true, useRecordId: true }
@@ -602,8 +606,31 @@ add_task(async function test_check_synchronization_with_signatures() {
     syncData = data;
   });
 
-  await client.maybeSync(5000);
+  
+  TelemetryTestUtils.assertEvents([], {}, { process: "dummy" });
 
+  await withFakeChannel("nightly", async () => {
+    
+    await client.maybeSync(5000);
+
+    
+    TelemetryTestUtils.assertEvents([
+      [
+        "uptake.remotecontent.result",
+        "uptake",
+        "remotesettings",
+        UptakeTelemetry.STATUS.CORRUPTION_ERROR,
+        {
+          source: client.identifier,
+          duration: v => v > 0,
+          trigger: "manual",
+        },
+      ],
+    ]);
+  });
+
+  
+  
   
   
   
@@ -636,7 +663,7 @@ add_task(async function test_check_synchronization_with_signatures() {
       metadata: {
         signature: {
           x5u,
-          signature: "wrong-sig-here-too",
+          signature: "aaaaaaaaaaaaaaaaaaaaaaaa", 
         },
       },
       changes: [
@@ -677,7 +704,7 @@ add_task(async function test_check_synchronization_with_signatures() {
       (await client.get()).map(r => r.id),
       [RECORD3.id, RECORD2.id]
     ),
-    "Remote changes were not changed"
+    "Local records were not changed"
   );
   
   await client.get({ verifySignature: true }); 
@@ -703,54 +730,4 @@ add_task(async function test_check_synchronization_with_signatures() {
   }
   
   equal((await client.get()).length, 0, "Local database is now empty.");
-
-  
-  
-  
-  
-  
-  
-
-  const RESPONSE_NO_SIG = {
-    sampleHeaders: [
-      "Content-Type: application/json; charset=UTF-8",
-      `ETag: \"123456\"`,
-    ],
-    status: { status: 200, statusText: "OK" },
-    responseBody: JSON.stringify({
-      metadata: {
-        last_modified: 123456,
-      },
-      changes: [],
-      timestamp: 123456,
-    }),
-  };
-
-  const missingSigResponses = {
-    
-    
-    "GET:/v1/buckets/main/collections/signed/changeset?_expected=6000": [
-      RESPONSE_NO_SIG,
-    ],
-  };
-
-  
-  equal((await client.get()).length, 0);
-
-  startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
-  registerHandlers(missingSigResponses);
-  try {
-    await client.maybeSync(6000);
-    do_throw("Sync should fail (the signature is missing)");
-  } catch (e) {
-    equal((await client.get()).length, 0, "Local remains empty");
-  }
-
-  
-  endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
-  expectedIncrements = {
-    [UptakeTelemetry.STATUS.SIGNATURE_ERROR]: 1,
-    [UptakeTelemetry.STATUS.SIGNATURE_RETRY_ERROR]: 0, 
-  };
-  checkUptakeTelemetry(startHistogram, endHistogram, expectedIncrements);
 });

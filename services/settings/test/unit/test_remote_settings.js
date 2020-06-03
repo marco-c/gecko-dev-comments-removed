@@ -6,6 +6,9 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
+const { ObjectUtils } = ChromeUtils.import(
+  "resource://gre/modules/ObjectUtils.jsm"
+);
 
 const IS_ANDROID = AppConstants.platform == "android";
 
@@ -66,6 +69,10 @@ function run_test() {
   server.registerPathHandler("/v1/", handleResponse);
   server.registerPathHandler(
     "/v1/buckets/monitor/collections/changes/records",
+    handleResponse
+  );
+  server.registerPathHandler(
+    "/v1/buckets/main/collections/password-fields",
     handleResponse
   );
   server.registerPathHandler(
@@ -304,7 +311,7 @@ add_task(async function test_get_ignores_synchronization_errors() {
 });
 add_task(clear_state);
 
-add_task(async function test_get_can_verify_signature() {
+add_task(async function test_get_verify_signature_no_sync() {
   
   let error;
   try {
@@ -313,7 +320,35 @@ add_task(async function test_get_can_verify_signature() {
     error = e;
   }
   equal(error.message, "Missing signature (main/password-fields)");
+});
+add_task(clear_state);
 
+add_task(async function test_get_can_verify_signature_pulled() {
+  
+  await client._importJSONDump();
+
+  let calledSignature;
+  client._verifier = {
+    async asyncVerifyContentSignature(serialized, signature) {
+      calledSignature = signature;
+      return true;
+    },
+  };
+
+  
+  ok(ObjectUtils.isEmpty(await client.db.getMetadata()), "Metadata is empty");
+
+  await client.get({ verifySignature: true });
+
+  ok(
+    !ObjectUtils.isEmpty(await client.db.getMetadata()),
+    "Metadata was pulled"
+  );
+  ok(calledSignature.endsWith("some-sig"), "Signature was verified");
+});
+add_task(clear_state);
+
+add_task(async function test_get_can_verify_signature() {
   
   await client.maybeSync(2000);
 
@@ -325,12 +360,14 @@ add_task(async function test_get_can_verify_signature() {
       return JSON.parse(serialized).data.length == 1;
     },
   };
+  ok(await Utils.hasLocalData(client), "Local data was populated");
   await client.get({ verifySignature: true });
-  ok(calledSignature.endsWith("abcdef"));
+
+  ok(calledSignature.endsWith("abcdef"), "Signature was verified");
 
   
   await client.db.delete("9d500963-d80e-3a91-6e74-66f3811b99cc");
-  error = null;
+  let error = null;
   try {
     await client.get({ verifySignature: true });
   } catch (e) {
@@ -967,7 +1004,9 @@ wNuvFqc=
       ],
       status: { status: 200, statusText: "OK" },
       responseBody: {
-        metadata: {},
+        metadata: {
+          signature: {},
+        },
         timestamp: 4000,
         changes: [
           {
@@ -995,7 +1034,9 @@ wNuvFqc=
       ],
       status: { status: 200, statusText: "OK" },
       responseBody: {
-        metadata: {},
+        metadata: {
+          signature: {},
+        },
         timestamp: 5000,
         changes: [
           {
@@ -1084,6 +1125,24 @@ wNuvFqc=
         ],
       },
     },
+    "GET:/v1/buckets/main/collections/password-fields": {
+      sampleHeaders: [
+        "Access-Control-Allow-Origin: *",
+        "Access-Control-Expose-Headers: Retry-After, Content-Length, Alert, Backoff",
+        "Content-Type: application/json; charset=UTF-8",
+        "Server: waitress",
+        'Etag: "3000"',
+      ],
+      status: { status: 200, statusText: "OK" },
+      responseBody: {
+        data: {
+          signature: {
+            signature: "some-sig",
+            x5u: `http://localhost:${port}/fake-x5u`,
+          },
+        },
+      },
+    },
     "GET:/v1/buckets/main/collections/password-fields/changeset?_expected=1337": {
       sampleHeaders: [
         "Access-Control-Allow-Origin: *",
@@ -1094,7 +1153,9 @@ wNuvFqc=
       ],
       status: { status: 200, statusText: "OK" },
       responseBody: {
-        metadata: {},
+        metadata: {
+          signature: {},
+        },
         timestamp: 3000,
         changes: [
           {
@@ -1202,7 +1263,9 @@ wNuvFqc=
       status: { status: 200, statusText: "OK" },
       responseBody: {
         timestamp: 3000,
-        metadata: {},
+        metadata: {
+          signature: {},
+        },
         changes: [
           {
             id: "1f5c98b9-6d93-4c13-aa26-978b38695096",
