@@ -552,7 +552,7 @@ nsUnknownContentTypeDialog.prototype = {
       
       this.dialogElement("mode").selectedItem = this.dialogElement("save");
     } else {
-      this.initAppAndSaveToDiskValues();
+      this.initInteractiveControls();
 
       
       
@@ -622,7 +622,6 @@ nsUnknownContentTypeDialog.prototype = {
     this.dialogElement("mode").focus();
   },
 
-  
   initIntro(url, filename, displayname) {
     this.dialogElement("location").value = displayname;
     this.dialogElement("location").setAttribute("realname", filename);
@@ -728,7 +727,6 @@ nsUnknownContentTypeDialog.prototype = {
     }
   },
 
-  
   getPath(aFile) {
     if (AppConstants.platform == "macosx") {
       return aFile.leafName || aFile.path;
@@ -736,8 +734,7 @@ nsUnknownContentTypeDialog.prototype = {
     return aFile.path;
   },
 
-  
-  initAppAndSaveToDiskValues() {
+  initInteractiveControls() {
     var modeGroup = this.dialogElement("mode");
 
     
@@ -789,6 +786,10 @@ nsUnknownContentTypeDialog.prototype = {
     openHandler.selectedIndex = 0;
     var defaultOpenHandler = this.dialogElement("defaultHandler");
 
+    if (this.shouldShowInternalHandlerOption()) {
+      this.dialogElement("handleInternally").hidden = false;
+    }
+
     if (
       this.mLauncher.MIMEInfo.preferredAction ==
       this.nsIMIMEInfo.useSystemDefault
@@ -804,6 +805,13 @@ nsUnknownContentTypeDialog.prototype = {
         otherHandler && !otherHandler.hidden
           ? otherHandler
           : defaultOpenHandler;
+    } else if (
+      !this.dialogElement("handleInternally").hidden &&
+      this.mLauncher.MIMEInfo.preferredAction ==
+        this.nsIMIMEInfo.handleInternally
+    ) {
+      
+      modeGroup.selectedItem = this.dialogElement("handleInternally");
     } else {
       
       modeGroup.selectedItem = this.dialogElement("save");
@@ -970,7 +978,6 @@ nsUnknownContentTypeDialog.prototype = {
     hs.store(handlerInfo);
   },
 
-  
   onOK(aEvent) {
     
     if (this.useOtherHandler) {
@@ -1041,7 +1048,6 @@ nsUnknownContentTypeDialog.prototype = {
     this.onUnload();
   },
 
-  
   onCancel() {
     
     this.mLauncher.setWebProgressListener(null);
@@ -1072,7 +1078,6 @@ nsUnknownContentTypeDialog.prototype = {
     }
   },
 
-  
   dialogElement(id) {
     return this.mDialog.document.getElementById(id);
   },
@@ -1226,6 +1231,19 @@ nsUnknownContentTypeDialog.prototype = {
     }
 
     this.finishChooseApp();
+  },
+
+  shouldShowInternalHandlerOption() {
+    
+    
+    return (
+      this.mLauncher.MIMEInfo.primaryExtension == "pdf" &&
+      !Services.prefs.getBoolPref("pdfjs.disabled", true) &&
+      Services.prefs.getBoolPref(
+        "browser.helperApps.showOpenOptionForPdfJS",
+        false
+      )
+    );
   },
 
   
