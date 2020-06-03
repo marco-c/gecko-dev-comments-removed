@@ -25,7 +25,7 @@
 namespace js {
 namespace frontend {
 
-using FunctionType = mozilla::Variant<JSFunction*, ScriptStencilBase>;
+using FunctionType = mozilla::Variant<JSFunction*, ScriptStencil>;
 
 
 

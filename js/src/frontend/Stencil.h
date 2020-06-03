@@ -340,7 +340,7 @@ using ScriptThingVariant =
 using ScriptThingsVector = Vector<ScriptThingVariant>;
 
 
-class ScriptStencilBase {
+class ScriptStencil {
  public:
   
   mozilla::Maybe<FunctionIndex> functionIndex;
@@ -355,17 +355,13 @@ class ScriptStencilBase {
   
   js::UniquePtr<js::ImmutableScriptData> immutableScriptData = nullptr;
 
-  explicit ScriptStencilBase(JSContext* cx) : gcThings(cx) {}
+  
+
+  explicit ScriptStencil(JSContext* cx) : gcThings(cx) {}
 
   
   
   void trace(JSTracer* trc);
-};
-
-
-class ScriptStencil : public ScriptStencilBase {
- public:
-  explicit ScriptStencil(JSContext* cx) : ScriptStencilBase(cx) {}
 
   
   
