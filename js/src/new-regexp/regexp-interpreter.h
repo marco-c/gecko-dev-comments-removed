@@ -23,12 +23,16 @@ class V8_EXPORT_PRIVATE IrregexpInterpreter : public AllStatic {
 
   
   
-  static Result MatchForCallFromRuntime(Isolate* isolate,
-                                        Handle<JSRegExp> regexp,
-                                        Handle<String> subject_string,
-                                        int* registers, int registers_length,
-                                        int start_position);
+  static Result MatchForCallFromRuntime(
+      Isolate* isolate, Handle<JSRegExp> regexp, Handle<String> subject_string,
+      int* output_registers, int output_register_count, int start_position);
 
+  
+  
+  
+  
+  
+  
   
   
   
@@ -38,21 +42,23 @@ class V8_EXPORT_PRIVATE IrregexpInterpreter : public AllStatic {
   
   static Result MatchForCallFromJs(Address subject, int32_t start_position,
                                    Address input_start, Address input_end,
-                                   int* registers, int32_t registers_length,
+                                   int* output_registers,
+                                   int32_t output_register_count,
                                    Address backtrack_stack,
                                    RegExp::CallOrigin call_origin,
                                    Isolate* isolate, Address regexp);
 
   static Result MatchInternal(Isolate* isolate, ByteArray code_array,
-                              String subject_string, int* registers,
-                              int registers_length, int start_position,
+                              String subject_string, int* output_registers,
+                              int output_register_count,
+                              int total_register_count, int start_position,
                               RegExp::CallOrigin call_origin,
                               uint32_t backtrack_limit);
 
  private:
   static Result Match(Isolate* isolate, JSRegExp regexp, String subject_string,
-                      int* registers, int registers_length, int start_position,
-                      RegExp::CallOrigin call_origin);
+                      int* output_registers, int output_register_count,
+                      int start_position, RegExp::CallOrigin call_origin);
 };
 
 }  
