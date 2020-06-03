@@ -23,10 +23,17 @@ const { Log } = ChromeUtils.import("chrome://marionette/content/log.js");
 
 XPCOMUtils.defineLazyGetter(this, "logger", Log.get);
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "E10SUtils",
+  "resource://gre/modules/E10SUtils.jsm"
+);
+
 this.EXPORTED_SYMBOLS = ["reftest"];
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const PREF_E10S = "browser.tabs.remote.autostart";
+const PREF_FISSION = "fission.autostart";
 
 const SCREENSHOT_MODE = {
   unexpected: 0,
@@ -62,7 +69,8 @@ reftest.Runner = class {
     this.canvasCache = new DefaultMap(undefined, () => new Map([[null, []]]));
     this.windowUtils = null;
     this.lastURL = null;
-    this.remote = Preferences.get(PREF_E10S);
+    this.useRemoteTabs = Preferences.get(PREF_E10S);
+    this.useRemoteSubframes = Preferences.get(PREF_FISSION);
   }
 
   
@@ -159,12 +167,7 @@ reftest.Runner = class {
       browser.setAttribute("id", "browser");
       browser.setAttribute("type", "content");
       browser.setAttribute("primary", "true");
-      if (this.remote) {
-        browser.setAttribute("remote", "true");
-        browser.setAttribute("remoteType", "web");
-      } else {
-        browser.setAttribute("remote", "false");
-      }
+      browser.setAttribute("remote", this.useRemoteTabs ? "true" : "false");
     }
     
     
@@ -492,6 +495,38 @@ max-width: ${width}px; max-height: ${height}px`;
     this.driver.curBrowser.contentBrowser.focus();
   }
 
+  updateBrowserRemotenessByURL(browser, url) {
+    
+    if (Services.appinfo.OS === "Android") {
+      return;
+    }
+
+    let remoteType = E10SUtils.getRemoteTypeForURI(
+      url,
+      this.useRemoteTabs,
+      this.useRemoteSubframes
+    );
+
+    
+    if (browser.remoteType !== remoteType) {
+      if (remoteType === E10SUtils.NOT_REMOTE) {
+        browser.removeAttribute("remote");
+        browser.removeAttribute("remoteType");
+      } else {
+        browser.setAttribute("remote", "true");
+        browser.setAttribute("remoteType", remoteType);
+      }
+
+      browser.changeRemoteness({ remoteType });
+      browser.construct();
+
+      
+      
+      
+      
+    }
+  }
+
   async screenshot(win, url, timeout) {
     
     
@@ -558,6 +593,14 @@ browserRect.height: ${browserRect.height}`);
         logger.debug(`Refreshing page`);
         await this.driver.listener.refresh(navigateOpts);
       } else {
+        
+        
+        
+        
+        
+        
+        this.updateBrowserRemotenessByURL(win.gBrowser, url);
+
         navigateOpts.url = url;
         navigateOpts.loadEventExpected = false;
         await this.driver.listener.get(navigateOpts);
@@ -565,7 +608,7 @@ browserRect.height: ${browserRect.height}`);
       }
 
       this.ensureFocus(win);
-      await this.driver.listener.reftestWait(url, this.remote);
+      await this.driver.listener.reftestWait(url, this.useRemoteTabs);
 
       canvas = await capture.canvas(
         win,
