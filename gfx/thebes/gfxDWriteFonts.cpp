@@ -95,17 +95,6 @@ gfxDWriteFont::gfxDWriteFont(const RefPtr<UnscaledFontDWrite>& aUnscaledFont,
 
 gfxDWriteFont::~gfxDWriteFont() { delete mMetrics; }
 
-static void ForceFontUpdate() {
-  
-  
-  
-  
-  
-  static const char kPrefName[] = "font.internaluseonly.changed";
-  bool fontInternalChange = Preferences::GetBool(kPrefName, false);
-  Preferences::SetBool(kPrefName, !fontInternalChange);
-}
-
 void gfxDWriteFont::UpdateSystemTextQuality() {
   BYTE newQuality = GetSystemTextQuality();
   if (gfxVars::SystemTextQuality() != newQuality) {
@@ -115,10 +104,9 @@ void gfxDWriteFont::UpdateSystemTextQuality() {
 
 void gfxDWriteFont::SystemTextQualityChanged() {
   
-  
-  
-  ForceFontUpdate();
   Factory::SetSystemTextQuality(gfxVars::SystemTextQuality());
+  
+  
   gfxPlatform::FlushFontAndWordCaches();
   gfxPlatform::ForceGlobalReflow();
 }
