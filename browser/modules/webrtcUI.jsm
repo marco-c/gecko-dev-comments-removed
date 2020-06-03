@@ -660,6 +660,10 @@ var webrtcUI = {
   },
 
   shouldShowSharedTabWarning(tab) {
+    if (!tab || !tab.linkedBrowser) {
+      return false;
+    }
+
     let browser = tab.linkedBrowser;
     
     
