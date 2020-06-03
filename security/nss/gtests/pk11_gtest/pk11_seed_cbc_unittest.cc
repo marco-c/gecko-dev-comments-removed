@@ -50,6 +50,7 @@ class Pkcs11SeedTest : public ::testing::Test {
   }
 };
 
+#ifndef NSS_DISABLE_DEPRECATED_SEED
 
 
 
@@ -76,5 +77,6 @@ TEST_F(Pkcs11SeedTest, ECB_Singleblock) {
 TEST_F(Pkcs11SeedTest, ECB_Multiblock) {
   EncryptDecryptSeed(SECSuccess, 64, 64, CKM_SEED_ECB);
 }
+#endif
 
 }  

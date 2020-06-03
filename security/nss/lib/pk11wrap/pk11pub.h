@@ -939,6 +939,17 @@ PK11_GetLowLevelKeyIDForPrivateKey(SECKEYPrivateKey *key);
 
 PRBool SECMOD_HasRootCerts(void);
 
+
+
+
+
+
+
+
+
+
+int SECMOD_GetSystemFIPSEnabled();
+
 SEC_END_PROTOS
 
 #endif
