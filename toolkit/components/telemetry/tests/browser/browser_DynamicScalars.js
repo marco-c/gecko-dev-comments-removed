@@ -30,19 +30,9 @@ async function waitForProcessesScalars(
 
 add_task(async function test_setup() {
   
-  
-  
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [TelemetryUtils.Preferences.OverridePreRelease, true],
-      ["dom.ipc.processPrelaunch.enabled", false],
-    ],
+    set: [[TelemetryUtils.Preferences.OverridePreRelease, true]],
   });
-  Services.ppmm.releaseCachedProcesses();
-  await SpecialPowers.pushPrefEnv({
-    set: [["dom.ipc.processPrelaunch.enabled", true]],
-  });
-
   
   let canRecordExtended = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;
@@ -131,9 +121,9 @@ add_task(async function test_recording() {
   );
 
   
-  await waitForProcessesScalars(["dynamic"], true, scalars => {
+  await waitForProcessesScalars(["dynamic"], false, scalars => {
     
-    return "telemetry.test.dynamic.post_content_spawn_keyed" in scalars.dynamic;
+    return "telemetry.test.dynamic.pre_content_spawn" in scalars.dynamic;
   });
 
   

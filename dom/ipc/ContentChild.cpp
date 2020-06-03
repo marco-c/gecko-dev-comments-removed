@@ -29,7 +29,6 @@
 #include "mozilla/Unused.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/TelemetryIPC.h"
 #include "mozilla/RemoteDecoderManagerChild.h"
@@ -2567,26 +2566,11 @@ mozilla::ipc::IPCResult ContentChild::RecvAppInfo(
 
 mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
     const nsString& aRemoteType) {
-  if (!DOMStringIsNull(mRemoteType)) {
-    
-    
-    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("Changing remoteType of process %d from %s to %s", getpid(),
-             NS_ConvertUTF16toUTF8(mRemoteType).get(),
-             NS_ConvertUTF16toUTF8(aRemoteType).get()));
-    
-    MOZ_RELEASE_ASSERT(!aRemoteType.EqualsLiteral(FILE_REMOTE_TYPE) &&
-                       (mRemoteType.EqualsLiteral(PREALLOC_REMOTE_TYPE) ||
-                        (mRemoteType.EqualsLiteral(DEFAULT_REMOTE_TYPE) &&
-                         aRemoteType.EqualsLiteral(DEFAULT_REMOTE_TYPE))));
-  } else {
-    
-    
-    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("Setting remoteType of process %d to %s", getpid(),
-             NS_ConvertUTF16toUTF8(aRemoteType).get()));
-  }
+  MOZ_ASSERT(DOMStringIsNull(mRemoteType));
 
+  mRemoteType.Assign(aRemoteType);
+
+  
   
   if (aRemoteType.EqualsLiteral(FILE_REMOTE_TYPE)) {
     SetProcessName(NS_LITERAL_STRING("file:// Content"));
@@ -2596,13 +2580,7 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
     SetProcessName(NS_LITERAL_STRING("Privileged Content"));
   } else if (aRemoteType.EqualsLiteral(LARGE_ALLOCATION_REMOTE_TYPE)) {
     SetProcessName(NS_LITERAL_STRING("Large Allocation Web Content"));
-  } else if (RemoteTypePrefix(aRemoteType)
-                 .EqualsLiteral(FISSION_WEB_REMOTE_TYPE)) {
-    SetProcessName(NS_LITERAL_STRING("Isolated Web Content"));
   }
-  
-
-  mRemoteType.Assign(aRemoteType);
 
   return IPC_OK();
 }
@@ -3530,6 +3508,7 @@ mozilla::ipc::IPCResult ContentChild::RecvSessionStorageData(
   }
   return IPC_OK();
 }
+
 
 mozilla::ipc::IPCResult ContentChild::RecvOnAllowAccessFor(
     const MaybeDiscarded<BrowsingContext>& aContext,
