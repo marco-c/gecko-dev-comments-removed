@@ -268,7 +268,7 @@ var gSyncPane = {
       
       let tooltiptext = state.syncing
         ? document.getElementById("syncNow").getAttribute("label")
-        : window.browsingContext.topChromeWindow.gSync.formatLastSyncDate(
+        : window.docShell.rootTreeItem.domWindow.gSync.formatLastSyncDate(
             state.lastSync
           );
       document
@@ -552,14 +552,12 @@ var gSyncPane = {
 
   
   unlinkFirefoxAccount(confirm) {
-    window.browsingContext.topChromeWindow.gSync.disconnect({
-      confirm,
-    });
+    window.docShell.rootTreeItem.domWindow.gSync.disconnect({ confirm });
   },
 
   
   disconnectSync() {
-    return window.browsingContext.topChromeWindow.gSync.disconnect({
+    return window.docShell.rootTreeItem.domWindow.gSync.disconnect({
       confirm: true,
       disconnectAccount: false,
     });

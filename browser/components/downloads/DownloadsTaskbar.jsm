@@ -129,7 +129,9 @@ var DownloadsTaskbar = {
 
   _attachIndicator(aWindow) {
     
-    let { docShell } = aWindow.browsingContext.topChromeWindow;
+    let docShell = aWindow.docShell.treeOwner
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIAppWindow).docShell;
     this._taskbarProgress = gWinTaskbar.getTaskbarProgress(docShell);
 
     

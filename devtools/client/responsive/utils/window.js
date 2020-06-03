@@ -10,7 +10,7 @@ const Services = require("Services");
 
 
 function getTopLevelWindow(window) {
-  return window.browsingContext.topChromeWindow;
+  return window.docShell.rootTreeItem.domWindow;
 }
 exports.getTopLevelWindow = getTopLevelWindow;
 

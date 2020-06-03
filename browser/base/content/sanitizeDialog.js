@@ -57,7 +57,9 @@ var gSanitizePromptDialog = {
         .translateFragment(warningDesc)
         .then(() => {
           
-          let rootWin = window.browsingContext.topChromeWindow;
+          let rootWin = window.docShell.rootTreeItem.QueryInterface(
+            Ci.nsIDocShell
+          ).domWindow;
           return rootWin.promiseDocumentFlushed(() => {});
         });
     } else {

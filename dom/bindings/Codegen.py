@@ -9528,9 +9528,7 @@ class CGSpecializedGetter(CGAbstractStaticMethod):
         if self.attr.getExtendedAttribute("CrossOriginReadable"):
             remoteType = type
             extendedAttributes = self.descriptor.getExtendedAttributes(self.attr, getter=True)
-            if (remoteType.isGeckoInterface()
-                  and not remoteType.unroll().inner.isExternal()
-                  and remoteType.unroll().inner.getExtendedAttribute("ChromeOnly") is None):
+            if remoteType.isGeckoInterface() and not remoteType.unroll().inner.isExternal():
                 
                 
                 remoteType = BuiltinTypes[IDLBuiltinType.Types.object]

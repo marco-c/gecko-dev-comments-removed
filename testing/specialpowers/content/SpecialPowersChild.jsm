@@ -1281,7 +1281,7 @@ class SpecialPowersChild extends JSWindowActorChild {
   
   
   _getTopChromeWindow(window) {
-    return window.browsingContext.topChromeWindow;
+    return window.docShell.rootTreeItem.domWindow;
   }
   _getAutoCompletePopup(window) {
     return this._getTopChromeWindow(window).document.getElementById(

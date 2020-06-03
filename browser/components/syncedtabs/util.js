@@ -8,5 +8,5 @@ var EXPORTED_SYMBOLS = ["getChromeWindow"];
 
 
 function getChromeWindow(window) {
-  return window.browsingContext.topChromeWindow;
+  return window.docShell.rootTreeItem.domWindow.wrappedJSObject;
 }

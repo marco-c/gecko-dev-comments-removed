@@ -145,7 +145,7 @@ function sectionalizeObject(obj) {
 
 
 function getMainWindow() {
-  return window.browsingContext.topChromeWindow;
+  return window.docShell.rootTreeItem.domWindow;
 }
 
 
