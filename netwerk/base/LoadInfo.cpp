@@ -570,10 +570,7 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
       mFrameOuterWindowID(aFrameOuterWindowID),
       mBrowsingContextID(0),
       mFrameBrowsingContextID(0),
-      
-      
-      
-      mInitialSecurityCheckDone(true),
+      mInitialSecurityCheckDone(false),
       mIsThirdPartyContext(false),
       mIsThirdPartyContextToTopWindow(true),
       mIsFormSubmission(false),
