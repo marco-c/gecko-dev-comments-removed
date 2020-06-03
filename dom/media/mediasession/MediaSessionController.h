@@ -56,16 +56,16 @@ class IMediaInfoUpdater {
 
   
   
-  virtual void SetDeclaredPlaybackState(uint64_t aSessionContextId,
+  virtual void SetDeclaredPlaybackState(uint64_t aBrowsingContextId,
                                         MediaSessionPlaybackState aState) = 0;
 
   
   
-  virtual void NotifySessionCreated(uint64_t aSessionContextId) = 0;
-  virtual void NotifySessionDestroyed(uint64_t aSessionContextId) = 0;
+  virtual void NotifySessionCreated(uint64_t aBrowsingContextId) = 0;
+  virtual void NotifySessionDestroyed(uint64_t aBrowsingContextId) = 0;
 
   
-  virtual void UpdateMetadata(uint64_t aSessionContextId,
+  virtual void UpdateMetadata(uint64_t aBrowsingContextId,
                               const Maybe<MediaMetadataBase>& aMetadata) = 0;
 
   
@@ -127,7 +127,7 @@ class MediaSessionController : public IMediaInfoUpdater {
   ~MediaSessionController() = default;
   virtual void HandleActualPlaybackStateChanged() = 0;
 
-  uint64_t mTopLevelBCId;
+  uint64_t mTopLevelBrowsingContextId;
   Maybe<uint64_t> mActiveMediaSessionContextId;
 
  private:
