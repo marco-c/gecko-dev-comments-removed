@@ -476,36 +476,50 @@ class UrlbarInput {
       selType,
     });
 
+    let isValidUrl = false;
     try {
       new URL(url);
-    } catch (ex) {
-      
-
-      
-      
-      
-      
-      
-
-      let browser = this.window.gBrowser.selectedBrowser;
-      let lastLocationChange = browser.lastLocationChange;
-      UrlbarUtils.getShortcutOrURIAndPostData(url).then(data => {
-        
-        
-        if (
-          where != "current" ||
-          browser.lastLocationChange == lastLocationChange
-        ) {
-          openParams.postData = data.postData;
-          openParams.allowInheritPrincipal = data.mayInheritPrincipal;
-          this._loadURL(data.url, where, openParams, null, browser);
-        }
-      });
-      
+      isValidUrl = true;
+    } catch (ex) {}
+    if (isValidUrl) {
+      this._loadURL(url, where, openParams);
       return;
     }
 
-    this._loadURL(url, where, openParams);
+    
+    
+
+    
+    if (this._resultForCurrentValue) {
+      this.pickResult(this._resultForCurrentValue, event);
+      return;
+    }
+
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+    let browser = this.window.gBrowser.selectedBrowser;
+    let lastLocationChange = browser.lastLocationChange;
+    UrlbarUtils.getShortcutOrURIAndPostData(url).then(data => {
+      
+      
+      if (
+        where != "current" ||
+        browser.lastLocationChange == lastLocationChange
+      ) {
+        openParams.postData = data.postData;
+        openParams.allowInheritPrincipal = data.mayInheritPrincipal;
+        this._loadURL(data.url, where, openParams, null, browser);
+      }
+    });
   }
 
   handleRevert() {
@@ -523,11 +537,22 @@ class UrlbarInput {
 
 
   pickElement(element, event) {
-    let originalUntrimmedValue = this.untrimmedValue;
     let result = this.view.getResultFromElement(element);
     if (!result) {
       return;
     }
+    this.pickResult(result, event, element);
+  }
+
+  
+
+
+
+
+
+
+  pickResult(result, event, element = null) {
+    let originalUntrimmedValue = this.untrimmedValue;
     let isCanonized = this.setValueFromResult(result, event);
     let where = this._whereToOpen(event);
     let openParams = {
@@ -883,11 +908,11 @@ class UrlbarInput {
 
 
 
-
-
-
-
-  maybeClearAutofillPlaceholder(firstResult) {
+  onFirstResult(firstResult) {
+    
+    
+    
+    
     if (
       this._autofillPlaceholder &&
       !firstResult.autofill &&
@@ -895,6 +920,10 @@ class UrlbarInput {
       !this.value.endsWith(" ")
     ) {
       this._setValue(this.window.gBrowser.userTypedValue, false);
+    }
+
+    if (firstResult.heuristic) {
+      this._resultForCurrentValue = firstResult;
     }
   }
 
