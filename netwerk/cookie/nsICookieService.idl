@@ -7,7 +7,6 @@
 
 interface nsIURI;
 interface nsIChannel;
-interface nsIPrincipal;
 webidl Document;
 
 
@@ -102,7 +101,7 @@ interface nsICookieService : nsISupports
 
 
 
-  ACString getCookieStringForPrincipal(in nsIPrincipal aPrincipal);
+  ACString getCookieStringFromDocument(in Document aDocument);
 
   
 

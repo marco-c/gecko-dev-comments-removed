@@ -5666,7 +5666,7 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& rv) {
       do_GetService(NS_COOKIESERVICE_CONTRACTID);
   if (service) {
     nsAutoCString cookie;
-    service->GetCookieStringForPrincipal(EffectiveStoragePrincipal(), cookie);
+    service->GetCookieStringFromDocument(this, cookie);
     
     
     UTF_8_ENCODING->DecodeWithoutBOMHandling(cookie, aCookie);
