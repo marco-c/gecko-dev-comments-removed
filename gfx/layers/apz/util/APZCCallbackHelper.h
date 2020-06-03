@@ -112,6 +112,8 @@ class APZCCallbackHelper {
   
 
 
+
+
   MOZ_CAN_RUN_SCRIPT
   static bool DispatchMouseEvent(PresShell* aPresShell, const nsString& aType,
                                  const CSSPoint& aPoint, int32_t aButton,
