@@ -1707,7 +1707,7 @@ nsresult ServiceWorkerPrivate::SpawnWorkerIfNeeded(WakeUpReason aWhy,
   info.mLoadingPrincipal = info.mPrincipal;
   
   
-  info.mPartitionedPrincipal = info.mPrincipal;
+  info.mStoragePrincipal = info.mPrincipal;
 
   info.mCookieJarSettings = mozilla::net::CookieJarSettings::Create();
   MOZ_ASSERT(info.mCookieJarSettings);
@@ -1735,7 +1735,7 @@ nsresult ServiceWorkerPrivate::SpawnWorkerIfNeeded(WakeUpReason aWhy,
   WorkerPrivate::OverrideLoadInfoLoadGroup(info, info.mPrincipal);
 
   rv = info.SetPrincipalsAndCSPOnMainThread(
-      info.mPrincipal, info.mPartitionedPrincipal, info.mLoadGroup, nullptr);
+      info.mPrincipal, info.mStoragePrincipal, info.mLoadGroup, nullptr);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

@@ -137,27 +137,27 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
       return nullptr;
     }
 
-    nsIPrincipal* windowPartitionedPrincipal = sop->PartitionedPrincipal();
-    if (!windowPartitionedPrincipal) {
+    nsIPrincipal* windowStoragePrincipal = sop->GetEffectiveStoragePrincipal();
+    if (!windowStoragePrincipal) {
       aRv.Throw(NS_ERROR_UNEXPECTED);
       return nullptr;
     }
 
-    if (!windowPrincipal->Equals(windowPartitionedPrincipal)) {
-      loadInfo.mPartitionedPrincipal =
+    if (!windowPrincipal->Equals(windowStoragePrincipal)) {
+      loadInfo.mStoragePrincipal =
           BasePrincipal::Cast(loadInfo.mPrincipal)
               ->CloneForcingOriginAttributes(
-                  BasePrincipal::Cast(windowPartitionedPrincipal)
+                  BasePrincipal::Cast(windowStoragePrincipal)
                       ->OriginAttributesRef());
     }
   }
 
-  PrincipalInfo partitionedPrincipalInfo;
-  if (loadInfo.mPrincipal->Equals(loadInfo.mPartitionedPrincipal)) {
-    partitionedPrincipalInfo = principalInfo;
+  PrincipalInfo storagePrincipalInfo;
+  if (loadInfo.mPrincipal->Equals(loadInfo.mStoragePrincipal)) {
+    storagePrincipalInfo = principalInfo;
   } else {
-    aRv = PrincipalToPrincipalInfo(loadInfo.mPartitionedPrincipal,
-                                   &partitionedPrincipalInfo);
+    aRv = PrincipalToPrincipalInfo(loadInfo.mStoragePrincipal,
+                                   &storagePrincipalInfo);
     if (NS_WARN_IF(aRv.Failed())) {
       return nullptr;
     }
@@ -195,11 +195,9 @@ already_AddRefed<SharedWorker> SharedWorker::Constructor(
 
   RemoteWorkerData remoteWorkerData(
       nsString(aScriptURL), baseURL, resolvedScriptURL, name,
-      loadingPrincipalInfo, principalInfo, partitionedPrincipalInfo,
-      loadInfo.mUseRegularPrincipal,
-      loadInfo.mHasStorageAccessPermissionGranted, loadInfo.mDomain,
-      isSecureContext, ipcClientInfo, loadInfo.mReferrerInfo, storageAllowed,
-      void_t() , agentClusterId);
+      loadingPrincipalInfo, principalInfo, storagePrincipalInfo,
+      loadInfo.mDomain, isSecureContext, ipcClientInfo, loadInfo.mReferrerInfo,
+      storageAllowed, void_t() , agentClusterId);
 
   PSharedWorkerChild* pActor = actorChild->SendPSharedWorkerConstructor(
       remoteWorkerData, loadInfo.mWindowID, portIdentifier.release());

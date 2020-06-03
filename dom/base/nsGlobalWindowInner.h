@@ -266,7 +266,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   virtual nsIPrincipal* GetEffectiveStoragePrincipal() override;
 
-  virtual nsIPrincipal* PartitionedPrincipal() override;
+  virtual nsIPrincipal* IntrinsicStoragePrincipal() override;
 
   
   NS_DECL_NSIDOMWINDOW
@@ -1126,7 +1126,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   
   
-  void StorageAccessPermissionGranted();
+  void StorageAccessGranted();
 
  protected:
   static void NotifyDOMWindowDestroyed(nsGlobalWindowInner* aWindow);
@@ -1339,7 +1339,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
   nsCOMPtr<nsIPrincipal> mDocumentStoragePrincipal;
-  nsCOMPtr<nsIPrincipal> mDocumentPartitionedPrincipal;
+  nsCOMPtr<nsIPrincipal> mDocumentIntrinsicStoragePrincipal;
   nsCOMPtr<nsIContentSecurityPolicy> mDocumentCsp;
 
   RefPtr<mozilla::dom::DebuggerNotificationManager>
