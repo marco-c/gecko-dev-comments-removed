@@ -1,7 +1,7 @@
 
 
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
 
 import json
 import tempfile
@@ -9,6 +9,9 @@ import shutil
 import os
 import mozfile
 from .symbolication import ProfileSymbolicator
+from mozlog import get_proxy_logger
+
+LOG = get_proxy_logger('profiler')
 
 
 def save_gecko_profile(profile, filename):
@@ -72,7 +75,9 @@ def symbolicate_profile_json(profile_path, objdir_path):
         symbol_paths["FIREFOX"] = symbol_path
 
 
-    print("Symbolicating profile at %s" % profile_path)
+    LOG.info("Symbolicating the performance profile... This could take a couple "
+             "of minutes.")
+
     try:
         with open(profile_path, 'r') as profile_file:
             profile = json.load(profile_file)
@@ -83,14 +88,13 @@ def symbolicate_profile_json(profile_path, objdir_path):
         
         save_gecko_profile(profile, profile_path)
     except MemoryError:
-        print(
+        LOG.error(
             "Ran out of memory while trying"
             " to symbolicate profile {0}"
             .format(profile_path)
         )
-    except Exception:
-        print("Encountered an exception during profile"
-              " symbolication {0}"
-              .format(profile_path))
+    except Exception as e:
+        LOG.error("Encountered an exception during profile symbolication")
+        LOG.error(e)
 
     shutil.rmtree(temp_dir)
