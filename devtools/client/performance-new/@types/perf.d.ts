@@ -477,5 +477,7 @@ export interface FeatureDescription {
   
   recommended?: boolean,
   
+  experimental?: boolean,
+  
   disabledReason?: string,
 }
