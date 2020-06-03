@@ -474,8 +474,6 @@ pref("media.video-queue.send-to-compositor-size", 1);
 pref("media.mediadrm-widevinecdm.visible", true);
 
 
-pref("media.autoplay.enabled.user-gestures-needed", true);
-
 pref("media.autoplay.default", 1); 
 
 

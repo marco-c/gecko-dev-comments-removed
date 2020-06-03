@@ -1481,8 +1481,6 @@ pref("media.gmp-gmpopenh264.visible", true);
 pref("media.gmp-gmpopenh264.enabled", true);
 
 
-pref("media.autoplay.enabled.user-gestures-needed", true);
-
 pref("media.autoplay.default", 1); 
 
 #ifdef NIGHTLY_BUILD
