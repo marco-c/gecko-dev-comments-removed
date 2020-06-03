@@ -156,7 +156,7 @@ WorkerGlobalScopeBase::WorkerGlobalScopeBase(
 
   
   
-  BindToOwner(static_cast<nsIGlobalObject*>(this));
+  BindToOwnerInternal(static_cast<nsIGlobalObject*>(this));
 }
 
 JSObject* WorkerGlobalScopeBase::GetGlobalJSObject() {
