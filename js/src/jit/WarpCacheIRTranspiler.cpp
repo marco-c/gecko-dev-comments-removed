@@ -202,6 +202,8 @@ bool WarpCacheIRTranspiler::emitGuardSpecificAtom(StringOperandId strId,
   
   auto* ins = MGuardSpecificAtom::New(alloc(), str, &expected->asAtom());
   add(ins);
+
+  setOperand(strId, ins);
   return true;
 }
 
