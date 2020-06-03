@@ -235,6 +235,7 @@ RefPtr<ProcInfoPromise> GetProcInfo(base::ProcessId pid, int32_t childId,
           return;
         }
         
+        info.pid = pid;
         info.childId = childId;
         info.type = type;
         info.origin = originCopy;
