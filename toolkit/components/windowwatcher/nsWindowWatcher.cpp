@@ -706,29 +706,43 @@ nsresult nsWindowWatcher::OpenWindowInternal(
                                                 aDialog, uriToLoadIsChrome,
                                                 hasChromeParent, aCalledFromJS);
   } else {
+    MOZ_DIAGNOSTIC_ASSERT(parentBC && parentBC->IsContent(),
+                          "content caller must provide content parent");
     chromeFlags = CalculateChromeFlagsForChild(features, sizeSpec);
 
     if (aDialog) {
       MOZ_ASSERT(XRE_IsParentProcess());
       chromeFlags |= nsIWebBrowserChrome::CHROME_OPENAS_DIALOG;
     }
+  }
 
-    
-    
-    if (parentWindow) {
-      auto* docShell = nsDocShell::Cast(parentWindow->GetDocShell());
+  bool windowTypeIsChrome =
+      chromeFlags & nsIWebBrowserChrome::CHROME_OPENAS_CHROME;
 
-      if (docShell->UseRemoteTabs()) {
-        chromeFlags |= nsIWebBrowserChrome::CHROME_REMOTE_WINDOW;
-      }
+  if (parentBC && !aForceNoOpener) {
+    if (parentBC->IsChrome() && !windowTypeIsChrome) {
+      NS_WARNING(
+          "Content windows may never have chrome windows as their openers.");
+      return NS_ERROR_INVALID_ARG;
+    }
+    if (parentBC->IsContent() && windowTypeIsChrome) {
+      NS_WARNING(
+          "Chrome windows may never have content windows as their openers.");
+      return NS_ERROR_INVALID_ARG;
+    }
+  }
 
-      if (docShell->UseRemoteSubframes()) {
-        chromeFlags |= nsIWebBrowserChrome::CHROME_FISSION_WINDOW;
-      }
-    } else if (XRE_IsContentProcess()) {
-      
-      
+  
+  
+  
+  if (parentBC && parentBC->IsContent() && !windowTypeIsChrome) {
+    chromeFlags &= ~(nsIWebBrowserChrome::CHROME_REMOTE_WINDOW |
+                     nsIWebBrowserChrome::CHROME_FISSION_WINDOW);
+    if (parentBC->UseRemoteTabs()) {
       chromeFlags |= nsIWebBrowserChrome::CHROME_REMOTE_WINDOW;
+    }
+    if (parentBC->UseRemoteSubframes()) {
+      chromeFlags |= nsIWebBrowserChrome::CHROME_FISSION_WINDOW;
     }
   }
 
@@ -736,24 +750,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   
   
   dom::AutoJSAPI jsapiChromeGuard;
-
-  nsCOMPtr<nsIDOMChromeWindow> chromeWin = do_QueryInterface(aParent);
-
-  bool windowTypeIsChrome =
-      chromeFlags & nsIWebBrowserChrome::CHROME_OPENAS_CHROME;
-
-  if (!aForceNoOpener) {
-    if (chromeWin && !windowTypeIsChrome) {
-      NS_WARNING(
-          "Content windows may never have chrome windows as their openers.");
-      return NS_ERROR_INVALID_ARG;
-    }
-    if (aParent && !chromeWin && windowTypeIsChrome) {
-      NS_WARNING(
-          "Chrome windows may never have content windows as their openers.");
-      return NS_ERROR_INVALID_ARG;
-    }
-  }
 
   if (isCallerChrome && !hasChromeParent && !windowTypeIsChrome) {
     
@@ -824,17 +820,13 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     
     
     
-    if (!aDialog && !chromeWin &&
+    if (parentTreeOwner && !aDialog && parentBC->IsContent() &&
         !(chromeFlags & (nsIWebBrowserChrome::CHROME_MODAL |
                          nsIWebBrowserChrome::CHROME_OPENAS_DIALOG |
                          nsIWebBrowserChrome::CHROME_OPENAS_CHROME))) {
       MOZ_ASSERT(openWindowInfo);
 
-      nsCOMPtr<nsIWindowProvider> provider;
-      if (parentTreeOwner) {
-        provider = do_GetInterface(parentTreeOwner);
-      }
-
+      nsCOMPtr<nsIWindowProvider> provider = do_GetInterface(parentTreeOwner);
       if (provider) {
         rv = provider->ProvideWindow(openWindowInfo, chromeFlags, aCalledFromJS,
                                      sizeSpec.WidthSpecified(), uriToLoad, name,
