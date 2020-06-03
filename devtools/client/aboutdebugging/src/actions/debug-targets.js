@@ -314,8 +314,16 @@ function requestWorkers() {
           continue;
         }
 
-        const subscription = await registrationFront.getPushSubscription();
-        serviceWorker.subscription = subscription;
+        try {
+          const subscription = await registrationFront.getPushSubscription();
+          serviceWorker.subscription = subscription;
+        } catch (e) {
+          
+          
+          
+          
+          console.error("Failed to retrieve service worker subscription", e);
+        }
       }
 
       dispatch({
