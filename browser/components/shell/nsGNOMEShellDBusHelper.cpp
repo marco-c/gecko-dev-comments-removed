@@ -285,7 +285,9 @@ static void DBusAppendSearchID(DBusMessageIter* aIter, const char* aID) {
   nsAutoCString gnomeSearchTitle;
   if (GetGnomeSearchTitle(searchTerm.get(), gnomeSearchTitle)) {
     appendStringDictionary(aIter, "name", gnomeSearchTitle.get());
-    appendStringDictionary(aIter, "gicon", "org.mozilla.Firefox");
+    
+    
+    appendStringDictionary(aIter, "gicon", "firefox");
   }
 }
 
