@@ -294,18 +294,14 @@ class GlobalHelperThreadState {
   bool canStartCompressionTask(const AutoLockHelperThreadState& lock);
   bool canStartGCParallelTask(const AutoLockHelperThreadState& lock);
 
-  enum class ScheduleCompressionTask { GC, API };
-
   
-  void startHandlingCompressionTasks(const AutoLockHelperThreadState&,
-                                     ScheduleCompressionTask schedule);
+  void startHandlingCompressionTasks(const AutoLockHelperThreadState&);
 
   jit::IonCompileTask* highestPriorityPendingIonCompile(
       const AutoLockHelperThreadState& lock);
 
  private:
-  void scheduleCompressionTasks(const AutoLockHelperThreadState&,
-                                ScheduleCompressionTask schedule);
+  void scheduleCompressionTasks(const AutoLockHelperThreadState&);
 
   UniquePtr<ParseTask> finishParseTaskCommon(JSContext* cx, ParseTaskKind kind,
                                              JS::OffThreadToken* token);
