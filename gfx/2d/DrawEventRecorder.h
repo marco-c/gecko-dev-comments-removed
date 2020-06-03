@@ -75,13 +75,21 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
     mStoredObjects.erase(aObject);
   }
 
-  void AddStoredUnscaledFont(const ReferencePtr aObject) {
-    mStoredUnscaledFonts.insert(aObject);
+  
+
+
+
+  int32_t IncrementUnscaledFontRefCount(const ReferencePtr aUnscaledFont) {
+    int32_t& count = mUnscaledFontRefs[aUnscaledFont];
+    return count++;
   }
 
-  void RemoveStoredUnscaledFont(const ReferencePtr aObject) {
-    mStoredUnscaledFonts.erase(aObject);
-  }
+  
+
+
+
+
+  void DecrementUnscaledFontRefCount(const ReferencePtr aUnscaledFont);
 
   void AddScaledFont(ScaledFont* aFont) {
     if (mStoredFonts.insert(aFont).second && WantsExternalFonts()) {
@@ -101,10 +109,6 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
 
   bool HasStoredObject(const ReferencePtr aObject) {
     return mStoredObjects.find(aObject) != mStoredObjects.end();
-  }
-
-  bool HasStoredUnscaledFont(const ReferencePtr aObject) {
-    return mStoredUnscaledFonts.find(aObject) != mStoredUnscaledFonts.end();
   }
 
   void AddStoredFontData(const uint64_t aFontDataKey) {
@@ -136,9 +140,14 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
   virtual void Flush() = 0;
 
   std::unordered_set<const void*> mStoredObjects;
+
   
   
-  std::unordered_set<const void*> mStoredUnscaledFonts;
+  
+  
+  
+  
+  std::unordered_map<const void*, int32_t> mUnscaledFontRefs;
 
   std::unordered_set<uint64_t> mStoredFontData;
   std::unordered_set<ScaledFont*> mStoredFonts;
