@@ -14,7 +14,6 @@
 
 
 
-
 assert.sameValue(/./.dotAll, false, "/./.dotAll");
 assert.sameValue(/./i.dotAll, false, "/./i.dotAll");
 assert.sameValue(/./g.dotAll, false, "/./g.dotAll");

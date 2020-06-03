@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue(new RegExp("", "gimsuy").flags, "gimsuy", "gimsuy => gimsuy");
 assert.sameValue(new RegExp("", "yusmig").flags, "gimsuy", "yusmig => gimsuy");
 

@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue("abcdef".match(/(?<=$abc)def/), null, "#1");
 assert.sameValue("fno".match(/^f.o(?<=foo)$/), null, "#2");
 assert.sameValue("foo".match(/^foo(?<!foo)$/), null, "#3");

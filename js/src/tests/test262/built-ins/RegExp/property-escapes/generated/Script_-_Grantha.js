@@ -13,7 +13,6 @@
 
 
 
-
 const matchSymbols = buildString({
   loneCodePoints: [
     0x011350,

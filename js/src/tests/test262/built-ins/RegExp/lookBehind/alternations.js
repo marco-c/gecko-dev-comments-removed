@@ -21,7 +21,6 @@
 
 
 
-
 assert.compareArray("xabcd".match(/.*(?<=(..|...|....))(.*)/), ["xabcd", "cd", ""], "#1");
 assert.compareArray("xabcd".match(/.*(?<=(xx|...|....))(.*)/), ["xabcd", "bcd", ""], "#2");
 assert.compareArray("xxabcd".match(/.*(?<=(xx|...))(.*)/), ["xxabcd", "bcd", ""], "#3");

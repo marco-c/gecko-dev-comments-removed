@@ -15,7 +15,6 @@
 
 
 
-
 var dotAll = Object.getOwnPropertyDescriptor(RegExp.prototype, 'dotAll').get;
 
 assert.throws(TypeError, function() {

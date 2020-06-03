@@ -17,7 +17,6 @@
 
 
 
-
 var get = Object.getOwnPropertyDescriptor(RegExp.prototype, 'flags').get;
 
 assert.throws(Test262Error, function() {

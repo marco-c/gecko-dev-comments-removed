@@ -21,7 +21,6 @@
 
 
 
-
 assert.compareArray("abcCd".match(/(?<=\1(\w))d/i), ["d", "C"], "#1");
 assert.compareArray("abxxd".match(/(?<=\1([abx]))d/), ["d", "x"], "#2");
 assert.compareArray("ababc".match(/(?<=\1(\w+))c/), ["c", "ab"], "#3");

@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue("b".match(/^.(?<=a)/), null, "#1");
 assert.sameValue("boo".match(/^f\w\w(?<=\woo)/), null, "#2");
 assert.sameValue("fao".match(/^f\w\w(?<=\woo)/), null, "#3");

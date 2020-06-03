@@ -21,7 +21,6 @@
 
 
 
-
 var re1 = /(?<=^(\w+))def/g;
 assert.compareArray(re1.exec("abcdefdef"), ["def", "abc"], "#1");
 assert.compareArray(re1.exec("abcdefdef"), ["def", "abcdef"], "#2");
