@@ -135,7 +135,6 @@ bool wasm::IonDisabledByFeatures(JSContext* cx, bool* isDisabled,
   
   bool debug = cx->realm() && cx->realm()->debuggerObservesAsmJS();
   bool gc = cx->options().wasmGc();
-  bool simd = WasmSimdFlag(cx);
   if (reason) {
     char sep = 0;
     if (debug && !Append(reason, "debug", &sep)) {
@@ -144,11 +143,8 @@ bool wasm::IonDisabledByFeatures(JSContext* cx, bool* isDisabled,
     if (gc && !Append(reason, "gc", &sep)) {
       return false;
     }
-    if (simd && !Append(reason, "simd", &sep)) {
-      return false;
-    }
   }
-  *isDisabled = debug || gc || simd;
+  *isDisabled = debug || gc;
   return true;
 }
 
@@ -233,7 +229,7 @@ bool wasm::MultiValuesAvailable(JSContext* cx) {
 
 bool wasm::SimdAvailable(JSContext* cx) {
   
-  return WasmSimdFlag(cx) && BaselineAvailable(cx);
+  return WasmSimdFlag(cx) && (BaselineAvailable(cx) || IonAvailable(cx));
 }
 
 bool wasm::ThreadsAvailable(JSContext* cx) {
