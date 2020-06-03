@@ -107,7 +107,7 @@ def import_from(srcdir, dstdir):
 
     
     hash = get_hash(srcdir)
-    version_file = open(str(dstdir / 'VERSION'), 'w')
+    version_file = open(str(dstdir / 'IRREGEXP_VERSION'), 'w')
     version_file.write('Imported using import-irregexp.py from:\n')
     version_file.write('https://github.com/v8/v8/tree/%s/src/regexp\n' % hash)
 
