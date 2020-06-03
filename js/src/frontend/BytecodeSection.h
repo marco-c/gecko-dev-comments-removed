@@ -50,9 +50,6 @@ struct MOZ_STACK_CLASS GCThingList {
   ScriptThingsVector vector;
 
   
-  FunctionBox* lastbox = nullptr;
-
-  
   mozilla::Maybe<uint32_t> firstScopeIndex;
 
   explicit GCThingList(JSContext* cx, CompilationInfo& compilationInfo)
@@ -101,8 +98,6 @@ struct MOZ_STACK_CLASS GCThingList {
   uint32_t length() const { return vector.length(); }
 
   const ScriptThingsVector& objects() { return vector; }
-
-  void finishInnerFunctions();
 
   AbstractScopePtr getScope(size_t index) const;
 

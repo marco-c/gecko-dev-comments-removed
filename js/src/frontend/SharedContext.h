@@ -295,7 +295,6 @@ class FunctionBox : public SharedContext {
   
   
   FunctionBox* traceLink_ = nullptr;
-  FunctionBox* emitLink_ = nullptr;
 
   
   

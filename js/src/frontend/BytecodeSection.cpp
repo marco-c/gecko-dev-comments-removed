@@ -22,26 +22,12 @@ using namespace js::frontend;
 
 bool GCThingList::append(FunctionBox* funbox, uint32_t* index) {
   
-  
-  
-
-  MOZ_ASSERT(!funbox->emitLink_);
-  funbox->emitLink_ = lastbox;
-  lastbox = funbox;
-
   *index = vector.length();
+
   
   
   
   return vector.append(mozilla::AsVariant(FunctionIndex(funbox->index())));
-}
-
-void GCThingList::finishInnerFunctions() {
-  FunctionBox* funbox = lastbox;
-  while (funbox) {
-    funbox->finish();
-    funbox = funbox->emitLink_;
-  }
 }
 
 AbstractScopePtr GCThingList::getScope(size_t index) const {
