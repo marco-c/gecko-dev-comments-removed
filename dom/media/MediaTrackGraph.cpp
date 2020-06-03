@@ -1621,7 +1621,6 @@ class MediaTrackGraphShutDownRunnable : public Runnable {
       
       
       
-      
       NS_ASSERTION(mGraph->mForceShutDownReceived, "Not in forced shutdown?");
       mGraph->LifecycleStateRef() =
           MediaTrackGraphImpl::LIFECYCLE_WAITING_FOR_TRACK_DESTRUCTION;
@@ -3129,12 +3128,10 @@ MediaTrackGraph* MediaTrackGraph::CreateNonRealtimeInstance(
   return graph;
 }
 
-void MediaTrackGraph::DestroyNonRealtimeInstance(MediaTrackGraph* aGraph) {
+void MediaTrackGraph::ForceShutDown() {
   MOZ_ASSERT(NS_IsMainThread(), "Main thread only");
-  MOZ_ASSERT(aGraph->IsNonRealtime(),
-             "Should not destroy the global graph here");
 
-  MediaTrackGraphImpl* graph = static_cast<MediaTrackGraphImpl*>(aGraph);
+  MediaTrackGraphImpl* graph = static_cast<MediaTrackGraphImpl*>(this);
 
   graph->ForceShutDown();
 }
