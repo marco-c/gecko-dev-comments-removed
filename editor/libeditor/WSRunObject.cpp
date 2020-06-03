@@ -1603,7 +1603,6 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
   
   
   bool leftCheck = false;
-  bool spaceNBSP = false;
   bool rightCheck = false;
 
   
@@ -1621,18 +1620,20 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
     
     EditorDOMPointInText atPreviousCharOfPreviousCharOfEndOfRun =
         GetPreviousEditableCharPoint(atPreviousCharOfEndOfRun);
+    bool isPreviousCharASCIIWhitespace =
+        atPreviousCharOfPreviousCharOfEndOfRun.IsSet() &&
+        !atPreviousCharOfPreviousCharOfEndOfRun.IsEndOfContainer() &&
+        atPreviousCharOfPreviousCharOfEndOfRun.IsCharASCIISpace();
     if (atPreviousCharOfPreviousCharOfEndOfRun.IsSet()) {
       if (atPreviousCharOfPreviousCharOfEndOfRun.IsEndOfContainer() ||
           !atPreviousCharOfPreviousCharOfEndOfRun.IsCharASCIISpace()) {
         leftCheck = true;
-      } else {
-        spaceNBSP = true;
       }
     } else if (aRun->StartsFromNormalText() ||
                aRun->StartsFromSpecialContent()) {
       leftCheck = true;
     }
-    if (leftCheck || spaceNBSP) {
+    if (leftCheck || isPreviousCharASCIIWhitespace) {
       
       
       if (aRun->EndsByNormalText() || aRun->EndsBySpecialContent() ||
@@ -1723,7 +1724,7 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
           return rv;
         }
       }
-    } else if (!mPRE && spaceNBSP && rightCheck) {
+    } else if (!mPRE && isPreviousCharASCIIWhitespace && rightCheck) {
       
       
       
