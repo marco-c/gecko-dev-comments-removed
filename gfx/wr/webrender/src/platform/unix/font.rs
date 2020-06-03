@@ -552,16 +552,7 @@ impl FontContext {
         match format {
             FT_Glyph_Format::FT_GLYPH_FORMAT_BITMAP => {
                 let bitmap_size = unsafe { (*(*(*slot).face).size).metrics.y_ppem };
-                
-                
-                
-                
-                
-                
-                
-                
-                let scale_size = if font.transform_glyphs { req_size } else { req_size * y_scale };
-                Some((slot, scale_size as f32 / bitmap_size as f32))
+                Some((slot, req_size as f32 / bitmap_size as f32))
             }
             FT_Glyph_Format::FT_GLYPH_FORMAT_OUTLINE => Some((slot, 1.0)),
             _ => {
