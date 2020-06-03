@@ -21,7 +21,7 @@ namespace mozilla {
 
 
 struct Module {
-  static const unsigned int kVersion = 78;
+  static const unsigned int kVersion = 79;
 
   struct CIDEntry;
 
