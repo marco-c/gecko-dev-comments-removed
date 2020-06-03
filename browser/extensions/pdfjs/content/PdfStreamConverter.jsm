@@ -1109,13 +1109,32 @@ PdfStreamConverter.prototype = {
 
   getConvertedType(aFromType, aChannel) {
     const HTML = "text/html";
+    let channelURI = aChannel?.URI;
+    
+    
+    if (aFromType != "application/pdf") {
+      let isPDF = channelURI?.QueryInterface(Ci.nsIURL).fileExtension == "pdf";
+      let typeIsOctetStream = aFromType == "application/octet-stream";
+      if (
+        !isPDF ||
+        !typeIsOctetStream ||
+        !getBoolPref(PREF_PREFIX + ".handleOctetStream", false)
+      ) {
+        throw new Components.Exception(
+          "Ignore PDF.js for this download.",
+          Cr.NS_ERROR_FAILURE
+        );
+      }
+      
+    }
+
     if (this._validateAndMaybeUpdatePDFPrefs()) {
       return HTML;
     }
     
     
-    if (aChannel && aChannel.URI.schemeIs("file")) {
-      let triggeringPrincipal = aChannel?.loadInfo?.triggeringPrincipal;
+    if (channelURI?.schemeIs("file")) {
+      let triggeringPrincipal = aChannel.loadInfo?.triggeringPrincipal;
       if (triggeringPrincipal?.isSystemPrincipal) {
         return HTML;
       }

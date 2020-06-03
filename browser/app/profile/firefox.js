@@ -1373,6 +1373,9 @@ pref("pdfjs.previousHandler.preferredAction", 0);
 pref("pdfjs.previousHandler.alwaysAskBeforeHandling", false);
 
 
+pref("pdfjs.handleOctetStream", true);
+
+
 pref("sidebar.position_start", true);
 
 pref("security.identitypopup.recordEventTelemetry", true);
