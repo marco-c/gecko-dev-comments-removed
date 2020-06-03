@@ -392,3 +392,13 @@ function resolveWhen(condition) {
     tick();
   });
 }
+
+
+function waitForAnimationFrames(n){
+  let p = 0;
+  function next(){
+    p++;
+    return p === n;
+  }
+  return resolveWhen(next);
+}
