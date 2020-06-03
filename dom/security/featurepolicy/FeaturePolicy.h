@@ -80,6 +80,8 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
     mDefaultOrigin = aPrincipal;
   }
 
+  void SetSrcOrigin(nsIPrincipal* aPrincipal) { mSrcOrigin = aPrincipal; }
+
   nsIPrincipal* DefaultOrigin() const { return mDefaultOrigin; }
 
   
@@ -114,6 +116,8 @@ class FeaturePolicy final : public nsISupports, public nsWrapperCache {
   
   bool AllowsFeatureExplicitlyInAncestorChain(const nsAString& aFeatureName,
                                               nsIPrincipal* aOrigin) const;
+
+  bool IsSameOriginAsSrc(nsIPrincipal* aPrincipal) const;
 
   
 

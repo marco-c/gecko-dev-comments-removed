@@ -3485,6 +3485,7 @@ nsresult Document::InitFeaturePolicy(nsIChannel* aChannel) {
   if (parentPolicy) {
     
     mFeaturePolicy->InheritPolicy(parentPolicy);
+    mFeaturePolicy->SetSrcOrigin(parentPolicy->GetSrcOrigin());
   }
 
   
