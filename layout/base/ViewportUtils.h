@@ -58,6 +58,8 @@ class ViewportUtils {
 
   static LayoutDevicePoint DocumentRelativeLayoutToVisual(
       const LayoutDevicePoint& aPoint, PresShell* aShell);
+  static LayoutDeviceRect DocumentRelativeLayoutToVisual(
+      const LayoutDeviceRect& aRect, PresShell* aShell);
 
   
 
@@ -74,6 +76,8 @@ class ViewportUtils {
 
   static LayoutDevicePoint ToScreenRelativeVisual(const LayoutDevicePoint& aPt,
                                                   nsPresContext* aCtx);
+  static LayoutDeviceRect ToScreenRelativeVisual(const LayoutDeviceRect& aRect,
+                                                 nsPresContext* aCtx);
 
   
 

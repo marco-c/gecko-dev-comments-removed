@@ -43,6 +43,7 @@
 #include "mozilla/dom/Selection.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/Unused.h"
+#include "mozilla/ViewportUtils.h"
 #include "nsFrameLoader.h"
 #include "BrowserParent.h"
 #include "nsIMutableArray.h"
@@ -708,28 +709,27 @@ nsresult nsBaseDragService::DrawDrag(nsINode* aDOMNode,
   if (!enableDragImages || !mHasImage) {
     
     
-    CSSIntRect dragRect;
+    nsRect presLayoutRect;
     if (aRegion) {
       
-      dragRect = aRegion->GetBounds();
-
-      nsIFrame* rootFrame = presShell->GetRootFrame();
-      CSSIntRect screenRect = rootFrame->GetScreenRect();
-      dragRect.MoveBy(screenRect.TopLeft());
+      
+      presLayoutRect = ToAppUnits(aRegion->GetBounds(), AppUnitsPerCSSPixel());
     } else {
       
       
       nsCOMPtr<nsIContent> content = do_QueryInterface(dragNode);
       nsIFrame* frame = content->GetPrimaryFrame();
       if (frame) {
-        dragRect = frame->GetScreenRect();
+        presLayoutRect = frame->GetRect();
       }
     }
 
-    nsIntRect dragRectDev =
-        ToAppUnits(dragRect, AppUnitsPerCSSPixel())
-            .ToOutsidePixels((*aPresContext)->AppUnitsPerDevPixel());
-    aScreenDragRect->SizeTo(dragRectDev.Width(), dragRectDev.Height());
+    LayoutDeviceRect screenVisualRect = ViewportUtils::ToScreenRelativeVisual(
+        LayoutDeviceRect::FromAppUnits(presLayoutRect,
+                                       (*aPresContext)->AppUnitsPerDevPixel()),
+        *aPresContext);
+    aScreenDragRect->SizeTo(screenVisualRect.Width(),
+                            screenVisualRect.Height());
     return NS_OK;
   }
 
