@@ -17,18 +17,22 @@
 
 namespace mozilla::layers {
 
-class ScheduleHandlePrepareForUse : public wr::NotificationHandler {
+class ScheduleNofityForUse : public wr::NotificationHandler {
  public:
-  explicit ScheduleHandlePrepareForUse() {}
+  explicit ScheduleNofityForUse(uint64_t aExternalImageId)
+      : mExternalImageId(aExternalImageId) {}
 
   virtual void Notify(wr::Checkpoint aCheckpoint) override {
     if (aCheckpoint == wr::Checkpoint::FrameTexturesUpdated) {
       MOZ_ASSERT(wr::RenderThread::IsInRenderThread());
-      wr::RenderThread::Get()->HandlePrepareForUse();
+      wr::RenderThread::Get()->NofityForUse(mExternalImageId);
     } else {
       MOZ_ASSERT(aCheckpoint == wr::Checkpoint::TransactionDropped);
     }
   }
+
+ protected:
+  uint64_t mExternalImageId;
 };
 
 WebRenderTextureHost::WebRenderTextureHost(
@@ -153,8 +157,10 @@ void WebRenderTextureHost::MaybeNofityForUse(wr::TransactionBuilder& aTxn) {
   if (!mWrappedTextureHost->AsSurfaceTextureHost()) {
     return;
   }
+  
+  
   aTxn.Notify(wr::Checkpoint::FrameTexturesUpdated,
-              MakeUnique<ScheduleHandlePrepareForUse>());
+              MakeUnique<ScheduleNofityForUse>(wr::AsUint64(mExternalImageId)));
 #endif
 }
 

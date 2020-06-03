@@ -207,6 +207,9 @@ class RenderThread final {
   void NotifyNotUsed(uint64_t aExternalImageId);
 
   
+  void NofityForUse(uint64_t aExternalImageId);
+
+  
   void UnregisterExternalImageDuringShutdown(uint64_t aExternalImageId);
 
   

@@ -150,22 +150,35 @@ void RenderAndroidSurfaceTextureHostOGL::PrepareForUse() {
   MOZ_ASSERT(RenderThread::IsInRenderThread());
   MOZ_ASSERT(mPrepareStatus == STATUS_NONE);
 
-  if (!EnsureAttachedToGLContext()) {
+  if (mContinuousUpdate || !mSurfTex) {
     return;
   }
 
-  if (mContinuousUpdate) {
-    return;
-  }
-
-  MOZ_ASSERT(mSurfTex);
-  mPrepareStatus = STATUS_UPDATE_TEX_IMAGE_NEEDED;
+  mPrepareStatus = STATUS_MIGHT_BE_USED_BY_WR;
 
   if (mSurfTex->IsSingleBuffer()) {
+    EnsureAttachedToGLContext();
     
     
     mSurfTex->UpdateTexImage();
     mPrepareStatus = STATUS_PREPARED;
+  }
+}
+
+void RenderAndroidSurfaceTextureHostOGL::NofityForUse() {
+  MOZ_ASSERT(RenderThread::IsInRenderThread());
+
+  if (mPrepareStatus == STATUS_MIGHT_BE_USED_BY_WR) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(!mSurfTex->IsSingleBuffer());
+    if (!EnsureAttachedToGLContext()) {
+      return;
+    }
+    mPrepareStatus = STATUS_UPDATE_TEX_IMAGE_NEEDED;
   }
 }
 

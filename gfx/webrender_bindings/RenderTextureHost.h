@@ -48,6 +48,10 @@ class RenderTextureHost {
   
   
   
+  virtual void NofityForUse() {}
+  
+  
+  
   virtual void NotifyNotUsed() {}
 
   virtual RenderDXGITextureHostOGL* AsRenderDXGITextureHostOGL() {
