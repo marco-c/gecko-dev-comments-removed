@@ -248,11 +248,7 @@ class nsDocLoader : public nsIDocumentLoader,
   
   
   
-  
-  
-  void DocLoaderIsEmpty(
-      bool aFlushLayout,
-      const Maybe<nsresult>& aOverrideStatus = mozilla::Nothing());
+  void DocLoaderIsEmpty(bool aFlushLayout);
 
  protected:
   struct nsStatusInfo : public mozilla::LinkedListElement<nsStatusInfo> {

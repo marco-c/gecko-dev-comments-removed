@@ -1162,12 +1162,6 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
     }
   } else {
     
-
-    
-    
-    if (aStatus == NS_BINDING_ABORTED && mDocument) {
-      mDocument->NotifyAbortedLoad();
-    }
   }
 
   
@@ -1179,10 +1173,7 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
   
   
   
-  
-  
-  if (mDocument && mDocument->IsCurrentActiveDocument() &&
-      aStatus != NS_BINDING_ABORTED) {
+  if (mDocument && mDocument->IsCurrentActiveDocument()) {
     
     window = mDocument->GetWindow();
     if (window) {
