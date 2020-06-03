@@ -220,6 +220,7 @@ class FxAccountsKeys {
   
 
 
+
   async getScopedKeys(scopes, clientId) {
     const { sessionToken } = await this._fxia._getVerifiedAccountOrReject();
     const keyData = await this._fxia.fxAccountsClient.getScopedKeyData(

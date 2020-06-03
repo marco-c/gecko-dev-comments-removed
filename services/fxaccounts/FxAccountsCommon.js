@@ -269,6 +269,7 @@ exports.FXA_PWDMGR_SECURE_FIELDS = new Set([
   "keyFetchToken",
   "unwrapBKey",
   "assertion",
+  "scopedKeys",
 ]);
 
 
