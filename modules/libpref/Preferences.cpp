@@ -159,6 +159,8 @@ static char* DeserializeString(char* aChars, nsCString& aStr) {
 
 
 union PrefValue {
+  
+  
   const char* mStringVal;
   int32_t mIntVal;
   bool mBoolVal;
@@ -422,14 +424,21 @@ struct PrefsSizes {
 
 static StaticRefPtr<SharedPrefMap> gSharedMap;
 
-static ArenaAllocator<4096, 1> gPrefNameArena;
+
+
+static inline ArenaAllocator<4096, 1>& PrefNameArena() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  static ArenaAllocator<4096, 1> sPrefNameArena;
+  return sPrefNameArena;
+}
 
 class PrefWrapper;
 
 class Pref {
  public:
   explicit Pref(const char* aName)
-      : mName(ArenaStrdup(aName, gPrefNameArena)),
+      : mName(ArenaStrdup(aName, PrefNameArena())),
         mType(static_cast<uint32_t>(PrefType::None)),
         mIsSticky(false),
         mIsLocked(false),
@@ -3150,7 +3159,7 @@ PreferenceServiceReporter::CollectReports(
     }
   }
 
-  sizes.mPrefNameArena += gPrefNameArena.SizeOfExcludingThis(mallocSizeOf);
+  sizes.mPrefNameArena += PrefNameArena().SizeOfExcludingThis(mallocSizeOf);
 
   for (CallbackNode* node = gFirstCallback; node; node = node->Next()) {
     node->AddSizeOfIncludingThis(mallocSizeOf, sizes);
@@ -3547,7 +3556,7 @@ Preferences::~Preferences() {
 
   gSharedMap = nullptr;
 
-  gPrefNameArena.Clear();
+  PrefNameArena().Clear();
 }
 
 NS_IMPL_ISUPPORTS(Preferences, nsIPrefService, nsIObserver, nsIPrefBranch,
@@ -3633,7 +3642,7 @@ FileDescriptor Preferences::EnsureSnapshot(size_t* aSize) {
     gHashTable->clearAndCompact();
     Unused << gHashTable->reserve(kHashTableInitialLengthContent);
 
-    gPrefNameArena.Clear();
+    PrefNameArena().Clear();
   }
 
   *aSize = gSharedMap->MapSize();
@@ -3752,7 +3761,7 @@ Preferences::ResetPrefs() {
   gHashTable->clearAndCompact();
   Unused << gHashTable->reserve(kHashTableInitialLengthParent);
 
-  gPrefNameArena.Clear();
+  PrefNameArena().Clear();
 
   return InitInitialObjects( false);
 }
