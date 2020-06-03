@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "OSXNotificationCenter.h"
 #import <AppKit/AppKit.h>
@@ -86,7 +86,7 @@ enum { NSUserNotificationActivationTypeAdditionalActionClicked = 4 };
 
 - (id)initWithOSXNC:(OSXNotificationCenter*)osxnc {
   [super init];
-  // We should *never* outlive this OSXNotificationCenter.
+  
   mOSXNC = osxnc;
   return self;
 }
@@ -111,8 +111,8 @@ enum { NSUserNotificationActivationTypeAdditionalActionClicked = 4 };
   return YES;
 }
 
-// This is an undocumented method that we need for parity with Safari.
-// Apple bug #15440664.
+
+
 - (void)userNotificationCenter:(id<FakeNSUserNotificationCenter>)center
     didRemoveDeliveredNotifications:(NSArray*)notifications {
   for (id<FakeNSUserNotification> notification in notifications) {
@@ -121,7 +121,7 @@ enum { NSUserNotificationActivationTypeAdditionalActionClicked = 4 };
   }
 }
 
-// This is an undocumented method that we need to be notified if a user clicks the close button.
+
 - (void)userNotificationCenter:(id<FakeNSUserNotificationCenter>)center
                didDismissAlert:(id<FakeNSUserNotification>)notification {
   NSString* name = [[notification userInfo] valueForKey:@"name"];
@@ -190,6 +190,7 @@ OSXNotificationCenter::OSXNotificationCenter() {
 
   mDelegate = [[mozNotificationCenterDelegate alloc] initWithOSXNC:this];
   GetNotificationCenter().delegate = mDelegate;
+  mSuppressForScreenSharing = false;
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -203,7 +204,7 @@ OSXNotificationCenter::~OSXNotificationCenter() {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-NS_IMPL_ISUPPORTS(OSXNotificationCenter, nsIAlertsService, nsIAlertsIconData,
+NS_IMPL_ISUPPORTS(OSXNotificationCenter, nsIAlertsService, nsIAlertsIconData, nsIAlertsDoNotDisturb,
                   nsIAlertNotificationImageListener)
 
 nsresult OSXNotificationCenter::Init() {
@@ -250,6 +251,10 @@ OSXNotificationCenter::ShowAlertWithIconData(nsIAlertNotification* aAlert,
 
   NS_ENSURE_ARG(aAlert);
 
+  if (mSuppressForScreenSharing) {
+    return NS_OK;
+  }
+
   Class unClass = NSClassFromString(@"NSUserNotification");
   id<FakeNSUserNotification> notification = [[unClass alloc] init];
 
@@ -280,8 +285,8 @@ OSXNotificationCenter::ShowAlertWithIconData(nsIAlertNotification* aAlert,
   notification.soundName = NSUserNotificationDefaultSoundName;
   notification.hasActionButton = NO;
 
-  // If this is not an application/extension alert, show additional actions dealing with
-  // permissions.
+  
+  
   bool isActionable;
   if (bundle && NS_SUCCEEDED(aAlert->GetActionable(&isActionable)) && isActionable) {
     nsAutoString closeButtonTitle, actionButtonTitle, disableButtonTitle, settingsButtonTitle;
@@ -296,9 +301,9 @@ OSXNotificationCenter::ShowAlertWithIconData(nsIAlertNotification* aAlert,
 
     notification.otherButtonTitle = nsCocoaUtils::ToNSString(closeButtonTitle);
 
-    // OS X 10.8 only shows action buttons if the "Alerts" style is set in
-    // Notification Center preferences, and doesn't support the alternate
-    // action menu.
+    
+    
+    
     if ([notification respondsToSelector:@selector(set_showsButtons:)] &&
         [notification respondsToSelector:@selector(set_alwaysShowAlternateActionMenu:)] &&
         [notification respondsToSelector:@selector(set_alternateActionButtonTitles:)]) {
@@ -315,9 +320,9 @@ OSXNotificationCenter::ShowAlertWithIconData(nsIAlertNotification* aAlert,
   }
   nsAutoString name;
   rv = aAlert->GetName(name);
-  // Don't let an alert name be more than MAX_NOTIFICATION_NAME_LEN characters.
-  // More than that shouldn't be necessary and userInfo (assigned to below) has
-  // a length limit of 16k on OS X 10.11. Exception thrown if limit exceeded.
+  
+  
+  
   if (name.Length() > MAX_NOTIFICATION_NAME_LEN) {
     return NS_ERROR_FAILURE;
   }
@@ -337,7 +342,7 @@ OSXNotificationCenter::ShowAlertWithIconData(nsIAlertNotification* aAlert,
 
   OSXNotificationInfo* osxni = new OSXNotificationInfo(alertName, aAlertListener, cookie);
 
-  // Show the favicon if supported on this version of OS X.
+  
   if (aIconSize > 0 && [notification respondsToSelector:@selector(set_identityImage:)] &&
       [notification respondsToSelector:@selector(set_identityImageHasBorder:)]) {
     NSData* iconData = [NSData dataWithBytes:aIconData length:aIconSize];
@@ -351,8 +356,8 @@ OSXNotificationCenter::ShowAlertWithIconData(nsIAlertNotification* aAlert,
   rv = aAlert->GetInPrivateBrowsing(&inPrivateBrowsing);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Show the notification without waiting for an image if there is no icon URL or
-  // notification icons are not supported on this version of OS X.
+  
+  
   if (![unClass instancesRespondToSelector:@selector(setContentImage:)]) {
     CloseAlertCocoaString(alertName);
     mActiveAlerts.AppendElement(osxni);
@@ -364,7 +369,7 @@ OSXNotificationCenter::ShowAlertWithIconData(nsIAlertNotification* aAlert,
   } else {
     mPendingAlerts.AppendElement(osxni);
     osxni->mPendingNotification = notification;
-    // Wait six seconds for the image to load.
+    
     rv = aAlert->LoadImage(6000, this, osxni, getter_AddRefs(osxni->mIconRequest));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       ShowPendingNotification(osxni);
@@ -391,7 +396,7 @@ void OSXNotificationCenter::CloseAlertCocoaString(NSString* aAlertName) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   if (!aAlertName) {
-    return;  // Can't do anything without a name
+    return;  
   }
 
   NSArray* notifications = [GetNotificationCenter() deliveredNotifications];
@@ -428,7 +433,7 @@ void OSXNotificationCenter::OnActivate(NSString* aAlertName,
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   if (!aAlertName) {
-    return;  // Can't do anything without a name
+    return;  
   }
 
   for (unsigned int i = 0; i < mActiveAlerts.Length(); i++) {
@@ -498,8 +503,8 @@ OSXNotificationCenter::OnImageMissing(nsISupports* aUserData) {
 
   OSXNotificationInfo* osxni = static_cast<OSXNotificationInfo*>(aUserData);
   if (osxni->mPendingNotification) {
-    // If there was an error getting the image, or the request timed out, show
-    // the notification without a content image.
+    
+    
     ShowPendingNotification(osxni);
   }
   return NS_OK;
@@ -534,4 +539,34 @@ OSXNotificationCenter::OnImageReady(nsISupports* aUserData, imgIRequest* aReques
   NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
 }
 
-}  // namespace mozilla
+
+NS_IMETHODIMP
+OSXNotificationCenter::GetManualDoNotDisturb(bool* aRetVal) { return NS_ERROR_NOT_IMPLEMENTED; }
+
+NS_IMETHODIMP
+OSXNotificationCenter::SetManualDoNotDisturb(bool aDoNotDisturb) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+OSXNotificationCenter::GetSuppressForScreenSharing(bool* aRetVal) {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT
+
+  NS_ENSURE_ARG(aRetVal);
+  *aRetVal = mSuppressForScreenSharing;
+  return NS_OK;
+
+  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT
+}
+
+NS_IMETHODIMP
+OSXNotificationCenter::SetSuppressForScreenSharing(bool aSuppress) {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT
+
+  mSuppressForScreenSharing = aSuppress;
+  return NS_OK;
+
+  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT
+}
+
+}  
