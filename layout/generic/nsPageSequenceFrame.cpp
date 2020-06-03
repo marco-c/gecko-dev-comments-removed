@@ -405,12 +405,8 @@ static void GetPrintCanvasElementsInFrame(
   if (!aFrame) {
     return;
   }
-  for (nsIFrame::ChildListIterator childLists(aFrame); !childLists.IsDone();
-       childLists.Next()) {
-    nsFrameList children = childLists.CurrentList();
-    for (nsFrameList::Enumerator e(children); !e.AtEnd(); e.Next()) {
-      nsIFrame* child = e.get();
-
+  for (const auto& childList : aFrame->GetChildLists()) {
+    for (nsIFrame* child : childList.mList) {
       
       nsHTMLCanvasFrame* canvasFrame = do_QueryFrame(child);
 

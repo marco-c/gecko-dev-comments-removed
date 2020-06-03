@@ -636,21 +636,20 @@ ScrollAnchorContainer::ExamineAnchorCandidate(nsIFrame* aFrame) const {
 
 nsIFrame* ScrollAnchorContainer::FindAnchorIn(nsIFrame* aFrame) const {
   
-  for (nsIFrame::ChildListIterator lists(aFrame); !lists.IsDone();
-       lists.Next()) {
+  for (const auto& [list, listID] : aFrame->GetChildLists()) {
     
     
     
     
-    if (lists.CurrentID() == FrameChildListID::kAbsoluteList ||
-        lists.CurrentID() == FrameChildListID::kFixedList ||
-        lists.CurrentID() == FrameChildListID::kFloatList ||
-        lists.CurrentID() == FrameChildListID::kOverflowOutOfFlowList) {
+    if (listID == FrameChildListID::kAbsoluteList ||
+        listID == FrameChildListID::kFixedList ||
+        listID == FrameChildListID::kFloatList ||
+        listID == FrameChildListID::kOverflowOutOfFlowList) {
       continue;
     }
 
     
-    if (nsIFrame* anchor = FindAnchorInList(lists.CurrentList())) {
+    if (nsIFrame* anchor = FindAnchorInList(list)) {
       return anchor;
     }
   }

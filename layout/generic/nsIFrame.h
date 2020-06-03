@@ -1644,7 +1644,21 @@ class nsIFrame : public nsQueryFrame {
   const nsFrameList& PrincipalChildList() const {
     return GetChildList(kPrincipalList);
   }
+
+  
+
+
+
   virtual void GetChildLists(nsTArray<ChildList>* aLists) const;
+
+  
+
+
+  AutoTArray<ChildList, 4> GetChildLists() const {
+    AutoTArray<ChildList, 4> childLists;
+    GetChildLists(&childLists);
+    return childLists;
+  }
 
   
 

@@ -320,11 +320,8 @@ void nsFontInflationData::ScanTextIn(nsIFrame* aFrame) {
   
   
 
-  nsIFrame::ChildListIterator lists(aFrame);
-  for (; !lists.IsDone(); lists.Next()) {
-    nsFrameList::Enumerator kids(lists.CurrentList());
-    for (; !kids.AtEnd(); kids.Next()) {
-      nsIFrame* kid = kids.get();
+  for (const auto& childList : aFrame->GetChildLists()) {
+    for (nsIFrame* kid : childList.mList) {
       if (kid->GetStateBits() & NS_FRAME_FONT_INFLATION_FLOW_ROOT) {
         
         continue;
