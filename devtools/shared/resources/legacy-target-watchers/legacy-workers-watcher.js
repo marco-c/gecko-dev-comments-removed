@@ -82,6 +82,10 @@ class LegacyWorkersWatcher {
 
     
     const existingTargets = this.targetsByProcess.get(targetFront);
+    if (!existingTargets) {
+      
+      return;
+    }
 
     
     
