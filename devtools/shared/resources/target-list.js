@@ -106,6 +106,7 @@ class TargetList {
     
     
     this.listenForWorkers = false;
+    this.listenForServiceWorkers = false;
   }
 
   
@@ -195,11 +196,12 @@ class TargetList {
       types.push(TargetList.TYPES.SHARED_WORKER);
     }
     if (
-      this.listenForWorkers &&
+      this.listenForServiceWorkers &&
       !types.includes(TargetList.TYPES.SERVICE_WORKER)
     ) {
       types.push(TargetList.TYPES.SERVICE_WORKER);
     }
+
     
     
     
