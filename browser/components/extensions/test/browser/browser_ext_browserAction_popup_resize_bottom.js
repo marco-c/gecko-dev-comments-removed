@@ -4,10 +4,6 @@
 
 loadTestSubscript("head_browserAction.js");
 
-add_task(async function testSetup() {
-  Services.prefs.setBoolPref("toolkit.cosmeticAnimations.enabled", false);
-});
-
 
 
 

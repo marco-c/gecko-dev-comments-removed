@@ -2,10 +2,6 @@
 
 "use strict";
 
-add_task(async function testSetup() {
-  Services.prefs.setBoolPref("toolkit.cosmeticAnimations.enabled", false);
-});
-
 add_task(async function testPopupSelectPopup() {
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
