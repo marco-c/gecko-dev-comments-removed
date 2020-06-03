@@ -91,6 +91,13 @@ void HostReleaseTopLevelScript(const JS::Value& aPrivate) {
 
 
 
+EventScript::EventScript(ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL)
+    : LoadedScript(ScriptKind::eEvent, aFetchOptions, aBaseURL) {}
+
+
+
+
+
 ClassicScript::ClassicScript(ScriptFetchOptions* aFetchOptions,
                              nsIURI* aBaseURL)
     : LoadedScript(ScriptKind::eClassic, aFetchOptions, aBaseURL) {}
