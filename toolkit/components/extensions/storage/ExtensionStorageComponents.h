@@ -11,7 +11,8 @@
 extern "C" {
 
 
-nsresult NS_NewExtensionStorageSyncArea(mozIExtensionStorageArea** aResult);
+nsresult NS_NewExtensionStorageSyncArea(
+    mozIConfigurableExtensionStorageArea** aResult);
 
 }  
 
@@ -24,8 +25,8 @@ namespace storage {
 
 
 
-already_AddRefed<mozIExtensionStorageArea> NewSyncArea() {
-  nsCOMPtr<mozIExtensionStorageArea> storage;
+already_AddRefed<mozIConfigurableExtensionStorageArea> NewSyncArea() {
+  nsCOMPtr<mozIConfigurableExtensionStorageArea> storage;
   nsresult rv = NS_NewExtensionStorageSyncArea(getter_AddRefs(storage));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return nullptr;
