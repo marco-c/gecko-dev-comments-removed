@@ -32,6 +32,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/TextEvents.h"
 #include <algorithm>
 
@@ -45,13 +46,6 @@ const int32_t kNothingSelected = -1;
 
 nsListControlFrame* nsListControlFrame::mFocused = nullptr;
 nsString* nsListControlFrame::sIncrementalString = nullptr;
-
-
-#define INCREMENTAL_SEARCH_KEYPRESS_TIME 1000
-
-
-
-
 
 DOMTimeStamp nsListControlFrame::gLastKeyTime = 0;
 
@@ -1985,7 +1979,8 @@ nsresult nsListControlFrame::KeyDown(dom::Event* aKeyEvent) {
   dropDownMenuOnSpace = IsInDropDownMode() && !mComboboxFrame->IsDroppedDown();
 #endif
   bool withinIncrementalSearchTime =
-      keyEvent->mTime - gLastKeyTime <= INCREMENTAL_SEARCH_KEYPRESS_TIME;
+      keyEvent->mTime - gLastKeyTime <=
+      StaticPrefs::ui_menu_incremental_search_timeout();
   if ((dropDownMenuOnUpDown &&
        (keyEvent->mKeyCode == NS_VK_UP || keyEvent->mKeyCode == NS_VK_DOWN)) ||
       (dropDownMenuOnSpace && keyEvent->mKeyCode == NS_VK_SPACE &&
@@ -2208,7 +2203,8 @@ nsresult nsListControlFrame::KeyPress(dom::Event* aKeyEvent) {
   
   
   
-  if (keyEvent->mTime - gLastKeyTime > INCREMENTAL_SEARCH_KEYPRESS_TIME) {
+  if (keyEvent->mTime - gLastKeyTime >
+      StaticPrefs::ui_menu_incremental_search_timeout()) {
     
     
     if (keyEvent->mCharCode == ' ') {

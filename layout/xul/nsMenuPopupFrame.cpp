@@ -78,15 +78,6 @@ DOMTimeStamp nsMenuPopupFrame::sLastKeyTime = 0;
 
 
 
-uint32_t nsMenuPopupFrame::sTimeoutOfIncrementalSearch = 1000;
-
-const char kPrefIncrementalSearchTimeout[] =
-    "ui.menu.incremental_search.timeout";
-
-
-
-
-
 nsIFrame* NS_NewMenuPopupFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell)
       nsMenuPopupFrame(aStyle, aPresShell->GetPresContext());
@@ -136,8 +127,6 @@ nsMenuPopupFrame::nsMenuPopupFrame(ComputedStyle* aStyle,
   if (sDefaultLevelIsTop >= 0) return;
   sDefaultLevelIsTop =
       Preferences::GetBool("ui.panel.default_level_parent", false);
-  Preferences::AddUintVarCache(&sTimeoutOfIncrementalSearch,
-                               kPrefIncrementalSearchTimeout, 1000);
 }  
 
 void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,

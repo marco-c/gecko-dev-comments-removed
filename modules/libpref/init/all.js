@@ -317,9 +317,6 @@ pref("ui.click_hold_context_menus", false);
 
 pref("ui.android.mouse_as_touch", 1);
 
-
-pref("ui.menu.incremental_search.timeout", 1000);
-
 pref("browser.display.force_inline_alttext", false); 
 
 
@@ -2290,6 +2287,8 @@ pref("security.notification_enable_delay", 500);
   
   pref("security.disallow_non_local_systemprincipal_in_tests", false);
 #endif
+
+pref("security.cancel_non_local_systemprincipal", true);
 
 
 pref("security.sri.enable", true);
