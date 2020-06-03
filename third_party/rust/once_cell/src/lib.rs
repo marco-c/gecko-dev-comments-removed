@@ -237,7 +237,7 @@ pub mod unsync {
     use core::{
         cell::{Cell, UnsafeCell},
         fmt,
-        ops::{Deref, DerefMut},
+        ops::Deref,
     };
 
     #[cfg(feature = "std")]
@@ -435,10 +435,6 @@ pub mod unsync {
                 return Ok(val);
             }
             let val = f()?;
-            
-            
-            
-            
             assert!(self.set(val).is_ok(), "reentrant init");
             Ok(self.get().unwrap())
         }
@@ -494,7 +490,7 @@ pub mod unsync {
     #[cfg(feature = "std")]
     impl<T, F: RefUnwindSafe> RefUnwindSafe for Lazy<T, F> where OnceCell<T>: RefUnwindSafe {}
 
-    impl<T: fmt::Debug, F> fmt::Debug for Lazy<T, F> {
+    impl<T: fmt::Debug, F: fmt::Debug> fmt::Debug for Lazy<T, F> {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             f.debug_struct("Lazy").field("cell", &self.cell).field("init", &"..").finish()
         }
@@ -550,13 +546,6 @@ pub mod unsync {
         }
     }
 
-    impl<T, F: FnOnce() -> T> DerefMut for Lazy<T, F> {
-        fn deref_mut(&mut self) -> &mut T {
-            Lazy::force(self);
-            self.cell.get_mut().unwrap_or_else(|| unreachable!())
-        }
-    }
-
     impl<T: Default> Default for Lazy<T> {
         
         fn default() -> Lazy<T> {
@@ -567,21 +556,10 @@ pub mod unsync {
 
 #[cfg(feature = "std")]
 pub mod sync {
-    use std::{
-        cell::Cell,
-        fmt,
-        hint::unreachable_unchecked,
-        ops::{Deref, DerefMut},
-        panic::RefUnwindSafe,
-    };
+    use std::{cell::Cell, fmt, hint::unreachable_unchecked, panic::RefUnwindSafe};
 
     use crate::imp::OnceCell as Imp;
 
-    
-    
-    
-    
-    
     
     
     
@@ -678,7 +656,6 @@ pub mod sync {
             unsafe { &mut *self.0.value.get() }.as_mut()
         }
 
-        
         
         
         
@@ -866,7 +843,7 @@ pub mod sync {
         init: Cell<Option<F>>,
     }
 
-    impl<T: fmt::Debug, F> fmt::Debug for Lazy<T, F> {
+    impl<T: fmt::Debug, F: fmt::Debug> fmt::Debug for Lazy<T, F> {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             f.debug_struct("Lazy").field("cell", &self.cell).field("init", &"..").finish()
         }
@@ -913,17 +890,10 @@ pub mod sync {
         }
     }
 
-    impl<T, F: FnOnce() -> T> Deref for Lazy<T, F> {
+    impl<T, F: FnOnce() -> T> ::std::ops::Deref for Lazy<T, F> {
         type Target = T;
         fn deref(&self) -> &T {
             Lazy::force(self)
-        }
-    }
-
-    impl<T, F: FnOnce() -> T> DerefMut for Lazy<T, F> {
-        fn deref_mut(&mut self) -> &mut T {
-            Lazy::force(self);
-            self.cell.get_mut().unwrap_or_else(|| unreachable!())
         }
     }
 
