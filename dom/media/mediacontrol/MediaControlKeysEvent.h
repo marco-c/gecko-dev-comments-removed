@@ -20,6 +20,7 @@ namespace dom {
 
 
 enum class MediaControlKeysEvent : uint32_t {
+  eFocus,
   ePlay,
   ePause,
   ePlayPause,
@@ -27,7 +28,6 @@ enum class MediaControlKeysEvent : uint32_t {
   eNextTrack,
   eSeekBackward,
   eSeekForward,
-  eFocus,
   
   
   eStop,
