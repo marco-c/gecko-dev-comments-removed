@@ -122,14 +122,14 @@ def docker_worker_toolchain(config, job, taskdesc):
     
     
     artifacts = worker.setdefault('artifacts', [])
-    if not any(artifact.get('name') == 'public/build' for artifact in artifacts):
+    if not artifacts:
         docker_worker_add_artifacts(config, job, taskdesc)
 
     
     workspace = '{workdir}/workspace/build'.format(**run)
     gecko_path = '{}/src'.format(workspace)
 
-    env = worker['env']
+    env = worker.setdefault('env', {})
     env.update({
         'MOZ_BUILD_DATE': config.params['moz_build_date'],
         'MOZ_SCM_LEVEL': config.params['level'],
