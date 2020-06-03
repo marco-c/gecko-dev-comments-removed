@@ -88,7 +88,7 @@ function validFuncRefText(forwardDeclare, tbl_type) {
 }
 
 
-assertErrorMessage(() => validFuncRefText('', 'funcref'), WebAssembly.CompileError, /function index is not in an element segment/);
+assertErrorMessage(() => validFuncRefText('', 'funcref'), WebAssembly.CompileError, /function index is not declared in a section before the code section/);
 
 
 assertEq(validFuncRefText('(elem 0 (i32.const 0) func $referenced)', 'funcref') instanceof WebAssembly.Instance, true);
@@ -100,12 +100,13 @@ assertEq(validFuncRefText('(elem 0 (i32.const 0) funcref (ref.func $referenced))
 assertEq(validFuncRefText('(elem funcref (ref.func $referenced))', 'funcref') instanceof WebAssembly.Instance, true);
 
 
-assertErrorMessage(() => validFuncRefText('(start $referenced)', 'funcref'),
-                   WebAssembly.CompileError,
-                   /function index is not in an element segment/);
-assertErrorMessage(() => validFuncRefText('(export "referenced" (func $referenced))', 'funcref'),
-                   WebAssembly.CompileError,
-                   /function index is not in an element segment/);
+assertEq(validFuncRefText('(global funcref (ref.func $referenced))', 'anyref') instanceof WebAssembly.Instance, true);
+
+
+assertEq(validFuncRefText('(export "referenced" (func $referenced))', 'anyref') instanceof WebAssembly.Instance, true);
+
+
+assertEq(validFuncRefText('(start $referenced)', 'anyref') instanceof WebAssembly.Instance, true);
 
 
 
