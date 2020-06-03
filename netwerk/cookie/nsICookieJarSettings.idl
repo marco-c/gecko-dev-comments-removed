@@ -25,6 +25,11 @@ interface nsICookieJarSettings : nsISupports
   
 
 
+  [infallible] readonly attribute boolean isFirstPartyIsolated;
+
+  
+
+
   [infallible] readonly attribute boolean rejectThirdPartyContexts;
 
   [infallible] readonly attribute boolean limitForeignContexts;
