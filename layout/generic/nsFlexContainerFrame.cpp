@@ -68,6 +68,17 @@ static bool IsLegacyBox(const nsIFrame* aFlexContainer) {
 
 
 
+
+static CSSOrderAwareFrameIterator::OrderState OrderStateForIter(
+    const nsFlexContainerFrame* aFlexContainer) {
+  return aFlexContainer->HasAnyStateBits(
+             NS_STATE_FLEX_NORMAL_FLOW_CHILDREN_IN_CSS_ORDER)
+             ? CSSOrderAwareFrameIterator::OrderState::eKnownOrdered
+             : CSSOrderAwareFrameIterator::OrderState::eKnownUnordered;
+}
+
+
+
 static CSSOrderAwareFrameIterator::OrderingProperty OrderingPropertyForIter(
     const nsFlexContainerFrame* aFlexContainer) {
   return IsLegacyBox(aFlexContainer)
@@ -2610,15 +2621,10 @@ void nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   nsDisplayListSet childLists(tempLists, tempLists.BlockBorderBackgrounds());
 
-  using OrderState = CSSOrderAwareFrameIterator::OrderState;
-  OrderState orderState =
-      HasAnyStateBits(NS_STATE_FLEX_NORMAL_FLOW_CHILDREN_IN_CSS_ORDER)
-          ? OrderState::eKnownOrdered
-          : OrderState::eKnownUnordered;
+  CSSOrderAwareFrameIterator iter(
+      this, kPrincipalList, CSSOrderAwareFrameIterator::eIncludeAll,
+      OrderStateForIter(this), OrderingPropertyForIter(this));
 
-  CSSOrderAwareFrameIterator iter(this, kPrincipalList,
-                                  CSSOrderAwareFrameIterator::eIncludeAll,
-                                  orderState, OrderingPropertyForIter(this));
   for (; !iter.AtEnd(); iter.Next()) {
     nsIFrame* childFrame = *iter;
     BuildDisplayListForChild(aBuilder, childFrame, childLists,
@@ -3838,11 +3844,8 @@ void nsFlexContainerFrame::GenerateFlexLines(
       this, kPrincipalList, CSSOrderAwareFrameIterator::eIncludeAll,
       CSSOrderAwareFrameIterator::eUnknownOrder, OrderingPropertyForIter(this));
 
-  if (iter.ItemsAreAlreadyInOrder()) {
-    AddStateBits(NS_STATE_FLEX_NORMAL_FLOW_CHILDREN_IN_CSS_ORDER);
-  } else {
-    RemoveStateBits(NS_STATE_FLEX_NORMAL_FLOW_CHILDREN_IN_CSS_ORDER);
-  }
+  AddOrRemoveStateBits(NS_STATE_FLEX_NORMAL_FLOW_CHILDREN_IN_CSS_ORDER,
+                       iter.ItemsAreAlreadyInOrder());
 
   const bool useMozBoxCollapseBehavior =
       ShouldUseMozBoxCollapseBehavior(aReflowInput.mStyleDisplay);
@@ -3933,9 +3936,17 @@ void nsFlexContainerFrame::GenerateFlexLines(const SharedFlexData& aData,
 
   
   
+  
+  
+  AddOrRemoveStateBits(NS_STATE_FLEX_NORMAL_FLOW_CHILDREN_IN_CSS_ORDER,
+                       GetPrevInFlow()->HasAnyStateBits(
+                           NS_STATE_FLEX_NORMAL_FLOW_CHILDREN_IN_CSS_ORDER));
+
+  
+  
   CSSOrderAwareFrameIterator iter(
       this, kPrincipalList, CSSOrderAwareFrameIterator::eSkipPlaceholders,
-      CSSOrderAwareFrameIterator::eUnknownOrder, OrderingPropertyForIter(this));
+      OrderStateForIter(this), OrderingPropertyForIter(this));
 
   FlexItemIterator itemIter(aData.mLines);
 
