@@ -135,7 +135,9 @@ void GPUVideoTextureHost::UpdatedInternal(const nsIntRegion* Region) {
 
 void GPUVideoTextureHost::CreateRenderTexture(
     const wr::ExternalImageId& aExternalImageId) {
-  MOZ_ASSERT(mExternalImageId.isSome());
+  MOZ_ASSERT(mExternalImageId.isNothing());
+
+  mExternalImageId = Some(aExternalImageId);
 
   
   
@@ -147,15 +149,6 @@ void GPUVideoTextureHost::CreateRenderTexture(
 
   MOZ_ASSERT(EnsureWrappedTextureHost());
   EnsureWrappedTextureHost();
-}
-
-void GPUVideoTextureHost::MaybeDestroyRenderTexture() {
-  if (mExternalImageId.isNothing() || !mWrappedTextureHost) {
-    
-    return;
-  }
-  
-  TextureHost::DestroyRenderTexture(mExternalImageId.ref());
 }
 
 uint32_t GPUVideoTextureHost::NumSubTextures() {
