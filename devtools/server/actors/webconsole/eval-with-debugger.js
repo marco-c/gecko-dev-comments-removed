@@ -6,6 +6,7 @@
 
 const Debugger = require("Debugger");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+const Services = require("Services");
 
 loader.lazyRequireGetter(
   this,
@@ -52,6 +53,9 @@ loader.lazyRequireGetter(
 function isObject(value) {
   return Object(value) === value;
 }
+
+
+
 
 
 
@@ -497,7 +501,19 @@ function getFrameDbg(options, webConsole) {
 }
 
 function getDbgWindow(options, dbg, webConsole) {
-  const dbgWindow = dbg.makeGlobalObjectReference(webConsole.evalWindow);
+  let evalWindow = webConsole.evalWindow;
+
+  if (options.innerWindowID) {
+    const window = Services.wm.getCurrentInnerWindowWithId(
+      options.innerWindowID
+    );
+
+    if (window) {
+      evalWindow = window;
+    }
+  }
+
+  const dbgWindow = dbg.makeGlobalObjectReference(evalWindow);
 
   
   

@@ -193,6 +193,11 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
 
 
 
+
+
+
+
+
   async evaluateJSAsync(string, opts = {}) {
     const options = {
       text: string,
@@ -200,6 +205,7 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
       url: opts.url,
       selectedNodeActor: opts.selectedNodeActor,
       selectedObjectActor: opts.selectedObjectActor,
+      innerWindowID: opts.innerWindowID,
       mapped: opts.mapped,
       eager: opts.eager,
     };
