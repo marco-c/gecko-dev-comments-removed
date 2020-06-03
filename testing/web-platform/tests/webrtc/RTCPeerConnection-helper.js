@@ -456,6 +456,7 @@ const trackFactories = {
       count += 1;
       ctx.fillRect(0, 0, width, height);
       
+      
       if (signal !== null) {
         ctx.fillStyle = `rgb(${signal}, ${signal}, ${signal})`;
         ctx.fillRect(10, 10, 20, 20);
@@ -484,7 +485,9 @@ function getVideoSignal(v) {
   context.drawImage(v, 0, 0, v.videoWidth, v.videoHeight);
   
   let pixel = context.getImageData(20, 20, 1, 1);
-  return (pixel.data[0] + pixel.data[1] + pixel.data[2]) / 3;
+  
+  
+  return (pixel.data[0] * 0.21 + pixel.data[1] * 0.72 + pixel.data[2] * 0.07);
 }
 
 function detectSignal(t, v, value) {
@@ -494,6 +497,8 @@ function detectSignal(t, v, value) {
       if (signal !== null && signal < value + 1 && signal > value - 1) {
         resolve();
       } else {
+        
+        
         t.step_timeout(check, 100);
       }
     }
