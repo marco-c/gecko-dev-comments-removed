@@ -599,7 +599,7 @@ class DisplayListBuilder final {
 
 
 
-  void CancelGroup();
+  void CancelGroup(const bool aDiscard = false);
 
   
 
