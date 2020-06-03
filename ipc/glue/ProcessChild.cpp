@@ -4,6 +4,8 @@
 
 
 
+#include "mozilla/ipc/ProcessChild.h"
+
 #include "nsDebug.h"
 
 #ifdef XP_WIN
@@ -14,12 +16,13 @@
 
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ipc/IOThreadChild.h"
-#include "mozilla/ipc/ProcessChild.h"
 
 namespace mozilla {
 namespace ipc {
 
 ProcessChild* ProcessChild::gProcessChild;
+
+static Atomic<bool> sExpectingShutdown(false);
 
 ProcessChild::ProcessChild(ProcessId aParentPid)
     : ChildProcess(new IOThreadChild()),
@@ -31,6 +34,12 @@ ProcessChild::ProcessChild(ProcessId aParentPid)
 }
 
 ProcessChild::~ProcessChild() { gProcessChild = nullptr; }
+
+
+void ProcessChild::NotifyImpendingShutdown() { sExpectingShutdown = true; }
+
+
+bool ProcessChild::ExpectingShutdown() { return sExpectingShutdown; }
 
 
 void ProcessChild::QuickExit() { AppShutdown::DoImmediateExit(); }

@@ -178,6 +178,12 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver {
   bool OpenOnSameThread(MessageChannel* aTargetChan, Side aSide);
 
   
+
+
+
+  void NotifyImpendingShutdown();
+
+  
   void Close();
 
   

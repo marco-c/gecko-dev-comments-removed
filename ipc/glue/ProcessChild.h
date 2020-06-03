@@ -32,6 +32,10 @@ class ProcessChild : public ChildProcess {
 
   static MessageLoop* message_loop() { return gProcessChild->mUILoop; }
 
+  static void NotifyImpendingShutdown();
+
+  static bool ExpectingShutdown();
+
   
 
 

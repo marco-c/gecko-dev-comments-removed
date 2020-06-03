@@ -52,6 +52,7 @@ namespace {
 
 
 enum {
+  IMPENDING_SHUTDOWN_MESSAGE_TYPE = kuint16max - 9,
   BUILD_IDS_MATCH_MESSAGE_TYPE = kuint16max - 8,
   BUILD_ID_MESSAGE_TYPE = kuint16max - 7,  
   CHANNEL_OPENED_MESSAGE_TYPE = kuint16max - 6,
@@ -443,6 +444,12 @@ class IToplevelProtocol : public IProtocol {
   
   bool OpenOnSameThread(MessageChannel* aChannel,
                         mozilla::ipc::Side aSide = mozilla::ipc::UnknownSide);
+
+  
+
+
+
+  void NotifyImpendingShutdown();
 
   void Close();
 
