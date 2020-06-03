@@ -102,8 +102,10 @@ class StatReader {
       case 23:
         
         
-        aInfo.residentSetSize = Get64Value(aToken, &rv);
+        uint64_t pageCount = Get64Value(aToken, &rv);
         NS_ENSURE_SUCCESS(rv, rv);
+        uint64_t pageSize = sysconf(_SC_PAGESIZE);
+        aInfo.residentSetSize = pageCount * pageSize;
         break;
     }
     return rv;
