@@ -19,49 +19,94 @@ type Args = {
   targetList: TargetList,
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export async function attachTarget(
+  targetFront: Target,
+  targets: { [string]: Target },
+  options: Object
+) {
+  try {
+    
+    await targetFront.attach();
+
+    const threadActorID = targetFront.targetForm.threadActor;
+    if (targets[threadActorID]) {
+      return;
+    }
+    targets[threadActorID] = targetFront;
+
+    
+    
+    
+    let threadFront = targetFront.threadFront;
+
+    
+    
+    if (!threadFront) {
+      threadFront = await targetFront.attachThread({
+        ...defaultThreadOptions(),
+        ...options,
+      });
+      
+      
+      threadFront.resume();
+    }
+
+    addThreadEventListeners(threadFront);
+  } catch (e) {
+    
+    
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 async function attachTargets(targetLists, args): Promise<*> {
   const { targets } = args;
 
   targetLists = targetLists.filter(target => !!target);
 
+  
   for (const actor of Object.keys(targets)) {
     if (!targetLists.some(target => target.targetForm.threadActor == actor)) {
       delete targets[actor];
     }
   }
 
+  
+  
   for (const targetFront of targetLists) {
-    try {
-      await targetFront.attach();
-
-      const threadActorID = targetFront.targetForm.threadActor;
-      if (targets[threadActorID]) {
-        continue;
-      }
-      targets[threadActorID] = targetFront;
-
-      
-      
-      
-      let { threadFront } = targetFront;
-
-      
-      
-      if (!threadFront) {
-        threadFront = await targetFront.attachThread({
-          ...defaultThreadOptions(),
-          ...args.options,
-        });
-        
-        
-        threadFront.resume();
-      }
-
-      addThreadEventListeners(threadFront);
-    } catch (e) {
-      
-      
-    }
+    await attachTarget(targetFront, targets, args.options);
   }
 }
 
@@ -174,7 +219,8 @@ async function listProcessTargets(args: Args): Promise<*> {
 }
 
 export async function updateTargets(args: Args): Promise<*> {
+  const currentTopLevelTarget = args.targetList.targetFront;
   const workers = await listWorkerTargets(args);
   const processes = await listProcessTargets(args);
-  await attachTargets([...workers, ...processes], args);
+  await attachTargets([currentTopLevelTarget, ...workers, ...processes], args);
 }
