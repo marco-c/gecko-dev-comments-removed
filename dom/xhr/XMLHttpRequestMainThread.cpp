@@ -1803,6 +1803,11 @@ NS_IMETHODIMP
 XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
   AUTO_PROFILER_LABEL("XMLHttpRequestMainThread::OnStartRequest", NETWORK);
 
+  if (mFromPreload && !mChannel) {
+    mChannel = do_QueryInterface(request);
+    EnsureChannelContentType();
+  }
+
   nsresult rv = NS_OK;
   if (!mFirstStartRequestSeen && mRequestObserver) {
     mFirstStartRequestSeen = true;
@@ -2500,6 +2505,32 @@ nsresult XMLHttpRequestMainThread::InitiateFetch(
   nsresult rv;
   nsCOMPtr<nsIInputStream> uploadStream = std::move(aUploadStream);
 
+  if (!uploadStream) {
+    RefPtr<PreloaderBase> preload = FindPreload();
+    if (preload) {
+      
+      
+      
+      
+      nsCOMPtr<nsIStreamListener> listener =
+          new net::nsStreamListenerWrapper(this);
+      rv = preload->AsyncConsume(listener);
+      if (NS_SUCCEEDED(rv)) {
+        mFromPreload = true;
+
+        
+        
+        mChannel = preload->Channel();
+        if (mChannel) {
+          EnsureChannelContentType();
+        }
+        return NS_OK;
+      }
+
+      preload = nullptr;
+    }
+  }
+
   
   
   
@@ -2639,17 +2670,7 @@ nsresult XMLHttpRequestMainThread::InitiateFetch(
     AddLoadFlags(mChannel, nsICachingChannel::LOAD_BYPASS_LOCAL_CACHE_IF_BUSY);
   }
 
-  
-  
-  
-  
-  
-  nsAutoCString contentType;
-  if (NS_FAILED(mChannel->GetContentType(contentType)) ||
-      contentType.IsEmpty() ||
-      contentType.EqualsLiteral(UNKNOWN_CONTENT_TYPE)) {
-    mChannel->SetContentType(NS_LITERAL_CSTRING("text/xml"));
-  }
+  EnsureChannelContentType();
 
   
   if (!IsSystemXHR()) {
@@ -2703,6 +2724,58 @@ nsresult XMLHttpRequestMainThread::InitiateFetch(
   }
 
   return NS_OK;
+}
+
+already_AddRefed<PreloaderBase> XMLHttpRequestMainThread::FindPreload() {
+  Document* doc = GetDocumentIfCurrent();
+  if (!doc) {
+    return nullptr;
+  }
+  if (mPrincipal->IsSystemPrincipal() || IsSystemXHR()) {
+    return nullptr;
+  }
+  if (!mRequestMethod.EqualsLiteral("GET")) {
+    
+    return nullptr;
+  }
+  if (!mAuthorRequestHeaders.IsEmpty()) {
+    
+    return nullptr;
+  }
+
+  
+  CORSMode cors = (mIsAnon || !mFlagACwithCredentials)
+                      ? CORSMode::CORS_ANONYMOUS
+                      : CORSMode::CORS_USE_CREDENTIALS;
+  nsCOMPtr<nsIReferrerInfo> referrerInfo =
+      ReferrerInfo::CreateForFetch(mPrincipal, doc);
+  auto key = PreloadHashKey::CreateAsFetch(mRequestURL, cors,
+                                           referrerInfo->ReferrerPolicy());
+  RefPtr<PreloaderBase> preload = doc->Preloads().LookupPreload(&key);
+  if (!preload) {
+    return nullptr;
+  }
+
+  preload->RemoveSelf(doc);
+  preload->NotifyUsage(PreloaderBase::LoadBackground::Keep);
+
+  return preload.forget();
+}
+
+void XMLHttpRequestMainThread::EnsureChannelContentType() {
+  MOZ_ASSERT(mChannel);
+
+  
+  
+  
+  
+  
+  nsAutoCString contentType;
+  if (NS_FAILED(mChannel->GetContentType(contentType)) ||
+      contentType.IsEmpty() ||
+      contentType.EqualsLiteral(UNKNOWN_CONTENT_TYPE)) {
+    mChannel->SetContentType(NS_LITERAL_CSTRING("text/xml"));
+  }
 }
 
 void XMLHttpRequestMainThread::UnsuppressEventHandlingAndResume() {
@@ -3903,6 +3976,8 @@ RequestHeaders::RequestHeader* RequestHeaders::Find(const nsACString& aName) {
   }
   return nullptr;
 }
+
+bool RequestHeaders::IsEmpty() const { return mHeaders.IsEmpty(); }
 
 bool RequestHeaders::Has(const char* aName) {
   return Has(nsDependentCString(aName));

@@ -154,6 +154,7 @@ class RequestHeaders {
     bool Next();
   };
 
+  bool IsEmpty() const;
   bool Has(const char* aName);
   bool Has(const nsACString& aName);
   void Get(const char* aName, nsACString& aValue);
@@ -465,7 +466,14 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
   
   nsresult ChangeState(uint16_t aState, bool aBroadcast = true);
   already_AddRefed<nsILoadGroup> GetLoadGroup() const;
-  nsIURI* GetBaseURI();
+
+  
+  
+  
+  already_AddRefed<PreloaderBase> FindPreload();
+  
+  
+  void EnsureChannelContentType();
 
   already_AddRefed<nsIHttpChannel> GetCurrentHttpChannel();
   already_AddRefed<nsIJARChannel> GetCurrentJARChannel();
@@ -754,6 +762,10 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
   
   
   bool mEofDecoded;
+
+  
+  
+  bool mFromPreload = false;
 
   
   RefPtr<nsXHRParseEndListener> mParseEndListener;
