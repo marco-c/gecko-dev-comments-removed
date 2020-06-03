@@ -209,14 +209,87 @@ function maybeReportErrorToGecko(error) {
 
 
 
-const Localization = {
-  cached(iterable, isSync) {
-    if (isSync) {
+class Localization {
+  
+
+
+
+
+  constructor() {
+    this.resourceIds = [];
+    this.generateBundles = undefined;
+    this.generateBundlesSync = undefined;
+    this.isSync = undefined;
+    this.bundles = undefined;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  activate(sync, eager, generateBundles = defaultGenerateBundles, generateBundlesSync = defaultGenerateBundlesSync) {
+    if (this.bundles) {
+      throw new Error("Attempt to initialize an already initialized instance.");
+    }
+    this.generateBundles = generateBundles;
+    this.generateBundlesSync = generateBundlesSync;
+    this.isSync = sync;
+    this.regenerateBundles(eager);
+  }
+
+  setIsSync(isSync) {
+    this.isSync = isSync;
+  }
+
+  cached(iterable) {
+    if (this.isSync) {
       return CachedSyncIterable.from(iterable);
     } else {
       return CachedAsyncIterable.from(iterable);
     }
-  },
+  }
+
+  
+
+
+  addResourceId(resourceId) {
+    this.resourceIds.push(resourceId);
+    this.onChange();
+    return this.resourceIds.length;
+  }
+
+  
+
+
+  removeResourceId(resourceId) {
+    this.resourceIds = this.resourceIds.filter(r => r !== resourceId);
+    this.onChange();
+    return this.resourceIds.length;
+  }
+
+  
+
+
+  addResourceIds(resourceIds) {
+    this.resourceIds.push(...resourceIds);
+    this.onChange();
+    return this.resourceIds.length;
+  }
+
+  
+
+
+  removeResourceIds(resourceIds) {
+    this.resourceIds = this.resourceIds.filter(r => !resourceIds.includes(r));
+    this.onChange();
+    return this.resourceIds.length;
+  }
 
   
 
@@ -230,18 +303,14 @@ const Localization = {
 
 
 
-
-
-
-  async formatWithFallback(resourceIds, bundles, keys, method) {
-    if (!bundles) {
+  async formatWithFallback(keys, method) {
+    if (!this.bundles) {
       throw new Error("Attempt to format on an uninitialized instance.");
     }
-
     const translations = new Array(keys.length).fill(null);
     let hasAtLeastOneBundle = false;
 
-    for await (const bundle of bundles) {
+    for await (const bundle of this.bundles) {
       hasAtLeastOneBundle = true;
       const missingIds = keysFromBundle(method, bundle, keys, translations);
 
@@ -255,11 +324,11 @@ const Localization = {
     }
 
     if (!hasAtLeastOneBundle) {
-      maybeReportErrorToGecko(`[fluent] Request for keys failed because no resource bundles got generated.\n keys: ${JSON.stringify(keys)}.\n resourceIds: ${JSON.stringify(resourceIds)}.`);
+      maybeReportErrorToGecko(`[fluent] Request for keys failed because no resource bundles got generated.\n keys: ${JSON.stringify(keys)}.\n resourceIds: ${JSON.stringify(this.resourceIds)}.`);
     }
 
     return translations;
-  },
+  }
 
   
 
@@ -273,18 +342,18 @@ const Localization = {
 
 
 
-
-
-
-  formatWithFallbackSync(resourceIds, bundles, keys, method) {
-    if (!bundles) {
+  formatWithFallbackSync(keys, method) {
+    if (!this.isSync) {
+      throw new Error("Can't use sync formatWithFallback when state is async.");
+    }
+    if (!this.bundles) {
       throw new Error("Attempt to format on an uninitialized instance.");
     }
 
     const translations = new Array(keys.length).fill(null);
     let hasAtLeastOneBundle = false;
 
-    for (const bundle of bundles) {
+    for (const bundle of this.bundles) {
       hasAtLeastOneBundle = true;
       const missingIds = keysFromBundle(method, bundle, keys, translations);
 
@@ -298,11 +367,11 @@ const Localization = {
     }
 
     if (!hasAtLeastOneBundle) {
-      maybeReportErrorToGecko(`[fluent] Request for keys failed because no resource bundles got generated.\n keys: ${JSON.stringify(keys)}.\n resourceIds: ${JSON.stringify(resourceIds)}.`);
+      maybeReportErrorToGecko(`[fluent] Request for keys failed because no resource bundles got generated.\n keys: ${JSON.stringify(keys)}.\n resourceIds: ${JSON.stringify(this.resourceIds)}.`);
     }
 
     return translations;
-  },
+  }
 
 
   
@@ -331,12 +400,9 @@ const Localization = {
 
 
 
-
-
-
-  formatMessages(resourceIds, bundles, keys) {
-    return this.formatWithFallback(resourceIds, bundles, keys, messageFromBundle);
-  },
+  formatMessages(keys) {
+    return this.formatWithFallback(keys, messageFromBundle);
+  }
 
   
 
@@ -347,54 +413,9 @@ const Localization = {
 
 
 
-
-
-
-  formatMessagesSync(resourceIds, bundles, keys) {
-    return this.formatWithFallbackSync(resourceIds, bundles, keys, messageFromBundle);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  formatValues(resourceIds, bundles, keys) {
-    return this.formatWithFallback(resourceIds, bundles, keys, valueFromBundle);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  formatValuesSync(resourceIds, bundles, keys) {
-    return this.formatWithFallbackSync(resourceIds, bundles, keys, valueFromBundle);
-  },
+  formatMessagesSync(keys) {
+    return this.formatWithFallbackSync(keys, messageFromBundle);
+  }
 
   
 
@@ -415,16 +436,49 @@ const Localization = {
 
 
 
+  formatValues(keys) {
+    return this.formatWithFallback(keys, valueFromBundle);
+  }
+
+  
 
 
 
 
 
 
-  async formatValue(resourceIds, bundles, id, args) {
-    const [val] = await this.formatValues(resourceIds, bundles, [{id, args}]);
+
+
+  formatValuesSync(keys) {
+    return this.formatWithFallbackSync(keys, valueFromBundle);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async formatValue(id, args) {
+    const [val] = await this.formatValues([{id, args}]);
     return val;
-  },
+  }
 
   
 
@@ -435,14 +489,18 @@ const Localization = {
 
 
 
-
-
-
-
-  formatValueSync(resourceIds, bundles, id, args) {
-    const [val] = this.formatValuesSync(resourceIds, bundles, [{id, args}]);
+  formatValueSync(id, args) {
+    const [val] = this.formatValuesSync([{id, args}]);
     return val;
-  },
+  }
+
+  
+
+
+  registerObservers() {
+    Services.obs.addObserver(this, "intl:app-locales-changed", true);
+    Services.prefs.addObserver("intl.l10n.pseudo", this, true);
+  }
 
   
 
@@ -451,16 +509,37 @@ const Localization = {
 
 
 
+  observe(subject, topic, data) {
+    switch (topic) {
+      case "intl:app-locales-changed":
+        this.onChange();
+        break;
+      case "nsPref:changed":
+        switch (data) {
+          case "intl.l10n.pseudo":
+            this.onChange();
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  onChange() {
+    if (this.bundles) {
+      this.regenerateBundles(false);
+    }
+  }
+
+  
 
 
 
 
 
-
-  generateBundles(resourceIds, isSync, eager = false, generateBundles = defaultGenerateBundles, generateBundlesSync = defaultGenerateBundlesSync) {
-    
-    let generateMessages = isSync ? generateBundlesSync : generateBundles;
-    let bundles = this.cached(generateMessages(resourceIds), isSync);
+  regenerateBundles(eager = false) {
+    let generateMessages = this.isSync ? this.generateBundlesSync : this.generateBundles;
+    this.bundles = this.cached(generateMessages(this.resourceIds));
     if (eager) {
       
       
@@ -470,11 +549,14 @@ const Localization = {
       const appLocale = Services.locale.appLocaleAsBCP47;
       const lastFallback = Services.locale.lastFallbackLocale;
       const prefetchCount = appLocale === lastFallback ? 1 : 2;
-      bundles.touchNext(prefetchCount);
+      this.bundles.touchNext(prefetchCount);
     }
-    return bundles;
-  },
+  }
 }
+
+Localization.prototype.QueryInterface = ChromeUtils.generateQI([
+  Ci.nsISupportsWeakReference,
+]);
 
 
 
@@ -595,5 +677,13 @@ function keysFromBundle(method, bundle, keys, translations) {
   return missingIds;
 }
 
+
+
+
+
+var getLocalization = () => {
+  return new Localization();
+};
+
 this.Localization = Localization;
-var EXPORTED_SYMBOLS = ["Localization"];
+var EXPORTED_SYMBOLS = ["Localization", "getLocalization"];
