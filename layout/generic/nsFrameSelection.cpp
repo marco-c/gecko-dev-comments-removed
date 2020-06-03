@@ -1430,12 +1430,15 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* const aNewFocus,
       if (context) {
         RefPtr<HTMLEditor> htmlEditor = nsContentUtils::GetHTMLEditor(context);
         if (htmlEditor) {
-          nsINode* cellparent = GetClosestInclusiveTableCellAncestor(aNewFocus);
+          nsINode* inclusiveTableCellAncestor =
+              GetClosestInclusiveTableCellAncestor(aNewFocus);
           nsCOMPtr<nsINode> editorHostNode = htmlEditor->GetActiveEditingHost();
-          editableCell = cellparent && editorHostNode &&
-                         cellparent->IsInclusiveDescendantOf(editorHostNode);
+          editableCell = inclusiveTableCellAncestor && editorHostNode &&
+                         inclusiveTableCellAncestor->IsInclusiveDescendantOf(
+                             editorHostNode);
           if (editableCell) {
-            mTableSelection.mClosestInclusiveTableCellAncestor = cellparent;
+            mTableSelection.mClosestInclusiveTableCellAncestor =
+                inclusiveTableCellAncestor;
 #ifdef DEBUG_TABLE_SELECTION
             printf(" * TakeFocus - Collapsing into new cell\n");
 #endif
@@ -1447,9 +1450,11 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* const aNewFocus,
     case FocusMode::kExtendSelection: {
       
       int32_t offset;
-      nsINode* cellparent = GetClosestInclusiveTableCellAncestor(aNewFocus);
-      if (mTableSelection.mClosestInclusiveTableCellAncestor && cellparent &&
-          cellparent !=
+      nsINode* inclusiveTableCellAncestor =
+          GetClosestInclusiveTableCellAncestor(aNewFocus);
+      if (mTableSelection.mClosestInclusiveTableCellAncestor &&
+          inclusiveTableCellAncestor &&
+          inclusiveTableCellAncestor !=
               mTableSelection
                   .mClosestInclusiveTableCellAncestor)  
                                                         
@@ -1472,13 +1477,14 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* const aNewFocus,
         }
 
         
-        parent = ParentOffset(cellparent, &offset);
+        parent = ParentOffset(inclusiveTableCellAncestor, &offset);
 
         
         
         event.mModifiers &= ~MODIFIER_SHIFT;  
         if (parent) {
-          mTableSelection.mClosestInclusiveTableCellAncestor = cellparent;
+          mTableSelection.mClosestInclusiveTableCellAncestor =
+              inclusiveTableCellAncestor;
           
           const nsresult result = HandleTableSelection(
               parent, offset, TableSelectionMode::Cell, &event);
