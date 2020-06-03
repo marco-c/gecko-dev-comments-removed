@@ -437,14 +437,15 @@ var DownloadsCommon = {
 
 
 
-  async openDownload(download) {
-    
 
+
+
+  async openDownload(download, options) {
     
     if (typeof download.launch !== "function") {
       download = await Downloads.createDownload(download);
     }
-    return download.launch().catch(ex => Cu.reportError(ex));
+    return download.launch(options).catch(ex => Cu.reportError(ex));
   },
 
   

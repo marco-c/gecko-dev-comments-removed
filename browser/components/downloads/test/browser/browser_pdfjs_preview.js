@@ -6,6 +6,10 @@ const DATA_PDF = atob(
 );
 let gDownloadDir;
 
+SimpleTest.requestFlakyTimeout(
+  "Giving a chance for possible last-pb-context-exited to occur (Bug 1329912)"
+);
+
 
 
 
@@ -21,7 +25,7 @@ const TestCases = [
     expected: {
       downloadCount: 1,
       newWindow: false,
-      opensTab: true,
+      opensTab: false,
       tabSelected: true,
     },
   },
@@ -36,10 +40,61 @@ const TestCases = [
     expected: {
       downloadCount: 1,
       newWindow: false,
+      opensTab: false,
+      tabSelected: true,
+    },
+  },
+  {
+    name: "Download panel, open in new window",
+    whichUI: "downloadPanel",
+    itemSelector: "#downloadsListBox richlistitem .downloadMainArea",
+    async userEvents(itemTarget, win) {
+      EventUtils.synthesizeMouseAtCenter(itemTarget, { shiftKey: true }, win);
+    },
+    expected: {
+      downloadCount: 1,
+      newWindow: true,
+      opensTab: false,
+      tabSelected: true,
+    },
+  },
+  {
+    name: "Download panel, open foreground tab",
+    whichUI: "downloadPanel",
+    itemSelector: "#downloadsListBox richlistitem .downloadMainArea",
+    async userEvents(itemTarget, win) {
+      EventUtils.synthesizeMouseAtCenter(
+        itemTarget,
+        { ctrlKey: true, metaKey: true },
+        win
+      );
+    },
+    expected: {
+      downloadCount: 1,
+      newWindow: false,
       opensTab: true,
       tabSelected: true,
     },
   },
+  {
+    name: "Download panel, open background tab",
+    whichUI: "downloadPanel",
+    itemSelector: "#downloadsListBox richlistitem .downloadMainArea",
+    async userEvents(itemTarget, win) {
+      EventUtils.synthesizeMouseAtCenter(
+        itemTarget,
+        { ctrlKey: true, metaKey: true, shiftKey: true },
+        win
+      );
+    },
+    expected: {
+      downloadCount: 1,
+      newWindow: false,
+      opensTab: true,
+      tabSelected: false,
+    },
+  },
+
   {
     name: "Library all downloads dialog, default click behavior",
     whichUI: "allDownloads",
@@ -50,12 +105,12 @@ const TestCases = [
     expected: {
       downloadCount: 1,
       newWindow: false,
-      opensTab: true,
+      opensTab: false,
       tabSelected: true,
     },
   },
   {
-    name: "Library all downloads dialog, open tab from keyboard",
+    name: "Library all downloads dialog, open from keyboard",
     whichUI: "allDownloads",
     async userEvents(itemTarget, win) {
       itemTarget.focus();
@@ -64,8 +119,58 @@ const TestCases = [
     expected: {
       downloadCount: 1,
       newWindow: false,
+      opensTab: false,
+      tabSelected: true,
+    },
+  },
+  {
+    name: "Library all downloads dialog, open in new window",
+    whichUI: "allDownloads",
+    async userEvents(itemTarget, win) {
+      
+      await triggerDblclickOn(itemTarget, { shiftKey: true }, win);
+    },
+    expected: {
+      downloadCount: 1,
+      newWindow: true,
+      opensTab: false,
+      tabSelected: true,
+    },
+  },
+  {
+    name: "Library all downloads dialog, open foreground tab",
+    whichUI: "allDownloads",
+    async userEvents(itemTarget, win) {
+      
+      await triggerDblclickOn(
+        itemTarget,
+        { ctrlKey: true, metaKey: true },
+        win
+      );
+    },
+    expected: {
+      downloadCount: 1,
+      newWindow: false,
       opensTab: true,
       tabSelected: true,
+    },
+  },
+  {
+    name: "Library all downloads dialog, open background tab",
+    whichUI: "allDownloads",
+    async userEvents(itemTarget, win) {
+      
+      await triggerDblclickOn(
+        itemTarget,
+        { ctrlKey: true, metaKey: true, shiftKey: true },
+        win
+      );
+    },
+    expected: {
+      downloadCount: 1,
+      newWindow: false,
+      opensTab: true,
+      tabSelected: false,
     },
   },
   {
@@ -80,7 +185,81 @@ const TestCases = [
     expected: {
       downloadCount: 1,
       newWindow: false,
+      opensTab: false,
+      tabSelected: true,
+    },
+  },
+  {
+    name: "about:downloads, open in new window",
+    whichUI: "aboutDownloads",
+    itemSelector: "#downloadsRichListBox richlistitem .downloadContainer",
+    async userEvents(itemSelector, win) {
+      let browser = win.gBrowser.selectedBrowser;
+      is(browser.currentURI.spec, "about:downloads");
+      await contentTriggerDblclickOn(itemSelector, { shiftKey: true }, browser);
+    },
+    expected: {
+      downloadCount: 1,
+      newWindow: true,
+      opensTab: false,
+      tabSelected: true,
+    },
+  },
+  {
+    name: "about:downloads, open in foreground tab",
+    whichUI: "aboutDownloads",
+    itemSelector: "#downloadsRichListBox richlistitem .downloadContainer",
+    async userEvents(itemSelector, win) {
+      let browser = win.gBrowser.selectedBrowser;
+      is(browser.currentURI.spec, "about:downloads");
+      await contentTriggerDblclickOn(
+        itemSelector,
+        { ctrlKey: true, metaKey: true },
+        browser
+      );
+    },
+    expected: {
+      downloadCount: 1,
+      newWindow: false,
       opensTab: true,
+      tabSelected: true,
+    },
+  },
+  {
+    name: "about:downloads, open in background tab",
+    whichUI: "aboutDownloads",
+    itemSelector: "#downloadsRichListBox richlistitem .downloadContainer",
+    async userEvents(itemSelector, win) {
+      let browser = win.gBrowser.selectedBrowser;
+      is(browser.currentURI.spec, "about:downloads");
+      await contentTriggerDblclickOn(
+        itemSelector,
+        { ctrlKey: true, metaKey: true, shiftKey: true },
+        browser
+      );
+    },
+    expected: {
+      downloadCount: 1,
+      newWindow: false,
+      opensTab: true,
+      tabSelected: false,
+    },
+  },
+  {
+    name: "Private download in about:downloads, opens in new private window",
+    skip: true, 
+    whichUI: "aboutDownloads",
+    itemSelector: "#downloadsRichListBox richlistitem .downloadContainer",
+    async userEvents(itemSelector, win) {
+      let browser = win.gBrowser.selectedBrowser;
+      is(browser.currentURI.spec, "about:downloads");
+      await contentTriggerDblclickOn(itemSelector, { shiftKey: true }, browser);
+    },
+    isPrivate: true,
+    expected: {
+      downloadCount: 1,
+      newWindow: true,
+      opensTab: false,
       tabSelected: true,
     },
   },
@@ -147,10 +326,13 @@ async function addPDFDownload(itemData) {
   let pdfFile = await createDownloadedFile(downloadPathname, DATA_PDF);
   info("Created file at:" + pdfFile.path);
 
-  let downloadList = await Downloads.getList(Downloads.ALL);
+  let downloadList = await Downloads.getList(
+    itemData.isPrivate ? Downloads.PRIVATE : Downloads.PUBLIC
+  );
   let download = {
     source: {
       url: "https://example.com/some.pdf",
+      isPrivate: itemData.isPrivate,
     },
     target: {
       path: pdfFile.path,
@@ -172,14 +354,14 @@ async function addPDFDownload(itemData) {
 
 async function testSetup(testData = {}) {
   
-  
-  info("Reset state");
+  let downloadList = await Downloads.getList(Downloads.ALL);
+  let downloadCount = (await downloadList.getAll()).length;
+  is(downloadCount, 0, "At the start of the test, there should be 0 downloads");
+
   await task_resetState();
-  if (gDownloadDir) {
-    info("Removing existing download directory: " + gDownloadDir);
-    await OS.File.removeDir(gDownloadDir, { ignoreAbsent: true });
+  if (!gDownloadDir) {
+    gDownloadDir = await setDownloadDir();
   }
-  gDownloadDir = await setDownloadDir();
   info("Created download directory: " + gDownloadDir);
 }
 
@@ -198,6 +380,7 @@ async function testOpenPDFPreview({
   itemSelector,
   expected,
   userEvents,
+  isPrivate,
 }) {
   info("Test case: " + name);
   
@@ -208,124 +391,209 @@ async function testOpenPDFPreview({
   info("Adding download objects");
   let download = await addPDFDownload({
     targetFilename: "downloaded.pdf",
+    isPrivate,
   });
   info("Got download pathname:" + download.target.path);
+  is(
+    !!download.source.isPrivate,
+    !!isPrivate,
+    `Added download is ${isPrivate ? "private" : "not private"} as expected`
+  );
+  let downloadList = await Downloads.getList(
+    isPrivate ? Downloads.PRIVATE : Downloads.PUBLIC
+  );
+  let downloads = await downloadList.getAll();
+  is(
+    downloads.length,
+    expected.downloadCount,
+    `${isPrivate ? "Private" : "Public"} list has expected ${
+      downloads.length
+    } downloads`
+  );
 
   let pdfFileURI = NetUtil.newURI(new FileUtils.File(download.target.path));
   info("pdfFileURI:" + pdfFileURI.spec);
 
   let uiWindow = window;
-  let initialTab = gBrowser.selectedTab;
   let previewWindow = window;
-  let previewTab;
-  let previewHappened;
+  
+  await BrowserTestUtils.withNewTab("about:blank", async initialBrowser => {
+    let previewTab;
+    let previewHappened;
 
-  if (expected.newWindow) {
-    info(
-      "previewHappened will wait for new browser window with url: " +
-        pdfFileURI.spec
-    );
-    
-    previewHappened = BrowserTestUtils.waitForNewWindow({
-      anyWindow: true,
-      url: pdfFileURI.spec,
-    });
-  } else {
-    
-    info("previewHappened will wait for tab with URI:" + pdfFileURI.spec);
-    previewHappened = BrowserTestUtils.waitForNewTab(
-      gBrowser,
-      pdfFileURI.spec,
-      false, 
-      true 
-    );
-  }
-
-  let itemTarget;
-  switch (whichUI) {
-    case "downloadPanel":
-      info("Opening download panel");
-      await openDownloadPanel(expected.downloadCount);
-      info("/Opening download panel");
-      itemTarget = document.querySelector(itemSelector);
-      break;
-    case "allDownloads":
-      
-      uiWindow = await openLibrary("Downloads");
-
-      let listbox = uiWindow.document.getElementById("downloadsRichListBox");
-      ok(listbox, "download list box present");
-      
-      await TestUtils.waitForCondition(
-        () => listbox.itemChildren.length == expected.downloadCount
-      );
-      itemTarget = listbox.itemChildren[0];
-      break;
-    case "aboutDownloads":
+    if (expected.newWindow) {
       info(
-        "in aboutDownloads, initially there are tabs: " + gBrowser.tabs.length
+        "previewHappened will wait for new browser window with url: " +
+          pdfFileURI.spec
       );
-      await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
-      let browser = gBrowser.selectedBrowser;
-      let downloadsLoaded = BrowserTestUtils.waitForEvent(
-        browser,
-        "InitialDownloadsLoaded",
-        true
+      
+      previewHappened = BrowserTestUtils.waitForNewWindow({
+        anyWindow: true,
+        url: pdfFileURI.spec,
+      });
+    } else if (expected.opensTab) {
+      
+      info("previewHappened will wait for tab with URI:" + pdfFileURI.spec);
+      previewHappened = BrowserTestUtils.waitForNewTab(
+        gBrowser,
+        pdfFileURI.spec,
+        false, 
+        true 
       );
-      BrowserTestUtils.loadURI(browser, "about:downloads");
-      info("waiting for downloadsLoaded");
-      await downloadsLoaded;
-      break;
-  }
+    } else {
+      info(
+        "previewHappened will wait to load " +
+          pdfFileURI.spec +
+          " into the current tab"
+      );
+      previewHappened = BrowserTestUtils.browserLoaded(
+        initialBrowser,
+        false,
+        pdfFileURI.spec
+      );
+    }
 
-  info("Executing user events");
-  info(
-    "selectedBrowser has currentURI: " +
-      gBrowser.selectedBrowser.currentURI.spec
-  );
-  await userEvents(itemTarget || itemSelector, uiWindow);
-  info("/Executing user events");
-  info("Waiting for previewHappened");
-  let results = await previewHappened;
-  if (expected.newWindow) {
-    previewWindow = results;
-    info("New window expected, got previewWindow? " + previewWindow);
-  }
-  previewTab =
-    previewWindow.gBrowser.tabs[previewWindow.gBrowser.tabs.length - 1];
-  ok(previewTab, "Got preview tab");
+    let itemTarget;
+    switch (whichUI) {
+      case "downloadPanel":
+        info("Opening download panel");
+        await openDownloadPanel(expected.downloadCount);
+        info("/Opening download panel");
+        itemTarget = document.querySelector(itemSelector);
+        break;
+      case "allDownloads":
+        
+        uiWindow = await openLibrary("Downloads");
 
-  let isSelected = previewWindow.gBrowser.selectedTab == previewTab;
-  if (expected.tabSelected) {
-    ok(isSelected, "The preview tab was selected");
-  } else {
-    ok(!isSelected, "The preview tab was opened in the background");
-  }
+        let listbox = uiWindow.document.getElementById("downloadsRichListBox");
+        ok(listbox, "download list box present");
+        
+        await TestUtils.waitForCondition(
+          () => listbox.itemChildren.length == expected.downloadCount
+        );
+        itemTarget = listbox.itemChildren[0];
+        break;
+      case "aboutDownloads":
+        info("Preparing about:downloads browser window");
 
-  is(
-    previewTab.linkedBrowser.currentURI.spec,
-    pdfFileURI.spec,
-    "previewTab has the expected currentURI"
-  );
+        
+        
+        
+        let pbExitedOrTimeout = isPrivate
+          ? new Promise(resolve => {
+              const topic = "last-pb-context-exited";
+              const ENOUGH_TIME = 1000;
+              function observer() {
+                info(`Bogus ${topic} observed`);
+                done();
+              }
+              function done() {
+                clearTimeout(timerId);
+                Services.obs.removeObserver(observer, topic);
+                resolve();
+              }
+              
+              const timerId = setTimeout(done, ENOUGH_TIME);
+              Services.obs.addObserver(observer, "last-pb-context-exited");
+            })
+          : Promise.resolve();
 
-  info("cleaning up");
-  if (whichUI == "downloadPanel") {
-    DownloadsPanel.hidePanel();
-  }
+        if (isPrivate) {
+          uiWindow = await BrowserTestUtils.openNewBrowserWindow({
+            private: true,
+          });
+        }
+        info(
+          "in aboutDownloads, initially there are tabs: " +
+            uiWindow.gBrowser.tabs.length
+        );
 
-  info("Test opened a new UI window? " + (uiWindow !== window));
-  if (uiWindow !== window) {
-    await BrowserTestUtils.closeWindow(uiWindow);
-  }
-  if (expected.newWindow) {
-    
-    await BrowserTestUtils.closeWindow(previewWindow);
-  } else {
-    await BrowserTestUtils.removeTab(previewTab);
-  }
-  if (gBrowser.selectedTab !== initialTab) {
-    await BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  }
+        let browser = uiWindow.gBrowser.selectedBrowser;
+        await pbExitedOrTimeout;
+
+        info("Loading about:downloads");
+        let downloadsLoaded = BrowserTestUtils.waitForEvent(
+          browser,
+          "InitialDownloadsLoaded",
+          true
+        );
+        BrowserTestUtils.loadURI(browser, "about:downloads");
+        await BrowserTestUtils.browserLoaded(browser);
+        info("waiting for downloadsLoaded");
+        await downloadsLoaded;
+
+        await ContentTask.spawn(
+          browser,
+          [expected.downloadCount],
+          async function awaitListItems(expectedCount) {
+            await ContentTaskUtils.waitForCondition(
+              () =>
+                content.document.getElementById("downloadsRichListBox")
+                  .childElementCount == expectedCount,
+              `Await ${expectedCount} download list items`
+            );
+          }
+        );
+        break;
+    }
+
+    info("Executing user events");
+    await userEvents(itemTarget || itemSelector, uiWindow);
+
+    info("Waiting for previewHappened");
+    let results = await previewHappened;
+    if (expected.newWindow) {
+      previewWindow = results;
+      info("New window expected, got previewWindow? " + previewWindow);
+    }
+    previewTab =
+      previewWindow.gBrowser.tabs[previewWindow.gBrowser.tabs.length - 1];
+    ok(previewTab, "Got preview tab");
+
+    let isSelected = previewWindow.gBrowser.selectedTab == previewTab;
+    if (expected.tabSelected) {
+      ok(isSelected, "The preview tab was selected");
+    } else {
+      ok(!isSelected, "The preview tab was opened in the background");
+    }
+
+    is(
+      previewTab.linkedBrowser.currentURI.spec,
+      pdfFileURI.spec,
+      "previewTab has the expected currentURI"
+    );
+
+    is(
+      PrivateBrowsingUtils.isBrowserPrivate(previewTab.linkedBrowser),
+      !!isPrivate,
+      `The preview tab was ${isPrivate ? "private" : "not private"} as expected`
+    );
+
+    info("cleaning up");
+    if (whichUI == "downloadPanel") {
+      DownloadsPanel.hidePanel();
+    }
+    let lastPBContextExitedPromise = isPrivate
+      ? TestUtils.topicObserved("last-pb-context-exited").then(() =>
+          TestUtils.waitForTick()
+        )
+      : Promise.resolve();
+
+    info("Test opened a new UI window? " + (uiWindow !== window));
+    if (uiWindow !== window) {
+      info("Closing uiWindow");
+      await BrowserTestUtils.closeWindow(uiWindow);
+    }
+    if (expected.newWindow) {
+      
+      await BrowserTestUtils.closeWindow(previewWindow);
+    } else {
+      await BrowserTestUtils.removeTab(previewTab);
+    }
+    info("Waiting for lastPBContextExitedPromise");
+    await lastPBContextExitedPromise;
+  });
+  await downloadList.removeFinished();
 }
 
 
