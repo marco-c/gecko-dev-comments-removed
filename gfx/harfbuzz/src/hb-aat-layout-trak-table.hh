@@ -62,7 +62,7 @@ struct TrackTableEntry
   }
 
   protected:
-  HBFixed		track;		
+  HBFixed	track;		
   NameID	trackNameID;	
 
 
@@ -141,7 +141,7 @@ struct TrackData
   protected:
   HBUINT16	nTracks;	
   HBUINT16	nSizes;		
-  LOffsetTo<UnsizedArrayOf<HBFixed>, false>
+  LNNOffsetTo<UnsizedArrayOf<HBFixed>>
 		sizeTable;	
 
   UnsizedArrayOf<TrackTableEntry>
@@ -211,7 +211,7 @@ struct trak
   protected:
   FixedVersion<>version;	
 
-  HBUINT16	format; 	
+  HBUINT16	format;		
   OffsetTo<TrackData>
 		horizData;	
 

@@ -79,7 +79,7 @@ struct SegmentMaps : ArrayOf<AxisValueMap>
       return value - arrayZ[0].fromCoord + arrayZ[0].toCoord;
 
     unsigned int i;
-    unsigned int count = len;
+    unsigned int count = len - 1;
     for (i = 1; i < count && value > arrayZ[i].fromCoord; i++)
       ;
 
@@ -90,9 +90,8 @@ struct SegmentMaps : ArrayOf<AxisValueMap>
       return arrayZ[i-1].toCoord;
 
     int denom = arrayZ[i].fromCoord - arrayZ[i-1].fromCoord;
-    return arrayZ[i-1].toCoord +
-	   ((arrayZ[i].toCoord - arrayZ[i-1].toCoord) *
-	    (value - arrayZ[i-1].fromCoord) + denom/2) / denom;
+    return roundf (arrayZ[i-1].toCoord + ((float) (arrayZ[i].toCoord - arrayZ[i-1].toCoord) *
+					  (value - arrayZ[i-1].fromCoord)) / denom);
 #undef toCoord
 #undef fromCoord
   }

@@ -69,7 +69,6 @@ _hb_options_init ()
 	if (0 == strncmp (c, name, p - c) && strlen (name) == static_cast<size_t>(p - c)) do { u.opts.symbol = true; } while (0)
 
       OPTION ("uniscribe-bug-compatible", uniscribe_bug_compatible);
-      OPTION ("aat", aat);
 
 #undef OPTION
 
@@ -592,38 +591,6 @@ hb_script_get_horizontal_direction (hb_script_t script)
 
 
 
-bool
-hb_user_data_array_t::set (hb_user_data_key_t *key,
-			   void *              data,
-			   hb_destroy_func_t   destroy,
-			   hb_bool_t           replace)
-{
-  if (!key)
-    return false;
-
-  if (replace) {
-    if (!data && !destroy) {
-      items.remove (key, lock);
-      return true;
-    }
-  }
-  hb_user_data_item_t item = {key, data, destroy};
-  bool ret = !!items.replace_or_insert (item, lock, (bool) replace);
-
-  return ret;
-}
-
-void *
-hb_user_data_array_t::get (hb_user_data_key_t *key)
-{
-  hb_user_data_item_t item = {nullptr, nullptr, nullptr};
-
-  return items.find (key, &item, lock) ? item.data : nullptr;
-}
-
-
-
-
 
 
 
@@ -960,14 +927,14 @@ hb_feature_to_string (hb_feature_t *feature,
   len += 4;
   while (len && s[len - 1] == ' ')
     len--;
-  if (feature->start != 0 || feature->end != (unsigned int) -1)
+  if (feature->start != HB_FEATURE_GLOBAL_START || feature->end != HB_FEATURE_GLOBAL_END)
   {
     s[len++] = '[';
     if (feature->start)
       len += hb_max (0, snprintf (s + len, ARRAY_LENGTH (s) - len, "%u", feature->start));
     if (feature->end != feature->start + 1) {
       s[len++] = ':';
-      if (feature->end != (unsigned int) -1)
+      if (feature->end != HB_FEATURE_GLOBAL_END)
 	len += hb_max (0, snprintf (s + len, ARRAY_LENGTH (s) - len, "%u", feature->end));
     }
     s[len++] = ']';

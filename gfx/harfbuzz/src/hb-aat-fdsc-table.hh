@@ -65,7 +65,7 @@ struct FontDescriptor
   protected:
   Tag		tag;		
   union {
-  HBFixed		value;		
+  HBFixed	value;		
   HBUINT32	nalfType;	
   } u;
   public:
@@ -80,10 +80,10 @@ struct fdsc
     Weight	 = HB_TAG ('w','g','h','t'),
 				
 
-    Width 	 = HB_TAG ('w','d','t','h'),
+    Width	 = HB_TAG ('w','d','t','h'),
 				
 
-    Slant 	 = HB_TAG ('s','l','n','t'),
+    Slant	 = HB_TAG ('s','l','n','t'),
 				
 
 
@@ -108,7 +108,7 @@ struct fdsc
   }
 
   protected:
-  HBFixed		version;	
+  HBFixed	version;	
 
   LArrayOf<FontDescriptor>
 		descriptors;	

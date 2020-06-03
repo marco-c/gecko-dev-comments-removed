@@ -397,4 +397,15 @@ using hb_is_trivial= hb_bool_constant<
 #define hb_is_trivial(T) hb_is_trivial<T>::value
 
 
+
+
+
+template <typename T, typename>
+struct _hb_unwrap_type : hb_type_identity_t<T> {};
+template <typename T>
+struct _hb_unwrap_type<T, hb_void_t<typename T::type>> : _hb_unwrap_type<typename T::type, void> {};
+template <typename T>
+using hb_unwrap_type = _hb_unwrap_type<T, void>;
+#define hb_unwrap_type(T) typename hb_unwrap_type<T>::type
+
 #endif 

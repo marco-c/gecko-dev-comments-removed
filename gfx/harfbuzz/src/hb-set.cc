@@ -69,7 +69,7 @@ hb_set_create ()
 hb_set_t *
 hb_set_get_empty ()
 {
-  return const_cast<hb_set_t *> (&Null(hb_set_t));
+  return const_cast<hb_set_t *> (&Null (hb_set_t));
 }
 
 

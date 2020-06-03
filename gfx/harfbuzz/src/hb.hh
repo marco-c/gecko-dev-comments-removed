@@ -176,6 +176,7 @@
 
 #include <limits.h>
 #include <math.h>
+#include <float.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
@@ -316,6 +317,18 @@ extern "C" void  hb_free_impl(void *ptr);
 #else
 #  define HB_FALLTHROUGH
 #endif
+
+
+#if __cplusplus >= 201703L
+#  define HB_NODISCARD [[nodiscard]]
+#elif defined(__GNUC__) || defined(__clang__)
+#  define HB_NODISCARD __attribute__((warn_unused_result))
+#elif defined(_MSC_VER)
+#  define HB_NODISCARD _Check_return_
+#else
+#  define HB_NODISCARD
+#endif
+#define hb_success_t HB_NODISCARD bool
 
 
 #if defined(__clang__) && !(defined(_AIX) && (defined(__IBMCPP__) || defined(__ibmxl__)))

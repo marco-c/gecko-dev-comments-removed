@@ -222,7 +222,7 @@ struct JSTF
   FixedVersion<>version;	
 
   RecordArrayOf<JstfScript>
-		scriptList;  	
+		scriptList;	
 
   public:
   DEFINE_SIZE_ARRAY (6, scriptList);

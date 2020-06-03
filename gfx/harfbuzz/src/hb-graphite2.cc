@@ -53,6 +53,10 @@
 
 
 
+
+
+
+
 typedef struct hb_graphite2_tablelist_t
 {
   struct hb_graphite2_tablelist_t *next;
@@ -151,6 +155,14 @@ _hb_graphite2_shaper_face_data_destroy (hb_graphite2_face_data_t *data)
 
   free (data);
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -376,7 +388,7 @@ _hb_graphite2_shape (hb_shape_plan_t    *shape_plan HB_UNUSED,
   buffer->len = glyph_count;
 
   
-  unsigned int currclus = (unsigned int) -1;
+  unsigned int currclus = UINT_MAX;
   const hb_glyph_info_t *info = buffer->info;
   hb_glyph_position_t *pPos = hb_buffer_get_glyph_positions (buffer, nullptr);
   if (!HB_DIRECTION_IS_BACKWARD(buffer->props.direction))
