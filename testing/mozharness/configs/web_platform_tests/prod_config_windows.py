@@ -30,9 +30,7 @@ config = {
         'hg': 'c:/mozilla-build/hg/hg',
     },
 
-
-    
-    "geckodriver": os.path.join("%(abs_test_bin_dir)s", "geckodriver.exe"),
+    "geckodriver": os.path.join("%(abs_fetches_dir)s", "geckodriver.exe"),
 
     "per_test_category": "web-platform",
 
