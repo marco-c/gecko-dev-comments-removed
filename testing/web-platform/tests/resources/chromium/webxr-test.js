@@ -201,9 +201,115 @@ class MockVRService {
   }
 }
 
+class FakeXRAnchorController {
+  constructor() {
+    
+    this.device_ = null;
+    this.id_ = null;
+    this.dirty_ = true;
+
+    
+    this.deleted_ = false;
+    this.paused_ = false;
+    this.anchorOrigin_ = XRMathHelper.identity();
+  }
+
+  get deleted() {
+    return this.deleted_;
+  }
+
+  pauseTracking() {
+    if(!this.paused_) {
+      this.paused_ = true;
+      this.dirty_ = true;
+    }
+  }
+
+  resumeTracking() {
+    if(this.paused_) {
+      this.paused_ = false;
+      this.dirty_ = true;
+    }
+  }
+
+  stopTracking() {
+    if(!this.deleted_) {
+      this.device_.deleteAnchorController(this.id_);
+
+      this.deleted_ = true;
+      this.dirty_ = true;
+    }
+  }
+
+  setAnchorOrigin(anchorOrigin) {
+    this.anchorOrigin_ = getMatrixFromTransform(anchorOrigin);
+    this.dirty_ = true;
+  }
+
+  
+  set id(value) {
+    this.id_ = value;
+  }
+
+  set device(value) {
+    this.device_ = value;
+  }
+
+  get dirty() {
+    return this.dirty_;
+  }
+
+  markProcessed() {
+    this.dirty_ = false;
+  }
+
+  getAnchorOrigin() {
+    return this.anchorOrigin_;
+  }
+}
+
+class FakeXRAnchorCreationEvent extends Event {
+  constructor(type, eventInitDict) {
+    super(type, eventInitDict);
+
+    this.success_ = false;
+    this.requestedAnchorOrigin_ = {};
+    this.isAttachedToEntity_ = false;
+    this.anchorController_ = new FakeXRAnchorController();
+
+    if(eventInitDict.requestedAnchorOrigin != null) {
+      this.requestedAnchorOrigin_ = eventInitDict.requestedAnchorOrigin;
+    }
+
+    if(eventInitDict.isAttachedToEntity != null) {
+      this.isAttachedToEntity_ = eventInitDict.isAttachedToEntity;
+    }
+  }
+
+  get requestedAnchorOrigin() {
+    return this.requestedAnchorOrigin_;
+  }
+
+  get isAttachedToEntity() {
+    return this.isAttachedToEntity_;
+  }
+
+  get success() {
+    return this.success_;
+  }
+
+  set success(value) {
+    this.success_ = value;
+  }
+
+  get anchorController() {
+    return this.anchorController_;
+  }
+}
 
 
-class MockRuntime {
+
+class MockRuntime extends EventTarget {
   
   
   static featureToMojoMap = {
@@ -215,6 +321,7 @@ class MockRuntime {
     'hit-test': device.mojom.XRSessionFeature.HIT_TEST,
     'dom-overlay': device.mojom.XRSessionFeature.DOM_OVERLAY,
     'light-estimation': device.mojom.XRSessionFeature.LIGHT_ESTIMATION,
+    'anchors': device.mojom.XRSessionFeature.ANCHORS,
   };
 
   static sessionModeToMojoMap = {
@@ -224,6 +331,8 @@ class MockRuntime {
   };
 
   constructor(fakeDeviceInit, service) {
+    super();
+
     this.sessionClient_ = new device.mojom.XRSessionClientPtr();
     this.presentation_provider_ = new MockXRPresentationProvider();
 
@@ -247,6 +356,10 @@ class MockRuntime {
     this.transientHitTestSubscriptions_ = new Map();
     
     this.next_hit_test_id_ = 1;
+
+    this.anchor_controllers_ = new Map();
+    
+    this.next_anchor_id_ = 1;
 
     let supportedModes = [];
     if (fakeDeviceInit.supportedModes) {
@@ -572,6 +685,11 @@ class MockRuntime {
   }
 
   
+  deleteAnchorController(controllerId) {
+    this.anchor_controllers_.delete(controllerId);
+  }
+
+  
 
   _injectAdditionalFrameData(options, frameData) {
   }
@@ -623,6 +741,8 @@ class MockRuntime {
 
     this._calculateHitTestResults(frameData);
 
+    this._calculateAnchorInformation(frameData);
+
     this._injectAdditionalFrameData(options, frameData);
 
     return Promise.resolve({
@@ -662,25 +782,7 @@ class MockRuntime {
       });
     }
 
-    if (nativeOriginInformation.$tag == device.mojom.XRNativeOriginInformation.Tags.inputSourceId) {
-      if (!this.input_sources_.has(nativeOriginInformation.inputSourceId)) {
-        
-        return Promise.resolve({
-          result : device.mojom.SubscribeToHitTestResult.FAILURE_GENERIC,
-          subscriptionId : 0
-        });
-      }
-    } else if (nativeOriginInformation.$tag == device.mojom.XRNativeOriginInformation.Tags.referenceSpaceCategory) {
-      
-      if (nativeOriginInformation.referenceSpaceCategory == device.mojom.XRReferenceSpaceCategory.UNBOUNDED
-       || nativeOriginInformation.referenceSpaceCategory == device.mojom.XRReferenceSpaceCategory.BOUNDED_FLOOR) {
-        return Promise.resolve({
-          result : device.mojom.SubscribeToHitTestResult.FAILURE_GENERIC,
-          subscriptionId : 0
-        });
-      }
-    } else {
-      
+    if (!this._nativeOriginKnown(nativeOriginInformation)) {
       return Promise.resolve({
         result : device.mojom.SubscribeToHitTestResult.FAILURE_GENERIC,
         subscriptionId : 0
@@ -713,6 +815,65 @@ class MockRuntime {
     return Promise.resolve({
       result : device.mojom.SubscribeToHitTestResult.SUCCESS,
       subscriptionId : id
+    });
+  }
+
+  createAnchor(nativeOriginInformation, nativeOriginFromAnchor) {
+    return new Promise((resolve) => {
+      const mojoFromNativeOrigin = this._getMojoFromNativeOrigin(nativeOriginInformation);
+      if(mojoFromNativeOrigin == null) {
+        resolve({
+          result : device.mojom.CreateAnchorResult.FAILURE,
+          anchorId : 0
+        });
+
+        return;
+      }
+
+      const mojoFromAnchor = XRMathHelper.mul4x4(mojoFromNativeOrigin, nativeOriginFromAnchor);
+
+      const createAnchorEvent = new FakeXRAnchorCreationEvent("anchorcreate", {
+        requestedAnchorOrigin: mojoFromAnchor,
+        isAttachedToEntity: false,
+      });
+
+      this.dispatchEvent(createAnchorEvent);
+
+      if(createAnchorEvent.success) {
+        let anchor_controller = createAnchorEvent.anchorController;
+        const anchor_id = this.next_anchor_id_;
+        this.next_anchor_id_++;
+
+        
+        
+        this.anchor_controllers_.set(anchor_id, anchor_controller);
+        anchor_controller.device = this;
+        anchor_controller.id = anchor_id;
+
+        resolve({
+          result : device.mojom.CreateAnchorResult.SUCCESS,
+          anchorId : anchor_id
+        });
+
+        return;
+      }
+
+      resolve({
+        result : device.mojom.CreateAnchorResult.FAILURE,
+        anchorId : 0
+      });
+    });
+  }
+
+  createPlaneAnchor(planeFromAnchor, planeId) {
+    return new Promise((resolve) => {
+
+      
+
+      resolve({
+        result : device.mojom.CreateAnchorResult.FAILURE,
+        anchorId : 0
+      });
     });
   }
 
@@ -775,6 +936,61 @@ class MockRuntime {
     return Promise.resolve({
       supportsSession: this.supportedModes_.includes(options.mode)
     });
+  }
+
+  
+  _nativeOriginKnown(nativeOriginInformation){
+
+    if (nativeOriginInformation.$tag == device.mojom.XRNativeOriginInformation.Tags.inputSourceId) {
+      if (!this.input_sources_.has(nativeOriginInformation.inputSourceId)) {
+        
+        return false;
+      }
+
+      return true;
+    } else if (nativeOriginInformation.$tag == device.mojom.XRNativeOriginInformation.Tags.referenceSpaceCategory) {
+      
+      if (nativeOriginInformation.referenceSpaceCategory == device.mojom.XRReferenceSpaceCategory.UNBOUNDED
+       || nativeOriginInformation.referenceSpaceCategory == device.mojom.XRReferenceSpaceCategory.BOUNDED_FLOOR) {
+        return false;
+      }
+
+      return true;
+    } else {
+      
+      return false;
+    }
+  }
+
+  
+
+  
+  _calculateAnchorInformation(frameData) {
+    if (!this.supportedModes_.includes(device.mojom.XRSessionMode.kImmersiveAr)) {
+      return;
+    }
+
+    frameData.anchorsData = new device.mojom.XRAnchorsData();
+    frameData.anchorsData.allAnchorsIds = [];
+    frameData.anchorsData.updatedAnchorsData = [];
+
+    for(const [id, controller] of this.anchor_controllers_) {
+      frameData.anchorsData.allAnchorsIds.push(id);
+
+      
+      if(controller.dirty) {
+        const anchorData = new device.mojom.XRAnchorData();
+        anchorData.id = id;
+        if(!controller.paused) {
+          anchorData.pose = XRMathHelper.decomposeRigidTransform(
+            controller.getAnchorOrigin());
+        }
+
+        controller.markProcessed();
+
+        frameData.anchorsData.updatedAnchorsData.push(anchorData);
+      }
+    }
   }
 
   
