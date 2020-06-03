@@ -289,11 +289,11 @@ var webrtcUI = {
     }
     
     
-    if (!aData || !aData.documentURI) {
+    if (aData.remove) {
       if (index < this._streams.length) {
         this._streams.splice(index, 1);
       }
-    } else if (aData) {
+    } else {
       this._streams[index] = {
         browsingContext: aBrowsingContext,
         topBrowsingContext: aBrowsingContext.top,
