@@ -70,7 +70,9 @@ function createContextMenu(event, message, webConsoleWrapper) {
   const rootActor = rootObjectInspector
     ? rootObjectInspector.querySelector("[data-link-actor-id]")
     : null;
-  const rootActorId = rootActor ? rootActor.dataset.linkActorId : null;
+  
+  
+  const rootActorId = rootActor ? rootActor.dataset.linkActorId : actor;
 
   const elementNode =
     target.closest(".objectBox-node") || target.closest(".objectBox-textNode");
