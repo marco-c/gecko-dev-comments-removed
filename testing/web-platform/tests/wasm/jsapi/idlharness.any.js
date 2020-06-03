@@ -18,6 +18,9 @@ promise_test(async () => {
   });
 
   
+  idl_array.add_untested_idls('[Exposed=(Window,Worker)] interface ArrayBuffer {};');
+
+  
   try {
     self.memory = new WebAssembly.Memory({initial: 1024});
   } catch (e) { }

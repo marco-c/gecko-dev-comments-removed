@@ -443,7 +443,7 @@ const trackFactories = {
     return dst.stream.getAudioTracks()[0];
   },
 
-  video({width = 640, height = 480, signal = null} = {}) {
+  video({width = 640, height = 480} = {}) {
     const canvas = Object.assign(
       document.createElement("canvas"), {width, height}
     );
@@ -454,12 +454,8 @@ const trackFactories = {
     setInterval(() => {
       ctx.fillStyle = `rgb(${count%255}, ${count*count%255}, ${count%255})`;
       count += 1;
+
       ctx.fillRect(0, 0, width, height);
-      
-      if (signal !== null) {
-        ctx.fillStyle = `rgb(${signal}, ${signal}, ${signal})`;
-        ctx.fillRect(10, 10, 20, 20);
-      }
     }, 100);
 
     if (document.body) {
@@ -473,33 +469,6 @@ const trackFactories = {
     return stream.getVideoTracks()[0];
   }
 };
-
-
-function getVideoSignal(v) {
-  if (v.videoWidth < 21 || v.videoHeight < 21) {
-    return null;
-  }
-  const canvas = new OffscreenCanvas(v.videoWidth, v.videoHeight);
-  let context = canvas.getContext('2d');
-  context.drawImage(v, 0, 0, v.videoWidth, v.videoHeight);
-  
-  let pixel = context.getImageData(20, 20, 1, 1);
-  return (pixel.data[0] + pixel.data[1] + pixel.data[2]) / 3;
-}
-
-function detectSignal(t, v, value) {
-  return new Promise((resolve) => {
-    let check = () => {
-      const signal = getVideoSignal(v);
-      if (signal !== null && signal < value + 1 && signal > value - 1) {
-        resolve();
-      } else {
-        t.step_timeout(check, 100);
-      }
-    }
-    check();
-  });
-}
 
 
 
@@ -519,7 +488,7 @@ async function getNoiseStream(caps = {}) {
   }
 
   if (caps.video) {
-    tracks.push(trackFactories.video(caps.video));
+    tracks.push(trackFactories.video());
   }
 
   return new MediaStream(tracks);

@@ -41,12 +41,7 @@ if MYPY:
     from typing import Type
     from typing import Union
 
-    
-    
-    
-    
-    
-    Ignorelist = Dict[Text, Dict[Text, Set[Optional[int]]]]
+    Whitelist = Dict[Text, Dict[Text, Set[Optional[int]]]]
 
 
 logger = None  
@@ -80,12 +75,12 @@ ERROR_MSG = """You must fix all errors; for details on how to fix them, see
 https://web-platform-tests.org/writing-tests/lint-tool.html
 
 However, instead of fixing a particular error, it's sometimes
-OK to add a line to the lint.ignore file in the root of the
+OK to add a line to the lint.whitelist file in the root of the
 web-platform-tests directory to make the lint tool ignore it.
 
 For example, to make the lint tool ignore all '%s'
 errors in the %s file,
-you could add the following line to the lint.ignore file.
+you could add the following line to the lint.whitelist file.
 
 %s: %s"""
 
@@ -323,17 +318,14 @@ def check_css_globally_unique(repo_root, paths):
     return errors
 
 
-def parse_ignorelist(f):
+def parse_whitelist(f):
     
     """
-    Parse the ignorelist file given by `f`, and return the parsed structure.
-
-    :returns: a tuple of an Ignorelist and a set of files that are completely
-              skipped by the linter (i.e. have a '*' entry).
+    Parse the whitelist file given by `f`, and return the parsed structure.
     """
 
     data = defaultdict(lambda:defaultdict(set))  
-    skipped_files = set()  
+    ignored_files = set()  
 
     for line in f:
         line = line.strip()
@@ -352,24 +344,24 @@ def parse_ignorelist(f):
         file_match = os.path.normcase(file_match)
 
         if "*" in error_types:
-            skipped_files.add(file_match)
+            ignored_files.add(file_match)
         else:
             for error_type in error_types:
                 data[error_type][file_match].add(line_number)
 
-    return data, skipped_files
+    return data, ignored_files
 
 
-def filter_ignorelist_errors(data, errors):
+def filter_whitelist_errors(data, errors):
     
     """
-    Filter out those errors that are ignored in `data`.
+    Filter out those errors that are whitelisted in `data`.
     """
 
     if not errors:
         return []
 
-    skipped = [False for item in range(len(errors))]
+    whitelisted = [False for item in range(len(errors))]
 
     for i, (error_type, msg, path, line) in enumerate(errors):
         normpath = os.path.normcase(path)
@@ -380,9 +372,9 @@ def filter_ignorelist_errors(data, errors):
             for file_match, allowed_lines in iteritems(wl_files):
                 if None in allowed_lines or line in allowed_lines:
                     if fnmatch.fnmatchcase(normpath, file_match):
-                        skipped[i] = True
+                        whitelisted[i] = True
 
-    return [item for i, item in enumerate(errors) if not skipped[i]]
+    return [item for i, item in enumerate(errors) if not whitelisted[i]]
 
 
 regexps = [item() for item in  
@@ -813,7 +805,7 @@ def lint_paths(kwargs, wpt_root):
         force_all = False
         for path in changed_paths:
             path = path.replace(os.path.sep, "/")
-            if path == "lint.ignore" or path.startswith("tools/lint/"):
+            if path == "lint.whitelist" or path.startswith("tools/lint/"):
                 force_all = True
                 break
         paths = (list(changed_paths) if not force_all  
@@ -867,11 +859,11 @@ def lint(repo_root, paths, output_format, ignore_glob=str()):
     error_count = defaultdict(int)  
     last = None
 
-    with open(os.path.join(repo_root, "lint.ignore")) as f:
-        ignorelist, skipped_files = parse_ignorelist(f)
+    with open(os.path.join(repo_root, "lint.whitelist")) as f:
+        whitelist, ignored_files = parse_whitelist(f)
 
     if ignore_glob:
-        skipped_files.add(ignore_glob)
+        ignored_files.add(ignore_glob)
 
     output_errors = {"json": output_errors_json,
                      "markdown": output_errors_markdown,
@@ -887,7 +879,7 @@ def lint(repo_root, paths, output_format, ignore_glob=str()):
                   a tuple of the error type and the path otherwise
         """
 
-        errors = filter_ignorelist_errors(ignorelist, errors)
+        errors = filter_whitelist_errors(whitelist, errors)
 
         if not errors:
             return None
@@ -904,7 +896,7 @@ def lint(repo_root, paths, output_format, ignore_glob=str()):
             paths.remove(path)
             continue
 
-        if any(fnmatch.fnmatch(path, file_match) for file_match in skipped_files):
+        if any(fnmatch.fnmatch(path, file_match) for file_match in ignored_files):
             paths.remove(path)
             continue
 

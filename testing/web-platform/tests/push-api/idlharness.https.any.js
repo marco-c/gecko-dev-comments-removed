@@ -5,7 +5,6 @@
 
 
 
-
 idl_test(
   ['push-api'],
   ['service-workers', 'html', 'dom'],

@@ -32,3 +32,11 @@ test(t => {
 
 
 
+
+
+
+test(() => {
+  delete namedPropertiesObject[Symbol.toStringTag];
+
+  assert_equals(Object.prototype.toString.call(namedPropertiesObject), "[object EventTarget]", "prototype");
+}, "Object.prototype.toString applied after deleting @@toStringTag");

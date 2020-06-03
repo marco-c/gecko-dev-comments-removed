@@ -1,5 +1,0 @@
-
-
-cls_expect = (watcher, expectation) => {
-  watcher.checkExpectation(expectation);
-};

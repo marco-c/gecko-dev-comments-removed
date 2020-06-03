@@ -18,25 +18,15 @@ function xr_promise_test(name, func, properties) {
     
     xr_debug(name, 'setup');
 
-    if (!navigator.xr.test) {
-      if (isChromiumBased) {
-        
-        await loadChromiumResources();
-      } else if (isWebKitBased) {
-        
-        await setupWebKitWebXRTestAPI();
-      }
+    if (isChromiumBased) {
+      
+      await loadChromiumResources;
+      xr_debug = navigator.xr.test.Debug;
     }
 
-    
-    
-    
-    
-    
-    if (!navigator.xr.test) {
+    if (isWebKitBased) {
       
-      
-      return Promise.reject("No navigator.xr.test object found, even after attempted load");
+      await setupWebKitWebXRTestAPI;
     }
 
     
@@ -52,18 +42,6 @@ function xr_promise_test(name, func, properties) {
     xr_debug(name, 'main');
     return func(t);
   }, name, properties);
-}
-
-
-
-
-
-
-
-function requestSkipAnimationFrame(session, callback) {
- session.requestAnimationFrame(() => {
-  session.requestAnimationFrame(callback);
- });
 }
 
 
@@ -185,7 +163,13 @@ function forEachWebxrObject(callback) {
 }
 
 
-function loadChromiumResources() {
+let loadChromiumResources = Promise.resolve().then(() => {
+  if (!isChromiumBased) {
+    
+    
+    return;
+  }
+
   let chromiumResources = [
     '/gen/layout_test_data/mojo/public/js/mojo_bindings.js',
     '/gen/mojo/public/mojom/base/time.mojom.js',
@@ -221,17 +205,18 @@ function loadChromiumResources() {
       document.head.appendChild(script);
   });
 
-  chain = chain.then(() => {
-    xr_debug = navigator.xr.test.Debug;
-  });
-
   return chain;
-}
+});
 
-function setupWebKitWebXRTestAPI() {
+let setupWebKitWebXRTestAPI = Promise.resolve().then(() => {
+  if (!isWebKitBased) {
+    
+    return;
+  }
+
   
   
   
   navigator.xr.test = internals.xrTest;
   return Promise.resolve();
-}
+});

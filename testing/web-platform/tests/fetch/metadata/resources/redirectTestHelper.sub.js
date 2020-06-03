@@ -23,7 +23,7 @@ let insecureTestURL = 'http://{{host}}:{{ports[http][0]}}/fetch/metadata/';
 
 function MultipleRedirectTo(partialPath) {
   let finalURL = insecureRedirectURL + encodeURIComponent(secureTestURL + partialPath);
-  return secureRedirectURL + encodeURIComponent(finalURL);
+  return insecureRedirectURL + encodeURIComponent(finalURL);
 }
 
 

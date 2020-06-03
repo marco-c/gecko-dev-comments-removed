@@ -4,9 +4,7 @@ import os
 import uuid
 import threading
 from multiprocessing.managers import AcquirerProxy, BaseManager, DictProxy
-from six import text_type, binary_type
-
-from .utils import isomorphic_encode
+from six import text_type
 
 
 class ServerDictManager(BaseManager):
@@ -149,10 +147,7 @@ class Stash(object):
         
         
         
-        if isinstance(key, binary_type):
-            
-            key = key.decode('ascii')
-        return (isomorphic_encode(path), uuid.UUID(key).bytes)
+        return (str(path), str(uuid.UUID(key)))
 
     def put(self, key, value, path=None):
         """Place a value in the shared stash.
