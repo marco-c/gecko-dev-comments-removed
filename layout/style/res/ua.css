@@ -64,6 +64,7 @@
   outline-offset: inherit;
   column-span: inherit; 
   contain: inherit; 
+  scroll-margin: inherit;  
 }
 
 *|*::-moz-table-row {
