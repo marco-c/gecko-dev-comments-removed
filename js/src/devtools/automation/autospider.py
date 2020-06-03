@@ -7,6 +7,7 @@
 import argparse
 import json
 import logging
+import multiprocessing
 import re
 import os
 import platform
@@ -490,6 +491,14 @@ if 'all' in args.skip_tests.split(","):
 
 if platform.system() == 'Windows':
     env['JITTEST_EXTRA_ARGS'] = "-j1 " + env.get('JITTEST_EXTRA_ARGS', '')
+
+
+
+
+
+if platform.system() == 'Windows':
+    worker_count = min(multiprocessing.cpu_count(), 16)
+    env['JSTESTS_EXTRA_ARGS'] = "-j{} ".format(worker_count) + env.get('JSTESTS_EXTRA_ARGS', '')
 
 if use_minidump:
     
