@@ -228,6 +228,10 @@ var whitelist = [
 
   
   { file: "resource://app/localization/en-US/browser/screenshots.ftl" },
+
+  
+  
+  { file: "resource://app/localization/en-US/preview/popup-notifications.ftl" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {

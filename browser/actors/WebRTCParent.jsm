@@ -480,6 +480,10 @@ function prompt(aActor, aBrowser, aRequest) {
 
   let chromeDoc = aBrowser.ownerDocument;
   let stringBundle = chromeDoc.defaultView.gNavigatorBundle;
+  let localization = new Localization(
+    ["branding/brand.ftl", "preview/popup-notifications.ftl"],
+    true
+  );
 
   
   
@@ -529,37 +533,113 @@ function prompt(aActor, aBrowser, aRequest) {
     callback() {},
   };
 
-  let secondaryActions = [
-    {
-      label: stringBundle.getString("getUserMedia.dontAllow.label"),
-      accessKey: stringBundle.getString("getUserMedia.dontAllow.accesskey"),
-      callback(aState) {
-        aActor.denyRequest(aRequest);
-        let scope = SitePermissions.SCOPE_TEMPORARY;
-        if (aState && aState.checkboxChecked) {
-          scope = SitePermissions.SCOPE_PERSISTENT;
-        }
-        if (audioDevices.length) {
+  let notificationSilencingEnabled = Services.prefs.getBoolPref(
+    "privacy.webrtc.allowSilencingNotifications"
+  );
+
+  let secondaryActions = [];
+  if (notificationSilencingEnabled && sharingScreen) {
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let convertAttributesToObjects = messages => {
+      return messages.map(msg => {
+        return msg.attributes.reduce((acc, attribute) => {
+          acc[attribute.name] = attribute.value;
+          return acc;
+        }, {});
+      });
+    };
+
+    let [notNow, never] = convertAttributesToObjects(
+      localization.formatMessagesSync([
+        { id: "popup-screen-sharing-not-now" },
+        { id: "popup-screen-sharing-never" },
+      ])
+    );
+
+    secondaryActions = [
+      {
+        label: notNow.label,
+        accessKey: notNow.accesskey,
+        callback(aState) {
+          aActor.denyRequest(aRequest);
           SitePermissions.setForPrincipal(
             principal,
-            "microphone",
+            "screen",
             SitePermissions.BLOCK,
-            scope,
+            SitePermissions.SCOPE_TEMPORARY,
             notification.browser
           );
-        }
-        if (videoDevices.length) {
-          SitePermissions.setForPrincipal(
-            principal,
-            sharingScreen ? "screen" : "camera",
-            SitePermissions.BLOCK,
-            scope,
-            notification.browser
-          );
-        }
+        },
       },
-    },
-  ];
+      {
+        label: never.label,
+        accessKey: never.accesskey,
+        callback(aState) {
+          aActor.denyRequest(aRequest);
+          SitePermissions.setForPrincipal(
+            principal,
+            "screen",
+            SitePermissions.BLOCK,
+            SitePermissions.SCOPE_PERSISTENT,
+            notification.browser
+          );
+        },
+      },
+    ];
+  } else {
+    secondaryActions = [
+      {
+        label: stringBundle.getString("getUserMedia.dontAllow.label"),
+        accessKey: stringBundle.getString("getUserMedia.dontAllow.accesskey"),
+        callback(aState) {
+          aActor.denyRequest(aRequest);
+          let scope = SitePermissions.SCOPE_TEMPORARY;
+          if (aState && aState.checkboxChecked) {
+            scope = SitePermissions.SCOPE_PERSISTENT;
+          }
+          if (audioDevices.length) {
+            SitePermissions.setForPrincipal(
+              principal,
+              "microphone",
+              SitePermissions.BLOCK,
+              scope,
+              notification.browser
+            );
+          }
+          if (videoDevices.length) {
+            SitePermissions.setForPrincipal(
+              principal,
+              sharingScreen ? "screen" : "camera",
+              SitePermissions.BLOCK,
+              scope,
+              notification.browser
+            );
+          }
+        },
+      },
+    ];
+  }
 
   let productName = gBrandBundle.GetStringFromName("brandShortName");
 
@@ -1044,19 +1124,21 @@ function prompt(aActor, aBrowser, aRequest) {
         "getUserMedia.reasonForNoPermanentAllow.insecure";
     }
 
-    options.checkbox = {
-      label: stringBundle.getString("getUserMedia.remember"),
-      checked: principal.isAddonOrExpandedAddonPrincipal,
-      checkedState: reasonForNoPermanentAllow
-        ? {
-            disableMainAction: true,
-            warningLabel: stringBundle.getFormattedString(
-              reasonForNoPermanentAllow,
-              [productName]
-            ),
-          }
-        : undefined,
-    };
+    if (!notificationSilencingEnabled) {
+      options.checkbox = {
+        label: stringBundle.getString("getUserMedia.remember"),
+        checked: principal.isAddonOrExpandedAddonPrincipal,
+        checkedState: reasonForNoPermanentAllow
+          ? {
+              disableMainAction: true,
+              warningLabel: stringBundle.getFormattedString(
+                reasonForNoPermanentAllow,
+                [productName]
+              ),
+            }
+          : undefined,
+      };
+    }
   }
 
   let iconType = "Devices";
