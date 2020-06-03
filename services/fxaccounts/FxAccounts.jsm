@@ -116,6 +116,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   true
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "USE_SESSION_TOKENS_FOR_OAUTH",
+  "identity.fxaccounts.useSessionTokensForOAuth"
+);
+
 
 
 
@@ -1580,6 +1586,7 @@ FxAccountsInternal.prototype = {
     
     
     
+    
     let token;
     let oAuthURL = this.fxAccountsOAuthGrantClient.serverURL.href;
     let assertion = await this.getAssertion(oAuthURL);
@@ -1609,6 +1616,26 @@ FxAccountsInternal.prototype = {
       token = result.access_token;
     }
     return token;
+  },
+
+  
+
+
+
+
+
+
+
+  async _doTokenFetchWithSessionToken(scopeString, ttl) {
+    return this.withSessionToken(async sessionToken => {
+      const result = await this.fxAccountsClient.accessTokenWithSessionToken(
+        sessionToken,
+        FX_OAUTH_CLIENT_ID,
+        scopeString,
+        ttl
+      );
+      return result.access_token;
+    });
   },
 
   getOAuthToken(options = {}) {
@@ -1646,10 +1673,13 @@ FxAccountsInternal.prototype = {
         log.debug("getOAuthToken has an in-flight request for this scope");
         return maybeInFlight;
       }
-
+      let fetchFunction = this._doTokenFetch.bind(this);
+      if (USE_SESSION_TOKENS_FOR_OAUTH) {
+        fetchFunction = this._doTokenFetchWithSessionToken.bind(this);
+      }
       
       
-      let promise = this._doTokenFetch(scopeString, options.ttl)
+      let promise = fetchFunction(scopeString, options.ttl)
         .then(token => {
           
           

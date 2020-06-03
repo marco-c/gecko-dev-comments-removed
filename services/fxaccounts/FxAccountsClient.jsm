@@ -497,6 +497,32 @@ FxAccountsClient.prototype = {
 
 
 
+
+
+
+  async accessTokenWithSessionToken(sessionTokenHex, clientId, scope, ttl) {
+    const credentials = await deriveHawkCredentials(
+      sessionTokenHex,
+      "sessionToken"
+    );
+    const body = {
+      client_id: clientId,
+      grant_type: "fxa-credentials",
+      scope,
+      ttl,
+    };
+    return this._request("/oauth/token", "POST", credentials, body);
+  },
+
+  
+
+
+
+
+
+
+
+
   accountExists(email) {
     return this.signIn(email, "").then(
       cantHappen => {

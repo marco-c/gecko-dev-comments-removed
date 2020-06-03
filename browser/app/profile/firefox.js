@@ -1448,6 +1448,9 @@ pref("identity.sync.tokenserver.uri", "https://token.services.mozilla.com/1.0/sy
 #endif
 
 
+pref("identity.fxaccounts.useSessionTokensForOAuth", true);
+
+
 
 
 
