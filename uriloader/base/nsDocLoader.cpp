@@ -271,7 +271,12 @@ nsDocLoader::Stop(void) {
   
 
   NS_ASSERTION(!IsBusy(), "Shouldn't be busy here");
-  DocLoaderIsEmpty(false);
+
+  
+  
+  
+  
+  DocLoaderIsEmpty(false, Some(NS_BINDING_ABORTED));
 
   return rv;
 }
@@ -657,7 +662,8 @@ NS_IMETHODIMP nsDocLoader::GetDocumentChannel(nsIChannel** aChannel) {
   return CallQueryInterface(mDocumentRequest, aChannel);
 }
 
-void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
+void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
+                                   const Maybe<nsresult>& aOverrideStatus) {
   if (IsBlockingLoadEvent()) {
     
 
@@ -721,7 +727,11 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
       mProgressStateFlags = nsIWebProgressListener::STATE_STOP;
 
       nsresult loadGroupStatus = NS_OK;
-      mLoadGroup->GetStatus(&loadGroupStatus);
+      if (aOverrideStatus) {
+        loadGroupStatus = *aOverrideStatus;
+      } else {
+        mLoadGroup->GetStatus(&loadGroupStatus);
+      }
 
       
       
