@@ -717,15 +717,8 @@ SearchService.prototype = {
     let searchProvider =
       extension.manifest.chrome_settings_overrides.search_provider;
     let engine = this._engines.get(searchProvider.name);
-    if (!engine || !engine.isAppProvided || engine.hidden) {
-      
-      
-      
-      
-      return {
-        canChangeToAppProvided: false,
-        canInstallEngine: !engine?.hidden,
-      };
+    if (!engine || !engine.isAppProvided) {
+      return false;
     }
     let params = this.getEngineParams(
       extension,
@@ -743,10 +736,7 @@ SearchService.prototype = {
     ) {
       
       if (this.defaultEngine.name == searchProvider.name) {
-        return {
-          canChangeToAppProvided: false,
-          canInstallEngine: false,
-        };
+        return false;
       }
       if (
         !(await this._defaultOverrideAllowlist.canOverride(
@@ -760,10 +750,7 @@ SearchService.prototype = {
         );
         
         
-        return {
-          canChangeToAppProvided: true,
-          canInstallEngine: false,
-        };
+        return true;
       }
       
       engine.overrideWithExtension(params);
@@ -771,10 +758,7 @@ SearchService.prototype = {
         "Allowing default engine to be set to app-provided and overridden.",
         extension.id
       );
-      return {
-        canChangeToAppProvided: true,
-        canInstallEngine: false,
-      };
+      return true;
     }
 
     if (
@@ -789,16 +773,10 @@ SearchService.prototype = {
         "Re-enabling overriding of core extension by",
         extension.id
       );
-      return {
-        canChangeToAppProvided: true,
-        canInstallEngine: false,
-      };
+      return true;
     }
 
-    return {
-      canChangeToAppProvided: false,
-      canInstallEngine: false,
-    };
+    return false;
   },
 
   
