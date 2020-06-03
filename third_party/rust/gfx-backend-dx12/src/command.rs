@@ -144,6 +144,7 @@ impl UserData {
     }
 
     
+    
     fn set_constants(&mut self, offset: usize, data: &[u32]) {
         assert!(offset + data.len() <= ROOT_SIGNATURE_SIZE);
         
@@ -154,6 +155,7 @@ impl UserData {
     }
 
     
+    
     fn set_srv_cbv_uav_table(&mut self, offset: usize, table_start: u32) {
         assert!(offset < ROOT_SIGNATURE_SIZE);
         
@@ -161,6 +163,7 @@ impl UserData {
         self.dirty_mask |= 1u64 << offset;
     }
 
+    
     
     fn set_sampler_table(&mut self, offset: usize, table_start: u32) {
         assert!(offset < ROOT_SIGNATURE_SIZE);
@@ -170,12 +173,14 @@ impl UserData {
     }
 
     
+    
     fn set_descriptor_cbv(&mut self, offset: usize, buffer: u64) {
         assert!(offset + 1 < ROOT_SIGNATURE_SIZE);
+        
         self.data[offset] = RootElement::DescriptorCbv { buffer };
         self.data[offset + 1] = RootElement::DescriptorPlaceholder;
-        self.dirty_mask |= 0b1u64 << offset;
-        self.dirty_mask |= 0b1u64 << offset + 1;
+        self.dirty_mask |= 1u64 << offset;
+        self.dirty_mask |= 1u64 << offset + 1;
     }
 
     fn is_dirty(&self) -> bool {

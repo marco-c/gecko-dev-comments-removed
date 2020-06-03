@@ -1531,6 +1531,9 @@ impl d::Device<B> for Device {
         
         
         
+        
+        
+        
 
         let sets = sets.into_iter().collect::<Vec<_>>();
 
@@ -1633,29 +1636,12 @@ impl d::Device<B> for Device {
 
                 let mut descriptors = Vec::new();
                 let mut mutable_bindings = auxil::FastHashSet::default();
+
+                
                 let mut range_base = ranges.len();
                 for bind in set.bindings.iter() {
                     let content = r::DescriptorContent::from(bind.ty);
-
-                    if content.is_dynamic() {
-                        
-                        let binding = native::Binding {
-                            register: bind.binding as _,
-                            space,
-                        };
-
-                        if content.contains(r::DescriptorContent::CBV) {
-                            descriptors.push(r::RootDescriptor {
-                                offset: root_offset,
-                            });
-                            parameters
-                                .push(native::RootParameter::cbv_descriptor(visibility, binding));
-                            root_offset += 2;
-                        } else {
-                            
-                            unimplemented!()
-                        }
-                    } else {
+                    if !content.is_dynamic() {
                         
                         if content.contains(r::DescriptorContent::CBV) {
                             ranges.push(describe(bind, native::DescriptorRangeType::CBV));
@@ -1678,6 +1664,7 @@ impl d::Device<B> for Device {
                     root_offset += 1;
                 }
 
+                
                 range_base = ranges.len();
                 for bind in set.bindings.iter() {
                     let content = r::DescriptorContent::from(bind.ty);
@@ -1692,6 +1679,29 @@ impl d::Device<B> for Device {
                     ));
                     table_type |= r::SAMPLERS;
                     root_offset += 1;
+                }
+
+                
+                for bind in set.bindings.iter() {
+                    let content = r::DescriptorContent::from(bind.ty);
+                    if content.is_dynamic() {
+                        let binding = native::Binding {
+                            register: bind.binding as _,
+                            space,
+                        };
+
+                        if content.contains(r::DescriptorContent::CBV) {
+                            descriptors.push(r::RootDescriptor {
+                                offset: root_offset,
+                            });
+                            parameters
+                                .push(native::RootParameter::cbv_descriptor(visibility, binding));
+                            root_offset += 2;
+                        } else {
+                            
+                            unimplemented!()
+                        }
+                    }
                 }
 
                 r::RootElement {
