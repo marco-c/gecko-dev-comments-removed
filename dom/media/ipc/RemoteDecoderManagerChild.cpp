@@ -22,6 +22,7 @@ using namespace gfx;
 
 
 StaticRefPtr<nsIThread> sRemoteDecoderManagerChildThread;
+StaticRefPtr<AbstractThread> sRemoteDecoderManagerChildAbstractThread;
 
 
 static StaticRefPtr<RemoteDecoderManagerChild>
@@ -37,7 +38,19 @@ void RemoteDecoderManagerChild::InitializeThread() {
 
   if (!sRemoteDecoderManagerChildThread) {
     RefPtr<nsIThread> childThread;
-    nsresult rv = NS_NewNamedThread("RemVidChild", getter_AddRefs(childThread));
+    nsresult rv = NS_NewNamedThread(
+        "RemVidChild", getter_AddRefs(childThread),
+        NS_NewRunnableFunction(
+            "RemoteDecoderManagerChild::InitializeThread::AbstractThread",
+            []() {
+              
+              
+              
+              
+              sRemoteDecoderManagerChildAbstractThread =
+                  AbstractThread::CreateXPCOMThreadWrapper(
+                      NS_GetCurrentThread(), false );
+            }));
     NS_ENSURE_SUCCESS_VOID(rv);
     sRemoteDecoderManagerChildThread = childThread;
 
@@ -88,6 +101,7 @@ void RemoteDecoderManagerChild::Shutdown() {
         NS_DISPATCH_NORMAL);
 
     sRemoteDecoderManagerChildThread->Shutdown();
+    sRemoteDecoderManagerChildAbstractThread = nullptr;
     sRemoteDecoderManagerChildThread = nullptr;
 
     sRecreateTasks = nullptr;
