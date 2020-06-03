@@ -1012,9 +1012,9 @@ Handle<FixedArray> RegExpParser::CreateCaptureNameMap() {
                                     capture->name()->size());
     
     
-    Handle<String> name = factory->InternalizeString(capture_name);
-    array->set(i * 2, *name);
-    array->set(i * 2 + 1, Smi::FromInt(capture->index()));
+    
+    
+    
 
     i++;
   }
