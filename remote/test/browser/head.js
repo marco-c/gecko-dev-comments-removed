@@ -12,6 +12,9 @@ const { RemoteAgent } = ChromeUtils.import(
   "chrome://remote/content/RemoteAgent.jsm"
 );
 
+const TIMEOUT_MULTIPLIER = SpecialPowers.isDebugBuild ? 4 : 1;
+const TIMEOUT_EVENTS = 1000 * TIMEOUT_MULTIPLIER;
+
 
 
 
@@ -550,7 +553,7 @@ class RecordEvents {
 
 
 
-  async record(timeout = 1000) {
+  async record(timeout = TIMEOUT_EVENTS) {
     await Promise.race([Promise.all(this.promises), timeoutPromise(timeout)]);
     for (const unsubscribe of this.subscriptions) {
       unsubscribe();
