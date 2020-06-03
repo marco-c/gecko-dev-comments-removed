@@ -2606,10 +2606,11 @@ static const LiveRegisterSet RegsToPreserve(
 #elif defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
 
 
+
 static const LiveRegisterSet RegsToPreserve(
     GeneralRegisterSet(Registers::AllMask &
                        ~(uint32_t(1) << Registers::StackPointer)),
-    FloatRegisterSet(FloatRegisters::AllVector128Mask));
+    FloatRegisterSet(FloatRegisters::AllMask));
 #else
 static const LiveRegisterSet RegsToPreserve(
     GeneralRegisterSet(0), FloatRegisterSet(FloatRegisters::AllDoubleMask));
