@@ -2220,7 +2220,8 @@ WorkerThreadPrimaryRunnable::Run() {
     
     
     
-    mWorkerPrivate->ScheduleDeletion(WorkerPrivate::WorkerRan);
+    
+    mWorkerPrivate->RunLoopNeverRan();
   });
 
   mWorkerPrivate->AssertIsOnWorkerThread();

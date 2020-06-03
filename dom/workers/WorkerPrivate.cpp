@@ -2798,6 +2798,26 @@ void WorkerPrivate::OverrideLoadInfoLoadGroup(WorkerLoadInfo& aLoadInfo,
   MOZ_ASSERT(NS_LoadGroupMatchesPrincipal(aLoadInfo.mLoadGroup, aPrincipal));
 }
 
+void WorkerPrivate::RunLoopNeverRan() {
+  {
+    MutexAutoLock lock(mMutex);
+
+    mStatus = Dead;
+  }
+
+  
+  
+  if (!mControlQueue.IsEmpty()) {
+    WorkerControlRunnable* runnable = nullptr;
+    while (mControlQueue.Pop(runnable)) {
+      runnable->Cancel();
+      runnable->Release();
+    }
+  }
+
+  ScheduleDeletion(WorkerPrivate::WorkerRan);
+}
+
 void WorkerPrivate::DoRunLoop(JSContext* aCx) {
   MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
   MOZ_ASSERT(mThread);
@@ -2978,10 +2998,38 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
   MOZ_CRASH("Shouldn't get here!");
 }
 
+namespace {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+uint32_t GetEffectiveEventLoopRecursionDepth() {
+  auto ccjs = CycleCollectedJSContext::Get();
+  if (ccjs) {
+    return ccjs->RecursionDepth();
+  }
+
+  return 1;
+}
+
+}  
+
 void WorkerPrivate::OnProcessNextEvent() {
   AssertIsOnWorkerThread();
 
-  uint32_t recursionDepth = CycleCollectedJSContext::Get()->RecursionDepth();
+  uint32_t recursionDepth = GetEffectiveEventLoopRecursionDepth();
   MOZ_ASSERT(recursionDepth);
 
   
@@ -2997,7 +3045,7 @@ void WorkerPrivate::OnProcessNextEvent() {
 
 void WorkerPrivate::AfterProcessNextEvent() {
   AssertIsOnWorkerThread();
-  MOZ_ASSERT(CycleCollectedJSContext::Get()->RecursionDepth());
+  MOZ_ASSERT(GetEffectiveEventLoopRecursionDepth());
 }
 
 nsIEventTarget* WorkerPrivate::MainThreadEventTargetForMessaging() {
