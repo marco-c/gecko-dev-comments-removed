@@ -1392,7 +1392,7 @@ nsresult nsPrintJob::ReconstructAndReflow(bool doSetPixelScale) {
     nsPrintObject* po = printData->mPrintDocList.ElementAt(i);
     NS_ASSERTION(po, "nsPrintObject can't be null!");
 
-    if (po->mDontPrint || po->mInvisible) {
+    if (!po->PrintingIsEnabled() || po->mInvisible) {
       continue;
     }
 
@@ -1481,7 +1481,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
   
   
   MOZ_ASSERT(
-      (!mIsCreatingPrintPreview && !mPrt->mPrintObject->IsPrintable()) ||
+      (!mIsCreatingPrintPreview && !mPrt->mPrintObject->PrintingIsEnabled()) ||
           (mPrt->mPrintObject->mPresContext && mPrt->mPrintObject->mPresShell),
       "mPresContext and mPresShell shouldn't be nullptr when printing the "
       "document or creating print-preview");
@@ -1933,7 +1933,7 @@ nsresult nsPrintJob::SetRootView(nsPrintObject* aPO, bool& doReturn,
 
   doReturn = false;
 
-  if (aPO->mParent && aPO->mParent->IsPrintable()) {
+  if (aPO->mParent && aPO->mParent->PrintingIsEnabled()) {
     nsIFrame* frame =
         aPO->mContent ? aPO->mContent->GetPrimaryFrame() : nullptr;
     
@@ -1995,7 +1995,7 @@ nsresult nsPrintJob::SetRootView(nsPrintObject* aPO, bool& doReturn,
 nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
   NS_ENSURE_STATE(aPO);
 
-  if (!aPO->IsPrintable()) {
+  if (!aPO->PrintingIsEnabled()) {
     return NS_OK;
   }
 
@@ -2010,7 +2010,7 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
   nsPresContext::nsPresContextType type =
       mIsCreatingPrintPreview ? nsPresContext::eContext_PrintPreview
                               : nsPresContext::eContext_Print;
-  nsView* parentView = aPO->mParent && aPO->mParent->IsPrintable()
+  nsView* parentView = aPO->mParent && aPO->mParent->PrintingIsEnabled()
                            ? nullptr
                            : GetParentViewForRoot();
   aPO->mPresContext = parentView ? new nsPresContext(aPO->mDocument, type)
@@ -2174,7 +2174,7 @@ bool nsPrintJob::PrintDocContent(const UniquePtr<nsPrintObject>& aPO,
   NS_ASSERTION(aPO, "Pointer is null!");
   aStatus = NS_OK;
 
-  if (!aPO->mHasBeenPrinted && aPO->IsPrintable()) {
+  if (!aPO->mHasBeenPrinted && aPO->PrintingIsEnabled()) {
     aStatus = DoPrint(aPO);
     return true;
   }
@@ -2313,7 +2313,7 @@ nsresult nsPrintJob::DoPrint(const UniquePtr<nsPrintObject>& aPO) {
 
 #ifdef EXTENDED_DEBUG_PRINTING
     nsIFrame* rootFrame = poPresShell->GetRootFrame();
-    if (aPO->IsPrintable()) {
+    if (aPO->PrintingIsEnabled()) {
       nsAutoCString docStr;
       nsAutoCString urlStr;
       GetDocTitleAndURL(aPO, docStr, urlStr);
@@ -3224,8 +3224,9 @@ static void DumpPrintObjectsList(const nsTArray<nsPrintObject*>& aDocList) {
       }
     }
 
-    PR_PL(("%s %d %d %p %p %p\n", types[po->mFrameType], po->IsPrintable(),
-           po->mHasBeenPrinted, po, po->mDocShell.get(), rootFrame));
+    PR_PL(("%s %d %d %p %p %p\n", types[po->mFrameType],
+           po->PrintingIsEnabled(), po->mHasBeenPrinted, po,
+           po->mDocShell.get(), rootFrame));
   }
 }
 
@@ -3292,7 +3293,7 @@ static void DumpPrintObjectsTreeLayout(const UniquePtr<nsPrintObject>& aPO,
     for (int32_t k = 0; k < aLevel; k++) fprintf(fd, "  ");
     fprintf(fd, "%s %p %p\n", types[aPO->mFrameType], aPO.get(),
             aPO->mDocShell.get());
-    if (aPO->IsPrintable()) {
+    if (aPO->PrintingIsEnabled()) {
       nsAutoCString docStr;
       nsAutoCString urlStr;
       GetDocTitleAndURL(aPO, docStr, urlStr);

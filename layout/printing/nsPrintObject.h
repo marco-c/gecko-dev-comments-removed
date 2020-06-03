@@ -40,7 +40,6 @@ class nsPrintObject {
                               mozilla::dom::Document* aDoc,
                               nsPrintObject* aParent);
 
-  bool IsPrintable() { return !mDontPrint; }
   void DestroyPresentation();
 
   
@@ -54,6 +53,7 @@ class nsPrintObject {
 
 
   void EnablePrinting(bool aEnable);
+  bool PrintingIsEnabled() const { return mPrintingIsEnabled; }
 
   
   nsCOMPtr<nsIDocShell> mDocShell;
@@ -70,7 +70,6 @@ class nsPrintObject {
   nsTArray<mozilla::UniquePtr<nsPrintObject>> mKids;
   nsPrintObject* mParent;  
   bool mHasBeenPrinted;
-  bool mDontPrint;
   bool mPrintAsIs;
   bool mInvisible;  
   bool mDidCreateDocShell;
@@ -79,6 +78,8 @@ class nsPrintObject {
 
  private:
   nsPrintObject& operator=(const nsPrintObject& aOther) = delete;
+
+  bool mPrintingIsEnabled = false;
 };
 
 #endif 
