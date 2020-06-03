@@ -4,7 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["webrtcUI"];
+var EXPORTED_SYMBOLS = ["webrtcUI", "MacOSWebRTCStatusbarIndicator"];
 
 const { EventEmitter } = ChromeUtils.import(
   "resource:///modules/syncedtabs/EventEmitter.jsm"
@@ -743,134 +743,199 @@ function getGlobalIndicator() {
     );
   }
 
-  let indicator = {
-    _camera: null,
-    _microphone: null,
-    _screen: null,
+  return new MacOSWebRTCStatusbarIndicator();
+}
 
-    _hiddenDoc: Services.appShell.hiddenDOMWindow.document,
-    _statusBar: Cc["@mozilla.org/widget/macsystemstatusbar;1"].getService(
+
+
+
+
+
+
+
+
+
+class MacOSWebRTCStatusbarIndicator {
+  constructor() {
+    this._camera = null;
+    this._microphone = null;
+    this._screen = null;
+
+    this._hiddenDoc = Services.appShell.hiddenDOMWindow.document;
+    this._statusBar = Cc["@mozilla.org/widget/macsystemstatusbar;1"].getService(
       Ci.nsISystemStatusBar
-    ),
+    );
 
-    _command(aEvent) {
-      webrtcUI.showSharingDoorhanger(aEvent.target.stream);
-    },
+    this.updateIndicatorState();
+  }
 
-    _popupShowing(aEvent) {
-      let type = this.getAttribute("type");
-      let activeStreams;
-      if (type == "Camera") {
-        activeStreams = webrtcUI.getActiveStreams(true, false, false);
-      } else if (type == "Microphone") {
-        activeStreams = webrtcUI.getActiveStreams(false, true, false);
-      } else if (type == "Screen") {
-        activeStreams = webrtcUI.getActiveStreams(false, false, true);
-        type = webrtcUI.showScreenSharingIndicator;
+  
+
+
+
+
+  updateIndicatorState() {
+    this._setIndicatorState("Camera", webrtcUI.showCameraIndicator);
+    this._setIndicatorState("Microphone", webrtcUI.showMicrophoneIndicator);
+    this._setIndicatorState("Screen", webrtcUI.showScreenSharingIndicator);
+  }
+
+  
+
+
+  close() {
+    this._setIndicatorState("Camera", false);
+    this._setIndicatorState("Microphone", false);
+    this._setIndicatorState("Screen", false);
+  }
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "popupshowing": {
+        this._popupShowing(event);
+        break;
       }
+      case "popuphiding": {
+        this._popupHiding(event);
+        break;
+      }
+      case "command": {
+        this._command(event);
+        break;
+      }
+    }
+  }
 
-      let bundle = Services.strings.createBundle(
-        "chrome://browser/locale/webrtcIndicator.properties"
+  
+
+
+
+
+
+  _command(aEvent) {
+    webrtcUI.showSharingDoorhanger(aEvent.target.stream);
+  }
+
+  
+
+
+
+
+
+  _popupShowing(aEvent) {
+    let menu = aEvent.target;
+    let type = menu.getAttribute("type");
+    let activeStreams;
+    if (type == "Camera") {
+      activeStreams = webrtcUI.getActiveStreams(true, false, false);
+    } else if (type == "Microphone") {
+      activeStreams = webrtcUI.getActiveStreams(false, true, false);
+    } else if (type == "Screen") {
+      activeStreams = webrtcUI.getActiveStreams(false, false, true);
+      type = webrtcUI.showScreenSharingIndicator;
+    }
+
+    let bundle = Services.strings.createBundle(
+      "chrome://browser/locale/webrtcIndicator.properties"
+    );
+
+    if (activeStreams.length == 1) {
+      let stream = activeStreams[0];
+
+      let menuitem = menu.ownerDocument.createXULElement("menuitem");
+      let labelId = "webrtcIndicator.sharing" + type + "With.menuitem";
+      let label = stream.browser.contentTitle || stream.uri;
+      menuitem.setAttribute(
+        "label",
+        bundle.formatStringFromName(labelId, [label])
       );
+      menuitem.setAttribute("disabled", "true");
+      menu.appendChild(menuitem);
 
-      if (activeStreams.length == 1) {
-        let stream = activeStreams[0];
+      menuitem = menu.ownerDocument.createXULElement("menuitem");
+      menuitem.setAttribute(
+        "label",
+        bundle.GetStringFromName("webrtcIndicator.controlSharing.menuitem")
+      );
+      menuitem.stream = stream;
+      menuitem.addEventListener("command", this);
 
-        let menuitem = this.ownerDocument.createXULElement("menuitem");
-        let labelId = "webrtcIndicator.sharing" + type + "With.menuitem";
-        let label = stream.browser.contentTitle || stream.uri;
-        menuitem.setAttribute(
-          "label",
-          bundle.formatStringFromName(labelId, [label])
-        );
-        menuitem.setAttribute("disabled", "true");
-        this.appendChild(menuitem);
+      menu.appendChild(menuitem);
+      return true;
+    }
 
-        menuitem = this.ownerDocument.createXULElement("menuitem");
-        menuitem.setAttribute(
-          "label",
-          bundle.GetStringFromName("webrtcIndicator.controlSharing.menuitem")
-        );
-        menuitem.stream = stream;
-        menuitem.addEventListener("command", indicator._command);
+    
+    let menuitem = menu.ownerDocument.createXULElement("menuitem");
+    let labelId = "webrtcIndicator.sharing" + type + "WithNTabs.menuitem";
+    let count = activeStreams.length;
+    let label = PluralForm.get(
+      count,
+      bundle.GetStringFromName(labelId)
+    ).replace("#1", count);
+    menuitem.setAttribute("label", label);
+    menuitem.setAttribute("disabled", "true");
+    menu.appendChild(menuitem);
 
-        this.appendChild(menuitem);
-        return true;
-      }
+    for (let stream of activeStreams) {
+      let item = menu.ownerDocument.createXULElement("menuitem");
+      labelId = "webrtcIndicator.controlSharingOn.menuitem";
+      label = stream.browser.contentTitle || stream.uri;
+      item.setAttribute("label", bundle.formatStringFromName(labelId, [label]));
+      item.stream = stream;
+      item.addEventListener("command", this);
+      menu.appendChild(item);
+    }
+
+    return true;
+  }
+
+  
+
+
+
+
+
+  _popupHiding(aEvent) {
+    let menu = aEvent.target;
+    while (menu.firstChild) {
+      menu.firstChild.remove();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  _setIndicatorState(aName, aState) {
+    let field = "_" + aName.toLowerCase();
+    if (aState && !this[field]) {
+      let menu = this._hiddenDoc.createXULElement("menu");
+      menu.setAttribute("id", "webRTC-sharing" + aName + "-menu");
 
       
-      let menuitem = this.ownerDocument.createXULElement("menuitem");
-      let labelId = "webrtcIndicator.sharing" + type + "WithNTabs.menuitem";
-      let count = activeStreams.length;
-      let label = PluralForm.get(
-        count,
-        bundle.GetStringFromName(labelId)
-      ).replace("#1", count);
-      menuitem.setAttribute("label", label);
-      menuitem.setAttribute("disabled", "true");
-      this.appendChild(menuitem);
+      this._hiddenDoc.documentElement.appendChild(menu);
 
-      for (let stream of activeStreams) {
-        let item = this.ownerDocument.createXULElement("menuitem");
-        labelId = "webrtcIndicator.controlSharingOn.menuitem";
-        label = stream.browser.contentTitle || stream.uri;
-        item.setAttribute(
-          "label",
-          bundle.formatStringFromName(labelId, [label])
-        );
-        item.stream = stream;
-        item.addEventListener("command", indicator._command);
-        this.appendChild(item);
-      }
+      this._statusBar.addItem(menu);
 
-      return true;
-    },
+      let menupopup = this._hiddenDoc.createXULElement("menupopup");
+      menupopup.setAttribute("type", aName);
+      menupopup.addEventListener("popupshowing", this);
+      menupopup.addEventListener("popuphiding", this);
+      menupopup.addEventListener("command", this);
+      menu.appendChild(menupopup);
 
-    _popupHiding(aEvent) {
-      while (this.firstChild) {
-        this.firstChild.remove();
-      }
-    },
-
-    _setIndicatorState(aName, aState) {
-      let field = "_" + aName.toLowerCase();
-      if (aState && !this[field]) {
-        let menu = this._hiddenDoc.createXULElement("menu");
-        menu.setAttribute("id", "webRTC-sharing" + aName + "-menu");
-
-        
-        this._hiddenDoc.documentElement.appendChild(menu);
-
-        this._statusBar.addItem(menu);
-
-        let menupopup = this._hiddenDoc.createXULElement("menupopup");
-        menupopup.setAttribute("type", aName);
-        menupopup.addEventListener("popupshowing", this._popupShowing);
-        menupopup.addEventListener("popuphiding", this._popupHiding);
-        menupopup.addEventListener("command", this._command);
-        menu.appendChild(menupopup);
-
-        this[field] = menu;
-      } else if (this[field] && !aState) {
-        this._statusBar.removeItem(this[field]);
-        this[field].remove();
-        this[field] = null;
-      }
-    },
-    updateIndicatorState() {
-      this._setIndicatorState("Camera", webrtcUI.showCameraIndicator);
-      this._setIndicatorState("Microphone", webrtcUI.showMicrophoneIndicator);
-      this._setIndicatorState("Screen", webrtcUI.showScreenSharingIndicator);
-    },
-    close() {
-      this._setIndicatorState("Camera", false);
-      this._setIndicatorState("Microphone", false);
-      this._setIndicatorState("Screen", false);
-    },
-  };
-
-  indicator.updateIndicatorState();
-  return indicator;
+      this[field] = menu;
+    } else if (this[field] && !aState) {
+      this._statusBar.removeItem(this[field]);
+      this[field].remove();
+      this[field] = null;
+    }
+  }
 }
 
 function onTabSharingMenuPopupShowing(e) {
