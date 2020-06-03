@@ -96,7 +96,7 @@ class DebianBootstrapper(
             self.packages.extend(['python2.7', 'python2.7-dev'])
         else:
             if (self.distro == 'ubuntu'
-                or (self.distro == 'debian' and self.codename != "bullseye")):
+                or (self.distro == 'debian' and self.codename not in ('bullseye', 'sid',))):
                 
                 
                 
