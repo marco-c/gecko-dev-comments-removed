@@ -47,16 +47,12 @@ uint64_t APZCCallbackHelper::sLastTargetAPZCNotificationInputBlock =
     uint64_t(-1);
 
 ScreenMargin APZCCallbackHelper::AdjustDisplayPortForScrollDelta(
-    const RepaintRequest& aRequest, const CSSPoint& aActualScrollOffset) {
-  
-  
-  ScreenPoint shift = (aRequest.GetScrollOffset() - aActualScrollOffset) *
-                      aRequest.DisplayportPixelsPerCSSPixel();
-  ScreenMargin margins = aRequest.GetDisplayPortMargins();
-  margins.left -= shift.x;
-  margins.right += shift.x;
-  margins.top -= shift.y;
-  margins.bottom += shift.y;
+    ScreenMargin aMargins, ScreenPoint aScrollDelta) {
+  ScreenMargin margins = aMargins;
+  margins.left -= aScrollDelta.x;
+  margins.right += aScrollDelta.x;
+  margins.top -= aScrollDelta.y;
+  margins.bottom += aScrollDelta.y;
   return margins;
 }
 
@@ -184,6 +180,7 @@ static ScreenMargin ScrollFrame(nsIContent* aContent,
   ScreenMargin displayPortMargins = aRequest.GetDisplayPortMargins();
   CSSPoint apzScrollOffset = aRequest.GetScrollOffset();
   CSSPoint actualScrollOffset = ScrollFrameTo(sf, aRequest, scrollUpdated);
+  CSSPoint scrollDelta = apzScrollOffset - actualScrollOffset;
 
   if (scrollUpdated) {
     if (aRequest.IsScrollInfoLayer()) {
@@ -200,11 +197,11 @@ static ScreenMargin ScrollFrame(nsIContent* aContent,
       
       
       displayPortMargins = APZCCallbackHelper::AdjustDisplayPortForScrollDelta(
-          aRequest, actualScrollOffset);
+          aRequest.GetDisplayPortMargins(),
+          scrollDelta * aRequest.DisplayportPixelsPerCSSPixel());
     }
   } else if (aRequest.IsRootContent() &&
-             aRequest.GetScrollOffset() !=
-                 aRequest.GetLayoutViewport().TopLeft()) {
+             apzScrollOffset != aRequest.GetLayoutViewport().TopLeft()) {
     
     
     
@@ -213,7 +210,8 @@ static ScreenMargin ScrollFrame(nsIContent* aContent,
     
     
     displayPortMargins = APZCCallbackHelper::AdjustDisplayPortForScrollDelta(
-        aRequest, actualScrollOffset);
+        aRequest.GetDisplayPortMargins(),
+        scrollDelta * aRequest.DisplayportPixelsPerCSSPixel());
   } else {
     
     
@@ -238,7 +236,6 @@ static ScreenMargin ScrollFrame(nsIContent* aContent,
       sf && sf->CurrentScrollGeneration() != aRequest.GetScrollGeneration() &&
       nsLayoutUtils::CanScrollOriginClobberApz(sf->LastScrollOrigin());
   if (aContent && !mainThreadScrollChanged) {
-    CSSPoint scrollDelta = apzScrollOffset - actualScrollOffset;
     aContent->SetProperty(nsGkAtoms::apzCallbackTransform,
                           new CSSPoint(scrollDelta),
                           nsINode::DeleteProperty<CSSPoint>);

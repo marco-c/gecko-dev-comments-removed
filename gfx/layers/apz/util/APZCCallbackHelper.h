@@ -172,8 +172,11 @@ class APZCCallbackHelper {
 
   static void CancelAutoscroll(const ScrollableLayerGuid::ViewID& aScrollId);
 
-  static ScreenMargin AdjustDisplayPortForScrollDelta(
-      const RepaintRequest& aRequest, const CSSPoint& aActualScrollOffset);
+  
+
+
+  static ScreenMargin AdjustDisplayPortForScrollDelta(ScreenMargin aMargins,
+                                                      ScreenPoint aScrollDelta);
 
   
 
