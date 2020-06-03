@@ -40,13 +40,14 @@ def check_mozharness_perfherder_options(config, jobs):
         primary_config = job['run']['config'][0]
         options = worker.get('env', {}).get('PERFHERDER_EXTRA_OPTIONS')
         nightly = job.get('attributes', {}).get('nightly', False)
+        shippable = job.get('attributes', {}).get('shippable', False)
 
         
         
         
         assert primary_config.startswith('builds/')
 
-        key = (platform, primary_config, nightly, options)
+        key = (platform, primary_config, (nightly or shippable), options)
 
         if key in SEEN_CONFIGS:
             raise Exception(
