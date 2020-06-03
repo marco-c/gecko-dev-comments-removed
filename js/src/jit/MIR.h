@@ -777,6 +777,10 @@ class MDefinition : public MNode {
 
   bool hasUses() const { return !uses_.empty(); }
 
+  
+  
+  MDefinition* maybeSingleDefUse() const;
+
   void addUse(MUse* use) {
     MOZ_ASSERT(use->producer() == this);
     uses_.pushFront(use);

@@ -753,6 +753,24 @@ bool MDefinition::hasLiveDefUses() const {
   return false;
 }
 
+MDefinition* MDefinition::maybeSingleDefUse() const {
+  MUseDefIterator use(this);
+  if (!use) {
+    
+    return nullptr;
+  }
+
+  MDefinition* useDef = use.def();
+
+  use++;
+  if (use) {
+    
+    return nullptr;
+  }
+
+  return useDef;
+}
+
 void MDefinition::replaceAllUsesWith(MDefinition* dom) {
   for (size_t i = 0, e = numOperands(); i < e; ++i) {
     getOperand(i)->setUseRemovedUnchecked();
@@ -2513,12 +2531,11 @@ MDefinition* MBinaryBitwiseInstruction::foldUnnecessaryBitop() {
   
   
   
-  if (isUrsh() && hasOneDefUse() && IsUint32Type(this)) {
-    MUseDefIterator use(this);
-    if (use.def()->isMod() && use.def()->toMod()->isUnsigned()) {
+  if (isUrsh() && IsUint32Type(this)) {
+    MDefinition* defUse = maybeSingleDefUse();
+    if (defUse && defUse->isMod() && defUse->toMod()->isUnsigned()) {
       return getOperand(0);
     }
-    MOZ_ASSERT(!(++use));
   }
 
   
