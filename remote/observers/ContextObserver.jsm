@@ -32,6 +32,11 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const { executeSoon } = ChromeUtils.import("chrome://remote/content/Sync.jsm");
 
+const FRAMES_ENABLED = Services.prefs.getBoolPref(
+  "remote.frames.enabled",
+  false
+);
+
 class ContextObserver {
   constructor(chromeEventHandler) {
     this.chromeEventHandler = chromeEventHandler;
@@ -67,13 +72,13 @@ class ContextObserver {
 
   handleEvent({ type, target, persisted }) {
     const window = target.defaultView;
-    if (window != this.chromeEventHandler.ownerGlobal) {
-      
+    const frameId = window.docShell.browsingContext.id.toString();
+    const id = window.windowUtils.currentInnerWindowID;
+
+    if (window != this.chromeEventHandler.ownerGlobal && !FRAMES_ENABLED) {
       return;
     }
-    const { windowUtils } = window;
-    const frameId = window.docShell.browsingContext.id.toString();
-    const id = windowUtils.currentInnerWindowID;
+
     switch (type) {
       case "DOMWindowCreated":
         
@@ -87,6 +92,7 @@ class ContextObserver {
           this.emit("script-loaded");
         });
         break;
+
       case "pageshow":
         
         if (!persisted) {

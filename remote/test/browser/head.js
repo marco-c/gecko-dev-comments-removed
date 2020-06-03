@@ -433,6 +433,7 @@ class RecordEvents {
       eventName,
       messageFn = () => `Received ${eventName}`,
     } = options;
+
     const promise = new Promise(resolve => {
       const unsubscribe = event(payload => {
         info(messageFn(payload));
@@ -445,6 +446,7 @@ class RecordEvents {
       });
       this.subscriptions.add(unsubscribe);
     });
+
     this.promises.add(promise);
   }
 
@@ -477,5 +479,19 @@ class RecordEvents {
       return event.payload;
     }
     return {};
+  }
+
+  
+
+
+
+
+
+
+
+  findEvents(eventName) {
+    return this.events
+      .filter(event => event.eventName == eventName)
+      .map(event => event.payload);
   }
 }
