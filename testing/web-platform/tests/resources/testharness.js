@@ -1190,6 +1190,8 @@
     }
     expose(assert_in_array, "assert_in_array");
 
+    
+    
     function assert_object_equals(actual, expected, description)
     {
          assert(typeof actual === "object" && actual !== null, "assert_object_equals", description,
