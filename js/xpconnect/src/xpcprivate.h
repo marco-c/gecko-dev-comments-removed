@@ -2708,14 +2708,6 @@ class RealmPrivate {
 
   
   
-  
-  
-  
-  
-  bool forcePermissiveCOWs = false;
-
-  
-  
   bool wrapperDenialWarnings[WrapperDenialTypeCount];
 
   const nsACString& GetLocation() {

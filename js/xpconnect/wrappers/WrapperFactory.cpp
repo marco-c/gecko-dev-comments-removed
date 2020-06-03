@@ -396,12 +396,6 @@ static void DEBUG_CheckUnwrapSafety(HandleObject obj,
     
     MOZ_ASSERT(!handler->hasSecurityPolicy() ||
                handler == &CrossOriginObjectWrapper::singleton);
-  } else if (RealmPrivate::Get(origin)->forcePermissiveCOWs) {
-    
-    
-    
-    MOZ_ASSERT(!handler->hasSecurityPolicy() ||
-               handler == &CrossOriginObjectWrapper::singleton);
   } else {
     
     bool subsumes =
@@ -523,8 +517,6 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
   CompartmentPrivate* targetCompartmentPrivate =
       CompartmentPrivate::Get(target);
 
-  RealmPrivate* originRealmPrivate = RealmPrivate::Get(origin);
-
   
   
   bool isTransparentWrapperDueToDocumentDomain = false;
@@ -534,13 +526,7 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
   
 
   
-  if (originRealmPrivate->forcePermissiveCOWs) {
-    CrashIfNotInAutomation();
-    wrapper = &CrossCompartmentWrapper::singleton;
-  }
-
-  
-  else if (originIsChrome && !targetIsChrome) {
+  if (originIsChrome && !targetIsChrome) {
     
     
     if ((IdentifyStandardInstance(obj) == JSProto_Function)) {
@@ -619,9 +605,7 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
     wrapper = SelectWrapper(securityWrapper, xrayType, waiveXrays, obj);
   }
 
-  if (!targetSubsumesOrigin && !originRealmPrivate->forcePermissiveCOWs &&
-      !isTransparentWrapperDueToDocumentDomain) {
-    
+  if (!targetSubsumesOrigin && !isTransparentWrapperDueToDocumentDomain) {
     
     
     if (JSFunction* fun = JS_GetObjectFunction(obj)) {
