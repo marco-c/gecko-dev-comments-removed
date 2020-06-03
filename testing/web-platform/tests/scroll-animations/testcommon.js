@@ -2,6 +2,8 @@ function createScroller(test) {
   var scroller = createDiv(test);
   scroller.innerHTML = "<div class='contents'></div>";
   scroller.classList.add('scroller');
+  
+  scroller.scrollTop;
   return scroller;
 }
 
