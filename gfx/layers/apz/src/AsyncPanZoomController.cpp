@@ -1009,7 +1009,14 @@ bool AsyncPanZoomController::ArePointerEventsConsumable(
 nsEventStatus AsyncPanZoomController::HandleDragEvent(
     const MouseInput& aEvent, const AsyncDragMetrics& aDragMetrics,
     CSSCoord aInitialThumbPos) {
-  if (!StaticPrefs::apz_drag_enabled()) {
+  
+  
+  
+  
+  
+  
+  if (!StaticPrefs::apz_drag_enabled() ||
+      mScrollMetadata.GetIsRDMTouchSimulationActive()) {
     return nsEventStatus_eIgnore;
   }
 
