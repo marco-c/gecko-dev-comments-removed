@@ -815,10 +815,15 @@ var BrowserUtils = {
 
 
 
+  get trimURLProtocol() {
+    return "http://";
+  },
   trimURL(aURL) {
     let url = this.removeSingleTrailingSlashFromURL(aURL);
     
-    return url.startsWith("http://") ? url.substring(7) : url;
+    return url.startsWith(this.trimURLProtocol)
+      ? url.substring(this.trimURLProtocol.length)
+      : url;
   },
 
   recordSiteOriginTelemetry(aWindows, aIsGeckoView) {

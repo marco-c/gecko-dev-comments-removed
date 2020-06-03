@@ -667,25 +667,12 @@ class UrlbarInput {
           
           
           
-          let flags =
-            Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
-            Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
-          if (this.isPrivate) {
-            flags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
-          }
           
-          try {
-            let fixupInfo = Services.uriFixup.getFixupURIInfo(
-              originalUntrimmedValue.trim(),
-              flags
-            );
+          let fixupInfo = this._getURIFixupInfo(originalUntrimmedValue.trim());
+          if (fixupInfo) {
             this.window.gKeywordURIFixup.check(
               this.window.gBrowser.selectedBrowser,
               fixupInfo
-            );
-          } catch (ex) {
-            Cu.reportError(
-              `An error occured while trying to fixup "${originalUntrimmedValue.trim()}": ${ex}`
             );
           }
         }
@@ -848,7 +835,23 @@ class UrlbarInput {
         let { value, selectionStart, selectionEnd } = result.autofill;
         this._autofillValue(value, selectionStart, selectionEnd);
       } else {
-        this.value = this._getValueFromResult(result);
+        
+        
+        
+        let allowTrim = true;
+        if (
+          result.type == UrlbarUtils.RESULT_TYPE.URL &&
+          UrlbarPrefs.get("trimURLs") &&
+          result.payload.url.startsWith(BrowserUtils.trimURLProtocol)
+        ) {
+          let fixupInfo = this._getURIFixupInfo(
+            BrowserUtils.trimURL(result.payload.url)
+          );
+          if (fixupInfo?.keywordAsSent) {
+            allowTrim = false;
+          }
+        }
+        this._setValue(this._getValueFromResult(result), allowTrim);
       }
     }
     this._resultForCurrentValue = result;
@@ -1209,6 +1212,23 @@ class UrlbarInput {
   }
 
   
+
+  _getURIFixupInfo(searchString) {
+    let flags =
+      Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
+      Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
+    if (this.isPrivate) {
+      flags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
+    }
+    try {
+      return Services.uriFixup.getFixupURIInfo(searchString, flags);
+    } catch (ex) {
+      Cu.reportError(
+        `An error occured while trying to fixup "${searchString}": ${ex}`
+      );
+    }
+    return null;
+  }
 
   _afterTabSelectAndFocusChange() {
     
@@ -1579,8 +1599,6 @@ class UrlbarInput {
   }
 
   
-
-
 
 
 
@@ -1999,20 +2017,15 @@ class UrlbarInput {
     
     
     if (this.value != this._untrimmedValue) {
-      
-      
-      
       let untrim = false;
-      try {
-        let fixedSpec = Services.uriFixup.createFixupURI(
-          this.value,
-          Services.uriFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP |
-            Services.uriFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS
-        ).displaySpec;
-        let expectedSpec = Services.io.newURI(this._untrimmedValue).displaySpec;
-        untrim = fixedSpec != expectedSpec;
-      } catch (ex) {
-        untrim = true;
+      let fixedURI = this._getURIFixupInfo(this.value)?.preferredURI;
+      if (fixedURI) {
+        try {
+          let expectedURI = Services.io.newURI(this._untrimmedValue);
+          untrim = fixedURI.displaySpec != expectedURI.displaySpec;
+        } catch (ex) {
+          untrim = true;
+        }
       }
       if (untrim) {
         this.inputField.value = this._focusUntrimmedValue = this._untrimmedValue;
