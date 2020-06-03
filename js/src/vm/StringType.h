@@ -256,6 +256,10 @@ class JSString : public js::gc::Cell {
 
 
 
+
+
+
+
   
   static_assert(js::gc::CellFlagBitsReservedForGC <= 3,
                 "JSString::flags must reserve enough bits for Cell");
