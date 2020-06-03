@@ -6,9 +6,6 @@
 var EXPORTED_SYMBOLS = ["OSKeyStoreTestUtils"];
 
 ChromeUtils.import("resource://gre/modules/OSKeyStore.jsm", this);
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
-);
 ChromeUtils.defineModuleGetter(
   this,
   "UpdateUtils",
@@ -43,10 +40,8 @@ var OSKeyStoreTestUtils = {
 
 
   canTestOSKeyStoreLogin() {
-    
     return (
-      UpdateUtils.getUpdateChannel(false) == "default" &&
-      AppConstants.platform != "linux"
+      UpdateUtils.getUpdateChannel(false) == "default" && OSKeyStore.canReauth()
     );
   },
 

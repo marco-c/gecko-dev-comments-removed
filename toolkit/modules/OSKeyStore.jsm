@@ -75,6 +75,24 @@ var OSKeyStore = {
     return !!this._pendingUnlockPromise;
   },
 
+  canReauth() {
+    
+    
+    
+    if (
+      AppConstants.platform == "win" ||
+      AppConstants.isPlatformAndVersionAtLeast("macosx", "16")
+    ) {
+      log.debug(
+        "canReauth, returning true, this._testReauth:",
+        this._testReauth
+      );
+      return true;
+    }
+    log.debug("canReauth, returning false");
+    return false;
+  },
+
   
 
 
@@ -182,11 +200,7 @@ var OSKeyStore = {
         this._testReauth
       ) {
         unlockPromise = this._reauthInTests();
-      } else if (
-        AppConstants.platform == "win" ||
-        (AppConstants.platform == "macosx" &&
-          AppConstants.isPlatformAndVersionAtLeast("macosx", "16"))
-      ) {
+      } else if (this.canReauth()) {
         
         
 

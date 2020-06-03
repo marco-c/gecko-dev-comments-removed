@@ -354,18 +354,25 @@ class AboutLoginsParent extends JSWindowActorParent {
             return;
           }
           if (!token.hasPassword && OS_AUTH_ENABLED) {
-            messageId += "-" + AppConstants.platform;
-            let [
-              messageText,
-              captionText,
-            ] = await AboutLoginsL10n.formatMessages([
-              {
-                id: messageId,
-              },
-              {
-                id: "about-logins-os-auth-dialog-caption",
-              },
-            ]);
+            let messageText = { value: "" };
+            let captionText = { value: "" };
+            
+            
+            
+            
+            if (OSKeyStore.canReauth()) {
+              messageId += "-" + AppConstants.platform;
+              [messageText, captionText] = await AboutLoginsL10n.formatMessages(
+                [
+                  {
+                    id: messageId,
+                  },
+                  {
+                    id: "about-logins-os-auth-dialog-caption",
+                  },
+                ]
+              );
+            }
             let result = await OSKeyStore.ensureLoggedIn(
               messageText.value,
               captionText.value,

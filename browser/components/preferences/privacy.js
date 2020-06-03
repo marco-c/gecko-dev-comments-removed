@@ -1937,7 +1937,7 @@ var gPrivacyPane = {
     if (
       !LoginHelper.isMasterPasswordSet() &&
       OS_AUTH_ENABLED &&
-      AppConstants.platform != "linux"
+      OSKeyStore.canReauth()
     ) {
       let messageId =
         "master-password-os-auth-dialog-message-" + AppConstants.platform;
