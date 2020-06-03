@@ -762,7 +762,15 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
   void guardSpecificFunction(ObjOperandId obj, JSFunction* expected) {
     
     
-    guardSpecificObject(obj, expected);
+    
+    
+    static_assert(JSFunction::NArgsBits == 16);
+    static_assert(sizeof(decltype(expected->flags().toRaw())) ==
+                  sizeof(uint16_t));
+
+    uint32_t nargsAndFlags =
+        (uint32_t(expected->nargs()) << 16) | expected->flags().toRaw();
+    guardSpecificFunction_(obj, expected, nargsAndFlags);
   }
 
   ValOperandId loadArgumentFixedSlot(
