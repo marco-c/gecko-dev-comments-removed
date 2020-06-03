@@ -13,6 +13,7 @@
 #include "nsQueryObject.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/SyncRunnable.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/DNSListenerProxy.h"
 #include "mozilla/net/TRRServiceParent.h"
@@ -35,8 +36,27 @@ already_AddRefed<ChildDNSService> ChildDNSService::GetSingleton() {
                 XRE_IsContentProcess() || XRE_IsSocketProcess());
 
   if (!gChildDNSService) {
-    gChildDNSService = new ChildDNSService();
-    ClearOnShutdown(&gChildDNSService);
+    auto initTask = []() {
+      gChildDNSService = new ChildDNSService();
+      ClearOnShutdown(&gChildDNSService);
+    };
+
+    
+    
+    
+    if (!NS_IsMainThread()) {
+      
+      RefPtr<nsIThread> mainThread = do_GetMainThread();
+      if (!mainThread) {
+        return nullptr;
+      }
+
+      SyncRunnable::DispatchToThread(
+          mainThread, new SyncRunnable(NS_NewRunnableFunction(
+                          "ChildDNSService::GetSingleton", initTask)));
+    } else {
+      initTask();
+    }
   }
 
   return do_AddRef(gChildDNSService);
