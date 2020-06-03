@@ -351,6 +351,9 @@ class CorePS {
   }
 
   
+  PS_GET_LOCKLESS(int, MainThreadId)
+
+  
   PS_GET_LOCKLESS(TimeStamp, ProcessStartTime)
 
   

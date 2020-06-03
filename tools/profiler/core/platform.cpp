@@ -382,7 +382,8 @@ using JsFrameBuffer = JS::ProfilingFrameIterator::Frame[MAX_JS_FRAMES];
 class CorePS {
  private:
   CorePS()
-      : mProcessStartTime(TimeStamp::ProcessCreation()),
+      : mMainThreadId(profiler_current_thread_id()),
+        mProcessStartTime(TimeStamp::ProcessCreation()),
         
         
         
@@ -393,6 +394,8 @@ class CorePS {
         mLul(nullptr)
 #endif
   {
+    MOZ_ASSERT(NS_IsMainThread(),
+               "CorePS must be created from the main thread");
   }
 
   ~CorePS() {}
@@ -442,6 +445,9 @@ class CorePS {
     }
 #endif
   }
+
+  
+  PS_GET_LOCKLESS(int, MainThreadId)
 
   
   PS_GET_LOCKLESS(TimeStamp, ProcessStartTime)
@@ -552,6 +558,9 @@ class CorePS {
  private:
   
   static CorePS* sInstance;
+
+  
+  const int mMainThreadId;
 
   
   const TimeStamp mProcessStartTime;
