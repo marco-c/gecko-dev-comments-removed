@@ -49,12 +49,17 @@ MCall* WarpBuilderShared::makeCall(CallInfo& callInfo, bool needsThisCheck,
   MOZ_ASSERT_IF(needsThisCheck, !target);
 
   
-  
-  uint32_t targetArgs = callInfo.argc();
   bool isDOMCall = false;
   DOMObjectKind objKind = DOMObjectKind::Unknown;
 
-  MOZ_ASSERT_IF(target, target->isNative());
+  uint32_t targetArgs = callInfo.argc();
+
+  
+  
+  if (target && !target->isBuiltinNative()) {
+    targetArgs = std::max<uint32_t>(target->nargs(), callInfo.argc());
+  }
+
   MCall* call =
       MCall::New(alloc(), target, targetArgs + 1 + callInfo.constructing(),
                  callInfo.argc(), callInfo.constructing(),
@@ -68,7 +73,21 @@ MCall* WarpBuilderShared::makeCall(CallInfo& callInfo, bool needsThisCheck,
     if (needsThisCheck) {
       call->setNeedsThisCheck();
     }
+
+    
     call->addArg(targetArgs + 1, callInfo.getNewTarget());
+  }
+
+  
+  
+  MOZ_ASSERT_IF(target && targetArgs > callInfo.argc(),
+                !target->isBuiltinNative());
+  for (uint32_t i = targetArgs; i > callInfo.argc(); i--) {
+    MConstant* undef = constant(UndefinedValue());
+    if (!alloc().ensureBallast()) {
+      return nullptr;
+    }
+    call->addArg(i, undef);
   }
 
   
@@ -80,6 +99,11 @@ MCall* WarpBuilderShared::makeCall(CallInfo& callInfo, bool needsThisCheck,
   
   call->addArg(0, callInfo.thisArg());
   call->initCallee(callInfo.callee());
+
+  if (target) {
+    
+    call->disableClassCheck();
+  }
 
   return call;
 }

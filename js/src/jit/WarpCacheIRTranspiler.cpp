@@ -1193,21 +1193,42 @@ bool WarpCacheIRTranspiler::emitCallFunction(ObjOperandId calleeId,
     auto* guard = callee->toGuardSpecificFunction();
     JSFunction* target =
         &guard->expected()->toConstant()->toObject().as<JSFunction>();
-    MOZ_ASSERT(target->isNative());
 
     wrappedTarget =
         new (alloc()) WrappedFunction(target, guard->nargs(), guard->flags());
+
+    MOZ_ASSERT_IF(kind == CallKind::Native, wrappedTarget->isNative());
+    MOZ_ASSERT_IF(kind == CallKind::Scripted,
+                  wrappedTarget->isInterpreted() ||
+                      wrappedTarget->isNativeWithJitEntry());
   }
 
-  
-  
   bool needsThisCheck = false;
   if (callInfo_->constructing()) {
     MOZ_ASSERT(flags.isConstructing());
 
     callInfo_->thisArg()->setImplicitlyUsedUnchecked();
-    
-    callInfo_->setThis(constant(MagicValue(JS_IS_CONSTRUCTING)));
+
+    if (kind == CallKind::Native) {
+      
+      
+
+      
+      callInfo_->setThis(constant(MagicValue(JS_IS_CONSTRUCTING)));
+
+      needsThisCheck = false;
+    } else {
+      MOZ_ASSERT(kind == CallKind::Scripted);
+
+      
+      MDefinition* newTarget = callInfo_->getNewTarget();
+      auto* createThis = MCreateThis::New(alloc(), callee, newTarget);
+      add(createThis);
+      callInfo_->setThis(createThis);
+
+      wrappedTarget = nullptr;
+      needsThisCheck = true;
+    }
   }
 
   MCall* call = makeCall(*callInfo_, needsThisCheck, wrappedTarget);
@@ -1241,6 +1262,12 @@ bool WarpCacheIRTranspiler::emitCallNativeFunction(ObjOperandId calleeId,
   return emitCallFunction(calleeId, argcId, flags, CallKind::Native);
 }
 #endif
+
+bool WarpCacheIRTranspiler::emitCallScriptedFunction(ObjOperandId calleeId,
+                                                     Int32OperandId argcId,
+                                                     CallFlags flags) {
+  return emitCallFunction(calleeId, argcId, flags, CallKind::Scripted);
+}
 
 bool WarpCacheIRTranspiler::emitMetaTwoByte(MetaTwoByteKind kind,
                                             uint32_t functionObjectOffset,
