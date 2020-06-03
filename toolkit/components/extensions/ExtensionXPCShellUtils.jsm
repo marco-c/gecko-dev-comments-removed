@@ -246,18 +246,6 @@ class ContentPage {
     chromeDoc.documentElement.appendChild(browser);
 
     await awaitFrameLoader;
-
-    
-    
-    
-    
-    
-    await new Promise(resolve => {
-      chromeDoc.defaultView.requestAnimationFrame(() => {
-        chromeDoc.defaultView.requestAnimationFrame(resolve);
-      });
-    });
-
     this.browser = browser;
 
     this.loadFrameScript(frameScript);

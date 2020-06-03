@@ -1246,17 +1246,6 @@ class HiddenXULWindow {
     chromeDoc.documentElement.appendChild(browser);
     await awaitFrameLoader;
 
-    
-    
-    
-    
-    
-    await new Promise(resolve => {
-      chromeDoc.defaultView.requestAnimationFrame(() => {
-        chromeDoc.defaultView.requestAnimationFrame(resolve);
-      });
-    });
-
     return browser;
   }
 }
