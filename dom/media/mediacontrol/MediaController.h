@@ -67,6 +67,8 @@ class IMediaController {
 
 
 
+
+
 class MediaController final
     : public IMediaController,
       public MediaStatusManager,
@@ -109,15 +111,8 @@ class MediaController final
   void HandleActualPlaybackStateChanged() override;
   void UpdateMediaControlKeysEventToContentMediaIfNeeded(
       MediaControlKeysEvent aEvent);
-
-  
-  
   void Activate();
-
-  
   void Deactivate();
-
-  void UpdateActivatedStateIfNeeded();
   bool ShouldActivateController() const;
   bool ShouldDeactivateController() const;
 
