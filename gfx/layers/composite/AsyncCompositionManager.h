@@ -220,6 +220,8 @@ class AsyncCompositionManager final {
   
   void RecordShadowTransforms(Layer* aLayer);
 
+  bool SampleAnimations(Layer* aLayer, TimeStamp aCurrentFrameTime);
+
   TargetConfig mTargetConfig;
   CSSRect mContentRect;
 

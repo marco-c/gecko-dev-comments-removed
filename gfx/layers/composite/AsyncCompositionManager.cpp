@@ -10,6 +10,7 @@
 #include "Layers.h"                 
 #include "gfxPoint.h"               
 #include "mozilla/ServoBindings.h"  
+#include "mozilla/ScopeExit.h"      
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/WidgetUtils.h"      
@@ -641,11 +642,19 @@ static void ApplyAnimatedValue(
   }
 }
 
-static bool SampleAnimations(Layer* aLayer,
-                             CompositorAnimationStorage* aStorage,
-                             TimeStamp aPreviousFrameTime,
-                             TimeStamp aCurrentFrameTime) {
+bool AsyncCompositionManager::SampleAnimations(Layer* aLayer,
+                                               TimeStamp aCurrentFrameTime) {
   bool isAnimating = false;
+  CompositorAnimationStorage* storage =
+      mCompositorBridge->GetAnimationStorage();
+
+  auto autoClearAnimationStorage = MakeScopeExit([&] {
+    if (!isAnimating) {
+      
+      
+      storage->Clear();
+    }
+  });
 
   ForEachNode<ForwardIterator>(aLayer, [&](Layer* layer) {
     auto& propertyAnimationGroups = layer->GetPropertyAnimationGroups();
@@ -655,12 +664,12 @@ static bool SampleAnimations(Layer* aLayer,
 
     isAnimating = true;
     AnimatedValue* previousValue =
-        aStorage->GetAnimatedValue(layer->GetCompositorAnimationsId());
+        storage->GetAnimatedValue(layer->GetCompositorAnimationsId());
 
     nsTArray<RefPtr<RawServoAnimationValue>> animationValues;
     AnimationHelper::SampleResult sampleResult =
         AnimationHelper::SampleAnimationForEachNode(
-            aPreviousFrameTime, aCurrentFrameTime, previousValue,
+            mPreviousFrameTimeStamp, aCurrentFrameTime, previousValue,
             propertyAnimationGroups, animationValues);
 
     const PropertyAnimationGroup& lastPropertyAnimationGroup =
@@ -671,8 +680,7 @@ static bool SampleAnimations(Layer* aLayer,
         
         
         
-        ApplyAnimatedValue(layer, aStorage,
-                           lastPropertyAnimationGroup.mProperty,
+        ApplyAnimatedValue(layer, storage, lastPropertyAnimationGroup.mProperty,
                            animationValues);
         break;
       case AnimationHelper::SampleResult::Skipped:
@@ -1425,19 +1433,10 @@ bool AsyncCompositionManager::TransformShadowTree(
     return false;
   }
 
-  CompositorAnimationStorage* storage =
-      mCompositorBridge->GetAnimationStorage();
   
   
   
-  bool wantNextFrame =
-      SampleAnimations(root, storage, mPreviousFrameTimeStamp, aCurrentFrame);
-
-  if (!wantNextFrame) {
-    
-    
-    storage->Clear();
-  }
+  bool wantNextFrame = SampleAnimations(root, aCurrentFrame);
 
   
   
