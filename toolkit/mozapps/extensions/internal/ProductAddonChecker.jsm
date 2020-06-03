@@ -318,7 +318,6 @@ function downloadLocalConfig() {
 function downloadFile(url, options = { httpsOnlyNoUpgrade: false }) {
   return new Promise((resolve, reject) => {
     let xhr = new XMLHttpRequest();
-
     xhr.onload = function(response) {
       logger.info("downloadXHR File download. status=" + xhr.status);
       if (xhr.status != 200 && xhr.status != 206) {
@@ -360,8 +359,6 @@ function downloadFile(url, options = { httpsOnlyNoUpgrade: false }) {
         xhr.channel.loadInfo.httpsOnlyStatus |=
           Ci.nsILoadInfo.HTTPS_ONLY_EXEMPT;
       }
-      
-      xhr.channel.loadInfo.allowDeprecatedSystemRequests = true;
       
       
       if (xhr.channel instanceof Ci.nsIHttpChannelInternal) {
