@@ -317,6 +317,14 @@ CookieService::GetCookieStringFromDocument(Document* aDocument,
   
   bool potentiallyTurstworthy = principal->GetIsOriginPotentiallyTrustworthy();
 
+  nsPIDOMWindowInner* innerWindow = aDocument->GetInnerWindow();
+  if (NS_WARN_IF(!innerWindow)) {
+    return NS_OK;
+  }
+
+  bool thirdParty = nsContentUtils::IsThirdPartyWindowOrChannel(
+      innerWindow, nullptr, nullptr);
+
   bool stale = false;
   nsTArray<Cookie*> cookieList;
 
@@ -330,6 +338,11 @@ CookieService::GetCookieStringFromDocument(Document* aDocument,
     
     
     if (cookie->IsHttpOnly()) {
+      continue;
+    }
+
+    if (thirdParty &&
+        !CookieCommons::ShouldIncludeCrossSiteCookieForDocument(cookie)) {
       continue;
     }
 
