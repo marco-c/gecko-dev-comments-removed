@@ -160,6 +160,9 @@ void WindowGlobalChild::OnNewDocument(Document* aDocument) {
   
   
   
+  
+
+  
   SetDocumentURI(aDocument->GetDocumentURI());
   SetDocumentPrincipal(aDocument->NodePrincipal());
   SendUpdateDocumentCspSettings(aDocument->GetBlockAllMixedContent(false),
