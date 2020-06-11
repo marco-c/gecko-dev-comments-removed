@@ -41,7 +41,7 @@ from taskgraph.util.scriptworker import (
 )
 from taskgraph.util.signed_artifacts import get_signed_artifacts
 from taskgraph.util.workertypes import worker_type_implementation
-from voluptuous import Any, Required, Optional, Extra, Match, All, NotIn
+from voluptuous import Any, Required, Optional, Extra, Match
 from taskgraph import GECKO, MAX_DEPENDENCIES
 from ..util import docker as dockerutil
 from ..util.workertypes import get_worker_type
@@ -82,12 +82,7 @@ task_description_schema = Schema({
     
     
     
-    Optional('dependencies'): {
-        All(
-            text_type,
-            NotIn(["self", "decision"], "Can't use 'self` or 'decision' as depdency names."),
-        ): object,
-    },
+    Optional('dependencies'): {text_type: object},
 
     
     Optional('soft-dependencies'): [text_type],
@@ -1769,7 +1764,7 @@ def build_task(config, tasks):
 
         
         extra = task.get('extra', {})
-        extra['parent'] = {'task-reference': '<decision>'}
+        extra['parent'] = os.environ.get('TASK_ID', '')
         task_th = task.get('treeherder')
         if task_th:
             extra.setdefault('treeherder-platform', task_th['platform'])
