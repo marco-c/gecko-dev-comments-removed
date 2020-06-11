@@ -84,6 +84,8 @@
 
 
 use super::raw_vec::RawVec;
+use crate::collections::CollectionAllocErr;
+use crate::Bump;
 use core::cmp::Ordering;
 use core::fmt;
 use core::hash::{self, Hash};
@@ -95,8 +97,7 @@ use core::ops::Bound::{Excluded, Included, Unbounded};
 use core::ops::{Index, IndexMut, RangeBounds};
 use core::ptr;
 use core::ptr::NonNull;
-use std::slice;
-use crate::Bump;
+use core::slice;
 
 unsafe fn arith_offset<T>(p: *const T, offset: isize) -> *const T {
     p.offset(offset)
@@ -264,7 +265,7 @@ macro_rules! vec {
         $( v.push($x); )*
         v
     }};
-    (in $bump:expr; $(, $x:expr,)*) => (bumpalo::vec![in $bump; $($x),*])
+    (in $bump:expr; $($x:expr,)*) => (bumpalo::vec![in $bump; $($x),*])
 }
 
 
@@ -658,8 +659,6 @@ impl<'bump, T: 'bump> Vec<'bump, T> {
     
     
     
-    
-    
     pub unsafe fn from_raw_parts_in(
         ptr: *mut T,
         length: usize,
@@ -758,6 +757,57 @@ impl<'bump, T: 'bump> Vec<'bump, T> {
     
     
     
+    
+    
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), CollectionAllocErr> {
+        self.buf.try_reserve(self.len, additional)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), CollectionAllocErr> {
+        self.buf.try_reserve_exact(self.len, additional)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn shrink_to_fit(&mut self) {
         if self.capacity() != self.len {
             self.buf.shrink_to_fit(self.len);
@@ -777,13 +827,38 @@ impl<'bump, T: 'bump> Vec<'bump, T> {
     
     
     
-    pub fn into_bump_slice(mut self) -> &'bump [T] {
+    pub fn into_bump_slice(self) -> &'bump [T] {
         unsafe {
-            let ptr = self.as_mut_ptr();
+            let ptr = self.as_ptr();
             let len = self.len();
             mem::forget(self);
             slice::from_raw_parts(ptr, len)
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_bump_slice_mut(mut self) -> &'bump mut [T] {
+        let ptr = self.as_mut_ptr();
+        let len = self.len();
+        mem::forget(self);
+
+        unsafe { slice::from_raw_parts_mut(ptr, len) }
     }
 
     
@@ -954,9 +1029,16 @@ impl<'bump, T: 'bump> Vec<'bump, T> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    pub unsafe fn set_len(&mut self, len: usize) {
-        self.len = len;
+    pub unsafe fn set_len(&mut self, new_len: usize) {
+        self.len = new_len;
     }
 
     
@@ -1458,6 +1540,38 @@ impl<'bump, T: 'bump> Vec<'bump, T> {
     }
 }
 
+#[cfg(feature = "boxed")]
+impl<'bump, T> Vec<'bump, T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_boxed_slice(mut self) -> crate::boxed::Box<'bump, [T]> {
+        use crate::boxed::Box;
+
+        
+        unsafe {
+            let slice = slice::from_raw_parts_mut(self.as_mut_ptr(), self.len);
+            let output: Box<'bump, [T]> = Box::from_raw(slice);
+            mem::forget(self);
+            output
+        }
+    }
+}
+
 impl<'bump, T: 'bump + Clone> Vec<'bump, T> {
     
     
@@ -1588,7 +1702,7 @@ impl<'a> SetLenOnDrop<'a> {
     fn new(len: &'a mut usize) -> Self {
         SetLenOnDrop {
             local_len: *len,
-            len: len,
+            len,
         }
     }
 
@@ -1772,6 +1886,9 @@ impl<'a, 'bump, T> IntoIterator for &'a mut Vec<'bump, T> {
 impl<'bump, T: 'bump> Extend<T> for Vec<'bump, T> {
     #[inline]
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        let iter = iter.into_iter();
+        self.reserve(iter.size_hint().0);
+
         for t in iter {
             self.push(t);
         }
@@ -1848,13 +1965,16 @@ macro_rules! __impl_slice_eq1 {
         __impl_slice_eq1! { $Lhs, $Rhs, Sized }
     };
     ($Lhs: ty, $Rhs: ty, $Bound: ident) => {
-        impl<'a, 'b, A: $Bound, B> PartialEq<$Rhs> for $Lhs where A: PartialEq<B> {
+        impl<'a, 'b, A: $Bound, B> PartialEq<$Rhs> for $Lhs
+        where
+            A: PartialEq<B>,
+        {
             #[inline]
-            fn eq(&self, other: &$Rhs) -> bool { self[..] == other[..] }
-            #[inline]
-            fn ne(&self, other: &$Rhs) -> bool { self[..] != other[..] }
+            fn eq(&self, other: &$Rhs) -> bool {
+                self[..] == other[..]
+            }
         }
-    }
+    };
 }
 
 __impl_slice_eq1! { Vec<'a, A>, Vec<'b, B> }
@@ -1931,13 +2051,12 @@ impl<'bump, T: 'bump> AsMut<[T]> for Vec<'bump, T> {
     }
 }
 
-
-
-
-
-
-
-
+#[cfg(feature = "boxed")]
+impl<'bump, T: 'bump> From<Vec<'bump, T>> for crate::boxed::Box<'bump, [T]> {
+    fn from(v: Vec<'bump, T>) -> crate::boxed::Box<'bump, [T]> {
+        v.into_boxed_slice()
+    }
+}
 
 
 
@@ -2031,21 +2150,19 @@ impl<'bump, T: 'bump> Iterator for IntoIter<T> {
         unsafe {
             if self.ptr as *const _ == self.end {
                 None
+            } else if mem::size_of::<T>() == 0 {
+                
+                
+                
+                self.ptr = arith_offset(self.ptr as *const i8, 1) as *mut T;
+
+                
+                Some(mem::zeroed())
             } else {
-                if mem::size_of::<T>() == 0 {
-                    
-                    
-                    
-                    self.ptr = arith_offset(self.ptr as *const i8, 1) as *mut T;
+                let old = self.ptr;
+                self.ptr = self.ptr.offset(1);
 
-                    
-                    Some(mem::zeroed())
-                } else {
-                    let old = self.ptr;
-                    self.ptr = self.ptr.offset(1);
-
-                    Some(ptr::read(old))
-                }
+                Some(ptr::read(old))
             }
         }
     }
@@ -2072,18 +2189,16 @@ impl<'bump, T: 'bump> DoubleEndedIterator for IntoIter<T> {
         unsafe {
             if self.end == self.ptr {
                 None
+            } else if mem::size_of::<T>() == 0 {
+                
+                self.end = arith_offset(self.end as *const i8, -1) as *mut T;
+
+                
+                Some(mem::zeroed())
             } else {
-                if mem::size_of::<T>() == 0 {
-                    
-                    self.end = arith_offset(self.end as *const i8, -1) as *mut T;
+                self.end = self.end.offset(-1);
 
-                    
-                    Some(mem::zeroed())
-                } else {
-                    self.end = self.end.offset(-1);
-
-                    Some(ptr::read(self.end))
-                }
+                Some(ptr::read(self.end))
             }
         }
     }

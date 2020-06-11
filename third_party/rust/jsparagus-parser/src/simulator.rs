@@ -7,8 +7,7 @@
 use crate::parser::Parser;
 use ast::SourceLocation;
 use generated_parser::{
-    noop_actions, ParseError, ParserTrait, Result, StackValue, Term, TermValue, TerminalId, Token,
-    TABLES,
+    noop_actions, ParseError, ParserTrait, Result, StackValue, TermValue, TerminalId, Token, TABLES,
 };
 
 
@@ -129,7 +128,7 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
     pub fn write_token(&mut self, t: TerminalId) -> Result<'alloc, ()> {
         
         let accept = self.shift(TermValue {
-            term: Term::Terminal(t),
+            term: t.into(),
             value: (),
         })?;
         
@@ -141,7 +140,7 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
     pub fn close(&mut self, _position: usize) -> Result<'alloc, ()> {
         
         let accept = self.shift(TermValue {
-            term: Term::Terminal(TerminalId::End),
+            term: TerminalId::End.into(),
             value: (),
         })?;
         
@@ -157,7 +156,8 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
 
     
     fn try_error_handling(&mut self, t: TermValue<()>) -> Result<'alloc, bool> {
-        if let Term::Terminal(term) = t.term {
+        if t.term.is_terminal() {
+            let term = t.term.to_terminal();
             let bogus_loc = SourceLocation::new(0, 0);
             let token = &Token::basic_token(term, bogus_loc);
 
@@ -166,7 +166,7 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
             
             
             
-            if t.term == Term::Terminal(TerminalId::ErrorToken) {
+            if term == TerminalId::ErrorToken {
                 return Err(Parser::parse_error(token).into());
             }
 
@@ -179,7 +179,7 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
                 Parser::recover(token, error_code)?;
                 self.replay(t);
                 self.replay(TermValue {
-                    term: Term::Terminal(TerminalId::ErrorToken),
+                    term: TerminalId::ErrorToken.into(),
                     value: (),
                 });
                 return Ok(false);

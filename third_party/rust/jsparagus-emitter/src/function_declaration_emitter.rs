@@ -1,47 +1,14 @@
 use crate::ast_emitter::AstEmitter;
-use crate::emitter::EmitError;
-use ast::source_atom_set::SourceAtomSetIndex;
-use stencil::function::{FunctionFlags, FunctionStencil};
+use stencil::function::FunctionStencilIndex;
 use stencil::gcthings::GCThingIndex;
 
-
-
-pub struct DummyFunctionScriptEmitter {
-    pub name: SourceAtomSetIndex,
+pub struct LazyFunctionEmitter {
+    pub stencil_index: FunctionStencilIndex,
 }
 
-impl DummyFunctionScriptEmitter {
-    pub fn emit(self, emitter: &mut AstEmitter) -> Result<GCThingIndex, EmitError> {
-        let script = emitter.with_inner(|_emitter| {
-            Err(EmitError::NotImplemented("TODO: FunctionDeclaration"))
-
-            
-            
-            
-            
-            
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-        })?;
-
-        let fun =
-            FunctionStencil::non_lazy(Some(self.name), script, FunctionFlags::interpreted_normal());
-
-        let index = emitter.compilation_info.functions.push(fun);
-
-        Ok(emitter.emit.get_function_gcthing_index(index))
+impl LazyFunctionEmitter {
+    pub fn emit(self, emitter: &mut AstEmitter) -> GCThingIndex {
+        emitter.emit.get_function_gcthing_index(self.stencil_index)
     }
 }
 

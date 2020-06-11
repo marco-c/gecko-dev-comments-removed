@@ -4,7 +4,7 @@ use ast::arena;
 use ast::SourceLocation;
 use generated_parser::{
     full_actions, AstBuilder, AstBuilderDelegate, ErrorCode, ParseError, ParserTrait, Result,
-    StackValue, Term, TermValue, TerminalId, Token, TABLES,
+    StackValue, TermValue, TerminalId, Token, TABLES,
 };
 use json_log::json_trace;
 
@@ -127,7 +127,7 @@ impl<'alloc> Parser<'alloc> {
             "end": token.loc.end,
         });
         
-        let term = Term::Terminal(token.terminal_id);
+        let term = token.terminal_id.into();
         let accept = self.shift(TermValue {
             term,
             value: StackValue::Token(token),
@@ -147,7 +147,7 @@ impl<'alloc> Parser<'alloc> {
         let loc = SourceLocation::new(position, position);
         let token = Token::basic_token(TerminalId::End, loc);
         let accept = self.shift(TermValue {
-            term: Term::Terminal(TerminalId::End),
+            term: TerminalId::End.into(),
             value: StackValue::Token(self.handler.alloc(token)),
         })?;
         
@@ -186,7 +186,7 @@ impl<'alloc> Parser<'alloc> {
             
             
             
-            if t.term == Term::Terminal(TerminalId::ErrorToken) {
+            if t.term == TerminalId::ErrorToken.into() {
                 return Err(Self::parse_error(token).into());
             }
 
@@ -201,7 +201,7 @@ impl<'alloc> Parser<'alloc> {
                 self.replay(t);
                 let err_token = self.handler.alloc(err_token);
                 self.replay(TermValue {
-                    term: Term::Terminal(TerminalId::ErrorToken),
+                    term: TerminalId::ErrorToken.into(),
                     value: StackValue::Token(err_token),
                 });
                 return Ok(false);
