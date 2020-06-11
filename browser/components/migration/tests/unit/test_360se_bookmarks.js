@@ -22,10 +22,11 @@ add_task(async function() {
 
   
   
-  let source = MigrationUtils.getLocalizedString("sourceName360se");
-  let label = MigrationUtils.getLocalizedString("importedBookmarksFolder", [
-    source,
-  ]);
+  let source = await MigrationUtils.getLocalizedString("source-name-360se");
+  let label = await MigrationUtils.getLocalizedString(
+    "imported-bookmarks-source",
+    { source }
+  );
 
   let expectedParents = [PlacesUtils.toolbarFolderId];
   let itemCount = 0;

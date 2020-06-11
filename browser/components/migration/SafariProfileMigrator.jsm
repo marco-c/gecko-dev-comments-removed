@@ -153,13 +153,14 @@ Bookmarks.prototype = {
         
         
         
+        let readingListTitle = await MigrationUtils.getLocalizedString(
+          "imported-safari-reading-list"
+        );
         folderGuid = (
           await MigrationUtils.insertBookmarkWrapper({
             parentGuid: PlacesUtils.bookmarks.menuGuid,
             type: PlacesUtils.bookmarks.TYPE_FOLDER,
-            title: MigrationUtils.getLocalizedString(
-              "importedSafariReadingList"
-            ),
+            title: readingListTitle,
           })
         ).guid;
         break;
