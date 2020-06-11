@@ -3870,7 +3870,8 @@ class Document : public nsINode,
   nsIPermissionDelegateHandler* PermDelegateHandler();
 
   
-  StylePrefersColorScheme PrefersColorScheme() const;
+  enum class IgnoreRFP { No, Yes };
+  StylePrefersColorScheme PrefersColorScheme(IgnoreRFP aIgnoreRFP = IgnoreRFP::No) const;
 
   
   

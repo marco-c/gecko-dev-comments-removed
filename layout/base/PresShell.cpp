@@ -5238,7 +5238,7 @@ nscolor PresShell::GetDefaultBackgroundColorToDraw() {
   BrowsingContext* bc = doc->GetBrowsingContext();
   if (bc && bc->IsTop() && !bc->HasOpener() && doc->GetDocumentURI() &&
       NS_IsAboutBlank(doc->GetDocumentURI()) &&
-      doc->PrefersColorScheme() == StylePrefersColorScheme::Dark) {
+      doc->PrefersColorScheme(Document::IgnoreRFP::Yes) == StylePrefersColorScheme::Dark) {
     
     return NS_RGB(0x2A, 0x2A, 0x2E);
   }
