@@ -171,6 +171,10 @@ class ChannelEventQueue final {
   
   void Resume();
 
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  bool IsEmpty() const { return mEventQueue.IsEmpty(); }
+#endif
+
  private:
   
   ~ChannelEventQueue() = default;

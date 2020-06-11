@@ -43,6 +43,10 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   
   void OnStartRequestReceived();
 
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  bool IsQueueEmpty() const { return mQueuedRunnables.IsEmpty(); }
+#endif
+
  protected:
   IPCResult RecvOnTransportAndData(const nsresult& aChannelStatus,
                                    const nsresult& aTransportStatus,
