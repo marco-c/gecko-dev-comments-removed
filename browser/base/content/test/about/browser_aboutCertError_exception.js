@@ -138,6 +138,16 @@ add_task(async function checkBadStsCert() {
           : content.document;
         let advancedButton = doc.getElementById("advancedButton");
         advancedButton.click();
+
+        
+        
+        
+        
+        let elements = [doc.getElementById("badCertTechnicalInfo")];
+        await ContentTaskUtils.waitForCondition(() => {
+          return elements.every(elem => !!elem.textContent.trim().length);
+        });
+
         return doc.getElementById("badCertTechnicalInfo").textContent;
       }
     );

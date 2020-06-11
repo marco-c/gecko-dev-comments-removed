@@ -92,6 +92,19 @@ async function setupPage(htmlPageName, blockedPage) {
   
   await SpecialPowers.spawn(iframe, [], async function() {
     let doc = content.document;
+
+    
+    
+    
+    
+    let elements = [
+      doc.getElementById("errorLongDesc"),
+      doc.getElementById("openInNewWindowButton"),
+    ];
+    await ContentTaskUtils.waitForCondition(() => {
+      return elements.every(elem => !!elem.textContent.trim().length);
+    });
+
     let textLongDescription = doc.getElementById("errorLongDesc").textContent;
     Assert.ok(
       textLongDescription.includes(
