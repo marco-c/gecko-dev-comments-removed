@@ -593,7 +593,7 @@ nsCSPContext::GetAllowsInline(nsContentPolicyType aContentType,
 
 NS_IMETHODIMP
 nsCSPContext::GetAllowsNavigateTo(nsIURI* aURI, bool aIsFormSubmission,
-                                  bool aWasRedirected, bool aEnforceWhitelist,
+                                  bool aWasRedirected, bool aEnforceAllowlist,
                                   bool* outAllowsNavigateTo) {
   
 
@@ -625,7 +625,7 @@ nsCSPContext::GetAllowsNavigateTo(nsIURI* aURI, bool aIsFormSubmission,
   bool atLeastOneBlock = false;
   for (unsigned long i = 0; i < mPolicies.Length(); i++) {
     if (!mPolicies[i]->allowsNavigateTo(aURI, aWasRedirected,
-                                        aEnforceWhitelist)) {
+                                        aEnforceAllowlist)) {
       if (!mPolicies[i]->getReportOnlyFlag()) {
         atLeastOneBlock = true;
       }

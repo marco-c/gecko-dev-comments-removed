@@ -1494,7 +1494,7 @@ bool nsCSPPolicy::hasDirective(CSPDirective aDir) const {
 }
 
 bool nsCSPPolicy::allowsNavigateTo(nsIURI* aURI, bool aWasRedirected,
-                                   bool aEnforceWhitelist) const {
+                                   bool aEnforceAllowlist) const {
   bool allowsNavigateTo = true;
 
   for (unsigned long i = 0; i < mDirectives.Length(); i++) {
@@ -1502,7 +1502,7 @@ bool nsCSPPolicy::allowsNavigateTo(nsIURI* aURI, bool aWasRedirected,
             nsIContentSecurityPolicy::NAVIGATE_TO_DIRECTIVE)) {
       
       
-      if (!aEnforceWhitelist &&
+      if (!aEnforceAllowlist &&
           mDirectives[i]->allows(CSP_UNSAFE_ALLOW_REDIRECTS, EmptyString(),
                                  false)) {
         return true;

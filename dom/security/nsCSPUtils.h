@@ -667,7 +667,7 @@ class nsCSPPolicy {
   bool visitDirectiveSrcs(CSPDirective aDir, nsCSPSrcVisitor* aVisitor) const;
 
   bool allowsNavigateTo(nsIURI* aURI, bool aWasRedirected,
-                        bool aEnforceWhitelist) const;
+                        bool aEnforceAllowlist) const;
 
  private:
   nsUpgradeInsecureDirective* mUpgradeInsecDir;

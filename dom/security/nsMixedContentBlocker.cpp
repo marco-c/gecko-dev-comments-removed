@@ -54,8 +54,8 @@ enum nsMixedContentBlockerMessageType { eBlocked = 0x00, eUserOverride = 0x01 };
 
 
 
-nsCString* nsMixedContentBlocker::sSecurecontextWhitelist = nullptr;
-bool nsMixedContentBlocker::sSecurecontextWhitelistCached = false;
+nsCString* nsMixedContentBlocker::sSecurecontextAllowlist = nullptr;
+bool nsMixedContentBlocker::sSecurecontextAllowlistCached = false;
 
 enum MixedContentHSTSState {
   MCB_HSTS_PASSIVE_NO_HSTS = 0,
@@ -265,27 +265,27 @@ void nsMixedContentBlocker::OnPrefChange(const char* aPref, void* aClosure) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!strcmp(aPref, "dom.securecontext.whitelist"));
   Preferences::GetCString("dom.securecontext.whitelist",
-                          *sSecurecontextWhitelist);
+                          *sSecurecontextAllowlist);
 }
 
 
-void nsMixedContentBlocker::GetSecureContextWhiteList(nsACString& aList) {
+void nsMixedContentBlocker::GetSecureContextAllowList(nsACString& aList) {
   MOZ_ASSERT(NS_IsMainThread());
-  if (!sSecurecontextWhitelistCached) {
-    MOZ_ASSERT(!sSecurecontextWhitelist);
-    sSecurecontextWhitelistCached = true;
-    sSecurecontextWhitelist = new nsCString();
+  if (!sSecurecontextAllowlistCached) {
+    MOZ_ASSERT(!sSecurecontextAllowlist);
+    sSecurecontextAllowlistCached = true;
+    sSecurecontextAllowlist = new nsCString();
     Preferences::RegisterCallbackAndCall(OnPrefChange,
                                          "dom.securecontext.whitelist");
   }
-  aList = *sSecurecontextWhitelist;
+  aList = *sSecurecontextAllowlist;
 }
 
 
 void nsMixedContentBlocker::Shutdown() {
-  if (sSecurecontextWhitelist) {
-    delete sSecurecontextWhitelist;
-    sSecurecontextWhitelist = nullptr;
+  if (sSecurecontextAllowlist) {
+    delete sSecurecontextAllowlist;
+    sSecurecontextAllowlist = nullptr;
   }
 }
 
@@ -342,9 +342,9 @@ bool nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(nsIURI* aURI) {
     return false;
   }
 
-  nsAutoCString whitelist;
-  GetSecureContextWhiteList(whitelist);
-  nsCCharSeparatedTokenizer tokenizer(whitelist, ',');
+  nsAutoCString allowlist;
+  GetSecureContextAllowList(allowlist);
+  nsCCharSeparatedTokenizer tokenizer(allowlist, ',');
   while (tokenizer.hasMoreTokens()) {
     const nsACString& allowedHost = tokenizer.nextToken();
     if (host.Equals(allowedHost)) {
