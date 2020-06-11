@@ -511,7 +511,7 @@ class LexicalEnvironmentObject : public EnvironmentObject {
       JSContext* cx, HandleShape shape, HandleObject enclosing,
       gc::InitialHeap heap, IsSingletonEnv isSingleton);
 
-  void initThisValue(JSObject* obj) {
+  void initThisObject(JSObject* obj) {
     MOZ_ASSERT(isGlobal() || !isSyntactic());
     JSObject* thisObj = GetThisObject(obj);
     initReservedSlot(THIS_VALUE_OR_SCOPE_SLOT, ObjectValue(*thisObj));
@@ -568,7 +568,7 @@ class LexicalEnvironmentObject : public EnvironmentObject {
     return enclosingEnvironment().as<GlobalObject>();
   }
 
-  void setWindowProxyThisValue(JSObject* obj);
+  void setWindowProxyThisObject(JSObject* obj);
 
   
   
@@ -580,7 +580,7 @@ class LexicalEnvironmentObject : public EnvironmentObject {
 
   
   
-  Value thisValue() const;
+  JSObject* thisObject() const;
 
   static constexpr size_t offsetOfThisValueOrScopeSlot() {
     return getFixedSlotOffset(THIS_VALUE_OR_SCOPE_SLOT);

@@ -409,7 +409,7 @@ class WarpSnapshot : public TempObject {
   
   
   WarpGCPtr<LexicalEnvironmentObject*> globalLexicalEnv_;
-  WarpGCPtr<Value> globalLexicalEnvThis_;
+  WarpGCPtr<JSObject*> globalLexicalEnvThis_;
 
  public:
   explicit WarpSnapshot(JSContext* cx, WarpScriptSnapshot* script);
@@ -419,7 +419,7 @@ class WarpSnapshot : public TempObject {
   LexicalEnvironmentObject* globalLexicalEnv() const {
     return globalLexicalEnv_;
   }
-  Value globalLexicalEnvThis() const { return globalLexicalEnvThis_; }
+  JSObject* globalLexicalEnvThis() const { return globalLexicalEnvThis_; }
 
   void trace(JSTracer* trc);
 
