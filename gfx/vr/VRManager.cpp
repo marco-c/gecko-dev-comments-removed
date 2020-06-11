@@ -608,7 +608,9 @@ void VRManager::DetectRuntimes() {
 }
 
 void VRManager::EnumerateDevices() {
-  if (mState == VRManagerState::Enumeration) {
+  if (mState == VRManagerState::Enumeration ||
+      (mRuntimeDetectionCompleted &&
+       (mVRDisplaysRequested || mEnumerationRequested))) {
     
     
     
