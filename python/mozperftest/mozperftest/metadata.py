@@ -18,7 +18,7 @@ class Metadata(MachLogger):
     def run_hook(self, name, **kw):
         
         
-        return self._env.run_hook(name, **kw)
+        return self._env.hooks.run(name, **kw)
 
     def set_output(self, output):
         self._output = output
