@@ -262,7 +262,8 @@ class ConsumerView {
 
 
   template <typename Arg>
-  QueueStatus ReadParam(Arg* aArg = nullptr) {
+  QueueStatus ReadParam(Arg* aArg) {
+    MOZ_ASSERT(aArg);
     return mozilla::webgl::QueueParamTraits<
         typename RemoveCVR<Arg>::Type>::Read(*this, aArg);
   }
@@ -271,7 +272,8 @@ class ConsumerView {
 
 
   template <typename Arg>
-  size_t MinSizeParam(Arg* aArg = nullptr) {
+  size_t MinSizeParam(Arg* aArg) {
+    MOZ_ASSERT(aArg);
     return mozilla::webgl::QueueParamTraits<
         typename RemoveCVR<Arg>::Type>::MinSize(*this, aArg);
   }

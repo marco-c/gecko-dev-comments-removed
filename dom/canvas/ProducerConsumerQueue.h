@@ -620,45 +620,10 @@ class PcqConsumer : public detail::PcqBase {
   
 
 
-  template <typename... Args>
-  QueueStatus TryPeek(Args&... aArgs) {
-    return TryPeekOrRemove<false, Args...>(
-        [&](ConsumerView<PcqConsumer>& aView) -> QueueStatus {
-          return TryPeekRemoveHelper(aView, &aArgs...);
-        });
-  }
-
-  
-
-
 
   template <typename... Args>
   QueueStatus TryRemove(Args&... aArgs) {
-    return TryPeekOrRemove<true, Args...>(
-        [&](ConsumerView<PcqConsumer>& aView) -> QueueStatus {
-          return TryPeekRemoveHelper(aView, &aArgs...);
-        });
-  }
-
-  
-
-
-
-  template <typename... Args>
-  QueueStatus TryRemove() {
-    using seq = std::index_sequence_for<Args...>;
-    return TryRemove<Args...>(seq{});
-  }
-
-  
-
-
-
-
-  template <typename... Args>
-  QueueStatus TryWaitPeek(const Maybe<TimeDuration>& aDuration,
-                          Args&... aArgs) {
-    return TryWaitPeekOrRemove<false>(aDuration, aArgs...);
+    return TryRemoveImpl(aArgs...);
   }
 
   
@@ -668,50 +633,7 @@ class PcqConsumer : public detail::PcqBase {
   template <typename... Args>
   QueueStatus TryWaitRemove(const Maybe<TimeDuration>& aDuration,
                             Args&... aArgs) {
-    return TryWaitPeekOrRemove<true>(aDuration, aArgs...);
-  }
-
-  
-
-
-
-
-
-  template <typename... Args>
-  QueueStatus TryWaitRemove(const Maybe<TimeDuration>& aDuration) {
-    
-    
-    TimeStamp start(TimeStamp::Now());
-    if (!mMaybeNotEmptySem->Wait(aDuration)) {
-      return QueueStatus::kNotReady;
-    }
-
-    
-    QueueStatus status = TryRemove<Args...>();
-
-    TimeStamp now;
-    if (IsSuccess(status)) {
-      
-      
-      
-      
-      
-      if ((!IsEmpty()) && (!mMaybeNotEmptySem->IsAvailable())) {
-        mMaybeNotEmptySem->Signal();
-      }
-    } else if ((status == QueueStatus::kNotReady) &&
-               (aDuration.isNothing() ||
-                ((now = TimeStamp::Now()) - start) < aDuration.value())) {
-      
-      
-      
-      status =
-          aDuration.isNothing()
-              ? TryWaitRemove<Args...>(aDuration)
-              : TryWaitRemove<Args...>(Some(aDuration.value() - (now - start)));
-    }
-
-    return status;
+    return TryWaitRemoveImpl(false, aDuration, aArgs...);
   }
 
   mozilla::ipc::Shmem::SharedMemory* LookupSharedMemory(uint32_t aId) {
@@ -725,12 +647,8 @@ class PcqConsumer : public detail::PcqBase {
   friend ProducerConsumerQueue;
   friend ConsumerView<PcqConsumer>;
 
-  
-  using PeekOrRemoveOperation =
-      std::function<QueueStatus(ConsumerView<PcqConsumer>&)>;
-
-  template <bool isRemove, typename... Args>
-  QueueStatus TryPeekOrRemove(const PeekOrRemoveOperation& aOperation) {
+  template <typename... Args>
+  QueueStatus TryRemoveImpl(Args&... aArgs) {
     size_t write = mWrite->load(std::memory_order_acquire);
     size_t read = mRead->load(std::memory_order_relaxed);
     const size_t initRead = read;
@@ -766,8 +684,7 @@ class PcqConsumer : public detail::PcqBase {
     }
 
     
-    
-    QueueStatus status = aOperation(view);
+    QueueStatus status = TryRemoveArgs(view, &aArgs...);
     if (!status) {
       return status;
     }
@@ -785,44 +702,25 @@ class PcqConsumer : public detail::PcqBase {
     MOZ_ASSERT(ValidState(read, write));
 
     PCQ_LOGD(
-        "Successfully %s.  PcqConsumer used %zu bytes total.  "
+        "Successfully removed.  PcqConsumer used %zu bytes total.  "
         "Read index: %zu -> %zu",
-        isRemove ? "removed" : "peeked", bytesNeeded, initRead, read);
+        bytesNeeded, initRead, read);
 
     
-    if (isRemove) {
-      mRead->store(read, std::memory_order_release);
-      
-      
-      
-      if (!mMaybeNotFullSem->IsAvailable()) {
-        mMaybeNotFullSem->Signal();
-      }
+    mRead->store(read, std::memory_order_release);
+    
+    
+    
+    if (!mMaybeNotFullSem->IsAvailable()) {
+      mMaybeNotFullSem->Signal();
     }
     return status;
   }
 
-  
-  template <typename... Args, size_t... Is>
-  QueueStatus TryRemove(std::index_sequence<Is...>) {
-    std::tuple<Args*...> nullArgs;
-    return TryPeekOrRemove<true, Args...>(
-        [&](ConsumerView<PcqConsumer>& aView) {
-          return TryPeekRemoveHelper(aView, std::get<Is>(nullArgs)...);
-        });
-  }
-
-  template <bool isRemove, typename... Args>
-  QueueStatus TryWaitPeekOrRemove(const Maybe<TimeDuration>& aDuration,
-                                  Args&&... aArgs) {
-    return TryWaitPeekOrRemoveImpl<isRemove>(false, aDuration,
-                                             std::forward<Args>(aArgs)...);
-  }
-
-  template <bool isRemove, typename... Args>
-  QueueStatus TryWaitPeekOrRemoveImpl(bool aRecursed,
-                                      const Maybe<TimeDuration>& aDuration,
-                                      Args&... aArgs) {
+  template <typename... Args>
+  QueueStatus TryWaitRemoveImpl(bool aRecursed,
+                                const Maybe<TimeDuration>& aDuration,
+                                Args&... aArgs) {
     
     
     TimeStamp start(TimeStamp::Now());
@@ -831,7 +729,7 @@ class PcqConsumer : public detail::PcqBase {
     }
 
     
-    QueueStatus status = isRemove ? TryRemove(aArgs...) : TryPeek(aArgs...);
+    QueueStatus status = TryRemove(aArgs...);
 
     TimeStamp now;
     if (aRecursed && IsSuccess(status)) {
@@ -851,9 +749,9 @@ class PcqConsumer : public detail::PcqBase {
       
       status =
           aDuration.isNothing()
-              ? TryWaitPeekOrRemoveImpl<isRemove>(true, aDuration, aArgs...)
-              : TryWaitPeekOrRemoveImpl<isRemove>(
-                    true, Some(aDuration.value() - (now - start)), aArgs...);
+              ? TryWaitRemoveImpl(true, aDuration, aArgs...)
+              : TryWaitRemoveImpl(true, Some(aDuration.value() - (now - start)),
+                                  aArgs...);
     }
 
     return status;
@@ -861,25 +759,24 @@ class PcqConsumer : public detail::PcqBase {
 
   
   template <typename... Args>
-  QueueStatus TryPeekRemoveHelper(ConsumerView<PcqConsumer>& aView,
-                                  Args*... aArgs);
+  QueueStatus TryRemoveArgs(ConsumerView<PcqConsumer>& aView, Args*... aArgs);
 
   template <typename Arg, typename... Args>
-  QueueStatus TryPeekRemoveHelper(ConsumerView<PcqConsumer>& aView, Arg* aArg,
-                                  Args*... aArgs) {
-    QueueStatus status = TryCopyOrSkipItem<Arg>(aView, aArg);
-    return IsSuccess(status) ? TryPeekRemoveHelper<Args...>(aView, aArgs...)
-                             : status;
+  QueueStatus TryRemoveArgs(ConsumerView<PcqConsumer>& aView, Arg* aArg,
+                            Args*... aArgs) {
+    QueueStatus status = TryCopyItem<Arg>(aView, aArg);
+    return IsSuccess(status) ? TryRemoveArgs<Args...>(aView, aArgs...) : status;
   }
 
-  QueueStatus TryPeekRemoveHelper(ConsumerView<PcqConsumer>&) {
+  QueueStatus TryRemoveArgs(ConsumerView<PcqConsumer>&) {
     return QueueStatus::kSuccess;
   }
 
   
   
   template <typename Arg>
-  QueueStatus TryCopyOrSkipItem(ConsumerView<PcqConsumer>& aView, Arg* aArg) {
+  QueueStatus TryCopyItem(ConsumerView<PcqConsumer>& aView, Arg* aArg) {
+    MOZ_ASSERT(aArg);
     return QueueParamTraits<typename RemoveCVR<Arg>::Type>::Read(
         aView, const_cast<std::remove_cv_t<Arg>*>(aArg));
   }
