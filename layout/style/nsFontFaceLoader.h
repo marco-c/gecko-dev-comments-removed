@@ -36,8 +36,6 @@ class nsFontFaceLoader final : public nsIStreamLoaderObserver,
   NS_DECL_NSIREQUESTOBSERVER
 
   
-  nsresult Init();
-  
   void Cancel();
 
   void DropChannel() { mChannel = nullptr; }
