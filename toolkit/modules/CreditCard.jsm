@@ -215,30 +215,6 @@ class CreditCard {
 
 
 
-  static getLabelInfo({ number, name, month, year }) {
-    let formatSelector = ["number"];
-    if (name) {
-      formatSelector.push("name");
-    }
-    if (month && year) {
-      formatSelector.push("expiration");
-    }
-    let stringId = "credit-card-label-" + formatSelector.join("-");
-    return {
-      id: stringId,
-      args: {
-        number: CreditCard.getMaskedNumber(number),
-        name,
-        month: month?.toString(),
-        year: year?.toString(),
-      },
-    };
-  }
-
-  
-
-
-
   static getLabel({ number, name }) {
     let parts = [];
 
