@@ -816,6 +816,12 @@ class AsyncPanZoomController {
 
 
 
+  void CancelGesture();
+
+  
+
+
+
 
 
 
