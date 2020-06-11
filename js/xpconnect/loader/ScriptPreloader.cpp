@@ -206,6 +206,9 @@ static void TraceOp(JSTracer* trc, void* data) {
 }  
 
 void ScriptPreloader::Trace(JSTracer* trc) {
+  mMonitor.AssertNotCurrentThreadOwns();
+  MonitorAutoLock mal(mMonitor);
+
   for (auto& script : IterHash(mScripts)) {
     JS::TraceEdge(trc, &script->mScript,
                   "ScriptPreloader::CachedScript.mScript");
