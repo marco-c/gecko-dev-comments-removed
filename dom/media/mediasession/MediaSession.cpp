@@ -63,6 +63,16 @@ MediaSessionPlaybackState MediaSession::PlaybackState() const {
 void MediaSession::SetActionHandler(MediaSessionAction aAction,
                                     MediaSessionActionHandler* aHandler) {
   MOZ_ASSERT(size_t(aAction) < ArrayLength(mActionHandlers));
+  
+  
+  
+  
+  RefPtr<MediaSessionActionHandler>& hanlder = mActionHandlers[aAction];
+  if (!hanlder && aHandler) {
+    NotifyEnableSupportedAction(aAction);
+  } else if (hanlder && !aHandler) {
+    NotifyDisableSupportedAction(aAction);
+  }
   mActionHandlers[aAction] = aHandler;
 }
 
@@ -192,6 +202,22 @@ void MediaSession::NotifyMetadataUpdated() {
   }
   if (RefPtr<IMediaInfoUpdater> updater = ContentMediaAgent::Get(currentBC)) {
     updater->UpdateMetadata(currentBC->Id(), metadata);
+  }
+}
+
+void MediaSession::NotifyEnableSupportedAction(MediaSessionAction aAction) {
+  RefPtr<BrowsingContext> currentBC = GetParentObject()->GetBrowsingContext();
+  MOZ_ASSERT(currentBC, "Update action after context destroyed!");
+  if (RefPtr<IMediaInfoUpdater> updater = ContentMediaAgent::Get(currentBC)) {
+    updater->EnableAction(currentBC->Id(), aAction);
+  }
+}
+
+void MediaSession::NotifyDisableSupportedAction(MediaSessionAction aAction) {
+  RefPtr<BrowsingContext> currentBC = GetParentObject()->GetBrowsingContext();
+  MOZ_ASSERT(currentBC, "Update action after context destroyed!");
+  if (RefPtr<IMediaInfoUpdater> updater = ContentMediaAgent::Get(currentBC)) {
+    updater->DisableAction(currentBC->Id(), aAction);
   }
 }
 

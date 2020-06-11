@@ -76,9 +76,13 @@ class MediaSession final : public nsISupports, public nsWrapperCache {
     eDestroyed = false,
     eCreated = true,
   };
-  void NotifyMediaSessionStatus(SessionStatus aState);
 
+  
+  
+  void NotifyMediaSessionStatus(SessionStatus aState);
   void NotifyMetadataUpdated();
+  void NotifyEnableSupportedAction(MediaSessionAction aAction);
+  void NotifyDisableSupportedAction(MediaSessionAction aAction);
 
   void DispatchNotifyHandler(const MediaSessionActionDetails& aDetails);
 
