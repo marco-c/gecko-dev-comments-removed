@@ -71,11 +71,18 @@ NS_IMETHODIMP nsPrintProgress::OpenProgressDialog(
     nsCOMPtr<nsPIDOMWindowOuter> pParentWindow =
         nsPIDOMWindowOuter::From(parent);
     NS_ENSURE_STATE(pParentWindow);
-    RefPtr<BrowsingContext> bc = pParentWindow->GetBrowsingContext();
-    NS_ENSURE_STATE(bc);
-    
-    nsCOMPtr<nsPIDOMWindowOuter> piOwnerWindow = bc->Top()->GetDOMWindow();
-    NS_ENSURE_STATE(piOwnerWindow);
+    nsCOMPtr<nsIDocShell> docShell = pParentWindow->GetDocShell();
+    NS_ENSURE_STATE(docShell);
+
+    nsCOMPtr<nsIDocShellTreeOwner> owner;
+    docShell->GetTreeOwner(getter_AddRefs(owner));
+
+    nsCOMPtr<nsIAppWindow> ownerAppWindow = do_GetInterface(owner);
+    nsCOMPtr<mozIDOMWindowProxy> ownerWindow = do_GetInterface(ownerAppWindow);
+    NS_ENSURE_STATE(ownerWindow);
+
+    nsCOMPtr<nsPIDOMWindowOuter> piOwnerWindow =
+        nsPIDOMWindowOuter::From(ownerWindow);
 
     
     RefPtr<BrowsingContext> newBC;
