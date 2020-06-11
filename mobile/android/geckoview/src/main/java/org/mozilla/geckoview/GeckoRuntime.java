@@ -717,6 +717,7 @@ public final class GeckoRuntime implements Parcelable {
     }
 
     @AnyThread
+    @SuppressWarnings("checkstyle:javadocmethod")
     public @NonNull GeckoRuntimeSettings getSettings() {
         return mSettings;
     }
@@ -851,6 +852,7 @@ public final class GeckoRuntime implements Parcelable {
 
     
     @AnyThread
+    @SuppressWarnings("checkstyle:javadocmethod")
     public void readFromParcel(final @NonNull Parcel source) {
         mSettings = source.readParcelable(getClass().getClassLoader());
     }

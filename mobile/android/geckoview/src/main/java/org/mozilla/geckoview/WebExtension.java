@@ -1378,6 +1378,9 @@ public class WebExtension {
                     ? source.badgeBackgroundColor : defaultValue.badgeBackgroundColor;
         }
 
+        
+
+
         @UiThread
         public void click() {
             if (mPopupUri != null && !mPopupUri.isEmpty()) {
