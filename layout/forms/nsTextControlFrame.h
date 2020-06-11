@@ -188,11 +188,6 @@ class nsTextControlFrame : public nsContainerFrame,
 
   NS_DECL_QUERYFRAME
 
-  
-  
-  enum class ScrollAncestors { No, Yes };
-  void ScrollSelectionIntoViewAsync(ScrollAncestors = ScrollAncestors::No);
-
  protected:
   
 
@@ -294,6 +289,8 @@ class nsTextControlFrame : public nsContainerFrame,
   mozilla::LogicalSize CalcIntrinsicSize(gfxContext* aRenderingContext,
                                          mozilla::WritingMode aWM,
                                          float aFontSizeInflation) const;
+
+  void ScrollSelectionIntoViewAsync();
 
  private:
   
