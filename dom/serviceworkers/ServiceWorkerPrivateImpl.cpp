@@ -173,6 +173,10 @@ nsresult ServiceWorkerPrivateImpl::Initialize() {
   
   mRemoteWorkerData.partitionedPrincipalInfo() = principalInfo;
 
+  
+  mRemoteWorkerData.useRegularPrincipal() = true;
+  mRemoteWorkerData.hasStorageAccessPermissionGranted() = false;
+
   rv = uri->GetHost(mRemoteWorkerData.domain());
   NS_ENSURE_SUCCESS(rv, rv);
   mRemoteWorkerData.isSecureContext() = true;
