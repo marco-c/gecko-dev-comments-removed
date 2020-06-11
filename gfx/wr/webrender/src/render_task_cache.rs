@@ -147,14 +147,6 @@ impl RenderTaskCache {
 
         
         
-        
-        
-        
-        
-        
-        
-        
-        
         texture_cache.update(
             &mut entry.handle,
             descriptor,
@@ -165,7 +157,7 @@ impl RenderTaskCache {
             gpu_cache,
             None,
             render_task.uv_rect_kind(),
-            Eviction::Eager,
+            Eviction::Auto,
         );
 
         
