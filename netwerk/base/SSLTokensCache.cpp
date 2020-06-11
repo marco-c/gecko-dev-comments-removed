@@ -76,12 +76,11 @@ NS_IMPL_ISUPPORTS(SSLTokensCache, nsIMemoryReporter)
 nsresult SSLTokensCache::Init() {
   StaticMutexAutoLock lock(sLock);
 
-  
-  
-  
-  
-  
-  if (!(XRE_IsSocketProcess() || XRE_IsParentProcess())) {
+  if (nsIOService::UseSocketProcess()) {
+    if (!XRE_IsSocketProcess()) {
+      return NS_OK;
+    }
+  } else if (!XRE_IsParentProcess()) {
     return NS_OK;
   }
 
