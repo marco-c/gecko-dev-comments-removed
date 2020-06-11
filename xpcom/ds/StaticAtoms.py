@@ -2381,6 +2381,9 @@ STATIC_ATOMS = [
     Atom("onboundary", "onboundary"),
 
     
+    Atom("onsupportedkeyschange", "onsupportedkeyschange"),
+
+    
     Atom("usercontextid", "usercontextid"),
     Atom("geckoViewSessionContextId", "geckoViewSessionContextId"),
 

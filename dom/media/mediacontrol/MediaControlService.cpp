@@ -243,7 +243,7 @@ bool MediaControlService::ControllerManager::RemoveController(
   }
   
   
-  aController->remove();
+  static_cast<LinkedListControllerPtr>(aController)->remove();
   
   
   
@@ -291,7 +291,7 @@ void MediaControlService::ControllerManager::ReorderGivenController(
     
     
     
-    aController->remove();
+    static_cast<LinkedListControllerPtr>(aController)->remove();
     return mControllers.insertBack(aController);
   }
 
@@ -303,8 +303,9 @@ void MediaControlService::ControllerManager::ReorderGivenController(
     
     
     MOZ_ASSERT(GetMainController() != aController);
-    aController->remove();
-    return GetMainController()->setPrevious(aController);
+    static_cast<LinkedListControllerPtr>(aController)->remove();
+    return static_cast<LinkedListControllerPtr>(GetMainController())
+        ->setPrevious(aController);
   }
 }
 
@@ -380,7 +381,14 @@ MediaController* MediaControlService::ControllerManager::GetMainController()
 }
 
 uint64_t MediaControlService::ControllerManager::GetControllersNum() const {
-  return mControllers.length();
+  size_t length = 0;
+  const auto* element =
+      static_cast<ConstLinkedListControllerPtr>(mControllers.getFirst());
+  while (element) {
+    length++;
+    element = element->getNext();
+  }
+  return length;
 }
 
 bool MediaControlService::ControllerManager::Contains(
