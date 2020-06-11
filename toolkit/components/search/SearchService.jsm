@@ -1652,9 +1652,6 @@ SearchService.prototype = {
       SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.ADDED);
     }
 
-    
-    engine._engineAddedToStore = true;
-
     if (engine._hasUpdates) {
       
       if (!engine.getAttr("updateexpir")) {

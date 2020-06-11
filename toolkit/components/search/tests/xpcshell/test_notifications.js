@@ -6,9 +6,6 @@
 let engine;
 let originalDefaultEngine;
 
-SearchTestUtils.init(Assert, registerCleanupFunction);
-SearchTestUtils.initXPCShellAddonManager(this);
-
 
 
 
@@ -70,9 +67,13 @@ add_task(async function setup() {
   originalDefaultEngine = await Services.search.getDefault();
 });
 
-add_task(async function test_addingEngine_opensearch() {
+add_task(async function test_addingEngine() {
   const addEngineObserver = new SearchObserver(
     [
+      
+      
+      
+      SearchUtils.MODIFIED_TYPE.CHANGED,
       
       
       SearchUtils.MODIFIED_TYPE.LOADED,
@@ -89,28 +90,6 @@ add_task(async function test_addingEngine_opensearch() {
 
   let retrievedEngine = Services.search.getEngineByName("Test search engine");
   Assert.equal(engine, retrievedEngine);
-});
-
-add_task(async function test_addingEngine_webExtension() {
-  const addEngineObserver = new SearchObserver(
-    [
-      
-      
-      SearchUtils.MODIFIED_TYPE.ADDED,
-    ],
-    true
-  );
-
-  let extension = await SearchTestUtils.installSearchExtension({
-    name: "Example Engine",
-  });
-  await extension.awaitStartup();
-
-  let webExtensionEngine = await addEngineObserver.promise;
-
-  let retrievedEngine = Services.search.getEngineByName("Example Engine");
-  Assert.equal(webExtensionEngine, retrievedEngine);
-  await extension.unload();
 });
 
 async function defaultNotificationTest(
