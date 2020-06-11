@@ -457,6 +457,9 @@ class PinchGestureInput : public InputData {
       ONE_TOUCH, 
       TRACKPAD, 
       MOUSEWHEEL 
+
+      
+      
   ));
   
 
