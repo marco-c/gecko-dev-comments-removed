@@ -28,7 +28,7 @@ use servo_arc::Arc;
 use std::fmt;
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, MallocSizeOf)]
 pub struct PropertyAnimation {
     
     property: AnimatedProperty,
@@ -137,7 +137,7 @@ impl PropertyAnimation {
 }
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
 pub enum AnimationState {
     
     
@@ -154,7 +154,7 @@ pub enum AnimationState {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, MallocSizeOf)]
 pub enum KeyframesIterationState {
     
     Infinite,
@@ -165,7 +165,7 @@ pub enum KeyframesIterationState {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, MallocSizeOf)]
 pub struct Animation {
     
     pub node: OpaqueNode,
@@ -199,6 +199,7 @@ pub struct Animation {
 
     
     
+    #[ignore_malloc_size_of = "ComputedValues"]
     pub cascade_style: Arc<ComputedValues>,
 
     
@@ -543,7 +544,7 @@ impl fmt::Debug for Animation {
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, MallocSizeOf)]
 pub struct Transition {
     
     pub node: OpaqueNode,
@@ -598,7 +599,7 @@ impl Transition {
 }
 
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, MallocSizeOf)]
 pub struct ElementAnimationSet {
     
     pub animations: Vec<Animation>,
