@@ -2832,17 +2832,12 @@ nsresult nsFrameSelection::RestrictCellsToSelection(nsIContent* aTable,
                                        aEndColumnIndex, true, *selection);
 }
 
-nsresult nsFrameSelection::TableSelection::SelectRowOrColumn(
-    nsIContent* aCellContent, Selection& aNormalSelection) {
-  MOZ_ASSERT(aNormalSelection.Type() == SelectionType::eNormal);
-
-  if (!aCellContent) {
-    return NS_ERROR_NULL_POINTER;
-  }
-
-  const nsIContent* table = GetParentTable(aCellContent);
+Result<nsFrameSelection::TableSelection::FirstAndLastCell, nsresult>
+nsFrameSelection::TableSelection::FindFirstAndLastCellOfRowOrColumn(
+    const nsIContent& aCellContent) const {
+  const nsIContent* table = GetParentTable(&aCellContent);
   if (!table) {
-    return NS_ERROR_NULL_POINTER;
+    return Err(NS_ERROR_NULL_POINTER);
   }
 
   
@@ -2850,18 +2845,18 @@ nsresult nsFrameSelection::TableSelection::SelectRowOrColumn(
   
   nsTableWrapperFrame* tableFrame = do_QueryFrame(table->GetPrimaryFrame());
   if (!tableFrame) {
-    return NS_ERROR_FAILURE;
+    return Err(NS_ERROR_FAILURE);
   }
-  nsITableCellLayout* cellLayout = GetCellLayout(aCellContent);
+  nsITableCellLayout* cellLayout = GetCellLayout(&aCellContent);
   if (!cellLayout) {
-    return NS_ERROR_FAILURE;
+    return Err(NS_ERROR_FAILURE);
   }
 
   
   int32_t rowIndex, colIndex;
   nsresult result = cellLayout->GetCellIndexes(rowIndex, colIndex);
   if (NS_FAILED(result)) {
-    return result;
+    return Err(result);
   }
 
   
@@ -2873,7 +2868,7 @@ nsresult nsFrameSelection::TableSelection::SelectRowOrColumn(
     rowIndex = 0;
   }
 
-  nsCOMPtr<nsIContent> firstCell, lastCell;
+  FirstAndLastCell firstAndLastCell;
   while (true) {
     
     nsCOMPtr<nsIContent> curCellContent =
@@ -2882,11 +2877,11 @@ nsresult nsFrameSelection::TableSelection::SelectRowOrColumn(
       break;
     }
 
-    if (!firstCell) {
-      firstCell = curCellContent;
+    if (!firstAndLastCell.mFirst) {
+      firstAndLastCell.mFirst = curCellContent;
     }
 
-    lastCell = std::move(curCellContent);
+    firstAndLastCell.mLast = std::move(curCellContent);
 
     
     if (mMode == TableSelectionMode::Row) {
@@ -2895,26 +2890,46 @@ nsresult nsFrameSelection::TableSelection::SelectRowOrColumn(
       rowIndex += tableFrame->GetEffectiveRowSpanAt(rowIndex, colIndex);
     }
   }
+  return firstAndLastCell;
+}
+
+nsresult nsFrameSelection::TableSelection::SelectRowOrColumn(
+    nsIContent* aCellContent, Selection& aNormalSelection) {
+  MOZ_ASSERT(aNormalSelection.Type() == SelectionType::eNormal);
+
+  if (!aCellContent) {
+    return NS_ERROR_NULL_POINTER;
+  }
+
+  Result<FirstAndLastCell, nsresult> firstAndLastCell =
+      FindFirstAndLastCellOfRowOrColumn(*aCellContent);
+  if (firstAndLastCell.isErr()) {
+    return firstAndLastCell.unwrapErr();
+  }
 
   
   
   
-  if (firstCell && lastCell) {
+  if (firstAndLastCell.inspect().mFirst && firstAndLastCell.inspect().mLast) {
+    nsresult rv{NS_OK};
+
     if (!mStartSelectedCell) {
       
-      result = ::SelectCellElement(firstCell, aNormalSelection);
-      if (NS_FAILED(result)) {
-        return result;
+      rv = ::SelectCellElement(firstAndLastCell.inspect().mFirst,
+                               aNormalSelection);
+      if (NS_FAILED(rv)) {
+        return rv;
       }
-      mStartSelectedCell = firstCell;
+      mStartSelectedCell = firstAndLastCell.inspect().mFirst;
     }
 
-    result = SelectBlockOfCells(mStartSelectedCell, lastCell, aNormalSelection);
+    rv = SelectBlockOfCells(mStartSelectedCell,
+                            firstAndLastCell.inspect().mLast, aNormalSelection);
 
     
     
     mEndSelectedCell = aCellContent;
-    return result;
+    return rv;
   }
 
 #if 0
