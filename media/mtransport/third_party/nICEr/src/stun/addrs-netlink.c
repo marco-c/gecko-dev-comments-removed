@@ -1,0 +1,259 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(LINUX)
+#include "addrs-netlink.h"
+#include <csi_platform.h>
+#include <assert.h>
+#include <string.h>
+#include "util.h"
+#include "stun_util.h"
+#include "util.h"
+#include <r_macros.h>
+
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/utsname.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <unistd.h>
+#include <errno.h>
+#include <linux/netlink.h>
+#include <linux/rtnetlink.h>
+
+#ifdef ANDROID
+
+#undef __unused
+#else
+#include <linux/if.h> 
+#include <linux/wireless.h> 
+#include <linux/ethtool.h> 
+#include <linux/sockios.h> 
+#endif 
+
+
+struct netlinkrequest {
+  struct nlmsghdr header;
+  struct ifaddrmsg msg;
+};
+
+static const int kMaxReadSize = 4096;
+
+static void set_ifname(nr_local_addr *addr, struct ifaddrmsg* msg) {
+  assert(sizeof(addr->addr.ifname) > IF_NAMESIZE);
+  if_indextoname(msg->ifa_index, addr->addr.ifname);
+}
+
+static int get_siocgifflags(nr_local_addr *addr) {
+  int fd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (fd == -1) {
+    assert(0);
+    return 0;
+  }
+  struct ifreq ifr;
+  memset(&ifr, 0, sizeof(ifr));
+  strncpy(ifr.ifr_name, addr->addr.ifname, IFNAMSIZ - 1);
+  int rc = ioctl(fd, SIOCGIFFLAGS, &ifr);
+  close(fd);
+  if (rc == -1) {
+    assert(0);
+    return 0;
+  }
+  return ifr.ifr_flags;
+}
+
+static int set_sockaddr(nr_local_addr *addr, struct ifaddrmsg* msg, struct rtattr* rta) {
+  assert(rta->rta_type == IFA_ADDRESS);
+  void *data = RTA_DATA(rta);
+  size_t len = RTA_PAYLOAD(rta);
+  if (msg->ifa_family == AF_INET) {
+    struct sockaddr_in sa;
+    memset(&sa, 0, sizeof(struct sockaddr_in));
+    sa.sin_family = AF_INET;
+    memcpy(&sa.sin_addr, data, len);
+    return nr_sockaddr_to_transport_addr((struct sockaddr*)&sa, IPPROTO_UDP, 0, &(addr->addr));
+  } else if (msg->ifa_family == AF_INET6) {
+    struct sockaddr_in6 sa;
+    memset(&sa, 0, sizeof(struct sockaddr_in6));
+    sa.sin6_family = AF_INET6;
+    
+
+    memcpy(&sa.sin6_addr, data, len);
+    return nr_sockaddr_to_transport_addr((struct sockaddr*)&sa, IPPROTO_UDP, 0, &(addr->addr));
+  }
+
+  return R_BAD_ARGS;
+}
+
+static int
+stun_convert_netlink(nr_local_addr *addr, struct ifaddrmsg *address_msg, struct rtattr* rta)
+{
+  int r = set_sockaddr(addr, address_msg, rta);
+  if (r) {
+    r_log(NR_LOG_STUN, LOG_ERR, "set_sockaddr error r = %d", r);
+    return r;
+  }
+
+  set_ifname(addr, address_msg);
+
+  int flags = get_siocgifflags(addr);
+  if (flags & IFF_POINTOPOINT)
+  {
+    addr->interface.type = NR_INTERFACE_TYPE_UNKNOWN | NR_INTERFACE_TYPE_VPN;
+    
+  }
+
+#if defined(LINUX) && !defined(ANDROID)
+  struct ethtool_cmd ecmd;
+  struct ifreq ifr;
+  struct iwreq wrq;
+  int e;
+  int s = socket(AF_INET, SOCK_DGRAM, 0);
+
+  strncpy(ifr.ifr_name, addr->addr.ifname, sizeof(ifr.ifr_name));
+  
+  
+  ecmd.cmd = ETHTOOL_GSET;
+  
+  ifr.ifr_data = (void*)&ecmd;
+
+  e = ioctl(s, SIOCETHTOOL, &ifr);
+  if (e == 0)
+  {
+    
+
+    addr->interface.type = NR_INTERFACE_TYPE_WIRED;
+#ifdef DONT_HAVE_ETHTOOL_SPEED_HI
+    addr->interface.estimated_speed = ecmd.speed;
+#else
+    addr->interface.estimated_speed = ((ecmd.speed_hi << 16) | ecmd.speed) * 1000;
+#endif
+  }
+
+  strncpy(wrq.ifr_name, addr->addr.ifname, sizeof(wrq.ifr_name));
+  e = ioctl(s, SIOCGIWRATE, &wrq);
+  if (e == 0)
+  {
+    addr->interface.type = NR_INTERFACE_TYPE_WIFI;
+    addr->interface.estimated_speed = wrq.u.bitrate.value / 1000;
+  }
+
+  close(s);
+
+#else
+  addr->interface.type = NR_INTERFACE_TYPE_UNKNOWN;
+  addr->interface.estimated_speed = 0;
+#endif
+  return 0;
+}
+
+int
+stun_getaddrs_filtered(nr_local_addr addrs[], int maxaddrs, int *count)
+{
+  int _status;
+  int fd = 0;
+
+  
+  {
+    *count = 0;
+
+    if (maxaddrs <= 0)
+      ABORT(R_BAD_ARGS);
+
+    fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
+    if (fd < 0) {
+      ABORT(R_INTERNAL);
+    }
+
+    struct netlinkrequest ifaddr_request;
+    memset(&ifaddr_request, 0, sizeof(ifaddr_request));
+    ifaddr_request.header.nlmsg_flags = NLM_F_ROOT | NLM_F_REQUEST;
+    ifaddr_request.header.nlmsg_type = RTM_GETADDR;
+    ifaddr_request.header.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifaddrmsg));
+
+    ssize_t bytes = send(fd, &ifaddr_request, ifaddr_request.header.nlmsg_len, 0);
+    if ((size_t)bytes != ifaddr_request.header.nlmsg_len) {
+      ABORT(R_INTERNAL);
+    }
+
+    char buf[kMaxReadSize];
+    ssize_t amount_read = recv(fd, &buf, kMaxReadSize, 0);
+    while ((amount_read > 0) && (*count != maxaddrs)) {
+      struct nlmsghdr* header = (struct nlmsghdr*)&buf[0];
+      size_t header_size = (size_t)amount_read;
+      for ( ; NLMSG_OK(header, header_size) && (*count != maxaddrs);
+            header = NLMSG_NEXT(header, header_size)) {
+        switch (header->nlmsg_type) {
+          case NLMSG_DONE:
+            
+            close(fd);
+            return 0;
+          case NLMSG_ERROR:
+            ABORT(R_INTERNAL);
+          case RTM_NEWADDR: {
+            struct ifaddrmsg* address_msg =
+                (struct ifaddrmsg*)NLMSG_DATA(header);
+            struct rtattr* rta = IFA_RTA(address_msg);
+            ssize_t payload_len = IFA_PAYLOAD(header);
+            while (RTA_OK(rta, payload_len)) {
+              if (rta->rta_type == IFA_ADDRESS) {
+                int family = address_msg->ifa_family;
+                if (family == AF_INET || family == AF_INET6) {
+                  if (stun_convert_netlink(&addrs[*count], address_msg, rta)) {
+                    assert(0);
+                  } else {
+                    ++(*count);
+                  }
+                }
+              }
+              
+
+
+              rta = RTA_NEXT(rta, payload_len);
+            }
+            break;
+          }
+        }
+      }
+      amount_read = recv(fd, &buf, kMaxReadSize, 0);
+    }
+  }
+
+  _status=0;
+abort:
+  close(fd);
+  return(_status);
+}
+
+#endif  
