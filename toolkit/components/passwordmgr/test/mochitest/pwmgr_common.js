@@ -171,6 +171,26 @@ function getSubmitMessage(aFilterFn = undefined) {
 
 
 
+function getPasswordEditedMessage() {
+  info("getPasswordEditedMessage");
+  return new Promise((resolve, reject) => {
+    PWMGR_COMMON_PARENT.addMessageListener(
+      "passwordEditedOrGenerated",
+      function listener(...args) {
+        info("got passwordEditedOrGenerated");
+        PWMGR_COMMON_PARENT.removeMessageListener(
+          "passwordEditedOrGenerated",
+          listener
+        );
+        resolve(args[0]);
+      }
+    );
+  });
+}
+
+
+
+
 
 function checkLoginForm(
   usernameField,

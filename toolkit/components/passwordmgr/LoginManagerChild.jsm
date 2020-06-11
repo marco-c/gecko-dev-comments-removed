@@ -1232,6 +1232,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     let usernameField = null;
     let newPasswordField = null;
     let oldPasswordField = null;
+    let confirmPasswordField = null;
     let emptyResult = {
       usernameField: null,
       newPasswordField: null,
@@ -1325,6 +1326,33 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         acFieldName
       );
     }
+
+    let { generatedPasswordFields } = this.stateForDocument(form.ownerDocument);
+    let pwGeneratedFields = pwFields.filter(pwField =>
+      generatedPasswordFields.has(pwField.element)
+    );
+    if (pwGeneratedFields.length) {
+      
+      [newPasswordField, confirmPasswordField] = pwGeneratedFields.map(
+        pwField => pwField.element
+      );
+      
+      
+      let idx = pwFields.findIndex(
+        pwField => pwField.element === newPasswordField
+      );
+      if (idx > 0) {
+        oldPasswordField = pwFields[idx - 1].element;
+      }
+      return {
+        ...emptyResult,
+        usernameField,
+        newPasswordField,
+        oldPasswordField: oldPasswordField || null,
+        confirmPasswordField: confirmPasswordField || null,
+      };
+    }
+
     
     
     
@@ -1335,13 +1363,14 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         ...emptyResult,
         usernameField,
         newPasswordField: passwordField,
-        oldPasswordField,
+        oldPasswordField: null,
       };
     }
 
     
+    
     let pw1 = pwFields[0].element.value;
-    let pw2 = pwFields[1].element.value;
+    let pw2 = pwFields[1] ? pwFields[1].element.value : null;
     let pw3 = pwFields[2] ? pwFields[2].element.value : null;
 
     if (pwFields.length == 3) {
