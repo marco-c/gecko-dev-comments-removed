@@ -282,9 +282,6 @@ const nsStaticAtom* const kPresAttributesHTML[] = {
     
 };
 
-
-
-
 const nsStaticAtom* const kURLAttributesHTML[] = {
     
   nsGkAtoms::action,
@@ -293,10 +290,6 @@ const nsStaticAtom* const kURLAttributesHTML[] = {
   nsGkAtoms::longdesc,
   nsGkAtoms::cite,
   nsGkAtoms::background,
-  nsGkAtoms::formaction,
-  nsGkAtoms::data,
-  nsGkAtoms::ping,
-  nsGkAtoms::poster,
   nullptr
     
 };
