@@ -1695,10 +1695,20 @@ impl Device {
     }
 
     pub fn reset_state(&mut self) {
-        self.bound_textures = [0; 16];
+        for i in 0 .. self.bound_textures.len() {
+            self.bound_textures[i] = 0;
+            self.gl.active_texture(gl::TEXTURE0 + i as gl::GLuint);
+            self.gl.bind_texture(gl::TEXTURE_2D, 0);
+        }
+
         self.bound_vao = 0;
-        self.bound_read_fbo = FBOId(0);
-        self.bound_draw_fbo = FBOId(0);
+        self.gl.bind_vertex_array(0);
+
+        self.bound_read_fbo = self.default_read_fbo;
+        self.gl.bind_framebuffer(gl::READ_FRAMEBUFFER, self.bound_read_fbo.0);
+
+        self.bound_draw_fbo = self.default_draw_fbo;
+        self.gl.bind_framebuffer(gl::DRAW_FRAMEBUFFER, self.bound_draw_fbo.0);
     }
 
     #[cfg(debug_assertions)]
@@ -1794,24 +1804,12 @@ impl Device {
         self.default_draw_fbo = FBOId(default_draw_fbo[0] as gl::GLuint);
 
         
-        for i in 0 .. self.bound_textures.len() {
-            self.bound_textures[i] = 0;
-            self.gl.active_texture(gl::TEXTURE0 + i as gl::GLuint);
-            self.gl.bind_texture(gl::TEXTURE_2D, 0);
-        }
-
-        
         self.bound_program = 0;
         self.program_mode_id = UniformLocation::INVALID;
         self.gl.use_program(0);
 
         
-        self.bound_vao = 0;
-        self.gl.bind_vertex_array(0);
-
-        
-        self.bound_read_fbo = self.default_read_fbo;
-        self.bound_draw_fbo = self.default_draw_fbo;
+        self.reset_state();
 
         
         self.gl.pixel_store_i(gl::UNPACK_ALIGNMENT, 1);
