@@ -2111,7 +2111,8 @@ impl PropertyId {
 pub struct WideKeywordDeclaration {
     #[css(skip)]
     id: LonghandId,
-    keyword: CSSWideKeyword,
+    
+    pub keyword: CSSWideKeyword,
 }
 
 
