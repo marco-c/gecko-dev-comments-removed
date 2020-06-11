@@ -17,15 +17,15 @@
 #define HB_OT_SHAPE_COMPLEX_ARABIC_TABLE_HH
 
 
-#define X	JOINING_TYPE_X
+#define A	JOINING_GROUP_ALAPH
+#define DR	JOINING_GROUP_DALATH_RISH
+#define C	JOINING_TYPE_C
+#define D	JOINING_TYPE_D
+#define L	JOINING_TYPE_L
 #define R	JOINING_TYPE_R
 #define T	JOINING_TYPE_T
 #define U	JOINING_TYPE_U
-#define A	JOINING_GROUP_ALAPH
-#define DR	JOINING_GROUP_DALATH_RISH
-#define L	JOINING_TYPE_L
-#define C	JOINING_TYPE_C
-#define D	JOINING_TYPE_D
+#define X	JOINING_TYPE_X
 
 static const uint8_t joining_table[] =
 {
@@ -71,7 +71,7 @@ static const uint8_t joining_table[] =
 
   
 
-   R,D,D,D,D,D,R,R,D,R,D,D,D,D,D,D,D,D,D,D,R,D,U,U,U,X,X,X,X,X,X,X,
+   R,D,D,D,D,D,R,R,D,R,D,D,D,D,D,D,D,D,D,D,R,D,R,R,R,X,X,X,X,X,X,X,
 
   
 
@@ -80,8 +80,8 @@ static const uint8_t joining_table[] =
 
   
 
-   D,D,D,D,D,D,D,D,D,D,R,R,R,U,R,D,D,R,R,D,D,X,D,D,D,R,D,D,D,D,X,X,
-   X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
+   D,D,D,D,D,D,D,D,D,D,R,R,R,U,R,D,D,R,R,D,D,X,D,D,D,R,D,D,D,D,D,D,
+   D,D,D,D,D,D,D,D,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,X,
    X,X,U,
 
 #define joining_offset_0x1806u 739
@@ -139,14 +139,21 @@ static const uint8_t joining_table[] =
                                    D,D,D,R,D,D,D,D,D,D,D,D,D,D,D,D,
    D,D,D,D,D,U,X,X,X,X,X,X,X,X,X,X,X,D,D,D,R,
 
-#define joining_offset_0x110bdu 1219
+#define joining_offset_0x10fb0u 1219
+
+  
+
+                                   D,U,D,D,R,R,R,U,D,R,R,D,D,R,D,D,
+   U,D,R,R,D,U,U,U,U,R,D,L,
+
+#define joining_offset_0x110bdu 1247
 
   
 
                                                              U,X,X,
    X,X,X,X,X,X,X,X,X,X,X,X,X,U,
 
-#define joining_offset_0x1e900u 1236
+#define joining_offset_0x1e900u 1264
 
   
 
@@ -183,6 +190,7 @@ joining_type (hb_codepoint_t u)
       if (hb_in_range<hb_codepoint_t> (u, 0x10B80u, 0x10BAFu)) return joining_table[u - 0x10B80u + joining_offset_0x10b80u];
       if (hb_in_range<hb_codepoint_t> (u, 0x10D00u, 0x10D23u)) return joining_table[u - 0x10D00u + joining_offset_0x10d00u];
       if (hb_in_range<hb_codepoint_t> (u, 0x10F30u, 0x10F54u)) return joining_table[u - 0x10F30u + joining_offset_0x10f30u];
+      if (hb_in_range<hb_codepoint_t> (u, 0x10FB0u, 0x10FCBu)) return joining_table[u - 0x10FB0u + joining_offset_0x10fb0u];
       break;
 
     case 0x11u:
@@ -199,15 +207,15 @@ joining_type (hb_codepoint_t u)
   return X;
 }
 
-#undef X
+#undef A
+#undef DR
+#undef C
+#undef D
+#undef L
 #undef R
 #undef T
 #undef U
-#undef A
-#undef DR
-#undef L
-#undef C
-#undef D
+#undef X
 
 
 static const uint16_t shaping_table[][4] =
@@ -406,16 +414,16 @@ static const struct ligature_set_t {
 } ligature_table[] =
 {
   { 0xFEDFu, {
-    { 0xFE88u, 0xFEF9u }, 
     { 0xFE82u, 0xFEF5u }, 
-    { 0xFE8Eu, 0xFEFBu }, 
     { 0xFE84u, 0xFEF7u }, 
+    { 0xFE88u, 0xFEF9u }, 
+    { 0xFE8Eu, 0xFEFBu }, 
   }},
   { 0xFEE0u, {
-    { 0xFE88u, 0xFEFAu }, 
     { 0xFE82u, 0xFEF6u }, 
-    { 0xFE8Eu, 0xFEFCu }, 
     { 0xFE84u, 0xFEF8u }, 
+    { 0xFE88u, 0xFEFAu }, 
+    { 0xFE8Eu, 0xFEFCu }, 
   }},
 };
 

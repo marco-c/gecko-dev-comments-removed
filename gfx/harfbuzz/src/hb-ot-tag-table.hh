@@ -199,6 +199,7 @@ static const LangTag ot_languages[] = {
   {"cnh",	HB_TAG('Q','I','N',' ')},	
   {"cnk",	HB_TAG('Q','I','N',' ')},	
   {"cnl",	HB_TAG('C','C','H','N')},	
+  {"cnp",	HB_TAG('Z','H','S',' ')},	
   {"cnt",	HB_TAG('C','C','H','N')},	
   {"cnw",	HB_TAG('Q','I','N',' ')},	
   {"co",	HB_TAG('C','O','S',' ')},	
@@ -228,6 +229,7 @@ static const LangTag ot_languages[] = {
 	
   {"csh",	HB_TAG('Q','I','N',' ')},	
   {"cso",	HB_TAG('C','C','H','N')},	
+  {"csp",	HB_TAG('Z','H','S',' ')},	
   {"csw",	HB_TAG('N','C','R',' ')},	
   {"csw",	HB_TAG('N','H','C',' ')},	
   {"csy",	HB_TAG('Q','I','N',' ')},	
@@ -280,6 +282,7 @@ static const LangTag ot_languages[] = {
   {"dup",	HB_TAG('M','L','Y',' ')},	
   {"dv",	HB_TAG('D','I','V',' ')},	
   {"dv",	HB_TAG('D','H','V',' ')},	
+  {"dwk",	HB_TAG('K','U','I',' ')},	
   {"dwu",	HB_TAG('D','U','J',' ')},	
   {"dwy",	HB_TAG('D','U','J',' ')},	
   {"dyu",	HB_TAG('J','U','L',' ')},	
@@ -538,6 +541,7 @@ static const LangTag ot_languages[] = {
   {"kwy",	HB_TAG('K','O','N','0')},	
   {"kxc",	HB_TAG('K','M','S',' ')},	
   {"kxd",	HB_TAG('M','L','Y',' ')},	
+  {"kxl",	HB_TAG('K','U','U',' ')},	
   {"kxu",	HB_TAG('K','U','I',' ')},	
   {"ky",	HB_TAG('K','I','R',' ')},	
 	
@@ -965,6 +969,7 @@ static const LangTag ot_languages[] = {
 	
   {"ug",	HB_TAG('U','Y','G',' ')},	
   {"uk",	HB_TAG('U','K','R',' ')},	
+  {"uki",	HB_TAG('K','U','I',' ')},	
 	
   {"unr",	HB_TAG('M','U','N',' ')},	
   {"ur",	HB_TAG('U','R','D',' ')},	
@@ -1183,6 +1188,20 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = 1;
       return true;
     }
+    if (lang_matches (&lang_str[1], "np-hant-hk"))
+    {
+      
+      tags[0] = HB_TAG('Z','H','H',' ');  
+      *count = 1;
+      return true;
+    }
+    if (lang_matches (&lang_str[1], "np-hant-mo"))
+    {
+      
+      tags[0] = HB_TAG('Z','H','H',' ');  
+      *count = 1;
+      return true;
+    }
     if (lang_matches (&lang_str[1], "px-hant-hk"))
     {
       
@@ -1191,6 +1210,20 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (lang_matches (&lang_str[1], "px-hant-mo"))
+    {
+      
+      tags[0] = HB_TAG('Z','H','H',' ');  
+      *count = 1;
+      return true;
+    }
+    if (lang_matches (&lang_str[1], "sp-hant-hk"))
+    {
+      
+      tags[0] = HB_TAG('Z','H','H',' ');  
+      *count = 1;
+      return true;
+    }
+    if (lang_matches (&lang_str[1], "sp-hant-mo"))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -1267,6 +1300,20 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = 1;
       return true;
     }
+    if (lang_matches (&lang_str[1], "np-hans"))
+    {
+      
+      tags[0] = HB_TAG('Z','H','S',' ');  
+      *count = 1;
+      return true;
+    }
+    if (lang_matches (&lang_str[1], "np-hant"))
+    {
+      
+      tags[0] = HB_TAG('Z','H','T',' ');  
+      *count = 1;
+      return true;
+    }
     if (lang_matches (&lang_str[1], "px-hans"))
     {
       
@@ -1275,6 +1322,20 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (lang_matches (&lang_str[1], "px-hant"))
+    {
+      
+      tags[0] = HB_TAG('Z','H','T',' ');  
+      *count = 1;
+      return true;
+    }
+    if (lang_matches (&lang_str[1], "sp-hans"))
+    {
+      
+      tags[0] = HB_TAG('Z','H','S',' ');  
+      *count = 1;
+      return true;
+    }
+    if (lang_matches (&lang_str[1], "sp-hant"))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -1381,6 +1442,30 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = 1;
       return true;
     }
+    if (0 == strncmp (&lang_str[1], "np-", 3)
+	&& subtag_matches (lang_str, limit, "-hk"))
+    {
+      
+      tags[0] = HB_TAG('Z','H','H',' ');  
+      *count = 1;
+      return true;
+    }
+    if (0 == strncmp (&lang_str[1], "np-", 3)
+	&& subtag_matches (lang_str, limit, "-mo"))
+    {
+      
+      tags[0] = HB_TAG('Z','H','H',' ');  
+      *count = 1;
+      return true;
+    }
+    if (0 == strncmp (&lang_str[1], "np-", 3)
+	&& subtag_matches (lang_str, limit, "-tw"))
+    {
+      
+      tags[0] = HB_TAG('Z','H','T',' ');  
+      *count = 1;
+      return true;
+    }
     if (0 == strncmp (&lang_str[1], "px-", 3)
 	&& subtag_matches (lang_str, limit, "-hk"))
     {
@@ -1398,6 +1483,30 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "px-", 3)
+	&& subtag_matches (lang_str, limit, "-tw"))
+    {
+      
+      tags[0] = HB_TAG('Z','H','T',' ');  
+      *count = 1;
+      return true;
+    }
+    if (0 == strncmp (&lang_str[1], "sp-", 3)
+	&& subtag_matches (lang_str, limit, "-hk"))
+    {
+      
+      tags[0] = HB_TAG('Z','H','H',' ');  
+      *count = 1;
+      return true;
+    }
+    if (0 == strncmp (&lang_str[1], "sp-", 3)
+	&& subtag_matches (lang_str, limit, "-mo"))
+    {
+      
+      tags[0] = HB_TAG('Z','H','H',' ');  
+      *count = 1;
+      return true;
+    }
+    if (0 == strncmp (&lang_str[1], "sp-", 3)
 	&& subtag_matches (lang_str, limit, "-tw"))
     {
       
@@ -1993,6 +2102,8 @@ hb_ot_ambiguous_tag_to_language (hb_tag_t tag)
     return hb_language_from_string ("kr", -1);  
   case HB_TAG('K','O','K',' '):  
     return hb_language_from_string ("kok", -1);  
+  case HB_TAG('K','U','I',' '):  
+    return hb_language_from_string ("uki", -1);  
   case HB_TAG('K','U','R',' '):  
     return hb_language_from_string ("ku", -1);  
   case HB_TAG('L','U','H',' '):  

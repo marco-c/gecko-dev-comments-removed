@@ -123,7 +123,6 @@ hb_ot_layout_get_glyphs_in_class (hb_face_t                  *face,
 
 
 
-
 HB_EXTERN unsigned int
 hb_ot_layout_get_attach_points (hb_face_t      *face,
 				hb_codepoint_t  glyph,

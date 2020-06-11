@@ -381,6 +381,10 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     
     case HB_SCRIPT_NANDINAGARI:
 
+    
+    case HB_SCRIPT_CHORASMIAN:
+    case HB_SCRIPT_DIVES_AKURU:
+
       
 
 

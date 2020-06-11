@@ -318,7 +318,6 @@ hb_ot_layout_get_glyphs_in_class (hb_face_t                  *face,
   return face->table.GDEF->table->get_glyphs_in_class (klass, glyphs);
 }
 
-
 #ifndef HB_NO_LAYOUT_UNUSED
 
 
@@ -369,7 +368,7 @@ hb_ot_layout_get_ligature_carets (hb_font_t      *font,
 				  unsigned int   *caret_count ,
 				  hb_position_t  *caret_array )
 {
-  unsigned int result_caret_count = 0;
+  unsigned int result_caret_count = caret_count ? *caret_count : 0;
   unsigned int result = font->face->table.GDEF->table->get_lig_carets (font, direction, glyph, start_offset, &result_caret_count, caret_array);
   if (result)
   {
