@@ -87,3 +87,7 @@ pref("signon.debug", false);
 pref("signon.showAutoCompleteFooter", true);
 pref("security.insecure_field_warning.contextual.enabled", true);
 pref("toolkit.autocomplete.delegate", true);
+
+
+
+pref("webextensions.storage.sync.kinto", true);
