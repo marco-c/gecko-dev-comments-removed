@@ -14,10 +14,10 @@ enum class ScrollOrigin : uint8_t {
   
   
   
+  
+  
   None,
 
-  
-  
   
   
   NotSpecified,
