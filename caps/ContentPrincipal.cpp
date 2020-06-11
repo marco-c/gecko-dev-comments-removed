@@ -64,7 +64,7 @@ nsresult ContentPrincipal::Init(nsIURI* aURI,
   
   
   
-  bool hasFlag;
+  bool hasFlag = false;
   Unused << hasFlag;  
   MOZ_DIAGNOSTIC_ASSERT(
       NS_SUCCEEDED(NS_URIChainHasFlags(
