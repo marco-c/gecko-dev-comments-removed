@@ -2181,11 +2181,7 @@ pref("devtools.dom.enabled", false);
 
 pref("devtools.accessibility.enabled", true);
 
-#if defined(EARLY_BETA_OR_EARLIER) || defined(MOZ_DEV_EDITION)
-  pref("devtools.accessibility.auto-init.enabled", true);
-#else
-  pref("devtools.accessibility.auto-init.enabled", false);
-#endif
+pref("devtools.accessibility.auto-init.enabled", true);
 
 
 pref("devtools.webconsole.filter.error", true);
