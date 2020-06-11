@@ -1,10 +1,10 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* Intl.NumberFormat implementation. */
+
+
+
+
+
+
 
 #include "builtin/intl/NumberFormat.h"
 
@@ -46,7 +46,7 @@
 #include "vm/BigIntType.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
-#include "vm/PlainObject.h"  // js::PlainObject
+#include "vm/PlainObject.h"  
 #include "vm/SelfHosting.h"
 #include "vm/Stack.h"
 #include "vm/StringType.h"
@@ -67,17 +67,17 @@ using js::intl::FieldType;
 using js::intl::IcuLocale;
 
 const JSClassOps NumberFormatObject::classOps_ = {
-    nullptr,                       // addProperty
-    nullptr,                       // delProperty
-    nullptr,                       // enumerate
-    nullptr,                       // newEnumerate
-    nullptr,                       // resolve
-    nullptr,                       // mayResolve
-    NumberFormatObject::finalize,  // finalize
-    nullptr,                       // call
-    nullptr,                       // hasInstance
-    nullptr,                       // construct
-    nullptr,                       // trace
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
+    NumberFormatObject::finalize,  
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
+    nullptr,                       
 };
 
 const JSClass NumberFormatObject::class_ = {
@@ -108,7 +108,8 @@ static const JSFunctionSpec numberFormat_methods[] = {
 
 static const JSPropertySpec numberFormat_properties[] = {
     JS_SELF_HOSTED_GET("format", "$Intl_NumberFormat_format_get", 0),
-    JS_STRING_SYM_PS(toStringTag, "Object", JSPROP_READONLY), JS_PS_END};
+    JS_STRING_SYM_PS(toStringTag, "Intl.NumberFormat", JSPROP_READONLY),
+    JS_PS_END};
 
 static bool NumberFormat(JSContext* cx, unsigned argc, Value* vp);
 
@@ -122,15 +123,15 @@ const ClassSpec NumberFormatObject::classSpec_ = {
     nullptr,
     ClassSpec::DontDefineConstructor};
 
-/**
- * 11.2.1 Intl.NumberFormat([ locales [, options]])
- *
- * ES2017 Intl draft rev 94045d234762ad107a3d09bb6f7381a65f1a2f9b
- */
-static bool NumberFormat(JSContext* cx, const CallArgs& args, bool construct) {
-  // Step 1 (Handled by OrdinaryCreateFromConstructor fallback code).
 
-  // Step 2 (Inlined 9.1.14, OrdinaryCreateFromConstructor).
+
+
+
+
+static bool NumberFormat(JSContext* cx, const CallArgs& args, bool construct) {
+  
+
+  
   RootedObject proto(cx);
   if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_NumberFormat,
                                           &proto)) {
@@ -148,7 +149,7 @@ static bool NumberFormat(JSContext* cx, const CallArgs& args, bool construct) {
   HandleValue locales = args.get(0);
   HandleValue options = args.get(1);
 
-  // Step 3.
+  
   return intl::LegacyInitializeObject(
       cx, numberFormat, cx->names().InitializeNumberFormat, thisValue, locales,
       options, DateTimeFormatOptions::Standard, args.rval());
@@ -163,9 +164,9 @@ bool js::intl_NumberFormat(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   MOZ_ASSERT(args.length() == 2);
   MOZ_ASSERT(!args.isConstructing());
-  // intl_NumberFormat is an intrinsic for self-hosted JavaScript, so it
-  // cannot be used with "new", but it still has to be treated as a
-  // constructor.
+  
+  
+  
   return NumberFormat(cx, args, true);
 }
 
@@ -182,7 +183,7 @@ void js::NumberFormatObject::finalize(JSFreeOp* fop, JSObject* obj) {
     unumf_close(nf);
   }
   if (formatted) {
-    // UFormattedNumber memory tracked as part of UNumberFormatter.
+    
 
     unumf_closeResult(formatted);
   }
@@ -242,8 +243,8 @@ bool js::intl_availableMeasurementUnits(JSContext* cx, unsigned argc,
     return false;
   }
 
-  // Lookup the available measurement units in the resource boundle of the root
-  // locale.
+  
+  
 
   static const char packageName[] =
       U_ICUDATA_NAME U_TREE_SEPARATOR_STRING "unit";
@@ -323,7 +324,7 @@ bool js::intl::NumberFormatterSkeleton::currencyDisplay(
     case CurrencyDisplay::Name:
       return appendToken(u"unit-width-full-name");
     case CurrencyDisplay::Symbol:
-      // Default, no additional tokens needed.
+      
       return true;
     case CurrencyDisplay::NarrowSymbol:
       return appendToken(u"unit-width-narrow");
@@ -345,7 +346,7 @@ static const MeasureUnit& FindSimpleMeasureUnit(const char* name) {
 }
 
 static constexpr size_t MaxUnitLength() {
-  // Enable by default when libstdc++ 7 is the minimal version expected
+  
 #if _GLIBCXX_RELEASE >= 7
   size_t length = 0;
   for (const auto& unit : simpleMeasureUnits) {
@@ -368,11 +369,11 @@ bool js::intl::NumberFormatterSkeleton::unit(JSLinearString* unit) {
            append(unit.name, strlen(unit.name));
   };
 
-  // |unit| can be a compound unit identifier, separated by "-per-".
+  
 
   static constexpr char separator[] = "-per-";
   if (char* p = strstr(unitChars, separator)) {
-    // Split into two strings.
+    
     p[0] = '\0';
 
     auto& numerator = FindSimpleMeasureUnit(unitChars);
@@ -412,7 +413,7 @@ bool js::intl::NumberFormatterSkeleton::percent() {
 
 bool js::intl::NumberFormatterSkeleton::fractionDigits(uint32_t min,
                                                        uint32_t max) {
-  // Note: |min| can be zero here.
+  
   MOZ_ASSERT(min <= max);
   return append('.') && appendN('0', min) && appendN('#', max - min) &&
          append(' ');
@@ -437,7 +438,7 @@ bool js::intl::NumberFormatterSkeleton::useGrouping(bool on) {
 bool js::intl::NumberFormatterSkeleton::notation(Notation style) {
   switch (style) {
     case Notation::Standard:
-      // Default, no additional tokens needed.
+      
       return true;
     case Notation::Scientific:
       return appendToken(u"scientific");
@@ -454,7 +455,7 @@ bool js::intl::NumberFormatterSkeleton::notation(Notation style) {
 bool js::intl::NumberFormatterSkeleton::signDisplay(SignDisplay display) {
   switch (display) {
     case SignDisplay::Auto:
-      // Default, no additional tokens needed.
+      
       return true;
     case SignDisplay::Always:
       return appendToken(u"sign-always");
@@ -488,10 +489,10 @@ UNumberFormatter* js::intl::NumberFormatterSkeleton::toFormatter(
   return nf;
 }
 
-/**
- * Returns a new UNumberFormatter with the locale and number formatting options
- * of the given NumberFormat.
- */
+
+
+
+
 static UNumberFormatter* NewUNumberFormatter(
     JSContext* cx, Handle<NumberFormatObject*> numberFormat) {
   RootedValue value(cx);
@@ -505,7 +506,7 @@ static UNumberFormatter* NewUNumberFormatter(
     return nullptr;
   }
 
-  // ICU expects numberingSystem as a Unicode locale extensions on locale.
+  
 
   intl::LanguageTag tag(cx);
   {
@@ -537,10 +538,10 @@ static UNumberFormatter* NewUNumberFormatter(
     }
   }
 
-  // |ApplyUnicodeExtensionToTag| applies the new keywords to the front of
-  // the Unicode extension subtag. We're then relying on ICU to follow RFC
-  // 6067, which states that any trailing keywords using the same key
-  // should be ignored.
+  
+  
+  
+  
   if (!intl::ApplyUnicodeExtensionToTag(cx, tag, keywords)) {
     return nullptr;
   }
@@ -841,9 +842,9 @@ static const UFormattedValue* PartitionNumberPattern(
   if (x.isNumber()) {
     double num = x.toNumber();
 
-    // ICU incorrectly formats NaN values with the sign bit set, as if they
-    // were negative.  Replace all NaNs with a single pattern with sign bit
-    // unset ("positive", that is) until ICU is fixed.
+    
+    
+    
     if (MOZ_UNLIKELY(IsNaN(num))) {
       num = SpecificNaN<double>(0, 1);
     }
@@ -862,7 +863,7 @@ static const UFormattedValue* PartitionNumberPattern(
       }
       MOZ_ASSERT(str->hasLatin1Chars());
 
-      // Tell the analysis the |unumf_formatDecimal| function can't GC.
+      
       JS::AutoSuppressGCAnalysis nogc;
 
       const char* chars = reinterpret_cast<const char*>(str->latin1Chars(nogc));
@@ -919,11 +920,11 @@ enum class FormattingType { ForUnit, NotForUnit };
 static FieldType GetFieldTypeForNumberField(UNumberFormatFields fieldName,
                                             HandleValue x,
                                             FormattingType formattingType) {
-  // See intl/icu/source/i18n/unicode/unum.h for a detailed field list.  This
-  // list is deliberately exhaustive: cases might have to be added/removed if
-  // this code is compiled with a different ICU with more UNumberFormatFields
-  // enum initializers.  Please guard such cases with appropriate ICU
-  // version-testing #ifdefs, should cross-version divergence occur.
+  
+  
+  
+  
+  
   switch (fieldName) {
     case UNUM_INTEGER_FIELD:
       if (x.isNumber()) {
@@ -947,8 +948,8 @@ static FieldType GetFieldTypeForNumberField(UNumberFormatFields fieldName,
       return &JSAtomState::fraction;
 
     case UNUM_SIGN_FIELD: {
-      // We coerce all NaNs to one with the sign bit unset, so all NaNs are
-      // positive in our implementation.
+      
+      
       bool isNegative = x.isNumber()
                             ? !IsNaN(x.toNumber()) && IsNegative(x.toNumber())
                             : x.toBigInt()->isNegative();
@@ -956,8 +957,8 @@ static FieldType GetFieldTypeForNumberField(UNumberFormatFields fieldName,
     }
 
     case UNUM_PERCENT_FIELD:
-      // Percent fields are returned as "unit" elements when the number
-      // formatter's style is "unit".
+      
+      
       if (formattingType == FormattingType::ForUnit) {
         return &JSAtomState::unit;
       }
@@ -1006,7 +1007,7 @@ struct Field {
   uint32_t end;
   FieldType type;
 
-  // Needed for vector-resizing scratch space.
+  
   Field() = default;
 
   Field(uint32_t begin, uint32_t end, FieldType type)
@@ -1039,8 +1040,8 @@ bool NumberFormatFields::append(FieldType type, int32_t begin, int32_t end) {
 ArrayObject* NumberFormatFields::toArray(JSContext* cx,
                                          HandleString overallResult,
                                          FieldType unitType) {
-  // Merge sort the fields vector.  Expand the vector to have scratch space for
-  // performing the sort.
+  
+  
   size_t fieldsLen = fields_.length();
   if (!fields_.growByUninitialized(fieldsLen)) {
     return nullptr;
@@ -1049,83 +1050,83 @@ ArrayObject* NumberFormatFields::toArray(JSContext* cx,
   MOZ_ALWAYS_TRUE(MergeSort(
       fields_.begin(), fieldsLen, fields_.begin() + fieldsLen,
       [](const Field& left, const Field& right, bool* lessOrEqual) {
-        // Sort first by begin index, then to place
-        // enclosing fields before nested fields.
+        
+        
         *lessOrEqual = left.begin < right.begin ||
                        (left.begin == right.begin && left.end > right.end);
         return true;
       }));
 
-  // Delete the elements in the scratch space.
+  
   fields_.shrinkBy(fieldsLen);
 
-  // Then iterate over the sorted field list to generate a sequence of parts
-  // (what ECMA-402 actually exposes).  A part is a maximal character sequence
-  // entirely within no field or a single most-nested field.
-  //
-  // Diagrams may be helpful to illustrate how fields map to parts.  Consider
-  // formatting -19,766,580,028,249.41, the US national surplus (negative
-  // because it's actually a debt) on October 18, 2016.
-  //
-  //    var options =
-  //      { style: "currency", currency: "USD", currencyDisplay: "name" };
-  //    var usdFormatter = new Intl.NumberFormat("en-US", options);
-  //    usdFormatter.format(-19766580028249.41);
-  //
-  // The formatted result is "-19,766,580,028,249.41 US dollars".  ICU
-  // identifies these fields in the string:
-  //
-  //     UNUM_GROUPING_SEPARATOR_FIELD
-  //                   |
-  //   UNUM_SIGN_FIELD |  UNUM_DECIMAL_SEPARATOR_FIELD
-  //    |   __________/|   |
-  //    |  /   |   |   |   |
-  //   "-19,766,580,028,249.41 US dollars"
-  //     \________________/ |/ \_______/
-  //             |          |      |
-  //    UNUM_INTEGER_FIELD  |  UNUM_CURRENCY_FIELD
-  //                        |
-  //               UNUM_FRACTION_FIELD
-  //
-  // These fields map to parts as follows:
-  //
-  //         integer     decimal
-  //       _____|________  |
-  //      /  /| |\  |\  |\ |  literal
-  //     /| / | | \ | \ | \|  |
-  //   "-19,766,580,028,249.41 US dollars"
-  //    |  \___|___|___/    |/ \________/
-  //    |        |          |       |
-  //    |      group        |   currency
-  //    |                   |
-  //   minusSign        fraction
-  //
-  // The sign is a part.  Each comma is a part, splitting the integer field
-  // into parts for trillions/billions/&c. digits.  The decimal point is a
-  // part.  Cents are a part.  The space between cents and currency is a part
-  // (outside any field).  Last, the currency field is a part.
-  //
-  // Because parts fully partition the formatted string, we only track the
-  // end of each part -- the beginning is implicitly the last part's end.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   struct Part {
     uint32_t end;
     FieldType type;
   };
 
   class PartGenerator {
-    // The fields in order from start to end, then least to most nested.
+    
     const FieldsVector& fields;
 
-    // Index of the current field, in |fields|, being considered to
-    // determine part boundaries.  |lastEnd <= fields[index].begin| is an
-    // invariant.
+    
+    
+    
     size_t index;
 
-    // The end index of the last part produced, always less than or equal
-    // to |limit|, strictly increasing.
+    
+    
     uint32_t lastEnd;
 
-    // The length of the overall formatted string.
+    
     const uint32_t limit;
 
     Vector<size_t, 4> enclosingFields;
@@ -1144,17 +1145,17 @@ ArrayObject* NumberFormatFields::toArray(JSContext* cx,
       size_t len = fields.length();
       MOZ_ASSERT(index <= len);
 
-      // If we're out of fields, all that remains are part(s) consisting
-      // of trailing portions of enclosing fields, and maybe a final
-      // literal part.
+      
+      
+      
       if (index == len) {
         if (enclosingFields.length() > 0) {
           const auto& enclosing = fields[enclosingFields.popCopy()];
           part->end = enclosing.end;
           part->type = enclosing.type;
 
-          // If additional enclosing fields end where this part ends,
-          // pop them as well.
+          
+          
           popEnclosingFieldsEndingAt(part->end);
         } else {
           part->end = limit;
@@ -1164,24 +1165,24 @@ ArrayObject* NumberFormatFields::toArray(JSContext* cx,
         return true;
       }
 
-      // Otherwise we still have a field to process.
+      
       const Field* current = &fields[index];
       MOZ_ASSERT(lastEnd <= current->begin);
       MOZ_ASSERT(current->begin < current->end);
 
-      // But first, deal with inter-field space.
+      
       if (lastEnd < current->begin) {
         if (enclosingFields.length() > 0) {
-          // Space between fields, within an enclosing field, is part
-          // of that enclosing field, until the start of the current
-          // field or the end of the enclosing field, whichever is
-          // earlier.
+          
+          
+          
+          
           const auto& enclosing = fields[enclosingFields.back()];
           part->end = std::min(enclosing.end, current->begin);
           part->type = enclosing.type;
           popEnclosingFieldsEndingAt(part->end);
         } else {
-          // If there's no enclosing field, the space is a literal.
+          
           part->end = current->begin;
           part->type = &JSAtomState::literal;
         }
@@ -1189,13 +1190,13 @@ ArrayObject* NumberFormatFields::toArray(JSContext* cx,
         return true;
       }
 
-      // Otherwise, the part spans a prefix of the current field.  Find
-      // the most-nested field containing that prefix.
+      
+      
       const Field* next;
       do {
         current = &fields[index];
 
-        // If the current field is last, the part extends to its end.
+        
         if (++index == len) {
           part->end = current->end;
           part->type = current->type;
@@ -1206,28 +1207,28 @@ ArrayObject* NumberFormatFields::toArray(JSContext* cx,
         MOZ_ASSERT(current->begin <= next->begin);
         MOZ_ASSERT(current->begin < next->end);
 
-        // If the next field nests within the current field, push an
-        // enclosing field.  (If there are no nested fields, don't
-        // bother pushing a field that'd be immediately popped.)
+        
+        
+        
         if (current->end > next->begin) {
           if (!enclosingFields.append(index - 1)) {
             return false;
           }
         }
 
-        // Do so until the next field begins after this one.
+        
       } while (current->begin == next->begin);
 
       part->type = current->type;
 
       if (current->end <= next->begin) {
-        // The next field begins after the current field ends.  Therefore
-        // the current part ends at the end of the current field.
+        
+        
         part->end = current->end;
         popEnclosingFieldsEndingAt(part->end);
       } else {
-        // The current field encloses the next one.  The current part
-        // ends where the next field/part will start.
+        
+        
         part->end = next->begin;
       }
 
@@ -1243,7 +1244,7 @@ ArrayObject* NumberFormatFields::toArray(JSContext* cx,
           enclosingFields(cx) {}
 
     bool nextPart(bool* hasPart, Part* part) {
-      // There are no parts left if we've partitioned the entire string.
+      
       if (lastEnd == limit) {
         MOZ_ASSERT(enclosingFields.length() == 0);
         *hasPart = false;
@@ -1260,7 +1261,7 @@ ArrayObject* NumberFormatFields::toArray(JSContext* cx,
     }
   };
 
-  // Finally, generate the result array.
+  
   size_t lastEndIndex = 0;
   RootedObject singlePart(cx);
   RootedValue propVal(cx);
@@ -1349,14 +1350,14 @@ static bool FormattedNumberToParts(JSContext* cx,
   }
   ScopedICUObject<UConstrainedFieldPosition, ucfpos_close> toCloseFpos(fpos);
 
-  // We're only interested in UFIELD_CATEGORY_NUMBER fields.
+  
   ucfpos_constrainCategory(fpos, UFIELD_CATEGORY_NUMBER, &status);
   if (U_FAILURE(status)) {
     intl::ReportInternalError(cx);
     return false;
   }
 
-  // Vacuum up fields in the overall formatted string.
+  
 
   NumberFormatFields fields(cx);
 
@@ -1434,7 +1435,7 @@ bool js::intl_FormatNumber(JSContext* cx, unsigned argc, Value* vp) {
   Rooted<NumberFormatObject*> numberFormat(
       cx, &args[0].toObject().as<NumberFormatObject>());
 
-  // Obtain a cached UNumberFormatter object.
+  
   UNumberFormatter* nf = numberFormat->getNumberFormatter();
   if (!nf) {
     nf = NewUNumberFormatter(cx, numberFormat);
@@ -1447,7 +1448,7 @@ bool js::intl_FormatNumber(JSContext* cx, unsigned argc, Value* vp) {
                            NumberFormatObject::EstimatedMemoryUse);
   }
 
-  // Obtain a cached UFormattedNumber object.
+  
   UFormattedNumber* formatted = numberFormat->getFormattedNumber();
   if (!formatted) {
     formatted = NewUFormattedNumber(cx);
@@ -1456,10 +1457,10 @@ bool js::intl_FormatNumber(JSContext* cx, unsigned argc, Value* vp) {
     }
     numberFormat->setFormattedNumber(formatted);
 
-    // UFormattedNumber memory tracked as part of UNumberFormatter.
+    
   }
 
-  // Use the UNumberFormatter to actually format the number.
+  
   if (args[2].toBoolean()) {
     FormattingType formattingType = args[3].toBoolean()
                                         ? FormattingType::ForUnit
