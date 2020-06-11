@@ -96,39 +96,51 @@ def run_tests(mach_cmd, **kwargs):
 
     from mozperftest.utils import build_test_list
     from mozperftest import MachEnvironment, Metadata
+    from mozperftest.hooks import Hooks
 
-    flavor = kwargs["flavor"]
-    kwargs["tests"], tmp_dir = build_test_list(
-        kwargs["tests"], randomized=flavor != "doc"
-    )
+    hooks = Hooks(mach_cmd, kwargs.pop("hooks", None))
     verbose = kwargs.get("verbose", False)
     log_level = logging.DEBUG if verbose else logging.INFO
-    mach_cmd.log_manager.add_terminal_logging(level=log_level)
+
+    
+    
+    
+    if mach_cmd.log_manager.terminal_handler is not None:
+        mach_cmd.log_manager.terminal_handler.level = log_level
+    else:
+        mach_cmd.log_manager.add_terminal_logging(level=log_level)
 
     try:
-        
-        
-        if flavor == "doc":
-            from mozperftest.test.browsertime.script import ScriptInfo
+        hooks.run("before_iterations", kwargs)
 
-            for test in kwargs["tests"]:
-                print(ScriptInfo(test))
-            return
-
-        env = MachEnvironment(mach_cmd, **kwargs)
-        try:
-            metadata = Metadata(mach_cmd, env, flavor)
-            env.run_hook("before_runs")
+        for iteration in range(kwargs.get("test_iterations", 1)):
+            flavor = kwargs["flavor"]
+            kwargs["tests"], tmp_dir = build_test_list(
+                kwargs["tests"], randomized=flavor != "doc"
+            )
             try:
-                with env.frozen() as e:
-                    e.run(metadata)
+                
+                
+                if flavor == "doc":
+                    from mozperftest.test.browsertime.script import ScriptInfo
+
+                    for test in kwargs["tests"]:
+                        print(ScriptInfo(test))
+                    return
+
+                env = MachEnvironment(mach_cmd, hooks=hooks, **kwargs)
+                metadata = Metadata(mach_cmd, env, flavor)
+                hooks.run("before_runs", env)
+                try:
+                    with env.frozen() as e:
+                        e.run(metadata)
+                finally:
+                    hooks.run("after_runs", env)
             finally:
-                env.run_hook("after_runs")
-        finally:
-            env.cleanup()
+                if tmp_dir is not None:
+                    shutil.rmtree(tmp_dir)
     finally:
-        if tmp_dir is not None:
-            shutil.rmtree(tmp_dir)
+        hooks.cleanup()
 
 
 def main(argv=sys.argv[1:]):
