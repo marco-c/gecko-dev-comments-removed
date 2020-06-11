@@ -65,7 +65,8 @@ class nsMIMEInfoWin : public nsMIMEInfoBase, public nsIPropertyBag {
                    const nsAString& appFilesystemCommand);
 
   
-  nsresult ShellExecuteWithIFile(nsIFile* aExecutable, const nsString& aArgs);
+  nsresult ShellExecuteWithIFile(nsIFile* aExecutable, int aArgc,
+                                 const wchar_t** aArgv);
 };
 
 #endif
