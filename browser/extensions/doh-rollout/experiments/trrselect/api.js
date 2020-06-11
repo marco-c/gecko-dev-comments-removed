@@ -52,7 +52,7 @@ this.trrselect = class trrselect extends ExtensionAPI {
             if (Cu.isInAutomation) {
               
               
-              setDryRunResultAndRecordTelemetry("dummyTRR");
+              setDryRunResultAndRecordTelemetry("https://dummytrr.com/query");
               return;
             }
 
