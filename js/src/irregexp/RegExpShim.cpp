@@ -155,7 +155,16 @@ void Isolate::trace(JSTracer* trc) {
 
 
 std::unique_ptr<char[]> String::ToCString() {
-  return std::unique_ptr<char[]>();
+  js::AutoEnterOOMUnsafeRegion oomUnsafe;
+
+  std::unique_ptr<char[]> ptr;
+  ptr.reset(static_cast<char*>(js_malloc(1)));
+  if (!ptr) {
+    oomUnsafe.crash("Irregexp String::ToCString");
+  }
+  ptr[0] = '\0';
+
+  return ptr;
 }
 
 bool Isolate::init() {
