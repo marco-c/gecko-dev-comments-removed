@@ -179,6 +179,17 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
       return;
     }
 
+    if (gWeakPlayerContent) {
+      try {
+        if (this.contentWindow == gWeakPlayerContent.get()) {
+          
+          return;
+        }
+      } catch (e) {
+        return;
+      }
+    }
+
     switch (event.type) {
       case "UAWidgetSetupOrChange": {
         if (
@@ -1195,6 +1206,11 @@ class PictureInPictureChild extends JSWindowActorChild {
       });
     }
 
+    
+    
+    
+    gWeakPlayerContent = Cu.getWeakReference(this.contentWindow);
+
     let doc = this.document;
     let playerVideo = doc.createElement("video");
 
@@ -1225,8 +1241,6 @@ class PictureInPictureChild extends JSWindowActorChild {
       },
       { once: true }
     );
-
-    gWeakPlayerContent = Cu.getWeakReference(this.contentWindow);
   }
 
   play() {
