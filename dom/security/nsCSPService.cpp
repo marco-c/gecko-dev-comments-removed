@@ -20,6 +20,7 @@
 #include "nsContentPolicyUtils.h"
 #include "nsNetUtil.h"
 #include "mozilla/net/DocumentLoadListener.h"
+#include "mozilla/net/DocumentChannel.h"
 
 using namespace mozilla;
 
@@ -249,6 +250,16 @@ CSPService::AsyncOnChannelRedirect(nsIChannel* oldChannel,
     if (parentChannel && !docListener) {
       return NS_OK;
     }
+  }
+
+  
+  
+  
+  
+  
+  
+  if (RefPtr<net::DocumentChannel> docChannel = do_QueryObject(oldChannel)) {
+    return NS_OK;
   }
 
   nsCOMPtr<nsIURI> newUri;
