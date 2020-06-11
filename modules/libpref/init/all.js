@@ -4144,12 +4144,6 @@ pref("memory.blob_report.stack_frames", 0);
 pref("io.activity.enabled", false);
 
 
-
-
-
-pref("jsloader.shareGlobal", true);
-
-
 pref("gfx.vr.osvr.utilLibPath", "");
 pref("gfx.vr.osvr.commonLibPath", "");
 pref("gfx.vr.osvr.clientLibPath", "");
