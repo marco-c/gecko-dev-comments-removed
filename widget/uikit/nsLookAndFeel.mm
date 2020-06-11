@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #import <UIKit/UIColor.h>
 #import <UIKit/UIInterface.h>
@@ -77,14 +77,14 @@ nsresult nsLookAndFeel::NativeGetColor(const ColorID aID, nscolor& aResult) {
       aResult = NS_RGB(0x00, 0x00, 0x00);
       break;
     case ColorID::TextSelectBackground:
-    case ColorID::Highlight:  // CSS2 color
+    case ColorID::Highlight:  
       aResult = NS_RGB(0xaa, 0xaa, 0xaa);
       break;
     case ColorID::MozMenuhover:
       aResult = NS_RGB(0xee, 0xee, 0xee);
       break;
     case ColorID::TextSelectForeground:
-    case ColorID::Highlighttext:  // CSS2 color
+    case ColorID::Highlighttext:  
     case ColorID::MozMenuhovertext:
       aResult = mColorTextSelectForeground;
       break;
@@ -112,9 +112,9 @@ nsresult nsLookAndFeel::NativeGetColor(const ColorID aID, nscolor& aResult) {
       aResult = NS_RGB(0xff, 0, 0);
       break;
 
-    //
-    // css2 system colors http://www.w3.org/TR/REC-CSS2/ui.html#system-colors
-    //
+    
+    
+    
     case ColorID::Buttontext:
     case ColorID::MozButtonhovertext:
     case ColorID::Captiontext:
@@ -159,7 +159,7 @@ nsresult nsLookAndFeel::NativeGetColor(const ColorID aID, nscolor& aResult) {
       aResult = NS_RGB(0x45, 0x45, 0x45);
       break;
     case ColorID::Scrollbar:
-      aResult = NS_RGB(0, 0, 0);  // XXX
+      aResult = NS_RGB(0, 0, 0);  
       break;
     case ColorID::Threeddarkshadow:
       aResult = NS_RGB(0xDC, 0xDC, 0xDC);
@@ -200,6 +200,8 @@ nsresult nsLookAndFeel::NativeGetColor(const ColorID aID, nscolor& aResult) {
     case ColorID::MozDialogtext:
     case ColorID::MozCellhighlighttext:
     case ColorID::MozHtmlCellhighlighttext:
+    case ColorID::MozColheadertext:
+    case ColorID::MozColheaderhovertext:
       aResult = mColorDarkText;
       break;
     case ColorID::MozDragtargetzone:
@@ -231,19 +233,19 @@ nsresult nsLookAndFeel::NativeGetColor(const ColorID aID, nscolor& aResult) {
     case ColorID::MozCellhighlight:
     case ColorID::MozHtmlCellhighlight:
     case ColorID::MozMacSecondaryhighlight:
-      // For inactive list selection
+      
       aResult = NS_RGB(0xaa, 0xaa, 0xaa);
       break;
     case ColorID::MozEventreerow:
-      // Background color of even list rows.
+      
       aResult = NS_RGB(0xff, 0xff, 0xff);
       break;
     case ColorID::MozOddtreerow:
-      // Background color of odd list rows.
+      
       aResult = NS_TRANSPARENT;
       break;
     case ColorID::MozNativehyperlinktext:
-      // There appears to be no available system defined color. HARDCODING to the appropriate color.
+      
       aResult = NS_RGB(0x14, 0x4F, 0xAE);
       break;
     default:
@@ -273,15 +275,15 @@ nsLookAndFeel::GetIntImpl(IntID aID, int32_t& aResult) {
       aResult = 0;
       break;
     case eIntID_SelectTextfieldsOnKeyFocus:
-      // Select textfield content when focused by kbd
-      // used by nsEventStateManager::sTextfieldSelectModel
+      
+      
       aResult = 1;
       break;
     case eIntID_SubmenuDelay:
       aResult = 200;
       break;
     case eIntID_MenusCanOverlapOSBar:
-      // xul popups are not allowed to overlap the menubar.
+      
       aResult = 0;
       break;
     case eIntID_SkipNavigatingDisabledMenuItem:
@@ -323,7 +325,7 @@ nsLookAndFeel::GetIntImpl(IntID aID, int32_t& aResult) {
       aResult = 0;
       break;
     case eIntID_TabFocusModel:
-      aResult = 1;  // default to just textboxes
+      aResult = 1;  
       break;
     case eIntID_ScrollToClick:
       aResult = 0;
@@ -373,7 +375,7 @@ nsLookAndFeel::GetFloatImpl(FloatID aID, float& aResult) {
 }
 
 bool nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName, gfxFontStyle& aFontStyle) {
-  // hack for now
+  
   if (aID == eFont_Window || aID == eFont_Document) {
     aFontStyle.style = FontSlantStyle::Normal();
     aFontStyle.weight = FontWeight::Normal();
@@ -385,7 +387,7 @@ bool nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName, gfxFontStyle& a
     return true;
   }
 
-  // TODO: implement more here?
+  
   return false;
 }
 
