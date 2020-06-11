@@ -1787,11 +1787,7 @@ WebGLContext::FuncScope::~FuncScope() {
 
 
 
-bool ClientWebGLContext::IsXRCompatible() const {
-  if (!mNotLost) return false;
-  const auto& options = mNotLost->info.options;
-  return options.xrCompatible;
-}
+bool ClientWebGLContext::IsXRCompatible() const { return mXRCompatible; }
 
 already_AddRefed<dom::Promise> ClientWebGLContext::MakeXRCompatible(
     ErrorResult& aRv) {
@@ -1823,7 +1819,7 @@ already_AddRefed<dom::Promise> ClientWebGLContext::MakeXRCompatible(
   
   
   
-
+  mXRCompatible = true;
   promise->MaybeResolveWithUndefined();
   return promise.forget();
 }
