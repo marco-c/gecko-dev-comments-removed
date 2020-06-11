@@ -545,6 +545,11 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
   }
 
   
+  if (!preserveDOMWrapper(cx, target)) {
+    return false;
+  }
+
+  
   RootedObject wrappedRecord(cx, record);
   AutoRealm ar(cx, unwrappedTarget);
   if (!JS_WrapObject(cx, &wrappedRecord)) {
@@ -566,6 +571,18 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
   recordsGuard.release();
   registrationsGuard.release();
   args.rval().setUndefined();
+  return true;
+}
+
+
+bool FinalizationRegistryObject::preserveDOMWrapper(JSContext* cx,
+                                                    HandleObject obj) {
+  if (!MaybePreserveDOMWrapper(cx, obj)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BAD_FINALIZATION_REGISTRY_OBJECT);
+    return false;
+  }
+
   return true;
 }
 

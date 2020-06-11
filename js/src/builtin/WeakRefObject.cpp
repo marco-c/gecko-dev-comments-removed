@@ -56,6 +56,11 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
+  if (!preserveDOMWrapper(cx, target)) {
+    return false;
+  }
+
+  
   RootedObject wrappedWeakRef(cx, weakRef);
   AutoRealm ar(cx, target);
   if (!JS_WrapObject(cx, &wrappedWeakRef)) {
@@ -84,6 +89,17 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 
   
   args.rval().setObject(*weakRef);
+  return true;
+}
+
+
+bool WeakRefObject::preserveDOMWrapper(JSContext* cx, HandleObject obj) {
+  if (!MaybePreserveDOMWrapper(cx, obj)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BAD_WEAKREF_TARGET);
+    return false;
+  }
+
   return true;
 }
 
