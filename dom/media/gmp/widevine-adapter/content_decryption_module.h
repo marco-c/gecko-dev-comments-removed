@@ -16,7 +16,7 @@ typedef unsigned int uint32_t;
 typedef int int32_t;
 typedef __int64 int64_t;
 #else
-#include <stdint.h>
+#  include <stdint.h>
 #endif
 
 
@@ -113,6 +113,26 @@ struct Pattern {
 };
 CHECK_TYPE(Pattern, 8, 8);
 
+enum class ColorRange : uint8_t {
+  kInvalid,
+  kLimited,  
+  kFull,     
+  kDerived   
+};
+CHECK_TYPE(ColorRange, 1, 1);
+
+
+
+
+
+struct ColorSpace {
+  uint8_t primary_id;   
+  uint8_t transfer_id;  
+  uint8_t matrix_id;    
+  ColorRange range;
+};
+CHECK_TYPE(ColorSpace, 4, 4);
+
 
 
 
@@ -151,27 +171,6 @@ CHECK_TYPE(SubsampleEntry, 8, 8);
 
 
 
-struct InputBuffer_1 {
-  const uint8_t* data;  
-  uint32_t data_size;   
-
-  const uint8_t* key_id;  
-  uint32_t key_id_size;   
-
-  const uint8_t* iv;  
-  uint32_t iv_size;   
-
-  const struct SubsampleEntry* subsamples;
-  uint32_t num_subsamples;  
-
-  int64_t timestamp;  
-};
-CHECK_TYPE(InputBuffer_1, 40, 72);
-
-
-
-
-
 
 
 struct InputBuffer_2 {
@@ -201,20 +200,6 @@ CHECK_TYPE(InputBuffer_2, 64, 80);
 
 enum AudioCodec : uint32_t { kUnknownAudioCodec = 0, kCodecVorbis, kCodecAac };
 CHECK_TYPE(AudioCodec, 4, 4);
-
-
-struct AudioDecoderConfig_1 {
-  AudioCodec codec;
-  int32_t channel_count;
-  int32_t bits_per_channel;
-  int32_t samples_per_second;
-
-  
-  
-  uint8_t* extra_data;
-  uint32_t extra_data_size;
-};
-CHECK_TYPE(AudioDecoderConfig_1, 24, 32);
 
 struct AudioDecoderConfig_2 {
   AudioCodec codec;
@@ -277,7 +262,8 @@ enum VideoCodec : uint32_t {
   kUnknownVideoCodec = 0,
   kCodecVp8,
   kCodecH264,
-  kCodecVp9
+  kCodecVp9,
+  kCodecAv1
 };
 CHECK_TYPE(VideoCodec, 4, 4);
 
@@ -291,30 +277,16 @@ enum VideoCodecProfile : uint32_t {
   kH264ProfileHigh10,
   kH264ProfileHigh422,
   kH264ProfileHigh444Predictive,
-  
   kVP9Profile0,
   kVP9Profile1,
   kVP9Profile2,
-  kVP9Profile3
+  kVP9Profile3,
+  kAv1ProfileMain,
+  kAv1ProfileHigh,
+  kAv1ProfilePro
 };
 CHECK_TYPE(VideoCodecProfile, 4, 4);
 
-
-struct VideoDecoderConfig_1 {
-  VideoCodec codec;
-  VideoCodecProfile profile;
-  VideoFormat format;
-
-  
-  
-  Size coded_size;
-
-  
-  
-  uint8_t* extra_data;
-  uint32_t extra_data_size;
-};
-CHECK_TYPE(VideoDecoderConfig_1, 28, 40);
 
 
 
@@ -338,6 +310,25 @@ struct VideoDecoderConfig_2 {
   EncryptionScheme encryption_scheme;
 };
 CHECK_TYPE(VideoDecoderConfig_2, 36, 40);
+
+struct VideoDecoderConfig_3 {
+  VideoCodec codec;
+  VideoCodecProfile profile;
+  VideoFormat format;
+  ColorSpace color_space;
+
+  
+  
+  Size coded_size;
+
+  
+  
+  uint8_t* extra_data;
+  uint32_t extra_data_size;
+
+  EncryptionScheme encryption_scheme;
+};
+CHECK_TYPE(VideoDecoderConfig_3, 36, 40);
 
 enum StreamType : uint32_t { kStreamTypeAudio = 0, kStreamTypeVideo = 1 };
 CHECK_TYPE(StreamType, 4, 4);
@@ -420,7 +411,7 @@ CHECK_TYPE(InitDataType, 4, 4);
 enum SessionType : uint32_t {
   kTemporary = 0,
   kPersistentLicense = 1,
-  kPersistentKeyRelease = 2
+  kPersistentUsageRecord = 2
 };
 CHECK_TYPE(SessionType, 4, 4);
 
@@ -430,9 +421,6 @@ enum MessageType : uint32_t {
   kLicenseRequest = 0,
   kLicenseRenewal = 1,
   kLicenseRelease = 2,
-  
-  
-  
   kIndividualizationRequest = 3
 };
 CHECK_TYPE(MessageType, 4, 4);
@@ -446,7 +434,8 @@ enum HdcpVersion : uint32_t {
   kHdcpVersion1_4,
   kHdcpVersion2_0,
   kHdcpVersion2_1,
-  kHdcpVersion2_2
+  kHdcpVersion2_2,
+  kHdcpVersion2_3
 };
 CHECK_TYPE(HdcpVersion, 4, 4);
 
@@ -467,8 +456,8 @@ class CDM_CLASS_API Buffer {
   virtual uint32_t Size() const = 0;
 
  protected:
-  Buffer() = default;
-  virtual ~Buffer() = default;
+  Buffer() {}
+  virtual ~Buffer() {}
 
  private:
   Buffer(const Buffer&);
@@ -487,19 +476,20 @@ class CDM_CLASS_API DecryptedBlock {
   virtual int64_t Timestamp() const = 0;
 
  protected:
-  DecryptedBlock() = default;
-  virtual ~DecryptedBlock() = default;
+  DecryptedBlock() {}
+  virtual ~DecryptedBlock() {}
 };
+
+enum VideoPlane : uint32_t {
+  kYPlane = 0,
+  kUPlane = 1,
+  kVPlane = 2,
+  kMaxPlanes = 3,
+};
+CHECK_TYPE(VideoPlane, 4, 4);
 
 class CDM_CLASS_API VideoFrame {
  public:
-  enum VideoPlane : uint32_t {
-    kYPlane = 0,
-    kUPlane = 1,
-    kVPlane = 2,
-    kMaxPlanes = 3,
-  };
-
   virtual void SetFormat(VideoFormat format) = 0;
   virtual VideoFormat Format() const = 0;
 
@@ -515,12 +505,31 @@ class CDM_CLASS_API VideoFrame {
   virtual void SetStride(VideoPlane plane, uint32_t stride) = 0;
   virtual uint32_t Stride(VideoPlane plane) = 0;
 
+  
   virtual void SetTimestamp(int64_t timestamp) = 0;
   virtual int64_t Timestamp() const = 0;
 
  protected:
-  VideoFrame() = default;
-  virtual ~VideoFrame() = default;
+  VideoFrame() {}
+  virtual ~VideoFrame() {}
+};
+
+
+
+class CDM_CLASS_API VideoFrame_2 {
+ public:
+  virtual void SetFormat(VideoFormat format) = 0;
+  virtual void SetSize(cdm::Size size) = 0;
+  virtual void SetFrameBuffer(Buffer* frame_buffer) = 0;
+  virtual void SetPlaneOffset(VideoPlane plane, uint32_t offset) = 0;
+  virtual void SetStride(VideoPlane plane, uint32_t stride) = 0;
+  
+  virtual void SetTimestamp(int64_t timestamp) = 0;
+  virtual void SetColorSpace(ColorSpace color_space) = 0;
+
+ protected:
+  VideoFrame_2() {}
+  virtual ~VideoFrame_2() {}
 };
 
 
@@ -546,8 +555,8 @@ class CDM_CLASS_API AudioFrames {
   virtual AudioFormat Format() const = 0;
 
  protected:
-  AudioFrames() = default;
-  virtual ~AudioFrames() = default;
+  AudioFrames() {}
+  virtual ~AudioFrames() {}
 };
 
 
@@ -592,8 +601,8 @@ class CDM_CLASS_API FileIO {
   virtual void Close() = 0;
 
  protected:
-  FileIO() = default;
-  virtual ~FileIO() = default;
+  FileIO() {}
+  virtual ~FileIO() {}
 };
 
 
@@ -602,7 +611,7 @@ class CDM_CLASS_API FileIO {
 
 class CDM_CLASS_API FileIOClient {
  public:
-  enum Status : uint32_t { kSuccess = 0, kInUse, kError };
+  enum class Status : uint32_t { kSuccess = 0, kInUse, kError };
 
   
   virtual void OnOpenComplete(Status status) = 0;
@@ -614,8 +623,7 @@ class CDM_CLASS_API FileIOClient {
   
   
   
-  virtual void OnReadComplete(Status status,
-                              const uint8_t* data,
+  virtual void OnReadComplete(Status status, const uint8_t* data,
                               uint32_t data_size) = 0;
 
   
@@ -628,220 +636,12 @@ class CDM_CLASS_API FileIOClient {
   virtual void OnWriteComplete(Status status) = 0;
 
  protected:
-  FileIOClient() = default;
-  virtual ~FileIOClient() = default;
+  FileIOClient() {}
+  virtual ~FileIOClient() {}
 };
 
-class CDM_CLASS_API Host_9;
 class CDM_CLASS_API Host_10;
 class CDM_CLASS_API Host_11;
-
-
-
-
-
-
-
-class CDM_CLASS_API ContentDecryptionModule_9 {
- public:
-  static const int kVersion = 9;
-  typedef Host_9 Host;
-
-  
-  
-  
-  
-  
-  
-  
-  virtual void Initialize(bool allow_distinctive_identifier,
-                          bool allow_persistent_state) = 0;
-
-  
-  
-  
-  
-  virtual void GetStatusForPolicy(uint32_t promise_id,
-                                  const Policy& policy) = 0;
-
-  
-  
-  
-  
-
-  
-  
-  
-  virtual void SetServerCertificate(uint32_t promise_id,
-                                    const uint8_t* server_certificate_data,
-                                    uint32_t server_certificate_data_size) = 0;
-
-  
-  
-  
-  virtual void CreateSessionAndGenerateRequest(uint32_t promise_id,
-                                               SessionType session_type,
-                                               InitDataType init_data_type,
-                                               const uint8_t* init_data,
-                                               uint32_t init_data_size) = 0;
-
-  
-  
-  
-  
-  virtual void LoadSession(uint32_t promise_id,
-                           SessionType session_type,
-                           const char* session_id,
-                           uint32_t session_id_size) = 0;
-
-  
-  
-  virtual void UpdateSession(uint32_t promise_id,
-                             const char* session_id,
-                             uint32_t session_id_size,
-                             const uint8_t* response,
-                             uint32_t response_size) = 0;
-
-  
-  
-  
-  
-  virtual void CloseSession(uint32_t promise_id,
-                            const char* session_id,
-                            uint32_t session_id_size) = 0;
-
-  
-  
-  
-  
-  virtual void RemoveSession(uint32_t promise_id,
-                             const char* session_id,
-                             uint32_t session_id_size) = 0;
-
-  
-  virtual void TimerExpired(void* context) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual Status Decrypt(const InputBuffer_1& encrypted_buffer,
-                         DecryptedBlock* decrypted_buffer) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual Status InitializeAudioDecoder(
-      const AudioDecoderConfig_1& audio_decoder_config) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual Status InitializeVideoDecoder(
-      const VideoDecoderConfig_1& video_decoder_config) = 0;
-
-  
-  
-  
-  
-  virtual void DeinitializeDecoder(StreamType decoder_type) = 0;
-
-  
-  
-  virtual void ResetDecoder(StreamType decoder_type) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual Status DecryptAndDecodeFrame(const InputBuffer_1& encrypted_buffer,
-                                       VideoFrame* video_frame) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual Status DecryptAndDecodeSamples(const InputBuffer_1& encrypted_buffer,
-                                         AudioFrames* audio_frames) = 0;
-
-  
-  
-  virtual void OnPlatformChallengeResponse(
-      const PlatformChallengeResponse& response) = 0;
-
-  
-  
-  
-  
-  
-  virtual void OnQueryOutputProtectionStatus(
-      QueryResult result,
-      uint32_t link_mask,
-      uint32_t output_protection_mask) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual void OnStorageId(uint32_t version,
-                           const uint8_t* storage_id,
-                           uint32_t storage_id_size) = 0;
-
-  
-  virtual void Destroy() = 0;
-
- protected:
-  ContentDecryptionModule_9() = default;
-  virtual ~ContentDecryptionModule_9() = default;
-};
 
 
 
@@ -909,33 +709,28 @@ class CDM_CLASS_API ContentDecryptionModule_10 {
   
   
   
-  virtual void LoadSession(uint32_t promise_id,
-                           SessionType session_type,
+  virtual void LoadSession(uint32_t promise_id, SessionType session_type,
                            const char* session_id,
                            uint32_t session_id_size) = 0;
 
   
   
-  virtual void UpdateSession(uint32_t promise_id,
-                             const char* session_id,
-                             uint32_t session_id_size,
-                             const uint8_t* response,
+  virtual void UpdateSession(uint32_t promise_id, const char* session_id,
+                             uint32_t session_id_size, const uint8_t* response,
                              uint32_t response_size) = 0;
 
   
   
   
   
-  virtual void CloseSession(uint32_t promise_id,
-                            const char* session_id,
+  virtual void CloseSession(uint32_t promise_id, const char* session_id,
                             uint32_t session_id_size) = 0;
 
   
   
   
   
-  virtual void RemoveSession(uint32_t promise_id,
-                             const char* session_id,
+  virtual void RemoveSession(uint32_t promise_id, const char* session_id,
                              uint32_t session_id_size) = 0;
 
   
@@ -1039,8 +834,7 @@ class CDM_CLASS_API ContentDecryptionModule_10 {
   
   
   virtual void OnQueryOutputProtectionStatus(
-      QueryResult result,
-      uint32_t link_mask,
+      QueryResult result, uint32_t link_mask,
       uint32_t output_protection_mask) = 0;
 
   
@@ -1051,16 +845,15 @@ class CDM_CLASS_API ContentDecryptionModule_10 {
   
   
   
-  virtual void OnStorageId(uint32_t version,
-                           const uint8_t* storage_id,
+  virtual void OnStorageId(uint32_t version, const uint8_t* storage_id,
                            uint32_t storage_id_size) = 0;
 
   
   virtual void Destroy() = 0;
 
  protected:
-  ContentDecryptionModule_10() = default;
-  virtual ~ContentDecryptionModule_10() = default;
+  ContentDecryptionModule_10() {}
+  virtual ~ContentDecryptionModule_10() {}
 };
 
 
@@ -1131,33 +924,32 @@ class CDM_CLASS_API ContentDecryptionModule_11 {
   
   
   
-  virtual void LoadSession(uint32_t promise_id,
-                           SessionType session_type,
+  virtual void LoadSession(uint32_t promise_id, SessionType session_type,
                            const char* session_id,
                            uint32_t session_id_size) = 0;
 
   
   
-  virtual void UpdateSession(uint32_t promise_id,
-                             const char* session_id,
-                             uint32_t session_id_size,
-                             const uint8_t* response,
+  virtual void UpdateSession(uint32_t promise_id, const char* session_id,
+                             uint32_t session_id_size, const uint8_t* response,
                              uint32_t response_size) = 0;
 
   
   
   
   
-  virtual void CloseSession(uint32_t promise_id,
-                            const char* session_id,
+  virtual void CloseSession(uint32_t promise_id, const char* session_id,
                             uint32_t session_id_size) = 0;
 
   
   
   
   
-  virtual void RemoveSession(uint32_t promise_id,
-                             const char* session_id,
+  
+  
+  
+  
+  virtual void RemoveSession(uint32_t promise_id, const char* session_id,
                              uint32_t session_id_size) = 0;
 
   
@@ -1200,7 +992,7 @@ class CDM_CLASS_API ContentDecryptionModule_11 {
   
   
   virtual Status InitializeVideoDecoder(
-      const VideoDecoderConfig_2& video_decoder_config) = 0;
+      const VideoDecoderConfig_3& video_decoder_config) = 0;
 
   
   
@@ -1229,7 +1021,7 @@ class CDM_CLASS_API ContentDecryptionModule_11 {
   
   
   virtual Status DecryptAndDecodeFrame(const InputBuffer_2& encrypted_buffer,
-                                       VideoFrame* video_frame) = 0;
+                                       VideoFrame_2* video_frame) = 0;
 
   
   
@@ -1261,8 +1053,7 @@ class CDM_CLASS_API ContentDecryptionModule_11 {
   
   
   virtual void OnQueryOutputProtectionStatus(
-      QueryResult result,
-      uint32_t link_mask,
+      QueryResult result, uint32_t link_mask,
       uint32_t output_protection_mask) = 0;
 
   
@@ -1273,149 +1064,15 @@ class CDM_CLASS_API ContentDecryptionModule_11 {
   
   
   
-  virtual void OnStorageId(uint32_t version,
-                           const uint8_t* storage_id,
+  virtual void OnStorageId(uint32_t version, const uint8_t* storage_id,
                            uint32_t storage_id_size) = 0;
 
   
   virtual void Destroy() = 0;
 
  protected:
-  ContentDecryptionModule_11() = default;
-  virtual ~ContentDecryptionModule_11() = default;
-};
-
-class CDM_CLASS_API Host_9 {
- public:
-  static const int kVersion = 9;
-
-  
-  
-  
-  
-  virtual Buffer* Allocate(uint32_t capacity) = 0;
-
-  
-  
-  virtual void SetTimer(int64_t delay_ms, void* context) = 0;
-
-  
-  virtual Time GetCurrentWallTime() = 0;
-
-  
-  
-  virtual void OnResolveKeyStatusPromise(uint32_t promise_id,
-                                         KeyStatus key_status) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual void OnResolveNewSessionPromise(uint32_t promise_id,
-                                          const char* session_id,
-                                          uint32_t session_id_size) = 0;
-
-  
-  virtual void OnResolvePromise(uint32_t promise_id) = 0;
-
-  
-  
-  
-  
-  virtual void OnRejectPromise(uint32_t promise_id,
-                               Exception exception,
-                               uint32_t system_code,
-                               const char* error_message,
-                               uint32_t error_message_size) = 0;
-
-  
-  
-  virtual void OnSessionMessage(const char* session_id,
-                                uint32_t session_id_size,
-                                MessageType message_type,
-                                const char* message,
-                                uint32_t message_size) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  virtual void OnSessionKeysChange(const char* session_id,
-                                   uint32_t session_id_size,
-                                   bool has_additional_usable_key,
-                                   const KeyInformation* keys_info,
-                                   uint32_t keys_info_count) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual void OnExpirationChange(const char* session_id,
-                                  uint32_t session_id_size,
-                                  Time new_expiry_time) = 0;
-
-  
-  
-  virtual void OnSessionClosed(const char* session_id,
-                               uint32_t session_id_size) = 0;
-
-  
-  
-
-  
-  
-  
-  
-  
-  virtual void SendPlatformChallenge(const char* service_id,
-                                     uint32_t service_id_size,
-                                     const char* challenge,
-                                     uint32_t challenge_size) = 0;
-
-  
-  
-  
-  
-  virtual void EnableOutputProtection(uint32_t desired_protection_mask) = 0;
-
-  
-  
-  virtual void QueryOutputProtectionStatus() = 0;
-
-  
-  
-  virtual void OnDeferredInitializationDone(StreamType stream_type,
-                                            Status decoder_status) = 0;
-
-  
-  
-  
-  
-  virtual FileIO* CreateFileIO(FileIOClient* client) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  virtual void RequestStorageId(uint32_t version) = 0;
-
- protected:
-  Host_9() = default;
-  virtual ~Host_9() = default;
+  ContentDecryptionModule_11() {}
+  virtual ~ContentDecryptionModule_11() {}
 };
 
 class CDM_CLASS_API Host_10 {
@@ -1462,18 +1119,15 @@ class CDM_CLASS_API Host_10 {
   
   
   
-  virtual void OnRejectPromise(uint32_t promise_id,
-                               Exception exception,
-                               uint32_t system_code,
-                               const char* error_message,
+  virtual void OnRejectPromise(uint32_t promise_id, Exception exception,
+                               uint32_t system_code, const char* error_message,
                                uint32_t error_message_size) = 0;
 
   
   
   virtual void OnSessionMessage(const char* session_id,
                                 uint32_t session_id_size,
-                                MessageType message_type,
-                                const char* message,
+                                MessageType message_type, const char* message,
                                 uint32_t message_size) = 0;
 
   
@@ -1550,8 +1204,8 @@ class CDM_CLASS_API Host_10 {
   virtual void RequestStorageId(uint32_t version) = 0;
 
  protected:
-  Host_10() = default;
-  virtual ~Host_10() = default;
+  Host_10() {}
+  virtual ~Host_10() {}
 };
 
 class CDM_CLASS_API Host_11 {
@@ -1598,18 +1252,15 @@ class CDM_CLASS_API Host_11 {
   
   
   
-  virtual void OnRejectPromise(uint32_t promise_id,
-                               Exception exception,
-                               uint32_t system_code,
-                               const char* error_message,
+  virtual void OnRejectPromise(uint32_t promise_id, Exception exception,
+                               uint32_t system_code, const char* error_message,
                                uint32_t error_message_size) = 0;
 
   
   
   virtual void OnSessionMessage(const char* session_id,
                                 uint32_t session_id_size,
-                                MessageType message_type,
-                                const char* message,
+                                MessageType message_type, const char* message,
                                 uint32_t message_size) = 0;
 
   
@@ -1699,8 +1350,8 @@ class CDM_CLASS_API Host_11 {
   virtual void RequestStorageId(uint32_t version) = 0;
 
  protected:
-  Host_11() = default;
-  virtual ~Host_11() = default;
+  Host_11() {}
+  virtual ~Host_11() {}
 };
 
 }  

@@ -12,7 +12,7 @@ typedef unsigned char uint8_t;
 typedef unsigned int uint32_t;
 typedef unsigned __int64 uint64_t;
 #else
-#include <stdint.h>
+#  include <stdint.h>
 #endif
 
 namespace cdm {
@@ -32,6 +32,11 @@ class CDM_CLASS_API CdmProxy {
     
   };
 
+  enum KeyType : uint32_t {
+    kDecryptOnly = 0,
+    kDecryptAndDecode = 1,
+  };
+
   
   
   virtual void Initialize() = 0;
@@ -40,10 +45,8 @@ class CDM_CLASS_API CdmProxy {
   
   
   
-  virtual void Process(Function function,
-                       uint32_t crypto_session_id,
-                       const uint8_t* input_data,
-                       uint32_t input_data_size,
+  virtual void Process(Function function, uint32_t crypto_session_id,
+                       const uint8_t* input_data, uint32_t input_data_size,
                        uint32_t output_data_size) = 0;
 
   
@@ -54,20 +57,17 @@ class CDM_CLASS_API CdmProxy {
                                         uint32_t input_data_size) = 0;
 
   
-  virtual void SetKey(uint32_t crypto_session_id,
-                      const uint8_t* key_id,
-                      uint32_t key_id_size,
-                      const uint8_t* key_blob,
-                      uint32_t key_blob_size) = 0;
+  virtual void SetKey(uint32_t crypto_session_id, const uint8_t* key_id,
+                      uint32_t key_id_size, KeyType key_type,
+                      const uint8_t* key_blob, uint32_t key_blob_size) = 0;
 
   
-  virtual void RemoveKey(uint32_t crypto_session_id,
-                         const uint8_t* key_id,
+  virtual void RemoveKey(uint32_t crypto_session_id, const uint8_t* key_id,
                          uint32_t key_id_size) = 0;
 
  protected:
-  CdmProxy() = default;
-  virtual ~CdmProxy() = default;
+  CdmProxy() {}
+  virtual ~CdmProxy() {}
 };
 
 
@@ -80,20 +80,18 @@ class CDM_CLASS_API CdmProxyClient {
 
   enum Protocol : uint32_t {
     kNone = 0,  
-    kIntel,  
+    kIntel,     
     
     
   };
 
   
   
-  virtual void OnInitialized(Status status,
-                             Protocol protocol,
+  virtual void OnInitialized(Status status, Protocol protocol,
                              uint32_t crypto_session_id) = 0;
 
   
-  virtual void OnProcessed(Status status,
-                           const uint8_t* output_data,
+  virtual void OnProcessed(Status status, const uint8_t* output_data,
                            uint32_t output_data_size) = 0;
 
   
@@ -105,11 +103,17 @@ class CDM_CLASS_API CdmProxyClient {
                                            uint64_t output_data) = 0;
 
   
+  virtual void OnKeySet(Status status) = 0;
+
+  
+  virtual void OnKeyRemoved(Status status) = 0;
+
+  
   virtual void NotifyHardwareReset() = 0;
 
  protected:
-  CdmProxyClient() = default;
-  virtual ~CdmProxyClient() = default;
+  CdmProxyClient() {}
+  virtual ~CdmProxyClient() {}
 };
 
 }  
