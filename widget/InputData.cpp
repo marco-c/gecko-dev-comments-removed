@@ -613,18 +613,16 @@ WidgetWheelEvent PinchGestureInput::ToWidgetWheelEvent(
   
   
   
+  
+  
+  
+  
 
   
   
 
-  if (mPreviousSpan != 0.f) {
-    wheelEvent.mDeltaY = -100.0 * (mCurrentSpan / mPreviousSpan) *
-                         (aWidget ? aWidget->GetDefaultScaleInternal() : 1.f);
-  } else {
-    
-    wheelEvent.mDeltaY = -100.0 * mCurrentSpan *
-                         (aWidget ? aWidget->GetDefaultScaleInternal() : 1.f);
-  }
+  wheelEvent.mDeltaY = (mPreviousSpan - mCurrentSpan) *
+                       (aWidget ? aWidget->GetDefaultScaleInternal() : 1.f);
 #endif
 
   return wheelEvent;
