@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "AntiTrackingLog.h"
 #include "ContentBlockingNotifier.h"
@@ -89,7 +89,7 @@ void ReportUnblockingToConsole(
           return;
         }
 
-        // Not adding grantedOrigin yet because we may not want it later.
+        
         AutoTArray<nsString, 2> params = {origin, trackingOrigin};
 
         nsAutoString errorText;
@@ -138,8 +138,8 @@ void ReportBlockingToConsole(uint64_t aWindowID, nsIURI* aURI,
                                          columnNumber, uri, aRejectedReason]() {
         const char* message = nullptr;
         nsAutoCString category;
-        // When changing this list, please make sure to update the corresponding
-        // code in antitracking_head.js (inside _createTask).
+        
+        
         switch (aRejectedReason) {
           case nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION:
             message = "CookieBlockedByPermission";
@@ -147,7 +147,7 @@ void ReportBlockingToConsole(uint64_t aWindowID, nsIURI* aURI,
             break;
 
           case nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER:
-            message = "CookieBlockedTracker";
+            message = "BlockedCookieTracker";
             category = NS_LITERAL_CSTRING("cookieBlockedTracker");
             break;
 
@@ -157,7 +157,7 @@ void ReportBlockingToConsole(uint64_t aWindowID, nsIURI* aURI,
             break;
 
           case nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN:
-            message = "CookieBlockedForeign";
+            message = "BlockedCookieForeign";
             category = NS_LITERAL_CSTRING("cookieBlockedForeign");
             break;
 
@@ -167,8 +167,8 @@ void ReportBlockingToConsole(uint64_t aWindowID, nsIURI* aURI,
 
         MOZ_ASSERT(message);
 
-        // Strip the URL of any possible username/password and make it ready
-        // to be presented in the UI.
+        
+        
         nsCOMPtr<nsIURI> exposableURI =
             net::nsIOService::CreateExposableURI(uri);
         AutoTArray<nsString, 1> params;
@@ -192,7 +192,7 @@ void ReportBlockingToConsole(nsIChannel* aChannel, nsIURI* aURI,
                              uint32_t aRejectedReason) {
   MOZ_ASSERT(aChannel && aURI);
 
-  // Get the top-level window ID from the top-level BrowsingContext
+  
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
 
   RefPtr<dom::BrowsingContext> bc;
@@ -213,8 +213,8 @@ void NotifyBlockingDecision(nsIChannel* aTrackingChannel,
                             uint32_t aRejectedReason, nsIURI* aURI) {
   MOZ_ASSERT(aTrackingChannel);
 
-  // This can be called in either the parent process or the child processes.
-  // When this is called in the child processes, we must have a window.
+  
+  
   if (XRE_IsContentProcess()) {
     nsCOMPtr<nsILoadContext> loadContext;
     NS_QueryNotificationCallbacks(aTrackingChannel, loadContext);
@@ -233,9 +233,9 @@ void NotifyBlockingDecision(nsIChannel* aTrackingChannel,
       return;
     }
 
-    // When this is called in the child processes with system privileges,
-    // the decision should always be ALLOW. We can stop here because both
-    // UI and content blocking log don't care this event.
+    
+    
+    
     if (nsGlobalWindowOuter::Cast(outer)->GetPrincipal() ==
         nsContentUtils::GetSystemPrincipal()) {
       MOZ_DIAGNOSTIC_ASSERT(aDecision ==
@@ -256,8 +256,8 @@ void NotifyBlockingDecision(nsIChannel* aTrackingChannel,
     ReportBlockingToConsole(aTrackingChannel, aURI, aRejectedReason);
   }
 
-  // Now send the generic "cookies loaded" notifications, from the most generic
-  // to the most specific.
+  
+  
   ContentBlockingNotifier::OnEvent(aTrackingChannel, false,
                                    nsIWebProgressListener::STATE_COOKIES_LOADED,
                                    trackingOrigin);
@@ -286,8 +286,8 @@ void NotifyBlockingDecision(nsIChannel* aTrackingChannel,
   }
 }
 
-// Send a message to notify OnContentBlockingEvent in the parent, which will
-// update the ContentBlockingLog in the parent.
+
+
 void NotifyEventInChild(
     nsIChannel* aTrackingChannel, bool aBlocked, uint32_t aRejectedReason,
     const nsACString& aTrackingOrigin,
@@ -295,8 +295,8 @@ void NotifyEventInChild(
         aReason) {
   MOZ_ASSERT(XRE_IsContentProcess());
 
-  // We don't need to find the top-level window here because the
-  // parent will do that for us.
+  
+  
   nsCOMPtr<nsILoadContext> loadContext;
   NS_QueryNotificationCallbacks(aTrackingChannel, loadContext);
   if (!loadContext) {
@@ -326,8 +326,8 @@ void NotifyEventInChild(
                                            trackingFullHashes, aReason);
 }
 
-// Update the ContentBlockingLog of the top-level WindowGlobalParent of
-// the tracking channel.
+
+
 void NotifyEventInParent(
     nsIChannel* aTrackingChannel, bool aBlocked, uint32_t aRejectedReason,
     const nsACString& aTrackingOrigin,
@@ -361,9 +361,9 @@ void NotifyEventInParent(
                                   aTrackingOrigin, trackingFullHashes, aReason);
 }
 
-}  // namespace
+}  
 
-/* static */
+
 void ContentBlockingNotifier::ReportUnblockingToConsole(
     BrowsingContext* aBrowsingContext, const nsAString& aTrackingOrigin,
     ContentBlockingNotifier::StorageAccessPermissionGrantedReason aReason) {
@@ -380,7 +380,7 @@ void ContentBlockingNotifier::ReportUnblockingToConsole(
   ::ReportUnblockingToConsole(windowID, principal, aTrackingOrigin, aReason);
 }
 
-/* static */
+
 void ContentBlockingNotifier::OnDecision(nsIChannel* aChannel,
                                          BlockingDecision aDecision,
                                          uint32_t aRejectedReason) {
@@ -406,11 +406,11 @@ void ContentBlockingNotifier::OnDecision(nsIChannel* aChannel,
   nsCOMPtr<nsIURI> uri;
   aChannel->GetURI(getter_AddRefs(uri));
 
-  // Can be called in EITHER the parent or child process.
+  
   NotifyBlockingDecision(aChannel, aDecision, aRejectedReason, uri);
 }
 
-/* static */
+
 void ContentBlockingNotifier::OnDecision(nsPIDOMWindowInner* aWindow,
                                          BlockingDecision aDecision,
                                          uint32_t aRejectedReason) {
@@ -445,7 +445,7 @@ void ContentBlockingNotifier::OnDecision(nsPIDOMWindowInner* aWindow,
   NotifyBlockingDecision(channel, aDecision, aRejectedReason, uri);
 }
 
-/* static */
+
 void ContentBlockingNotifier::OnDecision(BrowsingContext* aBrowsingContext,
                                          BlockingDecision aDecision,
                                          uint32_t aRejectedReason) {
@@ -465,11 +465,11 @@ void ContentBlockingNotifier::OnDecision(BrowsingContext* aBrowsingContext,
 
     ContentBlockingNotifier::OnDecision(inner, aDecision, aRejectedReason);
   } else {
-    // we send an IPC to the content process when we don't have an in-process
-    // browsing context. This is not smart because this should be able to be
-    // done directly in the parent. The reason we are doing this is because we
-    // need the channel, which is not accessible in the parent when you only
-    // have a browsing context.
+    
+    
+    
+    
+    
     MOZ_ASSERT(XRE_IsParentProcess());
 
     ContentParent* cp = aBrowsingContext->Canonical()->GetContentParent();
@@ -478,7 +478,7 @@ void ContentBlockingNotifier::OnDecision(BrowsingContext* aBrowsingContext,
   }
 }
 
-/* static */
+
 void ContentBlockingNotifier::OnEvent(nsIChannel* aTrackingChannel,
                                       uint32_t aRejectedReason) {
   MOZ_ASSERT(XRE_IsParentProcess() && aTrackingChannel);
@@ -495,7 +495,7 @@ void ContentBlockingNotifier::OnEvent(nsIChannel* aTrackingChannel,
                                           aRejectedReason, trackingOrigin);
 }
 
-/* static */
+
 void ContentBlockingNotifier::OnEvent(
     nsIChannel* aTrackingChannel, bool aBlocked, uint32_t aRejectedReason,
     const nsACString& aTrackingOrigin,
