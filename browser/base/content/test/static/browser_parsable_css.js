@@ -89,14 +89,6 @@ if (
   });
 }
 
-if (!Services.prefs.getBoolPref("layout.css.scrollbar-width.enabled")) {
-  whitelist.push({
-    sourceName: /(?:res|gre-resources)\/forms\.css$/i,
-    errorMessage: /Unknown property .*\bscrollbar-width\b/i,
-    isFromDevTools: false,
-  });
-}
-
 if (!Services.prefs.getBoolPref("layout.css.file-chooser-button.enabled")) {
   
   whitelist.push({
