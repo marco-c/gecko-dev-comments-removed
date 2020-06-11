@@ -99,7 +99,12 @@ void MediaStatusManager::UpdateMetadata(
         NS_ConvertUTF16toUTF8(aMetadata->mAlbum).get());
     info->mMetadata = aMetadata;
   }
-  mMetadataChangedEvent.Notify(GetCurrentMediaMetadata());
+  
+  
+  if (!mActiveMediaSessionContextId ||
+      *mActiveMediaSessionContextId == aBrowsingContextId) {
+    mMetadataChangedEvent.Notify(GetCurrentMediaMetadata());
+  }
   if (StaticPrefs::media_mediacontrol_testingevents_enabled()) {
     if (nsCOMPtr<nsIObserverService> obs = services::GetObserverService()) {
       obs->NotifyObservers(nullptr, "media-session-controller-metadata-changed",

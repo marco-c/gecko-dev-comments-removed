@@ -165,6 +165,8 @@ class MediaStatusManager : public IMediaInfoUpdater {
   bool IsMediaPlaying() const;
   bool IsAnyMediaBeingControlled() const;
 
+  
+  
   MediaEventSource<MediaMetadataBase>& MetadataChangedEvent() {
     return mMetadataChangedEvent;
   }
