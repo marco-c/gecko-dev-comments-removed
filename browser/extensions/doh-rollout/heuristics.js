@@ -11,19 +11,24 @@ const GLOBAL_CANARY = "use-application-dns.net";
 
 const NXDOMAIN_ERR = "NS_ERROR_UNKNOWN_HOST";
 
-async function dnsLookup(hostname) {
+async function dnsLookup(hostname, resolveCanonicalName = false) {
   let flags = ["disable_trr", "disable_ipv6", "bypass_cache"];
-  let addresses, err;
+  if (resolveCanonicalName) {
+    flags.push("canonical_name");
+  }
+
+  let addresses, canonicalName, err;
 
   try {
     let response = await browser.dns.resolve(hostname, flags);
     addresses = response.addresses;
+    canonicalName = response.canonicalName;
   } catch (e) {
     addresses = [null];
     err = e.message;
   }
 
-  return { addresses, err };
+  return { addresses, canonicalName, err };
 }
 
 async function dnsListLookup(domainList) {
@@ -121,26 +126,86 @@ async function modifiedRoots() {
   return "enable_doh";
 }
 
+
+
+async function providerSteering() {
+  if (
+    !(await browser.experiments.preferences.getBoolPref(
+      "doh-rollout.provider-steering.enabled",
+      false
+    ))
+  ) {
+    return null;
+  }
+  const TEST_DOMAIN = "doh.test";
+
+  
+  
+  
+  let steeredProviders = await browser.experiments.preferences.getCharPref(
+    "doh-rollout.provider-steering.provider-list",
+    "[]"
+  );
+  try {
+    steeredProviders = JSON.parse(steeredProviders);
+  } catch (e) {
+    console.log("Provider list is invalid JSON, moving on.");
+    return null;
+  }
+
+  if (!steeredProviders || !steeredProviders.length) {
+    return null;
+  }
+
+  let { canonicalName, err } = await dnsLookup(TEST_DOMAIN, true);
+  if (err || !canonicalName) {
+    return null;
+  }
+
+  let provider = steeredProviders.find(p => {
+    return p && p.canonicalName == canonicalName;
+  });
+  if (!provider || !provider.uri || !provider.name) {
+    return null;
+  }
+
+  
+  
+  browser.experiments.heuristics.setDetectedTrrURI(provider.uri);
+
+  return provider.name;
+}
+
 async function runHeuristics() {
-  let safeSearchChecks = await safeSearch();
-  let zscalerCheck = await zscalerCanary();
-  let canaryCheck = await globalCanary();
-  let modifiedRootsCheck = await modifiedRoots();
-
   
-  let browserParentCheck = await browser.experiments.heuristics.checkParentalControls();
-  let enterpriseCheck = await browser.experiments.heuristics.checkEnterprisePolicies();
-  let thirdPartyRootsCheck = await browser.experiments.heuristics.checkThirdPartyRoots();
-
-  
-  return {
-    google: safeSearchChecks.google,
-    youtube: safeSearchChecks.youtube,
-    zscalerCanary: zscalerCheck,
-    canary: canaryCheck,
-    modifiedRoots: modifiedRootsCheck,
-    browserParent: browserParentCheck,
-    thirdPartyRoots: thirdPartyRootsCheck,
-    policy: enterpriseCheck,
+  let results = {
+    google: "",
+    youtube: "",
+    zscalerCanary: "",
+    canary: await globalCanary(),
+    modifiedRoots: await modifiedRoots(),
+    browserParent: await browser.experiments.heuristics.checkParentalControls(),
+    thirdPartyRoots: await browser.experiments.heuristics.checkThirdPartyRoots(),
+    policy: await browser.experiments.heuristics.checkEnterprisePolicies(),
+    steeredProvider: "",
   };
+
+  
+  if (Object.values(results).includes("disable_doh")) {
+    return results;
+  }
+
+  
+  results.steeredProvider = (await providerSteering()) || "";
+  if (results.steeredProvider) {
+    return results;
+  }
+
+  
+  let safeSearchChecks = await safeSearch();
+  results.google = safeSearchChecks.google;
+  results.youtube = safeSearchChecks.youtube;
+  results.zscalerCanary = await zscalerCanary();
+
+  return results;
 }
