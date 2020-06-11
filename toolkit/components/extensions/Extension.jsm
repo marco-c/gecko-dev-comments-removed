@@ -1668,7 +1668,7 @@ class BootstrapScope {
   async update(data, reason) {
     
     
-    if (data.oldPermissions !== null) {
+    if (data.oldPermissions) {
       
       
       let emptyPermissions = { permissions: [], origins: [] };
