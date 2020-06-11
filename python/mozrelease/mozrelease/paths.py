@@ -3,8 +3,7 @@
 
 
 from __future__ import absolute_import
-
-from urlparse import urlunsplit
+from six.moves.urllib.parse import urlunsplit
 
 product_ftp_map = {
     "fennec": "mobile",
