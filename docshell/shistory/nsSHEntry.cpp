@@ -44,7 +44,8 @@ nsSHEntry::nsSHEntry(nsISHistory* aSHistory)
       mIsSrcdocEntry(false),
       mScrollRestorationIsManual(false),
       mLoadedInThisProcess(false),
-      mPersist(true) {}
+      mPersist(true),
+      mHasUserInteraction(false) {}
 
 nsSHEntry::nsSHEntry(const nsSHEntry& aOther)
     : mShared(aOther.mShared),
@@ -70,7 +71,8 @@ nsSHEntry::nsSHEntry(const nsSHEntry& aOther)
       mIsSrcdocEntry(aOther.mIsSrcdocEntry),
       mScrollRestorationIsManual(false),
       mLoadedInThisProcess(aOther.mLoadedInThisProcess),
-      mPersist(aOther.mPersist) {}
+      mPersist(aOther.mPersist),
+      mHasUserInteraction(false) {}
 
 nsSHEntry::~nsSHEntry() {
   
@@ -287,6 +289,31 @@ nsSHEntry::SetIsSubFrame(bool aFlag) {
 }
 
 NS_IMETHODIMP
+nsSHEntry::GetHasUserInteraction(bool* aFlag) {
+  
+  
+  
+  MOZ_ASSERT(!mParent || !mHasUserInteraction,
+             "User interaction can only be set on root entries");
+
+  *aFlag = mHasUserInteraction;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSHEntry::SetHasUserInteraction(bool aFlag) {
+  
+  
+  if (!mParent) {
+    mHasUserInteraction = aFlag;
+  } else {
+    nsCOMPtr<nsISHEntry> root = nsSHistory::GetRootSHEntry(this);
+    root->SetHasUserInteraction(aFlag);
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsSHEntry::GetCacheKey(uint32_t* aResult) {
   *aResult = mShared->mCacheKey;
   return NS_OK;
@@ -359,6 +386,8 @@ nsSHEntry::Create(nsIURI* aURI, const nsAString& aTitle,
   
   
   mShared->mIsFrameNavigation = false;
+
+  mHasUserInteraction = false;
 
   mShared->mExpired = aExpired;
 

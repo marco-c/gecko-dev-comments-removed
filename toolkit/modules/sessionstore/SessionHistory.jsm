@@ -276,6 +276,8 @@ var SessionHistoryInternal = {
       );
     }
 
+    entry.hasUserInteraction = shEntry.hasUserInteraction;
+
     if (shEntry.triggeringPrincipal) {
       entry.triggeringPrincipal_base64 = E10SUtils.serializePrincipal(
         shEntry.triggeringPrincipal
@@ -375,10 +377,21 @@ var SessionHistoryInternal = {
         continue;
       }
       let persist = "persist" in entry ? entry.persist : true;
-      history.addEntry(
-        this.deserializeEntry(entry, idMap, docIdentMap, history),
-        persist
-      );
+      let shEntry = this.deserializeEntry(entry, idMap, docIdentMap, history);
+
+      
+      
+      
+      
+      
+      
+      if (entry.hasUserInteraction == undefined) {
+        shEntry.hasUserInteraction = true;
+      } else {
+        shEntry.hasUserInteraction = entry.hasUserInteraction;
+      }
+
+      history.addEntry(shEntry, persist);
     }
 
     

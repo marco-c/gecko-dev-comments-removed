@@ -10750,8 +10750,24 @@ nsresult nsDocShell::AddToSessionHistory(
     if (loadedEntryIndex.isSome()) {
       mLoadedEntryIndex = loadedEntryIndex.value();
     }
-  } else {
+
     
+    
+    
+    if (aCloneChildren) {
+      WindowContext* topWc = mBrowsingContext->GetTopWindowContext();
+      if (topWc) {
+        topWc->SetSHEntryHasUserInteraction(false);
+      }
+    }
+  } else {
+
+    
+    
+    WindowContext* topWc = mBrowsingContext->GetTopWindowContext();
+    if (topWc) {
+      topWc->SetSHEntryHasUserInteraction(false);
+    }
     if (!mOSHE || !LOAD_TYPE_HAS_FLAGS(mLoadType, LOAD_FLAGS_REPLACE_HISTORY)) {
       rv = AddChildSHEntryToParent(entry, mChildOffset, aCloneChildren);
     }

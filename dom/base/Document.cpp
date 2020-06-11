@@ -93,6 +93,8 @@
 #include "nsINSSErrorsService.h"
 #include "nsISocketProvider.h"
 #include "nsISiteSecurityService.h"
+#include "nsISHEntry.h"
+#include "nsSHistory.h"
 #include "mozilla/PermissionDelegateHandler.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
@@ -15061,12 +15063,63 @@ void Document::ReportHasScrollLinkedEffect() {
       nsContentUtils::eLAYOUT_PROPERTIES, "ScrollLinkedEffectFound2");
 }
 
+void Document::SetSHEntryHasUserInteraction(bool aHasInteraction) {
+  nsPIDOMWindowInner* inner = GetInnerWindow();
+  if (NS_WARN_IF(!inner)) {
+    return;
+  }
+
+  WindowContext* wc = inner->GetWindowContext();
+  if (NS_WARN_IF(!wc)) {
+    return;
+  }
+
+  WindowContext* topWc = wc->TopWindowContext();
+  topWc->SetSHEntryHasUserInteraction(aHasInteraction);
+}
+
+bool Document::GetSHEntryHasUserInteraction() {
+  nsPIDOMWindowInner* inner = GetInnerWindow();
+  if (NS_WARN_IF(!inner)) {
+    return false;
+  }
+
+  WindowContext* wc = inner->GetWindowContext();
+  if (NS_WARN_IF(!wc)) {
+    return false;
+  }
+
+  WindowContext* topWc = wc->TopWindowContext();
+  return topWc->GetSHEntryHasUserInteraction();
+}
+
 void Document::SetUserHasInteracted() {
   MOZ_LOG(gUserInteractionPRLog, LogLevel::Debug,
           ("Document %p has been interacted by user.", this));
 
   
   MaybeStoreUserInteractionAsPermission();
+
+  
+  
+  
+  
+  
+  
+  
+  if (!GetSHEntryHasUserInteraction()) {
+    nsIDocShell* docShell = this->GetDocShell();
+    if (docShell) {
+      nsCOMPtr<nsISHEntry> currentEntry;
+      bool oshe;
+      nsresult rv =
+          docShell->GetCurrentSHEntry(getter_AddRefs(currentEntry), &oshe);
+      if (!NS_WARN_IF(NS_FAILED(rv)) && currentEntry) {
+        currentEntry->SetHasUserInteraction(true);
+      }
+    }
+    SetSHEntryHasUserInteraction(true);
+  }
 
   if (mUserHasInteracted) {
     return;

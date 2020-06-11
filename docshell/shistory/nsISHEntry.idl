@@ -84,6 +84,14 @@ interface nsISHEntry : nsISupports
     [infallible] attribute boolean isSubFrame;
 
     
+
+
+
+
+
+    [infallible] attribute boolean hasUserInteraction;
+
+    
     [infallible] attribute nsIReferrerInfo referrerInfo;
 
     

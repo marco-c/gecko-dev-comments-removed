@@ -18,7 +18,17 @@ class WindowGlobalParent;
 class WindowGlobalInit;
 class BrowsingContextGroup;
 
-#define MOZ_EACH_WC_FIELD(FIELD)                                       \
+#define MOZ_EACH_WC_FIELD(FIELD)
+
+
+
+
+
+
+
+
+                   \
+  FIELD(SHEntryHasUserInteraction, bool)                               \
   FIELD(CookieBehavior, Maybe<uint32_t>)                               \
   FIELD(IsOnContentBlockingAllowList, bool)                            \
   /* Whether the given window hierarchy is third party. See            \
@@ -147,6 +157,10 @@ class WindowContext : public nsISupports, public nsWrapperCache {
               ContentParent* aSource);
   bool CanSet(FieldIndex<IDX_AutoplayPermission>, const uint32_t& aValue,
               ContentParent* aSource);
+  bool CanSet(FieldIndex<IDX_SHEntryHasUserInteraction>,
+              const bool& aSHEntryHasUserInteraction, ContentParent* aSource) {
+    return true;
+  }
 
   
   
