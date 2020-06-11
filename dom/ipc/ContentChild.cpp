@@ -1620,18 +1620,17 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
   bool sandboxEnabled = true;
 #  if defined(XP_LINUX)
   
-  if (!SandboxInfo::Get().CanSandboxContent()) {
-    sandboxEnabled = false;
-  } else {
+  sandboxEnabled = SandboxInfo::Get().CanSandboxContent();
+
+  if (StaticPrefs::media_cubeb_sandbox()) {
     
-    if (StaticPrefs::media_cubeb_sandbox()) {
-      if (atp_set_real_time_limit(0, 48000)) {
-        NS_WARNING("could not set real-time limit at process startup");
-      }
-      InstallSoftRealTimeLimitHandler();
-    } else {
-      Unused << CubebUtils::GetCubebContext();
+    if (atp_set_real_time_limit(0, 48000)) {
+      NS_WARNING("could not set real-time limit at process startup");
     }
+    InstallSoftRealTimeLimitHandler();
+  } else if (sandboxEnabled) {
+    
+    Unused << CubebUtils::GetCubebContext();
   }
 
   if (sandboxEnabled) {
