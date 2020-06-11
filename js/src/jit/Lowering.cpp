@@ -1595,6 +1595,11 @@ void LIRGenerator::visitMathFunction(MMathFunction* ins) {
   defineReturn(lir, ins);
 }
 
+void LIRGenerator::visitRandom(MRandom* ins) {
+  auto* lir = new (alloc()) LRandom(temp(), tempInt64(), tempInt64());
+  define(lir, ins);
+}
+
 
 
 template <typename S, typename T>
