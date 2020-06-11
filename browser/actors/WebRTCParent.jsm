@@ -1122,6 +1122,7 @@ function prompt(aActor, aBrowser, aRequest) {
     
     
     
+    
     let reasonForNoPermanentAllow = "";
     if (sharingScreen) {
       reasonForNoPermanentAllow =
@@ -1134,38 +1135,41 @@ function prompt(aActor, aBrowser, aRequest) {
         "getUserMedia.reasonForNoPermanentAllow.insecure";
     }
 
-    if (notificationSilencingEnabled && sharingScreen) {
-      let [
-        silenceNotifications,
-        silenceNotificationsWarning,
-      ] = localization.formatMessagesSync([
-        { id: "popup-silence-notifications-checkbox" },
-        { id: "popup-silence-notifications-checkbox-warning" },
-      ]);
+    options.checkbox = {
+      label: stringBundle.getString("getUserMedia.remember"),
+      checked: principal.isAddonOrExpandedAddonPrincipal,
+      checkedState: reasonForNoPermanentAllow
+        ? {
+            disableMainAction: true,
+            warningLabel: stringBundle.getFormattedString(
+              reasonForNoPermanentAllow,
+              [productName]
+            ),
+          }
+        : undefined,
+    };
+  }
 
-      options.checkbox = {
-        label: silenceNotifications.value,
-        checked: false,
-        checkedState: {
-          disableMainAction: false,
-          warningLabel: silenceNotificationsWarning.value,
-        },
-      };
-    } else {
-      options.checkbox = {
-        label: stringBundle.getString("getUserMedia.remember"),
-        checked: principal.isAddonOrExpandedAddonPrincipal,
-        checkedState: reasonForNoPermanentAllow
-          ? {
-              disableMainAction: true,
-              warningLabel: stringBundle.getFormattedString(
-                reasonForNoPermanentAllow,
-                [productName]
-              ),
-            }
-          : undefined,
-      };
-    }
+  
+  
+  
+  if (notificationSilencingEnabled && sharingScreen) {
+    let [
+      silenceNotifications,
+      silenceNotificationsWarning,
+    ] = localization.formatMessagesSync([
+      { id: "popup-silence-notifications-checkbox" },
+      { id: "popup-silence-notifications-checkbox-warning" },
+    ]);
+
+    options.checkbox = {
+      label: silenceNotifications.value,
+      checked: false,
+      checkedState: {
+        disableMainAction: false,
+        warningLabel: silenceNotificationsWarning.value,
+      },
+    };
   }
 
   let iconType = "Devices";
