@@ -22,10 +22,19 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.jsm",
   UrlbarResult: "resource:///modules/UrlbarResult.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
+  TOP_SITES_MAX_SITES_PER_ROW: "resource://activity-stream/common/Reducers.jsm",
+  TOP_SITES_DEFAULT_ROWS: "resource://activity-stream/common/Reducers.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(this, "logger", () =>
   Log.repository.getLogger("Urlbar.Provider.TopSites")
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "topSitesRows",
+  "browser.newtabpage.activity-stream.topSitesRows",
+  TOP_SITES_DEFAULT_ROWS
 );
 
 
@@ -118,7 +127,13 @@ class ProviderTopSites extends UrlbarProvider {
     
     sites = sites.filter(site => site);
     
-    sites = sites.slice(0, 8);
+    
+    
+    let numTopSites = Math.min(
+      UrlbarPrefs.get("maxRichResults"),
+      TOP_SITES_MAX_SITES_PER_ROW * topSitesRows
+    );
+    sites = sites.slice(0, numTopSites);
 
     sites = sites.map(link => ({
       type: link.searchTopSite ? "search" : "url",
