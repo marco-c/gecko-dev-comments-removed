@@ -5174,26 +5174,11 @@ class MHypot : public MVariadicInstruction, public AllDoublePolicy::Data {
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 class MPow : public MBinaryInstruction, public PowPolicy::Data {
   
   
   
-  bool powerIsInt32_ : 1;
-
-  
-  bool canBeNegativeZero_ : 1;
+  bool powerIsInt32_;
 
   MPow(MDefinition* input, MDefinition* power, MIRType specialization)
       : MBinaryInstruction(classOpcode, input, power),
@@ -5202,9 +5187,6 @@ class MPow : public MBinaryInstruction, public PowPolicy::Data {
                specialization == MIRType::Double);
     setResultType(specialization);
     setMovable();
-
-    
-    canBeNegativeZero_ = input->type() != MIRType::Int32;
   }
 
   
@@ -5230,7 +5212,6 @@ class MPow : public MBinaryInstruction, public PowPolicy::Data {
   MOZ_MUST_USE bool writeRecoverData(
       CompactBufferWriter& writer) const override;
   bool canRecoverOnBailout() const override { return true; }
-  bool canBeNegativeZero() const { return canBeNegativeZero_; }
 
   MDefinition* foldsTo(TempAllocator& alloc) override;
 
