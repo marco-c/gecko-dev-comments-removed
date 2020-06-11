@@ -46,12 +46,6 @@ class nsPrintObject {
 
 
 
-  void SetPrintAsIs(bool aAsIs);
-
-  
-
-
-
   void EnablePrinting(bool aEnable);
   bool PrintingIsEnabled() const { return mPrintingIsEnabled; }
 
@@ -70,7 +64,6 @@ class nsPrintObject {
   nsTArray<mozilla::UniquePtr<nsPrintObject>> mKids;
   nsPrintObject* mParent;  
   bool mHasBeenPrinted;
-  bool mPrintAsIs;
   bool mInvisible;  
   bool mDidCreateDocShell;
   float mShrinkRatio;

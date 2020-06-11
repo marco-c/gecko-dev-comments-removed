@@ -2075,7 +2075,9 @@ bool nsPrintJob::PrintDocContent(const UniquePtr<nsPrintObject>& aPO,
 
   
   
-  if (!aPO->mInvisible && !(aPO->mPrintAsIs && aPO->mHasBeenPrinted)) {
+  
+  
+  if (!aPO->mHasBeenPrinted && !aPO->mInvisible) {
     for (const UniquePtr<nsPrintObject>& po : aPO->mKids) {
       bool printed = PrintDocContent(po, aStatus);
       if (printed || NS_FAILED(aStatus)) {
@@ -2576,22 +2578,6 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
   if (printRangeType == nsIPrintSettings::kRangeAllPages ||
       printRangeType == nsIPrintSettings::kRangeSpecifiedPageRange) {
     printData->mPrintObject->EnablePrinting(true);
-
-    if (printData->mIsParentAFrameSet) {
-      printData->mPrintObject->SetPrintAsIs(true);
-      return NS_OK;
-    }
-
-    
-    
-    if (printData->mPrintObject->mKids.Length() > 0) {
-      for (const UniquePtr<nsPrintObject>& po :
-           printData->mPrintObject->mKids) {
-        NS_ASSERTION(po, "nsPrintObject can't be null!");
-        po->SetPrintAsIs(true);
-      }
-    }
-    PR_PL(("PrintRange:         %s \n", gPrintRangeStr[printRangeType]));
     return NS_OK;
   }
 
@@ -2621,9 +2607,6 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
   if (!po) {
     return NS_OK;
   }
-
-  
-  po->SetPrintAsIs(true);
 
   
   po->EnablePrinting(true);
