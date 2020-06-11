@@ -5031,6 +5031,10 @@ var AboutHomeStartupCache = {
     Services.obs.addObserver(this, "ipc:content-created");
     Services.obs.addObserver(this, "ipc:content-shutdown");
 
+    this._cacheEntryPromise = new Promise(resolve => {
+      this._cacheEntryResolver = resolve;
+    });
+
     let lci = Services.loadContextInfo.default;
     let storage = Services.cache2.diskCacheStorage(lci, false);
     try {
@@ -5079,6 +5083,9 @@ var AboutHomeStartupCache = {
     this._initted = false;
     this._cacheEntry = null;
     this._hasWrittenThisSession = false;
+    this._cacheEntryPromise = null;
+    this._cacheEntryResolver = null;
+
     this.log.trace("Uninitialized.");
     this.log.removeAppender(this._appender);
     this.log = null;
@@ -5136,7 +5143,7 @@ var AboutHomeStartupCache = {
 
 
   async cacheNow() {
-    this._hasWrittenThisSession = true;
+    this.log.trace("Caching now.");
     this._cacheProgress = "Getting cache streams";
     let { pageInputStream, scriptInputStream } = await this.requestCache();
 
@@ -5148,6 +5155,8 @@ var AboutHomeStartupCache = {
     this._cacheProgress = "Writing to cache";
     await this.populateCache(pageInputStream, scriptInputStream);
     this._cacheProgress = "Done";
+    this.log.trace("Done writing to cache.");
+    this._hasWrittenThisSession = true;
   },
 
   
@@ -5265,7 +5274,7 @@ var AboutHomeStartupCache = {
     if (parseInt(version, 10) != this.CACHE_VERSION) {
       this.log.info("Version does not match! Dooming and closing streams.\n");
       
-      this._cacheEntry = this._cacheEntry.recreate();
+      this.clearCache();
       this.pagePipe.outputStream.close();
       this.scriptPipe.outputStream.close();
       return;
@@ -5367,37 +5376,117 @@ var AboutHomeStartupCache = {
 
 
 
-  populateCache(pageInputStream, scriptInputStream) {
-    
-    this.log.trace("Populating the cache. Dooming old entry.");
-    this._cacheEntry = this._cacheEntry.recreate();
 
-    this.log.trace("Opening the page output stream.");
-    let pageOutputStream = this._cacheEntry.openOutputStream(0, -1);
 
-    this.log.info("Writing the page cache.");
-    NetUtil.asyncCopy(pageInputStream, pageOutputStream, () => {
-      this.log.trace(
-        "Writing the page data is complete. Now opening the " +
-          "script output stream."
-      );
 
-      let scriptOutputStream = this._cacheEntry.openAlternativeOutputStream(
-        "script",
-        -1
-      );
 
-      this.log.info("Writing the script cache.");
-      NetUtil.asyncCopy(scriptInputStream, scriptOutputStream, () => {
-        this.log.trace("Writing the script cache is done. Setting version.");
-        this._cacheEntry.setMetaDataElement(
-          "version",
-          String(this.CACHE_VERSION)
+
+
+  async populateCache(pageInputStream, scriptInputStream) {
+    await this.ensureCacheEntry();
+
+    await new Promise((resolve, reject) => {
+      
+      this.log.trace("Populating the cache. Dooming old entry.");
+      this.clearCache();
+
+      this.log.trace("Opening the page output stream.");
+      let pageOutputStream;
+      try {
+        pageOutputStream = this._cacheEntry.openOutputStream(0, -1);
+      } catch (e) {
+        reject(e);
+        return;
+      }
+
+      this.log.info("Writing the page cache.");
+      NetUtil.asyncCopy(pageInputStream, pageOutputStream, pageResult => {
+        if (!Components.isSuccessCode(pageResult)) {
+          this.log.error("Failed to write page. Result: " + pageResult);
+          reject(new Error(pageResult));
+          return;
+        }
+
+        this.log.trace(
+          "Writing the page data is complete. Now opening the " +
+            "script output stream."
         );
-        this.log.trace(`Version is set to ${this.CACHE_VERSION}.`);
-        this.log.info("Caching of page and script is done.");
+
+        let scriptOutputStream;
+        try {
+          scriptOutputStream = this._cacheEntry.openAlternativeOutputStream(
+            "script",
+            -1
+          );
+        } catch (e) {
+          reject(e);
+          return;
+        }
+
+        this.log.info("Writing the script cache.");
+        NetUtil.asyncCopy(
+          scriptInputStream,
+          scriptOutputStream,
+          scriptResult => {
+            if (!Components.isSuccessCode(scriptResult)) {
+              this.log.error("Failed to write script. Result: " + scriptResult);
+              reject(new Error(scriptResult));
+              return;
+            }
+
+            this.log.trace(
+              "Writing the script cache is done. Setting version."
+            );
+            try {
+              this._cacheEntry.setMetaDataElement(
+                "version",
+                String(this.CACHE_VERSION)
+              );
+            } catch (e) {
+              this.log.error("Failed to write version.");
+              reject(e);
+              return;
+            }
+            this.log.trace(`Version is set to ${this.CACHE_VERSION}.`);
+            this.log.info("Caching of page and script is done.");
+            resolve();
+          }
+        );
       });
     });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  ensureCacheEntry() {
+    if (!this._initted) {
+      return Promise.reject(
+        "Cannot ensureCacheEntry - AboutHomeStartupCache is not initted"
+      );
+    }
+
+    return this._cacheEntryPromise;
+  },
+
+  
+
+
+  clearCache() {
+    this.log.trace("Clearing the cache.");
+    this._cacheEntry = this._cacheEntry.recreate();
+    this._cacheEntryPromise = new Promise(resolve => {
+      resolve(this._cacheEntry);
+    });
+    this._hasWrittenThisSession = false;
   },
 
   
@@ -5520,5 +5609,7 @@ var AboutHomeStartupCache = {
     this._cacheEntry = aEntry;
     this.makePipes();
     this.maybeConnectToPipes();
+
+    this._cacheEntryResolver(this._cacheEntry);
   },
 };
