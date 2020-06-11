@@ -7,9 +7,9 @@
 #ifndef jit_InlinableNatives_h
 #define jit_InlinableNatives_h
 
-#include <stdint.h> 
+#include <stdint.h>  
 
-#include "jspubtd.h" 
+#include "jspubtd.h"  
 
 #define INLINABLE_NATIVE_LIST(_)                   \
   _(Array)                                         \
@@ -201,6 +201,8 @@ INLINABLE_NATIVE_LIST(ADD_NATIVE)
 #undef ADD_NATIVE
 
 const JSClass* InlinableNativeGuardToClass(InlinableNative native);
+
+bool CanInlineNativeCrossRealm(InlinableNative native);
 
 }  
 }  

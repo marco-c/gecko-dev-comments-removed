@@ -4789,6 +4789,8 @@ CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
       cacheIRStubKind_(BaselineCacheIRStubKind::Regular) {}
 
 void CallIRGenerator::emitNativeCalleeGuard(HandleFunction callee) {
+  
+  
   MOZ_ASSERT(callee->isNativeWithoutJitEntry());
   ValOperandId calleeValId =
       writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_);
@@ -5716,8 +5718,15 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
     return AttachDecision::NoAction;
   }
 
+  InlinableNative native = callee->jitInfo()->inlinableNative;
+
   
-  switch (InlinableNative native = callee->jitInfo()->inlinableNative) {
+  if (cx_->realm() != callee->realm() && !CanInlineNativeCrossRealm(native)) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  switch (native) {
     
     case InlinableNative::ArrayPush:
       return tryAttachArrayPush(callee);
