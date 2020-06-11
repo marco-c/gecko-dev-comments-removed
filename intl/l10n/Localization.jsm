@@ -573,7 +573,16 @@ function keysFromBundle(method, bundle, keys, translations) {
   const messageErrors = [];
   const missingIds = new Set();
 
-  keys.forEach(({id, args}, i) => {
+  keys.forEach((key, i) => {
+    let id;
+    let args = undefined;
+    if (typeof key == "object" && "id" in key) {
+      id = String(key.id);
+      args = key.args;
+    } else {
+      id = String(key);
+    }
+
     if (translations[i] !== null) {
       return;
     }
