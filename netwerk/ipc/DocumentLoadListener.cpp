@@ -527,6 +527,9 @@ auto DocumentLoadListener::Open(
 
   *aRv = NS_OK;
   mOpenPromise = new OpenPromise::Private(__func__);
+  
+  
+  mOpenPromise->UseDirectTaskDispatch(__func__);
   return mOpenPromise;
 }
 
