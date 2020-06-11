@@ -3872,7 +3872,7 @@ class Document : public nsINode,
 
   
   enum class IgnoreRFP { No, Yes };
-  StylePrefersColorScheme PrefersColorScheme(IgnoreRFP aIgnoreRFP = IgnoreRFP::No) const;
+  StylePrefersColorScheme PrefersColorScheme(IgnoreRFP = IgnoreRFP::No) const;
 
   
   
