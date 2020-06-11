@@ -55,6 +55,7 @@ add_task(async function test_deserialize_principal_with_csp() {
           privateBrowsingId: 0,
           userContextId: 0,
           geckoViewSessionContextId: "",
+          partitionKey: "",
         },
       },
     },
@@ -69,6 +70,7 @@ add_task(async function test_deserialize_principal_with_csp() {
           privateBrowsingId: 0,
           userContextId: 0,
           geckoViewSessionContextId: "",
+          partitionKey: "",
         },
         
         
