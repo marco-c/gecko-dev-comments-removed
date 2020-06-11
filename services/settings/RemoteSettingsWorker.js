@@ -65,8 +65,13 @@ const Agent = {
 
 
 
+
   async importJSONDump(bucket, collection) {
     const { data: records } = await loadJSONDump(bucket, collection);
+    if (records === null) {
+      
+      return -1;
+    }
     if (gShutdown) {
       throw new Error("Can't import when we've started shutting down.");
     }
@@ -142,7 +147,7 @@ async function loadJSONDump(bucket, collection) {
     response = await fetch(fileURI);
   } catch (e) {
     
-    return { data: [] };
+    return { data: null };
   }
   if (gShutdown) {
     throw new Error("Can't import when we've started shutting down.");

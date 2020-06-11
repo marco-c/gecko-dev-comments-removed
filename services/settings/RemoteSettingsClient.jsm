@@ -341,14 +341,8 @@ class RemoteSettingsClient extends EventEmitter {
       try {
         
         
-        if (
-          gLoadDump &&
-          (await Utils.hasLocalDump(this.bucketName, this.collectionName))
-        ) {
-          
-          console.debug(`${this.identifier} Local DB is empty, load JSON dump`);
-          await this._importJSONDump();
-        } else {
+        const importedFromDump = gLoadDump ? await this._importJSONDump() : -1;
+        if (importedFromDump < 0) {
           
           console.debug(
             `${this.identifier} Local DB is empty, pull data from server`
@@ -720,9 +714,14 @@ class RemoteSettingsClient extends EventEmitter {
 
 
   async _importJSONDump() {
+    console.info(`${this.identifier} restore dump`);
+
+    
+    const bucketName = this.bucketName.replace("-preview", "");
+
     const start = Cu.now() * 1000;
     const result = await RemoteSettingsWorker.importJSONDump(
-      this.bucketName,
+      bucketName,
       this.collectionName
     );
     if (gTimingEnabled) {
@@ -921,13 +920,10 @@ class RemoteSettingsClient extends EventEmitter {
           await this.db.importBulk(localRecords);
           await this.db.saveLastModified(localTimestamp);
           await this.db.saveMetadata(localMetadata);
-        } else if (
+        } else {
           
           
           
-          await Utils.hasLocalDump(this.bucketName, this.collectionName)
-        ) {
-          console.info(`${this.identifier} restore dump`);
           await this._importJSONDump();
         }
 

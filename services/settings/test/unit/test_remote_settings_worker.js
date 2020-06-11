@@ -78,6 +78,10 @@ add_task(async function test_throws_error_if_worker_fails() {
 });
 
 add_task(async function test_throws_error_if_worker_fails_async() {
+  if (IS_ANDROID) {
+    
+    return;
+  }
   
   
   
