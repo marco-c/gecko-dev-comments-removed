@@ -530,6 +530,9 @@ function EnvironmentAddonBuilder(environment) {
 
   
   this._loaded = false;
+
+  
+  this._shutdownState = "Initial";
 }
 EnvironmentAddonBuilder.prototype = {
   
@@ -537,27 +540,33 @@ EnvironmentAddonBuilder.prototype = {
 
 
   async init() {
-    AddonManager.beforeShutdown.addBlocker("EnvironmentAddonBuilder", () =>
-      this._shutdownBlocker()
+    AddonManager.beforeShutdown.addBlocker(
+      "EnvironmentAddonBuilder",
+      () => this._shutdownBlocker(),
+      { fetchState: () => this._shutdownState }
     );
 
     this._pendingTask = (async () => {
       try {
+        this._shutdownState = "Awaiting _updateAddons";
         
         await this._updateAddons(true);
 
         if (!this._environment._addonsAreFull) {
           
           
+          this._shutdownState = "Awaiting AddonManagerPrivate.databaseReady";
           await AddonManagerPrivate.databaseReady;
 
           
+          this._shutdownState = "Awaiting second _updateAddons";
           await this._updateAddons();
         }
       } catch (err) {
         this._environment._log.error("init - Exception in _updateAddons", err);
       } finally {
         this._pendingTask = null;
+        this._shutdownState = "_pendingTask init complete. No longer blocking.";
       }
     })();
 
@@ -630,9 +639,11 @@ EnvironmentAddonBuilder.prototype = {
       return;
     }
 
+    this._shutdownState = "_checkForChanges awaiting _updateAddons";
     this._pendingTask = this._updateAddons().then(
       result => {
         this._pendingTask = null;
+        this._shutdownState = "No longer blocking, _updateAddons resolved";
         if (result.changed) {
           this._environment._onEnvironmentChange(
             changeReason,
@@ -642,6 +653,7 @@ EnvironmentAddonBuilder.prototype = {
       },
       err => {
         this._pendingTask = null;
+        this._shutdownState = "No longer blocking, _updateAddons rejected";
         this._environment._log.error(
           "_checkForChanges: Error collecting addons",
           err
