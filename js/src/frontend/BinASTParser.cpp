@@ -28,8 +28,8 @@
 #include "frontend/ParseNode.h"
 #include "frontend/Parser.h"
 #include "frontend/SharedContext.h"
-#include "js/RegExpFlags.h"  
-#include "new-regexp/RegExpAPI.h"
+#include "irregexp/RegExpAPI.h"
+#include "js/RegExpFlags.h"            
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/RegExpObject.h"
 
