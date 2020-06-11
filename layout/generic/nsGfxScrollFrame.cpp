@@ -2089,7 +2089,7 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
       mReferenceFrameDuringPainting(nullptr),
       mAsyncScroll(nullptr),
       mAsyncSmoothMSDScroll(nullptr),
-      mLastScrollOrigin(ScrollOrigin::Other),
+      mLastScrollOrigin(ScrollOrigin::None),
       mLastSmoothScrollOrigin(ScrollOrigin::NotSpecified),
       mScrollGeneration(++sScrollGenerationCounter),
       mDestination(0, 0),
@@ -2318,6 +2318,9 @@ CSSIntPoint ScrollFrameHelper::GetScrollPositionCSSPixels() {
 void ScrollFrameHelper::ScrollToWithOrigin(
     nsPoint aScrollPosition, ScrollMode aMode, ScrollOrigin aOrigin,
     const nsRect* aRange, nsIScrollbarMediator::ScrollSnapMode aSnap) {
+  
+  MOZ_ASSERT(aOrigin != ScrollOrigin::None);
+
   if (aOrigin != ScrollOrigin::Restore) {
     
     
@@ -2733,6 +2736,9 @@ bool ScrollFrameHelper::GetDisplayPortAtLastApproximateFrameVisibilityUpdate(
 void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
                                      ScrollOrigin aOrigin) {
   
+  MOZ_ASSERT(aOrigin != ScrollOrigin::None);
+
+  
   if (aOrigin == ScrollOrigin::NotSpecified) {
     
     
@@ -2745,7 +2751,8 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
   
   
   if (aOrigin == ScrollOrigin::Relative &&
-      (mLastScrollOrigin != ScrollOrigin::NotSpecified &&
+      (mLastScrollOrigin != ScrollOrigin::None &&
+       mLastScrollOrigin != ScrollOrigin::NotSpecified &&
        mLastScrollOrigin != ScrollOrigin::Relative &&
        mLastScrollOrigin != ScrollOrigin::Apz)) {
     aOrigin = ScrollOrigin::Other;
@@ -6685,8 +6692,18 @@ UniquePtr<PresState> ScrollFrameHelper::SaveState() const {
 
 void ScrollFrameHelper::RestoreState(PresState* aState) {
   mRestorePos = aState->scrollState();
-  MOZ_ASSERT(mLastScrollOrigin == ScrollOrigin::Other);
+  MOZ_ASSERT(mLastScrollOrigin == ScrollOrigin::None);
   mAllowScrollOriginDowngrade = aState->allowScrollOriginDowngrade();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mLastScrollOrigin = ScrollOrigin::Other;
   mDidHistoryRestore = true;
   mLastPos = mScrolledFrame ? GetLogicalVisualViewportOffset() : nsPoint(0, 0);
 
