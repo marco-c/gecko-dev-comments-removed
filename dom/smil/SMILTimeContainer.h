@@ -169,8 +169,7 @@ class SMILTimeContainer {
 
 
 
-
-  bool AddMilestone(const SMILMilestone& aMilestone,
+  void AddMilestone(const SMILMilestone& aMilestone,
                     mozilla::dom::SVGAnimationElement& aElement);
 
   
