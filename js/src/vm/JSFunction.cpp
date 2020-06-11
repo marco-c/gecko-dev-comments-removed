@@ -1872,13 +1872,6 @@ static bool CreateDynamicFunction(JSContext* cx, const CallArgs& args,
   }
 
   
-  
-  RootedObject defaultProto(cx);
-  if (!GetFunctionPrototype(cx, generatorKind, asyncKind, &defaultProto)) {
-    return false;
-  }
-
-  
   AutoStableStringChars stableChars(cx);
   if (!stableChars.initTwoByte(cx, functionText)) {
     return false;

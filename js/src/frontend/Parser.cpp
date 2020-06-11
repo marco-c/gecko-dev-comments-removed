@@ -1868,7 +1868,7 @@ static bool SetTypeForExposedFunctions(JSContext* cx, FunctionBox* listHead) {
 
     
     
-    if (!funbox->wasEmitted) {
+    if (!funbox->wasEmitted && !funbox->isStandalone) {
       continue;
     }
 
@@ -2136,6 +2136,9 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneFunction(
   if (!funbox) {
     return null();
   }
+
+  
+  funbox->isStandalone = true;
 
   
   

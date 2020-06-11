@@ -344,6 +344,10 @@ class FunctionBox : public SharedContext {
 
   
   
+  bool isStandalone : 1;
+
+  
+  
   
   bool wasEmitted : 1;
 
