@@ -359,7 +359,7 @@ bool nsCoreUtils::IsContentDocument(Document* aDocument) {
   return (docShellTreeItem->ItemType() == nsIDocShellTreeItem::typeContent);
 }
 
-bool nsCoreUtils::IsTabDocument(Document* aDocumentNode) {
+bool nsCoreUtils::IsTopLevelContentDocInProcess(Document* aDocumentNode) {
   nsCOMPtr<nsIDocShellTreeItem> treeItem(aDocumentNode->GetDocShell());
 
   nsCOMPtr<nsIDocShellTreeItem> parentTreeItem;

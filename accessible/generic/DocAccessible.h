@@ -607,7 +607,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
   enum {
     
-    eTabDocument = 1 << 0
+    eTopLevelContentDocInProcess = 1 << 0
   };
 
   

@@ -207,7 +207,9 @@ class nsCoreUtils {
   
 
 
-  static bool IsTabDocument(Document* aDocumentNode);
+
+
+  static bool IsTopLevelContentDocInProcess(Document* aDocumentNode);
 
   
 
