@@ -102,7 +102,9 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
         pattern = intl_patternForStyle(dataLocale,
                                        lazyDateTimeFormatData.dateStyle,
                                        lazyDateTimeFormatData.timeStyle,
-                                       lazyDateTimeFormatData.timeZone);
+                                       lazyDateTimeFormatData.timeZone,
+                                       formatOpt.hour12,
+                                       formatOpt.hourCycle);
 
         internalProps.dateStyle = lazyDateTimeFormatData.dateStyle;
         internalProps.timeStyle = lazyDateTimeFormatData.timeStyle;
@@ -111,56 +113,11 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     }
 
     
-    
-    if (formatOpt.hourCycle !== undefined)
-        pattern = replaceHourRepresentation(pattern, formatOpt.hourCycle);
-
-    
     internalProps.pattern = pattern;
 
     
     
     return internalProps;
-}
-
-
-
-
-
-function replaceHourRepresentation(pattern, hourCycle) {
-    var hour;
-    switch (hourCycle) {
-      case "h11":
-        hour = "K";
-        break;
-      case "h12":
-        hour = "h";
-        break;
-      case "h23":
-        hour = "H";
-        break;
-      case "h24":
-        hour = "k";
-        break;
-    }
-    assert(hour !== undefined, "Unexpected hourCycle requested: " + hourCycle);
-
-    
-    
-    
-    var resultPattern = "";
-    var inQuote = false;
-    for (var i = 0; i < pattern.length; i++) {
-        var ch = pattern[i];
-        if (ch === "'") {
-            inQuote = !inQuote;
-        } else if (!inQuote && (ch === "h" || ch === "H" || ch === "k" || ch === "K")) {
-            ch = hour;
-        }
-        resultPattern += ch;
-    }
-
-    return resultPattern;
 }
 
 
@@ -718,7 +675,7 @@ function toBestICUPattern(locale, options) {
     }
 
     
-    return intl_patternForSkeleton(locale, skeleton);
+    return intl_patternForSkeleton(locale, skeleton, options.hourCycle);
 }
 
 
