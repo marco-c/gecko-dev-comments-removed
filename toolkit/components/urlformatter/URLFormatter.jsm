@@ -30,6 +30,12 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/UpdateUtils.jsm"
 );
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "Region",
+  "resource://gre/modules/Region.jsm"
+);
+
 function nsURLFormatterService() {
   XPCOMUtils.defineLazyGetter(this, "ABI", function UFS_ABI() {
     let ABI = "default";
@@ -80,7 +86,7 @@ nsURLFormatterService.prototype = {
       try {
         
         
-        return Services.prefs.getCharPref("browser.search.region") || "ZZ";
+        return Region.home || "ZZ";
       } catch (e) {
         return "ZZ";
       }
