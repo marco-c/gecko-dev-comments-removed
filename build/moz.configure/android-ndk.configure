@@ -1,16 +1,16 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 
 @depends(mozbuild_state_path, '--help')
-@imports('os')
+@imports(_from='os.path', _import='isdir')
 @imports(_from='mozboot.android', _import='NDK_VERSION')
 def default_android_ndk_root(mozbuild_state_path, _):
     path = os.path.join(mozbuild_state_path, 'android-ndk-%s' % NDK_VERSION)
-    if os.path.isdir(path):
+    if isdir(path):
         return path
 
 
@@ -28,7 +28,7 @@ option('--with-android-googlevr-sdk', nargs=1,
 @depends(target)
 def min_android_version(target):
     if target.cpu in ['aarch64', 'x86_64']:
-        # 64-bit support was added in API 21.
+        
         return '21'
     return '16'
 
@@ -43,7 +43,7 @@ js_option('--with-android-version',
 @imports(_from='__builtin__', _import='ValueError')
 def android_version(value, min_version):
     if not value:
-        # Someone has passed --without-android-version.
+        
         die('--with-android-version cannot be disabled.')
 
     try:
@@ -84,7 +84,7 @@ add_old_configure_assignment('android_ndk', ndk)
 @imports(_from='mozboot.android', _import='NDK_VERSION')
 def ndk_version(ndk):
     if not ndk:
-        # Building 'js/src' for non-Android.
+        
         return
     with open(os.path.join(ndk, 'source.properties'), 'r') as f:
         revision = [line for line in f if line.startswith('Pkg.Revision')]
@@ -101,10 +101,10 @@ def ndk_version(ndk):
         if not major or not minor:
             die('Unexpected NDK version string: ' + version)
 
-        # source.properties contains a $MAJOR.$MINOR.$PATCH revision number,
-        # but the more common nomenclature that Google uses is alphanumeric
-        # version strings like "r20" or "r19c".  Convert the source.properties
-        # notation into an alphanumeric string.
+        
+        
+        
+        
         int_minor = int(minor)
         alphas = "abcdefghijklmnop"
         ascii_minor = alphas[int_minor] if int_minor > 0 else ''
@@ -137,8 +137,8 @@ def android_platform(target, android_version, ndk):
     else:
         target_dir_name = target.cpu
 
-    # Not all Android releases have their own platform release. We use
-    # the next lower platform version in these cases.
+    
+    
     if android_version in (11, 10):
         platform_version = 9
     elif android_version in (20, 22):
@@ -169,10 +169,10 @@ def android_sysroot(android_platform, ndk, target):
     if target.os != 'Android':
         return
 
-    # NDK r15 has both unified and non-unified headers, but we only support
-    # non-unified for that NDK, so look for that first.
+    
+    
     search_dirs = [
-        # (<if this directory exists>, <return this directory>)
+        
         (os.path.join(android_platform, 'usr', 'include'), android_platform),
         (os.path.join(ndk, 'sysroot'), os.path.join(ndk, 'sysroot')),
     ]
@@ -195,8 +195,8 @@ def android_system(android_platform, ndk, target):
     if target.os != 'Android':
         return
 
-    # NDK r15 has both unified and non-unified headers, but we only support
-    # non-unified for that NDK, so look for that first.
+    
+    
     search_dirs = [
         os.path.join(android_platform, 'usr', 'include'),
         os.path.join(ndk, 'sysroot', 'usr', 'include', target.toolchain),
@@ -255,8 +255,8 @@ set_config('ANDROID_TOOLCHAIN', android_toolchain)
 @depends(target)
 def android_toolchain_prefix_base(target):
     if target.cpu == 'x86':
-        # Ideally, the --target should just have the right x86 variant
-        # in the first place.
+        
+        
         return 'i686-linux-android'
     return target.toolchain
 
@@ -281,26 +281,26 @@ def stlport_cppflags(value, ndk):
     cxxabi_include = os.path.join(cxxabi_base, 'libcxxabi', 'include')
 
     if not isdir(cxx_include):
-        # NDK r13 removes the inner "libcxx" directory.
+        
         cxx_include = os.path.join(cxx_base, 'include')
         if not isdir(cxx_include):
             die("Couldn't find path to libc++ includes in the android ndk")
 
     if not isdir(cxxabi_include):
-        # NDK r13 removes the inner "libcxxabi" directory.
+        
         cxxabi_include = os.path.join(cxxabi_base, 'include')
         if not isdir(cxxabi_include):
             die("Couldn't find path to libc++abi includes in the android ndk")
 
-    # Add android/support/include/ for prototyping long double math
-    # functions, locale-specific C library functions, multibyte support,
-    # etc.
+    
+    
+    
     return [
-        # You'd think we'd want to use -stdlib=libc++, but this doesn't work
-        # (cf. https://bugzilla.mozilla.org/show_bug.cgi?id=1510897#c2)
-        # Using -stdlib=libc++ and removing some of the -I below also doesn't
-        # work because not everything that is in cxx_include comes in the C++
-        # header directory that comes with clang.
+        
+        
+        
+        
+        
         '-stdlib=libstdc++',
         '-I%s' % cxx_include,
         '-I%s' % os.path.join(ndk, 'sources', 'android', 'support', 'include'),
