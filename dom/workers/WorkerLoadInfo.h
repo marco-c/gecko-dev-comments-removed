@@ -104,7 +104,11 @@ struct WorkerLoadInfoData {
   UniquePtr<mozilla::ipc::PrincipalInfo> mPrincipalInfo;
   UniquePtr<mozilla::ipc::PrincipalInfo> mStoragePrincipalInfo;
   nsCString mDomain;
-  nsString mOrigin;  
+  nsString mOriginNoSuffix;  
+                             
+  nsCString mOrigin;  
+  nsCString mPartitionedOrigin;  
+                                 
 
   nsString mServiceWorkerCacheName;
   Maybe<ServiceWorkerDescriptor> mServiceWorkerDescriptor;
