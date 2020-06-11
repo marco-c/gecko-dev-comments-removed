@@ -17,13 +17,15 @@ namespace IPC {
 
 
 template <>
-struct ParamTraits<mozilla::ContentBlockingNotifier::StorageAccessGrantedReason>
+struct ParamTraits<
+    mozilla::ContentBlockingNotifier::StorageAccessPermissionGrantedReason>
     : public ContiguousEnumSerializerInclusive<
-          mozilla::ContentBlockingNotifier::StorageAccessGrantedReason,
-          mozilla::ContentBlockingNotifier::StorageAccessGrantedReason::
-              eStorageAccessAPI,
-          mozilla::ContentBlockingNotifier::StorageAccessGrantedReason::
-              eOpener> {};
+          mozilla::ContentBlockingNotifier::
+              StorageAccessPermissionGrantedReason,
+          mozilla::ContentBlockingNotifier::
+              StorageAccessPermissionGrantedReason::eStorageAccessAPI,
+          mozilla::ContentBlockingNotifier::
+              StorageAccessPermissionGrantedReason::eOpener> {};
 
 
 template <>
