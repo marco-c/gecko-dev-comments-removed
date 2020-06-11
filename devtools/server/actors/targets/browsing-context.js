@@ -288,6 +288,8 @@ const browsingContextTargetPrototype = {
       logInPage: true,
       
       watchpoints: true,
+      
+      navigation: true,
     };
 
     this._workerTargetActorList = null;
@@ -1062,6 +1064,44 @@ const browsingContextTargetPrototype = {
   },
 
   
+  goForward() {
+    
+    
+    Services.tm.dispatchToMainThread(
+      DevToolsUtils.makeInfallible(() => {
+        
+        
+        if (Services.startup.shuttingDown) {
+          return;
+        }
+
+        this.webNavigation.goForward();
+      }, "BrowsingContextTargetActor.prototype.goForward's delayed body")
+    );
+
+    return {};
+  },
+
+  
+  goBack() {
+    
+    
+    Services.tm.dispatchToMainThread(
+      DevToolsUtils.makeInfallible(() => {
+        
+        
+        if (Services.startup.shuttingDown) {
+          return;
+        }
+
+        this.webNavigation.goBack();
+      }, "BrowsingContextTargetActor.prototype.goBack's delayed body")
+    );
+
+    return {};
+  },
+
+  
 
 
   reload(request) {
@@ -1075,6 +1115,7 @@ const browsingContextTargetPrototype = {
         if (Services.startup.shuttingDown) {
           return;
         }
+
         this.webNavigation.reload(
           force
             ? Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE
