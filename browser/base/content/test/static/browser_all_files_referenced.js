@@ -285,6 +285,11 @@ if (!isDevtools) {
   ]) {
     whitelist.add("resource://services-sync/engines/" + module);
   }
+  
+  
+  if (!AppConstants.ENABLE_REMOTE_AGENT) {
+    whitelist.add("resource://gre/modules/jsdebugger.jsm");
+  }
 }
 
 if (AppConstants.MOZ_CODE_COVERAGE) {
