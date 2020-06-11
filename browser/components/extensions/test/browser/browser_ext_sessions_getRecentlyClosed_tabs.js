@@ -28,7 +28,10 @@ add_task(async function test_sessions_get_recently_closed_tabs() {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [["privacy.reduceTimerPrecision", false]],
+    set: [
+      ["privacy.reduceTimerPrecision", false],
+      ["browser.navigation.requireUserInteraction", false],
+    ],
   });
 
   async function background() {

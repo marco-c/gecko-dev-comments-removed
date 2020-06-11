@@ -13,6 +13,10 @@ const DUMMY_2_URL = "http://example.com/browser/";
 addRDMTask(
   null,
   async function() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.navigation.requireUserInteraction", false]],
+    });
+
     
     
     

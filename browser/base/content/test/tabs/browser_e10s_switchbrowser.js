@@ -133,6 +133,10 @@ var forward = async function() {
 
 
 add_task(async function test_navigation() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.navigation.requireUserInteraction", false]],
+  });
+
   let expectedRemote = gMultiProcessBrowser;
 
   info("1");
