@@ -50,17 +50,6 @@ const parentProcessTargetPrototype = extend({}, browsingContextTargetPrototype);
 
 
 parentProcessTargetPrototype.initialize = function(connection, window) {
-  BrowsingContextTargetActor.prototype.initialize.call(this, connection);
-
-  
-  this.makeDebugger = makeDebugger.bind(null, {
-    findDebuggees: dbg => dbg.findAllGlobals(),
-    shouldAddNewGlobalAsDebuggee: () => true,
-  });
-
-  
-  this.watchNewDocShells = true;
-
   
   if (!window) {
     window = Services.wm.getMostRecentWindow(DevToolsServer.chromeWindowType);
@@ -78,10 +67,20 @@ parentProcessTargetPrototype.initialize = function(connection, window) {
     window = Services.appShell.hiddenDOMWindow;
   }
 
-  Object.defineProperty(this, "docShell", {
-    value: window.docShell,
-    configurable: true,
+  BrowsingContextTargetActor.prototype.initialize.call(
+    this,
+    connection,
+    window.docShell
+  );
+
+  
+  this.makeDebugger = makeDebugger.bind(null, {
+    findDebuggees: dbg => dbg.findAllGlobals(),
+    shouldAddNewGlobalAsDebuggee: () => true,
   });
+
+  
+  this.watchNewDocShells = true;
 };
 
 parentProcessTargetPrototype.isRootActor = true;

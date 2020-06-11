@@ -250,8 +250,17 @@ const browsingContextTargetPrototype = {
 
 
 
-  initialize: function(connection, options = {}) {
+
+
+  initialize: function(connection, docShell, options = {}) {
     Actor.prototype.initialize.call(this, connection);
+
+    if (!docShell) {
+      throw new Error(
+        "A docShell should be provided as constructor argument of BrowsingContextTargetActor"
+      );
+    }
+    this.docShell = docShell;
 
     this.followWindowGlobalLifeCycle = options.followWindowGlobalLifeCycle;
     this.doNotFireFrameUpdates = options.doNotFireFrameUpdates;
@@ -365,16 +374,6 @@ const browsingContextTargetPrototype = {
       
       return null;
     }
-  },
-
-  
-
-
-  get docShell() {
-    throw new Error(
-      "`docShell` getter should be overridden by a subclass of " +
-        "`BrowsingContextTargetActor`"
-    );
   },
 
   
@@ -578,10 +577,7 @@ const browsingContextTargetPrototype = {
 
     this._detach();
 
-    Object.defineProperty(this, "docShell", {
-      value: null,
-      configurable: true,
-    });
+    this.docShell = null;
 
     this._extraActors = null;
 
@@ -1385,15 +1381,10 @@ const browsingContextTargetPrototype = {
   },
 
   _setWindow(window) {
-    const docShell = window.docShell;
     
     
     
-    Object.defineProperty(this, "docShell", {
-      value: docShell,
-      enumerable: true,
-      configurable: true,
-    });
+    this.docShell = window.docShell;
     this.emit("changed-toplevel-document");
     this.emit("frameUpdate", {
       selected: this.outerWindowID,

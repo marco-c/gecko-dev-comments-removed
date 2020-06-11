@@ -54,13 +54,11 @@ const chromeWindowTargetPrototype = extend({}, browsingContextTargetPrototype);
 
 
 chromeWindowTargetPrototype.initialize = function(connection, window) {
-  BrowsingContextTargetActor.prototype.initialize.call(this, connection);
-
-  const docShell = window.docShell;
-  Object.defineProperty(this, "docShell", {
-    value: docShell,
-    configurable: true,
-  });
+  BrowsingContextTargetActor.prototype.initialize.call(
+    this,
+    connection,
+    window.docShell
+  );
 };
 
 
