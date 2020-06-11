@@ -107,6 +107,9 @@ enum BailoutKind {
   Bailout_Hole,
 
   
+  Bailout_NoDenseElementsGuard,
+
+  
   Bailout_NegativeIndex,
 
   
@@ -217,6 +220,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "Bailout_MonitorTypes";
     case Bailout_Hole:
       return "Bailout_Hole";
+    case Bailout_NoDenseElementsGuard:
+      return "Bailout_NoDenseElementsGuard";
     case Bailout_NegativeIndex:
       return "Bailout_NegativeIndex";
     case Bailout_NonIntegerIndex:
