@@ -5043,7 +5043,9 @@ AttachDecision CallIRGenerator::tryAttachToString(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
-AttachDecision CallIRGenerator::tryAttachToObject(HandleFunction callee) {
+AttachDecision CallIRGenerator::tryAttachToObject(HandleFunction callee,
+                                                  InlinableNative native) {
+  
   
   
   if (argc_ != 1 || !args_[0].isObject()) {
@@ -5067,7 +5069,12 @@ AttachDecision CallIRGenerator::tryAttachToObject(HandleFunction callee) {
   writer.typeMonitorResult();
   cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
 
-  trackAttached("ToObject");
+  if (native == InlinableNative::IntrinsicToObject) {
+    trackAttached("ToObject");
+  } else {
+    MOZ_ASSERT(native == InlinableNative::Object);
+    trackAttached("Object");
+  }
   return AttachDecision::Attach;
 }
 
@@ -5806,7 +5813,7 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
     case InlinableNative::IntrinsicToString:
       return tryAttachToString(callee);
     case InlinableNative::IntrinsicToObject:
-      return tryAttachToObject(callee);
+      return tryAttachToObject(callee, native);
     case InlinableNative::IntrinsicToInteger:
       return tryAttachToInteger(callee);
     case InlinableNative::IntrinsicIsObject:
@@ -5890,6 +5897,10 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
     
     case InlinableNative::IntrinsicGuardToMapObject:
       return tryAttachGuardToClass(callee, native);
+
+    
+    case InlinableNative::Object:
+      return tryAttachToObject(callee, native);
 
     
     case InlinableNative::IntrinsicGuardToSetObject:
