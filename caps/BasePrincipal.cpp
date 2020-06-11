@@ -556,12 +556,6 @@ nsresult BasePrincipal::CheckMayLoadHelper(nsIURI* aURI,
 
 NS_IMETHODIMP
 BasePrincipal::IsThirdPartyURI(nsIURI* aURI, bool* aRes) {
-  if (IsSystemPrincipal()) {
-    
-    *aRes = false;
-    return NS_OK;
-  }
-
   *aRes = true;
   
   nsCOMPtr<nsIURI> prinURI;
@@ -585,12 +579,6 @@ BasePrincipal::IsThirdPartyPrincipal(nsIPrincipal* aPrin, bool* aRes) {
 }
 NS_IMETHODIMP
 BasePrincipal::IsThirdPartyChannel(nsIChannel* aChan, bool* aRes) {
-  if (IsSystemPrincipal()) {
-    
-    *aRes = false;
-    return NS_OK;
-  }
-
   nsCOMPtr<nsIURI> prinURI;
   GetURI(getter_AddRefs(prinURI));
   ThirdPartyUtil* thirdPartyUtil = ThirdPartyUtil::GetInstance();
