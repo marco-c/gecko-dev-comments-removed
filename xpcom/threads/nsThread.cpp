@@ -31,10 +31,9 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/Services.h"
-#include "mozilla/StaticPrefs_threads.h"
-#include "mozilla/TaskController.h"
 #include "nsXPCOMPrivate.h"
 #include "mozilla/ChaosMode.h"
+#include "mozilla/SchedulerGroup.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Unused.h"
@@ -596,10 +595,6 @@ nsThread::nsThread(NotNull<SynchronizedEventQueue*> aQueue,
       mLastWakeupCheckTime(TimeStamp::Now()),
 #endif
       mPerformanceCounterState(mNestedEventLoopDepth, mIsMainThread) {
-  if (mIsMainThread) {
-    mozilla::TaskController::Get()->SetPerformanceCounterState(
-        &mPerformanceCounterState);
-  }
 }
 
 nsThread::nsThread()
@@ -907,11 +902,7 @@ nsThread::HasPendingEvents(bool* aResult) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
 
-  if (NS_IsMainThread() && UseTaskController() && !mIsInLocalExecutionMode) {
-    *aResult = TaskController::Get()->HasMainThreadPendingTasks();
-  } else {
-    *aResult = mEvents->HasPendingEvent();
-  }
+  *aResult = mEvents->HasPendingEvent();
   return NS_OK;
 }
 
@@ -1007,7 +998,7 @@ static bool GetLabeledRunnableName(nsIRunnable* aEvent, nsACString& aName,
     aName.AssignLiteral("anonymous runnable");
   }
 
-  if (!labeled && aPriority > EventQueuePriority::InputHigh) {
+  if (!labeled && aPriority > EventQueuePriority::Input) {
     aName.AppendLiteral("(unlabeled)");
   }
 
@@ -1017,12 +1008,6 @@ static bool GetLabeledRunnableName(nsIRunnable* aEvent, nsACString& aName,
 
 mozilla::PerformanceCounter* nsThread::GetPerformanceCounter(
     nsIRunnable* aEvent) const {
-  return GetPerformanceCounterBase(aEvent);
-}
-
-
-mozilla::PerformanceCounter* nsThread::GetPerformanceCounterBase(
-    nsIRunnable* aEvent) {
   RefPtr<SchedulerGroup::Runnable> docRunnable = do_QueryObject(aEvent);
   if (docRunnable) {
     mozilla::dom::DocGroup* docGroup = docRunnable->DocGroup();
@@ -1070,6 +1055,7 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
 
+  
   
   
   
@@ -1139,17 +1125,9 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
     
     
     
-    EventQueuePriority priority = EventQueuePriority::Normal;
-    nsCOMPtr<nsIRunnable> event;
-    bool usingTaskController = mIsMainThread && UseTaskController();
-    if (usingTaskController) {
-      
-      
-      
-      event = TaskController::Get()->GetRunnableForMTTask(reallyWait);
-    } else {
-      event = mEvents->GetEvent(reallyWait, &priority, &mLastEventDelay);
-    }
+    EventQueuePriority priority;
+    nsCOMPtr<nsIRunnable> event =
+        mEvents->GetEvent(reallyWait, &priority, &mLastEventDelay);
 
     *aResult = (event.get() != nullptr);
 
@@ -1218,27 +1196,23 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
         sMainThreadRunnableName[length] = '\0';
       }
 #endif
-      
       Maybe<AutoTimeDurationHelper> timeDurationHelper;
-      if (priority == EventQueuePriority::InputHigh) {
+      if (priority == EventQueuePriority::Input) {
         timeDurationHelper.emplace();
       }
 
-      Maybe<PerformanceCounterState::Snapshot> snapshot;
-      if (!usingTaskController) {
-        snapshot.emplace(mPerformanceCounterState.RunnableWillRun(
-            GetPerformanceCounter(event), now,
-            priority == EventQueuePriority::Idle));
-      }
+      PerformanceCounterState::Snapshot snapshot =
+          mPerformanceCounterState.RunnableWillRun(
+              GetPerformanceCounter(event), now,
+              priority == EventQueuePriority::Idle);
 
       mLastEventStart = now;
 
       event->Run();
 
-      if (!usingTaskController) {
-        mEvents->DidRunEvent();
-        mPerformanceCounterState.RunnableDidRun(std::move(snapshot.ref()));
-      }
+      mEvents->DidRunEvent();
+
+      mPerformanceCounterState.RunnableDidRun(std::move(snapshot));
 
       
       event = nullptr;
@@ -1287,7 +1261,6 @@ nsThread::SetPriority(int32_t aPriority) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  
   
   
   
