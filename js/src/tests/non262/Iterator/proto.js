@@ -10,5 +10,8 @@ assertEq(propDesc.writable, false);
 assertEq(propDesc.enumerable, false);
 assertEq(propDesc.configurable, false);
 
+
+assertEq(Symbol.toStringTag in propDesc.value, false);
+
 if (typeof reportCompare === 'function')
   reportCompare(0, 0);
