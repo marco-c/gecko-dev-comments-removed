@@ -1211,11 +1211,11 @@ def enable_code_coverage(config, tasks):
 
             
             if 'mac' in task['build-platform']:
-                task['run-on-projects'] = []
+                task['run-on-projects'] = ['try']
 
             
             
-            if task['run-on-projects'] not in [[]]:
+            if task['run-on-projects'] not in [[], ['try']]:
                 task['run-on-projects'] = 'built-projects'
 
             

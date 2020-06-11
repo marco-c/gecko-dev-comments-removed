@@ -76,6 +76,9 @@ def fill_template(config, tasks):
             
             task['run-on-projects'] = dep.attributes.get('run_on_projects')
             task['optimization'] = dep.optimization
+        else:
+            
+            task['run-on-projects'] = ['try']
 
         
         del task['primary-dependency']
