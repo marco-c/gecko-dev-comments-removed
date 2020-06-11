@@ -203,6 +203,7 @@ OptimizationSchema = voluptuous.Any(
     {'always': None},
     
     {'build': list(schedules.ALL_COMPONENTS)},
+    {'build-optimized': list(schedules.ALL_COMPONENTS)},
     {'build-fuzzing': None},
     
     
