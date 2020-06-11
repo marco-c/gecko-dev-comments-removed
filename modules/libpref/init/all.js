@@ -810,7 +810,6 @@ pref("toolkit.telemetry.debugSlowSql", false);
 pref("toolkit.telemetry.unified", true);
 
 #if !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
-  pref("toolkit.asyncshutdown.report_writes_after", 40000); 
   pref("toolkit.asyncshutdown.crash_timeout", 60000); 
 #else
   
