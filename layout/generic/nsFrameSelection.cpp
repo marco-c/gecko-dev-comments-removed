@@ -680,6 +680,16 @@ static nsINode* GetClosestInclusiveTableCellAncestor(nsINode* aDomNode) {
   return nullptr;
 }
 
+static nsDirection GetCaretDirection(const nsIFrame& aFrame,
+                                     nsDirection aDirection,
+                                     bool aVisualMovement) {
+  const nsBidiDirection paragraphDirection =
+      nsBidiPresUtils::ParagraphDirection(&aFrame);
+  return (aVisualMovement && paragraphDirection == NSBIDI_RTL)
+             ? nsDirection(1 - aDirection)
+             : aDirection;
+}
+
 nsresult nsFrameSelection::MoveCaret(nsDirection aDirection,
                                      bool aContinueSelection,
                                      const nsSelectionAmount aAmount,
@@ -749,12 +759,37 @@ nsresult nsFrameSelection::MoveCaret(nsDirection aDirection,
     mDesiredCaretPos.Set(desiredPos);
   }
 
+  bool visualMovement =
+      mCaret.IsVisualMovement(aContinueSelection, aMovementStyle);
+  nsIFrame* frame;
+  int32_t offsetused = 0;
+  nsresult rv =
+      sel->GetPrimaryFrameForFocusNode(&frame, &offsetused, visualMovement);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  if (!frame) {
+    return NS_ERROR_FAILURE;
+  }
+
+  Result<bool, nsresult> isIntraLineCaretMove = IsIntraLineCaretMove(aAmount);
+  nsDirection direction{aDirection};
+  if (isIntraLineCaretMove.isErr()) {
+    return isIntraLineCaretMove.unwrapErr();
+  }
+  if (isIntraLineCaretMove.inspect()) {
+    
+    
+    mDesiredCaretPos.Invalidate();
+    direction = GetCaretDirection(*frame, aDirection, visualMovement);
+  }
+
   if (doCollapse) {
     const nsRange* anchorFocusRange = sel->GetAnchorFocusRange();
     if (anchorFocusRange) {
       nsINode* node;
       int32_t offset;
-      if (aDirection == eDirPrevious) {
+      if (direction == eDirPrevious) {
         node = anchorFocusRange->GetStartContainer();
         offset = anchorFocusRange->StartOffset();
       } else {
@@ -768,31 +803,11 @@ nsresult nsFrameSelection::MoveCaret(nsDirection aDirection,
     return NS_OK;
   }
 
-  const bool visualMovement =
-      mCaret.IsVisualMovement(aContinueSelection, aMovementStyle);
-  nsIFrame* frame;
-  int32_t offsetused = 0;
-  nsresult rv =
-      sel->GetPrimaryFrameForFocusNode(&frame, &offsetused, visualMovement);
-  if (NS_FAILED(rv) || !frame) {
-    return NS_FAILED(rv) ? rv : NS_ERROR_FAILURE;
-  }
-
   CaretAssociateHint tHint(mCaret.mHint);  
                                            
 
-  Result<bool, nsresult> isIntraLineCaretMove = IsIntraLineCaretMove(aAmount);
-  if (isIntraLineCaretMove.isErr()) {
-    return NS_ERROR_FAILURE;
-  }
-  if (isIntraLineCaretMove.inspect()) {
-    
-    
-    mDesiredCaretPos.Invalidate();
-  }
-
   Result<nsPeekOffsetStruct, nsresult> result = PeekOffsetForCaretMove(
-      aDirection, aContinueSelection, aAmount, aMovementStyle, desiredPos);
+      direction, aContinueSelection, aAmount, aMovementStyle, desiredPos);
   if (result.isOk() && result.inspect().mResultContent) {
     const nsPeekOffsetStruct& pos = result.inspect();
     nsIFrame* theFrame;
@@ -858,7 +873,7 @@ nsresult nsFrameSelection::MoveCaret(nsDirection aDirection,
                                     : FocusMode::kCollapseToNewPoint;
     rv = TakeFocus(MOZ_KnownLive(pos.mResultContent), pos.mContentOffset,
                    pos.mContentOffset, tHint, focusMode);
-  } else if (aAmount <= eSelectWordNoSpace && aDirection == eDirNext &&
+  } else if (aAmount <= eSelectWordNoSpace && direction == eDirNext &&
              !aContinueSelection) {
     
     
@@ -907,27 +922,12 @@ Result<nsPeekOffsetStruct, nsresult> nsFrameSelection::PeekOffsetForCaretMove(
       selection->IsEditorSelection()
           ? nsPeekOffsetStruct::ForceEditableRegion::Yes
           : nsPeekOffsetStruct::ForceEditableRegion::No;
-  const nsBidiDirection kParagraphDirection =
-      nsBidiPresUtils::ParagraphDirection(frame);
-
-  nsDirection direction{aDirection};
-  Result<bool, nsresult> isIntraLineCareMove = IsIntraLineCaretMove(aAmount);
-  if (isIntraLineCareMove.isErr()) {
-    return Err(NS_ERROR_FAILURE);
-  }
-  if (isIntraLineCareMove.inspect()) {
-    
-    
-    direction = (visualMovement && kParagraphDirection == NSBIDI_RTL)
-                    ? nsDirection(1 - aDirection)
-                    : aDirection;
-  }
 
   
   
   
-  nsPeekOffsetStruct pos(aAmount, direction, offsetused, aDesiredCaretPos, true,
-                         !!mLimiters.mLimiter, true, visualMovement,
+  nsPeekOffsetStruct pos(aAmount, aDirection, offsetused, aDesiredCaretPos,
+                         true, !!mLimiters.mLimiter, true, visualMovement,
                          aContinueSelection, kForceEditableRegion);
   if (NS_FAILED(rv = frame->PeekOffset(&pos))) {
     return Err(rv);
