@@ -178,6 +178,12 @@ class JsepTransceiver {
   }
 
   
+  void SetRtxIsAllowed(bool aRtxIsAllowed) {
+    mSendTrack.SetRtxIsAllowed(aRtxIsAllowed);
+    mRecvTrack.SetRtxIsAllowed(aRtxIsAllowed);
+  }
+
+  
   SdpDirectionAttribute::Direction mJsDirection;
 
   JsepTrack mSendTrack;
