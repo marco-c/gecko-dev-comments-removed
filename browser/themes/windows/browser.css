@@ -498,9 +498,11 @@ menuitem.bookmark-item {
     -moz-image-region: rect(32px, 49px, 48px, 32px);
   }
 
-  #minimize-button:-moz-locale-dir(rtl),
-  #restore-button:-moz-locale-dir(rtl),
-  #close-button:-moz-locale-dir(rtl) {
+  
+
+
+  #minimize-button > .toolbarbutton-icon:-moz-locale-dir(rtl),
+  #close-button > .toolbarbutton-icon:-moz-locale-dir(rtl) {
     transform: scaleX(-1);
   }
 }
