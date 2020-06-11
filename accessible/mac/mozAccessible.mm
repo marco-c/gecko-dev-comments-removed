@@ -345,8 +345,9 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
 }
 
 - (NSString*)moxRole {
-#define ROLE(geckoRole, stringRole, atkRole, macRole, msaaRole, ia2Role, androidClass, nameRule) \
-  case roles::geckoRole:                                                                         \
+#define ROLE(geckoRole, stringRole, atkRole, macRole, macSubrole, msaaRole, ia2Role, androidClass, \
+             nameRule)                                                                             \
+  case roles::geckoRole:                                                                           \
     return macRole;
 
   switch (mRole) {
@@ -368,7 +369,6 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
   
   
   
-  if (mRole == roles::NAVIGATION) return @"AXLandmarkNavigation";
   if (mRole == roles::LANDMARK) {
     nsAtom* landmark = acc ? acc->LandmarkRole() : proxy->LandmarkRole();
     
@@ -387,197 +387,74 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
 
   
   nsStaticAtom* roleAtom = nullptr;
-  switch (mRole) {
-    case roles::LIST:
-      return @"AXContentList";  
 
-    case roles::DEFINITION_LIST:
-      return @"AXDefinitionList";  
+  if (mRole == roles::DIALOG) {
+    if (acc && acc->HasARIARole()) {
+      const nsRoleMapEntry* roleMap = acc->ARIARoleMap();
+      roleAtom = roleMap->roleAtom;
+    } else if (proxy) {
+      roleAtom = proxy->ARIARoleAtom();
+    }
 
-    case roles::TERM:
-      return @"AXTerm";
-
-    case roles::DEFINITION:
-      return @"AXDefinition";
-
-    case roles::MATHML_MATH:
-      return @"AXDocumentMath";
-
-    case roles::MATHML_FRACTION:
-      return @"AXMathFraction";
-
-    case roles::MATHML_FENCED:
-      
-      
-      
-      
-      return @"AXMathRow";
-
-    case roles::MATHML_SUB:
-    case roles::MATHML_SUP:
-    case roles::MATHML_SUB_SUP:
-      return @"AXMathSubscriptSuperscript";
-
-    case roles::MATHML_ROW:
-    case roles::MATHML_STYLE:
-    case roles::MATHML_ERROR:
-      return @"AXMathRow";
-
-    case roles::MATHML_UNDER:
-    case roles::MATHML_OVER:
-    case roles::MATHML_UNDER_OVER:
-      return @"AXMathUnderOver";
-
-    case roles::MATHML_SQUARE_ROOT:
-      return @"AXMathSquareRoot";
-
-    case roles::MATHML_ROOT:
-      return @"AXMathRoot";
-
-    case roles::MATHML_TEXT:
-      return @"AXMathText";
-
-    case roles::MATHML_NUMBER:
-      return @"AXMathNumber";
-
-    case roles::MATHML_IDENTIFIER:
-      return @"AXMathIdentifier";
-
-    case roles::MATHML_TABLE:
-      return @"AXMathTable";
-
-    case roles::MATHML_TABLE_ROW:
-      return @"AXMathTableRow";
-
-    case roles::MATHML_CELL:
-      return @"AXMathTableCell";
-
-    
-    
-    
-    
-    
-    
-    
-    case roles::MATHML_OPERATOR:
-      return @"AXMathOperator";
-
-    case roles::MATHML_MULTISCRIPTS:
-      return @"AXMathMultiscript";
-
-    case roles::SWITCH:
-      return @"AXSwitch";
-
-    case roles::ALERT:
-      return @"AXApplicationAlert";
-
-    case roles::DIALOG:
-      if (acc && acc->HasARIARole()) {
-        const nsRoleMapEntry* roleMap = acc->ARIARoleMap();
-        roleAtom = roleMap->roleAtom;
+    if (roleAtom) {
+      if (roleAtom == nsGkAtoms::alertdialog) {
+        return @"AXApplicationAlertDialog";
       }
-      if (proxy) roleAtom = proxy->ARIARoleAtom();
-      if (roleAtom) {
-        if (roleAtom == nsGkAtoms::alertdialog) return @"AXApplicationAlertDialog";
-        if (roleAtom == nsGkAtoms::dialog) return @"AXApplicationDialog";
+      if (roleAtom == nsGkAtoms::dialog) {
+        return @"AXApplicationDialog";
       }
-      break;
-
-    case roles::APPLICATION:
-      return @"AXLandmarkApplication";
-
-    case roles::FORM:
-      
-      if (acc && acc->HasARIARole()) {
-        const nsRoleMapEntry* roleMap = acc->ARIARoleMap();
-        roleAtom = roleMap->roleAtom;
-      }
-      if (proxy) roleAtom = proxy->ARIARoleAtom();
-      if (roleAtom && roleAtom == nsGkAtoms::form) return @"AXLandmarkForm";
-      break;
-
-    case roles::FORM_LANDMARK:
-      
-      
-      return @"AXLandmarkForm";
-
-    case roles::ANIMATION:
-      return @"AXApplicationMarquee";
-
-    case roles::FLAT_EQUATION:
-      return @"AXDocumentMath";
-
-    case roles::REGION:
-      return @"AXLandmarkRegion";
-
-    case roles::STATUSBAR:
-      return @"AXApplicationStatus";
-
-    case roles::PROPERTYPAGE:
-      return @"AXTabPanel";
-
-    case roles::TOOLTIP:
-      return @"AXUserInterfaceTooltip";
-
-    case roles::DETAILS:
-      return @"AXDetails";
-
-    case roles::SUMMARY:
-      return @"AXSummary";
-
-    case roles::NOTE:
-      return @"AXDocumentNote";
-
-    case roles::OUTLINEITEM:
-      return @"AXOutlineRow";
-
-    case roles::ARTICLE:
-      return @"AXDocumentArticle";
-
-    case roles::NON_NATIVE_DOCUMENT:
-      return @"AXDocument";
-
-    case roles::CONTENT_DELETION:
-      return @"AXDeleteStyleGroup";
-
-    case roles::CONTENT_INSERTION:
-      return @"AXInsertStyleGroup";
-
-    case roles::CODE:
-      return @"AXCodeStyleGroup";
-
-    case roles::TOGGLE_BUTTON:
-      return @"AXToggle";
-
-    case roles::PAGETAB:
-      return @"AXTabButton";
-
-    case roles::SEPARATOR:
-      return @"AXContentSeparator";
-
-    default:
-      
-      
-      if (acc && acc->HasARIARole()) {
-        const nsRoleMapEntry* roleMap = acc->ARIARoleMap();
-        roleAtom = roleMap->roleAtom;
-      }
-      if (proxy) roleAtom = proxy->ARIARoleAtom();
-
-      if (roleAtom) {
-        if (roleAtom == nsGkAtoms::log_) return @"AXApplicationLog";
-        if (roleAtom == nsGkAtoms::timer) return @"AXApplicationTimer";
-        
-        
-        
-        if (mRole == roles::FOOTNOTE || mRole == roles::SECTION) {
-          return @"AXApplicationGroup";
-        }
-      }
-      break;
+    }
   }
 
-  return nil;
+  if (mRole == roles::FORM) {
+    
+    if (acc && acc->HasARIARole()) {
+      const nsRoleMapEntry* roleMap = acc->ARIARoleMap();
+      roleAtom = roleMap->roleAtom;
+    } else if (proxy) {
+      roleAtom = proxy->ARIARoleAtom();
+    }
+
+    if (roleAtom && roleAtom == nsGkAtoms::form) {
+      return @"AXLandmarkForm";
+    }
+  }
+
+#define ROLE(geckoRole, stringRole, atkRole, macRole, macSubrole, msaaRole, ia2Role, androidClass, \
+             nameRule)                                                                             \
+  case roles::geckoRole:                                                                           \
+    if (![macSubrole isEqualToString:NSAccessibilityUnknownSubrole]) {                             \
+      return macSubrole;                                                                           \
+    } else {                                                                                       \
+      break;                                                                                       \
+    }
+
+  switch (mRole) {
+#include "RoleMap.h"
+  }
+
+  
+  
+  if (acc && acc->HasARIARole()) {
+    const nsRoleMapEntry* roleMap = acc->ARIARoleMap();
+    roleAtom = roleMap->roleAtom;
+  }
+  if (proxy) roleAtom = proxy->ARIARoleAtom();
+
+  if (roleAtom) {
+    if (roleAtom == nsGkAtoms::log_) return @"AXApplicationLog";
+    if (roleAtom == nsGkAtoms::timer) return @"AXApplicationTimer";
+    
+    
+    
+    if (mRole == roles::FOOTNOTE || mRole == roles::SECTION) {
+      return @"AXApplicationGroup";
+    }
+  }
+
+  return NSAccessibilityUnknownSubrole;
+
+#undef ROLE
 }
 
 struct RoleDescrMap {
