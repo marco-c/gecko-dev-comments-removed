@@ -279,11 +279,7 @@ void DocumentL10n::InitialTranslationCompleted(bool aL10nCached) {
 
   
   
-  if (mIsSync) {
-    mIsSync = false;
-
-    mLocalization->SetIsSync(mIsSync);
-  }
+  SetIsSync(false);
 }
 
 void DocumentL10n::ConnectRoot(nsINode& aNode, bool aTranslate,
