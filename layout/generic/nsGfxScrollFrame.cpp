@@ -4569,13 +4569,12 @@ static nsSize GetScrollPortSizeExcludingHeadersAndFooters(
 nsSize ScrollFrameHelper::GetPageScrollAmount() const {
   nsSize effectiveScrollPortSize;
 
-  PresShell* presShell = mOuter->PresShell();
-  if (mIsRoot && presShell->IsVisualViewportSizeSet()) {
+  if (GetVisualViewportSize() != mScrollPort.Size()) {
     
     
     
     
-    effectiveScrollPortSize = presShell->GetVisualViewportSize();
+    effectiveScrollPortSize = GetVisualViewportSize();
   } else {
     
     
