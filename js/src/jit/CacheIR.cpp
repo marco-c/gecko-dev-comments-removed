@@ -5304,6 +5304,32 @@ AttachDecision CallIRGenerator::tryAttachStringFromCharCode(
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachMathRandom(HandleFunction callee) {
+  
+  if (argc_ != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  MOZ_ASSERT(cx_->realm() == callee->realm(),
+             "Shouldn't inline cross-realm Math.random because per-realm RNG");
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  mozilla::non_crypto::XorShift128PlusRNG* rng =
+      &cx_->realm()->getOrCreateRandomNumberGenerator();
+  writer.mathRandomResult(rng);
+
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("MathRandom");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachMathAbs(HandleFunction callee) {
   
   if (argc_ != 1) {
@@ -5777,6 +5803,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachStringFromCharCode(callee);
 
     
+    case InlinableNative::MathRandom:
+      return tryAttachMathRandom(callee);
     case InlinableNative::MathAbs:
       return tryAttachMathAbs(callee);
     case InlinableNative::MathFloor:
