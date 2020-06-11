@@ -288,8 +288,8 @@ TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1073250) {
   EXPECT_TRUE(rootApzc->IsOverscrolled());
 
   
-  MultiTouchInput secondFingerDown(MultiTouchInput::MULTITOUCH_START, 0,
-                                   TimeStamp(), 0);
+  MultiTouchInput secondFingerDown =
+      CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_START, mcc->Time());
   
   
   secondFingerDown.mTouches.AppendElement(
@@ -333,8 +333,8 @@ TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1231228) {
   EXPECT_TRUE(rootApzc->IsOverscrolled());
 
   
-  MultiTouchInput secondFingerDown(MultiTouchInput::MULTITOUCH_START, 0,
-                                   TimeStamp(), 0);
+  MultiTouchInput secondFingerDown =
+      CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_START, mcc->Time());
   
   
   secondFingerDown.mTouches.AppendElement(

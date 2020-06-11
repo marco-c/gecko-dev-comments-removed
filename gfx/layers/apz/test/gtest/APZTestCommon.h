@@ -45,6 +45,15 @@ using ::testing::MockFunction;
 using ::testing::NiceMock;
 typedef mozilla::layers::GeckoContentController::TapType TapType;
 
+static TimeStamp GetStartupTime() {
+  static TimeStamp sStartupTime = TimeStamp::Now();
+  return sStartupTime;
+}
+
+inline uint32_t MillisecondsSinceStartup(TimeStamp aTime) {
+  return (aTime - GetStartupTime()).ToMilliseconds();
+}
+
 
 
 
@@ -67,8 +76,9 @@ inline PinchGestureInput CreatePinchGestureInput(
     PinchGestureInput::PinchGestureType aType, const ScreenPoint& aFocus,
     float aCurrentSpan, float aPreviousSpan, TimeStamp timestamp) {
   ParentLayerPoint localFocus(aFocus.x, aFocus.y);
-  PinchGestureInput result(aType, 0, timestamp, ExternalPoint(0, 0), aFocus,
-                           aCurrentSpan, aPreviousSpan, 0);
+  PinchGestureInput result(aType, MillisecondsSinceStartup(timestamp),
+                           timestamp, ExternalPoint(0, 0), aFocus, aCurrentSpan,
+                           aPreviousSpan, 0);
   return result;
 }
 
@@ -114,11 +124,6 @@ class ScopedGfxSetting {
 #define SCOPED_GFX_VAR(varBase, varType, varValue)         \
   ScopedGfxSetting<const varType&, varType> var_##varBase( \
       &(gfxVars::varBase), &(gfxVars::Set##varBase), varValue)
-
-static TimeStamp GetStartupTime() {
-  static TimeStamp sStartupTime = TimeStamp::Now();
-  return sStartupTime;
-}
 
 class MockContentController : public GeckoContentController {
  public:
@@ -908,10 +913,6 @@ inline FrameMetrics TestFrameMetrics() {
   fm.SetScrollableRect(CSSRect(0, 0, 100, 100));
 
   return fm;
-}
-
-inline uint32_t MillisecondsSinceStartup(TimeStamp aTime) {
-  return (aTime - GetStartupTime()).ToMilliseconds();
 }
 
 #endif  

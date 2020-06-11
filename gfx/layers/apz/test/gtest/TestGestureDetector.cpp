@@ -153,27 +153,27 @@ TEST_F(APZCGestureDetectorTester, Pan_With_Tap) {
 
   
   MultiTouchInput mti =
-      MultiTouchInput(MultiTouchInput::MULTITOUCH_START, 0, TimeStamp(), 0);
+      CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_START, mcc->Time());
   mti.mTouches.AppendElement(
       CreateSingleTouchData(firstFingerId, touchX, touchY));
   apzc->ReceiveInputEvent(mti, nullptr);
 
   
   touchY += 40;
-  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, 0, TimeStamp(), 0);
+  mti = CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, mcc->Time());
   mti.mTouches.AppendElement(
       CreateSingleTouchData(firstFingerId, touchX, touchY));
   apzc->ReceiveInputEvent(mti, nullptr);
 
   
   touchY += panDistance;
-  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, 0, TimeStamp(), 0);
+  mti = CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, mcc->Time());
   mti.mTouches.AppendElement(
       CreateSingleTouchData(firstFingerId, touchX, touchY));
   apzc->ReceiveInputEvent(mti, nullptr);
 
   
-  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_START, 0, TimeStamp(), 0);
+  mti = CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_START, mcc->Time());
   mti.mTouches.AppendElement(
       CreateSingleTouchData(firstFingerId, touchX, touchY));
   mti.mTouches.AppendElement(
@@ -181,27 +181,27 @@ TEST_F(APZCGestureDetectorTester, Pan_With_Tap) {
   apzc->ReceiveInputEvent(mti, nullptr);
 
   
-  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_END, 0, TimeStamp(), 0);
+  mti = CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_END, mcc->Time());
   mti.mTouches.AppendElement(
       CreateSingleTouchData(secondFingerId, touchX + 10, touchY));
   apzc->ReceiveInputEvent(mti, nullptr);
 
   
   touchY += 40;
-  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, 0, TimeStamp(), 0);
+  mti = CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, mcc->Time());
   mti.mTouches.AppendElement(
       CreateSingleTouchData(firstFingerId, touchX, touchY));
   apzc->ReceiveInputEvent(mti, nullptr);
 
   
   touchY += panDistance;
-  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, 0, TimeStamp(), 0);
+  mti = CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_MOVE, mcc->Time());
   mti.mTouches.AppendElement(
       CreateSingleTouchData(firstFingerId, touchX, touchY));
   apzc->ReceiveInputEvent(mti, nullptr);
 
   
-  mti = MultiTouchInput(MultiTouchInput::MULTITOUCH_END, 0, TimeStamp(), 0);
+  mti = CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_END, mcc->Time());
   mti.mTouches.AppendElement(
       CreateSingleTouchData(firstFingerId, touchX, touchY));
   apzc->ReceiveInputEvent(mti, nullptr);
