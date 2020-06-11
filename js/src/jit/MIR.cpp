@@ -2958,30 +2958,53 @@ MDefinition* MMinMax::foldsTo(TempAllocator& alloc) {
 
 MDefinition* MPow::foldsConstant(TempAllocator& alloc) {
   
-  if (!(input()->isConstant() && power()->isConstant())) return nullptr;
-  if (!power()->toConstant()->isTypeRepresentableAsDouble()) return nullptr;
-  if (!input()->toConstant()->isTypeRepresentableAsDouble()) return nullptr;
+  if (!input()->isConstant() || !power()->isConstant()) {
+    return nullptr;
+  }
+  if (!power()->toConstant()->isTypeRepresentableAsDouble()) {
+    return nullptr;
+  }
+  if (!input()->toConstant()->isTypeRepresentableAsDouble()) {
+    return nullptr;
+  }
 
   double x = input()->toConstant()->numberToDouble();
   double p = power()->toConstant()->numberToDouble();
-  return MConstant::New(alloc, DoubleValue(js::ecmaPow(x, p)));
+  double result = js::ecmaPow(x, p);
+  if (type() == MIRType::Int32) {
+    int32_t cast;
+    if (!mozilla::NumberIsInt32(result, &cast)) {
+      
+      return nullptr;
+    }
+    return MConstant::New(alloc, Int32Value(cast));
+  }
+  return MConstant::New(alloc, DoubleValue(result));
 }
 
 MDefinition* MPow::foldsConstantPower(TempAllocator& alloc) {
   
-  if (!power()->isConstant()) return nullptr;
-  if (!power()->toConstant()->isTypeRepresentableAsDouble()) return nullptr;
+  if (!power()->isConstant()) {
+    return nullptr;
+  }
+  if (!power()->toConstant()->isTypeRepresentableAsDouble()) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(type() == MIRType::Double || type() == MIRType::Int32);
 
   double pow = power()->toConstant()->numberToDouble();
   MIRType outputType = type();
 
   
   if (pow == 0.5) {
+    MOZ_ASSERT(type() == MIRType::Double);
     return MPowHalf::New(alloc, input());
   }
 
   
   if (pow == -0.5) {
+    MOZ_ASSERT(type() == MIRType::Double);
     MPowHalf* half = MPowHalf::New(alloc, input());
     block()->insertBefore(this, half);
     MConstant* one = MConstant::New(alloc, DoubleValue(1.0));

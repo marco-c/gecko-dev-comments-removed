@@ -2484,6 +2484,27 @@ class LPowI : public LCallInstructionHelper<1, 2, 1> {
 };
 
 
+class LPowII : public LInstructionHelper<1, 2, 2> {
+ public:
+  LIR_HEADER(PowII)
+  LPowII(const LAllocation& value, const LAllocation& power,
+         const LDefinition& temp1, const LDefinition& temp2)
+      : LInstructionHelper(classOpcode) {
+    setOperand(0, value);
+    setOperand(1, power);
+    setTemp(0, temp1);
+    setTemp(1, temp2);
+  }
+
+  const LAllocation* value() { return getOperand(0); }
+  const LAllocation* power() { return getOperand(1); }
+  const LDefinition* temp1() { return getTemp(0); }
+  const LDefinition* temp2() { return getTemp(1); }
+
+  MPow* mir() const { return mir_->toPow(); }
+};
+
+
 class LPowD : public LCallInstructionHelper<1, 2, 1> {
  public:
   LIR_HEADER(PowD)
