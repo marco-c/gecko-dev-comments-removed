@@ -5,7 +5,7 @@
 
 
 #[cfg(feature = "servo")]
-use crate::animation::ElementAnimationState;
+use crate::animation::ElementAnimationSet;
 use crate::bloom::StyleBloom;
 use crate::data::{EagerPseudoStyles, ElementData};
 #[cfg(feature = "servo")]
@@ -167,7 +167,7 @@ pub struct SharedStyleContext<'a> {
 
     
     #[cfg(feature = "servo")]
-    pub animation_states: Arc<RwLock<FxHashMap<OpaqueNode, ElementAnimationState>>>,
+    pub animation_states: Arc<RwLock<FxHashMap<OpaqueNode, ElementAnimationSet>>>,
 
     
     #[cfg(feature = "servo")]

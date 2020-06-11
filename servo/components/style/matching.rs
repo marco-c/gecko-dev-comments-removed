@@ -452,7 +452,7 @@ trait PrivateMatchMethods: TElement {
             &context.thread_local.font_metrics_provider,
         );
 
-        animation_state.apply_new_and_running_animations::<Self>(
+        animation_state.apply_active_animations::<Self>(
             shared_context,
             new_values,
             &context.thread_local.font_metrics_provider,
@@ -460,7 +460,7 @@ trait PrivateMatchMethods: TElement {
 
         
         
-        animation_state.finished_animations.clear();
+        animation_state.clear_finished_animations();
         if !animation_state.is_empty() {
             animation_states.insert(this_opaque, animation_state);
         }
