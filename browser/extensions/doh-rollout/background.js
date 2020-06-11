@@ -21,11 +21,6 @@ const DOH_ENABLED_PREF = "doh-rollout.enabled";
 
 
 
-const MOCK_HEURISTICS_PREF = "doh-rollout.heuristics.mockValues";
-
-
-
-
 
 
 
@@ -223,14 +218,6 @@ const rollout = {
   
   lastNetworkChangeTime: 0,
 
-  async isTesting() {
-    if (this._isTesting === undefined) {
-      this._isTesting = await browser.experiments.heuristics.isTesting();
-    }
-
-    return this._isTesting;
-  },
-
   addDoorhangerListeners() {
     browser.experiments.doorhanger.onDoorhangerAccept.addListener(
       rollout.doorhangerAcceptListener
@@ -279,17 +266,7 @@ const rollout = {
     }
 
     
-    let results;
-
-    if (await rollout.isTesting()) {
-      results = await browser.experiments.preferences.getCharPref(
-        MOCK_HEURISTICS_PREF,
-        `{ "test": "disable_doh" }`
-      );
-      results = JSON.parse(results);
-    } else {
-      results = await runHeuristics();
-    }
+    let results = await runHeuristics();
 
     
     let decision = Object.values(results).includes("disable_doh")
