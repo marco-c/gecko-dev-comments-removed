@@ -1182,7 +1182,11 @@ nsIntRect HyperTextAccessible::TextBounds(int32_t aStartOffset,
   if (CharacterCount() == 0) {
     nsPresContext* presContext = mDoc->PresContext();
     
-    return GetFrame()->GetScreenRectInAppUnits().ToNearestPixels(
+    nsIFrame* frame = GetFrame();
+    if (!frame) {
+      return nsIntRect();
+    }
+    return frame->GetScreenRectInAppUnits().ToNearestPixels(
         presContext->AppUnitsPerDevPixel());
   }
 
