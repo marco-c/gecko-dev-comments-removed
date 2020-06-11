@@ -671,6 +671,18 @@ void WebRenderLayerManager::WaitOnTransactionProcessed() {
 
 void WebRenderLayerManager::SendInvalidRegion(const nsIntRegion& aRegion) {
   
+
+#ifdef XP_WIN
+  
+  
+  
+  const bool needsInvalidate = !gfx::gfxVars::DwmCompositionEnabled();
+#else
+  const bool needsInvalidate = true;
+#endif
+  if (needsInvalidate && WrBridge()) {
+    WrBridge()->SendInvalidateRenderedFrame();
+  }
 }
 
 void WebRenderLayerManager::ScheduleComposite() {

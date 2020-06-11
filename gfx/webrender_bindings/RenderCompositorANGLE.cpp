@@ -928,17 +928,7 @@ void RenderCompositorANGLE::InitializeUsePartialPresent() {
 
 bool RenderCompositorANGLE::UsePartialPresent() { return mUsePartialPresent; }
 
-bool RenderCompositorANGLE::RequestFullRender() {
-  if (!gfx::gfxVars::DwmCompositionEnabled()) {
-    
-    
-    
-    
-    
-    mFullRender = true;
-  }
-  return mFullRender;
-}
+bool RenderCompositorANGLE::RequestFullRender() { return mFullRender; }
 
 uint32_t RenderCompositorANGLE::GetMaxPartialPresentRects() {
   if (!mUsePartialPresent) {

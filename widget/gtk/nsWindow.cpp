@@ -2657,12 +2657,6 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
     
     GetLayerManager()->SetNeedsComposite(true);
     GetLayerManager()->SendInvalidRegion(region.ToUnknownRegion());
-    if (WebRenderLayerManager* wrlm =
-            GetLayerManager()->AsWebRenderLayerManager()) {
-      if (WebRenderBridgeChild* bridge = wrlm->WrBridge()) {
-        bridge->SendInvalidateRenderedFrame();
-      }
-    }
   }
 
   RefPtr<nsWindow> strongThis(this);
