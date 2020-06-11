@@ -84,9 +84,18 @@ HWND DocAccessibleChild::GetNativeWindowHandle() const {
     return mEmulatedWindowHandle;
   }
 
-  auto tab = static_cast<dom::BrowserChild*>(Manager());
-  MOZ_ASSERT(tab);
-  return reinterpret_cast<HWND>(tab->GetNativeWindowHandle());
+  auto browser = static_cast<dom::BrowserChild*>(Manager());
+  MOZ_ASSERT(browser);
+  
+  auto topDoc = static_cast<DocAccessibleChild*>(
+      browser->GetTopLevelDocAccessibleChild());
+  
+  
+  if (topDoc && topDoc != this && topDoc->mEmulatedWindowHandle) {
+    return topDoc->mEmulatedWindowHandle;
+  }
+
+  return reinterpret_cast<HWND>(browser->GetNativeWindowHandle());
 }
 
 void DocAccessibleChild::PushDeferredEvent(UniquePtr<DeferredEvent> aEvent) {
