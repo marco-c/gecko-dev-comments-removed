@@ -314,30 +314,8 @@ nsresult HTMLEditorEventListener::MouseDown(MouseEvent* aMouseEvent) {
     }
 
     
-    bool nodeIsInSelection = false;
-    if (isContextClick && !selection->IsCollapsed()) {
-      uint32_t rangeCount = selection->RangeCount();
-
-      for (uint32_t i = 0; i < rangeCount; i++) {
-        RefPtr<const nsRange> range = selection->GetRangeAt(i);
-        if (!range) {
-          
-          continue;
-        }
-
-        IgnoredErrorResult ignoredError;
-        nodeIsInSelection =
-            range->IsPointInRange(*parentContent, offset, ignoredError) &&
-            !ignoredError.Failed();
-        NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                             "nsRange::IsPointInRange() failed");
-
-        
-        if (nodeIsInSelection) {
-          break;
-        }
-      }
-    }
+    bool nodeIsInSelection =
+        EditorUtils::IsPointInSelection(*selection, *parentContent, offset);
     nsCOMPtr<nsIContent> originalEventTargetContent =
         originalEventTargetElement;
     if (!originalEventTargetContent) {

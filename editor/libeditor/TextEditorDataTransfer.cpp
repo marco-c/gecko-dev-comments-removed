@@ -253,27 +253,17 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
   
   
   
-  if (!SelectionRefPtr()->IsCollapsed() && sourceNode &&
-      sourceNode->IsEditable() && srcdoc == document) {
-    uint32_t rangeCount = SelectionRefPtr()->RangeCount();
-    for (uint32_t j = 0; j < rangeCount; j++) {
-      const nsRange* range = SelectionRefPtr()->GetRangeAt(j);
-      if (NS_WARN_IF(!range)) {
-        
-        continue;
-      }
-      IgnoredErrorResult ignoredError;
-      if (range->IsPointInRange(*droppedAt.GetContainer(), droppedAt.Offset(),
-                                ignoredError) &&
-          !ignoredError.Failed()) {
-        
-        
-        
-        
-        
-        
-        return NS_OK;
-      }
+  if (sourceNode && sourceNode->IsEditable() && srcdoc == document) {
+    bool isPointInSelection = EditorUtils::IsPointInSelection(
+        *SelectionRefPtr(), *droppedAt.GetContainer(), droppedAt.Offset());
+    if (isPointInSelection) {
+      
+      
+      
+      
+      
+      
+      return NS_OK;
     }
   }
 

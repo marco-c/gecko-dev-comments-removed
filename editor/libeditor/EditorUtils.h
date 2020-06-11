@@ -908,6 +908,12 @@ class EditorUtils final {
         return false;
     }
   }
+
+  
+
+
+  static bool IsPointInSelection(const Selection& aSelection,
+                                 nsINode& aParentNode, int32_t aOffset);
 };
 
 }  
