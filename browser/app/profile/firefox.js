@@ -282,16 +282,7 @@ pref("browser.urlbar.filter.javascript", true);
 pref("browser.urlbar.maxRichResults", 10);
 
 
-
-pref("browser.urlbar.delay", 50);
-
-
 pref("browser.urlbar.maxHistoricalSearchSuggestions", 2);
-
-
-
-
-pref("browser.urlbar.restyleSearches", false);
 
 
 
@@ -305,7 +296,6 @@ pref("browser.urlbar.suggest.topsites",             true);
 
 pref("browser.urlbar.maxCharsForSearchSuggestions", 100);
 
-pref("browser.urlbar.formatting.enabled", true);
 pref("browser.urlbar.trimURLs", true);
 
 
@@ -322,10 +312,6 @@ pref("browser.urlbar.openintab", false);
 
 
 pref("browser.urlbar.richSuggestions.tail", false);
-
-
-pref("browser.urlbar.usepreloadedtopurls.enabled", false);
-pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
 
 
 

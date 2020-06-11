@@ -68,7 +68,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["filter.javascript", true],
 
   
-  ["formatting.enabled", false],
+  ["formatting.enabled", true],
 
   
   ["matchBuckets", "suggestion:4,general:Infinity"],
@@ -137,7 +137,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["trimURLs", true],
 
   
-  ["usepreloadedtopurls.enabled", true],
+  ["usepreloadedtopurls.enabled", false],
 
   
   
