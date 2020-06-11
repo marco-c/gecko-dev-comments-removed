@@ -5273,6 +5273,35 @@ AttachDecision CallIRGenerator::tryAttachStringCharAt(HandleFunction callee) {
   return tryAttachStringChar(callee, StringChar::At);
 }
 
+AttachDecision CallIRGenerator::tryAttachStringFromCharCode(
+    HandleFunction callee) {
+  
+  if (argc_ != 1 || !args_[0].isInt32()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  Int32OperandId codeId = writer.guardToInt32(argId);
+
+  
+  writer.stringFromCharCodeResult(codeId);
+
+  
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("StringFromCharCode");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachMathAbs(HandleFunction callee) {
   
   if (argc_ != 1) {
@@ -5735,6 +5764,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachStringCharCodeAt(callee);
     case InlinableNative::StringCharAt:
       return tryAttachStringCharAt(callee);
+    case InlinableNative::StringFromCharCode:
+      return tryAttachStringFromCharCode(callee);
 
     
     case InlinableNative::MathAbs:
