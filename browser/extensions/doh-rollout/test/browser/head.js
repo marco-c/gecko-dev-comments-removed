@@ -32,6 +32,7 @@ const prefs = {
   DOH_DONE_FIRST_RUN_PREF: "doh-rollout.doneFirstRun",
   DOH_BALROG_MIGRATION_PREF: "doh-rollout.balrog-migration-done",
   DOH_DEBUG_PREF: "doh-rollout.debug",
+  DOH_TRR_SELECT_ENABLED_PREF: "doh-rollout.trr-selection.enabled",
   DOH_TRR_SELECT_URI_PREF: "doh-rollout.uri",
   DOH_TRR_SELECT_COMMIT_PREF: "doh-rollout.trr-selection.commit-result",
   DOH_TRR_SELECT_DRY_RUN_RESULT_PREF:
@@ -74,6 +75,10 @@ async function setup() {
   
   
   Preferences.set(prefs.PROFILE_CREATION_THRESHOLD_PREF, "99999999999999");
+
+  
+  
+  Preferences.set(prefs.DOH_TRR_SELECT_ENABLED_PREF, true);
 
   
   
