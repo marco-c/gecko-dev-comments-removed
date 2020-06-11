@@ -30,8 +30,7 @@ class WebExtensionDescriptorFront extends FrontClassWithSpec(
     this.actorID = json.actor;
 
     
-    
-    this.targetForm = json;
+    this._form = json;
     this.traits = json.traits || {};
 
     
