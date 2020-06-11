@@ -1,10 +1,10 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* the interface (to internal code) for retrieving computed style data */
+
+
+
+
+
+
 
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/DebugOnly.h"
@@ -34,8 +34,8 @@
 #include "nsLayoutUtils.h"
 #include "nsCoord.h"
 
-// Ensure the binding function declarations in ComputedStyle.h matches
-// those in ServoBindings.h.
+
+
 #include "mozilla/ServoBindings.h"
 
 namespace mozilla {
@@ -44,12 +44,12 @@ ComputedStyle::ComputedStyle(PseudoStyleType aPseudoType,
                              ServoComputedDataForgotten aComputedValues)
     : mSource(aComputedValues), mPseudoType(aPseudoType) {}
 
-// If a struct returned nsChangeHint_UpdateContainingBlock, that means that one
-// property's influence on whether we're a containing block for abs-pos or
-// fixed-pos elements has changed.
-//
-// However, we only need to return the hint if the overall computation of
-// whether we establish a containing block has really changed.
+
+
+
+
+
+
 static bool ContainingBlockMayHaveChanged(const ComputedStyle& aOldStyle,
                                           const ComputedStyle& aNewStyle) {
   auto* oldDisp = aOldStyle.StyleDisplay();
@@ -66,18 +66,18 @@ static bool ContainingBlockMayHaveChanged(const ComputedStyle& aOldStyle,
       newDisp->IsFixedPosContainingBlockForNonSVGTextFrames(aNewStyle)) {
     return true;
   }
-  // If we were both before and after a fixed-pos containing-block that means
-  // that everything else doesn't matter, since all the other conditions are a
-  // subset of this.
+  
+  
+  
   if (fixedCB) {
     return false;
   }
-  // Note that neither of these two following sets of frames
-  // (transform-supporting and layout-and-paint-supporting frames) is a subset
-  // of the other, because table frames support contain: layout/paint but not
-  // transforms (which are instead inherited to the table wrapper), and quite a
-  // few frame types support transforms but not contain: layout/paint (e.g.,
-  // table rows and row groups, many SVG frames).
+  
+  
+  
+  
+  
+  
   if (oldDisp->IsFixedPosContainingBlockForTransformSupportingFrames() !=
       newDisp->IsFixedPosContainingBlockForTransformSupportingFrames()) {
     return true;
@@ -100,28 +100,28 @@ nsChangeHint ComputedStyle::CalcStyleDifference(const ComputedStyle& aNewStyle,
   *aEqualStructs = 0;
 
   nsChangeHint hint = nsChangeHint(0);
-  // We must always ensure that we populate the structs on the new style
-  // context that are filled in on the old context, so that if we get
-  // two style changes in succession, the second of which causes a real
-  // style change, the PeekStyleData doesn't return null (implying that
-  // nobody ever looked at that struct's data).  In other words, we
-  // can't skip later structs if we get a big change up front, because
-  // we could later get a small change in one of those structs that we
-  // don't want to miss.
+  
+  
+  
+  
+  
+  
+  
+  
 
   DebugOnly<uint32_t> structsFound = 0;
 
   DebugOnly<int> styleStructCount = 0;
 
-  // Servo's optimization to stop the cascade when there are no style changes
-  // that children need to be recascade for relies on comparing all of the
-  // structs, not just those that are returned from PeekStyleData, although
-  // if PeekStyleData does return null we could avoid to accumulate any change
-  // hints for those structs.
-  //
-  // FIXME(emilio): Reintroduce that optimization either for all kind of structs
-  // after bug 1368290 with a weak parent pointer from text, or just for reset
-  // structs.
+  
+  
+  
+  
+  
+  
+  
+  
+  
 #define STYLE_STRUCT_BIT(name_) \
   StyleStructConstants::BitFor(StyleStructID::name_)
 
@@ -149,9 +149,9 @@ nsChangeHint ComputedStyle::CalcStyleDifference(const ComputedStyle& aNewStyle,
 #define DO_STRUCT_DIFFERENCE(struct_) \
   DO_STRUCT_DIFFERENCE_WITH_ARGS(struct_, ())
 
-  // FIXME: The order of these DO_STRUCT_DIFFERENCE calls is no longer
-  // significant.  With a small amount of effort, we could replace them with a
-  // #include "nsStyleStructList.h".
+  
+  
+  
   DO_STRUCT_DIFFERENCE_WITH_ARGS(Display, (, *StylePosition()));
   DO_STRUCT_DIFFERENCE(XUL);
   DO_STRUCT_DIFFERENCE(Column);
@@ -182,40 +182,40 @@ nsChangeHint ComputedStyle::CalcStyleDifference(const ComputedStyle& aNewStyle,
   MOZ_ASSERT(styleStructCount == StyleStructConstants::kStyleStructCount,
              "missing a call to DO_STRUCT_DIFFERENCE");
 
-  // Note that we do not check whether this->RelevantLinkVisited() !=
-  // aNewContext->RelevantLinkVisited(); we don't need to since
-  // nsCSSFrameConstructor::DoContentStateChanged always adds
-  // nsChangeHint_RepaintFrame for NS_EVENT_STATE_VISITED changes (and
-  // needs to, since HasStateDependentStyle probably doesn't work right
-  // for NS_EVENT_STATE_VISITED).  Hopefully this doesn't actually
-  // expose whether links are visited to performance tests since all
-  // link coloring happens asynchronously at a time when it's hard for
-  // the page to measure.
-  // However, we do need to compute the larger of the changes that can
-  // happen depending on whether the link is visited or unvisited, since
-  // doing only the one that's currently appropriate would expose which
-  // links are in history to easy performance measurement.  Therefore,
-  // here, we add nsChangeHint_RepaintFrame hints (the maximum for
-  // things that can depend on :visited) for the properties on which we
-  // call GetVisitedDependentColor.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   const ComputedStyle* thisVis = GetStyleIfVisited();
   const ComputedStyle* otherVis = aNewStyle.GetStyleIfVisited();
   if (!thisVis != !otherVis) {
-    // One style has a style-if-visited and the other doesn't.
-    // Presume a difference.
+    
+    
 #define STYLE_STRUCT(name_, fields_) *aEqualStructs &= ~STYLE_STRUCT_BIT(name_);
 #include "nsCSSVisitedDependentPropList.h"
 #undef STYLE_STRUCT
     hint |= nsChangeHint_RepaintFrame;
   } else if (thisVis) {
-    // Both styles have a style-if-visited.
+    
     bool change = false;
 
-    // NB: Calling Peek on |this|, not |thisVis|, since callers may look
-    // at a struct on |this| without looking at the same struct on
-    // |thisVis| (including this function if we skip one of these checks
-    // due to change being true already or due to the old style not having a
-    // style-if-visited), but not the other way around.
+    
+    
+    
+    
+    
 #define STYLE_FIELD(name_) thisVisStruct->name_ != otherVisStruct->name_
 #define STYLE_STRUCT(name_, fields_)                                 \
   {                                                                  \
@@ -238,9 +238,9 @@ nsChangeHint ComputedStyle::CalcStyleDifference(const ComputedStyle& aNewStyle,
 
   if (hint & nsChangeHint_UpdateContainingBlock) {
     if (!ContainingBlockMayHaveChanged(*this, aNewStyle)) {
-      // While some styles that cause the frame to be a containing block
-      // has changed, the overall result cannot have changed (no matter
-      // what the frame type is).
+      
+      
+      
       hint &= ~nsChangeHint_UpdateContainingBlock;
     }
   }
@@ -253,7 +253,7 @@ nsChangeHint ComputedStyle::CalcStyleDifference(const ComputedStyle& aNewStyle,
 #ifdef DEBUG
 void ComputedStyle::List(FILE* out, int32_t aIndent) {
   nsAutoCString str;
-  // Indent
+  
   int32_t ix;
   for (ix = aIndent; --ix >= 0;) {
     str.AppendLiteral("  ");
@@ -290,8 +290,8 @@ static nscolor ExtractColor(const ComputedStyle& aStyle,
   return aColor.CalcColor(aStyle);
 }
 
-// Currently caret-color, the only property in the list which is a ColorOrAuto,
-// always maps auto to currentcolor.
+
+
 static nscolor ExtractColor(const ComputedStyle& aStyle,
                             const StyleColorOrAuto& aColor) {
   if (aColor.IsAuto()) {
@@ -330,19 +330,19 @@ struct ColorIndexSet {
 
 static const ColorIndexSet gVisitedIndices[2] = {{0, 0}, {1, 0}};
 
-/* static */
+
 nscolor ComputedStyle::CombineVisitedColors(nscolor* aColors,
                                             bool aLinkIsVisited) {
   if (NS_GET_A(aColors[1]) == 0) {
-    // If the style-if-visited is transparent, then just use the
-    // unvisited style rather than using the (meaningless) color
-    // components of the visited style along with a potentially
-    // non-transparent alpha value.
+    
+    
+    
+    
     aLinkIsVisited = false;
   }
 
-  // NOTE: We want this code to have as little timing dependence as
-  // possible on whether this->RelevantLinkVisited() is true.
+  
+  
   const ColorIndexSet& set = gVisitedIndices[aLinkIsVisited ? 1 : 0];
 
   nscolor colorColor = aColors[set.colorIndex];
@@ -352,7 +352,7 @@ nscolor ComputedStyle::CombineVisitedColors(nscolor* aColors,
 }
 
 #ifdef DEBUG
-/* static */ const char* ComputedStyle::StructName(StyleStructID aSID) {
+ const char* ComputedStyle::StructName(StyleStructID aSID) {
   switch (aSID) {
 #  define STYLE_STRUCT(name_)  \
     case StyleStructID::name_: \
@@ -364,7 +364,7 @@ nscolor ComputedStyle::CombineVisitedColors(nscolor* aColors,
   }
 }
 
-/* static */
+
 Maybe<StyleStructID> ComputedStyle::LookupStruct(const nsACString& aName) {
 #  define STYLE_STRUCT(name_) \
     if (aName.EqualsLiteral(#name_)) return Some(StyleStructID::name_);
@@ -372,7 +372,7 @@ Maybe<StyleStructID> ComputedStyle::LookupStruct(const nsACString& aName) {
 #  undef STYLE_STRUCT
   return Nothing();
 }
-#endif  // DEBUG
+#endif  
 
 ComputedStyle* ComputedStyle::GetCachedLazyPseudoStyle(
     PseudoStyleType aPseudo) const {
@@ -389,10 +389,10 @@ MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF(ServoComputedValuesMallocEnclosingSizeOf)
 
 void ComputedStyle::AddSizeOfIncludingThis(nsWindowSizes& aSizes,
                                            size_t* aCVsSize) const {
-  // Note: |this| sits within a servo_arc::Arc, i.e. it is preceded by a
-  // refcount. So we need to measure it with a function that can handle an
-  // interior pointer. We use ServoComputedValuesMallocEnclosingSizeOf to
-  // clearly identify in DMD's output the memory measured here.
+  
+  
+  
+  
   *aCVsSize += ServoComputedValuesMallocEnclosingSizeOf(this);
   mSource.AddSizeOfExcludingThis(aSizes);
   mCachedInheritingStyles.AddSizeOfIncludingThis(aSizes, aCVsSize);
@@ -401,14 +401,18 @@ void ComputedStyle::AddSizeOfIncludingThis(nsWindowSizes& aSizes,
 #ifdef DEBUG
 bool ComputedStyle::EqualForCachedAnonymousContentStyle(
     const ComputedStyle& aOther) const {
-  // One thing we can't add UA rules to prevent is different -x-lang
-  // values being inherited in.  So we use this FFI function function rather
-  // than rely on CalcStyleDifference, which can't tell us which specific
-  // properties have changed.
+  
+  
+  
+  
   return Servo_ComputedValues_EqualForCachedAnonymousContentStyle(this,
                                                                   &aOther);
 }
 
 #endif
 
-}  // namespace mozilla
+bool ComputedStyle::HasOverriddenAppearance(StyleAppearance aAppearance) const {
+  return Servo_ComputedValues_HasOverriddenAppearance(this, aAppearance);
+}
+
+}  

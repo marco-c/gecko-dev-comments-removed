@@ -1,17 +1,18 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 @namespace url("http://www.w3.org/1999/xhtml");
 @namespace xul url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 @namespace svg url("http://www.w3.org/2000/svg");
 
-/* Override inverse OS themes */
+
 textarea,
 button,
 xul|button,
 * > input:not(:-moz-any([type="image"], [type="checkbox"], [type="radio"])) {
-  -moz-appearance: none !important;  /* See bug 598421 for fixing the platform */
+  -moz-appearance: none !important;  
+  -moz-default-appearance: none !important;
 }
 
 textarea,
@@ -125,7 +126,7 @@ button:focus {
   background-color: white;
 }
 
-/* we need to be specific for selects because the above rules are specific too */
+
 textarea:disabled,
 select[size]:disabled,
 select[multiple]:disabled,
@@ -196,7 +197,7 @@ input[type="submit"]:active:hover {
   padding-inline-start: 7px;
 }
 
-input[type=number] > div > div, /* work around bug 946184 */
+input[type=number] > div > div, 
 input[type=number]::-moz-number-spin-box {
   display: none;
 }
