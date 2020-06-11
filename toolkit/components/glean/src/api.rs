@@ -131,6 +131,9 @@ pub fn set_upload_enabled(enabled: bool) -> bool {
             
             
             initialize_core_metrics(&glean, &state.client_info);
+        } else if old_enabled && !enabled {
+            
+            ping_upload::check_for_uploads();
         }
 
         enabled
