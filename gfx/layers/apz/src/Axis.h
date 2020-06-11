@@ -11,6 +11,7 @@
 
 #include "APZUtils.h"
 #include "AxisPhysicsMSDModel.h"
+#include "mozilla/DataMutex.h"  
 #include "mozilla/gfx/Types.h"  
 #include "mozilla/TimeStamp.h"  
 #include "nsTArray.h"           
@@ -301,7 +302,11 @@ class Axis {
   ParentLayerCoord mPos;
 
   ParentLayerCoord mStartPos;
-  float mVelocity;   
+  
+  
+  
+  
+  mutable DataMutex<float> mVelocity;
   bool mAxisLocked;  
   AsyncPanZoomController* mAsyncPanZoomController;
 
@@ -315,6 +320,9 @@ class Axis {
   
   
   UniquePtr<VelocityTracker> mVelocityTracker;
+
+  float DoGetVelocity() const;
+  void DoSetVelocity(float aVelocity);
 
   const FrameMetrics& GetFrameMetrics() const;
   const ScrollMetadata& GetScrollMetadata() const;
