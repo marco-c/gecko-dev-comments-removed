@@ -930,6 +930,11 @@ bool RenderCompositorANGLE::UsePartialPresent() { return mUsePartialPresent; }
 
 bool RenderCompositorANGLE::RequestFullRender() {
   if (!gfx::gfxVars::DwmCompositionEnabled()) {
+    
+    
+    
+    
+    
     mFullRender = true;
   }
   return mFullRender;
