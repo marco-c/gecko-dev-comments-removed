@@ -12,6 +12,7 @@
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/java/GeckoAppShellWrappers.h"
+#include "mozilla/java/GeckoRuntimeWrappers.h"
 #include "mozilla/java/GeckoSystemStateListenerWrappers.h"
 
 using namespace mozilla;
@@ -388,15 +389,17 @@ nsresult nsLookAndFeel::GetIntImpl(IntID aID, int32_t& aResult) {
       aResult = java::GeckoAppShell::GetAllPointerCapabilities();
       break;
 
-    case eIntID_SystemUsesDarkTheme:
+    case eIntID_SystemUsesDarkTheme: {
       
       
       
       if (!jni::IsAvailable()) {
         return NS_ERROR_FAILURE;
       }
-      aResult = java::GeckoSystemStateListener::IsNightMode() ? 1 : 0;
+      java::GeckoRuntime::LocalRef runtime = java::GeckoRuntime::GetInstance();
+      aResult = runtime && runtime->UsesDarkTheme();
       break;
+    }
 
     default:
       aResult = 0;

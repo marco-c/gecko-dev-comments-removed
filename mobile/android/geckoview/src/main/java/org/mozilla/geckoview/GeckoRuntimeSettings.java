@@ -25,6 +25,7 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
 import org.mozilla.gecko.EventDispatcher;
+import org.mozilla.gecko.GeckoSystemStateListener;
 import org.mozilla.gecko.util.GeckoBundle;
 
 @AnyThread
@@ -358,7 +359,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
         public @NonNull Builder preferredColorScheme(final @ColorScheme int scheme) {
-            getSettings().mPreferredColorScheme.set(scheme);
+            getSettings().setPreferredColorScheme(scheme);
             return this;
         }
 
@@ -477,8 +478,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         "font.size.systemFontScale", 100);
      final Pref<Integer> mFontInflationMinTwips = new Pref<>(
         "font.size.inflation.minTwips", 0);
-     final Pref<Integer> mPreferredColorScheme = new Pref<>(
-        "ui.systemUsesDarkTheme", -1);
      final Pref<Boolean> mInputAutoZoom = new Pref<>(
             "formhelper.autozoom", true);
      final Pref<Boolean> mDoubleTapZooming = new Pref<>(
@@ -501,6 +500,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             "browser.tabs.remote.autostart", true);
      final Pref<Boolean> mAutofillLogins = new Pref<Boolean>(
         "signon.autofillForms", true);
+
+     int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
      boolean mDebugPause;
      boolean mUseMaxScreenDepth;
@@ -984,7 +985,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
     public @ColorScheme int getPreferredColorScheme() {
-        return mPreferredColorScheme.get();
+        return mPreferredColorScheme;
     }
 
     
@@ -995,7 +996,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
     public @NonNull GeckoRuntimeSettings setPreferredColorScheme(final @ColorScheme int scheme) {
-        mPreferredColorScheme.commit(scheme);
+        if (mPreferredColorScheme != scheme) {
+            mPreferredColorScheme = scheme;
+            GeckoSystemStateListener.onDeviceChanged();
+        }
         return this;
     }
 
