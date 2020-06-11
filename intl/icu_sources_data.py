@@ -16,7 +16,6 @@ from __future__ import print_function
 import glob
 import multiprocessing
 import os
-import sets
 import shutil
 import subprocess
 import sys
@@ -29,7 +28,7 @@ from mozpack import path as mozpath
 
 
 
-UNUSED_SOURCES = sets.Set([
+UNUSED_SOURCES = set([
     'intl/icu/source/common/bytestrieiterator.cpp',
     'intl/icu/source/common/cstr.cpp',
     'intl/icu/source/common/cwchar.cpp',
