@@ -201,8 +201,16 @@ class EditorBase : public nsIEditor,
   nsPIDOMWindowInner* GetInnerWindow() const {
     return mDocument ? mDocument->GetInnerWindow() : nullptr;
   }
+
   
-  
+
+
+
+
+
+
+
+
   bool MaybeHasMutationEventListeners(
       uint32_t aMutationEventType = 0xFFFFFFFF) const {
     if (IsTextEditor()) {
@@ -210,8 +218,16 @@ class EditorBase : public nsIEditor,
       
       return false;
     }
+#ifdef DEBUG
+    
+    
+    
+    
+    return true;
+#else   
     nsPIDOMWindowInner* window = GetInnerWindow();
     return window ? window->HasMutationListeners(aMutationEventType) : false;
+#endif  
   }
 
   PresShell* GetPresShell() const {
