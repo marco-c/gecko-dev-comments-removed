@@ -92,7 +92,7 @@ interface DOMLocalization : Localization {
 
 
 
-  [Throws] L10nKey getAttributes(Element aElement);
+  [Throws] L10nIdArgs getAttributes(Element aElement);
 
   
 
