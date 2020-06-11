@@ -445,7 +445,10 @@ trait PrivateMatchMethods: TElement {
         let mut animation_state = animation_states.remove(&this_opaque).unwrap_or_default();
 
         if let Some(ref mut old_values) = *old_values {
-            animation_state.compute_before_change_style::<Self>(
+            
+            
+            animation_state.apply_completed_animations(old_values);
+            animation_state.apply_running_animations::<Self>(
                 shared_context,
                 old_values,
                 &context.thread_local.font_metrics_provider,
@@ -475,10 +478,20 @@ trait PrivateMatchMethods: TElement {
                 .cancel_transitions_with_nontransitioning_properties(&transitioning_properties);
         }
 
-        animation_state.finished_animations.clear();
+        animation_state.apply_running_animations::<Self>(
+            shared_context,
+            new_values,
+            &context.thread_local.font_metrics_provider,
+        );
+        animation_state.apply_new_animations::<Self>(
+            shared_context,
+            new_values,
+            &context.thread_local.font_metrics_provider,
+        );
 
         
         
+        animation_state.finished_animations.clear();
         if !animation_state.is_empty() {
             animation_states.insert(this_opaque, animation_state);
         }
