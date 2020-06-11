@@ -167,7 +167,6 @@ class ProfilingStackFrame {
   }
 
   
-  
   enum class Flags : uint32_t {
     
     
@@ -209,7 +208,10 @@ class ProfilingStackFrame {
     
     LABEL_DETERMINED_BY_CATEGORY_PAIR = 1 << 8,
 
-    FLAGS_BITCOUNT = 9,
+    
+    NONSENSITIVE = 1 << 9,
+
+    FLAGS_BITCOUNT = 16,
     FLAGS_MASK = (1 << FLAGS_BITCOUNT) - 1
   };
 
