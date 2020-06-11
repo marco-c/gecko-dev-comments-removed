@@ -194,7 +194,13 @@ add_task(async function test_notifyPendingChanges() {
 
 
 add_task(async function test_engine() {
-  let engine = new ExtensionStorageEngineBridge(Service);
+  
+  
+  
+  
+  await Service.engineManager.unregister("extension-storage");
+  await Service.engineManager.register(ExtensionStorageEngineBridge);
+  let engine = Service.engineManager.get("extension-storage");
   Assert.equal(engine.version, 1);
 
   Assert.deepEqual(await engine.getSyncID(), null);
