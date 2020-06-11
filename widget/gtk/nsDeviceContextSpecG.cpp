@@ -151,16 +151,10 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecGTK::MakePrintTarget() {
 
   
   if (format == nsIPrintSettings::kOutputFormatNative) {
-    if (mIsPPreview) {
-      
-      format = nsIPrintSettings::kOutputFormatPDF;
-    } else {
-      return nullptr;
-    }
+    format = nsIPrintSettings::kOutputFormatPDF;
   }
 
   IntSize size = IntSize::Truncate(width, height);
-
   if (format == nsIPrintSettings::kOutputFormatPDF) {
     return PrintTargetPDF::CreateOrNull(stream, size);
   }
@@ -190,8 +184,6 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget* aWidget,
 
   mPrintSettings = do_QueryInterface(aPS);
   if (!mPrintSettings) return NS_ERROR_NO_INTERFACE;
-
-  mIsPPreview = aIsPrintPreview;
 
   
   bool toFile;

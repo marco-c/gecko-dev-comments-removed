@@ -44,7 +44,6 @@ class nsDeviceContextSpecGTK : public nsIDeviceContextSpec {
   virtual ~nsDeviceContextSpecGTK();
   nsCOMPtr<nsPrintSettingsGTK> mPrintSettings;
   bool mToPrinter : 1;  
-  bool mIsPPreview : 1; 
   GtkPrintSettings* mGtkPrintSettings;
   GtkPageSetup* mGtkPageSetup;
 
