@@ -669,14 +669,15 @@ void Faulty::CopyFDs(IPC::Message* aDstMsg, IPC::Message* aSrcMsg) {
 #endif
 }
 
-IPC::Message* Faulty::MutateIPCMessage(const char* aChannel, IPC::Message* aMsg,
-                                       unsigned int aProbability) {
+UniquePtr<IPC::Message> Faulty::MutateIPCMessage(const char* aChannel,
+                                                 UniquePtr<IPC::Message> aMsg,
+                                                 unsigned int aProbability) {
   if (!mIsValidProcessType || !mFuzzMessages) {
     return aMsg;
   }
 
   sMsgCounter += 1;
-  LogMessage(aChannel, aMsg);
+  LogMessage(aChannel, aMsg.get());
 
   
   if (!FuzzingTraits::Sometimes(aProbability)) {
@@ -698,7 +699,7 @@ IPC::Message* Faulty::MutateIPCMessage(const char* aChannel, IPC::Message* aMsg,
   }
 
   
-  std::vector<uint8_t> data(GetDataFromIPCMessage(aMsg));
+  std::vector<uint8_t> data(GetDataFromIPCMessage(aMsg.get()));
 
   
   uint32_t headerSize = aMsg->HeaderSizeFromData(nullptr, nullptr);
@@ -731,17 +732,16 @@ IPC::Message* Faulty::MutateIPCMessage(const char* aChannel, IPC::Message* aMsg,
   }
 
   
-  auto* mutatedMsg =
-      new IPC::Message(reinterpret_cast<const char*>(data.data()), data.size());
-  CopyFDs(mutatedMsg, aMsg);
+  auto mutatedMsg = MakeUnique<IPC::Message>(
+      reinterpret_cast<const char*>(data.data()), data.size());
+  CopyFDs(mutatedMsg.get(), aMsg.get());
 
   
-  DumpMessage(aChannel, aMsg, nsPrintfCString(".%zu.o", sMsgCounter).get());
+  DumpMessage(aChannel, aMsg.get(),
+              nsPrintfCString(".%zu.o", sMsgCounter).get());
   
-  DumpMessage(aChannel, mutatedMsg,
+  DumpMessage(aChannel, mutatedMsg.get(),
               nsPrintfCString(".%zu.m", sMsgCounter).get());
-
-  delete aMsg;
 
   return mutatedMsg;
 }

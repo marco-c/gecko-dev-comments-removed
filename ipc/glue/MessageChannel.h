@@ -532,7 +532,7 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver {
 
   
   
-  void SendMessageToLink(Message* aMsg);
+  void SendMessageToLink(UniquePtr<Message> aMsg);
 
   bool WasTransactionCanceled(int transaction);
   bool ShouldDeferMessage(const Message& aMsg);

@@ -11,6 +11,7 @@
 
 #include <queue>
 #include "chrome/common/ipc_message.h"
+#include "mozilla/UniquePtr.h"
 
 namespace IPC {
 
@@ -102,7 +103,7 @@ class Channel {
   
   
   
-  bool Send(Message* message);
+  bool Send(mozilla::UniquePtr<Message> message);
 
   
   
