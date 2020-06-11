@@ -40,6 +40,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "geoSpecificDefaults",
+  "browser.search.geoSpecificDefaults",
+  false
+);
+
 const log = console.createInstance({
   prefix: "Region.jsm",
   maxLogLevel: loggingEnabled ? "All" : "Warn",
@@ -99,6 +106,9 @@ class RegionDetector {
 
 
   async _fetchRegion() {
+    if (!geoSpecificDefaults) {
+      return null;
+    }
     let startTime = Date.now();
     let telemetryResult = this.TELEMETRY.SUCCESS;
     let result = null;
