@@ -85,6 +85,11 @@ function ContentRestoreInternal(chromeGlobal) {
   
   
   
+  this._tabDataForFinishRestoreHistory = null;
+
+  
+  
+  
   this._restoringDocument = null;
 
   
@@ -173,24 +178,25 @@ ContentRestoreInternal.prototype = {
       webNavigation.sessionHistory.legacySHistory.addSHistoryListener(listener);
       this._historyListener = listener;
 
+      this._tabDataForFinishRestoreHistory = tabData;
       this.finishRestoreHistory(callbacks);
     }
   },
 
   finishRestoreHistory(callbacks) {
+    let tabData = this._tabDataForFinishRestoreHistory;
+    this._tabDataForFinishRestoreHistory = null;
+
     
     
     SessionStoreUtils.restoreDocShellCapabilities(
       this.docShell,
-      this._tabData.disallow
+      tabData.disallow
     );
 
-    if (this._tabData.storage && this.docShell instanceof Ci.nsIDocShell) {
-      SessionStoreUtils.restoreSessionStorage(
-        this.docShell,
-        this._tabData.storage
-      );
-      delete this._tabData.storage;
+    if (tabData.storage && this.docShell instanceof Ci.nsIDocShell) {
+      SessionStoreUtils.restoreSessionStorage(this.docShell, tabData.storage);
+      delete tabData.storage;
     }
 
     
