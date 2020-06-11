@@ -1788,12 +1788,27 @@ class nsTArray_Impl
   void RemoveElementAt(index_type aIndex) { RemoveElementsAt(aIndex, 1); }
 
   
-  void RemoveLastElement() { RemoveElementAt(Length() - 1); }
+  void RemoveLastElement() {
+    
+    
+    MOZ_ASSERT(!base_type::IsEmpty());
+    TruncateLength(Length() - 1);
+  }
 
   
   [[nodiscard]] elem_type PopLastElement() {
-    elem_type elem = std::move(LastElement());
-    RemoveLastElement();
+    
+    
+    
+    
+    
+    MOZ_ASSERT(!base_type::IsEmpty());
+    const size_type oldLen = Length();
+    if (MOZ_UNLIKELY(0 == oldLen)) {
+      InvalidArrayIndex_CRASH(1, 0);
+    }
+    elem_type elem = std::move(Elements()[oldLen - 1]);
+    TruncateLengthUnsafe(oldLen - 1);
     return elem;
   }
 
@@ -2137,14 +2152,14 @@ class nsTArray_Impl
  protected:
   template <typename ActualAlloc = Alloc>
   typename ActualAlloc::ResultType SetLength(size_type aNewLen) {
-    size_type oldLen = Length();
+    const size_type oldLen = Length();
     if (aNewLen > oldLen) {
       return ActualAlloc::ConvertBoolToResultType(
           InsertElementsAtInternal<ActualAlloc>(oldLen, aNewLen - oldLen) !=
           nullptr);
     }
 
-    TruncateLength(aNewLen);
+    TruncateLengthUnsafe(aNewLen);
     return ActualAlloc::ConvertBoolToResultType(true);
   }
 
@@ -2160,9 +2175,24 @@ class nsTArray_Impl
   
   
   void TruncateLength(size_type aNewLen) {
-    size_type oldLen = Length();
-    MOZ_ASSERT(aNewLen <= oldLen, "caller should use SetLength instead");
-    RemoveElementsAt(aNewLen, oldLen - aNewLen);
+    
+    
+    MOZ_ASSERT(aNewLen <= Length(), "caller should use SetLength instead");
+
+    if (MOZ_UNLIKELY(aNewLen > Length())) {
+      InvalidArrayIndex_CRASH(aNewLen, Length());
+    }
+
+    TruncateLengthUnsafe(aNewLen);
+  }
+
+ private:
+  void TruncateLengthUnsafe(size_type aNewLen) {
+    const size_type oldLen = Length();
+    if (oldLen) {
+      DestructRange(aNewLen, oldLen - aNewLen);
+      base_type::mHdr->mLength = aNewLen;
+    }
   }
 
   
