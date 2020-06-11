@@ -7,7 +7,6 @@
 #include "mozilla/AbstractThread.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/ContentBlockingUserInteraction.h"
 #include "mozilla/ContentPrincipal.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/dom/ContentParent.h"
@@ -123,9 +122,7 @@ static const nsLiteralCString kPreloadPermissions[] = {
     
     
     
-    NS_LITERAL_CSTRING("cookie"),
-
-    USER_INTERACTION_PERM};
+    NS_LITERAL_CSTRING("cookie")};
 
 
 
