@@ -10,6 +10,7 @@
 
 
 
+
 "use strict";
 
 ChromeUtils.import("resource://gre/modules/OSKeyStore.jsm", this);
@@ -152,6 +153,17 @@ const TEST_CREDIT_CARD_3 = {
   "cc-exp-month": 1,
   "cc-exp-year": 2000,
   "cc-type": "mastercard",
+};
+
+const TEST_CREDIT_CARD_4 = {
+  "cc-number": "5105105105105100",
+  "cc-type": "mastercard",
+};
+
+const TEST_CREDIT_CARD_5 = {
+  "cc-name": "Chris P. Bacon",
+  "cc-number": "4012888888881881",
+  "cc-type": "visa",
 };
 
 const MAIN_BUTTON = "button";
