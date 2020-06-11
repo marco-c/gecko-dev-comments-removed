@@ -8,6 +8,7 @@
 #define mozilla_dom_quota_MemoryOutputStream_h
 
 #include "nsIOutputStream.h"
+#include "nsString.h"
 
 namespace mozilla {
 namespace dom {
@@ -35,7 +36,7 @@ class MemoryOutputStream final : public nsIOutputStream {
  private:
   MemoryOutputStream() : mOffset(0) {}
 
-  virtual ~MemoryOutputStream() {}
+  virtual ~MemoryOutputStream() = default;
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOUTPUTSTREAM
