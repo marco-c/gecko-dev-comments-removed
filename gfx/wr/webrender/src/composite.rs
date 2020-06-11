@@ -500,7 +500,11 @@ impl CompositeState {
                     let surface = descriptor.resolve(resource_cache, tile_cache.current_tile_size);
                     (
                         CompositeTileSurface::Texture { surface },
-                        tile.is_opaque || tile_cache.is_opaque(),
+                        
+                        
+                        
+                        
+                        tile.is_opaque || (!tile.has_compositor_surface && tile_cache.is_opaque()),
                     )
                 }
             };
