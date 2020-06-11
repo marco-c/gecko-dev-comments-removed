@@ -347,26 +347,20 @@ RuleEditor.prototype = {
       this._updateLocation(null);
     }
 
-    let url = null;
-    if (this.rule.sheet) {
-      url = this.rule.sheet.href || this.rule.sheet.nodeHref;
-    }
     if (
-      url &&
+      this.rule.sheet &&
       !this.rule.isSystem &&
       this.rule.domRule.type !== ELEMENT_STYLE
     ) {
       
       
-      const sourceLine = this.rule.ruleLine;
-      const sourceColumn = this.rule.ruleColumn;
       if (this._unsubscribeSourceMap) {
         this._unsubscribeSourceMap();
       }
-      this._unsubscribeSourceMap = this.sourceMapURLService.subscribeByURL(
-        url,
-        sourceLine,
-        sourceColumn,
+      this._unsubscribeSourceMap = this.sourceMapURLService.subscribeByID(
+        this.rule.sheet.actorID,
+        this.rule.ruleLine,
+        this.rule.ruleColumn,
         this._updateLocation
       );
       

@@ -940,15 +940,15 @@ class Rule {
 
 
   subscribeToLocationChange() {
-    const { url, line, column } = this.generatedLocation;
+    const { sheet, line, column } = this.generatedLocation;
 
-    if (url && !this.isSystem && this.domRule.type !== ELEMENT_STYLE) {
+    if (sheet && !this.isSystem && this.domRule.type !== ELEMENT_STYLE) {
       
       if (this._unsubscribeSourceMap) {
         this._unsubscribeSourceMap();
       }
-      this._unsubscribeSourceMap = this.sourceMapURLService.subscribeByURL(
-        url,
+      this._unsubscribeSourceMap = this.sourceMapURLService.subscribeByID(
+        sheet.actorID,
         line,
         column,
         this.updateOriginalLocation
