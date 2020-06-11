@@ -101,7 +101,7 @@ class MozFramebuffer;
 namespace layers {
 class CompositableHost;
 class SurfaceDescriptor;
-}
+}  
 
 namespace webgl {
 class AvailabilityRunnable;
@@ -483,6 +483,7 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr<WebGLContext> {
   
  private:
   bool PresentInto(gl::SwapChain& swapChain);
+  bool PresentIntoXR(gl::SwapChain& swapChain, const gl::MozFramebuffer& fb);
 
  public:
   void Present(WebGLFramebuffer*, layers::TextureType);
