@@ -117,8 +117,6 @@ class FileReader final : public DOMEventTargetHelper,
   eDataFormat DataFormat() const { return mDataFormat; }
   const nsString& Result() const { return mResult; }
 
-  void InitialAsyncWait();
-
  private:
   virtual ~FileReader();
 
@@ -193,10 +191,6 @@ class FileReader final : public DOMEventTargetHelper,
   
   
   RefPtr<StrongWorkerRef> mStrongWorkerRef;
-
-  
-  class AsyncWaitRunnable;
-  RefPtr<AsyncWaitRunnable> mAsyncWaitRunnable;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(FileReader, FILEREADER_ID)
