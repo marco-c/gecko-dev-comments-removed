@@ -264,6 +264,7 @@ function getLinkifiedElements({
             
             href: openLink || isInContentPage ? useUrl : null,
             target: "_blank",
+            rel: "noopener noreferrer",
             onClick: openLink
               ? e => {
                   e.preventDefault();
