@@ -4,8 +4,12 @@
 
 
 
+DIRS += [
+    'target-helpers',
+]
+
 DevToolsModules(
-    'FrameWatchers.jsm',
     'watcher.js',
+    'WatcherRegistry.jsm',
 )
 

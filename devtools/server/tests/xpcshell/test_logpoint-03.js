@@ -8,17 +8,27 @@
 
 
 
+const ConsoleMessages = require("devtools/server/actors/resources/console-messages");
+
 add_task(
   threadFrontTest(async ({ threadActor, threadFront, debuggee, client }) => {
     let lastMessage, lastExpression;
-    threadActor._parent._consoleActor = {
-      onConsoleAPICall(message) {
-        lastMessage = message;
-      },
+    const targetActor = threadActor._parent;
+    
+    
+    targetActor._consoleActor = {
       evaluateJS(expression) {
         lastExpression = expression;
       },
     };
+    
+    ConsoleMessages.watch(targetActor, {
+      onAvailable: messages => {
+        if (messages.length > 0) {
+          lastMessage = messages[0].message;
+        }
+      },
+    });
 
     const packet = await executeOnNextTickAndWaitForPause(
       () => evalCode(debuggee),

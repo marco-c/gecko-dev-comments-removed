@@ -312,16 +312,23 @@ function getAdHocFrontOrPrimitiveGrip(packet, parentFront) {
   
   
   
+  
   const isPacketAnObject = packet && typeof packet === "object";
+  const isFront = !!packet.typeName;
   if (
     !isPacketAnObject ||
     packet.type == "symbol" ||
-    (packet.type !== "mapEntry" && !packet.actor)
+    (packet.type !== "mapEntry" && !packet.actor) ||
+    isFront
   ) {
     return packet;
   }
 
-  const { conn, targetFront } = parentFront;
+  const { conn } = parentFront;
+  
+  const targetFront = parentFront.isTargetFront
+    ? parentFront
+    : parentFront.targetFront;
 
   
   
@@ -341,8 +348,16 @@ function getAdHocFrontOrPrimitiveGrip(packet, parentFront) {
 
   if (type === "mapEntry" && packet.preview) {
     const { key, value } = packet.preview;
-    packet.preview.key = getAdHocFrontOrPrimitiveGrip(key, parentFront);
-    packet.preview.value = getAdHocFrontOrPrimitiveGrip(value, parentFront);
+    packet.preview.key = getAdHocFrontOrPrimitiveGrip(
+      key,
+      parentFront,
+      targetFront
+    );
+    packet.preview.value = getAdHocFrontOrPrimitiveGrip(
+      value,
+      parentFront,
+      targetFront
+    );
     return packet;
   }
 

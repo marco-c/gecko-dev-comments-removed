@@ -4,13 +4,25 @@
 
 "use strict";
 
-const Services = require("Services");
 const protocol = require("devtools/shared/protocol");
 const { watcherSpec } = require("devtools/shared/specs/watcher");
 
-const ChromeUtils = require("ChromeUtils");
-const { registerWatcher, unregisterWatcher } = ChromeUtils.import(
-  "resource://devtools/server/actors/descriptors/watcher/FrameWatchers.jsm"
+const Resources = require("devtools/server/actors/resources/index");
+const {
+  TargetActorRegistry,
+} = require("devtools/server/actors/targets/target-actor-registry.jsm");
+const {
+  WatcherRegistry,
+} = require("devtools/server/actors/descriptors/watcher/WatcherRegistry.jsm");
+
+const TARGET_TYPES = {
+  FRAME: "frame",
+};
+const TARGET_HELPERS = {};
+loader.lazyRequireGetter(
+  TARGET_HELPERS,
+  TARGET_TYPES.FRAME,
+  "devtools/server/actors/descriptors/watcher/target-helpers/frame-helper"
 );
 
 exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
@@ -24,11 +36,36 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   },
 
   destroy: function() {
-    protocol.Actor.prototype.destroy.call(this);
+    
+    
+    for (const targetType of Object.values(TARGET_TYPES)) {
+      this.unwatchTargets(targetType);
+    }
+    this.unwatchResources(Object.values(Resources.TYPES));
 
     
-    
-    this.unwatchTargets("frame");
+    protocol.Actor.prototype.destroy.call(this);
+  },
+
+  
+
+
+
+
+
+
+  get browsingContextID() {
+    return this._browser ? this._browser.browsingContext.id : null;
+  },
+
+  
+
+
+
+
+
+  get watchedResources() {
+    return WatcherRegistry.getWatchedResources(this);
   },
 
   form() {
@@ -37,73 +74,53 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       traits: {
         
         frame: true,
+        resources: {
+          
+          
+          
+          
+          
+          
+          
+          [Resources.TYPES.CONSOLE_MESSAGE]: false,
+        },
       },
     };
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
   async watchTargets(targetType) {
-    
-    
-    
-    
-    const { prefix } = this.conn;
-    const perPrefixMap =
-      Services.ppmm.sharedData.get("DevTools:watchedPerPrefix") || new Map();
-    let perPrefixData = perPrefixMap.get(prefix);
-    if (!perPrefixData) {
-      perPrefixData = {
-        targets: new Set(),
-        browsingContextID: null,
-      };
-      perPrefixMap.set(prefix, perPrefixData);
-    }
-    if (perPrefixData.targets.has(targetType)) {
-      throw new Error(`Already watching for '${targetType}' target`);
-    }
-    perPrefixData.targets.add(targetType);
-    if (this._browser) {
-      
-      
-      perPrefixData.browsingContextID = this._browser.browsingContext.id;
-    }
+    WatcherRegistry.watchTargets(this, targetType);
 
-    Services.ppmm.sharedData.set("DevTools:watchedPerPrefix", perPrefixMap);
-
+    const watchedResources = WatcherRegistry.getWatchedResources(this);
+    const targetHelperModule = TARGET_HELPERS[targetType];
     
-    Services.ppmm.sharedData.flush();
-
-    if (targetType == "frame") {
-      
-      await registerWatcher(
-        this,
-        this._browser ? this._browser.browsingContext.id : null
-      );
-    }
+    await targetHelperModule.createTargets(this, watchedResources);
   },
 
   unwatchTargets(targetType) {
-    const perPrefixMap = Services.ppmm.sharedData.get(
-      "DevTools:watchedPerPrefix"
-    );
-    if (!perPrefixMap) {
+    const isWatchingTargets = WatcherRegistry.unwatchTargets(this, targetType);
+    if (!isWatchingTargets) {
       return;
     }
-    const { prefix } = this.conn;
-    const perPrefixData = perPrefixMap.get(prefix);
-    if (!perPrefixData) {
-      return;
-    }
-    perPrefixData.targets.delete(targetType);
-    if (perPrefixData.targets.size === 0) {
-      perPrefixMap.delete(prefix);
-    }
-    Services.ppmm.sharedData.set("DevTools:watchedPerPrefix", perPrefixMap);
-    
-    Services.ppmm.sharedData.flush();
 
-    if (targetType == "frame") {
-      unregisterWatcher(this);
-    }
+    const targetHelperModule = TARGET_HELPERS[targetType];
+    targetHelperModule.destroyTargets(this);
+
+    
+    WatcherRegistry.maybeUnregisteringJSWindowActor();
   },
 
   
@@ -138,5 +155,87 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       return browsingContext.embedderWindowGlobal.browsingContext.id;
     }
     return null;
+  },
+
+  
+
+
+
+
+
+
+
+  async watchResources(resourceTypes) {
+    WatcherRegistry.watchResources(this, resourceTypes);
+
+    
+    for (const targetType in TARGET_HELPERS) {
+      
+      
+      if (
+        !WatcherRegistry.isWatchingTargets(this, targetType) &&
+        targetType != TARGET_TYPES.FRAME
+      ) {
+        continue;
+      }
+      const targetHelperModule = TARGET_HELPERS[targetType];
+      await targetHelperModule.watchResources({
+        watcher: this,
+        resourceTypes,
+      });
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    const targetActor = TargetActorRegistry.getTargetActor(
+      this.browsingContextID
+    );
+    if (targetActor) {
+      await targetActor.watchTargetResources(resourceTypes);
+    }
+  },
+
+  
+
+
+
+
+
+  unwatchResources(resourceTypes) {
+    const isWatchingResources = WatcherRegistry.unwatchResources(
+      this,
+      resourceTypes
+    );
+    if (!isWatchingResources) {
+      return;
+    }
+
+    
+    
+    if (!this._browser || this._browser.browsingContext) {
+      for (const targetType in TARGET_HELPERS) {
+        
+        
+        if (
+          !WatcherRegistry.isWatchingTargets(this, targetType) &&
+          targetType != TARGET_TYPES.FRAME
+        ) {
+          continue;
+        }
+        const targetHelperModule = TARGET_HELPERS[targetType];
+        targetHelperModule.unwatchResources({
+          watcher: this,
+          resourceTypes,
+        });
+      }
+    }
+
+    
+    WatcherRegistry.maybeUnregisteringJSWindowActor();
   },
 });

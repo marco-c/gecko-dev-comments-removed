@@ -65,6 +65,14 @@ function TargetMixin(parentClass) {
 
 
 
+    get isTargetFront() {
+      return true;
+    }
+
+    
+
+
+
 
 
 

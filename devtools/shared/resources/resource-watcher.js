@@ -7,6 +7,14 @@
 const EventEmitter = require("devtools/shared/event-emitter");
 const Services = require("Services");
 
+
+loader.lazyRequireGetter(
+  this,
+  "getAdHocFrontOrPrimitiveGrip",
+  "devtools/client/fronts/object",
+  true
+);
+
 class ResourceWatcher {
   
 
@@ -23,11 +31,13 @@ class ResourceWatcher {
 
   constructor(targetList) {
     this.targetList = targetList;
+    this.descriptorFront = targetList.descriptorFront;
 
     this._onTargetAvailable = this._onTargetAvailable.bind(this);
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
 
     this._onResourceAvailable = this._onResourceAvailable.bind(this);
+    this._onResourceDestroyed = this._onResourceDestroyed.bind(this);
 
     this._availableListeners = new EventEmitter();
     this._destroyedListeners = new EventEmitter();
@@ -67,6 +77,15 @@ class ResourceWatcher {
 
   async watchResources(resources, options) {
     const { onAvailable, ignoreExistingResources = false } = options;
+
+    
+    
+    if (!this.watcher) {
+      const supportsWatcher = this.descriptorFront?.traits?.watcher;
+      if (supportsWatcher) {
+        this.watcher = await this.descriptorFront.getWatcher();
+      }
+    }
 
     
     
@@ -176,8 +195,25 @@ class ResourceWatcher {
         continue;
       }
       
+      
+      
+      if (this._hasWatcherSupport(resourceType)) {
+        continue;
+      }
       await this._watchResourcesForTarget(targetFront, resourceType);
     }
+    
+    
+    
+    
+    targetFront.on(
+      "resource-available-form",
+      this._onResourceAvailable.bind(this, targetFront)
+    );
+    targetFront.on(
+      "resource-destroyed-form",
+      this._onResourceDestroyed.bind(this, targetFront)
+    );
   }
 
   
@@ -211,6 +247,14 @@ class ResourceWatcher {
         resource.targetFront = targetFront;
       }
       const { resourceType } = resource;
+      if (resourceType == ResourceWatcher.TYPES.CONSOLE_MESSAGE) {
+        if (Array.isArray(resource.message.arguments)) {
+          
+          resource.message.arguments = resource.message.arguments.map(arg =>
+            getAdHocFrontOrPrimitiveGrip(arg, targetFront)
+          );
+        }
+      }
 
       this._availableListeners.emit(resourceType, {
         
@@ -253,6 +297,10 @@ class ResourceWatcher {
     );
   }
 
+  _hasWatcherSupport(resourceType) {
+    return this.watcher?.traits?.resources?.[resourceType];
+  }
+
   
 
 
@@ -270,6 +318,14 @@ class ResourceWatcher {
     if (listeners > 1) {
       return;
     }
+
+    
+    
+    if (this._hasWatcherSupport(resourceType)) {
+      await this.watcher.watchResources([resourceType]);
+      return;
+    }
+    
 
     
     
@@ -329,6 +385,14 @@ class ResourceWatcher {
     this._cache = this._cache.filter(
       cachedResource => cachedResource.resourceType !== resourceType
     );
+
+    
+    
+    if (this._hasWatcherSupport(resourceType)) {
+      this.watcher.unwatchResources([resourceType]);
+      return;
+    }
+    
 
     
     
