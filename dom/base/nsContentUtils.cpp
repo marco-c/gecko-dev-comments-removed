@@ -9859,14 +9859,6 @@ uint64_t nsContentUtils::GenerateTabId() {
 }
 
 
-static uint64_t gNextBrowserId = 0;
-
-
-uint64_t nsContentUtils::GenerateBrowserId() {
-  return GenerateProcessSpecificId(++gNextBrowserId);
-}
-
-
 static uint64_t gNextBrowsingContextId = 0;
 
 
