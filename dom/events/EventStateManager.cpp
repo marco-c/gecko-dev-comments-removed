@@ -1824,6 +1824,8 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
     return;
   }
 
+  AutoWeakFrame targetFrameBefore = mCurrentTarget;
+  auto autoRestore = MakeScopeExit([&] { mCurrentTarget = targetFrameBefore; });
   mCurrentTarget = mGestureDownFrameOwner->GetPrimaryFrame();
 
   if (!mCurrentTarget || !mCurrentTarget->GetNearestWidget()) {
@@ -1940,9 +1942,6 @@ void EventStateManager::GenerateDragGesture(nsPresContext* aPresContext,
     MOZ_ASSERT(false);
   }
 
-  
-  
-  
   
   
   
