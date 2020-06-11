@@ -328,7 +328,8 @@ class RtpRtcp : public Module {
 
   
   virtual void RemoteRTCPSenderInfo(uint32_t* packet_count,
-                                    uint32_t* octet_count) const = 0;
+                                    uint32_t* octet_count,
+                                    NtpTime* ntp_timestamp) const = 0;
 
   
   
