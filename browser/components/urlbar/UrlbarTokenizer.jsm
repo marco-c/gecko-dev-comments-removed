@@ -285,6 +285,8 @@ function splitString(searchString) {
     if (!hasRestrictionToken && token.length > 1) {
       
       
+      
+      
       if (
         i == 0 &&
         chars.includes(token[0]) &&
@@ -296,7 +298,7 @@ function splitString(searchString) {
         continue;
       } else if (
         i == tokens.length - 1 &&
-        chars.includes(token[token.length - 1]) &&
+        token[token.length - 1] == UrlbarTokenizer.RESTRICT.SEARCH &&
         !UrlbarTokenizer.looksLikeUrl(token, { requirePath: true })
       ) {
         hasRestrictionToken = true;
