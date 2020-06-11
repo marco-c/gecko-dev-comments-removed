@@ -1722,7 +1722,10 @@ static void MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
         JSScript* script = jsFrame.interpreterScript;
         jsbytecode* pc = jsFrame.interpreterPC();
         js::ProfilingStackFrame stackFrame;
-        stackFrame.initJsFrame("", jsFrame.label, script, pc, jsFrame.realmID);
+        constexpr uint32_t ExtraFlags =
+            uint32_t(js::ProfilingStackFrame::Flags::IS_BLINTERP_FRAME);
+        stackFrame.initJsFrame<ExtraFlags>("", jsFrame.label, script, pc,
+                                           jsFrame.realmID);
         aCollector.CollectProfilingStackFrame(stackFrame);
       } else {
         MOZ_ASSERT(jsFrame.kind == JS::ProfilingFrameIterator::Frame_Ion ||

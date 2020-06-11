@@ -211,6 +211,9 @@ class ProfilingStackFrame {
     
     NONSENSITIVE = 1 << 9,
 
+    
+    IS_BLINTERP_FRAME = 1 << 10,
+
     FLAGS_BITCOUNT = 16,
     FLAGS_MASK = (1 << FLAGS_BITCOUNT) - 1
   };
