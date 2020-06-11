@@ -245,7 +245,9 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  bool MaybeTriggerProcessSwitch();
+  
+  
+  bool MaybeTriggerProcessSwitch(bool* aWillSwitchToRemote);
 
   
   

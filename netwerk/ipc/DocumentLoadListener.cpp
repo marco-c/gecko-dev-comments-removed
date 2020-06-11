@@ -1158,12 +1158,14 @@ void DocumentLoadListener::SerializeRedirectData(
   }
 }
 
-bool DocumentLoadListener::MaybeTriggerProcessSwitch() {
+bool DocumentLoadListener::MaybeTriggerProcessSwitch(
+    bool* aWillSwitchToRemote) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_DIAGNOSTIC_ASSERT(!mDoingProcessSwitch,
                         "Already in the middle of switching?");
   MOZ_DIAGNOSTIC_ASSERT(mChannel);
   MOZ_DIAGNOSTIC_ASSERT(mParentChannelListener);
+  MOZ_DIAGNOSTIC_ASSERT(aWillSwitchToRemote);
 
   LOG(("DocumentLoadListener MaybeTriggerProcessSwitch [this=%p]", this));
 
@@ -1325,6 +1327,8 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch() {
     LOG(("Process Switch Abort: non-remote target process"));
     return false;
   }
+
+  *aWillSwitchToRemote = !remoteType.IsEmpty();
 
   LOG(("Process Switch: Changing Remoteness from '%s' to '%s'",
        NS_ConvertUTF16toUTF8(currentRemoteType).get(),
@@ -1622,6 +1626,23 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   
   
   
+  bool willBeRemote = false;
+  if (status == NS_BINDING_ABORTED ||
+      !MaybeTriggerProcessSwitch(&willBeRemote)) {
+    TriggerRedirectToRealChannel();
+
+    
+    if (GetBrowsingContext() && GetBrowsingContext()->GetContentParent()) {
+      willBeRemote = true;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
   
   
   
@@ -1629,17 +1650,10 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   
   if (httpChannel) {
     Unused << httpChannel->GetApplyConversion(&mOldApplyConversion);
-    httpChannel->SetApplyConversion(false);
+    if (willBeRemote) {
+      httpChannel->SetApplyConversion(false);
+    }
   }
-
-  
-  
-  
-  if (status != NS_BINDING_ABORTED && MaybeTriggerProcessSwitch()) {
-    return NS_OK;
-  }
-
-  TriggerRedirectToRealChannel();
 
   return NS_OK;
 }
