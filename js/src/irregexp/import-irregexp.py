@@ -60,7 +60,7 @@ def copy_and_update_includes(src_path, dst_path):
 
     
     regexp_include = re.compile('#include "src/regexp')
-    regexp_include_new = '#include "irregexp'
+    regexp_include_new = '#include "irregexp/imported'
 
     
     other_include = re.compile('#include "src/')
@@ -77,8 +77,8 @@ def copy_and_update_includes(src_path, dst_path):
 
     for line in src:
         if adding_shim_now:
-            if (line == '\n' or line > '#include "src/regexp/regexp-shim.h"'):
-                dst.write('#include "irregexp/regexp-shim.h"\n')
+            if line == '\n':
+                dst.write('#include "irregexp/RegExpShim.h"\n')
                 need_to_add_shim = False
                 adding_shim_now = False
 
@@ -103,7 +103,7 @@ def import_from(srcdir, dstdir):
             continue
         if str(file.name) in excluded:
             continue
-        copy_and_update_includes(file, dstdir / file.name)
+        copy_and_update_includes(file, dstdir / "imported" / file.name)
 
     
     hash = get_hash(srcdir)
