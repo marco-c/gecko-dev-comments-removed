@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_ContentBlockingLog_h
 #define mozilla_ContentBlockingLog_h
@@ -23,14 +23,15 @@ class nsIPrincipal;
 namespace mozilla {
 
 class ContentBlockingLog final {
-  typedef ContentBlockingNotifier::StorageAccessGrantedReason
-      StorageAccessGrantedReason;
+  typedef ContentBlockingNotifier::StorageAccessPermissionGrantedReason
+      StorageAccessPermissionGrantedReason;
 
   struct LogEntry {
     uint32_t mType;
     uint32_t mRepeatCount;
     bool mBlocked;
-    Maybe<ContentBlockingNotifier::StorageAccessGrantedReason> mReason;
+    Maybe<ContentBlockingNotifier::StorageAccessPermissionGrantedReason>
+        mReason;
     nsTArray<nsCString> mTrackingFullHashes;
   };
 
@@ -58,7 +59,7 @@ class ContentBlockingLog final {
 
   struct StringWriteFunc : public JSONWriteFunc {
     nsACString&
-        mBuffer;  
+        mBuffer;  // The lifetime of the struct must be bound to the buffer
     explicit StringWriteFunc(nsACString& aBuffer) : mBuffer(aBuffer) {}
 
     void Write(const char* aStr) override { mBuffer.Append(aStr); }
@@ -86,17 +87,21 @@ class ContentBlockingLog final {
   ContentBlockingLog() = default;
   ~ContentBlockingLog() = default;
 
-  
-  
-  
+  // Record the log in the parent process. This should be called only in the
+  // parent process and will replace the RecordLog below after we remove the
+  // ContentBlockingLog from content processes.
   Maybe<uint32_t> RecordLogParent(
       const nsACString& aOrigin, uint32_t aType, bool aBlocked,
-      const Maybe<ContentBlockingNotifier::StorageAccessGrantedReason>& aReason,
+      const Maybe<
+          ContentBlockingNotifier::StorageAccessPermissionGrantedReason>&
+          aReason,
       const nsTArray<nsCString>& aTrackingFullHashes);
 
   void RecordLog(
       const nsACString& aOrigin, uint32_t aType, bool aBlocked,
-      const Maybe<ContentBlockingNotifier::StorageAccessGrantedReason>& aReason,
+      const Maybe<
+          ContentBlockingNotifier::StorageAccessPermissionGrantedReason>&
+          aReason,
       const nsTArray<nsCString>& aTrackingFullHashes) {
     RecordLogInternal(aOrigin, aType, aBlocked, aReason, aTrackingFullHashes);
   }
@@ -139,10 +144,10 @@ class ContentBlockingLog final {
   }
 
   bool HasBlockedAnyOfType(uint32_t aType) const {
-    
-    
-    
-    
+    // Note: nothing inside this loop should return false, the goal for the
+    // loop is to scan the log to see if we find a matching entry, and if so
+    // we would return true, otherwise in the end of the function outside of
+    // the loop we take the common `return false;` statement.
     for (const OriginEntry& entry : mLog) {
       if (!entry.mData) {
         continue;
@@ -190,7 +195,7 @@ class ContentBlockingLog final {
     aSizes.mDOMOtherSize +=
         mLog.ShallowSizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
 
-    
+    // Now add the sizes of each origin log queue.
     for (const OriginEntry& entry : mLog) {
       if (entry.mData) {
         aSizes.mDOMOtherSize += aSizes.mState.mMallocSizeOf(entry.mData.get()) +
@@ -203,7 +208,7 @@ class ContentBlockingLog final {
   uint32_t GetContentBlockingEventsInLog() {
     uint32_t events = 0;
 
-    
+    // We iterate the whole log to produce the overview of blocked events.
     for (const OriginEntry& entry : mLog) {
       if (!entry.mData) {
         continue;
@@ -245,7 +250,8 @@ class ContentBlockingLog final {
  private:
   void RecordLogInternal(
       const nsACString& aOrigin, uint32_t aType, bool aBlocked,
-      const Maybe<ContentBlockingNotifier::StorageAccessGrantedReason>&
+      const Maybe<
+          ContentBlockingNotifier::StorageAccessPermissionGrantedReason>&
           aReason = Nothing(),
       const nsTArray<nsCString>& aTrackingFullHashes = nsTArray<nsCString>()) {
     DebugOnly<bool> isCookiesBlockedTracker =
@@ -272,12 +278,12 @@ class ContentBlockingLog final {
         auto& last = entry.mData->mLogs.LastElement();
         if (last.mType == aType && last.mBlocked == aBlocked) {
           ++last.mRepeatCount;
-          
-          
-          
-          
-          
-          
+          // Don't record recorded events.  This helps compress our log.
+          // We don't care about if the the reason is the same, just keep the
+          // first one.
+          // Note: {aReason, aTrackingFullHashes} are not compared here and we
+          // simply keep the first for the reason, and merge hashes to make sure
+          // they can be correctly recorded.
           for (const auto& hash : aTrackingFullHashes) {
             if (!last.mTrackingFullHashes.Contains(hash)) {
               last.mTrackingFullHashes.AppendElement(hash);
@@ -289,7 +295,7 @@ class ContentBlockingLog final {
       if (entry.mData->mLogs.Length() ==
           std::max(1u,
                    StaticPrefs::browser_contentblocking_originlog_length())) {
-        
+        // Cap the size at the maximum length adjustable by the pref
         entry.mData->mLogs.RemoveElementAt(0);
       }
       entry.mData->mLogs.AppendElement(
@@ -297,7 +303,7 @@ class ContentBlockingLog final {
       return;
     }
 
-    
+    // The entry has not been found.
 
     OriginEntry* entry = mLog.AppendElement();
     if (NS_WARN_IF(!entry || !entry->mData)) {
@@ -373,8 +379,8 @@ class ContentBlockingLog final {
       {
         aWriter.IntElement(
             nsIWebProgressListener::STATE_LOADED_LEVEL_1_TRACKING_CONTENT);
-        aWriter.BoolElement(true);  
-        aWriter.IntElement(1);      
+        aWriter.BoolElement(true);  // blocked
+        aWriter.IntElement(1);      // repeat count
       }
       aWriter.EndArray();
     }
@@ -383,8 +389,8 @@ class ContentBlockingLog final {
       {
         aWriter.IntElement(
             nsIWebProgressListener::STATE_LOADED_LEVEL_2_TRACKING_CONTENT);
-        aWriter.BoolElement(true);  
-        aWriter.IntElement(1);      
+        aWriter.BoolElement(true);  // blocked
+        aWriter.IntElement(1);      // repeat count
       }
       aWriter.EndArray();
     }
@@ -393,8 +399,8 @@ class ContentBlockingLog final {
       {
         aWriter.IntElement(nsIWebProgressListener::STATE_COOKIES_LOADED);
         aWriter.BoolElement(
-            aEntry.mData->mHasCookiesLoaded.value());  
-        aWriter.IntElement(1);                         
+            aEntry.mData->mHasCookiesLoaded.value());  // blocked
+        aWriter.IntElement(1);                         // repeat count
       }
       aWriter.EndArray();
     }
@@ -404,8 +410,8 @@ class ContentBlockingLog final {
         aWriter.IntElement(
             nsIWebProgressListener::STATE_COOKIES_LOADED_TRACKER);
         aWriter.BoolElement(
-            aEntry.mData->mHasTrackerCookiesLoaded.value());  
-        aWriter.IntElement(1);                                
+            aEntry.mData->mHasTrackerCookiesLoaded.value());  // blocked
+        aWriter.IntElement(1);                                // repeat count
       }
       aWriter.EndArray();
     }
@@ -415,8 +421,8 @@ class ContentBlockingLog final {
         aWriter.IntElement(
             nsIWebProgressListener::STATE_COOKIES_LOADED_SOCIALTRACKER);
         aWriter.BoolElement(
-            aEntry.mData->mHasSocialTrackerCookiesLoaded.value());  
-        aWriter.IntElement(1);  
+            aEntry.mData->mHasSocialTrackerCookiesLoaded.value());  // blocked
+        aWriter.IntElement(1);  // repeat count
       }
       aWriter.EndArray();
     }
@@ -426,6 +432,6 @@ class ContentBlockingLog final {
   OriginDataTable mLog;
 };
 
-}  
+}  // namespace mozilla
 
 #endif

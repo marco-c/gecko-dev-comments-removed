@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AntiTrackingLog.h"
 #include "ContentBlockingLog.h"
@@ -27,14 +27,14 @@ using ipc::AutoIPCStream;
 
 typedef Telemetry::OriginMetricID OriginMetricID;
 
-
+// sync with TelemetryOriginData.inc
 NS_NAMED_LITERAL_CSTRING(ContentBlockingLog::kDummyOriginHash, "PAGELOAD");
 
-
-
+// randomly choose 1% users included in the content blocking measurement
+// based on their client id.
 static constexpr double kRatioReportUser = 0.01;
 
-
+// randomly choose 0.14% documents when the page is unload.
 static constexpr double kRatioReportDocument = 0.0014;
 
 static bool IsReportingPerUserEnabled() {
@@ -57,14 +57,14 @@ static bool IsReportingPerUserEnabled() {
     return false;
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * UUID might not be uniform-distributed (although some part of it could be).
+   * In order to generate more random result, usually we use a hash function,
+   * but here we hope it's fast and doesn't have to be cryptographic-safe.
+   * |XorShift128PlusRNG| looks like a good alternative because it takes a
+   * 128-bit data as its seed and always generate identical sequence if the
+   * initial seed is the same.
+   */
   static_assert(sizeof(nsID) == 16, "nsID is 128-bit");
   uint64_t* init = reinterpret_cast<uint64_t*>(&clientId);
   non_crypto::XorShift128PlusRNG rng(init[0], init[1]);
@@ -105,7 +105,8 @@ static void ReportOriginSingleHash(OriginMetricID aId,
 
 Maybe<uint32_t> ContentBlockingLog::RecordLogParent(
     const nsACString& aOrigin, uint32_t aType, bool aBlocked,
-    const Maybe<ContentBlockingNotifier::StorageAccessGrantedReason>& aReason,
+    const Maybe<ContentBlockingNotifier::StorageAccessPermissionGrantedReason>&
+        aReason,
     const nsTArray<nsCString>& aTrackingFullHashes) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
@@ -130,9 +131,9 @@ Maybe<uint32_t> ContentBlockingLog::RecordLogParent(
       MOZ_ASSERT(!aBlocked,
                  "We don't expected to see blocked "
                  "STATE_COOKIES_LOADED_SOCIALTRACKER");
-      
-      
-      
+      // Note that the logic in these branches are the logical negation of the
+      // logic in other branches, since the Document API we have is phrased
+      // in "loaded" terms as opposed to "blocked" terms.
       blockedValue = !aBlocked;
       [[fallthrough]];
 
@@ -158,7 +159,7 @@ Maybe<uint32_t> ContentBlockingLog::RecordLogParent(
       break;
 
     default:
-      
+      // Ignore nsIWebProgressListener::STATE_BLOCKED_UNSAFE_CONTENT;
       break;
   }
 
@@ -175,17 +176,17 @@ Maybe<uint32_t> ContentBlockingLog::RecordLogParent(
 
   if (events == oldEvents
 #ifdef ANDROID
-      
-      
-      
-      
-      
-      
+      // GeckoView always needs to notify about blocked trackers,
+      // since the GeckoView API always needs to report the URI and
+      // type of any blocked tracker. We use a platform-dependent code
+      // path here because reporting this notification on desktop
+      // platforms isn't necessary and doing so can have a big
+      // performance cost.
       && aType != nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT
 #endif
   ) {
-    
-    
+    // Avoid dispatching repeated notifications when nothing has
+    // changed
     return Nothing();
   }
 
@@ -242,21 +243,22 @@ void ContentBlockingLog::ReportOrigins() {
       }
 
       const bool isBlocked = logEntry.mBlocked;
-      Maybe<StorageAccessGrantedReason> reason = logEntry.mReason;
+      Maybe<StorageAccessPermissionGrantedReason> reason = logEntry.mReason;
 
       metricId = testMode ? OriginMetricID::ContentBlocking_Blocked_TestOnly
                           : OriginMetricID::ContentBlocking_Blocked;
       if (!isBlocked) {
         MOZ_ASSERT(reason.isSome());
         switch (reason.value()) {
-          case StorageAccessGrantedReason::eStorageAccessAPI:
+          case StorageAccessPermissionGrantedReason::eStorageAccessAPI:
             metricId =
                 testMode
                     ? OriginMetricID::
                           ContentBlocking_StorageAccessAPIExempt_TestOnly
                     : OriginMetricID::ContentBlocking_StorageAccessAPIExempt;
             break;
-          case StorageAccessGrantedReason::eOpenerAfterUserInteraction:
+          case StorageAccessPermissionGrantedReason::
+              eOpenerAfterUserInteraction:
             metricId =
                 testMode
                     ? OriginMetricID::
@@ -264,13 +266,14 @@ void ContentBlockingLog::ReportOrigins() {
                     : OriginMetricID::
                           ContentBlocking_OpenerAfterUserInteractionExempt;
             break;
-          case StorageAccessGrantedReason::eOpener:
+          case StorageAccessPermissionGrantedReason::eOpener:
             metricId =
                 testMode ? OriginMetricID::ContentBlocking_OpenerExempt_TestOnly
                          : OriginMetricID::ContentBlocking_OpenerExempt;
             break;
           default:
-            MOZ_ASSERT_UNREACHABLE("Unknown StorageAccessGrantedReason");
+            MOZ_ASSERT_UNREACHABLE(
+                "Unknown StorageAccessPermissionGrantedReason");
         }
       }
 
@@ -288,4 +291,4 @@ void ContentBlockingLog::ReportOrigins() {
   }
 }
 
-}  
+}  // namespace mozilla
