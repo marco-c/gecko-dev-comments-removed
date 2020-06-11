@@ -1758,6 +1758,10 @@ GeckoDriver.prototype.switchToFrame = async function(cmd) {
 
   let { id, focus } = cmd.parameters;
 
+  if (typeof id == "number") {
+    assert.unsignedShort(id, `Expected id to be unsigned short, got ${id}`);
+  }
+
   
   
   let byFrame;
