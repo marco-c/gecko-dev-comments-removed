@@ -56,7 +56,7 @@ MCall* WarpBuilderShared::makeCall(CallInfo& callInfo, bool needsThisCheck,
 
   
   
-  if (target && !target->isBuiltinNative()) {
+  if (target && target->hasJitEntry()) {
     targetArgs = std::max<uint32_t>(target->nargs(), callInfo.argc());
   }
 
@@ -80,8 +80,7 @@ MCall* WarpBuilderShared::makeCall(CallInfo& callInfo, bool needsThisCheck,
 
   
   
-  MOZ_ASSERT_IF(target && targetArgs > callInfo.argc(),
-                !target->isBuiltinNative());
+  MOZ_ASSERT_IF(target && targetArgs > callInfo.argc(), target->hasJitEntry());
   for (uint32_t i = targetArgs; i > callInfo.argc(); i--) {
     MConstant* undef = constant(UndefinedValue());
     if (!alloc().ensureBallast()) {

@@ -6199,7 +6199,7 @@ AbortReasonOr<MCall*> IonBuilder::makeCallHelper(
 
   
   
-  if (target && !target->isBuiltinNative()) {
+  if (target && target->hasJitEntry()) {
     targetArgs = std::max<uint32_t>(target->nargs(), callInfo.argc());
   }
 
@@ -6223,8 +6223,7 @@ AbortReasonOr<MCall*> IonBuilder::makeCallHelper(
 
   
   
-  MOZ_ASSERT_IF(target && targetArgs > callInfo.argc(),
-                !target->isBuiltinNative());
+  MOZ_ASSERT_IF(target && targetArgs > callInfo.argc(), target->hasJitEntry());
   for (int i = targetArgs; i > (int)callInfo.argc(); i--) {
     MConstant* undef = constant(UndefinedValue());
     if (!alloc().ensureBallast()) {
