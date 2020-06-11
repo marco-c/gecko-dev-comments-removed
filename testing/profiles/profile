@@ -1,13 +1,13 @@
-#!/bin/sh
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
 
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# The beginning of this script is both valid shell and valid python,
-# such that the script starts with the shell and is reexecuted python
+
+
+
+
+
+
+
+
 '''which' mach > /dev/null 2>&1 && exec mach python "$0" "$@" ||
 echo "mach not found, either add it to your \$PATH or run this script via ./mach python testing/profiles/profile"; exit  # noqa
 '''
@@ -162,8 +162,8 @@ def diff(a, b, fmt, limit_key):
             jsondiff.Symbol('insert'): res[1],
         }
 
-    # Post process results to make them JSON compatible and a
-    # bit more clear. Also calculate identical prefs.
+    
+    
     results = {}
     results['change'] = {k: v for k, v in res.items() if not isinstance(k, jsondiff.Symbol)}
 
@@ -264,7 +264,8 @@ def rm(profile, pref_file):
 
 def cli(args=sys.argv[1:]):
     parser = ArgumentParser()
-    subparsers = parser.add_subparsers()
+    subparsers = parser.add_subparsers(dest='func')
+    subparsers.required = True
 
     diff_parser = subparsers.add_parser('diff')
     diff_parser.add_argument('a', metavar='A',
