@@ -102,11 +102,16 @@ function tunnelToInnerBrowser(outer, inner) {
         inner._documentURI = outer._documentURI;
         inner._documentContentType = outer._documentContentType;
         inner._characterSet = outer._characterSet;
-        inner._contentPrincipal = outer._contentPrincipal;
         inner._isSyntheticDocument = outer._isSyntheticDocument;
         inner._innerWindowID = outer._innerWindowID;
         inner._remoteWebNavigation._currentURI =
           outer._remoteWebNavigation._currentURI;
+        
+        
+        
+        
+        
+        inner.contentPrincipal = outer.contentPrincipal;
       }
     },
 
