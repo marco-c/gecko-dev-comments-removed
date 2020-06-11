@@ -74,12 +74,32 @@ const GeckoViewTabBridge = {
 
 
 
+  async openOptionsPage(extensionId) {
+    debug`openOptionsPage for extensionId ${extensionId}`;
+
+    return EventDispatcher.instance.sendRequestForResult({
+      type: "GeckoView:WebExtension:OpenOptionsPage",
+      extensionId,
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
 
 
 
 
 
   async createNewTab({ extensionId, createProperties } = {}) {
+    debug`createNewTab`;
+
     const sessionId = await EventDispatcher.instance.sendRequestForResult({
       type: "GeckoView:WebExtension:NewTab",
       extensionId,

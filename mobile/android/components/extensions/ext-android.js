@@ -1,4 +1,16 @@
+
+
+
+
 "use strict";
+
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  mobileWindowTracker: "resource://gre/modules/GeckoViewWebExtension.jsm",
+});
 
 
 
@@ -37,9 +49,35 @@ extensions.on("page-shutdown", (type, context) => {
 });
 
 
-global.openOptionsPage = extension => {
+global.openOptionsPage = async extension => {
+  const { options_ui } = extension.manifest;
+  const extensionId = extension.id;
+
+  if (options_ui.open_in_tab) {
+    
+    const tab = await GeckoViewTabBridge.createNewTab({
+      extensionId,
+      createProperties: {
+        url: options_ui.page,
+        active: true,
+      },
+    });
+
+    const { browser } = tab;
+    const flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
+
+    browser.loadURI(options_ui.page, {
+      flags,
+      triggeringPrincipal: extension.principal,
+    });
+
+    const newWindow = browser.ownerGlobal;
+    mobileWindowTracker.setTabActive(newWindow, true);
+    return;
+  }
+
   
-  return Promise.reject({ message: "Not implemented yet." });
+  return GeckoViewTabBridge.openOptionsPage(extensionId);
 };
 
 extensions.registerModules({

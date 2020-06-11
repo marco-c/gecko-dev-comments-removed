@@ -630,6 +630,18 @@ public class WebExtension {
                                                    @NonNull CreateTabDetails createDetails) {
             return null;
         }
+
+        
+
+
+
+
+
+
+
+
+        @UiThread
+        default void onOpenOptionsPage(@NonNull WebExtension source) {}
     }
 
     
@@ -842,7 +854,8 @@ public class WebExtension {
                     this,
                     "GeckoView:WebExtension:NewTab",
                     "GeckoView:WebExtension:UpdateTab",
-                    "GeckoView:WebExtension:CloseTab"
+                    "GeckoView:WebExtension:CloseTab",
+                    "GeckoView:WebExtension:OpenOptionsPage"
             );
             mTabDelegateRegistered = true;
         }
@@ -874,7 +887,8 @@ public class WebExtension {
                         this,
                         "GeckoView:WebExtension:NewTab",
                         "GeckoView:WebExtension:UpdateTab",
-                        "GeckoView:WebExtension:CloseTab"
+                        "GeckoView:WebExtension:CloseTab",
+                        "GeckoView:WebExtension:OpenOptionsPage"
                 );
                 mTabDelegateRegistered = true;
             }
@@ -901,7 +915,8 @@ public class WebExtension {
                         this,
                         "GeckoView:WebExtension:NewTab",
                         "GeckoView:WebExtension:UpdateTab",
-                        "GeckoView:WebExtension:CloseTab"
+                        "GeckoView:WebExtension:CloseTab",
+                        "GeckoView:WebExtension:OpenOptionsPage"
                 );
                 mTabDelegateRegistered = true;
             }
