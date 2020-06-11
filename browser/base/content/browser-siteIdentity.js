@@ -131,23 +131,6 @@ var gIdentityHandler = {
     );
   },
 
-  get _isAboutNetErrorPage() {
-    return (
-      gBrowser.selectedBrowser.documentURI &&
-      gBrowser.selectedBrowser.documentURI.scheme == "about" &&
-      gBrowser.selectedBrowser.documentURI.pathQueryRef.startsWith("neterror")
-    );
-  },
-
-  get _isPotentiallyTrustworthy() {
-    return (
-      !this._isBrokenConnection &&
-      (this._isSecureContext ||
-        (gBrowser.selectedBrowser.documentURI &&
-          gBrowser.selectedBrowser.documentURI.scheme == "chrome"))
-    );
-  },
-
   
   get _identityPopup() {
     delete this._identityPopup;
@@ -724,12 +707,14 @@ var gIdentityHandler = {
     } else if (this._isAboutCertErrorPage) {
       
       this._identityBox.className = "certErrorPage";
-    } else if (this._isAboutNetErrorPage) {
+    } else if (
+      this._isSecureContext ||
+      (gBrowser.selectedBrowser.documentURI &&
+        (gBrowser.selectedBrowser.documentURI.scheme == "about" ||
+          gBrowser.selectedBrowser.documentURI.scheme == "chrome"))
+    ) {
       
       this._identityBox.className = "unknownIdentity";
-    } else if (this._isPotentiallyTrustworthy) {
-      
-      this._identityBox.className = "localResource";
     } else {
       
       let warnOnInsecure =
@@ -908,10 +893,6 @@ var gIdentityHandler = {
       customRoot = this._hasCustomRoot();
     } else if (this._isAboutCertErrorPage) {
       connection = "cert-error-page";
-    } else if (this._isAboutNetErrorPage) {
-      connection = "not-secure";
-    } else if (this._isPotentiallyTrustworthy) {
-      connection = "file";
     }
 
     
