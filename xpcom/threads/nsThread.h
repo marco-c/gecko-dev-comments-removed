@@ -8,6 +8,7 @@
 #define nsThread_h__
 
 #include "mozilla/Mutex.h"
+#include "prenv.h"
 #include "nsIThreadInternal.h"
 #include "nsISupportsPriority.h"
 #include "nsThreadUtils.h"
@@ -41,6 +42,13 @@ class nsThreadEnumerator;
 
 
 #define LONGTASK_BUSY_WINDOW_MS 50
+
+static inline bool UseTaskController() {
+  if (PR_GetEnv("MOZ_USE_TASKCONTROLLER")) {
+    return true;
+  }
+  return false;
+}
 
 
 namespace mozilla {

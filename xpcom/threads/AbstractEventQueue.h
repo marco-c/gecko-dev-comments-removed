@@ -17,12 +17,15 @@ class nsIRunnable;
 namespace mozilla {
 
 enum class EventQueuePriority {
-  High,
-  Input,
-  MediumHigh,
-  Normal,
-  DeferredTimers,
   Idle,
+  DeferredTimers,
+  InputLow,
+  
+  HighLow,
+  Normal,
+  MediumHigh,
+  InputHigh,
+  High,
 
   Count
 };
@@ -96,7 +99,7 @@ class AbstractEventQueue {
   virtual size_t SizeOfExcludingThis(
       mozilla::MallocSizeOf aMallocSizeOf) const = 0;
 
-  virtual ~AbstractEventQueue() {}
+  virtual ~AbstractEventQueue() = default;
 };
 
 }  

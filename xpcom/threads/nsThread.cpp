@@ -31,9 +31,10 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_threads.h"
+#include "mozilla/TaskController.h"
 #include "nsXPCOMPrivate.h"
 #include "mozilla/ChaosMode.h"
-#include "mozilla/SchedulerGroup.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Unused.h"
@@ -595,6 +596,10 @@ nsThread::nsThread(NotNull<SynchronizedEventQueue*> aQueue,
       mLastWakeupCheckTime(TimeStamp::Now()),
 #endif
       mPerformanceCounterState(mNestedEventLoopDepth, mIsMainThread) {
+  if (mIsMainThread) {
+    mozilla::TaskController::Get()->SetPerformanceCounterState(
+        &mPerformanceCounterState);
+  }
 }
 
 nsThread::nsThread()
@@ -902,7 +907,11 @@ nsThread::HasPendingEvents(bool* aResult) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
 
-  *aResult = mEvents->HasPendingEvent();
+  if (NS_IsMainThread() && UseTaskController() && !mIsInLocalExecutionMode) {
+    *aResult = TaskController::Get()->HasMainThreadPendingTasks();
+  } else {
+    *aResult = mEvents->HasPendingEvent();
+  }
   return NS_OK;
 }
 
@@ -998,7 +1007,7 @@ static bool GetLabeledRunnableName(nsIRunnable* aEvent, nsACString& aName,
     aName.AssignLiteral("anonymous runnable");
   }
 
-  if (!labeled && aPriority > EventQueuePriority::Input) {
+  if (!labeled && aPriority > EventQueuePriority::InputHigh) {
     aName.AppendLiteral("(unlabeled)");
   }
 
@@ -1069,7 +1078,6 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
   
   
   
-  
   bool reallyWait = aMayWait && (mNestedEventLoopDepth > 0 || !ShuttingDown());
 
   if (mIsInLocalExecutionMode) {
@@ -1131,9 +1139,17 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
     
     
     
-    EventQueuePriority priority;
-    nsCOMPtr<nsIRunnable> event =
-        mEvents->GetEvent(reallyWait, &priority, &mLastEventDelay);
+    EventQueuePriority priority = EventQueuePriority::Normal;
+    nsCOMPtr<nsIRunnable> event;
+    bool usingTaskController = mIsMainThread && UseTaskController();
+    if (usingTaskController) {
+      
+      
+      
+      event = TaskController::Get()->GetRunnableForMTTask(reallyWait);
+    } else {
+      event = mEvents->GetEvent(reallyWait, &priority, &mLastEventDelay);
+    }
 
     *aResult = (event.get() != nullptr);
 
@@ -1202,23 +1218,27 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
         sMainThreadRunnableName[length] = '\0';
       }
 #endif
+      
       Maybe<AutoTimeDurationHelper> timeDurationHelper;
-      if (priority == EventQueuePriority::Input) {
+      if (priority == EventQueuePriority::InputHigh) {
         timeDurationHelper.emplace();
       }
 
-      PerformanceCounterState::Snapshot snapshot =
-          mPerformanceCounterState.RunnableWillRun(
-              GetPerformanceCounter(event), now,
-              priority == EventQueuePriority::Idle);
+      Maybe<PerformanceCounterState::Snapshot> snapshot;
+      if (!usingTaskController) {
+        snapshot.emplace(mPerformanceCounterState.RunnableWillRun(
+            GetPerformanceCounter(event), now,
+            priority == EventQueuePriority::Idle));
+      }
 
       mLastEventStart = now;
 
       event->Run();
 
-      mEvents->DidRunEvent();
-
-      mPerformanceCounterState.RunnableDidRun(std::move(snapshot));
+      if (!usingTaskController) {
+        mEvents->DidRunEvent();
+        mPerformanceCounterState.RunnableDidRun(std::move(snapshot.ref()));
+      }
 
       
       event = nullptr;
@@ -1267,6 +1287,7 @@ nsThread::SetPriority(int32_t aPriority) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
+  
   
   
   
