@@ -130,7 +130,8 @@ class imgRequestProxy : public mozilla::PreloaderBase,
   imgRequest* GetOwner() const;
 
   
-  virtual void PrioritizeAsPreload() override;
+  
+  virtual void PrioritizeAsPreload() override {}
 
  protected:
   friend class mozilla::image::ProgressTracker;

@@ -1207,15 +1207,6 @@ imgCacheValidator* imgRequestProxy::GetValidator() const {
   return owner->GetValidator();
 }
 
-void imgRequestProxy::PrioritizeAsPreload() {
-  if (imgRequest* owner = GetOwner()) {
-    owner->PrioritizeAsPreload();
-  }
-  if (imgCacheValidator* validator = GetValidator()) {
-    validator->PrioritizeAsPreload();
-  }
-}
-
 
 
 class StaticBehaviour : public ProxyBehaviour {
