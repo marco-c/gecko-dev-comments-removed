@@ -34,6 +34,7 @@ function clearAllDatabases(callback) {
 
 
 
+
 function getSimpleDatabase() {
   let connection = SpecialPowers.Cc[
     "@mozilla.org/dom/sdb-connection;1"
