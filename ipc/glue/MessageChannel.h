@@ -243,10 +243,6 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver {
   bool DoBuildIDsMatch() { return mBuildIDsConfirmedMatch; }
 
   
-  
-  bool Echo(Message* aMsg);
-
-  
   bool Send(Message* aMsg, Message* aReply);
 
   
