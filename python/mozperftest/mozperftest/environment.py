@@ -15,7 +15,7 @@ from mozperftest.layers import Layers
 from mozperftest.utils import download_file
 
 
-SYSTEM, BROWSER, METRICS = 0, 1, 2
+SYSTEM, TEST, METRICS = 0, 1, 2
 
 
 class MachEnvironment:
@@ -90,40 +90,32 @@ class MachEnvironment:
         has_exc_handler = self.has_hook("on_exception")
 
         
-        for layer in self.layers[:-1]:
-            with layer:
-                try:
-                    metadata = layer(metadata)
-                except Exception as e:
-                    if has_exc_handler:
-                        
-                        
-                        
-                        
-                        if not self.run_hook("on_exception", layer, e):
-                            return metadata
-                    else:
-                        raise
-        
-        with self.layers[METRICS] as metrics:
+        with self.layers[SYSTEM] as syslayer, self.layers[TEST] as testlayer:
+            metadata = syslayer(metadata)
             try:
-                metadata = metrics(metadata)
+                metadata = testlayer(metadata)
             except Exception as e:
                 if has_exc_handler:
-                    if not self.run_hook("on_exception", layer, e):
+                    
+                    
+                    
+                    
+                    if not self.run_hook("on_exception", testlayer, e):
                         return metadata
                 else:
                     raise
+
+        
+        with self.layers[METRICS] as metrics:
+            metadata = metrics(metadata)
+
         return metadata
 
     def __enter__(self):
-        for layer in self.layers:
-            layer.__enter__()
         return self
 
     def __exit__(self, type, value, traceback):
-        for layer in self.layers:
-            layer.__exit__(type, value, traceback)
+        return
 
     def cleanup(self):
         if self.tmp_dir is None:

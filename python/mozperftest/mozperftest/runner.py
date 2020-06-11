@@ -90,7 +90,7 @@ def run_tests(mach_cmd, **kwargs):
 
     
     if on_try:
-        try_options = json.loads(os.environ['PERFTEST_OPTIONS'])
+        try_options = json.loads(os.environ["PERFTEST_OPTIONS"])
         kwargs.update(try_options)
 
     from mozperftest.utils import build_test_list, install_package
