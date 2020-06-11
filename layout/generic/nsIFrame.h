@@ -1764,11 +1764,13 @@ class nsIFrame : public nsQueryFrame {
       nsDisplayListBuilder* aBuilder, nsDisplayList* aList,
       bool* aCreatedContainerItem = nullptr);
 
-  enum {
-    DISPLAY_CHILD_FORCE_PSEUDO_STACKING_CONTEXT = 0x01,
-    DISPLAY_CHILD_FORCE_STACKING_CONTEXT = 0x02,
-    DISPLAY_CHILD_INLINE = 0x04
+  enum class DisplayChildFlag {
+    ForcePseudoStackingContext,
+    ForceStackingContext,
+    Inline,
   };
+  using DisplayChildFlags = mozilla::EnumSet<DisplayChildFlag>;
+
   
 
 
@@ -1781,7 +1783,7 @@ class nsIFrame : public nsQueryFrame {
   void BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
                                 nsIFrame* aChild,
                                 const nsDisplayListSet& aLists,
-                                uint32_t aFlags = 0);
+                                DisplayChildFlags aFlags = {});
 
   void BuildDisplayListForSimpleChild(nsDisplayListBuilder* aBuilder,
                                       nsIFrame* aChild,

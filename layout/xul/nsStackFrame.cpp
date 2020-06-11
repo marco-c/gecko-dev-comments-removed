@@ -56,7 +56,7 @@ void nsStackFrame::BuildDisplayListForChildren(nsDisplayListBuilder* aBuilder,
   while (kid) {
     
     BuildDisplayListForChild(aBuilder, kid, kidLists,
-                             DISPLAY_CHILD_FORCE_STACKING_CONTEXT);
+                             DisplayChildFlag::ForceStackingContext);
     kid = kid->GetNextSibling();
   }
 }

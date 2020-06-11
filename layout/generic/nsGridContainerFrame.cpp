@@ -3661,12 +3661,12 @@ void nsGridContainerFrame::GridReflowInput::CalculateTrackSizes(
 
 
 
-static uint32_t GetDisplayFlagsForGridItem(nsIFrame* aFrame) {
+static nsIFrame::DisplayChildFlag GetDisplayFlagsForGridItem(nsIFrame* aFrame) {
   const nsStylePosition* pos = aFrame->StylePosition();
   if (pos->mZIndex.IsInteger()) {
-    return nsIFrame::DISPLAY_CHILD_FORCE_STACKING_CONTEXT;
+    return nsIFrame::DisplayChildFlag::ForceStackingContext;
   }
-  return nsIFrame::DISPLAY_CHILD_FORCE_PSEUDO_STACKING_CONTEXT;
+  return nsIFrame::DisplayChildFlag::ForcePseudoStackingContext;
 }
 
 

@@ -2627,13 +2627,13 @@ nscoord nsFlexContainerFrame::GetLogicalBaseline(
 
 
 
-static uint32_t GetDisplayFlagsForFlexItem(nsIFrame* aFrame) {
+static nsIFrame::DisplayChildFlag GetDisplayFlagsForFlexItem(nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame->IsFlexItem(), "Should only be called on flex items");
   const nsStylePosition* pos = aFrame->StylePosition();
   if (pos->mZIndex.IsInteger()) {
-    return nsIFrame::DISPLAY_CHILD_FORCE_STACKING_CONTEXT;
+    return nsIFrame::DisplayChildFlag::ForceStackingContext;
   }
-  return nsIFrame::DISPLAY_CHILD_FORCE_PSEUDO_STACKING_CONTEXT;
+  return nsIFrame::DisplayChildFlag::ForcePseudoStackingContext;
 }
 
 void nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
