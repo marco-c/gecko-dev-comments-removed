@@ -49,8 +49,10 @@ class ReadStream final : public nsIInputStream {
  public:
   
   
-  class Controllable {
+  class Controllable : public SafeRefCounted<Controllable> {
    public:
+    virtual ~Controllable() = default;
+
     
     
     virtual void CloseStream() = 0;
@@ -63,7 +65,7 @@ class ReadStream final : public nsIInputStream {
 
     virtual bool HasEverBeenRead() const = 0;
 
-    NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+    MOZ_DECLARE_REFCOUNTED_TYPENAME(ReadStream::Controllable);
   };
 
   static already_AddRefed<ReadStream> Create(
@@ -88,7 +90,6 @@ class ReadStream final : public nsIInputStream {
  private:
   class Inner;
 
-  explicit ReadStream(Inner* aInner);
   ~ReadStream();
 
   
@@ -96,9 +97,11 @@ class ReadStream final : public nsIInputStream {
   
   
   
-  RefPtr<Inner> mInner;
+  SafeRefPtr<ReadStream::Inner> mInner;
 
  public:
+  explicit ReadStream(SafeRefPtr<ReadStream::Inner> aInner);
+
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_DOM_CACHE_READSTREAM_IID);
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIINPUTSTREAM
