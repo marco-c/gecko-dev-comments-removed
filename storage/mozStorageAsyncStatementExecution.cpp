@@ -212,7 +212,25 @@ bool AsyncExecuteStatements::executeStatement(sqlite3_stmt* aStatement) {
   mMutex.AssertNotCurrentThreadOwns();
   Telemetry::AutoTimer<Telemetry::MOZ_STORAGE_ASYNC_REQUESTS_MS>
       finallySendExecutionDuration(mRequestStartDate);
+
+  bool busyRetry = false;
   while (true) {
+    if (busyRetry) {
+      busyRetry = false;
+
+      
+      Unused << PR_Sleep(PR_INTERVAL_NO_WAIT);
+
+      
+      {
+        MutexAutoLock lockedScope(mMutex);
+        if (mCancelRequested) {
+          mState = CANCELED;
+          return false;
+        }
+      }
+    }
+
     
     SQLiteMutexAutoLock lockedScope(mDBMutex);
 
@@ -233,13 +251,8 @@ bool AsyncExecuteStatements::executeStatement(sqlite3_stmt* aStatement) {
 
     
     if (rc == SQLITE_BUSY) {
-      {
-        
-        SQLiteMutexAutoUnlock unlockedScope(mDBMutex);
-        
-        (void)::PR_Sleep(PR_INTERVAL_NO_WAIT);
-      }
       ::sqlite3_reset(aStatement);
+      busyRetry = true;
       continue;
     }
 
