@@ -111,6 +111,43 @@ static already_AddRefed<URLAndReferrerInfo> ResolveURLUsingLocalRef(
   return info.forget();
 }
 
+static already_AddRefed<URLAndReferrerInfo> ResolveURLUsingLocalRef(
+    nsIFrame* aFrame, const nsAString& aURL, nsIReferrerInfo* aReferrerInfo) {
+  MOZ_ASSERT(aFrame);
+
+  nsIContent* content = aFrame->GetContent();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsIURI* base = nullptr;
+  const Encoding* encoding = nullptr;
+  if (SVGUseElement* use = content->GetContainingSVGUseShadowHost()) {
+    base = use->GetSourceDocURI();
+    encoding = use->GetSourceDocCharacterSet();
+  }
+
+  if (!base) {
+    base = content->OwnerDoc()->GetDocumentURI();
+    encoding = content->OwnerDoc()->GetDocumentCharacterSet();
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  Unused << NS_NewURI(getter_AddRefs(uri), aURL, WrapNotNull(encoding), base);
+
+  if (!uri) {
+    return nullptr;
+  }
+
+  RefPtr<URLAndReferrerInfo> info = new URLAndReferrerInfo(uri, aReferrerInfo);
+  return info.forget();
+}
+
 namespace mozilla {
 
 class SVGFilterObserverList;
@@ -1371,17 +1408,12 @@ SVGGeometryElement* SVGObserverUtils::GetAndObserveTextPathsPath(
       return nullptr;  
     }
 
-    nsCOMPtr<nsIURI> targetURI;
-    nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(targetURI), href,
-                                              content->GetUncomposedDoc(),
-                                              content->GetBaseURI());
-
     
     
     nsCOMPtr<nsIReferrerInfo> referrerInfo =
         ReferrerInfo::CreateForSVGResources(content->OwnerDoc());
     RefPtr<URLAndReferrerInfo> target =
-        new URLAndReferrerInfo(targetURI, referrerInfo);
+        ResolveURLUsingLocalRef(aTextPathFrame, href, referrerInfo);
 
     property =
         GetEffectProperty(target, aTextPathFrame, HrefAsTextPathProperty());
