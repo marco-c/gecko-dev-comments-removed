@@ -18,7 +18,7 @@ def getChunk(things, chunks, thisChunk):
     possibleThings = copy(things)
     nThings = len(possibleThings)
     for c in range(1, chunks + 1):
-        n = nThings / chunks
+        n = nThings // chunks
         
         
         if c <= (nThings % chunks):
