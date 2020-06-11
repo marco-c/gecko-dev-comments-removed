@@ -1277,6 +1277,7 @@ bool nsMathMLChar::StretchEnumContext::TryParts(
 }
 
 
+
 bool nsMathMLChar::StretchEnumContext::EnumCallback(
     const FontFamilyName& aFamily, bool aGeneric, void* aData) {
   StretchEnumContext* context = static_cast<StretchEnumContext*>(aData);
@@ -1297,7 +1298,7 @@ bool nsMathMLChar::StretchEnumContext::EnumCallback(
   if (!aGeneric &&
       !context->mChar->SetFontFamily(context->mPresContext, nullptr, kNullGlyph,
                                      family, font, &fontGroup))
-    return true;  
+    return false;  
 
   
   UniquePtr<nsOpenTypeTable> openTypeTable;
@@ -1321,7 +1322,7 @@ bool nsMathMLChar::StretchEnumContext::EnumCallback(
 
   if (!openTypeTable) {
     if (context->mTablesTried.Contains(glyphTable))
-      return true;  
+      return false;  
 
     
     context->mTablesTried.AppendElement(glyphTable);
@@ -1334,13 +1335,10 @@ bool nsMathMLChar::StretchEnumContext::EnumCallback(
       glyphTable == &gGlyphTableList->mUnicodeTable ? context->mFamilyList
                                                     : family;
 
-  if ((context->mTryVariants &&
-       context->TryVariants(glyphTable, &fontGroup, familyList)) ||
-      (context->mTryParts &&
-       context->TryParts(glyphTable, &fontGroup, familyList)))
-    return false;  
-
-  return true;  
+  return (context->mTryVariants &&
+          context->TryVariants(glyphTable, &fontGroup, familyList)) ||
+         (context->mTryParts &&
+          context->TryParts(glyphTable, &fontGroup, familyList));
 }
 
 static void AppendFallbacks(nsTArray<FontFamilyName>& aNames,
@@ -1527,12 +1525,10 @@ nsresult nsMathMLChar::StretchInternal(
 
     const nsTArray<FontFamilyName>& fontlist =
         font.fontlist.GetFontlist()->mNames;
-    uint32_t i, num = fontlist.Length();
-    bool next = true;
-    for (i = 0; i < num && next; i++) {
-      const FontFamilyName& name = fontlist[i];
-      next =
-          StretchEnumContext::EnumCallback(name, name.IsGeneric(), &enumData);
+    for (const FontFamilyName& name : fontlist) {
+      if (StretchEnumContext::EnumCallback(name, name.IsGeneric(), &enumData)) {
+        break;
+      }
     }
   }
 
