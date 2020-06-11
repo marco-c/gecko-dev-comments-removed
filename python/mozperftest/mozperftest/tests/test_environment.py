@@ -134,10 +134,13 @@ def test_metrics_last():
 
     
     
+    
     class M:
         def __enter__(self):
-            system.teardown.assert_called()
-            browser.teardown.assert_called()
+            system.setup.assert_called_once()
+            browser.setup.assert_called_once()
+            system.teardown.assert_called_once()
+            browser.teardown.assert_called_once()
             return self
 
         def __exit__(self, *args, **kw):
