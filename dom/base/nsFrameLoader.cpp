@@ -2164,27 +2164,6 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     }
   }
 
-  
-  
-  
-  
-  nsCOMPtr<nsPIDOMWindowOuter> win = doc->GetWindow();
-  if (parentDocShell->ItemType() == docShell->ItemType() &&
-      !doc->IsStaticDocument() && win) {
-    
-    nsTArray<nsCOMPtr<nsIPrincipal>> ancestorPrincipals;
-    
-    ancestorPrincipals = doc->AncestorPrincipals().Clone();
-    ancestorPrincipals.InsertElementAt(0, doc->NodePrincipal());
-    docShell->SetAncestorPrincipals(std::move(ancestorPrincipals));
-
-    
-    nsTArray<uint64_t> ancestorOuterWindowIDs;
-    ancestorOuterWindowIDs = doc->AncestorOuterWindowIDs().Clone();
-    ancestorOuterWindowIDs.InsertElementAt(0, win->WindowID());
-    docShell->SetAncestorOuterWindowIDs(std::move(ancestorOuterWindowIDs));
-  }
-
   ReallyLoadFrameScripts();
   InitializeBrowserAPI();
 

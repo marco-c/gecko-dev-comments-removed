@@ -859,27 +859,7 @@ class Document : public nsINode,
   
 
 
-
-
-
-
-
-  const nsTArray<nsCOMPtr<nsIPrincipal>>& AncestorPrincipals() const {
-    return mAncestorPrincipals;
-  }
-
-  
-
-
   uint32_t HttpsOnlyStatus() const { return mHttpsOnlyStatus; }
-
-  
-
-
-
-  const nsTArray<uint64_t>& AncestorOuterWindowIDs() const {
-    return mAncestorOuterWindowIDs;
-  }
 
   
 
@@ -4826,12 +4806,6 @@ class Document : public nsINode,
   
   
   nsTHashtable<nsCStringHashKey> mTrackingScripts;
-
-  
-  
-  nsTArray<nsCOMPtr<nsIPrincipal>> mAncestorPrincipals;
-  
-  nsTArray<uint64_t> mAncestorOuterWindowIDs;
 
   
   

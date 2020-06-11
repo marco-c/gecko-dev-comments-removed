@@ -374,60 +374,6 @@ class nsDocShell final : public nsDocLoader,
 
   nsresult SetOriginAttributes(const mozilla::OriginAttributes& aAttrs);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  const nsTArray<nsCOMPtr<nsIPrincipal>>& AncestorPrincipals() const {
-    return mAncestorPrincipals;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  void SetAncestorPrincipals(
-      nsTArray<nsCOMPtr<nsIPrincipal>>&& aAncestorPrincipals) {
-    mAncestorPrincipals = std::move(aAncestorPrincipals);
-  }
-
-  
-
-
-
-
-
-  const nsTArray<uint64_t>& AncestorOuterWindowIDs() const {
-    return mAncestorOuterWindowIDs;
-  }
-
-  
-
-
-
-
-
-
-  void SetAncestorOuterWindowIDs(nsTArray<uint64_t>&& aAncestorOuterWindowIDs) {
-    mAncestorOuterWindowIDs = std::move(aAncestorOuterWindowIDs);
-  }
-
   const mozilla::OriginAttributes& GetOriginAttributes() {
     return mBrowsingContext->OriginAttributesRef();
   }
@@ -1152,12 +1098,6 @@ class nsDocShell final : public nsDocLoader,
   
   
   nsCOMPtr<nsIURI> mLoadingURI;
-
-  
-  nsTArray<nsCOMPtr<nsIPrincipal>> mAncestorPrincipals;
-
-  
-  nsTArray<uint64_t> mAncestorOuterWindowIDs;
 
   
   
