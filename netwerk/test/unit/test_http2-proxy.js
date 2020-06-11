@@ -336,10 +336,6 @@ add_task(async function setup() {
   Services.prefs.setBoolPref("network.http.spdy.enabled.http2", true);
 
   
-  
-  Services.prefs.setBoolPref("privacy.partition.network_state", true);
-
-  
   Services.prefs.setBoolPref("network.dns.native-is-localhost", true);
 
   filter = new ProxyFilter("https", "localhost", proxy_port, 0);
