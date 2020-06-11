@@ -124,6 +124,9 @@ enum BailoutKind {
   Bailout_SpecificAtomGuard,
 
   
+  Bailout_SpecificSymbolGuard,
+
+  
   Bailout_NonInt32Input,
   Bailout_NonNumericInput,  
   Bailout_NonBooleanInput,
@@ -222,6 +225,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "Bailout_ObjectIdentityOrTypeGuard";
     case Bailout_SpecificAtomGuard:
       return "Bailout_SpecifcAtomGuard";
+    case Bailout_SpecificSymbolGuard:
+      return "Bailout_SpecifcSymbolGuard";
     case Bailout_NonInt32Input:
       return "Bailout_NonInt32Input";
     case Bailout_NonNumericInput:
