@@ -399,6 +399,10 @@ class BuildBackendLoader(TestLoader):
         with open(test_defaults, 'rb') as fh:
             defaults = pickle.load(fh)
 
+        
+        
+        topsrcdir = os.path.normpath(self.topsrcdir)
+
         for path, tests in six.iteritems(test_data):
             for metadata in tests:
                 defaults_manifests = [metadata['manifest']]
@@ -408,7 +412,7 @@ class BuildBackendLoader(TestLoader):
                     
                     
                     
-                    ancestor_manifest = os.path.join(self.topsrcdir, ancestor_manifest)
+                    ancestor_manifest = os.path.join(topsrcdir, ancestor_manifest)
                     defaults_manifests[0] = (ancestor_manifest, metadata['manifest'])
                     defaults_manifests.append(ancestor_manifest)
 
