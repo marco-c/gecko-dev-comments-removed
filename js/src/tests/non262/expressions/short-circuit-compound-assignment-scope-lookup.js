@@ -1,7 +1,5 @@
 
 
-
-
 function createScope() {
   let log = [];
   let environment = {};

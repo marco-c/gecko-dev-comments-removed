@@ -1,8 +1,6 @@
 
 
 
-
-
 {
   assertThrowsInstanceOf(() => { let a = (a &&= 0); }, ReferenceError);
   assertThrowsInstanceOf(() => { let a = (a ||= 0); }, ReferenceError);
