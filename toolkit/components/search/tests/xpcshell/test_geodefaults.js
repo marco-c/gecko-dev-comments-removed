@@ -10,9 +10,18 @@ const kUrlPref = "geoSpecificDefaults.url";
 const kDayInSeconds = 86400;
 const kYearInSeconds = kDayInSeconds * 365;
 
+async function asyncReInitReloaded() {
+  let enginesReloaded = SearchTestUtils.promiseSearchNotification(
+    "engines-reloaded"
+  );
+  await asyncReInit();
+  await enginesReloaded;
+}
+
 add_task(async function no_request_if_prefed_off() {
   await withGeoServer(async function cont(requests) {
     
+    Services.prefs.setCharPref("browser.region.network.url", "");
     Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
     await AddonTestUtils.promiseStartupManager();
     await Services.search.init(true);
@@ -42,10 +51,7 @@ add_task(async function should_get_geo_defaults_only_once() {
     
     
     Region._setRegion("FR", false);
-    let enginesReloaded = SearchTestUtils.promiseSearchNotification(
-      "engines-reloaded"
-    );
-    await Promise.all([asyncReInit(), enginesReloaded, promiseAfterCache()]);
+    await Promise.all([asyncReInitReloaded(), promiseAfterCache()]);
     Assert.equal((await Services.search.getDefault()).name, kTestEngineName);
 
     
@@ -68,7 +74,7 @@ add_task(async function should_recheck_if_interval_expired() {
     await forceExpiration();
 
     let date = Date.now();
-    await Promise.all([asyncReInit(true), promiseAfterCache()]);
+    await Promise.all([asyncReInitReloaded(), promiseAfterCache()]);
 
     
     let metadata = await promiseGlobalMetadata();
@@ -90,7 +96,7 @@ add_task(async function should_recheck_if_appversion_changed() {
     data.appVersion = "1";
     await promiseSaveCacheData(data);
 
-    await Promise.all([asyncReInit(), promiseAfterCache()]);
+    await Promise.all([asyncReInitReloaded(), promiseAfterCache()]);
     checkRequest(requests);
 
     
@@ -160,7 +166,7 @@ add_task(async function should_remember_cohort_id() {
       
       await forceExpiration();
       let commitPromise = promiseAfterCache();
-      await asyncReInit();
+      await asyncReInitReloaded();
       checkRequest(requests);
       await commitPromise;
 
@@ -180,7 +186,7 @@ add_task(async function should_remember_cohort_id() {
     
     await forceExpiration();
     let commitPromise = promiseAfterCache();
-    await asyncReInit();
+    await asyncReInitReloaded();
     checkRequest(requests, cohort);
     await commitPromise;
     Assert.equal(
