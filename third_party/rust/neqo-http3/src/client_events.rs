@@ -4,7 +4,12 @@
 
 
 
+#![allow(clippy::module_name_repetitions)]
+
 use crate::connection::Http3State;
+use crate::recv_message::RecvMessageEvents;
+use crate::send_message::SendMessageEvents;
+use crate::Header;
 use neqo_common::matches;
 use neqo_transport::{AppError, StreamType};
 
@@ -15,7 +20,11 @@ use std::rc::Rc;
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
 pub enum Http3ClientEvent {
     
-    HeaderReady { stream_id: u64 },
+    HeaderReady {
+        stream_id: u64,
+        headers: Option<Vec<Header>>,
+        fin: bool,
+    },
     
     DataWritable { stream_id: u64 },
     
@@ -43,20 +52,32 @@ pub struct Http3ClientEvents {
     events: Rc<RefCell<VecDeque<Http3ClientEvent>>>,
 }
 
-impl Http3ClientEvents {
-    pub fn header_ready(&self, stream_id: u64) {
-        self.insert(Http3ClientEvent::HeaderReady { stream_id });
+impl RecvMessageEvents for Http3ClientEvents {
+    
+    fn header_ready(&self, stream_id: u64, headers: Option<Vec<Header>>, fin: bool) {
+        self.insert(Http3ClientEvent::HeaderReady {
+            stream_id,
+            headers,
+            fin,
+        });
     }
 
-    pub fn data_writable(&self, stream_id: u64) {
-        self.insert(Http3ClientEvent::DataWritable { stream_id });
-    }
-
-    pub fn data_readable(&self, stream_id: u64) {
+    
+    fn data_readable(&self, stream_id: u64) {
         self.insert(Http3ClientEvent::DataReadable { stream_id });
     }
+}
 
-    pub fn stop_sending(&self, stream_id: u64, error: AppError) {
+impl SendMessageEvents for Http3ClientEvents {
+    
+    fn data_writable(&self, stream_id: u64) {
+        self.insert(Http3ClientEvent::DataWritable { stream_id });
+    }
+}
+
+impl Http3ClientEvents {
+    
+    pub(crate) fn stop_sending(&self, stream_id: u64, error: AppError) {
         
         self.remove(|evt| {
             matches!(evt, Http3ClientEvent::DataWritable {
@@ -70,33 +91,40 @@ impl Http3ClientEvents {
     
     
 
-    pub fn new_requests_creatable(&self, stream_type: StreamType) {
+    
+    pub(crate) fn new_requests_creatable(&self, stream_type: StreamType) {
         if stream_type == StreamType::BiDi {
             self.insert(Http3ClientEvent::RequestsCreatable);
         }
     }
 
-    pub fn authentication_needed(&self) {
+    
+    pub(crate) fn authentication_needed(&self) {
         self.insert(Http3ClientEvent::AuthenticationNeeded);
     }
 
-    pub fn zero_rtt_rejected(&self) {
+    
+    pub(crate) fn zero_rtt_rejected(&self) {
         self.insert(Http3ClientEvent::ZeroRttRejected);
     }
 
-    pub fn goaway_received(&self) {
+    
+    pub(crate) fn goaway_received(&self) {
         self.remove(|evt| matches!(evt, Http3ClientEvent::RequestsCreatable));
         self.insert(Http3ClientEvent::GoawayReceived);
     }
 
-    pub fn events(&self) -> impl Iterator<Item = Http3ClientEvent> {
+    
+    pub(crate) fn events(&self) -> impl Iterator<Item = Http3ClientEvent> {
         self.events.replace(VecDeque::new()).into_iter()
     }
 
+    
     pub fn has_events(&self) -> bool {
         !self.events.borrow().is_empty()
     }
 
+    
     pub fn next_event(&self) -> Option<Http3ClientEvent> {
         self.events.borrow_mut().pop_front()
     }
@@ -112,12 +140,14 @@ impl Http3ClientEvents {
         self.events.borrow_mut().retain(|evt| !f(evt))
     }
 
-    pub fn reset(&self, stream_id: u64, error: AppError) {
+    
+    pub(crate) fn reset(&self, stream_id: u64, error: AppError) {
         self.remove_events_for_stream_id(stream_id);
         self.insert(Http3ClientEvent::Reset { stream_id, error });
     }
 
-    pub fn connection_state_change(&self, state: Http3State) {
+    
+    pub(crate) fn connection_state_change(&self, state: Http3State) {
         
         match state {
             Http3State::Closing { .. } | Http3State::Closed(_) => self.events.borrow_mut().clear(),
@@ -126,10 +156,11 @@ impl Http3ClientEvents {
         self.insert(Http3ClientEvent::StateChange(state));
     }
 
-    pub fn remove_events_for_stream_id(&self, stream_id: u64) {
+    
+    pub(crate) fn remove_events_for_stream_id(&self, stream_id: u64) {
         self.remove(|evt| {
             matches!(evt,
-                Http3ClientEvent::HeaderReady { stream_id: x }
+                Http3ClientEvent::HeaderReady { stream_id: x, .. }
                 | Http3ClientEvent::DataWritable { stream_id: x }
                 | Http3ClientEvent::DataReadable { stream_id: x }
                 | Http3ClientEvent::NewPushStream { stream_id: x }

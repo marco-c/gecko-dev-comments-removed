@@ -4,6 +4,8 @@
 
 
 
+#![allow(clippy::module_name_repetitions)]
+
 use crate::connection::Http3State;
 use crate::connection_server::Http3ServerHandler;
 use crate::{Header, Res};
@@ -34,7 +36,7 @@ impl ::std::fmt::Display for ClientRequestStream {
 }
 
 impl ClientRequestStream {
-    pub fn new(
+    pub(crate) fn new(
         conn: ActiveConnectionRef,
         handler: Rc<RefCell<Http3ServerHandler>>,
         stream_id: u64,
@@ -45,13 +47,16 @@ impl ClientRequestStream {
             stream_id,
         }
     }
-    pub fn set_response(&mut self, headers: &[Header], data: Vec<u8>) -> Res<()> {
+
+    
+    pub fn set_response(&mut self, headers: &[Header], data: &[u8]) -> Res<()> {
         qinfo!([self], "Set new response.");
         self.handler
             .borrow_mut()
             .set_response(self.stream_id, headers, data)
     }
 
+    
     pub fn stream_stop_sending(&mut self, app_error: AppError) -> Res<()> {
         qdebug!(
             [self],
@@ -65,6 +70,7 @@ impl ClientRequestStream {
         Ok(())
     }
 
+    
     pub fn stream_reset(&mut self, app_error: AppError) -> Res<()> {
         qdebug!([self], "reset error:{}.", app_error);
         self.handler.borrow_mut().stream_reset(
@@ -80,7 +86,7 @@ pub enum Http3ServerEvent {
     
     Headers {
         request: ClientRequestStream,
-        headers: Vec<Header>,
+        headers: Option<Vec<Header>>,
         fin: bool,
     },
     
@@ -106,19 +112,28 @@ impl Http3ServerEvents {
         self.events.borrow_mut().push_back(event);
     }
 
+    
     pub fn events(&self) -> impl Iterator<Item = Http3ServerEvent> {
         self.events.replace(VecDeque::new()).into_iter()
     }
 
+    
     pub fn has_events(&self) -> bool {
         !self.events.borrow().is_empty()
     }
 
+    
     pub fn next_event(&self) -> Option<Http3ServerEvent> {
         self.events.borrow_mut().pop_front()
     }
 
-    pub fn headers(&self, request: ClientRequestStream, headers: Vec<Header>, fin: bool) {
+    
+    pub(crate) fn headers(
+        &self,
+        request: ClientRequestStream,
+        headers: Option<Vec<Header>>,
+        fin: bool,
+    ) {
         self.insert(Http3ServerEvent::Headers {
             request,
             headers,
@@ -126,11 +141,13 @@ impl Http3ServerEvents {
         });
     }
 
-    pub fn connection_state_change(&self, conn: ActiveConnectionRef, state: Http3State) {
+    
+    pub(crate) fn connection_state_change(&self, conn: ActiveConnectionRef, state: Http3State) {
         self.insert(Http3ServerEvent::StateChange { conn, state });
     }
 
-    pub fn data(&self, request: ClientRequestStream, data: Vec<u8>, fin: bool) {
+    
+    pub(crate) fn data(&self, request: ClientRequestStream, data: Vec<u8>, fin: bool) {
         self.insert(Http3ServerEvent::Data { request, data, fin });
     }
 }

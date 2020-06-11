@@ -211,9 +211,7 @@ nsresult Http3Session::ProcessInput(uint32_t* aCountRead) {
     }
   } while (NS_SUCCEEDED(rv));
   
-  
   if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
-    mHttp3Connection->ProcessHttp3();
     return NS_OK;
   }
 
@@ -292,21 +290,51 @@ nsresult Http3Session::ProcessEvents(uint32_t count) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
   LOG(("Http3Session::ProcessEvents [this=%p]", this));
-  Http3Event event = mHttp3Connection->GetEvent();
+
+  nsTArray<uint8_t> headerBytes;
+  Http3Event event;
+  event.tag = Http3Event::Tag::NoEvent;
+  bool fin = false;
+
+  nsresult rv = mHttp3Connection->GetEvent(&event, headerBytes, &fin);
+  if (NS_FAILED(rv)) {
+    LOG(("Http3Session::ProcessEvents [this=%p] rv=%" PRIx32, this,
+         static_cast<uint32_t>(rv)));
+    return rv;
+  }
 
   while (event.tag != Http3Event::Tag::NoEvent) {
     switch (event.tag) {
-      case Http3Event::Tag::HeaderReady:
+      case Http3Event::Tag::HeaderReady: {
+        MOZ_ASSERT(mState == CONNECTED);
+        LOG(("Http3Session::ProcessEvents - HeaderReady"));
+        uint64_t id = event.header_ready.stream_id;
+
+        RefPtr<Http3Stream> stream = mStreamIdHash.Get(id);
+        if (!stream) {
+          LOG(
+              ("Http3Session::ProcessEvents - HeaderReady - stream not found "
+               "stream_id=0x%" PRIx64 " [this=%p].",
+               id, this));
+          continue;
+        }
+
+        stream->SetResponseHeaders(headerBytes, fin);
+
+        uint32_t read = 0;
+        rv = ProcessTransactionRead(stream, count, &read);
+
+        if (NS_FAILED(rv)) {
+          LOG(("Http3Session::ProcessEvents [this=%p] rv=%" PRIx32, this,
+               static_cast<uint32_t>(rv)));
+          return rv;
+        }
+        break;
+      }
       case Http3Event::Tag::DataReadable: {
         MOZ_ASSERT(mState == CONNECTED);
-        uint64_t id;
-        if (event.tag == Http3Event::Tag::HeaderReady) {
-          LOG(("Http3Session::ProcessEvents - HeaderReady"));
-          id = event.header_ready.stream_id;
-        } else {
-          LOG(("Http3Session::ProcessEvents - DataReadable"));
-          id = event.data_readable.stream_id;
-        }
+        LOG(("Http3Session::ProcessEvents - DataReadable"));
+        uint64_t id = event.data_readable.stream_id;
 
         uint32_t read = 0;
         nsresult rv = ProcessTransactionRead(id, count, &read);
@@ -386,11 +414,16 @@ nsresult Http3Session::ProcessEvents(uint32_t count) {
       default:
         break;
     }
-    event = mHttp3Connection->GetEvent();
+    rv = mHttp3Connection->GetEvent(&event, headerBytes, &fin);
+    if (NS_FAILED(rv)) {
+      LOG(("Http3Session::ProcessEvents [this=%p] rv=%" PRIx32, this,
+           static_cast<uint32_t>(rv)));
+      return rv;
+    }
   }
 
   return NS_OK;
-}
+}  
 
 
 
@@ -410,7 +443,6 @@ nsresult Http3Session::ProcessOutput() {
        mSegmentReaderWriter.get(), this));
 
   
-  mHttp3Connection->ProcessHttp3();
   uint64_t timeout = mHttp3Connection->ProcessOutput();
 
   
@@ -454,12 +486,10 @@ nsresult Http3Session::ProcessOutput() {
 
 nsresult Http3Session::ProcessOutputAndEvents() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  mHttp3Connection->ProcessTimer();
   nsresult rv = ProcessOutput();
   if (NS_FAILED(rv)) {
     return rv;
   }
-  mHttp3Connection->ProcessHttp3();
   return ProcessEvents(nsIOService::gDefaultSegmentSize);
 }
 
@@ -616,7 +646,6 @@ nsresult Http3Session::TryActivating(
 
   MOZ_ASSERT(*aStreamId != UINT64_MAX);
   mStreamIdHash.Put(*aStreamId, RefPtr{aStream});
-  mHttp3Connection->ProcessHttp3();
   return NS_OK;
 }
 
@@ -1094,15 +1123,6 @@ nsresult Http3Session::OnWriteSegment(char* buf, uint32_t count,
   LOG3(("Http3Session::OnWriteSegment"));
   *countWritten = 0;
   return NS_OK;
-}
-
-
-nsresult Http3Session::ReadResponseHeaders(uint64_t aStreamId,
-                                           nsTArray<uint8_t>& aResponseHeaders,
-                                           bool* aFin) {
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  return mHttp3Connection->ReadResponseHeaders(aStreamId, aResponseHeaders,
-                                               aFin);
 }
 
 

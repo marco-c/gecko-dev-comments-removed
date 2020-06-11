@@ -8,7 +8,7 @@
 
 
 
-use neqo_crypto::*;
+use neqo_crypto::{assert_initialized, init_db};
 
 
 

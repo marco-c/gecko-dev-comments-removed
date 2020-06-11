@@ -20,6 +20,7 @@ pub mod huffman;
 mod huffman_decode_helper;
 pub mod huffman_table;
 mod prefix;
+mod qlog;
 mod qpack_send_buf;
 pub mod reader;
 mod static_table;
@@ -28,16 +29,11 @@ mod table;
 pub type Header = (String, String);
 type Res<T> = Result<T, Error>;
 
-#[derive(Debug)]
-enum QPackSide {
-    Encoder,
-    Decoder,
-}
-
-impl ::std::fmt::Display for QPackSide {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
+#[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Clone, Copy)]
+pub struct QpackSettings {
+    pub max_table_size_decoder: u64,
+    pub max_table_size_encoder: u64,
+    pub max_blocked_streams: u16,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -48,14 +44,21 @@ pub enum Error {
     ClosedCriticalStream,
 
     
+    NeedMoreData, 
     HeaderLookup,
-    NoMoreData,
+    HuffmanDecompressionFailed,
+    ToStringFailed,
+    ChangeCapacity,
+    DynamicTableFull,
+    IncrementAck,
     IntegerOverflow,
     WrongStreamCount,
-    Internal,
     Decoding, 
+    EncoderStreamBlocked,
+    Internal,
 
     TransportError(neqo_transport::Error),
+    QlogError,
 }
 
 impl Error {
@@ -90,5 +93,11 @@ impl ::std::fmt::Display for Error {
 impl From<neqo_transport::Error> for Error {
     fn from(err: neqo_transport::Error) -> Self {
         Self::TransportError(err)
+    }
+}
+
+impl From<::qlog::Error> for Error {
+    fn from(_err: ::qlog::Error) -> Self {
+        Self::QlogError
     }
 }

@@ -4,7 +4,7 @@
 
 
 
-use crate::constants::*;
+use crate::constants::{Cipher, Version};
 use crate::err::{Error, Res};
 use crate::p11::{PK11SymKey, SymKey};
 use crate::ssl;

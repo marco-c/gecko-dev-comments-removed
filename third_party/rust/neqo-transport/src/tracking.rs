@@ -6,18 +6,20 @@
 
 
 
-use std::cmp::min;
+#![deny(clippy::pedantic)]
+
 use std::collections::VecDeque;
 use std::convert::TryInto;
-use std::ops::{Index, IndexMut};
 use std::time::{Duration, Instant};
 
 use neqo_common::{qdebug, qinfo, qtrace, qwarn};
-use neqo_crypto::{Epoch, TLS_EPOCH_APPLICATION_DATA, TLS_EPOCH_HANDSHAKE, TLS_EPOCH_INITIAL};
+use neqo_crypto::{Epoch, TLS_EPOCH_HANDSHAKE, TLS_EPOCH_INITIAL};
 
 use crate::frame::{AckRange, Frame};
 use crate::packet::{PacketNumber, PacketType};
 use crate::recovery::RecoveryToken;
+
+use smallvec::{smallvec, SmallVec};
 
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Ord, Eq)]
@@ -62,15 +64,15 @@ impl From<PacketType> for PNSpace {
 
 #[derive(Debug, Clone)]
 pub struct SentPacket {
-    pub ack_eliciting: bool,
+    ack_eliciting: bool,
     pub time_sent: Instant,
     pub tokens: Vec<RecoveryToken>,
 
-    pub time_declared_lost: Option<Instant>,
+    time_declared_lost: Option<Instant>,
     
     pto: bool,
 
-    pub in_flight: bool,
+    in_flight: bool,
     pub size: usize,
 }
 
@@ -94,24 +96,57 @@ impl SentPacket {
     }
 
     
+    pub fn ack_eliciting(&self) -> bool {
+        self.ack_eliciting
+    }
+
+    
+    
+    pub fn cc_in_flight(&self) -> bool {
+        self.in_flight
+    }
+
+    
+    pub fn lost(&self) -> bool {
+        self.time_declared_lost.is_some()
+    }
+
+    
+    
+    
+    
+    pub fn cc_outstanding(&self) -> bool {
+        self.cc_in_flight() && !self.lost()
+    }
+
+    
+    pub fn declare_lost(&mut self, now: Instant) -> bool {
+        if self.lost() {
+            false
+        } else {
+            self.time_declared_lost = Some(now);
+            true
+        }
+    }
+
+    
+    
+    pub fn expired(&self, now: Instant, expiration_period: Duration) -> bool {
+        if let Some(loss_time) = self.time_declared_lost {
+            (loss_time + expiration_period) <= now
+        } else {
+            false
+        }
+    }
+
+    
     
     pub fn pto(&mut self) -> bool {
-        if self.pto {
+        if self.pto || self.lost() {
             false
         } else {
             self.pto = true;
             true
-        }
-    }
-}
-
-impl Into<Epoch> for PNSpace {
-    fn into(self) -> Epoch {
-        match self {
-            Self::Initial => TLS_EPOCH_INITIAL,
-            Self::Handshake => TLS_EPOCH_HANDSHAKE,
-            
-            Self::ApplicationData => TLS_EPOCH_APPLICATION_DATA,
         }
     }
 }
@@ -206,6 +241,7 @@ impl ::std::fmt::Display for PacketRange {
 
 
 pub const ACK_DELAY: Duration = Duration::from_millis(20); 
+pub const MAX_UNACKED_PKTS: u64 = 1;
 const MAX_TRACKED_RANGES: usize = 32;
 const MAX_ACKS_PER_FRAME: usize = 32;
 
@@ -228,6 +264,7 @@ pub struct RecvdPackets {
     largest_pn_time: Option<Instant>,
     
     ack_time: Option<Instant>,
+    pkts_since_last_ack: u64,
 }
 
 impl RecvdPackets {
@@ -239,6 +276,7 @@ impl RecvdPackets {
             min_tracked: 0,
             largest_pn_time: None,
             ack_time: None,
+            pkts_since_last_ack: 0,
         }
     }
 
@@ -302,16 +340,26 @@ impl RecvdPackets {
         }
 
         if ack_eliciting {
+            self.pkts_since_last_ack += 1;
+
+            
+            
             
             
             
             if pn != next_in_order_pn {
                 self.ack_time = Some(now);
-            } else if self.ack_time.is_none() && self.space == PNSpace::ApplicationData {
-                self.ack_time = Some(now + ACK_DELAY);
+            } else if self.space == PNSpace::ApplicationData {
+                match &mut self.pkts_since_last_ack {
+                    0 => unreachable!(),
+                    1 => self.ack_time = Some(now + ACK_DELAY),
+                    x if *x > MAX_UNACKED_PKTS => self.ack_time = Some(now),
+                    _ => debug_assert!(self.ack_time.is_some()),
+                }
             } else {
                 self.ack_time = Some(now);
             }
+            qdebug!([self], "Set ACK timer to {:?}", self.ack_time);
         }
     }
 
@@ -343,31 +391,6 @@ impl RecvdPackets {
             cur.acknowledged(&ack);
         }
     }
-}
-
-impl ::std::fmt::Display for RecvdPackets {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        write!(f, "Recvd-{}", self.space)
-    }
-}
-
-#[derive(Debug)]
-pub struct AckTracker {
-    spaces: [RecvdPackets; 3],
-}
-
-impl AckTracker {
-    pub fn ack_time(&self) -> Option<Instant> {
-        let mut iter = self.spaces.iter().filter_map(RecvdPackets::ack_time);
-        match iter.next() {
-            Some(v) => Some(iter.fold(v, min)),
-            _ => None,
-        }
-    }
-
-    pub fn acked(&mut self, token: &AckToken) {
-        self.spaces[token.space as usize].acknowledged(&token.ranges);
-    }
 
     
     
@@ -379,21 +402,15 @@ impl AckTracker {
     
     
     
-    pub(crate) fn get_frame(
-        &mut self,
-        now: Instant,
-        pn_space: PNSpace,
-    ) -> Option<(Frame, Option<RecoveryToken>)> {
-        let space = &mut self[pn_space];
-
+    fn get_frame(&mut self, now: Instant) -> Option<(Frame, Option<RecoveryToken>)> {
         
-        if !space.ack_now(now) {
+        if !self.ack_now(now) {
             return None;
         }
 
         
         
-        let ranges: Vec<PacketRange> = space
+        let ranges: Vec<PacketRange> = self
             .ranges
             .iter()
             .filter(|r| r.ack_needed())
@@ -420,9 +437,10 @@ impl AckTracker {
         }
 
         
-        space.ack_time = None;
+        self.ack_time = None;
+        self.pkts_since_last_ack = 0;
 
-        let ack_delay = now.duration_since(space.largest_pn_time.unwrap());
+        let ack_delay = now.duration_since(self.largest_pn_time.unwrap());
         
         
         if let Ok(delay) = (ack_delay.as_micros() / 8).try_into() {
@@ -432,13 +450,11 @@ impl AckTracker {
                 first_ack_range: first.len() - 1,
                 ack_ranges,
             };
-            Some((
-                ack,
-                Some(RecoveryToken::Ack(AckToken {
-                    space: pn_space,
-                    ranges,
-                })),
-            ))
+            let token = RecoveryToken::Ack(AckToken {
+                space: self.space,
+                ranges,
+            });
+            Some((ack, Some(token)))
         } else {
             qwarn!(
                 "ack_delay.as_micros() did not fit a u64 {:?}",
@@ -449,35 +465,94 @@ impl AckTracker {
     }
 }
 
+impl ::std::fmt::Display for RecvdPackets {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        write!(f, "Recvd-{}", self.space)
+    }
+}
+
+#[derive(Debug)]
+pub struct AckTracker {
+    
+    
+    
+    spaces: SmallVec<[RecvdPackets; 1]>,
+}
+
+impl AckTracker {
+    pub fn drop_space(&mut self, space: PNSpace) {
+        let sp = match space {
+            PNSpace::Initial => self.spaces.pop(),
+            PNSpace::Handshake => {
+                let sp = self.spaces.pop();
+                self.spaces.shrink_to_fit();
+                sp
+            }
+            _ => panic!("discarding application space"),
+        };
+        assert_eq!(sp.unwrap().space, space, "dropping spaces out of order");
+    }
+
+    pub fn get_mut(&mut self, space: PNSpace) -> Option<&mut RecvdPackets> {
+        self.spaces.get_mut(match space {
+            PNSpace::ApplicationData => 0,
+            PNSpace::Handshake => 1,
+            PNSpace::Initial => 2,
+        })
+    }
+
+    
+    pub fn ack_time(&self, now: Instant) -> Option<Instant> {
+        if self.spaces.len() == 1 {
+            self.spaces[0].ack_time()
+        } else {
+            
+            
+            
+            
+            
+            self.spaces
+                .iter()
+                .filter_map(|recvd| recvd.ack_time().filter(|t| *t > now))
+                .min()
+        }
+    }
+
+    pub fn acked(&mut self, token: &AckToken) {
+        if let Some(space) = self.get_mut(token.space) {
+            space.acknowledged(&token.ranges);
+        }
+    }
+
+    pub(crate) fn get_frame(
+        &mut self,
+        now: Instant,
+        pn_space: PNSpace,
+    ) -> Option<(Frame, Option<RecoveryToken>)> {
+        self.get_mut(pn_space)
+            .map(|space| space.get_frame(now))
+            .flatten()
+    }
+}
+
 impl Default for AckTracker {
     fn default() -> Self {
         Self {
-            spaces: [
-                RecvdPackets::new(PNSpace::Initial),
-                RecvdPackets::new(PNSpace::Handshake),
+            spaces: smallvec![
                 RecvdPackets::new(PNSpace::ApplicationData),
+                RecvdPackets::new(PNSpace::Handshake),
+                RecvdPackets::new(PNSpace::Initial),
             ],
         }
     }
 }
 
-impl Index<PNSpace> for AckTracker {
-    type Output = RecvdPackets;
-
-    fn index(&self, space: PNSpace) -> &Self::Output {
-        &self.spaces[space as usize]
-    }
-}
-
-impl IndexMut<PNSpace> for AckTracker {
-    fn index_mut(&mut self, space: PNSpace) -> &mut Self::Output {
-        &mut self.spaces[space as usize]
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        AckTracker, Duration, Instant, PNSpace, RecoveryToken, RecvdPackets, ACK_DELAY,
+        MAX_TRACKED_RANGES, MAX_UNACKED_PKTS,
+    };
     use lazy_static::lazy_static;
     use std::collections::HashSet;
 
@@ -511,7 +586,7 @@ mod tests {
 
         
         let mut in_ranges = HashSet::new();
-        for range in rp.ranges.iter() {
+        for range in &rp.ranges {
             for included in range.smallest..=range.largest {
                 in_ranges.insert(included);
             }
@@ -565,13 +640,15 @@ mod tests {
         assert!(!rp.ack_now(*NOW));
 
         
-        rp.set_received(*NOW, 0, true);
-        assert_eq!(Some(*NOW + ACK_DELAY), rp.ack_time());
-        assert!(!rp.ack_now(*NOW));
-        assert!(rp.ack_now(*NOW + ACK_DELAY));
+        for num in 0..MAX_UNACKED_PKTS {
+            rp.set_received(*NOW, num, true);
+            assert_eq!(Some(*NOW + ACK_DELAY), rp.ack_time());
+            assert!(!rp.ack_now(*NOW));
+            assert!(rp.ack_now(*NOW + ACK_DELAY));
+        }
 
         
-        rp.set_received(*NOW, 1, true);
+        rp.set_received(*NOW, MAX_UNACKED_PKTS, true);
         assert_eq!(Some(*NOW), rp.ack_time());
         assert!(rp.ack_now(*NOW));
     }
@@ -612,16 +689,92 @@ mod tests {
     fn aggregate_ack_time() {
         let mut tracker = AckTracker::default();
         
-        tracker[PNSpace::Handshake].set_received(*NOW, 0, false);
-        assert_eq!(None, tracker.ack_time());
+        tracker
+            .get_mut(PNSpace::Handshake)
+            .unwrap()
+            .set_received(*NOW, 0, false);
+        assert_eq!(None, tracker.ack_time(*NOW));
 
         
-        tracker[PNSpace::ApplicationData].set_received(*NOW, 0, true);
-        assert_eq!(Some(*NOW + ACK_DELAY), tracker.ack_time());
+        tracker
+            .get_mut(PNSpace::ApplicationData)
+            .unwrap()
+            .set_received(*NOW, 0, true);
+        assert_eq!(Some(*NOW + ACK_DELAY), tracker.ack_time(*NOW));
 
         
         let later = *NOW + ACK_DELAY.checked_div(2).unwrap();
-        tracker[PNSpace::Initial].set_received(later, 0, true);
-        assert_eq!(Some(later), tracker.ack_time());
+        tracker
+            .get_mut(PNSpace::Initial)
+            .unwrap()
+            .set_received(later, 0, true);
+        assert_eq!(Some(later), tracker.ack_time(*NOW));
+    }
+
+    #[test]
+    #[should_panic(expected = "discarding application space")]
+    fn drop_app() {
+        let mut tracker = AckTracker::default();
+        tracker.drop_space(PNSpace::ApplicationData);
+    }
+
+    #[test]
+    #[should_panic(expected = "dropping spaces out of order")]
+    fn drop_out_of_order() {
+        let mut tracker = AckTracker::default();
+        tracker.drop_space(PNSpace::Handshake);
+    }
+
+    #[test]
+    fn drop_spaces() {
+        let mut tracker = AckTracker::default();
+        tracker
+            .get_mut(PNSpace::Initial)
+            .unwrap()
+            .set_received(*NOW, 0, true);
+        
+        assert!(tracker.ack_time(*NOW - Duration::from_millis(1)).is_some());
+        let (_ack, token) = tracker.get_frame(*NOW, PNSpace::Initial).unwrap();
+        assert!(token.is_some());
+
+        
+        tracker
+            .get_mut(PNSpace::Initial)
+            .unwrap()
+            .set_received(*NOW, 1, true);
+        assert!(tracker.ack_time(*NOW - Duration::from_millis(1)).is_some());
+
+        
+        tracker.drop_space(PNSpace::Initial);
+
+        assert!(tracker.get_mut(PNSpace::Initial).is_none());
+        assert!(tracker.ack_time(*NOW - Duration::from_millis(1)).is_none());
+        assert!(tracker.get_frame(*NOW, PNSpace::Initial).is_none());
+        if let RecoveryToken::Ack(tok) = token.as_ref().unwrap() {
+            tracker.acked(tok); 
+        } else {
+            panic!("not an ACK token");
+        }
+    }
+
+    #[test]
+    fn ack_time_elapsed() {
+        let mut tracker = AckTracker::default();
+
+        
+        
+        tracker
+            .get_mut(PNSpace::ApplicationData)
+            .unwrap()
+            .set_received(*NOW, 3, true);
+        assert!(tracker.ack_time(*NOW + Duration::from_millis(1)).is_none());
+
+        
+        tracker.drop_space(PNSpace::Initial);
+        tracker.drop_space(PNSpace::Handshake);
+        assert_eq!(
+            tracker.ack_time(*NOW + Duration::from_millis(1)),
+            Some(*NOW)
+        );
     }
 }
