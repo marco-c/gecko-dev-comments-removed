@@ -5177,6 +5177,43 @@ AttachDecision CallIRGenerator::tryAttachIsConstructor(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachGuardToClass(HandleFunction callee,
+                                                      InlinableNative native) {
+  
+  if (argc_ != 1 || !args_[0].isObject()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  const JSClass* clasp = InlinableNativeGuardToClass(native);
+  if (args_[0].toObject().getClass() != clasp) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ObjOperandId objId = writer.guardToObject(argId);
+
+  
+  writer.guardAnyClass(objId, clasp);
+
+  
+  writer.loadObjectResult(objId);
+
+  
+  writer.typeMonitorResult();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
+
+  trackAttached("GuardToClass");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachStringChar(HandleFunction callee,
                                                     StringChar kind) {
   
@@ -5595,7 +5632,7 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
   }
 
   
-  switch (callee->jitInfo()->inlinableNative) {
+  switch (InlinableNative native = callee->jitInfo()->inlinableNative) {
     
     case InlinableNative::ArrayPush:
       return tryAttachArrayPush(callee);
@@ -5603,6 +5640,16 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachArrayJoin(callee);
     case InlinableNative::ArrayIsArray:
       return tryAttachArrayIsArray(callee);
+
+    
+    case InlinableNative::IntlGuardToCollator:
+    case InlinableNative::IntlGuardToDateTimeFormat:
+    case InlinableNative::IntlGuardToDisplayNames:
+    case InlinableNative::IntlGuardToListFormat:
+    case InlinableNative::IntlGuardToNumberFormat:
+    case InlinableNative::IntlGuardToPluralRules:
+    case InlinableNative::IntlGuardToRelativeTimeFormat:
+      return tryAttachGuardToClass(callee, native);
 
     
     case InlinableNative::IntrinsicIsSuspendedGenerator:
@@ -5619,6 +5666,13 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachIsCallable(callee);
     case InlinableNative::IntrinsicIsConstructor:
       return tryAttachIsConstructor(callee);
+    case InlinableNative::IntrinsicGuardToArrayIterator:
+    case InlinableNative::IntrinsicGuardToMapIterator:
+    case InlinableNative::IntrinsicGuardToSetIterator:
+    case InlinableNative::IntrinsicGuardToStringIterator:
+    case InlinableNative::IntrinsicGuardToRegExpStringIterator:
+    case InlinableNative::IntrinsicGuardToWrapForValidIterator:
+      return tryAttachGuardToClass(callee, native);
 
     
     case InlinableNative::StringCharCodeAt:
@@ -5675,6 +5729,22 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachMathFunction(callee, UnaryMathFunction::ATanH);
     case InlinableNative::MathCbrt:
       return tryAttachMathFunction(callee, UnaryMathFunction::Cbrt);
+
+    
+    case InlinableNative::IntrinsicGuardToMapObject:
+      return tryAttachGuardToClass(callee, native);
+
+    
+    case InlinableNative::IntrinsicGuardToSetObject:
+      return tryAttachGuardToClass(callee, native);
+
+    
+    case InlinableNative::IntrinsicGuardToArrayBuffer:
+      return tryAttachGuardToClass(callee, native);
+
+    
+    case InlinableNative::IntrinsicGuardToSharedArrayBuffer:
+      return tryAttachGuardToClass(callee, native);
 
     default:
       return AttachDecision::NoAction;
