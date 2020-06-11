@@ -446,7 +446,7 @@ void AppleVTDecoder::OutputFrame(CVPixelBufferRef aImage,
   
   
   MonitorAutoLock mon(mMonitor);
-  mReorderQueue.Push(data);
+  mReorderQueue.Push(std::move(data));
   MaybeResolveBufferedFrames();
 
   LOG("%llu decoded frames queued",
