@@ -207,7 +207,7 @@ class nsPipeInputStream final : public nsIAsyncInputStream,
 
   
   nsPipeReadState mReadState;
-  uint32_t mPriority;
+  Atomic<uint32_t, Relaxed> mPriority;
 };
 
 
