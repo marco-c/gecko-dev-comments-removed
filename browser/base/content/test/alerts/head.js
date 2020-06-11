@@ -1,3 +1,9 @@
+
+
+SpecialPowers.pushPrefEnv({
+  set: [["ui.prefersReducedMotion", 0]],
+});
+
 async function addNotificationPermission(originString) {
   return SpecialPowers.pushPermissions([
     {
