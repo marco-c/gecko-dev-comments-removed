@@ -220,6 +220,22 @@ class SourceMapURLService {
 
 
 
+
+
+  subscribeByLocation({ id, url, line, column }, callback) {
+    if (id) {
+      return this.subscribeByID(id, line, column, callback);
+    }
+
+    return this.subscribeByURL(url, line, column, callback);
+  }
+
+  
+
+
+
+
+
   async newSourceMapCreated(id) {
     await this._ensureAllSourcesPopulated();
 

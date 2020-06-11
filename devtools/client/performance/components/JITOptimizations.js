@@ -113,9 +113,6 @@ class JITOptimizations extends Component {
       : frameData.functionName || "";
 
     
-    const frame = { source: url, line: +line, functionDisplayName: name };
-
-    
     
     
     let frameComponent;
@@ -123,8 +120,12 @@ class JITOptimizations extends Component {
       frameComponent = dom.span();
     } else {
       frameComponent = FrameView({
-        frame,
-        onClick: () => onViewSourceInDebugger(frame),
+        frame: {
+          source: url,
+          line: +line,
+          functionDisplayName: name,
+        },
+        onClick: onViewSourceInDebugger,
       });
     }
 

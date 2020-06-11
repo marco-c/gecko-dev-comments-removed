@@ -27,12 +27,29 @@ const webl10n = new LocalizationHelper(
   "devtools/client/locales/webconsole.properties"
 );
 
+function savedFrameToLocation(frame) {
+  const { source: url, line, column, sourceId } = frame;
+  return {
+    url,
+    line,
+    column,
+    
+    
+    
+    id: typeof sourceId === "string" ? sourceId : null,
+  };
+}
+
 class Frame extends Component {
   static get propTypes() {
     return {
       
       frame: PropTypes.shape({
         functionDisplayName: PropTypes.string,
+        
+        
+        
+        sourceId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
         source: PropTypes.string.isRequired,
         line: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
         column: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -68,17 +85,24 @@ class Frame extends Component {
 
   constructor(props) {
     super(props);
+    this.state = {
+      originalLocation: null,
+    };
     this._locationChanged = this._locationChanged.bind(this);
-    this.getSourceForClick = this.getSourceForClick.bind(this);
   }
 
   componentWillMount() {
     if (this.props.sourceMapURLService) {
-      const { source, line, column } = this.props.frame;
-      this.unsubscribeSourceMapService = this.props.sourceMapURLService.subscribeByURL(
-        source,
-        line,
-        column,
+      const location = savedFrameToLocation(this.props.frame);
+      
+      
+      
+      
+      
+      
+      
+      this.unsubscribeSourceMapService = this.props.sourceMapURLService.subscribeByLocation(
+        location,
         this._locationChanged
       );
     }
@@ -91,42 +115,13 @@ class Frame extends Component {
   }
 
   _locationChanged(originalLocation) {
-    const newState = {
-      isSourceMapped: !!originalLocation,
-    };
-    if (originalLocation) {
-      newState.frame = {
-        source: originalLocation.url,
-        line: originalLocation.line,
-        column: originalLocation.column,
-        functionDisplayName: this.props.frame.functionDisplayName,
-      };
-    }
-
-    this.setState(newState);
-  }
-
-  
-
-
-
-
-
-  getSourceForClick(frame) {
-    const { source, line, column, sourceId } = frame;
-    return {
-      url: source,
-      line,
-      column,
-      functionDisplayName: this.props.frame.functionDisplayName,
-      sourceId,
-    };
+    this.setState({ originalLocation });
   }
 
   
   render() {
-    let frame, isSourceMapped;
     const {
+      frame,
       onClick,
       showFunctionName,
       showAnonymousFunctionName,
@@ -135,18 +130,16 @@ class Frame extends Component {
       showFullSourceUrl,
       messageSource,
     } = this.props;
+    const { originalLocation } = this.state;
 
-    if (this.state && this.state.isSourceMapped && this.state.frame) {
-      frame = this.state.frame;
-      isSourceMapped = this.state.isSourceMapped;
-    } else {
-      frame = this.props.frame;
-    }
+    const generatedLocation = savedFrameToLocation(frame);
+    const currentLocation = originalLocation || generatedLocation;
 
-    const source = frame.source || "";
-    const sourceId = frame.sourceId;
-    const line = frame.line != void 0 ? Number(frame.line) : null;
-    const column = frame.column != void 0 ? Number(frame.column) : null;
+    const source = currentLocation.url || "";
+    const line =
+      currentLocation.line != void 0 ? Number(currentLocation.line) : null;
+    const column =
+      currentLocation.column != void 0 ? Number(currentLocation.column) : null;
 
     const { short, long, host } = getSourceNames(source);
     const unicodeShort = getUnicodeUrlPath(short);
@@ -159,7 +152,11 @@ class Frame extends Component {
     
     
     
-    const isLinkable = !!parseURL(source) || isSourceMapped || sourceId;
+    const isLinkable =
+      originalLocation ||
+      generatedLocation.id ||
+      !!parseURL(generatedLocation.url);
+
     const elements = [];
     const sourceElements = [];
     let sourceEl;
@@ -180,19 +177,16 @@ class Frame extends Component {
     };
 
     if (showFunctionName) {
-      let functionDisplayName = frame.functionDisplayName;
-      if (!functionDisplayName && showAnonymousFunctionName) {
-        functionDisplayName = webl10n.getStr("stacktrace.anonymousFunction");
-      }
-
-      if (functionDisplayName) {
+      const functionDisplayName = frame.functionDisplayName;
+      if (functionDisplayName || showAnonymousFunctionName) {
         elements.push(
           dom.span(
             {
               key: "function-display-name",
               className: "frame-link-function-display-name",
             },
-            functionDisplayName
+            functionDisplayName ||
+              webl10n.getStr("stacktrace.anonymousFunction")
           ),
           " "
         );
@@ -200,7 +194,7 @@ class Frame extends Component {
     }
 
     let displaySource = showFullSourceUrl ? unicodeLong : unicodeShort;
-    if (isSourceMapped) {
+    if (originalLocation) {
       displaySource = getSourceMappedFile(displaySource);
     } else if (
       showEmptyPathAsHost &&
@@ -272,7 +266,8 @@ class Frame extends Component {
           onClick: e => {
             e.preventDefault();
             e.stopPropagation();
-            onClick(this.getSourceForClick({ ...frame, source, sourceId }));
+
+            onClick(generatedLocation);
           },
           href: source,
           className: "frame-link-source",
