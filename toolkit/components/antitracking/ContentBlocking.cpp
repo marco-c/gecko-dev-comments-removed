@@ -576,12 +576,17 @@ ContentBlocking::CompleteAllowAccessFor(
       AntiTrackingUtils::GetInnerWindow(aParentContext);
   MOZ_ASSERT(parentInner);
 
+  Document* doc = parentInner->GetExtantDoc();
+  if (NS_WARN_IF(!doc)) {
+    return;
+  }
+
   
   
   
   
   ContentBlockingNotifier::OnEvent(
-      parentInner->GetExtantDoc()->GetChannel(), false,
+      doc->GetChannel(), false,
       CookieJarSettings::IsRejectThirdPartyWithExceptions(aCookieBehavior)
           ? nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN
           : nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER,
