@@ -256,7 +256,7 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
     return -1;
   }
 
-  bool IsInvisibleNodeAndShouldBeSkipped(nsINode& aNode) const {
+  bool IsInvisibleNodeAndShouldBeSkipped(const nsINode& aNode) const {
     if (mFlags & SkipInvisibleContent) {
       
       
@@ -264,8 +264,8 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
       
       
       
-      nsINode* node{&aNode};
-      if (ShadowRoot* shadowRoot = ShadowRoot::FromNode(node)) {
+      const nsINode* node{&aNode};
+      if (const ShadowRoot* shadowRoot = ShadowRoot::FromNode(node)) {
         node = shadowRoot->GetHost();
       }
 
