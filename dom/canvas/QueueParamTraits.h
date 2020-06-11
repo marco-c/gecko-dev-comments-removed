@@ -72,10 +72,6 @@ struct IsTriviallySerializable
     : public std::integral_constant<bool, std::is_enum<T>::value ||
                                               std::is_arithmetic<T>::value> {};
 
-class ProducerConsumerQueue;
-class PcqProducer;
-class PcqConsumer;
-
 
 
 
@@ -146,7 +142,6 @@ class Marshaller {
     return QueueStatus::kSuccess;
   }
 
-  
   static QueueStatus ReadObject(const uint8_t* aQueue, size_t aQueueBufferSize,
                                 size_t* aRead, size_t aWrite, void* aArg,
                                 size_t aArgLength) {
@@ -192,6 +187,10 @@ class ProducerView {
 
 
   inline QueueStatus Write(const void* aBuffer, size_t aBufferSize);
+
+  
+
+
 
   template <typename T>
   inline QueueStatus Write(const T* src, size_t count) {
@@ -247,6 +246,11 @@ class ConsumerView {
 
 
   inline QueueStatus Read(void* aBuffer, size_t aBufferSize);
+
+  
+
+
+
 
   template <typename T>
   inline QueueStatus Read(T* dest, size_t count) {
