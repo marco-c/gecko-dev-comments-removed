@@ -4551,6 +4551,14 @@ pref("browser.sanitizer.loglevel", "Warn");
 pref("prompts.authentication_dialog_abuse_limit", 2);
 
 
+
+#ifdef NIGHTLY_BUILD
+  pref("prompts.modalType.httpAuth", 2);
+#else
+  pref("prompts.modalType.httpAuth", 3);
+#endif
+
+
 pref("dom.payments.loglevel", "Warn");
 pref("dom.payments.defaults.saveCreditCard", false);
 pref("dom.payments.defaults.saveAddress", true);
