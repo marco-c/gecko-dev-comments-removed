@@ -11,7 +11,6 @@
 
 
 
-
 var value = 0;
 
 assert.throws(ReferenceError, function() {

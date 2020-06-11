@@ -11,7 +11,6 @@
 
 
 
-
 var value = 2;
 
 assert.sameValue(value ||= unresolved, 2, "value");

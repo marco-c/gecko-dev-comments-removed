@@ -20,7 +20,6 @@
 
 
 
-
 var value = undefined;
 assert.sameValue(value &&= 1, undefined, "(value &&= 1) === undefined; where value = undefined");
 

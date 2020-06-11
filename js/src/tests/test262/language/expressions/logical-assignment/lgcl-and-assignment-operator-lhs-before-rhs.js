@@ -9,7 +9,6 @@
 
 
 
-
 function DummyError() { }
 
 assert.throws(DummyError, function() {

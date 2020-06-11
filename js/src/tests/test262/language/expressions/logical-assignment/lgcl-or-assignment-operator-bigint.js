@@ -20,7 +20,6 @@
 
 
 
-
 var value = 0n;
 assert.sameValue(value ||= 1n, 1n, "(value ||= 1n) === 1n; where value = 0n");
 
