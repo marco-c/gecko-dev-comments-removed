@@ -5367,6 +5367,7 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JSFreeOp* fop,
 
   
   
+  
   sweepFinalizationRegistriesOnMainThread();
 
   
@@ -5457,6 +5458,25 @@ IncrementalProgress GCRuntime::endSweepingSweepGroup(JSFreeOp* fop,
   queueZonesAndStartBackgroundSweep(zones);
 
   return Finished;
+}
+
+IncrementalProgress GCRuntime::markDuringSweeping(JSFreeOp* fop,
+                                                  SliceBudget& budget) {
+  if (sweepMarkTaskStarted || marker.isDrained()) {
+    return Finished;
+  }
+
+  if (markOnBackgroundThreadDuringSweeping) {
+    AutoLockHelperThreadState lock;
+    MOZ_ASSERT(sweepMarkTask.isIdle(lock));
+    sweepMarkTask.setBudget(budget);
+    sweepMarkTask.startOrRunIfIdle(lock);
+    sweepMarkTaskStarted = true;
+    return Finished;  
+  }
+
+  gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_MARK);
+  return markUntilBudgetExhausted(budget);
 }
 
 void GCRuntime::beginSweepPhase(JS::GCReason reason, AutoGCSession& session) {
@@ -6091,6 +6111,7 @@ bool GCRuntime::initSweepActions() {
           Call(&GCRuntime::endMarkingSweepGroup),
           Call(&GCRuntime::beginSweepingSweepGroup),
           MaybeYield(ZealMode::IncrementalMultipleSlices),
+          Call(&GCRuntime::markDuringSweeping),
           MaybeYield(ZealMode::YieldBeforeSweepingAtoms),
           Call(&GCRuntime::sweepAtomsTable),
           MaybeYield(ZealMode::YieldBeforeSweepingCaches),
@@ -6128,21 +6149,9 @@ IncrementalProgress GCRuntime::performSweepActions(SliceBudget& budget) {
 
   MOZ_ASSERT(initialState <= State::Sweep);
   MOZ_ASSERT_IF(initialState != State::Sweep, marker.isDrained());
-  MOZ_ASSERT(!sweepMarkTaskStarted);
-
-  if (initialState == State::Sweep && !marker.isDrained()) {
-    if (markOnBackgroundThreadDuringSweeping) {
-      AutoLockHelperThreadState lock;
-      MOZ_ASSERT(sweepMarkTask.isIdle(lock));
-      sweepMarkTask.setBudget(budget);
-      sweepMarkTask.startOrRunIfIdle(lock);
-      sweepMarkTaskStarted = true;
-    } else {
-      gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_MARK);
-      if (markUntilBudgetExhausted(budget) == NotFinished) {
-        return NotFinished;
-      }
-    }
+  if (initialState == State::Sweep &&
+      markDuringSweeping(&fop, budget) == NotFinished) {
+    return NotFinished;
   }
 
   
