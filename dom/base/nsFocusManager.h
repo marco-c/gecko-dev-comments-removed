@@ -180,6 +180,9 @@ class nsFocusManager final : public nsIFocusManager,
     eIncludeVisibleDescendants,
   };
   static mozilla::dom::Element* GetFocusedDescendant(
+      nsPIDOMWindowOuter* aWindow, bool* aFocusIsOutOfProcess,
+      SearchRange aSearchRange, nsPIDOMWindowOuter** aFocusedWindow);
+  static mozilla::dom::Element* GetFocusedDescendant(
       nsPIDOMWindowOuter* aWindow, SearchRange aSearchRange,
       nsPIDOMWindowOuter** aFocusedWindow);
 
@@ -399,6 +402,7 @@ class nsFocusManager final : public nsIFocusManager,
   void Focus(nsPIDOMWindowOuter* aWindow, mozilla::dom::Element* aContent,
              uint32_t aFlags, bool aIsNewDocument, bool aFocusChanged,
              bool aWindowRaised, bool aAdjustWidget,
+             bool aFocusInOtherContentProcess,
              nsIContent* aContentLostFocus = nullptr);
 
   
