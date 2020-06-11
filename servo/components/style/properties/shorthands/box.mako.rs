@@ -28,7 +28,6 @@ ${helpers.two_properties_shorthand(
          "(https://developer.mozilla.org/en-US/docs/Web/CSS/overflow-clip-box)",
 )}
 
-#[cfg(any(feature = "gecko", feature = "servo-layout-2013"))]
 macro_rules! try_parse_one {
     ($context: expr, $input: expr, $var: ident, $prop_module: ident) => {
         if $var.is_none() {
@@ -43,12 +42,12 @@ macro_rules! try_parse_one {
 }
 
 <%helpers:shorthand name="transition"
-                    engines="gecko servo-2013"
+                    engines="gecko servo-2013 servo-2020"
                     extra_prefixes="moz:layout.css.prefixes.transitions webkit"
                     sub_properties="transition-property transition-duration
                                     transition-timing-function
                                     transition-delay"
-                    spec="https://drafts.csswg.org/css-transitions/#propdef-transition">
+                    spec="https:
     use crate::parser::Parse;
     % for prop in "delay duration property timing_function".split():
     use crate::properties::longhands::transition_${prop};
@@ -63,8 +62,8 @@ macro_rules! try_parse_one {
             % for prop in "duration timing_function delay".split():
             transition_${prop}: transition_${prop}::SingleSpecifiedValue,
             % endfor
-            // Unlike other properties, transition-property uses an Option<> to
-            // represent 'none' as `None`.
+            
+            
             transition_property: Option<TransitionProperty>,
         }
 
@@ -83,8 +82,8 @@ macro_rules! try_parse_one {
                 try_parse_one!(context, input, duration, transition_duration);
                 try_parse_one!(context, input, timing_function, transition_timing_function);
                 try_parse_one!(context, input, delay, transition_delay);
-                // Must check 'transition-property' after 'transition-timing-function' since
-                // 'transition-property' accepts any keyword.
+                
+                
                 if property.is_none() {
                     if let Ok(value) = input.try(|i| TransitionProperty::parse(context, i)) {
                         property = Some(Some(value));
@@ -92,8 +91,8 @@ macro_rules! try_parse_one {
                     }
 
                     if input.try(|i| i.expect_ident_matching("none")).is_ok() {
-                        // 'none' is not a valid value for <single-transition-property>,
-                        // so it's not acceptable in the function above.
+                        
+                        
                         property = Some(None);
                         continue;
                     }
@@ -127,9 +126,9 @@ macro_rules! try_parse_one {
             if let Some(value) = result.transition_property {
                 propertys.push(value);
             } else if multiple_items {
-                // If there is more than one item, and any of transitions has 'none',
-                // then it's invalid. Othersize, leave propertys to be empty (which
-                // means "transition-property: none");
+                
+                
+                
                 return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
             }
 
@@ -149,9 +148,9 @@ macro_rules! try_parse_one {
         fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result where W: fmt::Write {
             let property_len = self.transition_property.0.len();
 
-            // There are two cases that we can do shorthand serialization:
-            // * when all value lists have the same length, or
-            // * when transition-property is none, and other value lists have exactly one item.
+            
+            
+            
             if property_len == 0 {
                 % for name in "duration delay timing_function".split():
                     if self.transition_${name}.0.len() != 1 {
@@ -166,7 +165,7 @@ macro_rules! try_parse_one {
                 % endfor
             }
 
-            // Representative length.
+            
             let len = self.transition_duration.0.len();
 
             for i in 0..len {
@@ -189,7 +188,7 @@ macro_rules! try_parse_one {
 </%helpers:shorthand>
 
 <%helpers:shorthand name="animation"
-                    engines="gecko servo-2013"
+                    engines="gecko servo-2013 servo-2020"
                     extra_prefixes="moz:layout.css.prefixes.animations webkit"
                     sub_properties="animation-name animation-duration
                                     animation-timing-function animation-delay
@@ -224,11 +223,11 @@ macro_rules! try_parse_one {
             % endfor
 
             let mut parsed = 0;
-            // NB: Name must be the last one here so that keywords valid for other
-            // longhands are not interpreted as names.
-            //
-            // Also, duration must be before delay, see
-            // https://drafts.csswg.org/css-animations/#typedef-single-animation
+            
+            
+            
+            
+            
             loop {
                 parsed += 1;
                 try_parse_one!(context, input, duration, animation_duration);
@@ -244,7 +243,7 @@ macro_rules! try_parse_one {
                 break
             }
 
-            // If nothing is parsed, this is an invalid entry.
+            
             if parsed == 0 {
                 Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
             } else {
@@ -278,13 +277,13 @@ macro_rules! try_parse_one {
     impl<'a> ToCss for LonghandsToSerialize<'a>  {
         fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result where W: fmt::Write {
             let len = self.animation_name.0.len();
-            // There should be at least one declared value
+            
             if len == 0 {
                 return Ok(());
             }
 
-            // If any value list length is differs then we don't do a shorthand serialization
-            // either.
+            
+            
             % for name in props[1:]:
                 if len != self.animation_${name}.0.len() {
                     return Ok(())
@@ -323,7 +322,7 @@ ${helpers.two_properties_shorthand(
     name="page-break-before"
     flags="SHORTHAND_IN_GETCS IS_LEGACY_SHORTHAND"
     sub_properties="break-before"
-    spec="https://drafts.csswg.org/css2/page.html#propdef-page-break-before"
+    spec="https:
 >
     pub fn parse_value<'i>(
         _: &ParserContext,
@@ -381,9 +380,9 @@ ${helpers.two_properties_shorthand(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Longhands, ParseError<'i>> {
-        // FIXME: Bug 1559232: Support offset-position.
-        // Per the spec, this must have offet-position and/or offset-path. However, we don't
-        // support offset-position, so offset-path is necessary now.
+        
+        
+        
         let offset_path = OffsetPath::parse(context, input)?;
 
         let mut offset_distance = None;
@@ -419,8 +418,8 @@ ${helpers.two_properties_shorthand(
 
     impl<'a> ToCss for LonghandsToSerialize<'a>  {
         fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result where W: fmt::Write {
-            // FIXME: Bug 1559232: Support offset-position. We don't support offset-position,
-            // so always serialize offset-path now.
+            
+            
             self.offset_path.to_css(dest)?;
 
             if !self.offset_distance.is_zero() {
@@ -463,9 +462,9 @@ ${helpers.two_properties_shorthand(
             },
         };
 
-        // Make sure that the initial value matches the values for the
-        // longhands, just for general sanity.  `zoom: 1` and `zoom: 0` are
-        // ignored, see [1][2]. They are just hack for the "has layout" mode on
+        
+        
+        
         
         
         
