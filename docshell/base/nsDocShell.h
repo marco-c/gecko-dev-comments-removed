@@ -1230,25 +1230,6 @@ class nsDocShell final : public nsDocLoader,
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  enum FullscreenAllowedState : uint8_t {
-    CHECK_ATTRIBUTES,
-    PARENT_ALLOWS,
-    PARENT_PROHIBITS
-  };
-  FullscreenAllowedState mFullscreenAllowed;
-
-  
-  
   bool mCreatingDocument;  
 #ifdef DEBUG
   bool mInEnsureScriptEnv;
