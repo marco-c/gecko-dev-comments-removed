@@ -1,16 +1,16 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// NSApplication delegate for Mac OS X Cocoa API.
 
-// As of 10.4 Tiger, the system can send six kinds of Apple Events to an application;
-// a well-behaved XUL app should have some kind of handling for all of them.
-//
-// See
-// http://developer.apple.com/documentation/Cocoa/Conceptual/ScriptableCocoaApplications/SApps_handle_AEs/chapter_11_section_3.html
-// for details.
+
+
+
+
+
+
+
+
+
+
+
 
 #import <Cocoa/Cocoa.h>
 #import <Carbon/Carbon.h>
@@ -51,10 +51,10 @@ class AutoAutoreleasePool {
 
 static bool sProcessedGetURLEvent = false;
 
-// Methods that can be called from non-Objective-C code.
 
-// This is needed, on relaunch, to force the OS to use the "Cocoa Dock API"
-// instead of the "Carbon Dock API".  For more info see bmo bug 377166.
+
+
+
 void EnsureUseCocoaDockAPI() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -64,13 +64,13 @@ void EnsureUseCocoaDockAPI() {
 }
 
 void DisableAppNap() {
-  // Prevent the parent process from entering App Nap. macOS does not put our
-  // child processes into App Nap and, as a result, when the parent is in
-  // App Nap, child processes continue to run normally generating IPC messages
-  // for the parent which can end up being queued. This can cause the browser
-  // to be unresponsive for a period of time after the App Nap until the parent
-  // process "catches up." NSAppSleepDisabled has to be set early during
-  // startup before the OS reads the value for the process.
+  
+  
+  
+  
+  
+  
+  
   [[NSUserDefaults standardUserDefaults] registerDefaults:@{
     @"NSAppSleepDisabled" : @YES,
   }];
@@ -79,32 +79,32 @@ void DisableAppNap() {
 void SetupMacApplicationDelegate() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  // this is called during startup, outside an event loop, and therefore
-  // needs an autorelease pool to avoid cocoa object leakage (bug 559075)
+  
+  
   AutoAutoreleasePool pool;
 
-  // Ensure that ProcessPendingGetURLAppleEvents() doesn't regress bug 377166.
+  
   [GeckoNSApplication sharedApplication];
 
-  // This call makes it so that application:openFile: doesn't get bogus calls
-  // from Cocoa doing its own parsing of the argument string. And yes, we need
-  // to use a string with a boolean value in it. That's just how it works.
+  
+  
+  
   [[NSUserDefaults standardUserDefaults] setObject:@"NO" forKey:@"NSTreatUnknownArgumentsAsOpen"];
 
-  // Create the delegate. This should be around for the lifetime of the app.
+  
   id<NSApplicationDelegate> delegate = [[MacApplicationDelegate alloc] init];
   [[GeckoNSApplication sharedApplication] setDelegate:delegate];
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-// Indirectly make the OS process any pending GetURL Apple events.  This is
-// done via _DPSNextEvent() (an undocumented AppKit function called from
-// [NSApplication nextEventMatchingMask:untilDate:inMode:dequeue:]).  Apple
-// events are only processed if 'dequeue' is 'YES' -- so we need to call
-// [NSApplication sendEvent:] on any event that gets returned.  'event' will
-// never itself be an Apple event, and it may be 'nil' even when Apple events
-// are processed.
+
+
+
+
+
+
+
 void ProcessPendingGetURLAppleEvents() {
   AutoAutoreleasePool pool;
   bool keepSpinning = true;
@@ -143,8 +143,8 @@ void ProcessPendingGetURLAppleEvents() {
                 andEventID:kAEOpenDocuments];
 
     if (![NSApp windowsMenu]) {
-      // If the application has a windows menu, it will keep it up to date and
-      // prepend the window list to the Dock menu automatically.
+      
+      
       NSMenu* windowsMenu = [[NSMenu alloc] initWithTitle:@"Window"];
       [NSApp setWindowsMenu:windowsMenu];
       [windowsMenu release];
@@ -167,23 +167,23 @@ void ProcessPendingGetURLAppleEvents() {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-// The method that NSApplication calls upon a request to reopen, such as when
-// the Dock icon is clicked and no windows are open. A "visible" window may be
-// miniaturized, so we can't skip nsCocoaNativeReOpen() if 'flag' is 'true'.
+
+
+
 - (BOOL)applicationShouldHandleReopen:(NSApplication*)theApp hasVisibleWindows:(BOOL)flag {
   nsCOMPtr<nsINativeAppSupport> nas = NS_GetNativeAppSupport();
   NS_ENSURE_TRUE(nas, NO);
 
-  // Go to the common Carbon/Cocoa reopen method.
+  
   nsresult rv = nas->ReOpen();
   NS_ENSURE_SUCCESS(rv, NO);
 
-  // NO says we don't want NSApplication to do anything else for us.
+  
   return NO;
 }
 
-// The method that NSApplication calls when documents are requested to be opened.
-// It will be called once for each selected document.
+
+
 - (BOOL)application:(NSApplication*)theApplication openFile:(NSString*)filename {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
 
@@ -193,7 +193,7 @@ void ProcessPendingGetURLAppleEvents() {
   NSString* urlString = [url absoluteString];
   if (!urlString) return NO;
 
-  // Add the URL to any command line we're currently setting up.
+  
   if (CommandLineServiceMac::AddURLToCurrentCommandLine([urlString UTF8String])) return YES;
 
   nsCOMPtr<nsILocalFileMac> inFile;
@@ -221,23 +221,23 @@ void ProcessPendingGetURLAppleEvents() {
   NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(NO);
 }
 
-// The method that NSApplication calls when documents are requested to be printed
-// from the Finder (under the "File" menu).
-// It will be called once for each selected document.
+
+
+
 - (BOOL)application:(NSApplication*)theApplication printFile:(NSString*)filename {
   return NO;
 }
 
-// Create the menu that shows up in the Dock.
+
 - (NSMenu*)applicationDockMenu:(NSApplication*)sender {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
-  // Create the NSMenu that will contain the dock menu items.
+  
   NSMenu* menu = [[[NSMenu alloc] initWithTitle:@""] autorelease];
   [menu setAutoenablesItems:NO];
 
-  // Add application-specific dock menu items. On error, do not insert the
-  // dock menu items.
+  
+  
   nsresult rv;
   nsCOMPtr<nsIMacDockSupport> dockSupport =
       do_GetService("@mozilla.org/widget/macdocksupport;1", &rv);
@@ -247,19 +247,19 @@ void ProcessPendingGetURLAppleEvents() {
   rv = dockSupport->GetDockMenu(getter_AddRefs(dockMenu));
   if (NS_FAILED(rv) || !dockMenu) return menu;
 
-  // Determine if the dock menu items should be displayed. This also gives
-  // the menu the opportunity to update itself before display.
+  
+  
   bool shouldShowItems;
   rv = dockMenu->MenuWillOpen(&shouldShowItems);
   if (NS_FAILED(rv) || !shouldShowItems) return menu;
 
-  // Obtain a copy of the native menu.
+  
   NSMenu* nativeDockMenu;
   rv = dockMenu->GetNativeMenu(reinterpret_cast<void**>(&nativeDockMenu));
   if (NS_FAILED(rv) || !nativeDockMenu) return menu;
 
-  // Loop through the application-specific dock menu and insert its
-  // contents into the dock menu that we are building for Cocoa.
+  
+  
   int numDockMenuItems = [nativeDockMenu numberOfItems];
   if (numDockMenuItems > 0) {
     if ([menu numberOfItems] > 0) [menu addItem:[NSMenuItem separatorItem]];
@@ -277,13 +277,13 @@ void ProcessPendingGetURLAppleEvents() {
 }
 
 - (void)applicationWillFinishLaunching:(NSNotification*)notification {
-  // We provide our own full screen menu item, so we don't want the OS providing
-  // one as well.
+  
+  
   [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"NSFullScreenMenuItemEverywhere"];
 }
 
-// If we don't handle applicationShouldTerminate:, a call to [NSApp terminate:]
-// (from the browser or from the OS) can result in an unclean shutdown.
+
+
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)sender {
   nsCOMPtr<nsIObserverService> obsServ = do_GetService("@mozilla.org/observer-service;1");
   if (!obsServ) return NSTerminateNow;
@@ -299,7 +299,13 @@ void ProcessPendingGetURLAppleEvents() {
   if (abortQuit) return NSTerminateCancel;
 
   nsCOMPtr<nsIAppStartup> appService = do_GetService("@mozilla.org/toolkit/app-startup;1");
-  if (appService) appService->Quit(nsIAppStartup::eForceQuit);
+  if (appService) {
+    bool userAllowedQuit = true;
+    appService->Quit(nsIAppStartup::eForceQuit, &userAllowedQuit);
+    if (!userAllowedQuit) {
+      return NSTerminateCancel;
+    }
+  }
 
   return NSTerminateNow;
 }
@@ -322,13 +328,13 @@ void ProcessPendingGetURLAppleEvents() {
     NSAppleEventDescriptor* fileListDescriptor = [event paramDescriptorForKeyword:keyDirectObject];
     if (!fileListDescriptor) return;
 
-    // Descriptor list indexing is one-based...
+    
     NSInteger numberOfFiles = [fileListDescriptor numberOfItems];
     for (NSInteger i = 1; i <= numberOfFiles; i++) {
       NSString* urlString = [[fileListDescriptor descriptorAtIndex:i] stringValue];
       if (!urlString) continue;
 
-      // We need a path, not a URL
+      
       NSURL* url = [NSURL URLWithString:urlString];
       if (!url) continue;
 
@@ -368,7 +374,7 @@ void ProcessPendingGetURLAppleEvents() {
   }
 
   const char* const urlString = [[url absoluteString] UTF8String];
-  // Add the URL to any command line we're currently setting up.
+  
   if (CommandLineServiceMac::AddURLToCurrentCommandLine(urlString)) {
     return NO;
   }

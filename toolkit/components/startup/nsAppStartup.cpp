@@ -275,7 +275,8 @@ nsAppStartup::Run(void) {
   
   
   
-  Quit(eForceQuit);
+  bool userAllowedQuit = true;
+  Quit(eForceQuit, &userAllowedQuit);
 
   nsresult retval = NS_OK;
   if (mozilla::AppShutdown::IsRestarting()) {
@@ -286,8 +287,13 @@ nsAppStartup::Run(void) {
 }
 
 NS_IMETHODIMP
-nsAppStartup::Quit(uint32_t aMode) {
+nsAppStartup::Quit(uint32_t aMode, bool* aUserAllowedQuit) {
   uint32_t ferocity = (aMode & 0xF);
+
+  
+  
+  
+  *aUserAllowedQuit = false;
 
   
   
@@ -349,7 +355,9 @@ nsAppStartup::Quit(uint32_t aMode) {
           windowEnumerator->GetNext(getter_AddRefs(window));
           nsCOMPtr<nsPIDOMWindowOuter> domWindow(do_QueryInterface(window));
           if (domWindow) {
-            if (!domWindow->CanClose()) return NS_OK;
+            if (!domWindow->CanClose()) {
+              return NS_OK;
+            }
           }
           windowEnumerator->HasMoreElements(&more);
         }
@@ -359,6 +367,7 @@ nsAppStartup::Quit(uint32_t aMode) {
     PROFILER_ADD_MARKER("Shutdown start", OTHER);
     mozilla::RecordShutdownStartTimeStamp();
 
+    *aUserAllowedQuit = true;
     mShuttingDown = true;
     auto shutdownMode = ((aMode & eRestart) != 0)
                             ? mozilla::AppShutdownMode::Restart
@@ -496,7 +505,10 @@ nsAppStartup::ExitLastWindowClosingSurvivalArea(void) {
   NS_ASSERTION(mConsiderQuitStopper > 0, "consider quit stopper out of bounds");
   --mConsiderQuitStopper;
 
-  if (mRunning) Quit(eConsiderQuit);
+  if (mRunning) {
+    bool userAllowedQuit = false;
+    Quit(eConsiderQuit, &userAllowedQuit);
+  }
 
   return NS_OK;
 }
@@ -940,7 +952,8 @@ nsAppStartup::TrackStartupCrashEnd() {
 NS_IMETHODIMP
 nsAppStartup::RestartInSafeMode(uint32_t aQuitMode) {
   PR_SetEnv("MOZ_SAFE_MODE_RESTART=1");
-  this->Quit(aQuitMode | nsIAppStartup::eRestart);
+  bool userAllowedQuit = false;
+  this->Quit(aQuitMode | nsIAppStartup::eRestart, &userAllowedQuit);
 
   return NS_OK;
 }
