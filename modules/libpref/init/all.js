@@ -2592,9 +2592,6 @@ pref("svg.disabled", false);
 pref("dom.ipc.processCount.webLargeAllocation", 10);
 
 
-pref("dom.largeAllocationHeader.enabled", true);
-
-
 pref("browser.tabs.remote.autostart", false);
 
 
@@ -4530,11 +4527,6 @@ pref("dom.clients.openwindow_favors_same_process", true);
 #else
   pref("layers.omtp.enabled", false);
 #endif
-
-
-
-
-pref("general.document_open_conversion_depth_limit", 20);
 
 pref("fission.rebuild_frameloaders_on_remoteness_change", true);
 
