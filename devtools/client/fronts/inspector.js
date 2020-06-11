@@ -193,10 +193,12 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
       target = await watcher.getBrowsingContextTarget(browsingContextId);
     } else {
       
-      const descriptor = await this.targetFront.client.mainRoot.getBrowsingContextDescriptor(
-        browsingContextId
+      
+      
+      
+      throw new Error(
+        `Unable to call getNodeActorFromContentDomReference for ${this.targetFront.actorID}`
       );
-      target = await descriptor.getTarget();
     }
     const { walker } = await target.getFront("inspector");
     return walker.getNodeActorFromContentDomReference(contentDomReference);

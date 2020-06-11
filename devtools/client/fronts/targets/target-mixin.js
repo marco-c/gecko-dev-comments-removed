@@ -171,10 +171,11 @@ function TargetMixin(parentClass) {
 
       
       
-      const descriptor = await this.client.mainRoot.getBrowsingContextDescriptor(
-        browsingContextID
+      
+      
+      throw new Error(
+        `Unable to call getBrowsingContextTarget for ${this.actorID}`
       );
-      return descriptor.getTarget();
     }
 
     
