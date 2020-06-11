@@ -198,8 +198,7 @@ class JsepTrack {
 
   virtual std::vector<uint32_t> GetRtxSsrcs() const {
     std::vector<uint32_t> result;
-    if (mRtxIsAllowed &&
-        Preferences::GetBool("media.peerconnection.video.use_rtx", false)) {
+    if (Preferences::GetBool("media.peerconnection.video.use_rtx", false)) {
       std::for_each(
           mSsrcToRtxSsrc.begin(), mSsrcToRtxSsrc.end(),
           [&result](const auto& pair) { result.push_back(pair.second); });
@@ -279,9 +278,6 @@ class JsepTrack {
                      sdp::Direction direction, SsrcGenerator& ssrcGenerator,
                      bool requireRtxSsrcs, SdpMediaSection* msection);
 
-  
-  void SetRtxIsAllowed(bool aRtxIsAllowed) { mRtxIsAllowed = aRtxIsAllowed; }
-
  private:
   std::vector<UniquePtr<JsepCodecDescription>> GetCodecClones() const;
   static void EnsureNoDuplicatePayloadTypes(
@@ -329,9 +325,6 @@ class JsepTrack {
   std::map<uint32_t, uint32_t> mSsrcToRtxSsrc;
   bool mActive;
   bool mRemoteSetSendBit;
-
-  
-  bool mRtxIsAllowed = true;
 };
 
 }  

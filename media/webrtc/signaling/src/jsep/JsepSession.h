@@ -207,16 +207,10 @@ class JsepSession {
     }
   }
 
-  
-  void SetRtxIsAllowed(bool aRtxIsAllowed) { mRtxIsAllowed = aRtxIsAllowed; }
-
  protected:
   const std::string mName;
   JsepSignalingState mState;
   uint32_t mNegotiations;
-
-  
-  bool mRtxIsAllowed = true;
 };
 
 }  
