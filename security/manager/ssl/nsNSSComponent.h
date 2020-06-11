@@ -29,8 +29,7 @@
 
 class nsIDOMWindow;
 class nsIPrompt;
-class nsISerialEventTarget;
-class nsITimer;
+class SmartCardThreadList;
 
 namespace mozilla {
 namespace psm {
@@ -108,8 +107,6 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
 
   bool ShouldEnableEnterpriseRootsForFamilySafety(uint32_t familySafetyMode);
 
-  nsresult MaybeEnableIntermediatePreloadingHealer();
-
   
   mozilla::Monitor mLoadableCertsLoadedMonitor;
   bool mLoadableCertsLoaded;
@@ -139,13 +136,6 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
   
   
   bool mLoadLoadableCertsTaskDispatched;
-  
-  
-  
-  
-  
-  nsCOMPtr<nsISerialEventTarget> mIntermediatePreloadingHealerTaskQueue;
-  nsCOMPtr<nsITimer> mIntermediatePreloadingHealerTimer;
 };
 
 inline nsresult BlockUntilLoadableCertsLoaded() {
