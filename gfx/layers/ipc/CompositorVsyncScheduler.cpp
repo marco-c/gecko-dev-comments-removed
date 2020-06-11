@@ -172,11 +172,19 @@ void CompositorVsyncScheduler::ScheduleComposition() {
 bool CompositorVsyncScheduler::NotifyVsync(const VsyncEvent& aVsync) {
   
   
-  MOZ_ASSERT_IF(XRE_IsParentProcess(),
-                !CompositorThreadHolder::IsInCompositorThread());
+#ifdef DEBUG
+#  ifdef MOZ_WAYLAND
+  if (!gfxPlatformGtk::GetPlatform()->IsWaylandDisplay())
+#  endif  
+  {
+    MOZ_ASSERT_IF(XRE_IsParentProcess(),
+                  !CompositorThreadHolder::IsInCompositorThread());
+    MOZ_ASSERT(!NS_IsMainThread());
+  }
+
   MOZ_ASSERT_IF(XRE_GetProcessType() == GeckoProcessType_GPU,
                 CompositorThreadHolder::IsInCompositorThread());
-  MOZ_ASSERT(!NS_IsMainThread());
+#endif  
 
 #if defined(MOZ_WIDGET_ANDROID)
   gfx::VRManager* vm = gfx::VRManager::Get();
