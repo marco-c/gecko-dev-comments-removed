@@ -1133,8 +1133,7 @@ size_t JSContext::sizeOfExcludingThis(
 
 
 
-  return cycleDetectorVector().sizeOfExcludingThis(mallocSizeOf) +
-         irregexp::IsolateSizeOfIncludingThis(isolate, mallocSizeOf);
+  return cycleDetectorVector().sizeOfExcludingThis(mallocSizeOf);
 }
 
 #ifdef DEBUG
