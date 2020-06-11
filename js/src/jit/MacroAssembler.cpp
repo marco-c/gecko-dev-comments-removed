@@ -3022,6 +3022,8 @@ void MacroAssembler::pow32(Register base, Register power, Register dest,
   
   
   
+  
+  
   Label start;
   branchTest32(Assembler::NotSigned, power, power, &start);
   jump(onOver);

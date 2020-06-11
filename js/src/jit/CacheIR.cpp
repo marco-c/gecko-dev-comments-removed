@@ -5442,6 +5442,28 @@ AttachDecision CallIRGenerator::tryAttachMathSqrt(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+static bool CanAttachInt32Pow(const Value& baseVal, const Value& powerVal) {
+  MOZ_ASSERT(baseVal.isInt32() || baseVal.isBoolean());
+  MOZ_ASSERT(powerVal.isInt32() || powerVal.isBoolean());
+
+  int32_t base = baseVal.isInt32() ? baseVal.toInt32() : baseVal.toBoolean();
+  int32_t power =
+      powerVal.isInt32() ? powerVal.toInt32() : powerVal.toBoolean();
+
+  
+  
+  
+  
+  
+  if (power < 0) {
+    return base == 1;
+  }
+
+  double res = powi(base, power);
+  int32_t unused;
+  return mozilla::NumberIsInt32(res, &unused);
+}
+
 AttachDecision CallIRGenerator::tryAttachMathPow(HandleFunction callee) {
   
   if (argc_ != 2 || !args_[0].isNumber() || !args_[1].isNumber()) {
@@ -5458,10 +5480,16 @@ AttachDecision CallIRGenerator::tryAttachMathPow(HandleFunction callee) {
   ValOperandId exponentId =
       writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
 
-  NumberOperandId baseNumberId = writer.guardIsNumber(baseId);
-  NumberOperandId exponentNumberId = writer.guardIsNumber(exponentId);
-
-  writer.doublePowResult(baseNumberId, exponentNumberId);
+  if (args_[0].isInt32() && args_[1].isInt32() &&
+      CanAttachInt32Pow(args_[0], args_[1])) {
+    Int32OperandId baseInt32Id = writer.guardToInt32(baseId);
+    Int32OperandId exponentInt32Id = writer.guardToInt32(exponentId);
+    writer.int32PowResult(baseInt32Id, exponentInt32Id);
+  } else {
+    NumberOperandId baseNumberId = writer.guardIsNumber(baseId);
+    NumberOperandId exponentNumberId = writer.guardIsNumber(exponentId);
+    writer.doublePowResult(baseNumberId, exponentNumberId);
+  }
 
   writer.typeMonitorResult();
   cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
@@ -7411,10 +7439,7 @@ AttachDecision BinaryArithIRGenerator::tryAttachInt32() {
     return AttachDecision::NoAction;
   }
 
-  
-  
-  
-  if (op_ == JSOp::Pow && rhs_.isInt32() && rhs_.toInt32() < 0) {
+  if (op_ == JSOp::Pow && !CanAttachInt32Pow(lhs_, rhs_)) {
     return AttachDecision::NoAction;
   }
 
@@ -7694,16 +7719,10 @@ AttachDecision BinaryArithIRGenerator::tryAttachStringInt32Arith() {
   }
 
   
+  
+  
   if (op_ != JSOp::Sub && op_ != JSOp::Mul && op_ != JSOp::Div &&
-      op_ != JSOp::Mod && op_ != JSOp::Pow) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  
-  
-  if (op_ == JSOp::Pow &&
-      ((rhs_.isInt32() && rhs_.toInt32() < 0) || rhs_.isString())) {
+      op_ != JSOp::Mod) {
     return AttachDecision::NoAction;
   }
 
@@ -7739,10 +7758,6 @@ AttachDecision BinaryArithIRGenerator::tryAttachStringInt32Arith() {
     case JSOp::Mod:
       writer.int32ModResult(lhsIntId, rhsIntId);
       trackAttached("BinaryArith.StringInt32.Mod");
-      break;
-    case JSOp::Pow:
-      writer.int32PowResult(lhsIntId, rhsIntId);
-      trackAttached("BinaryArith.StringInt32.Pow");
       break;
     default:
       MOZ_CRASH("Unhandled op in tryAttachStringInt32Arith");
