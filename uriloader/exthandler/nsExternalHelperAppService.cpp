@@ -15,6 +15,7 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "nsXULAppAPI.h"
 
 #include "nsExternalHelperAppService.h"
@@ -966,6 +967,36 @@ nsExternalHelperAppService::LoadURI(nsIURI* aURI,
 
   if (!allowLoad) {
     return NS_OK;  
+  }
+
+  
+  
+  
+  
+  
+  if (aBrowsingContext && aTriggeringPrincipal &&
+      !StaticPrefs::security_allow_disjointed_external_uri_loads() &&
+      !aTriggeringPrincipal->IsSystemPrincipal()) {
+    RefPtr<BrowsingContext> bc = aBrowsingContext;
+    WindowGlobalParent* wgp = bc->Canonical()->GetCurrentWindowGlobal();
+    bool foundAccessibleFrame = false;
+
+    
+    
+    if (bc->IsTop() && !bc->HadOriginalOpener()) {
+      RefPtr<nsIURI> uri = wgp->GetDocumentURI();
+      foundAccessibleFrame =
+          uri && uri->GetSpecOrDefault().EqualsLiteral("about:blank");
+    }
+
+    while (wgp && !foundAccessibleFrame) {
+      foundAccessibleFrame =
+          aTriggeringPrincipal->Subsumes(wgp->DocumentPrincipal());
+      wgp = wgp->GetParentWindowContext();
+    }
+    if (!foundAccessibleFrame) {
+      return NS_OK;  
+    }
   }
 
   nsCOMPtr<nsIHandlerInfo> handler;
