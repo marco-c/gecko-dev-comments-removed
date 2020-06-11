@@ -1933,14 +1933,6 @@ nsresult nsHttpTransaction::HandleContent(char* buf, uint32_t count,
     }
   }
 
-  if (mConnInfo->GetIsTrrServiceChannel()) {
-    
-    
-    nsCOMPtr<nsIInputStreamPriority> pri = do_QueryInterface(mPipeIn);
-    if (pri) {
-      pri->SetPriority(nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
-    }
-  }
   return NS_OK;
 }
 
