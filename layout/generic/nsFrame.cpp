@@ -8285,7 +8285,7 @@ nsresult nsIFrame::PeekOffsetParagraph(nsPeekOffsetStruct* aPos) {
   nsIFrame* frame = this;
   nsContentAndOffset blockFrameOrBR;
   blockFrameOrBR.mContent = nullptr;
-  bool reachedBlockAncestor = frame->IsBlockOutside();
+  bool reachedLimit = frame->IsBlockOutside() || IsEditingHost(frame);
 
   auto traverse = [&aPos](nsIFrame* current) {
     return aPos->mDirection == eDirPrevious ? current->GetPrevSibling()
@@ -8296,12 +8296,12 @@ nsresult nsIFrame::PeekOffsetParagraph(nsPeekOffsetStruct* aPos) {
   
   
   
-  while (!reachedBlockAncestor) {
+  while (!reachedLimit) {
     nsIFrame* parent = frame->GetParent();
     
     
     if (!frame->mContent || !frame->mContent->GetParent()) {
-      reachedBlockAncestor = true;
+      reachedLimit = true;
       break;
     }
 
@@ -8321,10 +8321,10 @@ nsresult nsIFrame::PeekOffsetParagraph(nsPeekOffsetStruct* aPos) {
       break;
     }
     frame = parent;
-    reachedBlockAncestor = frame && frame->IsBlockOutside();
+    reachedLimit = frame && (frame->IsBlockOutside() || IsEditingHost(frame));
   }
 
-  if (reachedBlockAncestor) {  
+  if (reachedLimit) {  
     aPos->mResultContent = frame->GetContent();
     if (aPos->mDirection == eDirPrevious) {
       aPos->mContentOffset = 0;
