@@ -641,6 +641,11 @@ bool LMoveGroup::add(LAllocation from, LAllocation to, LDefinition::Type type) {
   }
 
   
+#  ifdef ENABLE_WASM_SIMD
+  
+  
+  
+#    if !defined(JS_CODEGEN_X86) && !defined(JS_CODEGEN_X64)
   if (LDefinition(type).type() == LDefinition::SIMD128) {
     MOZ_ASSERT(from.isMemory() || from.isFloatReg());
     if (from.isMemory()) {
@@ -659,6 +664,8 @@ bool LMoveGroup::add(LAllocation from, LAllocation to, LDefinition::Type type) {
       }
     }
   }
+#    endif
+#  endif
 #endif
   return moves_.append(LMove(from, to, type));
 }
