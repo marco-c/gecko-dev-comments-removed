@@ -228,6 +228,17 @@ bool LaunchApp(const std::vector<std::string>& argv,
     return false;
   }
 
+#ifdef MOZ_CODE_COVERAGE
+  
+  
+  
+  
+  
+  
+  
+  void (*ccovSigHandler)(int) = signal(SIGUSR1, SIG_IGN);
+#endif
+
 #ifdef OS_LINUX
   pid_t pid = options.fork_delegate ? options.fork_delegate->Fork() : fork();
   
@@ -269,6 +280,12 @@ bool LaunchApp(const std::vector<std::string>& argv,
   }
 
   
+
+#ifdef MOZ_CODE_COVERAGE
+  
+  signal(SIGUSR1, ccovSigHandler);
+#endif
+
   gProcessLog.print("==> process %d launched child process %d\n",
                     GetCurrentProcId(), pid);
   if (options.wait) HANDLE_EINTR(waitpid(pid, 0, 0));
