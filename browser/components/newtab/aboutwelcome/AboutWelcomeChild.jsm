@@ -12,8 +12,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   ExperimentAPI: "resource://messaging-system/experiments/ExperimentAPI.jsm",
-  shortURL: "resource://activity-stream/lib/ShortURL.jsm",
-  TippyTopProvider: "resource://activity-stream/lib/TippyTopProvider.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(this, "log", () => {
@@ -41,35 +39,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   null,
   _parseOverrideContent
 );
-
-
-
-
-function getImportableSites(child) {
-  return (
-    getImportableSites.cache ??
-    (getImportableSites.cache = (async () => {
-      
-      const tippyTop = new TippyTopProvider();
-      await tippyTop.init();
-
-      
-      return `[${[
-        ...new Set(
-          (await child.sendQuery("AWPage:IMPORTABLE_SITES")).map(url => {
-            
-            const site = { url };
-            tippyTop.processSite(site, "*");
-            return JSON.stringify({
-              icon: site.tippyTopIcon,
-              label: shortURL(site),
-            });
-          })
-        ),
-      ]}]`;
-    })())
-  );
-}
 
 class AboutWelcomeChild extends JSWindowActorChild {
   actorCreated() {
@@ -133,10 +102,6 @@ class AboutWelcomeChild extends JSWindowActorChild {
       defineAs: "AWGetFxAMetricsFlowURI",
     });
 
-    Cu.exportFunction(this.AWGetImportableSites.bind(this), window, {
-      defineAs: "AWGetImportableSites",
-    });
-
     Cu.exportFunction(this.AWSendEventTelemetry.bind(this), window, {
       defineAs: "AWSendEventTelemetry",
     });
@@ -149,9 +114,6 @@ class AboutWelcomeChild extends JSWindowActorChild {
       defineAs: "AWWaitForMigrationClose",
     });
   }
-
-  
-
 
   wrapPromise(promise) {
     return new this.contentWindow.Promise((resolve, reject) =>
@@ -196,10 +158,6 @@ class AboutWelcomeChild extends JSWindowActorChild {
 
   AWGetFxAMetricsFlowURI() {
     return this.wrapPromise(this.sendQuery("AWPage:FXA_METRICS_FLOW_URI"));
-  }
-
-  AWGetImportableSites() {
-    return this.wrapPromise(getImportableSites(this));
   }
 
   
