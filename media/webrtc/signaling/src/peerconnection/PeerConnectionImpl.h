@@ -528,7 +528,8 @@ class PeerConnectionImpl final
   
   std::string mLocalRequestedSDP;
   std::string mRemoteRequestedSDP;
-
+  
+  mozilla::dom::Sequence<mozilla::dom::RTCSdpHistoryEntryInternal> mSdpHistory;
   std::string mPendingLocalDescription;
   std::string mPendingRemoteDescription;
   std::string mCurrentLocalDescription;
