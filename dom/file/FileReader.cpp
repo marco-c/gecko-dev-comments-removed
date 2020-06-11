@@ -84,6 +84,28 @@ class MOZ_RAII FileReaderDecreaseBusyCounter {
   ~FileReaderDecreaseBusyCounter() { mFileReader->DecreaseBusyCounter(); }
 };
 
+class FileReader::AsyncWaitRunnable final : public CancelableRunnable {
+ public:
+  explicit AsyncWaitRunnable(FileReader* aReader)
+      : CancelableRunnable("FileReader::AsyncWaitRunnable"), mReader(aReader) {}
+
+  NS_IMETHOD
+  Run() override {
+    if (mReader) {
+      mReader->InitialAsyncWait();
+    }
+    return NS_OK;
+  }
+
+  nsresult Cancel() override {
+    mReader = nullptr;
+    return NS_OK;
+  }
+
+ public:
+  RefPtr<FileReader> mReader;
+};
+
 void FileReader::RootResultArrayBuffer() { mozilla::HoldJSObjects(this); }
 
 
@@ -156,7 +178,7 @@ void FileReader::GetResult(JSContext* aCx,
     return;
   }
 
-  if (mResult.IsVoid()) {
+  if (mReadyState != DONE || mResult.IsVoid()) {
     aResult.SetNull();
     return;
   }
@@ -400,7 +422,8 @@ void FileReader::ReadFileContent(Blob& aBlob, const nsAString& aCharset,
     }
   }
 
-  aRv = DoAsyncWait();
+  mAsyncWaitRunnable = new AsyncWaitRunnable(this);
+  aRv = NS_DispatchToCurrentThread(mAsyncWaitRunnable);
   if (NS_WARN_IF(aRv.Failed())) {
     FreeFileData();
     return;
@@ -408,6 +431,18 @@ void FileReader::ReadFileContent(Blob& aBlob, const nsAString& aCharset,
 
   
   mReadyState = LOADING;
+}
+
+void FileReader::InitialAsyncWait() {
+  mAsyncWaitRunnable = nullptr;
+
+  nsresult rv = DoAsyncWait();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    mReadyState = EMPTY;
+    FreeFileData();
+    return;
+  }
+
   DispatchProgressEvent(NS_LITERAL_STRING(LOADSTART_STR));
 }
 
@@ -694,6 +729,11 @@ void FileReader::Abort() {
 
   ClearProgressEventTimer();
 
+  if (mAsyncWaitRunnable) {
+    mAsyncWaitRunnable->Cancel();
+    mAsyncWaitRunnable = nullptr;
+  }
+
   mReadyState = DONE;
 
   
@@ -702,6 +742,20 @@ void FileReader::Abort() {
   
   SetDOMStringToNull(mResult);
   mResultArrayBuffer = nullptr;
+
+  
+  
+  
+  
+  if (mAsyncStream && mBusyCount) {
+    mAsyncStream->AsyncWait( nullptr,
+                             0,
+                             0, mTarget);
+    DecreaseBusyCounter();
+    MOZ_ASSERT(mBusyCount == 0);
+
+    mAsyncStream->Close();
+  }
 
   mAsyncStream = nullptr;
   mBlob = nullptr;
@@ -712,7 +766,7 @@ void FileReader::Abort() {
   
   DispatchProgressEvent(NS_LITERAL_STRING(ABORT_STR));
   DispatchProgressEvent(NS_LITERAL_STRING(LOADEND_STR));
-}
+}  
 
 nsresult FileReader::IncreaseBusyCounter() {
   if (mWeakWorkerRef && mBusyCount++ == 0) {
@@ -744,6 +798,11 @@ void FileReader::DecreaseBusyCounter() {
 
 void FileReader::Shutdown() {
   mReadyState = DONE;
+
+  if (mAsyncWaitRunnable) {
+    mAsyncWaitRunnable->Cancel();
+    mAsyncWaitRunnable = nullptr;
+  }
 
   if (mAsyncStream) {
     mAsyncStream->Close();
