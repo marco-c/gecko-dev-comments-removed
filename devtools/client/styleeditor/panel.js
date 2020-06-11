@@ -105,12 +105,42 @@ StyleEditorPanel.prototype = {
 
 
 
-  selectStyleSheet: function(href, line, col) {
+  selectStyleSheet: function(front, line, col) {
     if (!this.UI) {
       return null;
     }
 
-    return this.UI.selectStyleSheet(href, line - 1, col ? col - 1 : 0);
+    return this.UI.selectStyleSheet(front, line - 1, col ? col - 1 : 0);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  selectOriginalSheet: function(originalId, line, col) {
+    if (!this.UI) {
+      return null;
+    }
+
+    const originalSheet = this.UI.getOriginalSourceSheet(originalId);
+    return this.UI.selectStyleSheet(originalSheet, line - 1, col ? col - 1 : 0);
+  },
+
+  getStylesheetFrontForGeneratedURL: function(url) {
+    if (!this.UI) {
+      return null;
+    }
+
+    return this.UI.getStylesheetFrontForGeneratedURL(url);
   },
 
   
