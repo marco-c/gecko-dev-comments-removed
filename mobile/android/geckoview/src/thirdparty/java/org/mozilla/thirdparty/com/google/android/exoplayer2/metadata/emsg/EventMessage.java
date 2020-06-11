@@ -15,13 +15,17 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.emsg;
 
+import static org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util.castNonNull;
+
 import android.os.Parcel;
 import android.os.Parcelable;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.Metadata;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 import java.util.Arrays;
-
-
 
 
 public final class EventMessage implements Metadata.Entry {
@@ -29,6 +33,30 @@ public final class EventMessage implements Metadata.Entry {
   
 
 
+
+  @VisibleForTesting public static final String ID3_SCHEME_ID_AOM = "https://aomedia.org/emsg/ID3";
+
+  
+
+
+  private static final String ID3_SCHEME_ID_APPLE =
+      "https://developer.apple.com/streaming/emsg-id3";
+
+  
+
+
+
+
+  @VisibleForTesting public static final String SCTE35_SCHEME_ID = "urn:scte:scte35:2014:bin";
+
+  private static final Format ID3_FORMAT =
+      Format.createSampleFormat(
+           null, MimeTypes.APPLICATION_ID3, Format.OFFSET_SAMPLE_RELATIVE);
+  private static final Format SCTE35_FORMAT =
+      Format.createSampleFormat(
+           null, MimeTypes.APPLICATION_SCTE35, Format.OFFSET_SAMPLE_RELATIVE);
+
+  
   public final String schemeIdUri;
 
   
@@ -61,9 +89,8 @@ public final class EventMessage implements Metadata.Entry {
 
 
 
-
-  public EventMessage(String schemeIdUri, String value, long durationMs, long id,
-      byte[] messageData) {
+  public EventMessage(
+      String schemeIdUri, String value, long durationMs, long id, byte[] messageData) {
     this.schemeIdUri = schemeIdUri;
     this.value = value;
     this.durationMs = durationMs;
@@ -72,11 +99,31 @@ public final class EventMessage implements Metadata.Entry {
   }
 
    EventMessage(Parcel in) {
-    schemeIdUri = in.readString();
-    value = in.readString();
+    schemeIdUri = castNonNull(in.readString());
+    value = castNonNull(in.readString());
     durationMs = in.readLong();
     id = in.readLong();
-    messageData = in.createByteArray();
+    messageData = castNonNull(in.createByteArray());
+  }
+
+  @Override
+  @Nullable
+  public Format getWrappedMetadataFormat() {
+    switch (schemeIdUri) {
+      case ID3_SCHEME_ID_AOM:
+      case ID3_SCHEME_ID_APPLE:
+        return ID3_FORMAT;
+      case SCTE35_SCHEME_ID:
+        return SCTE35_FORMAT;
+      default:
+        return null;
+    }
+  }
+
+  @Override
+  @Nullable
+  public byte[] getWrappedMetadataBytes() {
+    return getWrappedMetadataFormat() != null ? messageData : null;
   }
 
   @Override
@@ -94,7 +141,7 @@ public final class EventMessage implements Metadata.Entry {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     if (this == obj) {
       return true;
     }
@@ -102,9 +149,23 @@ public final class EventMessage implements Metadata.Entry {
       return false;
     }
     EventMessage other = (EventMessage) obj;
-    return durationMs == other.durationMs && id == other.id
-        && Util.areEqual(schemeIdUri, other.schemeIdUri) && Util.areEqual(value, other.value)
+    return durationMs == other.durationMs
+        && id == other.id
+        && Util.areEqual(schemeIdUri, other.schemeIdUri)
+        && Util.areEqual(value, other.value)
         && Arrays.equals(messageData, other.messageData);
+  }
+
+  @Override
+  public String toString() {
+    return "EMSG: scheme="
+        + schemeIdUri
+        + ", id="
+        + id
+        + ", durationMs="
+        + durationMs
+        + ", value="
+        + value;
   }
 
   

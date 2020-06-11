@@ -15,11 +15,20 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.cache;
 
+import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
+
 
 
 
 
 public interface CacheEvictor extends Cache.Listener {
+
+  
+
+
+
+
+  boolean requiresCacheSpanTouches();
 
   
 
@@ -34,6 +43,5 @@ public interface CacheEvictor extends Cache.Listener {
 
 
 
-  void onStartFile(Cache cache, String key, long position, long maxLength);
-
+  void onStartFile(Cache cache, String key, long position, long length);
 }

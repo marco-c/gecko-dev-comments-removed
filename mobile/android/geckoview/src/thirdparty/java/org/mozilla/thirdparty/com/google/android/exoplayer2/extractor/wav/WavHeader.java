@@ -15,94 +15,41 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.wav;
 
-import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
-
 
  final class WavHeader {
 
   
-  private final int numChannels;
-  
-  private final int sampleRateHz;
-  
-  private final int averageBytesPerSecond;
-  
-  private final int blockAlignment;
-  
-  private final int bitsPerSample;
-  
-  @C.PcmEncoding
-  private final int encoding;
 
-  
-  private long dataStartPosition;
-  
-  private long dataSize;
 
-  public WavHeader(int numChannels, int sampleRateHz, int averageBytesPerSecond, int blockAlignment,
-      int bitsPerSample, @C.PcmEncoding int encoding) {
+
+  public final int formatType;
+  
+  public final int numChannels;
+  
+  public final int frameRateHz;
+  
+  public final int averageBytesPerSecond;
+  
+  public final int blockSize;
+  
+  public final int bitsPerSample;
+  
+  public final byte[] extraData;
+
+  public WavHeader(
+      int formatType,
+      int numChannels,
+      int frameRateHz,
+      int averageBytesPerSecond,
+      int blockSize,
+      int bitsPerSample,
+      byte[] extraData) {
+    this.formatType = formatType;
     this.numChannels = numChannels;
-    this.sampleRateHz = sampleRateHz;
+    this.frameRateHz = frameRateHz;
     this.averageBytesPerSecond = averageBytesPerSecond;
-    this.blockAlignment = blockAlignment;
+    this.blockSize = blockSize;
     this.bitsPerSample = bitsPerSample;
-    this.encoding = encoding;
+    this.extraData = extraData;
   }
-
-  
-  public long getDurationUs() {
-    long numFrames = dataSize / blockAlignment;
-    return (numFrames * C.MICROS_PER_SECOND) / sampleRateHz;
-  }
-
-  
-  public int getBytesPerFrame() {
-    return blockAlignment;
-  }
-
-  
-  public int getBitrate() {
-    return sampleRateHz * bitsPerSample * numChannels;
-  }
-
-  
-  public int getSampleRateHz() {
-    return sampleRateHz;
-  }
-
-  
-  public int getNumChannels() {
-    return numChannels;
-  }
-
-  
-  public long getPosition(long timeUs) {
-    long unroundedPosition = (timeUs * averageBytesPerSecond) / C.MICROS_PER_SECOND;
-    
-    long position = (unroundedPosition / blockAlignment) * blockAlignment;
-    return Math.min(position, dataSize - blockAlignment) + dataStartPosition;
-  }
-
-  
-  public long getTimeUs(long position) {
-    return position * C.MICROS_PER_SECOND / averageBytesPerSecond;
-  }
-
-  
-  public boolean hasDataBounds() {
-    return dataStartPosition != 0 && dataSize != 0;
-  }
-
-  
-  public void setDataBounds(long dataStartPosition, long dataSize) {
-    this.dataStartPosition = dataStartPosition;
-    this.dataSize = dataSize;
-  }
-
-  
-  @C.PcmEncoding
-  public int getEncoding() {
-    return encoding;
-  }
-
 }

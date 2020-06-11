@@ -15,21 +15,23 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.decoder;
 
+import androidx.annotation.CallSuper;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 
 
-
-
-public abstract class SimpleDecoder<I extends DecoderInputBuffer, O extends OutputBuffer,
-    E extends Exception> implements Decoder<I, O, E> {
+@SuppressWarnings("UngroupedOverloads")
+public abstract class SimpleDecoder<
+        I extends DecoderInputBuffer, O extends OutputBuffer, E extends Exception>
+    implements Decoder<I, O, E> {
 
   private final Thread decodeThread;
 
   private final Object lock;
-  private final LinkedList<I> queuedInputBuffers;
-  private final LinkedList<O> queuedOutputBuffers;
+  private final ArrayDeque<I> queuedInputBuffers;
+  private final ArrayDeque<O> queuedOutputBuffers;
   private final I[] availableInputBuffers;
   private final O[] availableOutputBuffers;
 
@@ -48,8 +50,8 @@ public abstract class SimpleDecoder<I extends DecoderInputBuffer, O extends Outp
 
   protected SimpleDecoder(I[] inputBuffers, O[] outputBuffers) {
     lock = new Object();
-    queuedInputBuffers = new LinkedList<>();
-    queuedOutputBuffers = new LinkedList<>();
+    queuedInputBuffers = new ArrayDeque<>();
+    queuedOutputBuffers = new ArrayDeque<>();
     availableInputBuffers = inputBuffers;
     availableInputBufferCount = inputBuffers.length;
     for (int i = 0; i < availableInputBufferCount; i++) {
@@ -85,6 +87,7 @@ public abstract class SimpleDecoder<I extends DecoderInputBuffer, O extends Outp
   }
 
   @Override
+  @Nullable
   public final I dequeueInputBuffer() throws E {
     synchronized (lock) {
       maybeThrowException();
@@ -107,6 +110,7 @@ public abstract class SimpleDecoder<I extends DecoderInputBuffer, O extends Outp
   }
 
   @Override
+  @Nullable
   public final O dequeueOutputBuffer() throws E {
     synchronized (lock) {
       maybeThrowException();
@@ -122,6 +126,7 @@ public abstract class SimpleDecoder<I extends DecoderInputBuffer, O extends Outp
 
 
 
+  @CallSuper
   protected void releaseOutputBuffer(O outputBuffer) {
     synchronized (lock) {
       releaseOutputBufferInternal(outputBuffer);
@@ -142,11 +147,13 @@ public abstract class SimpleDecoder<I extends DecoderInputBuffer, O extends Outp
         releaseInputBufferInternal(queuedInputBuffers.removeFirst());
       }
       while (!queuedOutputBuffers.isEmpty()) {
-        releaseOutputBufferInternal(queuedOutputBuffers.removeFirst());
+        queuedOutputBuffers.removeFirst().release();
       }
+      exception = null;
     }
   }
 
+  @CallSuper
   @Override
   public void release() {
     synchronized (lock) {
@@ -219,20 +226,33 @@ public abstract class SimpleDecoder<I extends DecoderInputBuffer, O extends Outp
       if (inputBuffer.isDecodeOnly()) {
         outputBuffer.addFlag(C.BUFFER_FLAG_DECODE_ONLY);
       }
-      exception = decode(inputBuffer, outputBuffer, resetDecoder);
-      if (exception != null) {
+      @Nullable E exception;
+      try {
+        exception = decode(inputBuffer, outputBuffer, resetDecoder);
+      } catch (RuntimeException e) {
         
-        synchronized (lock) {}
+        
+        exception = createUnexpectedDecodeException(e);
+      } catch (OutOfMemoryError e) {
+        
+        
+        
+        exception = createUnexpectedDecodeException(e);
+      }
+      if (exception != null) {
+        synchronized (lock) {
+          this.exception = exception;
+        }
         return false;
       }
     }
 
     synchronized (lock) {
       if (flushed) {
-        releaseOutputBufferInternal(outputBuffer);
+        outputBuffer.release();
       } else if (outputBuffer.isDecodeOnly()) {
         skippedOutputBufferCount++;
-        releaseOutputBufferInternal(outputBuffer);
+        outputBuffer.release();
       } else {
         outputBuffer.skippedOutputBufferCount = skippedOutputBufferCount;
         skippedOutputBufferCount = 0;
@@ -275,12 +295,20 @@ public abstract class SimpleDecoder<I extends DecoderInputBuffer, O extends Outp
 
 
 
+  protected abstract E createUnexpectedDecodeException(Throwable error);
+
+  
 
 
 
 
 
 
+
+
+
+
+
+  @Nullable
   protected abstract E decode(I inputBuffer, O outputBuffer, boolean reset);
-
 }

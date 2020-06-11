@@ -22,21 +22,48 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.text.Cue;
 
  final class TtmlRegion {
 
+  public final String id;
   public final float position;
   public final float line;
-  @Cue.LineType
-  public final int lineType;
+  public final @Cue.LineType int lineType;
+  public final @Cue.AnchorType int lineAnchor;
   public final float width;
+  public final float height;
+  public final @Cue.TextSizeType int textSizeType;
+  public final float textSize;
 
-  public TtmlRegion() {
-    this(Cue.DIMEN_UNSET, Cue.DIMEN_UNSET, Cue.TYPE_UNSET, Cue.DIMEN_UNSET);
+  public TtmlRegion(String id) {
+    this(
+        id,
+         Cue.DIMEN_UNSET,
+         Cue.DIMEN_UNSET,
+         Cue.TYPE_UNSET,
+         Cue.TYPE_UNSET,
+         Cue.DIMEN_UNSET,
+         Cue.DIMEN_UNSET,
+         Cue.TYPE_UNSET,
+         Cue.DIMEN_UNSET);
   }
 
-  public TtmlRegion(float position, float line, @Cue.LineType int lineType, float width) {
+  public TtmlRegion(
+      String id,
+      float position,
+      float line,
+      @Cue.LineType int lineType,
+      @Cue.AnchorType int lineAnchor,
+      float width,
+      float height,
+      int textSizeType,
+      float textSize) {
+    this.id = id;
     this.position = position;
     this.line = line;
     this.lineType = lineType;
+    this.lineAnchor = lineAnchor;
     this.width = width;
+    this.height = height;
+    this.textSizeType = textSizeType;
+    this.textSize = textSize;
   }
 
 }

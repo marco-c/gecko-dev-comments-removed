@@ -15,11 +15,14 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.decoder;
 
-import android.support.annotation.IntDef;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.ByteBuffer;
+import org.checkerframework.checker.nullness.qual.EnsuresNonNull;
 
 
 
@@ -29,9 +32,15 @@ public class DecoderInputBuffer extends Buffer {
   
 
 
+
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef({BUFFER_REPLACEMENT_MODE_DISABLED, BUFFER_REPLACEMENT_MODE_NORMAL,
-      BUFFER_REPLACEMENT_MODE_DIRECT})
+  @IntDef({
+    BUFFER_REPLACEMENT_MODE_DISABLED,
+    BUFFER_REPLACEMENT_MODE_NORMAL,
+    BUFFER_REPLACEMENT_MODE_DIRECT
+  })
   public @interface BufferReplacementMode {}
   
 
@@ -52,14 +61,26 @@ public class DecoderInputBuffer extends Buffer {
   public final CryptoInfo cryptoInfo;
 
   
+  @Nullable public ByteBuffer data;
+
+  
+  
+  
 
 
-  public ByteBuffer data;
+
+  public boolean waitingForKeys;
 
   
 
 
   public long timeUs;
+
+  
+
+
+
+  @Nullable public ByteBuffer supplementalData;
 
   @BufferReplacementMode private final int bufferReplacementMode;
 
@@ -88,13 +109,29 @@ public class DecoderInputBuffer extends Buffer {
 
 
 
+  @EnsuresNonNull("supplementalData")
+  public void resetSupplementalData(int length) {
+    if (supplementalData == null || supplementalData.capacity() < length) {
+      supplementalData = ByteBuffer.allocate(length);
+    } else {
+      supplementalData.clear();
+    }
+  }
+
+  
 
 
 
 
 
 
-  public void ensureSpaceForWrite(int length) throws IllegalStateException {
+
+
+
+
+
+  @EnsuresNonNull("data")
+  public void ensureSpaceForWrite(int length) {
     if (data == null) {
       data = createReplacementByteBuffer(length);
       return;
@@ -108,10 +145,10 @@ public class DecoderInputBuffer extends Buffer {
     }
     
     ByteBuffer newData = createReplacementByteBuffer(requiredCapacity);
+    newData.order(data.order());
     
     if (position > 0) {
-      data.position(0);
-      data.limit(position);
+      data.flip();
       newData.put(data);
     }
     
@@ -140,6 +177,9 @@ public class DecoderInputBuffer extends Buffer {
 
   public final void flip() {
     data.flip();
+    if (supplementalData != null) {
+      supplementalData.flip();
+    }
   }
 
   @Override
@@ -148,6 +188,10 @@ public class DecoderInputBuffer extends Buffer {
     if (data != null) {
       data.clear();
     }
+    if (supplementalData != null) {
+      supplementalData.clear();
+    }
+    waitingForKeys = false;
   }
 
   private ByteBuffer createReplacementByteBuffer(int requiredCapacity) {

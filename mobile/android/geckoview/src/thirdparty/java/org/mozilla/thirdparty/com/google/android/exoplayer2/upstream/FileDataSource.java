@@ -15,51 +15,78 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream;
 
+import static org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util.castNonNull;
+
 import android.net.Uri;
+import android.text.TextUtils;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import java.io.EOFException;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
 
-
-
-public final class FileDataSource implements DataSource {
+public final class FileDataSource extends BaseDataSource {
 
   
-
-
   public static class FileDataSourceException extends IOException {
 
     public FileDataSourceException(IOException cause) {
       super(cause);
     }
 
+    public FileDataSourceException(String message, IOException cause) {
+      super(message, cause);
+    }
   }
 
-  private final TransferListener<? super FileDataSource> listener;
+  
+  public static final class Factory implements DataSource.Factory {
 
-  private RandomAccessFile file;
-  private Uri uri;
+    @Nullable private TransferListener listener;
+
+    
+
+
+
+
+
+    public Factory setListener(@Nullable TransferListener listener) {
+      this.listener = listener;
+      return this;
+    }
+
+    @Override
+    public FileDataSource createDataSource() {
+      FileDataSource dataSource = new FileDataSource();
+      if (listener != null) {
+        dataSource.addTransferListener(listener);
+      }
+      return dataSource;
+    }
+  }
+
+  @Nullable private RandomAccessFile file;
+  @Nullable private Uri uri;
   private long bytesRemaining;
   private boolean opened;
 
   public FileDataSource() {
-    this(null);
-  }
-
-  
-
-
-  public FileDataSource(TransferListener<? super FileDataSource> listener) {
-    this.listener = listener;
+    super( false);
   }
 
   @Override
   public long open(DataSpec dataSpec) throws FileDataSourceException {
     try {
-      uri = dataSpec.uri;
-      file = new RandomAccessFile(dataSpec.uri.getPath(), "r");
+      Uri uri = dataSpec.uri;
+      this.uri = uri;
+
+      transferInitializing(dataSpec);
+
+      this.file = openLocalFile(uri);
+
       file.seek(dataSpec.position);
       bytesRemaining = dataSpec.length == C.LENGTH_UNSET ? file.length() - dataSpec.position
           : dataSpec.length;
@@ -71,11 +98,26 @@ public final class FileDataSource implements DataSource {
     }
 
     opened = true;
-    if (listener != null) {
-      listener.onTransferStart(this, dataSpec);
-    }
+    transferStarted(dataSpec);
 
     return bytesRemaining;
+  }
+
+  private static RandomAccessFile openLocalFile(Uri uri) throws FileDataSourceException {
+    try {
+      return new RandomAccessFile(Assertions.checkNotNull(uri.getPath()), "r");
+    } catch (FileNotFoundException e) {
+      if (!TextUtils.isEmpty(uri.getQuery()) || !TextUtils.isEmpty(uri.getFragment())) {
+        throw new FileDataSourceException(
+            String.format(
+                "uri has query and/or fragment, which are not supported. Did you call Uri.parse()"
+                    + " on a string containing '?' or '#'? Use Uri.fromFile(new File(path)) to"
+                    + " avoid this. path=%s,query=%s,fragment=%s",
+                uri.getPath(), uri.getQuery(), uri.getFragment()),
+            e);
+      }
+      throw new FileDataSourceException(e);
+    }
   }
 
   @Override
@@ -87,16 +129,15 @@ public final class FileDataSource implements DataSource {
     } else {
       int bytesRead;
       try {
-        bytesRead = file.read(buffer, offset, (int) Math.min(bytesRemaining, readLength));
+        bytesRead =
+            castNonNull(file).read(buffer, offset, (int) Math.min(bytesRemaining, readLength));
       } catch (IOException e) {
         throw new FileDataSourceException(e);
       }
 
       if (bytesRead > 0) {
         bytesRemaining -= bytesRead;
-        if (listener != null) {
-          listener.onBytesTransferred(this, bytesRead);
-        }
+        bytesTransferred(bytesRead);
       }
 
       return bytesRead;
@@ -104,6 +145,7 @@ public final class FileDataSource implements DataSource {
   }
 
   @Override
+  @Nullable
   public Uri getUri() {
     return uri;
   }
@@ -121,9 +163,7 @@ public final class FileDataSource implements DataSource {
       file = null;
       if (opened) {
         opened = false;
-        if (listener != null) {
-          listener.onTransferEnd(this);
-        }
+        transferEnded();
       }
     }
   }

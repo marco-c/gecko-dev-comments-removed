@@ -15,11 +15,17 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.trackselection;
 
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.TrackGroup;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.chunk.MediaChunk;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.chunk.MediaChunkIterator;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.BandwidthMeter;
 import java.util.List;
+import org.checkerframework.checker.nullness.compatqual.NullableType;
+
+
 
 
 
@@ -29,6 +35,40 @@ import java.util.List;
 
 
 public interface TrackSelection {
+
+  
+  final class Definition {
+    
+    public final TrackGroup group;
+    
+    public final int[] tracks;
+    
+    public final int reason;
+    
+    @Nullable public final Object data;
+
+    
+
+
+
+
+    public Definition(TrackGroup group, int... tracks) {
+      this(group, tracks, C.SELECTION_REASON_UNKNOWN,  null);
+    }
+
+    
+
+
+
+
+
+    public Definition(TrackGroup group, int[] tracks, int reason, @Nullable Object data) {
+      this.group = group;
+      this.tracks = tracks;
+      this.reason = reason;
+      this.data = data;
+    }
+  }
 
   
 
@@ -43,9 +83,31 @@ public interface TrackSelection {
 
 
 
-    TrackSelection createTrackSelection(TrackGroup group, int... tracks);
 
+
+
+    @NullableType
+    TrackSelection[] createTrackSelections(
+        @NullableType Definition[] definitions, BandwidthMeter bandwidthMeter);
   }
+
+  
+
+
+
+
+
+
+  void enable();
+
+  
+
+
+
+
+
+
+  void disable();
 
   
 
@@ -76,6 +138,8 @@ public interface TrackSelection {
   int getIndexInTrackGroup(int index);
 
   
+
+
 
 
 
@@ -116,9 +180,7 @@ public interface TrackSelection {
   int getSelectionReason();
 
   
-
-
-  Object getSelectionData();
+  @Nullable Object getSelectionData();
 
   
 
@@ -127,9 +189,51 @@ public interface TrackSelection {
 
 
 
-  void updateSelectedTrack(long bufferedDurationUs);
+
+  void onPlaybackSpeed(float speed);
 
   
+
+
+
+
+  default void onDiscontinuity() {}
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void updateSelectedTrack(
+      long playbackPositionUs,
+      long bufferedDurationUs,
+      long availableDurationUs,
+      List<? extends MediaChunk> queue,
+      MediaChunkIterator[] mediaChunkIterators);
+
+  
+
+
+
 
 
 
@@ -158,6 +262,8 @@ public interface TrackSelection {
 
 
 
-  boolean blacklist(int index, long blacklistDurationMs);
 
+
+
+  boolean blacklist(int index, long blacklistDurationMs);
 }

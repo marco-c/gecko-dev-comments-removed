@@ -18,10 +18,12 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2.text;
 import android.annotation.TargetApi;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.support.annotation.IntDef;
 import android.view.accessibility.CaptioningManager;
 import android.view.accessibility.CaptioningManager.CaptionStyle;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -33,9 +35,17 @@ public final class CaptionStyleCompat {
   
 
 
+
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef({EDGE_TYPE_NONE, EDGE_TYPE_OUTLINE, EDGE_TYPE_DROP_SHADOW, EDGE_TYPE_RAISED,
-      EDGE_TYPE_DEPRESSED})
+  @IntDef({
+    EDGE_TYPE_NONE,
+    EDGE_TYPE_OUTLINE,
+    EDGE_TYPE_DROP_SHADOW,
+    EDGE_TYPE_RAISED,
+    EDGE_TYPE_DEPRESSED
+  })
   public @interface EdgeType {}
   
 
@@ -64,10 +74,14 @@ public final class CaptionStyleCompat {
   public static final int USE_TRACK_COLOR_SETTINGS = 1;
 
   
-
-
-  public static final CaptionStyleCompat DEFAULT = new CaptionStyleCompat(
-      Color.WHITE, Color.BLACK, Color.TRANSPARENT, EDGE_TYPE_NONE, Color.WHITE, null);
+  public static final CaptionStyleCompat DEFAULT =
+      new CaptionStyleCompat(
+          Color.WHITE,
+          Color.BLACK,
+          Color.TRANSPARENT,
+          EDGE_TYPE_NONE,
+          Color.WHITE,
+           null);
 
   
 
@@ -102,9 +116,7 @@ public final class CaptionStyleCompat {
   public final int edgeColor;
 
   
-
-
-  public final Typeface typeface;
+  @Nullable public final Typeface typeface;
 
   
 
@@ -132,8 +144,13 @@ public final class CaptionStyleCompat {
 
 
 
-  public CaptionStyleCompat(int foregroundColor, int backgroundColor, int windowColor,
-      @EdgeType int edgeType, int edgeColor, Typeface typeface) {
+  public CaptionStyleCompat(
+      int foregroundColor,
+      int backgroundColor,
+      int windowColor,
+      @EdgeType int edgeType,
+      int edgeColor,
+      @Nullable Typeface typeface) {
     this.foregroundColor = foregroundColor;
     this.backgroundColor = backgroundColor;
     this.windowColor = windowColor;

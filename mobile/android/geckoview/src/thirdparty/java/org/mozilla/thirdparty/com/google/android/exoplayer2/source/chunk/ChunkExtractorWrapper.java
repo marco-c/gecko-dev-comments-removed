@@ -16,6 +16,7 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source.chunk;
 
 import android.util.SparseArray;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.DummyTrackOutput;
@@ -27,6 +28,7 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.TrackOutpu
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
 import java.io.IOException;
+
 
 
 
@@ -56,11 +58,13 @@ public final class ChunkExtractorWrapper implements ExtractorOutput {
 
   public final Extractor extractor;
 
-  private final Format manifestFormat;
+  private final int primaryTrackType;
+  private final Format primaryTrackManifestFormat;
   private final SparseArray<BindingTrackOutput> bindingTrackOutputs;
 
   private boolean extractorInitialized;
   private TrackOutputProvider trackOutputProvider;
+  private long endTimeUs;
   private SeekMap seekMap;
   private Format[] sampleFormats;
 
@@ -69,9 +73,13 @@ public final class ChunkExtractorWrapper implements ExtractorOutput {
 
 
 
-  public ChunkExtractorWrapper(Extractor extractor, Format manifestFormat) {
+
+
+  public ChunkExtractorWrapper(Extractor extractor, int primaryTrackType,
+      Format primaryTrackManifestFormat) {
     this.extractor = extractor;
-    this.manifestFormat = manifestFormat;
+    this.primaryTrackType = primaryTrackType;
+    this.primaryTrackManifestFormat = primaryTrackManifestFormat;
     bindingTrackOutputs = new SparseArray<>();
   }
 
@@ -95,15 +103,24 @@ public final class ChunkExtractorWrapper implements ExtractorOutput {
 
 
 
-  public void init(TrackOutputProvider trackOutputProvider) {
+
+
+
+
+  public void init(
+      @Nullable TrackOutputProvider trackOutputProvider, long startTimeUs, long endTimeUs) {
     this.trackOutputProvider = trackOutputProvider;
+    this.endTimeUs = endTimeUs;
     if (!extractorInitialized) {
       extractor.init(this);
+      if (startTimeUs != C.TIME_UNSET) {
+        extractor.seek( 0, startTimeUs);
+      }
       extractorInitialized = true;
     } else {
-      extractor.seek(0, 0);
+      extractor.seek( 0, startTimeUs == C.TIME_UNSET ? 0 : startTimeUs);
       for (int i = 0; i < bindingTrackOutputs.size(); i++) {
-        bindingTrackOutputs.valueAt(i).bind(trackOutputProvider);
+        bindingTrackOutputs.valueAt(i).bind(trackOutputProvider, endTimeUs);
       }
     }
   }
@@ -116,8 +133,10 @@ public final class ChunkExtractorWrapper implements ExtractorOutput {
     if (bindingTrackOutput == null) {
       
       Assertions.checkState(sampleFormats == null);
-      bindingTrackOutput = new BindingTrackOutput(id, type, manifestFormat);
-      bindingTrackOutput.bind(trackOutputProvider);
+      
+      bindingTrackOutput = new BindingTrackOutput(id, type,
+          type == primaryTrackType ? primaryTrackManifestFormat : null);
+      bindingTrackOutput.bind(trackOutputProvider, endTimeUs);
       bindingTrackOutputs.put(id, bindingTrackOutput);
     }
     return bindingTrackOutput;
@@ -144,32 +163,35 @@ public final class ChunkExtractorWrapper implements ExtractorOutput {
     private final int id;
     private final int type;
     private final Format manifestFormat;
+    private final DummyTrackOutput dummyTrackOutput;
 
     public Format sampleFormat;
     private TrackOutput trackOutput;
+    private long endTimeUs;
 
     public BindingTrackOutput(int id, int type, Format manifestFormat) {
       this.id = id;
       this.type = type;
       this.manifestFormat = manifestFormat;
+      dummyTrackOutput = new DummyTrackOutput();
     }
 
-    public void bind(TrackOutputProvider trackOutputProvider) {
+    public void bind(TrackOutputProvider trackOutputProvider, long endTimeUs) {
       if (trackOutputProvider == null) {
-        trackOutput = new DummyTrackOutput();
+        trackOutput = dummyTrackOutput;
         return;
       }
+      this.endTimeUs = endTimeUs;
       trackOutput = trackOutputProvider.track(id, type);
-      if (trackOutput != null) {
+      if (sampleFormat != null) {
         trackOutput.format(sampleFormat);
       }
     }
 
     @Override
     public void format(Format format) {
-      
-      
-      sampleFormat = format.copyWithManifestFormatInfo(manifestFormat);
+      sampleFormat = manifestFormat != null ? format.copyWithManifestFormatInfo(manifestFormat)
+          : format;
       trackOutput.format(sampleFormat);
     }
 
@@ -186,8 +208,11 @@ public final class ChunkExtractorWrapper implements ExtractorOutput {
 
     @Override
     public void sampleMetadata(long timeUs, @C.BufferFlags int flags, int size, int offset,
-        byte[] encryptionKey) {
-      trackOutput.sampleMetadata(timeUs, flags, size, offset, encryptionKey);
+        CryptoData cryptoData) {
+      if (endTimeUs != C.TIME_UNSET && timeUs >= endTimeUs) {
+        trackOutput = dummyTrackOutput;
+      }
+      trackOutput.sampleMetadata(timeUs, flags, size, offset, cryptoData);
     }
 
   }

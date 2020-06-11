@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.cache;
+
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSpec;
+
+
+public interface CacheKeyFactory {
+
+  
+
+
+
+
+  String buildCacheKey(DataSpec dataSpec);
+}

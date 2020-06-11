@@ -39,6 +39,14 @@ public interface SequenceableLoader {
   
 
 
+
+
+
+  long getBufferedPositionUs();
+
+  
+
+
   long getNextLoadPositionUs();
 
   
@@ -48,6 +56,22 @@ public interface SequenceableLoader {
 
 
 
+
+
   boolean continueLoading(long positionUs);
 
+  
+  boolean isLoading();
+
+  
+
+
+
+
+
+
+
+
+
+  void reevaluateBuffer(long positionUs);
 }

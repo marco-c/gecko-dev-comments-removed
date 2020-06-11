@@ -15,12 +15,12 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ts;
 
-import android.util.Log;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ExtractorOutput;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.TrackOutput;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ts.TsPayloadReader.TrackIdGenerator;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Log;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.NalUnitUtil;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
@@ -104,7 +104,8 @@ public final class H265Reader implements ElementaryStreamReader {
   }
 
   @Override
-  public void packetStarted(long pesTimeUs, boolean dataAlignmentIndicator) {
+  public void packetStarted(long pesTimeUs, @TsPayloadReader.Flags int flags) {
+    
     this.pesTimeUs = pesTimeUs;
   }
 
@@ -225,7 +226,7 @@ public final class H265Reader implements ElementaryStreamReader {
     ParsableNalUnitBitArray bitArray = new ParsableNalUnitBitArray(sps.nalData, 0, sps.nalLength);
     bitArray.skipBits(40 + 4); 
     int maxSubLayersMinus1 = bitArray.readBits(3);
-    bitArray.skipBits(1); 
+    bitArray.skipBit(); 
 
     
     bitArray.skipBits(88); 
@@ -247,7 +248,7 @@ public final class H265Reader implements ElementaryStreamReader {
     bitArray.readUnsignedExpGolombCodedInt(); 
     int chromaFormatIdc = bitArray.readUnsignedExpGolombCodedInt();
     if (chromaFormatIdc == 3) {
-      bitArray.skipBits(1); 
+      bitArray.skipBit(); 
     }
     int picWidthInLumaSamples = bitArray.readUnsignedExpGolombCodedInt();
     int picHeightInLumaSamples = bitArray.readUnsignedExpGolombCodedInt();
@@ -288,7 +289,7 @@ public final class H265Reader implements ElementaryStreamReader {
       bitArray.skipBits(8);
       bitArray.readUnsignedExpGolombCodedInt(); 
       bitArray.readUnsignedExpGolombCodedInt(); 
-      bitArray.skipBits(1); 
+      bitArray.skipBit(); 
     }
     
     skipShortTermRefPicSets(bitArray);
@@ -365,11 +366,11 @@ public final class H265Reader implements ElementaryStreamReader {
         interRefPicSetPredictionFlag = bitArray.readBit();
       }
       if (interRefPicSetPredictionFlag) {
-        bitArray.skipBits(1); 
+        bitArray.skipBit(); 
         bitArray.readUnsignedExpGolombCodedInt(); 
         for (int j = 0; j <= previousNumDeltaPocs; j++) {
           if (bitArray.readBit()) { 
-            bitArray.skipBits(1); 
+            bitArray.skipBit(); 
           }
         }
       } else {
@@ -378,11 +379,11 @@ public final class H265Reader implements ElementaryStreamReader {
         previousNumDeltaPocs = numNegativePics + numPositivePics;
         for (int i = 0; i < numNegativePics; i++) {
           bitArray.readUnsignedExpGolombCodedInt(); 
-          bitArray.skipBits(1); 
+          bitArray.skipBit(); 
         }
         for (int i = 0; i < numPositivePics; i++) {
           bitArray.readUnsignedExpGolombCodedInt(); 
-          bitArray.skipBits(1); 
+          bitArray.skipBit(); 
         }
       }
     }

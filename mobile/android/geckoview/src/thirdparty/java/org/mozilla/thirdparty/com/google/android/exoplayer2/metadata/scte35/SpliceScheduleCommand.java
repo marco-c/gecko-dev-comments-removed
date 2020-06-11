@@ -33,22 +33,62 @@ public final class SpliceScheduleCommand extends SpliceCommand {
 
   public static final class Event {
 
+    
+
+
     public final long spliceEventId;
+    
+
+
     public final boolean spliceEventCancelIndicator;
+    
+
+
+
     public final boolean outOfNetworkIndicator;
+    
+
+
+
     public final boolean programSpliceFlag;
+    
+
+
+
     public final long utcSpliceTime;
+    
+
+
+
     public final List<ComponentSplice> componentSpliceList;
+    
+
+
+
+
     public final boolean autoReturn;
-    public final long breakDuration;
+    
+
+
+
+    public final long breakDurationUs;
+    
+
+
     public final int uniqueProgramId;
+    
+
+
     public final int availNum;
+    
+
+
     public final int availsExpected;
 
     private Event(long spliceEventId, boolean spliceEventCancelIndicator,
         boolean outOfNetworkIndicator, boolean programSpliceFlag,
         List<ComponentSplice> componentSpliceList, long utcSpliceTime, boolean autoReturn,
-        long breakDuration, int uniqueProgramId, int availNum, int availsExpected) {
+        long breakDurationUs, int uniqueProgramId, int availNum, int availsExpected) {
       this.spliceEventId = spliceEventId;
       this.spliceEventCancelIndicator = spliceEventCancelIndicator;
       this.outOfNetworkIndicator = outOfNetworkIndicator;
@@ -56,7 +96,7 @@ public final class SpliceScheduleCommand extends SpliceCommand {
       this.componentSpliceList = Collections.unmodifiableList(componentSpliceList);
       this.utcSpliceTime = utcSpliceTime;
       this.autoReturn = autoReturn;
-      this.breakDuration = breakDuration;
+      this.breakDurationUs = breakDurationUs;
       this.uniqueProgramId = uniqueProgramId;
       this.availNum = availNum;
       this.availsExpected = availsExpected;
@@ -75,7 +115,7 @@ public final class SpliceScheduleCommand extends SpliceCommand {
       this.componentSpliceList = Collections.unmodifiableList(componentSpliceList);
       this.utcSpliceTime = in.readLong();
       this.autoReturn = in.readByte() == 1;
-      this.breakDuration = in.readLong();
+      this.breakDurationUs = in.readLong();
       this.uniqueProgramId = in.readInt();
       this.availNum = in.readInt();
       this.availsExpected = in.readInt();
@@ -93,7 +133,7 @@ public final class SpliceScheduleCommand extends SpliceCommand {
       int availNum = 0;
       int availsExpected = 0;
       boolean autoReturn = false;
-      long duration = C.TIME_UNSET;
+      long breakDurationUs = C.TIME_UNSET;
       if (!spliceEventCancelIndicator) {
         int headerByte = sectionData.readUnsignedByte();
         outOfNetworkIndicator = (headerByte & 0x80) != 0;
@@ -114,15 +154,16 @@ public final class SpliceScheduleCommand extends SpliceCommand {
         if (durationFlag) {
           long firstByte = sectionData.readUnsignedByte();
           autoReturn = (firstByte & 0x80) != 0;
-          duration = ((firstByte & 0x01) << 32) | sectionData.readUnsignedInt();
+          long breakDuration90khz = ((firstByte & 0x01) << 32) | sectionData.readUnsignedInt();
+          breakDurationUs = breakDuration90khz * 1000 / 90;
         }
         uniqueProgramId = sectionData.readUnsignedShort();
         availNum = sectionData.readUnsignedByte();
         availsExpected = sectionData.readUnsignedByte();
       }
       return new Event(spliceEventId, spliceEventCancelIndicator, outOfNetworkIndicator,
-          programSpliceFlag, componentSplices, utcSpliceTime, autoReturn, duration, uniqueProgramId,
-          availNum, availsExpected);
+          programSpliceFlag, componentSplices, utcSpliceTime, autoReturn, breakDurationUs,
+          uniqueProgramId, availNum, availsExpected);
     }
 
     private void writeToParcel(Parcel dest) {
@@ -137,7 +178,7 @@ public final class SpliceScheduleCommand extends SpliceCommand {
       }
       dest.writeLong(utcSpliceTime);
       dest.writeByte((byte) (autoReturn ? 1 : 0));
-      dest.writeLong(breakDuration);
+      dest.writeLong(breakDurationUs);
       dest.writeInt(uniqueProgramId);
       dest.writeInt(availNum);
       dest.writeInt(availsExpected);
@@ -172,6 +213,9 @@ public final class SpliceScheduleCommand extends SpliceCommand {
     }
 
   }
+
+  
+
 
   public final List<Event> events;
 

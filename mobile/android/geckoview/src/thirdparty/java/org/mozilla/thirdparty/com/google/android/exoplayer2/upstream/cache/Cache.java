@@ -15,6 +15,9 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.cache;
 
+import androidx.annotation.Nullable;
+import androidx.annotation.WorkerThread;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import java.io.File;
 import java.io.IOException;
 import java.util.NavigableSet;
@@ -59,9 +62,8 @@ public interface Cache {
 
 
     void onSpanTouched(Cache cache, CacheSpan oldSpan, CacheSpan newSpan);
-
   }
-  
+
   
 
 
@@ -71,11 +73,39 @@ public interface Cache {
       super(message);
     }
 
-    public CacheException(IOException cause) {
+    public CacheException(Throwable cause) {
       super(cause);
     }
 
+    public CacheException(String message, Throwable cause) {
+      super(message, cause);
+    }
   }
+
+  
+
+
+
+  long UID_UNSET = -1;
+
+  
+
+
+
+
+
+
+
+  long getUid();
+
+  
+
+
+
+
+
+  @WorkerThread
+  void release();
 
   
 
@@ -141,6 +171,10 @@ public interface Cache {
 
 
 
+
+
+
+  @WorkerThread
   CacheSpan startReadWrite(String key, long position) throws InterruptedException, CacheException;
 
   
@@ -151,6 +185,11 @@ public interface Cache {
 
 
 
+
+
+
+  @WorkerThread
+  @Nullable
   CacheSpan startReadWriteNonBlocking(String key, long position) throws CacheException;
 
   
@@ -163,7 +202,11 @@ public interface Cache {
 
 
 
-  File startFile(String key, long position, long maxLength) throws CacheException;
+
+
+
+  @WorkerThread
+  File startFile(String key, long position, long length) throws CacheException;
 
   
 
@@ -171,7 +214,12 @@ public interface Cache {
 
 
 
-  void commitFile(File file) throws CacheException;
+
+
+
+
+  @WorkerThread
+  void commitFile(File file, long length) throws CacheException;
 
   
 
@@ -186,9 +234,13 @@ public interface Cache {
 
 
 
+
+
+
+  @WorkerThread
   void removeSpan(CacheSpan span) throws CacheException;
 
- 
+  
 
 
 
@@ -208,7 +260,7 @@ public interface Cache {
 
 
 
-  long getCachedBytes(String key, long position, long length);
+  long getCachedLength(String key, long position, long length);
 
   
 
@@ -216,7 +268,13 @@ public interface Cache {
 
 
 
-  void setContentLength(String key, long length) throws CacheException;
+
+
+
+
+  @WorkerThread
+  void applyContentMetadataMutations(String key, ContentMetadataMutations mutations)
+      throws CacheException;
 
   
 
@@ -224,6 +282,5 @@ public interface Cache {
 
 
 
-  long getContentLength(String key);
-
+  ContentMetadata getContentMetadata(String key);
 }

@@ -25,42 +25,48 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
  final class TrackSampleTable {
 
   
-
-
+  public final Track track;
+  
   public final int sampleCount;
   
-
-
   public final long[] offsets;
   
-
-
   public final int[] sizes;
   
-
-
   public final int maximumSize;
   
-
-
   public final long[] timestampsUs;
+  
+  public final int[] flags;
   
 
 
-  public final int[] flags;
 
-  public TrackSampleTable(long[] offsets, int[] sizes, int maximumSize, long[] timestampsUs,
-      int[] flags) {
+  public final long durationUs;
+
+  public TrackSampleTable(
+      Track track,
+      long[] offsets,
+      int[] sizes,
+      int maximumSize,
+      long[] timestampsUs,
+      int[] flags,
+      long durationUs) {
     Assertions.checkArgument(sizes.length == timestampsUs.length);
     Assertions.checkArgument(offsets.length == timestampsUs.length);
     Assertions.checkArgument(flags.length == timestampsUs.length);
 
+    this.track = track;
     this.offsets = offsets;
     this.sizes = sizes;
     this.maximumSize = maximumSize;
     this.timestampsUs = timestampsUs;
     this.flags = flags;
+    this.durationUs = durationUs;
     sampleCount = offsets.length;
+    if (flags.length > 0) {
+      flags[flags.length - 1] |= C.BUFFER_FLAG_LAST_SAMPLE;
+    }
   }
 
   

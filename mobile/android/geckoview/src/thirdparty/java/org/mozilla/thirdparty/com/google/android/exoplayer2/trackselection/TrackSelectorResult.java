@@ -15,9 +15,10 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.trackselection;
 
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.RendererConfiguration;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.source.TrackGroupArray;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
+import org.checkerframework.checker.nullness.compatqual.NullableType;
 
 
 
@@ -25,9 +26,12 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 public final class TrackSelectorResult {
 
   
+  public final int length;
+  
 
 
-  public final TrackGroupArray groups;
+
+  public final @NullableType RendererConfiguration[] rendererConfigurations;
   
 
 
@@ -37,10 +41,6 @@ public final class TrackSelectorResult {
 
 
   public final Object info;
-  
-
-
-  public final RendererConfiguration[] rendererConfigurations;
 
   
 
@@ -49,13 +49,19 @@ public final class TrackSelectorResult {
 
 
 
-
-  public TrackSelectorResult(TrackGroupArray groups, TrackSelectionArray selections, Object info,
-      RendererConfiguration[] rendererConfigurations) {
-    this.groups = groups;
-    this.selections = selections;
-    this.info = info;
+  public TrackSelectorResult(
+      @NullableType RendererConfiguration[] rendererConfigurations,
+      @NullableType TrackSelection[] selections,
+      Object info) {
     this.rendererConfigurations = rendererConfigurations;
+    this.selections = new TrackSelectionArray(selections);
+    this.info = info;
+    length = rendererConfigurations.length;
+  }
+
+  
+  public boolean isRendererEnabled(int index) {
+    return rendererConfigurations[index] != null;
   }
 
   
@@ -65,8 +71,8 @@ public final class TrackSelectorResult {
 
 
 
-  public boolean isEquivalent(TrackSelectorResult other) {
-    if (other == null) {
+  public boolean isEquivalent(@Nullable TrackSelectorResult other) {
+    if (other == null || other.selections.length != selections.length) {
       return false;
     }
     for (int i = 0; i < selections.length; i++) {
@@ -87,12 +93,13 @@ public final class TrackSelectorResult {
 
 
 
-  public boolean isEquivalent(TrackSelectorResult other, int index) {
+
+  public boolean isEquivalent(@Nullable TrackSelectorResult other, int index) {
     if (other == null) {
       return false;
     }
-    return Util.areEqual(selections.get(index), other.selections.get(index))
-        && Util.areEqual(rendererConfigurations[index], other.rendererConfigurations[index]);
+    return Util.areEqual(rendererConfigurations[index], other.rendererConfigurations[index])
+        && Util.areEqual(selections.get(index), other.selections.get(index));
   }
 
 }

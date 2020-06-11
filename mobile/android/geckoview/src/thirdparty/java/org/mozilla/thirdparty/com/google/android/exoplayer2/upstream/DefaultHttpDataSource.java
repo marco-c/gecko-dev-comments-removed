@@ -17,9 +17,12 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream;
 
 import android.net.Uri;
 import android.text.TextUtils;
-import android.util.Log;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSpec.HttpMethod;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Log;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Predicate;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 import java.io.EOFException;
@@ -33,11 +36,14 @@ import java.net.NoRouteToHostException;
 import java.net.ProtocolException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 
 import org.mozilla.gecko.util.ProxySelector;
 
@@ -49,11 +55,12 @@ import org.mozilla.gecko.util.ProxySelector;
 
 
 
-public class DefaultHttpDataSource implements HttpDataSource {
+
+
+
+public class DefaultHttpDataSource extends BaseDataSource implements HttpDataSource {
 
   
-
-
   public static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 8 * 1000;
   
 
@@ -62,6 +69,8 @@ public class DefaultHttpDataSource implements HttpDataSource {
 
   private static final String TAG = "DefaultHttpDataSource";
   private static final int MAX_REDIRECTS = 20; 
+  private static final int HTTP_STATUS_TEMPORARY_REDIRECT = 307;
+  private static final int HTTP_STATUS_PERMANENT_REDIRECT = 308;
   private static final long MAX_BYTES_TO_DRAIN = 2048;
   private static final Pattern CONTENT_RANGE_HEADER =
       Pattern.compile("^bytes (\\d+)-(\\d+)/(\\d+)$");
@@ -71,15 +80,15 @@ public class DefaultHttpDataSource implements HttpDataSource {
   private final int connectTimeoutMillis;
   private final int readTimeoutMillis;
   private final String userAgent;
-  private final Predicate<String> contentTypePredicate;
-  private final RequestProperties defaultRequestProperties;
+  @Nullable private final RequestProperties defaultRequestProperties;
   private final RequestProperties requestProperties;
-  private final TransferListener<? super DefaultHttpDataSource> listener;
 
-  private DataSpec dataSpec;
-  private HttpURLConnection connection;
-  private InputStream inputStream;
+  @Nullable private Predicate<String> contentTypePredicate;
+  @Nullable private DataSpec dataSpec;
+  @Nullable private HttpURLConnection connection;
+  @Nullable private InputStream inputStream;
   private boolean opened;
+  private int responseCode;
 
   private long bytesToSkip;
   private long bytesToRead;
@@ -88,13 +97,8 @@ public class DefaultHttpDataSource implements HttpDataSource {
   private long bytesRead;
 
   
-
-
-
-
-
-  public DefaultHttpDataSource(String userAgent, Predicate<String> contentTypePredicate) {
-    this(userAgent, contentTypePredicate, null);
+  public DefaultHttpDataSource(String userAgent) {
+    this(userAgent, DEFAULT_CONNECT_TIMEOUT_MILLIS, DEFAULT_READ_TIMEOUT_MILLIS);
   }
 
   
@@ -104,9 +108,56 @@ public class DefaultHttpDataSource implements HttpDataSource {
 
 
 
-  public DefaultHttpDataSource(String userAgent, Predicate<String> contentTypePredicate,
-      TransferListener<? super DefaultHttpDataSource> listener) {
-    this(userAgent, contentTypePredicate, listener, DEFAULT_CONNECT_TIMEOUT_MILLIS,
+  public DefaultHttpDataSource(String userAgent, int connectTimeoutMillis, int readTimeoutMillis) {
+    this(
+        userAgent,
+        connectTimeoutMillis,
+        readTimeoutMillis,
+         false,
+         null);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  public DefaultHttpDataSource(
+      String userAgent,
+      int connectTimeoutMillis,
+      int readTimeoutMillis,
+      boolean allowCrossProtocolRedirects,
+      @Nullable RequestProperties defaultRequestProperties) {
+    super( true);
+    this.userAgent = Assertions.checkNotEmpty(userAgent);
+    this.requestProperties = new RequestProperties();
+    this.connectTimeoutMillis = connectTimeoutMillis;
+    this.readTimeoutMillis = readTimeoutMillis;
+    this.allowCrossProtocolRedirects = allowCrossProtocolRedirects;
+    this.defaultRequestProperties = defaultRequestProperties;
+  }
+
+  
+
+
+
+
+
+
+
+  @Deprecated
+  public DefaultHttpDataSource(String userAgent, @Nullable Predicate<String> contentTypePredicate) {
+    this(
+        userAgent,
+        contentTypePredicate,
+        DEFAULT_CONNECT_TIMEOUT_MILLIS,
         DEFAULT_READ_TIMEOUT_MILLIS);
   }
 
@@ -121,11 +172,21 @@ public class DefaultHttpDataSource implements HttpDataSource {
 
 
 
-  public DefaultHttpDataSource(String userAgent, Predicate<String> contentTypePredicate,
-      TransferListener<? super DefaultHttpDataSource> listener, int connectTimeoutMillis,
+
+  @SuppressWarnings("deprecation")
+  @Deprecated
+  public DefaultHttpDataSource(
+      String userAgent,
+      @Nullable Predicate<String> contentTypePredicate,
+      int connectTimeoutMillis,
       int readTimeoutMillis) {
-    this(userAgent, contentTypePredicate, listener, connectTimeoutMillis, readTimeoutMillis, false,
-        null);
+    this(
+        userAgent,
+        contentTypePredicate,
+        connectTimeoutMillis,
+        readTimeoutMillis,
+         false,
+         null);
   }
 
   
@@ -144,13 +205,18 @@ public class DefaultHttpDataSource implements HttpDataSource {
 
 
 
-  public DefaultHttpDataSource(String userAgent, Predicate<String> contentTypePredicate,
-      TransferListener<? super DefaultHttpDataSource> listener, int connectTimeoutMillis,
-      int readTimeoutMillis, boolean allowCrossProtocolRedirects,
-      RequestProperties defaultRequestProperties) {
+
+  @Deprecated
+  public DefaultHttpDataSource(
+      String userAgent,
+      @Nullable Predicate<String> contentTypePredicate,
+      int connectTimeoutMillis,
+      int readTimeoutMillis,
+      boolean allowCrossProtocolRedirects,
+      @Nullable RequestProperties defaultRequestProperties) {
+    super( true);
     this.userAgent = Assertions.checkNotEmpty(userAgent);
     this.contentTypePredicate = contentTypePredicate;
-    this.listener = listener;
     this.requestProperties = new RequestProperties();
     this.connectTimeoutMillis = connectTimeoutMillis;
     this.readTimeoutMillis = readTimeoutMillis;
@@ -158,14 +224,31 @@ public class DefaultHttpDataSource implements HttpDataSource {
     this.defaultRequestProperties = defaultRequestProperties;
   }
 
+  
+
+
+
+
+
+
+  public void setContentTypePredicate(@Nullable Predicate<String> contentTypePredicate) {
+    this.contentTypePredicate = contentTypePredicate;
+  }
+
   @Override
+  @Nullable
   public Uri getUri() {
     return connection == null ? null : Uri.parse(connection.getURL().toString());
   }
 
   @Override
+  public int getResponseCode() {
+    return connection == null || responseCode <= 0 ? -1 : responseCode;
+  }
+
+  @Override
   public Map<String, List<String>> getResponseHeaders() {
-    return connection == null ? null : connection.getHeaderFields();
+    return connection == null ? Collections.emptyMap() : connection.getHeaderFields();
   }
 
   @Override
@@ -186,27 +269,32 @@ public class DefaultHttpDataSource implements HttpDataSource {
     requestProperties.clear();
   }
 
+  
+
+
   @Override
   public long open(DataSpec dataSpec) throws HttpDataSourceException {
     this.dataSpec = dataSpec;
     this.bytesRead = 0;
     this.bytesSkipped = 0;
+    transferInitializing(dataSpec);
     try {
       connection = makeConnection(dataSpec);
     } catch (IOException e) {
-      throw new HttpDataSourceException("Unable to connect to " + dataSpec.uri.toString(), e,
-          dataSpec, HttpDataSourceException.TYPE_OPEN);
+      throw new HttpDataSourceException(
+          "Unable to connect", e, dataSpec, HttpDataSourceException.TYPE_OPEN);
     } catch (URISyntaxException e) {
       throw new HttpDataSourceException("URI invalid: " + dataSpec.uri.toString(), dataSpec, HttpDataSourceException.TYPE_OPEN);
     }
 
-    int responseCode;
+    String responseMessage;
     try {
       responseCode = connection.getResponseCode();
+      responseMessage = connection.getResponseMessage();
     } catch (IOException e) {
       closeConnectionQuietly();
-      throw new HttpDataSourceException("Unable to connect to " + dataSpec.uri.toString(), e,
-          dataSpec, HttpDataSourceException.TYPE_OPEN);
+      throw new HttpDataSourceException(
+          "Unable to connect", e, dataSpec, HttpDataSourceException.TYPE_OPEN);
     }
 
     
@@ -214,7 +302,7 @@ public class DefaultHttpDataSource implements HttpDataSource {
       Map<String, List<String>> headers = connection.getHeaderFields();
       closeConnectionQuietly();
       InvalidResponseCodeException exception =
-          new InvalidResponseCodeException(responseCode, headers, dataSpec);
+          new InvalidResponseCodeException(responseCode, responseMessage, headers, dataSpec);
       if (responseCode == 416) {
         exception.initCause(new DataSourceException(DataSourceException.POSITION_OUT_OF_RANGE));
       }
@@ -234,7 +322,8 @@ public class DefaultHttpDataSource implements HttpDataSource {
     bytesToSkip = responseCode == 200 && dataSpec.position != 0 ? dataSpec.position : 0;
 
     
-    if (!dataSpec.isFlagSet(DataSpec.FLAG_ALLOW_GZIP)) {
+    boolean isCompressed = isCompressed(connection);
+    if (!isCompressed) {
       if (dataSpec.length != C.LENGTH_UNSET) {
         bytesToRead = dataSpec.length;
       } else {
@@ -246,21 +335,21 @@ public class DefaultHttpDataSource implements HttpDataSource {
       
       
       
-      
       bytesToRead = dataSpec.length;
     }
 
     try {
       inputStream = connection.getInputStream();
+      if (isCompressed) {
+        inputStream = new GZIPInputStream(inputStream);
+      }
     } catch (IOException e) {
       closeConnectionQuietly();
       throw new HttpDataSourceException(e, dataSpec, HttpDataSourceException.TYPE_OPEN);
     }
 
     opened = true;
-    if (listener != null) {
-      listener.onTransferStart(this, dataSpec);
-    }
+    transferStarted(dataSpec);
 
     return bytesToRead;
   }
@@ -291,9 +380,7 @@ public class DefaultHttpDataSource implements HttpDataSource {
       closeConnectionQuietly();
       if (opened) {
         opened = false;
-        if (listener != null) {
-          listener.onTransferEnd(this);
-        }
+        transferEnded();
       }
     }
   }
@@ -303,7 +390,7 @@ public class DefaultHttpDataSource implements HttpDataSource {
 
 
 
-  protected final HttpURLConnection getConnection() {
+  protected final @Nullable HttpURLConnection getConnection() {
     return connection;
   }
 
@@ -344,7 +431,8 @@ public class DefaultHttpDataSource implements HttpDataSource {
 
   private HttpURLConnection makeConnection(DataSpec dataSpec) throws IOException, URISyntaxException {
     URL url = new URL(dataSpec.uri.toString());
-    byte[] postBody = dataSpec.postBody;
+    @HttpMethod int httpMethod = dataSpec.httpMethod;
+    byte[] httpBody = dataSpec.httpBody;
     long position = dataSpec.position;
     long length = dataSpec.length;
     boolean allowGzip = dataSpec.isFlagSet(DataSpec.FLAG_ALLOW_GZIP);
@@ -352,27 +440,50 @@ public class DefaultHttpDataSource implements HttpDataSource {
     if (!allowCrossProtocolRedirects) {
       
       
-      return makeConnection(url, postBody, position, length, allowGzip, true );
+      return makeConnection(
+          url,
+          httpMethod,
+          httpBody,
+          position,
+          length,
+          allowGzip,
+           true,
+          dataSpec.httpRequestHeaders);
     }
 
     
     int redirectCount = 0;
     while (redirectCount++ <= MAX_REDIRECTS) {
-      HttpURLConnection connection = makeConnection(
-          url, postBody, position, length, allowGzip, false );
+      HttpURLConnection connection =
+          makeConnection(
+              url,
+              httpMethod,
+              httpBody,
+              position,
+              length,
+              allowGzip,
+               false,
+              dataSpec.httpRequestHeaders);
       int responseCode = connection.getResponseCode();
-      if (responseCode == HttpURLConnection.HTTP_MULT_CHOICE
-          || responseCode == HttpURLConnection.HTTP_MOVED_PERM
-          || responseCode == HttpURLConnection.HTTP_MOVED_TEMP
-          || responseCode == HttpURLConnection.HTTP_SEE_OTHER
-          || (postBody == null
-              && (responseCode == 307 
-                  || responseCode == 308 ))) {
-        
-        
-        postBody = null;
-        String location = connection.getHeaderField("Location");
+      String location = connection.getHeaderField("Location");
+      if ((httpMethod == DataSpec.HTTP_METHOD_GET || httpMethod == DataSpec.HTTP_METHOD_HEAD)
+          && (responseCode == HttpURLConnection.HTTP_MULT_CHOICE
+              || responseCode == HttpURLConnection.HTTP_MOVED_PERM
+              || responseCode == HttpURLConnection.HTTP_MOVED_TEMP
+              || responseCode == HttpURLConnection.HTTP_SEE_OTHER
+              || responseCode == HTTP_STATUS_TEMPORARY_REDIRECT
+              || responseCode == HTTP_STATUS_PERMANENT_REDIRECT)) {
         connection.disconnect();
+        url = handleRedirect(url, location);
+      } else if (httpMethod == DataSpec.HTTP_METHOD_POST
+          && (responseCode == HttpURLConnection.HTTP_MULT_CHOICE
+              || responseCode == HttpURLConnection.HTTP_MOVED_PERM
+              || responseCode == HttpURLConnection.HTTP_MOVED_TEMP
+              || responseCode == HttpURLConnection.HTTP_SEE_OTHER)) {
+        
+        connection.disconnect();
+        httpMethod = DataSpec.HTTP_METHOD_GET;
+        httpBody = null;
         url = handleRedirect(url, location);
       } else {
         return connection;
@@ -393,8 +504,18 @@ public class DefaultHttpDataSource implements HttpDataSource {
 
 
 
-  private HttpURLConnection makeConnection(URL url, byte[] postBody, long position,
-      long length, boolean allowGzip, boolean followRedirects) throws IOException, URISyntaxException {
+
+
+  private HttpURLConnection makeConnection(
+      URL url,
+      @HttpMethod int httpMethod,
+      byte[] httpBody,
+      long position,
+      long length,
+      boolean allowGzip,
+      boolean followRedirects,
+      Map<String, String> requestParameters)
+      throws IOException, URISyntaxException {
     
 
 
@@ -404,14 +525,18 @@ public class DefaultHttpDataSource implements HttpDataSource {
 
     connection.setConnectTimeout(connectTimeoutMillis);
     connection.setReadTimeout(readTimeoutMillis);
+
+    Map<String, String> requestHeaders = new HashMap<>();
     if (defaultRequestProperties != null) {
-      for (Map.Entry<String, String> property : defaultRequestProperties.getSnapshot().entrySet()) {
-        connection.setRequestProperty(property.getKey(), property.getValue());
-      }
+      requestHeaders.putAll(defaultRequestProperties.getSnapshot());
     }
-    for (Map.Entry<String, String> property : requestProperties.getSnapshot().entrySet()) {
+    requestHeaders.putAll(requestProperties.getSnapshot());
+    requestHeaders.putAll(requestParameters);
+
+    for (Map.Entry<String, String> property : requestHeaders.entrySet()) {
       connection.setRequestProperty(property.getKey(), property.getValue());
     }
+
     if (!(position == 0 && length == C.LENGTH_UNSET)) {
       String rangeRequest = "bytes=" + position + "-";
       if (length != C.LENGTH_UNSET) {
@@ -420,26 +545,27 @@ public class DefaultHttpDataSource implements HttpDataSource {
       connection.setRequestProperty("Range", rangeRequest);
     }
     connection.setRequestProperty("User-Agent", userAgent);
-    if (!allowGzip) {
-      connection.setRequestProperty("Accept-Encoding", "identity");
-    }
+    connection.setRequestProperty("Accept-Encoding", allowGzip ? "gzip" : "identity");
     connection.setInstanceFollowRedirects(followRedirects);
-    connection.setDoOutput(postBody != null);
-    if (postBody != null) {
-      connection.setRequestMethod("POST");
-      if (postBody.length == 0) {
-        connection.connect();
-      } else  {
-        connection.setFixedLengthStreamingMode(postBody.length);
-        connection.connect();
-        OutputStream os = connection.getOutputStream();
-        os.write(postBody);
-        os.close();
-      }
+    connection.setDoOutput(httpBody != null);
+    connection.setRequestMethod(DataSpec.getStringForHttpMethod(httpMethod));
+
+    if (httpBody != null) {
+      connection.setFixedLengthStreamingMode(httpBody.length);
+      connection.connect();
+      OutputStream os = connection.getOutputStream();
+      os.write(httpBody);
+      os.close();
     } else {
       connection.connect();
     }
     return connection;
+  }
+
+  
+  @VisibleForTesting
+   HttpURLConnection openConnection(URL url) throws IOException {
+    return (HttpURLConnection) url.openConnection();
   }
 
   
@@ -537,16 +663,14 @@ public class DefaultHttpDataSource implements HttpDataSource {
     while (bytesSkipped != bytesToSkip) {
       int readLength = (int) Math.min(bytesToSkip - bytesSkipped, skipBuffer.length);
       int read = inputStream.read(skipBuffer, 0, readLength);
-      if (Thread.interrupted()) {
+      if (Thread.currentThread().isInterrupted()) {
         throw new InterruptedIOException();
       }
       if (read == -1) {
         throw new EOFException();
       }
       bytesSkipped += read;
-      if (listener != null) {
-        listener.onBytesTransferred(this, read);
-      }
+      bytesTransferred(read);
     }
 
     
@@ -589,9 +713,7 @@ public class DefaultHttpDataSource implements HttpDataSource {
     }
 
     bytesRead += read;
-    if (listener != null) {
-      listener.onBytesTransferred(this, read);
-    }
+    bytesTransferred(read);
     return read;
   }
 
@@ -624,9 +746,9 @@ public class DefaultHttpDataSource implements HttpDataSource {
         return;
       }
       String className = inputStream.getClass().getName();
-      if (className.equals("com.android.okhttp.internal.http.HttpTransport$ChunkedInputStream")
-          || className.equals(
-          "com.android.okhttp.internal.http.HttpTransport$FixedLengthInputStream")) {
+      if ("com.android.okhttp.internal.http.HttpTransport$ChunkedInputStream".equals(className)
+          || "com.android.okhttp.internal.http.HttpTransport$FixedLengthInputStream"
+              .equals(className)) {
         Class<?> superclass = inputStream.getClass().getSuperclass();
         Method unexpectedEndOfInput = superclass.getDeclaredMethod("unexpectedEndOfInput");
         unexpectedEndOfInput.setAccessible(true);
@@ -654,4 +776,8 @@ public class DefaultHttpDataSource implements HttpDataSource {
     }
   }
 
+  private static boolean isCompressed(HttpURLConnection connection) {
+    String contentEncoding = connection.getHeaderField("Content-Encoding");
+    return "gzip".equalsIgnoreCase(contentEncoding);
+  }
 }

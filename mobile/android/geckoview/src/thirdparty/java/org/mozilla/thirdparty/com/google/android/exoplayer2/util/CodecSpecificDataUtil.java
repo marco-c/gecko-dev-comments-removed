@@ -16,7 +16,9 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.util;
 
 import android.util.Pair;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.ParserException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,8 +88,24 @@ public final class CodecSpecificDataUtil {
 
 
 
-  public static Pair<Integer, Integer> parseAacAudioSpecificConfig(byte[] audioSpecificConfig) {
-    ParsableBitArray bitArray = new ParsableBitArray(audioSpecificConfig);
+
+  public static Pair<Integer, Integer> parseAacAudioSpecificConfig(byte[] audioSpecificConfig)
+      throws ParserException {
+    return parseAacAudioSpecificConfig(new ParsableBitArray(audioSpecificConfig), false);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  public static Pair<Integer, Integer> parseAacAudioSpecificConfig(
+      ParsableBitArray bitArray, boolean forceReadToEnd) throws ParserException {
     int audioObjectType = getAacAudioObjectType(bitArray);
     int sampleRate = getAacSamplingFrequency(bitArray);
     int channelConfiguration = bitArray.readBits(4);
@@ -104,6 +122,41 @@ public final class CodecSpecificDataUtil {
         channelConfiguration = bitArray.readBits(4);
       }
     }
+
+    if (forceReadToEnd) {
+      switch (audioObjectType) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 6:
+        case 7:
+        case 17:
+        case 19:
+        case 20:
+        case 21:
+        case 22:
+        case 23:
+          parseGaSpecificConfig(bitArray, audioObjectType, channelConfiguration);
+          break;
+        default:
+          throw new ParserException("Unsupported audio object type: " + audioObjectType);
+      }
+      switch (audioObjectType) {
+        case 17:
+        case 19:
+        case 20:
+        case 21:
+        case 22:
+        case 23:
+          int epConfig = bitArray.readBits(2);
+          if (epConfig == 2 || epConfig == 3) {
+            throw new ParserException("Unsupported epConfig: " + epConfig);
+          }
+          break;
+      }
+    }
+    
     int channelCount = AUDIO_SPECIFIC_CONFIG_CHANNEL_COUNT_TABLE[channelConfiguration];
     Assertions.checkArgument(channelCount != AUDIO_SPECIFIC_CONFIG_CHANNEL_CONFIGURATION_INVALID);
     return Pair.create(sampleRate, channelCount);
@@ -116,7 +169,7 @@ public final class CodecSpecificDataUtil {
 
 
 
-  public static byte[] buildAacLcAudioSpecificConfig(int sampleRate, int numChannels) {
+  public static byte[] buildAacLcAudioSpecificConfig(int sampleRate, int channelCount) {
     int sampleRateIndex = C.INDEX_UNSET;
     for (int i = 0; i < AUDIO_SPECIFIC_CONFIG_SAMPLING_RATE_TABLE.length; ++i) {
       if (sampleRate == AUDIO_SPECIFIC_CONFIG_SAMPLING_RATE_TABLE[i]) {
@@ -125,13 +178,13 @@ public final class CodecSpecificDataUtil {
     }
     int channelConfig = C.INDEX_UNSET;
     for (int i = 0; i < AUDIO_SPECIFIC_CONFIG_CHANNEL_COUNT_TABLE.length; ++i) {
-      if (numChannels == AUDIO_SPECIFIC_CONFIG_CHANNEL_COUNT_TABLE[i]) {
+      if (channelCount == AUDIO_SPECIFIC_CONFIG_CHANNEL_COUNT_TABLE[i]) {
         channelConfig = i;
       }
     }
     if (sampleRate == C.INDEX_UNSET || channelConfig == C.INDEX_UNSET) {
-      throw new IllegalArgumentException("Invalid sample rate or number of channels: "
-          + sampleRate + ", " + numChannels);
+      throw new IllegalArgumentException(
+          "Invalid sample rate or number of channels: " + sampleRate + ", " + channelCount);
     }
     return buildAacAudioSpecificConfig(AUDIO_OBJECT_TYPE_AAC_LC, sampleRateIndex, channelConfig);
   }
@@ -150,6 +203,37 @@ public final class CodecSpecificDataUtil {
     specificConfig[0] = (byte) (((audioObjectType << 3) & 0xF8) | ((sampleRateIndex >> 1) & 0x07));
     specificConfig[1] = (byte) (((sampleRateIndex << 7) & 0x80) | ((channelConfig << 3) & 0x78));
     return specificConfig;
+  }
+
+  
+
+
+
+
+
+
+  public static Pair<Integer, Integer> parseAlacAudioSpecificConfig(byte[] audioSpecificConfig) {
+    ParsableByteArray byteArray = new ParsableByteArray(audioSpecificConfig);
+    byteArray.setPosition(9);
+    int channelCount = byteArray.readUnsignedByte();
+    byteArray.setPosition(20);
+    int sampleRate = byteArray.readUnsignedIntToInt();
+    return Pair.create(sampleRate, channelCount);
+  }
+
+  
+
+
+
+
+
+
+
+
+  public static String buildAvcCodecString(
+      int profileIdc, int constraintsFlagsAndReservedZero2Bits, int levelIdc) {
+    return String.format(
+        "avc1.%02X%02X%02X", profileIdc, constraintsFlagsAndReservedZero2Bits, levelIdc);
   }
 
   
@@ -178,7 +262,7 @@ public final class CodecSpecificDataUtil {
 
 
 
-  public static byte[][] splitNalUnits(byte[] data) {
+  public static @Nullable byte[][] splitNalUnits(byte[] data) {
     if (!isNalStartCode(data, 0)) {
       
       return null;
@@ -267,6 +351,34 @@ public final class CodecSpecificDataUtil {
       samplingFrequency = AUDIO_SPECIFIC_CONFIG_SAMPLING_RATE_TABLE[frequencyIndex];
     }
     return samplingFrequency;
+  }
+
+  private static void parseGaSpecificConfig(ParsableBitArray bitArray, int audioObjectType,
+      int channelConfiguration) {
+    bitArray.skipBits(1); 
+    boolean dependsOnCoreDecoder = bitArray.readBit();
+    if (dependsOnCoreDecoder) {
+      bitArray.skipBits(14); 
+    }
+    boolean extensionFlag = bitArray.readBit();
+    if (channelConfiguration == 0) {
+      throw new UnsupportedOperationException(); 
+    }
+    if (audioObjectType == 6 || audioObjectType == 20) {
+      bitArray.skipBits(3); 
+    }
+    if (extensionFlag) {
+      if (audioObjectType == 22) {
+        bitArray.skipBits(16); 
+      }
+      if (audioObjectType == 17 || audioObjectType == 19 || audioObjectType == 20
+          || audioObjectType == 23) {
+        
+        
+        bitArray.skipBits(3);
+      }
+      bitArray.skipBits(1); 
+    }
   }
 
 }

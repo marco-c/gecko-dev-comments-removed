@@ -15,6 +15,10 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ts;
 
+import static org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ts.TsPayloadReader.FLAG_DATA_ALIGNMENT_INDICATOR;
+import static org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.id3.Id3Decoder.ID3_HEADER_LENGTH;
+import static org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.id3.Id3Decoder.ID3_TAG;
+
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.audio.Ac3Util;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.Extractor;
@@ -25,9 +29,7 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.PositionHo
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.SeekMap;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ts.TsPayloadReader.TrackIdGenerator;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 import java.io.IOException;
-
 
 
 
@@ -35,16 +37,7 @@ import java.io.IOException;
 public final class Ac3Extractor implements Extractor {
 
   
-
-
-  public static final ExtractorsFactory FACTORY = new ExtractorsFactory() {
-
-    @Override
-    public Extractor[] createExtractors() {
-      return new Extractor[] {new Ac3Extractor()};
-    }
-
-  };
+  public static final ExtractorsFactory FACTORY = () -> new Extractor[] {new Ac3Extractor()};
 
   
 
@@ -53,35 +46,32 @@ public final class Ac3Extractor implements Extractor {
   private static final int MAX_SNIFF_BYTES = 8 * 1024;
   private static final int AC3_SYNC_WORD = 0x0B77;
   private static final int MAX_SYNC_FRAME_SIZE = 2786;
-  private static final int ID3_TAG = Util.getIntegerCodeForString("ID3");
 
-  private final long firstSampleTimestampUs;
+  private final Ac3Reader reader;
   private final ParsableByteArray sampleData;
 
-  private Ac3Reader reader;
   private boolean startedPacket;
 
+  
   public Ac3Extractor() {
-    this(0);
-  }
-
-  public Ac3Extractor(long firstSampleTimestampUs) {
-    this.firstSampleTimestampUs = firstSampleTimestampUs;
+    reader = new Ac3Reader();
     sampleData = new ParsableByteArray(MAX_SYNC_FRAME_SIZE);
   }
+
+  
 
   @Override
   public boolean sniff(ExtractorInput input) throws IOException, InterruptedException {
     
-    ParsableByteArray scratch = new ParsableByteArray(10);
+    ParsableByteArray scratch = new ParsableByteArray(ID3_HEADER_LENGTH);
     int startPosition = 0;
     while (true) {
-      input.peekFully(scratch.data, 0, 10);
+      input.peekFully(scratch.data,  0, ID3_HEADER_LENGTH);
       scratch.setPosition(0);
       if (scratch.readUnsignedInt24() != ID3_TAG) {
         break;
       }
-      scratch.skipBytes(3);
+      scratch.skipBytes(3); 
       int length = scratch.readSynchSafeInt();
       startPosition += 10 + length;
       input.advancePeekPosition(length);
@@ -92,7 +82,7 @@ public final class Ac3Extractor implements Extractor {
     int headerPosition = startPosition;
     int validFramesCount = 0;
     while (true) {
-      input.peekFully(scratch.data, 0, 5);
+      input.peekFully(scratch.data, 0, 6);
       scratch.setPosition(0);
       int syncBytes = scratch.readUnsignedShort();
       if (syncBytes != AC3_SYNC_WORD) {
@@ -110,14 +100,13 @@ public final class Ac3Extractor implements Extractor {
         if (frameSize == C.LENGTH_UNSET) {
           return false;
         }
-        input.advancePeekPosition(frameSize - 5);
+        input.advancePeekPosition(frameSize - 6);
       }
     }
   }
 
   @Override
   public void init(ExtractorOutput output) {
-    reader = new Ac3Reader(); 
     reader.createTracks(output, new TrackIdGenerator(0, 1));
     output.endTracks();
     output.seekMap(new SeekMap.Unseekable(C.TIME_UNSET));
@@ -148,7 +137,7 @@ public final class Ac3Extractor implements Extractor {
 
     if (!startedPacket) {
       
-      reader.packetStarted(firstSampleTimestampUs, true);
+      reader.packetStarted( 0, FLAG_DATA_ALIGNMENT_INDICATOR);
       startedPacket = true;
     }
     

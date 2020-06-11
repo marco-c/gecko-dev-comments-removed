@@ -60,10 +60,9 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArr
 
 
 
-  public final void consume(ParsableByteArray data, long timeUs) throws ParserException {
-    if (parseHeader(data)) {
-      parsePayload(data, timeUs);
-    }
+
+  public final boolean consume(ParsableByteArray data, long timeUs) throws ParserException {
+    return parseHeader(data) && parsePayload(data, timeUs);
   }
 
   
@@ -82,6 +81,7 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArr
 
 
 
-  protected abstract void parsePayload(ParsableByteArray data, long timeUs) throws ParserException;
 
+  protected abstract boolean parsePayload(ParsableByteArray data, long timeUs)
+      throws ParserException;
 }

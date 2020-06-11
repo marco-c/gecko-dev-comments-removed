@@ -16,6 +16,7 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.drm;
 
 import android.util.Pair;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import java.util.Map;
 
@@ -38,10 +39,13 @@ public final class WidevineUtil {
 
 
 
-  public static Pair<Long, Long> getLicenseDurationRemainingSec(DrmSession<?> drmSession) {
+  public static @Nullable Pair<Long, Long> getLicenseDurationRemainingSec(
+      DrmSession<?> drmSession) {
     Map<String, String> keyStatus = drmSession.queryKeyStatus();
-    return new Pair<>(
-        getDurationRemainingSec(keyStatus, PROPERTY_LICENSE_DURATION_REMAINING),
+    if (keyStatus == null) {
+      return null;
+    }
+    return new Pair<>(getDurationRemainingSec(keyStatus, PROPERTY_LICENSE_DURATION_REMAINING),
         getDurationRemainingSec(keyStatus, PROPERTY_PLAYBACK_DURATION_REMAINING));
   }
 

@@ -25,7 +25,13 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.util.TimestampAdjust
 
 public final class TimeSignalCommand extends SpliceCommand {
 
+  
+
+
   public final long ptsTime;
+  
+
+
   public final long playbackPositionUs;
 
   private TimeSignalCommand(long ptsTime, long playbackPositionUs) {

@@ -15,6 +15,8 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.metadata;
 
+import androidx.annotation.Nullable;
+
 
 
 
@@ -26,7 +28,6 @@ public interface MetadataDecoder {
 
 
 
-
-  Metadata decode(MetadataInputBuffer inputBuffer) throws MetadataDecoderException;
-
+  @Nullable
+  Metadata decode(MetadataInputBuffer inputBuffer);
 }

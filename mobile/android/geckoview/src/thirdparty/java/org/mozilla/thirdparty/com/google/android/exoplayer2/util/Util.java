@@ -15,26 +15,48 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.util;
 
+import static android.content.Context.UI_MODE_SERVICE;
+
 import android.Manifest.permission;
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.UiModeManager;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Point;
+import android.media.AudioFormat;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
-import android.support.annotation.NonNull;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Parcel;
+import android.security.NetworkSecurityPolicy;
+import android.telephony.TelephonyManager;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.Display;
+import android.view.SurfaceView;
 import android.view.WindowManager;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.ExoPlayerLibraryInfo;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.ParserException;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.Renderer;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.RendererCapabilities;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.RenderersFactory;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.SeekParameters;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.audio.AudioRendererEventListener;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSpec;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.video.VideoRendererEventListener;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -48,14 +70,22 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Formatter;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
+import org.checkerframework.checker.initialization.qual.UnknownInitialization;
+import org.checkerframework.checker.nullness.compatqual.NullableType;
+import org.checkerframework.checker.nullness.qual.EnsuresNonNull;
+import org.checkerframework.checker.nullness.qual.PolyNull;
 
 
 
@@ -66,9 +96,7 @@ public final class Util {
 
 
 
-  public static final int SDK_INT =
-      (Build.VERSION.SDK_INT == 25 && Build.VERSION.CODENAME.charAt(0) == 'O') ? 26
-      : Build.VERSION.SDK_INT;
+  public static final int SDK_INT = Build.VERSION.SDK_INT;
 
   
 
@@ -94,15 +122,21 @@ public final class Util {
   public static final String DEVICE_DEBUG_INFO = DEVICE + ", " + MODEL + ", " + MANUFACTURER + ", "
       + SDK_INT;
 
+  
+  public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
   private static final String TAG = "Util";
   private static final Pattern XS_DATE_TIME_PATTERN = Pattern.compile(
       "(\\d\\d\\d\\d)\\-(\\d\\d)\\-(\\d\\d)[Tt]"
       + "(\\d\\d):(\\d\\d):(\\d\\d)([\\.,](\\d+))?"
-      + "([Zz]|((\\+|\\-)(\\d\\d):?(\\d\\d)))?");
+      + "([Zz]|((\\+|\\-)(\\d?\\d):?(\\d\\d)))?");
   private static final Pattern XS_DURATION_PATTERN =
       Pattern.compile("^(-)?P(([0-9]*)Y)?(([0-9]*)M)?(([0-9]*)D)?"
           + "(T(([0-9]*)H)?(([0-9]*)M)?(([0-9.]*)S)?)?$");
   private static final Pattern ESCAPED_CHARACTER_PATTERN = Pattern.compile("%([A-Fa-f0-9]{2})");
+
+  
+  @Nullable private static HashMap<String, String> languageTagReplacementMap;
 
   private Util() {}
 
@@ -132,13 +166,30 @@ public final class Util {
 
 
 
+  @Nullable
+  public static ComponentName startForegroundService(Context context, Intent intent) {
+    if (Util.SDK_INT >= 26) {
+      return context.startForegroundService(intent);
+    } else {
+      return context.startService(intent);
+    }
+  }
+
+  
+
+
+
+
+
+
+
   @TargetApi(23)
   public static boolean maybeRequestReadExternalStoragePermission(Activity activity, Uri... uris) {
     if (Util.SDK_INT < 23) {
       return false;
     }
     for (Uri uri : uris) {
-      if (Util.isLocalFileUri(uri)) {
+      if (isLocalFileUri(uri)) {
         if (activity.checkSelfPermission(permission.READ_EXTERNAL_STORAGE)
             != PackageManager.PERMISSION_GRANTED) {
           activity.requestPermissions(new String[] {permission.READ_EXTERNAL_STORAGE}, 0);
@@ -155,9 +206,33 @@ public final class Util {
 
 
 
+
+
+  @TargetApi(24)
+  public static boolean checkCleartextTrafficPermitted(Uri... uris) {
+    if (Util.SDK_INT < 24) {
+      
+      return true;
+    }
+    for (Uri uri : uris) {
+      if ("http".equals(uri.getScheme())
+          && !NetworkSecurityPolicy.getInstance()
+              .isCleartextTrafficPermitted(Assertions.checkNotNull(uri.getHost()))) {
+        
+        return false;
+      }
+    }
+    return true;
+  }
+
+  
+
+
+
+
   public static boolean isLocalFileUri(Uri uri) {
     String scheme = uri.getScheme();
-    return TextUtils.isEmpty(scheme) || scheme.equals("file");
+    return TextUtils.isEmpty(scheme) || "file".equals(scheme);
   }
 
   
@@ -168,7 +243,7 @@ public final class Util {
 
 
 
-  public static boolean areEqual(Object o1, Object o2) {
+  public static boolean areEqual(@Nullable Object o1, @Nullable Object o2) {
     return o1 == null ? o2 == null : o1.equals(o2);
   }
 
@@ -182,9 +257,9 @@ public final class Util {
 
 
 
-  public static boolean contains(Object[] items, Object item) {
+  public static boolean contains(@NullableType Object[] items, @Nullable Object item) {
     for (Object arrayItem : items) {
-      if (Util.areEqual(arrayItem, item)) {
+      if (areEqual(arrayItem, item)) {
         return true;
       }
     }
@@ -197,13 +272,18 @@ public final class Util {
 
 
 
-  public static ExecutorService newSingleThreadExecutor(final String threadName) {
-    return Executors.newSingleThreadExecutor(new ThreadFactory() {
-      @Override
-      public Thread newThread(@NonNull Runnable r) {
-        return new Thread(r, threadName);
-      }
-    });
+
+
+
+
+
+  public static <T> void removeRange(List<T> list, int fromIndex, int toIndex) {
+    if (fromIndex < 0 || toIndex > list.size() || fromIndex > toIndex) {
+      throw new IllegalArgumentException();
+    } else if (fromIndex != toIndex) {
+      
+      list.subList(fromIndex, toIndex).clear();
+    }
   }
 
   
@@ -211,7 +291,136 @@ public final class Util {
 
 
 
-  public static void closeQuietly(DataSource dataSource) {
+  @SuppressWarnings({"contracts.postcondition.not.satisfied", "return.type.incompatible"})
+  @EnsuresNonNull("#1")
+  public static <T> T castNonNull(@Nullable T value) {
+    return value;
+  }
+
+  
+  @SuppressWarnings({"contracts.postcondition.not.satisfied", "return.type.incompatible"})
+  @EnsuresNonNull("#1")
+  public static <T> T[] castNonNullTypeArray(@NullableType T[] value) {
+    return value;
+  }
+
+  
+
+
+
+
+
+
+
+  @SuppressWarnings({"nullness:argument.type.incompatible", "nullness:return.type.incompatible"})
+  public static <T> T[] nullSafeArrayCopy(T[] input, int length) {
+    Assertions.checkArgument(length <= input.length);
+    return Arrays.copyOf(input, length);
+  }
+
+  
+
+
+
+
+
+
+
+  @SuppressWarnings({"nullness:argument.type.incompatible", "nullness:return.type.incompatible"})
+  public static <T> T[] nullSafeArrayCopyOfRange(T[] input, int from, int to) {
+    Assertions.checkArgument(0 <= from);
+    Assertions.checkArgument(to <= input.length);
+    return Arrays.copyOfRange(input, from, to);
+  }
+
+  
+
+
+
+
+
+
+  public static <T> T[] nullSafeArrayAppend(T[] original, T newElement) {
+    @NullableType T[] result = Arrays.copyOf(original, original.length + 1);
+    result[original.length] = newElement;
+    return castNonNullTypeArray(result);
+  }
+
+  
+
+
+
+
+
+
+  @SuppressWarnings({"nullness:assignment.type.incompatible"})
+  public static <T> T[] nullSafeArrayConcatenation(T[] first, T[] second) {
+    T[] concatenation = Arrays.copyOf(first, first.length + second.length);
+    System.arraycopy(
+         second,
+         0,
+         concatenation,
+         first.length,
+         second.length);
+    return concatenation;
+  }
+  
+
+
+
+
+
+
+
+
+
+
+
+  public static Handler createHandler(Handler.@UnknownInitialization Callback callback) {
+    return createHandler(getLooper(), callback);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  @SuppressWarnings({"nullness:argument.type.incompatible", "nullness:return.type.incompatible"})
+  public static Handler createHandler(
+      Looper looper, Handler.@UnknownInitialization Callback callback) {
+    return new Handler(looper, callback);
+  }
+
+  
+
+
+
+  public static Looper getLooper() {
+    Looper myLooper = Looper.myLooper();
+    return myLooper != null ? myLooper : Looper.getMainLooper();
+  }
+
+  
+
+
+
+
+
+  public static ExecutorService newSingleThreadExecutor(final String threadName) {
+    return Executors.newSingleThreadExecutor(runnable -> new Thread(runnable, threadName));
+  }
+
+  
+
+
+
+
+  public static void closeQuietly(@Nullable DataSource dataSource) {
     try {
       if (dataSource != null) {
         dataSource.close();
@@ -227,7 +436,7 @@ public final class Util {
 
 
 
-  public static void closeQuietly(Closeable closeable) {
+  public static void closeQuietly(@Nullable Closeable closeable) {
     try {
       if (closeable != null) {
         closeable.close();
@@ -243,8 +452,92 @@ public final class Util {
 
 
 
-  public static String normalizeLanguageCode(String language) {
-    return language == null ? null : new Locale(language).getLanguage();
+
+  public static boolean readBoolean(Parcel parcel) {
+    return parcel.readInt() != 0;
+  }
+
+  
+
+
+
+
+
+
+  public static void writeBoolean(Parcel parcel, boolean value) {
+    parcel.writeInt(value ? 1 : 0);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  public static String getLocaleLanguageTag(Locale locale) {
+    return SDK_INT >= 21 ? getLocaleLanguageTagV21(locale) : locale.toString();
+  }
+
+  
+
+
+
+
+
+
+
+  public static @PolyNull String normalizeLanguageCode(@PolyNull String language) {
+    if (language == null) {
+      return null;
+    }
+    
+    
+    String normalizedTag = language.replace('_', '-');
+    if (normalizedTag.isEmpty() || "und".equals(normalizedTag)) {
+      
+      normalizedTag = language;
+    }
+    normalizedTag = Util.toLowerInvariant(normalizedTag);
+    String mainLanguage = Util.splitAtFirst(normalizedTag, "-")[0];
+    if (languageTagReplacementMap == null) {
+      languageTagReplacementMap = createIsoLanguageReplacementMap();
+    }
+    @Nullable String replacedLanguage = languageTagReplacementMap.get(mainLanguage);
+    if (replacedLanguage != null) {
+      normalizedTag =
+          replacedLanguage + normalizedTag.substring( mainLanguage.length());
+      mainLanguage = replacedLanguage;
+    }
+    if ("no".equals(mainLanguage) || "i".equals(mainLanguage) || "zh".equals(mainLanguage)) {
+      normalizedTag = maybeReplaceGrandfatheredLanguageTags(normalizedTag);
+    }
+    return normalizedTag;
+  }
+
+  
+
+
+
+
+
+  public static String fromUtf8Bytes(byte[] bytes) {
+    return new String(bytes, Charset.forName(C.UTF8_NAME));
+  }
+
+  
+
+
+
+
+
+
+
+  public static String fromUtf8Bytes(byte[] bytes, int offset, int length) {
+    return new String(bytes, offset, length, Charset.forName(C.UTF8_NAME));
   }
 
   
@@ -254,7 +547,34 @@ public final class Util {
 
 
   public static byte[] getUtf8Bytes(String value) {
-    return value.getBytes(Charset.defaultCharset()); 
+    return value.getBytes(Charset.forName(C.UTF8_NAME));
+  }
+
+  
+
+
+
+
+
+
+
+
+  public static String[] split(String value, String regex) {
+    return value.split(regex,  -1);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  public static String[] splitAtFirst(String value, String regex) {
+    return value.split(regex,  2);
   }
 
   
@@ -273,8 +593,27 @@ public final class Util {
 
 
 
-  public static String toLowerInvariant(String text) {
-    return text == null ? null : text.toLowerCase(Locale.US);
+  public static @PolyNull String toLowerInvariant(@PolyNull String text) {
+    return text == null ? text : text.toLowerCase(Locale.US);
+  }
+
+  
+
+
+
+
+
+  public static @PolyNull String toUpperInvariant(@PolyNull String text) {
+    return text == null ? text : text.toUpperCase(Locale.US);
+  }
+
+  
+
+
+
+
+  public static String formatInvariant(String format, Object... args) {
+    return String.format(Locale.US, format, args);
   }
 
   
@@ -343,6 +682,51 @@ public final class Util {
 
 
 
+  public static long addWithOverflowDefault(long x, long y, long overflowResult) {
+    long result = x + y;
+    
+    if (((x ^ result) & (y ^ result)) < 0) {
+      return overflowResult;
+    }
+    return result;
+  }
+
+  
+
+
+
+
+
+
+
+  public static long subtractWithOverflowDefault(long x, long y, long overflowResult) {
+    long result = x - y;
+    
+    if (((x ^ y) & (x ^ result)) < 0) {
+      return overflowResult;
+    }
+    return result;
+  }
+
+  
+
+
+
+
+
+
+
+
+  public static int linearSearch(int[] array, int value) {
+    for (int i = 0; i < array.length; i++) {
+      if (array[i] == value) {
+        return i;
+      }
+    }
+    return C.INDEX_UNSET;
+  }
+
+  
 
 
 
@@ -353,13 +737,20 @@ public final class Util {
 
 
 
-  public static int binarySearchFloor(int[] array, int value, boolean inclusive,
-      boolean stayInBounds) {
+
+
+
+
+
+
+
+  public static int binarySearchFloor(
+      int[] array, int value, boolean inclusive, boolean stayInBounds) {
     int index = Arrays.binarySearch(array, value);
     if (index < 0) {
       index = -(index + 2);
     } else {
-      while ((--index) >= 0 && array[index] == value) {}
+      while (--index >= 0 && array[index] == value) {}
       if (inclusive) {
         index++;
       }
@@ -391,7 +782,7 @@ public final class Util {
     if (index < 0) {
       index = -(index + 2);
     } else {
-      while ((--index) >= 0 && array[index] == value) {}
+      while (--index >= 0 && array[index] == value) {}
       if (inclusive) {
         index++;
       }
@@ -418,13 +809,49 @@ public final class Util {
 
 
 
-  public static int binarySearchCeil(long[] array, long value, boolean inclusive,
+  public static <T extends Comparable<? super T>> int binarySearchFloor(
+      List<? extends Comparable<? super T>> list,
+      T value,
+      boolean inclusive,
       boolean stayInBounds) {
+    int index = Collections.binarySearch(list, value);
+    if (index < 0) {
+      index = -(index + 2);
+    } else {
+      while (--index >= 0 && list.get(index).compareTo(value) == 0) {}
+      if (inclusive) {
+        index++;
+      }
+    }
+    return stayInBounds ? Math.max(0, index) : index;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  public static int binarySearchCeil(
+      int[] array, int value, boolean inclusive, boolean stayInBounds) {
     int index = Arrays.binarySearch(array, value);
     if (index < 0) {
       index = ~index;
     } else {
-      while ((++index) < array.length && array[index] == value) {}
+      while (++index < array.length && array[index] == value) {}
       if (inclusive) {
         index--;
       }
@@ -451,18 +878,18 @@ public final class Util {
 
 
 
-  public static <T> int binarySearchFloor(List<? extends Comparable<? super T>> list, T value,
-      boolean inclusive, boolean stayInBounds) {
-    int index = Collections.binarySearch(list, value);
+  public static int binarySearchCeil(
+      long[] array, long value, boolean inclusive, boolean stayInBounds) {
+    int index = Arrays.binarySearch(array, value);
     if (index < 0) {
-      index = -(index + 2);
+      index = ~index;
     } else {
-      while ((--index) >= 0 && list.get(index).compareTo(value) == 0) {}
+      while (++index < array.length && array[index] == value) {}
       if (inclusive) {
-        index++;
+        index--;
       }
     }
-    return stayInBounds ? Math.max(0, index) : index;
+    return stayInBounds ? Math.min(array.length - 1, index) : index;
   }
 
   
@@ -485,19 +912,34 @@ public final class Util {
 
 
 
-  public static <T> int binarySearchCeil(List<? extends Comparable<? super T>> list, T value,
-      boolean inclusive, boolean stayInBounds) {
+  public static <T extends Comparable<? super T>> int binarySearchCeil(
+      List<? extends Comparable<? super T>> list,
+      T value,
+      boolean inclusive,
+      boolean stayInBounds) {
     int index = Collections.binarySearch(list, value);
     if (index < 0) {
       index = ~index;
     } else {
       int listSize = list.size();
-      while ((++index) < listSize && list.get(index).compareTo(value) == 0) {}
+      while (++index < listSize && list.get(index).compareTo(value) == 0) {}
       if (inclusive) {
         index--;
       }
     }
     return stayInBounds ? Math.min(list.size() - 1, index) : index;
+  }
+
+  
+
+
+
+
+
+
+
+  public static int compareLong(long left, long right) {
+    return left < right ? -1 : left == right ? 0 : 1;
   }
 
   
@@ -554,7 +996,7 @@ public final class Util {
     } else {
       timezoneShift = ((Integer.parseInt(matcher.group(12)) * 60
           + Integer.parseInt(matcher.group(13))));
-      if (matcher.group(11).equals("-")) {
+      if ("-".equals(matcher.group(11))) {
         timezoneShift *= -1;
       }
     }
@@ -668,7 +1110,72 @@ public final class Util {
 
 
 
-  public static int[] toArray(List<Integer> list) {
+
+  public static long getMediaDurationForPlayoutDuration(long playoutDuration, float speed) {
+    if (speed == 1f) {
+      return playoutDuration;
+    }
+    return Math.round((double) playoutDuration * speed);
+  }
+
+  
+
+
+
+
+
+  public static long getPlayoutDurationForMediaDuration(long mediaDuration, float speed) {
+    if (speed == 1f) {
+      return mediaDuration;
+    }
+    return Math.round((double) mediaDuration / speed);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  public static long resolveSeekPositionUs(
+      long positionUs, SeekParameters seekParameters, long firstSyncUs, long secondSyncUs) {
+    if (SeekParameters.EXACT.equals(seekParameters)) {
+      return positionUs;
+    }
+    long minPositionUs =
+        subtractWithOverflowDefault(positionUs, seekParameters.toleranceBeforeUs, Long.MIN_VALUE);
+    long maxPositionUs =
+        addWithOverflowDefault(positionUs, seekParameters.toleranceAfterUs, Long.MAX_VALUE);
+    boolean firstSyncPositionValid = minPositionUs <= firstSyncUs && firstSyncUs <= maxPositionUs;
+    boolean secondSyncPositionValid =
+        minPositionUs <= secondSyncUs && secondSyncUs <= maxPositionUs;
+    if (firstSyncPositionValid && secondSyncPositionValid) {
+      if (Math.abs(firstSyncUs - positionUs) <= Math.abs(secondSyncUs - positionUs)) {
+        return firstSyncUs;
+      } else {
+        return secondSyncUs;
+      }
+    } else if (firstSyncPositionValid) {
+      return firstSyncUs;
+    } else if (secondSyncPositionValid) {
+      return secondSyncUs;
+    } else {
+      return minPositionUs;
+    }
+  }
+
+  
+
+
+
+
+
+  public static int @PolyNull [] toArray(@PolyNull List<Integer> list) {
     if (list == null) {
       return null;
     }
@@ -686,25 +1193,6 @@ public final class Util {
 
 
 
-
-
-  public static DataSpec getRemainderDataSpec(DataSpec dataSpec, int bytesLoaded) {
-    if (bytesLoaded == 0) {
-      return dataSpec;
-    } else {
-      long remainingLength = dataSpec.length == C.LENGTH_UNSET ? C.LENGTH_UNSET
-          : dataSpec.length - bytesLoaded;
-      return new DataSpec(dataSpec.uri, dataSpec.position + bytesLoaded, remainingLength,
-          dataSpec.key, dataSpec.flags);
-    }
-  }
-
-  
-
-
-
-
-
   public static int getIntegerCodeForString(String string) {
     int length = string.length();
     Assertions.checkArgument(length <= 4);
@@ -714,6 +1202,29 @@ public final class Util {
       result |= string.charAt(i);
     }
     return result;
+  }
+
+  
+
+
+
+
+  public static long toUnsignedLong(int x) {
+    
+    
+    return x & 0xFFFFFFFFL;
+  }
+
+  
+
+
+
+
+
+
+
+  public static long toLong(int mostSignificantBits, int leastSignificantBits) {
+    return (toUnsignedLong(mostSignificantBits) << 32) | toUnsignedLong(leastSignificantBits);
   }
 
   
@@ -778,6 +1289,45 @@ public final class Util {
 
 
 
+  public static @Nullable String getCodecsOfType(@Nullable String codecs, int trackType) {
+    String[] codecArray = splitCodecs(codecs);
+    if (codecArray.length == 0) {
+      return null;
+    }
+    StringBuilder builder = new StringBuilder();
+    for (String codec : codecArray) {
+      if (trackType == MimeTypes.getTrackTypeOfCodec(codec)) {
+        if (builder.length() > 0) {
+          builder.append(",");
+        }
+        builder.append(codec);
+      }
+    }
+    return builder.length() > 0 ? builder.toString() : null;
+  }
+
+  
+
+
+
+
+
+  public static String[] splitCodecs(@Nullable String codecs) {
+    if (TextUtils.isEmpty(codecs)) {
+      return new String[0];
+    }
+    return split(codecs.trim(), "(\\s*,\\s*)");
+  }
+
+  
+
+
+
+
+
+
+
+
   @C.PcmEncoding
   public static int getPcmEncoding(int bitDepth) {
     switch (bitDepth) {
@@ -800,20 +1350,210 @@ public final class Util {
 
 
 
+  public static boolean isEncodingLinearPcm(@C.Encoding int encoding) {
+    return encoding == C.ENCODING_PCM_8BIT
+        || encoding == C.ENCODING_PCM_16BIT
+        || encoding == C.ENCODING_PCM_16BIT_BIG_ENDIAN
+        || encoding == C.ENCODING_PCM_24BIT
+        || encoding == C.ENCODING_PCM_32BIT
+        || encoding == C.ENCODING_PCM_FLOAT;
+  }
+
+  
+
+
+
+
+
+  public static boolean isEncodingHighResolutionPcm(@C.PcmEncoding int encoding) {
+    return encoding == C.ENCODING_PCM_24BIT
+        || encoding == C.ENCODING_PCM_32BIT
+        || encoding == C.ENCODING_PCM_FLOAT;
+  }
+
+  
+
+
+
+
+
+
+
+  public static int getAudioTrackChannelConfig(int channelCount) {
+    switch (channelCount) {
+      case 1:
+        return AudioFormat.CHANNEL_OUT_MONO;
+      case 2:
+        return AudioFormat.CHANNEL_OUT_STEREO;
+      case 3:
+        return AudioFormat.CHANNEL_OUT_STEREO | AudioFormat.CHANNEL_OUT_FRONT_CENTER;
+      case 4:
+        return AudioFormat.CHANNEL_OUT_QUAD;
+      case 5:
+        return AudioFormat.CHANNEL_OUT_QUAD | AudioFormat.CHANNEL_OUT_FRONT_CENTER;
+      case 6:
+        return AudioFormat.CHANNEL_OUT_5POINT1;
+      case 7:
+        return AudioFormat.CHANNEL_OUT_5POINT1 | AudioFormat.CHANNEL_OUT_BACK_CENTER;
+      case 8:
+        if (Util.SDK_INT >= 23) {
+          return AudioFormat.CHANNEL_OUT_7POINT1_SURROUND;
+        } else if (Util.SDK_INT >= 21) {
+          
+          return AudioFormat.CHANNEL_OUT_5POINT1
+              | AudioFormat.CHANNEL_OUT_SIDE_LEFT
+              | AudioFormat.CHANNEL_OUT_SIDE_RIGHT;
+        } else {
+          
+          return AudioFormat.CHANNEL_INVALID;
+        }
+      default:
+        return AudioFormat.CHANNEL_INVALID;
+    }
+  }
+
+  
+
+
+
+
+
 
   public static int getPcmFrameSize(@C.PcmEncoding int pcmEncoding, int channelCount) {
     switch (pcmEncoding) {
       case C.ENCODING_PCM_8BIT:
         return channelCount;
       case C.ENCODING_PCM_16BIT:
+      case C.ENCODING_PCM_16BIT_BIG_ENDIAN:
         return channelCount * 2;
       case C.ENCODING_PCM_24BIT:
         return channelCount * 3;
       case C.ENCODING_PCM_32BIT:
+      case C.ENCODING_PCM_FLOAT:
         return channelCount * 4;
+      case C.ENCODING_INVALID:
+      case Format.NO_VALUE:
       default:
         throw new IllegalArgumentException();
     }
+  }
+
+  
+
+
+  @C.AudioUsage
+  public static int getAudioUsageForStreamType(@C.StreamType int streamType) {
+    switch (streamType) {
+      case C.STREAM_TYPE_ALARM:
+        return C.USAGE_ALARM;
+      case C.STREAM_TYPE_DTMF:
+        return C.USAGE_VOICE_COMMUNICATION_SIGNALLING;
+      case C.STREAM_TYPE_NOTIFICATION:
+        return C.USAGE_NOTIFICATION;
+      case C.STREAM_TYPE_RING:
+        return C.USAGE_NOTIFICATION_RINGTONE;
+      case C.STREAM_TYPE_SYSTEM:
+        return C.USAGE_ASSISTANCE_SONIFICATION;
+      case C.STREAM_TYPE_VOICE_CALL:
+        return C.USAGE_VOICE_COMMUNICATION;
+      case C.STREAM_TYPE_USE_DEFAULT:
+      case C.STREAM_TYPE_MUSIC:
+      default:
+        return C.USAGE_MEDIA;
+    }
+  }
+
+  
+
+
+  @C.AudioContentType
+  public static int getAudioContentTypeForStreamType(@C.StreamType int streamType) {
+    switch (streamType) {
+      case C.STREAM_TYPE_ALARM:
+      case C.STREAM_TYPE_DTMF:
+      case C.STREAM_TYPE_NOTIFICATION:
+      case C.STREAM_TYPE_RING:
+      case C.STREAM_TYPE_SYSTEM:
+        return C.CONTENT_TYPE_SONIFICATION;
+      case C.STREAM_TYPE_VOICE_CALL:
+        return C.CONTENT_TYPE_SPEECH;
+      case C.STREAM_TYPE_USE_DEFAULT:
+      case C.STREAM_TYPE_MUSIC:
+      default:
+        return C.CONTENT_TYPE_MUSIC;
+    }
+  }
+
+  
+
+
+  @C.StreamType
+  public static int getStreamTypeForAudioUsage(@C.AudioUsage int usage) {
+    switch (usage) {
+      case C.USAGE_MEDIA:
+      case C.USAGE_GAME:
+      case C.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE:
+        return C.STREAM_TYPE_MUSIC;
+      case C.USAGE_ASSISTANCE_SONIFICATION:
+        return C.STREAM_TYPE_SYSTEM;
+      case C.USAGE_VOICE_COMMUNICATION:
+        return C.STREAM_TYPE_VOICE_CALL;
+      case C.USAGE_VOICE_COMMUNICATION_SIGNALLING:
+        return C.STREAM_TYPE_DTMF;
+      case C.USAGE_ALARM:
+        return C.STREAM_TYPE_ALARM;
+      case C.USAGE_NOTIFICATION_RINGTONE:
+        return C.STREAM_TYPE_RING;
+      case C.USAGE_NOTIFICATION:
+      case C.USAGE_NOTIFICATION_COMMUNICATION_REQUEST:
+      case C.USAGE_NOTIFICATION_COMMUNICATION_INSTANT:
+      case C.USAGE_NOTIFICATION_COMMUNICATION_DELAYED:
+      case C.USAGE_NOTIFICATION_EVENT:
+        return C.STREAM_TYPE_NOTIFICATION;
+      case C.USAGE_ASSISTANCE_ACCESSIBILITY:
+      case C.USAGE_ASSISTANT:
+      case C.USAGE_UNKNOWN:
+      default:
+        return C.STREAM_TYPE_DEFAULT;
+    }
+  }
+
+  
+
+
+
+
+
+
+  public static @Nullable UUID getDrmUuid(String drmScheme) {
+    switch (toLowerInvariant(drmScheme)) {
+      case "widevine":
+        return C.WIDEVINE_UUID;
+      case "playready":
+        return C.PLAYREADY_UUID;
+      case "clearkey":
+        return C.CLEARKEY_UUID;
+      default:
+        try {
+          return UUID.fromString(drmScheme);
+        } catch (RuntimeException e) {
+          return null;
+        }
+    }
+  }
+
+  
+
+
+
+
+
+
+  @C.ContentType
+  public static int inferContentType(Uri uri, @Nullable String overrideExtension) {
+    return TextUtils.isEmpty(overrideExtension)
+        ? inferContentType(uri)
+        : inferContentType("." + overrideExtension);
   }
 
   
@@ -836,13 +1576,12 @@ public final class Util {
 
   @C.ContentType
   public static int inferContentType(String fileName) {
-    fileName = fileName.toLowerCase();
+    fileName = toLowerInvariant(fileName);
     if (fileName.endsWith(".mpd")) {
       return C.TYPE_DASH;
     } else if (fileName.endsWith(".m3u8")) {
       return C.TYPE_HLS;
-    } else if (fileName.endsWith(".ism") || fileName.endsWith(".isml")
-        || fileName.endsWith(".ism/manifest") || fileName.endsWith(".isml/manifest")) {
+    } else if (fileName.matches(".*\\.ism(l)?(/manifest(\\(.+\\))?)?")) {
       return C.TYPE_SS;
     } else {
       return C.TYPE_OTHER;
@@ -868,30 +1607,6 @@ public final class Util {
     builder.setLength(0);
     return hours > 0 ? formatter.format("%d:%02d:%02d", hours, minutes, seconds).toString()
         : formatter.format("%02d:%02d", minutes, seconds).toString();
-  }
-
-  
-
-
-
-
-
-
-  public static int getDefaultBufferSize(int trackType) {
-    switch (trackType) {
-      case C.TRACK_TYPE_DEFAULT:
-        return C.DEFAULT_MUXED_BUFFER_SIZE;
-      case C.TRACK_TYPE_AUDIO:
-        return C.DEFAULT_AUDIO_BUFFER_SIZE;
-      case C.TRACK_TYPE_VIDEO:
-        return C.DEFAULT_VIDEO_BUFFER_SIZE;
-      case C.TRACK_TYPE_TEXT:
-        return C.DEFAULT_TEXT_BUFFER_SIZE;
-      case C.TRACK_TYPE_METADATA:
-        return C.DEFAULT_METADATA_BUFFER_SIZE;
-      default:
-        throw new IllegalStateException();
-    }
   }
 
   
@@ -962,7 +1677,7 @@ public final class Util {
 
 
 
-  public static String unescapeFileName(String fileName) {
+  public static @Nullable String unescapeFileName(String fileName) {
     int length = fileName.length();
     int percentCharacterCount = 0;
     for (int i = 0; i < length; i++) {
@@ -977,15 +1692,15 @@ public final class Util {
     int expectedLength = length - percentCharacterCount * 2;
     StringBuilder builder = new StringBuilder(expectedLength);
     Matcher matcher = ESCAPED_CHARACTER_PATTERN.matcher(fileName);
-    int endOfLastMatch = 0;
+    int startOfNotEscaped = 0;
     while (percentCharacterCount > 0 && matcher.find()) {
       char unescapedCharacter = (char) Integer.parseInt(matcher.group(1), 16);
-      builder.append(fileName, endOfLastMatch, matcher.start()).append(unescapedCharacter);
-      endOfLastMatch = matcher.end();
+      builder.append(fileName, startOfNotEscaped, matcher.start()).append(unescapedCharacter);
+      startOfNotEscaped = matcher.end();
       percentCharacterCount--;
     }
-    if (endOfLastMatch < length) {
-      builder.append(fileName, endOfLastMatch, length);
+    if (startOfNotEscaped < length) {
+      builder.append(fileName, startOfNotEscaped, length);
     }
     if (builder.length() != expectedLength) {
       return null;
@@ -998,7 +1713,7 @@ public final class Util {
 
 
   public static void sneakyThrow(Throwable t) {
-    Util.<RuntimeException>sneakyThrowInternal(t);
+    sneakyThrowInternal(t);
   }
 
   @SuppressWarnings("unchecked")
@@ -1008,8 +1723,9 @@ public final class Util {
 
   
   public static void recursiveDelete(File fileOrDirectory) {
-    if (fileOrDirectory.isDirectory()) {
-      for (File child : fileOrDirectory.listFiles()) {
+    File[] directoryFiles = fileOrDirectory.listFiles();
+    if (directoryFiles != null) {
+      for (File child : directoryFiles) {
         recursiveDelete(child);
       }
     }
@@ -1018,10 +1734,15 @@ public final class Util {
 
   
   public static File createTempDirectory(Context context, String prefix) throws IOException {
-    File tempFile = File.createTempFile(prefix, null, context.getCacheDir());
+    File tempFile = createTempFile(context, prefix);
     tempFile.delete(); 
     tempFile.mkdir(); 
     return tempFile;
+  }
+
+  
+  public static File createTempFile(Context context, String prefix) throws IOException {
+    return File.createTempFile(prefix, null, context.getCacheDir());
   }
 
   
@@ -1034,7 +1755,7 @@ public final class Util {
 
 
 
-  public static int crc(byte[] bytes, int start, int end, int initialValue) {
+  public static int crc32(byte[] bytes, int start, int end, int initialValue) {
     for (int i = start; i < end; i++) {
       initialValue = (initialValue << 8)
           ^ CRC32_BYTES_MSBF[((initialValue >>> 24) ^ (bytes[i] & 0xFF)) & 0xFF];
@@ -1048,9 +1769,58 @@ public final class Util {
 
 
 
-  public static Point getPhysicalDisplaySize(Context context) {
-    WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-    return getPhysicalDisplaySize(context, windowManager.getDefaultDisplay());
+
+
+
+
+  public static int crc8(byte[] bytes, int start, int end, int initialValue) {
+    for (int i = start; i < end; i++) {
+      initialValue = CRC8_BYTES_MSBF[initialValue ^ (bytes[i] & 0xFF)];
+    }
+    return initialValue;
+  }
+
+  
+
+
+
+
+
+  @C.NetworkType
+  public static int getNetworkType(Context context) {
+    if (context == null) {
+      
+      return C.NETWORK_TYPE_UNKNOWN;
+    }
+    NetworkInfo networkInfo;
+    ConnectivityManager connectivityManager =
+        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+    if (connectivityManager == null) {
+      return C.NETWORK_TYPE_UNKNOWN;
+    }
+    try {
+      networkInfo = connectivityManager.getActiveNetworkInfo();
+    } catch (SecurityException e) {
+      
+      return C.NETWORK_TYPE_UNKNOWN;
+    }
+    if (networkInfo == null || !networkInfo.isConnected()) {
+      return C.NETWORK_TYPE_OFFLINE;
+    }
+    switch (networkInfo.getType()) {
+      case ConnectivityManager.TYPE_WIFI:
+        return C.NETWORK_TYPE_WIFI;
+      case ConnectivityManager.TYPE_WIMAX:
+        return C.NETWORK_TYPE_4G;
+      case ConnectivityManager.TYPE_MOBILE:
+      case ConnectivityManager.TYPE_MOBILE_DUN:
+      case ConnectivityManager.TYPE_MOBILE_HIPRI:
+        return getMobileNetworkType(networkInfo);
+      case ConnectivityManager.TYPE_ETHERNET:
+        return C.NETWORK_TYPE_ETHERNET;
+      default: 
+        return C.NETWORK_TYPE_OTHER;
+    }
   }
 
   
@@ -1060,39 +1830,158 @@ public final class Util {
 
 
 
-  public static Point getPhysicalDisplaySize(Context context, Display display) {
-    if (Util.SDK_INT < 25 && display.getDisplayId() == Display.DEFAULT_DISPLAY) {
+  public static String getCountryCode(@Nullable Context context) {
+    if (context != null) {
+      TelephonyManager telephonyManager =
+          (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+      if (telephonyManager != null) {
+        String countryCode = telephonyManager.getNetworkCountryIso();
+        if (!TextUtils.isEmpty(countryCode)) {
+          return toUpperInvariant(countryCode);
+        }
+      }
+    }
+    return toUpperInvariant(Locale.getDefault().getCountry());
+  }
+
+  
+
+
+
+  public static String[] getSystemLanguageCodes() {
+    String[] systemLocales = getSystemLocales();
+    for (int i = 0; i < systemLocales.length; i++) {
+      systemLocales[i] = normalizeLanguageCode(systemLocales[i]);
+    }
+    return systemLocales;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  public static boolean inflate(
+      ParsableByteArray input, ParsableByteArray output, @Nullable Inflater inflater) {
+    if (input.bytesLeft() <= 0) {
+      return false;
+    }
+    byte[] outputData = output.data;
+    if (outputData.length < input.bytesLeft()) {
+      outputData = new byte[2 * input.bytesLeft()];
+    }
+    if (inflater == null) {
+      inflater = new Inflater();
+    }
+    inflater.setInput(input.data, input.getPosition(), input.bytesLeft());
+    try {
+      int outputSize = 0;
+      while (true) {
+        outputSize += inflater.inflate(outputData, outputSize, outputData.length - outputSize);
+        if (inflater.finished()) {
+          output.reset(outputData, outputSize);
+          return true;
+        }
+        if (inflater.needsDictionary() || inflater.needsInput()) {
+          return false;
+        }
+        if (outputSize == outputData.length) {
+          outputData = Arrays.copyOf(outputData, outputData.length * 2);
+        }
+      }
+    } catch (DataFormatException e) {
+      return false;
+    } finally {
+      inflater.reset();
+    }
+  }
+
+  
+
+
+
+
+
+  public static boolean isTv(Context context) {
+    
+    UiModeManager uiModeManager =
+        (UiModeManager) context.getApplicationContext().getSystemService(UI_MODE_SERVICE);
+    return uiModeManager != null
+        && uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  public static Point getCurrentDisplayModeSize(Context context) {
+    WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+    return getCurrentDisplayModeSize(context, windowManager.getDefaultDisplay());
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  public static Point getCurrentDisplayModeSize(Context context, Display display) {
+    if (Util.SDK_INT <= 29 && display.getDisplayId() == Display.DEFAULT_DISPLAY && isTv(context)) {
       
       
-      if ("Sony".equals(Util.MANUFACTURER) && Util.MODEL.startsWith("BRAVIA")
+      
+      
+
+      
+      if ("Sony".equals(Util.MANUFACTURER)
+          && Util.MODEL.startsWith("BRAVIA")
           && context.getPackageManager().hasSystemFeature("com.sony.dtv.hardware.panel.qfhd")) {
         return new Point(3840, 2160);
-      } else if ("NVIDIA".equals(Util.MANUFACTURER) && Util.MODEL.contains("SHIELD")) {
-        
-        String sysDisplaySize = null;
+      }
+
+      
+      
+      String displaySize =
+          Util.SDK_INT < 28
+              ? getSystemProperty("sys.display-size")
+              : getSystemProperty("vendor.display-size");
+      
+      if (!TextUtils.isEmpty(displaySize)) {
         try {
-          Class<?> systemProperties = Class.forName("android.os.SystemProperties");
-          Method getMethod = systemProperties.getMethod("get", String.class);
-          sysDisplaySize = (String) getMethod.invoke(systemProperties, "sys.display-size");
-        } catch (Exception e) {
-          Log.e(TAG, "Failed to read sys.display-size", e);
-        }
-        
-        if (!TextUtils.isEmpty(sysDisplaySize)) {
-          try {
-            String[] sysDisplaySizeParts = sysDisplaySize.trim().split("x");
-            if (sysDisplaySizeParts.length == 2) {
-              int width = Integer.parseInt(sysDisplaySizeParts[0]);
-              int height = Integer.parseInt(sysDisplaySizeParts[1]);
-              if (width > 0 && height > 0) {
-                return new Point(width, height);
-              }
+          String[] displaySizeParts = split(displaySize.trim(), "x");
+          if (displaySizeParts.length == 2) {
+            int width = Integer.parseInt(displaySizeParts[0]);
+            int height = Integer.parseInt(displaySizeParts[1]);
+            if (width > 0 && height > 0) {
+              return new Point(width, height);
             }
-          } catch (NumberFormatException e) {
-            
           }
-          Log.e(TAG, "Invalid sys.display-size: " + sysDisplaySize);
+        } catch (NumberFormatException e) {
+          
         }
+        Log.e(TAG, "Invalid display size: " + displaySize);
       }
     }
 
@@ -1101,12 +1990,73 @@ public final class Util {
       getDisplaySizeV23(display, displaySize);
     } else if (Util.SDK_INT >= 17) {
       getDisplaySizeV17(display, displaySize);
-    } else if (Util.SDK_INT >= 16) {
-      getDisplaySizeV16(display, displaySize);
     } else {
-      getDisplaySizeV9(display, displaySize);
+      getDisplaySizeV16(display, displaySize);
     }
     return displaySize;
+  }
+
+  
+
+
+
+
+
+
+  public static RendererCapabilities[] getRendererCapabilities(RenderersFactory renderersFactory) {
+    Renderer[] renderers =
+        renderersFactory.createRenderers(
+            new Handler(),
+            new VideoRendererEventListener() {},
+            new AudioRendererEventListener() {},
+            (cues) -> {},
+            (metadata) -> {},
+             null);
+    RendererCapabilities[] capabilities = new RendererCapabilities[renderers.length];
+    for (int i = 0; i < renderers.length; i++) {
+      capabilities[i] = renderers[i].getCapabilities();
+    }
+    return capabilities;
+  }
+
+  
+
+
+
+
+
+  public static String getTrackTypeString(int trackType) {
+    switch (trackType) {
+      case C.TRACK_TYPE_AUDIO:
+        return "audio";
+      case C.TRACK_TYPE_DEFAULT:
+        return "default";
+      case C.TRACK_TYPE_METADATA:
+        return "metadata";
+      case C.TRACK_TYPE_CAMERA_MOTION:
+        return "camera motion";
+      case C.TRACK_TYPE_NONE:
+        return "none";
+      case C.TRACK_TYPE_TEXT:
+        return "text";
+      case C.TRACK_TYPE_VIDEO:
+        return "video";
+      default:
+        return trackType >= C.TRACK_TYPE_CUSTOM_BASE ? "custom (" + trackType + ")" : "?";
+    }
+  }
+
+  @Nullable
+  private static String getSystemProperty(String name) {
+    try {
+      @SuppressLint("PrivateApi")
+      Class<?> systemProperties = Class.forName("android.os.SystemProperties");
+      Method getMethod = systemProperties.getMethod("get", String.class);
+      return (String) getMethod.invoke(systemProperties, name);
+    } catch (Exception e) {
+      Log.e(TAG, "Failed to read system property " + name, e);
+      return null;
+    }
   }
 
   @TargetApi(23)
@@ -1121,59 +2071,228 @@ public final class Util {
     display.getRealSize(outSize);
   }
 
-  @TargetApi(16)
   private static void getDisplaySizeV16(Display display, Point outSize) {
     display.getSize(outSize);
   }
 
-  @SuppressWarnings("deprecation")
-  private static void getDisplaySizeV9(Display display, Point outSize) {
-    outSize.x = display.getWidth();
-    outSize.y = display.getHeight();
+  private static String[] getSystemLocales() {
+    Configuration config = Resources.getSystem().getConfiguration();
+    return SDK_INT >= 24
+        ? getSystemLocalesV24(config)
+        : new String[] {getLocaleLanguageTag(config.locale)};
   }
+
+  @TargetApi(24)
+  private static String[] getSystemLocalesV24(Configuration config) {
+    return Util.split(config.getLocales().toLanguageTags(), ",");
+  }
+
+  @TargetApi(21)
+  private static String getLocaleLanguageTagV21(Locale locale) {
+    return locale.toLanguageTag();
+  }
+
+  private static @C.NetworkType int getMobileNetworkType(NetworkInfo networkInfo) {
+    switch (networkInfo.getSubtype()) {
+      case TelephonyManager.NETWORK_TYPE_EDGE:
+      case TelephonyManager.NETWORK_TYPE_GPRS:
+        return C.NETWORK_TYPE_2G;
+      case TelephonyManager.NETWORK_TYPE_1xRTT:
+      case TelephonyManager.NETWORK_TYPE_CDMA:
+      case TelephonyManager.NETWORK_TYPE_EVDO_0:
+      case TelephonyManager.NETWORK_TYPE_EVDO_A:
+      case TelephonyManager.NETWORK_TYPE_EVDO_B:
+      case TelephonyManager.NETWORK_TYPE_HSDPA:
+      case TelephonyManager.NETWORK_TYPE_HSPA:
+      case TelephonyManager.NETWORK_TYPE_HSUPA:
+      case TelephonyManager.NETWORK_TYPE_IDEN:
+      case TelephonyManager.NETWORK_TYPE_UMTS:
+      case TelephonyManager.NETWORK_TYPE_EHRPD:
+      case TelephonyManager.NETWORK_TYPE_HSPAP:
+      case TelephonyManager.NETWORK_TYPE_TD_SCDMA:
+        return C.NETWORK_TYPE_3G;
+      case TelephonyManager.NETWORK_TYPE_LTE:
+        return C.NETWORK_TYPE_4G;
+      case TelephonyManager.NETWORK_TYPE_NR:
+        return C.NETWORK_TYPE_5G;
+      case TelephonyManager.NETWORK_TYPE_IWLAN:
+        return C.NETWORK_TYPE_WIFI;
+      case TelephonyManager.NETWORK_TYPE_GSM:
+      case TelephonyManager.NETWORK_TYPE_UNKNOWN:
+      default: 
+        return C.NETWORK_TYPE_CELLULAR_UNKNOWN;
+    }
+  }
+
+  private static HashMap<String, String> createIsoLanguageReplacementMap() {
+    String[] iso2Languages = Locale.getISOLanguages();
+    HashMap<String, String> replacedLanguages =
+        new HashMap<>(
+             iso2Languages.length + additionalIsoLanguageReplacements.length);
+    for (String iso2 : iso2Languages) {
+      try {
+        
+        String iso3 = new Locale(iso2).getISO3Language();
+        if (!TextUtils.isEmpty(iso3)) {
+          replacedLanguages.put(iso3, iso2);
+        }
+      } catch (MissingResourceException e) {
+        
+      }
+    }
+    
+    for (int i = 0; i < additionalIsoLanguageReplacements.length; i += 2) {
+      replacedLanguages.put(
+          additionalIsoLanguageReplacements[i], additionalIsoLanguageReplacements[i + 1]);
+    }
+    return replacedLanguages;
+  }
+
+  private static String maybeReplaceGrandfatheredLanguageTags(String languageTag) {
+    for (int i = 0; i < isoGrandfatheredTagReplacements.length; i += 2) {
+      if (languageTag.startsWith(isoGrandfatheredTagReplacements[i])) {
+        return isoGrandfatheredTagReplacements[i + 1]
+            + languageTag.substring( isoGrandfatheredTagReplacements[i].length());
+      }
+    }
+    return languageTag;
+  }
+
+  
+  private static final String[] additionalIsoLanguageReplacements =
+      new String[] {
+        
+        
+        "alb", "sq",
+        "arm", "hy",
+        "baq", "eu",
+        "bur", "my",
+        "tib", "bo",
+        "chi", "zh",
+        "cze", "cs",
+        "dut", "nl",
+        "ger", "de",
+        "gre", "el",
+        "fre", "fr",
+        "geo", "ka",
+        "ice", "is",
+        "mac", "mk",
+        "mao", "mi",
+        "may", "ms",
+        "per", "fa",
+        "rum", "ro",
+        "scc", "hbs-srp",
+        "slo", "sk",
+        "wel", "cy",
+        
+        
+        "id", "ms-ind",
+        "iw", "he",
+        "heb", "he",
+        "ji", "yi",
+        
+        
+        "in", "ms-ind",
+        "ind", "ms-ind",
+        "nb", "no-nob",
+        "nob", "no-nob",
+        "nn", "no-nno",
+        "nno", "no-nno",
+        "tw", "ak-twi",
+        "twi", "ak-twi",
+        "bs", "hbs-bos",
+        "bos", "hbs-bos",
+        "hr", "hbs-hrv",
+        "hrv", "hbs-hrv",
+        "sr", "hbs-srp",
+        "srp", "hbs-srp",
+        "cmn", "zh-cmn",
+        "hak", "zh-hak",
+        "nan", "zh-nan",
+        "hsn", "zh-hsn"
+      };
+
+  
+  
+  private static final String[] isoGrandfatheredTagReplacements =
+      new String[] {
+        "i-lux", "lb",
+        "i-hak", "zh-hak",
+        "i-navajo", "nv",
+        "no-bok", "no-nob",
+        "no-nyn", "no-nno",
+        "zh-guoyu", "zh-cmn",
+        "zh-hakka", "zh-hak",
+        "zh-min-nan", "zh-nan",
+        "zh-xiang", "zh-hsn"
+      };
 
   
 
 
 
   private static final int[] CRC32_BYTES_MSBF = {
-      0X00000000, 0X04C11DB7, 0X09823B6E, 0X0D4326D9, 0X130476DC, 0X17C56B6B, 0X1A864DB2,
-      0X1E475005, 0X2608EDB8, 0X22C9F00F, 0X2F8AD6D6, 0X2B4BCB61, 0X350C9B64, 0X31CD86D3,
-      0X3C8EA00A, 0X384FBDBD, 0X4C11DB70, 0X48D0C6C7, 0X4593E01E, 0X4152FDA9, 0X5F15ADAC,
-      0X5BD4B01B, 0X569796C2, 0X52568B75, 0X6A1936C8, 0X6ED82B7F, 0X639B0DA6, 0X675A1011,
-      0X791D4014, 0X7DDC5DA3, 0X709F7B7A, 0X745E66CD, 0X9823B6E0, 0X9CE2AB57, 0X91A18D8E,
-      0X95609039, 0X8B27C03C, 0X8FE6DD8B, 0X82A5FB52, 0X8664E6E5, 0XBE2B5B58, 0XBAEA46EF,
-      0XB7A96036, 0XB3687D81, 0XAD2F2D84, 0XA9EE3033, 0XA4AD16EA, 0XA06C0B5D, 0XD4326D90,
-      0XD0F37027, 0XDDB056FE, 0XD9714B49, 0XC7361B4C, 0XC3F706FB, 0XCEB42022, 0XCA753D95,
-      0XF23A8028, 0XF6FB9D9F, 0XFBB8BB46, 0XFF79A6F1, 0XE13EF6F4, 0XE5FFEB43, 0XE8BCCD9A,
-      0XEC7DD02D, 0X34867077, 0X30476DC0, 0X3D044B19, 0X39C556AE, 0X278206AB, 0X23431B1C,
-      0X2E003DC5, 0X2AC12072, 0X128E9DCF, 0X164F8078, 0X1B0CA6A1, 0X1FCDBB16, 0X018AEB13,
-      0X054BF6A4, 0X0808D07D, 0X0CC9CDCA, 0X7897AB07, 0X7C56B6B0, 0X71159069, 0X75D48DDE,
-      0X6B93DDDB, 0X6F52C06C, 0X6211E6B5, 0X66D0FB02, 0X5E9F46BF, 0X5A5E5B08, 0X571D7DD1,
-      0X53DC6066, 0X4D9B3063, 0X495A2DD4, 0X44190B0D, 0X40D816BA, 0XACA5C697, 0XA864DB20,
-      0XA527FDF9, 0XA1E6E04E, 0XBFA1B04B, 0XBB60ADFC, 0XB6238B25, 0XB2E29692, 0X8AAD2B2F,
-      0X8E6C3698, 0X832F1041, 0X87EE0DF6, 0X99A95DF3, 0X9D684044, 0X902B669D, 0X94EA7B2A,
-      0XE0B41DE7, 0XE4750050, 0XE9362689, 0XEDF73B3E, 0XF3B06B3B, 0XF771768C, 0XFA325055,
-      0XFEF34DE2, 0XC6BCF05F, 0XC27DEDE8, 0XCF3ECB31, 0XCBFFD686, 0XD5B88683, 0XD1799B34,
-      0XDC3ABDED, 0XD8FBA05A, 0X690CE0EE, 0X6DCDFD59, 0X608EDB80, 0X644FC637, 0X7A089632,
-      0X7EC98B85, 0X738AAD5C, 0X774BB0EB, 0X4F040D56, 0X4BC510E1, 0X46863638, 0X42472B8F,
-      0X5C007B8A, 0X58C1663D, 0X558240E4, 0X51435D53, 0X251D3B9E, 0X21DC2629, 0X2C9F00F0,
-      0X285E1D47, 0X36194D42, 0X32D850F5, 0X3F9B762C, 0X3B5A6B9B, 0X0315D626, 0X07D4CB91,
-      0X0A97ED48, 0X0E56F0FF, 0X1011A0FA, 0X14D0BD4D, 0X19939B94, 0X1D528623, 0XF12F560E,
-      0XF5EE4BB9, 0XF8AD6D60, 0XFC6C70D7, 0XE22B20D2, 0XE6EA3D65, 0XEBA91BBC, 0XEF68060B,
-      0XD727BBB6, 0XD3E6A601, 0XDEA580D8, 0XDA649D6F, 0XC423CD6A, 0XC0E2D0DD, 0XCDA1F604,
-      0XC960EBB3, 0XBD3E8D7E, 0XB9FF90C9, 0XB4BCB610, 0XB07DABA7, 0XAE3AFBA2, 0XAAFBE615,
-      0XA7B8C0CC, 0XA379DD7B, 0X9B3660C6, 0X9FF77D71, 0X92B45BA8, 0X9675461F, 0X8832161A,
-      0X8CF30BAD, 0X81B02D74, 0X857130C3, 0X5D8A9099, 0X594B8D2E, 0X5408ABF7, 0X50C9B640,
-      0X4E8EE645, 0X4A4FFBF2, 0X470CDD2B, 0X43CDC09C, 0X7B827D21, 0X7F436096, 0X7200464F,
-      0X76C15BF8, 0X68860BFD, 0X6C47164A, 0X61043093, 0X65C52D24, 0X119B4BE9, 0X155A565E,
-      0X18197087, 0X1CD86D30, 0X029F3D35, 0X065E2082, 0X0B1D065B, 0X0FDC1BEC, 0X3793A651,
-      0X3352BBE6, 0X3E119D3F, 0X3AD08088, 0X2497D08D, 0X2056CD3A, 0X2D15EBE3, 0X29D4F654,
-      0XC5A92679, 0XC1683BCE, 0XCC2B1D17, 0XC8EA00A0, 0XD6AD50A5, 0XD26C4D12, 0XDF2F6BCB,
-      0XDBEE767C, 0XE3A1CBC1, 0XE760D676, 0XEA23F0AF, 0XEEE2ED18, 0XF0A5BD1D, 0XF464A0AA,
-      0XF9278673, 0XFDE69BC4, 0X89B8FD09, 0X8D79E0BE, 0X803AC667, 0X84FBDBD0, 0X9ABC8BD5,
-      0X9E7D9662, 0X933EB0BB, 0X97FFAD0C, 0XAFB010B1, 0XAB710D06, 0XA6322BDF, 0XA2F33668,
-      0XBCB4666D, 0XB8757BDA, 0XB5365D03, 0XB1F740B4
+    0X00000000, 0X04C11DB7, 0X09823B6E, 0X0D4326D9, 0X130476DC, 0X17C56B6B, 0X1A864DB2,
+    0X1E475005, 0X2608EDB8, 0X22C9F00F, 0X2F8AD6D6, 0X2B4BCB61, 0X350C9B64, 0X31CD86D3,
+    0X3C8EA00A, 0X384FBDBD, 0X4C11DB70, 0X48D0C6C7, 0X4593E01E, 0X4152FDA9, 0X5F15ADAC,
+    0X5BD4B01B, 0X569796C2, 0X52568B75, 0X6A1936C8, 0X6ED82B7F, 0X639B0DA6, 0X675A1011,
+    0X791D4014, 0X7DDC5DA3, 0X709F7B7A, 0X745E66CD, 0X9823B6E0, 0X9CE2AB57, 0X91A18D8E,
+    0X95609039, 0X8B27C03C, 0X8FE6DD8B, 0X82A5FB52, 0X8664E6E5, 0XBE2B5B58, 0XBAEA46EF,
+    0XB7A96036, 0XB3687D81, 0XAD2F2D84, 0XA9EE3033, 0XA4AD16EA, 0XA06C0B5D, 0XD4326D90,
+    0XD0F37027, 0XDDB056FE, 0XD9714B49, 0XC7361B4C, 0XC3F706FB, 0XCEB42022, 0XCA753D95,
+    0XF23A8028, 0XF6FB9D9F, 0XFBB8BB46, 0XFF79A6F1, 0XE13EF6F4, 0XE5FFEB43, 0XE8BCCD9A,
+    0XEC7DD02D, 0X34867077, 0X30476DC0, 0X3D044B19, 0X39C556AE, 0X278206AB, 0X23431B1C,
+    0X2E003DC5, 0X2AC12072, 0X128E9DCF, 0X164F8078, 0X1B0CA6A1, 0X1FCDBB16, 0X018AEB13,
+    0X054BF6A4, 0X0808D07D, 0X0CC9CDCA, 0X7897AB07, 0X7C56B6B0, 0X71159069, 0X75D48DDE,
+    0X6B93DDDB, 0X6F52C06C, 0X6211E6B5, 0X66D0FB02, 0X5E9F46BF, 0X5A5E5B08, 0X571D7DD1,
+    0X53DC6066, 0X4D9B3063, 0X495A2DD4, 0X44190B0D, 0X40D816BA, 0XACA5C697, 0XA864DB20,
+    0XA527FDF9, 0XA1E6E04E, 0XBFA1B04B, 0XBB60ADFC, 0XB6238B25, 0XB2E29692, 0X8AAD2B2F,
+    0X8E6C3698, 0X832F1041, 0X87EE0DF6, 0X99A95DF3, 0X9D684044, 0X902B669D, 0X94EA7B2A,
+    0XE0B41DE7, 0XE4750050, 0XE9362689, 0XEDF73B3E, 0XF3B06B3B, 0XF771768C, 0XFA325055,
+    0XFEF34DE2, 0XC6BCF05F, 0XC27DEDE8, 0XCF3ECB31, 0XCBFFD686, 0XD5B88683, 0XD1799B34,
+    0XDC3ABDED, 0XD8FBA05A, 0X690CE0EE, 0X6DCDFD59, 0X608EDB80, 0X644FC637, 0X7A089632,
+    0X7EC98B85, 0X738AAD5C, 0X774BB0EB, 0X4F040D56, 0X4BC510E1, 0X46863638, 0X42472B8F,
+    0X5C007B8A, 0X58C1663D, 0X558240E4, 0X51435D53, 0X251D3B9E, 0X21DC2629, 0X2C9F00F0,
+    0X285E1D47, 0X36194D42, 0X32D850F5, 0X3F9B762C, 0X3B5A6B9B, 0X0315D626, 0X07D4CB91,
+    0X0A97ED48, 0X0E56F0FF, 0X1011A0FA, 0X14D0BD4D, 0X19939B94, 0X1D528623, 0XF12F560E,
+    0XF5EE4BB9, 0XF8AD6D60, 0XFC6C70D7, 0XE22B20D2, 0XE6EA3D65, 0XEBA91BBC, 0XEF68060B,
+    0XD727BBB6, 0XD3E6A601, 0XDEA580D8, 0XDA649D6F, 0XC423CD6A, 0XC0E2D0DD, 0XCDA1F604,
+    0XC960EBB3, 0XBD3E8D7E, 0XB9FF90C9, 0XB4BCB610, 0XB07DABA7, 0XAE3AFBA2, 0XAAFBE615,
+    0XA7B8C0CC, 0XA379DD7B, 0X9B3660C6, 0X9FF77D71, 0X92B45BA8, 0X9675461F, 0X8832161A,
+    0X8CF30BAD, 0X81B02D74, 0X857130C3, 0X5D8A9099, 0X594B8D2E, 0X5408ABF7, 0X50C9B640,
+    0X4E8EE645, 0X4A4FFBF2, 0X470CDD2B, 0X43CDC09C, 0X7B827D21, 0X7F436096, 0X7200464F,
+    0X76C15BF8, 0X68860BFD, 0X6C47164A, 0X61043093, 0X65C52D24, 0X119B4BE9, 0X155A565E,
+    0X18197087, 0X1CD86D30, 0X029F3D35, 0X065E2082, 0X0B1D065B, 0X0FDC1BEC, 0X3793A651,
+    0X3352BBE6, 0X3E119D3F, 0X3AD08088, 0X2497D08D, 0X2056CD3A, 0X2D15EBE3, 0X29D4F654,
+    0XC5A92679, 0XC1683BCE, 0XCC2B1D17, 0XC8EA00A0, 0XD6AD50A5, 0XD26C4D12, 0XDF2F6BCB,
+    0XDBEE767C, 0XE3A1CBC1, 0XE760D676, 0XEA23F0AF, 0XEEE2ED18, 0XF0A5BD1D, 0XF464A0AA,
+    0XF9278673, 0XFDE69BC4, 0X89B8FD09, 0X8D79E0BE, 0X803AC667, 0X84FBDBD0, 0X9ABC8BD5,
+    0X9E7D9662, 0X933EB0BB, 0X97FFAD0C, 0XAFB010B1, 0XAB710D06, 0XA6322BDF, 0XA2F33668,
+    0XBCB4666D, 0XB8757BDA, 0XB5365D03, 0XB1F740B4
   };
 
+  
+
+
+
+  private static final int[] CRC8_BYTES_MSBF = {
+    0x00, 0x07, 0x0E, 0x09, 0x1C, 0x1B, 0x12, 0x15, 0x38, 0x3F, 0x36, 0x31, 0x24, 0x23, 0x2A,
+    0x2D, 0x70, 0x77, 0x7E, 0x79, 0x6C, 0x6B, 0x62, 0x65, 0x48, 0x4F, 0x46, 0x41, 0x54, 0x53,
+    0x5A, 0x5D, 0xE0, 0xE7, 0xEE, 0xE9, 0xFC, 0xFB, 0xF2, 0xF5, 0xD8, 0xDF, 0xD6, 0xD1, 0xC4,
+    0xC3, 0xCA, 0xCD, 0x90, 0x97, 0x9E, 0x99, 0x8C, 0x8B, 0x82, 0x85, 0xA8, 0xAF, 0xA6, 0xA1,
+    0xB4, 0xB3, 0xBA, 0xBD, 0xC7, 0xC0, 0xC9, 0xCE, 0xDB, 0xDC, 0xD5, 0xD2, 0xFF, 0xF8, 0xF1,
+    0xF6, 0xE3, 0xE4, 0xED, 0xEA, 0xB7, 0xB0, 0xB9, 0xBE, 0xAB, 0xAC, 0xA5, 0xA2, 0x8F, 0x88,
+    0x81, 0x86, 0x93, 0x94, 0x9D, 0x9A, 0x27, 0x20, 0x29, 0x2E, 0x3B, 0x3C, 0x35, 0x32, 0x1F,
+    0x18, 0x11, 0x16, 0x03, 0x04, 0x0D, 0x0A, 0x57, 0x50, 0x59, 0x5E, 0x4B, 0x4C, 0x45, 0x42,
+    0x6F, 0x68, 0x61, 0x66, 0x73, 0x74, 0x7D, 0x7A, 0x89, 0x8E, 0x87, 0x80, 0x95, 0x92, 0x9B,
+    0x9C, 0xB1, 0xB6, 0xBF, 0xB8, 0xAD, 0xAA, 0xA3, 0xA4, 0xF9, 0xFE, 0xF7, 0xF0, 0xE5, 0xE2,
+    0xEB, 0xEC, 0xC1, 0xC6, 0xCF, 0xC8, 0xDD, 0xDA, 0xD3, 0xD4, 0x69, 0x6E, 0x67, 0x60, 0x75,
+    0x72, 0x7B, 0x7C, 0x51, 0x56, 0x5F, 0x58, 0x4D, 0x4A, 0x43, 0x44, 0x19, 0x1E, 0x17, 0x10,
+    0x05, 0x02, 0x0B, 0x0C, 0x21, 0x26, 0x2F, 0x28, 0x3D, 0x3A, 0x33, 0x34, 0x4E, 0x49, 0x40,
+    0x47, 0x52, 0x55, 0x5C, 0x5B, 0x76, 0x71, 0x78, 0x7F, 0x6A, 0x6D, 0x64, 0x63, 0x3E, 0x39,
+    0x30, 0x37, 0x22, 0x25, 0x2C, 0x2B, 0x06, 0x01, 0x08, 0x0F, 0x1A, 0x1D, 0x14, 0x13, 0xAE,
+    0xA9, 0xA0, 0xA7, 0xB2, 0xB5, 0xBC, 0xBB, 0x96, 0x91, 0x98, 0x9F, 0x8A, 0x8D, 0x84, 0x83,
+    0xDE, 0xD9, 0xD0, 0xD7, 0xC2, 0xC5, 0xCC, 0xCB, 0xE6, 0xE1, 0xE8, 0xEF, 0xFA, 0xFD, 0xF4,
+    0xF3
+  };
 }

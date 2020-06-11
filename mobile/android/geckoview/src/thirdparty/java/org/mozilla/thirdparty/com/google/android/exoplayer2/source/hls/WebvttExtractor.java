@@ -16,6 +16,7 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls;
 
 import android.text.TextUtils;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.ParserException;
@@ -25,8 +26,8 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ExtractorO
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.PositionHolder;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.SeekMap;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.TrackOutput;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.text.SubtitleDecoderException;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.text.webvtt.WebvttParserUtil;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.TimestampAdjuster;
@@ -34,6 +35,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.checkerframework.checker.nullness.qual.RequiresNonNull;
 
 
 
@@ -43,21 +46,23 @@ import java.util.regex.Pattern;
 
 
 
- final class WebvttExtractor implements Extractor {
+public final class WebvttExtractor implements Extractor {
 
   private static final Pattern LOCAL_TIMESTAMP = Pattern.compile("LOCAL:([^,]+)");
-  private static final Pattern MEDIA_TIMESTAMP = Pattern.compile("MPEGTS:(\\d+)");
+  private static final Pattern MEDIA_TIMESTAMP = Pattern.compile("MPEGTS:(-?\\d+)");
+  private static final int HEADER_MIN_LENGTH = 6 ;
+  private static final int HEADER_MAX_LENGTH = 3  + HEADER_MIN_LENGTH;
 
-  private final String language;
+  @Nullable private final String language;
   private final TimestampAdjuster timestampAdjuster;
   private final ParsableByteArray sampleDataWrapper;
 
-  private ExtractorOutput output;
+  private @MonotonicNonNull ExtractorOutput output;
 
   private byte[] sampleData;
   private int sampleSize;
 
-  public WebvttExtractor(String language, TimestampAdjuster timestampAdjuster) {
+  public WebvttExtractor(@Nullable String language, TimestampAdjuster timestampAdjuster) {
     this.language = language;
     this.timestampAdjuster = timestampAdjuster;
     this.sampleDataWrapper = new ParsableByteArray();
@@ -69,7 +74,20 @@ import java.util.regex.Pattern;
   @Override
   public boolean sniff(ExtractorInput input) throws IOException, InterruptedException {
     
-    throw new IllegalStateException();
+    input.peekFully(
+        sampleData,  0,  HEADER_MIN_LENGTH,  false);
+    sampleDataWrapper.reset(sampleData, HEADER_MIN_LENGTH);
+    if (WebvttParserUtil.isWebvttHeaderLine(sampleDataWrapper)) {
+      return true;
+    }
+    
+    input.peekFully(
+        sampleData,
+         HEADER_MIN_LENGTH,
+        HEADER_MAX_LENGTH - HEADER_MIN_LENGTH,
+         false);
+    sampleDataWrapper.reset(sampleData, HEADER_MAX_LENGTH);
+    return WebvttParserUtil.isWebvttHeaderLine(sampleDataWrapper);
   }
 
   @Override
@@ -92,6 +110,8 @@ import java.util.regex.Pattern;
   @Override
   public int read(ExtractorInput input, PositionHolder seekPosition)
       throws IOException, InterruptedException {
+    
+    Assertions.checkNotNull(output);
     int currentFileSize = (int) input.getLength();
 
     
@@ -114,23 +134,21 @@ import java.util.regex.Pattern;
     return Extractor.RESULT_END_OF_INPUT;
   }
 
+  @RequiresNonNull("output")
   private void processSample() throws ParserException {
     ParsableByteArray webvttData = new ParsableByteArray(sampleData);
 
     
-    try {
-      WebvttParserUtil.validateWebvttHeaderLine(webvttData);
-    } catch (SubtitleDecoderException e) {
-      throw new ParserException(e);
-    }
+    WebvttParserUtil.validateWebvttHeaderLine(webvttData);
 
     
     long vttTimestampUs = 0;
     long tsTimestampUs = 0;
 
     
-    String line;
-    while (!TextUtils.isEmpty(line = webvttData.readLine())) {
+    for (String line = webvttData.readLine();
+        !TextUtils.isEmpty(line);
+        line = webvttData.readLine()) {
       if (line.startsWith("X-TIMESTAMP-MAP")) {
         Matcher localTimestampMatcher = LOCAL_TIMESTAMP.matcher(line);
         if (!localTimestampMatcher.find()) {
@@ -141,8 +159,7 @@ import java.util.regex.Pattern;
           throw new ParserException("X-TIMESTAMP-MAP doesn't contain media timestamp: " + line);
         }
         vttTimestampUs = WebvttParserUtil.parseTimestampUs(localTimestampMatcher.group(1));
-        tsTimestampUs = TimestampAdjuster.ptsToUs(
-            Long.parseLong(mediaTimestampMatcher.group(1)));
+        tsTimestampUs = TimestampAdjuster.ptsToUs(Long.parseLong(mediaTimestampMatcher.group(1)));
       }
     }
 
@@ -155,8 +172,8 @@ import java.util.regex.Pattern;
     }
 
     long firstCueTimeUs = WebvttParserUtil.parseTimestampUs(cueHeaderMatcher.group(1));
-    long sampleTimeUs = timestampAdjuster.adjustSampleTimestamp(
-        firstCueTimeUs + tsTimestampUs - vttTimestampUs);
+    long sampleTimeUs = timestampAdjuster.adjustTsTimestamp(
+        TimestampAdjuster.usToPts(firstCueTimeUs + tsTimestampUs - vttTimestampUs));
     long subsampleOffsetUs = sampleTimeUs - firstCueTimeUs;
     
     TrackOutput trackOutput = buildTrackOutput(subsampleOffsetUs);
@@ -166,6 +183,7 @@ import java.util.regex.Pattern;
     trackOutput.sampleMetadata(sampleTimeUs, C.BUFFER_FLAG_KEY_FRAME, sampleSize, 0, null);
   }
 
+  @RequiresNonNull("output")
   private TrackOutput buildTrackOutput(long subsampleOffsetUs) {
     TrackOutput trackOutput = output.track(0, C.TRACK_TYPE_TEXT);
     trackOutput.format(Format.createTextSampleFormat(null, MimeTypes.TEXT_VTT, null,

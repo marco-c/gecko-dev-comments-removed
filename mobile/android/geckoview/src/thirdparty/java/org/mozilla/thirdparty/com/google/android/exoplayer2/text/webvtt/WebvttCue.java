@@ -15,31 +15,36 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.text.webvtt;
 
+import static java.lang.annotation.RetentionPolicy.SOURCE;
+
 import android.text.Layout.Alignment;
-import android.text.SpannableStringBuilder;
-import android.util.Log;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.text.Cue;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Log;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
 
 
+public final class WebvttCue extends Cue {
 
-
- final class WebvttCue extends Cue {
+  private static final float DEFAULT_POSITION = 0.5f;
 
   public final long startTime;
   public final long endTime;
 
-  public WebvttCue(CharSequence text) {
-    this(0, 0, text);
-  }
-
-  public WebvttCue(long startTime, long endTime, CharSequence text) {
-    this(startTime, endTime, text, null, Cue.DIMEN_UNSET, Cue.TYPE_UNSET, Cue.TYPE_UNSET,
-        Cue.DIMEN_UNSET, Cue.TYPE_UNSET, Cue.DIMEN_UNSET);
-  }
-
-  public WebvttCue(long startTime, long endTime, CharSequence text, Alignment textAlignment,
-      float line, @Cue.LineType int lineType, @Cue.AnchorType int lineAnchor, float position,
-      @Cue.AnchorType int positionAnchor, float width) {
+  private WebvttCue(
+      long startTime,
+      long endTime,
+      CharSequence text,
+      @Nullable Alignment textAlignment,
+      float line,
+      @Cue.LineType int lineType,
+      @Cue.AnchorType int lineAnchor,
+      float position,
+      @Cue.AnchorType int positionAnchor,
+      float width) {
     super(text, textAlignment, line, lineType, lineAnchor, position, positionAnchor, width);
     this.startTime = startTime;
     this.endTime = endTime;
@@ -52,30 +57,81 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.text.Cue;
 
 
   public boolean isNormalCue() {
-    return (line == DIMEN_UNSET && position == DIMEN_UNSET);
+    return (line == DIMEN_UNSET && position == DEFAULT_POSITION);
   }
 
   
-
-
   @SuppressWarnings("hiding")
-  public static final class Builder {
+  public static class Builder {
+
+    
+
+
+
+
+
+
+
+
+
+    @Documented
+    @Retention(SOURCE)
+    @IntDef({
+        TEXT_ALIGNMENT_START,
+        TEXT_ALIGNMENT_CENTER,
+        TEXT_ALIGNMENT_END,
+        TEXT_ALIGNMENT_LEFT,
+        TEXT_ALIGNMENT_RIGHT
+    })
+    public @interface TextAlignment {}
+    
+
+
+
+    public static final int TEXT_ALIGNMENT_START = 1;
+
+    
+
+
+
+    public static final int TEXT_ALIGNMENT_CENTER = 2;
+
+    
+
+
+    public static final int TEXT_ALIGNMENT_END = 3;
+
+    
+
+
+    public static final int TEXT_ALIGNMENT_LEFT = 4;
+
+    
+
+
+
+    public static final int TEXT_ALIGNMENT_RIGHT = 5;
 
     private static final String TAG = "WebvttCueBuilder";
 
     private long startTime;
     private long endTime;
-    private SpannableStringBuilder text;
-    private Alignment textAlignment;
+    @Nullable private CharSequence text;
+    @TextAlignment private int textAlignment;
     private float line;
-    private int lineType;
-    private int lineAnchor;
+    
+    
+    @LineType private int lineType;
+    @AnchorType private int lineAnchor;
     private float position;
-    private int positionAnchor;
+    @AnchorType private int positionAnchor;
     private float width;
 
     
 
+    
+    
+    @SuppressWarnings("nullness:method.invocation.invalid")
     public Builder() {
       reset();
     }
@@ -84,23 +140,45 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.text.Cue;
       startTime = 0;
       endTime = 0;
       text = null;
-      textAlignment = null;
+      
+      textAlignment = TEXT_ALIGNMENT_CENTER;
       line = Cue.DIMEN_UNSET;
-      lineType = Cue.TYPE_UNSET;
-      lineAnchor = Cue.TYPE_UNSET;
+      
+      lineType = Cue.LINE_TYPE_NUMBER;
+      
+      lineAnchor = Cue.ANCHOR_TYPE_START;
       position = Cue.DIMEN_UNSET;
       positionAnchor = Cue.TYPE_UNSET;
-      width = Cue.DIMEN_UNSET;
+      
+      width = 1.0f;
     }
 
     
 
     public WebvttCue build() {
-      if (position != Cue.DIMEN_UNSET && positionAnchor == Cue.TYPE_UNSET) {
-        derivePositionAnchorFromAlignment();
+      line = computeLine(line, lineType);
+
+      if (position == Cue.DIMEN_UNSET) {
+        position = derivePosition(textAlignment);
       }
-      return new WebvttCue(startTime, endTime, text, textAlignment, line, lineType, lineAnchor,
-          position, positionAnchor, width);
+
+      if (positionAnchor == Cue.TYPE_UNSET) {
+        positionAnchor = derivePositionAnchor(textAlignment);
+      }
+
+      width = Math.min(width, deriveMaxSize(positionAnchor, position));
+
+      return new WebvttCue(
+          startTime,
+          endTime,
+          Assertions.checkNotNull(text),
+          convertTextAlignment(textAlignment),
+          line,
+          lineType,
+          lineAnchor,
+          position,
+          positionAnchor,
+          width);
     }
 
     public Builder setStartTime(long time) {
@@ -113,12 +191,12 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.text.Cue;
       return this;
     }
 
-    public Builder setText(SpannableStringBuilder aText) {
-      text = aText;
+    public Builder setText(CharSequence text) {
+      this.text = text;
       return this;
     }
 
-    public Builder setTextAlignment(Alignment textAlignment) {
+    public Builder setTextAlignment(@TextAlignment int textAlignment) {
       this.textAlignment = textAlignment;
       return this;
     }
@@ -128,12 +206,12 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.text.Cue;
       return this;
     }
 
-    public Builder setLineType(int lineType) {
+    public Builder setLineType(@LineType int lineType) {
       this.lineType = lineType;
       return this;
     }
 
-    public Builder setLineAnchor(int lineAnchor) {
+    public Builder setLineAnchor(@AnchorType int lineAnchor) {
       this.lineAnchor = lineAnchor;
       return this;
     }
@@ -143,7 +221,7 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.text.Cue;
       return this;
     }
 
-    public Builder setPositionAnchor(int positionAnchor) {
+    public Builder setPositionAnchor(@AnchorType int positionAnchor) {
       this.positionAnchor = positionAnchor;
       return this;
     }
@@ -153,29 +231,89 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.text.Cue;
       return this;
     }
 
-    private Builder derivePositionAnchorFromAlignment() {
-      if (textAlignment == null) {
-        positionAnchor = Cue.TYPE_UNSET;
+    
+    private static float computeLine(float line, @LineType int lineType) {
+      if (line != Cue.DIMEN_UNSET
+          && lineType == Cue.LINE_TYPE_FRACTION
+          && (line < 0.0f || line > 1.0f)) {
+        return 1.0f; 
+      } else if (line != Cue.DIMEN_UNSET) {
+        
+        return line;
+      } else if (lineType == Cue.LINE_TYPE_FRACTION) {
+        return 1.0f; 
       } else {
-        switch (textAlignment) {
-          case ALIGN_NORMAL:
-            positionAnchor = Cue.ANCHOR_TYPE_START;
-            break;
-          case ALIGN_CENTER:
-            positionAnchor = Cue.ANCHOR_TYPE_MIDDLE;
-            break;
-          case ALIGN_OPPOSITE:
-            positionAnchor = Cue.ANCHOR_TYPE_END;
-            break;
-          default:
-            Log.w(TAG, "Unrecognized alignment: " + textAlignment);
-            positionAnchor = Cue.ANCHOR_TYPE_START;
-            break;
-        }
+        
+        
+        return DIMEN_UNSET;
       }
-      return this;
     }
 
-  }
+    
+    private static float derivePosition(@TextAlignment int textAlignment) {
+      switch (textAlignment) {
+        case TEXT_ALIGNMENT_LEFT:
+          return 0.0f;
+        case TEXT_ALIGNMENT_RIGHT:
+          return 1.0f;
+        case TEXT_ALIGNMENT_START:
+        case TEXT_ALIGNMENT_CENTER:
+        case TEXT_ALIGNMENT_END:
+        default:
+          return DEFAULT_POSITION;
+      }
+    }
 
+    
+    @AnchorType
+    private static int derivePositionAnchor(@TextAlignment int textAlignment) {
+      switch (textAlignment) {
+        case TEXT_ALIGNMENT_LEFT:
+        case TEXT_ALIGNMENT_START:
+          return Cue.ANCHOR_TYPE_START;
+        case TEXT_ALIGNMENT_RIGHT:
+        case TEXT_ALIGNMENT_END:
+          return Cue.ANCHOR_TYPE_END;
+        case TEXT_ALIGNMENT_CENTER:
+        default:
+          return Cue.ANCHOR_TYPE_MIDDLE;
+      }
+    }
+
+    @Nullable
+    private static Alignment convertTextAlignment(@TextAlignment int textAlignment) {
+      switch (textAlignment) {
+        case TEXT_ALIGNMENT_START:
+        case TEXT_ALIGNMENT_LEFT:
+          return Alignment.ALIGN_NORMAL;
+        case TEXT_ALIGNMENT_CENTER:
+          return Alignment.ALIGN_CENTER;
+        case TEXT_ALIGNMENT_END:
+        case TEXT_ALIGNMENT_RIGHT:
+          return Alignment.ALIGN_OPPOSITE;
+        default:
+          Log.w(TAG, "Unknown textAlignment: " + textAlignment);
+          return null;
+      }
+    }
+
+    
+    private static float deriveMaxSize(@AnchorType int positionAnchor, float position) {
+      switch (positionAnchor) {
+        case Cue.ANCHOR_TYPE_START:
+          return 1.0f - position;
+        case Cue.ANCHOR_TYPE_END:
+          return position;
+        case Cue.ANCHOR_TYPE_MIDDLE:
+          if (position <= 0.5f) {
+            return position * 2;
+          } else {
+            return (1.0f - position) * 2;
+          }
+        case Cue.TYPE_UNSET:
+        default:
+          throw new IllegalStateException(String.valueOf(positionAnchor));
+      }
+    }
+  }
 }

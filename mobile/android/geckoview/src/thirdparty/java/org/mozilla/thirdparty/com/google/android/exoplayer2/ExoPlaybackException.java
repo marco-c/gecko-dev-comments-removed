@@ -15,10 +15,14 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2;
 
-import android.support.annotation.IntDef;
+import android.os.SystemClock;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.RendererCapabilities.FormatSupport;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.MediaSource;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import java.io.IOException;
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -30,8 +34,11 @@ public final class ExoPlaybackException extends Exception {
   
 
 
+
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef({TYPE_SOURCE, TYPE_RENDERER, TYPE_UNEXPECTED})
+  @IntDef({TYPE_SOURCE, TYPE_RENDERER, TYPE_UNEXPECTED, TYPE_REMOTE, TYPE_OUT_OF_MEMORY})
   public @interface Type {}
   
 
@@ -51,11 +58,16 @@ public final class ExoPlaybackException extends Exception {
 
 
   public static final int TYPE_UNEXPECTED = 2;
-
   
 
 
 
+
+  public static final int TYPE_REMOTE = 3;
+  
+  public static final int TYPE_OUT_OF_MEMORY = 4;
+
+  
   @Type public final int type;
 
   
@@ -67,12 +79,19 @@ public final class ExoPlaybackException extends Exception {
 
 
 
+  @Nullable public final Format rendererFormat;
+
+  
 
 
 
-  public static ExoPlaybackException createForRenderer(Exception cause, int rendererIndex) {
-    return new ExoPlaybackException(TYPE_RENDERER, null, cause, rendererIndex);
-  }
+
+  @FormatSupport public final int rendererFormatSupport;
+
+  
+  public final long timestampMs;
+
+  @Nullable private final Throwable cause;
 
   
 
@@ -81,7 +100,7 @@ public final class ExoPlaybackException extends Exception {
 
 
   public static ExoPlaybackException createForSource(IOException cause) {
-    return new ExoPlaybackException(TYPE_SOURCE, null, cause, C.INDEX_UNSET);
+    return new ExoPlaybackException(TYPE_SOURCE, cause);
   }
 
   
@@ -90,15 +109,86 @@ public final class ExoPlaybackException extends Exception {
 
 
 
-   static ExoPlaybackException createForUnexpected(RuntimeException cause) {
-    return new ExoPlaybackException(TYPE_UNEXPECTED, null, cause, C.INDEX_UNSET);
+
+
+
+
+
+  public static ExoPlaybackException createForRenderer(
+      Exception cause,
+      int rendererIndex,
+      @Nullable Format rendererFormat,
+      @FormatSupport int rendererFormatSupport) {
+    return new ExoPlaybackException(
+        TYPE_RENDERER,
+        cause,
+        rendererIndex,
+        rendererFormat,
+        rendererFormat == null ? RendererCapabilities.FORMAT_HANDLED : rendererFormatSupport);
   }
 
-  private ExoPlaybackException(@Type int type, String message, Throwable cause,
-      int rendererIndex) {
-    super(message, cause);
+  
+
+
+
+
+
+  public static ExoPlaybackException createForUnexpected(RuntimeException cause) {
+    return new ExoPlaybackException(TYPE_UNEXPECTED, cause);
+  }
+
+  
+
+
+
+
+
+  public static ExoPlaybackException createForRemote(String message) {
+    return new ExoPlaybackException(TYPE_REMOTE, message);
+  }
+
+  
+
+
+
+
+
+  public static ExoPlaybackException createForOutOfMemoryError(OutOfMemoryError cause) {
+    return new ExoPlaybackException(TYPE_OUT_OF_MEMORY, cause);
+  }
+
+  private ExoPlaybackException(@Type int type, Throwable cause) {
+    this(
+        type,
+        cause,
+         C.INDEX_UNSET,
+         null,
+         RendererCapabilities.FORMAT_HANDLED);
+  }
+
+  private ExoPlaybackException(
+      @Type int type,
+      Throwable cause,
+      int rendererIndex,
+      @Nullable Format rendererFormat,
+      @FormatSupport int rendererFormatSupport) {
+    super(cause);
     this.type = type;
+    this.cause = cause;
     this.rendererIndex = rendererIndex;
+    this.rendererFormat = rendererFormat;
+    this.rendererFormatSupport = rendererFormatSupport;
+    timestampMs = SystemClock.elapsedRealtime();
+  }
+
+  private ExoPlaybackException(@Type int type, String message) {
+    super(message);
+    this.type = type;
+    rendererIndex = C.INDEX_UNSET;
+    rendererFormat = null;
+    rendererFormatSupport = RendererCapabilities.FORMAT_UNSUPPORTED_TYPE;
+    cause = null;
+    timestampMs = SystemClock.elapsedRealtime();
   }
 
   
@@ -108,7 +198,7 @@ public final class ExoPlaybackException extends Exception {
 
   public IOException getSourceException() {
     Assertions.checkState(type == TYPE_SOURCE);
-    return (IOException) getCause();
+    return (IOException) Assertions.checkNotNull(cause);
   }
 
   
@@ -118,7 +208,7 @@ public final class ExoPlaybackException extends Exception {
 
   public Exception getRendererException() {
     Assertions.checkState(type == TYPE_RENDERER);
-    return (Exception) getCause();
+    return (Exception) Assertions.checkNotNull(cause);
   }
 
   
@@ -128,7 +218,16 @@ public final class ExoPlaybackException extends Exception {
 
   public RuntimeException getUnexpectedException() {
     Assertions.checkState(type == TYPE_UNEXPECTED);
-    return (RuntimeException) getCause();
+    return (RuntimeException) Assertions.checkNotNull(cause);
   }
 
+  
+
+
+
+
+  public OutOfMemoryError getOutOfMemoryError() {
+    Assertions.checkState(type == TYPE_OUT_OF_MEMORY);
+    return (OutOfMemoryError) Assertions.checkNotNull(cause);
+  }
 }

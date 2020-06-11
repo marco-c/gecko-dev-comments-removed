@@ -33,9 +33,8 @@ public final class SingleSampleMediaChunk extends BaseMediaChunk {
   private final int trackType;
   private final Format sampleFormat;
 
-  private volatile int bytesLoaded;
-  private volatile boolean loadCanceled;
-  private volatile boolean loadCompleted;
+  private long nextLoadPosition;
+  private boolean loadCompleted;
 
   
 
@@ -50,11 +49,28 @@ public final class SingleSampleMediaChunk extends BaseMediaChunk {
 
 
 
-  public SingleSampleMediaChunk(DataSource dataSource, DataSpec dataSpec, Format trackFormat,
-      int trackSelectionReason, Object trackSelectionData, long startTimeUs, long endTimeUs,
-      int chunkIndex, int trackType, Format sampleFormat) {
-    super(dataSource, dataSpec, trackFormat, trackSelectionReason, trackSelectionData, startTimeUs,
-        endTimeUs, chunkIndex);
+  public SingleSampleMediaChunk(
+      DataSource dataSource,
+      DataSpec dataSpec,
+      Format trackFormat,
+      int trackSelectionReason,
+      Object trackSelectionData,
+      long startTimeUs,
+      long endTimeUs,
+      long chunkIndex,
+      int trackType,
+      Format sampleFormat) {
+    super(
+        dataSource,
+        dataSpec,
+        trackFormat,
+        trackSelectionReason,
+        trackSelectionData,
+        startTimeUs,
+        endTimeUs,
+         C.TIME_UNSET,
+         C.TIME_UNSET,
+        chunkIndex);
     this.trackType = trackType;
     this.sampleFormat = sampleFormat;
   }
@@ -65,50 +81,40 @@ public final class SingleSampleMediaChunk extends BaseMediaChunk {
     return loadCompleted;
   }
 
-  @Override
-  public long bytesLoaded() {
-    return bytesLoaded;
-  }
-
   
 
   @Override
   public void cancelLoad() {
-    loadCanceled = true;
-  }
-
-  @Override
-  public boolean isLoadCanceled() {
-    return loadCanceled;
+    
   }
 
   @SuppressWarnings("NonAtomicVolatileUpdate")
   @Override
   public void load() throws IOException, InterruptedException {
-    DataSpec loadDataSpec = Util.getRemainderDataSpec(dataSpec, bytesLoaded);
+    BaseMediaChunkOutput output = getOutput();
+    output.setSampleOffsetUs(0);
+    TrackOutput trackOutput = output.track(0, trackType);
+    trackOutput.format(sampleFormat);
     try {
       
+      DataSpec loadDataSpec = dataSpec.subrange(nextLoadPosition);
       long length = dataSource.open(loadDataSpec);
       if (length != C.LENGTH_UNSET) {
-        length += bytesLoaded;
+        length += nextLoadPosition;
       }
-      ExtractorInput extractorInput = new DefaultExtractorInput(dataSource, bytesLoaded, length);
-      BaseMediaChunkOutput output = getOutput();
-      output.setSampleOffsetUs(0);
-      TrackOutput trackOutput = output.track(0, trackType);
-      trackOutput.format(sampleFormat);
+      ExtractorInput extractorInput =
+          new DefaultExtractorInput(dataSource, nextLoadPosition, length);
       
       int result = 0;
       while (result != C.RESULT_END_OF_INPUT) {
-        bytesLoaded += result;
+        nextLoadPosition += result;
         result = trackOutput.sampleData(extractorInput, Integer.MAX_VALUE, true);
       }
-      int sampleSize = bytesLoaded;
+      int sampleSize = (int) nextLoadPosition;
       trackOutput.sampleMetadata(startTimeUs, C.BUFFER_FLAG_KEY_FRAME, sampleSize, 0, null);
     } finally {
       Util.closeQuietly(dataSource);
     }
     loadCompleted = true;
   }
-
 }

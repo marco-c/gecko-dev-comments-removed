@@ -15,11 +15,13 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream;
 
-import android.support.annotation.IntDef;
 import android.text.TextUtils;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Predicate;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 import java.io.IOException;
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Collections;
@@ -181,18 +183,21 @@ public interface HttpDataSource extends DataSource {
       return defaultRequestProperties;
     }
 
+    
     @Deprecated
     @Override
     public final void setDefaultRequestProperty(String name, String value) {
       defaultRequestProperties.set(name, value);
     }
 
+    
     @Deprecated
     @Override
     public final void clearDefaultRequestProperty(String name) {
       defaultRequestProperties.remove(name);
     }
 
+    
     @Deprecated
     @Override
     public final void clearAllDefaultRequestProperties() {
@@ -212,28 +217,25 @@ public interface HttpDataSource extends DataSource {
   }
 
   
-
-
-  Predicate<String> REJECT_PAYWALL_TYPES = new Predicate<String>() {
-
-    @Override
-    public boolean evaluate(String contentType) {
-      contentType = Util.toLowerInvariant(contentType);
-      return !TextUtils.isEmpty(contentType)
-          && (!contentType.contains("text") || contentType.contains("text/vtt"))
-          && !contentType.contains("html") && !contentType.contains("xml");
-    }
-
-  };
+  Predicate<String> REJECT_PAYWALL_TYPES =
+      contentType -> {
+        contentType = Util.toLowerInvariant(contentType);
+        return !TextUtils.isEmpty(contentType)
+            && (!contentType.contains("text") || contentType.contains("text/vtt"))
+            && !contentType.contains("html")
+            && !contentType.contains("xml");
+      };
 
   
 
 
   class HttpDataSourceException extends IOException {
 
+    @Documented
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({TYPE_OPEN, TYPE_READ, TYPE_CLOSE})
     public @interface Type {}
+
     public static final int TYPE_OPEN = 1;
     public static final int TYPE_READ = 2;
     public static final int TYPE_CLOSE = 3;
@@ -297,18 +299,39 @@ public interface HttpDataSource extends DataSource {
     public final int responseCode;
 
     
+    @Nullable public final String responseMessage;
+
+    
 
 
     public final Map<String, List<String>> headerFields;
 
-    public InvalidResponseCodeException(int responseCode, Map<String, List<String>> headerFields,
+    
+    @Deprecated
+    public InvalidResponseCodeException(
+        int responseCode, Map<String, List<String>> headerFields, DataSpec dataSpec) {
+      this(responseCode,  null, headerFields, dataSpec);
+    }
+
+    public InvalidResponseCodeException(
+        int responseCode,
+        @Nullable String responseMessage,
+        Map<String, List<String>> headerFields,
         DataSpec dataSpec) {
       super("Response code: " + responseCode, dataSpec, TYPE_OPEN);
       this.responseCode = responseCode;
+      this.responseMessage = responseMessage;
       this.headerFields = headerFields;
     }
 
   }
+
+  
+
+
+
+
+
 
   @Override
   long open(DataSpec dataSpec) throws HttpDataSourceException;
@@ -320,6 +343,10 @@ public interface HttpDataSource extends DataSource {
   int read(byte[] buffer, int offset, int readLength) throws HttpDataSourceException;
 
   
+
+
+
+
 
 
 
@@ -345,6 +372,8 @@ public interface HttpDataSource extends DataSource {
 
 
 
-  Map<String, List<String>> getResponseHeaders();
+  int getResponseCode();
 
+  @Override
+  Map<String, List<String>> getResponseHeaders();
 }

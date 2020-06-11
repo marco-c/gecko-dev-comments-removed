@@ -16,44 +16,31 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.mp3;
 
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ConstantBitrateSeekMap;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.MpegAudioHeader;
 
 
 
 
- final class ConstantBitrateSeeker implements Mp3Extractor.Seeker {
+ final class ConstantBitrateSeeker extends ConstantBitrateSeekMap implements Seeker {
 
-  private static final int BITS_PER_BYTE = 8;
+  
 
-  private final long firstFramePosition;
-  private final int bitrate;
-  private final long durationUs;
 
-  public ConstantBitrateSeeker(long firstFramePosition, int bitrate, long inputLength) {
-    this.firstFramePosition = firstFramePosition;
-    this.bitrate = bitrate;
-    durationUs = inputLength == C.LENGTH_UNSET ? C.TIME_UNSET : getTimeUs(inputLength);
-  }
 
-  @Override
-  public boolean isSeekable() {
-    return durationUs != C.TIME_UNSET;
-  }
 
-  @Override
-  public long getPosition(long timeUs) {
-    return durationUs == C.TIME_UNSET ? 0
-        : firstFramePosition + (timeUs * bitrate) / (C.MICROS_PER_SECOND * BITS_PER_BYTE);
+  public ConstantBitrateSeeker(
+      long inputLength, long firstFramePosition, MpegAudioHeader mpegAudioHeader) {
+    super(inputLength, firstFramePosition, mpegAudioHeader.bitrate, mpegAudioHeader.frameSize);
   }
 
   @Override
   public long getTimeUs(long position) {
-    return (Math.max(0, position - firstFramePosition) * C.MICROS_PER_SECOND * BITS_PER_BYTE)
-        / bitrate;
+    return getTimeUsAtPosition(position);
   }
 
   @Override
-  public long getDurationUs() {
-    return durationUs;
+  public long getDataEndPosition() {
+    return C.POSITION_UNSET;
   }
-
 }

@@ -39,6 +39,12 @@ public final class DecoderCounters {
   
 
 
+
+
+  public int skippedInputBufferCount;
+  
+
+
   public int renderedOutputBufferCount;
   
 
@@ -52,13 +58,21 @@ public final class DecoderCounters {
 
 
 
-  public int droppedOutputBufferCount;
+  public int droppedBufferCount;
   
 
 
 
 
-  public int maxConsecutiveDroppedOutputBufferCount;
+  public int maxConsecutiveDroppedBufferCount;
+  
+
+
+
+
+
+
+  public int droppedToKeyframeCount;
 
   
 
@@ -79,11 +93,13 @@ public final class DecoderCounters {
     decoderInitCount += other.decoderInitCount;
     decoderReleaseCount += other.decoderReleaseCount;
     inputBufferCount += other.inputBufferCount;
+    skippedInputBufferCount += other.skippedInputBufferCount;
     renderedOutputBufferCount += other.renderedOutputBufferCount;
     skippedOutputBufferCount += other.skippedOutputBufferCount;
-    droppedOutputBufferCount += other.droppedOutputBufferCount;
-    maxConsecutiveDroppedOutputBufferCount = Math.max(maxConsecutiveDroppedOutputBufferCount,
-        other.maxConsecutiveDroppedOutputBufferCount);
+    droppedBufferCount += other.droppedBufferCount;
+    maxConsecutiveDroppedBufferCount = Math.max(maxConsecutiveDroppedBufferCount,
+        other.maxConsecutiveDroppedBufferCount);
+    droppedToKeyframeCount += other.droppedToKeyframeCount;
   }
 
 }

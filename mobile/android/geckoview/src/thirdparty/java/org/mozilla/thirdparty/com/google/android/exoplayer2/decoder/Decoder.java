@@ -15,6 +15,8 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.decoder;
 
+import androidx.annotation.Nullable;
+
 
 
 
@@ -37,6 +39,7 @@ public interface Decoder<I, O, E extends Exception> {
 
 
 
+  @Nullable
   I dequeueInputBuffer() throws E;
 
   
@@ -53,6 +56,7 @@ public interface Decoder<I, O, E extends Exception> {
 
 
 
+  @Nullable
   O dequeueOutputBuffer() throws E;
 
   

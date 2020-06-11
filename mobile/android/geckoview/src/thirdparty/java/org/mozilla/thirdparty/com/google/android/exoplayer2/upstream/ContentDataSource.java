@@ -15,20 +15,22 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream;
 
+import static org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util.castNonNull;
+
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.net.Uri;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import java.io.EOFException;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.channels.FileChannel;
 
 
-
-
-public final class ContentDataSource implements DataSource {
+public final class ContentDataSource extends BaseDataSource {
 
   
 
@@ -42,11 +44,10 @@ public final class ContentDataSource implements DataSource {
   }
 
   private final ContentResolver resolver;
-  private final TransferListener<? super ContentDataSource> listener;
 
-  private Uri uri;
-  private AssetFileDescriptor assetFileDescriptor;
-  private InputStream inputStream;
+  @Nullable private Uri uri;
+  @Nullable private AssetFileDescriptor assetFileDescriptor;
+  @Nullable private FileInputStream inputStream;
   private long bytesRemaining;
   private boolean opened;
 
@@ -54,26 +55,28 @@ public final class ContentDataSource implements DataSource {
 
 
   public ContentDataSource(Context context) {
-    this(context, null);
-  }
-
-  
-
-
-
-  public ContentDataSource(Context context, TransferListener<? super ContentDataSource> listener) {
+    super( false);
     this.resolver = context.getContentResolver();
-    this.listener = listener;
   }
 
   @Override
   public long open(DataSpec dataSpec) throws ContentDataSourceException {
     try {
-      uri = dataSpec.uri;
-      assetFileDescriptor = resolver.openAssetFileDescriptor(uri, "r");
-      inputStream = new FileInputStream(assetFileDescriptor.getFileDescriptor());
-      long skipped = inputStream.skip(dataSpec.position);
-      if (skipped < dataSpec.position) {
+      Uri uri = dataSpec.uri;
+      this.uri = uri;
+
+      transferInitializing(dataSpec);
+      AssetFileDescriptor assetFileDescriptor = resolver.openAssetFileDescriptor(uri, "r");
+      this.assetFileDescriptor = assetFileDescriptor;
+      if (assetFileDescriptor == null) {
+        throw new FileNotFoundException("Could not open file descriptor for: " + uri);
+      }
+      FileInputStream inputStream = new FileInputStream(assetFileDescriptor.getFileDescriptor());
+      this.inputStream = inputStream;
+
+      long assetStartOffset = assetFileDescriptor.getStartOffset();
+      long skipped = inputStream.skip(assetStartOffset + dataSpec.position) - assetStartOffset;
+      if (skipped != dataSpec.position) {
         
         
         throw new EOFException();
@@ -81,12 +84,15 @@ public final class ContentDataSource implements DataSource {
       if (dataSpec.length != C.LENGTH_UNSET) {
         bytesRemaining = dataSpec.length;
       } else {
-        bytesRemaining = inputStream.available();
-        if (bytesRemaining == 0) {
+        long assetFileDescriptorLength = assetFileDescriptor.getLength();
+        if (assetFileDescriptorLength == AssetFileDescriptor.UNKNOWN_LENGTH) {
           
           
-          
-          bytesRemaining = C.LENGTH_UNSET;
+          FileChannel channel = inputStream.getChannel();
+          long channelSize = channel.size();
+          bytesRemaining = channelSize == 0 ? C.LENGTH_UNSET : channelSize - channel.position();
+        } else {
+          bytesRemaining = assetFileDescriptorLength - skipped;
         }
       }
     } catch (IOException e) {
@@ -94,9 +100,7 @@ public final class ContentDataSource implements DataSource {
     }
 
     opened = true;
-    if (listener != null) {
-      listener.onTransferStart(this, dataSpec);
-    }
+    transferStarted(dataSpec);
 
     return bytesRemaining;
   }
@@ -113,7 +117,7 @@ public final class ContentDataSource implements DataSource {
     try {
       int bytesToRead = bytesRemaining == C.LENGTH_UNSET ? readLength
           : (int) Math.min(bytesRemaining, readLength);
-      bytesRead = inputStream.read(buffer, offset, bytesToRead);
+      bytesRead = castNonNull(inputStream).read(buffer, offset, bytesToRead);
     } catch (IOException e) {
       throw new ContentDataSourceException(e);
     }
@@ -128,17 +132,17 @@ public final class ContentDataSource implements DataSource {
     if (bytesRemaining != C.LENGTH_UNSET) {
       bytesRemaining -= bytesRead;
     }
-    if (listener != null) {
-      listener.onBytesTransferred(this, bytesRead);
-    }
+    bytesTransferred(bytesRead);
     return bytesRead;
   }
 
   @Override
+  @Nullable
   public Uri getUri() {
     return uri;
   }
 
+  @SuppressWarnings("Finally")
   @Override
   public void close() throws ContentDataSourceException {
     uri = null;
@@ -160,9 +164,7 @@ public final class ContentDataSource implements DataSource {
         assetFileDescriptor = null;
         if (opened) {
           opened = false;
-          if (listener != null) {
-            listener.onTransferEnd(this);
-          }
+          transferEnded();
         }
       }
     }

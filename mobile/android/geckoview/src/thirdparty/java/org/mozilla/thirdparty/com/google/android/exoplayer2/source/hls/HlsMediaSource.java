@@ -15,83 +15,433 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls;
 
+import static java.lang.annotation.RetentionPolicy.SOURCE;
+
 import android.net.Uri;
 import android.os.Handler;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.ExoPlayer;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.source.AdaptiveMediaSourceEventListener;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.source.AdaptiveMediaSourceEventListener.EventDispatcher;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.ExoPlayerLibraryInfo;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.DrmSession;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.DrmSessionManager;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.Extractor;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.offline.StreamKey;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.BaseMediaSource;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.CompositeSequenceableLoaderFactory;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.DefaultCompositeSequenceableLoaderFactory;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.MediaPeriod;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.MediaSource;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.MediaSourceEventListener;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.MediaSourceEventListener.EventDispatcher;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.MediaSourceFactory;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.SequenceableLoader;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.SinglePeriodTimeline;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls.playlist.DefaultHlsPlaylistParserFactory;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls.playlist.DefaultHlsPlaylistTracker;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls.playlist.FilteringHlsPlaylistParserFactory;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls.playlist.HlsMediaPlaylist;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls.playlist.HlsPlaylistParserFactory;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls.playlist.HlsPlaylistTracker;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.Allocator;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DefaultLoadErrorHandlingPolicy;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.LoadErrorHandlingPolicy;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.TransferListener;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import java.io.IOException;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
 import java.util.List;
 
 
+public final class HlsMediaSource extends BaseMediaSource
+    implements HlsPlaylistTracker.PrimaryPlaylistListener {
 
-
-public final class HlsMediaSource implements MediaSource,
-    HlsPlaylistTracker.PrimaryPlaylistListener {
+  static {
+    ExoPlayerLibraryInfo.registerModule("goog.exo.hls");
+  }
 
   
 
 
-  public static final int DEFAULT_MIN_LOADABLE_RETRY_COUNT = 3;
 
+
+
+
+
+
+
+
+
+  @Documented
+  @Retention(SOURCE)
+  @IntDef({METADATA_TYPE_ID3, METADATA_TYPE_EMSG})
+  public @interface MetadataType {}
+
+  
+  public static final int METADATA_TYPE_ID3 = 1;
+  
+  public static final int METADATA_TYPE_EMSG = 3;
+
+  
+  public static final class Factory implements MediaSourceFactory {
+
+    private final HlsDataSourceFactory hlsDataSourceFactory;
+
+    private HlsExtractorFactory extractorFactory;
+    private HlsPlaylistParserFactory playlistParserFactory;
+    @Nullable private List<StreamKey> streamKeys;
+    private HlsPlaylistTracker.Factory playlistTrackerFactory;
+    private CompositeSequenceableLoaderFactory compositeSequenceableLoaderFactory;
+    private DrmSessionManager<?> drmSessionManager;
+    private LoadErrorHandlingPolicy loadErrorHandlingPolicy;
+    private boolean allowChunklessPreparation;
+    @MetadataType private int metadataType;
+    private boolean useSessionKeys;
+    private boolean isCreateCalled;
+    @Nullable private Object tag;
+
+    
+
+
+
+
+
+
+    public Factory(DataSource.Factory dataSourceFactory) {
+      this(new DefaultHlsDataSourceFactory(dataSourceFactory));
+    }
+
+    
+
+
+
+
+
+    public Factory(HlsDataSourceFactory hlsDataSourceFactory) {
+      this.hlsDataSourceFactory = Assertions.checkNotNull(hlsDataSourceFactory);
+      playlistParserFactory = new DefaultHlsPlaylistParserFactory();
+      playlistTrackerFactory = DefaultHlsPlaylistTracker.FACTORY;
+      extractorFactory = HlsExtractorFactory.DEFAULT;
+      drmSessionManager = DrmSessionManager.getDummyDrmSessionManager();
+      loadErrorHandlingPolicy = new DefaultLoadErrorHandlingPolicy();
+      compositeSequenceableLoaderFactory = new DefaultCompositeSequenceableLoaderFactory();
+      metadataType = METADATA_TYPE_ID3;
+    }
+
+    
+
+
+
+
+
+
+
+
+    public Factory setTag(@Nullable Object tag) {
+      Assertions.checkState(!isCreateCalled);
+      this.tag = tag;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+    public Factory setExtractorFactory(HlsExtractorFactory extractorFactory) {
+      Assertions.checkState(!isCreateCalled);
+      this.extractorFactory = Assertions.checkNotNull(extractorFactory);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    public Factory setLoadErrorHandlingPolicy(LoadErrorHandlingPolicy loadErrorHandlingPolicy) {
+      Assertions.checkState(!isCreateCalled);
+      this.loadErrorHandlingPolicy = loadErrorHandlingPolicy;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    @Deprecated
+    public Factory setMinLoadableRetryCount(int minLoadableRetryCount) {
+      Assertions.checkState(!isCreateCalled);
+      this.loadErrorHandlingPolicy = new DefaultLoadErrorHandlingPolicy(minLoadableRetryCount);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+    public Factory setPlaylistParserFactory(HlsPlaylistParserFactory playlistParserFactory) {
+      Assertions.checkState(!isCreateCalled);
+      this.playlistParserFactory = Assertions.checkNotNull(playlistParserFactory);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+    public Factory setPlaylistTrackerFactory(HlsPlaylistTracker.Factory playlistTrackerFactory) {
+      Assertions.checkState(!isCreateCalled);
+      this.playlistTrackerFactory = Assertions.checkNotNull(playlistTrackerFactory);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    public Factory setCompositeSequenceableLoaderFactory(
+        CompositeSequenceableLoaderFactory compositeSequenceableLoaderFactory) {
+      Assertions.checkState(!isCreateCalled);
+      this.compositeSequenceableLoaderFactory =
+          Assertions.checkNotNull(compositeSequenceableLoaderFactory);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+    public Factory setAllowChunklessPreparation(boolean allowChunklessPreparation) {
+      Assertions.checkState(!isCreateCalled);
+      this.allowChunklessPreparation = allowChunklessPreparation;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public Factory setMetadataType(@MetadataType int metadataType) {
+      Assertions.checkState(!isCreateCalled);
+      this.metadataType = metadataType;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+    public Factory setUseSessionKeys(boolean useSessionKeys) {
+      this.useSessionKeys = useSessionKeys;
+      return this;
+    }
+
+    
+
+
+
+    @Deprecated
+    public HlsMediaSource createMediaSource(
+        Uri playlistUri,
+        @Nullable Handler eventHandler,
+        @Nullable MediaSourceEventListener eventListener) {
+      HlsMediaSource mediaSource = createMediaSource(playlistUri);
+      if (eventHandler != null && eventListener != null) {
+        mediaSource.addEventListener(eventHandler, eventListener);
+      }
+      return mediaSource;
+    }
+
+    
+
+
+
+
+
+
+
+    @Override
+    public Factory setDrmSessionManager(DrmSessionManager<?> drmSessionManager) {
+      Assertions.checkState(!isCreateCalled);
+      this.drmSessionManager = drmSessionManager;
+      return this;
+    }
+
+    
+
+
+
+
+    @Override
+    public HlsMediaSource createMediaSource(Uri playlistUri) {
+      isCreateCalled = true;
+      if (streamKeys != null) {
+        playlistParserFactory =
+            new FilteringHlsPlaylistParserFactory(playlistParserFactory, streamKeys);
+      }
+      return new HlsMediaSource(
+          playlistUri,
+          hlsDataSourceFactory,
+          extractorFactory,
+          compositeSequenceableLoaderFactory,
+          drmSessionManager,
+          loadErrorHandlingPolicy,
+          playlistTrackerFactory.createTracker(
+              hlsDataSourceFactory, loadErrorHandlingPolicy, playlistParserFactory),
+          allowChunklessPreparation,
+          metadataType,
+          useSessionKeys,
+          tag);
+    }
+
+    @Override
+    public Factory setStreamKeys(List<StreamKey> streamKeys) {
+      Assertions.checkState(!isCreateCalled);
+      this.streamKeys = streamKeys;
+      return this;
+    }
+
+    @Override
+    public int[] getSupportedTypes() {
+      return new int[] {C.TYPE_HLS};
+    }
+
+  }
+
+  private final HlsExtractorFactory extractorFactory;
   private final Uri manifestUri;
   private final HlsDataSourceFactory dataSourceFactory;
-  private final int minLoadableRetryCount;
-  private final EventDispatcher eventDispatcher;
+  private final CompositeSequenceableLoaderFactory compositeSequenceableLoaderFactory;
+  private final DrmSessionManager<?> drmSessionManager;
+  private final LoadErrorHandlingPolicy loadErrorHandlingPolicy;
+  private final boolean allowChunklessPreparation;
+  private final @MetadataType int metadataType;
+  private final boolean useSessionKeys;
+  private final HlsPlaylistTracker playlistTracker;
+  @Nullable private final Object tag;
 
-  private HlsPlaylistTracker playlistTracker;
-  private Listener sourceListener;
+  @Nullable private TransferListener mediaTransferListener;
 
-  public HlsMediaSource(Uri manifestUri, DataSource.Factory dataSourceFactory, Handler eventHandler,
-      AdaptiveMediaSourceEventListener eventListener) {
-    this(manifestUri, dataSourceFactory, DEFAULT_MIN_LOADABLE_RETRY_COUNT, eventHandler,
-        eventListener);
-  }
-
-  public HlsMediaSource(Uri manifestUri, DataSource.Factory dataSourceFactory,
-      int minLoadableRetryCount, Handler eventHandler,
-      AdaptiveMediaSourceEventListener eventListener) {
-    this(manifestUri, new DefaultHlsDataSourceFactory(dataSourceFactory), minLoadableRetryCount,
-        eventHandler, eventListener);
-  }
-
-  public HlsMediaSource(Uri manifestUri, HlsDataSourceFactory dataSourceFactory,
-      int minLoadableRetryCount, Handler eventHandler,
-      AdaptiveMediaSourceEventListener eventListener) {
+  private HlsMediaSource(
+      Uri manifestUri,
+      HlsDataSourceFactory dataSourceFactory,
+      HlsExtractorFactory extractorFactory,
+      CompositeSequenceableLoaderFactory compositeSequenceableLoaderFactory,
+      DrmSessionManager<?> drmSessionManager,
+      LoadErrorHandlingPolicy loadErrorHandlingPolicy,
+      HlsPlaylistTracker playlistTracker,
+      boolean allowChunklessPreparation,
+      @MetadataType int metadataType,
+      boolean useSessionKeys,
+      @Nullable Object tag) {
     this.manifestUri = manifestUri;
     this.dataSourceFactory = dataSourceFactory;
-    this.minLoadableRetryCount = minLoadableRetryCount;
-    eventDispatcher = new EventDispatcher(eventHandler, eventListener);
+    this.extractorFactory = extractorFactory;
+    this.compositeSequenceableLoaderFactory = compositeSequenceableLoaderFactory;
+    this.drmSessionManager = drmSessionManager;
+    this.loadErrorHandlingPolicy = loadErrorHandlingPolicy;
+    this.playlistTracker = playlistTracker;
+    this.allowChunklessPreparation = allowChunklessPreparation;
+    this.metadataType = metadataType;
+    this.useSessionKeys = useSessionKeys;
+    this.tag = tag;
   }
 
   @Override
-  public void prepareSource(ExoPlayer player, boolean isTopLevelSource, Listener listener) {
-    Assertions.checkState(playlistTracker == null);
-    playlistTracker = new HlsPlaylistTracker(manifestUri, dataSourceFactory, eventDispatcher,
-        minLoadableRetryCount, this);
-    sourceListener = listener;
-    playlistTracker.start();
+  @Nullable
+  public Object getTag() {
+    return tag;
+  }
+
+  @Override
+  protected void prepareSourceInternal(@Nullable TransferListener mediaTransferListener) {
+    this.mediaTransferListener = mediaTransferListener;
+    drmSessionManager.prepare();
+    EventDispatcher eventDispatcher = createEventDispatcher( null);
+    playlistTracker.start(manifestUri, eventDispatcher,  this);
   }
 
   @Override
   public void maybeThrowSourceInfoRefreshError() throws IOException {
-    playlistTracker.maybeThrowPlaylistRefreshError();
+    playlistTracker.maybeThrowPrimaryPlaylistRefreshError();
   }
 
   @Override
-  public MediaPeriod createPeriod(int index, Allocator allocator, long positionUs) {
-    Assertions.checkArgument(index == 0);
-    return new HlsMediaPeriod(playlistTracker, dataSourceFactory, minLoadableRetryCount,
-        eventDispatcher, allocator, positionUs);
+  public MediaPeriod createPeriod(MediaPeriodId id, Allocator allocator, long startPositionUs) {
+    EventDispatcher eventDispatcher = createEventDispatcher(id);
+    return new HlsMediaPeriod(
+        extractorFactory,
+        playlistTracker,
+        dataSourceFactory,
+        mediaTransferListener,
+        drmSessionManager,
+        loadErrorHandlingPolicy,
+        eventDispatcher,
+        allocator,
+        compositeSequenceableLoaderFactory,
+        allowChunklessPreparation,
+        metadataType,
+        useSessionKeys);
   }
 
   @Override
@@ -100,37 +450,79 @@ public final class HlsMediaSource implements MediaSource,
   }
 
   @Override
-  public void releaseSource() {
-    if (playlistTracker != null) {
-      playlistTracker.release();
-      playlistTracker = null;
-    }
-    sourceListener = null;
+  protected void releaseSourceInternal() {
+    playlistTracker.stop();
+    drmSessionManager.release();
   }
 
   @Override
   public void onPrimaryPlaylistRefreshed(HlsMediaPlaylist playlist) {
     SinglePeriodTimeline timeline;
+    long windowStartTimeMs = playlist.hasProgramDateTime ? C.usToMs(playlist.startTimeUs)
+        : C.TIME_UNSET;
+    
+    
+    long presentationStartTimeMs =
+        playlist.playlistType == HlsMediaPlaylist.PLAYLIST_TYPE_EVENT
+                || playlist.playlistType == HlsMediaPlaylist.PLAYLIST_TYPE_VOD
+            ? windowStartTimeMs
+            : C.TIME_UNSET;
     long windowDefaultStartPositionUs = playlist.startOffsetUs;
+    
+    HlsManifest manifest =
+        new HlsManifest(Assertions.checkNotNull(playlistTracker.getMasterPlaylist()), playlist);
     if (playlistTracker.isLive()) {
-      long periodDurationUs = playlist.hasEndTag ? (playlist.startTimeUs + playlist.durationUs)
-          : C.TIME_UNSET;
+      long offsetFromInitialStartTimeUs =
+          playlist.startTimeUs - playlistTracker.getInitialStartTimeUs();
+      long periodDurationUs =
+          playlist.hasEndTag ? offsetFromInitialStartTimeUs + playlist.durationUs : C.TIME_UNSET;
       List<HlsMediaPlaylist.Segment> segments = playlist.segments;
       if (windowDefaultStartPositionUs == C.TIME_UNSET) {
-        windowDefaultStartPositionUs = segments.isEmpty() ? 0
-            : segments.get(Math.max(0, segments.size() - 3)).relativeStartTimeUs;
+        windowDefaultStartPositionUs = 0;
+        if (!segments.isEmpty()) {
+          int defaultStartSegmentIndex = Math.max(0, segments.size() - 3);
+          
+          
+          long minStartPositionUs = playlist.durationUs - playlist.targetDurationUs * 2;
+          while (defaultStartSegmentIndex > 0
+              && segments.get(defaultStartSegmentIndex).relativeStartTimeUs > minStartPositionUs) {
+            defaultStartSegmentIndex--;
+          }
+          windowDefaultStartPositionUs = segments.get(defaultStartSegmentIndex).relativeStartTimeUs;
+        }
       }
-      timeline = new SinglePeriodTimeline(periodDurationUs, playlist.durationUs,
-          playlist.startTimeUs, windowDefaultStartPositionUs, true, !playlist.hasEndTag);
+      timeline =
+          new SinglePeriodTimeline(
+              presentationStartTimeMs,
+              windowStartTimeMs,
+              periodDurationUs,
+               playlist.durationUs,
+               offsetFromInitialStartTimeUs,
+              windowDefaultStartPositionUs,
+               true,
+               !playlist.hasEndTag,
+               true,
+              manifest,
+              tag);
     } else  {
       if (windowDefaultStartPositionUs == C.TIME_UNSET) {
         windowDefaultStartPositionUs = 0;
       }
-      timeline = new SinglePeriodTimeline(playlist.startTimeUs + playlist.durationUs,
-          playlist.durationUs, playlist.startTimeUs, windowDefaultStartPositionUs, true, false);
+      timeline =
+          new SinglePeriodTimeline(
+              presentationStartTimeMs,
+              windowStartTimeMs,
+               playlist.durationUs,
+               playlist.durationUs,
+               0,
+              windowDefaultStartPositionUs,
+               true,
+               false,
+               false,
+              manifest,
+              tag);
     }
-    sourceListener.onSourceInfoRefreshed(timeline,
-        new HlsManifest(playlistTracker.getMasterPlaylist(), playlist));
+    refreshSourceInfo(timeline);
   }
 
 }

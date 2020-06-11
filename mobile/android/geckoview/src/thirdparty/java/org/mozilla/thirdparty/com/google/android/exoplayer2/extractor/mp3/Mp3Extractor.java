@@ -15,7 +15,8 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.mp3;
 
-import android.support.annotation.IntDef;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.ParserException;
@@ -24,16 +25,19 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ExtractorI
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ExtractorOutput;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ExtractorsFactory;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.GaplessInfoHolder;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.Id3Peeker;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.MpegAudioHeader;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.PositionHolder;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.SeekMap;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.TrackOutput;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.mp3.Seeker.UnseekableSeeker;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.Metadata;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.id3.Id3Decoder;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.id3.Id3Decoder.FramePredicate;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.id3.MlltFrame;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 import java.io.EOFException;
 import java.io.IOException;
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -43,22 +47,17 @@ import java.lang.annotation.RetentionPolicy;
 public final class Mp3Extractor implements Extractor {
 
   
-
-
-  public static final ExtractorsFactory FACTORY = new ExtractorsFactory() {
-
-    @Override
-    public Extractor[] createExtractors() {
-      return new Extractor[] {new Mp3Extractor()};
-    }
-
-  };
+  public static final ExtractorsFactory FACTORY = () -> new Extractor[] {new Mp3Extractor()};
 
   
 
 
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef(flag = true, value = {FLAG_ENABLE_CONSTANT_BITRATE_SEEKING, FLAG_DISABLE_ID3_METADATA})
+  @IntDef(
+      flag = true,
+      value = {FLAG_ENABLE_CONSTANT_BITRATE_SEEKING, FLAG_DISABLE_ID3_METADATA})
   public @interface Flags {}
   
 
@@ -72,13 +71,19 @@ public final class Mp3Extractor implements Extractor {
   public static final int FLAG_DISABLE_ID3_METADATA = 2;
 
   
+  private static final FramePredicate REQUIRED_ID3_FRAME_PREDICATE =
+      (majorVersion, id0, id1, id2, id3) ->
+          ((id0 == 'C' && id1 == 'O' && id2 == 'M' && (id3 == 'M' || majorVersion == 2))
+              || (id0 == 'M' && id1 == 'L' && id2 == 'L' && (id3 == 'T' || majorVersion == 2)));
+
+  
 
 
   private static final int MAX_SYNC_BYTES = 128 * 1024;
   
 
 
-  private static final int MAX_SNIFF_BYTES = MpegAudioHeader.MAX_FRAME_SIZE_BYTES;
+  private static final int MAX_SNIFF_BYTES = 16 * 1024;
   
 
 
@@ -87,16 +92,19 @@ public final class Mp3Extractor implements Extractor {
   
 
 
-  private static final int HEADER_MASK = 0xFFFE0C00;
-  private static final int XING_HEADER = Util.getIntegerCodeForString("Xing");
-  private static final int INFO_HEADER = Util.getIntegerCodeForString("Info");
-  private static final int VBRI_HEADER = Util.getIntegerCodeForString("VBRI");
+  private static final int MPEG_AUDIO_HEADER_MASK = 0xFFFE0C00;
+
+  private static final int SEEK_HEADER_XING = 0x58696e67;
+  private static final int SEEK_HEADER_INFO = 0x496e666f;
+  private static final int SEEK_HEADER_VBRI = 0x56425249;
+  private static final int SEEK_HEADER_UNSET = 0;
 
   @Flags private final int flags;
   private final long forcedFirstSampleTimestampUs;
   private final ParsableByteArray scratch;
   private final MpegAudioHeader synchronizedHeader;
   private final GaplessInfoHolder gaplessInfoHolder;
+  private final Id3Peeker id3Peeker;
 
   
   private ExtractorOutput extractorOutput;
@@ -105,21 +113,18 @@ public final class Mp3Extractor implements Extractor {
   private int synchronizedHeaderData;
 
   private Metadata metadata;
-  private Seeker seeker;
+  @Nullable private Seeker seeker;
+  private boolean disableSeeking;
   private long basisTimeUs;
   private long samplesRead;
+  private long firstSamplePosition;
   private int sampleBytesRemaining;
-
-  
-
 
   public Mp3Extractor() {
     this(0);
   }
 
   
-
-
 
 
   public Mp3Extractor(@Flags int flags) {
@@ -131,8 +136,6 @@ public final class Mp3Extractor implements Extractor {
 
 
 
-
-
   public Mp3Extractor(@Flags int flags, long forcedFirstSampleTimestampUs) {
     this.flags = flags;
     this.forcedFirstSampleTimestampUs = forcedFirstSampleTimestampUs;
@@ -140,7 +143,10 @@ public final class Mp3Extractor implements Extractor {
     synchronizedHeader = new MpegAudioHeader();
     gaplessInfoHolder = new GaplessInfoHolder();
     basisTimeUs = C.TIME_UNSET;
+    id3Peeker = new Id3Peeker();
   }
+
+  
 
   @Override
   public boolean sniff(ExtractorInput input) throws IOException, InterruptedException {
@@ -178,26 +184,73 @@ public final class Mp3Extractor implements Extractor {
       }
     }
     if (seeker == null) {
-      seeker = setupSeeker(input);
+      
+      
+      Seeker seekFrameSeeker = maybeReadSeekFrame(input);
+      Seeker metadataSeeker = maybeHandleSeekMetadata(metadata, input.getPosition());
+
+      if (disableSeeking) {
+        seeker = new UnseekableSeeker();
+      } else {
+        if (metadataSeeker != null) {
+          seeker = metadataSeeker;
+        } else if (seekFrameSeeker != null) {
+          seeker = seekFrameSeeker;
+        }
+        if (seeker == null
+            || (!seeker.isSeekable() && (flags & FLAG_ENABLE_CONSTANT_BITRATE_SEEKING) != 0)) {
+          seeker = getConstantBitrateSeeker(input);
+        }
+      }
       extractorOutput.seekMap(seeker);
-      trackOutput.format(Format.createAudioSampleFormat(null, synchronizedHeader.mimeType, null,
-          Format.NO_VALUE, MpegAudioHeader.MAX_FRAME_SIZE_BYTES, synchronizedHeader.channels,
-          synchronizedHeader.sampleRate, Format.NO_VALUE, gaplessInfoHolder.encoderDelay,
-          gaplessInfoHolder.encoderPadding, null, null, 0, null,
-          (flags & FLAG_DISABLE_ID3_METADATA) != 0 ? null : metadata));
+      trackOutput.format(
+          Format.createAudioSampleFormat(
+               null,
+              synchronizedHeader.mimeType,
+               null,
+               Format.NO_VALUE,
+              MpegAudioHeader.MAX_FRAME_SIZE_BYTES,
+              synchronizedHeader.channels,
+              synchronizedHeader.sampleRate,
+               Format.NO_VALUE,
+              gaplessInfoHolder.encoderDelay,
+              gaplessInfoHolder.encoderPadding,
+               null,
+               null,
+               0,
+               null,
+              (flags & FLAG_DISABLE_ID3_METADATA) != 0 ? null : metadata));
+      firstSamplePosition = input.getPosition();
+    } else if (firstSamplePosition != 0) {
+      long inputPosition = input.getPosition();
+      if (inputPosition < firstSamplePosition) {
+        
+        input.skipFully((int) (firstSamplePosition - inputPosition));
+      }
     }
     return readSample(input);
   }
 
+  
+
+
+
+
+  public void disableSeeking() {
+    disableSeeking = true;
+  }
+
+  
+
   private int readSample(ExtractorInput extractorInput) throws IOException, InterruptedException {
     if (sampleBytesRemaining == 0) {
       extractorInput.resetPeekPosition();
-      if (!extractorInput.peekFully(scratch.data, 0, 4, true)) {
+      if (peekEndOfStreamOrHeader(extractorInput)) {
         return RESULT_END_OF_INPUT;
       }
       scratch.setPosition(0);
       int sampleHeaderData = scratch.readInt();
-      if ((sampleHeaderData & HEADER_MASK) != (synchronizedHeaderData & HEADER_MASK)
+      if (!headersMatch(sampleHeaderData, synchronizedHeaderData)
           || MpegAudioHeader.getFrameSize(sampleHeaderData) == C.LENGTH_UNSET) {
         
         extractorInput.skipFully(1);
@@ -239,22 +292,33 @@ public final class Mp3Extractor implements Extractor {
     int searchLimitBytes = sniffing ? MAX_SNIFF_BYTES : MAX_SYNC_BYTES;
     input.resetPeekPosition();
     if (input.getPosition() == 0) {
-      peekId3Data(input);
+      
+      
+      boolean parseAllId3Frames = (flags & FLAG_DISABLE_ID3_METADATA) == 0;
+      Id3Decoder.FramePredicate id3FramePredicate =
+          parseAllId3Frames ? null : REQUIRED_ID3_FRAME_PREDICATE;
+      metadata = id3Peeker.peekId3Data(input, id3FramePredicate);
+      if (metadata != null) {
+        gaplessInfoHolder.setFromMetadata(metadata);
+      }
       peekedId3Bytes = (int) input.getPeekPosition();
       if (!sniffing) {
         input.skipFully(peekedId3Bytes);
       }
     }
     while (true) {
-      if (!input.peekFully(scratch.data, 0, 4, validFrameCount > 0)) {
-        
-        break;
+      if (peekEndOfStreamOrHeader(input)) {
+        if (validFrameCount > 0) {
+          
+          break;
+        }
+        throw new EOFException();
       }
       scratch.setPosition(0);
       int headerData = scratch.readInt();
       int frameSize;
       if ((candidateSynchronizedHeaderData != 0
-          && (headerData & HEADER_MASK) != (candidateSynchronizedHeaderData & HEADER_MASK))
+          && !headersMatch(headerData, candidateSynchronizedHeaderData))
           || (frameSize = MpegAudioHeader.getFrameSize(headerData)) == C.LENGTH_UNSET) {
         
         if (searchedBytes++ == searchLimitBytes) {
@@ -297,43 +361,21 @@ public final class Mp3Extractor implements Extractor {
 
 
 
-
-
-
-  private void peekId3Data(ExtractorInput input) throws IOException, InterruptedException {
-    int peekedId3Bytes = 0;
-    while (true) {
-      input.peekFully(scratch.data, 0, Id3Decoder.ID3_HEADER_LENGTH);
-      scratch.setPosition(0);
-      if (scratch.readUnsignedInt24() != Id3Decoder.ID3_TAG) {
-        
-        break;
+  private boolean peekEndOfStreamOrHeader(ExtractorInput extractorInput)
+      throws IOException, InterruptedException {
+    if (seeker != null) {
+      long dataEndPosition = seeker.getDataEndPosition();
+      if (dataEndPosition != C.POSITION_UNSET
+          && extractorInput.getPeekPosition() > dataEndPosition - 4) {
+        return true;
       }
-      scratch.skipBytes(3); 
-      int framesLength = scratch.readSynchSafeInt();
-      int tagLength = Id3Decoder.ID3_HEADER_LENGTH + framesLength;
-
-      if (metadata == null) {
-        byte[] id3Data = new byte[tagLength];
-        System.arraycopy(scratch.data, 0, id3Data, 0, Id3Decoder.ID3_HEADER_LENGTH);
-        input.peekFully(id3Data, Id3Decoder.ID3_HEADER_LENGTH, framesLength);
-        
-        
-        Id3Decoder.FramePredicate id3FramePredicate = (flags & FLAG_DISABLE_ID3_METADATA) != 0
-            ? GaplessInfoHolder.GAPLESS_INFO_ID3_FRAME_PREDICATE : null;
-        metadata = new Id3Decoder(id3FramePredicate).decode(id3Data, tagLength);
-        if (metadata != null) {
-          gaplessInfoHolder.setFromMetadata(metadata);
-        }
-      } else {
-        input.advancePeekPosition(framesLength);
-      }
-
-      peekedId3Bytes += tagLength;
     }
-
-    input.resetPeekPosition();
-    input.advancePeekPosition(peekedId3Bytes);
+    try {
+      return !extractorInput.peekFully(
+          scratch.data,  0,  4,  true);
+    } catch (EOFException e) {
+      return true;
+    }
   }
 
   
@@ -348,26 +390,16 @@ public final class Mp3Extractor implements Extractor {
 
 
 
-  private Seeker setupSeeker(ExtractorInput input) throws IOException, InterruptedException {
-    
+  private Seeker maybeReadSeekFrame(ExtractorInput input) throws IOException, InterruptedException {
     ParsableByteArray frame = new ParsableByteArray(synchronizedHeader.frameSize);
     input.peekFully(frame.data, 0, synchronizedHeader.frameSize);
-
-    long position = input.getPosition();
-    long length = input.getLength();
-    int headerData = 0;
-    Seeker seeker = null;
-
-    
     int xingBase = (synchronizedHeader.version & 1) != 0
         ? (synchronizedHeader.channels != 1 ? 36 : 21) 
         : (synchronizedHeader.channels != 1 ? 21 : 13); 
-    if (frame.limit() >= xingBase + 4) {
-      frame.setPosition(xingBase);
-      headerData = frame.readInt();
-    }
-    if (headerData == XING_HEADER || headerData == INFO_HEADER) {
-      seeker = XingSeeker.create(synchronizedHeader, frame, position, length);
+    int seekHeader = getSeekFrameHeader(frame, xingBase);
+    Seeker seeker;
+    if (seekHeader == SEEK_HEADER_XING || seekHeader == SEEK_HEADER_INFO) {
+      seeker = XingSeeker.create(input.getLength(), input.getPosition(), synchronizedHeader, frame);
       if (seeker != null && !gaplessInfoHolder.hasGaplessInfo()) {
         
         input.resetPeekPosition();
@@ -377,44 +409,74 @@ public final class Mp3Extractor implements Extractor {
         gaplessInfoHolder.setFromXingHeaderValue(scratch.readUnsignedInt24());
       }
       input.skipFully(synchronizedHeader.frameSize);
-    } else if (frame.limit() >= 40) {
-      
-      frame.setPosition(36); 
-      headerData = frame.readInt();
-      if (headerData == VBRI_HEADER) {
-        seeker = VbriSeeker.create(synchronizedHeader, frame, position, length);
-        input.skipFully(synchronizedHeader.frameSize);
+      if (seeker != null && !seeker.isSeekable() && seekHeader == SEEK_HEADER_INFO) {
+        
+        return getConstantBitrateSeeker(input);
       }
-    }
-
-    if (seeker == null || (!seeker.isSeekable()
-        && (flags & FLAG_ENABLE_CONSTANT_BITRATE_SEEKING) != 0)) {
+    } else if (seekHeader == SEEK_HEADER_VBRI) {
+      seeker = VbriSeeker.create(input.getLength(), input.getPosition(), synchronizedHeader, frame);
+      input.skipFully(synchronizedHeader.frameSize);
+    } else { 
       
-      
+      seeker = null;
       input.resetPeekPosition();
-      input.peekFully(scratch.data, 0, 4);
-      scratch.setPosition(0);
-      MpegAudioHeader.populateHeader(scratch.readInt(), synchronizedHeader);
-      seeker = new ConstantBitrateSeeker(input.getPosition(), synchronizedHeader.bitrate, length);
     }
-
     return seeker;
   }
 
   
 
 
-
-   interface Seeker extends SeekMap {
-
-    
-
-
-
-
-
-    long getTimeUs(long position);
-
+  private Seeker getConstantBitrateSeeker(ExtractorInput input)
+      throws IOException, InterruptedException {
+    input.peekFully(scratch.data, 0, 4);
+    scratch.setPosition(0);
+    MpegAudioHeader.populateHeader(scratch.readInt(), synchronizedHeader);
+    return new ConstantBitrateSeeker(input.getLength(), input.getPosition(), synchronizedHeader);
   }
+
+  
+
+
+  private static boolean headersMatch(int headerA, long headerB) {
+    return (headerA & MPEG_AUDIO_HEADER_MASK) == (headerB & MPEG_AUDIO_HEADER_MASK);
+  }
+
+  
+
+
+
+
+  private static int getSeekFrameHeader(ParsableByteArray frame, int xingBase) {
+    if (frame.limit() >= xingBase + 4) {
+      frame.setPosition(xingBase);
+      int headerData = frame.readInt();
+      if (headerData == SEEK_HEADER_XING || headerData == SEEK_HEADER_INFO) {
+        return headerData;
+      }
+    }
+    if (frame.limit() >= 40) {
+      frame.setPosition(36); 
+      if (frame.readInt() == SEEK_HEADER_VBRI) {
+        return SEEK_HEADER_VBRI;
+      }
+    }
+    return SEEK_HEADER_UNSET;
+  }
+
+  @Nullable
+  private static MlltSeeker maybeHandleSeekMetadata(Metadata metadata, long firstFramePosition) {
+    if (metadata != null) {
+      int length = metadata.length();
+      for (int i = 0; i < length; i++) {
+        Metadata.Entry entry = metadata.get(i);
+        if (entry instanceof MlltFrame) {
+          return MlltSeeker.create(firstFramePosition, (MlltFrame) entry);
+        }
+      }
+    }
+    return null;
+  }
+
 
 }

@@ -23,7 +23,6 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 
@@ -73,16 +72,16 @@ import java.util.List;
 
   @Override
   public List<Cue> getCues(long timeUs) {
-    ArrayList<Cue> list = null;
+    List<Cue> list = new ArrayList<>();
     WebvttCue firstNormalCue = null;
     SpannableStringBuilder normalCueTextBuilder = null;
 
     for (int i = 0; i < numCues; i++) {
       if ((cueTimesUs[i * 2] <= timeUs) && (timeUs < cueTimesUs[i * 2 + 1])) {
-        if (list == null) {
-          list = new ArrayList<>();
-        }
         WebvttCue cue = cues.get(i);
+        
+        
+        
         if (cue.isNormalCue()) {
           
           
@@ -91,9 +90,12 @@ import java.util.List;
             firstNormalCue = cue;
           } else if (normalCueTextBuilder == null) {
             normalCueTextBuilder = new SpannableStringBuilder();
-            normalCueTextBuilder.append(firstNormalCue.text).append("\n").append(cue.text);
+            normalCueTextBuilder
+                .append(Assertions.checkNotNull(firstNormalCue.text))
+                .append("\n")
+                .append(Assertions.checkNotNull(cue.text));
           } else {
-            normalCueTextBuilder.append("\n").append(cue.text);
+            normalCueTextBuilder.append("\n").append(Assertions.checkNotNull(cue.text));
           }
         } else {
           list.add(cue);
@@ -102,17 +104,12 @@ import java.util.List;
     }
     if (normalCueTextBuilder != null) {
       
-      list.add(new WebvttCue(normalCueTextBuilder));
+      list.add(new WebvttCue.Builder().setText(normalCueTextBuilder).build());
     } else if (firstNormalCue != null) {
       
       list.add(firstNormalCue);
     }
-
-    if (list != null) {
-      return list;
-    } else {
-      return Collections.emptyList();
-    }
+    return list;
   }
 
 }

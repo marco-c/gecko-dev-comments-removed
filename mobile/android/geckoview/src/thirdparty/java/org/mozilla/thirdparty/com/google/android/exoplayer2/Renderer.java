@@ -15,10 +15,14 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2;
 
-import org.mozilla.thirdparty.com.google.android.exoplayer2.ExoPlayer.ExoPlayerComponent;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.SampleStream;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MediaClock;
 import java.io.IOException;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 
 
@@ -30,13 +34,26 @@ import java.io.IOException;
 
 
 
-public interface Renderer extends ExoPlayerComponent {
+
+public interface Renderer extends PlayerMessage.Target {
 
   
+
+
+
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({STATE_DISABLED, STATE_ENABLED, STATE_STARTED})
+  @interface State {}
+  
+
+
 
 
   int STATE_DISABLED = 0;
   
+
+
 
 
 
@@ -77,6 +94,7 @@ public interface Renderer extends ExoPlayerComponent {
 
 
 
+  @Nullable
   MediaClock getMediaClock();
 
   
@@ -84,6 +102,8 @@ public interface Renderer extends ExoPlayerComponent {
 
 
 
+
+  @State
   int getState();
 
   
@@ -131,8 +151,7 @@ public interface Renderer extends ExoPlayerComponent {
       throws ExoPlaybackException;
 
   
-
-
+  @Nullable
   SampleStream getStream();
 
   
@@ -142,6 +161,16 @@ public interface Renderer extends ExoPlayerComponent {
 
 
   boolean hasReadStreamToEnd();
+
+  
+
+
+
+
+
+
+
+  long getReadingPositionUs();
 
   
 
@@ -183,6 +212,18 @@ public interface Renderer extends ExoPlayerComponent {
 
 
   void resetPosition(long positionUs) throws ExoPlaybackException;
+
+  
+
+
+
+
+
+
+
+
+
+  default void setOperatingRate(float operatingRate) throws ExoPlaybackException {}
 
   
 
@@ -254,4 +295,12 @@ public interface Renderer extends ExoPlayerComponent {
 
   void disable();
 
+  
+
+
+
+
+
+
+  void reset();
 }

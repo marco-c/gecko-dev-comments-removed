@@ -15,16 +15,83 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor;
 
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
 import java.io.EOFException;
 import java.io.IOException;
+import java.util.Arrays;
 
 
 
 
 public interface TrackOutput {
+
+  
+
+
+  final class CryptoData {
+
+    
+
+
+    @C.CryptoMode public final int cryptoMode;
+
+    
+
+
+    public final byte[] encryptionKey;
+
+    
+
+
+
+    public final int encryptedBlocks;
+
+    
+
+
+
+    public final int clearBlocks;
+
+    
+
+
+
+
+
+    public CryptoData(@C.CryptoMode int cryptoMode, byte[] encryptionKey, int encryptedBlocks,
+        int clearBlocks) {
+      this.cryptoMode = cryptoMode;
+      this.encryptionKey = encryptionKey;
+      this.encryptedBlocks = encryptedBlocks;
+      this.clearBlocks = clearBlocks;
+    }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null || getClass() != obj.getClass()) {
+        return false;
+      }
+      CryptoData other = (CryptoData) obj;
+      return cryptoMode == other.cryptoMode && encryptedBlocks == other.encryptedBlocks
+          && clearBlocks == other.clearBlocks && Arrays.equals(encryptionKey, other.encryptionKey);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = cryptoMode;
+      result = 31 * result + Arrays.hashCode(encryptionKey);
+      result = 31 * result + encryptedBlocks;
+      result = 31 * result + clearBlocks;
+      return result;
+    }
+
+  }
 
   
 
@@ -71,8 +138,10 @@ public interface TrackOutput {
 
 
 
-
-  void sampleMetadata(long timeUs, @C.BufferFlags int flags, int size, int offset,
-      byte[] encryptionKey);
-
+  void sampleMetadata(
+      long timeUs,
+      @C.BufferFlags int flags,
+      int size,
+      int offset,
+      @Nullable CryptoData encryptionData);
 }

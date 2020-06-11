@@ -16,9 +16,12 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.text.webvtt;
 
 import android.text.TextUtils;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ColorParser;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
-import java.util.Arrays;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,8 +37,8 @@ import java.util.regex.Pattern;
   private static final String PROPERTY_TEXT_DECORATION = "text-decoration";
   private static final String VALUE_BOLD = "bold";
   private static final String VALUE_UNDERLINE = "underline";
-  private static final String BLOCK_START = "{";
-  private static final String BLOCK_END = "}";
+  private static final String RULE_START = "{";
+  private static final String RULE_END = "}";
   private static final String PROPERTY_FONT_STYLE = "font-style";
   private static final String VALUE_ITALIC = "italic";
 
@@ -58,30 +61,40 @@ import java.util.regex.Pattern;
 
 
 
-  public WebvttCssStyle parseBlock(ParsableByteArray input) {
+
+
+  public List<WebvttCssStyle> parseBlock(ParsableByteArray input) {
     stringBuilder.setLength(0);
     int initialInputPosition = input.getPosition();
     skipStyleBlock(input);
     styleInput.reset(input.data, input.getPosition());
     styleInput.setPosition(initialInputPosition);
-    String selector = parseSelector(styleInput, stringBuilder);
-    if (selector == null || !BLOCK_START.equals(parseNextToken(styleInput, stringBuilder))) {
-      return null;
-    }
-    WebvttCssStyle style = new WebvttCssStyle();
-    applySelectorToStyle(style, selector);
-    String token = null;
-    boolean blockEndFound = false;
-    while (!blockEndFound) {
-      int position = styleInput.getPosition();
-      token = parseNextToken(styleInput, stringBuilder);
-      blockEndFound = token == null || BLOCK_END.equals(token);
-      if (!blockEndFound) {
-        styleInput.setPosition(position);
-        parseStyleDeclaration(styleInput, style, stringBuilder);
+
+    List<WebvttCssStyle> styles = new ArrayList<>();
+    String selector;
+    while ((selector = parseSelector(styleInput, stringBuilder)) != null) {
+      if (!RULE_START.equals(parseNextToken(styleInput, stringBuilder))) {
+        return styles;
+      }
+      WebvttCssStyle style = new WebvttCssStyle();
+      applySelectorToStyle(style, selector);
+      String token = null;
+      boolean blockEndFound = false;
+      while (!blockEndFound) {
+        int position = styleInput.getPosition();
+        token = parseNextToken(styleInput, stringBuilder);
+        blockEndFound = token == null || RULE_END.equals(token);
+        if (!blockEndFound) {
+          styleInput.setPosition(position);
+          parseStyleDeclaration(styleInput, style, stringBuilder);
+        }
+      }
+      
+      if (RULE_END.equals(token)) {
+        styles.add(style);
       }
     }
-    return BLOCK_END.equals(token) ? style : null; 
+    return styles;
   }
 
   
@@ -92,6 +105,7 @@ import java.util.regex.Pattern;
 
 
 
+  @Nullable
   private static String parseSelector(ParsableByteArray input, StringBuilder stringBuilder) {
     skipWhitespaceAndComments(input);
     if (input.bytesLeft() < 5) {
@@ -106,7 +120,7 @@ import java.util.regex.Pattern;
     if (token == null) {
       return null;
     }
-    if (BLOCK_START.equals(token)) {
+    if (RULE_START.equals(token)) {
       input.setPosition(position);
       return "";
     }
@@ -115,7 +129,7 @@ import java.util.regex.Pattern;
       target = readCueTarget(input);
     }
     token = parseNextToken(input, stringBuilder);
-    if (!")".equals(token) || token == null) {
+    if (!")".equals(token)) {
       return null;
     }
     return target;
@@ -155,7 +169,7 @@ import java.util.regex.Pattern;
     String token = parseNextToken(input, stringBuilder);
     if (";".equals(token)) {
       
-    } else if (BLOCK_END.equals(token)) {
+    } else if (RULE_END.equals(token)) {
       
       
       input.setPosition(position);
@@ -195,6 +209,7 @@ import java.util.regex.Pattern;
   }
 
   
+  @Nullable
    static String parseNextToken(ParsableByteArray input, StringBuilder stringBuilder) {
     skipWhitespaceAndComments(input);
     if (input.bytesLeft() == 0) {
@@ -236,6 +251,7 @@ import java.util.regex.Pattern;
     return (char) input.data[position];
   }
 
+  @Nullable
   private static String parsePropertyValue(ParsableByteArray input, StringBuilder stringBuilder) {
     StringBuilder expressionBuilder = new StringBuilder();
     String token;
@@ -249,7 +265,7 @@ import java.util.regex.Pattern;
         
         return null;
       }
-      if (BLOCK_END.equals(token) || ";".equals(token)) {
+      if (RULE_END.equals(token) || ";".equals(token)) {
         input.setPosition(position);
         expressionEndFound = true;
       } else {
@@ -314,7 +330,7 @@ import java.util.regex.Pattern;
       }
       selector = selector.substring(0, voiceStartIndex);
     }
-    String[] classDivision = selector.split("\\.");
+    String[] classDivision = Util.split(selector, "\\.");
     String tagAndIdDivision = classDivision[0];
     int idPrefixIndex = tagAndIdDivision.indexOf('#');
     if (idPrefixIndex != -1) {
@@ -324,7 +340,7 @@ import java.util.regex.Pattern;
       style.setTargetTagName(tagAndIdDivision);
     }
     if (classDivision.length > 1) {
-      style.setTargetClasses(Arrays.copyOfRange(classDivision, 1, classDivision.length));
+      style.setTargetClasses(Util.nullSafeArrayCopyOfRange(classDivision, 1, classDivision.length));
     }
   }
 

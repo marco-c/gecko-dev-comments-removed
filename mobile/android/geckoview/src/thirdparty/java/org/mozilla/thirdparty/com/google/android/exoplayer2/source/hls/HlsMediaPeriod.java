@@ -15,27 +15,47 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls;
 
-import android.os.Handler;
+import android.net.Uri;
 import android.text.TextUtils;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.source.AdaptiveMediaSourceEventListener.EventDispatcher;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.source.CompositeSequenceableLoader;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.SeekParameters;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.DrmInitData;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.DrmSession;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.DrmSessionManager;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.Extractor;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.Metadata;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.offline.StreamKey;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.CompositeSequenceableLoaderFactory;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.MediaPeriod;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.MediaSourceEventListener.EventDispatcher;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.SampleStream;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.SequenceableLoader;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.TrackGroup;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.TrackGroupArray;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls.playlist.HlsMasterPlaylist;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls.playlist.HlsMasterPlaylist.HlsUrl;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls.playlist.HlsMasterPlaylist.Rendition;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls.playlist.HlsMasterPlaylist.Variant;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls.playlist.HlsPlaylistTracker;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.trackselection.TrackSelection;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.Allocator;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.LoadErrorHandlingPolicy;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.TransferListener;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import org.checkerframework.checker.nullness.compatqual.NullableType;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 
 
 
@@ -43,72 +63,204 @@ import java.util.List;
 public final class HlsMediaPeriod implements MediaPeriod, HlsSampleStreamWrapper.Callback,
     HlsPlaylistTracker.PlaylistEventListener {
 
+  private final HlsExtractorFactory extractorFactory;
   private final HlsPlaylistTracker playlistTracker;
   private final HlsDataSourceFactory dataSourceFactory;
-  private final int minLoadableRetryCount;
+  @Nullable private final TransferListener mediaTransferListener;
+  private final DrmSessionManager<?> drmSessionManager;
+  private final LoadErrorHandlingPolicy loadErrorHandlingPolicy;
   private final EventDispatcher eventDispatcher;
   private final Allocator allocator;
   private final IdentityHashMap<SampleStream, Integer> streamWrapperIndices;
   private final TimestampAdjusterProvider timestampAdjusterProvider;
-  private final Handler continueLoadingHandler;
-  private final long preparePositionUs;
+  private final CompositeSequenceableLoaderFactory compositeSequenceableLoaderFactory;
+  private final boolean allowChunklessPreparation;
+  private final @HlsMediaSource.MetadataType int metadataType;
+  private final boolean useSessionKeys;
 
-  private Callback callback;
+  @Nullable private Callback callback;
   private int pendingPrepareCount;
-  private boolean seenFirstTrackSelection;
-  private TrackGroupArray trackGroups;
+  private @MonotonicNonNull TrackGroupArray trackGroups;
   private HlsSampleStreamWrapper[] sampleStreamWrappers;
   private HlsSampleStreamWrapper[] enabledSampleStreamWrappers;
-  private CompositeSequenceableLoader sequenceableLoader;
+  
+  private int[][] manifestUrlIndicesPerWrapper;
+  private SequenceableLoader compositeSequenceableLoader;
+  private boolean notifiedReadingStarted;
 
-  public HlsMediaPeriod(HlsPlaylistTracker playlistTracker, HlsDataSourceFactory dataSourceFactory,
-      int minLoadableRetryCount, EventDispatcher eventDispatcher, Allocator allocator,
-      long positionUs) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  public HlsMediaPeriod(
+      HlsExtractorFactory extractorFactory,
+      HlsPlaylistTracker playlistTracker,
+      HlsDataSourceFactory dataSourceFactory,
+      @Nullable TransferListener mediaTransferListener,
+      DrmSessionManager<?> drmSessionManager,
+      LoadErrorHandlingPolicy loadErrorHandlingPolicy,
+      EventDispatcher eventDispatcher,
+      Allocator allocator,
+      CompositeSequenceableLoaderFactory compositeSequenceableLoaderFactory,
+      boolean allowChunklessPreparation,
+      @HlsMediaSource.MetadataType int metadataType,
+      boolean useSessionKeys) {
+    this.extractorFactory = extractorFactory;
     this.playlistTracker = playlistTracker;
     this.dataSourceFactory = dataSourceFactory;
-    this.minLoadableRetryCount = minLoadableRetryCount;
+    this.mediaTransferListener = mediaTransferListener;
+    this.drmSessionManager = drmSessionManager;
+    this.loadErrorHandlingPolicy = loadErrorHandlingPolicy;
     this.eventDispatcher = eventDispatcher;
     this.allocator = allocator;
+    this.compositeSequenceableLoaderFactory = compositeSequenceableLoaderFactory;
+    this.allowChunklessPreparation = allowChunklessPreparation;
+    this.metadataType = metadataType;
+    this.useSessionKeys = useSessionKeys;
+    compositeSequenceableLoader =
+        compositeSequenceableLoaderFactory.createCompositeSequenceableLoader();
     streamWrapperIndices = new IdentityHashMap<>();
     timestampAdjusterProvider = new TimestampAdjusterProvider();
-    continueLoadingHandler = new Handler();
-    preparePositionUs = positionUs;
+    sampleStreamWrappers = new HlsSampleStreamWrapper[0];
+    enabledSampleStreamWrappers = new HlsSampleStreamWrapper[0];
+    manifestUrlIndicesPerWrapper = new int[0][];
+    eventDispatcher.mediaPeriodCreated();
   }
 
   public void release() {
     playlistTracker.removeListener(this);
-    continueLoadingHandler.removeCallbacksAndMessages(null);
-    if (sampleStreamWrappers != null) {
-      for (HlsSampleStreamWrapper sampleStreamWrapper : sampleStreamWrappers) {
-        sampleStreamWrapper.release();
-      }
+    for (HlsSampleStreamWrapper sampleStreamWrapper : sampleStreamWrappers) {
+      sampleStreamWrapper.release();
     }
+    callback = null;
+    eventDispatcher.mediaPeriodReleased();
   }
 
   @Override
-  public void prepare(Callback callback) {
-    playlistTracker.addListener(this);
+  public void prepare(Callback callback, long positionUs) {
     this.callback = callback;
-    buildAndPrepareSampleStreamWrappers();
+    playlistTracker.addListener(this);
+    buildAndPrepareSampleStreamWrappers(positionUs);
   }
 
   @Override
   public void maybeThrowPrepareError() throws IOException {
-    if (sampleStreamWrappers != null) {
-      for (HlsSampleStreamWrapper sampleStreamWrapper : sampleStreamWrappers) {
-        sampleStreamWrapper.maybeThrowPrepareError();
-      }
+    for (HlsSampleStreamWrapper sampleStreamWrapper : sampleStreamWrappers) {
+      sampleStreamWrapper.maybeThrowPrepareError();
     }
   }
 
   @Override
   public TrackGroupArray getTrackGroups() {
-    return trackGroups;
+    
+    return Assertions.checkNotNull(trackGroups);
+  }
+
+  
+  
+  
+  @Override
+  public List<StreamKey> getStreamKeys(List<TrackSelection> trackSelections) {
+    
+    HlsMasterPlaylist masterPlaylist = Assertions.checkNotNull(playlistTracker.getMasterPlaylist());
+    boolean hasVariants = !masterPlaylist.variants.isEmpty();
+    int audioWrapperOffset = hasVariants ? 1 : 0;
+    
+    int subtitleWrapperOffset = sampleStreamWrappers.length - masterPlaylist.subtitles.size();
+
+    TrackGroupArray mainWrapperTrackGroups;
+    int mainWrapperPrimaryGroupIndex;
+    int[] mainWrapperVariantIndices;
+    if (hasVariants) {
+      HlsSampleStreamWrapper mainWrapper = sampleStreamWrappers[0];
+      mainWrapperVariantIndices = manifestUrlIndicesPerWrapper[0];
+      mainWrapperTrackGroups = mainWrapper.getTrackGroups();
+      mainWrapperPrimaryGroupIndex = mainWrapper.getPrimaryTrackGroupIndex();
+    } else {
+      mainWrapperVariantIndices = new int[0];
+      mainWrapperTrackGroups = TrackGroupArray.EMPTY;
+      mainWrapperPrimaryGroupIndex = 0;
+    }
+
+    List<StreamKey> streamKeys = new ArrayList<>();
+    boolean needsPrimaryTrackGroupSelection = false;
+    boolean hasPrimaryTrackGroupSelection = false;
+    for (TrackSelection trackSelection : trackSelections) {
+      TrackGroup trackSelectionGroup = trackSelection.getTrackGroup();
+      int mainWrapperTrackGroupIndex = mainWrapperTrackGroups.indexOf(trackSelectionGroup);
+      if (mainWrapperTrackGroupIndex != C.INDEX_UNSET) {
+        if (mainWrapperTrackGroupIndex == mainWrapperPrimaryGroupIndex) {
+          
+          hasPrimaryTrackGroupSelection = true;
+          for (int i = 0; i < trackSelection.length(); i++) {
+            int variantIndex = mainWrapperVariantIndices[trackSelection.getIndexInTrackGroup(i)];
+            streamKeys.add(new StreamKey(HlsMasterPlaylist.GROUP_INDEX_VARIANT, variantIndex));
+          }
+        } else {
+          
+          needsPrimaryTrackGroupSelection = true;
+        }
+      } else {
+        
+        for (int i = audioWrapperOffset; i < sampleStreamWrappers.length; i++) {
+          TrackGroupArray wrapperTrackGroups = sampleStreamWrappers[i].getTrackGroups();
+          int selectedTrackGroupIndex = wrapperTrackGroups.indexOf(trackSelectionGroup);
+          if (selectedTrackGroupIndex != C.INDEX_UNSET) {
+            int groupIndexType =
+                i < subtitleWrapperOffset
+                    ? HlsMasterPlaylist.GROUP_INDEX_AUDIO
+                    : HlsMasterPlaylist.GROUP_INDEX_SUBTITLE;
+            int[] selectedWrapperUrlIndices = manifestUrlIndicesPerWrapper[i];
+            for (int trackIndex = 0; trackIndex < trackSelection.length(); trackIndex++) {
+              int renditionIndex =
+                  selectedWrapperUrlIndices[trackSelection.getIndexInTrackGroup(trackIndex)];
+              streamKeys.add(new StreamKey(groupIndexType, renditionIndex));
+            }
+            break;
+          }
+        }
+      }
+    }
+    if (needsPrimaryTrackGroupSelection && !hasPrimaryTrackGroupSelection) {
+      
+      
+      int lowestBitrateIndex = mainWrapperVariantIndices[0];
+      int lowestBitrate = masterPlaylist.variants.get(mainWrapperVariantIndices[0]).format.bitrate;
+      for (int i = 1; i < mainWrapperVariantIndices.length; i++) {
+        int variantBitrate =
+            masterPlaylist.variants.get(mainWrapperVariantIndices[i]).format.bitrate;
+        if (variantBitrate < lowestBitrate) {
+          lowestBitrate = variantBitrate;
+          lowestBitrateIndex = mainWrapperVariantIndices[i];
+        }
+      }
+      streamKeys.add(new StreamKey(HlsMasterPlaylist.GROUP_INDEX_VARIANT, lowestBitrateIndex));
+    }
+    return streamKeys;
   }
 
   @Override
-  public long selectTracks(TrackSelection[] selections, boolean[] mayRetainStreamFlags,
-      SampleStream[] streams, boolean[] streamResetFlags, long positionUs) {
+  public long selectTracks(
+      @NullableType TrackSelection[] selections,
+      boolean[] mayRetainStreamFlags,
+      @NullableType SampleStream[] streams,
+      boolean[] streamResetFlags,
+      long positionUs) {
     
     int[] streamChildIndices = new int[selections.length];
     int[] selectionChildIndices = new int[selections.length];
@@ -126,107 +278,134 @@ public final class HlsMediaPeriod implements MediaPeriod, HlsSampleStreamWrapper
         }
       }
     }
-    boolean selectedNewTracks = false;
+
+    boolean forceReset = false;
     streamWrapperIndices.clear();
     
     SampleStream[] newStreams = new SampleStream[selections.length];
-    SampleStream[] childStreams = new SampleStream[selections.length];
-    TrackSelection[] childSelections = new TrackSelection[selections.length];
-    ArrayList<HlsSampleStreamWrapper> enabledSampleStreamWrapperList = new ArrayList<>(
-        sampleStreamWrappers.length);
+    @NullableType SampleStream[] childStreams = new SampleStream[selections.length];
+    @NullableType TrackSelection[] childSelections = new TrackSelection[selections.length];
+    int newEnabledSampleStreamWrapperCount = 0;
+    HlsSampleStreamWrapper[] newEnabledSampleStreamWrappers =
+        new HlsSampleStreamWrapper[sampleStreamWrappers.length];
     for (int i = 0; i < sampleStreamWrappers.length; i++) {
       for (int j = 0; j < selections.length; j++) {
         childStreams[j] = streamChildIndices[j] == i ? streams[j] : null;
         childSelections[j] = selectionChildIndices[j] == i ? selections[j] : null;
       }
-      selectedNewTracks |= sampleStreamWrappers[i].selectTracks(childSelections,
-          mayRetainStreamFlags, childStreams, streamResetFlags, !seenFirstTrackSelection);
+      HlsSampleStreamWrapper sampleStreamWrapper = sampleStreamWrappers[i];
+      boolean wasReset = sampleStreamWrapper.selectTracks(childSelections, mayRetainStreamFlags,
+          childStreams, streamResetFlags, positionUs, forceReset);
       boolean wrapperEnabled = false;
       for (int j = 0; j < selections.length; j++) {
+        SampleStream childStream = childStreams[j];
         if (selectionChildIndices[j] == i) {
           
-          Assertions.checkState(childStreams[j] != null);
-          newStreams[j] = childStreams[j];
+          Assertions.checkNotNull(childStream);
+          newStreams[j] = childStream;
           wrapperEnabled = true;
-          streamWrapperIndices.put(childStreams[j], i);
+          streamWrapperIndices.put(childStream, i);
         } else if (streamChildIndices[j] == i) {
           
-          Assertions.checkState(childStreams[j] == null);
+          Assertions.checkState(childStream == null);
         }
       }
       if (wrapperEnabled) {
-        enabledSampleStreamWrapperList.add(sampleStreamWrappers[i]);
+        newEnabledSampleStreamWrappers[newEnabledSampleStreamWrapperCount] = sampleStreamWrapper;
+        if (newEnabledSampleStreamWrapperCount++ == 0) {
+          
+          
+          sampleStreamWrapper.setIsTimestampMaster(true);
+          if (wasReset || enabledSampleStreamWrappers.length == 0
+              || sampleStreamWrapper != enabledSampleStreamWrappers[0]) {
+            
+            
+            timestampAdjusterProvider.reset();
+            forceReset = true;
+          }
+        } else {
+          sampleStreamWrapper.setIsTimestampMaster(false);
+        }
       }
     }
     
     System.arraycopy(newStreams, 0, streams, 0, newStreams.length);
     
-    enabledSampleStreamWrappers = new HlsSampleStreamWrapper[enabledSampleStreamWrapperList.size()];
-    enabledSampleStreamWrapperList.toArray(enabledSampleStreamWrappers);
-
-    
-    
-    
-    
-    if (enabledSampleStreamWrappers.length > 0) {
-      enabledSampleStreamWrappers[0].setIsTimestampMaster(true);
-      for (int i = 1; i < enabledSampleStreamWrappers.length; i++) {
-        enabledSampleStreamWrappers[i].setIsTimestampMaster(false);
-      }
-    }
-
-    sequenceableLoader = new CompositeSequenceableLoader(enabledSampleStreamWrappers);
-    if (seenFirstTrackSelection && selectedNewTracks) {
-      seekToUs(positionUs);
-      
-      for (int i = 0; i < selections.length; i++) {
-        if (streams[i] != null) {
-          streamResetFlags[i] = true;
-        }
-      }
-    }
-    seenFirstTrackSelection = true;
+    enabledSampleStreamWrappers =
+        Util.nullSafeArrayCopy(newEnabledSampleStreamWrappers, newEnabledSampleStreamWrapperCount);
+    compositeSequenceableLoader =
+        compositeSequenceableLoaderFactory.createCompositeSequenceableLoader(
+            enabledSampleStreamWrappers);
     return positionUs;
   }
 
   @Override
-  public void discardBuffer(long positionUs) {
-    
+  public void discardBuffer(long positionUs, boolean toKeyframe) {
+    for (HlsSampleStreamWrapper sampleStreamWrapper : enabledSampleStreamWrappers) {
+      sampleStreamWrapper.discardBuffer(positionUs, toKeyframe);
+    }
+  }
+
+  @Override
+  public void reevaluateBuffer(long positionUs) {
+    compositeSequenceableLoader.reevaluateBuffer(positionUs);
   }
 
   @Override
   public boolean continueLoading(long positionUs) {
-    return sequenceableLoader.continueLoading(positionUs);
+    if (trackGroups == null) {
+      
+      for (HlsSampleStreamWrapper wrapper : sampleStreamWrappers) {
+        wrapper.continuePreparing();
+      }
+      return false;
+    } else {
+      return compositeSequenceableLoader.continueLoading(positionUs);
+    }
+  }
+
+  @Override
+  public boolean isLoading() {
+    return compositeSequenceableLoader.isLoading();
   }
 
   @Override
   public long getNextLoadPositionUs() {
-    return sequenceableLoader.getNextLoadPositionUs();
+    return compositeSequenceableLoader.getNextLoadPositionUs();
   }
 
   @Override
   public long readDiscontinuity() {
+    if (!notifiedReadingStarted) {
+      eventDispatcher.readingStarted();
+      notifiedReadingStarted = true;
+    }
     return C.TIME_UNSET;
   }
 
   @Override
   public long getBufferedPositionUs() {
-    long bufferedPositionUs = Long.MAX_VALUE;
-    for (HlsSampleStreamWrapper sampleStreamWrapper : enabledSampleStreamWrappers) {
-      long rendererBufferedPositionUs = sampleStreamWrapper.getBufferedPositionUs();
-      if (rendererBufferedPositionUs != C.TIME_END_OF_SOURCE) {
-        bufferedPositionUs = Math.min(bufferedPositionUs, rendererBufferedPositionUs);
-      }
-    }
-    return bufferedPositionUs == Long.MAX_VALUE ? C.TIME_END_OF_SOURCE : bufferedPositionUs;
+    return compositeSequenceableLoader.getBufferedPositionUs();
   }
 
   @Override
   public long seekToUs(long positionUs) {
-    timestampAdjusterProvider.reset();
-    for (HlsSampleStreamWrapper sampleStreamWrapper : enabledSampleStreamWrappers) {
-      sampleStreamWrapper.seekTo(positionUs);
+    if (enabledSampleStreamWrappers.length > 0) {
+      
+      
+      boolean forceReset = enabledSampleStreamWrappers[0].seekToUs(positionUs, false);
+      for (int i = 1; i < enabledSampleStreamWrappers.length; i++) {
+        enabledSampleStreamWrappers[i].seekToUs(positionUs, forceReset);
+      }
+      if (forceReset) {
+        timestampAdjusterProvider.reset();
+      }
     }
+    return positionUs;
+  }
+
+  @Override
+  public long getAdjustedSeekPositionUs(long positionUs, SeekParameters seekParameters) {
     return positionUs;
   }
 
@@ -255,16 +434,12 @@ public final class HlsMediaPeriod implements MediaPeriod, HlsSampleStreamWrapper
   }
 
   @Override
-  public void onPlaylistRefreshRequired(HlsUrl url) {
+  public void onPlaylistRefreshRequired(Uri url) {
     playlistTracker.refreshPlaylist(url);
   }
 
   @Override
   public void onContinueLoadingRequested(HlsSampleStreamWrapper sampleStreamWrapper) {
-    if (trackGroups == null) {
-      
-      return;
-    }
     callback.onContinueLoadingRequested(this);
   }
 
@@ -272,112 +447,412 @@ public final class HlsMediaPeriod implements MediaPeriod, HlsSampleStreamWrapper
 
   @Override
   public void onPlaylistChanged() {
-    continuePreparingOrLoading();
+    callback.onContinueLoadingRequested(this);
   }
 
   @Override
-  public void onPlaylistBlacklisted(HlsUrl url, long blacklistMs) {
+  public boolean onPlaylistError(Uri url, long blacklistDurationMs) {
+    boolean noBlacklistingFailure = true;
     for (HlsSampleStreamWrapper streamWrapper : sampleStreamWrappers) {
-      streamWrapper.onPlaylistBlacklisted(url, blacklistMs);
+      noBlacklistingFailure &= streamWrapper.onPlaylistError(url, blacklistDurationMs);
     }
-    continuePreparingOrLoading();
+    callback.onContinueLoadingRequested(this);
+    return noBlacklistingFailure;
   }
 
   
 
-  private void buildAndPrepareSampleStreamWrappers() {
-    HlsMasterPlaylist masterPlaylist = playlistTracker.getMasterPlaylist();
-    
-    List<HlsUrl> selectedVariants = new ArrayList<>(masterPlaylist.variants);
-    ArrayList<HlsUrl> definiteVideoVariants = new ArrayList<>();
-    ArrayList<HlsUrl> definiteAudioOnlyVariants = new ArrayList<>();
-    for (int i = 0; i < selectedVariants.size(); i++) {
-      HlsUrl variant = selectedVariants.get(i);
-      if (variant.format.height > 0 || variantHasExplicitCodecWithPrefix(variant, "avc")) {
-        definiteVideoVariants.add(variant);
-      } else if (variantHasExplicitCodecWithPrefix(variant, "mp4a")) {
-        definiteAudioOnlyVariants.add(variant);
-      }
-    }
-    if (!definiteVideoVariants.isEmpty()) {
-      
-      
-      
-      selectedVariants = definiteVideoVariants;
-    } else if (definiteAudioOnlyVariants.size() < selectedVariants.size()) {
-      
-      
-      selectedVariants.removeAll(definiteAudioOnlyVariants);
-    } else {
-      
-    }
-    List<HlsUrl> audioRenditions = masterPlaylist.audios;
-    List<HlsUrl> subtitleRenditions = masterPlaylist.subtitles;
-    sampleStreamWrappers = new HlsSampleStreamWrapper[1  + audioRenditions.size()
-        + subtitleRenditions.size()];
-    int currentWrapperIndex = 0;
-    pendingPrepareCount = sampleStreamWrappers.length;
+  private void buildAndPrepareSampleStreamWrappers(long positionUs) {
+    HlsMasterPlaylist masterPlaylist = Assertions.checkNotNull(playlistTracker.getMasterPlaylist());
+    Map<String, DrmInitData> overridingDrmInitData =
+        useSessionKeys
+            ? deriveOverridingDrmInitData(masterPlaylist.sessionKeyDrmInitData)
+            : Collections.emptyMap();
 
-    Assertions.checkArgument(!selectedVariants.isEmpty());
-    HlsUrl[] variants = new HlsMasterPlaylist.HlsUrl[selectedVariants.size()];
-    selectedVariants.toArray(variants);
-    HlsSampleStreamWrapper sampleStreamWrapper = buildSampleStreamWrapper(C.TRACK_TYPE_DEFAULT,
-        variants, masterPlaylist.muxedAudioFormat, masterPlaylist.muxedCaptionFormats);
-    sampleStreamWrappers[currentWrapperIndex++] = sampleStreamWrapper;
-    sampleStreamWrapper.setIsTimestampMaster(true);
-    sampleStreamWrapper.continuePreparing();
+    boolean hasVariants = !masterPlaylist.variants.isEmpty();
+    List<Rendition> audioRenditions = masterPlaylist.audios;
+    List<Rendition> subtitleRenditions = masterPlaylist.subtitles;
+
+    pendingPrepareCount = 0;
+    ArrayList<HlsSampleStreamWrapper> sampleStreamWrappers = new ArrayList<>();
+    ArrayList<int[]> manifestUrlIndicesPerWrapper = new ArrayList<>();
+
+    if (hasVariants) {
+      buildAndPrepareMainSampleStreamWrapper(
+          masterPlaylist,
+          positionUs,
+          sampleStreamWrappers,
+          manifestUrlIndicesPerWrapper,
+          overridingDrmInitData);
+    }
 
     
 
-    
-    for (int i = 0; i < audioRenditions.size(); i++) {
-      sampleStreamWrapper = buildSampleStreamWrapper(C.TRACK_TYPE_AUDIO,
-          new HlsUrl[] {audioRenditions.get(i)}, null, Collections.<Format>emptyList());
-      sampleStreamWrappers[currentWrapperIndex++] = sampleStreamWrapper;
-      sampleStreamWrapper.continuePreparing();
-    }
+    buildAndPrepareAudioSampleStreamWrappers(
+        positionUs,
+        audioRenditions,
+        sampleStreamWrappers,
+        manifestUrlIndicesPerWrapper,
+        overridingDrmInitData);
 
     
     for (int i = 0; i < subtitleRenditions.size(); i++) {
-      HlsUrl url = subtitleRenditions.get(i);
-      sampleStreamWrapper = buildSampleStreamWrapper(C.TRACK_TYPE_TEXT, new HlsUrl[] {url}, null,
-          Collections.<Format>emptyList());
-      sampleStreamWrapper.prepareSingleTrack(url.format);
-      sampleStreamWrappers[currentWrapperIndex++] = sampleStreamWrapper;
+      Rendition subtitleRendition = subtitleRenditions.get(i);
+      HlsSampleStreamWrapper sampleStreamWrapper =
+          buildSampleStreamWrapper(
+              C.TRACK_TYPE_TEXT,
+              new Uri[] {subtitleRendition.url},
+              new Format[] {subtitleRendition.format},
+              null,
+              Collections.emptyList(),
+              overridingDrmInitData,
+              positionUs);
+      manifestUrlIndicesPerWrapper.add(new int[] {i});
+      sampleStreamWrappers.add(sampleStreamWrapper);
+      sampleStreamWrapper.prepareWithMasterPlaylistInfo(
+          new TrackGroup[] {new TrackGroup(subtitleRendition.format)},
+           0);
     }
+
+    this.sampleStreamWrappers = sampleStreamWrappers.toArray(new HlsSampleStreamWrapper[0]);
+    this.manifestUrlIndicesPerWrapper = manifestUrlIndicesPerWrapper.toArray(new int[0][]);
+    pendingPrepareCount = this.sampleStreamWrappers.length;
+    
+    this.sampleStreamWrappers[0].setIsTimestampMaster(true);
+    for (HlsSampleStreamWrapper sampleStreamWrapper : this.sampleStreamWrappers) {
+      sampleStreamWrapper.continuePreparing();
+    }
+    
+    enabledSampleStreamWrappers = this.sampleStreamWrappers;
   }
 
-  private HlsSampleStreamWrapper buildSampleStreamWrapper(int trackType, HlsUrl[] variants,
-      Format muxedAudioFormat, List<Format> muxedCaptionFormats) {
-    HlsChunkSource defaultChunkSource = new HlsChunkSource(playlistTracker, variants,
-        dataSourceFactory, timestampAdjusterProvider, muxedCaptionFormats);
-    return new HlsSampleStreamWrapper(trackType, this, defaultChunkSource, allocator,
-        preparePositionUs, muxedAudioFormat, minLoadableRetryCount, eventDispatcher);
-  }
+  
 
-  private void continuePreparingOrLoading() {
-    if (trackGroups != null) {
-      callback.onContinueLoadingRequested(this);
-    } else {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  private void buildAndPrepareMainSampleStreamWrapper(
+      HlsMasterPlaylist masterPlaylist,
+      long positionUs,
+      List<HlsSampleStreamWrapper> sampleStreamWrappers,
+      List<int[]> manifestUrlIndicesPerWrapper,
+      Map<String, DrmInitData> overridingDrmInitData) {
+    int[] variantTypes = new int[masterPlaylist.variants.size()];
+    int videoVariantCount = 0;
+    int audioVariantCount = 0;
+    for (int i = 0; i < masterPlaylist.variants.size(); i++) {
+      Variant variant = masterPlaylist.variants.get(i);
+      Format format = variant.format;
+      if (format.height > 0 || Util.getCodecsOfType(format.codecs, C.TRACK_TYPE_VIDEO) != null) {
+        variantTypes[i] = C.TRACK_TYPE_VIDEO;
+        videoVariantCount++;
+      } else if (Util.getCodecsOfType(format.codecs, C.TRACK_TYPE_AUDIO) != null) {
+        variantTypes[i] = C.TRACK_TYPE_AUDIO;
+        audioVariantCount++;
+      } else {
+        variantTypes[i] = C.TRACK_TYPE_UNKNOWN;
+      }
+    }
+    boolean useVideoVariantsOnly = false;
+    boolean useNonAudioVariantsOnly = false;
+    int selectedVariantsCount = variantTypes.length;
+    if (videoVariantCount > 0) {
       
-      for (HlsSampleStreamWrapper wrapper : sampleStreamWrappers) {
-        wrapper.continuePreparing();
+      
+      
+      useVideoVariantsOnly = true;
+      selectedVariantsCount = videoVariantCount;
+    } else if (audioVariantCount < variantTypes.length) {
+      
+      
+      useNonAudioVariantsOnly = true;
+      selectedVariantsCount = variantTypes.length - audioVariantCount;
+    }
+    Uri[] selectedPlaylistUrls = new Uri[selectedVariantsCount];
+    Format[] selectedPlaylistFormats = new Format[selectedVariantsCount];
+    int[] selectedVariantIndices = new int[selectedVariantsCount];
+    int outIndex = 0;
+    for (int i = 0; i < masterPlaylist.variants.size(); i++) {
+      if ((!useVideoVariantsOnly || variantTypes[i] == C.TRACK_TYPE_VIDEO)
+          && (!useNonAudioVariantsOnly || variantTypes[i] != C.TRACK_TYPE_AUDIO)) {
+        Variant variant = masterPlaylist.variants.get(i);
+        selectedPlaylistUrls[outIndex] = variant.url;
+        selectedPlaylistFormats[outIndex] = variant.format;
+        selectedVariantIndices[outIndex++] = i;
+      }
+    }
+    String codecs = selectedPlaylistFormats[0].codecs;
+    HlsSampleStreamWrapper sampleStreamWrapper =
+        buildSampleStreamWrapper(
+            C.TRACK_TYPE_DEFAULT,
+            selectedPlaylistUrls,
+            selectedPlaylistFormats,
+            masterPlaylist.muxedAudioFormat,
+            masterPlaylist.muxedCaptionFormats,
+            overridingDrmInitData,
+            positionUs);
+    sampleStreamWrappers.add(sampleStreamWrapper);
+    manifestUrlIndicesPerWrapper.add(selectedVariantIndices);
+    if (allowChunklessPreparation && codecs != null) {
+      boolean variantsContainVideoCodecs = Util.getCodecsOfType(codecs, C.TRACK_TYPE_VIDEO) != null;
+      boolean variantsContainAudioCodecs = Util.getCodecsOfType(codecs, C.TRACK_TYPE_AUDIO) != null;
+      List<TrackGroup> muxedTrackGroups = new ArrayList<>();
+      if (variantsContainVideoCodecs) {
+        Format[] videoFormats = new Format[selectedVariantsCount];
+        for (int i = 0; i < videoFormats.length; i++) {
+          videoFormats[i] = deriveVideoFormat(selectedPlaylistFormats[i]);
+        }
+        muxedTrackGroups.add(new TrackGroup(videoFormats));
+
+        if (variantsContainAudioCodecs
+            && (masterPlaylist.muxedAudioFormat != null || masterPlaylist.audios.isEmpty())) {
+          muxedTrackGroups.add(
+              new TrackGroup(
+                  deriveAudioFormat(
+                      selectedPlaylistFormats[0],
+                      masterPlaylist.muxedAudioFormat,
+                       false)));
+        }
+        List<Format> ccFormats = masterPlaylist.muxedCaptionFormats;
+        if (ccFormats != null) {
+          for (int i = 0; i < ccFormats.size(); i++) {
+            muxedTrackGroups.add(new TrackGroup(ccFormats.get(i)));
+          }
+        }
+      } else if (variantsContainAudioCodecs) {
+        
+        Format[] audioFormats = new Format[selectedVariantsCount];
+        for (int i = 0; i < audioFormats.length; i++) {
+          audioFormats[i] =
+              deriveAudioFormat(
+                   selectedPlaylistFormats[i],
+                  masterPlaylist.muxedAudioFormat,
+                   true);
+        }
+        muxedTrackGroups.add(new TrackGroup(audioFormats));
+      } else {
+        
+        throw new IllegalArgumentException("Unexpected codecs attribute: " + codecs);
+      }
+
+      TrackGroup id3TrackGroup =
+          new TrackGroup(
+              Format.createSampleFormat(
+                   "ID3",
+                  MimeTypes.APPLICATION_ID3,
+                   null,
+                   Format.NO_VALUE,
+                   null));
+      muxedTrackGroups.add(id3TrackGroup);
+
+      sampleStreamWrapper.prepareWithMasterPlaylistInfo(
+          muxedTrackGroups.toArray(new TrackGroup[0]),
+           0,
+           muxedTrackGroups.indexOf(id3TrackGroup));
+    }
+  }
+
+  private void buildAndPrepareAudioSampleStreamWrappers(
+      long positionUs,
+      List<Rendition> audioRenditions,
+      List<HlsSampleStreamWrapper> sampleStreamWrappers,
+      List<int[]> manifestUrlsIndicesPerWrapper,
+      Map<String, DrmInitData> overridingDrmInitData) {
+    ArrayList<Uri> scratchPlaylistUrls =
+        new ArrayList<>( audioRenditions.size());
+    ArrayList<Format> scratchPlaylistFormats =
+        new ArrayList<>( audioRenditions.size());
+    ArrayList<Integer> scratchIndicesList =
+        new ArrayList<>( audioRenditions.size());
+    HashSet<String> alreadyGroupedNames = new HashSet<>();
+    for (int renditionByNameIndex = 0;
+        renditionByNameIndex < audioRenditions.size();
+        renditionByNameIndex++) {
+      String name = audioRenditions.get(renditionByNameIndex).name;
+      if (!alreadyGroupedNames.add(name)) {
+        
+        continue;
+      }
+
+      boolean renditionsHaveCodecs = true;
+      scratchPlaylistUrls.clear();
+      scratchPlaylistFormats.clear();
+      scratchIndicesList.clear();
+      
+      for (int renditionIndex = 0; renditionIndex < audioRenditions.size(); renditionIndex++) {
+        if (Util.areEqual(name, audioRenditions.get(renditionIndex).name)) {
+          Rendition rendition = audioRenditions.get(renditionIndex);
+          scratchIndicesList.add(renditionIndex);
+          scratchPlaylistUrls.add(rendition.url);
+          scratchPlaylistFormats.add(rendition.format);
+          renditionsHaveCodecs &= rendition.format.codecs != null;
+        }
+      }
+
+      HlsSampleStreamWrapper sampleStreamWrapper =
+          buildSampleStreamWrapper(
+              C.TRACK_TYPE_AUDIO,
+              scratchPlaylistUrls.toArray(Util.castNonNullTypeArray(new Uri[0])),
+              scratchPlaylistFormats.toArray(new Format[0]),
+               null,
+               Collections.emptyList(),
+              overridingDrmInitData,
+              positionUs);
+      manifestUrlsIndicesPerWrapper.add(Util.toArray(scratchIndicesList));
+      sampleStreamWrappers.add(sampleStreamWrapper);
+
+      if (allowChunklessPreparation && renditionsHaveCodecs) {
+        Format[] renditionFormats = scratchPlaylistFormats.toArray(new Format[0]);
+        sampleStreamWrapper.prepareWithMasterPlaylistInfo(
+            new TrackGroup[] {new TrackGroup(renditionFormats)},  0);
       }
     }
   }
 
-  private static boolean variantHasExplicitCodecWithPrefix(HlsUrl variant, String prefix) {
-    String codecs = variant.format.codecs;
-    if (TextUtils.isEmpty(codecs)) {
-      return false;
+  private HlsSampleStreamWrapper buildSampleStreamWrapper(
+      int trackType,
+      Uri[] playlistUrls,
+      Format[] playlistFormats,
+      @Nullable Format muxedAudioFormat,
+      @Nullable List<Format> muxedCaptionFormats,
+      Map<String, DrmInitData> overridingDrmInitData,
+      long positionUs) {
+    HlsChunkSource defaultChunkSource =
+        new HlsChunkSource(
+            extractorFactory,
+            playlistTracker,
+            playlistUrls,
+            playlistFormats,
+            dataSourceFactory,
+            mediaTransferListener,
+            timestampAdjusterProvider,
+            muxedCaptionFormats);
+    return new HlsSampleStreamWrapper(
+        trackType,
+         this,
+        defaultChunkSource,
+        overridingDrmInitData,
+        allocator,
+        positionUs,
+        muxedAudioFormat,
+        drmSessionManager,
+        loadErrorHandlingPolicy,
+        eventDispatcher,
+        metadataType);
+  }
+
+  private static Map<String, DrmInitData> deriveOverridingDrmInitData(
+      List<DrmInitData> sessionKeyDrmInitData) {
+    ArrayList<DrmInitData> mutableSessionKeyDrmInitData = new ArrayList<>(sessionKeyDrmInitData);
+    HashMap<String, DrmInitData> drmInitDataBySchemeType = new HashMap<>();
+    for (int i = 0; i < mutableSessionKeyDrmInitData.size(); i++) {
+      DrmInitData drmInitData = sessionKeyDrmInitData.get(i);
+      String scheme = drmInitData.schemeType;
+      
+      
+      
+      
+      int j = i + 1;
+      while (j < mutableSessionKeyDrmInitData.size()) {
+        DrmInitData nextDrmInitData = mutableSessionKeyDrmInitData.get(j);
+        if (TextUtils.equals(nextDrmInitData.schemeType, scheme)) {
+          drmInitData = drmInitData.merge(nextDrmInitData);
+          mutableSessionKeyDrmInitData.remove(j);
+        } else {
+          j++;
+        }
+      }
+      drmInitDataBySchemeType.put(scheme, drmInitData);
     }
-    String[] codecArray = codecs.split("(\\s*,\\s*)|(\\s*$)");
-    for (String codec : codecArray) {
-      if (codec.startsWith(prefix)) {
-        return true;
+    return drmInitDataBySchemeType;
+  }
+
+  private static Format deriveVideoFormat(Format variantFormat) {
+    String codecs = Util.getCodecsOfType(variantFormat.codecs, C.TRACK_TYPE_VIDEO);
+    String sampleMimeType = MimeTypes.getMediaMimeType(codecs);
+    return Format.createVideoContainerFormat(
+        variantFormat.id,
+        variantFormat.label,
+        variantFormat.containerMimeType,
+        sampleMimeType,
+        codecs,
+        variantFormat.metadata,
+        variantFormat.bitrate,
+        variantFormat.width,
+        variantFormat.height,
+        variantFormat.frameRate,
+         null,
+        variantFormat.selectionFlags,
+        variantFormat.roleFlags);
+  }
+
+  private static Format deriveAudioFormat(
+      Format variantFormat, @Nullable Format mediaTagFormat, boolean isPrimaryTrackInVariant) {
+    String codecs;
+    Metadata metadata;
+    int channelCount = Format.NO_VALUE;
+    int selectionFlags = 0;
+    int roleFlags = 0;
+    String language = null;
+    String label = null;
+    if (mediaTagFormat != null) {
+      codecs = mediaTagFormat.codecs;
+      metadata = mediaTagFormat.metadata;
+      channelCount = mediaTagFormat.channelCount;
+      selectionFlags = mediaTagFormat.selectionFlags;
+      roleFlags = mediaTagFormat.roleFlags;
+      language = mediaTagFormat.language;
+      label = mediaTagFormat.label;
+    } else {
+      codecs = Util.getCodecsOfType(variantFormat.codecs, C.TRACK_TYPE_AUDIO);
+      metadata = variantFormat.metadata;
+      if (isPrimaryTrackInVariant) {
+        channelCount = variantFormat.channelCount;
+        selectionFlags = variantFormat.selectionFlags;
+        roleFlags = variantFormat.roleFlags;
+        language = variantFormat.language;
+        label = variantFormat.label;
       }
     }
-    return false;
+    String sampleMimeType = MimeTypes.getMediaMimeType(codecs);
+    int bitrate = isPrimaryTrackInVariant ? variantFormat.bitrate : Format.NO_VALUE;
+    return Format.createAudioContainerFormat(
+        variantFormat.id,
+        label,
+        variantFormat.containerMimeType,
+        sampleMimeType,
+        codecs,
+        metadata,
+        bitrate,
+        channelCount,
+         Format.NO_VALUE,
+         null,
+        selectionFlags,
+        roleFlags,
+        language);
   }
 
 }

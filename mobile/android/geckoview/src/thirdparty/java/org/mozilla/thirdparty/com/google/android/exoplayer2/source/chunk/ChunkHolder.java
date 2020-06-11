@@ -15,15 +15,15 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source.chunk;
 
+import androidx.annotation.Nullable;
+
 
 
 
 public final class ChunkHolder {
 
   
-
-
-  public Chunk chunk;
+  @Nullable public Chunk chunk;
 
   
 

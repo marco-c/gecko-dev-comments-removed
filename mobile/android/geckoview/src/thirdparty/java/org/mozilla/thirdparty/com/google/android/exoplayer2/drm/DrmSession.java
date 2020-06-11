@@ -15,9 +15,11 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.drm;
 
-import android.annotation.TargetApi;
 import android.media.MediaDrm;
-import android.support.annotation.IntDef;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
+import java.io.IOException;
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
@@ -25,14 +27,32 @@ import java.util.Map;
 
 
 
-@TargetApi(16)
 public interface DrmSession<T extends ExoMediaCrypto> {
 
   
-  class DrmSessionException extends Exception {
 
-    public DrmSessionException(Exception e) {
-      super(e);
+
+
+
+  static <T extends ExoMediaCrypto> void replaceSession(
+      @Nullable DrmSession<T> previousSession, @Nullable DrmSession<T> newSession) {
+    if (previousSession == newSession) {
+      
+      return;
+    }
+    if (newSession != null) {
+      newSession.acquire();
+    }
+    if (previousSession != null) {
+      previousSession.release();
+    }
+  }
+
+  
+  class DrmSessionException extends IOException {
+
+    public DrmSessionException(Throwable cause) {
+      super(cause);
     }
 
   }
@@ -40,28 +60,26 @@ public interface DrmSession<T extends ExoMediaCrypto> {
   
 
 
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef({STATE_ERROR, STATE_CLOSED, STATE_OPENING, STATE_OPENED, STATE_OPENED_WITH_KEYS})
+  @IntDef({STATE_RELEASED, STATE_ERROR, STATE_OPENING, STATE_OPENED, STATE_OPENED_WITH_KEYS})
   @interface State {}
   
 
 
-  int STATE_ERROR = 0;
+  int STATE_RELEASED = 0;
   
 
 
-  int STATE_CLOSED = 1;
+  int STATE_ERROR = 1;
   
 
 
   int STATE_OPENING = 2;
   
-
-
   int STATE_OPENED = 3;
   
-
-
   int STATE_OPENED_WITH_KEYS = 4;
 
   
@@ -69,18 +87,25 @@ public interface DrmSession<T extends ExoMediaCrypto> {
 
 
 
-
   @State int getState();
+
+  
+  default boolean playClearSamplesWithoutKeys() {
+    return false;
+  }
 
   
 
 
 
+  @Nullable
+  DrmSessionException getError();
+
+  
 
 
 
-
-
+  @Nullable
   T getMediaCrypto();
 
   
@@ -95,37 +120,25 @@ public interface DrmSession<T extends ExoMediaCrypto> {
 
 
 
-
-
-  boolean requiresSecureDecoderComponent(String mimeType);
-
-  
-
-
-
-
-
-
-  DrmSessionException getError();
-
-  
-
-
-
-
-
-
-
-
-
-
-
+  @Nullable
   Map<String, String> queryKeyStatus();
 
   
 
 
 
+  @Nullable
   byte[] getOfflineLicenseKeySetId();
 
+  
+
+
+
+  void acquire();
+
+  
+
+
+
+  void release();
 }

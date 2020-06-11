@@ -32,19 +32,20 @@ public final class TimestampAdjuster {
   
 
 
+
   private static final long MAX_PTS_PLUS_ONE = 0x200000000L;
 
   private long firstSampleTimestampUs;
   private long timestampOffsetUs;
 
   
-  private volatile long lastSampleTimestamp;
+  private volatile long lastSampleTimestampUs;
 
   
 
 
   public TimestampAdjuster(long firstSampleTimestampUs) {
-    lastSampleTimestamp = C.TIME_UNSET;
+    lastSampleTimestampUs = C.TIME_UNSET;
     setFirstSampleTimestampUs(firstSampleTimestampUs);
   }
 
@@ -56,15 +57,11 @@ public final class TimestampAdjuster {
 
 
   public synchronized void setFirstSampleTimestampUs(long firstSampleTimestampUs) {
-    Assertions.checkState(lastSampleTimestamp == C.TIME_UNSET);
+    Assertions.checkState(lastSampleTimestampUs == C.TIME_UNSET);
     this.firstSampleTimestampUs = firstSampleTimestampUs;
   }
 
   
-
-
-
-
   public long getFirstSampleTimestampUs() {
     return firstSampleTimestampUs;
   }
@@ -75,11 +72,9 @@ public final class TimestampAdjuster {
 
 
 
-
-
-
   public long getLastAdjustedTimestampUs() {
-    return lastSampleTimestamp != C.TIME_UNSET ? lastSampleTimestamp
+    return lastSampleTimestampUs != C.TIME_UNSET
+        ? (lastSampleTimestampUs + timestampOffsetUs)
         : firstSampleTimestampUs != DO_NOT_OFFSET ? firstSampleTimestampUs : C.TIME_UNSET;
   }
 
@@ -93,15 +88,16 @@ public final class TimestampAdjuster {
 
 
   public long getTimestampOffsetUs() {
-    return firstSampleTimestampUs == DO_NOT_OFFSET ? 0
-        : lastSampleTimestamp == C.TIME_UNSET ? C.TIME_UNSET : timestampOffsetUs;
+    return firstSampleTimestampUs == DO_NOT_OFFSET
+        ? 0
+        : lastSampleTimestampUs == C.TIME_UNSET ? C.TIME_UNSET : timestampOffsetUs;
   }
 
   
 
 
   public void reset() {
-    lastSampleTimestamp = C.TIME_UNSET;
+    lastSampleTimestampUs = C.TIME_UNSET;
   }
 
   
@@ -110,21 +106,23 @@ public final class TimestampAdjuster {
 
 
 
-  public long adjustTsTimestamp(long pts) {
-    if (pts == C.TIME_UNSET) {
+  public long adjustTsTimestamp(long pts90Khz) {
+    if (pts90Khz == C.TIME_UNSET) {
       return C.TIME_UNSET;
     }
-    if (lastSampleTimestamp != C.TIME_UNSET) {
+    if (lastSampleTimestampUs != C.TIME_UNSET) {
       
       
-      long lastPts = usToPts(lastSampleTimestamp);
+      long lastPts = usToPts(lastSampleTimestampUs);
       long closestWrapCount = (lastPts + (MAX_PTS_PLUS_ONE / 2)) / MAX_PTS_PLUS_ONE;
-      long ptsWrapBelow = pts + (MAX_PTS_PLUS_ONE * (closestWrapCount - 1));
-      long ptsWrapAbove = pts + (MAX_PTS_PLUS_ONE * closestWrapCount);
-      pts = Math.abs(ptsWrapBelow - lastPts) < Math.abs(ptsWrapAbove - lastPts)
-          ? ptsWrapBelow : ptsWrapAbove;
+      long ptsWrapBelow = pts90Khz + (MAX_PTS_PLUS_ONE * (closestWrapCount - 1));
+      long ptsWrapAbove = pts90Khz + (MAX_PTS_PLUS_ONE * closestWrapCount);
+      pts90Khz =
+          Math.abs(ptsWrapBelow - lastPts) < Math.abs(ptsWrapAbove - lastPts)
+              ? ptsWrapBelow
+              : ptsWrapAbove;
     }
-    return adjustSampleTimestamp(ptsToUs(pts));
+    return adjustSampleTimestamp(ptsToUs(pts90Khz));
   }
 
   
@@ -138,15 +136,15 @@ public final class TimestampAdjuster {
       return C.TIME_UNSET;
     }
     
-    if (lastSampleTimestamp != C.TIME_UNSET) {
-      lastSampleTimestamp = timeUs;
+    if (lastSampleTimestampUs != C.TIME_UNSET) {
+      lastSampleTimestampUs = timeUs;
     } else {
       if (firstSampleTimestampUs != DO_NOT_OFFSET) {
         
         timestampOffsetUs = firstSampleTimestampUs - timeUs;
       }
       synchronized (this) {
-        lastSampleTimestamp = timeUs;
+        lastSampleTimestampUs = timeUs;
         
         notifyAll();
       }
@@ -160,7 +158,7 @@ public final class TimestampAdjuster {
 
 
   public synchronized void waitUntilInitialized() throws InterruptedException {
-    while (lastSampleTimestamp == C.TIME_UNSET) {
+    while (lastSampleTimestampUs == C.TIME_UNSET) {
       wait();
     }
   }

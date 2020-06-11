@@ -15,6 +15,7 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source;
 
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Timeline;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
@@ -24,14 +25,19 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 
 public final class SinglePeriodTimeline extends Timeline {
 
-  private static final Object ID = new Object();
+  private static final Object UID = new Object();
 
+  private final long presentationStartTimeMs;
+  private final long windowStartTimeMs;
   private final long periodDurationUs;
   private final long windowDurationUs;
   private final long windowPositionInPeriodUs;
   private final long windowDefaultStartPositionUs;
   private final boolean isSeekable;
   private final boolean isDynamic;
+  private final boolean isLive;
+  @Nullable private final Object tag;
+  @Nullable private final Object manifest;
 
   
 
@@ -40,8 +46,39 @@ public final class SinglePeriodTimeline extends Timeline {
 
 
 
-  public SinglePeriodTimeline(long durationUs, boolean isSeekable) {
-    this(durationUs, durationUs, 0, 0, isSeekable, false);
+
+  public SinglePeriodTimeline(
+      long durationUs, boolean isSeekable, boolean isDynamic, boolean isLive) {
+    this(durationUs, isSeekable, isDynamic, isLive,  null,  null);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  public SinglePeriodTimeline(
+      long durationUs,
+      boolean isSeekable,
+      boolean isDynamic,
+      boolean isLive,
+      @Nullable Object manifest,
+      @Nullable Object tag) {
+    this(
+        durationUs,
+        durationUs,
+         0,
+         0,
+        isSeekable,
+        isDynamic,
+        isLive,
+        manifest,
+        tag);
   }
 
   
@@ -57,15 +94,75 @@ public final class SinglePeriodTimeline extends Timeline {
 
 
 
-  public SinglePeriodTimeline(long periodDurationUs, long windowDurationUs,
-      long windowPositionInPeriodUs, long windowDefaultStartPositionUs, boolean isSeekable,
-      boolean isDynamic) {
+
+
+
+  public SinglePeriodTimeline(
+      long periodDurationUs,
+      long windowDurationUs,
+      long windowPositionInPeriodUs,
+      long windowDefaultStartPositionUs,
+      boolean isSeekable,
+      boolean isDynamic,
+      boolean isLive,
+      @Nullable Object manifest,
+      @Nullable Object tag) {
+    this(
+         C.TIME_UNSET,
+         C.TIME_UNSET,
+        periodDurationUs,
+        windowDurationUs,
+        windowPositionInPeriodUs,
+        windowDefaultStartPositionUs,
+        isSeekable,
+        isDynamic,
+        isLive,
+        manifest,
+        tag);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  public SinglePeriodTimeline(
+      long presentationStartTimeMs,
+      long windowStartTimeMs,
+      long periodDurationUs,
+      long windowDurationUs,
+      long windowPositionInPeriodUs,
+      long windowDefaultStartPositionUs,
+      boolean isSeekable,
+      boolean isDynamic,
+      boolean isLive,
+      @Nullable Object manifest,
+      @Nullable Object tag) {
+    this.presentationStartTimeMs = presentationStartTimeMs;
+    this.windowStartTimeMs = windowStartTimeMs;
     this.periodDurationUs = periodDurationUs;
     this.windowDurationUs = windowDurationUs;
     this.windowPositionInPeriodUs = windowPositionInPeriodUs;
     this.windowDefaultStartPositionUs = windowDefaultStartPositionUs;
     this.isSeekable = isSeekable;
     this.isDynamic = isDynamic;
+    this.isLive = isLive;
+    this.manifest = manifest;
+    this.tag = tag;
   }
 
   @Override
@@ -74,20 +171,35 @@ public final class SinglePeriodTimeline extends Timeline {
   }
 
   @Override
-  public Window getWindow(int windowIndex, Window window, boolean setIds,
-      long defaultPositionProjectionUs) {
+  public Window getWindow(int windowIndex, Window window, long defaultPositionProjectionUs) {
     Assertions.checkIndex(windowIndex, 0, 1);
-    Object id = setIds ? ID : null;
     long windowDefaultStartPositionUs = this.windowDefaultStartPositionUs;
-    if (isDynamic) {
-      windowDefaultStartPositionUs += defaultPositionProjectionUs;
-      if (windowDefaultStartPositionUs > windowDurationUs) {
+    if (isDynamic && defaultPositionProjectionUs != 0) {
+      if (windowDurationUs == C.TIME_UNSET) {
         
         windowDefaultStartPositionUs = C.TIME_UNSET;
+      } else {
+        windowDefaultStartPositionUs += defaultPositionProjectionUs;
+        if (windowDefaultStartPositionUs > windowDurationUs) {
+          
+          windowDefaultStartPositionUs = C.TIME_UNSET;
+        }
       }
     }
-    return window.set(id, C.TIME_UNSET, C.TIME_UNSET, isSeekable, isDynamic,
-        windowDefaultStartPositionUs, windowDurationUs, 0, 0, windowPositionInPeriodUs);
+    return window.set(
+        Window.SINGLE_WINDOW_UID,
+        tag,
+        manifest,
+        presentationStartTimeMs,
+        windowStartTimeMs,
+        isSeekable,
+        isDynamic,
+        isLive,
+        windowDefaultStartPositionUs,
+        windowDurationUs,
+        0,
+        0,
+        windowPositionInPeriodUs);
   }
 
   @Override
@@ -98,13 +210,18 @@ public final class SinglePeriodTimeline extends Timeline {
   @Override
   public Period getPeriod(int periodIndex, Period period, boolean setIds) {
     Assertions.checkIndex(periodIndex, 0, 1);
-    Object id = setIds ? ID : null;
-    return period.set(id, id, 0, periodDurationUs, -windowPositionInPeriodUs, false);
+    Object uid = setIds ? UID : null;
+    return period.set( null, uid, 0, periodDurationUs, -windowPositionInPeriodUs);
   }
 
   @Override
   public int getIndexOfPeriod(Object uid) {
-    return ID.equals(uid) ? 0 : C.INDEX_UNSET;
+    return UID.equals(uid) ? 0 : C.INDEX_UNSET;
   }
 
+  @Override
+  public Object getUidOfPeriod(int periodIndex) {
+    Assertions.checkIndex(periodIndex, 0, 1);
+    return UID;
+  }
 }

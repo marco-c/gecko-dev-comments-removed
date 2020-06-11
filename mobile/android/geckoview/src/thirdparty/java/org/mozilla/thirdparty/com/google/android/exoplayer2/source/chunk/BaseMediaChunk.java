@@ -15,6 +15,8 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source.chunk;
 
+import androidx.annotation.Nullable;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSpec;
@@ -23,6 +25,17 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSpec;
 
 
 public abstract class BaseMediaChunk extends MediaChunk {
+
+  
+
+
+
+  public final long clippedStartTimeUs;
+  
+
+
+
+  public final long clippedEndTimeUs;
 
   private BaseMediaChunkOutput output;
   private int[] firstSampleIndices;
@@ -37,11 +50,25 @@ public abstract class BaseMediaChunk extends MediaChunk {
 
 
 
-  public BaseMediaChunk(DataSource dataSource, DataSpec dataSpec, Format trackFormat,
-      int trackSelectionReason, Object trackSelectionData, long startTimeUs, long endTimeUs,
-      int chunkIndex) {
+
+
+
+
+  public BaseMediaChunk(
+      DataSource dataSource,
+      DataSpec dataSpec,
+      Format trackFormat,
+      int trackSelectionReason,
+      @Nullable Object trackSelectionData,
+      long startTimeUs,
+      long endTimeUs,
+      long clippedStartTimeUs,
+      long clippedEndTimeUs,
+      long chunkIndex) {
     super(dataSource, dataSpec, trackFormat, trackSelectionReason, trackSelectionData, startTimeUs,
         endTimeUs, chunkIndex);
+    this.clippedStartTimeUs = clippedStartTimeUs;
+    this.clippedEndTimeUs = clippedEndTimeUs;
   }
 
   

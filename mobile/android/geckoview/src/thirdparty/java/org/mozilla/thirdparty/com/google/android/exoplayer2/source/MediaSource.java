@@ -15,10 +15,30 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source;
 
-import org.mozilla.thirdparty.com.google.android.exoplayer2.ExoPlayer;
+import android.os.Handler;
+import androidx.annotation.Nullable;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Timeline;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.Allocator;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.TransferListener;
 import java.io.IOException;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -26,9 +46,7 @@ import java.io.IOException;
 public interface MediaSource {
 
   
-
-
-  interface Listener {
+  interface MediaSourceCaller {
 
     
 
@@ -36,8 +54,184 @@ public interface MediaSource {
 
 
 
-    void onSourceInfoRefreshed(Timeline timeline, Object manifest);
 
+
+    void onSourceInfoRefreshed(MediaSource source, Timeline timeline);
+  }
+
+  
+  final class MediaPeriodId {
+
+    
+    public final Object periodUid;
+
+    
+
+
+
+    public final int adGroupIndex;
+
+    
+
+
+
+    public final int adIndexInAdGroup;
+
+    
+
+
+
+
+    public final long windowSequenceNumber;
+
+    
+
+
+
+    public final int nextAdGroupIndex;
+
+    
+
+
+
+
+
+    public MediaPeriodId(Object periodUid) {
+      this(periodUid,  C.INDEX_UNSET);
+    }
+
+    
+
+
+
+
+
+
+    public MediaPeriodId(Object periodUid, long windowSequenceNumber) {
+      this(
+          periodUid,
+           C.INDEX_UNSET,
+           C.INDEX_UNSET,
+          windowSequenceNumber,
+           C.INDEX_UNSET);
+    }
+
+    
+
+
+
+
+
+
+
+
+    public MediaPeriodId(Object periodUid, long windowSequenceNumber, int nextAdGroupIndex) {
+      this(
+          periodUid,
+           C.INDEX_UNSET,
+           C.INDEX_UNSET,
+          windowSequenceNumber,
+          nextAdGroupIndex);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    public MediaPeriodId(
+        Object periodUid, int adGroupIndex, int adIndexInAdGroup, long windowSequenceNumber) {
+      this(
+          periodUid,
+          adGroupIndex,
+          adIndexInAdGroup,
+          windowSequenceNumber,
+           C.INDEX_UNSET);
+    }
+
+    private MediaPeriodId(
+        Object periodUid,
+        int adGroupIndex,
+        int adIndexInAdGroup,
+        long windowSequenceNumber,
+        int nextAdGroupIndex) {
+      this.periodUid = periodUid;
+      this.adGroupIndex = adGroupIndex;
+      this.adIndexInAdGroup = adIndexInAdGroup;
+      this.windowSequenceNumber = windowSequenceNumber;
+      this.nextAdGroupIndex = nextAdGroupIndex;
+    }
+
+    
+    public MediaPeriodId copyWithPeriodUid(Object newPeriodUid) {
+      return periodUid.equals(newPeriodUid)
+          ? this
+          : new MediaPeriodId(
+              newPeriodUid, adGroupIndex, adIndexInAdGroup, windowSequenceNumber, nextAdGroupIndex);
+    }
+
+    
+
+
+    public boolean isAd() {
+      return adGroupIndex != C.INDEX_UNSET;
+    }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null || getClass() != obj.getClass()) {
+        return false;
+      }
+
+      MediaPeriodId periodId = (MediaPeriodId) obj;
+      return periodUid.equals(periodId.periodUid)
+          && adGroupIndex == periodId.adGroupIndex
+          && adIndexInAdGroup == periodId.adIndexInAdGroup
+          && windowSequenceNumber == periodId.windowSequenceNumber
+          && nextAdGroupIndex == periodId.nextAdGroupIndex;
+    }
+
+    @Override
+    public int hashCode() {
+      int result = 17;
+      result = 31 * result + periodUid.hashCode();
+      result = 31 * result + adGroupIndex;
+      result = 31 * result + adIndexInAdGroup;
+      result = 31 * result + (int) windowSequenceNumber;
+      result = 31 * result + nextAdGroupIndex;
+      return result;
+    }
+  }
+
+  
+
+
+
+
+
+
+  void addEventListener(Handler handler, MediaSourceEventListener eventListener);
+
+  
+
+
+
+
+
+  void removeEventListener(MediaSourceEventListener eventListener);
+
+  
+  @Nullable
+  default Object getTag() {
+    return null;
   }
 
   
@@ -50,9 +244,21 @@ public interface MediaSource {
 
 
 
-  void prepareSource(ExoPlayer player, boolean isTopLevelSource, Listener listener);
+
+
+
+
+
+
+
+
+  void prepareSource(MediaSourceCaller caller, @Nullable TransferListener mediaTransferListener);
 
   
+
+
+
+
 
 
   void maybeThrowSourceInfoRefreshError() throws IOException;
@@ -66,10 +272,25 @@ public interface MediaSource {
 
 
 
-
-  MediaPeriod createPeriod(int index, Allocator allocator, long positionUs);
+  void enable(MediaSourceCaller caller);
 
   
+
+
+
+
+
+
+
+
+
+
+
+  MediaPeriod createPeriod(MediaPeriodId id, Allocator allocator, long startPositionUs);
+
+  
+
+
 
 
 
@@ -82,6 +303,23 @@ public interface MediaSource {
 
 
 
-  void releaseSource();
 
+
+
+
+
+
+  void disable(MediaSourceCaller caller);
+
+  
+
+
+
+
+
+
+
+
+
+  void releaseSource(MediaSourceCaller caller);
 }

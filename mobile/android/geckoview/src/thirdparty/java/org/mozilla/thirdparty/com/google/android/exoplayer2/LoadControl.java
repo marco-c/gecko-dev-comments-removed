@@ -65,7 +65,10 @@ public interface LoadControl {
 
 
 
-  boolean shouldStartPlayback(long bufferedDurationUs, boolean rebuffering);
+
+
+
+  long getBackBufferDurationUs();
 
   
 
@@ -73,6 +76,38 @@ public interface LoadControl {
 
 
 
-  boolean shouldContinueLoading(long bufferedDurationUs);
 
+
+
+
+
+
+
+
+
+  boolean retainBackBufferFromKeyframe();
+
+  
+
+
+
+
+
+
+  boolean shouldContinueLoading(long bufferedDurationUs, float playbackSpeed);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  boolean shouldStartPlayback(long bufferedDurationUs, float playbackSpeed, boolean rebuffering);
 }

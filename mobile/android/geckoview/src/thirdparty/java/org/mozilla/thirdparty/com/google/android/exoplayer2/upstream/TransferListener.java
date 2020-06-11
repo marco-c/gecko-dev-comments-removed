@@ -18,7 +18,24 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream;
 
 
 
-public interface TransferListener<S> {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+public interface TransferListener {
 
   
 
@@ -26,7 +43,8 @@ public interface TransferListener<S> {
 
 
 
-  void onTransferStart(S source, DataSpec dataSpec);
+
+  void onTransferInitializing(DataSource source, DataSpec dataSpec, boolean isNetwork);
 
   
 
@@ -35,13 +53,25 @@ public interface TransferListener<S> {
 
 
 
-  void onBytesTransferred(S source, int bytesTransferred);
+  void onTransferStart(DataSource source, DataSpec dataSpec, boolean isNetwork);
 
   
 
 
 
 
-  void onTransferEnd(S source);
 
+
+
+  void onBytesTransferred(
+      DataSource source, DataSpec dataSpec, boolean isNetwork, int bytesTransferred);
+
+  
+
+
+
+
+
+
+  void onTransferEnd(DataSource source, DataSpec dataSpec, boolean isNetwork);
 }

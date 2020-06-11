@@ -15,13 +15,14 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import java.util.Arrays;
 
 
-
-
-public final class TrackGroupArray {
+public final class TrackGroupArray implements Parcelable {
 
   
 
@@ -46,6 +47,14 @@ public final class TrackGroupArray {
     this.length = trackGroups.length;
   }
 
+   TrackGroupArray(Parcel in) {
+    length = in.readInt();
+    trackGroups = new TrackGroup[length];
+    for (int i = 0; i < length; i++) {
+      trackGroups[i] = in.readParcelable(TrackGroup.class.getClassLoader());
+    }
+  }
+
   
 
 
@@ -62,13 +71,23 @@ public final class TrackGroupArray {
 
 
 
+  @SuppressWarnings("ReferenceEquality")
   public int indexOf(TrackGroup group) {
     for (int i = 0; i < length; i++) {
+      
+      
       if (trackGroups[i] == group) {
         return i;
       }
     }
     return C.INDEX_UNSET;
+  }
+
+  
+
+
+  public boolean isEmpty() {
+    return length == 0;
   }
 
   @Override
@@ -80,7 +99,7 @@ public final class TrackGroupArray {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     if (this == obj) {
       return true;
     }
@@ -91,4 +110,32 @@ public final class TrackGroupArray {
     return length == other.length && Arrays.equals(trackGroups, other.trackGroups);
   }
 
+  
+
+  @Override
+  public int describeContents() {
+    return 0;
+  }
+
+  @Override
+  public void writeToParcel(Parcel dest, int flags) {
+    dest.writeInt(length);
+    for (int i = 0; i < length; i++) {
+      dest.writeParcelable(trackGroups[i], 0);
+    }
+  }
+
+  public static final Parcelable.Creator<TrackGroupArray> CREATOR =
+      new Parcelable.Creator<TrackGroupArray>() {
+
+        @Override
+        public TrackGroupArray createFromParcel(Parcel in) {
+          return new TrackGroupArray(in);
+        }
+
+        @Override
+        public TrackGroupArray[] newArray(int size) {
+          return new TrackGroupArray[size];
+        }
+      };
 }

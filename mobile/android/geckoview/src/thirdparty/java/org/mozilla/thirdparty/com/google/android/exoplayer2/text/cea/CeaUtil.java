@@ -15,23 +15,23 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.text.cea;
 
-import android.util.Log;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.TrackOutput;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Log;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
-
-
 
 
 public final class CeaUtil {
 
   private static final String TAG = "CeaUtil";
 
+  public static final int USER_DATA_IDENTIFIER_GA94 = 0x47413934;
+  public static final int USER_DATA_TYPE_CODE_MPEG_CC = 0x3;
+
   private static final int PAYLOAD_TYPE_CC = 4;
   private static final int COUNTRY_CODE = 0xB5;
-  private static final int PROVIDER_CODE = 0x31;
-  private static final int USER_ID = 0x47413934; 
-  private static final int USER_DATA_TYPE_CODE = 0x3;
+  private static final int PROVIDER_CODE_ATSC = 0x31;
+  private static final int PROVIDER_CODE_DIRECTV = 0x2F;
 
   
 
@@ -46,33 +46,69 @@ public final class CeaUtil {
     while (seiBuffer.bytesLeft() > 1 ) {
       int payloadType = readNon255TerminatedValue(seiBuffer);
       int payloadSize = readNon255TerminatedValue(seiBuffer);
+      int nextPayloadPosition = seiBuffer.getPosition() + payloadSize;
       
       if (payloadSize == -1 || payloadSize > seiBuffer.bytesLeft()) {
         
         Log.w(TAG, "Skipping remainder of malformed SEI NAL unit.");
-        seiBuffer.setPosition(seiBuffer.limit());
-      } else if (isSeiMessageCea608(payloadType, payloadSize, seiBuffer)) {
-        
-        
-        seiBuffer.skipBytes(8);
-        
-        int ccCount = seiBuffer.readUnsignedByte() & 0x1F;
-        
-        seiBuffer.skipBytes(1);
-        
-        
-        int sampleLength = ccCount * 3;
-        int sampleStartPosition = seiBuffer.getPosition();
-        for (TrackOutput output : outputs) {
-          seiBuffer.setPosition(sampleStartPosition);
-          output.sampleData(seiBuffer, sampleLength);
-          output.sampleMetadata(presentationTimeUs, C.BUFFER_FLAG_KEY_FRAME, sampleLength, 0, null);
+        nextPayloadPosition = seiBuffer.limit();
+      } else if (payloadType == PAYLOAD_TYPE_CC && payloadSize >= 8) {
+        int countryCode = seiBuffer.readUnsignedByte();
+        int providerCode = seiBuffer.readUnsignedShort();
+        int userIdentifier = 0;
+        if (providerCode == PROVIDER_CODE_ATSC) {
+          userIdentifier = seiBuffer.readInt();
         }
-        
-        seiBuffer.skipBytes(payloadSize - (10 + ccCount * 3));
-      } else {
-        seiBuffer.skipBytes(payloadSize);
+        int userDataTypeCode = seiBuffer.readUnsignedByte();
+        if (providerCode == PROVIDER_CODE_DIRECTV) {
+          seiBuffer.skipBytes(1); 
+        }
+        boolean messageIsSupportedCeaCaption =
+            countryCode == COUNTRY_CODE
+                && (providerCode == PROVIDER_CODE_ATSC || providerCode == PROVIDER_CODE_DIRECTV)
+                && userDataTypeCode == USER_DATA_TYPE_CODE_MPEG_CC;
+        if (providerCode == PROVIDER_CODE_ATSC) {
+          messageIsSupportedCeaCaption &= userIdentifier == USER_DATA_IDENTIFIER_GA94;
+        }
+        if (messageIsSupportedCeaCaption) {
+          consumeCcData(presentationTimeUs, seiBuffer, outputs);
+        }
       }
+      seiBuffer.setPosition(nextPayloadPosition);
+    }
+  }
+
+  
+
+
+
+
+
+
+  public static void consumeCcData(
+      long presentationTimeUs, ParsableByteArray ccDataBuffer, TrackOutput[] outputs) {
+    
+    int firstByte = ccDataBuffer.readUnsignedByte();
+    boolean processCcDataFlag = (firstByte & 0x40) != 0;
+    if (!processCcDataFlag) {
+      
+      return;
+    }
+    int ccCount = firstByte & 0x1F;
+    ccDataBuffer.skipBytes(1); 
+    
+    
+    int sampleLength = ccCount * 3;
+    int sampleStartPosition = ccDataBuffer.getPosition();
+    for (TrackOutput output : outputs) {
+      ccDataBuffer.setPosition(sampleStartPosition);
+      output.sampleData(ccDataBuffer, sampleLength);
+      output.sampleMetadata(
+          presentationTimeUs,
+          C.BUFFER_FLAG_KEY_FRAME,
+          sampleLength,
+           0,
+           null);
     }
   }
 
@@ -95,31 +131,6 @@ public final class CeaUtil {
       value += b;
     } while (b == 0xFF);
     return value;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  private static boolean isSeiMessageCea608(int payloadType, int payloadLength,
-      ParsableByteArray payload) {
-    if (payloadType != PAYLOAD_TYPE_CC || payloadLength < 8) {
-      return false;
-    }
-    int startPosition = payload.getPosition();
-    int countryCode = payload.readUnsignedByte();
-    int providerCode = payload.readUnsignedShort();
-    int userIdentifier = payload.readInt();
-    int userDataTypeCode = payload.readUnsignedByte();
-    payload.setPosition(startPosition);
-    return countryCode == COUNTRY_CODE && providerCode == PROVIDER_CODE
-        && userIdentifier == USER_ID && userDataTypeCode == USER_DATA_TYPE_CODE;
   }
 
   private CeaUtil() {}

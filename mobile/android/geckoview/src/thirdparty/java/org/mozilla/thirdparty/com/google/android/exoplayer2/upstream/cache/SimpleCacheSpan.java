@@ -15,6 +15,7 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.cache;
 
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
@@ -23,11 +24,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-
-
  final class SimpleCacheSpan extends CacheSpan {
 
-  private static final String SUFFIX = ".v3.exo";
+   static final String COMMON_SUFFIX = ".exo";
+
+  private static final String SUFFIX = ".v3" + COMMON_SUFFIX;
   private static final Pattern CACHE_FILE_PATTERN_V1 = Pattern.compile(
       "^(.+)\\.(\\d+)\\.(\\d+)\\.v1\\.exo$", Pattern.DOTALL);
   private static final Pattern CACHE_FILE_PATTERN_V2 = Pattern.compile(
@@ -35,18 +36,49 @@ import java.util.regex.Pattern;
   private static final Pattern CACHE_FILE_PATTERN_V3 = Pattern.compile(
       "^(\\d+)\\.(\\d+)\\.(\\d+)\\.v3\\.exo$", Pattern.DOTALL);
 
-  public static File getCacheFile(File cacheDir, int id, long position,
-      long lastAccessTimestamp) {
-    return new File(cacheDir, id + "." + position + "." + lastAccessTimestamp + SUFFIX);
+  
+
+
+
+
+
+
+
+
+
+  public static File getCacheFile(File cacheDir, int id, long position, long timestamp) {
+    return new File(cacheDir, id + "." + position + "." + timestamp + SUFFIX);
   }
+
+  
+
+
+
+
+
 
   public static SimpleCacheSpan createLookup(String key, long position) {
     return new SimpleCacheSpan(key, position, C.LENGTH_UNSET, C.TIME_UNSET, null);
   }
 
+  
+
+
+
+
+
+
   public static SimpleCacheSpan createOpenHole(String key, long position) {
     return new SimpleCacheSpan(key, position, C.LENGTH_UNSET, C.TIME_UNSET, null);
   }
+
+  
+
+
+
+
+
+
 
   public static SimpleCacheSpan createClosedHole(String key, long position, long length) {
     return new SimpleCacheSpan(key, position, length, C.TIME_UNSET, null);
@@ -60,13 +92,35 @@ import java.util.regex.Pattern;
 
 
 
-  public static SimpleCacheSpan createCacheEntry(File file, CachedContentIndex index) {
+
+
+  @Nullable
+  public static SimpleCacheSpan createCacheEntry(File file, long length, CachedContentIndex index) {
+    return createCacheEntry(file, length,  C.TIME_UNSET, index);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  @Nullable
+  public static SimpleCacheSpan createCacheEntry(
+      File file, long length, long lastTouchTimestamp, CachedContentIndex index) {
     String name = file.getName();
     if (!name.endsWith(SUFFIX)) {
-      file = upgradeFile(file, index);
-      if (file == null) {
+      @Nullable File upgradedFile = upgradeFile(file, index);
+      if (upgradedFile == null) {
         return null;
       }
+      file = upgradedFile;
       name = file.getName();
     }
 
@@ -74,13 +128,36 @@ import java.util.regex.Pattern;
     if (!matcher.matches()) {
       return null;
     }
-    long length = file.length();
+
     int id = Integer.parseInt(matcher.group(1));
     String key = index.getKeyForId(id);
-    return key == null ? null : new SimpleCacheSpan(key, Long.parseLong(matcher.group(2)), length,
-        Long.parseLong(matcher.group(3)), file);
+    if (key == null) {
+      return null;
+    }
+
+    if (length == C.LENGTH_UNSET) {
+      length = file.length();
+    }
+    if (length == 0) {
+      return null;
+    }
+
+    long position = Long.parseLong(matcher.group(2));
+    if (lastTouchTimestamp == C.TIME_UNSET) {
+      lastTouchTimestamp = Long.parseLong(matcher.group(3));
+    }
+    return new SimpleCacheSpan(key, position, length, lastTouchTimestamp, file);
   }
 
+  
+
+
+
+
+
+
+
+  @Nullable
   private static File upgradeFile(File file, CachedContentIndex index) {
     String key;
     String filename = file.getName();
@@ -98,17 +175,16 @@ import java.util.regex.Pattern;
       key = matcher.group(1); 
     }
 
-    File newCacheFile = getCacheFile(file.getParentFile(), index.assignIdForKey(key),
-        Long.parseLong(matcher.group(2)), Long.parseLong(matcher.group(3)));
+    File newCacheFile =
+        getCacheFile(
+            Assertions.checkStateNotNull(file.getParentFile()),
+            index.assignIdForKey(key),
+            Long.parseLong(matcher.group(2)),
+            Long.parseLong(matcher.group(3)));
     if (!file.renameTo(newCacheFile)) {
       return null;
     }
     return newCacheFile;
-  }
-
-  private SimpleCacheSpan(String key, long position, long length, long lastAccessTimestamp,
-      File file) {
-    super(key, position, length, lastAccessTimestamp, file);
   }
 
   
@@ -119,11 +195,23 @@ import java.util.regex.Pattern;
 
 
 
-  public SimpleCacheSpan copyWithUpdatedLastAccessTime(int id) {
+
+  private SimpleCacheSpan(
+      String key, long position, long length, long lastTouchTimestamp, @Nullable File file) {
+    super(key, position, length, lastTouchTimestamp, file);
+  }
+
+  
+
+
+
+
+
+
+
+  public SimpleCacheSpan copyWithFileAndLastTouchTimestamp(File file, long lastTouchTimestamp) {
     Assertions.checkState(isCached);
-    long now = System.currentTimeMillis();
-    File newCacheFile = getCacheFile(file.getParentFile(), id, position, now);
-    return new SimpleCacheSpan(key, position, length, now, newCacheFile);
+    return new SimpleCacheSpan(key, position, length, lastTouchTimestamp, file);
   }
 
 }

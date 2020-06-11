@@ -59,4 +59,25 @@ public final class ConditionVariable {
     }
   }
 
+  
+
+
+
+
+
+
+  public synchronized boolean block(long timeout) throws InterruptedException {
+    long now = android.os.SystemClock.elapsedRealtime();
+    long end = now + timeout;
+    while (!isOpen && now < end) {
+      wait(end - now);
+      now = android.os.SystemClock.elapsedRealtime();
+    }
+    return isOpen;
+  }
+
+  
+  public synchronized boolean isOpen() {
+    return isOpen;
+  }
 }

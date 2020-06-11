@@ -15,6 +15,10 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.util;
 
+import android.os.Handler;
+import android.os.Looper;
+import androidx.annotation.Nullable;
+
 
 
 
@@ -24,8 +28,22 @@ public interface Clock {
   
 
 
+  Clock DEFAULT = new SystemClock();
 
-
+  
   long elapsedRealtime();
 
+  
+  long uptimeMillis();
+
+  
+  void sleep(long sleepTimeMs);
+
+  
+
+
+
+
+
+  HandlerWrapper createHandler(Looper looper, @Nullable Handler.Callback callback);
 }

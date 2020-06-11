@@ -47,6 +47,7 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.video.AvcConfig;
 
   
   private boolean hasOutputFormat;
+  private boolean hasOutputKeyframe;
   private int frameType;
 
   
@@ -60,7 +61,7 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.video.AvcConfig;
 
   @Override
   public void seek() {
-    
+    hasOutputKeyframe = false;
   }
 
   @Override
@@ -77,9 +78,10 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.video.AvcConfig;
   }
 
   @Override
-  protected void parsePayload(ParsableByteArray data, long timeUs) throws ParserException {
+  protected boolean parsePayload(ParsableByteArray data, long timeUs) throws ParserException {
     int packetType = data.readUnsignedByte();
-    int compositionTimeMs = data.readUnsignedInt24();
+    int compositionTimeMs = data.readInt24();
+
     timeUs += compositionTimeMs * 1000L;
     
     if (packetType == AVC_PACKET_TYPE_SEQUENCE_HEADER && !hasOutputFormat) {
@@ -93,7 +95,12 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.video.AvcConfig;
           avcConfig.initializationData, Format.NO_VALUE, avcConfig.pixelWidthAspectRatio, null);
       output.format(format);
       hasOutputFormat = true;
+      return false;
     } else if (packetType == AVC_PACKET_TYPE_AVC_NALU && hasOutputFormat) {
+      boolean isKeyframe = frameType == VIDEO_FRAME_KEYFRAME;
+      if (!hasOutputKeyframe && !isKeyframe) {
+        return false;
+      }
       
       
       
@@ -122,8 +129,12 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.video.AvcConfig;
         output.sampleData(data, bytesToWrite);
         bytesWritten += bytesToWrite;
       }
-      output.sampleMetadata(timeUs, frameType == VIDEO_FRAME_KEYFRAME ? C.BUFFER_FLAG_KEY_FRAME : 0,
-          bytesWritten, 0, null);
+      output.sampleMetadata(
+          timeUs, isKeyframe ? C.BUFFER_FLAG_KEY_FRAME : 0, bytesWritten, 0, null);
+      hasOutputKeyframe = true;
+      return true;
+    } else {
+      return false;
     }
   }
 

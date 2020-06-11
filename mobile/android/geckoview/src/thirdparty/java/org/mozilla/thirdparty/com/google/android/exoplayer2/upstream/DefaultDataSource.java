@@ -17,9 +17,22 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream;
 
 import android.content.Context;
 import android.net.Uri;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Log;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+
+
+
+
+
+
 
 
 
@@ -38,15 +51,28 @@ import java.io.IOException;
 
 public final class DefaultDataSource implements DataSource {
 
+  private static final String TAG = "DefaultDataSource";
+
   private static final String SCHEME_ASSET = "asset";
   private static final String SCHEME_CONTENT = "content";
+  private static final String SCHEME_RTMP = "rtmp";
+  private static final String SCHEME_UDP = "udp";
+  private static final String SCHEME_RAW = RawResourceDataSource.RAW_RESOURCE_SCHEME;
 
+  private final Context context;
+  private final List<TransferListener> transferListeners;
   private final DataSource baseDataSource;
-  private final DataSource fileDataSource;
-  private final DataSource assetDataSource;
-  private final DataSource contentDataSource;
 
-  private DataSource dataSource;
+  
+  @Nullable private DataSource fileDataSource;
+  @Nullable private DataSource assetDataSource;
+  @Nullable private DataSource contentDataSource;
+  @Nullable private DataSource rtmpDataSource;
+  @Nullable private DataSource udpDataSource;
+  @Nullable private DataSource dataSchemeDataSource;
+  @Nullable private DataSource rawResourceDataSource;
+
+  @Nullable private DataSource dataSource;
 
   
 
@@ -56,11 +82,13 @@ public final class DefaultDataSource implements DataSource {
 
 
 
-
-  public DefaultDataSource(Context context, TransferListener<? super DataSource> listener,
-      String userAgent, boolean allowCrossProtocolRedirects) {
-    this(context, listener, userAgent, DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
-        DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS, allowCrossProtocolRedirects);
+  public DefaultDataSource(Context context, String userAgent, boolean allowCrossProtocolRedirects) {
+    this(
+        context,
+        userAgent,
+        DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
+        DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
+        allowCrossProtocolRedirects);
   }
 
   
@@ -75,13 +103,20 @@ public final class DefaultDataSource implements DataSource {
 
 
 
-
-  public DefaultDataSource(Context context, TransferListener<? super DataSource> listener,
-      String userAgent, int connectTimeoutMillis, int readTimeoutMillis,
+  public DefaultDataSource(
+      Context context,
+      String userAgent,
+      int connectTimeoutMillis,
+      int readTimeoutMillis,
       boolean allowCrossProtocolRedirects) {
-    this(context, listener,
-        new DefaultHttpDataSource(userAgent, null, listener, connectTimeoutMillis,
-            readTimeoutMillis, allowCrossProtocolRedirects, null));
+    this(
+        context,
+        new DefaultHttpDataSource(
+            userAgent,
+            connectTimeoutMillis,
+            readTimeoutMillis,
+            allowCrossProtocolRedirects,
+             null));
   }
 
   
@@ -92,13 +127,23 @@ public final class DefaultDataSource implements DataSource {
 
 
 
-
-  public DefaultDataSource(Context context, TransferListener<? super DataSource> listener,
-      DataSource baseDataSource) {
+  public DefaultDataSource(Context context, DataSource baseDataSource) {
+    this.context = context.getApplicationContext();
     this.baseDataSource = Assertions.checkNotNull(baseDataSource);
-    this.fileDataSource = new FileDataSource(listener);
-    this.assetDataSource = new AssetDataSource(context, listener);
-    this.contentDataSource = new ContentDataSource(context, listener);
+    transferListeners = new ArrayList<>();
+  }
+
+  @Override
+  public void addTransferListener(TransferListener transferListener) {
+    baseDataSource.addTransferListener(transferListener);
+    transferListeners.add(transferListener);
+    maybeAddListenerToDataSource(fileDataSource, transferListener);
+    maybeAddListenerToDataSource(assetDataSource, transferListener);
+    maybeAddListenerToDataSource(contentDataSource, transferListener);
+    maybeAddListenerToDataSource(rtmpDataSource, transferListener);
+    maybeAddListenerToDataSource(udpDataSource, transferListener);
+    maybeAddListenerToDataSource(dataSchemeDataSource, transferListener);
+    maybeAddListenerToDataSource(rawResourceDataSource, transferListener);
   }
 
   @Override
@@ -107,15 +152,24 @@ public final class DefaultDataSource implements DataSource {
     
     String scheme = dataSpec.uri.getScheme();
     if (Util.isLocalFileUri(dataSpec.uri)) {
-      if (dataSpec.uri.getPath().startsWith("/android_asset/")) {
-        dataSource = assetDataSource;
+      String uriPath = dataSpec.uri.getPath();
+      if (uriPath != null && uriPath.startsWith("/android_asset/")) {
+        dataSource = getAssetDataSource();
       } else {
-        dataSource = fileDataSource;
+        dataSource = getFileDataSource();
       }
     } else if (SCHEME_ASSET.equals(scheme)) {
-      dataSource = assetDataSource;
+      dataSource = getAssetDataSource();
     } else if (SCHEME_CONTENT.equals(scheme)) {
-      dataSource = contentDataSource;
+      dataSource = getContentDataSource();
+    } else if (SCHEME_RTMP.equals(scheme)) {
+      dataSource = getRtmpDataSource();
+    } else if (SCHEME_UDP.equals(scheme)) {
+      dataSource = getUdpDataSource();
+    } else if (DataSchemeDataSource.SCHEME_DATA.equals(scheme)) {
+      dataSource = getDataSchemeDataSource();
+    } else if (SCHEME_RAW.equals(scheme)) {
+      dataSource = getRawResourceDataSource();
     } else {
       dataSource = baseDataSource;
     }
@@ -125,12 +179,18 @@ public final class DefaultDataSource implements DataSource {
 
   @Override
   public int read(byte[] buffer, int offset, int readLength) throws IOException {
-    return dataSource.read(buffer, offset, readLength);
+    return Assertions.checkNotNull(dataSource).read(buffer, offset, readLength);
   }
 
   @Override
+  @Nullable
   public Uri getUri() {
     return dataSource == null ? null : dataSource.getUri();
+  }
+
+  @Override
+  public Map<String, List<String>> getResponseHeaders() {
+    return dataSource == null ? Collections.emptyMap() : dataSource.getResponseHeaders();
   }
 
   @Override
@@ -144,4 +204,86 @@ public final class DefaultDataSource implements DataSource {
     }
   }
 
+  private DataSource getUdpDataSource() {
+    if (udpDataSource == null) {
+      udpDataSource = new UdpDataSource();
+      addListenersToDataSource(udpDataSource);
+    }
+    return udpDataSource;
+  }
+
+  private DataSource getFileDataSource() {
+    if (fileDataSource == null) {
+      fileDataSource = new FileDataSource();
+      addListenersToDataSource(fileDataSource);
+    }
+    return fileDataSource;
+  }
+
+  private DataSource getAssetDataSource() {
+    if (assetDataSource == null) {
+      assetDataSource = new AssetDataSource(context);
+      addListenersToDataSource(assetDataSource);
+    }
+    return assetDataSource;
+  }
+
+  private DataSource getContentDataSource() {
+    if (contentDataSource == null) {
+      contentDataSource = new ContentDataSource(context);
+      addListenersToDataSource(contentDataSource);
+    }
+    return contentDataSource;
+  }
+
+  private DataSource getRtmpDataSource() {
+    if (rtmpDataSource == null) {
+      try {
+        
+        Class<?> clazz = Class.forName("com.google.android.exoplayer2.ext.rtmp.RtmpDataSource");
+        rtmpDataSource = (DataSource) clazz.getConstructor().newInstance();
+        
+        addListenersToDataSource(rtmpDataSource);
+      } catch (ClassNotFoundException e) {
+        
+        Log.w(TAG, "Attempting to play RTMP stream without depending on the RTMP extension");
+      } catch (Exception e) {
+        
+        throw new RuntimeException("Error instantiating RTMP extension", e);
+      }
+      if (rtmpDataSource == null) {
+        rtmpDataSource = baseDataSource;
+      }
+    }
+    return rtmpDataSource;
+  }
+
+  private DataSource getDataSchemeDataSource() {
+    if (dataSchemeDataSource == null) {
+      dataSchemeDataSource = new DataSchemeDataSource();
+      addListenersToDataSource(dataSchemeDataSource);
+    }
+    return dataSchemeDataSource;
+  }
+
+  private DataSource getRawResourceDataSource() {
+    if (rawResourceDataSource == null) {
+      rawResourceDataSource = new RawResourceDataSource(context);
+      addListenersToDataSource(rawResourceDataSource);
+    }
+    return rawResourceDataSource;
+  }
+
+  private void addListenersToDataSource(DataSource dataSource) {
+    for (int i = 0; i < transferListeners.size(); i++) {
+      dataSource.addTransferListener(transferListeners.get(i));
+    }
+  }
+
+  private void maybeAddListenerToDataSource(
+      @Nullable DataSource dataSource, TransferListener listener) {
+    if (dataSource != null) {
+      dataSource.addTransferListener(listener);
+    }
+  }
 }

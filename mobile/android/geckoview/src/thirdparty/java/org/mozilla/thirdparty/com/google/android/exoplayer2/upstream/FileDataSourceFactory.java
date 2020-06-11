@@ -15,24 +15,24 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream;
 
+import androidx.annotation.Nullable;
 
 
-
+@Deprecated
 public final class FileDataSourceFactory implements DataSource.Factory {
 
-  private final TransferListener<? super FileDataSource> listener;
+  private final FileDataSource.Factory wrappedFactory;
 
   public FileDataSourceFactory() {
-    this(null);
+    this( null);
   }
 
-  public FileDataSourceFactory(TransferListener<? super FileDataSource> listener) {
-    this.listener = listener;
+  public FileDataSourceFactory(@Nullable TransferListener listener) {
+    wrappedFactory = new FileDataSource.Factory().setListener(listener);
   }
 
   @Override
-  public DataSource createDataSource() {
-    return new FileDataSource(listener);
+  public FileDataSource createDataSource() {
+    return wrappedFactory.createDataSource();
   }
-
 }

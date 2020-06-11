@@ -15,6 +15,9 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2;
 
+import androidx.annotation.Nullable;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+
 
 
 
@@ -23,17 +26,17 @@ public final class PlaybackParameters {
   
 
 
-  public static final PlaybackParameters DEFAULT = new PlaybackParameters(1f, 1f);
+
+  public static final PlaybackParameters DEFAULT = new PlaybackParameters( 1f);
 
   
-
-
   public final float speed;
 
   
-
-
   public final float pitch;
+
+  
+  public final boolean skipSilence;
 
   private final int scaledUsPerMs;
 
@@ -42,10 +45,34 @@ public final class PlaybackParameters {
 
 
 
+  public PlaybackParameters(float speed) {
+    this(speed,  1f,  false);
+  }
+
+  
+
+
+
+
 
   public PlaybackParameters(float speed, float pitch) {
+    this(speed, pitch,  false);
+  }
+
+  
+
+
+
+
+
+
+
+  public PlaybackParameters(float speed, float pitch, boolean skipSilence) {
+    Assertions.checkArgument(speed > 0);
+    Assertions.checkArgument(pitch > 0);
     this.speed = speed;
     this.pitch = pitch;
+    this.skipSilence = skipSilence;
     scaledUsPerMs = Math.round(speed * 1000f);
   }
 
@@ -56,12 +83,12 @@ public final class PlaybackParameters {
 
 
 
-  public long getSpeedAdjustedDurationUs(long timeMs) {
+  public long getMediaTimeUsForPlayoutTimeMs(long timeMs) {
     return timeMs * scaledUsPerMs;
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     if (this == obj) {
       return true;
     }
@@ -69,14 +96,17 @@ public final class PlaybackParameters {
       return false;
     }
     PlaybackParameters other = (PlaybackParameters) obj;
-    return this.speed == other.speed && this.pitch == other.pitch;
+    return this.speed == other.speed
+        && this.pitch == other.pitch
+        && this.skipSilence == other.skipSilence;
   }
-  
+
   @Override
   public int hashCode() {
     int result = 17;
     result = 31 * result + Float.floatToRawIntBits(speed);
     result = 31 * result + Float.floatToRawIntBits(pitch);
+    result = 31 * result + (skipSilence ? 1 : 0);
     return result;
   }
 

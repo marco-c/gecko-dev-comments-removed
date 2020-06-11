@@ -117,9 +117,6 @@ public final class DefaultAllocator implements Allocator {
           Math.max(availableAllocations.length * 2, availableCount + allocations.length));
     }
     for (Allocation allocation : allocations) {
-      
-      Assertions.checkArgument(allocation.data == initialAllocationBlock
-          || allocation.data.length == individualAllocationSize);
       availableAllocations[availableCount++] = allocation;
     }
     allocatedCount -= allocations.length;

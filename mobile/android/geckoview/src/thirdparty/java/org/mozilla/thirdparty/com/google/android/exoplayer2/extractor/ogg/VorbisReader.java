@@ -15,9 +15,11 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ogg;
 
+import androidx.annotation.VisibleForTesting;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.ParserException;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ogg.VorbisUtil.Mode;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.VorbisUtil;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.VorbisUtil.Mode;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
 import java.io.IOException;
@@ -101,13 +103,13 @@ import java.util.ArrayList;
     codecInitialisationData.add(vorbisSetup.setupHeaderData);
 
     setupData.format = Format.createAudioSampleFormat(null, MimeTypes.AUDIO_VORBIS, null,
-        this.vorbisSetup.idHeader.bitrateNominal, OggPageHeader.MAX_PAGE_PAYLOAD,
+        this.vorbisSetup.idHeader.bitrateNominal, Format.NO_VALUE,
         this.vorbisSetup.idHeader.channels, (int) this.vorbisSetup.idHeader.sampleRate,
         codecInitialisationData, null, 0, null);
     return true;
   }
 
-  
+  @VisibleForTesting
    VorbisSetup readSetupHeaders(ParsableByteArray scratch) throws IOException {
 
     if (vorbisIdHeader == null) {
@@ -141,19 +143,19 @@ import java.util.ArrayList;
 
 
 
-  
+  @VisibleForTesting
    static int readBits(byte src, int length, int leastSignificantBitIndex) {
     return (src >> leastSignificantBitIndex) & (255 >>> (8 - length));
   }
 
-  
-   static void appendNumberOfSamples(ParsableByteArray buffer,
-      long packetSampleCount) {
+  @VisibleForTesting
+   static void appendNumberOfSamples(
+      ParsableByteArray buffer, long packetSampleCount) {
 
     buffer.setLimit(buffer.limit() + 4);
     
     
-    buffer.data[buffer.limit() - 4] = (byte) ((packetSampleCount) & 0xFF);
+    buffer.data[buffer.limit() - 4] = (byte) (packetSampleCount & 0xFF);
     buffer.data[buffer.limit() - 3] = (byte) ((packetSampleCount >>> 8) & 0xFF);
     buffer.data[buffer.limit() - 2] = (byte) ((packetSampleCount >>> 16) & 0xFF);
     buffer.data[buffer.limit() - 1] = (byte) ((packetSampleCount >>> 24) & 0xFF);

@@ -15,6 +15,8 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.util;
 
+import androidx.annotation.Nullable;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
@@ -30,9 +32,9 @@ public final class ParsableByteArray {
   private int limit;
 
   
-
-
-  public ParsableByteArray() {}
+  public ParsableByteArray() {
+    data = Util.EMPTY_BYTE_ARRAY;
+  }
 
   
 
@@ -66,6 +68,12 @@ public final class ParsableByteArray {
   }
 
   
+  public void reset() {
+    position = 0;
+    limit = 0;
+  }
+
+  
 
 
 
@@ -81,18 +89,20 @@ public final class ParsableByteArray {
 
 
 
-  public void reset(byte[] data, int limit) {
-    this.data = data;
-    this.limit = limit;
-    position = 0;
+  public void reset(byte[] data) {
+    reset(data, data.length);
   }
 
   
 
 
-  public void reset() {
+
+
+
+  public void reset(byte[] data, int limit) {
+    this.data = data;
+    this.limit = limit;
     position = 0;
-    limit = 0;
   }
 
   
@@ -130,7 +140,7 @@ public final class ParsableByteArray {
 
 
   public int capacity() {
-    return data == null ? 0 : data.length;
+    return data.length;
   }
 
   
@@ -251,6 +261,15 @@ public final class ParsableByteArray {
 
   public int readUnsignedInt24() {
     return (data[position++] & 0xFF) << 16
+        | (data[position++] & 0xFF) << 8
+        | (data[position++] & 0xFF);
+  }
+
+  
+
+
+  public int readInt24() {
+    return ((data[position++] & 0xFF) << 24) >> 8
         | (data[position++] & 0xFF) << 8
         | (data[position++] & 0xFF);
   }
@@ -428,7 +447,7 @@ public final class ParsableByteArray {
 
 
   public String readString(int length) {
-    return readString(length, Charset.defaultCharset());
+    return readString(length, Charset.forName(C.UTF8_NAME));
   }
 
   
@@ -460,7 +479,7 @@ public final class ParsableByteArray {
     if (lastIndex < limit && data[lastIndex] == 0) {
       stringLength--;
     }
-    String result = new String(data, position, stringLength);
+    String result = Util.fromUtf8Bytes(data, position, stringLength);
     position += length;
     return result;
   }
@@ -471,6 +490,7 @@ public final class ParsableByteArray {
 
 
 
+  @Nullable
   public String readNullTerminatedString() {
     if (bytesLeft() == 0) {
       return null;
@@ -479,7 +499,7 @@ public final class ParsableByteArray {
     while (stringLimit < limit && data[stringLimit] != 0) {
       stringLimit++;
     }
-    String string = new String(data, position, stringLimit - position);
+    String string = Util.fromUtf8Bytes(data, position, stringLimit - position);
     position = stringLimit;
     if (position < limit) {
       position++;
@@ -497,6 +517,7 @@ public final class ParsableByteArray {
 
 
 
+  @Nullable
   public String readLine() {
     if (bytesLeft() == 0) {
       return null;
@@ -510,7 +531,7 @@ public final class ParsableByteArray {
       
       position += 3;
     }
-    String line = new String(data, position, lineLimit - position);
+    String line = Util.fromUtf8Bytes(data, position, lineLimit - position);
     position = lineLimit;
     if (position == limit) {
       return line;

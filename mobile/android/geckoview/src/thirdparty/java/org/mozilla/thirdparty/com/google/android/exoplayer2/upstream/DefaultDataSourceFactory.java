@@ -16,6 +16,7 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream;
 
 import android.content.Context;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource.Factory;
 
 
@@ -25,7 +26,7 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource.
 public final class DefaultDataSourceFactory implements Factory {
 
   private final Context context;
-  private final TransferListener<? super DataSource> listener;
+  @Nullable private final TransferListener listener;
   private final DataSource.Factory baseDataSourceFactory;
 
   
@@ -33,7 +34,7 @@ public final class DefaultDataSourceFactory implements Factory {
 
 
   public DefaultDataSourceFactory(Context context, String userAgent) {
-    this(context, userAgent, null);
+    this(context, userAgent,  null);
   }
 
   
@@ -41,8 +42,8 @@ public final class DefaultDataSourceFactory implements Factory {
 
 
 
-  public DefaultDataSourceFactory(Context context, String userAgent,
-      TransferListener<? super DataSource> listener) {
+  public DefaultDataSourceFactory(
+      Context context, String userAgent, @Nullable TransferListener listener) {
     this(context, listener, new DefaultHttpDataSourceFactory(userAgent, listener));
   }
 
@@ -52,8 +53,20 @@ public final class DefaultDataSourceFactory implements Factory {
 
 
 
+  public DefaultDataSourceFactory(Context context, DataSource.Factory baseDataSourceFactory) {
+    this(context,  null, baseDataSourceFactory);
+  }
 
-  public DefaultDataSourceFactory(Context context, TransferListener<? super DataSource> listener,
+  
+
+
+
+
+
+
+  public DefaultDataSourceFactory(
+      Context context,
+      @Nullable TransferListener listener,
       DataSource.Factory baseDataSourceFactory) {
     this.context = context.getApplicationContext();
     this.listener = listener;
@@ -62,7 +75,11 @@ public final class DefaultDataSourceFactory implements Factory {
 
   @Override
   public DefaultDataSource createDataSource() {
-    return new DefaultDataSource(context, listener, baseDataSourceFactory.createDataSource());
+    DefaultDataSource dataSource =
+        new DefaultDataSource(context, baseDataSourceFactory.createDataSource());
+    if (listener != null) {
+      dataSource.addTransferListener(listener);
+    }
+    return dataSource;
   }
-
 }

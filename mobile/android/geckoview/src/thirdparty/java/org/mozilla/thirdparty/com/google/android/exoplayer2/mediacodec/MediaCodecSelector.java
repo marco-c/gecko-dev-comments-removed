@@ -16,7 +16,9 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.mediacodec;
 
 import android.media.MediaCodec;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.mediacodec.MediaCodecUtil.DecoderQueryException;
+import java.util.List;
 
 
 
@@ -26,20 +28,23 @@ public interface MediaCodecSelector {
   
 
 
-  MediaCodecSelector DEFAULT = new MediaCodecSelector() {
 
-    @Override
-    public MediaCodecInfo getDecoderInfo(String mimeType, boolean requiresSecureDecoder)
-        throws DecoderQueryException {
-      return MediaCodecUtil.getDecoderInfo(mimeType, requiresSecureDecoder);
-    }
+  MediaCodecSelector DEFAULT =
+      new MediaCodecSelector() {
+        @Override
+        public List<MediaCodecInfo> getDecoderInfos(
+            String mimeType, boolean requiresSecureDecoder, boolean requiresTunnelingDecoder)
+            throws DecoderQueryException {
+          return MediaCodecUtil.getDecoderInfos(
+              mimeType, requiresSecureDecoder, requiresTunnelingDecoder);
+        }
 
-    @Override
-    public MediaCodecInfo getPassthroughDecoderInfo() throws DecoderQueryException {
-      return MediaCodecUtil.getPassthroughDecoderInfo();
-    }
-
-  };
+        @Override
+        @Nullable
+        public MediaCodecInfo getPassthroughDecoderInfo() throws DecoderQueryException {
+          return MediaCodecUtil.getPassthroughDecoderInfo();
+        }
+      };
 
   
 
@@ -49,7 +54,10 @@ public interface MediaCodecSelector {
 
 
 
-  MediaCodecInfo getDecoderInfo(String mimeType, boolean requiresSecureDecoder)
+
+
+  List<MediaCodecInfo> getDecoderInfos(
+      String mimeType, boolean requiresSecureDecoder, boolean requiresTunnelingDecoder)
       throws DecoderQueryException;
 
   
@@ -58,7 +66,6 @@ public interface MediaCodecSelector {
 
 
 
-
+  @Nullable
   MediaCodecInfo getPassthroughDecoderInfo() throws DecoderQueryException;
-
 }

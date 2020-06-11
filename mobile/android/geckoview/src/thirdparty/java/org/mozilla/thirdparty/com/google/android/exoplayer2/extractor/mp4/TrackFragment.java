@@ -190,4 +190,8 @@ import java.io.IOException;
     return sampleDecodingTimeTable[index] + sampleCompositionTimeOffsetTable[index];
   }
 
+  
+  public boolean sampleHasSubsampleEncryptionTable(int index) {
+    return definesEncryptionData && sampleHasSubsampleEncryptionTable[index];
+  }
 }

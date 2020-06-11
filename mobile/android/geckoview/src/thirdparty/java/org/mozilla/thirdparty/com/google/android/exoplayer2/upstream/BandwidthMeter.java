@@ -15,6 +15,9 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream;
 
+import android.os.Handler;
+import androidx.annotation.Nullable;
+
 
 
 
@@ -36,19 +39,33 @@ public interface BandwidthMeter {
 
 
 
-    void onBandwidthSample(int elapsedMs, long bytes, long bitrate);
 
+
+    void onBandwidthSample(int elapsedMs, long bytesTransferred, long bitrateEstimate);
   }
 
   
-
-
-  long NO_ESTIMATE = -1;
+  long getBitrateEstimate();
 
   
 
 
 
-  long getBitrateEstimate();
+  @Nullable
+  TransferListener getTransferListener();
 
+  
+
+
+
+
+
+  void addEventListener(Handler eventHandler, EventListener eventListener);
+
+  
+
+
+
+
+  void removeEventListener(EventListener eventListener);
 }

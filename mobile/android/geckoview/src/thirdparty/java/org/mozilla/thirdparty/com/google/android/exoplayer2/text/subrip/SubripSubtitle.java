@@ -61,7 +61,7 @@ import java.util.List;
   @Override
   public List<Cue> getCues(long timeUs) {
     int index = Util.binarySearchFloor(cueTimesUs, timeUs, true, false);
-    if (index == -1 || cues[index] == null) {
+    if (index == -1 || cues[index] == Cue.EMPTY) {
       
       return Collections.emptyList();
     } else {

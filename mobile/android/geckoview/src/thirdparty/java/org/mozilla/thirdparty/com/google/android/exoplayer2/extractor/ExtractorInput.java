@@ -18,6 +18,47 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -57,16 +98,11 @@ public interface ExtractorInput {
 
 
 
-
-
-
-
-
-
   boolean readFully(byte[] target, int offset, int length, boolean allowEndOfInput)
       throws IOException, InterruptedException;
 
   
+
 
 
 
@@ -89,6 +125,7 @@ public interface ExtractorInput {
   int skip(int length) throws IOException, InterruptedException;
 
   
+
 
 
 
@@ -136,6 +173,18 @@ public interface ExtractorInput {
 
 
 
+  int peek(byte[] target, int offset, int length) throws IOException, InterruptedException;
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
@@ -148,10 +197,6 @@ public interface ExtractorInput {
       throws IOException, InterruptedException;
 
   
-
-
-
-
 
 
 
@@ -181,12 +226,11 @@ public interface ExtractorInput {
 
 
 
-
-
   boolean advancePeekPosition(int length, boolean allowEndOfInput)
       throws IOException, InterruptedException;
 
   
+
 
 
 

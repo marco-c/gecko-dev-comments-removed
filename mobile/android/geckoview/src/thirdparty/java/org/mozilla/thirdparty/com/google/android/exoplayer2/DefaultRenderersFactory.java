@@ -16,22 +16,29 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2;
 
 import android.content.Context;
+import android.media.MediaCodec;
 import android.os.Handler;
 import android.os.Looper;
-import android.support.annotation.IntDef;
-import android.util.Log;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.audio.AudioCapabilities;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.audio.AudioProcessor;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.audio.AudioRendererEventListener;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.audio.DefaultAudioSink;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.audio.MediaCodecAudioRenderer;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.DrmSessionManager;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.FrameworkMediaCrypto;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.mediacodec.MediaCodecSelector;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.MetadataOutput;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.MetadataRenderer;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.text.TextOutput;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.text.TextRenderer;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.trackselection.TrackSelector;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Log;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.video.MediaCodecVideoRenderer;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.video.VideoRendererEventListener;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.video.spherical.CameraMotionRenderer;
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Constructor;
@@ -51,9 +58,10 @@ public class DefaultRenderersFactory implements RenderersFactory {
   
 
 
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef({EXTENSION_RENDERER_MODE_OFF, EXTENSION_RENDERER_MODE_ON,
-      EXTENSION_RENDERER_MODE_PREFER})
+  @IntDef({EXTENSION_RENDERER_MODE_OFF, EXTENSION_RENDERER_MODE_ON, EXTENSION_RENDERER_MODE_PREFER})
   public @interface ExtensionRendererMode {}
   
 
@@ -79,24 +87,29 @@ public class DefaultRenderersFactory implements RenderersFactory {
   protected static final int MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY = 50;
 
   private final Context context;
-  private final DrmSessionManager<FrameworkMediaCrypto> drmSessionManager;
-  private final @ExtensionRendererMode int extensionRendererMode;
-  private final long allowedVideoJoiningTimeMs;
+  @Nullable private DrmSessionManager<FrameworkMediaCrypto> drmSessionManager;
+  @ExtensionRendererMode private int extensionRendererMode;
+  private long allowedVideoJoiningTimeMs;
+  private boolean playClearSamplesWithoutKeys;
+  private boolean enableDecoderFallback;
+  private MediaCodecSelector mediaCodecSelector;
 
   
-
-
   public DefaultRenderersFactory(Context context) {
-    this(context, null);
+    this.context = context;
+    extensionRendererMode = EXTENSION_RENDERER_MODE_OFF;
+    allowedVideoJoiningTimeMs = DEFAULT_ALLOWED_VIDEO_JOINING_TIME_MS;
+    mediaCodecSelector = MediaCodecSelector.DEFAULT;
   }
 
   
 
 
 
-
-  public DefaultRenderersFactory(Context context,
-      DrmSessionManager<FrameworkMediaCrypto> drmSessionManager) {
+  @Deprecated
+  @SuppressWarnings("deprecation")
+  public DefaultRenderersFactory(
+      Context context, @Nullable DrmSessionManager<FrameworkMediaCrypto> drmSessionManager) {
     this(context, drmSessionManager, EXTENSION_RENDERER_MODE_OFF);
   }
 
@@ -104,15 +117,56 @@ public class DefaultRenderersFactory implements RenderersFactory {
 
 
 
+  @Deprecated
+  @SuppressWarnings("deprecation")
+  public DefaultRenderersFactory(
+      Context context, @ExtensionRendererMode int extensionRendererMode) {
+    this(context, extensionRendererMode, DEFAULT_ALLOWED_VIDEO_JOINING_TIME_MS);
+  }
+
+  
 
 
 
 
-  public DefaultRenderersFactory(Context context,
-      DrmSessionManager<FrameworkMediaCrypto> drmSessionManager,
+  @Deprecated
+  @SuppressWarnings("deprecation")
+  public DefaultRenderersFactory(
+      Context context,
+      @Nullable DrmSessionManager<FrameworkMediaCrypto> drmSessionManager,
       @ExtensionRendererMode int extensionRendererMode) {
-    this(context, drmSessionManager, extensionRendererMode,
-        DEFAULT_ALLOWED_VIDEO_JOINING_TIME_MS);
+    this(context, drmSessionManager, extensionRendererMode, DEFAULT_ALLOWED_VIDEO_JOINING_TIME_MS);
+  }
+
+  
+
+
+
+  @Deprecated
+  @SuppressWarnings("deprecation")
+  public DefaultRenderersFactory(
+      Context context,
+      @ExtensionRendererMode int extensionRendererMode,
+      long allowedVideoJoiningTimeMs) {
+    this(context, null, extensionRendererMode, allowedVideoJoiningTimeMs);
+  }
+
+  
+
+
+
+
+  @Deprecated
+  public DefaultRenderersFactory(
+      Context context,
+      @Nullable DrmSessionManager<FrameworkMediaCrypto> drmSessionManager,
+      @ExtensionRendererMode int extensionRendererMode,
+      long allowedVideoJoiningTimeMs) {
+    this.context = context;
+    this.extensionRendererMode = extensionRendererMode;
+    this.allowedVideoJoiningTimeMs = allowedVideoJoiningTimeMs;
+    this.drmSessionManager = drmSessionManager;
+    mediaCodecSelector = MediaCodecSelector.DEFAULT;
   }
 
   
@@ -125,31 +179,113 @@ public class DefaultRenderersFactory implements RenderersFactory {
 
 
 
-  public DefaultRenderersFactory(Context context,
-      DrmSessionManager<FrameworkMediaCrypto> drmSessionManager,
-      @ExtensionRendererMode int extensionRendererMode, long allowedVideoJoiningTimeMs) {
-    this.context = context;
-    this.drmSessionManager = drmSessionManager;
+  public DefaultRenderersFactory setExtensionRendererMode(
+      @ExtensionRendererMode int extensionRendererMode) {
     this.extensionRendererMode = extensionRendererMode;
+    return this;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  public DefaultRenderersFactory setPlayClearSamplesWithoutKeys(
+      boolean playClearSamplesWithoutKeys) {
+    this.playClearSamplesWithoutKeys = playClearSamplesWithoutKeys;
+    return this;
+  }
+
+  
+
+
+
+
+
+
+
+  public DefaultRenderersFactory setEnableDecoderFallback(boolean enableDecoderFallback) {
+    this.enableDecoderFallback = enableDecoderFallback;
+    return this;
+  }
+
+  
+
+
+
+
+
+
+
+  public DefaultRenderersFactory setMediaCodecSelector(MediaCodecSelector mediaCodecSelector) {
+    this.mediaCodecSelector = mediaCodecSelector;
+    return this;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  public DefaultRenderersFactory setAllowedVideoJoiningTimeMs(long allowedVideoJoiningTimeMs) {
     this.allowedVideoJoiningTimeMs = allowedVideoJoiningTimeMs;
+    return this;
   }
 
   @Override
-  public Renderer[] createRenderers(Handler eventHandler,
+  public Renderer[] createRenderers(
+      Handler eventHandler,
       VideoRendererEventListener videoRendererEventListener,
       AudioRendererEventListener audioRendererEventListener,
-      TextRenderer.Output textRendererOutput, MetadataRenderer.Output metadataRendererOutput) {
+      TextOutput textRendererOutput,
+      MetadataOutput metadataRendererOutput,
+      @Nullable DrmSessionManager<FrameworkMediaCrypto> drmSessionManager) {
+    if (drmSessionManager == null) {
+      drmSessionManager = this.drmSessionManager;
+    }
     ArrayList<Renderer> renderersList = new ArrayList<>();
-    buildVideoRenderers(context, drmSessionManager, allowedVideoJoiningTimeMs,
-        eventHandler, videoRendererEventListener, extensionRendererMode, renderersList);
-    buildAudioRenderers(context, drmSessionManager, buildAudioProcessors(),
-        eventHandler, audioRendererEventListener, extensionRendererMode, renderersList);
+    buildVideoRenderers(
+        context,
+        extensionRendererMode,
+        mediaCodecSelector,
+        drmSessionManager,
+        playClearSamplesWithoutKeys,
+        enableDecoderFallback,
+        eventHandler,
+        videoRendererEventListener,
+        allowedVideoJoiningTimeMs,
+        renderersList);
+    buildAudioRenderers(
+        context,
+        extensionRendererMode,
+        mediaCodecSelector,
+        drmSessionManager,
+        playClearSamplesWithoutKeys,
+        enableDecoderFallback,
+        buildAudioProcessors(),
+        eventHandler,
+        audioRendererEventListener,
+        renderersList);
     buildTextRenderers(context, textRendererOutput, eventHandler.getLooper(),
         extensionRendererMode, renderersList);
     buildMetadataRenderers(context, metadataRendererOutput, eventHandler.getLooper(),
         extensionRendererMode, renderersList);
+    buildCameraMotionRenderers(context, extensionRendererMode, renderersList);
     buildMiscellaneousRenderers(context, eventHandler, extensionRendererMode, renderersList);
-    return renderersList.toArray(new Renderer[renderersList.size()]);
+    return renderersList.toArray(new Renderer[0]);
   }
 
   
@@ -165,13 +301,35 @@ public class DefaultRenderersFactory implements RenderersFactory {
 
 
 
-  protected void buildVideoRenderers(Context context,
-      DrmSessionManager<FrameworkMediaCrypto> drmSessionManager, long allowedVideoJoiningTimeMs,
-      Handler eventHandler, VideoRendererEventListener eventListener,
-      @ExtensionRendererMode int extensionRendererMode, ArrayList<Renderer> out) {
-    out.add(new MediaCodecVideoRenderer(context, MediaCodecSelector.DEFAULT,
-        allowedVideoJoiningTimeMs, drmSessionManager, false, eventHandler, eventListener,
-        MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY));
+
+
+
+
+
+
+
+  protected void buildVideoRenderers(
+      Context context,
+      @ExtensionRendererMode int extensionRendererMode,
+      MediaCodecSelector mediaCodecSelector,
+      @Nullable DrmSessionManager<FrameworkMediaCrypto> drmSessionManager,
+      boolean playClearSamplesWithoutKeys,
+      boolean enableDecoderFallback,
+      Handler eventHandler,
+      VideoRendererEventListener eventListener,
+      long allowedVideoJoiningTimeMs,
+      ArrayList<Renderer> out) {
+    out.add(
+        new MediaCodecVideoRenderer(
+            context,
+            mediaCodecSelector,
+            allowedVideoJoiningTimeMs,
+            drmSessionManager,
+            playClearSamplesWithoutKeys,
+            enableDecoderFallback,
+            eventHandler,
+            eventListener,
+            MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY));
 
     if (extensionRendererMode == EXTENSION_RENDERER_MODE_OFF) {
       return;
@@ -182,18 +340,57 @@ public class DefaultRenderersFactory implements RenderersFactory {
     }
 
     try {
-      Class<?> clazz =
-          Class.forName("org.mozilla.thirdparty.com.google.android.exoplayer2.ext.vp9.LibvpxVideoRenderer");
-      Constructor<?> constructor = clazz.getConstructor(boolean.class, long.class, Handler.class,
-          VideoRendererEventListener.class, int.class);
-      Renderer renderer = (Renderer) constructor.newInstance(true, allowedVideoJoiningTimeMs,
-          eventHandler, eventListener, MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY);
+      
+      
+      Class<?> clazz = Class.forName("org.mozilla.thirdparty.com.google.android.exoplayer2.ext.vp9.LibvpxVideoRenderer");
+      Constructor<?> constructor =
+          clazz.getConstructor(
+              long.class,
+              android.os.Handler.class,
+              org.mozilla.thirdparty.com.google.android.exoplayer2.video.VideoRendererEventListener.class,
+              int.class);
+      
+      Renderer renderer =
+          (Renderer)
+              constructor.newInstance(
+                  allowedVideoJoiningTimeMs,
+                  eventHandler,
+                  eventListener,
+                  MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY);
       out.add(extensionRendererIndex++, renderer);
       Log.i(TAG, "Loaded LibvpxVideoRenderer.");
     } catch (ClassNotFoundException e) {
       
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      
+      throw new RuntimeException("Error instantiating VP9 extension", e);
+    }
+
+    try {
+      
+      
+      Class<?> clazz = Class.forName("org.mozilla.thirdparty.com.google.android.exoplayer2.ext.av1.Libgav1VideoRenderer");
+      Constructor<?> constructor =
+          clazz.getConstructor(
+              long.class,
+              android.os.Handler.class,
+              org.mozilla.thirdparty.com.google.android.exoplayer2.video.VideoRendererEventListener.class,
+              int.class);
+      
+      Renderer renderer =
+          (Renderer)
+              constructor.newInstance(
+                  allowedVideoJoiningTimeMs,
+                  eventHandler,
+                  eventListener,
+                  MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY);
+      out.add(extensionRendererIndex++, renderer);
+      Log.i(TAG, "Loaded Libgav1VideoRenderer.");
+    } catch (ClassNotFoundException e) {
+      
+    } catch (Exception e) {
+      
+      throw new RuntimeException("Error instantiating AV1 extension", e);
     }
   }
 
@@ -210,13 +407,34 @@ public class DefaultRenderersFactory implements RenderersFactory {
 
 
 
-  protected void buildAudioRenderers(Context context,
-      DrmSessionManager<FrameworkMediaCrypto> drmSessionManager,
-      AudioProcessor[] audioProcessors, Handler eventHandler,
-      AudioRendererEventListener eventListener, @ExtensionRendererMode int extensionRendererMode,
+
+
+
+
+
+
+
+  protected void buildAudioRenderers(
+      Context context,
+      @ExtensionRendererMode int extensionRendererMode,
+      MediaCodecSelector mediaCodecSelector,
+      @Nullable DrmSessionManager<FrameworkMediaCrypto> drmSessionManager,
+      boolean playClearSamplesWithoutKeys,
+      boolean enableDecoderFallback,
+      AudioProcessor[] audioProcessors,
+      Handler eventHandler,
+      AudioRendererEventListener eventListener,
       ArrayList<Renderer> out) {
-    out.add(new MediaCodecAudioRenderer(MediaCodecSelector.DEFAULT, drmSessionManager, true,
-        eventHandler, eventListener, AudioCapabilities.getCapabilities(context), audioProcessors));
+    out.add(
+        new MediaCodecAudioRenderer(
+            context,
+            mediaCodecSelector,
+            drmSessionManager,
+            playClearSamplesWithoutKeys,
+            enableDecoderFallback,
+            eventHandler,
+            eventListener,
+            new DefaultAudioSink(AudioCapabilities.getCapabilities(context), audioProcessors)));
 
     if (extensionRendererMode == EXTENSION_RENDERER_MODE_OFF) {
       return;
@@ -227,48 +445,67 @@ public class DefaultRenderersFactory implements RenderersFactory {
     }
 
     try {
-      Class<?> clazz =
-          Class.forName("org.mozilla.thirdparty.com.google.android.exoplayer2.ext.opus.LibopusAudioRenderer");
-      Constructor<?> constructor = clazz.getConstructor(Handler.class,
-          AudioRendererEventListener.class, AudioProcessor[].class);
-      Renderer renderer = (Renderer) constructor.newInstance(eventHandler, eventListener,
-          audioProcessors);
+      
+      
+      Class<?> clazz = Class.forName("org.mozilla.thirdparty.com.google.android.exoplayer2.ext.opus.LibopusAudioRenderer");
+      Constructor<?> constructor =
+          clazz.getConstructor(
+              android.os.Handler.class,
+              org.mozilla.thirdparty.com.google.android.exoplayer2.audio.AudioRendererEventListener.class,
+              org.mozilla.thirdparty.com.google.android.exoplayer2.audio.AudioProcessor[].class);
+      
+      Renderer renderer =
+          (Renderer) constructor.newInstance(eventHandler, eventListener, audioProcessors);
       out.add(extensionRendererIndex++, renderer);
       Log.i(TAG, "Loaded LibopusAudioRenderer.");
     } catch (ClassNotFoundException e) {
       
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      
+      throw new RuntimeException("Error instantiating Opus extension", e);
     }
 
     try {
-      Class<?> clazz =
-          Class.forName("org.mozilla.thirdparty.com.google.android.exoplayer2.ext.flac.LibflacAudioRenderer");
-      Constructor<?> constructor = clazz.getConstructor(Handler.class,
-          AudioRendererEventListener.class, AudioProcessor[].class);
-      Renderer renderer = (Renderer) constructor.newInstance(eventHandler, eventListener,
-          audioProcessors);
+      
+      
+      Class<?> clazz = Class.forName("org.mozilla.thirdparty.com.google.android.exoplayer2.ext.flac.LibflacAudioRenderer");
+      Constructor<?> constructor =
+          clazz.getConstructor(
+              android.os.Handler.class,
+              org.mozilla.thirdparty.com.google.android.exoplayer2.audio.AudioRendererEventListener.class,
+              org.mozilla.thirdparty.com.google.android.exoplayer2.audio.AudioProcessor[].class);
+      
+      Renderer renderer =
+          (Renderer) constructor.newInstance(eventHandler, eventListener, audioProcessors);
       out.add(extensionRendererIndex++, renderer);
       Log.i(TAG, "Loaded LibflacAudioRenderer.");
     } catch (ClassNotFoundException e) {
       
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      
+      throw new RuntimeException("Error instantiating FLAC extension", e);
     }
 
     try {
+      
+      
       Class<?> clazz =
           Class.forName("org.mozilla.thirdparty.com.google.android.exoplayer2.ext.ffmpeg.FfmpegAudioRenderer");
-      Constructor<?> constructor = clazz.getConstructor(Handler.class,
-          AudioRendererEventListener.class, AudioProcessor[].class);
-      Renderer renderer = (Renderer) constructor.newInstance(eventHandler, eventListener,
-          audioProcessors);
+      Constructor<?> constructor =
+          clazz.getConstructor(
+              android.os.Handler.class,
+              org.mozilla.thirdparty.com.google.android.exoplayer2.audio.AudioRendererEventListener.class,
+              org.mozilla.thirdparty.com.google.android.exoplayer2.audio.AudioProcessor[].class);
+      
+      Renderer renderer =
+          (Renderer) constructor.newInstance(eventHandler, eventListener, audioProcessors);
       out.add(extensionRendererIndex++, renderer);
       Log.i(TAG, "Loaded FfmpegAudioRenderer.");
     } catch (ClassNotFoundException e) {
       
     } catch (Exception e) {
-      throw new RuntimeException(e);
+      
+      throw new RuntimeException("Error instantiating FFmpeg extension", e);
     }
   }
 
@@ -281,9 +518,11 @@ public class DefaultRenderersFactory implements RenderersFactory {
 
 
 
-
-  protected void buildTextRenderers(Context context, TextRenderer.Output output,
-      Looper outputLooper, @ExtensionRendererMode int extensionRendererMode,
+  protected void buildTextRenderers(
+      Context context,
+      TextOutput output,
+      Looper outputLooper,
+      @ExtensionRendererMode int extensionRendererMode,
       ArrayList<Renderer> out) {
     out.add(new TextRenderer(output, outputLooper));
   }
@@ -297,11 +536,25 @@ public class DefaultRenderersFactory implements RenderersFactory {
 
 
 
-
-  protected void buildMetadataRenderers(Context context, MetadataRenderer.Output output,
-      Looper outputLooper, @ExtensionRendererMode int extensionRendererMode,
+  protected void buildMetadataRenderers(
+      Context context,
+      MetadataOutput output,
+      Looper outputLooper,
+      @ExtensionRendererMode int extensionRendererMode,
       ArrayList<Renderer> out) {
     out.add(new MetadataRenderer(output, outputLooper));
+  }
+
+  
+
+
+
+
+
+
+  protected void buildCameraMotionRenderers(
+      Context context, @ExtensionRendererMode int extensionRendererMode, ArrayList<Renderer> out) {
+    out.add(new CameraMotionRenderer());
   }
 
   

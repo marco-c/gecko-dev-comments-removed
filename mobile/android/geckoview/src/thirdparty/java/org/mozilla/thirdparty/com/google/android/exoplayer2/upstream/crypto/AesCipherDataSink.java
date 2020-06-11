@@ -15,6 +15,9 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.crypto;
 
+import static org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util.castNonNull;
+
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSink;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSpec;
 import java.io.IOException;
@@ -27,9 +30,9 @@ public final class AesCipherDataSink implements DataSink {
 
   private final DataSink wrappedDataSink;
   private final byte[] secretKey;
-  private final byte[] scratch;
+  @Nullable private final byte[] scratch;
 
-  private AesFlushingCipher cipher;
+  @Nullable private AesFlushingCipher cipher;
 
   
 
@@ -54,7 +57,8 @@ public final class AesCipherDataSink implements DataSink {
 
 
 
-  public AesCipherDataSink(byte[] secretKey, DataSink wrappedDataSink, byte[] scratch) {
+
+  public AesCipherDataSink(byte[] secretKey, DataSink wrappedDataSink, @Nullable byte[] scratch) {
     this.wrappedDataSink = wrappedDataSink;
     this.secretKey = secretKey;
     this.scratch = scratch;
@@ -72,15 +76,16 @@ public final class AesCipherDataSink implements DataSink {
   public void write(byte[] data, int offset, int length) throws IOException {
     if (scratch == null) {
       
-      cipher.updateInPlace(data, offset, length);
+      castNonNull(cipher).updateInPlace(data, offset, length);
       wrappedDataSink.write(data, offset, length);
     } else {
       
       int bytesProcessed = 0;
       while (bytesProcessed < length) {
         int bytesToProcess = Math.min(length - bytesProcessed, scratch.length);
-        cipher.update(data, offset + bytesProcessed, bytesToProcess, scratch, 0);
-        wrappedDataSink.write(scratch, 0, bytesToProcess);
+        castNonNull(cipher)
+            .update(data, offset + bytesProcessed, bytesToProcess, scratch,  0);
+        wrappedDataSink.write(scratch,  0, bytesToProcess);
         bytesProcessed += bytesToProcess;
       }
     }
@@ -91,5 +96,4 @@ public final class AesCipherDataSink implements DataSink {
     cipher = null;
     wrappedDataSink.close();
   }
-
 }

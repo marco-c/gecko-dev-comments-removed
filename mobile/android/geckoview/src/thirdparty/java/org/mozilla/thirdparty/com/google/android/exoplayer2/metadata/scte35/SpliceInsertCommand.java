@@ -29,24 +29,72 @@ import java.util.List;
 
 public final class SpliceInsertCommand extends SpliceCommand {
 
+  
+
+
   public final long spliceEventId;
+  
+
+
   public final boolean spliceEventCancelIndicator;
+  
+
+
+
   public final boolean outOfNetworkIndicator;
+  
+
+
+
   public final boolean programSpliceFlag;
+  
+
+
+
+
+
   public final boolean spliceImmediateFlag;
+  
+
+
+
   public final long programSplicePts;
+  
+
+
   public final long programSplicePlaybackPositionUs;
+  
+
+
+
   public final List<ComponentSplice> componentSpliceList;
+  
+
+
+
+
   public final boolean autoReturn;
-  public final long breakDuration;
+  
+
+
+  public final long breakDurationUs;
+  
+
+
   public final int uniqueProgramId;
+  
+
+
   public final int availNum;
+  
+
+
   public final int availsExpected;
 
   private SpliceInsertCommand(long spliceEventId, boolean spliceEventCancelIndicator,
       boolean outOfNetworkIndicator, boolean programSpliceFlag, boolean spliceImmediateFlag,
       long programSplicePts, long programSplicePlaybackPositionUs,
-      List<ComponentSplice> componentSpliceList, boolean autoReturn, long breakDuration,
+      List<ComponentSplice> componentSpliceList, boolean autoReturn, long breakDurationUs,
       int uniqueProgramId, int availNum, int availsExpected) {
     this.spliceEventId = spliceEventId;
     this.spliceEventCancelIndicator = spliceEventCancelIndicator;
@@ -57,7 +105,7 @@ public final class SpliceInsertCommand extends SpliceCommand {
     this.programSplicePlaybackPositionUs = programSplicePlaybackPositionUs;
     this.componentSpliceList = Collections.unmodifiableList(componentSpliceList);
     this.autoReturn = autoReturn;
-    this.breakDuration = breakDuration;
+    this.breakDurationUs = breakDurationUs;
     this.uniqueProgramId = uniqueProgramId;
     this.availNum = availNum;
     this.availsExpected = availsExpected;
@@ -78,7 +126,7 @@ public final class SpliceInsertCommand extends SpliceCommand {
     }
     this.componentSpliceList = Collections.unmodifiableList(componentSpliceList);
     autoReturn = in.readByte() == 1;
-    breakDuration = in.readLong();
+    breakDurationUs = in.readLong();
     uniqueProgramId = in.readInt();
     availNum = in.readInt();
     availsExpected = in.readInt();
@@ -98,7 +146,7 @@ public final class SpliceInsertCommand extends SpliceCommand {
     int availNum = 0;
     int availsExpected = 0;
     boolean autoReturn = false;
-    long duration = C.TIME_UNSET;
+    long breakDurationUs = C.TIME_UNSET;
     if (!spliceEventCancelIndicator) {
       int headerByte = sectionData.readUnsignedByte();
       outOfNetworkIndicator = (headerByte & 0x80) != 0;
@@ -124,7 +172,8 @@ public final class SpliceInsertCommand extends SpliceCommand {
       if (durationFlag) {
         long firstByte = sectionData.readUnsignedByte();
         autoReturn = (firstByte & 0x80) != 0;
-        duration = ((firstByte & 0x01) << 32) | sectionData.readUnsignedInt();
+        long breakDuration90khz = ((firstByte & 0x01) << 32) | sectionData.readUnsignedInt();
+        breakDurationUs = breakDuration90khz * 1000 / 90;
       }
       uniqueProgramId = sectionData.readUnsignedShort();
       availNum = sectionData.readUnsignedByte();
@@ -133,7 +182,7 @@ public final class SpliceInsertCommand extends SpliceCommand {
     return new SpliceInsertCommand(spliceEventId, spliceEventCancelIndicator, outOfNetworkIndicator,
         programSpliceFlag, spliceImmediateFlag, programSplicePts,
         timestampAdjuster.adjustTsTimestamp(programSplicePts), componentSplices, autoReturn,
-        duration, uniqueProgramId, availNum, availsExpected);
+        breakDurationUs, uniqueProgramId, availNum, availsExpected);
   }
 
   
@@ -181,7 +230,7 @@ public final class SpliceInsertCommand extends SpliceCommand {
       componentSpliceList.get(i).writeToParcel(dest);
     }
     dest.writeByte((byte) (autoReturn ? 1 : 0));
-    dest.writeLong(breakDuration);
+    dest.writeLong(breakDurationUs);
     dest.writeInt(uniqueProgramId);
     dest.writeInt(availNum);
     dest.writeInt(availsExpected);

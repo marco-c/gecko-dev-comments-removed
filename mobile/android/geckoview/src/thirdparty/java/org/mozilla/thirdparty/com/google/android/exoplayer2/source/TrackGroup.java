@@ -15,6 +15,9 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
@@ -29,7 +32,7 @@ import java.util.Arrays;
 
 
 
-public final class TrackGroup {
+public final class TrackGroup implements Parcelable {
 
   
 
@@ -50,6 +53,14 @@ public final class TrackGroup {
     this.length = formats.length;
   }
 
+   TrackGroup(Parcel in) {
+    length = in.readInt();
+    formats = new Format[length];
+    for (int i = 0; i < length; i++) {
+      formats[i] = in.readParcelable(Format.class.getClassLoader());
+    }
+  }
+
   
 
 
@@ -66,6 +77,9 @@ public final class TrackGroup {
 
 
 
+
+
+  @SuppressWarnings("ReferenceEquality")
   public int indexOf(Format format) {
     for (int i = 0; i < formats.length; i++) {
       if (format == formats[i]) {
@@ -86,7 +100,7 @@ public final class TrackGroup {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     if (this == obj) {
       return true;
     }
@@ -97,4 +111,32 @@ public final class TrackGroup {
     return length == other.length && Arrays.equals(formats, other.formats);
   }
 
+  
+
+  @Override
+  public int describeContents() {
+    return 0;
+  }
+
+  @Override
+  public void writeToParcel(Parcel dest, int flags) {
+    dest.writeInt(length);
+    for (int i = 0; i < length; i++) {
+      dest.writeParcelable(formats[i], 0);
+    }
+  }
+
+  public static final Parcelable.Creator<TrackGroup> CREATOR =
+      new Parcelable.Creator<TrackGroup>() {
+
+        @Override
+        public TrackGroup createFromParcel(Parcel in) {
+          return new TrackGroup(in);
+        }
+
+        @Override
+        public TrackGroup[] newArray(int size) {
+          return new TrackGroup[size];
+        }
+      };
 }

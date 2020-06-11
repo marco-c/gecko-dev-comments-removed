@@ -15,9 +15,14 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.trackselection;
 
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.TrackGroup;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.chunk.MediaChunk;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.chunk.MediaChunkIterator;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.BandwidthMeter;
+import java.util.List;
+import org.checkerframework.checker.nullness.compatqual.NullableType;
 
 
 
@@ -27,10 +32,14 @@ public final class FixedTrackSelection extends BaseTrackSelection {
   
 
 
+
+
+
+  @Deprecated
   public static final class Factory implements TrackSelection.Factory {
 
     private final int reason;
-    private final Object data;
+    @Nullable private final Object data;
 
     public Factory() {
       this.reason = C.SELECTION_REASON_UNKNOWN;
@@ -41,21 +50,23 @@ public final class FixedTrackSelection extends BaseTrackSelection {
 
 
 
-    public Factory(int reason, Object data) {
+    public Factory(int reason, @Nullable Object data) {
       this.reason = reason;
       this.data = data;
     }
 
     @Override
-    public FixedTrackSelection createTrackSelection(TrackGroup group, int... tracks) {
-      Assertions.checkArgument(tracks.length == 1);
-      return new FixedTrackSelection(group, tracks[0], reason, data);
+    public @NullableType TrackSelection[] createTrackSelections(
+        @NullableType Definition[] definitions, BandwidthMeter bandwidthMeter) {
+      return TrackSelectionUtil.createTrackSelectionsForDefinitions(
+          definitions,
+          definition ->
+              new FixedTrackSelection(definition.group, definition.tracks[0], reason, data));
     }
-
   }
 
   private final int reason;
-  private final Object data;
+  @Nullable private final Object data;
 
   
 
@@ -71,14 +82,19 @@ public final class FixedTrackSelection extends BaseTrackSelection {
 
 
 
-  public FixedTrackSelection(TrackGroup group, int track, int reason, Object data) {
+  public FixedTrackSelection(TrackGroup group, int track, int reason, @Nullable Object data) {
     super(group, track);
     this.reason = reason;
     this.data = data;
   }
 
   @Override
-  public void updateSelectedTrack(long bufferedDurationUs) {
+  public void updateSelectedTrack(
+      long playbackPositionUs,
+      long bufferedDurationUs,
+      long availableDurationUs,
+      List<? extends MediaChunk> queue,
+      MediaChunkIterator[] mediaChunkIterators) {
     
   }
 
@@ -93,6 +109,7 @@ public final class FixedTrackSelection extends BaseTrackSelection {
   }
 
   @Override
+  @Nullable
   public Object getSelectionData() {
     return data;
   }

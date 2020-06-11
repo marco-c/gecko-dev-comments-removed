@@ -33,8 +33,7 @@ public interface MediaClock {
 
 
 
-
-  PlaybackParameters setPlaybackParameters(PlaybackParameters playbackParameters);
+  void setPlaybackParameters(PlaybackParameters playbackParameters);
 
   
 

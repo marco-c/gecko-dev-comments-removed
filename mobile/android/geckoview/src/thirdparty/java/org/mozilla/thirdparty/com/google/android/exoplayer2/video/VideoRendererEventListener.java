@@ -15,14 +15,18 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.video;
 
+import static org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util.castNonNull;
+
 import android.os.Handler;
 import android.os.SystemClock;
 import android.view.Surface;
 import android.view.TextureView;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Renderer;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.decoder.DecoderCounters;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+
 
 
 
@@ -35,7 +39,7 @@ public interface VideoRendererEventListener {
 
 
 
-  void onVideoEnabled(DecoderCounters counters);
+  default void onVideoEnabled(DecoderCounters counters) {}
 
   
 
@@ -45,28 +49,15 @@ public interface VideoRendererEventListener {
 
 
 
-  void onVideoDecoderInitialized(String decoderName, long initializedTimestampMs,
-      long initializationDurationMs);
+  default void onVideoDecoderInitialized(
+      String decoderName, long initializedTimestampMs, long initializationDurationMs) {}
 
   
 
 
 
 
-  void onVideoInputFormatChanged(Format format);
-
-  
-
-
-
-
-
-
-
-
-
-
-  void onDroppedFrames(int count, long elapsedMs);
+  default void onVideoInputFormatChanged(Format format) {}
 
   
 
@@ -78,15 +69,7 @@ public interface VideoRendererEventListener {
 
 
 
-
-
-
-
-
-
-
-  void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees,
-      float pixelWidthHeightRatio);
+  default void onDroppedFrames(int count, long elapsedMs) {}
 
   
 
@@ -95,133 +78,118 @@ public interface VideoRendererEventListener {
 
 
 
-  void onRenderedFirstFrame(Surface surface);
+
+
+
+
+
+
+
+
+
+
+  default void onVideoSizeChanged(
+      int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {}
 
   
 
 
 
 
-  void onVideoDisabled(DecoderCounters counters);
+
+
+  default void onRenderedFirstFrame(@Nullable Surface surface) {}
+
+  
+
+
+
+
+  default void onVideoDisabled(DecoderCounters counters) {}
 
   
 
 
   final class EventDispatcher {
 
-    private final Handler handler;
-    private final VideoRendererEventListener listener;
+    @Nullable private final Handler handler;
+    @Nullable private final VideoRendererEventListener listener;
 
     
 
 
 
 
-    public EventDispatcher(Handler handler, VideoRendererEventListener listener) {
+    public EventDispatcher(@Nullable Handler handler,
+        @Nullable VideoRendererEventListener listener) {
       this.handler = listener != null ? Assertions.checkNotNull(handler) : null;
       this.listener = listener;
     }
 
     
-
-
-    public void enabled(final DecoderCounters decoderCounters) {
-      if (listener != null) {
-        handler.post(new Runnable() {
-          @Override
-          public void run() {
-            listener.onVideoEnabled(decoderCounters);
-          }
-        });
+    public void enabled(DecoderCounters decoderCounters) {
+      if (handler != null) {
+        handler.post(() -> castNonNull(listener).onVideoEnabled(decoderCounters));
       }
     }
 
     
-
-
-    public void decoderInitialized(final String decoderName,
-        final long initializedTimestampMs, final long initializationDurationMs) {
-      if (listener != null) {
-        handler.post(new Runnable() {
-          @Override
-          public void run() {
-            listener.onVideoDecoderInitialized(decoderName, initializedTimestampMs,
-                initializationDurationMs);
-          }
-        });
+    public void decoderInitialized(
+        String decoderName, long initializedTimestampMs, long initializationDurationMs) {
+      if (handler != null) {
+        handler.post(
+            () ->
+                castNonNull(listener)
+                    .onVideoDecoderInitialized(
+                        decoderName, initializedTimestampMs, initializationDurationMs));
       }
     }
 
     
-
-
-    public void inputFormatChanged(final Format format) {
-      if (listener != null) {
-        handler.post(new Runnable() {
-          @Override
-          public void run() {
-            listener.onVideoInputFormatChanged(format);
-          }
-        });
+    public void inputFormatChanged(Format format) {
+      if (handler != null) {
+        handler.post(() -> castNonNull(listener).onVideoInputFormatChanged(format));
       }
     }
 
     
-
-
-    public void droppedFrames(final int droppedFrameCount, final long elapsedMs) {
-      if (listener != null) {
-        handler.post(new Runnable()  {
-          @Override
-          public void run() {
-            listener.onDroppedFrames(droppedFrameCount, elapsedMs);
-          }
-        });
+    public void droppedFrames(int droppedFrameCount, long elapsedMs) {
+      if (handler != null) {
+        handler.post(() -> castNonNull(listener).onDroppedFrames(droppedFrameCount, elapsedMs));
       }
     }
 
     
-
-
-    public void videoSizeChanged(final int width, final int height,
-        final int unappliedRotationDegrees, final float pixelWidthHeightRatio) {
-      if (listener != null) {
-        handler.post(new Runnable()  {
-          @Override
-          public void run() {
-            listener.onVideoSizeChanged(width, height, unappliedRotationDegrees,
-                pixelWidthHeightRatio);
-          }
-        });
+    public void videoSizeChanged(
+        int width,
+        int height,
+        final int unappliedRotationDegrees,
+        final float pixelWidthHeightRatio) {
+      if (handler != null) {
+        handler.post(
+            () ->
+                castNonNull(listener)
+                    .onVideoSizeChanged(
+                        width, height, unappliedRotationDegrees, pixelWidthHeightRatio));
       }
     }
 
     
-
-
-    public void renderedFirstFrame(final Surface surface) {
-      if (listener != null) {
-        handler.post(new Runnable()  {
-          @Override
-          public void run() {
-            listener.onRenderedFirstFrame(surface);
-          }
-        });
+    public void renderedFirstFrame(@Nullable Surface surface) {
+      if (handler != null) {
+        handler.post(() -> castNonNull(listener).onRenderedFirstFrame(surface));
       }
     }
 
     
-
-
-    public void disabled(final DecoderCounters counters) {
-      if (listener != null) {
-        handler.post(new Runnable() {
-          @Override
-          public void run() {
-            counters.ensureUpdated();
-            listener.onVideoDisabled(counters);
-          }
-        });
+    public void disabled(DecoderCounters counters) {
+      counters.ensureUpdated();
+      if (handler != null) {
+        handler.post(
+            () -> {
+              counters.ensureUpdated();
+              castNonNull(listener).onVideoDisabled(counters);
+            });
       }
     }
 

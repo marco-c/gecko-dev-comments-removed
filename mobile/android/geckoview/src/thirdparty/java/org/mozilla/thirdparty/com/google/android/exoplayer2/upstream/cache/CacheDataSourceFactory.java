@@ -15,13 +15,10 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.cache;
 
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSink;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource.Factory;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.FileDataSourceFactory;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.cache.CacheDataSource.EventListener;
-
-
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.FileDataSource;
 
 
 public final class CacheDataSourceFactory implements DataSource.Factory {
@@ -29,47 +26,87 @@ public final class CacheDataSourceFactory implements DataSource.Factory {
   private final Cache cache;
   private final DataSource.Factory upstreamFactory;
   private final DataSource.Factory cacheReadDataSourceFactory;
-  private final DataSink.Factory cacheWriteDataSinkFactory;
-  private final int flags;
-  private final EventListener eventListener;
+  @CacheDataSource.Flags private final int flags;
+  @Nullable private final DataSink.Factory cacheWriteDataSinkFactory;
+  @Nullable private final CacheDataSource.EventListener eventListener;
+  @Nullable private final CacheKeyFactory cacheKeyFactory;
 
   
 
 
-  public CacheDataSourceFactory(Cache cache, DataSource.Factory upstreamFactory, int flags) {
-    this(cache, upstreamFactory, flags, CacheDataSource.DEFAULT_MAX_CACHE_FILE_SIZE);
+
+
+
+
+
+  public CacheDataSourceFactory(Cache cache, DataSource.Factory upstreamFactory) {
+    this(cache, upstreamFactory,  0);
+  }
+
+  
+  public CacheDataSourceFactory(
+      Cache cache, DataSource.Factory upstreamFactory, @CacheDataSource.Flags int flags) {
+    this(
+        cache,
+        upstreamFactory,
+        new FileDataSource.Factory(),
+        new CacheDataSinkFactory(cache, CacheDataSink.DEFAULT_FRAGMENT_SIZE),
+        flags,
+         null);
   }
 
   
 
 
-  public CacheDataSourceFactory(Cache cache, DataSource.Factory upstreamFactory, int flags,
-      long maxCacheFileSize) {
-    this(cache, upstreamFactory, new FileDataSourceFactory(),
-        new CacheDataSinkFactory(cache, maxCacheFileSize), flags, null);
+
+  public CacheDataSourceFactory(
+      Cache cache,
+      DataSource.Factory upstreamFactory,
+      DataSource.Factory cacheReadDataSourceFactory,
+      @Nullable DataSink.Factory cacheWriteDataSinkFactory,
+      @CacheDataSource.Flags int flags,
+      @Nullable CacheDataSource.EventListener eventListener) {
+    this(
+        cache,
+        upstreamFactory,
+        cacheReadDataSourceFactory,
+        cacheWriteDataSinkFactory,
+        flags,
+        eventListener,
+         null);
   }
 
   
 
 
 
-  public CacheDataSourceFactory(Cache cache, Factory upstreamFactory,
-      Factory cacheReadDataSourceFactory,
-      DataSink.Factory cacheWriteDataSinkFactory, int flags, EventListener eventListener) {
+  public CacheDataSourceFactory(
+      Cache cache,
+      DataSource.Factory upstreamFactory,
+      DataSource.Factory cacheReadDataSourceFactory,
+      @Nullable DataSink.Factory cacheWriteDataSinkFactory,
+      @CacheDataSource.Flags int flags,
+      @Nullable CacheDataSource.EventListener eventListener,
+      @Nullable CacheKeyFactory cacheKeyFactory) {
     this.cache = cache;
     this.upstreamFactory = upstreamFactory;
     this.cacheReadDataSourceFactory = cacheReadDataSourceFactory;
     this.cacheWriteDataSinkFactory = cacheWriteDataSinkFactory;
     this.flags = flags;
     this.eventListener = eventListener;
+    this.cacheKeyFactory = cacheKeyFactory;
   }
 
   @Override
   public CacheDataSource createDataSource() {
-    return new CacheDataSource(cache, upstreamFactory.createDataSource(),
+    return new CacheDataSource(
+        cache,
+        upstreamFactory.createDataSource(),
         cacheReadDataSourceFactory.createDataSource(),
-        cacheWriteDataSinkFactory != null ? cacheWriteDataSinkFactory.createDataSink() : null,
-        flags, eventListener);
+        cacheWriteDataSinkFactory == null ? null : cacheWriteDataSinkFactory.createDataSink(),
+        flags,
+        eventListener,
+        cacheKeyFactory);
   }
 
 }

@@ -15,11 +15,19 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.mp4;
 
+import androidx.annotation.Nullable;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.TrackOutput;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Log;
+
 
 
 
 
 public final class TrackEncryptionBox {
+
+  private static final String TAG = "TrackEncryptionBox";
 
   
 
@@ -29,23 +37,67 @@ public final class TrackEncryptionBox {
   
 
 
-  public final int initializationVectorSize;
-
-  
-
-
-  public final byte[] keyId;
+  @Nullable public final String schemeType;
 
   
 
 
 
+  public final TrackOutput.CryptoData cryptoData;
+
+  
+  public final int perSampleIvSize;
+
+  
 
 
-  public TrackEncryptionBox(boolean isEncrypted, int initializationVectorSize, byte[] keyId) {
+
+  @Nullable public final byte[] defaultInitializationVector;
+
+  
+
+
+
+
+
+
+
+
+  public TrackEncryptionBox(
+      boolean isEncrypted,
+      @Nullable String schemeType,
+      int perSampleIvSize,
+      byte[] keyId,
+      int defaultEncryptedBlocks,
+      int defaultClearBlocks,
+      @Nullable byte[] defaultInitializationVector) {
+    Assertions.checkArgument(perSampleIvSize == 0 ^ defaultInitializationVector == null);
     this.isEncrypted = isEncrypted;
-    this.initializationVectorSize = initializationVectorSize;
-    this.keyId = keyId;
+    this.schemeType = schemeType;
+    this.perSampleIvSize = perSampleIvSize;
+    this.defaultInitializationVector = defaultInitializationVector;
+    cryptoData = new TrackOutput.CryptoData(schemeToCryptoMode(schemeType), keyId,
+        defaultEncryptedBlocks, defaultClearBlocks);
+  }
+
+  @C.CryptoMode
+  private static int schemeToCryptoMode(@Nullable String schemeType) {
+    if (schemeType == null) {
+      
+      return C.CRYPTO_MODE_AES_CTR;
+    }
+    switch (schemeType) {
+      case C.CENC_TYPE_cenc:
+      case C.CENC_TYPE_cens:
+        return C.CRYPTO_MODE_AES_CTR;
+      case C.CENC_TYPE_cbc1:
+      case C.CENC_TYPE_cbcs:
+        return C.CRYPTO_MODE_AES_CBC;
+      default:
+        Log.w(TAG, "Unsupported protection scheme type '" + schemeType + "'. Assuming AES-CTR "
+            + "crypto mode.");
+        return C.CRYPTO_MODE_AES_CTR;
+    }
   }
 
 }

@@ -16,20 +16,27 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.cache;
 
 import android.net.Uri;
-import android.support.annotation.IntDef;
-import android.support.annotation.Nullable;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSink;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSourceException;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSpec;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSpec.HttpMethod;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.FileDataSource;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.TeeDataSource;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.TransferListener;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.cache.Cache.CacheException;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 
 
@@ -43,33 +50,52 @@ public final class CacheDataSource implements DataSource {
 
 
 
-
-  public static final long DEFAULT_MAX_CACHE_FILE_SIZE = 2 * 1024 * 1024;
-
-  
-
-
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef(flag = true, value = {FLAG_BLOCK_ON_CACHE, FLAG_IGNORE_CACHE_ON_ERROR,
-      FLAG_IGNORE_CACHE_FOR_UNSET_LENGTH_REQUESTS})
+  @IntDef(
+      flag = true,
+      value = {
+        FLAG_BLOCK_ON_CACHE,
+        FLAG_IGNORE_CACHE_ON_ERROR,
+        FLAG_IGNORE_CACHE_FOR_UNSET_LENGTH_REQUESTS
+      })
   public @interface Flags {}
   
 
 
 
-  public static final int FLAG_BLOCK_ON_CACHE = 1 << 0;
+  public static final int FLAG_BLOCK_ON_CACHE = 1;
 
   
 
 
 
 
-  public static final int FLAG_IGNORE_CACHE_ON_ERROR = 1 << 1;
+  public static final int FLAG_IGNORE_CACHE_ON_ERROR = 1 << 1; 
 
   
 
 
-  public static final int FLAG_IGNORE_CACHE_FOR_UNSET_LENGTH_REQUESTS = 1 << 2;
+
+  public static final int FLAG_IGNORE_CACHE_FOR_UNSET_LENGTH_REQUESTS = 1 << 2; 
+
+  
+
+
+
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({CACHE_IGNORED_REASON_ERROR, CACHE_IGNORED_REASON_UNSET_LENGTH})
+  public @interface CacheIgnoredReason {}
+
+  
+  private static final int CACHE_NOT_IGNORED = -1;
+
+  
+  public static final int CACHE_IGNORED_REASON_ERROR = 0;
+
+  
+  public static final int CACHE_IGNORED_REASON_UNSET_LENGTH = 1;
 
   
 
@@ -84,36 +110,73 @@ public final class CacheDataSource implements DataSource {
 
     void onCachedBytesRead(long cacheSizeBytes, long cachedBytesRead);
 
+    
+
+
+
+
+    void onCacheIgnored(@CacheIgnoredReason int reason);
   }
+
+  
+  private static final long MIN_READ_BEFORE_CHECKING_CACHE = 100 * 1024;
 
   private final Cache cache;
   private final DataSource cacheReadDataSource;
-  private final DataSource cacheWriteDataSource;
+  @Nullable private final DataSource cacheWriteDataSource;
   private final DataSource upstreamDataSource;
+  private final CacheKeyFactory cacheKeyFactory;
   @Nullable private final EventListener eventListener;
 
   private final boolean blockOnCache;
   private final boolean ignoreCacheOnError;
   private final boolean ignoreCacheForUnsetLengthRequests;
 
-  private DataSource currentDataSource;
-  private boolean currentRequestUnbounded;
-  private Uri uri;
-  private int flags;
-  private String key;
+  @Nullable private DataSource currentDataSource;
+  private boolean currentDataSpecLengthUnset;
+  @Nullable private Uri uri;
+  @Nullable private Uri actualUri;
+  @HttpMethod private int httpMethod;
+  @Nullable private byte[] httpBody;
+  private Map<String, String> httpRequestHeaders = Collections.emptyMap();
+  @DataSpec.Flags private int flags;
+  @Nullable private String key;
   private long readPosition;
   private long bytesRemaining;
-  private CacheSpan lockedSpan;
+  @Nullable private CacheSpan currentHoleSpan;
   private boolean seenCacheError;
   private boolean currentRequestIgnoresCache;
   private long totalCachedBytesRead;
+  private long checkCachePosition;
 
   
+
+
+
+
+
+
+  public CacheDataSource(Cache cache, DataSource upstream) {
+    this(cache, upstream,  0);
+  }
+
+  
+
+
+
+
+
 
 
 
   public CacheDataSource(Cache cache, DataSource upstream, @Flags int flags) {
-    this(cache, upstream, flags, DEFAULT_MAX_CACHE_FILE_SIZE);
+    this(
+        cache,
+        upstream,
+        new FileDataSource(),
+        new CacheDataSink(cache, CacheDataSink.DEFAULT_FRAGMENT_SIZE),
+        flags,
+         null);
   }
 
   
@@ -129,10 +192,22 @@ public final class CacheDataSource implements DataSource {
 
 
 
-  public CacheDataSource(Cache cache, DataSource upstream, @Flags int flags,
-      long maxCacheFileSize) {
-    this(cache, upstream, new FileDataSource(), new CacheDataSink(cache, maxCacheFileSize),
-        flags, null);
+
+  public CacheDataSource(
+      Cache cache,
+      DataSource upstream,
+      DataSource cacheReadDataSource,
+      @Nullable DataSink cacheWriteDataSink,
+      @Flags int flags,
+      @Nullable EventListener eventListener) {
+    this(
+        cache,
+        upstream,
+        cacheReadDataSource,
+        cacheWriteDataSink,
+        flags,
+        eventListener,
+         null);
   }
 
   
@@ -149,10 +224,19 @@ public final class CacheDataSource implements DataSource {
 
 
 
-  public CacheDataSource(Cache cache, DataSource upstream, DataSource cacheReadDataSource,
-      DataSink cacheWriteDataSink, @Flags int flags, @Nullable EventListener eventListener) {
+
+  public CacheDataSource(
+      Cache cache,
+      DataSource upstream,
+      DataSource cacheReadDataSource,
+      @Nullable DataSink cacheWriteDataSink,
+      @Flags int flags,
+      @Nullable EventListener eventListener,
+      @Nullable CacheKeyFactory cacheKeyFactory) {
     this.cache = cache;
     this.cacheReadDataSource = cacheReadDataSource;
+    this.cacheKeyFactory =
+        cacheKeyFactory != null ? cacheKeyFactory : CacheUtil.DEFAULT_CACHE_KEY_FACTORY;
     this.blockOnCache = (flags & FLAG_BLOCK_ON_CACHE) != 0;
     this.ignoreCacheOnError = (flags & FLAG_IGNORE_CACHE_ON_ERROR) != 0;
     this.ignoreCacheForUnsetLengthRequests =
@@ -167,18 +251,33 @@ public final class CacheDataSource implements DataSource {
   }
 
   @Override
+  public void addTransferListener(TransferListener transferListener) {
+    cacheReadDataSource.addTransferListener(transferListener);
+    upstreamDataSource.addTransferListener(transferListener);
+  }
+
+  @Override
   public long open(DataSpec dataSpec) throws IOException {
     try {
+      key = cacheKeyFactory.buildCacheKey(dataSpec);
       uri = dataSpec.uri;
+      actualUri = getRedirectedUriOrDefault(cache, key,  uri);
+      httpMethod = dataSpec.httpMethod;
+      httpBody = dataSpec.httpBody;
+      httpRequestHeaders = dataSpec.httpRequestHeaders;
       flags = dataSpec.flags;
-      key = CacheUtil.getKey(dataSpec);
       readPosition = dataSpec.position;
-      currentRequestIgnoresCache = (ignoreCacheOnError && seenCacheError)
-          || (dataSpec.length == C.LENGTH_UNSET && ignoreCacheForUnsetLengthRequests);
+
+      int reason = shouldIgnoreCacheForRequest(dataSpec);
+      currentRequestIgnoresCache = reason != CACHE_NOT_IGNORED;
+      if (currentRequestIgnoresCache) {
+        notifyCacheIgnored(reason);
+      }
+
       if (dataSpec.length != C.LENGTH_UNSET || currentRequestIgnoresCache) {
         bytesRemaining = dataSpec.length;
       } else {
-        bytesRemaining = cache.getContentLength(key);
+        bytesRemaining = ContentMetadata.getContentLength(cache.getContentMetadata(key));
         if (bytesRemaining != C.LENGTH_UNSET) {
           bytesRemaining -= dataSpec.position;
           if (bytesRemaining <= 0) {
@@ -186,9 +285,9 @@ public final class CacheDataSource implements DataSource {
           }
         }
       }
-      openNextSource(true);
+      openNextSource(false);
       return bytesRemaining;
-    } catch (IOException e) {
+    } catch (Throwable e) {
       handleBeforeThrow(e);
       throw e;
     }
@@ -203,48 +302,67 @@ public final class CacheDataSource implements DataSource {
       return C.RESULT_END_OF_INPUT;
     }
     try {
+      if (readPosition >= checkCachePosition) {
+        openNextSource(true);
+      }
       int bytesRead = currentDataSource.read(buffer, offset, readLength);
-      if (bytesRead >= 0) {
-        if (currentDataSource == cacheReadDataSource) {
+      if (bytesRead != C.RESULT_END_OF_INPUT) {
+        if (isReadingFromCache()) {
           totalCachedBytesRead += bytesRead;
         }
         readPosition += bytesRead;
         if (bytesRemaining != C.LENGTH_UNSET) {
           bytesRemaining -= bytesRead;
         }
-      } else {
-        if (currentRequestUnbounded) {
-          
-          
-          setContentLength(readPosition);
-          bytesRemaining = 0;
-        }
+      } else if (currentDataSpecLengthUnset) {
+        setNoBytesRemainingAndMaybeStoreLength();
+      } else if (bytesRemaining > 0 || bytesRemaining == C.LENGTH_UNSET) {
         closeCurrentSource();
-        if (bytesRemaining > 0 || bytesRemaining == C.LENGTH_UNSET) {
-          if (openNextSource(false)) {
-            return read(buffer, offset, readLength);
-          }
-        }
+        openNextSource(false);
+        return read(buffer, offset, readLength);
       }
       return bytesRead;
     } catch (IOException e) {
+      if (currentDataSpecLengthUnset && CacheUtil.isCausedByPositionOutOfRange(e)) {
+        setNoBytesRemainingAndMaybeStoreLength();
+        return C.RESULT_END_OF_INPUT;
+      }
+      handleBeforeThrow(e);
+      throw e;
+    } catch (Throwable e) {
       handleBeforeThrow(e);
       throw e;
     }
   }
 
   @Override
+  @Nullable
   public Uri getUri() {
-    return currentDataSource == upstreamDataSource ? currentDataSource.getUri() : uri;
+    return actualUri;
+  }
+
+  @Override
+  public Map<String, List<String>> getResponseHeaders() {
+    
+    return isReadingFromUpstream()
+        ? upstreamDataSource.getResponseHeaders()
+        : Collections.emptyMap();
   }
 
   @Override
   public void close() throws IOException {
     uri = null;
+    actualUri = null;
+    httpMethod = DataSpec.HTTP_METHOD_GET;
+    httpBody = null;
+    httpRequestHeaders = Collections.emptyMap();
+    flags = 0;
+    readPosition = 0;
+    key = null;
     notifyBytesRead();
     try {
       closeCurrentSource();
-    } catch (IOException e) {
+    } catch (Throwable e) {
       handleBeforeThrow(e);
       throw e;
     }
@@ -256,99 +374,162 @@ public final class CacheDataSource implements DataSource {
 
 
 
-  private boolean openNextSource(boolean initial) throws IOException {
-    DataSpec dataSpec;
-    CacheSpan span;
+
+
+
+
+
+
+
+
+  private void openNextSource(boolean checkCache) throws IOException {
+    CacheSpan nextSpan;
     if (currentRequestIgnoresCache) {
-      span = null;
+      nextSpan = null;
     } else if (blockOnCache) {
       try {
-        span = cache.startReadWrite(key, readPosition);
+        nextSpan = cache.startReadWrite(key, readPosition);
       } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
         throw new InterruptedIOException();
       }
     } else {
-      span = cache.startReadWriteNonBlocking(key, readPosition);
+      nextSpan = cache.startReadWriteNonBlocking(key, readPosition);
     }
 
-    if (span == null) {
+    DataSpec nextDataSpec;
+    DataSource nextDataSource;
+    if (nextSpan == null) {
       
       
-      currentDataSource = upstreamDataSource;
-      dataSpec = new DataSpec(uri, readPosition, bytesRemaining, key, flags);
-    } else if (span.isCached) {
+      nextDataSource = upstreamDataSource;
+      nextDataSpec =
+          new DataSpec(
+              uri,
+              httpMethod,
+              httpBody,
+              readPosition,
+              readPosition,
+              bytesRemaining,
+              key,
+              flags,
+              httpRequestHeaders);
+    } else if (nextSpan.isCached) {
       
-      Uri fileUri = Uri.fromFile(span.file);
-      long filePosition = readPosition - span.position;
-      long length = span.length - filePosition;
+      Uri fileUri = Uri.fromFile(nextSpan.file);
+      long filePosition = readPosition - nextSpan.position;
+      long length = nextSpan.length - filePosition;
       if (bytesRemaining != C.LENGTH_UNSET) {
         length = Math.min(length, bytesRemaining);
       }
-      dataSpec = new DataSpec(fileUri, readPosition, filePosition, length, key, flags);
-      currentDataSource = cacheReadDataSource;
+      
+      
+      nextDataSpec = new DataSpec(fileUri, readPosition, filePosition, length, key, flags);
+      nextDataSource = cacheReadDataSource;
     } else {
       
       long length;
-      if (span.isOpenEnded()) {
+      if (nextSpan.isOpenEnded()) {
         length = bytesRemaining;
       } else {
-        length = span.length;
+        length = nextSpan.length;
         if (bytesRemaining != C.LENGTH_UNSET) {
           length = Math.min(length, bytesRemaining);
         }
       }
-      dataSpec = new DataSpec(uri, readPosition, length, key, flags);
+      nextDataSpec =
+          new DataSpec(
+              uri,
+              httpMethod,
+              httpBody,
+              readPosition,
+              readPosition,
+              length,
+              key,
+              flags,
+              httpRequestHeaders);
       if (cacheWriteDataSource != null) {
-        currentDataSource = cacheWriteDataSource;
-        lockedSpan = span;
+        nextDataSource = cacheWriteDataSource;
       } else {
-        currentDataSource = upstreamDataSource;
-        cache.releaseHoleSpan(span);
+        nextDataSource = upstreamDataSource;
+        cache.releaseHoleSpan(nextSpan);
+        nextSpan = null;
       }
     }
 
-    currentRequestUnbounded = dataSpec.length == C.LENGTH_UNSET;
-    boolean successful = false;
-    long currentBytesRemaining = 0;
-    try {
-      currentBytesRemaining = currentDataSource.open(dataSpec);
-      successful = true;
-    } catch (IOException e) {
-      
-      
-      
-      if (!initial && currentRequestUnbounded) {
-        Throwable cause = e;
-        while (cause != null) {
-          if (cause instanceof DataSourceException) {
-            int reason = ((DataSourceException) cause).reason;
-            if (reason == DataSourceException.POSITION_OUT_OF_RANGE) {
-              e = null;
-              break;
-            }
-          }
-          cause = cause.getCause();
-        }
+    checkCachePosition =
+        !currentRequestIgnoresCache && nextDataSource == upstreamDataSource
+            ? readPosition + MIN_READ_BEFORE_CHECKING_CACHE
+            : Long.MAX_VALUE;
+    if (checkCache) {
+      Assertions.checkState(isBypassingCache());
+      if (nextDataSource == upstreamDataSource) {
+        
+        return;
       }
-      if (e != null) {
+      
+      try {
+        closeCurrentSource();
+      } catch (Throwable e) {
+        if (nextSpan.isHoleSpan()) {
+          
+          cache.releaseHoleSpan(nextSpan);
+        }
         throw e;
       }
     }
 
-    
-    
-    if (currentRequestUnbounded && currentBytesRemaining != C.LENGTH_UNSET) {
-      bytesRemaining = currentBytesRemaining;
-      setContentLength(dataSpec.position + bytesRemaining);
+    if (nextSpan != null && nextSpan.isHoleSpan()) {
+      currentHoleSpan = nextSpan;
     }
-    return successful;
+    currentDataSource = nextDataSource;
+    currentDataSpecLengthUnset = nextDataSpec.length == C.LENGTH_UNSET;
+    long resolvedLength = nextDataSource.open(nextDataSpec);
+
+    
+    ContentMetadataMutations mutations = new ContentMetadataMutations();
+    if (currentDataSpecLengthUnset && resolvedLength != C.LENGTH_UNSET) {
+      bytesRemaining = resolvedLength;
+      ContentMetadataMutations.setContentLength(mutations, readPosition + bytesRemaining);
+    }
+    if (isReadingFromUpstream()) {
+      actualUri = currentDataSource.getUri();
+      boolean isRedirected = !uri.equals(actualUri);
+      ContentMetadataMutations.setRedirectedUri(mutations, isRedirected ? actualUri : null);
+    }
+    if (isWritingToCache()) {
+      cache.applyContentMetadataMutations(key, mutations);
+    }
   }
 
-  private void setContentLength(long length) throws IOException {
-    
-    if (currentDataSource == cacheWriteDataSource) {
-      cache.setContentLength(key, length);
+  private void setNoBytesRemainingAndMaybeStoreLength() throws IOException {
+    bytesRemaining = 0;
+    if (isWritingToCache()) {
+      ContentMetadataMutations mutations = new ContentMetadataMutations();
+      ContentMetadataMutations.setContentLength(mutations, readPosition);
+      cache.applyContentMetadataMutations(key, mutations);
     }
+  }
+
+  private static Uri getRedirectedUriOrDefault(Cache cache, String key, Uri defaultUri) {
+    Uri redirectedUri = ContentMetadata.getRedirectedUri(cache.getContentMetadata(key));
+    return redirectedUri != null ? redirectedUri : defaultUri;
+  }
+
+  private boolean isReadingFromUpstream() {
+    return !isReadingFromCache();
+  }
+
+  private boolean isBypassingCache() {
+    return currentDataSource == upstreamDataSource;
+  }
+
+  private boolean isReadingFromCache() {
+    return currentDataSource == cacheReadDataSource;
+  }
+
+  private boolean isWritingToCache() {
+    return currentDataSource == cacheWriteDataSource;
   }
 
   private void closeCurrentSource() throws IOException {
@@ -357,19 +538,35 @@ public final class CacheDataSource implements DataSource {
     }
     try {
       currentDataSource.close();
-      currentDataSource = null;
-      currentRequestUnbounded = false;
     } finally {
-      if (lockedSpan != null) {
-        cache.releaseHoleSpan(lockedSpan);
-        lockedSpan = null;
+      currentDataSource = null;
+      currentDataSpecLengthUnset = false;
+      if (currentHoleSpan != null) {
+        cache.releaseHoleSpan(currentHoleSpan);
+        currentHoleSpan = null;
       }
     }
   }
 
-  private void handleBeforeThrow(IOException exception) {
-    if (currentDataSource == cacheReadDataSource || exception instanceof CacheException) {
+  private void handleBeforeThrow(Throwable exception) {
+    if (isReadingFromCache() || exception instanceof CacheException) {
       seenCacheError = true;
+    }
+  }
+
+  private int shouldIgnoreCacheForRequest(DataSpec dataSpec) {
+    if (ignoreCacheOnError && seenCacheError) {
+      return CACHE_IGNORED_REASON_ERROR;
+    } else if (ignoreCacheForUnsetLengthRequests && dataSpec.length == C.LENGTH_UNSET) {
+      return CACHE_IGNORED_REASON_UNSET_LENGTH;
+    } else {
+      return CACHE_NOT_IGNORED;
+    }
+  }
+
+  private void notifyCacheIgnored(@CacheIgnoredReason int reason) {
+    if (eventListener != null) {
+      eventListener.onCacheIgnored(reason);
     }
   }
 

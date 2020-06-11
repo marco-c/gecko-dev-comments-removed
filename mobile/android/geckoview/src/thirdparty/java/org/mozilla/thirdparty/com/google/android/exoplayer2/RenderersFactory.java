@@ -16,9 +16,12 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2;
 
 import android.os.Handler;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.audio.AudioRendererEventListener;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.MetadataRenderer;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.text.TextRenderer;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.DrmSessionManager;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.FrameworkMediaCrypto;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.MetadataOutput;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.text.TextOutput;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.video.VideoRendererEventListener;
 
 
@@ -36,9 +39,12 @@ public interface RenderersFactory {
 
 
 
-  Renderer[] createRenderers(Handler eventHandler,
+
+  Renderer[] createRenderers(
+      Handler eventHandler,
       VideoRendererEventListener videoRendererEventListener,
       AudioRendererEventListener audioRendererEventListener,
-      TextRenderer.Output textRendererOutput, MetadataRenderer.Output metadataRendererOutput);
-
+      TextOutput textRendererOutput,
+      MetadataOutput metadataRendererOutput,
+      @Nullable DrmSessionManager<FrameworkMediaCrypto> drmSessionManager);
 }

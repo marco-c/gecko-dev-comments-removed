@@ -63,6 +63,8 @@ public interface SampleStream {
 
 
 
+
+
   int readData(FormatHolder formatHolder, DecoderInputBuffer buffer, boolean formatRequired);
 
   
@@ -71,6 +73,7 @@ public interface SampleStream {
 
 
 
-  void skipData(long positionUs);
+
+  int skipData(long positionUs);
 
 }

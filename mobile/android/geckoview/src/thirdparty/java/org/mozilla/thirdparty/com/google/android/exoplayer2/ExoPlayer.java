@@ -15,20 +15,29 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2;
 
-import android.support.annotation.Nullable;
+import android.content.Context;
+import android.os.Looper;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.analytics.AnalyticsCollector;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.audio.MediaCodecAudioRenderer;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.MetadataRenderer;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.ClippingMediaSource;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.ConcatenatingMediaSource;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.source.ExtractorMediaSource;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.LoopingMediaSource;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.MediaSource;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.MergingMediaSource;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.SingleSampleMediaSource;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.source.TrackGroupArray;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.text.TextRenderer;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.trackselection.TrackSelector;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.BandwidthMeter;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Clock;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.video.MediaCodecVideoRenderer;
 
 
@@ -102,14 +111,6 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.video.MediaCodecVide
 
 
 
-public interface ExoPlayer {
-
-  
-
-
-  interface EventListener {
-
-    
 
 
 
@@ -120,158 +121,215 @@ public interface ExoPlayer {
 
 
 
-    void onTimelineChanged(Timeline timeline, Object manifest);
-
-    
 
 
-
-
-
-
-    void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections);
-
-    
-
-
-
-
-    void onLoadingChanged(boolean isLoading);
-
-    
-
-
-
-
-
-
-
-    void onPlayerStateChanged(boolean playWhenReady, int playbackState);
-
-    
-
-
-
-
-
-
-    void onPlayerError(ExoPlaybackException error);
-
-    
-
-
-
-
-
-
-
-
-
-    void onPositionDiscontinuity();
-
-    
-
-
-
-
-
-
-
-    void onPlaybackParametersChanged(PlaybackParameters playbackParameters);
-
-  }
+public interface ExoPlayer extends Player {
 
   
 
 
 
 
+  final class Builder {
 
-  interface ExoPlayerComponent {
+    private final Renderer[] renderers;
 
-    
-
-
-
-
-
-
-    void handleMessage(int messageType, Object message) throws ExoPlaybackException;
-
-  }
-
-  
-
-
-  final class ExoPlayerMessage {
-
-    
-
-
-    public final ExoPlayerComponent target;
-    
-
-
-    public final int messageType;
-    
-
-
-    public final Object message;
+    private Clock clock;
+    private TrackSelector trackSelector;
+    private LoadControl loadControl;
+    private BandwidthMeter bandwidthMeter;
+    private Looper looper;
+    private AnalyticsCollector analyticsCollector;
+    private boolean useLazyPreparation;
+    private boolean buildCalled;
 
     
 
 
 
 
-    public ExoPlayerMessage(ExoPlayerComponent target, int messageType, Object message) {
-      this.target = target;
-      this.messageType = messageType;
-      this.message = message;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public Builder(Context context, Renderer... renderers) {
+      this(
+          renderers,
+          new DefaultTrackSelector(context),
+          new DefaultLoadControl(),
+          DefaultBandwidthMeter.getSingletonInstance(context),
+          Util.getLooper(),
+          new AnalyticsCollector(Clock.DEFAULT),
+           true,
+          Clock.DEFAULT);
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public Builder(
+        Renderer[] renderers,
+        TrackSelector trackSelector,
+        LoadControl loadControl,
+        BandwidthMeter bandwidthMeter,
+        Looper looper,
+        AnalyticsCollector analyticsCollector,
+        boolean useLazyPreparation,
+        Clock clock) {
+      Assertions.checkArgument(renderers.length > 0);
+      this.renderers = renderers;
+      this.trackSelector = trackSelector;
+      this.loadControl = loadControl;
+      this.bandwidthMeter = bandwidthMeter;
+      this.looper = looper;
+      this.analyticsCollector = analyticsCollector;
+      this.useLazyPreparation = useLazyPreparation;
+      this.clock = clock;
+    }
+
+    
+
+
+
+
+
+
+    public Builder setTrackSelector(TrackSelector trackSelector) {
+      Assertions.checkState(!buildCalled);
+      this.trackSelector = trackSelector;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    public Builder setLoadControl(LoadControl loadControl) {
+      Assertions.checkState(!buildCalled);
+      this.loadControl = loadControl;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    public Builder setBandwidthMeter(BandwidthMeter bandwidthMeter) {
+      Assertions.checkState(!buildCalled);
+      this.bandwidthMeter = bandwidthMeter;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+    public Builder setLooper(Looper looper) {
+      Assertions.checkState(!buildCalled);
+      this.looper = looper;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    public Builder setAnalyticsCollector(AnalyticsCollector analyticsCollector) {
+      Assertions.checkState(!buildCalled);
+      this.analyticsCollector = analyticsCollector;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    public Builder setUseLazyPreparation(boolean useLazyPreparation) {
+      Assertions.checkState(!buildCalled);
+      this.useLazyPreparation = useLazyPreparation;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+    @VisibleForTesting
+    public Builder setClock(Clock clock) {
+      Assertions.checkState(!buildCalled);
+      this.clock = clock;
+      return this;
+    }
+
+    
+
+
+
+
+    public ExoPlayer build() {
+      Assertions.checkState(!buildCalled);
+      buildCalled = true;
+      return new ExoPlayerImpl(
+          renderers, trackSelector, loadControl, bandwidthMeter, clock, looper);
+    }
   }
 
   
-
-
-  int STATE_IDLE = 1;
-  
-
-
-
-
-  int STATE_BUFFERING = 2;
-  
-
-
-
-  int STATE_READY = 3;
-  
-
-
-  int STATE_ENDED = 4;
+  Looper getPlaybackLooper();
 
   
 
 
 
-
-
-  void addListener(EventListener listener);
-
-  
-
-
-
-
-  void removeListener(EventListener listener);
-
-  
-
-
-
-
-  int getPlaybackState();
+  void retry();
 
   
 
@@ -301,55 +359,18 @@ public interface ExoPlayer {
 
 
 
-  void setPlayWhenReady(boolean playWhenReady);
+
+  PlayerMessage createMessage(PlayerMessage.Target target);
 
   
 
 
 
 
-  boolean getPlayWhenReady();
+  void setSeekParameters(@Nullable SeekParameters seekParameters);
 
   
-
-
-
-
-  boolean isLoading();
-
-  
-
-
-
-
-  void seekToDefaultPosition();
-
-  
-
-
-
-
-
-
-
-  void seekToDefaultPosition(int windowIndex);
-
-  
-
-
-
-
-
-  void seekTo(long positionMs);
-
-  
-
-
-
-
-
-
-  void seekTo(int windowIndex, long positionMs);
+  SeekParameters getSeekParameters();
 
   
 
@@ -364,16 +385,12 @@ public interface ExoPlayer {
 
 
 
-  void setPlaybackParameters(@Nullable PlaybackParameters playbackParameters);
 
-  
 
 
 
 
-  PlaybackParameters getPlaybackParameters();
 
-  
 
 
 
@@ -383,113 +400,5 @@ public interface ExoPlayer {
 
 
 
-  void stop();
-
-  
-
-
-
-  void release();
-
-  
-
-
-
-
-
-
-  void sendMessages(ExoPlayerMessage... messages);
-
-  
-
-
-
-
-
-  void blockingSendMessages(ExoPlayerMessage... messages);
-
-  
-
-
-  int getRendererCount();
-
-  
-
-
-
-
-
-
-  int getRendererType(int index);
-
-  
-
-
-  TrackGroupArray getCurrentTrackGroups();
-
-  
-
-
-  TrackSelectionArray getCurrentTrackSelections();
-
-  
-
-
-
-  Object getCurrentManifest();
-
-  
-
-
-  Timeline getCurrentTimeline();
-
-  
-
-
-  int getCurrentPeriodIndex();
-
-  
-
-
-  int getCurrentWindowIndex();
-
-  
-
-
-
-  long getDuration();
-
-  
-
-
-  long getCurrentPosition();
-
-  
-
-
-
-  long getBufferedPosition();
-
-  
-
-
-
-  int getBufferedPercentage();
-
-  
-
-
-
-
-
-  boolean isCurrentWindowDynamic();
-
-  
-
-
-
-
-
-  boolean isCurrentWindowSeekable();
-
+  void setForegroundMode(boolean foregroundMode);
 }

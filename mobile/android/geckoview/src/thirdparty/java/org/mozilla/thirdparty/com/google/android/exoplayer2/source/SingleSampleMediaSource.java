@@ -17,22 +17,29 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2.source;
 
 import android.net.Uri;
 import android.os.Handler;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.ExoPlayer;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Timeline;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.Allocator;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSpec;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DefaultLoadErrorHandlingPolicy;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.LoadErrorHandlingPolicy;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.TransferListener;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import java.io.IOException;
 
 
 
 
-public final class SingleSampleMediaSource implements MediaSource {
+public final class SingleSampleMediaSource extends BaseMediaSource {
 
   
 
 
+
+
+  @Deprecated
   public interface EventListener {
 
     
@@ -46,47 +53,264 @@ public final class SingleSampleMediaSource implements MediaSource {
   }
 
   
+  public static final class Factory {
+
+    private final DataSource.Factory dataSourceFactory;
+
+    private LoadErrorHandlingPolicy loadErrorHandlingPolicy;
+    private boolean treatLoadErrorsAsEndOfStream;
+    private boolean isCreateCalled;
+    @Nullable private Object tag;
+
+    
 
 
-  public static final int DEFAULT_MIN_LOADABLE_RETRY_COUNT = 3;
 
-  private final Uri uri;
+
+
+    public Factory(DataSource.Factory dataSourceFactory) {
+      this.dataSourceFactory = Assertions.checkNotNull(dataSourceFactory);
+      loadErrorHandlingPolicy = new DefaultLoadErrorHandlingPolicy();
+    }
+
+    
+
+
+
+
+
+
+
+    public Factory setTag(Object tag) {
+      Assertions.checkState(!isCreateCalled);
+      this.tag = tag;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    @Deprecated
+    public Factory setMinLoadableRetryCount(int minLoadableRetryCount) {
+      return setLoadErrorHandlingPolicy(new DefaultLoadErrorHandlingPolicy(minLoadableRetryCount));
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    public Factory setLoadErrorHandlingPolicy(LoadErrorHandlingPolicy loadErrorHandlingPolicy) {
+      Assertions.checkState(!isCreateCalled);
+      this.loadErrorHandlingPolicy = loadErrorHandlingPolicy;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    public Factory setTreatLoadErrorsAsEndOfStream(boolean treatLoadErrorsAsEndOfStream) {
+      Assertions.checkState(!isCreateCalled);
+      this.treatLoadErrorsAsEndOfStream = treatLoadErrorsAsEndOfStream;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+    public SingleSampleMediaSource createMediaSource(Uri uri, Format format, long durationUs) {
+      isCreateCalled = true;
+      return new SingleSampleMediaSource(
+          uri,
+          dataSourceFactory,
+          format,
+          durationUs,
+          loadErrorHandlingPolicy,
+          treatLoadErrorsAsEndOfStream,
+          tag);
+    }
+
+    
+
+
+
+    @Deprecated
+    public SingleSampleMediaSource createMediaSource(
+        Uri uri,
+        Format format,
+        long durationUs,
+        @Nullable Handler eventHandler,
+        @Nullable MediaSourceEventListener eventListener) {
+      SingleSampleMediaSource mediaSource = createMediaSource(uri, format, durationUs);
+      if (eventHandler != null && eventListener != null) {
+        mediaSource.addEventListener(eventHandler, eventListener);
+      }
+      return mediaSource;
+    }
+
+  }
+
+  private final DataSpec dataSpec;
   private final DataSource.Factory dataSourceFactory;
   private final Format format;
-  private final int minLoadableRetryCount;
-  private final Handler eventHandler;
-  private final EventListener eventListener;
-  private final int eventSourceId;
+  private final long durationUs;
+  private final LoadErrorHandlingPolicy loadErrorHandlingPolicy;
+  private final boolean treatLoadErrorsAsEndOfStream;
   private final Timeline timeline;
+  @Nullable private final Object tag;
 
-  public SingleSampleMediaSource(Uri uri, DataSource.Factory dataSourceFactory, Format format,
-      long durationUs) {
-    this(uri, dataSourceFactory, format, durationUs, DEFAULT_MIN_LOADABLE_RETRY_COUNT);
+  @Nullable private TransferListener transferListener;
+
+  
+
+
+
+
+
+
+
+  @Deprecated
+  @SuppressWarnings("deprecation")
+  public SingleSampleMediaSource(
+      Uri uri, DataSource.Factory dataSourceFactory, Format format, long durationUs) {
+    this(
+        uri,
+        dataSourceFactory,
+        format,
+        durationUs,
+        DefaultLoadErrorHandlingPolicy.DEFAULT_MIN_LOADABLE_RETRY_COUNT);
   }
 
-  public SingleSampleMediaSource(Uri uri, DataSource.Factory dataSourceFactory, Format format,
-      long durationUs, int minLoadableRetryCount) {
-    this(uri, dataSourceFactory, format, durationUs, minLoadableRetryCount, null, null, 0);
+  
+
+
+
+
+
+
+
+
+  @Deprecated
+  public SingleSampleMediaSource(
+      Uri uri,
+      DataSource.Factory dataSourceFactory,
+      Format format,
+      long durationUs,
+      int minLoadableRetryCount) {
+    this(
+        uri,
+        dataSourceFactory,
+        format,
+        durationUs,
+        new DefaultLoadErrorHandlingPolicy(minLoadableRetryCount),
+         false,
+         null);
   }
 
-  public SingleSampleMediaSource(Uri uri, DataSource.Factory dataSourceFactory, Format format,
-      long durationUs, int minLoadableRetryCount, Handler eventHandler, EventListener eventListener,
-      int eventSourceId) {
-    this.uri = uri;
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @Deprecated
+  @SuppressWarnings("deprecation")
+  public SingleSampleMediaSource(
+      Uri uri,
+      DataSource.Factory dataSourceFactory,
+      Format format,
+      long durationUs,
+      int minLoadableRetryCount,
+      Handler eventHandler,
+      EventListener eventListener,
+      int eventSourceId,
+      boolean treatLoadErrorsAsEndOfStream) {
+    this(
+        uri,
+        dataSourceFactory,
+        format,
+        durationUs,
+        new DefaultLoadErrorHandlingPolicy(minLoadableRetryCount),
+        treatLoadErrorsAsEndOfStream,
+         null);
+    if (eventHandler != null && eventListener != null) {
+      addEventListener(eventHandler, new EventListenerWrapper(eventListener, eventSourceId));
+    }
+  }
+
+  private SingleSampleMediaSource(
+      Uri uri,
+      DataSource.Factory dataSourceFactory,
+      Format format,
+      long durationUs,
+      LoadErrorHandlingPolicy loadErrorHandlingPolicy,
+      boolean treatLoadErrorsAsEndOfStream,
+      @Nullable Object tag) {
     this.dataSourceFactory = dataSourceFactory;
     this.format = format;
-    this.minLoadableRetryCount = minLoadableRetryCount;
-    this.eventHandler = eventHandler;
-    this.eventListener = eventListener;
-    this.eventSourceId = eventSourceId;
-    timeline = new SinglePeriodTimeline(durationUs, true);
+    this.durationUs = durationUs;
+    this.loadErrorHandlingPolicy = loadErrorHandlingPolicy;
+    this.treatLoadErrorsAsEndOfStream = treatLoadErrorsAsEndOfStream;
+    this.tag = tag;
+    dataSpec = new DataSpec(uri, DataSpec.FLAG_ALLOW_GZIP);
+    timeline =
+        new SinglePeriodTimeline(
+            durationUs,
+             true,
+             false,
+             false,
+             null,
+            tag);
   }
 
   
 
   @Override
-  public void prepareSource(ExoPlayer player, boolean isTopLevelSource, Listener listener) {
-    listener.onSourceInfoRefreshed(timeline, null);
+  @Nullable
+  public Object getTag() {
+    return tag;
+  }
+
+  @Override
+  protected void prepareSourceInternal(@Nullable TransferListener mediaTransferListener) {
+    transferListener = mediaTransferListener;
+    refreshSourceInfo(timeline);
   }
 
   @Override
@@ -95,10 +319,16 @@ public final class SingleSampleMediaSource implements MediaSource {
   }
 
   @Override
-  public MediaPeriod createPeriod(int index, Allocator allocator, long positionUs) {
-    Assertions.checkArgument(index == 0);
-    return new SingleSampleMediaPeriod(uri, dataSourceFactory, format, minLoadableRetryCount,
-        eventHandler, eventListener, eventSourceId);
+  public MediaPeriod createPeriod(MediaPeriodId id, Allocator allocator, long startPositionUs) {
+    return new SingleSampleMediaPeriod(
+        dataSpec,
+        dataSourceFactory,
+        transferListener,
+        format,
+        durationUs,
+        loadErrorHandlingPolicy,
+        createEventDispatcher(id),
+        treatLoadErrorsAsEndOfStream);
   }
 
   @Override
@@ -107,8 +337,35 @@ public final class SingleSampleMediaSource implements MediaSource {
   }
 
   @Override
-  public void releaseSource() {
+  protected void releaseSourceInternal() {
     
   }
 
+  
+
+
+
+  @Deprecated
+  @SuppressWarnings("deprecation")
+  private static final class EventListenerWrapper implements MediaSourceEventListener {
+
+    private final EventListener eventListener;
+    private final int eventSourceId;
+
+    public EventListenerWrapper(EventListener eventListener, int eventSourceId) {
+      this.eventListener = Assertions.checkNotNull(eventListener);
+      this.eventSourceId = eventSourceId;
+    }
+
+    @Override
+    public void onLoadError(
+        int windowIndex,
+        @Nullable MediaPeriodId mediaPeriodId,
+        LoadEventInfo loadEventInfo,
+        MediaLoadData mediaLoadData,
+        IOException error,
+        boolean wasCanceled) {
+      eventListener.onLoadError(eventSourceId, error);
+    }
+  }
 }

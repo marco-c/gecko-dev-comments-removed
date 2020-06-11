@@ -15,6 +15,19 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2;
 
+import android.util.Pair;
+import androidx.annotation.Nullable;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.ads.AdPlaybackState;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+
+
+
+
+
+
+
+
+
 
 
 
@@ -94,128 +107,6 @@ public abstract class Timeline {
   
 
 
-  public static final Timeline EMPTY = new Timeline() {
-
-    @Override
-    public int getWindowCount() {
-      return 0;
-    }
-
-    @Override
-    public Window getWindow(int windowIndex, Window window, boolean setIds,
-        long defaultPositionProjectionUs) {
-      throw new IndexOutOfBoundsException();
-    }
-
-    @Override
-    public int getPeriodCount() {
-      return 0;
-    }
-
-    @Override
-    public Period getPeriod(int periodIndex, Period period, boolean setIds) {
-      throw new IndexOutOfBoundsException();
-    }
-
-    @Override
-    public int getIndexOfPeriod(Object uid) {
-      return C.INDEX_UNSET;
-    }
-
-  };
-
-  
-
-
-  public final boolean isEmpty() {
-    return getWindowCount() == 0;
-  }
-
-  
-
-
-  public abstract int getWindowCount();
-
-  
-
-
-
-
-
-
-
-  public final Window getWindow(int windowIndex, Window window) {
-    return getWindow(windowIndex, window, false);
-  }
-
-  
-
-
-
-
-
-
-
-
-  public Window getWindow(int windowIndex, Window window, boolean setIds) {
-    return getWindow(windowIndex, window, setIds, 0);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  public abstract Window getWindow(int windowIndex, Window window, boolean setIds,
-      long defaultPositionProjectionUs);
-
-  
-
-
-  public abstract int getPeriodCount();
-
-  
-
-
-
-
-
-
-
-  public final Period getPeriod(int periodIndex, Period period) {
-    return getPeriod(periodIndex, period, false);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  public abstract Period getPeriod(int periodIndex, Period period, boolean setIds);
-
-  
-
-
-
-
-
-
-  public abstract int getIndexOfPeriod(Object uid);
-
-  
-
-
 
 
 
@@ -228,7 +119,19 @@ public abstract class Timeline {
     
 
 
-    public Object id;
+    public static final Object SINGLE_WINDOW_UID = new Object();
+
+    
+
+
+
+    public Object uid;
+
+    
+    @Nullable public Object tag;
+
+    
+    @Nullable public Object manifest;
 
     
 
@@ -248,13 +151,21 @@ public abstract class Timeline {
     public boolean isSeekable;
 
     
-
-
+    
+    
+    
+    
+    
     public boolean isDynamic;
 
     
 
 
+
+
+    public boolean isLive;
+
+    
     public int firstPeriodIndex;
 
     
@@ -282,16 +193,33 @@ public abstract class Timeline {
     public long positionInFirstPeriodUs;
 
     
+    public Window() {
+      uid = SINGLE_WINDOW_UID;
+    }
 
-
-    public Window set(Object id, long presentationStartTimeMs, long windowStartTimeMs,
-        boolean isSeekable, boolean isDynamic, long defaultPositionUs, long durationUs,
-        int firstPeriodIndex, int lastPeriodIndex, long positionInFirstPeriodUs) {
-      this.id = id;
+    
+    public Window set(
+        Object uid,
+        @Nullable Object tag,
+        @Nullable Object manifest,
+        long presentationStartTimeMs,
+        long windowStartTimeMs,
+        boolean isSeekable,
+        boolean isDynamic,
+        boolean isLive,
+        long defaultPositionUs,
+        long durationUs,
+        int firstPeriodIndex,
+        int lastPeriodIndex,
+        long positionInFirstPeriodUs) {
+      this.uid = uid;
+      this.tag = tag;
+      this.manifest = manifest;
       this.presentationStartTimeMs = presentationStartTimeMs;
       this.windowStartTimeMs = windowStartTimeMs;
       this.isSeekable = isSeekable;
       this.isDynamic = isDynamic;
+      this.isLive = isLive;
       this.defaultPositionUs = defaultPositionUs;
       this.durationUs = durationUs;
       this.firstPeriodIndex = firstPeriodIndex;
@@ -361,17 +289,20 @@ public abstract class Timeline {
 
 
 
+
+
   public static final class Period {
 
     
 
 
-    public Object id;
+
+    @Nullable public Object id;
 
     
 
 
-    public Object uid;
+    @Nullable public Object uid;
 
     
 
@@ -383,24 +314,68 @@ public abstract class Timeline {
 
     public long durationUs;
 
-    
-
-
-    public boolean isAd;
-
     private long positionInWindowUs;
+    private AdPlaybackState adPlaybackState;
+
+    
+    public Period() {
+      adPlaybackState = AdPlaybackState.NONE;
+    }
 
     
 
 
-    public Period set(Object id, Object uid, int windowIndex, long durationUs,
-        long positionInWindowUs, boolean isAd) {
+
+
+
+
+
+
+
+
+
+
+
+
+    public Period set(
+        @Nullable Object id,
+        @Nullable Object uid,
+        int windowIndex,
+        long durationUs,
+        long positionInWindowUs) {
+      return set(id, uid, windowIndex, durationUs, positionInWindowUs, AdPlaybackState.NONE);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public Period set(
+        @Nullable Object id,
+        @Nullable Object uid,
+        int windowIndex,
+        long durationUs,
+        long positionInWindowUs,
+        AdPlaybackState adPlaybackState) {
       this.id = id;
       this.uid = uid;
       this.windowIndex = windowIndex;
       this.durationUs = durationUs;
       this.positionInWindowUs = positionInWindowUs;
-      this.isAd = isAd;
+      this.adPlaybackState = adPlaybackState;
       return this;
     }
 
@@ -436,6 +411,427 @@ public abstract class Timeline {
       return positionInWindowUs;
     }
 
+    
+
+
+    public int getAdGroupCount() {
+      return adPlaybackState.adGroupCount;
+    }
+
+    
+
+
+
+
+
+
+
+    public long getAdGroupTimeUs(int adGroupIndex) {
+      return adPlaybackState.adGroupTimesUs[adGroupIndex];
+    }
+
+    
+
+
+
+
+
+
+
+    public int getFirstAdIndexToPlay(int adGroupIndex) {
+      return adPlaybackState.adGroups[adGroupIndex].getFirstAdIndexToPlay();
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    public int getNextAdIndexToPlay(int adGroupIndex, int lastPlayedAdIndex) {
+      return adPlaybackState.adGroups[adGroupIndex].getNextAdIndexToPlay(lastPlayedAdIndex);
+    }
+
+    
+
+
+
+
+
+    public boolean hasPlayedAdGroup(int adGroupIndex) {
+      return !adPlaybackState.adGroups[adGroupIndex].hasUnplayedAds();
+    }
+
+    
+
+
+
+
+
+
+
+    public int getAdGroupIndexForPositionUs(long positionUs) {
+      return adPlaybackState.getAdGroupIndexForPositionUs(positionUs);
+    }
+
+    
+
+
+
+
+
+
+    public int getAdGroupIndexAfterPositionUs(long positionUs) {
+      return adPlaybackState.getAdGroupIndexAfterPositionUs(positionUs, durationUs);
+    }
+
+    
+
+
+
+
+
+
+    public int getAdCountInAdGroup(int adGroupIndex) {
+      return adPlaybackState.adGroups[adGroupIndex].count;
+    }
+
+    
+
+
+
+
+
+
+    public boolean isAdAvailable(int adGroupIndex, int adIndexInAdGroup) {
+      AdPlaybackState.AdGroup adGroup = adPlaybackState.adGroups[adGroupIndex];
+      return adGroup.count != C.LENGTH_UNSET
+          && adGroup.states[adIndexInAdGroup] != AdPlaybackState.AD_STATE_UNAVAILABLE;
+    }
+
+    
+
+
+
+
+
+
+
+    public long getAdDurationUs(int adGroupIndex, int adIndexInAdGroup) {
+      AdPlaybackState.AdGroup adGroup = adPlaybackState.adGroups[adGroupIndex];
+      return adGroup.count != C.LENGTH_UNSET ? adGroup.durationsUs[adIndexInAdGroup] : C.TIME_UNSET;
+    }
+
+    
+
+
+
+    public long getAdResumePositionUs() {
+      return adPlaybackState.adResumePositionUs;
+    }
+
   }
 
+  
+  public static final Timeline EMPTY =
+      new Timeline() {
+
+        @Override
+        public int getWindowCount() {
+          return 0;
+        }
+
+        @Override
+        public Window getWindow(int windowIndex, Window window, long defaultPositionProjectionUs) {
+          throw new IndexOutOfBoundsException();
+        }
+
+        @Override
+        public int getPeriodCount() {
+          return 0;
+        }
+
+        @Override
+        public Period getPeriod(int periodIndex, Period period, boolean setIds) {
+          throw new IndexOutOfBoundsException();
+        }
+
+        @Override
+        public int getIndexOfPeriod(Object uid) {
+          return C.INDEX_UNSET;
+        }
+
+        @Override
+        public Object getUidOfPeriod(int periodIndex) {
+          throw new IndexOutOfBoundsException();
+        }
+      };
+
+  
+
+
+  public final boolean isEmpty() {
+    return getWindowCount() == 0;
+  }
+
+  
+
+
+  public abstract int getWindowCount();
+
+  
+
+
+
+
+
+
+
+
+  public int getNextWindowIndex(int windowIndex, @Player.RepeatMode int repeatMode,
+      boolean shuffleModeEnabled) {
+    switch (repeatMode) {
+      case Player.REPEAT_MODE_OFF:
+        return windowIndex == getLastWindowIndex(shuffleModeEnabled) ? C.INDEX_UNSET
+            : windowIndex + 1;
+      case Player.REPEAT_MODE_ONE:
+        return windowIndex;
+      case Player.REPEAT_MODE_ALL:
+        return windowIndex == getLastWindowIndex(shuffleModeEnabled)
+            ? getFirstWindowIndex(shuffleModeEnabled) : windowIndex + 1;
+      default:
+        throw new IllegalStateException();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  public int getPreviousWindowIndex(int windowIndex, @Player.RepeatMode int repeatMode,
+      boolean shuffleModeEnabled) {
+    switch (repeatMode) {
+      case Player.REPEAT_MODE_OFF:
+        return windowIndex == getFirstWindowIndex(shuffleModeEnabled) ? C.INDEX_UNSET
+            : windowIndex - 1;
+      case Player.REPEAT_MODE_ONE:
+        return windowIndex;
+      case Player.REPEAT_MODE_ALL:
+        return windowIndex == getFirstWindowIndex(shuffleModeEnabled)
+            ? getLastWindowIndex(shuffleModeEnabled) : windowIndex - 1;
+      default:
+        throw new IllegalStateException();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  public int getLastWindowIndex(boolean shuffleModeEnabled) {
+    return isEmpty() ? C.INDEX_UNSET : getWindowCount() - 1;
+  }
+
+  
+
+
+
+
+
+
+
+  public int getFirstWindowIndex(boolean shuffleModeEnabled) {
+    return isEmpty() ? C.INDEX_UNSET : 0;
+  }
+
+  
+
+
+
+
+
+
+  public final Window getWindow(int windowIndex, Window window) {
+    return getWindow(windowIndex, window,  0);
+  }
+
+  
+  @Deprecated
+  public final Window getWindow(int windowIndex, Window window, boolean setTag) {
+    return getWindow(windowIndex, window,  0);
+  }
+
+  
+
+
+
+
+
+
+
+
+  public abstract Window getWindow(
+      int windowIndex, Window window, long defaultPositionProjectionUs);
+
+  
+
+
+  public abstract int getPeriodCount();
+
+  
+
+
+
+
+
+
+
+
+
+
+  public final int getNextPeriodIndex(int periodIndex, Period period, Window window,
+      @Player.RepeatMode int repeatMode, boolean shuffleModeEnabled) {
+    int windowIndex = getPeriod(periodIndex, period).windowIndex;
+    if (getWindow(windowIndex, window).lastPeriodIndex == periodIndex) {
+      int nextWindowIndex = getNextWindowIndex(windowIndex, repeatMode, shuffleModeEnabled);
+      if (nextWindowIndex == C.INDEX_UNSET) {
+        return C.INDEX_UNSET;
+      }
+      return getWindow(nextWindowIndex, window).firstPeriodIndex;
+    }
+    return periodIndex + 1;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  public final boolean isLastPeriod(int periodIndex, Period period, Window window,
+      @Player.RepeatMode int repeatMode, boolean shuffleModeEnabled) {
+    return getNextPeriodIndex(periodIndex, period, window, repeatMode, shuffleModeEnabled)
+        == C.INDEX_UNSET;
+  }
+
+  
+
+
+
+  public final Pair<Object, Long> getPeriodPosition(
+      Window window, Period period, int windowIndex, long windowPositionUs) {
+    return Assertions.checkNotNull(
+        getPeriodPosition(
+            window, period, windowIndex, windowPositionUs,  0));
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @Nullable
+  public final Pair<Object, Long> getPeriodPosition(
+      Window window,
+      Period period,
+      int windowIndex,
+      long windowPositionUs,
+      long defaultPositionProjectionUs) {
+    Assertions.checkIndex(windowIndex, 0, getWindowCount());
+    getWindow(windowIndex, window, defaultPositionProjectionUs);
+    if (windowPositionUs == C.TIME_UNSET) {
+      windowPositionUs = window.getDefaultPositionUs();
+      if (windowPositionUs == C.TIME_UNSET) {
+        return null;
+      }
+    }
+    int periodIndex = window.firstPeriodIndex;
+    long periodPositionUs = window.getPositionInFirstPeriodUs() + windowPositionUs;
+    long periodDurationUs = getPeriod(periodIndex, period,  true).getDurationUs();
+    while (periodDurationUs != C.TIME_UNSET && periodPositionUs >= periodDurationUs
+        && periodIndex < window.lastPeriodIndex) {
+      periodPositionUs -= periodDurationUs;
+      periodDurationUs = getPeriod(++periodIndex, period,  true).getDurationUs();
+    }
+    return Pair.create(Assertions.checkNotNull(period.uid), periodPositionUs);
+  }
+
+  
+
+
+
+
+
+
+  public Period getPeriodByUid(Object periodUid, Period period) {
+    return getPeriod(getIndexOfPeriod(periodUid), period,  true);
+  }
+
+  
+
+
+
+
+
+
+
+  public final Period getPeriod(int periodIndex, Period period) {
+    return getPeriod(periodIndex, period, false);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  public abstract Period getPeriod(int periodIndex, Period period, boolean setIds);
+
+  
+
+
+
+
+
+
+  public abstract int getIndexOfPeriod(Object uid);
+
+  
+
+
+
+
+
+  public abstract Object getUidOfPeriod(int periodIndex);
 }

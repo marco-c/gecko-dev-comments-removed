@@ -22,17 +22,16 @@ import android.media.MediaCodecInfo.AudioCapabilities;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo.CodecProfileLevel;
 import android.media.MediaCodecInfo.VideoCapabilities;
-import android.util.Log;
 import android.util.Pair;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Log;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 
 
-
-
-@TargetApi(16)
+@SuppressWarnings("InlinedApi")
 public final class MediaCodecInfo {
 
   public static final String TAG = "MediaCodecInfo";
@@ -41,9 +40,31 @@ public final class MediaCodecInfo {
 
 
 
+  public static final int MAX_SUPPORTED_INSTANCES_UNKNOWN = -1;
+
+  
+
+
+
 
 
   public final String name;
+
+  
+  @Nullable public final String mimeType;
+
+  
+
+
+
+
+  @Nullable public final String codecMimeType;
+
+  
+
+
+
+  @Nullable public final CodecCapabilities capabilities;
 
   
 
@@ -61,8 +82,45 @@ public final class MediaCodecInfo {
 
   public final boolean tunneling;
 
-  private final String mimeType;
-  private final CodecCapabilities capabilities;
+  
+
+
+
+
+
+  public final boolean secure;
+
+  
+  public final boolean passthrough;
+
+  
+
+
+
+
+
+
+  public final boolean hardwareAccelerated;
+
+  
+
+
+
+
+
+
+  public final boolean softwareOnly;
+
+  
+
+
+
+
+
+
+  public final boolean vendor;
+
+  private final boolean isVideo;
 
   
 
@@ -71,7 +129,17 @@ public final class MediaCodecInfo {
 
 
   public static MediaCodecInfo newPassthroughInstance(String name) {
-    return new MediaCodecInfo(name, null, null);
+    return new MediaCodecInfo(
+        name,
+         null,
+         null,
+         null,
+         true,
+         false,
+         true,
+         false,
+         false,
+         false);
   }
 
   
@@ -82,21 +150,65 @@ public final class MediaCodecInfo {
 
 
 
-  public static MediaCodecInfo newInstance(String name, String mimeType,
-      CodecCapabilities capabilities) {
-    return new MediaCodecInfo(name, mimeType, capabilities);
+
+
+
+
+
+
+
+
+  public static MediaCodecInfo newInstance(
+      String name,
+      String mimeType,
+      String codecMimeType,
+      @Nullable CodecCapabilities capabilities,
+      boolean hardwareAccelerated,
+      boolean softwareOnly,
+      boolean vendor,
+      boolean forceDisableAdaptive,
+      boolean forceSecure) {
+    return new MediaCodecInfo(
+        name,
+        mimeType,
+        codecMimeType,
+        capabilities,
+         false,
+        hardwareAccelerated,
+        softwareOnly,
+        vendor,
+        forceDisableAdaptive,
+        forceSecure);
   }
 
-  
-
-
-
-  private MediaCodecInfo(String name, String mimeType, CodecCapabilities capabilities) {
+  private MediaCodecInfo(
+      String name,
+      @Nullable String mimeType,
+      @Nullable String codecMimeType,
+      @Nullable CodecCapabilities capabilities,
+      boolean passthrough,
+      boolean hardwareAccelerated,
+      boolean softwareOnly,
+      boolean vendor,
+      boolean forceDisableAdaptive,
+      boolean forceSecure) {
     this.name = Assertions.checkNotNull(name);
     this.mimeType = mimeType;
+    this.codecMimeType = codecMimeType;
     this.capabilities = capabilities;
-    adaptive = capabilities != null && isAdaptive(capabilities);
+    this.passthrough = passthrough;
+    this.hardwareAccelerated = hardwareAccelerated;
+    this.softwareOnly = softwareOnly;
+    this.vendor = vendor;
+    adaptive = !forceDisableAdaptive && capabilities != null && isAdaptive(capabilities);
     tunneling = capabilities != null && isTunneling(capabilities);
+    secure = forceSecure || (capabilities != null && isSecure(capabilities));
+    isVideo = MimeTypes.isVideo(mimeType);
+  }
+
+  @Override
+  public String toString() {
+    return name;
   }
 
   
@@ -116,31 +228,158 @@ public final class MediaCodecInfo {
 
 
 
-  public boolean isCodecSupported(String codec) {
-    if (codec == null || mimeType == null) {
+  public int getMaxSupportedInstances() {
+    return (Util.SDK_INT < 23 || capabilities == null)
+        ? MAX_SUPPORTED_INSTANCES_UNKNOWN
+        : getMaxSupportedInstancesV23(capabilities);
+  }
+
+  
+
+
+
+
+
+
+  public boolean isFormatSupported(Format format) throws MediaCodecUtil.DecoderQueryException {
+    if (!isCodecSupported(format)) {
+      return false;
+    }
+
+    if (isVideo) {
+      if (format.width <= 0 || format.height <= 0) {
+        return true;
+      }
+      if (Util.SDK_INT >= 21) {
+        return isVideoSizeAndRateSupportedV21(format.width, format.height, format.frameRate);
+      } else {
+        boolean isFormatSupported =
+            format.width * format.height <= MediaCodecUtil.maxH264DecodableFrameSize();
+        if (!isFormatSupported) {
+          logNoSupport("legacyFrameSize, " + format.width + "x" + format.height);
+        }
+        return isFormatSupported;
+      }
+    } else { 
+      return Util.SDK_INT < 21
+          || ((format.sampleRate == Format.NO_VALUE
+                  || isAudioSampleRateSupportedV21(format.sampleRate))
+              && (format.channelCount == Format.NO_VALUE
+                  || isAudioChannelCountSupportedV21(format.channelCount)));
+    }
+  }
+
+  
+
+
+
+
+
+
+  public boolean isCodecSupported(Format format) {
+    if (format.codecs == null || mimeType == null) {
       return true;
     }
-    String codecMimeType = MimeTypes.getMediaMimeType(codec);
+    String codecMimeType = MimeTypes.getMediaMimeType(format.codecs);
     if (codecMimeType == null) {
       return true;
     }
     if (!mimeType.equals(codecMimeType)) {
-      logNoSupport("codec.mime " + codec + ", " + codecMimeType);
+      logNoSupport("codec.mime " + format.codecs + ", " + codecMimeType);
       return false;
     }
-    Pair<Integer, Integer> codecProfileAndLevel = MediaCodecUtil.getCodecProfileAndLevel(codec);
+    Pair<Integer, Integer> codecProfileAndLevel = MediaCodecUtil.getCodecProfileAndLevel(format);
     if (codecProfileAndLevel == null) {
       
       return true;
     }
+    int profile = codecProfileAndLevel.first;
+    int level = codecProfileAndLevel.second;
+    if (!isVideo && profile != CodecProfileLevel.AACObjectXHE) {
+      
+      
+      return true;
+    }
     for (CodecProfileLevel capabilities : getProfileLevels()) {
-      if (capabilities.profile == codecProfileAndLevel.first
-          && capabilities.level >= codecProfileAndLevel.second) {
+      if (capabilities.profile == profile && capabilities.level >= level) {
         return true;
       }
     }
-    logNoSupport("codec.profileLevel, " + codec + ", " + codecMimeType);
+    logNoSupport("codec.profileLevel, " + format.codecs + ", " + codecMimeType);
     return false;
+  }
+
+  
+  public boolean isHdr10PlusOutOfBandMetadataSupported() {
+    if (Util.SDK_INT >= 29 && MimeTypes.VIDEO_VP9.equals(mimeType)) {
+      for (CodecProfileLevel capabilities : getProfileLevels()) {
+        if (capabilities.profile == CodecProfileLevel.VP9Profile2HDR10Plus) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  public boolean isSeamlessAdaptationSupported(Format format) {
+    if (isVideo) {
+      return adaptive;
+    } else {
+      Pair<Integer, Integer> codecProfileLevel = MediaCodecUtil.getCodecProfileAndLevel(format);
+      return codecProfileLevel != null && codecProfileLevel.first == CodecProfileLevel.AACObjectXHE;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  public boolean isSeamlessAdaptationSupported(
+      Format oldFormat, Format newFormat, boolean isNewFormatComplete) {
+    if (isVideo) {
+      return oldFormat.sampleMimeType.equals(newFormat.sampleMimeType)
+          && oldFormat.rotationDegrees == newFormat.rotationDegrees
+          && (adaptive
+              || (oldFormat.width == newFormat.width && oldFormat.height == newFormat.height))
+          && ((!isNewFormatComplete && newFormat.colorInfo == null)
+              || Util.areEqual(oldFormat.colorInfo, newFormat.colorInfo));
+    } else {
+      if (!MimeTypes.AUDIO_AAC.equals(mimeType)
+          || !oldFormat.sampleMimeType.equals(newFormat.sampleMimeType)
+          || oldFormat.channelCount != newFormat.channelCount
+          || oldFormat.sampleRate != newFormat.sampleRate) {
+        return false;
+      }
+      
+      Pair<Integer, Integer> oldCodecProfileLevel =
+          MediaCodecUtil.getCodecProfileAndLevel(oldFormat);
+      Pair<Integer, Integer> newCodecProfileLevel =
+          MediaCodecUtil.getCodecProfileAndLevel(newFormat);
+      if (oldCodecProfileLevel == null || newCodecProfileLevel == null) {
+        return false;
+      }
+      int oldProfile = oldCodecProfileLevel.first;
+      int newProfile = newCodecProfileLevel.first;
+      return oldProfile == CodecProfileLevel.AACObjectXHE
+          && newProfile == CodecProfileLevel.AACObjectXHE;
+    }
   }
 
   
@@ -165,12 +404,10 @@ public final class MediaCodecInfo {
       logNoSupport("sizeAndRate.vCaps");
       return false;
     }
-    if (!areSizeAndRateSupported(videoCapabilities, width, height, frameRate)) {
-      
-      
-      
+    if (!areSizeAndRateSupportedV21(videoCapabilities, width, height, frameRate)) {
       if (width >= height
-          || !areSizeAndRateSupported(videoCapabilities, height, width, frameRate)) {
+          || !enableRotatedVerticalResolutionWorkaround(name)
+          || !areSizeAndRateSupportedV21(videoCapabilities, height, width, frameRate)) {
         logNoSupport("sizeAndRate.support, " + width + "x" + height + "x" + frameRate);
         return false;
       }
@@ -194,18 +431,13 @@ public final class MediaCodecInfo {
   @TargetApi(21)
   public Point alignVideoSizeV21(int width, int height) {
     if (capabilities == null) {
-      logNoSupport("align.caps");
       return null;
     }
     VideoCapabilities videoCapabilities = capabilities.getVideoCapabilities();
     if (videoCapabilities == null) {
-      logNoSupport("align.vCaps");
       return null;
     }
-    int widthAlignment = videoCapabilities.getWidthAlignment();
-    int heightAlignment = videoCapabilities.getHeightAlignment();
-    return new Point(Util.ceilDivide(width, widthAlignment) * widthAlignment,
-        Util.ceilDivide(height, heightAlignment) * heightAlignment);
+    return alignVideoSizeV21(videoCapabilities, width, height);
   }
 
   
@@ -253,7 +485,9 @@ public final class MediaCodecInfo {
       logNoSupport("channelCount.aCaps");
       return false;
     }
-    if (audioCapabilities.getMaxInputChannelCount() < channelCount) {
+    int maxInputChannelCount = adjustMaxInputChannelCount(name, mimeType,
+        audioCapabilities.getMaxInputChannelCount());
+    if (maxInputChannelCount < channelCount) {
       logNoSupport("channelCount.support, " + channelCount);
       return false;
     }
@@ -270,6 +504,40 @@ public final class MediaCodecInfo {
         + Util.DEVICE_DEBUG_INFO + "]");
   }
 
+  private static int adjustMaxInputChannelCount(String name, String mimeType, int maxChannelCount) {
+    if (maxChannelCount > 1 || (Util.SDK_INT >= 26 && maxChannelCount > 0)) {
+      
+      return maxChannelCount;
+    }
+    if (MimeTypes.AUDIO_MPEG.equals(mimeType)
+        || MimeTypes.AUDIO_AMR_NB.equals(mimeType)
+        || MimeTypes.AUDIO_AMR_WB.equals(mimeType)
+        || MimeTypes.AUDIO_AAC.equals(mimeType)
+        || MimeTypes.AUDIO_VORBIS.equals(mimeType)
+        || MimeTypes.AUDIO_OPUS.equals(mimeType)
+        || MimeTypes.AUDIO_RAW.equals(mimeType)
+        || MimeTypes.AUDIO_FLAC.equals(mimeType)
+        || MimeTypes.AUDIO_ALAW.equals(mimeType)
+        || MimeTypes.AUDIO_MLAW.equals(mimeType)
+        || MimeTypes.AUDIO_MSGSM.equals(mimeType)) {
+      
+      return maxChannelCount;
+    }
+    
+    int assumedMaxChannelCount;
+    if (MimeTypes.AUDIO_AC3.equals(mimeType)) {
+      assumedMaxChannelCount = 6;
+    } else if (MimeTypes.AUDIO_E_AC3.equals(mimeType)) {
+      assumedMaxChannelCount = 16;
+    } else {
+      
+      assumedMaxChannelCount = 30;
+    }
+    Log.w(TAG, "AssumedMaxChannelAdjustment: " + name + ", [" + maxChannelCount + " to "
+        + assumedMaxChannelCount + "]");
+    return assumedMaxChannelCount;
+  }
+
   private static boolean isAdaptive(CodecCapabilities capabilities) {
     return Util.SDK_INT >= 19 && isAdaptiveV19(capabilities);
   }
@@ -277,14 +545,6 @@ public final class MediaCodecInfo {
   @TargetApi(19)
   private static boolean isAdaptiveV19(CodecCapabilities capabilities) {
     return capabilities.isFeatureSupported(CodecCapabilities.FEATURE_AdaptivePlayback);
-  }
-
-  @TargetApi(21)
-  private static boolean areSizeAndRateSupported(VideoCapabilities capabilities, int width,
-      int height, double frameRate) {
-    return frameRate == Format.NO_VALUE || frameRate <= 0
-        ? capabilities.isSizeSupported(width, height)
-        : capabilities.areSizeAndRateSupported(width, height, frameRate);
   }
 
   private static boolean isTunneling(CodecCapabilities capabilities) {
@@ -296,4 +556,62 @@ public final class MediaCodecInfo {
     return capabilities.isFeatureSupported(CodecCapabilities.FEATURE_TunneledPlayback);
   }
 
+  private static boolean isSecure(CodecCapabilities capabilities) {
+    return Util.SDK_INT >= 21 && isSecureV21(capabilities);
+  }
+
+  @TargetApi(21)
+  private static boolean isSecureV21(CodecCapabilities capabilities) {
+    return capabilities.isFeatureSupported(CodecCapabilities.FEATURE_SecurePlayback);
+  }
+
+  @TargetApi(21)
+  private static boolean areSizeAndRateSupportedV21(VideoCapabilities capabilities, int width,
+      int height, double frameRate) {
+    
+    Point alignedSize = alignVideoSizeV21(capabilities, width, height);
+    width = alignedSize.x;
+    height = alignedSize.y;
+
+    if (frameRate == Format.NO_VALUE || frameRate <= 0) {
+      return capabilities.isSizeSupported(width, height);
+    } else {
+      
+      
+      
+      double floorFrameRate = Math.floor(frameRate);
+      return capabilities.areSizeAndRateSupported(width, height, floorFrameRate);
+    }
+  }
+
+  @TargetApi(21)
+  private static Point alignVideoSizeV21(VideoCapabilities capabilities, int width, int height) {
+    int widthAlignment = capabilities.getWidthAlignment();
+    int heightAlignment = capabilities.getHeightAlignment();
+    return new Point(
+        Util.ceilDivide(width, widthAlignment) * widthAlignment,
+        Util.ceilDivide(height, heightAlignment) * heightAlignment);
+  }
+
+  @TargetApi(23)
+  private static int getMaxSupportedInstancesV23(CodecCapabilities capabilities) {
+    return capabilities.getMaxSupportedInstances();
+  }
+
+  
+
+
+
+
+
+
+
+
+  private static final boolean enableRotatedVerticalResolutionWorkaround(String name) {
+    if ("OMX.MTK.VIDEO.DECODER.HEVC".equals(name) && "mcv5a".equals(Util.DEVICE)) {
+      
+      return false;
+    }
+    return true;
+  }
 }

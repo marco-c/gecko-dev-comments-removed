@@ -40,6 +40,9 @@ public interface DataSink {
 
 
 
+
+
+
   void open(DataSpec dataSpec) throws IOException;
 
   
@@ -57,6 +60,8 @@ public interface DataSink {
 
 
 
-  void close() throws IOException;
 
+
+
+  void close() throws IOException;
 }

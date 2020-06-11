@@ -15,7 +15,6 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.util;
 
-import android.os.SystemClock;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.PlaybackParameters;
 
@@ -25,6 +24,8 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.PlaybackParameters;
 
 public final class StandaloneMediaClock implements MediaClock {
 
+  private final Clock clock;
+
   private boolean started;
   private long baseUs;
   private long baseElapsedMs;
@@ -33,8 +34,11 @@ public final class StandaloneMediaClock implements MediaClock {
   
 
 
-  public StandaloneMediaClock() {
-    playbackParameters = PlaybackParameters.DEFAULT;
+
+
+  public StandaloneMediaClock(Clock clock) {
+    this.clock = clock;
+    this.playbackParameters = PlaybackParameters.DEFAULT;
   }
 
   
@@ -42,7 +46,7 @@ public final class StandaloneMediaClock implements MediaClock {
 
   public void start() {
     if (!started) {
-      baseElapsedMs = SystemClock.elapsedRealtime();
+      baseElapsedMs = clock.elapsedRealtime();
       started = true;
     }
   }
@@ -52,7 +56,7 @@ public final class StandaloneMediaClock implements MediaClock {
 
   public void stop() {
     if (started) {
-      setPositionUs(getPositionUs());
+      resetPosition(getPositionUs());
       started = false;
     }
   }
@@ -62,45 +66,34 @@ public final class StandaloneMediaClock implements MediaClock {
 
 
 
-  public void setPositionUs(long positionUs) {
+  public void resetPosition(long positionUs) {
     baseUs = positionUs;
     if (started) {
-      baseElapsedMs = SystemClock.elapsedRealtime();
+      baseElapsedMs = clock.elapsedRealtime();
     }
-  }
-
-  
-
-
-
-
-  public void synchronize(MediaClock clock) {
-    setPositionUs(clock.getPositionUs());
-    playbackParameters = clock.getPlaybackParameters();
   }
 
   @Override
   public long getPositionUs() {
     long positionUs = baseUs;
     if (started) {
-      long elapsedSinceBaseMs = SystemClock.elapsedRealtime() - baseElapsedMs;
+      long elapsedSinceBaseMs = clock.elapsedRealtime() - baseElapsedMs;
       if (playbackParameters.speed == 1f) {
         positionUs += C.msToUs(elapsedSinceBaseMs);
       } else {
-        positionUs += playbackParameters.getSpeedAdjustedDurationUs(elapsedSinceBaseMs);
+        positionUs += playbackParameters.getMediaTimeUsForPlayoutTimeMs(elapsedSinceBaseMs);
       }
     }
     return positionUs;
   }
 
   @Override
-  public PlaybackParameters setPlaybackParameters(PlaybackParameters playbackParameters) {
+  public void setPlaybackParameters(PlaybackParameters playbackParameters) {
     
     if (started) {
-      setPositionUs(getPositionUs());
+      resetPosition(getPositionUs());
     }
     this.playbackParameters = playbackParameters;
-    return playbackParameters;
   }
 
   @Override

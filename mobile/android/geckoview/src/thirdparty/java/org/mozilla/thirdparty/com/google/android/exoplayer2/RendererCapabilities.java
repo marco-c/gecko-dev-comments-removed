@@ -15,7 +15,12 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2;
 
+import android.annotation.SuppressLint;
+import androidx.annotation.IntDef;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 
 
@@ -27,29 +32,23 @@ public interface RendererCapabilities {
 
 
 
-  int FORMAT_SUPPORT_MASK = 0b11;
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    FORMAT_HANDLED,
+    FORMAT_EXCEEDS_CAPABILITIES,
+    FORMAT_UNSUPPORTED_DRM,
+    FORMAT_UNSUPPORTED_SUBTYPE,
+    FORMAT_UNSUPPORTED_TYPE
+  })
+  @interface FormatSupport {}
+
+  
+  int FORMAT_SUPPORT_MASK = 0b111;
   
 
 
-  int FORMAT_HANDLED = 0b11;
-  
-
-
-
-
-
-
-
-  int FORMAT_EXCEEDS_CAPABILITIES = 0b10;
-  
-
-
-
-
-
-
-
-  int FORMAT_UNSUPPORTED_SUBTYPE = 0b01;
+  int FORMAT_HANDLED = 0b100;
   
 
 
@@ -58,40 +57,208 @@ public interface RendererCapabilities {
 
 
 
-  int FORMAT_UNSUPPORTED_TYPE = 0b00;
+
+
+  int FORMAT_EXCEEDS_CAPABILITIES = 0b011;
+  
+
+
+
+
+
+
+
+  int FORMAT_UNSUPPORTED_DRM = 0b010;
+  
+
+
+
+
+
+
+
+  int FORMAT_UNSUPPORTED_SUBTYPE = 0b001;
+  
+
+
+
+
+
+
+
+  int FORMAT_UNSUPPORTED_TYPE = 0b000;
 
   
 
 
 
-  int ADAPTIVE_SUPPORT_MASK = 0b1100;
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({ADAPTIVE_SEAMLESS, ADAPTIVE_NOT_SEAMLESS, ADAPTIVE_NOT_SUPPORTED})
+  @interface AdaptiveSupport {}
+
+  
+  int ADAPTIVE_SUPPORT_MASK = 0b11000;
   
 
 
-  int ADAPTIVE_SEAMLESS = 0b1000;
-  
-
-
-
-  int ADAPTIVE_NOT_SEAMLESS = 0b0100;
-  
-
-
-  int ADAPTIVE_NOT_SUPPORTED = 0b0000;
-
+  int ADAPTIVE_SEAMLESS = 0b10000;
   
 
 
 
-  int TUNNELING_SUPPORT_MASK = 0b10000;
+  int ADAPTIVE_NOT_SEAMLESS = 0b01000;
   
 
 
-  int TUNNELING_SUPPORTED = 0b10000;
+  int ADAPTIVE_NOT_SUPPORTED = 0b00000;
+
   
 
 
-  int TUNNELING_NOT_SUPPORTED = 0b00000;
+
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({TUNNELING_SUPPORTED, TUNNELING_NOT_SUPPORTED})
+  @interface TunnelingSupport {}
+
+  
+  int TUNNELING_SUPPORT_MASK = 0b100000;
+  
+
+
+  int TUNNELING_SUPPORTED = 0b100000;
+  
+
+
+  int TUNNELING_NOT_SUPPORTED = 0b000000;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  
+  @IntDef({})
+  @interface Capabilities {}
+
+  
+
+
+
+
+
+
+
+
+
+  @Capabilities
+  static int create(@FormatSupport int formatSupport) {
+    return create(formatSupport, ADAPTIVE_NOT_SUPPORTED, TUNNELING_NOT_SUPPORTED);
+  }
+
+  
+
+
+
+
+
+
+
+
+  
+  @SuppressLint("WrongConstant")
+  @Capabilities
+  static int create(
+      @FormatSupport int formatSupport,
+      @AdaptiveSupport int adaptiveSupport,
+      @TunnelingSupport int tunnelingSupport) {
+    return formatSupport | adaptiveSupport | tunnelingSupport;
+  }
+
+  
+
+
+
+
+
+  
+  @SuppressLint("WrongConstant")
+  @FormatSupport
+  static int getFormatSupport(@Capabilities int supportFlags) {
+    return supportFlags & FORMAT_SUPPORT_MASK;
+  }
+
+  
+
+
+
+
+
+  
+  @SuppressLint("WrongConstant")
+  @AdaptiveSupport
+  static int getAdaptiveSupport(@Capabilities int supportFlags) {
+    return supportFlags & ADAPTIVE_SUPPORT_MASK;
+  }
+
+  
+
+
+
+
+
+  
+  @SuppressLint("WrongConstant")
+  @TunnelingSupport
+  static int getTunnelingSupport(@Capabilities int supportFlags) {
+    return supportFlags & TUNNELING_SUPPORT_MASK;
+  }
+
+  
+
+
+
+
+
+  static String getFormatSupportString(@FormatSupport int formatSupport) {
+    switch (formatSupport) {
+      case RendererCapabilities.FORMAT_HANDLED:
+        return "YES";
+      case RendererCapabilities.FORMAT_EXCEEDS_CAPABILITIES:
+        return "NO_EXCEEDS_CAPABILITIES";
+      case RendererCapabilities.FORMAT_UNSUPPORTED_DRM:
+        return "NO_UNSUPPORTED_DRM";
+      case RendererCapabilities.FORMAT_UNSUPPORTED_SUBTYPE:
+        return "NO_UNSUPPORTED_TYPE";
+      case RendererCapabilities.FORMAT_UNSUPPORTED_TYPE:
+        return "NO";
+      default:
+        throw new IllegalStateException();
+    }
+  }
 
   
 
@@ -110,20 +277,7 @@ public interface RendererCapabilities {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  @Capabilities
   int supportsFormat(Format format) throws ExoPlaybackException;
 
   
@@ -134,7 +288,6 @@ public interface RendererCapabilities {
 
 
 
-
+  @AdaptiveSupport
   int supportsMixedMimeTypeAdaptation() throws ExoPlaybackException;
-
 }

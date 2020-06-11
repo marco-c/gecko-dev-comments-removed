@@ -19,13 +19,13 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.source.TrackGroupArr
 import org.mozilla.thirdparty.com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.Allocator;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DefaultAllocator;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.util.PriorityTaskManager;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 
 
 
 
-public final class DefaultLoadControl implements LoadControl {
+public class DefaultLoadControl implements LoadControl {
 
   
 
@@ -36,7 +36,9 @@ public final class DefaultLoadControl implements LoadControl {
   
 
 
-  public static final int DEFAULT_MAX_BUFFER_MS = 30000;
+
+
+  public static final int DEFAULT_MAX_BUFFER_MS = 50000;
 
   
 
@@ -48,87 +50,293 @@ public final class DefaultLoadControl implements LoadControl {
 
 
 
-
-  public static final int DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS  = 5000;
-
-  private static final int ABOVE_HIGH_WATERMARK = 0;
-  private static final int BETWEEN_WATERMARKS = 1;
-  private static final int BELOW_LOW_WATERMARK = 2;
-
-  private final DefaultAllocator allocator;
-
-  private final long minBufferUs;
-  private final long maxBufferUs;
-  private final long bufferForPlaybackUs;
-  private final long bufferForPlaybackAfterRebufferUs;
-  private final PriorityTaskManager priorityTaskManager;
-
-  private int targetBufferSize;
-  private boolean isBuffering;
+  public static final int DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS = 5000;
 
   
 
 
+
+  public static final int DEFAULT_TARGET_BUFFER_BYTES = C.LENGTH_UNSET;
+
+  
+  public static final boolean DEFAULT_PRIORITIZE_TIME_OVER_SIZE_THRESHOLDS = true;
+
+  
+  public static final int DEFAULT_BACK_BUFFER_DURATION_MS = 0;
+
+  
+  public static final boolean DEFAULT_RETAIN_BACK_BUFFER_FROM_KEYFRAME = false;
+
+  
+  public static final int DEFAULT_VIDEO_BUFFER_SIZE = 500 * C.DEFAULT_BUFFER_SEGMENT_SIZE;
+
+  
+  public static final int DEFAULT_AUDIO_BUFFER_SIZE = 54 * C.DEFAULT_BUFFER_SEGMENT_SIZE;
+
+  
+  public static final int DEFAULT_TEXT_BUFFER_SIZE = 2 * C.DEFAULT_BUFFER_SEGMENT_SIZE;
+
+  
+  public static final int DEFAULT_METADATA_BUFFER_SIZE = 2 * C.DEFAULT_BUFFER_SEGMENT_SIZE;
+
+  
+  public static final int DEFAULT_CAMERA_MOTION_BUFFER_SIZE = 2 * C.DEFAULT_BUFFER_SEGMENT_SIZE;
+
+  
+  public static final int DEFAULT_MUXED_BUFFER_SIZE =
+      DEFAULT_VIDEO_BUFFER_SIZE + DEFAULT_AUDIO_BUFFER_SIZE + DEFAULT_TEXT_BUFFER_SIZE;
+
+  
+  public static final class Builder {
+
+    private DefaultAllocator allocator;
+    private int minBufferAudioMs;
+    private int minBufferVideoMs;
+    private int maxBufferMs;
+    private int bufferForPlaybackMs;
+    private int bufferForPlaybackAfterRebufferMs;
+    private int targetBufferBytes;
+    private boolean prioritizeTimeOverSizeThresholds;
+    private int backBufferDurationMs;
+    private boolean retainBackBufferFromKeyframe;
+    private boolean createDefaultLoadControlCalled;
+
+    
+    public Builder() {
+      minBufferAudioMs = DEFAULT_MIN_BUFFER_MS;
+      minBufferVideoMs = DEFAULT_MAX_BUFFER_MS;
+      maxBufferMs = DEFAULT_MAX_BUFFER_MS;
+      bufferForPlaybackMs = DEFAULT_BUFFER_FOR_PLAYBACK_MS;
+      bufferForPlaybackAfterRebufferMs = DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS;
+      targetBufferBytes = DEFAULT_TARGET_BUFFER_BYTES;
+      prioritizeTimeOverSizeThresholds = DEFAULT_PRIORITIZE_TIME_OVER_SIZE_THRESHOLDS;
+      backBufferDurationMs = DEFAULT_BACK_BUFFER_DURATION_MS;
+      retainBackBufferFromKeyframe = DEFAULT_RETAIN_BACK_BUFFER_FROM_KEYFRAME;
+    }
+
+    
+
+
+
+
+
+
+    public Builder setAllocator(DefaultAllocator allocator) {
+      Assertions.checkState(!createDefaultLoadControlCalled);
+      this.allocator = allocator;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public Builder setBufferDurationsMs(
+        int minBufferMs,
+        int maxBufferMs,
+        int bufferForPlaybackMs,
+        int bufferForPlaybackAfterRebufferMs) {
+      Assertions.checkState(!createDefaultLoadControlCalled);
+      assertGreaterOrEqual(bufferForPlaybackMs, 0, "bufferForPlaybackMs", "0");
+      assertGreaterOrEqual(
+          bufferForPlaybackAfterRebufferMs, 0, "bufferForPlaybackAfterRebufferMs", "0");
+      assertGreaterOrEqual(minBufferMs, bufferForPlaybackMs, "minBufferMs", "bufferForPlaybackMs");
+      assertGreaterOrEqual(
+          minBufferMs,
+          bufferForPlaybackAfterRebufferMs,
+          "minBufferMs",
+          "bufferForPlaybackAfterRebufferMs");
+      assertGreaterOrEqual(maxBufferMs, minBufferMs, "maxBufferMs", "minBufferMs");
+      this.minBufferAudioMs = minBufferMs;
+      this.minBufferVideoMs = minBufferMs;
+      this.maxBufferMs = maxBufferMs;
+      this.bufferForPlaybackMs = bufferForPlaybackMs;
+      this.bufferForPlaybackAfterRebufferMs = bufferForPlaybackAfterRebufferMs;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+    public Builder setTargetBufferBytes(int targetBufferBytes) {
+      Assertions.checkState(!createDefaultLoadControlCalled);
+      this.targetBufferBytes = targetBufferBytes;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+    public Builder setPrioritizeTimeOverSizeThresholds(boolean prioritizeTimeOverSizeThresholds) {
+      Assertions.checkState(!createDefaultLoadControlCalled);
+      this.prioritizeTimeOverSizeThresholds = prioritizeTimeOverSizeThresholds;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    public Builder setBackBuffer(int backBufferDurationMs, boolean retainBackBufferFromKeyframe) {
+      Assertions.checkState(!createDefaultLoadControlCalled);
+      assertGreaterOrEqual(backBufferDurationMs, 0, "backBufferDurationMs", "0");
+      this.backBufferDurationMs = backBufferDurationMs;
+      this.retainBackBufferFromKeyframe = retainBackBufferFromKeyframe;
+      return this;
+    }
+
+    
+    public DefaultLoadControl createDefaultLoadControl() {
+      Assertions.checkState(!createDefaultLoadControlCalled);
+      createDefaultLoadControlCalled = true;
+      if (allocator == null) {
+        allocator = new DefaultAllocator( true, C.DEFAULT_BUFFER_SEGMENT_SIZE);
+      }
+      return new DefaultLoadControl(
+          allocator,
+          minBufferAudioMs,
+          minBufferVideoMs,
+          maxBufferMs,
+          bufferForPlaybackMs,
+          bufferForPlaybackAfterRebufferMs,
+          targetBufferBytes,
+          prioritizeTimeOverSizeThresholds,
+          backBufferDurationMs,
+          retainBackBufferFromKeyframe);
+    }
+  }
+
+  private final DefaultAllocator allocator;
+
+  private final long minBufferAudioUs;
+  private final long minBufferVideoUs;
+  private final long maxBufferUs;
+  private final long bufferForPlaybackUs;
+  private final long bufferForPlaybackAfterRebufferUs;
+  private final int targetBufferBytesOverwrite;
+  private final boolean prioritizeTimeOverSizeThresholds;
+  private final long backBufferDurationUs;
+  private final boolean retainBackBufferFromKeyframe;
+
+  private int targetBufferSize;
+  private boolean isBuffering;
+  private boolean hasVideo;
+
+  
+  @SuppressWarnings("deprecation")
   public DefaultLoadControl() {
     this(new DefaultAllocator(true, C.DEFAULT_BUFFER_SEGMENT_SIZE));
   }
 
   
-
-
-
-
+  @Deprecated
   public DefaultLoadControl(DefaultAllocator allocator) {
-    this(allocator, DEFAULT_MIN_BUFFER_MS, DEFAULT_MAX_BUFFER_MS, DEFAULT_BUFFER_FOR_PLAYBACK_MS,
-        DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS);
+    this(
+        allocator,
+         DEFAULT_MIN_BUFFER_MS,
+         DEFAULT_MAX_BUFFER_MS,
+        DEFAULT_MAX_BUFFER_MS,
+        DEFAULT_BUFFER_FOR_PLAYBACK_MS,
+        DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS,
+        DEFAULT_TARGET_BUFFER_BYTES,
+        DEFAULT_PRIORITIZE_TIME_OVER_SIZE_THRESHOLDS,
+        DEFAULT_BACK_BUFFER_DURATION_MS,
+        DEFAULT_RETAIN_BACK_BUFFER_FROM_KEYFRAME);
   }
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-  public DefaultLoadControl(DefaultAllocator allocator, int minBufferMs, int maxBufferMs,
-      long bufferForPlaybackMs, long bufferForPlaybackAfterRebufferMs) {
-    this(allocator, minBufferMs, maxBufferMs, bufferForPlaybackMs, bufferForPlaybackAfterRebufferMs,
-        null);
+  @Deprecated
+  public DefaultLoadControl(
+      DefaultAllocator allocator,
+      int minBufferMs,
+      int maxBufferMs,
+      int bufferForPlaybackMs,
+      int bufferForPlaybackAfterRebufferMs,
+      int targetBufferBytes,
+      boolean prioritizeTimeOverSizeThresholds) {
+    this(
+        allocator,
+         minBufferMs,
+         minBufferMs,
+        maxBufferMs,
+        bufferForPlaybackMs,
+        bufferForPlaybackAfterRebufferMs,
+        targetBufferBytes,
+        prioritizeTimeOverSizeThresholds,
+        DEFAULT_BACK_BUFFER_DURATION_MS,
+        DEFAULT_RETAIN_BACK_BUFFER_FROM_KEYFRAME);
   }
 
-  
+  protected DefaultLoadControl(
+      DefaultAllocator allocator,
+      int minBufferAudioMs,
+      int minBufferVideoMs,
+      int maxBufferMs,
+      int bufferForPlaybackMs,
+      int bufferForPlaybackAfterRebufferMs,
+      int targetBufferBytes,
+      boolean prioritizeTimeOverSizeThresholds,
+      int backBufferDurationMs,
+      boolean retainBackBufferFromKeyframe) {
+    assertGreaterOrEqual(bufferForPlaybackMs, 0, "bufferForPlaybackMs", "0");
+    assertGreaterOrEqual(
+        bufferForPlaybackAfterRebufferMs, 0, "bufferForPlaybackAfterRebufferMs", "0");
+    assertGreaterOrEqual(
+        minBufferAudioMs, bufferForPlaybackMs, "minBufferAudioMs", "bufferForPlaybackMs");
+    assertGreaterOrEqual(
+        minBufferVideoMs, bufferForPlaybackMs, "minBufferVideoMs", "bufferForPlaybackMs");
+    assertGreaterOrEqual(
+        minBufferAudioMs,
+        bufferForPlaybackAfterRebufferMs,
+        "minBufferAudioMs",
+        "bufferForPlaybackAfterRebufferMs");
+    assertGreaterOrEqual(
+        minBufferVideoMs,
+        bufferForPlaybackAfterRebufferMs,
+        "minBufferVideoMs",
+        "bufferForPlaybackAfterRebufferMs");
+    assertGreaterOrEqual(maxBufferMs, minBufferAudioMs, "maxBufferMs", "minBufferAudioMs");
+    assertGreaterOrEqual(maxBufferMs, minBufferVideoMs, "maxBufferMs", "minBufferVideoMs");
+    assertGreaterOrEqual(backBufferDurationMs, 0, "backBufferDurationMs", "0");
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  public DefaultLoadControl(DefaultAllocator allocator, int minBufferMs, int maxBufferMs,
-      long bufferForPlaybackMs, long bufferForPlaybackAfterRebufferMs,
-      PriorityTaskManager priorityTaskManager) {
     this.allocator = allocator;
-    minBufferUs = minBufferMs * 1000L;
-    maxBufferUs = maxBufferMs * 1000L;
-    bufferForPlaybackUs = bufferForPlaybackMs * 1000L;
-    bufferForPlaybackAfterRebufferUs = bufferForPlaybackAfterRebufferMs * 1000L;
-    this.priorityTaskManager = priorityTaskManager;
+    this.minBufferAudioUs = C.msToUs(minBufferAudioMs);
+    this.minBufferVideoUs = C.msToUs(minBufferVideoMs);
+    this.maxBufferUs = C.msToUs(maxBufferMs);
+    this.bufferForPlaybackUs = C.msToUs(bufferForPlaybackMs);
+    this.bufferForPlaybackAfterRebufferUs = C.msToUs(bufferForPlaybackAfterRebufferMs);
+    this.targetBufferBytesOverwrite = targetBufferBytes;
+    this.prioritizeTimeOverSizeThresholds = prioritizeTimeOverSizeThresholds;
+    this.backBufferDurationUs = C.msToUs(backBufferDurationMs);
+    this.retainBackBufferFromKeyframe = retainBackBufferFromKeyframe;
   }
 
   @Override
@@ -139,12 +347,11 @@ public final class DefaultLoadControl implements LoadControl {
   @Override
   public void onTracksSelected(Renderer[] renderers, TrackGroupArray trackGroups,
       TrackSelectionArray trackSelections) {
-    targetBufferSize = 0;
-    for (int i = 0; i < renderers.length; i++) {
-      if (trackSelections.get(i) != null) {
-        targetBufferSize += Util.getDefaultBufferSize(renderers[i].getTrackType());
-      }
-    }
+    hasVideo = hasVideo(renderers, trackSelections);
+    targetBufferSize =
+        targetBufferBytesOverwrite == C.LENGTH_UNSET
+            ? calculateTargetBufferSize(renderers, trackSelections)
+            : targetBufferBytesOverwrite;
     allocator.setTargetBufferSize(targetBufferSize);
   }
 
@@ -164,42 +371,103 @@ public final class DefaultLoadControl implements LoadControl {
   }
 
   @Override
-  public boolean shouldStartPlayback(long bufferedDurationUs, boolean rebuffering) {
-    long minBufferDurationUs = rebuffering ? bufferForPlaybackAfterRebufferUs : bufferForPlaybackUs;
-    return minBufferDurationUs <= 0 || bufferedDurationUs >= minBufferDurationUs;
+  public long getBackBufferDurationUs() {
+    return backBufferDurationUs;
   }
 
   @Override
-  public boolean shouldContinueLoading(long bufferedDurationUs) {
-    int bufferTimeState = getBufferTimeState(bufferedDurationUs);
+  public boolean retainBackBufferFromKeyframe() {
+    return retainBackBufferFromKeyframe;
+  }
+
+  @Override
+  public boolean shouldContinueLoading(long bufferedDurationUs, float playbackSpeed) {
     boolean targetBufferSizeReached = allocator.getTotalBytesAllocated() >= targetBufferSize;
-    boolean wasBuffering = isBuffering;
-    isBuffering = bufferTimeState == BELOW_LOW_WATERMARK
-        || (bufferTimeState == BETWEEN_WATERMARKS && isBuffering && !targetBufferSizeReached);
-    if (priorityTaskManager != null && isBuffering != wasBuffering) {
-      if (isBuffering) {
-        priorityTaskManager.add(C.PRIORITY_PLAYBACK);
-      } else {
-        priorityTaskManager.remove(C.PRIORITY_PLAYBACK);
-      }
+    long minBufferUs = hasVideo ? minBufferVideoUs : minBufferAudioUs;
+    if (playbackSpeed > 1) {
+      
+      
+      long mediaDurationMinBufferUs =
+          Util.getMediaDurationForPlayoutDuration(minBufferUs, playbackSpeed);
+      minBufferUs = Math.min(mediaDurationMinBufferUs, maxBufferUs);
     }
+    if (bufferedDurationUs < minBufferUs) {
+      isBuffering = prioritizeTimeOverSizeThresholds || !targetBufferSizeReached;
+    } else if (bufferedDurationUs >= maxBufferUs || targetBufferSizeReached) {
+      isBuffering = false;
+    } 
     return isBuffering;
   }
 
-  private int getBufferTimeState(long bufferedDurationUs) {
-    return bufferedDurationUs > maxBufferUs ? ABOVE_HIGH_WATERMARK
-        : (bufferedDurationUs < minBufferUs ? BELOW_LOW_WATERMARK : BETWEEN_WATERMARKS);
+  @Override
+  public boolean shouldStartPlayback(
+      long bufferedDurationUs, float playbackSpeed, boolean rebuffering) {
+    bufferedDurationUs = Util.getPlayoutDurationForMediaDuration(bufferedDurationUs, playbackSpeed);
+    long minBufferDurationUs = rebuffering ? bufferForPlaybackAfterRebufferUs : bufferForPlaybackUs;
+    return minBufferDurationUs <= 0
+        || bufferedDurationUs >= minBufferDurationUs
+        || (!prioritizeTimeOverSizeThresholds
+            && allocator.getTotalBytesAllocated() >= targetBufferSize);
+  }
+
+  
+
+
+
+
+
+
+
+  protected int calculateTargetBufferSize(
+      Renderer[] renderers, TrackSelectionArray trackSelectionArray) {
+    int targetBufferSize = 0;
+    for (int i = 0; i < renderers.length; i++) {
+      if (trackSelectionArray.get(i) != null) {
+        targetBufferSize += getDefaultBufferSize(renderers[i].getTrackType());
+      }
+    }
+    return targetBufferSize;
   }
 
   private void reset(boolean resetAllocator) {
     targetBufferSize = 0;
-    if (priorityTaskManager != null && isBuffering) {
-      priorityTaskManager.remove(C.PRIORITY_PLAYBACK);
-    }
     isBuffering = false;
     if (resetAllocator) {
       allocator.reset();
     }
   }
 
+  private static int getDefaultBufferSize(int trackType) {
+    switch (trackType) {
+      case C.TRACK_TYPE_DEFAULT:
+        return DEFAULT_MUXED_BUFFER_SIZE;
+      case C.TRACK_TYPE_AUDIO:
+        return DEFAULT_AUDIO_BUFFER_SIZE;
+      case C.TRACK_TYPE_VIDEO:
+        return DEFAULT_VIDEO_BUFFER_SIZE;
+      case C.TRACK_TYPE_TEXT:
+        return DEFAULT_TEXT_BUFFER_SIZE;
+      case C.TRACK_TYPE_METADATA:
+        return DEFAULT_METADATA_BUFFER_SIZE;
+      case C.TRACK_TYPE_CAMERA_MOTION:
+        return DEFAULT_CAMERA_MOTION_BUFFER_SIZE;
+      case C.TRACK_TYPE_NONE:
+        return 0;
+      default:
+        throw new IllegalArgumentException();
+    }
+  }
+
+  private static boolean hasVideo(Renderer[] renderers, TrackSelectionArray trackSelectionArray) {
+    for (int i = 0; i < renderers.length; i++) {
+      if (renderers[i].getTrackType() == C.TRACK_TYPE_VIDEO && trackSelectionArray.get(i) != null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static void assertGreaterOrEqual(int value1, int value2, String name1, String name2) {
+    Assertions.checkArgument(value1 >= value2, name1 + " cannot be less than " + name2);
+  }
 }

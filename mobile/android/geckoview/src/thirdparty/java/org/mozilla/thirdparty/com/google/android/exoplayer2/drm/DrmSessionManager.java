@@ -15,16 +15,94 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.drm;
 
-import android.annotation.TargetApi;
 import android.os.Looper;
+import androidx.annotation.Nullable;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.DrmInitData.SchemeData;
 
 
 
 
-@TargetApi(16)
 public interface DrmSessionManager<T extends ExoMediaCrypto> {
 
   
+  @SuppressWarnings("unchecked")
+  static <T extends ExoMediaCrypto> DrmSessionManager<T> getDummyDrmSessionManager() {
+    return (DrmSessionManager<T>) DUMMY;
+  }
+
+  
+  DrmSessionManager<ExoMediaCrypto> DUMMY =
+      new DrmSessionManager<ExoMediaCrypto>() {
+
+        @Override
+        public boolean canAcquireSession(DrmInitData drmInitData) {
+          return false;
+        }
+
+        @Override
+        public DrmSession<ExoMediaCrypto> acquireSession(
+            Looper playbackLooper, DrmInitData drmInitData) {
+          return new ErrorStateDrmSession<>(
+              new DrmSession.DrmSessionException(
+                  new UnsupportedDrmException(UnsupportedDrmException.REASON_UNSUPPORTED_SCHEME)));
+        }
+
+        @Override
+        @Nullable
+        public Class<ExoMediaCrypto> getExoMediaCryptoType(DrmInitData drmInitData) {
+          return null;
+        }
+      };
+
+  
+
+
+
+
+
+  default void prepare() {
+    
+  }
+
+  
+  default void release() {
+    
+  }
+
+  
+
+
+
+
+
+
+
+  boolean canAcquireSession(DrmInitData drmInitData);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @Nullable
+  default DrmSession<T> acquirePlaceholderSession(Looper playbackLooper, int trackType) {
+    return null;
+  }
+
+  
+
+
 
 
 
@@ -37,6 +115,7 @@ public interface DrmSessionManager<T extends ExoMediaCrypto> {
   
 
 
-  void releaseSession(DrmSession<T> drmSession);
 
+  @Nullable
+  Class<? extends ExoMediaCrypto> getExoMediaCryptoType(DrmInitData drmInitData);
 }

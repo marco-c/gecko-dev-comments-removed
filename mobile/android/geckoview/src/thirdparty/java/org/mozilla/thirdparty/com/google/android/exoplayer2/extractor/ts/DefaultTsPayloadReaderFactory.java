@@ -15,12 +15,14 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ts;
 
-import android.support.annotation.IntDef;
 import android.util.SparseArray;
+import androidx.annotation.IntDef;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ts.TsPayloadReader.EsInfo;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.text.cea.Cea708InitializationData;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
@@ -35,17 +37,62 @@ public final class DefaultTsPayloadReaderFactory implements TsPayloadReader.Fact
   
 
 
+
+
+
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef(flag = true, value = {FLAG_ALLOW_NON_IDR_KEYFRAMES, FLAG_IGNORE_AAC_STREAM,
-      FLAG_IGNORE_H264_STREAM, FLAG_DETECT_ACCESS_UNITS, FLAG_IGNORE_SPLICE_INFO_STREAM,
-      FLAG_OVERRIDE_CAPTION_DESCRIPTORS})
+  @IntDef(
+      flag = true,
+      value = {
+        FLAG_ALLOW_NON_IDR_KEYFRAMES,
+        FLAG_IGNORE_AAC_STREAM,
+        FLAG_IGNORE_H264_STREAM,
+        FLAG_DETECT_ACCESS_UNITS,
+        FLAG_IGNORE_SPLICE_INFO_STREAM,
+        FLAG_OVERRIDE_CAPTION_DESCRIPTORS,
+        FLAG_ENABLE_HDMV_DTS_AUDIO_STREAMS
+      })
   public @interface Flags {}
+
+  
+
+
+
   public static final int FLAG_ALLOW_NON_IDR_KEYFRAMES = 1;
+  
+
+
+
+
   public static final int FLAG_IGNORE_AAC_STREAM = 1 << 1;
+  
+
+
+
+
   public static final int FLAG_IGNORE_H264_STREAM = 1 << 2;
+  
+
+
+
+
   public static final int FLAG_DETECT_ACCESS_UNITS = 1 << 3;
+  
   public static final int FLAG_IGNORE_SPLICE_INFO_STREAM = 1 << 4;
+  
+
+
+
+
+
   public static final int FLAG_OVERRIDE_CAPTION_DESCRIPTORS = 1 << 5;
+  
+
+
+
+  public static final int FLAG_ENABLE_HDMV_DTS_AUDIO_STREAMS = 1 << 6;
 
   private static final int DESCRIPTOR_TAG_CAPTION_SERVICE = 0x86;
 
@@ -61,7 +108,10 @@ public final class DefaultTsPayloadReaderFactory implements TsPayloadReader.Fact
 
 
   public DefaultTsPayloadReaderFactory(@Flags int flags) {
-    this(flags, Collections.<Format>emptyList());
+    this(
+        flags,
+        Collections.singletonList(
+            Format.createTextSampleFormat(null, MimeTypes.APPLICATION_CEA608, 0, null)));
   }
 
   
@@ -76,10 +126,6 @@ public final class DefaultTsPayloadReaderFactory implements TsPayloadReader.Fact
 
   public DefaultTsPayloadReaderFactory(@Flags int flags, List<Format> closedCaptionFormats) {
     this.flags = flags;
-    if (!isSet(FLAG_OVERRIDE_CAPTION_DESCRIPTORS) && closedCaptionFormats.isEmpty()) {
-      closedCaptionFormats = Collections.singletonList(Format.createTextSampleFormat(null,
-          MimeTypes.APPLICATION_CEA608, null, Format.NO_VALUE, 0, null, null));
-    }
     this.closedCaptionFormats = closedCaptionFormats;
   }
 
@@ -89,22 +135,32 @@ public final class DefaultTsPayloadReaderFactory implements TsPayloadReader.Fact
   }
 
   @Override
+  @SuppressWarnings("fallthrough")
   public TsPayloadReader createPayloadReader(int streamType, EsInfo esInfo) {
     switch (streamType) {
       case TsExtractor.TS_STREAM_TYPE_MPA:
       case TsExtractor.TS_STREAM_TYPE_MPA_LSF:
         return new PesReader(new MpegAudioReader(esInfo.language));
-      case TsExtractor.TS_STREAM_TYPE_AAC:
+      case TsExtractor.TS_STREAM_TYPE_AAC_ADTS:
         return isSet(FLAG_IGNORE_AAC_STREAM)
             ? null : new PesReader(new AdtsReader(false, esInfo.language));
+      case TsExtractor.TS_STREAM_TYPE_AAC_LATM:
+        return isSet(FLAG_IGNORE_AAC_STREAM)
+            ? null : new PesReader(new LatmReader(esInfo.language));
       case TsExtractor.TS_STREAM_TYPE_AC3:
       case TsExtractor.TS_STREAM_TYPE_E_AC3:
         return new PesReader(new Ac3Reader(esInfo.language));
-      case TsExtractor.TS_STREAM_TYPE_DTS:
+      case TsExtractor.TS_STREAM_TYPE_AC4:
+        return new PesReader(new Ac4Reader(esInfo.language));
       case TsExtractor.TS_STREAM_TYPE_HDMV_DTS:
+        if (!isSet(FLAG_ENABLE_HDMV_DTS_AUDIO_STREAMS)) {
+          return null;
+        }
+        
+      case TsExtractor.TS_STREAM_TYPE_DTS:
         return new PesReader(new DtsReader(esInfo.language));
       case TsExtractor.TS_STREAM_TYPE_H262:
-        return new PesReader(new H262Reader());
+        return new PesReader(new H262Reader(buildUserDataReader(esInfo)));
       case TsExtractor.TS_STREAM_TYPE_H264:
         return isSet(FLAG_IGNORE_H264_STREAM) ? null
             : new PesReader(new H264Reader(buildSeiReader(esInfo),
@@ -134,8 +190,34 @@ public final class DefaultTsPayloadReaderFactory implements TsPayloadReader.Fact
 
 
   private SeiReader buildSeiReader(EsInfo esInfo) {
+    return new SeiReader(getClosedCaptionFormats(esInfo));
+  }
+
+  
+
+
+
+
+
+
+
+
+  private UserDataReader buildUserDataReader(EsInfo esInfo) {
+    return new UserDataReader(getClosedCaptionFormats(esInfo));
+  }
+
+  
+
+
+
+
+
+
+
+
+  private List<Format> getClosedCaptionFormats(EsInfo esInfo) {
     if (isSet(FLAG_OVERRIDE_CAPTION_DESCRIPTORS)) {
-      return new SeiReader(closedCaptionFormats);
+      return closedCaptionFormats;
     }
     ParsableByteArray scratchDescriptorData = new ParsableByteArray(esInfo.descriptorBytes);
     List<Format> closedCaptionFormats = this.closedCaptionFormats;
@@ -160,21 +242,42 @@ public final class DefaultTsPayloadReaderFactory implements TsPayloadReader.Fact
             mimeType = MimeTypes.APPLICATION_CEA608;
             accessibilityChannel = 1;
           }
-          closedCaptionFormats.add(Format.createTextSampleFormat(null, mimeType, null,
-              Format.NO_VALUE, 0, language, accessibilityChannel, null));
+
           
-          scratchDescriptorData.skipBytes(2);
+          byte flags = (byte) scratchDescriptorData.readUnsignedByte();
+          
+          scratchDescriptorData.skipBytes(1);
+
+          List<byte[]> initializationData = null;
+          
+          if (isDigital) {
+            boolean isWideAspectRatio = (flags & 0x40) != 0;
+            initializationData = Cea708InitializationData.buildData(isWideAspectRatio);
+          }
+
+          closedCaptionFormats.add(
+              Format.createTextSampleFormat(
+                   null,
+                  mimeType,
+                   null,
+                   Format.NO_VALUE,
+                   0,
+                  language,
+                  accessibilityChannel,
+                   null,
+                  Format.OFFSET_SAMPLE_RELATIVE,
+                  initializationData));
         }
       } else {
         
       }
       scratchDescriptorData.setPosition(nextDescriptorPosition);
     }
-    return new SeiReader(closedCaptionFormats);
+
+    return closedCaptionFormats;
   }
 
   private boolean isSet(@Flags int flag) {
     return (flags & flag) != 0;
   }
-
 }

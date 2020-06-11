@@ -15,6 +15,7 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source.chunk;
 
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource;
@@ -27,9 +28,7 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 public abstract class MediaChunk extends Chunk {
 
   
-
-
-  public final int chunkIndex;
+  public final long chunkIndex;
 
   
 
@@ -41,9 +40,15 @@ public abstract class MediaChunk extends Chunk {
 
 
 
-  public MediaChunk(DataSource dataSource, DataSpec dataSpec, Format trackFormat,
-      int trackSelectionReason, Object trackSelectionData, long startTimeUs, long endTimeUs,
-      int chunkIndex) {
+  public MediaChunk(
+      DataSource dataSource,
+      DataSpec dataSpec,
+      Format trackFormat,
+      int trackSelectionReason,
+      @Nullable Object trackSelectionData,
+      long startTimeUs,
+      long endTimeUs,
+      long chunkIndex) {
     super(dataSource, dataSpec, C.DATA_TYPE_MEDIA, trackFormat, trackSelectionReason,
         trackSelectionData, startTimeUs, endTimeUs);
     Assertions.checkNotNull(trackFormat);
@@ -51,10 +56,8 @@ public abstract class MediaChunk extends Chunk {
   }
 
   
-
-
-  public int getNextChunkIndex() {
-    return chunkIndex + 1;
+  public long getNextChunkIndex() {
+    return chunkIndex != C.INDEX_UNSET ? chunkIndex + 1 : C.INDEX_UNSET;
   }
 
   

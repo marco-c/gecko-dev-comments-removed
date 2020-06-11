@@ -15,42 +15,50 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.wav;
 
+import android.util.Pair;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.ParserException;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.audio.WavUtil;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.Extractor;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ExtractorInput;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ExtractorOutput;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ExtractorsFactory;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.PositionHolder;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.SeekMap;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.TrackOutput;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 import java.io.IOException;
+import org.checkerframework.checker.nullness.qual.EnsuresNonNull;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 
 
-public final class WavExtractor implements Extractor, SeekMap {
-
-  
 
 
-  public static final ExtractorsFactory FACTORY = new ExtractorsFactory() {
-
-    @Override
-    public Extractor[] createExtractors() {
-      return new Extractor[] {new WavExtractor()};
-    }
-
-  };
+public final class WavExtractor implements Extractor {
 
   
-  private static final int MAX_INPUT_SIZE = 32 * 1024;
 
-  private ExtractorOutput extractorOutput;
-  private TrackOutput trackOutput;
-  private WavHeader wavHeader;
-  private int bytesPerFrame;
-  private int pendingBytes;
+
+
+
+  private static final int TARGET_SAMPLES_PER_SECOND = 10;
+
+  
+  public static final ExtractorsFactory FACTORY = () -> new Extractor[] {new WavExtractor()};
+
+  @MonotonicNonNull private ExtractorOutput extractorOutput;
+  @MonotonicNonNull private TrackOutput trackOutput;
+  @MonotonicNonNull private OutputWriter outputWriter;
+  private int dataStartPosition;
+  private long dataEndPosition;
+
+  public WavExtractor() {
+    dataStartPosition = C.POSITION_UNSET;
+    dataEndPosition = C.POSITION_UNSET;
+  }
 
   @Override
   public boolean sniff(ExtractorInput input) throws IOException, InterruptedException {
@@ -61,13 +69,14 @@ public final class WavExtractor implements Extractor, SeekMap {
   public void init(ExtractorOutput output) {
     extractorOutput = output;
     trackOutput = output.track(0, C.TRACK_TYPE_AUDIO);
-    wavHeader = null;
     output.endTracks();
   }
 
   @Override
   public void seek(long position, long timeUs) {
-    pendingBytes = 0;
+    if (outputWriter != null) {
+      outputWriter.reset(timeUs);
+    }
   }
 
   @Override
@@ -78,55 +87,476 @@ public final class WavExtractor implements Extractor, SeekMap {
   @Override
   public int read(ExtractorInput input, PositionHolder seekPosition)
       throws IOException, InterruptedException {
-    if (wavHeader == null) {
-      wavHeader = WavHeaderReader.peek(input);
-      if (wavHeader == null) {
+    assertInitialized();
+    if (outputWriter == null) {
+      WavHeader header = WavHeaderReader.peek(input);
+      if (header == null) {
         
         throw new ParserException("Unsupported or unrecognized wav header.");
       }
-      Format format = Format.createAudioSampleFormat(null, MimeTypes.AUDIO_RAW, null,
-          wavHeader.getBitrate(), MAX_INPUT_SIZE, wavHeader.getNumChannels(),
-          wavHeader.getSampleRateHz(), wavHeader.getEncoding(), null, null, 0, null);
-      trackOutput.format(format);
-      bytesPerFrame = wavHeader.getBytesPerFrame();
+
+      if (header.formatType == WavUtil.TYPE_IMA_ADPCM) {
+        outputWriter = new ImaAdPcmOutputWriter(extractorOutput, trackOutput, header);
+      } else if (header.formatType == WavUtil.TYPE_ALAW) {
+        outputWriter =
+            new PassthroughOutputWriter(
+                extractorOutput,
+                trackOutput,
+                header,
+                MimeTypes.AUDIO_ALAW,
+                 Format.NO_VALUE);
+      } else if (header.formatType == WavUtil.TYPE_MLAW) {
+        outputWriter =
+            new PassthroughOutputWriter(
+                extractorOutput,
+                trackOutput,
+                header,
+                MimeTypes.AUDIO_MLAW,
+                 Format.NO_VALUE);
+      } else {
+        @C.PcmEncoding
+        int pcmEncoding = WavUtil.getPcmEncodingForType(header.formatType, header.bitsPerSample);
+        if (pcmEncoding == C.ENCODING_INVALID) {
+          throw new ParserException("Unsupported WAV format type: " + header.formatType);
+        }
+        outputWriter =
+            new PassthroughOutputWriter(
+                extractorOutput, trackOutput, header, MimeTypes.AUDIO_RAW, pcmEncoding);
+      }
     }
 
-    if (!wavHeader.hasDataBounds()) {
-      WavHeaderReader.skipToData(input, wavHeader);
-      extractorOutput.seekMap(this);
+    if (dataStartPosition == C.POSITION_UNSET) {
+      Pair<Long, Long> dataBounds = WavHeaderReader.skipToData(input);
+      dataStartPosition = dataBounds.first.intValue();
+      dataEndPosition = dataBounds.second;
+      outputWriter.init(dataStartPosition, dataEndPosition);
+    } else if (input.getPosition() == 0) {
+      input.skipFully(dataStartPosition);
     }
 
-    int bytesAppended = trackOutput.sampleData(input, MAX_INPUT_SIZE - pendingBytes, true);
-    if (bytesAppended != RESULT_END_OF_INPUT) {
-      pendingBytes += bytesAppended;
-    }
+    Assertions.checkState(dataEndPosition != C.POSITION_UNSET);
+    long bytesLeft = dataEndPosition - input.getPosition();
+    return outputWriter.sampleData(input, bytesLeft) ? RESULT_END_OF_INPUT : RESULT_CONTINUE;
+  }
 
-    
-    int pendingFrames = pendingBytes / bytesPerFrame;
-    if (pendingFrames > 0) {
-      long timeUs = wavHeader.getTimeUs(input.getPosition() - pendingBytes);
-      int size = pendingFrames * bytesPerFrame;
-      pendingBytes -= size;
-      trackOutput.sampleMetadata(timeUs, C.BUFFER_FLAG_KEY_FRAME, size, pendingBytes, null);
-    }
-
-    return bytesAppended == RESULT_END_OF_INPUT ? RESULT_END_OF_INPUT : RESULT_CONTINUE;
+  @EnsuresNonNull({"extractorOutput", "trackOutput"})
+  private void assertInitialized() {
+    Assertions.checkStateNotNull(trackOutput);
+    Util.castNonNull(extractorOutput);
   }
 
   
+  private interface OutputWriter {
 
-  @Override
-  public long getDurationUs() {
-    return wavHeader.getDurationUs();
+    
+
+
+
+
+    void reset(long timeUs);
+
+    
+
+
+
+
+
+
+
+
+    void init(int dataStartPosition, long dataEndPosition) throws ParserException;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    boolean sampleData(ExtractorInput input, long bytesLeft)
+        throws IOException, InterruptedException;
   }
 
-  @Override
-  public boolean isSeekable() {
-    return true;
+  private static final class PassthroughOutputWriter implements OutputWriter {
+
+    private final ExtractorOutput extractorOutput;
+    private final TrackOutput trackOutput;
+    private final WavHeader header;
+    private final Format format;
+    
+    private final int targetSampleSizeBytes;
+
+    
+    private long startTimeUs;
+    
+
+
+
+
+    private int pendingOutputBytes;
+    
+
+
+
+    private long outputFrameCount;
+
+    public PassthroughOutputWriter(
+        ExtractorOutput extractorOutput,
+        TrackOutput trackOutput,
+        WavHeader header,
+        String mimeType,
+        @C.PcmEncoding int pcmEncoding)
+        throws ParserException {
+      this.extractorOutput = extractorOutput;
+      this.trackOutput = trackOutput;
+      this.header = header;
+
+      int bytesPerFrame = header.numChannels * header.bitsPerSample / 8;
+      
+      if (header.blockSize != bytesPerFrame) {
+        throw new ParserException(
+            "Expected block size: " + bytesPerFrame + "; got: " + header.blockSize);
+      }
+
+      targetSampleSizeBytes =
+          Math.max(bytesPerFrame, header.frameRateHz * bytesPerFrame / TARGET_SAMPLES_PER_SECOND);
+      format =
+          Format.createAudioSampleFormat(
+               null,
+              mimeType,
+               null,
+               header.frameRateHz * bytesPerFrame * 8,
+               targetSampleSizeBytes,
+              header.numChannels,
+              header.frameRateHz,
+              pcmEncoding,
+               null,
+               null,
+               0,
+               null);
+    }
+
+    @Override
+    public void reset(long timeUs) {
+      startTimeUs = timeUs;
+      pendingOutputBytes = 0;
+      outputFrameCount = 0;
+    }
+
+    @Override
+    public void init(int dataStartPosition, long dataEndPosition) {
+      extractorOutput.seekMap(
+          new WavSeekMap(header,  1, dataStartPosition, dataEndPosition));
+      trackOutput.format(format);
+    }
+
+    @Override
+    public boolean sampleData(ExtractorInput input, long bytesLeft)
+        throws IOException, InterruptedException {
+      
+      while (bytesLeft > 0 && pendingOutputBytes < targetSampleSizeBytes) {
+        int bytesToRead = (int) Math.min(targetSampleSizeBytes - pendingOutputBytes, bytesLeft);
+        int bytesAppended = trackOutput.sampleData(input, bytesToRead, true);
+        if (bytesAppended == RESULT_END_OF_INPUT) {
+          bytesLeft = 0;
+        } else {
+          pendingOutputBytes += bytesAppended;
+          bytesLeft -= bytesAppended;
+        }
+      }
+
+      
+      
+      
+      int bytesPerFrame = header.blockSize;
+      int pendingFrames = pendingOutputBytes / bytesPerFrame;
+      if (pendingFrames > 0) {
+        long timeUs =
+            startTimeUs
+                + Util.scaleLargeTimestamp(
+                    outputFrameCount, C.MICROS_PER_SECOND, header.frameRateHz);
+        int size = pendingFrames * bytesPerFrame;
+        int offset = pendingOutputBytes - size;
+        trackOutput.sampleMetadata(
+            timeUs, C.BUFFER_FLAG_KEY_FRAME, size, offset,  null);
+        outputFrameCount += pendingFrames;
+        pendingOutputBytes = offset;
+      }
+
+      return bytesLeft <= 0;
+    }
   }
 
-  @Override
-  public long getPosition(long timeUs) {
-    return wavHeader.getPosition(timeUs);
+  private static final class ImaAdPcmOutputWriter implements OutputWriter {
+
+    private static final int[] INDEX_TABLE = {
+      -1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8
+    };
+
+    private static final int[] STEP_TABLE = {
+      7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 50, 55, 60, 66,
+      73, 80, 88, 97, 107, 118, 130, 143, 157, 173, 190, 209, 230, 253, 279, 307, 337, 371, 408,
+      449, 494, 544, 598, 658, 724, 796, 876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066,
+      2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358, 5894, 6484, 7132, 7845, 8630,
+      9493, 10442, 11487, 12635, 13899, 15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794,
+      32767
+    };
+
+    private final ExtractorOutput extractorOutput;
+    private final TrackOutput trackOutput;
+    private final WavHeader header;
+
+    
+    private final int framesPerBlock;
+    
+    private final byte[] inputData;
+    
+    private final ParsableByteArray decodedData;
+    
+    private final int targetSampleSizeFrames;
+    
+    private final Format format;
+
+    
+    private int pendingInputBytes;
+    
+    private long startTimeUs;
+    
+
+
+
+
+    private int pendingOutputBytes;
+    
+
+
+
+    private long outputFrameCount;
+
+    public ImaAdPcmOutputWriter(
+        ExtractorOutput extractorOutput, TrackOutput trackOutput, WavHeader header)
+        throws ParserException {
+      this.extractorOutput = extractorOutput;
+      this.trackOutput = trackOutput;
+      this.header = header;
+      targetSampleSizeFrames = Math.max(1, header.frameRateHz / TARGET_SAMPLES_PER_SECOND);
+
+      ParsableByteArray scratch = new ParsableByteArray(header.extraData);
+      scratch.readLittleEndianUnsignedShort();
+      framesPerBlock = scratch.readLittleEndianUnsignedShort();
+
+      int numChannels = header.numChannels;
+      
+      
+      
+      int expectedFramesPerBlock =
+          (((header.blockSize - (4 * numChannels)) * 8) / (header.bitsPerSample * numChannels)) + 1;
+      if (framesPerBlock != expectedFramesPerBlock) {
+        throw new ParserException(
+            "Expected frames per block: " + expectedFramesPerBlock + "; got: " + framesPerBlock);
+      }
+
+      
+      
+      int maxBlocksToDecode = Util.ceilDivide(targetSampleSizeFrames, framesPerBlock);
+      inputData = new byte[maxBlocksToDecode * header.blockSize];
+      decodedData =
+          new ParsableByteArray(
+              maxBlocksToDecode * numOutputFramesToBytes(framesPerBlock, numChannels));
+
+      
+      
+      int bitrate = header.frameRateHz * header.blockSize * 8 / framesPerBlock;
+      format =
+          Format.createAudioSampleFormat(
+               null,
+              MimeTypes.AUDIO_RAW,
+               null,
+              bitrate,
+               numOutputFramesToBytes(targetSampleSizeFrames, numChannels),
+              header.numChannels,
+              header.frameRateHz,
+              C.ENCODING_PCM_16BIT,
+               null,
+               null,
+               0,
+               null);
+    }
+
+    @Override
+    public void reset(long timeUs) {
+      pendingInputBytes = 0;
+      startTimeUs = timeUs;
+      pendingOutputBytes = 0;
+      outputFrameCount = 0;
+    }
+
+    @Override
+    public void init(int dataStartPosition, long dataEndPosition) {
+      extractorOutput.seekMap(
+          new WavSeekMap(header, framesPerBlock, dataStartPosition, dataEndPosition));
+      trackOutput.format(format);
+    }
+
+    @Override
+    public boolean sampleData(ExtractorInput input, long bytesLeft)
+        throws IOException, InterruptedException {
+      
+      
+      int targetFramesRemaining =
+          targetSampleSizeFrames - numOutputBytesToFrames(pendingOutputBytes);
+      
+      int blocksToDecode = Util.ceilDivide(targetFramesRemaining, framesPerBlock);
+      int targetReadBytes = blocksToDecode * header.blockSize;
+
+      
+      boolean endOfSampleData = bytesLeft == 0;
+      while (!endOfSampleData && pendingInputBytes < targetReadBytes) {
+        int bytesToRead = (int) Math.min(targetReadBytes - pendingInputBytes, bytesLeft);
+        int bytesAppended = input.read(inputData, pendingInputBytes, bytesToRead);
+        if (bytesAppended == RESULT_END_OF_INPUT) {
+          endOfSampleData = true;
+        } else {
+          pendingInputBytes += bytesAppended;
+        }
+      }
+
+      int pendingBlockCount = pendingInputBytes / header.blockSize;
+      if (pendingBlockCount > 0) {
+        
+        decode(inputData, pendingBlockCount, decodedData);
+        pendingInputBytes -= pendingBlockCount * header.blockSize;
+
+        
+        int decodedDataSize = decodedData.limit();
+        trackOutput.sampleData(decodedData, decodedDataSize);
+        pendingOutputBytes += decodedDataSize;
+
+        
+        int pendingOutputFrames = numOutputBytesToFrames(pendingOutputBytes);
+        if (pendingOutputFrames >= targetSampleSizeFrames) {
+          writeSampleMetadata(targetSampleSizeFrames);
+        }
+      }
+
+      
+      if (endOfSampleData) {
+        int pendingOutputFrames = numOutputBytesToFrames(pendingOutputBytes);
+        if (pendingOutputFrames > 0) {
+          writeSampleMetadata(pendingOutputFrames);
+        }
+      }
+
+      return endOfSampleData;
+    }
+
+    private void writeSampleMetadata(int sampleFrames) {
+      long timeUs =
+          startTimeUs
+              + Util.scaleLargeTimestamp(outputFrameCount, C.MICROS_PER_SECOND, header.frameRateHz);
+      int size = numOutputFramesToBytes(sampleFrames);
+      int offset = pendingOutputBytes - size;
+      trackOutput.sampleMetadata(
+          timeUs, C.BUFFER_FLAG_KEY_FRAME, size, offset,  null);
+      outputFrameCount += sampleFrames;
+      pendingOutputBytes -= size;
+    }
+
+    
+
+
+
+
+
+
+    private void decode(byte[] input, int blockCount, ParsableByteArray output) {
+      for (int blockIndex = 0; blockIndex < blockCount; blockIndex++) {
+        for (int channelIndex = 0; channelIndex < header.numChannels; channelIndex++) {
+          decodeBlockForChannel(input, blockIndex, channelIndex, output.data);
+        }
+      }
+      int decodedDataSize = numOutputFramesToBytes(framesPerBlock * blockCount);
+      output.reset(decodedDataSize);
+    }
+
+    private void decodeBlockForChannel(
+        byte[] input, int blockIndex, int channelIndex, byte[] output) {
+      int blockSize = header.blockSize;
+      int numChannels = header.numChannels;
+
+      
+      
+      
+      
+      
+      
+      
+      int blockStartIndex = blockIndex * blockSize;
+      int headerStartIndex = blockStartIndex + channelIndex * 4;
+      int dataStartIndex = headerStartIndex + numChannels * 4;
+      int dataSizeBytes = blockSize / numChannels - 4;
+
+      
+      
+      int predictedSample =
+          (short) (((input[headerStartIndex + 1] & 0xFF) << 8) | (input[headerStartIndex] & 0xFF));
+      int stepIndex = Math.min(input[headerStartIndex + 2] & 0xFF, 88);
+      int step = STEP_TABLE[stepIndex];
+
+      
+      int outputIndex = (blockIndex * framesPerBlock * numChannels + channelIndex) * 2;
+      output[outputIndex] = (byte) (predictedSample & 0xFF);
+      output[outputIndex + 1] = (byte) (predictedSample >> 8);
+
+      
+      for (int i = 0; i < dataSizeBytes * 2; i++) {
+        int dataSegmentIndex = i / 8;
+        int dataSegmentOffset = (i / 2) % 4;
+        int dataIndex = dataStartIndex + (dataSegmentIndex * numChannels * 4) + dataSegmentOffset;
+
+        int originalSample = input[dataIndex] & 0xFF;
+        if (i % 2 == 0) {
+          originalSample &= 0x0F; 
+        } else {
+          originalSample >>= 4; 
+        }
+
+        int delta = originalSample & 0x07;
+        int difference = ((2 * delta + 1) * step) >> 3;
+
+        if ((originalSample & 0x08) != 0) {
+          difference = -difference;
+        }
+
+        predictedSample += difference;
+        predictedSample = Util.constrainValue(predictedSample,  -32768,  32767);
+
+        
+        outputIndex += 2 * numChannels;
+        output[outputIndex] = (byte) (predictedSample & 0xFF);
+        output[outputIndex + 1] = (byte) (predictedSample >> 8);
+
+        stepIndex += INDEX_TABLE[originalSample];
+        stepIndex = Util.constrainValue(stepIndex,  0,  STEP_TABLE.length - 1);
+        step = STEP_TABLE[stepIndex];
+      }
+    }
+
+    private int numOutputBytesToFrames(int bytes) {
+      return bytes / (2 * header.numChannels);
+    }
+
+    private int numOutputFramesToBytes(int frames) {
+      return numOutputFramesToBytes(frames, header.numChannels);
+    }
+
+    private static int numOutputFramesToBytes(int frames, int numChannels) {
+      return frames * 2 * numChannels;
+    }
   }
 }

@@ -17,13 +17,21 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
-import android.support.annotation.IntDef;
 import android.view.Surface;
+import androidx.annotation.IntDef;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.PlayerMessage.Target;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.audio.AuxEffectInfo;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.video.SimpleDecoderVideoRenderer;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.video.VideoDecoderOutputBufferRenderer;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.video.VideoFrameMetadataListener;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.video.spherical.CameraMotionListener;
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.UUID;
@@ -31,6 +39,7 @@ import java.util.UUID;
 
 
 
+@SuppressWarnings("InlinedApi")
 public final class C {
 
   private C() {}
@@ -63,8 +72,12 @@ public final class C {
   public static final int LENGTH_UNSET = -1;
 
   
+  public static final int PERCENTAGE_UNSET = -1;
 
+  
+  public static final long MILLIS_PER_SECOND = 1000L;
 
+  
   public static final long MICROS_PER_SECOND = 1000000L;
 
   
@@ -73,14 +86,29 @@ public final class C {
   public static final long NANOS_PER_SECOND = 1000000000L;
 
   
+  public static final int BITS_PER_BYTE = 8;
+
+  
+  public static final int BYTES_PER_FLOAT = 4;
+
+  
+
+
+  public static final String ASCII_NAME = "US-ASCII";
+
+  
 
 
   public static final String UTF8_NAME = "UTF-8";
 
   
+  public static final String ISO88591_NAME = "ISO-8859-1";
 
-
+  
   public static final String UTF16_NAME = "UTF-16";
+
+  
+  public static final String UTF16LE_NAME = "UTF-16LE";
 
   
 
@@ -95,107 +123,137 @@ public final class C {
   
 
 
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({CRYPTO_MODE_UNENCRYPTED, CRYPTO_MODE_AES_CTR, CRYPTO_MODE_AES_CBC})
   public @interface CryptoMode {}
   
 
 
-  @SuppressWarnings("InlinedApi")
   public static final int CRYPTO_MODE_UNENCRYPTED = MediaCodec.CRYPTO_MODE_UNENCRYPTED;
   
 
 
-  @SuppressWarnings("InlinedApi")
   public static final int CRYPTO_MODE_AES_CTR = MediaCodec.CRYPTO_MODE_AES_CTR;
   
 
 
-  @SuppressWarnings("InlinedApi")
-  public static final int CRYPTO_MODE_AES_CBC = 0x2;
+  public static final int CRYPTO_MODE_AES_CBC = MediaCodec.CRYPTO_MODE_AES_CBC;
 
   
 
 
 
-  @SuppressWarnings("InlinedApi")
   public static final int AUDIO_SESSION_ID_UNSET = AudioManager.AUDIO_SESSION_ID_GENERATE;
 
   
 
 
+
+
+
+
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef({Format.NO_VALUE, ENCODING_INVALID, ENCODING_PCM_8BIT, ENCODING_PCM_16BIT,
-      ENCODING_PCM_24BIT, ENCODING_PCM_32BIT, ENCODING_AC3, ENCODING_E_AC3, ENCODING_DTS,
-      ENCODING_DTS_HD})
+  @IntDef({
+    Format.NO_VALUE,
+    ENCODING_INVALID,
+    ENCODING_PCM_8BIT,
+    ENCODING_PCM_16BIT,
+    ENCODING_PCM_16BIT_BIG_ENDIAN,
+    ENCODING_PCM_24BIT,
+    ENCODING_PCM_32BIT,
+    ENCODING_PCM_FLOAT,
+    ENCODING_MP3,
+    ENCODING_AC3,
+    ENCODING_E_AC3,
+    ENCODING_E_AC3_JOC,
+    ENCODING_AC4,
+    ENCODING_DTS,
+    ENCODING_DTS_HD,
+    ENCODING_DOLBY_TRUEHD
+  })
   public @interface Encoding {}
 
   
 
 
+
+
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef({Format.NO_VALUE, ENCODING_INVALID, ENCODING_PCM_8BIT, ENCODING_PCM_16BIT,
-      ENCODING_PCM_24BIT, ENCODING_PCM_32BIT})
+  @IntDef({
+    Format.NO_VALUE,
+    ENCODING_INVALID,
+    ENCODING_PCM_8BIT,
+    ENCODING_PCM_16BIT,
+    ENCODING_PCM_16BIT_BIG_ENDIAN,
+    ENCODING_PCM_24BIT,
+    ENCODING_PCM_32BIT,
+    ENCODING_PCM_FLOAT
+  })
   public @interface PcmEncoding {}
   
-
-
   public static final int ENCODING_INVALID = AudioFormat.ENCODING_INVALID;
   
-
-
   public static final int ENCODING_PCM_8BIT = AudioFormat.ENCODING_PCM_8BIT;
   
-
-
   public static final int ENCODING_PCM_16BIT = AudioFormat.ENCODING_PCM_16BIT;
   
-
-
-  public static final int ENCODING_PCM_24BIT = 0x80000000;
+  public static final int ENCODING_PCM_16BIT_BIG_ENDIAN = 0x10000000;
   
-
-
-  public static final int ENCODING_PCM_32BIT = 0x40000000;
+  public static final int ENCODING_PCM_24BIT = 0x20000000;
   
-
-
-  @SuppressWarnings("InlinedApi")
+  public static final int ENCODING_PCM_32BIT = 0x30000000;
+  
+  public static final int ENCODING_PCM_FLOAT = AudioFormat.ENCODING_PCM_FLOAT;
+  
+  public static final int ENCODING_MP3 = AudioFormat.ENCODING_MP3;
+  
   public static final int ENCODING_AC3 = AudioFormat.ENCODING_AC3;
   
-
-
-  @SuppressWarnings("InlinedApi")
   public static final int ENCODING_E_AC3 = AudioFormat.ENCODING_E_AC3;
   
-
-
-  @SuppressWarnings("InlinedApi")
+  public static final int ENCODING_E_AC3_JOC = AudioFormat.ENCODING_E_AC3_JOC;
+  
+  public static final int ENCODING_AC4 = AudioFormat.ENCODING_AC4;
+  
   public static final int ENCODING_DTS = AudioFormat.ENCODING_DTS;
   
-
-
-  @SuppressWarnings("InlinedApi")
   public static final int ENCODING_DTS_HD = AudioFormat.ENCODING_DTS_HD;
+  
+  public static final int ENCODING_DOLBY_TRUEHD = AudioFormat.ENCODING_DOLBY_TRUEHD;
 
   
 
 
-  @SuppressWarnings({"InlinedApi", "deprecation"})
-  public static final int CHANNEL_OUT_7POINT1_SURROUND = Util.SDK_INT < 23
-      ? AudioFormat.CHANNEL_OUT_7POINT1 : AudioFormat.CHANNEL_OUT_7POINT1_SURROUND;
-
-  
 
 
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef({STREAM_TYPE_ALARM, STREAM_TYPE_MUSIC, STREAM_TYPE_NOTIFICATION, STREAM_TYPE_RING,
-      STREAM_TYPE_SYSTEM, STREAM_TYPE_VOICE_CALL})
+  @IntDef({
+    STREAM_TYPE_ALARM,
+    STREAM_TYPE_DTMF,
+    STREAM_TYPE_MUSIC,
+    STREAM_TYPE_NOTIFICATION,
+    STREAM_TYPE_RING,
+    STREAM_TYPE_SYSTEM,
+    STREAM_TYPE_VOICE_CALL,
+    STREAM_TYPE_USE_DEFAULT
+  })
   public @interface StreamType {}
   
 
 
   public static final int STREAM_TYPE_ALARM = AudioManager.STREAM_ALARM;
+  
+
+
+  public static final int STREAM_TYPE_DTMF = AudioManager.STREAM_DTMF;
   
 
 
@@ -219,50 +277,287 @@ public final class C {
   
 
 
+  public static final int STREAM_TYPE_USE_DEFAULT = AudioManager.USE_DEFAULT_STREAM_TYPE;
+  
+
+
   public static final int STREAM_TYPE_DEFAULT = STREAM_TYPE_MUSIC;
 
   
 
 
+
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef(flag = true, value = {BUFFER_FLAG_KEY_FRAME, BUFFER_FLAG_END_OF_STREAM,
-      BUFFER_FLAG_ENCRYPTED, BUFFER_FLAG_DECODE_ONLY})
+  @IntDef({
+    CONTENT_TYPE_MOVIE,
+    CONTENT_TYPE_MUSIC,
+    CONTENT_TYPE_SONIFICATION,
+    CONTENT_TYPE_SPEECH,
+    CONTENT_TYPE_UNKNOWN
+  })
+  public @interface AudioContentType {}
+  
+
+
+  public static final int CONTENT_TYPE_MOVIE = android.media.AudioAttributes.CONTENT_TYPE_MOVIE;
+  
+
+
+  public static final int CONTENT_TYPE_MUSIC = android.media.AudioAttributes.CONTENT_TYPE_MUSIC;
+  
+
+
+  public static final int CONTENT_TYPE_SONIFICATION =
+      android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION;
+  
+
+
+  public static final int CONTENT_TYPE_SPEECH =
+      android.media.AudioAttributes.CONTENT_TYPE_SPEECH;
+  
+
+
+  public static final int CONTENT_TYPE_UNKNOWN =
+      android.media.AudioAttributes.CONTENT_TYPE_UNKNOWN;
+
+  
+
+
+
+
+
+
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(
+      flag = true,
+      value = {FLAG_AUDIBILITY_ENFORCED})
+  public @interface AudioFlags {}
+  
+
+
+  public static final int FLAG_AUDIBILITY_ENFORCED =
+      android.media.AudioAttributes.FLAG_AUDIBILITY_ENFORCED;
+
+  
+
+
+
+
+
+
+
+
+
+
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    USAGE_ALARM,
+    USAGE_ASSISTANCE_ACCESSIBILITY,
+    USAGE_ASSISTANCE_NAVIGATION_GUIDANCE,
+    USAGE_ASSISTANCE_SONIFICATION,
+    USAGE_ASSISTANT,
+    USAGE_GAME,
+    USAGE_MEDIA,
+    USAGE_NOTIFICATION,
+    USAGE_NOTIFICATION_COMMUNICATION_DELAYED,
+    USAGE_NOTIFICATION_COMMUNICATION_INSTANT,
+    USAGE_NOTIFICATION_COMMUNICATION_REQUEST,
+    USAGE_NOTIFICATION_EVENT,
+    USAGE_NOTIFICATION_RINGTONE,
+    USAGE_UNKNOWN,
+    USAGE_VOICE_COMMUNICATION,
+    USAGE_VOICE_COMMUNICATION_SIGNALLING
+  })
+  public @interface AudioUsage {}
+  
+
+
+  public static final int USAGE_ALARM = android.media.AudioAttributes.USAGE_ALARM;
+  
+  public static final int USAGE_ASSISTANCE_ACCESSIBILITY =
+      android.media.AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY;
+  
+
+
+  public static final int USAGE_ASSISTANCE_NAVIGATION_GUIDANCE =
+      android.media.AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE;
+  
+
+
+  public static final int USAGE_ASSISTANCE_SONIFICATION =
+      android.media.AudioAttributes.USAGE_ASSISTANCE_SONIFICATION;
+  
+  public static final int USAGE_ASSISTANT = android.media.AudioAttributes.USAGE_ASSISTANT;
+  
+
+
+  public static final int USAGE_GAME = android.media.AudioAttributes.USAGE_GAME;
+  
+
+
+  public static final int USAGE_MEDIA = android.media.AudioAttributes.USAGE_MEDIA;
+  
+
+
+  public static final int USAGE_NOTIFICATION = android.media.AudioAttributes.USAGE_NOTIFICATION;
+  
+
+
+  public static final int USAGE_NOTIFICATION_COMMUNICATION_DELAYED =
+      android.media.AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_DELAYED;
+  
+
+
+  public static final int USAGE_NOTIFICATION_COMMUNICATION_INSTANT =
+      android.media.AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_INSTANT;
+  
+
+
+  public static final int USAGE_NOTIFICATION_COMMUNICATION_REQUEST =
+      android.media.AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_REQUEST;
+  
+
+
+  public static final int USAGE_NOTIFICATION_EVENT =
+      android.media.AudioAttributes.USAGE_NOTIFICATION_EVENT;
+  
+
+
+  public static final int USAGE_NOTIFICATION_RINGTONE =
+      android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE;
+  
+
+
+  public static final int USAGE_UNKNOWN = android.media.AudioAttributes.USAGE_UNKNOWN;
+  
+
+
+  public static final int USAGE_VOICE_COMMUNICATION =
+      android.media.AudioAttributes.USAGE_VOICE_COMMUNICATION;
+  
+
+
+  public static final int USAGE_VOICE_COMMUNICATION_SIGNALLING =
+      android.media.AudioAttributes.USAGE_VOICE_COMMUNICATION_SIGNALLING;
+
+  
+
+
+
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({ALLOW_CAPTURE_BY_ALL, ALLOW_CAPTURE_BY_NONE, ALLOW_CAPTURE_BY_SYSTEM})
+  public @interface AudioAllowedCapturePolicy {}
+  
+  public static final int ALLOW_CAPTURE_BY_ALL = AudioAttributes.ALLOW_CAPTURE_BY_ALL;
+  
+  public static final int ALLOW_CAPTURE_BY_NONE = AudioAttributes.ALLOW_CAPTURE_BY_NONE;
+  
+  public static final int ALLOW_CAPTURE_BY_SYSTEM = AudioAttributes.ALLOW_CAPTURE_BY_SYSTEM;
+
+  
+
+
+
+
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    AUDIOFOCUS_NONE,
+    AUDIOFOCUS_GAIN,
+    AUDIOFOCUS_GAIN_TRANSIENT,
+    AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK,
+    AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE
+  })
+  public @interface AudioFocusGain {}
+  
+  public static final int AUDIOFOCUS_NONE = AudioManager.AUDIOFOCUS_NONE;
+  
+  public static final int AUDIOFOCUS_GAIN = AudioManager.AUDIOFOCUS_GAIN;
+  
+  public static final int AUDIOFOCUS_GAIN_TRANSIENT = AudioManager.AUDIOFOCUS_GAIN_TRANSIENT;
+  
+  public static final int AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK =
+      AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK;
+  
+  public static final int AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE =
+      AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE;
+
+  
+
+
+
+
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(
+      flag = true,
+      value = {
+        BUFFER_FLAG_KEY_FRAME,
+        BUFFER_FLAG_END_OF_STREAM,
+        BUFFER_FLAG_HAS_SUPPLEMENTAL_DATA,
+        BUFFER_FLAG_LAST_SAMPLE,
+        BUFFER_FLAG_ENCRYPTED,
+        BUFFER_FLAG_DECODE_ONLY
+      })
   public @interface BufferFlags {}
   
 
 
-  @SuppressWarnings("InlinedApi")
   public static final int BUFFER_FLAG_KEY_FRAME = MediaCodec.BUFFER_FLAG_KEY_FRAME;
   
 
 
-  @SuppressWarnings("InlinedApi")
   public static final int BUFFER_FLAG_END_OF_STREAM = MediaCodec.BUFFER_FLAG_END_OF_STREAM;
   
+  public static final int BUFFER_FLAG_HAS_SUPPLEMENTAL_DATA = 1 << 28; 
+  
+  public static final int BUFFER_FLAG_LAST_SAMPLE = 1 << 29; 
+  
+  public static final int BUFFER_FLAG_ENCRYPTED = 1 << 30; 
+  
+  public static final int BUFFER_FLAG_DECODE_ONLY = 1 << 31; 
 
-
-  public static final int BUFFER_FLAG_ENCRYPTED = 0x40000000;
+  
   
 
 
-  public static final int BUFFER_FLAG_DECODE_ONLY = 0x80000000;
+
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(value = {VIDEO_OUTPUT_MODE_NONE, VIDEO_OUTPUT_MODE_YUV, VIDEO_OUTPUT_MODE_SURFACE_YUV})
+  public @interface VideoOutputMode {}
+  
+  public static final int VIDEO_OUTPUT_MODE_NONE = -1;
+  
+  public static final int VIDEO_OUTPUT_MODE_YUV = 0;
+  
+  public static final int VIDEO_OUTPUT_MODE_SURFACE_YUV = 1;
+  
+  
+  
+  
 
   
 
 
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(value = {VIDEO_SCALING_MODE_SCALE_TO_FIT, VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING})
   public @interface VideoScalingMode {}
   
 
 
-  @SuppressWarnings("InlinedApi")
   public static final int VIDEO_SCALING_MODE_SCALE_TO_FIT =
       MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT;
   
 
 
-  @SuppressWarnings("InlinedApi")
   public static final int VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING =
       MediaCodec.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING;
   
@@ -273,27 +568,33 @@ public final class C {
   
 
 
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef(flag = true, value = {SELECTION_FLAG_DEFAULT, SELECTION_FLAG_FORCED,
-      SELECTION_FLAG_AUTOSELECT})
+  @IntDef(
+      flag = true,
+      value = {SELECTION_FLAG_DEFAULT, SELECTION_FLAG_FORCED, SELECTION_FLAG_AUTOSELECT})
   public @interface SelectionFlags {}
   
 
 
   public static final int SELECTION_FLAG_DEFAULT = 1;
   
-
-
-  public static final int SELECTION_FLAG_FORCED = 2;
+  public static final int SELECTION_FLAG_FORCED = 1 << 1; 
   
 
 
 
-  public static final int SELECTION_FLAG_AUTOSELECT = 4;
+  public static final int SELECTION_FLAG_AUTOSELECT = 1 << 2; 
+
+  
+  public static final String LANGUAGE_UNDETERMINED = "und";
 
   
 
 
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({TYPE_DASH, TYPE_SS, TYPE_HLS, TYPE_OTHER})
   public @interface ContentType {}
@@ -337,29 +638,23 @@ public final class C {
   public static final int RESULT_FORMAT_READ = -5;
 
   
-
-
   public static final int DATA_TYPE_UNKNOWN = 0;
   
-
-
   public static final int DATA_TYPE_MEDIA = 1;
   
-
-
   public static final int DATA_TYPE_MEDIA_INITIALIZATION = 2;
   
-
-
   public static final int DATA_TYPE_DRM = 3;
   
-
-
   public static final int DATA_TYPE_MANIFEST = 4;
+  
+  public static final int DATA_TYPE_TIME_SYNCHRONIZATION = 5;
+  
+  public static final int DATA_TYPE_AD = 6;
   
 
 
-  public static final int DATA_TYPE_TIME_SYNCHRONIZATION = 5;
+  public static final int DATA_TYPE_MEDIA_PROGRESSIVE_LIVE = 7;
   
 
 
@@ -367,29 +662,21 @@ public final class C {
   public static final int DATA_TYPE_CUSTOM_BASE = 10000;
 
   
-
-
   public static final int TRACK_TYPE_UNKNOWN = -1;
   
-
-
   public static final int TRACK_TYPE_DEFAULT = 0;
   
-
-
   public static final int TRACK_TYPE_AUDIO = 1;
   
-
-
   public static final int TRACK_TYPE_VIDEO = 2;
   
-
-
   public static final int TRACK_TYPE_TEXT = 3;
   
-
-
   public static final int TRACK_TYPE_METADATA = 4;
+  
+  public static final int TRACK_TYPE_CAMERA_MOTION = 5;
+  
+  public static final int TRACK_TYPE_NONE = 6;
   
 
 
@@ -423,35 +710,23 @@ public final class C {
   public static final int SELECTION_REASON_CUSTOM_BASE = 10000;
 
   
-
-
   public static final int DEFAULT_BUFFER_SEGMENT_SIZE = 64 * 1024;
 
   
-
-
-  public static final int DEFAULT_VIDEO_BUFFER_SIZE = 200 * DEFAULT_BUFFER_SEGMENT_SIZE;
-
-  
-
-
-  public static final int DEFAULT_AUDIO_BUFFER_SIZE = 54 * DEFAULT_BUFFER_SEGMENT_SIZE;
+  @SuppressWarnings("ConstantField")
+  public static final String CENC_TYPE_cenc = "cenc";
 
   
-
-
-  public static final int DEFAULT_TEXT_BUFFER_SIZE = 2 * DEFAULT_BUFFER_SEGMENT_SIZE;
-
-  
-
-
-  public static final int DEFAULT_METADATA_BUFFER_SIZE = 2 * DEFAULT_BUFFER_SEGMENT_SIZE;
+  @SuppressWarnings("ConstantField")
+  public static final String CENC_TYPE_cbc1 = "cbc1";
 
   
+  @SuppressWarnings("ConstantField")
+  public static final String CENC_TYPE_cens = "cens";
 
-
-  public static final int DEFAULT_MUXED_BUFFER_SIZE = DEFAULT_VIDEO_BUFFER_SIZE
-      + DEFAULT_AUDIO_BUFFER_SIZE + DEFAULT_TEXT_BUFFER_SIZE;
+  
+  @SuppressWarnings("ConstantField")
+  public static final String CENC_TYPE_cbcs = "cbcs";
 
   
 
@@ -464,7 +739,14 @@ public final class C {
 
 
 
-  public static final UUID CLEARKEY_UUID = new UUID(0x1077EFECC0B24D02L, 0xACE33C1E52E2FB4BL);
+  public static final UUID COMMON_PSSH_UUID = new UUID(0x1077EFECC0B24D02L, 0xACE33C1E52E2FB4BL);
+
+  
+
+
+
+
+  public static final UUID CLEARKEY_UUID = new UUID(0xE2719D58A985B3C9L, 0x781AB030AF78D30EL);
 
   
 
@@ -507,7 +789,16 @@ public final class C {
 
 
 
-  public static final int MSG_SET_STREAM_TYPE = 3;
+
+
+
+
+
+
+
+
+
+  public static final int MSG_SET_AUDIO_ATTRIBUTES = 3;
 
   
 
@@ -523,18 +814,53 @@ public final class C {
 
 
 
+
+  public static final int MSG_SET_AUX_EFFECT_INFO = 5;
+
+  
+
+
+
+
+  public static final int MSG_SET_VIDEO_FRAME_METADATA_LISTENER = 6;
+
+  
+
+
+
+
+  public static final int MSG_SET_CAMERA_MOTION_LISTENER = 7;
+
+  
+
+
+
+
+
+
+
+
+  public static final int MSG_SET_VIDEO_DECODER_OUTPUT_BUFFER_RENDERER = 8;
+
+  
+
+
+
   public static final int MSG_CUSTOM_BASE = 10000;
 
   
 
 
+
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
-      Format.NO_VALUE,
-      STEREO_MODE_MONO,
-      STEREO_MODE_TOP_BOTTOM,
-      STEREO_MODE_LEFT_RIGHT,
-      STEREO_MODE_STEREO_MESH
+    Format.NO_VALUE,
+    STEREO_MODE_MONO,
+    STEREO_MODE_TOP_BOTTOM,
+    STEREO_MODE_LEFT_RIGHT,
+    STEREO_MODE_STEREO_MESH
   })
   public @interface StereoMode {}
   
@@ -558,63 +884,81 @@ public final class C {
   
 
 
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({Format.NO_VALUE, COLOR_SPACE_BT709, COLOR_SPACE_BT601, COLOR_SPACE_BT2020})
   public @interface ColorSpace {}
   
 
 
-  @SuppressWarnings("InlinedApi")
-  public static final int COLOR_SPACE_BT709 = 0x01;
+  public static final int COLOR_SPACE_BT709 = MediaFormat.COLOR_STANDARD_BT709;
   
 
 
-  @SuppressWarnings("InlinedApi")
-  public static final int COLOR_SPACE_BT601 = 0x02;
+  public static final int COLOR_SPACE_BT601 = MediaFormat.COLOR_STANDARD_BT601_PAL;
   
 
 
-  @SuppressWarnings("InlinedApi")
-  public static final int COLOR_SPACE_BT2020 = 0x06;
+  public static final int COLOR_SPACE_BT2020 = MediaFormat.COLOR_STANDARD_BT2020;
 
   
 
 
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({Format.NO_VALUE, COLOR_TRANSFER_SDR, COLOR_TRANSFER_ST2084, COLOR_TRANSFER_HLG})
   public @interface ColorTransfer {}
   
 
 
-  @SuppressWarnings("InlinedApi")
-  public static final int COLOR_TRANSFER_SDR = 0x03;
+  public static final int COLOR_TRANSFER_SDR = MediaFormat.COLOR_TRANSFER_SDR_VIDEO;
   
 
 
-  @SuppressWarnings("InlinedApi")
-  public static final int COLOR_TRANSFER_ST2084 = 0x06;
+  public static final int COLOR_TRANSFER_ST2084 = MediaFormat.COLOR_TRANSFER_ST2084;
   
 
 
-  @SuppressWarnings("InlinedApi")
-  public static final int COLOR_TRANSFER_HLG = 0x07;
+  public static final int COLOR_TRANSFER_HLG = MediaFormat.COLOR_TRANSFER_HLG;
 
   
 
 
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({Format.NO_VALUE, COLOR_RANGE_LIMITED, COLOR_RANGE_FULL})
   public @interface ColorRange {}
   
 
 
-  @SuppressWarnings("InlinedApi")
-  public static final int COLOR_RANGE_LIMITED = 0x02;
+  public static final int COLOR_RANGE_LIMITED = MediaFormat.COLOR_RANGE_LIMITED;
   
 
 
-  @SuppressWarnings("InlinedApi")
-  public static final int COLOR_RANGE_FULL = 0x01;
+  public static final int COLOR_RANGE_FULL = MediaFormat.COLOR_RANGE_FULL;
+
+  
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    Format.NO_VALUE,
+    PROJECTION_RECTANGULAR,
+    PROJECTION_EQUIRECTANGULAR,
+    PROJECTION_CUBEMAP,
+    PROJECTION_MESH
+  })
+  public @interface Projection {}
+  
+  public static final int PROJECTION_RECTANGULAR = 0;
+  
+  public static final int PROJECTION_EQUIRECTANGULAR = 1;
+  
+  public static final int PROJECTION_CUBEMAP = 2;
+  
+  public static final int PROJECTION_MESH = 3;
 
   
 
@@ -636,9 +980,158 @@ public final class C {
 
 
 
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    NETWORK_TYPE_UNKNOWN,
+    NETWORK_TYPE_OFFLINE,
+    NETWORK_TYPE_WIFI,
+    NETWORK_TYPE_2G,
+    NETWORK_TYPE_3G,
+    NETWORK_TYPE_4G,
+    NETWORK_TYPE_5G,
+    NETWORK_TYPE_CELLULAR_UNKNOWN,
+    NETWORK_TYPE_ETHERNET,
+    NETWORK_TYPE_OTHER
+  })
+  public @interface NetworkType {}
+  
+  public static final int NETWORK_TYPE_UNKNOWN = 0;
+  
+  public static final int NETWORK_TYPE_OFFLINE = 1;
+  
+  public static final int NETWORK_TYPE_WIFI = 2;
+  
+  public static final int NETWORK_TYPE_2G = 3;
+  
+  public static final int NETWORK_TYPE_3G = 4;
+  
+  public static final int NETWORK_TYPE_4G = 5;
+  
+  public static final int NETWORK_TYPE_5G = 9;
+  
+
+
+
+  public static final int NETWORK_TYPE_CELLULAR_UNKNOWN = 6;
+  
+  public static final int NETWORK_TYPE_ETHERNET = 7;
+  
+  public static final int NETWORK_TYPE_OTHER = 8;
+
+  
+
+
+
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({WAKE_MODE_NONE, WAKE_MODE_LOCAL, WAKE_MODE_NETWORK})
+  public @interface WakeMode {}
+  
+
+
+
+
+  public static final int WAKE_MODE_NONE = 0;
+  
+
+
+
+
+
+
+  public static final int WAKE_MODE_LOCAL = 1;
+  
+
+
+
+
+
+
+  public static final int WAKE_MODE_NETWORK = 2;
+
+  
+
+
+
+
+
+
+
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(
+      flag = true,
+      value = {
+        ROLE_FLAG_MAIN,
+        ROLE_FLAG_ALTERNATE,
+        ROLE_FLAG_SUPPLEMENTARY,
+        ROLE_FLAG_COMMENTARY,
+        ROLE_FLAG_DUB,
+        ROLE_FLAG_EMERGENCY,
+        ROLE_FLAG_CAPTION,
+        ROLE_FLAG_SUBTITLE,
+        ROLE_FLAG_SIGN,
+        ROLE_FLAG_DESCRIBES_VIDEO,
+        ROLE_FLAG_DESCRIBES_MUSIC_AND_SOUND,
+        ROLE_FLAG_ENHANCED_DIALOG_INTELLIGIBILITY,
+        ROLE_FLAG_TRANSCRIBES_DIALOG,
+        ROLE_FLAG_EASY_TO_READ
+      })
+  public @interface RoleFlags {}
+  
+  public static final int ROLE_FLAG_MAIN = 1;
+  
+
+
+
+  public static final int ROLE_FLAG_ALTERNATE = 1 << 1;
+  
+
+
+
+  public static final int ROLE_FLAG_SUPPLEMENTARY = 1 << 2;
+  
+  public static final int ROLE_FLAG_COMMENTARY = 1 << 3;
+  
+
+
+
+  public static final int ROLE_FLAG_DUB = 1 << 4;
+  
+  public static final int ROLE_FLAG_EMERGENCY = 1 << 5;
+  
+
+
+
+  public static final int ROLE_FLAG_CAPTION = 1 << 6;
+  
+
+
+
+  public static final int ROLE_FLAG_SUBTITLE = 1 << 7;
+  
+  public static final int ROLE_FLAG_SIGN = 1 << 8;
+  
+  public static final int ROLE_FLAG_DESCRIBES_VIDEO = 1 << 9;
+  
+  public static final int ROLE_FLAG_DESCRIBES_MUSIC_AND_SOUND = 1 << 10;
+  
+  public static final int ROLE_FLAG_ENHANCED_DIALOG_INTELLIGIBILITY = 1 << 11;
+  
+  public static final int ROLE_FLAG_TRANSCRIBES_DIALOG = 1 << 12;
+  
+  public static final int ROLE_FLAG_EASY_TO_READ = 1 << 13;
+
+  
+
+
+
+
+
 
   public static long usToMs(long timeUs) {
-    return timeUs == TIME_UNSET ? TIME_UNSET : (timeUs / 1000);
+    return (timeUs == TIME_UNSET || timeUs == TIME_END_OF_SOURCE) ? timeUs : (timeUs / 1000);
   }
 
   
@@ -649,10 +1142,13 @@ public final class C {
 
 
   public static long msToUs(long timeMs) {
-    return timeMs == TIME_UNSET ? TIME_UNSET : (timeMs * 1000);
+    return (timeMs == TIME_UNSET || timeMs == TIME_END_OF_SOURCE) ? timeMs : (timeMs * 1000);
   }
 
   
+
+
+
 
 
   @TargetApi(21)

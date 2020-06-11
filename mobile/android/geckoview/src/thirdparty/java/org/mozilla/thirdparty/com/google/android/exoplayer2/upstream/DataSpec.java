@@ -16,12 +16,17 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream;
 
 import android.net.Uri;
-import android.support.annotation.IntDef;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 
 
@@ -31,8 +36,13 @@ public final class DataSpec {
   
 
 
+
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef(flag = true, value = {FLAG_ALLOW_GZIP, FLAG_ALLOW_CACHING_UNKNOWN_LENGTH})
+  @IntDef(
+      flag = true,
+      value = {FLAG_ALLOW_GZIP, FLAG_DONT_CACHE_IF_LENGTH_UNKNOWN, FLAG_ALLOW_CACHE_FRAGMENTATION})
   public @interface Flags {}
   
 
@@ -45,24 +55,51 @@ public final class DataSpec {
 
 
 
-  public static final int FLAG_ALLOW_GZIP = 1 << 0;
+  public static final int FLAG_ALLOW_GZIP = 1;
+  
+  public static final int FLAG_DONT_CACHE_IF_LENGTH_UNKNOWN = 1 << 1; 
+  
+
+
+
+
+
+  public static final int FLAG_ALLOW_CACHE_FRAGMENTATION = 1 << 2; 
 
   
 
 
-  public static final int FLAG_ALLOW_CACHING_UNKNOWN_LENGTH = 1 << 1;
+
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({HTTP_METHOD_GET, HTTP_METHOD_POST, HTTP_METHOD_HEAD})
+  public @interface HttpMethod {}
+
+  public static final int HTTP_METHOD_GET = 1;
+  public static final int HTTP_METHOD_POST = 2;
+  public static final int HTTP_METHOD_HEAD = 3;
 
   
 
 
   public final Uri uri;
+
   
 
 
-  public final byte[] postBody;
+
+  public final @HttpMethod int httpMethod;
+
   
 
 
+
+  @Nullable public final byte[] httpBody;
+
+  
+  public final Map<String, String> httpRequestHeaders;
+
+  
   public final long absoluteStreamPosition;
   
 
@@ -79,12 +116,9 @@ public final class DataSpec {
 
 
 
-  public final String key;
+  @Nullable public final String key;
   
-
-
-
-  @Flags public final int flags;
+  public final @Flags int flags;
 
   
 
@@ -113,7 +147,7 @@ public final class DataSpec {
 
 
 
-  public DataSpec(Uri uri, long absoluteStreamPosition, long length, String key) {
+  public DataSpec(Uri uri, long absoluteStreamPosition, long length, @Nullable String key) {
     this(uri, absoluteStreamPosition, absoluteStreamPosition, length, key, 0);
   }
 
@@ -126,7 +160,8 @@ public final class DataSpec {
 
 
 
-  public DataSpec(Uri uri, long absoluteStreamPosition, long length, String key, @Flags int flags) {
+  public DataSpec(
+      Uri uri, long absoluteStreamPosition, long length, @Nullable String key, @Flags int flags) {
     this(uri, absoluteStreamPosition, absoluteStreamPosition, length, key, flags);
   }
 
@@ -141,7 +176,41 @@ public final class DataSpec {
 
 
 
-  public DataSpec(Uri uri, long absoluteStreamPosition, long position, long length, String key,
+  public DataSpec(
+      Uri uri,
+      long absoluteStreamPosition,
+      long length,
+      @Nullable String key,
+      @Flags int flags,
+      Map<String, String> httpRequestHeaders) {
+    this(
+        uri,
+        inferHttpMethod(null),
+        null,
+        absoluteStreamPosition,
+        absoluteStreamPosition,
+        length,
+        key,
+        flags,
+        httpRequestHeaders);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  public DataSpec(
+      Uri uri,
+      long absoluteStreamPosition,
+      long position,
+      long length,
+      @Nullable String key,
       @Flags int flags) {
     this(uri, null, absoluteStreamPosition, position, length, key, flags);
   }
@@ -158,18 +227,95 @@ public final class DataSpec {
 
 
 
-  public DataSpec(Uri uri, byte[] postBody, long absoluteStreamPosition, long position, long length,
-      String key, @Flags int flags) {
+
+
+  public DataSpec(
+      Uri uri,
+      @Nullable byte[] postBody,
+      long absoluteStreamPosition,
+      long position,
+      long length,
+      @Nullable String key,
+      @Flags int flags) {
+    this(
+        uri,
+         inferHttpMethod(postBody),
+         postBody,
+        absoluteStreamPosition,
+        position,
+        length,
+        key,
+        flags);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  public DataSpec(
+      Uri uri,
+      @HttpMethod int httpMethod,
+      @Nullable byte[] httpBody,
+      long absoluteStreamPosition,
+      long position,
+      long length,
+      @Nullable String key,
+      @Flags int flags) {
+    this(
+        uri,
+        httpMethod,
+        httpBody,
+        absoluteStreamPosition,
+        position,
+        length,
+        key,
+        flags,
+         Collections.emptyMap());
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  public DataSpec(
+      Uri uri,
+      @HttpMethod int httpMethod,
+      @Nullable byte[] httpBody,
+      long absoluteStreamPosition,
+      long position,
+      long length,
+      @Nullable String key,
+      @Flags int flags,
+      Map<String, String> httpRequestHeaders) {
     Assertions.checkArgument(absoluteStreamPosition >= 0);
     Assertions.checkArgument(position >= 0);
     Assertions.checkArgument(length > 0 || length == C.LENGTH_UNSET);
     this.uri = uri;
-    this.postBody = postBody;
+    this.httpMethod = httpMethod;
+    this.httpBody = (httpBody != null && httpBody.length != 0) ? httpBody : null;
     this.absoluteStreamPosition = absoluteStreamPosition;
     this.position = position;
     this.length = length;
     this.key = key;
     this.flags = flags;
+    this.httpRequestHeaders = Collections.unmodifiableMap(new HashMap<>(httpRequestHeaders));
   }
 
   
@@ -183,8 +329,150 @@ public final class DataSpec {
 
   @Override
   public String toString() {
-    return "DataSpec[" + uri + ", " + Arrays.toString(postBody) + ", " + absoluteStreamPosition
-        + ", "  + position + ", " + length + ", " + key + ", " + flags + "]";
+    return "DataSpec["
+        + getHttpMethodString()
+        + " "
+        + uri
+        + ", "
+        + Arrays.toString(httpBody)
+        + ", "
+        + absoluteStreamPosition
+        + ", "
+        + position
+        + ", "
+        + length
+        + ", "
+        + key
+        + ", "
+        + flags
+        + "]";
   }
 
+  
+
+
+
+  public final String getHttpMethodString() {
+    return getStringForHttpMethod(httpMethod);
+  }
+
+  
+
+
+
+  public static String getStringForHttpMethod(@HttpMethod int httpMethod) {
+    switch (httpMethod) {
+      case HTTP_METHOD_GET:
+        return "GET";
+      case HTTP_METHOD_POST:
+        return "POST";
+      case HTTP_METHOD_HEAD:
+        return "HEAD";
+      default:
+        throw new AssertionError(httpMethod);
+    }
+  }
+
+  
+
+
+
+
+
+
+  public DataSpec subrange(long offset) {
+    return subrange(offset, length == C.LENGTH_UNSET ? C.LENGTH_UNSET : length - offset);
+  }
+
+  
+
+
+
+
+
+
+  public DataSpec subrange(long offset, long length) {
+    if (offset == 0 && this.length == length) {
+      return this;
+    } else {
+      return new DataSpec(
+          uri,
+          httpMethod,
+          httpBody,
+          absoluteStreamPosition + offset,
+          position + offset,
+          length,
+          key,
+          flags,
+          httpRequestHeaders);
+    }
+  }
+
+  
+
+
+
+
+
+  public DataSpec withUri(Uri uri) {
+    return new DataSpec(
+        uri,
+        httpMethod,
+        httpBody,
+        absoluteStreamPosition,
+        position,
+        length,
+        key,
+        flags,
+        httpRequestHeaders);
+  }
+
+  
+
+
+
+
+
+  public DataSpec withRequestHeaders(Map<String, String> requestHeaders) {
+    return new DataSpec(
+        uri,
+        httpMethod,
+        httpBody,
+        absoluteStreamPosition,
+        position,
+        length,
+        key,
+        flags,
+        requestHeaders);
+  }
+
+  
+
+
+
+
+
+
+
+
+  public DataSpec withAdditionalHeaders(Map<String, String> requestHeaders) {
+    Map<String, String> totalHeaders = new HashMap<>(this.httpRequestHeaders);
+    totalHeaders.putAll(requestHeaders);
+
+    return new DataSpec(
+        uri,
+        httpMethod,
+        httpBody,
+        absoluteStreamPosition,
+        position,
+        length,
+        key,
+        flags,
+        totalHeaders);
+  }
+
+  @HttpMethod
+  private static int inferHttpMethod(@Nullable byte[] postBody) {
+    return postBody != null ? HTTP_METHOD_POST : HTTP_METHOD_GET;
+  }
 }

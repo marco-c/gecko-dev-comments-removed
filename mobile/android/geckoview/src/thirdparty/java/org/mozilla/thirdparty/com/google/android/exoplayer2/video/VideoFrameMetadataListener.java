@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package org.mozilla.thirdparty.com.google.android.exoplayer2.video;
+
+import android.media.MediaFormat;
+import androidx.annotation.Nullable;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
+
+
+public interface VideoFrameMetadataListener {
+  
+
+
+
+
+
+
+
+
+
+
+  void onVideoFrameAboutToBeRendered(
+      long presentationTimeUs,
+      long releaseTimeNs,
+      Format format,
+      @Nullable MediaFormat mediaFormat);
+}

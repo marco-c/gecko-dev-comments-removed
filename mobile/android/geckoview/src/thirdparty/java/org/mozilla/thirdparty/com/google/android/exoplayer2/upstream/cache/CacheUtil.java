@@ -16,14 +16,20 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.cache;
 
 import android.net.Uri;
+import android.util.Pair;
+import androidx.annotation.Nullable;
+import androidx.annotation.WorkerThread;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSourceException;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSpec;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.PriorityTaskManager;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.NavigableSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 
@@ -31,18 +37,26 @@ import java.util.NavigableSet;
 public final class CacheUtil {
 
   
-  public static class CachingCounters {
+  public interface ProgressListener {
+
     
-    public long alreadyCachedBytes;
-    
 
 
 
 
 
 
-    public long downloadedBytes;
+
+
+    void onProgress(long requestLength, long bytesCached, long newBytesCached);
   }
+
+  
+  public static final int DEFAULT_BUFFER_SIZE_BYTES = 128 * 1024;
+
+  
+  public static final CacheKeyFactory DEFAULT_CACHE_KEY_FACTORY =
+      (dataSpec) -> dataSpec.key != null ? dataSpec.key : generateKey(dataSpec.uri);
 
   
 
@@ -59,27 +73,69 @@ public final class CacheUtil {
 
 
 
-  public static String getKey(DataSpec dataSpec) {
-    return dataSpec.key != null ? dataSpec.key : generateKey(dataSpec.uri);
-  }
-
-  
 
 
 
-
-
-
-
-
-
-  public static CachingCounters getCached(DataSpec dataSpec, Cache cache,
-      CachingCounters counters) {
-    try {
-      return internalCache(dataSpec, cache, null, null, null, 0, counters);
-    } catch (IOException | InterruptedException e) {
-      throw new IllegalStateException(e);
+  public static Pair<Long, Long> getCached(
+      DataSpec dataSpec, Cache cache, @Nullable CacheKeyFactory cacheKeyFactory) {
+    String key = buildCacheKey(dataSpec, cacheKeyFactory);
+    long position = dataSpec.absoluteStreamPosition;
+    long requestLength = getRequestLength(dataSpec, cache, key);
+    long bytesAlreadyCached = 0;
+    long bytesLeft = requestLength;
+    while (bytesLeft != 0) {
+      long blockLength =
+          cache.getCachedLength(
+              key, position, bytesLeft != C.LENGTH_UNSET ? bytesLeft : Long.MAX_VALUE);
+      if (blockLength > 0) {
+        bytesAlreadyCached += blockLength;
+      } else {
+        blockLength = -blockLength;
+        if (blockLength == Long.MAX_VALUE) {
+          break;
+        }
+      }
+      position += blockLength;
+      bytesLeft -= bytesLeft == C.LENGTH_UNSET ? 0 : blockLength;
     }
+    return Pair.create(requestLength, bytesAlreadyCached);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @WorkerThread
+  public static void cache(
+      DataSpec dataSpec,
+      Cache cache,
+      @Nullable CacheKeyFactory cacheKeyFactory,
+      DataSource upstream,
+      @Nullable ProgressListener progressListener,
+      @Nullable AtomicBoolean isCanceled)
+      throws IOException, InterruptedException {
+    cache(
+        dataSpec,
+        cache,
+        cacheKeyFactory,
+        new CacheDataSource(cache, upstream),
+        new byte[DEFAULT_BUFFER_SIZE_BYTES],
+         null,
+         0,
+        progressListener,
+        isCanceled,
+         false);
   }
 
   
@@ -98,82 +154,94 @@ public final class CacheUtil {
 
 
 
-  public static CachingCounters cache(DataSpec dataSpec, Cache cache, CacheDataSource dataSource,
-      byte[] buffer, PriorityTaskManager priorityTaskManager, int priority,
-      CachingCounters counters) throws IOException, InterruptedException {
+
+
+
+
+
+
+
+
+
+
+
+  @WorkerThread
+  public static void cache(
+      DataSpec dataSpec,
+      Cache cache,
+      @Nullable CacheKeyFactory cacheKeyFactory,
+      CacheDataSource dataSource,
+      byte[] buffer,
+      @Nullable PriorityTaskManager priorityTaskManager,
+      int priority,
+      @Nullable ProgressListener progressListener,
+      @Nullable AtomicBoolean isCanceled,
+      boolean enableEOFException)
+      throws IOException, InterruptedException {
     Assertions.checkNotNull(dataSource);
     Assertions.checkNotNull(buffer);
-    return internalCache(dataSpec, cache, dataSource, buffer, priorityTaskManager, priority,
-        counters);
-  }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  private static CachingCounters internalCache(DataSpec dataSpec, Cache cache,
-      CacheDataSource dataSource, byte[] buffer, PriorityTaskManager priorityTaskManager,
-      int priority, CachingCounters counters) throws IOException, InterruptedException {
-    long start = dataSpec.position;
-    long left = dataSpec.length;
-    String key = getKey(dataSpec);
-    if (left == C.LENGTH_UNSET) {
-      left = cache.getContentLength(key);
-      if (left == C.LENGTH_UNSET) {
-        left = Long.MAX_VALUE;
-      }
-    }
-    if (counters == null) {
-      counters = new CachingCounters();
+    String key = buildCacheKey(dataSpec, cacheKeyFactory);
+    long bytesLeft;
+    ProgressNotifier progressNotifier = null;
+    if (progressListener != null) {
+      progressNotifier = new ProgressNotifier(progressListener);
+      Pair<Long, Long> lengthAndBytesAlreadyCached = getCached(dataSpec, cache, cacheKeyFactory);
+      progressNotifier.init(lengthAndBytesAlreadyCached.first, lengthAndBytesAlreadyCached.second);
+      bytesLeft = lengthAndBytesAlreadyCached.first;
     } else {
-      counters.alreadyCachedBytes = 0;
-      counters.downloadedBytes = 0;
+      bytesLeft = getRequestLength(dataSpec, cache, key);
     }
-    while (left > 0) {
-      long blockLength = cache.getCachedBytes(key, start, left);
-      
+
+    long position = dataSpec.absoluteStreamPosition;
+    boolean lengthUnset = bytesLeft == C.LENGTH_UNSET;
+    while (bytesLeft != 0) {
+      throwExceptionIfInterruptedOrCancelled(isCanceled);
+      long blockLength =
+          cache.getCachedLength(key, position, lengthUnset ? Long.MAX_VALUE : bytesLeft);
       if (blockLength > 0) {
-        counters.alreadyCachedBytes += blockLength;
+        
       } else {
         
         blockLength = -blockLength;
-        if (dataSource != null && buffer != null) {
-          DataSpec subDataSpec = new DataSpec(dataSpec.uri, start,
-              blockLength == Long.MAX_VALUE ? C.LENGTH_UNSET : blockLength, key);
-          long read = readAndDiscard(subDataSpec, dataSource, buffer, priorityTaskManager,
-              priority);
-          counters.downloadedBytes += read;
-          if (read < blockLength) {
-            
-            break;
+        long length = blockLength == Long.MAX_VALUE ? C.LENGTH_UNSET : blockLength;
+        boolean isLastBlock = length == bytesLeft;
+        long read =
+            readAndDiscard(
+                dataSpec,
+                position,
+                length,
+                dataSource,
+                buffer,
+                priorityTaskManager,
+                priority,
+                progressNotifier,
+                isLastBlock,
+                isCanceled);
+        if (read < blockLength) {
+          
+          if (enableEOFException && !lengthUnset) {
+            throw new EOFException();
           }
-        } else if (blockLength == Long.MAX_VALUE) {
-          counters.downloadedBytes = C.LENGTH_UNSET;
           break;
-        } else {
-          counters.downloadedBytes += blockLength;
         }
       }
-      start += blockLength;
-      if (left != Long.MAX_VALUE) {
-        left -= blockLength;
+      position += blockLength;
+      if (!lengthUnset) {
+        bytesLeft -= blockLength;
       }
     }
-    return counters;
+  }
+
+  private static long getRequestLength(DataSpec dataSpec, Cache cache, String key) {
+    if (dataSpec.length != C.LENGTH_UNSET) {
+      return dataSpec.length;
+    } else {
+      long contentLength = ContentMetadata.getContentLength(cache.getContentMetadata(key));
+      return contentLength == C.LENGTH_UNSET
+          ? C.LENGTH_UNSET
+          : contentLength - dataSpec.absoluteStreamPosition;
+    }
   }
 
   
@@ -188,27 +256,79 @@ public final class CacheUtil {
 
 
 
-  private static long readAndDiscard(DataSpec dataSpec, DataSource dataSource, byte[] buffer,
-      PriorityTaskManager priorityTaskManager, int priority)
+
+
+
+
+
+
+  private static long readAndDiscard(
+      DataSpec dataSpec,
+      long absoluteStreamPosition,
+      long length,
+      DataSource dataSource,
+      byte[] buffer,
+      @Nullable PriorityTaskManager priorityTaskManager,
+      int priority,
+      @Nullable ProgressNotifier progressNotifier,
+      boolean isLastBlock,
+      @Nullable AtomicBoolean isCanceled)
       throws IOException, InterruptedException {
+    long positionOffset = absoluteStreamPosition - dataSpec.absoluteStreamPosition;
+    long initialPositionOffset = positionOffset;
+    long endOffset = length != C.LENGTH_UNSET ? positionOffset + length : C.POSITION_UNSET;
     while (true) {
       if (priorityTaskManager != null) {
         
         priorityTaskManager.proceed(priority);
       }
+      throwExceptionIfInterruptedOrCancelled(isCanceled);
       try {
-        dataSource.open(dataSpec);
-        long totalRead = 0;
-        while (true) {
-          if (Thread.interrupted()) {
-            throw new InterruptedException();
+        long resolvedLength = C.LENGTH_UNSET;
+        boolean isDataSourceOpen = false;
+        if (endOffset != C.POSITION_UNSET) {
+          
+          
+          
+          
+          try {
+            resolvedLength =
+                dataSource.open(dataSpec.subrange(positionOffset, endOffset - positionOffset));
+            isDataSourceOpen = true;
+          } catch (IOException exception) {
+            if (!isLastBlock || !isCausedByPositionOutOfRange(exception)) {
+              throw exception;
+            }
+            Util.closeQuietly(dataSource);
           }
-          int read = dataSource.read(buffer, 0, buffer.length);
-          if (read == C.RESULT_END_OF_INPUT) {
-            return totalRead;
-          }
-          totalRead += read;
         }
+        if (!isDataSourceOpen) {
+          resolvedLength = dataSource.open(dataSpec.subrange(positionOffset, C.LENGTH_UNSET));
+        }
+        if (isLastBlock && progressNotifier != null && resolvedLength != C.LENGTH_UNSET) {
+          progressNotifier.onRequestLengthResolved(positionOffset + resolvedLength);
+        }
+        while (positionOffset != endOffset) {
+          throwExceptionIfInterruptedOrCancelled(isCanceled);
+          int bytesRead =
+              dataSource.read(
+                  buffer,
+                  0,
+                  endOffset != C.POSITION_UNSET
+                      ? (int) Math.min(buffer.length, endOffset - positionOffset)
+                      : buffer.length);
+          if (bytesRead == C.RESULT_END_OF_INPUT) {
+            if (progressNotifier != null) {
+              progressNotifier.onRequestLengthResolved(positionOffset);
+            }
+            break;
+          }
+          positionOffset += bytesRead;
+          if (progressNotifier != null) {
+            progressNotifier.onBytesCached(bytesRead);
+          }
+        }
+        return positionOffset - initialPositionOffset;
       } catch (PriorityTaskManager.PriorityTooLowException exception) {
         
       } finally {
@@ -218,11 +338,31 @@ public final class CacheUtil {
   }
 
   
+
+
+
+
+
+
+
+
+  @WorkerThread
+  public static void remove(
+      DataSpec dataSpec, Cache cache, @Nullable CacheKeyFactory cacheKeyFactory) {
+    remove(cache, buildCacheKey(dataSpec, cacheKeyFactory));
+  }
+
+  
+
+
+
+
+
+
+
+  @WorkerThread
   public static void remove(Cache cache, String key) {
     NavigableSet<CacheSpan> cachedSpans = cache.getCachedSpans(key);
-    if (cachedSpans == null) {
-      return;
-    }
     for (CacheSpan cachedSpan : cachedSpans) {
       try {
         cache.removeSpan(cachedSpan);
@@ -232,6 +372,63 @@ public final class CacheUtil {
     }
   }
 
+   static boolean isCausedByPositionOutOfRange(IOException e) {
+    Throwable cause = e;
+    while (cause != null) {
+      if (cause instanceof DataSourceException) {
+        int reason = ((DataSourceException) cause).reason;
+        if (reason == DataSourceException.POSITION_OUT_OF_RANGE) {
+          return true;
+        }
+      }
+      cause = cause.getCause();
+    }
+    return false;
+  }
+
+  private static String buildCacheKey(
+      DataSpec dataSpec, @Nullable CacheKeyFactory cacheKeyFactory) {
+    return (cacheKeyFactory != null ? cacheKeyFactory : DEFAULT_CACHE_KEY_FACTORY)
+        .buildCacheKey(dataSpec);
+  }
+
+  private static void throwExceptionIfInterruptedOrCancelled(@Nullable AtomicBoolean isCanceled)
+      throws InterruptedException {
+    if (Thread.interrupted() || (isCanceled != null && isCanceled.get())) {
+      throw new InterruptedException();
+    }
+  }
+
   private CacheUtil() {}
 
+  private static final class ProgressNotifier {
+    
+    private final ProgressListener listener;
+    
+    private long requestLength;
+    
+    private long bytesCached;
+
+    public ProgressNotifier(ProgressListener listener) {
+      this.listener = listener;
+    }
+
+    public void init(long requestLength, long bytesCached) {
+      this.requestLength = requestLength;
+      this.bytesCached = bytesCached;
+      listener.onProgress(requestLength, bytesCached,  0);
+    }
+
+    public void onRequestLengthResolved(long requestLength) {
+      if (this.requestLength == C.LENGTH_UNSET && requestLength != C.LENGTH_UNSET) {
+        this.requestLength = requestLength;
+        listener.onProgress(requestLength, bytesCached,  0);
+      }
+    }
+
+    public void onBytesCached(long newBytesCached) {
+      bytesCached += newBytesCached;
+      listener.onProgress(requestLength, bytesCached, newBytesCached);
+    }
+  }
 }

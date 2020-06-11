@@ -18,16 +18,95 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2.drm;
 import android.media.DeniedByServerException;
 import android.media.MediaCryptoException;
 import android.media.MediaDrm;
+import android.media.MediaDrmException;
 import android.media.NotProvisionedException;
-import android.media.ResourceBusyException;
+import android.os.Handler;
+import android.os.PersistableBundle;
+import androidx.annotation.Nullable;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.DrmInitData.SchemeData;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 
 
 
+
+
+
+
+
+
+
+
+
+
 public interface ExoMediaDrm<T extends ExoMediaCrypto> {
+
+  
+  interface Provider<T extends ExoMediaCrypto> {
+
+    
+
+
+
+
+    ExoMediaDrm<T> acquireExoMediaDrm(UUID uuid);
+  }
+
+  
+
+
+
+
+
+
+  final class AppManagedProvider<T extends ExoMediaCrypto> implements Provider<T> {
+
+    private final ExoMediaDrm<T> exoMediaDrm;
+
+    
+    public AppManagedProvider(ExoMediaDrm<T> exoMediaDrm) {
+      this.exoMediaDrm = exoMediaDrm;
+    }
+
+    @Override
+    public ExoMediaDrm<T> acquireExoMediaDrm(UUID uuid) {
+      exoMediaDrm.acquire();
+      return exoMediaDrm;
+    }
+  }
+
+  
+  @SuppressWarnings("InlinedApi")
+  int EVENT_KEY_REQUIRED = MediaDrm.EVENT_KEY_REQUIRED;
+  
+
+
+  @SuppressWarnings("InlinedApi")
+  int EVENT_KEY_EXPIRED = MediaDrm.EVENT_KEY_EXPIRED;
+  
+
+
+  @SuppressWarnings("InlinedApi")
+  int EVENT_PROVISION_REQUIRED = MediaDrm.EVENT_PROVISION_REQUIRED;
+
+  
+
+
+  @SuppressWarnings("InlinedApi")
+  int KEY_TYPE_STREAMING = MediaDrm.KEY_TYPE_STREAMING;
+  
+
+
+  @SuppressWarnings("InlinedApi")
+  int KEY_TYPE_OFFLINE = MediaDrm.KEY_TYPE_OFFLINE;
+  
+
+
+  @SuppressWarnings("InlinedApi")
+  int KEY_TYPE_RELEASE = MediaDrm.KEY_TYPE_RELEASE;
 
   
 
@@ -42,24 +121,95 @@ public interface ExoMediaDrm<T extends ExoMediaCrypto> {
 
 
 
-    void onEvent(ExoMediaDrm<? extends T> mediaDrm, byte[] sessionId, int event, int extra,
-        byte[] data);
+    void onEvent(
+        ExoMediaDrm<? extends T> mediaDrm,
+        @Nullable byte[] sessionId,
+        int event,
+        int extra,
+        @Nullable byte[] data);
   }
 
   
 
 
-  interface KeyRequest {
-    byte[] getData();
-    String getDefaultUrl();
+  interface OnKeyStatusChangeListener<T extends ExoMediaCrypto> {
+    
+
+
+
+
+
+
+
+
+    void onKeyStatusChange(
+        ExoMediaDrm<? extends T> mediaDrm,
+        byte[] sessionId,
+        List<KeyStatus> exoKeyInformation,
+        boolean hasNewUsableKey);
   }
 
   
+  final class KeyStatus {
 
+    private final int statusCode;
+    private final byte[] keyId;
 
-  interface ProvisionRequest {
-    byte[] getData();
-    String getDefaultUrl();
+    public KeyStatus(int statusCode, byte[] keyId) {
+      this.statusCode = statusCode;
+      this.keyId = keyId;
+    }
+
+    public int getStatusCode() {
+      return statusCode;
+    }
+
+    public byte[] getKeyId() {
+      return keyId;
+    }
+
+  }
+
+  
+  final class KeyRequest {
+
+    private final byte[] data;
+    private final String licenseServerUrl;
+
+    public KeyRequest(byte[] data, String licenseServerUrl) {
+      this.data = data;
+      this.licenseServerUrl = licenseServerUrl;
+    }
+
+    public byte[] getData() {
+      return data;
+    }
+
+    public String getLicenseServerUrl() {
+      return licenseServerUrl;
+    }
+
+  }
+
+  
+  final class ProvisionRequest {
+
+    private final byte[] data;
+    private final String defaultUrl;
+
+    public ProvisionRequest(byte[] data, String defaultUrl) {
+      this.data = data;
+      this.defaultUrl = defaultUrl;
+    }
+
+    public byte[] getData() {
+      return data;
+    }
+
+    public String getDefaultUrl() {
+      return defaultUrl;
+    }
+
   }
 
   
@@ -70,7 +220,12 @@ public interface ExoMediaDrm<T extends ExoMediaCrypto> {
   
 
 
-  byte[] openSession() throws NotProvisionedException, ResourceBusyException;
+  void setOnKeyStatusChangeListener(OnKeyStatusChangeListener<? super T> listener);
+
+  
+
+
+  byte[] openSession() throws MediaDrmException;
 
   
 
@@ -80,12 +235,30 @@ public interface ExoMediaDrm<T extends ExoMediaCrypto> {
   
 
 
-  KeyRequest getKeyRequest(byte[] scope, byte[] init, String mimeType, int keyType,
-      HashMap<String, String> optionalParameters) throws NotProvisionedException;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  KeyRequest getKeyRequest(
+      byte[] scope,
+      @Nullable List<SchemeData> schemeDatas,
+      int keyType,
+      @Nullable HashMap<String, String> optionalParameters)
+      throws NotProvisionedException;
 
   
-
-
+  @Nullable
   byte[] provideKeyResponse(byte[] scope, byte[] response)
       throws NotProvisionedException, DeniedByServerException;
 
@@ -107,12 +280,30 @@ public interface ExoMediaDrm<T extends ExoMediaCrypto> {
   
 
 
+
+
+
+
+  void acquire();
+
+  
+
+
+
   void release();
 
   
 
 
   void restoreKeys(byte[] sessionId, byte[] keySetId);
+
+  
+
+
+
+
+  @Nullable
+  PersistableBundle getMetrics();
 
   
 
@@ -140,8 +331,12 @@ public interface ExoMediaDrm<T extends ExoMediaCrypto> {
 
 
 
+  T createMediaCrypto(byte[] sessionId) throws MediaCryptoException;
+
+  
 
 
-  T createMediaCrypto(UUID uuid, byte[] initData) throws MediaCryptoException;
 
+  @Nullable
+  Class<T> getExoMediaCryptoType();
 }

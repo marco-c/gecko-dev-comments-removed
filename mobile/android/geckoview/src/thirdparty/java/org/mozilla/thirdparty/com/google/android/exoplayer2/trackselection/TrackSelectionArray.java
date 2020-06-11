@@ -15,27 +15,23 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.trackselection;
 
+import androidx.annotation.Nullable;
 import java.util.Arrays;
-
-
+import org.checkerframework.checker.nullness.compatqual.NullableType;
 
 
 public final class TrackSelectionArray {
 
   
-
-
   public final int length;
 
-  private final TrackSelection[] trackSelections;
+  private final @NullableType TrackSelection[] trackSelections;
 
   
   private int hashCode;
 
   
-
-
-  public TrackSelectionArray(TrackSelection... trackSelections) {
+  public TrackSelectionArray(@NullableType TrackSelection... trackSelections) {
     this.trackSelections = trackSelections;
     this.length = trackSelections.length;
   }
@@ -46,14 +42,13 @@ public final class TrackSelectionArray {
 
 
 
+  @Nullable
   public TrackSelection get(int index) {
     return trackSelections[index];
   }
 
   
-
-
-  public TrackSelection[] getAll() {
+  public @NullableType TrackSelection[] getAll() {
     return trackSelections.clone();
   }
 
@@ -68,7 +63,7 @@ public final class TrackSelectionArray {
   }
 
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     if (this == obj) {
       return true;
     }

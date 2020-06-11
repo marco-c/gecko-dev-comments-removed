@@ -20,11 +20,17 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
-import android.util.Log;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Log;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.TraceUtil;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 import java.io.IOException;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.concurrent.ExecutorService;
 
 
@@ -37,7 +43,7 @@ public final class Loader implements LoaderErrorThrower {
 
   public static final class UnexpectedLoaderException extends IOException {
 
-    public UnexpectedLoaderException(Exception cause) {
+    public UnexpectedLoaderException(Throwable cause) {
       super("Unexpected " + cause.getClass().getSimpleName() + ": " + cause.getMessage(), cause);
     }
 
@@ -52,11 +58,6 @@ public final class Loader implements LoaderErrorThrower {
 
 
     void cancelLoad();
-
-    
-
-
-    boolean isLoadCanceled();
 
     
 
@@ -83,9 +84,11 @@ public final class Loader implements LoaderErrorThrower {
 
 
 
+
     void onLoadCompleted(T loadable, long elapsedRealtimeMs, long loadDurationMs);
 
     
+
 
 
 
@@ -115,25 +118,80 @@ public final class Loader implements LoaderErrorThrower {
 
 
 
-    int onLoadError(T loadable, long elapsedRealtimeMs, long loadDurationMs, IOException error);
+
+
+    LoadErrorAction onLoadError(
+        T loadable, long elapsedRealtimeMs, long loadDurationMs, IOException error, int errorCount);
+  }
+
+  
+
+
+  public interface ReleaseCallback {
+
+    
+
+
+    void onLoaderReleased();
 
   }
 
-  public static final int RETRY = 0;
-  public static final int RETRY_RESET_ERROR_COUNT = 1;
-  public static final int DONT_RETRY = 2;
-  public static final int DONT_RETRY_FATAL = 3;
+  
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    ACTION_TYPE_RETRY,
+    ACTION_TYPE_RETRY_AND_RESET_ERROR_COUNT,
+    ACTION_TYPE_DONT_RETRY,
+    ACTION_TYPE_DONT_RETRY_FATAL
+  })
+  private @interface RetryActionType {}
 
-  private static final int MSG_START = 0;
-  private static final int MSG_CANCEL = 1;
-  private static final int MSG_END_OF_SOURCE = 2;
-  private static final int MSG_IO_EXCEPTION = 3;
-  private static final int MSG_FATAL_ERROR = 4;
+  private static final int ACTION_TYPE_RETRY = 0;
+  private static final int ACTION_TYPE_RETRY_AND_RESET_ERROR_COUNT = 1;
+  private static final int ACTION_TYPE_DONT_RETRY = 2;
+  private static final int ACTION_TYPE_DONT_RETRY_FATAL = 3;
+
+  
+  public static final LoadErrorAction RETRY =
+      createRetryAction( false, C.TIME_UNSET);
+  
+  public static final LoadErrorAction RETRY_RESET_ERROR_COUNT =
+      createRetryAction( true, C.TIME_UNSET);
+  
+  public static final LoadErrorAction DONT_RETRY =
+      new LoadErrorAction(ACTION_TYPE_DONT_RETRY, C.TIME_UNSET);
+  
+
+
+
+  public static final LoadErrorAction DONT_RETRY_FATAL =
+      new LoadErrorAction(ACTION_TYPE_DONT_RETRY_FATAL, C.TIME_UNSET);
+
+  
+
+
+
+  public static final class LoadErrorAction {
+
+    private final @RetryActionType int type;
+    private final long retryDelayMillis;
+
+    private LoadErrorAction(@RetryActionType int type, long retryDelayMillis) {
+      this.type = type;
+      this.retryDelayMillis = retryDelayMillis;
+    }
+
+    
+    public boolean isRetry() {
+      return type == ACTION_TYPE_RETRY || type == ACTION_TYPE_RETRY_AND_RESET_ERROR_COUNT;
+    }
+  }
 
   private final ExecutorService downloadExecutorService;
 
-  private LoadTask<? extends Loadable> currentTask;
-  private IOException fatalError;
+  @Nullable private LoadTask<? extends Loadable> currentTask;
+  @Nullable private IOException fatalError;
 
   
 
@@ -149,6 +207,26 @@ public final class Loader implements LoaderErrorThrower {
 
 
 
+  public static LoadErrorAction createRetryAction(boolean resetErrorCount, long retryDelayMillis) {
+    return new LoadErrorAction(
+        resetErrorCount ? ACTION_TYPE_RETRY_AND_RESET_ERROR_COUNT : ACTION_TYPE_RETRY,
+        retryDelayMillis);
+  }
+
+  
+
+
+
+  public boolean hasFatalError() {
+    return fatalError != null;
+  }
+
+  
+  public void clearFatalError() {
+    fatalError = null;
+  }
+
+  
 
 
 
@@ -156,18 +234,22 @@ public final class Loader implements LoaderErrorThrower {
 
 
 
-  public <T extends Loadable> long startLoading(T loadable, Callback<T> callback,
-      int defaultMinRetryCount) {
-    Looper looper = Looper.myLooper();
-    Assertions.checkState(looper != null);
+
+
+
+
+
+
+  public <T extends Loadable> long startLoading(
+      T loadable, Callback<T> callback, int defaultMinRetryCount) {
+    Looper looper = Assertions.checkStateNotNull(Looper.myLooper());
+    fatalError = null;
     long startTimeMs = SystemClock.elapsedRealtime();
     new LoadTask<>(looper, loadable, callback, defaultMinRetryCount, startTimeMs).start(0);
     return startTimeMs;
   }
 
   
-
-
   public boolean isLoading() {
     return currentTask != null;
   }
@@ -175,14 +257,13 @@ public final class Loader implements LoaderErrorThrower {
   
 
 
+
+
   public void cancelLoading() {
-    currentTask.cancel(false);
+    Assertions.checkStateNotNull(currentTask).cancel(false);
   }
 
   
-
-
-
   public void release() {
     release(null);
   }
@@ -193,13 +274,12 @@ public final class Loader implements LoaderErrorThrower {
 
 
 
-
-  public void release(Runnable postLoadAction) {
+  public void release(@Nullable ReleaseCallback callback) {
     if (currentTask != null) {
       currentTask.cancel(true);
     }
-    if (postLoadAction != null) {
-      downloadExecutorService.execute(postLoadAction);
+    if (callback != null) {
+      downloadExecutorService.execute(new ReleaseTask(callback));
     }
     downloadExecutorService.shutdown();
   }
@@ -228,15 +308,23 @@ public final class Loader implements LoaderErrorThrower {
 
     private static final String TAG = "LoadTask";
 
-    private final T loadable;
-    private final Loader.Callback<T> callback;
+    private static final int MSG_START = 0;
+    private static final int MSG_CANCEL = 1;
+    private static final int MSG_END_OF_SOURCE = 2;
+    private static final int MSG_IO_EXCEPTION = 3;
+    private static final int MSG_FATAL_ERROR = 4;
+
     public final int defaultMinRetryCount;
+
+    private final T loadable;
     private final long startTimeMs;
 
-    private IOException currentError;
+    @Nullable private Loader.Callback<T> callback;
+    @Nullable private IOException currentError;
     private int errorCount;
 
-    private volatile Thread executorThread;
+    @Nullable private volatile Thread executorThread;
+    private volatile boolean canceled;
     private volatile boolean released;
 
     public LoadTask(Looper looper, T loadable, Loader.Callback<T> callback,
@@ -273,7 +361,9 @@ public final class Loader implements LoaderErrorThrower {
           sendEmptyMessage(MSG_CANCEL);
         }
       } else {
+        canceled = true;
         loadable.cancelLoad();
+        Thread executorThread = this.executorThread;
         if (executorThread != null) {
           executorThread.interrupt();
         }
@@ -281,7 +371,13 @@ public final class Loader implements LoaderErrorThrower {
       if (released) {
         finish();
         long nowMs = SystemClock.elapsedRealtime();
-        callback.onLoadCanceled(loadable, nowMs, nowMs - startTimeMs, true);
+        Assertions.checkNotNull(callback)
+            .onLoadCanceled(loadable, nowMs, nowMs - startTimeMs, true);
+        
+        
+        
+        
+        callback = null;
       }
     }
 
@@ -289,7 +385,7 @@ public final class Loader implements LoaderErrorThrower {
     public void run() {
       try {
         executorThread = Thread.currentThread();
-        if (!loadable.isLoadCanceled()) {
+        if (!canceled) {
           TraceUtil.beginSection("load:" + loadable.getClass().getSimpleName());
           try {
             loadable.load();
@@ -306,13 +402,21 @@ public final class Loader implements LoaderErrorThrower {
         }
       } catch (InterruptedException e) {
         
-        Assertions.checkState(loadable.isLoadCanceled());
+        Assertions.checkState(canceled);
         if (!released) {
           sendEmptyMessage(MSG_END_OF_SOURCE);
         }
       } catch (Exception e) {
         
         Log.e(TAG, "Unexpected exception loading stream", e);
+        if (!released) {
+          obtainMessage(MSG_IO_EXCEPTION, new UnexpectedLoaderException(e)).sendToTarget();
+        }
+      } catch (OutOfMemoryError e) {
+        
+        
+        
+        Log.e(TAG, "OutOfMemory error loading stream", e);
         if (!released) {
           obtainMessage(MSG_IO_EXCEPTION, new UnexpectedLoaderException(e)).sendToTarget();
         }
@@ -343,7 +447,8 @@ public final class Loader implements LoaderErrorThrower {
       finish();
       long nowMs = SystemClock.elapsedRealtime();
       long durationMs = nowMs - startTimeMs;
-      if (loadable.isLoadCanceled()) {
+      Loader.Callback<T> callback = Assertions.checkNotNull(this.callback);
+      if (canceled) {
         callback.onLoadCanceled(loadable, nowMs, durationMs, false);
         return;
       }
@@ -352,24 +457,40 @@ public final class Loader implements LoaderErrorThrower {
           callback.onLoadCanceled(loadable, nowMs, durationMs, false);
           break;
         case MSG_END_OF_SOURCE:
-          callback.onLoadCompleted(loadable, nowMs, durationMs);
+          try {
+            callback.onLoadCompleted(loadable, nowMs, durationMs);
+          } catch (RuntimeException e) {
+            
+            Log.e(TAG, "Unexpected exception handling load completed", e);
+            fatalError = new UnexpectedLoaderException(e);
+          }
           break;
         case MSG_IO_EXCEPTION:
           currentError = (IOException) msg.obj;
-          int retryAction = callback.onLoadError(loadable, nowMs, durationMs, currentError);
-          if (retryAction == DONT_RETRY_FATAL) {
+          errorCount++;
+          LoadErrorAction action =
+              callback.onLoadError(loadable, nowMs, durationMs, currentError, errorCount);
+          if (action.type == ACTION_TYPE_DONT_RETRY_FATAL) {
             fatalError = currentError;
-          } else if (retryAction != DONT_RETRY) {
-            errorCount = retryAction == RETRY_RESET_ERROR_COUNT ? 1 : errorCount + 1;
-            start(getRetryDelayMillis());
+          } else if (action.type != ACTION_TYPE_DONT_RETRY) {
+            if (action.type == ACTION_TYPE_RETRY_AND_RESET_ERROR_COUNT) {
+              errorCount = 1;
+            }
+            start(
+                action.retryDelayMillis != C.TIME_UNSET
+                    ? action.retryDelayMillis
+                    : getRetryDelayMillis());
           }
+          break;
+        default:
+          
           break;
       }
     }
 
     private void execute() {
       currentError = null;
-      downloadExecutorService.execute(currentTask);
+      downloadExecutorService.execute(Assertions.checkNotNull(currentTask));
     }
 
     private void finish() {
@@ -378,6 +499,21 @@ public final class Loader implements LoaderErrorThrower {
 
     private long getRetryDelayMillis() {
       return Math.min((errorCount - 1) * 1000, 5000);
+    }
+
+  }
+
+  private static final class ReleaseTask implements Runnable {
+
+    private final ReleaseCallback callback;
+
+    public ReleaseTask(ReleaseCallback callback) {
+      this.callback = callback;
+    }
+
+    @Override
+    public void run() {
+      callback.onLoaderReleased();
     }
 
   }

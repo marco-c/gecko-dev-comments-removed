@@ -15,7 +15,9 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor;
 
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 
 
 
@@ -23,18 +25,28 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 public interface SeekMap {
 
   
-
-
-  final class Unseekable implements SeekMap {
+  class Unseekable implements SeekMap {
 
     private final long durationUs;
+    private final SeekPoints startSeekPoints;
 
     
 
 
 
     public Unseekable(long durationUs) {
+      this(durationUs, 0);
+    }
+
+    
+
+
+
+
+    public Unseekable(long durationUs, long startPosition) {
       this.durationUs = durationUs;
+      startSeekPoints =
+          new SeekPoints(startPosition == 0 ? SeekPoint.START : new SeekPoint(0, startPosition));
     }
 
     @Override
@@ -48,16 +60,57 @@ public interface SeekMap {
     }
 
     @Override
-    public long getPosition(long timeUs) {
-      return 0;
+    public SeekPoints getSeekPoints(long timeUs) {
+      return startSeekPoints;
     }
-
   }
 
   
+  final class SeekPoints {
+
+    
+    public final SeekPoint first;
+    
+    public final SeekPoint second;
+
+    
+    public SeekPoints(SeekPoint point) {
+      this(point, point);
+    }
+
+    
 
 
 
+    public SeekPoints(SeekPoint first, SeekPoint second) {
+      this.first = Assertions.checkNotNull(first);
+      this.second = Assertions.checkNotNull(second);
+    }
+
+    @Override
+    public String toString() {
+      return "[" + first + (first.equals(second) ? "" : (", " + second)) + "]";
+    }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
+      if (this == obj) {
+        return true;
+      }
+      if (obj == null || getClass() != obj.getClass()) {
+        return false;
+      }
+      SeekPoints other = (SeekPoints) obj;
+      return first.equals(other.first) && second.equals(other.second);
+    }
+
+    @Override
+    public int hashCode() {
+      return (31 * first.hashCode()) + second.hashCode();
+    }
+  }
+
+  
 
 
 
@@ -80,6 +133,9 @@ public interface SeekMap {
 
 
 
-  long getPosition(long timeUs);
 
+
+
+
+  SeekPoints getSeekPoints(long timeUs);
 }

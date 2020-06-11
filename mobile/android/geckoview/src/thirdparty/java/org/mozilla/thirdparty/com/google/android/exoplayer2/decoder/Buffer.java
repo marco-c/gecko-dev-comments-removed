@@ -54,6 +54,11 @@ public abstract class Buffer {
   }
 
   
+  public final boolean hasSupplementalData() {
+    return getFlag(C.BUFFER_FLAG_HAS_SUPPLEMENTAL_DATA);
+  }
+
+  
 
 
 

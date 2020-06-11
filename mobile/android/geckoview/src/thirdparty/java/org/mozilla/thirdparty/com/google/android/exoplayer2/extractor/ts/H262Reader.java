@@ -36,6 +36,7 @@ public final class H262Reader implements ElementaryStreamReader {
   private static final int START_SEQUENCE_HEADER = 0xB3;
   private static final int START_EXTENSION = 0xB5;
   private static final int START_GROUP = 0xB8;
+  private static final int START_USER_DATA = 0xB2;
 
   private String formatId;
   private TrackOutput output;
@@ -48,33 +49,51 @@ public final class H262Reader implements ElementaryStreamReader {
   private boolean hasOutputFormat;
   private long frameDurationUs;
 
+  private final UserDataReader userDataReader;
+  private final ParsableByteArray userDataParsable;
+
   
   private final boolean[] prefixFlags;
   private final CsdBuffer csdBuffer;
-  private boolean foundFirstFrameInGroup;
+  private final NalUnitTargetBuffer userData;
   private long totalBytesWritten;
+  private boolean startedFirstSample;
 
   
   private long pesTimeUs;
-  private boolean pesPtsUsAvailable;
 
   
-  private boolean isKeyframe;
-  private long framePosition;
-  private long frameTimeUs;
+  private long samplePosition;
+  private long sampleTimeUs;
+  private boolean sampleIsKeyframe;
+  private boolean sampleHasPicture;
 
   public H262Reader() {
+    this(null);
+  }
+
+   H262Reader(UserDataReader userDataReader) {
+    this.userDataReader = userDataReader;
     prefixFlags = new boolean[4];
     csdBuffer = new CsdBuffer(128);
+    if (userDataReader != null) {
+      userData = new NalUnitTargetBuffer(START_USER_DATA, 128);
+      userDataParsable = new ParsableByteArray();
+    } else {
+      userData = null;
+      userDataParsable = null;
+    }
   }
 
   @Override
   public void seek() {
     NalUnitUtil.clearPrefixFlags(prefixFlags);
     csdBuffer.reset();
-    pesPtsUsAvailable = false;
-    foundFirstFrameInGroup = false;
+    if (userDataReader != null) {
+      userData.reset();
+    }
     totalBytesWritten = 0;
+    startedFirstSample = false;
   }
 
   @Override
@@ -82,14 +101,15 @@ public final class H262Reader implements ElementaryStreamReader {
     idGenerator.generateNewId();
     formatId = idGenerator.getFormatId();
     output = extractorOutput.track(idGenerator.getTrackId(), C.TRACK_TYPE_VIDEO);
+    if (userDataReader != null) {
+      userDataReader.createTracks(extractorOutput, idGenerator);
+    }
   }
 
   @Override
-  public void packetStarted(long pesTimeUs, boolean dataAlignmentIndicator) {
-    pesPtsUsAvailable = pesTimeUs != C.TIME_UNSET;
-    if (pesPtsUsAvailable) {
-      this.pesTimeUs = pesTimeUs;
-    }
+  public void packetStarted(long pesTimeUs, @TsPayloadReader.Flags int flags) {
+    
+    this.pesTimeUs = pesTimeUs;
   }
 
   @Override
@@ -102,25 +122,27 @@ public final class H262Reader implements ElementaryStreamReader {
     totalBytesWritten += data.bytesLeft();
     output.sampleData(data, data.bytesLeft());
 
-    int searchOffset = offset;
     while (true) {
-      int startCodeOffset = NalUnitUtil.findNalUnit(dataArray, searchOffset, limit, prefixFlags);
+      int startCodeOffset = NalUnitUtil.findNalUnit(dataArray, offset, limit, prefixFlags);
 
       if (startCodeOffset == limit) {
         
         if (!hasOutputFormat) {
           csdBuffer.onData(dataArray, offset, limit);
         }
+        if (userDataReader != null) {
+          userData.appendToNalUnit(dataArray, offset, limit);
+        }
         return;
       }
 
       
       int startCodeValue = data.data[startCodeOffset + 3] & 0xFF;
+      
+      
+      int lengthToStartCode = startCodeOffset - offset;
 
       if (!hasOutputFormat) {
-        
-        
-        int lengthToStartCode = startCodeOffset - offset;
         if (lengthToStartCode > 0) {
           csdBuffer.onData(dataArray, offset, startCodeOffset);
         }
@@ -135,28 +157,47 @@ public final class H262Reader implements ElementaryStreamReader {
           hasOutputFormat = true;
         }
       }
-
-      if (hasOutputFormat && (startCodeValue == START_GROUP || startCodeValue == START_PICTURE)) {
-        int bytesWrittenPastStartCode = limit - startCodeOffset;
-        if (foundFirstFrameInGroup) {
-          @C.BufferFlags int flags = isKeyframe ? C.BUFFER_FLAG_KEY_FRAME : 0;
-          int size = (int) (totalBytesWritten - framePosition) - bytesWrittenPastStartCode;
-          output.sampleMetadata(frameTimeUs, flags, size, bytesWrittenPastStartCode, null);
-          isKeyframe = false;
+      if (userDataReader != null) {
+        int bytesAlreadyPassed = 0;
+        if (lengthToStartCode > 0) {
+          userData.appendToNalUnit(dataArray, offset, startCodeOffset);
+        } else {
+          bytesAlreadyPassed = -lengthToStartCode;
         }
-        if (startCodeValue == START_GROUP) {
-          foundFirstFrameInGroup = false;
-          isKeyframe = true;
-        } else  {
-          frameTimeUs = pesPtsUsAvailable ? pesTimeUs : (frameTimeUs + frameDurationUs);
-          framePosition = totalBytesWritten - bytesWrittenPastStartCode;
-          pesPtsUsAvailable = false;
-          foundFirstFrameInGroup = true;
+
+        if (userData.endNalUnit(bytesAlreadyPassed)) {
+          int unescapedLength = NalUnitUtil.unescapeStream(userData.nalData, userData.nalLength);
+          userDataParsable.reset(userData.nalData, unescapedLength);
+          userDataReader.consume(sampleTimeUs, userDataParsable);
+        }
+
+        if (startCodeValue == START_USER_DATA && data.data[startCodeOffset + 2] == 0x1) {
+          userData.startNalUnit(startCodeValue);
         }
       }
+      if (startCodeValue == START_PICTURE || startCodeValue == START_SEQUENCE_HEADER) {
+        int bytesWrittenPastStartCode = limit - startCodeOffset;
+        if (startedFirstSample && sampleHasPicture && hasOutputFormat) {
+          
+          @C.BufferFlags int flags = sampleIsKeyframe ? C.BUFFER_FLAG_KEY_FRAME : 0;
+          int size = (int) (totalBytesWritten - samplePosition) - bytesWrittenPastStartCode;
+          output.sampleMetadata(sampleTimeUs, flags, size, bytesWrittenPastStartCode, null);
+        }
+        if (!startedFirstSample || sampleHasPicture) {
+          
+          samplePosition = totalBytesWritten - bytesWrittenPastStartCode;
+          sampleTimeUs = pesTimeUs != C.TIME_UNSET ? pesTimeUs
+              : (startedFirstSample ? (sampleTimeUs + frameDurationUs) : 0);
+          sampleIsKeyframe = false;
+          pesTimeUs = C.TIME_UNSET;
+          startedFirstSample = true;
+        }
+        sampleHasPicture = startCodeValue == START_PICTURE;
+      } else if (startCodeValue == START_GROUP) {
+        sampleIsKeyframe = true;
+      }
 
-      offset = startCodeOffset;
-      searchOffset = offset + 3;
+      offset = startCodeOffset + 3;
     }
   }
 
@@ -221,6 +262,8 @@ public final class H262Reader implements ElementaryStreamReader {
 
   private static final class CsdBuffer {
 
+    private static final byte[] START_CODE = new byte[] {0, 0, 1};
+
     private boolean isFilling;
 
     public int length;
@@ -252,16 +295,17 @@ public final class H262Reader implements ElementaryStreamReader {
 
     public boolean onStartCode(int startCodeValue, int bytesAlreadyPassed) {
       if (isFilling) {
+        length -= bytesAlreadyPassed;
         if (sequenceExtensionPosition == 0 && startCodeValue == START_EXTENSION) {
           sequenceExtensionPosition = length;
         } else {
-          length -= bytesAlreadyPassed;
           isFilling = false;
           return true;
         }
       } else if (startCodeValue == START_SEQUENCE_HEADER) {
         isFilling = true;
       }
+      onData(START_CODE, 0, START_CODE.length);
       return false;
     }
 

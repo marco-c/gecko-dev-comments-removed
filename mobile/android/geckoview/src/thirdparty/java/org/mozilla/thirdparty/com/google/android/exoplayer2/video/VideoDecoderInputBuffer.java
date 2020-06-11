@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package org.mozilla.thirdparty.com.google.android.exoplayer2.video;
+
+import androidx.annotation.Nullable;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.decoder.DecoderInputBuffer;
+
+
+public class VideoDecoderInputBuffer extends DecoderInputBuffer {
+
+  @Nullable public ColorInfo colorInfo;
+
+  public VideoDecoderInputBuffer() {
+    super(DecoderInputBuffer.BUFFER_REPLACEMENT_MODE_DIRECT);
+  }
+
+}

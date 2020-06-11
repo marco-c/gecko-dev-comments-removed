@@ -15,16 +15,27 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.audio;
 
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.DrmInitData;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableBitArray;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 
 
 
 public final class DtsUtil {
+
+  private static final int SYNC_VALUE_BE = 0x7FFE8001;
+  private static final int SYNC_VALUE_14B_BE = 0x1FFFE800;
+  private static final int SYNC_VALUE_LE = 0xFE7F0180;
+  private static final int SYNC_VALUE_14B_LE = 0xFF1F00E8;
+  private static final byte FIRST_BYTE_BE = (byte) (SYNC_VALUE_BE >>> 24);
+  private static final byte FIRST_BYTE_14B_BE = (byte) (SYNC_VALUE_14B_BE >>> 24);
+  private static final byte FIRST_BYTE_LE = (byte) (SYNC_VALUE_LE >>> 24);
+  private static final byte FIRST_BYTE_14B_LE = (byte) (SYNC_VALUE_14B_LE >>> 24);
 
   
 
@@ -52,13 +63,27 @@ public final class DtsUtil {
 
 
 
+  public static boolean isSyncWord(int word) {
+    return word == SYNC_VALUE_BE
+        || word == SYNC_VALUE_LE
+        || word == SYNC_VALUE_14B_BE
+        || word == SYNC_VALUE_14B_LE;
+  }
+
+  
 
 
 
-  public static Format parseDtsFormat(byte[] frame, String trackId, String language,
-      DrmInitData drmInitData) {
-    ParsableBitArray frameBits = new ParsableBitArray(frame);
-    frameBits.skipBits(4 * 8 + 1 + 5 + 1 + 7 + 14); 
+
+
+
+
+
+
+  public static Format parseDtsFormat(
+      byte[] frame, String trackId, @Nullable String language, @Nullable DrmInitData drmInitData) {
+    ParsableBitArray frameBits = getNormalizedFrameHeader(frame);
+    frameBits.skipBits(32 + 1 + 5 + 1 + 7 + 14); 
     int amode = frameBits.readBits(6);
     int channelCount = CHANNELS_BY_AMODE[amode];
     int sfreq = frameBits.readBits(4);
@@ -79,8 +104,21 @@ public final class DtsUtil {
 
 
   public static int parseDtsAudioSampleCount(byte[] data) {
-    
-    int nblks = ((data[4] & 0x01) << 6) | ((data[5] & 0xFC) >> 2);
+    int nblks;
+    switch (data[0]) {
+      case FIRST_BYTE_LE:
+        nblks = ((data[5] & 0x01) << 6) | ((data[4] & 0xFC) >> 2);
+        break;
+      case FIRST_BYTE_14B_LE:
+        nblks = ((data[4] & 0x07) << 4) | ((data[7] & 0x3C) >> 2);
+        break;
+      case FIRST_BYTE_14B_BE:
+        nblks = ((data[5] & 0x07) << 4) | ((data[6] & 0x3C) >> 2);
+        break;
+      default:
+        
+        nblks = ((data[4] & 0x01) << 6) | ((data[5] & 0xFC) >> 2);
+    }
     return (nblks + 1) * 32;
   }
 
@@ -94,8 +132,21 @@ public final class DtsUtil {
   public static int parseDtsAudioSampleCount(ByteBuffer buffer) {
     
     int position = buffer.position();
-    int nblks = ((buffer.get(position + 4) & 0x01) << 6)
-        | ((buffer.get(position + 5) & 0xFC) >> 2);
+    int nblks;
+    switch (buffer.get(position)) {
+      case FIRST_BYTE_LE:
+        nblks = ((buffer.get(position + 5) & 0x01) << 6) | ((buffer.get(position + 4) & 0xFC) >> 2);
+        break;
+      case FIRST_BYTE_14B_LE:
+        nblks = ((buffer.get(position + 4) & 0x07) << 4) | ((buffer.get(position + 7) & 0x3C) >> 2);
+        break;
+      case FIRST_BYTE_14B_BE:
+        nblks = ((buffer.get(position + 5) & 0x07) << 4) | ((buffer.get(position + 6) & 0x3C) >> 2);
+        break;
+      default:
+        
+        nblks = ((buffer.get(position + 4) & 0x01) << 6) | ((buffer.get(position + 5) & 0xFC) >> 2);
+    }
     return (nblks + 1) * 32;
   }
 
@@ -106,9 +157,59 @@ public final class DtsUtil {
 
 
   public static int getDtsFrameSize(byte[] data) {
-    return (((data[5] & 0x02) << 12)
-        | ((data[6] & 0xFF) << 4)
-        | ((data[7] & 0xF0) >> 4)) + 1;
+    int fsize;
+    boolean uses14BitPerWord = false;
+    switch (data[0]) {
+      case FIRST_BYTE_14B_BE:
+        fsize = (((data[6] & 0x03) << 12) | ((data[7] & 0xFF) << 4) | ((data[8] & 0x3C) >> 2)) + 1;
+        uses14BitPerWord = true;
+        break;
+      case FIRST_BYTE_LE:
+        fsize = (((data[4] & 0x03) << 12) | ((data[7] & 0xFF) << 4) | ((data[6] & 0xF0) >> 4)) + 1;
+        break;
+      case FIRST_BYTE_14B_LE:
+        fsize = (((data[7] & 0x03) << 12) | ((data[6] & 0xFF) << 4) | ((data[9] & 0x3C) >> 2)) + 1;
+        uses14BitPerWord = true;
+        break;
+      default:
+        
+        fsize = (((data[5] & 0x03) << 12) | ((data[6] & 0xFF) << 4) | ((data[7] & 0xF0) >> 4)) + 1;
+    }
+
+    
+    return uses14BitPerWord ? fsize * 16 / 14 : fsize;
+  }
+
+  private static ParsableBitArray getNormalizedFrameHeader(byte[] frameHeader) {
+    if (frameHeader[0] == FIRST_BYTE_BE) {
+      
+      return new ParsableBitArray(frameHeader);
+    }
+    
+    frameHeader = Arrays.copyOf(frameHeader, frameHeader.length);
+    if (isLittleEndianFrameHeader(frameHeader)) {
+      
+      for (int i = 0; i < frameHeader.length - 1; i += 2) {
+        byte temp = frameHeader[i];
+        frameHeader[i] = frameHeader[i + 1];
+        frameHeader[i + 1] = temp;
+      }
+    }
+    ParsableBitArray frameBits = new ParsableBitArray(frameHeader);
+    if (frameHeader[0] == (byte) (SYNC_VALUE_14B_BE >> 24)) {
+      
+      ParsableBitArray scratchBits = new ParsableBitArray(frameHeader);
+      while (scratchBits.bitsLeft() >= 16) {
+        scratchBits.skipBits(2);
+        frameBits.putInt(scratchBits.readBits(14), 14);
+      }
+    }
+    frameBits.reset(frameHeader);
+    return frameBits;
+  }
+
+  private static boolean isLittleEndianFrameHeader(byte[] frameHeader) {
+    return frameHeader[0] == FIRST_BYTE_LE || frameHeader[0] == FIRST_BYTE_14B_LE;
   }
 
   private DtsUtil() {}

@@ -27,9 +27,7 @@ import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArr
 import java.util.List;
 
 
-
-
- final class SeiReader {
+public final class SeiReader {
 
   private final List<Format> closedCaptionFormats;
   private final TrackOutput[] outputs;
@@ -51,9 +49,19 @@ import java.util.List;
       Assertions.checkArgument(MimeTypes.APPLICATION_CEA608.equals(channelMimeType)
           || MimeTypes.APPLICATION_CEA708.equals(channelMimeType),
           "Invalid closed caption mime type provided: " + channelMimeType);
-      output.format(Format.createTextSampleFormat(idGenerator.getFormatId(), channelMimeType, null,
-          Format.NO_VALUE, channelFormat.selectionFlags, channelFormat.language,
-          channelFormat.accessibilityChannel, null));
+      String formatId = channelFormat.id != null ? channelFormat.id : idGenerator.getFormatId();
+      output.format(
+          Format.createTextSampleFormat(
+              formatId,
+              channelMimeType,
+               null,
+               Format.NO_VALUE,
+              channelFormat.selectionFlags,
+              channelFormat.language,
+              channelFormat.accessibilityChannel,
+               null,
+              Format.OFFSET_SAMPLE_RELATIVE,
+              channelFormat.initializationData));
       outputs[i] = output;
     }
   }

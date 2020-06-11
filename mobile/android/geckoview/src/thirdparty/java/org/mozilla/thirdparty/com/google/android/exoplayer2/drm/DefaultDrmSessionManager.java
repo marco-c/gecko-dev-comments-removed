@@ -17,74 +17,204 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2.drm;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.media.DeniedByServerException;
-import android.media.MediaDrm;
-import android.media.NotProvisionedException;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.support.annotation.IntDef;
-import android.text.TextUtils;
-import android.util.Log;
-import android.util.Pair;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.DrmInitData.SchemeData;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.ExoMediaDrm.KeyRequest;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.DrmSession.DrmSessionException;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.ExoMediaDrm.OnEventListener;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.ExoMediaDrm.ProvisionRequest;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.mp4.PsshAtomUtil;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DefaultLoadErrorHandlingPolicy;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.LoadErrorHandlingPolicy;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.EventDispatcher;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Log;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 
-
-
 @TargetApi(18)
-public class DefaultDrmSessionManager<T extends ExoMediaCrypto> implements DrmSessionManager<T>,
-    DrmSession<T> {
+public class DefaultDrmSessionManager<T extends ExoMediaCrypto> implements DrmSessionManager<T> {
 
   
 
 
-  public interface EventListener {
+
+
+  public static final class Builder {
+
+    private final HashMap<String, String> keyRequestParameters;
+    private UUID uuid;
+    private ExoMediaDrm.Provider<ExoMediaCrypto> exoMediaDrmProvider;
+    private boolean multiSession;
+    private int[] useDrmSessionsForClearContentTrackTypes;
+    private boolean playClearSamplesWithoutKeys;
+    private LoadErrorHandlingPolicy loadErrorHandlingPolicy;
 
     
 
 
-    void onDrmKeysLoaded();
+
+
+
+
+
+
+
+
+
+
+
+
+    @SuppressWarnings("unchecked")
+    public Builder() {
+      keyRequestParameters = new HashMap<>();
+      uuid = C.WIDEVINE_UUID;
+      exoMediaDrmProvider = (ExoMediaDrm.Provider) FrameworkMediaDrm.DEFAULT_PROVIDER;
+      loadErrorHandlingPolicy = new DefaultLoadErrorHandlingPolicy();
+      useDrmSessionsForClearContentTrackTypes = new int[0];
+    }
 
     
 
 
 
 
-    void onDrmSessionManagerError(Exception e);
+
+
+
+
+    public Builder setKeyRequestParameters(Map<String, String> keyRequestParameters) {
+      this.keyRequestParameters.clear();
+      this.keyRequestParameters.putAll(Assertions.checkNotNull(keyRequestParameters));
+      return this;
+    }
 
     
 
 
-    void onDrmKeysRestored();
+
+
+
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public Builder setUuidAndExoMediaDrmProvider(
+        UUID uuid, ExoMediaDrm.Provider exoMediaDrmProvider) {
+      this.uuid = Assertions.checkNotNull(uuid);
+      this.exoMediaDrmProvider = Assertions.checkNotNull(exoMediaDrmProvider);
+      return this;
+    }
 
     
 
 
-    void onDrmKeysRemoved();
 
+
+
+
+
+
+
+    public Builder setMultiSession(boolean multiSession) {
+      this.multiSession = multiSession;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public Builder setUseDrmSessionsForClearContent(
+        int... useDrmSessionsForClearContentTrackTypes) {
+      for (int trackType : useDrmSessionsForClearContentTrackTypes) {
+        Assertions.checkArgument(
+            trackType == C.TRACK_TYPE_VIDEO || trackType == C.TRACK_TYPE_AUDIO);
+      }
+      this.useDrmSessionsForClearContentTrackTypes =
+          useDrmSessionsForClearContentTrackTypes.clone();
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+    public Builder setPlayClearSamplesWithoutKeys(boolean playClearSamplesWithoutKeys) {
+      this.playClearSamplesWithoutKeys = playClearSamplesWithoutKeys;
+      return this;
+    }
+
+    
+
+
+
+
+
+    public Builder setLoadErrorHandlingPolicy(LoadErrorHandlingPolicy loadErrorHandlingPolicy) {
+      this.loadErrorHandlingPolicy = Assertions.checkNotNull(loadErrorHandlingPolicy);
+      return this;
+    }
+
+    
+    public DefaultDrmSessionManager<ExoMediaCrypto> build(MediaDrmCallback mediaDrmCallback) {
+      return new DefaultDrmSessionManager<>(
+          uuid,
+          exoMediaDrmProvider,
+          mediaDrmCallback,
+          keyRequestParameters,
+          multiSession,
+          useDrmSessionsForClearContentTrackTypes,
+          playClearSamplesWithoutKeys,
+          loadErrorHandlingPolicy);
+    }
   }
 
   
 
 
+
+  public static final class MissingSchemeDataException extends Exception {
+
+    private MissingSchemeDataException(UUID uuid) {
+      super("Media does not support uuid: " + uuid);
+    }
+  }
+
+  
+
+
+
   public static final String PLAYREADY_CUSTOM_DATA_KEY = "PRCustomData";
 
   
+
+
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({MODE_PLAYBACK, MODE_QUERY, MODE_DOWNLOAD, MODE_RELEASE})
   public @interface Mode {}
@@ -94,49 +224,63 @@ public class DefaultDrmSessionManager<T extends ExoMediaCrypto> implements DrmSe
 
   public static final int MODE_PLAYBACK = 0;
   
-
-
-
   public static final int MODE_QUERY = 1;
   
   public static final int MODE_DOWNLOAD = 2;
   
   public static final int MODE_RELEASE = 3;
+  
+  public static final int INITIAL_DRM_REQUEST_RETRY_COUNT = 3;
 
-  private static final String TAG = "OfflineDrmSessionMngr";
-  private static final String CENC_SCHEME_MIME_TYPE = "cenc";
+  private static final String TAG = "DefaultDrmSessionMgr";
 
-  private static final int MSG_PROVISION = 0;
-  private static final int MSG_KEYS = 1;
+  private final UUID uuid;
+  private final ExoMediaDrm.Provider<T> exoMediaDrmProvider;
+  private final MediaDrmCallback callback;
+  private final HashMap<String, String> keyRequestParameters;
+  private final EventDispatcher<DefaultDrmSessionEventListener> eventDispatcher;
+  private final boolean multiSession;
+  private final int[] useDrmSessionsForClearContentTrackTypes;
+  private final boolean playClearSamplesWithoutKeys;
+  private final ProvisioningManagerImpl provisioningManagerImpl;
+  private final LoadErrorHandlingPolicy loadErrorHandlingPolicy;
 
-  private static final int MAX_LICENSE_DURATION_TO_RENEW = 60;
+  private final List<DefaultDrmSession<T>> sessions;
+  private final List<DefaultDrmSession<T>> provisioningSessions;
 
-  private final Handler eventHandler;
-  private final EventListener eventListener;
-  private final ExoMediaDrm<T> mediaDrm;
-  private final HashMap<String, String> optionalKeyRequestParameters;
-
-   final MediaDrmCallback callback;
-   final UUID uuid;
-
-   MediaDrmHandler mediaDrmHandler;
-   PostResponseHandler postResponseHandler;
-
-  private Looper playbackLooper;
-  private HandlerThread requestHandlerThread;
-  private Handler postRequestHandler;
-
+  private int prepareCallsCount;
+  @Nullable private ExoMediaDrm<T> exoMediaDrm;
+  @Nullable private DefaultDrmSession<T> placeholderDrmSession;
+  @Nullable private DefaultDrmSession<T> noMultiSessionDrmSession;
+  @Nullable private Looper playbackLooper;
   private int mode;
-  private int openCount;
-  private boolean provisioningInProgress;
-  @DrmSession.State
-  private int state;
-  private T mediaCrypto;
-  private DrmSessionException lastException;
-  private byte[] schemeInitData;
-  private String schemeMimeType;
-  private byte[] sessionId;
-  private byte[] offlineLicenseKeySetId;
+  @Nullable private byte[] offlineLicenseKeySetId;
+
+   volatile @Nullable MediaDrmHandler mediaDrmHandler;
+
+  
+
+
+
+
+
+
+
+  @SuppressWarnings("deprecation")
+  @Deprecated
+  public DefaultDrmSessionManager(
+      UUID uuid,
+      ExoMediaDrm<T> exoMediaDrm,
+      MediaDrmCallback callback,
+      @Nullable HashMap<String, String> keyRequestParameters) {
+    this(
+        uuid,
+        exoMediaDrm,
+        callback,
+        keyRequestParameters == null ? new HashMap<>() : keyRequestParameters,
+         false,
+        INITIAL_DRM_REQUEST_RETRY_COUNT);
+  }
 
   
 
@@ -148,12 +292,20 @@ public class DefaultDrmSessionManager<T extends ExoMediaCrypto> implements DrmSe
 
 
 
-
-  public static DefaultDrmSessionManager<FrameworkMediaCrypto> newWidevineInstance(
-      MediaDrmCallback callback, HashMap<String, String> optionalKeyRequestParameters,
-      Handler eventHandler, EventListener eventListener) throws UnsupportedDrmException {
-    return newFrameworkInstance(C.WIDEVINE_UUID, callback, optionalKeyRequestParameters,
-        eventHandler, eventListener);
+  @Deprecated
+  public DefaultDrmSessionManager(
+      UUID uuid,
+      ExoMediaDrm<T> exoMediaDrm,
+      MediaDrmCallback callback,
+      @Nullable HashMap<String, String> keyRequestParameters,
+      boolean multiSession) {
+    this(
+        uuid,
+        exoMediaDrm,
+        callback,
+        keyRequestParameters == null ? new HashMap<>() : keyRequestParameters,
+        multiSession,
+        INITIAL_DRM_REQUEST_RETRY_COUNT);
   }
 
   
@@ -168,62 +320,51 @@ public class DefaultDrmSessionManager<T extends ExoMediaCrypto> implements DrmSe
 
 
 
-
-  public static DefaultDrmSessionManager<FrameworkMediaCrypto> newPlayReadyInstance(
-      MediaDrmCallback callback, String customData, Handler eventHandler,
-      EventListener eventListener) throws UnsupportedDrmException {
-    HashMap<String, String> optionalKeyRequestParameters;
-    if (!TextUtils.isEmpty(customData)) {
-      optionalKeyRequestParameters = new HashMap<>();
-      optionalKeyRequestParameters.put(PLAYREADY_CUSTOM_DATA_KEY, customData);
-    } else {
-      optionalKeyRequestParameters = null;
-    }
-    return newFrameworkInstance(C.PLAYREADY_UUID, callback, optionalKeyRequestParameters,
-        eventHandler, eventListener);
+  @Deprecated
+  public DefaultDrmSessionManager(
+      UUID uuid,
+      ExoMediaDrm<T> exoMediaDrm,
+      MediaDrmCallback callback,
+      @Nullable HashMap<String, String> keyRequestParameters,
+      boolean multiSession,
+      int initialDrmRequestRetryCount) {
+    this(
+        uuid,
+        new ExoMediaDrm.AppManagedProvider<>(exoMediaDrm),
+        callback,
+        keyRequestParameters == null ? new HashMap<>() : keyRequestParameters,
+        multiSession,
+         new int[0],
+         false,
+        new DefaultLoadErrorHandlingPolicy(initialDrmRequestRetryCount));
   }
 
   
-
-
-
-
-
-
-
-
-
-
-
-  public static DefaultDrmSessionManager<FrameworkMediaCrypto> newFrameworkInstance(
-      UUID uuid, MediaDrmCallback callback, HashMap<String, String> optionalKeyRequestParameters,
-      Handler eventHandler, EventListener eventListener) throws UnsupportedDrmException {
-    return new DefaultDrmSessionManager<>(uuid, FrameworkMediaDrm.newInstance(uuid), callback,
-        optionalKeyRequestParameters, eventHandler, eventListener);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  public DefaultDrmSessionManager(UUID uuid, ExoMediaDrm<T> mediaDrm, MediaDrmCallback callback,
-      HashMap<String, String> optionalKeyRequestParameters, Handler eventHandler,
-      EventListener eventListener) {
+  @SuppressWarnings("nullness:initialization.fields.uninitialized")
+  private DefaultDrmSessionManager(
+      UUID uuid,
+      ExoMediaDrm.Provider<T> exoMediaDrmProvider,
+      MediaDrmCallback callback,
+      HashMap<String, String> keyRequestParameters,
+      boolean multiSession,
+      int[] useDrmSessionsForClearContentTrackTypes,
+      boolean playClearSamplesWithoutKeys,
+      LoadErrorHandlingPolicy loadErrorHandlingPolicy) {
+    Assertions.checkNotNull(uuid);
+    Assertions.checkArgument(!C.COMMON_PSSH_UUID.equals(uuid), "Use C.CLEARKEY_UUID instead");
     this.uuid = uuid;
-    this.mediaDrm = mediaDrm;
+    this.exoMediaDrmProvider = exoMediaDrmProvider;
     this.callback = callback;
-    this.optionalKeyRequestParameters = optionalKeyRequestParameters;
-    this.eventHandler = eventHandler;
-    this.eventListener = eventListener;
-    mediaDrm.setOnEventListener(new MediaDrmEventListener());
-    state = STATE_CLOSED;
+    this.keyRequestParameters = keyRequestParameters;
+    this.eventDispatcher = new EventDispatcher<>();
+    this.multiSession = multiSession;
+    this.useDrmSessionsForClearContentTrackTypes = useDrmSessionsForClearContentTrackTypes;
+    this.playClearSamplesWithoutKeys = playClearSamplesWithoutKeys;
+    this.loadErrorHandlingPolicy = loadErrorHandlingPolicy;
+    provisioningManagerImpl = new ProvisioningManagerImpl();
     mode = MODE_PLAYBACK;
+    sessions = new ArrayList<>();
+    provisioningSessions = new ArrayList<>();
   }
 
   
@@ -232,10 +373,8 @@ public class DefaultDrmSessionManager<T extends ExoMediaCrypto> implements DrmSe
 
 
 
-
-
-  public final String getPropertyString(String key) {
-    return mediaDrm.getPropertyString(key);
+  public final void addListener(Handler handler, DefaultDrmSessionEventListener eventListener) {
+    eventDispatcher.addListener(handler, eventListener);
   }
 
   
@@ -243,35 +382,8 @@ public class DefaultDrmSessionManager<T extends ExoMediaCrypto> implements DrmSe
 
 
 
-
-
-
-  public final void setPropertyString(String key, String value) {
-    mediaDrm.setPropertyString(key, value);
-  }
-
-  
-
-
-
-
-
-
-
-  public final byte[] getPropertyByteArray(String key) {
-    return mediaDrm.getPropertyByteArray(key);
-  }
-
-  
-
-
-
-
-
-
-
-  public final void setPropertyByteArray(String key, byte[] value) {
-    mediaDrm.setPropertyByteArray(key, value);
+  public final void removeListener(DefaultDrmSessionEventListener eventListener) {
+    eventDispatcher.removeListener(eventListener);
   }
 
   
@@ -296,8 +408,10 @@ public class DefaultDrmSessionManager<T extends ExoMediaCrypto> implements DrmSe
 
 
 
-  public void setMode(@Mode int mode, byte[] offlineLicenseKeySetId) {
-    Assertions.checkState(openCount == 0);
+
+
+  public void setMode(@Mode int mode, @Nullable byte[] offlineLicenseKeySetId) {
+    Assertions.checkState(sessions.isEmpty());
     if (mode == MODE_QUERY || mode == MODE_RELEASE) {
       Assertions.checkNotNull(offlineLicenseKeySetId);
     }
@@ -308,311 +422,204 @@ public class DefaultDrmSessionManager<T extends ExoMediaCrypto> implements DrmSe
   
 
   @Override
-  public DrmSession<T> acquireSession(Looper playbackLooper, DrmInitData drmInitData) {
-    Assertions.checkState(this.playbackLooper == null || this.playbackLooper == playbackLooper);
-    if (++openCount != 1) {
-      return this;
+  public final void prepare() {
+    if (prepareCallsCount++ == 0) {
+      Assertions.checkState(exoMediaDrm == null);
+      exoMediaDrm = exoMediaDrmProvider.acquireExoMediaDrm(uuid);
+      exoMediaDrm.setOnEventListener(new MediaDrmEventListener());
     }
-
-    if (this.playbackLooper == null) {
-      this.playbackLooper = playbackLooper;
-      mediaDrmHandler = new MediaDrmHandler(playbackLooper);
-      postResponseHandler = new PostResponseHandler(playbackLooper);
-    }
-
-    requestHandlerThread = new HandlerThread("DrmRequestHandler");
-    requestHandlerThread.start();
-    postRequestHandler = new PostRequestHandler(requestHandlerThread.getLooper());
-
-    if (offlineLicenseKeySetId == null) {
-      SchemeData schemeData = drmInitData.get(uuid);
-      if (schemeData == null) {
-        onError(new IllegalStateException("Media does not support uuid: " + uuid));
-        return this;
-      }
-      schemeInitData = schemeData.data;
-      schemeMimeType = schemeData.mimeType;
-      if (Util.SDK_INT < 21) {
-        
-        byte[] psshData = PsshAtomUtil.parseSchemeSpecificData(schemeInitData, C.WIDEVINE_UUID);
-        if (psshData == null) {
-          
-        } else {
-          schemeInitData = psshData;
-        }
-      }
-      if (Util.SDK_INT < 26 && C.CLEARKEY_UUID.equals(uuid)
-          && (MimeTypes.VIDEO_MP4.equals(schemeMimeType)
-          || MimeTypes.AUDIO_MP4.equals(schemeMimeType))) {
-        
-        schemeMimeType = CENC_SCHEME_MIME_TYPE;
-      }
-    }
-    state = STATE_OPENING;
-    openInternal(true);
-    return this;
   }
 
   @Override
-  public void releaseSession(DrmSession<T> session) {
-    if (--openCount != 0) {
-      return;
+  public final void release() {
+    if (--prepareCallsCount == 0) {
+      Assertions.checkNotNull(exoMediaDrm).release();
+      exoMediaDrm = null;
     }
-    state = STATE_CLOSED;
-    provisioningInProgress = false;
-    mediaDrmHandler.removeCallbacksAndMessages(null);
-    postResponseHandler.removeCallbacksAndMessages(null);
-    postRequestHandler.removeCallbacksAndMessages(null);
-    postRequestHandler = null;
-    requestHandlerThread.quit();
-    requestHandlerThread = null;
-    schemeInitData = null;
-    schemeMimeType = null;
-    mediaCrypto = null;
-    lastException = null;
-    if (sessionId != null) {
-      mediaDrm.closeSession(sessionId);
-      sessionId = null;
-    }
-  }
-
-  
-
-  @Override
-  @DrmSession.State
-  public final int getState() {
-    return state;
   }
 
   @Override
-  public final T getMediaCrypto() {
-    if (state != STATE_OPENED && state != STATE_OPENED_WITH_KEYS) {
-      throw new IllegalStateException();
-    }
-    return mediaCrypto;
-  }
-
-  @Override
-  public boolean requiresSecureDecoderComponent(String mimeType) {
-    if (state != STATE_OPENED && state != STATE_OPENED_WITH_KEYS) {
-      throw new IllegalStateException();
-    }
-    return mediaCrypto.requiresSecureDecoderComponent(mimeType);
-  }
-
-  @Override
-  public final DrmSessionException getError() {
-    return state == STATE_ERROR ? lastException : null;
-  }
-
-  @Override
-  public Map<String, String> queryKeyStatus() {
-    
-    
-    if (sessionId == null) {
-      throw new IllegalStateException();
-    }
-    return mediaDrm.queryKeyStatus(sessionId);
-  }
-
-  @Override
-  public byte[] getOfflineLicenseKeySetId() {
-    return offlineLicenseKeySetId;
-  }
-
-  
-
-  private void openInternal(boolean allowProvisioning) {
-    try {
-      sessionId = mediaDrm.openSession();
-      mediaCrypto = mediaDrm.createMediaCrypto(uuid, sessionId);
-      state = STATE_OPENED;
-      doLicense();
-    } catch (NotProvisionedException e) {
-      if (allowProvisioning) {
-        postProvisionRequest();
-      } else {
-        onError(e);
-      }
-    } catch (Exception e) {
-      onError(e);
-    }
-  }
-
-  private void postProvisionRequest() {
-    if (provisioningInProgress) {
-      return;
-    }
-    provisioningInProgress = true;
-    ProvisionRequest request = mediaDrm.getProvisionRequest();
-    postRequestHandler.obtainMessage(MSG_PROVISION, request).sendToTarget();
-  }
-
-  private void onProvisionResponse(Object response) {
-    provisioningInProgress = false;
-    if (state != STATE_OPENING && state != STATE_OPENED && state != STATE_OPENED_WITH_KEYS) {
+  public boolean canAcquireSession(DrmInitData drmInitData) {
+    if (offlineLicenseKeySetId != null) {
       
-      return;
-    }
-
-    if (response instanceof Exception) {
-      onError((Exception) response);
-      return;
-    }
-
-    try {
-      mediaDrm.provideProvisionResponse((byte[]) response);
-      if (state == STATE_OPENING) {
-        openInternal(false);
-      } else {
-        doLicense();
-      }
-    } catch (DeniedByServerException e) {
-      onError(e);
-    }
-  }
-
-  private void doLicense() {
-    switch (mode) {
-      case MODE_PLAYBACK:
-      case MODE_QUERY:
-        if (offlineLicenseKeySetId == null) {
-          postKeyRequest(sessionId, MediaDrm.KEY_TYPE_STREAMING);
-        } else {
-          if (restoreKeys()) {
-            long licenseDurationRemainingSec = getLicenseDurationRemainingSec();
-            if (mode == MODE_PLAYBACK
-                && licenseDurationRemainingSec <= MAX_LICENSE_DURATION_TO_RENEW) {
-              Log.d(TAG, "Offline license has expired or will expire soon. "
-                  + "Remaining seconds: " + licenseDurationRemainingSec);
-              postKeyRequest(sessionId, MediaDrm.KEY_TYPE_OFFLINE);
-            } else if (licenseDurationRemainingSec <= 0) {
-              onError(new KeysExpiredException());
-            } else {
-              state = STATE_OPENED_WITH_KEYS;
-              if (eventHandler != null && eventListener != null) {
-                eventHandler.post(new Runnable() {
-                  @Override
-                  public void run() {
-                    eventListener.onDrmKeysRestored();
-                  }
-                });
-              }
-            }
-          }
-        }
-        break;
-      case MODE_DOWNLOAD:
-        if (offlineLicenseKeySetId == null) {
-          postKeyRequest(sessionId, MediaDrm.KEY_TYPE_OFFLINE);
-        } else {
-          
-          if (restoreKeys()) {
-            postKeyRequest(sessionId, MediaDrm.KEY_TYPE_OFFLINE);
-          }
-        }
-        break;
-      case MODE_RELEASE:
-        if (restoreKeys()) {
-          postKeyRequest(offlineLicenseKeySetId, MediaDrm.KEY_TYPE_RELEASE);
-        }
-        break;
-    }
-  }
-
-  private boolean restoreKeys() {
-    try {
-      mediaDrm.restoreKeys(sessionId, offlineLicenseKeySetId);
       return true;
-    } catch (Exception e) {
-      Log.e(TAG, "Error trying to restore Widevine keys.", e);
-      onError(e);
     }
-    return false;
-  }
-
-  private long getLicenseDurationRemainingSec() {
-    if (!C.WIDEVINE_UUID.equals(uuid)) {
-      return Long.MAX_VALUE;
-    }
-    Pair<Long, Long> pair = WidevineUtil.getLicenseDurationRemainingSec(this);
-    return Math.min(pair.first, pair.second);
-  }
-
-  private void postKeyRequest(byte[] scope, int keyType) {
-    try {
-      KeyRequest keyRequest = mediaDrm.getKeyRequest(scope, schemeInitData, schemeMimeType, keyType,
-          optionalKeyRequestParameters);
-      postRequestHandler.obtainMessage(MSG_KEYS, keyRequest).sendToTarget();
-    } catch (Exception e) {
-      onKeysError(e);
-    }
-  }
-
-  private void onKeyResponse(Object response) {
-    if (state != STATE_OPENED && state != STATE_OPENED_WITH_KEYS) {
-      
-      return;
-    }
-
-    if (response instanceof Exception) {
-      onKeysError((Exception) response);
-      return;
-    }
-
-    try {
-      if (mode == MODE_RELEASE) {
-        mediaDrm.provideKeyResponse(offlineLicenseKeySetId, (byte[]) response);
-        if (eventHandler != null && eventListener != null) {
-          eventHandler.post(new Runnable() {
-            @Override
-            public void run() {
-              eventListener.onDrmKeysRemoved();
-            }
-          });
-        }
+    List<SchemeData> schemeDatas = getSchemeDatas(drmInitData, uuid, true);
+    if (schemeDatas.isEmpty()) {
+      if (drmInitData.schemeDataCount == 1 && drmInitData.get(0).matches(C.COMMON_PSSH_UUID)) {
+        
+        Log.w(
+            TAG, "DrmInitData only contains common PSSH SchemeData. Assuming support for: " + uuid);
       } else {
-        byte[] keySetId = mediaDrm.provideKeyResponse(sessionId, (byte[]) response);
-        if ((mode == MODE_DOWNLOAD || (mode == MODE_PLAYBACK && offlineLicenseKeySetId != null))
-            && keySetId != null && keySetId.length != 0) {
-          offlineLicenseKeySetId = keySetId;
-        }
-        state = STATE_OPENED_WITH_KEYS;
-        if (eventHandler != null && eventListener != null) {
-          eventHandler.post(new Runnable() {
-            @Override
-            public void run() {
-              eventListener.onDrmKeysLoaded();
-            }
-          });
+        
+        return false;
+      }
+    }
+    String schemeType = drmInitData.schemeType;
+    if (schemeType == null || C.CENC_TYPE_cenc.equals(schemeType)) {
+      
+      return true;
+    } else if (C.CENC_TYPE_cbc1.equals(schemeType)
+        || C.CENC_TYPE_cbcs.equals(schemeType)
+        || C.CENC_TYPE_cens.equals(schemeType)) {
+      
+      
+      return Util.SDK_INT >= 25;
+    }
+    
+    return true;
+  }
+
+  @Override
+  @Nullable
+  public DrmSession<T> acquirePlaceholderSession(Looper playbackLooper, int trackType) {
+    assertExpectedPlaybackLooper(playbackLooper);
+    ExoMediaDrm<T> exoMediaDrm = Assertions.checkNotNull(this.exoMediaDrm);
+    boolean avoidPlaceholderDrmSessions =
+        FrameworkMediaCrypto.class.equals(exoMediaDrm.getExoMediaCryptoType())
+            && FrameworkMediaCrypto.WORKAROUND_DEVICE_NEEDS_KEYS_TO_CONFIGURE_CODEC;
+    
+    if (avoidPlaceholderDrmSessions
+        || Util.linearSearch(useDrmSessionsForClearContentTrackTypes, trackType) == C.INDEX_UNSET
+        || exoMediaDrm.getExoMediaCryptoType() == null) {
+      return null;
+    }
+    maybeCreateMediaDrmHandler(playbackLooper);
+    if (placeholderDrmSession == null) {
+      DefaultDrmSession<T> placeholderDrmSession =
+          createNewDefaultSession(
+               Collections.emptyList(),  true);
+      sessions.add(placeholderDrmSession);
+      this.placeholderDrmSession = placeholderDrmSession;
+    }
+    placeholderDrmSession.acquire();
+    return placeholderDrmSession;
+  }
+
+  @Override
+  public DrmSession<T> acquireSession(Looper playbackLooper, DrmInitData drmInitData) {
+    assertExpectedPlaybackLooper(playbackLooper);
+    maybeCreateMediaDrmHandler(playbackLooper);
+
+    @Nullable List<SchemeData> schemeDatas = null;
+    if (offlineLicenseKeySetId == null) {
+      schemeDatas = getSchemeDatas(drmInitData, uuid, false);
+      if (schemeDatas.isEmpty()) {
+        final MissingSchemeDataException error = new MissingSchemeDataException(uuid);
+        eventDispatcher.dispatch(listener -> listener.onDrmSessionManagerError(error));
+        return new ErrorStateDrmSession<>(new DrmSessionException(error));
+      }
+    }
+
+    @Nullable DefaultDrmSession<T> session;
+    if (!multiSession) {
+      session = noMultiSessionDrmSession;
+    } else {
+      
+      session = null;
+      for (DefaultDrmSession<T> existingSession : sessions) {
+        if (Util.areEqual(existingSession.schemeDatas, schemeDatas)) {
+          session = existingSession;
+          break;
         }
       }
-    } catch (Exception e) {
-      onKeysError(e);
+    }
+
+    if (session == null) {
+      
+      session = createNewDefaultSession(schemeDatas,  false);
+      if (!multiSession) {
+        noMultiSessionDrmSession = session;
+      }
+      sessions.add(session);
+    }
+    session.acquire();
+    return session;
+  }
+
+  @Override
+  @Nullable
+  public Class<T> getExoMediaCryptoType(DrmInitData drmInitData) {
+    return canAcquireSession(drmInitData)
+        ? Assertions.checkNotNull(exoMediaDrm).getExoMediaCryptoType()
+        : null;
+  }
+
+  
+
+  private void assertExpectedPlaybackLooper(Looper playbackLooper) {
+    Assertions.checkState(this.playbackLooper == null || this.playbackLooper == playbackLooper);
+    this.playbackLooper = playbackLooper;
+  }
+
+  private void maybeCreateMediaDrmHandler(Looper playbackLooper) {
+    if (mediaDrmHandler == null) {
+      mediaDrmHandler = new MediaDrmHandler(playbackLooper);
     }
   }
 
-  private void onKeysError(Exception e) {
-    if (e instanceof NotProvisionedException) {
-      postProvisionRequest();
-    } else {
-      onError(e);
-    }
+  private DefaultDrmSession<T> createNewDefaultSession(
+      @Nullable List<SchemeData> schemeDatas, boolean isPlaceholderSession) {
+    Assertions.checkNotNull(exoMediaDrm);
+    
+    boolean playClearSamplesWithoutKeys = this.playClearSamplesWithoutKeys | isPlaceholderSession;
+    return new DefaultDrmSession<>(
+        uuid,
+        exoMediaDrm,
+         provisioningManagerImpl,
+         this::onSessionReleased,
+        schemeDatas,
+        mode,
+        playClearSamplesWithoutKeys,
+        isPlaceholderSession,
+        offlineLicenseKeySetId,
+        keyRequestParameters,
+        callback,
+        Assertions.checkNotNull(playbackLooper),
+        eventDispatcher,
+        loadErrorHandlingPolicy);
   }
 
-  private void onError(final Exception e) {
-    lastException = new DrmSessionException(e);
-    if (eventHandler != null && eventListener != null) {
-      eventHandler.post(new Runnable() {
-        @Override
-        public void run() {
-          eventListener.onDrmSessionManagerError(e);
-        }
-      });
+  private void onSessionReleased(DefaultDrmSession<T> drmSession) {
+    sessions.remove(drmSession);
+    if (placeholderDrmSession == drmSession) {
+      placeholderDrmSession = null;
     }
-    if (state != STATE_OPENED_WITH_KEYS) {
-      state = STATE_ERROR;
+    if (noMultiSessionDrmSession == drmSession) {
+      noMultiSessionDrmSession = null;
     }
+    if (provisioningSessions.size() > 1 && provisioningSessions.get(0) == drmSession) {
+      
+      
+      provisioningSessions.get(1).provision();
+    }
+    provisioningSessions.remove(drmSession);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  private static List<SchemeData> getSchemeDatas(
+      DrmInitData drmInitData, UUID uuid, boolean allowMissingData) {
+    
+    List<SchemeData> matchingSchemeDatas = new ArrayList<>(drmInitData.schemeDataCount);
+    for (int i = 0; i < drmInitData.schemeDataCount; i++) {
+      SchemeData schemeData = drmInitData.get(i);
+      boolean uuidMatches =
+          schemeData.matches(uuid)
+              || (C.CLEARKEY_UUID.equals(uuid) && schemeData.matches(C.COMMON_PSSH_UUID));
+      if (uuidMatches && (schemeData.data != null || allowMissingData)) {
+        matchingSchemeDatas.add(schemeData);
+      }
+    }
+    return matchingSchemeDatas;
   }
 
   @SuppressLint("HandlerLeak")
@@ -622,94 +629,63 @@ public class DefaultDrmSessionManager<T extends ExoMediaCrypto> implements DrmSe
       super(looper);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleMessage(Message msg) {
-      if (openCount == 0 || (state != STATE_OPENED && state != STATE_OPENED_WITH_KEYS)) {
+      byte[] sessionId = (byte[]) msg.obj;
+      if (sessionId == null) {
+        
         return;
       }
-      switch (msg.what) {
-        case MediaDrm.EVENT_KEY_REQUIRED:
-          doLicense();
-          break;
-        case MediaDrm.EVENT_KEY_EXPIRED:
-          
-          
-          
-          if (state == STATE_OPENED_WITH_KEYS) {
-            state = STATE_OPENED;
-            onError(new KeysExpiredException());
-          }
-          break;
-        case MediaDrm.EVENT_PROVISION_REQUIRED:
-          state = STATE_OPENED;
-          postProvisionRequest();
-          break;
+      for (DefaultDrmSession<T> session : sessions) {
+        if (session.hasSessionId(sessionId)) {
+          session.onMediaDrmEvent(msg.what);
+          return;
+        }
+      }
+    }
+  }
+
+  private class ProvisioningManagerImpl implements DefaultDrmSession.ProvisioningManager<T> {
+    @Override
+    public void provisionRequired(DefaultDrmSession<T> session) {
+      if (provisioningSessions.contains(session)) {
+        
+        return;
+      }
+      provisioningSessions.add(session);
+      if (provisioningSessions.size() == 1) {
+        
+        session.provision();
       }
     }
 
+    @Override
+    public void onProvisionCompleted() {
+      for (DefaultDrmSession<T> session : provisioningSessions) {
+        session.onProvisionCompleted();
+      }
+      provisioningSessions.clear();
+    }
+
+    @Override
+    public void onProvisionError(Exception error) {
+      for (DefaultDrmSession<T> session : provisioningSessions) {
+        session.onProvisionError(error);
+      }
+      provisioningSessions.clear();
+    }
   }
 
   private class MediaDrmEventListener implements OnEventListener<T> {
 
     @Override
-    public void onEvent(ExoMediaDrm<? extends T> md, byte[] sessionId, int event, int extra,
-        byte[] data) {
-      if (mode == MODE_PLAYBACK) {
-        mediaDrmHandler.sendEmptyMessage(event);
-      }
+    public void onEvent(
+        ExoMediaDrm<? extends T> md,
+        @Nullable byte[] sessionId,
+        int event,
+        int extra,
+        @Nullable byte[] data) {
+      Assertions.checkNotNull(mediaDrmHandler).obtainMessage(event, sessionId).sendToTarget();
     }
-
   }
-
-  @SuppressLint("HandlerLeak")
-  private class PostResponseHandler extends Handler {
-
-    public PostResponseHandler(Looper looper) {
-      super(looper);
-    }
-
-    @Override
-    public void handleMessage(Message msg) {
-      switch (msg.what) {
-        case MSG_PROVISION:
-          onProvisionResponse(msg.obj);
-          break;
-        case MSG_KEYS:
-          onKeyResponse(msg.obj);
-          break;
-      }
-    }
-
-  }
-
-  @SuppressLint("HandlerLeak")
-  private class PostRequestHandler extends Handler {
-
-    public PostRequestHandler(Looper backgroundLooper) {
-      super(backgroundLooper);
-    }
-
-    @Override
-    public void handleMessage(Message msg) {
-      Object response;
-      try {
-        switch (msg.what) {
-          case MSG_PROVISION:
-            response = callback.executeProvisionRequest(uuid, (ProvisionRequest) msg.obj);
-            break;
-          case MSG_KEYS:
-            response = callback.executeKeyRequest(uuid, (KeyRequest) msg.obj);
-            break;
-          default:
-            throw new RuntimeException();
-        }
-      } catch (Exception e) {
-        response = e;
-      }
-      postResponseHandler.obtainMessage(msg.what, response).sendToTarget();
-    }
-
-  }
-
 }

@@ -15,35 +15,27 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.cache;
 
-import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.cache.Cache.CacheException;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Log;
+import java.io.File;
 import java.util.TreeSet;
-
-
 
 
  final class CachedContent {
 
+  private static final String TAG = "CachedContent";
+
   
-
-
   public final int id;
   
-
-
   public final String key;
   
-
-
   private final TreeSet<SimpleCacheSpan> cachedSpans;
   
-
-
-  private long length;
+  private DefaultContentMetadata metadata;
+  
+  private boolean locked;
 
   
 
@@ -51,44 +43,41 @@ import java.util.TreeSet;
 
 
 
-  public CachedContent(DataInputStream input) throws IOException {
-    this(input.readInt(), input.readUTF(), input.readLong());
+  public CachedContent(int id, String key) {
+    this(id, key, DefaultContentMetadata.EMPTY);
   }
 
-  
-
-
-
-
-
-
-  public CachedContent(int id, String key, long length) {
+  public CachedContent(int id, String key, DefaultContentMetadata metadata) {
     this.id = id;
     this.key = key;
-    this.length = length;
+    this.metadata = metadata;
     this.cachedSpans = new TreeSet<>();
   }
 
   
-
-
-
-
-
-  public void writeToStream(DataOutputStream output) throws IOException {
-    output.writeInt(id);
-    output.writeUTF(key);
-    output.writeLong(length);
+  public DefaultContentMetadata getMetadata() {
+    return metadata;
   }
 
   
-  public long getLength() {
-    return length;
+
+
+
+
+  public boolean applyMetadataMutations(ContentMetadataMutations mutations) {
+    DefaultContentMetadata oldMetadata = metadata;
+    metadata = metadata.copyWithMutationsApplied(mutations);
+    return !metadata.equals(oldMetadata);
   }
 
   
-  public void setLength(long length) {
-    this.length = length;
+  public boolean isLocked() {
+    return locked;
+  }
+
+  
+  public void setLocked(boolean locked) {
+    this.locked = locked;
   }
 
   
@@ -125,7 +114,7 @@ import java.util.TreeSet;
 
 
 
-  public long getCachedBytes(long position, long length) {
+  public long getCachedBytesLength(long position, long length) {
     SimpleCacheSpan span = getSpan(position);
     if (span.isHoleSpan()) {
       
@@ -159,17 +148,23 @@ import java.util.TreeSet;
 
 
 
-  public SimpleCacheSpan touch(SimpleCacheSpan cacheSpan) throws CacheException {
-    
+
+  public SimpleCacheSpan setLastTouchTimestamp(
+      SimpleCacheSpan cacheSpan, long lastTouchTimestamp, boolean updateFile) {
     Assertions.checkState(cachedSpans.remove(cacheSpan));
-    
-    SimpleCacheSpan newCacheSpan = cacheSpan.copyWithUpdatedLastAccessTime(id);
-    
-    if (!cacheSpan.file.renameTo(newCacheSpan.file)) {
-      throw new CacheException("Renaming of " + cacheSpan.file + " to " + newCacheSpan.file
-          + " failed.");
+    File file = cacheSpan.file;
+    if (updateFile) {
+      File directory = file.getParentFile();
+      long position = cacheSpan.position;
+      File newFile = SimpleCacheSpan.getCacheFile(directory, id, position, lastTouchTimestamp);
+      if (file.renameTo(newFile)) {
+        file = newFile;
+      } else {
+        Log.w(TAG, "Failed to rename " + file + " to " + newFile);
+      }
     }
-    
+    SimpleCacheSpan newCacheSpan =
+        cacheSpan.copyWithFileAndLastTouchTimestamp(file, lastTouchTimestamp);
     cachedSpans.add(newCacheSpan);
     return newCacheSpan;
   }
@@ -188,12 +183,26 @@ import java.util.TreeSet;
     return false;
   }
 
-  
-  public int headerHashCode() {
+  @Override
+  public int hashCode() {
     int result = id;
     result = 31 * result + key.hashCode();
-    result = 31 * result + (int) (length ^ (length >>> 32));
+    result = 31 * result + metadata.hashCode();
     return result;
   }
 
+  @Override
+  public boolean equals(@Nullable Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    CachedContent that = (CachedContent) o;
+    return id == that.id
+        && key.equals(that.key)
+        && cachedSpans.equals(that.cachedSpans)
+        && metadata.equals(that.metadata);
+  }
 }

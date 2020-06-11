@@ -16,8 +16,14 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.audio;
 
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+
+
+
+
 
 
 
@@ -25,20 +31,55 @@ import java.nio.ByteOrder;
 public interface AudioProcessor {
 
   
+  final class AudioFormat {
+    public static final AudioFormat NOT_SET =
+        new AudioFormat(
+             Format.NO_VALUE,
+             Format.NO_VALUE,
+             Format.NO_VALUE);
 
+    
+    public final int sampleRate;
+    
+    public final int channelCount;
+    
+    @C.PcmEncoding public final int encoding;
+    
+    public final int bytesPerFrame;
 
-  final class UnhandledFormatException extends Exception {
+    public AudioFormat(int sampleRate, int channelCount, @C.PcmEncoding int encoding) {
+      this.sampleRate = sampleRate;
+      this.channelCount = channelCount;
+      this.encoding = encoding;
+      bytesPerFrame =
+          Util.isEncodingLinearPcm(encoding)
+              ? Util.getPcmFrameSize(encoding, channelCount)
+              : Format.NO_VALUE;
+    }
 
-    public UnhandledFormatException(int sampleRateHz, int channelCount, @C.Encoding int encoding) {
-      super("Unhandled format: " + sampleRateHz + " Hz, " + channelCount + " channels in encoding "
-          + encoding);
+    @Override
+    public String toString() {
+      return "AudioFormat["
+          + "sampleRate="
+          + sampleRate
+          + ", channelCount="
+          + channelCount
+          + ", encoding="
+          + encoding
+          + ']';
+    }
+  }
+
+  
+  final class UnhandledAudioFormatException extends Exception {
+
+    public UnhandledAudioFormatException(AudioFormat inputAudioFormat) {
+      super("Unhandled format: " + inputAudioFormat);
     }
 
   }
 
   
-
-
   ByteBuffer EMPTY_BUFFER = ByteBuffer.allocateDirect(0).order(ByteOrder.nativeOrder());
 
   
@@ -56,24 +97,10 @@ public interface AudioProcessor {
 
 
 
-  boolean configure(int sampleRateHz, int channelCount, @C.Encoding int encoding)
-      throws UnhandledFormatException;
+  AudioFormat configure(AudioFormat inputAudioFormat) throws UnhandledAudioFormatException;
 
   
-
-
   boolean isActive();
-
-  
-
-
-  int getOutputChannelCount();
-
-  
-
-
-  @C.Encoding
-  int getOutputEncoding();
 
   
 
@@ -113,11 +140,9 @@ public interface AudioProcessor {
   
 
 
+
   void flush();
 
   
-
-
   void reset();
-
 }

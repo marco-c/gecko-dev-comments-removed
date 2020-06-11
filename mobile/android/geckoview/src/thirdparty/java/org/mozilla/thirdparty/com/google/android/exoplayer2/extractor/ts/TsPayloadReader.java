@@ -16,10 +16,15 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ts;
 
 import android.util.SparseArray;
+import androidx.annotation.IntDef;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.ParserException;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ExtractorOutput;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.TrackOutput;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.TimestampAdjuster;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.Collections;
 import java.util.List;
 
@@ -76,8 +81,10 @@ public interface TsPayloadReader {
         byte[] descriptorBytes) {
       this.streamType = streamType;
       this.language = language;
-      this.dvbSubtitleInfos = dvbSubtitleInfos == null ? Collections.<DvbSubtitleInfo>emptyList()
-          : Collections.unmodifiableList(dvbSubtitleInfos);
+      this.dvbSubtitleInfos =
+          dvbSubtitleInfos == null
+              ? Collections.emptyList()
+              : Collections.unmodifiableList(dvbSubtitleInfos);
       this.descriptorBytes = descriptorBytes;
     }
 
@@ -174,6 +181,29 @@ public interface TsPayloadReader {
   
 
 
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(
+      flag = true,
+      value = {
+        FLAG_PAYLOAD_UNIT_START_INDICATOR,
+        FLAG_RANDOM_ACCESS_INDICATOR,
+        FLAG_DATA_ALIGNMENT_INDICATOR
+      })
+  @interface Flags {}
+
+  
+  int FLAG_PAYLOAD_UNIT_START_INDICATOR = 1;
+  
+
+
+  int FLAG_RANDOM_ACCESS_INDICATOR = 1 << 1;
+  
+  int FLAG_DATA_ALIGNMENT_INDICATOR = 1 << 2;
+
+  
+
+
 
 
 
@@ -197,6 +227,6 @@ public interface TsPayloadReader {
 
 
 
-  void consume(ParsableByteArray data, boolean payloadUnitStartIndicator);
 
+  void consume(ParsableByteArray data, @Flags int flags) throws ParserException;
 }

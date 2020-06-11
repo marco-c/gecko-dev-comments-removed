@@ -15,6 +15,8 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source.chunk;
 
+import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.SeekParameters;
 import java.io.IOException;
 import java.util.List;
 
@@ -22,6 +24,16 @@ import java.util.List;
 
 
 public interface ChunkSource {
+
+  
+
+
+
+
+
+
+
+  long getAdjustedSeekPositionUs(long positionUs, SeekParameters seekParameters);
 
   
 
@@ -59,7 +71,15 @@ public interface ChunkSource {
 
 
 
-  void getNextChunk(MediaChunk previous, long playbackPositionUs, ChunkHolder out);
+
+
+
+
+  void getNextChunk(
+      long playbackPositionUs,
+      long loadPositionUs,
+      List<? extends MediaChunk> queue,
+      ChunkHolder out);
 
   
 
@@ -82,6 +102,10 @@ public interface ChunkSource {
 
 
 
-  boolean onChunkLoadError(Chunk chunk, boolean cancelable, Exception e);
 
+
+
+
+
+  boolean onChunkLoadError(Chunk chunk, boolean cancelable, Exception e, long blacklistDurationMs);
 }

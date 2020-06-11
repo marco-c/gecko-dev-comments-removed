@@ -16,12 +16,16 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream;
 
 import android.net.Uri;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.ParserException;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.Loader.Loadable;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 
 
 
@@ -51,6 +55,41 @@ public final class ParsingLoadable<T> implements Loadable {
   
 
 
+
+
+
+
+
+
+
+  public static <T> T load(DataSource dataSource, Parser<? extends T> parser, Uri uri, int type)
+      throws IOException {
+    ParsingLoadable<T> loadable = new ParsingLoadable<>(dataSource, uri, type, parser);
+    loadable.load();
+    return Assertions.checkNotNull(loadable.getResult());
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  public static <T> T load(
+      DataSource dataSource, Parser<? extends T> parser, DataSpec dataSpec, int type)
+      throws IOException {
+    ParsingLoadable<T> loadable = new ParsingLoadable<>(dataSource, dataSpec, type, parser);
+    loadable.load();
+    return Assertions.checkNotNull(loadable.getResult());
+  }
+
+  
+
+
   public final DataSpec dataSpec;
   
 
@@ -58,12 +97,10 @@ public final class ParsingLoadable<T> implements Loadable {
 
   public final int type;
 
-  private final DataSource dataSource;
+  private final StatsDataSource dataSource;
   private final Parser<? extends T> parser;
 
-  private volatile T result;
-  private volatile boolean isCanceled;
-  private volatile long bytesLoaded;
+  private volatile @Nullable T result;
 
   
 
@@ -72,16 +109,25 @@ public final class ParsingLoadable<T> implements Loadable {
 
 
   public ParsingLoadable(DataSource dataSource, Uri uri, int type, Parser<? extends T> parser) {
-    this.dataSource = dataSource;
-    this.dataSpec = new DataSpec(uri, DataSpec.FLAG_ALLOW_GZIP);
-    this.type = type;
-    this.parser = parser;
+    this(dataSource, new DataSpec(uri, DataSpec.FLAG_ALLOW_GZIP), type, parser);
   }
 
   
 
 
-  public final T getResult() {
+
+
+
+  public ParsingLoadable(DataSource dataSource, DataSpec dataSpec, int type,
+      Parser<? extends T> parser) {
+    this.dataSource = new StatsDataSource(dataSource);
+    this.dataSpec = dataSpec;
+    this.type = type;
+    this.parser = parser;
+  }
+
+  
+  public final @Nullable T getResult() {
     return result;
   }
 
@@ -90,33 +136,42 @@ public final class ParsingLoadable<T> implements Loadable {
 
 
 
-
   public long bytesLoaded() {
-    return bytesLoaded;
+    return dataSource.getBytesRead();
+  }
+
+  
+
+
+
+  public Uri getUri() {
+    return dataSource.getLastOpenedUri();
+  }
+
+  
+
+
+
+  public Map<String, List<String>> getResponseHeaders() {
+    return dataSource.getLastResponseHeaders();
   }
 
   @Override
   public final void cancelLoad() {
     
+  }
+
+  @Override
+  public final void load() throws IOException {
     
-    isCanceled = true;
-  }
-
-  @Override
-  public final boolean isLoadCanceled() {
-    return isCanceled;
-  }
-
-  @Override
-  public final void load() throws IOException, InterruptedException {
+    dataSource.resetBytesRead();
     DataSourceInputStream inputStream = new DataSourceInputStream(dataSource, dataSpec);
     try {
       inputStream.open();
-      result = parser.parse(dataSource.getUri(), inputStream);
+      Uri dataSourceUri = Assertions.checkNotNull(dataSource.getUri());
+      result = parser.parse(dataSourceUri, inputStream);
     } finally {
-      bytesLoaded = inputStream.bytesRead();
       Util.closeQuietly(inputStream);
     }
   }
-
 }

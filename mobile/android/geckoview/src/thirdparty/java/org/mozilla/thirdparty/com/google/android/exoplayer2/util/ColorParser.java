@@ -271,4 +271,7 @@ public final class ColorParser {
     COLOR_MAP.put("yellowgreen", 0xFF9ACD32);
   }
 
+  private ColorParser() {
+    
+  }
 }

@@ -15,29 +15,45 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.drm;
 
-import android.annotation.TargetApi;
 import android.media.MediaCrypto;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
+import java.util.UUID;
 
 
 
 
-@TargetApi(16)
+
 public final class FrameworkMediaCrypto implements ExoMediaCrypto {
 
-  private final MediaCrypto mediaCrypto;
+  
 
-   FrameworkMediaCrypto(MediaCrypto mediaCrypto) {
-    this.mediaCrypto = Assertions.checkNotNull(mediaCrypto);
+
+
+  public static final boolean WORKAROUND_DEVICE_NEEDS_KEYS_TO_CONFIGURE_CODEC =
+      "Amazon".equals(Util.MANUFACTURER)
+          && ("AFTM".equals(Util.MODEL) 
+              || "AFTB".equals(Util.MODEL)); 
+
+  
+  public final UUID uuid;
+  
+  public final byte[] sessionId;
+  
+
+
+
+  public final boolean forceAllowInsecureDecoderComponents;
+
+  
+
+
+
+
+
+  public FrameworkMediaCrypto(
+      UUID uuid, byte[] sessionId, boolean forceAllowInsecureDecoderComponents) {
+    this.uuid = uuid;
+    this.sessionId = sessionId;
+    this.forceAllowInsecureDecoderComponents = forceAllowInsecureDecoderComponents;
   }
-
-  public MediaCrypto getWrappedMediaCrypto() {
-    return mediaCrypto;
-  }
-
-  @Override
-  public boolean requiresSecureDecoderComponent(String mimeType) {
-    return mediaCrypto.requiresSecureDecoderComponent(mimeType);
-  }
-
 }

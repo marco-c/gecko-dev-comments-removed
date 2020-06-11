@@ -15,6 +15,7 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ts;
 
+import org.mozilla.thirdparty.com.google.android.exoplayer2.ParserException;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ExtractorOutput;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.TrackOutput;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
@@ -44,14 +45,15 @@ public interface ElementaryStreamReader {
 
 
 
-  void packetStarted(long pesTimeUs, boolean dataAlignmentIndicator);
+  void packetStarted(long pesTimeUs, @TsPayloadReader.Flags int flags);
 
   
 
 
 
 
-  void consume(ParsableByteArray data);
+
+  void consume(ParsableByteArray data) throws ParserException;
 
   
 

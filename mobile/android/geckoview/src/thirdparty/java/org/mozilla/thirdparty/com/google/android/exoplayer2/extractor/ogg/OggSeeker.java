@@ -37,11 +37,9 @@ import java.io.IOException;
 
 
 
-
-  long startSeek(long timeUs);
+  void startSeek(long targetGranule);
 
   
-
 
 
 

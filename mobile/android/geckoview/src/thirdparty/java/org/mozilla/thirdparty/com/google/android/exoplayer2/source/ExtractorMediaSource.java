@@ -17,36 +17,39 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2.source;
 
 import android.net.Uri;
 import android.os.Handler;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.ExoPlayer;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.Player;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Timeline;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.DrmSessionManager;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.Extractor;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ExtractorsFactory;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.Allocator;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DefaultLoadErrorHandlingPolicy;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.LoadErrorHandlingPolicy;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.TransferListener;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import java.io.IOException;
 
 
-
-
-
-
-
-
-
-
-
-
-public final class ExtractorMediaSource implements MediaSource, MediaSource.Listener {
+@Deprecated
+@SuppressWarnings("deprecation")
+public final class ExtractorMediaSource extends CompositeMediaSource<Void> {
 
   
-
-
+  @Deprecated
   public interface EventListener {
 
     
+
+
+
+
+
+
+
 
 
 
@@ -56,136 +59,336 @@ public final class ExtractorMediaSource implements MediaSource, MediaSource.List
   }
 
   
+  @Deprecated
+  public static final class Factory implements MediaSourceFactory {
 
+    private final DataSource.Factory dataSourceFactory;
 
-  public static final int DEFAULT_MIN_LOADABLE_RETRY_COUNT_ON_DEMAND = 3;
+    @Nullable private ExtractorsFactory extractorsFactory;
+    @Nullable private String customCacheKey;
+    @Nullable private Object tag;
+    private LoadErrorHandlingPolicy loadErrorHandlingPolicy;
+    private int continueLoadingCheckIntervalBytes;
+    private boolean isCreateCalled;
 
-  
-
-
-  public static final int DEFAULT_MIN_LOADABLE_RETRY_COUNT_LIVE = 6;
-
-  
-
-
-
-
-  public static final int MIN_RETRY_COUNT_DEFAULT_FOR_MEDIA = -1;
-
-  private final Uri uri;
-  private final DataSource.Factory dataSourceFactory;
-  private final ExtractorsFactory extractorsFactory;
-  private final int minLoadableRetryCount;
-  private final Handler eventHandler;
-  private final EventListener eventListener;
-  private final Timeline.Period period;
-  private final String customCacheKey;
-
-  private MediaSource.Listener sourceListener;
-  private Timeline timeline;
-  private boolean timelineHasDuration;
-
-  
-
-
-
-
-
-
-
-
-  public ExtractorMediaSource(Uri uri, DataSource.Factory dataSourceFactory,
-      ExtractorsFactory extractorsFactory, Handler eventHandler, EventListener eventListener) {
-    this(uri, dataSourceFactory, extractorsFactory, MIN_RETRY_COUNT_DEFAULT_FOR_MEDIA, eventHandler,
-        eventListener, null);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  public ExtractorMediaSource(Uri uri, DataSource.Factory dataSourceFactory,
-      ExtractorsFactory extractorsFactory, Handler eventHandler, EventListener eventListener,
-      String customCacheKey) {
-    this(uri, dataSourceFactory, extractorsFactory, MIN_RETRY_COUNT_DEFAULT_FOR_MEDIA, eventHandler,
-        eventListener, customCacheKey);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  public ExtractorMediaSource(Uri uri, DataSource.Factory dataSourceFactory,
-      ExtractorsFactory extractorsFactory, int minLoadableRetryCount, Handler eventHandler,
-      EventListener eventListener, String customCacheKey) {
-    this.uri = uri;
-    this.dataSourceFactory = dataSourceFactory;
-    this.extractorsFactory = extractorsFactory;
-    this.minLoadableRetryCount = minLoadableRetryCount;
-    this.eventHandler = eventHandler;
-    this.eventListener = eventListener;
-    this.customCacheKey = customCacheKey;
-    period = new Timeline.Period();
-  }
-
-  @Override
-  public void prepareSource(ExoPlayer player, boolean isTopLevelSource, Listener listener) {
-    sourceListener = listener;
-    timeline = new SinglePeriodTimeline(C.TIME_UNSET, false);
-    listener.onSourceInfoRefreshed(timeline, null);
-  }
-
-  @Override
-  public void maybeThrowSourceInfoRefreshError() throws IOException {
     
+
+
+
+
+    public Factory(DataSource.Factory dataSourceFactory) {
+      this.dataSourceFactory = dataSourceFactory;
+      loadErrorHandlingPolicy = new DefaultLoadErrorHandlingPolicy();
+      continueLoadingCheckIntervalBytes = DEFAULT_LOADING_CHECK_INTERVAL_BYTES;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    public Factory setExtractorsFactory(ExtractorsFactory extractorsFactory) {
+      Assertions.checkState(!isCreateCalled);
+      this.extractorsFactory = extractorsFactory;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+    public Factory setCustomCacheKey(String customCacheKey) {
+      Assertions.checkState(!isCreateCalled);
+      this.customCacheKey = customCacheKey;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+    public Factory setTag(Object tag) {
+      Assertions.checkState(!isCreateCalled);
+      this.tag = tag;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    @Deprecated
+    public Factory setMinLoadableRetryCount(int minLoadableRetryCount) {
+      return setLoadErrorHandlingPolicy(new DefaultLoadErrorHandlingPolicy(minLoadableRetryCount));
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    public Factory setLoadErrorHandlingPolicy(LoadErrorHandlingPolicy loadErrorHandlingPolicy) {
+      Assertions.checkState(!isCreateCalled);
+      this.loadErrorHandlingPolicy = loadErrorHandlingPolicy;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    public Factory setContinueLoadingCheckIntervalBytes(int continueLoadingCheckIntervalBytes) {
+      Assertions.checkState(!isCreateCalled);
+      this.continueLoadingCheckIntervalBytes = continueLoadingCheckIntervalBytes;
+      return this;
+    }
+
+    
+    @Override
+    @Deprecated
+    public Factory setDrmSessionManager(DrmSessionManager<?> drmSessionManager) {
+      throw new UnsupportedOperationException();
+    }
+
+    
+
+
+
+
+
+    @Override
+    public ExtractorMediaSource createMediaSource(Uri uri) {
+      isCreateCalled = true;
+      if (extractorsFactory == null) {
+        extractorsFactory = new DefaultExtractorsFactory();
+      }
+      return new ExtractorMediaSource(
+          uri,
+          dataSourceFactory,
+          extractorsFactory,
+          loadErrorHandlingPolicy,
+          customCacheKey,
+          continueLoadingCheckIntervalBytes,
+          tag);
+    }
+
+    
+
+
+
+    @Deprecated
+    public ExtractorMediaSource createMediaSource(
+        Uri uri, @Nullable Handler eventHandler, @Nullable MediaSourceEventListener eventListener) {
+      ExtractorMediaSource mediaSource = createMediaSource(uri);
+      if (eventHandler != null && eventListener != null) {
+        mediaSource.addEventListener(eventHandler, eventListener);
+      }
+      return mediaSource;
+    }
+
+    @Override
+    public int[] getSupportedTypes() {
+      return new int[] {C.TYPE_OTHER};
+    }
+  }
+
+  
+
+
+  @Deprecated
+  public static final int DEFAULT_LOADING_CHECK_INTERVAL_BYTES =
+      ProgressiveMediaSource.DEFAULT_LOADING_CHECK_INTERVAL_BYTES;
+
+  private final ProgressiveMediaSource progressiveMediaSource;
+
+  
+
+
+
+
+
+
+
+
+
+  @Deprecated
+  public ExtractorMediaSource(
+      Uri uri,
+      DataSource.Factory dataSourceFactory,
+      ExtractorsFactory extractorsFactory,
+      @Nullable Handler eventHandler,
+      @Nullable EventListener eventListener) {
+    this(uri, dataSourceFactory, extractorsFactory, eventHandler, eventListener, null);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  @Deprecated
+  public ExtractorMediaSource(
+      Uri uri,
+      DataSource.Factory dataSourceFactory,
+      ExtractorsFactory extractorsFactory,
+      @Nullable Handler eventHandler,
+      @Nullable EventListener eventListener,
+      @Nullable String customCacheKey) {
+    this(
+        uri,
+        dataSourceFactory,
+        extractorsFactory,
+        eventHandler,
+        eventListener,
+        customCacheKey,
+        DEFAULT_LOADING_CHECK_INTERVAL_BYTES);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @Deprecated
+  public ExtractorMediaSource(
+      Uri uri,
+      DataSource.Factory dataSourceFactory,
+      ExtractorsFactory extractorsFactory,
+      @Nullable Handler eventHandler,
+      @Nullable EventListener eventListener,
+      @Nullable String customCacheKey,
+      int continueLoadingCheckIntervalBytes) {
+    this(
+        uri,
+        dataSourceFactory,
+        extractorsFactory,
+        new DefaultLoadErrorHandlingPolicy(),
+        customCacheKey,
+        continueLoadingCheckIntervalBytes,
+         null);
+    if (eventListener != null && eventHandler != null) {
+      addEventListener(eventHandler, new EventListenerWrapper(eventListener));
+    }
+  }
+
+  private ExtractorMediaSource(
+      Uri uri,
+      DataSource.Factory dataSourceFactory,
+      ExtractorsFactory extractorsFactory,
+      LoadErrorHandlingPolicy loadableLoadErrorHandlingPolicy,
+      @Nullable String customCacheKey,
+      int continueLoadingCheckIntervalBytes,
+      @Nullable Object tag) {
+    progressiveMediaSource =
+        new ProgressiveMediaSource(
+            uri,
+            dataSourceFactory,
+            extractorsFactory,
+            DrmSessionManager.getDummyDrmSessionManager(),
+            loadableLoadErrorHandlingPolicy,
+            customCacheKey,
+            continueLoadingCheckIntervalBytes,
+            tag);
   }
 
   @Override
-  public MediaPeriod createPeriod(int index, Allocator allocator, long positionUs) {
-    Assertions.checkArgument(index == 0);
-    return new ExtractorMediaPeriod(uri, dataSourceFactory.createDataSource(),
-        extractorsFactory.createExtractors(), minLoadableRetryCount, eventHandler, eventListener,
-        this, allocator, customCacheKey);
+  @Nullable
+  public Object getTag() {
+    return progressiveMediaSource.getTag();
+  }
+
+  @Override
+  protected void prepareSourceInternal(@Nullable TransferListener mediaTransferListener) {
+    super.prepareSourceInternal(mediaTransferListener);
+    prepareChildSource( null, progressiveMediaSource);
+  }
+
+  @Override
+  protected void onChildSourceInfoRefreshed(
+      @Nullable Void id, MediaSource mediaSource, Timeline timeline) {
+    refreshSourceInfo(timeline);
+  }
+
+  @Override
+  public MediaPeriod createPeriod(MediaPeriodId id, Allocator allocator, long startPositionUs) {
+    return progressiveMediaSource.createPeriod(id, allocator, startPositionUs);
   }
 
   @Override
   public void releasePeriod(MediaPeriod mediaPeriod) {
-    ((ExtractorMediaPeriod) mediaPeriod).release();
+    progressiveMediaSource.releasePeriod(mediaPeriod);
   }
 
-  @Override
-  public void releaseSource() {
-    sourceListener = null;
-  }
+  @Deprecated
+  private static final class EventListenerWrapper implements MediaSourceEventListener {
 
-  
+    private final EventListener eventListener;
 
-  @Override
-  public void onSourceInfoRefreshed(Timeline newTimeline, Object manifest) {
-    long newTimelineDurationUs = newTimeline.getPeriod(0, period).getDurationUs();
-    boolean newTimelineHasDuration = newTimelineDurationUs != C.TIME_UNSET;
-    if (timelineHasDuration && !newTimelineHasDuration) {
-      
-      return;
+    public EventListenerWrapper(EventListener eventListener) {
+      this.eventListener = Assertions.checkNotNull(eventListener);
     }
-    timeline = newTimeline;
-    timelineHasDuration = newTimelineHasDuration;
-    sourceListener.onSourceInfoRefreshed(timeline, null);
-  }
 
+    @Override
+    public void onLoadError(
+        int windowIndex,
+        @Nullable MediaPeriodId mediaPeriodId,
+        LoadEventInfo loadEventInfo,
+        MediaLoadData mediaLoadData,
+        IOException error,
+        boolean wasCanceled) {
+      eventListener.onLoadError(error);
+    }
+  }
 }

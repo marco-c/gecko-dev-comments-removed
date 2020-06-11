@@ -17,8 +17,10 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2.text;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.support.annotation.IntDef;
 import android.text.Layout.Alignment;
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -28,13 +30,17 @@ import java.lang.annotation.RetentionPolicy;
 public class Cue {
 
   
+  public static final Cue EMPTY = new Cue("");
 
-
-  public static final float DIMEN_UNSET = Float.MIN_VALUE;
+  
+  
+  public static final float DIMEN_UNSET = -Float.MAX_VALUE;
 
   
 
 
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({TYPE_UNSET, ANCHOR_TYPE_START, ANCHOR_TYPE_MIDDLE, ANCHOR_TYPE_END})
   public @interface AnchorType {}
@@ -64,6 +70,8 @@ public class Cue {
   
 
 
+
+  @Documented
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({TYPE_UNSET, LINE_TYPE_FRACTION, LINE_TYPE_NUMBER})
   public @interface LineType {}
@@ -82,17 +90,37 @@ public class Cue {
 
 
 
-  public final CharSequence text;
+
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef({
+    TYPE_UNSET,
+    TEXT_SIZE_TYPE_FRACTIONAL,
+    TEXT_SIZE_TYPE_FRACTIONAL_IGNORE_PADDING,
+    TEXT_SIZE_TYPE_ABSOLUTE
+  })
+  public @interface TextSizeType {}
+
+  
+  public static final int TEXT_SIZE_TYPE_FRACTIONAL = 0;
+
+  
+  public static final int TEXT_SIZE_TYPE_FRACTIONAL_IGNORE_PADDING = 1;
+
+  
+  public static final int TEXT_SIZE_TYPE_ABSOLUTE = 2;
 
   
 
 
-  public final Alignment textAlignment;
+
+  @Nullable public final CharSequence text;
 
   
+  @Nullable public final Alignment textAlignment;
 
-
-  public final Bitmap bitmap;
+  
+  @Nullable public final Bitmap bitmap;
 
   
 
@@ -128,8 +156,7 @@ public class Cue {
 
 
 
-
-  @LineType public final int lineType;
+  public final @LineType int lineType;
 
   
 
@@ -139,7 +166,7 @@ public class Cue {
 
 
 
-  @AnchorType public final int lineAnchor;
+  public final @AnchorType int lineAnchor;
 
   
 
@@ -159,7 +186,7 @@ public class Cue {
 
 
 
-  @AnchorType public final int positionAnchor;
+  public final @AnchorType int positionAnchor;
 
   
 
@@ -188,6 +215,15 @@ public class Cue {
 
 
 
+  public final @TextSizeType int textSizeType;
+
+  
+
+
+
+  public final float textSize;
+
+  
 
 
 
@@ -201,10 +237,32 @@ public class Cue {
 
 
 
-  public Cue(Bitmap bitmap, float horizontalPosition, @AnchorType int horizontalPositionAnchor,
-      float verticalPosition, @AnchorType int verticalPositionAnchor, float width, float height) {
-    this(null, null, bitmap, verticalPosition, LINE_TYPE_FRACTION, verticalPositionAnchor,
-        horizontalPosition, horizontalPositionAnchor, width, height, false, Color.BLACK);
+
+
+
+  public Cue(
+      Bitmap bitmap,
+      float horizontalPosition,
+      @AnchorType int horizontalPositionAnchor,
+      float verticalPosition,
+      @AnchorType int verticalPositionAnchor,
+      float width,
+      float height) {
+    this(
+         null,
+         null,
+        bitmap,
+        verticalPosition,
+         LINE_TYPE_FRACTION,
+        verticalPositionAnchor,
+        horizontalPosition,
+        horizontalPositionAnchor,
+         TYPE_UNSET,
+         DIMEN_UNSET,
+        width,
+        height,
+         false,
+         Color.BLACK);
   }
 
   
@@ -214,7 +272,15 @@ public class Cue {
 
 
   public Cue(CharSequence text) {
-    this(text, null, DIMEN_UNSET, TYPE_UNSET, TYPE_UNSET, DIMEN_UNSET, TYPE_UNSET, DIMEN_UNSET);
+    this(
+        text,
+         null,
+         DIMEN_UNSET,
+         TYPE_UNSET,
+         TYPE_UNSET,
+         DIMEN_UNSET,
+         TYPE_UNSET,
+         DIMEN_UNSET);
   }
 
   
@@ -229,10 +295,26 @@ public class Cue {
 
 
 
-  public Cue(CharSequence text, Alignment textAlignment, float line, @LineType int lineType,
-      @AnchorType int lineAnchor, float position, @AnchorType int positionAnchor, float size) {
-    this(text, textAlignment, line, lineType, lineAnchor, position, positionAnchor, size, false,
-        Color.BLACK);
+  public Cue(
+      CharSequence text,
+      @Nullable Alignment textAlignment,
+      float line,
+      @LineType int lineType,
+      @AnchorType int lineAnchor,
+      float position,
+      @AnchorType int positionAnchor,
+      float size) {
+    this(
+        text,
+        textAlignment,
+        line,
+        lineType,
+        lineAnchor,
+        position,
+        positionAnchor,
+        size,
+         false,
+         Color.BLACK);
   }
 
   
@@ -249,16 +331,90 @@ public class Cue {
 
 
 
-  public Cue(CharSequence text, Alignment textAlignment, float line, @LineType int lineType,
-      @AnchorType int lineAnchor, float position, @AnchorType int positionAnchor, float size,
-      boolean windowColorSet, int windowColor) {
-    this(text, textAlignment, null, line, lineType, lineAnchor, position, positionAnchor, size,
-        DIMEN_UNSET, windowColorSet, windowColor);
+  public Cue(
+      CharSequence text,
+      @Nullable Alignment textAlignment,
+      float line,
+      @LineType int lineType,
+      @AnchorType int lineAnchor,
+      float position,
+      @AnchorType int positionAnchor,
+      float size,
+      @TextSizeType int textSizeType,
+      float textSize) {
+    this(
+        text,
+        textAlignment,
+         null,
+        line,
+        lineType,
+        lineAnchor,
+        position,
+        positionAnchor,
+        textSizeType,
+        textSize,
+        size,
+         DIMEN_UNSET,
+         false,
+         Color.BLACK);
   }
 
-  private Cue(CharSequence text, Alignment textAlignment, Bitmap bitmap, float line,
-      @LineType int lineType, @AnchorType int lineAnchor, float position,
-      @AnchorType int positionAnchor, float size, float bitmapHeight, boolean windowColorSet,
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  public Cue(
+      CharSequence text,
+      @Nullable Alignment textAlignment,
+      float line,
+      @LineType int lineType,
+      @AnchorType int lineAnchor,
+      float position,
+      @AnchorType int positionAnchor,
+      float size,
+      boolean windowColorSet,
+      int windowColor) {
+    this(
+        text,
+        textAlignment,
+         null,
+        line,
+        lineType,
+        lineAnchor,
+        position,
+        positionAnchor,
+         TYPE_UNSET,
+         DIMEN_UNSET,
+        size,
+         DIMEN_UNSET,
+        windowColorSet,
+        windowColor);
+  }
+
+  private Cue(
+      @Nullable CharSequence text,
+      @Nullable Alignment textAlignment,
+      @Nullable Bitmap bitmap,
+      float line,
+      @LineType int lineType,
+      @AnchorType int lineAnchor,
+      float position,
+      @AnchorType int positionAnchor,
+      @TextSizeType int textSizeType,
+      float textSize,
+      float size,
+      float bitmapHeight,
+      boolean windowColorSet,
       int windowColor) {
     this.text = text;
     this.textAlignment = textAlignment;
@@ -272,6 +428,8 @@ public class Cue {
     this.bitmapHeight = bitmapHeight;
     this.windowColorSet = windowColorSet;
     this.windowColor = windowColor;
+    this.textSizeType = textSizeType;
+    this.textSize = textSize;
   }
 
 }

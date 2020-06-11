@@ -16,13 +16,4 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.drm;
 
 
-
-
-public interface ExoMediaCrypto {
-
-  
-
-
-  boolean requiresSecureDecoderComponent(String mimeType);
-
-}
+public interface ExoMediaCrypto {}

@@ -13,11 +13,8 @@
 
 
 
-
 package org.mozilla.thirdparty.com.google.android.exoplayer2.util;
 
-import android.support.annotation.NonNull;
-import android.util.Log;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -52,6 +49,11 @@ public final class AtomicFile {
   public AtomicFile(File baseName) {
     this.baseName = baseName;
     backupName = new File(baseName.getPath() + ".bak");
+  }
+
+  
+  public boolean exists() {
+    return baseName.exists() || backupName.exists();
   }
 
   
@@ -104,13 +106,14 @@ public final class AtomicFile {
       str = new AtomicFileOutputStream(baseName);
     } catch (FileNotFoundException e) {
       File parent = baseName.getParentFile();
-      if (!parent.mkdirs()) {
-        throw new IOException("Couldn't create directory " + baseName);
+      if (parent == null || !parent.mkdirs()) {
+        throw new IOException("Couldn't create " + baseName, e);
       }
+      
       try {
         str = new AtomicFileOutputStream(baseName);
       } catch (FileNotFoundException e2) {
-        throw new IOException("Couldn't create " + baseName);
+        throw new IOException("Couldn't create " + baseName, e2);
       }
     }
     return str;
@@ -186,12 +189,12 @@ public final class AtomicFile {
     }
 
     @Override
-    public void write(@NonNull byte[] b) throws IOException {
+    public void write(byte[] b) throws IOException {
       fileOutputStream.write(b);
     }
 
     @Override
-    public void write(@NonNull byte[] b, int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
       fileOutputStream.write(b, off, len);
     }
   }

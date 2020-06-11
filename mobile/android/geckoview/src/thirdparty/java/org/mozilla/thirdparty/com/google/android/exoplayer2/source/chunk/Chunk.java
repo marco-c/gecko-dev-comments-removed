@@ -15,12 +15,17 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source.chunk;
 
+import android.net.Uri;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSpec;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.Loader.Loadable;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.StatsDataSource;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+import java.util.List;
+import java.util.Map;
 
 
 
@@ -51,7 +56,7 @@ public abstract class Chunk implements Loadable {
 
 
 
-  public final Object trackSelectionData;
+  @Nullable public final Object trackSelectionData;
   
 
 
@@ -63,7 +68,7 @@ public abstract class Chunk implements Loadable {
 
   public final long endTimeUs;
 
-  protected final DataSource dataSource;
+  protected final StatsDataSource dataSource;
 
   
 
@@ -75,9 +80,16 @@ public abstract class Chunk implements Loadable {
 
 
 
-  public Chunk(DataSource dataSource, DataSpec dataSpec, int type, Format trackFormat,
-      int trackSelectionReason, Object trackSelectionData, long startTimeUs, long endTimeUs) {
-    this.dataSource = Assertions.checkNotNull(dataSource);
+  public Chunk(
+      DataSource dataSource,
+      DataSpec dataSpec,
+      int type,
+      Format trackFormat,
+      int trackSelectionReason,
+      @Nullable Object trackSelectionData,
+      long startTimeUs,
+      long endTimeUs) {
+    this.dataSource = new StatsDataSource(dataSource);
     this.dataSpec = Assertions.checkNotNull(dataSpec);
     this.type = type;
     this.trackFormat = trackFormat;
@@ -97,6 +109,29 @@ public abstract class Chunk implements Loadable {
   
 
 
-  public abstract long bytesLoaded();
 
+  public final long bytesLoaded() {
+    return dataSource.getBytesRead();
+  }
+
+  
+
+
+
+
+
+
+  public final Uri getUri() {
+    return dataSource.getLastOpenedUri();
+  }
+
+  
+
+
+
+
+
+  public final Map<String, List<String>> getResponseHeaders() {
+    return dataSource.getLastResponseHeaders();
+  }
 }

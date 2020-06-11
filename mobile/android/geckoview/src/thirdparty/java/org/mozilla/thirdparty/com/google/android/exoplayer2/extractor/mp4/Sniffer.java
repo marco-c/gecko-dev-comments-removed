@@ -18,7 +18,6 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.mp4;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ExtractorInput;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 import java.io.IOException;
 
 
@@ -28,36 +27,37 @@ import java.io.IOException;
  final class Sniffer {
 
   
-
-
   private static final int SEARCH_LENGTH = 4 * 1024;
 
-  private static final int[] COMPATIBLE_BRANDS = new int[] {
-      Util.getIntegerCodeForString("isom"),
-      Util.getIntegerCodeForString("iso2"),
-      Util.getIntegerCodeForString("iso3"),
-      Util.getIntegerCodeForString("iso4"),
-      Util.getIntegerCodeForString("iso5"),
-      Util.getIntegerCodeForString("iso6"),
-      Util.getIntegerCodeForString("avc1"),
-      Util.getIntegerCodeForString("hvc1"),
-      Util.getIntegerCodeForString("hev1"),
-      Util.getIntegerCodeForString("mp41"),
-      Util.getIntegerCodeForString("mp42"),
-      Util.getIntegerCodeForString("3g2a"),
-      Util.getIntegerCodeForString("3g2b"),
-      Util.getIntegerCodeForString("3gr6"),
-      Util.getIntegerCodeForString("3gs6"),
-      Util.getIntegerCodeForString("3ge6"),
-      Util.getIntegerCodeForString("3gg6"),
-      Util.getIntegerCodeForString("M4V "),
-      Util.getIntegerCodeForString("M4A "),
-      Util.getIntegerCodeForString("f4v "),
-      Util.getIntegerCodeForString("kddi"),
-      Util.getIntegerCodeForString("M4VP"),
-      Util.getIntegerCodeForString("qt  "), 
-      Util.getIntegerCodeForString("MSNV"), 
-  };
+  private static final int[] COMPATIBLE_BRANDS =
+      new int[] {
+        0x69736f6d, 
+        0x69736f32, 
+        0x69736f33, 
+        0x69736f34, 
+        0x69736f35, 
+        0x69736f36, 
+        0x61766331, 
+        0x68766331, 
+        0x68657631, 
+        0x61763031, 
+        0x6d703431, 
+        0x6d703432, 
+        0x33673261, 
+        0x33673262, 
+        0x33677236, 
+        0x33677336, 
+        0x33676536, 
+        0x33676736, 
+        0x4d345620, 
+        0x4d344120, 
+        0x66347620, 
+        0x6b646469, 
+        0x4d345650, 
+        0x71742020, 
+        0x4d534e56, 
+        0x64627931, 
+      };
 
   
 
@@ -104,11 +104,18 @@ import java.io.IOException;
       input.peekFully(buffer.data, 0, headerSize);
       long atomSize = buffer.readUnsignedInt();
       int atomType = buffer.readInt();
-      if (atomSize == Atom.LONG_SIZE_PREFIX) {
+      if (atomSize == Atom.DEFINES_LARGE_SIZE) {
+        
         headerSize = Atom.LONG_HEADER_SIZE;
         input.peekFully(buffer.data, Atom.HEADER_SIZE, Atom.LONG_HEADER_SIZE - Atom.HEADER_SIZE);
         buffer.setLimit(Atom.LONG_HEADER_SIZE);
-        atomSize = buffer.readUnsignedLongToLong();
+        atomSize = buffer.readLong();
+      } else if (atomSize == Atom.EXTENDS_TO_END_SIZE) {
+        
+        long fileEndPosition = input.getLength();
+        if (fileEndPosition != C.LENGTH_UNSET) {
+          atomSize = fileEndPosition - input.getPeekPosition() + headerSize;
+        }
       }
 
       if (atomSize < headerSize) {
@@ -118,6 +125,13 @@ import java.io.IOException;
       bytesSearched += headerSize;
 
       if (atomType == Atom.TYPE_moov) {
+        
+        
+        bytesToSearch += (int) atomSize;
+        if (inputLength != C.LENGTH_UNSET && bytesToSearch > inputLength) {
+          
+          bytesToSearch = (int) inputLength;
+        }
         
         continue;
       }
@@ -169,7 +183,7 @@ import java.io.IOException;
 
   private static boolean isCompatibleBrand(int brand) {
     
-    if (brand >>> 8 == Util.getIntegerCodeForString("3gp")) {
+    if (brand >>> 8 == 0x00336770) {
       return true;
     }
     for (int compatibleBrand : COMPATIBLE_BRANDS) {

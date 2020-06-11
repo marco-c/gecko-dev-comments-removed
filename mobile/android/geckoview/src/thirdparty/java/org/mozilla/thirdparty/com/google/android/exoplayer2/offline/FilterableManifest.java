@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package org.mozilla.thirdparty.com.google.android.exoplayer2.offline;
+
+import java.util.List;
+
+
+
+
+
+
+
+public interface FilterableManifest<T> {
+
+  
+
+
+
+
+
+
+  T copy(List<StreamKey> streamKeys);
+}

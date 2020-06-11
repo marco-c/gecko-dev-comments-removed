@@ -16,9 +16,18 @@
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source;
 
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.ExoPlayer;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.SeekParameters;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Timeline;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.offline.StreamKey;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.MediaSource.MediaSourceCaller;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.trackselection.TrackSelection;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import org.checkerframework.checker.nullness.compatqual.NullableType;
+
+
 
 
 
@@ -40,7 +49,6 @@ public interface MediaPeriod extends SequenceableLoader {
 
 
     void onPrepared(MediaPeriod mediaPeriod);
-
   }
 
   
@@ -56,7 +64,8 @@ public interface MediaPeriod extends SequenceableLoader {
 
 
 
-  void prepare(Callback callback);
+
+  void prepare(Callback callback, long positionUs);
 
   
 
@@ -89,29 +98,62 @@ public interface MediaPeriod extends SequenceableLoader {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-  long selectTracks(TrackSelection[] selections, boolean[] mayRetainStreamFlags,
-      SampleStream[] streams, boolean[] streamResetFlags, long positionUs);
+  default List<StreamKey> getStreamKeys(List<TrackSelection> trackSelections) {
+    return Collections.emptyList();
+  }
 
   
 
 
 
 
-  void discardBuffer(long positionUs);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  long selectTracks(
+      @NullableType TrackSelection[] selections,
+      boolean[] mayRetainStreamFlags,
+      @NullableType SampleStream[] streams,
+      boolean[] streamResetFlags,
+      long positionUs);
 
   
+
+
+
+
+
+
+
+
+  void discardBuffer(long positionUs, boolean toKeyframe);
+
+  
+
+
+
 
 
 
@@ -130,22 +172,36 @@ public interface MediaPeriod extends SequenceableLoader {
 
 
 
-  long getBufferedPositionUs();
-
-  
-
-
-
-
-
-
-
 
 
 
   long seekToUs(long positionUs);
 
   
+
+
+
+
+
+
+
+
+
+
+  long getAdjustedSeekPositionUs(long positionUs, SeekParameters seekParameters);
+
+  
+
+  
+
+
+
+
+
+
+
+  @Override
+  long getBufferedPositionUs();
 
   
 
@@ -170,7 +226,26 @@ public interface MediaPeriod extends SequenceableLoader {
 
 
 
+
+
   @Override
   boolean continueLoading(long positionUs);
 
+  
+  boolean isLoading();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  @Override
+  void reevaluateBuffer(long positionUs);
 }

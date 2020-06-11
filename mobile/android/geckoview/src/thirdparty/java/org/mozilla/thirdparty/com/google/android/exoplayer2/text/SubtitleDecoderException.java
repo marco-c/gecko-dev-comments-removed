@@ -28,6 +28,11 @@ public class SubtitleDecoderException extends Exception {
   }
 
   
+  public SubtitleDecoderException(Exception cause) {
+    super(cause);
+  }
+
+  
 
 
 

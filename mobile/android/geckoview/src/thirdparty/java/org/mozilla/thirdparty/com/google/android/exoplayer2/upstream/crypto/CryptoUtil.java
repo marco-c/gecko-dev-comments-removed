@@ -15,6 +15,8 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.crypto;
 
+import androidx.annotation.Nullable;
+
 
 
 
@@ -27,7 +29,7 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.crypto;
 
 
 
-  public static long getFNV64Hash(String input) {
+  public static long getFNV64Hash(@Nullable String input) {
     if (input == null) {
       return 0;
     }

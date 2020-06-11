@@ -18,32 +18,30 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.emsg;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.Metadata;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.MetadataDecoder;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.MetadataInputBuffer;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 
-
-
-
-
-
 public final class EventMessageDecoder implements MetadataDecoder {
 
+  @SuppressWarnings("ByteBufferBackingArray")
   @Override
   public Metadata decode(MetadataInputBuffer inputBuffer) {
-    ByteBuffer buffer = inputBuffer.data;
+    ByteBuffer buffer = Assertions.checkNotNull(inputBuffer.data);
     byte[] data = buffer.array();
     int size = buffer.limit();
-    ParsableByteArray emsgData = new ParsableByteArray(data, size);
-    String schemeIdUri = emsgData.readNullTerminatedString();
-    String value = emsgData.readNullTerminatedString();
-    long timescale = emsgData.readUnsignedInt();
-    emsgData.skipBytes(4); 
-    long durationMs = (emsgData.readUnsignedInt() * 1000) / timescale;
-    long id = emsgData.readUnsignedInt();
-    byte[] messageData = Arrays.copyOfRange(data, emsgData.getPosition(), size);
-    return new Metadata(new EventMessage(schemeIdUri, value, durationMs, id, messageData));
+    return new Metadata(decode(new ParsableByteArray(data, size)));
   }
 
+  public EventMessage decode(ParsableByteArray emsgData) {
+    String schemeIdUri = Assertions.checkNotNull(emsgData.readNullTerminatedString());
+    String value = Assertions.checkNotNull(emsgData.readNullTerminatedString());
+    long durationMs = emsgData.readUnsignedInt();
+    long id = emsgData.readUnsignedInt();
+    byte[] messageData =
+        Arrays.copyOfRange(emsgData.data, emsgData.getPosition(), emsgData.limit());
+    return new EventMessage(schemeIdUri, value, durationMs, id, messageData);
+  }
 }

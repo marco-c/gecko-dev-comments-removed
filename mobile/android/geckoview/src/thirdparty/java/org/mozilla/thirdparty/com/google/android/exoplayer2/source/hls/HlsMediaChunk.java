@@ -15,51 +15,173 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls;
 
-import android.text.TextUtils;
+import android.net.Uri;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.DrmInitData;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.DefaultExtractorInput;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.Extractor;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ExtractorInput;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.mp3.Mp3Extractor;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.mp4.FragmentedMp4Extractor;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ts.Ac3Extractor;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ts.AdtsExtractor;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ts.DefaultTsPayloadReaderFactory;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.ts.TsExtractor;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.extractor.PositionHolder;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.Metadata;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.id3.Id3Decoder;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.id3.PrivFrame;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.chunk.MediaChunk;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls.playlist.HlsMasterPlaylist.HlsUrl;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls.playlist.HlsMediaPlaylist;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSource;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.DataSpec;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.ParsableByteArray;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.TimestampAdjuster;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.UriUtil;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
+import java.io.EOFException;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.checkerframework.checker.nullness.qual.EnsuresNonNull;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.checkerframework.checker.nullness.qual.RequiresNonNull;
 
 
 
 
  final class HlsMediaChunk extends MediaChunk {
 
-  private static final AtomicInteger UID_SOURCE = new AtomicInteger();
+  
 
-  private static final String PRIV_TIMESTAMP_FRAME_OWNER =
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  public static HlsMediaChunk createInstance(
+      HlsExtractorFactory extractorFactory,
+      DataSource dataSource,
+      Format format,
+      long startOfPlaylistInPeriodUs,
+      HlsMediaPlaylist mediaPlaylist,
+      int segmentIndexInPlaylist,
+      Uri playlistUrl,
+      @Nullable List<Format> muxedCaptionFormats,
+      int trackSelectionReason,
+      @Nullable Object trackSelectionData,
+      boolean isMasterTimestampSource,
+      TimestampAdjusterProvider timestampAdjusterProvider,
+      @Nullable HlsMediaChunk previousChunk,
+      @Nullable byte[] mediaSegmentKey,
+      @Nullable byte[] initSegmentKey) {
+    
+    HlsMediaPlaylist.Segment mediaSegment = mediaPlaylist.segments.get(segmentIndexInPlaylist);
+    DataSpec dataSpec =
+        new DataSpec(
+            UriUtil.resolveToUri(mediaPlaylist.baseUri, mediaSegment.url),
+            mediaSegment.byterangeOffset,
+            mediaSegment.byterangeLength,
+             null);
+    boolean mediaSegmentEncrypted = mediaSegmentKey != null;
+    byte[] mediaSegmentIv =
+        mediaSegmentEncrypted
+            ? getEncryptionIvArray(Assertions.checkNotNull(mediaSegment.encryptionIV))
+            : null;
+    DataSource mediaDataSource = buildDataSource(dataSource, mediaSegmentKey, mediaSegmentIv);
+
+    
+    HlsMediaPlaylist.Segment initSegment = mediaSegment.initializationSegment;
+    DataSpec initDataSpec = null;
+    boolean initSegmentEncrypted = false;
+    DataSource initDataSource = null;
+    if (initSegment != null) {
+      initSegmentEncrypted = initSegmentKey != null;
+      byte[] initSegmentIv =
+          initSegmentEncrypted
+              ? getEncryptionIvArray(Assertions.checkNotNull(initSegment.encryptionIV))
+              : null;
+      Uri initSegmentUri = UriUtil.resolveToUri(mediaPlaylist.baseUri, initSegment.url);
+      initDataSpec =
+          new DataSpec(
+              initSegmentUri,
+              initSegment.byterangeOffset,
+              initSegment.byterangeLength,
+               null);
+      initDataSource = buildDataSource(dataSource, initSegmentKey, initSegmentIv);
+    }
+
+    long segmentStartTimeInPeriodUs = startOfPlaylistInPeriodUs + mediaSegment.relativeStartTimeUs;
+    long segmentEndTimeInPeriodUs = segmentStartTimeInPeriodUs + mediaSegment.durationUs;
+    int discontinuitySequenceNumber =
+        mediaPlaylist.discontinuitySequence + mediaSegment.relativeDiscontinuitySequence;
+
+    Extractor previousExtractor = null;
+    Id3Decoder id3Decoder;
+    ParsableByteArray scratchId3Data;
+    boolean shouldSpliceIn;
+    if (previousChunk != null) {
+      id3Decoder = previousChunk.id3Decoder;
+      scratchId3Data = previousChunk.scratchId3Data;
+      shouldSpliceIn =
+          !playlistUrl.equals(previousChunk.playlistUrl) || !previousChunk.loadCompleted;
+      previousExtractor =
+          previousChunk.isExtractorReusable
+                  && previousChunk.discontinuitySequenceNumber == discontinuitySequenceNumber
+                  && !shouldSpliceIn
+              ? previousChunk.extractor
+              : null;
+    } else {
+      id3Decoder = new Id3Decoder();
+      scratchId3Data = new ParsableByteArray(Id3Decoder.ID3_HEADER_LENGTH);
+      shouldSpliceIn = false;
+    }
+
+    return new HlsMediaChunk(
+        extractorFactory,
+        mediaDataSource,
+        dataSpec,
+        format,
+        mediaSegmentEncrypted,
+        initDataSource,
+        initDataSpec,
+        initSegmentEncrypted,
+        playlistUrl,
+        muxedCaptionFormats,
+        trackSelectionReason,
+        trackSelectionData,
+        segmentStartTimeInPeriodUs,
+        segmentEndTimeInPeriodUs,
+         mediaPlaylist.mediaSequence + segmentIndexInPlaylist,
+        discontinuitySequenceNumber,
+        mediaSegment.hasGapTag,
+        isMasterTimestampSource,
+         timestampAdjusterProvider.getAdjuster(discontinuitySequenceNumber),
+        mediaSegment.drmInitData,
+        previousExtractor,
+        id3Decoder,
+        scratchId3Data,
+        shouldSpliceIn);
+  }
+
+  public static final String PRIV_TIMESTAMP_FRAME_OWNER =
       "com.apple.streaming.transportStreamTimestamp";
+  private static final PositionHolder DUMMY_POSITION_HOLDER = new PositionHolder();
 
-  private static final String AAC_FILE_EXTENSION = ".aac";
-  private static final String AC3_FILE_EXTENSION = ".ac3";
-  private static final String EC3_FILE_EXTENSION = ".ec3";
-  private static final String MP3_FILE_EXTENSION = ".mp3";
-  private static final String MP4_FILE_EXTENSION = ".mp4";
-  private static final String M4_FILE_EXTENSION_PREFIX = ".m4";
-  private static final String VTT_FILE_EXTENSION = ".vtt";
-  private static final String WEBVTT_FILE_EXTENSION = ".webvtt";
+  private static final AtomicInteger uidSource = new AtomicInteger();
 
   
 
@@ -72,88 +194,86 @@ import java.util.concurrent.atomic.AtomicInteger;
   public final int discontinuitySequenceNumber;
 
   
+  public final Uri playlistUrl;
 
+  @Nullable private final DataSource initDataSource;
+  @Nullable private final DataSpec initDataSpec;
+  @Nullable private final Extractor previousExtractor;
 
-  public final HlsUrl hlsUrl;
-
-  private final DataSource initDataSource;
-  private final DataSpec initDataSpec;
-  private final boolean isEncrypted;
   private final boolean isMasterTimestampSource;
+  private final boolean hasGapTag;
   private final TimestampAdjuster timestampAdjuster;
-  private final String lastPathSegment;
-  private final Extractor previousExtractor;
   private final boolean shouldSpliceIn;
-  private final boolean needNewExtractor;
-  private final List<Format> muxedCaptionFormats;
-
-  private final boolean isPackedAudio;
+  private final HlsExtractorFactory extractorFactory;
+  @Nullable private final List<Format> muxedCaptionFormats;
+  @Nullable private final DrmInitData drmInitData;
   private final Id3Decoder id3Decoder;
-  private final ParsableByteArray id3Data;
+  private final ParsableByteArray scratchId3Data;
+  private final boolean mediaSegmentEncrypted;
+  private final boolean initSegmentEncrypted;
 
-  private Extractor extractor;
-  private int initSegmentBytesLoaded;
-  private int bytesLoaded;
-  private boolean initLoadCompleted;
-  private HlsSampleStreamWrapper extractorOutput;
-  private volatile boolean loadCanceled;
-  private volatile boolean loadCompleted;
-
+  @MonotonicNonNull private Extractor extractor;
+  private boolean isExtractorReusable;
+  @MonotonicNonNull private HlsSampleStreamWrapper output;
   
+  
+  private int nextLoadPosition;
+  private boolean initDataLoadRequired;
+  private volatile boolean loadCanceled;
+  private boolean loadCompleted;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  public HlsMediaChunk(DataSource dataSource, DataSpec dataSpec, DataSpec initDataSpec,
-      HlsUrl hlsUrl, List<Format> muxedCaptionFormats, int trackSelectionReason,
-      Object trackSelectionData, long startTimeUs, long endTimeUs, int chunkIndex,
-      int discontinuitySequenceNumber, boolean isMasterTimestampSource,
-      TimestampAdjuster timestampAdjuster, HlsMediaChunk previousChunk, byte[] encryptionKey,
-      byte[] encryptionIv) {
-    super(buildDataSource(dataSource, encryptionKey, encryptionIv), dataSpec, hlsUrl.format,
-        trackSelectionReason, trackSelectionData, startTimeUs, endTimeUs, chunkIndex);
+  private HlsMediaChunk(
+      HlsExtractorFactory extractorFactory,
+      DataSource mediaDataSource,
+      DataSpec dataSpec,
+      Format format,
+      boolean mediaSegmentEncrypted,
+      @Nullable DataSource initDataSource,
+      @Nullable DataSpec initDataSpec,
+      boolean initSegmentEncrypted,
+      Uri playlistUrl,
+      @Nullable List<Format> muxedCaptionFormats,
+      int trackSelectionReason,
+      @Nullable Object trackSelectionData,
+      long startTimeUs,
+      long endTimeUs,
+      long chunkMediaSequence,
+      int discontinuitySequenceNumber,
+      boolean hasGapTag,
+      boolean isMasterTimestampSource,
+      TimestampAdjuster timestampAdjuster,
+      @Nullable DrmInitData drmInitData,
+      @Nullable Extractor previousExtractor,
+      Id3Decoder id3Decoder,
+      ParsableByteArray scratchId3Data,
+      boolean shouldSpliceIn) {
+    super(
+        mediaDataSource,
+        dataSpec,
+        format,
+        trackSelectionReason,
+        trackSelectionData,
+        startTimeUs,
+        endTimeUs,
+        chunkMediaSequence);
+    this.mediaSegmentEncrypted = mediaSegmentEncrypted;
     this.discontinuitySequenceNumber = discontinuitySequenceNumber;
     this.initDataSpec = initDataSpec;
-    this.hlsUrl = hlsUrl;
-    this.muxedCaptionFormats = muxedCaptionFormats;
+    this.initDataSource = initDataSource;
+    this.initDataLoadRequired = initDataSpec != null;
+    this.initSegmentEncrypted = initSegmentEncrypted;
+    this.playlistUrl = playlistUrl;
     this.isMasterTimestampSource = isMasterTimestampSource;
     this.timestampAdjuster = timestampAdjuster;
-    
-    this.isEncrypted = this.dataSource instanceof Aes128DataSource;
-    lastPathSegment = dataSpec.uri.getLastPathSegment();
-    isPackedAudio = lastPathSegment.endsWith(AAC_FILE_EXTENSION)
-        || lastPathSegment.endsWith(AC3_FILE_EXTENSION)
-        || lastPathSegment.endsWith(EC3_FILE_EXTENSION)
-        || lastPathSegment.endsWith(MP3_FILE_EXTENSION);
-    if (previousChunk != null) {
-      id3Decoder = previousChunk.id3Decoder;
-      id3Data = previousChunk.id3Data;
-      previousExtractor = previousChunk.extractor;
-      shouldSpliceIn = previousChunk.hlsUrl != hlsUrl;
-      needNewExtractor = previousChunk.discontinuitySequenceNumber != discontinuitySequenceNumber
-          || shouldSpliceIn;
-    } else {
-      id3Decoder = isPackedAudio ? new Id3Decoder() : null;
-      id3Data = isPackedAudio ? new ParsableByteArray(Id3Decoder.ID3_HEADER_LENGTH) : null;
-      previousExtractor = null;
-      shouldSpliceIn = false;
-      needNewExtractor = true;
-    }
-    initDataSource = dataSource;
-    uid = UID_SOURCE.getAndIncrement();
+    this.hasGapTag = hasGapTag;
+    this.extractorFactory = extractorFactory;
+    this.muxedCaptionFormats = muxedCaptionFormats;
+    this.drmInitData = drmInitData;
+    this.previousExtractor = previousExtractor;
+    this.id3Decoder = id3Decoder;
+    this.scratchId3Data = scratchId3Data;
+    this.shouldSpliceIn = shouldSpliceIn;
+    uid = uidSource.getAndIncrement();
   }
 
   
@@ -163,18 +283,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
   public void init(HlsSampleStreamWrapper output) {
-    extractorOutput = output;
+    this.output = output;
     output.init(uid, shouldSpliceIn);
   }
 
   @Override
   public boolean isLoadCompleted() {
     return loadCompleted;
-  }
-
-  @Override
-  public long bytesLoaded() {
-    return bytesLoaded;
   }
 
   
@@ -185,91 +300,127 @@ import java.util.concurrent.atomic.AtomicInteger;
   }
 
   @Override
-  public boolean isLoadCanceled() {
-    return loadCanceled;
-  }
-
-  @Override
   public void load() throws IOException, InterruptedException {
-    if (extractor == null && !isPackedAudio) {
-      
-      extractor = createExtractor();
+    
+    Assertions.checkNotNull(output);
+    if (extractor == null && previousExtractor != null) {
+      extractor = previousExtractor;
+      isExtractorReusable = true;
+      initDataLoadRequired = false;
     }
     maybeLoadInitData();
     if (!loadCanceled) {
-      loadMedia();
+      if (!hasGapTag) {
+        loadMedia();
+      }
+      loadCompleted = true;
     }
   }
 
   
 
+  @RequiresNonNull("output")
   private void maybeLoadInitData() throws IOException, InterruptedException {
-    if (previousExtractor == extractor || initLoadCompleted || initDataSpec == null) {
-      
+    if (!initDataLoadRequired) {
       return;
     }
-    DataSpec initSegmentDataSpec = Util.getRemainderDataSpec(initDataSpec, initSegmentBytesLoaded);
-    try {
-      ExtractorInput input = new DefaultExtractorInput(initDataSource,
-          initSegmentDataSpec.absoluteStreamPosition, initDataSource.open(initSegmentDataSpec));
-      try {
-        int result = Extractor.RESULT_CONTINUE;
-        while (result == Extractor.RESULT_CONTINUE && !loadCanceled) {
-          result = extractor.read(input, null);
-        }
-      } finally {
-        initSegmentBytesLoaded = (int) (input.getPosition() - initDataSpec.absoluteStreamPosition);
-      }
-    } finally {
-      Util.closeQuietly(dataSource);
-    }
-    initLoadCompleted = true;
+    
+    Assertions.checkNotNull(initDataSource);
+    Assertions.checkNotNull(initDataSpec);
+    feedDataToExtractor(initDataSource, initDataSpec, initSegmentEncrypted);
+    nextLoadPosition = 0;
+    initDataLoadRequired = false;
   }
 
+  @RequiresNonNull("output")
   private void loadMedia() throws IOException, InterruptedException {
-    
-    
-    
-    
-    DataSpec loadDataSpec;
-    boolean skipLoadedBytes;
-    if (isEncrypted) {
-      loadDataSpec = dataSpec;
-      skipLoadedBytes = bytesLoaded != 0;
-    } else {
-      loadDataSpec = Util.getRemainderDataSpec(dataSpec, bytesLoaded);
-      skipLoadedBytes = false;
-    }
     if (!isMasterTimestampSource) {
       timestampAdjuster.waitUntilInitialized();
     } else if (timestampAdjuster.getFirstSampleTimestampUs() == TimestampAdjuster.DO_NOT_OFFSET) {
       
       timestampAdjuster.setFirstSampleTimestampUs(startTimeUs);
     }
+    feedDataToExtractor(dataSource, dataSpec, mediaSegmentEncrypted);
+  }
+
+  
+
+
+
+
+  @RequiresNonNull("output")
+  private void feedDataToExtractor(
+      DataSource dataSource, DataSpec dataSpec, boolean dataIsEncrypted)
+      throws IOException, InterruptedException {
+    
+    
+    
+    
+    DataSpec loadDataSpec;
+    boolean skipLoadedBytes;
+    if (dataIsEncrypted) {
+      loadDataSpec = dataSpec;
+      skipLoadedBytes = nextLoadPosition != 0;
+    } else {
+      loadDataSpec = dataSpec.subrange(nextLoadPosition);
+      skipLoadedBytes = false;
+    }
     try {
-      ExtractorInput input = new DefaultExtractorInput(dataSource,
-          loadDataSpec.absoluteStreamPosition, dataSource.open(loadDataSpec));
-      if (extractor == null) {
-        
-        long id3Timestamp = peekId3PrivTimestamp(input);
-        extractor = buildPackedAudioExtractor(id3Timestamp != C.TIME_UNSET
-            ? timestampAdjuster.adjustTsTimestamp(id3Timestamp) : startTimeUs);
-      }
+      ExtractorInput input = prepareExtraction(dataSource, loadDataSpec);
       if (skipLoadedBytes) {
-        input.skipFully(bytesLoaded);
+        input.skipFully(nextLoadPosition);
       }
       try {
         int result = Extractor.RESULT_CONTINUE;
         while (result == Extractor.RESULT_CONTINUE && !loadCanceled) {
-          result = extractor.read(input, null);
+          result = extractor.read(input, DUMMY_POSITION_HOLDER);
         }
       } finally {
-        bytesLoaded = (int) (input.getPosition() - dataSpec.absoluteStreamPosition);
+        nextLoadPosition = (int) (input.getPosition() - dataSpec.absoluteStreamPosition);
       }
     } finally {
       Util.closeQuietly(dataSource);
     }
-    loadCompleted = true;
+  }
+
+  @RequiresNonNull("output")
+  @EnsuresNonNull("extractor")
+  private DefaultExtractorInput prepareExtraction(DataSource dataSource, DataSpec dataSpec)
+      throws IOException, InterruptedException {
+    long bytesToRead = dataSource.open(dataSpec);
+    DefaultExtractorInput extractorInput =
+        new DefaultExtractorInput(dataSource, dataSpec.absoluteStreamPosition, bytesToRead);
+
+    if (extractor == null) {
+      long id3Timestamp = peekId3PrivTimestamp(extractorInput);
+      extractorInput.resetPeekPosition();
+
+      HlsExtractorFactory.Result result =
+          extractorFactory.createExtractor(
+              previousExtractor,
+              dataSpec.uri,
+              trackFormat,
+              muxedCaptionFormats,
+              timestampAdjuster,
+              dataSource.getResponseHeaders(),
+              extractorInput);
+      extractor = result.extractor;
+      isExtractorReusable = result.isReusable;
+      if (result.isPackedAudioExtractor) {
+        output.setSampleOffsetUs(
+            id3Timestamp != C.TIME_UNSET
+                ? timestampAdjuster.adjustTsTimestamp(id3Timestamp)
+                : startTimeUs);
+      } else {
+        
+        
+        output.setSampleOffsetUs( 0L);
+      }
+      output.onNewExtractor();
+      extractor.init(output);
+    }
+    output.setDrmInitData(drmInitData);
+    return extractorInput;
   }
 
   
@@ -284,26 +435,27 @@ import java.util.concurrent.atomic.AtomicInteger;
 
   private long peekId3PrivTimestamp(ExtractorInput input) throws IOException, InterruptedException {
     input.resetPeekPosition();
-    if (!input.peekFully(id3Data.data, 0, Id3Decoder.ID3_HEADER_LENGTH, true)) {
+    try {
+      input.peekFully(scratchId3Data.data, 0, Id3Decoder.ID3_HEADER_LENGTH);
+    } catch (EOFException e) {
+      
       return C.TIME_UNSET;
     }
-    id3Data.reset(Id3Decoder.ID3_HEADER_LENGTH);
-    int id = id3Data.readUnsignedInt24();
+    scratchId3Data.reset(Id3Decoder.ID3_HEADER_LENGTH);
+    int id = scratchId3Data.readUnsignedInt24();
     if (id != Id3Decoder.ID3_TAG) {
       return C.TIME_UNSET;
     }
-    id3Data.skipBytes(3); 
-    int id3Size = id3Data.readSynchSafeInt();
+    scratchId3Data.skipBytes(3); 
+    int id3Size = scratchId3Data.readSynchSafeInt();
     int requiredCapacity = id3Size + Id3Decoder.ID3_HEADER_LENGTH;
-    if (requiredCapacity > id3Data.capacity()) {
-      byte[] data = id3Data.data;
-      id3Data.reset(requiredCapacity);
-      System.arraycopy(data, 0, id3Data.data, 0, Id3Decoder.ID3_HEADER_LENGTH);
+    if (requiredCapacity > scratchId3Data.capacity()) {
+      byte[] data = scratchId3Data.data;
+      scratchId3Data.reset(requiredCapacity);
+      System.arraycopy(data, 0, scratchId3Data.data, 0, Id3Decoder.ID3_HEADER_LENGTH);
     }
-    if (!input.peekFully(id3Data.data, Id3Decoder.ID3_HEADER_LENGTH, id3Size, true)) {
-      return C.TIME_UNSET;
-    }
-    Metadata metadata = id3Decoder.decode(id3Data.data, id3Size);
+    input.peekFully(scratchId3Data.data, Id3Decoder.ID3_HEADER_LENGTH, id3Size);
+    Metadata metadata = id3Decoder.decode(scratchId3Data.data, id3Size);
     if (metadata == null) {
       return C.TIME_UNSET;
     }
@@ -313,9 +465,12 @@ import java.util.concurrent.atomic.AtomicInteger;
       if (frame instanceof PrivFrame) {
         PrivFrame privFrame = (PrivFrame) frame;
         if (PRIV_TIMESTAMP_FRAME_OWNER.equals(privFrame.owner)) {
-          System.arraycopy(privFrame.privateData, 0, id3Data.data, 0, 8 );
-          id3Data.reset(8);
-          return id3Data.readLong();
+          System.arraycopy(
+              privFrame.privateData, 0, scratchId3Data.data, 0, 8 );
+          scratchId3Data.reset(8);
+          
+          
+          return scratchId3Data.readLong() & 0x1FFFFFFFFL;
         }
       }
     }
@@ -324,77 +479,41 @@ import java.util.concurrent.atomic.AtomicInteger;
 
   
 
+  private static byte[] getEncryptionIvArray(String ivString) {
+    String trimmedIv;
+    if (Util.toLowerInvariant(ivString).startsWith("0x")) {
+      trimmedIv = ivString.substring(2);
+    } else {
+      trimmedIv = ivString;
+    }
+
+    byte[] ivData = new BigInteger(trimmedIv,  16).toByteArray();
+    byte[] ivDataWithPadding = new byte[16];
+    int offset = ivData.length > 16 ? ivData.length - 16 : 0;
+    System.arraycopy(
+        ivData,
+        offset,
+        ivDataWithPadding,
+        ivDataWithPadding.length - ivData.length + offset,
+        ivData.length - offset);
+    return ivDataWithPadding;
+  }
+
   
 
 
 
-  private static DataSource buildDataSource(DataSource dataSource, byte[] encryptionKey,
-      byte[] encryptionIv) {
-    if (encryptionKey == null || encryptionIv == null) {
-      return dataSource;
-    }
-    return new Aes128DataSource(dataSource, encryptionKey, encryptionIv);
-  }
 
-  private Extractor createExtractor() {
-    
-    Extractor extractor;
-    boolean usingNewExtractor = true;
-    if (MimeTypes.TEXT_VTT.equals(hlsUrl.format.sampleMimeType)
-        || lastPathSegment.endsWith(WEBVTT_FILE_EXTENSION)
-        || lastPathSegment.endsWith(VTT_FILE_EXTENSION)) {
-      extractor = new WebvttExtractor(trackFormat.language, timestampAdjuster);
-    } else if (!needNewExtractor) {
-      
-      usingNewExtractor = false;
-      extractor = previousExtractor;
-    } else if (lastPathSegment.endsWith(MP4_FILE_EXTENSION)
-        || lastPathSegment.startsWith(M4_FILE_EXTENSION_PREFIX, lastPathSegment.length() - 4)) {
-      extractor = new FragmentedMp4Extractor(0, timestampAdjuster);
-    } else {
-      
-      
-      @DefaultTsPayloadReaderFactory.Flags
-      int esReaderFactoryFlags = DefaultTsPayloadReaderFactory.FLAG_IGNORE_SPLICE_INFO_STREAM;
-      if (!muxedCaptionFormats.isEmpty()) {
-        
-        esReaderFactoryFlags |= DefaultTsPayloadReaderFactory.FLAG_OVERRIDE_CAPTION_DESCRIPTORS;
-      }
-      String codecs = trackFormat.codecs;
-      if (!TextUtils.isEmpty(codecs)) {
-        
-        
-        
-        if (!MimeTypes.AUDIO_AAC.equals(MimeTypes.getAudioMediaMimeType(codecs))) {
-          esReaderFactoryFlags |= DefaultTsPayloadReaderFactory.FLAG_IGNORE_AAC_STREAM;
-        }
-        if (!MimeTypes.VIDEO_H264.equals(MimeTypes.getVideoMediaMimeType(codecs))) {
-          esReaderFactoryFlags |= DefaultTsPayloadReaderFactory.FLAG_IGNORE_H264_STREAM;
-        }
-      }
-      extractor = new TsExtractor(TsExtractor.MODE_HLS, timestampAdjuster,
-          new DefaultTsPayloadReaderFactory(esReaderFactoryFlags, muxedCaptionFormats));
-    }
-    if (usingNewExtractor) {
-      extractor.init(extractorOutput);
-    }
-    return extractor;
-  }
 
-  private Extractor buildPackedAudioExtractor(long startTimeUs) {
-    Extractor extractor;
-    if (lastPathSegment.endsWith(AAC_FILE_EXTENSION)) {
-      extractor = new AdtsExtractor(startTimeUs);
-    } else if (lastPathSegment.endsWith(AC3_FILE_EXTENSION)
-        || lastPathSegment.endsWith(EC3_FILE_EXTENSION)) {
-      extractor = new Ac3Extractor(startTimeUs);
-    } else if (lastPathSegment.endsWith(MP3_FILE_EXTENSION)) {
-      extractor = new Mp3Extractor(0, startTimeUs);
-    } else {
-      throw new IllegalArgumentException("Unkown extension for audio file: " + lastPathSegment);
+  private static DataSource buildDataSource(
+      DataSource dataSource,
+      @Nullable byte[] fullSegmentEncryptionKey,
+      @Nullable byte[] encryptionIv) {
+    if (fullSegmentEncryptionKey != null) {
+      Assertions.checkNotNull(encryptionIv);
+      return new Aes128DataSource(dataSource, fullSegmentEncryptionKey, encryptionIv);
     }
-    extractor.init(extractorOutput);
-    return extractor;
+    return dataSource;
   }
 
 }

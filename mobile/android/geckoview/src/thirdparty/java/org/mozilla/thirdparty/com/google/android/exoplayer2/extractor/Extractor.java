@@ -15,8 +15,12 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor;
 
+import androidx.annotation.IntDef;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import java.io.IOException;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 
 
@@ -40,6 +44,15 @@ public interface Extractor {
 
 
   int RESULT_END_OF_INPUT = C.RESULT_END_OF_INPUT;
+
+  
+
+
+
+  @Documented
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(value = {RESULT_CONTINUE, RESULT_SEEK, RESULT_END_OF_INPUT})
+  @interface ReadResult {}
 
   
 
@@ -82,6 +95,12 @@ public interface Extractor {
 
 
 
+
+
+
+
+
+  @ReadResult
   int read(ExtractorInput input, PositionHolder seekPosition)
       throws IOException, InterruptedException;
 

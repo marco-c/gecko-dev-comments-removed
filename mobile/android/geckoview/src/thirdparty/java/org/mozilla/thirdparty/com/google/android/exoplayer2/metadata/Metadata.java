@@ -17,6 +17,9 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2.metadata;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import androidx.annotation.Nullable;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
 import java.util.Arrays;
 import java.util.List;
 
@@ -26,9 +29,26 @@ import java.util.List;
 public final class Metadata implements Parcelable {
 
   
+  public interface Entry extends Parcelable {
+
+    
 
 
-  public interface Entry extends Parcelable {}
+
+    @Nullable
+    default Format getWrappedMetadataFormat() {
+      return null;
+    }
+
+    
+
+
+
+    @Nullable
+    default byte[] getWrappedMetadataBytes() {
+      return null;
+    }
+  }
 
   private final Entry[] entries;
 
@@ -36,19 +56,15 @@ public final class Metadata implements Parcelable {
 
 
   public Metadata(Entry... entries) {
-    this.entries = entries == null ? new Entry[0] : entries;
+    this.entries = entries;
   }
 
   
 
 
   public Metadata(List<? extends Entry> entries) {
-    if (entries != null) {
-      this.entries = new Entry[entries.size()];
-      entries.toArray(this.entries);
-    } else {
-      this.entries = new Entry[0];
-    }
+    this.entries = new Entry[entries.size()];
+    entries.toArray(this.entries);
   }
 
    Metadata(Parcel in) {
@@ -75,8 +91,36 @@ public final class Metadata implements Parcelable {
     return entries[index];
   }
 
+  
+
+
+
+
+
+
+
+  public Metadata copyWithAppendedEntriesFrom(@Nullable Metadata other) {
+    if (other == null) {
+      return this;
+    }
+    return copyWithAppendedEntries(other.entries);
+  }
+
+  
+
+
+
+
+
+  public Metadata copyWithAppendedEntries(Entry... entriesToAppend) {
+    if (entriesToAppend.length == 0) {
+      return this;
+    }
+    return new Metadata(Util.nullSafeArrayConcatenation(entries, entriesToAppend));
+  }
+
   @Override
-  public boolean equals(Object obj) {
+  public boolean equals(@Nullable Object obj) {
     if (this == obj) {
       return true;
     }
@@ -93,6 +137,13 @@ public final class Metadata implements Parcelable {
   }
 
   @Override
+  public String toString() {
+    return "entries=" + Arrays.toString(entries);
+  }
+
+  
+
+  @Override
   public int describeContents() {
     return 0;
   }
@@ -105,16 +156,16 @@ public final class Metadata implements Parcelable {
     }
   }
 
-  public static final Parcelable.Creator<Metadata> CREATOR = new Parcelable.Creator<Metadata>() {
-    @Override
-    public Metadata createFromParcel(Parcel in) {
-      return new Metadata(in);
-    }
+  public static final Parcelable.Creator<Metadata> CREATOR =
+      new Parcelable.Creator<Metadata>() {
+        @Override
+        public Metadata createFromParcel(Parcel in) {
+          return new Metadata(in);
+        }
 
-    @Override
-    public Metadata[] newArray(int size) {
-      return new Metadata[0];
-    }
-  };
-
+        @Override
+        public Metadata[] newArray(int size) {
+          return new Metadata[size];
+        }
+      };
 }

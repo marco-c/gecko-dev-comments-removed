@@ -18,7 +18,7 @@ package org.mozilla.thirdparty.com.google.android.exoplayer2.extractor;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.Metadata;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.id3.CommentFrame;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.id3.Id3Decoder.FramePredicate;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.id3.InternalFrame;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,19 +27,8 @@ import java.util.regex.Pattern;
 
 public final class GaplessInfoHolder {
 
-  
-
-
-
-
-  public static final FramePredicate GAPLESS_INFO_ID3_FRAME_PREDICATE = new FramePredicate() {
-    @Override
-    public boolean evaluate(int majorVersion, int id0, int id1, int id2, int id3) {
-      return id0 == 'C' && id1 == 'O' && id2 == 'M' && (id3 == 'M' || majorVersion == 2);
-    }
-  };
-
-  private static final String GAPLESS_COMMENT_ID = "iTunSMPB";
+  private static final String GAPLESS_DOMAIN = "com.apple.iTunes";
+  private static final String GAPLESS_DESCRIPTION = "iTunSMPB";
   private static final Pattern GAPLESS_COMMENT_PATTERN =
       Pattern.compile("^ [0-9a-fA-F]{8} ([0-9a-fA-F]{8}) ([0-9a-fA-F]{8})");
 
@@ -91,7 +80,15 @@ public final class GaplessInfoHolder {
       Metadata.Entry entry = metadata.get(i);
       if (entry instanceof CommentFrame) {
         CommentFrame commentFrame = (CommentFrame) entry;
-        if (setFromComment(commentFrame.description, commentFrame.text)) {
+        if (GAPLESS_DESCRIPTION.equals(commentFrame.description)
+            && setFromComment(commentFrame.text)) {
+          return true;
+        }
+      } else if (entry instanceof InternalFrame) {
+        InternalFrame internalFrame = (InternalFrame) entry;
+        if (GAPLESS_DOMAIN.equals(internalFrame.domain)
+            && GAPLESS_DESCRIPTION.equals(internalFrame.description)
+            && setFromComment(internalFrame.text)) {
           return true;
         }
       }
@@ -106,11 +103,7 @@ public final class GaplessInfoHolder {
 
 
 
-
-  private boolean setFromComment(String name, String data) {
-    if (!GAPLESS_COMMENT_ID.equals(name)) {
-      return false;
-    }
+  private boolean setFromComment(String data) {
     Matcher matcher = GAPLESS_COMMENT_PATTERN.matcher(data);
     if (matcher.find()) {
       try {

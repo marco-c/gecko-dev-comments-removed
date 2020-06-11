@@ -15,8 +15,10 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.metadata;
 
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.emsg.EventMessageDecoder;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.icy.IcyDecoder;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.id3.Id3Decoder;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.metadata.scte35.SpliceInfoDecoder;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
@@ -54,30 +56,39 @@ public interface MetadataDecoderFactory {
 
 
 
-  MetadataDecoderFactory DEFAULT = new MetadataDecoderFactory() {
 
-    @Override
-    public boolean supportsFormat(Format format) {
-      String mimeType = format.sampleMimeType;
-      return MimeTypes.APPLICATION_ID3.equals(mimeType)
-          || MimeTypes.APPLICATION_EMSG.equals(mimeType)
-          || MimeTypes.APPLICATION_SCTE35.equals(mimeType);
-    }
 
-    @Override
-    public MetadataDecoder createDecoder(Format format) {
-      switch (format.sampleMimeType) {
-        case MimeTypes.APPLICATION_ID3:
-          return new Id3Decoder();
-        case MimeTypes.APPLICATION_EMSG:
-          return new EventMessageDecoder();
-        case MimeTypes.APPLICATION_SCTE35:
-          return new SpliceInfoDecoder();
-        default:
-          throw new IllegalArgumentException("Attempted to create decoder for unsupported format");
-      }
-    }
+  MetadataDecoderFactory DEFAULT =
+      new MetadataDecoderFactory() {
 
-  };
+        @Override
+        public boolean supportsFormat(Format format) {
+          @Nullable String mimeType = format.sampleMimeType;
+          return MimeTypes.APPLICATION_ID3.equals(mimeType)
+              || MimeTypes.APPLICATION_EMSG.equals(mimeType)
+              || MimeTypes.APPLICATION_SCTE35.equals(mimeType)
+              || MimeTypes.APPLICATION_ICY.equals(mimeType);
+        }
 
+        @Override
+        public MetadataDecoder createDecoder(Format format) {
+          @Nullable String mimeType = format.sampleMimeType;
+          if (mimeType != null) {
+            switch (mimeType) {
+              case MimeTypes.APPLICATION_ID3:
+                return new Id3Decoder();
+              case MimeTypes.APPLICATION_EMSG:
+                return new EventMessageDecoder();
+              case MimeTypes.APPLICATION_SCTE35:
+                return new SpliceInfoDecoder();
+              case MimeTypes.APPLICATION_ICY:
+                return new IcyDecoder();
+              default:
+                break;
+            }
+          }
+          throw new IllegalArgumentException(
+              "Attempted to create decoder for unsupported MIME type: " + mimeType);
+        }
+      };
 }

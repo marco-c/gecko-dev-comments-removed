@@ -15,30 +15,86 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source;
 
+import androidx.annotation.IntDef;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.ExoPlayer;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Timeline;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.Allocator;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.TransferListener;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
 import java.io.IOException;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 
 
 
 
 
+public final class ClippingMediaSource extends CompositeMediaSource<Void> {
 
-public final class ClippingMediaSource implements MediaSource, MediaSource.Listener {
+  
+  public static final class IllegalClippingException extends IOException {
+
+    
+
+
+
+    @Documented
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({REASON_INVALID_PERIOD_COUNT, REASON_NOT_SEEKABLE_TO_START, REASON_START_EXCEEDS_END})
+    public @interface Reason {}
+    
+    public static final int REASON_INVALID_PERIOD_COUNT = 0;
+    
+    public static final int REASON_NOT_SEEKABLE_TO_START = 1;
+    
+    public static final int REASON_START_EXCEEDS_END = 2;
+
+    
+    public final @Reason int reason;
+
+    
+
+
+    public IllegalClippingException(@Reason int reason) {
+      super("Illegal clipping: " + getReasonDescription(reason));
+      this.reason = reason;
+    }
+
+    private static String getReasonDescription(@Reason int reason) {
+      switch (reason) {
+        case REASON_INVALID_PERIOD_COUNT:
+          return "invalid period count";
+        case REASON_NOT_SEEKABLE_TO_START:
+          return "not seekable to start";
+        case REASON_START_EXCEEDS_END:
+          return "start exceeds end";
+        default:
+          return "unknown";
+      }
+    }
+  }
 
   private final MediaSource mediaSource;
   private final long startUs;
   private final long endUs;
+  private final boolean enableInitialDiscontinuity;
+  private final boolean allowDynamicClippingUpdates;
+  private final boolean relativeToDefaultPosition;
   private final ArrayList<ClippingMediaPeriod> mediaPeriods;
+  private final Timeline.Window window;
 
-  private MediaSource.Listener sourceListener;
-  private ClippingTimeline clippingTimeline;
+  @Nullable private ClippingTimeline clippingTimeline;
+  @Nullable private IllegalClippingException clippingError;
+  private long periodStartUs;
+  private long periodEndUs;
 
   
+
+
+
 
 
 
@@ -49,30 +105,114 @@ public final class ClippingMediaSource implements MediaSource, MediaSource.Liste
 
 
   public ClippingMediaSource(MediaSource mediaSource, long startPositionUs, long endPositionUs) {
+    this(
+        mediaSource,
+        startPositionUs,
+        endPositionUs,
+         true,
+         false,
+         false);
+  }
+
+  
+
+
+
+
+
+
+
+
+  public ClippingMediaSource(MediaSource mediaSource, long durationUs) {
+    this(
+        mediaSource,
+         0,
+         durationUs,
+         true,
+         false,
+         true);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  public ClippingMediaSource(
+      MediaSource mediaSource,
+      long startPositionUs,
+      long endPositionUs,
+      boolean enableInitialDiscontinuity,
+      boolean allowDynamicClippingUpdates,
+      boolean relativeToDefaultPosition) {
     Assertions.checkArgument(startPositionUs >= 0);
     this.mediaSource = Assertions.checkNotNull(mediaSource);
     startUs = startPositionUs;
     endUs = endPositionUs;
+    this.enableInitialDiscontinuity = enableInitialDiscontinuity;
+    this.allowDynamicClippingUpdates = allowDynamicClippingUpdates;
+    this.relativeToDefaultPosition = relativeToDefaultPosition;
     mediaPeriods = new ArrayList<>();
+    window = new Timeline.Window();
   }
 
   @Override
-  public void prepareSource(ExoPlayer player, boolean isTopLevelSource, Listener listener) {
-    this.sourceListener = listener;
-    mediaSource.prepareSource(player, false, this);
+  @Nullable
+  public Object getTag() {
+    return mediaSource.getTag();
+  }
+
+  @Override
+  protected void prepareSourceInternal(@Nullable TransferListener mediaTransferListener) {
+    super.prepareSourceInternal(mediaTransferListener);
+    prepareChildSource( null, mediaSource);
   }
 
   @Override
   public void maybeThrowSourceInfoRefreshError() throws IOException {
-    mediaSource.maybeThrowSourceInfoRefreshError();
+    if (clippingError != null) {
+      throw clippingError;
+    }
+    super.maybeThrowSourceInfoRefreshError();
   }
 
   @Override
-  public MediaPeriod createPeriod(int index, Allocator allocator, long positionUs) {
-    ClippingMediaPeriod mediaPeriod = new ClippingMediaPeriod(
-        mediaSource.createPeriod(index, allocator, startUs + positionUs));
+  public MediaPeriod createPeriod(MediaPeriodId id, Allocator allocator, long startPositionUs) {
+    ClippingMediaPeriod mediaPeriod =
+        new ClippingMediaPeriod(
+            mediaSource.createPeriod(id, allocator, startPositionUs),
+            enableInitialDiscontinuity,
+            periodStartUs,
+            periodEndUs);
     mediaPeriods.add(mediaPeriod);
-    mediaPeriod.setClipping(clippingTimeline.startUs, clippingTimeline.endUs);
     return mediaPeriod;
   }
 
@@ -80,36 +220,87 @@ public final class ClippingMediaSource implements MediaSource, MediaSource.Liste
   public void releasePeriod(MediaPeriod mediaPeriod) {
     Assertions.checkState(mediaPeriods.remove(mediaPeriod));
     mediaSource.releasePeriod(((ClippingMediaPeriod) mediaPeriod).mediaPeriod);
-  }
-
-  @Override
-  public void releaseSource() {
-    mediaSource.releaseSource();
-  }
-
-  
-
-  @Override
-  public void onSourceInfoRefreshed(Timeline timeline, Object manifest) {
-    clippingTimeline = new ClippingTimeline(timeline, startUs, endUs);
-    sourceListener.onSourceInfoRefreshed(clippingTimeline, manifest);
-    long startUs = clippingTimeline.startUs;
-    long endUs = clippingTimeline.endUs == C.TIME_UNSET ? C.TIME_END_OF_SOURCE
-        : clippingTimeline.endUs;
-    int count = mediaPeriods.size();
-    for (int i = 0; i < count; i++) {
-      mediaPeriods.get(i).setClipping(startUs, endUs);
+    if (mediaPeriods.isEmpty() && !allowDynamicClippingUpdates) {
+      refreshClippedTimeline(Assertions.checkNotNull(clippingTimeline).timeline);
     }
   }
 
+  @Override
+  protected void releaseSourceInternal() {
+    super.releaseSourceInternal();
+    clippingError = null;
+    clippingTimeline = null;
+  }
+
+  @Override
+  protected void onChildSourceInfoRefreshed(Void id, MediaSource mediaSource, Timeline timeline) {
+    if (clippingError != null) {
+      return;
+    }
+    refreshClippedTimeline(timeline);
+  }
+
+  private void refreshClippedTimeline(Timeline timeline) {
+    long windowStartUs;
+    long windowEndUs;
+    timeline.getWindow( 0, window);
+    long windowPositionInPeriodUs = window.getPositionInFirstPeriodUs();
+    if (clippingTimeline == null || mediaPeriods.isEmpty() || allowDynamicClippingUpdates) {
+      windowStartUs = startUs;
+      windowEndUs = endUs;
+      if (relativeToDefaultPosition) {
+        long windowDefaultPositionUs = window.getDefaultPositionUs();
+        windowStartUs += windowDefaultPositionUs;
+        windowEndUs += windowDefaultPositionUs;
+      }
+      periodStartUs = windowPositionInPeriodUs + windowStartUs;
+      periodEndUs =
+          endUs == C.TIME_END_OF_SOURCE
+              ? C.TIME_END_OF_SOURCE
+              : windowPositionInPeriodUs + windowEndUs;
+      int count = mediaPeriods.size();
+      for (int i = 0; i < count; i++) {
+        mediaPeriods.get(i).updateClipping(periodStartUs, periodEndUs);
+      }
+    } else {
+      
+      windowStartUs = periodStartUs - windowPositionInPeriodUs;
+      windowEndUs =
+          endUs == C.TIME_END_OF_SOURCE
+              ? C.TIME_END_OF_SOURCE
+              : periodEndUs - windowPositionInPeriodUs;
+    }
+    try {
+      clippingTimeline = new ClippingTimeline(timeline, windowStartUs, windowEndUs);
+    } catch (IllegalClippingException e) {
+      clippingError = e;
+      return;
+    }
+    refreshSourceInfo(clippingTimeline);
+  }
+
+  @Override
+  protected long getMediaTimeForChildMediaTime(Void id, long mediaTimeMs) {
+    if (mediaTimeMs == C.TIME_UNSET) {
+      return C.TIME_UNSET;
+    }
+    long startMs = C.usToMs(startUs);
+    long clippedTimeMs = Math.max(0, mediaTimeMs - startMs);
+    if (endUs != C.TIME_END_OF_SOURCE) {
+      clippedTimeMs = Math.min(C.usToMs(endUs) - startMs, clippedTimeMs);
+    }
+    return clippedTimeMs;
+  }
+
   
 
 
-  private static final class ClippingTimeline extends Timeline {
+  private static final class ClippingTimeline extends ForwardingTimeline {
 
-    private final Timeline timeline;
     private final long startUs;
     private final long endUs;
+    private final long durationUs;
+    private final boolean isDynamic;
 
     
 
@@ -119,34 +310,42 @@ public final class ClippingMediaSource implements MediaSource, MediaSource.Liste
 
 
 
-    public ClippingTimeline(Timeline timeline, long startUs, long endUs) {
-      Assertions.checkArgument(timeline.getWindowCount() == 1);
-      Assertions.checkArgument(timeline.getPeriodCount() == 1);
-      Window window = timeline.getWindow(0, new Window(), false);
-      Assertions.checkArgument(!window.isDynamic);
-      long resolvedEndUs = endUs == C.TIME_END_OF_SOURCE ? window.durationUs : endUs;
-      if (window.durationUs != C.TIME_UNSET) {
-        Assertions.checkArgument(startUs == 0 || window.isSeekable);
-        Assertions.checkArgument(resolvedEndUs <= window.durationUs);
-        Assertions.checkArgument(startUs <= resolvedEndUs);
+
+    public ClippingTimeline(Timeline timeline, long startUs, long endUs)
+        throws IllegalClippingException {
+      super(timeline);
+      if (timeline.getPeriodCount() != 1) {
+        throw new IllegalClippingException(IllegalClippingException.REASON_INVALID_PERIOD_COUNT);
       }
-      Period period = timeline.getPeriod(0, new Period());
-      Assertions.checkArgument(period.getPositionInWindowUs() == 0);
-      this.timeline = timeline;
+      Window window = timeline.getWindow(0, new Window());
+      startUs = Math.max(0, startUs);
+      long resolvedEndUs = endUs == C.TIME_END_OF_SOURCE ? window.durationUs : Math.max(0, endUs);
+      if (window.durationUs != C.TIME_UNSET) {
+        if (resolvedEndUs > window.durationUs) {
+          resolvedEndUs = window.durationUs;
+        }
+        if (startUs != 0 && !window.isSeekable) {
+          throw new IllegalClippingException(IllegalClippingException.REASON_NOT_SEEKABLE_TO_START);
+        }
+        if (startUs > resolvedEndUs) {
+          throw new IllegalClippingException(IllegalClippingException.REASON_START_EXCEEDS_END);
+        }
+      }
       this.startUs = startUs;
       this.endUs = resolvedEndUs;
+      durationUs = resolvedEndUs == C.TIME_UNSET ? C.TIME_UNSET : (resolvedEndUs - startUs);
+      isDynamic =
+          window.isDynamic
+              && (resolvedEndUs == C.TIME_UNSET
+                  || (window.durationUs != C.TIME_UNSET && resolvedEndUs == window.durationUs));
     }
 
     @Override
-    public int getWindowCount() {
-      return 1;
-    }
-
-    @Override
-    public Window getWindow(int windowIndex, Window window, boolean setIds,
-        long defaultPositionProjectionUs) {
-      window = timeline.getWindow(0, window, setIds, defaultPositionProjectionUs);
-      window.durationUs = endUs != C.TIME_UNSET ? endUs - startUs : C.TIME_UNSET;
+    public Window getWindow(int windowIndex, Window window, long defaultPositionProjectionUs) {
+      timeline.getWindow( 0, window,  0);
+      window.positionInFirstPeriodUs += startUs;
+      window.durationUs = durationUs;
+      window.isDynamic = isDynamic;
       if (window.defaultPositionUs != C.TIME_UNSET) {
         window.defaultPositionUs = Math.max(window.defaultPositionUs, startUs);
         window.defaultPositionUs = endUs == C.TIME_UNSET ? window.defaultPositionUs
@@ -164,22 +363,13 @@ public final class ClippingMediaSource implements MediaSource, MediaSource.Liste
     }
 
     @Override
-    public int getPeriodCount() {
-      return 1;
-    }
-
-    @Override
     public Period getPeriod(int periodIndex, Period period, boolean setIds) {
-      period = timeline.getPeriod(0, period, setIds);
-      period.durationUs = endUs != C.TIME_UNSET ? endUs - startUs : C.TIME_UNSET;
-      return period;
+      timeline.getPeriod( 0, period, setIds);
+      long positionInClippedWindowUs = period.getPositionInWindowUs() - startUs;
+      long periodDurationUs =
+          durationUs == C.TIME_UNSET ? C.TIME_UNSET : durationUs - positionInClippedWindowUs;
+      return period.set(
+          period.id, period.uid,  0, periodDurationUs, positionInClippedWindowUs);
     }
-
-    @Override
-    public int getIndexOfPeriod(Object uid) {
-      return timeline.getIndexOfPeriod(uid);
-    }
-
   }
-
 }

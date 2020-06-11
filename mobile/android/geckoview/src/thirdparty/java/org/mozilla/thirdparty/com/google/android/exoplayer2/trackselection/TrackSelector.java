@@ -15,9 +15,70 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.trackselection;
 
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.ExoPlaybackException;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.ExoPlayer;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.Renderer;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.RendererCapabilities;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.RendererConfiguration;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.Timeline;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.source.MediaSource.MediaPeriodId;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.source.TrackGroupArray;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.BandwidthMeter;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 public abstract class TrackSelector {
@@ -30,19 +91,24 @@ public abstract class TrackSelector {
     
 
 
+
     void onTrackSelectionsInvalidated();
 
   }
 
-  private InvalidationListener listener;
+  @Nullable private InvalidationListener listener;
+  @Nullable private BandwidthMeter bandwidthMeter;
 
   
 
 
 
 
-  public final void init(InvalidationListener listener) {
+
+
+  public final void init(InvalidationListener listener, BandwidthMeter bandwidthMeter) {
     this.listener = listener;
+    this.bandwidthMeter = bandwidthMeter;
   }
 
   
@@ -54,8 +120,14 @@ public abstract class TrackSelector {
 
 
 
-  public abstract TrackSelectorResult selectTracks(RendererCapabilities[] rendererCapabilities,
-      TrackGroupArray trackGroups) throws ExoPlaybackException;
+
+
+  public abstract TrackSelectorResult selectTracks(
+      RendererCapabilities[] rendererCapabilities,
+      TrackGroupArray trackGroups,
+      MediaPeriodId periodId,
+      Timeline timeline)
+      throws ExoPlaybackException;
 
   
 
@@ -68,10 +140,18 @@ public abstract class TrackSelector {
   
 
 
+
   protected final void invalidate() {
     if (listener != null) {
       listener.onTrackSelectionsInvalidated();
     }
   }
 
+  
+
+
+
+  protected final BandwidthMeter getBandwidthMeter() {
+    return Assertions.checkNotNull(bandwidthMeter);
+  }
 }

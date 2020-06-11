@@ -15,7 +15,8 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.upstream.cache;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
 import java.io.File;
 
@@ -41,15 +42,12 @@ public class CacheSpan implements Comparable<CacheSpan> {
 
   public final boolean isCached;
   
+  @Nullable public final File file;
+  
+  public final long lastTouchTimestamp;
 
-
-  public final File file;
   
 
-
-  public final long lastAccessTimestamp;
-
-  
 
 
 
@@ -72,13 +70,14 @@ public class CacheSpan implements Comparable<CacheSpan> {
 
 
 
-  public CacheSpan(String key, long position, long length, long lastAccessTimestamp, File file) {
+  public CacheSpan(
+      String key, long position, long length, long lastTouchTimestamp, @Nullable File file) {
     this.key = key;
     this.position = position;
     this.length = length;
     this.isCached = file != null;
     this.file = file;
-    this.lastAccessTimestamp = lastAccessTimestamp;
+    this.lastTouchTimestamp = lastTouchTimestamp;
   }
 
   

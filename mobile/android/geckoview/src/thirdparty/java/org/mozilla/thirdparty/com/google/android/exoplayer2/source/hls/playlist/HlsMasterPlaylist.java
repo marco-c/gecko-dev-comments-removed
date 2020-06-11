@@ -15,59 +15,316 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.source.hls.playlist;
 
+import android.net.Uri;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.drm.DrmInitData;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.offline.StreamKey;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.MimeTypes;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-
+import java.util.Map;
 
 
 public final class HlsMasterPlaylist extends HlsPlaylist {
 
   
+  public static final HlsMasterPlaylist EMPTY =
+      new HlsMasterPlaylist(
+           "",
+           Collections.emptyList(),
+           Collections.emptyList(),
+           Collections.emptyList(),
+           Collections.emptyList(),
+           Collections.emptyList(),
+           Collections.emptyList(),
+           null,
+           Collections.emptyList(),
+           false,
+           Collections.emptyMap(),
+           Collections.emptyList());
 
+  
+  public static final int GROUP_INDEX_VARIANT = 0;
+  public static final int GROUP_INDEX_AUDIO = 1;
+  public static final int GROUP_INDEX_SUBTITLE = 2;
 
-  public static final class HlsUrl {
+  
+  public static final class Variant {
 
-    public final String url;
+    
+    public final Uri url;
+
+    
     public final Format format;
 
-    public static HlsUrl createMediaPlaylistHlsUrl(String baseUri) {
-      Format format = Format.createContainerFormat("0", MimeTypes.APPLICATION_M3U8, null, null,
-          Format.NO_VALUE, 0, null);
-      return new HlsUrl(baseUri, format);
-    }
+    
+    @Nullable public final String videoGroupId;
 
-    public HlsUrl(String url, Format format) {
+    
+    @Nullable public final String audioGroupId;
+
+    
+    @Nullable public final String subtitleGroupId;
+
+    
+    @Nullable public final String captionGroupId;
+
+    
+
+
+
+
+
+
+
+    public Variant(
+        Uri url,
+        Format format,
+        @Nullable String videoGroupId,
+        @Nullable String audioGroupId,
+        @Nullable String subtitleGroupId,
+        @Nullable String captionGroupId) {
       this.url = url;
       this.format = format;
+      this.videoGroupId = videoGroupId;
+      this.audioGroupId = audioGroupId;
+      this.subtitleGroupId = subtitleGroupId;
+      this.captionGroupId = captionGroupId;
+    }
+
+    
+
+
+
+
+
+    public static Variant createMediaPlaylistVariantUrl(Uri url) {
+      Format format =
+          Format.createContainerFormat(
+              "0",
+               null,
+              MimeTypes.APPLICATION_M3U8,
+               null,
+               null,
+               Format.NO_VALUE,
+               0,
+               0,
+               null);
+      return new Variant(
+          url,
+          format,
+           null,
+           null,
+           null,
+           null);
+    }
+
+    
+    public Variant copyWithFormat(Format format) {
+      return new Variant(url, format, videoGroupId, audioGroupId, subtitleGroupId, captionGroupId);
+    }
+  }
+
+  
+  public static final class Rendition {
+
+    
+    @Nullable public final Uri url;
+
+    
+    public final Format format;
+
+    
+    public final String groupId;
+
+    
+    public final String name;
+
+    
+
+
+
+
+
+    public Rendition(@Nullable Uri url, Format format, String groupId, String name) {
+      this.url = url;
+      this.format = format;
+      this.groupId = groupId;
+      this.name = name;
     }
 
   }
 
-  public final List<HlsUrl> variants;
-  public final List<HlsUrl> audios;
-  public final List<HlsUrl> subtitles;
+  
+  public final List<Uri> mediaPlaylistUrls;
+  
+  public final List<Variant> variants;
+  
+  public final List<Rendition> videos;
+  
+  public final List<Rendition> audios;
+  
+  public final List<Rendition> subtitles;
+  
+  public final List<Rendition> closedCaptions;
 
-  public final Format muxedAudioFormat;
-  public final List<Format> muxedCaptionFormats;
+  
 
-  public HlsMasterPlaylist(String baseUri, List<HlsUrl> variants, List<HlsUrl> audios,
-      List<HlsUrl> subtitles, Format muxedAudioFormat, List<Format> muxedCaptionFormats) {
-    super(baseUri);
+
+
+  @Nullable public final Format muxedAudioFormat;
+  
+
+
+
+
+  @Nullable public final List<Format> muxedCaptionFormats;
+  
+  public final Map<String, String> variableDefinitions;
+  
+  public final List<DrmInitData> sessionKeyDrmInitData;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  public HlsMasterPlaylist(
+      String baseUri,
+      List<String> tags,
+      List<Variant> variants,
+      List<Rendition> videos,
+      List<Rendition> audios,
+      List<Rendition> subtitles,
+      List<Rendition> closedCaptions,
+      @Nullable Format muxedAudioFormat,
+      @Nullable List<Format> muxedCaptionFormats,
+      boolean hasIndependentSegments,
+      Map<String, String> variableDefinitions,
+      List<DrmInitData> sessionKeyDrmInitData) {
+    super(baseUri, tags, hasIndependentSegments);
+    this.mediaPlaylistUrls =
+        Collections.unmodifiableList(
+            getMediaPlaylistUrls(variants, videos, audios, subtitles, closedCaptions));
     this.variants = Collections.unmodifiableList(variants);
+    this.videos = Collections.unmodifiableList(videos);
     this.audios = Collections.unmodifiableList(audios);
     this.subtitles = Collections.unmodifiableList(subtitles);
+    this.closedCaptions = Collections.unmodifiableList(closedCaptions);
     this.muxedAudioFormat = muxedAudioFormat;
-    this.muxedCaptionFormats = Collections.unmodifiableList(muxedCaptionFormats);
+    this.muxedCaptionFormats = muxedCaptionFormats != null
+        ? Collections.unmodifiableList(muxedCaptionFormats) : null;
+    this.variableDefinitions = Collections.unmodifiableMap(variableDefinitions);
+    this.sessionKeyDrmInitData = Collections.unmodifiableList(sessionKeyDrmInitData);
   }
 
-  public static HlsMasterPlaylist createSingleVariantMasterPlaylist(String variantUri) {
-    List<HlsUrl> variant = Collections.singletonList(HlsUrl.createMediaPlaylistHlsUrl(variantUri));
-    List<HlsUrl> emptyList = Collections.emptyList();
-    return new HlsMasterPlaylist(null, variant, emptyList, emptyList, null,
-        Collections.<Format>emptyList());
+  @Override
+  public HlsMasterPlaylist copy(List<StreamKey> streamKeys) {
+    return new HlsMasterPlaylist(
+        baseUri,
+        tags,
+        copyStreams(variants, GROUP_INDEX_VARIANT, streamKeys),
+        
+         Collections.emptyList(),
+        copyStreams(audios, GROUP_INDEX_AUDIO, streamKeys),
+        copyStreams(subtitles, GROUP_INDEX_SUBTITLE, streamKeys),
+        
+         Collections.emptyList(),
+        muxedAudioFormat,
+        muxedCaptionFormats,
+        hasIndependentSegments,
+        variableDefinitions,
+        sessionKeyDrmInitData);
+  }
+
+  
+
+
+
+
+
+  public static HlsMasterPlaylist createSingleVariantMasterPlaylist(String variantUrl) {
+    List<Variant> variant =
+        Collections.singletonList(Variant.createMediaPlaylistVariantUrl(Uri.parse(variantUrl)));
+    return new HlsMasterPlaylist(
+         "",
+         Collections.emptyList(),
+        variant,
+         Collections.emptyList(),
+         Collections.emptyList(),
+         Collections.emptyList(),
+         Collections.emptyList(),
+         null,
+         null,
+         false,
+         Collections.emptyMap(),
+         Collections.emptyList());
+  }
+
+  private static List<Uri> getMediaPlaylistUrls(
+      List<Variant> variants,
+      List<Rendition> videos,
+      List<Rendition> audios,
+      List<Rendition> subtitles,
+      List<Rendition> closedCaptions) {
+    ArrayList<Uri> mediaPlaylistUrls = new ArrayList<>();
+    for (int i = 0; i < variants.size(); i++) {
+      Uri uri = variants.get(i).url;
+      if (!mediaPlaylistUrls.contains(uri)) {
+        mediaPlaylistUrls.add(uri);
+      }
+    }
+    addMediaPlaylistUrls(videos, mediaPlaylistUrls);
+    addMediaPlaylistUrls(audios, mediaPlaylistUrls);
+    addMediaPlaylistUrls(subtitles, mediaPlaylistUrls);
+    addMediaPlaylistUrls(closedCaptions, mediaPlaylistUrls);
+    return mediaPlaylistUrls;
+  }
+
+  private static void addMediaPlaylistUrls(List<Rendition> renditions, List<Uri> out) {
+    for (int i = 0; i < renditions.size(); i++) {
+      Uri uri = renditions.get(i).url;
+      if (uri != null && !out.contains(uri)) {
+        out.add(uri);
+      }
+    }
+  }
+
+  private static <T> List<T> copyStreams(
+      List<T> streams, int groupIndex, List<StreamKey> streamKeys) {
+    List<T> copiedStreams = new ArrayList<>(streamKeys.size());
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for (int i = 0; i < streams.size(); i++) {
+      T stream = streams.get(i);
+      for (int j = 0; j < streamKeys.size(); j++) {
+        StreamKey streamKey = streamKeys.get(j);
+        if (streamKey.groupIndex == groupIndex && streamKey.trackIndex == i) {
+          copiedStreams.add(stream);
+          break;
+        }
+      }
+    }
+    return copiedStreams;
   }
 
 }

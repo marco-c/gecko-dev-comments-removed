@@ -15,36 +15,29 @@
 
 package org.mozilla.thirdparty.com.google.android.exoplayer2.metadata;
 
+import static org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util.castNonNull;
+
 import android.os.Handler;
 import android.os.Handler.Callback;
 import android.os.Looper;
 import android.os.Message;
+import androidx.annotation.Nullable;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.BaseRenderer;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.C;
-import org.mozilla.thirdparty.com.google.android.exoplayer2.ExoPlaybackException;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.Format;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.FormatHolder;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.RendererCapabilities;
 import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Assertions;
+import org.mozilla.thirdparty.com.google.android.exoplayer2.util.Util;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import org.checkerframework.checker.nullness.compatqual.NullableType;
 
 
 
 
 public final class MetadataRenderer extends BaseRenderer implements Callback {
-
-  
-
-
-  public interface Output {
-
-    
-
-
-
-
-    void onMetadata(Metadata metadata);
-
-  }
 
   private static final int MSG_INVOKE_RENDERER = 0;
   
@@ -53,17 +46,17 @@ public final class MetadataRenderer extends BaseRenderer implements Callback {
   private static final int MAX_PENDING_METADATA_COUNT = 5;
 
   private final MetadataDecoderFactory decoderFactory;
-  private final Output output;
-  private final Handler outputHandler;
-  private final FormatHolder formatHolder;
+  private final MetadataOutput output;
+  @Nullable private final Handler outputHandler;
   private final MetadataInputBuffer buffer;
-  private final Metadata[] pendingMetadata;
+  private final @NullableType Metadata[] pendingMetadata;
   private final long[] pendingMetadataTimestamps;
 
   private int pendingMetadataIndex;
   private int pendingMetadataCount;
-  private MetadataDecoder decoder;
+  @Nullable private MetadataDecoder decoder;
   private boolean inputStreamEnded;
+  private long subsampleOffsetUs;
 
   
 
@@ -73,7 +66,7 @@ public final class MetadataRenderer extends BaseRenderer implements Callback {
 
 
 
-  public MetadataRenderer(Output output, Looper outputLooper) {
+  public MetadataRenderer(MetadataOutput output, @Nullable Looper outputLooper) {
     this(output, outputLooper, MetadataDecoderFactory.DEFAULT);
   }
 
@@ -86,25 +79,31 @@ public final class MetadataRenderer extends BaseRenderer implements Callback {
 
 
 
-  public MetadataRenderer(Output output, Looper outputLooper,
-      MetadataDecoderFactory decoderFactory) {
+  public MetadataRenderer(
+      MetadataOutput output, @Nullable Looper outputLooper, MetadataDecoderFactory decoderFactory) {
     super(C.TRACK_TYPE_METADATA);
     this.output = Assertions.checkNotNull(output);
-    this.outputHandler = outputLooper == null ? null : new Handler(outputLooper, this);
+    this.outputHandler =
+        outputLooper == null ? null : Util.createHandler(outputLooper,  this);
     this.decoderFactory = Assertions.checkNotNull(decoderFactory);
-    formatHolder = new FormatHolder();
     buffer = new MetadataInputBuffer();
     pendingMetadata = new Metadata[MAX_PENDING_METADATA_COUNT];
     pendingMetadataTimestamps = new long[MAX_PENDING_METADATA_COUNT];
   }
 
   @Override
+  @Capabilities
   public int supportsFormat(Format format) {
-    return decoderFactory.supportsFormat(format) ? FORMAT_HANDLED : FORMAT_UNSUPPORTED_TYPE;
+    if (decoderFactory.supportsFormat(format)) {
+      return RendererCapabilities.create(
+          supportsFormatDrm(null, format.drmInitData) ? FORMAT_HANDLED : FORMAT_UNSUPPORTED_DRM);
+    } else {
+      return RendererCapabilities.create(FORMAT_UNSUPPORTED_TYPE);
+    }
   }
 
   @Override
-  protected void onStreamChanged(Format[] formats) throws ExoPlaybackException {
+  protected void onStreamChanged(Format[] formats, long offsetUs) {
     decoder = decoderFactory.createDecoder(formats[0]);
   }
 
@@ -115,9 +114,10 @@ public final class MetadataRenderer extends BaseRenderer implements Callback {
   }
 
   @Override
-  public void render(long positionUs, long elapsedRealtimeUs) throws ExoPlaybackException {
+  public void render(long positionUs, long elapsedRealtimeUs) {
     if (!inputStreamEnded && pendingMetadataCount < MAX_PENDING_METADATA_COUNT) {
       buffer.clear();
+      FormatHolder formatHolder = getFormatHolder();
       int result = readSource(formatHolder, buffer, false);
       if (result == C.RESULT_BUFFER_READ) {
         if (buffer.isEndOfStream()) {
@@ -127,25 +127,63 @@ public final class MetadataRenderer extends BaseRenderer implements Callback {
           
           
         } else {
-          buffer.subsampleOffsetUs = formatHolder.format.subsampleOffsetUs;
+          buffer.subsampleOffsetUs = subsampleOffsetUs;
           buffer.flip();
-          try {
-            int index = (pendingMetadataIndex + pendingMetadataCount) % MAX_PENDING_METADATA_COUNT;
-            pendingMetadata[index] = decoder.decode(buffer);
-            pendingMetadataTimestamps[index] = buffer.timeUs;
-            pendingMetadataCount++;
-          } catch (MetadataDecoderException e) {
-            throw ExoPlaybackException.createForRenderer(e, getIndex());
+          @Nullable Metadata metadata = castNonNull(decoder).decode(buffer);
+          if (metadata != null) {
+            List<Metadata.Entry> entries = new ArrayList<>(metadata.length());
+            decodeWrappedMetadata(metadata, entries);
+            if (!entries.isEmpty()) {
+              Metadata expandedMetadata = new Metadata(entries);
+              int index =
+                  (pendingMetadataIndex + pendingMetadataCount) % MAX_PENDING_METADATA_COUNT;
+              pendingMetadata[index] = expandedMetadata;
+              pendingMetadataTimestamps[index] = buffer.timeUs;
+              pendingMetadataCount++;
+            }
           }
         }
+      } else if (result == C.RESULT_FORMAT_READ) {
+        subsampleOffsetUs = Assertions.checkNotNull(formatHolder.format).subsampleOffsetUs;
       }
     }
 
     if (pendingMetadataCount > 0 && pendingMetadataTimestamps[pendingMetadataIndex] <= positionUs) {
-      invokeRenderer(pendingMetadata[pendingMetadataIndex]);
+      Metadata metadata = castNonNull(pendingMetadata[pendingMetadataIndex]);
+      invokeRenderer(metadata);
       pendingMetadata[pendingMetadataIndex] = null;
       pendingMetadataIndex = (pendingMetadataIndex + 1) % MAX_PENDING_METADATA_COUNT;
       pendingMetadataCount--;
+    }
+  }
+
+  
+
+
+
+
+  private void decodeWrappedMetadata(Metadata metadata, List<Metadata.Entry> decodedEntries) {
+    for (int i = 0; i < metadata.length(); i++) {
+      @Nullable Format wrappedMetadataFormat = metadata.get(i).getWrappedMetadataFormat();
+      if (wrappedMetadataFormat != null && decoderFactory.supportsFormat(wrappedMetadataFormat)) {
+        MetadataDecoder wrappedMetadataDecoder =
+            decoderFactory.createDecoder(wrappedMetadataFormat);
+        
+        byte[] wrappedMetadataBytes =
+            Assertions.checkNotNull(metadata.get(i).getWrappedMetadataBytes());
+        buffer.clear();
+        buffer.ensureSpaceForWrite(wrappedMetadataBytes.length);
+        castNonNull(buffer.data).put(wrappedMetadataBytes);
+        buffer.flip();
+        @Nullable Metadata innerMetadata = wrappedMetadataDecoder.decode(buffer);
+        if (innerMetadata != null) {
+          
+          decodeWrappedMetadata(innerMetadata, decodedEntries);
+        }
+      } else {
+        
+        decodedEntries.add(metadata.get(i));
+      }
     }
   }
 
@@ -153,7 +191,6 @@ public final class MetadataRenderer extends BaseRenderer implements Callback {
   protected void onDisabled() {
     flushPendingMetadata();
     decoder = null;
-    super.onDisabled();
   }
 
   @Override
@@ -180,7 +217,6 @@ public final class MetadataRenderer extends BaseRenderer implements Callback {
     pendingMetadataCount = 0;
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public boolean handleMessage(Message msg) {
     switch (msg.what) {

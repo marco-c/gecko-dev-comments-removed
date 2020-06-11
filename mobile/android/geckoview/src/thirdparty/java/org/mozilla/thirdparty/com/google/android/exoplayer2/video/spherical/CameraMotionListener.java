@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package org.mozilla.thirdparty.com.google.android.exoplayer2.video.spherical;
+
+
+public interface CameraMotionListener {
+
+  
+
+
+
+
+
+
+  void onCameraMotion(long timeUs, float[] rotation);
+
+  
+  void onCameraMotionReset();
+}
