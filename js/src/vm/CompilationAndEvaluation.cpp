@@ -262,6 +262,8 @@ class FunctionCompiler {
 
   JSFunction* finish(HandleObjectVector envChain,
                      const ReadOnlyCompileOptions& optionsArg) {
+    using js::frontend::FunctionSyntaxKind;
+
     if (!funStr_.append(FunctionConstructorFinalBrace)) {
       return nullptr;
     }
@@ -286,16 +288,6 @@ class FunctionCompiler {
 
     cx_->check(enclosingEnv);
 
-    RootedFunction fun(
-        cx_,
-        NewScriptedFunction(cx_, 0, FunctionFlags::INTERPRETED_NORMAL,
-                            nameIsIdentifier_ ? HandleAtom(nameAtom_) : nullptr,
-                             nullptr, gc::AllocKind::FUNCTION,
-                            TenuredObject, enclosingEnv));
-    if (!fun) {
-      return nullptr;
-    }
-
     
     
     MOZ_ASSERT_IF(!IsGlobalLexicalEnvironment(enclosingEnv),
@@ -305,9 +297,12 @@ class FunctionCompiler {
     options.setNonSyntacticScope(
         enclosingScope->hasOnChain(ScopeKind::NonSyntactic));
 
-    if (!js::frontend::CompileStandaloneFunction(
-            cx_, &fun, options, newSrcBuf, mozilla::Some(parameterListEnd_),
-            enclosingScope)) {
+    FunctionSyntaxKind syntaxKind = FunctionSyntaxKind::Statement;
+    RootedFunction fun(
+        cx_, js::frontend::CompileStandaloneFunction(
+                 cx_, options, newSrcBuf, mozilla::Some(parameterListEnd_),
+                 syntaxKind, enclosingScope));
+    if (!fun) {
       return nullptr;
     }
 
@@ -315,6 +310,10 @@ class FunctionCompiler {
     
     if (!nameIsIdentifier_) {
       fun->setAtom(nameAtom_);
+    }
+
+    if (fun->isInterpreted()) {
+      fun->initEnvironment(enclosingEnv);
     }
 
     return fun;
