@@ -75,17 +75,21 @@ const double kVRMaxFrameSubmitDuration = 4000.0f;
 
 static StaticRefPtr<VRManager> sVRManagerSingleton;
 
+static bool ValidVRManagerProcess() {
+  return XRE_IsParentProcess() || XRE_IsGPUProcess();
+}
+
 
 VRManager* VRManager::Get() {
   MOZ_ASSERT(sVRManagerSingleton != nullptr);
-  MOZ_ASSERT(XRE_IsParentProcess() || XRE_IsGPUProcess());
+  MOZ_ASSERT(ValidVRManagerProcess());
 
   return sVRManagerSingleton;
 }
 
 
 VRManager* VRManager::MaybeGet() {
-  MOZ_ASSERT(XRE_IsParentProcess() || XRE_IsGPUProcess());
+  MOZ_ASSERT(ValidVRManagerProcess());
 
   return sVRManagerSingleton;
 }
@@ -98,6 +102,10 @@ uint32_t VRManager::AllocateDisplayID() { return ++sDisplayBase; }
 
 void VRManager::ManagerInit() {
   MOZ_ASSERT(NS_IsMainThread());
+
+  if (!ValidVRManagerProcess()) {
+    return;
+  }
 
   
   
@@ -137,6 +145,7 @@ VRManager::VRManager()
       mLastSensorState{} {
   MOZ_ASSERT(sVRManagerSingleton == nullptr);
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(ValidVRManagerProcess());
 
 #if !defined(MOZ_WIDGET_ANDROID)
   
