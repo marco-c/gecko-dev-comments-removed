@@ -7,7 +7,7 @@
 
 
 idl_test(
-  ['background-sync'],
+  ['BackgroundSync'],
   ['service-workers', 'html', 'dom'],
   idlArray => {
     const isServiceWorker = location.pathname.includes('.serviceworker.');

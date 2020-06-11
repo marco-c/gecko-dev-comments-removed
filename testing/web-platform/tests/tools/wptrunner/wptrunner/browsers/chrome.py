@@ -5,8 +5,7 @@ from ..executors import executor_kwargs as base_executor_kwargs
 from ..executors.executorwebdriver import (WebDriverTestharnessExecutor,  
                                            WebDriverRefTestExecutor,  
                                            WebDriverCrashtestExecutor)  
-from ..executors.executorchrome import (ChromeDriverWdspecExecutor,  
-                                        ChromeDriverPrintRefTestExecutor)  
+from ..executors.executorchrome import ChromeDriverWdspecExecutor  
 
 
 __wptrunner__ = {"product": "chrome",
@@ -14,7 +13,6 @@ __wptrunner__ = {"product": "chrome",
                  "browser": "ChromeBrowser",
                  "executor": {"testharness": "WebDriverTestharnessExecutor",
                               "reftest": "WebDriverRefTestExecutor",
-                              "print-reftest": "ChromeDriverPrintRefTestExecutor",
                               "wdspec": "ChromeDriverWdspecExecutor",
                               "crashtest": "WebDriverCrashtestExecutor"},
                  "browser_kwargs": "browser_kwargs",
@@ -83,9 +81,7 @@ def executor_kwargs(test_type, server_config, cache_manager, run_info_data,
         chrome_options["args"].extend(kwargs["binary_args"])
 
     
-    
-    if ((kwargs["headless"] or test_type == "print-reftest") and
-        "--headless" not in chrome_options["args"]):
+    if kwargs["headless"] and "--headless" not in chrome_options["args"]:
         chrome_options["args"].append("--headless")
 
     executor_kwargs["capabilities"] = capabilities
