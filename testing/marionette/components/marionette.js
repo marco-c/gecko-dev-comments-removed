@@ -278,9 +278,6 @@ const RECOMMENDED_PREFS = new Map([
   ["startup.homepage_welcome_url.additional", ""],
 
   
-  ["toolkit.cosmeticAnimations.enabled", false],
-
-  
   ["toolkit.startup.max_resumed_crashes", -1],
 ]);
 

@@ -666,9 +666,6 @@ class FirefoxLauncher implements ProductLauncher {
       'startup.homepage_welcome_url.additional': '',
 
       
-      'toolkit.cosmeticAnimations.enabled': false,
-
-      
       'toolkit.telemetry.server': `https://${server}/dummy/telemetry/`,
       
       'toolkit.startup.max_resumed_crashes': -1,

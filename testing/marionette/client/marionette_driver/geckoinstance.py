@@ -567,9 +567,6 @@ class DesktopInstance(GeckoInstance):
         "browser.startup.page": 0,
 
         
-        "toolkit.cosmeticAnimations.enabled": False,
-
-        
         "browser.tabs.remote.separatePrivilegedContentProcess": False,
 
         
