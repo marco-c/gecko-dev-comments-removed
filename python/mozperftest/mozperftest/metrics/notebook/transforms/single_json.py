@@ -1,7 +1,7 @@
 
 
 
-from ..utilities import flat
+from mozperftest.metrics.notebook.utilities import flat
 
 
 class SingleJsonRetriever:
