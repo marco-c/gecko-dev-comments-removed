@@ -301,7 +301,6 @@ export function newGeneratedSources(sourceInfo: Array<GeneratedSourceData>) {
     getState,
     client,
   }: ThunkArgs): Promise<Array<Source>> => {
-    
     if (sourceInfo.length == 0) {
       return [];
     }

@@ -17,12 +17,7 @@ import Actions from "../../actions";
 import { createPause, prepareSourcePayload } from "./create";
 import sourceQueue from "../../utils/source-queue";
 import { recordEvent } from "../../utils/telemetry";
-import { prefs, features } from "../../utils/prefs";
-
-const {
-  WorkersListener,
-  
-} = require("devtools/client/shared/workers-listener.js");
+import { prefs } from "../../utils/prefs";
 
 type Dependencies = {
   actions: typeof Actions,
@@ -57,25 +52,13 @@ function attachAllTargets(currentTarget: Target): boolean {
 }
 
 function setupEvents(dependencies: Dependencies): void {
-  const { devToolsClient } = dependencies;
   actions = dependencies.actions;
   sourceQueue.initialize(actions);
-
-  workersListener = new WorkersListener(devToolsClient.mainRoot);
 
   threadFrontListeners = new WeakMap();
 }
 
-function setupEventsTopTarget(targetFront: Target): void {
-  targetFront.on("workerListChanged", threadListChanged);
-
-  if (features.windowlessServiceWorkers || attachAllTargets(targetFront)) {
-    workersListener.addListener(threadListChanged);
-  }
-}
-
 function removeEventsTopTarget(targetFront: Target): void {
-  targetFront.off("workerListChanged", threadListChanged);
   removeThreadEventListeners(targetFront.threadFront);
   workersListener.removeListener();
 }
@@ -84,11 +67,6 @@ async function paused(
   threadFront: ThreadFront,
   packet: PausedPacket
 ): Promise<*> {
-  
-  
-  
-  await actions.ensureHasThread(threadFront.actor);
-
   
   
   
@@ -137,10 +115,6 @@ function newSource(threadFront: ThreadFront, { source }: SourcePacket): void {
   });
 }
 
-function threadListChanged(): void {
-  actions.updateThreads();
-}
-
 const clientEvents = {
   paused,
   resumed,
@@ -150,7 +124,6 @@ const clientEvents = {
 export {
   removeEventsTopTarget,
   setupEvents,
-  setupEventsTopTarget,
   clientEvents,
   addThreadEventListeners,
   attachAllTargets,

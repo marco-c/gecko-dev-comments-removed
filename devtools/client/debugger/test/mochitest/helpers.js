@@ -458,10 +458,11 @@ function assertPausedAtSourceAndLine(dbg, expectedSourceId, expectedLine) {
   );
 }
 
-
-async function getThreads(dbg) {
-  await dbg.actions.updateThreads();
-  return dbg.selectors.getThreads();
+async function waitForThreadCount(dbg, count) {
+  return waitForState(
+    dbg,
+    state => dbg.selectors.getThreads(state).length == count
+  );
 }
 
 async function waitForLoadedScopes(dbg) {

@@ -775,9 +775,11 @@ Toolbox.prototype = {
     
     
     
+    
+    
     if (
       targetFront.isTopLevel ||
-      targetFront.targetType != TargetList.TYPES.FRAME
+      targetFront.targetType == TargetList.TYPES.PROCESS
     ) {
       const threadFront = await this._attachAndResumeThread(targetFront);
       this._startThreadFrontListeners(threadFront);
@@ -3043,6 +3045,7 @@ Toolbox.prototype = {
     if (!panel) {
       return;
     }
+
     await panel.once("reloaded");
     const delay = this.win.performance.now() - start;
 

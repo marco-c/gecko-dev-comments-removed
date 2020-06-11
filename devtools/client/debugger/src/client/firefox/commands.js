@@ -5,8 +5,7 @@
 
 
 import { prepareSourcePayload, createThread, createFrame } from "./create";
-import { updateTargets, attachTarget } from "./targets";
-import { clientEvents } from "./events";
+import { addThreadEventListeners, clientEvents } from "./events";
 
 import Reps from "devtools-reps";
 import type { Node } from "devtools-reps";
@@ -24,6 +23,7 @@ import type {
   SourceActor,
   Range,
   URL,
+  Thread,
 } from "../../types";
 
 import type {
@@ -41,6 +41,9 @@ import type {
   EventListenerCategoryList,
   EventListenerActiveList,
 } from "../../actions/types";
+
+
+const { defaultThreadOptions } = require("devtools/client/shared/thread-utils");
 
 let targets: { [string]: Target };
 let devToolsClient: DevToolsClient;
@@ -458,26 +461,6 @@ function getSourceForActor(actor: ActorId) {
   return sourceActors[actor];
 }
 
-async function fetchThreads() {
-  const options = {
-    breakpoints,
-    eventBreakpoints,
-    observeAsmJS: true,
-  };
-
-  await updateTargets({
-    devToolsClient,
-    targets,
-    options,
-    targetList,
-  });
-
-  
-  return (Object.entries(targets).map: any)(([actor, target]) =>
-    createThread((actor: any), (target: any))
-  );
-}
-
 async function attachThread(targetFront: Target) {
   const options = {
     breakpoints,
@@ -485,10 +468,48 @@ async function attachThread(targetFront: Target) {
     observeAsmJS: true,
   };
 
-  await attachTarget(targetFront, targets, options);
+  await attachTarget(targetFront, options);
   const threadFront: ThreadFront = await targetFront.getFront("thread");
 
   return createThread(threadFront.actorID, targetFront);
+}
+
+export async function attachTarget(targetFront: Target, options: Object) {
+  try {
+    await targetFront.attach();
+
+    const threadActorID = targetFront.targetForm.threadActor;
+    if (targets[threadActorID]) {
+      return;
+    }
+    targets[threadActorID] = targetFront;
+
+    
+    
+    
+    let threadFront = targetFront.threadFront;
+
+    
+    
+    if (!threadFront) {
+      threadFront = await targetFront.attachThread({
+        ...defaultThreadOptions(),
+        ...options,
+      });
+      
+      
+      threadFront.resume();
+    }
+
+    addThreadEventListeners(threadFront);
+  } catch (e) {
+    
+    
+  }
+}
+
+function removeThread(thread: Thread) {
+  delete targets[thread.actor];
 }
 
 function getMainThread() {
@@ -577,8 +598,8 @@ const clientCommands = {
   fetchThreadSources,
   checkIfAlreadyPaused,
   registerSourceActor,
-  fetchThreads,
   attachThread,
+  removeThread,
   getMainThread,
   sendPacket,
   setSkipPausing,
