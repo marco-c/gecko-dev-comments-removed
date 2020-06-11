@@ -4583,7 +4583,7 @@ void nsFlexContainerFrame::CalculatePackingSpace(
 
 ComputedFlexContainerInfo*
 nsFlexContainerFrame::CreateOrClearFlexContainerInfo() {
-  if (!ShouldGenerateComputedInfo()) {
+  if (!HasAnyStateBits(NS_STATE_FLEX_GENERATE_COMPUTED_VALUES)) {
     return nullptr;
   }
 
@@ -4734,7 +4734,7 @@ nsFlexContainerFrame* nsFlexContainerFrame::GetFlexFrameWithComputedInfo(
       AutoWeakFrame weakFrameRef(aFrame);
 
       RefPtr<mozilla::PresShell> presShell = flexFrame->PresShell();
-      flexFrame->SetShouldGenerateComputedInfo(true);
+      flexFrame->AddStateBits(NS_STATE_FLEX_GENERATE_COMPUTED_VALUES);
       presShell->FrameNeedsReflow(flexFrame, IntrinsicDirty::Resize,
                                   NS_FRAME_IS_DIRTY);
       presShell->FlushPendingNotifications(FlushType::Layout);
@@ -4836,9 +4836,9 @@ void nsFlexContainerFrame::DoFlexLayout(
   
   
   if (aContainerInfo) {
-    MOZ_ASSERT(ShouldGenerateComputedInfo(),
+    MOZ_ASSERT(HasAnyStateBits(NS_STATE_FLEX_GENERATE_COMPUTED_VALUES),
                "We should only have the info struct if "
-               "ShouldGenerateComputedInfo() is true!");
+               "NS_STATE_FLEX_GENERATE_COMPUTED_VALUES state bit is set!");
 
     if (!aStruts.IsEmpty()) {
       
