@@ -25,7 +25,6 @@ use crate::shared_lock::StylesheetGuards;
 use crate::sharing::StyleSharingCache;
 use crate::stylist::Stylist;
 use crate::thread_state::{self, ThreadState};
-use crate::timer::Timer;
 use crate::traversal::DomTraversal;
 use crate::traversal_flags::TraversalFlags;
 use app_units::Au;
@@ -158,7 +157,7 @@ pub struct SharedStyleContext<'a> {
 
     
     
-    pub timer: Timer,
+    pub current_time_for_animations: f64,
 
     
     pub traversal_flags: TraversalFlags,
