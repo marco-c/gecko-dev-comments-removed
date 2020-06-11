@@ -2641,6 +2641,9 @@ void nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   nsDisplayListCollection tempLists(aBuilder);
 
   DisplayBorderBackgroundOutline(aBuilder, tempLists);
+  if (GetPrevInFlow()) {
+    DisplayOverflowContainers(aBuilder, tempLists);
+  }
 
   
   
