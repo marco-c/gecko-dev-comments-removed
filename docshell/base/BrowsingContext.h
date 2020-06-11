@@ -400,6 +400,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   bool UseGlobalHistory() const { return GetUseGlobalHistory(); }
 
+  uint64_t BrowserId() const { return GetBrowserId(); }
+
   bool IsLoading();
 
   
@@ -421,9 +423,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   }
 
   void SetAllowContentRetargeting(bool aAllowContentRetargeting);
-
-  
-  uint64_t BrowserId() const { return GetBrowserId(); }
 
   
   

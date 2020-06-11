@@ -50,6 +50,7 @@
 #include "nsGlobalWindowOuter.h"
 #include "nsIObserverService.h"
 #include "nsContentUtils.h"
+#include "nsQueryObject.h"
 #include "nsSandboxFlags.h"
 #include "nsScriptError.h"
 #include "nsThreadUtils.h"
@@ -487,27 +488,24 @@ void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
     Transaction txn;
     txn.SetEmbedderElementType(Some(aEmbedder->LocalName()));
 
-    if (RefPtr<XULFrameElement> xulFrame =
-            XULFrameElement::FromNode(aEmbedder)) {
+    
+    if (RefPtr<nsFrameLoaderOwner> owner = do_QueryObject(aEmbedder);
+        !IsChrome() && owner) {
       uint64_t browserId = GetBrowserId();
-      uint64_t frameBrowserId = xulFrame->BrowserId();
+      uint64_t frameBrowserId = owner->GetBrowserId();
+      MOZ_DIAGNOSTIC_ASSERT(browserId != 0);
 
-      if (browserId != 0 && frameBrowserId == 0) {
+      if (frameBrowserId == 0) {
         
         
         
         
         MOZ_DIAGNOSTIC_ASSERT(IsTopContent());
         MOZ_DIAGNOSTIC_ASSERT(Children().IsEmpty());
-        xulFrame->SetBrowserId(browserId);
-      } else if (browserId == 0 && frameBrowserId == 0) {
-        
-        
-        MOZ_DIAGNOSTIC_ASSERT(IsChrome());
+        owner->SetBrowserId(browserId);
       } else {
         
-        
-        MOZ_DIAGNOSTIC_ASSERT(browserId != 0 && browserId == frameBrowserId);
+        MOZ_DIAGNOSTIC_ASSERT(browserId == frameBrowserId);
       }
     }
 
@@ -2403,7 +2401,7 @@ void BrowsingContext::DidSet(FieldIndex<IDX_HasSessionHistory>,
 bool BrowsingContext::CanSet(FieldIndex<IDX_BrowserId>, const uint32_t& aValue,
                              ContentParent* aSource) {
   
-  return GetBrowserId() == 0 && Children().IsEmpty() && !GetParent();
+  return GetBrowserId() == 0 && IsTop() && Children().IsEmpty();
 }
 
 }  

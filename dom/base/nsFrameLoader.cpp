@@ -297,7 +297,7 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
 
   
   uint64_t browserId = parentBC->GetBrowserId();
-  RefPtr<XULFrameElement> xulFrame = XULFrameElement::FromNode(aOwner);
+  RefPtr<nsFrameLoaderOwner> owner = do_QueryObject(aOwner);
 
   
   
@@ -306,11 +306,10 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   
   
   if (IsTopContent(parentBC, aOwner)) {
-    
-    if (xulFrame && xulFrame->BrowserId() != 0) {
+    if (owner && owner->GetBrowserId() != 0) {
       
       
-      browserId = xulFrame->BrowserId();
+      browserId = owner->GetBrowserId();
 
       
       
@@ -318,9 +317,8 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
       MOZ_DIAGNOSTIC_ASSERT(browserId != parentBC->GetBrowserId());
     } else {
       browserId = nsContentUtils::GenerateBrowserId();
-
-      if (xulFrame) {
-        xulFrame->SetBrowserId(browserId);
+      if (owner) {
+        owner->SetBrowserId(browserId);
       }
     }
 
@@ -332,10 +330,10 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   MOZ_ASSERT(!aOpenWindowInfo,
              "Can't have openWindowInfo for non-toplevel context");
 
-  if (xulFrame) {
-    MOZ_DIAGNOSTIC_ASSERT(xulFrame->BrowserId() == 0 ||
-                          xulFrame->BrowserId() == browserId);
-    xulFrame->SetBrowserId(browserId);
+  if (owner) {
+    MOZ_DIAGNOSTIC_ASSERT(owner->GetBrowserId() == 0 ||
+                          owner->GetBrowserId() == browserId);
+    owner->SetBrowserId(browserId);
   }
 
   return BrowsingContext::CreateDetached(parentInner, nullptr, frameName,
@@ -1285,16 +1283,11 @@ nsresult nsFrameLoader::SwapWithOtherRemoteLoader(
   MaybeUpdatePrimaryBrowserParent(eBrowserParentRemoved);
   aOther->MaybeUpdatePrimaryBrowserParent(eBrowserParentRemoved);
 
-  RefPtr<XULFrameElement> ourXulFrame = XULFrameElement::FromNode(ourContent);
-  RefPtr<XULFrameElement> otherXulFrame =
-      XULFrameElement::FromNode(otherContent);
-  if (ourXulFrame && otherXulFrame) {
-    
-    
-    uint64_t browserId = otherXulFrame->BrowserId();
-    otherXulFrame->SetBrowserId(ourXulFrame->BrowserId());
-    ourXulFrame->SetBrowserId(browserId);
-  }
+  
+  
+  uint64_t ourBrowserId = aThisOwner->GetBrowserId();
+  aThisOwner->SetBrowserId(aOtherOwner->GetBrowserId());
+  aOtherOwner->SetBrowserId(ourBrowserId);
 
   SetOwnerContent(otherContent);
   aOther->SetOwnerContent(ourContent);
@@ -1711,16 +1704,11 @@ nsresult nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
       otherDocshell, ourOwner,
       ourBc->IsContent() ? ourChromeEventHandler.get() : nullptr);
 
-  RefPtr<XULFrameElement> ourXulFrame = XULFrameElement::FromNode(ourContent);
-  RefPtr<XULFrameElement> otherXulFrame =
-      XULFrameElement::FromNode(otherContent);
-  if (ourXulFrame && otherXulFrame) {
-    
-    
-    uint64_t browserId = otherXulFrame->BrowserId();
-    otherXulFrame->SetBrowserId(ourXulFrame->BrowserId());
-    ourXulFrame->SetBrowserId(browserId);
-  }
+  
+  
+  uint64_t ourBrowserId = aThisOwner->GetBrowserId();
+  aThisOwner->SetBrowserId(aOtherOwner->GetBrowserId());
+  aOtherOwner->SetBrowserId(ourBrowserId);
 
   
   
