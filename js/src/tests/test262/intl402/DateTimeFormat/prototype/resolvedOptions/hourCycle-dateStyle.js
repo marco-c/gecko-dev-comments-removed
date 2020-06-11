@@ -9,7 +9,6 @@
 
 
 
-
 const hcValues = ["h11", "h12", "h23", "h24"];
 const hour12Values = ["h11", "h12"];
 

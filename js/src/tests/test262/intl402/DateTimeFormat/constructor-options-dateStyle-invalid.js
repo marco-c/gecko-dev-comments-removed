@@ -14,7 +14,6 @@
 
 
 
-
 const invalidOptions = [
   "",
   "FULL",
