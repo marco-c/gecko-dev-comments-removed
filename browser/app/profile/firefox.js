@@ -2369,6 +2369,10 @@ pref("devtools.whatsnew.enabled", true);
 pref("devtools.whatsnew.feature-enabled", true);
 
 
+
+pref("devtools.overflow.debugging.enabled", false);
+
+
 pref("first-startup.timeout", 30000);
 
 
