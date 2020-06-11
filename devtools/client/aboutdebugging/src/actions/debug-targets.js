@@ -247,14 +247,6 @@ function requestExtensions() {
         extensions = extensions.filter(e => !e.isSystem && !e.hidden);
       }
 
-      if (runtime.type !== RUNTIMES.THIS_FIREFOX) {
-        
-        
-        extensions.forEach(extension => {
-          extension.manifestURL = null;
-        });
-      }
-
       const installedExtensions = extensions.filter(
         e => !e.temporarilyInstalled
       );
