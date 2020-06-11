@@ -3,32 +3,27 @@
 
 from collections import defaultdict
 import re
-import os
 import textwrap
-
-
-
-
+from pathlib import Path
 
 import esprima
 
 
-METADATA = set(
-    [
-        "setUp",
-        "tearDown",
-        "test",
-        "owner",
-        "author",
-        "name",
-        "description",
-        "longDescription",
-        "usage",
-        "supportedBrowsers",
-        "supportedPlatforms",
-        "filename",
-    ]
-)
+
+METADATA = [
+    ("setUp", False),
+    ("tearDown", False),
+    ("test", True),
+    ("owner", True),
+    ("author", False),
+    ("name", True),
+    ("description", True),
+    ("longDescription", False),
+    ("usage", False),
+    ("supportedBrowsers", False),
+    ("supportedPlatforms", False),
+    ("filename", True),
+]
 
 
 _INFO = """\
@@ -47,18 +42,19 @@ Description:
 """
 
 
-class MetadataDict(defaultdict):
-    def __missing__(self, key):
-        return "N/A"
+class MissingFieldError(Exception):
+    pass
 
 
-class ScriptInfo(MetadataDict):
-    def __init__(self, script):
+class ScriptInfo(defaultdict):
+    """Loads and parses a Browsertime test script."""
+
+    def __init__(self, path):
         super(ScriptInfo, self).__init__()
-        filename = os.path.basename(script)
-        self["filename"] = script, filename
-        self.script = script
-        with open(script) as f:
+        self.script = Path(path)
+        self["filename"] = str(self.script)
+
+        with self.script.open() as f:
             self.parsed = esprima.parseScript(f.read())
 
         
@@ -66,6 +62,7 @@ class ScriptInfo(MetadataDict):
             if (
                 stmt.type != "ExpressionStatement"
                 or stmt.expression.left is None
+                or stmt.expression.left.property is None
                 or stmt.expression.left.property.name != "exports"
                 or stmt.expression.right is None
                 or stmt.expression.right.properties is None
@@ -86,21 +83,33 @@ class ScriptInfo(MetadataDict):
                     value = [e.value for e in prop.value.elements]
                 else:
                     raise ValueError(prop.value.type)
-                
-                if isinstance(value, str):
-                    repr = "\n".join(textwrap.wrap(value, break_on_hyphens=False))
-                elif isinstance(value, list):
-                    repr = ", ".join(value)
 
-                self[prop.key.name] = value, repr
+                self[prop.key.name] = value
 
         
-        
-        assert set(list(self.keys())) - METADATA == set()
+        for field, required in METADATA:
+            if not required:
+                continue
+            if field not in self:
+                raise MissingFieldError(field)
 
     def __str__(self):
-        reprs = dict((k, v[1]) for k, v in self.items())
-        d = MetadataDict()
-        d.update(reprs)
-        d.update({"filename_underline": "-" * len(self["filename"])})
+        """Used to generate docs."""
+        d = {}
+        for field, value in self.items():
+            if field == "filename":
+                d[field] = self.script.name
+                continue
+
+            
+            if isinstance(value, str):
+                value = "\n".join(textwrap.wrap(value, break_on_hyphens=False))
+            elif isinstance(value, list):
+                value = ", ".join(value)
+            d[field] = value
+
+        d["filename_underline"] = "-" * len(d["filename"])
         return _INFO % d
+
+    def __missing__(self, key):
+        return "N/A"
