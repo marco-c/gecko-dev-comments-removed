@@ -173,6 +173,17 @@ impl KeyframesAnimationState {
         self.current_direction = old_direction;
         self.started_at = new_started_at;
     }
+
+    
+    
+    
+    
+    pub fn active_duration(&self) -> f64 {
+        match self.iteration_state {
+            KeyframesIterationState::Finite(_, max) => self.duration * (max as f64),
+            KeyframesIterationState::Infinite => 0.,
+        }
+    }
 }
 
 impl fmt::Debug for KeyframesAnimationState {
