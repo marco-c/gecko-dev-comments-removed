@@ -24,8 +24,10 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 
-function LOG(string) {
-  if (gLogEnabled) {
+
+
+function LOG(string, alwaysLog = false) {
+  if (alwaysLog || gLogEnabled) {
     dump("*** UTM:SVC " + string + "\n");
     Services.console.logStringMessage("UTM:SVC " + string);
   }
@@ -349,11 +351,11 @@ TimerManager.prototype = {
     if (this._timers === null) {
       
       
-      gLogEnabled = true;
       LOG(
         "TimerManager:registerTimer called after profile-before-change " +
           "notification. Ignoring timer registration for id: " +
-          id
+          id,
+        true
       );
       return;
     }
