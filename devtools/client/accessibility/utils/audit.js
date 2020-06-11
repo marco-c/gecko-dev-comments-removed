@@ -29,9 +29,15 @@ class CombinedProgress {
 
     let combinedTotal = 0;
     let combinedCompleted = 0;
-    for (const { total, percentage } of this.combinedProgress.values()) {
+    
+    
+    for (const {
+      completed,
+      total,
+      percentage,
+    } of this.combinedProgress.values()) {
       combinedTotal += total;
-      combinedCompleted += Math.round((percentage * total) / 100);
+      combinedCompleted += completed ?? Math.round((percentage * total) / 100);
     }
     this.onProgress({
       total: combinedTotal,
