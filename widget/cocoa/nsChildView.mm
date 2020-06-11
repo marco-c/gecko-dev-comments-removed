@@ -2837,6 +2837,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
   }
 
   PinchGestureInput event{pinchGestureType,
+                          PinchGestureInput::TRACKPAD,
                           eventIntervalTime,
                           eventTimeStamp,
                           screenOffset,

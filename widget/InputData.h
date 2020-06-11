@@ -449,11 +449,21 @@ class PinchGestureInput : public InputData {
       
       PINCHGESTURE_END
   ));
+
+  MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
+    PinchGestureSource, (
+      UNKNOWN, 
+      TOUCH, 
+      ONE_TOUCH, 
+      TRACKPAD, 
+      MOUSEWHEEL 
+  ));
   
 
   
-  PinchGestureInput(PinchGestureType aType, uint32_t aTime,
-                    TimeStamp aTimeStamp, const ExternalPoint& aScreenOffset,
+  PinchGestureInput(PinchGestureType aType, PinchGestureSource aSource,
+                    uint32_t aTime, TimeStamp aTimeStamp,
+                    const ExternalPoint& aScreenOffset,
                     const ScreenPoint& aFocusPoint, ScreenCoord aCurrentSpan,
                     ScreenCoord aPreviousSpan, Modifiers aModifiers);
 
@@ -464,6 +474,9 @@ class PinchGestureInput : public InputData {
   
   
   PinchGestureType mType;
+
+  
+  PinchGestureSource mSource;
 
   
   
