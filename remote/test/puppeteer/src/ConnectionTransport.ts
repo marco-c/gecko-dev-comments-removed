@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export interface ConnectionTransport {
+  send(string);
+  close();
+  onmessage?: (message: string) => void;
+  onclose?: () => void;
+}

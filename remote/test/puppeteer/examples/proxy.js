@@ -18,7 +18,7 @@
 
 const puppeteer = require('puppeteer');
 
-(async() => {
+(async () => {
   const browser = await puppeteer.launch({
     
     
@@ -27,7 +27,7 @@ const puppeteer = require('puppeteer');
       '--proxy-server=127.0.0.1:9876',
       
       '--proxy-bypass-list=<-loopback>',
-    ]
+    ],
   });
   const page = await browser.newPage();
   await page.goto('https://google.com');
