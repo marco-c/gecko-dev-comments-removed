@@ -33,6 +33,8 @@
 #include <algorithm>
 #include "gfxPoint.h"
 #include "nsClassHashtable.h"
+#include "MobileViewportManager.h"
+#include "UnitTransforms.h"
 
 class gfxContext;
 class gfxFontEntry;
@@ -3166,19 +3168,19 @@ template <typename PointType, typename RectType, typename CoordType>
 template <typename SizeType>
  SizeType nsLayoutUtils::ExpandHeightForDynamicToolbar(
     nsPresContext* aPresContext, const SizeType& aSize) {
-  nsSize sizeForViewportUnits = aPresContext->GetSizeForViewportUnits();
+  RefPtr<MobileViewportManager> MVM =
+      aPresContext->PresShell()->GetMobileViewportManager();
+  MOZ_ASSERT(MVM);
+  float toolbarHeightRatio =
+      mozilla::ScreenCoord(aPresContext->GetDynamicToolbarMaxHeight()) /
+      mozilla::ViewAs<mozilla::ScreenPixel>(
+          MVM->DisplaySize(),
+          mozilla::PixelCastJustification::LayoutDeviceIsScreenForBounds)
+          .height;
 
-  
-  
-  
-  
-  float vhExpansionRatio = (float)sizeForViewportUnits.height /
-                           aPresContext->GetVisibleArea().height;
-
-  MOZ_ASSERT(aSize.height <= NSCoordSaturatingNonnegativeMultiply(
-                                 aSize.height, vhExpansionRatio));
-  return SizeType(aSize.width, NSCoordSaturatingNonnegativeMultiply(
-                                   aSize.height, vhExpansionRatio));
+  return SizeType(
+      aSize.width,
+      NSCoordSaturatingAdd(aSize.height, aSize.height * toolbarHeightRatio));
 }
 
 template <typename T>
