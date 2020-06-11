@@ -1101,10 +1101,14 @@ impl TextureResolver {
         
         
         
+        
+        
+        
         self.gc_targets(
             device,
             frame_id,
             32 * 1024 * 1024,
+            32 * 1024 * 1024 * 10,
             60,
         );
     }
@@ -1132,6 +1136,7 @@ impl TextureResolver {
         device: &mut Device,
         current_frame_id: GpuFrameId,
         total_bytes_threshold: usize,
+        total_bytes_red_line_threshold: usize,
         frames_threshold: usize,
     ) {
         
@@ -1157,8 +1162,9 @@ impl TextureResolver {
             
             
             
-            if rt_pool_size_in_bytes > total_bytes_threshold &&
-               !target.used_recently(current_frame_id, frames_threshold)
+            if (rt_pool_size_in_bytes > total_bytes_red_line_threshold) ||
+               (rt_pool_size_in_bytes > total_bytes_threshold &&
+                !target.used_recently(current_frame_id, frames_threshold))
             {
                 rt_pool_size_in_bytes -= target.size_in_bytes();
                 device.delete_texture(target);
