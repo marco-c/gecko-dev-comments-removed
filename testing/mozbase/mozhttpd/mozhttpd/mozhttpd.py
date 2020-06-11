@@ -144,7 +144,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             else:
                 self.send_response(404)
                 self.end_headers()
-                self.wfile.write(b'')
+                self.wfile.write('')
 
     def do_POST(self):
         
@@ -153,7 +153,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
         if not self._try_handler('POST'):
             self.send_response(404)
             self.end_headers()
-            self.wfile.write(b'')
+            self.wfile.write('')
 
     def do_DEL(self):
         
@@ -162,7 +162,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
         if not self._try_handler('DEL'):
             self.send_response(404)
             self.end_headers()
-            self.wfile.write(b'')
+            self.wfile.write('')
 
     def translate_path(self, path):
         

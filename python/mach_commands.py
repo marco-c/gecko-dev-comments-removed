@@ -56,12 +56,12 @@ class MachCommands(MachCommandBase):
 
         
         append_env = {
-            'PYTHONDONTWRITEBYTECODE': str('1'),
+            b'PYTHONDONTWRITEBYTECODE': str('1'),
         }
 
         if no_virtualenv:
             python_path = sys.executable
-            append_env['PYTHONPATH'] = os.pathsep.join(sys.path)
+            append_env[b'PYTHONPATH'] = os.pathsep.join(sys.path)
         else:
             self._activate_virtualenv()
             python_path = self.virtualenv_manager.python_path
