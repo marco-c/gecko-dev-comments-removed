@@ -1020,17 +1020,6 @@ pref("dom.storage.client_validation", true);
 pref("dom.send_after_paint_to_content", false);
 
 
-pref("dom.experimental_forms", false);
-
-
-
-pref("dom.forms.color", true);
-
-
-
-pref("dom.forms.datetime.others", false);
-
-
 pref("dom.forms.datetime.timepicker", false);
 
 

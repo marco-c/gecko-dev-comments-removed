@@ -160,9 +160,6 @@ pref("browser.formfill.enable", true);
 pref("layout.spellcheckDefault", 0);
 
 
-pref("dom.forms.datetime.others", true);
-
-
 pref("xpinstall.whitelist.fileRequest", false);
 pref("xpinstall.whitelist.add", "https://addons.mozilla.org");
 
