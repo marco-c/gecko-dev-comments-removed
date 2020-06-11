@@ -406,10 +406,20 @@ this.TopSitesFeed = class TopSitesFeed {
     
     const withPinned = insertPinned(checkedAdult, pinned).slice(0, numItems);
 
-    const amazonSearchTileOverrideURL = Services.prefs.getStringPref(
+    let amazonSearchTileOverrideURL = Services.prefs.getStringPref(
       AMAZON_SEARCH_TILE_OVERRIDE_PREF,
       ""
     );
+    if (amazonSearchTileOverrideURL) {
+      let date = new Date();
+      let pad = number => number.toString().padStart(2, "0");
+      amazonSearchTileOverrideURL = amazonSearchTileOverrideURL.replace(
+        "%YYYYMMDD%",
+        String(date.getFullYear()) +
+          pad(date.getMonth() + 1) +
+          pad(date.getDate())
+      );
+    }
 
     
     for (const link of withPinned) {
