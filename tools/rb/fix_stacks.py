@@ -15,6 +15,8 @@ import platform
 import re
 import sys
 
+import six
+
 
 
 line_re = re.compile("#\d+: .+\[.+ \+0x[0-9A-Fa-f]+\]")
@@ -25,6 +27,7 @@ fix_stacks = None
 def fixSymbols(line, jsonMode=False, slowWarning=False, breakpadSymsDir=None, hide_errors=False):
     global fix_stacks
 
+    line = six.ensure_str(line)
     result = line_re.search(line)
     if result is None:
         return line
