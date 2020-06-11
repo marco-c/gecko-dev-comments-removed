@@ -174,13 +174,13 @@ impl<LengthPercentage> Size<LengthPercentage> {
 
 
 #[allow(missing_docs)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 #[derive(
     Animate,
     Clone,
     ComputeSquaredDistance,
     Copy,
     Debug,
+    MallocSizeOf,
     PartialEq,
     SpecifiedValueInfo,
     ToAnimatedValue,

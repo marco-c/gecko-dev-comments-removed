@@ -978,7 +978,13 @@ where
         } => {
             let guard = declarations.read_with(context.guards.author);
 
-            let iter = || {
+            
+            
+            let computed = properties::apply_declarations::<E, _>(
+                context.stylist.device(),
+                 None,
+                previous_style.rules(),
+                &context.guards,
                 
                 
                 
@@ -986,17 +992,7 @@ where
                 guard
                     .normal_declaration_iter()
                     .filter(|declaration| declaration.is_animatable())
-                    .map(|decl| (decl, Origin::Author))
-            };
-
-            
-            
-            let computed = properties::apply_declarations::<E, _, _>(
-                context.stylist.device(),
-                 None,
-                previous_style.rules(),
-                &context.guards,
-                iter,
+                    .map(|decl| (decl, Origin::Author)),
                 Some(previous_style),
                 Some(previous_style),
                 Some(previous_style),

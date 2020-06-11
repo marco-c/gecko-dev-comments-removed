@@ -5,13 +5,13 @@
 
 
 
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 #[derive(
     Animate,
     Clone,
     ComputeSquaredDistance,
     Copy,
     Debug,
+    MallocSizeOf,
     Parse,
     PartialEq,
     SpecifiedValueInfo,

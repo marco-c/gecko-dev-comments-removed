@@ -615,15 +615,14 @@ impl DerefMut for SnapshotMap {
 }
 
 
-#[derive(Debug)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
+#[derive(Debug, Default, MallocSizeOf)]
 pub struct ServoElementSnapshot {
     
     pub state: Option<ElementState>,
     
     pub attrs: Option<Vec<(AttrIdentifier, AttrValue)>>,
     
-    pub is_html_element_in_html_document: bool,
+    pub changed_attrs: Vec<LocalName>,
     
     pub class_changed: bool,
     
@@ -634,15 +633,8 @@ pub struct ServoElementSnapshot {
 
 impl ServoElementSnapshot {
     
-    pub fn new(is_html_element_in_html_document: bool) -> Self {
-        ServoElementSnapshot {
-            state: None,
-            attrs: None,
-            is_html_element_in_html_document: is_html_element_in_html_document,
-            class_changed: false,
-            id_changed: false,
-            other_attributes_changed: false,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 
     
@@ -667,6 +659,17 @@ impl ServoElementSnapshot {
             .iter()
             .find(|&&(ref ident, _)| ident.local_name == *name && ident.namespace == *namespace)
             .map(|&(_, ref v)| v)
+    }
+
+    
+    #[inline]
+    pub fn each_attr_changed<F>(&self, mut callback: F)
+    where
+        F: FnMut(&LocalName),
+    {
+        for name in &self.changed_attrs {
+            callback(name)
+        }
     }
 
     fn any_attr_ignore_ns<F>(&self, name: &LocalName, mut f: F) -> bool

@@ -68,8 +68,7 @@ pub type AnimationValueMap = FxHashMap<LonghandId, AnimationValue>;
 
 
 
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
-#[derive(Debug)]
+#[derive(Debug, MallocSizeOf)]
 #[repr(u16)]
 pub enum AnimationValue {
     % for prop in data.longhands:
@@ -420,6 +419,7 @@ impl AnimationValue {
     
     
     
+    #[cfg(feature = "servo")]
     pub fn set_in_style_for_servo(&self, style: &mut ComputedValues) {
         match self {
             % for prop in data.longhands:
@@ -438,6 +438,11 @@ impl AnimationValue {
             % endif
             % endfor
         }
+    }
+
+    
+    #[cfg(feature = "gecko")]
+    pub fn set_in_style_for_servo(&self, _: &mut ComputedValues) {
     }
 }
 

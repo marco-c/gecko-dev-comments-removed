@@ -12,8 +12,7 @@ use crate::values::generics::color::{Color as GenericColor, ComplexColorRatios};
 
 
 
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
-#[derive(Clone, Copy, Debug, PartialEq, ToAnimatedZero)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToAnimatedZero)]
 pub struct RGBA {
     
     pub red: f32,
