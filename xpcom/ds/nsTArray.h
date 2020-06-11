@@ -1788,11 +1788,14 @@ class nsTArray_Impl
   void RemoveElementAt(index_type aIndex) { RemoveElementsAt(aIndex, 1); }
 
   
-  void RemoveLastElement() {
+  void RemoveLastElement() { RemoveLastElements(1); }
+
+  
+  void RemoveLastElements(const size_type aCount) {
     
     
-    MOZ_ASSERT(!base_type::IsEmpty());
-    TruncateLength(Length() - 1);
+    MOZ_ASSERT(aCount <= Length());
+    TruncateLength(Length() - aCount);
   }
 
   
