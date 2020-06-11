@@ -15,15 +15,23 @@ from six import (
 )
 
 from . import vcs
-from .item import (ConformanceCheckerTest, ManifestItem, ManualTest, RefTest, SupportFile,
-                   TestharnessTest, VisualTest, WebDriverSpecTest, CrashTest)
+from .item import (ConformanceCheckerTest,
+                   CrashTest,
+                   ManifestItem,
+                   ManualTest,
+                   PrintRefTest,
+                   RefTest,
+                   SupportFile,
+                   TestharnessTest,
+                   VisualTest,
+                   WebDriverSpecTest)
 from .log import get_logger
 from .sourcefile import SourceFile
 from .typedata import TypeData
 
 MYPY = False
 if MYPY:
-    # MYPY is set to True when run under Mypy.
+    
     from logging import Logger
     from typing import Any
     from typing import Container
@@ -42,9 +50,9 @@ try:
     import ujson
     fast_json = ujson
 except ImportError:
-    fast_json = json  # type: ignore
+    fast_json = json  
 
-CURRENT_VERSION = 8  # type: int
+CURRENT_VERSION = 8  
 
 
 class ManifestError(Exception):
@@ -57,16 +65,17 @@ class ManifestVersionMismatch(ManifestError):
 
 item_classes = {"testharness": TestharnessTest,
                 "reftest": RefTest,
+                "print-reftest": PrintRefTest,
                 "crashtest": CrashTest,
                 "manual": ManualTest,
                 "wdspec": WebDriverSpecTest,
                 "conformancechecker": ConformanceCheckerTest,
                 "visual": VisualTest,
-                "support": SupportFile}  # type: Dict[str, Type[ManifestItem]]
+                "support": SupportFile}  
 
 
 def compute_manifest_items(source_file):
-    # type: (SourceFile) -> Tuple[Tuple[Text, ...], Text, Set[ManifestItem], Text]
+    
     rel_path_parts = source_file.rel_path_parts
     new_type, manifest_items = source_file.manifest_items()
     file_hash = source_file.hash
@@ -79,33 +88,33 @@ else:
 
 class ManifestData(ManifestDataType):
     def __init__(self, manifest):
-        # type: (Manifest) -> None
+        
         """Dictionary subclass containing a TypeData instance for each test type,
         keyed by type name"""
-        self.initialized = False  # type: bool
+        self.initialized = False  
         for key, value in iteritems(item_classes):
             self[key] = TypeData(manifest, value)
         self.initialized = True
-        self.json_obj = None  # type: None
+        self.json_obj = None  
 
     def __setitem__(self, key, value):
-        # type: (str, TypeData) -> None
+        
         if self.initialized:
             raise AttributeError
         dict.__setitem__(self, key, value)
 
     def paths(self):
-        # type: () -> Set[Text]
+        
         """Get a list of all paths containing test items
         without actually constructing all the items"""
-        rv = set()  # type: Set[Text]
+        rv = set()  
         for item_data in itervalues(self):
             for item in item_data:
                 rv.add(os.path.sep.join(item))
         return rv
 
     def type_by_path(self):
-        # type: () -> Dict[Tuple[Text, ...], str]
+        
         rv = {}
         for item_type, item_data in iteritems(self):
             for item in item_data:
@@ -116,18 +125,18 @@ class ManifestData(ManifestDataType):
 
 class Manifest(object):
     def __init__(self, tests_root=None, url_base="/"):
-        # type: (Optional[str], Text) -> None
+        
         assert url_base is not None
-        self._data = ManifestData(self)  # type: ManifestData
-        self.tests_root = tests_root  # type: Optional[str]
-        self.url_base = url_base  # type: Text
+        self._data = ManifestData(self)  
+        self.tests_root = tests_root  
+        self.url_base = url_base  
 
     def __iter__(self):
-        # type: () -> Iterator[Tuple[str, Text, Set[ManifestItem]]]
+        
         return self.itertypes()
 
     def itertypes(self, *types):
-        # type: (*str) -> Iterator[Tuple[str, Text, Set[ManifestItem]]]
+        
         for item_type in (types or sorted(self._data.keys())):
             for path in self._data[item_type]:
                 str_path = os.sep.join(path)
@@ -135,7 +144,7 @@ class Manifest(object):
                 yield item_type, str_path, tests
 
     def iterpath(self, path):
-        # type: (Text) -> Iterable[ManifestItem]
+        
         tpath = tuple(path.split(os.path.sep))
 
         for type_tests in self._data.values():
@@ -145,7 +154,7 @@ class Manifest(object):
                 yield test
 
     def iterdir(self, dir_name):
-        # type: (Text) -> Iterable[ManifestItem]
+        
         tpath = tuple(dir_name.split(os.path.sep))
         tpath_len = len(tpath)
 
@@ -156,7 +165,7 @@ class Manifest(object):
                         yield test
 
     def update(self, tree, parallel=True):
-        # type: (Iterable[Tuple[Union[SourceFile, bytes], bool]], bool) -> bool
+        
         """Update the manifest given an iterable of items that make up the updated manifest.
 
         The iterable must either generate tuples of the form (SourceFile, True) for paths
@@ -167,8 +176,8 @@ class Manifest(object):
 
         changed = False
 
-        # Create local variable references to these dicts so we avoid the
-        # attribute access in the hot loop below
+        
+        
         data = self._data
 
         types = data.type_by_path()
@@ -187,14 +196,14 @@ class Manifest(object):
                 rel_path_parts = source_file.rel_path_parts
                 assert isinstance(rel_path_parts, tuple)
 
-                is_new = rel_path_parts not in deleted  # type: bool
-                hash_changed = False  # type: bool
+                is_new = rel_path_parts not in deleted  
+                hash_changed = False  
 
                 if not is_new:
                     deleted.remove(rel_path_parts)
                     old_type = types[rel_path_parts]
                     old_hash = data[old_type].hashes[rel_path_parts]
-                    file_hash = source_file.hash  # type: Text
+                    file_hash = source_file.hash  
                     if old_hash != file_hash:
                         hash_changed = True
                         del data[old_type][rel_path_parts]
@@ -206,18 +215,18 @@ class Manifest(object):
             changed = True
 
         if parallel and len(to_update) > 25 and cpu_count() > 1:
-            # 25 derived experimentally (2020-01) to be approximately
-            # the point at which it is quicker to create Pool and
-            # parallelize this
+            
+            
+            
             pool = Pool()
 
-            # chunksize set > 1 when more than 10000 tests, because
-            # chunking is a net-gain once we get to very large numbers
-            # of items (again, experimentally, 2020-01)
+            
+            
+            
             results = pool.imap_unordered(compute_manifest_items,
                                           to_update,
                                           chunksize=max(1, len(to_update) // 10000)
-                                          )  # type: Iterator[Tuple[Tuple[Text, ...], Text, Set[ManifestItem], Text]]
+                                          )  
         elif PY3:
             results = map(compute_manifest_items, to_update)
         else:
@@ -238,7 +247,7 @@ class Manifest(object):
         return changed
 
     def to_json(self, caller_owns_obj=True):
-        # type: (bool) -> Dict[Text, Any]
+        
         """Dump a manifest into a object which can be serialized as JSON
 
         If caller_owns_obj is False, then the return value remains
@@ -259,12 +268,12 @@ class Manifest(object):
 
         rv = {"url_base": self.url_base,
               "items": out_items,
-              "version": CURRENT_VERSION}  # type: Dict[Text, Any]
+              "version": CURRENT_VERSION}  
         return rv
 
     @classmethod
     def from_json(cls, tests_root, obj, types=None, callee_owns_obj=False):
-        # type: (str, Dict[Text, Any], Optional[Container[Text]], bool) -> Manifest
+        
         """Load a manifest from a JSON object
 
         This loads a manifest for a given local test_root path from an
@@ -301,23 +310,23 @@ class Manifest(object):
 
 
 def load(tests_root, manifest, types=None):
-    # type: (str, Union[IO[bytes], str], Optional[Container[Text]]) -> Optional[Manifest]
+    
     logger = get_logger()
 
     logger.warning("Prefer load_and_update instead")
     return _load(logger, tests_root, manifest, types)
 
 
-__load_cache = {}  # type: Dict[str, Manifest]
+__load_cache = {}  
 
 
-def _load(logger,  # type: Logger
-          tests_root,  # type: str
-          manifest,  # type: Union[IO[bytes], str]
-          types=None,  # type: Optional[Container[Text]]
-          allow_cached=True  # type: bool
+def _load(logger,  
+          tests_root,  
+          manifest,  
+          types=None,  
+          allow_cached=True  
           ):
-    # type: (...) -> Optional[Manifest]
+    
     manifest_path = (manifest if isinstance(manifest, string_types)
                      else manifest.name)
     if allow_cached and manifest_path in __load_cache:
@@ -350,20 +359,20 @@ def _load(logger,  # type: Logger
     return rv
 
 
-def load_and_update(tests_root,  # type: bytes
-                    manifest_path,  # type: bytes
-                    url_base,  # type: Text
-                    update=True,  # type: bool
-                    rebuild=False,  # type: bool
-                    metadata_path=None,  # type: Optional[bytes]
-                    cache_root=None,  # type: Optional[bytes]
-                    working_copy=True,  # type: bool
-                    types=None,  # type: Optional[Container[Text]]
-                    write_manifest=True,  # type: bool
-                    allow_cached=True,  # type: bool
-                    parallel=True  # type: bool
+def load_and_update(tests_root,  
+                    manifest_path,  
+                    url_base,  
+                    update=True,  
+                    rebuild=False,  
+                    metadata_path=None,  
+                    cache_root=None,  
+                    working_copy=True,  
+                    types=None,  
+                    write_manifest=True,  
+                    allow_cached=True,  
+                    parallel=True  
                     ):
-    # type: (...) -> Manifest
+    
     logger = get_logger()
 
     manifest = None
@@ -400,13 +409,13 @@ def load_and_update(tests_root,  # type: bytes
 
 
 def write(manifest, manifest_path):
-    # type: (Manifest, bytes) -> None
+    
     dir_name = os.path.dirname(manifest_path)
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
     with open(manifest_path, "w") as f:
-        # Use ',' instead of the default ', ' separator to prevent trailing
-        # spaces: https://docs.python.org/2/library/json.html#json.dump
+        
+        
         json.dump(manifest.to_json(caller_owns_obj=True), f,
                   sort_keys=True, indent=1, separators=(',', ': '))
         f.write("\n")
