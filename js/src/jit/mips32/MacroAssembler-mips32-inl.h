@@ -139,6 +139,19 @@ void MacroAssembler::xorPtr(Imm32 imm, Register dest) { ma_xor(dest, imm); }
 
 
 
+void MacroAssembler::swap64(Register64 reg) {
+  swap32(reg.high);
+  swap32(reg.low);
+
+  
+  ma_xor(reg.high, reg.low);
+  ma_xor(reg.low, reg.high);
+  ma_xor(reg.high, reg.low);
+}
+
+
+
+
 void MacroAssembler::addPtr(Register src, Register dest) { ma_addu(dest, src); }
 
 void MacroAssembler::addPtr(Imm32 imm, Register dest) { ma_addu(dest, imm); }

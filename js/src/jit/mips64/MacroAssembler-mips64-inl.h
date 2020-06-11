@@ -145,6 +145,15 @@ void MacroAssembler::xorPtr(Imm32 imm, Register dest) { ma_xor(dest, imm); }
 
 
 
+void MacroAssembler::swap64(Register64 reg64) {
+  Register reg = reg64.reg;
+  ma_dsbh(reg, reg);
+  ma_dshd(reg, reg);
+}
+
+
+
+
 void MacroAssembler::addPtr(Register src, Register dest) {
   ma_daddu(dest, src);
 }
