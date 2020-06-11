@@ -348,6 +348,13 @@ typedef enum JSGCParamKey {
 
 
   JSGC_INCREMENTAL_WEAKMAP_ENABLED = 37,
+
+  
+
+
+
+
+  JSGC_CHUNK_BYTES = 38,
 } JSGCParamKey;
 
 
