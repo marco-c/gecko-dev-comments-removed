@@ -1236,6 +1236,8 @@ class Document : public nsINode,
   already_AddRefed<Promise> HasStorageAccess(ErrorResult& aRv);
   already_AddRefed<Promise> RequestStorageAccess(ErrorResult& aRv);
 
+  bool UseRegularPrincipal() const;
+
   
 
 
@@ -1389,7 +1391,7 @@ class Document : public nsINode,
   nsICookieJarSettings* CookieJarSettings();
 
   
-  bool HasStoragePermission();
+  bool HasStorageAccessPermissionGranted();
 
   
   inline void Changed() { ++mGeneration; }

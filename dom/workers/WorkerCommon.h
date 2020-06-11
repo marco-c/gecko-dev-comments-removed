@@ -44,7 +44,7 @@ void SuspendWorkersForWindow(const nsPIDOMWindowInner& aWindow);
 
 void ResumeWorkersForWindow(const nsPIDOMWindowInner& aWindow);
 
-void PropagateFirstPartyStorageAccessGrantedToWorkers(
+void PropagateStorageAccessPermissionGrantedToWorkers(
     const nsPIDOMWindowInner& aWindow);
 
 
