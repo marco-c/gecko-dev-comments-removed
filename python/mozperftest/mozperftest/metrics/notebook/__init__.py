@@ -1,6 +1,7 @@
 
 
 
+from .perftestetl import PerftestETL
 from .perftestnotebook import PerftestNotebook
 
-__all__ = ["PerftestNotebook"]
+__all__ = ["PerftestETL", "PerftestNotebook"]
