@@ -5228,7 +5228,7 @@ void CodeGenerator::visitPostWriteElementBarrierV(
 void CodeGenerator::visitCallNative(LCallNative* call) {
   WrappedFunction* target = call->getSingleTarget();
   MOZ_ASSERT(target);
-  MOZ_ASSERT(target->isNativeWithCppEntry());
+  MOZ_ASSERT(target->isNativeWithoutJitEntry());
 
   int callargslot = call->argslot();
   int unusedStack = StackOffsetOfPassedArg(callargslot);
@@ -5659,7 +5659,8 @@ void CodeGenerator::visitCallKnown(LCallKnown* call) {
   WrappedFunction* target = call->getSingleTarget();
 
   
-  MOZ_ASSERT(!target->isNativeWithCppEntry());
+  MOZ_ASSERT(target->hasJitEntry());
+
   
   DebugOnly<unsigned> numNonArgsOnStack = 1 + call->isConstructing();
   MOZ_ASSERT(target->nargs() <=
@@ -6067,7 +6068,7 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
 
   
   if (apply->hasSingleTarget() &&
-      apply->getSingleTarget()->isNativeWithCppEntry()) {
+      apply->getSingleTarget()->isNativeWithoutJitEntry()) {
     emitCallInvokeFunction(apply, extraStackSpace);
 
 #ifdef DEBUG
