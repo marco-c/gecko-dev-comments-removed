@@ -25,6 +25,7 @@ pub struct Path {
     remote: SocketAddr,
     local_cids: Vec<ConnectionId>,
     remote_cid: ConnectionId,
+    reset_token: Option<[u8; 16]>,
 }
 
 impl Path {
@@ -40,6 +41,7 @@ impl Path {
             remote,
             local_cids: vec![local_cid],
             remote_cid,
+            reset_token: None,
         }
     }
 
@@ -50,6 +52,7 @@ impl Path {
             remote: d.source(),
             local_cids: Vec::new(),
             remote_cid,
+            reset_token: None,
         }
     }
 
@@ -88,6 +91,16 @@ impl Path {
     
     pub fn remote_cid(&self) -> &ConnectionId {
         &self.remote_cid
+    }
+
+    
+    pub fn set_reset_token(&mut self, token: [u8; 16]) {
+        self.reset_token = Some(token);
+    }
+
+    
+    pub fn reset_token(&self) -> Option<&[u8; 16]> {
+        self.reset_token.as_ref()
     }
 
     

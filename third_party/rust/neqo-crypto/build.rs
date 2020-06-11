@@ -22,22 +22,28 @@ const BINDINGS_CONFIG: &str = "bindings.toml";
 #[derive(Deserialize)]
 struct Bindings {
     
-    types: Option<Vec<String>>,
+    #[serde(default)]
+    types: Vec<String>,
     
-    functions: Option<Vec<String>>,
+    #[serde(default)]
+    functions: Vec<String>,
     
-    variables: Option<Vec<String>>,
+    #[serde(default)]
+    variables: Vec<String>,
     
-    opaque: Option<Vec<String>>,
+    #[serde(default)]
+    opaque: Vec<String>,
     
     
     
-    enums: Option<Vec<String>>,
+    #[serde(default)]
+    enums: Vec<String>,
 
     
     
     
-    exclude: Option<Vec<String>>,
+    #[serde(default)]
+    exclude: Vec<String>,
 
     
     #[serde(default)]
@@ -253,23 +259,22 @@ fn build_bindings(base: &str, bindings: &Bindings, flags: &[String], gecko: bool
     builder = builder.clang_args(flags);
 
     
-    let empty: Vec<String> = vec![];
-    for v in bindings.types.as_ref().unwrap_or_else(|| &empty).iter() {
+    for v in &bindings.types {
         builder = builder.whitelist_type(v);
     }
-    for v in bindings.functions.as_ref().unwrap_or_else(|| &empty).iter() {
+    for v in &bindings.functions {
         builder = builder.whitelist_function(v);
     }
-    for v in bindings.variables.as_ref().unwrap_or_else(|| &empty).iter() {
+    for v in &bindings.variables {
         builder = builder.whitelist_var(v);
     }
-    for v in bindings.exclude.as_ref().unwrap_or_else(|| &empty).iter() {
+    for v in &bindings.exclude {
         builder = builder.blacklist_item(v);
     }
-    for v in bindings.opaque.as_ref().unwrap_or_else(|| &empty).iter() {
+    for v in &bindings.opaque {
         builder = builder.opaque_type(v);
     }
-    for v in bindings.enums.as_ref().unwrap_or_else(|| &empty).iter() {
+    for v in &bindings.enums {
         builder = builder.constified_enum_module(v);
     }
 
