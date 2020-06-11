@@ -85,8 +85,8 @@ END_TEST(testAtomicFence)
 
 
 
-MOZ_ALIGNED_DECL(static uint8_t atomicMem[8], 8);
-MOZ_ALIGNED_DECL(static uint8_t atomicMem2[8], 8);
+MOZ_ALIGNED_DECL(8, static uint8_t atomicMem[8]);
+MOZ_ALIGNED_DECL(8, static uint8_t atomicMem2[8]);
 
 
 
@@ -106,10 +106,10 @@ MOZ_ALIGNED_DECL(static uint8_t atomicMem2[8], 8);
   CHECK(jit::AtomicOperations::exchangeSeqCst(p, A) == B);              \
   CHECK(*q == A);                                                       \
   CHECK(jit::AtomicOperations::compareExchangeSeqCst(p, (T)0, (T)1) ==  \
-        A);                                                  \
+        A); /*failure*/                                                 \
   CHECK(*q == A);                                                       \
   CHECK(jit::AtomicOperations::compareExchangeSeqCst(p, A, B) ==        \
-        A);                                                  \
+        A); /*success*/                                                 \
   CHECK(*q == B);                                                       \
   *q = A;                                                               \
   CHECK(jit::AtomicOperations::fetchAddSeqCst(p, B) == A);              \
