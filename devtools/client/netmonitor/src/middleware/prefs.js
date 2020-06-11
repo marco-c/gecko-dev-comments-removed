@@ -92,7 +92,7 @@ function persistVisibleColumns(state) {
 
 function persistVisibleWebSocketsColumns(state) {
   const visibleColumns = [];
-  const { columns } = state.webSockets;
+  const { columns } = state.messages;
   for (const column in columns) {
     if (columns[column]) {
       visibleColumns.push(column);
@@ -100,7 +100,7 @@ function persistVisibleWebSocketsColumns(state) {
   }
 
   Services.prefs.setCharPref(
-    "devtools.netmonitor.ws.visibleColumns",
+    "devtools.netmonitor.msg.visibleColumns",
     JSON.stringify(visibleColumns)
   );
 }

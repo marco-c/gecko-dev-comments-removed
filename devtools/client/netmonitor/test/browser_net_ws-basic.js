@@ -36,7 +36,7 @@ add_task(async function() {
   
   const wait = waitForDOM(
     document,
-    "#messages-panel .ws-frames-list-table .ws-frame-list-item",
+    "#messages-panel .message-list-table .message-list-item",
     2
   );
 
@@ -49,7 +49,7 @@ add_task(async function() {
 
   
   const frames = document.querySelectorAll(
-    "#messages-panel .ws-frames-list-table .ws-frame-list-item"
+    "#messages-panel .message-list-table .message-list-item"
   );
 
   

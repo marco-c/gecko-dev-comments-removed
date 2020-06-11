@@ -13,7 +13,7 @@ const {
   SELECT_DETAILS_PANEL_TAB,
   SEND_CUSTOM_REQUEST,
   ENABLE_PERSISTENT_LOGS,
-  WS_SELECT_FRAME,
+  MSG_SELECT,
 } = require("devtools/client/netmonitor/src/constants");
 
 const {
@@ -95,8 +95,8 @@ function eventTelemetryMiddleware(connector, telemetry) {
     }
 
     
-    if (action.type == WS_SELECT_FRAME) {
-      selectWSFrame({
+    if (action.type == MSG_SELECT) {
+      selectMessage({
         telemetry,
         sessionId,
       });
@@ -202,7 +202,7 @@ function persistenceChange({ telemetry, state, sessionId }) {
 
 
 
-function selectWSFrame({ telemetry, sessionId }) {
+function selectMessage({ telemetry, sessionId }) {
   telemetry.recordEvent("select_ws_frame", "netmonitor", null, {
     session_id: sessionId,
   });

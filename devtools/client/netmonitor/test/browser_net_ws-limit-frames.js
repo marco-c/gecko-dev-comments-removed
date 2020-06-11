@@ -11,7 +11,7 @@ add_task(async function() {
   await pushPref("devtools.netmonitor.features.webSockets", true);
 
   
-  await pushPref("devtools.netmonitor.ws.displayed-frames.limit", 30);
+  await pushPref("devtools.netmonitor.msg.displayed-messages.limit", 30);
 
   const { tab, monitor } = await initNetMonitor(WS_PAGE_URL, {
     requestCount: 1,
@@ -46,7 +46,7 @@ add_task(async function() {
 
   
   const frames = document.querySelectorAll(
-    "#messages-panel .ws-frames-list-table .ws-frame-list-item"
+    "#messages-panel .message-list-table .message-list-item"
   );
 
   

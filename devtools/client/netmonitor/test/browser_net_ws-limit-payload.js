@@ -11,7 +11,7 @@ add_task(async function() {
   await pushPref("devtools.netmonitor.features.webSockets", true);
 
   
-  await pushPref("devtools.netmonitor.ws.messageDataLimit", 100);
+  await pushPref("devtools.netmonitor.msg.messageDataLimit", 100);
 
   const { tab, monitor } = await initNetMonitor(WS_PAGE_URL, {
     requestCount: 1,
@@ -35,7 +35,7 @@ add_task(async function() {
   
   const wait = waitForDOM(
     document,
-    "#messages-panel .ws-frames-list-table .ws-frame-list-item",
+    "#messages-panel .message-list-table .message-list-item",
     2
   );
 
@@ -51,7 +51,7 @@ add_task(async function() {
 
   
   const frames = document.querySelectorAll(
-    "#messages-panel .ws-frames-list-table .ws-frame-list-item"
+    "#messages-panel .message-list-table .message-list-item"
   );
 
   
@@ -68,7 +68,7 @@ add_task(async function() {
     "Truncated data header shown"
   );
   is(
-    document.querySelector("#messages-panel .ws-frame-rawData-payload")
+    document.querySelector("#messages-panel .message-rawData-payload")
       .textContent.length,
     100,
     "Payload size is kept to the limit"

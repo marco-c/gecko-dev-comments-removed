@@ -52,13 +52,13 @@ add_task(async function() {
   
   await waitForDOMIfNeeded(
     document,
-    "#messages-panel .ws-frames-list-table .ws-frame-list-item",
+    "#messages-panel .message-list-table .message-list-item",
     2
   );
 
   
   const firstFramePayload = document.querySelector(
-    "#messages-panel .ws-frames-list-table .ws-frame-list-item .ws-frames-list-payload"
+    "#messages-panel .message-list-table .message-list-item .message-list-payload"
   );
   is(firstFramePayload.textContent.trim(), "readyState:loading");
 

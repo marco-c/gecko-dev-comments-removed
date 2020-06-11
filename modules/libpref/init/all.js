@@ -4851,7 +4851,7 @@ pref("devtools.netmonitor.responseBodyLimit", 1048576);
 pref("devtools.netmonitor.requestBodyLimit", 1048576);
 
 
-pref("devtools.netmonitor.ws.messageDataLimit", 100000);
+pref("devtools.netmonitor.msg.messageDataLimit", 100000);
 
 
 pref("devtools.defaultColorUnit", "authored");
