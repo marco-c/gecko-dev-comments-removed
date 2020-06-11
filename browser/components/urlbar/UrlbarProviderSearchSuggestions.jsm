@@ -199,6 +199,8 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
     
     
+    
+    
     if (
       queryContext.tokens.length == 1 &&
       queryContext.tokens[0].type == UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN
@@ -208,14 +210,9 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
     
     
-    
     if (
-      queryContext.tokens.some(
-        t =>
-          t.type == UrlbarTokenizer.TYPE.POSSIBLE_URL ||
-          (t.type == UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN &&
-            !UrlbarTokenizer.REGEXP_SINGLE_WORD_HOST.test(t.value))
-      )
+      queryContext.fixupInfo.fixedURI &&
+      !queryContext.fixupInfo.keywordAsSent
     ) {
       return false;
     }
