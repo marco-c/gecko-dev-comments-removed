@@ -20,16 +20,17 @@ namespace mozilla {
 namespace layers {
 
 SharedSurfaceTextureData::SharedSurfaceTextureData(
-    UniquePtr<gl::SharedSurface> surf)
-    : mSurf(std::move(surf)) {}
+    const SurfaceDescriptor& desc, const gfx::SurfaceFormat format,
+    const gfx::IntSize size)
+    : mDesc(desc), mFormat(format), mSize(size) {}
 
 SharedSurfaceTextureData::~SharedSurfaceTextureData() = default;
 
 void SharedSurfaceTextureData::Deallocate(LayersIPCChannel*) {}
 
 void SharedSurfaceTextureData::FillInfo(TextureData::Info& aInfo) const {
-  aInfo.size = mSurf->mSize;
-  aInfo.format = gfx::SurfaceFormat::UNKNOWN;
+  aInfo.size = mSize;
+  aInfo.format = mFormat;
   aInfo.hasIntermediateBuffer = false;
   aInfo.hasSynchronization = false;
   aInfo.supportsMoz2D = false;
@@ -37,49 +38,46 @@ void SharedSurfaceTextureData::FillInfo(TextureData::Info& aInfo) const {
 }
 
 bool SharedSurfaceTextureData::Serialize(SurfaceDescriptor& aOutDescriptor) {
-  return mSurf->ToSurfaceDescriptor(&aOutDescriptor);
+  aOutDescriptor = mDesc;
+  return true;
 }
 
-SharedSurfaceTextureClient::SharedSurfaceTextureClient(
-    SharedSurfaceTextureData* aData, TextureFlags aFlags,
-    LayersIPCChannel* aAllocator)
-    : TextureClient(aData, aFlags, aAllocator) {
-  mWorkaroundAnnoyingSharedSurfaceLifetimeIssues = true;
-}
 
-already_AddRefed<SharedSurfaceTextureClient> SharedSurfaceTextureClient::Create(
-    UniquePtr<gl::SharedSurface> surf, gl::SurfaceFactory* factory,
-    LayersIPCChannel* aAllocator, TextureFlags aFlags) {
-  if (!surf) {
-    return nullptr;
-  }
-  TextureFlags flags = aFlags | TextureFlags::RECYCLE | surf->GetTextureFlags();
-  SharedSurfaceTextureData* data =
-      new SharedSurfaceTextureData(std::move(surf));
-  return MakeAndAddRef<SharedSurfaceTextureClient>(data, flags, aAllocator);
-}
 
-SharedSurfaceTextureClient::~SharedSurfaceTextureClient() {
-  
-  
-  
-  
-  
-  TextureData* data = mData;
-  mData = nullptr;
 
-  Destroy();
 
-  if (data) {
-    
-    
-    
-    
-    
-    
-    delete data;
-  }
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }  
 }  

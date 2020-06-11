@@ -398,82 +398,59 @@ ReturnType ClientWebGLContext::Run(Args&&... aArgs) const {
 
 
 
-static uint8_t gWebGLLayerUserData;
-
-class WebGLContextUserData : public LayerUserData {
- public:
-  explicit WebGLContextUserData(HTMLCanvasElement* canvas) : mCanvas(canvas) {}
-
-  
-
-
-  static void PreTransactionCallback(void* data) {
-    ClientWebGLContext* webgl = static_cast<ClientWebGLContext*>(data);
-
-    
-    webgl->BeginComposition();
-  }
-
-  
-
-
-
-  static void DidTransactionCallback(void* data) {
-    ClientWebGLContext* webgl = static_cast<ClientWebGLContext*>(data);
-
-    
-    webgl->EndComposition();
-  }
-
- private:
-  RefPtr<HTMLCanvasElement> mCanvas;
-};
-
-void ClientWebGLContext::BeginComposition() {
-  
-  
-  
-  
-  
-  
-  if (!mNotLost) return;
-  if (mNotLost->inProcess) {
-    WEBGL_BRIDGE_LOGI("[%p] Presenting", this);
-    Run<RPROC(Present)>();
-  }
-}
+void ClientWebGLContext::OnBeforePaintTransaction() { Present(); }
 
 void ClientWebGLContext::EndComposition() {
-  if (!mNotLost) return;
-  if (mNotLost->outOfProcess) {
-    WEBGL_BRIDGE_LOGI("[%p] Presenting", this);
-    Run<RPROC(Present)>();
-  }
-
   
   MarkContextClean();
 }
 
-void ClientWebGLContext::Present() { Run<RPROC(Present)>(); }
 
-void ClientWebGLContext::ClearVRFrame() const { Run<RPROC(ClearVRFrame)>(); }
 
-RefPtr<layers::SharedSurfaceTextureClient> ClientWebGLContext::GetVRFrame(
-    const WebGLFramebufferJS* fb) const {
-  const auto notLost =
-      mNotLost;  
-  if (!notLost) return nullptr;
-  const auto& inProcessContext = notLost->inProcess;
-  if (inProcessContext) {
-    return inProcessContext->GetVRFrame(fb ? fb->mId : 0);
+namespace webgl {
+
+void Present(ClientWebGLContext& webgl) { webgl.Present(); }
+
+Maybe<layers::SurfaceDescriptor> GetFrontBuffer(
+    ClientWebGLContext& webgl, layers::KnowsCompositor* const kc) {
+  auto texType = layers::TextureType::Unknown;
+  if (kc) {
+    texType = layers::PreferredCanvasTextureType(*kc);
   }
-  MOZ_ASSERT_UNREACHABLE("TODO: Remote GetVRFrame");
-  return nullptr;
+  return webgl.GetFrontBuffer(texType);
 }
+
+}  
+
+
+
+void ClientWebGLContext::Present() {
+  if (!mIsCanvasDirty) return;
+  mIsCanvasDirty = false;
+  mFrontBufferDesc = nullptr;
+  mFrontBufferSnapshot = nullptr;
+
+  Run<RPROC(Present)>();
+}
+
+Maybe<layers::SurfaceDescriptor> ClientWebGLContext::GetFrontBuffer(
+    const layers::TextureType type) {
+  if (!mFrontBufferDesc) {
+    const auto desc = Run<RPROC(GetFrontBuffer)>(type);
+    if (desc) {
+      mFrontBufferDesc = MakeUnique<layers::SurfaceDescriptor>(*desc);
+    }
+  }
+
+  if (!mFrontBufferDesc) return Nothing();
+  return Some(*mFrontBufferDesc);
+}
+
+
 
 already_AddRefed<layers::Layer> ClientWebGLContext::GetCanvasLayer(
     nsDisplayListBuilder* builder, Layer* oldLayer, LayerManager* manager) {
-  if (!mResetLayer && oldLayer && oldLayer->HasUserData(&gWebGLLayerUserData)) {
+  if (!mResetLayer && oldLayer) {
     RefPtr<layers::Layer> ret = oldLayer;
     return ret.forget();
   }
@@ -486,14 +463,7 @@ already_AddRefed<layers::Layer> ClientWebGLContext::GetCanvasLayer(
     return nullptr;
   }
 
-  WebGLContextUserData* userData = nullptr;
-  if (builder->IsPaintingToWindow() && mCanvasElement) {
-    userData = new WebGLContextUserData(mCanvasElement);
-  }
-
-  canvasLayer->SetUserData(&gWebGLLayerUserData, userData);
-
-  CanvasRenderer* canvasRenderer = canvasLayer->CreateOrGetCanvasRenderer();
+  const auto canvasRenderer = canvasLayer->CreateOrGetCanvasRenderer();
   if (!InitializeCanvasRenderer(builder, canvasRenderer)) return nullptr;
 
   uint32_t flags = 0;
@@ -503,7 +473,6 @@ already_AddRefed<layers::Layer> ClientWebGLContext::GetCanvasLayer(
   canvasLayer->SetContentFlags(flags);
 
   mResetLayer = false;
-
   return canvasLayer.forget();
 }
 
@@ -533,54 +502,19 @@ bool ClientWebGLContext::InitializeCanvasRenderer(
   const FuncScope funcScope(*this, "<InitializeCanvasRenderer>");
   if (IsContextLost()) return false;
 
-  Maybe<ICRData> icrData =
-      Run<RPROC(InitializeCanvasRenderer)>(GetCompositorBackendType());
+  CanvasRendererData data;
+  data.mContext = mSharedPtrPtr;
+  data.mOriginPos = gl::OriginPos::BottomLeft;
 
-  if (!icrData) {
-    return false;
-  }
+  const auto& options = *mInitialOptions;
+  const auto& size = DrawingBufferSize();
+  data.mIsOpaque = !options.alpha;
+  data.mIsAlphaPremult = !options.alpha || options.premultipliedAlpha;
+  data.mSize = {size.x, size.y};
 
-  mSurfaceInfo = *icrData;
-
-  CanvasInitializeData data;
   if (aBuilder->IsPaintingToWindow() && mCanvasElement) {
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    data.mPreTransCallback = WebGLContextUserData::PreTransactionCallback;
-    data.mPreTransCallbackData = this;
-    data.mDidTransCallback = WebGLContextUserData::DidTransactionCallback;
-    data.mDidTransCallbackData = this;
+    data.mDoPaintCallbacks = true;
   }
-
-  MOZ_ASSERT(mCanvasElement);  
-                               
-
-  if (!mNotLost) return false;
-
-  if (mNotLost->outOfProcess) {
-    data.mOOPRenderer = mCanvasElement->GetOOPCanvasRenderer();
-    MOZ_ASSERT(data.mOOPRenderer);
-    MOZ_ASSERT((!data.mOOPRenderer->mContext) ||
-               (data.mOOPRenderer->mContext == this));
-    data.mOOPRenderer->mContext = this;
-  } else {
-    MOZ_ASSERT(mNotLost->inProcess);
-    data.mGLContext = mNotLost->inProcess->GetWebGLContext()->gl;
-  }
-
-  data.mHasAlpha = mSurfaceInfo.hasAlpha;
-  data.mIsGLAlphaPremult = mSurfaceInfo.isPremultAlpha || !data.mHasAlpha;
-  data.mSize = mSurfaceInfo.size;
 
   aRenderer->Initialize(data);
   aRenderer->SetDirty();
@@ -672,13 +606,24 @@ ClientWebGLContext::SetDimensions(const int32_t signedWidth,
   if (!size.y) {
     size.y = 1;
   }
+  const auto prevRequestedSize = mRequestedSize;
+  mRequestedSize = size;
 
   mResetLayer = true;  
 
   if (mNotLost) {
     auto& state = State();
-    state.mDrawingBufferSize = Nothing();
 
+    auto curSize = prevRequestedSize;
+    if (state.mDrawingBufferSize) {
+      curSize = *state.mDrawingBufferSize;
+    }
+    if (size == curSize) return NS_OK;  
+
+    if (mIsCanvasDirty) {
+      Present();
+    }
+    state.mDrawingBufferSize = Nothing();
     Run<RPROC(Resize)>(size);
 
     MarkCanvasDirty();
@@ -791,6 +736,7 @@ bool ClientWebGLContext::CreateHostContext(const uvec2& requestedSize) {
     return false;
   }
   mNotLost = pNotLost;
+  MarkCanvasDirty();
 
   
   const auto& limits = Limits();
@@ -922,6 +868,67 @@ already_AddRefed<gfx::SourceSurface> ClientWebGLContext::GetSurfaceSnapshot(
   const auto notLost =
       mNotLost;  
 
+  auto ret = BackBufferSnapshot();
+  if (!ret) return nullptr;
+
+  
+
+  const auto& options = mNotLost->info.options;
+
+  auto srcAlphaType = gfxAlphaType::Opaque;
+  if (options.alpha) {
+    if (options.premultipliedAlpha) {
+      srcAlphaType = gfxAlphaType::Premult;
+    } else {
+      srcAlphaType = gfxAlphaType::NonPremult;
+    }
+  }
+
+  if (out_alphaType) {
+    *out_alphaType = srcAlphaType;
+  } else {
+    
+    if (srcAlphaType == gfxAlphaType::NonPremult) {
+      const auto nonPremultSurf = ret;
+      const auto& size = nonPremultSurf->GetSize();
+      const auto format = nonPremultSurf->GetFormat();
+      ret = gfx::Factory::CreateDataSourceSurface(size, format, false);
+      gfxUtils::PremultiplyDataSurface(nonPremultSurf, ret);
+    }
+  }
+
+  return ret.forget();
+}
+
+RefPtr<gfx::SourceSurface> ClientWebGLContext::GetFrontBufferSnapshot() {
+  const FuncScope funcScope(*this, "<GetSurfaceSnapshot>");
+  if (IsContextLost()) return nullptr;
+  const auto notLost =
+      mNotLost;  
+
+  const auto& options = mNotLost->info.options;
+
+  if (!mFrontBufferSnapshot) {
+    mFrontBufferSnapshot = Run<RPROC(GetFrontBufferSnapshot)>();
+    if (!mFrontBufferSnapshot) return nullptr;
+
+    if (options.alpha && !options.premultipliedAlpha) {
+      const auto nonPremultSurf = mFrontBufferSnapshot;
+      const auto& size = nonPremultSurf->GetSize();
+      const auto format = nonPremultSurf->GetFormat();
+      mFrontBufferSnapshot =
+          gfx::Factory::CreateDataSourceSurface(size, format, false);
+      gfxUtils::PremultiplyDataSurface(nonPremultSurf, mFrontBufferSnapshot);
+    }
+  }
+  return mFrontBufferSnapshot;
+}
+
+RefPtr<gfx::DataSourceSurface> ClientWebGLContext::BackBufferSnapshot() {
+  if (IsContextLost()) return nullptr;
+  const auto notLost =
+      mNotLost;  
+
   const auto& options = mNotLost->info.options;
   const auto& state = State();
 
@@ -970,64 +977,31 @@ already_AddRefed<gfx::SourceSurface> ClientWebGLContext::GetSurfaceSnapshot(
     MOZ_ASSERT(static_cast<uint32_t>(map.GetStride()) == stride);
 
     const auto desc = webgl::ReadPixelsDesc{{0, 0}, size};
-
     const auto range = Range<uint8_t>(map.GetData(), stride * size.y);
-    auto view = RawBufferView(range);
+    DoReadPixels(desc, range);
 
-    const auto notLost =
-        mNotLost;  
-    if (!notLost) return nullptr;
-    const auto& inProcessContext = notLost->inProcess;
-    if (inProcessContext) {
-      inProcessContext->ReadPixels(desc, view);
-    } else {
-      MOZ_ASSERT_UNREACHABLE("TODO: Remote GetSurfaceSnapshot");
+    const auto begin = range.begin().get();
+
+    std::vector<uint8_t> temp;
+    temp.resize(stride);
+    for (const auto i : IntegerRange(size.y / 2)) {
+      const auto top = begin + stride * i;
+      const auto bottom = begin + stride * (size.y - 1 - i);
+      memcpy(temp.data(), top, stride);
+      memcpy(top, bottom, stride);
+      gfxUtils::ConvertBGRAtoRGBA(top, stride);
+
+      memcpy(bottom, temp.data(), stride);
+      gfxUtils::ConvertBGRAtoRGBA(bottom, stride);
     }
-    
 
-    const auto swapRowRedBlue = [&](uint8_t* const row) {
-      for (const auto x : IntegerRange(size.x)) {
-        std::swap(row[4 * x], row[4 * x + 2]);
-      }
-    };
-
-    std::vector<uint8_t> tempRow(stride);
-    for (const auto srcY : IntegerRange(size.y / 2)) {
-      const auto dstY = size.y - 1 - srcY;
-      const auto srcRow = (range.begin() + (stride * srcY)).get();
-      const auto dstRow = (range.begin() + (stride * dstY)).get();
-      memcpy(tempRow.data(), dstRow, stride);
-      memcpy(dstRow, srcRow, stride);
-      swapRowRedBlue(dstRow);
-      memcpy(srcRow, tempRow.data(), stride);
-      swapRowRedBlue(srcRow);
-    }
-    if (size.y & 1) {
-      const auto midY = size.y / 2;  
-      const auto midRow = (range.begin() + (stride * midY)).get();
-      swapRowRedBlue(midRow);
+    if (size.y % 2) {
+      const auto middle = begin + stride * (size.y / 2);
+      gfxUtils::ConvertBGRAtoRGBA(middle, stride);
     }
   }
 
-  gfxAlphaType srcAlphaType;
-  if (!options.alpha) {
-    srcAlphaType = gfxAlphaType::Opaque;
-  } else if (options.premultipliedAlpha) {
-    srcAlphaType = gfxAlphaType::Premult;
-  } else {
-    srcAlphaType = gfxAlphaType::NonPremult;
-  }
-
-  if (out_alphaType) {
-    *out_alphaType = srcAlphaType;
-  } else {
-    
-    if (srcAlphaType == gfxAlphaType::NonPremult) {
-      gfxUtils::PremultiplyDataSurface(surf, surf);
-    }
-  }
-
-  return surf.forget();
+  return surf;
 }
 
 UniquePtr<uint8_t[]> ClientWebGLContext::GetImageBuffer(int32_t* out_format) {
@@ -4093,7 +4067,12 @@ void ClientWebGLContext::ReadPixels(GLint x, GLint y, GLsizei width,
                                           {format, type},
                                           state.mPixelPackState};
   const auto range = Range<uint8_t>(bytes, byteLen);
-  auto view = RawBufferView(range);
+  DoReadPixels(desc, range);
+}
+
+void ClientWebGLContext::DoReadPixels(const webgl::ReadPixelsDesc& desc,
+                                      const Range<uint8_t> dest) const {
+  auto view = RawBufferView(dest);
 
   const auto notLost =
       mNotLost;  

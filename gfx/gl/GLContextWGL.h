@@ -17,13 +17,11 @@ class GLContextWGL final : public GLContext {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(GLContextWGL, override)
   
-  GLContextWGL(CreateContextFlags flags, const SurfaceCaps& caps,
-               bool isOffscreen, HDC aDC, HGLRC aContext,
+  GLContextWGL(const GLContextDesc&, HDC aDC, HGLRC aContext,
                HWND aWindow = nullptr);
 
   
-  GLContextWGL(CreateContextFlags flags, const SurfaceCaps& caps,
-               bool isOffscreen, HANDLE aPbuffer, HDC aDC, HGLRC aContext,
+  GLContextWGL(const GLContextDesc&, HANDLE aPbuffer, HDC aDC, HGLRC aContext,
                int aPixelFormat);
 
   ~GLContextWGL();
