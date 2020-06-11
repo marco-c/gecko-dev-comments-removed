@@ -360,19 +360,12 @@ bool nsCoreUtils::IsContentDocument(Document* aDocument) {
 }
 
 bool nsCoreUtils::IsTopLevelContentDocInProcess(Document* aDocumentNode) {
-  nsCOMPtr<nsIDocShellTreeItem> treeItem(aDocumentNode->GetDocShell());
-
-  nsCOMPtr<nsIDocShellTreeItem> parentTreeItem;
-  treeItem->GetInProcessParent(getter_AddRefs(parentTreeItem));
-
-  
-  if (XRE_IsContentProcess()) return !parentTreeItem;
-
-  
-  nsCOMPtr<nsIDocShellTreeItem> rootTreeItem;
-  treeItem->GetInProcessRootTreeItem(getter_AddRefs(rootTreeItem));
-
-  return parentTreeItem == rootTreeItem;
+  BrowsingContext* bc = aDocumentNode->GetBrowsingContext();
+  return bc->IsContent() && (
+                                
+                                bc->IsTop() ||
+                                
+                                !bc->GetParent()->IsInProcess());
 }
 
 bool nsCoreUtils::IsErrorPage(Document* aDocument) {
