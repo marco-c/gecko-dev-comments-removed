@@ -59,10 +59,12 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ScriptLoadRequest)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFetchOptions, mCacheInfo)
   tmp->mScript = nullptr;
   tmp->DropBytecodeCacheReferences();
+  tmp->MaybeUnblockOnload();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(ScriptLoadRequest)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFetchOptions, mCacheInfo)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFetchOptions, mCacheInfo,
+                                    mLoadBlockedDocument)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(ScriptLoadRequest)
@@ -102,16 +104,20 @@ ScriptLoadRequest::ScriptLoadRequest(ScriptKind aKind, nsIURI* aURI,
 
 ScriptLoadRequest::~ScriptLoadRequest() {
   
-  MOZ_ASSERT(!mOffThreadToken);
+  
+  
+  MOZ_ASSERT_IF(
+      !StaticPrefs::
+          dom_script_loader_external_scripts_speculative_omt_parse_enabled(),
+      !mOffThreadToken);
 
-  
-  
   MaybeCancelOffThreadScript();
 
   if (mScript) {
     DropBytecodeCacheReferences();
   }
 
+  MaybeUnblockOnload();
   DropJSObjects(this);
 }
 

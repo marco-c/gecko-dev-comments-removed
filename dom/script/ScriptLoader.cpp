@@ -170,6 +170,7 @@ ScriptLoader::ScriptLoader(Document* aDocument)
       mNumberOfProcessors(0),
       mEnabled(true),
       mDeferEnabled(false),
+      mSpeculativeOMTParsingEnabled(false),
       mDeferCheckpointReached(false),
       mBlockingDOMContentLoaded(false),
       mLoadEventFired(false),
@@ -177,6 +178,9 @@ ScriptLoader::ScriptLoader(Document* aDocument)
       mReporter(new ConsoleReportCollector()) {
   LOG(("ScriptLoader::ScriptLoader %p", this));
   EnsureModuleHooksInitialized();
+
+  mSpeculativeOMTParsingEnabled = StaticPrefs::
+      dom_script_loader_external_scripts_speculative_omt_parse_enabled();
 }
 
 ScriptLoader::~ScriptLoader() {
@@ -1151,9 +1155,7 @@ void ScriptLoader::ProcessLoadedModuleTree(ModuleLoadRequest* aRequest) {
     }
   }
 
-  if (aRequest->mWasCompiledOMT) {
-    mDocument->UnblockOnload(false);
-  }
+  aRequest->MaybeUnblockOnload();
 }
 
 JS::Value ScriptLoader::FindFirstParseError(ModuleLoadRequest* aRequest) {
@@ -1742,7 +1744,8 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
 
   
   
-  NS_ASSERTION(!request->InCompilingStage() || request->IsModuleRequest(),
+  NS_ASSERTION(SpeculativeOMTParsingEnabled() || !request->InCompilingStage() ||
+                   request->IsModuleRequest(),
                "Request should not yet be in compiling stage.");
 
   if (request->IsAsyncScript()) {
@@ -1943,6 +1946,11 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
   
   RefPtr<ScriptLoadRequest> request = mPreloads[i].mRequest;
   request->SetIsLoadRequest(aElement);
+
+  if (request->mWasCompiledOMT && !request->IsModuleRequest()) {
+    request->SetReady();
+  }
+
   nsString preloadCharset(mPreloads[i].mCharset);
   mPreloads.RemoveElementAt(i);
 
@@ -2066,6 +2074,15 @@ nsresult ScriptLoader::ProcessOffThreadRequest(ScriptLoadRequest* aRequest) {
     return ProcessFetchedModuleSource(request);
   }
 
+  
+  
+  MOZ_ASSERT_IF(!SpeculativeOMTParsingEnabled(), aRequest->GetScriptElement());
+  if (!aRequest->GetScriptElement()) {
+    
+    aRequest->MaybeUnblockOnload();
+    return NS_OK;
+  }
+
   aRequest->SetReady();
 
   if (aRequest == mParserBlockingRequest) {
@@ -2080,14 +2097,19 @@ nsresult ScriptLoader::ProcessOffThreadRequest(ScriptLoadRequest* aRequest) {
     mParserBlockingRequest = nullptr;
     UnblockParser(aRequest);
     ProcessRequest(aRequest);
-    mDocument->UnblockOnload(false);
     ContinueParserAsync(aRequest);
     return NS_OK;
   }
 
-  nsresult rv = ProcessRequest(aRequest);
-  mDocument->UnblockOnload(false);
-  return rv;
+  
+  if (aRequest->IsAsyncScript() || aRequest->IsBlockingScript()) {
+    nsresult rv = ProcessRequest(aRequest);
+    return rv;
+  }
+
+  
+  ProcessPendingRequests();
+  return NS_OK;
 }
 
 NotifyOffThreadScriptLoadCompletedRunnable::
@@ -2198,7 +2220,10 @@ static void OffThreadScriptLoaderCallback(JS::OffThreadToken* aToken,
 
 nsresult ScriptLoader::AttemptAsyncScriptCompile(ScriptLoadRequest* aRequest,
                                                  bool* aCouldCompileOut) {
-  MOZ_ASSERT_IF(!aRequest->IsModuleRequest(), aRequest->IsReadyToRun());
+  
+  
+  MOZ_ASSERT_IF(!SpeculativeOMTParsingEnabled() && !aRequest->IsModuleRequest(),
+                aRequest->IsReadyToRun());
   MOZ_ASSERT(!aRequest->mWasCompiledOMT);
   MOZ_ASSERT(aCouldCompileOut && !*aCouldCompileOut);
 
@@ -2303,7 +2328,7 @@ nsresult ScriptLoader::AttemptAsyncScriptCompile(ScriptLoadRequest* aRequest,
     }
   }
 
-  mDocument->BlockOnload();
+  aRequest->BlockOnload(mDocument);
 
   
   
@@ -2318,21 +2343,18 @@ nsresult ScriptLoader::CompileOffThreadOrProcessRequest(
     ScriptLoadRequest* aRequest) {
   NS_ASSERTION(nsContentUtils::IsSafeToRunScript(),
                "Processing requests when running scripts is unsafe.");
-  NS_ASSERTION(!aRequest->mOffThreadToken,
-               "Candidate for off-thread compile is already parsed off-thread");
-  NS_ASSERTION(
-      !aRequest->InCompilingStage(),
-      "Candidate for off-thread compile is already in compiling stage.");
 
-  bool couldCompile = false;
-  nsresult rv = AttemptAsyncScriptCompile(aRequest, &couldCompile);
-  if (NS_FAILED(rv)) {
-    HandleLoadError(aRequest, rv);
-    return rv;
-  }
+  if (!aRequest->mOffThreadToken && !aRequest->mWasCompiledOMT) {
+    bool couldCompile = false;
+    nsresult rv = AttemptAsyncScriptCompile(aRequest, &couldCompile);
+    if (NS_FAILED(rv)) {
+      HandleLoadError(aRequest, rv);
+      return rv;
+    }
 
-  if (couldCompile) {
-    return NS_OK;
+    if (couldCompile) {
+      return NS_OK;
+    }
   }
 
   return ProcessRequest(aRequest);
@@ -2408,6 +2430,8 @@ nsresult ScriptLoader::ProcessRequest(ScriptLoadRequest* aRequest) {
                "Processing a request that is not ready to run.");
 
   NS_ENSURE_ARG(aRequest);
+
+  auto unblockOnload = MakeScopeExit([&] { aRequest->MaybeUnblockOnload(); });
 
   if (aRequest->IsModuleRequest()) {
     ModuleLoadRequest* request = aRequest->AsModuleRequest();
@@ -3211,9 +3235,6 @@ void ScriptLoader::ProcessPendingRequests() {
     request.swap(mParserBlockingRequest);
     UnblockParser(request);
     ProcessRequest(request);
-    if (request->mWasCompiledOMT) {
-      mDocument->UnblockOnload(false);
-    }
     ContinueParserAsync(request);
   }
 
@@ -3683,6 +3704,40 @@ static bool IsInternalURIScheme(nsIURI* uri) {
          uri->SchemeIs("chrome");
 }
 
+bool ScriptLoader::ShouldCompileOffThread(ScriptLoadRequest* aRequest) {
+  if (NumberOfProcessors() <= 1) {
+    return false;
+  }
+  if (aRequest == mParserBlockingRequest) {
+    return true;
+  }
+  if (SpeculativeOMTParsingEnabled()) {
+    
+    
+    if (aRequest->mIsNonAsyncScriptInserted &&
+        !StaticPrefs::
+            dom_script_loader_external_scripts_speculate_non_parser_inserted_enabled()) {
+      return false;
+    }
+
+    
+    if (aRequest->IsAsyncScript() &&
+        !StaticPrefs::
+            dom_script_loader_external_scripts_speculate_async_enabled()) {
+      return false;
+    }
+
+    if (aRequest->IsLinkPreloadScript() &&
+        !StaticPrefs::
+            dom_script_loader_external_scripts_speculate_link_preload_enabled()) {
+      return false;
+    }
+
+    return true;
+  }
+  return false;
+}
+
 nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
                                             nsIIncrementalStreamLoader* aLoader,
                                             nsresult aStatus) {
@@ -3798,7 +3853,8 @@ nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
 
   
   
-  if (aRequest == mParserBlockingRequest && NumberOfProcessors() > 1) {
+  
+  if (ShouldCompileOffThread(aRequest)) {
     MOZ_ASSERT(!aRequest->IsModuleRequest());
     bool couldCompile = false;
     nsresult rv = AttemptAsyncScriptCompile(aRequest, &couldCompile);

@@ -155,6 +155,16 @@ class ScriptLoader final : public nsISupports {
 
 
 
+
+  bool SpeculativeOMTParsingEnabled() const {
+    return mSpeculativeOMTParsingEnabled;
+  }
+
+  
+
+
+
+
   void AddParserBlockingScriptExecutionBlocker() {
     ++mParserBlockingBlockerCount;
   }
@@ -555,6 +565,8 @@ class ScriptLoader final : public nsISupports {
   void AddAsyncRequest(ScriptLoadRequest* aRequest);
   bool MaybeRemovedDeferRequests();
 
+  bool ShouldCompileOffThread(ScriptLoadRequest* aRequest);
+
   void MaybeMoveToLoadedList(ScriptLoadRequest* aRequest);
 
   using MaybeSourceText =
@@ -648,6 +660,7 @@ class ScriptLoader final : public nsISupports {
   uint32_t mNumberOfProcessors;
   bool mEnabled;
   bool mDeferEnabled;
+  bool mSpeculativeOMTParsingEnabled;
   bool mDeferCheckpointReached;
   bool mBlockingDOMContentLoaded;
   bool mLoadEventFired;

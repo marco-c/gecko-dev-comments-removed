@@ -123,6 +123,19 @@ class ScriptLoadRequest
     mIsTracking = true;
   }
 
+  void BlockOnload(Document* aDocument) {
+    MOZ_ASSERT(!mLoadBlockedDocument);
+    aDocument->BlockOnload();
+    mLoadBlockedDocument = aDocument;
+  }
+
+  void MaybeUnblockOnload() {
+    if (mLoadBlockedDocument) {
+      mLoadBlockedDocument->UnblockOnload(false);
+      mLoadBlockedDocument = nullptr;
+    }
+  }
+
   enum class Progress : uint8_t {
     eLoading,         
     eLoading_Source,  
@@ -343,6 +356,9 @@ class ScriptLoadRequest
   int32_t mLineNo;
   const SRIMetadata mIntegrity;
   const nsCOMPtr<nsIURI> mReferrer;
+
+  
+  RefPtr<Document> mLoadBlockedDocument;
 
   
   
