@@ -2744,8 +2744,17 @@ toolbar#nav-bar {
             profiler_logger = get_proxy_logger("profiler")
             profiler_logger.info("Shutdown performance profiling was enabled")
             profiler_logger.info("Profile saved locally to: %s" % profile_path)
-            symbolicate_profile_json(profile_path, options.topobjdir)
-            view_gecko_profile_from_mochitest(profile_path, options, profiler_logger)
+
+            if options.profilerSaveOnly or options.profiler:
+                
+                
+                
+                symbolicate_profile_json(profile_path, options.topobjdir)
+                view_gecko_profile_from_mochitest(profile_path, options, profiler_logger)
+            else:
+                profiler_logger.info("The profiler was enabled outside of the mochitests. "
+                                     "Use --profiler instead of MOZ_PROFILER_SHUTDOWN to "
+                                     "symbolicate and open the profile automatically.")
 
             
             if self.profiler_tempdir:
