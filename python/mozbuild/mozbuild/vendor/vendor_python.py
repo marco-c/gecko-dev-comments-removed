@@ -16,29 +16,30 @@ from mozpack.files import FileFinder
 
 
 class VendorPython(MozbuildObject):
-
     def vendor(self, packages=None, with_windows_wheel=False):
         self.populate_logger()
         self.log_manager.enable_unstructured()
 
-        vendor_dir = mozpath.join(
-            self.topsrcdir, os.path.join('third_party', 'python'))
+        vendor_dir = mozpath.join(self.topsrcdir, os.path.join("third_party", "python"))
 
         packages = packages or []
         if with_windows_wheel and len(packages) != 1:
-            raise Exception('--with-windows-wheel is only supported for a single package!')
+            raise Exception(
+                "--with-windows-wheel is only supported for a single package!"
+            )
 
         self._activate_virtualenv()
-        pip_compile = os.path.join(self.virtualenv_manager.bin_path, 'pip-compile')
+        pip_compile = os.path.join(self.virtualenv_manager.bin_path, "pip-compile")
         if not os.path.exists(pip_compile):
-            path = os.path.normpath(os.path.join(
-                self.topsrcdir, 'third_party', 'python', 'pip-tools'))
+            path = os.path.normpath(
+                os.path.join(self.topsrcdir, "third_party", "python", "pip-tools")
+            )
             self.virtualenv_manager.install_pip_package(path, vendored=True)
-        spec = os.path.join(vendor_dir, 'requirements.in')
-        requirements = os.path.join(vendor_dir, 'requirements.txt')
+        spec = os.path.join(vendor_dir, "requirements.in")
+        requirements = os.path.join(vendor_dir, "requirements.txt")
 
         with TemporaryDirectory() as spec_dir:
-            tmpspec = 'requirements-mach-vendor-python.in'
+            tmpspec = "requirements-mach-vendor-python.in"
             tmpspec_absolute = os.path.join(spec_dir, tmpspec)
             shutil.copyfile(spec, tmpspec_absolute)
             self._update_packages(tmpspec_absolute, packages)
@@ -48,39 +49,56 @@ class VendorPython(MozbuildObject):
                 [
                     pip_compile,
                     tmpspec,
-                    '--no-header',
-                    '--no-index',
-                    '--output-file', requirements,
-                    '--generate-hashes'
+                    "--no-header",
+                    "--no-index",
+                    "--output-file",
+                    requirements,
+                    "--generate-hashes",
                 ],
                 
                 
-                cwd=spec_dir)
+                cwd=spec_dir,
+            )
 
             with TemporaryDirectory() as tmp:
                 
-                self.virtualenv_manager._run_pip([
-                    'download',
-                    '-r', requirements,
-                    '--no-deps',
-                    '--dest', tmp,
-                    '--no-binary', ':all:',
-                    '--disable-pip-version-check'])
+                self.virtualenv_manager._run_pip(
+                    [
+                        "download",
+                        "-r",
+                        requirements,
+                        "--no-deps",
+                        "--dest",
+                        tmp,
+                        "--no-binary",
+                        ":all:",
+                        "--disable-pip-version-check",
+                    ]
+                )
                 if with_windows_wheel:
                     
                     
                     
-                    self.virtualenv_manager._run_pip([
-                        'download',
-                        '--dest', tmp,
-                        '--no-deps',
-                        '--only-binary', ':all:',
-                        '--platform', 'win_amd64',
-                        '--implementation', 'cp',
-                        '--python-version', '27',
-                        '--abi', 'none',
-                        '--disable-pip-version-check',
-                        packages[0]])
+                    self.virtualenv_manager._run_pip(
+                        [
+                            "download",
+                            "--dest",
+                            tmp,
+                            "--no-deps",
+                            "--only-binary",
+                            ":all:",
+                            "--platform",
+                            "win_amd64",
+                            "--implementation",
+                            "cp",
+                            "--python-version",
+                            "27",
+                            "--abi",
+                            "none",
+                            "--disable-pip-version-check",
+                            packages[0],
+                        ]
+                    )
                 self._extract(tmp, vendor_dir)
 
             shutil.copyfile(tmpspec_absolute, spec)
@@ -88,59 +106,61 @@ class VendorPython(MozbuildObject):
 
     def _update_packages(self, spec, packages):
         for package in packages:
-            if not all(package.partition('==')):
-                raise Exception('Package {} must be in the format name==version'.format(package))
+            if not all(package.partition("==")):
+                raise Exception(
+                    "Package {} must be in the format name==version".format(package)
+                )
 
         requirements = {}
-        with open(spec, 'r') as f:
+        with open(spec, "r") as f:
             comments = []
             for line in f.readlines():
                 line = line.strip()
-                if not line or line.startswith('#'):
+                if not line or line.startswith("#"):
                     comments.append(line)
                     continue
-                name, version = line.split('==')
+                name, version = line.split("==")
                 requirements[name] = version, comments
                 comments = []
 
         for package in packages:
-            name, version = package.split('==')
+            name, version = package.split("==")
             requirements[name] = version, []
 
-        with open(spec, 'w') as f:
+        with open(spec, "w") as f:
             for name, (version, comments) in sorted(requirements.items()):
                 if comments:
-                    f.write('{}\n'.format('\n'.join(comments)))
-                f.write('{}=={}\n'.format(name, version))
+                    f.write("{}\n".format("\n".join(comments)))
+                f.write("{}=={}\n".format(name, version))
 
     def _extract(self, src, dest):
         """extract source distribution into vendor directory"""
         finder = FileFinder(src)
-        for path, _ in finder.find('*'):
+        for path, _ in finder.find("*"):
             base, ext = os.path.splitext(path)
-            if ext == '.whl':
+            if ext == ".whl":
                 
                 
                 
                 
-                bits = base.split('-')
+                bits = base.split("-")
 
                 
                 bits.pop(1)
-                target = os.path.join(dest, '-'.join(bits))
+                target = os.path.join(dest, "-".join(bits))
                 mozfile.remove(target)  
                 os.mkdir(target)
                 mozfile.extract(os.path.join(finder.base, path), target)
             else:
                 
                 tld = mozfile.extract(os.path.join(finder.base, path), dest)[0]
-                target = os.path.join(dest, tld.rpartition('-')[0])
+                target = os.path.join(dest, tld.rpartition("-")[0])
                 mozfile.remove(target)  
                 mozfile.move(tld, target)
             
             
             link_finder = FileFinder(target)
-            for _, f in link_finder.find('**'):
+            for _, f in link_finder.find("**"):
                 if os.path.islink(f.path):
                     link_target = os.path.realpath(f.path)
                     os.unlink(f.path)
