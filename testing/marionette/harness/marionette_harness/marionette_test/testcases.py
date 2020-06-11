@@ -125,6 +125,11 @@ class CommonTestCase(unittest.TestCase):
                           RuntimeWarning, 2)
             result.addSuccess(self)
 
+    def assertRaisesRegxp(self, expected_exception, expected_regexp, callable_obj=None,
+                          *args, **kwargs):
+        return six.assertRaisesRegex(self, expected_exception, expected_regexp,
+                                     callable_obj=None, *args, **kwargs)
+
     def run(self, result=None):
         
         
