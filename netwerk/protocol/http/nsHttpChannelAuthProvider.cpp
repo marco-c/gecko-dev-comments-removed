@@ -67,8 +67,7 @@ static void GetOriginAttributesSuffix(nsIChannel* aChan, nsACString& aSuffix) {
 
   
   if (aChan) {
-    StoragePrincipalHelper::GetOriginAttributes(
-        aChan, oa, StoragePrincipalHelper::eRegularPrincipal);
+    StoragePrincipalHelper::GetOriginAttributesForNetworkState(aChan, oa);
   }
 
   oa.CreateSuffix(aSuffix);
