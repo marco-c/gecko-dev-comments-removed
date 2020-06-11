@@ -17,6 +17,7 @@
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/CustomEvent.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/StaticPrefs_print.h"
 #include "mozilla/Telemetry.h"
 #include "nsIBrowserChild.h"
 #include "nsIOService.h"
@@ -720,12 +721,11 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   
   if (!aIsPrintPreview || printingViaParent) {
     scriptSuppressor.Suppress();
-    bool printSilently;
+    bool printSilently = false;
     printData->mPrintSettings->GetPrintSilent(&printSilently);
-
-    
-    printSilently =
-        Preferences::GetBool("print.always_print_silent", printSilently);
+    if (StaticPrefs::print_always_print_silent()) {
+      printSilently = true;
+    }
 
     
     
