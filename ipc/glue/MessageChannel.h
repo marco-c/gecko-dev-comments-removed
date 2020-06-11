@@ -243,10 +243,10 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver {
   bool DoBuildIDsMatch() { return mBuildIDsConfirmedMatch; }
 
   
-  bool Send(Message* aMsg, Message* aReply);
+  bool Send(UniquePtr<Message> aMsg, Message* aReply);
 
   
-  bool Call(Message* aMsg, Message* aReply);
+  bool Call(UniquePtr<Message> aMsg, Message* aReply);
 
   
   bool WaitForIncomingMessage();
