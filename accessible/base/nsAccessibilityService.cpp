@@ -150,20 +150,6 @@ static bool MustBeAccessible(nsIContent* aContent, DocAccessible* aDocument) {
 
 
 
-static bool MustSVGElementBeAccessible(nsIContent* aContent) {
-  
-  for (nsIContent* childElm = aContent->GetFirstChild(); childElm;
-       childElm = childElm->GetNextSibling()) {
-    if (childElm->IsAnyOfSVGElements(nsGkAtoms::title, nsGkAtoms::desc)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-
-
-
 #ifdef MOZ_XUL
 Accessible* CreateMenupopupAccessible(Element* aElement, Accessible* aContext) {
 #  ifdef MOZ_ACCESSIBILITY_ATK
@@ -1154,7 +1140,7 @@ Accessible* nsAccessibilityService::CreateAccessible(nsINode* aNode,
   if (!newAcc) {
     if (content->IsSVGElement()) {
       SVGGeometryFrame* geometryFrame = do_QueryFrame(frame);
-      if (geometryFrame && MustSVGElementBeAccessible(content)) {
+      if (geometryFrame) {
         
         
         
@@ -1163,9 +1149,6 @@ Accessible* nsAccessibilityService::CreateAccessible(nsINode* aNode,
         newAcc = new HyperTextAccessibleWrap(content->AsElement(), document);
       } else if (content->IsSVGElement(nsGkAtoms::svg)) {
         newAcc = new EnumRoleAccessible<roles::DIAGRAM>(content, document);
-      } else if (content->IsSVGElement(nsGkAtoms::g) &&
-                 MustSVGElementBeAccessible(content)) {
-        newAcc = new EnumRoleAccessible<roles::GROUPING>(content, document);
       }
 
     } else if (content->IsMathMLElement()) {
