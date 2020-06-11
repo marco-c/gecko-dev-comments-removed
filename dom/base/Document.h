@@ -582,9 +582,7 @@ class Document : public nsINode,
   
   
   
-  nsIPrincipal* IntrinsicStoragePrincipal() final {
-    return mIntrinsicStoragePrincipal;
-  }
+  nsIPrincipal* PartitionedPrincipal() final { return mPartitionedPrincipal; }
 
   void ClearActiveStoragePrincipal() { mActiveStoragePrincipal = nullptr; }
 
@@ -855,7 +853,8 @@ class Document : public nsINode,
 
 
 
-  void SetPrincipals(nsIPrincipal* aPrincipal, nsIPrincipal* aStoragePrincipal);
+  void SetPrincipals(nsIPrincipal* aPrincipal,
+                     nsIPrincipal* aPartitionedPrincipal);
 
   
 
@@ -2095,7 +2094,7 @@ class Document : public nsINode,
 
   virtual void ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
                           nsIPrincipal* aPrincipal,
-                          nsIPrincipal* aStoragePrincipal);
+                          nsIPrincipal* aPartitionedPrincipal);
 
   
 
@@ -5046,7 +5045,8 @@ class Document : public nsINode,
   nsTabSizes mCachedTabSizes;
 
   
-  nsCOMPtr<nsIPrincipal> mIntrinsicStoragePrincipal;
+  
+  nsCOMPtr<nsIPrincipal> mPartitionedPrincipal;
 
   
   

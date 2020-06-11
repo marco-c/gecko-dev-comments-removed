@@ -236,9 +236,10 @@ interface nsIScriptSecurityManager : nsISupports
 
 
 
+
     void getChannelResultPrincipals(in nsIChannel aChannel,
                                     out nsIPrincipal aPrincipal,
-                                    out nsIPrincipal aStoragePrincipal);
+                                    out nsIPrincipal aPartitionedPrincipal);
 
     
 

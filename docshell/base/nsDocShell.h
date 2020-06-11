@@ -602,7 +602,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   nsresult CreateAboutBlankContentViewer(
-      nsIPrincipal* aPrincipal, nsIPrincipal* aStoragePrincipal,
+      nsIPrincipal* aPrincipal, nsIPrincipal* aPartitionedPrincipal,
       nsIContentSecurityPolicy* aCSP, nsIURI* aBaseURI,
       bool aTryToSaveOldPresentation = true, bool aCheckPermitUnload = true,
       mozilla::dom::WindowGlobalChild* aActor = nullptr);
@@ -642,7 +642,7 @@ class nsDocShell final : public nsDocLoader,
   nsresult AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
                                nsIPrincipal* aTriggeringPrincipal,
                                nsIPrincipal* aPrincipalToInherit,
-                               nsIPrincipal* aStoragePrincipalToInherit,
+                               nsIPrincipal* aPartitionedPrincipalToInherit,
                                nsIContentSecurityPolicy* aCsp,
                                bool aCloneChildren, nsISHEntry** aNewEntry);
 
@@ -717,9 +717,10 @@ class nsDocShell final : public nsDocLoader,
   bool OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
                 nsIPrincipal* aTriggeringPrincipal,
                 nsIPrincipal* aPrincipalToInherit,
-                nsIPrincipal* aStoragePrincipalToInehrit, uint32_t aLoadType,
-                nsIContentSecurityPolicy* aCsp, bool aFireOnLocationChange,
-                bool aAddToGlobalHistory, bool aCloneSHChildren);
+                nsIPrincipal* aPartitionedPrincipalToInehrit,
+                uint32_t aLoadType, nsIContentSecurityPolicy* aCsp,
+                bool aFireOnLocationChange, bool aAddToGlobalHistory,
+                bool aCloneSHChildren);
 
   
   
@@ -759,8 +760,9 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  nsIPrincipal* GetInheritedPrincipal(bool aConsiderCurrentDocument,
-                                      bool aConsiderStoragePrincipal = false);
+  nsIPrincipal* GetInheritedPrincipal(
+      bool aConsiderCurrentDocument,
+      bool aConsiderPartitionedPrincipal = false);
 
   
 

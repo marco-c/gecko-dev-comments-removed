@@ -69,7 +69,7 @@ ServiceWorkerPrivateImpl::RAIIActorPtrHolder::~RAIIActorPtrHolder() {
 }
 
 RemoteWorkerControllerChild*
-    ServiceWorkerPrivateImpl::RAIIActorPtrHolder::operator->() const {
+ServiceWorkerPrivateImpl::RAIIActorPtrHolder::operator->() const {
   AssertIsOnMainThread();
 
   return get();
@@ -170,7 +170,8 @@ nsresult ServiceWorkerPrivateImpl::Initialize() {
   mRemoteWorkerData.principalInfo() = principalInfo;
   
   
-  mRemoteWorkerData.storagePrincipalInfo() = principalInfo;
+  
+  mRemoteWorkerData.partitionedPrincipalInfo() = principalInfo;
 
   rv = uri->GetHost(mRemoteWorkerData.domain());
   NS_ENSURE_SUCCESS(rv, rv);

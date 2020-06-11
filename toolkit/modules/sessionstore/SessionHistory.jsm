@@ -270,9 +270,9 @@ var SessionHistoryInternal = {
       );
     }
 
-    if (shEntry.storagePrincipalToInherit) {
-      entry.storagePrincipalToInherit_base64 = E10SUtils.serializePrincipal(
-        shEntry.storagePrincipalToInherit
+    if (shEntry.partitionedPrincipalToInherit) {
+      entry.partitionedPrincipalToInherit_base64 = E10SUtils.serializePrincipal(
+        shEntry.partitionedPrincipalToInherit
       );
     }
 
@@ -553,9 +553,9 @@ var SessionHistoryInternal = {
     );
     
     
-    if (entry.storagePrincipalToInherit_base64) {
-      shEntry.storagePrincipalToInherit = E10SUtils.deserializePrincipal(
-        entry.storagePrincipalToInherit_base64
+    if (entry.partitionedPrincipalToInherit_base64) {
+      shEntry.partitionedPrincipalToInherit = E10SUtils.deserializePrincipal(
+        entry.partitionedPrincipalToInherit_base64
       );
     }
     if (entry.principalToInherit_base64) {
