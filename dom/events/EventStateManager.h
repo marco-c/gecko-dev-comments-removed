@@ -348,23 +348,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   
 
 
-  class Prefs {
-   public:
-    static bool KeyCausesActivation() { return sKeyCausesActivation; }
-    static bool ClickHoldContextMenu() { return sClickHoldContextMenu; }
-
-    static void Init();
-
-   private:
-    static bool sKeyCausesActivation;
-    static bool sClickHoldContextMenu;
-
-    static int32_t GetAccessModifierMask(int32_t aItemType);
-  };
-
-  
-
-
 
 
 
@@ -661,26 +644,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
     bool IsOverOnePageScrollAllowedX(const WidgetWheelEvent* aEvent);
     bool IsOverOnePageScrollAllowedY(const WidgetWheelEvent* aEvent);
 
-    
-
-
-
-    static bool WheelEventsEnabledOnPlugins();
-
-    
-
-
-
-
-    static bool IsAutoDirEnabled();
-
-    
-
-
-
-
-    static bool HonoursRootForAutoDir();
-
    private:
     WheelPrefs();
     ~WheelPrefs();
@@ -755,9 +718,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
     Action mOverriddenActionsX[COUNT_OF_MULTIPLIERS];
 
     static WheelPrefs* sInstance;
-    static bool sWheelEventsEnabledOnPlugins;
-    static bool sIsAutoDirEnabled;
-    static bool sHonoursRootForAutoDir;
   };
 
   

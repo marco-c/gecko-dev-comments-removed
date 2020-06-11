@@ -309,8 +309,6 @@ pref("dom.mouseevent.click.hack.use_legacy_non-primary_dispatch", "");
 
 pref("browser.sessionhistory.max_total_viewers", -1);
 
-pref("ui.click_hold_context_menus", false);
-
 pref("ui.android.mouse_as_touch", 1);
 
 pref("browser.display.force_inline_alttext", false); 
@@ -745,7 +743,6 @@ pref("accessibility.force_disabled", 0);
 pref("focusmanager.testmode", false);
 
 pref("accessibility.usetexttospeech", "");
-pref("accessibility.accesskeycausesactivation", true);
 pref("accessibility.mouse_focuses_formcontrol", false);
 
 
@@ -2404,30 +2401,6 @@ pref("mousewheel.with_win.delta_multiplier_z", 100);
 
 
 
-pref("mousewheel.autodir.enabled", false);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pref("mousewheel.autodir.honourroot", false);
-
-
-
-
-
-
-
-
 
 pref("general.smoothScroll.scrollbars.durationMinMS", 150);
 pref("general.smoothScroll.scrollbars.durationMaxMS", 150);
@@ -3047,9 +3020,6 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
   
   
   pref("plugin.scan.plid.all", true);
-
-  
-  pref("plugin.mousewheel.enabled", true);
 
   
   pref("intl.keyboard.per_window_layout", false);
