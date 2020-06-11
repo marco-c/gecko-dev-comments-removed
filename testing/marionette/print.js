@@ -96,7 +96,7 @@ function getPrintSettings(settings, filePath) {
   return printSettings;
 }
 
-print.printToFile = async function(frameLoader, outerWindowID, settings) {
+print.printToFile = async function(browser, outerWindowID, settings) {
   
   const basePath = OS.Path.join(OS.Constants.Path.tmpDir, "marionette.pdf");
   const { file, path: filePath } = await OS.File.openUnique(basePath);
@@ -133,7 +133,7 @@ print.printToFile = async function(frameLoader, outerWindowID, settings) {
       QueryInterface: ChromeUtils.generateQI([Ci.nsIWebProgressListener]),
     };
 
-    frameLoader.print(outerWindowID, printSettings, printProgressListener);
+    browser.print(outerWindowID, printSettings, printProgressListener);
   });
 
   logger.debug(`PDF output written to ${filePath}`);
