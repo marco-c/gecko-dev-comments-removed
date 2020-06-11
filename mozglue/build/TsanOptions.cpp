@@ -154,19 +154,8 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:ScriptPreloader::DoFinishOffThreadDecode\n"
 
          
-         "race:ApplyAsyncTestAttributes\n"
-         "race:UnapplyAsyncTestAttributes\n"
-         "race:MarkAsyncTransformAppliedToContent\n"
-
-         
          "race:image::RasterImage::StartDecoding\n"
          "race:image::RasterImage::OnImageDataAvailable\n"
-
-         
-         "race:HttpChannelParent::OnDataAvailable\n"
-
-         
-         "race:nsSocketTransport::OnSocketReady\n"
 
          
          "race:nsPluginTag::nsPluginTag\n"
@@ -193,25 +182,11 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:CacheEntry::InvokeCallback\n"
 
          
-         "race:nsProxyInfo::SetResolveFlags\n"
-         "race:nsProxyInfo::GetResolveFlags\n"
-
-         
-         "race:EnsurePerformanceCounter\n"
-         "race:GetPerformanceCounter\n"
-
-         
-         "race:net::sRunningIndex\n"
-
-         
          "race:gXPCOMThreadsShutDown\n"
 
          
          "race:PACLoadComplete::Run\n"
          "race:nsPACMan::ProcessPending\n"
-
-         
-         "race:nsSocketTransport::SetTimeout\n"
 
          
          "race:nsJARChannel::Suspend\n"
@@ -255,18 +230,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:nsContentSecurityUtils::ValidateScriptFilename\n"
 
          
-         "race:GCRuntime::setPerformanceHint\n"
-         "race:GCHeapThreshold::updateAfterGC\n"
-
-         
-         "race:CookieService::CountCookiesFromHostInternal\n"
-         "race:CookieService::InitDBStates\n"
-
-         
-         "race:CacheFileInputStream::Release\n"
-         "race:CacheFileInputStream::CloseWithStatus\n"
-
-         
          "race:CacheFileMetadata::SetHash\n"
          "race:CacheFileMetadata::OnDataWritten\n"
 
@@ -283,6 +246,10 @@ extern "C" const char* __tsan_default_suppressions() {
 
          
          "race:mp_exptmod.max_window_bits\n"
+
+         
+         "race:EnsurePerformanceCounter\n"
+         "race:GetPerformanceCounter\n"
 
          
          
