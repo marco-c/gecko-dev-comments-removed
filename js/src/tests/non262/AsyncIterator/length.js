@@ -1,0 +1,13 @@
+
+
+
+
+
+const propDesc = Reflect.getOwnPropertyDescriptor(AsyncIterator, 'length');
+assertEq(propDesc.value, 0);
+assertEq(propDesc.writable, false);
+assertEq(propDesc.enumerable, false);
+assertEq(propDesc.configurable, true);
+
+if (typeof reportCompare === 'function')
+  reportCompare(0, 0);
