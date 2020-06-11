@@ -1059,7 +1059,7 @@ void nsGlobalWindowInner::FreeInnerObjects() {
   }
 
   
-  CancelWorkersForWindow(this);
+  CancelWorkersForWindow(*this);
 
   nsTObserverArray<RefPtr<mozilla::dom::SharedWorker>>::ForwardIterator iter(
       mSharedWorkers);
@@ -5188,7 +5188,7 @@ void nsGlobalWindowInner::Suspend() {
   DisableGamepadUpdates();
   DisableVRUpdates();
 
-  SuspendWorkersForWindow(this);
+  SuspendWorkersForWindow(*this);
 
   nsTObserverArray<RefPtr<mozilla::dom::SharedWorker>>::ForwardIterator iter(
       mSharedWorkers);
@@ -5258,7 +5258,7 @@ void nsGlobalWindowInner::Resume() {
   
   
   
-  ResumeWorkersForWindow(this);
+  ResumeWorkersForWindow(*this);
 
   nsTObserverArray<RefPtr<mozilla::dom::SharedWorker>>::ForwardIterator iter(
       mSharedWorkers);
@@ -5293,7 +5293,7 @@ void nsGlobalWindowInner::FreezeInternal() {
     return;
   }
 
-  FreezeWorkersForWindow(this);
+  FreezeWorkersForWindow(*this);
 
   nsTObserverArray<RefPtr<mozilla::dom::SharedWorker>>::ForwardIterator iter(
       mSharedWorkers);
@@ -5334,7 +5334,7 @@ void nsGlobalWindowInner::ThawInternal() {
   }
   mTimeoutManager->Thaw();
 
-  ThawWorkersForWindow(this);
+  ThawWorkersForWindow(*this);
 
   nsTObserverArray<RefPtr<mozilla::dom::SharedWorker>>::ForwardIterator iter(
       mSharedWorkers);
@@ -7184,7 +7184,7 @@ void nsGlobalWindowInner::ForgetSharedWorker(SharedWorker* aSharedWorker) {
 }
 
 void nsGlobalWindowInner::StorageAccessGranted() {
-  PropagateFirstPartyStorageAccessGrantedToWorkers(this);
+  PropagateFirstPartyStorageAccessGrantedToWorkers(*this);
 
   
   

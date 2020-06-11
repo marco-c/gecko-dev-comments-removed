@@ -831,9 +831,9 @@ class WorkerPrivate : public RelativeTimeline {
 
   
   
-  bool Freeze(nsPIDOMWindowInner* aWindow);
+  bool Freeze(const nsPIDOMWindowInner* aWindow);
 
-  bool Thaw(nsPIDOMWindowInner* aWindow);
+  bool Thaw(const nsPIDOMWindowInner* aWindow);
 
   void PropagateFirstPartyStorageAccessGranted();
 
