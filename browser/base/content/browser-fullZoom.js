@@ -327,6 +327,14 @@ var FullZoom = {
 
   
 
+  sendMessageToPDFViewer(browser, name) {
+    try {
+      browser.sendMessageToActor(name, {}, "Pdfjs");
+    } catch (ex) {
+      Cu.reportError(ex);
+    }
+  },
+
   
 
 
@@ -336,7 +344,7 @@ var FullZoom = {
     if (browser.currentURI.spec.startsWith("about:reader")) {
       browser.sendMessageToActor("Reader:ZoomOut", {}, "AboutReader");
     } else if (this._isPDFViewer(browser)) {
-      browser.messageManager.sendAsyncMessage("PDFJS:ZoomOut");
+      this.sendMessageToPDFViewer(browser, "PDFJS:ZoomOut");
     } else {
       ZoomManager.reduce();
       this._ignorePendingZoomAccesses(browser);
@@ -353,7 +361,7 @@ var FullZoom = {
     if (browser.currentURI.spec.startsWith("about:reader")) {
       browser.sendMessageToActor("Reader:ZoomIn", {}, "AboutReader");
     } else if (this._isPDFViewer(browser)) {
-      browser.messageManager.sendAsyncMessage("PDFJS:ZoomIn");
+      this.sendMessageToPDFViewer(browser, "PDFJS:ZoomIn");
     } else {
       ZoomManager.enlarge();
       this._ignorePendingZoomAccesses(browser);
@@ -375,7 +383,7 @@ var FullZoom = {
       return;
     } else if (this._isPDFViewer(aBrowser)) {
       const message = aValue > 0 ? "PDFJS::ZoomIn" : "PDFJS:ZoomOut";
-      aBrowser.messageManager.sendAsyncMessage(message);
+      this.sendMessageToPDFViewer(aBrowser, message);
       return;
     }
     let zoom = ZoomManager.getZoomForBrowser(aBrowser);
@@ -414,7 +422,7 @@ var FullZoom = {
     if (browser.currentURI.spec.startsWith("about:reader")) {
       browser.sendMessageToActor("Reader:ResetZoom", {}, "AboutReader");
     } else if (this._isPDFViewer(browser)) {
-      browser.messageManager.sendAsyncMessage("PDFJS:ZoomReset");
+      this.sendMessageToPDFViewer(browser, "PDFJS:ZoomReset");
       
       
       forceValue = 1;

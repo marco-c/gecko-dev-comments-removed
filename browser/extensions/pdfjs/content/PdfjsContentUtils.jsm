@@ -72,8 +72,8 @@ var PdfjsContentUtils = {
 
   displayWarning(aWindow, aMessage, aLabel, aAccessKey) {
     
-    let winmm = aWindow.docShell.messageManager;
-    winmm.sendAsyncMessage("PDFJS:Parent:displayWarning", {
+    let actor = aWindow.windowGlobalChild.getActor("Pdfjs");
+    actor.sendAsyncMessage("PDFJS:Parent:displayWarning", {
       message: aMessage,
       label: aLabel,
       accessKey: aAccessKey,
