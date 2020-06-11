@@ -286,11 +286,7 @@ pref("browser.urlbar.maxRichResults", 10);
 pref("browser.urlbar.delay", 50);
 
 
-#ifdef EARLY_BETA_OR_EARLIER
 pref("browser.urlbar.maxHistoricalSearchSuggestions", 2);
-#else
-pref("browser.urlbar.maxHistoricalSearchSuggestions", 0);
-#endif
 
 
 

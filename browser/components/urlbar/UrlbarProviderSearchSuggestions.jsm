@@ -131,12 +131,24 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       return false;
     }
 
-    return this._formHistoryCount || this._allowRemoteSuggestions(queryContext);
+    return (
+      this._getFormHistoryCount(queryContext) ||
+      this._allowRemoteSuggestions(queryContext)
+    );
   }
 
-  _allowRemoteSuggestions(queryContext) {
-    
-    
+  
+
+
+
+
+
+
+
+
+
+
+  _allowSuggestions(queryContext) {
     if (
       !queryContext.allowSearchSuggestions ||
       !UrlbarPrefs.get("suggest.searches") ||
@@ -144,6 +156,20 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       (queryContext.isPrivate &&
         !UrlbarPrefs.get("browser.search.suggest.enabled.private"))
     ) {
+      return false;
+    }
+    return true;
+  }
+
+  
+
+
+
+
+
+  _allowRemoteSuggestions(queryContext) {
+    
+    if (!this._allowSuggestions(queryContext)) {
       return false;
     }
 
@@ -324,11 +350,23 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     this.queries.delete(queryContext);
   }
 
-  get _formHistoryCount() {
+  
+
+
+
+
+
+
+  _getFormHistoryCount(queryContext) {
+    if (!this._allowSuggestions(queryContext)) {
+      return 0;
+    }
+
     let count = UrlbarPrefs.get("maxHistoricalSearchSuggestions");
     if (!count) {
       return 0;
     }
+
     
     
     
@@ -346,7 +384,9 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
     this._suggestionsController = new SearchSuggestionController();
     this._suggestionsController.formHistoryParam = queryContext.formHistoryName;
-    this._suggestionsController.maxLocalResults = this._formHistoryCount;
+    this._suggestionsController.maxLocalResults = this._getFormHistoryCount(
+      queryContext
+    );
 
     let allowRemote = this._allowRemoteSuggestions(queryContext);
 
