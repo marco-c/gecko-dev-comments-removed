@@ -672,76 +672,61 @@ nsMultiplexInputStream::Seek(int32_t aWhence, int64_t aOffset) {
     if (aOffset > 0) {
       return NS_ERROR_INVALID_ARG;
     }
+
     int64_t remaining = aOffset;
-    for (uint32_t i = mStreams.Length() - 1; i != (uint32_t)-1; --i) {
+    int32_t i;
+    for (i = mStreams.Length() - 1; i >= 0; --i) {
       nsCOMPtr<nsISeekableStream> stream = mStreams[i].mSeekableStream;
 
-      
-      if (remaining == 0) {
-        if (i >= oldCurrentStream) {
-          uint64_t avail;
-          rv = AvailableMaybeSeek(mStreams[i], &avail);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-          }
-
-          rv = stream->Seek(NS_SEEK_END, 0);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-          }
-
-          mStreams[i].mCurrentPos += avail;
-        } else {
-          break;
-        }
+      uint64_t avail;
+      rv = AvailableMaybeSeek(mStreams[i], &avail);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
       }
 
-      
-      int64_t streamPos;
-      if (i < oldCurrentStream) {
-        streamPos = 0;
-      } else {
-        streamPos = mStreams[i].mCurrentPos;
-      }
+      int64_t streamLength = avail + mStreams[i].mCurrentPos;
 
       
-      if (DeprecatedAbs(remaining) < streamPos) {
+      if (streamLength >= DeprecatedAbs(remaining)) {
         rv = stream->Seek(NS_SEEK_END, remaining);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
 
-        
-        mStreams[i].mCurrentPos = streamPos + remaining;
+        mStreams[i].mCurrentPos = streamLength + remaining;
         mCurrentStream = i;
         mStartedReadingCurrent = true;
-
-        remaining = 0;
-      } else if (DeprecatedAbs(remaining) > streamPos) {
-        if (i > oldCurrentStream ||
-            (i == oldCurrentStream && !oldStartedReadingCurrent)) {
-          
-          remaining += streamPos;
-        } else {
-          int64_t diff =
-              XPCOM_MIN((int64_t)streamPos, DeprecatedAbs(remaining));
-          int64_t newPos = streamPos + diff;
-
-          rv = stream->Seek(NS_SEEK_END, -newPos);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-          }
-
-          mCurrentStream = i;
-          mStartedReadingCurrent = true;
-          mStreams[i].mCurrentPos += diff;
-
-          remaining += newPos;
-        }
-      } else {
-        NS_ASSERTION(remaining == streamPos, "Huh?");
-        remaining = 0;
+        break;
       }
+
+      
+      rv = stream->Seek(NS_SEEK_SET, 0);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+
+      remaining += streamLength;
+      mStreams[i].mCurrentPos = 0;
+    }
+
+    
+    for (--i; i >= 0; --i) {
+      nsCOMPtr<nsISeekableStream> stream = mStreams[i].mSeekableStream;
+
+      uint64_t avail;
+      rv = AvailableMaybeSeek(mStreams[i], &avail);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+
+      int64_t streamLength = avail + mStreams[i].mCurrentPos;
+
+      rv = stream->Seek(NS_SEEK_END, 0);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+
+      mStreams[i].mCurrentPos = streamLength;
     }
 
     return NS_OK;
