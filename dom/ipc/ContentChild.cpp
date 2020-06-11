@@ -119,6 +119,7 @@
 #include "nsIInputStreamChannel.h"
 #include "nsFocusManager.h"
 #include "nsIOpenWindowInfo.h"
+#include "nsSandboxFlags.h"
 
 #if !defined(XP_WIN)
 #  include "mozilla/Omnijar.h"
@@ -880,13 +881,21 @@ nsresult ContentChild::ProvideWindowCommon(
   bool useRemoteSubframes =
       aChromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW;
 
+  uint32_t parentSandboxFlags = parent->SandboxFlags();
+  if (Document* doc = parent->GetDocument()) {
+    parentSandboxFlags = doc->GetSandboxFlags();
+  }
+
+  bool sandboxFlagsPropagate =
+      parentSandboxFlags & SANDBOX_PROPAGATES_TO_AUXILIARY_BROWSING_CONTEXTS;
+
   
   
   
   
   
-  bool loadInDifferentProcess =
-      aForceNoOpener && sNoopenerNewProcess && !useRemoteSubframes;
+  bool loadInDifferentProcess = aForceNoOpener && sNoopenerNewProcess &&
+                                !useRemoteSubframes && !sandboxFlagsPropagate;
   if (!loadInDifferentProcess && aURI) {
     
     
@@ -904,7 +913,7 @@ nsresult ContentChild::ProvideWindowCommon(
 
   
   
-  if (loadInDifferentProcess) {
+  if (loadInDifferentProcess && !sandboxFlagsPropagate) {
     float fullZoom;
     nsCOMPtr<nsIPrincipal> triggeringPrincipal;
     nsCOMPtr<nsIContentSecurityPolicy> csp;
