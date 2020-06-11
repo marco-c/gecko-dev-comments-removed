@@ -287,11 +287,19 @@ nsresult BackgroundFileSaver::GetWorkerThreadAttention(
 
   if (!mAsyncCopyContext) {
     
+    
+    
+    if (!mBackgroundET) {
+      return NS_ERROR_UNEXPECTED;
+    }
+
+    
     rv = mBackgroundET->Dispatch(
         NewRunnableMethod("net::BackgroundFileSaver::ProcessAttention", this,
                           &BackgroundFileSaver::ProcessAttention),
         NS_DISPATCH_EVENT_MAY_BLOCK);
     NS_ENSURE_SUCCESS(rv, rv);
+
   } else if (aShouldInterruptCopy) {
     
     
