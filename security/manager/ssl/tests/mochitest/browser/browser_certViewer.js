@@ -12,205 +12,41 @@ var { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 var { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-const PREF_ABOUT_CERTIFICATE = "security.aboutcertificate.enabled";
-
-registerCleanupFunction(function() {
-  Services.prefs.clearUserPref(PREF_ABOUT_CERTIFICATE);
-});
 
 add_task(async function testCAandTitle() {
   let cert = await readCertificate("ca.pem", "CTu,CTu,CTu");
-  for (let isNewCertViewer of [true, false]) {
-    Services.prefs.setBoolPref(PREF_ABOUT_CERTIFICATE, isNewCertViewer);
-    if (isNewCertViewer) {
-      let url = getURL(cert);
-      await openCertViewerAndCheckTabName(url, "ca");
-    } else {
-      let win = await displayCertificate(cert);
-      checkUsages(win, [{ id: "verify-ssl-ca", args: null }]);
-      checkDetailsPane(win, ["ca"]);
-
-      
-      
-      Assert.deepEqual(
-        win.document.l10n.getAttributes(win.document.documentElement),
-        { args: { certName: "ca" }, id: "cert-viewer-title" },
-        "Actual and expected title should match"
-      );
-      await BrowserTestUtils.closeWindow(win);
-    }
-  }
+  let url = getURL(cert);
+  await openCertViewerAndCheckTabName(url, "ca");
 });
 
 add_task(async function testSSLEndEntity() {
   let cert = await readCertificate("ssl-ee.pem", ",,");
-  for (let isNewCertViewer of [true, false]) {
-    Services.prefs.setBoolPref(PREF_ABOUT_CERTIFICATE, isNewCertViewer);
-    if (isNewCertViewer) {
-      let url = getURL(cert);
-      await openCertViewerAndCheckTabName(url, "ssl-ee");
-    } else {
-      let win = await displayCertificate(cert);
-      checkUsages(win, [
-        { id: "verify-ssl-server", args: null },
-        { id: "verify-ssl-client", args: null },
-      ]);
-      checkDetailsPane(win, ["ca", "ssl-ee"]);
-      await BrowserTestUtils.closeWindow(win);
-    }
-  }
+  let url = getURL(cert);
+  await openCertViewerAndCheckTabName(url, "ssl-ee");
 });
 
 add_task(async function testEmailEndEntity() {
   let cert = await readCertificate("email-ee.pem", ",,");
-  for (let isNewCertViewer of [true, false]) {
-    Services.prefs.setBoolPref(PREF_ABOUT_CERTIFICATE, isNewCertViewer);
-    if (isNewCertViewer) {
-      let url = getURL(cert);
-      await openCertViewerAndCheckTabName(url, "email-ee");
-    } else {
-      let win = await displayCertificate(cert);
-      checkUsages(win, [
-        { id: "verify-email-recip", args: null },
-        { id: "verify-email-signer", args: null },
-      ]);
-      checkDetailsPane(win, ["ca", "email-ee"]);
-      await BrowserTestUtils.closeWindow(win);
-    }
-  }
+  let url = getURL(cert);
+  await openCertViewerAndCheckTabName(url, "email-ee");
 });
 
 add_task(async function testCodeSignEndEntity() {
   let cert = await readCertificate("code-ee.pem", ",,");
-  for (let isNewCertViewer of [true, false]) {
-    Services.prefs.setBoolPref(PREF_ABOUT_CERTIFICATE, isNewCertViewer);
-    if (isNewCertViewer) {
-      let url = getURL(cert);
-      await openCertViewerAndCheckTabName(url, "code-ee");
-    } else {
-      let win = await displayCertificate(cert);
-      checkError(win, { id: "cert-not-verified-unknown", args: null });
-      checkDetailsPane(win, ["code-ee"]);
-      await BrowserTestUtils.closeWindow(win);
-    }
-  }
+  let url = getURL(cert);
+  await openCertViewerAndCheckTabName(url, "code-ee");
 });
 
 add_task(async function testExpired() {
   let cert = await readCertificate("expired-ca.pem", ",,");
-  for (let isNewCertViewer of [true, false]) {
-    Services.prefs.setBoolPref(PREF_ABOUT_CERTIFICATE, isNewCertViewer);
-    if (isNewCertViewer) {
-      let url = getURL(cert);
-      await openCertViewerAndCheckTabName(url, "expired-ca");
-    } else {
-      let win = await displayCertificate(cert);
-      checkError(win, { id: "cert-not-verified-cert-expired", args: null });
-      checkDetailsPane(win, ["expired-ca"]);
-      await BrowserTestUtils.closeWindow(win);
-
-      
-      
-      let eeCert = await readCertificate("ee-from-expired-ca.pem", ",,");
-      let eeWin = await displayCertificate(eeCert);
-      checkError(eeWin, { id: "cert-not-verified-ca-invalid", args: null });
-      checkDetailsPane(eeWin, ["ee-from-expired-ca"]);
-      await BrowserTestUtils.closeWindow(eeWin);
-    }
-  }
-});
-
-add_task(async function testUnknownIssuer() {
-  Services.prefs.setBoolPref(PREF_ABOUT_CERTIFICATE, false);
-  let cert = await readCertificate("unknown-issuer.pem", ",,");
-  let win = await displayCertificate(cert);
-  checkError(win, { id: "cert-not-verified-issuer-unknown", args: null });
-  checkDetailsPane(win, ["unknown-issuer"]);
-  await BrowserTestUtils.closeWindow(win);
-});
-
-add_task(async function testInsecureAlgo() {
-  Services.prefs.setBoolPref(PREF_ABOUT_CERTIFICATE, false);
-  let cert = await readCertificate("md5-ee.pem", ",,");
-  let win = await displayCertificate(cert);
-  checkError(win, { id: "cert-not-verified_algorithm-disabled", args: null });
-  checkDetailsPane(win, ["md5-ee"]);
-  await BrowserTestUtils.closeWindow(win);
+  let url = getURL(cert);
+  await openCertViewerAndCheckTabName(url, "expired-ca");
 });
 
 add_task(async function testUntrusted() {
   let cert = await readCertificate("untrusted-ca.pem", "p,p,p");
-  for (let isNewCertViewer of [true, false]) {
-    Services.prefs.setBoolPref(PREF_ABOUT_CERTIFICATE, isNewCertViewer);
-    if (isNewCertViewer) {
-      let url = getURL(cert);
-      await openCertViewerAndCheckTabName(url, "untrusted-ca");
-    } else {
-      let win = await displayCertificate(cert);
-      checkError(win, { id: "cert-not-verified-cert-not-trusted", args: null });
-      checkDetailsPane(win, ["untrusted-ca"]);
-      await BrowserTestUtils.closeWindow(win);
-
-      
-      
-      let eeCert = await readCertificate("ee-from-untrusted-ca.pem", ",,");
-      let eeWin = await displayCertificate(eeCert);
-      checkError(eeWin, {
-        id: "cert-not-verified-issuer-not-trusted",
-        args: null,
-      });
-      checkDetailsPane(eeWin, ["ee-from-untrusted-ca"]);
-      await BrowserTestUtils.closeWindow(eeWin);
-    }
-  }
-});
-
-add_task(async function testRevoked() {
-  
-  
-  
-  if (AppConstants.MOZ_NEW_CERT_STORAGE) {
-    let certBlocklist = Cc["@mozilla.org/security/certstorage;1"].getService(
-      Ci.nsICertStorage
-    );
-    let result = await new Promise(resolve =>
-      certBlocklist.setRevocations(
-        [
-          {
-            QueryInterface: ChromeUtils.generateQI([
-              Ci.nsISubjectAndPubKeyRevocationState,
-            ]),
-            subject: "MBIxEDAOBgNVBAMMB3Jldm9rZWQ=", 
-            pubKey: "VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8=", 
-            state: Ci.nsICertStorage.STATE_ENFORCE, 
-          },
-        ],
-        resolve
-      )
-    );
-    Assert.equal(result, Cr.NS_OK, "setting revocation state should succeed");
-  } else {
-    let certBlocklist = Cc["@mozilla.org/security/certblocklist;1"].getService(
-      Ci.nsICertBlocklist
-    );
-    certBlocklist.revokeCertBySubjectAndPubKey(
-      "MBIxEDAOBgNVBAMMB3Jldm9rZWQ=", 
-      "VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8="
-    ); 
-  }
-  Services.prefs.setBoolPref(PREF_ABOUT_CERTIFICATE, false);
-  let cert = await readCertificate("revoked.pem", ",,");
-  let win = await displayCertificate(cert);
-  
-  
-  
-  checkUsages(win, [
-    { id: "verify-email-recip", args: null },
-    { id: "verify-email-signer", args: null },
-    { id: "verify-ssl-client", args: null },
-  ]);
-  checkDetailsPane(win, ["ca", "revoked"]);
-  await BrowserTestUtils.closeWindow(win);
+  let url = getURL(cert);
+  await openCertViewerAndCheckTabName(url, "untrusted-ca");
 });
 
 add_task(async function testInvalid() {
@@ -219,206 +55,17 @@ add_task(async function testInvalid() {
   
   
   let cert = await readCertificate("invalid.pem", ",,");
-  for (let isNewCertViewer of [true, false]) {
-    Services.prefs.setBoolPref(PREF_ABOUT_CERTIFICATE, isNewCertViewer);
-    if (isNewCertViewer) {
-      let url = getURL(cert);
-      await openCertViewerAndCheckTabName(url, "invalid");
-    } else {
-      let win = await displayCertificate(cert);
-      checkError(win, { id: "cert-not-verified-unknown", args: null });
-      checkDetailsPane(win, ["invalid"]);
-      await BrowserTestUtils.closeWindow(win);
-    }
-  }
+  let url = getURL(cert);
+  await openCertViewerAndCheckTabName(url, "invalid");
 });
 
 add_task(async function testLongOID() {
   
   
   let cert = await readCertificate("longOID.pem", ",,");
-  for (let isNewCertViewer of [true, false]) {
-    Services.prefs.setBoolPref(PREF_ABOUT_CERTIFICATE, isNewCertViewer);
-    if (isNewCertViewer) {
-      let url = getURL(cert);
-      await openCertViewerAndCheckTabName(url, "Long OID");
-    } else {
-      let win = await displayCertificate(cert);
-      checkDetailsPane(win, ["Long OID"]);
-      await BrowserTestUtils.closeWindow(win);
-    }
-  }
+  let url = getURL(cert);
+  await openCertViewerAndCheckTabName(url, "Long OID");
 });
-
-
-
-
-
-
-
-
-
-
-
-
-function displayCertificate(certificate) {
-  let win = window.openDialog(
-    "chrome://pippki/content/certViewer.xhtml",
-    "",
-    "",
-    certificate
-  );
-  return TestUtils.topicObserved(
-    "ViewCertDetails:CertUsagesDone",
-    (subject, data) => subject == win
-  ).then(
-    ([subject, data]) => subject,
-    error => {
-      throw error;
-    }
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-function getUsages(win) {
-  let determinedUsages = [];
-  let verifyInfoBox = win.document.getElementById("verify_info_box");
-  Array.from(verifyInfoBox.children).forEach(child => {
-    if (
-      child.getAttribute("hidden") != "true" &&
-      child.getAttribute("id") != "verified"
-    ) {
-      determinedUsages.push(win.document.l10n.getAttributes(child));
-    }
-  });
-  return determinedUsages.sort(compareL10Ids);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getError(win) {
-  let verified = win.document.getElementById("verified");
-  return win.document.l10n.getAttributes(verified);
-}
-
-
-
-
-
-
-
-
-
-
-
-function checkUsages(win, usagesL10nIds) {
-  Assert.deepEqual(
-    getError(win),
-    { id: "cert-verified", args: null },
-    "should have successful verification message"
-  );
-  let determinedUsages = getUsages(win);
-  usagesL10nIds.sort(compareL10Ids);
-  Assert.deepEqual(
-    determinedUsages.length,
-    usagesL10nIds.length,
-    "number of usages as determined by cert viewer should be equal"
-  );
-  while (usagesL10nIds.length > 0) {
-    Assert.deepEqual(
-      determinedUsages.pop(),
-      usagesL10nIds.pop(),
-      "usages as determined by cert viewer should be equal"
-    );
-  }
-}
-
-
-
-
-
-
-
-
-
-
-function checkError(win, errorL10nId) {
-  let determinedUsages = getUsages(win);
-  Assert.equal(
-    determinedUsages.length,
-    0,
-    "should not have any successful usages in error case"
-  );
-  Assert.deepEqual(
-    getError(win),
-    errorL10nId,
-    "determined error should be the same as expected error"
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-function checkDetailsPane(win, names) {
-  let tree = win.document.getElementById("treesetDump");
-  let nodes = tree.querySelectorAll("treecell");
-  Assert.equal(
-    nodes.length,
-    names.length,
-    "details pane: should have the expected number of cert names"
-  );
-  for (let i = 0; i < names.length; i++) {
-    Assert.equal(
-      nodes[i].getAttribute("label"),
-      names[i],
-      "details pain: should have expected cert name"
-    );
-  }
-}
-
-
-
-
-
-
-
-
-
-
-function compareL10Ids(ida, idb) {
-  if (ida.id < idb.id) {
-    return -1;
-  } else if (ida.id > idb.id) {
-    return 1;
-  }
-  return 0;
-}
 
 
 

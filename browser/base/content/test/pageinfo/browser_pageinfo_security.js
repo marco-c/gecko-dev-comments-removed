@@ -23,9 +23,6 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
 
 
 add_task(async function test_ShowCertificate() {
-  SpecialPowers.pushPrefEnv({
-    set: [["security.aboutcertificate.enabled", true]],
-  });
   let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_ORIGIN);
   let tab2;
   let pageLoaded;

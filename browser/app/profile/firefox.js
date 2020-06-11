@@ -989,8 +989,6 @@ pref("security.certerrors.mitm.priming.enabled", true);
 pref("security.certerrors.mitm.priming.endpoint", "https://mitmdetection.services.mozilla.com/");
 pref("security.certerrors.mitm.auto_enable_enterprise_roots", true);
 
-pref("security.aboutcertificate.enabled", true);
-
 
 pref("browser.bookmarks.editDialog.showForNewBookmarks", true);
 
