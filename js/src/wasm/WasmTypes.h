@@ -2321,14 +2321,14 @@ struct JitExitOffsets : CallableOffsets {
 
 struct FuncOffsets : CallableOffsets {
   MOZ_IMPLICIT FuncOffsets()
-      : CallableOffsets(), normalEntry(0), tierEntry(0) {}
+      : CallableOffsets(), uncheckedCallEntry(0), tierEntry(0) {}
 
   
   
   
   
   
-  uint32_t normalEntry;
+  uint32_t uncheckedCallEntry;
 
   
   
@@ -2369,7 +2369,7 @@ class CodeRange {
       union {
         struct {
           uint32_t lineOrBytecode_;
-          uint8_t beginToNormalEntry_;
+          uint8_t beginToUncheckedCallEntry_;
           uint8_t beginToTierEntry_;
         } func;
         struct {
@@ -2456,13 +2456,13 @@ class CodeRange {
   
   
 
-  uint32_t funcTableEntry() const {
+  uint32_t funcCheckedCallEntry() const {
     MOZ_ASSERT(isFunction());
     return begin_;
   }
-  uint32_t funcNormalEntry() const {
+  uint32_t funcUncheckedCallEntry() const {
     MOZ_ASSERT(isFunction());
-    return begin_ + u.func.beginToNormalEntry_;
+    return begin_ + u.func.beginToUncheckedCallEntry_;
   }
   uint32_t funcTierEntry() const {
     MOZ_ASSERT(isFunction());

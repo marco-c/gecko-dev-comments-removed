@@ -188,6 +188,11 @@ static constexpr uint32_t SimdMemoryAlignment = 16;
 static constexpr uint32_t WasmStackAlignment = SimdMemoryAlignment;
 static const uint32_t WasmTrapInstructionLength = 4;
 
+
+
+static constexpr uint32_t WasmCheckedCallEntryOffset = 0u;
+static constexpr uint32_t WasmCheckedTailEntryOffset = 16u;
+
 static constexpr Scale ScalePointer = TimesEight;
 
 class Assembler : public AssemblerMIPSShared {
