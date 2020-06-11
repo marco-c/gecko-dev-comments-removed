@@ -5,8 +5,6 @@
 "use strict";
 
 async function test(context, commands) {
-  
-  
   await commands.measure.start();
   await commands.measure.browser.wait(commands.measure.pageCompleteCheck);
   await commands.measure.stop();
