@@ -7,7 +7,6 @@
 
 
 
-
 use crate::bezier::Bezier;
 use crate::context::SharedStyleContext;
 use crate::dom::{OpaqueNode, TElement};
@@ -26,12 +25,8 @@ use crate::values::computed::TimingFunction;
 use crate::values::generics::box_::AnimationIterationCount;
 use crate::values::generics::easing::{StepPosition, TimingFunction as GenericTimingFunction};
 use crate::Atom;
-#[cfg(feature = "servo")]
-use crossbeam_channel::Sender;
 use servo_arc::Arc;
 use std::fmt;
-#[cfg(feature = "gecko")]
-use std::sync::mpsc::Sender;
 
 
 
@@ -370,69 +365,167 @@ impl PropertyAnimation {
 }
 
 
-
-
-#[cfg(feature = "servo")]
-pub fn update_transitions(
-    context: &SharedStyleContext,
-    new_animations_sender: &Sender<Animation>,
-    opaque_node: OpaqueNode,
-    old_style: &ComputedValues,
-    new_style: &mut Arc<ComputedValues>,
-    expired_transitions: &[PropertyAnimation],
-) {
-    let mut all_running_animations = context.running_animations.write();
-    let previously_running_animations = all_running_animations
-        .remove(&opaque_node)
-        .unwrap_or_else(Vec::new);
-
-    let properties_that_transition = start_transitions_if_applicable(
-        context,
-        new_animations_sender,
-        opaque_node,
-        old_style,
-        new_style,
-        expired_transitions,
-        &previously_running_animations,
-    );
-
-    let mut all_cancelled_animations = context.cancelled_animations.write();
-    let mut cancelled_animations = all_cancelled_animations
-        .remove(&opaque_node)
-        .unwrap_or_else(Vec::new);
-    let mut running_animations = vec![];
+#[derive(Default)]
+pub struct ElementAnimationState {
+    
+    pub running_animations: Vec<Animation>,
 
     
     
-    for running_animation in previously_running_animations.into_iter() {
-        if let Animation::Transition(_, _, ref property_animation) = running_animation {
-            if !properties_that_transition.contains(property_animation.property_id()) {
-                cancelled_animations.push(running_animation);
-                continue;
+    pub finished_animations: Vec<Animation>,
+
+    
+    
+    pub cancelled_animations: Vec<Animation>,
+
+    
+    pub new_animations: Vec<Animation>,
+}
+
+impl ElementAnimationState {
+    
+    
+    pub fn cancel_all_animations(&mut self) {
+        self.cancelled_animations.extend(
+            self.finished_animations
+                .drain(..)
+                .chain(self.running_animations.drain(..))
+                .chain(self.new_animations.drain(..)),
+        );
+    }
+
+    pub(crate) fn cancel_transitions_with_nontransitioning_properties(
+        &mut self,
+        properties_that_transition: &LonghandIdSet,
+    ) {
+        if self.running_animations.is_empty() {
+            return;
+        }
+
+        let previously_running_transitions =
+            std::mem::replace(&mut self.running_animations, Vec::new());
+        for running_animation in previously_running_transitions {
+            if let Animation::Transition(_, _, ref property_animation) = running_animation {
+                if !properties_that_transition.contains(property_animation.property_id()) {
+                    self.cancelled_animations.push(running_animation);
+                    continue;
+                }
+            }
+            self.running_animations.push(running_animation);
+        }
+    }
+
+    fn has_transition_with_same_end_value(&self, property_animation: &PropertyAnimation) -> bool {
+        if self
+            .running_animations
+            .iter()
+            .any(|animation| animation.is_transition_with_same_end_value(&property_animation))
+        {
+            debug!(
+                "Running transition found with the same end value for {:?}",
+                property_animation,
+            );
+            return true;
+        }
+
+        if self
+            .finished_animations
+            .iter()
+            .any(|animation| animation.is_transition_with_same_end_value(&property_animation))
+        {
+            debug!(
+                "Expired transition found with the same end value for {:?}",
+                property_animation,
+            );
+            return true;
+        }
+
+        false
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) fn compute_before_change_style<E>(
+        &mut self,
+        context: &SharedStyleContext,
+        style: &mut Arc<ComputedValues>,
+        font_metrics: &dyn crate::font_metrics::FontMetricsProvider,
+    ) where
+        E: TElement,
+    {
+        for animation in self.finished_animations.iter() {
+            debug!("Updating style for finished animation {:?}", animation);
+            
+            if let Animation::Transition(_, _, property_animation) = animation {
+                property_animation.update(Arc::make_mut(style), 1.0);
             }
         }
-        running_animations.push(running_animation);
+
+        for running_animation in self.running_animations.iter_mut() {
+            let update = match *running_animation {
+                Animation::Transition(..) => continue,
+                Animation::Keyframes(..) => {
+                    update_style_for_animation::<E>(context, running_animation, style, font_metrics)
+                },
+            };
+
+            match *running_animation {
+                Animation::Transition(..) => unreachable!(),
+                Animation::Keyframes(_, _, _, ref mut state) => match update {
+                    AnimationUpdate::Regular => {},
+                    AnimationUpdate::AnimationCanceled => {
+                        state.expired = true;
+                    },
+                },
+            }
+        }
     }
 
-    if !cancelled_animations.is_empty() {
-        all_cancelled_animations.insert(opaque_node, cancelled_animations);
+    
+    
+    pub fn is_empty(&self) -> bool {
+        self.running_animations.is_empty() &&
+            self.finished_animations.is_empty() &&
+            self.cancelled_animations.is_empty() &&
+            self.new_animations.is_empty()
     }
-    if !running_animations.is_empty() {
-        all_running_animations.insert(opaque_node, running_animations);
+
+    fn add_new_animation(&mut self, animation: Animation) {
+        self.new_animations.push(animation);
+    }
+
+    fn add_or_update_new_animation(&mut self, timer: &Timer, new_animation: Animation) {
+        
+        
+        if let Animation::Keyframes(_, _, ref new_name, ref new_state) = new_animation {
+            for existing_animation in self.running_animations.iter_mut() {
+                match existing_animation {
+                    Animation::Keyframes(_, _, ref name, ref mut state) if *name == *new_name => {
+                        state.update_from_other(&new_state, timer);
+                        return;
+                    },
+                    _ => {},
+                }
+            }
+        }
+        
+        self.add_new_animation(new_animation);
     }
 }
 
 
 
-#[cfg(feature = "servo")]
 pub fn start_transitions_if_applicable(
     context: &SharedStyleContext,
-    new_animations_sender: &Sender<Animation>,
     opaque_node: OpaqueNode,
     old_style: &ComputedValues,
     new_style: &mut Arc<ComputedValues>,
-    expired_transitions: &[PropertyAnimation],
-    running_animations: &[Animation],
+    animation_state: &mut ElementAnimationState,
 ) -> LonghandIdSet {
     use crate::properties::animated_properties::TransitionPropertyIteration;
 
@@ -475,28 +568,8 @@ pub fn start_transitions_if_applicable(
         
         
         
-        debug!("checking {:?} for matching end value", expired_transitions);
-        if expired_transitions
-            .iter()
-            .any(|animation| animation.has_the_same_end_value_as(&property_animation))
-        {
-            debug!(
-                "Not initiating transition for {}, expired transition \
-                 found with the same end value",
-                property_animation.property_name()
-            );
-            continue;
-        }
-
-        if running_animations
-            .iter()
-            .any(|animation| animation.is_transition_with_same_end_value(&property_animation))
-        {
-            debug!(
-                "Not initiating transition for {}, running transition \
-                 found with the same end value",
-                property_animation.property_name()
-            );
+        
+        if animation_state.has_transition_with_same_end_value(&property_animation) {
             continue;
         }
 
@@ -505,13 +578,11 @@ pub fn start_transitions_if_applicable(
         let box_style = new_style.get_box();
         let now = context.timer.seconds();
         let start_time = now + (box_style.transition_delay_mod(transition.index).seconds() as f64);
-        new_animations_sender
-            .send(Animation::Transition(
-                opaque_node,
-                start_time,
-                property_animation,
-            ))
-            .unwrap();
+        animation_state.add_new_animation(Animation::Transition(
+            opaque_node,
+            start_time,
+            property_animation,
+        ));
     }
 
     properties_that_transition
@@ -571,15 +642,12 @@ where
 pub fn maybe_start_animations<E>(
     element: E,
     context: &SharedStyleContext,
-    new_animations_sender: &Sender<Animation>,
     node: OpaqueNode,
     new_style: &Arc<ComputedValues>,
-) -> bool
-where
+    animation_state: &mut ElementAnimationState,
+) where
     E: TElement,
 {
-    let mut had_animations = false;
-
     let box_style = new_style.get_box();
     for (i, name) in box_style.animation_name_iter().enumerate() {
         let name = match name.as_atom() {
@@ -633,8 +701,9 @@ where
             AnimationPlayState::Running => KeyframesRunningState::Running,
         };
 
-        new_animations_sender
-            .send(Animation::Keyframes(
+        animation_state.add_or_update_new_animation(
+            &context.timer,
+            Animation::Keyframes(
                 node,
                 anim.clone(),
                 name.clone(),
@@ -649,12 +718,9 @@ where
                     expired: false,
                     cascade_style: new_style.clone(),
                 },
-            ))
-            .unwrap();
-        had_animations = true;
+            ),
+        );
     }
-
-    had_animations
 }
 
 

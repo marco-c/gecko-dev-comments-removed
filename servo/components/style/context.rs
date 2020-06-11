@@ -5,7 +5,7 @@
 
 
 #[cfg(feature = "servo")]
-use crate::animation::Animation;
+use crate::animation::ElementAnimationState;
 use crate::bloom::StyleBloom;
 use crate::data::{EagerPseudoStyles, ElementData};
 #[cfg(feature = "servo")]
@@ -29,8 +29,6 @@ use crate::timer::Timer;
 use crate::traversal::DomTraversal;
 use crate::traversal_flags::TraversalFlags;
 use app_units::Au;
-#[cfg(feature = "servo")]
-use crossbeam_channel::Sender;
 use euclid::default::Size2D;
 use euclid::Scale;
 use fxhash::FxHashMap;
@@ -43,8 +41,6 @@ use servo_arc::Arc;
 use servo_atoms::Atom;
 use std::fmt;
 use std::ops;
-#[cfg(feature = "servo")]
-use std::sync::Mutex;
 use style_traits::CSSPixel;
 use style_traits::DevicePixel;
 #[cfg(feature = "servo")]
@@ -53,22 +49,6 @@ use time;
 use uluru::{Entry, LRUCache};
 
 pub use selectors::matching::QuirksMode;
-
-
-#[cfg(feature = "servo")]
-pub struct ThreadLocalStyleContextCreationInfo {
-    new_animations_sender: Sender<Animation>,
-}
-
-#[cfg(feature = "servo")]
-impl ThreadLocalStyleContextCreationInfo {
-    
-    pub fn new(animations_sender: Sender<Animation>) -> Self {
-        ThreadLocalStyleContextCreationInfo {
-            new_animations_sender: animations_sender,
-        }
-    }
-}
 
 
 
@@ -188,23 +168,11 @@ pub struct SharedStyleContext<'a> {
 
     
     #[cfg(feature = "servo")]
-    pub running_animations: Arc<RwLock<FxHashMap<OpaqueNode, Vec<Animation>>>>,
-
-    
-    #[cfg(feature = "servo")]
-    pub expired_animations: Arc<RwLock<FxHashMap<OpaqueNode, Vec<Animation>>>>,
-
-    
-    #[cfg(feature = "servo")]
-    pub cancelled_animations: Arc<RwLock<FxHashMap<OpaqueNode, Vec<Animation>>>>,
+    pub animation_states: Arc<RwLock<FxHashMap<OpaqueNode, ElementAnimationState>>>,
 
     
     #[cfg(feature = "servo")]
     pub registered_speculative_painters: &'a dyn RegisteredSpeculativePainters,
-
-    
-    #[cfg(feature = "servo")]
-    pub local_context_creation_data: Mutex<ThreadLocalStyleContextCreationInfo>,
 }
 
 impl<'a> SharedStyleContext<'a> {
@@ -743,10 +711,6 @@ pub struct ThreadLocalStyleContext<E: TElement> {
     pub bloom_filter: StyleBloom<E>,
     
     
-    #[cfg(feature = "servo")]
-    pub new_animations_sender: Sender<Animation>,
-    
-    
     
     
     
@@ -778,12 +742,6 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
             sharing_cache: StyleSharingCache::new(),
             rule_cache: RuleCache::new(),
             bloom_filter: StyleBloom::new(),
-            new_animations_sender: shared
-                .local_context_creation_data
-                .lock()
-                .unwrap()
-                .new_animations_sender
-                .clone(),
             tasks: SequentialTaskList(Vec::new()),
             selector_flags: SelectorFlagsMap::new(),
             statistics: PerThreadTraversalStatistics::default(),
