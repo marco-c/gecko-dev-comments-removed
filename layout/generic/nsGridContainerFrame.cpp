@@ -3652,24 +3652,6 @@ void nsGridContainerFrame::GridReflowInput::CalculateTrackSizes(
 }
 
 
-
-
-
-
-
-
-
-
-
-static nsIFrame::DisplayChildFlag GetDisplayFlagsForGridItem(nsIFrame* aFrame) {
-  const nsStylePosition* pos = aFrame->StylePosition();
-  if (pos->mZIndex.IsInteger()) {
-    return nsIFrame::DisplayChildFlag::ForceStackingContext;
-  }
-  return nsIFrame::DisplayChildFlag::ForcePseudoStackingContext;
-}
-
-
 static void AlignJustifySelf(StyleAlignFlags aAlignment, LogicalAxis aAxis,
                              AlignJustifyFlags aFlags, nscoord aBaselineAdjust,
                              nscoord aCBSize, const ReflowInput& aRI,
@@ -9252,7 +9234,7 @@ void nsGridContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   for (; !iter.AtEnd(); iter.Next()) {
     nsIFrame* child = *iter;
     BuildDisplayListForChild(aBuilder, child, aLists,
-                             ::GetDisplayFlagsForGridItem(child));
+                             child->DisplayFlagForFlexOrGridItem());
   }
 }
 

@@ -1789,6 +1789,19 @@ class nsIFrame : public nsQueryFrame {
                                       nsIFrame* aChild,
                                       const nsDisplayListSet& aLists);
 
+  
+
+
+
+
+
+
+
+
+
+
+  DisplayChildFlag DisplayFlagForFlexOrGridItem() const;
+
   bool RefusedAsyncAnimation() const {
     return GetProperty(RefusedAsyncAnimationProperty());
   }

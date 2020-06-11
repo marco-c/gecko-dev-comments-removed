@@ -2621,21 +2621,6 @@ nscoord nsFlexContainerFrame::GetLogicalBaseline(
   return mBaselineFromLastReflow;
 }
 
-
-
-
-
-
-
-static nsIFrame::DisplayChildFlag GetDisplayFlagsForFlexItem(nsIFrame* aFrame) {
-  MOZ_ASSERT(aFrame->IsFlexItem(), "Should only be called on flex items");
-  const nsStylePosition* pos = aFrame->StylePosition();
-  if (pos->mZIndex.IsInteger()) {
-    return nsIFrame::DisplayChildFlag::ForceStackingContext;
-  }
-  return nsIFrame::DisplayChildFlag::ForcePseudoStackingContext;
-}
-
 void nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                             const nsDisplayListSet& aLists) {
   nsDisplayListCollection tempLists(aBuilder);
@@ -2656,7 +2641,7 @@ void nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   for (; !iter.AtEnd(); iter.Next()) {
     nsIFrame* childFrame = *iter;
     BuildDisplayListForChild(aBuilder, childFrame, childLists,
-                             GetDisplayFlagsForFlexItem(childFrame));
+                             childFrame->DisplayFlagForFlexOrGridItem());
   }
 
   tempLists.MoveTo(aLists);
