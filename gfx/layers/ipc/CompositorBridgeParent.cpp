@@ -2419,6 +2419,10 @@ CompositorBridgeParent::GetIndirectShadowTree(LayersId aId) {
 bool CompositorBridgeParent::CallWithIndirectShadowTree(
     LayersId aId,
     const std::function<void(CompositorBridgeParent::LayerTreeState&)>& aFunc) {
+  if (!sIndirectLayerTreesLock) {
+    
+    return false;
+  }
   
   
   
