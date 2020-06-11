@@ -5,6 +5,7 @@
 
 
 EXPORTS.mozilla.net += [
+    'ADocumentChannelBridge.h',
     'ChannelEventQueue.h',
     'DocumentChannel.h',
     'DocumentChannelChild.h',

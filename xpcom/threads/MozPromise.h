@@ -982,22 +982,6 @@ class MozPromise : public MozPromiseBase {
     PROMISE_LOG(
         "%s invoking Chain() [this=%p, chainedPromise=%p, isPending=%d]",
         aCallSite, this, chainedPromise.get(), (int)IsPending());
-
-    
-    
-
-    
-    
-    
-    
-    if (mUseDirectTaskDispatch) {
-      chainedPromise->UseDirectTaskDispatch(aCallSite);
-    } else if constexpr (IsExclusive) {
-      if (mUseSynchronousTaskDispatch) {
-        chainedPromise->UseSynchronousTaskDispatch(aCallSite);
-      }
-    }
-
     if (!IsPending()) {
       ForwardTo(chainedPromise);
     } else {
@@ -1317,16 +1301,6 @@ class MozPromiseHolderBase {
       ResolveOrReject(std::forward<ResolveOrRejectValueType_>(aValue),
                       aMethodName);
     }
-  }
-
-  void UseSynchronousTaskDispatch(const char* aSite) {
-    MOZ_ASSERT(mPromise);
-    mPromise->UseSynchronousTaskDispatch(aSite);
-  }
-
-  void UseDirectTaskDispatch(const char* aSite) {
-    MOZ_ASSERT(mPromise);
-    mPromise->UseDirectTaskDispatch(aSite);
   }
 
  private:
