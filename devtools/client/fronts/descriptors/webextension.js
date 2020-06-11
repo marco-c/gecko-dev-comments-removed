@@ -51,22 +51,23 @@ class WebExtensionDescriptorFront extends FrontClassWithSpec(
 
 
 
+
+
+
+
   async getTarget() {
-    if (this.isWebExtension) {
-      
-      
-      
-      
-      
-      
-      
-      const form = await super.getTarget();
-      const front = new BrowsingContextTargetFront(this.conn, null, this);
-      front.form(form);
-      this.manage(front);
-      return front;
+    if (!this.isWebExtension) {
+      throw new Error(
+        "Tried to call getTarget() for an addon which is not a webextension: " +
+          this.actorID
+      );
     }
-    return this;
+
+    const form = await super.getTarget();
+    const front = new BrowsingContextTargetFront(this.conn, null, this);
+    front.form(form);
+    this.manage(front);
+    return front;
   }
 }
 
