@@ -967,7 +967,7 @@ class nsFrameSelection final {
 
 
 
-    MOZ_CAN_RUN_SCRIPT bool AdjustNormalSelection(
+    MOZ_CAN_RUN_SCRIPT void AdjustNormalSelection(
         const nsIContent* aContent, int32_t aOffset,
         mozilla::dom::Selection& aNormalSelection) const;
 
