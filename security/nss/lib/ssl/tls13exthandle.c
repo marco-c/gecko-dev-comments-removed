@@ -14,6 +14,7 @@
 #include "ssl3exthandle.h"
 #include "tls13esni.h"
 #include "tls13exthandle.h"
+#include "tls13psk.h"
 #include "tls13subcerts.h"
 
 SECStatus
@@ -409,21 +410,26 @@ tls13_ServerSendKeyShareXtn(const sslSocket *ss, TLSExtensionData *xtnData,
 
 
 
-
-
-
 SECStatus
 tls13_ClientSendPreSharedKeyXtn(const sslSocket *ss, TLSExtensionData *xtnData,
                                 sslBuffer *buf, PRBool *added)
 {
-    NewSessionTicket *session_ticket;
-    PRTime age;
     const static PRUint8 binder[TLS13_MAX_FINISHED_SIZE] = { 0 };
     unsigned int binderLen;
+    unsigned int identityLen = 0;
+    const PRUint8 *identity = NULL;
+    PRTime age;
     SECStatus rv;
 
     
-    if (!ss->statelessResume) {
+    if (PR_CLIST_IS_EMPTY(&ss->ssl3.hs.psks) ||
+        ss->vrange.max < SSL_LIBRARY_VERSION_TLS_1_3) {
+        return SECSuccess;
+    }
+
+    
+    sslPsk *psk = (sslPsk *)PR_LIST_HEAD(&ss->ssl3.hs.psks);
+    if (psk->type == ssl_psk_resume && !ss->statelessResume) {
         return SECSuccess;
     }
 
@@ -431,46 +437,64 @@ tls13_ClientSendPreSharedKeyXtn(const sslSocket *ss, TLSExtensionData *xtnData,
 
     PORT_Assert(buf->len >= 4);
     xtnData->lastXtnOffset = buf->len - 4;
+    PORT_Assert(psk->type == ssl_psk_resume || psk->type == ssl_psk_external);
+    binderLen = tls13_GetHashSizeForHash(psk->hash);
+    if (psk->type == ssl_psk_resume) {
+        
+        NewSessionTicket *session_ticket = &ss->sec.ci.sid->u.ssl3.locked.sessionTicket;
+        identityLen = session_ticket->ticket.len;
+        identity = session_ticket->ticket.data;
 
-    PORT_Assert(ss->vrange.max >= SSL_LIBRARY_VERSION_TLS_1_3);
-    PORT_Assert(ss->sec.ci.sid->version >= SSL_LIBRARY_VERSION_TLS_1_3);
+        
+        age = ssl_Time(ss) - session_ticket->received_timestamp;
+        age /= PR_USEC_PER_MSEC;
+        age += session_ticket->ticket_age_add;
+        PRINT_BUF(50, (ss, "Sending Resumption PSK with identity", identity, identityLen));
+    } else if (psk->type == ssl_psk_external) {
+        identityLen = psk->label.len;
+        identity = psk->label.data;
+        age = 0;
+        PRINT_BUF(50, (ss, "Sending External PSK with label", identity, identityLen));
+    } else {
+        PORT_Assert(0);
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        return SECFailure;
+    }
 
     
-    session_ticket = &ss->sec.ci.sid->u.ssl3.locked.sessionTicket;
-    rv = sslBuffer_AppendNumber(buf, 2 +                              
-                                         session_ticket->ticket.len + 
-                                         4 ,
-                                2);
-    if (rv != SECSuccess)
+    rv = sslBuffer_AppendNumber(buf, 2 + identityLen + 4, 2);
+    if (rv != SECSuccess) {
         goto loser;
-    rv = sslBuffer_AppendVariable(buf, session_ticket->ticket.data,
-                                  session_ticket->ticket.len, 2);
-    if (rv != SECSuccess)
-        goto loser;
+    }
 
-    
-    age = ssl_Time(ss) - session_ticket->received_timestamp;
-    age /= PR_USEC_PER_MSEC;
-    age += session_ticket->ticket_age_add;
+    rv = sslBuffer_AppendVariable(buf, identity,
+                                  identityLen, 2);
+    if (rv != SECSuccess) {
+        goto loser;
+    }
+
     rv = sslBuffer_AppendNumber(buf, age, 4);
-    if (rv != SECSuccess)
+    if (rv != SECSuccess) {
         goto loser;
+    }
 
     
-    binderLen = tls13_GetHashSize(ss);
     rv = sslBuffer_AppendNumber(buf, binderLen + 1, 2);
-    if (rv != SECSuccess)
+    if (rv != SECSuccess) {
         goto loser;
+    }
+
     
+
     rv = sslBuffer_AppendVariable(buf, binder, binderLen, 1);
-    if (rv != SECSuccess)
+    if (rv != SECSuccess) {
         goto loser;
+    }
 
-    PRINT_BUF(50, (ss, "Sending PreSharedKey value",
-                   session_ticket->ticket.data,
-                   session_ticket->ticket.len));
+    if (psk->type == ssl_psk_resume) {
+        xtnData->sentSessionTicketInClientHello = PR_TRUE;
+    }
 
-    xtnData->sentSessionTicketInClientHello = PR_TRUE;
     *added = PR_TRUE;
     return SECSuccess;
 
@@ -478,7 +502,6 @@ loser:
     xtnData->ticketTimestampVerified = PR_FALSE;
     return SECFailure;
 }
-
 
 
 SECStatus
@@ -534,28 +557,52 @@ tls13_ServerHandlePreSharedKeyXtn(const sslSocket *ss, TLSExtensionData *xtnData
             return rv;
 
         if (!numIdentities) {
-            PRINT_BUF(50, (ss, "Handling PreSharedKey value",
-                           label.data, label.len));
-            rv = ssl3_ProcessSessionTicketCommon(
-                CONST_CAST(sslSocket, ss), &label, appToken);
             
 
+            PORT_Assert(!xtnData->selectedPsk);
+            for (PRCList *cur_p = PR_LIST_HEAD(&ss->ssl3.hs.psks);
+                 cur_p != &ss->ssl3.hs.psks;
+                 cur_p = PR_NEXT_LINK(cur_p)) {
+                sslPsk *psk = (sslPsk *)cur_p;
+                if (psk->type != ssl_psk_external ||
+                    SECITEM_CompareItem(&psk->label, &label) != SECEqual) {
+                    continue;
+                }
+                PRINT_BUF(50, (ss, "Using External PSK with label",
+                               psk->label.data, psk->label.len));
+                xtnData->selectedPsk = psk;
+            }
 
-            if (rv != SECSuccess)
-                return SECFailure;
-
-            if (ss->sec.ci.sid) {
+            if (!xtnData->selectedPsk) {
+                PRINT_BUF(50, (ss, "Handling PreSharedKey value",
+                               label.data, label.len));
+                rv = ssl3_ProcessSessionTicketCommon(
+                    CONST_CAST(sslSocket, ss), &label, appToken);
                 
 
 
+                if (rv != SECSuccess) {
+                    return SECFailure;
+                }
+
+                if (ss->sec.ci.sid) {
+                    
 
 
 
 
 
-                xtnData->ticketAge += obfuscatedAge;
+
+
+                    xtnData->ticketAge += obfuscatedAge;
+
+                    
+
+
+                }
             }
         }
+
         ++numIdentities;
     }
 
@@ -589,10 +636,14 @@ tls13_ServerHandlePreSharedKeyXtn(const sslSocket *ss, TLSExtensionData *xtnData
     if (numBinders != numIdentities)
         goto alert_loser;
 
-    
+    if (ss->statelessResume) {
+        PORT_Assert(!ss->xtnData.selectedPsk);
+    } else if (!xtnData->selectedPsk) {
+        
+        return SECSuccess;
+    }
 
     xtnData->negotiated[xtnData->numNegotiated++] = ssl_tls13_pre_shared_key_xtn;
-
     return SECSuccess;
 
 alert_loser:
@@ -617,7 +668,6 @@ tls13_ServerSendPreSharedKeyXtn(const sslSocket *ss, TLSExtensionData *xtnData,
     *added = PR_TRUE;
     return SECSuccess;
 }
-
 
 
 SECStatus
@@ -648,12 +698,23 @@ tls13_ClientHandlePreSharedKeyXtn(const sslSocket *ss, TLSExtensionData *xtnData
 
     
     if (index) {
+        ssl3_ExtSendAlert(ss, alert_fatal, illegal_parameter);
         PORT_SetError(SSL_ERROR_MALFORMED_PRE_SHARED_KEY);
+        return SECFailure;
+    }
+
+    PORT_Assert(!PR_CLIST_IS_EMPTY(&ss->ssl3.hs.psks));
+    sslPsk *candidate = (sslPsk *)PR_LIST_HEAD(&ss->ssl3.hs.psks);
+
+    
+    if (candidate->hash != tls13_GetHashForCipherSuite(ss->ssl3.hs.cipher_suite)) {
+        ssl3_ExtSendAlert(ss, alert_fatal, illegal_parameter);
         return SECFailure;
     }
 
     
     xtnData->negotiated[xtnData->numNegotiated++] = ssl_tls13_pre_shared_key_xtn;
+    xtnData->selectedPsk = candidate;
 
     return SECSuccess;
 }

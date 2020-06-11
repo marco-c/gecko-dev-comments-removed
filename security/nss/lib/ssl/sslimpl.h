@@ -37,6 +37,7 @@
 typedef struct sslSocketStr sslSocket;
 typedef struct sslNamedGroupDefStr sslNamedGroupDef;
 typedef struct sslEsniKeysStr sslEsniKeys;
+typedef struct sslPskStr sslPsk;
 typedef struct sslDelegatedCredentialStr sslDelegatedCredential;
 typedef struct sslEphemeralKeyPairStr sslEphemeralKeyPair;
 typedef struct TLS13KeyShareEntryStr TLS13KeyShareEntry;
@@ -693,7 +694,6 @@ typedef struct SSL3HandshakeStateStr {
 
     PK11SymKey *resumptionMasterSecret;   
     PK11SymKey *dheSecret;                
-    PK11SymKey *pskBinderKey;             
     PK11SymKey *clientEarlyTrafficSecret; 
     PK11SymKey *clientHsTrafficSecret;    
     PK11SymKey *serverHsTrafficSecret;    
@@ -724,6 +724,7 @@ typedef struct SSL3HandshakeStateStr {
     PRCList dtlsSentHandshake; 
     PRCList dtlsRcvdHandshake; 
 
+    PRCList psks;              
 } SSL3HandshakeState;
 
 #define SSL_ASSERT_HASHES_EMPTY(ss)                                  \
@@ -1101,6 +1102,9 @@ struct sslSocketStr {
 
     
     SSLAntiReplayContext *antiReplay;
+
+    
+    sslPsk *psk;
 };
 
 struct sslSelfEncryptKeysStr {

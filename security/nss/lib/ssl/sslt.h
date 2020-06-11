@@ -184,6 +184,12 @@ typedef enum {
     ssl_auth_size 
 } SSLAuthType;
 
+typedef enum {
+    ssl_psk_none = 0,
+    ssl_psk_resume = 1,
+    ssl_psk_external = 2,
+} SSLPskType;
+
 
 #define ssl_auth_rsa ssl_auth_rsa_decrypt
 
@@ -357,6 +363,10 @@ typedef struct SSLChannelInfoStr {
 
 
     PRBool peerDelegCred;
+
+    
+    
+    SSLPskType pskType;
 
     
 

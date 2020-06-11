@@ -134,6 +134,10 @@ struct TLSExtensionDataStr {
 
 
     PRBool sendingDelegCredToPeer;
+
+    
+
+    sslPsk *selectedPsk;
 };
 
 typedef struct TLSExtensionStr {

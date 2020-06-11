@@ -256,6 +256,7 @@ typedef struct SSLAntiReplayContextStr SSLAntiReplayContext;
 
 
 
+
 #define SSL_SendSessionTicket(fd, appToken, appTokenLen)              \
     SSL_EXPERIMENTAL_API("SSL_SendSessionTicket",                     \
                          (PRFileDesc * _fd, const PRUint8 *_appToken, \
@@ -372,6 +373,10 @@ typedef SSLHelloRetryRequestAction(PR_CALLBACK *SSLHelloRetryRequestCallback)(
     SSL_EXPERIMENTAL_API("SSL_KeyUpdate",                           \
                          (PRFileDesc * _fd, PRBool _requestUpdate), \
                          (fd, requestUpdate))
+
+
+
+
 
 
 
@@ -946,6 +951,51 @@ typedef struct SSLMaskingContextStr {
 #define SSL_SetDtls13VersionWorkaround(fd, enabled)        \
     SSL_EXPERIMENTAL_API("SSL_SetDtls13VersionWorkaround", \
                          (PRFileDesc * _fd, PRBool _enabled), (fd, enabled))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define SSL_AddExternalPsk(fd, psk, identity, identityLen, hash)               \
+    SSL_EXPERIMENTAL_API("SSL_AddExternalPsk",                                 \
+                         (PRFileDesc * _fd, PK11SymKey * _psk,                 \
+                          const PRUint8 *_identity, unsigned int _identityLen, \
+                          SSLHashType _hash),                                  \
+                         (fd, psk, identity, identityLen, hash))
+
+#define SSL_AddExternalPsk0Rtt(fd, psk, identity, identityLen, hash,           \
+                               zeroRttSuite, maxEarlyData)                     \
+    SSL_EXPERIMENTAL_API("SSL_AddExternalPsk0Rtt",                             \
+                         (PRFileDesc * _fd, PK11SymKey * _psk,                 \
+                          const PRUint8 *_identity, unsigned int _identityLen, \
+                          SSLHashType _hash, PRUint16 _zeroRttSuite,           \
+                          PRUint32 _maxEarlyData),                             \
+                         (fd, psk, identity, identityLen, hash,                \
+                          zeroRttSuite, maxEarlyData))
+
+
+
+
+#define SSL_RemoveExternalPsk(fd, identity, identityLen)              \
+    SSL_EXPERIMENTAL_API("SSL_RemoveExternalPsk",                     \
+                         (PRFileDesc * _fd, const PRUint8 *_identity, \
+                          unsigned int _identityLen),                 \
+                         (fd, identity, identityLen))
 
 
 #define SSL_UseAltServerHelloType(fd, enable) SSL_DEPRECATED_EXPERIMENTAL_API

@@ -15,6 +15,7 @@
 #include "pk11func.h" 
 #include "nss.h"      
 #include "prinit.h"   
+#include "tls13psk.h"
 
 
 
@@ -173,6 +174,7 @@ SSL_ResetHandshake(PRFileDesc *s, PRBool asServer)
 
     ssl3_DestroyRemoteExtensions(&ss->ssl3.hs.remoteExtensions);
     ssl3_ResetExtensionData(&ss->xtnData, ss);
+    tls13_ResetHandshakePsks(ss, &ss->ssl3.hs.psks);
 
     if (!ss->TCPconnected)
         ss->TCPconnected = (PR_SUCCESS == ssl_DefGetpeername(ss, &addr));
