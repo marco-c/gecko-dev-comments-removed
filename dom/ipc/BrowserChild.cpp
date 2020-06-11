@@ -208,7 +208,7 @@ bool BrowserChild::UpdateFrame(const RepaintRequest& aRequest) {
       
       
       if (aRequest.GetPresShellId() == presShell->GetPresShellId()) {
-        ProcessUpdateFrame(aRequest);
+        APZCCallbackHelper::UpdateRootFrame(aRequest);
         return true;
       }
     }
@@ -219,14 +219,6 @@ bool BrowserChild::UpdateFrame(const RepaintRequest& aRequest) {
     return true;
   }
   return true;
-}
-
-void BrowserChild::ProcessUpdateFrame(const RepaintRequest& aRequest) {
-  if (!mBrowserChildMessageManager) {
-    return;
-  }
-
-  APZCCallbackHelper::UpdateRootFrame(aRequest);
 }
 
 NS_IMETHODIMP
