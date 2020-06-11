@@ -128,13 +128,9 @@ void FormData::Append(const nsAString& aName, Directory* aDirectory) {
 }
 
 void FormData::Delete(const nsAString& aName) {
-  
-  
-  for (uint32_t i = mFormData.Length(); i-- > 0;) {
-    if (aName.Equals(mFormData[i].name)) {
-      mFormData.RemoveElementAt(i);
-    }
-  }
+  mFormData.RemoveElementsBy([&aName](const auto& formDataItem) {
+    return aName.Equals(formDataItem.name);
+  });
 }
 
 void FormData::Get(const nsAString& aName,

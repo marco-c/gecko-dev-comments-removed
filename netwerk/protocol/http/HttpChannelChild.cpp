@@ -3696,12 +3696,9 @@ nsresult HttpChannelChild::SetReferrerHeader(const nsACString& aReferrer,
   }
 
   
-  for (int i = mClientSetRequestHeaders.Length() - 1; i >= 0; --i) {
-    if (NS_LITERAL_CSTRING("Referer").Equals(
-            mClientSetRequestHeaders[i].mHeader)) {
-      mClientSetRequestHeaders.RemoveElementAt(i);
-    }
-  }
+  mClientSetRequestHeaders.RemoveElementsBy([](const auto& header) {
+    return NS_LITERAL_CSTRING("Referer").Equals(header.mHeader);
+  });
 
   return HttpBaseChannel::SetReferrerHeader(aReferrer, aRespectBeforeConnect);
 }

@@ -487,7 +487,7 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
         
         
         Unused << currentThread->mRequestedShutdownContexts[index].release();
-        currentThread->mRequestedShutdownContexts.RemoveElementsAt(index, 1);
+        currentThread->mRequestedShutdownContexts.RemoveElementAt(index);
       }
     }
   }

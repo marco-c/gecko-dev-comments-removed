@@ -171,12 +171,9 @@ bool ImageClientSingle::UpdateImage(ImageContainer* aContainer,
   }
   mLastUpdateGenerationCounter = generationCounter;
 
-  for (int32_t i = images.Length() - 1; i >= 0; --i) {
-    if (!images[i].mImage->IsValid()) {
-      
-      images.RemoveElementAt(i);
-    }
-  }
+  
+  images.RemoveElementsBy(
+      [](const auto& image) { return !image.mImage->IsValid(); });
   if (images.IsEmpty()) {
     
     

@@ -2270,19 +2270,13 @@ mozilla::ipc::IPCResult ContentChild::RecvDataStorageClear(
 
 mozilla::ipc::IPCResult ContentChild::RecvNotifyAlertsObserver(
     const nsCString& aType, const nsString& aData) {
-  for (uint32_t i = 0; i < mAlertObservers.Length();
-       ) {
-    const auto& observer = mAlertObservers[i];
-    if (observer->Observes(aData) && observer->Notify(aType)) {
-      
-      
-      if (aType.Equals(nsDependentCString("alertfinished"))) {
-        mAlertObservers.RemoveElementAt(i);
-        continue;
-      }
-    }
-    ++i;
-  }
+  mAlertObservers.RemoveElementsBy([&aData, &aType](const auto& observer) {
+    const bool notified = observer->Observes(aData) && observer->Notify(aType);
+    
+    
+    return notified && aType.EqualsLiteral("alertfinished");
+  });
+
   return IPC_OK();
 }
 

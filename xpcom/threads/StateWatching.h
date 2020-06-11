@@ -114,11 +114,8 @@ class WatchTarget {
   
   
   void PruneWatchers() {
-    for (int i = mWatchers.Length() - 1; i >= 0; --i) {
-      if (mWatchers[i]->IsDestroyed()) {
-        mWatchers.RemoveElementAt(i);
-      }
-    }
+    mWatchers.RemoveElementsBy(
+        [](const auto& watcher) { return watcher->IsDestroyed(); });
   }
 
   nsTArray<RefPtr<AbstractWatcher>> mWatchers;

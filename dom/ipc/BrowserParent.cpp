@@ -1833,11 +1833,8 @@ void BrowserParent::SendRealTouchEvent(WidgetTouchEvent& aEvent) {
   
   
   if (aEvent.mMessage == eTouchEnd || aEvent.mMessage == eTouchCancel) {
-    for (int i = aEvent.mTouches.Length() - 1; i >= 0; i--) {
-      if (!aEvent.mTouches[i]->mChanged) {
-        aEvent.mTouches.RemoveElementAt(i);
-      }
-    }
+    aEvent.mTouches.RemoveElementsBy(
+        [](const auto& touch) { return !touch->mChanged; });
   }
 
   APZData apzData;
