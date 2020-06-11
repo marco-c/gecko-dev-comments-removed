@@ -41,6 +41,9 @@ class TelemetryTestRunner(BaseMarionetteTestRunner):
                 "toolkit.telemetry.log.dump": True,
                 "toolkit.telemetry.send.overrideOfficialCheck": True,
                 "toolkit.telemetry.testing.disableFuzzingDelay": True,
+                
+                
+                "app.normandy.enabled": False,
             }
         )
 
