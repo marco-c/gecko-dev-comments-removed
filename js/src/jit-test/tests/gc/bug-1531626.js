@@ -1,9 +1,5 @@
 
 
-
-
-
-
 load(libdir + "asserts.js");
 
 var testSizesKB = [128, 129, 255, 256, 1023, 1024, 3*1024, 4*1024+1, 16*1024];
@@ -33,8 +29,8 @@ function setMinMax(min, max) {
   
   gcparam('maxNurseryBytes', max * 1024);
   gcparam('minNurseryBytes', min * 1024);
-  assertEq(nearestLegalSize(max) * 1024, gcparam('maxNurseryBytes'));
-  assertEq(nearestLegalSize(min) * 1024, gcparam('minNurseryBytes'));
+  assertEq(max * 1024, gcparam('maxNurseryBytes'));
+  assertEq(min * 1024, gcparam('minNurseryBytes'));
   allocateSomeThings();
   gc();
 }
@@ -45,15 +41,3 @@ function allocateSomeThings() {
   }
 }
 
-function nearestLegalSize(sizeKB) {
-  if (sizeKB >= 1024) {
-    return round(sizeKB, 1024);
-  }
-
-  return Math.min(round(sizeKB, 4), 1020);
-}
-
-function round(x, y) {
-  x += y / 2;
-  return x - (x % y);
-}

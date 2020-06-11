@@ -12,7 +12,6 @@
 #include "mozilla/Unused.h"
 
 #include <algorithm>
-#include <cmath>
 #include <utility>
 
 #include "builtin/MapObject.h"
@@ -246,7 +245,7 @@ js::Nursery::Nursery(GCRuntime* gc)
 }
 
 bool js::Nursery::init(AutoLockGCBgAlloc& lock) {
-  capacity_ = tunables().gcMinNurseryBytes();
+  capacity_ = roundSize(tunables().gcMinNurseryBytes());
   if (!allocateNextChunk(0, lock)) {
     capacity_ = 0;
     return false;
@@ -300,7 +299,7 @@ void js::Nursery::enable() {
 
   {
     AutoLockGCBgAlloc lock(gc);
-    capacity_ = tunables().gcMinNurseryBytes();
+    capacity_ = roundSize(tunables().gcMinNurseryBytes());
     if (!allocateNextChunk(0, lock)) {
       capacity_ = 0;
       return;
@@ -750,24 +749,24 @@ js::TenuringTracer::TenuringTracer(JSRuntime* rt, Nursery* nursery)
       bigIntHead(nullptr),
       bigIntTail(&bigIntHead) {}
 
-inline double js::Nursery::calcPromotionRate(bool* validForTenuring) const {
-  double used = double(previousGC.nurseryUsedBytes);
-  double capacity = double(previousGC.nurseryCapacity);
-  double tenured = double(previousGC.tenuredBytes);
-  double rate;
+inline float js::Nursery::calcPromotionRate(bool* validForTenuring) const {
+  float used = float(previousGC.nurseryUsedBytes);
+  float capacity = float(previousGC.nurseryCapacity);
+  float tenured = float(previousGC.tenuredBytes);
+  float rate;
 
   if (previousGC.nurseryUsedBytes > 0) {
     if (validForTenuring) {
       
       
-      *validForTenuring = used > capacity * 0.9;
+      *validForTenuring = used > capacity * 0.9f;
     }
     rate = tenured / used;
   } else {
     if (validForTenuring) {
       *validForTenuring = false;
     }
-    rate = 0.0;
+    rate = 0.0f;
   }
 
   return rate;
@@ -910,7 +909,7 @@ bool js::Nursery::shouldCollect() const {
   bool belowBytesThreshold =
       freeSpace() < tunables().nurseryFreeThresholdForIdleCollection();
   bool belowFractionThreshold =
-      double(freeSpace()) / double(capacity()) <
+      float(freeSpace()) / float(capacity()) <
       tunables().nurseryFreeThresholdForIdleCollectionFraction();
 
   
@@ -982,19 +981,16 @@ void js::Nursery::collect(JS::GCReason reason) {
   
   MOZ_ASSERT(!IsNurseryAllocable(AllocKind::OBJECT_GROUP));
 
-  previousGC.reason = JS::GCReason::NO_REASON;
-  previousGC.nurseryUsedBytes = usedSpace();
-  previousGC.nurseryCapacity = capacity();
-  previousGC.nurseryCommitted = committed();
-  previousGC.tenuredBytes = 0;
-  previousGC.tenuredCells = 0;
-
   TenureCountCache tenureCounts;
+  previousGC.reason = JS::GCReason::NO_REASON;
   if (!isEmpty()) {
-    CollectionResult result = doCollection(reason, tenureCounts);
-    previousGC.reason = reason;
-    previousGC.tenuredBytes = result.tenuredBytes;
-    previousGC.tenuredCells = result.tenuredCells;
+    doCollection(reason, tenureCounts);
+  } else {
+    previousGC.nurseryUsedBytes = 0;
+    previousGC.nurseryCapacity = capacity();
+    previousGC.nurseryCommitted = committed();
+    previousGC.tenuredBytes = 0;
+    previousGC.tenuredCells = 0;
   }
 
   
@@ -1014,15 +1010,7 @@ void js::Nursery::collect(JS::GCReason reason) {
     poisonAndInitCurrentChunk(previousGC.nurseryUsedBytes);
   }
 
-  bool validPromotionRate;
-  const double promotionRate = calcPromotionRate(&validPromotionRate);
-  bool highPromotionRate =
-      validPromotionRate && promotionRate > tunables().pretenureThreshold();
-
-  startProfile(ProfileKey::Pretenure);
-  size_t pretenureCount =
-      doPretenuring(rt, reason, tenureCounts, highPromotionRate);
-  endProfile(ProfileKey::Pretenure);
+  const float promotionRate = doPretenuring(rt, reason, tenureCounts);
 
   
   
@@ -1035,63 +1023,48 @@ void js::Nursery::collect(JS::GCReason reason) {
   gc->incMinorGcNumber();
 
   TimeDuration totalTime = profileDurations_[ProfileKey::Total];
-  sendTelemetry(reason, totalTime, pretenureCount, promotionRate);
+  rt->addTelemetry(JS_TELEMETRY_GC_MINOR_US, totalTime.ToMicroseconds());
+  rt->addTelemetry(JS_TELEMETRY_GC_MINOR_REASON, uint32_t(reason));
+  if (totalTime.ToMilliseconds() > 1.0) {
+    rt->addTelemetry(JS_TELEMETRY_GC_MINOR_REASON_LONG, uint32_t(reason));
+  }
+  rt->addTelemetry(JS_TELEMETRY_GC_NURSERY_BYTES, committed());
 
   stats().endNurseryCollection(reason);
   gcprobes::MinorGCEnd();
   timeInChunkAlloc_ = mozilla::TimeDuration();
 
   if (enableProfiling_ && totalTime >= profileThreshold_) {
-    printCollectionProfile(reason, promotionRate);
-  }
+    stats().maybePrintProfileHeaders();
 
-  if (reportTenurings_) {
-    printTenuringData(tenureCounts);
-  }
-}
+    fprintf(stderr, "MinorGC: %20s %5.1f%% %5zu       ",
+            JS::ExplainGCReason(reason), promotionRate * 100,
+            capacity() / 1024);
+    printProfileDurations(profileDurations_);
 
-void js::Nursery::sendTelemetry(JS::GCReason reason, TimeDuration totalTime,
-                                size_t pretenureCount, double promotionRate) {
-  JSRuntime* rt = runtime();
-  rt->addTelemetry(JS_TELEMETRY_GC_MINOR_REASON, uint32_t(reason));
-  if (totalTime.ToMilliseconds() > 1.0) {
-    rt->addTelemetry(JS_TELEMETRY_GC_MINOR_REASON_LONG, uint32_t(reason));
-  }
-  rt->addTelemetry(JS_TELEMETRY_GC_MINOR_US, totalTime.ToMicroseconds());
-  rt->addTelemetry(JS_TELEMETRY_GC_NURSERY_BYTES, committed());
-  rt->addTelemetry(JS_TELEMETRY_GC_PRETENURE_COUNT, pretenureCount);
-  rt->addTelemetry(JS_TELEMETRY_GC_PRETENURE_COUNT_2, pretenureCount);
-  rt->addTelemetry(JS_TELEMETRY_GC_NURSERY_PROMOTION_RATE, promotionRate * 100);
-}
-
-void js::Nursery::printCollectionProfile(JS::GCReason reason,
-                                         double promotionRate) {
-  stats().maybePrintProfileHeaders();
-
-  fprintf(stderr, "MinorGC: %20s %5.1f%% %5zu       ",
-          JS::ExplainGCReason(reason), promotionRate * 100, capacity() / 1024);
-
-  printProfileDurations(profileDurations_);
-}
-
-void js::Nursery::printTenuringData(const TenureCountCache& tenureCounts) {
-  for (const auto& entry : tenureCounts.entries) {
-    if (entry.count >= reportTenurings_) {
-      fprintf(stderr, "  %u x ", entry.count);
-      AutoSweepObjectGroup sweep(entry.group);
-      entry.group->print(sweep);
+    if (reportTenurings_) {
+      for (auto& entry : tenureCounts.entries) {
+        if (entry.count >= reportTenurings_) {
+          fprintf(stderr, "  %u x ", entry.count);
+          AutoSweepObjectGroup sweep(entry.group);
+          entry.group->print(sweep);
+        }
+      }
     }
   }
 }
 
-js::Nursery::CollectionResult js::Nursery::doCollection(
-    JS::GCReason reason, TenureCountCache& tenureCounts) {
+void js::Nursery::doCollection(JS::GCReason reason,
+                               TenureCountCache& tenureCounts) {
   JSRuntime* rt = runtime();
   AutoGCSession session(gc, JS::HeapState::MinorCollecting);
   AutoSetThreadIsPerformingGC performingGC;
   AutoStopVerifyingBarriers av(rt, false);
   AutoDisableProxyCheck disableStrictProxyChecking;
   mozilla::DebugOnly<AutoEnterOOMUnsafeRegion> oomUnsafeRegion;
+
+  const size_t initialNurseryCapacity = capacity();
+  const size_t initialNurseryUsedBytes = usedSpace();
 
   
   TenuringTracer mover(rt, this);
@@ -1190,37 +1163,46 @@ js::Nursery::CollectionResult js::Nursery::doCollection(
 #endif
   endProfile(ProfileKey::CheckHashTables);
 
-  return {mover.tenuredSize, mover.tenuredCells};
+  previousGC.reason = reason;
+  previousGC.nurseryCapacity = initialNurseryCapacity;
+  previousGC.nurseryCommitted = spaceToEnd(allocatedChunkCount());
+  previousGC.nurseryUsedBytes = initialNurseryUsedBytes;
+  previousGC.tenuredBytes = mover.tenuredSize;
+  previousGC.tenuredCells = mover.tenuredCells;
 }
 
-size_t js::Nursery::doPretenuring(JSRuntime* rt, JS::GCReason reason,
-                                  const TenureCountCache& tenureCounts,
-                                  bool highPromotionRate) {
+float js::Nursery::doPretenuring(JSRuntime* rt, JS::GCReason reason,
+                                 TenureCountCache& tenureCounts) {
   
   
   
   
+  startProfile(ProfileKey::Pretenure);
+  bool validPromotionRate;
+  const float promotionRate = calcPromotionRate(&validPromotionRate);
+  uint32_t pretenureCount = 0;
+  bool attempt = tunables().attemptPretenuring();
 
-  bool pretenureObj = false;
-  bool pretenureStr = false;
-  bool pretenureBigInt = false;
-  if (tunables().attemptPretenuring()) {
+  bool pretenureObj, pretenureStr, pretenureBigInt;
+  if (attempt) {
     
-    bool pretenureAll =
-        highPromotionRate && previousGC.nurseryUsedBytes >= 4 * 1024 * 1024;
-
+    bool shouldPretenure = validPromotionRate &&
+                           promotionRate > tunables().pretenureThreshold() &&
+                           previousGC.nurseryUsedBytes >= 4 * 1024 * 1024;
     pretenureObj =
-        pretenureAll ||
+        shouldPretenure ||
         IsFullStoreBufferReason(reason, JS::GCReason::FULL_CELL_PTR_OBJ_BUFFER);
     pretenureStr =
-        pretenureAll ||
+        shouldPretenure ||
         IsFullStoreBufferReason(reason, JS::GCReason::FULL_CELL_PTR_STR_BUFFER);
-    pretenureBigInt =
-        pretenureAll || IsFullStoreBufferReason(
-                            reason, JS::GCReason::FULL_CELL_PTR_BIGINT_BUFFER);
+    pretenureBigInt = shouldPretenure ||
+                      IsFullStoreBufferReason(
+                          reason, JS::GCReason::FULL_CELL_PTR_BIGINT_BUFFER);
+  } else {
+    pretenureObj = false;
+    pretenureStr = false;
+    pretenureBigInt = false;
   }
-
-  size_t pretenureCount = 0;
 
   if (pretenureObj) {
     JSContext* cx = rt->mainContextFromOwnThread();
@@ -1291,8 +1273,13 @@ size_t js::Nursery::doPretenuring(JSRuntime* rt, JS::GCReason reason,
   stats().setStat(gcstats::STAT_NURSERY_BIGINT_REALMS_DISABLED,
                   numNurseryBigIntRealmsDisabled);
   stats().setStat(gcstats::STAT_BIGINTS_TENURED, numBigIntsTenured);
+  endProfile(ProfileKey::Pretenure);
 
-  return pretenureCount;
+  rt->addTelemetry(JS_TELEMETRY_GC_PRETENURE_COUNT, pretenureCount);
+  rt->addTelemetry(JS_TELEMETRY_GC_PRETENURE_COUNT_2, pretenureCount);
+  rt->addTelemetry(JS_TELEMETRY_GC_NURSERY_PROMOTION_RATE, promotionRate * 100);
+
+  return promotionRate;
 }
 
 bool js::Nursery::registerMallocedBuffer(void* buffer, size_t nbytes) {
@@ -1468,75 +1455,95 @@ MOZ_ALWAYS_INLINE void js::Nursery::setStartPosition() {
 }
 
 void js::Nursery::maybeResizeNursery(JS::GCReason reason) {
-#ifdef JS_GC_ZEAL
-  
-  if (gc->hasZealMode(ZealMode::GenerationalGC)) {
+  if (maybeResizeExact(reason)) {
     return;
   }
+
+  
+  
+  
+  const float promotionRate =
+      float(previousGC.tenuredBytes) / float(previousGC.nurseryCapacity);
+
+  
+  
+  
+  static const float GrowThreshold = 0.03f;
+  static const float ShrinkThreshold = 0.01f;
+  static const float PromotionGoal = (GrowThreshold + ShrinkThreshold) / 2.0f;
+  const float factor = promotionRate / PromotionGoal;
+  MOZ_ASSERT(factor >= 0.0f);
+
+#ifdef DEBUG
+  
+  
+  static const float SizeMaxPlusOne =
+      2.0f * float(1ULL << (sizeof(void*) * CHAR_BIT - 1));
+  MOZ_ASSERT((float(capacity()) * factor) < SizeMaxPlusOne);
 #endif
 
-  size_t newCapacity =
-      mozilla::Clamp(targetSize(reason), tunables().gcMinNurseryBytes(),
-                     tunables().gcMaxNurseryBytes());
+  size_t newCapacity = size_t(float(capacity()) * factor);
 
-  MOZ_ASSERT(roundSize(newCapacity) == newCapacity);
+  const size_t minNurseryBytes = roundSize(tunables().gcMinNurseryBytes());
+  MOZ_ASSERT(minNurseryBytes >= ArenaSize);
+  const size_t maxNurseryBytes = roundSize(tunables().gcMaxNurseryBytes());
+  MOZ_ASSERT(maxNurseryBytes >= ArenaSize);
 
-  if (newCapacity > capacity()) {
+  
+  
+  
+  size_t lowLimit = std::max(minNurseryBytes, capacity() / 2);
+  size_t highLimit =
+      std::min(maxNurseryBytes, (CheckedInt<size_t>(capacity()) * 2).value());
+  newCapacity = roundSize(mozilla::Clamp(newCapacity, lowLimit, highLimit));
+
+  if (capacity() < maxNurseryBytes && promotionRate > GrowThreshold &&
+      newCapacity > capacity()) {
     growAllocableSpace(newCapacity);
-  } else if (newCapacity < capacity()) {
+  } else if (capacity() >= minNurseryBytes + SubChunkStep &&
+             promotionRate < ShrinkThreshold && newCapacity < capacity()) {
     shrinkAllocableSpace(newCapacity);
   }
 }
 
-static inline double ClampDouble(double value, double min, double max) {
-  MOZ_ASSERT(!isnan(value) && !isnan(min) && !isnan(max));
-  MOZ_ASSERT(max >= min);
-
-  if (value <= min) {
-    return min;
-  }
-
-  if (value >= max) {
-    return max;
-  }
-
-  return value;
-}
-
-size_t js::Nursery::targetSize(JS::GCReason reason) {
+bool js::Nursery::maybeResizeExact(JS::GCReason reason) {
+  
+  
   if (gc::IsOOMReason(reason) || gc->systemHasLowMemory()) {
+    minimizeAllocableSpace();
+    return true;
+  }
+
+#ifdef JS_GC_ZEAL
+  
+  if (gc->hasZealMode(ZealMode::GenerationalGC)) {
+    return true;
+  }
+#endif
+
+  MOZ_ASSERT(tunables().gcMaxNurseryBytes() >= ArenaSize);
+  const size_t newMaxNurseryBytes = roundSize(tunables().gcMaxNurseryBytes());
+  MOZ_ASSERT(newMaxNurseryBytes >= ArenaSize);
+
+  if (capacity_ > newMaxNurseryBytes) {
     
-    return 0;
+    
+    shrinkAllocableSpace(newMaxNurseryBytes);
+    return true;
   }
 
-  
-  
-  
-  
-  const double fractionPromoted =
-      double(previousGC.tenuredBytes) / double(previousGC.nurseryCapacity);
+  const size_t newMinNurseryBytes = roundSize(tunables().gcMinNurseryBytes());
+  MOZ_ASSERT(newMinNurseryBytes >= ArenaSize);
 
-  
-  
-  static const double GrowThreshold = 0.03;
-  static const double ShrinkThreshold = 0.01;
-  static const double PromotionGoal = (GrowThreshold + ShrinkThreshold) / 2.0;
-
-  
-  if (fractionPromoted > ShrinkThreshold && fractionPromoted < GrowThreshold) {
-    return capacity();
+  if (newMinNurseryBytes > capacity()) {
+    
+    MOZ_ASSERT(newMinNurseryBytes <= roundSize(tunables().gcMaxNurseryBytes()));
+    growAllocableSpace(newMinNurseryBytes);
+    return true;
   }
 
-  const double growthFactor =
-      ClampDouble(fractionPromoted / PromotionGoal, 0.5, 2.0);
-
-  
-  
-  MOZ_ASSERT(capacity() < SIZE_MAX / 2);
-
-  return roundSize(size_t(double(capacity()) * growthFactor));
+  return false;
 }
-
 
 size_t js::Nursery::roundSize(size_t size) {
   if (size >= ChunkSize) {
@@ -1551,7 +1558,7 @@ size_t js::Nursery::roundSize(size_t size) {
 
 void js::Nursery::growAllocableSpace(size_t newCapacity) {
   MOZ_ASSERT_IF(!isSubChunkMode(), newCapacity > currentChunk_ * ChunkSize);
-  MOZ_ASSERT(newCapacity <= tunables().gcMaxNurseryBytes());
+  MOZ_ASSERT(newCapacity <= roundSize(tunables().gcMaxNurseryBytes()));
   MOZ_ASSERT(newCapacity > capacity());
 
   if (isSubChunkMode()) {
@@ -1650,6 +1657,21 @@ void js::Nursery::shrinkAllocableSpace(size_t newCapacity) {
     decommitTask.queueRange(capacity_, chunk(0), lock);
     decommitTask.startOrRunIfIdle(lock);
   }
+}
+
+void js::Nursery::minimizeAllocableSpace() {
+  if (capacity_ < roundSize(tunables().gcMinNurseryBytes())) {
+    
+    
+    
+    
+    
+    
+    
+    
+    return;
+  }
+  shrinkAllocableSpace(roundSize(tunables().gcMinNurseryBytes()));
 }
 
 bool js::Nursery::queueDictionaryModeObjectToSweep(NativeObject* obj) {
