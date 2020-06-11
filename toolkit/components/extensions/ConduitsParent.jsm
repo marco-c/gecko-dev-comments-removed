@@ -275,16 +275,24 @@ class BroadcastConduit extends BaseConduit {
 
   _raceResponses(promises) {
     return new Promise((resolve, reject) => {
+      let result;
       promises.map(p =>
         p
-          
-          .then(value => value && resolve(value))
-
+          .then(value => {
+            if (value.response) {
+              
+              resolve(value);
+            } else if (value.received) {
+              
+              
+              result = value;
+            }
+          })
           
           .catch(err => err.result !== Cr.NS_ERROR_NOT_AVAILABLE && reject(err))
       );
       
-      Promise.allSettled(promises).then(() => resolve());
+      Promise.allSettled(promises).then(() => resolve(result));
     });
   }
 
