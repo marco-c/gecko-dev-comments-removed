@@ -60,13 +60,7 @@ class WebExtensionDescriptorFront extends FrontClassWithSpec(
       
       
       
-      let form = null;
-      
-      if (!this.traits.isDescriptor) {
-        form = await super.connect();
-      } else {
-        form = await super.getTarget();
-      }
+      const form = await super.getTarget();
       const front = new BrowsingContextTargetFront(this.conn, null, this);
       front.form(form);
       this.manage(front);
