@@ -431,16 +431,26 @@ IPCBlobInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
         break;
       }
 
-      
+      case eClosed:
+        [[fallthrough]];
       default:
         MOZ_ASSERT(mState == eClosed);
-        return NS_BASE_STREAM_CLOSED;
+        if (mInputStreamCallback && aCallback) {
+          return NS_ERROR_FAILURE;
+        }
+        break;
     }
   }
 
-  MOZ_ASSERT(asyncRemoteStream);
-  return asyncRemoteStream->AsyncWait(aCallback ? this : nullptr, 0, 0,
-                                      aEventTarget);
+  if (asyncRemoteStream) {
+    return asyncRemoteStream->AsyncWait(aCallback ? this : nullptr, 0, 0,
+                                        aEventTarget);
+  }
+
+  
+  
+  InputStreamCallbackRunnable::Execute(aCallback, aEventTarget, this);
+  return NS_OK;
 }
 
 void IPCBlobInputStream::StreamReady(
@@ -803,38 +813,6 @@ IPCBlobInputStream::Length(int64_t* aLength) {
   return NS_BASE_STREAM_WOULD_BLOCK;
 }
 
-
-
-NS_IMETHODIMP
-IPCBlobInputStream::AsyncLengthWait(nsIInputStreamLengthCallback* aCallback,
-                                    nsIEventTarget* aEventTarget) {
-  MutexAutoLock lock(mMutex);
-
-  if (mState == eClosed) {
-    return NS_BASE_STREAM_CLOSED;
-  }
-
-  if (mConsumed) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  
-  if (NS_WARN_IF(!!aCallback != !!aEventTarget)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  MOZ_ASSERT(mActor);
-
-  mLengthCallback = aCallback;
-  mLengthCallbackEventTarget = aEventTarget;
-
-  if (aCallback) {
-    mActor->LengthNeeded(this, aEventTarget);
-  }
-
-  return NS_OK;
-}
-
 namespace {
 
 class InputStreamLengthCallbackRunnable final : public CancelableRunnable {
@@ -879,6 +857,39 @@ class InputStreamLengthCallbackRunnable final : public CancelableRunnable {
 
 }  
 
+
+
+NS_IMETHODIMP
+IPCBlobInputStream::AsyncLengthWait(nsIInputStreamLengthCallback* aCallback,
+                                    nsIEventTarget* aEventTarget) {
+  
+  if (NS_WARN_IF(!!aCallback != !!aEventTarget)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  {
+    MutexAutoLock lock(mMutex);
+
+    mLengthCallback = aCallback;
+    mLengthCallbackEventTarget = aEventTarget;
+
+    if (mState != eClosed && !mConsumed) {
+      MOZ_ASSERT(mActor);
+
+      if (aCallback) {
+        mActor->LengthNeeded(this, aEventTarget);
+      }
+
+      return NS_OK;
+    }
+  }
+
+  
+  
+  InputStreamLengthCallbackRunnable::Execute(aCallback, aEventTarget, this, -1);
+  return NS_OK;
+}
+
 void IPCBlobInputStream::LengthReady(int64_t aLength) {
   nsCOMPtr<nsIInputStreamLengthCallback> lengthCallback;
   nsCOMPtr<nsIEventTarget> lengthCallbackEventTarget;
@@ -887,18 +898,19 @@ void IPCBlobInputStream::LengthReady(int64_t aLength) {
     MutexAutoLock lock(mMutex);
 
     
+    
     if (mState == eClosed || mConsumed) {
-      return;
-    }
+      aLength = -1;
+    } else {
+      if (mStart > 0) {
+        aLength -= mStart;
+      }
 
-    if (mStart > 0) {
-      aLength -= mStart;
-    }
-
-    if (mLength < mActor->Size()) {
-      
-      
-      aLength = XPCOM_MIN(aLength, (int64_t)mLength);
+      if (mLength < mActor->Size()) {
+        
+        
+        aLength = XPCOM_MIN(aLength, (int64_t)mLength);
+      }
     }
 
     lengthCallback.swap(mLengthCallback);
