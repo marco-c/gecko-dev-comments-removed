@@ -33,7 +33,10 @@ using namespace mozilla;
 using namespace mozilla::scache;
 using mozilla::intl::LocaleService;
 
-static bool gDisableXULCache = false;  
+#define XUL_CACHE_DISABLED_DEFAULT false
+
+static bool gDisableXULCache =
+    XUL_CACHE_DISABLED_DEFAULT;  
 static const char kDisableXULCachePref[] = "nglayout.debug.disable_xul_cache";
 static const char kXULCacheInfoKey[] = "nsXULPrototypeCache.startupCache";
 static const char kXULCachePrefix[] = "xulcache";
@@ -43,7 +46,7 @@ static const char kXULCachePrefix[] = "xulcache";
 static void UpdategDisableXULCache() {
   
   gDisableXULCache =
-      Preferences::GetBool(kDisableXULCachePref, gDisableXULCache);
+      Preferences::GetBool(kDisableXULCachePref, XUL_CACHE_DISABLED_DEFAULT);
 
   
   if (gDisableXULCache) {
