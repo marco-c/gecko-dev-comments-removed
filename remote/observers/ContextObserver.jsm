@@ -145,19 +145,14 @@ class ContextObserver {
   }
 
   onDocShellCreated(docShell) {
-    const parent = docShell.browsingContext.parent;
-
-    
-    this.emit("frame-attached", {
-      frameId: docShell.browsingContext.id.toString(),
-      parentFrameId: parent ? parent.id.toString() : null,
+    this.emit("docshell-created", {
+      id: docShell.browsingContext.id,
     });
   }
 
   onDocShellDestroyed(docShell) {
-    
-    this.emit("frame-detached", {
-      frameId: docShell.browsingContext.id.toString(),
+    this.emit("docshell-destroyed", {
+      id: docShell.browsingContext.id,
     });
   }
 }

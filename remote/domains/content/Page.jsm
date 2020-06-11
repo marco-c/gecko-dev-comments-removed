@@ -64,8 +64,14 @@ class Page extends ContentProcessDomain {
 
   async enable() {
     if (!this.enabled) {
-      this.session.contextObserver.on("frame-attached", this._onFrameAttached);
-      this.session.contextObserver.on("frame-detached", this._onFrameDetached);
+      this.session.contextObserver.on(
+        "docshell-created",
+        this._onFrameAttached
+      );
+      this.session.contextObserver.on(
+        "docshell-destroyed",
+        this._onFrameDetached
+      );
       this.session.contextObserver.on(
         "frame-navigated",
         this._onFrameNavigated
@@ -99,8 +105,14 @@ class Page extends ContentProcessDomain {
 
   disable() {
     if (this.enabled) {
-      this.session.contextObserver.off("frame-attached", this._onFrameAttached);
-      this.session.contextObserver.off("frame-detached", this._onFrameDetached);
+      this.session.contextObserver.off(
+        "docshell-created",
+        this._onFrameAttached
+      );
+      this.session.contextObserver.off(
+        "docshell-destroyed",
+        this._onFrameDetached
+      );
       this.session.contextObserver.off(
         "frame-navigated",
         this._onFrameNavigated
@@ -256,16 +268,32 @@ class Page extends ContentProcessDomain {
     return this.content.location.href;
   }
 
-  _onFrameAttached(name, { frameId, parentFrameId }) {
+  _onFrameAttached(name, { id }) {
+    const bc = BrowsingContext.get(id);
+
+    
+    if (!bc.parent) {
+      return;
+    }
+
+    
     this.emit("Page.frameAttached", {
-      frameId,
-      parentFrameId,
+      frameId: bc.id.toString(),
+      parentFrameId: bc.parent.id.toString(),
       stack: null,
     });
   }
 
-  _onFrameDetached(name, { frameId }) {
-    this.emit("Page.frameDetached", { frameId });
+  _onFrameDetached(name, { id }) {
+    const bc = BrowsingContext.get(id);
+
+    
+    if (!bc.parent) {
+      return;
+    }
+
+    
+    this.emit("Page.frameDetached", { frameId: bc.id.toString() });
   }
 
   _onFrameNavigated(name, { frameId, window }) {
