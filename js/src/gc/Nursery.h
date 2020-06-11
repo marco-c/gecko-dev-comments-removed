@@ -512,7 +512,7 @@ class Nursery {
   
   
   
-  float calcPromotionRate(bool* validForTenuring) const;
+  double calcPromotionRate(bool* validForTenuring) const;
 
   
   
@@ -650,9 +650,9 @@ class Nursery {
   void freeChunksFrom(unsigned firstFreeChunk);
 
   void sendTelemetry(JS::GCReason reason, mozilla::TimeDuration totalTime,
-                     size_t pretenureCount, float promotionRate);
+                     size_t pretenureCount, double promotionRate);
 
-  void printCollectionProfile(JS::GCReason reason, float promotionRate);
+  void printCollectionProfile(JS::GCReason reason, double promotionRate);
   void printTenuringData(const gc::TenureCountCache& tenureCounts);
 
   

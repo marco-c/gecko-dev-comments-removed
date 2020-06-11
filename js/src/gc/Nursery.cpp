@@ -749,24 +749,24 @@ js::TenuringTracer::TenuringTracer(JSRuntime* rt, Nursery* nursery)
       bigIntHead(nullptr),
       bigIntTail(&bigIntHead) {}
 
-inline float js::Nursery::calcPromotionRate(bool* validForTenuring) const {
-  float used = float(previousGC.nurseryUsedBytes);
-  float capacity = float(previousGC.nurseryCapacity);
-  float tenured = float(previousGC.tenuredBytes);
-  float rate;
+inline double js::Nursery::calcPromotionRate(bool* validForTenuring) const {
+  double used = double(previousGC.nurseryUsedBytes);
+  double capacity = double(previousGC.nurseryCapacity);
+  double tenured = double(previousGC.tenuredBytes);
+  double rate;
 
   if (previousGC.nurseryUsedBytes > 0) {
     if (validForTenuring) {
       
       
-      *validForTenuring = used > capacity * 0.9f;
+      *validForTenuring = used > capacity * 0.9;
     }
     rate = tenured / used;
   } else {
     if (validForTenuring) {
       *validForTenuring = false;
     }
-    rate = 0.0f;
+    rate = 0.0;
   }
 
   return rate;
@@ -909,7 +909,7 @@ bool js::Nursery::shouldCollect() const {
   bool belowBytesThreshold =
       freeSpace() < tunables().nurseryFreeThresholdForIdleCollection();
   bool belowFractionThreshold =
-      float(freeSpace()) / float(capacity()) <
+      double(freeSpace()) / double(capacity()) <
       tunables().nurseryFreeThresholdForIdleCollectionFraction();
 
   
@@ -1014,7 +1014,7 @@ void js::Nursery::collect(JS::GCReason reason) {
   }
 
   bool validPromotionRate;
-  const float promotionRate = calcPromotionRate(&validPromotionRate);
+  const double promotionRate = calcPromotionRate(&validPromotionRate);
   bool highPromotionRate =
       validPromotionRate && promotionRate > tunables().pretenureThreshold();
 
@@ -1050,7 +1050,7 @@ void js::Nursery::collect(JS::GCReason reason) {
 }
 
 void js::Nursery::sendTelemetry(JS::GCReason reason, TimeDuration totalTime,
-                                size_t pretenureCount, float promotionRate) {
+                                size_t pretenureCount, double promotionRate) {
   JSRuntime* rt = runtime();
   rt->addTelemetry(JS_TELEMETRY_GC_MINOR_REASON, uint32_t(reason));
   if (totalTime.ToMilliseconds() > 1.0) {
@@ -1064,7 +1064,7 @@ void js::Nursery::sendTelemetry(JS::GCReason reason, TimeDuration totalTime,
 }
 
 void js::Nursery::printCollectionProfile(JS::GCReason reason,
-                                         float promotionRate) {
+                                         double promotionRate) {
   stats().maybePrintProfileHeaders();
 
   fprintf(stderr, "MinorGC: %20s %5.1f%% %5zu       ",
@@ -1474,27 +1474,27 @@ void js::Nursery::maybeResizeNursery(JS::GCReason reason) {
   
   
   
-  const float promotionRate =
-      float(previousGC.tenuredBytes) / float(previousGC.nurseryCapacity);
+  const double promotionRate =
+      double(previousGC.tenuredBytes) / double(previousGC.nurseryCapacity);
 
   
   
   
-  static const float GrowThreshold = 0.03f;
-  static const float ShrinkThreshold = 0.01f;
-  static const float PromotionGoal = (GrowThreshold + ShrinkThreshold) / 2.0f;
-  const float factor = promotionRate / PromotionGoal;
-  MOZ_ASSERT(factor >= 0.0f);
+  static const double GrowThreshold = 0.03;
+  static const double ShrinkThreshold = 0.01;
+  static const double PromotionGoal = (GrowThreshold + ShrinkThreshold) / 2.0;
+  const double factor = promotionRate / PromotionGoal;
+  MOZ_ASSERT(factor >= 0.0);
 
 #ifdef DEBUG
   
   
-  static const float SizeMaxPlusOne =
-      2.0f * float(1ULL << (sizeof(void*) * CHAR_BIT - 1));
-  MOZ_ASSERT((float(capacity()) * factor) < SizeMaxPlusOne);
+  static const double SizeMaxPlusOne =
+      2.0f * double(1ULL << (sizeof(void*) * CHAR_BIT - 1));
+  MOZ_ASSERT((double(capacity()) * factor) < SizeMaxPlusOne);
 #endif
 
-  size_t newCapacity = size_t(float(capacity()) * factor);
+  size_t newCapacity = size_t(double(capacity()) * factor);
 
   const size_t minNurseryBytes = roundSize(tunables().gcMinNurseryBytes());
   MOZ_ASSERT(minNurseryBytes >= ArenaSize);
