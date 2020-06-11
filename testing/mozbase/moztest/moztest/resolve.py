@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -75,7 +75,7 @@ TEST_SUITES = {
         'mach_command': 'check-spidermonkey',
         'kwargs': {'valgrind': False},
     },
-    
+    # TODO(ato): integrate geckodriver tests with moz.build
     'geckodriver': {
         'aliases': ('testing/geckodriver',),
         'mach_command': 'geckodriver-test',
@@ -147,7 +147,7 @@ TEST_SUITES = {
         'build_flavor': 'mochitest',
         'mach_command': 'mochitest',
         'kwargs': {'flavor': 'plain', 'test_paths': None},
-        'task_regex': ['mochitest-plain($|.*(-1|[^0-9])$)',  
+        'task_regex': ['mochitest-plain($|.*(-1|[^0-9])$)',  # noqa
                        'test-verify($|.*(-1|[^0-9])$)'],
     },
     'mochitest-plain-gpu': {
@@ -380,9 +380,9 @@ class BuildBackendLoader(TestLoader):
         These manifest defaults will be merged into the test configuration of the
         contained tests.
         """
-        
-        
-        
+        # If installing tests is going to result in re-generating the build
+        # backend, we need to do this here, so that the updated contents of
+        # all-tests.pkl make it to the set of tests to run.
         if self.backend_out_of_date(mozpath.join(self.topobjdir,
                                                  'backend.TestManifestBackend'
                                                  )):
@@ -405,9 +405,9 @@ class BuildBackendLoader(TestLoader):
 
                 ancestor_manifest = metadata.get('ancestor_manifest')
                 if ancestor_manifest:
-                    
-                    
-                    
+                    # The (ancestor manifest, included manifest) tuple
+                    # contains the defaults of the included manifest, so
+                    # use it instead of [metadata['manifest']].
                     ancestor_manifest = os.path.join(self.topsrcdir, ancestor_manifest)
                     defaults_manifests[0] = (ancestor_manifest, metadata['manifest'])
                     defaults_manifests.append(ancestor_manifest)
@@ -461,7 +461,7 @@ class TestManifestLoader(TestLoader):
                 assert mozpath.basedir(path, [self.topsrcdir])
                 relpath = path[len(self.topsrcdir)+1:]
 
-                
+                # Add these keys for compatibility with the build backend loader.
                 test['flavor'] = flavor
                 test['file_relpath'] = relpath
                 test['srcdir_relpath'] = relpath
@@ -488,7 +488,7 @@ class TestResolver(MozbuildObject):
         self._tests = []
         self._reset_state()
 
-        
+        # These suites aren't registered in moz.build so require special handling.
         self._puppeteer_loaded = False
         self._tests_loaded = False
         self._wpt_loaded = False
@@ -586,7 +586,7 @@ class TestResolver(MozbuildObject):
                 if under_path and not test['file_relpath'].startswith(under_path):
                     continue
 
-                
+                # Make a copy so modifications don't change the source.
                 yield dict(test)
 
         paths = paths or []
@@ -612,22 +612,22 @@ class TestResolver(MozbuildObject):
                                     if mozpath.match(p, path)}
                 continue
 
-            
-            
+            # If the path is a directory, or the path is a prefix of a directory
+            # containing tests, pull in all tests in that directory.
             if (path in self.test_dirs or
                 any(p.startswith(path) for p in self.tests_by_path)):
                 candidate_paths |= {p for p in self.tests_by_path
                                     if p.startswith(path)}
                 continue
 
-            
+            # If the path is a manifest, add all tests defined in that manifest.
             if any(path.endswith(e) for e in ('.ini', '.list')):
                 key = 'manifest' if os.path.isabs(path) else 'manifest_relpath'
                 candidate_paths |= {t['file_relpath'] for t in self.tests
                                     if mozpath.normpath(t[key]) == path}
                 continue
 
-            
+            # If it's a test file, add just that file.
             candidate_paths |= {p for p in self.tests_by_path if path in p}
 
         for p in sorted(candidate_paths):
@@ -694,9 +694,9 @@ class TestResolver(MozbuildObject):
         Returns:
             str: The group the given test belongs to.
         """
-        
-        
-        
+        # Extract the first path component (top level directory) as the key.
+        # This value should match the path in manifest-runtimes JSON data.
+        # Mozilla WPT paths have one extra URL component in the front.
         components = 3 if test['name'].startswith('/_mozilla') else 2
         group = '/'.join(test['name'].split('/')[:components])
         return group
@@ -723,7 +723,7 @@ class TestResolver(MozbuildObject):
         logger = logging.getLogger("manifestupdate")
         logger.disabled = True
 
-        manifests = manifestupdate.run(self.topsrcdir, self.topobjdir, rebuild=True,
+        manifests = manifestupdate.run(self.topsrcdir, self.topobjdir, rebuild=False,
                                        download=True, config_path=None, rewrite_config=True,
                                        update=True, logger=logger)
         if not manifests:
@@ -731,14 +731,14 @@ class TestResolver(MozbuildObject):
             return
 
         for manifest, data in six.iteritems(manifests):
-            tests_root = data["tests_path"]  
+            tests_root = data["tests_path"]  # full path on disk until web-platform tests directory
             for test_type, path, tests in manifest:
                 full_path = mozpath.join(tests_root, path)
                 src_path = mozpath.relpath(full_path, self.topsrcdir)
                 if test_type not in ["testharness", "reftest", "wdspec", "crashtest"]:
                     continue
 
-                full_path = mozpath.join(tests_root, path)  
+                full_path = mozpath.join(tests_root, path)  # absolute path on disk
                 src_path = mozpath.relpath(full_path, self.topsrcdir)
 
                 for test in tests:
@@ -857,13 +857,13 @@ class TestResolver(MozbuildObject):
         """Resolve tests based on the given metadata. If not specified, metadata
         from outgoing files will be used instead.
         """
-        
+        # Parse arguments and assemble a test "plan."
         run_suites = set()
         run_tests = []
 
         for entry in what:
-            
-            
+            # If the path matches the name or alias of an entire suite, run
+            # the entire suite.
             if entry in TEST_SUITES:
                 run_suites.add(entry)
                 continue
@@ -875,7 +875,7 @@ class TestResolver(MozbuildObject):
             if suitefound:
                 continue
 
-            
+            # Now look for file/directory matches in the TestResolver.
             relpath = self._wrap_path_argument(entry).relpath()
             tests = list(self.resolve_tests(paths=[relpath]))
             run_tests.extend(tests)
@@ -887,10 +887,10 @@ class TestResolver(MozbuildObject):
             res = self.get_outgoing_metadata()
             paths, tags, flavors = (res[key] for key in ('paths', 'tags', 'flavors'))
 
-            
-            
-            
-            
+            # This requires multiple calls to resolve_tests, because the test
+            # resolver returns tests that match every condition, while we want
+            # tests that match any condition. Bug 1210213 tracks implementing
+            # more flexible querying.
             if tags:
                 run_tests = list(self.resolve_tests(tags=tags))
             if paths:
