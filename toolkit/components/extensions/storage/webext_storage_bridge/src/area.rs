@@ -261,6 +261,14 @@ impl StorageSyncArea {
         }
         Ok(())
     }
+
+    xpcom_method!(takeMigrationInfo => TakeMigrationInfo(callback: *const mozIExtensionStorageCallback));
+
+    
+    
+    fn takeMigrationInfo(&self, callback: &mozIExtensionStorageCallback) -> Result<()> {
+        self.dispatch(Punt::TakeMigrationInfo, callback)
+    }
 }
 
 fn teardown(

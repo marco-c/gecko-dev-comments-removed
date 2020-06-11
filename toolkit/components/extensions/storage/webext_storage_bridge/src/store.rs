@@ -212,9 +212,13 @@ fn init_store(config: &LazyStoreConfig) -> Result<Store> {
     let store = Store::new(&config.path)?;
     if should_migrate {
         match store.migrate(&config.kinto_path) {
-            Ok(num) => {
+            
+            
+            
+            
+            Ok(()) => {
                 
-                println!("extension-storage: migrated {} records", num);
+                println!("extension-storage: migration complete");
                 Ok(store)
             }
             Err(e) => {

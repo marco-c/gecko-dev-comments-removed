@@ -40,6 +40,12 @@ pub enum Punt {
     
     
     FetchPendingSyncChanges,
+    
+    
+    
+    
+    
+    TakeMigrationInfo,
 }
 
 impl Punt {
@@ -53,6 +59,7 @@ impl Punt {
             Punt::Clear { .. } => "webext_storage::clear",
             Punt::GetBytesInUse { .. } => "webext_storage::get_bytes_in_use",
             Punt::FetchPendingSyncChanges => "webext_storage::fetch_pending_sync_changes",
+            Punt::TakeMigrationInfo => "webext_storage::take_migration_info",
         }
     }
 }
@@ -184,6 +191,9 @@ impl PuntTask {
                     })
                     .collect(),
             ),
+            Punt::TakeMigrationInfo => {
+                PuntResult::with_value(self.store()?.get()?.take_migration_info()?)?
+            }
         })
     }
 }

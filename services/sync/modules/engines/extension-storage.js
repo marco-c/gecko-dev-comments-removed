@@ -16,6 +16,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   BridgedEngine: "resource://services-sync/bridged_engine.js",
   extensionStorageSync: "resource://gre/modules/ExtensionStorageSync.jsm",
+  Observers: "resource://services-common/observers.js",
   Svc: "resource://services-sync/util.js",
   SyncEngine: "resource://services-sync/engines.js",
   Tracker: "resource://services-sync/engines.js",
@@ -113,6 +114,41 @@ ExtensionStorageEngineBridge.prototype = {
           },
         });
     });
+  },
+
+  _takeMigrationInfo() {
+    return new Promise((resolve, reject) => {
+      this._bridge
+        .QueryInterface(Ci.mozIExtensionStorageArea)
+        .takeMigrationInfo({
+          QueryInterface: ChromeUtils.generateQI([
+            Ci.mozIExtensionStorageCallback,
+          ]),
+          handleSuccess: result => {
+            resolve(result ? JSON.parse(result) : null);
+          },
+          handleError: (code, message) => {
+            this._log.warn("Error fetching migration info", message, code);
+            
+            
+            
+            
+            
+            
+            
+            resolve(null);
+          },
+        });
+    });
+  },
+
+  async _syncStartup() {
+    let result = await super._syncStartup();
+    let info = await this._takeMigrationInfo();
+    if (info) {
+      Observers.notify("weave:telemetry:migration", info, "webext-storage");
+    }
+    return result;
   },
 
   async _processIncoming() {
