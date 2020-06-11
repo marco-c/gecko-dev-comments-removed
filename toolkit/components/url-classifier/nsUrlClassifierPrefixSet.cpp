@@ -540,7 +540,7 @@ nsresult nsUrlClassifierPrefixSet::WritePrefixes(
       totalDeltas += deltaLength;
       indexStarts.AppendElement(totalDeltas);
     }
-    indexStarts.RemoveLastElement();  
+    indexStarts.RemoveElementAt(indexSize);  
     MOZ_ASSERT(indexStarts.Length() == indexSize);
   }
 

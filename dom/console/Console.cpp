@@ -1935,7 +1935,7 @@ static bool ProcessArguments(JSContext* aCx, const Sequence<JS::Value>& aData,
         
         
         if (output.IsEmpty() && !aStyles.IsEmpty()) {
-          aStyles.RemoveLastElement();
+          aStyles.TruncateLength(aStyles.Length() - 1);
         }
 
         if (NS_WARN_IF(!FlushOutput(aCx, aSequence, output))) {
@@ -2084,7 +2084,9 @@ static bool UnstoreGroupName(nsAString& aName,
     return false;
   }
 
-  aName = aGroupStack->PopLastElement();
+  uint32_t pos = aGroupStack->Length() - 1;
+  aName = (*aGroupStack)[pos];
+  aGroupStack->RemoveElementAt(pos);
   return true;
 }
 

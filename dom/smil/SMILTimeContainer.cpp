@@ -185,7 +185,7 @@ nsresult SMILTimeContainer::SetParent(SMILTimeContainer* aParent) {
   return rv;
 }
 
-void SMILTimeContainer::AddMilestone(
+bool SMILTimeContainer::AddMilestone(
     const SMILMilestone& aMilestone,
     mozilla::dom::SVGAnimationElement& aElement) {
   
@@ -193,7 +193,7 @@ void SMILTimeContainer::AddMilestone(
   
   
   MOZ_ASSERT(!mHoldingEntries);
-  mMilestoneEntries.Push(MilestoneEntry(aMilestone, aElement));
+  return mMilestoneEntries.Push(MilestoneEntry(aMilestone, aElement));
 }
 
 void SMILTimeContainer::ClearMilestones() {

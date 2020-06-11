@@ -981,7 +981,10 @@ bool ServoStyleSet::EnsureUniqueInnerOnCSSSheets() {
   });
 
   while (!queue.IsEmpty()) {
-    auto [sheet, owner] = queue.PopLastElement();
+    uint32_t idx = queue.Length() - 1;
+    auto* sheet = queue[idx].first;
+    SheetOwner owner = queue[idx].second;
+    queue.RemoveElementAt(idx);
 
     
     

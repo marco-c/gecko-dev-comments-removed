@@ -207,9 +207,15 @@ void TypeInState::ClearProp(nsAtom* aProp, nsAtom* aAttr) {
 
 
 UniquePtr<PropItem> TypeInState::TakeClearProperty() {
-  return mClearedArray.Length()
-             ? UniquePtr<PropItem>{mClearedArray.PopLastElement()}
-             : nullptr;
+  size_t count = mClearedArray.Length();
+  if (!count) {
+    return nullptr;
+  }
+
+  --count;  
+  PropItem* propItem = mClearedArray[count];
+  mClearedArray.RemoveElementAt(count);
+  return UniquePtr<PropItem>(propItem);
 }
 
 
@@ -217,8 +223,14 @@ UniquePtr<PropItem> TypeInState::TakeClearProperty() {
 
 
 UniquePtr<PropItem> TypeInState::TakeSetProperty() {
-  return mSetArray.Length() ? UniquePtr<PropItem>{mSetArray.PopLastElement()}
-                            : nullptr;
+  size_t count = mSetArray.Length();
+  if (!count) {
+    return nullptr;
+  }
+  count--;  
+  PropItem* propItem = mSetArray[count];
+  mSetArray.RemoveElementAt(count);
+  return UniquePtr<PropItem>(propItem);
 }
 
 

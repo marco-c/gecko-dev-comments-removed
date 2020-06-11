@@ -189,13 +189,12 @@ class ExpirationTrackerImpl {
     MOZ_ASSERT(generation.Length() > index && generation[index] == aObj,
                "Object is lying about its index");
     
-    T* lastObj = generation.PopLastElement();
-    
-    
-    if (index < generation.Length()) {
-      generation[index] = lastObj;
-    }
+    uint32_t last = generation.Length() - 1;
+    T* lastObj = generation[last];
+    generation[index] = lastObj;
     lastObj->GetExpirationState()->mIndexInGeneration = index;
+    generation.RemoveElementAt(last);
+    MOZ_ASSERT(generation.Length() == last);
     state->mGeneration = nsExpirationState::NOT_TRACKED;
     
     

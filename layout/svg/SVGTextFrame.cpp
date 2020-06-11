@@ -1627,7 +1627,7 @@ nsTextFrame* TextFrameIterator::Next() {
           mCurrentPosition -= mCurrentFrame->GetPosition();
           if (mCurrentFrame->GetContent()->IsSVGElement(nsGkAtoms::textPath)) {
             
-            mTextPathFrames.RemoveLastElement();
+            mTextPathFrames.TruncateLength(mTextPathFrames.Length() - 1);
           }
           
           PopBaseline();
@@ -1674,7 +1674,7 @@ void TextFrameIterator::PushBaseline(nsIFrame* aNextFrame) {
 
 void TextFrameIterator::PopBaseline() {
   NS_ASSERTION(!mBaselines.IsEmpty(), "popped too many baselines");
-  mBaselines.RemoveLastElement();
+  mBaselines.TruncateLength(mBaselines.Length() - 1);
 }
 
 

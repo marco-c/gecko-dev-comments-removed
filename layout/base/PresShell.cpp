@@ -607,10 +607,11 @@ void PresShell::DirtyRootsList::Remove(nsIFrame* aFrame) {
 nsIFrame* PresShell::DirtyRootsList::PopShallowestRoot() {
   
   
-  const FrameAndDepth& lastFAD = mList.PopLastElement();
+  const FrameAndDepth& lastFAD = mList.LastElement();
   nsIFrame* frame = lastFAD.mFrame;
   
   MOZ_ASSERT(frame->GetDepthInFrameTree() == lastFAD.mDepth);
+  mList.RemoveLastElement();
   return frame;
 }
 
@@ -5258,7 +5259,8 @@ nscolor PresShell::GetDefaultBackgroundColorToDraw() {
   BrowsingContext* bc = doc->GetBrowsingContext();
   if (bc && bc->IsTop() && !bc->HasOpener() && doc->GetDocumentURI() &&
       NS_IsAboutBlank(doc->GetDocumentURI()) &&
-      doc->PrefersColorScheme(Document::IgnoreRFP::Yes) == StylePrefersColorScheme::Dark) {
+      doc->PrefersColorScheme(Document::IgnoreRFP::Yes) ==
+          StylePrefersColorScheme::Dark) {
     
     return NS_RGB(0x2A, 0x2A, 0x2E);
   }

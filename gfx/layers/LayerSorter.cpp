@@ -301,9 +301,12 @@ void SortLayersBy3DZOrder(nsTArray<Layer*>& aLayers) {
   
   do {
     if (!noIncoming.IsEmpty()) {
-      Layer* layer = noIncoming.PopLastElement();
+      uint32_t last = noIncoming.Length() - 1;
+
+      Layer* layer = noIncoming.ElementAt(last);
       MOZ_ASSERT(layer);  
 
+      noIncoming.RemoveElementAt(last);
       sortedList.AppendElement(layer);
 
       nsTArray<DirectedGraph<Layer*>::Edge> outgoing;

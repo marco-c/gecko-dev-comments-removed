@@ -43,11 +43,11 @@ RefPtr<MediaDataDecoder::DecodePromise> DummyMediaDataDecoder::Decode(
   }
 
   
-  mReorderQueue.Push(std::move(data));
+  mReorderQueue.Push(data);
 
   if (mReorderQueue.Length() > mMaxRefFrames) {
-    return DecodePromise::CreateAndResolve(DecodedData{mReorderQueue.Pop()},
-                                           __func__);
+    return DecodePromise::CreateAndResolve(
+        DecodedData{mReorderQueue.Pop().get()}, __func__);
   }
   return DecodePromise::CreateAndResolve(DecodedData(), __func__);
 }
@@ -55,7 +55,7 @@ RefPtr<MediaDataDecoder::DecodePromise> DummyMediaDataDecoder::Decode(
 RefPtr<MediaDataDecoder::DecodePromise> DummyMediaDataDecoder::Drain() {
   DecodedData samples;
   while (!mReorderQueue.IsEmpty()) {
-    samples.AppendElement(mReorderQueue.Pop());
+    samples.AppendElement(mReorderQueue.Pop().get());
   }
   return DecodePromise::CreateAndResolve(std::move(samples), __func__);
 }
