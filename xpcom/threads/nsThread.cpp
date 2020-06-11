@@ -1139,13 +1139,13 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
     
     
     
+    
+    
+    
     EventQueuePriority priority = EventQueuePriority::Normal;
     nsCOMPtr<nsIRunnable> event;
     bool usingTaskController = mIsMainThread && UseTaskController();
     if (usingTaskController) {
-      
-      
-      
       event = TaskController::Get()->GetRunnableForMTTask(reallyWait);
     } else {
       event = mEvents->GetEvent(reallyWait, &priority, &mLastEventDelay);
@@ -1218,14 +1218,13 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
         sMainThreadRunnableName[length] = '\0';
       }
 #endif
-      
       Maybe<AutoTimeDurationHelper> timeDurationHelper;
-      if (priority == EventQueuePriority::InputHigh) {
-        timeDurationHelper.emplace();
-      }
-
       Maybe<PerformanceCounterState::Snapshot> snapshot;
       if (!usingTaskController) {
+        
+        if (priority == EventQueuePriority::InputHigh) {
+          timeDurationHelper.emplace();
+        }
         snapshot.emplace(mPerformanceCounterState.RunnableWillRun(
             GetPerformanceCounter(event), now,
             priority == EventQueuePriority::Idle));
