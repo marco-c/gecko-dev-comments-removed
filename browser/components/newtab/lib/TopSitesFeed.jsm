@@ -430,7 +430,12 @@ this.TopSitesFeed = class TopSitesFeed {
         link.typedBonus = true;
 
         if (amazonSearchTileOverrideURL) {
-          if (link.searchTopSite && link.label === "@amazon") {
+          
+          if (
+            link.searchTopSite &&
+            !link.searchVendor &&
+            link.label === "@amazon"
+          ) {
             delete link.searchTopSite;
             delete link.label;
             link.url = amazonSearchTileOverrideURL;
