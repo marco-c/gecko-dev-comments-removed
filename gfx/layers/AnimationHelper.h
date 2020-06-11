@@ -16,6 +16,7 @@
 #include "mozilla/TimingParams.h"
 #include "mozilla/Variant.h"
 #include "X11UndefineNone.h"
+#include <unordered_map>
 
 namespace mozilla {
 struct AnimationValue;
@@ -108,7 +109,7 @@ struct AnimatedValue final {
 
 class CompositorAnimationStorage final {
   typedef nsClassHashtable<nsUint64HashKey, AnimatedValue> AnimatedValueTable;
-  typedef nsDataHashtable<nsUint64HashKey, AnimationStorageData>
+  typedef std::unordered_map<uint64_t, std::unique_ptr<AnimationStorageData>>
       AnimationsTable;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorAnimationStorage)
@@ -158,14 +159,9 @@ class CompositorAnimationStorage final {
 
   void SetAnimations(uint64_t aId, const AnimationArray& aAnimations);
 
-  
+  const AnimationsTable& Animations() const { return mAnimations; }
 
-
-  AnimationsTable::Iterator ConstAnimationsTableIter() const {
-    return mAnimations.ConstIter();
-  }
-
-  uint32_t AnimationsCount() const { return mAnimations.Count(); }
+  bool HasAnimations() const { return !mAnimations.empty(); }
 
   
 
