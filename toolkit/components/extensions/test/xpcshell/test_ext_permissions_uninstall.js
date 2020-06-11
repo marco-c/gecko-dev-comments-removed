@@ -49,22 +49,9 @@ async function getCachedPermissions(extensionId) {
 
 
 async function getStoredPermissions(extensionId) {
-  
-  
-  
-  let perms1 = await ExtensionPermissions._get(extensionId);
-  let perms2 = await ExtensionPermissions._get(extensionId);
-  if (perms1 === perms2) {
-    
-    return perms1;
+  if (await ExtensionPermissions._has(extensionId)) {
+    return ExtensionPermissions._get(extensionId);
   }
-  
-  Assert.deepEqual(perms1, perms2, "Expected same permission values");
-  Assert.deepEqual(
-    perms1,
-    { origins: [], permissions: [] },
-    "Expected empty permissions"
-  );
   return null;
 }
 
