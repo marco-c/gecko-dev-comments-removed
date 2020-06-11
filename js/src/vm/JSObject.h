@@ -812,11 +812,11 @@ MOZ_ALWAYS_INLINE const char* GetObjectClassName(JSContext* cx,
 
 
 
-Value GetThisValue(JSObject* obj);
+JSObject* GetThisObject(JSObject* obj);
 
 Value GetThisValueOfLexical(JSObject* env);
 
-Value GetThisValueOfWith(JSObject* env);
+JSObject* GetThisObjectOfWith(JSObject* env);
 
 } 
 
