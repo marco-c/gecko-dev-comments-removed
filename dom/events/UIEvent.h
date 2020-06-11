@@ -85,7 +85,7 @@ class UIEvent : public Event {
 
 
   MOZ_CAN_RUN_SCRIPT already_AddRefed<nsIContent>
-  GetRangeParentContentAndOffset(int32_t* aOffset);
+  GetRangeParentContentAndOffset(int32_t* aOffset) const;
 
   
 

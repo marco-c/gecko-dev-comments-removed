@@ -565,7 +565,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  virtual bool IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent);
+  virtual bool IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) const;
 
   
 
