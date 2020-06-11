@@ -17,6 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
+  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
   URLBAR_SELECTED_RESULT_TYPES: "resource:///modules/BrowserUsageTelemetry.jsm",
 });
@@ -758,6 +759,9 @@ class TelemetryEvent {
 
 
 
+
+
+
   record(event, details) {
     
     try {
@@ -821,9 +825,17 @@ class TelemetryEvent {
       Services.telemetry.setEventRecordingEnabled("urlbar", recordingEnabled);
     }
 
+    
+    
+    
     let extra = {
       elapsed: elapsed.toString(),
-      numChars: details.numChars.toString(),
+      numChars: details.searchString.length.toString(),
+      numWords: details.searchString
+        .trim()
+        .split(UrlbarTokenizer.REGEXP_SPACES)
+        .filter(t => t)
+        .length.toString(),
     };
     if (method == "engagement") {
       extra.selIndex = details.selIndex.toString();
