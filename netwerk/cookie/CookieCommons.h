@@ -121,6 +121,15 @@ class CookieCommons final {
   static nsICookie::schemeType PrincipalToSchemeType(nsIPrincipal* aPrincipal);
 
   static nsICookie::schemeType SchemeToSchemeType(const nsACString& aScheme);
+
+  
+  
+  static bool IsSafeTopLevelNav(nsIChannel* aChannel);
+
+  
+  
+  
+  static bool IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI);
 };
 
 }  

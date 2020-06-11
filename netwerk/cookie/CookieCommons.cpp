@@ -17,6 +17,7 @@
 #include "nsICookiePermission.h"
 #include "nsICookieService.h"
 #include "nsIEffectiveTLDService.h"
+#include "nsIRedirectHistoryEntry.h"
 #include "nsScriptSecurityManager.h"
 
 constexpr auto CONSOLE_SCHEMEFUL_CATEGORY =
@@ -458,6 +459,91 @@ bool CookieCommons::ShouldIncludeCrossSiteCookieForDocument(Cookie* aCookie) {
   aCookie->GetSameSite(&sameSiteAttr);
 
   return sameSiteAttr == nsICookie::SAMESITE_NONE;
+}
+
+bool CookieCommons::IsSafeTopLevelNav(nsIChannel* aChannel) {
+  if (!aChannel) {
+    return false;
+  }
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  if (loadInfo->GetExternalContentPolicyType() !=
+          nsIContentPolicy::TYPE_DOCUMENT &&
+      loadInfo->GetExternalContentPolicyType() !=
+          nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
+    return false;
+  }
+  return NS_IsSafeMethodNav(aChannel);
+}
+
+bool CookieCommons::IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI) {
+  if (!aChannel) {
+    return false;
+  }
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  
+  nsCOMPtr<nsIURI> channelURI;
+  NS_GetFinalChannelURI(aChannel, getter_AddRefs(channelURI));
+  RefPtr<BasePrincipal> triggeringPrincipal =
+      BasePrincipal::Cast(loadInfo->TriggeringPrincipal());
+  if (triggeringPrincipal->AddonPolicy() &&
+      triggeringPrincipal->AddonAllowsLoad(channelURI)) {
+    return false;
+  }
+
+  bool isForeign = true;
+  nsresult rv;
+  if (loadInfo->GetExternalContentPolicyType() ==
+          nsIContentPolicy::TYPE_DOCUMENT ||
+      loadInfo->GetExternalContentPolicyType() ==
+          nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
+    
+    
+    
+    rv = triggeringPrincipal->IsThirdPartyChannel(aChannel, &isForeign);
+  } else {
+    nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
+        do_GetService(THIRDPARTYUTIL_CONTRACTID);
+    if (!thirdPartyUtil) {
+      return true;
+    }
+    rv = thirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isForeign);
+  }
+  
+  
+  if (NS_FAILED(rv) || isForeign) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  if (loadInfo->GetExternalContentPolicyType() ==
+      nsIContentPolicy::TYPE_SUBDOCUMENT) {
+    rv = loadInfo->TriggeringPrincipal()->IsThirdPartyChannel(aChannel,
+                                                              &isForeign);
+    if (NS_FAILED(rv) || isForeign) {
+      return true;
+    }
+  }
+
+  
+  
+  
+
+  nsCOMPtr<nsIPrincipal> redirectPrincipal;
+  for (nsIRedirectHistoryEntry* entry : loadInfo->RedirectChain()) {
+    entry->GetPrincipal(getter_AddRefs(redirectPrincipal));
+    if (redirectPrincipal) {
+      rv = redirectPrincipal->IsThirdPartyChannel(aChannel, &isForeign);
+      
+      if (NS_FAILED(rv) || isForeign) {
+        return true;
+      }
+    }
+  }
+  return isForeign;
 }
 
 namespace {
