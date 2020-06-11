@@ -989,6 +989,28 @@ inline std::string ToString(const nsACString& text) {
   return {text.BeginReading(), text.Length()};
 }
 
+
+
+
+namespace gfx {
+class SourceSurface;
+}  
+
+namespace layers {
+class KnowsCompositor;
+class SurfaceDescriptor;
+}  
+
+namespace webgl {
+
+void Present(ClientWebGLContext&);
+Maybe<layers::SurfaceDescriptor> GetFrontBuffer(ClientWebGLContext&,
+                                                layers::KnowsCompositor*);
+
+}  
+
+
+
 }  
 
 #endif

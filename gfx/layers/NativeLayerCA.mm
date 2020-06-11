@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nullptr; c-basic-offset: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "mozilla/layers/NativeLayerCA.h"
 
@@ -36,37 +36,37 @@ using gfx::SurfaceFormat;
 using gl::GLContext;
 using gl::GLContextCGL;
 
-// Needs to be on the stack whenever CALayer mutations are performed.
-// (Mutating CALayers outside of a transaction can result in permanently stuck rendering, because
-// such mutations create an implicit transaction which never auto-commits if the current thread does
-// not have a native runloop.)
-// Uses NSAnimationContext, which wraps CATransaction with additional off-main-thread protection,
-// see bug 1585523.
+
+
+
+
+
+
 struct MOZ_STACK_CLASS AutoCATransaction final {
   AutoCATransaction() {
     [NSAnimationContext beginGrouping];
-    // By default, mutating a CALayer property triggers an animation which smoothly transitions the
-    // property to the new value. We don't need these animations, and this call turns them off:
+    
+    
     [CATransaction setDisableActions:YES];
   }
   ~AutoCATransaction() { [NSAnimationContext endGrouping]; }
 };
 
-/* static */ already_AddRefed<NativeLayerRootCA> NativeLayerRootCA::CreateForCALayer(
+ already_AddRefed<NativeLayerRootCA> NativeLayerRootCA::CreateForCALayer(
     CALayer* aLayer) {
   RefPtr<NativeLayerRootCA> layerRoot = new NativeLayerRootCA(aLayer);
   return layerRoot.forget();
 }
 
-// Returns an autoreleased CALayer* object.
+
 static CALayer* MakeOffscreenRootCALayer() {
-  // This layer should behave similarly to the backing layer of a flipped NSView.
-  // It will never be rendered on the screen and it will never be attached to an NSView's layer;
-  // instead, it will be the root layer of a "local" CAContext.
-  // Setting geometryFlipped to YES causes the orientation of descendant CALayers' contents (such as
-  // IOSurfaces) to be consistent with what happens in a layer subtree that is attached to a flipped
-  // NSView. Setting it to NO would cause the surfaces in individual leaf layers to render upside
-  // down (rather than just flipping the entire layer tree upside down).
+  
+  
+  
+  
+  
+  
+  
   AutoCATransaction transaction;
   CALayer* layer = [CALayer layer];
   layer.position = NSZeroPoint;
@@ -119,11 +119,11 @@ void NativeLayerRootCA::RemoveLayer(NativeLayer* aLayer) {
 void NativeLayerRootCA::SetLayers(const nsTArray<RefPtr<NativeLayer>>& aLayers) {
   MutexAutoLock lock(mMutex);
 
-  // Ideally, we'd just be able to do mSublayers = std::move(aLayers).
-  // However, aLayers has a different type: it carries NativeLayer objects, whereas mSublayers
-  // carries NativeLayerCA objects, so we have to downcast all the elements first. There's one other
-  // reason to look at all the elements in aLayers first: We need to make sure any new layers know
-  // about our current backing scale.
+  
+  
+  
+  
+  
 
   nsTArray<RefPtr<NativeLayerCA>> layersCA(aLayers.Length());
   for (auto& layer : aLayers) {
@@ -220,8 +220,8 @@ NativeLayerRootCA::Representation::Representation(CALayer* aRootCALayer)
 
 NativeLayerRootCA::Representation::~Representation() {
   if (mMutated) {
-    // Clear the root layer's sublayers. At this point the window is usually closed, so this
-    // transaction does not cause any screen updates.
+    
+    
     AutoCATransaction transaction;
     mRootCALayer.sublayers = @[];
   }
@@ -233,9 +233,9 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
                                                const nsTArray<RefPtr<NativeLayerCA>>& aSublayers) {
   AutoCATransaction transaction;
 
-  // Call ApplyChanges on our sublayers first, and then update the root layer's
-  // list of sublayers. The order is important because we need layer->UnderlyingCALayer()
-  // to be non-null, and the underlying CALayer gets lazily initialized in ApplyChanges().
+  
+  
+  
   for (auto layer : aSublayers) {
     layer->ApplyChanges(aRepresentation);
   }
@@ -250,21 +250,21 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
   }
 }
 
-/* static */ UniquePtr<NativeLayerRootSnapshotterCA> NativeLayerRootSnapshotterCA::Create(
+ UniquePtr<NativeLayerRootSnapshotterCA> NativeLayerRootSnapshotterCA::Create(
     NativeLayerRootCA* aLayerRoot, CALayer* aRootCALayer) {
   if (NS_IsMainThread()) {
-    // Disallow creating snapshotters on the main thread.
-    // On the main thread, any explicit CATransaction / NSAnimationContext is nested within a global
-    // implicit transaction. This makes it impossible to apply CALayer mutations synchronously such
-    // that they become visible to CARenderer. As a result, the snapshotter would not capture
-    // the right output on the main thread.
+    
+    
+    
+    
+    
     return nullptr;
   }
 
   nsCString failureUnused;
   RefPtr<gl::GLContext> gl =
-      gl::GLContextProvider::CreateHeadless(gl::CreateContextFlags::ALLOW_OFFLINE_RENDERER |
-                                                gl::CreateContextFlags::REQUIRE_COMPAT_PROFILE,
+      gl::GLContextProvider::CreateHeadless({gl::CreateContextFlags::ALLOW_OFFLINE_RENDERER |
+                                             gl::CreateContextFlags::REQUIRE_COMPAT_PROFILE},
                                             &failureUnused);
   if (!gl) {
     return nullptr;
@@ -299,11 +299,11 @@ bool NativeLayerRootSnapshotterCA::ReadbackPixels(const IntSize& aReadbackSize,
   CGRect bounds = CGRectMake(0, 0, aReadbackSize.width, aReadbackSize.height);
 
   {
-    // Set the correct bounds and scale on the renderer and its root layer. CARenderer always
-    // renders at unit scale, i.e. the coordinates on the root layer must map 1:1 to render target
-    // pixels. But the coordinates on our content layers are in "points", where 1 point maps to 2
-    // device pixels on HiDPI. So in order to render at the full device pixel resolution, we set a
-    // scale transform on the root offscreen layer.
+    
+    
+    
+    
+    
     AutoCATransaction transaction;
     mRenderer.layer.bounds = bounds;
     float scale = mLayerRoot->BackingScale();
@@ -327,9 +327,9 @@ bool NativeLayerRootSnapshotterCA::ReadbackPixels(const IntSize& aReadbackSize,
   const gl::ScopedBindFramebuffer bindFB(mGL, mFB->mFB);
   mGL->fViewport(0.0, 0.0, aReadbackSize.width, aReadbackSize.height);
 
-  // These legacy OpenGL function calls are part of CARenderer's API contract, see CARenderer.h.
-  // The size passed to glOrtho must be the device pixel size of the render target, otherwise
-  // CARenderer will produce incorrect results.
+  
+  
+  
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
   glOrtho(0.0, aReadbackSize.width, 0.0, aReadbackSize.height, -1, 1);
@@ -340,21 +340,21 @@ bool NativeLayerRootSnapshotterCA::ReadbackPixels(const IntSize& aReadbackSize,
     [mRenderer addUpdateRect:bounds];
   }
   if (!CGRectIsEmpty([mRenderer updateBounds])) {
-    // CARenderer assumes the layer tree is opaque. It only ever paints over existing content, it
-    // never erases anything. However, our layer tree is not necessarily opaque. So we manually
-    // erase the area that's going to be redrawn. This ensures correct rendering in the transparent
-    // areas.
-    //
-    // Since we erase the bounds of the update area, this will erase more than necessary if the
-    // update area is not a single rectangle. Unfortunately we cannot get the precise update region
-    // from CARenderer, we can only get the bounds.
+    
+    
+    
+    
+    
+    
+    
+    
     CGRect updateBounds = [mRenderer updateBounds];
     gl::ScopedGLState scopedScissorTestState(mGL, LOCAL_GL_SCISSOR_TEST, true);
     gl::ScopedScissorRect scissor(mGL, updateBounds.origin.x, updateBounds.origin.y,
                                   updateBounds.size.width, updateBounds.size.height);
     mGL->fClearColor(0.0, 0.0, 0.0, 0.0);
     mGL->fClear(LOCAL_GL_COLOR_BUFFER_BIT);
-    // We erased the update region's bounds. Make sure the entire update bounds get repainted.
+    
     [mRenderer addUpdateRect:updateBounds];
   }
   [mRenderer render];
@@ -430,6 +430,16 @@ IntPoint NativeLayerCA::GetPosition() {
 IntRect NativeLayerCA::GetRect() {
   MutexAutoLock lock(mMutex);
   return IntRect(mPosition, mSize);
+}
+
+void NativeLayerCA::SetValidRect(const gfx::IntRect& aValidRect) {
+  MutexAutoLock lock(mMutex);
+  mValidRect = aValidRect;
+}
+
+IntRect NativeLayerCA::GetValidRect() {
+  MutexAutoLock lock(mMutex);
+  return mValidRect;
 }
 
 void NativeLayerCA::SetBackingScale(float aBackingScale) {
@@ -518,27 +528,32 @@ void NativeLayerCA::HandlePartialUpdate(const MutexAutoLock& aLock,
 
   gfx::IntRegion copyRegion;
   copyRegion.Sub(mInProgressSurface->mInvalidRegion, aUpdateRegion);
+
+  
+
   if (!copyRegion.IsEmpty()) {
-    // There are parts in mInProgressSurface which are invalid but which are not included in
-    // aUpdateRegion. We will obtain valid content for those parts by copying from a previous
-    // surface.
-    MOZ_RELEASE_ASSERT(
-        mFrontSurface,
-        "The first call to NextSurface* must always update the entire layer. If this "
-        "is the second call, mFrontSurface will be Some().");
+    
+    
+    
+    
+    
+    
+    
 
-    // NotifySurfaceReady marks the entirety of mFrontSurface as valid.
-    MOZ_RELEASE_ASSERT(mFrontSurface->mInvalidRegion.Intersect(copyRegion).IsEmpty(),
-                       "mFrontSurface should have valid content in the entire copy region, because "
-                       "the only invalidation since NotifySurfaceReady was aUpdateRegion, and "
-                       "aUpdateRegion has no overlap with copyRegion.");
+    
+    
+    
+    
+    
 
-    // Now copy the valid content, using a caller-provided copy function.
-    aCopyFn(mFrontSurface->mSurface, copyRegion);
-    mInProgressSurface->mInvalidRegion.SubOut(copyRegion);
+    if (mFrontSurface) {
+      
+      aCopyFn(mFrontSurface->mSurface, copyRegion);
+      mInProgressSurface->mInvalidRegion.SubOut(copyRegion);
+    }
   }
 
-  MOZ_RELEASE_ASSERT(mInProgressSurface->mInvalidRegion == aUpdateRegion);
+  
 }
 
 RefPtr<gfx::DrawTarget> NativeLayerCA::NextSurfaceAsDrawTarget(const gfx::IntRegion& aUpdateRegion,
@@ -588,7 +603,7 @@ Maybe<GLuint> NativeLayerCA::NextSurfaceAsFramebuffer(const gfx::IntRegion& aUpd
   HandlePartialUpdate(
       lock, aUpdateRegion,
       [&](CFTypeRefPtr<IOSurfaceRef> validSource, const gfx::IntRegion& copyRegion) {
-        // Copy copyRegion from validSource to fbo.
+        
         MOZ_RELEASE_ASSERT(mSurfacePoolHandle->gl());
         mSurfacePoolHandle->gl()->MakeCurrent();
         Maybe<GLuint> sourceFBO = mSurfacePoolHandle->GetFramebufferForSurface(validSource, false);
@@ -686,8 +701,8 @@ void NativeLayerCA::Representation::ApplyChanges(const IntSize& aSize, bool aIsO
     mContentCALayer.bounds = CGRectMake(0, 0, aSize.width, aSize.height);
     mContentCALayer.opaque = aIsOpaque;
     if ([mContentCALayer respondsToSelector:@selector(setContentsOpaque:)]) {
-      // The opaque property seems to not be enough when using IOSurface contents.
-      // Additionally, call the private method setContentsOpaque.
+      
+      
       [mContentCALayer setContentsOpaque:aIsOpaque];
     }
     [mWrappingCALayer addSublayer:mContentCALayer];
@@ -714,15 +729,15 @@ void NativeLayerCA::Representation::ApplyChanges(const IntSize& aSize, bool aIsO
     mOpaquenessTintLayer = nullptr;
   }
 
-  // CALayers have a position and a size, specified through the position and the bounds properties.
-  // layer.bounds.origin must always be (0, 0).
-  // A layer's position affects the layer's entire layer subtree. In other words, each layer's
-  // position is relative to its superlayer's position. We implement the clip rect using
-  // masksToBounds on mWrappingCALayer. So mContentCALayer's position is relative to the clip rect
-  // position.
-  // Note: The Core Animation docs on "Positioning and Sizing Sublayers" say:
-  //  Important: Always use integral numbers for the width and height of your layer.
-  // We hope that this refers to integral physical pixels, and not to integral logical coordinates.
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   auto globalClipOrigin = aClipRect ? aClipRect->TopLeft() : gfx::IntPoint{};
   auto globalLayerOrigin = aPosition;
@@ -777,40 +792,40 @@ void NativeLayerCA::Representation::ApplyChanges(const IntSize& aSize, bool aIsO
   mMutatedFrontSurface = false;
 }
 
-// Called when mMutex is already being held by the current thread.
+
 Maybe<NativeLayerCA::SurfaceWithInvalidRegion> NativeLayerCA::GetUnusedSurfaceAndCleanUp(
     const MutexAutoLock&) {
   std::vector<SurfaceWithInvalidRegionAndCheckCount> usedSurfaces;
   Maybe<SurfaceWithInvalidRegion> unusedSurface;
 
-  // Separate mSurfaces into used and unused surfaces.
+  
   for (auto& surf : mSurfaces) {
     if (IOSurfaceIsInUse(surf.mEntry.mSurface.get())) {
       surf.mCheckCount++;
       if (surf.mCheckCount < 10) {
         usedSurfaces.push_back(std::move(surf));
       } else {
-        // The window server has been holding on to this surface for an unreasonably long time. This
-        // is known to happen sometimes, for example in occluded windows or after a GPU switch. In
-        // that case, release our references to the surface so that it doesn't look like we're
-        // trying to keep it alive.
+        
+        
+        
+        
         mSurfacePoolHandle->ReturnSurfaceToPool(std::move(surf.mEntry.mSurface));
       }
     } else {
       if (unusedSurface) {
-        // Multiple surfaces are unused. Keep the most recent one and release any earlier ones. The
-        // most recent one requires the least amount of copying during partial repaints.
+        
+        
         mSurfacePoolHandle->ReturnSurfaceToPool(std::move(unusedSurface->mSurface));
       }
       unusedSurface = Some(std::move(surf.mEntry));
     }
   }
 
-  // Put the used surfaces back into mSurfaces.
+  
   mSurfaces = std::move(usedSurfaces);
 
   return unusedSurface;
 }
 
-}  // namespace layers
-}  // namespace mozilla
+}  
+}  

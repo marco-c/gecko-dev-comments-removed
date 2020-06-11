@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "GLContextProvider.h"
 #include "GLContextCGL.h"
@@ -55,9 +55,8 @@ class CGLLibrary {
 
 CGLLibrary sCGLLibrary;
 
-GLContextCGL::GLContextCGL(CreateContextFlags flags, const SurfaceCaps& caps,
-                           NSOpenGLContext* context, bool isOffscreen)
-    : GLContext(flags, caps, nullptr, isOffscreen), mContext(context) {
+GLContextCGL::GLContextCGL(const GLContextDesc& desc, NSOpenGLContext* context)
+    : GLContext(desc), mContext(context) {
   CGDisplayRegisterReconfigurationCallback(DisplayReconfigurationCallback, this);
 }
 
@@ -68,9 +67,9 @@ GLContextCGL::~GLContextCGL() {
 
   if (mContext) {
     if ([NSOpenGLContext currentContext] == mContext) {
-      // Clear the current context before releasing. If we don't do
-      // this, the next time we call [NSOpenGLContext currentContext],
-      // "invalid context" will be printed to the console.
+      
+      
+      
       [NSOpenGLContext clearCurrentContext];
     }
     [mContext release];
@@ -85,12 +84,12 @@ bool GLContextCGL::MakeCurrentImpl() const {
   if (mContext) {
     [mContext makeCurrentContext];
     MOZ_ASSERT(IsCurrentImpl());
-    // Use non-blocking swap in "ASAP mode".
-    // ASAP mode means that rendering is iterated as fast as possible.
-    // ASAP mode is entered when layout.frame_rate=0 (requires restart).
-    // If swapInt is 1, then glSwapBuffers will block and wait for a vblank signal.
-    // When we're iterating as fast as possible, however, we want a non-blocking
-    // glSwapBuffers, which will happen when swapInt==0.
+    
+    
+    
+    
+    
+    
     GLint swapInt = StaticPrefs::layout_frame_rate() == 0 ? 0 : 1;
     [mContext setValues:&swapInt forParameter:NSOpenGLCPSwapInterval];
   }
@@ -99,7 +98,7 @@ bool GLContextCGL::MakeCurrentImpl() const {
 
 bool GLContextCGL::IsCurrentImpl() const { return [NSOpenGLContext currentContext] == mContext; }
 
-/* static */ void GLContextCGL::DisplayReconfigurationCallback(CGDirectDisplayID aDisplay,
+ void GLContextCGL::DisplayReconfigurationCallback(CGDirectDisplayID aDisplay,
                                                                CGDisplayChangeSummaryFlags aFlags,
                                                                void* aUserInfo) {
   if (aFlags & kCGDisplaySetModeFlag) {
@@ -121,29 +120,29 @@ static NSOpenGLContext* CreateWithFormat(const NSOpenGLPixelFormatAttribute* att
   return context;
 }
 
-// Get the "OpenGL display mask" for a fresh context. The return value of this
-// function depends on the time at which this function is called.
-// In practice, on a Macbook Pro with an integrated and a discrete GPU, this function returns the
-// display mask for the GPU that currently drives the internal display.
-//
-// Quick reference of the concepts involved in the code below:
-//   GPU switch: On Mac devices with an integrated and a discrete GPU, a GPU switch changes which
-//     GPU drives the internal display. Both GPUs are still usable at all times. (When the
-//     integrated GPU is driving the internal display, using the discrete GPU can incur a longer
-//     warm-up cost.)
-//   Virtual screen: A CGL concept. A "virtual screen" corresponds to a GL renderer. There's one
-//     for the integrated GPU, one for each discrete GPU, and one for the Apple software renderer.
-//     The list of virtual screens is per-NSOpenGLPixelFormat; it is filtered down to only the
-//     renderers that support the requirements from the pixel format attributes. Indexes into this
-//     list (such as currentVirtualScreen) cannot be used interchangably across different
-//     NSOpenGLPixelFormat instances.
-//   Display mask: A bitset per GL renderer. Different renderers have disjoint display masks. The
-//     Apple software renderer has all bits zeroed. For each CGDirectDisplayID,
-//     CGDisplayIDToOpenGLDisplayMask(displayID) returns a single bit in the display mask.
-//   CGDirectDisplayID: An ID for each (physical screen, GPU which can drive this screen) pair. The
-//     current CGDirectDisplayID for an NSScreen object can be obtained using [[[screen
-//     deviceDescription] objectForKey:@"NSScreenNumber"] unsignedIntValue]; it changes depending on
-//     which GPU is currently driving the screen.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static CGOpenGLDisplayMask GetFreshContextDisplayMask() {
   NSOpenGLPixelFormatAttribute attribs[] = {NSOpenGLPFAAllowOfflineRenderers, 0};
   NSOpenGLPixelFormat* pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attribs];
@@ -163,12 +162,12 @@ static bool IsSameGPU(CGOpenGLDisplayMask mask1, CGOpenGLDisplayMask mask2) {
   if ((mask1 & mask2) != 0) {
     return true;
   }
-  // Both masks can be zero, when using the Apple software renderer.
+  
   return !mask1 && !mask2;
 }
 
 static NSOpenGLPixelFormat* GetPixelFormatForContext(NSOpenGLContext* aContext) {
-  // -[NSOpenGLContext pixelFormat] is macOS 10.10+
+  
   if ([aContext respondsToSelector:@selector(pixelFormat)]) {
     return [aContext pixelFormat];
   }
@@ -189,14 +188,14 @@ void GLContextCGL::MigrateToActiveGPU() {
             forAttribute:NSOpenGLPFAScreenMask
         forVirtualScreen:currentVirtualScreen];
   if (IsSameGPU(currentDisplayMask, newPreferredDisplayMask)) {
-    // No "virtual screen" change needed.
+    
     return;
   }
 
-  // Find the "virtual screen" with a display mask that matches newPreferredDisplayMask, if
-  // available, and switch the context over to it.
-  // This code was inspired by equivalent functionality in -[NSOpenGLContext update] which only
-  // kicks in for contexts that present via a CAOpenGLLayer.
+  
+  
+  
+  
   for (const auto i : IntegerRange([pixelFormat numberOfVirtualScreens])) {
     GLint displayMask = 0;
     [pixelFormat getValues:&displayMask forAttribute:NSOpenGLPFAScreenMask forVirtualScreen:i];
@@ -212,9 +211,9 @@ GLenum GLContextCGL::GetPreferredARGB32Format() const { return LOCAL_GL_BGRA; }
 bool GLContextCGL::SwapBuffers() {
   AUTO_PROFILER_LABEL("GLContextCGL::SwapBuffers", GRAPHICS);
 
-  // We do not have a default framebuffer. Just do a flush.
-  // Flushing is necessary if we want our IOSurfaces to have the correct
-  // content once they're picked up by the WindowServer from our CALayers.
+  
+  
+  
   fFlush();
 
   return true;
@@ -241,10 +240,10 @@ already_AddRefed<GLContext> GLContextProviderCGL::CreateForCompositorWidget(
     flags |= CreateContextFlags::REQUIRE_COMPAT_PROFILE;
   }
   nsCString failureUnused;
-  return CreateHeadless(flags, &failureUnused);
+  return CreateHeadless({flags}, &failureUnused);
 }
 
-static already_AddRefed<GLContextCGL> CreateOffscreenFBOContext(CreateContextFlags flags) {
+static RefPtr<GLContextCGL> CreateOffscreenFBOContext(GLContextCreateDesc desc) {
   if (!sCGLLibrary.EnsureInitialized()) {
     return nullptr;
   }
@@ -252,14 +251,15 @@ static already_AddRefed<GLContextCGL> CreateOffscreenFBOContext(CreateContextFla
   NSOpenGLContext* context = nullptr;
 
   std::vector<NSOpenGLPixelFormatAttribute> attribs;
+  auto& flags = desc.flags;
 
   if (!StaticPrefs::gl_allow_high_power()) {
     flags &= ~CreateContextFlags::HIGH_POWER;
   }
   if (flags & CreateContextFlags::ALLOW_OFFLINE_RENDERER ||
       !(flags & CreateContextFlags::HIGH_POWER)) {
-    // This is really poorly named on Apple's part, but "AllowOfflineRenderers" means
-    // that we want to allow running on the iGPU instead of requiring the dGPU.
+    
+    
     attribs.push_back(NSOpenGLPFAAllowOfflineRenderers);
   }
 
@@ -285,18 +285,17 @@ static already_AddRefed<GLContextCGL> CreateOffscreenFBOContext(CreateContextFla
     return nullptr;
   }
 
-  RefPtr<GLContextCGL> glContext = new GLContextCGL(flags, SurfaceCaps::Any(), context, true);
+  RefPtr<GLContextCGL> glContext = new GLContextCGL({desc, true}, context);
 
   if (flags & CreateContextFlags::PREFER_MULTITHREADED) {
     CGLEnable(glContext->GetCGLContext(), kCGLCEMPEngine);
   }
-  return glContext.forget();
+  return glContext;
 }
 
-already_AddRefed<GLContext> GLContextProviderCGL::CreateHeadless(CreateContextFlags flags,
+already_AddRefed<GLContext> GLContextProviderCGL::CreateHeadless(const GLContextCreateDesc& desc,
                                                                  nsACString* const out_failureId) {
-  RefPtr<GLContextCGL> gl;
-  gl = CreateOffscreenFBOContext(flags);
+  auto gl = CreateOffscreenFBOContext(desc);
   if (!gl) {
     *out_failureId = NS_LITERAL_CSTRING("FEATURE_FAILURE_CGL_FBO");
     return nullptr;
@@ -312,20 +311,9 @@ already_AddRefed<GLContext> GLContextProviderCGL::CreateHeadless(CreateContextFl
 }
 
 already_AddRefed<GLContext> GLContextProviderCGL::CreateOffscreen(const IntSize& size,
-                                                                  const SurfaceCaps& minCaps,
-                                                                  CreateContextFlags flags,
+                                                                  const GLContextCreateDesc& desc,
                                                                   nsACString* const out_failureId) {
-  RefPtr<GLContext> gl = CreateHeadless(flags, out_failureId);
-  if (!gl) {
-    return nullptr;
-  }
-
-  if (!gl->InitOffscreen(size, minCaps)) {
-    *out_failureId = NS_LITERAL_CSTRING("FEATURE_FAILURE_CGL_INIT");
-    return nullptr;
-  }
-
-  return gl.forget();
+  return CreateHeadless(desc, out_failureId);
 }
 
 static RefPtr<GLContext> gGlobalContext;
@@ -337,7 +325,7 @@ GLContext* GLContextProviderCGL::GetGlobalContext() {
 
     MOZ_RELEASE_ASSERT(!gGlobalContext);
     nsCString discardFailureId;
-    RefPtr<GLContext> temp = CreateHeadless(CreateContextFlags::NONE, &discardFailureId);
+    RefPtr<GLContext> temp = CreateHeadless({}, &discardFailureId);
     gGlobalContext = temp;
 
     if (!gGlobalContext) {
@@ -350,5 +338,5 @@ GLContext* GLContextProviderCGL::GetGlobalContext() {
 
 void GLContextProviderCGL::Shutdown() { gGlobalContext = nullptr; }
 
-} /* namespace gl */
-} /* namespace mozilla */
+} 
+} 
