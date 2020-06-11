@@ -128,7 +128,18 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
   virtual void StoreSourceSurfaceRecording(SourceSurface* aSurface,
                                            const char* aReason);
 
-  virtual void RecordSourceSurfaceDestruction(SourceSurface* aSurface);
+  
+
+
+
+
+
+
+
+
+
+
+  virtual void RecordSourceSurfaceDestruction(void* aSurface);
 
   virtual void AddDependentSurface(uint64_t aDependencyId) {
     MOZ_CRASH("GFX: AddDependentSurface");
