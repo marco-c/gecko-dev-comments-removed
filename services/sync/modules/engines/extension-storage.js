@@ -80,6 +80,9 @@ ExtensionStorageEngineBridge.prototype = {
   
   _skipPercentageChance: 100,
 
+  
+  overrideTelemetryName: "rust-webext-storage",
+
   _notifyPendingChanges() {
     return new Promise(resolve => {
       this._bridge
