@@ -2,6 +2,7 @@ use crate::ast_emitter::AstEmitter;
 use crate::emitter::EmitError;
 use crate::emitter_scope::NameLocation;
 use ast::source_atom_set::SourceAtomSetIndex;
+use stencil::env_coord::{EnvironmentHops, EnvironmentSlot};
 use stencil::frame_slot::FrameSlot;
 use stencil::gcthings::GCThingIndex;
 use stencil::scope::BindingKind;
@@ -12,6 +13,8 @@ enum AssignmentReferenceKind {
     GlobalLexical(GCThingIndex),
     FrameSlotLexical(FrameSlot),
     FrameSlotNonLexical(FrameSlot),
+    EnvironmentCoordLexical(EnvironmentHops, EnvironmentSlot),
+    EnvironmentCoordNonLexical(EnvironmentHops, EnvironmentSlot),
     Dynamic(GCThingIndex),
     #[allow(dead_code)]
     Prop(GCThingIndex),
@@ -37,6 +40,8 @@ impl AssignmentReference {
             AssignmentReferenceKind::GlobalLexical(_) => 1,
             AssignmentReferenceKind::FrameSlotLexical(_) => 0,
             AssignmentReferenceKind::FrameSlotNonLexical(_) => 0,
+            AssignmentReferenceKind::EnvironmentCoordLexical(_, _) => 0,
+            AssignmentReferenceKind::EnvironmentCoordNonLexical(_, _) => 0,
             AssignmentReferenceKind::Dynamic(_) => 1,
             AssignmentReferenceKind::Prop(_) => 1,
             AssignmentReferenceKind::Elem => 2,
@@ -49,6 +54,7 @@ enum DeclarationReferenceKind {
     GlobalVar(GCThingIndex),
     GlobalLexical(GCThingIndex),
     FrameSlot(FrameSlot),
+    EnvironmentCoord(EnvironmentHops, EnvironmentSlot),
 }
 
 
@@ -76,7 +82,7 @@ enum ValueIsOnStack {
     Yes,
 }
 
-fn check_temporary_dead_zone(
+fn check_frame_temporary_dead_zone(
     emitter: &mut AstEmitter,
     slot: FrameSlot,
     is_on_stack: ValueIsOnStack,
@@ -92,6 +98,33 @@ fn check_temporary_dead_zone(
     }
 
     emitter.emit.check_lexical(slot.into());
+    
+
+    if is_on_stack == ValueIsOnStack::No {
+        emitter.emit.pop();
+        
+    }
+
+    
+}
+
+fn check_env_temporary_dead_zone(
+    emitter: &mut AstEmitter,
+    hops: EnvironmentHops,
+    slot: EnvironmentSlot,
+    is_on_stack: ValueIsOnStack,
+) {
+    
+    
+
+    
+
+    if is_on_stack == ValueIsOnStack::No {
+        emitter.emit.get_aliased_var(hops.into(), slot.into());
+        
+    }
+
+    emitter.emit.check_aliased_lexical(hops.into(), slot.into());
     
 
     if is_on_stack == ValueIsOnStack::No {
@@ -140,7 +173,15 @@ impl GetNameEmitter {
                 
 
                 if kind == BindingKind::Let || kind == BindingKind::Const {
-                    check_temporary_dead_zone(emitter, slot, ValueIsOnStack::Yes);
+                    check_frame_temporary_dead_zone(emitter, slot, ValueIsOnStack::Yes);
+                    
+                }
+            }
+            NameLocation::EnvironmentCoord(hops, slot, kind) => {
+                emitter.emit.get_aliased_var(hops.into(), slot.into());
+
+                if kind == BindingKind::Let || kind == BindingKind::Const {
+                    check_env_temporary_dead_zone(emitter, hops, slot, ValueIsOnStack::Yes);
                     
                 }
             }
@@ -317,7 +358,19 @@ impl NameReferenceEmitter {
                 
 
                 if kind == BindingKind::Let || kind == BindingKind::Const {
-                    check_temporary_dead_zone(emitter, slot, ValueIsOnStack::Yes);
+                    check_frame_temporary_dead_zone(emitter, slot, ValueIsOnStack::Yes);
+                    
+                }
+
+                emitter.emit.undefined();
+                
+            }
+            NameLocation::EnvironmentCoord(hops, slot, kind) => {
+                emitter.emit.get_aliased_var(hops.into(), slot.into());
+                
+
+                if kind == BindingKind::Let || kind == BindingKind::Const {
+                    check_env_temporary_dead_zone(emitter, hops, slot, ValueIsOnStack::Yes);
                     
                 }
 
@@ -361,6 +414,17 @@ impl NameReferenceEmitter {
                     AssignmentReference::new(AssignmentReferenceKind::FrameSlotNonLexical(slot))
                 }
             }
+            NameLocation::EnvironmentCoord(hops, slot, kind) => {
+                if kind == BindingKind::Let || kind == BindingKind::Const {
+                    AssignmentReference::new(AssignmentReferenceKind::EnvironmentCoordLexical(
+                        hops, slot,
+                    ))
+                } else {
+                    AssignmentReference::new(AssignmentReferenceKind::EnvironmentCoordNonLexical(
+                        hops, slot,
+                    ))
+                }
+            }
         }
     }
 
@@ -386,6 +450,10 @@ impl NameReferenceEmitter {
             }
             NameLocation::FrameSlot(slot, _kind) => {
                 DeclarationReference::new(DeclarationReferenceKind::FrameSlot(slot))
+            }
+            NameLocation::EnvironmentCoord(hops, slot, _kind) => {
+                
+                DeclarationReference::new(DeclarationReferenceKind::EnvironmentCoord(hops, slot))
             }
         }
     }
@@ -636,7 +704,7 @@ where
             AssignmentReferenceKind::FrameSlotLexical(slot) => {
                 
 
-                check_temporary_dead_zone(emitter, slot, ValueIsOnStack::No);
+                check_frame_temporary_dead_zone(emitter, slot, ValueIsOnStack::No);
                 
 
                 emitter.emit.set_local(slot.into());
@@ -646,6 +714,21 @@ where
                 
 
                 emitter.emit.set_local(slot.into());
+                
+            }
+            AssignmentReferenceKind::EnvironmentCoordLexical(hops, slot) => {
+                
+
+                check_env_temporary_dead_zone(emitter, hops, slot, ValueIsOnStack::No);
+                
+
+                emitter.emit.set_aliased_var(hops.into(), slot.into());
+                
+            }
+            AssignmentReferenceKind::EnvironmentCoordNonLexical(hops, slot) => {
+                
+
+                emitter.emit.set_aliased_var(hops.into(), slot.into());
                 
             }
             AssignmentReferenceKind::Prop(key_index) => {
@@ -706,6 +789,12 @@ where
                 
 
                 emitter.emit.init_lexical(slot.into());
+                
+            }
+            DeclarationReferenceKind::EnvironmentCoord(hops, slot) => {
+                
+
+                emitter.emit.init_aliased_lexical(hops.into(), slot.into());
                 
             }
         }

@@ -10,7 +10,8 @@
 
 
 use crate::frame_slot::FrameSlot;
-use ast::associated_data::{AssociatedData, Key as AssociatedDataKey};
+use crate::function::FunctionStencilIndex;
+use ast::associated_data::AssociatedData;
 use ast::source_atom_set::SourceAtomSetIndex;
 use ast::source_location_accessor::SourceLocationAccessor;
 use ast::type_id::NodeTypeIdAccessor;
@@ -71,8 +72,82 @@ impl<'a> BindingIterItem<'a> {
         self.name.is_top_level_function
     }
 
+    pub fn is_closed_over(&self) -> bool {
+        self.name.is_closed_over
+    }
+
     pub fn kind(&self) -> BindingKind {
         self.kind
+    }
+}
+
+
+pub trait MaybeBindingName {
+    fn is_closed_over(&self) -> bool;
+}
+impl MaybeBindingName for BindingName {
+    fn is_closed_over(&self) -> bool {
+        self.is_closed_over
+    }
+}
+impl MaybeBindingName for Option<BindingName> {
+    fn is_closed_over(&self) -> bool {
+        match self {
+            Some(b) => b.is_closed_over,
+            None => false,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct BaseScopeData<BindingItemT>
+where
+    BindingItemT: MaybeBindingName,
+{
+    
+    
+    
+    pub bindings: Vec<BindingItemT>,
+    pub has_eval: bool,
+    pub has_with: bool,
+}
+
+impl<BindingItemT> BaseScopeData<BindingItemT>
+where
+    BindingItemT: MaybeBindingName,
+{
+    pub fn new(bindings_count: usize) -> Self {
+        Self {
+            bindings: Vec::with_capacity(bindings_count),
+            has_eval: false,
+            has_with: false,
+        }
+    }
+
+    pub fn is_all_bindings_closed_over(&self) -> bool {
+        
+        
+        self.has_eval || self.has_with
+    }
+
+    
+    
+    pub fn needs_environment_object(&self) -> bool {
+        
+        
+        if self.is_all_bindings_closed_over() {
+            return true;
+        }
+
+        
+        
+        for binding in &self.bindings {
+            if binding.is_closed_over() {
+                return true;
+            }
+        }
+
+        false
     }
 }
 
@@ -81,20 +156,18 @@ impl<'a> BindingIterItem<'a> {
 
 #[derive(Debug)]
 pub struct GlobalScopeData {
+    
+    
+    
+    
+    
+    pub base: BaseScopeData<BindingName>,
+
     pub let_start: usize,
     pub const_start: usize,
 
     
-    
-    
-    
-    
-    
-    
-    pub bindings: Vec<BindingName>,
-
-    
-    pub functions: Vec<AssociatedDataKey>,
+    pub functions: Vec<FunctionStencilIndex>,
 }
 
 impl GlobalScopeData {
@@ -102,14 +175,14 @@ impl GlobalScopeData {
         var_count: usize,
         let_count: usize,
         const_count: usize,
-        functions: Vec<AssociatedDataKey>,
+        functions: Vec<FunctionStencilIndex>,
     ) -> Self {
         let capacity = var_count + let_count + const_count;
 
         Self {
+            base: BaseScopeData::new(capacity),
             let_start: var_count,
             const_start: var_count + let_count,
-            bindings: Vec::with_capacity(capacity),
             functions,
         }
     }
@@ -136,7 +209,7 @@ impl<'a> Iterator for GlobalBindingIter<'a> {
     type Item = BindingIterItem<'a>;
 
     fn next(&mut self) -> Option<BindingIterItem<'a>> {
-        if self.i == self.data.bindings.len() {
+        if self.i == self.data.base.bindings.len() {
             return None;
         }
 
@@ -148,7 +221,7 @@ impl<'a> Iterator for GlobalBindingIter<'a> {
             BindingKind::Const
         };
 
-        let name = &self.data.bindings[self.i];
+        let name = &self.data.base.bindings[self.i];
 
         self.i += 1;
 
@@ -164,7 +237,7 @@ impl<'a> Iterator for GlobalBindingIter<'a> {
 #[derive(Debug)]
 pub struct VarScopeData {
     
-    pub bindings: Vec<BindingName>,
+    pub base: BaseScopeData<BindingName>,
 
     
     
@@ -186,7 +259,7 @@ impl VarScopeData {
         let capacity = var_count;
 
         Self {
-            bindings: Vec::with_capacity(capacity),
+            base: BaseScopeData::new(capacity),
             
             first_frame_slot: FrameSlot::new(0),
             enclosing,
@@ -201,10 +274,13 @@ impl VarScopeData {
 
 #[derive(Debug)]
 pub struct LexicalScopeData {
-    pub const_start: usize,
-
     
-    pub bindings: Vec<BindingName>,
+    
+    
+    
+    pub base: BaseScopeData<BindingName>,
+
+    pub const_start: usize,
 
     
     
@@ -221,7 +297,7 @@ pub struct LexicalScopeData {
     pub enclosing: ScopeIndex,
 
     
-    pub functions: Vec<AssociatedDataKey>,
+    pub functions: Vec<FunctionStencilIndex>,
 }
 
 impl LexicalScopeData {
@@ -229,13 +305,13 @@ impl LexicalScopeData {
         let_count: usize,
         const_count: usize,
         enclosing: ScopeIndex,
-        functions: Vec<AssociatedDataKey>,
+        functions: Vec<FunctionStencilIndex>,
     ) -> Self {
         let capacity = let_count + const_count;
 
         Self {
+            base: BaseScopeData::new(capacity),
             const_start: let_count,
-            bindings: Vec::with_capacity(capacity),
             
             first_frame_slot: FrameSlot::new(0),
             enclosing,
@@ -247,7 +323,7 @@ impl LexicalScopeData {
         let_count: usize,
         const_count: usize,
         enclosing: ScopeIndex,
-        functions: Vec<AssociatedDataKey>,
+        functions: Vec<FunctionStencilIndex>,
     ) -> Self {
         Self::new(let_count, const_count, enclosing, functions)
     }
@@ -266,6 +342,49 @@ impl LexicalScopeData {
 
     pub fn iter<'a>(&'a self) -> LexicalBindingIter<'a> {
         LexicalBindingIter::new(self)
+    }
+
+    
+    
+    
+    
+    
+    pub fn mark_annex_b_function(
+        &mut self,
+        name: SourceAtomSetIndex,
+        original_binding_index: usize,
+    ) {
+        let binding_index = self.find_binding(name, original_binding_index);
+
+        
+        debug_assert!(binding_index < self.const_start);
+
+        self.const_start -= 1;
+        self.base.bindings.remove(binding_index);
+    }
+
+    
+    
+    
+    
+    fn find_binding(&self, name: SourceAtomSetIndex, original_binding_index: usize) -> usize {
+        if original_binding_index < self.base.bindings.len() {
+            let binding = &self.base.bindings[original_binding_index];
+            if binding.name == name {
+                return original_binding_index;
+            }
+        }
+
+        
+        
+
+        for (i, binding) in self.base.bindings.iter().enumerate() {
+            if binding.name == name {
+                return i;
+            }
+        }
+
+        panic!("The binding should exist");
     }
 }
 
@@ -286,7 +405,7 @@ impl<'a> Iterator for LexicalBindingIter<'a> {
     type Item = BindingIterItem<'a>;
 
     fn next(&mut self) -> Option<BindingIterItem<'a>> {
-        if self.i == self.data.bindings.len() {
+        if self.i == self.data.base.bindings.len() {
             return None;
         }
 
@@ -296,7 +415,7 @@ impl<'a> Iterator for LexicalBindingIter<'a> {
             BindingKind::Const
         };
 
-        let name = &self.data.bindings[self.i];
+        let name = &self.data.base.bindings[self.i];
 
         self.i += 1;
 
@@ -311,15 +430,26 @@ impl<'a> Iterator for LexicalBindingIter<'a> {
 
 #[derive(Debug)]
 pub struct FunctionScopeData {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub base: BaseScopeData<Option<BindingName>>,
+
     has_parameter_exprs: bool,
+
     non_positional_formal_start: usize,
     var_start: usize,
-
-    
-    
-    
-    
-    pub bindings: Vec<Option<BindingName>>,
 
     
     
@@ -347,10 +477,10 @@ impl FunctionScopeData {
         let capacity = positional_parameter_count + non_positional_formal_start + var_count;
 
         Self {
+            base: BaseScopeData::new(capacity),
             has_parameter_exprs,
             non_positional_formal_start: positional_parameter_count,
             var_start: positional_parameter_count + non_positional_formal_start,
-            bindings: Vec::with_capacity(capacity),
             
             first_frame_slot: FrameSlot::new(0),
             enclosing,
@@ -439,7 +569,7 @@ impl ScopeDataList {
             .expect("Should be populated")
     }
 
-    fn get_mut(&mut self, index: ScopeIndex) -> &mut ScopeData {
+    pub fn get_mut(&mut self, index: ScopeIndex) -> &mut ScopeData {
         self.scopes[usize::from(index)]
             .as_mut()
             .expect("Should be populated")
@@ -498,6 +628,13 @@ impl ScopeDataMap {
             .get(node)
             .expect("There should be a scope data associated")
             .clone()
+    }
+
+    pub fn get_lexical_at(&self, index: ScopeIndex) -> &LexicalScopeData {
+        match self.scopes.get(index) {
+            ScopeData::Lexical(scope) => scope,
+            _ => panic!("Unexpected scope data for lexical"),
+        }
     }
 
     pub fn get_lexical_at_mut(&mut self, index: ScopeIndex) -> &mut LexicalScopeData {
