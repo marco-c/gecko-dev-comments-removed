@@ -125,13 +125,6 @@ IPCResult DocumentChannelChild::RecvDisconnectChildListeners(
   return IPC_OK();
 }
 
-IPCResult DocumentChannelChild::RecvDeleteSelf() {
-  
-  
-  Send__delete__(this);
-  return IPC_OK();
-}
-
 IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
     RedirectToRealChannelArgs&& aArgs,
     nsTArray<Endpoint<extensions::PStreamFilterParent>>&& aEndpoints,
