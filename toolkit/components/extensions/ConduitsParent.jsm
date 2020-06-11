@@ -254,7 +254,6 @@ class BroadcastConduit extends BaseConduit {
 
       
       tab: remote =>
-        !remote.verified &&
         remote.extensionId === arg.extensionId &&
         remote.actor.manager.browsingContext.top.id === arg.topBC &&
         (arg.frameId == null || remote.frameId === arg.frameId) &&
