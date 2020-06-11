@@ -266,10 +266,6 @@ RefPtr<ClientOpPromise> ClientNavigateOpChild::DoNavigate(
     
     
     
-    
-    
-    
-    
     nsPrintfCString err("Invalid URL \"%s\"", aArgs.url().get());
     CopyableErrorResult result;
     result.ThrowTypeError(err);
