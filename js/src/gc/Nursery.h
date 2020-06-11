@@ -420,6 +420,9 @@ class Nursery {
 
   void joinDecommitTask() { decommitTask.join(); }
 
+  
+  static size_t roundSize(size_t size);
+
  private:
   gc::GCRuntime* const gc;
 
@@ -640,7 +643,6 @@ class Nursery {
   
   void maybeResizeNursery(JS::GCReason reason);
   bool maybeResizeExact(JS::GCReason reason);
-  static size_t roundSize(size_t size);
   void growAllocableSpace(size_t newCapacity);
   void shrinkAllocableSpace(size_t newCapacity);
   void minimizeAllocableSpace();
