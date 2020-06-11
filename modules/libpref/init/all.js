@@ -2433,12 +2433,6 @@ pref("bidi.numeral", 0);
 
 
 
-
-pref("bidi.edit.caret_movement_style", 2);
-
-
-
-
 pref("bidi.browser.ui", false);
 
 
