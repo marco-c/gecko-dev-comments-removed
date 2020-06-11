@@ -135,7 +135,9 @@ cubeb_ops const mock_ops = {
 
 class MockCubebStream {
  public:
-  MockCubebStream(cubeb* aContext, cubeb_stream_params* aInputStreamParams,
+  MockCubebStream(cubeb* aContext, cubeb_devid aInputDevice,
+                  cubeb_stream_params* aInputStreamParams,
+                  cubeb_devid aOutputDevice,
                   cubeb_stream_params* aOutputStreamParams,
                   cubeb_data_callback aDataCallback,
                   cubeb_state_callback aStateCallback, void* aUserPtr)
@@ -144,7 +146,12 @@ class MockCubebStream {
         mStateCallback(aStateCallback),
         mUserPtr(aUserPtr),
         mSampleRate(aInputStreamParams ? aInputStreamParams->rate
-                                       : aOutputStreamParams->rate) {}
+                                       : aOutputStreamParams->rate),
+        mInputDeviceID(aInputDevice),
+        mOutputDeviceID(aOutputDevice) {
+    LOG("MockCubeb(%p) StreamInit: Input id = %p, Output id = %p", this,
+        mInputDeviceID, mOutputDeviceID);
+  }
 
   ~MockCubebStream() { assert(!mFakeAudioThread); }
 
@@ -168,6 +175,11 @@ class MockCubebStream {
     return CUBEB_OK;
   }
 
+  cubeb_devid GetInputDeviceID() { return mInputDeviceID; }
+  cubeb_devid GetOutputDeviceID() { return mOutputDeviceID; }
+
+  void ForceError() { mForceErrorState = true; }
+
  private:
   
   
@@ -182,6 +194,10 @@ class MockCubebStream {
                                      NUM_OF_FRAMES);
       if (outframes < NUM_OF_FRAMES) {
         mStateCallback(stream, mUserPtr, CUBEB_STATE_DRAINED);
+        break;
+      }
+      if (mForceErrorState) {
+        mStateCallback(stream, mUserPtr, CUBEB_STATE_ERROR);
         break;
       }
       std::this_thread::sleep_for(
@@ -207,6 +223,11 @@ class MockCubebStream {
   void* mUserPtr = nullptr;
   
   uint32_t mSampleRate = 0;
+  
+  cubeb_devid mInputDeviceID;
+  cubeb_devid mOutputDeviceID;
+
+  std::atomic_bool mForceErrorState{false};
 };
 
 
@@ -367,33 +388,18 @@ class MockCubeb {
   }
 
   int StreamInit(cubeb* aContext, cubeb_stream** aStream,
-                 cubeb_devid input_device,
+                 cubeb_devid aInputDevice,
                  cubeb_stream_params* aInputStreamParams,
-                 cubeb_devid output_device,
+                 cubeb_devid aOutputDevice,
                  cubeb_stream_params* aOutputStreamParams,
                  cubeb_data_callback aDataCallback,
                  cubeb_state_callback aStateCallback, void* aUserPtr) {
-    MockCubebStream* mockStream =
-        new MockCubebStream(aContext, aInputStreamParams, aOutputStreamParams,
-                            aDataCallback, aStateCallback, aUserPtr);
+    MockCubebStream* mockStream = new MockCubebStream(
+        aContext, aInputDevice, aInputStreamParams, aOutputDevice,
+        aOutputStreamParams, aDataCallback, aStateCallback, aUserPtr);
     *aStream = reinterpret_cast<cubeb_stream*>(mockStream);
-    
-    
-    mInputDeviceID = input_device;
-    mOutputDeviceID = output_device;
-    LOG("MockCubeb(%p) StreamInit: Input id = %p, Output id = %p", this,
-        mInputDeviceID, mOutputDeviceID);
+    mCurrentMockStream = mockStream;
     return CUBEB_OK;
-  }
-
-  int StreamStart(cubeb_stream* aStream) {
-    MockCubebStream* mockStream = reinterpret_cast<MockCubebStream*>(aStream);
-    return mockStream->Start();
-  }
-
-  int StreamStop(cubeb_stream* aStream) {
-    MockCubebStream* mockStream = reinterpret_cast<MockCubebStream*>(aStream);
-    return mockStream->Stop();
   }
 
   void StreamDestroy(cubeb_stream* aStream) {
@@ -401,8 +407,7 @@ class MockCubeb {
     delete mockStream;
   }
 
-  cubeb_devid GetCurrentInputDeviceID() { return mInputDeviceID; }
-  cubeb_devid GetCurrentOutputDeviceID() { return mOutputDeviceID; }
+  MockCubebStream* CurrentStream() { return mCurrentMockStream; }
 
  private:
   
@@ -427,8 +432,8 @@ class MockCubeb {
   nsTArray<cubeb_device_info> mOutputDevices;
 
   
-  cubeb_devid mInputDeviceID = reinterpret_cast<cubeb_devid>(-1);
-  cubeb_devid mOutputDeviceID = reinterpret_cast<cubeb_devid>(-1);
+  
+  std::atomic<MockCubebStream*> mCurrentMockStream{nullptr};
 };
 
 void cubeb_mock_destroy(cubeb* context) {
@@ -469,14 +474,12 @@ int cubeb_mock_stream_init(
 
 int cubeb_mock_stream_start(cubeb_stream* stream) {
   MockCubebStream* mockStream = reinterpret_cast<MockCubebStream*>(stream);
-  MockCubeb* mock = reinterpret_cast<MockCubeb*>(mockStream->context);
-  return mock->StreamStart(stream);
+  return mockStream->Start();
 }
 
 int cubeb_mock_stream_stop(cubeb_stream* stream) {
   MockCubebStream* mockStream = reinterpret_cast<MockCubebStream*>(stream);
-  MockCubeb* mock = reinterpret_cast<MockCubeb*>(mockStream->context);
-  return mock->StreamStop(stream);
+  return mockStream->Stop();
 }
 
 void cubeb_mock_stream_destroy(cubeb_stream* stream) {
