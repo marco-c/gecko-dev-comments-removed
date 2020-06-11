@@ -2046,9 +2046,8 @@ void nsMemoryReporterManager::EndProcessReport(uint32_t aGeneration,
   while (s->mNumProcessesRunning < s->mConcurrencyLimit &&
          !s->mChildrenPending.IsEmpty()) {
     
-    RefPtr<MemoryReportingProcess> nextChild;
-    nextChild.swap(s->mChildrenPending.LastElement());
-    s->mChildrenPending.TruncateLength(s->mChildrenPending.Length() - 1);
+    const RefPtr<MemoryReportingProcess> nextChild =
+        s->mChildrenPending.PopLastElement();
     
     if (StartChildReport(nextChild, s)) {
       ++s->mNumProcessesRunning;

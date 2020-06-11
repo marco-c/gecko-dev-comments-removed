@@ -161,16 +161,12 @@ void AudioNode::DisconnectFromGraph() {
 
   
   while (!mInputNodes.IsEmpty()) {
-    size_t i = mInputNodes.Length() - 1;
-    RefPtr<AudioNode> input = mInputNodes[i].mInputNode;
-    mInputNodes.RemoveElementAt(i);
-    input->mOutputNodes.RemoveElement(this);
+    InputNode inputNode = mInputNodes.PopLastElement();
+    inputNode.mInputNode->mOutputNodes.RemoveElement(this);
   }
 
   while (!mOutputNodes.IsEmpty()) {
-    size_t i = mOutputNodes.Length() - 1;
-    RefPtr<AudioNode> output = std::move(mOutputNodes[i]);
-    mOutputNodes.RemoveElementAt(i);
+    RefPtr<AudioNode> output = mOutputNodes.PopLastElement();
     size_t inputIndex = FindIndexOfNode(output->mInputNodes, this);
     
     
@@ -180,9 +176,7 @@ void AudioNode::DisconnectFromGraph() {
   }
 
   while (!mOutputParams.IsEmpty()) {
-    size_t i = mOutputParams.Length() - 1;
-    RefPtr<AudioParam> output = std::move(mOutputParams[i]);
-    mOutputParams.RemoveElementAt(i);
+    RefPtr<AudioParam> output = mOutputParams.PopLastElement();
     size_t inputIndex = FindIndexOfNode(output->InputNodes(), this);
     
     
