@@ -5487,7 +5487,7 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
       writer.guardFunctionHasJitEntry(thisObjId, false);
       writer.callScriptedFunction(thisObjId, argcId, targetFlags);
     } else {
-      writer.guardFunctionIsNative(thisObjId);
+      writer.guardFunctionHasNoJitEntry(thisObjId);
       writer.callAnyNativeFunction(thisObjId, argcId, targetFlags);
     }
   }
@@ -5563,7 +5563,7 @@ AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
     writer.callScriptedFunction(thisObjId, argcId, targetFlags);
   } else {
     
-    writer.guardFunctionIsNative(thisObjId);
+    writer.guardFunctionHasNoJitEntry(thisObjId);
     writer.callAnyNativeFunction(thisObjId, argcId, targetFlags);
   }
 
@@ -5976,7 +5976,7 @@ AttachDecision CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   } else {
     
     writer.guardClass(calleeObjId, GuardClassKind::JSFunction);
-    writer.guardFunctionIsNative(calleeObjId);
+    writer.guardFunctionHasNoJitEntry(calleeObjId);
 
     if (isConstructing) {
       

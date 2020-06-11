@@ -3468,7 +3468,7 @@ bool CacheIRCompiler::emitGuardFunctionHasJitEntry(ObjOperandId funId,
   return true;
 }
 
-bool CacheIRCompiler::emitGuardFunctionIsNative(ObjOperandId funId) {
+bool CacheIRCompiler::emitGuardFunctionHasNoJitEntry(ObjOperandId funId) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   Register obj = allocator.useRegister(masm, funId);
   AutoScratchRegister scratch(allocator, masm);
@@ -3478,8 +3478,8 @@ bool CacheIRCompiler::emitGuardFunctionIsNative(ObjOperandId funId) {
     return false;
   }
 
-  
-  masm.branchIfInterpreted(obj, false, failure->label());
+  masm.branchIfFunctionHasJitEntry(obj, false,
+                                   failure->label());
   return true;
 }
 
