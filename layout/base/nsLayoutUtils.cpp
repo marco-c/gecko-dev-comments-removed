@@ -9138,7 +9138,7 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
       
       if (presContext->HasDynamicToolbar()) {
         CSSRect viewport = metrics.GetLayoutViewport();
-        viewport.SizeTo(nsLayoutUtils::ExpandHeightForViewportUnits(
+        viewport.SizeTo(nsLayoutUtils::ExpandHeightForDynamicToolbar(
             presContext, viewport.Size()));
         metrics.SetLayoutViewport(viewport);
 
@@ -10365,4 +10365,22 @@ bool nsLayoutUtils::FrameIsMostlyScrolledOutOfViewInCrossProcess(
 
   return visibleRect->width < margin.width ||
          visibleRect->height < margin.height;
+}
+
+
+nsSize nsLayoutUtils::ExpandHeightForViewportUnits(nsPresContext* aPresContext,
+                                                   const nsSize& aSize) {
+  nsSize sizeForViewportUnits = aPresContext->GetSizeForViewportUnits();
+
+  
+  
+  
+  
+  float vhExpansionRatio = (float)sizeForViewportUnits.height /
+                           aPresContext->GetVisibleArea().height;
+
+  MOZ_ASSERT(aSize.height <= NSCoordSaturatingNonnegativeMultiply(
+                                 aSize.height, vhExpansionRatio));
+  return nsSize(aSize.width, NSCoordSaturatingNonnegativeMultiply(
+                                 aSize.height, vhExpansionRatio));
 }

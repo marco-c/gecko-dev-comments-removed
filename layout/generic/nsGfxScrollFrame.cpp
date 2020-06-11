@@ -3407,7 +3407,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     
-    effectiveScrollPort.SizeTo(nsLayoutUtils::ExpandHeightForViewportUnits(
+    effectiveScrollPort.SizeTo(nsLayoutUtils::ExpandHeightForDynamicToolbar(
         mOuter->PresContext(), effectiveScrollPort.Size()));
   }
 
