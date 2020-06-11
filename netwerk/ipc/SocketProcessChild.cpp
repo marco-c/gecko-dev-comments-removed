@@ -123,26 +123,6 @@ bool SocketProcessChild::Init(base::ProcessId aParentPid,
   
   CGSShutdownServerConnections();
 #endif  
-
-  nsresult rv;
-  nsCOMPtr<nsIIOService> ios = do_GetIOService(&rv);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-
-  nsCOMPtr<nsIProtocolHandler> handler;
-  rv = ios->GetProtocolHandler("http", getter_AddRefs(handler));
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-
-  
-  nsCOMPtr<nsIDNSService> dns =
-      do_GetService("@mozilla.org/network/dns-service;1", &rv);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-
   return true;
 }
 
@@ -333,8 +313,31 @@ PFileDescriptorSetChild* SocketProcessChild::SendPFileDescriptorSetConstructor(
 already_AddRefed<PHttpConnectionMgrChild>
 SocketProcessChild::AllocPHttpConnectionMgrChild() {
   LOG(("SocketProcessChild::AllocPHttpConnectionMgrChild \n"));
-  RefPtr<HttpConnectionMgrChild> actor = new HttpConnectionMgrChild();
-  return actor.forget();
+  if (!gHttpHandler) {
+    nsresult rv;
+    nsCOMPtr<nsIIOService> ios = do_GetIOService(&rv);
+    if (NS_FAILED(rv)) {
+      return nullptr;
+    }
+
+    nsCOMPtr<nsIProtocolHandler> handler;
+    rv = ios->GetProtocolHandler("http", getter_AddRefs(handler));
+    if (NS_FAILED(rv)) {
+      return nullptr;
+    }
+
+    
+    nsCOMPtr<nsIDNSService> dns =
+        do_GetService("@mozilla.org/network/dns-service;1", &rv);
+    if (NS_FAILED(rv)) {
+      return nullptr;
+    }
+
+    RefPtr<HttpConnectionMgrChild> actor = new HttpConnectionMgrChild();
+    return actor.forget();
+  }
+
+  return nullptr;
 }
 
 mozilla::ipc::IPCResult
