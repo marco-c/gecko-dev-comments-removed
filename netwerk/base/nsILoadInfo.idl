@@ -880,6 +880,17 @@ interface nsILoadInfo : nsISupports
 
 
 
+
+
+
+
+
+
+
+
+
+
+
   [noscript, notxpcom, nostdcall]
   PrincipalArrayRef AncestorPrincipals();
 

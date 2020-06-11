@@ -90,6 +90,14 @@ class LoadInfo final : public nsILoadInfo {
            nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
 
   
+  
+  
+  static void ComputeAncestors(
+      dom::CanonicalBrowsingContext* aBC,
+      nsTArray<nsCOMPtr<nsIPrincipal>>& aAncestorPrincipals,
+      nsTArray<uint64_t>& aOuterWindowIDs);
+
+  
   already_AddRefed<nsILoadInfo> Clone() const;
 
   
