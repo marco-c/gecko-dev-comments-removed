@@ -20,14 +20,14 @@ namespace layers {
 class SimpleVelocityTracker : public VelocityTracker {
  public:
   explicit SimpleVelocityTracker(Axis* aAxis);
-  void StartTracking(ParentLayerCoord aPos, uint32_t aTimestamp) override;
+  void StartTracking(ParentLayerCoord aPos, TimeStamp aTimestamp) override;
   Maybe<float> AddPosition(ParentLayerCoord aPos,
-                           uint32_t aTimestampMs) override;
-  Maybe<float> ComputeVelocity(uint32_t aTimestampMs) override;
+                           TimeStamp aTimestamp) override;
+  Maybe<float> ComputeVelocity(TimeStamp aTimestamp) override;
   void Clear() override;
 
  private:
-  void AddVelocityToQueue(uint32_t aTimestampMs, float aVelocity);
+  void AddVelocityToQueue(TimeStamp aTimestamp, float aVelocity);
   float ApplyFlingCurveToVelocity(float aVelocity) const;
 
   
@@ -38,14 +38,13 @@ class SimpleVelocityTracker : public VelocityTracker {
   
   
   
-  
-  nsTArray<std::pair<uint32_t, float>> mVelocityQueue;
+  nsTArray<std::pair<TimeStamp, float>> mVelocityQueue;
 
   
   
   
   
-  uint32_t mVelocitySampleTimeMs;
+  TimeStamp mVelocitySampleTime;
   ParentLayerCoord mVelocitySamplePos;
 };
 

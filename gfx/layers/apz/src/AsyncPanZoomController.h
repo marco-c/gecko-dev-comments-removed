@@ -805,12 +805,12 @@ class AsyncPanZoomController {
 
 
 
-  void StartTouch(const ParentLayerPoint& aPoint, uint32_t aTimestampMs);
+  void StartTouch(const ParentLayerPoint& aPoint, TimeStamp aTimestamp);
 
   
 
 
-  void EndTouch(uint32_t aTimestampMs);
+  void EndTouch(TimeStamp aTimestamp);
 
   
 

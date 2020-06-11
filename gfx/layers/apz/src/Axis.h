@@ -46,14 +46,14 @@ class VelocityTracker {
 
 
 
-  virtual void StartTracking(ParentLayerCoord aPos, uint32_t aTimestamp) = 0;
+  virtual void StartTracking(ParentLayerCoord aPos, TimeStamp aTimestamp) = 0;
   
 
 
 
 
   virtual Maybe<float> AddPosition(ParentLayerCoord aPos,
-                                   uint32_t aTimestampMs) = 0;
+                                   TimeStamp aTimestamp) = 0;
   
 
 
@@ -61,7 +61,7 @@ class VelocityTracker {
 
 
 
-  virtual Maybe<float> ComputeVelocity(uint32_t aTimestampMs) = 0;
+  virtual Maybe<float> ComputeVelocity(TimeStamp aTimestamp) = 0;
   
 
 
@@ -85,20 +85,20 @@ class Axis {
 
 
   void UpdateWithTouchAtDevicePoint(ParentLayerCoord aPos,
-                                    uint32_t aTimestampMs);
+                                    TimeStamp aTimestamp);
 
  public:
   
 
 
 
-  void StartTouch(ParentLayerCoord aPos, uint32_t aTimestampMs);
+  void StartTouch(ParentLayerCoord aPos, TimeStamp aTimestamp);
 
   
 
 
 
-  void EndTouch(uint32_t aTimestampMs);
+  void EndTouch(TimeStamp aTimestamp);
 
   
 

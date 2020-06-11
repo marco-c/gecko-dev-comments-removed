@@ -120,7 +120,6 @@ typedef GeckoContentController::APZStateChange APZStateChange;
 typedef GeckoContentController::TapType TapType;
 typedef mozilla::gfx::Point Point;
 typedef mozilla::gfx::Matrix4x4 Matrix4x4;
-using mozilla::gfx::PointTyped;
 
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -1353,7 +1352,7 @@ nsEventStatus AsyncPanZoomController::OnTouchStart(
     case NOTHING: {
       ParentLayerPoint point = GetFirstTouchPoint(aEvent);
       mStartTouch = GetFirstExternalTouchPoint(aEvent);
-      StartTouch(point, aEvent.mTime);
+      StartTouch(point, aEvent.mTimeStamp);
       if (RefPtr<GeckoContentController> controller =
               GetGeckoContentController()) {
         MOZ_ASSERT(GetCurrentTouchBlock());
@@ -1508,7 +1507,7 @@ nsEventStatus AsyncPanZoomController::OnTouchEnd(
     case PANNING_LOCKED_Y:
     case PAN_MOMENTUM: {
       MOZ_ASSERT(GetCurrentTouchBlock());
-      EndTouch(aEvent.mTime);
+      EndTouch(aEvent.mTimeStamp);
       return HandleEndOfPan();
     }
     case PINCHING:
@@ -1557,7 +1556,7 @@ nsEventStatus AsyncPanZoomController::OnScaleBegin(
   
   
   if (!mZoomConstraints.mAllowZoom) {
-    StartTouch(aEvent.mLocalFocusPoint, aEvent.mTime);
+    StartTouch(aEvent.mLocalFocusPoint, aEvent.mTimeStamp);
   }
 
   
@@ -1604,8 +1603,10 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
   
   
   if (!allowZoom) {
-    mX.UpdateWithTouchAtDevicePoint(aEvent.mLocalFocusPoint.x, aEvent.mTime);
-    mY.UpdateWithTouchAtDevicePoint(aEvent.mLocalFocusPoint.y, aEvent.mTime);
+    mX.UpdateWithTouchAtDevicePoint(aEvent.mLocalFocusPoint.x,
+                                    aEvent.mTimeStamp);
+    mY.UpdateWithTouchAtDevicePoint(aEvent.mLocalFocusPoint.y,
+                                    aEvent.mTimeStamp);
   }
 
   
@@ -1765,7 +1766,7 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(
     
     if (mZoomConstraints.mAllowZoom) {
       mPanDirRestricted = false;
-      StartTouch(aEvent.mLocalFocusPoint, aEvent.mTime);
+      StartTouch(aEvent.mLocalFocusPoint, aEvent.mTimeStamp);
       SetState(TOUCHING);
     } else {
       
@@ -1804,7 +1805,7 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(
       ScrollSnap();
     } else {
       
-      EndTouch(aEvent.mTime);
+      EndTouch(aEvent.mTimeStamp);
       if (stateWasPinching) {
         
         if (HasReadyTouchBlock()) {
@@ -2466,7 +2467,7 @@ nsEventStatus AsyncPanZoomController::OnPanMayBegin(
     const PanGestureInput& aEvent) {
   APZC_LOG("%p got a pan-maybegin in state %d\n", this, mState);
 
-  StartTouch(aEvent.mLocalPanStartPoint, aEvent.mTime);
+  StartTouch(aEvent.mLocalPanStartPoint, aEvent.mTimeStamp);
   MOZ_ASSERT(GetCurrentPanGestureBlock());
   GetCurrentPanGestureBlock()->GetOverscrollHandoffChain()->CancelAnimations();
 
@@ -2492,7 +2493,7 @@ nsEventStatus AsyncPanZoomController::OnPanBegin(
     CancelAnimation();
   }
 
-  StartTouch(aEvent.mLocalPanStartPoint, aEvent.mTime);
+  StartTouch(aEvent.mLocalPanStartPoint, aEvent.mTimeStamp);
 
   if (GetAxisLockMode() == FREE) {
     SetState(PANNING);
@@ -2620,9 +2621,9 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
   
   
   mX.UpdateWithTouchAtDevicePoint(mX.GetPos() - logicalPanDisplacement.x,
-                                  aEvent.mTime);
+                                  aEvent.mTimeStamp);
   mY.UpdateWithTouchAtDevicePoint(mY.GetPos() - logicalPanDisplacement.y,
-                                  aEvent.mTime);
+                                  aEvent.mTimeStamp);
 
   HandlePanningUpdate(physicalPanDisplacement);
 
@@ -2663,7 +2664,7 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
   
   OnPan(aEvent, true);
 
-  EndTouch(aEvent.mTime);
+  EndTouch(aEvent.mTimeStamp);
 
   
   
@@ -3161,8 +3162,8 @@ nsEventStatus AsyncPanZoomController::StartPanning(
 void AsyncPanZoomController::UpdateWithTouchAtDevicePoint(
     const MultiTouchInput& aEvent) {
   ParentLayerPoint point = GetFirstTouchPoint(aEvent);
-  mX.UpdateWithTouchAtDevicePoint(point.x, aEvent.mTime);
-  mY.UpdateWithTouchAtDevicePoint(point.y, aEvent.mTime);
+  mX.UpdateWithTouchAtDevicePoint(point.x, aEvent.mTimeStamp);
+  mY.UpdateWithTouchAtDevicePoint(point.y, aEvent.mTimeStamp);
 }
 
 Maybe<CompositionPayload> AsyncPanZoomController::NotifyScrollSampling() {
@@ -3540,16 +3541,16 @@ void AsyncPanZoomController::RecordScrollPayload(const TimeStamp& aTimeStamp) {
 }
 
 void AsyncPanZoomController::StartTouch(const ParentLayerPoint& aPoint,
-                                        uint32_t aTimestampMs) {
+                                        TimeStamp aTimestamp) {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
-  mX.StartTouch(aPoint.x, aTimestampMs);
-  mY.StartTouch(aPoint.y, aTimestampMs);
+  mX.StartTouch(aPoint.x, aTimestamp);
+  mY.StartTouch(aPoint.y, aTimestamp);
 }
 
-void AsyncPanZoomController::EndTouch(uint32_t aTimestampMs) {
+void AsyncPanZoomController::EndTouch(TimeStamp aTimestamp) {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
-  mX.EndTouch(aTimestampMs);
-  mY.EndTouch(aTimestampMs);
+  mX.EndTouch(aTimestamp);
+  mY.EndTouch(aTimestamp);
 }
 
 void AsyncPanZoomController::TrackTouch(const MultiTouchInput& aEvent) {

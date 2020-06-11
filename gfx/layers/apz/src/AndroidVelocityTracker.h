@@ -21,19 +21,19 @@ namespace layers {
 class AndroidVelocityTracker : public VelocityTracker {
  public:
   explicit AndroidVelocityTracker();
-  void StartTracking(ParentLayerCoord aPos, uint32_t aTimestamp) override;
+  void StartTracking(ParentLayerCoord aPos, TimeStamp aTimestamp) override;
   Maybe<float> AddPosition(ParentLayerCoord aPos,
-                           uint32_t aTimestampMs) override;
-  Maybe<float> ComputeVelocity(uint32_t aTimestampMs) override;
+                           TimeStamp aTimestamp) override;
+  Maybe<float> ComputeVelocity(TimeStamp aTimestamp) override;
   void Clear() override;
 
  private:
   
   
-  nsTArray<std::pair<uint32_t, ParentLayerCoord>> mHistory;
+  nsTArray<std::pair<TimeStamp, ParentLayerCoord>> mHistory;
   
   
-  uint32_t mLastEventTime;
+  TimeStamp mLastEventTime;
 };
 
 }  
