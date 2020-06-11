@@ -112,18 +112,6 @@ class AccessibilityProxy {
     });
   }
 
-  
-
-
-  async cancelPick(onHovered, onPicked, onPreviewed, onCanceled) {
-    const front = this.accessibleWalkerFront;
-    await front.cancelPick();
-    this._off(front, "picker-accessible-hovered", onHovered);
-    this._off(front, "picker-accessible-picked", onPicked);
-    this._off(front, "picker-accessible-previewed", onPreviewed);
-    this._off(front, "picker-accessible-canceled", onCanceled);
-  }
-
   async disableAccessibility() {
     
     
@@ -160,13 +148,90 @@ class AccessibilityProxy {
 
 
 
-  async pick(doFocus, onHovered, onPicked, onPreviewed, onCanceled) {
-    const front = this.accessibleWalkerFront;
-    this._on(front, "picker-accessible-hovered", onHovered);
-    this._on(front, "picker-accessible-picked", onPicked);
-    this._on(front, "picker-accessible-previewed", onPreviewed);
-    this._on(front, "picker-accessible-canceled", onCanceled);
-    await front.pick(doFocus);
+
+  async withAllAccessibilityFronts(taskFn) {
+    const accessibilityFronts = await this.toolbox.targetList.getAllFronts(
+      this.toolbox.targetList.TYPES.FRAME,
+      "accessibility"
+    );
+    const tasks = [];
+    for (const accessibilityFront of accessibilityFronts) {
+      tasks.push(taskFn(accessibilityFront));
+    }
+
+    return Promise.all(tasks);
+  }
+
+  
+
+
+
+
+
+
+  withAllAccessibilityWalkerFronts(taskFn) {
+    return this.withAllAccessibilityFronts(async accessibilityFront => {
+      if (!accessibilityFront.accessibleWalkerFront) {
+        await accessibilityFront.bootstrap();
+      }
+
+      return taskFn(accessibilityFront.accessibleWalkerFront);
+    });
+  }
+
+  
+
+
+
+
+  pick(doFocus, onHovered, onPicked, onPreviewed, onCanceled) {
+    return this.withAllAccessibilityWalkerFronts(
+      async accessibleWalkerFront => {
+        this._on(accessibleWalkerFront, "picker-accessible-hovered", onHovered);
+        this._on(accessibleWalkerFront, "picker-accessible-picked", onPicked);
+        this._on(
+          accessibleWalkerFront,
+          "picker-accessible-previewed",
+          onPreviewed
+        );
+        this._on(
+          accessibleWalkerFront,
+          "picker-accessible-canceled",
+          onCanceled
+        );
+        await accessibleWalkerFront.pick(
+          
+          doFocus && accessibleWalkerFront.targetFront.isTopLevel
+        );
+      }
+    );
+  }
+
+  
+
+
+  cancelPick(onHovered, onPicked, onPreviewed, onCanceled) {
+    return this.withAllAccessibilityWalkerFronts(
+      async accessibleWalkerFront => {
+        await accessibleWalkerFront.cancelPick();
+        this._off(
+          accessibleWalkerFront,
+          "picker-accessible-hovered",
+          onHovered
+        );
+        this._off(accessibleWalkerFront, "picker-accessible-picked", onPicked);
+        this._off(
+          accessibleWalkerFront,
+          "picker-accessible-previewed",
+          onPreviewed
+        );
+        this._off(
+          accessibleWalkerFront,
+          "picker-accessible-canceled",
+          onCanceled
+        );
+      }
+    );
   }
 
   async resetAccessiblity() {
