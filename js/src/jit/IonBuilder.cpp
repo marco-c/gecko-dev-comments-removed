@@ -5419,10 +5419,6 @@ MDefinition* IonBuilder::createThis(JSFunction* target, MDefinition* callee,
   MOZ_ASSERT_IF(target, target->isConstructor());
 
   
-  
-  MOZ_ASSERT_IF(target, !target->isNativeWithJitEntry());
-
-  
   MOZ_ASSERT_IF(inlining, target);
 
   
@@ -5439,6 +5435,8 @@ MDefinition* IonBuilder::createThis(JSFunction* target, MDefinition* callee,
   
   
   if (target->isNative()) {
+    MOZ_ASSERT(target->isNativeWithoutJitEntry(),
+               "Natives with JitEntry are not supported for constructor calls");
     return constant(MagicValue(JS_IS_CONSTRUCTING));
   }
   if (target->constructorNeedsUninitializedThis()) {
