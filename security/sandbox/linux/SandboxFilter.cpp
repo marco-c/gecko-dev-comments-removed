@@ -532,6 +532,31 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
       CASES_FOR_fstat:
         return Allow();
 
+      CASES_FOR_fcntl : {
+        Arg<int> cmd(1);
+        Arg<int> flags(2);
+        
+        
+        
+        
+        
+        static const int ignored_flags =
+            O_ACCMODE | O_LARGEFILE_REAL | O_CLOEXEC;
+        static const int allowed_flags = ignored_flags | O_APPEND | O_NONBLOCK;
+        return Switch(cmd)
+            
+            
+            .Case(F_GETFD, Allow())
+            .Case(
+                F_SETFD,
+                If((flags & ~FD_CLOEXEC) == 0, Allow()).Else(InvalidSyscall()))
+            
+            .Case(F_GETFL, Allow())
+            .Case(F_SETFL, If((flags & ~allowed_flags) == 0, Allow())
+                               .Else(InvalidSyscall()))
+            .Default(SandboxPolicyBase::EvaluateSyscall(sysno));
+      }
+
         
       case __NR_pread64:
       case __NR_write:
@@ -1105,25 +1130,7 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
 
       CASES_FOR_fcntl : {
         Arg<int> cmd(1);
-        Arg<int> flags(2);
-        
-        
-        
-        
-        
-        static const int ignored_flags =
-            O_ACCMODE | O_LARGEFILE_REAL | O_CLOEXEC;
-        static const int allowed_flags = ignored_flags | O_APPEND | O_NONBLOCK;
         return Switch(cmd)
-            
-            
-            .Case(F_GETFD, Allow())
-            .Case(
-                F_SETFD,
-                If((flags & ~FD_CLOEXEC) == 0, Allow()).Else(InvalidSyscall()))
-            .Case(F_GETFL, Allow())
-            .Case(F_SETFL, If((flags & ~allowed_flags) == 0, Allow())
-                               .Else(InvalidSyscall()))
             .Case(F_DUPFD_CLOEXEC, Allow())
             
             .Case(F_SETLK, Allow())
@@ -1486,28 +1493,10 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
       : SandboxPolicyCommon(aBroker, ShmemUsage::MAY_CREATE,
                             AllowUnsafeSocketPair::NO) {}
 
-  static intptr_t FcntlTrap(const sandbox::arch_seccomp_data& aArgs,
-                            void* aux) {
-    const auto cmd = static_cast<int>(aArgs.args[1]);
-    switch (cmd) {
-        
-        
-      case F_GETFD:
-        return O_CLOEXEC;
-      case F_SETFD:
-        return 0;
-      default:
-        return -ENOSYS;
-    }
-  }
-
   ResultExpr EvaluateSyscall(int sysno) const override {
     switch (sysno) {
       case __NR_getrusage:
         return Allow();
-
-      CASES_FOR_fcntl:
-        return Trap(FcntlTrap, nullptr);
 
       
       default:
@@ -1618,25 +1607,7 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
 
       CASES_FOR_fcntl : {
         Arg<int> cmd(1);
-        Arg<int> flags(2);
-        
-        
-        
-        
-        
-        static const int ignored_flags =
-            O_ACCMODE | O_LARGEFILE_REAL | O_CLOEXEC;
-        static const int allowed_flags = ignored_flags | O_APPEND | O_NONBLOCK;
         return Switch(cmd)
-            
-            
-            .Case(F_GETFD, Allow())
-            .Case(
-                F_SETFD,
-                If((flags & ~FD_CLOEXEC) == 0, Allow()).Else(InvalidSyscall()))
-            .Case(F_GETFL, Allow())
-            .Case(F_SETFL, If((flags & ~allowed_flags) == 0, Allow())
-                               .Else(InvalidSyscall()))
             .Case(F_DUPFD_CLOEXEC, Allow())
             
             .Case(F_SETLK, Allow())
