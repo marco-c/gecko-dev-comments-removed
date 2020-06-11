@@ -1869,7 +1869,7 @@ void nsHttpChannel::UpdateAntiTrackingInfo() {
     
     
     mozilla::net::CookieJarSettings::Cast(cookieJarSettings)
-        ->SetFirstPartyDomain(mURI);
+        ->SetPartitionKey(mURI);
   }
 }
 

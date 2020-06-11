@@ -117,7 +117,7 @@ class CookieJarSettings final : public nsICookieJarSettings {
   static already_AddRefed<nsICookieJarSettings> Create();
 
   static already_AddRefed<nsICookieJarSettings> Create(
-      uint32_t aCookieBehavior, const nsAString& aFirstPartyDomain,
+      uint32_t aCookieBehavior, const nsAString& aPartitionKey,
       bool aIsFirstPartyIsolated);
 
   static CookieJarSettings* Cast(nsICookieJarSettings* aCS) {
@@ -138,8 +138,8 @@ class CookieJarSettings final : public nsICookieJarSettings {
 
   void UpdateIsOnContentBlockingAllowList(nsIChannel* aChannel);
 
-  void SetFirstPartyDomain(nsIURI* aURI);
-  const nsAString& GetFirstPartyDomain() { return mFirstPartyDomain; };
+  void SetPartitionKey(nsIURI* aURI);
+  const nsAString& GetPartitionKey() { return mPartitionKey; };
 
   
   
@@ -170,7 +170,7 @@ class CookieJarSettings final : public nsICookieJarSettings {
   bool mIsFirstPartyIsolated;
   CookiePermissionList mCookiePermissions;
   bool mIsOnContentBlockingAllowList;
-  nsString mFirstPartyDomain;
+  nsString mPartitionKey;
 
   State mState;
 

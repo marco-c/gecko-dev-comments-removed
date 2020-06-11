@@ -47,7 +47,7 @@ interface nsICookieJarSettings : nsISupports
   
 
 
-  readonly attribute AString firstPartyDomain;
+  readonly attribute AString partitionKey;
 
   
 
