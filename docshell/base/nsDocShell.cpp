@@ -1753,6 +1753,8 @@ nsDocShell::GetFullscreenAllowed(bool* aFullscreenAllowed) {
   if (!win) {
     return NS_OK;
   }
+
+  
   if (nsCOMPtr<Element> frameElement = win->GetFrameElementInternal()) {
     if (frameElement->IsXULElement()) {
       if (frameElement->HasAttr(kNameSpaceID_None,
