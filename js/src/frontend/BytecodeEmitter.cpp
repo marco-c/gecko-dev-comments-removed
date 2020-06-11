@@ -4458,9 +4458,7 @@ bool BytecodeEmitter::emitShortCircuitAssignment(AssignmentNode* node) {
     return false;
   }
 
-  
-  
-  if (!emitTree(rhs)) {
+  if (!emitAssignmentRhs(rhs, name)) {
     
     return false;
   }
