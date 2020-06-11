@@ -1,43 +1,43 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/**
+  Styles for old GFX form widgets
+ **/
 
 
-
-
-
-
-
-
-
-@namespace url(http://www.w3.org/1999/xhtml); 
+@namespace url(http://www.w3.org/1999/xhtml); /* set default namespace to HTML */
 
 *|*::-moz-fieldset-content {
-  display: block; 
+  display: block; /* StyleAdjuster::adjust_for_fieldset_content overrides this in some cases */
   unicode-bidi: inherit;
   text-overflow: inherit;
   overflow: inherit;
   overflow-clip-box: inherit;
-  
-
+  /* Need to inherit border-radius too, so when the fieldset has rounded
+     borders we don't leak out the corners for hit-testing purposes. */
   border-radius: inherit;
   padding: inherit;
   box-decoration-break: inherit;
-  block-size: 100%; 
-  
-
-  
+  block-size: 100%; /* Need this so percentage block-sizes of kids work right */
+  /* Please keep the Multicol/Flex/Grid/Align sections below in sync with
+     ::-moz-scrolled-content in ua.css and ::-moz-button-content below. */
+  /* Multicol container */
   column-count: inherit;
   column-width: inherit;
   column-gap: inherit;
   column-rule: inherit;
   column-fill: inherit;
-  
+  /* Flex container */
   flex-direction: inherit;
   flex-wrap: inherit;
-  
+  /* -webkit-box container (aliased from -webkit versions to -moz versions) */
   -moz-box-orient: inherit;
   -moz-box-direction: inherit;
   -moz-box-pack: inherit;
   -moz-box-align: inherit;
-  
+  /* Grid container */
   grid-auto-columns: inherit;
   grid-auto-rows: inherit;
   grid-auto-flow: inherit;
@@ -46,14 +46,14 @@
   grid-template-areas: inherit;
   grid-template-columns: inherit;
   grid-template-rows: inherit;
-  
+  /* CSS Align */
   align-content: inherit;
   align-items: inherit;
   justify-content: inherit;
   justify-items: inherit;
 }
 
-
+/* Miscellaneous form elements */
 
 fieldset > legend {
   inline-size: -moz-fit-content;
@@ -77,18 +77,17 @@ label {
   cursor: default;
 }
 
+/* Default inputs, text inputs, and selects */
 
-
-
-
+/* Note: Values in nsNativeTheme IsWidgetStyled function
+   need to match textfield background/border values here */
 
 input {
   display: inline-block;
   -moz-appearance: textfield;
-  -moz-default-appearance: textfield;
-  
-
-
+  /* The sum of border and padding on block-start and block-end
+     must be the same here, for buttons, and for <select> (including its
+     internal padding magic) */
   padding: 1px;
   border: 2px inset ThreeDLightShadow;
   background-color: -moz-Field;
@@ -102,16 +101,15 @@ input {
 input::-moz-text-control-editing-root,
 input::placeholder {
   word-wrap: normal;
-  
+  /* Make the line-height equal to the available height */
   line-height: -moz-block-height;
 }
 
 textarea {
   -moz-appearance: textarea;
-  -moz-default-appearance: textarea;
   margin-block: 1px;
   border: 2px inset ThreeDLightShadow;
-  
+  /* The 1px inline padding is for parity with Win/IE */
   padding-inline: 1px;
   background-color: -moz-Field;
   color: -moz-FieldText;
@@ -125,7 +123,7 @@ textarea {
   overflow-clip-box: content-box;
 }
 
-
+/* A few properties that we don't want to inherit by default: */
 input, textarea, select, button, ::file-chooser-button {
   text-align: initial;
   text-indent: initial;
@@ -133,7 +131,7 @@ input, textarea, select, button, ::file-chooser-button {
   text-transform: initial;
   word-spacing: initial;
   letter-spacing: initial;
-  
+  /* Note that line-height is also reset for all these, via the font shorthand */
 }
 
 textarea > scrollbar {
@@ -164,40 +162,40 @@ input::-moz-text-control-preview {
 
 input[type=password]::-moz-text-control-editing-root,
 input[type=password]::-moz-text-control-preview {
-  
-
-
-
-
-
+  /*
+   * In password fields, any character should be put same direction.  Otherwise,
+   * caret position at typing tells everybody whether the character is an RTL
+   * or an LTR character.  Unfortunately, this makes odd rendering when bidi
+   * text is unmasked.
+   */
   unicode-bidi: bidi-override;
 }
 
 textarea::-moz-text-control-editing-root {
   scroll-behavior: inherit;
   overscroll-behavior: inherit;
-  
+  /* StyleAdjuster makes sure that the overflow value ends up being scrollable */
   overflow: inherit;
 }
 
 ::placeholder,
 ::-moz-text-control-preview {
-  
-
-
+  /*
+   * Changing display to inline can leads to broken behaviour and will assert.
+   */
   display: inline-block;
 
-  
-
-
+  /*
+   * Changing resize would display a broken behaviour and will assert.
+   */
   resize: none;
 
   overflow: hidden;
 
-  
-
-
-
+  /*
+   * The placeholder or preview should be ignored by pointer otherwise, we might have some
+   * unexpected behavior like the resize handle not being selectable.
+   */
   pointer-events: none;
 }
 
@@ -227,46 +225,43 @@ select {
   box-sizing: border-box;
   user-select: none;
   -moz-appearance: menulist;
-  -moz-default-appearance: menulist;
   border-width: 2px;
   border-style: inset;
   overflow: -moz-hidden-unscrollable;
-  
+  /* No text-decoration reaching inside, by default */
   display: inline-block;
   page-break-inside: avoid;
-  overflow-clip-box: padding-box !important; 
+  overflow-clip-box: padding-box !important; /* bug 992447 */
 }
 
 %ifdef MOZ_WIDGET_GTK
-
-
+/* Comboboxes use button styles on Gtk so it's safe to
+ * use a button style here. */
 select:active:hover {
   color: -moz-gtk-buttonactivetext;
 }
 %endif
 
-
-
+/* Need the "select[size][multiple]" selector to override the settings on
+   'select[size="1"]', eg if one has <select size="1" multiple> */
 
 select:is([size], [multiple], [size][multiple]) {
-  
+  /* Different alignment and padding for listbox vs combobox */
   background-color: -moz-Field;
   color: -moz-FieldText;
   padding-block: 1px;
   padding-inline: 0;
   vertical-align: text-bottom;
   -moz-appearance: listbox;
-  -moz-default-appearance: listbox;
 }
 
 select:is([size="0"], [size="1"]) {
-  
+  /* Except this is not a listbox */
   background-color: -moz-Combobox;
   color: -moz-ComboboxText;
   vertical-align: baseline;
   padding: unset;
   -moz-appearance: menulist;
-  -moz-default-appearance: menulist;
 }
 
 select > button {
@@ -278,15 +273,15 @@ select > button {
   background-position: center !important;
   -moz-appearance: -moz-menulist-arrow-button;
 
-  
+  /* Make sure to size correctly if the combobox has a non-auto height. */
   block-size: 100% !important;
   box-sizing: border-box !important;
 
-  
-
-
-
-
+  /*
+    Make sure to align properly with the display frame.  Note that we
+    want the baseline of the combobox to match the baseline of the
+    display frame, so the dropmarker is what gets the vertical-align.
+  */
   vertical-align: top !important;
 }
 
@@ -312,17 +307,17 @@ select > button[orientation="right"]:active {
 
 *|*::-moz-display-comboboxcontrol-frame {
   overflow: -moz-hidden-unscrollable;
-  
-
+  /* This block-start/end padding plus the combobox block-start/end border need to
+     add up to the block-start/end borderpadding of text inputs and buttons */
   padding-block: 1px;
   padding-inline: 4px;
   color: unset;
   white-space: nowrap;
   text-align: unset;
   user-select: none;
-  
+  /* Make sure to size correctly if the combobox has a non-auto block-size. */
   block-size: 100%;
-  
+  /* Try to always display our own text */
   min-inline-size: max-content;
   box-sizing: border-box;
   line-height: -moz-block-height;
@@ -337,12 +332,12 @@ option {
   float: none !important;
   position: static !important;
   min-block-size: 1em;
-  
-
-
-
-
-
+  /*
+   * Note that the "UA !important" tests in
+   * layout/style/test/test_animations.html depend on this rule, because
+   * they need some UA !important rule to test.  If this changes, use a
+   * different one there.
+   */
   line-height: normal !important;
   user-select: none;
   text-indent: 0;
@@ -394,7 +389,7 @@ optgroup:before {
 }
 
 %ifdef ANDROID
-
+/* These elements are handled by the prompt module. */
 select option,
 select optgroup {
   pointer-events: none;
@@ -408,13 +403,13 @@ select optgroup {
   position: static !important;
   float: none !important;
 
-  
-
-
-
-
-
-
+  /*
+   * We can't change the padding here, because that would affect our
+   * intrinsic inline-size, since we scroll.  But at the same time, we want
+   * to make sure that our inline-start border+padding matches the inline-start
+   * border+padding of a combobox so that our scrollbar will line up
+   * with the dropmarker.  So set our inline-start border to 2px.
+   */
   border: 1px outset black !important;
   border-inline-start-width: 2px !important;
 }
@@ -423,8 +418,8 @@ input:disabled,
 textarea:disabled,
 option:disabled,
 optgroup:disabled,
-select:disabled:disabled 
-
+select:disabled:disabled /* Need the pseudo-class twice to have the specificity
+                            be at least the same as select[size][multiple] above */
 {
   color: GrayText;
   background-color: ThreeDLightShadow;
@@ -441,10 +436,9 @@ optgroup:disabled {
   background-color: transparent;
 }
 
-
+/* hidden inputs */
 input[type="hidden"] {
   -moz-appearance: none;
-  -moz-default-appearance: none;
   display: none !important;
   padding: unset;
   border: 0;
@@ -452,10 +446,9 @@ input[type="hidden"] {
   -moz-user-focus: ignore;
 }
 
-
+/* image buttons */
 input[type="image"] {
   -moz-appearance: none;
-  -moz-default-appearance: none;
   padding: unset;
   border: none;
   background-color: transparent;
@@ -468,7 +461,7 @@ input[type="image"]:disabled {
   cursor: unset;
 }
 
-
+/* colored part of the color selector button */
 ::-moz-color-swatch {
   width: 100%;
   height: 100%;
@@ -480,29 +473,27 @@ input[type="image"]:disabled {
   display: block;
 }
 
-
+/* radio buttons */
 input[type="radio"] {
   -moz-appearance: radio;
-  -moz-default-appearance: radio;
   margin-block: 3px 0;
   margin-inline: 5px 3px;
 }
 
-
+/* check boxes */
 input[type="checkbox"] {
   -moz-appearance: checkbox;
-  -moz-default-appearance: checkbox;
   margin-block: 3px;
   margin-inline: 4px 3px;
 }
 
-
+/* Common features of radio buttons and check boxes */
 
 input[type="radio"],
 input[type="checkbox"] {
   box-sizing: border-box;
   cursor: default;
-  
+  /* unset some values from the general 'input' rule above: */
   padding: unset;
   border: unset;
   background-color: unset;
@@ -517,9 +508,9 @@ input:not([type="file"]):not([type="image"]):-moz-focusring,
 select:-moz-focusring,
 button:-moz-focusring,
 textarea:-moz-focusring {
-  
-
-
+  /* These elements can handle outline themselves when themed, so we use
+   * outline-style: auto and skip rendering the outline only when themed and
+   * the theme allows so */
   outline-style: auto;
 }
 
@@ -527,21 +518,20 @@ input[type="search"] {
   box-sizing: border-box;
 }
 
+/* buttons */
 
+/* Note: Values in nsNativeTheme IsWidgetStyled function
+   need to match button background/border values here */
 
-
-
-
-
-
+/* Non text-related properties for buttons: these ones are shared with
+   input[type="color"] */
 button,
 ::file-chooser-button,
 input:is([type="color"], [type="reset"], [type="button"], [type="submit"]) {
   -moz-appearance: button;
-  -moz-default-appearance: button;
-  
-
-
+  /* The sum of border and padding on block-start and block-end
+     must be the same here, for text inputs, and for <select>.
+     Note -moz-focus-inner padding does not affect button size. */
   padding-block: 0;
   padding-inline: 8px;
   border: 2px outset ThreeDLightShadow;
@@ -551,8 +541,8 @@ input:is([type="color"], [type="reset"], [type="button"], [type="submit"]) {
   user-select: none;
 }
 
-
-
+/* Text-related properties for buttons: these ones are not shared with
+   input[type="color"] */
 button,
 ::file-chooser-button,
 input:is([type="reset"], [type="button"], [type="submit"]) {
@@ -570,32 +560,32 @@ input[type="color"] {
 
 button,
 ::file-chooser-button {
-  
+  /* Buttons should lay out like "normal" html, mostly */
   white-space: unset;
   text-indent: 0;
-  
+  /* But no text-decoration reaching inside, by default */
   display: inline-block;
 }
 
 *|*::-moz-button-content {
   display: block;
-  
-
-  
+  /* Please keep the Multicol/Flex/Grid/Align sections below in sync with
+     ::-moz-scrolled-content in ua.css and ::-moz-fieldset-content above. */
+  /* Multicol container */
   column-count: inherit;
   column-width: inherit;
   column-gap: inherit;
   column-rule: inherit;
   column-fill: inherit;
-  
+  /* Flex container */
   flex-direction: inherit;
   flex-wrap: inherit;
-  
+  /* -webkit-box container (aliased from -webkit versions to -moz versions) */
   -moz-box-orient: inherit;
   -moz-box-direction: inherit;
   -moz-box-pack: inherit;
   -moz-box-align: inherit;
-  
+  /* Grid container */
   grid-auto-columns: inherit;
   grid-auto-rows: inherit;
   grid-auto-flow: inherit;
@@ -604,7 +594,7 @@ button,
   grid-template-areas: inherit;
   grid-template-columns: inherit;
   grid-template-rows: inherit;
-  
+  /* CSS Align */
   align-content: inherit;
   align-items: inherit;
   justify-content: inherit;
@@ -645,7 +635,7 @@ input:is([type="reset"], [type="button"], [type="submit"]):active:hover {
 }
 
 ::-moz-focus-inner {
-  
+  /* Note this padding only affects the -moz-focus-inner ring, not the button itself */
   padding-block: 0;
   padding-inline: 2px;
   border: 1px dotted transparent;
@@ -659,8 +649,8 @@ input:is([type="reset"], [type="button"], [type="submit"]):active:hover {
 button:is(:disabled, :disabled:active),
 input:is([type="reset"], [type="button"], [type="submit"], [type="color"]):is(:disabled, :disabled:active),
 select:is(:disabled, :disabled:active) > button {
-  
-
+  /* The sum of border and padding on block-start and block-end
+     must be the same here and for text inputs */
   padding-block: 0;
   padding-inline: 8px;
   border: 2px outset ThreeDLightShadow;
@@ -674,16 +664,15 @@ select:is(:disabled, :disabled:active) > button {
   color: GrayText;
 }
 
-
+/* file selector */
 input[type="file"] {
   white-space: nowrap !important;
   overflow: hidden !important;
   overflow-clip-box: padding-box;
   color: unset;
 
-  
+  /* Revert rules which apply on all inputs. */
   -moz-appearance: none;
-  -moz-default-appearance: none;
   cursor: default;
 
   border: none;
@@ -705,31 +694,31 @@ input[type="file"] > label {
   unicode-bidi: plaintext;
 }
 
-
+/* button part of file selector */
 ::file-chooser-button {
   font-size: unset;
   letter-spacing: unset;
   cursor: unset;
 }
 
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ /*
+  * Make form controls inherit 'unicode-bidi' transparently as required by
+  *  their various anonymous descendants and pseudo-elements:
+  *
+  * <textarea> and <input type="text">:
+  *  inherit into the scroll frame with pseudo ::-moz-text-control-editing-root
+  *  which is a (direct or indirect) child of the text control.
+  *
+  * Buttons (either <button>, <input type="submit">, <input type="button">
+  *          or <input type="reset">)
+  *  inherit into the ':-moz-button-content' pseudo-element.
+  *
+  * <select>:
+  *  inherit into the ':-moz-display-comboboxcontrol-frame' pseudo-element and
+  *  the <optgroup>'s ':before' pseudo-element, which is where the label of
+  *  the <optgroup> gets displayed. The <option>s don't use anonymous boxes,
+  *  so they need no special rules.
+  */
 ::placeholder,
 ::-moz-text-control-editing-root,
 *|*::-moz-button-content,
@@ -739,9 +728,9 @@ optgroup:before {
   text-overflow: inherit;
 }
 
-
-
-
+/**
+ * Set default style for invalid elements.
+ */
 :-moz-ui-invalid {
   box-shadow: 0 0 1.5px 1px red;
 }
@@ -767,20 +756,19 @@ output:-moz-ui-invalid {
 
 progress {
   -moz-appearance: progress-bar;
-  -moz-default-appearance: progress-bar;
   display: inline-block;
   vertical-align: -0.2em;
 
-  
+  /* Default style in case of there is -moz-appearance: none; */
   border: 1px solid ThreeDShadow;
   border-right-color: ThreeDHighlight;
   border-bottom-color: ThreeDHighlight;
-  
+  /* #e6e6e6 is a light gray. */
   background-color: #e6e6e6;
 }
 
 ::-moz-progress-bar {
-  
+  /* Prevent styling that would change the type of frame we construct. */
   display: inline-block !important;
   float: none !important;
   position: static !important;
@@ -791,20 +779,19 @@ progress {
   height: 100%;
   width: 100%;
 
-  
-  background-color: #0064b4; 
+  /* Default style in case of there is -moz-appearance: none; */
+  background-color: #0064b4; /* blue */
 }
 
 meter {
   -moz-appearance: meter;
-  -moz-default-appearance: meter;
   display: inline-block;
   vertical-align: -0.2em;
   background: linear-gradient(#e6e6e6, #e6e6e6, #eeeeee 20%, #cccccc 45%, #cccccc 55%);
 }
 
 ::-moz-meter-bar {
-  
+  /* Block styles that would change the type of frame we construct. */
   display: inline-block !important;
   float: none !important;
   position: static !important;
@@ -816,93 +803,91 @@ meter {
 }
 
 :-moz-meter-optimum::-moz-meter-bar {
-  
+  /* green. */
   background: linear-gradient(#ad7, #ad7, #cea 20%, #7a3 45%, #7a3 55%);
 }
 :-moz-meter-sub-optimum::-moz-meter-bar {
-  
+  /* orange. */
   background: linear-gradient(#fe7, #fe7, #ffc 20%, #db3 45%, #db3 55%);
 }
 :-moz-meter-sub-sub-optimum::-moz-meter-bar {
-  
+  /* red. */
   background: linear-gradient(#f77, #f77, #fcc 20%, #d44 45%, #d44 55%);
 }
 
 input[type=range] {
   -moz-appearance: range;
-  -moz-default-appearance: range;
   margin: 2px;
-  
+  /* Override some rules that apply on all input types: */
   cursor: default;
   padding: unset;
   border: unset;
-  
+  /* Prevent nsFrame::HandlePress setting mouse capture to this element. */
   user-select: none !important;
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Layout handles positioning of this pseudo-element specially (so that content
+ * authors can concentrate on styling the thumb without worrying about the
+ * logic to position it). Specifically the 'margin', 'top' and 'left'
+ * properties are ignored.
+ *
+ * If content authors want to have a vertical range, they will also need to
+ * set the width/height of this pseudo-element.
+ */
 input[type=range]::-moz-range-track {
-  
+  /* Prevent styling that would change the type of frame we construct. */
   display: block !important;
   float: none !important;
   position: static !important;
   writing-mode: unset !important;
   direction: unset !important;
-  block-size: 0.2em; 
-  
+  block-size: 0.2em; /* same as inline-size below */
+  /* Prevent nsFrame::HandlePress setting mouse capture to this element. */
   user-select: none !important;
 }
 
 input[type=range][orient=vertical]::-moz-range-track {
-  inline-size: 0.2em; 
+  inline-size: 0.2em; /* same as block-size above */
   block-size: 100%;
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Layout handles positioning of this pseudo-element specially (so that content
+ * authors can concentrate on styling this pseudo-element without worrying
+ * about the logic to position it). Specifically the 'margin', 'top' and 'left'
+ * properties are ignored. Additionally, if the range is horizontal, the width
+ * property is ignored, and if the range range is vertical, the height property
+ * is ignored.
+ */
 input[type=range]::-moz-range-progress {
-  
+  /* Prevent styling that would change the type of frame we construct. */
   display: block !important;
   float: none !important;
   position: static !important;
   writing-mode: unset !important;
   direction: unset !important;
-  
-
-
+  /* Since one of width/height will be ignored, this just sets the "other"
+     dimension.
+   */
   width: 0.2em;
   height: 0.2em;
-  
+  /* Prevent nsFrame::HandlePress setting mouse capture to this element. */
   user-select: none !important;
 }
 
-
-
-
-
-
-
+/**
+ * Layout handles positioning of this pseudo-element specially (so that content
+ * authors can concentrate on styling the thumb without worrying about the
+ * logic to position it). Specifically the 'margin', 'top' and 'left'
+ * properties are ignored.
+ */
 input[type=range]::-moz-range-thumb {
-  
-
-
+  /* Native theming is atomic for range. Set -moz-appearance on the range
+   * to get rid of it. The thumb's -moz-appearance is fixed.
+   */
   -moz-appearance: range-thumb !important;
-  -moz-default-appearance: range-thumb: !important;
-  
+  /* Prevent styling that would change the type of frame we construct. */
   display: block !important;
   float: none !important;
   position: static !important;
@@ -914,37 +899,36 @@ input[type=range]::-moz-range-thumb {
   border: 0.1em solid #999;
   border-radius: 0.5em;
   background-color: #F0F0F0;
-  
+  /* Prevent nsFrame::HandlePress setting mouse capture to this element. */
   user-select: none !important;
 }
 
 input[type="number"] {
   -moz-appearance: number-input;
-  -moz-default-appearance: number-input;
 }
 
 input[type=number]::-moz-number-wrapper {
-  
+  /* Prevent styling that would change the type of frame we construct. */
   display: flex;
   float: none !important;
   position: static !important;
   block-size: 100%;
-  
-
+  /* The align-self: center bit below allows the editor to be potentially
+   * bigger than us. Clip it to match other text fields. */
   overflow: -moz-hidden-unscrollable;
 }
 
 input[type=number]::-moz-text-control-editing-root {
-  display: block; 
-
-
+  display: block; /* Flex items must be block-level. Normally we do fixup in
+                     the style system to ensure this, but that fixup is disabled
+                     inside of form controls. So, we hardcode display here. */
   flex: 1;
   min-inline-size: 0;
-  
-
+  /* This makes it overflow into the flex container padding if needed, instead
+   * of getting squashed or pushed down by it */
   align-self: center;
-  
-
+  /* This prevents double-applying the padding, which our flex container gets
+   * via the override in nsTextControlFrame::ReflowTextControlChild */
   padding: 0;
 }
 
@@ -953,19 +937,19 @@ input[type=number]::-moz-number-spin-box {
   display: flex;
   flex-direction: column;
 %ifdef XP_WIN
-  
-
-
+  /* The Window's Theme's spin buttons have a very narrow minimum width, so
+   * make it something reasonable:
+   */
   width: 16px;
 %endif
-  
-
-
-
-
-
-
-
+  /* If the spin-box has auto height, it ends up enlarging the default height
+   * of the control, so we limit it to 1em here. The height doesn't affect
+   * the rendering of the spinner-buttons; it's only for layout purposes.
+   *
+   * This is a temporary hack until we implement better positioning for the
+   * spin-box in vertical mode; it works OK at default size but less well
+   * if the font-size is made substantially larger or smaller. (Bug 1175074.)
+   */
   height: 1em;
   max-height: 1em;
   align-self: center;
@@ -975,17 +959,17 @@ input[type=number]::-moz-number-spin-box {
 input[type=number]::-moz-number-spin-up {
   writing-mode: horizontal-tb;
   -moz-appearance: spinner-upbutton;
-  display: block; 
+  display: block; /* bug 926670 */
   flex-grow: 1;
   cursor: default;
-  
+  /* Style for when native theming is off: */
   background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="6" height="5"><path d="M1,4 L3,0 5,4" fill="dimgrey"/></svg>');
   background-repeat: no-repeat;
   background-position: center bottom;
   border: 1px solid darkgray;
   border-bottom: none;
-  
-
+  /* [JK] I think the border-*-*-radius properties here can remain physical,
+     as we probably don't want to turn the spinner sideways in vertical writing mode */
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
 }
@@ -993,10 +977,10 @@ input[type=number]::-moz-number-spin-up {
 input[type=number]::-moz-number-spin-down {
   writing-mode: horizontal-tb;
   -moz-appearance: spinner-downbutton;
-  display: block; 
+  display: block; /* bug 926670 */
   flex-grow: 1;
   cursor: default;
-  
+  /* Style for when native theming is off: */
   background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="6" height="5"><path d="M1,1 L3,5 5,1" fill="dimgrey"/></svg>');
   background-repeat: no-repeat;
   background-position: center top;
@@ -1007,7 +991,7 @@ input[type=number]::-moz-number-spin-down {
 }
 
 input[type="number"] > div > div > div:hover {
-  
+  /* Give some indication of hover state for the up/down buttons */
   background-color: lightblue;
 }
 

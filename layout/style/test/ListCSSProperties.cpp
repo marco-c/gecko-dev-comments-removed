@@ -1,17 +1,17 @@
+/* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
+/* build (from code) lists of all supported CSS properties */
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "mozilla/ArrayUtils.h"
 
-
-
+// Need an extra level of macro nesting to force expansion of method_
+// params before they get pasted.
 #define STRINGIFY_METHOD(method_) #method_
 
 struct PropertyInfo {
@@ -33,11 +33,11 @@ const PropertyInfo gLonghandProperties[] = {
 
 };
 
-
-
-
-
-
+/*
+ * These are the properties for which domName in the above list should
+ * be used.  They're in the same order as the above list, with some
+ * items skipped.
+ */
 const char* gLonghandPropertiesWithDOMProp[] = {
 
 #define CSS_PROP_LIST_EXCLUDE_INTERNAL
@@ -66,7 +66,7 @@ const PropertyInfo gShorthandProperties[] = {
 
 };
 
-
+/* see gLonghandPropertiesWithDOMProp */
 const char* gShorthandPropertiesWithDOMProp[] = {
 
 #define CSS_PROP_LIST_EXCLUDE_INTERNAL
@@ -84,28 +84,27 @@ const char* gShorthandPropertiesWithDOMProp[] = {
 #undef STRINGIFY_METHOD
 
 const char* gInaccessibleProperties[] = {
-    
-    
+    // Don't print the properties that aren't accepted by the parser, per
+    // CSSParserImpl::ParseProperty
     "-x-cols",
     "-x-lang",
     "-x-span",
     "-x-text-zoom",
     "-moz-context-properties",
     "-moz-control-character-visibility",
-    "-moz-default-appearance",
-    "-moz-list-reversed",  
-    "-moz-script-level",   
+    "-moz-list-reversed",  // parsed by UA sheets only
+    "-moz-script-level",   // parsed by UA sheets only
     "-moz-script-size-multiplier",
     "-moz-script-min-size",
     "-moz-math-variant",
-    "-moz-math-display",                     
-    "-moz-top-layer",                        
-    "-moz-min-font-size-ratio",              
-    "-moz-font-smoothing-background-color",  
-    "-moz-window-opacity",                   
-    "-moz-window-transform",                 
-    "-moz-window-transform-origin",          
-    "-moz-window-shadow",                    
+    "-moz-math-display",                     // parsed by UA sheets only
+    "-moz-top-layer",                        // parsed by UA sheets only
+    "-moz-min-font-size-ratio",              // parsed by UA sheets only
+    "-moz-font-smoothing-background-color",  // chrome-only internal properties
+    "-moz-window-opacity",                   // chrome-only internal properties
+    "-moz-window-transform",                 // chrome-only internal properties
+    "-moz-window-transform-origin",          // chrome-only internal properties
+    "-moz-window-shadow",                    // chrome-only internal properties
 };
 
 inline int is_inaccessible(const char* aPropName) {
@@ -121,14 +120,14 @@ void print_array(const char* aName, const PropertyInfo* aProps,
   printf("var %s = [\n", aName);
 
   int first = 1;
-  unsigned j = 0;  
+  unsigned j = 0;  // index into DOM prop list
   for (unsigned i = 0; i < aPropsLength; ++i) {
     const PropertyInfo* p = aProps + i;
 
     if (is_inaccessible(p->propName))
-      
-      
-      
+      // inaccessible properties never have DOM props, so don't
+      // worry about incrementing j.  The assertion below will
+      // catch if they do.
       continue;
 
     if (first)
@@ -144,7 +143,7 @@ void print_array(const char* aName, const PropertyInfo* aProps,
       if (strncmp(p->domName, "Moz", 3) == 0)
         printf("\"%s\"", p->domName);
       else
-        
+        // lowercase the first letter
         printf("\"%c%s\"", p->domName[0] + 32, p->domName + 1);
     }
     if (p->pref[0]) {
