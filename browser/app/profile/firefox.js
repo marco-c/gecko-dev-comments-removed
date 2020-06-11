@@ -205,6 +205,10 @@ pref("browser.fixup.domainsuffixwhitelist.internal", true);
 
 pref("browser.fixup.domainsuffixwhitelist.local", true);
 
+
+
+pref("browser.fixup.dns_first_for_single_words", false);
+
 #ifdef UNIX_BUT_NOT_MAC
   pref("general.autoScroll", false);
 #else
