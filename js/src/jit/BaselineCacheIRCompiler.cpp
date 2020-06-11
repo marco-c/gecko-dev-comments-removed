@@ -441,6 +441,12 @@ bool BaselineCacheIRCompiler::emitLoadFixedSlotResult(ObjOperandId objId,
   return true;
 }
 
+bool BaselineCacheIRCompiler::emitLoadFixedSlotTypedResult(
+    ObjOperandId objId, uint32_t offsetOffset, ValueType) {
+  
+  return emitLoadFixedSlotResult(objId, offsetOffset);
+}
+
 bool BaselineCacheIRCompiler::emitLoadDynamicSlotResult(ObjOperandId objId,
                                                         uint32_t offsetOffset) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
@@ -1497,7 +1503,6 @@ bool BaselineCacheIRCompiler::emitStringFromCharCodeResult(
   Register code = allocator.useRegister(masm, codeId);
 
   allocator.discardStack(masm);
-
 
   
   
