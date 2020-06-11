@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/layers/APZChild.h"
 #include "mozilla/layers/GeckoContentController.h"
@@ -10,7 +10,7 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 
-#include "InputData.h"  // for InputData
+#include "InputData.h"  
 
 namespace mozilla {
 namespace layers {
@@ -42,14 +42,16 @@ mozilla::ipc::IPCResult APZChild::RecvRequestContentRepaint(
 }
 
 mozilla::ipc::IPCResult APZChild::RecvUpdateOverscrollVelocity(
-    const float& aX, const float& aY, const bool& aIsRootContent) {
-  mController->UpdateOverscrollVelocity(aX, aY, aIsRootContent);
+    const ScrollableLayerGuid& aGuid, const float& aX, const float& aY,
+    const bool& aIsRootContent) {
+  mController->UpdateOverscrollVelocity(aGuid, aX, aY, aIsRootContent);
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult APZChild::RecvUpdateOverscrollOffset(
-    const float& aX, const float& aY, const bool& aIsRootContent) {
-  mController->UpdateOverscrollOffset(aX, aY, aIsRootContent);
+    const ScrollableLayerGuid& aGuid, const float& aX, const float& aY,
+    const bool& aIsRootContent) {
+  mController->UpdateOverscrollOffset(aGuid, aX, aY, aIsRootContent);
   return IPC_OK();
 }
 
@@ -94,10 +96,10 @@ mozilla::ipc::IPCResult APZChild::RecvNotifyAsyncAutoscrollRejected(
 }
 
 mozilla::ipc::IPCResult APZChild::RecvDestroy() {
-  // mController->Destroy will be called in the destructor
+  
   PAPZChild::Send__delete__(this);
   return IPC_OK();
 }
 
-}  // namespace layers
-}  // namespace mozilla
+}  
+}  
