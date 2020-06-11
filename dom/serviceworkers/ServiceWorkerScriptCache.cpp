@@ -663,6 +663,8 @@ nsresult CompareNetwork::Initialize(nsIPrincipal* aPrincipal,
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
       mozilla::net::CookieJarSettings::Create();
 
+  net::CookieJarSettings::Cast(cookieJarSettings)->SetPartitionKey(uri);
+
   
   
   
