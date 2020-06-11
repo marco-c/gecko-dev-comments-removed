@@ -78,7 +78,23 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
   },
 
   _getTitle() {
-    return this._browser.contentTitle || this._getZombieTabTitle();
+    
+    if (this._browser.contentTitle) {
+      return this._browser.contentTitle;
+    }
+
+    
+    
+    
+    if (this._tabbrowser) {
+      const tab = this._tabbrowser.getTabForBrowser(this._browser);
+      if (tab) {
+        return tab.label;
+      }
+    }
+
+    
+    return null;
   },
 
   _getUrl() {
@@ -146,8 +162,7 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
           onDestroy
         );
 
-        const form = this._createTargetForm(connectForm);
-        resolve(form);
+        resolve(connectForm);
       } catch (e) {
         reject({
           error: "tabDestroyed",
@@ -197,34 +212,6 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
     const tabbrowser = this._tabbrowser;
     const tab = tabbrowser ? tabbrowser.getTabForBrowser(this._browser) : null;
     return tab?.hasAttribute && tab.hasAttribute("pending");
-  },
-
-  
-
-
-
-  _getZombieTabTitle() {
-    
-    
-    
-    if (this._tabbrowser) {
-      const tab = this._tabbrowser.getTabForBrowser(this._browser);
-      if (tab) {
-        return tab.label;
-      }
-    }
-
-    return null;
-  },
-
-  _createTargetForm(connectedForm) {
-    const form = Object.assign({}, connectedForm);
-    
-    if (this._isZombieTab()) {
-      form.title = this._getZombieTabTitle() || form.title;
-    }
-
-    return form;
   },
 
   destroy() {
