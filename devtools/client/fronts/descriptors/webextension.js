@@ -32,15 +32,64 @@ class WebExtensionDescriptorFront extends FrontClassWithSpec(
     
     this._form = json;
     this.traits = json.traits || {};
+  }
 
-    
-    
-    for (const name in json) {
-      if (name == "actor") {
-        continue;
-      }
-      this[name] = json[name];
-    }
+  get debuggable() {
+    return this._form.debuggable;
+  }
+
+  get hidden() {
+    return this._form.hidden;
+  }
+
+  get iconDataURL() {
+    return this._form.iconDataURL;
+  }
+
+  get iconURL() {
+    return this._form.iconURL;
+  }
+
+  get id() {
+    return this._form.id;
+  }
+
+  
+  get isAPIExtension() {
+    return this._form.isAPIExtension;
+  }
+
+  get isSystem() {
+    return this._form.isSystem;
+  }
+
+  get isWebExtension() {
+    return this._form.isWebExtension;
+  }
+
+  get manifestURL() {
+    return this._form.manifestURL;
+  }
+
+  get name() {
+    return this._form.name;
+  }
+
+  get temporarilyInstalled() {
+    return this._form.temporarilyInstalled;
+  }
+
+  
+  get type() {
+    return this._form.type;
+  }
+
+  get url() {
+    return this._form.url;
+  }
+
+  get warnings() {
+    return this._form.warnings;
   }
 
   
