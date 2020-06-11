@@ -180,8 +180,8 @@ class nsFocusManager final : public nsIFocusManager,
     eIncludeVisibleDescendants,
   };
   static mozilla::dom::Element* GetFocusedDescendant(
-      nsPIDOMWindowOuter* aWindow, bool* aFocusIsOutOfProcess,
-      SearchRange aSearchRange, nsPIDOMWindowOuter** aFocusedWindow);
+      nsPIDOMWindowOuter* aWindow, SearchRange aSearchRange,
+      bool* aFocusIsOutOfProcess, nsPIDOMWindowOuter** aFocusedWindow);
   static mozilla::dom::Element* GetFocusedDescendant(
       nsPIDOMWindowOuter* aWindow, SearchRange aSearchRange,
       nsPIDOMWindowOuter** aFocusedWindow);
