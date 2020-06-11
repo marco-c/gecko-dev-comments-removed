@@ -3,7 +3,4 @@
 
 
 
-user_pref("network.cookie.sameSite.laxByDefault", false);
-
-
 user_pref("browser.tabs.remote.autostart", true);
