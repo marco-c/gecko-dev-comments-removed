@@ -2256,9 +2256,7 @@ nsresult nsFrameSelection::TableSelection::HandleSelection(
     return NS_OK;
   }
 
-  nsresult result = NS_OK;
-
-  nsIContent* childContent =
+  RefPtr<nsIContent> childContent =
       aParentContent->GetChildAt_Deprecated(aContentOffset);
 
   
@@ -2270,14 +2268,27 @@ nsresult nsFrameSelection::TableSelection::HandleSelection(
   
   SelectionBatcher selectionBatcher(&aNormalSelection);
 
-  int32_t startRowIndex, startColIndex, curRowIndex, curColIndex;
   if (aDragState && mDragSelectingCells) {
+    return HandleDragSelecting(aTarget, childContent, aMouseEvent,
+                               aNormalSelection);
+  }
+
+  return HandleMouseUpOrDown(aTarget, aDragState, childContent, aParentContent,
+                             aContentOffset, aMouseEvent, aNormalSelection);
+}
+
+nsresult nsFrameSelection::TableSelection::HandleDragSelecting(
+    TableSelectionMode aTarget, nsIContent* childContent,
+    const WidgetMouseEvent* aMouseEvent, Selection& aNormalSelection) {
+  nsresult result = NS_OK;
+
+  int32_t startRowIndex, startColIndex, curRowIndex, curColIndex;
+  
+  if (aTarget != TableSelectionMode::Table) {
     
-    if (aTarget != TableSelectionMode::Table) {
-      
-      if (mEndSelectedCell == childContent) {
-        return NS_OK;
-      }
+    if (mEndSelectedCell == childContent) {
+      return NS_OK;
+    }
 
 #ifdef DEBUG_TABLE_SELECTION
       printf(
@@ -2364,12 +2375,18 @@ nsresult nsFrameSelection::TableSelection::HandleSelection(
         return SelectBlockOfCells(mStartSelectedCell, childContent,
                                   aNormalSelection);
       }
-    }
+  }
     
     return NS_OK;
-  } else {
-    
-    if (aDragState) {
+}
+
+nsresult nsFrameSelection::TableSelection::HandleMouseUpOrDown(
+    TableSelectionMode aTarget, bool aDragState, nsIContent* childContent,
+    nsINode* aParentContent, int32_t aContentOffset,
+    const WidgetMouseEvent* aMouseEvent, Selection& aNormalSelection) {
+  nsresult result = NS_OK;
+  
+  if (aDragState) {
 #ifdef DEBUG_TABLE_SELECTION
       printf("HandleTableSelection: Mouse down event\n");
 #endif
@@ -2457,7 +2474,7 @@ nsresult nsFrameSelection::TableSelection::HandleSelection(
 
         return SelectRowOrColumn(childContent, aNormalSelection);
       }
-    } else {
+  } else {
 #ifdef DEBUG_TABLE_SELECTION
       printf(
           "HandleTableSelection: Mouse UP event. "
@@ -2582,7 +2599,6 @@ nsresult nsFrameSelection::TableSelection::HandleSelection(
         }
         mUnselectCellOnMouseUp = nullptr;
       }
-    }
   }
   return result;
 }
