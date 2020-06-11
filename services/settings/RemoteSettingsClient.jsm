@@ -581,7 +581,7 @@ class RemoteSettingsClient extends EventEmitter {
           
           try {
             console.warn(
-              `Signature verified failed for ${this.identifier}. Retry from scratch`
+              `${this.identifier} Signature verified failed. Retry from scratch`
             );
             syncResult = await this._importChanges(
               localRecords,
@@ -889,6 +889,7 @@ class RemoteSettingsClient extends EventEmitter {
         
         
         let localTrustworthy = false;
+        console.debug(`${this.identifier} verify data before sync`);
         try {
           await this._validateCollectionSignature(
             localRecords,
@@ -901,6 +902,7 @@ class RemoteSettingsClient extends EventEmitter {
             
             throw sigerr;
           }
+          console.debug(`${this.identifier} previous data was invalid`);
         }
 
         
@@ -912,21 +914,22 @@ class RemoteSettingsClient extends EventEmitter {
           
           console.error(`${this.identifier} local data was corrupted`);
           throw new CorruptedDataError(this.identifier);
-        } else if (localTrustworthy) {
+        } else if (retry) {
           
           
-          
-          
-          await this.db.importBulk(localRecords);
-          await this.db.saveLastModified(localTimestamp);
-          await this.db.saveMetadata(localMetadata);
-        } else {
-          
-          
-          
-          await this._importJSONDump();
+          if (localTrustworthy) {
+            
+            console.debug(
+              `${this.identifier} Restore previous data (timestamp=${localTimestamp})`
+            );
+            await this.db.importBulk(localRecords);
+            await this.db.saveLastModified(localTimestamp);
+            await this.db.saveMetadata(localMetadata);
+          } else {
+            
+            await this._importJSONDump();
+          }
         }
-
         throw e;
       }
     } else {

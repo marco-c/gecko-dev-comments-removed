@@ -6,6 +6,9 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { RemoteSettings } = ChromeUtils.import(
   "resource://services-settings/remote-settings.js"
 );
+const { RemoteSettingsClient } = ChromeUtils.import(
+  "resource://services-settings/RemoteSettingsClient.jsm"
+);
 const { UptakeTelemetry } = ChromeUtils.import(
   "resource://services-common/uptake-telemetry.js"
 );
@@ -652,7 +655,7 @@ add_task(async function test_check_synchronization_with_signatures() {
   
 
   const RESPONSE_ONLY_RECORD4_BAD_SIG = {
-    comment: "Delete RECORD3, create RECORD4",
+    comment: "Create RECORD4",
     sampleHeaders: [
       "Content-Type: application/json; charset=UTF-8",
       'ETag: "6000"',
@@ -674,9 +677,22 @@ add_task(async function test_check_synchronization_with_signatures() {
       ],
     }),
   };
+  const RESPONSE_EMPTY_NO_UPDATE_BAD_SIG_6000 = {
+    ...RESPONSE_EMPTY_NO_UPDATE,
+    responseBody: JSON.stringify({
+      timestamp: 6000,
+      metadata: {
+        signature: {
+          x5u,
+          signature: "aW52YWxpZCBzaWduYXR1cmUK",
+        },
+      },
+      changes: [],
+    }),
+  };
   const allBadSigResponses = {
     "GET:/v1/buckets/main/collections/signed/changeset?_expected=6000&_since=%224000%22": [
-      RESPONSE_EMPTY_NO_UPDATE_BAD_SIG,
+      RESPONSE_EMPTY_NO_UPDATE_BAD_SIG_6000,
     ],
     "GET:/v1/buckets/main/collections/signed/changeset?_expected=6000": [
       RESPONSE_ONLY_RECORD4_BAD_SIG,
@@ -685,12 +701,11 @@ add_task(async function test_check_synchronization_with_signatures() {
 
   startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
   registerHandlers(allBadSigResponses);
-  try {
-    await client.maybeSync(6000);
-    do_throw("Sync should fail (the signature is intentionally bad)");
-  } catch (e) {
-    ok(true, "Sync failed as expected (bad signature after retry)");
-  }
+  await Assert.rejects(
+    client.maybeSync(6000),
+    RemoteSettingsClient.InvalidSignatureError,
+    "Sync failed as expected (bad signature after retry)"
+  );
 
   
   endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
@@ -722,12 +737,81 @@ add_task(async function test_check_synchronization_with_signatures() {
     tampered: true,
   });
 
-  try {
-    await client.maybeSync(6000);
-    do_throw("Sync should fail (the signature is intentionally bad)");
-  } catch (e) {
-    ok(true, "Sync failed as expected (bad signature after retry)");
-  }
+  await Assert.rejects(
+    client.maybeSync(6000),
+    RemoteSettingsClient.InvalidSignatureError,
+    "Sync failed as expected (bad signature after retry)"
+  );
+
   
   equal((await client.get()).length, 0, "Local database is now empty.");
+
+  
+  
+  
+  
+  
+  
+
+  await client.db.create({
+    id: "c6b19c67-2e0e-4a82-b7f7-1777b05f3e81",
+    last_modified: 42,
+    tampered: true,
+  });
+
+  await Assert.rejects(
+    client.maybeSync(6000),
+    RemoteSettingsClient.InvalidSignatureError,
+    "Sync failed as expected (bad signature after retry)"
+  );
+  
+  equal((await client.get()).length, 0, "Local database is now empty.");
+
+  
+  
+  
+  
+  
+  
+  const sigCalls = [];
+  let i = 0;
+  client._verifier = {
+    async asyncVerifyContentSignature(serialized, signature) {
+      sigCalls.push(serialized);
+      console.log(`verify call ${i}`);
+      return [
+        false, 
+        true, 
+        false, 
+        true, 
+      ][i++];
+    },
+  };
+  
+  await client.db.saveLastModified(4000);
+  await client.db.saveMetadata({ signature: { x5u, signature: "aa" } });
+  
+  
+  await client.db.create({
+    id: "extraId",
+    last_modified: 42,
+  });
+  equal((await client.get()).length, 1);
+
+  
+  
+  await Assert.rejects(
+    client.maybeSync(6000),
+    RemoteSettingsClient.InvalidSignatureError,
+    "Sync failed as expected (bad signature after retry)"
+  );
+  equal(i, 4, "sync has retried as expected");
+
+  
+  
+  
+  ok(/extraId/.test(sigCalls[0]), "extra record when importing changes");
+  ok(/extraId/.test(sigCalls[1]), "extra record when checking local");
+  ok(!/extraId/.test(sigCalls[2]), "db was flushed before retry");
+  ok(/extraId/.test(sigCalls[3]), "when checking local after retry");
 });
