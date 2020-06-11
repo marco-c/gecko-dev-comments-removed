@@ -254,6 +254,10 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:GetPerformanceCounter\n"
 
          
+         "race:Axis::UpdateWithTouchAtDevicePoint\n"
+         "race:AsyncPanZoomController::RequestContentRepaint\n"
+
+         
          
          "mutex:GLContextGLX::~GLContextGLX\n"
 
