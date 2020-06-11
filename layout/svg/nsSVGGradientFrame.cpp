@@ -568,25 +568,6 @@ already_AddRefed<gfxPattern> nsSVGRadialGradientFrame::CreateGradient() {
   fy = GetLengthValue(dom::SVGRadialGradientElement::ATTR_FY, cy);
   fr = GetLengthValue(dom::SVGRadialGradientElement::ATTR_FR);
 
-  if (fx != cx || fy != cy) {
-    
-    
-    
-    
-    
-    
-    
-    double dMax = std::max(0.0, r - 1.0 / 128);
-    double dx = fx - cx;
-    double dy = fy - cy;
-    double d = std::sqrt((dx * dx) + (dy * dy));
-    if (d > dMax) {
-      double angle = std::atan2(dy, dx);
-      fx = float(dMax * std::cos(angle)) + cx;
-      fy = float(dMax * std::sin(angle)) + cy;
-    }
-  }
-
   RefPtr<gfxPattern> pattern = new gfxPattern(fx, fy, fr, cx, cy, r);
   return pattern.forget();
 }
