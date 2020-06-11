@@ -90,8 +90,8 @@ class Rule {
   }
 
   destroy() {
-    if (this.unsubscribeSourceMap) {
-      this.unsubscribeSourceMap();
+    if (this._unsubscribeSourceMap) {
+      this._unsubscribeSourceMap();
     }
 
     
@@ -944,7 +944,10 @@ class Rule {
 
     if (url && !this.isSystem && this.domRule.type !== ELEMENT_STYLE) {
       
-      this.unsubscribeSourceMap = this.sourceMapURLService.subscribe(
+      if (this._unsubscribeSourceMap) {
+        this._unsubscribeSourceMap();
+      }
+      this._unsubscribeSourceMap = this.sourceMapURLService.subscribe(
         url,
         line,
         column,

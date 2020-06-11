@@ -376,7 +376,6 @@ SourceMapURLService.prototype._callOneCallback = async function(
 
 
 
-
 SourceMapURLService.prototype.subscribe = function(
   url,
   line,
@@ -384,7 +383,7 @@ SourceMapURLService.prototype.subscribe = function(
   callback
 ) {
   if (!this._subscriptions) {
-    return;
+    return () => {};
   }
 
   const key = JSON.stringify([url, line, column]);
@@ -406,7 +405,14 @@ SourceMapURLService.prototype.subscribe = function(
     this._callOneCallback(subscriptionEntry, callback);
   }
 
-  return () => this.unsubscribe(url, line, column, callback);
+  let unsubscribed = false;
+  return () => {
+    if (unsubscribed) {
+      return;
+    }
+    unsubscribed = true;
+    this._unsubscribe(url, line, column, callback);
+  };
 };
 
 
@@ -421,7 +427,7 @@ SourceMapURLService.prototype.subscribe = function(
 
 
 
-SourceMapURLService.prototype.unsubscribe = function(
+SourceMapURLService.prototype._unsubscribe = function(
   url,
   line,
   column,
