@@ -11,6 +11,117 @@ const STRINGBUNDLE_URL = "chrome://mozapps/locale/handling/handling.properties";
 
 
 
+
+const gContextsToDialogs = new WeakMap();
+
+
+
+
+const gBoundWPLMap = new WeakMap();
+
+class BoundProgresslistener {
+  constructor(browser) {
+    this.browsingContext = browser.browsingContext;
+    this._knownPrincipal = browser.contentPrincipal;
+  }
+
+  onLocationChange(webProgress, channel, uri, flags) {
+    if (
+      webProgress.isTopLevel &&
+      !(flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT)
+    ) {
+      
+      
+      let isPrivate = this.browsingContext.usePrivateBrowsing;
+      if (!uri || !this._knownPrincipal.isSameOrigin(uri, isPrivate)) {
+        gChooserTracker.unregisterContext(this.browsingContext);
+      }
+    }
+  }
+}
+
+const gChooserTracker = {
+  getDialogFor(browsingContext) {
+    return gContextsToDialogs.get(browsingContext);
+  },
+
+  observe(aSubject, aTopic, aData) {
+    if (
+      aTopic == "dom-window-destroyed" &&
+      aSubject.document.URL == CONTENT_HANDLING_URL
+    ) {
+      let browsingContext = aSubject.arguments[10];
+      this.unregisterContext(browsingContext?.top);
+    }
+
+    if (aTopic == "browsing-context-discarded") {
+      let browsingContext = aSubject;
+      
+      if (browsingContext && browsingContext == browsingContext.top) {
+        this.unregisterContext(browsingContext);
+      }
+    }
+  },
+
+  newDialogForContext(browsingContext, dialog) {
+    if (!browsingContext) {
+      return;
+    }
+    gContextsToDialogs.set(browsingContext, dialog);
+    
+    if (!this._haveObserver) {
+      Services.obs.addObserver(this, "dom-window-destroyed", true);
+      Services.obs.addObserver(this, "browsing-context-discarded", true);
+      this._haveObserver = true;
+    }
+    
+    let browser = browsingContext.embedderElement;
+    if (!browser) {
+      return;
+    }
+
+    let listener = new BoundProgresslistener(browser);
+    
+    
+    let filter = Cc[
+      "@mozilla.org/appshell/component/browser-status-filter;1"
+    ].createInstance(Ci.nsIWebProgress);
+    filter.addProgressListener(listener, Ci.nsIWebProgress.NOTIFY_LOCATION);
+    gBoundWPLMap.set(browsingContext, filter);
+    browser.addProgressListener(filter, Ci.nsIWebProgress.NOTIFY_LOCATION);
+  },
+
+  unregisterContext(browsingContext) {
+    if (!browsingContext) {
+      return;
+    }
+    let dialog = gContextsToDialogs.get(browsingContext);
+    if (!dialog) {
+      return;
+    }
+    if (!dialog.closed) {
+      dialog.close();
+    }
+
+    
+    
+    let browser = browsingContext.embedderElement;
+    if (browser) {
+      browser.removeProgressListener(gBoundWPLMap.get(browsingContext));
+    }
+
+    gContextsToDialogs.delete(browsingContext);
+    gBoundWPLMap.delete(browsingContext);
+  },
+
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIObserver,
+    Ci.nsISupportsWeakReference,
+  ]),
+};
+
+
+
 function nsContentDispatchChooser() {}
 
 nsContentDispatchChooser.prototype = {
@@ -20,6 +131,17 @@ nsContentDispatchChooser.prototype = {
 
   ask: function ask(aHandler, aURI, aPrincipal, aBrowsingContext, aReason) {
     let window = aBrowsingContext?.top?.embedderElement?.ownerGlobal || null;
+
+    if (aBrowsingContext) {
+      const topBC = aBrowsingContext.top;
+      
+      
+      let existingDialog = gChooserTracker.getDialogFor(topBC);
+      if (existingDialog) {
+        existingDialog.focus();
+        return;
+      }
+    }
 
     var bundle = Services.strings.createBundle(STRINGBUNDLE_URL);
 
@@ -49,15 +171,17 @@ nsContentDispatchChooser.prototype = {
     }
     params.appendElement(aHandler);
     params.appendElement(aURI);
+    params.appendElement(aPrincipal);
     params.appendElement(aBrowsingContext);
 
-    Services.ww.openWindow(
+    let dialog = Services.ww.openWindow(
       window,
       CONTENT_HANDLING_URL,
       null,
       "chrome,dialog=yes,resizable,centerscreen",
       params
     );
+    gChooserTracker.newDialogForContext(aBrowsingContext?.top, dialog);
   },
 
   
