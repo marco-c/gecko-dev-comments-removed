@@ -96,10 +96,6 @@ static MOZ_ALWAYS_INLINE bool LooseEqualityOp(JSContext* cx,
 
 bool js::BoxNonStrictThis(JSContext* cx, HandleValue thisv,
                           MutableHandleValue vp) {
-  
-
-
-
   MOZ_ASSERT(!thisv.isMagic());
 
   if (thisv.isNullOrUndefined()) {
