@@ -350,8 +350,7 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(RemoteWorkerData&& aData) {
       aData.hasStorageAccessPermissionGranted();
   info.mOriginAttributes =
       BasePrincipal::Cast(principal)->OriginAttributesRef();
-  net::CookieJarSettings::Deserialize(aData.cookieJarSettings(),
-                                      getter_AddRefs(info.mCookieJarSettings));
+  info.mCookieJarSettings = net::CookieJarSettings::Create();
 
   
   
