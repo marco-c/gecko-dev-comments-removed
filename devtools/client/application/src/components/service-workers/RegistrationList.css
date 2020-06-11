@@ -20,6 +20,8 @@
   width: calc(var(--base-unit) * 4);
   height: calc(var(--base-unit) * 4);
   content: "";
+  -moz-context-properties: fill;
+  fill: currentColor;
   background-image: url(chrome://browser/skin/developer.svg);
   
 
