@@ -5,7 +5,7 @@
 #ifndef DOM_MEDIA_MEDIACONTROL_CONTENTMEDIACONTROLLER_H_
 #define DOM_MEDIA_MEDIACONTROL_CONTENTMEDIACONTROLLER_H_
 
-#include "MediaControlKeysEvent.h"
+#include "MediaControlKeySource.h"
 #include "MediaStatusManager.h"
 
 namespace mozilla {
@@ -21,16 +21,15 @@ class BrowsingContext;
 
 
 
-
-class ContentControlKeyEventReceiver {
+class ContentMediaControlKeyReceiver {
  public:
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
   
-  static ContentControlKeyEventReceiver* Get(BrowsingContext* aBC);
+  static ContentMediaControlKeyReceiver* Get(BrowsingContext* aBC);
 
   
-  virtual void HandleEvent(MediaControlKeysEvent aKeyEvent) = 0;
+  virtual void HandleMediaKey(MediaControlKey aKey) = 0;
 };
 
 
@@ -73,8 +72,8 @@ class ContentMediaAgent : public IMediaInfoUpdater {
 
   
   
-  virtual void AddReceiver(ContentControlKeyEventReceiver* aReceiver) = 0;
-  virtual void RemoveReceiver(ContentControlKeyEventReceiver* aReceiver) = 0;
+  virtual void AddReceiver(ContentMediaControlKeyReceiver* aReceiver) = 0;
+  virtual void RemoveReceiver(ContentMediaControlKeyReceiver* aReceiver) = 0;
 };
 
 
@@ -95,22 +94,22 @@ class ContentMediaAgent : public IMediaInfoUpdater {
 
 
 class ContentMediaController final : public ContentMediaAgent,
-                                     public ContentControlKeyEventReceiver {
+                                     public ContentMediaControlKeyReceiver {
  public:
   NS_INLINE_DECL_REFCOUNTING(ContentMediaController, override)
 
   explicit ContentMediaController(uint64_t aId);
   
-  void AddReceiver(ContentControlKeyEventReceiver* aListener) override;
-  void RemoveReceiver(ContentControlKeyEventReceiver* aListener) override;
+  void AddReceiver(ContentMediaControlKeyReceiver* aListener) override;
+  void RemoveReceiver(ContentMediaControlKeyReceiver* aListener) override;
 
   
-  void HandleEvent(MediaControlKeysEvent aEvent) override;
+  void HandleMediaKey(MediaControlKey aKey) override;
 
  private:
   ~ContentMediaController() = default;
 
-  nsTArray<RefPtr<ContentControlKeyEventReceiver>> mReceivers;
+  nsTArray<RefPtr<ContentMediaControlKeyReceiver>> mReceivers;
   uint64_t mTopLevelBrowsingContextId;
 };
 

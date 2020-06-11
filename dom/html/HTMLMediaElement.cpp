@@ -388,12 +388,12 @@ class nsSourceErrorEventRunner : public nsMediaEvent {
 
 
 
-class HTMLMediaElement::MediaControlEventListener final
-    : public ContentControlKeyEventReceiver {
+class HTMLMediaElement::MediaControlKeyListener final
+    : public ContentMediaControlKeyReceiver {
  public:
-  NS_INLINE_DECL_REFCOUNTING(MediaControlEventListener, override)
+  NS_INLINE_DECL_REFCOUNTING(MediaControlKeyListener, override)
 
-  MOZ_INIT_OUTSIDE_CTOR explicit MediaControlEventListener(
+  MOZ_INIT_OUTSIDE_CTOR explicit MediaControlKeyListener(
       HTMLMediaElement* aElement)
       : mElement(aElement) {
     MOZ_ASSERT(NS_IsMainThread());
@@ -495,14 +495,14 @@ class HTMLMediaElement::MediaControlEventListener final
                                                mIsPictureInPictureEnabled);
   }
 
-  void HandleEvent(MediaControlKeysEvent aEvent) override {
+  void HandleMediaKey(MediaControlKey aKey) override {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(IsStarted());
-    MEDIACONTROL_LOG("HandleEvent '%s'", ToMediaControlKeysEventStr(aEvent));
-    if (aEvent == MediaControlKeysEvent::ePlay && Owner()->Paused()) {
+    MEDIACONTROL_LOG("HandleEvent '%s'", ToMediaControlKeyStr(aKey));
+    if (aKey == MediaControlKey::Play && Owner()->Paused()) {
       Owner()->Play();
-    } else if ((aEvent == MediaControlKeysEvent::ePause ||
-                aEvent == MediaControlKeysEvent::eStop) &&
+    } else if ((aKey == MediaControlKey::Pause ||
+                aKey == MediaControlKey::Stop) &&
                !Owner()->Paused()) {
       Owner()->Pause();
     }
@@ -539,7 +539,7 @@ class HTMLMediaElement::MediaControlEventListener final
   }
 
  private:
-  ~MediaControlEventListener() = default;
+  ~MediaControlKeyListener() = default;
 
   
   
@@ -1952,9 +1952,9 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLMediaElement,
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPendingPlayPromises)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSeekDOMPromise)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSetMediaKeysDOMPromise)
-  if (tmp->mMediaControlEventListener) {
-    tmp->StopListeningMediaControlEventIfNeeded();
-    tmp->mMediaControlEventListener = nullptr;
+  if (tmp->mMediaControlKeyListener) {
+    tmp->StopListeningMediaControlKeyIfNeeded();
+    tmp->mMediaControlKeyListener = nullptr;
   }
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -4194,8 +4194,8 @@ HTMLMediaElement::~HTMLMediaElement() {
     mResumeDelayedPlaybackAgent = nullptr;
   }
 
-  StopListeningMediaControlEventIfNeeded();
-  mMediaControlEventListener = nullptr;
+  StopListeningMediaControlKeyIfNeeded();
+  mMediaControlKeyListener = nullptr;
 
   WakeLockRelease();
   ReportPlayedTimeAfterBlockedTelemetry();
@@ -4395,7 +4395,7 @@ void HTMLMediaElement::PlayInternal(bool aHandlingUserInput) {
   UpdatePreloadAction();
   UpdateSrcMediaStreamPlaying();
 
-  StartListeningMediaControlEventIfNeeded();
+  StartListeningMediaControlKeyIfNeeded();
 
   
   
@@ -4690,8 +4690,8 @@ nsresult HTMLMediaElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   }
 
   NotifyDecoderActivityChanges();
-  if (mMediaControlEventListener) {
-    mMediaControlEventListener->UpdateOwnerBrowsingContextIfNeeded();
+  if (mMediaControlKeyListener) {
+    mMediaControlKeyListener->UpdateOwnerBrowsingContextIfNeeded();
   }
 
   return rv;
@@ -6136,7 +6136,7 @@ void HTMLMediaElement::CheckAutoplayDataReady() {
   UpdateSrcMediaStreamPlaying();
   UpdateAudioChannelPlayingState();
 
-  StartListeningMediaControlEventIfNeeded();
+  StartListeningMediaControlKeyIfNeeded();
 
   if (mDecoder) {
     SetPlayedOrSeeked(true);
@@ -6471,7 +6471,7 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aSuspendElement) {
     mEventDeliveryPaused = true;
     
     ClearResumeDelayedMediaPlaybackAgentIfNeeded();
-    StopListeningMediaControlEventIfNeeded();
+    StopListeningMediaControlKeyIfNeeded();
   } else {
     if (!mPaused) {
       mCurrentLoadPlayTime.Start();
@@ -6497,9 +6497,8 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aSuspendElement) {
     }
     
     
-    if (mMediaControlEventListener &&
-        !mMediaControlEventListener->IsStarted()) {
-      StartListeningMediaControlEventIfNeeded();
+    if (mMediaControlKeyListener && !mMediaControlKeyListener->IsStarted()) {
+      StartListeningMediaControlKeyIfNeeded();
     }
   }
   if (StaticPrefs::media_testing_only_events()) {
@@ -7348,8 +7347,8 @@ void HTMLMediaElement::NotifyAudioPlaybackChanged(
   if (mAudioChannelWrapper) {
     mAudioChannelWrapper->NotifyAudioPlaybackChanged(aReason);
   }
-  if (mMediaControlEventListener && mMediaControlEventListener->IsStarted()) {
-    mMediaControlEventListener->UpdateMediaAudibleState(IsAudible());
+  if (mMediaControlKeyListener && mMediaControlKeyListener->IsStarted()) {
+    mMediaControlKeyListener->UpdateMediaAudibleState(IsAudible());
   }
   
   UpdateWakeLock();
@@ -7789,17 +7788,17 @@ void HTMLMediaElement::ClearResumeDelayedMediaPlaybackAgentIfNeeded() {
 }
 
 void HTMLMediaElement::NotifyMediaControlPlaybackStateChanged() {
-  if (!mMediaControlEventListener || !mMediaControlEventListener->IsStarted()) {
+  if (!mMediaControlKeyListener || !mMediaControlKeyListener->IsStarted()) {
     return;
   }
   if (mPaused) {
-    mMediaControlEventListener->NotifyMediaStoppedPlaying();
+    mMediaControlKeyListener->NotifyMediaStoppedPlaying();
   } else {
-    mMediaControlEventListener->NotifyMediaStartedPlaying();
+    mMediaControlKeyListener->NotifyMediaStartedPlaying();
   }
 }
 
-void HTMLMediaElement::StartListeningMediaControlEventIfNeeded() {
+void HTMLMediaElement::StartListeningMediaControlKeyIfNeeded() {
   if (mPaused) {
     MEDIACONTROL_LOG("Not listening because media is paused");
     return;
@@ -7819,12 +7818,12 @@ void HTMLMediaElement::StartListeningMediaControlEventIfNeeded() {
   
   ClearStopMediaControlTimerIfNeeded();
 
-  if (!mMediaControlEventListener) {
-    mMediaControlEventListener = new MediaControlEventListener(this);
+  if (!mMediaControlKeyListener) {
+    mMediaControlKeyListener = new MediaControlKeyListener(this);
   }
 
-  if (mMediaControlEventListener->IsStarted() ||
-      !mMediaControlEventListener->Start()) {
+  if (mMediaControlKeyListener->IsStarted() ||
+      !mMediaControlKeyListener->Start()) {
     return;
   }
 
@@ -7837,17 +7836,17 @@ void HTMLMediaElement::StartListeningMediaControlEventIfNeeded() {
   
   
   
-  mMediaControlEventListener->UpdateMediaAudibleState(IsAudible());
+  mMediaControlKeyListener->UpdateMediaAudibleState(IsAudible());
 
   
   
-  mMediaControlEventListener->SetPictureInPictureModeEnabled(
+  mMediaControlKeyListener->SetPictureInPictureModeEnabled(
       IsBeingUsedInPictureInPictureMode());
 }
 
-void HTMLMediaElement::StopListeningMediaControlEventIfNeeded() {
-  if (mMediaControlEventListener && mMediaControlEventListener->IsStarted()) {
-    mMediaControlEventListener->Stop();
+void HTMLMediaElement::StopListeningMediaControlKeyIfNeeded() {
+  if (mMediaControlKeyListener && mMediaControlKeyListener->IsStarted()) {
+    mMediaControlKeyListener->Stop();
   }
 }
 
@@ -7858,7 +7857,7 @@ void HTMLMediaElement::StopMediaControlTimerCallback(nsITimer* aTimer,
   auto element = static_cast<HTMLMediaElement*>(aClosure);
   CONTROLLER_TIMER_LOG(element,
                        "Runnning stop media control timmer callback function");
-  element->StopListeningMediaControlEventIfNeeded();
+  element->StopListeningMediaControlKeyIfNeeded();
   element->mStopMediaControlTimer = nullptr;
 }
 
@@ -7866,8 +7865,8 @@ void HTMLMediaElement::CreateStopMediaControlTimerIfNeeded() {
   MOZ_ASSERT(NS_IsMainThread());
   
   
-  if (mStopMediaControlTimer || !mMediaControlEventListener ||
-      !mMediaControlEventListener->IsStarted()) {
+  if (mStopMediaControlTimer || !mMediaControlKeyListener ||
+      !mMediaControlKeyListener->IsStarted()) {
     return;
   }
 
@@ -7903,13 +7902,13 @@ void HTMLMediaElement::ClearStopMediaControlTimerIfNeeded() {
 
 void HTMLMediaElement::UpdateMediaControlAfterPictureInPictureModeChanged() {
   
-  if (!mMediaControlEventListener || !mMediaControlEventListener->IsStarted()) {
+  if (!mMediaControlKeyListener || !mMediaControlKeyListener->IsStarted()) {
     return;
   }
   if (IsBeingUsedInPictureInPictureMode()) {
-    mMediaControlEventListener->SetPictureInPictureModeEnabled(true);
+    mMediaControlKeyListener->SetPictureInPictureModeEnabled(true);
   } else {
-    mMediaControlEventListener->SetPictureInPictureModeEnabled(false);
+    mMediaControlKeyListener->SetPictureInPictureModeEnabled(false);
     CreateStopMediaControlTimerIfNeeded();
   }
 }

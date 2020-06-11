@@ -20,7 +20,6 @@ namespace mozilla {
 namespace dom {
 
 class BrowsingContext;
-enum class MediaControlKeysEvent : uint32_t;
 
 
 
@@ -116,18 +115,16 @@ class MediaController final : public DOMEventTargetHelper,
 
   
   
-  MediaEventSource<nsTArray<MediaControlKeysEvent>>&
-  SupportedKeysChangedEvent() {
+  MediaEventSource<nsTArray<MediaControlKey>>& SupportedKeysChangedEvent() {
     return mSupportedKeysChangedEvent;
   }
 
-  CopyableTArray<MediaControlKeysEvent> GetSupportedMediaKeys() const;
+  CopyableTArray<MediaControlKey> GetSupportedMediaKeys() const;
 
  private:
   ~MediaController();
   void HandleActualPlaybackStateChanged() override;
-  void UpdateMediaControlKeysEventToContentMediaIfNeeded(
-      MediaControlKeysEvent aEvent);
+  void UpdateMediaControlKeyToContentMediaIfNeeded(MediaControlKey aKey);
   void HandleSupportedMediaSessionActionsChanged(
       const nsTArray<MediaSessionAction>& aSupportedAction);
 
@@ -149,11 +146,10 @@ class MediaController final : public DOMEventTargetHelper,
   
   
   MediaEventListener mSupportedActionsChangedListener;
-  MediaEventProducer<nsTArray<MediaControlKeysEvent>>
-      mSupportedKeysChangedEvent;
+  MediaEventProducer<nsTArray<MediaControlKey>> mSupportedKeysChangedEvent;
   
   
-  CopyableTArray<MediaControlKeysEvent> mSupportedKeys;
+  CopyableTArray<MediaControlKey> mSupportedKeys;
 };
 
 }  

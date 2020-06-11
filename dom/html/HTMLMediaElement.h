@@ -21,7 +21,6 @@
 #include "mozilla/StateWatching.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/HTMLMediaElementBinding.h"
-#include "mozilla/dom/MediaControlKeysEvent.h"
 #include "mozilla/dom/MediaDebugInfoBinding.h"
 #include "mozilla/dom/MediaKeys.h"
 #include "mozilla/dom/TextTrackManager.h"
@@ -765,7 +764,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   class MediaStreamTrackListener;
   class FirstFrameListener;
   class ShutdownObserver;
-  class MediaControlEventListener;
+  class MediaControlKeyListener;
 
   MediaDecoderOwner::NextFrameStatus NextFrameStatus();
 
@@ -1936,9 +1935,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  void StartListeningMediaControlEventIfNeeded();
-  void StopListeningMediaControlEventIfNeeded();
-  RefPtr<MediaControlEventListener> mMediaControlEventListener;
+  void StartListeningMediaControlKeyIfNeeded();
+  void StopListeningMediaControlKeyIfNeeded();
+  RefPtr<MediaControlKeyListener> mMediaControlKeyListener;
 
   
   bool IsBeingUsedInPictureInPictureMode() const;

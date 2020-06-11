@@ -1,0 +1,88 @@
+
+
+
+
+#ifndef DOM_MEDIA_MEDIACONTROL_MEDIACONTROLKEYSOURCE_H_
+#define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLKEYSOURCE_H_
+
+#include "mozilla/dom/MediaControllerBinding.h"
+#include "mozilla/dom/MediaMetadata.h"
+#include "mozilla/dom/MediaSessionBinding.h"
+#include "nsISupportsImpl.h"
+#include "nsTArray.h"
+
+namespace mozilla {
+namespace dom {
+
+
+
+
+
+
+
+class MediaControlKeyListener {
+ public:
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+  MediaControlKeyListener() = default;
+
+  virtual void OnKeyPressed(MediaControlKey aKey) = 0;
+
+ protected:
+  virtual ~MediaControlKeyListener() = default;
+};
+
+
+
+
+
+class MediaControlKeyHandler final : public MediaControlKeyListener {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(MediaControlKeyHandler, override)
+  void OnKeyPressed(MediaControlKey aKey) override;
+
+ private:
+  virtual ~MediaControlKeyHandler() = default;
+};
+
+
+
+
+
+
+class MediaControlKeySource {
+ public:
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+  MediaControlKeySource();
+
+  using MediaKeysArray = nsTArray<MediaControlKey>;
+
+  virtual void AddListener(MediaControlKeyListener* aListener);
+  virtual void RemoveListener(MediaControlKeyListener* aListener);
+  size_t GetListenersNum() const;
+
+  
+  
+  virtual bool Open() = 0;
+  virtual void Close();
+  virtual bool IsOpened() const = 0;
+
+  virtual void SetPlaybackState(MediaSessionPlaybackState aState);
+  virtual MediaSessionPlaybackState GetPlaybackState() const;
+
+  
+  virtual void SetMediaMetadata(const MediaMetadataBase& aMetadata) {}
+
+  
+  
+  virtual void SetSupportedMediaKeys(const MediaKeysArray& aSupportedKeys) = 0;
+
+ protected:
+  virtual ~MediaControlKeySource() = default;
+  nsTArray<RefPtr<MediaControlKeyListener>> mListeners;
+  MediaSessionPlaybackState mPlaybackState;
+};
+
+}  
+}  
+
+#endif

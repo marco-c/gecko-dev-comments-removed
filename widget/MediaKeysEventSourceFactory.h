@@ -7,7 +7,7 @@
 
 namespace mozilla {
 namespace dom {
-class MediaControlKeysEventSource;
+class MediaControlKeySource;
 }  
 }  
 
@@ -16,8 +16,7 @@ namespace widget {
 
 
 
-extern mozilla::dom::MediaControlKeysEventSource*
-CreateMediaControlKeysEventSource();
+extern mozilla::dom::MediaControlKeySource* CreateMediaControlKeySource();
 
 }  
 }  

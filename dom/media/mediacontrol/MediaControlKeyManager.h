@@ -2,10 +2,10 @@
 
 
 
-#ifndef DOM_MEDIA_MEDIACONTROL_MEDIACONTROLKEYSMANAGER_H_
-#define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLKEYSMANAGER_H_
+#ifndef DOM_MEDIA_MEDIACONTROL_MEDIACONTROLKEYMANAGER_H_
+#define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLKEYMANAGER_H_
 
-#include "MediaControlKeysEvent.h"
+#include "MediaControlKeySource.h"
 #include "MediaEventSource.h"
 
 namespace mozilla {
@@ -19,12 +19,12 @@ namespace dom {
 
 
 
-class MediaControlKeysManager final : public MediaControlKeysEventSource,
-                                      public MediaControlKeysEventListener {
+class MediaControlKeyManager final : public MediaControlKeySource,
+                                     public MediaControlKeyListener {
  public:
-  NS_INLINE_DECL_REFCOUNTING(MediaControlKeysManager, override)
+  NS_INLINE_DECL_REFCOUNTING(MediaControlKeyManager, override)
 
-  MediaControlKeysManager() = default;
+  MediaControlKeyManager() = default;
 
   
   bool Open() override;
@@ -34,7 +34,7 @@ class MediaControlKeysManager final : public MediaControlKeysEventSource,
   MediaSessionPlaybackState GetPlaybackState() const override;
 
   
-  void OnKeyPressed(MediaControlKeysEvent aKeyEvent) override;
+  void OnKeyPressed(MediaControlKey aKey) override;
 
   
   
@@ -44,13 +44,13 @@ class MediaControlKeysManager final : public MediaControlKeysEventSource,
   void SetSupportedMediaKeys(const MediaKeysArray& aSupportedKeys) override;
 
  private:
-  ~MediaControlKeysManager();
+  ~MediaControlKeyManager();
   void StartMonitoringControlKeys();
   void StopMonitoringControlKeys();
-  RefPtr<MediaControlKeysEventSource> mEventSource;
+  RefPtr<MediaControlKeySource> mEventSource;
   MediaEventListener mControllerAmountChangedListener;
   MediaMetadataBase mMetadata;
-  nsTArray<MediaControlKeysEvent> mSupportedKeys;
+  nsTArray<MediaControlKey> mSupportedKeys;
 };
 
 }  
