@@ -209,7 +209,8 @@ class SessionHistoryListener extends Handler {
 
   OnHistoryNewEntry(newURI, oldIndex) {
     
-    this.collectFrom(oldIndex);
+    
+    this.collectFrom(oldIndex == -1 ? oldIndex : oldIndex - 1);
   }
 
   OnHistoryGotoIndex() {

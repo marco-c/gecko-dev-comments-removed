@@ -4549,6 +4549,17 @@ function FillHistoryMenu(aParent) {
 
     for (let j = end - 1; j >= start; j--) {
       let entry = sessionHistory.entries[j];
+      
+      
+      if (
+        BrowserUtils.navigationRequireUserInteraction &&
+        entry.hasUserInteraction === false &&
+        
+        j != end - 1 &&
+        j != start
+      ) {
+        continue;
+      }
       let uri = entry.url;
 
       let item =

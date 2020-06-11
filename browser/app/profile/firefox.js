@@ -1693,6 +1693,12 @@ pref("browser.tabs.crashReporting.requestEmail", false);
 pref("browser.tabs.crashReporting.emailMe", false);
 pref("browser.tabs.crashReporting.email", "");
 
+#ifdef NIGHTLY_BUILD
+pref("browser.navigation.requireUserInteraction", true);
+#else
+pref("browser.navigation.requireUserInteraction", false);
+#endif
+
 
 
 pref("extensions.experiments.enabled", false);
