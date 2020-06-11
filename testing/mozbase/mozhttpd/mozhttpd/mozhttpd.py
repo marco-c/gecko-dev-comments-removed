@@ -17,6 +17,7 @@ import os
 import re
 import moznetwork
 import time
+import traceback
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from six import iteritems
@@ -46,6 +47,9 @@ class EasyServer(ThreadingMixIn, HTTPServer):
             pass  
         else:
             logging.error(error)
+            
+            
+            traceback.print_exc()
 
 
 class Request(object):
