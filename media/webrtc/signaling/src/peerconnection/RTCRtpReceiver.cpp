@@ -180,10 +180,11 @@ static UniquePtr<dom::RTCStatsCollection> GetReceiverStats_s(
   
   uint32_t packetsSent;
   uint64_t bytesSent;
+  DOMHighResTimeStamp remoteTimestamp;
   Maybe<DOMHighResTimeStamp> timestamp =
       aPipeline->Conduit()->LastRtcpReceived();
-  if (timestamp.isSome() &&
-      aPipeline->Conduit()->GetRTCPSenderReport(&packetsSent, &bytesSent)) {
+  if (timestamp.isSome() && aPipeline->Conduit()->GetRTCPSenderReport(
+                                &packetsSent, &bytesSent, &remoteTimestamp)) {
     RTCRemoteOutboundRtpStreamStats s;
     remoteId = NS_LITERAL_STRING("inbound_rtcp_") + idstr;
     s.mTimestamp.Construct(*timestamp);
@@ -195,6 +196,7 @@ static UniquePtr<dom::RTCStatsCollection> GetReceiverStats_s(
     s.mLocalId.Construct(localId);
     s.mPacketsSent.Construct(packetsSent);
     s.mBytesSent.Construct(bytesSent);
+    s.mRemoteTimestamp.Construct(remoteTimestamp);
     if (!report->mRemoteOutboundRtpStreamStats.AppendElement(s, fallible)) {
       mozalloc_handle_oom(0);
     }
