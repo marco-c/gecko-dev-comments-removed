@@ -234,9 +234,7 @@ already_AddRefed<BroadcastChannel> BroadcastChannel::Constructor(
 
     storageAccess = workerPrivate->StorageAccess();
     storagePrincipalInfo = workerPrivate->GetEffectiveStoragePrincipalInfo();
-
-    
-    origin = workerPrivate->PartitionedOrigin();
+    origin = workerPrivate->StoragePrincipalOrigin();
 
     originNoSuffix = workerPrivate->GetLocationInfo().mOrigin;
 

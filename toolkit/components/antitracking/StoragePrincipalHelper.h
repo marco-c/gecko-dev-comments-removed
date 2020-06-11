@@ -195,6 +195,10 @@
 
 
 
+
+
+
+
 class nsIChannel;
 class nsILoadGroup;
 class nsIPrincipal;
@@ -214,6 +218,7 @@ class OriginAttributes;
 class StoragePrincipalHelper final {
  public:
   static nsresult Create(nsIChannel* aChannel, nsIPrincipal* aPrincipal,
+                         bool aForceIsolation,
                          nsIPrincipal** aStoragePrincipal);
 
   static nsresult PrepareEffectiveStoragePrincipalOriginAttributes(
