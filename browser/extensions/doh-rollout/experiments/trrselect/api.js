@@ -72,14 +72,22 @@ this.trrselect = class trrselect extends ExtensionAPI {
           },
 
           async run() {
+            
+            
+            if (!Services.prefs.getBoolPref(kCommitSelectionPref, false)) {
+              Services.prefs.clearUserPref(kRolloutURIPref);
+            }
+
             if (!Services.prefs.getBoolPref(kEnabledPref, false)) {
               return;
             }
 
+            
             if (Services.prefs.prefHasUserValue(kRolloutURIPref)) {
               return;
             }
 
+            
             await this.dryRun();
 
             
@@ -87,6 +95,7 @@ this.trrselect = class trrselect extends ExtensionAPI {
               return;
             }
 
+            
             Services.prefs.setCharPref(
               kRolloutURIPref,
               Services.prefs.getCharPref(kDryRunResultPref)
