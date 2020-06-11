@@ -688,10 +688,16 @@ var BrowserTestUtils = {
   waitForLocationChange(tabbrowser, url) {
     return new Promise((resolve, reject) => {
       let progressListener = {
-        onLocationChange(aBrowser) {
+        onLocationChange(
+          aBrowser,
+          aWebProgress,
+          aRequest,
+          aLocationURI,
+          aFlags
+        ) {
           if (
-            (url && aBrowser.currentURI.spec != url) ||
-            (!url && aBrowser.currentURI.spec == "about:blank")
+            (url && aLocationURI.spec != url) ||
+            (!url && aLocationURI.spec == "about:blank")
           ) {
             return;
           }
@@ -1491,7 +1497,17 @@ var BrowserTestUtils = {
 
 
 
-  synthesizeMouse(target, offsetX, offsetY, event, browsingContext) {
+
+
+
+  synthesizeMouse(
+    target,
+    offsetX,
+    offsetY,
+    event,
+    browsingContext,
+    handlingUserInput
+  ) {
     let targetFn = null;
     if (typeof target == "function") {
       targetFn = target.toString();
@@ -1507,6 +1523,7 @@ var BrowserTestUtils = {
       x: offsetX,
       y: offsetY,
       event,
+      handlingUserInput,
     });
   },
 
