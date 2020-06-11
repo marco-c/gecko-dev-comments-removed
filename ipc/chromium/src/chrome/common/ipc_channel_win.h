@@ -84,7 +84,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   Listener* listener_;
 
   
-  std::queue<Message*> output_queue_;
+  std::queue<mozilla::UniquePtr<Message>> output_queue_;
 
   
   

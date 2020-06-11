@@ -99,7 +99,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   Listener* listener_;
 
   
-  std::queue<Message*> output_queue_;
+  std::queue<mozilla::UniquePtr<Message>> output_queue_;
 
   
   char input_buf_[Channel::kReadBufferSize];
