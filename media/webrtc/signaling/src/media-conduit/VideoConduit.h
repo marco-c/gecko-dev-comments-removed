@@ -284,6 +284,8 @@ class WebrtcVideoConduit
                            DOMHighResTimeStamp* aRemoteTimestamp) override;
 
   void GetRtpSources(nsTArray<dom::RTCRtpSourceEntry>& outSources) override;
+  bool AddFrameHistory(dom::Sequence<dom::RTCVideoFrameHistoryInternal>*
+                           outHistories) const override;
 
   uint64_t MozVideoLatencyAvg();
 
@@ -667,6 +669,9 @@ class WebrtcVideoConduit
 
   
   RefPtr<RtpSourceObserver> mRtpSourceObserver;
+  
+  
+  dom::RTCVideoFrameHistoryInternal mReceivedFrameHistory;
 };
 }  
 

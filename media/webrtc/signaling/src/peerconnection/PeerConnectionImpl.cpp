@@ -2865,7 +2865,9 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
               if (!report->mRawLocalCandidates.AppendElements(
                       stats->mRawLocalCandidates, fallible) ||
                   !report->mRawRemoteCandidates.AppendElements(
-                      stats->mRawRemoteCandidates, fallible)) {
+                      stats->mRawRemoteCandidates, fallible) ||
+                  !report->mVideoFrameHistories.AppendElements(
+                      stats->mVideoFrameHistories, fallible)) {
                 
                 
                 
