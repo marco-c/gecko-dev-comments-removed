@@ -330,6 +330,7 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
 
   nsString mMimeType;
   const Encoding* mEncoding;
+  
   uint32_t mFlags;
   uint32_t mWrapColumn;
   ContextInfoDepth mContextInfoDepth;
