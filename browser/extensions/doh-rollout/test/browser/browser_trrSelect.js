@@ -10,22 +10,23 @@ add_task(async function testTRRSelect() {
     .getDefaultBranch("")
     .setCharPref(
       "network.trr.resolvers",
-      `[{"url": "https://dummytrr.com/query"}, {"url": "https://dummytrr2.com/query"}]`
+      `[{"url": "dummyTRR"}, {"url": "dummyTRR2"}]`
     );
   Services.prefs.setCharPref(
     "network.trr.resolvers",
-    `[{"url": "https://dummytrr.com/query"}, {"url": "https://dummytrr2.com/query"}, {"url": "https://dummytrr3.com/query"}]`
+    `[{"url": "dummyTRR"}, {"url": "dummyTRR2"}, {"url": "dummyTRR3"}]`
   );
 
   
   setPassingHeuristics();
-  let prefPromise = TestUtils.waitForPrefChange(prefs.DOH_SELF_ENABLED_PREF);
   Preferences.set(prefs.DOH_ENABLED_PREF, true);
-  await prefPromise;
+  await BrowserTestUtils.waitForCondition(() => {
+    return Preferences.get(prefs.DOH_SELF_ENABLED_PREF);
+  });
   is(Preferences.get(prefs.DOH_SELF_ENABLED_PREF), true, "Breadcrumb saved.");
   is(
     Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF),
-    "https://dummytrr.com/query",
+    "dummyTRR",
     "TRR selection complete."
   );
 
@@ -36,42 +37,14 @@ add_task(async function testTRRSelect() {
   
   Preferences.reset(prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF);
   Preferences.reset(prefs.DOH_TRR_SELECT_URI_PREF);
-
-  prefPromise = TestUtils.waitForPrefChange(prefs.DOH_TRR_SELECT_URI_PREF);
   await restartAddon();
-  await prefPromise;
+  await BrowserTestUtils.waitForCondition(() => {
+    return Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF);
+  });
   is(
     Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF),
-    "https://dummytrr.com/query",
+    "dummyTRR",
     "TRR selection complete."
-  );
-
-  
-  await ensureTRRMode(2);
-  await checkHeuristicsTelemetry("enable_doh", "startup");
-
-  
-  
-  Preferences.set(prefs.DOH_TRR_SELECT_COMMIT_PREF, false);
-  prefPromise = TestUtils.waitForPrefChange(prefs.DOH_TRR_SELECT_URI_PREF);
-  await restartAddon();
-  await prefPromise;
-  ok(
-    !Preferences.isSet(prefs.DOH_TRR_SELECT_URI_PREF),
-    "TRR selection cleared."
-  );
-  try {
-    await BrowserTestUtils.waitForCondition(() => {
-      return !Preferences.isSet(prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF);
-    });
-    ok(false, "Dry run result was cleared, fail!");
-  } catch (e) {
-    ok(true, "Dry run result was not cleared.");
-  }
-  is(
-    Preferences.get(prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF),
-    "https://dummytrr.com/query",
-    "dry-run result has the correct value."
   );
 
   
@@ -82,6 +55,7 @@ add_task(async function testTRRSelect() {
   
   Preferences.reset(prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF);
   Preferences.reset(prefs.DOH_TRR_SELECT_URI_PREF);
+  Preferences.set(prefs.DOH_TRR_SELECT_COMMIT_PREF, false);
   await restartAddon();
   try {
     await BrowserTestUtils.waitForCondition(() => {
@@ -93,7 +67,7 @@ add_task(async function testTRRSelect() {
   }
   is(
     Preferences.get(prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF),
-    "https://dummytrr.com/query",
+    "dummyTRR",
     "TRR selection complete, dry-run result recorded."
   );
   Preferences.set(prefs.DOH_TRR_SELECT_COMMIT_PREF, true);
@@ -105,16 +79,14 @@ add_task(async function testTRRSelect() {
   
   
   Preferences.reset(prefs.DOH_TRR_SELECT_URI_PREF);
-  Preferences.set(
-    prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF,
-    "https://dummytrr2.com/query"
-  );
-  prefPromise = TestUtils.waitForPrefChange(prefs.DOH_TRR_SELECT_URI_PREF);
+  Preferences.set(prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF, "dummyTRR2");
   await restartAddon();
-  await prefPromise;
+  await BrowserTestUtils.waitForCondition(() => {
+    return Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF);
+  });
   is(
     Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF),
-    "https://dummytrr2.com/query",
+    "dummyTRR2",
     "TRR selection complete, existing dry-run-result committed."
   );
 
@@ -125,16 +97,14 @@ add_task(async function testTRRSelect() {
   
   
   Preferences.reset(prefs.DOH_TRR_SELECT_URI_PREF);
-  Preferences.set(
-    prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF,
-    "https://dummytrr3.com/query"
-  );
-  prefPromise = TestUtils.waitForPrefChange(prefs.DOH_TRR_SELECT_URI_PREF);
+  Preferences.set(prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF, "dummyTRR3");
   await restartAddon();
-  await prefPromise;
+  await BrowserTestUtils.waitForCondition(() => {
+    return Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF);
+  });
   is(
     Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF),
-    "https://dummytrr.com/query",
+    "dummyTRR",
     "TRR selection complete, existing dry-run-result discarded and refreshed."
   );
 
