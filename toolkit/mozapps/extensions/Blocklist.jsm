@@ -1219,7 +1219,7 @@ this.ExtensionBlocklistRS = {
 
       
       if (state != Ci.nsIBlocklistService.STATE_SOFTBLOCKED) {
-        addon.softDisabled = false;
+        await addon.setSoftDisabled(false);
       }
 
       
@@ -1228,7 +1228,7 @@ this.ExtensionBlocklistRS = {
         state == Ci.nsIBlocklistService.STATE_SOFTBLOCKED &&
         oldState == Ci.nsIBlocklistService.STATE_BLOCKED
       ) {
-        addon.softDisabled = true;
+        await addon.setSoftDisabled(true);
       }
 
       if (
@@ -1243,7 +1243,7 @@ this.ExtensionBlocklistRS = {
           state == Ci.nsIBlocklistService.STATE_SOFTBLOCKED &&
           !addon.userDisabled
         ) {
-          addon.softDisabled = true;
+          await addon.setSoftDisabled(true);
         }
         
         let entry = this._getEntry(addon, this._entries);
@@ -1579,7 +1579,7 @@ this.ExtensionBlocklistMLBF = {
       
       
       if (state != Ci.nsIBlocklistService.STATE_SOFTBLOCKED) {
-        addon.softDisabled = false;
+        await addon.setSoftDisabled(false);
       }
     }
 
