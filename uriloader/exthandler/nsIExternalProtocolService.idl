@@ -8,6 +8,7 @@
 
 interface nsIURI;
 interface nsIFile;
+interface nsIPrincipal;
 interface nsIInterfaceRequestor;
 interface nsIHandlerInfo;
 
@@ -109,7 +110,11 @@ interface nsIExternalProtocolService : nsISupports
 
 
 
+
+
+
   void loadURI(in nsIURI aURI,
+               [optional] in nsIPrincipal aTriggeringPrincipal,
                [optional] in BrowsingContext aBrowsingContext);
 
   

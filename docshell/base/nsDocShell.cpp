@@ -11826,6 +11826,11 @@ nsresult nsDocShell::OnLinkClickSync(
     return NS_OK;
   }
 
+  
+  
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal =
+      aTriggeringPrincipal ? aTriggeringPrincipal : aContent->NodePrincipal();
+
   {
     
     nsCOMPtr<nsIExternalProtocolService> extProtService =
@@ -11841,16 +11846,12 @@ nsresult nsDocShell::OnLinkClickSync(
         nsresult rv =
             extProtService->IsExposedProtocol(scheme.get(), &isExposed);
         if (NS_SUCCEEDED(rv) && !isExposed) {
-          return extProtService->LoadURI(aURI, mBrowsingContext);
+          return extProtService->LoadURI(aURI, triggeringPrincipal,
+                                         mBrowsingContext);
         }
       }
     }
   }
-
-  
-  
-  nsCOMPtr<nsIPrincipal> triggeringPrincipal =
-      aTriggeringPrincipal ? aTriggeringPrincipal : aContent->NodePrincipal();
 
   nsCOMPtr<nsIContentSecurityPolicy> csp = aCsp;
   if (!csp) {
