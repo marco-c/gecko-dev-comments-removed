@@ -390,9 +390,7 @@ pref("browser.search.widget.inNavBar", false);
 
 pref("browser.search.separatePrivateDefault.ui.banner.max", 0);
 
-#ifdef EARLY_BETA_OR_EARLIER
-  pref("browser.search.modernConfig", true);
-#endif
+pref("browser.search.modernConfig", true);
 
 pref("browser.sessionhistory.max_entries", 50);
 
