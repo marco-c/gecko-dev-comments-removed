@@ -207,9 +207,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   }
 
   base::ProcessId OtherPid() const {
-    if (mPendingDocumentChannelBridgeProcess) {
-      return *mPendingDocumentChannelBridgeProcess;
-    }
     return mOtherPid;
   }
 
@@ -224,27 +221,16 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                              dom::ContentParent* aParent) const;
 
  protected:
-  DocumentLoadListener(dom::CanonicalBrowsingContext* aBrowsingContext,
-                       base::ProcessId aPendingBridgeProcess);
   virtual ~DocumentLoadListener();
 
  private:
   friend class ParentProcessDocumentOpenInfo;
   
   void DisconnectListeners(nsresult aStatus, nsresult aLoadGroupStatus);
-  
-  
-  void NotifyBridgeConnected();
 
   
   
-  void NotifyBridgeFailed();
-
-  
-  
-  
-  
-  RefPtr<GenericPromise> EnsureBridge();
+  void NotifyDocumentChannelFailed();
 
   
   
@@ -393,15 +379,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  Maybe<base::ProcessId> mPendingDocumentChannelBridgeProcess;
-
-  
-  
-  MozPromiseHolder<GenericPromise> mBridgePromise;
-
-  
-  
-  
   
   nsCOMPtr<nsIURI> mChannelCreationURI;
 
@@ -462,12 +439,18 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   base::ProcessId mOtherPid = 0;
 
-  void RejectOpenPromiseIfExists(nsresult aStatus, nsresult aLoadGroupStatus,
-                                 const char* aLocation) {
-    mOpenPromise.RejectIfExists(
-        OpenPromiseFailedType({aStatus, aLoadGroupStatus}), aLocation);
+  void RejectOpenPromise(nsresult aStatus, nsresult aLoadGroupStatus,
+                         const char* aLocation) {
+    
+    
+    if (!mOpenPromiseResolved && mOpenPromise) {
+      mOpenPromise->Reject(OpenPromiseFailedType({aStatus, aLoadGroupStatus}),
+                           aLocation);
+      mOpenPromiseResolved = true;
+    }
   }
-  MozPromiseHolder<OpenPromise> mOpenPromise;
+  RefPtr<OpenPromise::Private> mOpenPromise;
+  bool mOpenPromiseResolved = false;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DocumentLoadListener, DOCUMENT_LOAD_LISTENER_IID)
