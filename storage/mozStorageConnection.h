@@ -55,7 +55,7 @@ class Connection final : public mozIStorageConnection,
 
 
   struct FunctionInfo {
-    nsCOMPtr<nsISupports> function;
+    nsCOMPtr<mozIStorageFunction> function;
     int32_t numArgs;
   };
 
@@ -350,7 +350,7 @@ class Connection final : public mozIStorageConnection,
   nsresult databaseElementExists(enum DatabaseElementType aElementType,
                                  const nsACString& aElementName, bool* _exists);
 
-  bool findFunctionByInstance(nsISupports* aInstance);
+  bool findFunctionByInstance(mozIStorageFunction* aInstance);
 
   static int sProgressHelper(void* aArg);
   
