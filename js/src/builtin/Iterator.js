@@ -7,16 +7,36 @@ function IteratorIdentity() {
 }
 
 
+function IteratorClose(iteratorRecord, value) {
+  
+  const iterator = iteratorRecord.iterator;
+  
+  const returnMethod = iterator.return;
+  
+  if (returnMethod !== undefined && returnMethod !== null) {
+    const result = callContentFunction(returnMethod, iterator);
+    
+    if (!IsObject(result)) {
+      ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, result));
+    }
+  }
+  
+  return value;
+}
+
+
 function GetIteratorDirect(obj) {
   
-  if (!IsObject(obj))
+  if (!IsObject(obj)) {
     ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, obj));
+  }
 
   
   const nextMethod = obj.next;
   
-  if (!IsCallable(nextMethod))
+  if (!IsCallable(nextMethod)) {
     ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, nextMethod));
+  }
 
   
   return {
@@ -24,6 +44,65 @@ function GetIteratorDirect(obj) {
     nextMethod,
     done: false,
   };
+}
+
+function GetIteratorDirectWrapper(obj) {
+  
+  if (!IsObject(obj)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, obj);
+  }
+
+  
+  const nextMethod = obj.next;
+  
+  if (!IsCallable(nextMethod)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, nextMethod);
+  }
+
+  
+  return {
+    
+    
+    [std_iterator]: function IteratorMethod() {
+      return this;
+    },
+    next(value) {
+      return callContentFunction(nextMethod, obj, value);
+    },
+    return(value) {
+      const returnMethod = obj.return;
+      if (returnMethod !== undefined && returnMethod !== null) {
+        return callContentFunction(returnMethod, obj, value);
+      }
+      return {done: true, value};
+    },
+  };
+}
+
+
+function IteratorStep(iteratorRecord, value) {
+  
+  let result;
+  if (arguments.length === 2) {
+    result = callContentFunction(
+      iteratorRecord.nextMethod,
+      iteratorRecord.iterator,
+      value
+    );
+  } else {
+    result = callContentFunction(
+      iteratorRecord.nextMethod,
+      iteratorRecord.iterator
+    );
+  }
+
+  
+  if (!IsObject(result)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, result));
+  }
+
+  
+  return result.done ? false : result;
 }
 
 
@@ -39,8 +118,9 @@ function IteratorFrom(O) {
     const iterator = callContentFunction(usingIterator, O);
     iteratorRecord = GetIteratorDirect(iterator);
     
-    if (iteratorRecord.iterator instanceof GetBuiltinConstructor("Iterator"))
+    if (iteratorRecord.iterator instanceof GetBuiltinConstructor("Iterator")) {
       return iteratorRecord.iterator;
+    }
   } else {
     
     iteratorRecord = GetIteratorDirect(O);
@@ -88,8 +168,9 @@ function WrapForValidIteratorReturn(value) {
   const returnMethod = iterator.return;
   if (returnMethod !== undefined && returnMethod !== null) {
     let innerResult = callContentFunction(returnMethod, iterator);
-    if (!IsObject(innerResult))
+    if (!IsObject(innerResult)) {
       ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, innerResult));
+    }
   }
   
   return {
@@ -102,8 +183,9 @@ function WrapForValidIteratorReturn(value) {
 function WrapForValidIteratorThrow(value) {
   
   let O;
-  if (!IsObject(this) || (O = GuardToWrapForValidIterator(this)) === null)
+  if (!IsObject(this) || (O = GuardToWrapForValidIterator(this)) === null) {
     ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, O));
+  }
   const iterated = UnsafeGetReservedSlot(O, ITERATED_SLOT);
   
   const iterator = iterated.iterator;
@@ -115,4 +197,125 @@ function WrapForValidIteratorThrow(value) {
   }
   
   return callContentFunction(throwMethod, iterator, value);
+}
+
+
+function IteratorReduce(reducer) {
+  
+  const iterated = GetIteratorDirectWrapper(this);
+
+  
+  if (!IsCallable(reducer)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, reducer));
+  }
+
+  
+  let accumulator;
+  if (arguments.length === 1) {
+    
+    const next = callContentFunction(iterated.next, iterated);
+    if (!IsObject(next)) {
+      ThrowTypeError(JSMSG_OBJECT_REQUIRED, DecompileArg(0, next));
+    }
+    
+    if (next.done) {
+      ThrowTypeError(JSMSG_EMPTY_ITERATOR_REDUCE);
+    }
+    
+    accumulator = next.value;
+  } else {
+    
+    accumulator = arguments[1];
+  }
+
+  
+  for (const value of allowContentIter(iterated)) {
+    accumulator = callContentFunction(reducer, undefined, accumulator, value);
+  }
+  return accumulator;
+}
+
+
+function IteratorToArray() {
+  
+  const iterated = {[std_iterator]: () => this};
+  
+  return [...allowContentIter(iterated)];
+}
+
+
+function IteratorForEach(fn) {
+  
+  const iterated = GetIteratorDirectWrapper(this);
+
+  
+  if (!IsCallable(fn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, fn));
+  }
+
+  
+  for (const value of allowContentIter(iterated)) {
+    callContentFunction(fn, undefined, value);
+  }
+}
+
+
+function IteratorSome(fn) {
+  
+  const iterated = GetIteratorDirectWrapper(this);
+
+  
+  if (!IsCallable(fn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, fn));
+  }
+
+  
+  for (const value of allowContentIter(iterated)) {
+    
+    if (callContentFunction(fn, undefined, value)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+
+function IteratorEvery(fn) {
+  
+  const iterated = GetIteratorDirectWrapper(this);
+
+  
+  if (!IsCallable(fn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, fn));
+  }
+
+  
+  for (const value of allowContentIter(iterated)) {
+    
+    if (!callContentFunction(fn, undefined, value)) {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+
+function IteratorFind(fn) {
+  
+  const iterated = GetIteratorDirectWrapper(this);
+
+  
+  if (!IsCallable(fn)) {
+    ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, fn));
+  }
+
+  
+  for (const value of allowContentIter(iterated)) {
+    
+    if (callContentFunction(fn, undefined, value)) {
+      return value;
+    }
+  }
 }

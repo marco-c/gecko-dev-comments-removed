@@ -1,0 +1,10 @@
+
+
+const iter = [].values();
+const array = iter.toArray();
+
+assertEq(Array.isArray(array), true);
+assertEq(array.length, 0);
+
+if (typeof reportCompare === 'function')
+  reportCompare(0, 0);
