@@ -3706,7 +3706,7 @@ var AddonManager = {
     
     ["STATE_DOWNLOADING", 1],
     
-    ["STATE_CHECKING", 2],
+    ["STATE_CHECKING_UPDATE", 2],
     
     ["STATE_DOWNLOADED", 3],
     
