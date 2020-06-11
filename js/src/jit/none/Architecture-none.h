@@ -21,11 +21,6 @@ static const uint32_t SimdMemoryAlignment =
 static const uint32_t WasmStackAlignment = 8;
 static const uint32_t WasmTrapInstructionLength = 0;
 
-
-
-static constexpr uint32_t CheckedCallEntryOffset = 0u;
-static constexpr uint32_t CheckedTailEntryOffset = 1u;
-
 class Registers {
  public:
   enum RegisterID {

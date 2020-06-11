@@ -556,30 +556,10 @@ static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
   MOZ_ASSERT_IF(!masm.oom(), PoppedTLSReg == *ret - poppedTlsReg);
 }
 
-static void EnsureOffset(MacroAssembler& masm, uint32_t base,
-                         uint32_t targetOffset) {
-  MOZ_ASSERT(targetOffset % CodeAlignment == 0);
-  MOZ_ASSERT(masm.currentOffset() - base <= targetOffset);
-
-  while (masm.currentOffset() - base < targetOffset) {
-    masm.nopAlign(CodeAlignment);
-    if (masm.currentOffset() - base < targetOffset) {
-      masm.nop();
-    }
-  }
-
-  MOZ_ASSERT(masm.currentOffset() - base == targetOffset);
-}
-
 void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
                                     const FuncTypeIdDesc& funcTypeId,
                                     const Maybe<uint32_t>& tier1FuncIndex,
                                     FuncOffsets* offsets) {
-  
-  
-  static_assert(CheckedCallEntryOffset % CodeAlignment == 0, "code aligned");
-  static_assert(CheckedTailEntryOffset % CodeAlignment == 0, "code aligned");
-
   
   
   
@@ -588,45 +568,27 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  Label functionBody;
+  Label normalEntry;
 
   
   
   offsets->begin = masm.currentOffset();
-  MOZ_ASSERT(masm.currentOffset() - offsets->begin == CheckedCallEntryOffset);
-  uint32_t dummy;
-  GenerateCallablePrologue(masm, &dummy);
-
-  EnsureOffset(masm, offsets->begin, CheckedTailEntryOffset);
   switch (funcTypeId.kind()) {
     case FuncTypeIdDescKind::Global: {
       Register scratch = WasmTableCallScratchReg0;
       masm.loadWasmGlobalPtr(funcTypeId.globalDataOffset(), scratch);
       masm.branchPtr(Assembler::Condition::Equal, WasmTableCallSigReg, scratch,
-                     &functionBody);
+                     &normalEntry);
       masm.wasmTrap(Trap::IndirectCallBadSig, BytecodeOffset(0));
       break;
     }
     case FuncTypeIdDescKind::Immediate: {
       masm.branch32(Assembler::Condition::Equal, WasmTableCallSigReg,
-                    Imm32(funcTypeId.immediate()), &functionBody);
+                    Imm32(funcTypeId.immediate()), &normalEntry);
       masm.wasmTrap(Trap::IndirectCallBadSig, BytecodeOffset(0));
       break;
     }
     case FuncTypeIdDescKind::None:
-      masm.jump(&functionBody);
       break;
   }
 
@@ -636,8 +598,8 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
 
   
   masm.nopAlign(CodeAlignment);
-  GenerateCallablePrologue(masm, &offsets->uncheckedCallEntry);
-  masm.bind(&functionBody);
+  masm.bind(&normalEntry);
+  GenerateCallablePrologue(masm, &offsets->normalEntry);
 
   
   
@@ -913,22 +875,6 @@ static void AssertCallerFP(DebugOnly<bool> fpWasTagged, Frame* const fp,
                                        reinterpret_cast<Frame*>(sp)->callerFP);
 }
 
-static bool isSignatureCheckFail(uint32_t offsetInCode,
-                                 const CodeRange* codeRange) {
-  if (!codeRange->isFunction()) {
-    return false;
-  }
-  
-  
-  
-  
-  
-  
-  
-  return offsetInCode < codeRange->funcUncheckedCallEntry() &&
-         (offsetInCode - codeRange->funcCheckedCallEntry()) > SetFP;
-}
-
 bool js::wasm::StartUnwinding(const RegisterState& registers,
                               UnwindState* unwindState, bool* unwoundCaller) {
   
@@ -975,13 +921,12 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
   
   
   
-  
   uint32_t offsetFromEntry;
   if (codeRange->isFunction()) {
-    if (offsetInCode < codeRange->funcUncheckedCallEntry()) {
-      offsetFromEntry = offsetInCode - codeRange->funcCheckedCallEntry();
+    if (offsetInCode < codeRange->funcNormalEntry()) {
+      offsetFromEntry = 0;
     } else {
-      offsetFromEntry = offsetInCode - codeRange->funcUncheckedCallEntry();
+      offsetFromEntry = offsetInCode - codeRange->funcNormalEntry();
     }
   } else {
     offsetFromEntry = offsetInCode - codeRange->begin();
@@ -1099,15 +1044,6 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
             return false;
           }
         }
-
-        if (isSignatureCheckFail(offsetInCode, codeRange)) {
-          
-          fixedFP = fp->callerFP;
-          fixedPC = fp->returnAddress;
-          AssertMatchesCallSite(fixedPC, fixedFP);
-          break;
-        }
-
         
         fixedPC = pc;
         fixedFP = fp;
