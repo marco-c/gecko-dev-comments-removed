@@ -170,11 +170,6 @@ extern MOZ_MUST_USE bool intl_patternForSkeleton(JSContext* cx, unsigned argc,
 
 
 
-
-
-
-
-
 extern MOZ_MUST_USE bool intl_patternForStyle(JSContext* cx, unsigned argc,
                                               JS::Value* vp);
 

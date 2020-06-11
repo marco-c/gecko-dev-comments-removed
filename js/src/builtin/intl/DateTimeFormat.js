@@ -49,6 +49,11 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     
     
     
+    
+    
+    
+    
+    
 
     var internalProps = std_Object_create(null);
 
@@ -93,24 +98,30 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
 
     
     var pattern;
-    if (lazyDateTimeFormatData.patternOption !== undefined) {
-        pattern = lazyDateTimeFormatData.patternOption;
+    if (lazyDateTimeFormatData.mozExtensions) {
+        if (lazyDateTimeFormatData.patternOption !== undefined) {
+            pattern = lazyDateTimeFormatData.patternOption;
 
-        internalProps.patternOption = lazyDateTimeFormatData.patternOption;
-    } else if (lazyDateTimeFormatData.dateStyle !== undefined ||
-               lazyDateTimeFormatData.timeStyle !== undefined) {
-        pattern = intl_patternForStyle(dataLocale,
-                                       lazyDateTimeFormatData.dateStyle,
-                                       lazyDateTimeFormatData.timeStyle,
-                                       lazyDateTimeFormatData.timeZone,
-                                       formatOpt.hour12,
-                                       formatOpt.hourCycle);
+            internalProps.patternOption = lazyDateTimeFormatData.patternOption;
+        } else if (lazyDateTimeFormatData.dateStyle || lazyDateTimeFormatData.timeStyle) {
+            pattern = intl_patternForStyle(dataLocale,
+              lazyDateTimeFormatData.dateStyle, lazyDateTimeFormatData.timeStyle,
+              lazyDateTimeFormatData.timeZone);
 
-        internalProps.dateStyle = lazyDateTimeFormatData.dateStyle;
-        internalProps.timeStyle = lazyDateTimeFormatData.timeStyle;
+            internalProps.dateStyle = lazyDateTimeFormatData.dateStyle;
+            internalProps.timeStyle = lazyDateTimeFormatData.timeStyle;
+        } else {
+            pattern = toBestICUPattern(dataLocale, formatOpt);
+        }
+        internalProps.mozExtensions = true;
     } else {
-        pattern = toBestICUPattern(dataLocale, formatOpt);
+      pattern = toBestICUPattern(dataLocale, formatOpt);
     }
+
+    
+    
+    if (formatOpt.hourCycle !== undefined)
+        pattern = replaceHourRepresentation(pattern, formatOpt.hourCycle);
 
     
     internalProps.pattern = pattern;
@@ -118,6 +129,46 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     
     
     return internalProps;
+}
+
+
+
+
+
+function replaceHourRepresentation(pattern, hourCycle) {
+    var hour;
+    switch (hourCycle) {
+      case "h11":
+        hour = "K";
+        break;
+      case "h12":
+        hour = "h";
+        break;
+      case "h23":
+        hour = "H";
+        break;
+      case "h24":
+        hour = "k";
+        break;
+    }
+    assert(hour !== undefined, "Unexpected hourCycle requested: " + hourCycle);
+
+    
+    
+    
+    var resultPattern = "";
+    var inQuote = false;
+    for (var i = 0; i < pattern.length; i++) {
+        var ch = pattern[i];
+        if (ch === "'") {
+            inQuote = !inQuote;
+        } else if (!inQuote && (ch === "h" || ch === "H" || ch === "k" || ch === "K")) {
+            ch = hour;
+        }
+        resultPattern += ch;
+    }
+
+    return resultPattern;
 }
 
 
@@ -361,9 +412,16 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
     var formatOpt = new Record();
     lazyDateTimeFormatData.formatOpt = formatOpt;
 
+    lazyDateTimeFormatData.mozExtensions = mozExtensions;
+
     if (mozExtensions) {
         let pattern = GetOption(options, "pattern", "string", undefined, undefined);
         lazyDateTimeFormatData.patternOption = pattern;
+
+        let dateStyle = GetOption(options, "dateStyle", "string", ["full", "long", "medium", "short"], undefined);
+        lazyDateTimeFormatData.dateStyle = dateStyle;
+        let timeStyle = GetOption(options, "timeStyle", "string", ["full", "long", "medium", "short"], undefined);
+        lazyDateTimeFormatData.timeStyle = timeStyle;
     }
 
     
@@ -401,37 +459,6 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
         GetOption(options, "formatMatcher", "string", ["basic", "best fit"],
                   "best fit");
     void formatMatcher;
-
-    
-    
-    var dateStyle = GetOption(options, "dateStyle", "string", ["full", "long", "medium", "short"],
-                              undefined);
-    lazyDateTimeFormatData.dateStyle = dateStyle;
-
-    var timeStyle = GetOption(options, "timeStyle", "string", ["full", "long", "medium", "short"],
-                              undefined);
-    lazyDateTimeFormatData.timeStyle = timeStyle;
-
-    if (dateStyle !== undefined || timeStyle !== undefined) {
-      var optionsList = [
-          "weekday", "era", "year", "month", "day", "hour", "minute", "second", "timeZoneName",
-      ];
-
-      for (var i = 0; i < optionsList.length; i++) {
-          var option = optionsList[i];
-          if (formatOpt[option] !== undefined) {
-              ThrowTypeError(JSMSG_INVALID_DATETIME_OPTION, option,
-                             dateStyle !== undefined ? "dateStyle" : "timeStyle");
-          }
-      }
-
-#ifdef NIGHTLY_BUILD
-      if (formatOpt.fractionalSecondDigits !== 0) {
-          ThrowTypeError(JSMSG_INVALID_DATETIME_OPTION, "fractionalSecondDigits",
-                         dateStyle !== undefined ? "dateStyle" : "timeStyle");
-      }
-#endif
-    }
 
     
 
@@ -675,7 +702,7 @@ function toBestICUPattern(locale, options) {
     }
 
     
-    return intl_patternForSkeleton(locale, skeleton, options.hourCycle);
+    return intl_patternForSkeleton(locale, skeleton);
 }
 
 
@@ -730,20 +757,6 @@ function ToDateTimeOptions(options, required, defaults) {
             needDefaults = false;
 #endif
     }
-
-    
-    
-    var dateStyle = options.dateStyle;
-    var timeStyle = options.timeStyle;
-
-    if (dateStyle !== undefined || timeStyle !== undefined)
-        needDefaults = false;
-
-    if (required === "date" && timeStyle !== undefined)
-        ThrowTypeError(JSMSG_INVALID_DATETIME_STYLE, "timeStyle", "toLocaleDateString");
-
-    if (required === "time" && dateStyle !== undefined)
-        ThrowTypeError(JSMSG_INVALID_DATETIME_STYLE, "dateStyle", "toLocaleTimeString");
 
     
     if (needDefaults && (defaults === "date" || defaults === "all")) {
@@ -918,28 +931,16 @@ function Intl_DateTimeFormat_resolvedOptions() {
         timeZone: internals.timeZone,
     };
 
-    if (internals.patternOption !== undefined) {
-        _DefineDataProperty(result, "pattern", internals.pattern);
-    }
-
-    var hasDateStyle = internals.dateStyle !== undefined;
-    var hasTimeStyle = internals.timeStyle !== undefined;
-
-    if (hasDateStyle || hasTimeStyle) {
-        if (hasTimeStyle) {
-            
-            
-            resolveICUPattern(internals.pattern, result,  false);
-        }
-        if (hasDateStyle) {
+    if (internals.mozExtensions) {
+        if (internals.patternOption !== undefined) {
+            _DefineDataProperty(result, "pattern", internals.pattern);
+        } else if (internals.dateStyle || internals.timeStyle) {
             _DefineDataProperty(result, "dateStyle", internals.dateStyle);
-        }
-        if (hasTimeStyle) {
             _DefineDataProperty(result, "timeStyle", internals.timeStyle);
         }
-    } else {
-        resolveICUPattern(internals.pattern, result,  true);
     }
+
+    resolveICUPattern(internals.pattern, result);
 
     
     return result;
@@ -953,7 +954,7 @@ function Intl_DateTimeFormat_resolvedOptions() {
 
 
 
-function resolveICUPattern(pattern, result, includeDateTimeFields) {
+function resolveICUPattern(pattern, result) {
     assert(IsObject(result), "resolveICUPattern");
 
     var hourCycle, weekday, era, year, month, day, dayPeriod, hour, minute, second,
@@ -1085,9 +1086,6 @@ function resolveICUPattern(pattern, result, includeDateTimeFields) {
     if (hourCycle) {
         _DefineDataProperty(result, "hourCycle", hourCycle);
         _DefineDataProperty(result, "hour12", hourCycle === "h11" || hourCycle === "h12");
-    }
-    if (!includeDateTimeFields) {
-        return;
     }
     if (weekday) {
         _DefineDataProperty(result, "weekday", weekday);

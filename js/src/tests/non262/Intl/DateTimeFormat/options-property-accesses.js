@@ -29,7 +29,6 @@ var constructorAccesses = [
     
     "weekday", "year", "month", "day",
     ...dayPeriod, "hour", "minute", "second", ...fractionalSecondDigits,
-    "dateStyle", "timeStyle",
 
     
     "localeMatcher", "calendar", "numberingSystem", "hour12", "hourCycle", "timeZone",
@@ -40,7 +39,6 @@ var constructorAccesses = [
     
     ...fractionalSecondDigits,
     "formatMatcher",
-    "dateStyle", "timeStyle",
 ];
 
 log = [];
@@ -55,7 +53,6 @@ assertEqArray(log, [
     
     "weekday", "year", "month", "day",
     ...dayPeriod, "hour", "minute", "second", ...fractionalSecondDigits,
-    "dateStyle", "timeStyle",
 
     ...constructorAccesses
 ]);
@@ -66,7 +63,6 @@ new Date().toLocaleDateString(undefined, proxy);
 assertEqArray(log, [
     
     "weekday", "year", "month", "day",
-    "dateStyle", "timeStyle",
 
     ...constructorAccesses
 ]);
@@ -77,7 +73,6 @@ new Date().toLocaleTimeString(undefined, proxy);
 assertEqArray(log, [
     
     ...dayPeriod, "hour", "minute", "second", ...fractionalSecondDigits,
-    "dateStyle", "timeStyle",
 
     ...constructorAccesses
 ]);
