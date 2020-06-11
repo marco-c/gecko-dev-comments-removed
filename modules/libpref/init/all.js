@@ -1983,11 +1983,6 @@ pref("network.mdns.use_js_fallback", false);
 pref("converter.html2txt.structs",          true); 
 pref("converter.html2txt.header_strategy",  1); 
 
-
-
-
-pref("converter.html2txt.always_include_ruby", false);
-
 pref("intl.accept_languages",               "chrome://global/locale/intl.properties");
 pref("intl.menuitems.alwaysappendaccesskeys","chrome://global/locale/intl.properties");
 pref("intl.menuitems.insertseparatorbeforeaccesskeys","chrome://global/locale/intl.properties");

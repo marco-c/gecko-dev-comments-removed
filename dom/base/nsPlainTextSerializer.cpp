@@ -29,6 +29,7 @@
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_converter.h"
 #include "mozilla/BinarySearch.h"
 #include "nsComputedDOMStyle.h"
 
@@ -41,7 +42,6 @@ using namespace mozilla::dom;
 
 #define PREF_STRUCTS "converter.html2txt.structs"
 #define PREF_HEADER_STRATEGY "converter.html2txt.header_strategy"
-#define PREF_ALWAYS_INCLUDE_RUBY "converter.html2txt.always_include_ruby"
 
 static const int32_t kTabSize = 4;
 static const int32_t kIndentSizeHeaders =
@@ -67,9 +67,6 @@ static int32_t GetUnicharStringWidth(const nsString& aString);
 
 
 static const uint32_t TagStackSize = 500;
-
-static bool gPreferenceInitialized = false;
-static bool gAlwaysIncludeRuby = false;
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsPlainTextSerializer)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsPlainTextSerializer)
@@ -265,12 +262,6 @@ nsPlainTextSerializer::nsPlainTextSerializer()
   mULCount = 0;
 
   mIgnoredChildNodeLevel = 0;
-
-  if (!gPreferenceInitialized) {
-    Preferences::AddBoolVarCache(&gAlwaysIncludeRuby, PREF_ALWAYS_INCLUDE_RUBY,
-                                 true);
-    gPreferenceInitialized = true;
-  }
 }
 
 nsPlainTextSerializer::~nsPlainTextSerializer() {
@@ -321,11 +312,8 @@ void nsPlainTextSerializer::Settings::Init(const int32_t aFlags,
     mHeaderStrategy = Convert(headerStrategy);
   }
 
-  
-  
-  
-  mWithRubyAnnotation =
-      gAlwaysIncludeRuby || (mFlags & nsIDocumentEncoder::OutputRubyAnnotation);
+  mWithRubyAnnotation = StaticPrefs::converter_html2txt_always_include_ruby() ||
+                        (mFlags & nsIDocumentEncoder::OutputRubyAnnotation);
 
   
   mFlags &= ~nsIDocumentEncoder::OutputNoFramesContent;
