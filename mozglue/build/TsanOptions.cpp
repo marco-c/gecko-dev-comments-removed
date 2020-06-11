@@ -57,6 +57,10 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:g_main_context_dispatch\n"
 
          
+         
+         "mutex:GetMaiAtkType\n"
+
+         
          "race:__tsan::ProcessPendingSignals\n"
          "race:__tsan::CallUserSignalHandler\n"
 
