@@ -5202,7 +5202,7 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       break;
 
     case WM_SYSCOLORCHANGE:
-      OnSysColorChanged();
+      NotifyThemeChanged();
       break;
 
     case WM_THEMECHANGED: {
@@ -5265,14 +5265,7 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       if (lParam) {
         auto lParamString = reinterpret_cast<const wchar_t*>(lParam);
         if (!wcscmp(lParamString, L"ImmersiveColorSet")) {
-          
-          
-          
-          if (IsWin10OrLater()) {
-            NotifyThemeChanged();
-          }
-          
-          OnSysColorChanged();
+          NotifyThemeChanged();
           break;
         }
         if (IsWin10OrLater() && mWindowType == eWindowType_invisible) {
@@ -7498,20 +7491,6 @@ bool nsWindow::HasBogusPopupsDropShadowOnMultiMonitor() {
     }
   }
   return !!sHasBogusPopupsDropShadowOnMultiMonitor;
-}
-
-void nsWindow::OnSysColorChanged() {
-  if (mWindowType == eWindowType_invisible) {
-    ::EnumThreadWindows(GetCurrentThreadId(), nsWindow::BroadcastMsg,
-                        WM_SYSCOLORCHANGE);
-  } else {
-    
-    
-    
-    
-    
-    NotifySysColorChanged();
-  }
 }
 
 void nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width,

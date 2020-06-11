@@ -808,11 +808,6 @@ class nsPresContext : public nsISupports,
   void UIResolutionChangedSync();
 
   
-
-
-  void SysColorChanged();
-
-  
   void SetPrintSettings(nsIPrintSettings* aPrintSettings);
 
   nsIPrintSettings* GetPrintSettings() { return mPrintSettings; }
@@ -1071,7 +1066,6 @@ class nsPresContext : public nsISupports,
  protected:
   friend class nsRunnableMethod<nsPresContext>;
   void ThemeChangedInternal();
-  void SysColorChangedInternal();
   void RefreshSystemMetrics();
 
   
@@ -1280,7 +1274,6 @@ class nsPresContext : public nsISupports,
   unsigned mIsRootPaginatedDocument : 1;
   unsigned mPrefBidiDirection : 1;
   unsigned mPrefScrollbarSide : 2;
-  unsigned mPendingSysColorChanged : 1;
   unsigned mPendingThemeChanged : 1;
   unsigned mPendingUIResolutionChanged : 1;
   unsigned mPrefChangePendingNeedsReflow : 1;

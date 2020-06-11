@@ -1282,7 +1282,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   void WindowSizeMoveDone();
-  void SysColorChanged() { mPresContext->SysColorChanged(); }
   void ThemeChanged() { mPresContext->ThemeChanged(); }
   void BackingScaleFactorChanged() { mPresContext->UIResolutionChangedSync(); }
 

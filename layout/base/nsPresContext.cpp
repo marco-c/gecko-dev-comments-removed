@@ -202,7 +202,6 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mIsRootPaginatedDocument(false),
       mPrefBidiDirection(false),
       mPrefScrollbarSide(0),
-      mPendingSysColorChanged(false),
       mPendingThemeChanged(false),
       mPendingUIResolutionChanged(false),
       mPrefChangePendingNeedsReflow(false),
@@ -1365,45 +1364,15 @@ void nsPresContext::ThemeChangedInternal() {
     }
   }
 
-  RefreshSystemMetrics();
-  PreferenceSheet::Refresh();
-}
-
-void nsPresContext::SysColorChanged() {
-  if (!mPendingSysColorChanged) {
-    sLookAndFeelChanged = true;
-    nsCOMPtr<nsIRunnable> ev =
-        NewRunnableMethod("nsPresContext::SysColorChangedInternal", this,
-                          &nsPresContext::SysColorChangedInternal);
-    nsresult rv = Document()->Dispatch(TaskCategory::Other, ev.forget());
-    if (NS_SUCCEEDED(rv)) {
-      mPendingSysColorChanged = true;
-    }
-  }
-}
-
-void nsPresContext::SysColorChangedInternal() {
-  mPendingSysColorChanged = false;
-
-  if (sLookAndFeelChanged) {
-    
-    LookAndFeel::Refresh();
-    sLookAndFeelChanged = false;
-  }
-
-  
-  RefreshSystemMetrics();
-
-  
-  
-  PreferenceSheet::Refresh();
-}
-
-void nsPresContext::RefreshSystemMetrics() {
   
   
   nsMediaFeatures::FreeSystemMetrics();
 
+  
+  
+  PreferenceSheet::Refresh();
+
+  
   
   
   
