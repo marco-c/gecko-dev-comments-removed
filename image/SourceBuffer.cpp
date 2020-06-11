@@ -250,7 +250,7 @@ nsresult SourceBuffer::Compact() {
              "Compacted chunk has slack space");
 
   
-  mChunks.RemoveElementsAt(1, mChunks.Length() - 1);
+  mChunks.RemoveLastElements(mChunks.Length() - 1);
   mChunks.Compact();
 
   return NS_OK;

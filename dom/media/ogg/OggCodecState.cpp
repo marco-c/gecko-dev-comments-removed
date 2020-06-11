@@ -1177,7 +1177,7 @@ bool OpusState::ReconstructOpusGranulepos(void) {
             
             
             gp = last_gp;
-            mUnstamped.RemoveElementsAt(i + 1, mUnstamped.Length() - (i + 1));
+            mUnstamped.RemoveLastElements(mUnstamped.Length() - (i + 1));
             packet->e_o_s = 1;
           }
         }

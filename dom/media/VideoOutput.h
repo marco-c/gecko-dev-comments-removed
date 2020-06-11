@@ -165,7 +165,7 @@ class VideoOutput : public DirectMediaTrackListener {
     
     
     DropPastFrames();
-    mFrames.RemoveElementsAt(1, mFrames.Length() - 1);
+    mFrames.RemoveLastElements(mFrames.Length() - 1);
     SendFrames();
     mFrames.ClearAndRetainStorage();
   }

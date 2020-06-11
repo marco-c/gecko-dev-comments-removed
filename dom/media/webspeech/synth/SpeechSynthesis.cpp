@@ -162,7 +162,7 @@ void SpeechSynthesis::Cancel() {
   if (!mSpeechQueue.IsEmpty() && HasSpeakingTask()) {
     
     
-    mSpeechQueue.RemoveElementsAt(1, mSpeechQueue.Length() - 1);
+    mSpeechQueue.RemoveLastElements(mSpeechQueue.Length() - 1);
   } else {
     mSpeechQueue.Clear();
   }

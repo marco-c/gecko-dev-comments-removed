@@ -12752,12 +12752,12 @@ void ConnectionPool::NoteClosedDatabase(DatabaseInfo* aDatabaseInfo) {
 
   
   
-  mCompleteCallbacks.RemoveElementsAt(
+  mCompleteCallbacks.RemoveLastElements(
+      mCompleteCallbacks.end() -
       std::remove_if(mCompleteCallbacks.begin(), mCompleteCallbacks.end(),
                      [&me = *this](const auto& completeCallback) {
                        return me.MaybeFireCallback(completeCallback.get());
-                     }),
-      mCompleteCallbacks.end());
+                     }));
 
   
   
@@ -20826,14 +20826,14 @@ nsresult FactoryOp::SendVersionChangeMessages(
 
   
   
-  mMaybeBlockedDatabases.RemoveElementsAt(
+  mMaybeBlockedDatabases.RemoveLastElements(
+      mMaybeBlockedDatabases.end() -
       std::remove_if(mMaybeBlockedDatabases.begin(),
                      mMaybeBlockedDatabases.end(),
                      [aOldVersion, &aNewVersion](auto& maybeBlockedDatabase) {
                        return !maybeBlockedDatabase->SendVersionChange(
                            aOldVersion, aNewVersion);
-                     }),
-      mMaybeBlockedDatabases.end());
+                     }));
 
   return NS_OK;
 }  

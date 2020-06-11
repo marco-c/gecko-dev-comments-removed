@@ -519,7 +519,7 @@ static void ClampColorStops(nsTArray<ColorStop>& aStops) {
           InterpolateColorStop(aStops[i - 1], aStops[i],
                                 1, aStops[i - 1].mColor);
       
-      aStops.RemoveElementsAt(i + 1, aStops.Length() - (i + 1));
+      aStops.RemoveLastElements(aStops.Length() - (i + 1));
     }
     if (aStops[i - 1].mPosition <= 0 && aStops[i].mPosition > 0) {
       

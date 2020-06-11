@@ -675,10 +675,7 @@ void TimerThread::RemoveLeadingCanceledTimersInternal() {
 
   
   
-  
-  
-  mTimers.RemoveElementsAt(sortedEnd - mTimers.begin(),
-                           mTimers.end() - sortedEnd);
+  mTimers.RemoveLastElements(mTimers.end() - sortedEnd);
 }
 
 void TimerThread::RemoveFirstTimerInternal() {
