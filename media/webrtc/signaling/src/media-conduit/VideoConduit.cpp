@@ -493,6 +493,7 @@ WebrtcVideoConduit::WebrtcVideoConduit(
           this)  
       ,
       mRecvSSRC(0),
+      mRemoteSSRC(0),
       mVideoStatsTimer(NS_NewTimer()),
       mRtpSourceObserver(new RtpSourceObserver(mCall->GetTimestampMaker())) {
   mCall->RegisterConduit(this);
@@ -1035,6 +1036,7 @@ bool WebrtcVideoConduit::SetRemoteSSRCLocked(uint32_t ssrc, uint32_t rtxSsrc) {
     }
   }
 
+  mRemoteSSRC = ssrc;
   mRecvStreamConfig.rtp.remote_ssrc = ssrc;
   mRecvStreamConfig.rtp.rtx_ssrc = rtxSsrc;
   mStsThread->Dispatch(NS_NewRunnableFunction(
@@ -1083,18 +1085,14 @@ bool WebrtcVideoConduit::UnsetRemoteSSRC(uint32_t ssrc) {
   return true;
 }
 
-bool WebrtcVideoConduit::GetRemoteSSRC(unsigned int* ssrc) {
-  MutexAutoLock lock(mMutex);
-
+bool WebrtcVideoConduit::GetRemoteSSRC(uint32_t* ssrc) {
   if (NS_IsMainThread()) {
     if (!mRecvStream) {
       return false;
     }
-    *ssrc = mRecvStream->GetStats().ssrc;
-  } else {
-    ASSERT_ON_THREAD(mStsThread);
-    *ssrc = mRecvStreamStats.Ssrc();
   }
+  
+  *ssrc = mRemoteSSRC;
   return true;
 }
 

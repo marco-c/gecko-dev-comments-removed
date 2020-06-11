@@ -249,6 +249,7 @@ class WebrtcVideoConduit
   std::vector<uint32_t> GetLocalSSRCs() override;
   bool SetLocalSSRCs(const std::vector<uint32_t>& ssrcs,
                      const std::vector<uint32_t>& rtxSsrcs) override;
+  
   bool GetRemoteSSRC(uint32_t* ssrc) override;
   bool SetRemoteSSRC(uint32_t ssrc, uint32_t rtxSsrc) override;
   bool UnsetRemoteSSRC(uint32_t ssrc) override;
@@ -639,6 +640,9 @@ class WebrtcVideoConduit
   
   
   Atomic<uint32_t> mRecvSSRC;  
+  
+  
+  Atomic<uint32_t> mRemoteSSRC;  
 
   
   RtpPacketQueue mRtpPacketQueue;
