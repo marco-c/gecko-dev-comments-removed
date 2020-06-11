@@ -14,31 +14,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 
-function installAddonEngine(name = "engine-addon") {
-  const profD = do_get_profile().QueryInterface(Ci.nsIFile);
-
-  let dir = profD.clone();
-  dir.append("extensions");
-  if (!dir.exists()) {
-    dir.create(dir.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-  }
-
-  dir.append("search-engine@tests.mozilla.org");
-  dir.create(dir.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-
-  do_get_file("data/install.rdf").copyTo(dir, "install.rdf");
-  dir.append("searchplugins");
-  dir.create(dir.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
-  do_get_file("data/" + name + ".xml").copyTo(dir, "bug645970.xml");
-}
-
-
-
-
-
-
-
-
 
 
 
