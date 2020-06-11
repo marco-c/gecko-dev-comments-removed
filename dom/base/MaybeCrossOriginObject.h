@@ -37,6 +37,22 @@ namespace dom {
 
 
 
+
+
+
+
+
+
+struct CrossOriginProperties {
+  const JSPropertySpec* mAttributes;
+  const JSFunctionSpec* mMethods;
+  const JSPropertySpec* mChromeOnlyAttributes;
+  const JSFunctionSpec* mChromeOnlyMethods;
+};
+
+
+
+
 class MaybeCrossOriginObjectMixins {
  public:
   
@@ -122,8 +138,7 @@ class MaybeCrossOriginObjectMixins {
 
 
   static bool EnsureHolder(JSContext* cx, JS::Handle<JSObject*> obj,
-                           size_t slot, JSPropertySpec* attributes,
-                           JSFunctionSpec* methods,
+                           size_t slot, const CrossOriginProperties& properties,
                            JS::MutableHandle<JSObject*> holder);
 
   
