@@ -7,6 +7,7 @@
 #![allow(unsafe_code)]
 #![deny(missing_docs)]
 
+use crate::animation::AnimationState;
 use crate::computed_value_flags::ComputedValueFlags;
 use crate::context::{ElementCascadeInputs, QuirksMode, SelectorFlagsMap};
 use crate::context::{SharedStyleContext, StyleContext};
@@ -460,7 +461,12 @@ trait PrivateMatchMethods: TElement {
 
         
         
-        animation_state.clear_finished_animations();
+        animation_state
+            .transitions
+            .retain(|transition| transition.state != AnimationState::Finished);
+
+        
+        
         if !animation_state.is_empty() {
             animation_states.insert(this_opaque, animation_state);
         }

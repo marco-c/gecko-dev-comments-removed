@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
 <% from data import ALL_AXES, Keyword, Method, to_rust_ident, to_camel_case%>
@@ -31,8 +31,8 @@ ${helpers.single_keyword(
     spec="Internal (not web-exposed)",
 )}
 
-// An internal-only property for elements in a top layer
-// https://fullscreen.spec.whatwg.org/#top-layer
+
+
 ${helpers.single_keyword(
     "-servo-top-layer",
     "none top",
@@ -98,7 +98,7 @@ ${helpers.predefined_type(
     servo_restyle_damage = "reflow",
 )}
 
-// CSS 2.1, Section 11 - Visual effects
+
 
 ${helpers.single_keyword(
     "-servo-overflow-clip-box",
@@ -246,8 +246,8 @@ ${helpers.predefined_type(
     spec="https://drafts.csswg.org/css-transitions/#propdef-transition-duration",
 )}
 
-// animation-timing-function is the exception to the rule for allowed_in_keyframe_block:
-// https://drafts.csswg.org/css-animations/#keyframes
+
+
 ${helpers.predefined_type(
     "animation-timing-function",
     "TimingFunction",
@@ -312,7 +312,7 @@ ${helpers.single_keyword(
 ${helpers.single_keyword(
     "animation-fill-mode",
     "none forwards backwards both",
-    engines="gecko servo-2013",
+    engines="gecko servo-2013 servo-2020",
     need_index=True,
     animation_value_type="none",
     vector=True,
@@ -391,7 +391,7 @@ ${helpers.predefined_type(
     servo_restyle_damage="reflow_out_of_flow",
 )}
 
-// Motion Path Module Level 1
+
 ${helpers.predefined_type(
     "offset-path",
     "OffsetPath",
@@ -404,7 +404,7 @@ ${helpers.predefined_type(
     servo_restyle_damage="reflow_out_of_flow"
 )}
 
-// Motion Path Module Level 1
+
 ${helpers.predefined_type(
     "offset-distance",
     "LengthPercentage",
@@ -417,7 +417,7 @@ ${helpers.predefined_type(
     servo_restyle_damage="reflow_out_of_flow"
 )}
 
-// Motion Path Module Level 1
+
 ${helpers.predefined_type(
     "offset-rotate",
     "OffsetRotate",
@@ -430,7 +430,7 @@ ${helpers.predefined_type(
     servo_restyle_damage="reflow_out_of_flow"
 )}
 
-// Motion Path Module Level 1
+
 ${helpers.predefined_type(
     "offset-anchor",
     "PositionOrAuto",
@@ -444,8 +444,8 @@ ${helpers.predefined_type(
     boxed=True
 )}
 
-// CSSOM View Module
-// https://www.w3.org/TR/cssom-view-1/
+
+
 ${helpers.single_keyword(
     "scroll-behavior",
     "auto smooth",
@@ -488,8 +488,8 @@ ${helpers.predefined_type(
     )}
 % endfor
 
-// Compositing and Blending Level 1
-// http://www.w3.org/TR/compositing-1/
+
+
 ${helpers.single_keyword(
     "isolation",
     "auto isolate",
@@ -531,8 +531,8 @@ ${helpers.predefined_type(
     animation_value_type="discrete",
 )}
 
-// CSS Basic User Interface Module Level 3
-// http://dev.w3.org/csswg/css-ui
+
+
 ${helpers.predefined_type(
     "resize",
     "Resize",
@@ -626,7 +626,7 @@ ${helpers.predefined_type(
     spec="https://drafts.csswg.org/css-contain/#contain-property",
 )}
 
-// Non-standard
+
 ${helpers.predefined_type(
     "-moz-appearance",
     "Appearance",
@@ -657,7 +657,7 @@ ${helpers.predefined_type(
     spec="https://drafts.csswg.org/css-will-change/#will-change",
 )}
 
-// The spec issue for the parse_method: https://github.com/w3c/csswg-drafts/issues/4102.
+
 ${helpers.predefined_type(
     "shape-image-threshold",
     "Opacity",
@@ -695,9 +695,9 @@ ${helpers.predefined_type(
     spec="https://compat.spec.whatwg.org/#touch-action",
 )}
 
-// Note that we only implement -webkit-line-clamp as a single, longhand
-// property for now, but the spec defines line-clamp as a shorthand for separate
-// max-lines, block-ellipsis, and continue properties.
+
+
+
 ${helpers.predefined_type(
     "-webkit-line-clamp",
     "PositiveIntegerOrNone",
