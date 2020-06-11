@@ -2309,8 +2309,14 @@ class StaticAnalysis(MachCommandBase):
                             
                             
                             relative_path = os.path.relpath(original_path, self.topsrcdir)
-                            patch = e.output.replace(target_file, relative_path)
-                            patch = patch.replace(original_path, relative_path)
+                            
+                            
+                            original_path_diff = os.path.join("a", relative_path)
+                            target_path_diff = os.path.join("b", relative_path)
+                            patch = e.output.replace("+++ {}".format(target_file),
+                                                     "+++ {}".format(target_path_diff)).replace(
+                                                         "-- {}".format(original_path),
+                                                         "-- {}".format(original_path_diff))
                             patches[original_path] = patch
 
             if output_format == 'json':
