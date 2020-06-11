@@ -297,6 +297,8 @@ class ComputedStyle {
 
   StyleWritingMode WritingMode() const { return {mSource.WritingMode().mBits}; }
 
+  bool HasOverriddenAppearance(StyleAppearance) const;
+
  protected:
   
   
