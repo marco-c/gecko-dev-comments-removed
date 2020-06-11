@@ -12,6 +12,8 @@
 #include "js/TypeDecls.h"
 
 
+class JSLinearString;
+
 namespace js {
 class BaseScript;
 class BaseShape;
@@ -144,6 +146,19 @@ inline constexpr bool IsBaseTraceType_v = IsBaseTraceType<T>::value;
 JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
 #undef JS_EXPAND_DEF
 
+template <>
+struct MapTypeToTraceKind<JSLinearString> {
+  static const JS::TraceKind kind = JS::TraceKind::String;
+};
+template <>
+struct MapTypeToTraceKind<JSFunction> {
+  static const JS::TraceKind kind = JS::TraceKind::Object;
+};
+template <>
+struct MapTypeToTraceKind<JSScript> {
+  static const JS::TraceKind kind = JS::TraceKind::Script;
+};
+
 
 
 
@@ -203,11 +218,6 @@ template <>
 struct MapTypeToRootKind<jsid> {
   static const JS::RootKind kind = JS::RootKind::Id;
 };
-template <>
-struct MapTypeToRootKind<JSFunction*> : public MapTypeToRootKind<JSObject*> {};
-template <>
-struct MapTypeToRootKind<JSScript*>
-    : public MapTypeToRootKind<js::BaseScript*> {};
 
 
 

@@ -28,10 +28,11 @@ class JS_PUBLIC_API Value;
 
 
 #define JS_FOR_EACH_PUBLIC_GC_POINTER_TYPE(D) \
-  D(JS::Symbol*)                              \
   D(JS::BigInt*)                              \
+  D(JS::Symbol*)                              \
   D(JSAtom*)                                  \
   D(JSFunction*)                              \
+  D(JSLinearString*)                          \
   D(JSObject*)                                \
   D(JSScript*)                                \
   D(JSString*)
