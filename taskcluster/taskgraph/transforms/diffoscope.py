@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 """
 This transform construct tasks to perform diffs between builds, as
 defined in kind.yml
@@ -27,44 +27,46 @@ index_or_string = Any(
 )
 
 diff_description_schema = Schema({
-    
+    # Name of the diff task.
     Required('name'): text_type,
 
-    
+    # Treeherder symbol.
     Required('symbol'): text_type,
 
-    
+    # relative path (from config.path) to the file the task was defined in.
     Optional('job-from'): text_type,
 
-    
+    # Original and new builds to compare.
     Required('original'): index_or_string,
     Required('new'): index_or_string,
 
-    
-    
+    # Arguments to pass to diffoscope, used for job-defaults in
+    # taskcluster/ci/diffoscope/kind.yml
     Optional('args'): text_type,
 
-    
+    # Extra arguments to pass to diffoscope, that can be set per job.
     Optional('extra-args'): text_type,
 
-    
+    # Fail the task when differences are detected.
     Optional('fail-on-diff'): bool,
 
-    
-    
-    
+    # What artifact to check the differences of. Defaults to target.tar.bz2
+    # for Linux, target.dmg for Mac, target.zip for Windows, target.apk for
+    # Android.
     Optional('artifact'): text_type,
 
-    
-    
-    
+    # Whether to unpack first. Diffoscope can normally work without unpacking,
+    # but when one needs to --exclude some contents, that doesn't work out well
+    # if said content is packed (e.g. in omni.ja).
     Optional('unpack'): bool,
 
-    
+    # Commands to run before performing the diff.
     Optional('pre-diff-commands'): [text_type],
 
-    
+    # Only run the task on a set of projects/branches.
     Optional('run-on-projects'): task_description_schema['run-on-projects'],
+
+    Optional('optimization'): task_description_schema['optimization'],
 })
 
 transforms = TransformSequence()
@@ -166,6 +168,7 @@ def fill_template(config, tasks):
                 ),
             },
             'dependencies': deps,
+            'optimization': task.get('optimization'),
         }
         if 'run-on-projects' in task:
             taskdesc['run-on-projects'] = task['run-on-projects']
