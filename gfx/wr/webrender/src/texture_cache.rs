@@ -7,8 +7,8 @@ use api::{DebugFlags, ImageDescriptor};
 use api::units::*;
 #[cfg(test)]
 use api::{DocumentId, IdNamespace};
-use crate::device::{TextureFilter, TextureFormatPair, total_gpu_bytes_allocated};
-use crate::freelist::{FreeList, FreeListHandle, UpsertResult, WeakFreeListHandle};
+use crate::device::{TextureFilter, TextureFormatPair};
+use crate::freelist::{FreeListHandle, WeakFreeListHandle};
 use crate::gpu_cache::{GpuCache, GpuCacheHandle};
 use crate::gpu_types::{ImageSource, UvRectKind};
 use crate::internal_types::{
@@ -16,14 +16,14 @@ use crate::internal_types::{
     TextureUpdateList, TextureUpdateSource, TextureSource,
     TextureCacheAllocInfo, TextureCacheUpdate,
 };
+use crate::lru_cache::LRUCache;
 use crate::profiler::{ResourceProfileCounter, TextureCacheProfileCounters};
-use crate::render_backend::{FrameId, FrameStamp};
+use crate::render_backend::FrameStamp;
 use crate::resource_cache::{CacheItem, CachedImageData};
 use smallvec::SmallVec;
 use std::cell::Cell;
 use std::cmp;
 use std::mem;
-use std::time::{Duration, SystemTime};
 use std::rc::Rc;
 
 
@@ -37,11 +37,6 @@ const PICTURE_TILE_FORMAT: ImageFormat = ImageFormat::RGBA8;
 
 const TEXTURE_REGION_PIXELS: usize =
     (TEXTURE_REGION_DIMENSIONS as usize) * (TEXTURE_REGION_DIMENSIONS as usize);
-
-
-
-
-const CACHE_EVICTION_THRESHOLD_BYTES: usize = 32 * 1024 * 1024;
 
 
 
@@ -77,26 +72,9 @@ impl EntryDetails {
     }
 }
 
-impl EntryDetails {
-    
-    fn kind(&self) -> EntryKind {
-        match *self {
-            EntryDetails::Standalone { .. } => EntryKind::Standalone,
-            EntryDetails::Picture { .. } => EntryKind::Picture,
-            EntryDetails::Cache { .. } => EntryKind::Shared,
-        }
-    }
-}
-
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum EntryKind {
-    Standalone,
-    Picture,
-    Shared,
-}
-
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum CacheEntryMarker {}
 
 
@@ -113,6 +91,9 @@ struct CacheEntry {
     
     user_data: [f32; 3],
     
+    
+    
+    
     last_access: FrameStamp,
     
     uv_rect_handle: GpuCacheHandle,
@@ -126,8 +107,6 @@ struct CacheEntry {
     eviction_notice: Option<EvictionNotice>,
     
     uv_rect_kind: UvRectKind,
-    
-    eviction: Eviction,
 }
 
 impl CacheEntry {
@@ -153,7 +132,6 @@ impl CacheEntry {
             uv_rect_handle: GpuCacheHandle::new(),
             eviction_notice: None,
             uv_rect_kind: params.uv_rect_kind,
-            eviction: Eviction::Auto,
         }
     }
 
@@ -452,137 +430,11 @@ impl PictureTextures {
 }
 
 
-
-
-#[derive(Default, Debug)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-struct EntryHandles {
-    
-    standalone: Vec<FreeListHandle<CacheEntryMarker>>,
-    
-    picture: Vec<FreeListHandle<CacheEntryMarker>>,
-    
-    shared: Vec<FreeListHandle<CacheEntryMarker>>,
-}
-
-impl EntryHandles {
-    
-    fn select(&mut self, kind: EntryKind) -> &mut Vec<FreeListHandle<CacheEntryMarker>> {
-        match kind {
-            EntryKind::Standalone => &mut self.standalone,
-            EntryKind::Picture => &mut self.picture,
-            EntryKind::Shared => &mut self.shared,
-        }
-    }
-}
-
-
 struct CacheAllocParams {
     descriptor: ImageDescriptor,
     filter: TextureFilter,
     user_data: [f32; 3],
     uv_rect_kind: UvRectKind,
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[derive(Clone, Copy)]
-struct EvictionThreshold {
-    id: FrameId,
-    time: SystemTime,
-}
-
-impl EvictionThreshold {
-    
-    
-    fn should_evict(&self, last_access: FrameStamp) -> bool {
-        last_access.frame_id() < self.id &&
-        last_access.time() < self.time
-    }
-}
-
-
-
-
-
-
-
-struct EvictionThresholdBuilder {
-    now: FrameStamp,
-    max_frames: Option<usize>,
-    max_time_ms: Option<usize>,
-    scale_by_pressure: bool,
-}
-
-impl EvictionThresholdBuilder {
-    fn new(now: FrameStamp) -> Self {
-        Self {
-            now,
-            max_frames: None,
-            max_time_ms: None,
-            scale_by_pressure: false,
-        }
-    }
-
-    fn max_frames(mut self, frames: usize) -> Self {
-        self.max_frames = Some(frames);
-        self
-    }
-
-    fn max_time_s(mut self, seconds: usize) -> Self {
-        self.max_time_ms = Some(seconds * 1000);
-        self
-    }
-
-    fn scale_by_pressure(mut self) -> Self {
-        self.scale_by_pressure = true;
-        self
-    }
-
-    fn build(self) -> EvictionThreshold {
-        const MAX_MEMORY_PRESSURE_BYTES: f64 = (300 * 512 * 512 * 4) as f64;
-        
-        let pressure_factor = if self.scale_by_pressure {
-            let bytes_allocated = total_gpu_bytes_allocated() as f64;
-            1.0 - (bytes_allocated / MAX_MEMORY_PRESSURE_BYTES).min(0.98)
-        } else {
-            1.0
-        };
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let max_frames = self.max_frames
-            .map(|f| (f as f64 * pressure_factor) as usize)
-            .unwrap_or(0)
-            .min(self.now.frame_id().as_usize() - 1);
-        let max_time_ms = self.max_time_ms
-            .map(|f| (f as f64 * pressure_factor) as usize)
-            .unwrap_or(0) as u64;
-
-        EvictionThreshold {
-            id: self.now.frame_id() - max_frames,
-            time: self.now.time() - Duration::from_millis(max_time_ms),
-        }
-    }
 }
 
 
@@ -635,14 +487,17 @@ pub struct TextureCache {
     now: FrameStamp,
 
     
-    entries: FreeList<CacheEntry, CacheEntryMarker>,
+    
+    picture_cache_handles: Vec<FreeListHandle<CacheEntryMarker>>,
 
     
-    last_shared_cache_expiration: FrameStamp,
+    
+    lru_cache: LRUCache<CacheEntry, CacheEntryMarker>,
 
     
     
-    handles: EntryHandles,
+    
+    manual_handles: Vec<FreeListHandle<CacheEntryMarker>>,
 
     
     
@@ -651,6 +506,17 @@ pub struct TextureCache {
     
     
     standalone_bytes_allocated: usize,
+
+    
+    
+    
+    eviction_threshold_bytes: usize,
+
+    
+    
+    
+    
+    max_evictions_per_frame: usize,
 }
 
 impl TextureCache {
@@ -661,6 +527,8 @@ impl TextureCache {
         initial_size: DeviceIntSize,
         color_formats: TextureFormatPair<ImageFormat>,
         swizzle: Option<SwizzleSettings>,
+        eviction_threshold_bytes: usize,
+        max_evictions_per_frame: usize,
     ) -> Self {
         
         
@@ -709,7 +577,6 @@ impl TextureCache {
                 &mut next_texture_id,
                 &mut pending_updates,
             ),
-            entries: FreeList::new(),
             max_texture_size,
             max_texture_layers,
             swizzle,
@@ -717,10 +584,13 @@ impl TextureCache {
             next_id: next_texture_id,
             pending_updates,
             now: FrameStamp::INVALID,
-            last_shared_cache_expiration: FrameStamp::INVALID,
-            handles: EntryHandles::default(),
+            lru_cache: LRUCache::new(),
             shared_bytes_allocated: 0,
             standalone_bytes_allocated: 0,
+            picture_cache_handles: Vec::new(),
+            manual_handles: Vec::new(),
+            eviction_threshold_bytes,
+            max_evictions_per_frame,
         }
     }
 
@@ -740,6 +610,8 @@ impl TextureCache {
             DeviceIntSize::zero(),
             TextureFormatPair::from(image_format),
             None,
+            64 * 1024 * 1024,
+            32,
         );
         let mut now = FrameStamp::first(DocumentId::new(IdNamespace(1), 1));
         now.advance();
@@ -752,42 +624,36 @@ impl TextureCache {
     }
 
     
-    fn clear_kind(&mut self, kind: EntryKind) {
-        let entry_handles = mem::replace(
-            self.handles.select(kind),
+    
+    pub fn clear_all(&mut self) {
+        
+        let manual_handles = mem::replace(
+            &mut self.manual_handles,
             Vec::new(),
         );
+        for handle in manual_handles {
+            self.evict_impl(handle);
+        }
 
-        for handle in entry_handles {
-            let entry = self.entries.free(handle);
+        
+        let picture_handles = mem::replace(
+            &mut self.picture_cache_handles,
+            Vec::new(),
+        );
+        for handle in picture_handles {
+            self.evict_impl(handle);
+        }
+
+        
+        while let Some(entry) = self.lru_cache.pop_oldest() {
             entry.evict();
             self.free(&entry);
         }
 
-        self.pending_updates.note_clear();
-    }
-
-    fn clear_standalone(&mut self) {
-        debug_assert!(!self.now.is_valid());
-        self.clear_kind(EntryKind::Standalone);
-    }
-
-    fn clear_picture(&mut self) {
-        self.clear_kind(EntryKind::Picture);
+        
         self.picture_textures.clear(&mut self.pending_updates);
-    }
-
-    fn clear_shared(&mut self) {
-        self.clear_kind(EntryKind::Shared);
         self.shared_textures.clear(&mut self.pending_updates);
-    }
-
-    
-    
-    pub fn clear_all(&mut self) {
-        self.clear_standalone();
-        self.clear_picture();
-        self.clear_shared();
+        self.pending_updates.note_clear();
     }
 
     
@@ -795,22 +661,19 @@ impl TextureCache {
         debug_assert!(!self.now.is_valid());
         profile_scope!("begin_frame");
         self.now = stamp;
+
+        
+        
+        self.evict_items_from_cache_if_required();
     }
 
     pub fn end_frame(&mut self, texture_cache_profile: &mut TextureCacheProfileCounters) {
         debug_assert!(self.now.is_valid());
-        
-        
-        
-        
-        
-        
-        
-        
-        let threshold = self.default_eviction();
-        self.expire_old_entries(EntryKind::Standalone, threshold);
         self.expire_old_picture_cache_tiles();
 
+        
+        
+        
         self.shared_textures.array_alpha8_linear.release_empty_textures(&mut self.pending_updates);
         self.shared_textures.array_alpha16_linear.release_empty_textures(&mut self.pending_updates);
         self.shared_textures.array_color8_linear.release_empty_textures(&mut self.pending_updates);
@@ -826,6 +689,8 @@ impl TextureCache {
             .update_profile(&mut texture_cache_profile.pages_color8_nearest);
         self.picture_textures
             .update_profile(&mut texture_cache_profile.pages_picture);
+        texture_cache_profile.shared_bytes.set(self.shared_bytes_allocated);
+        texture_cache_profile.standalone_bytes.set(self.standalone_bytes_allocated);
 
         self.now = FrameStamp::INVALID;
     }
@@ -839,7 +704,7 @@ impl TextureCache {
     
     
     pub fn request(&mut self, handle: &TextureCacheHandle, gpu_cache: &mut GpuCache) -> bool {
-        match self.entries.get_opt_mut(handle) {
+        match self.lru_cache.touch(handle) {
             
             
             Some(entry) => {
@@ -855,7 +720,7 @@ impl TextureCache {
     
     
     pub fn needs_upload(&self, handle: &TextureCacheHandle) -> bool {
-        self.entries.get_opt(handle).is_none()
+        self.lru_cache.get_opt(handle).is_none()
     }
 
     pub fn max_texture_size(&self) -> i32 {
@@ -880,6 +745,16 @@ impl TextureCache {
     #[cfg(feature = "replay")]
     pub fn swizzle_settings(&self) -> Option<SwizzleSettings> {
         self.swizzle
+    }
+
+    #[cfg(feature = "replay")]
+    pub fn eviction_threshold_bytes(&self) -> usize {
+        self.eviction_threshold_bytes
+    }
+
+    #[cfg(feature = "replay")]
+    pub fn max_evictions_per_frame(&self) -> usize {
+        self.max_evictions_per_frame
     }
 
     pub fn pending_updates(&mut self) -> TextureUpdateList {
@@ -908,7 +783,7 @@ impl TextureCache {
         
         
         
-        let realloc = match self.entries.get_opt(handle) {
+        let realloc = match self.lru_cache.get_opt(handle) {
             Some(entry) => {
                 entry.size != descriptor.size || (entry.input_format != descriptor.format &&
                     entry.alternative_input_format() != descriptor.format)
@@ -927,7 +802,14 @@ impl TextureCache {
             dirty_rect = DirtyRect::All;
         }
 
-        let entry = self.entries.get_opt_mut(handle)
+        
+        if eviction == Eviction::Manual {
+            if let Some(manual_handle) = self.lru_cache.set_manual_eviction(handle) {
+                self.manual_handles.push(manual_handle);
+            }
+        }
+
+        let entry = self.lru_cache.get_opt_mut(handle)
             .expect("BUG: handle must be valid now");
 
         
@@ -942,8 +824,6 @@ impl TextureCache {
 
         
         entry.update_gpu_cache(gpu_cache);
-
-        entry.eviction = eviction;
 
         
         
@@ -970,13 +850,13 @@ impl TextureCache {
     
     
     pub fn is_allocated(&self, handle: &TextureCacheHandle) -> bool {
-        self.entries.get_opt(handle).is_some()
+        self.lru_cache.get_opt(handle).is_some()
     }
 
     
     
     pub fn is_recently_used(&self, handle: &TextureCacheHandle, margin: usize) -> bool {
-        self.entries.get_opt(handle).map_or(false, |entry| {
+        self.lru_cache.get_opt(handle).map_or(false, |entry| {
             entry.last_access.frame_id() + margin >= self.now.frame_id()
         })
     }
@@ -984,7 +864,7 @@ impl TextureCache {
     
     
     pub fn get_allocated_size(&self, handle: &TextureCacheHandle) -> Option<usize> {
-        self.entries.get_opt(handle).map(|entry| {
+        self.lru_cache.get_opt(handle).map(|entry| {
             (entry.input_format.bytes_per_pixel() * entry.size.area()) as usize
         })
     }
@@ -1013,7 +893,7 @@ impl TextureCache {
         &self,
         handle: &TextureCacheHandle,
     ) -> (CacheTextureId, LayerIndex, DeviceIntRect, Swizzle, GpuCacheHandle) {
-        let entry = self.entries
+        let entry = self.lru_cache
             .get_opt(handle)
             .expect("BUG: was dropped from cache or not updated!");
         debug_assert_eq!(entry.last_access, self.now);
@@ -1025,44 +905,39 @@ impl TextureCache {
          entry.uv_rect_handle)
     }
 
-    pub fn mark_unused(&mut self, handle: &TextureCacheHandle) {
-        if let Some(entry) = self.entries.get_opt_mut(handle) {
-            
-            
-            entry.last_access = FrameStamp::INVALID;
-            entry.eviction = Eviction::Auto;
+    
+    fn evict_impl(
+        &mut self,
+        handle: FreeListHandle<CacheEntryMarker>,
+    ) {
+        let entry = self.lru_cache.remove_manual_handle(handle);
+        entry.evict();
+        self.free(&entry);
+    }
+
+    
+    
+    pub fn evict_manual_handle(&mut self, handle: &TextureCacheHandle) {
+        
+        
+        
+        let index = self.manual_handles.iter().position(|strong_handle| {
+            strong_handle.matches(handle)
+        });
+
+        if let Some(index) = index {
+            let handle = self.manual_handles.swap_remove(index);
+            self.evict_impl(handle);
         }
     }
 
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn default_eviction(&self) -> EvictionThreshold {
-        EvictionThresholdBuilder::new(self.now)
-            .max_frames(200)
-            .max_time_s(2)
-            .scale_by_pressure()
-            .build()
-    }
-
-    
-    
-    
     fn expire_old_picture_cache_tiles(&mut self) {
-        for i in (0 .. self.handles.picture.len()).rev() {
+        for i in (0 .. self.picture_cache_handles.len()).rev() {
             let evict = {
-                let entry = self.entries.get(&self.handles.picture[i]);
+                let entry = self.lru_cache.get(&self.picture_cache_handles[i]);
 
                 
                 
@@ -1080,51 +955,34 @@ impl TextureCache {
             };
 
             if evict {
-                let handle = self.handles.picture.swap_remove(i);
-                let entry = self.entries.free(handle);
-                entry.evict();
-                self.free(&entry);
+                let handle = self.picture_cache_handles.swap_remove(i);
+                self.evict_impl(handle);
             }
         }
     }
 
     
     
-    
-    fn expire_old_entries(&mut self, kind: EntryKind, threshold: EvictionThreshold) {
-        
-        
-        debug_assert_ne!(kind, EntryKind::Picture);
+    fn evict_items_from_cache_if_required(&mut self) {
+        let mut eviction_count = 0;
 
-        debug_assert!(self.now.is_valid());
         
         
-        
-        for i in (0..self.handles.select(kind).len()).rev() {
-            let evict = {
-                let entry = self.entries.get(&self.handles.select(kind)[i]);
-                match entry.eviction {
-                    Eviction::Manual => false,
-                    Eviction::Auto => threshold.should_evict(entry.last_access),
+        while self.current_memory_estimate() > self.eviction_threshold_bytes && eviction_count < self.max_evictions_per_frame {
+            match self.lru_cache.pop_oldest() {
+                Some(entry) => {
+                    entry.evict();
+                    self.free(&entry);
+                    eviction_count += 1;
                 }
-            };
-            if evict {
-                let handle = self.handles.select(kind).swap_remove(i);
-                let entry = self.entries.free(handle);
-                entry.evict();
-                self.free(&entry);
+                None => {
+                    
+                    
+                    
+                    
+                    break;
+                }
             }
-        }
-    }
-
-    
-    
-    
-    fn maybe_expire_old_shared_entries(&mut self, threshold: EvictionThreshold) {
-        debug_assert!(self.now.is_valid());
-        if self.last_shared_cache_expiration.frame_id() < self.now.frame_id() {
-            self.expire_old_entries(EntryKind::Shared, threshold);
-            self.last_shared_cache_expiration = self.now;
         }
     }
 
@@ -1188,21 +1046,6 @@ impl TextureCache {
                 region.free(origin, &mut unit.empty_regions);
             }
         }
-    }
-
-    
-    fn has_space_in_shared_cache(
-        &mut self,
-        params: &CacheAllocParams,
-    ) -> bool {
-        let texture_array = self.shared_textures.select(
-            params.descriptor.format,
-            params.filter,
-        );
-        let slab_size = SlabSize::new(params.descriptor.size);
-        texture_array.units
-            .iter()
-            .any(|unit| unit.can_alloc(slab_size))
     }
 
     
@@ -1364,55 +1207,9 @@ impl TextureCache {
         
         
         if self.is_allowed_in_shared_cache(params.filter, &params.descriptor) {
-            if !self.has_space_in_shared_cache(params) &&
-               self.current_memory_estimate() > CACHE_EVICTION_THRESHOLD_BYTES {
-                
-                let threshold = self.default_eviction();
-                self.maybe_expire_old_shared_entries(threshold);
-            }
             self.allocate_from_shared_cache(params)
         } else {
             self.allocate_standalone_entry(params)
-        }
-    }
-
-    fn upsert_entry(
-        &mut self,
-        cache_entry: CacheEntry,
-        handle: &mut TextureCacheHandle,
-    ) {
-        let new_kind = cache_entry.details.kind();
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        match self.entries.upsert(handle, cache_entry) {
-            UpsertResult::Updated(old_entry) => {
-                if new_kind != old_entry.details.kind() {
-                    
-                    
-                    
-                    let (from, to) = match new_kind {
-                        EntryKind::Standalone =>
-                            (&mut self.handles.shared, &mut self.handles.standalone),
-                        EntryKind::Picture => unreachable!(),
-                        EntryKind::Shared =>
-                            (&mut self.handles.standalone, &mut self.handles.shared),
-                    };
-                    let idx = from.iter().position(|h| h.weak() == *handle).unwrap();
-                    to.push(from.remove(idx));
-                }
-                self.free(&old_entry);
-            }
-            UpsertResult::Inserted(new_handle) => {
-                *handle = new_handle.weak();
-                self.handles.select(new_kind).push(new_handle);
-            }
         }
     }
 
@@ -1421,7 +1218,18 @@ impl TextureCache {
     fn allocate(&mut self, params: &CacheAllocParams, handle: &mut TextureCacheHandle) {
         debug_assert!(self.now.is_valid());
         let new_cache_entry = self.allocate_cache_entry(params);
-        self.upsert_entry(new_cache_entry, handle)
+
+        
+        
+        
+        
+        
+        
+        
+        if let Some(old_entry) = self.lru_cache.replace_or_insert(handle, new_cache_entry) {
+            old_entry.evict();
+            self.free(&old_entry);
+        }
     }
 
     
@@ -1434,7 +1242,7 @@ impl TextureCache {
         debug_assert!(self.now.is_valid());
         debug_assert!(tile_size.width > 0 && tile_size.height > 0);
 
-        if self.entries.get_opt(handle).is_none() {
+        if self.lru_cache.get_opt(handle).is_none() {
             let cache_entry = self.picture_textures.get_or_allocate_tile(
                 tile_size,
                 self.now,
@@ -1442,11 +1250,19 @@ impl TextureCache {
                 &mut self.pending_updates,
             );
 
-            self.upsert_entry(cache_entry, handle)
+            
+            
+
+            *handle = self.lru_cache.push_new(cache_entry);
+
+            let strong_handle = self.lru_cache
+                .set_manual_eviction(handle)
+                .expect("bug: handle must be valid here");
+            self.picture_cache_handles.push(strong_handle);
         }
 
         
-        self.entries
+        self.lru_cache
             .get_opt_mut(handle)
             .expect("BUG: handle must be valid now")
             .update_gpu_cache(gpu_cache);
@@ -1757,7 +1573,6 @@ impl TextureArray {
             texture_id: unit.texture_id,
             eviction_notice: None,
             uv_rect_kind: params.uv_rect_kind,
-            eviction: Eviction::Auto,
         }
     }
 }
@@ -1841,7 +1656,6 @@ impl WholeTextureArray {
             texture_id,
             eviction_notice: None,
             uv_rect_kind: UvRectKind::Rect,
-            eviction: Eviction::Auto,
         }
     }
 

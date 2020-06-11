@@ -76,6 +76,13 @@ impl<M> FreeListHandle<M> {
             _marker: PhantomData,
         }
     }
+
+    
+    
+    pub fn matches(&self, weak_handle: &WeakFreeListHandle<M>) -> bool {
+        self.index == weak_handle.index &&
+        self.epoch == weak_handle.epoch
+    }
 }
 
 impl<M> Clone for WeakFreeListHandle<M> {
@@ -143,11 +150,6 @@ pub struct FreeList<T, M> {
     _marker: PhantomData<M>,
 }
 
-pub enum UpsertResult<T, M> {
-    Updated(T),
-    Inserted(FreeListHandle<M>),
-}
-
 impl<T, M> FreeList<T, M> {
     
     
@@ -205,21 +207,6 @@ impl<T, M> FreeList<T, M> {
             slot.value.as_mut()
         } else {
             None
-        }
-    }
-
-    
-    
-    
-    
-    pub fn upsert(&mut self, id: &WeakFreeListHandle<M>, data: T) -> UpsertResult<T, M> {
-        if self.slots[id.index as usize].epoch == id.epoch {
-            let slot = &mut self.slots[id.index as usize];
-            let result = UpsertResult::Updated(slot.value.take().unwrap());
-            slot.value = Some(data);
-            result
-        } else {
-            UpsertResult::Inserted(self.insert(data))
         }
     }
 

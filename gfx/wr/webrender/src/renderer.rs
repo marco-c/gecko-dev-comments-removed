@@ -2568,6 +2568,8 @@ impl Renderer {
 
         let rb_font_instances = font_instances.clone();
         let enable_multithreading = options.enable_multithreading;
+        let texture_cache_eviction_threshold_bytes = options.texture_cache_eviction_threshold_bytes;
+        let texture_cache_max_evictions_per_frame = options.texture_cache_max_evictions_per_frame;
         thread::Builder::new().name(rb_thread_name.clone()).spawn(move || {
             register_thread_with_profiler(rb_thread_name.clone());
             if let Some(ref thread_listener) = *thread_listener_for_render_backend {
@@ -2585,6 +2587,8 @@ impl Renderer {
                 start_size,
                 color_cache_formats,
                 swizzle_settings,
+                texture_cache_eviction_threshold_bytes,
+                texture_cache_max_evictions_per_frame,
             );
 
             let glyph_cache = GlyphCache::new(max_glyph_cache_size);
@@ -7023,6 +7027,14 @@ pub struct RendererOptions {
     
     
     pub panic_on_gl_error: bool,
+    
+    
+    pub texture_cache_eviction_threshold_bytes: usize,
+    
+    
+    
+    
+    pub texture_cache_max_evictions_per_frame: usize,
 }
 
 impl Default for RendererOptions {
@@ -7078,6 +7090,8 @@ impl Default for RendererOptions {
             compositor_config: CompositorConfig::default(),
             enable_gpu_markers: true,
             panic_on_gl_error: false,
+            texture_cache_eviction_threshold_bytes: 64 * 1024 * 1024,
+            texture_cache_max_evictions_per_frame: 32,
         }
     }
 }
