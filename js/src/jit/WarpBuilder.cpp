@@ -1750,7 +1750,7 @@ bool WarpBuilder::build_FunctionThis(BytecodeLocation loc) {
 
   
   MDefinition* def = current->getSlot(info().thisSlot());
-  MComputeThis* thisObj = MComputeThis::New(alloc(), def);
+  MBoxNonStrictThis* thisObj = MBoxNonStrictThis::New(alloc(), def);
   current->add(thisObj);
   current->push(thisObj);
 

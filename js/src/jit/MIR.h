@@ -5922,14 +5922,14 @@ class MStringSplit : public MBinaryInstruction,
 
 
 
-class MComputeThis : public MUnaryInstruction, public BoxPolicy<0>::Data {
-  explicit MComputeThis(MDefinition* def)
+class MBoxNonStrictThis : public MUnaryInstruction, public BoxPolicy<0>::Data {
+  explicit MBoxNonStrictThis(MDefinition* def)
       : MUnaryInstruction(classOpcode, def) {
     setResultType(MIRType::Object);
   }
 
  public:
-  INSTRUCTION_HEADER(ComputeThis)
+  INSTRUCTION_HEADER(BoxNonStrictThis)
   TRIVIAL_NEW_WRAPPERS
 
   bool possiblyCalls() const override { return true; }

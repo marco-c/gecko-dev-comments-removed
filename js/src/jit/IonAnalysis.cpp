@@ -1197,7 +1197,7 @@ bool jit::EliminateDeadResumePointOperands(MIRGenerator* mir, MIRGraph& graph) {
       
       
       if (ins->isUnbox() || ins->isParameter() || ins->isTypeBarrier() ||
-          ins->isComputeThis() || ins->isFilterTypeSet()) {
+          ins->isBoxNonStrictThis() || ins->isFilterTypeSet()) {
         continue;
       }
 
