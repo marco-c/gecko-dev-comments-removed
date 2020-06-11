@@ -313,8 +313,6 @@
 
       this._autoScrollPopup = null;
 
-      this._autoScrollNeedsCleanup = false;
-
       
 
 
@@ -1224,11 +1222,6 @@
       if (!this.isRemoteBrowser) {
         this.removeEventListener("pagehide", this.onPageHide, true);
       }
-
-      if (this._autoScrollNeedsCleanup) {
-        
-        this._autoScrollPopup.remove();
-      }
     }
 
     receiveMessage(aMessage) {
@@ -1416,13 +1409,17 @@
       }
     }
 
-    _createAutoScrollPopup() {
-      var popup = document.createXULElement("panel");
-      popup.className = "autoscroller";
-      popup.setAttribute("consumeoutsideclicks", "true");
-      popup.setAttribute("rolluponmousewheel", "true");
-      popup.setAttribute("hidden", "true");
-      return popup;
+    _getAndMaybeCreateAutoScrollPopup() {
+      let autoscrollPopup = document.getElementById("autoscroller");
+      if (!autoscrollPopup) {
+        autoscrollPopup = document.createXULElement("panel");
+        autoscrollPopup.className = "autoscroller";
+        autoscrollPopup.setAttribute("consumeoutsideclicks", "true");
+        autoscrollPopup.setAttribute("rolluponmousewheel", "true");
+        autoscrollPopup.id = "autoscroller";
+      }
+
+      return autoscrollPopup;
     }
 
     startScroll({
@@ -1439,17 +1436,8 @@
 
       const POPUP_SIZE = 32;
       if (!this._autoScrollPopup) {
-        if (this.hasAttribute("autoscrollpopup")) {
-          
-          this._autoScrollPopup = document.getElementById(
-            this.getAttribute("autoscrollpopup")
-          );
-        } else {
-          
-          this._autoScrollPopup = this._createAutoScrollPopup();
-          document.documentElement.appendChild(this._autoScrollPopup);
-          this._autoScrollNeedsCleanup = true;
-        }
+        this._autoScrollPopup = this._getAndMaybeCreateAutoScrollPopup();
+        document.documentElement.appendChild(this._autoScrollPopup);
         this._autoScrollPopup.removeAttribute("hidden");
         this._autoScrollPopup.setAttribute("noautofocus", "true");
         this._autoScrollPopup.style.height = POPUP_SIZE + "px";

@@ -237,18 +237,20 @@
            noautofocus="true"
            hidden="true" />
 
-    
+    <html:template id="dateTimePickerTemplate">
+      
 
-    <panel id="DateTimePickerPanel"
-           type="arrow"
-           hidden="true"
-           orient="vertical"
-           noautofocus="true"
-           norolluponanchor="true"
-           consumeoutsideclicks="never"
-           level="parent"
-           tabspecific="true">
-    </panel>
+      <panel id="DateTimePickerPanel"
+             type="arrow"
+             hidden="true"
+             orient="vertical"
+             noautofocus="true"
+             norolluponanchor="true"
+             consumeoutsideclicks="never"
+             level="parent"
+             tabspecific="true">
+      </panel>
+    </html:template>
 
     
 
@@ -264,10 +266,12 @@
         />
     </menulist>
 
-    
-    <panel id="invalid-form-popup" type="arrow" orient="vertical" noautofocus="true" hidden="true" level="parent">
-      <description/>
-    </panel>
+    <html:template id="invalidFormTemplate">
+      
+      <panel id="invalid-form-popup" type="arrow" orient="vertical" noautofocus="true" level="parent">
+        <description/>
+      </panel>
+    </html:template>
 
     <html:template id="editBookmarkPanelTemplate">
       <panel id="editBookmarkPanel"
