@@ -55,7 +55,7 @@ bool ElemOpEmitter::emitGet() {
   MOZ_ASSERT(state_ == State::Key);
 
   if (isIncDec() || isCompoundAssignment()) {
-    if (!bce_->emit1(JSOp::ToId)) {
+    if (!bce_->emit1(JSOp::ToPropertyKey)) {
       
       
       
@@ -151,7 +151,7 @@ bool ElemOpEmitter::emitDelete() {
   MOZ_ASSERT(isDelete());
 
   if (isSuper()) {
-    if (!bce_->emit1(JSOp::ToId)) {
+    if (!bce_->emit1(JSOp::ToPropertyKey)) {
       
       return false;
     }

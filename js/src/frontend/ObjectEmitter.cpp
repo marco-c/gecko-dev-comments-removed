@@ -209,7 +209,7 @@ bool PropertyEmitter::prepareForComputedPropValue() {
 
   
 
-  if (!bce_->emit1(JSOp::ToId)) {
+  if (!bce_->emit1(JSOp::ToPropertyKey)) {
     
     return false;
   }

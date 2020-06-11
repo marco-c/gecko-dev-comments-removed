@@ -1534,7 +1534,7 @@ class MOZ_RAII PoppedValueUseChecker {
       switch (op) {
         case JSOp::Pos:
         case JSOp::ToNumeric:
-        case JSOp::ToId:
+        case JSOp::ToPropertyKey:
         case JSOp::ToString:
           
           
@@ -2277,8 +2277,8 @@ AbortReasonOr<Ok> IonBuilder::inspectOpcode(JSOp op, bool* restarted) {
     case JSOp::ToAsyncIter:
       return jsop_toasynciter();
 
-    case JSOp::ToId:
-      return jsop_toid();
+    case JSOp::ToPropertyKey:
+      return jsop_topropertykey();
 
     case JSOp::IterNext:
       return jsop_iternext();
@@ -12132,7 +12132,7 @@ AbortReasonOr<Ok> IonBuilder::jsop_toasynciter() {
   return resumeAfter(ins);
 }
 
-AbortReasonOr<Ok> IonBuilder::jsop_toid() {
+AbortReasonOr<Ok> IonBuilder::jsop_topropertykey() {
   
   MIRType type = current->peek(-1)->type();
   if (type == MIRType::Int32 || type == MIRType::String ||
