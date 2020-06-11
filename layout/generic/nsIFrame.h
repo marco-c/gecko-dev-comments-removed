@@ -606,7 +606,8 @@ class nsIFrame : public nsQueryFrame {
         mHasBSizeChange(false),
         mInScrollAnchorChain(false),
         mHasColumnSpanSiblings(false),
-        mDescendantMayDependOnItsStaticPosition(false) {
+        mDescendantMayDependOnItsStaticPosition(false),
+        mShouldGenerateComputedInfo(false) {
     MOZ_ASSERT(mComputedStyle);
     MOZ_ASSERT(mPresContext);
     mozilla::PodZero(&mOverflow);
@@ -4583,6 +4584,13 @@ class nsIFrame : public nsQueryFrame {
     mDescendantMayDependOnItsStaticPosition = aValue;
   }
 
+  bool ShouldGenerateComputedInfo() const {
+    return mShouldGenerateComputedInfo;
+  }
+  void SetShouldGenerateComputedInfo(bool aValue) {
+    mShouldGenerateComputedInfo = aValue;
+  }
+
   
 
 
@@ -4829,6 +4837,13 @@ class nsIFrame : public nsQueryFrame {
 
 
   bool mDescendantMayDependOnItsStaticPosition : 1;
+
+  
+
+
+
+
+  bool mShouldGenerateComputedInfo : 1;
 
  protected:
   
