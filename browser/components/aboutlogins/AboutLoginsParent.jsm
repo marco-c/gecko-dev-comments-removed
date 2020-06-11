@@ -465,6 +465,42 @@ class AboutLoginsParent extends JSWindowActorParent {
         break;
       }
       case "AboutLogins:ExportPasswords": {
+        let messageText = { value: "NOT SUPPORTED" };
+        let captionText = { value: "" };
+
+        
+        
+        
+        
+        if (OSKeyStore.canReauth()) {
+          let messageId =
+            "about-logins-export-password-os-auth-dialog-message-" +
+            AppConstants.platform;
+          [messageText, captionText] = await AboutLoginsL10n.formatMessages([
+            {
+              id: messageId,
+            },
+            {
+              id: "about-logins-os-auth-dialog-caption",
+            },
+          ]);
+        }
+
+        let { isAuthorized, telemetryEvent } = await LoginHelper.requestReauth(
+          this.browsingContext.embedderElement,
+          true,
+          null, 
+          messageText.value,
+          captionText.value
+        );
+
+        let { method, object, extra = {}, value = null } = telemetryEvent;
+        Services.telemetry.recordEvent("pwmgr", method, object, value, extra);
+
+        if (!isAuthorized) {
+          return;
+        }
+
         let fp = Cc["@mozilla.org/filepicker;1"].createInstance(
           Ci.nsIFilePicker
         );
