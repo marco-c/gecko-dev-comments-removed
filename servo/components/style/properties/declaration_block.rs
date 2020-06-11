@@ -341,21 +341,6 @@ impl PropertyDeclarationBlock {
     }
 
     
-    #[inline]
-    pub fn get_at_importance(
-        &self,
-        property: PropertyDeclarationId,
-        importance: Importance,
-    ) -> Option<&PropertyDeclaration> {
-        let (declaration, i) = self.get(property)?;
-        if i == importance {
-            Some(declaration)
-        } else {
-            None
-        }
-    }
-
-    
     
     pub fn shorthand_to_css(
         &self,
