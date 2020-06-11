@@ -49,7 +49,7 @@ class App extends Component {
       
       openSplitConsole: PropTypes.func,
       
-      sourceMapService: PropTypes.object,
+      sourceMapURLService: PropTypes.object,
       
       statisticsOpen: PropTypes.bool.isRequired,
       
@@ -65,7 +65,7 @@ class App extends Component {
       connector,
       openLink,
       openSplitConsole,
-      sourceMapService,
+      sourceMapURLService,
       statisticsOpen,
       toolboxDoc,
     } = this.props;
@@ -82,7 +82,7 @@ class App extends Component {
               actions,
               connector,
               openSplitConsole,
-              sourceMapService,
+              sourceMapURLService,
               openLink,
               toolboxDoc,
             })

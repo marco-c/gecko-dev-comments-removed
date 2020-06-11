@@ -50,7 +50,7 @@ class Frame extends Component {
       
       showFullSourceUrl: PropTypes.bool,
       
-      sourceMapService: PropTypes.object,
+      sourceMapURLService: PropTypes.object,
       
       messageSource: PropTypes.string,
     };
@@ -73,9 +73,9 @@ class Frame extends Component {
   }
 
   componentWillMount() {
-    if (this.props.sourceMapService) {
+    if (this.props.sourceMapURLService) {
       const { source, line, column } = this.props.frame;
-      this.unsubscribeSourceMapService = this.props.sourceMapService.subscribe(
+      this.unsubscribeSourceMapService = this.props.sourceMapURLService.subscribe(
         source,
         line,
         column,
