@@ -312,6 +312,10 @@ class Loader final {
   
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
+  
+  
+  nsIPrincipal* LoaderPrincipal() const;
+
  private:
   friend class SheetLoadData;
   friend class StreamLoader;
