@@ -26,8 +26,7 @@ class PlainObject;
 
 
 
-extern bool BoxNonStrictThis(JSContext* cx, HandleValue thisv,
-                             MutableHandleValue vp);
+extern JSObject* BoxNonStrictThis(JSContext* cx, HandleValue thisv);
 
 extern bool GetFunctionThis(JSContext* cx, AbstractFramePtr frame,
                             MutableHandleValue res);
