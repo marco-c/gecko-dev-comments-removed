@@ -422,14 +422,12 @@ bool BitwisePolicy::adjustInputs(TempAllocator& alloc,
 }
 
 bool PowPolicy::adjustInputs(TempAllocator& alloc, MInstruction* ins) const {
-  MIRType specialization = ins->typePolicySpecialization();
-  MOZ_ASSERT(specialization == MIRType::Int32 ||
-             specialization == MIRType::Double ||
-             specialization == MIRType::None);
+  MOZ_ASSERT(ins->type() == MIRType::Int32 || ins->type() == MIRType::Double);
 
-  
-  if (specialization == MIRType::None) {
-    return BoxInputsPolicy::staticAdjustInputs(alloc, ins);
+  if (ins->type() == MIRType::Int32) {
+    
+    return UnboxedInt32Policy<0>::staticAdjustInputs(alloc, ins) &&
+           UnboxedInt32Policy<1>::staticAdjustInputs(alloc, ins);
   }
 
   
@@ -438,10 +436,13 @@ bool PowPolicy::adjustInputs(TempAllocator& alloc, MInstruction* ins) const {
   }
 
   
-  if (specialization == MIRType::Double) {
-    return DoublePolicy<1>::staticAdjustInputs(alloc, ins);
+  if (ins->toPow()->power()->type() == MIRType::Int32) {
+    return true;
   }
-  return UnboxedInt32Policy<1>::staticAdjustInputs(alloc, ins);
+  if (ins->toPow()->powerIsInt32()) {
+    return UnboxedInt32Policy<1>::staticAdjustInputs(alloc, ins);
+  }
+  return DoublePolicy<1>::staticAdjustInputs(alloc, ins);
 }
 
 bool SignPolicy::adjustInputs(TempAllocator& alloc, MInstruction* ins) const {

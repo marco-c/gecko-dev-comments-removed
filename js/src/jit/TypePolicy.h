@@ -147,10 +147,14 @@ class CallPolicy final : public TypePolicy {
 };
 
 
+
+
+
+
 class PowPolicy final : public TypePolicy {
  public:
   constexpr PowPolicy() = default;
-  SPECIALIZATION_DATA_;
+  EMPTY_DATA_;
   MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
                                  MInstruction* ins) const override;
 };
