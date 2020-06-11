@@ -5,6 +5,8 @@
 #ifndef DOM_MEDIA_MEDIACONTROL_MEDIASTATUSMANAGER_H_
 #define DOM_MEDIA_MEDIACONTROL_MEDIASTATUSMANAGER_H_
 
+#include "MediaEventSource.h"
+#include "MediaPlaybackStatus.h"
 #include "mozilla/dom/MediaMetadata.h"
 #include "mozilla/dom/MediaSessionBinding.h"
 #include "mozilla/Maybe.h"
@@ -46,9 +48,19 @@ class IMediaInfoUpdater {
 
   
   
+  
+  
+  
+  
   virtual void NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
                                           MediaPlaybackState aState) = 0;
 
+  
+  
+  
+  
+  
+  
   
   
   virtual void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
@@ -70,7 +82,8 @@ class IMediaInfoUpdater {
 
   
   
-  virtual void SetIsInPictureInPictureMode(bool aIsInPictureInPictureMode) = 0;
+  virtual void SetIsInPictureInPictureMode(uint64_t aBrowsingContextId,
+                                           bool aIsInPictureInPictureMode) = 0;
 };
 
 

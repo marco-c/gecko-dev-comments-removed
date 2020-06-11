@@ -71,35 +71,10 @@ ContentMediaAgent* ContentMediaAgent::Get(BrowsingContext* aBC) {
                     : nullptr;
 }
 
-ContentMediaController::ContentMediaController(uint64_t aId)
-    : mTopLevelBrowsingContextId(aId) {}
-
-void ContentMediaController::AddReceiver(
-    ContentControlKeyEventReceiver* aListener) {
+void ContentMediaAgent::NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
+                                                   MediaPlaybackState aState) {
   MOZ_ASSERT(NS_IsMainThread());
-  mReceivers.AppendElement(aListener);
-}
-
-void ContentMediaController::RemoveReceiver(
-    ContentControlKeyEventReceiver* aListener) {
-  MOZ_ASSERT(NS_IsMainThread());
-  mReceivers.RemoveElement(aListener);
-  
-  
-  
-  if (mReceivers.IsEmpty() && sControllers) {
-    sControllers->Remove(mTopLevelBrowsingContextId);
-  }
-}
-
-void ContentMediaController::NotifyPlaybackStateChanged(
-    const ContentControlKeyEventReceiver* aMedia, MediaPlaybackState aState) {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (!mReceivers.Contains(aMedia)) {
-    return;
-  }
-
-  RefPtr<BrowsingContext> bc = aMedia->GetBrowsingContext();
+  RefPtr<BrowsingContext> bc = BrowsingContext::Get(aBrowsingContextId);
   if (!bc || bc->IsDiscarded()) {
     return;
   }
@@ -119,14 +94,10 @@ void ContentMediaController::NotifyPlaybackStateChanged(
   }
 }
 
-void ContentMediaController::NotifyAudibleStateChanged(
-    const ContentControlKeyEventReceiver* aMedia, MediaAudibleState aState) {
+void ContentMediaAgent::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
+                                                  MediaAudibleState aState) {
   MOZ_ASSERT(NS_IsMainThread());
-  if (!mReceivers.Contains(aMedia)) {
-    return;
-  }
-
-  RefPtr<BrowsingContext> bc = aMedia->GetBrowsingContext();
+  RefPtr<BrowsingContext> bc = BrowsingContext::Get(aBrowsingContextId);
   if (!bc || bc->IsDiscarded()) {
     return;
   }
@@ -147,30 +118,48 @@ void ContentMediaController::NotifyAudibleStateChanged(
   }
 }
 
-void ContentMediaController::NotifyPictureInPictureModeChanged(
-    const ContentControlKeyEventReceiver* aMedia, bool aEnabled) {
+void ContentMediaAgent::SetIsInPictureInPictureMode(
+    uint64_t aBrowsingContextId, bool aIsInPictureInPictureMode) {
   MOZ_ASSERT(NS_IsMainThread());
-  if (!mReceivers.Contains(aMedia)) {
-    return;
-  }
-
-  RefPtr<BrowsingContext> bc = aMedia->GetBrowsingContext();
+  RefPtr<BrowsingContext> bc = BrowsingContext::Get(aBrowsingContextId);
   if (!bc || bc->IsDiscarded()) {
     return;
   }
 
   LOG("Notify media Picture-in-Picture mode '%s' in BC %" PRId64,
-      aEnabled ? "enabled" : "disabled", bc->Id());
+      aIsInPictureInPictureMode ? "enabled" : "disabled", bc->Id());
   if (XRE_IsContentProcess()) {
     ContentChild* contentChild = ContentChild::GetSingleton();
-    Unused << contentChild->SendNotifyPictureInPictureModeChanged(bc, aEnabled);
+    Unused << contentChild->SendNotifyPictureInPictureModeChanged(
+        bc, aIsInPictureInPictureMode);
   } else {
     
     
     if (RefPtr<IMediaInfoUpdater> updater =
             bc->Canonical()->GetMediaController()) {
-      updater->SetIsInPictureInPictureMode(aEnabled);
+      updater->SetIsInPictureInPictureMode(bc->Id(), aIsInPictureInPictureMode);
     }
+  }
+}
+
+ContentMediaController::ContentMediaController(uint64_t aId)
+    : mTopLevelBrowsingContextId(aId) {}
+
+void ContentMediaController::AddReceiver(
+    ContentControlKeyEventReceiver* aListener) {
+  MOZ_ASSERT(NS_IsMainThread());
+  mReceivers.AppendElement(aListener);
+}
+
+void ContentMediaController::RemoveReceiver(
+    ContentControlKeyEventReceiver* aListener) {
+  MOZ_ASSERT(NS_IsMainThread());
+  mReceivers.RemoveElement(aListener);
+  
+  
+  
+  if (mReceivers.IsEmpty() && sControllers) {
+    sControllers->Remove(mTopLevelBrowsingContextId);
   }
 }
 

@@ -6,41 +6,12 @@
 #define DOM_MEDIA_MEDIACONTROL_CONTENTMEDIACONTROLLER_H_
 
 #include "MediaControlKeysEvent.h"
+#include "MediaStatusManager.h"
 
 namespace mozilla {
 namespace dom {
 
 class BrowsingContext;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum class MediaPlaybackState : uint32_t {
-  eStarted,
-  ePlayed,
-  ePaused,
-  eStopped,
-};
-
-
-
-
-
-enum class MediaAudibleState : bool {
-  eInaudible = false,
-  eAudible = true,
-};
 
 
 
@@ -60,10 +31,6 @@ class ContentControlKeyEventReceiver {
 
   
   virtual void HandleEvent(MediaControlKeysEvent aKeyEvent) = 0;
-
-  
-  
-  virtual BrowsingContext* GetBrowsingContext() const { return nullptr; }
 };
 
 
@@ -81,40 +48,33 @@ class ContentControlKeyEventReceiver {
 
 
 
-class ContentMediaAgent {
+class ContentMediaAgent : public IMediaInfoUpdater {
  public:
-  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
-
   
   static ContentMediaAgent* Get(BrowsingContext* aBC);
 
   
-  
-  virtual void NotifyPlaybackStateChanged(
-      const ContentControlKeyEventReceiver* aMedia,
-      MediaPlaybackState aState) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual void NotifyAudibleStateChanged(
-      const ContentControlKeyEventReceiver* aMedia,
-      MediaAudibleState aState) = 0;
-
-  
-  
-  virtual void NotifyPictureInPictureModeChanged(
-      const ContentControlKeyEventReceiver* aMedia, bool aEnabled) = 0;
+  void NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
+                                  MediaPlaybackState aState) override;
+  void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
+                                 MediaAudibleState aState) override;
+  void SetIsInPictureInPictureMode(uint64_t aBrowsingContextId,
+                                   bool aIsInPictureInPictureMode) override;
 
   
   
   virtual void AddReceiver(ContentControlKeyEventReceiver* aReceiver) = 0;
   virtual void RemoveReceiver(ContentControlKeyEventReceiver* aReceiver) = 0;
+
+ protected:
+  
+  
+  void SetDeclaredPlaybackState(uint64_t aBrowsingContextId,
+                                MediaSessionPlaybackState aState) override{};
+  void NotifySessionCreated(uint64_t aBrowsingContextId) override{};
+  void NotifySessionDestroyed(uint64_t aBrowsingContextId) override{};
+  void UpdateMetadata(uint64_t aBrowsingContextId,
+                      const Maybe<MediaMetadataBase>& aMetadata) override{};
 };
 
 
@@ -143,12 +103,6 @@ class ContentMediaController final : public ContentMediaAgent,
   
   void AddReceiver(ContentControlKeyEventReceiver* aListener) override;
   void RemoveReceiver(ContentControlKeyEventReceiver* aListener) override;
-  void NotifyPlaybackStateChanged(const ContentControlKeyEventReceiver* aMedia,
-                                  MediaPlaybackState aState) override;
-  void NotifyAudibleStateChanged(const ContentControlKeyEventReceiver* aMedia,
-                                 MediaAudibleState aState) override;
-  void NotifyPictureInPictureModeChanged(
-      const ContentControlKeyEventReceiver* aMedia, bool aEnabled) override;
 
   
   void HandleEvent(MediaControlKeysEvent aEvent) override;

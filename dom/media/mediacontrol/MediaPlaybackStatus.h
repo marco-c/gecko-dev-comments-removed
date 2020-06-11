@@ -5,7 +5,6 @@
 #ifndef DOM_MEDIA_MEDIACONTROL_MEDIAPLAYBACKSTATUS_H_
 #define DOM_MEDIA_MEDIACONTROL_MEDIAPLAYBACKSTATUS_H_
 
-#include "ContentMediaController.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "nsDataHashtable.h"
@@ -14,6 +13,32 @@
 
 namespace mozilla {
 namespace dom {
+
+
+
+
+
+
+
+
+
+
+
+enum class MediaPlaybackState : uint32_t {
+  eStarted,
+  ePlayed,
+  ePaused,
+  eStopped,
+};
+
+
+
+
+
+enum class MediaAudibleState : bool {
+  eInaudible = false,
+  eAudible = true,
+};
 
 
 
