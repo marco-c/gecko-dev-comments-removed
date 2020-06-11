@@ -5,6 +5,7 @@
 
 
 #include "VRLayerParent.h"
+#include "VRManager.h"
 #include "mozilla/Unused.h"
 #include "mozilla/layers/CompositorThread.h"
 
