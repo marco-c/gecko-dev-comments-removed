@@ -55,6 +55,20 @@ static uint64_t FindTopOuterWindowID(nsPIDOMWindowOuter* aOuter) {
   return outer->WindowID();
 }
 
+static nsContentPolicyType InternalContentPolicyTypeForFrame(
+    CanonicalBrowsingContext* aBrowsingContext) {
+  const auto& maybeEmbedderElementType =
+      aBrowsingContext->GetEmbedderElementType();
+  MOZ_ASSERT(maybeEmbedderElementType.isSome());
+  auto embedderElementType = maybeEmbedderElementType.value();
+
+  
+  
+  return embedderElementType.EqualsLiteral("iframe")
+             ? nsIContentPolicy::TYPE_INTERNAL_IFRAME
+             : nsIContentPolicy::TYPE_INTERNAL_FRAME;
+}
+
 LoadInfo::LoadInfo(
     nsIPrincipal* aLoadingPrincipal, nsIPrincipal* aTriggeringPrincipal,
     nsINode* aLoadingContext, nsSecurityFlags aSecurityFlags,
@@ -539,10 +553,11 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
   mCookieJarSettings = CookieJarSettings::Create();
 }
 
-LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
+LoadInfo::LoadInfo(dom::WindowGlobalParent* aParentWGP,
                    nsIPrincipal* aTriggeringPrincipal,
-                   uint64_t aFrameOuterWindowID, nsSecurityFlags aSecurityFlags,
-                   uint32_t aSandboxFlags)
+                   uint64_t aFrameOuterWindowID,
+                   nsContentPolicyType aContentPolicyType,
+                   nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags)
     : mLoadingPrincipal(nullptr),
       mTriggeringPrincipal(aTriggeringPrincipal),
       mPrincipalToInherit(nullptr),
@@ -552,6 +567,7 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
       mContextForTopLevelLoad(nullptr),
       mSecurityFlags(aSecurityFlags),
       mSandboxFlags(aSandboxFlags),
+      mInternalContentPolicyType(aContentPolicyType),
       mTainting(LoadTainting::Basic),
       mBlockAllMixedContent(false),
       mUpgradeInsecureRequests(false),
@@ -593,14 +609,12 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
       mHasStoragePermission(false),
       mIsFromProcessingFrameAttributes(false),
       mLoadingEmbedderPolicy(nsILoadInfo::EMBEDDER_POLICY_NULL) {
-  RefPtr<WindowGlobalParent> parentWGP =
-      aBrowsingContext->GetParentWindowContext();
-  CanonicalBrowsingContext* parentBC = parentWGP->BrowsingContext();
+  CanonicalBrowsingContext* parentBC = aParentWGP->BrowsingContext();
   MOZ_ASSERT(parentBC);
   nsTArray<nsCOMPtr<nsIPrincipal>> ancestorPrincipals;
   nsTArray<uint64_t> ancestorOuterWindowIDs;
   CanonicalBrowsingContext* ancestorBC = parentBC;
-  RefPtr<WindowGlobalParent> topLevelWGP = parentWGP->TopWindowContext();
+  RefPtr<WindowGlobalParent> topLevelWGP = aParentWGP->TopWindowContext();
 
   
   
@@ -617,10 +631,10 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
   MOZ_DIAGNOSTIC_ASSERT(mAncestorPrincipals.Length() ==
                         mAncestorOuterWindowIDs.Length());
 
-  if (WindowGlobalParent* ancestorWGP = parentWGP->GetParentWindowContext()) {
+  if (WindowGlobalParent* ancestorWGP = aParentWGP->GetParentWindowContext()) {
     mParentOuterWindowID = ancestorWGP->OuterWindowId();
   } else {
-    mParentOuterWindowID = parentWGP->OuterWindowId();
+    mParentOuterWindowID = aParentWGP->OuterWindowId();
   }
 
   
@@ -630,46 +644,34 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
     mSecurityFlags &= ~nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
   }
 
-  const auto& maybeEmbedderElementType =
-      aBrowsingContext->GetEmbedderElementType();
-  MOZ_ASSERT(maybeEmbedderElementType.isSome());
-  auto embedderElementType = maybeEmbedderElementType.value();
-
   
   
-  mInternalContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_FRAME;
-  if (embedderElementType.EqualsLiteral("iframe")) {
-    mInternalContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IFRAME;
-  }
-
-  
-  
-  mClientInfo = parentWGP->GetClientInfo();
-  mLoadingPrincipal = parentWGP->DocumentPrincipal();
-  ComputeIsThirdPartyContext(parentWGP);
+  mClientInfo = aParentWGP->GetClientInfo();
+  mLoadingPrincipal = aParentWGP->DocumentPrincipal();
+  ComputeIsThirdPartyContext(aParentWGP);
 
   
   
   
   
-  mOuterWindowID = parentWGP->OuterWindowId();
+  mOuterWindowID = aParentWGP->OuterWindowId();
   mTopOuterWindowID = topLevelWGP->OuterWindowId();
   mBrowsingContextID = parentBC->Id();
 
   
   
-  mCookieJarSettings = parentWGP->CookieJarSettings();
+  mCookieJarSettings = aParentWGP->CookieJarSettings();
   if (parentBC->IsContentSubframe()) {
     mDocumentHasLoaded = false;
   } else {
-    mDocumentHasLoaded = parentWGP->DocumentHasLoaded();
+    mDocumentHasLoaded = aParentWGP->DocumentHasLoaded();
   }
   if (topLevelWGP->BrowsingContext()->IsTop()) {
     if (mCookieJarSettings) {
       bool stopAtOurLevel = mCookieJarSettings->GetCookieBehavior() ==
                             nsICookieService::BEHAVIOR_REJECT_TRACKER;
       if (!stopAtOurLevel ||
-          topLevelWGP->OuterWindowId() != parentWGP->OuterWindowId()) {
+          topLevelWGP->OuterWindowId() != aParentWGP->OuterWindowId()) {
         mTopLevelPrincipal = topLevelWGP->DocumentPrincipal();
       }
     }
@@ -686,30 +688,29 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
   
   
   if (parentBC->IsTop()) {
-    if (!Document::StorageAccessSandboxed(parentWGP->SandboxFlags())) {
-      mTopLevelStorageAreaPrincipal = parentWGP->DocumentPrincipal();
+    if (!Document::StorageAccessSandboxed(aParentWGP->SandboxFlags())) {
+      mTopLevelStorageAreaPrincipal = aParentWGP->DocumentPrincipal();
     }
 
     
     
     if (!mTopLevelPrincipal) {
-      mTopLevelPrincipal = parentWGP->DocumentPrincipal();
+      mTopLevelPrincipal = aParentWGP->DocumentPrincipal();
     }
   }
 
-  mInnerWindowID = parentWGP->InnerWindowId();
-  mFrameBrowsingContextID = aBrowsingContext->Id();
-  mDocumentHasUserInteracted = parentWGP->DocumentHasUserInteracted();
+  mInnerWindowID = aParentWGP->InnerWindowId();
+  mDocumentHasUserInteracted = aParentWGP->DocumentHasUserInteracted();
 
   
   
-  mBlockAllMixedContent = parentWGP->GetDocumentBlockAllMixedContent();
+  mBlockAllMixedContent = aParentWGP->GetDocumentBlockAllMixedContent();
 
   
   
   
   
-  mUpgradeInsecureRequests = parentWGP->GetDocumentUpgradeInsecureRequests();
+  mUpgradeInsecureRequests = aParentWGP->GetDocumentUpgradeInsecureRequests();
   mOriginAttributes = mLoadingPrincipal->OriginAttributesRef();
 
   
@@ -719,7 +720,7 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
         parentBC->UsePrivateBrowsing());
   }
 
-  mHttpsOnlyStatus |= parentWGP->HttpsOnlyStatus();
+  mHttpsOnlyStatus |= aParentWGP->HttpsOnlyStatus();
 
   
   
@@ -733,6 +734,17 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
   if (ctx) {
     mLoadingEmbedderPolicy = ctx->GetEmbedderPolicy();
   }
+}
+
+LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
+                   nsIPrincipal* aTriggeringPrincipal,
+                   uint64_t aFrameOuterWindowID, nsSecurityFlags aSecurityFlags,
+                   uint32_t aSandboxFlags)
+    : LoadInfo(aBrowsingContext->GetParentWindowContext(), aTriggeringPrincipal,
+               aFrameOuterWindowID,
+               InternalContentPolicyTypeForFrame(aBrowsingContext),
+               aSecurityFlags, aSandboxFlags) {
+  mFrameBrowsingContextID = aBrowsingContext->Id();
 }
 
 LoadInfo::LoadInfo(const LoadInfo& rhs)

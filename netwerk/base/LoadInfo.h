@@ -84,6 +84,12 @@ class LoadInfo final : public nsILoadInfo {
            nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
 
   
+  LoadInfo(dom::WindowGlobalParent* aParentWGP,
+           nsIPrincipal* aTriggeringPrincipal, uint64_t aFrameOuterWindowID,
+           nsContentPolicyType aContentPolicyType,
+           nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
+
+  
   already_AddRefed<nsILoadInfo> Clone() const;
 
   
