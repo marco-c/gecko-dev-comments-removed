@@ -46,7 +46,19 @@ var Normandy = {
   studyPrefsChanged: {},
   rolloutPrefsChanged: {},
 
+  STATE_UNINITIALIZED: 1,
+  STATE_QUEUED: 2,
+  STATE_IN_PROGRESS: 3,
+  STATE_FINISHED: 4,
+  _state: 1, 
+
   async init({ runAsync = true } = {}) {
+    if (this._state != this.STATE_UNINITIALIZED) {
+      
+      return;
+    }
+    this._state = this.STATE_QUEUED;
+
     
     Services.obs.addObserver(
       this,
@@ -90,6 +102,12 @@ var Normandy = {
   },
 
   async finishInit() {
+    if (this._state !== this.STATE_QUEUED) {
+      
+      return;
+    }
+    this._state = this.STATE_IN_PROGRESS;
+
     try {
       TelemetryEvents.init();
     } catch (err) {
@@ -151,6 +169,7 @@ var Normandy = {
     }
 
     await RecipeRunner.init();
+    this._state = this.STATE_FINISHED;
     Services.obs.notifyObservers(null, SHIELD_INIT_NOTIFICATION);
   },
 
