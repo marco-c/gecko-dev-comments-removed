@@ -2874,7 +2874,7 @@ struct TlsData {
   
   
   
-  MOZ_ALIGNED_DECL(16, char globalArea);
+  MOZ_ALIGNED_DECL(char globalArea, 16);
 };
 
 static const size_t TlsDataAlign = 16;  
