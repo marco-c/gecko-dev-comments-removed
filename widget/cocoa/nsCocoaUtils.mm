@@ -1421,8 +1421,7 @@ void nsCocoaUtils::ResolveMediaCapturePromises(bool aGranted, PromiseArray& aPro
 
   
   while (aPromiseList->Length() > 0) {
-    RefPtr<Promise> promise = aPromiseList->LastElement();
-    aPromiseList->RemoveLastElement();
+    RefPtr<Promise> promise = aPromiseList->PopLastElement();
 
     
     nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
