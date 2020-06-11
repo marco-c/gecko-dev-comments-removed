@@ -4,10 +4,10 @@
 
 
 
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/ContentMediaController.h"
 #include "mozilla/dom/MediaSession.h"
 #include "mozilla/EnumeratedArrayCycleCollection.h"
-
-#include "MediaSessionUtils.h"
 
 namespace mozilla {
 namespace dom {
@@ -51,15 +51,7 @@ void MediaSession::SetPlaybackState(
   RefPtr<BrowsingContext> currentBC = GetParentObject()->GetBrowsingContext();
   MOZ_ASSERT(currentBC,
              "Update session playback state after context destroyed!");
-  if (XRE_IsContentProcess()) {
-    ContentChild* contentChild = ContentChild::GetSingleton();
-    Unused << contentChild->SendNotifyMediaSessionPlaybackStateChanged(
-        currentBC, mDeclaredPlaybackState);
-    return;
-  }
-  
-  if (RefPtr<IMediaInfoUpdater> updater =
-          currentBC->Canonical()->GetMediaController()) {
+  if (RefPtr<IMediaInfoUpdater> updater = ContentMediaAgent::Get(currentBC)) {
     updater->SetDeclaredPlaybackState(currentBC->Id(), mDeclaredPlaybackState);
   }
 }
@@ -178,26 +170,27 @@ void MediaSession::Shutdown() {
 void MediaSession::NotifyMediaSessionStatus(SessionStatus aState) {
   RefPtr<BrowsingContext> currentBC = GetParentObject()->GetBrowsingContext();
   MOZ_ASSERT(currentBC, "Update session status after context destroyed!");
-  NotfiyMediaSessionCreationOrDeconstruction(currentBC,
-                                             aState == SessionStatus::eCreated);
+
+  RefPtr<IMediaInfoUpdater> updater = ContentMediaAgent::Get(currentBC);
+  if (!updater) {
+    return;
+  }
+  if (aState == SessionStatus::eCreated) {
+    updater->NotifySessionCreated(currentBC->Id());
+  } else {
+    updater->NotifySessionDestroyed(currentBC->Id());
+  }
 }
 
 void MediaSession::NotifyMetadataUpdated() {
   RefPtr<BrowsingContext> currentBC = GetParentObject()->GetBrowsingContext();
   MOZ_ASSERT(currentBC, "Update session metadata after context destroyed!");
+
   Maybe<MediaMetadataBase> metadata;
   if (GetMetadata()) {
     metadata.emplace(*(GetMetadata()->AsMetadataBase()));
   }
-
-  if (XRE_IsContentProcess()) {
-    ContentChild* contentChild = ContentChild::GetSingleton();
-    Unused << contentChild->SendNotifyUpdateMediaMetadata(currentBC, metadata);
-    return;
-  }
-  
-  if (RefPtr<IMediaInfoUpdater> updater =
-          currentBC->Canonical()->GetMediaController()) {
+  if (RefPtr<IMediaInfoUpdater> updater = ContentMediaAgent::Get(currentBC)) {
     updater->UpdateMetadata(currentBC->Id(), metadata);
   }
 }

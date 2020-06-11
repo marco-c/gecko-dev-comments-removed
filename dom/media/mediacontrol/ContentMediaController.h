@@ -60,21 +60,17 @@ class ContentMediaAgent : public IMediaInfoUpdater {
                                  MediaAudibleState aState) override;
   void SetIsInPictureInPictureMode(uint64_t aBrowsingContextId,
                                    bool aIsInPictureInPictureMode) override;
+  void SetDeclaredPlaybackState(uint64_t aBrowsingContextId,
+                                MediaSessionPlaybackState aState) override;
+  void NotifySessionCreated(uint64_t aBrowsingContextId) override;
+  void NotifySessionDestroyed(uint64_t aBrowsingContextId) override;
+  void UpdateMetadata(uint64_t aBrowsingContextId,
+                      const Maybe<MediaMetadataBase>& aMetadata) override;
 
   
   
   virtual void AddReceiver(ContentControlKeyEventReceiver* aReceiver) = 0;
   virtual void RemoveReceiver(ContentControlKeyEventReceiver* aReceiver) = 0;
-
- protected:
-  
-  
-  void SetDeclaredPlaybackState(uint64_t aBrowsingContextId,
-                                MediaSessionPlaybackState aState) override{};
-  void NotifySessionCreated(uint64_t aBrowsingContextId) override{};
-  void NotifySessionDestroyed(uint64_t aBrowsingContextId) override{};
-  void UpdateMetadata(uint64_t aBrowsingContextId,
-                      const Maybe<MediaMetadataBase>& aMetadata) override{};
 };
 
 

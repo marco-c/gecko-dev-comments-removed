@@ -10,7 +10,6 @@
 #include "MediaControlUtils.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "mozilla/dom/MediaSessionUtils.h"
 
 
 #undef LOG
