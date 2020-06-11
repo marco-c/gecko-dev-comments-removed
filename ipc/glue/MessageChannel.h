@@ -218,16 +218,16 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver {
   ChannelFlags GetChannelFlags() { return mFlags; }
 
   
-  bool Send(Message* aMsg);
+  bool Send(UniquePtr<Message> aMsg);
 
   
   
   template <typename Value>
-  void Send(Message* aMsg, ActorIdType aActorId,
+  void Send(UniquePtr<Message> aMsg, ActorIdType aActorId,
             ResolveCallback<Value>&& aResolve, RejectCallback&& aReject) {
     int32_t seqno = NextSeqno();
     aMsg->set_seqno(seqno);
-    if (!Send(aMsg)) {
+    if (!Send(std::move(aMsg))) {
       aReject(ResponseRejectReason::SendError);
       return;
     }

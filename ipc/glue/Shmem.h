@@ -18,6 +18,7 @@
 #include "ipc/IPCMessageUtils.h"
 #include "mozilla/ipc/SharedMemory.h"
 #include "mozilla/ipc/IPDLParamTraits.h"
+#include "mozilla/UniquePtr.h"
 
 
 
@@ -158,14 +159,14 @@ class Shmem final {
   
   
   
-  IPC::Message* ShareTo(PrivateIPDLCaller, base::ProcessId aTargetPid,
-                        int32_t routingId);
+  UniquePtr<IPC::Message> ShareTo(PrivateIPDLCaller, base::ProcessId aTargetPid,
+                                  int32_t routingId);
 
   
   
   
   
-  IPC::Message* UnshareFrom(PrivateIPDLCaller, int32_t routingId);
+  UniquePtr<IPC::Message> UnshareFrom(PrivateIPDLCaller, int32_t routingId);
 
   
   
