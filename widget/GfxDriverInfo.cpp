@@ -871,7 +871,11 @@ const nsAString& GfxDriverInfo::GetDeviceVendor(DeviceVendor id) {
     DECLARE_VENDOR_ID(ATI, "0x1002");
     
     DECLARE_VENDOR_ID(Microsoft, "0x1414");
+    DECLARE_VENDOR_ID(MicrosoftBasic, "0x00ba");
+    DECLARE_VENDOR_ID(MicrosoftHyperV, "0x000b");
     DECLARE_VENDOR_ID(Parallels, "0x1ab8");
+    DECLARE_VENDOR_ID(VMWare, "0x15ad");
+    DECLARE_VENDOR_ID(VirtualBox, "0x80ee");
     
     
     DECLARE_VENDOR_ID(Qualcomm, "0x5143");
