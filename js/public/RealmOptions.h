@@ -234,6 +234,12 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
+  bool getPrivateClassFieldsEnabled() const { return privateClassFields_; }
+  RealmCreationOptions& setPrivateClassFieldsEnabled(bool flag) {
+    privateClassFields_ = flag;
+    return *this;
+  }
+
   
   
   
@@ -274,6 +280,7 @@ class JS_PUBLIC_API RealmCreationOptions {
   bool toSource_ = false;
   bool propertyErrorMessageFix_ = false;
   bool iteratorHelpers_ = false;
+  bool privateClassFields_ = false;
   bool secureContext_ = false;
 };
 
