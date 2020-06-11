@@ -780,7 +780,7 @@ class AsyncPanZoomController {
   
 
 
-  void HandlePinchLocking();
+  void HandlePinchLocking(const PinchGestureInput& aEvent);
 
   
 

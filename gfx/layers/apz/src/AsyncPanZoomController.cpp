@@ -1595,7 +1595,7 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
   }
 
   mPinchEventBuffer.push(aEvent);
-  HandlePinchLocking();
+  HandlePinchLocking(aEvent);
   bool allowZoom = mZoomConstraints.mAllowZoom && !mPinchLocked;
 
   
@@ -3076,7 +3076,8 @@ void AsyncPanZoomController::HandlePanningUpdate(
   }
 }
 
-void AsyncPanZoomController::HandlePinchLocking() {
+void AsyncPanZoomController::HandlePinchLocking(
+    const PinchGestureInput& aEvent) {
   
   
   
@@ -3124,6 +3125,10 @@ void AsyncPanZoomController::HandlePinchLocking() {
       if (spanDistance < spanLockThreshold &&
           focusChange.Length() > scrollLockThreshold) {
         mPinchLocked = true;
+
+        
+        
+        StartTouch(aEvent.mLocalFocusPoint, aEvent.mTimeStamp);
       }
     }
   }
