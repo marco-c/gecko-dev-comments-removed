@@ -20,49 +20,179 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/UniquePtr.h"
+#include "SharedSurface.h"
 #include "SurfaceTypes.h"
 
 namespace mozilla {
+namespace layers {
+class KnowsCompositor;
+class LayersIPCChannel;
+class SharedSurfaceTextureClient;
+enum class LayersBackend : int8_t;
+}  
+
 namespace gl {
 
+class GLContext;
 class SharedSurface;
+class ShSurfHandle;
 class SurfaceFactory;
-class SwapChain;
 
-class SwapChainPresenter final {
-  friend class SwapChain;
+class ReadBuffer {
+ public:
+  
+  static UniquePtr<ReadBuffer> Create(GLContext* gl, const SurfaceCaps& caps,
+                                      const GLFormats& formats,
+                                      SharedSurface* surf);
 
-  SwapChain* mSwapChain;
-  UniquePtr<SharedSurface> mBackBuffer;
+ protected:
+  GLContext* const mGL;
 
  public:
-  explicit SwapChainPresenter(SwapChain& swapChain);
-  ~SwapChainPresenter();
+  const GLuint mFB;
 
-  const auto& BackBuffer() const { return mBackBuffer; }
+ protected:
+  
+  const GLuint mDepthRB;
+  const GLuint mStencilRB;
+  
+  SharedSurface* mSurf;
 
-  UniquePtr<SharedSurface> SwapBackBuffer(UniquePtr<SharedSurface>);
-  GLuint Fb() const;
+  ReadBuffer(GLContext* gl, GLuint fb, GLuint depthRB, GLuint stencilRB,
+             SharedSurface* surf)
+      : mGL(gl),
+        mFB(fb),
+        mDepthRB(depthRB),
+        mStencilRB(stencilRB),
+        mSurf(surf) {}
+
+ public:
+  virtual ~ReadBuffer();
+
+  
+  void Attach(SharedSurface* surf);
+
+  const gfx::IntSize& Size() const;
+
+  SharedSurface* SharedSurf() const { return mSurf; }
 };
 
-
-
-class SwapChain final {
-  friend class SwapChainPresenter;
-
+class GLScreenBuffer final {
  public:
-  UniquePtr<SurfaceFactory> mFactory;
+  
+  static UniquePtr<GLScreenBuffer> Create(GLContext* gl,
+                                          const gfx::IntSize& size,
+                                          const SurfaceCaps& caps);
+
+  static UniquePtr<SurfaceFactory> CreateFactory(
+      GLContext* gl, const SurfaceCaps& caps,
+      layers::KnowsCompositor* compositorConnection,
+      const layers::TextureFlags& flags);
+
+  static UniquePtr<SurfaceFactory> CreateFactory(
+      GLContext* gl, const SurfaceCaps& caps,
+      layers::LayersIPCChannel* ipcChannel, layers::LayersBackend backend,
+      bool useANGLE, const layers::TextureFlags& flags);
 
  private:
-  UniquePtr<SharedSurface> mFrontBuffer;
-  SwapChainPresenter* mPresenter = nullptr;
+  GLContext* const mGL;  
+ public:
+  const SurfaceCaps mCaps;
+
+ private:
+  UniquePtr<SurfaceFactory> mFactory;
+
+  RefPtr<layers::SharedSurfaceTextureClient> mBack;
+  RefPtr<layers::SharedSurfaceTextureClient> mFront;
+
+  UniquePtr<ReadBuffer> mRead;
+
+  
+  GLuint mUserDrawFB;
+  GLuint mUserReadFB;
+  GLuint mInternalDrawFB;
+  GLuint mInternalReadFB;
+
+#ifdef DEBUG
+  bool mInInternalMode_DrawFB;
+  bool mInInternalMode_ReadFB;
+#endif
+
+  GLScreenBuffer(GLContext* gl, const SurfaceCaps& caps,
+                 UniquePtr<SurfaceFactory> factory);
 
  public:
-  SwapChain();
-  virtual ~SwapChain();
+  virtual ~GLScreenBuffer();
 
-  const auto& FrontBuffer() const { return mFrontBuffer; }
-  UniquePtr<SwapChainPresenter> Acquire(const gfx::IntSize&);
+  const auto& Factory() const { return mFactory; }
+  const auto& Front() const { return mFront; }
+
+  SharedSurface* SharedSurf() const {
+    MOZ_ASSERT(mRead);
+    return mRead->SharedSurf();
+  }
+
+ private:
+  GLuint DrawFB() const { return ReadFB(); }
+  GLuint ReadFB() const { return mRead->mFB; }
+
+ public:
+  void DeletingFB(GLuint fb);
+
+  const gfx::IntSize& Size() const {
+    MOZ_ASSERT(mRead);
+    return mRead->Size();
+  }
+
+  bool IsReadBufferReady() const { return mRead.get() != nullptr; }
+
+  bool CopyTexImage2D(GLenum target, GLint level, GLenum internalformat,
+                      GLint x, GLint y, GLsizei width, GLsizei height,
+                      GLint border);
+
+  
+
+
+
+
+
+
+  bool ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
+                  GLenum format, GLenum type, GLvoid* pixels);
+
+  
+  void Morph(UniquePtr<SurfaceFactory> newFactory);
+
+ private:
+  
+  bool Swap(const gfx::IntSize& size);
+
+ public:
+  bool PublishFrame(const gfx::IntSize& size) { return Swap(size); }
+
+  bool Resize(const gfx::IntSize& size);
+
+ private:
+  bool Attach(SharedSurface* surf, const gfx::IntSize& size);
+
+  UniquePtr<ReadBuffer> CreateRead(SharedSurface* surf);
+
+ public:
+  
+
+
+
+
+  void BindFB(GLuint fb);
+  void BindDrawFB(GLuint fb);
+  void BindReadFB(GLuint fb);
+  GLuint GetFB() const;
+  GLuint GetDrawFB() const;
+  GLuint GetReadFB() const;
+
+  
+  
+  void BindReadFB_Internal(GLuint fb);
 };
 
 }  
