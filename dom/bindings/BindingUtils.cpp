@@ -1155,6 +1155,33 @@ bool TryPreserveWrapper(JS::Handle<JSObject*> obj) {
   return addProperty(nullptr, obj, dummyId, dummyValue);
 }
 
+bool HasReleasedWrapper(JS::Handle<JSObject*> obj) {
+  MOZ_ASSERT(obj);
+  MOZ_ASSERT(IsDOMObject(obj));
+
+  nsWrapperCache* cache = nullptr;
+  if (nsISupports* native = UnwrapDOMObjectToISupports(obj)) {
+    CallQueryInterface(native, &cache);
+  } else {
+    const DOMJSClass* domClass = GetDOMClass(obj);
+
+    
+    MOZ_RELEASE_ASSERT(!domClass->ToJSClass()->isProxy(),
+                       "Should not call getWrapperCache for proxies.");
+
+    WrapperCacheGetter getter = domClass->mWrapperCacheGetter;
+
+    if (getter) {
+      
+      MOZ_RELEASE_ASSERT(domClass->mParticipant);
+
+      cache = getter(obj);
+    }
+  }
+
+  return cache && !cache->PreservingWrapper();
+}
+
 
 bool InstanceClassHasProtoAtDepth(const JSClass* clasp, uint32_t protoID,
                                   uint32_t depth) {

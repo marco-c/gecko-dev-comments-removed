@@ -1416,6 +1416,8 @@ inline void UpdateWrapper(T* p, void*, JSObject* obj, const JSObject* old) {
 
 bool TryPreserveWrapper(JS::Handle<JSObject*> obj);
 
+bool HasReleasedWrapper(JS::Handle<JSObject*> obj);
+
 
 bool InstanceClassHasProtoAtDepth(const JSClass* clasp, uint32_t protoID,
                                   uint32_t depth);

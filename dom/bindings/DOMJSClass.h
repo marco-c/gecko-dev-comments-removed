@@ -21,6 +21,7 @@
 #include "mozilla/dom/JSSlots.h"
 
 class nsCycleCollectionParticipant;
+class nsWrapperCache;
 struct JSStructuredCloneReader;
 struct JSStructuredCloneWriter;
 class nsIGlobalObject;
@@ -413,6 +414,8 @@ typedef JSObject* (*WebIDLDeserializer)(JSContext* aCx,
                                         nsIGlobalObject* aGlobal,
                                         JSStructuredCloneReader* aReader);
 
+typedef nsWrapperCache* (*WrapperCacheGetter)(JS::Handle<JSObject*> aObj);
+
 
 struct DOMJSClass {
   
@@ -446,6 +449,10 @@ struct DOMJSClass {
   
   
   WebIDLSerializer mSerializer;
+
+  
+  
+  WrapperCacheGetter mWrapperCacheGetter;
 
   static const DOMJSClass* FromJSClass(const JSClass* base) {
     MOZ_ASSERT(base->flags & JSCLASS_IS_DOMJSCLASS);

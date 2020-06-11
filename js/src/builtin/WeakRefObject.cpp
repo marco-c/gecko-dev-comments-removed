@@ -194,6 +194,9 @@ bool WeakRefObject::deref(JSContext* cx, unsigned argc, Value* vp) {
                                  &args.thisv().toObject().as<WeakRefObject>());
 
   
+  readBarrier(cx, weakRef);
+
+  
   
   
   
@@ -207,9 +210,6 @@ bool WeakRefObject::deref(JSContext* cx, unsigned argc, Value* vp) {
   if (!target->zone()->keepDuringJob(target)) {
     return false;
   }
-
-  
-  JSObject::readBarrier(target);
 
   
   RootedObject wrappedTarget(cx, target);
@@ -226,6 +226,28 @@ inline JSObject* WeakRefObject::target() {
 }
 
 void WeakRefObject::setTarget(JSObject* target) { setPrivate(target); }
+
+
+void WeakRefObject::readBarrier(JSContext* cx, Handle<WeakRefObject*> self) {
+  RootedObject obj(cx, self->target());
+  if (!obj) {
+    return;
+  }
+
+  if (obj->getClass()->isDOMClass()) {
+    
+    
+    
+    MOZ_ASSERT(cx->runtime()->hasReleasedWrapperCallback);
+    bool wasReleased = cx->runtime()->hasReleasedWrapperCallback(obj);
+    if (wasReleased) {
+      self->setTarget(nullptr);
+      return;
+    }
+  }
+
+  JSObject::readBarrier(obj);
+}
 
 namespace gc {
 
