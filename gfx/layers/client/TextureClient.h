@@ -907,8 +907,6 @@ class TKeepAlive : public KeepAlive {
 bool UpdateYCbCrTextureClient(TextureClient* aTexture,
                               const PlanarYCbCrData& aData);
 
-TextureType PreferredCanvasTextureType(const KnowsCompositor&);
-
 }  
 }  
 
