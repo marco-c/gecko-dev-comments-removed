@@ -18,17 +18,8 @@
 #include "mozilla/TypeTraits.h"
 #include "nsString.h"
 
-namespace IPC {
-typedef uint32_t PcqTypeInfoID;
-template <typename T>
-struct PcqTypeInfo;
-}  
-
 namespace mozilla {
 namespace webgl {
-
-using IPC::PcqTypeInfo;
-using IPC::PcqTypeInfoID;
 
 struct QueueStatus {
   enum EStatus {
@@ -38,8 +29,6 @@ struct QueueStatus {
     
     
     kNotReady,
-    
-    kTypeError,
     
     
     kTooSmall,
@@ -134,18 +123,6 @@ template <typename Arg>
 struct QueueParamTraits;
 
 
-template <typename Arg>
-struct PcqTypedArg {
-  explicit PcqTypedArg(const Arg& aArg) : mWrite(&aArg), mRead(nullptr) {}
-  explicit PcqTypedArg(Arg* aArg) : mWrite(nullptr), mRead(aArg) {}
-
- private:
-  friend struct QueueParamTraits<PcqTypedArg<Arg>>;
-  const Arg* mWrite;
-  Arg* mRead;
-};
-
-
 
 
 class Marshaller {
@@ -234,15 +211,6 @@ class ProducerView {
 
 
   template <typename Arg>
-  QueueStatus WriteTypedParam(const Arg& aArg) {
-    return mozilla::webgl::QueueParamTraits<PcqTypedArg<Arg>>::Write(
-        *this, PcqTypedArg<Arg>(aArg));
-  }
-
-  
-
-
-  template <typename Arg>
   size_t MinSizeParam(const Arg* aArg = nullptr) {
     return mozilla::webgl::QueueParamTraits<
         typename RemoveCVR<Arg>::Type>::MinSize(*this, aArg);
@@ -293,16 +261,6 @@ class ConsumerView {
   QueueStatus ReadParam(Arg* aArg = nullptr) {
     return mozilla::webgl::QueueParamTraits<
         typename RemoveCVR<Arg>::Type>::Read(*this, aArg);
-  }
-
-  
-
-
-
-  template <typename Arg>
-  QueueStatus ReadTypedParam(Arg* aArg = nullptr) {
-    return mozilla::webgl::QueueParamTraits<PcqTypedArg<Arg>>::Read(
-        *this, PcqTypedArg(aArg));
   }
 
   
@@ -383,38 +341,6 @@ size_t ConsumerView<T>::MinSizeBytes(size_t aNBytes) {
              ? MinSizeParam((mozilla::ipc::Shmem*)nullptr)
              : aNBytes;
 }
-
-
-
-template <typename Arg>
-struct QueueParamTraits<PcqTypedArg<Arg>> {
-  using ParamType = PcqTypedArg<Arg>;
-
-  template <typename U, PcqTypeInfoID ArgTypeId = PcqTypeInfo<Arg>::ID>
-  static QueueStatus Write(ProducerView<U>& aProducerView,
-                           const ParamType& aArg) {
-    MOZ_ASSERT(aArg.mWrite);
-    aProducerView.WriteParam(ArgTypeId);
-    return aProducerView.WriteParam(*aArg.mWrite);
-  }
-
-  template <typename U, PcqTypeInfoID ArgTypeId = PcqTypeInfo<Arg>::ID>
-  static QueueStatus Read(ConsumerView<U>& aConsumerView, ParamType* aArg) {
-    MOZ_ASSERT(aArg->mRead);
-    PcqTypeInfoID typeId;
-    if (!aConsumerView.ReadParam(&typeId)) {
-      return aConsumerView.GetStatus();
-    }
-    return (typeId == ArgTypeId) ? aConsumerView.ReadParam(aArg)
-                                 : QueueStatus::kTypeError;
-  }
-
-  template <typename View>
-  static constexpr size_t MinSize(View& aView, const ParamType* aArg) {
-    return sizeof(PcqTypeInfoID) +
-           aView.MinSize(aArg->mWrite ? aArg->mWrite : aArg->mRead);
-  }
-};
 
 
 

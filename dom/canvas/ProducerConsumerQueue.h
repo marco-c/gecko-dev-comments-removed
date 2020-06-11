@@ -26,8 +26,6 @@ struct ParamTraits;
 namespace mozilla {
 namespace webgl {
 
-using IPC::PcqTypeInfo;
-using IPC::PcqTypeInfoID;
 using mozilla::ipc::IProtocol;
 using mozilla::ipc::Shmem;
 
@@ -100,9 +98,6 @@ class PcqActor : public SupportsWeakPtr<PcqActor> {
 
 
 namespace detail {
-using IPC::PcqTypeInfo;
-using IPC::PcqTypeInfoID;
-
 using mozilla::ipc::IProtocol;
 using mozilla::ipc::Shmem;
 using mozilla::webgl::IsSuccess;
@@ -503,11 +498,6 @@ class PcqProducer : public detail::PcqBase {
     return TryWaitInsertImpl(false, aDuration, std::forward<Args>(aArgs)...);
   }
 
-  template <typename... Args>
-  QueueStatus TryTypedInsert(Args&&... aArgs) {
-    return TryInsert(PcqTypedArg<Args>(aArgs)...);
-  }
-
   QueueStatus AllocShmem(mozilla::ipc::Shmem* aShmem, size_t aBufferSize,
                          const void* aBuffer = nullptr) {
     if (!mActor) {
@@ -638,11 +628,6 @@ class PcqConsumer : public detail::PcqBase {
         });
   }
 
-  template <typename... Args>
-  QueueStatus TryTypedPeek(Args&... aArgs) {
-    return TryPeek(PcqTypedArg<Args>(aArgs)...);
-  }
-
   
 
 
@@ -655,11 +640,6 @@ class PcqConsumer : public detail::PcqBase {
         });
   }
 
-  template <typename... Args>
-  QueueStatus TryTypedRemove(Args&... aArgs) {
-    return TryRemove(PcqTypedArg<Args>(&aArgs)...);
-  }
-
   
 
 
@@ -668,11 +648,6 @@ class PcqConsumer : public detail::PcqBase {
   QueueStatus TryRemove() {
     using seq = std::index_sequence_for<Args...>;
     return TryRemove<Args...>(seq{});
-  }
-
-  template <typename... Args>
-  QueueStatus TryTypedRemove() {
-    return TryRemove<PcqTypedArg<Args>...>();
   }
 
   
