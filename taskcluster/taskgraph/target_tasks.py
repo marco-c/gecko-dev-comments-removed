@@ -22,7 +22,6 @@ _target_task_methods = {}
 UNCOMMON_TRY_TASK_LABELS = [
     
     r'build-.*-gcp',  
-    r'build-.*-aarch64',  
     r'mingwclang',  
     r'valgrind',  
     
