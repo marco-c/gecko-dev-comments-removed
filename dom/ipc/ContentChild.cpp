@@ -868,16 +868,6 @@ nsresult ContentChild::ProvideWindowCommon(
     return NS_ERROR_ABORT;
   }
 
-  
-  
-  static bool sNoopenerNewProcess = false;
-  static bool sNoopenerNewProcessInited = false;
-  if (!sNoopenerNewProcessInited) {
-    Preferences::AddBoolVarCache(&sNoopenerNewProcess,
-                                 "dom.noopener.newprocess.enabled");
-    sNoopenerNewProcessInited = true;
-  }
-
   bool useRemoteSubframes =
       aChromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW;
 
@@ -894,8 +884,9 @@ nsresult ContentChild::ProvideWindowCommon(
   
   
   
-  bool loadInDifferentProcess = aForceNoOpener && sNoopenerNewProcess &&
-                                !useRemoteSubframes && !sandboxFlagsPropagate;
+  bool loadInDifferentProcess =
+      aForceNoOpener && StaticPrefs::dom_noopener_newprocess_enabled() &&
+      !useRemoteSubframes && !sandboxFlagsPropagate;
   if (!loadInDifferentProcess && aURI) {
     
     
