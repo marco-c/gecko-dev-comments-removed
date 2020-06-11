@@ -18,31 +18,20 @@ namespace mozilla {
 static void WaylandVsyncSourceCallbackHandler(void* data,
                                               struct wl_callback* callback,
                                               uint32_t time) {
-  WaylandVsyncSource::WaylandFrameCallbackContext* context =
-      (WaylandVsyncSource::WaylandFrameCallbackContext*)data;
+  WaylandVsyncSource::WaylandDisplay* context =
+      (WaylandVsyncSource::WaylandDisplay*)data;
   wl_callback_destroy(callback);
-
-  if (!context->mEnabled) {
-    
-    delete context;
-    return;
-  }
-
-  context->mDisplay->FrameCallback();
+  context->FrameCallback();
 }
 
 static const struct wl_callback_listener WaylandVsyncSourceCallbackListener = {
     WaylandVsyncSourceCallbackHandler};
 
 WaylandVsyncSource::WaylandDisplay::WaylandDisplay(MozContainer* container)
-    : mThread("WaylandVsyncThread"),
-      mTask(nullptr),
-      mCallbackContext(nullptr),
-      mNotifyThreadMonitor("WaylandVsyncNotifyThreadMonitor"),
-      mEnabledLock("WaylandVsyncEnabledLock"),
+    : mEnabledLock("WaylandVsyncEnabledLock"),
       mVsyncEnabled(false),
       mMonitorEnabled(false),
-      mShutdown(false),
+      mCallback(nullptr),
       mContainer(container) {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -51,39 +40,39 @@ WaylandVsyncSource::WaylandDisplay::WaylandDisplay(MozContainer* container)
   mDisplay = widget::WaylandDisplayGet()->GetDisplay();
 }
 
-void WaylandVsyncSource::WaylandDisplay::Loop() {
-  MonitorAutoLock lock(mNotifyThreadMonitor);
-  while (true) {
-    lock.Wait();
-    if (mShutdown) {
-      return;
-    }
-
-    NotifyVsync(TimeStamp::Now());
-  }
-}
-
 void WaylandVsyncSource::WaylandDisplay::ClearFrameCallback() {
-  if (mCallbackContext) {
-    mCallbackContext->mEnabled = false;
-    mCallbackContext = nullptr;
+  if (mCallback) {
+    wl_callback_destroy(mCallback);
+    mCallback = nullptr;
   }
 }
 
-bool WaylandVsyncSource::WaylandDisplay::Setup() {
-  MutexAutoLock lock(mEnabledLock);
-  MOZ_ASSERT(!mTask);
-  MOZ_ASSERT(!mShutdown);
-
-  if (!mThread.Start()) {
-    return false;
+void WaylandVsyncSource::WaylandDisplay::Refresh() {
+  if (!mMonitorEnabled || !mVsyncEnabled || mCallback) {
+    
+    
+    
+    
+    return;
   }
-  mTask = NewRunnableMethod("WaylandVsyncSource::WaylandDisplay::Loop", this,
-                            &WaylandDisplay::Loop);
-  RefPtr<Runnable> addrefedTask = mTask;
-  mThread.message_loop()->PostTask(addrefedTask.forget());
 
-  return true;
+  struct wl_surface* surface = moz_container_wayland_surface_lock(mContainer);
+  if (!surface) {
+    
+    RefPtr<WaylandVsyncSource::WaylandDisplay> self(this);
+    moz_container_wayland_add_initial_draw_callback(
+        mContainer, [self]() -> void {
+          MutexAutoLock lock(self->mEnabledLock);
+          self->Refresh();
+        });
+    return;
+  }
+  moz_container_wayland_surface_unlock(mContainer, &surface);
+
+  
+  
+  SetupFrameCallback();
+  NotifyVsync(TimeStamp::Now());
 }
 
 void WaylandVsyncSource::WaylandDisplay::EnableMonitor() {
@@ -92,11 +81,7 @@ void WaylandVsyncSource::WaylandDisplay::EnableMonitor() {
     return;
   }
   mMonitorEnabled = true;
-  if (mVsyncEnabled && (!mCallbackContext || !mCallbackContext->mEnabled)) {
-    
-    
-    SetupFrameCallback();
-  }
+  Refresh();
 }
 
 void WaylandVsyncSource::WaylandDisplay::DisableMonitor() {
@@ -108,13 +93,8 @@ void WaylandVsyncSource::WaylandDisplay::DisableMonitor() {
   ClearFrameCallback();
 }
 
-void WaylandVsyncSource::WaylandDisplay::Notify() {
-  
-  MonitorAutoLock lock(mNotifyThreadMonitor);
-  mNotifyThreadMonitor.NotifyAll();
-}
-
 void WaylandVsyncSource::WaylandDisplay::SetupFrameCallback() {
+  MOZ_ASSERT(mCallback == nullptr);
   struct wl_surface* surface = moz_container_wayland_surface_lock(mContainer);
   if (!surface) {
     
@@ -124,16 +104,9 @@ void WaylandVsyncSource::WaylandDisplay::SetupFrameCallback() {
     return;
   }
 
-  if (mCallbackContext == nullptr) {
-    
-    
-    
-    mCallbackContext = new WaylandFrameCallbackContext(this);
-  }
-
-  struct wl_callback* callback = wl_surface_frame(surface);
-  wl_callback_add_listener(callback, &WaylandVsyncSourceCallbackListener,
-                           mCallbackContext);
+  mCallback = wl_surface_frame(surface);
+  wl_callback_add_listener(mCallback, &WaylandVsyncSourceCallbackListener,
+                           this);
   wl_surface_commit(surface);
   wl_display_flush(mDisplay);
   moz_container_wayland_surface_unlock(mContainer, &surface);
@@ -142,6 +115,7 @@ void WaylandVsyncSource::WaylandDisplay::SetupFrameCallback() {
 void WaylandVsyncSource::WaylandDisplay::FrameCallback() {
   {
     MutexAutoLock lock(mEnabledLock);
+    mCallback = nullptr;
 
     if (!mVsyncEnabled || !mMonitorEnabled) {
       
@@ -153,7 +127,7 @@ void WaylandVsyncSource::WaylandDisplay::FrameCallback() {
     SetupFrameCallback();
   }
 
-  Notify();
+  NotifyVsync(TimeStamp::Now());
 }
 
 void WaylandVsyncSource::WaylandDisplay::EnableVsync() {
@@ -162,18 +136,8 @@ void WaylandVsyncSource::WaylandDisplay::EnableVsync() {
   if (mVsyncEnabled) {
     return;
   }
-
   mVsyncEnabled = true;
-  if (!mMonitorEnabled || (mCallbackContext && mCallbackContext->mEnabled)) {
-    
-    
-    
-    
-    return;
-  }
-
-  
-  SetupFrameCallback();
+  Refresh();
 }
 
 void WaylandVsyncSource::WaylandDisplay::DisableVsync() {
@@ -190,19 +154,7 @@ bool WaylandVsyncSource::WaylandDisplay::IsVsyncEnabled() {
 void WaylandVsyncSource::WaylandDisplay::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
   DisableVsync();
-
-  
-  
-  {
-    MonitorAutoLock lock(mNotifyThreadMonitor);
-    mShutdown = true;
-    mNotifyThreadMonitor.NotifyAll();
-  }
-
-  
-  
-  
-  mThread.Stop();
+  wl_display_roundtrip(mDisplay);
 }
 
 }  
