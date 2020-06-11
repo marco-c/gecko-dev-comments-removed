@@ -85,7 +85,7 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph,
     frameDepth_ += gen->wasmMaxStackArgBytes();
 
 #ifdef ENABLE_WASM_SIMD
-#  ifdef JS_CODEGEN_X64
+#  if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
     
 #  else
 #    error \

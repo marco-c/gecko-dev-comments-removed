@@ -301,9 +301,6 @@ class LInt64ToFloatingPoint : public LInstructionHelper<1, INT64_PIECES, 1> {
 
 
 
-
-
-
 class LSimd128 : public LInstructionHelper<1, 0, 0> {
   SimdConstant v_;
 
@@ -367,7 +364,8 @@ class LWasmBinarySimd128 : public LInstructionHelper<1, 2, 2> {
 
 
 
-class LWasmI64x2Mul : public LInstructionHelper<1, 2, INT64_PIECES> {
+
+class LWasmI64x2Mul : public LInstructionHelper<1, 2, INT64_PIECES * 2 + 1> {
  public:
   LIR_HEADER(WasmI64x2Mul)
 
@@ -382,8 +380,22 @@ class LWasmI64x2Mul : public LInstructionHelper<1, 2, INT64_PIECES> {
     setInt64Temp(0, temp);
   }
 
+  LWasmI64x2Mul(const LAllocation& lhsDest, const LAllocation& rhs,
+                const LInt64Definition& temp1, const LInt64Definition& temp2,
+                const LDefinition& temp3)
+      : LInstructionHelper(classOpcode) {
+    setOperand(LhsDest, lhsDest);
+    setOperand(Rhs, rhs);
+    setInt64Temp(0, temp1);
+    setInt64Temp(INT64_PIECES, temp2);
+    setTemp(INT64_PIECES * 2, temp3);
+  }
+
   const LAllocation* lhsDest() { return getOperand(LhsDest); }
   const LAllocation* rhs() { return getOperand(Rhs); }
+  const LInt64Definition temp1() { return getInt64Temp(0); }
+  const LInt64Definition temp2() { return getInt64Temp(INT64_PIECES); }
+  const LDefinition* temp3() { return getTemp(INT64_PIECES * 2); }
 };
 
 

@@ -164,6 +164,7 @@ class LIRGeneratorShared {
   
   inline LDefinition tempFixed(Register reg);
   inline LDefinition tempFixed(FloatRegister reg);
+  inline LInt64Definition tempInt64Fixed(Register64 reg);
 
   template <size_t Ops, size_t Temps>
   inline void defineFixed(LInstructionHelper<1, Ops, Temps>* lir,

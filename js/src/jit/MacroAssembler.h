@@ -320,6 +320,22 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void Push(RegisterOrSP reg);
 #endif
 
+#ifdef ENABLE_WASM_SIMD
+  
+  
+  static bool MustScalarizeShiftSimd128(wasm::SimdOp op);
+
+  
+  
+  
+  static bool MustMaskShiftCountSimd128(wasm::SimdOp op, int32_t* mask);
+
+  
+  
+  
+  static bool MustScalarizeShiftSimd128(wasm::SimdOp op, Imm32 imm);
+#endif
+
   
  public:
   
@@ -1900,7 +1916,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void splatX4(FloatRegister src, FloatRegister dest)
       DEFINED_ON(x86_shared);
 
-  inline void splatX2(Register64 src, FloatRegister dest) DEFINED_ON(x64);
+  inline void splatX2(Register64 src, FloatRegister dest) DEFINED_ON(x86, x64);
 
   inline void splatX2(FloatRegister src, FloatRegister dest)
       DEFINED_ON(x86_shared);
@@ -1923,7 +1939,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                  Register dest) DEFINED_ON(x86_shared);
 
   inline void extractLaneInt64x2(uint32_t lane, FloatRegister src,
-                                 Register64 dest) DEFINED_ON(x64);
+                                 Register64 dest) DEFINED_ON(x86, x64);
 
   inline void extractLaneFloat32x4(uint32_t lane, FloatRegister src,
                                    FloatRegister dest) DEFINED_ON(x86_shared);
@@ -1943,7 +1959,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                  FloatRegister lhsDest) DEFINED_ON(x86_shared);
 
   inline void replaceLaneInt64x2(unsigned lane, Register64 rhs,
-                                 FloatRegister lhsDest) DEFINED_ON(x64);
+                                 FloatRegister lhsDest) DEFINED_ON(x86, x64);
 
   inline void replaceLaneFloat32x4(unsigned lane, FloatRegister rhs,
                                    FloatRegister lhsDest)
@@ -2062,6 +2078,11 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void mulInt64x2(FloatRegister rhs, FloatRegister lhsDest,
                          Register64 temp) DEFINED_ON(x64);
+
+  
+  inline void mulInt64x2(FloatRegister rhs, FloatRegister lhsDest,
+                         Register64 temp1, Register64 temp2, Register temp3)
+      DEFINED_ON(x86);
 
   
 
@@ -2238,12 +2259,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
       DEFINED_ON(x86_shared);
 
   
-  
-  inline void rightShiftInt64x2(Register rhs, FloatRegister lhsDest)
-      DEFINED_ON(x64);
-
   inline void rightShiftInt64x2(Imm32 count, FloatRegister src,
-                                FloatRegister dest) DEFINED_ON(x64);
+                                FloatRegister dest) DEFINED_ON(x86_shared);
 
   inline void unsignedRightShiftInt64x2(Register rhs, FloatRegister lhsDest,
                                         Register temp) DEFINED_ON(x86_shared);
@@ -2256,6 +2273,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void bitwiseAndSimd128(FloatRegister rhs, FloatRegister lhsDest)
       DEFINED_ON(x86_shared);
+
+  inline void bitwiseAndSimd128(const SimdConstant& rhs, FloatRegister lhsDest)
+      DEFINED_ON(x64, x86);
 
   inline void bitwiseOrSimd128(FloatRegister rhs, FloatRegister lhsDest)
       DEFINED_ON(x86_shared);
@@ -2280,7 +2300,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
 
-  inline void anyTrueSimd128(FloatRegister src, Register dest) DEFINED_ON(x64);
+  inline void anyTrueSimd128(FloatRegister src, Register dest)
+      DEFINED_ON(x86, x64);
 
   
 
