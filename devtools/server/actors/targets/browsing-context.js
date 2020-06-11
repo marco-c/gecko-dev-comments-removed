@@ -1723,7 +1723,12 @@ DebuggerProgressListener.prototype = {
     
     
     
-    docShell.browsingContext.watchedByDevTools = true;
+    
+    
+    
+    if (docShell.browsingContext.top == docShell.browsingContext) {
+      docShell.browsingContext.watchedByDevTools = true;
+    }
   },
 
   unwatch(docShell) {
@@ -1756,7 +1761,13 @@ DebuggerProgressListener.prototype = {
       this._knownWindowIDs.delete(getWindowID(win));
     }
 
-    docShell.browsingContext.watchedByDevTools = false;
+    
+    
+    
+    
+    if (docShell.browsingContext.top == docShell.browsingContext) {
+      docShell.browsingContext.watchedByDevTools = false;
+    }
   },
 
   _getWindowsInDocShell(docShell) {
