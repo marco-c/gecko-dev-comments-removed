@@ -1,7 +1,7 @@
 
 
 
-from mozperftest.browser.browsertime import add_options
+from mozperftest.test.browsertime import add_options
 
 url = "'https://www.example.com'"
 

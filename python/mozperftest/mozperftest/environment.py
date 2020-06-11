@@ -8,7 +8,7 @@ from pathlib import Path
 import tempfile
 import shutil
 
-from mozperftest.browser import pick_browser
+from mozperftest.test import pick_test
 from mozperftest.system import pick_system
 from mozperftest.metrics import pick_metrics
 from mozperftest.layers import Layers
@@ -28,7 +28,7 @@ class MachEnvironment:
         
         if flavor != "script":
             raise NotImplementedError(flavor)
-        for layer in (pick_system, pick_browser, pick_metrics):
+        for layer in (pick_system, pick_test, pick_metrics):
             self.add_layer(layer(self, flavor, mach_cmd))
         self.tmp_dir = tempfile.mkdtemp()
         self._load_hooks()

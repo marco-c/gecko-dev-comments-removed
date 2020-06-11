@@ -2,7 +2,7 @@
 
 
 
-from mozperftest.browser.browsertime.runner import BrowsertimeRunner  
+from mozperftest.test.browsertime.runner import BrowsertimeRunner  
 
 
 def add_option(env, name, value):

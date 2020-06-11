@@ -16,7 +16,7 @@ except ImportError:
     conditions = None
 
 from mozperftest.system import get_layers as system_layers  
-from mozperftest.browser import get_layers as browser_layers  
+from mozperftest.test import get_layers as test_layers  
 from mozperftest.metrics import get_layers as metrics_layers  
 
 FLAVORS = ["script", "doc"]
@@ -71,7 +71,7 @@ class Options:
     args = copy.deepcopy(general_args)
 
 
-for layer in system_layers() + browser_layers() + metrics_layers():
+for layer in system_layers() + test_layers() + metrics_layers():
     if layer.activated:
         
         option_name = "--no-%s" % layer.name
