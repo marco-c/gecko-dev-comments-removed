@@ -142,7 +142,7 @@ class BrowsertimeRunner(NodeRunner):
 
         
         
-        if self.browsertime_js.exists():
+        if self.browsertime_js.exists() and not self.get_arg("clobber"):
             return
 
         if install_url is None:
@@ -154,8 +154,8 @@ class BrowsertimeRunner(NodeRunner):
         for file in ("package.json", "package-lock.json"):
             src = BROWSERTIME_SRC_ROOT / file
             target = self.state_path / file
-            if not target.exists():
-                shutil.copyfile(str(src), str(target))
+            
+            shutil.copyfile(str(src), str(target))
 
         package_json_path = self.state_path / "package.json"
 
@@ -330,6 +330,12 @@ class BrowsertimeRunner(NodeRunner):
                     continue
                 option = option.split("=")
                 if len(option) != 2:
+                    self.warning(
+                        f"Skipping browsertime option {option} as it "
+                        "is missing a name/value pairing. We expect options "
+                        "to be formatted as: --browsertime-extra-options "
+                        "'browserRestartTries=1,timeouts.browserStart=10'"
+                    )
                     continue
                 name, value = option
                 args += ["--" + name, value]
