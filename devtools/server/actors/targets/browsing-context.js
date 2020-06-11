@@ -399,6 +399,10 @@ const browsingContextTargetPrototype = {
     return null;
   },
 
+  get browsingContextID() {
+    return this.docShell && this.docShell.browsingContext.id;
+  },
+
   
 
 
@@ -505,7 +509,7 @@ const browsingContextTargetPrototype = {
 
     const response = {
       actor: this.actorID,
-      browsingContextID: this.docShell.browsingContext.id,
+      browsingContextID: this.browsingContextID,
       traits: {
         
         

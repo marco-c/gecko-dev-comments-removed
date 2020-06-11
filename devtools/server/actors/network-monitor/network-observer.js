@@ -69,7 +69,7 @@ const HTTP_TEMPORARY_REDIRECT = 307;
 
 function matchRequest(channel, filters) {
   
-  if (!filters.outerWindowID && !filters.window) {
+  if (!filters.browsingContextID && !filters.window) {
     return true;
   }
 
@@ -109,21 +109,14 @@ function matchRequest(channel, filters) {
     }
   }
 
-  if (filters.outerWindowID) {
+  if (filters.browsingContextID) {
     const topFrame = NetworkHelper.getTopFrameForRequest(channel);
     
-    if (topFrame) {
-      try {
-        if (topFrame.outerWindowID == filters.outerWindowID) {
-          return true;
-        }
-      } catch (e) {
-        
-        
-      }
+    if (topFrame && topFrame.browsingContext.id == filters.browsingContextID) {
+      return true;
     } else if (
       channel.loadInfo &&
-      channel.loadInfo.topOuterWindowID == filters.outerWindowID
+      channel.loadInfo.browsingContext.id == filters.browsingContextID
     ) {
       
       
