@@ -1674,6 +1674,7 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   
+  
   void EndPaint();
 
   
