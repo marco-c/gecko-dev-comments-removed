@@ -59,7 +59,17 @@ class SVGTests : public nsISupports {
 
 
 
-  static const nsString* const kIgnoreSystemLanguage;
+
+
+  bool PassesConditionalProcessingTestsIgnoringSystemLanguage() const;
+
+  
+
+
+
+
+
+  bool PassesConditionalProcessingTests() const;
 
   
 
@@ -69,11 +79,7 @@ class SVGTests : public nsISupports {
 
 
 
-
-
-
-  bool PassesConditionalProcessingTests(
-      const nsString* aAcceptLangs = nullptr) const;
+  bool PassesConditionalProcessingTests(const nsAString& aAcceptLangs) const;
 
   
 
