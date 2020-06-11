@@ -1,15 +1,15 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 with Files('nsBlock*'):
-    # Parts of these files are really Layout: Floats
+    
     BUG_COMPONENT = ('Core', 'Layout: Block and Inline')
 
 with Files('Block*'):
-    # Parts of these files are really Layout: Floats
+    
     BUG_COMPONENT = ('Core', 'Layout: Block and Inline')
 
 with Files('nsColumn*'):
@@ -19,7 +19,7 @@ with Files('Column*'):
     BUG_COMPONENT = ('Core', 'Layout: Columns')
 
 with Files('nsLine*'):
-    # Parts of these files are really Layout: Floats
+    
     BUG_COMPONENT = ('Core', 'Layout: Block and Inline')
 
 with Files('nsInlineFrame.*'):
@@ -151,6 +151,7 @@ EXPORTS.mozilla += [
     'ReflowInput.h',
     'ReflowOutput.h',
     'ScrollbarPreferences.h',
+    'ScrollOrigin.h',
     'ViewportFrame.h',
     'WritingModes.h',
 ]
@@ -228,18 +229,16 @@ UNIFIED_SOURCES += [
     'WBRFrame.cpp'
 ]
 
-# nsPluginFrame.cpp needs to be built separately because of name clashes in the OS X headers.
+
 SOURCES += [
     'nsPluginFrame.cpp',
 ]
 
 GeneratedFile('FrameIdList.h',
               script='GenerateFrameLists.py',
-              py2=True,
               entry_point='generate_frame_id_list_h')
 GeneratedFile('FrameTypeList.h',
               script='GenerateFrameLists.py',
-              py2=True,
               entry_point='generate_frame_type_list_h')
 
 include('/ipc/chromium/chromium-config.mozbuild')

@@ -13,6 +13,7 @@
 
 #include "nsCoord.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/ScrollOrigin.h"
 #include "mozilla/ScrollStyles.h"
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/gfx/Point.h"
@@ -29,7 +30,6 @@ class nsIScrollPositionListener;
 class nsIFrame;
 class nsPresContext;
 class nsIContent;
-class nsAtom;
 class nsDisplayListBuilder;
 
 namespace mozilla {
@@ -57,6 +57,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   typedef mozilla::layers::ScrollSnapInfo ScrollSnapInfo;
   typedef mozilla::layout::ScrollAnchorContainer ScrollAnchorContainer;
   typedef mozilla::ScrollMode ScrollMode;
+  typedef mozilla::ScrollOrigin ScrollOrigin;
 
   NS_DECL_QUERYFRAME_TARGET(nsIScrollableFrame)
 
@@ -267,11 +268,12 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  virtual void ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
-                                 ScrollMode aMode = ScrollMode::Instant,
-                                 nsIScrollbarMediator::ScrollSnapMode aSnap =
-                                     nsIScrollbarMediator::DEFAULT,
-                                 nsAtom* aOrigin = nullptr) = 0;
+  virtual void ScrollToCSSPixels(
+      const CSSIntPoint& aScrollPosition,
+      ScrollMode aMode = ScrollMode::Instant,
+      nsIScrollbarMediator::ScrollSnapMode aSnap =
+          nsIScrollbarMediator::DEFAULT,
+      ScrollOrigin aOrigin = ScrollOrigin::NotSpecified) = 0;
   
 
 
@@ -281,7 +283,8 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
   virtual void ScrollToCSSPixelsApproximate(
-      const mozilla::CSSPoint& aScrollPosition, nsAtom* aOrigin = nullptr) = 0;
+      const mozilla::CSSPoint& aScrollPosition,
+      ScrollOrigin aOrigin = ScrollOrigin::NotSpecified) = 0;
 
   
 
@@ -300,7 +303,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
   virtual void ScrollBy(nsIntPoint aDelta, mozilla::ScrollUnit aUnit,
                         ScrollMode aMode, nsIntPoint* aOverflow = nullptr,
-                        nsAtom* aOrigin = nullptr,
+                        ScrollOrigin aOrigin = ScrollOrigin::NotSpecified,
                         ScrollMomentum aMomentum = NOT_MOMENTUM,
                         nsIScrollbarMediator::ScrollSnapMode aSnap =
                             nsIScrollbarMediator::DISABLE_SNAP) = 0;
@@ -309,11 +312,11 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  virtual void ScrollByCSSPixels(const CSSIntPoint& aDelta,
-                                 ScrollMode aMode = ScrollMode::Instant,
-                                 nsAtom* aOrigin = nullptr,
-                                 nsIScrollbarMediator::ScrollSnapMode aSnap =
-                                     nsIScrollbarMediator::DEFAULT) = 0;
+  virtual void ScrollByCSSPixels(
+      const CSSIntPoint& aDelta, ScrollMode aMode = ScrollMode::Instant,
+      ScrollOrigin aOrigin = ScrollOrigin::NotSpecified,
+      nsIScrollbarMediator::ScrollSnapMode aSnap =
+          nsIScrollbarMediator::DEFAULT) = 0;
 
   
 
@@ -416,7 +419,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  virtual nsAtom* LastScrollOrigin() = 0;
+  virtual ScrollOrigin LastScrollOrigin() = 0;
   
 
 
@@ -431,7 +434,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  virtual nsAtom* LastSmoothScrollOrigin() = 0;
+  virtual ScrollOrigin LastSmoothScrollOrigin() = 0;
   
 
 

@@ -2276,22 +2276,6 @@ STATIC_ATOMS = [
     Atom("ForwardMail", "ForwardMail"),
     Atom("ReplyToMail", "ReplyToMail"),
 
-    
-    
-    
-    
-    
-    Atom("mouseWheel", "mouseWheel"),  
-    Atom("pixels",     "pixels"),
-    Atom("lines",      "lines"),
-    Atom("pages",      "pages"),
-    Atom("scrollbars", "scrollbars"),
-    
-    
-    Atom("apz",        "apz"),
-    Atom("restore",    "restore"),
-    Atom("relative",    "relative"),
-
     Atom("alert", "alert"),
     Atom("alertdialog", "alertdialog"),
     Atom("application", "application"),
