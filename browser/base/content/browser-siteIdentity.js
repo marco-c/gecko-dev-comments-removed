@@ -57,7 +57,7 @@ var gIdentityHandler = {
 
 
 
-  _secureInternalUIWhitelist: /^(?:accounts|addons|cache|certificate|config|crashes|downloads|license|logins|preferences|protections|rights|sessionrestore|support|welcomeback)(?:[?#]|$)/i,
+  _secureInternalPages: /^(?:accounts|addons|cache|certificate|config|crashes|downloads|license|logins|preferences|protections|rights|sessionrestore|support|welcomeback)(?:[?#]|$)/i,
 
   
 
@@ -1032,8 +1032,7 @@ var gIdentityHandler = {
     }
 
     this._isSecureInternalUI =
-      uri.schemeIs("about") &&
-      this._secureInternalUIWhitelist.test(uri.pathQueryRef);
+      uri.schemeIs("about") && this._secureInternalPages.test(uri.pathQueryRef);
 
     this._pageExtensionPolicy = WebExtensionPolicy.getByURI(uri);
 
