@@ -334,7 +334,7 @@ SourceMapURLService.prototype._callOneCallback = async function(
 ) {
   
   if (!this._prefValue) {
-    callback(false);
+    callback(null);
     return;
   }
 
@@ -344,16 +344,15 @@ SourceMapURLService.prototype._callOneCallback = async function(
   }
 
   const resolvedLocation = await subscriptionEntry.promise;
-  if (resolvedLocation) {
-    const { line, column, sourceUrl } = resolvedLocation;
+
+  if (!this._prefValue) {
     
     
-    callback(this._prefValue, sourceUrl, line, column);
+  } else if (resolvedLocation) {
+    const { line, column, sourceUrl: url } = resolvedLocation;
+    callback({ url, line, column });
   }
 };
-
-
-
 
 
 

@@ -297,21 +297,12 @@ RuleEditor.prototype = {
 
 
 
-
-
-
-
-
-
-
-  _updateLocation: function(enabled, url, line) {
-    let displayURL = url;
-    if (!enabled) {
-      displayURL = null;
-      if (this.rule.sheet) {
-        displayURL = this.rule.sheet.href;
-      }
-      line = this.rule.ruleLine;
+  _updateLocation: function(originalLocation) {
+    let displayURL = this.rule.sheet ? this.rule.sheet.href : null;
+    let line = this.rule.ruleLine;
+    if (originalLocation) {
+      displayURL = originalLocation.url;
+      line = originalLocation.line;
     }
 
     let sourceTextContent = CssLogic.shortSource({ href: displayURL });
@@ -353,7 +344,7 @@ RuleEditor.prototype = {
         sourceLabel.removeAttribute("title");
       }
     } else {
-      this._updateLocation(false);
+      this._updateLocation(null);
     }
 
     let url = null;

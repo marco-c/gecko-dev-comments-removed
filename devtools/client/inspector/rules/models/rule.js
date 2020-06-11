@@ -951,12 +951,7 @@ class Rule {
         url,
         line,
         column,
-        (enabled, sourceUrl, sourceLine, sourceColumn) => {
-          if (enabled) {
-            
-            this.updateOriginalLocation(sourceUrl, sourceLine, sourceColumn);
-          }
-        }
+        this.updateOriginalLocation
       );
     }
 
@@ -970,16 +965,8 @@ class Rule {
 
 
 
-
-
-
-
-  updateOriginalLocation(url, line, column) {
-    this._originalLocation = {
-      column,
-      line,
-      url,
-    };
+  updateOriginalLocation(originalLocation) {
+    this._originalLocation = originalLocation;
     this.store.dispatch(
       updateSourceLink(this.domRule.actorID, this.sourceLink)
     );
