@@ -6,7 +6,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import concurrent.futures as futures
 import json
-import os
 import sys
 import logging
 
@@ -21,16 +20,13 @@ logger = logging.getLogger(__name__)
 testing = False
 
 
-def create_tasks(graph_config, taskgraph, label_to_taskid, params, decision_task_id=None):
+def create_tasks(graph_config, taskgraph, label_to_taskid, params, decision_task_id):
     taskid_to_label = {t: l for l, t in label_to_taskid.iteritems()}
 
-    decision_task_id = decision_task_id or os.environ.get('TASK_ID')
-
     
     
     
     
-    task_group_id = decision_task_id or slugid()
     scheduler_id = '{}-level-{}'.format(graph_config['trust-domain'], params['level'])
 
     
@@ -43,11 +39,10 @@ def create_tasks(graph_config, taskgraph, label_to_taskid, params, decision_task
         
         
         
-        if decision_task_id:
-            if not any(t in taskgraph.tasks for t in task_def.get('dependencies', [])):
-                task_def.setdefault('dependencies', []).append(decision_task_id)
+        if not any(t in taskgraph.tasks for t in task_def.get('dependencies', [])):
+            task_def.setdefault('dependencies', []).append(decision_task_id)
 
-        task_def['taskGroupId'] = task_group_id
+        task_def['taskGroupId'] = decision_task_id
         task_def['schedulerId'] = scheduler_id
 
     
