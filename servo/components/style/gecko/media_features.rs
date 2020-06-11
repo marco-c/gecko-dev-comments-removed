@@ -703,7 +703,6 @@ pub static MEDIA_FEATURES: [MediaFeatureDescription; 53] = [
         keyword_evaluator!(eval_any_hover, Hover),
         ParsingRequirements::empty(),
     ),
-
     
     
     
