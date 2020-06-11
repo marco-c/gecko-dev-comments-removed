@@ -321,46 +321,50 @@ function expectObserverCalledOnClose(
   });
 }
 
-function promiseMessage(aMessage, aAction, aCount = 1) {
-  let promise = ContentTask.spawn(
-    gBrowser.selectedBrowser,
-    [aMessage, aCount],
-    async function([expectedMessage, expectedCount]) {
-      return new Promise(resolve => {
-        function listenForMessage({ data }) {
-          if (
-            (!expectedMessage || data == expectedMessage) &&
-            --expectedCount == 0
-          ) {
-            content.removeEventListener("message", listenForMessage);
-            resolve(data);
-          }
+function promiseMessage(
+  aMessage,
+  aAction,
+  aCount = 1,
+  browser = gBrowser.selectedBrowser
+) {
+  let promise = ContentTask.spawn(browser, [aMessage, aCount], async function([
+    expectedMessage,
+    expectedCount,
+  ]) {
+    return new Promise(resolve => {
+      function listenForMessage({ data }) {
+        if (
+          (!expectedMessage || data == expectedMessage) &&
+          --expectedCount == 0
+        ) {
+          content.removeEventListener("message", listenForMessage);
+          resolve(data);
         }
-        content.addEventListener("message", listenForMessage);
-      });
-    }
-  );
+      }
+      content.addEventListener("message", listenForMessage);
+    });
+  });
   if (aAction) {
     aAction();
   }
   return promise;
 }
 
-function promisePopupNotificationShown(aName, aAction) {
+function promisePopupNotificationShown(aName, aAction, aWindow = window) {
   return new Promise(resolve => {
     
-    window.focus();
+    aWindow.focus();
 
-    PopupNotifications.panel.addEventListener(
+    aWindow.PopupNotifications.panel.addEventListener(
       "popupshown",
       function() {
         ok(
-          !!PopupNotifications.getNotification(aName),
+          !!aWindow.PopupNotifications.getNotification(aName),
           aName + " notification shown"
         );
-        ok(PopupNotifications.isPanelOpen, "notification panel open");
+        ok(aWindow.PopupNotifications.isPanelOpen, "notification panel open");
         ok(
-          !!PopupNotifications.panel.firstElementChild,
+          !!aWindow.PopupNotifications.panel.firstElementChild,
           "notification panel populated"
         );
 
@@ -511,22 +515,17 @@ async function getMediaCaptureState() {
 async function stopSharing(
   aType = "camera",
   aShouldKeepSharing = false,
-  aFrameBC
+  aFrameBC,
+  aWindow = window
 ) {
-  
-  
-  let frameBCToObserve;
-  if (gBrowserContextsToObserve.length > 1) {
-    frameBCToObserve = aFrameBC;
-  }
-
   let promiseRecordingEvent = expectObserverCalled(
     "recording-device-events",
     1,
-    frameBCToObserve
+    aFrameBC
   );
-  gIdentityHandler._identityBox.click();
-  let permissions = document.getElementById("identity-popup-permission-list");
+  aWindow.gIdentityHandler._identityBox.click();
+  let doc = aWindow.document;
+  let permissions = doc.getElementById("identity-popup-permission-list");
   let cancelButton = permissions.querySelector(
     ".identity-popup-permission-icon." +
       aType +
@@ -536,7 +535,7 @@ async function stopSharing(
   let observerPromise1 = expectObserverCalled(
     "getUserMedia:revoke",
     1,
-    frameBCToObserve
+    aFrameBC
   );
 
   
@@ -546,12 +545,13 @@ async function stopSharing(
     observerPromise2 = expectObserverCalled(
       "recording-window-ended",
       1,
-      frameBCToObserve
+      aFrameBC
     );
   }
 
   cancelButton.click();
-  gIdentityHandler._identityPopup.hidden = true;
+  aWindow.gIdentityHandler._identityPopup.hidden = true;
+
   await promiseRecordingEvent;
   await observerPromise1;
   await observerPromise2;
@@ -660,7 +660,8 @@ async function reloadAndAssertClosedStreams() {
   await checkNotSharing();
 }
 
-function checkDeviceSelectors(aAudio, aVideo, aScreen) {
+function checkDeviceSelectors(aAudio, aVideo, aScreen, aWindow = window) {
+  let document = aWindow.document;
   let micSelector = document.getElementById("webRTC-selectMicrophone");
   if (aAudio) {
     ok(!micSelector.hidden, "microphone selector visible");
