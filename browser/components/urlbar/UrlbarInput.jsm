@@ -1136,7 +1136,17 @@ class UrlbarInput {
       return;
     }
     
-    if (this.getAttribute("focused") != "true" && !this.view.isOpen) {
+    
+    
+    
+    
+    
+    if (
+      !this.view.isOpen &&
+      (this.getAttribute("focused") != "true" ||
+        (this.window.gReduceMotion &&
+          this.window.matchMedia("(prefers-reduced-motion: reduce)").matches))
+    ) {
       return;
     }
 
@@ -1161,10 +1171,15 @@ class UrlbarInput {
   }
 
   endLayoutExtend() {
+    
+    
+    
     if (
       !this.hasAttribute("breakout-extend") ||
       this.view.isOpen ||
-      this.getAttribute("focused") == "true"
+      (this.getAttribute("focused") == "true" &&
+        (!this.window.gReduceMotion ||
+          !this.window.matchMedia("(prefers-reduced-motion: reduce)").matches))
     ) {
       return;
     }
