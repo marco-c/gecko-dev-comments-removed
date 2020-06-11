@@ -4556,28 +4556,13 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   RepaintUpdateType contentRepaintType = RepaintUpdateType::eNone;
   bool viewportUpdated = false;
 
-  
-  
-  
-  
-  
-  bool entertainViewportUpdates =
-      FuzzyEqualsAdditive(aLayerMetrics.GetCompositionBounds().Width(),
-                          Metrics().GetCompositionBounds().Width()) &&
-      FuzzyEqualsAdditive(aLayerMetrics.GetCompositionBounds().Height(),
-                          Metrics().GetCompositionBounds().Height());
-#if defined(MOZ_WIDGET_ANDROID)
-  entertainViewportUpdates = true;
-#endif
-  if (entertainViewportUpdates) {
-    if (Metrics().GetLayoutViewport().Size() !=
-        aLayerMetrics.GetLayoutViewport().Size()) {
-      needContentRepaint = true;
-      viewportUpdated = true;
-    }
-    if (viewportUpdated || scrollOffsetUpdated) {
-      Metrics().SetLayoutViewport(aLayerMetrics.GetLayoutViewport());
-    }
+  if (Metrics().GetLayoutViewport().Size() !=
+      aLayerMetrics.GetLayoutViewport().Size()) {
+    needContentRepaint = true;
+    viewportUpdated = true;
+  }
+  if (viewportUpdated || scrollOffsetUpdated) {
+    Metrics().SetLayoutViewport(aLayerMetrics.GetLayoutViewport());
   }
 
   if ((aIsFirstPaint && aThisLayerTreeUpdated) || isDefault) {
