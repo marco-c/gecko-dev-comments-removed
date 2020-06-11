@@ -52,7 +52,7 @@ this.trrselect = class trrselect extends ExtensionAPI {
             if (Cu.isInAutomation) {
               
               
-              setDryRunResultAndRecordTelemetry("https://dummytrr.com/query");
+              setDryRunResultAndRecordTelemetry("dummyTRR");
               return;
             }
 
@@ -72,22 +72,14 @@ this.trrselect = class trrselect extends ExtensionAPI {
           },
 
           async run() {
-            
-            
-            if (!Services.prefs.getBoolPref(kCommitSelectionPref, false)) {
-              Services.prefs.clearUserPref(kRolloutURIPref);
-            }
-
             if (!Services.prefs.getBoolPref(kEnabledPref, false)) {
               return;
             }
 
-            
             if (Services.prefs.prefHasUserValue(kRolloutURIPref)) {
               return;
             }
 
-            
             await this.dryRun();
 
             
@@ -95,7 +87,6 @@ this.trrselect = class trrselect extends ExtensionAPI {
               return;
             }
 
-            
             Services.prefs.setCharPref(
               kRolloutURIPref,
               Services.prefs.getCharPref(kDryRunResultPref)
