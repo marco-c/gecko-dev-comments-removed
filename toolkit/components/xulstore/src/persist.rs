@@ -50,9 +50,6 @@ static PERSIST: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
 
 
 fn sync_persist() -> XULStoreResult<()> {
-    let db = get_database()?;
-    let mut writer = db.env.write()?;
-
     
     
     
@@ -60,9 +57,10 @@ fn sync_persist() -> XULStoreResult<()> {
     let writes = CHANGES.lock()?.take();
 
     
-    
-    
     let writes = writes.ok_or(XULStoreError::Unavailable)?;
+
+    let db = get_database()?;
+    let mut writer = db.env.write()?;
 
     for (key, value) in writes.iter() {
         match value {
