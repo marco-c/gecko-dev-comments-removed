@@ -6,6 +6,13 @@
 
 const Services = require("Services");
 
+loader.lazyRequireGetter(
+  this,
+  "CombinedProgress",
+  "devtools/client/accessibility/utils/audit",
+  true
+);
+
 const {
   accessibility: { AUDIT_TYPE },
 } = require("devtools/shared/constants");
@@ -78,38 +85,38 @@ class AccessibilityProxy {
 
 
 
-
-
-
-
-  audit(filter, onError, onProgress, onCompleted) {
-    return new Promise(resolve => {
-      const front = this.accessibleWalkerFront;
-      const types =
-        filter === FILTERS.ALL ? Object.values(AUDIT_TYPE) : [filter];
-      const auditEventHandler = ({ type, ancestries, progress }) => {
-        switch (type) {
-          case "error":
-            this._off(front, "audit-event", auditEventHandler);
-            onError();
-            resolve();
-            break;
-          case "completed":
-            this._off(front, "audit-event", auditEventHandler);
-            onCompleted(ancestries);
-            resolve();
-            break;
-          case "progress":
-            onProgress(progress);
-            break;
-          default:
-            break;
-        }
-      };
-
-      this._on(front, "audit-event", auditEventHandler);
-      front.startAudit({ types });
+  async audit(filter, onProgress) {
+    const types = filter === FILTERS.ALL ? Object.values(AUDIT_TYPE) : [filter];
+    const totalFrames = this.toolbox.targetList.getAllTargets([
+      this.toolbox.targetList.TYPES.FRAME,
+    ]).length;
+    const progress = new CombinedProgress({
+      onProgress,
+      totalFrames,
     });
+    const audits = await this.withAllAccessibilityWalkerFronts(
+      async accessibleWalkerFront =>
+        accessibleWalkerFront.audit({
+          types,
+          onProgress: progress.onProgressForWalker.bind(
+            progress,
+            accessibleWalkerFront
+          ),
+        })
+    );
+
+    
+    const combinedAudit = { ancestries: [] };
+    for (const audit of audits) {
+      
+      if (audit.error) {
+        return audit;
+      }
+
+      combinedAudit.ancestries.push(...audit.ancestries);
+    }
+
+    return combinedAudit;
   }
 
   async disableAccessibility() {
