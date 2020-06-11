@@ -107,10 +107,6 @@ static_assert(MAX_WORKERS_PER_DOMAIN >= 1,
               "We should allow at least one worker per domain.");
 
 
-
-#define MAX_SCRIPT_RUN_TIME_SEC 10
-
-
 #define IDLE_THREAD_TIMEOUT_SEC 30
 
 
@@ -119,9 +115,6 @@ static_assert(MAX_WORKERS_PER_DOMAIN >= 1,
 #define PREF_WORKERS_PREFIX "dom.workers."
 #define PREF_WORKERS_MAX_PER_DOMAIN PREF_WORKERS_PREFIX "maxPerDomain"
 #define PREF_WORKERS_MAX_HARDWARE_CONCURRENCY "dom.maxHardwareConcurrency"
-
-#define PREF_MAX_SCRIPT_RUN_TIME_CONTENT "dom.max_script_run_time"
-#define PREF_MAX_SCRIPT_RUN_TIME_CHROME "dom.max_chrome_script_run_time"
 
 #define GC_REQUEST_OBSERVER_TOPIC "child-gc-request"
 #define CC_REQUEST_OBSERVER_TOPIC "child-cc-request"
@@ -1455,8 +1448,6 @@ nsresult RuntimeService::Init() {
 
   
   sDefaultJSSettings = MakeUnique<JSSettings>();
-  sDefaultJSSettings->chrome.maxScriptRuntime = -1;
-  sDefaultJSSettings->content.maxScriptRuntime = MAX_SCRIPT_RUN_TIME_SEC;
   SetDefaultJSGCSettings(JSGC_MAX_BYTES, Some(WORKER_DEFAULT_RUNTIME_HEAPSIZE));
   SetDefaultJSGCSettings(JSGC_ALLOCATION_THRESHOLD,
                          Some(WORKER_DEFAULT_ALLOCATION_THRESHOLD));
@@ -1534,15 +1525,6 @@ nsresult RuntimeService::Init() {
 
   MOZ_ASSERT(gRuntimeServiceDuringInit, "Should be true!");
   gRuntimeServiceDuringInit = false;
-
-  
-  
-  
-  Preferences::AddIntVarCache(&sDefaultJSSettings->content.maxScriptRuntime,
-                              PREF_MAX_SCRIPT_RUN_TIME_CONTENT,
-                              MAX_SCRIPT_RUN_TIME_SEC);
-  Preferences::AddIntVarCache(&sDefaultJSSettings->chrome.maxScriptRuntime,
-                              PREF_MAX_SCRIPT_RUN_TIME_CHROME, -1);
 
   int32_t maxPerDomain =
       Preferences::GetInt(PREF_WORKERS_MAX_PER_DOMAIN, MAX_WORKERS_PER_DOMAIN);
