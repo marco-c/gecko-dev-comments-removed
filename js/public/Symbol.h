@@ -75,7 +75,6 @@ enum class SymbolCode : uint32_t {
   WellKnownAPILimit =
       0x80000000,  
                    
-  PrivateNameSymbol = 0xfffffffd,  
   InSymbolRegistry =
       0xfffffffe,            
   UniqueSymbol = 0xffffffff  
