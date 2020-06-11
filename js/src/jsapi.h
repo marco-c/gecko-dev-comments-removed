@@ -2876,30 +2876,6 @@ namespace JS {
 
 
 
-
-
-
-
-
-
-
-
-
-struct WasmModule : js::AtomicRefCounted<WasmModule> {
-  virtual ~WasmModule() = default;
-  virtual JSObject* createObject(JSContext* cx) = 0;
-};
-
-extern JS_PUBLIC_API bool IsWasmModuleObject(HandleObject obj);
-
-extern JS_PUBLIC_API RefPtr<WasmModule> GetWasmModule(HandleObject obj);
-
-
-
-
-
-
-
 extern JS_PUBLIC_API MOZ_MUST_USE bool DisableWasmHugeMemory();
 
 

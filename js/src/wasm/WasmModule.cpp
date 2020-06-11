@@ -326,7 +326,7 @@ void Module::serialize(const LinkData& linkData,
 }
 
 
-JSObject* Module::createObject(JSContext* cx) {
+JSObject* Module::createObject(JSContext* cx) const {
   if (!GlobalObject::ensureConstructor(cx, cx->global(), JSProto_WebAssembly)) {
     return nullptr;
   }
@@ -334,6 +334,13 @@ JSObject* Module::createObject(JSContext* cx) {
   RootedObject proto(
       cx, &cx->global()->getPrototype(JSProto_WasmModule).toObject());
   return WasmModuleObject::create(cx, *this, proto);
+}
+
+
+JSObject* Module::createObjectForAsmJS(JSContext* cx) const {
+  
+  
+  return WasmModuleObject::create(cx, *this, nullptr);
 }
 
 bool wasm::GetOptimizedEncodingBuildId(JS::BuildIdCharVector* buildId) {

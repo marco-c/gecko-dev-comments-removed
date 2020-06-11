@@ -7100,8 +7100,7 @@ static bool DoCompileAsmJS(JSContext* cx, AsmJSParser<Unit>& parser,
 
   
   
-  Rooted<WasmModuleObject*> moduleObj(
-      cx, WasmModuleObject::create(cx, *module, nullptr));
+  RootedObject moduleObj(cx, module->createObjectForAsmJS(cx));
   if (!moduleObj) {
     return false;
   }
