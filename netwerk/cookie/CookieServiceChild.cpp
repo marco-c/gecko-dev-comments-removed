@@ -506,6 +506,10 @@ CookieServiceChild::SetCookieStringFromHttp(nsIURI* aHostURI,
   NS_ENSURE_ARG(aHostURI);
   NS_ENSURE_ARG(aChannel);
 
+  if (!CookieCommons::IsSchemeSupported(aHostURI)) {
+    return NS_OK;
+  }
+
   
   
   nsAutoCString scheme;
