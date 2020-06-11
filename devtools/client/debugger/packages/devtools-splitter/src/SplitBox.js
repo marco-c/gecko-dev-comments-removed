@@ -136,27 +136,29 @@ class SplitBox extends Component {
 
 
 
-  onMove({ movementX, movementY }) {
+  onMove({ clientX, movementY }) {
     const node = ReactDOM.findDOMNode(this);
     const doc = node.ownerDocument;
 
     if (this.props.endPanelControl) {
       
       
-      movementX = -movementX;
+      clientX = node.clientWidth - clientX;
       movementY = -movementY;
     }
 
     if (this.state.vert) {
       const isRtl = doc.dir === "rtl";
+
       if (isRtl) {
         
         
-        movementX = -movementX;
+        const fullWidth = node.clientWidth + node.offsetLeft;
+        clientX = fullWidth - clientX;
       }
 
       this.setState((state, props) => ({
-        width: state.width + movementX,
+        width: clientX,
       }));
     } else {
       this.setState((state, props) => ({
