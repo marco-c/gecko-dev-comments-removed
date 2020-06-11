@@ -3338,7 +3338,7 @@
       this._clearMultiSelectionLocked = false;
       this.avoidSingleSelectedTab();
       let closedTabsCount =
-        initialTabCount - tabs.filter(t => !t.closing).length;
+        initialTabCount - tabs.filter(t => t.isConnected && !t.closing).length;
       
       
       document
