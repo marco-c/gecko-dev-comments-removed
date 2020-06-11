@@ -821,7 +821,7 @@ PresShell::PresShell(Document* aDocument)
       mIgnoreFrameDestruction(false),
       mIsActive(true),
       mFrozen(false),
-      mIsFirstPaint(true),  
+      mIsFirstPaint(true),
       mObservesMutationsForPrint(false),
       mWasLastReflowInterrupted(false),
       mObservingStyleFlushes(false),
@@ -1166,6 +1166,15 @@ static void LogTextPerfStats(gfxTextPerfMetrics* aTextPerf,
   }
 }
 
+bool PresShell::InRDMPane() {
+  if (Document* doc = GetDocument()) {
+    if (BrowsingContext* bc = doc->GetBrowsingContext()) {
+      return bc->InRDMPane();
+    }
+  }
+  return false;
+}
+
 void PresShell::Destroy() {
   
   if (mHaveShutDown) {
@@ -1176,6 +1185,18 @@ void PresShell::Destroy() {
                "destroy called on presshell while scripts not blocked");
 
   AUTO_PROFILER_LABEL("PresShell::Destroy", LAYOUT);
+
+  
+  
+  
+  
+  
+  if (!mIsFirstPaint && mPresContext->IsRootContentDocumentCrossProcess()) {
+    Telemetry::HistogramID histogram = InRDMPane()
+                                           ? Telemetry::APZ_ZOOM_ACTIVITY_RDM
+                                           : Telemetry::APZ_ZOOM_ACTIVITY;
+    Telemetry::Accumulate(histogram, IsResolutionUpdatedByApz());
+  }
 
   
   gfxTextPerfMetrics* tp;

@@ -356,6 +356,12 @@ class PresShell final : public nsStubDocumentObserver,
 
   void AddResizeEventFlushObserverIfNeeded();
 
+  
+
+
+
+  bool InRDMPane();
+
  private:
   
 
