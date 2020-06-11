@@ -44,26 +44,66 @@ IMPL_IUNKNOWN_QUERY_TAIL_INHERITED(HyperTextAccessibleWrap)
 STDMETHODIMP
 DocAccessibleWrap::get_accParent(
      IDispatch __RPC_FAR* __RPC_FAR* ppdispParent) {
+  if (IsDefunct()) {
+    return CO_E_OBJNOTCONNECTED;
+  }
+
   
   DocAccessibleChild* ipcDoc = IPCDoc();
-  if (!ipcDoc || static_cast<dom::BrowserChild*>(ipcDoc->Manager())
-                         ->GetTopLevelDocAccessibleChild() != ipcDoc) {
-    return DocAccessible::get_accParent(ppdispParent);
+  if (ipcDoc && static_cast<dom::BrowserChild*>(ipcDoc->Manager())
+                        ->GetTopLevelDocAccessibleChild() == ipcDoc) {
+    
+    
+    RefPtr<IDispatch> dispParent = ipcDoc->GetEmulatedWindowIAccessible();
+    if (!dispParent) {
+      dispParent = ipcDoc->GetParentIAccessible();
+    }
+
+    if (!dispParent) {
+      return S_FALSE;
+    }
+
+    dispParent.forget(ppdispParent);
+    return S_OK;
   }
 
   
   
-  RefPtr<IDispatch> dispParent = ipcDoc->GetEmulatedWindowIAccessible();
-  if (!dispParent) {
-    dispParent = ipcDoc->GetParentIAccessible();
+  
+  if (XRE_IsParentProcess() &&
+      (!ParentDocument() || (nsWinUtils::IsWindowEmulationStarted() &&
+                             nsCoreUtils::IsTabDocument(DocumentNode())))) {
+    HWND hwnd = static_cast<HWND>(GetNativeWindow());
+    if (hwnd && !ParentDocument()) {
+      nsIFrame* frame = GetFrame();
+      if (frame) {
+        nsIWidget* widget = frame->GetNearestWidget();
+        if (widget->WindowType() == eWindowType_child && !widget->GetParent()) {
+          
+          
+          
+          
+          
+          
+          
+          
+          HWND parentHwnd = ::GetParent(hwnd);
+          if (parentHwnd) {
+            MOZ_ASSERT(::GetWindowLongW(parentHwnd, GWL_STYLE) & WS_POPUP,
+                       "Parent HWND should be a popup!");
+            hwnd = parentHwnd;
+          }
+        }
+      }
+    }
+    if (hwnd &&
+        SUCCEEDED(::AccessibleObjectFromWindow(
+            hwnd, OBJID_WINDOW, IID_IAccessible, (void**)ppdispParent))) {
+      return S_OK;
+    }
   }
 
-  if (!dispParent) {
-    return S_FALSE;
-  }
-
-  dispParent.forget(ppdispParent);
-  return S_OK;
+  return DocAccessible::get_accParent(ppdispParent);
 }
 
 STDMETHODIMP
