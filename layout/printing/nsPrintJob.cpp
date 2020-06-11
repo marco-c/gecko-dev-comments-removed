@@ -297,105 +297,6 @@ static nsresult GetSeqFrameAndCountPagesInternal(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-static void MapContentForPO(const UniquePtr<nsPrintObject>& aPO,
-                            nsIContent* aContent) {
-  MOZ_ASSERT(aPO && aContent, "Null argument");
-
-  Document* doc = aContent->GetComposedDoc();
-
-  NS_ASSERTION(doc, "Content without a document from a document tree?");
-
-  Document* subDoc = doc->GetSubDocumentFor(aContent);
-
-  if (subDoc) {
-    nsCOMPtr<nsIDocShell> docShell(subDoc->GetDocShell());
-
-    if (docShell) {
-      nsPrintObject* po = nullptr;
-      for (const UniquePtr<nsPrintObject>& kid : aPO->mKids) {
-        if (kid->mDocument == subDoc) {
-          po = kid.get();
-          break;
-        }
-      }
-
-      
-      
-      if (po) {
-        
-        
-        if (aContent->IsHTMLElement(nsGkAtoms::frame) &&
-            po->mParent->mFrameType == eFrameSet) {
-          po->mFrameType = eFrame;
-        } else {
-          
-          po->mFrameType = eIFrame;
-          po->SetPrintAsIs(true);
-          NS_ASSERTION(po->mParent, "The root must be a parent");
-          po->mParent->mPrintAsIs = true;
-        }
-      }
-    }
-  }
-
-  
-  for (nsIContent* child = aContent->GetFirstChild(); child;
-       child = child->GetNextSibling()) {
-    MapContentForPO(aPO, child);
-  }
-}
-
-
-
-
-
-
-
-
-static void MapContentToWebShells(const UniquePtr<nsPrintObject>& aRootPO,
-                                  const UniquePtr<nsPrintObject>& aPO) {
-  NS_ASSERTION(aRootPO, "Pointer is null!");
-  NS_ASSERTION(aPO, "Pointer is null!");
-
-  
-  
-  
-  nsCOMPtr<nsIContentViewer> viewer;
-  aPO->mDocShell->GetContentViewer(getter_AddRefs(viewer));
-  if (!viewer) return;
-
-  nsCOMPtr<Document> doc = viewer->GetDocument();
-  if (!doc) return;
-
-  Element* rootElement = doc->GetRootElement();
-  if (rootElement) {
-    MapContentForPO(aPO, rootElement);
-  } else {
-    NS_WARNING("Null root content on (sub)document.");
-  }
-
-  
-  for (const UniquePtr<nsPrintObject>& kid : aPO->mKids) {
-    MapContentToWebShells(aRootPO, kid);
-  }
-}
-
-
-
-
-
 static void BuildNestedPrintObjects(Document* aDocument,
                                     const UniquePtr<nsPrintObject>& aPO,
                                     nsTArray<nsPrintObject*>* aDocList) {
@@ -757,9 +658,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   printData->mCurrentFocusWin = FindFocusedDOMWindow();
 
   
-  bool isSelection = IsThereARangeSelection(printData->mCurrentFocusWin);
-
-  
   nsCOMPtr<nsIDocShell> docShell(do_QueryReferent(mDocShell, &rv));
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -798,13 +696,9 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     return NS_ERROR_GFX_PRINTER_STARTDOC;
 
   
-  
-  MapContentToWebShells(printData->mPrintObject, printData->mPrintObject);
-
+  bool isSelection = IsThereARangeSelection(printData->mCurrentFocusWin);
   bool isIFrameSelected = IsThereAnIFrameSelected(
       docShell, printData->mCurrentFocusWin, printData->mIsParentAFrameSet);
-
-  
   printData->mPrintSettings->SetPrintOptions(
       nsIPrintSettings::kEnableSelectionRB, isSelection || isIFrameSelected);
 

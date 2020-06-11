@@ -221,6 +221,18 @@ nsresult nsPrintObject::InitAsNestedObject(nsIDocShell* aDocShell,
   nsCOMPtr<nsPIDOMWindowOuter> window = aDoc->GetWindow();
   mContent = window->GetFrameElementInternal();
 
+  
+  
+  if (mContent->IsHTMLElement(nsGkAtoms::frame) &&
+      mParent->mFrameType == eFrameSet) {
+    mFrameType = eFrame;
+  } else {
+    
+    mFrameType = eIFrame;
+    mParent->mPrintAsIs = true;
+    SetPrintAsIs(true);
+  }
+
   return NS_OK;
 }
 
