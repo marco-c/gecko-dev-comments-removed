@@ -248,7 +248,12 @@ class EventSourceImpl final : public nsIObserver,
 
   struct Message {
     nsString mEventName;
-    nsString mLastEventID;
+    
+    
+    
+    
+    
+    Maybe<nsString> mLastEventID;
     nsString mData;
   };
 
@@ -1373,12 +1378,6 @@ nsresult EventSourceImpl::DispatchCurrentMessageEvent() {
     message->mEventName.AssignLiteral("message");
   }
 
-  if (message->mLastEventID.IsEmpty() && !mLastEventID.IsEmpty()) {
-    message->mLastEventID.Assign(mLastEventID);
-  }
-
-  mServiceNotifier->EventReceived(message->mEventName, message->mLastEventID,
-                                  message->mData, mReconnectionTime, PR_Now());
   mMessagesToDispatch.Push(message.release());
 
   if (!mGoingToDispatchAllMessages) {
@@ -1418,6 +1417,19 @@ void EventSourceImpl::DispatchAllMessageEvents() {
   while (mMessagesToDispatch.GetSize() > 0) {
     UniquePtr<Message> message(
         static_cast<Message*>(mMessagesToDispatch.PopFront()));
+
+    if (message->mLastEventID.isSome()) {
+      mLastEventID.Assign(message->mLastEventID.value());
+    }
+
+    if (message->mLastEventID.isNothing() && !mLastEventID.IsEmpty()) {
+      message->mLastEventID = Some(mLastEventID);
+    }
+
+    mServiceNotifier->EventReceived(message->mEventName, mLastEventID,
+                                    message->mData, mReconnectionTime,
+                                    PR_Now());
+
     
     JS::Rooted<JS::Value> jsData(cx);
     {
@@ -1436,9 +1448,8 @@ void EventSourceImpl::DispatchAllMessageEvents() {
         new MessageEvent(mEventSource, nullptr, nullptr);
 
     event->InitMessageEvent(nullptr, message->mEventName, CanBubble::eNo,
-                            Cancelable::eNo, jsData, mOrigin,
-                            message->mLastEventID, nullptr,
-                            Sequence<OwningNonNull<MessagePort>>());
+                            Cancelable::eNo, jsData, mOrigin, mLastEventID,
+                            nullptr, Sequence<OwningNonNull<MessagePort>>());
     event->SetTrusted(true);
 
     IgnoredErrorResult err;
@@ -1448,7 +1459,6 @@ void EventSourceImpl::DispatchAllMessageEvents() {
       return;
     }
 
-    mLastEventID.Assign(message->mLastEventID);
     if (IsClosed() || IsFrozen()) {
       return;
     }
@@ -1495,7 +1505,7 @@ nsresult EventSourceImpl::SetFieldAndClear() {
 
     case char16_t('i'):
       if (mLastFieldName.EqualsLiteral("id")) {
-        mCurrentMessage->mLastEventID.Assign(mLastFieldValue);
+        mCurrentMessage->mLastEventID = Some(mLastFieldValue);
       }
       break;
 
