@@ -164,7 +164,7 @@ interface nsISHEntry : nsISupports
 
 
 
-    [infallible] attribute nsIPrincipal partitionedPrincipalToInherit;
+    [infallible] attribute nsIPrincipal storagePrincipalToInherit;
 
     
 
@@ -298,7 +298,7 @@ interface nsISHEntry : nsISupports
                            in ACString contentType,
                            in nsIPrincipal triggeringPrincipal,
                            in nsIPrincipal principalToInherit,
-                           in nsIPrincipal partitionedPrincipalToInherit,
+                           in nsIPrincipal storagePrincipalToInherit,
                            in nsIContentSecurityPolicy aCsp,
                            in nsIDRef docshellID,
                            in boolean dynamicCreation,

@@ -6254,7 +6254,7 @@ nsresult nsDocShell::EnsureContentViewer() {
   nsCOMPtr<nsIContentSecurityPolicy> cspToInheritForAboutBlank;
   nsCOMPtr<nsIURI> baseURI;
   nsIPrincipal* principal = GetInheritedPrincipal(false);
-  nsIPrincipal* partitionedPrincipal = GetInheritedPrincipal(false, true);
+  nsIPrincipal* storagePrincipal = GetInheritedPrincipal(false, true);
 
   nsCOMPtr<nsIDocShellTreeItem> parentItem;
   GetInProcessSameTypeParent(getter_AddRefs(parentItem));
@@ -6269,7 +6269,7 @@ nsresult nsDocShell::EnsureContentViewer() {
   }
 
   nsresult rv = CreateAboutBlankContentViewer(
-      principal, partitionedPrincipal, cspToInheritForAboutBlank, baseURI);
+      principal, storagePrincipal, cspToInheritForAboutBlank, baseURI);
 
   NS_ENSURE_STATE(mContentViewer);
 
@@ -6295,7 +6295,7 @@ nsresult nsDocShell::EnsureContentViewer() {
 }
 
 nsresult nsDocShell::CreateAboutBlankContentViewer(
-    nsIPrincipal* aPrincipal, nsIPrincipal* aPartitionedPrincipal,
+    nsIPrincipal* aPrincipal, nsIPrincipal* aStoragePrincipal,
     nsIContentSecurityPolicy* aCSP, nsIURI* aBaseURI,
     bool aTryToSaveOldPresentation, bool aCheckPermitUnload,
     WindowGlobalChild* aActor) {
@@ -6389,7 +6389,7 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
           NS_LITERAL_CSTRING("text/html"));
 
   if (docFactory) {
-    nsCOMPtr<nsIPrincipal> principal, partitionedPrincipal;
+    nsCOMPtr<nsIPrincipal> principal, storagePrincipal;
     uint32_t sandboxFlags = mBrowsingContext->GetSandboxFlags();
     
     
@@ -6403,17 +6403,17 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
       } else {
         principal = NullPrincipal::CreateWithInheritedAttributes(this);
       }
-      partitionedPrincipal = principal;
+      storagePrincipal = principal;
     } else {
       principal = aPrincipal;
-      partitionedPrincipal = aPartitionedPrincipal;
+      storagePrincipal = aStoragePrincipal;
     }
 
     MaybeCreateInitialClientSource(principal);
 
     
     blankDoc = nsContentDLF::CreateBlankDocument(mLoadGroup, principal,
-                                                 partitionedPrincipal, this);
+                                                 storagePrincipal, this);
     if (blankDoc) {
       
       
@@ -6465,9 +6465,9 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
 
 NS_IMETHODIMP
 nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
-                                          nsIPrincipal* aPartitionedPrincipal,
+                                          nsIPrincipal* aStoragePrincipal,
                                           nsIContentSecurityPolicy* aCSP) {
-  return CreateAboutBlankContentViewer(aPrincipal, aPartitionedPrincipal, aCSP,
+  return CreateAboutBlankContentViewer(aPrincipal, aStoragePrincipal, aCSP,
                                        nullptr);
 }
 
@@ -8365,18 +8365,17 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
 
 
   nsCOMPtr<nsIPrincipal> newURITriggeringPrincipal, newURIPrincipalToInherit,
-      newURIPartitionedPrincipalToInherit;
+      newURIStoragePrincipalToInherit;
   nsCOMPtr<nsIContentSecurityPolicy> newCsp;
   if (mOSHE) {
     newURITriggeringPrincipal = mOSHE->GetTriggeringPrincipal();
     newURIPrincipalToInherit = mOSHE->GetPrincipalToInherit();
-    newURIPartitionedPrincipalToInherit =
-        mOSHE->GetPartitionedPrincipalToInherit();
+    newURIStoragePrincipalToInherit = mOSHE->GetStoragePrincipalToInherit();
     newCsp = mOSHE->GetCsp();
   } else {
     newURITriggeringPrincipal = aLoadState->TriggeringPrincipal();
     newURIPrincipalToInherit = doc->NodePrincipal();
-    newURIPartitionedPrincipalToInherit = doc->PartitionedPrincipal();
+    newURIStoragePrincipalToInherit = doc->IntrinsicStoragePrincipal();
     newCsp = doc->GetCsp();
   }
   
@@ -8388,8 +8387,8 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   
   
   OnNewURI(aLoadState->URI(), nullptr, newURITriggeringPrincipal,
-           newURIPrincipalToInherit, newURIPartitionedPrincipalToInherit,
-           mLoadType, newCsp, true, true, true);
+           newURIPrincipalToInherit, newURIStoragePrincipalToInherit, mLoadType,
+           newCsp, true, true, true);
 
   nsCOMPtr<nsIInputStream> postData;
   uint32_t cacheKey = 0;
@@ -8968,7 +8967,7 @@ bool nsDocShell::CanLoadInParentProcess(nsIURI* aURI) {
 }
 
 nsIPrincipal* nsDocShell::GetInheritedPrincipal(
-    bool aConsiderCurrentDocument, bool aConsiderPartitionedPrincipal) {
+    bool aConsiderCurrentDocument, bool aConsiderStoragePrincipal) {
   RefPtr<Document> document;
   bool inheritedFromCurrent = false;
 
@@ -9001,8 +9000,8 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
 
   
   if (document) {
-    nsIPrincipal* docPrincipal = aConsiderPartitionedPrincipal
-                                     ? document->PartitionedPrincipal()
+    nsIPrincipal* docPrincipal = aConsiderStoragePrincipal
+                                     ? document->IntrinsicStoragePrincipal()
                                      : document->NodePrincipal();
 
     
@@ -10025,7 +10024,7 @@ void nsDocShell::SetupReferrerInfoFromChannel(nsIChannel* aChannel) {
 bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
                           nsIPrincipal* aTriggeringPrincipal,
                           nsIPrincipal* aPrincipalToInherit,
-                          nsIPrincipal* aPartitionedPrincipalToInherit,
+                          nsIPrincipal* aStoragePrincipalToInherit,
                           uint32_t aLoadType, nsIContentSecurityPolicy* aCsp,
                           bool aFireOnLocationChange, bool aAddToGlobalHistory,
                           bool aCloneSHChildren) {
@@ -10190,9 +10189,8 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
 
 
       (void)AddToSessionHistory(aURI, aChannel, aTriggeringPrincipal,
-                                aPrincipalToInherit,
-                                aPartitionedPrincipalToInherit, aCsp,
-                                aCloneSHChildren, getter_AddRefs(mLSHE));
+                                aPrincipalToInherit, aStoragePrincipalToInherit,
+                                aCsp, aCloneSHChildren, getter_AddRefs(mLSHE));
     }
   } else if (GetSessionHistory() && mLSHE && mURIResultedInDocument) {
     
@@ -10661,8 +10659,7 @@ bool nsDocShell::ShouldAddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel) {
 
 nsresult nsDocShell::AddToSessionHistory(
     nsIURI* aURI, nsIChannel* aChannel, nsIPrincipal* aTriggeringPrincipal,
-    nsIPrincipal* aPrincipalToInherit,
-    nsIPrincipal* aPartitionedPrincipalToInherit,
+    nsIPrincipal* aPrincipalToInherit, nsIPrincipal* aStoragePrincipalToInherit,
     nsIContentSecurityPolicy* aCsp, bool aCloneChildren,
     nsISHEntry** aNewEntry) {
   MOZ_ASSERT(aURI, "uri is null");
@@ -10721,8 +10718,7 @@ nsresult nsDocShell::AddToSessionHistory(
   uint32_t cacheKey = 0;
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = aTriggeringPrincipal;
   nsCOMPtr<nsIPrincipal> principalToInherit = aPrincipalToInherit;
-  nsCOMPtr<nsIPrincipal> partitionedPrincipalToInherit =
-      aPartitionedPrincipalToInherit;
+  nsCOMPtr<nsIPrincipal> storagePrincipalToInherit = aStoragePrincipalToInherit;
   nsCOMPtr<nsIContentSecurityPolicy> csp = aCsp;
   bool expired = false;  
   bool discardLayoutState = false;
@@ -10784,12 +10780,12 @@ nsresult nsDocShell::AddToSessionHistory(
       }
     }
 
-    if (!partitionedPrincipalToInherit) {
+    if (!storagePrincipalToInherit) {
       
       
       
       
-      partitionedPrincipalToInherit = principalToInherit;
+      storagePrincipalToInherit = principalToInherit;
     }
   }
 
@@ -10832,10 +10828,10 @@ nsresult nsDocShell::AddToSessionHistory(
                 cacheKey,             
                 mContentTypeHint,     
                 triggeringPrincipal,  
-                principalToInherit, partitionedPrincipalToInherit, csp,
-                HistoryID(), mDynamicallyCreated, originalURI,
-                resultPrincipalURI, loadReplace, referrerInfo, srcdoc,
-                srcdocEntry, baseURI, saveLayoutState, expired);
+                principalToInherit, storagePrincipalToInherit, csp, HistoryID(),
+                mDynamicallyCreated, originalURI, resultPrincipalURI,
+                loadReplace, referrerInfo, srcdoc, srcdocEntry, baseURI,
+                saveLayoutState, expired);
 
   if (root == static_cast<nsIDocShellTreeItem*>(this) && GetSessionHistory()) {
     bool shouldPersist = ShouldAddToSessionHistory(aURI, aChannel);
@@ -10898,10 +10894,9 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
     
     
     
-    rv = CreateAboutBlankContentViewer(
-        loadState->PrincipalToInherit(),
-        loadState->PartitionedPrincipalToInherit(), nullptr, nullptr,
-        aEntry != mOSHE);
+    rv = CreateAboutBlankContentViewer(loadState->PrincipalToInherit(),
+                                       loadState->StoragePrincipalToInherit(),
+                                       nullptr, nullptr, aEntry != mOSHE);
 
     if (NS_FAILED(rv)) {
       

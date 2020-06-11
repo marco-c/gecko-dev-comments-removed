@@ -226,7 +226,7 @@ nsContentDLF::CreateInstanceForDocument(nsISupports* aContainer,
 
 already_AddRefed<Document> nsContentDLF::CreateBlankDocument(
     nsILoadGroup* aLoadGroup, nsIPrincipal* aPrincipal,
-    nsIPrincipal* aPartitionedPrincipal, nsDocShell* aContainer) {
+    nsIPrincipal* aStoragePrincipal, nsDocShell* aContainer) {
   
   RefPtr<Document> blankDoc;
   mozilla::Unused << NS_NewHTMLDocument(getter_AddRefs(blankDoc));
@@ -241,7 +241,7 @@ already_AddRefed<Document> nsContentDLF::CreateBlankDocument(
   if (!uri) {
     return nullptr;
   }
-  blankDoc->ResetToURI(uri, aLoadGroup, aPrincipal, aPartitionedPrincipal);
+  blankDoc->ResetToURI(uri, aLoadGroup, aPrincipal, aStoragePrincipal);
   blankDoc->SetContainer(aContainer);
 
   

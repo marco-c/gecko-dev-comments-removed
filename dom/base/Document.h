@@ -582,7 +582,9 @@ class Document : public nsINode,
   
   
   
-  nsIPrincipal* PartitionedPrincipal() final { return mPartitionedPrincipal; }
+  nsIPrincipal* IntrinsicStoragePrincipal() final {
+    return mIntrinsicStoragePrincipal;
+  }
 
   void ClearActiveStoragePrincipal() { mActiveStoragePrincipal = nullptr; }
 
@@ -853,8 +855,7 @@ class Document : public nsINode,
 
 
 
-  void SetPrincipals(nsIPrincipal* aPrincipal,
-                     nsIPrincipal* aPartitionedPrincipal);
+  void SetPrincipals(nsIPrincipal* aPrincipal, nsIPrincipal* aStoragePrincipal);
 
   
 
@@ -1236,8 +1237,6 @@ class Document : public nsINode,
   already_AddRefed<Promise> HasStorageAccess(ErrorResult& aRv);
   already_AddRefed<Promise> RequestStorageAccess(ErrorResult& aRv);
 
-  bool UseRegularPrincipal() const;
-
   
 
 
@@ -1391,7 +1390,7 @@ class Document : public nsINode,
   nsICookieJarSettings* CookieJarSettings();
 
   
-  bool HasStorageAccessPermissionGranted();
+  bool HasStoragePermission();
 
   
   inline void Changed() { ++mGeneration; }
@@ -2096,7 +2095,7 @@ class Document : public nsINode,
 
   virtual void ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
                           nsIPrincipal* aPrincipal,
-                          nsIPrincipal* aPartitionedPrincipal);
+                          nsIPrincipal* aStoragePrincipal);
 
   
 
@@ -3879,8 +3878,7 @@ class Document : public nsINode,
 
   static bool HasRecentlyStartedForegroundLoads();
 
-  static bool AutomaticStorageAccessPermissionCanBeGranted(
-      nsIPrincipal* aPrincipal);
+  static bool AutomaticStorageAccessCanBeGranted(nsIPrincipal* aPrincipal);
 
   already_AddRefed<Promise> AddCertException(bool aIsTemporary);
 
@@ -4174,10 +4172,9 @@ class Document : public nsINode,
 
   void MaybeResolveReadyForIdle();
 
-  typedef MozPromise<bool, bool, true>
-      AutomaticStorageAccessPermissionGrantPromise;
-  MOZ_MUST_USE RefPtr<AutomaticStorageAccessPermissionGrantPromise>
-  AutomaticStorageAccessPermissionCanBeGranted();
+  typedef MozPromise<bool, bool, true> AutomaticStorageAccessGrantPromise;
+  MOZ_MUST_USE RefPtr<AutomaticStorageAccessGrantPromise>
+  AutomaticStorageAccessCanBeGranted();
 
   static void AddToplevelLoadingDocument(Document* aDoc);
   static void RemoveToplevelLoadingDocument(Document* aDoc);
@@ -5049,8 +5046,7 @@ class Document : public nsINode,
   nsTabSizes mCachedTabSizes;
 
   
-  
-  nsCOMPtr<nsIPrincipal> mPartitionedPrincipal;
+  nsCOMPtr<nsIPrincipal> mIntrinsicStoragePrincipal;
 
   
   

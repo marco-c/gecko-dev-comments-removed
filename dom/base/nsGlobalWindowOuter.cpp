@@ -1324,7 +1324,7 @@ nsGlobalWindowOuter::nsGlobalWindowOuter(uint64_t aWindowID)
       mIsChrome(false),
       mAllowScriptsToClose(false),
       mTopLevelOuterContentWindow(false),
-      mStorageAccessPermissionGranted(false),
+      mHasStorageAccess(false),
 #ifdef DEBUG
       mSerial(0),
       mSetOpenerWindowCalled(false),
@@ -1588,7 +1588,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindowOuter)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSuspendedDoc)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentPrincipal)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentStoragePrincipal)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentPartitionedPrincipal)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentIntrinsicStoragePrincipal)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDoc)
 
   
@@ -1620,7 +1620,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindowOuter)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSuspendedDoc)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentPrincipal)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentStoragePrincipal)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentPartitionedPrincipal)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentIntrinsicStoragePrincipal)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDoc)
 
   
@@ -2044,8 +2044,8 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
              "mDocumentPrincipal prematurely set!");
   MOZ_ASSERT(mDocumentStoragePrincipal == nullptr,
              "mDocumentStoragePrincipal prematurely set!");
-  MOZ_ASSERT(mDocumentPartitionedPrincipal == nullptr,
-             "mDocumentPartitionedPrincipal prematurely set!");
+  MOZ_ASSERT(mDocumentIntrinsicStoragePrincipal == nullptr,
+             "mDocumentIntrinsicStoragePrincipal prematurely set!");
   MOZ_ASSERT(aDocument);
 
   
@@ -2464,49 +2464,42 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
   ReportLargeAllocStatus();
   mLargeAllocStatus = LargeAllocStatus::NONE;
 
-  mStorageAccessPermissionGranted =
-      CheckStorageAccessPermission(aDocument, newInnerWindow);
+  bool isThirdPartyTrackingResourceWindow =
+      nsContentUtils::IsThirdPartyTrackingResourceWindow(newInnerWindow);
 
-  return NS_OK;
-}
-
-bool nsGlobalWindowOuter::CheckStorageAccessPermission(
-    Document* aDocument, nsGlobalWindowInner* aInnerWindow) {
-  if (!aInnerWindow) {
-    return false;
-  }
-
+  mHasStorageAccess = false;
   nsIURI* uri = aDocument->GetDocumentURI();
-  if (!aDocument->CookieJarSettings()->GetRejectThirdPartyContexts() ||
-      !nsContentUtils::IsThirdPartyWindowOrChannel(aInnerWindow, nullptr,
-                                                   uri)) {
-    return false;
-  }
-
-  uint32_t cookieBehavior = aDocument->CookieJarSettings()->GetCookieBehavior();
-
-  
-  
-  
-  bool checkStorageAccess = false;
-  if (net::CookieJarSettings::IsRejectThirdPartyWithExceptions(
-          cookieBehavior)) {
-    checkStorageAccess = true;
-  } else {
-    MOZ_ASSERT(
-        cookieBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
-        cookieBehavior ==
-            nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN);
-    if (nsContentUtils::IsThirdPartyTrackingResourceWindow(aInnerWindow)) {
+  if (newInnerWindow &&
+      aDocument->CookieJarSettings()->GetRejectThirdPartyContexts() &&
+      nsContentUtils::IsThirdPartyWindowOrChannel(newInnerWindow, nullptr,
+                                                  uri)) {
+    uint32_t cookieBehavior =
+        aDocument->CookieJarSettings()->GetCookieBehavior();
+    
+    
+    
+    
+    bool checkStorageAccess = false;
+    if (net::CookieJarSettings::IsRejectThirdPartyWithExceptions(
+            cookieBehavior)) {
       checkStorageAccess = true;
+    } else {
+      MOZ_ASSERT(
+          cookieBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
+          cookieBehavior ==
+              nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN);
+      if (isThirdPartyTrackingResourceWindow) {
+        checkStorageAccess = true;
+      }
+    }
+
+    if (checkStorageAccess) {
+      mHasStorageAccess =
+          ContentBlocking::ShouldAllowAccessFor(newInnerWindow, uri, nullptr);
     }
   }
 
-  if (checkStorageAccess) {
-    return ContentBlocking::ShouldAllowAccessFor(aInnerWindow, uri, nullptr);
-  }
-
-  return false;
+  return NS_OK;
 }
 
 
@@ -2704,7 +2697,7 @@ void nsGlobalWindowOuter::DetachFromDocShell(bool aIsBeingDiscarded) {
     
     mDocumentPrincipal = mDoc->NodePrincipal();
     mDocumentStoragePrincipal = mDoc->EffectiveStoragePrincipal();
-    mDocumentPartitionedPrincipal = mDoc->PartitionedPrincipal();
+    mDocumentIntrinsicStoragePrincipal = mDoc->IntrinsicStoragePrincipal();
     mDocumentURI = mDoc->GetDocumentURI();
 
     
@@ -2977,14 +2970,14 @@ nsIPrincipal* nsGlobalWindowOuter::GetEffectiveStoragePrincipal() {
   return nullptr;
 }
 
-nsIPrincipal* nsGlobalWindowOuter::PartitionedPrincipal() {
+nsIPrincipal* nsGlobalWindowOuter::IntrinsicStoragePrincipal() {
   if (mDoc) {
     
-    return mDoc->PartitionedPrincipal();
+    return mDoc->IntrinsicStoragePrincipal();
   }
 
-  if (mDocumentPartitionedPrincipal) {
-    return mDocumentPartitionedPrincipal;
+  if (mDocumentIntrinsicStoragePrincipal) {
+    return mDocumentIntrinsicStoragePrincipal;
   }
 
   
@@ -2994,7 +2987,7 @@ nsIPrincipal* nsGlobalWindowOuter::PartitionedPrincipal() {
       do_QueryInterface(GetInProcessParentInternal());
 
   if (objPrincipal) {
-    return objPrincipal->PartitionedPrincipal();
+    return objPrincipal->IntrinsicStoragePrincipal();
   }
 
   return nullptr;
