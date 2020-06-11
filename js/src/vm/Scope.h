@@ -30,7 +30,9 @@ class ScopeCreationData;
 class EnvironmentShapeCreationData;
 };  
 
-class BaseScopeData;
+template <typename NameT>
+class AbstractBaseScopeData;
+
 class ModuleObject;
 class AbstractScopePtr;
 
@@ -64,7 +66,8 @@ static inline bool ScopeKindIsInBody(ScopeKind kind) {
 const char* BindingKindString(BindingKind kind);
 const char* ScopeKindString(ScopeKind kind);
 
-class BindingName {
+template <typename NameT>
+class AbstractBindingName {
   
   
   
@@ -78,28 +81,30 @@ class BindingName {
   static const uintptr_t FlagMask = 0x3;
 
  public:
-  BindingName() : bits_(0) {}
+  AbstractBindingName() : bits_(0) {}
 
-  BindingName(JSAtom* name, bool closedOver, bool isTopLevelFunction = false)
+  AbstractBindingName(NameT* name, bool closedOver,
+                      bool isTopLevelFunction = false)
       : bits_(uintptr_t(name) | (closedOver ? ClosedOverFlag : 0x0) |
               (isTopLevelFunction ? TopLevelFunctionFlag : 0x0)) {}
 
  private:
   
-  BindingName(JSAtom* name, uint8_t flags) : bits_(uintptr_t(name) | flags) {
-    static_assert(FlagMask < alignof(JSAtom),
-                  "Flags should fit into unused bits of JSAtom pointer");
+  AbstractBindingName(NameT* name, uint8_t flags)
+      : bits_(uintptr_t(name) | flags) {
+    static_assert(FlagMask < alignof(NameT),
+                  "Flags should fit into unused low bits of atom repr");
     MOZ_ASSERT((flags & FlagMask) == flags);
   }
 
  public:
-  static BindingName fromXDR(JSAtom* name, uint8_t flags) {
-    return BindingName(name, flags);
+  static AbstractBindingName<NameT> fromXDR(NameT* name, uint8_t flags) {
+    return AbstractBindingName<NameT>(name, flags);
   }
 
   uint8_t flagsForXDR() const { return static_cast<uint8_t>(bits_ & FlagMask); }
 
-  JSAtom* name() const { return reinterpret_cast<JSAtom*>(bits_ & ~FlagMask); }
+  NameT* name() const { return reinterpret_cast<NameT*>(bits_ & ~FlagMask); }
 
   bool closedOver() const { return bits_ & ClosedOverFlag; }
 
@@ -113,6 +118,13 @@ class BindingName {
   void trace(JSTracer* trc);
 };
 
+using BindingName = AbstractBindingName<JSAtom>;
+
+
+template <typename NameT>
+class AbstractBaseScopeData {};
+
+using BaseScopeData = AbstractBaseScopeData<JSAtom>;
 
 
 
@@ -126,9 +138,17 @@ class BindingName {
 
 
 
-class TrailingNamesArray {
+
+
+
+
+
+template <typename NameT>
+class AbstractTrailingNamesArray {
+  using BindingNameT = AbstractBindingName<NameT>;
+
  private:
-  alignas(BindingName) unsigned char data_[sizeof(BindingName)];
+  alignas(BindingNameT) unsigned char data_[sizeof(BindingNameT)];
 
  private:
   
@@ -140,21 +160,23 @@ class TrailingNamesArray {
  public:
   
   
-  TrailingNamesArray() = delete;
+  AbstractTrailingNamesArray() = delete;
 
-  explicit TrailingNamesArray(size_t nameCount) {
+  explicit AbstractTrailingNamesArray(size_t nameCount) {
     if (nameCount) {
       AlwaysPoison(&data_, JS_SCOPE_DATA_TRAILING_NAMES_PATTERN,
-                   sizeof(BindingName) * nameCount,
+                   sizeof(BindingNameT) * nameCount,
                    MemCheckKind::MakeUndefined);
     }
   }
 
-  BindingName* start() { return reinterpret_cast<BindingName*>(ptr()); }
+  BindingNameT* start() { return reinterpret_cast<BindingNameT*>(ptr()); }
 
-  BindingName& get(size_t i) { return start()[i]; }
-  BindingName& operator[](size_t i) { return get(i); }
+  BindingNameT& get(size_t i) { return start()[i]; }
+  BindingNameT& operator[](size_t i) { return get(i); }
 };
+
+
 
 class BindingLocation {
  public:
@@ -364,9 +386,6 @@ class Scope : public js::gc::TenuredCell {
 #endif 
 };
 
-
-class BaseScopeData {};
-
 template <class Data>
 inline size_t SizeOfData(uint32_t numBindings) {
   static_assert(std::is_base_of_v<BaseScopeData, Data>,
@@ -406,7 +425,8 @@ class LexicalScope : public Scope {
  public:
   
   
-  struct Data : public BaseScopeData {
+  template <typename NameT>
+  struct AbstractData : public AbstractBaseScopeData<NameT> {
     
     
     uint32_t nextFrameSlot = 0;
@@ -419,13 +439,15 @@ class LexicalScope : public Scope {
     uint32_t length = 0;
 
     
-    TrailingNamesArray trailingNames;
+    AbstractTrailingNamesArray<NameT> trailingNames;
 
-    explicit Data(size_t nameCount) : trailingNames(nameCount) {}
-    Data() = delete;
+    explicit AbstractData(size_t nameCount) : trailingNames(nameCount) {}
+    AbstractData() = delete;
 
     void trace(JSTracer* trc);
   };
+
+  using Data = AbstractData<JSAtom>;
 
   template <XDRMode mode>
   static XDRResult XDR(XDRState<mode>* xdr, ScopeKind kind,
@@ -497,7 +519,8 @@ class FunctionScope : public Scope {
  public:
   
   
-  struct Data : public BaseScopeData {
+  template <typename NameT>
+  struct AbstractData : public AbstractBaseScopeData<NameT> {
     
     
     
@@ -543,13 +566,15 @@ class FunctionScope : public Scope {
     uint32_t length = 0;
 
     
-    TrailingNamesArray trailingNames;
+    AbstractTrailingNamesArray<NameT> trailingNames;
 
-    explicit Data(size_t nameCount) : trailingNames(nameCount) {}
-    Data() = delete;
+    explicit AbstractData(size_t nameCount) : trailingNames(nameCount) {}
+    AbstractData() = delete;
 
     void trace(JSTracer* trc);
   };
+
+  using Data = AbstractData<JSAtom>;
 
   template <typename ShapeType>
   static bool prepareForScopeCreation(JSContext* cx,
@@ -622,7 +647,8 @@ class VarScope : public Scope {
  public:
   
   
-  struct Data : public BaseScopeData {
+  template <typename NameT>
+  struct AbstractData : public AbstractBaseScopeData<NameT> {
     
     
     uint32_t nextFrameSlot = 0;
@@ -633,13 +659,14 @@ class VarScope : public Scope {
     uint32_t length = 0;
 
     
-    TrailingNamesArray trailingNames;
+    AbstractTrailingNamesArray<NameT> trailingNames;
 
-    explicit Data(size_t nameCount) : trailingNames(nameCount) {}
-    Data() = delete;
+    explicit AbstractData(size_t nameCount) : trailingNames(nameCount) {}
+    AbstractData() = delete;
 
     void trace(JSTracer* trc);
   };
+  using Data = AbstractData<JSAtom>;
 
   template <XDRMode mode>
   static XDRResult XDR(XDRState<mode>* xdr, ScopeKind kind,
@@ -709,7 +736,8 @@ class GlobalScope : public Scope {
  public:
   
   
-  struct Data : BaseScopeData {
+  template <typename NameT>
+  struct AbstractData : BaseScopeData {
     
     
     
@@ -722,13 +750,14 @@ class GlobalScope : public Scope {
     uint32_t length = 0;
 
     
-    TrailingNamesArray trailingNames;
+    AbstractTrailingNamesArray<NameT> trailingNames;
 
-    explicit Data(size_t nameCount) : trailingNames(nameCount) {}
-    Data() = delete;
+    explicit AbstractData(size_t nameCount) : trailingNames(nameCount) {}
+    AbstractData() = delete;
 
     void trace(JSTracer* trc);
   };
+  using Data = AbstractData<JSAtom>;
 
   static GlobalScope* create(JSContext* cx, ScopeKind kind, Handle<Data*> data);
 
@@ -800,7 +829,8 @@ class EvalScope : public Scope {
  public:
   
   
-  struct Data : public BaseScopeData {
+  template <typename NameT>
+  struct AbstractData : public AbstractBaseScopeData<NameT> {
     
     
     uint32_t nextFrameSlot = 0;
@@ -815,13 +845,14 @@ class EvalScope : public Scope {
     uint32_t length = 0;
 
     
-    TrailingNamesArray trailingNames;
+    AbstractTrailingNamesArray<NameT> trailingNames;
 
-    explicit Data(size_t nameCount) : trailingNames(nameCount) {}
-    Data() = delete;
+    explicit AbstractData(size_t nameCount) : trailingNames(nameCount) {}
+    AbstractData() = delete;
 
     void trace(JSTracer* trc);
   };
+  using Data = AbstractData<JSAtom>;
 
   template <XDRMode mode>
   static XDRResult XDR(XDRState<mode>* xdr, ScopeKind kind,
@@ -893,7 +924,8 @@ class ModuleScope : public Scope {
  public:
   
   
-  struct Data : BaseScopeData {
+  template <typename NameT>
+  struct AbstractData : BaseScopeData {
     
     GCPtr<ModuleObject*> module = {};
 
@@ -913,14 +945,15 @@ class ModuleScope : public Scope {
     uint32_t length = 0;
 
     
-    TrailingNamesArray trailingNames;
+    AbstractTrailingNamesArray<NameT> trailingNames;
 
-    explicit Data(size_t nameCount) : trailingNames(nameCount) {}
-    Data() = delete;
+    explicit AbstractData(size_t nameCount) : trailingNames(nameCount) {}
+    AbstractData() = delete;
 
     void trace(JSTracer* trc);
     Zone* zone() const;
   };
+  using Data = AbstractData<JSAtom>;
 
   template <XDRMode mode>
   static XDRResult XDR(XDRState<mode>* xdr, HandleModuleObject module,
@@ -963,7 +996,8 @@ class WasmInstanceScope : public Scope {
   static const ScopeKind classScopeKind_ = ScopeKind::WasmInstance;
 
  public:
-  struct Data : public BaseScopeData {
+  template <typename NameT>
+  struct AbstractData : public AbstractBaseScopeData<NameT> {
     
     GCPtr<WasmInstanceObject*> instance = {};
 
@@ -979,13 +1013,14 @@ class WasmInstanceScope : public Scope {
     uint32_t length = 0;
 
     
-    TrailingNamesArray trailingNames;
+    AbstractTrailingNamesArray<NameT> trailingNames;
 
-    explicit Data(size_t nameCount) : trailingNames(nameCount) {}
-    Data() = delete;
+    explicit AbstractData(size_t nameCount) : trailingNames(nameCount) {}
+    AbstractData() = delete;
 
     void trace(JSTracer* trc);
   };
+  using Data = AbstractData<JSAtom>;
 
   static WasmInstanceScope* create(JSContext* cx, WasmInstanceObject* instance);
 
@@ -1017,7 +1052,8 @@ class WasmFunctionScope : public Scope {
   static const ScopeKind classScopeKind_ = ScopeKind::WasmFunction;
 
  public:
-  struct Data : public BaseScopeData {
+  template <typename NameT>
+  struct AbstractData : public AbstractBaseScopeData<NameT> {
     
     
     uint32_t nextFrameSlot = 0;
@@ -1028,13 +1064,14 @@ class WasmFunctionScope : public Scope {
     uint32_t length = 0;
 
     
-    TrailingNamesArray trailingNames;
+    AbstractTrailingNamesArray<NameT> trailingNames;
 
-    explicit Data(size_t nameCount) : trailingNames(nameCount) {}
-    Data() = delete;
+    explicit AbstractData(size_t nameCount) : trailingNames(nameCount) {}
+    AbstractData() = delete;
 
     void trace(JSTracer* trc);
   };
+  using Data = AbstractData<JSAtom>;
 
   static WasmFunctionScope* create(JSContext* cx, HandleScope enclosing,
                                    uint32_t funcIndex);
