@@ -301,25 +301,6 @@ assert.callable = function(obj, msg = "") {
 
 
 
-assert.unsignedShort = function(obj, msg = "") {
-  msg = msg || pprint`Expected ${obj} to be >= 0 and < 65536`;
-  return assert.that(n => n >= 0 && n < 65536, msg)(obj);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 assert.integer = function(obj, msg = "") {
   msg = msg || pprint`Expected ${obj} to be an integer`;
   return assert.that(Number.isSafeInteger, msg)(obj);
