@@ -1365,10 +1365,6 @@ pref("network.http.request.max-start-delay", 10);
 pref("network.http.request.max-attempts", 10);
 
 
-
-pref("network.http.sendOriginHeader", 2);
-
-
 pref("network.http.redirection-limit", 20);
 
 

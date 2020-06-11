@@ -9553,16 +9553,7 @@ void nsHttpChannel::SetOriginHeader() {
     return;
   }
 
-  
-  
-  static int32_t sSendOriginHeader = 0;
-  static bool sIsInited = false;
-  if (!sIsInited) {
-    sIsInited = true;
-    Preferences::AddIntVarCache(&sSendOriginHeader,
-                                "network.http.sendOriginHeader");
-  }
-  if (sSendOriginHeader == 0) {
+  if (StaticPrefs::network_http_sendOriginHeader() == 0) {
     
     return;
   }
@@ -9578,7 +9569,7 @@ void nsHttpChannel::SetOriginHeader() {
   nsContentUtils::GetASCIIOrigin(referrer, origin);
 
   
-  if (sSendOriginHeader == 1) {
+  if (StaticPrefs::network_http_sendOriginHeader() == 1) {
     nsAutoCString currentOrigin;
     nsContentUtils::GetASCIIOrigin(mURI, currentOrigin);
     if (!origin.EqualsIgnoreCase(currentOrigin.get())) {
