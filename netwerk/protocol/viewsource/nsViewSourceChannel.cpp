@@ -1006,8 +1006,10 @@ nsViewSourceChannel::SetIsMainDocumentChannel(bool aValue) {
 
 
 void nsViewSourceChannel::SetCorsPreflightParameters(
-    const nsTArray<nsCString>& aUnsafeHeaders) {
-  mHttpChannelInternal->SetCorsPreflightParameters(aUnsafeHeaders);
+    const nsTArray<nsCString>& aUnsafeHeaders,
+    bool aShouldStripRequestBodyHeader) {
+  mHttpChannelInternal->SetCorsPreflightParameters(
+      aUnsafeHeaders, aShouldStripRequestBodyHeader);
 }
 
 void nsViewSourceChannel::SetAltDataForChild(bool aIsForChild) {
