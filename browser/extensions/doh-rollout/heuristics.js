@@ -177,11 +177,11 @@ async function providerSteering() {
 }
 
 async function runHeuristics() {
-  let safeSearchChecks = await safeSearch();
+  
   let results = {
-    google: safeSearchChecks.google,
-    youtube: safeSearchChecks.youtube,
-    zscalerCanary: await zscalerCanary(),
+    google: "",
+    youtube: "",
+    zscalerCanary: "",
     canary: await globalCanary(),
     modifiedRoots: await modifiedRoots(),
     browserParent: await browser.experiments.heuristics.checkParentalControls(),
@@ -197,5 +197,15 @@ async function runHeuristics() {
 
   
   results.steeredProvider = (await providerSteering()) || "";
+  if (results.steeredProvider) {
+    return results;
+  }
+
+  
+  let safeSearchChecks = await safeSearch();
+  results.google = safeSearchChecks.google;
+  results.youtube = safeSearchChecks.youtube;
+  results.zscalerCanary = await zscalerCanary();
+
   return results;
 }
