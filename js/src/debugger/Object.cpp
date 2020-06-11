@@ -1259,7 +1259,7 @@ bool DebuggerObject::CallData::createSource() {
 
   if (isScriptElement) {
     
-    compileOptions.setIntroductionType("scriptElement");
+    compileOptions.setIntroductionType("inlineScript");
   }
 
   Vector<char16_t> textChars(cx);

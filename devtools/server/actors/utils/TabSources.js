@@ -17,12 +17,6 @@ loader.lazyRequireGetter(
   "devtools/server/actors/source",
   true
 );
-loader.lazyRequireGetter(
-  this,
-  "isEvalSource",
-  "devtools/server/actors/source",
-  true
-);
 
 
 
@@ -114,14 +108,7 @@ TabSources.prototype = {
 
 
 
-
-
-
-
-
-
-
-  source: function({ source, isInlineSource, contentType }) {
+  createSourceActor: function(source) {
     assert(source, "TabSources.prototype.source needs a source");
 
     if (!this.allowSource(source)) {
@@ -135,8 +122,6 @@ TabSources.prototype = {
     const actor = new SourceActor({
       thread: this._thread,
       source,
-      isInlineSource,
-      contentType,
     });
 
     this._thread.threadLifetimePool.manage(actor);
@@ -264,104 +249,6 @@ TabSources.prototype = {
       
       return MINIFIED_SOURCE_REGEXP.test(uri);
     }
-  },
-
-  
-
-
-  isInlineScript(source) {
-    
-    
-    try {
-      const e = source.element ? source.element.unsafeDereference() : null;
-      return e && e.tagName === "SCRIPT" && !e.hasAttribute("src");
-    } catch (e) {
-      
-      DevToolsUtils.reportException("TabSources.isInlineScript", e);
-      return false;
-    }
-  },
-
-  
-
-
-
-
-
-
-  createSourceActor: function(source) {
-    
-    
-    
-    
-    
-    
-    const url = isEvalSource(source) ? null : source.url;
-    const spec = { source };
-
-    
-    
-    
-    
-    
-    
-
-    if (this.isInlineScript(source)) {
-      if (source.introductionScript) {
-        
-        
-        
-        spec.contentType = "text/javascript";
-      } else {
-        spec.isInlineSource = true;
-      }
-    } else if (source.introductionType === "wasm") {
-      
-      spec.contentType = "text/wasm";
-    } else if (source.introductionType === "debugger eval") {
-      
-      
-      spec.contentType = "text/javascript";
-    } else if (url) {
-      
-      
-      if (
-        url.indexOf("javascript:") === 0 ||
-        url === "debugger eval code" ||
-        url === "sandbox eval code"
-      ) {
-        spec.contentType = "text/javascript";
-      } else {
-        try {
-          const pathname = new URL(url).pathname;
-          const filename = pathname.slice(pathname.lastIndexOf("/") + 1);
-          const index = filename.lastIndexOf(".");
-          const extension = index >= 0 ? filename.slice(index + 1) : "";
-          if (extension === "xml") {
-            
-            
-            
-            spec.isInlineSource = true;
-          } else if (extension === "js" || extension == "sjs") {
-            spec.contentType = "text/javascript";
-          }
-        } catch (e) {
-          
-          
-          const filename = url;
-          const index = filename.lastIndexOf(".");
-          const extension = index >= 0 ? filename.slice(index + 1) : "";
-          if (extension === "js") {
-            spec.contentType = "text/javascript";
-          }
-        }
-      }
-    } else {
-      
-      spec.contentType = "text/javascript";
-    }
-
-    return this.source(spec);
   },
 
   

@@ -1831,8 +1831,8 @@ nsresult nsXULPrototypeScript::Compile(
 
   
   JS::CompileOptions options(cx);
-  options.setIntroductionType("scriptElement")
-      .setFileAndLine(urlspec.get(), aLineNo);
+  options.setIntroductionType(mOutOfLine ? "srcScript" : "inlineScript")
+      .setFileAndLine(urlspec.get(), mOutOfLine ? 1 : aLineNo);
   
   
   
