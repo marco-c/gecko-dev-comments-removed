@@ -4512,7 +4512,7 @@ pref("webextensions.webRequest.requestBodyMaxRawBytes", 16777216);
 
 pref("webextensions.storage.sync.enabled", true);
 
-pref("webextensions.storage.sync.kinto", true);
+pref("webextensions.storage.sync.kinto", false);
 
 pref("webextensions.storage.sync.serverURL", "https://webextensions.settings.services.mozilla.com/v1");
 

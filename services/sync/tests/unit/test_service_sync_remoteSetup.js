@@ -3,6 +3,26 @@
 
 const { Service } = ChromeUtils.import("resource://services-sync/service.js");
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Services.prefs.setBoolPref(
+  "services.sync.engine.extension-storage.force",
+  false
+);
+
 add_task(async function run_test() {
   enableValidationPrefs();
 
