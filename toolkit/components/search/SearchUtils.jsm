@@ -114,21 +114,6 @@ var SearchUtils = {
 
 
 
-
-
-  fail(message, resultCode) {
-    if (SearchUtils.loggingEnabled) {
-      Services.console.logStringMessage(message);
-    }
-    throw Components.Exception(message, resultCode || Cr.NS_ERROR_INVALID_ARG);
-  },
-
-  
-
-
-
-
-
   makeURI(urlSpec) {
     try {
       return Services.io.newURI(urlSpec);
