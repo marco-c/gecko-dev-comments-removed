@@ -289,6 +289,8 @@ struct Statistics {
 
   TimeStamp end() const { return slices_.back().end; }
 
+  TimeStamp creationTime() const { return creationTime_; }
+
   
   void maybePrintProfileHeaders();
 
@@ -341,6 +343,8 @@ struct Statistics {
   
   EnumeratedArray<Phase, Phase::LIMIT, TimeStamp> phaseEndTimes;
 #endif
+
+  TimeStamp creationTime_;
 
   
   TimeStamp timedGCStart;
