@@ -534,13 +534,19 @@ void VRManager::CheckForPuppetCompletion() {
   }
   
   if (mManagerParentRunningPuppet) {
-    if (mServiceHost->PuppetHasEnded()) {
-      Unused << mManagerParentRunningPuppet
-                    ->SendNotifyPuppetCommandBufferCompleted(true);
-      mManagerParentRunningPuppet = nullptr;
-    }
+    mServiceHost->CheckForPuppetCompletion();
   }
 }
+
+void VRManager::NotifyPuppetComplete() {
+  
+  if (mManagerParentRunningPuppet) {
+    Unused << mManagerParentRunningPuppet
+                  ->SendNotifyPuppetCommandBufferCompleted(true);
+    mManagerParentRunningPuppet = nullptr;
+  }
+}
+
 #endif  
 
 void VRManager::StartFrame() {

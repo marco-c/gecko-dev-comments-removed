@@ -34,15 +34,12 @@ VRServiceHost* VRServiceHost::Get() {
 }
 
 VRServiceHost::VRServiceHost(bool aEnableVRProcess)
-    : mPuppetActive(false)
-#if !defined(MOZ_WIDGET_ANDROID)
-      ,
-      mVRService(nullptr),
+    : mVRService(nullptr),
       mVRProcessEnabled(aEnableVRProcess),
       mVRProcessStarted(false),
+      mVRServiceReadyInVRProcess(false),
       mVRServiceRequested(false)
 
-#endif
 {
   MOZ_COUNT_CTOR(VRServiceHost);
 }
@@ -88,8 +85,6 @@ void VRServiceHost::Refresh() {
   }
 }
 
-#if !defined(MOZ_WIDGET_ANDROID)
-
 void VRServiceHost::CreateService(volatile VRExternalShmem* aShmem) {
   MOZ_ASSERT(!mVRProcessEnabled);
   mVRService = VRService::Create(aShmem);
@@ -99,13 +94,7 @@ bool VRServiceHost::NeedVRProcess() {
   if (!mVRProcessEnabled) {
     return false;
   }
-  if (mVRServiceRequested) {
-    return true;
-  }
-  if (mPuppetActive) {
-    return true;
-  }
-  return false;
+  return mVRServiceRequested;
 }
 
 void VRServiceHost::RefreshVRProcess() {
@@ -146,6 +135,36 @@ void VRServiceHost::CreateVRProcess() {
   Unused << gpu->SendCreateVRProcess();
 }
 
+void VRServiceHost::NotifyVRProcessStarted() {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mVRProcessEnabled);
+  if (!mVRProcessStarted) {
+    
+    
+    
+    return;
+  }
+
+  if (!VRGPUChild::IsCreated()) {
+    return;
+  }
+  VRGPUChild* vrGPUChild = VRGPUChild::Get();
+
+  
+  
+  
+  
+  
+  
+  if (!mPuppetPendingCommands.IsEmpty()) {
+    vrGPUChild->SendPuppetSubmit(mPuppetPendingCommands);
+    mPuppetPendingCommands.Clear();
+  }
+
+  vrGPUChild->SendStartVRService();
+  mVRServiceReadyInVRProcess = true;
+}
+
 void VRServiceHost::ShutdownVRProcess() {
   
   if (!XRE_IsGPUProcess()) {
@@ -176,55 +195,129 @@ void VRServiceHost::ShutdownVRProcess() {
   MOZ_ASSERT(gpu);
   Unused << gpu->SendShutdownVRProcess();
   mVRProcessStarted = false;
+  mVRServiceReadyInVRProcess = false;
 }
 
-#endif  
-
 void VRServiceHost::PuppetSubmit(const nsTArray<uint64_t>& aBuffer) {
-  mPuppetActive = true;
-  if (mVRProcessEnabled) {
+  if (!mVRProcessEnabled) {
     
-    MOZ_ASSERT(false);  
-  } else {
     VRPuppetCommandBuffer::Get().Submit(aBuffer);
+    return;
+  }
+
+  
+  SendPuppetSubmitToVRProcess(aBuffer);
+}
+
+void VRServiceHost::SendPuppetSubmitToVRProcess(
+    const nsTArray<uint64_t>& aBuffer) {
+  
+  if (!XRE_IsGPUProcess()) {
+    return;
+  }
+  
+  if (!NS_IsMainThread()) {
+    RefPtr<Runnable> task = NS_NewRunnableFunction(
+        "VRServiceHost::SendPuppetSubmitToVRProcess",
+        [buffer{aBuffer.Clone()}]() -> void {
+          VRServiceHost::Get()->SendPuppetSubmitToVRProcess(buffer);
+        });
+    NS_DispatchToMainThread(task.forget());
+    return;
+  }
+  if (!mVRServiceReadyInVRProcess) {
+    
+    mPuppetPendingCommands.AppendElements(aBuffer);
+    return;
+  }
+  if (VRGPUChild::IsCreated()) {
+    VRGPUChild* vrGPUChild = VRGPUChild::Get();
+    vrGPUChild->SendPuppetSubmit(aBuffer);
   }
 }
 
 void VRServiceHost::PuppetReset() {
-  if (mVRProcessEnabled) {
-    mPuppetActive = false;
-    if (!mVRProcessStarted) {
-      
-      return;
-    }
+  if (!mVRProcessEnabled) {
     
-    MOZ_ASSERT(false);  
-  } else if (mPuppetActive) {
     VRPuppetCommandBuffer::Get().Reset();
-    mPuppetActive = false;
+  }
+
+  mPuppetPendingCommands.Clear();
+  if (!mVRProcessStarted) {
+    
+    return;
+  }
+
+  
+  SendPuppetResetToVRProcess();
+}
+
+void VRServiceHost::SendPuppetResetToVRProcess() {
+  
+  if (!XRE_IsGPUProcess()) {
+    return;
+  }
+  
+  if (!NS_IsMainThread()) {
+    RefPtr<Runnable> task = NS_NewRunnableFunction(
+        "VRServiceHost::SendPuppetResetToVRProcess",
+        []() -> void { VRServiceHost::Get()->SendPuppetResetToVRProcess(); });
+    NS_DispatchToMainThread(task.forget());
+    return;
+  }
+  if (VRGPUChild::IsCreated()) {
+    VRGPUChild* vrGPUChild = VRGPUChild::Get();
+    vrGPUChild->SendPuppetReset();
   }
 }
 
-bool VRServiceHost::PuppetHasEnded() {
-  if (mVRProcessEnabled) {
-    if (!mVRProcessStarted) {
-      
-      
-      
-      
-      
-      return true;
-    }
+void VRServiceHost::CheckForPuppetCompletion() {
+  if (!mVRProcessEnabled) {
     
-    MOZ_ASSERT(false);  
-    return false;
+    if (VRPuppetCommandBuffer::Get().HasEnded()) {
+      VRManager::Get()->NotifyPuppetComplete();
+    }
+  }
+  if (!mPuppetPendingCommands.IsEmpty()) {
+    
+    
+    return;
+  }
+  if (!mVRProcessStarted) {
+    
+    
+    
+    
+    
+    VRManager::Get()->NotifyPuppetComplete();
   }
 
-  if (mPuppetActive) {
-    return VRPuppetCommandBuffer::Get().HasEnded();
-  }
+  
+  SendPuppetCheckForCompletionToVRProcess();
 
-  return true;
+  
+  
+  
+}
+
+void VRServiceHost::SendPuppetCheckForCompletionToVRProcess() {
+  
+  if (!XRE_IsGPUProcess()) {
+    return;
+  }
+  
+  if (!NS_IsMainThread()) {
+    RefPtr<Runnable> task = NS_NewRunnableFunction(
+        "VRServiceHost::SendPuppetCheckForCompletionToVRProcess", []() -> void {
+          VRServiceHost::Get()->SendPuppetCheckForCompletionToVRProcess();
+        });
+    NS_DispatchToMainThread(task.forget());
+    return;
+  }
+  if (VRGPUChild::IsCreated()) {
+    VRGPUChild* vrGPUChild = VRGPUChild::Get();
+    vrGPUChild->SendPuppetCheckForCompletion();
+  }
 }
 
 }  

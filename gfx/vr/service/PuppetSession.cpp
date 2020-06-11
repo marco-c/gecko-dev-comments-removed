@@ -30,6 +30,12 @@ bool PuppetSession::Initialize(mozilla::gfx::VRSystemState& aSystemState,
   if (!StaticPrefs::dom_vr_enabled() || !StaticPrefs::dom_vr_puppet_enabled()) {
     return false;
   }
+  if (!VRPuppetCommandBuffer::IsCreated()) {
+    
+    
+    
+    return false;
+  }
   if (aDetectRuntimesOnly) {
     aSystemState.displayState.capabilityFlags |=
         VRDisplayCapabilityFlags::Cap_ImmersiveVR;

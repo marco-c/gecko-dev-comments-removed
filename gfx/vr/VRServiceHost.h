@@ -19,6 +19,17 @@ namespace gfx {
 struct VRExternalShmem;
 class VRService;
 
+
+
+
+
+
+
+
+
+
+
+
 class VRServiceHost {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(mozilla::gfx::VRServiceHost)
  public:
@@ -29,32 +40,51 @@ class VRServiceHost {
   void StartService();
   void StopService();
   void Shutdown();
-#if !defined(MOZ_WIDGET_ANDROID)
   void CreateService(volatile VRExternalShmem* aShmem);
-#endif
+  void NotifyVRProcessStarted();
+  void CheckForPuppetCompletion();
 
   void PuppetSubmit(const nsTArray<uint64_t>& aBuffer);
   void PuppetReset();
-  bool PuppetHasEnded();
 
  protected:
  private:
   explicit VRServiceHost(bool aEnableVRProcess);
   ~VRServiceHost();
 
-  bool mPuppetActive;
-#if !defined(MOZ_WIDGET_ANDROID)
   void RefreshVRProcess();
   bool NeedVRProcess();
   void CreateVRProcess();
   void ShutdownVRProcess();
+  void SendPuppetResetToVRProcess();
+  void SendPuppetCheckForCompletionToVRProcess();
+  void SendPuppetSubmitToVRProcess(const nsTArray<uint64_t>& aBuffer);
+
+  
+  
+  nsTArray<uint64_t> mPuppetPendingCommands;
 
   RefPtr<VRService> mVRService;
+  
+  
+  
+  
+  
   bool mVRProcessEnabled;
+  
   bool mVRProcessStarted;
+  
+  
+  bool mVRServiceReadyInVRProcess;
+  
+  
+  
+  
+  
+  
+  
+  
   bool mVRServiceRequested;
-
-#endif
 };
 
 }  
