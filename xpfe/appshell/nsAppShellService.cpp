@@ -608,6 +608,19 @@ nsresult nsAppShellService::JustCreateTopWindow(
       ((aChromeMask & pipMask) == pipMask) && !(aChromeMask & barMask)) {
     widgetInitData.mPIPWindow = true;
   }
+#elif defined(XP_WIN)
+  
+  
+  uint32_t pipMask = nsIWebBrowserChrome::CHROME_ALWAYS_ON_TOP |
+                     nsIWebBrowserChrome::CHROME_OPENAS_CHROME;
+  uint32_t barMask = nsIWebBrowserChrome::CHROME_MENUBAR |
+                     nsIWebBrowserChrome::CHROME_TOOLBAR |
+                     nsIWebBrowserChrome::CHROME_LOCATIONBAR |
+                     nsIWebBrowserChrome::CHROME_STATUSBAR;
+  if (widgetInitData.mWindowType == eWindowType_dialog &&
+      ((aChromeMask & pipMask) == pipMask) && !(aChromeMask & barMask)) {
+    widgetInitData.mPIPWindow = true;
+  }
 #endif
 
 #ifdef XP_MACOSX
