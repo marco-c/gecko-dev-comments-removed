@@ -66,72 +66,6 @@ class SourceMapURLService {
 
 
 
-  async originalPositionForID(id, line, column) {
-    await this._ensureAllSourcesPopulated();
-
-    if (!this._prefValue) {
-      return null;
-    }
-
-    const map = this._mapsById.get(id);
-    if (!map) {
-      return null;
-    }
-
-    const query = this._buildQuery(map, line, column);
-    return this._dispatchQuery(query);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async originalPositionForURL(url, line, column) {
-    await this._ensureAllSourcesPopulated();
-
-    if (!this._prefValue) {
-      return null;
-    }
-
-    const id = this._urlToIDMap.get(url);
-    if (!id) {
-      return null;
-    }
-
-    const map = this._mapsById.get(id);
-    if (!map) {
-      return null;
-    }
-
-    const query = this._buildQuery(map, line, column);
-    return this._dispatchQuery(query);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -399,15 +333,11 @@ class SourceMapURLService {
             this._ensureSubscribersSynchronized(query);
           }
         }
-
-        return result;
       })();
       query.action = action;
     }
 
     this._ensureSubscribersSynchronized(query);
-
-    return query.action;
   }
 
   _ensureSubscribersSynchronized(query) {
