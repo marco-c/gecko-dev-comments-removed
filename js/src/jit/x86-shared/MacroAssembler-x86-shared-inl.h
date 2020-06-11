@@ -1432,6 +1432,28 @@ void MacroAssembler::mulInt32x4(FloatRegister rhs, FloatRegister lhsDest) {
   vpmulld(Operand(rhs), lhsDest, lhsDest);
 }
 
+void MacroAssembler::mulInt64x2(FloatRegister rhs, FloatRegister lhsDest,
+                                FloatRegister temp) {
+  ScratchSimd128Scope temp2(*this);
+  
+  
+  
+  moveSimd128(lhsDest, temp);                
+  vpsrlq(Imm32(32), temp, temp);             
+  vpmuludq(rhs, temp, temp);                 
+  moveSimd128(rhs, temp2);                   
+  vpsrlq(Imm32(32), temp2, temp2);           
+  vpmuludq(lhsDest, temp2, temp2);           
+  vpaddq(Operand(temp), temp2, temp2);       
+  vpsllq(Imm32(32), temp2, temp2);           
+                                             
+  vpmuludq(rhs, lhsDest, lhsDest);           
+                                             
+  vpaddq(Operand(temp2), lhsDest, lhsDest);  
+                                             
+                                             
+}
+
 
 
 void MacroAssembler::negInt8x16(FloatRegister src, FloatRegister dest) {
