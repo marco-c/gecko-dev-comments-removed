@@ -109,6 +109,7 @@ StyleEditorPanel.prototype = {
     if (!this.UI) {
       return null;
     }
+
     return this.UI.selectStyleSheet(href, line - 1, col ? col - 1 : 0);
   },
 

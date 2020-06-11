@@ -78,7 +78,7 @@ class Rule {
     this.onDeclarationsUpdated = this.onDeclarationsUpdated.bind(this);
     this.onLocationChanged = this.onLocationChanged.bind(this);
     this.onStyleRuleFrontUpdated = this.onStyleRuleFrontUpdated.bind(this);
-    this.updateSourceLocation = this.updateSourceLocation.bind(this);
+    this.updateOriginalLocation = this.updateOriginalLocation.bind(this);
 
     
     
@@ -130,10 +130,8 @@ class Rule {
 
   get sourceLink() {
     return {
-      label: this.getSourceText(
-        CssLogic.shortSource({ href: this.sourceLocation.url })
-      ),
-      title: this.getSourceText(this.sourceLocation.url),
+      label: this._getSourceText(true),
+      title: this._getSourceText(),
     };
   }
 
@@ -145,16 +143,17 @@ class Rule {
 
 
 
-  get sourceLocation() {
-    if (!this._sourceLocation) {
-      this._sourceLocation = {
-        column: this.ruleColumn,
-        line: this.ruleLine,
+  get generatedLocation() {
+    if (!this._generatedLocation) {
+      this._generatedLocation = {
+        sheet: this.sheet,
         url: this.sheet ? this.sheet.href || this.sheet.nodeHref : null,
+        line: this.ruleLine,
+        column: this.ruleColumn,
       };
     }
 
-    return this._sourceLocation;
+    return this._generatedLocation;
   }
 
   get title() {
@@ -254,18 +253,22 @@ class Rule {
 
 
 
-
-  getSourceText(url) {
+  _getSourceText(shortenURL) {
     if (this.isSystem) {
       return `${STYLE_INSPECTOR_L10N.getStr("rule.userAgentStyles")} ${
         this.title
       }`;
     }
 
-    let sourceText = url;
+    const currentLocation = this._originalLocation || this.generatedLocation;
 
-    if (this.sourceLocation.line > 0) {
-      sourceText += ":" + this.sourceLocation.line;
+    let sourceText = currentLocation.url;
+    if (shortenURL) {
+      sourceText = CssLogic.shortSource({ href: sourceText });
+    }
+
+    if (currentLocation.line > 0) {
+      sourceText += ":" + currentLocation.line;
     }
 
     if (this.mediaText) {
@@ -923,8 +926,13 @@ class Rule {
 
 
   onLocationChanged() {
-    const url = this.sheet ? this.sheet.href || this.sheet.nodeHref : null;
-    this.updateSourceLocation(url, this.ruleLine, this.ruleColumn);
+    
+    
+    this._generatedLocation = null;
+
+    this.store.dispatch(
+      updateSourceLink(this.domRule.actorID, this.sourceLink)
+    );
   }
 
   
@@ -932,7 +940,7 @@ class Rule {
 
 
   subscribeToLocationChange() {
-    const { url, line, column } = this.sourceLocation;
+    const { url, line, column } = this.generatedLocation;
 
     if (url && !this.isSystem && this.domRule.type !== ELEMENT_STYLE) {
       
@@ -943,7 +951,7 @@ class Rule {
         (enabled, sourceUrl, sourceLine, sourceColumn) => {
           if (enabled) {
             
-            this.updateSourceLocation(sourceUrl, sourceLine, sourceColumn);
+            this.updateOriginalLocation(sourceUrl, sourceLine, sourceColumn);
           }
         }
       );
@@ -963,8 +971,8 @@ class Rule {
 
 
 
-  updateSourceLocation(url, line, column) {
-    this._sourceLocation = {
+  updateOriginalLocation(url, line, column) {
+    this._originalLocation = {
       column,
       line,
       url,

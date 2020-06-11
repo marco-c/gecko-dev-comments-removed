@@ -235,27 +235,6 @@ class WebConsole {
 
 
 
-  viewSourceInStyleEditor(sourceURL, sourceLine) {
-    const { toolbox } = this;
-    if (!toolbox) {
-      this.viewSource(sourceURL, sourceLine);
-      return;
-    }
-    toolbox.viewSourceInStyleEditor(sourceURL, sourceLine);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
 
 
   async viewSourceInDebugger(sourceURL, sourceLine, sourceColumn) {
@@ -396,7 +375,7 @@ class WebConsole {
     if (!this.toolbox) {
       return;
     }
-    await this.toolbox.viewSourceInStyleEditor(
+    await this.toolbox.viewSourceInStyleEditorByURL(
       frame.url,
       frame.line,
       frame.column
