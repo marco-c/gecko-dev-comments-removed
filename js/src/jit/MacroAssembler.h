@@ -1025,6 +1025,11 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
+  void randomDouble(Register rng, FloatRegister dest, Register64 temp0,
+                    Register64 temp1);
+
+  
+  
 
   inline void minFloat32(FloatRegister other, FloatRegister srcDest,
                          bool handleNaN) PER_SHARED_ARCH;
