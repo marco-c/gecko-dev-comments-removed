@@ -3,6 +3,7 @@
 
 
 
+#include "CookieCommons.h"
 #include "mozilla/net/CookieService.h"
 #include "mozilla/net/CookieServiceParent.h"
 #include "mozilla/net/NeckoParent.h"
@@ -80,8 +81,8 @@ void CookieServiceParent::TrackCookieLoad(nsIChannel* aChannel) {
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   OriginAttributes attrs = loadInfo->GetOriginAttributes();
-  bool isSafeTopLevelNav = NS_IsSafeTopLevelNav(aChannel);
-  bool aIsSameSiteForeign = NS_IsSameSiteForeign(aChannel, uri);
+  bool isSafeTopLevelNav = CookieCommons::IsSafeTopLevelNav(aChannel);
+  bool aIsSameSiteForeign = CookieCommons::IsSameSiteForeign(aChannel, uri);
 
   StoragePrincipalHelper::PrepareEffectiveStoragePrincipalOriginAttributes(
       aChannel, attrs);
