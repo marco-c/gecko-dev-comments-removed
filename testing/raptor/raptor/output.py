@@ -683,6 +683,7 @@ class RaptorOutput(PerftestOutput):
                 
                 
                 youtube_playback_tests = [
+                    "youtube-playbackperf-test",
                     "youtube-playbackperf-sfr-vp9-test",
                     "youtube-playbackperf-sfr-h264-test",
                     "youtube-playbackperf-sfr-av1-test",
@@ -1280,6 +1281,8 @@ class RaptorOutput(PerftestOutput):
 
                 
                 _sub = _sub.split("PlaybackPerf", 1)[-1]
+                if _sub.startswith("."):
+                    _sub = _sub[1:]
 
                 
                 create_subtest_entry(
