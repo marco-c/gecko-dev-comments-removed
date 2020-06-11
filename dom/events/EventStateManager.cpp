@@ -2228,10 +2228,12 @@ void EventStateManager::DoScrollHistory(int32_t direction) {
     nsCOMPtr<nsIWebNavigation> webNav(do_QueryInterface(pcContainer));
     if (webNav) {
       
+      
+      
       if (direction > 0)
-        webNav->GoBack();
+        webNav->GoBack( true);
       else
-        webNav->GoForward();
+        webNav->GoForward( true);
     }
   }
 }

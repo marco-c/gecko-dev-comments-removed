@@ -158,9 +158,9 @@ void nsHistory::Go(int32_t aDelta, ErrorResult& aRv) {
   
   
   if (StaticPrefs::dom_window_history_async()) {
-    session_history->AsyncGo(aDelta);
+    session_history->AsyncGo(aDelta,  false);
   } else {
-    session_history->Go(aDelta, IgnoreErrors());
+    session_history->Go(aDelta,  false, IgnoreErrors());
   }
 }
 
@@ -180,9 +180,9 @@ void nsHistory::Back(ErrorResult& aRv) {
   }
 
   if (StaticPrefs::dom_window_history_async()) {
-    sHistory->AsyncGo(-1);
+    sHistory->AsyncGo(-1,  false);
   } else {
-    sHistory->Go(-1, IgnoreErrors());
+    sHistory->Go(-1,  false, IgnoreErrors());
   }
 }
 
@@ -202,9 +202,9 @@ void nsHistory::Forward(ErrorResult& aRv) {
   }
 
   if (StaticPrefs::dom_window_history_async()) {
-    sHistory->AsyncGo(1);
+    sHistory->AsyncGo(1,  false);
   } else {
-    sHistory->Go(1, IgnoreErrors());
+    sHistory->Go(1,  false, IgnoreErrors());
   }
 }
 
