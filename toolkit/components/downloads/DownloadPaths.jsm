@@ -68,19 +68,25 @@ var DownloadPaths = {
 
 
 
-  sanitize(leafName) {
+
+
+
+
+  sanitize(leafName, { compressWhitespaces = true } = {}) {
     if (AppConstants.platform == "win") {
       leafName = leafName
         .replace(/</g, "(")
         .replace(/>/g, ")")
         .replace(/"/g, "'");
     }
-    return leafName
+    leafName = leafName
       .replace(/[\\/]+/g, "_")
       .replace(/[\u200e\u200f\u202a-\u202e]/g, "")
-      .replace(gConvertToSpaceRegExp, " ")
-      .replace(/\s{2,}/g, " ")
-      .replace(/^[\s\u180e.]+|[\s\u180e.]+$/g, "");
+      .replace(gConvertToSpaceRegExp, " ");
+    if (compressWhitespaces) {
+      leafName = leafName.replace(/\s{2,}/g, " ");
+    }
+    return leafName.replace(/^[\s\u180e.]+|[\s\u180e.]+$/g, "");
   },
 
   
