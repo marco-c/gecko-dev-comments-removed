@@ -176,11 +176,9 @@ DefaultJitOptions::DefaultJitOptions() {
   
   SET_DEFAULT(fullIonWarmUpThreshold, 100'000);
 
-#ifdef ENABLE_NEW_REGEXP
   
   
   SET_DEFAULT(regexpWarmUpThreshold, 10);
-#endif
 
   
   
@@ -286,7 +284,6 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(enableTraceLogger, false);
 #endif
 
-#ifdef ENABLE_NEW_REGEXP
   
   SET_DEFAULT(traceRegExpParser, false);
   
@@ -295,7 +292,6 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(traceRegExpInterpreter, false);
   
   SET_DEFAULT(traceRegExpPeephole, false);
-#endif
 
   SET_DEFAULT(enableWasmJitExit, true);
   SET_DEFAULT(enableWasmJitEntry, true);
@@ -315,9 +311,7 @@ void DefaultJitOptions::enableGvn(bool enable) { disableGvn = !enable; }
 void DefaultJitOptions::setEagerBaselineCompilation() {
   baselineInterpreterWarmUpThreshold = 0;
   baselineJitWarmUpThreshold = 0;
-#ifdef ENABLE_NEW_REGEXP
   regexpWarmUpThreshold = 0;
-#endif
 }
 
 void DefaultJitOptions::setEagerIonCompilation() {

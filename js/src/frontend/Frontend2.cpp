@@ -26,23 +26,18 @@
 #include "frontend/Stencil.h"           
 #include "frontend/TokenStream.h"       
 #include "gc/Rooting.h"                 
-#ifndef ENABLE_NEW_REGEXP
-#  include "irregexp/RegExpParser.h"  
-#endif
 #include "js/CharacterEncoding.h"  
 #include "js/HeapAPI.h"            
 #include "js/RegExpFlags.h"        
 #include "js/RootingAPI.h"         
 #include "js/TypeDecls.h"          
 #include "js/Utility.h"            
-#ifdef ENABLE_NEW_REGEXP
-#  include "new-regexp/RegExpAPI.h"  
-#endif
-#include "vm/JSAtom.h"         
-#include "vm/JSScript.h"       
-#include "vm/Scope.h"          
-#include "vm/ScopeKind.h"      
-#include "vm/SharedStencil.h"  
+#include "new-regexp/RegExpAPI.h"  
+#include "vm/JSAtom.h"             
+#include "vm/JSScript.h"           
+#include "vm/Scope.h"              
+#include "vm/ScopeKind.h"          
+#include "vm/SharedStencil.h"      
 
 #include "vm/JSContext-inl.h"  
 
@@ -268,16 +263,9 @@ class SmooshScriptStencil : public ScriptStencil {
       
 
       LifoAllocScope allocScope(&cx->tempLifoAlloc());
-#ifdef ENABLE_NEW_REGEXP
       if (!irregexp::CheckPatternSyntax(cx, ts, range, flags)) {
         return false;
       }
-#else
-      if (!irregexp::ParsePatternSyntax(ts, allocScope.alloc(), range,
-                                        flags & JS::RegExpFlag::Unicode)) {
-        return false;
-      }
-#endif
 
       RegExpIndex index(compilationInfo_.regExpData.length());
       if (!compilationInfo_.regExpData.emplaceBack()) {

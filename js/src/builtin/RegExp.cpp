@@ -11,15 +11,10 @@
 #include "mozilla/TextUtils.h"
 
 #include "frontend/TokenStream.h"
-#ifndef ENABLE_NEW_REGEXP
-#  include "irregexp/RegExpParser.h"
-#endif
 #include "jit/InlinableNatives.h"
 #include "js/PropertySpec.h"
 #include "js/RegExpFlags.h"  
-#ifdef ENABLE_NEW_REGEXP
-#  include "new-regexp/RegExpAPI.h"
-#endif
+#include "new-regexp/RegExpAPI.h"
 #include "util/StringBuffer.h"
 #include "util/Unicode.h"
 #include "vm/JSContext.h"
@@ -81,7 +76,6 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
     return false;
   }
 
-#ifdef ENABLE_NEW_REGEXP
   
   RootedPlainObject groups(cx);
   bool groupsInDictionaryMode = false;
@@ -96,7 +90,6 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
           cx, groups, PlainObject::createWithTemplate(cx, groupsTemplate));
     }
   }
-#endif
 
   
   
@@ -118,7 +111,6 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
     }
   }
 
-#ifdef ENABLE_NEW_REGEXP
   
   
   
@@ -148,7 +140,6 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
       }
     }
   }
-#endif
 
   
   
@@ -159,12 +150,10 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
   
   arr->setSlot(RegExpRealm::MatchResultObjectInputSlot, StringValue(input));
 
-#ifdef ENABLE_NEW_REGEXP
   
   
   arr->setSlot(RegExpRealm::MatchResultObjectGroupsSlot,
                groups ? ObjectValue(*groups) : UndefinedValue());
-#endif
 
 #ifdef DEBUG
   RootedValue test(cx);
@@ -255,12 +244,7 @@ static bool CheckPatternSyntaxSlow(JSContext* cx, HandleAtom pattern,
   LifoAllocScope allocScope(&cx->tempLifoAlloc());
   CompileOptions options(cx);
   frontend::DummyTokenStream dummyTokenStream(cx, options);
-#ifdef ENABLE_NEW_REGEXP
   return irregexp::CheckPatternSyntax(cx, dummyTokenStream, pattern, flags);
-#else
-  return irregexp::ParsePatternSyntax(dummyTokenStream, allocScope.alloc(),
-                                      pattern, flags.unicode());
-#endif
 }
 
 static RegExpShared* CheckPatternSyntax(JSContext* cx, HandleAtom pattern,
@@ -862,9 +846,7 @@ const JSPropertySpec js::regexp_properties[] = {
     JS_PSG("global", regexp_global, 0),
     JS_PSG("ignoreCase", regexp_ignoreCase, 0),
     JS_PSG("multiline", regexp_multiline, 0),
-#ifdef ENABLE_NEW_REGEXP
     JS_PSG("dotAll", regexp_dotAll, 0),
-#endif
     JS_PSG("source", regexp_source, 0),
     JS_PSG("sticky", regexp_sticky, 0),
     JS_PSG("unicode", regexp_unicode, 0),
@@ -1928,7 +1910,6 @@ bool js::RegExpPrototypeOptimizableRaw(JSContext* cx, JSObject* proto) {
     return false;
   }
 
-#ifdef ENABLE_NEW_REGEXP
   JSNative dotAllGetter;
   if (!GetOwnNativeGetterPure(cx, proto, NameToId(cx->names().dotAll),
                               &dotAllGetter)) {
@@ -1938,7 +1919,6 @@ bool js::RegExpPrototypeOptimizableRaw(JSContext* cx, JSObject* proto) {
   if (dotAllGetter != regexp_dotAll) {
     return false;
   }
-#endif
 
   
   
