@@ -1317,7 +1317,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.region-spocs-config", "
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-layout-config", "US,CA");
 
-pref("browser.newtabpage.activity-stream.discoverystream.isCollectionDismissible", false);
+pref("browser.newtabpage.activity-stream.discoverystream.isCollectionDismissible", true);
 
 pref("browser.newtabpage.activity-stream.discoverystream.personalization.version", 1);
 
