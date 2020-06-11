@@ -1079,8 +1079,9 @@ void WindowSurfaceWayland::CommitWaylandBuffer() {
     return;
   }
 
-  auto unlockContainer =
-      MakeScopeExit([&] { moz_container_wayland_surface_unlock(container); });
+  auto unlockContainer = MakeScopeExit([&] {
+    moz_container_wayland_surface_unlock(container, &waylandSurface);
+  });
 
   wl_proxy_set_queue((struct wl_proxy*)waylandSurface,
                      mWaylandDisplay->GetEventQueue());
@@ -1124,6 +1125,9 @@ void WindowSurfaceWayland::CommitWaylandBuffer() {
   mWaylandBuffer->Attach(waylandSurface);
   mLastCommittedSurface = waylandSurface;
   mLastCommitTime = g_get_monotonic_time() / 1000;
+
+  
+  moz_container_wayland_surface_unlock(container, &waylandSurface);
 
   
   
