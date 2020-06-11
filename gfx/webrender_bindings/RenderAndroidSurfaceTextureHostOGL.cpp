@@ -33,7 +33,7 @@ RenderAndroidSurfaceTextureHostOGL::~RenderAndroidSurfaceTextureHostOGL() {
   MOZ_ASSERT(RenderThread::IsInRenderThread());
   MOZ_COUNT_DTOR_INHERITED(RenderAndroidSurfaceTextureHostOGL,
                            RenderTextureHostOGL);
-  DeleteTextureHandle();
+  
   if (mSurfTex) {
     mSurfTex->DecrementUse();
   }
@@ -99,10 +99,6 @@ wr::WrExternalImage RenderAndroidSurfaceTextureHostOGL::Lock(
 }
 
 void RenderAndroidSurfaceTextureHostOGL::Unlock() {}
-
-void RenderAndroidSurfaceTextureHostOGL::DeleteTextureHandle() {
-  NotifyNotUsed();
-}
 
 bool RenderAndroidSurfaceTextureHostOGL::EnsureAttachedToGLContext() {
   
