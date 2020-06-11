@@ -84,6 +84,7 @@ class Cookie final : public nsICookie {
   }
   inline int32_t SameSite() const { return mData.sameSite(); }
   inline int32_t RawSameSite() const { return mData.rawSameSite(); }
+  inline uint8_t SchemeMap() const { return mData.schemeMap(); }
 
   
   inline void SetExpiry(int64_t aExpiry) { mData.expiry() = aExpiry; }
