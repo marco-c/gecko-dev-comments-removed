@@ -1285,39 +1285,36 @@ void nsLookAndFeel::EnsureInit() {
   
   ButtonLayout buttonLayout[TOOLBAR_BUTTONS];
 
-  int activeButtons = GetGtkHeaderBarButtonLayout(buttonLayout, TOOLBAR_BUTTONS,
-                                                  &mCSDReversedPlacement);
-  for (int i = 0; i < activeButtons; i++) {
+  size_t activeButtons = GetGtkHeaderBarButtonLayout(MakeSpan(buttonLayout),
+                                                     &mCSDReversedPlacement);
+  for (size_t i = 0; i < activeButtons; i++) {
     
     
     
-    switch (buttonLayout[i].mType) {
+    const ButtonLayout& layout = buttonLayout[i];
+    int32_t* pos = nullptr;
+    switch (layout.mType) {
       case MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE:
         mCSDMinimizeButton = true;
-        if (buttonLayout[i].mAtRight) {
-          mCSDMinimizeButtonPosition = i + TOOLBAR_BUTTONS;
-        } else {
-          mCSDMinimizeButtonPosition = i;
-        }
+        pos = &mCSDMinimizeButtonPosition;
         break;
       case MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE:
         mCSDMaximizeButton = true;
-        if (buttonLayout[i].mAtRight) {
-          mCSDMaximizeButtonPosition = i + TOOLBAR_BUTTONS;
-        } else {
-          mCSDMaximizeButtonPosition = i;
-        }
+        pos = &mCSDMaximizeButtonPosition;
         break;
       case MOZ_GTK_HEADER_BAR_BUTTON_CLOSE:
         mCSDCloseButton = true;
-        if (buttonLayout[i].mAtRight) {
-          mCSDCloseButtonPosition = i + TOOLBAR_BUTTONS;
-        } else {
-          mCSDCloseButtonPosition = i;
-        }
+        pos = &mCSDCloseButtonPosition;
         break;
       default:
         break;
+    }
+
+    if (pos) {
+      *pos = i;
+      if (layout.mAtRight) {
+        *pos += TOOLBAR_BUTTONS;
+      }
     }
   }
 

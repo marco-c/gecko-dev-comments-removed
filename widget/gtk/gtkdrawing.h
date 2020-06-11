@@ -18,6 +18,7 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 #include <algorithm>
+#include "mozilla/Span.h"
 
 
 typedef struct {
@@ -616,10 +617,8 @@ const ToolbarButtonGTKMetrics* GetToolbarButtonMetrics(
 
 
 
-
-
-int GetGtkHeaderBarButtonLayout(ButtonLayout* aButtonLayout, int aMaxButtonNums,
-                                bool* aReversedButtonsPlacement);
+size_t GetGtkHeaderBarButtonLayout(mozilla::Span<ButtonLayout>,
+                                   bool* aReversedButtonsPlacement);
 
 
 
