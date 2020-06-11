@@ -16,6 +16,7 @@ pub extern crate once_cell;
 pub extern crate uuid;
 
 pub mod metrics;
+pub mod ping_upload;
 
 
 fn with_glean<F, R>(f: F) -> R
