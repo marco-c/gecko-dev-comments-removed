@@ -3977,11 +3977,38 @@ Toolbox.prototype = {
 
 
 
+  viewGeneratedSourceInStyleEditor: async function(url) {
+    if (typeof url !== "string") {
+      console.warn("Failed to open generated source, no url given");
+      return;
+    }
+
+    
+    
+    
+    return viewSource.viewSourceInStyleEditor(this, url, 1);
+  },
+
+  
+
+
+
+
 
   viewSourceInStyleEditorByURL: async function(url, line, column) {
     if (typeof url !== "string") {
       console.warn("Failed to open source, no url given");
       return;
+    }
+    if (typeof line !== "number") {
+      console.warn(
+        "No line given when navigating to source. If you're seeing this, there is a bug."
+      );
+
+      
+      
+      line = 1;
+      column = null;
     }
 
     return viewSource.viewSourceInStyleEditor(this, url, line, column);
@@ -4000,6 +4027,16 @@ Toolbox.prototype = {
     if (!stylesheetFront || typeof stylesheetFront !== "object") {
       console.warn("Failed to open source, no stylesheet given");
       return;
+    }
+    if (typeof line !== "number") {
+      console.warn(
+        "No line given when navigating to source. If you're seeing this, there is a bug."
+      );
+
+      
+      
+      line = 1;
+      column = null;
     }
 
     return viewSource.viewSourceInStyleEditor(
@@ -4028,6 +4065,20 @@ Toolbox.prototype = {
 
 
 
+  viewGeneratedSourceInDebugger: async function(url) {
+    if (typeof url !== "string") {
+      console.warn("Failed to open generated source, no url given");
+      return;
+    }
+
+    return viewSource.viewSourceInDebugger(this, url, null, null, null, null);
+  },
+
+  
+
+
+
+
 
 
 
@@ -4041,6 +4092,16 @@ Toolbox.prototype = {
     if (typeof sourceURL !== "string" && typeof sourceId !== "string") {
       console.warn("Failed to open generated source, no url/id given");
       return;
+    }
+    if (typeof sourceLine !== "number") {
+      console.warn(
+        "No line given when navigating to source. If you're seeing this, there is a bug."
+      );
+
+      
+      
+      sourceLine = 1;
+      sourceColumn = null;
     }
 
     return viewSource.viewSourceInDebugger(

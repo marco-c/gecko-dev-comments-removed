@@ -183,6 +183,12 @@ async function getOriginalLocation(
   generatedLine,
   generatedColumn
 ) {
+  
+  
+  if (typeof generatedLine !== "number") {
+    return null;
+  }
+
   let originalLocation = null;
   try {
     originalLocation = await toolbox.sourceMapService.getOriginalLocation({
