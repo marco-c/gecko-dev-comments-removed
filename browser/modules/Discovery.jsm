@@ -148,8 +148,7 @@ const DiscoveryInternal = {
             true, 
             Date.now(),
             originAttributes,
-            Ci.nsICookie.SAMESITE_LAX,
-            Ci.nsICookie.SCHEME_HTTPS
+            Ci.nsICookie.SAMESITE_LAX
           );
         }
       }

@@ -5,7 +5,6 @@
 
 #include "Cookie.h"
 #include "CookieCommons.h"
-#include "CookieLogging.h"
 #include "CookieService.h"
 #include "mozilla/ContentBlocking.h"
 #include "mozilla/ConsoleReportCollector.h"
@@ -17,11 +16,7 @@
 #include "nsICookiePermission.h"
 #include "nsICookieService.h"
 #include "nsIEffectiveTLDService.h"
-#include "nsIRedirectHistoryEntry.h"
 #include "nsScriptSecurityManager.h"
-
-constexpr auto CONSOLE_SCHEMEFUL_CATEGORY =
-    NS_LITERAL_CSTRING("cookieSchemeful");
 
 namespace mozilla {
 
@@ -459,198 +454,6 @@ bool CookieCommons::ShouldIncludeCrossSiteCookieForDocument(Cookie* aCookie) {
   aCookie->GetSameSite(&sameSiteAttr);
 
   return sameSiteAttr == nsICookie::SAMESITE_NONE;
-}
-
-bool CookieCommons::IsSafeTopLevelNav(nsIChannel* aChannel) {
-  if (!aChannel) {
-    return false;
-  }
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  if (loadInfo->GetExternalContentPolicyType() !=
-          nsIContentPolicy::TYPE_DOCUMENT &&
-      loadInfo->GetExternalContentPolicyType() !=
-          nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
-    return false;
-  }
-  return NS_IsSafeMethodNav(aChannel);
-}
-
-bool CookieCommons::IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI) {
-  if (!aChannel) {
-    return false;
-  }
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  
-  nsCOMPtr<nsIURI> channelURI;
-  NS_GetFinalChannelURI(aChannel, getter_AddRefs(channelURI));
-  RefPtr<BasePrincipal> triggeringPrincipal =
-      BasePrincipal::Cast(loadInfo->TriggeringPrincipal());
-  if (triggeringPrincipal->AddonPolicy() &&
-      triggeringPrincipal->AddonAllowsLoad(channelURI)) {
-    return false;
-  }
-
-  bool isForeign = true;
-  nsresult rv;
-  if (loadInfo->GetExternalContentPolicyType() ==
-          nsIContentPolicy::TYPE_DOCUMENT ||
-      loadInfo->GetExternalContentPolicyType() ==
-          nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
-    
-    
-    
-    rv = triggeringPrincipal->IsThirdPartyChannel(aChannel, &isForeign);
-  } else {
-    nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
-        do_GetService(THIRDPARTYUTIL_CONTRACTID);
-    if (!thirdPartyUtil) {
-      return true;
-    }
-    rv = thirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isForeign);
-  }
-  
-  
-  if (NS_FAILED(rv) || isForeign) {
-    return true;
-  }
-
-  
-  
-  
-  
-  
-  if (loadInfo->GetExternalContentPolicyType() ==
-      nsIContentPolicy::TYPE_SUBDOCUMENT) {
-    rv = loadInfo->TriggeringPrincipal()->IsThirdPartyChannel(aChannel,
-                                                              &isForeign);
-    if (NS_FAILED(rv) || isForeign) {
-      return true;
-    }
-  }
-
-  
-  
-  
-
-  nsCOMPtr<nsIPrincipal> redirectPrincipal;
-  for (nsIRedirectHistoryEntry* entry : loadInfo->RedirectChain()) {
-    entry->GetPrincipal(getter_AddRefs(redirectPrincipal));
-    if (redirectPrincipal) {
-      rv = redirectPrincipal->IsThirdPartyChannel(aChannel, &isForeign);
-      
-      if (NS_FAILED(rv) || isForeign) {
-        return true;
-      }
-    }
-  }
-  return isForeign;
-}
-
-namespace {
-
-bool MaybeCompareSchemeInternal(Cookie* aCookie,
-                                nsICookie::schemeType aSchemeType) {
-  MOZ_ASSERT(aCookie);
-
-  
-  if (aCookie->SchemeMap() == nsICookie::SCHEME_UNSET) {
-    return true;
-  }
-
-  return !!(aCookie->SchemeMap() & aSchemeType);
-}
-
-}  
-
-
-bool CookieCommons::MaybeCompareSchemeWithLogging(
-    nsIConsoleReportCollector* aCRC, nsIURI* aHostURI, Cookie* aCookie,
-    nsICookie::schemeType aSchemeType) {
-  MOZ_ASSERT(aCookie);
-  MOZ_ASSERT(aHostURI);
-
-  if (MaybeCompareSchemeInternal(aCookie, aSchemeType)) {
-    return true;
-  }
-
-  nsAutoCString uri;
-  nsresult rv = aHostURI->GetSpec(uri);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return !StaticPrefs::network_cookie_sameSite_schemeful();
-  }
-
-  if (!StaticPrefs::network_cookie_sameSite_schemeful()) {
-    CookieLogging::LogMessageToConsole(
-        aCRC, aHostURI, nsIScriptError::warningFlag, CONSOLE_SCHEMEFUL_CATEGORY,
-        NS_LITERAL_CSTRING("CookieSchemefulRejectForBeta"),
-        AutoTArray<nsString, 2>{NS_ConvertUTF8toUTF16(aCookie->Name()),
-                                NS_ConvertUTF8toUTF16(uri)});
-    return true;
-  }
-
-  CookieLogging::LogMessageToConsole(
-      aCRC, aHostURI, nsIScriptError::warningFlag, CONSOLE_SCHEMEFUL_CATEGORY,
-      NS_LITERAL_CSTRING("CookieSchemefulReject"),
-      AutoTArray<nsString, 2>{NS_ConvertUTF8toUTF16(aCookie->Name()),
-                              NS_ConvertUTF8toUTF16(uri)});
-  return false;
-}
-
-
-bool CookieCommons::MaybeCompareScheme(Cookie* aCookie,
-                                       nsICookie::schemeType aSchemeType) {
-  MOZ_ASSERT(aCookie);
-
-  if (!StaticPrefs::network_cookie_sameSite_schemeful()) {
-    return true;
-  }
-
-  return MaybeCompareSchemeInternal(aCookie, aSchemeType);
-}
-
-
-nsICookie::schemeType CookieCommons::URIToSchemeType(nsIURI* aURI) {
-  MOZ_ASSERT(aURI);
-
-  nsAutoCString scheme;
-  nsresult rv = aURI->GetScheme(scheme);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nsICookie::SCHEME_UNSET;
-  }
-
-  return SchemeToSchemeType(scheme);
-}
-
-
-nsICookie::schemeType CookieCommons::PrincipalToSchemeType(
-    nsIPrincipal* aPrincipal) {
-  MOZ_ASSERT(aPrincipal);
-
-  nsAutoCString scheme;
-  nsresult rv = aPrincipal->GetScheme(scheme);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nsICookie::SCHEME_UNSET;
-  }
-
-  return SchemeToSchemeType(scheme);
-}
-
-
-nsICookie::schemeType CookieCommons::SchemeToSchemeType(
-    const nsACString& aScheme) {
-  if (aScheme.Equals("https")) {
-    return nsICookie::SCHEME_HTTPS;
-  }
-
-  if (aScheme.Equals("http")) {
-    return nsICookie::SCHEME_HTTP;
-  }
-
-  if (aScheme.Equals("file")) {
-    return nsICookie::SCHEME_FILE;
-  }
-
-  MOZ_CRASH("Unsupported scheme type");
 }
 
 }  

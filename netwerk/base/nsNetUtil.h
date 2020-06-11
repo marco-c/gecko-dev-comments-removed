@@ -599,7 +599,19 @@ bool NS_HasBeenCrossOrigin(nsIChannel* aChannel, bool aReport = false);
 
 
 
+bool NS_IsSafeTopLevelNav(nsIChannel* aChannel);
+
+
+
+
 bool NS_IsSafeMethodNav(nsIChannel* aChannel);
+
+
+
+
+
+
+bool NS_IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI);
 
 
 
