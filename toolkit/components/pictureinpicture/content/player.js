@@ -154,13 +154,6 @@ let Player = {
     });
 
     this.computeAndSetMinimumSize(window.outerWidth, window.outerHeight);
-
-    
-    
-    
-    window.requestAnimationFrame(() => {
-      window.focus();
-    });
   },
 
   uninit() {
