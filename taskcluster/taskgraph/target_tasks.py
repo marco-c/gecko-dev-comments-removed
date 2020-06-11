@@ -37,6 +37,7 @@ UNCOMMON_TRY_TASK_LABELS = [
     
     r'web-platform-tests.*backlog',  
     r'-ccov/',
+    r'-profiling-',  
     
     
     
