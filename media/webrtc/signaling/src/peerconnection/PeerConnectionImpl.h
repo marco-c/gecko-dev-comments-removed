@@ -441,6 +441,11 @@ class PeerConnectionImpl final
     return mTimestampMaker;
   }
 
+  
+  
+  
+  static bool HostnameInPref(const char* aPrefList, nsIURI* aDocURI);
+
  private:
   virtual ~PeerConnectionImpl();
   PeerConnectionImpl(const PeerConnectionImpl& rhs);
@@ -608,6 +613,9 @@ class PeerConnectionImpl final
 
   DOMMediaStream* GetReceiveStream(const std::string& aId) const;
   DOMMediaStream* CreateReceiveStream(const std::string& aId);
+
+  
+  bool mRtxIsAllowed = true;
 
  public:
   
