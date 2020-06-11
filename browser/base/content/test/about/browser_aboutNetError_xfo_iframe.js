@@ -63,12 +63,20 @@ async function setupPage(htmlPageName, blockedPage) {
   is(strictCookie.sameSite, 2, "The cookie is a same site strict cookie");
 
   
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, iFramePage);
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
   let browser = tab.linkedBrowser;
+  let browserLoaded = BrowserTestUtils.browserLoaded(
+    browser,
+    true,
+    blockedPage,
+    true
+  );
 
-  await SpecialPowers.spawn(browser, [blockedPage], async function(
-    xfoBlockedPage
-  ) {
+  BrowserTestUtils.loadURI(browser, iFramePage);
+  await browserLoaded;
+  info("The error page has loaded!");
+
+  await SpecialPowers.spawn(browser, [], async function() {
     let iframe = content.document.getElementById("theIframe");
 
     await ContentTaskUtils.waitForCondition(() =>
@@ -77,7 +85,7 @@ async function setupPage(htmlPageName, blockedPage) {
   });
 
   let frameContext = browser.browsingContext.children[0];
-  let loaded = BrowserTestUtils.waitForNewTab(gBrowser, null, true);
+  let newTabLoaded = BrowserTestUtils.waitForNewTab(gBrowser, null, true);
 
   
   
@@ -99,8 +107,11 @@ async function setupPage(htmlPageName, blockedPage) {
     
     await EventUtils.synthesizeMouseAtCenter(button, {}, content);
   });
+  info("Button was clicked!");
+
   
-  await loaded;
+  await newTabLoaded;
+  info("The new tab has loaded!");
 
   let iframePageTab = tab;
   return {
