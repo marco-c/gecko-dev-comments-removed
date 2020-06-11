@@ -54,6 +54,15 @@ this.getSearchProvider = getSearchProvider;
 
 
 
+
+function getSearchFormURL(keyword) {
+  const engine = Services.search.getEngineByAlias(keyword);
+  return engine?.wrappedJSObject._searchForm;
+}
+this.getSearchFormURL = getSearchFormURL;
+
+
+
 async function checkHasSearchEngine(keyword) {
   return (await Services.search.getDefaultEngines()).find(e =>
     e.wrappedJSObject._internalAliases.includes(keyword)
@@ -64,6 +73,7 @@ this.checkHasSearchEngine = checkHasSearchEngine;
 const EXPORTED_SYMBOLS = [
   "checkHasSearchEngine",
   "getSearchProvider",
+  "getSearchFormURL",
   "SEARCH_SHORTCUTS",
   "CUSTOM_SEARCH_SHORTCUTS",
   "SEARCH_SHORTCUTS_EXPERIMENT",
