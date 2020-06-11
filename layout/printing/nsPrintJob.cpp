@@ -17,6 +17,7 @@
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/CustomEvent.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/Telemetry.h"
 #include "nsIBrowserChild.h"
 #include "nsIOService.h"
 #include "nsIScriptGlobalObject.h"
@@ -740,6 +741,19 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
         if (!aIsPrintPreview) {
           domWin = mOriginalDoc->GetWindow();
           NS_ENSURE_TRUE(domWin, NS_ERROR_FAILURE);
+
+          if (printSilently) {
+            Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_SILENT_PRINT, 1);
+          } else {
+            if (mIsDoingPrintPreview) {
+              Telemetry::ScalarAdd(
+                  Telemetry::ScalarID::PRINTING_DIALOG_OPENED_VIA_PREVIEW, 1);
+            } else {
+              Telemetry::ScalarAdd(
+                  Telemetry::ScalarID::PRINTING_DIALOG_OPENED_WITHOUT_PREVIEW,
+                  1);
+            }
+          }
         }
 
         
@@ -750,6 +764,24 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
         
         rv = printPromptService->ShowPrintDialog(domWin,
                                                  printData->mPrintSettings);
+
+        if (!aIsPrintPreview) {
+          if (rv == NS_ERROR_ABORT) {
+            
+            
+            if (mIsDoingPrintPreview) {
+              Telemetry::ScalarAdd(
+                  Telemetry::ScalarID::PRINTING_DIALOG_VIA_PREVIEW_CANCELLED,
+                  1);
+            } else {
+              Telemetry::ScalarAdd(
+                  Telemetry::ScalarID::
+                      PRINTING_DIALOG_WITHOUT_PREVIEW_CANCELLED,
+                  1);
+            }
+          }
+        }
+
         
         
         
@@ -2442,6 +2474,9 @@ void nsPrintJob::PageDone(nsresult aResult) {
 
 void nsPrintJob::SetIsPrinting(bool aIsPrinting) {
   mIsDoingPrinting = aIsPrinting;
+  if (aIsPrinting) {
+    mHasEverPrinted = true;
+  }
   
   
   if (!mIsDoingPrintPreview && mDocViewerPrint) {

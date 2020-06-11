@@ -11,6 +11,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Telemetry.h"
 
 #include <winspool.h>
 
@@ -125,6 +126,65 @@ NS_IMETHODIMP nsDeviceContextSpecWin::Init(nsIWidget* aWidget,
                                            bool aIsPrintPreview) {
   mPrintSettings = aPrintSettings;
 
+  
+  nsAutoString printerName;
+  if (mPrintSettings) {
+    mPrintSettings->GetOutputFormat(&mOutputFormat);
+    mPrintSettings->GetPrinterName(printerName);
+  }
+
+  
+  if (printerName.IsEmpty()) {
+    GlobalPrinters::GetInstance()->GetDefaultPrinterName(printerName);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mOutputFormat == nsIPrintSettings::kOutputFormatPDF) {
+    Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE,
+                         NS_LITERAL_STRING("pdf_file"), 1);
+  } else if (StringBeginsWith(printerName,
+                              NS_LITERAL_STRING("Microsoft Print to PDF")) ||
+             StringBeginsWith(printerName, NS_LITERAL_STRING("Adobe PDF")) ||
+             StringBeginsWith(printerName,
+                              NS_LITERAL_STRING("Bullzip PDF Printer")) ||
+             StringBeginsWith(printerName,
+                              NS_LITERAL_STRING("CutePDF Writer")) ||
+             StringBeginsWith(printerName, NS_LITERAL_STRING("doPDF")) ||
+             StringBeginsWith(printerName,
+                              NS_LITERAL_STRING("Foxit Reader PDF Printer")) ||
+             StringBeginsWith(printerName,
+                              NS_LITERAL_STRING("Nitro PDF Creator")) ||
+             StringBeginsWith(printerName, NS_LITERAL_STRING("novaPDF")) ||
+             StringBeginsWith(printerName, NS_LITERAL_STRING("PDF-XChange")) ||
+             StringBeginsWith(printerName, NS_LITERAL_STRING("PDF24 PDF")) ||
+             StringBeginsWith(printerName, NS_LITERAL_STRING("PDFCreator")) ||
+             StringBeginsWith(printerName, NS_LITERAL_STRING("PrimoPDF")) ||
+             StringBeginsWith(printerName, NS_LITERAL_STRING("Soda PDF")) ||
+             StringBeginsWith(printerName,
+                              NS_LITERAL_STRING("Solid PDF Creator")) ||
+             StringBeginsWith(
+                 printerName,
+                 NS_LITERAL_STRING("Universal Document Converter"))) {
+    Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE,
+                         NS_LITERAL_STRING("pdf_file"), 1);
+  } else if (printerName.EqualsLiteral("Microsoft XPS Document Writer")) {
+    Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE,
+                         NS_LITERAL_STRING("xps_file"), 1);
+  } else {
+    Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE,
+                         NS_LITERAL_STRING("unknown"), 1);
+  }
+
   nsresult rv = NS_ERROR_GFX_PRINTER_NO_PRINTER_AVAILABLE;
   if (aPrintSettings) {
 #ifdef MOZ_ENABLE_SKIA_PDF
@@ -137,7 +197,6 @@ NS_IMETHODIMP nsDeviceContextSpecWin::Init(nsIWidget* aWidget,
 
     
     
-    mPrintSettings->GetOutputFormat(&mOutputFormat);
     if ((XRE_IsContentProcess() &&
          Preferences::GetBool("print.print_via_parent")) ||
         mOutputFormat == nsIPrintSettings::kOutputFormatPDF) {
@@ -179,17 +238,6 @@ NS_IMETHODIMP nsDeviceContextSpecWin::Init(nsIWidget* aWidget,
     }
   } else {
     PR_PL(("***** nsDeviceContextSpecWin::Init - aPrintSettingswas NULL!\n"));
-  }
-
-  
-  nsAutoString printerName;
-  if (mPrintSettings) {
-    mPrintSettings->GetPrinterName(printerName);
-  }
-
-  
-  if (printerName.IsEmpty()) {
-    GlobalPrinters::GetInstance()->GetDefaultPrinterName(printerName);
   }
 
   if (printerName.IsEmpty()) {

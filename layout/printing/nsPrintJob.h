@@ -113,6 +113,7 @@ class nsPrintJob final : public nsIObserver,
 
   bool IsDoingPrint() const { return mIsDoingPrinting; }
   bool IsDoingPrintPreview() const { return mIsDoingPrintPreview; }
+  bool HasEverPrinted() const { return mHasEverPrinted; }
   bool IsIFrameSelected();
   bool IsRangeSelection();
   
@@ -299,6 +300,7 @@ class nsPrintJob final : public nsIObserver,
   bool mIsCreatingPrintPreview = false;
   bool mIsDoingPrinting = false;
   bool mIsDoingPrintPreview = false;
+  bool mHasEverPrinted = false;
   bool mProgressDialogIsShown = false;
   bool mDidLoadDataForPrinting = false;
   bool mIsDestroying = false;
