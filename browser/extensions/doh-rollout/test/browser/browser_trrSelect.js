@@ -10,11 +10,11 @@ add_task(async function testTRRSelect() {
     .getDefaultBranch("")
     .setCharPref(
       "network.trr.resolvers",
-      `[{"url": "dummyTRR"}, {"url": "dummyTRR2"}]`
+      `[{"url": "https://dummytrr.com/query"}, {"url": "https://dummytrr2.com/query"}]`
     );
   Services.prefs.setCharPref(
     "network.trr.resolvers",
-    `[{"url": "dummyTRR"}, {"url": "dummyTRR2"}, {"url": "dummyTRR3"}]`
+    `[{"url": "https://dummytrr.com/query"}, {"url": "https://dummytrr2.com/query"}, {"url": "https://dummytrr3.com/query"}]`
   );
 
   
@@ -26,7 +26,7 @@ add_task(async function testTRRSelect() {
   is(Preferences.get(prefs.DOH_SELF_ENABLED_PREF), true, "Breadcrumb saved.");
   is(
     Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF),
-    "dummyTRR",
+    "https://dummytrr.com/query",
     "TRR selection complete."
   );
 
@@ -43,7 +43,7 @@ add_task(async function testTRRSelect() {
   });
   is(
     Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF),
-    "dummyTRR",
+    "https://dummytrr.com/query",
     "TRR selection complete."
   );
 
@@ -67,7 +67,7 @@ add_task(async function testTRRSelect() {
   }
   is(
     Preferences.get(prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF),
-    "dummyTRR",
+    "https://dummytrr.com/query",
     "TRR selection complete, dry-run result recorded."
   );
   Preferences.set(prefs.DOH_TRR_SELECT_COMMIT_PREF, true);
@@ -79,14 +79,17 @@ add_task(async function testTRRSelect() {
   
   
   Preferences.reset(prefs.DOH_TRR_SELECT_URI_PREF);
-  Preferences.set(prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF, "dummyTRR2");
+  Preferences.set(
+    prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF,
+    "https://dummytrr2.com/query"
+  );
   await restartAddon();
   await BrowserTestUtils.waitForCondition(() => {
     return Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF);
   });
   is(
     Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF),
-    "dummyTRR2",
+    "https://dummytrr2.com/query",
     "TRR selection complete, existing dry-run-result committed."
   );
 
@@ -97,14 +100,17 @@ add_task(async function testTRRSelect() {
   
   
   Preferences.reset(prefs.DOH_TRR_SELECT_URI_PREF);
-  Preferences.set(prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF, "dummyTRR3");
+  Preferences.set(
+    prefs.DOH_TRR_SELECT_DRY_RUN_RESULT_PREF,
+    "https://dummytrr3.com/query"
+  );
   await restartAddon();
   await BrowserTestUtils.waitForCondition(() => {
     return Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF);
   });
   is(
     Preferences.get(prefs.DOH_TRR_SELECT_URI_PREF),
-    "dummyTRR",
+    "https://dummytrr.com/query",
     "TRR selection complete, existing dry-run-result discarded and refreshed."
   );
 
