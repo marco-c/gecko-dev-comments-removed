@@ -63,17 +63,17 @@ class _ExperimentManager {
 
 
 
-
   createTargetingContext() {
-    return {
+    let context = {
       isFirstStartup: FirstStartup.state === FirstStartup.IN_PROGRESS,
-      activeExperiments: {
-        get: async () => {
-          await this.store.ready();
-          return this.store.getAllActive().map(exp => exp.slug);
-        },
-      },
     };
+    Object.defineProperty(context, "activeExperiments", {
+      get: async () => {
+        await this.store.ready();
+        return this.store.getAllActive().map(exp => exp.slug);
+      },
+    });
+    return context;
   }
 
   
