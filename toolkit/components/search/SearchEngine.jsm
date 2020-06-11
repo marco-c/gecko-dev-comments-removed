@@ -915,6 +915,10 @@ SearchEngine.prototype = {
   _orderHint: null,
   
   _telemetryId: null,
+  
+  
+  
+  _engineAddedToStore: false,
 
   
 
@@ -1306,7 +1310,9 @@ SearchEngine.prototype = {
       case "data":
         if (!this._hasPreferredIcon || isPreferred) {
           this._iconURI = uri;
-          SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
+          if (this._engineAddedToStore) {
+            SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
+          }
           this._hasPreferredIcon = isPreferred;
         }
 
@@ -1357,7 +1363,9 @@ SearchEngine.prototype = {
             engine._addIconToMap(width, height, dataURL);
           }
 
-          SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.CHANGED);
+          if (engine._engineAddedToStore) {
+            SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.CHANGED);
+          }
           engine._hasPreferredIcon = isPreferred;
         };
 
