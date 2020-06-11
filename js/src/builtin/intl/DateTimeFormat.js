@@ -49,11 +49,6 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     
     
     
-    
-    
-    
-    
-    
 
     var internalProps = std_Object_create(null);
 
@@ -98,24 +93,21 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
 
     
     var pattern;
-    if (lazyDateTimeFormatData.mozExtensions) {
-        if (lazyDateTimeFormatData.patternOption !== undefined) {
-            pattern = lazyDateTimeFormatData.patternOption;
+    if (lazyDateTimeFormatData.patternOption !== undefined) {
+        pattern = lazyDateTimeFormatData.patternOption;
 
-            internalProps.patternOption = lazyDateTimeFormatData.patternOption;
-        } else if (lazyDateTimeFormatData.dateStyle || lazyDateTimeFormatData.timeStyle) {
-            pattern = intl_patternForStyle(dataLocale,
-              lazyDateTimeFormatData.dateStyle, lazyDateTimeFormatData.timeStyle,
-              lazyDateTimeFormatData.timeZone);
+        internalProps.patternOption = lazyDateTimeFormatData.patternOption;
+    } else if (lazyDateTimeFormatData.dateStyle !== undefined ||
+               lazyDateTimeFormatData.timeStyle !== undefined) {
+        pattern = intl_patternForStyle(dataLocale,
+                                       lazyDateTimeFormatData.dateStyle,
+                                       lazyDateTimeFormatData.timeStyle,
+                                       lazyDateTimeFormatData.timeZone);
 
-            internalProps.dateStyle = lazyDateTimeFormatData.dateStyle;
-            internalProps.timeStyle = lazyDateTimeFormatData.timeStyle;
-        } else {
-            pattern = toBestICUPattern(dataLocale, formatOpt);
-        }
-        internalProps.mozExtensions = true;
+        internalProps.dateStyle = lazyDateTimeFormatData.dateStyle;
+        internalProps.timeStyle = lazyDateTimeFormatData.timeStyle;
     } else {
-      pattern = toBestICUPattern(dataLocale, formatOpt);
+        pattern = toBestICUPattern(dataLocale, formatOpt);
     }
 
     
@@ -411,8 +403,6 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
     
     var formatOpt = new Record();
     lazyDateTimeFormatData.formatOpt = formatOpt;
-
-    lazyDateTimeFormatData.mozExtensions = mozExtensions;
 
     if (mozExtensions) {
         let pattern = GetOption(options, "pattern", "string", undefined, undefined);
@@ -931,16 +921,28 @@ function Intl_DateTimeFormat_resolvedOptions() {
         timeZone: internals.timeZone,
     };
 
-    if (internals.mozExtensions) {
-        if (internals.patternOption !== undefined) {
-            _DefineDataProperty(result, "pattern", internals.pattern);
-        } else if (internals.dateStyle || internals.timeStyle) {
-            _DefineDataProperty(result, "dateStyle", internals.dateStyle);
-            _DefineDataProperty(result, "timeStyle", internals.timeStyle);
-        }
+    if (internals.patternOption !== undefined) {
+        _DefineDataProperty(result, "pattern", internals.pattern);
     }
 
-    resolveICUPattern(internals.pattern, result);
+    var hasDateStyle = internals.dateStyle !== undefined;
+    var hasTimeStyle = internals.timeStyle !== undefined;
+
+    if (hasDateStyle || hasTimeStyle) {
+        if (hasTimeStyle) {
+            
+            
+            resolveICUPattern(internals.pattern, result,  false);
+        }
+        if (hasDateStyle) {
+            _DefineDataProperty(result, "dateStyle", internals.dateStyle);
+        }
+        if (hasTimeStyle) {
+            _DefineDataProperty(result, "timeStyle", internals.timeStyle);
+        }
+    } else {
+        resolveICUPattern(internals.pattern, result,  true);
+    }
 
     
     return result;
@@ -954,7 +956,7 @@ function Intl_DateTimeFormat_resolvedOptions() {
 
 
 
-function resolveICUPattern(pattern, result) {
+function resolveICUPattern(pattern, result, includeDateTimeFields) {
     assert(IsObject(result), "resolveICUPattern");
 
     var hourCycle, weekday, era, year, month, day, dayPeriod, hour, minute, second,
@@ -1086,6 +1088,9 @@ function resolveICUPattern(pattern, result) {
     if (hourCycle) {
         _DefineDataProperty(result, "hourCycle", hourCycle);
         _DefineDataProperty(result, "hour12", hourCycle === "h11" || hourCycle === "h12");
+    }
+    if (!includeDateTimeFields) {
+        return;
     }
     if (weekday) {
         _DefineDataProperty(result, "weekday", weekday);
