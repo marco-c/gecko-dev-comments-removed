@@ -5014,7 +5014,9 @@ AttachDecision CallIRGenerator::tryAttachIsSuspendedGenerator(
   return AttachDecision::Attach;
 }
 
-AttachDecision CallIRGenerator::tryAttachToString(HandleFunction callee) {
+AttachDecision CallIRGenerator::tryAttachToString(HandleFunction callee,
+                                                  InlinableNative native) {
+  
   
   
   if (argc_ != 1 || !args_[0].isString()) {
@@ -5039,7 +5041,12 @@ AttachDecision CallIRGenerator::tryAttachToString(HandleFunction callee) {
   writer.returnFromIC();
   cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
 
-  trackAttached("ToString");
+  if (native == InlinableNative::IntrinsicToString) {
+    trackAttached("ToString");
+  } else {
+    MOZ_ASSERT(native == InlinableNative::String);
+    trackAttached("String");
+  }
   return AttachDecision::Attach;
 }
 
@@ -5862,7 +5869,7 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
     case InlinableNative::IntrinsicIsSuspendedGenerator:
       return tryAttachIsSuspendedGenerator(callee);
     case InlinableNative::IntrinsicToString:
-      return tryAttachToString(callee);
+      return tryAttachToString(callee, native);
     case InlinableNative::IntrinsicToObject:
       return tryAttachToObject(callee, native);
     case InlinableNative::IntrinsicToInteger:
@@ -5882,6 +5889,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachGuardToClass(callee, native);
 
     
+    case InlinableNative::String:
+      return tryAttachToString(callee, native);
     case InlinableNative::StringCharCodeAt:
       return tryAttachStringCharCodeAt(callee);
     case InlinableNative::StringCharAt:
