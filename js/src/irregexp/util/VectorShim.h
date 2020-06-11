@@ -21,6 +21,7 @@ namespace internal {
 
 
 
+
 template <typename T>
 T* NewArray(size_t size) {
   static_assert(std::is_pod<T>::value, "");
@@ -172,13 +173,12 @@ namespace base {
 
 
 
+
 template <typename T, size_t kSize>
 class SmallVector {
-public:
+ public:
   SmallVector() = default;
-  SmallVector(size_t size) {
-    resize_no_init(size);
-  }
+  SmallVector(size_t size) { resize_no_init(size); }
 
   inline bool empty() const { return inner_.empty(); }
   inline const T& back() const { return inner_.back(); }
@@ -197,19 +197,18 @@ public:
   T& operator[](size_t index) { return inner_[index]; }
   const T& operator[](size_t index) const { return inner_[index]; }
 
-
   void resize_no_init(size_t new_size) {
     js::AutoEnterOOMUnsafeRegion oomUnsafe;
     if (!inner_.resizeUninitialized(new_size)) {
       oomUnsafe.crash("Irregexp SmallVector resize");
     }
   }
-private:
+
+ private:
   js::Vector<T, kSize, js::SystemAllocPolicy> inner_;
 };
 
-
-} 
+}  
 
 }  
 

@@ -40,9 +40,11 @@ class Zone {
   bool excess_allocation() const {
     return lifoAlloc_.computedSizeOfExcludingThis() > kExcessLimit;
   }
-private:
- js::LifoAlloc& lifoAlloc_;
+
+ private:
+  js::LifoAlloc& lifoAlloc_;
 };
+
 
 
 
@@ -62,6 +64,8 @@ class ZoneObject {
   void operator delete(void*, size_t) { MOZ_CRASH("unreachable"); }
   void operator delete(void* pointer, Zone* zone) { MOZ_CRASH("unreachable"); }
 };
+
+
 
 
 
@@ -148,7 +152,7 @@ class ZoneList final {
       memcpy(data_ + length_, other.begin(), sizeof(*data_) * other.length());
     } else {
       for (int i = 0; i < other.length(); i++) {
-	data_[length_ + i] = other.at(i);
+        data_[length_ + i] = other.at(i);
       }
     }
     length_ = result_length;
@@ -208,11 +212,11 @@ class ZoneList final {
       oomUnsafe.crash("Irregexp stable sort scratch space");
     }
     auto comparator = [cmp](const T& a, const T& b, bool* lessOrEqual) {
-			*lessOrEqual = cmp(&a, &b) <= 0;
-			return true;
-		      };
-    MOZ_ALWAYS_TRUE(js::MergeSort(begin() + start, length, scratch,
-				  comparator));
+      *lessOrEqual = cmp(&a, &b) <= 0;
+      return true;
+    };
+    MOZ_ALWAYS_TRUE(
+        js::MergeSort(begin() + start, length, scratch, comparator));
     js_free(scratch);
   }
 
@@ -259,9 +263,10 @@ class ZoneList final {
 };
 
 
+
 template <typename T>
 class ZoneAllocator {
-public:
+ public:
   using pointer = T*;
   using const_pointer = const T*;
   using reference = T&;
@@ -291,7 +296,7 @@ public:
     return zone_ != other.zone_;
   }
 
-private:
+ private:
   Zone* zone_;
 };
 
@@ -301,11 +306,12 @@ private:
 
 
 
+
 template <typename T>
 class ZoneVector : public std::vector<T, ZoneAllocator<T>> {
-public:
+ public:
   ZoneVector(Zone* zone)
-    : std::vector<T, ZoneAllocator<T>>(ZoneAllocator<T>(zone)) {}
+      : std::vector<T, ZoneAllocator<T>>(ZoneAllocator<T>(zone)) {}
 
   
   
@@ -367,7 +373,7 @@ class ZoneUnorderedMap
             ZoneAllocator<std::pair<const K, V>>(zone)) {}
 };
 
-} 
-} 
+}  
+}  
 
 #endif  

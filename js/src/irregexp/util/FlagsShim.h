@@ -7,6 +7,7 @@
 
 
 
+
 namespace v8 {
 namespace base {
 
@@ -26,8 +27,7 @@ class Flags final {
   using mask_type = S;
 
   constexpr Flags() : mask_(0) {}
-  constexpr Flags(flag_type flag)
-      : mask_(static_cast<S>(flag)) {}
+  constexpr Flags(flag_type flag) : mask_(static_cast<S>(flag)) {}
   constexpr explicit Flags(mask_type mask) : mask_(static_cast<S>(mask)) {}
 
   constexpr bool operator==(flag_type flag) const {
@@ -87,7 +87,7 @@ class Flags final {
   mask_type mask_;
 };
 
-} 
-} 
+}  
+}  
 
 #endif  

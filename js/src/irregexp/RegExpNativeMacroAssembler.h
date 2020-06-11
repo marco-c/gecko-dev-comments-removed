@@ -31,15 +31,15 @@ struct FrameData {
   void* backtrackStackBase;
 
   
-  int32_t* matches;   
-  int32_t numMatches; 
+  int32_t* matches;    
+  int32_t numMatches;  
 };
 
 class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
  public:
   SMRegExpMacroAssembler(JSContext* cx, js::jit::StackMacroAssembler& masm,
                          Zone* zone, Mode mode, uint32_t num_capture_registers);
-  virtual ~SMRegExpMacroAssembler() {} 
+  virtual ~SMRegExpMacroAssembler() = default;
 
   virtual int stack_limit_slack();
   virtual IrregexpImplementation Implementation();
@@ -103,6 +103,7 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   virtual Handle<HeapObject> GetCode(Handle<String> source);
 
   virtual bool CanReadUnaligned();
+
  private:
   size_t frameSize_ = 0;
 

@@ -40,16 +40,14 @@ struct InputOutputData {
   template <typename CharT>
   InputOutputData(const CharT* inputStart, const CharT* inputEnd,
                   size_t startIndex, js::MatchPairs* matches)
-    : inputStart(inputStart),
-      inputEnd(inputEnd),
-      startIndex(startIndex),
-      matches(matches)
-  {}
+      : inputStart(inputStart),
+        inputEnd(inputEnd),
+        startIndex(startIndex),
+        matches(matches) {}
 };
 
-} 
-} 
-
+}  
+}  
 
 namespace js {
 namespace irregexp {
@@ -61,7 +59,7 @@ using ByteArrayData = v8::internal::ByteArrayData;
 using ByteArray = js::UniquePtr<v8::internal::ByteArrayData, JS::FreePolicy>;
 using InputOutputData = v8::internal::InputOutputData;
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  
