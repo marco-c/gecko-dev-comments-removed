@@ -190,6 +190,24 @@
 
 - (id _Nullable)moxMathOver;
 
+
+- (NSString* _Nullable)moxInvalid;
+
+
+- (NSString* _Nullable)moxSelectedText;
+
+
+- (NSValue* _Nullable)moxSelectedTextRange;
+
+
+- (NSNumber* _Nullable)moxNumberOfCharacters;
+
+
+- (NSValue* _Nullable)moxVisibleCharacterRange;
+
+
+- (NSNumber* _Nullable)moxInsertionPointLineNumber;
+
 #pragma mark - AttributeSetters
 
 
@@ -203,6 +221,15 @@
 
 
 - (void)moxSetSelectedChildren:(NSArray* _Nullable)selectedChildren;
+
+
+- (void)moxSetSelectedText:(NSString* _Nullable)selectedText;
+
+
+- (void)moxSetSelectedTextRange:(NSValue* _Nullable)selectedTextRange;
+
+
+- (void)moxSetVisibleCharacterRange:(NSValue* _Nullable)visibleCharacterRange;
 
 #pragma mark - Actions
 
