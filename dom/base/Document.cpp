@@ -13589,10 +13589,11 @@ static const char* GetFullscreenError(Document* aDoc, CallerType aCallerType) {
 
   
   
-  nsCOMPtr<nsIDocShell> docShell(aDoc->GetDocShell());
-  if (!docShell || !docShell->GetFullscreenAllowed()) {
+  BrowsingContext* bc = aDoc->GetBrowsingContext();
+  if (!bc || !bc->FullscreenAllowed()) {
     return "FullscreenDeniedContainerNotAllowed";
   }
+
   return nullptr;
 }
 

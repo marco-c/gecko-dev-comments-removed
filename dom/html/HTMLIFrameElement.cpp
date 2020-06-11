@@ -169,6 +169,15 @@ nsresult HTMLIFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
         
         mFrameLoader->ApplySandboxFlags(GetSandboxFlags());
       }
+    } else if (aName == nsGkAtoms::allowfullscreen ||
+               aName == nsGkAtoms::mozallowfullscreen) {
+      if (mFrameLoader) {
+        if (auto* bc = mFrameLoader->GetExtantBrowsingContext()) {
+          
+          
+          bc->SetFullscreenAllowedByOwner(AllowFullscreen());
+        }
+      }
     }
 
     if (StaticPrefs::dom_security_featurePolicy_enabled()) {

@@ -32,6 +32,12 @@ class HTMLEmbedElement final : public nsGenericHTMLElement,
   NS_IMETHOD PostHandleEvent(EventChainPostVisitor& aVisitor) override;
 #endif
 
+  bool AllowFullscreen() const {
+    
+    
+    return IsRewrittenYoutubeEmbed() && GetBoolAttr(nsGkAtoms::allowfullscreen);
+  }
+
   
   virtual void AsyncEventRunning(AsyncEventDispatcher* aEvent) override;
 
