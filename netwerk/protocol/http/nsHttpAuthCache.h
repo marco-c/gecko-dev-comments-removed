@@ -200,6 +200,9 @@ class nsHttpAuthCache {
   
   void ClearAll();
 
+  
+  void CollectKeys(nsTArray<nsCString>& aValue);
+
  private:
   nsHttpAuthNode* LookupAuthNode(const char* scheme, const char* host,
                                  int32_t port, nsACString const& originSuffix,

@@ -65,6 +65,11 @@ interface nsIHttpProtocolHandler : nsIProxiedProtocolHandler
     
 
 
+    [must_use] readonly attribute Array<ACString> authCacheKeys;
+
+    
+
+
 
 
 
