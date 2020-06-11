@@ -150,8 +150,9 @@ void LIRGeneratorX86Shared::lowerMulI(MMul* mul, MDefinition* lhs,
                                       MDefinition* rhs) {
   
   LAllocation lhsCopy = mul->canBeNegativeZero() ? use(lhs) : LAllocation();
-  LMulI* lir =
-      new (alloc()) LMulI(useRegisterAtStart(lhs), useOrConstant(rhs), lhsCopy);
+  LMulI* lir = new (alloc()) LMulI(
+      useRegisterAtStart(lhs),
+      lhs != rhs ? useOrConstant(rhs) : useOrConstantAtStart(rhs), lhsCopy);
   if (mul->fallible()) {
     assignSnapshot(lir, Bailout_DoubleOutput);
   }
