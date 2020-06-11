@@ -55,10 +55,7 @@ class Connection final : public mozIStorageConnection,
 
 
   struct FunctionInfo {
-    enum FunctionType { SIMPLE, AGGREGATE };
-
     nsCOMPtr<nsISupports> function;
-    FunctionType type;
     int32_t numArgs;
   };
 
