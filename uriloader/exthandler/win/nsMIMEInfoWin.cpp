@@ -94,7 +94,8 @@ nsMIMEInfoWin::LaunchWithFile(nsIFile* aFile) {
                "nsMIMEInfoBase should have mClass == eMIMEInfo");
 
   if (mPreferredAction == useSystemDefault) {
-    if (StaticPrefs::browser_pdf_launchDefaultEdgeAsApp()) {
+    if (mDefaultApplication &&
+        StaticPrefs::browser_pdf_launchDefaultEdgeAsApp()) {
       
       
       
