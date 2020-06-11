@@ -53,7 +53,7 @@ function ModuleGetExportedNames(exportStarSet = [])
     for (let i = 0; i < starExportEntries.length; i++) {
         let e = starExportEntries[i];
         let requestedModule = CallModuleResolveHook(module, e.moduleRequest,
-                                                    MODULE_STATUS_UNINSTANTIATED);
+                                                    MODULE_STATUS_UNLINKED);
         let starNames = callFunction(requestedModule.getExportedNames, requestedModule,
                                      exportStarSet);
         for (let j = 0; j < starNames.length; j++) {
@@ -68,14 +68,14 @@ function ModuleGetExportedNames(exportStarSet = [])
 
 function ModuleSetStatus(module, newStatus)
 {
-    assert(newStatus >= MODULE_STATUS_UNINSTANTIATED &&
+    assert(newStatus >= MODULE_STATUS_UNLINKED &&
            newStatus <= MODULE_STATUS_EVALUATED_ERROR,
            "Bad new module status in ModuleSetStatus");
 
     
     
-    assert((module.status <= MODULE_STATUS_INSTANTIATED &&
-            newStatus === MODULE_STATUS_UNINSTANTIATED) ||
+    assert((module.status <= MODULE_STATUS_LINKED &&
+            newStatus === MODULE_STATUS_UNLINKED) ||
            newStatus > module.status,
            "New module status inconsistent with current status");
 
@@ -133,7 +133,7 @@ function ModuleResolveExport(exportName, resolveSet = [])
         let e = indirectExportEntries[i];
         if (exportName === e.exportName) {
             let importedModule = CallModuleResolveHook(module, e.moduleRequest,
-                                                       MODULE_STATUS_UNINSTANTIATED);
+                                                       MODULE_STATUS_UNLINKED);
             return callFunction(importedModule.resolveExport, importedModule, e.importName,
                                 resolveSet);
         }
@@ -153,7 +153,7 @@ function ModuleResolveExport(exportName, resolveSet = [])
     for (let i = 0; i < starExportEntries.length; i++) {
         let e = starExportEntries[i];
         let importedModule = CallModuleResolveHook(module, e.moduleRequest,
-                                                   MODULE_STATUS_UNINSTANTIATED);
+                                                   MODULE_STATUS_UNLINKED);
         let resolution = callFunction(importedModule.resolveExport, importedModule, exportName,
                                       resolveSet);
         if (resolution === "ambiguous")
@@ -189,7 +189,7 @@ function GetModuleNamespace(module)
     assert(IsObject(module) && IsModule(module), "GetModuleNamespace called with non-module");
 
     
-    assert(module.status !== MODULE_STATUS_UNINSTANTIATED,
+    assert(module.status !== MODULE_STATUS_UNLINKED,
            "Bad module state in GetModuleNamespace");
 
     
@@ -231,12 +231,13 @@ function ModuleNamespaceCreate(module, exports)
     return ns;
 }
 
+
 function GetModuleEnvironment(module)
 {
     assert(IsObject(module) && IsModule(module), "Non-module passed to GetModuleEnvironment");
 
-    assert(module.status >= MODULE_STATUS_INSTANTIATING,
-           "Attempt to access module environement before instantation");
+    assert(module.status >= MODULE_STATUS_LINKING,
+           "Attempt to access module environement before linking");
 
     let env = UnsafeGetReservedSlot(module, MODULE_OBJECT_ENVIRONMENT_SLOT);
     assert(IsObject(env) && IsModuleEnvironment(env),
@@ -269,7 +270,7 @@ function HandleModuleInstantiationFailure(module)
     
     
     
-    ModuleSetStatus(module, MODULE_STATUS_UNINSTANTIATED);
+    ModuleSetStatus(module, MODULE_STATUS_UNLINKED);
     UnsafeSetReservedSlot(module, MODULE_OBJECT_DFS_INDEX_SLOT, undefined);
     UnsafeSetReservedSlot(module, MODULE_OBJECT_DFS_ANCESTOR_INDEX_SLOT, undefined);
 }
@@ -284,7 +285,7 @@ function ModuleInstantiate()
     let module = this;
 
     
-    if (module.status === MODULE_STATUS_INSTANTIATING ||
+    if (module.status === MODULE_STATUS_LINKING ||
         module.status === MODULE_STATUS_EVALUATING)
     {
         ThrowInternalError(JSMSG_BAD_MODULE_STATUS);
@@ -295,49 +296,54 @@ function ModuleInstantiate()
 
     
     try {
-        InnerModuleInstantiation(module, stack, 0);
+        InnerModuleLinking(module, stack, 0);
     } catch (error) {
         for (let i = 0; i < stack.length; i++) {
             let m = stack[i];
-            if (m.status === MODULE_STATUS_INSTANTIATING) {
+            if (m.status === MODULE_STATUS_LINKING) {
                 HandleModuleInstantiationFailure(m);
             }
         }
 
         
-        if (stack.length === 0 && module.status === MODULE_STATUS_INSTANTIATING) {
+        if (stack.length === 0 && module.status === MODULE_STATUS_LINKING) {
             HandleModuleInstantiationFailure(module);
         }
 
-        assert(module.status !== MODULE_STATUS_INSTANTIATING,
-               "Expected uninstantiated status after failed instantiation");
+        assert(module.status !== MODULE_STATUS_LINKING,
+               "Expected unlinked status after failed linking");
 
         throw error;
     }
 
     
-    assert(module.status === MODULE_STATUS_INSTANTIATED ||
+    assert(module.status === MODULE_STATUS_LINKED ||
            module.status === MODULE_STATUS_EVALUATED ||
            module.status === MODULE_STATUS_EVALUATED_ERROR,
-           "Bad module status after successful instantiation");
+           "Bad module status after successful linking");
 
     
     assert(stack.length === 0,
-           "Stack should be empty after successful instantiation");
+           "Stack should be empty after successful linking");
 
     
     return undefined;
 }
 
 
-function InnerModuleInstantiation(module, stack, index)
+
+
+function InnerModuleLinking(module, stack, index)
 {
+    
+    
+    
     
     
 
     
-    if (module.status === MODULE_STATUS_INSTANTIATING ||
-        module.status === MODULE_STATUS_INSTANTIATED ||
+    if (module.status === MODULE_STATUS_LINKING ||
+        module.status === MODULE_STATUS_LINKED ||
         module.status === MODULE_STATUS_EVALUATED ||
         module.status === MODULE_STATUS_EVALUATED_ERROR)
     {
@@ -345,42 +351,49 @@ function InnerModuleInstantiation(module, stack, index)
     }
 
     
-    if (module.status !== MODULE_STATUS_UNINSTANTIATED)
+    if (module.status !== MODULE_STATUS_UNLINKED)
         ThrowInternalError(JSMSG_BAD_MODULE_STATUS);
 
     
-    ModuleSetStatus(module, MODULE_STATUS_INSTANTIATING);
+    ModuleSetStatus(module, MODULE_STATUS_LINKING);
 
     
     UnsafeSetReservedSlot(module, MODULE_OBJECT_DFS_INDEX_SLOT, index);
+    
     UnsafeSetReservedSlot(module, MODULE_OBJECT_DFS_ANCESTOR_INDEX_SLOT, index);
+    
     index++;
 
     
     _DefineDataProperty(stack, stack.length, module);
 
-    
+		
     let requestedModules = module.requestedModules;
     for (let i = 0; i < requestedModules.length; i++) {
+        
         let required = requestedModules[i].moduleSpecifier;
-        let requiredModule = CallModuleResolveHook(module, required, MODULE_STATUS_UNINSTANTIATED);
+        let requiredModule = CallModuleResolveHook(module, required, MODULE_STATUS_UNLINKED);
 
-        index = InnerModuleInstantiation(requiredModule, stack, index);
+        index = InnerModuleLinking(requiredModule, stack, index);
 
-        assert(requiredModule.status === MODULE_STATUS_INSTANTIATING ||
-               requiredModule.status === MODULE_STATUS_INSTANTIATED ||
+        
+        
+        assert(requiredModule.status === MODULE_STATUS_LINKING ||
+               requiredModule.status === MODULE_STATUS_LINKED ||
                requiredModule.status === MODULE_STATUS_EVALUATED ||
                requiredModule.status === MODULE_STATUS_EVALUATED_ERROR,
-               "Bad required module status after InnerModuleInstantiation");
+               "Bad required module status after InnerModuleLinking");
 
-        assert((requiredModule.status === MODULE_STATUS_INSTANTIATING) ===
+        
+        assert((requiredModule.status === MODULE_STATUS_LINKING) ===
                ArrayContains(stack, requiredModule),
               "Required module should be in the stack iff it is currently being instantiated");
 
         assert(typeof requiredModule.dfsIndex === "number", "Bad dfsIndex");
         assert(typeof requiredModule.dfsAncestorIndex === "number", "Bad dfsAncestorIndex");
 
-        if (requiredModule.status === MODULE_STATUS_INSTANTIATING) {
+        
+        if (requiredModule.status === MODULE_STATUS_LINKING) {
             UnsafeSetReservedSlot(module, MODULE_OBJECT_DFS_ANCESTOR_INDEX_SLOT,
                                   std_Math_min(module.dfsAncestorIndex,
                                                requiredModule.dfsAncestorIndex));
@@ -388,11 +401,12 @@ function InnerModuleInstantiation(module, stack, index)
     }
 
     
-    ModuleDeclarationEnvironmentSetup(module);
+    callFunction(InitializeEnvironment, module);
 
     
     assert(CountArrayValues(stack, module) === 1,
            "Current module should appear exactly once in the stack");
+    
     assert(module.dfsAncestorIndex <= module.dfsIndex,
            "Bad DFS ancestor index");
 
@@ -400,8 +414,11 @@ function InnerModuleInstantiation(module, stack, index)
     if (module.dfsAncestorIndex === module.dfsIndex) {
         let requiredModule;
         do {
+            
             requiredModule = callFunction(std_Array_pop, stack);
-            ModuleSetStatus(requiredModule, MODULE_STATUS_INSTANTIATED);
+            
+            
+            ModuleSetStatus(requiredModule, MODULE_STATUS_LINKED);
         } while (requiredModule !== module);
     }
 
@@ -410,8 +427,13 @@ function InnerModuleInstantiation(module, stack, index)
 }
 
 
-function ModuleDeclarationEnvironmentSetup(module)
+
+
+function InitializeEnvironment()
 {
+    
+    let module = this;
+
     
     let indirectExportEntries = module.indirectExportEntries;
     for (let i = 0; i < indirectExportEntries.length; i++) {
@@ -425,6 +447,9 @@ function ModuleDeclarationEnvironmentSetup(module)
 
     
     
+
+    
+    
     let env = GetModuleEnvironment(module);
 
     
@@ -432,7 +457,8 @@ function ModuleDeclarationEnvironmentSetup(module)
     for (let i = 0; i < importEntries.length; i++) {
         let imp = importEntries[i];
         let importedModule = CallModuleResolveHook(module, imp.moduleRequest,
-                                                   MODULE_STATUS_INSTANTIATING);
+                                                   MODULE_STATUS_LINKING);
+        
         if (imp.importName === "*") {
             let namespace = GetModuleNamespace(importedModule);
             CreateNamespaceBinding(env, imp.localName, namespace);
@@ -448,12 +474,20 @@ function ModuleDeclarationEnvironmentSetup(module)
         }
     }
 
+    
+    
+    
+    
+    
+
+    
+    
     InstantiateModuleFunctionDeclarations(module);
 }
 
 function ThrowResolutionError(module, resolution, kind, name, line, column)
 {
-    assert(module.status === MODULE_STATUS_INSTANTIATING,
+    assert(module.status === MODULE_STATUS_LINKING,
            "Unexpected module status in ThrowResolutionError");
 
     assert(kind === "import" || kind === "indirectExport",
@@ -513,7 +547,7 @@ function ModuleEvaluate()
     let module = this;
 
     
-    if (module.status !== MODULE_STATUS_INSTANTIATED &&
+    if (module.status !== MODULE_STATUS_LINKED &&
         module.status !== MODULE_STATUS_EVALUATED &&
         module.status !== MODULE_STATUS_EVALUATED_ERROR)
     {
@@ -570,7 +604,7 @@ function InnerModuleEvaluation(module, stack, index)
         return index;
 
     
-    assert(module.status === MODULE_STATUS_INSTANTIATED,
+    assert(module.status === MODULE_STATUS_LINKED,
           "Bad module status in InnerModuleEvaluation");
 
     
@@ -589,7 +623,7 @@ function InnerModuleEvaluation(module, stack, index)
     for (let i = 0; i < requestedModules.length; i++) {
         let required = requestedModules[i].moduleSpecifier;
         let requiredModule =
-            CallModuleResolveHook(module, required, MODULE_STATUS_INSTANTIATED);
+            CallModuleResolveHook(module, required, MODULE_STATUS_LINKED);
 
         index = InnerModuleEvaluation(requiredModule, stack, index);
 
