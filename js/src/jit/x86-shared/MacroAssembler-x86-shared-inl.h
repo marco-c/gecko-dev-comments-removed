@@ -1376,6 +1376,28 @@ void MacroAssembler::allTrueInt32x4(FloatRegister src, Register dest) {
 
 
 
+void MacroAssembler::bitmaskInt8x16(FloatRegister src, Register dest) {
+  vpmovmskb(src, dest);
+}
+
+void MacroAssembler::bitmaskInt16x8(FloatRegister src, Register dest) {
+  ScratchSimd128Scope scratch(*this);
+  
+  
+  
+  
+  moveSimd128(src, scratch);
+  vpacksswb(Operand(scratch), scratch, scratch);
+  vpmovmskb(scratch, dest);
+  andl(Imm32(0xFF), dest);
+}
+
+void MacroAssembler::bitmaskInt32x4(FloatRegister src, Register dest) {
+  vmovmskps(src, dest);
+}
+
+
+
 void MacroAssembler::swizzleInt8x16(FloatRegister rhs, FloatRegister lhsDest,
                                     FloatRegister temp) {
   ScratchSimd128Scope scratch(*this);

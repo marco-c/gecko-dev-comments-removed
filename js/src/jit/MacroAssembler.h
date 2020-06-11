@@ -2311,6 +2311,17 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
 
+  inline void bitmaskInt8x16(FloatRegister src, Register dest)
+      DEFINED_ON(x86_shared);
+
+  inline void bitmaskInt16x8(FloatRegister src, Register dest)
+      DEFINED_ON(x86_shared);
+
+  inline void bitmaskInt32x4(FloatRegister src, Register dest)
+      DEFINED_ON(x86_shared);
+
+  
+
   inline void compareInt8x16(Assembler::Condition cond, FloatRegister rhs,
                              FloatRegister lhsDest) DEFINED_ON(x86_shared);
 
