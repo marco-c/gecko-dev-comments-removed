@@ -13,16 +13,10 @@
 
 
 
-dictionary L10nIdArgs {
-  required UTF8String id;
+dictionary L10nKey {
+  UTF8String? id = null;
   L10nArgs? args = null;
 };
-
-
-
-
-
-typedef (UTF8String or L10nIdArgs) L10nKey;
 
 
 
