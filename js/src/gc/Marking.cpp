@@ -2700,8 +2700,6 @@ void GCMarker::repush(JSObject* obj) {
 }
 
 bool GCMarker::enterWeakMarkingMode() {
-  MOZ_ASSERT(runtime()->gc.nursery().isEmpty());
-
   MOZ_ASSERT(weakMapAction() == ExpandWeakMaps);
   MOZ_ASSERT(state != MarkingState::WeakMarking);
   if (state == MarkingState::IterativeMarking) {
@@ -3745,8 +3743,7 @@ inline bool SweepingTracer::sweepEdge(T** thingp) {
   
   
   
-  TenuredCell& tenured = thing->asTenured();
-  if (!tenured.isMarkedAny()) {
+  if (!thing->isMarkedAny()) {
     *thingp = nullptr;
     return false;
   }

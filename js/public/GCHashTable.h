@@ -76,7 +76,12 @@ class GCHashMap : public js::HashMap<Key, Value, HashPolicy, AllocPolicy> {
   bool needsSweep() const { return !this->empty(); }
 
   void sweep() {
-    for (typename Base::Enum e(*this); !e.empty(); e.popFront()) {
+    typename Base::Enum e(*this);
+    sweepEntries(e);
+  }
+
+  void sweepEntries(typename Base::Enum& e) {
+    for (; !e.empty(); e.popFront()) {
       if (MapSweepPolicy::needsSweep(&e.front().mutableKey(),
                                      &e.front().value())) {
         e.removeFront();
@@ -270,7 +275,12 @@ class GCHashSet : public js::HashSet<T, HashPolicy, AllocPolicy> {
   bool needsSweep() const { return !this->empty(); }
 
   void sweep() {
-    for (typename Base::Enum e(*this); !e.empty(); e.popFront()) {
+    typename Base::Enum e(*this);
+    sweepEntries(e);
+  }
+
+  void sweepEntries(typename Base::Enum& e) {
+    for (; !e.empty(); e.popFront()) {
       if (GCPolicy<T>::needsSweep(&e.mutableFront())) {
         e.removeFront();
       }
@@ -410,9 +420,22 @@ class WeakCache<GCHashMap<Key, Value, HashPolicy, AllocPolicy, MapSweepPolicy>>
 
   bool needsSweep() override { return map.needsSweep(); }
 
-  size_t sweep() override {
+  size_t sweep(js::gc::StoreBuffer* sbToLock) override {
     size_t steps = map.count();
-    map.sweep();
+
+    
+    mozilla::Maybe<typename Map::Enum> e;
+    e.emplace(map);
+    map.sweepEntries(e.ref());
+
+    
+    
+    mozilla::Maybe<js::gc::AutoLockStoreBuffer> lock;
+    if (sbToLock) {
+      lock.emplace(sbToLock);
+    }
+    e.reset();
+
     return steps;
   }
 
@@ -593,9 +616,24 @@ class WeakCache<GCHashSet<T, HashPolicy, AllocPolicy>>
         set(std::forward<Args>(args)...),
         needsBarrier(false) {}
 
-  size_t sweep() override {
+  size_t sweep(js::gc::StoreBuffer* sbToLock) override {
     size_t steps = set.count();
-    set.sweep();
+
+    
+    
+    mozilla::Maybe<typename Set::Enum> e;
+    e.emplace(set);
+    set.sweepEntries(e.ref());
+
+    
+    
+    
+    mozilla::Maybe<js::gc::AutoLockStoreBuffer> lock;
+    if (sbToLock) {
+      lock.emplace(sbToLock);
+    }
+    e.reset();
+
     return steps;
   }
 

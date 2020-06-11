@@ -497,7 +497,6 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
   JSRuntime* runtime = gc->rt;
   GCMarker* gcmarker = &gc->marker;
 
-  MOZ_ASSERT(gc->nursery().isEmpty());
   MOZ_ASSERT(!gcmarker->isWeakMarking());
 
   
@@ -671,7 +670,6 @@ void js::gc::MarkingValidator::validate() {
     return;
   }
 
-  MOZ_ASSERT(gc->nursery().isEmpty());
   MOZ_ASSERT(!gc->marker.isWeakMarking());
 
   gc->waitBackgroundSweepEnd();

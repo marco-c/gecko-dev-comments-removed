@@ -19,12 +19,17 @@
 #include "js/AllocPolicy.h"
 #include "js/MemoryMetrics.h"
 #include "js/UniquePtr.h"
+#include "threading/Mutex.h"
 
 namespace js {
 namespace gc {
 
 class Arena;
 class ArenaCellSet;
+
+#ifdef DEBUG
+extern bool CurrentThreadHasLockedGC();
+#endif
 
 
 
@@ -378,10 +383,23 @@ class StoreBuffer {
     } Hasher;
   };
 
+  
+  
+  
+  inline void CheckAccess() const {
+#ifdef DEBUG
+    if (JS::RuntimeHeapIsBusy()) {
+      MOZ_ASSERT((CurrentThreadCanAccessRuntime(runtime_) && !lock_.isHeld()) ||
+                 lock_.ownedByCurrentThread());
+    } else {
+      MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
+    }
+#endif
+  }
+
   template <typename Buffer, typename Edge>
   void unput(Buffer& buffer, const Edge& edge) {
-    MOZ_ASSERT(!JS::RuntimeHeapIsBusy());
-    MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
+    CheckAccess();
     if (!isEnabled()) {
       return;
     }
@@ -391,8 +409,7 @@ class StoreBuffer {
 
   template <typename Buffer, typename Edge>
   void put(Buffer& buffer, const Edge& edge) {
-    MOZ_ASSERT(!JS::RuntimeHeapIsBusy());
-    MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
+    CheckAccess();
     if (!isEnabled()) {
       return;
     }
@@ -402,6 +419,8 @@ class StoreBuffer {
     }
   }
 
+  Mutex lock_;
+
   MonoTypeBuffer<ValueEdge> bufferVal;
   MonoTypeBuffer<StringPtrEdge> bufStrCell;
   MonoTypeBuffer<BigIntPtrEdge> bufBigIntCell;
@@ -409,13 +428,15 @@ class StoreBuffer {
   MonoTypeBuffer<SlotsEdge> bufferSlot;
   WholeCellBuffer bufferWholeCell;
   GenericBuffer bufferGeneric;
-  bool cancelIonCompilations_;
 
   JSRuntime* runtime_;
   const Nursery& nursery_;
 
   bool aboutToOverflow_;
   bool enabled_;
+  bool cancelIonCompilations_;
+  bool hasTypeSetPointers_;
+  bool mayHavePointersToDeadCells_;
 #ifdef DEBUG
   bool mEntered; 
 #endif
@@ -435,6 +456,21 @@ class StoreBuffer {
   bool isAboutToOverflow() const { return aboutToOverflow_; }
 
   bool cancelIonCompilations() const { return cancelIonCompilations_; }
+
+  
+
+
+
+
+  bool hasTypeSetPointers() const { return hasTypeSetPointers_; }
+
+  
+
+
+
+  bool mayHavePointersToDeadCells() const {
+    return mayHavePointersToDeadCells_;
+  }
 
   
   void putValue(JS::Value* vp) { put(bufferVal, ValueEdge(vp)); }
@@ -467,6 +503,8 @@ class StoreBuffer {
   }
 
   void setShouldCancelIonCompilations() { cancelIonCompilations_ = true; }
+  void setHasTypeSetPointers() { hasTypeSetPointers_ = true; }
+  void setMayHavePointersToDeadCells() { mayHavePointersToDeadCells_ = true; }
 
   
   void traceValues(TenuringTracer& mover) { bufferVal.trace(mover); }
@@ -486,6 +524,10 @@ class StoreBuffer {
                               JS::GCSizes* sizes);
 
   void checkEmpty() const;
+
+  
+  void lock() { lock_.lock(); }
+  void unlock() { lock_.unlock(); }
 };
 
 

@@ -705,6 +705,8 @@ class GCRuntime {
                         JS::GCReason reason, AutoGCSession& session);
   MOZ_MUST_USE bool shouldCollectNurseryForSlice(bool nonincrementalByAPI,
                                                  SliceBudget& budget);
+  bool mightSweepInThisSlice(bool nonIncremental);
+  bool mightCompactInThisSlice(bool nonIncremental);
   void collectNursery(JS::GCReason reason, gcstats::PhaseKind phase);
 
   friend class AutoCallGCCallbacks;
@@ -1200,7 +1202,10 @@ class GCRuntime {
 
  private:
   MainThreadData<Nursery> nursery_;
-  MainThreadData<gc::StoreBuffer> storeBuffer_;
+
+  
+  
+  MainThreadOrGCTaskData<gc::StoreBuffer> storeBuffer_;
 
   mozilla::TimeStamp lastLastDitchTime;
 
