@@ -114,8 +114,6 @@ nsresult NSSKeyStore::StoreSecret(const nsACString& aSecret,
   
   
   
-  
-  
   nsresult rv = DeleteSecret(aLabel);
   if (NS_FAILED(rv)) {
     MOZ_LOG(gNSSKeyStoreLog, LogLevel::Debug,

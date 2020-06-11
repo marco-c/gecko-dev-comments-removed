@@ -46,7 +46,12 @@ var OSKeyStore = {
 
 
 
-  STORE_LABEL: AppConstants.MOZ_APP_NAME,
+
+
+
+
+
+  STORE_LABEL: AppConstants.MOZ_APP_BASENAME + " Encrypted Storage",
 
   
 
