@@ -42,13 +42,14 @@ class StreamControl {
   
   
   
-  void AddReadStream(ReadStream::Controllable* aReadStream);
+  void AddReadStream(SafeRefPtr<ReadStream::Controllable> aReadStream);
 
   
-  void ForgetReadStream(ReadStream::Controllable* aReadStream);
+  void ForgetReadStream(SafeRefPtr<ReadStream::Controllable> aReadStream);
 
   
-  void NoteClosed(ReadStream::Controllable* aReadStream, const nsID& aId);
+  void NoteClosed(SafeRefPtr<ReadStream::Controllable> aReadStream,
+                  const nsID& aId);
 
  protected:
   ~StreamControl();
@@ -73,7 +74,7 @@ class StreamControl {
  private:
   
   
-  typedef nsTObserverArray<RefPtr<ReadStream::Controllable>> ReadStreamList;
+  typedef nsTObserverArray<SafeRefPtr<ReadStream::Controllable>> ReadStreamList;
   ReadStreamList mReadStreamList;
 };
 
