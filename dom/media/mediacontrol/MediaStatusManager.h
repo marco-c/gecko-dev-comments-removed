@@ -176,6 +176,13 @@ class MediaStatusManager : public IMediaInfoUpdater {
   ~MediaStatusManager() = default;
   virtual void HandleActualPlaybackStateChanged() = 0;
 
+  
+  
+  MediaEventSource<nsTArray<MediaSessionAction>>&
+  SupportedActionsChangedEvent() {
+    return mSupportedActionsChangedEvent;
+  }
+
   uint64_t mTopLevelBrowsingContextId;
 
   
@@ -193,6 +200,13 @@ class MediaStatusManager : public IMediaInfoUpdater {
   void SetActiveMediaSessionContextId(uint64_t aBrowsingContextId);
   void ClearActiveMediaSessionContextIdIfNeeded();
   void HandleAudioFocusOwnerChanged(Maybe<uint64_t>& aBrowsingContextId);
+
+  void NotifySupportedKeysChangedIfNeeded(uint64_t aBrowsingContextId);
+
+  
+  
+  
+  CopyableTArray<MediaSessionAction> GetSupportedActions() const;
 
   
   
@@ -225,6 +239,8 @@ class MediaStatusManager : public IMediaInfoUpdater {
 
   nsDataHashtable<nsUint64HashKey, MediaSessionInfo> mMediaSessionInfoMap;
   MediaEventProducer<MediaMetadataBase> mMetadataChangedEvent;
+  MediaEventProducer<nsTArray<MediaSessionAction>>
+      mSupportedActionsChangedEvent;
   MediaPlaybackStatus mPlaybackStatusDelegate;
 };
 

@@ -125,6 +125,9 @@ class MPRISServiceHandler final : public dom::MediaControlKeysEventSource {
   void SetMediaMetadata(const dom::MediaMetadataBase& aMetadata) override;
   GVariant* GetMetadataAsGVariant() const;
 
+  
+  void SetSupportedMediaKeys(const MediaKeysArray& aSupportedKeys) override {}
+
  private:
   ~MPRISServiceHandler();
 

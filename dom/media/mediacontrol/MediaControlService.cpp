@@ -330,19 +330,21 @@ void MediaControlService::ControllerManager::UpdateMainControllerInternal(
   MOZ_ASSERT(NS_IsMainThread());
   mMainController = aController;
 
-  
-  
-  DisconnectMainControllerEvents();
-
   if (!mMainController) {
     LOG_MAINCONTROLLER_INFO("Clear main controller");
     mSource->SetPlaybackState(MediaSessionPlaybackState::None);
     mSource->SetMediaMetadata(MediaMetadataBase::EmptyData());
+    mSource->SetSupportedMediaKeys(MediaKeysArray());
+    DisconnectMainControllerEvents();
   } else {
     LOG_MAINCONTROLLER_INFO("Set controller %" PRId64 " as main controller",
                             mMainController->Id());
-    ConnectToMainControllerEvents();
+    mSource->SetPlaybackState(mMainController->GetState());
+    mSource->SetMediaMetadata(mMainController->GetCurrentMediaMetadata());
+    mSource->SetSupportedMediaKeys(mMainController->GetSupportedMediaKeys());
+    ConnectMainControllerEvents();
   }
+
   if (StaticPrefs::media_mediacontrol_testingevents_enabled()) {
     if (nsCOMPtr<nsIObserverService> obs = services::GetObserverService()) {
       obs->NotifyObservers(nullptr, "main-media-controller-changed", nullptr);
@@ -350,20 +352,26 @@ void MediaControlService::ControllerManager::UpdateMainControllerInternal(
   }
 }
 
-void MediaControlService::ControllerManager::ConnectToMainControllerEvents() {
-  MOZ_ASSERT(mMainController);
+void MediaControlService::ControllerManager::ConnectMainControllerEvents() {
+  
+  
+  DisconnectMainControllerEvents();
+  
   
   mMetadataChangedListener = mMainController->MetadataChangedEvent().Connect(
       AbstractThread::MainThread(), this,
       &ControllerManager::MainControllerMetadataChanged);
-
-  
-  mSource->SetPlaybackState(mMainController->GetState());
-  mSource->SetMediaMetadata(mMainController->GetCurrentMediaMetadata());
+  mSupportedKeysChangedListener =
+      mMainController->SupportedKeysChangedEvent().Connect(
+          AbstractThread::MainThread(),
+          [this](const MediaKeysArray& aSupportedKeys) {
+            mSource->SetSupportedMediaKeys(aSupportedKeys);
+          });
 }
 
 void MediaControlService::ControllerManager::DisconnectMainControllerEvents() {
   mMetadataChangedListener.DisconnectIfExists();
+  mSupportedKeysChangedListener.DisconnectIfExists();
 }
 
 MediaController* MediaControlService::ControllerManager::GetMainController()

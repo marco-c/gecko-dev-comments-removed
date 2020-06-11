@@ -104,11 +104,22 @@ class MediaController final
   
   void Shutdown();
 
+  
+  
+  MediaEventSource<nsTArray<MediaControlKeysEvent>>&
+  SupportedKeysChangedEvent() {
+    return mSupportedKeysChangedEvent;
+  }
+
+  CopyableTArray<MediaControlKeysEvent> GetSupportedMediaKeys() const;
+
  private:
   ~MediaController();
   void HandleActualPlaybackStateChanged() override;
   void UpdateMediaControlKeysEventToContentMediaIfNeeded(
       MediaControlKeysEvent aEvent);
+  void HandleSupportedMediaSessionActionsChanged(
+      const nsTArray<MediaSessionAction>& aSupportedAction);
 
   
   
@@ -124,6 +135,15 @@ class MediaController final
   bool mIsRegisteredToService = false;
   bool mShutdown = false;
   bool mIsInPictureInPictureMode = false;
+
+  
+  
+  MediaEventListener mSupportedActionsChangedListener;
+  MediaEventProducer<nsTArray<MediaControlKeysEvent>>
+      mSupportedKeysChangedEvent;
+  
+  
+  CopyableTArray<MediaControlKeysEvent> mSupportedKeys;
 };
 
 }  

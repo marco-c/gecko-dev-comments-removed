@@ -67,6 +67,9 @@ class WindowsSMTCProvider final
   void SetMediaMetadata(
       const mozilla::dom::MediaMetadataBase& aMetadata) override;
 
+  
+  void SetSupportedMediaKeys(const MediaKeysArray& aSupportedKeys) override {}
+
  private:
   ~WindowsSMTCProvider();
   void UnregisterEvents();

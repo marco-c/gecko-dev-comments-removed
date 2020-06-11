@@ -27,6 +27,9 @@ class MediaHardwareKeysEventSourceMac final
   void Close() override;
   bool IsOpened() const override;
 
+  
+  void SetSupportedMediaKeys(const MediaKeysArray& aSupportedKeys) override {}
+
  private:
   ~MediaHardwareKeysEventSourceMac() = default;
 
