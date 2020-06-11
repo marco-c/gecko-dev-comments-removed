@@ -223,11 +223,9 @@ class AndroidEmulatorTest(TestingMixin, BaseScript, MozbaseMixin, CodeCoverageMi
             ),
         ]
 
-        raw_log_file = os.path.join(dirs['abs_blob_upload_dir'],
-                                    '%s_raw.log' % self.test_suite)
+        raw_log_file, error_summary_file = self.get_indexed_logs(dirs['abs_blob_upload_dir'],
+                                                                 self.test_suite)
 
-        error_summary_file = os.path.join(dirs['abs_blob_upload_dir'],
-                                          '%s_errorsummary.log' % self.test_suite)
         str_format_values = {
             'device_serial': self.device_serial,
             
@@ -404,8 +402,6 @@ class AndroidEmulatorTest(TestingMixin, BaseScript, MozbaseMixin, CodeCoverageMi
         for (per_test_suite, suite) in suites:
             self.test_suite = suite
 
-            cmd = self._build_command()
-
             try:
                 cwd = self._query_tests_dir(self.test_suite)
             except Exception:
@@ -432,6 +428,7 @@ class AndroidEmulatorTest(TestingMixin, BaseScript, MozbaseMixin, CodeCoverageMi
                     
                     return
 
+                cmd = self._build_command()
                 final_cmd = copy.copy(cmd)
                 if len(per_test_args) > 0:
                     
