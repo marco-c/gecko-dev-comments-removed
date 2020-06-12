@@ -37,13 +37,10 @@ class WebGLParent : public PWebGLParent,
       const webgl::InitContextDesc&, UniquePtr<HostWebGLCommandSinkP>&& aSinkP,
       UniquePtr<HostWebGLCommandSinkI>&& aSinkI, webgl::InitContextResult* out);
 
-  RefPtr<layers::SharedSurfaceTextureClient> GetVRFrame(webgl::ObjectId);
-
   
   bool RunQueue(uint64_t) { return RunCommandQueue(); }
 
-  
-  WebGLParent();
+  WebGLParent();  
 
  private:
   ~WebGLParent();

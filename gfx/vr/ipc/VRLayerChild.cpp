@@ -5,23 +5,22 @@
 
 
 #include "VRLayerChild.h"
+
+#include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/layers/ImageBridgeChild.h"
+#include "mozilla/layers/LayersMessages.h"  
+#include "mozilla/layers/SyncObject.h"      
+
+#include "ClientWebGLContext.h"
 #include "gfxPlatform.h"
+#include "GLContext.h"
 #include "GLScreenBuffer.h"
-#include "../../../dom/canvas/ClientWebGLContext.h"
-#include "mozilla/layers/TextureClientSharedSurface.h"
 #include "SharedSurface.h"                  
 #include "SharedSurfaceGL.h"                
-#include "mozilla/layers/LayersMessages.h"  
-#include "nsICanvasRenderingContextInternal.h"
-#include "mozilla/dom/HTMLCanvasElement.h"
-#include "mozilla/layers/SyncObject.h"  
 
 namespace mozilla::gfx {
 
-VRLayerChild::VRLayerChild()
-    : mCanvasElement(nullptr), mIPCOpen(false), mLastSubmittedFrameId(0) {
-  MOZ_COUNT_CTOR(VRLayerChild);
-}
+VRLayerChild::VRLayerChild() { MOZ_COUNT_CTOR(VRLayerChild); }
 
 VRLayerChild::~VRLayerChild() {
   ClearSurfaces();
@@ -41,6 +40,12 @@ void VRLayerChild::Initialize(dom::HTMLCanvasElement* aCanvasElement,
 void VRLayerChild::SetXRFramebuffer(WebGLFramebufferJS* fb) {
   mFramebuffer = fb;
 }
+static constexpr bool kIsAndroid =
+#if defined(MOZ_WIDGET_ANDROID)
+    true;
+#else
+    false;
+#endif
 
 void VRLayerChild::SubmitFrame(const VRDisplayInfo& aDisplayInfo) {
   uint64_t frameId = aDisplayInfo.GetFrameId();
@@ -58,64 +63,47 @@ void VRLayerChild::SubmitFrame(const VRDisplayInfo& aDisplayInfo) {
 
   
   
-  mLastFrameTexture = mThisFrameTexture;
+  mLastFrameTextureDesc = mThisFrameTextureDesc;
 
-#if defined(MOZ_WIDGET_ANDROID)
-  
-
-
-
-
+  bool forSeparateVrSwapChain = false;
+  bool getNewFrame = true;
+  if (kIsAndroid) {
+    
 
 
-  if (!mThisFrameTexture || aDisplayInfo.mDisplayState.lastSubmittedFrameId ==
-                                mLastSubmittedFrameId) {
-    mThisFrameTexture = webgl->GetVRFrame(mFramebuffer.get());
+
+
+
+
+    forSeparateVrSwapChain = true;
+    getNewFrame = (!mThisFrameTextureDesc ||
+                   aDisplayInfo.mDisplayState.lastSubmittedFrameId ==
+                       mLastSubmittedFrameId);
   }
-#else
-  mThisFrameTexture = webgl->GetVRFrame(mFramebuffer.get());
-#endif  
+  if (getNewFrame) {
+    webgl::Present(*webgl);
+
+    RefPtr<layers::ImageBridgeChild> imageBridge =
+        layers::ImageBridgeChild::GetSingleton();
+    mThisFrameTextureDesc = webgl::GetFrontBuffer(*webgl, imageBridge);
+  }
 
   mLastSubmittedFrameId = frameId;
 
-  if (!mThisFrameTexture) {
-    return;
-  }
-  VRManagerChild* vrmc = VRManagerChild::Get();
-  layers::SyncObjectClient* syncObject = vrmc->GetSyncObject();
-  mThisFrameTexture->SyncWithObject(syncObject);
-  if (!gfxPlatform::GetPlatform()->DidRenderingDeviceReset()) {
-    if (syncObject && syncObject->IsSyncObjectValid()) {
-      syncObject->Synchronize();
-    }
-  }
-
-  gl::SharedSurface* surf = mThisFrameTexture->Surf();
-  if (surf->mType == gl::SharedSurfaceType::Basic) {
-    gfxCriticalError() << "SharedSurfaceType::Basic not supported for WebVR";
-    return;
-  }
-
-  layers::SurfaceDescriptor desc;
-  if (!surf->ToSurfaceDescriptor(&desc)) {
-    gfxCriticalError() << "SharedSurface::ToSurfaceDescriptor failed in "
+  if (!mThisFrameTextureDesc) {
+    gfxCriticalError() << "ToSurfaceDescriptor failed in "
                           "VRLayerChild::SubmitFrame";
     return;
   }
 
-  SendSubmitFrame(desc, frameId, mLeftEyeRect, mRightEyeRect);
+  SendSubmitFrame(*mThisFrameTextureDesc, frameId, mLeftEyeRect, mRightEyeRect);
 }
 
 bool VRLayerChild::IsIPCOpen() { return mIPCOpen; }
 
 void VRLayerChild::ClearSurfaces() {
-  mThisFrameTexture = nullptr;
-  mLastFrameTexture = nullptr;
-
-  const auto& webgl = mCanvasElement->GetWebGLContext();
-  if (webgl) {
-    webgl->ClearVRFrame();
-  }
+  mThisFrameTextureDesc = Nothing();
+  mLastFrameTextureDesc = Nothing();
 }
 
 void VRLayerChild::ActorDestroy(ActorDestroyReason aWhy) { mIPCOpen = false; }
