@@ -1858,12 +1858,16 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
   GenerateFunctionPrologue(masm, funcTypeId, Nothing(), offsets);
 
   MOZ_ASSERT(masm.framePushed() == 0);
+  const unsigned sizeOfTlsSlot = sizeof(void*);
   unsigned framePushed =
       StackDecrementForCall(WasmStackAlignment,
                             sizeof(Frame),  
-                            StackArgBytes(fi.funcType()));
+                            StackArgBytes(fi.funcType()) + sizeOfTlsSlot);
   masm.wasmReserveStackChecked(framePushed, BytecodeOffset(0));
   MOZ_ASSERT(masm.framePushed() == framePushed);
+
+  masm.storePtr(WasmTlsReg,
+                Address(masm.getStackPointer(), framePushed - sizeOfTlsSlot));
 
   
   
@@ -1892,7 +1896,8 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
   masm.wasmCallImport(desc, CalleeDesc::import(fi.tlsDataOffset()));
 
   
-  masm.loadWasmTlsRegFromFrame();
+  masm.loadPtr(Address(masm.getStackPointer(), framePushed - sizeOfTlsSlot),
+               WasmTlsReg);
   masm.loadWasmPinnedRegsFromTls();
 
   
@@ -2138,13 +2143,14 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   
   
   static_assert(WasmStackAlignment >= JitStackAlignment, "subsumes");
+  const unsigned sizeOfTlsSlot = sizeof(void*);
   const unsigned sizeOfRetAddr = sizeof(void*);
   const unsigned sizeOfPreFrame =
       WasmToJSJitFrameLayout::Size() - sizeOfRetAddr;
   const unsigned sizeOfThisAndArgs =
       (1 + fi.funcType().args().length()) * sizeof(Value);
   const unsigned totalJitFrameBytes =
-      sizeOfRetAddr + sizeOfPreFrame + sizeOfThisAndArgs;
+      sizeOfRetAddr + sizeOfPreFrame + sizeOfThisAndArgs + sizeOfTlsSlot;
   const unsigned jitFramePushed =
       StackDecrementForCall(JitStackAlignment,
                             sizeof(Frame),  
@@ -2199,6 +2205,10 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
                            scratch2, scratch3, ToValue(true), throwLabel);
   argOffset += fi.funcType().args().length() * sizeof(Value);
   MOZ_ASSERT(argOffset == sizeOfThisAndArgs + sizeOfPreFrame + frameAlignExtra);
+
+  
+  const size_t savedTlsOffset = argOffset;
+  masm.storePtr(WasmTlsReg, Address(masm.getStackPointer(), savedTlsOffset));
 
   
   Register callee = ABINonArgReturnReg0;  
@@ -2260,7 +2270,7 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   AssertStackAlignment(masm, JitStackAlignment,
                        sizeOfRetAddr + frameAlignExtra);
 
-  masm.loadWasmTlsRegFromFrame();
+  masm.loadPtr(Address(masm.getStackPointer(), savedTlsOffset), WasmTlsReg);
   masm.moveStackPtrTo(FramePointer);
   masm.addPtr(Imm32(masm.framePushed()), FramePointer);
   offsets->untrustedFPEnd = masm.currentOffset();
