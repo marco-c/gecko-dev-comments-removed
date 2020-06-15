@@ -291,6 +291,10 @@ function initPage() {
     document.getElementById("netErrorButtonContainer").style.display = "none";
   }
 
+  let learnMoreLink = document.getElementById("learnMoreLink");
+  let baseURL = RPMGetFormatURLPref("app.support.baseURL");
+  learnMoreLink.setAttribute("href", baseURL + "connection-not-secure");
+
   if (err == "cspBlocked" || err == "xfoBlocked") {
     
     
@@ -312,12 +316,13 @@ function initPage() {
       "openInNewWindowButton"
     );
     openInNewWindowButton.href = document.location.href;
+
+    
+    document.getElementById("learnMoreContainer").style.display = "block";
+    learnMoreLink.setAttribute("href", baseURL + "xframe-neterror-page");
   }
 
   setNetErrorMessageFromCode();
-  let learnMoreLink = document.getElementById("learnMoreLink");
-  let baseURL = RPMGetFormatURLPref("app.support.baseURL");
-  learnMoreLink.setAttribute("href", baseURL + "connection-not-secure");
 
   
   if (err == "nssFailure2") {
