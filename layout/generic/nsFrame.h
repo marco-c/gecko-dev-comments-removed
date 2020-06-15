@@ -312,13 +312,6 @@ class nsFrame : public nsIFrame {
   static void GetLastLeaf(nsPresContext* aPresContext, nsIFrame** aFrame);
   static void GetFirstLeaf(nsPresContext* aPresContext, nsIFrame** aFrame);
 
-  
-  
-  
-  
-  static int32_t GetLineNumber(nsIFrame* aFrame, bool aLockScroll,
-                               nsIFrame** aContainingBlock = nullptr);
-
  private:
   
   bool HasCSSAnimations();

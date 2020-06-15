@@ -3649,6 +3649,13 @@ class nsIFrame : public nsQueryFrame {
                                  bool* aOutMovedOverNonSelectableText);
 
   
+  
+  
+  
+  static int32_t GetLineNumber(nsIFrame* aFrame, bool aLockScroll,
+                               nsIFrame** aContainingBlock = nullptr);
+
+  
 
 
 
