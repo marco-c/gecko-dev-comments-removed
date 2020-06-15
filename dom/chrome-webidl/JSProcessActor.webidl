@@ -70,7 +70,5 @@ dictionary ProcessActorChildOptions : ProcessActorSidedOptions {
 
 
 
-
-
   sequence<ByteString> observers;
 };
