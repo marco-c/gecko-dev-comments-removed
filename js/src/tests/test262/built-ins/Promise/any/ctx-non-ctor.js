@@ -16,7 +16,6 @@
 
 
 
-
 assert.sameValue(typeof Promise.any, 'function');
 
 assert.throws(TypeError, function() {

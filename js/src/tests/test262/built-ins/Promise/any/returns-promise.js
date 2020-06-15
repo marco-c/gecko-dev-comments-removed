@@ -18,7 +18,6 @@
 
 
 
-
 var p = Promise.any([]);
 
 assert(p instanceof Promise);
