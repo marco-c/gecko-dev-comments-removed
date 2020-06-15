@@ -199,6 +199,14 @@ class MockVRService {
       return {supportsSession: false};
     });
   }
+
+  
+  
+  makeXrCompatible() {
+    return Promise.resolve({
+      xr_compatible_result: device.mojom.XrCompatibleResult.kAlreadyCompatible
+    });
+  }
 }
 
 class FakeXRAnchorController {
