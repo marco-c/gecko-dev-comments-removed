@@ -39,6 +39,9 @@ Preferences.addAll([
   { id: "network.trr.uri", type: "string" },
   { id: "network.trr.resolvers", type: "string" },
   { id: "network.trr.custom_uri", type: "string" },
+  { id: "doh-rollout.enabled", type: "bool" },
+  { id: "doh-rollout.disable-heuristics", type: "bool" },
+  { id: "doh-rollout.skipHeuristicsCheck", type: "bool" },
 ]);
 
 window.addEventListener(
@@ -67,8 +70,13 @@ window.addEventListener(
     gConnectionsDialog.uiReady = new Promise(resolve => {
       gConnectionsDialog._areTrrPrefsReady = false;
       gConnectionsDialog._handleTrrPrefsReady = resolve;
-    }).then(() => {
-      gConnectionsDialog.initDnsOverHttpsUI();
+    }).then(async () => {
+      
+      
+      
+      
+      
+      await gConnectionsDialog.initDnsOverHttpsUI();
     });
 
     document
@@ -441,9 +449,18 @@ var gConnectionsDialog = {
 
   isDnsOverHttpsEnabled() {
     
+    
+    
     let trrPref = Preferences.get("network.trr.mode");
-    let enabled = trrPref.value > 0 && trrPref.value < 5;
-    return enabled;
+    if (trrPref.value > 0) {
+      return trrPref.value == 2 || trrPref.value == 3;
+    }
+
+    let rolloutEnabled = Preferences.get("doh-rollout.enabled").value;
+    let heuristicsDisabled =
+      Preferences.get("doh-rollout.disable-heuristics").value ||
+      Preferences.get("doh-rollout.skipHeuristicsCheck").value;
+    return rolloutEnabled && !heuristicsDisabled;
   },
 
   readDnsOverHttpsMode() {
@@ -466,7 +483,7 @@ var gConnectionsDialog = {
     
     let trrModeCheckbox = document.getElementById("networkDnsOverHttps");
     
-    return trrModeCheckbox.checked ? 2 : 0;
+    return trrModeCheckbox.checked ? 2 : 5;
   },
 
   updateDnsOverHttpsUI() {
