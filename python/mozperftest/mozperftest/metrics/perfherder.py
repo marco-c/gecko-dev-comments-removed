@@ -132,6 +132,10 @@ class Perfherder(Layer):
             else:
                 all_perfherder_data["suites"].extend(perfherder_data["suites"])
 
+        if prefix:
+            
+            all_perfherder_data["prefix"] = prefix
+
         
         with pathlib.Path(metadata._mach_cmd.topsrcdir, PERFHERDER_SCHEMA).open() as f:
             schema = json.load(f)
