@@ -332,21 +332,6 @@ pref("devtools.debugger.unix-domain-socket", "@ANDROID_PACKAGE_NAME@/firefox-deb
 pref("devtools.remote.usb.enabled", false);
 pref("devtools.remote.wifi.enabled", false);
 
-pref("ui.touch.radius.enabled", false);
-pref("ui.touch.radius.leftmm", 3);
-pref("ui.touch.radius.topmm", 5);
-pref("ui.touch.radius.rightmm", 3);
-pref("ui.touch.radius.bottommm", 2);
-pref("ui.touch.radius.visitedWeight", 120);
-
-pref("ui.mouse.radius.enabled", true);
-pref("ui.mouse.radius.leftmm", 3);
-pref("ui.mouse.radius.topmm", 5);
-pref("ui.mouse.radius.rightmm", 3);
-pref("ui.mouse.radius.bottommm", 2);
-pref("ui.mouse.radius.visitedWeight", 120);
-pref("ui.mouse.radius.reposition", true);
-
 
 
 pref("browser.ui.selection.distance", 250);

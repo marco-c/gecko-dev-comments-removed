@@ -2771,33 +2771,6 @@ pref("font.minimum-size.x-math", 0);
 pref("font.size.variable.x-math", 16);
 pref("font.size.monospace.x-math", 13);
 
-
-
-
-
-
-
-
-
-
-pref("ui.touch.radius.enabled", false);
-pref("ui.touch.radius.leftmm", 8);
-pref("ui.touch.radius.topmm", 12);
-pref("ui.touch.radius.rightmm", 8);
-pref("ui.touch.radius.bottommm", 4);
-pref("ui.touch.radius.visitedWeight", 120);
-
-pref("ui.mouse.radius.enabled", false);
-pref("ui.mouse.radius.leftmm", 8);
-pref("ui.mouse.radius.topmm", 12);
-pref("ui.mouse.radius.rightmm", 8);
-pref("ui.mouse.radius.bottommm", 4);
-pref("ui.mouse.radius.visitedWeight", 120);
-
-
-
-pref("ui.mouse.radius.inputSource.touchOnly", true);
-
 #ifdef XP_WIN
 
   pref("font.name-list.emoji", "Segoe UI Emoji, Twemoji Mozilla");
