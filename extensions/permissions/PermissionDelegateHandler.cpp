@@ -216,6 +216,7 @@ nsresult PermissionDelegateHandler::GetPermission(const nsACString& aType,
                                                   uint32_t* aPermission,
                                                   bool aExactHostMatch) {
   MOZ_ASSERT(mDocument);
+  MOZ_ASSERT(mPrincipal);
 
   if (mPrincipal->IsSystemPrincipal()) {
     *aPermission = nsIPermissionManager::ALLOW_ACTION;
@@ -250,7 +251,32 @@ nsresult PermissionDelegateHandler::GetPermission(const nsACString& aType,
   if ((info->mPolicy == DelegatePolicy::eDelegateUseTopOrigin ||
        (info->mPolicy == DelegatePolicy::eDelegateUseFeaturePolicy &&
         StaticPrefs::dom_security_featurePolicy_enabled()))) {
-    
+    RefPtr<WindowContext> topWC =
+        mDocument->GetWindowContext()->TopWindowContext();
+
+    if (topWC->IsInProcess()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      RefPtr<Document> topDoc = topWC->GetBrowsingContext()->GetDocument();
+
+      if (topDoc) {
+        principal = topDoc->NodePrincipal();
+      }
+    } else {
+      
+      DelegatedPermissionList list =
+          aExactHostMatch ? topWC->GetDelegatedExactHostMatchPermissions()
+                          : topWC->GetDelegatedPermissions();
+      size_t idx = std::distance(sPermissionsMap, info);
+      *aPermission = list.mPermissions[idx];
+      return NS_OK;
+    }
   }
 
   return (mPermissionManager->*testPermission)(principal, aType, aPermission);
