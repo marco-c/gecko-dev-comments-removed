@@ -14,11 +14,10 @@ def web_socket_do_extra_handshake(request):
            b'Sec-WebSocket-Origin: %s\x0D\x0A'
            b'Sec-WebSocket-Accept: %s\x0D\x0A\x0D\x0A') % (request.ws_origin.encode(
                'UTF-8'), hybi.compute_accept_from_unicode(request.headers_in.get(common.SEC_WEBSOCKET_KEY_HEADER)))
+    request.connection.write(msg)
     
-    close_body = stream.create_closing_handshake_body(1001, 'PASS')
-    close_frame = stream.create_close_frame(close_body)
-    
-    request.connection.write(msg + close_frame)
+    body = stream.create_closing_handshake_body(1000, '')
+    request.connection.write(stream.create_close_frame(body))
     
     
     
