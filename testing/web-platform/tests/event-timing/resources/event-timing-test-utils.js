@@ -208,17 +208,19 @@ function testCounts(t, resolve, looseCount, eventType, expectedCount) {
 
 async function testEventType(t, eventType, looseCount=false) {
   assert_implements(window.EventCounts, "Event Counts isn't supported");
-  assert_equals(performance.eventCounts.get(eventType), 0);
   const target = document.getElementById('target');
   if (requiresListener(eventType)) {
     target.addEventListener(eventType, () =>{});
   }
-  assert_equals(performance.eventCounts.get(eventType), 0, 'No events yet.');
+  const initialCount = performance.eventCounts.get(eventType);
+  if (!looseCount) {
+    assert_equals(initialCount, 0, 'No events yet.');
+  }
   
   await applyAction(eventType, target);
   await applyAction(eventType, target);
   await new Promise(t.step_func(resolve => {
-    testCounts(t, resolve, looseCount, eventType, 2);
+    testCounts(t, resolve, looseCount, eventType, initialCount + 2);
   }));
   
   const durationThreshold = 16;
@@ -254,7 +256,7 @@ async function testEventType(t, eventType, looseCount=false) {
                   notCancelable(eventType));
       
       
-      testCounts(t, resolve, looseCount, eventType, 3);
+      testCounts(t, resolve, looseCount, eventType, initialCount + 3);
     })).observe({type: 'event', durationThreshold: durationThreshold});
   });
   
