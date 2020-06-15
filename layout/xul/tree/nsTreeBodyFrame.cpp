@@ -2532,6 +2532,19 @@ class nsDisplayTreeBody final : public nsPaintedDisplayItem {
   }
 };
 
+#ifdef XP_MACOSX
+static bool IsInSourceList(nsIFrame* aFrame) {
+  for (nsIFrame* frame = aFrame; frame;
+       frame = nsLayoutUtils::GetCrossDocParentFrame(frame)) {
+    if (frame->StyleDisplay()->mAppearance ==
+        StyleAppearance::MozMacSourceList) {
+      return true;
+    }
+  }
+  return false;
+}
+#endif
+
 
 void nsTreeBodyFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                        const nsDisplayListSet& aLists) {
@@ -2561,9 +2574,7 @@ void nsTreeBodyFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   
-  if (selection && treeFrame && theme &&
-      treeFrame->StyleDisplay()->mAppearance ==
-          StyleAppearance::MozMacSourceList) {
+  if (selection && theme && IsInSourceList(treeFrame)) {
     
     
     const auto end = std::min(mRowCount, LastVisibleRow() + 1);
