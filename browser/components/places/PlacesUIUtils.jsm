@@ -51,16 +51,6 @@ let InternalFaviconLoader = {
   
 
 
-
-
-  observe(subject, topic, data) {
-    let innerWindowID = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
-    this.removeRequestsForInner(innerWindowID);
-  },
-
-  
-
-
   _cancelRequest({ uri, innerWindowID, timerID, callback }, reason) {
     
     let request = callback.request;
@@ -176,10 +166,9 @@ let InternalFaviconLoader = {
     }
     this._initialized = true;
 
-    Services.obs.addObserver(this, "inner-window-destroyed");
-    Services.ppmm.addMessageListener("Toolkit:inner-window-destroyed", msg => {
-      this.removeRequestsForInner(msg.data);
-    });
+    Services.obs.addObserver(windowGlobal => {
+      this.removeRequestsForInner(windowGlobal.innerWindowId);
+    }, "window-global-destroyed");
   },
 
   loadFavicon(browser, principal, pageURI, uri, expiration, iconURI) {
