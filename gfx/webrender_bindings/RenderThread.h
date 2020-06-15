@@ -269,6 +269,9 @@ class RenderThread final {
   
   void HandlePrepareForUse();
 
+  
+  bool SyncObjectNeeded();
+
   size_t RendererCount();
 
   void SetCompositionRecorderForWindow(
@@ -331,6 +334,8 @@ class RenderThread final {
 
   Mutex mRenderTextureMapLock;
   std::unordered_map<uint64_t, RefPtr<RenderTextureHost>> mRenderTextures;
+  std::unordered_map<uint64_t, RefPtr<RenderTextureHost>>
+      mSyncObjectNeededRenderTextures;
   
   
   

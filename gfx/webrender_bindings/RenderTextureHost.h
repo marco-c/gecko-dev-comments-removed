@@ -53,6 +53,9 @@ class RenderTextureHost {
   
   
   virtual void NotifyNotUsed() {}
+  
+  
+  virtual bool SyncObjectNeeded() { return false; }
 
   virtual RenderDXGITextureHostOGL* AsRenderDXGITextureHostOGL() {
     return nullptr;
