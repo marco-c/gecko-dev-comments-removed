@@ -45,6 +45,10 @@ function updateIndicatorState() {
 
 
 const WebRTCIndicator = {
+  
+  
+  VERTICAL_OFFSET_PX: 80,
+
   init(event) {
     addEventListener("load", this);
     addEventListener("unload", this);
@@ -181,7 +185,10 @@ const WebRTCIndicator = {
     
     
     
-    window.moveTo((screenWidth - windowWidth) / 2, availHeight - windowHeight);
+    window.moveTo(
+      (screenWidth - windowWidth) / 2,
+      availHeight - windowHeight - this.VERTICAL_OFFSET_PX
+    );
   },
 
   handleEvent(event) {
