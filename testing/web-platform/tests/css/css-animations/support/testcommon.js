@@ -48,7 +48,8 @@ function assert_frames_equal(actual, expected, name) {
     `properties on ${name} should match`
   );
 
-  for (const prop in actual) {
+  
+  for (const prop of Object.keys(actual).sort()) {
     if (
       
       (prop === 'offset' && typeof actual[prop] === 'number') ||
