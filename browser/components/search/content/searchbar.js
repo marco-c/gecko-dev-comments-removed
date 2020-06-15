@@ -653,7 +653,9 @@
       
       
       this.textbox.onBeforeValueSet = aValue => {
-        this.textbox.popup.oneOffButtons.query = aValue;
+        if (this.textbox.popup._oneOffButtons) {
+          this.textbox.popup.oneOffButtons.query = aValue;
+        }
         return aValue;
       };
 
