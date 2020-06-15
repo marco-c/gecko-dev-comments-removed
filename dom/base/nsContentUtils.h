@@ -3041,8 +3041,6 @@ class nsContentUtils {
           nullptr,
       mozilla::dom::CustomElementDefinition* aDefinition = nullptr);
 
-  static bool AttemptLargeAllocationLoad(nsIHttpChannel* aChannel);
-
   
 
 

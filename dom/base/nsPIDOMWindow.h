@@ -59,6 +59,7 @@ class ContentFrameMessageManager;
 class DocGroup;
 class Document;
 class Element;
+class Location;
 class Navigator;
 class Performance;
 class Selection;
@@ -90,33 +91,6 @@ enum class FullscreenReason {
   
   ForForceExitFullscreen
 };
-
-namespace mozilla {
-namespace dom {
-
-class Location;
-
-
-
-
-
-enum class LargeAllocStatus : uint8_t {
-  
-  
-  
-  NONE,
-  SUCCESS,
-
-  
-  
-  
-  NON_GET,
-  NON_E10S,
-  NOT_ONLY_TOPLEVEL_IN_TABGROUP,
-  NON_WIN32
-};
-}  
-}  
 
 
 #define NS_PIDOMWINDOWINNER_IID                      \
@@ -741,8 +715,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   float GetDevicePixelRatio(mozilla::dom::CallerType aCallerType);
 
-  void SetLargeAllocStatus(mozilla::dom::LargeAllocStatus aStatus);
-
   bool IsTopLevelWindow();
   bool HadOriginalOpener() const;
 
@@ -1112,8 +1084,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   
   
   bool mServiceWorkersTestingEnabled;
-
-  mozilla::dom::LargeAllocStatus mLargeAllocStatus;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowOuter, NS_PIDOMWINDOWOUTER_IID)
