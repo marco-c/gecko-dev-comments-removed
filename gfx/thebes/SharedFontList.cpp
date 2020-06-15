@@ -770,6 +770,10 @@ void FontList::SetLocalNames(
     const auto& rec = aLocalNameTable.Get(faceArray[i]);
     faces[i].mKey.Assign(faceArray[i], this);
     const auto* family = FindFamily(rec.mFamilyName);
+    if (!family) {
+      
+      continue;
+    }
     faces[i].mFamilyIndex = family - families;
     if (rec.mFaceIndex == uint32_t(-1)) {
       
