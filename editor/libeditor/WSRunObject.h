@@ -13,7 +13,6 @@
 #include "mozilla/EditorDOMPoint.h"  
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/Tuple.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/Text.h"
@@ -566,6 +565,27 @@ class MOZ_STACK_CLASS WSRunScanner {
   EditorDOMPointInText GetPreviousEditableCharPoint(
       const EditorDOMPointBase<PT, CT>& aPoint) const;
 
+  
+
+
+
+
+
+
+  EditorDOMPointInText GetEndOfCollapsibleASCIIWhitespaces(
+      const EditorDOMPointInText& aPointAtASCIIWhitespace) const;
+
+  
+
+
+
+
+
+
+
+  EditorDOMPointInText GetFirstASCIIWhitespacePointCollapsedTo(
+      const EditorDOMPointInText& aPointAtASCIIWhitespace) const;
+
   nsresult GetWSNodes();
 
   
@@ -644,10 +664,6 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
  public:
   enum BlockBoundary { kBeforeBlock, kBlockStart, kBlockEnd, kAfterBlock };
-
-  enum { eBefore = 1 };
-  enum { eAfter = 1 << 1 };
-  enum { eBoth = eBefore | eAfter };
 
   
 
@@ -797,22 +813,6 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult ReplaceASCIIWhitespacesWithOneNBSP(
       const EditorDOMPointInText& aPointAtASCIIWhitespace);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  template <typename PT, typename CT>
-  Tuple<EditorDOMPointInText, EditorDOMPointInText> GetASCIIWhitespacesBounds(
-      int16_t aDir, const EditorDOMPointBase<PT, CT>& aPoint) const;
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   NormalizeWhitespacesAtEndOf(const WSFragment& aRun);
