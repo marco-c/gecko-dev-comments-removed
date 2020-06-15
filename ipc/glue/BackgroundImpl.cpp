@@ -14,7 +14,6 @@
 #include "FileDescriptor.h"
 #include "GeckoProfiler.h"
 #include "InputStreamUtils.h"
-#include "mozilla/AbstractThread.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -117,7 +116,6 @@ class ParentImpl final : public BackgroundParentImpl {
   
   
   static StaticRefPtr<nsIThread> sBackgroundThread;
-  static StaticRefPtr<AbstractThread> sBackgroundAbstractThread;
 
   
   
@@ -737,7 +735,6 @@ BackgroundChildImpl::GetThreadLocalForCurrentThread() {
 
 
 StaticRefPtr<nsIThread> ParentImpl::sBackgroundThread;
-StaticRefPtr<AbstractThread> ParentImpl::sBackgroundAbstractThread;
 
 nsTArray<ParentImpl*>* ParentImpl::sLiveActorsForBackgroundThread;
 
@@ -1247,12 +1244,6 @@ bool ParentImpl::CreateBackgroundThread() {
     return false;
   }
 
-  
-  
-  
-  
-  sBackgroundAbstractThread = AbstractThread::CreateXPCOMThreadWrapper(
-      thread, false );
   sBackgroundThread = thread.forget();
 
   sLiveActorsForBackgroundThread = new nsTArray<ParentImpl*>(1);
@@ -1279,7 +1270,6 @@ void ParentImpl::ShutdownBackgroundThread() {
   if (sBackgroundThread) {
     nsCOMPtr<nsIThread> thread = sBackgroundThread.get();
     sBackgroundThread = nullptr;
-    sBackgroundAbstractThread = nullptr;
 
     UniquePtr<nsTArray<ParentImpl*>> liveActors(sLiveActorsForBackgroundThread);
     sLiveActorsForBackgroundThread = nullptr;
