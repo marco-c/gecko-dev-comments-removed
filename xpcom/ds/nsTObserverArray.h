@@ -8,6 +8,7 @@
 #define nsTObserverArray_h___
 
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/ReverseIterator.h"
 #include "nsTArray.h"
 #include "nsCycleCollectionNoteChild.h"
 
@@ -494,6 +495,15 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
   
   auto BackwardRange() const {
     return STLBackwardIteratorRange<const T>{*this};
+  }
+
+  
+  
+  
+  auto NonObservingRange() const {
+    return mozilla::detail::IteratorRange<
+        typename AutoTArray<T, N>::const_iterator>{mArray.cbegin(),
+                                                   mArray.cend()};
   }
 
  protected:
