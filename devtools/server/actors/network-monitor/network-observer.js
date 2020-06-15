@@ -120,8 +120,7 @@ function matchRequest(channel, filters) {
     
     if (
       channel.loadInfo &&
-      channel.loadInfo.browsingContext &&
-      channel.loadInfo.browsingContext.id == filters.browsingContextID
+      channel.loadInfo.browsingContextID == filters.browsingContextID
     ) {
       return true;
     }
