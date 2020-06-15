@@ -22,9 +22,6 @@ const QUERYTYPE_ADAPTIVE = 3;
 const FRECENCY_DEFAULT = 1000;
 
 
-const MAXIMUM_ALLOWED_EXTENSION_TIME_MS = 3000;
-
-
 
 const RECENT_REMOTE_TAB_THRESHOLD_MS = 259200000; 
 
@@ -1047,22 +1044,6 @@ Search.prototype = {
     }
 
     
-    
-    let extensionsCompletePromise = Promise.resolve();
-    if (
-      this._heuristicToken &&
-      ExtensionSearchHandler.isKeywordRegistered(this._heuristicToken) &&
-      substringAfter(this._originalSearchString, this._heuristicToken) &&
-      !this._searchEngineAliasMatch
-    ) {
-      
-      
-      extensionsCompletePromise = this._matchExtensionSuggestions();
-    } else if (ExtensionSearchHandler.hasActiveInputSession()) {
-      ExtensionSearchHandler.handleInputCancelled();
-    }
-
-    
     await conn.executeCached(
       this._adaptiveQuery[0],
       this._adaptiveQuery[1],
@@ -1136,9 +1117,6 @@ Search.prototype = {
     }
 
     this._matchPreloadedSites();
-
-    
-    await extensionsCompletePromise;
   },
 
   _shouldMatchAboutPages() {
@@ -1621,13 +1599,6 @@ Search.prototype = {
   },
 
   _addExtensionMatch(content, comment) {
-    let count =
-      this._counts[UrlbarUtils.RESULT_GROUP.EXTENSION] +
-      this._counts[UrlbarUtils.RESULT_GROUP.HEURISTIC];
-    if (count >= UrlbarUtils.MAXIMUM_ALLOWED_EXTENSION_MATCHES) {
-      return;
-    }
-
     this._addMatch({
       value: makeActionUrl("extension", {
         content,
@@ -1688,30 +1659,6 @@ Search.prototype = {
 
     match.value = makeActionUrl("searchengine", actionURLParams);
     this._addMatch(match);
-  },
-
-  _matchExtensionSuggestions() {
-    let data = {
-      keyword: this._heuristicToken,
-      text: this._originalSearchString,
-      inPrivateWindow: this._inPrivateWindow,
-    };
-    let promise = ExtensionSearchHandler.handleSearch(data, suggestions => {
-      for (let suggestion of suggestions) {
-        let content = `${this._heuristicToken} ${suggestion.content}`;
-        this._addExtensionMatch(content, suggestion.description);
-      }
-    });
-
-    
-    
-    let timeoutPromise = new Promise(resolve => {
-      let timer = setTimeout(resolve, MAXIMUM_ALLOWED_EXTENSION_TIME_MS);
-      
-      
-      promise.then(timer.cancel);
-    });
-    return Promise.race([timeoutPromise, promise]).catch(Cu.reportError);
   },
 
   async _matchRemoteTabs() {

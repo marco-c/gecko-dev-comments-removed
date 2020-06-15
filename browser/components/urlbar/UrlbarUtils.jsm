@@ -100,6 +100,7 @@ var UrlbarUtils = {
   
   ICON: {
     
+    EXTENSION: "chrome://browser/content/extension.svg",
     HISTORY: "chrome://browser/skin/history.svg",
     SEARCH_GLASS: "chrome://browser/skin/search-glass.svg",
     TIP: "chrome://browser/skin/tip.svg",
@@ -570,6 +571,38 @@ var UrlbarUtils = {
   looksLikeSingleWordHost(value) {
     let str = value.trim();
     return this.REGEXP_SINGLE_WORD.test(str);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  substringAt(sourceStr, targetStr) {
+    let index = sourceStr.indexOf(targetStr);
+    return index < 0 ? "" : sourceStr.substr(index);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  substringAfter(sourceStr, targetStr) {
+    let index = sourceStr.indexOf(targetStr);
+    return index < 0 ? "" : sourceStr.substr(index + targetStr.length);
   },
 
   

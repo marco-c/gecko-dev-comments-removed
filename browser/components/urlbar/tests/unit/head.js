@@ -53,7 +53,7 @@ add_task(async function initXPCShellDependencies() {
 
 function createContext(searchString = "foo", properties = {}) {
   info(`Creating new queryContext with searchString: ${searchString}`);
-  return new UrlbarQueryContext(
+  let context = new UrlbarQueryContext(
     Object.assign(
       {
         allowAutofill: UrlbarPrefs.get("autoFill"),
@@ -64,6 +64,8 @@ function createContext(searchString = "foo", properties = {}) {
       properties
     )
   );
+  UrlbarTokenizer.tokenize(context);
+  return context;
 }
 
 
@@ -295,6 +297,98 @@ async function addTestTailSuggestionsEngine(suggestionsFn = null) {
 
 
 
+function makeBookmarkResult(
+  queryContext,
+  { title, uri, iconUri, tags = [], heuristic = false }
+) {
+  let result = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.URL,
+    UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+      url: [uri, UrlbarUtils.HIGHLIGHT.TYPED],
+      
+      icon: [typeof iconUri != "undefined" ? iconUri : `page-icon:${uri}`],
+      title: [title, UrlbarUtils.HIGHLIGHT.TYPED],
+      tags: [tags, UrlbarUtils.HIGHLIGHT.TYPED],
+    })
+  );
+
+  result.heuristic = heuristic;
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+function makeFormHistoryResult(queryContext, { suggestion, engineName }) {
+  return new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.SEARCH,
+    UrlbarUtils.RESULT_SOURCE.HISTORY,
+    ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+      engine: engineName,
+      suggestion: [suggestion, UrlbarUtils.HIGHLIGHT.SUGGESTED],
+      lowerCaseSuggestion: suggestion.toLocaleLowerCase(),
+    })
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function makeOmniboxResult(
+  queryContext,
+  { content, description, keyword, heuristic = false }
+) {
+  let result = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.OMNIBOX,
+    UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK,
+    ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+      title: [description, UrlbarUtils.HIGHLIGHT.TYPED],
+      content: [content, UrlbarUtils.HIGHLIGHT.TYPED],
+      keyword: [keyword, UrlbarUtils.HIGHLIGHT.TYPED],
+      icon: [UrlbarUtils.ICON.EXTENSION],
+    })
+  );
+  result.heuristic = heuristic;
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -318,8 +412,6 @@ function makeSearchResult(
     keywordOffer,
   }
 ) {
-  UrlbarTokenizer.tokenize(queryContext);
-
   if (!keywordOffer) {
     keywordOffer = UrlbarUtils.KEYWORD_OFFER.NONE;
     if (alias && !query.trim() && alias.startsWith("@")) {
@@ -377,29 +469,6 @@ function makeSearchResult(
 
 
 
-function makeFormHistoryResult(queryContext, { suggestion, engineName }) {
-  UrlbarTokenizer.tokenize(queryContext);
-  return new UrlbarResult(
-    UrlbarUtils.RESULT_TYPE.SEARCH,
-    UrlbarUtils.RESULT_SOURCE.HISTORY,
-    ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-      engine: engineName,
-      suggestion: [suggestion, UrlbarUtils.HIGHLIGHT.SUGGESTED],
-      lowerCaseSuggestion: suggestion.toLocaleLowerCase(),
-    })
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -410,8 +479,6 @@ function makeVisitResult(
   queryContext,
   { title, uri, iconUri, tags = null, heuristic = false }
 ) {
-  UrlbarTokenizer.tokenize(queryContext);
-
   let payload = {
     url: [uri, UrlbarUtils.HIGHLIGHT.TYPED],
     
@@ -427,44 +494,6 @@ function makeVisitResult(
     UrlbarUtils.RESULT_TYPE.URL,
     UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
     ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, payload)
-  );
-
-  result.heuristic = heuristic;
-  return result;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function makeBookmarkResult(
-  queryContext,
-  { title, uri, iconUri, tags = [], heuristic = false }
-) {
-  UrlbarTokenizer.tokenize(queryContext);
-
-  let result = new UrlbarResult(
-    UrlbarUtils.RESULT_TYPE.URL,
-    UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
-    ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-      url: [uri, UrlbarUtils.HIGHLIGHT.TYPED],
-      
-      icon: [typeof iconUri != "undefined" ? iconUri : `page-icon:${uri}`],
-      title: [title, UrlbarUtils.HIGHLIGHT.TYPED],
-      tags: [tags, UrlbarUtils.HIGHLIGHT.TYPED],
-    })
   );
 
   result.heuristic = heuristic;

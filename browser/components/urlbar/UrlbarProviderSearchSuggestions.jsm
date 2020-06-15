@@ -53,38 +53,6 @@ function looksLikeUrl(str, ignoreAlphanumericHosts = false) {
 
 
 
-
-
-
-
-
-
-
-
-function substringAt(sourceStr, targetStr) {
-  let index = sourceStr.indexOf(targetStr);
-  return index < 0 ? "" : sourceStr.substr(index);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function substringAfter(sourceStr, targetStr) {
-  let index = sourceStr.indexOf(targetStr);
-  return index < 0 ? "" : sourceStr.substr(index + targetStr.length);
-}
-
-
-
-
 class ProviderSearchSuggestions extends UrlbarProvider {
   constructor() {
     super();
@@ -250,7 +218,10 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
     let query = aliasEngine
       ? aliasEngine.query
-      : substringAt(queryContext.searchString, queryContext.tokens[0].value);
+      : UrlbarUtils.substringAt(
+          queryContext.searchString,
+          queryContext.tokens[0].value
+        );
     if (!query) {
       return;
     }
@@ -286,7 +257,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     
     
     if (leadingRestrictionToken === UrlbarTokenizer.RESTRICT.SEARCH) {
-      query = substringAfter(query, leadingRestrictionToken).trim();
+      query = UrlbarUtils.substringAfter(query, leadingRestrictionToken).trim();
     }
 
     
@@ -539,7 +510,10 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       return {
         engine: engineMatch,
         alias: possibleAlias,
-        query: substringAfter(queryContext.searchString, possibleAlias).trim(),
+        query: UrlbarUtils.substringAfter(
+          queryContext.searchString,
+          possibleAlias
+        ).trim(),
         isTokenAlias: possibleAlias.startsWith("@"),
       };
     }
@@ -555,7 +529,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
         return {
           engine,
           alias: possibleAlias,
-          query: substringAfter(
+          query: UrlbarUtils.substringAfter(
             queryContext.searchString,
             possibleAlias
           ).trim(),

@@ -69,13 +69,22 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
     
 
+    
+    
     let heuristicResultQuery;
-    if (
-      context.heuristicResult &&
-      context.heuristicResult.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
-      context.heuristicResult.payload.query
-    ) {
-      heuristicResultQuery = context.heuristicResult.payload.query.toLocaleLowerCase();
+    let heuristicResultOmniboxContent;
+    if (context.heuristicResult) {
+      if (
+        context.heuristicResult.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
+        context.heuristicResult.payload.query
+      ) {
+        heuristicResultQuery = context.heuristicResult.payload.query.toLocaleLowerCase();
+      } else if (
+        context.heuristicResult.type == UrlbarUtils.RESULT_TYPE.OMNIBOX &&
+        context.heuristicResult.payload.content
+      ) {
+        heuristicResultOmniboxContent = context.heuristicResult.payload.content.toLocaleLowerCase();
+      }
     }
 
     let canShowPrivateSearch = context.results.length > 1;
@@ -212,6 +221,15 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
             }
           }
         }
+      }
+
+      
+      if (
+        !result.heuristic &&
+        result.type == UrlbarUtils.RESULT_TYPE.OMNIBOX &&
+        result.payload.content == heuristicResultOmniboxContent
+      ) {
+        continue;
       }
 
       
