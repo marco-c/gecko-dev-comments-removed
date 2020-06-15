@@ -161,6 +161,12 @@ either Raptor or browsertime."""
         if self.config["app"] == "fennec":
             self.config["e10s"] = False
 
+        
+        
+        
+        if self.config["app"] in ("chrome", "chrome-m", "chromium"):
+            LOG.set_app(self.config["app"])
+
         self.browser_name = None
         self.browser_version = None
 
