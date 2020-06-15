@@ -32,7 +32,6 @@ class nsIPrefBranch;
 
 
 namespace mozilla {
-class AbstractThread;
 namespace net {
 
 
@@ -144,10 +143,6 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
 
   nsCOMPtr<nsIThread> mThread;  
-  
-  
-  
-  RefPtr<AbstractThread> mAbstractThread;
   UniquePtr<PollableEvent> mPollableEvent;
 
   
