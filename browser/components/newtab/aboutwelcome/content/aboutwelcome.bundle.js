@@ -289,8 +289,24 @@ const MultiStageAboutWelcome = props => {
       if (index === screen.order) {
         _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__["AboutWelcomeUtils"].sendImpressionTelemetry(`${props.message_id}_${screen.id}`);
       }
-    });
+    }); 
+
+    if (index > window.history.state) {
+      window.history.pushState(index, "");
+    }
   }, [index]);
+  Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(() => {
+    
+    const handler = ({
+      state
+    }) => setScreenIndex(Number(state)); 
+
+
+    handler(window.history); 
+
+    window.addEventListener("popstate", handler);
+    return () => window.removeEventListener("popstate", handler);
+  }, []);
   const [flowParams, setFlowParams] = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])(null);
   const {
     metricsFlowUri
