@@ -12,6 +12,7 @@
 #include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/ContentBlockingUserInteraction.h"
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/WindowContext.h"
@@ -614,10 +615,8 @@ ContentBlocking::SaveAccessForOriginOnParentProcess(
   
   
   
-  if (aParentContext->IsTop()) {
-    ContentBlocking::UpdateAllowAccessOnParentProcess(aParentContext,
-                                                      aTrackingOrigin);
-  }
+  ContentBlocking::UpdateAllowAccessOnParentProcess(aParentContext,
+                                                    aTrackingOrigin);
 
   return ContentBlocking::SaveAccessForOriginOnParentProcess(
       wgp->DocumentPrincipal(), aTrackingPrincipal, aTrackingOrigin, aAllowMode,
@@ -712,8 +711,6 @@ ContentBlocking::SaveAccessForOriginOnParentProcess(
 
 
 
-
-
 void ContentBlocking::UpdateAllowAccessOnCurrentProcess(
     BrowsingContext* aParentContext, const nsACString& aTrackingOrigin) {
   MOZ_ASSERT(aParentContext && aParentContext->IsInProcess());
@@ -730,6 +727,7 @@ void ContentBlocking::UpdateAllowAccessOnCurrentProcess(
   BrowsingContext* top = aParentContext->Top();
   uint32_t behavior = AntiTrackingUtils::GetCookieBehavior(top);
 
+  
   top->PreOrderWalk([&](BrowsingContext* aContext) {
     
     if (aContext->IsInProcess()) {
@@ -766,35 +764,56 @@ void ContentBlocking::UpdateAllowAccessOnCurrentProcess(
 void ContentBlocking::UpdateAllowAccessOnParentProcess(
     BrowsingContext* aParentContext, const nsACString& aTrackingOrigin) {
   MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(aParentContext && aParentContext->IsTop());
-
-  bool useRemoteSubframes;
-  aParentContext->GetUseRemoteSubframes(&useRemoteSubframes);
-  if (!useRemoteSubframes) {
-    
-    
-    return;
-  }
 
   uint32_t behavior = AntiTrackingUtils::GetCookieBehavior(aParentContext);
 
-  aParentContext->PreOrderWalk([&](BrowsingContext* aContext) {
-    WindowGlobalParent* wgp = aContext->Canonical()->GetCurrentWindowGlobal();
-    if (!wgp) {
-      return;
+  nsAutoCString topKey;
+  nsCOMPtr<nsIPrincipal> topPrincipal =
+      AntiTrackingUtils::GetPrincipal(aParentContext->Top());
+  PermissionManager::GetKeyForPrincipal(topPrincipal, false, topKey);
+
+  
+  
+  for (const auto& topContext : aParentContext->Group()->Toplevels()) {
+    if (topContext == aParentContext->Top()) {
+      
+      
+      
+      bool useRemoteSubframes;
+      aParentContext->GetUseRemoteSubframes(&useRemoteSubframes);
+      if (!useRemoteSubframes || !aParentContext->IsTop()) {
+        continue;
+      }
+    } else {
+      nsCOMPtr<nsIPrincipal> principal =
+          AntiTrackingUtils::GetPrincipal(topContext);
+      nsAutoCString key;
+      PermissionManager::GetKeyForPrincipal(principal, false, key);
+      
+      if (topKey != key) {
+        continue;
+      }
     }
 
-    if (behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER &&
-        !AntiTrackingUtils::IsFirstLevelSubContext(aContext)) {
-      return;
-    }
+    topContext->PreOrderWalk([&](BrowsingContext* aContext) {
+      WindowGlobalParent* wgp = aContext->Canonical()->GetCurrentWindowGlobal();
+      if (!wgp) {
+        return;
+      }
 
-    nsAutoCString origin;
-    AntiTrackingUtils::GetPrincipalAndTrackingOrigin(aContext, nullptr, origin);
-    if (aTrackingOrigin == origin) {
-      Unused << wgp->SendSaveStorageAccessPermissionGranted();
-    }
-  });
+      if (behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER &&
+          !AntiTrackingUtils::IsFirstLevelSubContext(aContext)) {
+        return;
+      }
+
+      nsAutoCString origin;
+      AntiTrackingUtils::GetPrincipalAndTrackingOrigin(aContext, nullptr,
+                                                       origin);
+      if (aTrackingOrigin == origin) {
+        Unused << wgp->SendSaveStorageAccessPermissionGranted();
+      }
+    });
+  }
 }
 
 bool ContentBlocking::ShouldAllowAccessFor(nsPIDOMWindowInner* aWindow,
