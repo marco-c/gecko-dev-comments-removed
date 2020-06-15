@@ -231,7 +231,7 @@ ALL_PROCESSES += [
     DllBlocklistEntry("IseGuard64.dll", (1, 6, 13835, 184)),
 
     
-    DllBlocklistEntry("guard64.dll", (5, 12, 59641, 2599)),
+    DllBlocklistEntry("guard64.dll", (8, 4, 0, 65535)),
 
     
     DllBlocklistEntry("PavLspHook64.dll", (9, 2, 2, 1), BLOCK_WIN7_AND_OLDER),
