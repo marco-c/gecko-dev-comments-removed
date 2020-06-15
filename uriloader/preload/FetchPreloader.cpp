@@ -204,7 +204,11 @@ NS_IMETHODIMP FetchPreloader::OnStopRequest(nsIRequest* request,
     }
   }
 
+  
+  
+  nsCOMPtr<nsIChannel> channel = mChannel;
   NotifyStop(request, status);
+  mChannel.swap(channel);
   return NS_OK;
 }
 

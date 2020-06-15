@@ -136,6 +136,9 @@ class PreloaderBase : public SupportsWeakPtr<PreloaderBase>,
  protected:
   virtual ~PreloaderBase();
 
+  
+  nsCOMPtr<nsIChannel> mChannel;
+
  private:
   void NotifyNodeEvent(nsINode* aNode);
 
@@ -172,9 +175,6 @@ class PreloaderBase : public SupportsWeakPtr<PreloaderBase>,
 
   
   nsTArray<RedirectRecord> mRedirectRecords;
-
-  
-  nsCOMPtr<nsIChannel> mChannel;
 
   
   
