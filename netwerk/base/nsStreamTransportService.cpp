@@ -29,32 +29,20 @@ namespace net {
 
 
 
-class nsInputStreamTransport : public nsITransport,
-                               public nsIAsyncInputStream,
-                               public nsIInputStreamCallback {
+class nsInputStreamTransport : public nsITransport, public nsIInputStream {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSITRANSPORT
   NS_DECL_NSIINPUTSTREAM
-  NS_DECL_NSIASYNCINPUTSTREAM
-  NS_DECL_NSIINPUTSTREAMCALLBACK
 
   nsInputStreamTransport(nsIInputStream* source, bool closeWhenDone)
-      : mMutex("nsInputStreamTransport::mMutex"),
-        mSource(source),
+      : mSource(source),
         mOffset(0),
         mCloseWhenDone(closeWhenDone),
-        mInProgress(false) {
-    mAsyncSource = do_QueryInterface(mSource);
-  }
+        mInProgress(false) {}
 
  private:
   virtual ~nsInputStreamTransport() = default;
-
-  Mutex mMutex;
-
-  
-  nsCOMPtr<nsIInputStreamCallback> mAsyncWaitCallback;
 
   nsCOMPtr<nsIAsyncInputStream> mPipeIn;
 
@@ -62,28 +50,15 @@ class nsInputStreamTransport : public nsITransport,
   
   nsCOMPtr<nsITransportEventSink> mEventSink;
   nsCOMPtr<nsIInputStream> mSource;
-
-  
-  nsCOMPtr<nsIAsyncInputStream> mAsyncSource;
-
   int64_t mOffset;
-  const bool mCloseWhenDone;
+  bool mCloseWhenDone;
 
   
   
   bool mInProgress;
 };
 
-NS_IMPL_ADDREF(nsInputStreamTransport);
-NS_IMPL_RELEASE(nsInputStreamTransport);
-
-NS_INTERFACE_MAP_BEGIN(nsInputStreamTransport)
-  NS_INTERFACE_MAP_ENTRY(nsITransport)
-  NS_INTERFACE_MAP_ENTRY(nsIInputStream)
-  NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIAsyncInputStream, !!mAsyncSource)
-  NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIInputStreamCallback, !!mAsyncSource)
-  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsITransport)
-NS_INTERFACE_MAP_END
+NS_IMPL_ISUPPORTS(nsInputStreamTransport, nsITransport, nsIInputStream)
 
 
 
@@ -190,53 +165,6 @@ NS_IMETHODIMP
 nsInputStreamTransport::IsNonBlocking(bool* result) {
   *result = false;
   return NS_OK;
-}
-
-
-
-NS_IMETHODIMP
-nsInputStreamTransport::CloseWithStatus(nsresult aStatus) { return Close(); }
-
-NS_IMETHODIMP
-nsInputStreamTransport::AsyncWait(nsIInputStreamCallback* aCallback,
-                                  uint32_t aFlags, uint32_t aRequestedCount,
-                                  nsIEventTarget* aEventTarget) {
-  NS_ENSURE_STATE(!!mAsyncSource);
-
-  nsCOMPtr<nsIInputStreamCallback> callback = aCallback ? this : nullptr;
-
-  {
-    MutexAutoLock lock(mMutex);
-
-    if (mAsyncWaitCallback && aCallback) {
-      return NS_ERROR_FAILURE;
-    }
-
-    mAsyncWaitCallback = aCallback;
-  }
-
-  return mAsyncSource->AsyncWait(callback, aFlags, aRequestedCount,
-                                 aEventTarget);
-}
-
-
-
-NS_IMETHODIMP
-nsInputStreamTransport::OnInputStreamReady(nsIAsyncInputStream* aStream) {
-  nsCOMPtr<nsIInputStreamCallback> callback;
-  {
-    MutexAutoLock lock(mMutex);
-
-    
-    if (!mAsyncWaitCallback) {
-      return NS_OK;
-    }
-
-    callback.swap(mAsyncWaitCallback);
-  }
-
-  MOZ_ASSERT(callback);
-  return callback->OnInputStreamReady(this);
 }
 
 
