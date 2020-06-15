@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 #include "sandbox/win/src/crosscall_params.h"
+#include "sandbox/win/src/ipc_tags.h"
 #include "sandbox/win/src/sandbox.h"
 
 
@@ -84,7 +85,7 @@ struct ChannelControl {
   
   HANDLE pong_event;
   
-  uint32_t ipc_tag;
+  IpcTag ipc_tag;
 };
 
 struct IPCControl {

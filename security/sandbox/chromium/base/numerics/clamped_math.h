@@ -192,12 +192,14 @@ constexpr ClampedNumeric<typename UnderlyingType<T>::type> MakeClampedNum(
   return value;
 }
 
+#if !BASE_NUMERICS_DISABLE_OSTREAM_OPERATORS
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const ClampedNumeric<T>& value) {
   os << static_cast<T>(value);
   return os;
 }
+#endif
 
 
 template <template <typename, typename, typename> class M,

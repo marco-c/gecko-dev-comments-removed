@@ -34,7 +34,6 @@
 namespace base {
 
 class TimeDelta;
-class TimeTicks;
 
 
 
@@ -101,13 +100,9 @@ class BASE_EXPORT WaitableEvent {
   
   
   
+  
+  
   bool TimedWait(const TimeDelta& wait_delta);
-
-  
-  
-  
-  
-  bool TimedWaitUntil(const TimeTicks& end_time);
 
 #if defined(OS_WIN)
   HANDLE handle() const { return handle_.Get(); }

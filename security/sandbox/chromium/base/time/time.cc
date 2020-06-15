@@ -135,52 +135,6 @@ int64_t TimeDelta::InNanoseconds() const {
   return delta_ * Time::kNanosecondsPerMicrosecond;
 }
 
-namespace time_internal {
-
-int64_t SaturatedAdd(int64_t value, TimeDelta delta) {
-  
-  
-  if (delta.is_max()) {
-    CHECK_GT(value, std::numeric_limits<int64_t>::min());
-    return std::numeric_limits<int64_t>::max();
-  } else if (delta.is_min()) {
-    CHECK_LT(value, std::numeric_limits<int64_t>::max());
-    return std::numeric_limits<int64_t>::min();
-  }
-
-  CheckedNumeric<int64_t> rv(value);
-  rv += delta.delta_;
-  if (rv.IsValid())
-    return rv.ValueOrDie();
-  
-  if (delta.delta_ < 0)
-    return std::numeric_limits<int64_t>::min();
-  return std::numeric_limits<int64_t>::max();
-}
-
-int64_t SaturatedSub(int64_t value, TimeDelta delta) {
-  
-  
-  if (delta.is_max()) {
-    CHECK_LT(value, std::numeric_limits<int64_t>::max());
-    return std::numeric_limits<int64_t>::min();
-  } else if (delta.is_min()) {
-    CHECK_GT(value, std::numeric_limits<int64_t>::min());
-    return std::numeric_limits<int64_t>::max();
-  }
-
-  CheckedNumeric<int64_t> rv(value);
-  rv -= delta.delta_;
-  if (rv.IsValid())
-    return rv.ValueOrDie();
-  
-  if (delta.delta_ < 0)
-    return std::numeric_limits<int64_t>::max();
-  return std::numeric_limits<int64_t>::min();
-}
-
-}  
-
 std::ostream& operator<<(std::ostream& os, TimeDelta time_delta) {
   return os << time_delta.InSecondsF() << " s";
 }
@@ -271,6 +225,10 @@ double Time::ToJsTime() const {
     
     return 0;
   }
+  return ToJsTimeIgnoringNull();
+}
+
+double Time::ToJsTimeIgnoringNull() const {
   if (is_max()) {
     
     return std::numeric_limits<double>::infinity();
@@ -312,8 +270,17 @@ Time Time::Midnight(bool is_local) const {
   exploded.second = 0;
   exploded.millisecond = 0;
   Time out_time;
-  if (FromExploded(is_local, exploded, &out_time))
+  if (FromExploded(is_local, exploded, &out_time)) {
     return out_time;
+  } else if (is_local) {
+    
+    
+    
+    
+    exploded.hour = 1;
+    if (FromExploded(is_local, exploded, &out_time))
+      return out_time;
+  }
   
   NOTREACHED();
   return Time();
@@ -348,6 +315,38 @@ bool Time::ExplodedMostlyEquals(const Exploded& lhs, const Exploded& rhs) {
          lhs.day_of_month == rhs.day_of_month && lhs.hour == rhs.hour &&
          lhs.minute == rhs.minute && lhs.second == rhs.second &&
          lhs.millisecond == rhs.millisecond;
+}
+
+
+bool Time::FromMillisecondsSinceUnixEpoch(int64_t unix_milliseconds,
+                                          Time* time) {
+  
+  
+  base::CheckedNumeric<int64_t> checked_microseconds_win_epoch =
+      unix_milliseconds;
+  checked_microseconds_win_epoch *= kMicrosecondsPerMillisecond;
+  checked_microseconds_win_epoch += kTimeTToMicrosecondsOffset;
+  if (!checked_microseconds_win_epoch.IsValid()) {
+    *time = base::Time(0);
+    return false;
+  }
+
+  *time = Time(checked_microseconds_win_epoch.ValueOrDie());
+  return true;
+}
+
+int64_t Time::ToRoundedDownMillisecondsSinceUnixEpoch() const {
+  
+  int64_t microseconds = us_ - kTimeTToMicrosecondsOffset;
+
+  
+  if (microseconds >= 0) {
+    
+    return microseconds / kMicrosecondsPerMillisecond;
+  } else {
+    return (microseconds - kMicrosecondsPerMillisecond + 1) /
+           kMicrosecondsPerMillisecond;
+  }
 }
 
 std::ostream& operator<<(std::ostream& os, Time time) {

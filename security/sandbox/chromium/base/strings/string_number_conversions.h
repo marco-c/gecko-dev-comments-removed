@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "base/base_export.h"
+#include "base/containers/span.h"
 #include "base/strings/string16.h"
 #include "base/strings/string_piece.h"
 #include "build/build_config.h"
@@ -60,29 +61,6 @@ BASE_EXPORT string16 NumberToString16(double value);
 
 
 
-inline std::string IntToString(int value) {
-  return NumberToString(value);
-}
-inline string16 IntToString16(int value) {
-  return NumberToString16(value);
-}
-inline std::string UintToString(unsigned value) {
-  return NumberToString(value);
-}
-inline string16 UintToString16(unsigned value) {
-  return NumberToString16(value);
-}
-inline std::string Int64ToString(int64_t value) {
-  return NumberToString(value);
-}
-inline string16 Int64ToString16(int64_t value) {
-  return NumberToString16(value);
-}
-
-
-
-
-
 
 
 
@@ -120,7 +98,8 @@ BASE_EXPORT bool StringToSizeT(StringPiece16 input, size_t* output);
 
 
 
-BASE_EXPORT bool StringToDouble(const std::string& input, double* output);
+BASE_EXPORT bool StringToDouble(StringPiece input, double* output);
+BASE_EXPORT bool StringToDouble(StringPiece16 input, double* output);
 
 
 
@@ -131,6 +110,7 @@ BASE_EXPORT bool StringToDouble(const std::string& input, double* output);
 
 
 BASE_EXPORT std::string HexEncode(const void* bytes, size_t size);
+BASE_EXPORT std::string HexEncode(base::span<const uint8_t> bytes);
 
 
 
@@ -160,6 +140,17 @@ BASE_EXPORT bool HexStringToUInt64(StringPiece input, uint64_t* output);
 
 BASE_EXPORT bool HexStringToBytes(StringPiece input,
                                   std::vector<uint8_t>* output);
+
+
+BASE_EXPORT bool HexStringToString(StringPiece input, std::string* output);
+
+
+
+
+
+
+
+BASE_EXPORT bool HexStringToSpan(StringPiece input, base::span<uint8_t> output);
 
 }  
 

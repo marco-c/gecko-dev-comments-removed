@@ -29,6 +29,7 @@ const DWORD kNormalTerminationExitCode = 0;
 const DWORD kDebuggerInactiveExitCode = 0xC0000354;
 const DWORD kKeyboardInterruptExitCode = 0xC000013A;
 const DWORD kDebuggerTerminatedExitCode = 0x40010004;
+const DWORD kStatusInvalidImageHashExitCode = 0xC0000428;
 
 
 
@@ -46,6 +47,7 @@ const DWORD kProcessKilledExitCode = 1;
 
 
 enum TerminationStatus {
+  
   TERMINATION_STATUS_NORMAL_TERMINATION,   
   TERMINATION_STATUS_ABNORMAL_TERMINATION, 
   TERMINATION_STATUS_PROCESS_WAS_KILLED,   
@@ -64,7 +66,12 @@ enum TerminationStatus {
 #endif
   TERMINATION_STATUS_LAUNCH_FAILED,        
   TERMINATION_STATUS_OOM,                  
+#if defined(OS_WIN)
+  
+  TERMINATION_STATUS_INTEGRITY_FAILURE,
+#endif
   TERMINATION_STATUS_MAX_ENUM
+  
 };
 
 

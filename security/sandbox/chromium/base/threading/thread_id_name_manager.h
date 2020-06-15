@@ -7,10 +7,12 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include "base/base_export.h"
 #include "base/callback.h"
 #include "base/macros.h"
+#include "base/observer_list.h"
 #include "base/synchronization/lock.h"
 #include "base/threading/platform_thread.h"
 
@@ -25,14 +27,24 @@ class BASE_EXPORT ThreadIdNameManager {
 
   static const char* GetDefaultInternedString();
 
+  class BASE_EXPORT Observer {
+   public:
+    virtual ~Observer();
+
+    
+    
+    
+    
+    
+    
+    virtual void OnThreadNameChanged(const char* name) = 0;
+  };
+
   
   void RegisterThread(PlatformThreadHandle::Handle handle, PlatformThreadId id);
 
-  
-  
-  
-  using SetNameCallback = base::RepeatingCallback<void(const char* name)>;
-  void InstallSetNameCallback(SetNameCallback callback);
+  void AddObserver(Observer*);
+  void RemoveObserver(Observer*);
 
   
   void SetName(const std::string& name);
@@ -70,7 +82,9 @@ class BASE_EXPORT ThreadIdNameManager {
   std::string* main_process_name_;
   PlatformThreadId main_process_id_;
 
-  SetNameCallback set_name_callback_;
+  
+  
+  std::vector<Observer*> observers_;
 
   DISALLOW_COPY_AND_ASSIGN(ThreadIdNameManager);
 };

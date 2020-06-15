@@ -8,8 +8,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <string>
+
 #include "base/memory/scoped_refptr.h"
-#include "base/strings/string16.h"
 #include "sandbox/win/src/sandbox_types.h"
 #include "sandbox/win/src/security_level.h"
 
@@ -24,13 +25,14 @@ class TargetPolicy {
   
   
   enum SubSystem {
-    SUBSYS_FILES,           
-    SUBSYS_NAMED_PIPES,     
-    SUBSYS_PROCESS,         
-    SUBSYS_REGISTRY,        
-    SUBSYS_SYNC,            
-    SUBSYS_HANDLES,         
-    SUBSYS_WIN32K_LOCKDOWN  
+    SUBSYS_FILES,            
+    SUBSYS_NAMED_PIPES,      
+    SUBSYS_PROCESS,          
+    SUBSYS_REGISTRY,         
+    SUBSYS_SYNC,             
+    SUBSYS_HANDLES,          
+    SUBSYS_WIN32K_LOCKDOWN,  
+    SUBSYS_SIGNED_BINARY     
   };
 
   
@@ -60,9 +62,10 @@ class TargetPolicy {
     FAKE_USER_GDI_INIT,     
                             
                             
-    IMPLEMENT_OPM_APIS      
+    IMPLEMENT_OPM_APIS,     
                             
                             
+    SIGNED_ALLOW_LOAD       
   };
 
   
@@ -160,7 +163,7 @@ class TargetPolicy {
   
   
   
-  virtual base::string16 GetAlternateDesktop() const = 0;
+  virtual std::wstring GetAlternateDesktop() const = 0;
 
   
   virtual ResultCode CreateAlternateDesktop(bool alternate_winstation) = 0;

@@ -104,15 +104,16 @@ struct IgnoreResultHelper {
   T functor_;
 };
 
-template <typename T>
+template <typename T, typename Deleter = std::default_delete<T>>
 class OwnedWrapper {
  public:
   explicit OwnedWrapper(T* o) : ptr_(o) {}
-  explicit OwnedWrapper(std::unique_ptr<T>&& ptr) : ptr_(std::move(ptr)) {}
+  explicit OwnedWrapper(std::unique_ptr<T, Deleter>&& ptr)
+      : ptr_(std::move(ptr)) {}
   T* get() const { return ptr_.get(); }
 
  private:
-  std::unique_ptr<T> ptr_;
+  std::unique_ptr<T, Deleter> ptr_;
 };
 
 
@@ -352,7 +353,6 @@ struct ForceVoidReturn<R(Args...)> {
 
 template <typename Functor, typename SFINAE>
 struct FunctorTraits;
-
 
 
 
@@ -791,10 +791,10 @@ BanUnconstructedRefCountedReceiver(const Receiver& receiver, Unused&&...) {
   
   
   DCHECK(receiver->HasAtLeastOneRef())
-      << "base::Bind() refuses to create the first reference to ref-counted "
-         "objects. That is typically happens around PostTask() in their "
-         "constructor, and such objects can be destroyed before `new` returns "
-         "if the task resolves fast enough.";
+      << "base::Bind{Once,Repeating}() refuses to create the first reference "
+         "to ref-counted objects. That typically happens around PostTask() in "
+         "their constructor, and such objects can be destroyed before `new` "
+         "returns if the task resolves fast enough.";
 }
 
 
@@ -953,9 +953,11 @@ struct BindUnwrapTraits<internal::RetainedRefWrapper<T>> {
   static T* Unwrap(const internal::RetainedRefWrapper<T>& o) { return o.get(); }
 };
 
-template <typename T>
-struct BindUnwrapTraits<internal::OwnedWrapper<T>> {
-  static T* Unwrap(const internal::OwnedWrapper<T>& o) { return o.get(); }
+template <typename T, typename Deleter>
+struct BindUnwrapTraits<internal::OwnedWrapper<T, Deleter>> {
+  static T* Unwrap(const internal::OwnedWrapper<T, Deleter>& o) {
+    return o.get();
+  }
 };
 
 template <typename T>

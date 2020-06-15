@@ -5,6 +5,7 @@
 
 
 
+
 #ifndef BASE_CALLBACK_H_
 #define BASE_CALLBACK_H_
 
@@ -117,8 +118,12 @@ class RepeatingCallback<R(Args...)> : public internal::CallbackBaseCopyable {
   RepeatingCallback(RepeatingCallback&&) noexcept = default;
   RepeatingCallback& operator=(RepeatingCallback&&) noexcept = default;
 
-  bool Equals(const RepeatingCallback& other) const {
+  bool operator==(const RepeatingCallback& other) const {
     return EqualsInternal(other);
+  }
+
+  bool operator!=(const RepeatingCallback& other) const {
+    return !operator==(other);
   }
 
   R Run(Args... args) const & {
@@ -135,7 +140,7 @@ class RepeatingCallback<R(Args...)> : public internal::CallbackBaseCopyable {
     RepeatingCallback cb = std::move(*this);
     PolymorphicInvoke f =
         reinterpret_cast<PolymorphicInvoke>(cb.polymorphic_invoke());
-    return f(cb.bind_state_.get(), std::forward<Args>(args)...);
+    return f(std::move(cb).bind_state_.get(), std::forward<Args>(args)...);
   }
 };
 

@@ -9,6 +9,9 @@
 
 #if defined(COMPILER_MSVC)
 
+#if !defined(__clang__)
+#error "Only clang-cl is supported on Windows, see https://crbug.com/988071"
+#endif
 
 
 
@@ -22,8 +25,9 @@
 
 
 
-#define MSVC_PUSH_DISABLE_WARNING(n) __pragma(warning(push)) \
-                                     __pragma(warning(disable:n))
+
+#define MSVC_PUSH_DISABLE_WARNING(n) \
+  __pragma(warning(push)) __pragma(warning(disable : n))
 
 
 #define MSVC_POP_WARNING() __pragma(warning(pop))
@@ -137,7 +141,7 @@
 
 #if defined(COMPILER_GCC) || defined(__clang__)
 #define PRINTF_FORMAT(format_param, dots_param) \
-    __attribute__((format(printf, format_param, dots_param)))
+  __attribute__((format(printf, format_param, dots_param)))
 #else
 #define PRINTF_FORMAT(format_param, dots_param)
 #endif
@@ -166,14 +170,14 @@
 
 
 
-#define MSAN_UNPOISON(p, size)  __msan_unpoison(p, size)
+#define MSAN_UNPOISON(p, size) __msan_unpoison(p, size)
 
 
 
 
 
 #define MSAN_CHECK_MEM_IS_INITIALIZED(p, size) \
-    __msan_check_mem_is_initialized(p, size)
+  __msan_check_mem_is_initialized(p, size)
 #else  
 #define MSAN_UNPOISON(p, size)
 #define MSAN_CHECK_MEM_IS_INITIALIZED(p, size)
@@ -236,6 +240,59 @@
 #else
 
 #define PRETTY_FUNCTION __func__
+#endif
+
+#if !defined(CPU_ARM_NEON)
+#if defined(__arm__)
+#if !defined(__ARMEB__) && !defined(__ARM_EABI__) && !defined(__EABI__) && \
+    !defined(__VFP_FP__) && !defined(_WIN32_WCE) && !defined(ANDROID)
+#error Chromium does not support middle endian architecture
+#endif
+#if defined(__ARM_NEON__)
+#define CPU_ARM_NEON 1
+#endif
+#endif  
+#endif  
+
+#if !defined(HAVE_MIPS_MSA_INTRINSICS)
+#if defined(__mips_msa) && defined(__mips_isa_rev) && (__mips_isa_rev >= 5)
+#define HAVE_MIPS_MSA_INTRINSICS 1
+#endif
+#endif
+
+#if defined(__clang__) && __has_attribute(uninitialized)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define STACK_UNINITIALIZED __attribute__((uninitialized))
+#else
+#define STACK_UNINITIALIZED
 #endif
 
 #endif  

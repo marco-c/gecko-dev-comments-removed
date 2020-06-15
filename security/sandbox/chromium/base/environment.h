@@ -39,51 +39,22 @@ class BASE_EXPORT Environment {
   virtual bool HasVar(StringPiece variable_name);
 
   
+  
   virtual bool SetVar(StringPiece variable_name,
                       const std::string& new_value) = 0;
 
   
+  
   virtual bool UnSetVar(StringPiece variable_name) = 0;
 };
 
-
 #if defined(OS_WIN)
-
-typedef string16 NativeEnvironmentString;
-typedef std::map<NativeEnvironmentString, NativeEnvironmentString>
-    EnvironmentMap;
-
-
-
-
-
-
-
-
-
-
-
-BASE_EXPORT string16 AlterEnvironment(const wchar_t* env,
-                                      const EnvironmentMap& changes);
-
+using NativeEnvironmentString = std::wstring;
 #elif defined(OS_POSIX) || defined(OS_FUCHSIA)
-
-typedef std::string NativeEnvironmentString;
-typedef std::map<NativeEnvironmentString, NativeEnvironmentString>
-    EnvironmentMap;
-
-
-
-
-
-
-
-
-BASE_EXPORT std::unique_ptr<char* []> AlterEnvironment(
-    const char* const* env,
-    const EnvironmentMap& changes);
-
+using NativeEnvironmentString = std::string;
 #endif
+using EnvironmentMap =
+    std::map<NativeEnvironmentString, NativeEnvironmentString>;
 
 }  
 

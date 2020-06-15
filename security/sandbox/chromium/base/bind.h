@@ -7,6 +7,7 @@
 
 #include <functional>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 #include "base/bind_internal.h"
@@ -179,26 +180,36 @@ template <bool is_once, bool is_method, typename... Args>
 using MakeUnwrappedTypeList =
     typename MakeUnwrappedTypeListImpl<is_once, is_method, Args...>::Type;
 
-}  
 
 
-template <typename Functor, typename... Args>
-inline OnceCallback<MakeUnboundRunType<Functor, Args...>>
-BindOnce(Functor&& functor, Args&&... args) {
-  static_assert(!internal::IsOnceCallback<std::decay_t<Functor>>() ||
-                    (std::is_rvalue_reference<Functor&&>() &&
-                     !std::is_const<std::remove_reference_t<Functor>>()),
-                "BindOnce requires non-const rvalue for OnceCallback binding."
-                " I.e.: base::BindOnce(std::move(callback)).");
 
+
+
+
+
+template <typename Invoker>
+constexpr auto GetInvokeFunc(std::true_type) {
+  return Invoker::RunOnce;
+}
+
+template <typename Invoker>
+constexpr auto GetInvokeFunc(std::false_type) {
+  return Invoker::Run;
+}
+
+template <template <typename> class CallbackT,
+          typename Functor,
+          typename... Args>
+decltype(auto) BindImpl(Functor&& functor, Args&&... args) {
   
   
   
+  static constexpr bool kIsOnce = IsOnceCallback<CallbackT<void()>>::value;
   using Helper = internal::BindTypeHelper<Functor, Args...>;
   using FunctorTraits = typename Helper::FunctorTraits;
   using BoundArgsList = typename Helper::BoundArgsList;
   using UnwrappedArgsList =
-      internal::MakeUnwrappedTypeList<true, FunctorTraits::is_method,
+      internal::MakeUnwrappedTypeList<kIsOnce, FunctorTraits::is_method,
                                       Args&&...>;
   using BoundParamsList = typename Helper::BoundParamsList;
   static_assert(internal::AssertBindArgsValidity<
@@ -209,18 +220,36 @@ BindOnce(Functor&& functor, Args&&... args) {
   using BindState = internal::MakeBindStateType<Functor, Args...>;
   using UnboundRunType = MakeUnboundRunType<Functor, Args...>;
   using Invoker = internal::Invoker<BindState, UnboundRunType>;
-  using CallbackType = OnceCallback<UnboundRunType>;
+  using CallbackType = CallbackT<UnboundRunType>;
 
   
   
   
   using PolymorphicInvoke = typename CallbackType::PolymorphicInvoke;
-  PolymorphicInvoke invoke_func = &Invoker::RunOnce;
+  PolymorphicInvoke invoke_func =
+      GetInvokeFunc<Invoker>(std::integral_constant<bool, kIsOnce>());
 
   using InvokeFuncStorage = internal::BindStateBase::InvokeFuncStorage;
   return CallbackType(BindState::Create(
       reinterpret_cast<InvokeFuncStorage>(invoke_func),
       std::forward<Functor>(functor), std::forward<Args>(args)...));
+}
+
+}  
+
+
+template <typename Functor, typename... Args>
+inline OnceCallback<MakeUnboundRunType<Functor, Args...>> BindOnce(
+    Functor&& functor,
+    Args&&... args) {
+  static_assert(!internal::IsOnceCallback<std::decay_t<Functor>>() ||
+                    (std::is_rvalue_reference<Functor&&>() &&
+                     !std::is_const<std::remove_reference_t<Functor>>()),
+                "BindOnce requires non-const rvalue for OnceCallback binding."
+                " I.e.: base::BindOnce(std::move(callback)).");
+
+  return internal::BindImpl<OnceCallback>(std::forward<Functor>(functor),
+                                          std::forward<Args>(args)...);
 }
 
 
@@ -231,36 +260,8 @@ BindRepeating(Functor&& functor, Args&&... args) {
       !internal::IsOnceCallback<std::decay_t<Functor>>(),
       "BindRepeating cannot bind OnceCallback. Use BindOnce with std::move().");
 
-  
-  
-  
-  using Helper = internal::BindTypeHelper<Functor, Args...>;
-  using FunctorTraits = typename Helper::FunctorTraits;
-  using BoundArgsList = typename Helper::BoundArgsList;
-  using UnwrappedArgsList =
-      internal::MakeUnwrappedTypeList<false, FunctorTraits::is_method,
-                                      Args&&...>;
-  using BoundParamsList = typename Helper::BoundParamsList;
-  static_assert(internal::AssertBindArgsValidity<
-                    std::make_index_sequence<Helper::num_bounds>, BoundArgsList,
-                    UnwrappedArgsList, BoundParamsList>::ok,
-                "The bound args need to be convertible to the target params.");
-
-  using BindState = internal::MakeBindStateType<Functor, Args...>;
-  using UnboundRunType = MakeUnboundRunType<Functor, Args...>;
-  using Invoker = internal::Invoker<BindState, UnboundRunType>;
-  using CallbackType = RepeatingCallback<UnboundRunType>;
-
-  
-  
-  
-  using PolymorphicInvoke = typename CallbackType::PolymorphicInvoke;
-  PolymorphicInvoke invoke_func = &Invoker::Run;
-
-  using InvokeFuncStorage = internal::BindStateBase::InvokeFuncStorage;
-  return CallbackType(BindState::Create(
-      reinterpret_cast<InvokeFuncStorage>(invoke_func),
-      std::forward<Functor>(functor), std::forward<Args>(args)...));
+  return internal::BindImpl<RepeatingCallback>(std::forward<Functor>(functor),
+                                               std::forward<Args>(args)...);
 }
 
 
@@ -275,19 +276,24 @@ Bind(Functor&& functor, Args&&... args) {
 
 
 template <typename Signature>
-OnceCallback<Signature> BindOnce(OnceCallback<Signature> closure) {
-  return closure;
+OnceCallback<Signature> BindOnce(OnceCallback<Signature> callback) {
+  return callback;
+}
+
+template <typename Signature>
+OnceCallback<Signature> BindOnce(RepeatingCallback<Signature> callback) {
+  return callback;
 }
 
 template <typename Signature>
 RepeatingCallback<Signature> BindRepeating(
-    RepeatingCallback<Signature> closure) {
-  return closure;
+    RepeatingCallback<Signature> callback) {
+  return callback;
 }
 
 template <typename Signature>
-Callback<Signature> Bind(Callback<Signature> closure) {
-  return closure;
+Callback<Signature> Bind(Callback<Signature> callback) {
+  return callback;
 }
 
 
@@ -362,9 +368,10 @@ static inline internal::OwnedWrapper<T> Owned(T* o) {
   return internal::OwnedWrapper<T>(o);
 }
 
-template <typename T>
-static inline internal::OwnedWrapper<T> Owned(std::unique_ptr<T>&& ptr) {
-  return internal::OwnedWrapper<T>(std::move(ptr));
+template <typename T, typename Deleter>
+static inline internal::OwnedWrapper<T, Deleter> Owned(
+    std::unique_ptr<T, Deleter>&& ptr) {
+  return internal::OwnedWrapper<T, Deleter>(std::move(ptr));
 }
 
 
@@ -439,6 +446,7 @@ static inline internal::IgnoreResultHelper<T> IgnoreResult(T data) {
 }
 
 #if defined(OS_MACOSX) && !HAS_FEATURE(objc_arc)
+
 
 
 

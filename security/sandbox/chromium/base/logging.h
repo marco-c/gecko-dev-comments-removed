@@ -8,6 +8,7 @@
 #include <stddef.h>
 
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <sstream>
 #include <string>
@@ -17,12 +18,17 @@
 #include "base/base_export.h"
 #include "base/callback_forward.h"
 #include "base/compiler_specific.h"
-#include "base/debug/debugger.h"
+#include "base/immediate_crash.h"
+#include "base/logging_buildflags.h"
 #include "base/macros.h"
 #include "base/scoped_clear_last_error.h"
 #include "base/strings/string_piece_forward.h"
 #include "base/template_util.h"
 #include "build/build_config.h"
+
+#if defined(OS_CHROMEOS)
+#include <cstdio>
+#endif
 
 
 
@@ -162,27 +168,35 @@ namespace logging {
 
 
 #if defined(OS_WIN)
-typedef base::char16 PathChar;
+typedef wchar_t PathChar;
 #elif defined(OS_POSIX) || defined(OS_FUCHSIA)
 typedef char PathChar;
 #endif
 
 
+using LoggingDestination = uint32_t;
 
-enum LoggingDestination {
+
+
+
+enum : uint32_t {
   LOG_NONE                = 0,
   LOG_TO_FILE             = 1 << 0,
   LOG_TO_SYSTEM_DEBUG_LOG = 1 << 1,
+  LOG_TO_STDERR           = 1 << 2,
 
-  LOG_TO_ALL = LOG_TO_FILE | LOG_TO_SYSTEM_DEBUG_LOG,
+  LOG_TO_ALL = LOG_TO_FILE | LOG_TO_SYSTEM_DEBUG_LOG | LOG_TO_STDERR,
 
-  
-  
-  
-#if defined(OS_WIN)
-  LOG_DEFAULT = LOG_TO_FILE,
-#elif defined(OS_POSIX) || defined(OS_FUCHSIA)
+
+
+
+
+#if defined(OS_FUCHSIA) || defined(OS_NACL)
   LOG_DEFAULT = LOG_TO_SYSTEM_DEBUG_LOG,
+#elif defined(OS_WIN)
+  LOG_DEFAULT = LOG_TO_FILE,
+#elif defined(OS_POSIX)
+  LOG_DEFAULT = LOG_TO_SYSTEM_DEBUG_LOG | LOG_TO_STDERR,
 #endif
 };
 
@@ -202,19 +216,20 @@ enum OldFileDeletionState { DELETE_OLD_LOG_FILE, APPEND_TO_OLD_LOG_FILE };
 struct BASE_EXPORT LoggingSettings {
   
   
-  
-  
-  
-  
-  LoggingSettings();
-
-  LoggingDestination logging_dest;
+  uint32_t logging_dest = LOG_DEFAULT;
 
   
   
-  const PathChar* log_file;
-  LogLockingState lock_log;
-  OldFileDeletionState delete_old;
+  const PathChar* log_file_path = nullptr;
+  LogLockingState lock_log = LOCK_LOG_FILE;
+  OldFileDeletionState delete_old = APPEND_TO_OLD_LOG_FILE;
+#if defined(OS_CHROMEOS)
+  
+  
+  
+  
+  FILE* log_file = nullptr;
+#endif
 };
 
 
@@ -300,10 +315,10 @@ BASE_EXPORT void SetShowErrorDialogs(bool enable_dialogs);
 
 
 using LogAssertHandlerFunction =
-    base::Callback<void(const char* file,
-                        int line,
-                        const base::StringPiece message,
-                        const base::StringPiece stack_trace)>;
+    base::RepeatingCallback<void(const char* file,
+                                 int line,
+                                 const base::StringPiece message,
+                                 const base::StringPiece stack_trace)>;
 
 class BASE_EXPORT ScopedLogAssertHandler {
  public:
@@ -515,119 +530,15 @@ BASE_EXPORT extern std::ostream* g_swallow_stream;
 class CheckOpResult {
  public:
   
-  CheckOpResult(std::string* message) : message_(message) {}
+  constexpr CheckOpResult(std::string* message) : message_(message) {}
   
-  operator bool() const { return !message_; }
+  constexpr operator bool() const { return !message_; }
   
   std::string* message() { return message_; }
 
  private:
   std::string* message_;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if defined(COMPILER_GCC)
-
-#if defined(ARCH_CPU_X86_FAMILY) && !defined(OS_NACL)
-
-#define TRAP_SEQUENCE() \
-  asm volatile(         \
-      "int3; ud2; push %0;" ::"i"(static_cast<unsigned char>(__COUNTER__)))
-
-#elif defined(ARCH_CPU_ARMEL) && !defined(OS_NACL)
-
-
-
-
-#define TRAP_SEQUENCE() \
-  asm volatile("bkpt #0; udf %0;" ::"i"(__COUNTER__ % 256))
-
-#elif defined(ARCH_CPU_ARM64) && !defined(OS_NACL)
-
-#define TRAP_SEQUENCE() \
-  asm volatile("brk #0; hlt %0;" ::"i"(__COUNTER__ % 65536))
-
-#else
-
-
-#define TRAP_SEQUENCE() __builtin_trap()
-#endif  
-
-#elif defined(COMPILER_MSVC)
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if !defined(__clang__)
-#define TRAP_SEQUENCE() __debugbreak()
-#elif defined(ARCH_CPU_ARM64)
-#define TRAP_SEQUENCE() \
-  __asm volatile("brk #0\n hlt %0\n" ::"i"(__COUNTER__ % 65536));
-#else
-#define TRAP_SEQUENCE() ({ {__asm int 3 __asm ud2 __asm push __COUNTER__}; })
-#endif  
-
-#else
-#error Port
-#endif  
-
-
-
-
-
-
-
-
-
-#if !defined(COMPILER_GCC)
-#define WRAPPED_TRAP_SEQUENCE() TRAP_SEQUENCE()
-#else
-#define WRAPPED_TRAP_SEQUENCE() \
-  do {                          \
-    [] { TRAP_SEQUENCE(); }();  \
-  } while (false)
-#endif
-
-#if defined(__clang__) || defined(COMPILER_GCC)
-#define IMMEDIATE_CRASH()    \
-  ({                         \
-    WRAPPED_TRAP_SEQUENCE(); \
-    __builtin_unreachable(); \
-  })
-#else
-
-
-#define IMMEDIATE_CRASH() WRAPPED_TRAP_SEQUENCE()
-#endif
 
 
 
@@ -659,26 +570,6 @@ class CheckOpResult {
 
 #else  
 
-#if defined(_PREFAST_) && defined(OS_WIN)
-
-
-
-
-
-
-
-#define CHECK(condition)                    \
-  __analysis_assume(!!(condition)),         \
-      LAZY_STREAM(LOG_STREAM(FATAL), false) \
-          << "Check failed: " #condition ". "
-
-#define PCHECK(condition)                    \
-  __analysis_assume(!!(condition)),          \
-      LAZY_STREAM(PLOG_STREAM(FATAL), false) \
-          << "Check failed: " #condition ". "
-
-#else  
-
 
 #define CHECK(condition)                                                      \
   LAZY_STREAM(::logging::LogMessage(__FILE__, __LINE__, #condition).stream(), \
@@ -687,8 +578,6 @@ class CheckOpResult {
 #define PCHECK(condition)                                           \
   LAZY_STREAM(PLOG_STREAM(FATAL), !ANALYZER_ASSUME_TRUE(condition)) \
       << "Check failed: " #condition ". "
-
-#endif  
 
 
 
@@ -716,6 +605,16 @@ inline typename std::enable_if<
     void>::type
 MakeCheckOpValueString(std::ostream* os, const T& v) {
   (*os) << v;
+}
+
+
+template <typename T>
+inline typename std::enable_if<
+    !base::internal::SupportsOstreamOperator<const T&>::value &&
+        base::internal::SupportsToString<const T&>::value,
+    void>::type
+MakeCheckOpValueString(std::ostream* os, const T& v) {
+  (*os) << v.ToString();
 }
 
 
@@ -786,20 +685,21 @@ std::string* MakeCheckOpString<std::string, std::string>(
 
 
 
-#define DEFINE_CHECK_OP_IMPL(name, op)                                       \
-  template <class t1, class t2>                                              \
-  inline std::string* Check##name##Impl(const t1& v1, const t2& v2,          \
-                                        const char* names) {                 \
-    if (ANALYZER_ASSUME_TRUE(v1 op v2))                                      \
-      return NULL;                                                           \
-    else                                                                     \
-      return ::logging::MakeCheckOpString(v1, v2, names);                    \
-  }                                                                          \
-  inline std::string* Check##name##Impl(int v1, int v2, const char* names) { \
-    if (ANALYZER_ASSUME_TRUE(v1 op v2))                                      \
-      return NULL;                                                           \
-    else                                                                     \
-      return ::logging::MakeCheckOpString(v1, v2, names);                    \
+#define DEFINE_CHECK_OP_IMPL(name, op)                                 \
+  template <class t1, class t2>                                        \
+  constexpr std::string* Check##name##Impl(const t1& v1, const t2& v2, \
+                                           const char* names) {        \
+    if (ANALYZER_ASSUME_TRUE(v1 op v2))                                \
+      return nullptr;                                                  \
+    else                                                               \
+      return ::logging::MakeCheckOpString(v1, v2, names);              \
+  }                                                                    \
+  constexpr std::string* Check##name##Impl(int v1, int v2,             \
+                                           const char* names) {        \
+    if (ANALYZER_ASSUME_TRUE(v1 op v2))                                \
+      return nullptr;                                                  \
+    else                                                               \
+      return ::logging::MakeCheckOpString(v1, v2, names);              \
   }
 DEFINE_CHECK_OP_IMPL(EQ, ==)
 DEFINE_CHECK_OP_IMPL(NE, !=)
@@ -817,9 +717,9 @@ DEFINE_CHECK_OP_IMPL(GT, > )
 #define CHECK_GT(val1, val2) CHECK_OP(GT, > , val1, val2)
 
 #if defined(NDEBUG) && !defined(DCHECK_ALWAYS_ON)
-#define DCHECK_IS_ON() 0
+#define DCHECK_IS_ON() false
 #else
-#define DCHECK_IS_ON() 1
+#define DCHECK_IS_ON() true
 #endif
 
 
@@ -885,21 +785,6 @@ const LogSeverity LOG_DCHECK = LOG_FATAL;
 
 
 
-#if defined(_PREFAST_) && defined(OS_WIN)
-
-
-#define DCHECK(condition)                    \
-  __analysis_assume(!!(condition)),          \
-      LAZY_STREAM(LOG_STREAM(DCHECK), false) \
-          << "Check failed: " #condition ". "
-
-#define DPCHECK(condition)                    \
-  __analysis_assume(!!(condition)),           \
-      LAZY_STREAM(PLOG_STREAM(DCHECK), false) \
-          << "Check failed: " #condition ". "
-
-#else  
-
 #if DCHECK_IS_ON()
 
 #define DCHECK(condition)                                           \
@@ -913,8 +798,6 @@ const LogSeverity LOG_DCHECK = LOG_FATAL;
 
 #define DCHECK(condition) EAT_STREAM_PARAMETERS << !(condition)
 #define DPCHECK(condition) EAT_STREAM_PARAMETERS << !(condition)
-
-#endif
 
 #endif
 
@@ -982,7 +865,7 @@ const LogSeverity LOG_DCHECK = LOG_FATAL;
 #define DCHECK_GE(val1, val2) DCHECK_OP(GE, >=, val1, val2)
 #define DCHECK_GT(val1, val2) DCHECK_OP(GT, > , val1, val2)
 
-#if !DCHECK_IS_ON() && defined(OS_CHROMEOS)
+#if BUILDFLAG(ENABLE_LOG_ERROR_NOT_REACHED)
 
 
 void LogErrorNotReached(const char* file, int line);
@@ -1038,6 +921,7 @@ class BASE_EXPORT LogMessage {
   
   const char* file_;
   const int line_;
+  const char* file_basename_;
 
   
   
@@ -1117,6 +1001,14 @@ class BASE_EXPORT ErrnoLogMessage {
 
 BASE_EXPORT void CloseLogFile();
 
+#if defined(OS_CHROMEOS)
+
+
+
+
+BASE_EXPORT FILE* DuplicateLogFILE();
+#endif
+
 
 BASE_EXPORT void RawLog(int level, const char* message);
 
@@ -1135,7 +1027,7 @@ BASE_EXPORT void RawLog(int level, const char* message);
 BASE_EXPORT bool IsLoggingToFileEnabled();
 
 
-BASE_EXPORT base::string16 GetLogFileFullPath();
+BASE_EXPORT std::wstring GetLogFileFullPath();
 #endif
 
 }  
@@ -1173,18 +1065,13 @@ inline std::ostream& operator<<(std::ostream& out, const std::wstring& wstr) {
 #define NOTIMPLEMENTED_MSG "NOT IMPLEMENTED"
 #endif
 
-#if defined(OS_ANDROID) && defined(OFFICIAL_BUILD)
-#define NOTIMPLEMENTED() EAT_STREAM_PARAMETERS
-#define NOTIMPLEMENTED_LOG_ONCE() EAT_STREAM_PARAMETERS
-#else
-#define NOTIMPLEMENTED() LOG(ERROR) << NOTIMPLEMENTED_MSG
-#define NOTIMPLEMENTED_LOG_ONCE()                      \
-  do {                                                 \
-    static bool logged_once = false;                   \
-    LOG_IF(ERROR, !logged_once) << NOTIMPLEMENTED_MSG; \
-    logged_once = true;                                \
-  } while (0);                                         \
+#define NOTIMPLEMENTED() DLOG(ERROR) << NOTIMPLEMENTED_MSG
+#define NOTIMPLEMENTED_LOG_ONCE()                       \
+  do {                                                  \
+    static bool logged_once = false;                    \
+    DLOG_IF(ERROR, !logged_once) << NOTIMPLEMENTED_MSG; \
+    logged_once = true;                                 \
+  } while (0);                                          \
   EAT_STREAM_PARAMETERS
-#endif
 
 #endif  

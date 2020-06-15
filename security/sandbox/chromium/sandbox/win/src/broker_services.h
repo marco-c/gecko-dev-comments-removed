@@ -19,16 +19,10 @@
 #include "sandbox/win/src/crosscall_server.h"
 #include "sandbox/win/src/job.h"
 #include "sandbox/win/src/sandbox.h"
+#include "sandbox/win/src/sandbox_policy_base.h"
 #include "sandbox/win/src/sharedmem_ipc_server.h"
 #include "sandbox/win/src/win2k_threadpool.h"
 #include "sandbox/win/src/win_utils.h"
-
-namespace {
-
-struct JobTracker;
-struct PeerTracker;
-
-}  
 
 namespace sandbox {
 
@@ -63,18 +57,15 @@ class BrokerServicesBase final : public BrokerServices,
   
   
   
-  bool IsActiveTarget(DWORD process_id);
+  bool IsSafeDuplicationTarget(DWORD process_id);
+
+  ResultCode GetPolicyDiagnostics(
+      std::unique_ptr<PolicyDiagnosticsReceiver> receiver) override;
 
  private:
-  typedef std::list<JobTracker*> JobTrackerList;
-  typedef std::map<DWORD, PeerTracker*> PeerTrackerMap;
-
   
   
   static DWORD WINAPI TargetEventsThread(PVOID param);
-
-  
-  static VOID CALLBACK RemovePeer(PVOID parameter, BOOLEAN timeout);
 
   
   
@@ -88,23 +79,20 @@ class BrokerServicesBase final : public BrokerServices,
   base::win::ScopedHandle job_thread_;
 
   
-  
-  CRITICAL_SECTION lock_;
-
-  
   std::unique_ptr<ThreadProvider> thread_pool_;
 
   
-  std::list<std::unique_ptr<JobTracker>> tracker_list_;
+  
+  std::set<DWORD> active_targets_;
 
   
   
-  PeerTrackerMap peer_map_;
+  CRITICAL_SECTION lock_;
 
-  
-  
-  
-  std::set<DWORD> child_process_ids_;
+  ResultCode AddTargetPeerInternal(HANDLE peer_process_handle,
+                                   DWORD peer_process_id,
+                                   scoped_refptr<PolicyBase> policy_base,
+                                   DWORD* last_error);
 
   DISALLOW_COPY_AND_ASSIGN(BrokerServicesBase);
 };
