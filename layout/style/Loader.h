@@ -361,7 +361,8 @@ class Loader final {
   
 
 
-  void DidHitCompleteSheetCache(SheetLoadData&);
+  void DidHitCompleteSheetCache(const SheetLoadDataHashKey&,
+                                const StyleUseCounters* aCounters);
 
   enum class UseSystemPrincipal { No, Yes };
 

@@ -119,8 +119,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   
   
-  void FinishAsyncParse(
-      already_AddRefed<RawServoStyleSheetContents> aSheetContents);
+  void FinishAsyncParse(already_AddRefed<RawServoStyleSheetContents>);
 
   
   

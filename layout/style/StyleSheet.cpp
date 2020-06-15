@@ -1180,31 +1180,33 @@ RefPtr<StyleSheetParsePromise> StyleSheet::ParseSheet(
   RefPtr<StyleSheetParsePromise> p = mParsePromise.Ensure(__func__);
   SetURLExtraData();
 
-  const StyleUseCounters* useCounters =
-      aLoader.GetDocument() ? aLoader.GetDocument()->GetStyleUseCounters()
-                            : nullptr;
   
   
   
   auto allowImportRules = SelfOrAncestorIsConstructed()
                               ? StyleAllowImportRules::No
                               : StyleAllowImportRules::Yes;
+  const bool shouldRecordCounters =
+      aLoader.GetDocument() && aLoader.GetDocument()->GetStyleUseCounters();
   if (!AllowParallelParse(aLoader, GetSheetURI())) {
+    UniquePtr<StyleUseCounters> counters =
+        shouldRecordCounters ? Servo_UseCounters_Create().Consume() : nullptr;
+
     RefPtr<RawServoStyleSheetContents> contents =
         Servo_StyleSheet_FromUTF8Bytes(
             &aLoader, this, &aLoadData, &aBytes, mParsingMode, Inner().mURLData,
             aLoadData.mLineNumber, aLoadData.mCompatMode,
-             nullptr, useCounters, allowImportRules,
+             nullptr, counters.get(), allowImportRules,
             StyleSanitizationKind::None,
              nullptr)
             .Consume();
+    aLoadData.mUseCounters = std::move(counters);
     FinishAsyncParse(contents.forget());
   } else {
     auto holder = MakeRefPtr<css::SheetLoadDataHolder>(__func__, &aLoadData);
     Servo_StyleSheet_FromUTF8BytesAsync(
         holder, Inner().mURLData, &aBytes, mParsingMode, aLoadData.mLineNumber,
-        aLoadData.mCompatMode,
-         !!useCounters, allowImportRules);
+        aLoadData.mCompatMode, shouldRecordCounters, allowImportRules);
   }
 
   return p;
