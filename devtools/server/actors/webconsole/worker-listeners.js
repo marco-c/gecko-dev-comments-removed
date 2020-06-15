@@ -10,27 +10,26 @@
 
 
 
+class ConsoleAPIListener {
+  constructor(window, listener, consoleID) {
+    this.window = window;
+    this.listener = listener;
+    this.consoleID = consoleID;
+    this.observe = this.observe.bind(this);
+  }
 
-function ConsoleAPIListener(window, owner, consoleID) {
-  this.window = window;
-  this.owner = owner;
-  this.consoleID = consoleID;
-  this.observe = this.observe.bind(this);
-}
-
-ConsoleAPIListener.prototype = {
-  init: function() {
+  init() {
     setConsoleEventHandler(this.observe);
-  },
-  destroy: function() {
+  }
+  destroy() {
     setConsoleEventHandler(null);
-  },
-  observe: function(message) {
-    this.owner.onConsoleAPICall(message.wrappedJSObject);
-  },
-  getCachedMessages: function() {
+  }
+  observe(message) {
+    this.listener(message.wrappedJSObject);
+  }
+  getCachedMessages() {
     return retrieveConsoleEvents();
-  },
-};
+  }
+}
 
 exports.ConsoleAPIListener = ConsoleAPIListener;

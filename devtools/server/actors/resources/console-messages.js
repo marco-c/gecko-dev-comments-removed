@@ -53,23 +53,20 @@ function watch(targetActor, { onAvailable }) {
   targetActor.attach();
 
   
-  
-  const owner = {
-    onConsoleAPICall: message => {
-      onAvailable([
-        {
-          resourceType: CONSOLE_MESSAGE,
-          message: prepareConsoleMessageForRemote(targetActor, message),
-        },
-      ]);
-    },
+  const onConsoleAPICall = message => {
+    onAvailable([
+      {
+        resourceType: CONSOLE_MESSAGE,
+        message: prepareConsoleMessageForRemote(targetActor, message),
+      },
+    ]);
   };
 
   
   
   const listener = new ConsoleAPIListener(
     targetActor.window,
-    owner,
+    onConsoleAPICall,
     targetActor.consoleAPIListenerOptions
   );
   listener.init();
@@ -125,7 +122,7 @@ function onLogPoint(targetActor, message) {
     
     
   }
-  listener.owner.onConsoleAPICall(message);
+  listener.handler(message);
 }
 
 module.exports = {

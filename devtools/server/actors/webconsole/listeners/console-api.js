@@ -30,23 +30,20 @@ const {
 
 
 
+class ConsoleAPIListener {
+  constructor(window, handler, { addonId } = {}) {
+    this.window = window;
+    this.handler = handler;
+    this.addonId = addonId;
+  }
 
-
-function ConsoleAPIListener(window, owner, { addonId } = {}) {
-  this.window = window;
-  this.owner = owner;
-  this.addonId = addonId;
-}
-exports.ConsoleAPIListener = ConsoleAPIListener;
-
-ConsoleAPIListener.prototype = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
+  QueryInterface = ChromeUtils.generateQI([Ci.nsIObserver]);
 
   
 
 
 
-  window: null,
+  window = null;
 
   
 
@@ -54,24 +51,22 @@ ConsoleAPIListener.prototype = {
 
 
 
-
-
-  owner: null,
+  handler = null;
 
   
 
 
 
-  addonId: null,
+  addonId = null;
 
   
 
 
-  init: function() {
+  init() {
     
     
     Services.obs.addObserver(this, "console-api-log-event");
-  },
+  }
 
   
 
@@ -82,8 +77,8 @@ ConsoleAPIListener.prototype = {
 
 
 
-  observe: function(message, topic) {
-    if (!this.owner) {
+  observe(message, topic) {
+    if (!this.handler) {
       return;
     }
 
@@ -96,8 +91,8 @@ ConsoleAPIListener.prototype = {
       return;
     }
 
-    this.owner.onConsoleAPICall(apiMessage);
-  },
+    this.handler(apiMessage);
+  }
 
   
 
@@ -108,7 +103,7 @@ ConsoleAPIListener.prototype = {
 
 
 
-  isMessageRelevant: function(message) {
+  isMessageRelevant(message) {
     const workerType = WebConsoleUtils.getWorkerType(message);
 
     if (this.window && workerType === "ServiceWorker") {
@@ -154,7 +149,7 @@ ConsoleAPIListener.prototype = {
     }
 
     return true;
-  },
+  }
 
   
 
@@ -165,7 +160,7 @@ ConsoleAPIListener.prototype = {
 
 
 
-  getCachedMessages: function(includePrivate = false) {
+  getCachedMessages(includePrivate = false) {
     let messages = [];
     const ConsoleAPIStorage = Cc[
       "@mozilla.org/consoleAPI-storage;1"
@@ -195,13 +190,14 @@ ConsoleAPIListener.prototype = {
     }
 
     return messages.filter(m => !m.private);
-  },
+  }
 
   
 
 
-  destroy: function() {
+  destroy() {
     Services.obs.removeObserver(this, "console-api-log-event");
-    this.window = this.owner = null;
-  },
-};
+    this.window = this.handler = null;
+  }
+}
+exports.ConsoleAPIListener = ConsoleAPIListener;
