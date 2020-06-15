@@ -95,17 +95,15 @@ TEST(TestAudioTrackGraph, SetOutputDeviceID)
   MockCubeb* cubeb = new MockCubeb();
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
 
+  EXPECT_EQ(cubeb->CurrentStream(), nullptr)
+      << "Cubeb stream has not been initialized yet";
+
   
   
   MediaTrackGraph* graph = MediaTrackGraph::GetInstance(
       MediaTrackGraph::AUDIO_THREAD_DRIVER,  nullptr,
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE,
        reinterpret_cast<cubeb_devid>(2));
-
-  
-  EXPECT_EQ(cubeb->GetCurrentOutputDeviceID(),
-            reinterpret_cast<cubeb_devid>(-1))
-      << "Initial state, invalid output device id";
 
   
   
@@ -116,7 +114,7 @@ TEST(TestAudioTrackGraph, SetOutputDeviceID)
   RefPtr<GenericPromise> p = graph->NotifyWhenDeviceStarted(dummySource);
   p->Then(GetMainThreadSerialEventTarget(), __func__,
           [&mon, cubeb, dummySource]() {
-            EXPECT_EQ(cubeb->GetCurrentOutputDeviceID(),
+            EXPECT_EQ(cubeb->CurrentStream()->GetOutputDeviceID(),
                       reinterpret_cast<cubeb_devid>(2))
                 << "After init confirm the expected output device id";
             
@@ -155,6 +153,36 @@ TEST(TestAudioTrackGraph, NotifyDeviceStarted)
     dummySource->Destroy();
     mon.SetFinished();
   });
+
+  mon.AwaitFinished();
+}
+
+TEST(TestAudioTrackGraph, ErrorStateCrash)
+{
+  MockCubeb* cubeb = new MockCubeb();
+  CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
+
+  MediaTrackGraph* graph = MediaTrackGraph::GetInstance(
+      MediaTrackGraph::AUDIO_THREAD_DRIVER,  nullptr,
+      MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE, nullptr);
+
+  
+  
+  RefPtr<SourceMediaTrack> dummySource =
+      graph->CreateSourceTrack(MediaSegment::AUDIO);
+
+  RefPtr<GenericPromise> p = graph->NotifyWhenDeviceStarted(dummySource);
+
+  GMPTestMonitor mon;
+
+  p->Then(GetMainThreadSerialEventTarget(), __func__,
+          [&mon, dummySource, cubeb]() {
+            cubeb->CurrentStream()->ForceError();
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            
+            dummySource->Destroy();
+            mon.SetFinished();
+          });
 
   mon.AwaitFinished();
 }
