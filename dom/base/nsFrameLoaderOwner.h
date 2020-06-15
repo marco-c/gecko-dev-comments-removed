@@ -68,7 +68,6 @@ class nsFrameLoaderOwner : public nsISupports {
   
   
   void ChangeRemotenessToProcess(mozilla::dom::ContentParent* aContentParent,
-                                 uint64_t aPendingSwitchId,
                                  bool aReplaceBrowsingContext,
                                  mozilla::ErrorResult& rv);
 
