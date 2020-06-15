@@ -1830,6 +1830,34 @@ void nsContainerFrame::NormalizeChildLists() {
 
   
   
+  
+  auto PullItemsNextInFlow = [this](const nsFrameList& aItems) {
+    auto* firstNIF = static_cast<nsContainerFrame*>(GetNextInFlow());
+    if (!firstNIF) {
+      return;
+    }
+    nsFrameList childNIFs;
+    nsFrameList childOCNIFs;
+    for (auto* child : aItems) {
+      auto* childNIF = child->GetNextInFlow();
+      if (childNIF && childNIF->GetParent() != firstNIF) {
+        auto* parent = childNIF->GetParent();
+        parent->StealFrame(childNIF);
+        ReparentFrame(childNIF, parent, firstNIF);
+        if (childNIF->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER)) {
+          childOCNIFs.AppendFrame(nullptr, childNIF);
+        } else {
+          childNIFs.AppendFrame(nullptr, childNIF);
+        }
+      }
+    }
+    
+    firstNIF->MergeSortedOverflow(childNIFs);
+    firstNIF->MergeSortedExcessOverflowContainers(childOCNIFs);
+  };
+
+  
+  
   DebugOnly<bool> foundOwnPushedChild = false;
   {
     nsFrameList* ourOverflow = GetOverflowFrames();
@@ -1847,6 +1875,10 @@ void nsContainerFrame::NormalizeChildLists() {
           }
         }
         f = next;
+      }
+
+      if (items.NotEmpty()) {
+        PullItemsNextInFlow(items);
       }
       MergeSortedFrameLists(mFrames, items, GetContent());
       if (ourOverflow->IsEmpty()) {
@@ -1885,7 +1917,6 @@ void nsContainerFrame::NormalizeChildLists() {
     RemoveStateBits(didPushItemsBit);
     nsFrameList items;
     auto* nif = static_cast<nsContainerFrame*>(GetNextInFlow());
-    auto* firstNIF = nif;
     DebugOnly<bool> nifNeedPushedItem = false;
     while (nif) {
       nsFrameList nifItems;
@@ -1929,26 +1960,7 @@ void nsContainerFrame::NormalizeChildLists() {
     }
 
     if (!items.IsEmpty()) {
-      
-      
-      nsFrameList childNIFs;
-      nsFrameList childOCNIFs;
-      for (auto* child : items) {
-        auto* childNIF = child->GetNextInFlow();
-        if (childNIF && childNIF->GetParent() != firstNIF) {
-          auto* parent = childNIF->GetParent();
-          parent->StealFrame(childNIF);
-          ReparentFrame(childNIF, parent, firstNIF);
-          if ((childNIF->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER)) {
-            childOCNIFs.AppendFrame(nullptr, childNIF);
-          } else {
-            childNIFs.AppendFrame(nullptr, childNIF);
-          }
-        }
-      }
-      
-      firstNIF->MergeSortedOverflow(childNIFs);
-      firstNIF->MergeSortedExcessOverflowContainers(childOCNIFs);
+      PullItemsNextInFlow(items);
     }
 
     MOZ_ASSERT(
