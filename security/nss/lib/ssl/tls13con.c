@@ -1384,7 +1384,14 @@ tls13_CanResume(sslSocket *ss, const sslSessionID *sid)
         return PR_FALSE;
     }
 
+#ifdef UNSAFE_FUZZER_MODE
+    
+
+
+    if (sid->u.ssl3.cipherSuite != ss->ssl3.hs.cipher_suite) {
+#else
     if (tls13_GetHashForCipherSuite(sid->u.ssl3.cipherSuite) != tls13_GetHashForCipherSuite(ss->ssl3.hs.cipher_suite)) {
+#endif
         return PR_FALSE;
     }
 

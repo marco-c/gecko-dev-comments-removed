@@ -145,6 +145,8 @@ PRBool SSLInt_ExtensionNegotiated(PRFileDesc *fd, PRUint16 ext) {
   return (PRBool)(ss && ssl3_ExtensionNegotiated(ss, ext));
 }
 
+
+
 void SSLInt_ClearSelfEncryptKey() { ssl_ResetSelfEncryptKeys(); }
 
 sslSelfEncryptKeys *ssl_GetSelfEncryptKeysInt();
