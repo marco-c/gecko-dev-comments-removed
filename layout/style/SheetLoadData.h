@@ -67,12 +67,12 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
                 nsIPrincipal* aTriggeringPrincipal,
                 nsIReferrerInfo* aReferrerInfo, nsINode* aRequestingNode);
 
-  nsIReferrerInfo* ReferrerInfo() { return mReferrerInfo; }
+  nsIReferrerInfo* ReferrerInfo() const { return mReferrerInfo; }
 
   void ScheduleLoadEventIfNeeded();
 
-  NotNull<const Encoding*> DetermineNonBOMEncoding(nsACString const& aSegment,
-                                                   nsIChannel* aChannel);
+  NotNull<const Encoding*> DetermineNonBOMEncoding(const nsACString& aSegment,
+                                                   nsIChannel*) const;
 
   
   
@@ -203,8 +203,10 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
   const nsCOMPtr<nsINode> mRequestingNode;
 
   
+  const NotNull<const Encoding*> mGuessedEncoding;
+
   
-  const Encoding* const mPreloadEncoding;
+  const nsCompatibility mCompatMode;
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   
