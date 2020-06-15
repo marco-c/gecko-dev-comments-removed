@@ -50,6 +50,18 @@ interface nsITelemetry : nsISupports
   const unsigned long DATASET_ALL_CHANNELS = 0;
   const unsigned long DATASET_PRERELEASE_CHANNELS = 1;
 
+  
+
+
+
+
+
+
+
+
+
+  [implicit_jscontext]
+  jsval getCategoricalLabels();
 
   
 
