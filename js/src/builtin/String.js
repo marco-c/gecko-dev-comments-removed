@@ -538,6 +538,41 @@ function String_substr(start, length) {
 
 
 
+
+function String_concat(arg1) {
+    
+    RequireObjectCoercible(this);
+    var str = ToString(this);
+
+    
+    if (arguments.length === 0) {
+        return str;
+    }
+    if (arguments.length === 1) {
+        return str + ToString(arguments[0]);
+    }
+    if (arguments.length === 2) {
+        return str + ToString(arguments[0]) + ToString(arguments[1]);
+    }
+
+    
+    
+    var result = str;
+
+    
+    for (var i = 0; i < arguments.length; i++) {
+        
+        var nextString = ToString(arguments[i]);
+        
+        result += nextString;
+    }
+
+    
+    return result;
+}
+
+
+
 function String_slice(start, end) {
     
     RequireObjectCoercible(this);
