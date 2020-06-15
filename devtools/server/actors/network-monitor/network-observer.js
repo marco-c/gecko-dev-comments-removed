@@ -114,12 +114,15 @@ function matchRequest(channel, filters) {
     
     if (topFrame && topFrame.browsingContext.id == filters.browsingContextID) {
       return true;
-    } else if (
+    }
+
+    
+    
+    if (
       channel.loadInfo &&
+      channel.loadInfo.browsingContext &&
       channel.loadInfo.browsingContext.id == filters.browsingContextID
     ) {
-      
-      
       return true;
     }
   }
