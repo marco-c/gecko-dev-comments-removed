@@ -1928,29 +1928,6 @@ bool imgLoader::ValidateEntry(
     return false;
   }
 
-  bool requestGotLoad = false;
-  RefPtr<ProgressTracker> tracker;
-  RefPtr<mozilla::image::Image> image = request->GetImage();
-  if (image) {
-    tracker = image->GetProgressTracker();
-  } else {
-    tracker = request->GetProgressTracker();
-  }
-  if (tracker) {
-    if ((tracker->GetProgress() & (FLAG_LOAD_COMPLETE | FLAG_HAS_ERROR)) ==
-        FLAG_LOAD_COMPLETE) {
-      requestGotLoad = true;
-    }
-  }
-  
-  
-  
-  
-  
-  if (!requestGotLoad) {
-    return true;
-  }
-
   if (validateRequest && aCanMakeNewChannel) {
     LOG_SCOPE(gImgLog, "imgLoader::ValidateRequest |cache hit| must validate");
 
