@@ -483,6 +483,14 @@ void MobileViewportManager::UpdateVisualViewportSize(
     return;
   }
 
+  
+  
+  if (mManagerType == ManagerType::VisualViewportOnly &&
+      !mContext->AllowZoomingForDocument()) {
+    MVM_LOG("%p: Aborting before setting visual viewport size\n", this);
+    return;
+  }
+
   ScreenSize compositionSize = ScreenSize(GetCompositionSize(aDisplaySize));
 
   CSSSize compSize = compositionSize / aZoom;
