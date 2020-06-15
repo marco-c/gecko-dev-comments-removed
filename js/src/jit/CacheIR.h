@@ -353,7 +353,8 @@ enum class AttachDecision {
 
 
 
-enum class ArgumentKind : uint8_t { Callee, This, NewTarget, Arg0, Arg1 };
+
+enum class ArgumentKind : uint8_t { Callee, This, NewTarget, Arg0, Arg1, Arg2 };
 
 
 
@@ -380,7 +381,7 @@ inline int32_t GetIndexOfArgument(ArgumentKind kind, CallFlags flags,
       break;
     case CallFlags::Spread:
       
-      MOZ_ASSERT(kind != ArgumentKind::Arg1);
+      MOZ_ASSERT(kind <= ArgumentKind::Arg0);
       *addArgc = false;
       break;
     case CallFlags::FunCall:
@@ -401,6 +402,8 @@ inline int32_t GetIndexOfArgument(ArgumentKind kind, CallFlags flags,
       return flags.isConstructing() + hasArgumentArray - 1;
     case ArgumentKind::Arg1:
       return flags.isConstructing() + hasArgumentArray - 2;
+    case ArgumentKind::Arg2:
+      return flags.isConstructing() + hasArgumentArray - 3;
     case ArgumentKind::NewTarget:
       MOZ_ASSERT(flags.isConstructing());
       *addArgc = false;
@@ -1546,6 +1549,8 @@ class MOZ_RAII CallIRGenerator : public IRGenerator {
   AttachDecision tryAttachGuardToClass(HandleFunction callee,
                                        InlinableNative native);
   AttachDecision tryAttachHasClass(HandleFunction callee, const JSClass* clasp);
+  AttachDecision tryAttachRegExpMatcherSearcherTester(HandleFunction callee,
+                                                      InlinableNative native);
   AttachDecision tryAttachStringChar(HandleFunction callee, StringChar kind);
   AttachDecision tryAttachStringCharCodeAt(HandleFunction callee);
   AttachDecision tryAttachStringCharAt(HandleFunction callee);
