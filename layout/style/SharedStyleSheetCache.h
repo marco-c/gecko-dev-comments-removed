@@ -55,7 +55,7 @@ class SharedStyleSheetCache final : public nsIMemoryReporter {
 
   
   using CacheResult = std::tuple<RefPtr<StyleSheet>, css::Loader::SheetState>;
-  CacheResult Lookup(SheetLoadDataHashKey&, bool aSyncLoad);
+  CacheResult Lookup(css::Loader&, const SheetLoadDataHashKey&, bool aSyncLoad);
 
   
   
@@ -112,7 +112,14 @@ class SharedStyleSheetCache final : public nsIMemoryReporter {
 
   ~SharedStyleSheetCache();
 
-  nsRefPtrHashtable<SheetLoadDataHashKey, StyleSheet> mCompleteSheets;
+  struct CompleteSheet {
+    uint32_t mExpirationTime = 0;
+    RefPtr<StyleSheet> mSheet;
+
+    bool Expired() const;
+  };
+
+  nsDataHashtable<SheetLoadDataHashKey, CompleteSheet> mCompleteSheets;
   nsRefPtrHashtable<SheetLoadDataHashKey, css::SheetLoadData> mPendingDatas;
   
   
