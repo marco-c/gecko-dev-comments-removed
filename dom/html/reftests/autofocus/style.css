@@ -1,6 +1,9 @@
 :focus { background-color: green; }
 
 
+textarea { -moz-appearance: none; }
+
+
 
 
 
