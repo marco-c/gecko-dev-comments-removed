@@ -59,7 +59,6 @@
 
 #include "nsBidiUtils.h"
 
-#include "mozilla/dom/FallbackEncoding.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/IdentifierMapEntry.h"
@@ -317,73 +316,6 @@ void nsHTMLDocument::TryParentCharset(nsIDocShell* aDocShell,
   }
 }
 
-void nsHTMLDocument::TryTLD(int32_t& aCharsetSource,
-                            NotNull<const Encoding*>& aEncoding) {
-  if (aCharsetSource >= kCharsetFromTopLevelDomain) {
-    return;
-  }
-  if (!StaticPrefs::intl_charset_fallback_tld()) {
-    return;
-  }
-  if (!mDocumentURI) {
-    return;
-  }
-  nsAutoCString host;
-  mDocumentURI->GetAsciiHost(host);
-  if (host.IsEmpty()) {
-    return;
-  }
-  
-  
-  if (host.Last() == '.') {
-    host.SetLength(host.Length() - 1);
-    if (host.IsEmpty()) {
-      return;
-    }
-  }
-  
-  
-  if (host.Last() == '.') {
-    return;
-  }
-  int32_t index = host.RFindChar('.');
-  if (index == kNotFound) {
-    
-    return;
-  }
-  
-  
-  
-  nsAutoCString tld;
-  ToLowerCase(Substring(host, index + 1, host.Length() - (index + 1)), tld);
-  
-  if (!FallbackEncoding::IsParticipatingTopLevelDomain(tld)) {
-    return;
-  }
-  
-  bool seenNonDigit = false;
-  for (size_t i = 0; i < tld.Length(); ++i) {
-    char c = tld.CharAt(i);
-    if (c < '0' || c > '9') {
-      seenNonDigit = true;
-      break;
-    }
-  }
-  if (!seenNonDigit) {
-    return;
-  }
-  aCharsetSource = kCharsetFromTopLevelDomain;
-  aEncoding = FallbackEncoding::FromTopLevelDomain(tld);
-}
-
-void nsHTMLDocument::TryFallback(int32_t& aCharsetSource,
-                                 NotNull<const Encoding*>& aEncoding) {
-  if (kCharsetFromFallback <= aCharsetSource) return;
-
-  aCharsetSource = kCharsetFromFallback;
-  aEncoding = FallbackEncoding::FromLocale();
-}
-
 
 bool ShouldUsePrototypeDocument(nsIChannel* aChannel, Document* aDoc) {
   if (!aChannel || !aDoc ||
@@ -555,6 +487,8 @@ nsresult nsHTMLDocument::StartDocumentLoad(const char* aCommand,
     NS_ASSERTION(docShell, "Unexpected null value");
 
     charsetSource = kCharsetUninitialized;
+    
+    encoding = WINDOWS_1252_ENCODING;
 
     
     
@@ -580,9 +514,6 @@ nsresult nsHTMLDocument::StartDocumentLoad(const char* aCommand,
     if (cachingChan && !urlSpec.IsEmpty()) {
       TryCacheCharset(cachingChan, charsetSource, encoding);
     }
-
-    TryTLD(charsetSource, encoding);
-    TryFallback(charsetSource, encoding);
   }
 
   SetDocumentCharacterSetSource(charsetSource);
