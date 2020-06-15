@@ -5170,6 +5170,35 @@ AttachDecision CallIRGenerator::tryAttachToInteger(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+AttachDecision CallIRGenerator::tryAttachToLength(HandleFunction callee) {
+  
+  if (argc_ != 1 || !args_[0].isInt32()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  Int32OperandId argcId(writer.setInputOperandId(0));
+
+  
+  emitNativeCalleeGuard(callee);
+
+  
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  Int32OperandId int32ArgId = writer.guardToInt32(argId);
+  Int32OperandId zeroId = writer.loadInt32Constant(0);
+  bool isMax = true;
+  Int32OperandId maxId = writer.int32MinMax(isMax, int32ArgId, zeroId);
+  writer.loadInt32Result(maxId);
+
+  
+  
+  writer.returnFromIC();
+  cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
+
+  trackAttached("ToLength");
+  return AttachDecision::Attach;
+}
+
 AttachDecision CallIRGenerator::tryAttachIsObject(HandleFunction callee) {
   
   if (argc_ != 1) {
@@ -5936,6 +5965,8 @@ AttachDecision CallIRGenerator::tryAttachInlinableNative(
       return tryAttachToObject(callee, native);
     case InlinableNative::IntrinsicToInteger:
       return tryAttachToInteger(callee);
+    case InlinableNative::IntrinsicToLength:
+      return tryAttachToLength(callee);
     case InlinableNative::IntrinsicIsObject:
       return tryAttachIsObject(callee);
     case InlinableNative::IntrinsicIsCallable:
