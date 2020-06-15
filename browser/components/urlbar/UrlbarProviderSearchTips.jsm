@@ -150,11 +150,7 @@ class ProviderSearchTips extends UrlbarProvider {
 
 
   isActive(queryContext) {
-    return (
-      UrlbarPrefs.get("update1.searchTips") &&
-      this.currentTip &&
-      cfrFeaturesUserPref
-    );
+    return this.currentTip && cfrFeaturesUserPref;
   }
 
   
@@ -300,7 +296,6 @@ class ProviderSearchTips extends UrlbarProvider {
 
     
     if (
-      !UrlbarPrefs.get("update1.searchTips") ||
       !cfrFeaturesUserPref ||
       (this.disableTipsForCurrentSession &&
         !UrlbarPrefs.get("searchTips.test.ignoreShowLimits"))

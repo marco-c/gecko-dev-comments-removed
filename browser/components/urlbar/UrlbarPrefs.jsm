@@ -150,14 +150,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["usepreloadedtopurls.expire_days", 14],
 
   
-  
-  ["update1.interventions", true],
-
-  
-  
-  ["update1.searchTips", true],
-
-  
   ["update2.searchButton", false],
 ]);
 const PREF_OTHER_DEFAULTS = new Map([

@@ -34,9 +34,6 @@ const SEARCH_STRINGS = {
 };
 
 add_task(async function init() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.update1.interventions", true]],
-  });
   registerCleanupFunction(() => {
     
     
