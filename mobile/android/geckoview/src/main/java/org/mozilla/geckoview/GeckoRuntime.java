@@ -166,7 +166,6 @@ public final class GeckoRuntime implements Parcelable {
     private Delegate mDelegate;
     private ServiceWorkerDelegate mServiceWorkerDelegate;
     private WebNotificationDelegate mNotificationDelegate;
-    private RuntimeTelemetry mTelemetry;
     private StorageController mStorageController;
     private final WebExtensionController mWebExtensionController;
     private WebPushController mPushController;
@@ -737,22 +736,6 @@ public final class GeckoRuntime implements Parcelable {
 
      void setPref(final String name, final Object value) {
         PrefsHelper.setPref(name, value,  false);
-    }
-
-    
-
-
-
-
-    @UiThread
-    public @NonNull RuntimeTelemetry getTelemetry() {
-        ThreadUtils.assertOnUiThread();
-
-        if (mTelemetry == null) {
-            mTelemetry = new RuntimeTelemetry(this);
-        }
-        return mTelemetry;
-
     }
 
     

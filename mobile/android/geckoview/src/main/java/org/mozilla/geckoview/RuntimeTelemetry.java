@@ -9,12 +9,7 @@ package org.mozilla.geckoview;
 import android.support.annotation.AnyThread;
 import android.support.annotation.NonNull;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import org.mozilla.gecko.annotation.WrapForJNI;
-import org.mozilla.gecko.EventDispatcher;
-import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.gecko.GeckoThread;
 
@@ -22,48 +17,7 @@ import org.mozilla.gecko.GeckoThread;
 
 
 public final class RuntimeTelemetry {
-    private final EventDispatcher mEventDispatcher;
-
-     RuntimeTelemetry(final @NonNull GeckoRuntime runtime) {
-        mEventDispatcher = EventDispatcher.getInstance();
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @Deprecated
-    @AnyThread
-    public @NonNull GeckoResult<JSONObject> getSnapshots(final boolean clear) {
-        final GeckoBundle msg = new GeckoBundle(1);
-        msg.putBoolean("clear", clear);
-
-        final CallbackResult<JSONObject> result = new CallbackResult<JSONObject>() {
-            @Override
-            public void sendSuccess(final Object value) {
-                try {
-                    complete(((GeckoBundle) value).toJSONObject());
-                } catch (JSONException ex) {
-                    completeExceptionally(ex);
-                }
-            }
-        };
-
-        mEventDispatcher.dispatch("GeckoView:TelemetrySnapshots", msg, result);
-
-        return result;
-    }
+    protected RuntimeTelemetry() {}
 
     
 
