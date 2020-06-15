@@ -2552,6 +2552,13 @@ bool nsIFrame::CanBeDynamicReflowRoot() const {
     }
   }
 
+  
+  
+  
+  if (GetPrevContinuation() || GetNextContinuation()) {
+    return false;
+  }
+
   return true;
 }
 
