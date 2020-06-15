@@ -22,6 +22,7 @@
 namespace mozilla {
 namespace dom {
 
+struct DOMMatrix2DInit;
 class SVGElement;
 class SVGMatrix;
 
@@ -50,6 +51,7 @@ class DOMSVGTransform final : public nsWrapperCache {
 
   explicit DOMSVGTransform();
   explicit DOMSVGTransform(const gfxMatrix& aMatrix);
+  explicit DOMSVGTransform(const DOMMatrix2DInit& aMatrix, ErrorResult& rv);
 
   
 
@@ -110,7 +112,7 @@ class DOMSVGTransform final : public nsWrapperCache {
   uint16_t Type() const;
   dom::SVGMatrix* GetMatrix();
   float Angle() const;
-  void SetMatrix(dom::SVGMatrix& matrix, ErrorResult& rv);
+  void SetMatrix(const DOMMatrix2DInit& matrix, ErrorResult& rv);
   void SetTranslate(float tx, float ty, ErrorResult& rv);
   void SetScale(float sx, float sy, ErrorResult& rv);
   void SetRotate(float angle, float cx, float cy, ErrorResult& rv);
