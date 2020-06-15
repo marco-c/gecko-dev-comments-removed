@@ -159,11 +159,6 @@ child:
 
   
   
-  
-  async CancelRedirected();
-
-  
-  
   async DeleteSelf();
 
   
