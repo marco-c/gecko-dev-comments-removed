@@ -460,7 +460,15 @@ void ExtensionPolicyService::CheckDocument(Document* aDocument) {
   if (win) {
     nsIDocShell* docShell = win->GetDocShell();
     RefPtr<ContentFrameMessageManager> mm = docShell->GetMessageManager();
-    if (!mm || !mMessageManagers.Contains(mm)) {
+    nsString group = win->GetBrowsingContext()->Top()->GetMessageManagerGroup();
+
+    
+    
+    if ((!mm || !mMessageManagers.Contains(mm)) &&
+        
+        
+        
+        !group.EqualsLiteral("browsers")) {
       return;
     }
 
