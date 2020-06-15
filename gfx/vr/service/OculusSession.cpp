@@ -211,8 +211,11 @@ OculusSession::~OculusSession() { Shutdown(); }
 
 bool OculusSession::Initialize(mozilla::gfx::VRSystemState& aSystemState,
                                bool aDetectRuntimesOnly) {
-  if (!StaticPrefs::dom_vr_enabled() ||
-      !StaticPrefs::dom_vr_oculus_enabled_AtStartup()) {
+  if (StaticPrefs::dom_vr_puppet_enabled()) {
+    
+    return false;
+  }
+  if (!StaticPrefs::dom_vr_enabled() || !StaticPrefs::dom_vr_oculus_enabled()) {
     return false;
   }
 
