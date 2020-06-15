@@ -7,14 +7,14 @@
 #ifndef TaskQueue_h_
 #define TaskQueue_h_
 
+#include <queue>
+
 #include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TaskDispatcher.h"
 #include "mozilla/Unused.h"
-
-#include <queue>
-
+#include "nsIDirectTaskDispatcher.h"
 #include "nsThreadUtils.h"
 
 class nsIEventTarget;
@@ -49,7 +49,7 @@ typedef MozPromise<bool, bool, false> ShutdownPromise;
 
 
 
-class TaskQueue : public AbstractThread {
+class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
   class EventTargetWrapper;
 
  public:
@@ -59,6 +59,9 @@ class TaskQueue : public AbstractThread {
 
   TaskQueue(already_AddRefed<nsIEventTarget> aTarget, const char* aName,
             bool aSupportsTailDispatch = false, bool aRetainFlags = false);
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSIDIRECTTASKDISPATCHER
 
   TaskDispatcher& TailDispatcher() override;
 
@@ -150,7 +153,8 @@ class TaskQueue : public AbstractThread {
   class AutoTaskGuard : public AutoTaskDispatcher {
    public:
     explicit AutoTaskGuard(TaskQueue* aQueue)
-        : AutoTaskDispatcher( true),
+        : AutoTaskDispatcher(aQueue,
+                              true),
           mQueue(aQueue),
           mLastCurrentThread(nullptr) {
       
@@ -197,6 +201,8 @@ class TaskQueue : public AbstractThread {
 
   
   const char* const mName;
+
+  SimpleTaskQueue mDirectTasks;
 
   class Runner : public Runnable {
    public:
