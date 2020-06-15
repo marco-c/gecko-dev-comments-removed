@@ -21,22 +21,19 @@ const DOH_ENABLED_PREF = "doh-rollout.enabled";
 
 
 
-const NETWORK_TRR_MODE_PREF = "network.trr.mode";
-
-
-
-const NETWORK_TRR_URI_PREF = "network.trr.uri";
 
 
 
 
-
-const ROLLOUT_TRR_MODE_PREF = "doh-rollout.mode";
+const TRR_MODE_PREF = "network.trr.mode";
 
 
 
 
 const DOH_SELF_ENABLED_PREF = "doh-rollout.self-enabled";
+
+
+const DOH_PREVIOUS_TRR_MODE_PREF = "doh-rollout.previous.trr.mode";
 
 
 const DOH_DOORHANGER_SHOWN_PREF = "doh-rollout.doorhanger-shown";
@@ -61,11 +58,6 @@ const DOH_DONE_FIRST_RUN_PREF = "doh-rollout.doneFirstRun";
 const DOH_BALROG_MIGRATION_PREF = "doh-rollout.balrog-migration-done";
 
 
-
-
-const DOH_PREVIOUS_TRR_MODE_PREF = "doh-rollout.previous.trr.mode";
-
-
 const DOH_DEBUG_PREF = "doh-rollout.debug";
 
 const stateManager = {
@@ -76,29 +68,39 @@ const stateManager = {
       case "uninstalled":
         break;
       case "disabled":
-        await rollout.setSetting(ROLLOUT_TRR_MODE_PREF, 0);
+        await rollout.setSetting(TRR_MODE_PREF, 0);
+        break;
+      case "manuallyDisabled":
+        await browser.experiments.preferences.clearUserPref(
+          DOH_SELF_ENABLED_PREF
+        );
         break;
       case "UIOk":
         await rollout.setSetting(DOH_SELF_ENABLED_PREF, true);
         break;
       case "enabled":
-        await rollout.setSetting(ROLLOUT_TRR_MODE_PREF, 2);
+        await rollout.setSetting(TRR_MODE_PREF, 2);
         await rollout.setSetting(DOH_SELF_ENABLED_PREF, true);
         break;
-      case "manuallyDisabled":
       case "UIDisabled":
+        await rollout.setSetting(TRR_MODE_PREF, 5);
         await browser.experiments.preferences.clearUserPref(
           DOH_SELF_ENABLED_PREF
-        );
-      
-      case "rollback":
-        await browser.experiments.preferences.clearUserPref(
-          ROLLOUT_TRR_MODE_PREF
         );
         break;
     }
 
     await browser.experiments.heuristics.sendStatePing(state);
+    await stateManager.rememberTRRMode();
+  },
+
+  async rememberTRRMode() {
+    let curMode = await browser.experiments.preferences.getIntPref(
+      TRR_MODE_PREF,
+      0
+    );
+    log("Saving current trr mode:", curMode);
+    await rollout.setSetting(DOH_PREVIOUS_TRR_MODE_PREF, curMode, true);
   },
 
   async rememberDoorhangerShown() {
@@ -132,7 +134,48 @@ const stateManager = {
       return false;
     }
 
-    return true;
+    let prevMode = await rollout.getSetting(DOH_PREVIOUS_TRR_MODE_PREF, 0);
+
+    let curMode = await browser.experiments.preferences.getIntPref(
+      TRR_MODE_PREF,
+      0
+    );
+
+    log("Comparing previous trr mode to current mode:", prevMode, curMode);
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+    if (prevMode === curMode) {
+      return true;
+    }
+
+    
+    log("Mismatched, curMode: ", curMode);
+
+    
+    let results = await runHeuristics();
+    results.evaluateReason = "userModified";
+    if (curMode === 0 || curMode === 5) {
+      
+      browser.experiments.heuristics.sendHeuristicsPing("disable_doh", results);
+      browser.experiments.preferences.clearUserPref(DOH_SELF_ENABLED_PREF);
+      await stateManager.rememberDisableHeuristics();
+    } else {
+      
+      await rollout.trrModePrefHasUserValue(
+        "shouldRunHeuristics_mismatch",
+        results
+      );
+    }
+
+    return false;
   },
 
   async shouldShowDoorhanger() {
@@ -317,21 +360,39 @@ const rollout = {
     });
   },
 
-  async trrPrefUserModifiedCheck() {
-    let modeHasUserValue = await browser.experiments.preferences.prefHasUserValue(
-      NETWORK_TRR_MODE_PREF
-    );
-    let uriHasUserValue = await browser.experiments.preferences.prefHasUserValue(
-      NETWORK_TRR_URI_PREF
-    );
-    if (modeHasUserValue || uriHasUserValue) {
-      await stateManager.setState("manuallyDisabled");
+  async trrModePrefHasUserValue(event, results) {
+    results.evaluateReason = event;
+
+    
+    
+    
+
+    if (await browser.experiments.preferences.prefHasUserValue(TRR_MODE_PREF)) {
+      
+      
+      browser.experiments.heuristics.sendHeuristicsPing(
+        "prefHasUserValue",
+        results
+      );
+
+      browser.experiments.preferences.clearUserPref(DOH_SELF_ENABLED_PREF);
+      await this.setSetting(DOH_SKIP_HEURISTICS_PREF, true);
       await stateManager.rememberDisableHeuristics();
     }
   },
 
   async enterprisePolicyCheck(event, results) {
     results.evaluateReason = event;
+
+    
+    let skipHeuristicsCheck = await rollout.getSetting(
+      DOH_SKIP_HEURISTICS_PREF,
+      false
+    );
+
+    if (skipHeuristicsCheck) {
+      return;
+    }
 
     
     let policyEnableDoH = await browser.experiments.heuristics.checkEnterprisePolicies();
@@ -373,6 +434,7 @@ const rollout = {
     const legacyLocalStorageKeys = [
       "doneFirstRun",
       "skipHeuristicsCheck",
+      DOH_PREVIOUS_TRR_MODE_PREF,
       DOH_DOORHANGER_SHOWN_PREF,
       DOH_DOORHANGER_USER_DECISION_PREF,
       DOH_DISABLED_PREF,
@@ -404,31 +466,8 @@ const rollout = {
     log("User successfully migrated.");
   },
 
-  
-  
-  
-  async migrateOldTrrMode() {
-    const needsMigration = await browser.experiments.preferences.getIntPref(
-      DOH_PREVIOUS_TRR_MODE_PREF,
-      -1
-    );
-
-    if (needsMigration === -1) {
-      log("User's TRR mode prefs already migrated");
-      return;
-    }
-
-    await browser.experiments.preferences.clearUserPref(NETWORK_TRR_MODE_PREF);
-    await browser.experiments.preferences.clearUserPref(
-      DOH_PREVIOUS_TRR_MODE_PREF
-    );
-
-    log("TRR mode prefs migrated");
-  },
-
   async init() {
     log("calling init");
-
     
     let doneFirstRun = await this.getSetting(DOH_DONE_FIRST_RUN_PREF, false);
 
@@ -441,13 +480,13 @@ const rollout = {
     if (!doneFirstRun) {
       log("first run!");
       await this.setSetting(DOH_DONE_FIRST_RUN_PREF, true);
+      
+      await this.trrModePrefHasUserValue("first_run", results);
       await this.enterprisePolicyCheck("first_run", results);
     } else {
       log("not first run!");
       await this.enterprisePolicyCheck("startup", results);
     }
-
-    await this.trrPrefUserModifiedCheck();
 
     if (!(await stateManager.shouldRunHeuristics())) {
       return;
@@ -482,17 +521,6 @@ const rollout = {
     } catch (e) {
       
     }
-
-    browser.experiments.preferences.onTRRPrefChanged.addListener(
-      async function listener() {
-        await stateManager.setState("manuallyDisabled");
-        await stateManager.rememberDisableHeuristics();
-        await setup.stop();
-        browser.experiments.preferences.onTRRPrefChanged.removeListener(
-          listener
-        );
-      }
-    );
   },
 
   async onConnectionChanged({ status }) {
@@ -541,6 +569,10 @@ const setup = {
       DOH_DOORHANGER_USER_DECISION_PREF,
       ""
     );
+    const runAddonPreviousTRRMode = await rollout.getSetting(
+      DOH_PREVIOUS_TRR_MODE_PREF,
+      -1
+    );
 
     if (isAddonDisabled) {
       
@@ -552,40 +584,18 @@ const setup = {
       return;
     }
 
-    if (runAddonBypassPref) {
-      
-      
-      
-      rollout.migrateOldTrrMode();
-    }
-
     if (
       runAddonPref ||
       runAddonBypassPref ||
       runAddonDoorhangerDecision === "UIOk" ||
-      runAddonDoorhangerDecision === "enabled"
+      runAddonDoorhangerDecision === "enabled" ||
+      runAddonPreviousTRRMode === 2 ||
+      runAddonPreviousTRRMode === 0
     ) {
       rollout.init();
     } else {
       log("Disabled, aborting!");
     }
-  },
-
-  async stop() {
-    
-    browser.networkStatus.onConnectionChanged.removeListener(
-      rollout.onConnectionChanged
-    );
-
-    try {
-      browser.captivePortal.onStateChange.removeListener(
-        rollout.onCaptiveStateChanged
-      );
-    } catch (e) {
-      
-    }
-
-    await browser.experiments.doorhanger.cancel();
   },
 };
 
@@ -599,16 +609,30 @@ const setup = {
   await rollout.migrateLocalStoragePrefs();
 
   log("Watching `doh-rollout.enabled` pref");
-  browser.experiments.preferences.onEnabledChanged.addListener(async () => {
+  browser.experiments.preferences.onPrefChanged.addListener(async () => {
     let enabled = await rollout.getSetting(DOH_ENABLED_PREF, false);
     if (enabled) {
       setup.start();
     } else {
       
       if (await stateManager.shouldRunHeuristics()) {
-        await stateManager.setState("rollback");
+        await stateManager.setState("disabled");
       }
-      setup.stop();
+
+      
+      browser.networkStatus.onConnectionChanged.removeListener(
+        rollout.onConnectionChanged
+      );
+
+      try {
+        browser.captivePortal.onStateChange.removeListener(
+          rollout.onCaptiveStateChanged
+        );
+      } catch (e) {
+        
+      }
+
+      await browser.experiments.doorhanger.cancel();
     }
   });
 
@@ -620,6 +644,6 @@ const setup = {
   ) {
     
     
-    await stateManager.setState("rollback");
+    await stateManager.setState("disabled");
   }
 })();

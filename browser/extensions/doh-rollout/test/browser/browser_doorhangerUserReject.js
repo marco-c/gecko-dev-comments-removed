@@ -57,23 +57,23 @@ add_task(async function testDoorhangerUserReject() {
 
   BrowserTestUtils.removeTab(tab);
 
-  await ensureTRRMode(undefined);
+  await ensureTRRMode(5);
   await checkHeuristicsTelemetry("disable_doh", "doorhangerDecline");
 
   
   simulateNetworkChange();
-  await ensureNoTRRModeChange(undefined);
+  await ensureNoTRRModeChange(5);
   ensureNoHeuristicsTelemetry();
 
   
   await restartAddon();
   ensureNoTRRSelectionTelemetry();
-  await ensureNoTRRModeChange(undefined);
+  await ensureNoTRRModeChange(5);
   ensureNoHeuristicsTelemetry();
 
   
   setFailingHeuristics();
   simulateNetworkChange();
-  await ensureNoTRRModeChange(undefined);
+  await ensureNoTRRModeChange(5);
   ensureNoHeuristicsTelemetry();
 });
