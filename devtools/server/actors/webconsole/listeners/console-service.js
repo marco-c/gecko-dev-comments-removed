@@ -24,34 +24,32 @@ const { WebConsoleUtils } = require("devtools/server/actors/webconsole/utils");
 
 
 
+class ConsoleServiceListener {
+  constructor(window, handler) {
+    this.window = window;
+    this.handler = handler;
+  }
 
-function ConsoleServiceListener(window, listener) {
-  this.window = window;
-  this.listener = listener;
-}
-exports.ConsoleServiceListener = ConsoleServiceListener;
-
-ConsoleServiceListener.prototype = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIConsoleListener]),
+  QueryInterface = ChromeUtils.generateQI([Ci.nsIConsoleListener]);
 
   
 
 
 
-  window: null,
+  window = null;
 
   
 
 
 
-  listener: null,
+  handler = null;
 
   
 
 
-  init: function() {
+  init() {
     Services.console.registerListener(this);
-  },
+  }
 
   
 
@@ -61,8 +59,8 @@ ConsoleServiceListener.prototype = {
 
 
 
-  observe: function(message) {
-    if (!this.listener) {
+  observe(message) {
+    if (!this.handler) {
       return;
     }
 
@@ -87,9 +85,8 @@ ConsoleServiceListener.prototype = {
     if (message.sourceName === "debugger eager eval code") {
       return;
     }
-
-    this.listener.onConsoleServiceMessage(message);
-  },
+    this.handler(message);
+  }
 
   
 
@@ -100,7 +97,7 @@ ConsoleServiceListener.prototype = {
 
 
 
-  isCategoryAllowed: function(category) {
+  isCategoryAllowed(category) {
     if (!category) {
       return false;
     }
@@ -114,7 +111,7 @@ ConsoleServiceListener.prototype = {
     }
 
     return true;
-  },
+  }
 
   
 
@@ -126,7 +123,7 @@ ConsoleServiceListener.prototype = {
 
 
 
-  getCachedMessages: function(includePrivate = false) {
+  getCachedMessages(includePrivate = false) {
     const errors = Services.console.getMessageArray() || [];
 
     
@@ -165,9 +162,9 @@ ConsoleServiceListener.prototype = {
 
       return true;
     });
-  },
+  }
 
-  clearCachedMessages: function() {
+  clearCachedMessages() {
     
     
     if (!this.window) {
@@ -177,13 +174,15 @@ ConsoleServiceListener.prototype = {
         Services.console.resetWindow(id)
       );
     }
-  },
+  }
 
   
 
 
-  destroy: function() {
+  destroy() {
     Services.console.unregisterListener(this);
-    this.listener = this.window = null;
-  },
-};
+    this.handler = this.window = null;
+  }
+}
+
+exports.ConsoleServiceListener = ConsoleServiceListener;
