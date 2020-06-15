@@ -10868,74 +10868,89 @@ RefPtr<MobileViewportManager> PresShell::GetMobileViewportManager() const {
   return mMobileViewportManager;
 }
 
-bool UseMobileViewportManager(PresShell* aPresShell, Document* aDocument) {
+Maybe<MobileViewportManager::ManagerType> UseMobileViewportManager(
+    PresShell* aPresShell, Document* aDocument) {
   
   
   if (nsPresContext* presContext = aPresShell->GetPresContext()) {
     if (nsIWidget* widget = presContext->GetNearestWidget()) {
       if (!widget->AsyncPanZoomEnabled()) {
-        return false;
+        return Nothing();
       }
     }
   }
-  return StaticPrefs::apz_mvm_force_enabled() ||
-         nsLayoutUtils::ShouldHandleMetaViewport(aDocument) ||
-         nsLayoutUtils::AllowZoomingForDocument(aDocument);
+  if (nsLayoutUtils::ShouldHandleMetaViewport(aDocument)) {
+    return Some(MobileViewportManager::ManagerType::VisualAndMetaViewport);
+  }
+  if (StaticPrefs::apz_mvm_force_enabled() ||
+      nsLayoutUtils::AllowZoomingForDocument(aDocument)) {
+    return Some(MobileViewportManager::ManagerType::VisualViewportOnly);
+  }
+  return Nothing();
 }
 
 void PresShell::UpdateViewportOverridden(bool aAfterInitialization) {
   
   
   
-  bool needMVM = UseMobileViewportManager(this, mDocument);
+  Maybe<MobileViewportManager::ManagerType> mvmType =
+      UseMobileViewportManager(this, mDocument);
 
-  if (needMVM == !!mMobileViewportManager) {
-    
+  if (mvmType.isNothing() && !mMobileViewportManager) {
     
     return;
   }
+  if (mvmType && mMobileViewportManager &&
+      *mvmType == mMobileViewportManager->GetManagerType()) {
+    
+  }
 
-  if (needMVM) {
+  if (mMobileViewportManager) {
+    
+    
+    
+    mMobileViewportManager->Destroy();
+    mMobileViewportManager = nullptr;
+    mMVMContext = nullptr;
+
+    ResetVisualViewportSize();
+
+    
+    
+    SetResolutionAndScaleTo(mDocument->GetSavedResolutionBeforeMVM(),
+                            ResolutionChangeOrigin::MainThreadRestore);
+
+    if (aAfterInitialization) {
+      
+      
+      
+      
+      nsDocShell* docShell =
+          static_cast<nsDocShell*>(GetPresContext()->GetDocShell());
+      int32_t width, height;
+      docShell->GetSize(&width, &height);
+      docShell->SetSize(width, height, false);
+    }
+  }
+
+  if (mvmType) {
+    
+    
+    MOZ_ASSERT(!mMobileViewportManager);
+
     if (mPresContext->IsRootContentDocumentCrossProcess()) {
       
       
       mDocument->SetSavedResolutionBeforeMVM(mResolution.valueOr(1.0f));
 
       mMVMContext = new GeckoMVMContext(mDocument, this);
-      mMobileViewportManager = new MobileViewportManager(mMVMContext);
+      mMobileViewportManager = new MobileViewportManager(mMVMContext, *mvmType);
 
       if (aAfterInitialization) {
         
         mMobileViewportManager->SetInitialViewport();
       }
     }
-    return;
-  }
-
-  MOZ_ASSERT(mMobileViewportManager,
-             "Shouldn't reach this without a MobileViewportManager.");
-
-  mMobileViewportManager->Destroy();
-  mMobileViewportManager = nullptr;
-  mMVMContext = nullptr;
-
-  ResetVisualViewportSize();
-
-  
-  
-  SetResolutionAndScaleTo(mDocument->GetSavedResolutionBeforeMVM(),
-                          ResolutionChangeOrigin::MainThreadRestore);
-
-  if (aAfterInitialization) {
-    
-    
-    
-    
-    nsDocShell* docShell =
-        static_cast<nsDocShell*>(GetPresContext()->GetDocShell());
-    int32_t width, height;
-    docShell->GetSize(&width, &height);
-    docShell->SetSize(width, height, false);
   }
 }
 

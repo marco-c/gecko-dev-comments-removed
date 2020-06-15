@@ -31,8 +31,19 @@ class MobileViewportManager final : public nsIDOMEventListener,
   NS_DECL_NSIDOMEVENTLISTENER
   NS_DECL_NSIOBSERVER
 
-  explicit MobileViewportManager(mozilla::MVMContext* aContext);
+  
+
+
+
+
+
+  enum class ManagerType { VisualAndMetaViewport, VisualViewportOnly };
+
+  explicit MobileViewportManager(mozilla::MVMContext* aContext,
+                                 ManagerType aType);
   void Destroy();
+
+  ManagerType GetManagerType() { return mManagerType; }
 
   
 
@@ -162,6 +173,7 @@ class MobileViewportManager final : public nsIDOMEventListener,
   mozilla::CSSToScreenScale GetZoom() const;
 
   RefPtr<mozilla::MVMContext> mContext;
+  ManagerType mManagerType;
   bool mIsFirstPaint;
   bool mPainted;
   mozilla::LayoutDeviceIntSize mDisplaySize;
