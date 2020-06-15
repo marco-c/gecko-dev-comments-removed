@@ -668,6 +668,11 @@ class UrlbarInput {
 
         if (
           result.heuristic &&
+          
+          !UrlbarPrefs.get("browser.fixup.dns_first_for_single_words") &&
+          
+          
+          UrlbarPrefs.get("dnsResolveSingleWordsAfterSearch") > 0 &&
           this.window.gKeywordURIFixup &&
           UrlbarUtils.looksLikeSingleWordHost(originalUntrimmedValue)
         ) {

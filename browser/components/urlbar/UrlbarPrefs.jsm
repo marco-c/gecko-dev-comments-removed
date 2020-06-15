@@ -62,6 +62,12 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["disableExtendForTests", false],
 
   
+  
+  
+  
+  ["dnsResolveSingleWordsAfterSearch", 1],
+
+  
   ["eventTelemetry.enabled", false],
 
   

@@ -194,6 +194,7 @@ pref("keyword.enabled", true);
 
 
 
+
 pref("browser.fixup.domainwhitelist.localhost", true);
 
 pref("browser.fixup.domainsuffixwhitelist.test", true);
@@ -271,6 +272,8 @@ pref("browser.urlbar.ctrlCanonizesURLs", true);
 
 
 pref("browser.urlbar.autoFill", true);
+
+
 pref("browser.urlbar.speculativeConnect.enabled", true);
 
 
@@ -326,6 +329,12 @@ pref("browser.urlbar.update1.searchTips", true);
 pref("browser.urlbar.update2.expandTextOnFocus", false);
 
 pref("browser.urlbar.eventTelemetry.enabled", false);
+
+
+
+
+
+pref("browser.urlbar.dnsResolveSingleWordsAfterSearch", 1);
 
 pref("browser.altClickSave", false);
 

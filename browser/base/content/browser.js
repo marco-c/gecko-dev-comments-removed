@@ -1269,7 +1269,13 @@ var gKeywordURIFixup = {
     
     
     
-    if (!keywordProviderName || !fixedURI || !fixedURI.host) {
+    if (
+      !keywordProviderName ||
+      !fixedURI ||
+      !fixedURI.host ||
+      UrlbarPrefs.get("browser.fixup.dns_first_for_single_words") ||
+      UrlbarPrefs.get("dnsResolveSingleWordsAfterSearch") == 0
+    ) {
       return;
     }
 
