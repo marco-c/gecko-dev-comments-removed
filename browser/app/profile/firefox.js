@@ -1025,12 +1025,6 @@ pref("dom.ipc.shims.enabledWarnings", false);
   
   
   
-  pref("security.sandbox.windows.log.stackTraceDepth", 0);
-
-  
-  
-  
-  
   
   pref("security.sandbox.gpu.level", 0);
 #endif
