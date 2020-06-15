@@ -9,20 +9,19 @@
 
 #include "mozilla/MozPromise.h"
 #include "mozilla/Variant.h"
+#include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/NeckoParent.h"
 #include "mozilla/net/PDocumentChannelParent.h"
 #include "mozilla/net/ParentChannelListener.h"
-#include "mozilla/net/ADocumentChannelBridge.h"
-#include "mozilla/dom/SessionHistoryEntry.h"
 #include "nsDOMNavigationTiming.h"
+#include "nsIBrowser.h"
 #include "nsIInterfaceRequestor.h"
+#include "nsIMultiPartChannel.h"
 #include "nsIParentChannel.h"
 #include "nsIParentRedirectingChannel.h"
-#include "nsIRedirectResultListener.h"
-#include "nsIMultiPartChannel.h"
 #include "nsIProgressEventSink.h"
-#include "nsIBrowser.h"
+#include "nsIRedirectResultListener.h"
 
 #define DOCUMENT_LOAD_LISTENER_IID                   \
   {                                                  \
@@ -94,15 +93,42 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                              public nsIMultiPartChannelListener,
                              public nsIProgressEventSink {
  public:
-  explicit DocumentLoadListener(dom::CanonicalBrowsingContext* aBrowsingContext,
-                                ADocumentChannelBridge* aBridge);
+  explicit DocumentLoadListener(
+      dom::CanonicalBrowsingContext* aBrowsingContext);
+
+  struct OpenPromiseSucceededType {
+    nsTArray<ipc::Endpoint<extensions::PStreamFilterParent>>
+        mStreamFilterEndpoints;
+    uint32_t mRedirectFlags;
+    uint32_t mLoadFlags;
+    RefPtr<PDocumentChannelParent::RedirectToRealChannelPromise::Private>
+        mPromise;
+  };
+  struct OpenPromiseFailedType {
+    nsresult mStatus;
+    nsresult mLoadGroupStatus;
+  };
+
+  typedef MozPromise<OpenPromiseSucceededType, OpenPromiseFailedType,
+                     true >
+      OpenPromise;
 
   
-  bool Open(nsDocShellLoadState* aLoadState, uint32_t aCacheKey,
-            const Maybe<uint64_t>& aChannelId, const TimeStamp& aAsyncOpenTime,
-            nsDOMNavigationTiming* aTiming, Maybe<dom::ClientInfo>&& aInfo,
-            uint64_t aOuterWindowId, bool aHasGesture, Maybe<bool> aUriModified,
-            Maybe<bool> aIsXFOError, nsresult* aRv);
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<OpenPromise> Open(nsDocShellLoadState* aLoadState, uint32_t aCacheKey,
+                           const Maybe<uint64_t>& aChannelId,
+                           const TimeStamp& aAsyncOpenTime,
+                           nsDOMNavigationTiming* aTiming,
+                           Maybe<dom::ClientInfo>&& aInfo,
+                           uint64_t aOuterWindowId, bool aHasGesture,
+                           Maybe<bool> aUriModified, Maybe<bool> aIsXFOError,
+                           base::ProcessId aPid, nsresult* aRv);
 
   
   
@@ -119,9 +145,12 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   static void CleanupParentLoadAttempt(uint32_t aLoadIdent);
 
   
+  static RefPtr<OpenPromise> ClaimParentLoad(DocumentLoadListener** aListener,
+                                             uint32_t aLoadIdent);
+
   
-  static already_AddRefed<DocumentLoadListener> ClaimParentLoad(
-      uint32_t aLoadIdent, ADocumentChannelBridge* aBridge);
+  
+  void Abort();
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREQUESTOBSERVER
@@ -143,6 +172,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   NS_DECLARE_STATIC_IID_ACCESSOR(DOCUMENT_LOAD_LISTENER_IID)
 
+  
   void Cancel(const nsresult& status);
 
   nsIChannel* GetChannel() const { return mChannel; }
@@ -184,26 +214,15 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
     return NS_OK;
   }
 
-  
-  
-  void DocumentChannelBridgeDisconnected();
-
-  void DisconnectChildListeners(nsresult aStatus, nsresult aLoadGroupStatus);
-
   base::ProcessId OtherPid() const {
-    if (mDocumentChannelBridge) {
-      return mDocumentChannelBridge->OtherPid();
-    }
     if (mPendingDocumentChannelBridgeProcess) {
       return *mPendingDocumentChannelBridgeProcess;
     }
-    return 0;
+    return mOtherPid;
   }
 
   [[nodiscard]] RefPtr<ChildEndpointPromise> AttachStreamFilter(
       base::ProcessId aChildProcessId);
-
-  using ParentEndpoint = ipc::Endpoint<extensions::PStreamFilterParent>;
 
   
   
@@ -217,9 +236,13 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                        base::ProcessId aPendingBridgeProcess);
   virtual ~DocumentLoadListener();
 
+ private:
+  friend class ParentProcessDocumentOpenInfo;
+  
+  void DisconnectListeners(nsresult aStatus, nsresult aLoadGroupStatus);
   
   
-  void NotifyBridgeConnected(ADocumentChannelBridge* aBridge);
+  void NotifyBridgeConnected();
 
   
   
@@ -229,9 +252,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  typedef MozPromise<RefPtr<ADocumentChannelBridge>, bool, false>
-      EnsureBridgePromise;
-  RefPtr<EnsureBridgePromise> EnsureBridge();
+  RefPtr<GenericPromise> EnsureBridge();
 
   
   
@@ -260,6 +281,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
+  using ParentEndpoint = ipc::Endpoint<extensions::PStreamFilterParent>;
   RefPtr<PDocumentChannelParent::RedirectToRealChannelPromise>
   RedirectToRealChannel(uint32_t aRedirectFlags, uint32_t aLoadFlags,
                         const Maybe<uint64_t>& aDestinationProcess,
@@ -275,6 +297,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   void AddURIVisit(nsIChannel* aChannel, uint32_t aLoadFlags);
   bool HasCrossOriginOpenerPolicyMismatch() const;
   void ApplyPendingFunctions(nsISupports* aChannel) const;
+
+  void Disconnect();
 
   
   
@@ -377,17 +401,11 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  
-  RefPtr<ADocumentChannelBridge> mDocumentChannelBridge;
-
-  
-  
-  
   Maybe<base::ProcessId> mPendingDocumentChannelBridgeProcess;
 
   
   
-  MozPromiseHolder<EnsureBridgePromise> mBridgePromise;
+  MozPromiseHolder<GenericPromise> mBridgePromise;
 
   
   
@@ -447,6 +465,17 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   
   bool mCancelled = false;
+
+  
+  
+  base::ProcessId mOtherPid = 0;
+
+  void RejectOpenPromiseIfExists(nsresult aStatus, nsresult aLoadGroupStatus,
+                                 const char* aLocation) {
+    mOpenPromise.RejectIfExists(
+        OpenPromiseFailedType({aStatus, aLoadGroupStatus}), aLocation);
+  }
+  MozPromiseHolder<OpenPromise> mOpenPromise;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DocumentLoadListener, DOCUMENT_LOAD_LISTENER_IID)

@@ -7,8 +7,8 @@
 #ifndef mozilla_net_DocumentChannelParent_h
 #define mozilla_net_DocumentChannelParent_h
 
-#include "mozilla/net/PDocumentChannelParent.h"
 #include "mozilla/net/DocumentLoadListener.h"
+#include "mozilla/net/PDocumentChannelParent.h"
 
 namespace mozilla {
 namespace dom {
@@ -20,9 +20,7 @@ namespace net {
 
 
 
-
-class DocumentChannelParent final : public ADocumentChannelBridge,
-                                    public PDocumentChannelParent {
+class DocumentChannelParent final : public PDocumentChannelParent {
  public:
   NS_INLINE_DECL_REFCOUNTING(DocumentChannelParent, override);
 
@@ -33,45 +31,27 @@ class DocumentChannelParent final : public ADocumentChannelBridge,
 
   
   bool RecvCancel(const nsresult& aStatus) {
-    if (mParent) {
-      mParent->Cancel(aStatus);
+    if (mDocumentLoadListener) {
+      mDocumentLoadListener->Cancel(aStatus);
     }
     return true;
   }
   void ActorDestroy(ActorDestroyReason aWhy) override {
-    if (mParent) {
-      mParent->DocumentChannelBridgeDisconnected();
-      mParent = nullptr;
+    if (mDocumentLoadListener) {
+      mDocumentLoadListener->Cancel(NS_BINDING_ABORTED);
     }
   }
 
  private:
-  
-  void DisconnectChildListeners(nsresult aStatus,
-                                nsresult aLoadGroupStatus) override {
-    if (CanSend()) {
-      Unused << SendDisconnectChildListeners(aStatus, aLoadGroupStatus);
-    }
-    mParent = nullptr;
-  }
-
-  void Delete() override {
-    if (CanSend()) {
-      Unused << SendDeleteSelf();
-    }
-  }
-
-  ProcessId OtherPid() const override { return IProtocol::OtherPid(); }
-
   RefPtr<PDocumentChannelParent::RedirectToRealChannelPromise>
   RedirectToRealChannel(
       nsTArray<ipc::Endpoint<extensions::PStreamFilterParent>>&&
           aStreamFilterEndpoints,
-      uint32_t aRedirectFlags, uint32_t aLoadFlags) override;
+      uint32_t aRedirectFlags, uint32_t aLoadFlags);
 
   virtual ~DocumentChannelParent();
 
-  RefPtr<DocumentLoadListener> mParent;
+  RefPtr<DocumentLoadListener> mDocumentLoadListener;
 };
 
 }  
