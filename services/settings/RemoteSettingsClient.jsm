@@ -264,7 +264,11 @@ class RemoteSettingsClient extends EventEmitter {
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "bucketName",
-      this.bucketNamePref
+      this.bucketNamePref,
+      null,
+      () => {
+        this.db.identifier = this.identifier;
+      }
     );
 
     XPCOMUtils.defineLazyGetter(
@@ -714,15 +718,15 @@ class RemoteSettingsClient extends EventEmitter {
 
 
   async _importJSONDump() {
-    console.info(`${this.identifier} restore dump`);
-
-    
-    const bucketName = this.bucketName.replace("-preview", "");
+    console.info(`${this.identifier} try to restore dump`);
 
     const start = Cu.now() * 1000;
     const result = await RemoteSettingsWorker.importJSONDump(
-      bucketName,
+      this.bucketName,
       this.collectionName
+    );
+    console.info(
+      `${this.identifier} imported ${result} records from JSON dump`
     );
     if (gTimingEnabled) {
       const end = Cu.now() * 1000;

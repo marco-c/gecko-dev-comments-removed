@@ -67,7 +67,11 @@ const Agent = {
 
 
   async importJSONDump(bucket, collection) {
-    const { data: records } = await loadJSONDump(bucket, collection);
+    
+    
+    const jsonBucket = bucket.replace("-preview", "");
+
+    const { data: records } = await loadJSONDump(jsonBucket, collection);
     if (records === null) {
       
       return -1;
