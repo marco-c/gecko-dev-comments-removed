@@ -769,7 +769,7 @@ class AudioCallbackDriver : public GraphDriver,
 
     Stopped,
   };
-  Atomic<FallbackDriverState> mFallbackDriverState;
+  Atomic<FallbackDriverState> mFallbackDriverState{FallbackDriverState::None};
   
 
   DataMutex<RefPtr<FallbackWrapper>> mFallback;
