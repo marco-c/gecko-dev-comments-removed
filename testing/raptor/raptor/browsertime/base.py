@@ -219,8 +219,12 @@ class Browsertime(Perftest):
             
             browsertime_options.extend([
                 "--video", "true",
-                "--firefox.windowRecorder", "true",
             ])
+            
+            if "fennec" not in self.config["app"]:
+                browsertime_options.extend([
+                    "--firefox.windowRecorder", "true",
+                ])
         else:
             browsertime_options.extend([
                 "--video", "false",
