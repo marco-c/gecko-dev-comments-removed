@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 
@@ -9,37 +8,18 @@
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const gInContentProcess =
-  Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
-
-Services.cpmm.addMessageListener("gmp-plugin-crash", msg => {
-  let gmpservice = Cc["@mozilla.org/gecko-media-plugin-service;1"].getService(
-    Ci.mozIGeckoMediaPluginService
-  );
-
-  gmpservice.RunPluginCrashCallbacks(msg.data.pluginID, msg.data.pluginName);
+Services.cpmm.addMessageListener("gmp-plugin-crash", ({ data }) => {
+  Cc["@mozilla.org/gecko-media-plugin-service;1"]
+    .getService(Ci.mozIGeckoMediaPluginService)
+    .RunPluginCrashCallbacks(data.pluginID, data.pluginName);
 });
-
-let TOPICS = [
-  "chrome-document-global-created",
-  "content-document-global-created",
-];
-
-if (gInContentProcess) {
-  TOPICS.push("inner-window-destroyed");
-  TOPICS.push("xpcom-shutdown");
-}
 
 let ProcessObserver = {
   init() {
-    for (let topic of TOPICS) {
-      Services.obs.addObserver(this, topic);
-    }
-  },
-
-  uninit() {
-    for (let topic of TOPICS) {
-      Services.obs.removeObserver(this, topic);
+    Services.obs.addObserver(this, "chrome-document-global-created");
+    Services.obs.addObserver(this, "content-document-global-created");
+    if (Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT) {
+      Services.obs.addObserver(this, "inner-window-destroyed");
     }
   },
 
@@ -49,44 +29,33 @@ let ProcessObserver = {
       case "content-document-global-created": {
         
         let window = subject;
-        let url = window.document.documentURI.replace(/[\#|\?].*$/, "");
+        let url = window.document.documentURI.replace(/[#?].*$/, "");
 
         let registeredURLs = Services.cpmm.sharedData.get(
           "RemotePageManager:urls"
         );
-
-        if (!registeredURLs || !registeredURLs.has(url)) {
-          return;
+        if (registeredURLs && registeredURLs.has(url)) {
+          let { ChildMessagePort } = ChromeUtils.import(
+            "resource://gre/modules/remotepagemanager/RemotePageManagerChild.jsm"
+          );
+          
+          new ChildMessagePort(window);
         }
-
-        
-        
-        let messageManager = window.docShell.messageManager;
-
-        let { ChildMessagePort } = ChromeUtils.import(
-          "resource://gre/modules/remotepagemanager/RemotePageManagerChild.jsm"
-        );
-        
-        new ChildMessagePort(messageManager, window);
         break;
       }
-      case "inner-window-destroyed": {
+      case "inner-window-destroyed":
         
         
         
-        let innerWindowID = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
         Services.cpmm.sendAsyncMessage(
           "Toolkit:inner-window-destroyed",
-          innerWindowID
+          subject.nsISupportsPRUint64.data
         );
         break;
-      }
-      case "xpcom-shutdown": {
-        this.uninit();
-        break;
-      }
     }
   },
 };
 
 ProcessObserver.init();
+
+ProcessObserver.init = null;
