@@ -233,9 +233,10 @@ fn get_keys(keys: JsonValue) -> Vec<(String, Option<JsonValue>)> {
 pub fn get(conn: &Connection, ext_id: &str, keys: JsonValue) -> Result<JsonValue> {
     
     let maybe_existing = get_from_db(conn, ext_id)?;
-    let mut existing = match maybe_existing {
-        None => return Ok(JsonValue::Object(Map::new())),
-        Some(v) => v,
+    let mut existing = match (maybe_existing, keys.is_object()) {
+        (None, true) => return Ok(keys),
+        (None, false) => return Ok(JsonValue::Object(Map::new())),
+        (Some(v), _) => v,
     };
     
     if keys.is_null() {
@@ -245,15 +246,13 @@ pub fn get(conn: &Connection, ext_id: &str, keys: JsonValue) -> Result<JsonValue
     let keys_and_defaults = get_keys(keys);
     let mut result = Map::with_capacity(keys_and_defaults.len());
     for (key, maybe_default) in keys_and_defaults {
-        
-        
-        
-        
         if let Some(v) = existing.remove(&key) {
             result.insert(key, v);
         } else if let Some(def) = maybe_default {
             result.insert(key, def);
         }
+        
+        
     }
     Ok(JsonValue::Object(result))
 }
@@ -267,6 +266,8 @@ pub fn remove(tx: &Transaction<'_>, ext_id: &str, keys: JsonValue) -> Result<Sto
         Some(v) => v,
     };
 
+    
+    
     let keys_and_defs = get_keys(keys);
 
     let mut result = StorageChanges::with_capacity(keys_and_defs.len());
@@ -379,16 +380,13 @@ mod tests {
         let tx = db.transaction()?;
 
         
-        for q in vec![
-            JsonValue::Null,
-            json!("foo"),
-            json!(["foo"]),
-            json!({ "foo": null }),
-            json!({"foo": "default"}),
-        ]
-        .into_iter()
-        {
+        for q in vec![JsonValue::Null, json!("foo"), json!(["foo"])].into_iter() {
             assert_eq!(get(&tx, &ext_id, q)?, json!({}));
+        }
+
+        
+        for q in vec![json!({ "foo": null }), json!({"foo": "default"})].into_iter() {
+            assert_eq!(get(&tx, &ext_id, q.clone())?, q.clone());
         }
 
         
@@ -403,6 +401,20 @@ mod tests {
         .into_iter()
         {
             assert_eq!(get(&tx, &ext_id, q)?, json!({"foo": "bar" }));
+        }
+
+        
+        for q in vec![
+            json!({ "non_existing_key": null }),
+            json!({"non_existing_key": 0}),
+            json!({"non_existing_key": false}),
+            json!({"non_existing_key": "default"}),
+            json!({"non_existing_key": ["array"]}),
+            json!({"non_existing_key": {"objectkey": "value"}}),
+        ]
+        .into_iter()
+        {
+            assert_eq!(get(&tx, &ext_id, q.clone())?, q.clone());
         }
 
         
