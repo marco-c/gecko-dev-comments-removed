@@ -167,6 +167,11 @@ const REQUEST_COUNT =
 
 add_task(async function() {
   
+  await SpecialPowers.pushPrefEnv({
+    set: [["javascript.options.asyncstack", true]],
+  });
+
+  
   
   
   

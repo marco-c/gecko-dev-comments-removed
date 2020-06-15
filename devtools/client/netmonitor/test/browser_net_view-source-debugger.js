@@ -18,6 +18,9 @@ add_task(async function() {
   
   await pushPref("devtools.toolbox.footer.height", 400);
 
+  
+  await pushPref("javascript.options.asyncstack", true);
+
   const { tab, monitor, toolbox } = await initNetMonitor(POST_DATA_URL, {
     requestCount: 1,
   });
