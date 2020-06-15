@@ -17,6 +17,7 @@
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ParseNode.h"
 #include "frontend/Stencil.h"
+#include "js/WasmModule.h"             
 #include "vm/FunctionFlags.h"          
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/JSFunction.h"
@@ -429,7 +430,7 @@ class FunctionBox : public SharedContext {
   
   void initializeFunction(JSFunction* fun) { clobberFunction(fun); }
 
-  void setAsmJSModule(JSFunction* function);
+  MOZ_MUST_USE bool setAsmJSModule(const JS::WasmModule* module);
   bool isAsmJSModule() { return isAsmJSModule_; }
 
   void clobberFunction(JSFunction* function);
