@@ -293,11 +293,20 @@ struct LocalFaceRec {
 
 
 
+
+
+
+
+
+
   struct InitData {
     nsCString mFamilyName;
-    uint32_t mFaceIndex;
-    InitData(const nsACString& aFamily, uint32_t aFace)
-        : mFamilyName(aFamily), mFaceIndex(aFace) {}
+    nsCString mFaceDescriptor;
+    uint32_t mFaceIndex = uint32_t(-1);
+    InitData(const nsACString& aFamily, const nsACString& aFace)
+        : mFamilyName(aFamily), mFaceDescriptor(aFace) {}
+    InitData(const nsACString& aFamily, uint32_t aFaceIndex)
+        : mFamilyName(aFamily), mFaceIndex(aFaceIndex) {}
     InitData() = default;
   };
   String mKey;

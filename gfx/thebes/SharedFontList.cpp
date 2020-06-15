@@ -769,8 +769,26 @@ void FontList::SetLocalNames(
     (void)new (&faces[i]) LocalFaceRec();
     const auto& rec = aLocalNameTable.Get(faceArray[i]);
     faces[i].mKey.Assign(faceArray[i], this);
-    faces[i].mFamilyIndex = FindFamily(rec.mFamilyName) - families;
-    faces[i].mFaceIndex = rec.mFaceIndex;
+    const auto* family = FindFamily(rec.mFamilyName);
+    faces[i].mFamilyIndex = family - families;
+    if (rec.mFaceIndex == uint32_t(-1)) {
+      
+      
+      faces[i].mFaceIndex = 0;
+      const Pointer* faceList =
+          static_cast<const Pointer*>(family->Faces(this));
+      for (uint32_t j = 0; j < family->NumFaces(); j++) {
+        if (!faceList[j].IsNull()) {
+          const Face* face = static_cast<const Face*>(faceList[j].ToPtr(this));
+          if (rec.mFaceDescriptor == face->mDescriptor.AsString(this)) {
+            faces[i].mFaceIndex = j;
+            break;
+          }
+        }
+      }
+    } else {
+      faces[i].mFaceIndex = rec.mFaceIndex;
+    }
   }
   header.mLocalFaces = ptr;
   header.mLocalFaceCount.store(count);
