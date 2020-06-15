@@ -5,19 +5,20 @@
 #include "sandbox/win/src/process_mitigations.h"
 
 #include <stddef.h>
-#include <windows.h>
-#include <wow64apiset.h>
 
 #include <algorithm>
 
+#include "base/files/file_path.h"
+#include "base/scoped_native_library.h"
 #include "base/win/windows_version.h"
-#include "build/build_config.h"
 #include "sandbox/win/src/nt_internals.h"
 #include "sandbox/win/src/restricted_token_utils.h"
 #include "sandbox/win/src/sandbox_rand.h"
 #include "sandbox/win/src/win_utils.h"
 
 namespace {
+
+using SetProcessDEPPolicyFunction = decltype(&SetProcessDEPPolicy);
 
 
 using SetDefaultDllDirectoriesFunction = decltype(&SetDefaultDllDirectories);
@@ -44,7 +45,7 @@ const ULONG64* GetSupportedMitigations() {
       
       
       size_t mits_size =
-          (base::win::GetVersion() >= base::win::Version::WIN10_RS2)
+          (base::win::GetVersion() >= base::win::VERSION_WIN10_RS2)
               ? (sizeof(mitigations[0]) * 2)
               : sizeof(mitigations[0]);
       if (!get_process_mitigation_policy(::GetCurrentProcess(),
@@ -56,33 +57,6 @@ const ULONG64* GetSupportedMitigations() {
   }
 
   return &mitigations[0];
-}
-
-
-
-
-
-
-
-bool IsRunning32bitEmulatedOnArm64() {
-#if defined(ARCH_CPU_X86)
-  using IsWow64Process2Function = decltype(&IsWow64Process2);
-
-  IsWow64Process2Function is_wow64_process2 =
-      reinterpret_cast<IsWow64Process2Function>(::GetProcAddress(
-          ::GetModuleHandleA("kernel32.dll"), "IsWow64Process2"));
-  if (!is_wow64_process2)
-    return false;
-  USHORT process_machine;
-  USHORT native_machine;
-  bool retval = is_wow64_process2(::GetCurrentProcess(), &process_machine,
-                                  &native_machine);
-  if (!retval)
-    return false;
-  if (native_machine == IMAGE_FILE_MACHINE_ARM64)
-    return true;
-#endif  
-  return false;
 }
 
 }  
@@ -132,15 +106,21 @@ bool ApplyProcessMitigationsToCurrentProcess(MitigationFlags flags) {
     if (flags & MITIGATION_DEP_NO_ATL_THUNK)
       dep_flags |= PROCESS_DEP_DISABLE_ATL_THUNK_EMULATION;
 
-    if (!::SetProcessDEPPolicy(dep_flags) &&
-        ERROR_ACCESS_DENIED != ::GetLastError()) {
+    SetProcessDEPPolicyFunction set_process_dep_policy =
+        reinterpret_cast<SetProcessDEPPolicyFunction>(
+            ::GetProcAddress(module, "SetProcessDEPPolicy"));
+    if (set_process_dep_policy) {
+      if (!set_process_dep_policy(dep_flags) &&
+          ERROR_ACCESS_DENIED != ::GetLastError()) {
+        return false;
+      }
+    } else
       return false;
-    }
   }
 #endif
 
   
-  if (version < base::win::Version::WIN8)
+  if (version < base::win::VERSION_WIN8)
     return true;
 
   SetProcessMitigationPolicyFunction set_process_mitigation_policy =
@@ -201,17 +181,20 @@ bool ApplyProcessMitigationsToCurrentProcess(MitigationFlags flags) {
     }
   }
 
-  if (version < base::win::Version::WIN8_1)
+  if (version < base::win::VERSION_WIN8_1)
     return true;
 
   
-  if (!IsRunning32bitEmulatedOnArm64() &&
-      (flags & MITIGATION_DYNAMIC_CODE_DISABLE)) {
-    
-    
-    DCHECK(!(flags & MITIGATION_DYNAMIC_CODE_DISABLE_WITH_OPT_OUT));
+  if (flags & MITIGATION_DYNAMIC_CODE_DISABLE ||
+      flags & MITIGATION_DYNAMIC_CODE_DISABLE_WITH_OPT_OUT) {
     PROCESS_MITIGATION_DYNAMIC_CODE_POLICY policy = {};
     policy.ProhibitDynamicCode = true;
+
+    
+    if (version >= base::win::VERSION_WIN10_RS1 &&
+        flags & MITIGATION_DYNAMIC_CODE_DISABLE_WITH_OPT_OUT) {
+      policy.AllowThreadOptOut = true;
+    }
 
     if (!set_process_mitigation_policy(ProcessDynamicCodePolicy, &policy,
                                        sizeof(policy)) &&
@@ -220,7 +203,7 @@ bool ApplyProcessMitigationsToCurrentProcess(MitigationFlags flags) {
     }
   }
 
-  if (version < base::win::Version::WIN10)
+  if (version < base::win::VERSION_WIN10)
     return true;
 
   
@@ -235,7 +218,7 @@ bool ApplyProcessMitigationsToCurrentProcess(MitigationFlags flags) {
     }
   }
 
-  if (version < base::win::Version::WIN10_TH2)
+  if (version < base::win::VERSION_WIN10_TH2)
     return true;
 
   
@@ -264,7 +247,7 @@ bool ApplyProcessMitigationsToCurrentProcess(MitigationFlags flags) {
     if (flags & MITIGATION_IMAGE_LOAD_NO_LOW_LABEL)
       policy.NoLowMandatoryLabelImages = true;
     
-    if (version >= base::win::Version::WIN10_RS1 &&
+    if (version >= base::win::VERSION_WIN10_RS1 &&
         flags & MITIGATION_IMAGE_LOAD_PREFER_SYS32) {
       policy.PreferSystem32Images = true;
     }
@@ -276,37 +259,19 @@ bool ApplyProcessMitigationsToCurrentProcess(MitigationFlags flags) {
     }
   }
 
-  if (version < base::win::Version::WIN10_RS1)
-    return true;
-
-  
-  
-  if (!IsRunning32bitEmulatedOnArm64() &&
-      (flags & MITIGATION_DYNAMIC_CODE_DISABLE_WITH_OPT_OUT)) {
-    
-    
-    DCHECK(!(flags & MITIGATION_DYNAMIC_CODE_DISABLE));
-    PROCESS_MITIGATION_DYNAMIC_CODE_POLICY policy = {};
-    policy.ProhibitDynamicCode = true;
-    policy.AllowThreadOptOut = true;
-
-    if (!set_process_mitigation_policy(ProcessDynamicCodePolicy, &policy,
-                                       sizeof(policy)) &&
-        ERROR_ACCESS_DENIED != ::GetLastError()) {
-      return false;
-    }
-  }
-
   return true;
 }
 
+
+
+#if !defined(MOZ_SANDBOX)
 bool ApplyMitigationsToCurrentThread(MitigationFlags flags) {
   if (!CanSetMitigationsPerThread(flags))
     return false;
 
   base::win::Version version = base::win::GetVersion();
 
-  if (version < base::win::Version::WIN10_RS1)
+  if (version < base::win::VERSION_WIN10_RS1)
     return true;
 
   
@@ -315,9 +280,12 @@ bool ApplyMitigationsToCurrentThread(MitigationFlags flags) {
 
     
     
+    base::ScopedNativeLibrary dll(base::FilePath(L"kernel32.dll"));
+    if (!dll.is_valid())
+      return false;
     SetThreadInformationFunction set_thread_info_function =
-        reinterpret_cast<SetThreadInformationFunction>(::GetProcAddress(
-            ::GetModuleHandleA("kernel32.dll"), "SetThreadInformation"));
+        reinterpret_cast<SetThreadInformationFunction>(
+            dll.GetFunctionPointer("SetThreadInformation"));
     if (!set_thread_info_function)
       return false;
 
@@ -330,6 +298,7 @@ bool ApplyMitigationsToCurrentThread(MitigationFlags flags) {
 
   return true;
 }
+#endif
 
 void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
                                        DWORD64* policy_flags,
@@ -348,7 +317,7 @@ void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
   *size = sizeof(*policy_flags);
 #elif defined(_M_IX86)
   
-  if (version < base::win::Version::WIN8)
+  if (version < base::win::VERSION_WIN8)
     *size = sizeof(DWORD);
   else
     *size = sizeof(*policy_flags);
@@ -370,7 +339,7 @@ void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
 #endif
 
   
-  if (version < base::win::Version::WIN8)
+  if (version < base::win::VERSION_WIN8)
     return;
 
   
@@ -379,7 +348,7 @@ void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
 
   
   
-  if (version >= base::win::Version::WIN8) {
+  if (version >= base::win::VERSION_WIN8) {
     if (flags & MITIGATION_RELOCATE_IMAGE) {
       *policy_value_1 |=
           PROCESS_CREATION_MITIGATION_POLICY_FORCE_RELOCATE_IMAGES_ALWAYS_ON;
@@ -422,7 +391,7 @@ void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
 
   
   
-  if (version >= base::win::Version::WIN8_1) {
+  if (version >= base::win::VERSION_WIN8_1) {
     if (flags & MITIGATION_DYNAMIC_CODE_DISABLE) {
       *policy_value_1 |=
           PROCESS_CREATION_MITIGATION_POLICY_PROHIBIT_DYNAMIC_CODE_ALWAYS_ON;
@@ -436,7 +405,7 @@ void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
 
   
   
-  if (version >= base::win::Version::WIN10) {
+  if (version >= base::win::VERSION_WIN10) {
     if (flags & MITIGATION_NONSYSTEM_FONT_DISABLE) {
       *policy_value_1 |=
           PROCESS_CREATION_MITIGATION_POLICY_FONT_DISABLE_ALWAYS_ON;
@@ -445,7 +414,7 @@ void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
 
   
   
-  if (version >= base::win::Version::WIN10_TH2) {
+  if (version >= base::win::VERSION_WIN10_TH2) {
     if (flags & MITIGATION_FORCE_MS_SIGNED_BINS) {
       *policy_value_1 |=
           PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALWAYS_ON;
@@ -464,7 +433,7 @@ void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
 
   
   
-  if (version >= base::win::Version::WIN10_RS1) {
+  if (version >= base::win::VERSION_WIN10_RS1) {
     if (flags & MITIGATION_DYNAMIC_CODE_DISABLE_WITH_OPT_OUT) {
       *policy_value_1 |=
           PROCESS_CREATION_MITIGATION_POLICY_PROHIBIT_DYNAMIC_CODE_ALWAYS_ON_ALLOW_OPT_OUT;
@@ -478,7 +447,7 @@ void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
 
   
   
-  if (version >= base::win::Version::WIN10_RS3) {
+  if (version >= base::win::VERSION_WIN10_RS3) {
     
     
     
@@ -502,7 +471,7 @@ void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
 
   
   
-  if (*policy_value_2 && version >= base::win::Version::WIN10_RS2) {
+  if (*policy_value_2 && version >= base::win::VERSION_WIN10_RS2) {
     *size = sizeof(*policy_flags) * 2;
   }
 
@@ -513,7 +482,7 @@ MitigationFlags FilterPostStartupProcessMitigations(MitigationFlags flags) {
   base::win::Version version = base::win::GetVersion();
 
   
-  if (version < base::win::Version::WIN8) {
+  if (version < base::win::VERSION_WIN8) {
     return flags & (MITIGATION_BOTTOM_UP_ASLR | MITIGATION_DLL_SEARCH_ORDER |
                     MITIGATION_HEAP_TERMINATE);
   }

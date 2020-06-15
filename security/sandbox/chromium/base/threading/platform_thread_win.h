@@ -8,9 +8,26 @@
 #include "base/threading/platform_thread.h"
 
 #include "base/base_export.h"
+#include "base/feature_list.h"
 
 namespace base {
+
+namespace features {
+
+
+
+
+
+
+BASE_EXPORT extern const Feature kWindowsThreadModeBackground;
+
+}  
+
 namespace internal {
+
+
+
+constexpr int kWin7BackgroundThreadModePriority = 4;
 
 
 
@@ -18,6 +35,7 @@ namespace internal {
 BASE_EXPORT void AssertMemoryPriority(HANDLE thread, int memory_priority);
 
 }  
+
 }  
 
 #endif  

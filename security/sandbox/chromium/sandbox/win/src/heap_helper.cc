@@ -92,7 +92,7 @@ bool HeapFlags(HANDLE handle, DWORD* flags) {
 }
 
 HANDLE FindCsrPortHeap() {
-  if (base::win::GetVersion() < base::win::Version::WIN10) {
+  if (base::win::GetVersion() < base::win::VERSION_WIN10) {
     
     return nullptr;
   }

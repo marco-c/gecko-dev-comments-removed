@@ -11,7 +11,6 @@
 #include "base/compiler_specific.h"
 #include "base/macros.h"
 #include "base/synchronization/lock.h"
-#include "base/thread_annotations.h"
 
 namespace base {
 
@@ -21,21 +20,10 @@ namespace base {
 
 
 
-
-
-class LOCKABLE BASE_EXPORT SequenceCheckerImpl {
+class BASE_EXPORT SequenceCheckerImpl {
  public:
   SequenceCheckerImpl();
   ~SequenceCheckerImpl();
-
-  
-  
-  
-  
-  
-  
-  SequenceCheckerImpl(SequenceCheckerImpl&& other);
-  SequenceCheckerImpl& operator=(SequenceCheckerImpl&& other);
 
   
   
@@ -49,11 +37,8 @@ class LOCKABLE BASE_EXPORT SequenceCheckerImpl {
   class Core;
 
   
-  
-  static bool HasThreadLocalStorageBeenDestroyed();
-
   mutable Lock lock_;
-  mutable std::unique_ptr<Core> core_ GUARDED_BY(lock_);
+  mutable std::unique_ptr<Core> core_;
 
   DISALLOW_COPY_AND_ASSIGN(SequenceCheckerImpl);
 };

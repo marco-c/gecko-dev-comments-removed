@@ -20,14 +20,11 @@ inline bool IsValidCodepoint(uint32_t code_point) {
   
   
   
-  
-  
   return code_point < 0xD800u ||
          (code_point >= 0xE000u && code_point <= 0x10FFFFu);
 }
 
 inline bool IsValidCharacter(uint32_t code_point) {
-  
   
   
   return code_point < 0xD800u || (code_point >= 0xE000u &&

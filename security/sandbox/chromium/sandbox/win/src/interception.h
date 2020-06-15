@@ -16,6 +16,7 @@
 
 #include "base/gtest_prod_util.h"
 #include "base/macros.h"
+#include "base/strings/string16.h"
 #include "sandbox/win/src/interceptors.h"
 #include "sandbox/win/src/sandbox_types.h"
 
@@ -142,7 +143,7 @@ class InterceptionManager {
 
     InterceptionType type;            
     InterceptorId id;                 
-    std::wstring dll;                 
+    base::string16 dll;               
     std::string function;             
     std::string interceptor;          
     const void* interceptor_address;  

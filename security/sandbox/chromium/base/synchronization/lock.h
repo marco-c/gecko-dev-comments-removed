@@ -38,7 +38,7 @@ class LOCKABLE BASE_EXPORT Lock {
   bool Try() { return lock_.Try(); }
 
   
-  void AssertAcquired() const ASSERT_EXCLUSIVE_LOCK() {}
+  void AssertAcquired() const {}
 #else
   Lock();
   ~Lock();
@@ -63,7 +63,7 @@ class LOCKABLE BASE_EXPORT Lock {
     return rv;
   }
 
-  void AssertAcquired() const ASSERT_EXCLUSIVE_LOCK();
+  void AssertAcquired() const;
 #endif  
 
   
@@ -115,18 +115,6 @@ using AutoLock = internal::BasicAutoLock<Lock>;
 
 
 using AutoUnlock = internal::BasicAutoUnlock<Lock>;
-
-
-
-
-using AutoLockMaybe = internal::BasicAutoLockMaybe<Lock>;
-
-
-
-
-
-
-using ReleasableAutoLock = internal::BasicReleasableAutoLock<Lock>;
 
 }  
 

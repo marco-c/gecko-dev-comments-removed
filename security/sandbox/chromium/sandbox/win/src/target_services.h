@@ -15,20 +15,21 @@ class ProcessState {
  public:
   ProcessState();
   
+  bool IsKernel32Loaded() const;
+  
   bool InitCalled() const;
   
   bool RevertedToSelf() const;
   
   bool IsCsrssConnected() const;
   
+  void SetKernel32Loaded();
   void SetInitCalled();
   void SetRevertedToSelf();
   void SetCsrssConnected(bool csrss_connected);
 
  private:
-  enum class ProcessStateInternal { NONE = 0, INIT_CALLED, REVERTED_TO_SELF };
-
-  ProcessStateInternal process_state_;
+  int process_state_;
   bool csrss_connected_;
   DISALLOW_COPY_AND_ASSIGN(ProcessState);
 };

@@ -8,8 +8,6 @@
 #include "base/compiler_specific.h"
 #include "base/logging.h"
 #include "base/sequence_checker_impl.h"
-#include "base/strings/string_piece.h"
-#include "build/build_config.h"
 
 
 
@@ -49,41 +47,15 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define SEQUENCE_CHECKER_INTERNAL_CONCAT2(a, b) a##b
-#define SEQUENCE_CHECKER_INTERNAL_CONCAT(a, b) \
-  SEQUENCE_CHECKER_INTERNAL_CONCAT2(a, b)
-#define SEQUENCE_CHECKER_INTERNAL_UID(prefix) \
-  SEQUENCE_CHECKER_INTERNAL_CONCAT(prefix, __LINE__)
 
 #if DCHECK_IS_ON()
 #define SEQUENCE_CHECKER(name) base::SequenceChecker name
-#define DCHECK_CALLED_ON_VALID_SEQUENCE(name, ...)                   \
-  base::ScopedValidateSequenceChecker SEQUENCE_CHECKER_INTERNAL_UID( \
-      scoped_validate_sequence_checker_)(name, ##__VA_ARGS__);
+#define DCHECK_CALLED_ON_VALID_SEQUENCE(name) \
+  DCHECK((name).CalledOnValidSequence())
 #define DETACH_FROM_SEQUENCE(name) (name).DetachFromSequence()
 #else  
-#if __OBJC__ && defined(OS_IOS) && !HAS_FEATURE(objc_cxx_static_assert)
-
 #define SEQUENCE_CHECKER(name)
-#else
-#define SEQUENCE_CHECKER(name) static_assert(true, "")
-#endif
-#define DCHECK_CALLED_ON_VALID_SEQUENCE(name, ...) EAT_STREAM_PARAMETERS
+#define DCHECK_CALLED_ON_VALID_SEQUENCE(name) EAT_STREAM_PARAMETERS
 #define DETACH_FROM_SEQUENCE(name)
 #endif  
 
@@ -93,18 +65,9 @@ namespace base {
 
 
 
-
-
-class LOCKABLE SequenceCheckerDoNothing {
+class SequenceCheckerDoNothing {
  public:
   SequenceCheckerDoNothing() = default;
-
-  
-  
-  SequenceCheckerDoNothing(SequenceCheckerDoNothing&& other) = default;
-  SequenceCheckerDoNothing& operator=(SequenceCheckerDoNothing&& other) =
-      default;
-
   bool CalledOnValidSequence() const WARN_UNUSED_RESULT { return true; }
   void DetachFromSequence() {}
 
@@ -119,24 +82,6 @@ class SequenceChecker : public SequenceCheckerImpl {
 class SequenceChecker : public SequenceCheckerDoNothing {
 };
 #endif  
-
-class SCOPED_LOCKABLE ScopedValidateSequenceChecker {
- public:
-  explicit ScopedValidateSequenceChecker(const SequenceChecker& checker)
-      EXCLUSIVE_LOCK_FUNCTION(checker) {
-    DCHECK(checker.CalledOnValidSequence());
-  }
-
-  explicit ScopedValidateSequenceChecker(const SequenceChecker& checker,
-                                         const StringPiece& msg)
-      EXCLUSIVE_LOCK_FUNCTION(checker) {
-    DCHECK(checker.CalledOnValidSequence()) << msg;
-  }
-
-  ~ScopedValidateSequenceChecker() UNLOCK_FUNCTION() {}
-
- private:
-};
 
 }  
 

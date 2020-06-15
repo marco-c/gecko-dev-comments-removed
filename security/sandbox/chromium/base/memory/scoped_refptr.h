@@ -25,16 +25,9 @@ class RefCounted;
 template <class, typename>
 class RefCountedThreadSafe;
 class SequencedTaskRunner;
-class WrappedPromise;
 
 template <typename T>
 scoped_refptr<T> AdoptRef(T* t);
-
-namespace internal {
-
-class BasePromise;
-
-}  
 
 namespace subtle {
 
@@ -179,15 +172,7 @@ class scoped_refptr {
   constexpr scoped_refptr() = default;
 
   
-  constexpr scoped_refptr(std::nullptr_t) {}
-
-  
-  
-  
-  
-  
-  
-  scoped_refptr(T* p) : ptr_(p) {
+  constexpr scoped_refptr(T* p) : ptr_(p) {
     if (ptr_)
       AddRef(ptr_);
   }
@@ -236,11 +221,6 @@ class scoped_refptr {
     return ptr_;
   }
 
-  scoped_refptr& operator=(std::nullptr_t) {
-    reset();
-    return *this;
-  }
-
   scoped_refptr& operator=(T* p) { return *this = scoped_refptr(p); }
 
   
@@ -279,11 +259,6 @@ class scoped_refptr {
   template <typename U>
   friend scoped_refptr<U> base::AdoptRef(U*);
   friend class ::base::SequencedTaskRunner;
-
-  
-  
-  friend class ::base::internal::BasePromise;
-  friend class ::base::WrappedPromise;
 
   
   

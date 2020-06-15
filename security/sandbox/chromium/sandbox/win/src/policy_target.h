@@ -5,7 +5,6 @@
 #ifndef SANDBOX_WIN_SRC_POLICY_TARGET_H_
 #define SANDBOX_WIN_SRC_POLICY_TARGET_H_
 
-#include "sandbox/win/src/ipc_tags.h"
 #include "sandbox/win/src/nt_internals.h"
 #include "sandbox/win/src/sandbox_types.h"
 
@@ -15,7 +14,7 @@ struct CountedParameterSetBase;
 
 
 
-bool QueryBroker(IpcTag ipc_id, CountedParameterSetBase* params);
+bool QueryBroker(int ipc_id, CountedParameterSetBase* params);
 
 extern "C" {
 

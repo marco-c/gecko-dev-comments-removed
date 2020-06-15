@@ -43,7 +43,7 @@ class BASE_EXPORT AtExitManager {
   static void RegisterCallback(AtExitCallbackType func, void* param);
 
   
-  static void RegisterTask(base::OnceClosure task);
+  static void RegisterTask(base::Closure task);
 
   
   
@@ -63,7 +63,7 @@ class BASE_EXPORT AtExitManager {
  private:
   base::Lock lock_;
 
-  base::stack<base::OnceClosure> stack_ GUARDED_BY(lock_);
+  base::stack<base::Closure> stack_ GUARDED_BY(lock_);
 
 #if DCHECK_IS_ON()
   bool processing_callbacks_ GUARDED_BY(lock_) = false;

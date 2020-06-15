@@ -68,43 +68,6 @@ static LazyLogModule sSandboxBrokerLog("SandboxBroker");
 static UniquePtr<nsTHashtable<nsCStringHashKey>> sLaunchErrors;
 
 
-
-
-
-static sandbox::ResultCode AddWin32kLockdownPolicy(
-    sandbox::TargetPolicy* aPolicy, bool aEnableOpm) {
-  
-  
-  if (!IsWin8OrLater()) {
-    return sandbox::SBOX_ALL_OK;
-  }
-
-  sandbox::MitigationFlags flags = aPolicy->GetProcessMitigations();
-  MOZ_ASSERT(!(flags & sandbox::MITIGATION_WIN32K_DISABLE),
-             "Check not enabling twice.  Should not happen.");
-
-  flags |= sandbox::MITIGATION_WIN32K_DISABLE;
-  sandbox::ResultCode result = aPolicy->SetProcessMitigations(flags);
-  if (result != sandbox::SBOX_ALL_OK) {
-    return result;
-  }
-
-  result =
-      aPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_WIN32K_LOCKDOWN,
-                       aEnableOpm ? sandbox::TargetPolicy::IMPLEMENT_OPM_APIS
-                                  : sandbox::TargetPolicy::FAKE_USER_GDI_INIT,
-                       nullptr);
-  if (result != sandbox::SBOX_ALL_OK) {
-    return result;
-  }
-  if (aEnableOpm) {
-    aPolicy->SetEnableOPMRedirection();
-  }
-
-  return result;
-}
-
-
 void SandboxBroker::Initialize(sandbox::BrokerServices* aBrokerServices) {
   sBrokerService = aBrokerServices;
 
@@ -597,15 +560,21 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
     }
   }
 
+  
+  
+  if (StaticPrefs::security_sandbox_content_win32k_disable() &&
+      IsWin8OrLater()) {
+    mitigations |= sandbox::MITIGATION_WIN32K_DISABLE;
+    result =
+        mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_WIN32K_LOCKDOWN,
+                         sandbox::TargetPolicy::FAKE_USER_GDI_INIT, nullptr);
+    MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
+                       "Failed to set FAKE_USER_GDI_INIT policy.");
+  }
+
   result = mPolicy->SetProcessMitigations(mitigations);
   MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
                      "Invalid flags for SetProcessMitigations.");
-
-  if (StaticPrefs::security_sandbox_content_win32k_disable()) {
-    result = AddWin32kLockdownPolicy(mPolicy, false);
-    MOZ_RELEASE_ASSERT(result == sandbox::SBOX_ALL_OK,
-                       "Failed to add the win32k lockdown policy");
-  }
 
   mitigations = sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
                 sandbox::MITIGATION_DLL_SEARCH_ORDER;
@@ -922,13 +891,18 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
       sandbox::MITIGATION_DEP_NO_ATL_THUNK | sandbox::MITIGATION_DEP |
       sandbox::MITIGATION_IMAGE_LOAD_PREFER_SYS32;
 
+  
+  
+  if (StaticPrefs::security_sandbox_rdd_win32k_disable() && IsWin8OrLater()) {
+    mitigations |= sandbox::MITIGATION_WIN32K_DISABLE;
+    result =
+        mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_WIN32K_LOCKDOWN,
+                         sandbox::TargetPolicy::FAKE_USER_GDI_INIT, nullptr);
+    SANDBOX_ENSURE_SUCCESS(result, "Failed to set FAKE_USER_GDI_INIT policy.");
+  }
+
   result = mPolicy->SetProcessMitigations(mitigations);
   SANDBOX_ENSURE_SUCCESS(result, "Invalid flags for SetProcessMitigations.");
-
-  if (StaticPrefs::security_sandbox_rdd_win32k_disable()) {
-    result = AddWin32kLockdownPolicy(mPolicy, false);
-    SANDBOX_ENSURE_SUCCESS(result, "Failed to add the win32k lockdown policy");
-  }
 
   mitigations = sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
                 sandbox::MITIGATION_DYNAMIC_CODE_DISABLE |
@@ -1021,13 +995,19 @@ bool SandboxBroker::SetSecurityLevelForSocketProcess() {
       sandbox::MITIGATION_DEP_NO_ATL_THUNK | sandbox::MITIGATION_DEP |
       sandbox::MITIGATION_IMAGE_LOAD_PREFER_SYS32;
 
+  
+  
+  if (StaticPrefs::security_sandbox_socket_win32k_disable() &&
+      IsWin8OrLater()) {
+    mitigations |= sandbox::MITIGATION_WIN32K_DISABLE;
+    result =
+        mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_WIN32K_LOCKDOWN,
+                         sandbox::TargetPolicy::FAKE_USER_GDI_INIT, nullptr);
+    SANDBOX_ENSURE_SUCCESS(result, "Failed to set FAKE_USER_GDI_INIT policy.");
+  }
+
   result = mPolicy->SetProcessMitigations(mitigations);
   SANDBOX_ENSURE_SUCCESS(result, "Invalid flags for SetProcessMitigations.");
-
-  if (StaticPrefs::security_sandbox_socket_win32k_disable()) {
-    result = AddWin32kLockdownPolicy(mPolicy, false);
-    SANDBOX_ENSURE_SUCCESS(result, "Failed to add the win32k lockdown policy");
-  }
 
   mitigations = sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
                 sandbox::MITIGATION_DYNAMIC_CODE_DISABLE |
@@ -1282,15 +1262,18 @@ bool SandboxBroker::SetSecurityLevelForGMPlugin(SandboxLevel aLevel,
       sandbox::MITIGATION_SEHOP | sandbox::MITIGATION_EXTENSION_POINT_DISABLE |
       sandbox::MITIGATION_DEP_NO_ATL_THUNK | sandbox::MITIGATION_DEP;
 
-  result = mPolicy->SetProcessMitigations(mitigations);
-  SANDBOX_ENSURE_SUCCESS(result, "Invalid flags for SetProcessMitigations.");
-
   
   
   if (StaticPrefs::security_sandbox_gmp_win32k_disable() && IsWin10OrLater()) {
-    result = AddWin32kLockdownPolicy(mPolicy, true);
-    SANDBOX_ENSURE_SUCCESS(result, "Failed to add the win32k lockdown policy");
+    mitigations |= sandbox::MITIGATION_WIN32K_DISABLE;
+    result =
+        mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_WIN32K_LOCKDOWN,
+                         sandbox::TargetPolicy::IMPLEMENT_OPM_APIS, nullptr);
+    SANDBOX_ENSURE_SUCCESS(result, "Failed to set OPM policy.");
   }
+
+  result = mPolicy->SetProcessMitigations(mitigations);
+  SANDBOX_ENSURE_SUCCESS(result, "Invalid flags for SetProcessMitigations.");
 
   mitigations = sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
                 sandbox::MITIGATION_DLL_SEARCH_ORDER;

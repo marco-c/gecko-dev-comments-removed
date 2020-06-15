@@ -66,6 +66,7 @@
 
 
 
+
 #ifndef BASE_MEMORY_WEAK_PTR_H_
 #define BASE_MEMORY_WEAK_PTR_H_
 
@@ -116,9 +117,9 @@ class BASE_EXPORT WeakReference {
   explicit WeakReference(const scoped_refptr<Flag>& flag);
   ~WeakReference();
 
-  WeakReference(WeakReference&& other) noexcept;
+  WeakReference(WeakReference&& other);
   WeakReference(const WeakReference& other);
-  WeakReference& operator=(WeakReference&& other) noexcept = default;
+  WeakReference& operator=(WeakReference&& other) = default;
   WeakReference& operator=(const WeakReference& other) = default;
 
   bool IsValid() const;
@@ -140,7 +141,7 @@ class BASE_EXPORT WeakReferenceOwner {
   void Invalidate();
 
  private:
-  scoped_refptr<WeakReference::Flag> flag_;
+  mutable scoped_refptr<WeakReference::Flag> flag_;
 };
 
 
@@ -153,9 +154,9 @@ class BASE_EXPORT WeakPtrBase {
   ~WeakPtrBase();
 
   WeakPtrBase(const WeakPtrBase& other) = default;
-  WeakPtrBase(WeakPtrBase&& other) noexcept = default;
+  WeakPtrBase(WeakPtrBase&& other) = default;
   WeakPtrBase& operator=(const WeakPtrBase& other) = default;
-  WeakPtrBase& operator=(WeakPtrBase&& other) noexcept = default;
+  WeakPtrBase& operator=(WeakPtrBase&& other) = default;
 
   void reset() {
     ref_ = internal::WeakReference();
@@ -236,7 +237,7 @@ class WeakPtr : public internal::WeakPtrBase {
     ptr_ = reinterpret_cast<uintptr_t>(t);
   }
   template <typename U>
-  WeakPtr(WeakPtr<U>&& other) noexcept : WeakPtrBase(std::move(other)) {
+  WeakPtr(WeakPtr<U>&& other) : WeakPtrBase(std::move(other)) {
     
     
     T* t = reinterpret_cast<U*>(other.ptr_);

@@ -193,10 +193,9 @@ class PolicyOpcode {
   uint32_t GetOptions() const { return options_; }
 
   
-  void SetOptions(uint32_t options) { options_ = options; }
-
-  
-  uint16_t GetParameter() const { return parameter_; }
+  void SetOptions(uint32_t options) {
+    options_ = base::checked_cast<uint16_t>(options);
+  }
 
  private:
   static const size_t kArgumentCount = 4;  
@@ -215,7 +214,10 @@ class PolicyOpcode {
                             MatchContext* match);
   OpcodeID opcode_id_;
   int16_t parameter_;
-  uint32_t options_;
+  
+  
+  
+  uint16_t options_;
   OpcodeArgument arguments_[PolicyOpcode::kArgumentCount];
 };
 

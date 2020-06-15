@@ -33,7 +33,6 @@
 
 #include "base/time/time.h"
 
-#include <windows.foundation.h>
 #include <windows.h>
 #include <mmsystem.h>
 #include <stdint.h>
@@ -41,12 +40,10 @@
 #include "base/atomicops.h"
 #include "base/bit_cast.h"
 #include "base/cpu.h"
-#include "base/feature_list.h"
 #include "base/logging.h"
 #include "base/synchronization/lock.h"
 #include "base/threading/platform_thread.h"
 #include "base/time/time_override.h"
-#include "base/time/time_win_features.h"
 
 namespace base {
 
@@ -88,12 +85,10 @@ void InitializeClock() {
 }
 
 
-UINT g_battery_power_interval_ms = 4;
 
 
-
-UINT g_last_interval_requested_ms = 0;
-
+const int kMinTimerIntervalHighResMs = 1;
+const int kMinTimerIntervalLowResMs = 4;
 
 bool g_high_res_timer_enabled = false;
 
@@ -111,56 +106,6 @@ TimeTicks g_high_res_timer_last_activation;
 Lock* GetHighResLock() {
   static auto* lock = new Lock();
   return lock;
-}
-
-
-
-
-
-
-
-
-UINT MinTimerIntervalHighResMs() {
-  return 1;
-}
-
-
-
-
-UINT MinTimerIntervalLowResMs() {
-  return g_battery_power_interval_ms;
-}
-
-
-
-UINT GetIntervalMs() {
-  if (!g_high_res_timer_count)
-    return 0;  
-  if (g_high_res_timer_enabled)
-    return MinTimerIntervalHighResMs();
-  return MinTimerIntervalLowResMs();
-}
-
-
-
-
-void UpdateTimerIntervalLocked() {
-  UINT new_interval = GetIntervalMs();
-  if (new_interval == g_last_interval_requested_ms)
-    return;
-  if (g_last_interval_requested_ms) {
-    
-    g_high_res_timer_usage += subtle::TimeTicksNowIgnoringOverride() -
-                              g_high_res_timer_last_activation;
-    
-    timeEndPeriod(g_last_interval_requested_ms);
-  }
-  g_last_interval_requested_ms = new_interval;
-  if (g_last_interval_requested_ms) {
-    
-    g_high_res_timer_last_activation = subtle::TimeTicksNowIgnoringOverride();
-    timeBeginPeriod(g_last_interval_requested_ms);
-  }
 }
 
 
@@ -245,32 +190,27 @@ FILETIME Time::ToFileTime() const {
   return utc_ft;
 }
 
-void Time::ReadMinTimerIntervalLowResMs() {
-  AutoLock lock(*GetHighResLock());
-  
-  g_battery_power_interval_ms =
-      base::FeatureList::IsEnabled(base::kSlowDCTimerInterruptsWin) ? 8 : 4;
-  UpdateTimerIntervalLocked();
-}
-
-
-
-
-
-
-
 
 void Time::EnableHighResolutionTimer(bool enable) {
   AutoLock lock(*GetHighResLock());
+  if (g_high_res_timer_enabled == enable)
+    return;
   g_high_res_timer_enabled = enable;
-  UpdateTimerIntervalLocked();
+  if (!g_high_res_timer_count)
+    return;
+  
+  
+  
+  
+  
+  if (enable) {
+    timeEndPeriod(kMinTimerIntervalLowResMs);
+    timeBeginPeriod(kMinTimerIntervalHighResMs);
+  } else {
+    timeEndPeriod(kMinTimerIntervalHighResMs);
+    timeBeginPeriod(kMinTimerIntervalLowResMs);
+  }
 }
-
-
-
-
-
-
 
 
 bool Time::ActivateHighResolutionTimer(bool activating) {
@@ -280,22 +220,31 @@ bool Time::ActivateHighResolutionTimer(bool activating) {
   const uint32_t max = std::numeric_limits<uint32_t>::max();
 
   AutoLock lock(*GetHighResLock());
+  UINT period = g_high_res_timer_enabled ? kMinTimerIntervalHighResMs
+                                         : kMinTimerIntervalLowResMs;
   if (activating) {
     DCHECK_NE(g_high_res_timer_count, max);
     ++g_high_res_timer_count;
+    if (g_high_res_timer_count == 1) {
+      g_high_res_timer_last_activation = subtle::TimeTicksNowIgnoringOverride();
+      timeBeginPeriod(period);
+    }
   } else {
     DCHECK_NE(g_high_res_timer_count, 0u);
     --g_high_res_timer_count;
+    if (g_high_res_timer_count == 0) {
+      g_high_res_timer_usage += subtle::TimeTicksNowIgnoringOverride() -
+                                g_high_res_timer_last_activation;
+      timeEndPeriod(period);
+    }
   }
-  UpdateTimerIntervalLocked();
-  return true;
+  return (period == kMinTimerIntervalHighResMs);
 }
-
 
 
 bool Time::IsHighResolutionTimerInUse() {
   AutoLock lock(*GetHighResLock());
-  return g_last_interval_requested_ms == MinTimerIntervalHighResMs();
+  return g_high_res_timer_enabled && g_high_res_timer_count > 0;
 }
 
 
@@ -674,20 +623,6 @@ ThreadTicks ThreadTicks::GetForThread(
     const PlatformThreadHandle& thread_handle) {
   DCHECK(IsSupported());
 
-#if defined(ARCH_CPU_ARM64)
-  
-  
-  
-  
-  
-  
-  FILETIME creation_time, exit_time, kernel_time, user_time;
-  ::GetThreadTimes(thread_handle.platform_handle(), &creation_time, &exit_time,
-                   &kernel_time, &user_time);
-
-  int64_t us = FileTimeToMicroseconds(user_time);
-  return ThreadTicks(us);
-#else
   
   ULONG64 thread_cycle_time = 0;
   ::QueryThreadCycleTime(thread_handle.platform_handle(), &thread_cycle_time);
@@ -701,7 +636,6 @@ ThreadTicks ThreadTicks::GetForThread(
   double thread_time_seconds = thread_cycle_time / tsc_ticks_per_second;
   return ThreadTicks(
       static_cast<int64_t>(thread_time_seconds * Time::kMicrosecondsPerSecond));
-#endif
 }
 
 
@@ -712,18 +646,23 @@ bool ThreadTicks::IsSupportedWin() {
 
 
 void ThreadTicks::WaitUntilInitializedWin() {
-#if !defined(ARCH_CPU_ARM64)
   while (TSCTicksPerSecond() == 0)
     ::Sleep(10);
-#endif
 }
 
-#if !defined(ARCH_CPU_ARM64)
+#if defined(_M_ARM64) && defined(__clang__)
+#define ReadCycleCounter() _ReadStatusReg(ARM64_PMCCNTR_EL0)
+#else
+#define ReadCycleCounter() __rdtsc()
+#endif
+
 double ThreadTicks::TSCTicksPerSecond() {
   DCHECK(IsSupported());
+
   
   
   
+
   
   
   static double tsc_ticks_per_second = 0;
@@ -738,12 +677,12 @@ double ThreadTicks::TSCTicksPerSecond() {
   
   
 
-  static const uint64_t tsc_initial = __rdtsc();
+  static const uint64_t tsc_initial = ReadCycleCounter();
   static const uint64_t perf_counter_initial = QPCNowRaw();
 
   
   
-  uint64_t tsc_now = __rdtsc();
+  uint64_t tsc_now = ReadCycleCounter();
   uint64_t perf_counter_now = QPCNowRaw();
 
   
@@ -776,8 +715,8 @@ double ThreadTicks::TSCTicksPerSecond() {
 
   return tsc_ticks_per_second;
 }
-#endif  
 
+#undef ReadCycleCounter
 
 TimeTicks TimeTicks::FromQPCValue(LONGLONG qpc_value) {
   return TimeTicks() + QPCValueToTimeDelta(qpc_value);
@@ -793,18 +732,6 @@ TimeDelta TimeDelta::FromQPCValue(LONGLONG qpc_value) {
 
 TimeDelta TimeDelta::FromFileTime(FILETIME ft) {
   return TimeDelta::FromMicroseconds(FileTimeToMicroseconds(ft));
-}
-
-
-TimeDelta TimeDelta::FromWinrtDateTime(ABI::Windows::Foundation::DateTime dt) {
-  
-  return TimeDelta::FromMicroseconds(dt.UniversalTime / 10);
-}
-
-ABI::Windows::Foundation::DateTime TimeDelta::ToWinrtDateTime() const {
-  ABI::Windows::Foundation::DateTime date_time;
-  date_time.UniversalTime = InMicroseconds() * 10;
-  return date_time;
 }
 
 }  

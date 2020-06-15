@@ -48,11 +48,11 @@ AtExitManager::~AtExitManager() {
 
 void AtExitManager::RegisterCallback(AtExitCallbackType func, void* param) {
   DCHECK(func);
-  RegisterTask(base::BindOnce(func, param));
+  RegisterTask(base::Bind(func, param));
 }
 
 
-void AtExitManager::RegisterTask(base::OnceClosure task) {
+void AtExitManager::RegisterTask(base::Closure task) {
   if (!g_top_manager) {
     NOTREACHED() << "Tried to RegisterCallback without an AtExitManager";
     return;
@@ -75,7 +75,7 @@ void AtExitManager::ProcessCallbacksNow() {
   
   
   
-  base::stack<base::OnceClosure> tasks;
+  base::stack<base::Closure> tasks;
   {
     AutoLock lock(g_top_manager->lock_);
     tasks.swap(g_top_manager->stack_);
@@ -89,7 +89,8 @@ void AtExitManager::ProcessCallbacksNow() {
   ScopedAllowCrossThreadRefCountAccess allow_cross_thread_ref_count_access;
 
   while (!tasks.empty()) {
-    std::move(tasks.top()).Run();
+    base::Closure task = tasks.top();
+    task.Run();
     tasks.pop();
   }
 

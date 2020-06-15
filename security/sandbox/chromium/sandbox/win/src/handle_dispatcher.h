@@ -20,7 +20,7 @@ class HandleDispatcher : public Dispatcher {
   ~HandleDispatcher() override {}
 
   
-  bool SetupService(InterceptionManager* manager, IpcTag service) override;
+  bool SetupService(InterceptionManager* manager, int service) override;
 
  private:
   

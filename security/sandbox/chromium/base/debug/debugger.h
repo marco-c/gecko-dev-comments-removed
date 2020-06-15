@@ -38,12 +38,6 @@ BASE_EXPORT void BreakDebugger();
 BASE_EXPORT void SetSuppressDebugUI(bool suppress);
 BASE_EXPORT bool IsDebugUISuppressed();
 
-
-
-
-
-BASE_EXPORT void VerifyDebugger();
-
 }  
 }  
 

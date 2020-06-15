@@ -87,14 +87,6 @@
 #include "base/win/windows_types.h"
 #endif
 
-namespace ABI {
-namespace Windows {
-namespace Foundation {
-struct DateTime;
-}  
-}  
-}  
-
 namespace base {
 
 class PlatformThreadHandle;
@@ -109,8 +101,8 @@ namespace time_internal {
 
 
 
-BASE_EXPORT constexpr int64_t SaturatedAdd(int64_t value, TimeDelta delta);
-BASE_EXPORT constexpr int64_t SaturatedSub(int64_t value, TimeDelta delta);
+BASE_EXPORT int64_t SaturatedAdd(int64_t value, TimeDelta delta);
+BASE_EXPORT int64_t SaturatedSub(int64_t value, TimeDelta delta);
 
 }  
 
@@ -120,9 +112,6 @@ class BASE_EXPORT TimeDelta {
  public:
   constexpr TimeDelta() : delta_(0) {}
 
-  
-  
-  
   
   static constexpr TimeDelta FromDays(int days);
   static constexpr TimeDelta FromHours(int hours);
@@ -137,15 +126,9 @@ class BASE_EXPORT TimeDelta {
   static constexpr TimeDelta FromNanosecondsD(double ns);
 #if defined(OS_WIN)
   static TimeDelta FromQPCValue(LONGLONG qpc_value);
-  
-  
   static TimeDelta FromFileTime(FILETIME ft);
-  static TimeDelta FromWinrtDateTime(ABI::Windows::Foundation::DateTime dt);
 #elif defined(OS_POSIX) || defined(OS_FUCHSIA)
   static TimeDelta FromTimeSpec(const timespec& ts);
-#endif
-#if defined(OS_FUCHSIA)
-  static TimeDelta FromZxDuration(zx_duration_t nanos);
 #endif
 
   
@@ -199,16 +182,7 @@ class BASE_EXPORT TimeDelta {
 #if defined(OS_POSIX) || defined(OS_FUCHSIA)
   struct timespec ToTimeSpec() const;
 #endif
-#if defined(OS_FUCHSIA)
-  zx_duration_t ToZxDuration() const;
-#endif
-#if defined(OS_WIN)
-  ABI::Windows::Foundation::DateTime ToWinrtDateTime() const;
-#endif
 
-  
-  
-  
   
   
   
@@ -228,24 +202,29 @@ class BASE_EXPORT TimeDelta {
   int64_t InNanoseconds() const;
 
   
-  constexpr TimeDelta operator+(TimeDelta other) const {
+  
+  
+  
+  TimeDelta operator+(TimeDelta other) const {
     return TimeDelta(time_internal::SaturatedAdd(delta_, other));
   }
-  constexpr TimeDelta operator-(TimeDelta other) const {
+  TimeDelta operator-(TimeDelta other) const {
     return TimeDelta(time_internal::SaturatedSub(delta_, other));
   }
 
-  constexpr TimeDelta& operator+=(TimeDelta other) {
+  TimeDelta& operator+=(TimeDelta other) {
     return *this = (*this + other);
   }
-  constexpr TimeDelta& operator-=(TimeDelta other) {
+  TimeDelta& operator-=(TimeDelta other) {
     return *this = (*this - other);
   }
   constexpr TimeDelta operator-() const { return TimeDelta(-delta_); }
 
   
+  
+  
   template <typename T>
-  constexpr TimeDelta operator*(T a) const {
+  TimeDelta operator*(T a) const {
     CheckedNumeric<int64_t> rv(delta_);
     rv *= a;
     if (rv.IsValid())
@@ -268,7 +247,7 @@ class BASE_EXPORT TimeDelta {
     return TimeDelta(std::numeric_limits<int64_t>::max());
   }
   template <typename T>
-  constexpr TimeDelta& operator*=(T a) {
+  TimeDelta& operator*=(T a) {
     return *this = (*this * a);
   }
   template <typename T>
@@ -277,11 +256,9 @@ class BASE_EXPORT TimeDelta {
   }
 
   constexpr int64_t operator/(TimeDelta a) const { return delta_ / a.delta_; }
-
   constexpr TimeDelta operator%(TimeDelta a) const {
     return TimeDelta(delta_ % a.delta_);
   }
-  TimeDelta& operator%=(TimeDelta other) { return *this = (*this % other); }
 
   
   constexpr bool operator==(TimeDelta other) const {
@@ -304,10 +281,8 @@ class BASE_EXPORT TimeDelta {
   }
 
  private:
-  friend constexpr int64_t time_internal::SaturatedAdd(int64_t value,
-                                                       TimeDelta delta);
-  friend constexpr int64_t time_internal::SaturatedSub(int64_t value,
-                                                       TimeDelta delta);
+  friend int64_t time_internal::SaturatedAdd(int64_t value, TimeDelta delta);
+  friend int64_t time_internal::SaturatedSub(int64_t value, TimeDelta delta);
 
   
   
@@ -326,7 +301,7 @@ class BASE_EXPORT TimeDelta {
 };
 
 template <typename T>
-constexpr TimeDelta operator*(T a, TimeDelta td) {
+TimeDelta operator*(T a, TimeDelta td) {
   return td * a;
 }
 
@@ -337,34 +312,6 @@ BASE_EXPORT std::ostream& operator<<(std::ostream& os, TimeDelta time_delta);
 
 
 namespace time_internal {
-
-constexpr int64_t SaturatedAdd(int64_t value, TimeDelta delta) {
-  
-  
-  if (delta.is_max()) {
-    CHECK_GT(value, std::numeric_limits<int64_t>::min());
-    return std::numeric_limits<int64_t>::max();
-  } else if (delta.is_min()) {
-    CHECK_LT(value, std::numeric_limits<int64_t>::max());
-    return std::numeric_limits<int64_t>::min();
-  }
-
-  return base::ClampAdd(value, delta.delta_);
-}
-
-constexpr int64_t SaturatedSub(int64_t value, TimeDelta delta) {
-  
-  
-  if (delta.is_max()) {
-    CHECK_LT(value, std::numeric_limits<int64_t>::max());
-    return std::numeric_limits<int64_t>::min();
-  } else if (delta.is_min()) {
-    CHECK_GT(value, std::numeric_limits<int64_t>::min());
-    return std::numeric_limits<int64_t>::max();
-  }
-
-  return base::ClampSub(value, delta.delta_);
-}
 
 
 
@@ -410,11 +357,11 @@ class TimeBase {
 
   
   
-  static constexpr TimeClass Max() {
+  static TimeClass Max() {
     return TimeClass(std::numeric_limits<int64_t>::max());
   }
 
-  static constexpr TimeClass Min() {
+  static TimeClass Min() {
     return TimeClass(std::numeric_limits<int64_t>::min());
   }
 
@@ -436,39 +383,51 @@ class TimeBase {
     return TimeDelta::FromMicroseconds(us_);
   }
 
-  constexpr TimeClass& operator=(TimeClass other) {
+  TimeClass& operator=(TimeClass other) {
     us_ = other.us_;
     return *(static_cast<TimeClass*>(this));
   }
 
   
-  constexpr TimeDelta operator-(TimeClass other) const {
+  TimeDelta operator-(TimeClass other) const {
     return TimeDelta::FromMicroseconds(us_ - other.us_);
   }
 
   
-  constexpr TimeClass operator+(TimeDelta delta) const {
+  TimeClass operator+(TimeDelta delta) const {
     return TimeClass(time_internal::SaturatedAdd(us_, delta));
   }
-  constexpr TimeClass operator-(TimeDelta delta) const {
+  TimeClass operator-(TimeDelta delta) const {
     return TimeClass(time_internal::SaturatedSub(us_, delta));
   }
 
   
-  constexpr TimeClass& operator+=(TimeDelta delta) {
+  TimeClass& operator+=(TimeDelta delta) {
     return static_cast<TimeClass&>(*this = (*this + delta));
   }
-  constexpr TimeClass& operator-=(TimeDelta delta) {
+  TimeClass& operator-=(TimeDelta delta) {
     return static_cast<TimeClass&>(*this = (*this - delta));
   }
 
   
-  constexpr bool operator==(TimeClass other) const { return us_ == other.us_; }
-  constexpr bool operator!=(TimeClass other) const { return us_ != other.us_; }
-  constexpr bool operator<(TimeClass other) const { return us_ < other.us_; }
-  constexpr bool operator<=(TimeClass other) const { return us_ <= other.us_; }
-  constexpr bool operator>(TimeClass other) const { return us_ > other.us_; }
-  constexpr bool operator>=(TimeClass other) const { return us_ >= other.us_; }
+  bool operator==(TimeClass other) const {
+    return us_ == other.us_;
+  }
+  bool operator!=(TimeClass other) const {
+    return us_ != other.us_;
+  }
+  bool operator<(TimeClass other) const {
+    return us_ < other.us_;
+  }
+  bool operator<=(TimeClass other) const {
+    return us_ <= other.us_;
+  }
+  bool operator>(TimeClass other) const {
+    return us_ > other.us_;
+  }
+  bool operator>=(TimeClass other) const {
+    return us_ >= other.us_;
+  }
 
  protected:
   constexpr explicit TimeBase(int64_t us) : us_(us) {}
@@ -479,11 +438,10 @@ class TimeBase {
 
 }  
 
-template <class TimeClass>
-inline constexpr TimeClass operator+(TimeDelta delta, TimeClass t) {
+template<class TimeClass>
+inline TimeClass operator+(TimeDelta delta, TimeClass t) {
   return t + delta;
 }
-
 
 
 
@@ -514,7 +472,7 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
 #if defined(OS_WIN)
   static constexpr int kExplodedMinYear = 1601;
   static constexpr int kExplodedMaxYear = 30827;
-#elif defined(OS_IOS) && !__LP64__
+#elif defined(OS_IOS)
   static constexpr int kExplodedMinYear = std::numeric_limits<int>::min();
   static constexpr int kExplodedMaxYear = std::numeric_limits<int>::max();
 #elif defined(OS_MACOSX)
@@ -607,14 +565,8 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   
   
   
-  
-  
-  
-  
-  
   static Time FromJsTime(double ms_since_epoch);
   double ToJsTime() const;
-  double ToJsTimeIgnoringNull() const;
 
   
   
@@ -625,11 +577,6 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
 #if defined(OS_POSIX) || defined(OS_FUCHSIA)
   static Time FromTimeVal(struct timeval t);
   struct timeval ToTimeVal() const;
-#endif
-
-#if defined(OS_FUCHSIA)
-  static Time FromZxTime(zx_time_t time);
-  zx_time_t ToZxTime() const;
 #endif
 
 #if defined(OS_MACOSX)
@@ -648,11 +595,6 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
 
   
   static void EnableHighResolutionTimer(bool enable);
-
-  
-  
-  
-  static void ReadMinTimerIntervalLowResMs();
 
   
   
@@ -742,8 +684,7 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
  private:
   friend class time_internal::TimeBase<Time>;
 
-  constexpr explicit Time(int64_t microseconds_since_win_epoch)
-      : TimeBase(microseconds_since_win_epoch) {}
+  constexpr explicit Time(int64_t us) : TimeBase(us) {}
 
   
   
@@ -775,15 +716,6 @@ class BASE_EXPORT Time : public time_internal::TimeBase<Time> {
   
   static bool ExplodedMostlyEquals(const Exploded& lhs,
                                    const Exploded& rhs) WARN_UNUSED_RESULT;
-
-  
-  
-  static bool FromMillisecondsSinceUnixEpoch(int64_t unix_milliseconds,
-                                             Time* time) WARN_UNUSED_RESULT;
-
-  
-  
-  int64_t ToRoundedDownMillisecondsSinceUnixEpoch() const;
 };
 
 
@@ -859,7 +791,13 @@ constexpr TimeDelta TimeDelta::Min() {
 
 
 constexpr TimeDelta TimeDelta::FromDouble(double value) {
-  return TimeDelta(saturated_cast<int64_t>(value));
+  
+  
+  return value > double(std::numeric_limits<int64_t>::max())
+             ? Max()
+             : value < std::numeric_limits<int64_t>::min()
+                   ? Min()
+                   : TimeDelta(static_cast<int64_t>(value));
 }
 
 
@@ -1052,17 +990,11 @@ class BASE_EXPORT ThreadTicks : public time_internal::TimeBase<ThreadTicks> {
 #if defined(OS_WIN)
   FRIEND_TEST_ALL_PREFIXES(TimeTicks, TSCTicksPerSecond);
 
-#if defined(ARCH_CPU_ARM64)
-  
-  
-  
-#else
   
   
   
   
   static double TSCTicksPerSecond();
-#endif
 
   static bool IsSupportedWin() WARN_UNUSED_RESULT;
   static void WaitUntilInitializedWin();

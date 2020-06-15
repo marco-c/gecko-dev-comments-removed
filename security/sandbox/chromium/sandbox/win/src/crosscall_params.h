@@ -20,11 +20,14 @@
 
 #include "base/macros.h"
 #include "sandbox/win/src/internal_types.h"
-#if !defined(SANDBOX_FUZZ_TARGET)
-#include "sandbox/win/src/sandbox_nt_types.h"
-#endif
-#include "sandbox/win/src/ipc_tags.h"
 #include "sandbox/win/src/sandbox_types.h"
+
+
+
+inline uint32_t Align(uint32_t value) {
+  uint32_t alignment = sizeof(int64_t);
+  return ((value + alignment - 1) / alignment) * alignment;
+}
 
 
 
@@ -45,26 +48,6 @@
 
 
 namespace sandbox {
-
-
-SANDBOX_INTERCEPT NtExports g_nt;
-
-namespace {
-
-
-
-inline uint32_t Align(uint32_t value) {
-  uint32_t alignment = sizeof(int64_t);
-  return ((value + alignment - 1) / alignment) * alignment;
-}
-
-inline void* memcpy_wrapper(void* dest, const void* src, size_t count) {
-  if (g_nt.memcpy)
-    return g_nt.memcpy(dest, src, count);
-  return memcpy(dest, src, count);
-}
-
-}  
 
 
 const size_t kExtendedReturnCount = 8;
@@ -130,7 +113,7 @@ struct CrossCallReturn {
 class CrossCallParams {
  public:
   
-  IpcTag GetTag() const { return tag_; }
+  uint32_t GetTag() const { return tag_; }
 
   
   
@@ -155,11 +138,11 @@ class CrossCallParams {
 
  protected:
   
-  CrossCallParams(IpcTag tag, uint32_t params_count)
+  CrossCallParams(uint32_t tag, uint32_t params_count)
       : tag_(tag), is_in_out_(0), params_count_(params_count) {}
 
  private:
-  IpcTag tag_;
+  uint32_t tag_;
   uint32_t is_in_out_;
   CrossCallReturn call_return;
   const uint32_t params_count_;
@@ -208,14 +191,15 @@ template <size_t NUMBER_PARAMS, size_t BLOCK_SIZE>
 class ActualCallParams : public CrossCallParams {
  public:
   
-  explicit ActualCallParams(IpcTag tag) : CrossCallParams(tag, NUMBER_PARAMS) {
+  explicit ActualCallParams(uint32_t tag)
+      : CrossCallParams(tag, NUMBER_PARAMS) {
     param_info_[0].offset_ =
         static_cast<uint32_t>(parameters_ - reinterpret_cast<char*>(this));
   }
 
   
   
-  ActualCallParams(IpcTag tag, uint32_t number_params)
+  ActualCallParams(uint32_t tag, uint32_t number_params)
       : CrossCallParams(tag, number_params) {
     param_info_[0].offset_ =
         static_cast<uint32_t>(parameters_ - reinterpret_cast<char*>(this));
@@ -260,7 +244,7 @@ class ActualCallParams : public CrossCallParams {
     
     
     __try {
-      memcpy_wrapper(dest, parameter_address, size);
+      memcpy(dest, parameter_address, size);
     } __except (EXCEPTION_EXECUTE_HANDLER) {
       return false;
     }
@@ -286,7 +270,7 @@ class ActualCallParams : public CrossCallParams {
   uint32_t GetSize() const { return param_info_[NUMBER_PARAMS].offset_; }
 
  protected:
-  ActualCallParams() : CrossCallParams(IpcTag::UNUSED, NUMBER_PARAMS) {}
+  ActualCallParams() : CrossCallParams(0, NUMBER_PARAMS) {}
 
  private:
   ParamInfo param_info_[NUMBER_PARAMS + 1];

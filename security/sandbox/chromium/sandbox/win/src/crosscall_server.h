@@ -12,8 +12,8 @@
 
 #include "base/callback.h"
 #include "base/macros.h"
+#include "base/strings/string16.h"
 #include "sandbox/win/src/crosscall_params.h"
-#include "sandbox/win/src/ipc_tags.h"
 
 
 
@@ -117,7 +117,7 @@ class CrossCallParamsEx : public CrossCallParams {
 
   
   
-  bool GetParameterStr(uint32_t index, std::wstring* string);
+  bool GetParameterStr(uint32_t index, base::string16* string);
 
   
   
@@ -152,14 +152,14 @@ struct ClientInfo {
 
 
 struct IPCInfo {
-  IpcTag ipc_tag;
+  int ipc_tag;
   const ClientInfo* client_info;
   CrossCallReturn return_info;
 };
 
 
 struct IPCParams {
-  IpcTag ipc_tag;
+  int ipc_tag;
   ArgType args[kMaxIpcParams];
 
   bool Matches(IPCParams* other) const {
@@ -240,7 +240,7 @@ class Dispatcher {
 
   
   
-  virtual bool SetupService(InterceptionManager* manager, IpcTag service) = 0;
+  virtual bool SetupService(InterceptionManager* manager, int service) = 0;
 
   Dispatcher();
   virtual ~Dispatcher();

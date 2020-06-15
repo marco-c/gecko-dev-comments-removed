@@ -104,7 +104,6 @@
 
 #include <stddef.h>
 
-#include <functional>
 #include <iosfwd>
 #include <string>
 #include <vector>
@@ -153,7 +152,7 @@ class BASE_EXPORT FilePath {
 #if defined(OS_WIN)
   
   
-  typedef std::wstring StringType;
+  typedef base::string16 StringType;
 #elif defined(OS_POSIX) || defined(OS_FUCHSIA)
   
   

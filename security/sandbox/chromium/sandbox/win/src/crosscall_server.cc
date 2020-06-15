@@ -7,10 +7,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <atomic>
 #include <string>
 #include <vector>
 
+#include "base/atomicops.h"
 #include "base/logging.h"
 #include "base/strings/utf_string_conversions.h"
 #include "sandbox/win/src/crosscall_client.h"
@@ -124,7 +124,7 @@ bool IsSizeWithinRange(uint32_t buffer_size,
   return true;
 }
 
-CrossCallParamsEx::CrossCallParamsEx() : CrossCallParams(IpcTag::UNUSED, 0) {}
+CrossCallParamsEx::CrossCallParamsEx() : CrossCallParams(0, 0) {}
 
 
 
@@ -190,7 +190,7 @@ CrossCallParamsEx* CrossCallParamsEx::CreateFromBuffer(void* buffer_base,
     
     
     
-    std::atomic_thread_fence(std::memory_order_seq_cst);
+    base::subtle::MemoryBarrier();
 
     min_declared_size = GetMinDeclaredActualCallParamsSize(param_count);
 
@@ -277,7 +277,8 @@ bool CrossCallParamsEx::GetParameterVoidPtr(uint32_t index, void** param) {
 
 
 
-bool CrossCallParamsEx::GetParameterStr(uint32_t index, std::wstring* string) {
+bool CrossCallParamsEx::GetParameterStr(uint32_t index,
+                                        base::string16* string) {
   DCHECK(string->empty());
   uint32_t size = 0;
   ArgType type;
@@ -287,16 +288,14 @@ bool CrossCallParamsEx::GetParameterStr(uint32_t index, std::wstring* string) {
 
   
   if (size == 0) {
-    *string = std::wstring();
+    *string = base::WideToUTF16(L"");
     return true;
   }
 
   if (!start || ((size % sizeof(wchar_t)) != 0))
     return false;
-
-  string->assign(reinterpret_cast<const wchar_t*>(start),
-                 size / sizeof(wchar_t));
-  return true;
+  return base::WideToUTF16(reinterpret_cast<wchar_t*>(start),
+                           size / sizeof(wchar_t), string);
 }
 
 bool CrossCallParamsEx::GetParameterPtr(uint32_t index,

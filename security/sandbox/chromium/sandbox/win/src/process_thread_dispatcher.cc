@@ -31,20 +31,20 @@ namespace {
 
 
 
-std::wstring GetPathFromCmdLine(const std::wstring& cmd_line) {
-  std::wstring exe_name;
+base::string16 GetPathFromCmdLine(const base::string16& cmd_line) {
+  base::string16 exe_name;
   
   if (cmd_line[0] == L'\"') {
     
-    std::wstring::size_type pos = cmd_line.find(L'\"', 1);
-    if (std::wstring::npos == pos)
+    base::string16::size_type pos = cmd_line.find(L'\"', 1);
+    if (base::string16::npos == pos)
       return cmd_line;
     exe_name = cmd_line.substr(1, pos - 1);
   } else {
     
     
-    std::wstring::size_type pos = cmd_line.find(L' ');
-    if (std::wstring::npos == pos) {
+    base::string16::size_type pos = cmd_line.find(L' ');
+    if (base::string16::npos == pos) {
       
       exe_name = cmd_line;
     } else {
@@ -57,7 +57,7 @@ std::wstring GetPathFromCmdLine(const std::wstring& cmd_line) {
 
 
 
-bool IsPathRelative(const std::wstring& path) {
+bool IsPathRelative(const base::string16& path) {
   
   
   if (path.find(L"\\\\") == 0 || path.find(L":\\") == 1)
@@ -66,9 +66,9 @@ bool IsPathRelative(const std::wstring& path) {
 }
 
 
-bool ConvertToAbsolutePath(const std::wstring& child_current_directory,
+bool ConvertToAbsolutePath(const base::string16& child_current_directory,
                            bool use_env_path,
-                           std::wstring* path) {
+                           base::string16* path) {
   wchar_t file_buffer[MAX_PATH];
   wchar_t* file_part = nullptr;
 
@@ -100,27 +100,27 @@ namespace sandbox {
 ThreadProcessDispatcher::ThreadProcessDispatcher(PolicyBase* policy_base)
     : policy_base_(policy_base) {
   static const IPCCall open_thread = {
-      {IpcTag::NTOPENTHREAD, {UINT32_TYPE, UINT32_TYPE}},
+      {IPC_NTOPENTHREAD_TAG, {UINT32_TYPE, UINT32_TYPE}},
       reinterpret_cast<CallbackGeneric>(
           &ThreadProcessDispatcher::NtOpenThread)};
 
   static const IPCCall open_process = {
-      {IpcTag::NTOPENPROCESS, {UINT32_TYPE, UINT32_TYPE}},
+      {IPC_NTOPENPROCESS_TAG, {UINT32_TYPE, UINT32_TYPE}},
       reinterpret_cast<CallbackGeneric>(
           &ThreadProcessDispatcher::NtOpenProcess)};
 
   static const IPCCall process_token = {
-      {IpcTag::NTOPENPROCESSTOKEN, {VOIDPTR_TYPE, UINT32_TYPE}},
+      {IPC_NTOPENPROCESSTOKEN_TAG, {VOIDPTR_TYPE, UINT32_TYPE}},
       reinterpret_cast<CallbackGeneric>(
           &ThreadProcessDispatcher::NtOpenProcessToken)};
 
   static const IPCCall process_tokenex = {
-      {IpcTag::NTOPENPROCESSTOKENEX, {VOIDPTR_TYPE, UINT32_TYPE, UINT32_TYPE}},
+      {IPC_NTOPENPROCESSTOKENEX_TAG, {VOIDPTR_TYPE, UINT32_TYPE, UINT32_TYPE}},
       reinterpret_cast<CallbackGeneric>(
           &ThreadProcessDispatcher::NtOpenProcessTokenEx)};
 
   static const IPCCall create_params = {
-      {IpcTag::CREATEPROCESSW,
+      {IPC_CREATEPROCESSW_TAG,
        {WCHAR_TYPE, WCHAR_TYPE, WCHAR_TYPE, WCHAR_TYPE, INOUTPTR_TYPE}},
       reinterpret_cast<CallbackGeneric>(
           &ThreadProcessDispatcher::CreateProcessW)};
@@ -130,7 +130,7 @@ ThreadProcessDispatcher::ThreadProcessDispatcher(PolicyBase* policy_base)
   static_assert(sizeof(size_t) == sizeof(void*),
                 "VOIDPTR_TYPE not same size as size_t");
   static const IPCCall create_thread_params = {
-      {IpcTag::CREATETHREAD,
+      {IPC_CREATETHREAD_TAG,
        {VOIDPTR_TYPE, VOIDPTR_TYPE, VOIDPTR_TYPE, UINT32_TYPE}},
       reinterpret_cast<CallbackGeneric>(
           &ThreadProcessDispatcher::CreateThread)};
@@ -144,18 +144,18 @@ ThreadProcessDispatcher::ThreadProcessDispatcher(PolicyBase* policy_base)
 }
 
 bool ThreadProcessDispatcher::SetupService(InterceptionManager* manager,
-                                           IpcTag service) {
+                                           int service) {
   switch (service) {
-    case IpcTag::NTOPENTHREAD:
-    case IpcTag::NTOPENPROCESS:
-    case IpcTag::NTOPENPROCESSTOKEN:
-    case IpcTag::NTOPENPROCESSTOKENEX:
-    case IpcTag::CREATETHREAD:
+    case IPC_NTOPENTHREAD_TAG:
+    case IPC_NTOPENPROCESS_TAG:
+    case IPC_NTOPENPROCESSTOKEN_TAG:
+    case IPC_NTOPENPROCESSTOKENEX_TAG:
+    case IPC_CREATETHREAD_TAG:
       
       NOTREACHED();
       return false;
 
-    case IpcTag::CREATEPROCESSW:
+    case IPC_CREATEPROCESSW_TAG:
       return INTERCEPT_EAT(manager, kKerneldllName, CreateProcessW,
                            CREATE_PROCESSW_ID, 44) &&
              INTERCEPT_EAT(manager, L"kernel32.dll", CreateProcessA,
@@ -212,16 +212,16 @@ bool ThreadProcessDispatcher::NtOpenProcessTokenEx(IPCInfo* ipc,
 }
 
 bool ThreadProcessDispatcher::CreateProcessW(IPCInfo* ipc,
-                                             std::wstring* name,
-                                             std::wstring* cmd_line,
-                                             std::wstring* cur_dir,
-                                             std::wstring* target_cur_dir,
+                                             base::string16* name,
+                                             base::string16* cmd_line,
+                                             base::string16* cur_dir,
+                                             base::string16* target_cur_dir,
                                              CountedBuffer* info) {
   if (sizeof(PROCESS_INFORMATION) != info->Size())
     return false;
 
   
-  std::wstring exe_name;
+  base::string16 exe_name;
   if (!name->empty())
     exe_name = *name;
   else
@@ -240,7 +240,7 @@ bool ThreadProcessDispatcher::CreateProcessW(IPCInfo* ipc,
   params[NameBased::NAME] = ParamPickerMake(const_exe_name);
 
   EvalResult eval =
-      policy_base_->EvalPolicy(IpcTag::CREATEPROCESSW, params.GetBase());
+      policy_base_->EvalPolicy(IPC_CREATEPROCESSW_TAG, params.GetBase());
 
   PROCESS_INFORMATION* proc_info =
       reinterpret_cast<PROCESS_INFORMATION*>(info->Buffer());
