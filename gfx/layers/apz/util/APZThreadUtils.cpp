@@ -4,14 +4,10 @@
 
 
 
-#include "APZThreadUtils.h"
+#include "mozilla/layers/APZThreadUtils.h"
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticMutex.h"
-
-#include "nsISerialEventTarget.h"
-#include "nsThreadUtils.h"
-#include "nsXULAppAPI.h"
 
 namespace mozilla {
 namespace layers {

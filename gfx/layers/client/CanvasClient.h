@@ -23,46 +23,196 @@
 #include "mozilla/gfx/Point.h"  
 #include "mozilla/gfx/Types.h"  
 
+class nsICanvasRenderingContextInternal;
+
 namespace mozilla {
 namespace layers {
 
+class AsyncCanvasRenderer;
+class ShareableCanvasRenderer;
 class CompositableForwarder;
+class ShadowableLayer;
+class SharedSurfaceTextureClient;
+class OOPCanvasRenderer;
 
 
 
 
-class CanvasClient final : public CompositableClient {
-  int32_t mFrameID = 0;
-  RefPtr<TextureClient> mFrontBuffer;
-
+class CanvasClient : public CompositableClient {
  public:
+  typedef MaybeOneOf<ShareableCanvasRenderer*, AsyncCanvasRenderer*> Renderer;
+
   
 
 
 
 
-  CanvasClient(CompositableForwarder* aFwd, const TextureFlags flags)
-      : CompositableClient(aFwd, flags) {}
+  enum CanvasClientType {
+    CanvasClientSurface,
+    CanvasClientGLContext,
+    CanvasClientTypeShSurf,
+    CanvasClientAsync,    
+    CanvasClientTypeOOP,  
+  };
+  static already_AddRefed<CanvasClient> CreateCanvasClient(
+      CanvasClientType aType, CompositableForwarder* aFwd, TextureFlags aFlags);
+
+  CanvasClient(CompositableForwarder* aFwd, TextureFlags aFlags)
+      : CompositableClient(aFwd, aFlags), mFrameID(0) {
+    mTextureFlags = aFlags;
+  }
 
   virtual ~CanvasClient() = default;
 
-  void Clear() { mFrontBuffer = nullptr; }
+  virtual void Clear(){};
+
+  virtual void Update(gfx::IntSize aSize,
+                      ShareableCanvasRenderer* aCanvasRenderer) = 0;
 
   bool AddTextureClient(TextureClient* aTexture) override {
     ++mFrameID;
     return CompositableClient::AddTextureClient(aTexture);
   }
 
+  virtual void UpdateAsync(AsyncCanvasRenderer* aRenderer) {}
+
+  virtual void UpdateFromTexture(TextureClient* aTexture) {}
+
+  virtual void Updated() {}
+
+ protected:
+  int32_t mFrameID;
+};
+
+
+
+class CanvasClient2D : public CanvasClient {
+ public:
+  CanvasClient2D(CompositableForwarder* aLayerForwarder, TextureFlags aFlags)
+      : CanvasClient(aLayerForwarder, aFlags) {}
+
   TextureInfo GetTextureInfo() const override {
     return TextureInfo(CompositableType::IMAGE, mTextureFlags);
   }
 
-  void OnDetach() override { Clear(); }
+  void Clear() override {
+    mBackBuffer = mFrontBuffer = mBufferProviderTexture = nullptr;
+  }
 
-  RefPtr<TextureClient> CreateTextureClientForCanvas(gfx::SurfaceFormat,
-                                                     gfx::IntSize,
-                                                     TextureFlags);
-  void UseTexture(TextureClient*);
+  void Update(gfx::IntSize aSize,
+              ShareableCanvasRenderer* aCanvasRenderer) override;
+
+  void UpdateFromTexture(TextureClient* aBuffer) override;
+
+  bool AddTextureClient(TextureClient* aTexture) override {
+    return CanvasClient::AddTextureClient(aTexture);
+  }
+
+  void OnDetach() override { mBackBuffer = mFrontBuffer = nullptr; }
+
+ private:
+  already_AddRefed<TextureClient> CreateTextureClientForCanvas(
+      gfx::SurfaceFormat aFormat, gfx::IntSize aSize, TextureFlags aFlags,
+      ShareableCanvasRenderer* aCanvasRenderer);
+
+  RefPtr<TextureClient> mBackBuffer;
+  RefPtr<TextureClient> mFrontBuffer;
+  
+  
+  
+  
+  
+  RefPtr<TextureClient> mBufferProviderTexture;
+};
+
+
+
+class CanvasClientSharedSurface : public CanvasClient {
+ private:
+  RefPtr<SharedSurfaceTextureClient> mShSurfClient;
+  RefPtr<TextureClient> mReadbackClient;
+  RefPtr<TextureClient> mFront;
+  RefPtr<TextureClient> mNewFront;
+
+  void ClearSurfaces();
+
+ public:
+  CanvasClientSharedSurface(CompositableForwarder* aLayerForwarder,
+                            TextureFlags aFlags);
+
+  ~CanvasClientSharedSurface();
+
+  TextureInfo GetTextureInfo() const override {
+    return TextureInfo(CompositableType::IMAGE);
+  }
+
+  void Clear() override { ClearSurfaces(); }
+
+  void Update(gfx::IntSize aSize,
+              ShareableCanvasRenderer* aCanvasRenderer) override;
+  void UpdateRenderer(gfx::IntSize aSize, Renderer& aRenderer);
+
+  void UpdateAsync(AsyncCanvasRenderer* aRenderer) override;
+
+  void Updated() override;
+
+  void OnDetach() override;
+};
+
+
+
+
+
+
+class CanvasClientBridge final : public CanvasClient {
+ public:
+  CanvasClientBridge(CompositableForwarder* aLayerForwarder,
+                     TextureFlags aFlags)
+      : CanvasClient(aLayerForwarder, aFlags), mLayer(nullptr) {
+    mIsAsync = true;
+  }
+
+  TextureInfo GetTextureInfo() const override {
+    return TextureInfo(CompositableType::IMAGE);
+  }
+
+  void Update(gfx::IntSize aSize,
+              ShareableCanvasRenderer* aCanvasRenderer) override {}
+
+  void UpdateAsync(AsyncCanvasRenderer* aRenderer) override;
+
+  void SetLayer(ShadowableLayer* aLayer) { mLayer = aLayer; }
+
+ protected:
+  CompositableHandle mAsyncHandle;
+  ShadowableLayer* mLayer;
+};
+
+
+
+
+class CanvasClientOOP final : public CanvasClient {
+ public:
+  CanvasClientOOP(CompositableForwarder* aLayerForwarder, TextureFlags aFlags);
+  ~CanvasClientOOP();
+
+  TextureInfo GetTextureInfo() const override {
+    return TextureInfo(CompositableType::IMAGE);
+  }
+
+  virtual void Update(gfx::IntSize aSize,
+                      ShareableCanvasRenderer* aCanvasRenderer) override;
+
+  virtual void UpdateAsync(AsyncCanvasRenderer* aRenderer) override {
+    MOZ_ASSERT_UNREACHABLE("Illegal to call UpdateAsync on CanvasClientOOP");
+  }
+
+  void SetLayer(ShadowableLayer* aLayer, OOPCanvasRenderer* aRenderer);
+
+ protected:
+  nsICanvasRenderingContextInternal* mCanvasContext = nullptr;
+  ShadowableLayer* mLayer = nullptr;
+  CompositableHandle mHandle;
 };
 
 }  
