@@ -129,8 +129,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       networkMonitor: true,
       
       storageInspector: true,
-      
-      wasmBinarySource: true,
       bulk: true,
       
       

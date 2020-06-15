@@ -19,7 +19,6 @@ add_task(
 
       await gThreadFront.reconfigure({
         observeAsmJS: true,
-        wasmBinarySource: true,
       });
 
       test_source();
