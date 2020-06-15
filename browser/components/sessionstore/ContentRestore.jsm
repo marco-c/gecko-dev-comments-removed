@@ -359,11 +359,11 @@ ContentRestoreInternal.prototype = {
 
   restoreTabContentStarted(finishCallback, removeListenerCallback) {
     
-    if (!this._shistoryInParent) {
+    if (this._shistoryInParent) {
+      removeListenerCallback();
+    } else if (this._historyListener) {
       this._historyListener.uninstall();
       this._historyListener = null;
-    } else {
-      removeListenerCallback();
     }
 
     
