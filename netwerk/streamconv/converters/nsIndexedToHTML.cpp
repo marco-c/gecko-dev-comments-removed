@@ -505,17 +505,9 @@ nsresult nsIndexedToHTML::DoOnStartRequest(nsIRequest* request,
   nsAutoString unEscapeSpec;
   rv = mTextToSubURI->UnEscapeAndConvert(NS_LITERAL_CSTRING("UTF-8"), titleUri,
                                          unEscapeSpec);
-  
-  
-  
-  
-  if (NS_FAILED(rv) && uri->SchemeIs("file") && !NS_IsNativeUTF8()) {
-    auto encoding = mozilla::dom::FallbackEncoding::FromLocale();
-    nsAutoCString charset;
-    encoding->Name(charset);
-    rv = mTextToSubURI->UnEscapeAndConvert(charset, titleUri, unEscapeSpec);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
-  if (NS_FAILED(rv)) return rv;
 
   nsCString htmlEscSpecUtf8;
   nsAppendEscapedHTML(NS_ConvertUTF16toUTF8(unEscapeSpec), htmlEscSpecUtf8);
