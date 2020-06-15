@@ -2,12 +2,17 @@
 
 
 
-export const kBigSeparator = ':'; 
 
-export const kPathSeparator = ','; 
+export const kBigSeparator = ':';
 
-export const kParamSeparator = ';'; 
 
-export const kParamKVSeparator = '='; 
+export const kPathSeparator = ',';
 
-export const kWildcard = '*'; 
+
+export const kParamSeparator = ';';
+
+
+export const kParamKVSeparator = '=';
+
+
+export const kWildcard = '*';

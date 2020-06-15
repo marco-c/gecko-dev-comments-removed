@@ -1,7 +1,0 @@
-
-
-
-
-export function testSpecEquals(x, y) {
-  return x.suite === y.suite && x.path === y.path;
-} 

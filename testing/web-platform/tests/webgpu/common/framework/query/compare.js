@@ -4,7 +4,11 @@
 
 import { paramKeyIsPublic } from '../params_utils.js';
 import { assert, objectEquals } from '../util/util.js';
-export let Ordering; 
+export let Ordering;
+
+
+
+
 
 
 (function (Ordering) {
@@ -40,7 +44,11 @@ export function compareQueries(a, b) {
   }
 
   return Ordering.Equal;
-} 
+}
+
+
+
+
 
 
 

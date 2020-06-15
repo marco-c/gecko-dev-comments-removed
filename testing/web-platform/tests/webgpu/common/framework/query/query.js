@@ -8,8 +8,23 @@ import { assert } from '../util/util.js';
 import { encodeURIComponentSelectively } from './encode_selectively.js';
 import { kBigSeparator, kPathSeparator, kWildcard, kParamSeparator } from './separators.js';
 import { stringifyPublicParams } from './stringify_params.js';
+
+
+
+
+
+
+
+
+
+
+
+
+
 export class TestQueryMultiFile {
   constructor(suite, file) {
+    _defineProperty(this, "level", 1);
+
     _defineProperty(this, "isMultiFile", true);
 
     _defineProperty(this, "suite", void 0);
@@ -24,18 +39,22 @@ export class TestQueryMultiFile {
     return encodeURIComponentSelectively(this.toStringHelper().join(kBigSeparator));
   }
 
-  toHTML() {
-    return this.toStringHelper().join(kBigSeparator + '<wbr>');
-  }
-
   toStringHelper() {
     return [this.suite, [...this.filePathParts, kWildcard].join(kPathSeparator)];
   }
 
 }
+
+
+
+
+
+
 export class TestQueryMultiTest extends TestQueryMultiFile {
   constructor(suite, file, test) {
     super(suite, file);
+
+    _defineProperty(this, "level", 2);
 
     _defineProperty(this, "isMultiFile", false);
 
@@ -52,9 +71,18 @@ export class TestQueryMultiTest extends TestQueryMultiFile {
   }
 
 }
+
+
+
+
+
+
+
 export class TestQueryMultiCase extends TestQueryMultiTest {
   constructor(suite, file, test, params) {
     super(suite, file, test);
+
+    _defineProperty(this, "level", 3);
 
     _defineProperty(this, "isMultiTest", false);
 
@@ -73,9 +101,17 @@ export class TestQueryMultiCase extends TestQueryMultiTest {
   }
 
 }
+
+
+
+
+
+
 export class TestQuerySingleCase extends TestQueryMultiCase {
   constructor(...args) {
     super(...args);
+
+    _defineProperty(this, "level", 4);
 
     _defineProperty(this, "isMultiCase", false);
   }

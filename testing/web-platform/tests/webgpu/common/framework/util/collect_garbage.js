@@ -39,6 +39,8 @@ export async function attemptGarbageCollection() {
       i: 'ab' + i + i / 100000
     };
     temp = temp + 'foo';
+    temp; 
+
     gcRec(n - 1);
   }
 
