@@ -226,8 +226,14 @@ void ChromeProcessController::NotifyPinchGesture(
   }
 
   if (mWidget) {
-    APZCCallbackHelper::NotifyPinchGesture(aType, aSpanChange, aModifiers,
-                                           mWidget.get());
+    
+    
+    
+    
+    mUIThread->Dispatch(NewRunnableFunction(
+        "layers::ChromeProcessController::NotifyPinchGestureAsync",
+        &APZCCallbackHelper::NotifyPinchGesture, aType, aSpanChange, aModifiers,
+        mWidget));
   }
 }
 

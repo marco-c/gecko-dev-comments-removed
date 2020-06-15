@@ -873,7 +873,7 @@ void APZCCallbackHelper::CancelAutoscroll(
 
 void APZCCallbackHelper::NotifyPinchGesture(
     PinchGestureInput::PinchGestureType aType, LayoutDeviceCoord aSpanChange,
-    Modifiers aModifiers, nsIWidget* aWidget) {
+    Modifiers aModifiers, const nsCOMPtr<nsIWidget>& aWidget) {
   EventMessage msg;
   switch (aType) {
     case PinchGestureInput::PINCHGESTURE_START:
@@ -888,7 +888,7 @@ void APZCCallbackHelper::NotifyPinchGesture(
       break;
   }
 
-  WidgetSimpleGestureEvent event(true, msg, aWidget);
+  WidgetSimpleGestureEvent event(true, msg, aWidget.get());
   
   
   
