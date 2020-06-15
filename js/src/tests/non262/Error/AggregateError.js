@@ -10,9 +10,6 @@ assertEq(AggregateError.prototype.name, "AggregateError");
 assertEq(AggregateError.prototype.message, "");
 
 
-assertThrowsInstanceOf(() => AggregateError.prototype.errors, TypeError);
-
-
 assertThrowsInstanceOf(() => new AggregateError(), TypeError);
 assertThrowsInstanceOf(() => AggregateError(), TypeError);
 
@@ -25,12 +22,14 @@ assertThrowsInstanceOf(() => AggregateError(), TypeError);
   assertEq(errors.length, 0);
 
   
-  assertEq(errors === err.errors, false);
-
-  
   errors.push(123);
   assertEq(errors.length, 1);
   assertEq(errors[0], 123);
+  assertEq(err.errors[0], 123);
+
+  
+  err.errors = undefined;
+  assertEq(err.errors, undefined);
 }
 
 
@@ -53,29 +52,30 @@ assertThrowsInstanceOf(() => AggregateError(), TypeError);
 }
 
 {
-  const {
-    get: getErrors,
-    set: setErrors,
-  } = Object.getOwnPropertyDescriptor(AggregateError.prototype, "errors");
-  assertEq(typeof getErrors, "function");
-  assertEq(typeof setErrors, "undefined");
+  assertEq("errors" in AggregateError.prototype, false);
 
-  
-  assertThrowsInstanceOf(() => getErrors.call(null), TypeError);
-  assertThrowsInstanceOf(() => getErrors.call({}), TypeError);
-  assertThrowsInstanceOf(() => getErrors.call(new Error), TypeError);
+  const {
+    configurable,
+    enumerable,
+    value,
+    writable
+  } = Object.getOwnPropertyDescriptor(new AggregateError([]), "errors");
+  assertEq(configurable, true);
+  assertEq(enumerable, false);
+  assertEq(writable, true);
+  assertEq(value.length, 0);
 
   const g = newGlobal();
 
   let obj = {};
-  let errors = getErrors.call(new g.AggregateError([obj]));
+  let errors = new g.AggregateError([obj]).errors;
 
   assertEq(errors.length, 1);
   assertEq(errors[0], obj);
 
   
   let proto = Object.getPrototypeOf(errors);
-  assertEq(proto === Array.prototype || proto === g.Array.prototype, true);
+  assertEq(proto === g.Array.prototype, true);
 }
 
 if (typeof reportCompare === "function")
