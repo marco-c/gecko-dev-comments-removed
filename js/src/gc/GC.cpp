@@ -213,6 +213,7 @@
 #include "jstypes.h"
 
 #include "builtin/FinalizationRegistryObject.h"
+#include "builtin/WeakRefObject.h"
 #include "debugger/DebugAPI.h"
 #include "gc/FindSCCs.h"
 #include "gc/FreeOp.h"
@@ -4833,11 +4834,35 @@ static bool HasIncomingCrossCompartmentPointers(JSRuntime* rt) {
 #endif
 
 void js::NotifyGCNukeWrapper(JSObject* obj) {
+  MOZ_ASSERT(IsCrossCompartmentWrapper(obj));
+
   
 
 
 
   RemoveFromGrayList(obj);
+
+  
+
+
+  JSObject* target = UncheckedUnwrapWithoutExpose(obj);
+  if (target->is<WeakRefObject>()) {
+    WeakRefObject* weakRef = &target->as<WeakRefObject>();
+    GCRuntime* gc = &weakRef->runtimeFromMainThread()->gc;
+    if (weakRef->target()) {
+      gc->unregisterWeakRef(weakRef);
+      weakRef->setTarget(nullptr);
+    }
+  }
+
+  
+
+
+
+  if (target->is<FinalizationRecordObject>()) {
+    auto* record = &target->as<FinalizationRecordObject>();
+    FinalizationRegistryObject::unregisterRecord(record);
+  }
 }
 
 enum {

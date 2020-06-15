@@ -61,6 +61,8 @@ FinalizationRecordObject* FinalizationRecordObject::create(
 
 FinalizationRegistryObject* FinalizationRecordObject::registryDuringGC(
     gc::GCRuntime* gc) const {
+  MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
+
   FinalizationRegistryObject* registry = registryUnbarriered();
 
   
@@ -680,28 +682,39 @@ bool FinalizationRegistryObject::unregister(JSContext* cx, unsigned argc,
   
   
 
-  FinalizationRecordSet* activeRecords = registry->activeRecords();
   RootedObject obj(cx, registry->registrations()->lookup(unregisterToken));
   if (obj) {
     auto* records = obj->as<FinalizationRegistrationsObject>().records();
     MOZ_ASSERT(records);
     MOZ_ASSERT(!records->empty());
     for (FinalizationRecordObject* record : *records) {
-      if (record->isActive()) {
-        
-        
-        activeRecords->remove(record);
-        record->clear();
+      if (unregisterRecord(record)) {
         removed = true;
       }
-
-      MOZ_ASSERT(!activeRecords->has(record));
+      MOZ_ASSERT(!registry->activeRecords()->has(record));
     }
     registry->registrations()->remove(unregisterToken);
   }
 
   
   args.rval().setBoolean(removed);
+  return true;
+}
+
+
+bool FinalizationRegistryObject::unregisterRecord(
+    FinalizationRecordObject* record) {
+  if (!record->isActive()) {
+    return false;
+  }
+
+  FinalizationRegistryObject* registry = record->registryUnbarriered();
+  MOZ_ASSERT(registry);
+
+  
+  
+  registry->activeRecords()->remove(record);
+  record->clear();
   return true;
 }
 

@@ -118,17 +118,11 @@ void WeakRefObject::trace(JSTracer* trc, JSObject* obj) {
 
 
 void WeakRefObject::finalize(JSFreeOp* fop, JSObject* obj) {
-  JSContext* cx = fop->runtime()->mainContextFromOwnThread();
-  WeakRefObject* weakRef = &obj->as<WeakRefObject>();
-  JSObject* target = weakRef->target();
-  if (!target) {
-    return;
-  }
-
-  gc::GCRuntime* gc = &fop->runtime()->gc;
   
   
-  gc->unregisterWeakRef(cx, target, weakRef);
+  
+  
+  MOZ_ASSERT(!obj->as<WeakRefObject>().target());
 }
 
 const JSClassOps WeakRefObject::classOps_ = {
@@ -221,10 +215,6 @@ bool WeakRefObject::deref(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-inline JSObject* WeakRefObject::target() {
-  return static_cast<JSObject*>(getPrivate());
-}
-
 void WeakRefObject::setTarget(JSObject* target) { setPrivate(target); }
 
 
@@ -266,16 +256,16 @@ bool GCRuntime::registerWeakRef(HandleObject target, HandleObject weakRef) {
   return refs.emplaceBack(weakRef);
 }
 
-bool GCRuntime::unregisterWeakRef(JSContext* cx, JSObject* target,
-                                  WeakRefObject* weakRef) {
-  auto& map = target->zone()->weakRefMap();
-  auto ptr = map.lookup(target);
-  if (!ptr) {
-    return false;
-  }
+void GCRuntime::unregisterWeakRef(WeakRefObject* weakRef) {
+  JSObject* target = weakRef->target();
+  MOZ_ASSERT(target);
 
-  ptr->value().eraseIfEqual(weakRef);
-  return true;
+  auto& map = target->zone()->weakRefMap();
+  if (auto ptr = map.lookup(target)) {
+    ptr->value().eraseIf([weakRef](JSObject* obj) {
+      return UncheckedUnwrapWithoutExpose(obj) == weakRef;
+    });
+  }
 }
 
 void GCRuntime::traceKeptObjects(JSTracer* trc) {
@@ -292,16 +282,12 @@ void WeakRefMap::sweep() {
     
     if (JS::GCPolicy<HeapPtrObject>::needsSweep(&e.front().mutableKey())) {
       for (JSObject* obj : e.front().value()) {
+        MOZ_ASSERT(!JS_IsDeadWrapper(obj));
         obj = UncheckedUnwrapWithoutExpose(obj);
-        if (!obj->is<WeakRefObject>()) {
-          MOZ_ASSERT(JS_IsDeadWrapper(obj));
-          continue;
-        }
 
         WeakRefObject* weakRef = &obj->as<WeakRefObject>();
         weakRef->setTarget(nullptr);
       }
-      e.front().value().clear();
       e.removeFront();
     } else {
       
@@ -318,10 +304,7 @@ void WeakRefHeapPtrVector::sweep(HeapPtrObject& target) {
   while (src != end()) {
     bool needsSweep = JS::GCPolicy<HeapPtrObject>::needsSweep(src);
     JSObject* obj = UncheckedUnwrapWithoutExpose(*src);
-    if (!obj->is<WeakRefObject>()) {
-      MOZ_ASSERT(JS_IsDeadWrapper(obj));
-      continue;
-    }
+    MOZ_ASSERT(!JS_IsDeadWrapper(obj));
 
     WeakRefObject* weakRef = &obj->as<WeakRefObject>();
 
