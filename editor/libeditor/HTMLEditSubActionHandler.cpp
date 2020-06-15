@@ -538,12 +538,12 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
             return NS_ERROR_FAILURE;
           }
         }
-        rv = WSRunObject(*this, pointToAdjust).AdjustWhitespace();
+        rv = WSRunObject(*this, pointToAdjust).AdjustWhiteSpace();
         if (NS_WARN_IF(Destroyed())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
         if (NS_FAILED(rv)) {
-          NS_WARNING("WSRunObject::AdjustWhitespace() failed");
+          NS_WARNING("WSRunObject::AdjustWhiteSpace() failed");
           return rv;
         }
 
@@ -558,13 +558,13 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
             WSRunObject(
                 *this,
                 TopLevelEditSubActionDataRef().mSelectedRange->StartRawPoint())
-                .AdjustWhitespace();
+                .AdjustWhiteSpace();
         if (NS_WARN_IF(Destroyed())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
         NS_WARNING_ASSERTION(
             NS_SUCCEEDED(rvIgnored),
-            "WSRunObject::AdjustWhitespace() failed, but ignored");
+            "WSRunObject::AdjustWhiteSpace() failed, but ignored");
         
         
         if (TopLevelEditSubActionDataRef().mSelectedRange->IsCollapsed()) {
@@ -572,13 +572,13 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
               WSRunObject(
                   *this,
                   TopLevelEditSubActionDataRef().mSelectedRange->EndRawPoint())
-                  .AdjustWhitespace();
+                  .AdjustWhiteSpace();
           if (NS_WARN_IF(Destroyed())) {
             return NS_ERROR_EDITOR_DESTROYED;
           }
           NS_WARNING_ASSERTION(
               NS_SUCCEEDED(rvIgnored),
-              "WSRunObject::AdjustWhitespace() failed, but ignored");
+              "WSRunObject::AdjustWhiteSpace() failed, but ignored");
         }
         break;
       }
@@ -5577,7 +5577,7 @@ nsresult HTMLEditor::IndentListChild(RefPtr<Element>* aCurList,
   
   
   if (nsIContent* nextEditableSibling =
-          GetNextHTMLSibling(&aContent, SkipWhitespace::Yes)) {
+          GetNextHTMLSibling(&aContent, SkipWhiteSpace::Yes)) {
     if (HTMLEditUtils::IsList(nextEditableSibling) &&
         aCurPoint.GetContainer()->NodeInfo()->NameAtom() ==
             nextEditableSibling->NodeInfo()->NameAtom() &&
@@ -5598,7 +5598,7 @@ nsresult HTMLEditor::IndentListChild(RefPtr<Element>* aCurList,
   
   
   if (nsCOMPtr<nsIContent> previousEditableSibling =
-          GetPriorHTMLSibling(&aContent, SkipWhitespace::Yes)) {
+          GetPriorHTMLSibling(&aContent, SkipWhiteSpace::Yes)) {
     if (HTMLEditUtils::IsList(previousEditableSibling) &&
         aCurPoint.GetContainer()->NodeInfo()->NameAtom() ==
             previousEditableSibling->NodeInfo()->NameAtom() &&
@@ -5618,7 +5618,7 @@ nsresult HTMLEditor::IndentListChild(RefPtr<Element>* aCurList,
   
   
   nsIContent* previousEditableSibling =
-      *aCurList ? GetPriorHTMLSibling(&aContent, SkipWhitespace::Yes) : nullptr;
+      *aCurList ? GetPriorHTMLSibling(&aContent, SkipWhiteSpace::Yes) : nullptr;
   if (!*aCurList ||
       (previousEditableSibling && previousEditableSibling != *aCurList)) {
     nsAtom* containerName = aCurPoint.GetContainer()->NodeInfo()->NameAtom();
@@ -8009,11 +8009,11 @@ EditorDOMPoint HTMLEditor::GetWhiteSpaceEndPoint(
     int32_t offset = -1;
     nsCOMPtr<nsIContent> content;
     if (aScanDirection == ScanDirection::Backward) {
-      HTMLEditor::IsPrevCharInNodeWhitespace(newContent, newOffset, &isSpace,
+      HTMLEditor::IsPrevCharInNodeWhiteSpace(newContent, newOffset, &isSpace,
                                              &isNBSP, getter_AddRefs(content),
                                              &offset);
     } else {
-      HTMLEditor::IsNextCharInNodeWhitespace(newContent, newOffset, &isSpace,
+      HTMLEditor::IsNextCharInNodeWhiteSpace(newContent, newOffset, &isSpace,
                                              &isNBSP, getter_AddRefs(content),
                                              &offset);
     }

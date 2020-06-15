@@ -822,7 +822,7 @@ bool HTMLEditor::IsEmptyInlineNode(nsIContent& aContent) const {
 
 
 
-void HTMLEditor::IsNextCharInNodeWhitespace(nsIContent* aContent,
+void HTMLEditor::IsNextCharInNodeWhiteSpace(nsIContent* aContent,
                                             int32_t aOffset, bool* outIsSpace,
                                             bool* outIsNBSP,
                                             nsIContent** outNode,
@@ -852,7 +852,7 @@ void HTMLEditor::IsNextCharInNodeWhitespace(nsIContent* aContent,
 
 
 
-void HTMLEditor::IsPrevCharInNodeWhitespace(nsIContent* aContent,
+void HTMLEditor::IsPrevCharInNodeWhiteSpace(nsIContent* aContent,
                                             int32_t aOffset, bool* outIsSpace,
                                             bool* outIsNBSP,
                                             nsIContent** outNode,
@@ -4956,13 +4956,13 @@ nsresult HTMLEditor::DeleteSelectionAndPrepareToCreateNode() {
 }
 
 nsIContent* HTMLEditor::GetPriorHTMLSibling(nsINode* aNode,
-                                            SkipWhitespace aSkipWS) const {
+                                            SkipWhiteSpace aSkipWS) const {
   MOZ_ASSERT(aNode);
 
   nsIContent* content = aNode->GetPreviousSibling();
   while (content &&
          (!EditorUtils::IsEditableContent(*content, EditorType::HTML) ||
-          SkippableWhitespace(content, aSkipWS))) {
+          SkippableWhiteSpace(content, aSkipWS))) {
     content = content->GetPreviousSibling();
   }
 
@@ -4970,13 +4970,13 @@ nsIContent* HTMLEditor::GetPriorHTMLSibling(nsINode* aNode,
 }
 
 nsIContent* HTMLEditor::GetNextHTMLSibling(nsINode* aNode,
-                                           SkipWhitespace aSkipWS) const {
+                                           SkipWhiteSpace aSkipWS) const {
   MOZ_ASSERT(aNode);
 
   nsIContent* content = aNode->GetNextSibling();
   while (content &&
          (!EditorUtils::IsEditableContent(*content, EditorType::HTML) ||
-          SkippableWhitespace(content, aSkipWS))) {
+          SkippableWhiteSpace(content, aSkipWS))) {
     content = content->GetNextSibling();
   }
 

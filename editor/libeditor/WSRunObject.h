@@ -572,8 +572,8 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
 
-  EditorDOMPointInText GetEndOfCollapsibleASCIIWhitespaces(
-      const EditorDOMPointInText& aPointAtASCIIWhitespace) const;
+  EditorDOMPointInText GetEndOfCollapsibleASCIIWhiteSpaces(
+      const EditorDOMPointInText& aPointAtASCIIWhiteSpace) const;
 
   
 
@@ -583,8 +583,8 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
 
-  EditorDOMPointInText GetFirstASCIIWhitespacePointCollapsedTo(
-      const EditorDOMPointInText& aPointAtASCIIWhitespace) const;
+  EditorDOMPointInText GetFirstASCIIWhiteSpacePointCollapsedTo(
+      const EditorDOMPointInText& aPointAtASCIIWhiteSpace) const;
 
   nsresult GetWSNodes();
 
@@ -710,6 +710,7 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult PrepareToJoinBlocks(
       HTMLEditor& aHTMLEditor, dom::Element& aLeftBlockElement,
       dom::Element& aRightBlockElement);
@@ -797,7 +798,7 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
   
   
-  MOZ_CAN_RUN_SCRIPT nsresult AdjustWhitespace();
+  MOZ_CAN_RUN_SCRIPT nsresult AdjustWhiteSpace();
 
  protected:
   MOZ_CAN_RUN_SCRIPT nsresult PrepareToDeleteRangePriv(WSRunObject* aEndObject);
@@ -816,12 +817,13 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult ReplaceASCIIWhitespacesWithOneNBSP(
-      const EditorDOMPointInText& aAtFirstASCIIWhitespace,
-      const EditorDOMPointInText& aEndOfCollapsibleASCIIWhitespaces);
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult ReplaceASCIIWhiteSpacesWithOneNBSP(
+      const EditorDOMPointInText& aAtFirstASCIIWhiteSpace,
+      const EditorDOMPointInText& aEndOfCollapsibleASCIIWhiteSpaces);
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  NormalizeWhitespacesAtEndOf(const WSFragment& aRun);
+  NormalizeWhiteSpacesAtEndOf(const WSFragment& aRun);
 
   
 
@@ -832,7 +834,7 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  MaybeReplacePreviousNBSPWithASCIIWhitespace(const WSFragment& aRun,
+  MaybeReplacePreviousNBSPWithASCIIWhiteSpace(const WSFragment& aRun,
                                               const EditorDOMPoint& aPoint);
 
   
@@ -845,7 +847,7 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  MaybeReplaceInclusiveNextNBSPWithASCIIWhitespace(
+  MaybeReplaceInclusiveNextNBSPWithASCIIWhiteSpace(
       const WSFragment& aRun, const EditorDOMPoint& aPoint);
 
   MOZ_CAN_RUN_SCRIPT nsresult Scrub();

@@ -828,11 +828,11 @@ class HTMLEditor final : public TextEditor,
 
   MOZ_CAN_RUN_SCRIPT nsresult DeleteTableCellContentsWithTransaction();
 
-  static void IsNextCharInNodeWhitespace(nsIContent* aContent, int32_t aOffset,
+  static void IsNextCharInNodeWhiteSpace(nsIContent* aContent, int32_t aOffset,
                                          bool* outIsSpace, bool* outIsNBSP,
                                          nsIContent** outNode = nullptr,
                                          int32_t* outOffset = 0);
-  static void IsPrevCharInNodeWhitespace(nsIContent* aContent, int32_t aOffset,
+  static void IsPrevCharInNodeWhiteSpace(nsIContent* aContent, int32_t aOffset,
                                          bool* outIsSpace, bool* outIsNBSP,
                                          nsIContent** outNode = nullptr,
                                          int32_t* outOffset = 0);
@@ -985,9 +985,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  enum class SkipWhitespace { Yes, No };
+  enum class SkipWhiteSpace { Yes, No };
   nsIContent* GetPriorHTMLSibling(nsINode* aNode,
-                                  SkipWhitespace = SkipWhitespace::No) const;
+                                  SkipWhiteSpace = SkipWhiteSpace::No) const;
 
   
 
@@ -995,11 +995,11 @@ class HTMLEditor final : public TextEditor,
 
 
   nsIContent* GetNextHTMLSibling(nsINode* aNode,
-                                 SkipWhitespace = SkipWhitespace::No) const;
+                                 SkipWhiteSpace = SkipWhiteSpace::No) const;
 
   
-  static bool SkippableWhitespace(nsINode* aNode, SkipWhitespace aSkipWS) {
-    return aSkipWS == SkipWhitespace::Yes && aNode->IsText() &&
+  static bool SkippableWhiteSpace(nsINode* aNode, SkipWhiteSpace aSkipWS) {
+    return aSkipWS == SkipWhiteSpace::Yes && aNode->IsText() &&
            aNode->AsText()->TextIsOnlyWhitespace();
   }
 
