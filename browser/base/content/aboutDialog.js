@@ -19,22 +19,27 @@ async function init(aEvent) {
 
   var distroId = Services.prefs.getCharPref("distribution.id", "");
   if (distroId) {
-    var distroString = distroId;
-
-    var distroVersion = Services.prefs.getCharPref("distribution.version", "");
-    if (distroVersion) {
-      distroString += " - " + distroVersion;
-    }
-
-    var distroIdField = document.getElementById("distributionId");
-    distroIdField.value = distroString;
-    distroIdField.style.display = "block";
-
     var distroAbout = Services.prefs.getStringPref("distribution.about", "");
+    
     if (distroAbout) {
       var distroField = document.getElementById("distribution");
       distroField.value = distroAbout;
       distroField.style.display = "block";
+    }
+    
+    
+    if (!distroId.startsWith("mozilla-") || distroAbout) {
+      var distroVersion = Services.prefs.getCharPref(
+        "distribution.version",
+        ""
+      );
+      if (distroVersion) {
+        distroId += " - " + distroVersion;
+      }
+
+      var distroIdField = document.getElementById("distributionId");
+      distroIdField.value = distroId;
+      distroIdField.style.display = "block";
     }
   }
 
