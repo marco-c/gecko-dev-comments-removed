@@ -103,6 +103,7 @@ RefPtr<MediaDataDecoder::DecodePromise> WMFMediaDataDecoder::ProcessError(
 
 RefPtr<MediaDataDecoder::DecodePromise> WMFMediaDataDecoder::ProcessDecode(
     MediaRawData* aSample) {
+
   DecodedData results;
   HRESULT hr = mMFTManager->Input(aSample);
   if (hr == MF_E_NOTACCEPTING) {
@@ -122,6 +123,7 @@ RefPtr<MediaDataDecoder::DecodePromise> WMFMediaDataDecoder::ProcessDecode(
     mLastTime = Some(aSample->mTime);
     mLastDuration = aSample->mDuration;
   }
+
   mSamplesCount++;
   mDrainStatus = DrainStatus::DRAINABLE;
   mLastStreamOffset = aSample->mOffset;
@@ -201,6 +203,20 @@ RefPtr<MediaDataDecoder::DecodePromise> WMFMediaDataDecoder::ProcessDrain() {
         
         data->mDuration = mLastDuration;
       }
+    } else if (results.Length() == 1 &&
+               results.LastElement()->mType == MediaData::Type::AUDIO_DATA) {
+      
+      
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(mLastTime,
+                 "We must have attempted to decode at least one frame to get "
+                 "one decoded output");
+      results.LastElement()->mTime = *mLastTime;
     }
     return DecodePromise::CreateAndResolve(std::move(results), __func__);
   }
