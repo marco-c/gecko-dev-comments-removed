@@ -239,7 +239,7 @@ impl SharedTextures {
             array_alpha8_linear: TextureArray::new(
                 TextureFormatPair::from(ImageFormat::R8),
                 TextureFilter::Linear,
-                4,
+                8,
             ),
             
             
