@@ -424,7 +424,13 @@ assert.object = function(obj, msg = "") {
 
 
 
+
+
 assert.in = function(prop, obj, msg = "") {
+  if (Array.isArray(obj)) {
+    assert.that(p => obj.includes(p), msg)(prop);
+    return prop;
+  }
   assert.object(obj, msg);
   msg = msg || pprint`Expected ${prop} in ${obj}`;
   assert.that(p => obj.hasOwnProperty(p), msg)(prop);
