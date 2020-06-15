@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "DAV1DDecoder.h"
 
@@ -31,10 +31,10 @@ RefPtr<MediaDataDecoder::InitPromise> DAV1DDecoder::Init() {
   }
   settings.n_frame_threads =
       static_cast<int>(std::min(decoder_threads, GetNumberOfProcessors()));
-  // There is not much improvement with more than 2 tile threads at least with
-  // the content being currently served. The ideal number of tile thread would
-  // much the tile count of the content. Maybe dav1d can help to do that in the
-  // future.
+  
+  
+  
+  
   settings.n_tile_threads = 2;
 
   int res = dav1d_open(&mContext, &settings);
@@ -62,9 +62,9 @@ void ReleaseDataBuffer_s(const uint8_t* buf, void* user_data) {
 }
 
 void DAV1DDecoder::ReleaseDataBuffer(const uint8_t* buf) {
-  // The release callback may be called on a different thread defined by the
-  // third party dav1d execution. In that case post a task into TaskQueue to
-  // ensure that mDecodingBuffers is only ever accessed on the TaskQueue.
+  
+  
+  
   RefPtr<DAV1DDecoder> self = this;
   auto releaseBuffer = [self, buf] {
     MOZ_ASSERT(self->mTaskQueue->IsCurrentThreadIn());
@@ -87,14 +87,14 @@ RefPtr<MediaDataDecoder::DecodePromise> DAV1DDecoder::InvokeDecode(
   MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn());
   MOZ_ASSERT(aSample);
 
-  // Add the buffer to the hashtable in order to increase
-  // the ref counter and keep it alive. When dav1d does not
-  // need it any more will call it's release callback. Remove
-  // the buffer, in there, to reduce the ref counter and eventually
-  // free it. We need a hashtable and not an array because the
-  // release callback are not coming in the same order that the
-  // buffers have been added in the decoder (threading ordering
-  // inside decoder)
+  
+  
+  
+  
+  
+  
+  
+  
   mDecodingBuffers.Put(aSample->Data(), RefPtr{aSample});
   Dav1dData data;
   int res = dav1d_data_wrap(&data, aSample->Data(), aSample->Size(),
@@ -116,8 +116,8 @@ RefPtr<MediaDataDecoder::DecodePromise> DAV1DDecoder::InvokeDecode(
       return DecodePromise::CreateAndReject(
           MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR, __func__), __func__);
     }
-    // Alway consume the whole buffer on success.
-    // At this point only -EAGAIN error is expected.
+    
+    
     MOZ_ASSERT((res == 0 && !data.sz) ||
                (res == -EAGAIN && data.sz == aSample->Size()));
 
@@ -125,10 +125,10 @@ RefPtr<MediaDataDecoder::DecodePromise> DAV1DDecoder::InvokeDecode(
     res = GetPicture(results, rs);
     if (res < 0) {
       if (res == -EAGAIN) {
-        // No frames ready to return. This is not an
-        // error, in some circumstances, we need to
-        // feed it with a certain amount of frames
-        // before we get a picture.
+        
+        
+        
+        
         continue;
       }
       return DecodePromise::CreateAndReject(rs, __func__);
@@ -183,7 +183,7 @@ already_AddRefed<VideoData> DAV1DDecoder::ConstructImage(
     b.mColorDepth = ColorDepth::COLOR_12;
   }
 
-  // On every other case use the default (BT601).
+  
   if (aPicture.seq_hdr->color_description_present) {
     switch (aPicture.seq_hdr->mtrx) {
       case DAV1D_MC_BT2020_NCL:
@@ -210,20 +210,17 @@ already_AddRefed<VideoData> DAV1DDecoder::ConstructImage(
   b.mPlanes[0].mStride = aPicture.stride[0];
   b.mPlanes[0].mHeight = aPicture.p.h;
   b.mPlanes[0].mWidth = aPicture.p.w;
-  b.mPlanes[0].mOffset = 0;
   b.mPlanes[0].mSkip = 0;
 
   b.mPlanes[1].mData = static_cast<uint8_t*>(aPicture.data[1]);
   b.mPlanes[1].mStride = aPicture.stride[1];
-  b.mPlanes[1].mOffset = 0;
   b.mPlanes[1].mSkip = 0;
 
   b.mPlanes[2].mData = static_cast<uint8_t*>(aPicture.data[2]);
   b.mPlanes[2].mStride = aPicture.stride[1];
-  b.mPlanes[2].mOffset = 0;
   b.mPlanes[2].mSkip = 0;
 
-  // https://code.videolan.org/videolan/dav1d/blob/master/tools/output/yuv.c#L67
+  
   const int ss_ver = aPicture.p.layout == DAV1D_PIXEL_LAYOUT_I420;
   const int ss_hor = aPicture.p.layout != DAV1D_PIXEL_LAYOUT_I444;
 
@@ -233,9 +230,9 @@ already_AddRefed<VideoData> DAV1DDecoder::ConstructImage(
   b.mPlanes[2].mHeight = (aPicture.p.h + ss_ver) >> ss_ver;
   b.mPlanes[2].mWidth = (aPicture.p.w + ss_hor) >> ss_hor;
 
-  // Timestamp, duration and offset used here are wrong.
-  // We need to take those values from the decoder. Latest
-  // dav1d version allows for that.
+  
+  
+  
   media::TimeUnit timecode =
       media::TimeUnit::FromMicroseconds(aPicture.m.timestamp);
   media::TimeUnit duration =
@@ -280,5 +277,5 @@ RefPtr<ShutdownPromise> DAV1DDecoder::Shutdown() {
   });
 }
 
-}  // namespace mozilla
+}  
 #undef LOG
