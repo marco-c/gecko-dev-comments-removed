@@ -11115,25 +11115,6 @@ class MAtomicIsLockFree : public MUnaryInstruction,
   ALLOW_CLONE(MAtomicIsLockFree)
 };
 
-
-
-
-class MGuardSharedTypedArray : public MUnaryInstruction,
-                               public SingleObjectPolicy::Data {
-  explicit MGuardSharedTypedArray(MDefinition* obj)
-      : MUnaryInstruction(classOpcode, obj) {
-    setGuard();
-    setMovable();
-  }
-
- public:
-  INSTRUCTION_HEADER(GuardSharedTypedArray)
-  TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, object))
-
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
-};
-
 class MCompareExchangeTypedArrayElement
     : public MQuaternaryInstruction,
       public MixPolicy<UnboxedInt32Policy<1>, TruncateToInt32Policy<2>,

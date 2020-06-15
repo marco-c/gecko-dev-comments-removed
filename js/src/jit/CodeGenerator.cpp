@@ -12812,19 +12812,6 @@ void CodeGenerator::visitAtomicIsLockFree(LAtomicIsLockFree* lir) {
   masm.bind(&Ldone);
 }
 
-void CodeGenerator::visitGuardSharedTypedArray(LGuardSharedTypedArray* guard) {
-  Register obj = ToRegister(guard->input());
-  Register tmp = ToRegister(guard->tempInt());
-
-  
-  
-  
-  masm.loadPtr(Address(obj, TypedArrayObject::offsetOfElements()), tmp);
-  masm.load32(Address(tmp, ObjectElements::offsetOfFlags()), tmp);
-  bailoutTest32(Assembler::Zero, tmp, Imm32(ObjectElements::SHARED_MEMORY),
-                guard->snapshot());
-}
-
 void CodeGenerator::visitClampIToUint8(LClampIToUint8* lir) {
   Register output = ToRegister(lir->output());
   MOZ_ASSERT(output == ToRegister(lir->input()));
