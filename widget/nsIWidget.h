@@ -1141,6 +1141,17 @@ class nsIWidget : public nsISupports {
 
   virtual void SetShowsToolbarButton(bool aShow) = 0;
 
+  
+
+
+
+
+
+
+
+
+  virtual void SetSupportsNativeFullscreen(bool aSupportsNativeFullscreen) = 0;
+
   enum WindowAnimationType {
     eGenericWindowAnimation,
     eDocumentWindowAnimation

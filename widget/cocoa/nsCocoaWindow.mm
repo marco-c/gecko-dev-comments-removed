@@ -509,9 +509,6 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aB
     [mWindow setLevel:NSFloatingWindowLevel];
     newBehavior |= NSWindowCollectionBehaviorCanJoinAllSpaces;
   }
-  if ((features & NSResizableWindowMask)) {
-    newBehavior |= NSWindowCollectionBehaviorFullScreenPrimary;
-  }
   [mWindow setCollectionBehavior:newBehavior];
 
   [mWindow setContentMinSize:NSMakeSize(60, 60)];
@@ -1612,6 +1609,14 @@ void nsCocoaWindow::UpdateFullscreenState(bool aFullScreen, bool aNativeMode) {
 
 inline bool nsCocoaWindow::ShouldToggleNativeFullscreen(bool aFullScreen,
                                                         bool aUseSystemTransition) {
+  
+  
+  
+  NSWindowCollectionBehavior colBehavior = [mWindow collectionBehavior];
+  if (!(colBehavior & NSWindowCollectionBehaviorFullScreenPrimary)) {
+    return false;
+  }
+
   if (mInNativeFullScreenMode) {
     
     return true;
@@ -2325,6 +2330,28 @@ void nsCocoaWindow::SetShowsToolbarButton(bool aShow) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   if (mWindow) [mWindow setShowsToolbarButton:aShow];
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+void nsCocoaWindow::SetSupportsNativeFullscreen(bool aSupportsNativeFullscreen) {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  if (mWindow) {
+    
+    
+    
+    
+    
+    
+    NSWindowCollectionBehavior newBehavior = [mWindow collectionBehavior];
+    if (aSupportsNativeFullscreen) {
+      newBehavior |= NSWindowCollectionBehaviorFullScreenPrimary;
+    } else {
+      newBehavior &= ~NSWindowCollectionBehaviorFullScreenPrimary;
+    }
+    [mWindow setCollectionBehavior:newBehavior];
+  }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
