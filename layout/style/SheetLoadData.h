@@ -112,6 +112,10 @@ class SheetLoadData final : public nsIRunnable, public nsIThreadObserver {
   const RefPtr<SheetLoadData> mParentData;
 
   
+  
+  uint32_t mExpirationTime = 0;
+
+  
   uint32_t mPendingChildren;
 
   

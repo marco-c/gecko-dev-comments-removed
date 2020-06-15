@@ -505,6 +505,8 @@ class Loader final {
   
   nsIPrincipal* LoaderPrincipal() const;
 
+  bool ShouldBypassCache() const;
+
  private:
   friend class mozilla::SharedStyleSheetCache;
   friend class SheetLoadData;
