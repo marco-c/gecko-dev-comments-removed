@@ -23,6 +23,7 @@
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/HttpChannelParent.h"
 #include "mozilla/net/RedirectChannelRegistrar.h"
+#include "mozilla/net/UrlClassifierCommon.h"
 #include "nsContentSecurityUtils.h"
 #include "nsDocShell.h"
 #include "nsDocShellLoadState.h"
@@ -732,7 +733,8 @@ void DocumentLoadListener::RedirectToRealChannelFinished(nsresult aRv) {
       ("DocumentLoadListener RedirectToRealChannelFinished [this=%p, "
        "aRv=%" PRIx32 " ]",
        this, static_cast<uint32_t>(aRv)));
-  if (NS_FAILED(aRv)) {
+
+  if (NS_FAILED(aRv) || !mRedirectChannelId) {
     FinishReplacementChannelSetup(aRv);
     return;
   }
@@ -781,6 +783,22 @@ void DocumentLoadListener::FinishReplacementChannelSetup(nsresult aResult) {
     disconnected = true;
   }
 
+  if (!mRedirectChannelId) {
+    if (NS_FAILED(aResult)) {
+      mChannel->Cancel(aResult);
+      mChannel->Resume();
+      if (!disconnected) {
+        DisconnectListeners(aResult, aResult);
+      }
+      return;
+    }
+    ApplyPendingFunctions(mChannel);
+
+    
+    
+    return;
+  }
+
   nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
       RedirectChannelRegistrar::GetOrCreate();
   MOZ_ASSERT(registrar);
@@ -789,7 +807,18 @@ void DocumentLoadListener::FinishReplacementChannelSetup(nsresult aResult) {
   nsresult rv = registrar->GetParentChannel(mRedirectChannelId,
                                             getter_AddRefs(redirectChannel));
   if (NS_FAILED(rv) || !redirectChannel) {
-    aResult = NS_ERROR_FAILURE;
+    
+    nsCOMPtr<nsIChannel> newChannel;
+    rv = registrar->GetRegisteredChannel(mRedirectChannelId,
+                                         getter_AddRefs(newChannel));
+    MOZ_ASSERT(newChannel, "Already registered channel not found");
+
+    if (NS_SUCCEEDED(rv)) {
+      newChannel->Cancel(NS_ERROR_FAILURE);
+    }
+    if (!redirectChannel) {
+      aResult = NS_ERROR_FAILURE;
+    }
   }
 
   
@@ -815,46 +844,72 @@ void DocumentLoadListener::FinishReplacementChannelSetup(nsresult aResult) {
 
   ApplyPendingFunctions(redirectChannel);
 
-  if (!ResumeSuspendedChannel(redirectChannel)) {
-    nsCOMPtr<nsILoadGroup> loadGroup;
-    mChannel->GetLoadGroup(getter_AddRefs(loadGroup));
-    if (loadGroup) {
-      
-      
-      
-      
-      
-      nsresult status = NS_OK;
-      mChannel->GetStatus(&status);
-      loadGroup->RemoveRequest(mChannel, nullptr, status);
-    }
-  }
+  ResumeSuspendedChannel(redirectChannel);
 }
 
-void DocumentLoadListener::ApplyPendingFunctions(
-    nsIParentChannel* aChannel) const {
+void DocumentLoadListener::ApplyPendingFunctions(nsISupports* aChannel) const {
   
   
   
 
-  nsCOMPtr<nsIParentChannel> parentChannel = aChannel;
-  for (auto& variant : mIParentChannelFunctions) {
-    variant.match(
-        [parentChannel](const nsIHttpChannel::FlashPluginState& aState) {
-          parentChannel->NotifyFlashPluginStateChanged(aState);
-        },
-        [parentChannel](const ClassifierMatchedInfoParams& aParams) {
-          parentChannel->SetClassifierMatchedInfo(
-              aParams.mList, aParams.mProvider, aParams.mFullHash);
-        },
-        [parentChannel](const ClassifierMatchedTrackingInfoParams& aParams) {
-          parentChannel->SetClassifierMatchedTrackingInfo(aParams.mLists,
-                                                          aParams.mFullHashes);
-        },
-        [parentChannel](const ClassificationFlagsParams& aParams) {
-          parentChannel->NotifyClassificationFlags(aParams.mClassificationFlags,
-                                                   aParams.mIsThirdParty);
-        });
+  nsCOMPtr<nsIParentChannel> parentChannel = do_QueryInterface(aChannel);
+  if (parentChannel) {
+    for (auto& variant : mIParentChannelFunctions) {
+      variant.match(
+          [parentChannel](const nsIHttpChannel::FlashPluginState& aState) {
+            parentChannel->NotifyFlashPluginStateChanged(aState);
+          },
+          [parentChannel](const ClassifierMatchedInfoParams& aParams) {
+            parentChannel->SetClassifierMatchedInfo(
+                aParams.mList, aParams.mProvider, aParams.mFullHash);
+          },
+          [parentChannel](const ClassifierMatchedTrackingInfoParams& aParams) {
+            parentChannel->SetClassifierMatchedTrackingInfo(
+                aParams.mLists, aParams.mFullHashes);
+          },
+          [parentChannel](const ClassificationFlagsParams& aParams) {
+            parentChannel->NotifyClassificationFlags(
+                aParams.mClassificationFlags, aParams.mIsThirdParty);
+          });
+    }
+  } else {
+    for (auto& variant : mIParentChannelFunctions) {
+      variant.match(
+          [&](const nsIHttpChannel::FlashPluginState& aState) {
+            
+            RefPtr<HttpBaseChannel> httpChannel = do_QueryObject(aChannel);
+            if (httpChannel) {
+              httpChannel->SetFlashPluginState(aState);
+            }
+          },
+          [&](const ClassifierMatchedInfoParams& aParams) {
+            nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
+                do_QueryInterface(aChannel);
+            if (classifiedChannel) {
+              classifiedChannel->SetMatchedInfo(
+                  aParams.mList, aParams.mProvider, aParams.mFullHash);
+            }
+          },
+          [&](const ClassifierMatchedTrackingInfoParams& aParams) {
+            nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
+                do_QueryInterface(aChannel);
+            if (classifiedChannel) {
+              nsTArray<nsCString> lists, fullhashes;
+              for (const nsACString& token : aParams.mLists.Split(',')) {
+                lists.AppendElement(token);
+              }
+              for (const nsACString& token : aParams.mFullHashes.Split(',')) {
+                fullhashes.AppendElement(token);
+              }
+              classifiedChannel->SetMatchedTrackingInfo(lists, fullhashes);
+            }
+          },
+          [&](const ClassificationFlagsParams& aParams) {
+            UrlClassifierCommon::SetClassificationFlagsHelper(
+                static_cast<nsIChannel*>(aChannel),
+                aParams.mClassificationFlags, aParams.mIsThirdParty);
+          });
+    }
   }
 
   RefPtr<HttpChannelSecurityWarningReporter> reporter;
@@ -1336,12 +1391,14 @@ DocumentLoadListener::RedirectToRealChannel(
     AddURIVisit(mChannel, aLoadFlags);
   }
 
-  
-  nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
-      RedirectChannelRegistrar::GetOrCreate();
-  MOZ_ASSERT(registrar);
-  MOZ_ALWAYS_SUCCEEDS(
-      registrar->RegisterChannel(mChannel, &mRedirectChannelId));
+  if (aDestinationProcess || OtherPid()) {
+    
+    nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
+        RedirectChannelRegistrar::GetOrCreate();
+    MOZ_ASSERT(registrar);
+    MOZ_ALWAYS_SUCCEEDS(
+        registrar->RegisterChannel(mChannel, &mRedirectChannelId));
+  }
 
   if (aDestinationProcess) {
     dom::ContentParent* cp =
