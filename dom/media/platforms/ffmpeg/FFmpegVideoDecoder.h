@@ -12,7 +12,7 @@
 #include "SimpleMap.h"
 #ifdef MOZ_WAYLAND_USE_VAAPI
 #  include "mozilla/widget/WaylandDMABufSurface.h"
-#  include <list>
+#  include "mozilla/LinkedList.h"
 #endif
 
 namespace mozilla {
@@ -34,19 +34,50 @@ namespace mozilla {
 
 
 
-class VAAPIFrameHolder final {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class DMABufSurface final {
  public:
-  VAAPIFrameHolder(FFmpegLibWrapper* aLib, WaylandDMABufSurface* aSurface,
-                   AVCodecContext* aAVCodecContext, AVFrame* aAVFrame);
-  ~VAAPIFrameHolder();
+  DMABufSurface(WaylandDMABufSurface* aSurface, FFmpegLibWrapper* aLib);
+  ~DMABufSurface();
+
+  
+  void LockVAAPIData(AVCodecContext* aAVCodecContext, AVFrame* aAVFrame);
+
+  
+  
+  void ReleaseVAAPIData();
 
   
   
   bool IsUsed() const { return mSurface->IsGlobalRefSet(); }
 
+  const RefPtr<WaylandDMABufSurfaceNV12> GetWaylandDMABufSurface() {
+    return mSurface->GetAsWaylandDMABufSurfaceNV12();
+  }
+
  private:
-  const FFmpegLibWrapper* mLib;
   const RefPtr<WaylandDMABufSurface> mSurface;
+  const FFmpegLibWrapper* mLib;
   AVBufferRef* mAVHWFramesContext;
   AVBufferRef* mHWAVBuffer;
 };
@@ -118,11 +149,15 @@ class FFmpegVideoDecoder<LIBAV_VER>
   void InitVAAPICodecContext();
   AVCodec* FindVAAPICodec();
   bool IsHardwareAccelerated(nsACString& aFailureReason) const override;
+  bool GetVAAPISurfaceDescriptor(VADRMPRIMESurfaceDescriptor& aVaDesc);
 
-  MediaResult CreateImageVAAPI(int64_t aOffset, int64_t aPts, int64_t aDuration,
-                               MediaDataDecoder::DecodedData& aResults);
+  MediaResult CreateImageDMABuf(int64_t aOffset, int64_t aPts,
+                                int64_t aDuration,
+                                MediaDataDecoder::DecodedData& aResults);
+
   void ReleaseUnusedVAAPIFrames();
-  void ReleaseAllVAAPIFrames();
+  DMABufSurface* GetUnusedDMABufSurface();
+  void ReleaseDMABufSurfaces();
 #endif
 
   
@@ -138,7 +173,8 @@ class FFmpegVideoDecoder<LIBAV_VER>
   AVBufferRef* mVAAPIDeviceContext;
   const bool mDisableHardwareDecoding;
   VADisplay mDisplay;
-  std::list<UniquePtr<VAAPIFrameHolder>> mFrameHolders;
+  bool mUseDMABufSurfaces;
+  nsTArray<DMABufSurface> mDMABufSurfaces;
 #endif
   RefPtr<KnowsCompositor> mImageAllocator;
   RefPtr<ImageContainer> mImageContainer;
