@@ -52,12 +52,13 @@ add_task(async function testUserInterference() {
   await checkHeuristicsTelemetry("enable_doh", "startup");
 
   
-  Preferences.set(prefs.TRR_MODE_PREF, 0);
+  Preferences.set(prefs.NETWORK_TRR_MODE_PREF, 3);
+  await ensureTRRMode(undefined);
 
   
   simulateNetworkChange();
-  await ensureNoTRRModeChange(0);
-  await checkHeuristicsTelemetry("disable_doh", "userModified");
+  await ensureNoTRRModeChange(undefined);
+  ensureNoHeuristicsTelemetry();
 
   is(
     Preferences.get(prefs.DOH_DISABLED_PREF, false),
@@ -72,17 +73,17 @@ add_task(async function testUserInterference() {
 
   
   simulateNetworkChange();
-  await ensureNoTRRModeChange(0);
+  await ensureNoTRRModeChange(undefined);
   ensureNoHeuristicsTelemetry();
 
   
   await restartAddon();
-  await ensureNoTRRModeChange(0);
+  await ensureNoTRRModeChange(undefined);
   ensureNoTRRSelectionTelemetry();
   ensureNoHeuristicsTelemetry();
 
   
   simulateNetworkChange();
-  await ensureNoTRRModeChange(0);
+  await ensureNoTRRModeChange(undefined);
   ensureNoHeuristicsTelemetry();
 });
