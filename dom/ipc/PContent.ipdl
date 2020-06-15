@@ -747,13 +747,6 @@ child:
     async GMPsChanged(GMPCapabilityData[] capabilities);
 
 
-    
-
-
-    async Activate(PBrowser aTab);
-
-    async Deactivate(PBrowser aTab);
-
     async PParentToChildStream();
 
     async ProvideAnonymousTemporaryFile(uint64_t aID, FileDescOrError aFD);
