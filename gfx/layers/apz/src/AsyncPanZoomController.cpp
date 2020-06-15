@@ -4553,15 +4553,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   RepaintUpdateType contentRepaintType = RepaintUpdateType::eNone;
   bool viewportUpdated = false;
 
-  if (Metrics().GetLayoutViewport().Size() !=
-      aLayerMetrics.GetLayoutViewport().Size()) {
-    needContentRepaint = true;
-    viewportUpdated = true;
-  }
-  if (viewportUpdated || scrollOffsetUpdated) {
-    Metrics().SetLayoutViewport(aLayerMetrics.GetLayoutViewport());
-  }
-
   if ((aIsFirstPaint && aThisLayerTreeUpdated) || isDefault) {
     
     
@@ -4589,6 +4580,15 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     
     
     
+
+    if (Metrics().GetLayoutViewport().Size() !=
+        aLayerMetrics.GetLayoutViewport().Size()) {
+      needContentRepaint = true;
+      viewportUpdated = true;
+    }
+    if (viewportUpdated || scrollOffsetUpdated) {
+      Metrics().SetLayoutViewport(aLayerMetrics.GetLayoutViewport());
+    }
 
     
     
