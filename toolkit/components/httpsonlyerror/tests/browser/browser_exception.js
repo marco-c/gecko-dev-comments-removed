@@ -41,70 +41,89 @@ const INSECURE_ROOT_PATH = ROOT_PATH.replace(
 
 
 add_task(async function() {
-  
-  let expectedQueries = new Set([
-    "content",
-    "img",
-    "iframe",
-    "xhr",
-    "nestedimg",
-  ]);
+  const openPrivateTab = [false, true];
+  for (let i = 0; i < openPrivateTab.length; i++) {
+    
+    let expectedQueries = new Set([
+      "content",
+      "img",
+      "iframe",
+      "xhr",
+      "nestedimg",
+    ]);
 
-  const filesLoaded = setupFileServer();
-  
-  
-  await new Promise(resolve => executeSoon(resolve));
+    const filesLoaded = setupFileServer();
+    
+    
+    await new Promise(resolve => executeSoon(resolve));
 
-  
-  
-  
-  let tab = await openErrorPage(
-    `${EXPIRED_ROOT_PATH}file_upgrade_insecure_server.sjs?content`,
-    false 
-  );
-  let browser = tab.linkedBrowser;
+    
+    let privateWindow = false;
+    if (openPrivateTab[i]) {
+      privateWindow = await BrowserTestUtils.openNewBrowserWindow({
+        private: true,
+      });
+    }
 
-  let pageShownPromise = BrowserTestUtils.waitForContentEvent(
-    browser,
-    "pageshow",
-    true
-  );
-
-  
-  await SpecialPowers.spawn(browser, [], async function() {
-    let openInsecureButton = content.document.getElementById("openInsecure");
-    ok(openInsecureButton != null, "openInsecureButton should exist.");
-    openInsecureButton.click();
-  });
-
-  await pageShownPromise;
-
-  
-  await SpecialPowers.spawn(browser, [], async function() {
-    let doc = content.document;
-    ok(
-      !doc.documentURI.startsWith("http://expired.example.com"),
-      "Page should load normally after exception button was clicked."
+    
+    
+    
+    let tab = await openErrorPage(
+      `${EXPIRED_ROOT_PATH}file_upgrade_insecure_server.sjs?content`,
+      false,
+      privateWindow
     );
-  });
+    let browser = tab.linkedBrowser;
 
-  
-  let results = await filesLoaded;
+    let pageShownPromise = BrowserTestUtils.waitForContentEvent(
+      browser,
+      "pageshow",
+      true
+    );
 
-  for (let resultIndex in results) {
-    const response = results[resultIndex];
     
-    const [key, result] = response.split("-", 2);
+    await SpecialPowers.spawn(browser, [], async function() {
+      let openInsecureButton = content.document.getElementById("openInsecure");
+      ok(openInsecureButton != null, "openInsecureButton should exist.");
+      openInsecureButton.click();
+    });
+
+    await pageShownPromise;
+
     
-    if (expectedQueries.has(key)) {
-      expectedQueries.delete(key);
-      is(result, "ok", `Request '${key}' should be loaded with HTTP.'`);
+    await SpecialPowers.spawn(browser, [], async function() {
+      let doc = content.document;
+      ok(
+        !doc.documentURI.startsWith("http://expired.example.com"),
+        "Page should load normally after exception button was clicked."
+      );
+    });
+
+    
+    let results = await filesLoaded;
+
+    for (let resultIndex in results) {
+      const response = results[resultIndex];
+      
+      const [key, result] = response.split("-", 2);
+      
+      if (expectedQueries.has(key)) {
+        expectedQueries.delete(key);
+        is(result, "ok", `Request '${key}' should be loaded with HTTP.'`);
+      } else {
+        ok(false, `Unexpected response from server (${response})`);
+      }
+    }
+
+    
+    Services.perms.removeAll();
+
+    if (privateWindow) {
+      await BrowserTestUtils.closeWindow(privateWindow);
     } else {
-      ok(false, `Unexpected response from server (${response})`);
+      gBrowser.removeCurrentTab();
     }
   }
-
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 function setupFileServer() {

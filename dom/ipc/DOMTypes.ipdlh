@@ -253,7 +253,6 @@ struct DocShellLoadStateInit
   bool HasValidUserGestureActivation;
   nsCString TypeHint;
   nsString FileName;
-  bool IsHttpsOnlyModeUpgradeExempt;
   bool IsFromProcessingFrameAttributes;
   
   

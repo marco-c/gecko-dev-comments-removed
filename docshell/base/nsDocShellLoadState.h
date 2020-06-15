@@ -199,10 +199,6 @@ class nsDocShellLoadState final {
 
   void SetFileName(const nsAString& aFileName);
 
-  bool IsHttpsOnlyModeUpgradeExempt() const;
-
-  void SetIsHttpsOnlyModeUpgradeExempt(bool aIsExempt);
-
   
   
   
@@ -397,10 +393,6 @@ class nsDocShellLoadState final {
   
   
   nsString mFileName;
-
-  
-  
-  bool mIsHttpsOnlyModeUpgradeExempt;
 
   
   
