@@ -18,7 +18,6 @@
 class nsIRunnable;
 
 namespace mozilla {
-class AbstractThread;
 namespace dom {
 
 class WorkerRunnable;
@@ -57,12 +56,6 @@ class WorkerThread final : public nsThread {
   
   uint32_t mOtherThreadsDispatchingViaEventTarget;
 
-  
-  
-  
-  
-  
-  RefPtr<AbstractThread> mAbstractThread;
 #ifdef DEBUG
   
   bool mAcceptingNonWorkerRunnables;
@@ -89,8 +82,6 @@ class WorkerThread final : public nsThread {
   uint32_t RecursionDepth(const WorkerThreadFriendKey& aKey) const;
 
   PerformanceCounter* GetPerformanceCounter(nsIRunnable* aEvent) const override;
-
-  NS_IMETHODIMP Shutdown() override;
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(WorkerThread, nsThread)
 
