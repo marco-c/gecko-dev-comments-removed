@@ -116,9 +116,9 @@ void LiveSavedFrameCache::find(JSContext* cx, FramePtr& framePtr,
   if (frames->back().savedFrame->realm() != cx->realm()) {
 #ifdef DEBUG
     
-    auto compartment = frames->back().savedFrame->realm();
+    auto realm = frames->back().savedFrame->realm();
     for (const auto& f : (*frames)) {
-      MOZ_ASSERT(compartment == f.savedFrame->realm());
+      MOZ_ASSERT(realm == f.savedFrame->realm());
     }
 #endif
     frames->clear();
@@ -1402,7 +1402,7 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
   
   
   
-  RootedSavedFrame parent(cx, nullptr);
+  RootedSavedFrame cachedParentFrame(cx, nullptr);
 
   
   
@@ -1426,6 +1426,8 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
   
   DebugOnly<bool> seenCached = false;
 
+  bool seenDebuggerEvalFrame = false;
+
   while (!iter.done()) {
     Activation& activation = *iter.activation();
     Maybe<LiveSavedFrameCache::FramePtr> framePtr =
@@ -1437,6 +1439,10 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
       MOZ_ASSERT_IF(seenCached, framePtr->hasCachedSavedFrame() ||
                                     framePtr->isRematerializedFrame());
       seenCached |= framePtr->hasCachedSavedFrame();
+
+      seenDebuggerEvalFrame |=
+          (framePtr->isInterpreterFrame() &&
+           framePtr->asInterpreterFrame().isDebuggerEvalFrame());
     }
 
     if (capture.is<JS::AllFrames>() && framePtr &&
@@ -1445,12 +1451,12 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
       if (!cache) {
         return false;
       }
-      cache->find(cx, *framePtr, iter.pc(), &parent);
+      cache->find(cx, *framePtr, iter.pc(), &cachedParentFrame);
 
       
       
       
-      if (parent) {
+      if (cachedParentFrame) {
         break;
       }
 
@@ -1489,8 +1495,6 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
     }
 
     if (captureIsSatisfied(cx, principals, location.source(), capture)) {
-      
-      parent.set(nullptr);
       break;
     }
 
@@ -1537,11 +1541,23 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
 
       
       
-      parent.set(activation.asyncStack());
-      if (!adoptAsyncStack(cx, &parent, causeAtom, maxFrames)) {
+      RootedSavedFrame asyncParent(cx, activation.asyncStack());
+      if (!adoptAsyncStack(cx, &asyncParent, causeAtom, maxFrames)) {
         return false;
       }
-      break;
+      stackChain[stackChain.length() - 1].setParent(asyncParent);
+      if (!(capture.is<JS::AllFrames>() && seenDebuggerEvalFrame)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        break;
+      }
     }
 
     if (capture.is<JS::MaxFrames>()) {
@@ -1551,10 +1567,14 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
 
   
   
-  frame.set(parent);
+  frame.set(cachedParentFrame);
   for (size_t i = stackChain.length(); i != 0; i--) {
     MutableHandle<SavedFrame::Lookup> lookup = stackChain[i - 1];
-    lookup.setParent(frame);
+    if (!lookup.parent()) {
+      
+      
+      lookup.setParent(frame);
+    }
 
     
     
@@ -1709,6 +1729,13 @@ bool SavedStacks::checkForEvalInFramePrev(
 
   
   MOZ_ALWAYS_TRUE(saved);
+
+  
+  
+  
+  
+  
+  MOZ_ASSERT(saved->realm() == cx->realm());
 
   lookup.setParent(saved);
   return true;
