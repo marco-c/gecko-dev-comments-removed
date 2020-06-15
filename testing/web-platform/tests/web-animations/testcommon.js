@@ -275,3 +275,34 @@ function assert_rotate3d_equals(actual, expected, description) {
       `expected ${expected} but got ${actual}: ${description}`);
   }
 }
+
+function assert_phase_at_time(animation, phase, currentTime) {
+  animation.currentTime = currentTime;
+
+  if (phase === 'active') {
+    
+    
+    animation.effect.updateTiming({ fill: 'none' });
+    assert_not_equals(animation.effect.getComputedTiming().progress, null,
+                      'Animation effect is in active phase when current time'
+                      + ` is ${currentTime}ms`);
+  } else {
+    
+    
+    
+    
+    animation.effect.updateTiming({ fill: 'none' });
+    assert_equals(animation.effect.getComputedTiming().progress, null,
+                  `Animation effect is in ${phase} phase when current time`
+                  + ` is ${currentTime}ms`
+                  + ' (progress is null with \'none\' fill mode)');
+
+    animation.effect.updateTiming({
+      fill: phase === 'before' ? 'backwards' : 'forwards',
+    });
+    assert_not_equals(animation.effect.getComputedTiming().progress, null,
+                      `Animation effect is in ${phase} phase when current time`
+                      + ` is ${currentTime}ms`
+                      + ' (progress is non-null with appropriate fill mode)');
+  }
+}
