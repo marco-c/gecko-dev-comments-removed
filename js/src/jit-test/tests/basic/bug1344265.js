@@ -1,3 +1,3 @@
 
 oomAfterAllocations(1);
-newExternalString("a");
+newString("a", {external: true});
