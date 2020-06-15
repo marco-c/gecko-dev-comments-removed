@@ -516,7 +516,7 @@ impl TrapSink for Traps {
                 
                 return;
             }
-            HeapOutOfBounds | OutOfBounds | TableOutOfBounds => bindings::Trap::OutOfBounds,
+            HeapOutOfBounds | TableOutOfBounds => bindings::Trap::OutOfBounds,
             IndirectCallToNull => bindings::Trap::IndirectCallToNull,
             BadSignature => bindings::Trap::IndirectCallBadSig,
             IntegerOverflow => bindings::Trap::IntegerOverflow,
