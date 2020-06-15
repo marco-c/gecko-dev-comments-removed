@@ -1,20 +1,21 @@
-/* -*- Mode: c++; tab-width: 2; indent-tabs-mode: nil; -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #import <Cocoa/Cocoa.h>
 
 #include "nsComponentManagerUtils.h"
 #include "nsMacDockSupport.h"
 #include "nsObjCExceptions.h"
+#include "nsNativeThemeColors.h"
 
 NS_IMPL_ISUPPORTS(nsMacDockSupport, nsIMacDockSupport, nsITaskbarProgress)
 
-// This view is used in the dock tile when we're downloading a file.
-// It draws a progress bar that looks similar to the native progress bar on
-// 10.12. This style of progress bar is not animated, unlike the pre-10.10
-// progress bar look which had to redrawn multiple times per second.
+
+
+
+
 @interface MOZProgressDockOverlayView : NSView {
   double mFractionValue;
 }
@@ -27,12 +28,12 @@ NS_IMPL_ISUPPORTS(nsMacDockSupport, nsIMacDockSupport, nsITaskbarProgress)
 @synthesize fractionValue = mFractionValue;
 
 - (void)drawRect:(NSRect)aRect {
-  // Erase the background behind this view, i.e. cut a rectangle hole in the icon.
+  
   [[NSColor clearColor] set];
   NSRectFill(self.bounds);
 
-  // Split the height of this view into four quarters. The middle two quarters
-  // will be covered by the actual progress bar.
+  
+  
   CGFloat radius = self.bounds.size.height / 4;
   NSRect barBounds = NSInsetRect(self.bounds, 0, radius);
 
@@ -40,20 +41,20 @@ NS_IMPL_ISUPPORTS(nsMacDockSupport, nsIMacDockSupport, nsITaskbarProgress)
                                                        xRadius:radius
                                                        yRadius:radius];
 
-  // Draw a grayish background first.
+  
   [[NSColor colorWithDeviceWhite:0 alpha:0.1] setFill];
   [path fill];
 
-  // Draw a blue or gray fill (depending on graphite or not) for the progress part.
+  
   NSRect progressFillRect = self.bounds;
   progressFillRect.size.width *= mFractionValue;
   [NSGraphicsContext saveGraphicsState];
   [NSBezierPath clipRect:progressFillRect];
-  [[NSColor keyboardFocusIndicatorColor] setFill];
+  [ControlAccentColor() setFill];
   [path fill];
   [NSGraphicsContext restoreGraphicsState];
 
-  // Add a shadowy stroke on top.
+  
   [NSGraphicsContext saveGraphicsState];
   [path addClip];
   [[NSColor colorWithDeviceWhite:0 alpha:0.2] setStroke];
@@ -154,10 +155,10 @@ nsresult nsMacDockSupport::UpdateDockTile() {
 
   if (mProgressState == STATE_NORMAL || mProgressState == STATE_INDETERMINATE) {
     if (!mDockTileWrapperView) {
-      // Create the following NSView hierarchy:
-      // * mDockTileWrapperView (NSView)
-      //    * imageView (NSImageView) <- has the application icon
-      //    * mProgressDockOverlayView (MOZProgressDockOverlayView) <- draws the progress bar
+      
+      
+      
+      
 
       mDockTileWrapperView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 32, 32)];
       mDockTileWrapperView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
@@ -182,8 +183,8 @@ nsresult nsMacDockSupport::UpdateDockTile() {
     if (mProgressState == STATE_NORMAL) {
       mProgressDockOverlayView.fractionValue = mProgressFraction;
     } else {
-      // Indeterminate states are rare. Just fill the entire progress bar in
-      // that case.
+      
+      
       mProgressDockOverlayView.fractionValue = 1.0;
     }
     [NSApp.dockTile display];
