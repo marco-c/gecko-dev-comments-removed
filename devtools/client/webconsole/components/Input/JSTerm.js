@@ -131,6 +131,7 @@ class JSTerm extends Component {
 
     this._onEditorChanges = this._onEditorChanges.bind(this);
     this._onEditorBeforeChange = this._onEditorBeforeChange.bind(this);
+    this._onEditorKeyHandled = this._onEditorKeyHandled.bind(this);
     this.onContextMenu = this.onContextMenu.bind(this);
     this.imperativeUpdate = this.imperativeUpdate.bind(this);
 
@@ -498,6 +499,8 @@ class JSTerm extends Component {
       this.editor.on("changes", this._onEditorChanges);
       this.editor.on("beforeChange", this._onEditorBeforeChange);
       this.editor.on("blur", this._onEditorBlur);
+      this.editor.on("keyHandled", this._onEditorKeyHandled);
+
       this.editor.appendToLocalElement(this.node);
       const cm = this.editor.codeMirror;
       cm.on("paste", (_, event) => this.props.onPaste(event));
@@ -840,6 +843,29 @@ class JSTerm extends Component {
       
       const [{ head }] = cm.listSelections();
       cm.setCursor(head, { scroll: false });
+    }
+  }
+
+  
+
+
+
+
+
+
+  _onEditorKeyHandled(cm, key, e) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const closingKeys = [`']'`, `')'`, "'}'"];
+    if (this.autocompletePopup.isOpen && closingKeys.includes(key)) {
+      this.clearCompletion();
     }
   }
 
