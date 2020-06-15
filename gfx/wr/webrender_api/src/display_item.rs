@@ -721,13 +721,36 @@ pub enum ReferenceFrameKind {
     }
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, PeekPoke)]
+pub enum ReferenceTransformBinding {
+    
+    Static {
+        binding: PropertyBinding<LayoutTransform>,
+    },
+    
+    
+    
+    Computed {
+        scale_from: Option<LayoutSize>,
+        vertical_flip: bool,
+    },
+}
+
+impl Default for ReferenceTransformBinding {
+    fn default() -> Self {
+        ReferenceTransformBinding::Static {
+            binding: Default::default(),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct ReferenceFrame {
     pub kind: ReferenceFrameKind,
     pub transform_style: TransformStyle,
     
     
-    pub transform: PropertyBinding<LayoutTransform>,
+    pub transform: ReferenceTransformBinding,
     pub id: SpatialId,
 }
 
