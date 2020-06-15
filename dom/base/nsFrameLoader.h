@@ -110,7 +110,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   static already_AddRefed<nsFrameLoader> Recreate(Element* aOwner,
                                                   BrowsingContext* aContext,
-                                                  const nsAString& aRemoteType,
+                                                  bool aIsRemote,
                                                   bool aNetworkCreated,
                                                   bool aPreserveContext);
 
@@ -391,6 +391,14 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   void SetWillChangeProcess();
 
+  
+  
+  
+  
+  
+  void ConfigRemoteProcess(const nsAString& aRemoteType,
+                           mozilla::dom::ContentParent* aContentParent);
+
   void MaybeNotifyCrashed(mozilla::dom::BrowsingContext* aBrowsingContext,
                           mozilla::ipc::MessageChannel* aChannel);
 
@@ -398,8 +406,8 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
  private:
   nsFrameLoader(mozilla::dom::Element* aOwner,
-                mozilla::dom::BrowsingContext* aBrowsingContext,
-                const nsAString& aRemoteType, bool aNetworkCreated);
+                mozilla::dom::BrowsingContext* aBrowsingContext, bool aIsRemote,
+                bool aNetworkCreated);
   ~nsFrameLoader();
 
   void SetOwnerContent(mozilla::dom::Element* aContent);

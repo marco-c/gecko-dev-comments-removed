@@ -1946,8 +1946,29 @@
       return origins;
     }
 
-    get canPerformProcessSwitch() {
-      return this.getTabBrowser() != null;
+    get processSwitchBehavior() {
+      
+      
+      
+      if (this.hasAttribute("maychangeremoteness")) {
+        return Ci.nsIBrowser.PROCESS_BEHAVIOR_STANDARD;
+      }
+
+      
+      
+      if (this.getTabBrowser() != null) {
+        return Ci.nsIBrowser.PROCESS_BEHAVIOR_CUSTOM;
+      }
+
+      
+      
+      
+      
+      if (this.isRemoteBrowser) {
+        return Ci.nsIBrowser.PROCESS_BEHAVIOR_SUBFRAME_ONLY;
+      }
+      
+      return Ci.nsIBrowser.PROCESS_BEHAVIOR_DISABLED;
     }
 
     performProcessSwitch(
