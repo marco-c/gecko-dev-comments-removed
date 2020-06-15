@@ -161,9 +161,7 @@ add_task(async function test_webRequest_mergecsp() {
       script3_loaded: true,
     }
   );
-  
-  
-  await test_csp("img-src self", "", "img-src example.com", {
+  await test_csp("img-src 'self'", "", "img-src example.com", {
     img1_loaded: false,
     img3_loaded: true,
     script1_loaded: true,
