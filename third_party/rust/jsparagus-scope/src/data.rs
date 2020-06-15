@@ -1,7 +1,7 @@
 
 
 use std::collections::HashMap;
-use stencil::function::FunctionStencilIndex;
+use stencil::script::ScriptStencilIndex;
 
 
 #[derive(Debug)]
@@ -34,7 +34,7 @@ impl FunctionProperty {
 pub struct FunctionDeclarationPropertyMap {
     
     
-    props: HashMap<FunctionStencilIndex, FunctionProperty>,
+    props: HashMap<ScriptStencilIndex, FunctionProperty>,
 }
 
 impl FunctionDeclarationPropertyMap {
@@ -44,7 +44,7 @@ impl FunctionDeclarationPropertyMap {
         }
     }
 
-    pub fn mark_annex_b(&mut self, index: FunctionStencilIndex) {
+    pub fn mark_annex_b(&mut self, index: ScriptStencilIndex) {
         if !self.props.contains_key(&index) {
             self.props.insert(index, FunctionProperty::new());
         }
@@ -55,7 +55,7 @@ impl FunctionDeclarationPropertyMap {
             .mark_annex_b();
     }
 
-    pub fn is_annex_b(&self, index: FunctionStencilIndex) -> bool {
+    pub fn is_annex_b(&self, index: ScriptStencilIndex) -> bool {
         if !self.props.contains_key(&index) {
             return FunctionProperty::is_annex_b_default();
         }

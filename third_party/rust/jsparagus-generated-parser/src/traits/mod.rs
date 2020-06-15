@@ -1,6 +1,34 @@
+use crate::error::Result;
+use crate::parser_tables_generated::Term;
+
 
 
 #[macro_export]
 macro_rules! grammar_extension {
     ( $($_:tt)* ) => {};
+}
+
+
+
+
+#[derive(Debug)]
+pub struct TermValue<Value> {
+    pub term: Term,
+    pub value: Value,
+}
+
+
+
+pub trait ParserTrait<'alloc, Value> {
+    fn shift(&mut self, tv: TermValue<Value>) -> Result<'alloc, bool>;
+    fn unshift(&mut self);
+    fn rewind(&mut self, n: usize) {
+        for _ in 0..n {
+            self.unshift();
+        }
+    }
+    fn pop(&mut self) -> TermValue<Value>;
+    fn replay(&mut self, tv: TermValue<Value>);
+    fn epsilon(&mut self, state: usize);
+    fn check_not_on_new_line(&mut self, peek: usize) -> Result<'alloc, bool>;
 }

@@ -5,7 +5,7 @@ import typing
 from dataclasses import dataclass
 from .grammar import Nt
 from .lr0 import ShiftedTerm, Term
-from .actions import Action, Reduce
+from .actions import Action
 
 
 if typing.TYPE_CHECKING:
@@ -43,10 +43,9 @@ def reduce_path(pt: ParseTable, shifted: Path) -> typing.Iterator[Path]:
     action = shifted[-1].term
     assert isinstance(action, Action)
     assert action.update_stack()
-    reducer = action.reduce_with()
-    assert isinstance(reducer, Reduce)
-    nt = reducer.nt
-    depth = reducer.pop + reducer.replay
+    stack_diff = action.update_stack_with()
+    nt = stack_diff.nt
+    depth = stack_diff.pop + stack_diff.replay
     if depth > 0:
         
         stacked = [i for i, e in enumerate(shifted) if pt.term_is_stacked(e.term)]
@@ -221,10 +220,15 @@ class APS:
                     
                     
                     continue
-                reducer = a.reduce_with()
+                
+                
+                
+                
+                
+                
+                assert not a.follow_edge()  
+                stack_diff = a.update_stack_with()
                 for path in reduce_path(pt, prev_sh):
-                    
-                    
                     
                     
                     
@@ -271,8 +275,10 @@ class APS:
                     
                     
                     
-                    replay = reducer.replay
-                    new_rp: typing.List[ShiftedTerm] = [reducer.nt]
+                    replay = stack_diff.replay
+                    nt = stack_diff.nt
+                    assert nt is not None
+                    new_rp: typing.List[ShiftedTerm] = [nt]
                     if replay > 0:
                         stacked_terms = [
                             typing.cast(ShiftedTerm, edge.term)
