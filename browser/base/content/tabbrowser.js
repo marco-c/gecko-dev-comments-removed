@@ -1772,17 +1772,7 @@
       }
     },
 
-    updateBrowserRemoteness(
-      aBrowser,
-      {
-        newFrameloader,
-        opener,
-        remoteType,
-        sameProcessAsFrameLoader,
-        replaceBrowsingContext,
-        redirectLoadSwitchId,
-      } = {}
-    ) {
+    updateBrowserRemoteness(aBrowser, { newFrameloader, remoteType } = {}) {
       let isRemote = aBrowser.getAttribute("remote") == "true";
 
       
@@ -1799,22 +1789,6 @@
           "Cannot switch to remote browser in a window " +
             "without the remote tabs load context."
         );
-      }
-
-      
-      
-      
-      if (opener) {
-        if (shouldBeRemote) {
-          throw new Error(
-            "Cannot set an opener on a browser which should be remote!"
-          );
-        }
-        if (!isRemote && aBrowser.contentWindow.opener != opener) {
-          throw new Error(
-            "Cannot change opener on an already non-remote browser!"
-          );
-        }
       }
 
       
@@ -1845,8 +1819,6 @@
       let listener = this._tabListeners.get(tab);
       aBrowser.webProgress.removeProgressListener(filter);
       filter.removeProgressListener(listener);
-      let stateFlags = listener.mStateFlags;
-      let requestCount = listener.mRequestCount;
 
       
       listener.destroy();
@@ -1871,10 +1843,7 @@
 
       
       
-      if (sameProcessAsFrameLoader) {
-        
-        aBrowser.sameProcessAsFrameLoader = sameProcessAsFrameLoader;
-      } else if (!shouldBeRemote || oldRemoteType == remoteType) {
+      if (!shouldBeRemote || oldRemoteType == remoteType) {
         
         
         aBrowser.sameProcessAsFrameLoader = oldSameProcessAsFrameLoader;
@@ -1894,7 +1863,6 @@
         aBrowser.removeAttribute("remoteType");
       }
 
-      let switchingInProgressLoad = !!redirectLoadSwitchId;
       if (!rebuildFrameLoaders) {
         parent.appendChild(aBrowser);
       } else {
@@ -1903,8 +1871,6 @@
         
         aBrowser.changeRemoteness({
           remoteType,
-          replaceBrowsingContext,
-          switchingInProgressLoad,
         });
         
         
@@ -1929,23 +1895,7 @@
       
       
       
-      let expectInitialAboutBlank = !switchingInProgressLoad;
-      if (expectInitialAboutBlank) {
-        stateFlags = 0;
-        requestCount = 0;
-      }
-
-      
-      
-      
-      listener = new TabProgressListener(
-        tab,
-        aBrowser,
-        expectInitialAboutBlank,
-        false,
-        stateFlags,
-        requestCount
-      );
+      listener = new TabProgressListener(tab, aBrowser, true, false);
       this._tabListeners.set(tab, listener);
       filter.addProgressListener(listener, Ci.nsIWebProgress.NOTIFY_ALL);
 
