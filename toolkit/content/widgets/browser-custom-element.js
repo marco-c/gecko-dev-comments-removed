@@ -1956,12 +1956,6 @@
 
       
       
-      if (this.getTabBrowser() != null) {
-        return Ci.nsIBrowser.PROCESS_BEHAVIOR_CUSTOM;
-      }
-
-      
-      
       
       
       if (this.isRemoteBrowser) {
@@ -1969,19 +1963,6 @@
       }
       
       return Ci.nsIBrowser.PROCESS_BEHAVIOR_DISABLED;
-    }
-
-    performProcessSwitch(
-      remoteType,
-      redirectLoadSwitchId,
-      replaceBrowsingContext
-    ) {
-      return this.getTabBrowser().performProcessSwitch(
-        this,
-        remoteType,
-        redirectLoadSwitchId,
-        replaceBrowsingContext
-      );
     }
 
     
