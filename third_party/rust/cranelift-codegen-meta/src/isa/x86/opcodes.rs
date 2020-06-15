@@ -348,6 +348,10 @@ pub static PAVGW: [u8; 3] = [0x66, 0x0f, 0xE3];
 pub static PBLENDVB: [u8; 4] = [0x66, 0x0f, 0x38, 0x10];
 
 
+
+pub static PBLENDW: [u8; 4] = [0x66, 0x0f, 0x3a, 0x0e];
+
+
 pub static PCMPEQB: [u8; 3] = [0x66, 0x0f, 0x74];
 
 
@@ -664,6 +668,12 @@ pub static UCOMISS: [u8; 2] = [0x0f, 0x2e];
 
 
 pub static UNDEFINED2: [u8; 2] = [0x0f, 0x0b];
+
+
+
+
+
+pub static VCVTUDQ2PS: [u8; 3] = [0xf2, 0x0f, 0x7a];
 
 
 pub static XOR_IMM: [u8; 1] = [0x81];

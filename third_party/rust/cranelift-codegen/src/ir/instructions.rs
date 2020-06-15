@@ -59,6 +59,14 @@ impl Opcode {
     pub fn constraints(self) -> OpcodeConstraints {
         OPCODE_CONSTRAINTS[self as usize - 1]
     }
+
+    
+    pub fn is_resumable_trap(&self) -> bool {
+        match self {
+            Opcode::ResumableTrap | Opcode::ResumableTrapnz => true,
+            _ => false,
+        }
+    }
 }
 
 
