@@ -25,11 +25,14 @@ mod checker;
 mod data_structures;
 mod inst_stream;
 mod linear_scan;
+mod reg_maps;
+mod snapshot;
 mod sparse_set;
 mod union_find;
 
 use log::{info, log_enabled, Level};
-use std::fmt;
+use std::default;
+use std::{borrow::Cow, fmt};
 
 
 
@@ -149,7 +152,22 @@ pub use crate::data_structures::RegUsageCollector;
 
 
 
-pub use crate::data_structures::RegUsageMapper;
+
+
+
+pub trait RegUsageMapper: fmt::Debug {
+    
+    
+    fn get_use(&self, vreg: VirtualReg) -> Option<RealReg>;
+
+    
+    
+    fn get_def(&self, vreg: VirtualReg) -> Option<RealReg>;
+
+    
+    
+    fn get_mod(&self, vreg: VirtualReg) -> Option<RealReg>;
+}
 
 
 
@@ -196,7 +214,7 @@ pub trait Function {
     fn block_insns(&self, block: BlockIx) -> Range<InstIx>;
 
     
-    fn block_succs(&self, block: BlockIx) -> Vec<BlockIx>;
+    fn block_succs(&self, block: BlockIx) -> Cow<[BlockIx]>;
 
     
     fn is_ret(&self, insn: InstIx) -> bool;
@@ -219,16 +237,15 @@ pub trait Function {
     
     
     
-    fn map_regs(insn: &mut Self::Inst, maps: &RegUsageMapper);
+    fn map_regs<RUM: RegUsageMapper>(insn: &mut Self::Inst, maps: &RUM);
 
     
     fn is_move(&self, insn: &Self::Inst) -> Option<(Writable<Reg>, Reg)>;
 
     
     
-    fn get_vreg_count_estimate(&self) -> Option<usize> {
-        None
-    }
+    
+    fn get_num_vregs(&self) -> usize;
 
     
     
@@ -354,11 +371,9 @@ pub struct RegAllocResult<F: Function> {
 
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RegAllocAlgorithm {
+pub enum AlgorithmWithDefaults {
     Backtracking,
-    BacktrackingChecked,
     LinearScan,
-    LinearScanChecked,
 }
 
 pub use crate::analysis_main::AnalysisError;
@@ -380,6 +395,98 @@ impl fmt::Display for RegAllocError {
     }
 }
 
+pub use crate::bt_main::BacktrackingOptions;
+pub use crate::linear_scan::LinearScanOptions;
+
+#[derive(Clone)]
+pub enum Algorithm {
+    LinearScan(LinearScanOptions),
+    Backtracking(BacktrackingOptions),
+}
+
+impl fmt::Debug for Algorithm {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Algorithm::LinearScan(opts) => write!(fmt, "{:?}", opts),
+            Algorithm::Backtracking(opts) => write!(fmt, "{:?}", opts),
+        }
+    }
+}
+
+
+#[derive(Clone)]
+pub struct Options {
+    
+    
+    pub run_checker: bool,
+
+    
+    
+    pub algorithm: Algorithm,
+}
+
+impl default::Default for Options {
+    fn default() -> Self {
+        Self {
+            run_checker: false,
+            algorithm: Algorithm::Backtracking(Default::default()),
+        }
+    }
+}
+
+impl fmt::Debug for Options {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "checker: {:?}, algorithm: {:?}",
+            self.run_checker, self.algorithm
+        )
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline(never)]
+pub fn allocate_registers_with_opts<F: Function>(
+    func: &mut F,
+    rreg_universe: &RealRegUniverse,
+    opts: Options,
+) -> Result<RegAllocResult<F>, RegAllocError> {
+    info!("");
+    info!("================ regalloc.rs: BEGIN function ================");
+    if log_enabled!(Level::Info) {
+        info!("with options: {:?}", opts);
+        let strs = rreg_universe.show();
+        info!("using RealRegUniverse:");
+        for s in strs {
+            info!("  {}", s);
+        }
+    }
+    let run_checker = opts.run_checker;
+    let res = match &opts.algorithm {
+        Algorithm::Backtracking(opts) => {
+            bt_main::alloc_main(func, rreg_universe, run_checker, opts)
+        }
+        Algorithm::LinearScan(opts) => linear_scan::run(func, rreg_universe, run_checker, opts),
+    };
+    info!("================ regalloc.rs: END function ================");
+    res
+}
+
+
+
 
 
 
@@ -394,29 +501,19 @@ impl fmt::Display for RegAllocError {
 #[inline(never)]
 pub fn allocate_registers<F: Function>(
     func: &mut F,
-    algorithm: RegAllocAlgorithm,
     rreg_universe: &RealRegUniverse,
-    request_block_annotations: bool,
+    algorithm: AlgorithmWithDefaults,
 ) -> Result<RegAllocResult<F>, RegAllocError> {
-    info!("");
-    info!("================ regalloc.rs: BEGIN function ================");
-    if log_enabled!(Level::Info) {
-        let strs = rreg_universe.show();
-        info!("using RealRegUniverse:");
-        for s in strs {
-            info!("  {}", s);
-        }
-    }
-    let res = match algorithm {
-        RegAllocAlgorithm::Backtracking | RegAllocAlgorithm::BacktrackingChecked => {
-            let use_checker = algorithm == RegAllocAlgorithm::BacktrackingChecked;
-            bt_main::alloc_main(func, rreg_universe, use_checker, request_block_annotations)
-        }
-        RegAllocAlgorithm::LinearScan | RegAllocAlgorithm::LinearScanChecked => {
-            let use_checker = algorithm == RegAllocAlgorithm::LinearScanChecked;
-            linear_scan::run(func, rreg_universe, use_checker)
-        }
+    let algorithm = match algorithm {
+        AlgorithmWithDefaults::Backtracking => Algorithm::Backtracking(Default::default()),
+        AlgorithmWithDefaults::LinearScan => Algorithm::LinearScan(Default::default()),
     };
-    info!("================ regalloc.rs: END function ================");
-    res
+    let opts = Options {
+        algorithm,
+        ..Default::default()
+    };
+    allocate_registers_with_opts(func, rreg_universe, opts)
 }
+
+
+pub use crate::snapshot::IRSnapshot;

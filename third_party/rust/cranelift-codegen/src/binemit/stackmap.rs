@@ -15,7 +15,61 @@ const NUM_BITS: usize = core::mem::size_of::<Num>() * 8;
 
 
 
-#[derive(Clone, Debug)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "enable-serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Stackmap {
     bitmap: Vec<BitSet<Num>>,
     mapped_words: u32,
@@ -49,7 +103,7 @@ impl Stackmap {
 
         
         
-        let map_size = (info.frame_size + info.inbound_args_size) as usize;
+        let map_size = (dbg!(info.frame_size) + dbg!(info.inbound_args_size)) as usize;
         let word_size = isa.pointer_bytes() as usize;
         let num_words = map_size / word_size;
 

@@ -689,6 +689,12 @@ fn define_moves(e: &mut PerCpuModeEncodings, shared_defs: &SharedDefinitions, r:
             }
         }
     }
+    for (to, from) in &[(I16, B16), (I32, B32), (I64, B64)] {
+        e.enc_both(
+            bint.bind(*to).bind(*from),
+            rec_urm_noflags_abcd.opcodes(&MOVZX_BYTE),
+        );
+    }
 
     
     
@@ -1448,6 +1454,7 @@ fn define_alu(
     
     e.enc_i32_i64(bnot, rec_ur.opcodes(&NOT).rrr(2));
     e.enc_b32_b64(bnot, rec_ur.opcodes(&NOT).rrr(2));
+    e.enc_both(bnot.bind(B1), rec_ur.opcodes(&NOT).rrr(2));
 
     
     
@@ -1487,8 +1494,13 @@ fn define_alu(
     for &(inst, rrr) in &[(rotl, 0), (rotr, 1), (ishl, 4), (ushr, 5), (sshr, 7)] {
         
         
+        e.enc32(inst.bind(I32).bind(I8), rec_rc.opcodes(&ROTATE_CL).rrr(rrr));
         e.enc32(
-            inst.bind(I32).bind(Any),
+            inst.bind(I32).bind(I16),
+            rec_rc.opcodes(&ROTATE_CL).rrr(rrr),
+        );
+        e.enc32(
+            inst.bind(I32).bind(I32),
             rec_rc.opcodes(&ROTATE_CL).rrr(rrr),
         );
         e.enc64(
@@ -1601,8 +1613,11 @@ fn define_simd(
     let sadd_sat = shared.by_name("sadd_sat");
     let scalar_to_vector = shared.by_name("scalar_to_vector");
     let sload8x8 = shared.by_name("sload8x8");
+    let sload8x8_complex = shared.by_name("sload8x8_complex");
     let sload16x4 = shared.by_name("sload16x4");
+    let sload16x4_complex = shared.by_name("sload16x4_complex");
     let sload32x2 = shared.by_name("sload32x2");
+    let sload32x2_complex = shared.by_name("sload32x2_complex");
     let spill = shared.by_name("spill");
     let sqrt = shared.by_name("sqrt");
     let sshr_imm = shared.by_name("sshr_imm");
@@ -1611,11 +1626,15 @@ fn define_simd(
     let store_complex = shared.by_name("store_complex");
     let uadd_sat = shared.by_name("uadd_sat");
     let uload8x8 = shared.by_name("uload8x8");
+    let uload8x8_complex = shared.by_name("uload8x8_complex");
     let uload16x4 = shared.by_name("uload16x4");
+    let uload16x4_complex = shared.by_name("uload16x4_complex");
     let uload32x2 = shared.by_name("uload32x2");
+    let uload32x2_complex = shared.by_name("uload32x2_complex");
     let ushr_imm = shared.by_name("ushr_imm");
     let usub_sat = shared.by_name("usub_sat");
     let vconst = shared.by_name("vconst");
+    let vselect = shared.by_name("vselect");
     let x86_insertps = x86.by_name("x86_insertps");
     let x86_movlhps = x86.by_name("x86_movlhps");
     let x86_movsd = x86.by_name("x86_movsd");
@@ -1626,6 +1645,8 @@ fn define_simd(
     let x86_pmaxu = x86.by_name("x86_pmaxu");
     let x86_pmins = x86.by_name("x86_pmins");
     let x86_pminu = x86.by_name("x86_pminu");
+    let x86_pmullq = x86.by_name("x86_pmullq");
+    let x86_pmuludq = x86.by_name("x86_pmuludq");
     let x86_pshufb = x86.by_name("x86_pshufb");
     let x86_pshufd = x86.by_name("x86_pshufd");
     let x86_psll = x86.by_name("x86_psll");
@@ -1636,6 +1657,7 @@ fn define_simd(
     let x86_punpckl = x86.by_name("x86_punpckl");
 
     
+    let rec_blend = r.template("blend");
     let rec_evex_reg_vvvv_rm_128 = r.template("evex_reg_vvvv_rm_128");
     let rec_f_ib = r.template("f_ib");
     let rec_fa = r.template("fa");
@@ -1703,6 +1725,20 @@ fn define_simd(
         let instruction = x86_pshufd.bind(vector(ty, sse_vector_size));
         let template = rec_r_ib_unsigned_fpr.opcodes(&PSHUFD);
         e.enc_both_inferred(instruction, template);
+    }
+
+    
+    
+    
+    for ty in ValueType::all_lane_types().filter(allowed_simd_type) {
+        let opcode = match ty.lane_bits() {
+            32 => &BLENDVPS,
+            64 => &BLENDVPD,
+            _ => &PBLENDVB,
+        };
+        let instruction = vselect.bind(vector(ty, sse_vector_size));
+        let template = rec_blend.opcodes(opcode);
+        e.enc_both_inferred_maybe_isap(instruction, template, Some(use_sse41_simd));
     }
 
     
@@ -1978,6 +2014,35 @@ fn define_simd(
     }
 
     
+    let is_load_complex_length_two =
+        InstructionPredicate::new_length_equals(&*formats.load_complex, 2);
+    for (inst, opcodes) in &[
+        (uload8x8_complex, &PMOVZXBW),
+        (uload16x4_complex, &PMOVZXWD),
+        (uload32x2_complex, &PMOVZXDQ),
+        (sload8x8_complex, &PMOVSXBW),
+        (sload16x4_complex, &PMOVSXWD),
+        (sload32x2_complex, &PMOVSXDQ),
+    ] {
+        for recipe in &[
+            rec_fldWithIndex,
+            rec_fldWithIndexDisp8,
+            rec_fldWithIndexDisp32,
+        ] {
+            let template = recipe.opcodes(*opcodes);
+            let predicate = |encoding: EncodingBuilder| {
+                encoding
+                    .isa_predicate(use_sse41_simd)
+                    .inst_predicate(is_load_complex_length_two.clone())
+            };
+            e.enc32_func(inst.clone(), template.clone(), predicate);
+            
+            e.enc64_func(inst.clone(), template.rex(), predicate);
+            e.enc64_func(inst.clone(), template, predicate);
+        }
+    }
+
+    
     for (ty, opcodes) in &[(I8, &PADDB), (I16, &PADDW), (I32, &PADDD), (I64, &PADDQ)] {
         let iadd = iadd.bind(vector(*ty, sse_vector_size));
         e.enc_both_inferred(iadd, rec_fa.opcodes(*opcodes));
@@ -2037,11 +2102,13 @@ fn define_simd(
     }
 
     
+    e.enc_both_inferred(x86_pmuludq, rec_fa.opcodes(&PMULUDQ));
+
+    
     {
-        let imul = imul.bind(vector(I64, sse_vector_size));
         e.enc_32_64_maybe_isap(
-            imul,
-            rec_evex_reg_vvvv_rm_128.opcodes(&PMULLQ).w(),
+            x86_pmullq,
+            rec_evex_reg_vvvv_rm_128.opcodes(&VPMULLQ).w(),
             Some(use_avx512dq_simd), 
         );
     }
@@ -2117,8 +2184,11 @@ fn define_simd(
         let ushr_imm = ushr_imm.bind(vector(*ty, sse_vector_size));
         e.enc_both_inferred(ushr_imm, rec_f_ib.opcodes(*opcodes).rrr(2));
 
-        let sshr_imm = sshr_imm.bind(vector(*ty, sse_vector_size));
-        e.enc_both_inferred(sshr_imm, rec_f_ib.opcodes(*opcodes).rrr(4));
+        
+        if *ty != I64 {
+            let sshr_imm = sshr_imm.bind(vector(*ty, sse_vector_size));
+            e.enc_both_inferred(sshr_imm, rec_f_ib.opcodes(*opcodes).rrr(4));
+        }
     }
 
     
@@ -2223,8 +2293,7 @@ fn define_entity_ref(
     let rec_gvaddr8 = r.template("gvaddr8");
     let rec_pcrel_fnaddr8 = r.template("pcrel_fnaddr8");
     let rec_pcrel_gvaddr8 = r.template("pcrel_gvaddr8");
-    let rec_spaddr4_id = r.template("spaddr4_id");
-    let rec_spaddr8_id = r.template("spaddr8_id");
+    let rec_spaddr_id = r.template("spaddr_id");
 
     
     let all_ones_funcaddrs_and_not_is_pic =
@@ -2312,8 +2381,8 @@ fn define_entity_ref(
     
     
     
-    e.enc32(stack_addr.bind(I32), rec_spaddr4_id.opcodes(&LEA));
-    e.enc64(stack_addr.bind(I64), rec_spaddr8_id.opcodes(&LEA).rex().w());
+    e.enc64(stack_addr.bind(I64), rec_spaddr_id.opcodes(&LEA).rex().w());
+    e.enc32(stack_addr.bind(I32), rec_spaddr_id.opcodes(&LEA));
 
     
     e.enc64(const_addr.bind(I64), rec_const_addr.opcodes(&LEA).rex().w());

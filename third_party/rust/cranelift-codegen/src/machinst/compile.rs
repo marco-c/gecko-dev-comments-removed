@@ -6,11 +6,11 @@ use crate::settings;
 use crate::timing;
 
 use log::debug;
-use regalloc::{allocate_registers, RegAllocAlgorithm};
+use regalloc::{allocate_registers_with_opts, Algorithm, Options};
 
 
 
-pub fn compile<B: LowerBackend>(
+pub fn compile<B: LowerBackend + MachBackend>(
     f: &Function,
     b: &B,
     abi: Box<dyn ABIBody<I = B::MInst>>,
@@ -19,28 +19,58 @@ where
     B::MInst: ShowWithRRU,
 {
     
-    let mut vcode = Lower::new(f, abi)?.lower(b)?;
+    let block_order = BlockLoweringOrder::new(f);
+    
+    let lower = Lower::new(f, abi, block_order)?;
+    
+    let mut vcode = lower.lower(b)?;
 
-    let universe = &B::MInst::reg_universe(vcode.flags());
-
-    debug!("vcode from lowering: \n{}", vcode.show_rru(Some(universe)));
+    debug!(
+        "vcode from lowering: \n{}",
+        vcode.show_rru(Some(b.reg_universe()))
+    );
 
     
-    let algorithm = match vcode.flags().regalloc() {
-        settings::Regalloc::Backtracking => RegAllocAlgorithm::Backtracking,
-        settings::Regalloc::BacktrackingChecked => RegAllocAlgorithm::BacktrackingChecked,
-        settings::Regalloc::ExperimentalLinearScan => RegAllocAlgorithm::LinearScan,
+    let (run_checker, algorithm) = match vcode.flags().regalloc() {
+        settings::Regalloc::Backtracking => (false, Algorithm::Backtracking(Default::default())),
+        settings::Regalloc::BacktrackingChecked => {
+            (true, Algorithm::Backtracking(Default::default()))
+        }
+        settings::Regalloc::ExperimentalLinearScan => {
+            (false, Algorithm::LinearScan(Default::default()))
+        }
+        settings::Regalloc::ExperimentalLinearScanChecked => {
+            (true, Algorithm::LinearScan(Default::default()))
+        }
     };
+
+    #[cfg(feature = "regalloc-snapshot")]
+    {
+        use std::fs;
+        use std::path::Path;
+        if let Some(path) = std::env::var("SERIALIZE_REGALLOC").ok() {
+            let snapshot = regalloc::IRSnapshot::from_function(&vcode, b.reg_universe());
+            let serialized = bincode::serialize(&snapshot).expect("couldn't serialize snapshot");
+
+            let file_path = Path::new(&path).join(Path::new(&format!("ir{}.bin", f.name)));
+            fs::write(file_path, &serialized).expect("couldn't write IR snapshot file");
+        }
+    }
 
     let result = {
         let _tt = timing::regalloc();
-        allocate_registers(
-            &mut vcode, algorithm, universe,  false,
+        allocate_registers_with_opts(
+            &mut vcode,
+            b.reg_universe(),
+            Options {
+                run_checker,
+                algorithm,
+            },
         )
         .map_err(|err| {
             debug!(
                 "Register allocation error for vcode\n{}\nError: {:?}",
-                vcode.show_rru(Some(universe)),
+                vcode.show_rru(Some(b.reg_universe())),
                 err
             );
             err
@@ -52,14 +82,9 @@ where
     
     vcode.replace_insns_from_regalloc(result);
 
-    vcode.remove_redundant_branches();
-
-    
-    vcode.finalize_branches();
-
     debug!(
         "vcode after regalloc: final version:\n{}",
-        vcode.show_rru(Some(universe))
+        vcode.show_rru(Some(b.reg_universe()))
     );
 
     Ok(vcode)

@@ -200,6 +200,7 @@ impl<'a> CodeSink for MemoryCodeSink<'a> {
 
 
 
+#[derive(Default)]
 pub struct NullRelocSink {}
 
 impl RelocSink for NullRelocSink {
@@ -219,6 +220,7 @@ impl RelocSink for NullRelocSink {
 
 
 
+#[derive(Default)]
 pub struct NullTrapSink {}
 
 impl TrapSink for NullTrapSink {

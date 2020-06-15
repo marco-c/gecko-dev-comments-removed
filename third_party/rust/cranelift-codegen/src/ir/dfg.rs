@@ -234,11 +234,7 @@ impl DataFlowGraph {
 
     
     pub fn value_type(&self, v: Value) -> Type {
-        match self.values[v] {
-            ValueData::Inst { ty, .. }
-            | ValueData::Param { ty, .. }
-            | ValueData::Alias { ty, .. } => ty,
-        }
+        self.values[v].ty()
     }
 
     
@@ -383,9 +379,14 @@ pub enum ValueDef {
 impl ValueDef {
     
     pub fn unwrap_inst(&self) -> Inst {
+        self.inst().expect("Value is not an instruction result")
+    }
+
+    
+    pub fn inst(&self) -> Option<Inst> {
         match *self {
-            Self::Result(inst, _) => inst,
-            _ => panic!("Value is not an instruction result"),
+            Self::Result(inst, _) => Some(inst),
+            _ => None,
         }
     }
 
@@ -426,6 +427,16 @@ enum ValueData {
     
     
     Alias { ty: Type, original: Value },
+}
+
+impl ValueData {
+    fn ty(&self) -> Type {
+        match *self {
+            ValueData::Inst { ty, .. }
+            | ValueData::Param { ty, .. }
+            | ValueData::Alias { ty, .. } => ty,
+        }
+    }
 }
 
 

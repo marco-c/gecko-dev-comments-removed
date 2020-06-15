@@ -3,14 +3,14 @@
 
 #![allow(dead_code)]
 
-use crate::binemit::CodeOffset;
 use crate::ir::Type;
 use crate::isa::aarch64::inst::*;
 use crate::isa::aarch64::lower::ty_bits;
+use crate::machinst::MachLabel;
 
 use regalloc::{RealRegUniverse, Reg, Writable};
 
-use core::convert::{Into, TryFrom};
+use core::convert::Into;
 use std::string::String;
 
 
@@ -112,7 +112,9 @@ pub enum MemLabel {
 
 #[derive(Clone, Debug)]
 pub enum MemArg {
-    Label(MemLabel),
+    
+    
+    
     
     PostIndexed(Writable<Reg>, SImm9),
     
@@ -138,10 +140,34 @@ pub enum MemArg {
     UnsignedOffset(Reg, UImm12Scaled),
 
     
-    SPOffset(i64),
+    
+    
+    
+    Label(MemLabel),
 
     
-    FPOffset(i64),
+    
+    RegOffset(Reg, i64, Type),
+
+    
+    SPOffset(i64, Type),
+
+    
+    FPOffset(i64, Type),
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    NominalSPOffset(i64, Type),
 }
 
 impl MemArg {
@@ -150,17 +176,6 @@ impl MemArg {
         
         
         MemArg::UnsignedOffset(reg, UImm12Scaled::zero(I64))
-    }
-
-    
-    pub fn reg_maybe_offset(reg: Reg, offset: i64, value_type: Type) -> Option<MemArg> {
-        if let Some(simm9) = SImm9::maybe_from_i64(offset) {
-            Some(MemArg::Unscaled(reg, simm9))
-        } else if let Some(uimm12s) = UImm12Scaled::maybe_from_i64(offset, value_type) {
-            Some(MemArg::UnsignedOffset(reg, uimm12s))
-        } else {
-            None
-        }
     }
 
     
@@ -281,78 +296,44 @@ impl CondBrKind {
 
 
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BranchTarget {
     
     
-    Block(BlockIndex),
+    Label(MachLabel),
     
-    
-    ResolvedOffset(isize),
+    ResolvedOffset(i32),
 }
 
 impl BranchTarget {
     
-    pub fn lower(&mut self, targets: &[CodeOffset], my_offset: CodeOffset) {
+    pub fn as_label(self) -> Option<MachLabel> {
         match self {
-            &mut BranchTarget::Block(bix) => {
-                let bix = usize::try_from(bix).unwrap();
-                assert!(bix < targets.len());
-                let block_offset_in_func = targets[bix];
-                let branch_offset = (block_offset_in_func as isize) - (my_offset as isize);
-                *self = BranchTarget::ResolvedOffset(branch_offset);
-            }
-            &mut BranchTarget::ResolvedOffset(..) => {}
-        }
-    }
-
-    
-    pub fn as_block_index(&self) -> Option<BlockIndex> {
-        match self {
-            &BranchTarget::Block(bix) => Some(bix),
+            BranchTarget::Label(l) => Some(l),
             _ => None,
         }
     }
 
     
-    
-    
-    pub fn as_offset_words(&self) -> isize {
-        match self {
-            &BranchTarget::ResolvedOffset(off) => off >> 2,
+    pub fn as_offset19_or_zero(self) -> u32 {
+        let off = match self {
+            BranchTarget::ResolvedOffset(off) => off >> 2,
             _ => 0,
-        }
+        };
+        assert!(off <= 0x3ffff);
+        assert!(off >= -0x40000);
+        (off as u32) & 0x7ffff
     }
 
     
-    pub fn as_off26(&self) -> Option<u32> {
-        let off = self.as_offset_words();
-        if (off < (1 << 25)) && (off >= -(1 << 25)) {
-            Some((off as u32) & ((1 << 26) - 1))
-        } else {
-            None
-        }
-    }
-
-    
-    pub fn as_off19(&self) -> Option<u32> {
-        let off = self.as_offset_words();
-        if (off < (1 << 18)) && (off >= -(1 << 18)) {
-            Some((off as u32) & ((1 << 19) - 1))
-        } else {
-            None
-        }
-    }
-
-    
-    pub fn map(&mut self, block_index_map: &[BlockIndex]) {
-        match self {
-            &mut BranchTarget::Block(ref mut bix) => {
-                let n = block_index_map[usize::try_from(*bix).unwrap()];
-                *bix = n;
-            }
-            &mut BranchTarget::ResolvedOffset(_) => {}
-        }
+    pub fn as_offset26_or_zero(self) -> u32 {
+        let off = match self {
+            BranchTarget::ResolvedOffset(off) => off >> 2,
+            _ => 0,
+        };
+        assert!(off <= 0x1ffffff);
+        assert!(off >= -0x2000000);
+        (off as u32) & 0x3ffffff
     }
 }
 
@@ -443,8 +424,11 @@ impl ShowWithRRU for MemArg {
                 simm9.show_rru(mb_rru)
             ),
             
-            &MemArg::SPOffset(..) | &MemArg::FPOffset(..) => {
-                panic!("Unexpected stack-offset mem-arg mode!")
+            &MemArg::SPOffset(..)
+            | &MemArg::FPOffset(..)
+            | &MemArg::NominalSPOffset(..)
+            | &MemArg::RegOffset(..) => {
+                panic!("Unexpected pseudo mem-arg mode (stack-offset or generic reg-offset)!")
             }
         }
     }
@@ -485,7 +469,7 @@ impl ShowWithRRU for Cond {
 impl ShowWithRRU for BranchTarget {
     fn show_rru(&self, _mb_rru: Option<&RealRegUniverse>) -> String {
         match self {
-            &BranchTarget::Block(block) => format!("block{}", block),
+            &BranchTarget::Label(label) => format!("label{:?}", label.get()),
             &BranchTarget::ResolvedOffset(off) => format!("{}", off),
         }
     }
@@ -493,10 +477,13 @@ impl ShowWithRRU for BranchTarget {
 
 
 
+
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum InstSize {
     Size32,
     Size64,
+    Size128,
 }
 
 impl InstSize {
@@ -519,11 +506,13 @@ impl InstSize {
     
     pub fn from_bits<I: Into<usize>>(bits: I) -> InstSize {
         let bits: usize = bits.into();
-        assert!(bits <= 64);
+        assert!(bits <= 128);
         if bits <= 32 {
             InstSize::Size32
-        } else {
+        } else if bits <= 64 {
             InstSize::Size64
+        } else {
+            InstSize::Size128
         }
     }
 
@@ -537,6 +526,7 @@ impl InstSize {
         match self {
             InstSize::Size32 => I32,
             InstSize::Size64 => I64,
+            InstSize::Size128 => I128,
         }
     }
 
@@ -544,6 +534,9 @@ impl InstSize {
         match self {
             InstSize::Size32 => 0,
             InstSize::Size64 => 1,
+            _ => {
+                panic!("Unexpected size");
+            }
         }
     }
 }
