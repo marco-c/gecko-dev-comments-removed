@@ -183,6 +183,10 @@ class WidgetRenderingContext;
   PixelHostingView* mPixelHostingView;
 
   
+  
+  CALayer* mRootCALayer;  
+
+  
   NSInteger mLastPressureStage;
 }
 
