@@ -183,8 +183,12 @@ class FakeCentral {
   
   
   async simulateAdvertisementReceived(scanResult) {
+    
+    
+    let clonedScanResult = JSON.parse(JSON.stringify(scanResult));
+
     if ('uuids' in scanResult.scanRecord) {
-      scanResult.scanRecord.uuids =
+      clonedScanResult.scanRecord.uuids =
           canonicalizeAndConvertToMojoUUID(scanResult.scanRecord.uuids);
     }
 
@@ -193,13 +197,13 @@ class FakeCentral {
     
     
     const has_appearance = 'appearance' in scanResult.scanRecord;
-    scanResult.scanRecord.appearance = {
+    clonedScanResult.scanRecord.appearance = {
       hasValue: has_appearance,
       value: (has_appearance ? scanResult.scanRecord.appearance : 0)
     }
 
     const has_tx_power = 'txPower' in scanResult.scanRecord;
-    scanResult.scanRecord.txPower = {
+    clonedScanResult.scanRecord.txPower = {
       hasValue: has_tx_power,
       value: (has_tx_power ? scanResult.scanRecord.txPower : 0)
     }
@@ -207,21 +211,21 @@ class FakeCentral {
     
     
     if ('manufacturerData' in scanResult.scanRecord) {
-      scanResult.scanRecord.manufacturerData = convertToMojoMap(
-          scanResult.scanRecord.manufacturerData, Number);
+      clonedScanResult.scanRecord.manufacturerData =
+          convertToMojoMap(scanResult.scanRecord.manufacturerData, Number);
     }
 
     
     
     if ('serviceData' in scanResult.scanRecord) {
-      scanResult.scanRecord.serviceData.serviceData = convertToMojoMap(
+      clonedScanResult.scanRecord.serviceData.serviceData = convertToMojoMap(
           scanResult.scanRecord.serviceData, BluetoothUUID.getService);
     }
 
     await this.fake_central_ptr_.simulateAdvertisementReceived(
-        new bluetooth.mojom.ScanResult(scanResult));
+        new bluetooth.mojom.ScanResult(clonedScanResult));
 
-    return this.fetchOrCreatePeripheral_(scanResult.deviceAddress);
+    return this.fetchOrCreatePeripheral_(clonedScanResult.deviceAddress);
   }
 
   

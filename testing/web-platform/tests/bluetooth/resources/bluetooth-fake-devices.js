@@ -118,6 +118,19 @@ const health_thermometer_ad_packet = {
 
 
 
+const heart_rate_ad_packet = {
+  deviceAddress: '08:08:08:08:08:08',
+  rssi: -10,
+  scanRecord: {
+    name: 'Heart Rate',
+    uuids: [heart_rate.uuid],
+  },
+};
+
+
+
+
+
 
 
 class TestCharacteristicProperties {
@@ -1044,6 +1057,29 @@ async function getUserDescriptionDescriptor() {
     descriptor,
     fake_descriptor: result.fake_user_description,
   });
+}
+
+
+
+
+const heartRateFakeDeviceOptionsDefault = {
+  address: '08:08:08:08:08:08',
+  name: 'Heart Rate',
+  knownServiceUUIDs: ['generic_access', 'heart_rate'],
+  connectable: false,
+  serviceDiscoveryComplete: false,
+};
+
+
+const heartRateRequestDeviceOptionsDefault = {
+  filters: [{services: ['heart_rate']}]
+};
+
+async function getHeartRateDevice(setupOptionsOverride) {
+  let setupOptions = createSetupOptions(
+      {fakeDeviceOptions: heartRateFakeDeviceOptionsDefault},
+      setupOptionsOverride);
+  return await setUpPreconnectedFakeDevice(setupOptions);
 }
 
 
