@@ -3,8 +3,6 @@
 
 
 
-
-
 let state = 0;
 
 let registry = new FinalizationRegistry(x => {

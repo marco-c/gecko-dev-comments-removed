@@ -24,6 +24,7 @@
 
 
 
+
 verifyProperty(FinalizationRegistry.prototype.unregister, 'length', {
   value: 1,
   writable: false,

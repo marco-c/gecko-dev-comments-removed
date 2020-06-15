@@ -1,5 +1,3 @@
-
-
 for (let p of [false, true]) {
   f(p);
 

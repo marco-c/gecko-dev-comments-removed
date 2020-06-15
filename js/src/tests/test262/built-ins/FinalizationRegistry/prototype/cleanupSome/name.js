@@ -23,6 +23,7 @@
 
 
 
+
 verifyProperty(FinalizationRegistry.prototype.cleanupSome, 'name', {
   value: 'cleanupSome',
   writable: false,

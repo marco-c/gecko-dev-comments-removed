@@ -1,5 +1,3 @@
-
-
 var registry = new FinalizationRegistry(x => {
   if (target1 === null) {
       return;

@@ -1,8 +1,6 @@
 
 
 
-
-
 let finalizeRan = false;
 let promiseRan = false;
 

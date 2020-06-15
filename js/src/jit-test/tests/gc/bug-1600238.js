@@ -1,5 +1,3 @@
-
-
 gczeal(0);
 newGlobal();
 nukeAllCCWs();

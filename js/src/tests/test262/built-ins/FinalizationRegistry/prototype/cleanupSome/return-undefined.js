@@ -16,6 +16,7 @@
 
 
 
+
 var fn = function() {};
 var cb = function() {};
 var poisoned = function() { throw new Test262Error(); };

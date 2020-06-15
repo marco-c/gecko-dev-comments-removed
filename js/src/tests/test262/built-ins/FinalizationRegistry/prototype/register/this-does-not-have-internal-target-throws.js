@@ -15,6 +15,7 @@
 
 
 
+
 assert.sameValue(typeof FinalizationRegistry.prototype.register, 'function');
 
 var register = FinalizationRegistry.prototype.register;

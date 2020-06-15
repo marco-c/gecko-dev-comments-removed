@@ -310,9 +310,6 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
                                       "&&getBuildConfiguration()['arm64-simulator'])",
                                       "ARM64 Simulator cannot emulate atomics"))
 
-            if "WeakRef" in testRec["features"] or "FinalizationRegistry" in testRec["features"]:
-                refTestOptions.append("shell-option(--enable-weak-refs)")
-
     
     
     

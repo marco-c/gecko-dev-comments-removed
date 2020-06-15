@@ -24,6 +24,7 @@
 
 
 
+
 verifyProperty(WeakRef.prototype.deref, 'length', {
   value: 0,
   writable: false,

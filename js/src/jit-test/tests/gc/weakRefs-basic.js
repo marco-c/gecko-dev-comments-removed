@@ -1,5 +1,3 @@
-
-
 assertEq('WeakRef' in this, true);
 
 function checkPropertyDescriptor(obj, property, writable, enumerable,

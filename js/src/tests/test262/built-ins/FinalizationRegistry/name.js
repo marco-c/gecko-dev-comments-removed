@@ -23,6 +23,7 @@
 
 
 
+
 verifyProperty(FinalizationRegistry, 'name', {
   value: 'FinalizationRegistry',
   writable: false,

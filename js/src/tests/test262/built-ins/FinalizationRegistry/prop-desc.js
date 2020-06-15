@@ -15,6 +15,7 @@
 
 
 
+
 verifyProperty(this, 'FinalizationRegistry', {
   enumerable: false,
   writable: true,

@@ -18,6 +18,7 @@
 
 
 
+
 var holdingsList = [];
 function cb(holding) {
   holdingsList.push(holding);

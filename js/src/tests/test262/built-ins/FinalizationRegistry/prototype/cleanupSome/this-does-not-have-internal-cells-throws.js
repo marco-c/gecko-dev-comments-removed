@@ -15,6 +15,7 @@
 
 
 
+
 assert.sameValue(typeof FinalizationRegistry.prototype.cleanupSome, 'function');
 
 var cleanupSome = FinalizationRegistry.prototype.cleanupSome;

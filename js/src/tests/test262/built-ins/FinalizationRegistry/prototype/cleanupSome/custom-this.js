@@ -16,6 +16,7 @@
 
 
 
+
 var fn = function() {};
 var cleanupSome = FinalizationRegistry.prototype.cleanupSome;
 var finalizationRegistry = new FinalizationRegistry(fn);

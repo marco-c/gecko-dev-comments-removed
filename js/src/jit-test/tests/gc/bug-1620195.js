@@ -1,4 +1,3 @@
-
 var g99 = newGlobal({});
 nukeAllCCWs();
 let group = new FinalizationRegistry(x90 => 0);

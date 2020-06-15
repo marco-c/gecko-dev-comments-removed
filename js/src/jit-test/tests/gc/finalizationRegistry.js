@@ -1,5 +1,3 @@
-
-
 function checkPropertyDescriptor(obj, property, writable, enumerable,
                                  configurable) {
   let desc = Object.getOwnPropertyDescriptor(obj, property);

@@ -15,6 +15,7 @@
 
 
 
+
 assert.sameValue(typeof FinalizationRegistry.prototype.cleanupSome, 'function');
 
 verifyProperty(FinalizationRegistry.prototype, 'cleanupSome', {

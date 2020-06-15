@@ -1,7 +1,5 @@
 
 
-
-
 gczeal(0);
 
 let heldValues = [];

@@ -1,4 +1,3 @@
-
 fullcompartmentchecks(true);
 var g37 = newGlobal({
     newCompartment: true

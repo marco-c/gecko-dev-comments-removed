@@ -1,5 +1,3 @@
-
-
 const token = {};
 let iterated;
 const finalizationRegistry = new FinalizationRegistry(items => {

@@ -1,4 +1,3 @@
-
 newGlobal();
 nukeAllCCWs();
 var g28 = newGlobal({

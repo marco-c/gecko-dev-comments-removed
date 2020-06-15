@@ -1,7 +1,5 @@
 
 
-
-
 function allocObj() { return {}; }
 
 let wr;

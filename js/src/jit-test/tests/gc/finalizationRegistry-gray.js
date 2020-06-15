@@ -1,6 +1,4 @@
 
-
-
 target = {};
 registry = new FinalizationRegistry(value => undefined);
 registry.register(target, 1);

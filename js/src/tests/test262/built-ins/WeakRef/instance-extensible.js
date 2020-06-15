@@ -27,6 +27,7 @@
 
 
 
+
 var wr = new WeakRef({});
 assert.sameValue(Object.isExtensible(wr), true);
 
