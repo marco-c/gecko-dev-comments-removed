@@ -47,6 +47,16 @@ def parse_issues(log, config, issues, path, onlyIn):
                         log.debug("File = {} / Detail = {}".format(p, detail))
                         continue
                     
+                    if len(detail["spans"]) == 0:
+                        
+                        
+                        
+                        
+                        
+                        
+                        log.debug("Skipping the summary line {} for file {}".format(detail, p))
+                        continue
+
                     l = detail["spans"][0]
                     if onlyIn and onlyIn not in p:
                         
