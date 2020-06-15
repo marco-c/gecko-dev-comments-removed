@@ -1945,12 +1945,13 @@ nsresult PresShell::ResizeReflow(nscoord aWidth, nscoord aHeight,
     
     mZoomConstraintsClient->ScreenSizeChanged();
   }
-  if (mMobileViewportManager) {
+  if (UsesMobileViewportSizing()) {
     
     
     
     
     
+    MOZ_ASSERT(mMobileViewportManager);
     mMobileViewportManager->RequestReflow(false);
     return NS_OK;
   }
