@@ -76,13 +76,24 @@ already_AddRefed<AudioNodeTrack> AudioNodeTrack::Create(
 
   RefPtr<AudioNodeTrack> track =
       new AudioNodeTrack(aEngine, aFlags, aGraph->GraphRate());
-  track->mSuspendedCount += aCtx->ShouldSuspendNewTrack();
   if (node) {
     track->SetChannelMixingParametersImpl(node->ChannelCount(),
                                           node->ChannelCountModeValue(),
                                           node->ChannelInterpretationValue());
   }
+  
+  
+  
+  
+  bool isRealtime = !aCtx->IsOffline();
+  track->mSuspendedCount += isRealtime;
   aGraph->AddTrack(track);
+  if (isRealtime && !aCtx->ShouldSuspendNewTrack()) {
+    nsTArray<RefPtr<mozilla::MediaTrack>> tracks;
+    tracks.AppendElement(track);
+    aGraph->ApplyAudioContextOperation(aCtx->DestinationTrack(), move(tracks),
+                                       AudioContextOperation::Resume);
+  }
   return track.forget();
 }
 
