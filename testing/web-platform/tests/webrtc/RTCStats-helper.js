@@ -1,4 +1,4 @@
-R'use strict';
+'use strict';
 
 
 
