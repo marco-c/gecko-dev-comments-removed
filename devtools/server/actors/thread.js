@@ -1173,6 +1173,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         
         case "finish":
           stepFrame.onStep = createStepForReactionTracking(stepFrame.onStep);
+        
         case "restart":
           stepFrame.onPop = onPop;
           break;
