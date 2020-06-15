@@ -44,32 +44,6 @@ class GL_CONTEXT_PROVIDER_NAME {
       bool aForceAccelerated);
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static already_AddRefed<GLContext> CreateOffscreen(
-      const mozilla::gfx::IntSize& size, const GLContextCreateDesc&,
-      nsACString* const out_failureId);
-
-  
   static already_AddRefed<GLContext> CreateHeadless(
       const GLContextCreateDesc&, nsACString* const out_failureId);
 

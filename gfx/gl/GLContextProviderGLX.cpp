@@ -1018,13 +1018,6 @@ already_AddRefed<GLContext> GLContextProviderGLX::CreateHeadless(
 }
 
 
-already_AddRefed<GLContext> GLContextProviderGLX::CreateOffscreen(
-    const IntSize& size, const GLContextCreateDesc& desc,
-    nsACString* const out_failureId) {
-  return CreateOffscreenPixmapContext(desc, size, out_failureId);
-}
-
-
 GLContext* GLContextProviderGLX::GetGlobalContext() {
   
   return nullptr;

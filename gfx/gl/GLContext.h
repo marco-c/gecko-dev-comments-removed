@@ -33,6 +33,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/ThreadLocal.h"
 
+#include "MozFramebuffer.h"
 #include "nsTArray.h"
 #include "GLDefs.h"
 #include "GLLibraryLoader.h"
@@ -316,7 +317,16 @@ class GLContext : public GenericAtomicRefCounted,
   
 
 
-  virtual GLuint GetDefaultFramebuffer() { return 0; }
+  UniquePtr<MozFramebuffer> mOffscreenDefaultFb;
+
+  bool CreateOffscreenDefaultFb(const gfx::IntSize& size);
+
+  virtual GLuint GetDefaultFramebuffer() {
+    if (mOffscreenDefaultFb) {
+      return mOffscreenDefaultFb->mFB;
+    }
+    return 0;
+  }
 
   
 
@@ -338,7 +348,7 @@ class GLContext : public GenericAtomicRefCounted,
 
 
 
- public:
+
   
 
 
