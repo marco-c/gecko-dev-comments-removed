@@ -845,64 +845,36 @@ static nsRect GetDisplayPortFromMarginsData(
   
   
   
-  
-  
-  
-  ScreenSize posAlignment;
-  ScreenSize sizeAlignment;
+  ScreenSize alignment;
 
   PresShell* presShell = presContext->PresShell();
   MOZ_ASSERT(presShell);
 
-  bool useWebRender = gfxVars::UseWebRender();
-
   if (presShell->IsDisplayportSuppressed()) {
-    posAlignment = ScreenSize(1, 1);
-    sizeAlignment = ScreenSize(1, 1);
-  } else if (useWebRender) {
-    
-    
-    
-    
-    posAlignment.width = fmax(128.0, 512.0 * floor(screenRect.width / 512.0));
-    posAlignment.height = fmax(128.0, 512.0 * floor(screenRect.height / 512.0));
-    
-    
-    
-    
-    sizeAlignment = ScreenSize(128, 128);
+    alignment = ScreenSize(1, 1);
   } else if (StaticPrefs::layers_enable_tiles_AtStartup()) {
     
     
     
     IntSize tileSize = gfxVars::TileSize();
-    posAlignment = ScreenSize(std::min(256, tileSize.width),
-                              std::min(256, tileSize.height));
-    sizeAlignment = posAlignment;
+    alignment = ScreenSize(std::min(256, tileSize.width),
+                           std::min(256, tileSize.height));
   } else {
     
     
     
-    posAlignment = ScreenSize(128, 128);
-    sizeAlignment = ScreenSize(128, 128);
+    alignment = ScreenSize(128, 128);
   }
 
   
-  if (posAlignment.width == 0) {
-    posAlignment.width = 128;
+  if (alignment.width == 0) {
+    alignment.width = 128;
   }
-  if (posAlignment.height == 0) {
-    posAlignment.height = 128;
-  }
-
-  if (sizeAlignment.width == 0) {
-    sizeAlignment.width = 128;
-  }
-  if (sizeAlignment.height == 0) {
-    sizeAlignment.height = 128;
+  if (alignment.height == 0) {
+    alignment.height = 128;
   }
 
-  if (StaticPrefs::layers_enable_tiles_AtStartup() || useWebRender) {
+  if (StaticPrefs::layers_enable_tiles_AtStartup()) {
     
     screenRect.Inflate(aMarginsData->mMargins);
   } else {
@@ -919,9 +891,9 @@ static nsRect GetDisplayPortFromMarginsData(
     
     int32_t maxSizeDevPx = presContext->AppUnitsToDevPixels(maxSizeAppUnits);
     int32_t maxWidthScreenPx = floor(double(maxSizeDevPx) * res.xScale) -
-                               MAX_ALIGN_ROUNDING * sizeAlignment.width;
+                               MAX_ALIGN_ROUNDING * alignment.width;
     int32_t maxHeightScreenPx = floor(double(maxSizeDevPx) * res.yScale) -
-                                MAX_ALIGN_ROUNDING * sizeAlignment.height;
+                                MAX_ALIGN_ROUNDING * alignment.height;
 
     
     const ScreenMargin& margins = aMarginsData->mMargins;
@@ -956,10 +928,10 @@ static nsRect GetDisplayPortFromMarginsData(
 
   
   screenRect += scrollPosScreen;
-  float x = posAlignment.width * floor(screenRect.x / posAlignment.width);
-  float y = posAlignment.height * floor(screenRect.y / posAlignment.height);
-  float w = sizeAlignment.width * ceil(screenRect.width / sizeAlignment.width + 1);
-  float h = sizeAlignment.height * ceil(screenRect.height / sizeAlignment.height + 1);
+  float x = alignment.width * floor(screenRect.x / alignment.width);
+  float y = alignment.height * floor(screenRect.y / alignment.height);
+  float w = alignment.width * ceil(screenRect.width / alignment.width + 1);
+  float h = alignment.height * ceil(screenRect.height / alignment.height + 1);
   screenRect = ScreenRect(x, y, w, h);
   screenRect -= scrollPosScreen;
 
