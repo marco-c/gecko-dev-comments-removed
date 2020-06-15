@@ -229,6 +229,10 @@ function initialize(toggleProfilerKeyShortcuts) {
         return;
       }
 
+      
+      
+      buttonElement.classList.add("subviewbutton-nav");
+
       function setButtonActive() {
         buttonElement.setAttribute(
           "tooltiptext",
