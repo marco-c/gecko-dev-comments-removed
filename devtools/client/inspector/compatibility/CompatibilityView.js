@@ -32,11 +32,19 @@ class CompatibilityView {
     this._onPanelSelected = this._onPanelSelected.bind(this);
     this._onSelectedNodeChanged = this._onSelectedNodeChanged.bind(this);
     this._onTopLevelTargetChanged = this._onTopLevelTargetChanged.bind(this);
+    this._onResourceAvailable = this._onResourceAvailable.bind(this);
 
     this._init();
   }
 
   destroy() {
+    this.resourceWatcher.unwatchResources(
+      [this.resourceWatcher.TYPES.CSS_CHANGE],
+      {
+        onAvailable: this._onResourceAvailable,
+      }
+    );
+
     this.inspector.off("new-root", this._onTopLevelTargetChanged);
     this.inspector.selection.off("new-node-front", this._onSelectedNodeChanged);
     this.inspector.sidebar.off(
@@ -52,6 +60,10 @@ class CompatibilityView {
     }
 
     this.inspector = null;
+  }
+
+  get resourceWatcher() {
+    return this.inspector.toolbox.resourceWatcher;
   }
 
   _init() {
@@ -85,6 +97,16 @@ class CompatibilityView {
     this.inspector.sidebar.on(
       "compatibilityview-selected",
       this._onPanelSelected
+    );
+
+    this.resourceWatcher.watchResources(
+      [this.resourceWatcher.TYPES.CSS_CHANGE],
+      {
+        onAvailable: this._onResourceAvailable,
+        
+        
+        ignoreExistingResources: true,
+      }
     );
   }
 
@@ -157,6 +179,10 @@ class CompatibilityView {
     );
   }
 
+  _onResourceAvailable({ resource }) {
+    this._onChangeAdded(resource);
+  }
+
   async _onTopLevelTargetChanged() {
     if (!this._isAvailable()) {
       return;
@@ -165,20 +191,6 @@ class CompatibilityView {
     this.inspector.store.dispatch(
       updateTopLevelTarget(this.inspector.toolbox.target)
     );
-
-    const changesFront = await this.inspector.toolbox.target.getFront(
-      "changes"
-    );
-
-    try {
-      
-      await changesFront.allChanges();
-    } catch (e) {
-      
-      
-    }
-
-    changesFront.on("add-change", this._onChangeAdded);
   }
 }
 
