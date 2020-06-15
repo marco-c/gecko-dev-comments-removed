@@ -1166,6 +1166,7 @@ class JSTerm extends Component {
   acceptProposedCompletion() {
     const {
       completionText,
+      numberOfCharsToMoveTheCursorForward,
       numberOfCharsToReplaceCharsBeforeCursor,
     } = this.getInputValueWithCompletionText();
 
@@ -1177,10 +1178,22 @@ class JSTerm extends Component {
         completionText,
         numberOfCharsToReplaceCharsBeforeCursor
       );
+
+      if (numberOfCharsToMoveTheCursorForward) {
+        const { line, ch } = this.editor.getCursor();
+        this.editor.setCursor({
+          line,
+          ch: ch + numberOfCharsToMoveTheCursorForward,
+        });
+      }
     }
   }
 
   
+
+
+
+
 
 
 
@@ -1201,6 +1214,7 @@ class JSTerm extends Component {
     );
     let completionText = this.getAutoCompletionText();
     let numberOfCharsToReplaceCharsBeforeCursor;
+    let numberOfCharsToMoveTheCursorForward = 0;
 
     
     
@@ -1223,8 +1237,33 @@ class JSTerm extends Component {
         }
 
         
-        if (!inputAfterCursor.trimLeft().startsWith("]")) {
+        
+        
+        
+        const completionTextLastChar =
+          completionText[completionText.length - 1];
+        const endingQuote = [`"`, `'`, "`"].includes(completionTextLastChar)
+          ? completionTextLastChar
+          : "";
+        if (
+          endingQuote &&
+          inputAfterCursor.trimLeft().startsWith(endingQuote)
+        ) {
+          completionText = completionText.substring(
+            0,
+            completionText.length - 1
+          );
+          numberOfCharsToMoveTheCursorForward++;
+        }
+
+        
+        if (
+          !inputAfterCursor.trimLeft().match(new RegExp(`^${endingQuote}?]`))
+        ) {
           completionText = completionText + "]";
+        } else {
+          
+          numberOfCharsToMoveTheCursorForward++;
         }
       }
     }
@@ -1240,8 +1279,9 @@ class JSTerm extends Component {
 
     return {
       completionText,
-      numberOfCharsToReplaceCharsBeforeCursor,
       expression,
+      numberOfCharsToMoveTheCursorForward,
+      numberOfCharsToReplaceCharsBeforeCursor,
     };
   }
 
