@@ -285,29 +285,49 @@ class EventSourceImpl final : public nsIObserver,
 
   class EventSourceServiceNotifier final {
    public:
-    EventSourceServiceNotifier(uint64_t aHttpChannelId, uint64_t aInnerWindowID)
-        : mHttpChannelId(aHttpChannelId), mInnerWindowID(aInnerWindowID) {
+    EventSourceServiceNotifier(EventSourceImpl* aEventSourceImpl,
+                               uint64_t aHttpChannelId, uint64_t aInnerWindowID)
+        : mEventSourceImpl(aEventSourceImpl),
+          mHttpChannelId(aHttpChannelId),
+          mInnerWindowID(aInnerWindowID),
+          mConnectionOpened(false) {
+      AssertIsOnMainThread();
       mService = EventSourceEventService::GetOrCreate();
-      mService->EventSourceConnectionOpened(aHttpChannelId, aInnerWindowID);
+    }
+
+    void ConnectionOpened() {
+      mEventSourceImpl->AssertIsOnTargetThread();
+      mService->EventSourceConnectionOpened(mHttpChannelId, mInnerWindowID);
+      mConnectionOpened = true;
     }
 
     void EventReceived(const nsAString& aEventName,
                        const nsAString& aLastEventID, const nsAString& aData,
                        uint32_t aRetry, DOMHighResTimeStamp aTimeStamp) {
+      mEventSourceImpl->AssertIsOnTargetThread();
       mService->EventReceived(mHttpChannelId, mInnerWindowID, aEventName,
                               aLastEventID, aData, aRetry, aTimeStamp);
     }
 
     ~EventSourceServiceNotifier() {
-      mService->EventSourceConnectionClosed(mHttpChannelId, mInnerWindowID);
+      mEventSourceImpl->AssertIsOnTargetThread();
+      if (mConnectionOpened) {
+        
+        
+        
+        mService->EventSourceConnectionClosed(mHttpChannelId, mInnerWindowID);
+      }
       NS_ReleaseOnMainThread("EventSourceServiceNotifier::mService",
                              mService.forget());
     }
 
    private:
     RefPtr<EventSourceEventService> mService;
+    
+    EventSourceImpl* mEventSourceImpl;
     uint64_t mHttpChannelId;
     uint64_t mInnerWindowID;
+    bool mConnectionOpened;
   };
 
   UniquePtr<EventSourceServiceNotifier> mServiceNotifier;
@@ -398,8 +418,6 @@ void EventSourceImpl::Close() {
     return;
   }
 
-  mServiceNotifier = nullptr;
-
   SetReadyState(CLOSED);
   CloseInternal();
 }
@@ -407,6 +425,12 @@ void EventSourceImpl::Close() {
 void EventSourceImpl::CloseInternal() {
   AssertIsOnTargetThread();
   MOZ_ASSERT(IsClosed());
+
+  {
+    MutexAutoLock lock(mMutex);
+    mServiceNotifier = nullptr;
+  }
+
   if (IsShutDown()) {
     return;
   }
@@ -695,8 +719,11 @@ EventSourceImpl::OnStartRequest(nsIRequest* aRequest) {
     }
   }
 
-  mServiceNotifier = MakeUnique<EventSourceServiceNotifier>(
-      mHttpChannel->ChannelId(), mInnerWindowID);
+  {
+    MutexAutoLock lock(mMutex);
+    mServiceNotifier = MakeUnique<EventSourceServiceNotifier>(
+        this, mHttpChannel->ChannelId(), mInnerWindowID);
+  }
   rv = Dispatch(NewRunnableMethod("dom::EventSourceImpl::AnnounceConnection",
                                   this, &EventSourceImpl::AnnounceConnection),
                 NS_DISPATCH_NORMAL);
@@ -794,7 +821,6 @@ EventSourceImpl::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
       aStatusCode != NS_ERROR_PROXY_CONNECTION_REFUSED &&
       aStatusCode != NS_ERROR_DNS_LOOKUP_QUEUE_FULL) {
     DispatchFailConnection();
-    mServiceNotifier = nullptr;
     return NS_ERROR_ABORT;
   }
 
@@ -1071,6 +1097,13 @@ void EventSourceImpl::AnnounceConnection() {
     return;
   }
 
+  {
+    MutexAutoLock lock(mMutex);
+    if (mServiceNotifier) {
+      mServiceNotifier->ConnectionOpened();
+    }
+  }
+
   
   
   
@@ -1090,7 +1123,6 @@ void EventSourceImpl::AnnounceConnection() {
 
 nsresult EventSourceImpl::ResetConnection() {
   AssertIsOnMainThread();
-  mServiceNotifier = nullptr;
   if (mHttpChannel) {
     mHttpChannel->Cancel(NS_ERROR_ABORT);
     mHttpChannel = nullptr;
@@ -1426,9 +1458,14 @@ void EventSourceImpl::DispatchAllMessageEvents() {
       message->mLastEventID = Some(mLastEventID);
     }
 
-    mServiceNotifier->EventReceived(message->mEventName, mLastEventID,
-                                    message->mData, mReconnectionTime,
-                                    PR_Now());
+    {
+      MutexAutoLock lock(mMutex);
+      if (mServiceNotifier) {
+        mServiceNotifier->EventReceived(message->mEventName, mLastEventID,
+                                        message->mData, mReconnectionTime,
+                                        PR_Now());
+      }
+    }
 
     
     JS::Rooted<JS::Value> jsData(cx);
