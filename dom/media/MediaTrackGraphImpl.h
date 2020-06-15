@@ -313,12 +313,8 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-
-
-  enum class ProcessingThread { FALLBACK_THREAD, AUDIO_THREAD };
   void NotifyWhenGraphStarted(RefPtr<MediaTrack> aTrack,
-                              MozPromiseHolder<GraphStartedPromise>&& aHolder,
-                              ProcessingThread aProcessingThread);
+                              MozPromiseHolder<GraphStartedPromise>&& aHolder);
 
   
 

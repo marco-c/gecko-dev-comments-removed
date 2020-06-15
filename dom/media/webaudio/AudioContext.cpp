@@ -160,7 +160,9 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow, bool aIsOffline,
       mIsStarted(!aIsOffline),
       mIsShutDown(false),
       mCloseCalled(false),
-      mSuspendCalled(false),
+      
+      
+      mSuspendCalled(!aIsOffline),
       mIsDisconnecting(false),
       mWasAllowedToStart(true),
       mSuspendedByContent(false),
@@ -172,16 +174,18 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow, bool aIsOffline,
   
   
   const bool allowedToStart = AutoplayPolicy::IsAllowedToPlay(*this);
+  mDestination = new AudioDestinationNode(this, aIsOffline, allowedToStart,
+                                          aNumberOfChannels, aLength);
   
   
   
   if (!allowedToStart) {
+    MOZ_ASSERT(!mIsOffline);
     AUTOPLAY_LOG("AudioContext %p is not allowed to start", this);
-    mSuspendCalled = true;
     ReportBlocked();
+  } else if (!mIsOffline) {
+    ResumeInternal(AudioContextOperationFlags::SendStateChange);
   }
-  mDestination = new AudioDestinationNode(this, aIsOffline, allowedToStart,
-                                          aNumberOfChannels, aLength);
 
   
   if (mute) {
@@ -950,6 +954,7 @@ void AudioContext::SuspendFromChrome() {
 void AudioContext::SuspendInternal(void* aPromise,
                                    AudioContextOperationFlags aFlags) {
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!mIsOffline);
   Destination()->Suspend();
 
   nsTArray<RefPtr<mozilla::MediaTrack>> tracks;
@@ -1020,6 +1025,7 @@ already_AddRefed<Promise> AudioContext::Resume(ErrorResult& aRv) {
 }
 
 void AudioContext::ResumeInternal(AudioContextOperationFlags aFlags) {
+  MOZ_ASSERT(!mIsOffline);
   AUTOPLAY_LOG("Allow to resume AudioContext %p", this);
   mWasAllowedToStart = true;
 

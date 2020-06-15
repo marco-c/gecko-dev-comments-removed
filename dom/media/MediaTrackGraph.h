@@ -1075,12 +1075,10 @@ class MediaTrackGraph {
 
 
 
+
+
+
   using GraphStartedPromise = GenericPromise;
-  RefPtr<GraphStartedPromise> NotifyWhenGraphStarted(MediaTrack* aTrack);
-  
-
-
-
   RefPtr<GraphStartedPromise> NotifyWhenDeviceStarted(MediaTrack* aTrack);
 
   
