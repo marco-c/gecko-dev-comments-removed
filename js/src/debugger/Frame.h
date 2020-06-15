@@ -195,11 +195,13 @@ class DebuggerFrame : public NativeObject {
   
   bool isOnStackMaybeForwarded() const;
 
+  bool isSuspended() const;
+
   OnStepHandler* onStepHandler() const;
   OnPopHandler* onPopHandler() const;
   void setOnPopHandler(JSContext* cx, OnPopHandler* handler);
 
-  inline bool hasGenerator() const;
+  inline bool hasGeneratorInfo() const;
 
   
   
@@ -226,8 +228,8 @@ class DebuggerFrame : public NativeObject {
 
 
 
-  MOZ_MUST_USE bool setGenerator(JSContext* cx,
-                                 Handle<AbstractGeneratorObject*> genObj);
+  MOZ_MUST_USE bool setGeneratorInfo(JSContext* cx,
+                                     Handle<AbstractGeneratorObject*> genObj);
 
   
 
@@ -244,8 +246,8 @@ class DebuggerFrame : public NativeObject {
 
 
 
-  void clearGenerator(JSFreeOp* fop);
-  void clearGenerator(
+  void clearGeneratorInfo(JSFreeOp* fop);
+  void clearGeneratorInfo(
       JSFreeOp* fop, Debugger* owner,
       Debugger::GeneratorWeakMap::Enum* maybeGeneratorFramesEnum = nullptr);
 
