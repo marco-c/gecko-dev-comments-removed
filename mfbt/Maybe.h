@@ -265,6 +265,11 @@ struct MaybeStorage<T, false> {
   explicit MaybeStorage(const T& aVal) : mStorage{aVal}, mIsSome{true} {}
   explicit MaybeStorage(T&& aVal) : mStorage{std::move(aVal)}, mIsSome{true} {}
 
+  template <typename... Args>
+  explicit MaybeStorage(std::in_place_t, Args&&... aArgs) : mIsSome{true} {
+    ::new (KnownNotNull, &mStorage.val) T(std::forward<Args>(aArgs)...);
+  }
+
   
   
 
@@ -288,6 +293,9 @@ struct MaybeStorage<T, true> {
     constexpr Union() : dummy() {}
     constexpr explicit Union(const T& aVal) : val{aVal} {}
     constexpr explicit Union(T&& aVal) : val{std::move(aVal)} {}
+    template <typename... Args>
+    constexpr explicit Union(std::in_place_t, Args&&... aArgs)
+        : val{std::forward<Args>(aArgs)...} {}
 
     NonConstT val;
     char dummy;
@@ -299,6 +307,10 @@ struct MaybeStorage<T, true> {
       : mStorage{aVal}, mIsSome{true} {}
   constexpr explicit MaybeStorage(T&& aVal)
       : mStorage{std::move(aVal)}, mIsSome{true} {}
+
+  template <typename... Args>
+  constexpr explicit MaybeStorage(std::in_place_t, Args&&... aArgs)
+      : mStorage{std::in_place, std::forward<Args>(aArgs)...}, mIsSome{true} {}
 };
 
 }  
@@ -306,9 +318,6 @@ struct MaybeStorage<T, true> {
 template <typename T, typename U = typename std::remove_cv<
                           typename std::remove_reference<T>::type>::type>
 constexpr Maybe<U> Some(T&& aValue);
-
-
-
 
 
 
@@ -388,6 +397,10 @@ class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS Maybe
   MOZ_ALLOW_TEMPORARY constexpr Maybe() = default;
 
   MOZ_ALLOW_TEMPORARY MOZ_IMPLICIT constexpr Maybe(Nothing) : Maybe{} {}
+
+  template <typename... Args>
+  constexpr explicit Maybe(std::in_place_t, Args&&... aArgs)
+      : detail::MaybeStorage<T>{std::in_place, std::forward<Args>(aArgs)...} {}
 
   
 
