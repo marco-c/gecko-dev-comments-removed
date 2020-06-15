@@ -803,17 +803,16 @@ class FirefoxDataProvider {
     
     
     
-    if (this.actionsEnabled && this.actions.updateMimeType) {
-      
-      await this.actions.updateMimeType(
-        httpChannelId,
-        "text/event-stream",
-        true
-      );
+    if (this.actionsEnabled && this.actions.setEventStreamFlag) {
+      await this.actions.setEventStreamFlag(httpChannelId);
     }
   }
 
-  async onEventSourceConnectionClosed(httpChannelId) {}
+  async onEventSourceConnectionClosed(httpChannelId) {
+    if (this.actionsEnabled && this.actions.closeConnection) {
+      await this.actions.closeConnection(httpChannelId);
+    }
+  }
 
   async onEventReceived(httpChannelId, data) {
     

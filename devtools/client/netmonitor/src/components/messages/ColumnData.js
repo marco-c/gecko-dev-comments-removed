@@ -25,21 +25,29 @@ class ColumnData extends Component {
 
   render() {
     const { type, payload } = this.props.item;
-    const typeLabel = L10N.getStr(`netmonitor.ws.type.${type}`);
+    
+    const typeLabel = type ? L10N.getStr(`netmonitor.ws.type.${type}`) : null;
 
     
     const displayedPayload = payload.initial ? payload.initial : payload;
 
+    const frameTypeImg = type
+      ? dom.img({
+          alt: typeLabel,
+          className: `message-list-type-icon message-list-type-icon-${type}`,
+          src: `chrome://devtools/content/netmonitor/src/assets/icons/arrow-up.svg`,
+        })
+      : null;
+
+    let title = limitTooltipLength(displayedPayload);
+    title = type ? typeLabel + " " + title : title;
+
     return dom.td(
       {
         className: "message-list-column message-list-payload",
-        title: typeLabel + " " + limitTooltipLength(displayedPayload),
+        title,
       },
-      dom.img({
-        alt: typeLabel,
-        className: `message-list-type-icon message-list-type-icon-${type}`,
-        src: `chrome://devtools/content/netmonitor/src/assets/icons/arrow-up.svg`,
-      }),
+      frameTypeImg,
       " " + displayedPayload
     );
   }

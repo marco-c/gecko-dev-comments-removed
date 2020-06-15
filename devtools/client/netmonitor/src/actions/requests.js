@@ -12,6 +12,7 @@ const {
   REMOVE_SELECTED_CUSTOM_REQUEST,
   RIGHT_CLICK_REQUEST,
   SEND_CUSTOM_REQUEST,
+  SET_EVENT_STREAM_FLAG,
   TOGGLE_RECORDING,
   UPDATE_REQUEST,
 } = require("devtools/client/netmonitor/src/constants");
@@ -41,6 +42,12 @@ function updateRequest(id, data, batch) {
   };
 }
 
+function setEventStreamFlag(channelId) {
+  return {
+    type: SET_EVENT_STREAM_FLAG,
+    channelId,
+  };
+}
 
 
 
@@ -155,6 +162,7 @@ module.exports = {
   rightClickRequest,
   removeSelectedCustomRequest,
   sendCustomRequest,
+  setEventStreamFlag,
   toggleRecording,
   updateRequest,
 };
