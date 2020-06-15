@@ -1264,15 +1264,6 @@ const JsonView = {
     
     
     
-    
-    Services.ppmm.loadProcessScript(
-      "resource://devtools/client/jsonview/converter-observer.js",
-      true
-    );
-
-    
-    
-    
     Services.mm.addMessageListener("devtools:jsonview:save", this.onSave);
   },
 
