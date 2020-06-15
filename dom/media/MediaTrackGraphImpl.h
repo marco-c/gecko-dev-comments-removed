@@ -29,6 +29,7 @@ namespace media {
 class ShutdownBlocker;
 }
 
+class AudioContextOperationControlMessage;
 template <typename T>
 class LinkedList;
 class GraphRunner;
@@ -788,6 +789,22 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
   nsDataHashtable<nsVoidPtrHashKey, nsTArray<RefPtr<AudioDataListener>>>
       mInputDeviceUsers;
+
+  
+
+
+  class PendingResumeOperation {
+   public:
+    explicit PendingResumeOperation(
+        AudioContextOperationControlMessage* aMessage);
+    MediaTrack* DestinationTrack() const { return mDestinationTrack; }
+
+   private:
+    RefPtr<MediaTrack> mDestinationTrack;
+    nsTArray<RefPtr<MediaTrack>> mTracks;
+    MozPromiseHolder<AudioContextOperationPromise> mHolder;
+  };
+  AutoTArray<PendingResumeOperation, 1> mPendingResumeOperations;
 
   
   
