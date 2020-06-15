@@ -618,14 +618,6 @@ class AudioCallbackDriver : public GraphDriver,
     return AudioInputType::Unknown;
   }
 
-  
-
-  void EnqueueTrackAndPromiseForOperation(
-      MediaTrack* aTrack, dom::AudioContextOperation aOperation,
-      AbstractThread* aMainThread,
-      MozPromiseHolder<MediaTrackGraph::AudioContextOperationPromise>&&
-          aHolder);
-
   std::thread::id ThreadId() { return mAudioThreadId.load(); }
 
   bool OnThread() override {
@@ -641,8 +633,6 @@ class AudioCallbackDriver : public GraphDriver,
   
 
   bool IsStarted();
-
-  void CompleteAudioContextOperations(AsyncCubebOperation aOperation);
 
   
   TimeDuration AudioOutputLatency();
@@ -736,7 +726,6 @@ class AudioCallbackDriver : public GraphDriver,
   
 
   const RefPtr<SharedThreadPool> mInitShutdownThread;
-  DataMutex<AutoTArray<TrackAndPromiseForOperation, 1>> mPromisesForOperation;
   cubeb_device_pref mInputDevicePreference;
   
 

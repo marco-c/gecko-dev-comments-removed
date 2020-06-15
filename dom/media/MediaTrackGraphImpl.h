@@ -322,17 +322,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   void ApplyAudioContextOperationImpl(
-      MediaTrack* aDestinationTrack,
-      const nsTArray<RefPtr<MediaTrack>>& aTracks,
-      dom::AudioContextOperation aOperation,
-      MozPromiseHolder<AudioContextOperationPromise>&& aHolder);
-
-  
-
-
-
-  void SuspendOrResumeTracks(dom::AudioContextOperation aAudioContextOperation,
-                             const nsTArray<RefPtr<MediaTrack>>& aTrackSet);
+      AudioContextOperationControlMessage* aMessage);
 
   
 
@@ -797,6 +787,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
    public:
     explicit PendingResumeOperation(
         AudioContextOperationControlMessage* aMessage);
+    void Apply(MediaTrackGraphImpl* aGraph);
     MediaTrack* DestinationTrack() const { return mDestinationTrack; }
 
    private:

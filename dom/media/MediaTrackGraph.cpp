@@ -65,6 +65,7 @@ MediaTrackGraphImpl::~MediaTrackGraphImpl() {
   MOZ_ASSERT(mTracks.IsEmpty() && mSuspendedTracks.IsEmpty(),
              "All tracks should have been destroyed by messages from the main "
              "thread");
+  MOZ_ASSERT(mPendingResumeOperations.IsEmpty());
   LOG(LogLevel::Debug, ("MediaTrackGraph %p destroyed", this));
   LOG(LogLevel::Debug, ("MediaTrackGraphImpl::~MediaTrackGraphImpl"));
   StopAudioCallbackTracing();
@@ -297,11 +298,19 @@ void MediaTrackGraphImpl::CheckDriver() {
 
   AudioCallbackDriver* audioCallbackDriver =
       CurrentDriver()->AsAudioCallbackDriver();
-  bool audioTrackPresent = AudioTrackPresent();
+  if (audioCallbackDriver) {
+    for (PendingResumeOperation& op : mPendingResumeOperations) {
+      op.Apply(this);
+    }
+    mPendingResumeOperations.Clear();
+  }
 
   
   
-  if (!audioTrackPresent) {
+  
+  bool needAudioCallbackDriver =
+      !mPendingResumeOperations.IsEmpty() || AudioTrackPresent();
+  if (!needAudioCallbackDriver) {
     if (audioCallbackDriver && audioCallbackDriver->IsStarted()) {
       SwitchAtNextIteration(
           new SystemClockDriver(this, CurrentDriver(), mSampleRate));
@@ -1158,7 +1167,8 @@ void MediaTrackGraphImpl::UpdateGraph(GraphTime aEndBlockingDecisions) {
   CheckDriver();
   UpdateTrackOrder();
 
-  bool ensureNextIteration = false;
+  
+  bool ensureNextIteration = !mPendingResumeOperations.IsEmpty();
 
   for (MediaTrack* track : mTracks) {
     if (SourceMediaTrack* is = track->AsSourceTrack()) {
@@ -3400,145 +3410,6 @@ void MediaTrackGraphImpl::NotifyWhenGraphStarted(
       move(aTrack), move(aHolder)));
 }
 
-void MediaTrackGraphImpl::SuspendOrResumeTracks(
-    AudioContextOperation aAudioContextOperation,
-    const nsTArray<RefPtr<MediaTrack>>& aTrackSet) {
-  MOZ_ASSERT(OnGraphThreadOrNotRunning());
-  
-  
-  for (MediaTrack* track : aTrackSet) {
-    if (aAudioContextOperation == AudioContextOperation::Resume) {
-      track->DecrementSuspendCount();
-    } else {
-      track->IncrementSuspendCount();
-    }
-  }
-  LOG(LogLevel::Debug, ("Moving tracks between suspended and running"
-                        "state: mTracks: %zu, mSuspendedTracks: %zu",
-                        mTracks.Length(), mSuspendedTracks.Length()));
-#ifdef DEBUG
-  
-  for (uint32_t i = 0; i < mTracks.Length(); i++) {
-    for (uint32_t j = 0; j < mSuspendedTracks.Length(); j++) {
-      MOZ_ASSERT(
-          mTracks[i] != mSuspendedTracks[j],
-          "The suspended track set and running track set are not disjoint.");
-    }
-  }
-#endif
-}
-
-void MediaTrackGraphImpl::ApplyAudioContextOperationImpl(
-    MediaTrack* aDestinationTrack, const nsTArray<RefPtr<MediaTrack>>& aTracks,
-    AudioContextOperation aOperation,
-    MozPromiseHolder<AudioContextOperationPromise>&& aHolder) {
-  MOZ_ASSERT(OnGraphThread());
-
-  SuspendOrResumeTracks(aOperation, aTracks);
-
-  if (aOperation == AudioContextOperation::Resume) {
-    
-    
-    
-    
-    
-    
-    if (!CurrentDriver()->AsAudioCallbackDriver()) {
-      AudioCallbackDriver* driver;
-      if (Switching()) {
-        MOZ_ASSERT(NextDriver()->AsAudioCallbackDriver());
-        driver = NextDriver()->AsAudioCallbackDriver();
-      } else {
-        driver = new AudioCallbackDriver(
-            this, CurrentDriver(), mSampleRate, AudioOutputChannelCount(),
-            AudioInputChannelCount(), mOutputDeviceID, mInputDeviceID,
-            AudioInputDevicePreference());
-        SwitchAtNextIteration(driver);
-      }
-      driver->EnqueueTrackAndPromiseForOperation(
-          aDestinationTrack, aOperation, mAbstractMainThread, move(aHolder));
-    } else {
-      
-      
-      
-      DispatchToMainThreadStableState(NS_NewRunnableFunction(
-          "MediaTrackGraphImpl::ApplyAudioContextOperationImpl::Resolve1",
-          [holder = move(aHolder)]() mutable {
-            holder.Resolve(AudioContextState::Running, __func__);
-          }));
-    }
-  } else {
-    
-    
-    
-    
-    
-    AudioContextState state;
-    switch (aOperation) {
-      case AudioContextOperation::Suspend:
-        state = AudioContextState::Suspended;
-        break;
-      case AudioContextOperation::Close:
-        state = AudioContextState::Closed;
-        break;
-      default:
-        MOZ_CRASH("Unexpected operation");
-    }
-    bool audioTrackPresent = AudioTrackPresent();
-
-    if (!audioTrackPresent && CurrentDriver()->AsAudioCallbackDriver()) {
-      CurrentDriver()
-          ->AsAudioCallbackDriver()
-          ->EnqueueTrackAndPromiseForOperation(aDestinationTrack, aOperation,
-                                               mAbstractMainThread,
-                                               move(aHolder));
-
-      SystemClockDriver* driver;
-      if (!Switching()) {
-        driver = new SystemClockDriver(this, CurrentDriver(), mSampleRate);
-        SwitchAtNextIteration(driver);
-      }
-      
-      
-      
-    } else if (!audioTrackPresent && Switching()) {
-      MOZ_ASSERT(NextDriver()->AsAudioCallbackDriver());
-      if (NextDriver()->AsAudioCallbackDriver()) {
-        NextDriver()
-            ->AsAudioCallbackDriver()
-            ->EnqueueTrackAndPromiseForOperation(aDestinationTrack, aOperation,
-                                                 mAbstractMainThread,
-                                                 move(aHolder));
-      } else {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        DispatchToMainThreadStableState(NS_NewRunnableFunction(
-            "MediaTrackGraphImpl::ApplyAudioContextOperationImpl::Resolve2",
-            [holder = move(aHolder), state]() mutable {
-              holder.Resolve(state, __func__);
-            }));
-      }
-    } else {
-      
-      
-      
-      DispatchToMainThreadStableState(NS_NewRunnableFunction(
-          "MediaTrackGraphImpl::ApplyAudioContextOperationImpl::Resolve3",
-          [holder = move(aHolder), state]() mutable {
-            holder.Resolve(state, __func__);
-          }));
-    }
-  }
-}
-
 class AudioContextOperationControlMessage : public ControlMessage {
   using AudioContextOperationPromise =
       MediaTrackGraph::AudioContextOperationPromise;
@@ -3553,8 +3424,7 @@ class AudioContextOperationControlMessage : public ControlMessage {
         mAudioContextOperation(aOperation),
         mHolder(move(aHolder)) {}
   void Run() override {
-    mTrack->GraphImpl()->ApplyAudioContextOperationImpl(
-        mTrack, mTracks, mAudioContextOperation, move(mHolder));
+    mTrack->GraphImpl()->ApplyAudioContextOperationImpl(this);
   }
   void RunDuringShutdown() override {
     MOZ_ASSERT(mAudioContextOperation == AudioContextOperation::Close,
@@ -3567,12 +3437,79 @@ class AudioContextOperationControlMessage : public ControlMessage {
   MozPromiseHolder<AudioContextOperationPromise> mHolder;
 };
 
+void MediaTrackGraphImpl::ApplyAudioContextOperationImpl(
+    AudioContextOperationControlMessage* aMessage) {
+  MOZ_ASSERT(OnGraphThread());
+  AudioContextState state;
+  switch (aMessage->mAudioContextOperation) {
+    
+    
+    
+    case AudioContextOperation::Suspend:
+      state = AudioContextState::Suspended;
+      break;
+    case AudioContextOperation::Close:
+      state = AudioContextState::Closed;
+      break;
+    case AudioContextOperation::Resume:
+      
+      
+      
+      mPendingResumeOperations.EmplaceBack(aMessage);
+      return;
+  }
+  
+  
+  
+  
+  MediaTrack* destinationTrack = aMessage->GetTrack();
+  bool shrinking = false;
+  auto moveDest = mPendingResumeOperations.begin();
+  for (PendingResumeOperation& op : mPendingResumeOperations) {
+    if (op.DestinationTrack() == destinationTrack) {
+      op.Apply(this);
+      shrinking = true;
+      continue;
+    }
+    if (shrinking) {  
+      *moveDest = move(op);
+    }
+    ++moveDest;
+  }
+  mPendingResumeOperations.TruncateLength(moveDest -
+                                          mPendingResumeOperations.begin());
+
+  for (MediaTrack* track : aMessage->mTracks) {
+    track->IncrementSuspendCount();
+  }
+  
+  DispatchToMainThreadStableState(NS_NewRunnableFunction(
+      "MediaTrackGraphImpl::ApplyAudioContextOperationImpl",
+      [holder = move(aMessage->mHolder), state]() mutable {
+        holder.Resolve(state, __func__);
+      }));
+}
+
 MediaTrackGraphImpl::PendingResumeOperation::PendingResumeOperation(
     AudioContextOperationControlMessage* aMessage)
     : mDestinationTrack(aMessage->GetTrack()),
       mTracks(move(aMessage->mTracks)),
       mHolder(move(aMessage->mHolder)) {
   MOZ_ASSERT(aMessage->mAudioContextOperation == AudioContextOperation::Resume);
+}
+
+void MediaTrackGraphImpl::PendingResumeOperation::Apply(
+    MediaTrackGraphImpl* aGraph) {
+  MOZ_ASSERT(aGraph->OnGraphThread());
+  for (MediaTrack* track : mTracks) {
+    track->DecrementSuspendCount();
+  }
+  
+  
+  aGraph->DispatchToMainThreadStableState(NS_NewRunnableFunction(
+      "PendingResumeOperation::Apply", [holder = move(mHolder)]() mutable {
+        holder.Resolve(AudioContextState::Running, __func__);
+      }));
 }
 
 auto MediaTrackGraph::ApplyAudioContextOperation(
