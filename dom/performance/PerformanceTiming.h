@@ -113,6 +113,18 @@ class PerformanceTimingData final {
   }
 
   
+
+
+
+
+
+
+
+
+
+  void InitializeForMemoryCacheHit();
+
+  
   
   DOMHighResTimeStamp AsyncOpenHighRes(Performance* aPerformance);
 

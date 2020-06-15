@@ -358,6 +358,11 @@ class Loader final {
                           nsIURI* aURL, dom::MediaList* aMedia,
                           LoaderReusableStyleSheets* aSavedSheets);
 
+  
+  
+  
+  void MaybeNotifyOfResourceTiming(SheetLoadData&);
+
   enum class UseSystemPrincipal { No, Yes };
 
   

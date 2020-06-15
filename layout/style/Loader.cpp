@@ -28,6 +28,8 @@
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/PerformanceTiming.h"
+#include "mozilla/dom/PerformanceMainThread.h"
 #include "nsIURI.h"
 #include "nsNetUtil.h"
 #include "nsContentUtils.h"
@@ -263,10 +265,6 @@ SheetLoadData::SheetLoadData(Loader* aLoader, nsIURI* aURI, StyleSheet* aSheet,
       mCompatMode(aLoader->mCompatMode) {
   MOZ_ASSERT(mLoader, "Must have a loader!");
   MOZ_ASSERT(mTriggeringPrincipal);
-  if (mParentData) {
-    ++mParentData->mPendingChildren;
-  }
-
   MOZ_ASSERT(!mUseSystemPrincipal || mSyncLoad,
              "Shouldn't use system principal for async loads");
 }
@@ -648,18 +646,14 @@ nsresult SheetLoadData::VerifySheetReadyToParse(nsresult aStatus,
 
   mSheet->SetPrincipal(principal);
 
-  if (mSheet->GetCORSMode() == CORS_NONE) {
-    bool subsumed;
-    result = mTriggeringPrincipal->Subsumes(principal, &subsumed);
-    if (NS_FAILED(result) || !subsumed) {
-      mIsCrossOriginNoCORS = true;
-    }
+  if (mSheet->GetCORSMode() == CORS_NONE &&
+      !mTriggeringPrincipal->Subsumes(principal)) {
+    mIsCrossOriginNoCORS = true;
   }
 
   
   
-  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(aChannel));
-  if (httpChannel) {
+  if (nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel)) {
     bool requestSucceeded;
     result = httpChannel->GetRequestSucceeded(&requestSucceeded);
     if (NS_SUCCEEDED(result) && !requestSucceeded) {
@@ -829,6 +823,48 @@ nsresult Loader::CheckContentPolicy(nsIPrincipal* aLoadingPrincipal,
   return NS_OK;
 }
 
+void Loader::MaybeNotifyOfResourceTiming(SheetLoadData& aData) {
+  SheetLoadDataHashKey key(aData);
+  if (!mLoadsPerformed.EnsureInserted(key)) {
+    
+    return;
+  }
+
+  if (!mDocument) {
+    
+    return;
+  }
+
+  nsPIDOMWindowInner* win = mDocument->GetInnerWindow();
+  if (!win) {
+    return;
+  }
+
+  auto* perf = static_cast<dom::PerformanceMainThread*>(win->GetPerformance());
+  if (!perf) {
+    return;
+  }
+
+  
+  
+  for (auto* parent = aData.mSheet->GetParentSheet(); parent;
+       parent = parent->GetParentSheet()) {
+    if (parent->GetCORSMode() == CORS_NONE &&
+        !aData.mTriggeringPrincipal->Subsumes(parent->Principal())) {
+      return;
+    }
+  }
+
+  nsLiteralString initiatorType = aData.mSheet->GetParentSheet()
+                                      ? NS_LITERAL_STRING("css")
+                                      : NS_LITERAL_STRING("link");
+  nsAutoCString entryName;
+  aData.mSheet->GetOriginalURI()->GetSpec(entryName);
+  auto data = MakeUnique<dom::PerformanceTimingData>(nullptr, nullptr, 0);
+  data->InitializeForMemoryCacheHit();
+  perf->AddRawEntry(std::move(data), initiatorType,
+                    NS_ConvertUTF8toUTF16(entryName));
+}
 
 
 
@@ -1048,6 +1084,9 @@ nsresult Loader::LoadSheet(SheetLoadData& aLoadData, SheetState aSheetState) {
   LOG_URI("  Load from: '%s'", aLoadData.mURI);
 
   ++mOngoingLoadCount;
+  if (aLoadData.mParentData) {
+    ++aLoadData.mParentData->mPendingChildren;
+  }
 
   nsresult rv = NS_OK;
 
@@ -1285,6 +1324,8 @@ nsresult Loader::LoadSheet(SheetLoadData& aLoadData, SheetState aSheetState) {
       if (aLoadData.mParentData) {
         timedChannel->SetInitiatorType(NS_LITERAL_STRING("css"));
 
+        
+        
         
         
         
@@ -1684,6 +1725,7 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadStyleLink(
       aInfo.mReferrerInfo, context);
   if (state == SheetState::Complete) {
     LOG(("  Sheet already complete: 0x%p", sheet.get()));
+    MaybeNotifyOfResourceTiming(*data);
     if (aObserver || !mObservers.IsEmpty() || aInfo.mContent) {
       rv = PostLoadEvent(std::move(data));
       if (NS_FAILED(rv)) {
@@ -1833,17 +1875,21 @@ nsresult Loader::LoadChildSheet(StyleSheet& aParentSheet,
   MOZ_ASSERT(sheet);
   InsertChildSheet(*sheet, aParentSheet);
 
-  if (state == SheetState::Complete) {
-    LOG(("  Sheet already complete"));
-    
-    
-    
-    return NS_OK;
-  }
-
   auto data = MakeRefPtr<SheetLoadData>(
       this, aURL, sheet, aParentData, observer, principal,
       aParentSheet.GetReferrerInfo(), context);
+
+  if (state == SheetState::Complete) {
+    LOG(("  Sheet already complete"));
+    MaybeNotifyOfResourceTiming(*data);
+    
+    
+    
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    data->mIntentionallyDropped = true;
+#endif
+    return NS_OK;
+  }
 
   bool syncLoad = data->mSyncLoad;
 
@@ -1925,6 +1971,7 @@ Result<RefPtr<StyleSheet>, nsresult> Loader::InternalLoadNonDocumentSheet(
       mDocument);
   if (state == SheetState::Complete) {
     LOG(("  Sheet already complete"));
+    MaybeNotifyOfResourceTiming(*data);
     if (aObserver || !mObservers.IsEmpty()) {
       rv = PostLoadEvent(std::move(data));
       if (NS_FAILED(rv)) {
