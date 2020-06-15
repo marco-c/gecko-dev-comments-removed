@@ -603,11 +603,14 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
 
   if (mManagerType == ManagerType::VisualAndMetaViewport &&
       (aForceAdjustResolution || mContext->AllowZoomingForDocument())) {
+    MVM_LOG("%p: Updating resolution because %d || %d\n", this,
+            aForceAdjustResolution, mContext->AllowZoomingForDocument());
     UpdateResolution(viewportInfo, displaySize, viewport,
                      displayWidthChangeRatio, UpdateType::ViewportSize);
   } else {
     
     
+    MVM_LOG("%p: Updating VV size\n", this);
     RefreshVisualViewportSize();
   }
   if (gfxPlatform::AsyncPanZoomEnabled()) {
@@ -618,12 +621,15 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
   mMobileViewportSize = viewport;
 
   if (mManagerType == ManagerType::VisualViewportOnly) {
+    MVM_LOG("%p: Visual-only, so aborting before reflow\n", this);
     return;
   }
 
   RefPtr<MobileViewportManager> strongThis(this);
 
   
+  MVM_LOG("%p: Triggering reflow with viewport %s\n", this,
+          Stringify(viewport).c_str());
   mContext->Reflow(viewport);
 
   
@@ -640,6 +646,7 @@ void MobileViewportManager::ShrinkToDisplaySizeIfNeeded(
   }
 
   if (mManagerType == ManagerType::VisualViewportOnly) {
+    MVM_LOG("%p: Visual-only, so aborting ShrinkToDisplaySizeIfNeeded\n", this);
     return;
   }
 
