@@ -19,21 +19,20 @@ const CONTENT_PROCESS_SCRIPT =
 
 
 
-function ContentProcessListener(listener) {
-  this.listener = listener;
 
-  Services.ppmm.addMessageListener("Console:Log", this);
-  Services.ppmm.loadProcessScript(CONTENT_PROCESS_SCRIPT, true);
-}
+class ContentProcessListener {
+  constructor(handler) {
+    this.handler = handler;
 
-exports.ContentProcessListener = ContentProcessListener;
+    Services.ppmm.addMessageListener("Console:Log", this);
+    Services.ppmm.loadProcessScript(CONTENT_PROCESS_SCRIPT, true);
+  }
 
-ContentProcessListener.prototype = {
   receiveMessage(message) {
     const logMsg = message.data;
     logMsg.wrappedJSObject = logMsg;
-    this.listener.onConsoleAPICall(logMsg);
-  },
+    this.handler(logMsg);
+  }
 
   destroy() {
     
@@ -44,6 +43,8 @@ ContentProcessListener.prototype = {
     Services.ppmm.removeMessageListener("Console:Log", this);
     Services.ppmm.removeDelayedProcessScript(CONTENT_PROCESS_SCRIPT);
 
-    this.listener = null;
-  },
-};
+    this.handler = null;
+  }
+}
+
+exports.ContentProcessListener = ContentProcessListener;
