@@ -36,12 +36,16 @@ pub fn convert_nscolor_to_rgba(color: u32) -> RGBA {
 
 
 
+
 #[inline]
-pub fn round_border_width(width: Au, au_per_device_px: Au) -> Au {
+pub fn round_border_to_device_pixels(width: Au, au_per_device_px: Au) -> Au {
     if width == Au(0) {
         Au(0)
     } else {
-        max(au_per_device_px, width)
+        max(
+            au_per_device_px,
+            Au(width.0 / au_per_device_px.0 * au_per_device_px.0),
+        )
     }
 }
 
