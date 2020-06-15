@@ -10,6 +10,10 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const { RemoteSettings } = ChromeUtils.import(
+  "resource://services-settings/remote-settings.js"
+);
+
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   LocationHelper: "resource://gre/modules/LocationHelper.jsm",
@@ -40,12 +44,20 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "localGeocodingEnabled",
+  "browser.region.local-geocoding",
+  false
+);
+
 const log = console.createInstance({
   prefix: "Region.jsm",
   maxLogLevel: loggingEnabled ? "All" : "Warn",
 });
 
 const REGION_PREF = "browser.search.region";
+const COLLECTION_ID = "regions";
 
 
 
@@ -53,6 +65,8 @@ const REGION_PREF = "browser.search.region";
 
 
 class RegionDetector {
+  
+  _rsClient = null;
   
   wifiDataPromise = null;
   
@@ -75,6 +89,11 @@ class RegionDetector {
     let region = Services.prefs.getCharPref(REGION_PREF, null);
     if (!region) {
       Services.tm.idleDispatchToMainThread(this._fetchRegion.bind(this));
+    }
+    if (localGeocodingEnabled) {
+      Services.tm.idleDispatchToMainThread(
+        this._setupRemoteSettings.bind(this)
+      );
     }
     this._home = region;
   }
@@ -250,6 +269,85 @@ class RegionDetector {
 
 
 
+  async _setupRemoteSettings() {
+    log.info("_setupRemoteSettings");
+    this._rsClient = RemoteSettings(COLLECTION_ID);
+    this._rsClient.on("sync", this._onRegionFilesSync.bind(this));
+    await this._ensureRegionFilesDownloaded();
+  }
+
+  
+
+
+
+
+
+
+  async _onRegionFilesSync({ data: { deleted } }) {
+    log.info("_onRegionFilesSync");
+    const toDelete = deleted.filter(d => d.attachment);
+    
+    await Promise.all(
+      toDelete.map(entry => this._rsClient.attachments.delete(entry))
+    );
+    await this._ensureRegionFilesDownloaded();
+  }
+
+  
+
+
+
+
+  async _ensureRegionFilesDownloaded() {
+    log.info("_ensureRegionFilesDownloaded");
+    let records = (await this._rsClient.get()).filter(d => d.attachment);
+    log.info("_ensureRegionFilesDownloaded", records);
+    if (!records.length) {
+      log.info("_ensureRegionFilesDownloaded: Nothing to download");
+      return;
+    }
+    let opts = { useCache: true };
+    await Promise.all(
+      records.map(r => this._rsClient.attachments.download(r, opts))
+    );
+    log.info("_ensureRegionFilesDownloaded complete");
+    this._regionFilesReady = true;
+  }
+
+  
+
+
+
+
+
+  async _fetchAttachment(id) {
+    let record = (await this._rsClient.get({ filters: { id } })).pop();
+    let { buffer } = await this._rsClient.attachments.download(record, {
+      useCache: true,
+    });
+    let text = new TextDecoder("utf-8").decode(buffer);
+    return JSON.parse(text);
+  }
+
+  
+
+
+  async _getPlainMap() {
+    return this._fetchAttachment("world");
+  }
+
+  
+
+
+
+  async _getBufferedMap() {
+    return this._fetchAttachment("world-buffered");
+  }
+
+  
+
+
+
 
 
 
@@ -274,14 +372,6 @@ class RegionDetector {
   async _getRegionLocally() {
     let { location } = await this._getLocation();
     return this._geoCode(location);
-  }
-
-  
-  async _getPlainMap() {
-    return null;
-  }
-  async _getBufferedMap() {
-    return null;
   }
 
   
