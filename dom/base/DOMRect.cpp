@@ -138,16 +138,7 @@ JSObject* DOMRectList::WrapObject(JSContext* cx,
   return mozilla::dom::DOMRectList_Binding::Wrap(cx, this, aGivenProto);
 }
 
-static double RoundFloat(double aValue) { return floor(aValue + 0.5); }
-
 void DOMRect::SetLayoutRect(const nsRect& aLayoutRect) {
-  double scale = 65536.0;
-  
-  
-  double scaleInv = 1 / scale;
-  double t2pScaled = scale / AppUnitsPerCSSPixel();
-  double x = RoundFloat(aLayoutRect.x * t2pScaled) * scaleInv;
-  double y = RoundFloat(aLayoutRect.y * t2pScaled) * scaleInv;
-  SetRect(x, y, RoundFloat(aLayoutRect.XMost() * t2pScaled) * scaleInv - x,
-          RoundFloat(aLayoutRect.YMost() * t2pScaled) * scaleInv - y);
+  auto pixelRect = CSSPixel::FromAppUnits(aLayoutRect);
+  SetRect(pixelRect.x, pixelRect.y, pixelRect.width, pixelRect.height);
 }
