@@ -57,11 +57,13 @@ class PageStyleChild extends JSWindowActorChild {
     
     
     
-    let docContainsStyleSheet = false;
-    for (let docStyleSheet of docStyleSheets) {
-      if (docStyleSheet.title === title) {
-        docContainsStyleSheet = true;
-        break;
+    let docContainsStyleSheet = !title;
+    if (title) {
+      for (let docStyleSheet of docStyleSheets) {
+        if (docStyleSheet.title === title) {
+          docContainsStyleSheet = true;
+          break;
+        }
       }
     }
 
