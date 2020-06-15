@@ -117,7 +117,11 @@ const EXTRA_ENGINES = ["addresses", "creditcards"];
 
 
 function getErrorDetails(error) {
-  let details = { message: String(error), stack: null };
+  
+  let cleanMessage = String(error)
+    .replace(/\\.*\\/gm, "[REDACTED]")
+    .replace(/\/.*\//gm, "[REDACTED]");
+  let details = { message: cleanMessage, stack: null };
 
   
   if (error.stack) {
