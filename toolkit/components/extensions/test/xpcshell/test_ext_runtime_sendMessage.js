@@ -41,6 +41,16 @@ add_task(async function runtimeSendMessageReply() {
       }
     });
 
+    browser.runtime.onMessage.addListener((msg, sender, respond) => {
+      if (msg == "respond-now") {
+        
+        
+
+        
+        msg.blah.this.throws();
+      }
+    });
+
     let childFrame = document.createElement("iframe");
     childFrame.src = "extensionpage.html";
     document.body.appendChild(childFrame);
