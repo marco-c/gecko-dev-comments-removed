@@ -3527,7 +3527,7 @@ void nsWindow::OnContainerFocusOutEvent(GdkEventFocus* aEvent) {
 
   DispatchDeactivateEvent();
 
-  if (mDrawInTitlebar) {
+  if (IsChromeWindowTitlebar()) {
     
     
     
@@ -3799,7 +3799,8 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
 
   
   
-  if (mDrawInTitlebar && (aEvent->changed_mask & GDK_WINDOW_STATE_FOCUSED)) {
+  if (IsChromeWindowTitlebar() &&
+      (aEvent->changed_mask & GDK_WINDOW_STATE_FOCUSED)) {
     
     
     
@@ -3871,13 +3872,11 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
     }
   }
 
-  if (mDrawInTitlebar) {
-    if (mTransparencyBitmapForTitlebar) {
-      if (mSizeState == nsSizeMode_Normal && !mIsTiled) {
-        UpdateTitlebarTransparencyBitmap();
-      } else {
-        ClearTransparencyBitmap();
-      }
+  if (mDrawInTitlebar && mTransparencyBitmapForTitlebar) {
+    if (mSizeState == nsSizeMode_Normal && !mIsTiled) {
+      UpdateTitlebarTransparencyBitmap();
+    } else {
+      ClearTransparencyBitmap();
     }
   }
 }
@@ -4212,15 +4211,18 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       mIsAccelerated = ComputeShouldAccelerate();
       bool useWebRender = gfx::gfxVars::UseWebRender() && mIsAccelerated;
 
-      if (mWindowType == eWindowType_toplevel) {
-        
-        mCSDSupportLevel = GetSystemCSDSupportLevel(mIsPIPWindow);
+      if (mWindowType == eWindowType_toplevel ||
+          mWindowType == eWindowType_dialog) {
+        bool isPopup = mIsPIPWindow || mWindowType == eWindowType_dialog;
+        mCSDSupportLevel = GetSystemCSDSupportLevel(isPopup);
+      }
 
+      if (mWindowType == eWindowType_toplevel && !mIsPIPWindow) {
         
         
         
         GdkScreen* screen = gdk_screen_get_default();
-        if (gdk_screen_is_composited(screen) && !mIsPIPWindow) {
+        if (gdk_screen_is_composited(screen)) {
           
           
           
@@ -5333,6 +5335,16 @@ void nsWindow::UpdatePopupOpaqueRegion(
   }
 }
 
+bool nsWindow::IsChromeWindowTitlebar() {
+  return mDrawInTitlebar && !mIsPIPWindow &&
+         mWindowType == eWindowType_toplevel;
+}
+
+bool nsWindow::DoDrawTilebarCorners() {
+  return IsChromeWindowTitlebar() && mSizeState == nsSizeMode_Normal &&
+         !mIsTiled;
+}
+
 void nsWindow::UpdateOpaqueRegion(const LayoutDeviceIntRegion& aOpaqueRegion) {
   
   if (mTransparencyBitmapForTitlebar) {
@@ -5351,8 +5363,7 @@ void nsWindow::UpdateOpaqueRegion(const LayoutDeviceIntRegion& aOpaqueRegion) {
     
     
     
-    bool drawTilebarCorners = (mDrawInTitlebar && !mIsPIPWindow) &&
-                              (mSizeState == nsSizeMode_Normal && !mIsTiled);
+    bool drawTilebarCorners = DoDrawTilebarCorners();
     if (mIsX11Display) {
       UpdateTopLevelOpaqueRegionGtk(drawTilebarCorners);
     }
@@ -7737,8 +7748,7 @@ nsresult nsWindow::SynthesizeNativeTouchPoint(uint32_t aPointerId,
 }
 #endif
 
-nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel(
-    bool aIsPIPWindow) {
+nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel(bool aIsPopup) {
   if (sCSDSupportLevel != CSD_SUPPORT_UNKNOWN) {
     return sCSDSupportLevel;
   }
@@ -7772,13 +7782,13 @@ nsWindow::CSDSupportLevel nsWindow::GetSystemCSDSupportLevel(
   if (currentDesktop) {
     
     if (strstr(currentDesktop, "GNOME-Flashback:GNOME") != nullptr) {
-      sCSDSupportLevel = aIsPIPWindow ? CSD_SUPPORT_CLIENT : CSD_SUPPORT_SYSTEM;
+      sCSDSupportLevel = aIsPopup ? CSD_SUPPORT_CLIENT : CSD_SUPPORT_SYSTEM;
       
     } else if (strstr(currentDesktop, "pop:GNOME") != nullptr) {
       sCSDSupportLevel = CSD_SUPPORT_CLIENT;
       
     } else if (strstr(currentDesktop, "GNOME") != nullptr) {
-      sCSDSupportLevel = aIsPIPWindow ? CSD_SUPPORT_CLIENT : CSD_SUPPORT_SYSTEM;
+      sCSDSupportLevel = aIsPopup ? CSD_SUPPORT_CLIENT : CSD_SUPPORT_SYSTEM;
     } else if (strstr(currentDesktop, "XFCE") != nullptr) {
       sCSDSupportLevel = CSD_SUPPORT_CLIENT;
     } else if (strstr(currentDesktop, "X-Cinnamon") != nullptr) {
