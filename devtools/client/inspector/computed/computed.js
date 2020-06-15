@@ -1082,21 +1082,12 @@ PropertyView.prototype = {
     
     this.matchedExpander = doc.createElementNS(HTML_NS, "div");
     this.matchedExpander.className = "computed-expander theme-twisty";
-    this.matchedExpander.setAttribute("role", "button");
-    this.matchedExpander.setAttribute(
-      "aria-label",
-      STYLE_INSPECTOR_L10N.getStr("rule.twistyExpand.label")
-    );
     this.matchedExpander.addEventListener("click", this.onMatchedToggle);
     nameContainer.appendChild(this.matchedExpander);
 
     
     this.nameNode = doc.createElementNS(HTML_NS, "span");
     this.nameNode.classList.add("computed-property-name", "theme-fg-color3");
-
-    
-    this.nameNode.setAttribute("role", "heading");
-
     
     
     this.nameNode.setAttribute("tabindex", "");
@@ -1169,10 +1160,6 @@ PropertyView.prototype = {
       this.matchedSelectorsContainer.parentNode.hidden = true;
       this.matchedSelectorsContainer.textContent = "";
       this.matchedExpander.removeAttribute("open");
-      this.matchedExpander.setAttribute(
-        "aria-label",
-        STYLE_INSPECTOR_L10N.getStr("rule.twistyExpand.label")
-      );
       return;
     }
 
@@ -1221,10 +1208,6 @@ PropertyView.prototype = {
 
           this._buildMatchedSelectors();
           this.matchedExpander.setAttribute("open", "");
-          this.matchedExpander.setAttribute(
-            "aria-label",
-            STYLE_INSPECTOR_L10N.getStr("rule.twistyCollapse.label")
-          );
           this.tree.inspector.emit("computed-view-property-expanded");
         })
         .catch(console.error);
@@ -1232,10 +1215,6 @@ PropertyView.prototype = {
 
     this.matchedSelectorsContainer.innerHTML = "";
     this.matchedExpander.removeAttribute("open");
-    this.matchedExpander.setAttribute(
-      "aria-label",
-      STYLE_INSPECTOR_L10N.getStr("rule.twistyExpand.label")
-    );
     this.tree.inspector.emit("computed-view-property-collapsed");
     return promise.resolve(undefined);
   },
@@ -1271,14 +1250,6 @@ PropertyView.prototype = {
         dir: "ltr",
         class: "rule-text theme-fg-color3 " + selector.statusClass,
         title: selector.statusText,
-      });
-
-      
-      
-      createChild(status, "span", {
-        dir: "ltr",
-        class: "visually-hidden",
-        textContent: selector.statusText + " ",
       });
 
       createChild(status, "div", {
