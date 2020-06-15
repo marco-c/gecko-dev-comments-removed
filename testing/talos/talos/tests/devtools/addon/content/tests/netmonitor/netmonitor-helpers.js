@@ -24,26 +24,52 @@ const { getToolbox, runTest } = require("../head");
 
 
 
-async function waitForAllRequestsFinished(expectedRequests) {
+
+
+
+
+
+async function waitForAllRequestsFinished(
+  minExpectedRequests,
+  maxExpectedRequests
+) {
   let toolbox = await getToolbox();
   let window = toolbox.getCurrentPanel().panelWin;
 
   return new Promise(resolve => {
     
     let payloadReady = 0;
+    let resolveWithLessThanMaxRequestsTimer = null;
 
     function onPayloadReady(_, id) {
       payloadReady++;
+      dump(`Waiting for ${maxExpectedRequests - payloadReady} requests\n`);
       maybeResolve();
     }
 
-    function maybeResolve() {
+    function doResolve() {
       
-      if (payloadReady >= expectedRequests) {
-        
-        window.api.off(EVENTS.PAYLOAD_READY, onPayloadReady);
-        
-        setTimeout(resolve, 1);
+      window.api.off(EVENTS.PAYLOAD_READY, onPayloadReady);
+      
+      setTimeout(resolve, 1);
+    }
+
+    function maybeResolve() {
+      if (resolveWithLessThanMaxRequestsTimer) {
+        clearTimeout(resolveWithLessThanMaxRequestsTimer);
+        resolveWithLessThanMaxRequestsTimer = null;
+      }
+
+      
+      if (payloadReady >= maxExpectedRequests) {
+        doResolve();
+        return;
+      }
+
+      
+      
+      if (payloadReady >= minExpectedRequests) {
+        resolveWithLessThanMaxRequestsTimer = setTimeout(doResolve, 1000);
       }
     }
 
@@ -96,10 +122,11 @@ function mouseDownElement(el, win) {
 exports.waitForNetworkRequests = async function(
   label,
   toolbox,
-  expectedRequests
+  minExpectedRequests,
+  maxExpectedRequests = minExpectedRequests
 ) {
   let test = runTest(label + ".requestsFinished.DAMP");
-  await waitForAllRequestsFinished(expectedRequests);
+  await waitForAllRequestsFinished(minExpectedRequests, maxExpectedRequests);
   test.done();
 };
 
