@@ -43,6 +43,7 @@ class nsFrameLoaderOwner : public nsISupports {
   void SetFrameLoader(nsFrameLoader* aNewFrameLoader);
 
   mozilla::dom::BrowsingContext* GetBrowsingContext();
+  mozilla::dom::BrowsingContext* GetExtantBrowsingContext();
 
   
   

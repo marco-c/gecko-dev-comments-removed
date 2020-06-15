@@ -311,7 +311,10 @@ Element* nsFocusManager::GetFocusedDescendant(
     window = GetContentWindow(currentElement);
     if (!window) {
       if (RefPtr<nsFrameLoaderOwner> flo = do_QueryObject(currentElement)) {
-        if (BrowsingContext* bc = flo->GetBrowsingContext()) {
+        
+        
+        
+        if (BrowsingContext* bc = flo->GetExtantBrowsingContext()) {
           if (!bc->IsInProcess()) {
             *aFocusIsOutOfProcess = true;
           }
