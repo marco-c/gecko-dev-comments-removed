@@ -40,7 +40,7 @@ function MapForEach(callbackfn, thisArg = undefined) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
 
     
-    var entries = callFunction(std_Map_iterator, M);
+    var entries = callFunction(std_Map_entries, M);
 
     
     var mapIterationResultPair = iteratorTemp.mapIterationResultPair;
@@ -62,13 +62,6 @@ function MapForEach(callbackfn, thisArg = undefined) {
         callContentFunction(callbackfn, thisArg, value, key, M);
     }
 }
-
-
-
-function $MapEntries() {
-    return callFunction(std_Map_iterator, this);
-}
-_SetCanonicalName($MapEntries, "entries");
 
 var iteratorTemp = { mapIterationResultPair: null };
 
@@ -121,6 +114,8 @@ function MapIteratorNext() {
     
     return retVal;
 }
+
+
 
 
 function $MapSpecies() {

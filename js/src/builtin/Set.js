@@ -34,7 +34,7 @@ function SetForEach(callbackfn, thisArg = undefined) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
 
     
-    var values = callFunction(std_Set_iterator, S);
+    var values = callFunction(std_Set_values, S);
 
     
     var setIterationResult = setIteratorTemp.setIterationResult;
@@ -54,11 +54,6 @@ function SetForEach(callbackfn, thisArg = undefined) {
 }
 
 
-
-function $SetValues() {
-    return callFunction(std_Set_iterator, this);
-}
-_SetCanonicalName($SetValues, "values");
 
 
 function $SetSpecies() {
