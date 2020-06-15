@@ -2,7 +2,6 @@
 
 #include "nsCOMPtr.h"
 #include "nsNetUtil.h"
-#include "nsStringStream.h"
 
 
 TEST(TestReadStreamToString, SyncStreamPreAllocatedSize)

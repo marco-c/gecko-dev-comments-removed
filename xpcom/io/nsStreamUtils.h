@@ -307,14 +307,8 @@ extern nsresult NS_CloneInputStream(nsIInputStream* aSource,
 
 
 
-
-
-
-
-
 extern nsresult NS_MakeAsyncNonBlockingInputStream(
     already_AddRefed<nsIInputStream> aSource,
-    nsIAsyncInputStream** aAsyncInputStream, bool aCloseWhenDone = true,
-    uint32_t aFlags = 0, uint32_t aSegmentSize = 0, uint32_t aSegmentCount = 0);
+    nsIAsyncInputStream** aAsyncInputStream);
 
 #endif  
