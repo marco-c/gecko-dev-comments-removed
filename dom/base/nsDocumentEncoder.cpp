@@ -422,8 +422,6 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
 
     nsresult SerializeRangeToString(const nsRange* aRange);
 
-    RangeBoundariesInclusiveAncestorsAndOffsets
-        mRangeBoundariesInclusiveAncestorsAndOffsets;
     
 
 
@@ -434,10 +432,14 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
 
     AutoTArray<nsINode*, 8> mCommonInclusiveAncestors;
 
+    ContextInfoDepth mContextInfoDepth;
+
+   private:
+    RangeBoundariesInclusiveAncestorsAndOffsets
+        mRangeBoundariesInclusiveAncestorsAndOffsets;
     int32_t mStartRootIndex;
     int32_t mEndRootIndex;
     bool mHaltRangeHint;
-    ContextInfoDepth mContextInfoDepth;
 
     
     const uint32_t& mFlags;
