@@ -914,6 +914,25 @@ var E10SUtils = {
     }
 
     
+    
+    
+    
+    let isOnlyToplevelBrowsingContext =
+      !aDocShell.browsingContext.parent &&
+      aDocShell.browsingContext.group.getToplevels().length == 1;
+    if (
+      !aHasPostData &&
+      remoteType == LARGE_ALLOCATION_REMOTE_TYPE &&
+      !aDocShell.awaitingLargeAlloc &&
+      isOnlyToplevelBrowsingContext
+    ) {
+      this.log().info(
+        "returning false to throw away large allocation process\n"
+      );
+      return false;
+    }
+
+    
     let requestedIndex = sessionHistory.legacySHistory.requestedIndex;
     if (requestedIndex >= 0) {
       this.log().debug("Checking history case\n");
@@ -942,6 +961,7 @@ var E10SUtils = {
     aURI,
     aReferrerInfo,
     aTriggeringPrincipal,
+    aFreshProcess,
     aFlags,
     aCsp
   ) {
@@ -961,6 +981,7 @@ var E10SUtils = {
             Services.scriptSecurityManager.createNullPrincipal({})
         ),
         csp: aCsp ? this.serializeCSP(aCsp) : null,
+        reloadInFreshProcess: !!aFreshProcess,
       },
       historyIndex: sessionHistory.legacySHistory.requestedIndex,
     });
@@ -1068,4 +1089,10 @@ XPCOMUtils.defineLazyGetter(
       Services.scriptSecurityManager.getSystemPrincipal()
     );
   }
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  E10SUtils,
+  "rebuildFrameloadersOnRemotenessChange",
+  "fission.rebuild_frameloaders_on_remoteness_change",
+  false
 );

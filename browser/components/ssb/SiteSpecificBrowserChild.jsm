@@ -174,4 +174,27 @@ class WebBrowserChrome {
   shouldLoadURIInThisProcess(uri) {
     return this.ssb.canLoad(uri);
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  reloadInFreshProcess(
+    docShell,
+    uri,
+    referrerInfo,
+    triggeringPrincipal,
+    loadFlags,
+    csp
+  ) {
+    return false;
+  }
 }

@@ -68,6 +68,27 @@
       return ["remote"];
     }
 
+    attributeChangedCallback(name, oldValue, newValue) {
+      
+      
+      
+      
+      
+      
+      let rebuildFrameLoaders =
+        LazyModules.E10SUtils.rebuildFrameloadersOnRemotenessChange ||
+        this.ownerGlobal.docShell.nsILoadContext.useRemoteSubframes;
+      if (
+        !rebuildFrameLoaders &&
+        name === "remote" &&
+        oldValue != newValue &&
+        this.isConnectedAndReady
+      ) {
+        this.destroy();
+        this.construct();
+      }
+    }
+
     constructor() {
       super();
 
@@ -1925,67 +1946,21 @@
       return origins;
     }
 
-    get processSwitchBehavior() {
-      
-      
-      
-      if (this.hasAttribute("maychangeremoteness")) {
-        return Ci.nsIBrowser.PROCESS_BEHAVIOR_STANDARD;
-      }
-
-      
-      
-      
-      
-      if (this.isRemoteBrowser) {
-        return Ci.nsIBrowser.PROCESS_BEHAVIOR_SUBFRAME_ONLY;
-      }
-      
-      return Ci.nsIBrowser.PROCESS_BEHAVIOR_DISABLED;
+    get canPerformProcessSwitch() {
+      return this.getTabBrowser() != null;
     }
 
-    
-    
-    
-    
-    async prepareToChangeRemoteness() {
-      
-    }
-
-    
-    
-    beforeChangeRemoteness() {
-      
-      
-      let event = document.createEvent("Events");
-      event.initEvent("WillChangeBrowserRemoteness", true, false);
-      this.dispatchEvent(event);
-
-      
-      
-      this.destroy();
-    }
-
-    finishChangeRemoteness(redirectLoadSwitchId) {
-      
-      this.construct();
-
-      
-      
-      let event = document.createEvent("Events");
-      event.initEvent("DidChangeBrowserRemoteness", true, false);
-      this.dispatchEvent(event);
-
-      
-      
-      
-      
-      let tabbrowser = this.getTabBrowser();
-      if (tabbrowser) {
-        tabbrowser.finishBrowserRemotenessChange(this, redirectLoadSwitchId);
-        return true;
-      }
-      return false;
+    performProcessSwitch(
+      remoteType,
+      redirectLoadSwitchId,
+      replaceBrowsingContext
+    ) {
+      return this.getTabBrowser().performProcessSwitch(
+        this,
+        remoteType,
+        redirectLoadSwitchId,
+        replaceBrowsingContext
+      );
     }
   }
 

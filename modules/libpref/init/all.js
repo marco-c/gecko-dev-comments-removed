@@ -4524,6 +4524,8 @@ pref("dom.clients.openwindow_favors_same_process", true);
   pref("layers.omtp.enabled", false);
 #endif
 
+pref("fission.rebuild_frameloaders_on_remoteness_change", true);
+
 
 
 

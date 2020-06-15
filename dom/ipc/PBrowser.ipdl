@@ -975,6 +975,12 @@ child:
     
 
 
+
+    async AwaitLargeAlloc();
+
+    
+
+
     async AllowScriptsToClose();
 
     

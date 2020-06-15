@@ -50,31 +50,18 @@ class nsFrameLoaderOwner : public nsISupports {
   
   
   
-  
-  
   void ChangeRemoteness(const mozilla::dom::RemotenessOptions& aOptions,
                         mozilla::ErrorResult& rv);
 
-  
-  
-  
   void ChangeRemotenessWithBridge(mozilla::dom::BrowserBridgeChild* aBridge,
                                   mozilla::ErrorResult& rv);
-
-  
-  
-  
-  
-  
-  
-  void ChangeRemotenessToProcess(mozilla::dom::ContentParent* aContentParent,
-                                 bool aReplaceBrowsingContext,
-                                 mozilla::ErrorResult& rv);
 
   void SubframeCrashed();
 
  private:
   bool UseRemoteSubframes();
+  bool ShouldPreserveBrowsingContext(
+      const mozilla::dom::RemotenessOptions& aOptions);
 
   
   
@@ -90,11 +77,9 @@ class nsFrameLoaderOwner : public nsISupports {
     DONT_PRESERVE_BUT_PROPAGATE = 1,
     PRESERVE = 2,
   };
-  ChangeRemotenessContextType ShouldPreserveBrowsingContext(
-      bool aIsRemote, bool aReplaceBrowsingContext);
-
   void ChangeRemotenessCommon(const ChangeRemotenessContextType& aContextType,
-                              bool aSwitchingInProgressLoad, bool aIsRemote,
+                              bool aSwitchingInProgressLoad,
+                              const nsAString& aRemoteType,
                               std::function<void()>& aFrameLoaderInit,
                               mozilla::ErrorResult& aRv);
 

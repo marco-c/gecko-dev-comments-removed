@@ -28,14 +28,26 @@ function expectProcessCreated() {
   return promise;
 }
 
+function expectNoProcess() {
+  let os = Services.obs;
+  let topic = "ipc:content-created";
+  function observer() {
+    ok(false, "A process was created!");
+    os.removeObserver(observer, topic);
+  }
+  os.addObserver(observer, topic);
+
+  return () => os.removeObserver(observer, topic);
+}
+
 function getPID(aBrowser) {
-  return SpecialPowers.spawn(aBrowser, [], () => {
+  return ContentTask.spawn(aBrowser, [], () => {
     return Services.appinfo.processID;
   });
 }
 
 function getInLAProc(aBrowser) {
-  return SpecialPowers.spawn(aBrowser, [], () => {
+  return ContentTask.spawn(aBrowser, [], () => {
     return Services.appinfo.remoteType == "webLargeAllocation";
   });
 }
@@ -67,17 +79,13 @@ async function largeAllocSuccessTests() {
     let pid1 = await getPID(aBrowser);
     is(false, await getInLAProc(aBrowser));
 
-    let ready = Promise.all([
-      expectProcessCreated(),
-      BrowserTestUtils.browserLoaded(aBrowser),
-    ]);
-
-    await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
+    let epc = expectProcessCreated();
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
     
-    await ready;
+    await epc;
 
     let pid2 = await getPID(aBrowser);
 
@@ -96,7 +104,10 @@ async function largeAllocSuccessTests() {
     let pid1 = await getPID(aBrowser);
     is(false, await getInLAProc(aBrowser));
 
-    await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
+    
+    let stopExpectNoProcess = expectNoProcess();
+
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       
       content.document.body.innerHTML = `<iframe src='${TEST_URI}'></iframe>`;
 
@@ -112,6 +123,8 @@ async function largeAllocSuccessTests() {
 
     is(pid1, pid2, "The PID should not have changed");
     is(false, await getInLAProc(aBrowser));
+
+    stopExpectNoProcess();
   });
 
   
@@ -122,24 +135,34 @@ async function largeAllocSuccessTests() {
     let pid1 = await getPID(aBrowser);
     is(false, await getInLAProc(aBrowser));
 
-    await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
-      info(TEST_URI);
+    
+    let stopExpectNoProcess = expectNoProcess();
+
+    let loaded = ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.body.innerHTML = "<button>CLICK ME</button>";
 
       return new Promise(resolve => {
-        let w = content.window.open(TEST_URI, "_blank");
-        w.onload = () => {
-          ok(true, "Window finished loading");
-          w.close();
-          resolve();
+        content.document.querySelector("button").onclick = e => {
+          let w = content.window.open(TEST_URI, "_blank");
+          w.onload = () => {
+            ok(true, "Window finished loading");
+            w.close();
+            resolve();
+          };
         };
       });
     });
+
+    await BrowserTestUtils.synthesizeMouseAtCenter("button", {}, aBrowser);
+
+    await loaded;
 
     let pid2 = await getPID(aBrowser);
 
     is(pid1, pid2, "The PID should not have changed");
     is(false, await getInLAProc(aBrowser));
+
+    stopExpectNoProcess();
   });
 
   
@@ -148,25 +171,26 @@ async function largeAllocSuccessTests() {
     let pid1 = await getPID(aBrowser);
     is(false, await getInLAProc(aBrowser));
 
-    let ready = Promise.all([
-      expectProcessCreated(),
-      BrowserTestUtils.browserLoaded(aBrowser),
-    ]);
+    let epc = expectProcessCreated();
 
-    await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
-    await ready;
+    await epc;
 
     let pid2 = await getPID(aBrowser);
 
     isnot(pid1, pid2);
     is(true, await getInLAProc(aBrowser));
 
-    await SpecialPowers.spawn(aBrowser, [], () => {
-      content.document.location = "http://example.com";
-    });
+    await BrowserTestUtils.browserLoaded(aBrowser);
+
+    await ContentTask.spawn(
+      aBrowser,
+      [],
+      () => (content.document.location = "about:blank")
+    );
 
     await BrowserTestUtils.browserLoaded(aBrowser);
 
@@ -174,16 +198,13 @@ async function largeAllocSuccessTests() {
     
     is(false, await getInLAProc(aBrowser));
 
-    ready = Promise.all([
-      expectProcessCreated(),
-      BrowserTestUtils.browserLoaded(aBrowser),
-    ]);
+    epc = expectProcessCreated();
 
-    await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
-    await ready;
+    await epc;
 
     let pid4 = await getPID(aBrowser);
 
@@ -198,25 +219,24 @@ async function largeAllocSuccessTests() {
     let pid1 = await getPID(aBrowser);
     is(false, await getInLAProc(aBrowser));
 
-    let ready = Promise.all([
-      expectProcessCreated(),
-      BrowserTestUtils.browserLoaded(aBrowser),
-    ]);
+    let epc = expectProcessCreated();
 
-    await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
-    await ready;
+    await epc;
 
     let pid2 = await getPID(aBrowser);
 
     isnot(pid1, pid2, "PIDs 1 and 2 should not match");
     is(true, await getInLAProc(aBrowser));
 
+    await BrowserTestUtils.browserLoaded(aBrowser);
+
     
-    await SpecialPowers.spawn(aBrowser, [], () => {
-      content.document.location = "http://example.com";
+    await ContentTask.spawn(aBrowser, [], () => {
+      content.document.location = "about:blank";
     });
 
     await BrowserTestUtils.browserLoaded(aBrowser);
@@ -227,18 +247,15 @@ async function largeAllocSuccessTests() {
     
     is(false, await getInLAProc(aBrowser));
 
-    ready = Promise.all([
-      expectProcessCreated(),
-      BrowserTestUtils.browserLoaded(aBrowser),
-    ]);
+    epc = expectProcessCreated();
 
     
     
-    await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.window.history.back();
     });
 
-    await ready;
+    await epc;
 
     let pid4 = await getPID(aBrowser);
 
@@ -259,7 +276,7 @@ async function largeAllocSuccessTests() {
       BrowserTestUtils.browserLoaded(aBrowser),
     ]);
 
-    await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
@@ -270,16 +287,27 @@ async function largeAllocSuccessTests() {
     isnot(pid1, pid2, "PIDs 1 and 2 should not match");
     is(true, await getInLAProc(aBrowser));
 
-    ready = Promise.all([
-      expectProcessCreated(),
-      BrowserTestUtils.browserLoaded(aBrowser),
-    ]);
+    let epc = expectProcessCreated();
 
-    await SpecialPowers.spawn(aBrowser, [TEST_URI_2], TEST_URI_2 => {
+    await ContentTask.spawn(aBrowser, TEST_URI_2, TEST_URI_2 => {
       content.document.location = TEST_URI_2;
     });
 
-    await ready;
+    await epc;
+
+    
+    
+    
+    
+    
+    
+    epc = expectProcessCreated();
+    if (!(await getInLAProc(aBrowser))) {
+      await epc;
+    } else {
+      epc.catch(() => {});
+      epc.kill();
+    }
 
     let pid3 = await getPID(aBrowser);
 
@@ -299,7 +327,7 @@ async function largeAllocSuccessTests() {
       BrowserTestUtils.browserLoaded(aBrowser),
     ]);
 
-    await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
@@ -310,13 +338,11 @@ async function largeAllocSuccessTests() {
     isnot(pid1, pid2, "PIDs 1 and 2 should not match");
     is(true, await getInLAProc(aBrowser));
 
-    let promiseTabOpened = BrowserTestUtils.waitForNewTab(
-      gBrowser,
-      "about:blank"
-    );
-    await SpecialPowers.spawn(aBrowser, [], () => {
-      content.window.open("about:blank");
-      content.document.location = "http://example.com";
+    let stopExpectNoProcess = expectNoProcess();
+
+    await ContentTask.spawn(aBrowser, [], () => {
+      this.__newWindow = content.window.open("about:blank");
+      content.document.location = "about:blank";
     });
 
     await BrowserTestUtils.browserLoaded(aBrowser);
@@ -326,7 +352,12 @@ async function largeAllocSuccessTests() {
     is(pid3, pid2, "PIDs 2 and 3 should match");
     is(true, await getInLAProc(aBrowser));
 
-    BrowserTestUtils.removeTab(await promiseTabOpened);
+    stopExpectNoProcess();
+
+    await ContentTask.spawn(aBrowser, [], () => {
+      ok(this.__newWindow, "The window should have been stored");
+      this.__newWindow.close();
+    });
   });
 
   
@@ -341,7 +372,7 @@ async function largeAllocSuccessTests() {
       BrowserTestUtils.browserLoaded(aBrowser),
     ]);
 
-    await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
@@ -352,15 +383,17 @@ async function largeAllocSuccessTests() {
     isnot(pid1, pid2, "PIDs 1 and 2 should not match");
     is(true, await getInLAProc(aBrowser));
 
+    let stopExpectNoProcess = expectNoProcess();
+
     let firstTab = gBrowser.selectedTab;
     let promiseTabOpened = BrowserTestUtils.waitForNewTab(
       gBrowser,
       "about:blank"
     );
-    await SpecialPowers.spawn(aBrowser, [], () => {
-      content.window.open("about:blank");
+    await ContentTask.spawn(aBrowser, [], () => {
+      this.__newWindow = content.window.open("about:blank");
     });
-    let newTab = await promiseTabOpened;
+    await promiseTabOpened;
 
     if (firstTab != gBrowser.selectedTab) {
       firstTab = await BrowserTestUtils.switchTab(gBrowser, firstTab);
@@ -375,7 +408,12 @@ async function largeAllocSuccessTests() {
     is(pid3, pid2, "PIDs 2 and 3 should match");
     is(true, await getInLAProc(aBrowser));
 
-    BrowserTestUtils.removeTab(newTab);
+    stopExpectNoProcess();
+
+    await ContentTask.spawn(aBrowser, [], () => {
+      ok(this.__newWindow, "The window should have been stored");
+      this.__newWindow.close();
+    });
   });
 
   
@@ -390,7 +428,7 @@ async function largeAllocSuccessTests() {
       expectProcessCreated(),
       BrowserTestUtils.browserLoaded(aBrowser),
     ]);
-    await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
@@ -438,7 +476,7 @@ async function largeAllocSuccessTests() {
       BrowserTestUtils.browserLoaded(aBrowser),
     ]);
 
-    await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
@@ -455,7 +493,7 @@ async function largeAllocSuccessTests() {
       is(false, await getInLAProc(aBrowser));
 
       let ready = Promise.all([BrowserTestUtils.browserLoaded(aBrowser)]);
-      await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
+      await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
         content.document.location = TEST_URI;
       });
       await ready;
@@ -476,7 +514,10 @@ async function largeAllocSuccessTests() {
     let pid1 = await getPID(aBrowser);
     is(false, await getInLAProc(aBrowser));
 
-    await SpecialPowers.spawn(aBrowser, [], () => {
+    
+    let stopExpectNoProcess = expectNoProcess();
+
+    await ContentTask.spawn(aBrowser, [], () => {
       content.document.location = "view-source:http://example.com";
     });
 
@@ -486,6 +527,8 @@ async function largeAllocSuccessTests() {
 
     is(pid1, pid2, "The PID should not have changed");
     is(false, await getInLAProc(aBrowser));
+
+    stopExpectNoProcess();
   });
 
   
@@ -503,7 +546,7 @@ async function largeAllocSuccessTests() {
       expectProcessCreated(),
       BrowserTestUtils.browserLoaded(aBrowser),
     ]);
-    await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
@@ -545,7 +588,7 @@ async function largeAllocSuccessTests() {
       expectProcessCreated(),
       BrowserTestUtils.browserLoaded(aBrowser),
     ]);
-    await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
@@ -557,7 +600,7 @@ async function largeAllocSuccessTests() {
     is(true, await getInLAProc(aBrowser));
 
     await Promise.all([
-      SpecialPowers.spawn(aBrowser, [], () => {
+      ContentTask.spawn(aBrowser, null, () => {
         content.document.querySelector("#submit").click();
       }),
       BrowserTestUtils.browserLoaded(aBrowser),
@@ -586,7 +629,10 @@ async function largeAllocFailTests() {
     let pid1 = await getPID(aBrowser);
     is(false, await getInLAProc(aBrowser));
 
-    await SpecialPowers.spawn(aBrowser, [TEST_URI], TEST_URI => {
+    
+    let stopExpectNoProcess = expectNoProcess();
+
+    await ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
     });
 
@@ -596,5 +642,7 @@ async function largeAllocFailTests() {
 
     is(pid1, pid2, "The PID should not have changed");
     is(false, await getInLAProc(aBrowser));
+
+    stopExpectNoProcess();
   });
 }

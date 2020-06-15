@@ -511,18 +511,6 @@ var SessionStore = {
       }
     }
   },
-
-  
-
-
-
-  async prepareToChangeRemoteness(aTab) {
-    await SessionStoreInternal.prepareToChangeRemoteness(aTab);
-  },
-
-  finishTabRemotenessChange(aTab, aSwitchId) {
-    SessionStoreInternal.finishTabRemotenessChange(aTab, aSwitchId);
-  },
 };
 
 
@@ -3882,9 +3870,13 @@ var SessionStoreInternal = {
     let permanentKey = tab.linkedBrowser.permanentKey;
     let browser = tab.linkedBrowser;
 
+    browser.messageManager.sendAsyncMessage(
+      "SessionStore:prepareForProcessChange"
+    );
+
     
     
-    await this.prepareToChangeRemoteness(browser);
+    await TabStateFlusher.flush(browser);
 
     
     
@@ -3913,9 +3905,11 @@ var SessionStoreInternal = {
       
       newFrameloader: loadArguments.newFrameloader,
       remoteType: loadArguments.remoteType,
+      replaceBrowsingContext: loadArguments.replaceBrowsingContext,
       
       
       restoreContentReason: RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE,
+      redirectLoadSwitchId: loadArguments.redirectLoadSwitchId,
     };
 
     if (historyIndex >= 0) {
@@ -3926,6 +3920,14 @@ var SessionStoreInternal = {
       );
     } else {
       options.loadArguments = loadArguments;
+
+      
+      
+      
+      
+      if (loadArguments.redirectLoadSwitchId) {
+        loadArguments.redirectHistoryIndex = tabState.requestedIndex - 1;
+      }
     }
 
     
@@ -4661,7 +4663,6 @@ var SessionStoreInternal = {
     let window = tab.ownerGlobal;
     let tabbrowser = window.gBrowser;
     let forceOnDemand = options.forceOnDemand;
-    let isRemotenessUpdate = options.isRemotenessUpdate;
 
     let willRestoreImmediately =
       options.restoreImmediately || tabbrowser.selectedBrowser == browser;
@@ -4791,12 +4792,7 @@ var SessionStoreInternal = {
       
       TAB_STATE_FOR_BROWSER.set(browser, TAB_STATE_NEEDS_RESTORE);
 
-      this._sendRestoreHistory(browser, {
-        tabData,
-        epoch,
-        loadArguments,
-        isRemotenessUpdate,
-      });
+      this._sendRestoreHistory(browser, { tabData, epoch, loadArguments });
 
       
       
@@ -4878,42 +4874,44 @@ var SessionStoreInternal = {
 
     this.markTabAsRestoring(aTab);
 
-    
-    
-    let isRemotenessUpdate = aOptions.isRemotenessUpdate;
-    if (!isRemotenessUpdate) {
-      let newFrameloader = aOptions.newFrameloader;
-      if (aOptions.remoteType !== undefined) {
-        
-        isRemotenessUpdate = tabbrowser.updateBrowserRemoteness(browser, {
-          remoteType: aOptions.remoteType,
+    let newFrameloader = aOptions.newFrameloader;
+    let replaceBrowsingContext = aOptions.replaceBrowsingContext;
+    let redirectLoadSwitchId = aOptions.redirectLoadSwitchId;
+    let isRemotenessUpdate;
+    if (aOptions.remoteType !== undefined) {
+      
+      isRemotenessUpdate = tabbrowser.updateBrowserRemoteness(browser, {
+        remoteType: aOptions.remoteType,
+        newFrameloader,
+        replaceBrowsingContext,
+        redirectLoadSwitchId,
+      });
+    } else {
+      isRemotenessUpdate = tabbrowser.updateBrowserRemotenessByURL(
+        browser,
+        uri,
+        {
           newFrameloader,
-        });
-      } else {
-        isRemotenessUpdate = tabbrowser.updateBrowserRemotenessByURL(
-          browser,
-          uri,
-          {
-            newFrameloader,
-          }
-        );
-      }
+          replaceBrowsingContext,
+          redirectLoadSwitchId,
+        }
+      );
+    }
 
-      if (isRemotenessUpdate) {
-        
-        
-        
-        
-        
-        let epoch = this.startNextEpoch(browser);
+    if (isRemotenessUpdate) {
+      
+      
+      
+      
+      
+      let epoch = this.startNextEpoch(browser);
 
-        this._sendRestoreHistory(browser, {
-          tabData,
-          epoch,
-          loadArguments,
-          isRemotenessUpdate,
-        });
-      }
+      this._sendRestoreHistory(browser, {
+        tabData,
+        epoch,
+        loadArguments,
+        isRemotenessUpdate,
+      });
     }
 
     browser.messageManager.sendAsyncMessage("SessionStore:restoreTabContent", {
@@ -6016,55 +6014,6 @@ var SessionStoreInternal = {
     if (browser && browser.frameLoader) {
       browser.frameLoader.requestEpochUpdate(options.epoch);
     }
-  },
-
-  
-  
-  
-  
-  
-  
-  async prepareToChangeRemoteness(aBrowser) {
-    aBrowser.messageManager.sendAsyncMessage(
-      "SessionStore:prepareForProcessChange"
-    );
-    await TabStateFlusher.flush(aBrowser);
-  },
-
-  
-  
-  
-  
-  
-  
-  finishTabRemotenessChange(aTab, aSwitchId) {
-    let window = aTab.ownerGlobal;
-    if (!window || !window.__SSi || window.closed) {
-      return;
-    }
-
-    let tabState = TabState.clone(aTab, TAB_CUSTOM_VALUES.get(aTab));
-    let options = {
-      restoreImmediately: true,
-      restoreContentReason: RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE,
-      isRemotenessUpdate: true,
-      loadArguments: {
-        redirectLoadSwitchId: aSwitchId,
-        
-        
-        
-        
-        redirectHistoryIndex: tabState.requestedIndex - 1,
-      },
-    };
-
-    
-    if (TAB_STATE_FOR_BROWSER.has(aTab.linkedBrowser)) {
-      this._resetLocalTabRestoringState(aTab);
-    }
-
-    
-    this.restoreTab(aTab, tabState, options);
   },
 };
 

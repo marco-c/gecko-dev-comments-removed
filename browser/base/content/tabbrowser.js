@@ -1772,7 +1772,17 @@
       }
     },
 
-    updateBrowserRemoteness(aBrowser, { newFrameloader, remoteType } = {}) {
+    updateBrowserRemoteness(
+      aBrowser,
+      {
+        newFrameloader,
+        opener,
+        remoteType,
+        sameProcessAsFrameLoader,
+        replaceBrowsingContext,
+        redirectLoadSwitchId,
+      } = {}
+    ) {
       let isRemote = aBrowser.getAttribute("remote") == "true";
 
       
@@ -1789,6 +1799,22 @@
           "Cannot switch to remote browser in a window " +
             "without the remote tabs load context."
         );
+      }
+
+      
+      
+      
+      if (opener) {
+        if (shouldBeRemote) {
+          throw new Error(
+            "Cannot set an opener on a browser which should be remote!"
+          );
+        }
+        if (!isRemote && aBrowser.contentWindow.opener != opener) {
+          throw new Error(
+            "Cannot change opener on an already non-remote browser!"
+          );
+        }
       }
 
       
@@ -1819,6 +1845,8 @@
       let listener = this._tabListeners.get(tab);
       aBrowser.webProgress.removeProgressListener(filter);
       filter.removeProgressListener(listener);
+      let stateFlags = listener.mStateFlags;
+      let requestCount = listener.mRequestCount;
 
       
       listener.destroy();
@@ -1827,20 +1855,37 @@
       let oldSameProcessAsFrameLoader = aBrowser.sameProcessAsFrameLoader;
       let oldUserTypedValue = aBrowser.userTypedValue;
       let hadStartedLoad = aBrowser.didStartLoadSinceLastUserTyping();
+      let parent = aBrowser.parentNode;
 
       
 
       
       aBrowser.destroy();
+      
+      let rebuildFrameLoaders =
+        E10SUtils.rebuildFrameloadersOnRemotenessChange ||
+        window.docShell.nsILoadContext.useRemoteSubframes;
+      if (!rebuildFrameLoaders) {
+        aBrowser.remove();
+      }
 
       
       
-      if (!shouldBeRemote || oldRemoteType == remoteType) {
+      if (sameProcessAsFrameLoader) {
+        
+        aBrowser.sameProcessAsFrameLoader = sameProcessAsFrameLoader;
+      } else if (!shouldBeRemote || oldRemoteType == remoteType) {
         
         
         aBrowser.sameProcessAsFrameLoader = oldSameProcessAsFrameLoader;
       }
 
+      
+      
+      
+      
+      
+      
       if (shouldBeRemote) {
         aBrowser.setAttribute("remote", "true");
         aBrowser.setAttribute("remoteType", remoteType);
@@ -1849,15 +1894,24 @@
         aBrowser.removeAttribute("remoteType");
       }
 
-      
-      
-      
-      aBrowser.changeRemoteness({
-        remoteType,
-      });
-
-      
-      aBrowser.construct();
+      let switchingInProgressLoad = !!redirectLoadSwitchId;
+      if (!rebuildFrameLoaders) {
+        parent.appendChild(aBrowser);
+      } else {
+        
+        
+        
+        aBrowser.changeRemoteness({
+          remoteType,
+          replaceBrowsingContext,
+          switchingInProgressLoad,
+        });
+        
+        
+        
+        
+        aBrowser.construct();
+      }
 
       aBrowser.userTypedValue = oldUserTypedValue;
       if (hadStartedLoad) {
@@ -1875,7 +1929,23 @@
       
       
       
-      listener = new TabProgressListener(tab, aBrowser, true, false);
+      let expectInitialAboutBlank = !switchingInProgressLoad;
+      if (expectInitialAboutBlank) {
+        stateFlags = 0;
+        requestCount = 0;
+      }
+
+      
+      
+      
+      listener = new TabProgressListener(
+        tab,
+        aBrowser,
+        expectInitialAboutBlank,
+        false,
+        stateFlags,
+        requestCount
+      );
       this._tabListeners.set(tab, listener);
       filter.addProgressListener(listener, Ci.nsIWebProgress.NOTIFY_ALL);
 
@@ -1988,14 +2058,8 @@
       
       b.permanentKey = new (Cu.getGlobalForObject(Services).Object)();
 
-      
-      
-      b.prepareToChangeRemoteness = () =>
-        SessionStore.prepareToChangeRemoteness(b);
-
       const defaultBrowserAttributes = {
         contextmenu: "contentAreaContextMenu",
-        maychangeremoteness: "true",
         message: "true",
         messagemanagergroup: "browsers",
         selectmenulist: "ContentSelectDropdown",
@@ -2640,9 +2704,6 @@
               gFissionBrowser,
               preferredRemoteType
             );
-        if (sameProcessAsFrameLoader) {
-          remoteType = sameProcessAsFrameLoader.messageManager.remoteType;
-        }
 
         
         
@@ -5655,138 +5716,6 @@
       );
       this.tabContainer.addEventListener("mouseover", tabContextFTLInserter);
       this.tabContainer.addEventListener("focus", tabContextFTLInserter, true);
-
-      
-      
-      
-      this.addEventListener("WillChangeBrowserRemoteness", event => {
-        let browser = event.originalTarget;
-        let tab = this.getTabForBrowser(browser);
-        if (!tab) {
-          return;
-        }
-
-        
-        
-        let evt = document.createEvent("Events");
-        evt.initEvent("BeforeTabRemotenessChange", true, false);
-        tab.dispatchEvent(evt);
-
-        let wasActive = document.activeElement == browser;
-
-        
-        this._outerWindowIDBrowserMap.delete(browser.outerWindowID);
-
-        
-        let filter = this._tabFilters.get(tab);
-        let oldListener = this._tabListeners.get(tab);
-        browser.webProgress.removeProgressListener(filter);
-        filter.removeProgressListener(oldListener);
-        let stateFlags = oldListener.mStateFlags;
-        let requestCount = oldListener.mRequestCount;
-
-        
-        oldListener.destroy();
-
-        let oldDroppedLinkHandler = browser.droppedLinkHandler;
-        let oldUserTypedValue = browser.userTypedValue;
-        let hadStartedLoad = browser.didStartLoadSinceLastUserTyping();
-
-        let didChange = didChangeEvent => {
-          browser.userTypedValue = oldUserTypedValue;
-          if (hadStartedLoad) {
-            browser.urlbarChangeTracker.startedLoad();
-          }
-
-          browser.droppedLinkHandler = oldDroppedLinkHandler;
-
-          
-          
-          
-          
-          browser.docShellIsActive = this.shouldActivateDocShell(browser);
-
-          
-          
-          
-          let listener = new TabProgressListener(
-            tab,
-            browser,
-            false,
-            false,
-            stateFlags,
-            requestCount
-          );
-          this._tabListeners.set(tab, listener);
-          filter.addProgressListener(listener, Ci.nsIWebProgress.NOTIFY_ALL);
-
-          
-          browser.webProgress.addProgressListener(
-            filter,
-            Ci.nsIWebProgress.NOTIFY_ALL
-          );
-
-          
-          let securityUI = browser.securityUI;
-          let state = securityUI
-            ? securityUI.state
-            : Ci.nsIWebProgressListener.STATE_IS_INSECURE;
-          this._callProgressListeners(
-            browser,
-            "onSecurityChange",
-            [browser.webProgress, null, state],
-            true,
-            false
-          );
-          let cbEvent = browser.getContentBlockingEvents();
-          
-          
-          this._callProgressListeners(
-            browser,
-            "onContentBlockingEvent",
-            [browser.webProgress, null, cbEvent, true],
-            true,
-            false
-          );
-
-          if (browser.isRemoteBrowser) {
-            
-            
-            
-            tab.removeAttribute("crashed");
-          } else {
-            browser.sendMessageToActor(
-              "Browser:AppTab",
-              { isAppTab: tab.pinned },
-              "BrowserTab"
-            );
-
-            
-            this._outerWindowIDBrowserMap.set(browser.outerWindowID, browser);
-          }
-
-          if (wasActive) {
-            browser.focus();
-          }
-
-          if (this.isFindBarInitialized(tab)) {
-            this.getCachedFindBar(tab).browser = browser;
-          }
-
-          browser.sendMessageToActor(
-            "Browser:HasSiblings",
-            this.tabs.length > 1,
-            "BrowserTab"
-          );
-
-          evt = document.createEvent("Events");
-          evt.initEvent("TabRemotenessChange", true, false);
-          tab.dispatchEvent(evt);
-        };
-        browser.addEventListener("DidChangeBrowserRemoteness", didChange, {
-          once: true,
-        });
-      });
     },
 
     setSuccessor(aTab, successorTab) {
@@ -5823,9 +5752,49 @@
       }
     },
 
-    finishBrowserRemotenessChange(aBrowser, aSwitchId) {
+    async performProcessSwitch(
+      aBrowser,
+      aRemoteType,
+      aSwitchId,
+      aReplaceBrowsingContext
+    ) {
+      E10SUtils.log().info(
+        `performing switch from ${aBrowser.remoteType} to ${aRemoteType}`
+      );
+
+      
+      await window.delayedStartupPromise;
+
+      
       let tab = this.getTabForBrowser(aBrowser);
-      SessionStore.finishTabRemotenessChange(tab, aSwitchId);
+      let loadArguments = {
+        newFrameloader: true, 
+        remoteType: aRemoteType, 
+
+        
+        redirectLoadSwitchId: aSwitchId,
+
+        
+        
+        replaceBrowsingContext: aReplaceBrowsingContext,
+      };
+
+      await SessionStore.navigateAndRestore(tab, loadArguments, -1);
+
+      
+      
+      if (
+        aBrowser.remoteType != aRemoteType ||
+        !aBrowser.frameLoader ||
+        !aBrowser.frameLoader.remoteTab
+      ) {
+        throw Components.Exception("", Cr.NS_ERROR_FAILURE);
+      }
+
+      
+      let remoteTab = aBrowser.frameLoader.remoteTab;
+      E10SUtils.log().debug(`new tabID: ${remoteTab.tabId}`);
+      return remoteTab.contentProcessId;
     },
   };
 

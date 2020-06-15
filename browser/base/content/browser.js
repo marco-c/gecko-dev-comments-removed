@@ -1643,6 +1643,21 @@ function RedirectLoad(browser, data) {
     data.loadOptions.newFrameloader = true;
   }
 
+  if (data.loadOptions.reloadInFreshProcess) {
+    
+    
+    data.loadOptions.remoteType = E10SUtils.LARGE_ALLOCATION_REMOTE_TYPE;
+    data.loadOptions.newFrameloader = true;
+  } else if (browser.remoteType == E10SUtils.LARGE_ALLOCATION_REMOTE_TYPE) {
+    
+    
+    data.loadOptions.remoteType = E10SUtils.getRemoteTypeForURI(
+      data.loadOptions.uri,
+      gMultiProcessBrowser,
+      gFissionBrowser
+    );
+  }
+
   
   
   if (gBrowserInit.delayedStartupFinished) {
@@ -5106,6 +5121,7 @@ var XULBrowserWindow = {
         aURI,
         aReferrerInfo,
         aTriggeringPrincipal,
+        false,
         null,
         aCsp
       );
@@ -5484,6 +5500,22 @@ var XULBrowserWindow = {
       return;
     }
     this.onStatusChange(gBrowser.webProgress, null, 0, aMessage);
+  },
+
+  navigateAndRestoreByIndex: function XWB_navigateAndRestoreByIndex(
+    aBrowser,
+    aIndex
+  ) {
+    let tab = gBrowser.getTabForBrowser(aBrowser);
+    if (tab) {
+      SessionStore.navigateAndRestore(tab, {}, aIndex);
+      return;
+    }
+
+    throw new Error(
+      "Trying to navigateAndRestore a browser which was " +
+        "not attached to this tabbrowser is unsupported"
+    );
   },
 };
 
