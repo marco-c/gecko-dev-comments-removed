@@ -55,14 +55,6 @@ pub static BIT_SCAN_FORWARD: [u8; 2] = [0x0f, 0xbc];
 pub static BIT_SCAN_REVERSE: [u8; 2] = [0x0f, 0xbd];
 
 
-
-pub static BLENDVPS: [u8; 4] = [0x66, 0x0f, 0x38, 0x14];
-
-
-
-pub static BLENDVPD: [u8; 4] = [0x66, 0x0f, 0x38, 0x15];
-
-
 pub static CALL_RELATIVE: [u8; 1] = [0xe8];
 
 
@@ -344,10 +336,6 @@ pub static PAVGB: [u8; 3] = [0x66, 0x0f, 0xE0];
 pub static PAVGW: [u8; 3] = [0x66, 0x0f, 0xE3];
 
 
-
-pub static PBLENDVB: [u8; 4] = [0x66, 0x0f, 0x38, 0x10];
-
-
 pub static PCMPEQB: [u8; 3] = [0x66, 0x0f, 0x74];
 
 
@@ -471,11 +459,7 @@ pub static PMULLD: [u8; 4] = [0x66, 0x0f, 0x38, 0x40];
 
 
 
-pub static VPMULLQ: [u8; 4] = [0x66, 0x0f, 0x38, 0x40];
-
-
-
-pub static PMULUDQ: [u8; 3] = [0x66, 0x0f, 0xf4];
+pub static PMULLQ: [u8; 4] = [0x66, 0x0f, 0x38, 0x40];
 
 
 pub static POP_REG: [u8; 1] = [0x58];

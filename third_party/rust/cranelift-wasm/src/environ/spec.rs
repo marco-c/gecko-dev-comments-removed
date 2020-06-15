@@ -23,13 +23,6 @@ use wasmparser::BinaryReaderError;
 use wasmparser::Operator;
 
 
-
-
-
-
-pub use wasmparser::{FuncType as WasmFuncType, Type as WasmType};
-
-
 #[derive(Clone, Copy)]
 pub enum GlobalVariable {
     
@@ -354,7 +347,7 @@ pub trait FuncEnvironment: TargetEnvironment {
     fn translate_table_grow(
         &mut self,
         pos: FuncCursor,
-        table_index: TableIndex,
+        table_index: u32,
         delta: ir::Value,
         init_value: ir::Value,
     ) -> WasmResult<ir::Value>;
@@ -363,7 +356,7 @@ pub trait FuncEnvironment: TargetEnvironment {
     fn translate_table_get(
         &mut self,
         pos: FuncCursor,
-        table_index: TableIndex,
+        table_index: u32,
         index: ir::Value,
     ) -> WasmResult<ir::Value>;
 
@@ -371,7 +364,7 @@ pub trait FuncEnvironment: TargetEnvironment {
     fn translate_table_set(
         &mut self,
         pos: FuncCursor,
-        table_index: TableIndex,
+        table_index: u32,
         value: ir::Value,
         index: ir::Value,
     ) -> WasmResult<()>;
@@ -394,7 +387,7 @@ pub trait FuncEnvironment: TargetEnvironment {
     fn translate_table_fill(
         &mut self,
         pos: FuncCursor,
-        table_index: TableIndex,
+        table_index: u32,
         dst: ir::Value,
         val: ir::Value,
         len: ir::Value,
@@ -479,11 +472,7 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
     }
 
     
-    fn declare_signature(
-        &mut self,
-        wasm_func_type: &WasmFuncType,
-        sig: ir::Signature,
-    ) -> WasmResult<()>;
+    fn declare_signature(&mut self, sig: ir::Signature) -> WasmResult<()>;
 
     
     

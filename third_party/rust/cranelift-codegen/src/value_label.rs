@@ -91,11 +91,6 @@ pub fn build_value_labels_ranges<T>(
 where
     T: From<SourceLoc> + Deref<Target = SourceLoc> + Ord + Copy,
 {
-    
-    if isa.get_mach_backend().is_some() {
-        return HashMap::new();
-    }
-
     let values_labels = build_value_labels_index::<T>(func);
 
     let mut blocks = func.layout.blocks().collect::<Vec<_>>();

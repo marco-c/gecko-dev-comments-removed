@@ -5,49 +5,26 @@
 
 use log::{debug, info, log_enabled, Level};
 use smallvec::SmallVec;
-use std::default;
 use std::fmt;
 
+use crate::analysis_control_flow::InstIxToBlockIxMap;
 use crate::analysis_data_flow::{add_raw_reg_vecs_for_insn, does_inst_use_def_or_mod_reg};
-use crate::analysis_main::{run_analysis, AnalysisInfo};
-use crate::avl_tree::{AVLTree, AVL_NULL};
+use crate::analysis_main::run_analysis;
+use crate::avl_tree::{AVLTag, AVLTree, AVL_NULL};
 use crate::bt_coalescing_analysis::{do_coalescing_analysis, Hint};
-use crate::bt_commitment_map::{CommitmentMap, RangeFragAndVLRIx};
+use crate::bt_commitment_map::{CommitmentMap, CommitmentMapFAST, FIxAndVLRIx, CROSSCHECK_CM};
 use crate::bt_spillslot_allocator::SpillSlotAllocator;
 use crate::bt_vlr_priority_queue::VirtualRangePrioQ;
 use crate::data_structures::{
-    BlockIx, InstIx, InstPoint, Point, RangeFrag, RangeFragIx, RealRange, RealReg, RealRegUniverse,
-    Reg, RegVecBounds, RegVecs, Set, SortedRangeFrags, SpillCost, SpillSlot, TypedIxVec,
-    VirtualRange, VirtualRangeIx, VirtualReg, Writable,
+    BlockIx, InstIx, InstPoint, Point, RangeFrag, RangeFragIx, RangeFragKind, RealRange,
+    RealRangeIx, RealReg, RealRegUniverse, Reg, RegVecBounds, RegVecs, RegVecsAndBounds, Set,
+    SortedRangeFragIxs, SpillCost, SpillSlot, TypedIxVec, VirtualRange, VirtualRangeIx, VirtualReg,
+    Writable,
 };
 use crate::inst_stream::{edit_inst_stream, InstToInsert, InstToInsertAndPoint};
-use crate::sparse_set::SparseSetU;
+use crate::sparse_set::{SparseSet, SparseSetU};
 use crate::union_find::UnionFindEquivClasses;
 use crate::{Function, RegAllocError, RegAllocResult};
-
-#[derive(Clone)]
-pub struct BacktrackingOptions {
-    
-    pub request_block_annotations: bool,
-}
-
-impl default::Default for BacktrackingOptions {
-    fn default() -> Self {
-        Self {
-            request_block_annotations: false,
-        }
-    }
-}
-
-impl fmt::Debug for BacktrackingOptions {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            fmt,
-            "backtracking (block annotations: {})",
-            self.request_block_annotations
-        )
-    }
-}
 
 
 
@@ -58,6 +35,7 @@ impl fmt::Debug for BacktrackingOptions {
 struct PerRealReg {
     
     committed: CommitmentMap,
+    committedFAST: CommitmentMapFAST,
 
     
     
@@ -70,28 +48,43 @@ impl PerRealReg {
     fn new() -> Self {
         Self {
             committed: CommitmentMap::new(),
+            committedFAST: CommitmentMapFAST::new(),
             vlrixs_assigned: Set::<VirtualRangeIx>::empty(),
         }
     }
 
     #[inline(never)]
-    fn add_RealRange(&mut self, to_add: &RealRange, frag_env: &TypedIxVec<RangeFragIx, RangeFrag>) {
+    fn add_RealRange(
+        &mut self,
+        to_add: &RealRange,
+        fenv: &TypedIxVec<RangeFragIx, RangeFrag>,
+        vlr_env: &TypedIxVec<VirtualRangeIx, VirtualRange>,
+    ) {
         
         
         
-        self.committed
-            .add_indirect(&to_add.sorted_frags, None, frag_env);
+        self.committedFAST
+            .add(&to_add.sorted_frags, None, fenv, vlr_env);
+        if CROSSCHECK_CM {
+            self.committed
+                .add(&to_add.sorted_frags, None, fenv, vlr_env);
+        }
     }
 
     #[inline(never)]
     fn add_VirtualRange(
         &mut self,
         to_add_vlrix: VirtualRangeIx,
+        fenv: &TypedIxVec<RangeFragIx, RangeFrag>,
         vlr_env: &TypedIxVec<VirtualRangeIx, VirtualRange>,
     ) {
         let to_add_vlr = &vlr_env[to_add_vlrix];
-        self.committed
-            .add(&to_add_vlr.sorted_frags, Some(to_add_vlrix));
+        self.committedFAST
+            .add(&to_add_vlr.sorted_frags, Some(to_add_vlrix), fenv, vlr_env);
+        if CROSSCHECK_CM {
+            self.committed
+                .add(&to_add_vlr.sorted_frags, Some(to_add_vlrix), fenv, vlr_env);
+        }
         assert!(!self.vlrixs_assigned.contains(to_add_vlrix));
         self.vlrixs_assigned.insert(to_add_vlrix);
     }
@@ -100,6 +93,7 @@ impl PerRealReg {
     fn del_VirtualRange(
         &mut self,
         to_del_vlrix: VirtualRangeIx,
+        fenv: &TypedIxVec<RangeFragIx, RangeFrag>,
         vlr_env: &TypedIxVec<VirtualRangeIx, VirtualRange>,
     ) {
         
@@ -110,7 +104,11 @@ impl PerRealReg {
         }
         
         let to_del_vlr = &vlr_env[to_del_vlrix];
-        self.committed.del(&to_del_vlr.sorted_frags);
+        self.committedFAST
+            .del(&to_del_vlr.sorted_frags, fenv, vlr_env);
+        if CROSSCHECK_CM {
+            self.committed.del(&to_del_vlr.sorted_frags, fenv, vlr_env);
+        }
     }
 }
 
@@ -120,102 +118,174 @@ impl PerRealReg {
 
 
 
-fn search_commitment_tree<IsAllowedToEvict>(
+fn handle_CM_entry(
+    evict_set: &mut Set<VirtualRangeIx>,
+    evict_cost: &mut SpillCost,
+    pairs: &Vec<FIxAndVLRIx>,
+    pairs_ix: usize,
+    spill_cost_budget: SpillCost,
+    do_not_evict: &SparseSetU<[VirtualRangeIx; 16]>,
+    vlr_env: &TypedIxVec<VirtualRangeIx, VirtualRange>,
+    _who: &'static str,
+) -> bool {
+    let FIxAndVLRIx {
+        fix: _fix_to_evict,
+        mb_vlrix: mb_vlrix_to_evict,
+    } = pairs[pairs_ix];
     
     
     
     
+    if mb_vlrix_to_evict.is_none() {
+        
+        
+        return false;
+    }
+    
+    let vlrix_to_evict = mb_vlrix_to_evict.unwrap();
+    if do_not_evict.contains(vlrix_to_evict) {
+        
+        return false;
+    }
+    let vlr_to_evict = &vlr_env[vlrix_to_evict];
+    if vlr_to_evict.spill_cost.is_infinite() {
+        
+        return false;
+    }
+    
+    
+    
+    
+    
+    
+    
+
+    if !evict_set.contains(vlrix_to_evict) {
+        let mut new_evict_cost = *evict_cost;
+        new_evict_cost.add(&vlr_to_evict.spill_cost);
+        
+        if !new_evict_cost.is_less_than(&spill_cost_budget) {
+            
+            return false;
+        }
+        
+        evict_set.insert(vlrix_to_evict);
+        *evict_cost = new_evict_cost;
+    }
+    true
+}
+
+
+
+
+
+
+
+fn rec_helper(
     
     
     running_set: &mut SparseSetU<[VirtualRangeIx; 4]>,
     running_cost: &mut SpillCost,
     
-    tree: &AVLTree<RangeFragAndVLRIx>,
+    root: u32,
+    
+    tree: &AVLTree<FIxAndVLRIx>,
     
     pair_frag: &RangeFrag,
     spill_cost_budget: &SpillCost,
-    allowed_to_evict: &IsAllowedToEvict,
+    do_not_evict: &SparseSetU<[VirtualRangeIx; 16]>,
+    frag_env: &TypedIxVec<RangeFragIx, RangeFrag>,
     vlr_env: &TypedIxVec<VirtualRangeIx, VirtualRange>,
-) -> bool
-where
-    IsAllowedToEvict: Fn(VirtualRangeIx) -> bool,
-{
-    let mut stack = SmallVec::<[u32; 32]>::new();
-    assert!(tree.root != AVL_NULL);
-    stack.push(tree.root);
+) -> bool {
+    let root_node = &tree.pool[root as usize];
+    let root_node_FnV = &root_node.item;
+    assert!(root_node.tag != AVLTag::Free);
+    let root_frag = &frag_env[root_node_FnV.fix];
+    
+    
+    
+    
+    let go_left = pair_frag.first < root_frag.first;
+    let go_right = pair_frag.last > root_frag.last;
+    let overlaps_root = pair_frag.last >= root_frag.first && pair_frag.first <= root_frag.last;
 
-    while let Some(curr) = stack.pop() {
-        let curr_node = &tree.pool[curr as usize];
-        let curr_node_item = &curr_node.item;
-        let curr_frag = &curr_node_item.frag;
-
+    
+    
+    if overlaps_root {
         
         
-        let overlaps_curr = pair_frag.last >= curr_frag.first && pair_frag.first <= curr_frag.last;
-
-        
-        
-        if overlaps_curr {
-            
-            
-            if curr_node_item.mb_vlrix.is_none() {
-                return false;
-            }
-            
-            
-            let vlrix_to_evict = curr_node_item.mb_vlrix.unwrap();
-            let vlr_to_evict = &vlr_env[vlrix_to_evict];
-            if vlr_to_evict.spill_cost.is_infinite() {
-                return false;
-            }
-            
-            
-            
-            
-            
-            if !vlr_to_evict.spill_cost.is_less_than(spill_cost_budget) {
-                return false;
-            }
-            
-            if !allowed_to_evict(vlrix_to_evict) {
-                return false;
-            }
-            
-            
-            
-            
-            if !running_set.contains(vlrix_to_evict) {
-                let mut tmp_cost = *running_cost;
-                tmp_cost.add(&vlr_to_evict.spill_cost);
-                
-                if !tmp_cost.is_less_than(spill_cost_budget) {
-                    return false;
-                }
-                *running_cost = tmp_cost;
-                running_set.insert(vlrix_to_evict);
-            }
+        if root_node_FnV.mb_vlrix.is_none() {
+            return false;
         }
-
         
-        
-        
-        let must_check_left = pair_frag.first < curr_frag.first;
-        if must_check_left {
-            let left_of_curr = tree.pool[curr as usize].left;
-            if left_of_curr != AVL_NULL {
-                stack.push(left_of_curr);
-            }
+        let vlrix_to_evict = root_node_FnV.mb_vlrix.unwrap();
+        let vlr_to_evict = &vlr_env[vlrix_to_evict];
+        if vlr_to_evict.spill_cost.is_infinite() {
+            return false;
         }
-
-        let must_check_right = pair_frag.last > curr_frag.last;
-        if must_check_right {
-            let right_of_curr = tree.pool[curr as usize].right;
-            if right_of_curr != AVL_NULL {
-                stack.push(right_of_curr);
+        
+        
+        if !vlr_to_evict.spill_cost.is_less_than(spill_cost_budget) {
+            return false;
+        }
+        
+        if do_not_evict.contains(vlrix_to_evict) {
+            return false;
+        }
+        
+        
+        
+        if !running_set.contains(vlrix_to_evict) {
+            let mut tmp_cost = *running_cost;
+            tmp_cost.add(&vlr_to_evict.spill_cost);
+            
+            if !tmp_cost.is_less_than(spill_cost_budget) {
+                return false;
             }
+            *running_cost = tmp_cost;
+            running_set.insert(vlrix_to_evict);
         }
     }
 
+    
+    
+    let left_root = tree.pool[root as usize].left;
+    if go_left && left_root != AVL_NULL {
+        let ok_left = rec_helper(
+            running_set,
+            running_cost,
+            left_root,
+            tree,
+            pair_frag,
+            spill_cost_budget,
+            do_not_evict,
+            frag_env,
+            vlr_env,
+        );
+        if !ok_left {
+            return false;
+        }
+    }
+
+    let right_root = tree.pool[root as usize].right;
+    if go_right && right_root != AVL_NULL {
+        let ok_right = rec_helper(
+            running_set,
+            running_cost,
+            right_root,
+            tree,
+            pair_frag,
+            spill_cost_budget,
+            do_not_evict,
+            frag_env,
+            vlr_env,
+        );
+        if !ok_right {
+            return false;
+        }
+    }
+
+    
     
     
     
@@ -255,18 +325,16 @@ impl PerRealReg {
     
     
     #[inline(never)]
-    fn find_evict_set<IsAllowedToEvict>(
+    fn find_Evict_Set_FAST(
         &self,
         would_like_to_add: VirtualRangeIx,
-        allowed_to_evict: &IsAllowedToEvict,
+        do_not_evict: &SparseSetU<[VirtualRangeIx; 16]>,
         vlr_env: &TypedIxVec<VirtualRangeIx, VirtualRange>,
-    ) -> Option<(SparseSetU<[VirtualRangeIx; 4]>, SpillCost)>
-    where
-        IsAllowedToEvict: Fn(VirtualRangeIx) -> bool,
-    {
+        frag_env: &TypedIxVec<RangeFragIx, RangeFrag>,
+    ) -> Option<(SparseSetU<[VirtualRangeIx; 4]>, SpillCost)> {
         
         
-        if self.committed.tree.root == AVL_NULL {
+        if self.committedFAST.tree.root == AVL_NULL {
             let evict_set = SparseSetU::<[VirtualRangeIx; 4]>::empty();
             let evict_cost = SpillCost::zero();
             return Some((evict_set, evict_cost));
@@ -288,19 +356,21 @@ impl PerRealReg {
         let mut running_cost = SpillCost::zero();
 
         
-        for wlta_frag in &would_like_to_add_vlr.sorted_frags.frags {
-            let wlta_frag_ok = search_commitment_tree(
+        for wlta_fix in &would_like_to_add_vlr.sorted_frags.frag_ixs {
+            
+            let wlta_frag = &frag_env[*wlta_fix];
+            let wlta_frag_ok = rec_helper(
                 &mut running_set,
                 &mut running_cost,
-                &self.committed.tree,
+                self.committedFAST.tree.root,
+                &self.committedFAST.tree,
                 &wlta_frag,
                 &evict_cost_budget,
-                allowed_to_evict,
+                do_not_evict,
+                frag_env,
                 vlr_env,
             );
             if !wlta_frag_ok {
-                
-                
                 return None;
             }
             
@@ -312,17 +382,151 @@ impl PerRealReg {
         Some((running_set, running_cost))
     }
 
-    #[allow(dead_code)]
+    
+    
+    
     #[inline(never)]
-    fn show1_with_envs(&self, _frag_env: &TypedIxVec<RangeFragIx, RangeFrag>) -> String {
+    fn find_Evict_Set_CROSSCHECK(
+        &self,
+        would_like_to_add: VirtualRangeIx,
+        do_not_evict: &SparseSetU<[VirtualRangeIx; 16]>,
+        vlr_env: &TypedIxVec<VirtualRangeIx, VirtualRange>,
+        frag_env: &TypedIxVec<RangeFragIx, RangeFrag>,
+    ) -> Option<(Set<VirtualRangeIx>, SpillCost)> {
         
-        "(show1_with_envs:FIXME)".to_string()
+        let would_like_to_add_vlr = &vlr_env[would_like_to_add];
+        let evict_cost_budget = would_like_to_add_vlr.spill_cost;
+        
+        
+
+        let vr_ip_first = frag_env[would_like_to_add_vlr.sorted_frags.frag_ixs[0]].first;
+        let vr_ip_last = frag_env[would_like_to_add_vlr.sorted_frags.frag_ixs
+            [would_like_to_add_vlr.sorted_frags.frag_ixs.len() - 1]]
+            .last;
+        
+        for fix in &would_like_to_add_vlr.sorted_frags.frag_ixs {
+            let frag = &frag_env[*fix];
+            assert!(vr_ip_first <= frag.first && frag.first <= vr_ip_last);
+            assert!(vr_ip_first <= frag.last && frag.last <= vr_ip_last);
+        }
+
+        
+
+        
+        let mut evict_set = Set::<VirtualRangeIx>::empty();
+        let mut evict_cost = SpillCost::zero();
+
+        if self.committed.pairs.len() > 0 {
+            
+            let mut vr_ip = vr_ip_first;
+            loop {
+                if vr_ip > vr_ip_last {
+                    break;
+                }
+
+                
+                let mut found_in_vr = false;
+                for fix in &would_like_to_add_vlr.sorted_frags.frag_ixs {
+                    let frag = &frag_env[*fix];
+                    if frag.first <= vr_ip && vr_ip <= frag.last {
+                        found_in_vr = true;
+                        break;
+                    }
+                }
+                if !found_in_vr {
+                    vr_ip = vr_ip.step();
+                    continue; 
+                }
+
+                
+                let mut pair_ix = 0;
+                let mut found = false;
+                for pair in &self.committed.pairs {
+                    let FIxAndVLRIx { fix, mb_vlrix: _ } = pair;
+                    let frag = &frag_env[*fix];
+                    if frag.first <= vr_ip && vr_ip <= frag.last {
+                        found = true;
+                        break;
+                    }
+                    pair_ix += 1;
+                }
+                if found {
+                    
+                    let evict_possible = handle_CM_entry(
+                        &mut evict_set,
+                        &mut evict_cost,
+                        &self.committed.pairs,
+                        pair_ix,
+                        evict_cost_budget,
+                        &do_not_evict,
+                        &vlr_env,
+                        "CX",
+                    );
+                    if !evict_possible {
+                        return None;
+                    }
+                }
+
+                vr_ip = vr_ip.step();
+            }
+        } 
+
+        assert!(evict_cost.is_finite());
+        assert!(evict_cost.is_less_than(&evict_cost_budget));
+        Some((evict_set, evict_cost))
     }
-    #[allow(dead_code)]
+
     #[inline(never)]
-    fn show2_with_envs(&self, _frag_env: &TypedIxVec<RangeFragIx, RangeFrag>) -> String {
+    fn find_Evict_Set(
+        &self,
+        would_like_to_add: VirtualRangeIx,
+        do_not_evict: &SparseSetU<[VirtualRangeIx; 16]>,
+        vlr_env: &TypedIxVec<VirtualRangeIx, VirtualRange>,
+        frag_env: &TypedIxVec<RangeFragIx, RangeFrag>,
+    ) -> Option<(SparseSetU<[VirtualRangeIx; 4]>, SpillCost)> {
         
-        "(show2_with_envs:FIXME)".to_string()
+        
+        
+        
+        
+
+        let result_fast =
+            self.find_Evict_Set_FAST(would_like_to_add, do_not_evict, vlr_env, frag_env);
+
+        if CROSSCHECK_CM {
+            let result_crosscheck =
+                self.find_Evict_Set_CROSSCHECK(would_like_to_add, do_not_evict, vlr_env, frag_env);
+            
+            
+            
+            
+            let str_fast: String = format!("{:?}", result_fast);
+            let str_crosscheck: String = format!("{:?}", result_crosscheck);
+            if str_fast != str_crosscheck {
+                println!(
+                    "QQQQ find_Evict_Set: fast {}, crosscheck {}",
+                    str_fast, str_crosscheck
+                );
+                println!("");
+                println!("self.commitments = {:?}", self.committed);
+                println!("");
+                println!("wlta = {:?}", vlr_env[would_like_to_add]);
+                println!("");
+                println!("");
+                panic!("find_Evict_Set: crosscheck failed");
+            }
+        }
+
+        result_fast
+    }
+
+    #[inline(never)]
+    fn show1_with_envs(&self, fenv: &TypedIxVec<RangeFragIx, RangeFrag>) -> String {
+        "in_use:   ".to_string() + &self.committed.show_with_fenv(&fenv)
+    }
+    #[inline(never)]
+    fn show2_with_envs(&self, _fenv: &TypedIxVec<RangeFragIx, RangeFrag>) -> String {
+        "assigned: ".to_string() + &format!("{:?}", &self.vlrixs_assigned)
     }
 }
 
@@ -332,30 +536,30 @@ impl PerRealReg {
 #[inline(never)]
 fn print_RA_state(
     who: &str,
-    _universe: &RealRegUniverse,
+    universe: &RealRegUniverse,
     
     prioQ: &VirtualRangePrioQ,
-    _perRealReg: &Vec<PerRealReg>,
+    perRealReg: &Vec<PerRealReg>,
     edit_list_move: &Vec<EditListItem>,
     edit_list_other: &Vec<EditListItem>,
     
     vlr_env: &TypedIxVec<VirtualRangeIx, VirtualRange>,
-    _frag_env: &TypedIxVec<RangeFragIx, RangeFrag>,
+    frag_env: &TypedIxVec<RangeFragIx, RangeFrag>,
 ) {
     debug!("<<<<====---- RA state at '{}' ----====", who);
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    for ix in 0..perRealReg.len() {
+        if !&perRealReg[ix].committed.pairs.is_empty() {
+            debug!(
+                "{:<5}  {}",
+                universe.regs[ix].1,
+                &perRealReg[ix].show1_with_envs(&frag_env)
+            );
+            debug!("       {}", &perRealReg[ix].show2_with_envs(&frag_env));
+            debug!("");
+        }
+    }
     if !prioQ.is_empty() {
-        for s in prioQ.show_with_envs(vlr_env) {
+        for s in prioQ.show_with_envs(&vlr_env) {
             debug!("{}", s);
         }
     }
@@ -366,6 +570,120 @@ fn print_RA_state(
         debug!("ELI other: {:?}", eli);
     }
     debug!(">>>>");
+}
+
+
+
+
+
+
+
+fn frags_are_mergeable(frag1: &RangeFrag, frag2: &RangeFrag) -> bool {
+    assert!(frag1.first.pt.is_use_or_def());
+    assert!(frag1.last.pt.is_use_or_def());
+    assert!(frag2.first.pt.is_use_or_def());
+    assert!(frag2.last.pt.is_use_or_def());
+
+    if frag1.bix != frag2.bix
+        && frag1.last.iix.plus(1) == frag2.first.iix
+        && frag1.last.pt == Point::Def
+        && frag2.first.pt == Point::Use
+    {
+        assert!(frag1.kind == RangeFragKind::LiveOut || frag1.kind == RangeFragKind::Thru);
+        assert!(frag2.kind == RangeFragKind::LiveIn || frag2.kind == RangeFragKind::Thru);
+        return true;
+    }
+
+    if frag1.last.iix == frag2.first.iix
+        && frag1.last.pt == Point::Use
+        && frag2.first.pt == Point::Def
+    {
+        assert!(frag1.kind == RangeFragKind::LiveIn || frag1.kind == RangeFragKind::Local);
+        assert!(frag2.kind == RangeFragKind::Local || frag2.kind == RangeFragKind::LiveOut);
+        return true;
+    }
+
+    false
+}
+
+const Z_INVALID_BLOCKIX: BlockIx = BlockIx::invalid_value();
+const Z_INVALID_COUNT: u16 = 0xFFFF;
+
+
+
+
+
+
+#[inline(never)]
+fn do_vlr_frag_compression(
+    vlr_env: &mut TypedIxVec<VirtualRangeIx, VirtualRange>,
+    frag_env: &mut TypedIxVec<RangeFragIx, RangeFrag>,
+) {
+    let mut fragsIN = 0;
+    let mut fragsOUT = 0;
+    for vlr in vlr_env.iter_mut() {
+        let frag_ixs = &mut vlr.sorted_frags.frag_ixs;
+        let num_frags = frag_ixs.len();
+        fragsIN += num_frags;
+
+        if num_frags == 1 {
+            
+            fragsOUT += 1;
+            continue;
+        }
+
+        
+        assert!(num_frags > 1);
+
+        let mut w = 0; 
+        let mut s = 0; 
+        let mut e = 0; 
+        loop {
+            if s >= num_frags {
+                break;
+            }
+            while e + 1 < num_frags
+                && frags_are_mergeable(&frag_env[frag_ixs[e]], &frag_env[frag_ixs[e + 1]])
+            {
+                e += 1;
+            }
+            
+            
+            if s == e {
+                
+                frag_ixs[w] = frag_ixs[s];
+            } else {
+                
+                
+                
+                let zFrag = RangeFrag {
+                    bix: Z_INVALID_BLOCKIX,
+                    kind: RangeFragKind::Multi,
+                    first: frag_env[frag_ixs[s]].first,
+                    last: frag_env[frag_ixs[e]].last,
+                    count: Z_INVALID_COUNT,
+                };
+                
+                
+                
+                
+                
+                frag_env.push(zFrag);
+                frag_ixs[w] = RangeFragIx::new(frag_env.len() - 1);
+            }
+            
+            w = w + 1;
+            s = e + 1;
+            e = s;
+        }
+        frag_ixs.truncate(w);
+        fragsOUT += w;
+        
+    }
+    info!(
+        "alloc_main:   compress frags: in {}, out {}",
+        fragsIN, fragsOUT
+    );
 }
 
 
@@ -472,23 +790,22 @@ pub fn alloc_main<F: Function>(
     func: &mut F,
     reg_universe: &RealRegUniverse,
     use_checker: bool,
-    opts: &BacktrackingOptions,
+    request_block_annotations: bool,
 ) -> Result<RegAllocResult<F>, RegAllocError> {
     
     
-    let AnalysisInfo {
-        reg_vecs_and_bounds,
-        real_ranges: rlr_env,
-        virtual_ranges: mut vlr_env,
-        range_frags: frag_env,
-        range_metrics: frag_metrics_env,
-        estimated_frequencies: est_freqs,
-        inst_to_block_map,
-        ..
-    } = run_analysis(func, reg_universe).map_err(|err| RegAllocError::Analysis(err))?;
+    let analysis_info =
+        run_analysis(func, reg_universe).map_err(|err| RegAllocError::Analysis(err))?;
+
+    let reg_vecs_and_bounds: RegVecsAndBounds = analysis_info.0;
+    let rlr_env: TypedIxVec<RealRangeIx, RealRange> = analysis_info.1;
+    let mut vlr_env: TypedIxVec<VirtualRangeIx, VirtualRange> = analysis_info.2;
+    let mut frag_env: TypedIxVec<RangeFragIx, RangeFrag> = analysis_info.3;
+    let _liveouts: TypedIxVec<BlockIx, SparseSet<Reg>> = analysis_info.4;
+    let est_freqs: TypedIxVec<BlockIx, u32> = analysis_info.5;
+    let inst_to_block_map: InstIxToBlockIxMap = analysis_info.6;
 
     assert!(reg_vecs_and_bounds.is_sanitized());
-    assert!(frag_env.len() == frag_metrics_env.len());
 
     
     let coalescing_info = do_coalescing_analysis(
@@ -541,8 +858,11 @@ pub fn alloc_main<F: Function>(
         if rregIndex >= reg_universe.allocable {
             continue;
         }
-        per_real_reg[rregIndex].add_RealRange(&rlr, &frag_env);
+        per_real_reg[rregIndex].add_RealRange(&rlr, &frag_env, &vlr_env);
     }
+
+    
+    do_vlr_frag_compression(&mut vlr_env, &mut frag_env);
 
     let mut edit_list_move = Vec::<EditListItem>::new();
     let mut edit_list_other = Vec::<EditListItem>::new();
@@ -582,6 +902,9 @@ pub fn alloc_main<F: Function>(
     
     debug!("");
     debug!("-- MAIN ALLOCATION LOOP (DI means 'direct', CO means 'coalesced'):");
+
+    
+    let empty_Set_VirtualRangeIx = SparseSetU::<[VirtualRangeIx; 16]>::empty();
 
     info!("alloc_main:   main allocation loop: begin");
 
@@ -635,6 +958,7 @@ pub fn alloc_main<F: Function>(
         
         assert!(hints.len() == vlr_env.len());
         let mut hinted_regs = SmallVec::<[RealReg; 8]>::new();
+        let mut mb_curr_vlr_eclass: Option<SparseSetU<[VirtualRangeIx; 16]>> = None;
 
         
         
@@ -674,20 +998,19 @@ pub fn alloc_main<F: Function>(
             
             
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
             let n_primary_cands = hinted_regs.len();
 
             
             
+            
             if curr_vlrix.get() < num_vlrs_initial {
+                let mut curr_vlr_eclass = SparseSetU::<[VirtualRangeIx; 16]>::empty();
+                for vlrix in vlrEquivClasses.equiv_class_elems_iter(curr_vlrix) {
+                    curr_vlr_eclass.insert(vlrix);
+                }
+                assert!(curr_vlr_eclass.contains(curr_vlrix));
+                mb_curr_vlr_eclass = Some(curr_vlr_eclass);
+
                 
                 for vlrix in vlrEquivClasses.equiv_class_elems_iter(curr_vlrix) {
                     if vlrix != curr_vlrix {
@@ -743,20 +1066,17 @@ pub fn alloc_main<F: Function>(
             
             
 
+            let do_not_evict = if let Some(ref curr_vlr_eclass) = mb_curr_vlr_eclass {
+                curr_vlr_eclass
+            } else {
+                &empty_Set_VirtualRangeIx
+            };
             let mb_evict_info: Option<(SparseSetU<[VirtualRangeIx; 4]>, SpillCost)> =
-                per_real_reg[rregNo].find_evict_set(
+                per_real_reg[rregNo].find_Evict_Set(
                     curr_vlrix,
-                    &|vlrix_to_evict| {
-                        
-                        
-                        
-                        
-                        
-                        
-                        vlrEquivClasses.in_same_equivalence_class(vlrix_to_evict, curr_vlrix)
-                            != Some(true)
-                    },
+                    do_not_evict, 
                     &vlr_env,
+                    &frag_env,
                 );
             if let Some((vlrixs_to_evict, total_evict_cost)) = mb_evict_info {
                 
@@ -771,16 +1091,13 @@ pub fn alloc_main<F: Function>(
                 for vlrix_to_evict in vlrixs_to_evict.iter() {
                     
                     
-                    assert!(
-                        vlrEquivClasses.in_same_equivalence_class(*vlrix_to_evict, curr_vlrix)
-                            != Some(true)
-                    );
+                    assert!(!do_not_evict.contains(*vlrix_to_evict));
                     
                     debug!(
                         "--   CO evict          {:?}:  {:?}",
                         *vlrix_to_evict, &vlr_env[*vlrix_to_evict]
                     );
-                    per_real_reg[rregNo].del_VirtualRange(*vlrix_to_evict, &vlr_env);
+                    per_real_reg[rregNo].del_VirtualRange(*vlrix_to_evict, &frag_env, &vlr_env);
                     prioQ.add_VirtualRange(&vlr_env, *vlrix_to_evict);
                     
                     
@@ -791,7 +1108,7 @@ pub fn alloc_main<F: Function>(
                 }
                 
                 debug!("--   CO alloc to       {}", reg_universe.regs[rregNo].1);
-                per_real_reg[rregNo].add_VirtualRange(curr_vlrix, &vlr_env);
+                per_real_reg[rregNo].add_VirtualRange(curr_vlrix, &frag_env, &vlr_env);
                 vlr_env[curr_vlrix].rreg = Some(*rreg);
                 
                 continue 'main_allocation_loop;
@@ -829,15 +1146,9 @@ pub fn alloc_main<F: Function>(
             
             
 
-            let mb_evict_info: Option<(SparseSetU<[VirtualRangeIx; 4]>, SpillCost)> =
-                per_real_reg[rregNo].find_evict_set(
-                    curr_vlrix,
-                    
-                    
-                    
-                    &|_vlrix_to_evict| true,
-                    &vlr_env,
-                );
+            let mb_evict_info: Option<(SparseSetU<[VirtualRangeIx; 4]>, SpillCost)> = per_real_reg
+                [rregNo]
+                .find_Evict_Set(curr_vlrix, &empty_Set_VirtualRangeIx, &vlr_env, &frag_env);
             
             
             
@@ -902,7 +1213,7 @@ pub fn alloc_main<F: Function>(
                     "--   DI evict          {:?}:  {:?}",
                     *vlrix_to_evict, &vlr_env[*vlrix_to_evict]
                 );
-                per_real_reg[rregNo].del_VirtualRange(*vlrix_to_evict, &vlr_env);
+                per_real_reg[rregNo].del_VirtualRange(*vlrix_to_evict, &frag_env, &vlr_env);
                 prioQ.add_VirtualRange(&vlr_env, *vlrix_to_evict);
                 debug_assert!(vlr_env[*vlrix_to_evict].rreg.is_some());
                 vlr_env[*vlrix_to_evict].rreg = None;
@@ -910,7 +1221,7 @@ pub fn alloc_main<F: Function>(
             }
             
             debug!("--   DI alloc to       {}", reg_universe.regs[rregNo].1);
-            per_real_reg[rregNo].add_VirtualRange(curr_vlrix, &vlr_env);
+            per_real_reg[rregNo].add_VirtualRange(curr_vlrix, &frag_env, &vlr_env);
             let rreg = reg_universe.regs[rregNo].0;
             vlr_env[curr_vlrix].rreg = Some(rreg);
             
@@ -974,8 +1285,9 @@ pub fn alloc_main<F: Function>(
         let curr_vlr_vreg = curr_vlr.vreg;
         let curr_vlr_reg = curr_vlr_vreg.to_reg();
 
-        for frag in &curr_vlr.sorted_frags.frags {
-            for iix in frag.first.iix().dotdot(frag.last.iix().plus(1)) {
+        for fix in &curr_vlr.sorted_frags.frag_ixs {
+            let frag: &RangeFrag = &frag_env[*fix];
+            for iix in frag.first.iix.dotdot(frag.last.iix.plus(1)) {
                 let (iix_uses_curr_vlr_reg, iix_defs_curr_vlr_reg, iix_mods_curr_vlr_reg) =
                     does_inst_use_def_or_mod_reg(&reg_vecs_and_bounds, iix, curr_vlr_reg);
                 
@@ -1048,6 +1360,7 @@ pub fn alloc_main<F: Function>(
             spill_slot_allocator.alloc_spill_slots(
                 &mut vlr_slot_env,
                 func,
+                &frag_env,
                 &vlr_env,
                 &vlrEquivClasses,
                 curr_vlrix,
@@ -1057,21 +1370,34 @@ pub fn alloc_main<F: Function>(
         let spill_slot_to_use = vlr_slot_env[curr_vlrix].unwrap();
 
         for sri in sri_vec {
+            
+            
+            
+            
+            let new_vlr_count = if sri.kind == BridgeKind::RtoS { 3 } else { 2 };
             let (new_vlr_first_pt, new_vlr_last_pt) = match sri.kind {
                 BridgeKind::RtoU => (Point::Reload, Point::Use),
                 BridgeKind::RtoS => (Point::Reload, Point::Spill),
                 BridgeKind::DtoS => (Point::Def, Point::Spill),
             };
             let new_vlr_frag = RangeFrag {
+                bix: sri.bix,
+                kind: RangeFragKind::Local,
                 first: InstPoint::new(sri.iix, new_vlr_first_pt),
                 last: InstPoint::new(sri.iix, new_vlr_last_pt),
+                count: new_vlr_count,
             };
-            debug!("--     new RangeFrag    {:?}", &new_vlr_frag);
-            let new_vlr_sfrags = SortedRangeFrags::unit(new_vlr_frag);
+            let new_vlr_fix = RangeFragIx::new(frag_env.len() as u32);
+            frag_env.push(new_vlr_frag);
+            debug!(
+                "--     new RangeFrag    {:?}  :=  {:?}",
+                &new_vlr_fix, &new_vlr_frag
+            );
+            let new_vlr_sfixs = SortedRangeFragIxs::unit(new_vlr_fix, &frag_env);
             let new_vlr = VirtualRange {
                 vreg: curr_vlr_vreg,
                 rreg: None,
-                sorted_frags: new_vlr_sfrags,
+                sorted_frags: new_vlr_sfixs,
                 size: 1,
                 
                 total_cost: 0xFFFF_FFFFu32,
@@ -1254,23 +1580,18 @@ pub fn alloc_main<F: Function>(
             assert!(vlrix1 != vlrix2);
             let vlr1 = &vlr_env[vlrix1];
             let vlr2 = &vlr_env[vlrix2];
-            let frags1 = &vlr1.sorted_frags;
-            let frags2 = &vlr2.sorted_frags;
-            assert!(frags1.frags.len() == 1);
-            assert!(frags2.frags.len() == 1);
-            let frag1 = &frags1.frags[0];
-            let frag2 = &frags2.frags[0];
-            assert!(frag1.first.iix() == i_min_iix);
-            assert!(frag1.last.iix() == i_min_iix);
-            assert!(frag2.first.iix() == i_min_iix);
-            assert!(frag2.last.iix() == i_min_iix);
+            let fixs1 = &vlr1.sorted_frags;
+            let fixs2 = &vlr2.sorted_frags;
+            assert!(fixs1.frag_ixs.len() == 1);
+            assert!(fixs2.frag_ixs.len() == 1);
+            let frag1 = &frag_env[fixs1.frag_ixs[0]];
+            let frag2 = &frag_env[fixs2.frag_ixs[0]];
+            assert!(frag1.first.iix == i_min_iix);
+            assert!(frag1.last.iix == i_min_iix);
+            assert!(frag2.first.iix == i_min_iix);
+            assert!(frag2.last.iix == i_min_iix);
             
-            match (
-                frag1.first.pt(),
-                frag1.last.pt(),
-                frag2.first.pt(),
-                frag2.last.pt(),
-            ) {
+            match (frag1.first.pt, frag1.last.pt, frag2.first.pt, frag2.last.pt) {
                 (Point::Reload, Point::Use, Point::Def, Point::Spill)
                 | (Point::Def, Point::Spill, Point::Reload, Point::Use) => {
                     let slot1 = edit_list_move[i_min].slot;
@@ -1318,15 +1639,15 @@ pub fn alloc_main<F: Function>(
         debug!("editlist entry (other): {:?}", eli);
         let vlr = &vlr_env[eli.vlrix];
         let vlr_sfrags = &vlr.sorted_frags;
-        assert!(vlr_sfrags.frags.len() == 1);
-        let vlr_frag = &vlr_sfrags.frags[0];
+        debug_assert!(vlr.sorted_frags.frag_ixs.len() == 1);
+        let vlr_frag = frag_env[vlr_sfrags.frag_ixs[0]];
         let rreg = vlr.rreg.expect("Gen of spill/reload: reg not assigned?!");
         let vreg = vlr.vreg;
         match eli.kind {
             BridgeKind::RtoU => {
-                debug_assert!(vlr_frag.first.pt().is_reload());
-                debug_assert!(vlr_frag.last.pt().is_use());
-                debug_assert!(vlr_frag.first.iix() == vlr_frag.last.iix());
+                debug_assert!(vlr_frag.first.pt.is_reload());
+                debug_assert!(vlr_frag.last.pt.is_use());
+                debug_assert!(vlr_frag.first.iix == vlr_frag.last.iix);
                 let insnR = InstToInsert::Reload {
                     to_reg: Writable::from_reg(rreg),
                     from_slot: eli.slot,
@@ -1337,9 +1658,9 @@ pub fn alloc_main<F: Function>(
                 num_reloads += 1;
             }
             BridgeKind::RtoS => {
-                debug_assert!(vlr_frag.first.pt().is_reload());
-                debug_assert!(vlr_frag.last.pt().is_spill());
-                debug_assert!(vlr_frag.first.iix() == vlr_frag.last.iix());
+                debug_assert!(vlr_frag.first.pt.is_reload());
+                debug_assert!(vlr_frag.last.pt.is_spill());
+                debug_assert!(vlr_frag.first.iix == vlr_frag.last.iix);
                 let insnR = InstToInsert::Reload {
                     to_reg: Writable::from_reg(rreg),
                     from_slot: eli.slot,
@@ -1358,9 +1679,9 @@ pub fn alloc_main<F: Function>(
                 num_spills += 1;
             }
             BridgeKind::DtoS => {
-                debug_assert!(vlr_frag.first.pt().is_def());
-                debug_assert!(vlr_frag.last.pt().is_spill());
-                debug_assert!(vlr_frag.first.iix() == vlr_frag.last.iix());
+                debug_assert!(vlr_frag.first.pt.is_def());
+                debug_assert!(vlr_frag.last.pt.is_spill());
+                debug_assert!(vlr_frag.first.iix == vlr_frag.last.iix);
                 let insnS = InstToInsert::Spill {
                     to_slot: eli.slot,
                     from_reg: rreg,
@@ -1385,7 +1706,7 @@ pub fn alloc_main<F: Function>(
 
     info!("alloc_main:   create frag_map");
 
-    let mut frag_map = Vec::<(RangeFrag, VirtualReg, RealReg)>::new();
+    let mut frag_map = Vec::<(RangeFragIx, VirtualReg, RealReg)>::new();
     
     for i in 0..reg_universe.allocable {
         let rreg = reg_universe.regs[i].0;
@@ -1398,8 +1719,8 @@ pub fn alloc_main<F: Function>(
             
             
             
-            for frag in &sorted_frags.frags {
-                frag_map.push((frag.clone(), *vreg, rreg));
+            for fix in &sorted_frags.frag_ixs {
+                frag_map.push((*fix, *vreg, rreg));
             }
         }
     }
@@ -1411,6 +1732,7 @@ pub fn alloc_main<F: Function>(
         spills_n_reloads,
         &iixs_to_nop_out,
         frag_map,
+        &frag_env,
         &reg_universe,
         use_checker,
     );
@@ -1495,7 +1817,7 @@ pub fn alloc_main<F: Function>(
 
     assert!(est_freqs.len() as usize == func.blocks().len());
     let mut block_annotations = None;
-    if opts.request_block_annotations {
+    if request_block_annotations {
         let mut anns = TypedIxVec::<BlockIx, Vec<String>>::new();
         for (estFreq, i) in est_freqs.iter().zip(0..) {
             let bix = BlockIx::new(i);

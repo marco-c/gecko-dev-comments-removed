@@ -1,6 +1,5 @@
 
 
-use crate::ir::types::*;
 use crate::isa::aarch64::inst::InstSize;
 use crate::machinst::*;
 use crate::settings;
@@ -22,17 +21,19 @@ const XREG_INDICES: [u8; 31] = [
     
     32, 33, 34, 35, 36, 37, 38, 39,
     
-    40, 41, 42, 43, 44, 45, 46, 47,
+    40, 41, 42, 43, 44, 45, 46,
     
-    58, 59,
+    59,
+    
+    47, 48,
     
     60,
     
-    48, 49,
+    49, 50,
     
-    57,
+    58,
     
-    50, 51, 52, 53, 54, 55, 56,
+    51, 52, 53, 54, 55, 56, 57,
     
     61,
     
@@ -130,30 +131,13 @@ pub fn writable_fp_reg() -> Writable<Reg> {
 
 
 
-
-
-
 pub fn spilltmp_reg() -> Reg {
-    xreg(16)
+    xreg(15)
 }
 
 
 pub fn writable_spilltmp_reg() -> Writable<Reg> {
     Writable::from_reg(spilltmp_reg())
-}
-
-
-
-
-
-
-pub fn tmp2_reg() -> Reg {
-    xreg(17)
-}
-
-
-pub fn writable_tmp2_reg() -> Writable<Reg> {
-    Writable::from_reg(tmp2_reg())
 }
 
 
@@ -189,7 +173,7 @@ pub fn create_reg_universe(flags: &settings::Flags) -> RealRegUniverse {
 
     for i in 0u8..32u8 {
         
-        if i == 16 || i == 17 || i == 18 || i == 29 || i == 30 || i == 31 || i == PINNED_REG {
+        if i == 15 || i == 18 || i == 29 || i == 30 || i == 31 || i == PINNED_REG {
             continue;
         }
         let reg = Reg::new_real(
@@ -207,7 +191,7 @@ pub fn create_reg_universe(flags: &settings::Flags) -> RealRegUniverse {
     allocable_by_class[RegClass::I64.rc_to_usize()] = Some(RegClassInfo {
         first: x_reg_base as usize,
         last: x_reg_last as usize,
-        suggested_scratch: Some(XREG_INDICES[19] as usize),
+        suggested_scratch: Some(XREG_INDICES[13] as usize),
     });
     allocable_by_class[RegClass::V128.rc_to_usize()] = Some(RegClassInfo {
         first: v_reg_base as usize,
@@ -227,8 +211,7 @@ pub fn create_reg_universe(flags: &settings::Flags) -> RealRegUniverse {
         regs.len()
     };
 
-    regs.push((xreg(16).to_real_reg(), "x16".to_string()));
-    regs.push((xreg(17).to_real_reg(), "x17".to_string()));
+    regs.push((xreg(15).to_real_reg(), "x15".to_string()));
     regs.push((xreg(18).to_real_reg(), "x18".to_string()));
     regs.push((fp_reg().to_real_reg(), "fp".to_string()));
     regs.push((link_reg().to_real_reg(), "lr".to_string()));
@@ -282,11 +265,7 @@ pub fn show_freg_sized(reg: Reg, mb_rru: Option<&RealRegUniverse>, size: InstSiz
     if reg.get_class() != RegClass::V128 {
         return s;
     }
-    let prefix = match size {
-        InstSize::Size32 => "s",
-        InstSize::Size64 => "d",
-        InstSize::Size128 => "q",
-    };
+    let prefix = if size.is32() { "s" } else { "d" };
     s.replace_range(0..1, prefix);
     s
 }
@@ -310,19 +289,5 @@ pub fn show_vreg_scalar(reg: Reg, mb_rru: Option<&RealRegUniverse>) -> String {
             s.push('d');
         }
     }
-    s
-}
-
-
-pub fn show_vreg_vector(reg: Reg, mb_rru: Option<&RealRegUniverse>, ty: Type) -> String {
-    assert_eq!(RegClass::V128, reg.get_class());
-    let mut s = reg.show_rru(mb_rru);
-
-    match ty {
-        I8X16 => s.push_str(".16b"),
-        F32X2 => s.push_str(".2s"),
-        _ => unimplemented!(),
-    }
-
     s
 }

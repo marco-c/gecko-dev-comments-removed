@@ -25,20 +25,6 @@ pub enum LibCall {
     
     Probestack,
     
-    UdivI64,
-    
-    SdivI64,
-    
-    UremI64,
-    
-    SremI64,
-    
-    IshlI64,
-    
-    UshrI64,
-    
-    SshrI64,
-    
     CeilF32,
     
     CeilF64,
@@ -77,13 +63,6 @@ impl FromStr for LibCall {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "Probestack" => Ok(Self::Probestack),
-            "UdivI64" => Ok(Self::UdivI64),
-            "SdivI64" => Ok(Self::SdivI64),
-            "UremI64" => Ok(Self::UremI64),
-            "SremI64" => Ok(Self::SremI64),
-            "IshlI64" => Ok(Self::IshlI64),
-            "UshrI64" => Ok(Self::UshrI64),
-            "SshrI64" => Ok(Self::SshrI64),
             "CeilF32" => Ok(Self::CeilF32),
             "CeilF64" => Ok(Self::CeilF64),
             "FloorF32" => Ok(Self::FloorF32),
@@ -109,16 +88,6 @@ impl LibCall {
     
     pub fn for_inst(opcode: Opcode, ctrl_type: Type) -> Option<Self> {
         Some(match ctrl_type {
-            types::I64 => match opcode {
-                Opcode::Udiv => Self::UdivI64,
-                Opcode::Sdiv => Self::SdivI64,
-                Opcode::Urem => Self::UremI64,
-                Opcode::Srem => Self::SremI64,
-                Opcode::Ishl => Self::IshlI64,
-                Opcode::Ushr => Self::UshrI64,
-                Opcode::Sshr => Self::SshrI64,
-                _ => return None,
-            },
             types::F32 => match opcode {
                 Opcode::Ceil => Self::CeilF32,
                 Opcode::Floor => Self::FloorF32,

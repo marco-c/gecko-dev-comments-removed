@@ -6,11 +6,11 @@ use crate::settings;
 use crate::timing;
 
 use log::debug;
-use regalloc::{allocate_registers_with_opts, Algorithm, Options};
+use regalloc::{allocate_registers, RegAllocAlgorithm};
 
 
 
-pub fn compile<B: LowerBackend + MachBackend>(
+pub fn compile<B: LowerBackend>(
     f: &Function,
     b: &B,
     abi: Box<dyn ABIBody<I = B::MInst>>,
@@ -19,45 +19,28 @@ where
     B::MInst: ShowWithRRU,
 {
     
-    let block_order = BlockLoweringOrder::new(f);
-    
-    let lower = Lower::new(f, abi, block_order)?;
-    
-    let mut vcode = lower.lower(b)?;
+    let mut vcode = Lower::new(f, abi)?.lower(b)?;
 
-    debug!(
-        "vcode from lowering: \n{}",
-        vcode.show_rru(Some(b.reg_universe()))
-    );
+    let universe = &B::MInst::reg_universe(vcode.flags());
+
+    debug!("vcode from lowering: \n{}", vcode.show_rru(Some(universe)));
 
     
-    let (run_checker, algorithm) = match vcode.flags().regalloc() {
-        settings::Regalloc::Backtracking => (false, Algorithm::Backtracking(Default::default())),
-        settings::Regalloc::BacktrackingChecked => {
-            (true, Algorithm::Backtracking(Default::default()))
-        }
-        settings::Regalloc::ExperimentalLinearScan => {
-            (false, Algorithm::LinearScan(Default::default()))
-        }
-        settings::Regalloc::ExperimentalLinearScanChecked => {
-            (true, Algorithm::LinearScan(Default::default()))
-        }
+    let algorithm = match vcode.flags().regalloc() {
+        settings::Regalloc::Backtracking => RegAllocAlgorithm::Backtracking,
+        settings::Regalloc::BacktrackingChecked => RegAllocAlgorithm::BacktrackingChecked,
+        settings::Regalloc::ExperimentalLinearScan => RegAllocAlgorithm::LinearScan,
     };
 
     let result = {
         let _tt = timing::regalloc();
-        allocate_registers_with_opts(
-            &mut vcode,
-            b.reg_universe(),
-            Options {
-                run_checker,
-                algorithm,
-            },
+        allocate_registers(
+            &mut vcode, algorithm, universe,  false,
         )
         .map_err(|err| {
             debug!(
                 "Register allocation error for vcode\n{}\nError: {:?}",
-                vcode.show_rru(Some(b.reg_universe())),
+                vcode.show_rru(Some(universe)),
                 err
             );
             err
@@ -69,9 +52,14 @@ where
     
     vcode.replace_insns_from_regalloc(result);
 
+    vcode.remove_redundant_branches();
+
+    
+    vcode.finalize_branches();
+
     debug!(
         "vcode after regalloc: final version:\n{}",
-        vcode.show_rru(Some(b.reg_universe()))
+        vcode.show_rru(Some(universe))
     );
 
     Ok(vcode)

@@ -28,6 +28,9 @@ pub enum TrapCode {
     TableOutOfBounds,
 
     
+    OutOfBounds,
+
+    
     IndirectCallToNull,
 
     
@@ -60,6 +63,7 @@ impl Display for TrapCode {
             StackOverflow => "stk_ovf",
             HeapOutOfBounds => "heap_oob",
             TableOutOfBounds => "table_oob",
+            OutOfBounds => "oob",
             IndirectCallToNull => "icall_null",
             BadSignature => "bad_sig",
             IntegerOverflow => "int_ovf",
@@ -82,6 +86,7 @@ impl FromStr for TrapCode {
             "stk_ovf" => Ok(StackOverflow),
             "heap_oob" => Ok(HeapOutOfBounds),
             "table_oob" => Ok(TableOutOfBounds),
+            "oob" => Ok(OutOfBounds),
             "icall_null" => Ok(IndirectCallToNull),
             "bad_sig" => Ok(BadSignature),
             "int_ovf" => Ok(IntegerOverflow),
@@ -101,10 +106,11 @@ mod tests {
     use alloc::string::ToString;
 
     
-    const CODES: [TrapCode; 10] = [
+    const CODES: [TrapCode; 11] = [
         TrapCode::StackOverflow,
         TrapCode::HeapOutOfBounds,
         TrapCode::TableOutOfBounds,
+        TrapCode::OutOfBounds,
         TrapCode::IndirectCallToNull,
         TrapCode::BadSignature,
         TrapCode::IntegerOverflow,

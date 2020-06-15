@@ -1,30 +1,7 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
+
+
 
 use log::{debug, info, log_enabled, Level};
 use smallvec::{smallvec, SmallVec};
@@ -36,42 +13,6 @@ use crate::data_structures::{
 };
 use crate::union_find::{ToFromU32, UnionFind, UnionFindEquivClasses};
 use crate::Function;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -207,7 +148,6 @@ pub fn do_coalescing_analysis<F: Function>(
     
 
     
-    
     let doesVRegHaveXXat
     
     
@@ -216,7 +156,9 @@ pub fn do_coalescing_analysis<F: Function>(
       let vreg_no = vreg.get_index();
       let vlrixs = &vreg_to_vlrs_map[vreg_no];
       for vlrix in vlrixs {
-        for frag in &vlr_env[*vlrix].sorted_frags.frags {
+        let frags = &vlr_env[*vlrix].sorted_frags;
+        for fix in &frags.frag_ixs {
+          let frag = &frag_env[*fix];
           if xxIsLastUse {
             
             
@@ -340,30 +282,25 @@ pub fn do_coalescing_analysis<F: Function>(
                 
                 let rSrcV = rSrc.to_virtual_reg();
                 let rDstV = rDst.to_virtual_reg();
-                let mb_vlrixSrc = doesVRegHaveXXat( true, rSrcV, iix);
-                let mb_vlrixDst = doesVRegHaveXXat( false, rDstV, iix);
-                if mb_vlrixSrc.is_some() && mb_vlrixDst.is_some() {
-                    let vlrixSrc = mb_vlrixSrc.unwrap();
-                    let vlrixDst = mb_vlrixDst.unwrap();
+                let mb_vlrSrc = doesVRegHaveXXat( true, rSrcV, iix);
+                let mb_vlrDst = doesVRegHaveXXat( false, rDstV, iix);
+                debug!("QQQQ mb_vlrSrc {:?} mb_vlrDst {:?}", mb_vlrSrc, mb_vlrDst);
+                if mb_vlrSrc.is_some() && mb_vlrDst.is_some() {
+                    let vlrSrc = mb_vlrSrc.unwrap();
+                    let vlrDst = mb_vlrDst.unwrap();
+                    
+                    
+                    
+                    hints[vlrSrc].push(Hint::SameAs(vlrDst, block_eef));
+                    hints[vlrDst].push(Hint::SameAs(vlrSrc, block_eef));
+                    vlrEquivClassesUF.union(vlrDst, vlrSrc);
+                    is_vv_boundary_move[iix] = true;
                     
                     
                     
                     
-                    if !vlr_env[vlrixSrc].overlaps(&vlr_env[vlrixDst]) {
-                        
-                        
-                        
-                        hints[vlrixSrc].push(Hint::SameAs(vlrixDst, block_eef));
-                        hints[vlrixDst].push(Hint::SameAs(vlrixSrc, block_eef));
-                        vlrEquivClassesUF.union(vlrixDst, vlrixSrc);
-                        is_vv_boundary_move[iix] = true;
-                        
-                        
-                        
-                        
-                        debug!("QQQQ reduce cost of {:?} and {:?}", vlrixSrc, vlrixDst);
-                        decVLRcosts.push((vlrixSrc, vlrixDst, 1 * block_eef));
-                    }
+                    debug!("QQQQ reduce cost of {:?} and {:?}", vlrSrc, vlrDst);
+                    decVLRcosts.push((vlrSrc, vlrDst, 1 * block_eef));
                 }
             }
             (true, false) => {

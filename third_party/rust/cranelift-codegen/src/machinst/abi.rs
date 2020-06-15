@@ -13,15 +13,6 @@ pub trait ABIBody {
     type I: VCodeInst;
 
     
-    
-    fn temp_needed(&self) -> bool;
-
-    
-    
-    
-    fn init(&mut self, maybe_tmp: Option<Writable<Reg>>);
-
-    
     fn flags(&self) -> &settings::Flags;
 
     
@@ -42,13 +33,6 @@ pub trait ABIBody {
     
     
     fn gen_copy_arg_to_reg(&self, idx: usize, into_reg: Writable<Reg>) -> Self::I;
-
-    
-    
-    
-    
-    
-    fn gen_retval_area_setup(&self) -> Option<Self::I>;
 
     
     fn gen_copy_reg_to_retval(
@@ -115,9 +99,6 @@ pub trait ABIBody {
 
     
     
-    
-    
-    
     fn frame_size(&self) -> u32;
 
     
@@ -152,26 +133,21 @@ pub trait ABICall {
     fn num_args(&self) -> usize;
 
     
-    fn emit_copy_reg_to_arg<C: LowerCtx<I = Self::I>>(
+    fn gen_copy_reg_to_arg<C: LowerCtx<I = Self::I>>(
         &self,
         ctx: &mut C,
         idx: usize,
         from_reg: Reg,
-    );
+    ) -> Vec<Self::I>;
 
     
-    fn emit_copy_retval_to_reg<C: LowerCtx<I = Self::I>>(
-        &self,
-        ctx: &mut C,
-        idx: usize,
-        into_reg: Writable<Reg>,
-    );
+    fn gen_copy_retval_to_reg(&self, idx: usize, into_reg: Writable<Reg>) -> Self::I;
 
     
-    fn emit_stack_pre_adjust<C: LowerCtx<I = Self::I>>(&self, ctx: &mut C);
+    fn gen_stack_pre_adjust(&self) -> Vec<Self::I>;
 
     
-    fn emit_stack_post_adjust<C: LowerCtx<I = Self::I>>(&self, ctx: &mut C);
+    fn gen_stack_post_adjust(&self) -> Vec<Self::I>;
 
     
     
@@ -183,8 +159,5 @@ pub trait ABICall {
     
     
     
-    
-    
-    
-    fn emit_call<C: LowerCtx<I = Self::I>>(&mut self, ctx: &mut C);
+    fn gen_call(&self) -> Vec<Self::I>;
 }

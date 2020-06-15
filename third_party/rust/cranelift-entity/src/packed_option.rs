@@ -11,11 +11,9 @@ use core::fmt;
 use core::mem;
 
 
-pub trait ReservedValue {
+pub trait ReservedValue: Eq {
     
     fn reserved_value() -> Self;
-    
-    fn is_reserved_value(&self) -> bool;
 }
 
 
@@ -25,12 +23,12 @@ pub struct PackedOption<T: ReservedValue>(T);
 impl<T: ReservedValue> PackedOption<T> {
     
     pub fn is_none(&self) -> bool {
-        self.0.is_reserved_value()
+        self.0 == T::reserved_value()
     }
 
     
     pub fn is_some(&self) -> bool {
-        !self.0.is_reserved_value()
+        self.0 != T::reserved_value()
     }
 
     
@@ -77,7 +75,7 @@ impl<T: ReservedValue> From<T> for PackedOption<T> {
     
     fn from(t: T) -> Self {
         debug_assert!(
-            !t.is_reserved_value(),
+            t != T::reserved_value(),
             "Can't make a PackedOption from the reserved value."
         );
         Self(t)
@@ -125,10 +123,6 @@ mod tests {
         fn reserved_value() -> Self {
             NoC(13)
         }
-
-        fn is_reserved_value(&self) -> bool {
-            self.0 == 13
-        }
     }
 
     #[test]
@@ -150,10 +144,6 @@ mod tests {
     impl ReservedValue for Ent {
         fn reserved_value() -> Self {
             Ent(13)
-        }
-
-        fn is_reserved_value(&self) -> bool {
-            self.0 == 13
         }
     }
 

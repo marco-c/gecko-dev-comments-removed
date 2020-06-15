@@ -794,20 +794,15 @@ impl<'c, 'f> ir::InstInserterBase<'c> for &'c mut EncCursor<'f> {
         if !self.srcloc.is_default() {
             self.func.srclocs[inst] = self.srcloc;
         }
-
         
         
-        if self.isa.get_mach_backend().is_none() {
-            
-            
-            #[cfg_attr(feature = "cargo-clippy", allow(clippy::match_wild_err_arm))]
-            match self
-                .isa
-                .encode(&self.func, &self.func.dfg[inst], ctrl_typevar)
-            {
-                Ok(e) => self.func.encodings[inst] = e,
-                Err(_) => panic!("can't encode {}", self.display_inst(inst)),
-            }
+        #[cfg_attr(feature = "cargo-clippy", allow(clippy::match_wild_err_arm))]
+        match self
+            .isa
+            .encode(&self.func, &self.func.dfg[inst], ctrl_typevar)
+        {
+            Ok(e) => self.func.encodings[inst] = e,
+            Err(_) => panic!("can't encode {}", self.display_inst(inst)),
         }
 
         &mut self.func.dfg

@@ -106,85 +106,6 @@ impl SImm7Scaled {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
-pub struct FPULeftShiftImm {
-    pub amount: u8,
-    pub lane_size_in_bits: u8,
-}
-
-impl FPULeftShiftImm {
-    pub fn maybe_from_u8(amount: u8, lane_size_in_bits: u8) -> Option<Self> {
-        debug_assert!(lane_size_in_bits == 32 || lane_size_in_bits == 64);
-        if amount < lane_size_in_bits {
-            Some(Self {
-                amount,
-                lane_size_in_bits,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn enc(&self) -> u32 {
-        debug_assert!(self.lane_size_in_bits.is_power_of_two());
-        debug_assert!(self.lane_size_in_bits > self.amount);
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        u32::from(self.lane_size_in_bits | self.amount)
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct FPURightShiftImm {
-    pub amount: u8,
-    pub lane_size_in_bits: u8,
-}
-
-impl FPURightShiftImm {
-    pub fn maybe_from_u8(amount: u8, lane_size_in_bits: u8) -> Option<Self> {
-        debug_assert!(lane_size_in_bits == 32 || lane_size_in_bits == 64);
-        if amount > 0 && amount <= lane_size_in_bits {
-            Some(Self {
-                amount,
-                lane_size_in_bits,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn enc(&self) -> u32 {
-        debug_assert_ne!(0, self.amount);
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        u32::from((self.lane_size_in_bits * 2) - self.amount)
-    }
-}
-
 
 #[derive(Clone, Copy, Debug)]
 pub struct SImm9 {
@@ -212,11 +133,6 @@ impl SImm9 {
     
     pub fn bits(&self) -> u32 {
         (self.value as u32) & 0x1ff
-    }
-
-    
-    pub fn value(&self) -> i32 {
-        self.value as i32
     }
 }
 
@@ -255,16 +171,6 @@ impl UImm12Scaled {
     
     pub fn bits(&self) -> u32 {
         (self.value as u32 / self.scale_ty.bytes()) & 0xfff
-    }
-
-    
-    pub fn value(&self) -> u32 {
-        self.value as u32
-    }
-
-    
-    pub fn scale_ty(&self) -> Type {
-        self.scale_ty
     }
 }
 
@@ -657,18 +563,6 @@ impl ShowWithRRU for Imm12 {
 impl ShowWithRRU for SImm7Scaled {
     fn show_rru(&self, _mb_rru: Option<&RealRegUniverse>) -> String {
         format!("#{}", self.value)
-    }
-}
-
-impl ShowWithRRU for FPULeftShiftImm {
-    fn show_rru(&self, _mb_rru: Option<&RealRegUniverse>) -> String {
-        format!("#{}", self.amount)
-    }
-}
-
-impl ShowWithRRU for FPURightShiftImm {
-    fn show_rru(&self, _mb_rru: Option<&RealRegUniverse>) -> String {
-        format!("#{}", self.amount)
     }
 }
 
