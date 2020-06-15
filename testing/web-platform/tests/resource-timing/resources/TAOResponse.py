@@ -1,51 +1,51 @@
 def main(request, response):
-    origin = request.headers['origin']
-    response.headers.set('Access-Control-Allow-Origin', origin)
+    origin = request.headers[b'origin']
+    response.headers.set(b'Access-Control-Allow-Origin', origin)
 
-    tao = request.GET.first('tao')
+    tao = request.GET.first(b'tao')
 
-    if tao == 'zero':
+    if tao == b'zero':
     
         pass
-    elif tao == 'wildcard':
+    elif tao == b'wildcard':
     
-        response.headers.set('Timing-Allow-Origin', '*')
-    elif tao == 'null':
+        response.headers.set(b'Timing-Allow-Origin', b'*')
+    elif tao == b'null':
     
-        response.headers.set('Timing-Allow-Origin', 'null')
-    elif tao == 'Null':
+        response.headers.set(b'Timing-Allow-Origin', b'null')
+    elif tao == b'Null':
     
-        response.headers.set('Timing-Allow-Origin', 'Null')
-    elif tao == 'origin':
+        response.headers.set(b'Timing-Allow-Origin', b'Null')
+    elif tao == b'origin':
     
-        response.headers.set('Timing-Allow-Origin', origin)
-    elif tao.startswith('origin_port'):
+        response.headers.set(b'Timing-Allow-Origin', origin)
+    elif tao.startswith(b'origin_port'):
     
-        origin_parts = origin.split(':')
-        host = origin_parts[0] + ':' + origin_parts[1]
-        port = tao.split('origin_port_')[1]
-        response.headers.set('Timing-Allow-Origin', host + ':' + port)
-    elif tao == 'space':
+        origin_parts = origin.split(b':')
+        host = origin_parts[0] + b':' + origin_parts[1]
+        port = tao.split(b'origin_port_')[1]
+        response.headers.set(b'Timing-Allow-Origin', host + b':' + port)
+    elif tao == b'space':
     
-        response.headers.set('Timing-Allow-Origin', (origin + ' *'))
-    elif tao == 'multi':
+        response.headers.set(b'Timing-Allow-Origin', (origin + b' *'))
+    elif tao == b'multi':
     
-        response.headers.set('Timing-Allow-Origin', origin)
-        response.headers.append('Timing-Allow-Origin', '*')
-    elif tao == 'multi_wildcard':
+        response.headers.set(b'Timing-Allow-Origin', origin)
+        response.headers.append(b'Timing-Allow-Origin', b'*')
+    elif tao == b'multi_wildcard':
     
-        response.headers.set('Timing-Allow-Origin', '*')
-        response.headers.append('Timing-Allow-Origin', '*')
-    elif tao == 'match_origin':
+        response.headers.set(b'Timing-Allow-Origin', b'*')
+        response.headers.append(b'Timing-Allow-Origin', b'*')
+    elif tao == b'match_origin':
     
-        response.headers.set('Timing-Allow-Origin', origin)
-        response.headers.append('Timing-Allow-Origin', "fake")
-    elif tao == 'match_wildcard':
+        response.headers.set(b'Timing-Allow-Origin', origin)
+        response.headers.append(b'Timing-Allow-Origin', b"fake")
+    elif tao == b'match_wildcard':
     
-        response.headers.set('Timing-Allow-Origin', "fake")
-        response.headers.append('Timing-Allow-Origin', '*')
-    elif tao == 'uppercase':
+        response.headers.set(b'Timing-Allow-Origin', b"fake")
+        response.headers.append(b'Timing-Allow-Origin', b'*')
+    elif tao == b'uppercase':
     
-        response.headers.set('Timing-Allow-Origin', origin.upper())
+        response.headers.set(b'Timing-Allow-Origin', origin.upper())
     else:
         pass
