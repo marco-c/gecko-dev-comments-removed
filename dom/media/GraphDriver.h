@@ -618,10 +618,17 @@ class AudioCallbackDriver : public GraphDriver,
     return AudioInputType::Unknown;
   }
 
-  std::thread::id ThreadId() { return mAudioThreadId.load(); }
+  std::thread::id ThreadId() { return mAudioThreadIdInCb.load(); }
+
+  
+
+  void OnThreadIdChanged();
+  
+
+  void CheckThreadIdChanged();
 
   bool OnThread() override {
-    return mAudioThreadId.load() == std::this_thread::get_id();
+    return mAudioThreadIdInCb.load() == std::this_thread::get_id();
   }
 
   
@@ -733,6 +740,11 @@ class AudioCallbackDriver : public GraphDriver,
   
 
   std::atomic<std::thread::id> mAudioThreadId;
+
+  
+
+
+  std::atomic<std::thread::id> mAudioThreadIdInCb;
   
   enum class AudioStreamState {
     
