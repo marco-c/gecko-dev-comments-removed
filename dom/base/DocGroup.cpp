@@ -5,16 +5,19 @@
 
 
 #include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/DOMTypes.h"
-#include "mozilla/dom/JSExecutionManager.h"
+
 #include "mozilla/AbstractThread.h"
 #include "mozilla/PerformanceUtils.h"
 #include "mozilla/SchedulerGroup.h"
-#include "mozilla/ThrottledEventQueue.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/ThrottledEventQueue.h"
+#include "mozilla/dom/DOMTypes.h"
+#include "mozilla/dom/JSExecutionManager.h"
 #include "nsDOMMutationObserver.h"
+#include "nsIDirectTaskDispatcher.h"
 #include "nsProxyRelease.h"
+#include "nsThread.h"
 #if defined(XP_WIN)
 #  include <processthreadsapi.h>  
 #else
@@ -32,7 +35,8 @@ namespace {
 
 
 
-class LabellingEventTarget final : public nsISerialEventTarget {
+class LabellingEventTarget final : public nsISerialEventTarget,
+                                   public nsIDirectTaskDispatcher {
   
   
   
@@ -42,13 +46,16 @@ class LabellingEventTarget final : public nsISerialEventTarget {
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_LABELLINGEVENTTARGET_IID)
 
   explicit LabellingEventTarget(mozilla::dom::DocGroup* aDocGroup)
-      : mDocGroup(aDocGroup) {}
+      : mDocGroup(aDocGroup),
+        mMainThread(static_cast<nsThread*>(GetMainThreadSerialEventTarget())) {}
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIEVENTTARGET_FULL
+  NS_DECL_NSIDIRECTTASKDISPATCHER
 
  private:
   ~LabellingEventTarget() = default;
+  const RefPtr<nsThread> mMainThread;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(LabellingEventTarget, NS_LABELLINGEVENTTARGET_IID)
@@ -88,8 +95,26 @@ LabellingEventTarget::IsOnCurrentThreadInfallible() {
   return NS_IsMainThread();
 }
 
-NS_IMPL_ISUPPORTS(LabellingEventTarget, LabellingEventTarget, nsIEventTarget,
-                  nsISerialEventTarget)
+
+
+
+
+
+NS_IMETHODIMP
+LabellingEventTarget::DispatchDirectTask(already_AddRefed<nsIRunnable> aEvent) {
+  return mMainThread->DispatchDirectTask(std::move(aEvent));
+}
+
+NS_IMETHODIMP LabellingEventTarget::DrainDirectTasks() {
+  return mMainThread->DrainDirectTasks();
+}
+
+NS_IMETHODIMP LabellingEventTarget::HaveDirectTasks(bool* aValue) {
+  return mMainThread->HaveDirectTasks(aValue);
+}
+
+NS_IMPL_ISUPPORTS(LabellingEventTarget, nsIEventTarget, nsISerialEventTarget,
+                  nsIDirectTaskDispatcher)
 
 namespace mozilla {
 namespace dom {
