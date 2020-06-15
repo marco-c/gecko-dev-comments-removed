@@ -16,10 +16,7 @@
 
 struct gfxFontStyle;
 
-struct LookAndFeelInt {
-  int32_t id;
-  int32_t value;
-};
+struct LookAndFeelInt;
 
 namespace mozilla {
 
@@ -31,69 +28,60 @@ class LookAndFeel {
 
   
   
-  enum IntID {
+  enum class IntID {
     
-    eIntID_CaretBlinkTime,
+    CaretBlinkTime,
     
-    eIntID_CaretWidth,
+    CaretWidth,
     
-    eIntID_ShowCaretDuringSelection,
+    ShowCaretDuringSelection,
     
-    eIntID_SelectTextfieldsOnKeyFocus,
+    SelectTextfieldsOnKeyFocus,
     
-    eIntID_SubmenuDelay,
+    SubmenuDelay,
     
-    eIntID_MenusCanOverlapOSBar,
+    MenusCanOverlapOSBar,
     
-    eIntID_UseOverlayScrollbars,
+    UseOverlayScrollbars,
     
-    eIntID_AllowOverlayScrollbarsOverlap,
+    AllowOverlayScrollbarsOverlap,
     
-    eIntID_ShowHideScrollbars,
+    ShowHideScrollbars,
     
-    eIntID_SkipNavigatingDisabledMenuItem,
+    SkipNavigatingDisabledMenuItem,
     
     
-    eIntID_DragThresholdX,
-    eIntID_DragThresholdY,
+    DragThresholdX,
+    DragThresholdY,
     
-    eIntID_UseAccessibilityTheme,
+    UseAccessibilityTheme,
 
     
-    eIntID_ScrollArrowStyle,
+    ScrollArrowStyle,
     
-    eIntID_ScrollSliderStyle,
+    ScrollSliderStyle,
 
     
-    eIntID_ScrollButtonLeftMouseButtonAction,
+    ScrollButtonLeftMouseButtonAction,
     
-    eIntID_ScrollButtonMiddleMouseButtonAction,
+    ScrollButtonMiddleMouseButtonAction,
     
-    eIntID_ScrollButtonRightMouseButtonAction,
+    ScrollButtonRightMouseButtonAction,
 
     
-    eIntID_TreeOpenDelay,
+    TreeOpenDelay,
     
-    eIntID_TreeCloseDelay,
+    TreeCloseDelay,
     
-    eIntID_TreeLazyScrollDelay,
+    TreeLazyScrollDelay,
     
-    eIntID_TreeScrollDelay,
+    TreeScrollDelay,
     
-    eIntID_TreeScrollLinesMax,
+    TreeScrollLinesMax,
     
-    eIntID_TabFocusModel,
+    TabFocusModel,
     
-    eIntID_ChosenMenuItemsShouldBlink,
-
-    
-
-
-
-
-
-
-    eIntID_WindowsAccentColorInTitlebar,
+    ChosenMenuItemsShouldBlink,
 
     
 
@@ -102,15 +90,7 @@ class LookAndFeel {
 
 
 
-    eIntID_WindowsDefaultTheme,
-
-    
-
-
-
-
-
-    eIntID_DWMCompositor,
+    WindowsAccentColorInTitlebar,
 
     
 
@@ -119,7 +99,15 @@ class LookAndFeel {
 
 
 
-    eIntID_WindowsClassic,
+    WindowsDefaultTheme,
+
+    
+
+
+
+
+
+    DWMCompositor,
 
     
 
@@ -128,7 +116,7 @@ class LookAndFeel {
 
 
 
-    eIntID_WindowsGlass,
+    WindowsClassic,
 
     
 
@@ -137,7 +125,7 @@ class LookAndFeel {
 
 
 
-    eIntID_TouchEnabled,
+    WindowsGlass,
 
     
 
@@ -146,7 +134,7 @@ class LookAndFeel {
 
 
 
-    eIntID_MacGraphiteTheme,
+    TouchEnabled,
 
     
 
@@ -155,8 +143,7 @@ class LookAndFeel {
 
 
 
-
-    eIntID_MacYosemiteTheme,
+    MacGraphiteTheme,
 
     
 
@@ -166,14 +153,7 @@ class LookAndFeel {
 
 
 
-
-
-
-
-
-
-
-    eIntID_AlertNotificationOrigin,
+    MacYosemiteTheme,
 
     
 
@@ -181,111 +161,16 @@ class LookAndFeel {
 
 
 
-    eIntID_ScrollToClick,
-
-    
 
 
 
-    eIntID_IMERawInputUnderlineStyle,
-    eIntID_IMESelectedRawTextUnderlineStyle,
-    eIntID_IMEConvertedTextUnderlineStyle,
-    eIntID_IMESelectedConvertedTextUnderline,
-    eIntID_SpellCheckerUnderlineStyle,
-
-    
-
-
-    eIntID_MenuBarDrag,
-    
-
-
-    eIntID_WindowsThemeIdentifier,
-    
-
-
-    eIntID_OperatingSystemVersionIdentifier,
-    
 
 
 
-    eIntID_ScrollbarButtonAutoRepeatBehavior,
-    
-
-
-    eIntID_TooltipDelay,
-    
 
 
 
-    eIntID_SwipeAnimationEnabled,
-
-    
-
-
-
-    eIntID_ScrollbarDisplayOnMouseMove,
-
-    
-
-
-    eIntID_ScrollbarFadeBeginDelay,
-    eIntID_ScrollbarFadeDuration,
-
-    
-
-
-
-    eIntID_ContextMenuOffsetVertical,
-    eIntID_ContextMenuOffsetHorizontal,
-
-    
-
-
-
-    eIntID_GTKCSDAvailable,
-
-    
-
-
-
-    eIntID_GTKCSDHideTitlebarByDefault,
-
-    
-
-
-
-    eIntID_GTKCSDTransparentBackground,
-
-    
-
-
-
-    eIntID_GTKCSDMinimizeButton,
-
-    
-
-
-
-    eIntID_GTKCSDMaximizeButton,
-
-    
-
-
-
-    eIntID_GTKCSDCloseButton,
-
-    
-
-
-
-    eIntID_GTKCSDReversedPlacement,
-
-    
-
-
-
-    eIntID_SystemUsesDarkTheme,
+    AlertNotificationOrigin,
 
     
 
@@ -293,8 +178,112 @@ class LookAndFeel {
 
 
 
+    ScrollToClick,
 
-    eIntID_PrefersReducedMotion,
+    
+
+
+
+    IMERawInputUnderlineStyle,
+    IMESelectedRawTextUnderlineStyle,
+    IMEConvertedTextUnderlineStyle,
+    IMESelectedConvertedTextUnderline,
+    SpellCheckerUnderlineStyle,
+
+    
+
+
+    MenuBarDrag,
+    
+
+
+    WindowsThemeIdentifier,
+    
+
+
+    OperatingSystemVersionIdentifier,
+    
+
+
+
+    ScrollbarButtonAutoRepeatBehavior,
+    
+
+
+    TooltipDelay,
+    
+
+
+
+    SwipeAnimationEnabled,
+
+    
+
+
+
+    ScrollbarDisplayOnMouseMove,
+
+    
+
+
+    ScrollbarFadeBeginDelay,
+    ScrollbarFadeDuration,
+
+    
+
+
+
+    ContextMenuOffsetVertical,
+    ContextMenuOffsetHorizontal,
+
+    
+
+
+
+    GTKCSDAvailable,
+
+    
+
+
+
+    GTKCSDHideTitlebarByDefault,
+
+    
+
+
+
+    GTKCSDTransparentBackground,
+
+    
+
+
+
+    GTKCSDMinimizeButton,
+
+    
+
+
+
+    GTKCSDMaximizeButton,
+
+    
+
+
+
+    GTKCSDCloseButton,
+
+    
+
+
+
+    GTKCSDReversedPlacement,
+
+    
+
+
+
+    SystemUsesDarkTheme,
+
     
 
 
@@ -302,20 +291,28 @@ class LookAndFeel {
 
 
 
-    eIntID_PrimaryPointerCapabilities,
-    
-
-
-
-
-    eIntID_AllPointerCapabilities,
+    PrefersReducedMotion,
     
 
 
 
 
 
-    eLookAndFeel_GTKCSDCloseButtonPosition,
+
+    PrimaryPointerCapabilities,
+    
+
+
+
+
+    AllPointerCapabilities,
+    
+
+
+
+
+
+    GTKCSDCloseButtonPosition,
 
     
 
@@ -323,7 +320,7 @@ class LookAndFeel {
 
 
 
-    eLookAndFeel_GTKCSDMinimizeButtonPosition,
+    GTKCSDMinimizeButtonPosition,
 
     
 
@@ -331,7 +328,7 @@ class LookAndFeel {
 
 
 
-    eLookAndFeel_GTKCSDMaximizeButtonPosition,
+    GTKCSDMaximizeButtonPosition,
   };
 
   
@@ -387,13 +384,13 @@ class LookAndFeel {
 
   
   
-  enum FloatID {
-    eFloatID_IMEUnderlineRelativeSize,
-    eFloatID_SpellCheckerUnderlineRelativeSize,
+  enum class FloatID {
+    IMEUnderlineRelativeSize,
+    SpellCheckerUnderlineRelativeSize,
 
     
     
-    eFloatID_CaretAspectRatio
+    CaretAspectRatio,
   };
 
   
@@ -553,6 +550,12 @@ class LookAndFeel {
 };
 
 }  
+
+struct LookAndFeelInt {
+  mozilla::LookAndFeel::IntID id;
+  int32_t value;
+};
+
 
 
 

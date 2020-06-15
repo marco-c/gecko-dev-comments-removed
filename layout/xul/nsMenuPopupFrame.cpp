@@ -136,7 +136,7 @@ void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   
   
   mMenuCanOverlapOSBar =
-      LookAndFeel::GetInt(LookAndFeel::eIntID_MenusCanOverlapOSBar) != 0;
+      LookAndFeel::GetInt(LookAndFeel::IntID::MenusCanOverlapOSBar) != 0;
 
   CreatePopupView();
 
@@ -1474,11 +1474,11 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
       nsPoint offsetForContextMenuDev;
       offsetForContextMenuDev.x =
           nsPresContext::CSSPixelsToAppUnits(LookAndFeel::GetInt(
-              LookAndFeel::eIntID_ContextMenuOffsetHorizontal)) /
+              LookAndFeel::IntID::ContextMenuOffsetHorizontal)) /
           factor;
       offsetForContextMenuDev.y =
           nsPresContext::CSSPixelsToAppUnits(LookAndFeel::GetInt(
-              LookAndFeel::eIntID_ContextMenuOffsetVertical)) /
+              LookAndFeel::IntID::ContextMenuOffsetVertical)) /
           factor;
       offsetForContextMenu.x =
           presContext->DevPixelsToAppUnits(offsetForContextMenuDev.x);
@@ -2311,9 +2311,9 @@ void nsMenuPopupFrame::MoveTo(const CSSIntPoint& aPos, bool aUpdateAttrs) {
   
   if (mAdjustOffsetForContextMenu) {
     margin.left += nsPresContext::CSSPixelsToAppUnits(
-        LookAndFeel::GetInt(LookAndFeel::eIntID_ContextMenuOffsetHorizontal));
+        LookAndFeel::GetInt(LookAndFeel::IntID::ContextMenuOffsetHorizontal));
     margin.top += nsPresContext::CSSPixelsToAppUnits(
-        LookAndFeel::GetInt(LookAndFeel::eIntID_ContextMenuOffsetVertical));
+        LookAndFeel::GetInt(LookAndFeel::IntID::ContextMenuOffsetVertical));
   }
 
   mAnchorType = MenuPopupAnchorType_Point;

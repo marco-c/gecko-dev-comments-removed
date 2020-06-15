@@ -29,13 +29,13 @@ NS_IMPL_ISUPPORTS(ScrollbarActivity, nsIDOMEventListener)
 void ScrollbarActivity::QueryLookAndFeelVals() {
   
   mScrollbarFadeBeginDelay =
-      LookAndFeel::GetInt(LookAndFeel::eIntID_ScrollbarFadeBeginDelay);
+      LookAndFeel::GetInt(LookAndFeel::IntID::ScrollbarFadeBeginDelay);
   mScrollbarFadeDuration =
-      LookAndFeel::GetInt(LookAndFeel::eIntID_ScrollbarFadeDuration);
+      LookAndFeel::GetInt(LookAndFeel::IntID::ScrollbarFadeDuration);
   
   
   mDisplayOnMouseMove =
-      LookAndFeel::GetInt(LookAndFeel::eIntID_ScrollbarDisplayOnMouseMove);
+      LookAndFeel::GetInt(LookAndFeel::IntID::ScrollbarDisplayOnMouseMove);
 }
 
 void ScrollbarActivity::Destroy() {

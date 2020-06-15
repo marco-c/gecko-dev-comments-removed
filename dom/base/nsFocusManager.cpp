@@ -3069,7 +3069,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
     doc = aWindow->GetExtantDoc();
   if (!doc) return NS_OK;
 
-  LookAndFeel::GetInt(LookAndFeel::eIntID_TabFocusModel,
+  LookAndFeel::GetInt(LookAndFeel::IntID::TabFocusModel,
                       &nsIContent::sTabFocusModel);
 
   

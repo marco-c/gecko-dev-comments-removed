@@ -161,7 +161,7 @@ void nsTreeBodyFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   
   GetBaseElement();
 
-  if (LookAndFeel::GetInt(LookAndFeel::eIntID_UseOverlayScrollbars) != 0) {
+  if (LookAndFeel::GetInt(LookAndFeel::IntID::UseOverlayScrollbars) != 0) {
     mScrollbarActivity =
         new ScrollbarActivity(static_cast<nsIScrollbarMediator*>(this));
   }
@@ -2351,7 +2351,7 @@ nsresult nsTreeBodyFrame::HandleEvent(nsPresContext* aPresContext,
         }
 
         
-        CreateTimer(LookAndFeel::eIntID_TreeLazyScrollDelay, LazyScrollCallback,
+        CreateTimer(LookAndFeel::IntID::TreeLazyScrollDelay, LazyScrollCallback,
                     nsITimer::TYPE_ONE_SHOT, getter_AddRefs(mSlots->mTimer),
                     "nsTreeBodyFrame::LazyScrollCallback");
       }
@@ -2390,7 +2390,7 @@ nsresult nsTreeBodyFrame::HandleEvent(nsPresContext* aPresContext,
             mView->IsContainerOpen(mSlots->mDropRow, &isOpen);
             if (!isOpen) {
               
-              CreateTimer(LookAndFeel::eIntID_TreeOpenDelay, OpenCallback,
+              CreateTimer(LookAndFeel::IntID::TreeOpenDelay, OpenCallback,
                           nsITimer::TYPE_ONE_SHOT,
                           getter_AddRefs(mSlots->mTimer),
                           "nsTreeBodyFrame::OpenCallback");
@@ -2462,7 +2462,7 @@ nsresult nsTreeBodyFrame::HandleEvent(nsPresContext* aPresContext,
 
     if (!mSlots->mArray.IsEmpty()) {
       
-      CreateTimer(LookAndFeel::eIntID_TreeCloseDelay, CloseCallback,
+      CreateTimer(LookAndFeel::IntID::TreeCloseDelay, CloseCallback,
                   nsITimer::TYPE_ONE_SHOT, getter_AddRefs(mSlots->mTimer),
                   "nsTreeBodyFrame::CloseCallback");
     }
@@ -4067,7 +4067,7 @@ void nsTreeBodyFrame::ComputeDropPosition(WidgetGUIEvent* aEvent, int32_t* aRow,
   if (CanAutoScroll(*aRow)) {
     
     int32_t scrollLinesMax =
-        LookAndFeel::GetInt(LookAndFeel::eIntID_TreeScrollLinesMax, 0);
+        LookAndFeel::GetInt(LookAndFeel::IntID::TreeScrollLinesMax, 0);
     scrollLinesMax--;
     if (scrollLinesMax < 0) scrollLinesMax = 0;
 
@@ -4120,7 +4120,7 @@ void nsTreeBodyFrame::LazyScrollCallback(nsITimer* aTimer, void* aClosure) {
 
     if (self->mView) {
       
-      self->CreateTimer(LookAndFeel::eIntID_TreeScrollDelay, ScrollCallback,
+      self->CreateTimer(LookAndFeel::IntID::TreeScrollDelay, ScrollCallback,
                         nsITimer::TYPE_REPEATING_SLACK,
                         getter_AddRefs(self->mSlots->mTimer),
                         "nsTreeBodyFrame::ScrollCallback");
