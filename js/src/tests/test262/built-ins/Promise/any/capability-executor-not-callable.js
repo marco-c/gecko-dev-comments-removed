@@ -24,6 +24,7 @@
 
 
 
+
 var checkPoint = '';
 function fn1(executor) {
   checkPoint += 'a';
