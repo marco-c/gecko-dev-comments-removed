@@ -73,6 +73,18 @@ function compareLists(list1, list2, kind) {
   equal(String(list1), String(list2), `${kind} URLs correct`);
 }
 
+async function openAndCloseContentPage(url) {
+  let contentPage = await ExtensionTestUtils.loadContentPage(URL);
+  
+  
+  
+  
+  await contentPage.spawn(null, () =>
+    content.windowUtils.clearSharedStyleSheetCache()
+  );
+  await contentPage.close();
+}
+
 add_task(async function setup() {
   
   Services.prefs.setBoolPref("network.http.rcwn.enabled", false);
@@ -91,8 +103,7 @@ add_task(async function filter_urls() {
   ]);
   WebRequest.onResponseStarted.addListener(onResponseStarted, filter);
 
-  let contentPage = await ExtensionTestUtils.loadContentPage(URL);
-  await contentPage.close();
+  await openAndCloseContentPage(URL);
 
   compareLists(requested, expected_urls, "requested");
   compareLists(sendHeaders, expected_urls, "sendHeaders");
@@ -113,8 +124,7 @@ add_task(async function filter_types() {
   ]);
   WebRequest.onResponseStarted.addListener(onResponseStarted, filter);
 
-  let contentPage = await ExtensionTestUtils.loadContentPage(URL);
-  await contentPage.close();
+  await openAndCloseContentPage(URL);
 
   compareLists(requested, expected_urls, "requested");
   compareLists(sendHeaders, expected_urls, "sendHeaders");
@@ -137,8 +147,7 @@ add_task(async function filter_windowId() {
   ]);
   WebRequest.onResponseStarted.addListener(onResponseStarted, filter);
 
-  let contentPage = await ExtensionTestUtils.loadContentPage(URL);
-  await contentPage.close();
+  await openAndCloseContentPage(URL);
 
   compareLists(requested, [], "requested");
   compareLists(sendHeaders, [], "sendHeaders");
@@ -161,8 +170,7 @@ add_task(async function filter_tabId() {
   ]);
   WebRequest.onResponseStarted.addListener(onResponseStarted, filter);
 
-  let contentPage = await ExtensionTestUtils.loadContentPage(URL);
-  await contentPage.close();
+  await openAndCloseContentPage(URL);
 
   compareLists(requested, [], "requested");
   compareLists(sendHeaders, [], "sendHeaders");
