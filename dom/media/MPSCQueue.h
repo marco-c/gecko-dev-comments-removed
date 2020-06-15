@@ -43,9 +43,11 @@ class MPSCQueue {
   
   
   
+#if !defined(XP_WIN) && !defined(MOZ_WIDGET_ANDROID)
   static_assert(IsPowerOfTwo(sizeof(MPSCQueue<T>::Message)),
                 "MPSCQueue internal allocations must have a size that is a"
                 "power of two ");
+#endif
 
   
   
