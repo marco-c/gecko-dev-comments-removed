@@ -99,27 +99,23 @@ nsMIMEInfoWin::LaunchWithFile(nsIFile* aFile) {
       
       
       
-      bool isPdf;
-      rv = IsPdf(&isPdf);
-      if (NS_SUCCEEDED(rv) && isPdf) {
-        nsAutoCString defaultAppExecutable;
-        rv = mDefaultApplication->GetNativeLeafName(defaultAppExecutable);
-        if (NS_SUCCEEDED(rv) &&
-            defaultAppExecutable.LowerCaseEqualsLiteral("msedge.exe")) {
-          nsAutoString path;
-          rv = aFile->GetPath(path);
-          if (NS_SUCCEEDED(rv)) {
-            
-            
-            
-            nsAutoString appArg;
-            appArg.AppendLiteral("--app=");
-            appArg.Append(path);
-            const wchar_t* argv[] = {appArg.get(), path.get()};
+      nsAutoCString defaultAppExecutable;
+      rv = mDefaultApplication->GetNativeLeafName(defaultAppExecutable);
+      if (NS_SUCCEEDED(rv) &&
+          defaultAppExecutable.LowerCaseEqualsLiteral("msedge.exe")) {
+        nsAutoString path;
+        rv = aFile->GetPath(path);
+        if (NS_SUCCEEDED(rv)) {
+          
+          
+          
+          nsAutoString appArg;
+          appArg.AppendLiteral("--app=");
+          appArg.Append(path);
+          const wchar_t* argv[] = {appArg.get(), path.get()};
 
-            return ShellExecuteWithIFile(mDefaultApplication,
-                                         mozilla::ArrayLength(argv), argv);
-          }
+          return ShellExecuteWithIFile(mDefaultApplication,
+                                       mozilla::ArrayLength(argv), argv);
         }
       }
     }
