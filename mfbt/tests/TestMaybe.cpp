@@ -156,7 +156,7 @@ struct UncopyableUnmovableValue {
 
   ~UncopyableUnmovableValue() { --sUndestroyedObjects; }
 
-  Status GetStatus() const { return mStatus; }
+  Status GetStatus() { return mStatus; }
 
  private:
   UncopyableUnmovableValue(const UncopyableUnmovableValue& aOther) = delete;
@@ -260,14 +260,6 @@ static bool TestBasicFeatures() {
   MOZ_RELEASE_ASSERT(mayValue->GetTag() == 1);
   mayValue.reset();
   MOZ_RELEASE_ASSERT(!mayValue);
-
-  {
-    
-    const auto mayValueConstructed = Maybe<BasicValue>(std::in_place, 1);
-    MOZ_RELEASE_ASSERT(mayValueConstructed);
-    MOZ_RELEASE_ASSERT(mayValueConstructed->GetStatus() == eWasConstructed);
-    MOZ_RELEASE_ASSERT(mayValueConstructed->GetTag() == 1);
-  }
 
   
   mayValue = Some(BasicValue(2));
@@ -505,13 +497,6 @@ static bool TestCopyAndMove() {
   MOZ_RELEASE_ASSERT(0 == sUndestroyedObjects);
 
   {  
-    {
-      const auto mayUncopyableUnmovableValueConstructed =
-          Maybe<UncopyableUnmovableValue>{std::in_place};
-      MOZ_RELEASE_ASSERT(mayUncopyableUnmovableValueConstructed->GetStatus() ==
-                         eWasDefaultConstructed);
-    }
-
     Maybe<UncopyableUnmovableValue> mayUncopyableUnmovableValue;
     mayUncopyableUnmovableValue.emplace();
     MOZ_RELEASE_ASSERT(mayUncopyableUnmovableValue->GetStatus() ==
