@@ -118,7 +118,8 @@ SharedStyleSheetCache::CacheResult SharedStyleSheetCache::Lookup(
     
     
     StyleSheet& cachedSheet = *completeSheet.mSheet;
-    LOG(("  From completed: %p", &cachedSheet));
+    LOG(("  From completed: %p, bypass: %d, expired: %d", &cachedSheet,
+         aLoader.ShouldBypassCache(), completeSheet.Expired()));
 
     if ((!aLoader.ShouldBypassCache() && !completeSheet.Expired()) ||
         aLoader.mLoadsPerformed.Contains(aKey)) {
