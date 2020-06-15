@@ -201,7 +201,7 @@ function validateCodecStats(statsReport, stats) {
   validateRtcStats(statsReport, stats);
 
   assert_unsigned_int_field(stats, 'payloadType');
-  assert_enum_field(stats, 'codecType', ['encode', 'decode']);
+  assert_optional_enum_field(stats, 'codecType', ['encode', 'decode']);
 
   validateOptionalIdField(statsReport, stats, 'transportId', 'transport');
 
@@ -482,10 +482,11 @@ function validateSentRtpStreamStats(statsReport, stats) {
 
 
 
+
+
 function validateOutboundRtpStreamStats(statsReport, stats) {
   validateSentRtpStreamStats(statsReport, stats)
 
-  validateOptionalIdField(statsReport, stats, 'trackId', 'track');
   validateOptionalIdField(statsReport, stats, 'mediaSourceId', 'media-source');
   validateIdField(statsReport, stats, 'senderId', 'sender');
   validateIdField(statsReport, stats, 'remoteId', 'remote-inbound-rtp');
@@ -556,6 +557,8 @@ function validateOutboundRtpStreamStats(statsReport, stats) {
   assert_optional_unsigned_int_field(stats, 'pliCount');
   assert_optional_unsigned_int_field(stats, 'sliCount');
   assert_optional_string_field(stats, 'encoderImplementation');
+  
+  validateOptionalIdField(statsReport, stats, 'trackId', 'track');
 }
 
 
@@ -908,9 +911,16 @@ function validateTransportStats(statsReport, stats) {
 function validateIceCandidateStats(statsReport, stats) {
   validateRtcStats(statsReport, stats);
 
-  validateOptionalIdField(statsReport, stats, 'transportId', 'transport');
-
-  assert_string_field(stats, 'address');
+  validateIdField(statsReport, stats, 'transportId', 'transport');
+  
+  
+  if (stats.address != null) {
+    
+    
+    
+    
+    assert_optional_string_field(stats, 'address');
+  }
   assert_unsigned_int_field(stats, 'port');
   assert_string_field(stats, 'protocol');
 
@@ -918,7 +928,10 @@ function validateIceCandidateStats(statsReport, stats) {
     ['host', 'srflx', 'prflx', 'relay']);
 
   assert_optional_int_field(stats, 'priority');
-  assert_string_field(stats, 'url');
+  
+  
+  
+  assert_optional_string_field(stats, 'url');
   assert_optional_string_field(stats, 'relayProtocol');
 }
 
