@@ -26,13 +26,11 @@ function TabSources(threadActor, allowSourceFn = () => true) {
   EventEmitter.decorate(this);
 
   this._thread = threadActor;
-  this._autoBlackBox = true;
   this.allowSource = source => {
     return !isHiddenSource(source) && allowSourceFn(source);
   };
 
   this.blackBoxedSources = new Map();
-  this.neverAutoBlackBoxSources = new Set();
 
   
   this._sourceActors = new Map();
@@ -78,22 +76,6 @@ TabSources.prototype = {
   
 
 
-  setOptions: function(options) {
-    let shouldReset = false;
-
-    if ("autoBlackBox" in options) {
-      shouldReset = true;
-      this._autoBlackBox = options.autoBlackBox;
-    }
-
-    if (shouldReset) {
-      this.reset();
-    }
-  },
-
-  
-
-
   reset: function() {
     this._sourceActors = new Map();
     this._urlContents = new Map();
@@ -125,15 +107,6 @@ TabSources.prototype = {
     });
 
     this._thread.threadLifetimePool.manage(actor);
-
-    if (
-      this._autoBlackBox &&
-      !this.neverAutoBlackBoxSources.has(actor.url) &&
-      this._isMinifiedURL(actor.url)
-    ) {
-      this.blackBox(actor.url);
-      this.neverAutoBlackBoxSources.add(actor.url);
-    }
 
     this._sourceActors.set(source, actor);
     if (this._sourcesByInternalSourceId && source.id) {
