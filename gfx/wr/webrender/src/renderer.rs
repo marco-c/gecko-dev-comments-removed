@@ -137,6 +137,10 @@ const VERTEX_TEXTURE_EXTRA_ROWS: i32 = 10;
 const VERTEX_DATA_TEXTURE_COUNT: usize = 3;
 
 
+
+pub const ONE_TIME_USAGE_HINT: VertexUsageHint = VertexUsageHint::Stream;
+
+
 static HAS_BEEN_INITIALIZED: AtomicBool = AtomicBool::new(false);
 
 
@@ -1585,8 +1589,8 @@ impl GpuCacheTexture {
             } => {
                 *count = 0;
                 if total_block_count > buf_value.allocated_count() {
-                    device.allocate_vbo(buf_position, total_block_count, VertexUsageHint::Stream);
-                    device.allocate_vbo(buf_value,    total_block_count, VertexUsageHint::Stream);
+                    device.allocate_vbo(buf_position, total_block_count, ONE_TIME_USAGE_HINT);
+                    device.allocate_vbo(buf_value,    total_block_count, ONE_TIME_USAGE_HINT);
                 }
             }
         }
@@ -4058,7 +4062,7 @@ impl Renderer {
 
         for chunk in data.chunks(chunk_size) {
             self.device
-                .update_vao_instances(vao, chunk, VertexUsageHint::Stream);
+                .update_vao_instances(vao, chunk, ONE_TIME_USAGE_HINT);
             self.device
                 .draw_indexed_triangles_instanced_u16(6, chunk.len() as i32);
             self.profile_counters.draw_calls.inc();
@@ -7058,7 +7062,7 @@ impl Default for RendererOptions {
             max_glyph_cache_size: None,
             
             
-            upload_method: UploadMethod::PixelBuffer(VertexUsageHint::Stream),
+            upload_method: UploadMethod::PixelBuffer(ONE_TIME_USAGE_HINT),
             workers: None,
             enable_multithreading: true,
             blob_image_handler: None,
