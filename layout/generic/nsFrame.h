@@ -381,19 +381,6 @@ class nsFrame : public nsIFrame {
 
   
   bool HasCSSTransitions();
-
- public:
-#ifdef DEBUG
-  static mozilla::LazyLogModule sFrameLogModule;
-
-  
-  static void ShowFrameBorders(bool aEnable);
-  static bool GetShowFrameBorders();
-
-  
-  static void ShowEventTargetFrameBorder(bool aEnable);
-  static bool GetShowEventTargetFrameBorder();
-#endif
 };
 
 #endif 

@@ -5090,6 +5090,18 @@ class nsIFrame : public nsQueryFrame {
   
   static int32_t ContentIndexInContainer(const nsIFrame* aFrame);
 #endif
+
+#ifdef DEBUG
+  static mozilla::LazyLogModule sFrameLogModule;
+
+  
+  static void ShowFrameBorders(bool aEnable);
+  static bool GetShowFrameBorders();
+
+  
+  static void ShowEventTargetFrameBorder(bool aEnable);
+  static bool GetShowEventTargetFrameBorder();
+#endif
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsIFrame::ReflowChildFlags)
