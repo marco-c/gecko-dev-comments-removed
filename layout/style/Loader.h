@@ -359,9 +359,9 @@ class Loader final {
                           LoaderReusableStyleSheets* aSavedSheets);
 
   
-  
-  
-  void MaybeNotifyOfResourceTiming(SheetLoadData&);
+
+
+  void DidHitCompleteSheetCache(SheetLoadData&);
 
   enum class UseSystemPrincipal { No, Yes };
 
