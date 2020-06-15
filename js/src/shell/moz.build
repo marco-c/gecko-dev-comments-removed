@@ -40,9 +40,17 @@ LOCAL_INCLUDES += [
 OS_LIBS += CONFIG['EDITLINE_LIBS']
 
 
+GeneratedFile('shellmoduleloader.out.h', 'shellmoduleloader.js',
+              script='../builtin/embedjs.py',
+              entry_point='generate_shellmoduleloader',
+              inputs=[
+                  '../js.msg',
+                  'ModuleLoader.js',
+              ])
 
-DEFINES['topsrcdir'] = '%s/js/src' % TOPSRCDIR
-FINAL_TARGET_PP_FILES += ['js-gdb.py.in']
+
+
+FINAL_TARGET_FILES += ['js-gdb.py']
 OBJDIR_FILES.js.src.shell += ['!/dist/bin/js-gdb.py']
 
 
