@@ -540,7 +540,27 @@ void MobileViewportManager::RefreshVisualViewportSize() {
   ScreenIntSize displaySize = ViewAs<ScreenPixel>(
       mDisplaySize, PixelCastJustification::LayoutDeviceIsScreenForBounds);
 
+  if (displaySize.width == 0 || displaySize.height == 0) {
+    return;
+  }
+
   UpdateVisualViewportSize(displaySize, GetZoom());
+}
+
+void MobileViewportManager::NotifyResizeReflow() {
+  
+  
+  if (Maybe<LayoutDeviceIntSize> newDisplaySize =
+          mContext->GetContentViewerSize()) {
+    
+    
+    
+    
+    mDisplaySize = *newDisplaySize;
+    MVM_LOG("%p: Display size updated to %s\n", this,
+            Stringify(mDisplaySize).c_str());
+    RefreshVisualViewportSize();
+  }
 }
 
 void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
