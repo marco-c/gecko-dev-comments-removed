@@ -20,7 +20,7 @@ namespace mozilla {
 namespace layers {
 
 static StaticRefPtr<CompositorThreadHolder> sCompositorThreadHolder;
-static bool sFinishedCompositorShutDown = false;
+static Atomic<bool> sFinishedCompositorShutDown(false);
 static mozilla::BackgroundHangMonitor* sBackgroundHangMonitor;
 
 nsISerialEventTarget* CompositorThread() {
@@ -39,7 +39,6 @@ CompositorThreadHolder::CompositorThreadHolder()
 }
 
 CompositorThreadHolder::~CompositorThreadHolder() {
-  MOZ_ASSERT(NS_IsMainThread());
   sFinishedCompositorShutDown = true;
 }
 
@@ -116,7 +115,9 @@ void CompositorThreadHolder::Shutdown() {
   
   CompositorThread()->Dispatch(NS_NewRunnableFunction(
       "CompositorThreadHolder::Shutdown",
-      [backgroundHangMonitor = UniquePtr<mozilla::BackgroundHangMonitor>(
+      [compositorThreadHolder =
+           RefPtr<CompositorThreadHolder>(sCompositorThreadHolder),
+       backgroundHangMonitor = UniquePtr<mozilla::BackgroundHangMonitor>(
            sBackgroundHangMonitor)]() {
         nsCOMPtr<nsIThread> thread = NS_GetCurrentThread();
         static_cast<nsThread*>(thread.get())->SetUseHangMonitor(false);
@@ -125,9 +126,15 @@ void CompositorThreadHolder::Shutdown() {
   sCompositorThreadHolder = nullptr;
   sBackgroundHangMonitor = nullptr;
 
-  
-  
-  SpinEventLoopUntil([&]() { return sFinishedCompositorShutDown; });
+  SpinEventLoopUntil([&]() {
+    bool finished = sFinishedCompositorShutDown;
+    return finished;
+  });
+
+
+
+
+
 
   CompositorBridgeParent::FinishShutdown();
 }
