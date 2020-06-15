@@ -2035,6 +2035,10 @@ class nsIFrame : public nsQueryFrame {
 
  protected:
   
+  void FireDOMEvent(const nsAString& aDOMEventName,
+                    nsIContent* aContent = nullptr);
+
+  
 
   NS_IMETHOD HandlePress(nsPresContext* aPresContext,
                          mozilla::WidgetGUIEvent* aEvent,

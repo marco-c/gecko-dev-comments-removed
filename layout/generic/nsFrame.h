@@ -375,11 +375,6 @@ class nsFrame : public nsIFrame {
            aFrame->PresContext()->IsPaginated() && aFrame->IsBlockFrame();
   }
 
- protected:
-  
-  void FireDOMEvent(const nsAString& aDOMEventName,
-                    nsIContent* aContent = nullptr);
-
  private:
   
   bool HasCSSAnimations();
