@@ -602,25 +602,76 @@ static MOZ_ALWAYS_INLINE JSString* GetBuiltinTagFast(JSObject* obj,
 }
 
 
+
+static JSAtom* MaybeObjectToStringPrimitive(JSContext* cx, const Value& v) {
+  JSProtoKey protoKey = js::PrimitiveToProtoKey(cx, v);
+
+  
+  JSObject* proto = cx->global()->maybeGetPrototype(protoKey);
+  if (!proto) {
+    return nullptr;
+  }
+
+  
+  
+  
+  if (MaybeHasInterestingSymbolProperty(
+          cx, proto, cx->wellKnownSymbols().toStringTag, nullptr)) {
+    return nullptr;
+  }
+
+  
+  switch (protoKey) {
+    case JSProto_String:
+      return cx->names().objectString;
+    case JSProto_Number:
+      return cx->names().objectNumber;
+    case JSProto_Boolean:
+      return cx->names().objectBoolean;
+    case JSProto_Symbol:
+      return cx->names().objectSymbol;
+    case JSProto_BigInt:
+      return cx->names().objectBigInt;
+    default:
+      break;
+  }
+
+  return nullptr;
+}
+
+
 bool js::obj_toString(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject obj(cx);
 
-  
-  if (args.thisv().isUndefined()) {
-    args.rval().setString(cx->names().objectUndefined);
-    return true;
-  }
+  if (args.thisv().isPrimitive()) {
+    
+    if (args.thisv().isUndefined()) {
+      args.rval().setString(cx->names().objectUndefined);
+      return true;
+    }
 
-  
-  if (args.thisv().isNull()) {
-    args.rval().setString(cx->names().objectNull);
-    return true;
-  }
+    
+    if (args.thisv().isNull()) {
+      args.rval().setString(cx->names().objectNull);
+      return true;
+    }
 
-  
-  RootedObject obj(cx, ToObject(cx, args.thisv()));
-  if (!obj) {
-    return false;
+    
+    
+    JSAtom* result = MaybeObjectToStringPrimitive(cx, args.thisv());
+    if (result) {
+      args.rval().setString(result);
+      return true;
+    }
+
+    
+    obj = ToObject(cx, args.thisv());
+    if (!obj) {
+      return false;
+    }
+  } else {
+    obj = &args.thisv().toObject();
   }
 
   RootedString builtinTag(cx);

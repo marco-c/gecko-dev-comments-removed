@@ -981,6 +981,7 @@ extern bool IsPrototypeOf(JSContext* cx, HandleObject protoObj, JSObject* obj,
 
 
 extern JSObject* PrimitiveToObject(JSContext* cx, const Value& v);
+extern JSProtoKey PrimitiveToProtoKey(JSContext* cx, const Value& v);
 
 } 
 
