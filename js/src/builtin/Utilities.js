@@ -76,20 +76,6 @@ function RequireObjectCoercible(v) {
 }
 
 
-function ToLength(v) {
-    
-    v = ToInteger(v);
-
-    
-    
-    v = std_Math_max(v, 0);
-
-    
-    
-    return std_Math_min(v, 0x1fffffffffffff);
-}
-
-
 
 function SameValueZero(x, y) {
     return x === y || (x !== x && y !== y);

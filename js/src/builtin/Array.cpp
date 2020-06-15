@@ -154,7 +154,7 @@ bool js::GetLengthProperty(JSContext* cx, HandleObject obj, uint32_t* lengthp) {
 }
 
 
-static bool ToLength(JSContext* cx, HandleValue v, uint64_t* out) {
+bool js::ToLength(JSContext* cx, HandleValue v, uint64_t* out) {
   if (v.isInt32()) {
     int32_t i = v.toInt32();
     *out = i < 0 ? 0 : i;
