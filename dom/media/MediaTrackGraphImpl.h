@@ -325,7 +325,8 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   void ApplyAudioContextOperationImpl(
-      MediaTrack* aDestinationTrack, const nsTArray<MediaTrack*>& aTracks,
+      MediaTrack* aDestinationTrack,
+      const nsTArray<RefPtr<MediaTrack>>& aTracks,
       dom::AudioContextOperation aOperation,
       MozPromiseHolder<AudioContextOperationPromise>&& aHolder);
 
@@ -334,7 +335,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   void SuspendOrResumeTracks(dom::AudioContextOperation aAudioContextOperation,
-                             const nsTArray<MediaTrack*>& aTrackSet);
+                             const nsTArray<RefPtr<MediaTrack>>& aTrackSet);
 
   
 
