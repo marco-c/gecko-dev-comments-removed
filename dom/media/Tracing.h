@@ -16,13 +16,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 
-#if defined(_WIN32)
-#  include <process.h>
-#  define getpid() _getpid()
-#else
-#  include <unistd.h>
-#endif
-
 #if defined(_MSC_VER)
 
 #  define FUNCTION_SIGNATURE __FUNCSIG__
@@ -48,16 +41,18 @@ void StopAudioCallbackTracing();
 
 
 
-#  define TRACE()                                                \
-    AutoTracer trace(                                            \
-        gAudioCallbackTraceLogger, FUNCTION_SIGNATURE, getpid(), \
-        std::hash<std::thread::id>{}(std::this_thread::get_id()));
-#  define TRACE_AUDIO_CALLBACK_BUDGET(aFrames, aSampleRate)                    \
-    AutoTracer budget(gAudioCallbackTraceLogger, "Real-time budget", getpid(), \
-                      1, AutoTracer::EventType::BUDGET, aFrames, aSampleRate);
-#  define TRACE_COMMENT(aFmt, ...)                                             \
-    AutoTracer trace(gAudioCallbackTraceLogger, FUNCTION_SIGNATURE, getpid(),  \
-                     std::hash<std::thread::id>{}(std::this_thread::get_id()), \
+#  define TRACE_AUDIO_CALLBACK() \
+    AutoTracer trace(gAudioCallbackTraceLogger, FUNCTION_SIGNATURE);
+#  define TRACE_AUDIO_CALLBACK_BUDGET(aFrames, aSampleRate)          \
+    AutoTracer budget(gAudioCallbackTraceLogger, "Real-time budget", \
+                      AutoTracer::EventType::BUDGET, aFrames, aSampleRate);
+#  define TRACE_AUDIO_CALLBACK_COMMENT(aFmt, ...)                   \
+    AutoTracer trace(gAudioCallbackTraceLogger, FUNCTION_SIGNATURE, \
+                     AutoTracer::EventType::DURATION, aFmt, ##__VA_ARGS__);
+#  define TRACE() \
+    AutoTracer trace(gAudioCallbackTraceLogger, FUNCTION_SIGNATURE);
+#  define TRACE_COMMENT(aFmt, ...)                                  \
+    AutoTracer trace(gAudioCallbackTraceLogger, FUNCTION_SIGNATURE, \
                      AutoTracer::EventType::DURATION, aFmt, ##__VA_ARGS__);
 #else
 #  define TRACE()
@@ -73,45 +68,38 @@ class MOZ_RAII AutoTracer {
   enum class EventType { DURATION, BUDGET };
 
   AutoTracer(mozilla::AsyncLogger& aLogger, const char* aLocation,
-             uint64_t aPID, uint64_t aTID,
              EventType aEventType = EventType::DURATION,
              const char* aComment = nullptr);
 
   template <typename... Args>
   AutoTracer(mozilla::AsyncLogger& aLogger, const char* aLocation,
-             uint64_t aPID, uint64_t aTID, EventType aEventType,
-             const char* aFormat, Args... aArgs)
+             EventType aEventType, const char* aFormat, Args... aArgs)
       : mLogger(aLogger),
         mLocation(aLocation),
         mComment(mBuffer),
-        mEventType(aEventType),
-        mPID(aPID),
-        mTID(aTID) {
+        mEventType(aEventType) {
     MOZ_ASSERT(aEventType == EventType::DURATION);
     if (aLogger.Enabled()) {
       int32_t size = snprintf(mBuffer, BUFFER_SIZE, aFormat, aArgs...);
       size = std::min(size, BUFFER_SIZE - 1);
       mBuffer[size] = 0;
       PrintEvent(aLocation, "perf", mComment,
-                 mozilla::AsyncLogger::TracingPhase::BEGIN, aPID, aTID);
+                 mozilla::AsyncLogger::TracingPhase::BEGIN);
     }
   }
 
   AutoTracer(mozilla::AsyncLogger& aLogger, const char* aLocation,
-             uint64_t aPID, uint64_t aTID, EventType aEventType,
-             uint64_t aFrames, uint64_t aSampleRate);
+             EventType aEventType, uint64_t aFrames, uint64_t aSampleRate);
 
   ~AutoTracer();
 
  private:
   void PrintEvent(const char* aName, const char* aCategory,
                   const char* aComment,
-                  mozilla::AsyncLogger::TracingPhase aPhase, uint64_t aPID,
-                  uint64_t aThread);
+                  mozilla::AsyncLogger::TracingPhase aPhase);
 
   void PrintBudget(const char* aName, const char* aCategory, uint64_t aDuration,
-                   uint64_t aPID, uint64_t aThread, uint64_t aFrames,
-                   uint64_t aSampleRate);
+                   uint64_t aFrames, uint64_t aSampleRate);
 
   
   
@@ -126,16 +114,6 @@ class MOZ_RAII AutoTracer {
   char mBuffer[BUFFER_SIZE];
   
   const EventType mEventType;
-  
-  
-  const uint64_t mPID;
-  
-  
-  const uint64_t mTID;
 };
-
-#if defined(_WIN32)
-#  undef getpid
-#endif
 
 #endif 
