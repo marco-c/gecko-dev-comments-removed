@@ -685,8 +685,8 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
     decoder->mTransform = qcms_transform_create(decoder->mInProfile, inType,
                                                 decoder->GetCMSOutputProfile(),
                                                 outType, (qcms_intent)intent);
-  } else if (sRGBTag && (decoder->mCMSMode == eCMSMode_TaggedOnly ||
-                         decoder->mCMSMode == eCMSMode_All)) {
+  } else if ((sRGBTag && decoder->mCMSMode == eCMSMode_TaggedOnly) ||
+             decoder->mCMSMode == eCMSMode_All) {
     
     
     
