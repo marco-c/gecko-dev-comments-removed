@@ -34,9 +34,7 @@ CompositorThreadHolder* CompositorThreadHolder::GetSingleton() {
 }
 
 CompositorThreadHolder::CompositorThreadHolder()
-    : mCompositorThread(CreateCompositorThread()),
-      mCompositorAbstractThread(AbstractThread::CreateXPCOMThreadWrapper(
-          mCompositorThread, false )) {
+    : mCompositorThread(CreateCompositorThread()) {
   MOZ_ASSERT(NS_IsMainThread());
 }
 
