@@ -116,7 +116,8 @@ bool ResolveRegistryName(std::wstring name, std::wstring* resolved_name);
 bool WriteProtectedChildMemory(HANDLE child_process,
                                void* address,
                                const void* buffer,
-                               size_t length);
+                               size_t length,
+                               DWORD writeProtection = PAGE_WRITECOPY);
 
 
 
