@@ -201,7 +201,7 @@ class AnimationImageKeyData final : public SharedSurfacesChild::ImageKeyData {
   AnimationImageKeyData(AnimationImageKeyData&& aOther);
   AnimationImageKeyData& operator=(AnimationImageKeyData&& aOther);
 
-  AutoTArray<RefPtr<gfx::SourceSurface>, 2> mPendingRelease;
+  AutoTArray<RefPtr<gfx::SourceSurfaceSharedData>, 2> mPendingRelease;
 };
 
 
@@ -223,11 +223,7 @@ class SharedSurfacesAnimation final {
 
 
 
-
-
-
-  nsresult SetCurrentFrame(gfx::SourceSurface* aParentSurface,
-                           gfx::SourceSurfaceSharedData* aSurface,
+  nsresult SetCurrentFrame(gfx::SourceSurfaceSharedData* aSurface,
                            const gfx::IntRect& aDirtyRect);
 
   
@@ -236,11 +232,7 @@ class SharedSurfacesAnimation final {
 
 
 
-
-
-
-  nsresult UpdateKey(gfx::SourceSurface* aParentSurface,
-                     gfx::SourceSurfaceSharedData* aSurface,
+  nsresult UpdateKey(gfx::SourceSurfaceSharedData* aSurface,
                      RenderRootStateManager* aManager,
                      wr::IpcResourceUpdateQueue& aResources,
                      wr::ImageKey& aKey);
@@ -262,7 +254,6 @@ class SharedSurfacesAnimation final {
   ~SharedSurfacesAnimation();
 
   void HoldSurfaceForRecycling(AnimationImageKeyData& aEntry,
-                               gfx::SourceSurface* aParentSurface,
                                gfx::SourceSurfaceSharedData* aSurface);
 
   AutoTArray<AnimationImageKeyData, 1> mKeys;

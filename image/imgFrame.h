@@ -219,14 +219,7 @@ class imgFrame {
   uint32_t GetImageBytesPerRow() const;
   uint32_t GetImageDataLength() const;
   void FinalizeSurfaceInternal();
-
-  
-
-
-
-
-
-  already_AddRefed<SourceSurface> GetSourceSurfaceInternal(bool aTemporary);
+  already_AddRefed<SourceSurface> GetSourceSurfaceInternal();
 
   struct SurfaceWithFormat {
     RefPtr<gfxDrawable> mDrawable;
@@ -253,7 +246,6 @@ class imgFrame {
  private:  
   friend class DrawableFrameRef;
   friend class RawAccessFrameRef;
-  friend class RecyclingSourceSurface;
   friend class UnlockImageDataRunnable;
 
   
@@ -288,9 +280,6 @@ class imgFrame {
 
   
   int16_t mLockCount;
-
-  
-  int16_t mRecycleLockCount;
 
   bool mAborted;
   bool mFinished;
