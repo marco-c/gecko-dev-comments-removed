@@ -234,13 +234,20 @@ extern const char* ReservedWordToCharZ(PropertyName* str);
 extern const char* ReservedWordToCharZ(TokenKind tt);
 
 struct TokenStreamFlags {
-  bool isEOF : 1;           
-  bool isDirtyLine : 1;     
-  bool sawOctalEscape : 1;  
-  bool hadError : 1;        
-                            
+  
+  bool isEOF : 1;
+  
+  bool isDirtyLine : 1;
+  
+  bool sawDeprecatedOctal : 1;
+  
+  bool hadError : 1;
 
-  TokenStreamFlags() : isEOF(), isDirtyLine(), sawOctalEscape(), hadError() {}
+  TokenStreamFlags()
+      : isEOF(false),
+        isDirtyLine(false),
+        sawDeprecatedOctal(false),
+        hadError(false) {}
 };
 
 template <typename Unit>
@@ -753,9 +760,9 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
   
   bool isEOF() const { return flags.isEOF; }
-  bool sawOctalEscape() const { return flags.sawOctalEscape; }
+  bool sawDeprecatedOctal() const { return flags.sawDeprecatedOctal; }
   bool hadError() const { return flags.hadError; }
-  void clearSawOctalEscape() { flags.sawOctalEscape = false; }
+  void clearSawDeprecatedOctal() { flags.sawDeprecatedOctal = false; }
 
   bool hasInvalidTemplateEscape() const {
     return invalidTemplateEscapeType != InvalidEscapeType::None;

@@ -3721,7 +3721,7 @@ bool GeneralParser<ParseHandler, Unit>::maybeParseDirective(
         
         
         
-        if (anyChars.sawOctalEscape()) {
+        if (anyChars.sawDeprecatedOctal()) {
           error(JSMSG_DEPRECATED_OCTAL);
           return false;
         }
@@ -3751,7 +3751,7 @@ GeneralParser<ParseHandler, Unit>::statementList(YieldHandling yieldHandling) {
 
   bool canHaveDirectives = pc_->atBodyLevel();
   if (canHaveDirectives) {
-    anyChars.clearSawOctalEscape();
+    anyChars.clearSawDeprecatedOctal();
   }
 
   bool canHaveHashbangComment = pc_->atTopLevel();
