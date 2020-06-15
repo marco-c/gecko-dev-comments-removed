@@ -1800,8 +1800,14 @@ void nsContainerFrame::NormalizeChildLists() {
 
       
       
+      
+      
+      
       nsFrameList* overflowContainers =
-          GetPropTableFrames(OverflowContainersProperty());
+          DrainExcessOverflowContainersList(MergeSortedFrameListsFor);
+
+      
+      
       if (overflowContainers) {
         nsFrameList moveToEOC;
         for (nsIFrame* f = overflowContainers->FirstChild(); f;) {
