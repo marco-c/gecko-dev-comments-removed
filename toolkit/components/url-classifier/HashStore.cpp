@@ -985,7 +985,7 @@ template <class T>
 static void Erase(FallibleTArray<T>* array,
                   typename FallibleTArray<T>::iterator& iterStart,
                   typename FallibleTArray<T>::iterator& iterEnd) {
-  array->RemoveElementsAt(iterStart, iterEnd);
+  array->RemoveElementsRange(iterStart, iterEnd);
 }
 
 
