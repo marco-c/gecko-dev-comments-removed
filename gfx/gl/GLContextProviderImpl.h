@@ -66,12 +66,12 @@ class GL_CONTEXT_PROVIDER_NAME {
 
 
   static already_AddRefed<GLContext> CreateOffscreen(
-      const mozilla::gfx::IntSize& size, const SurfaceCaps& minCaps,
-      CreateContextFlags flags, nsACString* const out_failureId);
+      const mozilla::gfx::IntSize& size, const GLContextCreateDesc&,
+      nsACString* const out_failureId);
 
   
   static already_AddRefed<GLContext> CreateHeadless(
-      CreateContextFlags flags, nsACString* const out_failureId);
+      const GLContextCreateDesc&, nsACString* const out_failureId);
 
   
 
