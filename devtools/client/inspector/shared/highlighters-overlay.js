@@ -92,8 +92,6 @@ class HighlightersOverlay {
     
     this.flexboxHighlighterShown = null;
     
-    this.flexItemHighlighterShown = null;
-    
     this.geometryEditorHighlighterShown = null;
     
     this.hoveredHighlighterShown = null;
@@ -109,11 +107,9 @@ class HighlightersOverlay {
     this.onMouseOut = this.onMouseOut.bind(this);
     this.onWillNavigate = this.onWillNavigate.bind(this);
     this.hideFlexboxHighlighter = this.hideFlexboxHighlighter.bind(this);
-    this.hideFlexItemHighlighter = this.hideFlexItemHighlighter.bind(this);
     this.hideGridHighlighter = this.hideGridHighlighter.bind(this);
     this.hideShapesHighlighter = this.hideShapesHighlighter.bind(this);
     this.showFlexboxHighlighter = this.showFlexboxHighlighter.bind(this);
-    this.showFlexItemHighlighter = this.showFlexItemHighlighter.bind(this);
     this.showGridHighlighter = this.showGridHighlighter.bind(this);
     this.showShapesHighlighter = this.showShapesHighlighter.bind(this);
     this._handleRejection = this._handleRejection.bind(this);
@@ -454,63 +450,6 @@ class HighlightersOverlay {
 
     
     this.state.flexbox = null;
-  }
-
-  
-
-
-
-
-
-
-
-  async toggleFlexItemHighlighter(node, options = {}) {
-    if (node == this.flexItemHighlighterShown) {
-      await this.hideFlexItemHighlighter(node);
-      return;
-    }
-
-    await this.showFlexItemHighlighter(node, options);
-  }
-
-  
-
-
-
-
-
-
-
-  async showFlexItemHighlighter(node, options) {
-    const highlighter = await this._getHighlighter("FlexItemHighlighter");
-    if (!highlighter) {
-      return;
-    }
-
-    const isShown = await highlighter.show(node, options);
-    if (!isShown) {
-      return;
-    }
-
-    this.flexItemHighlighterShown = node;
-  }
-
-  
-
-
-
-
-
-  async hideFlexItemHighlighter(node) {
-    if (
-      !this.flexItemHighlighterShown ||
-      !this.highlighters.FlexItemHighlighter
-    ) {
-      return;
-    }
-
-    await this.highlighters.FlexItemHighlighter.hide();
-    this.flexItemHighlighterShown = null;
   }
 
   
@@ -1419,10 +1358,6 @@ class HighlightersOverlay {
       this.hideFlexboxHighlighter
     );
     await this._hideHighlighterIfDeadNode(
-      this.flexItemHighlighterShown,
-      this.hideFlexItemHighlighter
-    );
-    await this._hideHighlighterIfDeadNode(
       this.shapesHighlighterShown,
       this.hideShapesHighlighter
     );
@@ -1450,7 +1385,6 @@ class HighlightersOverlay {
 
     this.boxModelHighlighterShown = null;
     this.flexboxHighlighterShown = null;
-    this.flexItemHighlighterShown = null;
     this.geometryEditorHighlighterShown = null;
     this.hoveredHighlighterShown = null;
     this.selectorHighlighterShown = null;
@@ -1537,7 +1471,6 @@ class HighlightersOverlay {
 
     this.boxModelHighlighterShown = null;
     this.flexboxHighlighterShown = null;
-    this.flexItemHighlighterShown = null;
     this.geometryEditorHighlighterShown = null;
     this.hoveredHighlighterShown = null;
     this.selectorHighlighterShown = null;
