@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+
 # -*- coding: utf-8 -*-
-#
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
 
 """ Usage:
     make_intl_data.py langtags [cldr_core.zip]
@@ -60,10 +60,10 @@ else:
     from urllib.parse import urlsplit
 
 
-# From https://docs.python.org/3/library/itertools.html
+
 def grouper(iterable, n, fillvalue=None):
     "Collect data into fixed-length chunks or blocks"
-    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
+    
     args = [iter(iterable)] * n
     return zip_longest(*args, fillvalue=fillvalue)
 
@@ -114,7 +114,7 @@ bool js::intl::LanguageTag::{0}({1} {2}) {{
         else:
             println(u"    static const char* {}[{}] = {{".format(name, len(subtags)))
 
-        # Group in pairs of ten to not exceed the 80 line column limit.
+        
         for entries in grouper(subtags, 10):
             entries = (u"\"{}\"".format(tag).rjust(length + 2)
                        for tag in entries if tag is not None)
@@ -124,12 +124,12 @@ bool js::intl::LanguageTag::{0}({1} {2}) {{
 
     trailing_return = True
 
-    # Sort the subtags by length. That enables using an optimized comparator
-    # for the binary search, which only performs a single |memcmp| for multiple
-    # of two subtag lengths.
+    
+    
+    
     mappings_keys = mappings.keys() if type(mappings) == dict else mappings
     for (length, subtags) in groupby(sorted(mappings_keys, key=len), len):
-        # Omit the length check if the current length is the maximum length.
+        
         if length != tag_maxlength:
             println(u"""
   if ({}.length() == {}) {{
@@ -140,13 +140,13 @@ bool js::intl::LanguageTag::{0}({1} {2}) {{
   {
 """.rstrip("\n"))
 
-        # The subtags need to be sorted for binary search to work.
+        
         subtags = sorted(subtags)
 
         def equals(subtag):
             return u"""{}.equalTo("{}")""".format(name, subtag)
 
-        # Don't emit a binary search for short lists.
+        
         if len(subtags) == 1:
             if type(mappings) == dict:
                 println(u"""
@@ -219,7 +219,7 @@ void js::intl::LanguageTag::performComplexLanguageMappings() {
   MOZ_ASSERT(IsCanonicallyCasedLanguageTag(language().span()));
 """.lstrip())
 
-    # Merge duplicate language entries.
+    
     language_aliases = {}
     for (deprecated_language, (language, script, region)) in (
         sorted(complex_language_mappings.items(), key=itemgetter(0))
@@ -281,12 +281,12 @@ void js::intl::LanguageTag::performComplexRegionMappings() {
   MOZ_ASSERT(IsCanonicallyCasedRegionTag(region().span()));
 """.lstrip())
 
-    # |non_default_replacements| is a list and hence not hashable. Convert it
-    # to a string to get a proper hashable value.
+    
+    
     def hash_key(default, non_default_replacements):
         return (default, str(sorted(str(v) for v in non_default_replacements)))
 
-    # Merge duplicate region entries.
+    
     region_aliases = {}
     for (deprecated_region, (default, non_default_replacements)) in (
         sorted(complex_region_mappings.items(), key=itemgetter(0))
@@ -493,9 +493,9 @@ bool js::intl::LanguageTag::updateGrandfatheredMappings(JSContext* cx) {
     return strcmp(variants()[0].get(), variant) == 0;
   };""")
 
-    # From Unicode BCP 47 locale identifier <https://unicode.org/reports/tr35/>.
-    #
-    # Doesn't allow any 'extensions' subtags.
+    
+    
+    
     re_unicode_locale_id = re.compile(
         r"""
         ^
@@ -618,7 +618,7 @@ def readSupplementalData(core_file):
     """
     import xml.etree.ElementTree as ET
 
-    # From Unicode BCP 47 locale identifier <https://unicode.org/reports/tr35/>.
+    
     re_unicode_language_id = re.compile(
         r"""
         ^
@@ -664,7 +664,7 @@ def readSupplementalData(core_file):
         $
         """, re.IGNORECASE | re.VERBOSE)
 
-    # The fixed list of BCP 47 grandfathered language tags.
+    
     grandfathered_tags = (
         "art-lojban",
         "cel-gaulish",
@@ -694,44 +694,44 @@ def readSupplementalData(core_file):
         "zh-xiang",
     )
 
-    # The list of grandfathered tags which are valid Unicode BCP 47 locale identifiers.
+    
     unicode_bcp47_grandfathered_tags = {tag for tag in grandfathered_tags
                                         if re_unicode_language_id.match(tag)}
 
-    # Dictionary of simple language subtag mappings, e.g. "in" -> "id".
+    
     language_mappings = {}
 
-    # Dictionary of complex language subtag mappings, modifying more than one
-    # subtag, e.g. "sh" -> ("sr", "Latn", None) and "cnr" -> ("sr", None, "ME").
+    
+    
     complex_language_mappings = {}
 
-    # Dictionary of simple region subtag mappings, e.g. "DD" -> "DE".
+    
     region_mappings = {}
 
-    # Dictionary of complex region subtag mappings, containing more than one
-    # replacement, e.g. "SU" -> ("RU", ["AM", "AZ", "BY", ...]).
+    
+    
     complex_region_mappings = {}
 
-    # Dictionary of aliased variant subtags to a tuple of preferred replacement
-    # type and replacement, e.g. "arevela" -> ("language", "hy") or
-    # "aaland" -> ("region", "AX") or "heploc" -> ("variant", "alalc97").
+    
+    
+    
     variant_mappings = {}
 
-    # Dictionary of grandfathered mappings to preferred values.
+    
     grandfathered_mappings = {}
 
-    # CLDR uses "_" as the separator for some elements. Replace it with "-".
+    
     def bcp47_id(cldr_id):
         return cldr_id.replace("_", "-")
 
-    # CLDR uses the canonical case for most entries, but there are some
-    # exceptions, like:
-    #   <languageAlias type="drw" replacement="fa_af" reason="deprecated"/>
-    # Therefore canonicalize all tags to be on the safe side.
+    
+    
+    
+    
     def bcp47_canonical(language, script, region):
-        # Canonical case for language subtags is lower case.
-        # Canonical case for script subtags is title case.
-        # Canonical case for region subtags is upper case.
+        
+        
+        
         return (language.lower() if language else None,
                 script.title() if script else None,
                 region.upper() if region else None)
@@ -742,20 +742,20 @@ def readSupplementalData(core_file):
         type = bcp47_id(language_alias.get("type"))
         replacement = bcp47_id(language_alias.get("replacement"))
 
-        # Handle grandfathered mappings first.
+        
         if type in unicode_bcp47_grandfathered_tags:
             grandfathered_mappings[type] = replacement
             continue
 
-        # We're only interested in language subtag matches, so ignore any
-        # entries which have additional subtags.
+        
+        
         if re_unicode_language_subtag.match(type) is None:
             continue
 
         assert type.islower()
 
         if re_unicode_language_subtag.match(replacement) is not None:
-            # Canonical case for language subtags is lower-case.
+            
             language_mappings[type] = replacement.lower()
         else:
             replacement_match = re_unicode_language_id.match(replacement)
@@ -772,18 +772,18 @@ def readSupplementalData(core_file):
         type = territory_alias.get("type")
         replacement = territory_alias.get("replacement")
 
-        # We're only interested in region subtag matches, so ignore any entries
-        # which contain legacy formats, e.g. three letter region codes.
+        
+        
         if re_unicode_region_subtag.match(type) is None:
             continue
 
         assert type.isupper() or type.isdigit()
 
         if re_unicode_region_subtag.match(replacement) is not None:
-            # Canonical case for region subtags is upper-case.
+            
             region_mappings[type] = replacement.upper()
         else:
-            # Canonical case for region subtags is upper-case.
+            
             replacements = [r.upper() for r in replacement.split(" ")]
             assert all(
                 re_unicode_region_subtag.match(loc) is not None for loc in replacements
@@ -797,12 +797,12 @@ def readSupplementalData(core_file):
         assert re_unicode_variant_subtag.match(type) is not None, (
                "{} invalid variant subtag".format(type))
 
-        # Normalize the case, because some variants are in upper case.
+        
         type = type.lower()
 
-        # The replacement can be a language, a region, or a variant subtag.
-        # Language and region subtags are case normalized, variant subtags can
-        # be in any case.
+        
+        
+        
 
         if re_unicode_language_subtag.match(replacement) is not None and replacement.islower():
             variant_mappings[type] = ("language", replacement)
@@ -849,30 +849,30 @@ def readSupplementalData(core_file):
     complex_region_mappings_final = {}
 
     for (deprecated_region, replacements) in complex_region_mappings.items():
-        # Find all likely subtag entries which don't already contain a region
-        # subtag and whose target region is in the list of replacement regions.
+        
+        
         region_likely_subtags = [(from_language, from_script, to_region)
                                  for ((from_language, from_script, from_region),
                                       (_, _, to_region)) in likely_subtags.items()
                                  if from_region is None and to_region in replacements]
 
-        # The first replacement entry is the default region.
+        
         default = replacements[0]
 
-        # Find all likely subtag entries whose region matches the default region.
+        
         default_replacements = {(language, script)
                                 for (language, script, region) in region_likely_subtags
                                 if region == default}
 
-        # And finally find those entries which don't use the default region.
-        # These are the entries we're actually interested in, because those need
-        # to be handled specially when selecting the correct preferred region.
+        
+        
+        
         non_default_replacements = [(language, script, region)
                                     for (language, script, region) in region_likely_subtags
                                     if (language, script) not in default_replacements]
 
-        # If there are no non-default replacements, we can handle the region as
-        # part of the simple region mapping.
+        
+        
         if non_default_replacements:
             complex_region_mappings_final[deprecated_region] = (default, non_default_replacements)
         else:
@@ -891,21 +891,21 @@ def readSupplementalData(core_file):
 def readUnicodeExtensions(core_file):
     import xml.etree.ElementTree as ET
 
-    # Match all xml-files in the BCP 47 directory.
+    
     bcpFileRE = re.compile(r"^common/bcp47/.+\.xml$")
 
-    # https://www.unicode.org/reports/tr35/#Unicode_locale_identifier
-    #
-    # type = alphanum{3,8} (sep alphanum{3,8})* ;
+    
+    
+    
     typeRE = re.compile(r"^[a-z0-9]{3,8}(-[a-z0-9]{3,8})*$")
 
-    # Mapping from Unicode extension types to dict of deprecated to
-    # preferred values.
+    
+    
     mapping = {
-        # Unicode BCP 47 U Extension
+        
         "u": {},
 
-        # Unicode BCP 47 T Extension
+        
         "t": {},
     }
 
@@ -919,57 +919,57 @@ def readUnicodeExtensions(core_file):
             extension_name = keyword.get("name")
 
             for type in keyword.iterfind("type"):
-                # <https://unicode.org/reports/tr35/#Unicode_Locale_Extension_Data_Files>:
-                #
-                # The key or type name used by Unicode locale extension with 'u' extension
-                # syntax or the 't' extensions syntax. When alias below is absent, this name
-                # can be also used with the old style "@key=type" syntax.
+                
+                
+                
+                
+                
                 name = type.get("name")
 
-                # Ignore the special name:
-                # - <https://unicode.org/reports/tr35/#CODEPOINTS>
-                # - <https://unicode.org/reports/tr35/#REORDER_CODE>
-                # - <https://unicode.org/reports/tr35/#RG_KEY_VALUE>
-                # - <https://unicode.org/reports/tr35/#SUBDIVISION_CODE>
-                # - <https://unicode.org/reports/tr35/#PRIVATE_USE>
+                
+                
+                
+                
+                
+                
                 if name in ("CODEPOINTS", "REORDER_CODE", "RG_KEY_VALUE", "SUBDIVISION_CODE",
                             "PRIVATE_USE"):
                     continue
 
-                # All other names should match the 'type' production.
+                
                 assert typeRE.match(name) is not None, (
                        "{} matches the 'type' production".format(name))
 
-                # <https://unicode.org/reports/tr35/#Unicode_Locale_Extension_Data_Files>:
-                #
-                # The preferred value of the deprecated key, type or attribute element.
-                # When a key, type or attribute element is deprecated, this attribute is
-                # used for specifying a new canonical form if available.
+                
+                
+                
+                
+                
                 preferred = type.get("preferred")
 
-                # <https://unicode.org/reports/tr35/#Unicode_Locale_Extension_Data_Files>:
-                #
-                # The BCP 47 form is the canonical form, and recommended. Other aliases are
-                # included only for backwards compatibility.
+                
+                
+                
+                
                 alias = type.get("alias")
 
-                # <https://unicode.org/reports/tr35/#Canonical_Unicode_Locale_Identifiers>
-                #
-                # Use the bcp47 data to replace keys, types, tfields, and tvalues by their
-                # canonical forms. See Section 3.6.4 U Extension Data Files) and Section
-                # 3.7.1 T Extension Data Files. The aliases are in the alias attribute
-                # value, while the canonical is in the name attribute value.
+                
+                
+                
+                
+                
+                
 
-                # 'preferred' contains the new preferred name, 'alias' the compatibility
-                # name, but then there's this entry where 'preferred' and 'alias' are the
-                # same. So which one to choose? Assume 'preferred' is the actual canonical
-                # name.
-                #
-                # <type name="islamicc"
-                #       description="Civil (algorithmic) Arabic calendar"
-                #       deprecated="true"
-                #       preferred="islamic-civil"
-                #       alias="islamic-civil"/>
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
 
                 if preferred is not None:
                     assert typeRE.match(preferred), preferred
@@ -977,53 +977,53 @@ def readUnicodeExtensions(core_file):
 
                 if alias is not None:
                     for alias_name in alias.lower().split(" "):
-                        # Ignore alias entries which don't match the 'type' production.
+                        
                         if typeRE.match(alias_name) is None:
                             continue
 
-                        # See comment above when 'alias' and 'preferred' are both present.
+                        
                         if (preferred is not None and
                             name in mapping[extension][extension_name]):
                             continue
 
-                        # Skip over entries where 'name' and 'alias' are equal.
-                        #
-                        # <type name="pst8pdt"
-                        #       description="POSIX style time zone for US Pacific Time"
-                        #       alias="PST8PDT"
-                        #       since="1.8"/>
+                        
+                        
+                        
+                        
+                        
+                        
                         if name == alias_name:
                             continue
 
                         mapping[extension].setdefault(extension_name, {})[alias_name] = name
 
     def readSupplementalMetadata(file):
-        # Find subdivision and region replacements.
-        #
-        # <https://www.unicode.org/reports/tr35/#Canonical_Unicode_Locale_Identifiers>
-        #
-        # Replace aliases in special key values:
-        #   - If there is an 'sd' or 'rg' key, replace any subdivision alias
-        #     in its value in the same way, using subdivisionAlias data.
+        
+        
+        
+        
+        
+        
+        
         tree = ET.parse(file)
         for alias in tree.iterfind(".//subdivisionAlias"):
             type = alias.get("type")
             assert typeRE.match(type) is not None, (
                    "{} matches the 'type' production".format(type))
 
-            # Take the first replacement when multiple ones are present.
+            
             replacement = alias.get("replacement").split(" ")[0].lower()
 
-            # Skip over invalid replacements.
-            #
-            # <subdivisionAlias type="fi01" replacement="AX" reason="overlong"/>
-            #
-            # It's not entirely clear to me if CLDR actually wants to use
-            # "axzzzz" as the replacement for this case.
+            
+            
+            
+            
+            
+            
             if typeRE.match(replacement) is None:
                 continue
 
-            # 'subdivisionAlias' applies to 'rg' and 'sd' keys.
+            
             mapping["u"].setdefault("rg", {})[type] = replacement
             mapping["u"].setdefault("sd", {})[type] = replacement
 
@@ -1156,10 +1156,10 @@ static bool IsCanonicallyCasedTransformType(mozilla::Span<const char> type) {
     unicode_mappings = data["unicodeMappings"]
     transform_mappings = data["transformMappings"]
 
-    # unicode_language_subtag = alpha{2,3} | alpha{5,8} ;
+    
     language_maxlength = 8
 
-    # unicode_region_subtag = (alpha{2} | digit{3}) ;
+    
     region_maxlength = 3
 
     writeMappingsBinarySearch(println, "languageMapping",
@@ -1224,7 +1224,7 @@ def writeCLDRLanguageTagLikelySubtagsTest(println, data, url):
     def canonical(tag):
         (language, script, region) = tag
 
-        # Map deprecated language subtags.
+        
         if language in language_mappings:
             language = language_mappings[language]
         elif language in complex_language_mappings:
@@ -1233,27 +1233,27 @@ def writeCLDRLanguageTagLikelySubtagsTest(println, data, url):
                                           script if script else script2,
                                           region if region else region2)
 
-        # Map deprecated region subtags.
+        
         if region in region_mappings:
             region = region_mappings[region]
         else:
-            # Assume no complex region mappings are needed for now.
+            
             assert region not in complex_region_mappings,\
                    "unexpected region with complex mappings: {}".format(region)
 
         return (language, script, region)
 
-    # https://unicode.org/reports/tr35/#Likely_Subtags
+    
 
     def addLikelySubtags(tag):
-        # Step 1: Canonicalize.
+        
         (language, script, region) = canonical(tag)
         if script == "Zzzz":
             script = None
         if region == "ZZ":
             region = None
 
-        # Step 2: Lookup.
+        
         searches = ((language, script, region),
                     (language, None, region),
                     (language, script, None),
@@ -1264,54 +1264,54 @@ def writeCLDRLanguageTagLikelySubtagsTest(println, data, url):
         (language_s, script_s, region_s) = search
         (language_m, script_m, region_m) = likely_subtags[search]
 
-        # Step 3: Return.
+        
         return (language if language != language_s else language_m,
                 script if script != script_s else script_m,
                 region if region != region_s else region_m)
 
-    # https://unicode.org/reports/tr35/#Likely_Subtags
+    
     def removeLikelySubtags(tag):
-        # Step 1: Add likely subtags.
+        
         max = addLikelySubtags(tag)
 
-        # Step 2: Remove variants (doesn't apply here).
+        
 
-        # Step 3: Find a match.
+        
         (language, script, region) = max
         for trial in ((language, None, None), (language, None, region), (language, script, None)):
             if addLikelySubtags(trial) == max:
                 return trial
 
-        # Step 4: Return maximized if no match found.
+        
         return max
 
     def likely_canonical(from_tag, to_tag):
-        # Canonicalize the input tag.
+        
         from_tag = canonical(from_tag)
 
-        # Update the expected result if necessary.
+        
         if from_tag in likely_subtags:
             to_tag = likely_subtags[from_tag]
 
-        # Canonicalize the expected output.
+        
         to_canonical = canonical(to_tag)
 
-        # Sanity check: This should match the result of |addLikelySubtags|.
+        
         assert to_canonical == addLikelySubtags(from_tag)
 
         return to_canonical
 
-    # |likely_subtags| contains non-canonicalized tags, so canonicalize it first.
+    
     likely_subtags_canonical = {k: likely_canonical(k, v) for (k, v) in likely_subtags.items()}
 
-    # Add test data for |Intl.Locale.prototype.maximize()|.
+    
     writeMappingsVar(println, {bcp47(k): bcp47(v) for (k, v) in likely_subtags_canonical.items()},
                      "maxLikelySubtags", "Extracted from likelySubtags.xml.", source, url)
 
-    # Use the maximalized tags as the input for the remove likely-subtags test.
+    
     minimized = {tag: removeLikelySubtags(tag) for tag in likely_subtags_canonical.values()}
 
-    # Add test data for |Intl.Locale.prototype.minimize()|.
+    
     writeMappingsVar(println, {bcp47(k): bcp47(v) for (k, v) in minimized.items()},
                      "minLikelySubtags", "Extracted from likelySubtags.xml.", source, url)
 
@@ -1336,6 +1336,23 @@ def updateCLDRLangTags(args):
     url = args.url
     out = args.out
     filename = args.file
+
+    
+    if version is None:
+        icuDir = os.path.join(topsrcdir, "intl/icu/source")
+        if not os.path.isdir(icuDir):
+            raise RuntimeError("not a directory: {}".format(icuDir))
+
+        reVersion = re.compile(r'\s*cldrVersion\{"(\d+(?:\.\d+)?)"\}')
+
+        for line in flines(os.path.join(icuDir, "data/misc/supplementalData.txt")):
+            m = reVersion.match(line)
+            if m:
+                version = m.group(1)
+                break
+
+        if version is None:
+            raise RuntimeError("can't resolve CLDR version")
 
     url = url.replace("<VERSION>", version)
 
@@ -1512,15 +1529,15 @@ def readIANATimeZones(tzdataDir, ignoreBackzone, ignoreFactory):
     backzoneFiles = {"backzone"}
     (bkfiles, tzfiles) = partition(listIANAFiles(tzdataDir), backzoneFiles.__contains__)
 
-    # Read zone and link infos.
+    
     (zones, links) = readIANAFiles(tzdataDir, tzfiles)
     (backzones, backlinks) = readIANAFiles(tzdataDir, bkfiles)
 
-    # Remove the placeholder time zone "Factory".
+    
     if ignoreFactory:
         zones.remove(Zone("Factory"))
 
-    # Merge with backzone data.
+    
     if not ignoreBackzone:
         zones |= backzones
         links = {name: target for name, target in links.items() if name not in backzones}
@@ -1641,12 +1658,12 @@ def readICUTimeZonesFromTimezoneTypes(icuTzDir):
         if name.startswith(typeAliasTimeZoneKey):
             links[toTimeZone(name[len(typeAliasTimeZoneKey):])] = value
 
-    # Remove the ICU placeholder time zone "Etc/Unknown".
+    
     zones.remove(Zone("Etc/Unknown"))
 
-    # tzdata2017c removed the link Canada/East-Saskatchewan -> America/Regina,
-    # but it is still present in ICU sources. Manually remove it to keep our
-    # tables consistent with IANA.
+    
+    
+    
     del links[Zone("Canada/East-Saskatchewan")]
 
     validateTimeZones(zones, links)
@@ -1678,15 +1695,15 @@ def readICUTimeZonesFromZoneInfo(icuTzDir, ignoreFactory):
     links = {Zone(tzNames[zone]): tzNames[target] for (zone, target) in tzLinks.items()}
     zones = {Zone(v) for v in tzNames if Zone(v) not in links}
 
-    # Remove the ICU placeholder time zone "Etc/Unknown".
+    
     zones.remove(Zone("Etc/Unknown"))
 
-    # tzdata2017c removed the link Canada/East-Saskatchewan -> America/Regina,
-    # but it is still present in ICU sources. Manually remove it to keep our
-    # tables consistent with IANA.
+    
+    
+    
     del links[Zone("Canada/East-Saskatchewan")]
 
-    # Remove the placeholder time zone "Factory".
+    
     if ignoreFactory:
         zones.remove(Zone("Factory"))
 
@@ -1696,19 +1713,19 @@ def readICUTimeZonesFromZoneInfo(icuTzDir, ignoreFactory):
 
 
 def readICUTimeZones(icuDir, icuTzDir, ignoreFactory):
-    # zoneinfo64.txt contains the supported time zones by ICU. This data is
-    # generated from tzdata files, it doesn't include "backzone" in stock ICU.
+    
+    
     (zoneinfoZones, zoneinfoLinks) = readICUTimeZonesFromZoneInfo(icuTzDir, ignoreFactory)
 
-    # timezoneTypes.txt contains the canonicalization information for ICU. This
-    # data is generated from CLDR files. It includes data about time zones from
-    # tzdata's "backzone" file.
+    
+    
+    
     (typesZones, typesLinks) = readICUTimeZonesFromTimezoneTypes(icuTzDir)
 
-    # Information in zoneinfo64 should be a superset of timezoneTypes.
+    
     def inZoneInfo64(zone): return zone in zoneinfoZones or zone in zoneinfoLinks
 
-    # Remove legacy ICU time zones from zoneinfo64 data.
+    
     (legacyZones, legacyLinks) = readICULegacyZones(icuDir)
     zoneinfoZones = {zone for zone in zoneinfoZones if zone not in legacyZones}
     zoneinfoLinks = {zone: target for (zone, target) in zoneinfoLinks.items()
@@ -1722,9 +1739,9 @@ def readICUTimeZones(icuDir, icuTzDir, ignoreFactory):
     if notFoundInZoneInfo64:
         raise RuntimeError("Missing time zones in zoneinfo64.txt: %s" % notFoundInZoneInfo64)
 
-    # zoneinfo64.txt only defines the supported time zones by ICU, the canonicalization
-    # rules are defined through timezoneTypes.txt. Merge both to get the actual zones
-    # and links used by ICU.
+    
+    
+    
     icuZones = set(chain(
         (zone for zone in zoneinfoZones if zone not in typesLinks),
         (zone for zone in typesZones)
@@ -1744,12 +1761,12 @@ def readICULegacyZones(icuDir):
     tzdir = TzDataDir(os.path.join(icuDir, "tools/tzcode"))
     (zones, links) = readIANAFiles(tzdir, ["icuzones"])
 
-    # Remove the ICU placeholder time zone "Etc/Unknown".
+    
     zones.remove(Zone("Etc/Unknown"))
 
-    # tzdata2017c removed the link Canada/East-Saskatchewan -> America/Regina,
-    # but it is still present in ICU sources. Manually tag it as a legacy time
-    # zone so our tables are kept consistent with IANA.
+    
+    
+    
     links[Zone("Canada/East-Saskatchewan")] = "America/Regina"
 
     return (zones, links)
@@ -1782,26 +1799,26 @@ def findIncorrectICUZones(ianaZones, ianaLinks, icuZones, icuLinks, ignoreBackzo
 
     def isICULink(zone): return zone in icuLinks
 
-    # All IANA zones should be present in ICU.
+    
     missingTimeZones = [zone for zone in ianaZones if not isICUTimeZone(zone)]
-    # Normally zones in backzone are also present as links in one of the other
-    # time zone files. The only exception to this rule is the Asia/Hanoi time
-    # zone, this zone is only present in the backzone file.
+    
+    
+    
     expectedMissing = [] if ignoreBackzone else [Zone("Asia/Hanoi")]
     if missingTimeZones != expectedMissing:
         raise RuntimeError("Not all zones are present in ICU, did you forget "
                            "to run intl/update-tzdata.sh? %s" % missingTimeZones)
 
-    # Zones which are only present in ICU?
+    
     additionalTimeZones = [zone for zone in icuZones if not isIANATimeZone(zone)]
     if additionalTimeZones:
         raise RuntimeError("Additional zones present in ICU, did you forget "
                            "to run intl/update-tzdata.sh? %s" % additionalTimeZones)
 
-    # Zones which are marked as links in ICU.
+    
     result = ((zone, icuLinks[zone]) for zone in ianaZones if isICULink(zone))
 
-    # Remove unnecessary UTC mappings.
+    
     utcnames = ["Etc/UTC", "Etc/UCT", "Etc/GMT"]
     result = ((zone, target) for (zone, target) in result if zone.name not in utcnames)
 
@@ -1818,28 +1835,28 @@ def findIncorrectICULinks(ianaZones, ianaLinks, icuZones, icuLinks):
 
     def isICUZone(zone): return zone in icuZones
 
-    # All links should be present in ICU.
+    
     missingTimeZones = [zone for zone in ianaLinks.keys() if not isICUTimeZone(zone)]
     if missingTimeZones:
         raise RuntimeError("Not all zones are present in ICU, did you forget "
                            "to run intl/update-tzdata.sh? %s" % missingTimeZones)
 
-    # Links which are only present in ICU?
+    
     additionalTimeZones = [zone for zone in icuLinks.keys() if not isIANATimeZone(zone)]
     if additionalTimeZones:
         raise RuntimeError("Additional links present in ICU, did you forget "
                            "to run intl/update-tzdata.sh? %s" % additionalTimeZones)
 
     result = chain(
-        # IANA links which have a different target in ICU.
+        
         ((zone, target, icuLinks[zone]) for (zone, target) in ianaLinks.items()
          if isICULink(zone) and target != icuLinks[zone]),
 
-        # IANA links which are zones in ICU.
+        
         ((zone, target, zone.name) for (zone, target) in ianaLinks.items() if isICUZone(zone))
     )
 
-    # Remove unnecessary UTC mappings.
+    
     utcnames = ["Etc/UTC", "Etc/UCT", "Etc/GMT"]
     result = ((zone, target, icuTarget)
               for (zone, target, icuTarget) in result
@@ -1910,7 +1927,7 @@ def processTimeZones(tzdataDir, icuDir, icuTzDir, version, ignoreBackzone, ignor
 
         println(u"// Legacy ICU time zones, these are not valid IANA time zone names. We also")
         println(u"// disallow the old and deprecated System V time zones.")
-        println(u"// https://ssl.icu-project.org/repos/icu/trunk/icu4c/source/tools/tzcode/icuzones")  # NOQA: E501
+        println(u"// https://ssl.icu-project.org/repos/icu/trunk/icu4c/source/tools/tzcode/icuzones")  
         println(u"const char* const legacyICUTimeZones[] = {")
         for zone in chain(sorted(legacyLinks.keys()), sorted(legacyZones)):
             println(u'    "%s",' % zone)
@@ -1929,12 +1946,12 @@ def updateBackzoneLinks(tzdataDir, links):
     (backzoneZones, backzoneLinks) = readIANAFiles(tzdataDir, ["backzone"])
     (stableZones, updatedLinks, updatedZones) = partition(
         links.items(),
-        # Link not changed in backzone.
+        
         withZone(lambda zone: zone not in backzoneLinks and zone not in backzoneZones),
-        # Link has a new target.
+        
         withZone(lambda zone: zone in backzoneLinks),
     )
-    # Keep stable zones and links with updated target.
+    
     return dict(chain(
                 stableZones,
                 map(withZone(lambda zone: (zone, backzoneLinks[zone])), updatedLinks)
@@ -2015,7 +2032,7 @@ def generateTzDataTestBackzone(tzdataDir, version, ignoreBackzone, testDir):
     backzoneFiles = {"backzone"}
     (bkfiles, tzfiles) = partition(listIANAFiles(tzdataDir), backzoneFiles.__contains__)
 
-    # Read zone and link infos.
+    
     (zones, links) = readIANAFiles(tzdataDir, tzfiles)
     (backzones, backlinks) = readIANAFiles(tzdataDir, bkfiles)
 
@@ -2047,7 +2064,7 @@ def generateTzDataTestBackzoneLinks(tzdataDir, version, ignoreBackzone, testDir)
     backzoneFiles = {"backzone"}
     (bkfiles, tzfiles) = partition(listIANAFiles(tzdataDir), backzoneFiles.__contains__)
 
-    # Read zone and link infos.
+    
     (zones, links) = readIANAFiles(tzdataDir, tzfiles)
     (backzones, backlinks) = readIANAFiles(tzdataDir, bkfiles)
 
@@ -2102,7 +2119,7 @@ def updateTzdata(topsrcdir, args):
     if tzDir is not None and not (os.path.isdir(tzDir) or os.path.isfile(tzDir)):
         raise RuntimeError("not a directory or file: %s" % tzDir)
     ignoreBackzone = args.ignore_backzone
-    # TODO: Accept or ignore the placeholder time zone "Factory"?
+    
     ignoreFactory = False
     out = args.out
 
@@ -2151,7 +2168,7 @@ def readCurrencyFile(tree):
     reIntMinorUnits = re.compile(r"^\d+$")
 
     for country in tree.iterfind(".//CcyNtry"):
-        # Skip entry if no currency information is available.
+        
         currency = country.findtext("Ccy")
         if currency is None:
             continue
@@ -2160,7 +2177,7 @@ def readCurrencyFile(tree):
         minorUnits = country.findtext("CcyMnrUnts")
         assert minorUnits is not None
 
-        # Skip all entries without minorUnits or which use the default minorUnits.
+        
         if reIntMinorUnits.match(minorUnits) and int(minorUnits) != 2:
             currencyName = country.findtext("CcyNm")
             countryName = country.findtext("CtryNm")
@@ -2326,7 +2343,7 @@ const char* js::intl::LanguageTag::replace{0}ExtensionType(
 
         println(u"    };")
 
-    # Merge duplicate keys.
+    
     key_aliases = {}
     for (key, replacements) in sorted(mapping.items(), key=itemgetter(0)):
         hash_key = to_hash_key(replacements)
@@ -2416,20 +2433,20 @@ def readICUUnitResourceFile(filepath):
     end_table_re = re.compile(r"^}$")
     table_entry_re = re.compile(r"^([\w\-%:\"]+){\"(.*?)\"}$")
 
-    # The current resource table.
+    
     table = {}
 
-    # List of parent tables when parsing.
+    
     parents = []
 
-    # Track multi-line comments state.
+    
     in_multiline_comment = False
 
     for line in flines(filepath, "utf-8-sig"):
-        # Remove leading and trailing whitespace.
+        
         line = line.strip()
 
-        # Skip over comments.
+        
         if in_multiline_comment:
             if line.endswith("*/"):
                 in_multiline_comment = False
@@ -2442,7 +2459,7 @@ def readICUUnitResourceFile(filepath):
             in_multiline_comment = True
             continue
 
-        # Try to match the start of a table, e.g. `length{` or `meter{`.
+        
         match = start_table_re.match(line)
         if match:
             parents.append(table)
@@ -2452,13 +2469,13 @@ def readICUUnitResourceFile(filepath):
             table = new_table
             continue
 
-        # Try to match the end of a table.
+        
         match = end_table_re.match(line)
         if match:
             table = parents.pop()
             continue
 
-        # Try to match a table entry, e.g. `dnam{"meter"}`.
+        
         match = table_entry_re.match(line)
         if match:
             entry_key = match.group(1)
@@ -2471,11 +2488,11 @@ def readICUUnitResourceFile(filepath):
     assert len(parents) == 0, "Not all tables closed"
     assert len(table) == 1, "More than one root table"
 
-    # Remove the top-level language identifier table.
+    
     (_, unit_table) = table.popitem()
 
-    # Add all units for the three display formats "units", "unitsNarrow", and "unitsShort".
-    # But exclude the pseudo-units "compound" and "ccoordinate".
+    
+    
     return {(unit_type, unit_name if not unit_name.endswith(":alias") else unit_name[:-6])
             for unit_display in ("units", "unitsNarrow", "unitsShort")
             if unit_display in unit_table
@@ -2518,14 +2535,14 @@ def readICUDataFilterForUnits(data_filter_file):
     with io.open(data_filter_file, mode="r", encoding="utf-8") as f:
         data_filter = json.load(f)
 
-    # Find the rule set for the "unit_tree".
+    
     unit_tree_rules = [entry["rules"]
                        for entry in data_filter["resourceFilters"]
                        if entry["categories"] == ["unit_tree"]]
     assert len(unit_tree_rules) == 1
 
-    # Compute the list of included units from that rule set. The regular expression must match
-    # "+/*/length/meter" and mustn't match either "-/*" or "+/*/compound".
+    
+    
     included_unit_re = re.compile(r"^\+/\*/(.+?)/(.+)$")
     filtered_units = (included_unit_re.match(unit) for unit in unit_tree_rules[0])
 
@@ -2701,18 +2718,18 @@ def updateUnits(topsrcdir, args):
     with io.open("SanctionedSimpleUnitIdentifiers.yaml", mode="r", encoding="utf-8") as f:
         sanctioned_units = yaml.safe_load(f)
 
-    # Read all possible ICU unit identifiers from the "unit/root.txt" resource.
+    
     unit_root_file = os.path.join(icu_unit_path, "root.txt")
     all_units = readICUUnitResourceFile(unit_root_file)
 
-    # Compute the set of effectively supported ICU unit identifiers.
+    
     supported_units = computeSupportedUnits(all_units, sanctioned_units)
 
-    # Read the list of units we're including into the ICU data file.
+    
     data_filter_file = os.path.join(icu_path, "data_filter.json")
     filtered_units = readICUDataFilterForUnits(data_filter_file)
 
-    # Both sets must match to avoid resource loading errors at runtime.
+    
     if supported_units != filtered_units:
         def units_to_string(units):
             return ", ".join("/".join(u) for u in units)
@@ -2721,8 +2738,8 @@ def updateUnits(topsrcdir, args):
         if missing:
             raise RuntimeError("Missing units: {}".format(units_to_string(missing)))
 
-        # Not exactly an error, but we currently don't have a use case where we need to support
-        # more units than required by ECMA-402.
+        
+        
         extra = filtered_units - supported_units
         if extra:
             raise RuntimeError("Unnecessary units: {}".format(units_to_string(extra)))
@@ -2733,7 +2750,7 @@ def updateUnits(topsrcdir, args):
 if __name__ == "__main__":
     import argparse
 
-    # This script must reside in js/src/builtin/intl to work correctly.
+    
     (thisDir, thisFile) = os.path.split(os.path.abspath(sys.argv[0]))
     dirPaths = os.path.normpath(thisDir).split(os.sep)
     if "/".join(dirPaths[-4:]) != "js/src/builtin/intl":
@@ -2752,7 +2769,6 @@ if __name__ == "__main__":
                                              help="Update CLDR language tags data")
     parser_cldr_tags.add_argument("--version",
                                   metavar="VERSION",
-                                  required=True,
                                   help="CLDR version number")
     parser_cldr_tags.add_argument("--url",
                                   metavar="URL",
@@ -2771,10 +2787,10 @@ if __name__ == "__main__":
     parser_tz.add_argument("--tz",
                            help="Local tzdata directory or file, if omitted downloads tzdata "
                                 "distribution from https://www.iana.org/time-zones/")
-    # ICU doesn't include the backzone file by default, but we still like to
-    # use the backzone time zone names to avoid user confusion. This does lead
-    # to formatting "historic" dates (pre-1970 era) with the wrong time zone,
-    # but that's probably acceptable for now.
+    
+    
+    
+    
     parser_tz.add_argument("--ignore-backzone",
                            action="store_true",
                            help="Ignore tzdata's 'backzone' file. Can be enabled to generate more "
@@ -2788,7 +2804,7 @@ if __name__ == "__main__":
     parser_currency = subparsers.add_parser("currency", help="Update currency digits mapping")
     parser_currency.add_argument("--url",
                                  metavar="URL",
-                                 default="https://www.currency-iso.org/dam/downloads/lists/list_one.xml",  # NOQA: E501
+                                 default="https://www.currency-iso.org/dam/downloads/lists/list_one.xml",  
                                  type=EnsureHttps,
                                  help="Download url for the currency & funds code list (default: "
                                       "%(default)s)")
