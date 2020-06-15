@@ -445,6 +445,13 @@ void CanonicalBrowsingContext::PendingRemotenessChange::Finish(
 
     
     
+    browserElement->SetAttr(
+        kNameSpaceID_None, nsGkAtoms::remote,
+        aContentParent ? NS_LITERAL_STRING("true") : NS_LITERAL_STRING("false"),
+         true);
+
+    
+    
     ErrorResult error;
     frameLoaderOwner->ChangeRemotenessToProcess(aContentParent,
                                                 mReplaceBrowsingContext, error);
@@ -454,25 +461,49 @@ void CanonicalBrowsingContext::PendingRemotenessChange::Finish(
     }
 
     
-    RefPtr<nsFrameLoader> frameLoader = frameLoaderOwner->GetFrameLoader();
-    RefPtr<BrowserParent> newBrowser = frameLoader->GetBrowserParent();
-    if (!newBrowser) {
-      
-      
-      Cancel(NS_ERROR_UNEXPECTED);
+    bool loadResumed = false;
+    rv = browser->FinishChangeRemoteness(mPendingSwitchId, &loadResumed);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      Cancel(rv);
       return;
     }
 
     
-    
-    bool loadResumed = false;
-    rv = browser->FinishChangeRemoteness(mPendingSwitchId, &loadResumed);
-    if (NS_FAILED(rv) || !loadResumed) {
+    RefPtr<nsFrameLoader> frameLoader = frameLoaderOwner->GetFrameLoader();
+    RefPtr<BrowserParent> newBrowser = frameLoader->GetBrowserParent();
+    if (!newBrowser) {
+      if (aContentParent) {
+        
+        
+        Cancel(NS_ERROR_UNEXPECTED);
+        return;
+      }
+
+      if (!loadResumed) {
+        RefPtr<nsDocShell> newDocShell = frameLoader->GetDocShell(error);
+        if (error.Failed()) {
+          Cancel(error.StealNSResult());
+          return;
+        }
+
+        rv = newDocShell->ResumeRedirectedLoad(mPendingSwitchId,
+                                                -1);
+        if (NS_FAILED(rv)) {
+          Cancel(error.StealNSResult());
+          return;
+        }
+      }
+    } else if (!loadResumed) {
       newBrowser->ResumeLoad(mPendingSwitchId);
     }
 
     mPromise->Resolve(newBrowser, __func__);
     Clear();
+    return;
+  }
+
+  if (NS_WARN_IF(!aContentParent)) {
+    Cancel(NS_ERROR_FAILURE);
     return;
   }
 
@@ -617,9 +648,13 @@ RefPtr<CanonicalBrowsingContext::RemotenessPromise>
 CanonicalBrowsingContext::ChangeRemoteness(const nsAString& aRemoteType,
                                            uint64_t aPendingSwitchId,
                                            bool aReplaceBrowsingContext) {
+  MOZ_DIAGNOSTIC_ASSERT(IsContent(),
+                        "cannot change the process of chrome contexts");
   MOZ_DIAGNOSTIC_ASSERT(
-      !aReplaceBrowsingContext || (IsEmbeddedInProcess(0) && IsTopContent()),
-      "Cannot replace BrowsingContext for subframes");
+      IsTop() == IsEmbeddedInProcess(0),
+      "toplevel content must be embedded in the parent process");
+  MOZ_DIAGNOSTIC_ASSERT(!aReplaceBrowsingContext || IsTop(),
+                        "Cannot replace BrowsingContext for subframes");
 
   
   RefPtr<WindowGlobalParent> embedderWindowGlobal = GetEmbedderWindowGlobal();
@@ -634,22 +669,21 @@ CanonicalBrowsingContext::ChangeRemoteness(const nsAString& aRemoteType,
   }
 
   RefPtr<ContentParent> oldContent = GetContentParent();
-  if (!oldContent || aRemoteType.IsEmpty()) {
-    NS_WARNING("Cannot switch to or from non-remote frame");
-    return RemotenessPromise::CreateAndReject(NS_ERROR_NOT_IMPLEMENTED,
-                                              __func__);
-  }
-
-  if (!aReplaceBrowsingContext &&
+  if (!aReplaceBrowsingContext && oldContent &&
       aRemoteType.Equals(oldContent->GetRemoteType())) {
     NS_WARNING("Already in the correct process");
+    return RemotenessPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+
+  if (aRemoteType.IsEmpty() && (!IsTop() || !GetEmbedderElement())) {
+    NS_WARNING("Cannot load non-remote subframes");
     return RemotenessPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
   
   if (mPendingRemotenessChange) {
     mPendingRemotenessChange->Cancel(NS_ERROR_ABORT);
-    MOZ_ASSERT(!mPendingRemotenessChange, "Should have cleared");
+    MOZ_DIAGNOSTIC_ASSERT(!mPendingRemotenessChange, "Should have cleared");
   }
 
   RefPtr<BrowserParent> embedderBrowser =
@@ -662,17 +696,17 @@ CanonicalBrowsingContext::ChangeRemoteness(const nsAString& aRemoteType,
       RefPtr<BrowserParent> oldBrowser =
           GetCurrentWindowGlobal()->GetBrowserParent();
 
-      RefPtr<CanonicalBrowsingContext> target(this);
       SetInFlightProcessId(OwnerProcessId());
       oldBrowser->SendWillChangeProcess(
-          [target](bool aSuccess) { target->SetInFlightProcessId(0); },
-          [target](mozilla::ipc::ResponseRejectReason aReason) {
-            target->SetInFlightProcessId(0);
-          });
+          [target = RefPtr{this}](auto) { target->SetInFlightProcessId(0); },
+          [target = RefPtr{this}](auto) { target->SetInFlightProcessId(0); });
       oldBrowser->Destroy();
     }
 
-    MOZ_ASSERT(!aReplaceBrowsingContext);
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(!aReplaceBrowsingContext);
+    MOZ_DIAGNOSTIC_ASSERT(!aRemoteType.IsEmpty());
     SetOwnerProcessId(embedderBrowser->Manager()->ChildID());
     Unused << embedderWindowGlobal->SendMakeFrameLocal(this, aPendingSwitchId);
     return RemotenessPromise::CreateAndResolve(embedderBrowser, __func__);
@@ -702,18 +736,25 @@ CanonicalBrowsingContext::ChangeRemoteness(const nsAString& aRemoteType,
     change->mPrepareToChangePromise = GenericPromise::FromDomPromise(blocker);
   }
 
-  ContentParent::GetNewOrUsedBrowserProcessAsync(
-       nullptr,
-       aRemoteType,
-       hal::PROCESS_PRIORITY_FOREGROUND,
-       nullptr,
-       false)
-      ->Then(
-          GetMainThreadSerialEventTarget(), __func__,
-          [change](ContentParent* aContentParent) {
-            change->ProcessReady(aContentParent);
-          },
-          [change](LaunchError aError) { change->Cancel(NS_ERROR_FAILURE); });
+  if (aRemoteType.IsEmpty()) {
+    change->ProcessReady(nullptr);
+  } else {
+    ContentParent::GetNewOrUsedBrowserProcessAsync(
+         nullptr,
+         aRemoteType,
+         hal::PROCESS_PRIORITY_FOREGROUND,
+         nullptr,
+         false)
+        ->Then(
+            GetMainThreadSerialEventTarget(), __func__,
+            [change](ContentParent* aContentParent) {
+              MOZ_RELEASE_ASSERT(
+                  aContentParent,
+                  "Null process from GetNewOrUsedBrowserProcessAsync");
+              change->ProcessReady(aContentParent);
+            },
+            [change](LaunchError aError) { change->Cancel(NS_ERROR_FAILURE); });
+  }
   return promise.forget();
 }
 
