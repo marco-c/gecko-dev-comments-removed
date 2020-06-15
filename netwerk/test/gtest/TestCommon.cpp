@@ -1,0 +1,7 @@
+
+
+
+
+#include "TestCommon.h"
+
+NS_IMPL_ISUPPORTS(WaitForCondition, nsIRunnable)
