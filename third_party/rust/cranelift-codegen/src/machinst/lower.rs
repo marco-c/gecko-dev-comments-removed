@@ -3,54 +3,99 @@
 
 
 use crate::entity::SecondaryMap;
-use crate::inst_predicates::has_side_effect;
+use crate::fx::{FxHashMap, FxHashSet};
+use crate::inst_predicates::{has_side_effect_or_load, is_constant_64bit};
 use crate::ir::instructions::BranchInfo;
+use crate::ir::types::I64;
 use crate::ir::{
-    ArgumentExtension, Block, ExternalName, Function, GlobalValueData, Inst, InstructionData,
-    MemFlags, Opcode, Signature, SourceLoc, Type, Value, ValueDef,
+    ArgumentExtension, Block, Constant, ConstantData, ExternalName, Function, GlobalValueData,
+    Inst, InstructionData, MemFlags, Opcode, Signature, SourceLoc, Type, Value, ValueDef,
 };
-use crate::machinst::{ABIBody, BlockIndex, VCode, VCodeBuilder, VCodeInst};
-use crate::{num_uses::NumUses, CodegenResult};
+use crate::machinst::{
+    ABIBody, BlockIndex, BlockLoweringOrder, LoweredBlock, MachLabel, VCode, VCodeBuilder,
+    VCodeInst,
+};
+use crate::CodegenResult;
 
-use regalloc::{Reg, RegClass, Set, VirtualReg, Writable};
+use regalloc::{Reg, RegClass, VirtualReg, Writable};
 
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use log::debug;
 use smallvec::SmallVec;
-use std::collections::VecDeque;
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct InstColor(u32);
+impl InstColor {
+    fn new(n: u32) -> InstColor {
+        InstColor(n)
+    }
+
+    
+    
+    
+    pub fn get(self) -> u32 {
+        self.0
+    }
+}
 
 
 
 
 pub trait LowerCtx {
     
-    type I;
+    type I: VCodeInst;
+
+    
+
+    
+    fn abi(&mut self) -> &dyn ABIBody<I = Self::I>;
+    
+    
+    
+    
+    fn retval(&self, idx: usize) -> Writable<Reg>;
+
+    
 
     
     fn data(&self, ir_inst: Inst) -> &InstructionData;
     
     fn ty(&self, ir_inst: Inst) -> Type;
     
-    fn abi(&mut self) -> &dyn ABIBody<I = Self::I>;
-    
-    fn emit(&mut self, mach_inst: Self::I);
     
     
     
+    fn call_target<'b>(&'b self, ir_inst: Inst) -> Option<(&'b ExternalName, RelocDistance)>;
     
-    fn merged(&mut self, from_inst: Inst);
+    fn call_sig<'b>(&'b self, ir_inst: Inst) -> Option<&'b Signature>;
     
     
-    fn input_inst(&self, ir_inst: Inst, idx: usize) -> Option<(Inst, usize)>;
+    fn symbol_value<'b>(&'b self, ir_inst: Inst) -> Option<(&'b ExternalName, RelocDistance, i64)>;
     
-    fn value_to_writable_reg(&self, val: Value) -> Writable<Reg>;
+    fn memflags(&self, ir_inst: Inst) -> Option<MemFlags>;
     
-    fn value_to_reg(&self, val: Value) -> Reg;
+    fn srcloc(&self, ir_inst: Inst) -> SourceLoc;
     
-    fn input(&self, ir_inst: Inst, idx: usize) -> Reg;
     
-    fn output(&self, ir_inst: Inst, idx: usize) -> Writable<Reg>;
+    
+    
+    fn inst_color(&self, ir_inst: Inst) -> InstColor;
+
+    
+
     
     fn num_inputs(&self, ir_inst: Inst) -> usize;
     
@@ -60,23 +105,69 @@ pub trait LowerCtx {
     
     fn output_ty(&self, ir_inst: Inst, idx: usize) -> Type;
     
-    fn tmp(&mut self, rc: RegClass, ty: Type) -> Writable<Reg>;
     
-    fn num_bb_params(&self, bb: Block) -> usize;
+    fn get_constant(&self, ir_inst: Inst) -> Option<u64>;
     
-    fn bb_param(&self, bb: Block, idx: usize) -> Reg;
     
-    fn retval(&self, idx: usize) -> Writable<Reg>;
     
-    fn call_target<'b>(&'b self, ir_inst: Inst) -> Option<&'b ExternalName>;
     
-    fn call_sig<'b>(&'b self, ir_inst: Inst) -> Option<&'b Signature>;
     
-    fn symbol_value<'b>(&'b self, ir_inst: Inst) -> Option<(&'b ExternalName, i64)>;
     
-    fn memflags(&self, ir_inst: Inst) -> Option<MemFlags>;
     
-    fn srcloc(&self, ir_inst: Inst) -> SourceLoc;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn get_input(&self, ir_inst: Inst, idx: usize) -> LowerInput;
+    
+    
+    
+    fn get_output(&self, ir_inst: Inst, idx: usize) -> Writable<Reg>;
+
+    
+    
+
+    
+    fn alloc_tmp(&mut self, rc: RegClass, ty: Type) -> Writable<Reg>;
+    
+    fn emit(&mut self, mach_inst: Self::I);
+    
+    
+    
+    fn use_input_reg(&mut self, input: LowerInput);
+    
+    
+    
+    fn is_reg_needed(&self, ir_inst: Inst, reg: Reg) -> bool;
+    
+    fn get_constant_data(&self, constant_handle: Constant) -> &ConstantData;
+}
+
+
+
+
+
+#[derive(Clone, Copy, Debug)]
+pub struct LowerInput {
+    
+    
+    pub reg: Reg,
+    
+    
+    pub inst: Option<(Inst, usize)>,
+    
+    pub constant: Option<u64>,
 }
 
 
@@ -87,7 +178,11 @@ pub trait LowerBackend {
     
     
     
-    fn lower<C: LowerCtx<I = Self::MInst>>(&self, ctx: &mut C, inst: Inst);
+    
+    
+    
+    
+    fn lower<C: LowerCtx<I = Self::MInst>>(&self, ctx: &mut C, inst: Inst) -> CodegenResult<()>;
 
     
     
@@ -95,9 +190,16 @@ pub trait LowerBackend {
         &self,
         ctx: &mut C,
         insts: &[Inst],
-        targets: &[BlockIndex],
-        fallthrough: Option<BlockIndex>,
-    );
+        targets: &[MachLabel],
+        fallthrough: Option<MachLabel>,
+    ) -> CodegenResult<()>;
+
+    
+    
+    
+    fn maybe_pinned_reg(&self) -> Option<Reg> {
+        None
+    }
 }
 
 
@@ -110,16 +212,53 @@ pub struct Lower<'func, I: VCodeInst> {
     vcode: VCodeBuilder<I>,
 
     
-    num_uses: SecondaryMap<Inst, u32>,
-
-    
     value_regs: SecondaryMap<Value, Reg>,
 
     
     retval_regs: Vec<(Reg, ArgumentExtension)>,
 
     
+    inst_colors: SecondaryMap<Inst, InstColor>,
+
+    
+    inst_constants: FxHashMap<Inst, u64>,
+
+    
+    inst_needed: SecondaryMap<Inst, bool>,
+
+    
+    vreg_needed: Vec<bool>,
+
+    
     next_vreg: u32,
+
+    
+    block_insts: Vec<(SourceLoc, I)>,
+
+    
+    block_ranges: Vec<(usize, usize)>,
+
+    
+    
+    bb_insts: Vec<(SourceLoc, I)>,
+
+    
+    ir_insts: Vec<I>,
+
+    
+    pinned_reg: Option<Reg>,
+}
+
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RelocDistance {
+    
+    
+    
+    Near,
+    
+    Far,
 }
 
 fn alloc_vreg(
@@ -128,7 +267,7 @@ fn alloc_vreg(
     value: Value,
     next_vreg: &mut u32,
 ) -> VirtualReg {
-    if value_regs[value].get_index() == 0 {
+    if value_regs[value].is_invalid() {
         
         let v = *next_vreg;
         *next_vreg += 1;
@@ -144,41 +283,35 @@ enum GenerateReturn {
 
 impl<'func, I: VCodeInst> Lower<'func, I> {
     
-    pub fn new(f: &'func Function, abi: Box<dyn ABIBody<I = I>>) -> CodegenResult<Lower<'func, I>> {
-        let mut vcode = VCodeBuilder::new(abi);
+    pub fn new(
+        f: &'func Function,
+        abi: Box<dyn ABIBody<I = I>>,
+        block_order: BlockLoweringOrder,
+    ) -> CodegenResult<Lower<'func, I>> {
+        let mut vcode = VCodeBuilder::new(abi, block_order);
 
-        let num_uses = NumUses::compute(f).take_uses();
+        let mut next_vreg: u32 = 0;
 
-        let mut next_vreg: u32 = 1;
-
-        
-        
-        
-        
-        
-        let default_register = Reg::new_virtual(RegClass::I32, 0);
-        let mut value_regs = SecondaryMap::with_default(default_register);
+        let mut value_regs = SecondaryMap::with_default(Reg::invalid());
 
         
         for bb in f.layout.blocks() {
-            for param in f.dfg.block_params(bb) {
-                let vreg = alloc_vreg(
-                    &mut value_regs,
-                    I::rc_for_type(f.dfg.value_type(*param))?,
-                    *param,
-                    &mut next_vreg,
-                );
-                vcode.set_vreg_type(vreg, f.dfg.value_type(*param));
+            for &param in f.dfg.block_params(bb) {
+                let ty = f.dfg.value_type(param);
+                let vreg = alloc_vreg(&mut value_regs, I::rc_for_type(ty)?, param, &mut next_vreg);
+                vcode.set_vreg_type(vreg, ty);
+                debug!("bb {} param {}: vreg {:?}", bb, param, vreg);
             }
             for inst in f.layout.block_insts(bb) {
-                for result in f.dfg.inst_results(inst) {
-                    let vreg = alloc_vreg(
-                        &mut value_regs,
-                        I::rc_for_type(f.dfg.value_type(*result))?,
-                        *result,
-                        &mut next_vreg,
+                for &result in f.dfg.inst_results(inst) {
+                    let ty = f.dfg.value_type(result);
+                    let vreg =
+                        alloc_vreg(&mut value_regs, I::rc_for_type(ty)?, result, &mut next_vreg);
+                    vcode.set_vreg_type(vreg, ty);
+                    debug!(
+                        "bb {} inst {} ({:?}): result vreg {:?}",
+                        bb, inst, f.dfg[inst], vreg
                     );
-                    vcode.set_vreg_type(vreg, f.dfg.value_type(*result));
                 }
             }
         }
@@ -194,13 +327,51 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
             vcode.set_vreg_type(vreg.as_virtual_reg().unwrap(), ret.value_type);
         }
 
+        
+        
+        let mut cur_color = 0;
+        let mut inst_colors = SecondaryMap::with_default(InstColor::new(0));
+        let mut inst_constants = FxHashMap::default();
+        let mut inst_needed = SecondaryMap::with_default(false);
+        for bb in f.layout.blocks() {
+            cur_color += 1;
+            for inst in f.layout.block_insts(bb) {
+                let side_effect = has_side_effect_or_load(f, inst);
+
+                
+                inst_colors[inst] = InstColor::new(cur_color);
+                debug!("bb {} inst {} has color {}", bb, inst, cur_color);
+                if side_effect {
+                    debug!(" -> side-effecting");
+                    inst_needed[inst] = true;
+                    cur_color += 1;
+                }
+
+                
+                if let Some(c) = is_constant_64bit(f, inst) {
+                    debug!(" -> constant: {}", c);
+                    inst_constants.insert(inst, c);
+                }
+            }
+        }
+
+        let vreg_needed = std::iter::repeat(false).take(next_vreg as usize).collect();
+
         Ok(Lower {
             f,
             vcode,
-            num_uses,
             value_regs,
             retval_regs,
+            inst_colors,
+            inst_constants,
+            inst_needed,
+            vreg_needed,
             next_vreg,
+            block_insts: vec![],
+            block_ranges: vec![],
+            bb_insts: vec![],
+            ir_insts: vec![],
+            pinned_reg: None,
         })
     }
 
@@ -214,451 +385,453 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
             for (i, param) in self.f.dfg.block_params(entry_bb).iter().enumerate() {
                 let reg = Writable::from_reg(self.value_regs[*param]);
                 let insn = self.vcode.abi().gen_copy_arg_to_reg(i, reg);
-                self.vcode.push(insn);
+                self.emit(insn);
+            }
+            if let Some(insn) = self.vcode.abi().gen_retval_area_setup() {
+                self.emit(insn);
             }
         }
     }
 
     fn gen_retval_setup(&mut self, gen_ret_inst: GenerateReturn) {
-        for (i, (reg, ext)) in self.retval_regs.iter().enumerate() {
-            let reg = Writable::from_reg(*reg);
-            let insns = self.vcode.abi().gen_copy_reg_to_retval(i, reg, *ext);
+        let retval_regs = self.retval_regs.clone();
+        for (i, (reg, ext)) in retval_regs.into_iter().enumerate() {
+            let reg = Writable::from_reg(reg);
+            let insns = self.vcode.abi().gen_copy_reg_to_retval(i, reg, ext);
             for insn in insns {
-                self.vcode.push(insn);
+                self.emit(insn);
             }
         }
         let inst = match gen_ret_inst {
             GenerateReturn::Yes => self.vcode.abi().gen_ret(),
             GenerateReturn::No => self.vcode.abi().gen_epilogue_placeholder(),
         };
-        self.vcode.push(inst);
+        self.emit(inst);
     }
 
-    fn find_reachable_bbs(&self) -> SmallVec<[Block; 16]> {
-        if let Some(entry) = self.f.layout.entry_block() {
-            let mut ret = SmallVec::new();
-            let mut queue = VecDeque::new();
-            let mut visited = SecondaryMap::with_default(false);
-            queue.push_back(entry);
-            visited[entry] = true;
-            while !queue.is_empty() {
-                let b = queue.pop_front().unwrap();
-                ret.push(b);
-                let mut succs: SmallVec<[Block; 16]> = SmallVec::new();
-                for inst in self.f.layout.block_insts(b) {
-                    if self.f.dfg[inst].opcode().is_branch() {
-                        visit_branch_targets(self.f, b, inst, |succ| {
-                            succs.push(succ);
-                        });
-                    }
+    fn lower_edge(&mut self, pred: Block, inst: Inst, succ: Block) -> CodegenResult<()> {
+        debug!("lower_edge: pred {} succ {}", pred, succ);
+
+        let mut src_regs: SmallVec<[Option<Reg>; 16]> = SmallVec::new();
+        let mut src_consts: SmallVec<[Option<u64>; 16]> = SmallVec::new();
+        let mut dst_regs: SmallVec<[Writable<Reg>; 16]> = SmallVec::new();
+
+        fn overlap(a: &[Option<Reg>], b: &[Writable<Reg>]) -> bool {
+            let mut set = FxHashSet::default();
+            for &maybe_reg in a {
+                if let Some(r) = maybe_reg {
+                    set.insert(r);
                 }
-                for succ in succs.into_iter() {
-                    if !visited[succ] {
-                        queue.push_back(succ);
-                        visited[succ] = true;
+            }
+            for &reg in b {
+                if set.contains(&reg.to_reg()) {
+                    return true;
+                }
+            }
+            false
+        }
+
+        
+        let phi_classes: SmallVec<[Type; 16]> = self
+            .f
+            .dfg
+            .block_params(succ)
+            .iter()
+            .map(|p| self.f.dfg.value_type(*p))
+            .collect();
+
+        
+        
+        for (i, arg) in self.f.dfg.inst_variable_args(inst).iter().enumerate() {
+            let arg = self.f.dfg.resolve_aliases(*arg);
+            let input = self.get_input_for_val(inst, arg);
+            debug!("jump arg {} is {}, reg {:?}", i, arg, input.reg);
+            if let Some(c) = input.constant {
+                src_consts.push(Some(c));
+                src_regs.push(None);
+            } else {
+                self.use_input_reg(input);
+                src_regs.push(Some(input.reg));
+                src_consts.push(None);
+            }
+        }
+        for (i, param) in self.f.dfg.block_params(succ).iter().enumerate() {
+            debug!("bb arg {} is {}", i, param);
+            dst_regs.push(Writable::from_reg(self.value_regs[*param]));
+        }
+        debug_assert!(src_regs.len() == dst_regs.len());
+        debug_assert!(src_consts.len() == dst_regs.len());
+        debug_assert!(phi_classes.len() == dst_regs.len());
+        debug!(
+            "src_regs = {:?} src_consts = {:?} dst_regs = {:?}",
+            src_regs, src_consts, dst_regs
+        );
+
+        
+        
+        
+        if !overlap(&src_regs[..], &dst_regs[..]) {
+            for i in 0..dst_regs.len() {
+                let src_reg = src_regs[i];
+                let src_const = src_consts[i];
+                let dst_reg = dst_regs[i];
+                let ty = phi_classes[i];
+                if let Some(r) = src_reg {
+                    self.emit(I::gen_move(dst_reg, r, ty));
+                } else {
+                    
+                    
+                    
+                    
+                    for inst in I::gen_constant(dst_reg, src_const.unwrap(), ty).into_iter() {
+                        self.emit(inst);
                     }
                 }
             }
-
-            ret
         } else {
-            SmallVec::new()
+            
+            let mut tmp_regs: SmallVec<[Writable<Reg>; 16]> = SmallVec::new();
+            for &ty in &phi_classes {
+                tmp_regs.push(self.alloc_tmp(I::rc_for_type(ty)?, ty));
+            }
+
+            debug!("phi_temps = {:?}", tmp_regs);
+            debug_assert!(tmp_regs.len() == src_regs.len());
+
+            for i in 0..dst_regs.len() {
+                let src_reg = src_regs[i];
+                let tmp_reg = tmp_regs[i];
+                let ty = phi_classes[i];
+                let src_const = src_consts[i];
+                if let Some(src_reg) = src_reg {
+                    self.emit(I::gen_move(tmp_reg, src_reg, ty));
+                } else {
+                    for inst in I::gen_constant(tmp_reg, src_const.unwrap(), ty).into_iter() {
+                        self.emit(inst);
+                    }
+                }
+            }
+            for i in 0..dst_regs.len() {
+                let tmp_reg = tmp_regs[i].to_reg();
+                let dst_reg = dst_regs[i];
+                let ty = phi_classes[i];
+                self.emit(I::gen_move(dst_reg, tmp_reg, ty));
+            }
+        }
+        Ok(())
+    }
+
+    fn lower_clif_block<B: LowerBackend<MInst = I>>(
+        &mut self,
+        backend: &B,
+        block: Block,
+    ) -> CodegenResult<()> {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        for inst in self.f.layout.block_insts(block).rev() {
+            let data = &self.f.dfg[inst];
+            let value_needed = self
+                .f
+                .dfg
+                .inst_results(inst)
+                .iter()
+                .any(|&result| self.vreg_needed[self.value_regs[result].get_index()]);
+            debug!(
+                "lower_clif_block: block {} inst {} ({:?}) is_branch {} inst_needed {} value_needed {}",
+                block,
+                inst,
+                data,
+                data.opcode().is_branch(),
+                self.inst_needed[inst],
+                value_needed,
+            );
+            if self.f.dfg[inst].opcode().is_branch() {
+                continue;
+            }
+            
+            
+            if self.inst_needed[inst] || value_needed {
+                debug!("lowering: inst {}: {:?}", inst, self.f.dfg[inst]);
+                backend.lower(self, inst)?;
+            }
+            if data.opcode().is_return() {
+                
+                let gen_ret = if data.opcode() == Opcode::Return {
+                    GenerateReturn::Yes
+                } else {
+                    debug_assert!(data.opcode() == Opcode::FallthroughReturn);
+                    GenerateReturn::No
+                };
+                self.gen_retval_setup(gen_ret);
+            }
+
+            let loc = self.srcloc(inst);
+            self.finish_ir_inst(loc);
+        }
+        Ok(())
+    }
+
+    fn finish_ir_inst(&mut self, loc: SourceLoc) {
+        for inst in self.ir_insts.drain(..).rev() {
+            self.bb_insts.push((loc, inst));
+        }
+    }
+
+    fn finish_bb(&mut self) {
+        let start = self.block_insts.len();
+        for pair in self.bb_insts.drain(..).rev() {
+            self.block_insts.push(pair);
+        }
+        let end = self.block_insts.len();
+        self.block_ranges.push((start, end));
+    }
+
+    fn copy_bbs_to_vcode(&mut self) {
+        for &(start, end) in self.block_ranges.iter().rev() {
+            for &(loc, ref inst) in &self.block_insts[start..end] {
+                self.vcode.set_srcloc(loc);
+                self.vcode.push(inst.clone());
+            }
+            self.vcode.end_bb();
+        }
+    }
+
+    fn lower_clif_branches<B: LowerBackend<MInst = I>>(
+        &mut self,
+        backend: &B,
+        block: Block,
+        branches: &SmallVec<[Inst; 2]>,
+        targets: &SmallVec<[MachLabel; 2]>,
+        maybe_fallthrough: Option<MachLabel>,
+    ) -> CodegenResult<()> {
+        debug!(
+            "lower_clif_branches: block {} branches {:?} targets {:?} maybe_fallthrough {:?}",
+            block, branches, targets, maybe_fallthrough
+        );
+        backend.lower_branch_group(self, branches, targets, maybe_fallthrough)?;
+        let loc = self.srcloc(branches[0]);
+        self.finish_ir_inst(loc);
+        Ok(())
+    }
+
+    fn collect_branches_and_targets(
+        &self,
+        bindex: BlockIndex,
+        _bb: Block,
+        branches: &mut SmallVec<[Inst; 2]>,
+        targets: &mut SmallVec<[MachLabel; 2]>,
+    ) {
+        branches.clear();
+        targets.clear();
+        let mut last_inst = None;
+        for &(inst, succ) in self.vcode.block_order().succ_indices(bindex) {
+            
+            if last_inst != Some(inst) {
+                branches.push(inst);
+            } else {
+                debug_assert!(self.f.dfg[inst].opcode() == Opcode::BrTable);
+                debug_assert!(branches.len() == 1);
+            }
+            last_inst = Some(inst);
+            targets.push(MachLabel::from_block(succ));
         }
     }
 
     
     pub fn lower<B: LowerBackend<MInst = I>>(mut self, backend: &B) -> CodegenResult<VCode<I>> {
-        
-        let bbs = self.find_reachable_bbs();
-
-        
-        let mut next_bindex = self.vcode.init_bb_map(&bbs[..]);
-
-        
-        
-        
-        let mut edge_blocks_by_inst: SecondaryMap<Inst, Vec<BlockIndex>> =
-            SecondaryMap::with_default(vec![]);
-        let mut edge_blocks: Vec<(Inst, BlockIndex, Block)> = vec![];
-
         debug!("about to lower function: {:?}", self.f);
-        debug!("bb map: {:?}", self.vcode.blocks_by_bb());
+
+        
+        let maybe_tmp = if self.vcode.abi().temp_needed() {
+            Some(self.alloc_tmp(RegClass::I64, I64))
+        } else {
+            None
+        };
+        self.vcode.abi().init(maybe_tmp);
 
         
         
-        for bb in bbs.iter().rev() {
-            for inst in self.f.layout.block_insts(*bb) {
-                let op = self.f.dfg[inst].opcode();
-                if op.is_branch() {
-                    
-                    let mut add_succ = |next_bb| {
-                        let edge_block = next_bindex;
-                        next_bindex += 1;
-                        edge_blocks_by_inst[inst].push(edge_block);
-                        edge_blocks.push((inst, edge_block, next_bb));
-                    };
-                    visit_branch_targets(self.f, *bb, inst, |succ| {
-                        add_succ(succ);
-                    });
-                }
-            }
-        }
+        self.pinned_reg = backend.maybe_pinned_reg();
 
-        for bb in bbs.iter() {
-            debug!("lowering bb: {}", bb);
+        self.vcode.set_entry(0);
 
-            
-            
-            
-            let last_insn = self.f.layout.block_insts(*bb).last().unwrap();
-            let last_insn_opcode = self.f.dfg[last_insn].opcode();
-            if last_insn_opcode.is_return() {
-                let gen_ret = if last_insn_opcode == Opcode::Return {
-                    GenerateReturn::Yes
-                } else {
-                    debug_assert!(last_insn_opcode == Opcode::FallthroughReturn);
-                    GenerateReturn::No
-                };
-                self.gen_retval_setup(gen_ret);
-                self.vcode.end_ir_inst();
-            }
+        
+        let mut branches: SmallVec<[Inst; 2]> = SmallVec::new();
+        let mut targets: SmallVec<[MachLabel; 2]> = SmallVec::new();
+
+        
+        
+        let lowered_order: SmallVec<[LoweredBlock; 64]> = self
+            .vcode
+            .block_order()
+            .lowered_order()
+            .iter()
+            .cloned()
+            .collect();
+
+        
+        for (bindex, lb) in lowered_order.iter().enumerate().rev() {
+            let bindex = bindex as BlockIndex;
 
             
-            let mut branches: SmallVec<[Inst; 2]> = SmallVec::new();
-            let mut targets: SmallVec<[BlockIndex; 2]> = SmallVec::new();
+            
 
-            for inst in self.f.layout.block_insts(*bb).rev() {
-                debug!("lower: inst {}", inst);
-                if edge_blocks_by_inst[inst].len() > 0 {
-                    branches.push(inst);
-                    for target in edge_blocks_by_inst[inst].iter().rev().cloned() {
-                        targets.push(target);
-                    }
-                } else {
-                    
-                    if branches.len() > 0 {
-                        let fallthrough = self.f.layout.next_block(*bb);
-                        let fallthrough = fallthrough.map(|bb| self.vcode.bb_to_bindex(bb));
-                        branches.reverse();
-                        targets.reverse();
-                        debug!(
-                            "lower_branch_group: targets = {:?} branches = {:?}",
-                            targets, branches
-                        );
-                        self.vcode.set_srcloc(self.srcloc(branches[0]));
-                        backend.lower_branch_group(
-                            &mut self,
-                            &branches[..],
-                            &targets[..],
-                            fallthrough,
-                        );
-                        self.vcode.end_ir_inst();
-                        branches.clear();
-                        targets.clear();
-                    }
-
-                    
-                    
-                    let num_uses = self.num_uses[inst];
-                    let side_effect = has_side_effect(self.f, inst);
-                    if side_effect || num_uses > 0 {
-                        self.vcode.set_srcloc(self.srcloc(inst));
-                        backend.lower(&mut self, inst);
-                        self.vcode.end_ir_inst();
+            
+            if let Some(bb) = lb.orig_block() {
+                self.collect_branches_and_targets(bindex, bb, &mut branches, &mut targets);
+                if branches.len() > 0 {
+                    let maybe_fallthrough = if (bindex + 1) < (lowered_order.len() as BlockIndex) {
+                        Some(MachLabel::from_block(bindex + 1))
                     } else {
-                        
-                        
-                        for arg in self.f.dfg.inst_args(inst) {
-                            let val = self.f.dfg.resolve_aliases(*arg);
-                            match self.f.dfg.value_def(val) {
-                                ValueDef::Result(src_inst, _) => {
-                                    self.dec_use(src_inst);
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
-                }
-            }
-
-            
-            if branches.len() > 0 {
-                let fallthrough = self.f.layout.next_block(*bb);
-                let fallthrough = fallthrough.map(|bb| self.vcode.bb_to_bindex(bb));
-                branches.reverse();
-                targets.reverse();
-                debug!(
-                    "lower_branch_group: targets = {:?} branches = {:?}",
-                    targets, branches
-                );
-                self.vcode.set_srcloc(self.srcloc(branches[0]));
-                backend.lower_branch_group(&mut self, &branches[..], &targets[..], fallthrough);
-                self.vcode.end_ir_inst();
-                branches.clear();
-                targets.clear();
-            }
-
-            
-            if Some(*bb) == self.f.layout.entry_block() {
-                self.gen_arg_setup();
-                self.vcode.end_ir_inst();
-            }
-
-            let vcode_bb = self.vcode.end_bb();
-            debug!("finished building bb: BlockIndex {}", vcode_bb);
-            debug!("bb_to_bindex map says: {}", self.vcode.bb_to_bindex(*bb));
-            assert!(vcode_bb == self.vcode.bb_to_bindex(*bb));
-            if Some(*bb) == self.f.layout.entry_block() {
-                self.vcode.set_entry(vcode_bb);
-            }
-        }
-
-        
-        for (inst, edge_block, orig_block) in edge_blocks.into_iter() {
-            debug!(
-                "creating edge block: inst {}, edge_block {}, orig_block {}",
-                inst, edge_block, orig_block
-            );
-
-            
-            let phi_classes: Vec<Type> = self
-                .f
-                .dfg
-                .block_params(orig_block)
-                .iter()
-                .map(|p| self.f.dfg.value_type(*p))
-                .collect();
-
-            
-            let mut src_regs = vec![];
-            let mut dst_regs = vec![];
-
-            
-
-            
-            for (i, arg) in self.f.dfg.inst_variable_args(inst).iter().enumerate() {
-                let arg = self.f.dfg.resolve_aliases(*arg);
-                debug!("jump arg {} is {}", i, arg);
-                src_regs.push(self.value_regs[arg]);
-            }
-            for (i, param) in self.f.dfg.block_params(orig_block).iter().enumerate() {
-                debug!("bb arg {} is {}", i, param);
-                dst_regs.push(Writable::from_reg(self.value_regs[*param]));
-            }
-            debug_assert!(src_regs.len() == dst_regs.len());
-            debug_assert!(phi_classes.len() == dst_regs.len());
-
-            
-            
-            
-            if !Set::<Reg>::from_vec(src_regs.clone()).intersects(&Set::<Reg>::from_vec(
-                dst_regs.iter().map(|r| r.to_reg()).collect(),
-            )) {
-                for (dst_reg, (src_reg, ty)) in
-                    dst_regs.iter().zip(src_regs.iter().zip(phi_classes))
-                {
-                    self.vcode.push(I::gen_move(*dst_reg, *src_reg, ty));
+                        None
+                    };
+                    self.lower_clif_branches(backend, bb, &branches, &targets, maybe_fallthrough)?;
+                    self.finish_ir_inst(self.srcloc(branches[0]));
                 }
             } else {
                 
-                let mut tmp_regs = Vec::with_capacity(phi_classes.len());
-                for &ty in &phi_classes {
-                    tmp_regs.push(self.tmp(I::rc_for_type(ty)?, ty));
-                }
-
-                debug!("phi_temps = {:?}", tmp_regs);
-                debug_assert!(tmp_regs.len() == src_regs.len());
-
-                for (tmp_reg, (src_reg, &ty)) in
-                    tmp_regs.iter().zip(src_regs.iter().zip(phi_classes.iter()))
-                {
-                    self.vcode.push(I::gen_move(*tmp_reg, *src_reg, ty));
-                }
-                for (dst_reg, (tmp_reg, &ty)) in
-                    dst_regs.iter().zip(tmp_regs.iter().zip(phi_classes.iter()))
-                {
-                    self.vcode.push(I::gen_move(*dst_reg, tmp_reg.to_reg(), ty));
-                }
+                
+                let (_, succ) = self.vcode.block_order().succ_indices(bindex)[0];
+                self.emit(I::gen_jump(MachLabel::from_block(succ)));
+                self.finish_ir_inst(SourceLoc::default());
             }
 
             
-            self.vcode
-                .push(I::gen_jump(self.vcode.bb_to_bindex(orig_block)));
+            if let Some((pred, inst, succ)) = lb.out_edge() {
+                self.lower_edge(pred, inst, succ)?;
+                self.finish_ir_inst(SourceLoc::default());
+            }
+            
+            if let Some(bb) = lb.orig_block() {
+                self.lower_clif_block(backend, bb)?;
+            }
+            
+            if let Some((pred, inst, succ)) = lb.in_edge() {
+                self.lower_edge(pred, inst, succ)?;
+                self.finish_ir_inst(SourceLoc::default());
+            }
 
-            
-            
-            self.vcode.end_ir_inst();
-            let blocknum = self.vcode.end_bb();
-            assert!(blocknum == edge_block);
+            if bindex == 0 {
+                
+                self.gen_arg_setup();
+                self.finish_ir_inst(SourceLoc::default());
+            }
+
+            self.finish_bb();
         }
 
+        self.copy_bbs_to_vcode();
+
         
-        Ok(self.vcode.build())
+        let vcode = self.vcode.build();
+        debug!("built vcode: {:?}", vcode);
+
+        Ok(vcode)
     }
 
     
     
     
-    fn dec_use(&mut self, ir_inst: Inst) {
-        assert!(self.num_uses[ir_inst] > 0);
-        self.num_uses[ir_inst] -= 1;
-        debug!(
-            "incref: ir_inst {} now has {} uses",
-            ir_inst, self.num_uses[ir_inst]
-        );
-    }
+    fn get_input_for_val(&self, at_inst: Inst, val: Value) -> LowerInput {
+        debug!("get_input_for_val: val {} at inst {}", val, at_inst);
+        let mut reg = self.value_regs[val];
+        debug!(" -> reg {:?}", reg);
+        assert!(reg.is_valid());
+        let mut inst = match self.f.dfg.value_def(val) {
+            
+            
+            
+            ValueDef::Result(src_inst, result_idx) => {
+                debug!(" -> src inst {}", src_inst);
+                debug!(
+                    " -> has side effect: {}",
+                    has_side_effect_or_load(self.f, src_inst)
+                );
+                debug!(
+                    " -> our color is {:?}, src inst is {:?}",
+                    self.inst_color(at_inst),
+                    self.inst_color(src_inst)
+                );
+                if !has_side_effect_or_load(self.f, src_inst)
+                    || self.inst_color(at_inst) == self.inst_color(src_inst)
+                {
+                    Some((src_inst, result_idx))
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        };
+        let constant = inst.and_then(|(inst, _)| self.get_constant(inst));
 
-    
-    
-    
-    fn inc_use(&mut self, ir_inst: Inst) {
-        self.num_uses[ir_inst] += 1;
-        debug!(
-            "decref: ir_inst {} now has {} uses",
-            ir_inst, self.num_uses[ir_inst]
-        );
+        
+        
+        
+        
+        
+        if let Some((i, _)) = inst {
+            if self.f.dfg[i].opcode() == Opcode::GetPinnedReg {
+                if let Some(pr) = self.pinned_reg {
+                    reg = pr;
+                }
+                inst = None;
+            }
+        }
+
+        LowerInput {
+            reg,
+            inst,
+            constant,
+        }
     }
 }
 
 impl<'func, I: VCodeInst> LowerCtx for Lower<'func, I> {
     type I = I;
 
-    
-    fn data(&self, ir_inst: Inst) -> &InstructionData {
-        &self.f.dfg[ir_inst]
-    }
-
-    
-    fn ty(&self, ir_inst: Inst) -> Type {
-        self.f.dfg.ctrl_typevar(ir_inst)
-    }
-
     fn abi(&mut self) -> &dyn ABIBody<I = I> {
         self.vcode.abi()
     }
 
-    
-    fn emit(&mut self, mach_inst: I) {
-        self.vcode.push(mach_inst);
-    }
-
-    
-    fn merged(&mut self, from_inst: Inst) {
-        debug!("merged: inst {}", from_inst);
-        
-        
-        for arg in self.f.dfg.inst_args(from_inst) {
-            let arg = self.f.dfg.resolve_aliases(*arg);
-            match self.f.dfg.value_def(arg) {
-                ValueDef::Result(src_inst, _) => {
-                    debug!(" -> inc-reffing src inst {}", src_inst);
-                    self.inc_use(src_inst);
-                }
-                _ => {}
-            }
-        }
-        
-        
-        
-        
-        self.dec_use(from_inst);
-    }
-
-    
-    
-    fn input_inst(&self, ir_inst: Inst, idx: usize) -> Option<(Inst, usize)> {
-        let val = self.f.dfg.inst_args(ir_inst)[idx];
-        let val = self.f.dfg.resolve_aliases(val);
-        match self.f.dfg.value_def(val) {
-            ValueDef::Result(src_inst, result_idx) => Some((src_inst, result_idx)),
-            _ => None,
-        }
-    }
-
-    
-    fn value_to_writable_reg(&self, val: Value) -> Writable<Reg> {
-        let val = self.f.dfg.resolve_aliases(val);
-        Writable::from_reg(self.value_regs[val])
-    }
-
-    
-    fn value_to_reg(&self, val: Value) -> Reg {
-        let val = self.f.dfg.resolve_aliases(val);
-        self.value_regs[val]
-    }
-
-    
-    fn input(&self, ir_inst: Inst, idx: usize) -> Reg {
-        let val = self.f.dfg.inst_args(ir_inst)[idx];
-        let val = self.f.dfg.resolve_aliases(val);
-        self.value_to_reg(val)
-    }
-
-    
-    fn output(&self, ir_inst: Inst, idx: usize) -> Writable<Reg> {
-        let val = self.f.dfg.inst_results(ir_inst)[idx];
-        self.value_to_writable_reg(val)
-    }
-
-    
-    fn tmp(&mut self, rc: RegClass, ty: Type) -> Writable<Reg> {
-        let v = self.next_vreg;
-        self.next_vreg += 1;
-        let vreg = Reg::new_virtual(rc, v);
-        self.vcode.set_vreg_type(vreg.as_virtual_reg().unwrap(), ty);
-        Writable::from_reg(vreg)
-    }
-
-    
-    fn num_inputs(&self, ir_inst: Inst) -> usize {
-        self.f.dfg.inst_args(ir_inst).len()
-    }
-
-    
-    fn num_outputs(&self, ir_inst: Inst) -> usize {
-        self.f.dfg.inst_results(ir_inst).len()
-    }
-
-    
-    fn input_ty(&self, ir_inst: Inst, idx: usize) -> Type {
-        let val = self.f.dfg.inst_args(ir_inst)[idx];
-        let val = self.f.dfg.resolve_aliases(val);
-        self.f.dfg.value_type(val)
-    }
-
-    
-    fn output_ty(&self, ir_inst: Inst, idx: usize) -> Type {
-        self.f.dfg.value_type(self.f.dfg.inst_results(ir_inst)[idx])
-    }
-
-    
-    fn num_bb_params(&self, bb: Block) -> usize {
-        self.f.dfg.block_params(bb).len()
-    }
-
-    
-    fn bb_param(&self, bb: Block, idx: usize) -> Reg {
-        let val = self.f.dfg.block_params(bb)[idx];
-        self.value_regs[val]
-    }
-
-    
     fn retval(&self, idx: usize) -> Writable<Reg> {
         Writable::from_reg(self.retval_regs[idx].0)
     }
 
-    
-    fn call_target<'b>(&'b self, ir_inst: Inst) -> Option<&'b ExternalName> {
+    fn data(&self, ir_inst: Inst) -> &InstructionData {
+        &self.f.dfg[ir_inst]
+    }
+
+    fn ty(&self, ir_inst: Inst) -> Type {
+        self.f.dfg.ctrl_typevar(ir_inst)
+    }
+
+    fn call_target<'b>(&'b self, ir_inst: Inst) -> Option<(&'b ExternalName, RelocDistance)> {
         match &self.f.dfg[ir_inst] {
             &InstructionData::Call { func_ref, .. }
             | &InstructionData::FuncAddr { func_ref, .. } => {
                 let funcdata = &self.f.dfg.ext_funcs[func_ref];
-                Some(&funcdata.name)
+                let dist = funcdata.reloc_distance();
+                Some((&funcdata.name, dist))
             }
             _ => None,
         }
     }
-    
+
     fn call_sig<'b>(&'b self, ir_inst: Inst) -> Option<&'b Signature> {
         match &self.f.dfg[ir_inst] {
             &InstructionData::Call { func_ref, .. } => {
@@ -670,8 +843,7 @@ impl<'func, I: VCodeInst> LowerCtx for Lower<'func, I> {
         }
     }
 
-    
-    fn symbol_value<'b>(&'b self, ir_inst: Inst) -> Option<(&'b ExternalName, i64)> {
+    fn symbol_value<'b>(&'b self, ir_inst: Inst) -> Option<(&'b ExternalName, RelocDistance, i64)> {
         match &self.f.dfg[ir_inst] {
             &InstructionData::UnaryGlobalValue { global_value, .. } => {
                 let gvdata = &self.f.global_values[global_value];
@@ -682,7 +854,8 @@ impl<'func, I: VCodeInst> LowerCtx for Lower<'func, I> {
                         ..
                     } => {
                         let offset = offset.bits();
-                        Some((name, offset))
+                        let dist = gvdata.maybe_reloc_distance().unwrap();
+                        Some((name, dist, offset))
                     }
                     _ => None,
                 }
@@ -691,7 +864,6 @@ impl<'func, I: VCodeInst> LowerCtx for Lower<'func, I> {
         }
     }
 
-    
     fn memflags(&self, ir_inst: Inst) -> Option<MemFlags> {
         match &self.f.dfg[ir_inst] {
             &InstructionData::Load { flags, .. }
@@ -702,27 +874,102 @@ impl<'func, I: VCodeInst> LowerCtx for Lower<'func, I> {
         }
     }
 
-    
     fn srcloc(&self, ir_inst: Inst) -> SourceLoc {
         self.f.srclocs[ir_inst]
     }
+
+    fn inst_color(&self, ir_inst: Inst) -> InstColor {
+        self.inst_colors[ir_inst]
+    }
+
+    fn num_inputs(&self, ir_inst: Inst) -> usize {
+        self.f.dfg.inst_args(ir_inst).len()
+    }
+
+    fn num_outputs(&self, ir_inst: Inst) -> usize {
+        self.f.dfg.inst_results(ir_inst).len()
+    }
+
+    fn input_ty(&self, ir_inst: Inst, idx: usize) -> Type {
+        let val = self.f.dfg.inst_args(ir_inst)[idx];
+        let val = self.f.dfg.resolve_aliases(val);
+        self.f.dfg.value_type(val)
+    }
+
+    fn output_ty(&self, ir_inst: Inst, idx: usize) -> Type {
+        self.f.dfg.value_type(self.f.dfg.inst_results(ir_inst)[idx])
+    }
+
+    fn get_constant(&self, ir_inst: Inst) -> Option<u64> {
+        self.inst_constants.get(&ir_inst).cloned()
+    }
+
+    fn get_input(&self, ir_inst: Inst, idx: usize) -> LowerInput {
+        let val = self.f.dfg.inst_args(ir_inst)[idx];
+        let val = self.f.dfg.resolve_aliases(val);
+        self.get_input_for_val(ir_inst, val)
+    }
+
+    fn get_output(&self, ir_inst: Inst, idx: usize) -> Writable<Reg> {
+        let val = self.f.dfg.inst_results(ir_inst)[idx];
+        Writable::from_reg(self.value_regs[val])
+    }
+
+    fn alloc_tmp(&mut self, rc: RegClass, ty: Type) -> Writable<Reg> {
+        let v = self.next_vreg;
+        self.next_vreg += 1;
+        let vreg = Reg::new_virtual(rc, v);
+        self.vcode.set_vreg_type(vreg.as_virtual_reg().unwrap(), ty);
+        Writable::from_reg(vreg)
+    }
+
+    fn emit(&mut self, mach_inst: I) {
+        self.ir_insts.push(mach_inst);
+    }
+
+    fn use_input_reg(&mut self, input: LowerInput) {
+        debug!("use_input_reg: vreg {:?} is needed", input.reg);
+        self.vreg_needed[input.reg.get_index()] = true;
+    }
+
+    fn is_reg_needed(&self, ir_inst: Inst, reg: Reg) -> bool {
+        self.inst_needed[ir_inst] || self.vreg_needed[reg.get_index()]
+    }
+
+    fn get_constant_data(&self, constant_handle: Constant) -> &ConstantData {
+        self.f.dfg.constants.get(constant_handle)
+    }
 }
 
-fn visit_branch_targets<F: FnMut(Block)>(f: &Function, block: Block, inst: Inst, mut visit: F) {
+
+pub(crate) fn visit_block_succs<F: FnMut(Inst, Block)>(f: &Function, block: Block, mut visit: F) {
+    for inst in f.layout.block_likely_branches(block) {
+        if f.dfg[inst].opcode().is_branch() {
+            visit_branch_targets(f, block, inst, &mut visit);
+        }
+    }
+}
+
+fn visit_branch_targets<F: FnMut(Inst, Block)>(
+    f: &Function,
+    block: Block,
+    inst: Inst,
+    visit: &mut F,
+) {
     if f.dfg[inst].opcode() == Opcode::Fallthrough {
-        visit(f.layout.next_block(block).unwrap());
+        visit(inst, f.layout.next_block(block).unwrap());
     } else {
         match f.dfg[inst].analyze_branch(&f.dfg.value_lists) {
             BranchInfo::NotABranch => {}
             BranchInfo::SingleDest(dest, _) => {
-                visit(dest);
+                visit(inst, dest);
             }
             BranchInfo::Table(table, maybe_dest) => {
                 if let Some(dest) = maybe_dest {
-                    visit(dest);
+                    visit(inst, dest);
                 }
                 for &dest in f.jump_tables[table].as_slice() {
-                    visit(dest);
+                    visit(inst, dest);
                 }
             }
         }

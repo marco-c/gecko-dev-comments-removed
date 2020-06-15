@@ -109,6 +109,7 @@ use regalloc::RegUsageCollector;
 use regalloc::{
     RealReg, RealRegUniverse, Reg, RegClass, RegUsageMapper, SpillSlot, VirtualReg, Writable,
 };
+use smallvec::SmallVec;
 use std::string::String;
 use target_lexicon::Triple;
 
@@ -124,8 +125,8 @@ pub mod abi;
 pub use abi::*;
 pub mod pretty_print;
 pub use pretty_print::*;
-pub mod sections;
-pub use sections::*;
+pub mod buffer;
+pub use buffer::*;
 pub mod adapter;
 pub use adapter::*;
 
@@ -137,7 +138,7 @@ pub trait MachInst: Clone + Debug {
 
     
     
-    fn map_regs(&mut self, maps: &RegUsageMapper);
+    fn map_regs<RUM: RegUsageMapper>(&mut self, maps: &RUM);
 
     
     fn is_move(&self) -> Option<(Writable<Reg>, Reg)>;
@@ -153,6 +154,9 @@ pub trait MachInst: Clone + Debug {
     fn gen_move(to_reg: Writable<Reg>, from_reg: Reg, ty: Type) -> Self;
 
     
+    fn gen_constant(to_reg: Writable<Reg>, value: u64, ty: Type) -> SmallVec<[Self; 4]>;
+
+    
     fn gen_zero_len_nop() -> Self;
 
     
@@ -166,7 +170,7 @@ pub trait MachInst: Clone + Debug {
 
     
     
-    fn gen_jump(target: BlockIndex) -> Self;
+    fn gen_jump(target: MachLabel) -> Self;
 
     
     
@@ -176,17 +180,6 @@ pub trait MachInst: Clone + Debug {
     fn gen_nop(preferred_size: usize) -> Self;
 
     
-    fn with_block_rewrites(&mut self, block_target_map: &[BlockIndex]);
-
-    
-    fn with_fallthrough_block(&mut self, fallthrough_block: Option<BlockIndex>);
-
-    
-    
-    
-    fn with_block_offsets(&mut self, my_offset: CodeOffset, targets: &[CodeOffset]);
-
-    
     fn reg_universe(flags: &Flags) -> RealRegUniverse;
 
     
@@ -194,6 +187,54 @@ pub trait MachInst: Clone + Debug {
     fn align_basic_block(offset: CodeOffset) -> CodeOffset {
         offset
     }
+
+    
+    fn worst_case_size() -> CodeOffset;
+
+    
+    
+    type LabelUse: MachInstLabelUse;
+}
+
+
+pub trait MachInstLabelUse: Clone + Copy + Debug + Eq {
+    
+    
+    const ALIGN: CodeOffset;
+
+    
+    
+    
+    fn max_pos_range(self) -> CodeOffset;
+    
+    
+    
+    fn max_neg_range(self) -> CodeOffset;
+    
+    
+    fn patch_size(self) -> CodeOffset;
+    
+    
+    
+    
+    
+    fn patch(self, buffer: &mut [u8], use_offset: CodeOffset, label_offset: CodeOffset);
+    
+    
+    
+    
+    fn supports_veneer(self) -> bool;
+    
+    fn veneer_size(self) -> CodeOffset;
+    
+    
+    
+    
+    
+    
+    
+    
+    fn generate_veneer(self, buffer: &mut [u8], veneer_offset: CodeOffset) -> (CodeOffset, Self);
 }
 
 
@@ -205,24 +246,26 @@ pub enum MachTerminator<'a> {
     
     Ret,
     
-    Uncond(BlockIndex),
+    Uncond(MachLabel),
     
-    Cond(BlockIndex, BlockIndex),
+    Cond(MachLabel, MachLabel),
     
-    Indirect(&'a [BlockIndex]),
+    Indirect(&'a [MachLabel]),
 }
 
 
-pub trait MachInstEmit<O: MachSectionOutput> {
+pub trait MachInstEmit: MachInst {
     
-    fn emit(&self, code: &mut O, flags: &Flags);
+    type State: Default + Clone + Debug;
+    
+    fn emit(&self, code: &mut MachBuffer<Self>, flags: &Flags, state: &mut Self::State);
 }
 
 
 
 pub struct MachCompileResult {
     
-    pub sections: MachSections,
+    pub buffer: MachBufferFinalized,
     
     pub frame_size: u32,
     
@@ -232,7 +275,7 @@ pub struct MachCompileResult {
 impl MachCompileResult {
     
     pub fn code_info(&self) -> CodeInfo {
-        let code_size = self.sections.total_size();
+        let code_size = self.buffer.total_size();
         CodeInfo {
             code_size,
             jumptables_size: 0,
@@ -262,17 +305,13 @@ pub trait MachBackend {
     fn name(&self) -> &'static str;
 
     
-    fn reg_universe(&self) -> RealRegUniverse;
+    fn reg_universe(&self) -> &RealRegUniverse;
 
     
-    fn unsigned_add_overflow_condition(&self) -> IntCC {
-        
-        IntCC::UnsignedLessThan
-    }
+    
+    fn unsigned_add_overflow_condition(&self) -> IntCC;
 
     
-    fn unsigned_sub_overflow_condition(&self) -> IntCC {
-        
-        IntCC::UnsignedLessThan
-    }
+    
+    fn unsigned_sub_overflow_condition(&self) -> IntCC;
 }

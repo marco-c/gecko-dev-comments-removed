@@ -9,12 +9,11 @@ use std::collections::VecDeque;
 use std::fmt;
 use std::hash::Hash;
 use std::marker::PhantomData;
-use std::mem;
 use std::ops::Index;
 use std::ops::IndexMut;
 use std::slice::{Iter, IterMut};
 
-use crate::Function;
+use crate::{Function, RegUsageMapper};
 
 
 
@@ -34,6 +33,7 @@ pub type Map<K, V> = FxHashMap<K, V>;
 
 
 
+#[derive(Clone)]
 pub struct Set<T> {
     set: FxHashSet<T>,
 }
@@ -175,6 +175,10 @@ impl<T: Eq + Ord + Hash + Copy + fmt::Debug> Set<T> {
             set: self.set.iter().filter_map(f).collect(),
         }
     }
+
+    pub fn clear(&mut self) {
+        self.set.clear();
+    }
 }
 
 impl<T: Eq + Ord + Hash + Copy + fmt::Debug> fmt::Debug for Set<T> {
@@ -194,17 +198,6 @@ impl<T: Eq + Ord + Hash + Copy + fmt::Debug> fmt::Debug for Set<T> {
         }
         s = s + &"}".to_string();
         write!(fmt, "{}", s)
-    }
-}
-
-impl<T: Eq + Ord + Hash + Copy + Clone + fmt::Debug> Clone for Set<T> {
-    #[inline(never)]
-    fn clone(&self) -> Self {
-        let mut res = Set::<T>::empty();
-        for item in self.set.iter() {
-            res.set.insert(item.clone());
-        }
-        res
     }
 }
 
@@ -638,40 +631,34 @@ impl RegClass {
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Reg {
-    do_not_access_this_directly: u32,
+    bits: u32,
 }
 
 static INVALID_REG: u32 = 0xffffffff;
 
 impl Reg {
     pub fn is_virtual(self) -> bool {
-        self.is_valid() && (self.do_not_access_this_directly & 0x8000_0000) != 0
+        self.is_valid() && (self.bits & 0x8000_0000) != 0
     }
     pub fn is_real(self) -> bool {
         self.is_valid() && !self.is_virtual()
     }
     pub fn new_real(rc: RegClass, enc: u8, index: u8) -> Self {
         let n = (0 << 31) | (rc.rc_to_u32() << 28) | ((enc as u32) << 8) | ((index as u32) << 0);
-        Reg {
-            do_not_access_this_directly: n,
-        }
+        Reg { bits: n }
     }
     pub fn new_virtual(rc: RegClass, index: u32) -> Self {
         if index >= (1 << 28) {
             panic!("new_virtual(): index too large");
         }
         let n = (1 << 31) | (rc.rc_to_u32() << 28) | (index << 0);
-        Reg {
-            do_not_access_this_directly: n,
-        }
+        Reg { bits: n }
     }
     pub fn invalid() -> Reg {
-        Reg {
-            do_not_access_this_directly: INVALID_REG,
-        }
+        Reg { bits: INVALID_REG }
     }
     pub fn is_invalid(self) -> bool {
-        self.do_not_access_this_directly == INVALID_REG
+        self.bits == INVALID_REG
     }
     pub fn is_valid(self) -> bool {
         !self.is_invalid()
@@ -684,16 +671,16 @@ impl Reg {
     }
     pub fn get_class(self) -> RegClass {
         debug_assert!(self.is_valid());
-        RegClass::rc_from_u32((self.do_not_access_this_directly >> 28) & 0x7)
+        RegClass::rc_from_u32((self.bits >> 28) & 0x7)
     }
     pub fn get_index(self) -> usize {
         debug_assert!(self.is_valid());
         
         
         if self.is_virtual() {
-            (self.do_not_access_this_directly & ((1 << 28) - 1)) as usize
+            (self.bits & ((1 << 28) - 1)) as usize
         } else {
-            (self.do_not_access_this_directly & ((1 << 8) - 1)) as usize
+            (self.bits & ((1 << 8) - 1)) as usize
         }
     }
     pub fn get_hw_encoding(self) -> u8 {
@@ -701,7 +688,7 @@ impl Reg {
         if self.is_virtual() {
             panic!("Virtual register does not have a hardware encoding")
         } else {
-            ((self.do_not_access_this_directly >> 8) & ((1 << 8) - 1)) as u8
+            ((self.bits >> 8) & ((1 << 8) - 1)) as u8
         }
     }
     pub fn as_virtual_reg(self) -> Option<VirtualReg> {
@@ -853,19 +840,19 @@ impl fmt::Debug for VirtualReg {
 impl Reg {
     
     
-    pub fn apply_uses(&mut self, mapper: &RegUsageMapper) {
+    pub fn apply_uses<RUM: RegUsageMapper>(&mut self, mapper: &RUM) {
         self.apply(|vreg| mapper.get_use(vreg));
     }
 
     
     
-    pub fn apply_defs(&mut self, mapper: &RegUsageMapper) {
+    pub fn apply_defs<RUM: RegUsageMapper>(&mut self, mapper: &RUM) {
         self.apply(|vreg| mapper.get_def(vreg));
     }
 
     
     
-    pub fn apply_mods(&mut self, mapper: &RegUsageMapper) {
+    pub fn apply_mods<RUM: RegUsageMapper>(&mut self, mapper: &RUM) {
         self.apply(|vreg| mapper.get_mod(vreg));
     }
 
@@ -931,14 +918,17 @@ pub enum SpillSlot {
     SpillSlot(u32),
 }
 impl SpillSlot {
+    #[inline(always)]
     pub fn new(n: u32) -> Self {
         SpillSlot::SpillSlot(n)
     }
+    #[inline(always)]
     pub fn get(self) -> u32 {
         match self {
             SpillSlot::SpillSlot(n) => n,
         }
     }
+    #[inline(always)]
     pub fn get_usize(self) -> usize {
         self.get() as usize
     }
@@ -966,6 +956,7 @@ impl fmt::Debug for SpillSlot {
 pub struct RegUsageCollector<'a> {
     pub reg_vecs: &'a mut RegVecs,
 }
+
 impl<'a> RegUsageCollector<'a> {
     pub fn new(reg_vecs: &'a mut RegVecs) -> Self {
         Self { reg_vecs }
@@ -973,27 +964,28 @@ impl<'a> RegUsageCollector<'a> {
     pub fn add_use(&mut self, r: Reg) {
         self.reg_vecs.uses.push(r);
     }
-    pub fn add_uses(&mut self, regs: &Set<Reg>) {
-        for reg in regs.iter() {
-            self.add_use(*reg);
-        }
+    pub fn add_uses(&mut self, regs: &[Reg]) {
+        self.reg_vecs.uses.extend(regs.iter());
     }
     pub fn add_def(&mut self, r: Writable<Reg>) {
         self.reg_vecs.defs.push(r.to_reg());
     }
-    pub fn add_defs(&mut self, regs: &Set<Writable<Reg>>) {
-        for reg in regs.iter() {
-            self.add_def(*reg);
+    pub fn add_defs(&mut self, regs: &[Writable<Reg>]) {
+        self.reg_vecs.defs.reserve(regs.len());
+        for r in regs {
+            self.reg_vecs.defs.push(r.to_reg());
         }
     }
     pub fn add_mod(&mut self, r: Writable<Reg>) {
         self.reg_vecs.mods.push(r.to_reg());
     }
-    pub fn add_mods(&mut self, regs: &Set<Writable<Reg>>) {
-        for reg in regs.iter() {
-            self.add_mod(*reg);
+    pub fn add_mods(&mut self, regs: &[Writable<Reg>]) {
+        self.reg_vecs.mods.reserve(regs.len());
+        for r in regs {
+            self.reg_vecs.mods.push(r.to_reg());
         }
     }
+
     
     
     pub fn get_use_def_mod_vecs_test_framework_only(&self) -> (Vec<Reg>, Vec<Reg>, Vec<Reg>) {
@@ -1003,6 +995,7 @@ impl<'a> RegUsageCollector<'a> {
             self.reg_vecs.mods.clone(),
         )
     }
+
     pub fn get_empty_reg_vecs_test_framework_only(sanitized: bool) -> RegVecs {
         RegVecs::new(sanitized)
     }
@@ -1091,6 +1084,7 @@ impl RegVecsAndBounds {
     pub fn is_sanitized(&self) -> bool {
         self.vecs.sanitized
     }
+    #[allow(dead_code)] 
     pub fn num_insns(&self) -> u32 {
         self.bounds.len()
     }
@@ -1120,6 +1114,7 @@ impl RegSets {
             sanitized,
         }
     }
+
     pub fn is_sanitized(&self) -> bool {
         self.sanitized
     }
@@ -1142,170 +1137,6 @@ impl RegVecsAndBounds {
             regsets.mods.insert(self.vecs.mods[i]);
         }
         regsets
-    }
-}
-
-
-
-
-
-
-#[derive(Debug)]
-pub struct RegUsageMapper {
-    
-    
-    slots: Vec<RealReg>,
-
-    
-    
-    
-    
-    overlay: SmallVec<[(VirtualReg, RealReg); 16]>,
-}
-
-impl RegUsageMapper {
-    
-    pub(crate) fn new(vreg_capacity: usize) -> RegUsageMapper {
-        RegUsageMapper {
-            slots: Vec::with_capacity(vreg_capacity),
-            overlay: SmallVec::new(),
-        }
-    }
-
-    
-    fn is_overlay_large_enough_to_sort(&self) -> bool {
-        
-        
-        
-        
-        
-        self.overlay.spilled()
-    }
-
-    
-    pub(crate) fn set_overlay(&mut self, vreg: VirtualReg, rreg: Option<RealReg>) {
-        let rreg = rreg.unwrap_or(RealReg::invalid());
-        self.overlay.push((vreg, rreg));
-    }
-
-    
-    pub(crate) fn finish_overlay(&mut self) {
-        if self.overlay.len() == 0 || !self.is_overlay_large_enough_to_sort() {
-            return;
-        }
-
-        
-        
-        self.overlay.sort_by_key(|pair| pair.0);
-        
-        
-        let mut last_vreg = self.overlay[0].0;
-        let mut out = 0;
-        for i in 1..self.overlay.len() {
-            let this_vreg = self.overlay[i].0;
-            if this_vreg != last_vreg {
-                out += 1;
-            }
-            if i != out {
-                self.overlay[out] = self.overlay[i];
-            }
-            last_vreg = this_vreg;
-        }
-        let new_len = out + 1;
-        self.overlay.truncate(new_len);
-    }
-
-    
-    pub(crate) fn merge_overlay(&mut self) {
-        
-        
-        let mappings = mem::replace(&mut self.overlay, SmallVec::new());
-        for (vreg, rreg) in mappings.into_iter() {
-            self.set_direct_internal(vreg, rreg);
-        }
-    }
-
-    
-    
-    pub(crate) fn set_direct(&mut self, vreg: VirtualReg, rreg: Option<RealReg>) {
-        debug_assert!(self.overlay.is_empty());
-        let rreg = rreg.unwrap_or(RealReg::invalid());
-        self.set_direct_internal(vreg, rreg);
-    }
-
-    fn set_direct_internal(&mut self, vreg: VirtualReg, rreg: RealReg) {
-        let idx = vreg.get_index();
-        if idx >= self.slots.len() {
-            self.slots.resize(idx + 1, RealReg::invalid());
-        }
-        self.slots[idx] = rreg;
-    }
-
-    
-    
-    fn lookup_direct(&self, vreg: VirtualReg) -> Option<RealReg> {
-        let idx = vreg.get_index();
-        if idx >= self.slots.len() {
-            None
-        } else {
-            Some(self.slots[idx])
-        }
-    }
-
-    
-    
-    
-    
-    fn lookup_overlay(&self, vreg: VirtualReg) -> Option<RealReg> {
-        if self.is_overlay_large_enough_to_sort() {
-            
-            
-            if let Ok(idx) = self.overlay.binary_search_by_key(&vreg, |pair| pair.0) {
-                return Some(self.overlay[idx].1);
-            }
-        } else {
-            
-            for &(this_vreg, this_rreg) in self.overlay.iter().rev() {
-                if this_vreg == vreg {
-                    return Some(this_rreg);
-                }
-            }
-        }
-        None
-    }
-
-    
-    
-    pub(crate) fn is_empty(&self) -> bool {
-        self.overlay.iter().all(|pair| pair.1.is_invalid())
-            && self.slots.iter().all(|rreg| rreg.is_invalid())
-    }
-
-    
-
-    
-    
-    pub fn get_use(&self, vreg: VirtualReg) -> Option<RealReg> {
-        self.lookup_direct(vreg)
-            
-            .and_then(|reg| reg.maybe_valid())
-    }
-
-    
-    
-    pub fn get_def(&self, vreg: VirtualReg) -> Option<RealReg> {
-        self.lookup_overlay(vreg)
-            .or_else(|| self.lookup_direct(vreg))
-            
-            .and_then(|reg| reg.maybe_valid())
-    }
-
-    
-    
-    pub fn get_mod(&self, vreg: VirtualReg) -> Option<RealReg> {
-        let result = self.get_use(vreg);
-        debug_assert_eq!(result, self.get_def(vreg));
-        result
     }
 }
 
@@ -1546,19 +1377,14 @@ impl RealRegUniverse {
 
 
 pub enum Point {
-    Reload,
-    Use,
-    Def,
-    Spill,
+    
+    Reload = 0,
+    Use = 1,
+    Def = 2,
+    Spill = 3,
 }
 
 impl Point {
-    pub fn min_value() -> Self {
-        Self::Reload
-    }
-    pub fn max_value() -> Self {
-        Self::Spill
-    }
     pub fn is_reload(self) -> bool {
         match self {
             Point::Reload => true,
@@ -1592,93 +1418,100 @@ impl PartialOrd for Point {
     
     
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        
-        
-        fn convert(pt: &Point) -> u32 {
-            match pt {
-                Point::Reload => 0,
-                Point::Use => 1,
-                Point::Def => 2,
-                Point::Spill => 3,
-            }
-        }
-        convert(self).partial_cmp(&convert(other))
+        (*self as u32).partial_cmp(&(*other as u32))
     }
 }
 
 
-#[derive(Copy, Clone, Hash, PartialEq, Eq, Ord)]
+#[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InstPoint {
-    pub iix: InstIx,
-    pub pt: Point,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bits: u32,
 }
 
 impl InstPoint {
     #[inline(always)]
     pub fn new(iix: InstIx, pt: Point) -> Self {
-        InstPoint { iix, pt }
+        let iix_n = iix.get();
+        assert!(iix_n < 0x4000_0000u32);
+        let pt_n = pt as u32;
+        InstPoint {
+            bits: (iix_n << 2) | pt_n,
+        }
+    }
+    #[inline(always)]
+    pub fn iix(self) -> InstIx {
+        InstIx::new(self.bits >> 2)
+    }
+    #[inline(always)]
+    pub fn pt(self) -> Point {
+        match self.bits & 3 {
+            0 => Point::Reload,
+            1 => Point::Use,
+            2 => Point::Def,
+            3 => Point::Spill,
+            
+            _ => panic!("InstPt::pt: unreachable case"),
+        }
+    }
+    #[inline(always)]
+    pub fn set_iix(&mut self, iix: InstIx) {
+        let iix_n = iix.get();
+        assert!(iix_n < 0x4000_0000u32);
+        self.bits = (iix_n << 2) | (self.bits & 3);
+    }
+    #[inline(always)]
+    pub fn set_pt(&mut self, pt: Point) {
+        self.bits = (self.bits & 0xFFFF_FFFCu32) | pt as u32;
     }
     #[inline(always)]
     pub fn new_reload(iix: InstIx) -> Self {
-        InstPoint {
-            iix,
-            pt: Point::Reload,
-        }
+        InstPoint::new(iix, Point::Reload)
     }
     #[inline(always)]
     pub fn new_use(iix: InstIx) -> Self {
-        InstPoint {
-            iix,
-            pt: Point::Use,
-        }
+        InstPoint::new(iix, Point::Use)
     }
     #[inline(always)]
     pub fn new_def(iix: InstIx) -> Self {
-        InstPoint {
-            iix,
-            pt: Point::Def,
-        }
+        InstPoint::new(iix, Point::Def)
     }
     #[inline(always)]
     pub fn new_spill(iix: InstIx) -> Self {
-        InstPoint {
-            iix,
-            pt: Point::Spill,
+        InstPoint::new(iix, Point::Spill)
+    }
+    #[inline(always)]
+    pub fn invalid_value() -> Self {
+        Self {
+            bits: 0xFFFF_FFFFu32,
         }
     }
-    pub fn step(&self) -> Self {
-        match self.pt {
-            Point::Reload => InstPoint::new(self.iix, Point::Use),
-            Point::Use => InstPoint::new(self.iix, Point::Def),
-            Point::Def => InstPoint::new(self.iix, Point::Spill),
-            Point::Spill => InstPoint::new(self.iix.plus(1), Point::Reload),
-        }
-    }
+    #[inline(always)]
     pub fn max_value() -> Self {
         Self {
-            iix: InstIx::max_value(),
-            pt: Point::max_value(),
+            bits: 0xFFFF_FFFFu32,
         }
     }
+    #[inline(always)]
     pub fn min_value() -> Self {
-        Self {
-            iix: InstIx::min_value(),
-            pt: Point::min_value(),
-        }
-    }
-}
-
-impl PartialOrd for InstPoint {
-    
-    
-    
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match self.iix.partial_cmp(&other.iix) {
-            Some(Ordering::Less) => Some(Ordering::Less),
-            Some(Ordering::Greater) => Some(Ordering::Greater),
-            Some(Ordering::Equal) => self.pt.partial_cmp(&other.pt),
-            None => panic!("InstPoint::partial_cmp: fail #1"),
-        }
+        Self { bits: 0u32 }
     }
 }
 
@@ -1687,8 +1520,8 @@ impl fmt::Debug for InstPoint {
         write!(
             fmt,
             "{:?}{}",
-            self.iix,
-            match self.pt {
+            self.iix(),
+            match self.pt() {
                 Point::Reload => ".r",
                 Point::Use => ".u",
                 Point::Def => ".d",
@@ -1699,30 +1532,6 @@ impl fmt::Debug for InstPoint {
 }
 
 
-#[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub enum RangeFragKind {
-    Local,   
-    LiveIn,  
-    LiveOut, 
-    Thru,    
-    
-    
-    
-    Multi, 
-}
-
-impl fmt::Debug for RangeFragKind {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            RangeFragKind::Local => write!(fmt, "Local"),
-            RangeFragKind::LiveIn => write!(fmt, "LiveIn"),
-            RangeFragKind::LiveOut => write!(fmt, "LiveOut"),
-            RangeFragKind::Thru => write!(fmt, "Thru"),
-            
-            RangeFragKind::Multi => write!(fmt, "Multi"),
-        }
-    }
-}
 
 
 
@@ -1749,67 +1558,42 @@ impl fmt::Debug for RangeFragKind {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RangeFrag {
-    pub bix: BlockIx,
-    pub kind: RangeFragKind,
     pub first: InstPoint,
     pub last: InstPoint,
-    pub count: u16,
 }
 
 impl fmt::Debug for RangeFrag {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            fmt,
-            "(RF: {:?}, count={}, {:?}, {:?}-{:?})",
-            self.bix, self.count, self.kind, self.first, self.last
-        )
+        write!(fmt, "(RF: {:?}-{:?})", self.first, self.last)
     }
 }
 
 impl RangeFrag {
-    pub fn new_multi_block<F: Function>(
+    #[allow(dead_code)] 
+    pub fn new(first: InstPoint, last: InstPoint) -> Self {
+        debug_assert!(first <= last);
+        RangeFrag { first, last }
+    }
+
+    pub fn invalid_value() -> Self {
+        Self {
+            first: InstPoint::invalid_value(),
+            last: InstPoint::invalid_value(),
+        }
+    }
+
+    pub fn new_with_metrics<F: Function>(
         f: &F,
         bix: BlockIx,
         first: InstPoint,
         last: InstPoint,
         count: u16,
-    ) -> Self {
+    ) -> (Self, RangeFragMetrics) {
+        debug_assert!(f.block_insns(bix).len() >= 1);
+        debug_assert!(f.block_insns(bix).contains(first.iix()));
+        debug_assert!(f.block_insns(bix).contains(last.iix()));
         debug_assert!(first <= last);
         if first == last {
             debug_assert!(count == 1);
@@ -1824,26 +1608,10 @@ impl RangeFrag {
             (true, false) => RangeFragKind::LiveIn,
             (true, true) => RangeFragKind::Thru,
         };
-        RangeFrag {
-            bix,
-            kind,
-            first,
-            last,
-            count,
-        }
-    }
-
-    pub fn new<F: Function>(
-        f: &F,
-        bix: BlockIx,
-        first: InstPoint,
-        last: InstPoint,
-        count: u16,
-    ) -> Self {
-        debug_assert!(f.block_insns(bix).len() >= 1);
-        debug_assert!(f.block_insns(bix).contains(first.iix));
-        debug_assert!(f.block_insns(bix).contains(last.iix));
-        RangeFrag::new_multi_block(f, bix, first, last, count)
+        (
+            RangeFrag { first, last },
+            RangeFragMetrics { bix, kind, count },
+        )
     }
 }
 
@@ -1873,6 +1641,73 @@ impl RangeFrag {
 
 
 
+#[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub enum RangeFragKind {
+    Local,   
+    LiveIn,  
+    LiveOut, 
+    Thru,    
+}
+
+impl fmt::Debug for RangeFragKind {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            RangeFragKind::Local => write!(fmt, "Local"),
+            RangeFragKind::LiveIn => write!(fmt, "LiveIn"),
+            RangeFragKind::LiveOut => write!(fmt, "LiveOut"),
+            RangeFragKind::Thru => write!(fmt, "Thru"),
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, PartialEq)]
+pub struct RangeFragMetrics {
+    pub bix: BlockIx,
+    pub kind: RangeFragKind,
+    pub count: u16,
+}
+
+impl fmt::Debug for RangeFragMetrics {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            fmt,
+            "(RFM: {:?}, count={}, {:?})",
+            self.kind, self.count, self.bix
+        )
+    }
+}
+
+
+
+
 
 
 
@@ -1890,22 +1725,13 @@ impl fmt::Debug for SortedRangeFragIxs {
 }
 
 impl SortedRangeFragIxs {
-    pub fn cmp_debug_only(&self, other: &SortedRangeFragIxs) -> Ordering {
-        self.frag_ixs.cmp(&other.frag_ixs)
-    }
-
-    pub fn check(&self, fenv: &TypedIxVec<RangeFragIx, RangeFrag>) {
-        let mut ok = true;
+    pub(crate) fn check(&self, fenv: &TypedIxVec<RangeFragIx, RangeFrag>) {
         for i in 1..self.frag_ixs.len() {
             let prev_frag = &fenv[self.frag_ixs[i - 1]];
-            let this_frag = &fenv[self.frag_ixs[i - 0]];
+            let this_frag = &fenv[self.frag_ixs[i]];
             if cmp_range_frags(prev_frag, this_frag) != Some(Ordering::Less) {
-                ok = false;
-                break;
+                panic!("SortedRangeFragIxs::check: vector not ok");
             }
-        }
-        if !ok {
-            panic!("SortedRangeFragIxs::check: vector not ok");
         }
     }
 
@@ -1915,7 +1741,7 @@ impl SortedRangeFragIxs {
                 Some(Ordering::Less) => Ordering::Less,
                 Some(Ordering::Greater) => Ordering::Greater,
                 Some(Ordering::Equal) | None => {
-                    panic!("SortedRangeFragIxs::new: overlapping Frags!")
+                    panic!("SortedRangeFragIxs::sort: overlapping Frags!")
                 }
             }
         });
@@ -1946,6 +1772,68 @@ impl SortedRangeFragIxs {
 
 
 
+#[derive(Clone)]
+pub struct SortedRangeFrags {
+    pub frags: SmallVec<[RangeFrag; 4]>,
+}
+
+impl fmt::Debug for SortedRangeFrags {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        self.frags.fmt(fmt)
+    }
+}
+
+impl SortedRangeFrags {
+    pub fn unit(frag: RangeFrag) -> Self {
+        let mut res = SortedRangeFrags {
+            frags: SmallVec::<[RangeFrag; 4]>::new(),
+        };
+        res.frags.push(frag);
+        res
+    }
+
+    pub fn empty() -> Self {
+        Self {
+            frags: SmallVec::<[RangeFrag; 4]>::new(),
+        }
+    }
+
+    pub fn overlaps(&self, other: &Self) -> bool {
+        
+        
+        
+        
+        let frags1 = &self.frags;
+        let frags2 = &other.frags;
+        let n1 = frags1.len();
+        let n2 = frags2.len();
+        let mut c1 = 0;
+        let mut c2 = 0;
+        loop {
+            if c1 >= n1 || c2 >= n2 {
+                
+                
+                return false; 
+            }
+            let f1 = &frags1[c1];
+            let f2 = &frags2[c2];
+            match cmp_range_frags(f1, f2) {
+                Some(Ordering::Less) => c1 += 1,
+                Some(Ordering::Greater) => c2 += 1,
+                _ => {
+                    
+                    
+                    return true; 
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
 
 
 
@@ -1967,12 +1855,15 @@ impl fmt::Debug for SpillCost {
 }
 
 impl SpillCost {
+    #[inline(always)]
     pub fn zero() -> Self {
         SpillCost::Finite(0.0)
     }
+    #[inline(always)]
     pub fn infinite() -> Self {
         SpillCost::Infinite
     }
+    #[inline(always)]
     pub fn finite(cost: f32) -> Self {
         
         
@@ -1983,21 +1874,25 @@ impl SpillCost {
         assert!(cost < 1e18);
         SpillCost::Finite(cost)
     }
+    #[inline(always)]
     pub fn is_zero(&self) -> bool {
         match self {
             SpillCost::Infinite => false,
             SpillCost::Finite(c) => *c == 0.0,
         }
     }
+    #[inline(always)]
     pub fn is_infinite(&self) -> bool {
         match self {
             SpillCost::Infinite => true,
             SpillCost::Finite(_) => false,
         }
     }
+    #[inline(always)]
     pub fn is_finite(&self) -> bool {
         !self.is_infinite()
     }
+    #[inline(always)]
     pub fn is_less_than(&self, other: &Self) -> bool {
         match (self, other) {
             
@@ -2010,18 +1905,7 @@ impl SpillCost {
             (SpillCost::Finite(c1), SpillCost::Finite(c2)) => c1 < c2,
         }
     }
-    pub fn partial_cmp_debug_only(&self, other: &Self) -> Option<Ordering> {
-        
-        
-        
-        
-        match (self, other) {
-            (SpillCost::Infinite, SpillCost::Infinite) => Some(Ordering::Equal),
-            (SpillCost::Finite(_), SpillCost::Infinite) => Some(Ordering::Less),
-            (SpillCost::Infinite, SpillCost::Finite(_)) => Some(Ordering::Greater),
-            (SpillCost::Finite(c1), SpillCost::Finite(c2)) => c1.partial_cmp(c2),
-        }
-    }
+    #[inline(always)]
     pub fn add(&mut self, other: &Self) {
         match (*self, other) {
             (SpillCost::Finite(c1), SpillCost::Finite(c2)) => {
@@ -2079,6 +1963,8 @@ impl SpillCost {
 
 
 
+
+
 #[derive(Clone)]
 pub struct RealRange {
     pub rreg: RealReg,
@@ -2092,12 +1978,6 @@ impl fmt::Debug for RealRange {
 }
 
 impl RealRange {
-    pub fn cmp_debug_only(&self, other: &RealRange) -> Ordering {
-        match self.rreg.cmp(&other.rreg) {
-            Ordering::Equal => self.sorted_frags.cmp_debug_only(&other.sorted_frags),
-            oth1 => oth1,
-        }
-    }
     pub fn show_with_rru(&self, univ: &RealRegUniverse) -> String {
         format!(
             "(RR: {}, {:?})",
@@ -2117,10 +1997,16 @@ impl RealRange {
 pub struct VirtualRange {
     pub vreg: VirtualReg,
     pub rreg: Option<RealReg>,
-    pub sorted_frags: SortedRangeFragIxs,
+    pub sorted_frags: SortedRangeFrags,
     pub size: u16,
     pub total_cost: u32,
     pub spill_cost: SpillCost, 
+}
+
+impl VirtualRange {
+    pub fn overlaps(&self, other: &Self) -> bool {
+        self.sorted_frags.overlaps(&other.sorted_frags)
+    }
 }
 
 impl fmt::Debug for VirtualRange {
@@ -2134,146 +2020,6 @@ impl fmt::Debug for VirtualRange {
             " sz={}, tc={}, sc={:?}, {:?})",
             self.size, self.total_cost, self.spill_cost, self.sorted_frags
         )
-    }
-}
-
-impl VirtualRange {
-    pub fn cmp_debug_only(&self, other: &VirtualRange) -> Ordering {
-        match self.vreg.cmp(&other.vreg) {
-            Ordering::Equal => match self.rreg.cmp(&other.rreg) {
-                Ordering::Equal => match self.sorted_frags.cmp_debug_only(&other.sorted_frags) {
-                    Ordering::Equal => match self.size.cmp(&other.size) {
-                        Ordering::Equal => self
-                            .spill_cost
-                            .partial_cmp_debug_only(&other.spill_cost)
-                            .unwrap(),
-                        oth4 => oth4,
-                    },
-                    oth3 => oth3,
-                },
-                oth2 => oth2,
-            },
-            oth1 => oth1,
-        }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    fn vreg(idx: u32) -> VirtualReg {
-        Reg::new_virtual(RegClass::I64, idx).to_virtual_reg()
-    }
-    fn rreg(idx: u8) -> RealReg {
-        Reg::new_real(RegClass::I64,  0,  idx).to_real_reg()
-    }
-
-    #[test]
-    fn test_reg_use_mapper() {
-        let mut mapper = RegUsageMapper::new( 16);
-        assert_eq!(None, mapper.get_use(vreg(0)));
-        assert_eq!(None, mapper.get_def(vreg(0)));
-        assert_eq!(None, mapper.get_mod(vreg(0)));
-
-        mapper.set_direct(vreg(0), Some(rreg(1)));
-        mapper.set_direct(vreg(1), Some(rreg(2)));
-
-        assert_eq!(Some(rreg(1)), mapper.get_use(vreg(0)));
-        assert_eq!(Some(rreg(1)), mapper.get_def(vreg(0)));
-        assert_eq!(Some(rreg(1)), mapper.get_mod(vreg(0)));
-        assert_eq!(Some(rreg(2)), mapper.get_use(vreg(1)));
-        assert_eq!(Some(rreg(2)), mapper.get_def(vreg(1)));
-        assert_eq!(Some(rreg(2)), mapper.get_mod(vreg(1)));
-
-        mapper.set_overlay(vreg(0), Some(rreg(3)));
-        mapper.set_overlay(vreg(2), Some(rreg(4)));
-        mapper.finish_overlay();
-
-        assert_eq!(Some(rreg(1)), mapper.get_use(vreg(0)));
-        assert_eq!(Some(rreg(3)), mapper.get_def(vreg(0)));
-        
-        assert_eq!(Some(rreg(2)), mapper.get_use(vreg(1)));
-        assert_eq!(Some(rreg(2)), mapper.get_def(vreg(1)));
-        assert_eq!(Some(rreg(2)), mapper.get_mod(vreg(1)));
-        assert_eq!(None, mapper.get_use(vreg(2)));
-        assert_eq!(Some(rreg(4)), mapper.get_def(vreg(2)));
-        
-
-        mapper.merge_overlay();
-        assert_eq!(Some(rreg(3)), mapper.get_use(vreg(0)));
-        assert_eq!(Some(rreg(2)), mapper.get_use(vreg(1)));
-        assert_eq!(Some(rreg(4)), mapper.get_use(vreg(2)));
-        assert_eq!(None, mapper.get_use(vreg(3)));
-
-        
-        mapper.set_overlay(vreg(0), None);
-        mapper.finish_overlay();
-        assert_eq!(Some(rreg(3)), mapper.get_use(vreg(0)));
-        assert_eq!(None, mapper.get_def(vreg(0)));
-        mapper.merge_overlay();
-
-        
-        for i in (2..50).rev() {
-            mapper.set_overlay(vreg(i), Some(rreg((i + 100) as u8)));
-        }
-        mapper.finish_overlay();
-        assert_eq!(None, mapper.get_use(vreg(0)));
-        assert_eq!(Some(rreg(2)), mapper.get_use(vreg(1)));
-        assert_eq!(Some(rreg(4)), mapper.get_use(vreg(2)));
-        for i in 2..50 {
-            assert_eq!(Some(rreg((i + 100) as u8)), mapper.get_def(vreg(i)));
-        }
-        mapper.merge_overlay();
-
-        for i in (0..100).rev() {
-            mapper.set_overlay(vreg(i), None);
-        }
-        mapper.finish_overlay();
-        for i in 0..100 {
-            assert_eq!(None, mapper.get_def(vreg(i)));
-        }
-        assert_eq!(false, mapper.is_empty());
-        mapper.merge_overlay();
-        assert_eq!(true, mapper.is_empty());
-
-        
-        mapper.set_overlay(vreg(1), Some(rreg(1)));
-        mapper.set_overlay(vreg(1), Some(rreg(2)));
-        mapper.finish_overlay();
-        assert_eq!(Some(rreg(2)), mapper.get_def(vreg(1)));
-        mapper.merge_overlay();
-        assert_eq!(Some(rreg(2)), mapper.get_use(vreg(1)));
-
-        mapper.set_overlay(vreg(1), Some(rreg(2)));
-        mapper.set_overlay(vreg(1), None);
-        mapper.finish_overlay();
-        assert_eq!(None, mapper.get_def(vreg(1)));
-        mapper.merge_overlay();
-        assert_eq!(None, mapper.get_use(vreg(1)));
-
-        
-        for i in 0..100 {
-            mapper.set_overlay(vreg(2), Some(rreg(i)));
-        }
-        for i in 0..100 {
-            mapper.set_overlay(vreg(2), Some(rreg(2 * i)));
-        }
-        mapper.finish_overlay();
-        assert_eq!(Some(rreg(198)), mapper.get_def(vreg(2)));
-        mapper.merge_overlay();
-        assert_eq!(Some(rreg(198)), mapper.get_use(vreg(2)));
-
-        for i in 0..100 {
-            mapper.set_overlay(vreg(2), Some(rreg(i)));
-        }
-        for _ in 0..100 {
-            mapper.set_overlay(vreg(2), None);
-        }
-        mapper.finish_overlay();
-        assert_eq!(None, mapper.get_def(vreg(50)));
-        mapper.merge_overlay();
-        assert_eq!(None, mapper.get_use(vreg(50)));
     }
 }
 

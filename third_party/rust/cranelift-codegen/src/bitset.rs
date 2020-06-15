@@ -5,12 +5,14 @@
 
 
 
+
 use core::convert::{From, Into};
 use core::mem::size_of;
 use core::ops::{Add, BitOr, Shl, Sub};
 
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "enable-serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BitSet<T>(pub T);
 
 impl<T> BitSet<T>

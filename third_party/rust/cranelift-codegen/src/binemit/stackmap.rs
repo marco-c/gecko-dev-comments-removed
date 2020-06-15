@@ -15,7 +15,8 @@ const NUM_BITS: usize = core::mem::size_of::<Num>() * 8;
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "enable-serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Stackmap {
     bitmap: Vec<BitSet<Num>>,
     mapped_words: u32,

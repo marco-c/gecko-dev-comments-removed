@@ -4,16 +4,18 @@
 #![allow(dead_code)]
 
 use crate::binemit::CodeOffset;
-use crate::ir::types::{B1, B16, B32, B64, B8, F32, F64, FFLAGS, I16, I32, I64, I8, IFLAGS};
+use crate::ir::types::{
+    B1, B16, B32, B64, B8, B8X16, F32, F32X2, F64, FFLAGS, I128, I16, I32, I64, I8, I8X16, IFLAGS,
+};
 use crate::ir::{ExternalName, Opcode, SourceLoc, TrapCode, Type};
 use crate::machinst::*;
 use crate::{settings, CodegenError, CodegenResult};
 
 use regalloc::{RealRegUniverse, Reg, RegClass, SpillSlot, VirtualReg, Writable};
-use regalloc::{RegUsageCollector, RegUsageMapper, Set};
+use regalloc::{RegUsageCollector, RegUsageMapper};
 
+use alloc::boxed::Box;
 use alloc::vec::Vec;
-use core::convert::TryFrom;
 use smallvec::{smallvec, SmallVec};
 use std::string::{String, ToString};
 
@@ -125,6 +127,19 @@ pub enum FPUOp2 {
 }
 
 
+#[derive(Copy, Clone, Debug)]
+pub enum FPUOpRI {
+    
+    UShr32(FPURightShiftImm),
+    
+    UShr64(FPURightShiftImm),
+    
+    Sli32(FPULeftShiftImm),
+    
+    Sli64(FPULeftShiftImm),
+}
+
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum FPUOp3 {
     MAdd32,
@@ -182,6 +197,23 @@ pub enum VecALUOp {
     SQSubScalar,
     
     UQSubScalar,
+    
+    Cmeq,
+    
+    Cmge,
+    
+    Cmgt,
+    
+    Cmhs,
+    
+    Cmhi,
+}
+
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum VecMisc2 {
+    
+    Not,
 }
 
 
@@ -230,6 +262,36 @@ impl From<(Opcode, Type)> for BitOp {
             _ => unreachable!("Called with non-bit op!: {:?}", op_ty),
         }
     }
+}
+
+
+
+#[derive(Clone, Debug)]
+pub struct CallInfo {
+    pub dest: ExternalName,
+    pub uses: Vec<Reg>,
+    pub defs: Vec<Writable<Reg>>,
+    pub loc: SourceLoc,
+    pub opcode: Opcode,
+}
+
+
+
+#[derive(Clone, Debug)]
+pub struct CallIndInfo {
+    pub rn: Reg,
+    pub uses: Vec<Reg>,
+    pub defs: Vec<Writable<Reg>>,
+    pub loc: SourceLoc,
+    pub opcode: Opcode,
+}
+
+
+
+#[derive(Clone, Debug)]
+pub struct JTSequenceInfo {
+    pub targets: Vec<BranchTarget>,
+    pub targets_for_term: Vec<MachLabel>, 
 }
 
 
@@ -458,6 +520,12 @@ pub enum Inst {
     },
 
     
+    FpuMove128 {
+        rd: Writable<Reg>,
+        rn: Reg,
+    },
+
+    
     FpuRR {
         fpu_op: FPUOp1,
         rd: Writable<Reg>,
@@ -470,6 +538,12 @@ pub enum Inst {
         rd: Writable<Reg>,
         rn: Reg,
         rm: Reg,
+    },
+
+    FpuRRI {
+        fpu_op: FPUOpRI,
+        rd: Writable<Reg>,
+        rn: Reg,
     },
 
     
@@ -540,6 +614,11 @@ pub enum Inst {
         const_data: f64,
     },
 
+    LoadFpuConst128 {
+        rd: Writable<Reg>,
+        const_data: u128,
+    },
+
     
     FpuToInt {
         op: FpuToIntOp,
@@ -594,6 +673,15 @@ pub enum Inst {
         rd: Writable<Reg>,
         rn: Reg,
         rm: Reg,
+        ty: Type,
+    },
+
+    
+    VecMisc {
+        op: VecMisc2,
+        rd: Writable<Reg>,
+        rn: Reg,
+        ty: Type,
     },
 
     
@@ -613,20 +701,15 @@ pub enum Inst {
     },
 
     
+    
+    
+    
     Call {
-        dest: ExternalName,
-        uses: Set<Reg>,
-        defs: Set<Writable<Reg>>,
-        loc: SourceLoc,
-        opcode: Opcode,
+        info: Box<CallInfo>,
     },
     
     CallInd {
-        rn: Reg,
-        uses: Set<Reg>,
-        defs: Set<Writable<Reg>>,
-        loc: SourceLoc,
-        opcode: Opcode,
+        info: Box<CallIndInfo>,
     },
 
     
@@ -643,6 +726,9 @@ pub enum Inst {
     },
 
     
+    
+    
+    
     CondBr {
         taken: BranchTarget,
         not_taken: BranchTarget,
@@ -652,17 +738,16 @@ pub enum Inst {
     
     
     
-    CondBrLowered {
+    
+    
+    
+    
+    
+    
+    
+    
+    OneWayCondBr {
         target: BranchTarget,
-        kind: CondBrKind,
-    },
-
-    
-    
-    
-    CondBrLoweredCompound {
-        taken: BranchTarget,
-        not_taken: BranchTarget,
         kind: CondBrKind,
     },
 
@@ -670,7 +755,7 @@ pub enum Inst {
     
     IndirectBr {
         rn: Reg,
-        targets: Vec<BlockIndex>,
+        targets: Vec<MachLabel>,
     },
 
     
@@ -684,9 +769,12 @@ pub enum Inst {
 
     
     
+    
+    
     Adr {
         rd: Writable<Reg>,
-        label: MemLabel,
+        
+        off: i32,
     },
 
     
@@ -702,8 +790,7 @@ pub enum Inst {
     
     
     JTSequence {
-        targets: Vec<BranchTarget>,
-        targets_for_term: Vec<BlockIndex>, 
+        info: Box<JTSequenceInfo>,
         ridx: Reg,
         rtmp1: Writable<Reg>,
         rtmp2: Writable<Reg>,
@@ -718,7 +805,7 @@ pub enum Inst {
     
     LoadExtName {
         rd: Writable<Reg>,
-        name: ExternalName,
+        name: Box<ExternalName>,
         srcloc: SourceLoc,
         offset: i64,
     },
@@ -730,13 +817,34 @@ pub enum Inst {
     },
 
     
-    GetPinnedReg {
-        rd: Writable<Reg>,
+    
+    VirtualSPOffsetAdj {
+        offset: i64,
     },
 
     
-    SetPinnedReg {
-        rm: Reg,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    EmitIsland {
+        
+        needed_space: CodeOffset,
     },
 }
 
@@ -752,6 +860,13 @@ fn count_zero_half_words(mut value: u64) -> usize {
     count
 }
 
+#[test]
+fn inst_size_test() {
+    
+    
+    assert_eq!(32, std::mem::size_of::<Inst>());
+}
+
 impl Inst {
     
     pub fn mov(to_reg: Writable<Reg>, from_reg: Reg) -> Inst {
@@ -760,6 +875,11 @@ impl Inst {
             Inst::Mov {
                 rd: to_reg,
                 rm: from_reg,
+            }
+        } else if from_reg.get_class() == RegClass::V128 {
+            Inst::FpuMove128 {
+                rd: to_reg,
+                rn: from_reg,
             }
         } else {
             Inst::FpuMove64 {
@@ -850,6 +970,14 @@ impl Inst {
             const_data: value,
         }
     }
+
+    
+    pub fn load_fp_constant128(rd: Writable<Reg>, value: u128) -> Inst {
+        Inst::LoadFpuConst128 {
+            rd,
+            const_data: value,
+        }
+    }
 }
 
 
@@ -873,8 +1001,11 @@ fn memarg_regs(memarg: &MemArg, collector: &mut RegUsageCollector) {
         &MemArg::FPOffset(..) => {
             collector.add_use(fp_reg());
         }
-        &MemArg::SPOffset(..) => {
+        &MemArg::SPOffset(..) | &MemArg::NominalSPOffset(..) => {
             collector.add_use(stack_reg());
+        }
+        &MemArg::RegOffset(r, ..) => {
+            collector.add_use(r);
         }
     }
 }
@@ -989,6 +1120,10 @@ fn aarch64_get_regs(inst: &Inst, collector: &mut RegUsageCollector) {
             collector.add_def(rd);
             collector.add_use(rn);
         }
+        &Inst::FpuMove128 { rd, rn } => {
+            collector.add_def(rd);
+            collector.add_use(rn);
+        }
         &Inst::FpuRR { rd, rn, .. } => {
             collector.add_def(rd);
             collector.add_use(rn);
@@ -998,11 +1133,22 @@ fn aarch64_get_regs(inst: &Inst, collector: &mut RegUsageCollector) {
             collector.add_use(rn);
             collector.add_use(rm);
         }
+        &Inst::FpuRRI { fpu_op, rd, rn, .. } => {
+            match fpu_op {
+                FPUOpRI::UShr32(..) | FPUOpRI::UShr64(..) => collector.add_def(rd),
+                FPUOpRI::Sli32(..) | FPUOpRI::Sli64(..) => collector.add_mod(rd),
+            }
+            collector.add_use(rn);
+        }
         &Inst::FpuRRRR { rd, rn, rm, ra, .. } => {
             collector.add_def(rd);
             collector.add_use(rn);
             collector.add_use(rm);
             collector.add_use(ra);
+        }
+        &Inst::VecMisc { rd, rn, .. } => {
+            collector.add_def(rd);
+            collector.add_use(rn);
         }
         &Inst::FpuCmp32 { rn, rm } | &Inst::FpuCmp64 { rn, rm } => {
             collector.add_use(rn);
@@ -1032,7 +1178,9 @@ fn aarch64_get_regs(inst: &Inst, collector: &mut RegUsageCollector) {
             collector.add_use(rd);
             memarg_regs(mem, collector);
         }
-        &Inst::LoadFpuConst32 { rd, .. } | &Inst::LoadFpuConst64 { rd, .. } => {
+        &Inst::LoadFpuConst32 { rd, .. }
+        | &Inst::LoadFpuConst64 { rd, .. }
+        | &Inst::LoadFpuConst128 { rd, .. } => {
             collector.add_def(rd);
         }
         &Inst::FpuToInt { rd, rn, .. } => {
@@ -1079,25 +1227,16 @@ fn aarch64_get_regs(inst: &Inst, collector: &mut RegUsageCollector) {
             collector.add_use(rn);
         }
         &Inst::Jump { .. } | &Inst::Ret | &Inst::EpiloguePlaceholder => {}
-        &Inst::Call {
-            ref uses, ref defs, ..
-        } => {
-            collector.add_uses(uses);
-            collector.add_defs(defs);
+        &Inst::Call { ref info } => {
+            collector.add_uses(&*info.uses);
+            collector.add_defs(&*info.defs);
         }
-        &Inst::CallInd {
-            ref uses,
-            ref defs,
-            rn,
-            ..
-        } => {
-            collector.add_uses(uses);
-            collector.add_defs(defs);
-            collector.add_use(rn);
+        &Inst::CallInd { ref info } => {
+            collector.add_uses(&*info.uses);
+            collector.add_defs(&*info.defs);
+            collector.add_use(info.rn);
         }
-        &Inst::CondBr { ref kind, .. }
-        | &Inst::CondBrLowered { ref kind, .. }
-        | &Inst::CondBrLoweredCompound { ref kind, .. } => match kind {
+        &Inst::CondBr { ref kind, .. } | &Inst::OneWayCondBr { ref kind, .. } => match kind {
             CondBrKind::Zero(rt) | CondBrKind::NotZero(rt) => {
                 collector.add_use(*rt);
             }
@@ -1126,41 +1265,37 @@ fn aarch64_get_regs(inst: &Inst, collector: &mut RegUsageCollector) {
         &Inst::LoadAddr { rd, mem: _ } => {
             collector.add_def(rd);
         }
-        &Inst::GetPinnedReg { rd } => {
-            collector.add_def(rd);
-        }
-        &Inst::SetPinnedReg { rm } => {
-            collector.add_use(rm);
-        }
+        &Inst::VirtualSPOffsetAdj { .. } => {}
+        &Inst::EmitIsland { .. } => {}
     }
 }
 
 
 
 
-fn aarch64_map_regs(inst: &mut Inst, mapper: &RegUsageMapper) {
-    fn map_use(m: &RegUsageMapper, r: &mut Reg) {
+fn aarch64_map_regs<RUM: RegUsageMapper>(inst: &mut Inst, mapper: &RUM) {
+    fn map_use<RUM: RegUsageMapper>(m: &RUM, r: &mut Reg) {
         if r.is_virtual() {
             let new = m.get_use(r.to_virtual_reg()).unwrap().to_reg();
             *r = new;
         }
     }
 
-    fn map_def(m: &RegUsageMapper, r: &mut Writable<Reg>) {
+    fn map_def<RUM: RegUsageMapper>(m: &RUM, r: &mut Writable<Reg>) {
         if r.to_reg().is_virtual() {
             let new = m.get_def(r.to_reg().to_virtual_reg()).unwrap().to_reg();
             *r = Writable::from_reg(new);
         }
     }
 
-    fn map_mod(m: &RegUsageMapper, r: &mut Writable<Reg>) {
+    fn map_mod<RUM: RegUsageMapper>(m: &RUM, r: &mut Writable<Reg>) {
         if r.to_reg().is_virtual() {
             let new = m.get_mod(r.to_reg().to_virtual_reg()).unwrap().to_reg();
             *r = Writable::from_reg(new);
         }
     }
 
-    fn map_mem(m: &RegUsageMapper, mem: &mut MemArg) {
+    fn map_mem<RUM: RegUsageMapper>(m: &RUM, mem: &mut MemArg) {
         
         
         
@@ -1183,11 +1318,14 @@ fn aarch64_map_regs(inst: &mut Inst, mapper: &RegUsageMapper) {
             &mut MemArg::Label(..) => {}
             &mut MemArg::PreIndexed(ref mut r, ..) => map_mod(m, r),
             &mut MemArg::PostIndexed(ref mut r, ..) => map_mod(m, r),
-            &mut MemArg::FPOffset(..) | &mut MemArg::SPOffset(..) => {}
+            &mut MemArg::FPOffset(..)
+            | &mut MemArg::SPOffset(..)
+            | &mut MemArg::NominalSPOffset(..) => {}
+            &mut MemArg::RegOffset(ref mut r, ..) => map_use(m, r),
         };
     }
 
-    fn map_pairmem(m: &RegUsageMapper, mem: &mut PairMemArg) {
+    fn map_pairmem<RUM: RegUsageMapper>(m: &RUM, mem: &mut PairMemArg) {
         match mem {
             &mut PairMemArg::SignedOffset(ref mut reg, ..) => map_use(m, reg),
             &mut PairMemArg::PreIndexed(ref mut reg, ..) => map_def(m, reg),
@@ -1195,7 +1333,7 @@ fn aarch64_map_regs(inst: &mut Inst, mapper: &RegUsageMapper) {
         }
     }
 
-    fn map_br(m: &RegUsageMapper, br: &mut CondBrKind) {
+    fn map_br<RUM: RegUsageMapper>(m: &RUM, br: &mut CondBrKind) {
         match br {
             &mut CondBrKind::Zero(ref mut reg) => map_use(m, reg),
             &mut CondBrKind::NotZero(ref mut reg) => map_use(m, reg),
@@ -1432,6 +1570,13 @@ fn aarch64_map_regs(inst: &mut Inst, mapper: &RegUsageMapper) {
             map_def(mapper, rd);
             map_use(mapper, rn);
         }
+        &mut Inst::FpuMove128 {
+            ref mut rd,
+            ref mut rn,
+        } => {
+            map_def(mapper, rd);
+            map_use(mapper, rn);
+        }
         &mut Inst::FpuRR {
             ref mut rd,
             ref mut rn,
@@ -1450,6 +1595,14 @@ fn aarch64_map_regs(inst: &mut Inst, mapper: &RegUsageMapper) {
             map_use(mapper, rn);
             map_use(mapper, rm);
         }
+        &mut Inst::FpuRRI {
+            ref mut rd,
+            ref mut rn,
+            ..
+        } => {
+            map_def(mapper, rd);
+            map_use(mapper, rn);
+        }
         &mut Inst::FpuRRRR {
             ref mut rd,
             ref mut rn,
@@ -1461,6 +1614,14 @@ fn aarch64_map_regs(inst: &mut Inst, mapper: &RegUsageMapper) {
             map_use(mapper, rn);
             map_use(mapper, rm);
             map_use(mapper, ra);
+        }
+        &mut Inst::VecMisc {
+            ref mut rd,
+            ref mut rn,
+            ..
+        } => {
+            map_def(mapper, rd);
+            map_use(mapper, rn);
         }
         &mut Inst::FpuCmp32 {
             ref mut rn,
@@ -1528,6 +1689,9 @@ fn aarch64_map_regs(inst: &mut Inst, mapper: &RegUsageMapper) {
             map_def(mapper, rd);
         }
         &mut Inst::LoadFpuConst64 { ref mut rd, .. } => {
+            map_def(mapper, rd);
+        }
+        &mut Inst::LoadFpuConst128 { ref mut rd, .. } => {
             map_def(mapper, rd);
         }
         &mut Inst::FpuToInt {
@@ -1616,54 +1780,25 @@ fn aarch64_map_regs(inst: &mut Inst, mapper: &RegUsageMapper) {
             map_use(mapper, rn);
         }
         &mut Inst::Jump { .. } => {}
-        &mut Inst::Call {
-            ref mut uses,
-            ref mut defs,
-            ..
-        } => {
-            
-            let new_uses = uses.map(|r| {
-                let mut r = *r;
-                map_use(mapper, &mut r);
-                r
-            });
-            let new_defs = defs.map(|r| {
-                let mut r = *r;
-                map_def(mapper, &mut r);
-                r
-            });
-            *uses = new_uses;
-            *defs = new_defs;
+        &mut Inst::Call { ref mut info } => {
+            for r in info.uses.iter_mut() {
+                map_use(mapper, r);
+            }
+            for r in info.defs.iter_mut() {
+                map_def(mapper, r);
+            }
         }
         &mut Inst::Ret | &mut Inst::EpiloguePlaceholder => {}
-        &mut Inst::CallInd {
-            ref mut uses,
-            ref mut defs,
-            ref mut rn,
-            ..
-        } => {
-            
-            let new_uses = uses.map(|r| {
-                let mut r = *r;
-                map_use(mapper, &mut r);
-                r
-            });
-            let new_defs = defs.map(|r| {
-                let mut r = *r;
-                map_def(mapper, &mut r);
-                r
-            });
-            *uses = new_uses;
-            *defs = new_defs;
-            map_use(mapper, rn);
+        &mut Inst::CallInd { ref mut info, .. } => {
+            for r in info.uses.iter_mut() {
+                map_use(mapper, r);
+            }
+            for r in info.defs.iter_mut() {
+                map_def(mapper, r);
+            }
+            map_use(mapper, &mut info.rn);
         }
-        &mut Inst::CondBr { ref mut kind, .. } => {
-            map_br(mapper, kind);
-        }
-        &mut Inst::CondBrLowered { ref mut kind, .. } => {
-            map_br(mapper, kind);
-        }
-        &mut Inst::CondBrLoweredCompound { ref mut kind, .. } => {
+        &mut Inst::CondBr { ref mut kind, .. } | &mut Inst::OneWayCondBr { ref mut kind, .. } => {
             map_br(mapper, kind);
         }
         &mut Inst::IndirectBr { ref mut rn, .. } => {
@@ -1697,12 +1832,8 @@ fn aarch64_map_regs(inst: &mut Inst, mapper: &RegUsageMapper) {
             map_def(mapper, rd);
             map_mem(mapper, mem);
         }
-        &mut Inst::GetPinnedReg { ref mut rd } => {
-            map_def(mapper, rd);
-        }
-        &mut Inst::SetPinnedReg { ref mut rm } => {
-            map_use(mapper, rm);
-        }
+        &mut Inst::VirtualSPOffsetAdj { .. } => {}
+        &mut Inst::EmitIsland { .. } => {}
     }
 }
 
@@ -1710,11 +1841,13 @@ fn aarch64_map_regs(inst: &mut Inst, mapper: &RegUsageMapper) {
 
 
 impl MachInst for Inst {
+    type LabelUse = LabelUse;
+
     fn get_regs(&self, collector: &mut RegUsageCollector) {
         aarch64_get_regs(self, collector)
     }
 
-    fn map_regs(&mut self, mapper: &RegUsageMapper) {
+    fn map_regs<RUM: RegUsageMapper>(&mut self, mapper: &RUM) {
         aarch64_map_regs(self, mapper);
     }
 
@@ -1722,6 +1855,7 @@ impl MachInst for Inst {
         match self {
             &Inst::Mov { rd, rm } => Some((rd, rm)),
             &Inst::FpuMove64 { rd, rn } => Some((rd, rn)),
+            &Inst::FpuMove128 { rd, rn } => Some((rd, rn)),
             _ => None,
         }
     }
@@ -1737,36 +1871,54 @@ impl MachInst for Inst {
     fn is_term<'a>(&'a self) -> MachTerminator<'a> {
         match self {
             &Inst::Ret | &Inst::EpiloguePlaceholder => MachTerminator::Ret,
-            &Inst::Jump { dest } => MachTerminator::Uncond(dest.as_block_index().unwrap()),
+            &Inst::Jump { dest } => MachTerminator::Uncond(dest.as_label().unwrap()),
             &Inst::CondBr {
                 taken, not_taken, ..
-            } => MachTerminator::Cond(
-                taken.as_block_index().unwrap(),
-                not_taken.as_block_index().unwrap(),
-            ),
-            &Inst::CondBrLowered { .. } => {
-                
-                
-                
-                
+            } => MachTerminator::Cond(taken.as_label().unwrap(), not_taken.as_label().unwrap()),
+            &Inst::OneWayCondBr { .. } => {
                 
                 MachTerminator::None
             }
-            &Inst::CondBrLoweredCompound { .. } => {
-                panic!("is_term() called after lowering branches");
-            }
             &Inst::IndirectBr { ref targets, .. } => MachTerminator::Indirect(&targets[..]),
-            &Inst::JTSequence {
-                ref targets_for_term,
-                ..
-            } => MachTerminator::Indirect(&targets_for_term[..]),
+            &Inst::JTSequence { ref info, .. } => {
+                MachTerminator::Indirect(&info.targets_for_term[..])
+            }
             _ => MachTerminator::None,
         }
     }
 
     fn gen_move(to_reg: Writable<Reg>, from_reg: Reg, ty: Type) -> Inst {
-        assert!(ty.bits() <= 64); 
+        assert!(ty.bits() <= 128);
         Inst::mov(to_reg, from_reg)
+    }
+
+    fn gen_constant(to_reg: Writable<Reg>, value: u64, ty: Type) -> SmallVec<[Inst; 4]> {
+        if ty == F64 {
+            let mut ret = SmallVec::new();
+            ret.push(Inst::load_fp_constant64(to_reg, f64::from_bits(value)));
+            ret
+        } else if ty == F32 {
+            let mut ret = SmallVec::new();
+            ret.push(Inst::load_fp_constant32(
+                to_reg,
+                f32::from_bits(value as u32),
+            ));
+            ret
+        } else {
+            
+            debug_assert!(
+                ty == B1
+                    || ty == I8
+                    || ty == B8
+                    || ty == I16
+                    || ty == B16
+                    || ty == I32
+                    || ty == B32
+                    || ty == I64
+                    || ty == B64
+            );
+            Inst::load_constant(to_reg, value)
+        }
     }
 
     fn gen_zero_len_nop() -> Inst {
@@ -1788,6 +1940,8 @@ impl MachInst for Inst {
             I8 | I16 | I32 | I64 | B1 | B8 | B16 | B32 | B64 => Ok(RegClass::I64),
             F32 | F64 => Ok(RegClass::V128),
             IFLAGS | FFLAGS => Ok(RegClass::I64),
+            I8X16 => Ok(RegClass::V128),
+            B8X16 => Ok(RegClass::V128),
             _ => Err(CodegenError::Unsupported(format!(
                 "Unexpected SSA-value type: {}",
                 ty
@@ -1795,105 +1949,25 @@ impl MachInst for Inst {
         }
     }
 
-    fn gen_jump(blockindex: BlockIndex) -> Inst {
+    fn gen_jump(target: MachLabel) -> Inst {
         Inst::Jump {
-            dest: BranchTarget::Block(blockindex),
-        }
-    }
-
-    fn with_block_rewrites(&mut self, block_target_map: &[BlockIndex]) {
-        match self {
-            &mut Inst::Jump { ref mut dest } => {
-                dest.map(block_target_map);
-            }
-            &mut Inst::CondBr {
-                ref mut taken,
-                ref mut not_taken,
-                ..
-            } => {
-                taken.map(block_target_map);
-                not_taken.map(block_target_map);
-            }
-            &mut Inst::CondBrLowered { .. } => {
-                
-                
-            }
-            &mut Inst::CondBrLoweredCompound { .. } => {
-                panic!("with_block_rewrites called after branch lowering!");
-            }
-            _ => {}
-        }
-    }
-
-    fn with_fallthrough_block(&mut self, fallthrough: Option<BlockIndex>) {
-        match self {
-            &mut Inst::CondBr {
-                taken,
-                not_taken,
-                kind,
-            } => {
-                if taken.as_block_index() == fallthrough
-                    && not_taken.as_block_index() == fallthrough
-                {
-                    *self = Inst::Nop0;
-                } else if taken.as_block_index() == fallthrough {
-                    *self = Inst::CondBrLowered {
-                        target: not_taken,
-                        kind: kind.invert(),
-                    };
-                } else if not_taken.as_block_index() == fallthrough {
-                    *self = Inst::CondBrLowered {
-                        target: taken,
-                        kind,
-                    };
-                } else {
-                    
-                    *self = Inst::CondBrLoweredCompound {
-                        taken,
-                        not_taken,
-                        kind,
-                    };
-                }
-            }
-            &mut Inst::Jump { dest } => {
-                if dest.as_block_index() == fallthrough {
-                    *self = Inst::Nop0;
-                }
-            }
-            _ => {}
-        }
-    }
-
-    fn with_block_offsets(&mut self, my_offset: CodeOffset, targets: &[CodeOffset]) {
-        match self {
-            &mut Inst::CondBrLowered { ref mut target, .. } => {
-                target.lower(targets, my_offset);
-            }
-            &mut Inst::CondBrLoweredCompound {
-                ref mut taken,
-                ref mut not_taken,
-                ..
-            } => {
-                taken.lower(targets, my_offset);
-                not_taken.lower(targets, my_offset + 4);
-            }
-            &mut Inst::Jump { ref mut dest } => {
-                dest.lower(targets, my_offset);
-            }
-            &mut Inst::JTSequence {
-                targets: ref mut t, ..
-            } => {
-                for target in t {
-                    
-                    target.lower(targets, my_offset + 20);
-                }
-            }
-            _ => {}
+            dest: BranchTarget::Label(target),
         }
     }
 
     fn reg_universe(flags: &settings::Flags) -> RealRegUniverse {
         create_reg_universe(flags)
+    }
+
+    fn worst_case_size() -> CodeOffset {
+        
+        
+        
+        
+        
+        
+        
+        44
     }
 }
 
@@ -1901,7 +1975,7 @@ impl MachInst for Inst {
 
 
 fn mem_finalize_for_show(mem: &MemArg, mb_rru: Option<&RealRegUniverse>) -> (String, MemArg) {
-    let (mem_insts, mem) = mem_finalize(0, mem);
+    let (mem_insts, mem) = mem_finalize(0, mem, &mut Default::default());
     let mut mem_str = mem_insts
         .into_iter()
         .map(|inst| inst.show_rru(mb_rru))
@@ -2238,6 +2312,11 @@ impl ShowWithRRU for Inst {
                 let rn = rn.show_rru(mb_rru);
                 format!("mov {}.8b, {}.8b", rd, rn)
             }
+            &Inst::FpuMove128 { rd, rn } => {
+                let rd = rd.to_reg().show_rru(mb_rru);
+                let rn = rn.show_rru(mb_rru);
+                format!("mov {}.16b, {}.16b", rd, rn)
+            }
             &Inst::FpuRR { fpu_op, rd, rn } => {
                 let (op, sizesrc, sizedest) = match fpu_op {
                     FPUOp1::Abs32 => ("fabs", InstSize::Size32, InstSize::Size32),
@@ -2272,6 +2351,23 @@ impl ShowWithRRU for Inst {
                 let rn = show_freg_sized(rn, mb_rru, size);
                 let rm = show_freg_sized(rm, mb_rru, size);
                 format!("{} {}, {}, {}", op, rd, rn, rm)
+            }
+            &Inst::FpuRRI { fpu_op, rd, rn } => {
+                let (op, imm, vector) = match fpu_op {
+                    FPUOpRI::UShr32(imm) => ("ushr", imm.show_rru(mb_rru), true),
+                    FPUOpRI::UShr64(imm) => ("ushr", imm.show_rru(mb_rru), false),
+                    FPUOpRI::Sli32(imm) => ("sli", imm.show_rru(mb_rru), true),
+                    FPUOpRI::Sli64(imm) => ("sli", imm.show_rru(mb_rru), false),
+                };
+
+                let show_vreg_fn: fn(Reg, Option<&RealRegUniverse>) -> String = if vector {
+                    |reg, mb_rru| show_vreg_vector(reg, mb_rru, F32X2)
+                } else {
+                    show_vreg_scalar
+                };
+                let rd = show_vreg_fn(rd.to_reg(), mb_rru);
+                let rn = show_vreg_fn(rn, mb_rru);
+                format!("{} {}, {}, {}", op, rd, rn, imm)
             }
             &Inst::FpuRRRR {
                 fpu_op,
@@ -2346,6 +2442,10 @@ impl ShowWithRRU for Inst {
                 let rd = show_freg_sized(rd.to_reg(), mb_rru, InstSize::Size64);
                 format!("ldr {}, pc+8 ; b 12 ; data.f64 {}", rd, const_data)
             }
+            &Inst::LoadFpuConst128 { rd, const_data } => {
+                let rd = show_freg_sized(rd.to_reg(), mb_rru, InstSize::Size128);
+                format!("ldr {}, pc+8 ; b 20 ; data.f128 0x{:032x}", rd, const_data)
+            }
             &Inst::FpuToInt { op, rd, rn } => {
                 let (op, sizesrc, sizedest) = match op {
                     FpuToIntOp::F32ToI32 => ("fcvtzs", InstSize::Size32, InstSize::Size32),
@@ -2415,17 +2515,44 @@ impl ShowWithRRU for Inst {
                 let rn = rn.show_rru(mb_rru);
                 format!("mov {}, {}.d[0]", rd, rn)
             }
-            &Inst::VecRRR { rd, rn, rm, alu_op } => {
-                let op = match alu_op {
-                    VecALUOp::SQAddScalar => "sqadd",
-                    VecALUOp::UQAddScalar => "uqadd",
-                    VecALUOp::SQSubScalar => "sqsub",
-                    VecALUOp::UQSubScalar => "uqsub",
+            &Inst::VecRRR {
+                rd,
+                rn,
+                rm,
+                alu_op,
+                ty,
+            } => {
+                let (op, vector) = match alu_op {
+                    VecALUOp::SQAddScalar => ("sqadd", false),
+                    VecALUOp::UQAddScalar => ("uqadd", false),
+                    VecALUOp::SQSubScalar => ("sqsub", false),
+                    VecALUOp::UQSubScalar => ("uqsub", false),
+                    VecALUOp::Cmeq => ("cmeq", true),
+                    VecALUOp::Cmge => ("cmge", true),
+                    VecALUOp::Cmgt => ("cmgt", true),
+                    VecALUOp::Cmhs => ("cmhs", true),
+                    VecALUOp::Cmhi => ("cmhi", true),
                 };
-                let rd = show_vreg_scalar(rd.to_reg(), mb_rru);
-                let rn = show_vreg_scalar(rn, mb_rru);
-                let rm = show_vreg_scalar(rm, mb_rru);
+
+                let show_vreg_fn: fn(Reg, Option<&RealRegUniverse>, Type) -> String = if vector {
+                    |reg, mb_rru, ty| show_vreg_vector(reg, mb_rru, ty)
+                } else {
+                    |reg, mb_rru, _ty| show_vreg_scalar(reg, mb_rru)
+                };
+
+                let rd = show_vreg_fn(rd.to_reg(), mb_rru, ty);
+                let rn = show_vreg_fn(rn, mb_rru, ty);
+                let rm = show_vreg_fn(rm, mb_rru, ty);
                 format!("{} {}, {}, {}", op, rd, rn, rm)
+            }
+            &Inst::VecMisc { op, rd, rn, ty } => {
+                let op = match op {
+                    VecMisc2::Not => "mvn",
+                };
+
+                let rd = show_vreg_vector(rd.to_reg(), mb_rru, ty);
+                let rn = show_vreg_vector(rn, mb_rru, ty);
+                format!("{} {}, {}", op, rd, rn)
             }
             &Inst::MovToNZCV { rn } => {
                 let rn = rn.show_rru(mb_rru);
@@ -2501,9 +2628,9 @@ impl ShowWithRRU for Inst {
             &Inst::Extend { .. } => {
                 panic!("Unsupported Extend case");
             }
-            &Inst::Call { dest: _, .. } => format!("bl 0"),
-            &Inst::CallInd { rn, .. } => {
-                let rn = rn.show_rru(mb_rru);
+            &Inst::Call { .. } => format!("bl 0"),
+            &Inst::CallInd { ref info, .. } => {
+                let rn = info.rn.show_rru(mb_rru);
                 format!("blr {}", rn)
             }
             &Inst::Ret => "ret".to_string(),
@@ -2534,12 +2661,12 @@ impl ShowWithRRU for Inst {
                     }
                 }
             }
-            &Inst::CondBrLowered {
+            &Inst::OneWayCondBr {
                 ref target,
                 ref kind,
             } => {
                 let target = target.show_rru(mb_rru);
-                match &kind {
+                match kind {
                     &CondBrKind::Zero(reg) => {
                         let reg = reg.show_rru(mb_rru);
                         format!("cbz {}, {}", reg, target)
@@ -2554,35 +2681,20 @@ impl ShowWithRRU for Inst {
                     }
                 }
             }
-            &Inst::CondBrLoweredCompound {
-                ref taken,
-                ref not_taken,
-                ref kind,
-            } => {
-                let first = Inst::CondBrLowered {
-                    target: taken.clone(),
-                    kind: kind.clone(),
-                };
-                let second = Inst::Jump {
-                    dest: not_taken.clone(),
-                };
-                first.show_rru(mb_rru) + " ; " + &second.show_rru(mb_rru)
-            }
             &Inst::IndirectBr { rn, .. } => {
                 let rn = rn.show_rru(mb_rru);
                 format!("br {}", rn)
             }
             &Inst::Brk => "brk #0".to_string(),
             &Inst::Udf { .. } => "udf".to_string(),
-            &Inst::Adr { rd, ref label } => {
+            &Inst::Adr { rd, off } => {
                 let rd = rd.show_rru(mb_rru);
-                let label = label.show_rru(mb_rru);
-                format!("adr {}, {}", rd, label)
+                format!("adr {}, pc+{}", rd, off)
             }
             &Inst::Word4 { data } => format!("data.i32 {}", data),
             &Inst::Word8 { data } => format!("data.i64 {}", data),
             &Inst::JTSequence {
-                ref targets,
+                ref info,
                 ridx,
                 rtmp1,
                 rtmp2,
@@ -2599,7 +2711,7 @@ impl ShowWithRRU for Inst {
                         "br {} ; ",
                         "jt_entries {:?}"
                     ),
-                    rtmp1, rtmp2, rtmp1, ridx, rtmp1, rtmp1, rtmp2, rtmp1, targets
+                    rtmp1, rtmp2, rtmp1, ridx, rtmp1, rtmp1, rtmp2, rtmp1, info.targets
                 )
             }
             &Inst::LoadConst64 { rd, const_data } => {
@@ -2615,50 +2727,187 @@ impl ShowWithRRU for Inst {
                 let rd = rd.show_rru(mb_rru);
                 format!("ldr {}, 8 ; b 12 ; data {:?} + {}", rd, name, offset)
             }
-            &Inst::LoadAddr { rd, ref mem } => match *mem {
-                MemArg::FPOffset(fp_off) => {
-                    let alu_op = if fp_off < 0 {
-                        ALUOp::Sub64
-                    } else {
-                        ALUOp::Add64
-                    };
-                    if let Some(imm12) = Imm12::maybe_from_u64(u64::try_from(fp_off.abs()).unwrap())
-                    {
-                        let inst = Inst::AluRRImm12 {
-                            alu_op,
-                            rd,
-                            imm12,
-                            rn: fp_reg(),
-                        };
-                        inst.show_rru(mb_rru)
-                    } else {
-                        let mut res = String::new();
-                        let const_insts =
-                            Inst::load_constant(rd, u64::try_from(fp_off.abs()).unwrap());
-                        for inst in const_insts {
-                            res.push_str(&inst.show_rru(mb_rru));
-                            res.push_str("; ");
-                        }
-                        let inst = Inst::AluRRR {
-                            alu_op,
-                            rd,
-                            rn: fp_reg(),
-                            rm: rd.to_reg(),
-                        };
-                        res.push_str(&inst.show_rru(mb_rru));
-                        res
-                    }
+            &Inst::LoadAddr { rd, ref mem } => {
+                
+                
+                
+                
+                let (mem_insts, mem) = mem_finalize(0, mem, &EmitState::default());
+                let mut ret = String::new();
+                for inst in mem_insts.into_iter() {
+                    ret.push_str(&inst.show_rru(mb_rru));
                 }
-                _ => unimplemented!("{:?}", mem),
-            },
-            &Inst::GetPinnedReg { rd } => {
-                let rd = rd.show_rru(mb_rru);
-                format!("get_pinned_reg {}", rd)
+                let (reg, offset) = match mem {
+                    MemArg::Unscaled(r, simm9) => (r, simm9.value()),
+                    MemArg::UnsignedOffset(r, uimm12scaled) => (r, uimm12scaled.value() as i32),
+                    _ => panic!("Unsupported case for LoadAddr: {:?}", mem),
+                };
+                let abs_offset = if offset < 0 {
+                    -offset as u64
+                } else {
+                    offset as u64
+                };
+                let alu_op = if offset < 0 {
+                    ALUOp::Sub64
+                } else {
+                    ALUOp::Add64
+                };
+
+                if offset == 0 {
+                    let mov = Inst::mov(rd, reg);
+                    ret.push_str(&mov.show_rru(mb_rru));
+                } else if let Some(imm12) = Imm12::maybe_from_u64(abs_offset) {
+                    let add = Inst::AluRRImm12 {
+                        alu_op,
+                        rd,
+                        rn: reg,
+                        imm12,
+                    };
+                    ret.push_str(&add.show_rru(mb_rru));
+                } else {
+                    let tmp = writable_spilltmp_reg();
+                    for inst in Inst::load_constant(tmp, abs_offset).into_iter() {
+                        ret.push_str(&inst.show_rru(mb_rru));
+                    }
+                    let add = Inst::AluRRR {
+                        alu_op,
+                        rd,
+                        rn: reg,
+                        rm: tmp.to_reg(),
+                    };
+                    ret.push_str(&add.show_rru(mb_rru));
+                }
+                ret
             }
-            &Inst::SetPinnedReg { rm } => {
-                let rm = rm.show_rru(mb_rru);
-                format!("set_pinned_reg {}", rm)
+            &Inst::VirtualSPOffsetAdj { offset } => format!("virtual_sp_offset_adjust {}", offset),
+            &Inst::EmitIsland { needed_space } => format!("emit_island {}", needed_space),
+        }
+    }
+}
+
+
+
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LabelUse {
+    
+    
+    Branch19,
+    
+    
+    Branch26,
+    
+    
+    Ldr19,
+    
+    
+    Adr21,
+    
+    
+    PCRel32,
+}
+
+impl MachInstLabelUse for LabelUse {
+    
+    const ALIGN: CodeOffset = 4;
+
+    
+    fn max_pos_range(self) -> CodeOffset {
+        match self {
+            
+            
+            LabelUse::Branch19 => (1 << 20) - 1,
+            LabelUse::Branch26 => (1 << 27) - 1,
+            LabelUse::Ldr19 => (1 << 20) - 1,
+            
+            
+            LabelUse::Adr21 => (1 << 20) - 1,
+            LabelUse::PCRel32 => 0x7fffffff,
+        }
+    }
+
+    
+    fn max_neg_range(self) -> CodeOffset {
+        
+        
+        self.max_pos_range() + 1
+    }
+
+    
+    fn patch_size(self) -> CodeOffset {
+        
+        4
+    }
+
+    
+    fn patch(self, buffer: &mut [u8], use_offset: CodeOffset, label_offset: CodeOffset) {
+        let pc_rel = (label_offset as i64) - (use_offset as i64);
+        debug_assert!(pc_rel <= self.max_pos_range() as i64);
+        debug_assert!(pc_rel >= -(self.max_neg_range() as i64));
+        let pc_rel = pc_rel as u32;
+        let insn_word = u32::from_le_bytes([buffer[0], buffer[1], buffer[2], buffer[3]]);
+        let mask = match self {
+            LabelUse::Branch19 => 0x00ffffe0, 
+            LabelUse::Branch26 => 0x03ffffff, 
+            LabelUse::Ldr19 => 0x00ffffe0,    
+            LabelUse::Adr21 => 0x60ffffe0,    
+            LabelUse::PCRel32 => 0xffffffff,
+        };
+        let pc_rel_shifted = match self {
+            LabelUse::Adr21 | LabelUse::PCRel32 => pc_rel,
+            _ => {
+                debug_assert!(pc_rel & 3 == 0);
+                pc_rel >> 2
             }
+        };
+        let pc_rel_inserted = match self {
+            LabelUse::Branch19 | LabelUse::Ldr19 => (pc_rel_shifted & 0x7ffff) << 5,
+            LabelUse::Branch26 => pc_rel_shifted & 0x3ffffff,
+            LabelUse::Adr21 => (pc_rel_shifted & 0x7ffff) << 5 | (pc_rel_shifted & 0x180000) << 10,
+            LabelUse::PCRel32 => pc_rel_shifted,
+        };
+        let is_add = match self {
+            LabelUse::PCRel32 => true,
+            _ => false,
+        };
+        let insn_word = if is_add {
+            insn_word.wrapping_add(pc_rel_inserted)
+        } else {
+            (insn_word & !mask) | pc_rel_inserted
+        };
+        buffer[0..4].clone_from_slice(&u32::to_le_bytes(insn_word));
+    }
+
+    
+    fn supports_veneer(self) -> bool {
+        match self {
+            LabelUse::Branch19 => true, 
+            _ => false,
+        }
+    }
+
+    
+    fn veneer_size(self) -> CodeOffset {
+        4
+    }
+
+    
+    
+    fn generate_veneer(
+        self,
+        buffer: &mut [u8],
+        veneer_offset: CodeOffset,
+    ) -> (CodeOffset, LabelUse) {
+        match self {
+            LabelUse::Branch19 => {
+                
+                
+                let insn_word = 0b000101 << 26;
+                buffer[0..4].clone_from_slice(&u32::to_le_bytes(insn_word));
+                (veneer_offset, LabelUse::Branch26)
+            }
+            _ => panic!("Unsupported label-reference type for veneer generation!"),
         }
     }
 }
