@@ -8,7 +8,6 @@
 
 #include "mozilla/Encoding.h"
 #include "mozilla/ScopeExit.h"
-#include "nsContentUtils.h"
 #include "nsIChannel.h"
 #include "nsIInputStream.h"
 #include "nsISupportsPriority.h"
@@ -132,15 +131,6 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }  
-
-  auto info = nsContentUtils::GetSubresourceCacheValidationInfo(aRequest);
-
-  
-  if (!info.mExpirationTime || info.mMustRevalidate) {
-    info.mExpirationTime =
-        Some(nsContentUtils::SecondsFromPRTime(PR_Now()) - 1);
-  }
-  mSheetLoadData->mExpirationTime = *info.mExpirationTime;
 
   
   

@@ -22,8 +22,6 @@
 #include "nsStringFwd.h"
 #include "nsTArray.h"
 #include "nsTObserverArray.h"
-#include "nsURIHashKey.h"
-#include "nsRefPtrHashtable.h"
 
 class nsICSSLoaderObserver;
 class nsIConsoleReportCollector;
@@ -32,8 +30,6 @@ class nsIPrincipal;
 
 namespace mozilla {
 
-class SharedStyleSheetCache;
-class SheetLoadDataHashKey;
 class StyleSheet;
 
 namespace dom {
@@ -41,186 +37,10 @@ class DocGroup;
 class Element;
 }  
 
-
-
-
-class SheetLoadDataHashKey : public PLDHashEntryHdr {
- public:
-  enum class IsPreload : uint8_t {
-    No,
-    
-    
-    FromParser,
-    
-    
-    FromLink,
-  };
-
-  using KeyType = const SheetLoadDataHashKey&;
-  using KeyTypePointer = const SheetLoadDataHashKey*;
-
-  explicit SheetLoadDataHashKey(const SheetLoadDataHashKey* aKey)
-      : mURI(aKey->mURI),
-        mPrincipal(aKey->mPrincipal),
-        mLoaderPrincipal(aKey->mLoaderPrincipal),
-        mReferrerInfo(aKey->mReferrerInfo),
-        mEncodingGuess(aKey->mEncodingGuess),
-        mCORSMode(aKey->mCORSMode),
-        mParsingMode(aKey->mParsingMode),
-        mCompatMode(aKey->mCompatMode),
-        mSRIMetadata(aKey->mSRIMetadata),
-        mIsLinkPreload(aKey->mIsLinkPreload) {
-    MOZ_COUNT_CTOR(SheetLoadDataHashKey);
-  }
-
-  SheetLoadDataHashKey(nsIURI* aURI, nsIPrincipal* aPrincipal,
-                       nsIPrincipal* aLoaderPrincipal,
-                       nsIReferrerInfo* aReferrerInfo,
-                       NotNull<const Encoding*> aEncodingGuess,
-                       CORSMode aCORSMode, css::SheetParsingMode aParsingMode,
-                       nsCompatibility aCompatMode,
-                       const dom::SRIMetadata& aSRIMetadata,
-                       IsPreload aIsPreload)
-      : mURI(aURI),
-        mPrincipal(aPrincipal),
-        mLoaderPrincipal(aLoaderPrincipal),
-        mReferrerInfo(aReferrerInfo),
-        mEncodingGuess(aEncodingGuess),
-        mCORSMode(aCORSMode),
-        mParsingMode(aParsingMode),
-        mCompatMode(aCompatMode),
-        mSRIMetadata(aSRIMetadata),
-        mIsLinkPreload(aIsPreload == IsPreload::FromLink) {
-    MOZ_ASSERT(aURI);
-    MOZ_ASSERT(aPrincipal);
-    MOZ_ASSERT(aLoaderPrincipal);
-    MOZ_COUNT_CTOR(SheetLoadDataHashKey);
-  }
-
-  SheetLoadDataHashKey(SheetLoadDataHashKey&& toMove)
-      : mURI(std::move(toMove.mURI)),
-        mPrincipal(std::move(toMove.mPrincipal)),
-        mLoaderPrincipal(std::move(toMove.mLoaderPrincipal)),
-        mReferrerInfo(std::move(toMove.mReferrerInfo)),
-        mEncodingGuess(std::move(toMove.mEncodingGuess)),
-        mCORSMode(std::move(toMove.mCORSMode)),
-        mParsingMode(std::move(toMove.mParsingMode)),
-        mCompatMode(std::move(toMove.mCompatMode)),
-        mSRIMetadata(std::move(toMove.mSRIMetadata)),
-        mIsLinkPreload(std::move(toMove.mIsLinkPreload)) {
-    MOZ_COUNT_CTOR(SheetLoadDataHashKey);
-  }
-
-  explicit SheetLoadDataHashKey(const css::SheetLoadData&);
-
-  MOZ_COUNTED_DTOR(SheetLoadDataHashKey)
-
-  const SheetLoadDataHashKey& GetKey() const { return *this; }
-  const SheetLoadDataHashKey* GetKeyPointer() const { return this; }
-
-  bool KeyEquals(const SheetLoadDataHashKey* aKey) const {
-    return KeyEquals(*aKey);
-  }
-
-  bool KeyEquals(const SheetLoadDataHashKey& aKey) const {
-    {
-      bool eq;
-      if (NS_FAILED(mURI->Equals(aKey.mURI, &eq)) || !eq) {
-        return false;
-      }
-    }
-
-    
-    
-
-    if (!mPrincipal->Equals(aKey.mPrincipal)) {
-      return false;
-    }
-
-    if (mCORSMode != aKey.mCORSMode) {
-      return false;
-    }
-
-    if (mParsingMode != aKey.mParsingMode) {
-      return false;
-    }
-
-    if (mCompatMode != aKey.mCompatMode) {
-      return false;
-    }
-
-    
-    
-    
-    
-    
-    if (mEncodingGuess != aKey.mEncodingGuess) {
-      return false;
-    }
-
-    
-    
-    if (mReferrerInfo->ReferrerPolicy() !=
-        aKey.mReferrerInfo->ReferrerPolicy()) {
-      return false;
-    }
-
-    
-    
-    
-    
-    
-    if (mIsLinkPreload != aKey.mIsLinkPreload) {
-      const auto& linkPreloadMetadata =
-          mIsLinkPreload ? mSRIMetadata : aKey.mSRIMetadata;
-      const auto& consumerPreloadMetadata =
-          mIsLinkPreload ? aKey.mSRIMetadata : mSRIMetadata;
-
-      if (!consumerPreloadMetadata.CanTrustBeDelegatedTo(linkPreloadMetadata)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  static const SheetLoadDataHashKey* KeyToPointer(
-      const SheetLoadDataHashKey& aKey) {
-    return &aKey;
-  }
-  static PLDHashNumber HashKey(const SheetLoadDataHashKey* aKey) {
-    return nsURIHashKey::HashKey(aKey->mURI);
-  }
-
-  nsIURI* URI() const { return mURI; }
-
-  nsIPrincipal* Principal() const { return mPrincipal; }
-
-  nsIPrincipal* LoaderPrincipal() const { return mLoaderPrincipal; }
-
-  css::SheetParsingMode ParsingMode() const { return mParsingMode; }
-
-  enum { ALLOW_MEMMOVE = true };
-
- protected:
-  const nsCOMPtr<nsIURI> mURI;
-  const nsCOMPtr<nsIPrincipal> mPrincipal;
-  const nsCOMPtr<nsIPrincipal> mLoaderPrincipal;
-  const nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
-  
-  
-  
-  const NotNull<const Encoding*> mEncodingGuess;
-  const CORSMode mCORSMode;
-  const css::SheetParsingMode mParsingMode;
-  const nsCompatibility mCompatMode;
-  dom::SRIMetadata mSRIMetadata;
-  const bool mIsLinkPreload;
-};
-
 namespace css {
 
 class SheetLoadData;
+class SheetCache;
 class ImportRule;
 
 
@@ -292,9 +112,6 @@ class Loader final {
 
   void DropDocumentReference();  
 
-  void DeregisterFromSheetCache();
-  void RegisterInSheetCache();
-
   void SetCompatibilityMode(nsCompatibility aCompatMode) {
     mCompatMode = aCompatMode;
   }
@@ -358,11 +175,6 @@ class Loader final {
                           nsIURI* aURL, dom::MediaList* aMedia,
                           LoaderReusableStyleSheets* aSavedSheets);
 
-  
-
-
-  void DidHitCompleteSheetCache(SheetLoadData&);
-
   enum class UseSystemPrincipal { No, Yes };
 
   
@@ -390,7 +202,15 @@ class Loader final {
       nsIURI*, SheetParsingMode = eAuthorSheetFeatures,
       UseSystemPrincipal = UseSystemPrincipal::No);
 
-  using IsPreload = SheetLoadDataHashKey::IsPreload;
+  enum class IsPreload : uint8_t {
+    No,
+    
+    
+    FromParser,
+    
+    
+    FromLink,
+  };
 
   
 
@@ -447,8 +267,6 @@ class Loader final {
   bool GetEnabled() { return mEnabled; }
   void SetEnabled(bool aEnabled) { mEnabled = aEnabled; }
 
-  uint32_t ParsedSheetCount() const { return mParsedSheetCount; }
-
   
 
 
@@ -494,21 +312,11 @@ class Loader final {
   
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
-  enum class SheetState : uint8_t {
-    NeedsParser = 0,
-    Pending,
-    Loading,
-    Complete
-  };
-
   
   
   nsIPrincipal* LoaderPrincipal() const;
 
-  bool ShouldBypassCache() const;
-
  private:
-  friend class mozilla::SharedStyleSheetCache;
   friend class SheetLoadData;
   friend class StreamLoader;
 
@@ -525,15 +333,19 @@ class Loader final {
                               nsIURI* aTargetURI, nsINode* aRequestingNode,
                               const nsAString& aNonce, IsPreload);
 
+  enum class SheetState : uint8_t {
+    NeedsParser = 0,
+    Pending,
+    Loading,
+    Complete
+  };
+
   std::tuple<RefPtr<StyleSheet>, SheetState> CreateSheet(
-      const SheetInfo& aInfo, css::SheetParsingMode aParsingMode,
-      bool aSyncLoad, IsPreload aIsPreload) {
-    nsIPrincipal* triggeringPrincipal = aInfo.mTriggeringPrincipal
-                                            ? aInfo.mTriggeringPrincipal.get()
-                                            : LoaderPrincipal();
-    return CreateSheet(aInfo.mURI, aInfo.mContent, triggeringPrincipal,
+      const SheetInfo& aInfo, nsIPrincipal* aTriggeringPrincipal,
+      css::SheetParsingMode aParsingMode, bool aSyncLoad,
+      IsPreload aIsPreload) {
+    return CreateSheet(aInfo.mURI, aInfo.mContent, aTriggeringPrincipal,
                        aParsingMode, aInfo.mCORSMode, aInfo.mReferrerInfo,
-                        nullptr,
                        aInfo.mIntegrity, aSyncLoad, aIsPreload);
   }
 
@@ -543,8 +355,7 @@ class Loader final {
   std::tuple<RefPtr<StyleSheet>, SheetState> CreateSheet(
       nsIURI* aURI, nsIContent* aLinkingContent,
       nsIPrincipal* aTriggeringPrincipal, css::SheetParsingMode, CORSMode,
-      nsIReferrerInfo* aLoadingReferrerInfo,
-      const Encoding* aPreloadOrParentDataEncoding, const nsAString& aIntegrity,
+      nsIReferrerInfo* aLoadingReferrerInfo, const nsAString& aIntegrity,
       bool aSyncLoad, IsPreload aIsPreload);
 
   
@@ -565,8 +376,6 @@ class Loader final {
       UseSystemPrincipal, const Encoding* aPreloadEncoding,
       nsIReferrerInfo* aReferrerInfo, nsICSSLoaderObserver* aObserver,
       CORSMode aCORSMode, const nsAString& aIntegrity);
-
-  RefPtr<StyleSheet> LookupInlineSheetInCache(const nsAString&);
 
   
   
@@ -599,29 +408,20 @@ class Loader final {
 
   
   
-  void SheetComplete(SheetLoadData&, nsresult);
-
-  
-  
-  void NotifyObservers(SheetLoadData&, nsresult);
+  void SheetComplete(SheetLoadData&, nsresult aStatus);
 
   
   
   
-  
-  
-  
-  
-  static void MarkLoadTreeFailed(SheetLoadData&,
-                                 Loader* aOnlyForLoader = nullptr);
-
-  nsRefPtrHashtable<nsStringHashKey, StyleSheet> mInlineSheets;
+  void DoSheetComplete(SheetLoadData&, LoadDataArray& aDatasToNotify);
 
   
   
-  nsTHashtable<const SheetLoadDataHashKey> mLoadsPerformed;
+  
+  void MarkLoadTreeFailed(SheetLoadData&);
 
-  RefPtr<SharedStyleSheetCache> mSheets;
+  struct Sheets;
+  UniquePtr<Sheets> mSheets;
 
   
   
@@ -637,21 +437,17 @@ class Loader final {
   
   RefPtr<dom::DocGroup> mDocGroup;
 
+  
+  
+  
+  
+  uint32_t mDatasToNotifyOn;
+
   nsCompatibility mCompatMode;
 
+  bool mEnabled;  
+
   nsCOMPtr<nsIConsoleReportCollector> mReporter;
-
-  
-  
-  uint32_t mOngoingLoadCount = 0;
-
-  
-  uint32_t mPendingLoadCount = 0;
-
-  
-  uint32_t mParsedSheetCount = 0;
-
-  bool mEnabled = true;
 
 #ifdef DEBUG
   

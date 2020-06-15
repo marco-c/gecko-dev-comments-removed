@@ -960,10 +960,10 @@ static nsresult NewImageChannel(
   return NS_OK;
 }
 
-static uint32_t SecondsFromPRTime(PRTime aTime) {
-  return nsContentUtils::SecondsFromPRTime(aTime);
-}
 
+uint32_t imgCacheEntry::SecondsFromPRTime(PRTime prTime) {
+  return uint32_t(int64_t(prTime) / int64_t(PR_USEC_PER_SEC));
+}
 
 imgCacheEntry::imgCacheEntry(imgLoader* loader, imgRequest* request,
                              bool forcePrincipalCheck)
@@ -1822,8 +1822,8 @@ bool imgLoader::ValidateEntry(
   
   
   uint32_t expiryTime = aEntry->GetExpiryTime();
-  bool hasExpired =
-      expiryTime != 0 && expiryTime <= SecondsFromPRTime(PR_Now());
+  bool hasExpired = expiryTime != 0 &&
+                    expiryTime <= imgCacheEntry::SecondsFromPRTime(PR_Now());
 
   nsresult rv;
 
@@ -1840,7 +1840,8 @@ bool imgLoader::ValidateEntry(
       if (NS_SUCCEEDED(rv)) {
         
         fileLastMod *= 1000;
-        hasExpired = SecondsFromPRTime((PRTime)fileLastMod) > lastModTime;
+        hasExpired =
+            imgCacheEntry::SecondsFromPRTime((PRTime)fileLastMod) > lastModTime;
       }
     }
   }

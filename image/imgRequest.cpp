@@ -517,26 +517,53 @@ void imgRequest::UpdateCacheEntrySize() {
 void imgRequest::SetCacheValidation(imgCacheEntry* aCacheEntry,
                                     nsIRequest* aRequest) {
   
-  if (!aCacheEntry || aCacheEntry->GetExpiryTime() != 0) {
-    return;
-  }
-
-  auto info = nsContentUtils::GetSubresourceCacheValidationInfo(aRequest);
-
-  
-  
-  if (!info.mExpirationTime) {
+  if (aCacheEntry) {
     
     
-    info.mExpirationTime.emplace(nsContentUtils::SecondsFromPRTime(PR_Now()) -
-                                 1);
-  }
-  aCacheEntry->SetExpiryTime(*info.mExpirationTime);
-  
-  
-  
-  if (info.mMustRevalidate) {
-    aCacheEntry->SetMustValidate(info.mMustRevalidate);
+    if (aCacheEntry->GetExpiryTime() == 0) {
+      uint32_t expiration = 0;
+      nsCOMPtr<nsICacheInfoChannel> cacheChannel(do_QueryInterface(aRequest));
+      if (cacheChannel) {
+        
+        cacheChannel->GetCacheTokenExpirationTime(&expiration);
+      }
+      if (expiration == 0) {
+        
+        
+        expiration = imgCacheEntry::SecondsFromPRTime(PR_Now()) - 1;
+      }
+      aCacheEntry->SetExpiryTime(expiration);
+    }
+
+    
+    
+    nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(aRequest));
+    if (httpChannel) {
+      bool bMustRevalidate = false;
+
+      Unused << httpChannel->IsNoStoreResponse(&bMustRevalidate);
+
+      if (!bMustRevalidate) {
+        Unused << httpChannel->IsNoCacheResponse(&bMustRevalidate);
+      }
+
+      if (!bMustRevalidate) {
+        nsAutoCString cacheHeader;
+
+        Unused << httpChannel->GetResponseHeader(
+            NS_LITERAL_CSTRING("Cache-Control"), cacheHeader);
+        if (PL_strcasestr(cacheHeader.get(), "must-revalidate")) {
+          bMustRevalidate = true;
+        }
+      }
+
+      
+      
+      
+      if (bMustRevalidate) {
+        aCacheEntry->SetMustValidate(bMustRevalidate);
+      }
+    }
   }
 }
 

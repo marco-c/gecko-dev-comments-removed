@@ -16,13 +16,11 @@ const { reloadConsoleAndLog } = require("./webconsole-helpers");
 const { AppConstants } = require("resource://gre/modules/AppConstants.jsm");
 
 const EXPECTED_MESSAGES = [
-  
-  
-  
-  
-  
-  
-  
+  {
+    text: `This page uses the non standard property “zoom”`,
+    count: isFissionEnabled() ? 2 : 4,
+    visibleWhenFissionEnabled: true,
+  },
   {
     text: `Layout was forced before the page was fully loaded.`,
     visibleWhenFissionEnabled: true,
