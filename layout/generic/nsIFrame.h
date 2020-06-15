@@ -2841,6 +2841,12 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+  static bool ShouldApplyOverflowClipping(const nsIFrame* aFrame,
+                                          const nsStyleDisplay* aDisp);
+
+  
+
+
 
 
 

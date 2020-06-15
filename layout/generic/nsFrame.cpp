@@ -1916,7 +1916,7 @@ bool nsIFrame::Extend3DContext(const nsStyleDisplay* aStyleDisplay,
     return false;
   }
 
-  return !nsFrame::ShouldApplyOverflowClipping(this, disp) &&
+  return !nsIFrame::ShouldApplyOverflowClipping(this, disp) &&
          !GetClipPropClipRect(disp, effects, GetSize()) &&
          !nsSVGIntegrationUtils::UsingEffectsForFrame(this);
 }
@@ -9121,7 +9121,7 @@ static nsRect UnionBorderBoxes(
   }
   const nsStyleDisplay* disp = aFrame->StyleDisplay();
   LayoutFrameType fType = aFrame->Type();
-  if (nsFrame::ShouldApplyOverflowClipping(aFrame, disp) ||
+  if (nsIFrame::ShouldApplyOverflowClipping(aFrame, disp) ||
       fType == LayoutFrameType::Scroll ||
       fType == LayoutFrameType::ListControl ||
       fType == LayoutFrameType::SVGOuterSVG) {
@@ -11129,6 +11129,58 @@ void nsIFrame::UpdateVisibleDescendantsState() {
   } else {
     mAllDescendantsAreInvisible = HasNoVisibleDescendants(this);
   }
+}
+
+bool nsIFrame::ShouldApplyOverflowClipping(const nsIFrame* aFrame,
+                                           const nsStyleDisplay* aDisp) {
+  MOZ_ASSERT(aDisp == aFrame->StyleDisplay(), "Wong display struct");
+  
+  
+  if (MOZ_UNLIKELY(aDisp->mOverflowX == StyleOverflow::MozHiddenUnscrollable &&
+                   !aFrame->IsListControlFrame())) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  if (aDisp->IsContainPaint() && !aFrame->IsScrollFrame() &&
+      aFrame->IsFrameOfType(eSupportsContainLayoutAndPaint)) {
+    return true;
+  }
+
+  
+  if (aDisp->mOverflowX == StyleOverflow::Hidden &&
+      aDisp->mOverflowY == StyleOverflow::Hidden) {
+    
+    LayoutFrameType type = aFrame->Type();
+    switch (type) {
+      case LayoutFrameType::Table:
+      case LayoutFrameType::TableCell:
+      case LayoutFrameType::SVGOuterSVG:
+      case LayoutFrameType::SVGInnerSVG:
+      case LayoutFrameType::SVGSymbol:
+      case LayoutFrameType::SVGForeignObject:
+        return true;
+      default:
+        if (aFrame->IsFrameOfType(nsIFrame::eReplacedContainsBlock)) {
+          
+          
+          return type != LayoutFrameType::TextInput;
+        }
+    }
+  }
+
+  if ((aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT)) {
+    return false;
+  }
+
+  
+  
+  return (aFrame->GetStateBits() & NS_BLOCK_CLIP_PAGINATED_OVERFLOW) != 0 &&
+         aFrame->PresContext()->IsPaginated() && aFrame->IsBlockFrame();
 }
 
 
