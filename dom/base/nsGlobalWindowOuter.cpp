@@ -3607,7 +3607,7 @@ void nsGlobalWindowOuter::SetInnerWidthOuter(int32_t aInnerWidth,
 
   
   
-  if (presShell && presShell->GetIsViewportOverridden()) {
+  if (presShell && presShell->UsesMobileViewportSizing()) {
     nscoord height = 0;
 
     RefPtr<nsPresContext> presContext;
@@ -3653,7 +3653,7 @@ void nsGlobalWindowOuter::SetInnerHeightOuter(int32_t aInnerHeight,
 
   
   
-  if (presShell && presShell->GetIsViewportOverridden()) {
+  if (presShell && presShell->UsesMobileViewportSizing()) {
     nscoord width = 0;
 
     RefPtr<nsPresContext> presContext;
