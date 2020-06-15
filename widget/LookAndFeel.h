@@ -395,29 +395,29 @@ class LookAndFeel {
 
   
   
-  enum FontID {
-    eFont_Caption = 1,  
-    FontID_MINIMUM = eFont_Caption,
-    eFont_Icon,
-    eFont_Menu,
-    eFont_MessageBox,
-    eFont_SmallCaption,
-    eFont_StatusBar,
+  enum class FontID {
+    Caption = 1,  
+    MINIMUM = Caption,
+    Icon,
+    Menu,
+    MessageBox,
+    SmallCaption,
+    StatusBar,
 
-    eFont_Window,  
-    eFont_Document,
-    eFont_Workspace,
-    eFont_Desktop,
-    eFont_Info,
-    eFont_Dialog,
-    eFont_Button,
-    eFont_PullDownMenu,
-    eFont_List,
-    eFont_Field,
+    Window,  
+    Document,
+    Workspace,
+    Desktop,
+    Info,
+    Dialog,
+    Button,
+    PullDownMenu,
+    List,
+    Field,
 
-    eFont_Tooltips,  
-    eFont_Widget,
-    FontID_MAXIMUM = eFont_Widget
+    Tooltips,  
+    Widget,
+    MAXIMUM = Widget,
   };
 
   

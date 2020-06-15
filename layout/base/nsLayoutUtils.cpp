@@ -10200,9 +10200,9 @@ void nsLayoutUtils::ComputeSystemFont(nsFont* aSystemFont,
     
     
 
-    if (aFontID == LookAndFeel::eFont_Field ||
-        aFontID == LookAndFeel::eFont_Button ||
-        aFontID == LookAndFeel::eFont_List) {
+    if (aFontID == LookAndFeel::FontID::Field ||
+        aFontID == LookAndFeel::FontID::Button ||
+        aFontID == LookAndFeel::FontID::List) {
       
       
       

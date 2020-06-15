@@ -837,36 +837,36 @@ static void GetSystemFontInfo(GtkStyleContext* aStyle, nsString* aFontName,
 bool nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName,
                                 gfxFontStyle& aFontStyle) {
   switch (aID) {
-    case eFont_Menu:          
-    case eFont_PullDownMenu:  
+    case FontID::Menu:          
+    case FontID::PullDownMenu:  
       aFontName = mMenuFontName;
       aFontStyle = mMenuFontStyle;
       break;
 
-    case eFont_Field:  
-    case eFont_List:   
+    case FontID::Field:  
+    case FontID::List:   
       aFontName = mFieldFontName;
       aFontStyle = mFieldFontStyle;
       break;
 
-    case eFont_Button:  
+    case FontID::Button:  
       aFontName = mButtonFontName;
       aFontStyle = mButtonFontStyle;
       break;
 
-    case eFont_Caption:       
-    case eFont_Icon:          
-    case eFont_MessageBox:    
-    case eFont_SmallCaption:  
-    case eFont_StatusBar:     
-    case eFont_Window:        
-    case eFont_Document:      
-    case eFont_Workspace:     
-    case eFont_Desktop:       
-    case eFont_Info:          
-    case eFont_Dialog:        
-    case eFont_Tooltips:      
-    case eFont_Widget:        
+    case FontID::Caption:       
+    case FontID::Icon:          
+    case FontID::MessageBox:    
+    case FontID::SmallCaption:  
+    case FontID::StatusBar:     
+    case FontID::Window:        
+    case FontID::Document:      
+    case FontID::Workspace:     
+    case FontID::Desktop:       
+    case FontID::Info:          
+    case FontID::Dialog:        
+    case FontID::Tooltips:      
+    case FontID::Widget:        
     default:
       aFontName = mDefaultFontName;
       aFontStyle = mDefaultFontStyle;
