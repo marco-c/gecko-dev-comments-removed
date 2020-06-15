@@ -5080,7 +5080,15 @@ class nsIFrame : public nsQueryFrame {
   void DumpFrameTreeLimited() const;
   void DumpFrameTreeLimitedInCSSPixels() const;
 
-  virtual nsresult GetFrameName(nsAString& aResult) const = 0;
+  
+
+
+
+  virtual nsresult GetFrameName(nsAString& aResult) const;
+  nsresult MakeFrameName(const nsAString& aType, nsAString& aResult) const;
+  
+  
+  static int32_t ContentIndexInContainer(const nsIFrame* aFrame);
 #endif
 };
 

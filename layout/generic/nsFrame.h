@@ -383,18 +383,6 @@ class nsFrame : public nsIFrame {
   bool HasCSSTransitions();
 
  public:
-#ifdef DEBUG_FRAME_DUMP
-  
-
-
-
-  nsresult GetFrameName(nsAString& aResult) const override;
-  nsresult MakeFrameName(const nsAString& aKind, nsAString& aResult) const;
-  
-  
-  static int32_t ContentIndexInContainer(const nsIFrame* aFrame);
-#endif
-
 #ifdef DEBUG
   static mozilla::LazyLogModule sFrameLogModule;
 
