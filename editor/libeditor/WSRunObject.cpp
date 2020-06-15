@@ -15,6 +15,8 @@
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/RangeUtils.h"
 #include "mozilla/SelectionState.h"
+#include "mozilla/StaticPrefs_dom.h"     
+#include "mozilla/StaticPrefs_editor.h"  
 #include "mozilla/dom/AncestorIterator.h"
 
 #include "nsAString.h"
@@ -43,12 +45,18 @@ template WSRunScanner::WSRunScanner(const HTMLEditor* aHTMLEditor,
 template WSRunScanner::WSRunScanner(const HTMLEditor* aHTMLEditor,
                                     const EditorRawDOMPoint& aScanStartPoint,
                                     const EditorRawDOMPoint& aScanEndPoint);
+template WSRunScanner::WSRunScanner(const HTMLEditor* aHTMLEditor,
+                                    const EditorDOMPointInText& aScanStartPoint,
+                                    const EditorDOMPointInText& aScanEndPoint);
 template WSRunObject::WSRunObject(HTMLEditor& aHTMLEditor,
                                   const EditorDOMPoint& aScanStartPoint,
                                   const EditorDOMPoint& aScanEndPoint);
 template WSRunObject::WSRunObject(HTMLEditor& aHTMLEditor,
                                   const EditorRawDOMPoint& aScanStartPoint,
                                   const EditorRawDOMPoint& aScanEndPoint);
+template WSRunObject::WSRunObject(HTMLEditor& aHTMLEditor,
+                                  const EditorDOMPointInText& aScanStartPoint,
+                                  const EditorDOMPointInText& aScanEndPoint);
 template WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
     const EditorDOMPoint& aPoint) const;
 template WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
@@ -1664,6 +1672,188 @@ nsresult WSRunObject::NormalizeWhiteSpacesAtEndOf(const WSFragment& aRun) {
   }
 
   
+  if (!StaticPrefs::editor_white_space_normalization_blink_compatible()) {
+    
+    
+    EditorDOMPoint atEndOfRun = aRun.EndPoint();
+    EditorDOMPointInText atPreviousCharOfEndOfRun =
+        GetPreviousEditableCharPoint(atEndOfRun);
+    if (!atPreviousCharOfEndOfRun.IsSet() ||
+        atPreviousCharOfEndOfRun.IsEndOfContainer() ||
+        !atPreviousCharOfEndOfRun.IsCharNBSP()) {
+      return NS_OK;
+    }
+
+    
+    
+    EditorDOMPointInText atPreviousCharOfPreviousCharOfEndOfRun =
+        GetPreviousEditableCharPoint(atPreviousCharOfEndOfRun);
+    bool isPreviousCharASCIIWhiteSpace =
+        atPreviousCharOfPreviousCharOfEndOfRun.IsSet() &&
+        !atPreviousCharOfPreviousCharOfEndOfRun.IsEndOfContainer() &&
+        atPreviousCharOfPreviousCharOfEndOfRun.IsCharASCIISpace();
+    bool maybeNBSPFollowingVisibleContent =
+        (atPreviousCharOfPreviousCharOfEndOfRun.IsSet() &&
+         !isPreviousCharASCIIWhiteSpace) ||
+        (!atPreviousCharOfPreviousCharOfEndOfRun.IsSet() &&
+         (aRun.StartsFromNormalText() || aRun.StartsFromSpecialContent()));
+    bool followedByVisibleContentOrBRElement = false;
+
+    
+    
+    
+    if (maybeNBSPFollowingVisibleContent || isPreviousCharASCIIWhiteSpace) {
+      followedByVisibleContentOrBRElement = aRun.EndsByNormalText() ||
+                                            aRun.EndsBySpecialContent() ||
+                                            aRun.EndsByBRElement();
+      
+      
+      if (aRun.EndsByBlockBoundary() && mScanStartPoint.IsInContentNode()) {
+        bool insertBRElement = HTMLEditUtils::IsBlockElement(
+            *mScanStartPoint.ContainerAsContent());
+        if (!insertBRElement) {
+          nsIContent* blockParentOrTopmostEditableInlineContent =
+              GetEditableBlockParentOrTopmotEditableInlineContent(
+                  mScanStartPoint.ContainerAsContent());
+          insertBRElement = blockParentOrTopmostEditableInlineContent &&
+                            HTMLEditUtils::IsBlockElement(
+                                *blockParentOrTopmostEditableInlineContent);
+        }
+        if (insertBRElement) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+
+          RefPtr<Element> brElement =
+              MOZ_KnownLive(mHTMLEditor)
+                  .InsertBRElementWithTransaction(atEndOfRun);
+          if (NS_WARN_IF(mHTMLEditor.Destroyed())) {
+            return NS_ERROR_EDITOR_DESTROYED;
+          }
+          if (!brElement) {
+            NS_WARNING("HTMLEditor::InsertBRElementWithTransaction() failed");
+            return NS_ERROR_FAILURE;
+          }
+
+          atPreviousCharOfEndOfRun = GetPreviousEditableCharPoint(atEndOfRun);
+          atPreviousCharOfPreviousCharOfEndOfRun =
+              GetPreviousEditableCharPoint(atPreviousCharOfEndOfRun);
+          isPreviousCharASCIIWhiteSpace =
+              atPreviousCharOfPreviousCharOfEndOfRun.IsCharASCIISpace();
+          followedByVisibleContentOrBRElement = true;
+        }
+      }
+
+      
+      
+      if (maybeNBSPFollowingVisibleContent &&
+          followedByVisibleContentOrBRElement) {
+        AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
+        nsresult rv =
+            MOZ_KnownLive(mHTMLEditor)
+                .ReplaceTextWithTransaction(
+                    MOZ_KnownLive(*atPreviousCharOfEndOfRun.ContainerAsText()),
+                    atPreviousCharOfEndOfRun.Offset(), 1,
+                    NS_LITERAL_STRING(" "));
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                             "HTMLEditor::ReplaceTextWithTransaction() failed");
+        return rv;
+      }
+    }
+    
+    
+    
+    
+    
+    
+    
+    if (mPRE || maybeNBSPFollowingVisibleContent ||
+        !isPreviousCharASCIIWhiteSpace ||
+        !followedByVisibleContentOrBRElement) {
+      return NS_OK;
+    }
+
+    
+    
+    MOZ_ASSERT(!atPreviousCharOfPreviousCharOfEndOfRun.IsEndOfContainer());
+    EditorDOMPointInText atFirstASCIIWhiteSpace =
+        GetFirstASCIIWhiteSpacePointCollapsedTo(
+            atPreviousCharOfPreviousCharOfEndOfRun);
+    AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
+    uint32_t numberOfASCIIWhiteSpacesInStartNode =
+        atFirstASCIIWhiteSpace.ContainerAsText() ==
+                atPreviousCharOfEndOfRun.ContainerAsText()
+            ? atPreviousCharOfEndOfRun.Offset() -
+                  atFirstASCIIWhiteSpace.Offset()
+            : atFirstASCIIWhiteSpace.ContainerAsText()->Length() -
+                  atFirstASCIIWhiteSpace.Offset();
+    
+    uint32_t replaceLengthInStartNode =
+        numberOfASCIIWhiteSpacesInStartNode +
+        (atFirstASCIIWhiteSpace.ContainerAsText() ==
+                 atPreviousCharOfEndOfRun.ContainerAsText()
+             ? 1
+             : 0);
+    nsresult rv =
+        MOZ_KnownLive(mHTMLEditor)
+            .ReplaceTextWithTransaction(
+                MOZ_KnownLive(*atFirstASCIIWhiteSpace.ContainerAsText()),
+                atFirstASCIIWhiteSpace.Offset(), replaceLengthInStartNode,
+                NS_LITERAL_STRING(u"\x00A0 "));
+    if (NS_FAILED(rv)) {
+      NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed");
+      return rv;
+    }
+
+    if (atFirstASCIIWhiteSpace.GetContainer() ==
+        atPreviousCharOfEndOfRun.GetContainer()) {
+      return NS_OK;
+    }
+
+    
+    
+    
+    rv = MOZ_KnownLive(mHTMLEditor)
+             .DeleteTextAndTextNodesWithTransaction(
+                 EditorDOMPointInText::AtEndOf(
+                     *atFirstASCIIWhiteSpace.ContainerAsText()),
+                 atPreviousCharOfEndOfRun.NextPoint());
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
+    return rv;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
   EditorDOMPoint atEndOfRun = aRun.EndPoint();
   EditorDOMPointInText atPreviousCharOfEndOfRun =
       GetPreviousEditableCharPoint(atEndOfRun);
@@ -1674,158 +1864,32 @@ nsresult WSRunObject::NormalizeWhiteSpacesAtEndOf(const WSFragment& aRun) {
   }
 
   
-  
+  EditorDOMPointInText startToDelete, endToDelete;
+
   EditorDOMPointInText atPreviousCharOfPreviousCharOfEndOfRun =
       GetPreviousEditableCharPoint(atPreviousCharOfEndOfRun);
-  bool isPreviousCharASCIIWhiteSpace =
+  
+  
+  if (atPreviousCharOfEndOfRun.IsCharNBSP() &&
       atPreviousCharOfPreviousCharOfEndOfRun.IsSet() &&
-      !atPreviousCharOfPreviousCharOfEndOfRun.IsEndOfContainer() &&
-      atPreviousCharOfPreviousCharOfEndOfRun.IsCharASCIISpace();
-  bool maybeNBSPFollowingVisibleContent =
-      (atPreviousCharOfPreviousCharOfEndOfRun.IsSet() &&
-       !isPreviousCharASCIIWhiteSpace) ||
-      (!atPreviousCharOfPreviousCharOfEndOfRun.IsSet() &&
-       (aRun.StartsFromNormalText() || aRun.StartsFromSpecialContent()));
-  bool followedByVisibleContentOrBRElement = false;
-
+      atPreviousCharOfPreviousCharOfEndOfRun.IsCharASCIISpace()) {
+    startToDelete = GetFirstASCIIWhiteSpacePointCollapsedTo(
+        atPreviousCharOfPreviousCharOfEndOfRun);
+    endToDelete = atPreviousCharOfPreviousCharOfEndOfRun;
+  }
   
   
-  
-  if (maybeNBSPFollowingVisibleContent || isPreviousCharASCIIWhiteSpace) {
-    followedByVisibleContentOrBRElement = aRun.EndsByNormalText() ||
-                                          aRun.EndsBySpecialContent() ||
-                                          aRun.EndsByBRElement();
-    
-    
-    if (aRun.EndsByBlockBoundary() && mScanStartPoint.IsInContentNode()) {
-      bool insertBRElement =
-          HTMLEditUtils::IsBlockElement(*mScanStartPoint.ContainerAsContent());
-      if (!insertBRElement) {
-        nsIContent* blockParentOrTopmostEditableInlineContent =
-            GetEditableBlockParentOrTopmotEditableInlineContent(
-                mScanStartPoint.ContainerAsContent());
-        insertBRElement = blockParentOrTopmostEditableInlineContent &&
-                          HTMLEditUtils::IsBlockElement(
-                              *blockParentOrTopmostEditableInlineContent);
-      }
-      if (insertBRElement) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        RefPtr<Element> brElement =
-            MOZ_KnownLive(mHTMLEditor)
-                .InsertBRElementWithTransaction(atEndOfRun);
-        if (NS_WARN_IF(mHTMLEditor.Destroyed())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
-        if (!brElement) {
-          NS_WARNING("HTMLEditor::InsertBRElementWithTransaction() failed");
-          return NS_ERROR_FAILURE;
-        }
-
-        atPreviousCharOfEndOfRun = GetPreviousEditableCharPoint(atEndOfRun);
-        atPreviousCharOfPreviousCharOfEndOfRun =
-            GetPreviousEditableCharPoint(atPreviousCharOfEndOfRun);
-        isPreviousCharASCIIWhiteSpace =
-            atPreviousCharOfPreviousCharOfEndOfRun.IsCharASCIISpace();
-        followedByVisibleContentOrBRElement = true;
-      }
-    }
-
-    
-    
-    if (maybeNBSPFollowingVisibleContent &&
-        followedByVisibleContentOrBRElement) {
-      AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
-      nsresult rv =
-          MOZ_KnownLive(mHTMLEditor)
-              .ReplaceTextWithTransaction(
-                  MOZ_KnownLive(*atPreviousCharOfEndOfRun.ContainerAsText()),
-                  atPreviousCharOfEndOfRun.Offset(), 1, NS_LITERAL_STRING(" "));
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "HTMLEditor::ReplaceTextWithTransaction() failed");
-      return rv;
-    }
+  else {
+    startToDelete = endToDelete = atPreviousCharOfEndOfRun.NextPoint();
   }
 
-  
-  
-  
-  
-  
-  
-  
-  if (mPRE || maybeNBSPFollowingVisibleContent ||
-      !isPreviousCharASCIIWhiteSpace || !followedByVisibleContentOrBRElement) {
-    return NS_OK;
-  }
-
-  
-  
-  MOZ_ASSERT(!atPreviousCharOfPreviousCharOfEndOfRun.IsEndOfContainer());
-  EditorDOMPointInText atFirstASCIIWhiteSpace =
-      GetFirstASCIIWhiteSpacePointCollapsedTo(
-          atPreviousCharOfPreviousCharOfEndOfRun);
   AutoTransactionsConserveSelection dontChangeMySelection(mHTMLEditor);
-  uint32_t numberOfASCIIWhiteSpacesInStartNode =
-      atFirstASCIIWhiteSpace.ContainerAsText() ==
-              atPreviousCharOfEndOfRun.ContainerAsText()
-          ? atPreviousCharOfEndOfRun.Offset() - atFirstASCIIWhiteSpace.Offset()
-          : atFirstASCIIWhiteSpace.ContainerAsText()->Length() -
-                atFirstASCIIWhiteSpace.Offset();
-  
-  uint32_t replaceLengthInStartNode =
-      numberOfASCIIWhiteSpacesInStartNode +
-      (atFirstASCIIWhiteSpace.ContainerAsText() ==
-               atPreviousCharOfEndOfRun.ContainerAsText()
-           ? 1
-           : 0);
-  nsresult rv =
-      MOZ_KnownLive(mHTMLEditor)
-          .ReplaceTextWithTransaction(
-              MOZ_KnownLive(*atFirstASCIIWhiteSpace.ContainerAsText()),
-              atFirstASCIIWhiteSpace.Offset(), replaceLengthInStartNode,
-              NS_LITERAL_STRING(u"\x00A0 "));
-  if (NS_FAILED(rv)) {
-    NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed");
-    return rv;
-  }
-
-  if (atFirstASCIIWhiteSpace.GetContainer() ==
-      atPreviousCharOfEndOfRun.GetContainer()) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  rv = MOZ_KnownLive(mHTMLEditor)
-           .DeleteTextAndTextNodesWithTransaction(
-               EditorDOMPointInText::AtEndOf(
-                   *atFirstASCIIWhiteSpace.ContainerAsText()),
-               atPreviousCharOfEndOfRun.NextPoint());
+  nsresult rv = MOZ_KnownLive(mHTMLEditor)
+                    .DeleteTextAndNormalizeSurroundingWhiteSpaces(startToDelete,
+                                                                  endToDelete);
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rv),
-      "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
+      "HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces() failed");
   return rv;
 }
 

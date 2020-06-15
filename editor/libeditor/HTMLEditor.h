@@ -1829,9 +1829,10 @@ class HTMLEditor final : public TextEditor,
 
 
 
+  template <typename EditorDOMPointType>
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
-      const EditorDOMPoint& aPointToInsert);
+      const EditorDOMPointType& aPointToInsert);
 
   
 
@@ -2452,6 +2453,173 @@ class HTMLEditor final : public TextEditor,
 
   already_AddRefed<dom::StaticRange> GetRangeExtendedToIncludeInvisibleNodes(
       const dom::AbstractRange& aAbstractRange);
+
+  
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  DeleteTextAndNormalizeSurroundingWhiteSpaces(
+      const EditorDOMPointInText& aStartToDelete,
+      const EditorDOMPointInText& aEndToDelete);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void ExtendRangeToDeleteWithNormalizingWhiteSpaces(
+      EditorDOMPointInText& aStartToDelete, EditorDOMPointInText& aEndToDelete,
+      nsAString& aNormalizedWhiteSpacesInStartNode,
+      nsAString& aNormalizedWhiteSpacesInEndNode) const;
+
+  
+
+
+
+
+  enum class CharPointType {
+    TextEnd,  
+              
+    ASCIIWhiteSpace,   
+    NoBreakingSpace,   
+    VisibleChar,       
+    PreformattedChar,  
+                       
+  };
+
+  
+
+
+
+
+  template <typename EditorDOMPointType>
+  static CharPointType GetPreviousCharPointType(
+      const EditorDOMPointType& aPoint) {
+    MOZ_ASSERT(aPoint.IsInTextNode());
+    if (aPoint.IsStartOfContainer()) {
+      return CharPointType::TextEnd;
+    }
+    if (EditorUtils::IsContentPreformatted(*aPoint.ContainerAsText())) {
+      return CharPointType::PreformattedChar;
+    }
+    if (aPoint.IsPreviousCharASCIISpace()) {
+      return CharPointType::ASCIIWhiteSpace;
+    }
+    return aPoint.IsPreviousCharNBSP() ? CharPointType::NoBreakingSpace
+                                       : CharPointType::VisibleChar;
+  }
+  template <typename EditorDOMPointType>
+  static CharPointType GetCharPointType(const EditorDOMPointType& aPoint) {
+    MOZ_ASSERT(aPoint.IsInTextNode());
+    if (aPoint.IsEndOfContainer()) {
+      return CharPointType::TextEnd;
+    }
+    if (EditorUtils::IsContentPreformatted(*aPoint.ContainerAsText())) {
+      return CharPointType::PreformattedChar;
+    }
+    if (aPoint.IsCharASCIISpace()) {
+      return CharPointType::ASCIIWhiteSpace;
+    }
+    return aPoint.IsCharNBSP() ? CharPointType::NoBreakingSpace
+                               : CharPointType::VisibleChar;
+  }
+
+  
+
+
+
+
+
+  class MOZ_STACK_CLASS CharPointData final {
+   public:
+    static CharPointData InDifferentTextNode(CharPointType aCharPointType) {
+      CharPointData result;
+      result.mIsInDifferentTextNode = true;
+      result.mType = aCharPointType;
+      return result;
+    }
+    static CharPointData InSameTextNode(CharPointType aCharPointType) {
+      CharPointData result;
+      
+      
+      
+      result.mIsInDifferentTextNode = aCharPointType == CharPointType::TextEnd;
+      result.mType = aCharPointType;
+      return result;
+    }
+
+    bool AcrossTextNodeBoundary() const { return mIsInDifferentTextNode; }
+    bool IsWhiteSpace() const {
+      return mType == CharPointType::ASCIIWhiteSpace ||
+             mType == CharPointType::NoBreakingSpace;
+    }
+    CharPointType Type() const { return mType; }
+
+   private:
+    CharPointData() = default;
+
+    CharPointType mType;
+    bool mIsInDifferentTextNode;
+  };
+
+  
+
+
+
+
+
+  CharPointData GetPreviousCharPointDataForNormalizingWhiteSpaces(
+      const EditorDOMPointInText& aPoint) const;
+  CharPointData GetInclusiveNextCharPointDataForNormalizingWhiteSpaces(
+      const EditorDOMPointInText& aPoint) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static void GenerateWhiteSpaceSequence(
+      nsAString& aResult, uint32_t aLength,
+      const CharPointData& aPreviousCharPointData,
+      const CharPointData& aNextCharPointData);
 
   
 
