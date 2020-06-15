@@ -666,6 +666,20 @@ async function stepOut(threadFront, frameActor) {
 
 
 
+async function restartFrame(threadFront, frameActor) {
+  dumpn("Restarting frame.");
+  await threadFront.restart(frameActor);
+  return waitForPause(threadFront);
+}
+
+
+
+
+
+
+
+
+
 
 function getFrames(threadFront, first, count) {
   dumpn("Getting frames.");
