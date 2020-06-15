@@ -89,9 +89,8 @@ HWND DocAccessibleChild::GetNativeWindowHandle() const {
   
   auto topDoc = static_cast<DocAccessibleChild*>(
       browser->GetTopLevelDocAccessibleChild());
-  
-  
-  if (topDoc && topDoc != this && topDoc->mEmulatedWindowHandle) {
+  MOZ_ASSERT(topDoc);
+  if (topDoc != this && topDoc->mEmulatedWindowHandle) {
     return topDoc->mEmulatedWindowHandle;
   }
 
