@@ -134,11 +134,6 @@ const EXPECTED_REQUESTS = [
 
 add_task(async function() {
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["javascript.options.asyncstack", true]],
-  });
-
-  
   
   
   

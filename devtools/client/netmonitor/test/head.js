@@ -298,6 +298,14 @@ function initNetMonitor(url, { requestCount, enableCache = false }) {
   }
 
   return (async function() {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        
+        
+        ["javascript.options.asyncstack_capture_debuggee_only", false],
+      ],
+    });
+
     const tab = await addTab(url);
     info("Net tab added successfully: " + url);
 
