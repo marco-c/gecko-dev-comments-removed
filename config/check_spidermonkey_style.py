@@ -67,6 +67,7 @@ included_inclnames_to_ignore = set([
     'jit/CacheIROpsGenerated.h',         
     'jit/LOpcodesGenerated.h',           
     'jit/MOpcodesGenerated.h',           
+    'js/ProfilingCategoryList.h',        
     'jscustomallocator.h',      
     'js-config.h',              
     'fdlibm.h',                 
