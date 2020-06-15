@@ -337,10 +337,6 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
   uint32_t mFlags;
   uint32_t mWrapColumn;
   
-
-
-  AutoTArray<nsINode*, 8> mCommonInclusiveAncestors;
-  
   
   
   bool mNeedsPreformatScanning;
@@ -433,6 +429,11 @@ class nsDocumentEncoder : public nsIDocumentEncoder {
 
 
     nsCOMPtr<nsINode> mClosestCommonInclusiveAncestorOfRange;
+
+    
+
+
+    AutoTArray<nsINode*, 8> mCommonInclusiveAncestors;
 
     int32_t mStartRootIndex;
     int32_t mEndRootIndex;
@@ -562,11 +563,12 @@ nsresult nsDocumentEncoder::SerializeSelection() {
           !ParentIsTR(content)) {
         if (!prevNode) {
           
-          mCommonInclusiveAncestors.Clear();
-          nsContentUtils::GetInclusiveAncestors(node->GetParentNode(),
-                                                mCommonInclusiveAncestors);
+          mRangeSerializer.mCommonInclusiveAncestors.Clear();
+          nsContentUtils::GetInclusiveAncestors(
+              node->GetParentNode(),
+              mRangeSerializer.mCommonInclusiveAncestors);
           rv = mRangeContextSerializer.SerializeRangeContextStart(
-              mCommonInclusiveAncestors);
+              mRangeSerializer.mCommonInclusiveAncestors);
           NS_ENSURE_SUCCESS(rv, rv);
           
           mRangeContextSerializer.mDisableContextSerialize = true;
@@ -581,9 +583,10 @@ nsresult nsDocumentEncoder::SerializeSelection() {
 
         
         
-        mCommonInclusiveAncestors.Clear();
-        nsContentUtils::GetInclusiveAncestors(prevNode->GetParentNode(),
-                                              mCommonInclusiveAncestors);
+        mRangeSerializer.mCommonInclusiveAncestors.Clear();
+        nsContentUtils::GetInclusiveAncestors(
+            prevNode->GetParentNode(),
+            mRangeSerializer.mCommonInclusiveAncestors);
 
         rv = mRangeContextSerializer.SerializeRangeContextEnd();
         NS_ENSURE_SUCCESS(rv, rv);
@@ -606,9 +609,9 @@ nsresult nsDocumentEncoder::SerializeSelection() {
 
     
     
-    mCommonInclusiveAncestors.Clear();
-    nsContentUtils::GetInclusiveAncestors(prevNode->GetParentNode(),
-                                          mCommonInclusiveAncestors);
+    mRangeSerializer.mCommonInclusiveAncestors.Clear();
+    nsContentUtils::GetInclusiveAncestors(
+        prevNode->GetParentNode(), mRangeSerializer.mCommonInclusiveAncestors);
 
     rv = mRangeContextSerializer.SerializeRangeContextEnd();
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1160,7 +1163,7 @@ nsresult nsDocumentEncoder::SerializeRangeToString(const nsRange* aRange) {
   int32_t endOffset = aRange->EndOffset();
 
   mRangeSerializer.mContextInfoDepth = {};
-  mCommonInclusiveAncestors.Clear();
+  mRangeSerializer.mCommonInclusiveAncestors.Clear();
 
   mRangeSerializer.mRangeBoundariesInclusiveAncestorsAndOffsets = {};
   auto& inclusiveAncestorsOfStart =
@@ -1178,7 +1181,7 @@ nsresult nsDocumentEncoder::SerializeRangeToString(const nsRange* aRange) {
 
   nsContentUtils::GetInclusiveAncestors(
       mRangeSerializer.mClosestCommonInclusiveAncestorOfRange,
-      mCommonInclusiveAncestors);
+      mRangeSerializer.mCommonInclusiveAncestors);
   nsContentUtils::GetInclusiveAncestorsAndOffsets(
       startContainer, startOffset, &inclusiveAncestorsOfStart,
       &inclusiveAncestorsOffsetsOfStart);
@@ -1196,7 +1199,7 @@ nsresult nsDocumentEncoder::SerializeRangeToString(const nsRange* aRange) {
   nsresult rv = NS_OK;
 
   rv = mRangeContextSerializer.SerializeRangeContextStart(
-      mCommonInclusiveAncestors);
+      mRangeSerializer.mCommonInclusiveAncestors);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (startContainer == endContainer && IsTextNode(startContainer)) {
@@ -1577,15 +1580,15 @@ nsHTMLCopyEncoder::EncodeToStringWithContext(nsAString& aContextString,
                     &mNeedsPreformatScanning, aContextString);
 
   
-  int32_t count = mCommonInclusiveAncestors.Length();
+  int32_t count = mRangeSerializer.mCommonInclusiveAncestors.Length();
   int32_t i;
   nsCOMPtr<nsINode> node;
   if (count > 0) {
-    node = mCommonInclusiveAncestors.ElementAt(0);
+    node = mRangeSerializer.mCommonInclusiveAncestors.ElementAt(0);
   }
 
   if (node && IsTextNode(node)) {
-    mCommonInclusiveAncestors.RemoveElementAt(0);
+    mRangeSerializer.mCommonInclusiveAncestors.RemoveElementAt(0);
     if (mRangeSerializer.mContextInfoDepth.mStart) {
       --mRangeSerializer.mContextInfoDepth.mStart;
     }
@@ -1597,13 +1600,13 @@ nsHTMLCopyEncoder::EncodeToStringWithContext(nsAString& aContextString,
 
   i = count;
   while (i > 0) {
-    node = mCommonInclusiveAncestors.ElementAt(--i);
+    node = mRangeSerializer.mCommonInclusiveAncestors.ElementAt(--i);
     rv = mNodeSerializer.SerializeNodeStart(*node, 0, -1);
     NS_ENSURE_SUCCESS(rv, rv);
   }
   
   while (i < count) {
-    node = mCommonInclusiveAncestors.ElementAt(i++);
+    node = mRangeSerializer.mCommonInclusiveAncestors.ElementAt(i++);
     rv = mNodeSerializer.SerializeNodeEnd(*node);
     NS_ENSURE_SUCCESS(rv, rv);
   }
