@@ -41,7 +41,10 @@ UNCOMMON_TRY_TASK_LABELS = [
     
     
     
-    r'(linux1804-64|windows10-64|windows7-32)-shippable(?!.*(awsy|browsertime|marionette-headless|raptor|talos|web-platform-tests-wdspec-headless))',  
+    
+    
+    
+    r'(?<!(x1014-64|macosx64))-shippable(?!.*(awsy|browsertime|marionette-headless|raptor|talos|web-platform-tests-wdspec-headless))',  
 ]
 
 
