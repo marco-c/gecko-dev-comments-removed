@@ -51,6 +51,7 @@
 #include "nsLookAndFeel.h"
 #include "nsUnicharUtils.h"
 #include "nsWindowsHelpers.h"
+#include "WinContentSystemParameters.h"
 
 #ifdef NS_ENABLE_TSF
 #  include <textstor.h>
@@ -540,6 +541,9 @@ void WinUtils::Log(const char* fmt, ...) {
 
 
 float WinUtils::SystemDPI() {
+  if (XRE_IsContentProcess()) {
+    return WinContentSystemParameters::GetSingleton()->SystemDPI();
+  }
   
   
   
@@ -602,6 +606,9 @@ static bool SlowIsPerMonitorDPIAware() {
 
 
 bool WinUtils::IsPerMonitorDPIAware() {
+  if (XRE_IsContentProcess()) {
+    return WinContentSystemParameters::GetSingleton()->IsPerMonitorDPIAware();
+  }
   static bool perMonitorDPIAware = SlowIsPerMonitorDPIAware();
   return perMonitorDPIAware;
 }
