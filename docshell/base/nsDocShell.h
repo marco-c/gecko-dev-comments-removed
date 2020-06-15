@@ -65,6 +65,7 @@ class ClientInfo;
 class ClientSource;
 class EventTarget;
 class SessionHistoryInfo;
+struct SessionHistoryInfoAndId;
 }  
 namespace net {
 class LoadInfo;
@@ -482,6 +483,9 @@ class nsDocShell final : public nsDocLoader,
 
   static uint32_t ComputeURILoaderFlags(
       mozilla::dom::BrowsingContext* aBrowsingContext, uint32_t aLoadType);
+
+  void SetLoadingSessionHistoryInfoAndId(
+      const mozilla::dom::SessionHistoryInfoAndId& aInfoAndId);
 
  private:  
   friend class nsDSURIContentListener;

@@ -211,6 +211,14 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
         *aArgs.contentDispositionFilename());
   }
 
+  nsDocShell* docShell = GetDocShell();
+  if (docShell && aArgs.sessionHistoryInfo().isSome()) {
+    SessionHistoryInfoAndId& infoAndId = aArgs.sessionHistoryInfo().ref();
+    if (infoAndId.mId != 0) {
+      docShell->SetLoadingSessionHistoryInfoAndId(infoAndId);
+    }
+  }
+
   
   
   
