@@ -569,6 +569,12 @@ class GCRuntime {
   void checkHashTablesAfterMovingGC();
 #endif
 
+#ifdef DEBUG
+  
+  
+  bool isPointerWithinTenuredCell(void* ptr, JS::TraceKind traceKind);
+#endif
+
   
   void queueUnusedLifoBlocksForFree(LifoAlloc* lifo);
   void queueAllLifoBlocksForFree(LifoAlloc* lifo);

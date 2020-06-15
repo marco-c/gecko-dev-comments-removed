@@ -60,9 +60,18 @@ class MOZ_STACK_CLASS JS_FRIEND_API AutoStableStringChars final {
   enum State { Uninitialized, Latin1, TwoByte };
   State state_;
 
+  
+
+
+
+
+  bool preventedDeduplication_;
+
  public:
   explicit AutoStableStringChars(JSContext* cx)
-      : s_(cx), state_(Uninitialized) {}
+      : s_(cx), state_(Uninitialized), preventedDeduplication_(false) {}
+
+  ~AutoStableStringChars();
 
   MOZ_MUST_USE bool init(JSContext* cx, JSString* s);
 

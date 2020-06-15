@@ -55,6 +55,8 @@ class UnsafeBareWeakHeapPtr : public ReadBarriered<T> {
 };
 }  
 
+enum : bool { DuplicatesNotPossible, DuplicatesPossible };
+
 
 
 
@@ -68,7 +70,8 @@ class UnsafeBareWeakHeapPtr : public ReadBarriered<T> {
 
 template <typename Key, typename Value,
           typename HashPolicy = DefaultHasher<Key>,
-          typename AllocPolicy = TempAllocPolicy>
+          typename AllocPolicy = TempAllocPolicy,
+          bool AllowDuplicates = DuplicatesNotPossible>
 class NurseryAwareHashMap {
   using BarrieredValue = detail::UnsafeBareWeakHeapPtr<Value>;
   using MapType =
@@ -164,7 +167,25 @@ class NurseryAwareHashMap {
         map.remove(key);
         continue;
       }
-      map.rekeyIfMoved(key, copy);
+      if (AllowDuplicates) {
+        
+        
+        
+        
+        
+        if (key == copy) {
+          
+        } else if (map.has(copy)) {
+          
+          
+          map.remove(key);
+        } else {
+          map.rekeyAs(key, copy, copy);
+        }
+      } else {
+        MOZ_ASSERT(key == copy || !map.has(copy));
+        map.rekeyIfMoved(key, copy);
+      }
     }
     nurseryEntries.clear();
   }

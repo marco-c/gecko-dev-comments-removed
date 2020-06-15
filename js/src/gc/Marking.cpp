@@ -23,6 +23,7 @@
 #include "builtin/ModuleObject.h"
 #include "debugger/DebugAPI.h"
 #include "gc/GCInternals.h"
+#include "gc/GCProbes.h"
 #include "gc/Policy.h"
 #include "jit/JitCode.h"
 #include "js/GCTypeMacros.h"  
@@ -52,6 +53,8 @@
 #include "vm/PlainObject-inl.h"  
 #include "vm/Realm-inl.h"
 #include "vm/StringType-inl.h"
+
+#define MAX_DEDUPLICATABLE_STRING_LENGTH 500
 
 using namespace js;
 using namespace js::gc;
@@ -3100,10 +3103,76 @@ void js::gc::StoreBuffer::SlotsEdge::trace(TenuringTracer& mover) const {
 }
 
 static inline void TraceWholeCell(TenuringTracer& mover, JSObject* object) {
+  MOZ_ASSERT_IF(object->storeBuffer(),
+                !object->storeBuffer()->markingNondeduplicatable);
   mover.traceObject(object);
 }
 
 static inline void TraceWholeCell(TenuringTracer& mover, JSString* str) {
+  MOZ_ASSERT_IF(str->storeBuffer(),
+                str->storeBuffer()->markingNondeduplicatable);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (str->hasBase()) {
+    MOZ_ASSERT(str->isTenured());
+    MOZ_ASSERT(!str->isForwarded());
+
+    JSLinearString* baseOrRelocOverlay = str->nurseryBaseOrRelocOverlay();
+
+    
+    
+    while (true) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (baseOrRelocOverlay->isForwarded()) {
+        JSLinearString* tenuredBase =
+            Forwarded(reinterpret_cast<JSLinearString*>(baseOrRelocOverlay));
+        if (!tenuredBase->hasBase()) {
+          break;
+        }
+        baseOrRelocOverlay =
+            StringRelocationOverlay::fromCell(baseOrRelocOverlay)
+                ->savedNurseryBaseOrRelocOverlay();
+      } else {
+        JSLinearString* base = baseOrRelocOverlay;
+        if (base->isTenured()) {
+          break;
+        }
+        if (base->isDeduplicatable()) {
+          base->setNonDeduplicatable();
+        }
+        if (!base->hasBase()) {
+          break;
+        }
+        baseOrRelocOverlay = base->nurseryBaseOrRelocOverlay();
+      }
+    }
+  }
+
   str->traceChildren(&mover);
 }
 
@@ -3131,10 +3200,8 @@ static void TraceBufferedCells(TenuringTracer& mover, Arena* arena,
   }
 }
 
-void js::gc::StoreBuffer::WholeCellBuffer::trace(TenuringTracer& mover) {
-  MOZ_ASSERT(owner_->isEnabled());
-
-  for (ArenaCellSet* cells = head_; cells; cells = cells->next) {
+void ArenaCellSet::trace(TenuringTracer& mover) {
+  for (ArenaCellSet* cells = this; cells; cells = cells->next) {
     cells->check();
 
     Arena* arena = cells->arena;
@@ -3158,8 +3225,30 @@ void js::gc::StoreBuffer::WholeCellBuffer::trace(TenuringTracer& mover) {
         MOZ_CRASH("Unexpected trace kind");
     }
   }
+}
 
-  head_ = nullptr;
+void js::gc::StoreBuffer::WholeCellBuffer::trace(TenuringTracer& mover) {
+  MOZ_ASSERT(owner_->isEnabled());
+
+#ifdef DEBUG
+  
+  
+  MOZ_ASSERT(!owner_->markingNondeduplicatable);
+  owner_->markingNondeduplicatable = true;
+#endif
+  
+  
+  if (stringHead_) {
+    stringHead_->trace(mover);
+  }
+#ifdef DEBUG
+  owner_->markingNondeduplicatable = false;
+#endif
+  if (nonStringHead_) {
+    nonStringHead_->trace(mover);
+  }
+
+  stringHead_ = nonStringHead_ = nullptr;
 }
 
 template <typename T>
@@ -3174,6 +3263,14 @@ void js::gc::StoreBuffer::CellPtrEdge<T>::trace(TenuringTracer& mover) const {
 
   MOZ_ASSERT(IsCellPointerValid(*edge));
   MOZ_ASSERT((*edge)->getTraceKind() == JS::MapTypeToTraceKind<T>::kind);
+
+  if (std::is_same_v<JSString, T>) {
+    
+    
+    
+    MOZ_ASSERT(!mover.runtime()->gc.isPointerWithinTenuredCell(
+        edge, JS::TraceKind::String));
+  }
 
   mover.traverse(edge);
 }
@@ -3257,6 +3354,15 @@ inline void js::TenuringTracer::insertIntoObjectFixupList(
 template <typename T>
 inline T* js::TenuringTracer::allocTenured(Zone* zone, AllocKind kind) {
   return static_cast<T*>(static_cast<Cell*>(AllocateCellInGC(zone, kind)));
+}
+
+JSString* js::TenuringTracer::allocTenuredString(JSString* src, Zone* zone,
+                                                 AllocKind dstKind) {
+  JSString* dst = allocTenured<JSString>(zone, dstKind);
+  tenuredSize += moveStringToTenured(dst, src, dstKind);
+  tenuredCells++;
+
+  return dst;
 }
 
 JSObject* js::TenuringTracer::moveToTenuredSlow(JSObject* src) {
@@ -3458,7 +3564,7 @@ size_t js::TenuringTracer::moveElementsToTenured(NativeObject* dst,
 }
 
 inline void js::TenuringTracer::insertIntoStringFixupList(
-    RelocationOverlay* entry) {
+    StringRelocationOverlay* entry) {
   *stringTail = entry;
   stringTail = &entry->nextRef();
   *stringTail = nullptr;
@@ -3467,20 +3573,120 @@ inline void js::TenuringTracer::insertIntoStringFixupList(
 JSString* js::TenuringTracer::moveToTenured(JSString* src) {
   MOZ_ASSERT(IsInsideNursery(src));
   MOZ_ASSERT(!src->nurseryZone()->usedByHelperThread());
+  MOZ_ASSERT(!src->isExternal());
 
   AllocKind dstKind = src->getAllocKind();
   Zone* zone = src->nurseryZone();
   zone->tenuredStrings++;
 
-  JSString* dst = allocTenured<JSString>(zone, dstKind);
-  tenuredSize += moveStringToTenured(dst, src, dstKind);
-  tenuredCells++;
+  JSString* dst;
 
-  RelocationOverlay* overlay = RelocationOverlay::forwardCell(src, dst);
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (src->length() < MAX_DEDUPLICATABLE_STRING_LENGTH && src->isLinear() &&
+      src->isDeduplicatable() && nursery().stringDeDupSet.isSome()) {
+    if (auto p = nursery().stringDeDupSet->lookup(src)) {
+      dst = *p;
+
+      StringRelocationOverlay::forwardCell(src, dst);
+
+      gcprobes::PromoteToTenured(src, dst);
+      return dst;
+    }
+
+    dst = allocTenuredString(src, zone, dstKind);
+
+    if (!nursery().stringDeDupSet->putNew(dst)) {
+      
+      
+      nursery().stringDeDupSet.reset();
+    }
+  } else {
+    dst = allocTenuredString(src, zone, dstKind);
+  }
+
+  auto overlay = StringRelocationOverlay::forwardCell(src, dst);
+  
+  
+  
+  dst->clearNonDeduplicatable();
+  
+  
   insertIntoStringFixupList(overlay);
 
   gcprobes::PromoteToTenured(src, dst);
   return dst;
+}
+
+template <typename CharT>
+void js::Nursery::relocateDependentStringChars(
+    JSDependentString* tenuredDependentStr, JSLinearString* baseOrRelocOverlay,
+    size_t* offset, bool* rootBaseNotYetForwarded, JSLinearString** rootBase) {
+  MOZ_ASSERT(*offset == 0);
+  MOZ_ASSERT(*rootBaseNotYetForwarded == false);
+  MOZ_ASSERT(*rootBase == nullptr);
+
+  JS::AutoCheckCannotGC nogc;
+
+  const CharT* dependentStrChars =
+      tenuredDependentStr->nonInlineChars<CharT>(nogc);
+
+  
+  
+  while (true) {
+    if (baseOrRelocOverlay->isForwarded()) {
+      JSLinearString* tenuredBase = Forwarded(baseOrRelocOverlay);
+      StringRelocationOverlay* relocOverlay =
+          StringRelocationOverlay::fromCell(baseOrRelocOverlay);
+
+      if (!tenuredBase->hasBase()) {
+        
+        
+        
+        JSLinearString* tenuredRootBase = tenuredBase;
+        const CharT* rootBaseChars = relocOverlay->savedNurseryChars<CharT>();
+        *offset = dependentStrChars - rootBaseChars;
+        MOZ_ASSERT(*offset < tenuredRootBase->length());
+        tenuredDependentStr->relocateNonInlineChars<const CharT*>(
+            tenuredRootBase->nonInlineChars<CharT>(nogc), *offset);
+        tenuredDependentStr->setBase(tenuredRootBase);
+        return;
+      }
+
+      baseOrRelocOverlay = relocOverlay->savedNurseryBaseOrRelocOverlay();
+
+    } else {
+      JSLinearString* base = baseOrRelocOverlay;
+
+      if (!base->hasBase()) {
+        
+        *rootBase = base;
+
+        
+        
+        
+        if (!(*rootBase)->isTenured()) {
+          *rootBaseNotYetForwarded = true;
+          const CharT* rootBaseChars = (*rootBase)->nonInlineChars<CharT>(nogc);
+          *offset = dependentStrChars - rootBaseChars;
+          MOZ_ASSERT(*offset < base->length(), "Tenured root base");
+        }
+
+        tenuredDependentStr->setBase(*rootBase);
+
+        return;
+      }
+
+      baseOrRelocOverlay = base->nurseryBaseOrRelocOverlay();
+    }
+  }
 }
 
 inline void js::TenuringTracer::insertIntoBigIntFixupList(
@@ -3524,8 +3730,50 @@ void js::Nursery::collectToFixedPoint(TenuringTracer& mover,
     }
   }
 
-  for (RelocationOverlay* p = mover.stringHead; p; p = p->next()) {
-    mover.traceString(static_cast<JSString*>(p->forwardingAddress()));
+  for (StringRelocationOverlay* p = mover.stringHead; p; p = p->next()) {
+    JSString* tenuredStr = static_cast<JSString*>(p->forwardingAddress());
+    
+    MOZ_ASSERT(tenuredStr->isDeduplicatable());
+
+    
+    
+    
+    
+    size_t offset = 0;
+    bool rootBaseNotYetForwarded = false;
+    JSLinearString* rootBase = nullptr;
+
+    if (tenuredStr->isDependent()) {
+      if (tenuredStr->hasTwoByteChars()) {
+        relocateDependentStringChars<char16_t>(
+            &tenuredStr->asDependent(), p->savedNurseryBaseOrRelocOverlay(),
+            &offset, &rootBaseNotYetForwarded, &rootBase);
+      } else {
+        relocateDependentStringChars<JS::Latin1Char>(
+            &tenuredStr->asDependent(), p->savedNurseryBaseOrRelocOverlay(),
+            &offset, &rootBaseNotYetForwarded, &rootBase);
+      }
+    }
+
+    mover.traceString(tenuredStr);
+
+    if (rootBaseNotYetForwarded) {
+      MOZ_ASSERT(rootBase->isForwarded(),
+                 "traceString() should make it forwarded");
+      JS::AutoCheckCannotGC nogc;
+
+      JSLinearString* tenuredRootBase = Forwarded(rootBase);
+      MOZ_ASSERT(offset < tenuredRootBase->length());
+
+      if (tenuredStr->hasTwoByteChars()) {
+        tenuredStr->asDependent().relocateNonInlineChars<const char16_t*>(
+            tenuredRootBase->twoByteChars(nogc), offset);
+      } else {
+        tenuredStr->asDependent().relocateNonInlineChars<const JS::Latin1Char*>(
+            tenuredRootBase->latin1Chars(nogc), offset);
+      }
+      tenuredStr->setBase(tenuredRootBase);
+    }
   }
 
   for (RelocationOverlay* p = mover.bigIntHead; p; p = p->next()) {

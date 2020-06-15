@@ -34,6 +34,7 @@ class RelocatedCellHeader : public CellHeader {
 
 
 class RelocationOverlay : public Cell {
+ protected:
   
   
   
