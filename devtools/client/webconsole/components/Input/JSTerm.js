@@ -522,6 +522,19 @@ class JSTerm extends Component {
         }
       });
 
+      this.resizeObserver = new ResizeObserver(() => {
+        
+        
+        
+        if (!this.node || !this.node.isConnected) {
+          this.resizeObserver.disconnect();
+          return;
+        }
+        
+        this.editor.codeMirror.refresh();
+      });
+      this.resizeObserver.observe(this.node);
+
       
       this._inputCharWidth = this._getInputCharWidth();
       this.lastInputValue && this._setValue(this.lastInputValue);
@@ -1320,6 +1333,7 @@ class JSTerm extends Component {
     }
 
     if (this.editor) {
+      this.resizeObserver.disconnect();
       this.editor.destroy();
       this.editor = null;
     }
