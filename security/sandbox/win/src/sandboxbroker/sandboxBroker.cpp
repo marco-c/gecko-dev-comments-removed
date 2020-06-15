@@ -58,10 +58,6 @@ static UniquePtr<nsString> sUserExtensionsDevDir;
 static UniquePtr<nsString> sUserExtensionsDir;
 #endif
 
-
-static bool sRddWin32kDisable = false;
-static bool sGmpWin32kDisable = false;
-
 static LazyLogModule sSandboxBrokerLog("SandboxBroker");
 
 #define LOG_E(...) MOZ_LOG(sSandboxBrokerLog, LogLevel::Error, (__VA_ARGS__))
@@ -141,17 +137,6 @@ void SandboxBroker::GeckoDependentInitialize() {
   
   sLaunchErrors = MakeUnique<nsTHashtable<nsCStringHashKey>>();
   ClearOnShutdown(&sLaunchErrors);
-
-  if (haveXPCOM) {
-    
-    Preferences::AddBoolVarCache(&sRddWin32kDisable,
-                                 "security.sandbox.rdd.win32k-disable");
-    Preferences::AddBoolVarCache(&sGmpWin32kDisable,
-                                 "security.sandbox.gmp.win32k-disable");
-  } else {
-    sRddWin32kDisable = false;
-    sGmpWin32kDisable = false;
-  }
 }
 
 SandboxBroker::SandboxBroker() {
@@ -908,7 +893,7 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
 
   
   
-  if (sRddWin32kDisable && IsWin8OrLater()) {
+  if (StaticPrefs::security_sandbox_rdd_win32k_disable() && IsWin8OrLater()) {
     mitigations |= sandbox::MITIGATION_WIN32K_DISABLE;
     result =
         mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_WIN32K_LOCKDOWN,
@@ -1279,7 +1264,7 @@ bool SandboxBroker::SetSecurityLevelForGMPlugin(SandboxLevel aLevel,
 
   
   
-  if (sGmpWin32kDisable && IsWin10OrLater()) {
+  if (StaticPrefs::security_sandbox_gmp_win32k_disable() && IsWin10OrLater()) {
     mitigations |= sandbox::MITIGATION_WIN32K_DISABLE;
     result =
         mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_WIN32K_LOCKDOWN,
