@@ -1200,7 +1200,12 @@ const bool FLAG_regexp_possessive_quantifier = false;
 
 
 const bool FLAG_regexp_optimization = true;
+#if MOZ_BIG_ENDIAN()
+
+const bool FLAG_regexp_peephole_optimization = false;
+#else
 const bool FLAG_regexp_peephole_optimization = true;
+#endif
 
 
 
