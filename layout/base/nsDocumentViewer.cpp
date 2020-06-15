@@ -1685,6 +1685,8 @@ nsDocumentViewer::Destroy() {
     
     
     
+    MOZ_LOG(gPageCacheLog, LogLevel::Debug,
+            ("BFCache not allowed, dropping SHEntry"));
     nsCOMPtr<nsISHEntry> shEntry = std::move(mSHEntry);
     shEntry->SetContentViewer(nullptr);
     shEntry->SyncPresentationState();
@@ -1742,6 +1744,8 @@ nsDocumentViewer::Destroy() {
     nsCOMPtr<nsISHEntry> shEntry =
         std::move(mSHEntry);  
 
+    MOZ_LOG(gPageCacheLog, LogLevel::Debug,
+            ("Storing content viewer into cache entry"));
     shEntry->SetContentViewer(this);
 
     
