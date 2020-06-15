@@ -31,6 +31,9 @@ class nsTObserverArray_base {
 
  protected:
   class Iterator_base {
+   public:
+    Iterator_base(const Iterator_base&) = delete;
+
    protected:
     friend class nsTObserverArray_base;
 
@@ -270,6 +273,9 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
     friend class nsAutoTObserverArray;
     typedef nsAutoTObserverArray<T, N> array_type;
 
+    Iterator(const Iterator& aOther)
+        : Iterator(aOther.mPosition, aOther.mArray) {}
+
     Iterator(index_type aPosition, const array_type& aArray)
         : Iterator_base(aPosition, aArray.mIterators),
           mArray(const_cast<array_type&>(aArray)) {
@@ -389,6 +395,106 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
       return base_type::mArray.RemoveElementAt(base_type::mPosition);
     }
   };
+
+  struct EndSentinel {};
+
+  
+  
+  template <typename Iterator, typename U>
+  struct STLIterator {
+    using value_type = std::remove_reference_t<U>;
+
+    explicit STLIterator(const nsAutoTObserverArray<T, N>& aArray)
+        : mIterator{aArray} {
+      operator++();
+    }
+
+    bool operator!=(const EndSentinel&) const {
+      
+      
+      return mCurrent;
+    }
+
+    STLIterator& operator++() {
+      mCurrent = mIterator.HasMore() ? &mIterator.GetNext() : nullptr;
+      return *this;
+    }
+
+    STLIterator operator++(int) {
+      auto res = *this;
+      ++res;
+      return res;
+    }
+
+    value_type* operator->() { return mCurrent; }
+    U& operator*() { return *mCurrent; }
+
+   private:
+    Iterator mIterator;
+    value_type* mCurrent;
+  };
+
+  
+  
+  template <typename Iterator, typename U>
+  class STLIteratorRange {
+   public:
+    using iterator = STLIterator<Iterator, U>;
+
+    explicit STLIteratorRange(const nsAutoTObserverArray<T, N>& aArray)
+        : mArray{aArray} {}
+
+    STLIteratorRange(const STLIteratorRange& aOther) = delete;
+
+    iterator begin() const { return iterator{mArray}; }
+    EndSentinel end() const { return {}; }
+
+   private:
+    const nsAutoTObserverArray<T, N>& mArray;
+  };
+
+  template <typename U>
+  using STLForwardIteratorRange = STLIteratorRange<ForwardIterator, U>;
+
+  template <typename U>
+  using STLEndLimitedIteratorRange = STLIteratorRange<EndLimitedIterator, U>;
+
+  template <typename U>
+  using STLBackwardIteratorRange = STLIteratorRange<BackwardIterator, U>;
+
+  
+  
+  
+  auto ForwardRange() { return STLForwardIteratorRange<T>{*this}; }
+
+  
+  
+  
+  auto ForwardRange() const { return STLForwardIteratorRange<const T>{*this}; }
+
+  
+  
+  
+  auto EndLimitedRange() { return STLEndLimitedIteratorRange<T>{*this}; }
+
+  
+  
+  
+  auto EndLimitedRange() const {
+    return STLEndLimitedIteratorRange<const T>{*this};
+  }
+
+  
+  
+  
+  auto BackwardRange() { return STLBackwardIteratorRange<T>{*this}; }
+
+  
+  
+  
+  auto BackwardRange() const {
+    return STLBackwardIteratorRange<const T>{*this};
+  }
 
  protected:
   AutoTArray<T, N> mArray;
