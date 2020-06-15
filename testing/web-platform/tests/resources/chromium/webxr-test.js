@@ -767,11 +767,6 @@ class MockRuntime extends EventTarget {
     this.dataProviderBinding_.close();
   }
 
-  updateSessionGeometry(frame_size, display_rotation) {
-    
-    
-  }
-
   
   subscribeToHitTest(nativeOriginInformation, entityTypes, ray) {
     if (!this.supportedModes_.includes(device.mojom.XRSessionMode.kImmersiveAr)) {
