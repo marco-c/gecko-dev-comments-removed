@@ -13,7 +13,6 @@
 class nsIThread;
 
 namespace mozilla {
-class AbstractThread;
 namespace dom {
 
 class RemoteWorkerServiceChild;
@@ -39,10 +38,6 @@ class RemoteWorkerService final : public nsIObserver {
   void ShutdownOnTargetThread();
 
   nsCOMPtr<nsIThread> mThread;
-  
-  
-  
-  RefPtr<AbstractThread> mAbstractThread;
   RefPtr<RemoteWorkerServiceChild> mActor;
 };
 
