@@ -386,10 +386,6 @@ namespace {
 mozilla::Atomic<uint64_t> gIDGenerator(0);
 }  
 
-static MOZ_ALWAYS_INLINE bool ShouldCaptureDebugInfo(JSContext* cx) {
-  return cx->options().asyncStack() || cx->realm()->isDebuggee();
-}
-
 class PromiseDebugInfo : public NativeObject {
  private:
   enum Slots {
@@ -479,7 +475,7 @@ class PromiseDebugInfo : public NativeObject {
     MOZ_ASSERT_IF(unwrappedRejectionStack,
                   promise->state() == JS::PromiseState::Rejected);
 
-    if (!ShouldCaptureDebugInfo(cx)) {
+    if (!JS::IsAsyncStackCaptureEnabledForRealm(cx)) {
       return;
     }
 
@@ -2255,7 +2251,7 @@ CreatePromiseObjectInternal(JSContext* cx, HandleObject proto ,
   
   
 
-  if (MOZ_LIKELY(!ShouldCaptureDebugInfo(cx))) {
+  if (MOZ_LIKELY(!JS::IsAsyncStackCaptureEnabledForRealm(cx))) {
     return promise;
   }
 
@@ -5155,8 +5151,6 @@ static bool Promise_catch_impl(JSContext* cx, unsigned argc, Value* vp,
 
 static MOZ_ALWAYS_INLINE bool IsPromiseThenOrCatchRetValImplicitlyUsed(
     JSContext* cx) {
-  
-  
   
   
   

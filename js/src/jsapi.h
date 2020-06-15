@@ -3034,6 +3034,16 @@ extern JS_PUBLIC_API bool CaptureCurrentStack(
 
 
 
+extern JS_PUBLIC_API bool IsAsyncStackCaptureEnabledForRealm(JSContext* cx);
+
+
+
+
+
+
+
+
+
 
 
 
