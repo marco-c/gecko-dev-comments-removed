@@ -11,13 +11,26 @@
 
 #include "mozilla/WinHeaderOnlyUtils.h"
 
+enum struct Browser {
+  Unknown,
+  Firefox,
+  Chrome,
+  EdgeWithEdgeHTML,
+  EdgeWithBlink,
+  InternetExplorer,
+  Opera,
+  Brave,
+};
+
 struct DefaultBrowserInfo {
-  std::string currentDefaultBrowser;
-  std::string previousDefaultBrowser;
+  Browser currentDefaultBrowser;
+  Browser previousDefaultBrowser;
 };
 
 using DefaultBrowserResult = mozilla::WindowsErrorResult<DefaultBrowserInfo>;
 
 DefaultBrowserResult GetDefaultBrowserInfo();
+
+std::string GetStringForBrowser(Browser browser);
 
 #endif  
