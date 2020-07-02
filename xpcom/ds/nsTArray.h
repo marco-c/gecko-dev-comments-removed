@@ -2305,6 +2305,21 @@ class nsTArray_Impl
   void Sort() { Sort(nsDefaultComparator<elem_type, elem_type>()); }
 
   
+  
+  
+  
+  
+  template <class Comparator>
+  void StableSort(const Comparator& aComp) {
+    const ::detail::CompareWrapper<Comparator, elem_type> comp(aComp);
+
+    std::stable_sort(Elements(), Elements() + Length(),
+                     [&comp](const auto& lhs, const auto& rhs) {
+                       return comp.LessThan(lhs, rhs);
+                     });
+  }
+
+  
   void Reverse() {
     elem_type* elements = Elements();
     const size_type len = Length();
