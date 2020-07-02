@@ -8,6 +8,7 @@
 
 
 #include "mpi-priv.h"
+#include "mplogic.h"
 #if defined(OSF1)
 #include <c_asm.h>
 #endif
@@ -1691,95 +1692,109 @@ mp_iseven(const mp_int *a)
 
 
 
+
 mp_err
 mp_gcd(mp_int *a, mp_int *b, mp_int *c)
 {
     mp_err res;
-    mp_int u, v, t;
-    mp_size k = 0;
+    mp_digit cond = 0, mask = 0;
+    mp_int g, temp, f;
+    int i, j, m, bit = 1, delta = 1, shifts = 0, last = -1;
+    mp_size top, flen, glen;
+    mp_int *clear[3];
 
     ARGCHK(a != NULL && b != NULL && c != NULL, MP_BADARG);
+    
 
-    if (mp_cmp_z(a) == MP_EQ && mp_cmp_z(b) == MP_EQ)
-        return MP_RANGE;
+
+
     if (mp_cmp_z(a) == MP_EQ) {
-        return mp_copy(b, c);
-    } else if (mp_cmp_z(b) == MP_EQ) {
-        return mp_copy(a, c);
-    }
-
-    if ((res = mp_init(&t)) != MP_OKAY)
+        res = mp_copy(b, c);
+        SIGN(c) = ZPOS;
         return res;
-    if ((res = mp_init_copy(&u, a)) != MP_OKAY)
-        goto U;
-    if ((res = mp_init_copy(&v, b)) != MP_OKAY)
-        goto V;
-
-    SIGN(&u) = ZPOS;
-    SIGN(&v) = ZPOS;
-
-    
-    while (mp_iseven(&u) && mp_iseven(&v)) {
-        s_mp_div_2(&u);
-        s_mp_div_2(&v);
-        ++k;
+    } else if (mp_cmp_z(b) == MP_EQ) {
+        res = mp_copy(a, c);
+        SIGN(c) = ZPOS;
+        return res;
     }
 
+    MP_CHECKOK(mp_init(&temp));
+    clear[++last] = &temp;
+    MP_CHECKOK(mp_init_copy(&g, a));
+    clear[++last] = &g;
+    MP_CHECKOK(mp_init_copy(&f, b));
+    clear[++last] = &f;
+
     
-    if (mp_isodd(&u)) {
-        if ((res = mp_copy(&v, &t)) != MP_OKAY)
-            goto CLEANUP;
+
+
+
+    for (i = 0; i < USED(&f) && i < USED(&g); i++) {
+        mask = ~(DIGIT(&f, i) | DIGIT(&g, i));
+        for (j = 0; j < MP_DIGIT_BIT; j++) {
+            bit &= mask;
+            shifts += bit;
+            mask >>= 1;
+        }
+    }
+    
+    s_mp_div_2d(&f, shifts);
+    s_mp_div_2d(&g, shifts);
+
+    
+    top = (mp_size)1 + ((USED(&f) >= USED(&g)) ? USED(&f) : USED(&g));
+    MP_CHECKOK(s_mp_grow(&f, top));
+    MP_CHECKOK(s_mp_grow(&g, top));
+    MP_CHECKOK(s_mp_grow(&temp, top));
+
+    
+    MP_CHECKOK(mp_cswap((~DIGIT(&f, 0) & 1), &f, &g, top));
+
+    
+    flen = mpl_significant_bits(&f);
+    glen = mpl_significant_bits(&g);
+    m = 4 + 3 * ((flen >= glen) ? flen : glen);
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4146) // Thanks MSVC, we know what we're negating an unsigned mp_digit
+#endif
+
+    for (i = 0; i < m; i++) {
+        
+        
+        cond = (-delta >> (8 * sizeof(delta) - 1)) & DIGIT(&g, 0) & 1;
+        
+        delta = (-cond & -delta) | ((cond - 1) & delta);
+        SIGN(&f) ^= cond;
+        
+        MP_CHECKOK(mp_cswap(cond, &f, &g, top));
 
         
-        if (SIGN(&v) == ZPOS)
-            SIGN(&t) = NEG;
-        else
-            SIGN(&t) = ZPOS;
-
-    } else {
-        if ((res = mp_copy(&u, &t)) != MP_OKAY)
-            goto CLEANUP;
+        
+        delta++;
+        
+        MP_CHECKOK(mp_add(&g, &f, &temp));
+        MP_CHECKOK(mp_cswap((DIGIT(&g, 0) & 1), &g, &temp, top));
+        s_mp_div_2(&g);
     }
 
-    for (;;) {
-        while (mp_iseven(&t)) {
-            s_mp_div_2(&t);
-        }
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
-        if (mp_cmp_z(&t) == MP_GT) {
-            if ((res = mp_copy(&t, &u)) != MP_OKAY)
-                goto CLEANUP;
+    
+    SIGN(&f) = ZPOS;
 
-        } else {
-            if ((res = mp_copy(&t, &v)) != MP_OKAY)
-                goto CLEANUP;
+    
+    MP_CHECKOK(s_mp_mul_2d(&f, shifts));
 
-            
-            if (SIGN(&t) == ZPOS)
-                SIGN(&v) = NEG;
-            else
-                SIGN(&v) = ZPOS;
-        }
-
-        if ((res = mp_sub(&u, &v, &t)) != MP_OKAY)
-            goto CLEANUP;
-
-        if (s_mp_cmp_d(&t, 0) == MP_EQ)
-            break;
-    }
-
-    s_mp_2expt(&v, k);       
-    res = mp_mul(&u, &v, c); 
+    MP_CHECKOK(mp_copy(&f, c));
 
 CLEANUP:
-    mp_clear(&v);
-V:
-    mp_clear(&u);
-U:
-    mp_clear(&t);
-
+    while (last >= 0)
+        mp_clear(clear[last--]);
     return res;
-
 } 
 
 
@@ -2132,41 +2147,113 @@ CLEANUP:
 }
 
 
+
+
+
+
 mp_err
 s_mp_invmod_odd_m(const mp_int *a, const mp_int *m, mp_int *c)
 {
-    int k;
     mp_err res;
-    mp_int x;
+    mp_digit cond = 0;
+    mp_int g, f, v, r, temp;
+    int i, its, delta = 1, last = -1;
+    mp_size top, flen, glen;
+    mp_int *clear[6];
 
     ARGCHK(a != NULL && m != NULL && c != NULL, MP_BADARG);
-
-    if (mp_cmp_z(a) == 0 || mp_cmp_z(m) == 0)
+    
+    if (mp_cmp_z(a) == MP_EQ || mp_cmp_d(m, 2) == MP_LT)
         return MP_RANGE;
-    if (mp_iseven(m))
+
+    if (a == m || mp_iseven(m))
         return MP_UNDEF;
 
-    MP_DIGITS(&x) = 0;
+    MP_CHECKOK(mp_init(&temp));
+    clear[++last] = &temp;
+    MP_CHECKOK(mp_init(&v));
+    clear[++last] = &v;
+    MP_CHECKOK(mp_init(&r));
+    clear[++last] = &r;
+    MP_CHECKOK(mp_init_copy(&g, a));
+    clear[++last] = &g;
+    MP_CHECKOK(mp_init_copy(&f, m));
+    clear[++last] = &f;
 
-    if (a == c) {
-        if ((res = mp_init_copy(&x, a)) != MP_OKAY)
-            return res;
-        if (a == m)
-            m = &x;
-        a = &x;
-    } else if (m == c) {
-        if ((res = mp_init_copy(&x, m)) != MP_OKAY)
-            return res;
-        m = &x;
-    } else {
-        MP_DIGITS(&x) = 0;
+    mp_set(&v, 0);
+    mp_set(&r, 1);
+
+    
+    top = (mp_size)1 + ((USED(&f) >= USED(&g)) ? USED(&f) : USED(&g));
+    MP_CHECKOK(s_mp_grow(&f, top));
+    MP_CHECKOK(s_mp_grow(&g, top));
+    MP_CHECKOK(s_mp_grow(&temp, top));
+    MP_CHECKOK(s_mp_grow(&v, top));
+    MP_CHECKOK(s_mp_grow(&r, top));
+
+    
+    flen = mpl_significant_bits(&f);
+    glen = mpl_significant_bits(&g);
+    its = 4 + 3 * ((flen >= glen) ? flen : glen);
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4146) // Thanks MSVC, we know what we're negating an unsigned mp_digit
+#endif
+
+    for (i = 0; i < its; i++) {
+        
+        
+        cond = (-delta >> (8 * sizeof(delta) - 1)) & DIGIT(&g, 0) & 1;
+        
+        delta = (-cond & -delta) | ((cond - 1) & delta);
+        SIGN(&f) ^= cond;
+        SIGN(&v) ^= cond;
+        
+        MP_CHECKOK(mp_cswap(cond, &f, &g, top));
+        MP_CHECKOK(mp_cswap(cond, &v, &r, top));
+
+        
+        
+        delta++;
+        
+        MP_CHECKOK(mp_add(&r, &v, &temp));
+        MP_CHECKOK(mp_cswap((DIGIT(&g, 0) & 1), &r, &temp, top));
+        
+        MP_CHECKOK(mp_add(&g, &f, &temp));
+        MP_CHECKOK(mp_cswap((DIGIT(&g, 0) & 1), &g, &temp, top));
+        s_mp_div_2(&g);
+        
+
+
+
+
+        MP_CHECKOK(mp_add(&r, m, &temp));
+        MP_CHECKOK(mp_cswap((DIGIT(&r, 0) & 1), &r, &temp, top));
+        s_mp_div_2(&r);
     }
 
-    MP_CHECKOK(s_mp_almost_inverse(a, m, c));
-    k = res;
-    MP_CHECKOK(s_mp_fixup_reciprocal(c, m, k, c));
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+    
+    SIGN(&v) ^= SIGN(&f);
+    
+    SIGN(&f) = ZPOS;
+
+    
+    if (mp_cmp_d(&f, 1) != MP_EQ) {
+        res = MP_UNDEF;
+        goto CLEANUP;
+    }
+
+    
+    MP_CHECKOK(mp_mod(&v, m, c));
+
 CLEANUP:
-    mp_clear(&x);
+    while (last >= 0)
+        mp_clear(clear[last--]);
     return res;
 }
 
@@ -2218,13 +2305,24 @@ s_mp_invmod_2d(const mp_int *a, mp_size k, mp_int *c)
 
     if (mp_iseven(a))
         return MP_UNDEF;
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4146) // Thanks MSVC, we know what we're negating an unsigned mp_digit
+#endif
     if (k <= MP_DIGIT_BIT) {
         mp_digit i = s_mp_invmod_radix(MP_DIGIT(a, 0));
+        
+        i = (i ^ -(mp_digit)SIGN(a)) + (mp_digit)SIGN(a);
         if (k < MP_DIGIT_BIT)
             i &= ((mp_digit)1 << k) - (mp_digit)1;
         mp_set(c, i);
         return MP_OKAY;
     }
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
     MP_DIGITS(&t0) = 0;
     MP_DIGITS(&t1) = 0;
     MP_DIGITS(&val) = 0;
@@ -2831,6 +2929,8 @@ s_mp_clamp(mp_int *mp)
     while (used > 1 && DIGIT(mp, used - 1) == 0)
         --used;
     MP_USED(mp) = used;
+    if (used == 1 && DIGIT(mp, 0) == 0)
+        MP_SIGN(mp) = ZPOS;
 } 
 
 
@@ -2908,37 +3008,36 @@ mp_err
 s_mp_mul_2d(mp_int *mp, mp_digit d)
 {
     mp_err res;
-    mp_digit dshift, bshift;
-    mp_digit mask;
+    mp_digit dshift, rshift, mask, x, prev = 0;
+    mp_digit *pa = NULL;
+    int i;
 
     ARGCHK(mp != NULL, MP_BADARG);
 
     dshift = d / MP_DIGIT_BIT;
-    bshift = d % MP_DIGIT_BIT;
+    d %= MP_DIGIT_BIT;
     
-    if (bshift) {
-        mask = (mp_digit)~0 << (MP_DIGIT_BIT - bshift);
-        mask &= MP_DIGIT(mp, MP_USED(mp) - 1);
-    } else {
-        mask = 0;
-    }
+    
+    rshift = MP_DIGIT_BIT - d;
+    rshift %= MP_DIGIT_BIT;
+    
+    mask = (DIGIT_MAX << rshift) + 1;
+    mask &= DIGIT_MAX - 1;
+    
+    x = MP_DIGIT(mp, MP_USED(mp) - 1) & mask;
 
-    if (MP_OKAY != (res = s_mp_pad(mp, MP_USED(mp) + dshift + (mask != 0))))
+    if (MP_OKAY != (res = s_mp_pad(mp, MP_USED(mp) + dshift + (x != 0))))
         return res;
 
     if (dshift && MP_OKAY != (res = s_mp_lshd(mp, dshift)))
         return res;
 
-    if (bshift) {
-        mp_digit *pa = MP_DIGITS(mp);
-        mp_digit *alim = pa + MP_USED(mp);
-        mp_digit prev = 0;
+    pa = MP_DIGITS(mp) + dshift;
 
-        for (pa += dshift; pa < alim;) {
-            mp_digit x = *pa;
-            *pa++ = (x << bshift) | prev;
-            prev = x >> (DIGIT_BIT - bshift);
-        }
+    for (i = MP_USED(mp) - dshift; i > 0; i--) {
+        x = *pa;
+        *pa++ = (x << d) | prev;
+        prev = (x & mask) >> rshift;
     }
 
     s_mp_clamp(mp);
@@ -3077,18 +3176,20 @@ void
 s_mp_div_2d(mp_int *mp, mp_digit d)
 {
     int ix;
-    mp_digit save, next, mask;
+    mp_digit save, next, mask, lshift;
 
     s_mp_rshd(mp, d / DIGIT_BIT);
     d %= DIGIT_BIT;
-    if (d) {
-        mask = ((mp_digit)1 << d) - 1;
-        save = 0;
-        for (ix = USED(mp) - 1; ix >= 0; ix--) {
-            next = DIGIT(mp, ix) & mask;
-            DIGIT(mp, ix) = (DIGIT(mp, ix) >> d) | (save << (DIGIT_BIT - d));
-            save = next;
-        }
+    
+    
+    lshift = DIGIT_BIT - d;
+    lshift %= DIGIT_BIT;
+    mask = ((mp_digit)1 << d) - 1;
+    save = 0;
+    for (ix = USED(mp) - 1; ix >= 0; ix--) {
+        next = DIGIT(mp, ix) & mask;
+        DIGIT(mp, ix) = (save << lshift) | (DIGIT(mp, ix) >> d);
+        save = next;
     }
     s_mp_clamp(mp);
 
@@ -4838,6 +4939,45 @@ mp_to_fixlen_octets(const mp_int *mp, unsigned char *str, mp_size length)
         }
     }
     return MP_OKAY;
+} 
+
+
+
+
+mp_err
+mp_cswap(mp_digit condition, mp_int *a, mp_int *b, mp_size numdigits)
+{
+    mp_digit x;
+    unsigned int i;
+    mp_err res = 0;
+
+    
+    if (a == b)
+        return res;
+
+    if (MP_ALLOC(a) < numdigits || MP_ALLOC(b) < numdigits) {
+        MP_CHECKOK(s_mp_grow(a, numdigits));
+        MP_CHECKOK(s_mp_grow(b, numdigits));
+    }
+
+    condition = ((~condition & ((condition - 1))) >> (MP_DIGIT_BIT - 1)) - 1;
+
+    x = (USED(a) ^ USED(b)) & condition;
+    USED(a) ^= x;
+    USED(b) ^= x;
+
+    x = (SIGN(a) ^ SIGN(b)) & condition;
+    SIGN(a) ^= x;
+    SIGN(b) ^= x;
+
+    for (i = 0; i < numdigits; i++) {
+        x = (DIGIT(a, i) ^ DIGIT(b, i)) & condition;
+        DIGIT(a, i) ^= x;
+        DIGIT(b, i) ^= x;
+    }
+
+CLEANUP:
+    return res;
 } 
 
 
