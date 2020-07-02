@@ -83,7 +83,8 @@ HttpChannelParent::HttpChannelParent(dom::BrowserParent* iframeEmbedding,
       mCacheNeedFlowControlInitialized(false),
       mNeedFlowControl(true),
       mSuspendedForFlowControl(false),
-      mAfterOnStartRequestBegun(false) {
+      mAfterOnStartRequestBegun(false),
+      mStreamFilterAttached(false) {
   LOG(("Creating HttpChannelParent [this=%p]\n", this));
 
   
@@ -1541,7 +1542,8 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   
   
   
-  args.shouldWaitForOnStartRequestSent() = isDocument || hasSetCookie;
+  args.shouldWaitForOnStartRequestSent() =
+      isDocument || hasSetCookie || mStreamFilterAttached;
 
   rv = NS_OK;
 
@@ -2650,6 +2652,13 @@ void HttpChannelParent::OverrideReferrerInfoDuringBeginConnect(
   MOZ_ASSERT(!mAfterOnStartRequestBegun);
 
   mOverrideReferrerInfo = aReferrerInfo;
+}
+
+bool HttpChannelParent::AttachStreamFilter(
+    Endpoint<extensions::PStreamFilterParent>&& aEndpoint) {
+  MOZ_ASSERT(!mAfterOnStartRequestBegun);
+  mStreamFilterAttached = true;
+  return SendAttachStreamFilter(std::move(aEndpoint));
 }
 
 }  
