@@ -307,7 +307,6 @@ class MOZ_STACK_CLASS WSRunScanner {
       : WSRunScanner(aHTMLEditor,
                      EditorRawDOMPoint(aScanStartNode, aScanStartOffset),
                      EditorRawDOMPoint(aScanStartNode, aScanStartOffset)) {}
-  ~WSRunScanner();
 
   
   
@@ -428,7 +427,7 @@ class MOZ_STACK_CLASS WSRunScanner {
   
   
   
-  struct WSFragment final {
+  struct MOZ_STACK_CLASS WSFragment final {
     nsCOMPtr<nsINode> mStartNode;  
     nsCOMPtr<nsINode> mEndNode;    
     int32_t mStartOffset;          
@@ -530,6 +529,8 @@ class MOZ_STACK_CLASS WSRunScanner {
     StartOfHardLine mIsStartOfHardLine;
     EndOfHardLine mIsEndOfHardLine;
   };
+
+  using WSFragmentArray = AutoTArray<WSFragment, 3>;
 
   
 
@@ -690,7 +691,6 @@ class MOZ_STACK_CLASS WSRunScanner {
   };
 
   void GetRuns();
-  void ClearRuns();
   void InitializeWithSingleFragment(
       WSFragment::Visible aIsVisible,
       WSFragment::StartOfHardLine aIsStartOfHardLine,
@@ -720,11 +720,7 @@ class MOZ_STACK_CLASS WSRunScanner {
   
   bool mPRE;
 
-  
-  WSFragment* mStartRun;
-
-  
-  WSFragment* mEndRun;
+  WSFragmentArray mFragments;
 
   
   const HTMLEditor* mHTMLEditor;
