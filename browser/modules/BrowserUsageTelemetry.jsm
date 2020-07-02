@@ -191,6 +191,18 @@ function telemetryId(widgetId, obscureAddons = true) {
       let action = PageActions.actionForID(actionId);
       widgetId = action?._isMozillaAction ? actionId : addonId(actionId);
     }
+  } else if (widgetId.startsWith("ext-keyset-id-")) {
+    
+    
+    widgetId = addonId(widgetId.substring("ext-keyset-id-".length));
+  } else if (widgetId.startsWith("ext-key-id-")) {
+    
+    widgetId = widgetId.substring("ext-key-id-".length);
+    if (widgetId.endsWith("-sidebar-action")) {
+      widgetId = addonId(
+        widgetId.substring(0, widgetId.length - "-sidebar-action".length)
+      );
+    }
   }
 
   return widgetId.replace(/_/g, "-");
@@ -907,13 +919,19 @@ let BrowserUsageTelemetry = {
     }
 
     
-    for (let idAttribute of [
+    let possibleAttributes = [
       "preference",
-      "key",
       "command",
       "observes",
       "data-l10n-id",
-    ]) {
+    ];
+
+    
+    if (node.localName != "key") {
+      possibleAttributes.unshift("key");
+    }
+
+    for (let idAttribute of possibleAttributes) {
       if (node.hasAttribute(idAttribute)) {
         return node.getAttribute(idAttribute);
       }
