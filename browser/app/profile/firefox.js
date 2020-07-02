@@ -2130,11 +2130,7 @@ pref("devtools.netmonitor.features.search", true);
 pref("devtools.netmonitor.features.requestBlocking", true);
 
 
-#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
-  pref("devtools.application.enabled", true);
-#else
-  pref("devtools.application.enabled", false);
-#endif
+pref("devtools.application.enabled", true);
 
 
 pref("devtools.netmonitor.panes-network-details-width", 550);
