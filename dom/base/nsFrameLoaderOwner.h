@@ -89,9 +89,13 @@ class nsFrameLoaderOwner : public nsISupports {
   
   
   
+  
+  
+  
   enum class ChangeRemotenessContextType {
     DONT_PRESERVE = 0,
-    PRESERVE = 1,
+    DONT_PRESERVE_BUT_PROPAGATE = 1,
+    PRESERVE = 2,
   };
   ChangeRemotenessContextType ShouldPreserveBrowsingContext(
       bool aIsRemote, bool aReplaceBrowsingContext);

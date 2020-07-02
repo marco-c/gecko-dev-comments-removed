@@ -527,10 +527,6 @@ already_AddRefed<nsDocShell> nsDocShell::Create(
   
   ds->SetLoadGroupDefaultLoadFlags(aBrowsingContext->GetDefaultLoadFlags());
 
-  if (XRE_IsParentProcess()) {
-    aBrowsingContext->Canonical()->MaybeAddAsProgressListener(ds);
-  }
-
   return ds.forget();
 }
 
