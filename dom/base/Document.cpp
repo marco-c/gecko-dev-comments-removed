@@ -11530,10 +11530,10 @@ NS_IMPL_ISUPPORTS(StubCSSLoaderObserver, nsICSSLoaderObserver)
 
 }  
 
-void Document::PreloadStyle(nsIURI* uri, const Encoding* aEncoding,
-                            const nsAString& aCrossOriginAttr,
-                            const enum ReferrerPolicy aReferrerPolicy,
-                            const nsAString& aIntegrity, bool aIsLinkPreload) {
+SheetPreloadStatus Document::PreloadStyle(
+    nsIURI* uri, const Encoding* aEncoding, const nsAString& aCrossOriginAttr,
+    const enum ReferrerPolicy aReferrerPolicy, const nsAString& aIntegrity,
+    bool aIsLinkPreload) {
   
   nsCOMPtr<nsICSSLoaderObserver> obs = new StubCSSLoaderObserver();
 
@@ -11544,9 +11544,17 @@ void Document::PreloadStyle(nsIURI* uri, const Encoding* aEncoding,
                                     : css::Loader::IsPreload::FromParser;
 
   
-  Unused << CSSLoader()->LoadSheet(
+  auto result = CSSLoader()->LoadSheet(
       uri, preloadType, aEncoding, referrerInfo, obs,
       Element::StringToCORSMode(aCrossOriginAttr), aIntegrity);
+  if (result.isErr()) {
+    return SheetPreloadStatus::Errored;
+  }
+  RefPtr<StyleSheet> sheet = result.unwrap();
+  if (sheet->IsComplete()) {
+    return SheetPreloadStatus::AlreadyComplete;
+  }
+  return SheetPreloadStatus::InProgress;
 }
 
 RefPtr<StyleSheet> Document::LoadChromeSheetSync(nsIURI* uri) {

@@ -465,6 +465,17 @@ class ExternalResourceMap {
 };
 
 
+enum class SheetPreloadStatus : uint8_t {
+  
+  AlreadyComplete,
+  
+  
+  InProgress,
+  
+  Errored,
+};
+
+
 
 
 
@@ -2872,10 +2883,11 @@ class Document : public nsINode,
 
 
 
-  void PreloadStyle(nsIURI* aURI, const Encoding* aEncoding,
-                    const nsAString& aCrossOriginAttr,
-                    ReferrerPolicyEnum aReferrerPolicy,
-                    const nsAString& aIntegrity, bool aIsLinkPreload);
+  SheetPreloadStatus PreloadStyle(nsIURI* aURI, const Encoding* aEncoding,
+                                  const nsAString& aCrossOriginAttr,
+                                  ReferrerPolicyEnum aReferrerPolicy,
+                                  const nsAString& aIntegrity,
+                                  bool aIsLinkPreload);
 
   
 
