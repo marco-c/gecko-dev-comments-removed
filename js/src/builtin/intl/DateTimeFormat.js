@@ -92,6 +92,7 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
         formatOpt.hourCycle = r.hc;
 
     
+    var skeleton;
     var pattern;
     if (lazyDateTimeFormatData.patternOption !== undefined) {
         pattern = lazyDateTimeFormatData.patternOption;
@@ -109,7 +110,8 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
         internalProps.dateStyle = lazyDateTimeFormatData.dateStyle;
         internalProps.timeStyle = lazyDateTimeFormatData.timeStyle;
     } else {
-        pattern = toBestICUPattern(dataLocale, formatOpt);
+        skeleton = toICUSkeleton(formatOpt);
+        pattern = toBestICUPattern(dataLocale, skeleton, formatOpt);
     }
 
     
@@ -535,8 +537,7 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
 
 
 
-
-function toBestICUPattern(locale, options) {
+function toICUSkeleton(options) {
     
     
     var skeleton = "";
@@ -673,11 +674,18 @@ function toBestICUPattern(locale, options) {
         skeleton += "zzzz";
         break;
     }
+    return skeleton;
+}
 
+
+
+
+
+
+function toBestICUPattern(locale, skeleton, options) {
     
     return intl_patternForSkeleton(locale, skeleton, options.hourCycle);
 }
-
 
 
 
