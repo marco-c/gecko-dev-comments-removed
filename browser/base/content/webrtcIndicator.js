@@ -157,7 +157,22 @@ const WebRTCIndicator = {
 
     
     
+    let docElStyle = document.documentElement.style;
+    docElStyle.minWidth = docElStyle.maxWidth = "unset";
+    docElStyle.minHeight = docElStyle.maxHeight = "unset";
     window.sizeToContent();
+
+    
+    
+    
+    if (AppConstants.platform == "linux") {
+      let { width, height } = window.windowUtils.getBoundsWithoutFlushing(
+        document.documentElement
+      );
+
+      docElStyle.minWidth = docElStyle.maxWidth = `${width}px`;
+      docElStyle.minHeight = docElStyle.maxHeight = `${height}px`;
+    }
 
     this.ensureOnScreen();
 
