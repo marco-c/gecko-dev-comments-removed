@@ -35,20 +35,20 @@ add_task(async function setup() {
   } else {
     
     cacheTemplate.visibleDefaultEngines = getDefaultEngineList(false);
-  }
 
-  
-  
-  if (AppConstants.MOZ_APP_VERSION_DISPLAY.endsWith("esr")) {
-    let esrOverrides = {
-      "google-b-d": "google-b-e",
-      "google-b-1-d": "google-b-1-e",
-    };
+    
+    
+    if (AppConstants.MOZ_APP_VERSION_DISPLAY.endsWith("esr")) {
+      let esrOverrides = {
+        "google-b-d": "google-b-e",
+        "google-b-1-d": "google-b-1-e",
+      };
 
-    for (let engine in esrOverrides) {
-      let index = cacheTemplate.visibleDefaultEngines.indexOf(engine);
-      if (index > -1) {
-        cacheTemplate.visibleDefaultEngines[index] = esrOverrides[engine];
+      for (let engine in esrOverrides) {
+        let index = cacheTemplate.visibleDefaultEngines.indexOf(engine);
+        if (index > -1) {
+          cacheTemplate.visibleDefaultEngines[index] = esrOverrides[engine];
+        }
       }
     }
   }
