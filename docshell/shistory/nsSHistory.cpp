@@ -1558,8 +1558,7 @@ nsresult nsSHistory::LoadEntry(int32_t aIndex, long aLoadType,
   
   nsCOMPtr<nsIURI> nextURI = nextEntry->GetURI();
 
-  MOZ_ASSERT((prevEntry && nextEntry && nextURI),
-             "prevEntry, nextEntry and nextURI can't be null");
+  MOZ_ASSERT(nextURI, "nextURI can't be null");
 
   
   if (aHistCmd == HIST_CMD_GOTOINDEX) {
@@ -1569,7 +1568,8 @@ nsresult nsSHistory::LoadEntry(int32_t aIndex, long aLoadType,
 
   if (mRequestedIndex == mIndex) {
     
-    return InitiateLoad(nextEntry, mRootBC, aLoadType, aLoadResults);
+    InitiateLoad(nextEntry, mRootBC, aLoadType, aLoadResults);
+    return NS_OK;
   }
 
   
@@ -1602,7 +1602,8 @@ nsresult nsSHistory::LoadDifferingEntries(
 
     
     aNextEntry->SetIsSubFrame(aParent != mRootBC);
-    return InitiateLoad(aNextEntry, aParent, aLoadType, aLoadResults);
+    InitiateLoad(aNextEntry, aParent, aLoadType, aLoadResults);
+    return NS_OK;
   }
 
   
@@ -1661,10 +1662,10 @@ nsresult nsSHistory::LoadDifferingEntries(
   return result;
 }
 
-nsresult nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
-                                  BrowsingContext* aFrameBC, long aLoadType,
-                                  nsTArray<LoadEntryResult>& aLoadResults) {
-  NS_ENSURE_STATE(aFrameBC && aFrameEntry);
+void nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
+                              BrowsingContext* aFrameBC, long aLoadType,
+                              nsTArray<LoadEntryResult>& aLoadResults) {
+  MOZ_ASSERT(aFrameBC && aFrameEntry);
 
   LoadEntryResult* loadResult = aLoadResults.AppendElement();
   loadResult->mBrowsingContext = aFrameBC;
@@ -1695,8 +1696,6 @@ nsresult nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
   loadState->SetCsp(csp);
 
   loadResult->mLoadState = std::move(loadState);
-
-  return NS_OK;
 }
 
 NS_IMETHODIMP
