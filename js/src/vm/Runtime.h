@@ -110,10 +110,6 @@ class Simulator;
 #endif
 }  
 
-namespace frontend {
-class WellKnownParserAtoms;
-}  
-
 
 
 
@@ -749,9 +745,7 @@ struct JSRuntime {
 
  public:
   bool initializeAtoms(JSContext* cx);
-  bool initializeParserAtoms(JSContext* cx);
   void finishAtoms();
-  void finishParserAtoms();
   bool atomsAreFinished() const {
     return !atoms_ && !permanentAtomsDuringInit_;
   }
@@ -792,7 +786,6 @@ struct JSRuntime {
 
   
   js::WriteOnceData<JSAtomState*> commonNames;
-  js::WriteOnceData<js::frontend::WellKnownParserAtoms*> commonParserNames;
 
   
   
