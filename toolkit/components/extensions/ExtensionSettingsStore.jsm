@@ -588,7 +588,7 @@ var ExtensionSettingsStore = {
       
       
       let addon = await AddonManager.getAddonByID(id);
-      return keyInfo.selectedDate > addon.installDate.valueOf()
+      return !addon || keyInfo.selectedDate > addon.installDate.valueOf()
         ? "not_controllable"
         : "controllable_by_this_extension";
     }
@@ -604,7 +604,7 @@ var ExtensionSettingsStore = {
     }
 
     let addon = await AddonManager.getAddonByID(id);
-    return topItem.installDate > addon.installDate.valueOf()
+    return !addon || topItem.installDate > addon.installDate.valueOf()
       ? "controlled_by_other_extensions"
       : "controllable_by_this_extension";
   },
