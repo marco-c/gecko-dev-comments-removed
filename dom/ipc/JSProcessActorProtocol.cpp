@@ -78,6 +78,7 @@ NS_IMETHODIMP JSProcessActorProtocol::Observe(nsISupports* aSubject,
                                               const char* aTopic,
                                               const char16_t* aData) {
   MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
+  MOZ_ASSERT(!XRE_IsParentProcess());
 
   ErrorResult error;
   RefPtr<JSProcessActorChild> actor =
@@ -104,6 +105,12 @@ NS_IMETHODIMP JSProcessActorProtocol::Observe(nsISupports* aSubject,
 }
 
 void JSProcessActorProtocol::AddObservers() {
+  
+  
+  if (XRE_IsParentProcess()) {
+    return;
+  }
+
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   for (auto& topic : mChild.mObservers) {
     
