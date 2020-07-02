@@ -37,9 +37,9 @@ if CONFIG['MOZ_DMD']:
 
 
 
-FINAL_TARGET_FILES += ['/.gdbinit']
-FINAL_TARGET_PP_FILES += ['.gdbinit_python.in']
-OBJDIR_FILES += ['!/dist/bin/.gdbinit_python']
+OBJDIR_PP_FILES.build += ['.gdbinit.py.in']
+OBJDIR_FILES.build += ['.gdbinit.loader']
+OBJDIR_FILES.build += ['.gdbinit']
 
 
 if CONFIG['MOZ_ASAN'] and CONFIG['CC_TYPE'] == 'clang-cl':
@@ -94,9 +94,6 @@ if CONFIG['MOZ_APP_BASENAME']:
 
     GeneratedFile('application.ini.h', script='appini_header.py',
                   inputs=['!application.ini'])
-
-
-OBJDIR_FILES += ['/.gdbinit']
 
 
 
