@@ -4925,9 +4925,7 @@ var AboutHomeStartupCache = {
   
   
   
-  
   CACHE_VERSION_META_KEY: "version",
-  CACHE_VERSION: 1,
 
   LOG_NAME: "AboutHomeStartupCache",
 
@@ -5246,7 +5244,7 @@ var AboutHomeStartupCache = {
 
     this.log.info("Version retrieved is", version);
 
-    if (parseInt(version, 10) != this.CACHE_VERSION) {
+    if (version != Services.appinfo.appBuildID) {
       this.log.info("Version does not match! Dooming and closing streams.\n");
       
       this.clearCache();
@@ -5415,14 +5413,14 @@ var AboutHomeStartupCache = {
             try {
               this._cacheEntry.setMetaDataElement(
                 "version",
-                String(this.CACHE_VERSION)
+                Services.appinfo.appBuildID
               );
             } catch (e) {
               this.log.error("Failed to write version.");
               reject(e);
               return;
             }
-            this.log.trace(`Version is set to ${this.CACHE_VERSION}.`);
+            this.log.trace(`Version is set to ${Services.appinfo.appBuildID}.`);
             this.log.info("Caching of page and script is done.");
             resolve();
           }
