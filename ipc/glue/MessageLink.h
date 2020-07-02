@@ -44,6 +44,10 @@ class MessageLink {
 
   
   
+  virtual void PrepareToDestroy(){};
+
+  
+  
   virtual void SendMessage(mozilla::UniquePtr<Message> msg) = 0;
   virtual void SendClose() = 0;
 
@@ -102,7 +106,9 @@ class ProcessLink : public MessageLink, public Transport::Listener {
 class ThreadLink : public MessageLink {
  public:
   ThreadLink(MessageChannel* aChan, MessageChannel* aTargetChan);
-  virtual ~ThreadLink();
+  virtual ~ThreadLink() = default;
+
+  virtual void PrepareToDestroy() override;
 
   virtual void SendMessage(mozilla::UniquePtr<Message> msg) override;
   virtual void SendClose() override;

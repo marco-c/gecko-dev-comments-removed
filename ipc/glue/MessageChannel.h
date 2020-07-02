@@ -624,7 +624,7 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver {
   RefPtr<RefCountedMonitor> mMonitor;
   Side mSide;
   bool mIsCrossProcess;
-  MessageLink* mLink;
+  UniquePtr<MessageLink> mLink;
   MessageLoop* mWorkerLoop;  
   RefPtr<CancelableRunnable>
       mChannelErrorTask;  

@@ -166,7 +166,7 @@ void ProcessLink::SendClose() {
 ThreadLink::ThreadLink(MessageChannel* aChan, MessageChannel* aTargetChan)
     : MessageLink(aChan), mTargetChan(aTargetChan) {}
 
-ThreadLink::~ThreadLink() {
+void ThreadLink::PrepareToDestroy() {
   MOZ_ASSERT(mChan);
   MOZ_ASSERT(mChan->mMonitor);
   MonitorAutoLock lock(*mChan->mMonitor);
@@ -187,9 +187,35 @@ ThreadLink::~ThreadLink() {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (mTargetChan) {
     MOZ_ASSERT(mTargetChan->mLink);
-    static_cast<ThreadLink*>(mTargetChan->mLink)->mTargetChan = nullptr;
+    static_cast<ThreadLink*>(mTargetChan->mLink.get())->mTargetChan = nullptr;
   }
   mTargetChan = nullptr;
 }
