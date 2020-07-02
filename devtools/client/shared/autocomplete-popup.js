@@ -109,8 +109,6 @@ AutocompletePopup.prototype = {
       "devtools-autocomplete-popup",
       "devtools-monospace"
     );
-    
-    this._tooltip.panel.setAttribute("role", "presentation");
     this._tooltip.panel.appendChild(this.list);
     this._tooltip.setContentSize({ height: "auto" });
 
