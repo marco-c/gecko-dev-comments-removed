@@ -374,21 +374,6 @@ enum class StyleFlexWrap : uint8_t {
 
 #define NS_STYLE_ORDER_INITIAL 0
 
-
-enum class StyleFontSize : uint8_t {
-  Xxsmall = 0,
-  Xsmall,
-  Small,
-  Medium,
-  Large,
-  Xlarge,
-  Xxlarge,
-  Xxxlarge,
-  Larger,
-  Smaller,
-  NoKeyword  
-};
-
 #define NS_STYLE_MASONRY_PLACEMENT_PACK (1 << 0)
 #define NS_STYLE_MASONRY_ORDER_DEFINITE_FIRST (1 << 1)
 #define NS_STYLE_MASONRY_AUTO_FLOW_INITIAL_VALUE \
