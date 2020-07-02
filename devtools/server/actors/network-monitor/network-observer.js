@@ -81,11 +81,8 @@ function matchRequest(channel, filters) {
 
   
   
-  
-  
-  
   if (
-    !flags.testing &&
+    !flags.wantAllNetworkRequests &&
     channel.loadInfo &&
     channel.loadInfo.loadingDocument === null &&
     (channel.loadInfo.loadingPrincipal ===
