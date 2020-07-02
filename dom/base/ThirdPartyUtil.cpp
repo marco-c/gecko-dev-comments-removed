@@ -150,43 +150,6 @@ ThirdPartyUtil::GetURIFromWindow(mozIDOMWindowProxy* aWin, nsIURI** result) {
   return basePrin->GetURI(result);
 }
 
-NS_IMETHODIMP
-ThirdPartyUtil::GetContentBlockingAllowListPrincipalFromWindow(
-    mozIDOMWindowProxy* aWin, nsIURI* aURIBeingLoaded, nsIPrincipal** result) {
-  nsPIDOMWindowOuter* outerWindow = nsPIDOMWindowOuter::From(aWin);
-  nsPIDOMWindowInner* innerWindow = outerWindow->GetCurrentInnerWindow();
-  Document* doc = innerWindow ? innerWindow->GetExtantDoc() : nullptr;
-  if (!doc) {
-    return GetPrincipalFromWindow(aWin, result);
-  }
-
-  nsCOMPtr<nsIPrincipal> principal =
-      doc->GetContentBlockingAllowListPrincipal();
-  if (aURIBeingLoaded && principal && principal->GetIsNullPrincipal()) {
-    
-    
-    nsIDocShell* docShell = doc->GetDocShell();
-    OriginAttributes attrs =
-        docShell ? nsDocShell::Cast(docShell)->GetOriginAttributes()
-                 : OriginAttributes();
-    ContentBlockingAllowList::RecomputePrincipal(aURIBeingLoaded, attrs,
-                                                 getter_AddRefs(principal));
-  }
-
-  if (!principal || !principal->GetIsContentPrincipal()) {
-    
-    
-    
-    LOG(
-        ("ThirdPartyUtil::GetContentBlockingAllowListPrincipalFromWindow can't "
-         "use null principal\n"));
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  principal.forget(result);
-  return NS_OK;
-}
-
 
 
 NS_IMETHODIMP
