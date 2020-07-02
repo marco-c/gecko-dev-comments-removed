@@ -67,9 +67,6 @@ pub trait VecHelper<T> {
     fn take(&mut self) -> Self;
 
     
-    fn cleared(self) -> Self;
-
-    
     
     
     fn take_and_preallocate(&mut self) -> Self;
@@ -100,12 +97,6 @@ impl<T> VecHelper<T> for Vec<T> {
 
     fn take(&mut self) -> Self {
         replace(self, Vec::new())
-    }
-
-    fn cleared(mut self) -> Self {
-        self.clear();
-
-        self
     }
 
     fn take_and_preallocate(&mut self) -> Self {
