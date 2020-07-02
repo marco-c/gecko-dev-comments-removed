@@ -141,9 +141,14 @@ bool BytecodeAnalysis::init(TempAllocator& alloc) {
       }
 
       case JSOp::LoopHead:
-        for (size_t i = 0; i < catchFinallyRanges.length(); i++) {
-          if (catchFinallyRanges[i].contains(offset)) {
-            infos_[offset].loopHeadInCatchOrFinally = true;
+        infos_[offset].loopHeadCanOsr = true;
+
+        
+        
+        for (const CatchFinallyRange& range : catchFinallyRanges) {
+          if (range.contains(offset)) {
+            infos_[offset].loopHeadCanOsr = false;
+            break;
           }
         }
         break;

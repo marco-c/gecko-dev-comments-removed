@@ -23,7 +23,7 @@ struct BytecodeInfo {
   bool jumpTarget : 1;
 
   
-  bool loopHeadInCatchOrFinally : 1;
+  bool loopHeadCanOsr : 1;
 
   
   bool hasResumeOffset : 1;

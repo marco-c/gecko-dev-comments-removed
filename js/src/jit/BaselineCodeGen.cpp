@@ -1253,7 +1253,8 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
   if (JSOp(*pc) == JSOp::LoopHead) {
     
     
-    if (handler.analysis().info(pc).loopHeadInCatchOrFinally) {
+    
+    if (!handler.analysis().info(pc).loopHeadCanOsr) {
       return true;
     }
   }
