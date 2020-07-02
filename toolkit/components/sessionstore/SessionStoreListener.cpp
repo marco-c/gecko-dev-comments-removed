@@ -284,14 +284,8 @@ NS_IMETHODIMP TabListener::OnStateChange(nsIWebProgress* aWebProgress,
     return NS_OK;
   }
 
-  
-  
-  
-  uint64_t DOMWindowID = 0;
-  Unused << aWebProgress->GetDOMWindowID(&DOMWindowID);
-  nsCOMPtr<nsPIDOMWindowOuter> window = do_GetInterface(mDocShell);
-  NS_ENSURE_TRUE(window, NS_ERROR_FAILURE);
-  if (DOMWindowID != window->WindowID()) {
+  nsCOMPtr<nsIWebProgress> webProgress = do_QueryInterface(mDocShell);
+  if (webProgress != aWebProgress) {
     return NS_OK;
   }
 
