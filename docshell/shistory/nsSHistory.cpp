@@ -1573,37 +1573,31 @@ nsresult nsSHistory::LoadEntry(int32_t aIndex, long aLoadType,
   }
 
   
-  bool differenceFound = false;
-  nsresult rv = LoadDifferingEntries(prevEntry, nextEntry, mRootBC, aLoadType,
-                                     differenceFound, aLoadResults);
+  bool differenceFound = LoadDifferingEntries(prevEntry, nextEntry, mRootBC,
+                                              aLoadType, aLoadResults);
   if (!differenceFound) {
     
     return LoadNextPossibleEntry(aIndex, aLoadType, aHistCmd, aLoadResults);
   }
 
-  return rv;
+  return NS_OK;
 }
 
-nsresult nsSHistory::LoadDifferingEntries(
-    nsISHEntry* aPrevEntry, nsISHEntry* aNextEntry, BrowsingContext* aParent,
-    long aLoadType, bool& aDifferenceFound,
-    nsTArray<LoadEntryResult>& aLoadResults) {
-  if (!aPrevEntry || !aNextEntry || !aParent) {
-    return NS_ERROR_FAILURE;
-  }
+bool nsSHistory::LoadDifferingEntries(nsISHEntry* aPrevEntry,
+                                      nsISHEntry* aNextEntry,
+                                      BrowsingContext* aParent, long aLoadType,
+                                      nsTArray<LoadEntryResult>& aLoadResults) {
+  MOZ_ASSERT(aPrevEntry && aNextEntry && aParent);
 
-  nsresult result = NS_OK;
   uint32_t prevID = aPrevEntry->GetID();
   uint32_t nextID = aNextEntry->GetID();
 
   
   if (prevID != nextID) {
-    aDifferenceFound = true;
-
     
     aNextEntry->SetIsSubFrame(aParent != mRootBC);
     InitiateLoad(aNextEntry, aParent, aLoadType, aLoadResults);
-    return NS_OK;
+    return true;
   }
 
   
@@ -1615,6 +1609,7 @@ nsresult nsSHistory::LoadDifferingEntries(
   aParent->GetChildren(browsingContexts);
 
   
+  bool differenceFound = false;
   for (int32_t i = 0; i < ncnt; ++i) {
     
     nsCOMPtr<nsISHEntry> nChild;
@@ -1652,14 +1647,19 @@ nsresult nsSHistory::LoadDifferingEntries(
         }
       }
     }
+    if (!pChild) {
+      continue;
+    }
 
     
     
     
-    LoadDifferingEntries(pChild, nChild, bcChild, aLoadType, aDifferenceFound,
-                         aLoadResults);
+    if (LoadDifferingEntries(pChild, nChild, bcChild, aLoadType,
+                             aLoadResults)) {
+      differenceFound = true;
+    }
   }
-  return result;
+  return differenceFound;
 }
 
 void nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
