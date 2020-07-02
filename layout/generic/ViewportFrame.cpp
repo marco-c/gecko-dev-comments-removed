@@ -386,15 +386,6 @@ nsSize ViewportFrame::AdjustViewportSizeForFixedPosition(
   
   
   if (presShell->IsVisualViewportSizeSet()) {
-    if (RefPtr<MobileViewportManager> manager =
-            presShell->GetMobileViewportManager()) {
-      
-      
-      
-      
-      
-      manager->UpdateVisualViewportSizeForPotentialScrollbarChange();
-    }
     if (presShell->GetDynamicToolbarState() == DynamicToolbarState::Collapsed &&
         result < presShell->GetVisualViewportSizeUpdatedByDynamicToolbar()) {
       

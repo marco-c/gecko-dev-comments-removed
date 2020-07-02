@@ -78,7 +78,8 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
 
 
-  void NotifyResizeReflow();
+
+  void UpdateSizesBeforeReflow();
 
   
 

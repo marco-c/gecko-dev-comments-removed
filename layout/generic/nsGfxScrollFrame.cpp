@@ -1251,6 +1251,17 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
       mHelper.mSkippedScrollbarLayout = true;
     }
   }
+  if (mHelper.mIsRoot) {
+    if (RefPtr<MobileViewportManager> manager =
+            PresShell()->GetMobileViewportManager()) {
+      
+      
+      
+      
+      
+      manager->UpdateVisualViewportSizeForPotentialScrollbarChange();
+    }
+  }
 
   aDesiredSize.SetOverflowAreasToDesiredBounds();
 
