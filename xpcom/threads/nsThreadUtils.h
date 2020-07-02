@@ -1779,6 +1779,11 @@ extern "C" nsresult NS_DispatchBackgroundTask(
 extern "C" nsresult NS_CreateBackgroundTaskQueue(
     const char* aName, nsISerialEventTarget** aTarget);
 
+
+namespace IPC {
+class Message;
+}
+
 namespace mozilla {
 
 
@@ -1887,6 +1892,10 @@ class LogTaskBase {
 
   
   
+  static void LogDispatchWithPid(T* aEvent, int32_t aPid);
+
+  
+  
   
   
   class MOZ_RAII Run {
@@ -1905,14 +1914,20 @@ class LogTaskBase {
   };
 };
 
+class MicroTaskRunnable;
+
 
 template <>
 LogTaskBase<nsIRunnable>::Run::Run(nsIRunnable* aEvent, bool aWillRunAgain);
-
-class MicroTaskRunnable;
+template <>
+void LogTaskBase<IPC::Message>::LogDispatchWithPid(IPC::Message* aEvent,
+                                                   int32_t aPid);
+template <>
+LogTaskBase<IPC::Message>::Run::Run(IPC::Message* aMessage, bool aWillRunAgain);
 
 typedef LogTaskBase<nsIRunnable> LogRunnable;
 typedef LogTaskBase<MicroTaskRunnable> LogMicroTaskRunnable;
+typedef LogTaskBase<IPC::Message> LogIPCMessage;
 
 
 
