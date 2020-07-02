@@ -62,7 +62,6 @@ class WebGLFBAttachPoint final {
   explicit WebGLFBAttachPoint(WebGLFBAttachPoint&);  
   WebGLFBAttachPoint(const WebGLContext* webgl, GLenum attachmentPoint);
 
-
  public:
   ~WebGLFBAttachPoint();
 

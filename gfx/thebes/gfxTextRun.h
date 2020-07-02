@@ -880,12 +880,12 @@ class gfxTextRun : public gfxShapedText {
   bool mDontSkipDrawing;  
                           
                           
-  bool mReleasedFontGroup;  
-                            
+  bool mReleasedFontGroup;                
+                                          
   bool mReleasedFontGroupSkippedDrawing;  
                                           
-  bool mHasGlyphRunArray;   
-                            
+  bool mHasGlyphRunArray;                 
+                                          
 
   
   

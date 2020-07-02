@@ -214,8 +214,7 @@ bool OSVRSession::Initialize(mozilla::gfx::VRSystemState& aSystemState,
     
     return false;
   }
-  if (!StaticPrefs::dom_vr_enabled() ||
-      !StaticPrefs::dom_vr_osvr_enabled()) {
+  if (!StaticPrefs::dom_vr_enabled() || !StaticPrefs::dom_vr_osvr_enabled()) {
     return false;
   }
   if (mOSVRInitialized) {

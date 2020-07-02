@@ -131,11 +131,12 @@ void CompositorThreadHolder::Shutdown() {
     return finished;
   });
 
-
-
-
-
-
+  
+  
+  
+  
+  
+  
   CompositorBridgeParent::FinishShutdown();
 }
 

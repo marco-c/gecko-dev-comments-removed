@@ -20,7 +20,7 @@
 #include "mozilla/ipc/MessageChannel.h"  
 #include "mozilla/ipc/Transport.h"       
 #include "mozilla/gfx/gfxVars.h"
-#include "mozilla/gfx/Point.h"  
+#include "mozilla/gfx/Point.h"                         
 #include "mozilla/media/MediaSystemResourceManager.h"  
 #include "mozilla/media/MediaSystemResourceManagerChild.h"  
 #include "mozilla/layers/CompositableClient.h"  

@@ -16,8 +16,8 @@
 #include "gfxPlatform.h"
 #include "GLContext.h"
 #include "GLScreenBuffer.h"
-#include "SharedSurface.h"                  
-#include "SharedSurfaceGL.h"                
+#include "SharedSurface.h"    
+#include "SharedSurfaceGL.h"  
 
 namespace mozilla::gfx {
 
