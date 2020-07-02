@@ -127,10 +127,8 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:nsThread::SizeOfEventQueues\n"
 
          
-         "race:UpdateCellPointers<js::Shape>\n"
-         "race:UpdateCellPointers<js::Scope>\n"
-         "race:js::gc::MovingTracer::onShapeEdge\n"
-         "race:fixupShapeTreeAfterMovingGC\n"
+         "race:UpdateArenaPointersTyped<js::ObjectGroup>\n"
+         "race:UpdateArenaPointersTyped<js::Shape>\n"
 
          
          "race:setFlagBit\n"
