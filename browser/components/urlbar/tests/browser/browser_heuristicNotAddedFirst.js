@@ -54,7 +54,6 @@ add_task(async function slowHeuristicSelected() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     value: "test",
     window,
-    waitForFocus: SimpleTest.waitForFocus,
   });
 
   
@@ -127,7 +126,6 @@ add_task(async function oneOffRemainsSelected() {
   let searchPromise = UrlbarTestUtils.promiseAutocompleteResultPopup({
     value: "test",
     window,
-    waitForFocus: SimpleTest.waitForFocus,
   });
 
   
@@ -157,8 +155,8 @@ add_task(async function oneOffRemainsSelected() {
 
   
   Assert.equal(
-    window.gURLBar.view.oneOffSearchButtons.selectedButton,
-    window.gURLBar.view.oneOffSearchButtons.settingsButtonCompact
+    gURLBar.view.oneOffSearchButtons.selectedButton,
+    gURLBar.view.oneOffSearchButtons.settingsButtonCompact
   );
 
   await UrlbarTestUtils.promisePopupClose(window);

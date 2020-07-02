@@ -18,7 +18,6 @@ add_task(async function setup() {
 add_task(async function test_escape() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    waitForFocus,
     value: "invalid",
   });
   
@@ -51,7 +50,6 @@ add_task(async function test_escape() {
 add_task(async function test_edit_url() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    waitForFocus,
     value: "invalid",
   });
   

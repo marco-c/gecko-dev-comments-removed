@@ -94,7 +94,7 @@ add_task(async function multipleInterventionsInOneEngagement() {
   );
 
   
-  await UrlbarTestUtils.promisePopupClose(window, () => window.gURLBar.blur());
+  await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
 
   const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
   
@@ -120,7 +120,7 @@ add_task(async function tipsAreEnglishOnly() {
     result.payload.type,
     UrlbarProviderInterventions.TIP_TYPE.REFRESH
   );
-  await UrlbarTestUtils.promisePopupClose(window, () => window.gURLBar.blur());
+  await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
 
   
   let searchReinit = SearchTestUtils.promiseSearchNotification(
@@ -148,7 +148,7 @@ add_task(async function tipsAreEnglishOnly() {
 
   
   await awaitNoTip(SEARCH_STRINGS.CLEAR, window);
-  await UrlbarTestUtils.promisePopupClose(window, () => window.gURLBar.blur());
+  await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
 });
 
 

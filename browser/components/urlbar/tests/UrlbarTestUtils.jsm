@@ -30,6 +30,16 @@ var UrlbarTestUtils = {
 
 
 
+
+  init(scope) {
+    this._testScope = scope;
+  },
+
+  
+
+
+
+
   async promiseSearchComplete(win) {
     return this.promisePopupOpen(win, () => {}).then(
       () => win.gURLBar.lastQueryContextPromise
@@ -55,7 +65,11 @@ var UrlbarTestUtils = {
     selectionStart = -1,
     selectionEnd = -1,
   } = {}) {
-    await new Promise(resolve => waitForFocus(resolve, window));
+    if (this._testScope) {
+      await this._testScope.SimpleTest.promiseFocus(window);
+    } else {
+      await new Promise(resolve => waitForFocus(resolve, window));
+    }
     window.gURLBar.inputField.focus();
     
     
@@ -282,6 +296,9 @@ var UrlbarTestUtils = {
     if (win.gURLBar.view.isOpen) {
       return;
     }
+    if (this._testScope) {
+      this._testScope.info("Awaiting for the urlbar panel to open");
+    }
     await new Promise(resolve => {
       win.gURLBar.controller.addQueryListener({
         onViewOpen() {
@@ -307,6 +324,9 @@ var UrlbarTestUtils = {
     }
     if (!win.gURLBar.view.isOpen) {
       return;
+    }
+    if (this._testScope) {
+      this._testScope.info("Awaiting for the urlbar panel to close");
     }
     await new Promise(resolve => {
       win.gURLBar.controller.addQueryListener({

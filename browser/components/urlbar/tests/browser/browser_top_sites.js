@@ -45,7 +45,7 @@ async function checkDoesNotOpenOnFocus(win = window) {
   win.gURLBar.blur();
 
   
-  EventUtils.synthesizeMouseAtCenter(win.gURLBar.inputField, {});
+  EventUtils.synthesizeMouseAtCenter(win.gURLBar.inputField, {}, win);
   
   
   await new Promise(resolve => setTimeout(resolve, 500));
@@ -421,7 +421,6 @@ add_task(async function topSitesDisabled() {
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window: privateWin,
-    waitForFocus,
     value: "example",
   });
   privateWin.gURLBar.select();

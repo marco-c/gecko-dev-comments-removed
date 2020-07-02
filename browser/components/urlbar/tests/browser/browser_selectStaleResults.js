@@ -54,7 +54,6 @@ add_task(async function viewContainsStaleRows() {
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    waitForFocus: SimpleTest.waitForFocus,
     value: "x",
     fireInputEvent: true,
   });
@@ -185,7 +184,6 @@ add_task(async function staleReplacedWithFresh() {
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    waitForFocus: SimpleTest.waitForFocus,
     value: "tes",
     fireInputEvent: true,
   });

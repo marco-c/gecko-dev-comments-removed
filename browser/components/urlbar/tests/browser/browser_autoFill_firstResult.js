@@ -55,7 +55,6 @@ add_task(async function successfulAutofill() {
 add_task(async function firstResultNotAutofill() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    waitForFocus,
     value: "foo",
     fireInputEvent: true,
   });
@@ -77,7 +76,6 @@ add_task(async function caretNotAtEndOfSearchString() {
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    waitForFocus,
     value: "exam",
     selectionStart: "exa".length,
     selectionEnd: "exa".length,
@@ -105,7 +103,6 @@ add_task(async function selectionNotEmpty() {
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    waitForFocus,
     value: "exam",
     selectionStart: "exa".length,
     selectionEnd: "exam".length,
@@ -131,7 +128,6 @@ add_task(async function successfulAutofillAfterSettingPlaceholder() {
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    waitForFocus,
     value: "exam",
     selectionStart: "exam".length,
     selectionEnd: "exam".length,
@@ -158,7 +154,6 @@ add_task(async function successfulAutofillPlaceholderSelected() {
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    waitForFocus,
     value: "exam",
     selectionStart: "exam".length,
     selectionEnd: "example.com/".length,
@@ -177,7 +172,6 @@ add_task(async function successfulAutofillPlaceholderSelected() {
 async function doInitialAutofillSearch() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    waitForFocus,
     value: "ex",
     fireInputEvent: true,
   });
@@ -197,7 +191,6 @@ async function cleanUp() {
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    waitForFocus,
     value: "reset last search string",
   });
   await UrlbarTestUtils.promisePopupClose(window, () => {
