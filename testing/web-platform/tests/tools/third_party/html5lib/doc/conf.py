@@ -12,15 +12,8 @@
 
 
 
-import sys, os
-
-
-
-
-
-
-
-
+import sys
+import os
 
 
 
@@ -35,14 +28,11 @@ templates_path = ['_templates']
 source_suffix = '.rst'
 
 
-
-
-
 master_doc = 'index'
 
 
 project = 'html5lib'
-copyright = '2006 - 2013, James Graham, Geoffrey Sneddon, and contributors'
+copyright = '2006 - 2013, James Graham, Sam Sneddon, and contributors'
 
 
 
@@ -52,36 +42,12 @@ copyright = '2006 - 2013, James Graham, Geoffrey Sneddon, and contributors'
 version = '1.0'
 
 sys.path.append(os.path.abspath('..'))
-from html5lib import __version__
+from html5lib import __version__  
 release = __version__
 
 
 
-
-
-
-
-
-
-
-
-
-
 exclude_patterns = ['_build', 'theme']
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 pygments_style = 'sphinx'
@@ -90,84 +56,7 @@ pygments_style = 'sphinx'
 
 
 
-
-
-
-
-
-
-
 html_theme = 'default'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 htmlhelp_basename = 'html5libdoc'
@@ -175,44 +64,12 @@ htmlhelp_basename = 'html5libdoc'
 
 
 
-latex_elements = {
-
-
-
-
-
-
-
-
-}
-
 
 
 latex_documents = [
-  ('index', 'html5lib.tex', 'html5lib Documentation',
-   'James Graham, Geoffrey Sneddon, and contributors', 'manual'),
+    ('index', 'html5lib.tex', 'html5lib Documentation',
+     'James Graham, Sam Sneddon, and contributors', 'manual'),
 ]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -220,12 +77,8 @@ latex_documents = [
 
 man_pages = [
     ('index', 'html5lib', 'html5lib Documentation',
-     ['James Graham, Geoffrey Sneddon, and contributors'], 1)
+     ['James Graham, Sam Sneddon, and contributors'], 1)
 ]
-
-
-
-
 
 
 
@@ -233,21 +86,10 @@ man_pages = [
 
 
 texinfo_documents = [
-  ('index', 'html5lib', 'html5lib Documentation',
-   'James Graham, Geoffrey Sneddon, and contributors', 'html5lib', 'One line description of project.',
-   'Miscellaneous'),
+    ('index', 'html5lib', 'html5lib Documentation',
+     'James Graham, Sam Sneddon, and contributors', 'html5lib', 'One line description of project.',
+     'Miscellaneous'),
 ]
-
-
-
-
-
-
-
-
-
-
-
 
 
 class CExtMock(object):
@@ -265,6 +107,7 @@ class CExtMock(object):
         else:
             return CExtMock()
 
+
 try:
     import lxml   
 except ImportError:
@@ -273,7 +116,7 @@ except ImportError:
     print("warning: lxml modules mocked.")
 
 try:
-    import genshi   
+    import genshi  
 except ImportError:
     sys.modules['genshi'] = CExtMock()
     sys.modules['genshi.core'] = CExtMock()

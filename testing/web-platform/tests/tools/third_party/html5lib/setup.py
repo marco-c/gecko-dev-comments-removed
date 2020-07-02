@@ -66,10 +66,12 @@ classifiers = [
     'Programming Language :: Python :: 2',
     'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.3',
-    'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Programming Language :: Python :: Implementation :: PyPy',
     'Topic :: Software Development :: Libraries :: Python Modules',
     'Topic :: Text Processing :: Markup :: HTML'
 ]
@@ -105,10 +107,10 @@ setup(name='html5lib',
           'six>=1.9',
           'webencodings',
       ],
+      python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
       extras_require={
           
           
-          "datrie:platform_python_implementation == 'CPython'": ["datrie"],
           "lxml:platform_python_implementation == 'CPython'": ["lxml"],
 
           
@@ -120,6 +122,6 @@ setup(name='html5lib',
           
           
           "all": ["genshi", "chardet>=2.2"],
-          "all:platform_python_implementation == 'CPython'": ["datrie", "lxml"],
+          "all:platform_python_implementation == 'CPython'": ["lxml"],
       },
       )

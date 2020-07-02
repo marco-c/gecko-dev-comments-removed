@@ -1,14 +1,5 @@
 from __future__ import absolute_import, division, unicode_literals
 
-from .py import Trie as PyTrie
+from .py import Trie
 
-Trie = PyTrie
-
-
-try:
-    from .datrie import Trie as DATrie
-except ImportError:
-    pass
-else:
-    Trie = DATrie
-
+__all__ = ["Trie"]
