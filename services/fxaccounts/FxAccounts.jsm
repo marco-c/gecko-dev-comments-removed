@@ -49,6 +49,7 @@ const {
   SERVER_ERRNO_TO_ERROR,
   log,
   logPII,
+  logManager,
 } = ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
 
 ChromeUtils.defineModuleGetter(
@@ -772,6 +773,20 @@ class FxAccounts {
     return this._withCurrentAccountState(_ => {
       return this._internal.whenVerified(data);
     });
+  }
+
+  
+
+
+
+  async flushLogFile() {
+    const logType = await logManager.resetFileLog();
+    if (logType == logManager.ERROR_LOG_WRITTEN) {
+      Cu.reportError(
+        "FxA encountered an error - see about:sync-log for the log file."
+      );
+    }
+    Services.obs.notifyObservers(null, "service:log-manager:flush-log-file");
   }
 }
 
