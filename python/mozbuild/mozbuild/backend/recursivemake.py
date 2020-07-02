@@ -399,6 +399,7 @@ class RecursiveMakeBackend(MakeBackend):
     def _get_backend_file_for(self, obj):
         
         
+        
         if isinstance(obj, GeneratedFile) and not obj.required_during_compile and \
                 not obj.localized:
             objdir = self.environment.topobjdir
@@ -546,8 +547,6 @@ class RecursiveMakeBackend(MakeBackend):
                 tier = 'export'
             elif obj.required_during_compile:
                 tier = None
-            elif obj.localized:
-                tier = 'libs'
             else:
                 tier = 'misc'
             if tier:
@@ -565,7 +564,7 @@ class RecursiveMakeBackend(MakeBackend):
                 backend_file.write(stmt + '\n')
 
         elif isinstance(obj, JARManifest):
-            self._no_skip['libs'].add(backend_file.relobjdir)
+            self._no_skip['misc'].add(backend_file.relobjdir)
             backend_file.write('JAR_MANIFEST := %s\n' % obj.path.full_path)
 
         elif isinstance(obj, RustProgram):
@@ -1487,6 +1486,9 @@ class RecursiveMakeBackend(MakeBackend):
             install_location = '$(DEPTH)/%s' % mozpath.join(target, path)
             if objdir_files:
                 tier = 'export' if obj.install_target == 'dist/include' else 'misc'
+                
+                if objdir_files[0] == 'multilocale.txt':
+                    tier = 'libs'
                 self._add_install_target(backend_file, target_var, tier,
                                          install_location, objdir_files)
             if absolute_files:
@@ -1545,12 +1547,12 @@ class RecursiveMakeBackend(MakeBackend):
             raise Exception('Cannot install localized files to ' + target)
         for i, (path, files) in enumerate(files.walk()):
             name = 'LOCALIZED_FILES_%d' % i
-            self._no_skip['libs'].add(backend_file.relobjdir)
+            self._no_skip['misc'].add(backend_file.relobjdir)
             self._write_localized_files_files(files, name + '_FILES', backend_file)
             
             
             backend_file.write('%s_DEST = $(FINAL_TARGET)/%s\n' % (name, path))
-            backend_file.write('%s_TARGET := libs\n' % name)
+            backend_file.write('%s_TARGET := misc\n' % name)
             backend_file.write('INSTALL_TARGETS += %s\n' % name)
 
     def _process_localized_pp_files(self, obj, files, backend_file):
@@ -1560,12 +1562,12 @@ class RecursiveMakeBackend(MakeBackend):
             raise Exception('Cannot install localized files to ' + target)
         for i, (path, files) in enumerate(files.walk()):
             name = 'LOCALIZED_PP_FILES_%d' % i
-            self._no_skip['libs'].add(backend_file.relobjdir)
+            self._no_skip['misc'].add(backend_file.relobjdir)
             self._write_localized_files_files(files, name, backend_file)
             
             
             backend_file.write('%s_PATH = $(FINAL_TARGET)/%s\n' % (name, path))
-            backend_file.write('%s_TARGET := libs\n' % name)
+            backend_file.write('%s_TARGET := misc\n' % name)
             
             
             
