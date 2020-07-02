@@ -73,9 +73,6 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
   
   bool SetControlAttributes(SMTCControlAttributes aAttributes);
 
-  bool RefreshDisplay();
-
-  
   
   
   bool SetMusicMetadata(const wchar_t* aArtist, const wchar_t* aTitle,
@@ -89,7 +86,6 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
   
   
   void LoadImage(const char* aImageData, uint32_t aDataSize);
-  
   
   bool SetThumbnail();
   void ClearThumbnail();
