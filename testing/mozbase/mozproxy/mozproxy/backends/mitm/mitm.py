@@ -464,7 +464,7 @@ class MitmproxyDesktop(Mitmproxy):
             
             contents = self.read_policies_json(self.policies_dir)
             LOG.info("Firefox policies file contents:")
-            LOG.info("{contents}", contents=contents)
+            LOG.info(contents)
             if (
                 POLICIES_CONTENT_ON
                 % {"cert": self.cert_path, "host": self.host, "port": self.port}
