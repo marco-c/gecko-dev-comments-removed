@@ -1928,7 +1928,10 @@ class LogTaskBase {
   };
 };
 
+class MicroTaskRunnable;
+
 typedef LogTaskBase<nsIRunnable> LogRunnable;
+typedef LogTaskBase<MicroTaskRunnable> LogMicroTaskRunnable;
 
 
 
