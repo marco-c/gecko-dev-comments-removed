@@ -4205,7 +4205,7 @@ bool GCRuntime::beginMarkPhase(JS::GCReason reason, AutoGCSession& session) {
 
     if (IsShutdownGC(reason)) {
       
-      for (GCZonesIter zone(this, SkipAtoms); !zone.done(); zone.next()) {
+      for (GCZonesIter zone(this); !zone.done(); zone.next()) {
         zone->clearRootsForShutdownGC();
       }
     }
@@ -4315,7 +4315,7 @@ void GCRuntime::updateMemoryCountersOnGCStart() {
   heapSize.updateOnGCStart();
 
   
-  for (GCZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
+  for (GCZonesIter zone(this); !zone.done(); zone.next()) {
     zone->updateMemoryCountersOnGCStart();
   }
 }
