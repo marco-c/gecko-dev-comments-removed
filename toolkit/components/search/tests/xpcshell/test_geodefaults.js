@@ -50,7 +50,7 @@ add_task(async function should_get_geo_defaults_only_once() {
   await withGeoServer(async function cont(requests) {
     
     
-    Region._setHomeRegion("FR", false);
+    Region._setRegion("FR", false);
     await Promise.all([asyncReInitReloaded(), promiseAfterCache()]);
     Assert.equal((await Services.search.getDefault()).name, kTestEngineName);
 
