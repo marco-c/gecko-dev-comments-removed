@@ -1544,8 +1544,13 @@ pref("browser.ping-centre.log", false);
 
 pref("media.gmp-provider.enabled", true);
 
+#ifdef NIGHTLY_BUILD
+
+pref("network.cookie.cookieBehavior", 5 );
+#else
 
 pref("network.cookie.cookieBehavior", 4 );
+#endif
 
 
 pref("privacy.trackingprotection.fingerprinting.enabled", true);
@@ -1588,7 +1593,12 @@ pref("browser.contentblocking.fingerprinting.preferences.ui.enabled", true);
 
 
 
+#ifdef NIGHTLY_BUILD
+
+pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cm,fp,stp");
+#else
 pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior4,cm,fp,stp");
+#endif
 
 
 
