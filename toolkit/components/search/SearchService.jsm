@@ -495,8 +495,6 @@ SearchService.prototype = {
 
 
   async _init() {
-    logConsole.debug("_init start");
-
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "_separatePrivateDefaultPrefValue",
