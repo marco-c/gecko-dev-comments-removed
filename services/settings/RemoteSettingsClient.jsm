@@ -342,24 +342,36 @@ class RemoteSettingsClient extends EventEmitter {
     let { verifySignature = false } = options;
 
     if (syncIfEmpty && !(await Utils.hasLocalData(this))) {
+      
+      
+      if (!this._importingPromise) {
+        
+        this._importingPromise = (async () => {
+          const importedFromDump = gLoadDump
+            ? await this._importJSONDump()
+            : -1;
+          if (importedFromDump < 0) {
+            
+            console.debug(
+              `${this.identifier} Local DB is empty, pull data from server`
+            );
+            await this.sync({ loadDump: false });
+          }
+        })();
+      }
       try {
-        
-        
-        const importedFromDump = gLoadDump ? await this._importJSONDump() : -1;
-        if (importedFromDump < 0) {
-          
-          console.debug(
-            `${this.identifier} Local DB is empty, pull data from server`
-          );
-          await this.sync({ loadDump: false });
-        }
-        
-        verifySignature = false;
+        await this._importingPromise;
       } catch (e) {
         
         Cu.reportError(e);
         return [];
+      } finally {
+        
+        delete this._importingPromise;
       }
+      
+      
+      verifySignature = false;
     }
 
     
