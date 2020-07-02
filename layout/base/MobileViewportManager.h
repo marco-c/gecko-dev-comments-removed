@@ -118,6 +118,14 @@ class MobileViewportManager final : public nsIDOMEventListener,
     return mVisualViewportSizeUpdatedByDynamicToolbar;
   }
 
+  
+
+
+
+
+
+  void UpdateVisualViewportSizeForPotentialScrollbarChange();
+
  private:
   ~MobileViewportManager();
 

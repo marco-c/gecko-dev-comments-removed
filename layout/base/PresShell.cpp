@@ -11078,10 +11078,20 @@ void PresShell::MarkFixedFramesForReflow(IntrinsicDirty aIntrinsicDirty) {
 }
 
 void PresShell::CompleteChangeToVisualViewportSize() {
-  if (nsIScrollableFrame* rootScrollFrame = GetRootScrollFrameAsScrollable()) {
-    rootScrollFrame->MarkScrollbarsDirtyForReflow();
+  
+  
+  
+  
+  
+  
+  
+  if (!mIsReflowing) {
+    if (nsIScrollableFrame* rootScrollFrame =
+            GetRootScrollFrameAsScrollable()) {
+      rootScrollFrame->MarkScrollbarsDirtyForReflow();
+    }
+    MarkFixedFramesForReflow(IntrinsicDirty::Resize);
   }
-  MarkFixedFramesForReflow(IntrinsicDirty::Resize);
 
   if (auto* window = nsGlobalWindowInner::Cast(mDocument->GetInnerWindow())) {
     window->VisualViewport()->PostResizeEvent();
