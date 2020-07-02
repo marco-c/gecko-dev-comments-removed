@@ -9,6 +9,10 @@ const { LoginTestUtils } = SpecialPowers.Cu.import(
   {}
 );
 
+const { TestUtils } = SpecialPowers.Cu.import(
+  "resource://testing-common/TestUtils.jsm"
+);
+
 
 LoginTestUtils.setAssertReporter(
   SpecialPowers.wrapCallback((err, message, stack) => {
@@ -554,6 +558,16 @@ function runChecksAfterCommonInit(aFunction = null) {
     testDependsOnDeprecatedLogin: gTestDependsOnDeprecatedLogin,
   });
   return PWMGR_COMMON_PARENT;
+}
+
+
+
+
+async function popupEnabled() {
+  return TestUtils.waitForCondition(
+    async () => !(await getPopupState()).disabled,
+    "Wait for popup to become enabled."
+  );
 }
 
 
