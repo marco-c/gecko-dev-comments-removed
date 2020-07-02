@@ -647,55 +647,31 @@ static bool InSharedRegion(mach_vm_address_t aAddr, cpu_type_t aType) {
 
 
 [[nodiscard]] static nsresult SystemHeapSize(int64_t* aSizeOut) {
-  
-  DWORD nHeaps = GetProcessHeaps(0, nullptr);
-  NS_ENSURE_TRUE(nHeaps != 0, NS_ERROR_FAILURE);
+  HANDLE heap = GetProcessHeap();
 
-  
-  
-  UniquePtr<HANDLE[]> heaps(new HANDLE[nHeaps]);
-  DWORD nHeaps2 = GetProcessHeaps(nHeaps, heaps.get());
-  NS_ENSURE_TRUE(nHeaps2 != 0 && nHeaps2 == nHeaps, NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(HeapLock(heap), NS_ERROR_FAILURE);
 
-  
-  int64_t heapsSize = 0;
-  for (DWORD i = 0; i < nHeaps; i++) {
-    HANDLE heap = heaps[i];
-
+  int64_t heapSize = 0;
+  PROCESS_HEAP_ENTRY entry;
+  entry.lpData = nullptr;
+  while (HeapWalk(heap, &entry)) {
     
     
-    
-    MEMORY_BASIC_INFORMATION mbi = {0};
-    if (VirtualQuery(heap, &mbi, sizeof(mbi)) && mbi.Protect == PAGE_READONLY) {
-      continue;
+    if (entry.wFlags & PROCESS_HEAP_ENTRY_BUSY) {
+      heapSize += entry.cbData;
     }
-
-    NS_ENSURE_TRUE(HeapLock(heap), NS_ERROR_FAILURE);
-
-    int64_t heapSize = 0;
-    PROCESS_HEAP_ENTRY entry;
-    entry.lpData = nullptr;
-    while (HeapWalk(heap, &entry)) {
-      
-      
-      if (entry.wFlags & PROCESS_HEAP_ENTRY_BUSY) {
-        heapSize += entry.cbData;
-      }
-    }
-
-    
-    
-    DWORD lastError = GetLastError();
-
-    
-    NS_ENSURE_TRUE(HeapUnlock(heap), NS_ERROR_FAILURE);
-
-    NS_ENSURE_TRUE(lastError == ERROR_NO_MORE_ITEMS, NS_ERROR_FAILURE);
-
-    heapsSize += heapSize;
   }
 
-  *aSizeOut = heapsSize;
+  
+  
+  DWORD lastError = GetLastError();
+
+  
+  NS_ENSURE_TRUE(HeapUnlock(heap), NS_ERROR_FAILURE);
+
+  NS_ENSURE_TRUE(lastError == ERROR_NO_MORE_ITEMS, NS_ERROR_FAILURE);
+
+  *aSizeOut = heapSize;
   return NS_OK;
 }
 
