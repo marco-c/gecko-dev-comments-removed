@@ -1839,6 +1839,16 @@ SearchEngine.prototype = {
 
 
   toJSON() {
+    
+    
+    if (gModernConfig && this._isBuiltin) {
+      return {
+        _name: this.name,
+        _isBuiltin: true,
+        _metaData: this._metaData,
+      };
+    }
+
     var json = {
       _name: this._name,
       _shortName: this._shortName,
