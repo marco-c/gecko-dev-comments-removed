@@ -35,6 +35,7 @@ class FeatureGateImplementation {
 
 
 
+
   constructor(definition) {
     this._definition = definition;
     this._observers = new Set();
@@ -64,6 +65,10 @@ class FeatureGateImplementation {
 
   get description() {
     return this._definition.description;
+  }
+
+  get descriptionLinks() {
+    return this._definition.descriptionLinks;
   }
 
   

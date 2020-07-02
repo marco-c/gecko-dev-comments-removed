@@ -28,6 +28,7 @@ feature_schema = Schema({
         Optional('preference'): Text,
         Optional('default-value'): Any(bool, dict), 
         Optional('is-public'): Any(bool, dict),
+        Optional('description-links'): dict,
     },
 })
 
