@@ -1597,8 +1597,6 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
             
             .ElseIf(request == FIONBIO, Allow())
             
-            .ElseIf(request == FIONREAD, Allow())
-            
             
             .ElseIf(request == TCGETS, Error(ENOTTY))
             
@@ -1648,10 +1646,6 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
       CASES_FOR_getgid:
       CASES_FOR_geteuid:
       CASES_FOR_getegid:
-        return Allow();
-
-      
-      case __NR_uname:
         return Allow();
 
       default:
