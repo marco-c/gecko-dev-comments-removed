@@ -12,6 +12,8 @@ function genericChecker() {
   }
   window.kind = kind;
 
+  let bcGroupId = SpecialPowers.wrap(window).browsingContext.group.id;
+
   browser.test.onMessage.addListener((msg, ...args) => {
     if (msg == kind + "-check-views") {
       let counts = {
@@ -35,6 +37,17 @@ function genericChecker() {
             "background page is correct"
           );
           background = view;
+        }
+
+        
+        
+        
+        if (kind == "tab" && view.kind == "tab") {
+          browser.test.assertEq(
+            bcGroupId,
+            SpecialPowers.wrap(view).browsingContext.group.id,
+            "browsing context group is correct"
+          );
         }
       }
       if (background) {
