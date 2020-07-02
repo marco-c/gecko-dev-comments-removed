@@ -556,7 +556,6 @@ SearchService.prototype = {
 
       
       logConsole.debug("_init: engines loaded, writing cache");
-      this._cache.write();
       this._addObservers();
     } catch (ex) {
       this._initRV = ex.result !== undefined ? ex.result : Cr.NS_ERROR_FAILURE;
@@ -591,9 +590,12 @@ SearchService.prototype = {
 
   async _setupRemoteSettings() {
     
-    this._ignoreListListener = this._handleIgnoreListUpdated.bind(this);
+    let listener = this._handleIgnoreListUpdated.bind(this);
 
-    const current = await IgnoreLists.getAndSubscribe(this._ignoreListListener);
+    const current = await IgnoreLists.getAndSubscribe(listener);
+    
+    
+    this._ignoreListListener = listener;
 
     await this._handleIgnoreListUpdated({ data: { current } });
     Services.obs.notifyObservers(
@@ -1292,8 +1294,6 @@ SearchService.prototype = {
       return;
     }
 
-    await this._cache.ensurePendingWritesCompleted();
-
     
     const prevCurrentEngine = this._currentEngine;
     const prevPrivateEngine = this._currentPrivateEngine;
@@ -1305,8 +1305,6 @@ SearchService.prototype = {
     
     this.__sortedEngines = null;
     await this._loadEngines(await this._cache.get(), true);
-    
-    await this._cache.write();
 
     
     
@@ -1371,7 +1369,6 @@ SearchService.prototype = {
         }
 
         this._initObservers = PromiseUtils.defer();
-        await this._cache.ensurePendingWritesCompleted(origin);
 
         
         this._resetLocalData();
@@ -1384,7 +1381,7 @@ SearchService.prototype = {
           "uninit-complete"
         );
 
-        let cache = await this._cache.get();
+        let cache = await this._cache.get(origin);
         
         
         
@@ -1410,9 +1407,6 @@ SearchService.prototype = {
           this._initObservers.reject(Cr.NS_ERROR_ABORT);
           return;
         }
-
-        
-        await this._cache.write();
 
         
         
@@ -3344,7 +3338,6 @@ SearchService.prototype = {
           case SearchUtils.MODIFIED_TYPE.ADDED:
           case SearchUtils.MODIFIED_TYPE.CHANGED:
           case SearchUtils.MODIFIED_TYPE.REMOVED:
-            this._cache.delayedWrite();
             
             this._parseSubmissionMap = null;
             break;
@@ -3457,6 +3450,8 @@ SearchService.prototype = {
     Services.obs.addObserver(this, QUIT_APPLICATION_TOPIC);
     Services.obs.addObserver(this, TOPIC_LOCALES_CHANGE);
 
+    this._cache.addObservers();
+
     
     
     let shutdownState = {
@@ -3508,6 +3503,8 @@ SearchService.prototype = {
       this.idleService.removeIdleObserver(this, REINIT_IDLE_TIME_SEC);
       this._queuedIdle = false;
     }
+
+    this._cache.removeObservers();
 
     Services.obs.removeObserver(this, SearchUtils.TOPIC_ENGINE_MODIFIED);
     Services.obs.removeObserver(this, QUIT_APPLICATION_TOPIC);
