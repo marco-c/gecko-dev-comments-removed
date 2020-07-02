@@ -424,6 +424,10 @@ class TargetList {
     
     await this.startListening();
   }
+
+  isTargetRegistered(targetFront) {
+    return this._targets.has(targetFront);
+  }
 }
 
 

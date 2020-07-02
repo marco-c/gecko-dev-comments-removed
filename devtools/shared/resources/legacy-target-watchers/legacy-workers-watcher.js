@@ -102,21 +102,32 @@ class LegacyWorkersWatcher {
       }
     }
 
-    const promises = [];
-    for (const workerTarget of workers) {
-      if (
-        !this._supportWorkerTarget(workerTarget) ||
-        existingTargets.has(workerTarget)
-      ) {
-        continue;
-      }
+    const promises = workers.map(workerTarget =>
+      this._processNewWorkerTarget(workerTarget, existingTargets)
+    );
+    await Promise.all(promises);
+  }
 
-      
-      existingTargets.add(workerTarget);
-      promises.push(this.onTargetAvailable(workerTarget));
+  
+  
+  _recordWorkerTarget(workerTarget) {
+    return this._supportWorkerTarget(workerTarget);
+  }
+
+  async _processNewWorkerTarget(workerTarget, existingTargets) {
+    if (
+      !this._recordWorkerTarget(workerTarget) ||
+      existingTargets.has(workerTarget)
+    ) {
+      return;
     }
 
-    await Promise.all(promises);
+    
+    existingTargets.add(workerTarget);
+
+    if (this._supportWorkerTarget(workerTarget)) {
+      await this.onTargetAvailable(workerTarget);
+    }
   }
 
   async listen() {
