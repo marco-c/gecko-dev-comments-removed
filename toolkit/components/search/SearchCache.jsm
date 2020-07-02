@@ -264,7 +264,7 @@ class SearchCache {
 
   setVerifiedAttribute(name, val) {
     this.setAttribute(name, val);
-    this.setAttribute(name + "Hash", getVerificationHash(val));
+    this.setAttribute(this.getHashName(name), getVerificationHash(val));
   }
 
   
@@ -290,11 +290,31 @@ class SearchCache {
 
   getVerifiedAttribute(name) {
     let val = this.getAttribute(name);
-    if (val && this.getAttribute(name + "Hash") != getVerificationHash(val)) {
+    if (
+      val &&
+      this.getAttribute(this.getHashName(name)) != getVerificationHash(val)
+    ) {
       logConsole.warn("getVerifiedGlobalAttr, invalid hash for", name);
       return "";
     }
     return val;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  getHashName(name) {
+    if (name == "current") {
+      return "hash";
+    }
+    return name + "Hash";
   }
 
   
