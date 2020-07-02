@@ -43,7 +43,7 @@ class ModuleSegment;
 
 struct CallableOffsets;
 struct FuncOffsets;
-class Frame;
+struct Frame;
 
 using RegisterState = JS::ProfilingFrameIterator::RegisterState;
 
@@ -170,7 +170,7 @@ class ExitReason {
 class ProfilingFrameIterator {
   const Code* code_;
   const CodeRange* codeRange_;
-  uint8_t* callerFP_;
+  Frame* callerFP_;
   void* callerPC_;
   void* stackAddress_;
   uint8_t* unwoundIonCallerFP_;
@@ -236,7 +236,7 @@ void GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed,
 
 
 struct UnwindState {
-  uint8_t* fp;
+  Frame* fp;
   void* pc;
   const Code* code;
   const CodeRange* codeRange;
@@ -256,6 +256,19 @@ struct UnwindState {
 
 bool StartUnwinding(const RegisterState& registers, UnwindState* unwindState,
                     bool* unwoundCaller);
+
+
+
+
+
+
+
+
+
+
+
+
+constexpr uintptr_t ExitOrJitEntryFPTag = 0x1;
 
 }  
 }  

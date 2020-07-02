@@ -707,7 +707,7 @@ static MOZ_MUST_USE bool HandleTrap(CONTEXT* context,
   
   
   
-  Instance* instance = ((Frame*)ContextToFP(context))->instance();
+  Instance* instance = ((Frame*)ContextToFP(context))->tls->instance;
   MOZ_RELEASE_ASSERT(&instance->code() == &segment.code() ||
                      trap == Trap::IndirectCallBadSig);
 
@@ -1167,7 +1167,7 @@ bool wasm::MemoryAccessTraps(const RegisterState& regs, uint8_t* addr,
     return false;
   }
 
-  Instance& instance = *Frame::fromUntaggedWasmExitFP(regs.fp)->instance();
+  Instance& instance = *reinterpret_cast<Frame*>(regs.fp)->tls->instance;
   MOZ_ASSERT(&instance.code() == &segment.code());
 
   if (!instance.memoryAccessInGuardRegion((uint8_t*)addr, numBytes)) {
