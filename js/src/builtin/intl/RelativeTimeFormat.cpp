@@ -19,6 +19,7 @@
 #include "js/PropertySpec.h"
 #include "unicode/udisplaycontext.h"
 #include "unicode/uloc.h"
+#include "unicode/unum.h"
 #include "unicode/ureldatefmt.h"
 #include "unicode/utypes.h"
 #include "vm/GlobalObject.h"
@@ -232,13 +233,42 @@ static URelativeDateTimeFormatter* NewURelativeDateTimeFormatter(
   }
 
   UErrorCode status = U_ZERO_ERROR;
+  UNumberFormat* nf = unum_open(UNUM_DECIMAL, nullptr, 0,
+                                IcuLocale(locale.get()), nullptr, &status);
+  if (U_FAILURE(status)) {
+    intl::ReportInternalError(cx);
+    return nullptr;
+  }
+  ScopedICUObject<UNumberFormat, unum_close> toClose(nf);
+
+  
+  unum_setAttribute(nf, UNUM_MIN_INTEGER_DIGITS, 1);
+  unum_setAttribute(nf, UNUM_MIN_FRACTION_DIGITS, 0);
+  unum_setAttribute(nf, UNUM_MAX_FRACTION_DIGITS, 3);
+  unum_setAttribute(nf, UNUM_GROUPING_USED, true);
+
+  
+  
+  
+  
+  
+  
+  constexpr int32_t useLocaleData = -2;
+
+  unum_setAttribute(nf, UNUM_GROUPING_SIZE, useLocaleData);
+  unum_setAttribute(nf, UNUM_SECONDARY_GROUPING_SIZE, useLocaleData);
+  unum_setAttribute(nf, UNUM_MINIMUM_GROUPING_DIGITS, useLocaleData);
+
   URelativeDateTimeFormatter* rtf =
-      ureldatefmt_open(IcuLocale(locale.get()), nullptr, relDateTimeStyle,
+      ureldatefmt_open(IcuLocale(locale.get()), nf, relDateTimeStyle,
                        UDISPCTX_CAPITALIZATION_FOR_STANDALONE, &status);
   if (U_FAILURE(status)) {
     intl::ReportInternalError(cx);
     return nullptr;
   }
+
+  
+  toClose.forget();
   return rtf;
 }
 
