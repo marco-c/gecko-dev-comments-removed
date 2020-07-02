@@ -3550,7 +3550,7 @@ function BrowserReloadWithFlags(reloadFlags) {
     
     delete tab.linkedBrowser.authPromptAbuseCounter;
   }
-  PanelMultiView.hidePopup(gIdentityHandler._identityPopup);
+  gIdentityHandler.hidePopup();
 
   let handlingUserInput = window.windowUtils.isHandlingUserInput;
 

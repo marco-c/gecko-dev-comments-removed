@@ -148,8 +148,26 @@ var gIdentityHandler = {
     );
   },
 
+  _popupInitialized: false,
+  _initializePopup() {
+    if (!this._popupInitialized) {
+      let wrapper = document.getElementById("template-identity-popup");
+      wrapper.replaceWith(wrapper.content);
+      this._popupInitialized = true;
+    }
+  },
+
+  hidePopup() {
+    if (this._popupInitialized) {
+      PanelMultiView.hidePopup(this._identityPopup);
+    }
+  },
+
   
   get _identityPopup() {
+    if (!this._popupInitialized) {
+      return null;
+    }
     delete this._identityPopup;
     return (this._identityPopup = document.getElementById("identity-popup"));
   },
@@ -416,7 +434,9 @@ var gIdentityHandler = {
     histogram.add(kMIXED_CONTENT_UNBLOCK_EVENT);
     
     BrowserReloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_MIXED_CONTENT);
-    PanelMultiView.hidePopup(this._identityPopup);
+    if (this._popupInitialized) {
+      PanelMultiView.hidePopup(this._identityPopup);
+    }
   },
 
   enableMixedContentProtection() {
@@ -426,7 +446,9 @@ var gIdentityHandler = {
       "BrowserTab"
     );
     BrowserReload();
-    PanelMultiView.hidePopup(this._identityPopup);
+    if (this._popupInitialized) {
+      PanelMultiView.hidePopup(this._identityPopup);
+    }
   },
 
   removeCertException() {
@@ -440,7 +462,9 @@ var gIdentityHandler = {
     let port = this._uri.port > 0 ? this._uri.port : 443;
     this._overrideService.clearValidityOverride(host, port);
     BrowserReloadSkipCache();
-    PanelMultiView.hidePopup(this._identityPopup);
+    if (this._popupInitialized) {
+      PanelMultiView.hidePopup(this._identityPopup);
+    }
   },
 
   
@@ -501,7 +525,7 @@ var gIdentityHandler = {
     this.refreshIdentityBlock();
     
     
-    if (shouldHidePopup) {
+    if (shouldHidePopup && this._popupInitialized) {
       PanelMultiView.hidePopup(this._identityPopup);
     }
 
@@ -567,7 +591,7 @@ var gIdentityHandler = {
       }
     }
 
-    if (this._identityPopup.state == "open") {
+    if (this._popupInitialized && this._identityPopup.state != "closed") {
       this.updateSitePermissions();
       PanelView.forNode(
         this._identityPopupMainView
@@ -1108,8 +1132,7 @@ var gIdentityHandler = {
 
   _openPopup(event) {
     
-    
-    this._identityPopup.hidden = false;
+    this._initializePopup();
 
     
     this._permissionReloadHint.setAttribute("hidden", "true");
@@ -1121,8 +1144,9 @@ var gIdentityHandler = {
     this._identityBox.setAttribute("open", "true");
 
     
-    if (gProtectionsHandler._protectionsPopup.state != "closed") {
-      PanelMultiView.hidePopup(gProtectionsHandler._protectionsPopup);
+    let openPanels = Array.from(document.querySelectorAll("panel[openpanel]"));
+    for (let panel of openPanels) {
+      PanelMultiView.hidePopup(panel);
     }
 
     
@@ -1263,10 +1287,12 @@ var gIdentityHandler = {
   },
 
   onLocationChange() {
-    this._permissionReloadHint.setAttribute("hidden", "true");
+    if (this._popupInitialized && this._identityPopup.state != "closed") {
+      this._permissionReloadHint.setAttribute("hidden", "true");
 
-    if (!this._permissionList.hasChildNodes()) {
-      this._permissionEmptyHint.removeAttribute("hidden");
+      if (!this._permissionList.hasChildNodes()) {
+        this._permissionEmptyHint.removeAttribute("hidden");
+      }
     }
   },
 

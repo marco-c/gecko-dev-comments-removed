@@ -4101,7 +4101,7 @@
       SitePermissions.clearTemporaryPermissions(browser);
       
       delete browser.authPromptAbuseCounter;
-      PanelMultiView.hidePopup(gIdentityHandler._identityPopup);
+      gIdentityHandler.hidePopup();
       browser.reload();
     },
 
