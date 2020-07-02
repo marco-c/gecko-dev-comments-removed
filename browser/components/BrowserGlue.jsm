@@ -811,12 +811,6 @@ const listeners = {
 
   ppmm: {
     
-    "ContentPrefs:FunctionCall": ["ContentPrefServiceParent"],
-    "ContentPrefs:AddObserverForName": ["ContentPrefServiceParent"],
-    "ContentPrefs:RemoveObserverForName": ["ContentPrefServiceParent"],
-    
-
-    
     "AsyncPrefs:SetPref": ["AsyncPrefs"],
     "AsyncPrefs:ResetPref": ["AsyncPrefs"],
     

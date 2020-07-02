@@ -33,7 +33,16 @@ const { DefaultMap } = ExtensionUtils;
 
 
 
-let JSPROCESSACTORS = {};
+let JSPROCESSACTORS = {
+  ContentPrefs: {
+    parent: {
+      moduleURI: "resource://gre/modules/ContentPrefServiceParent.jsm",
+    },
+    child: {
+      moduleURI: "resource://gre/modules/ContentPrefServiceChild.jsm",
+    },
+  },
+};
 
 
 
