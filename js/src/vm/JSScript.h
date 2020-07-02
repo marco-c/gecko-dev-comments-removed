@@ -1622,19 +1622,19 @@ struct SourceExtent {
 
 
 
-class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
+class BaseScript : public gc::TenuredCell {
  public:
   
   using ImmutableFlags = ImmutableScriptFlagsEnum;
   using MutableFlags = MutableScriptFlagsEnum;
 
- public:
-  
-  
-  
-  uint8_t* jitCodeRaw() const { return headerPtr(); }
-
  protected:
+  
+  
+  
+  using HeaderWithCodePtr = gc::CellHeaderWithNonGCPointer<uint8_t>;
+  HeaderWithCodePtr headerAndJitCodeRaw_;
+
   
   
   
@@ -1681,7 +1681,7 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   BaseScript(uint8_t* stubEntry, JSObject* functionOrGlobal,
              ScriptSourceObject* sourceObject, SourceExtent extent,
              uint32_t immutableFlags)
-      : TenuredCellWithNonGCPointer(stubEntry),
+      : headerAndJitCodeRaw_(stubEntry),
         functionOrGlobal_(functionOrGlobal),
         sourceObject_(sourceObject),
         extent_(extent),
@@ -1692,7 +1692,7 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
     MOZ_ASSERT(extent_.sourceEnd <= extent_.toStringEnd);
   }
 
-  void setJitCodeRaw(uint8_t* code) { setHeaderPtr(code); }
+  void setJitCodeRaw(uint8_t* code) { headerAndJitCodeRaw_.setPtr(code); }
 
  public:
   static BaseScript* New(JSContext* cx, js::HandleObject functionOrGlobal,
@@ -1707,6 +1707,7 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
                                    const SourceExtent& extent,
                                    uint32_t immutableFlags);
 
+  uint8_t* jitCodeRaw() const { return headerAndJitCodeRaw_.ptr(); }
   bool isUsingInterpreterTrampoline(JSRuntime* rt) const;
 
   
@@ -1982,6 +1983,7 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
 
  public:
   static const JS::TraceKind TraceKind = JS::TraceKind::Script;
+  const gc::CellHeader& cellHeader() const { return headerAndJitCodeRaw_; }
 
   void traceChildren(JSTracer* trc);
   void finalize(JSFreeOp* fop);
@@ -1999,7 +2001,10 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
                                      bool hasFieldInitializer);
 
   
-  static constexpr size_t offsetOfJitCodeRaw() { return offsetOfHeaderPtr(); }
+  static constexpr size_t offsetOfJitCodeRaw() {
+    return offsetof(BaseScript, headerAndJitCodeRaw_) +
+           HeaderWithCodePtr::offsetOfPtr();
+  }
   static constexpr size_t offsetOfPrivateData() {
     return offsetof(BaseScript, data_);
   }
