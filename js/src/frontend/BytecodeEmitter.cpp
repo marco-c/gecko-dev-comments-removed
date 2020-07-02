@@ -8011,7 +8011,7 @@ bool BytecodeEmitter::emitCalleeAndThisForOptionalChain(
     
     
     
-    return true;
+    return false;
   }
   return true;
 }
@@ -8032,7 +8032,7 @@ bool BytecodeEmitter::emitOptionalChain(UnaryNode* optionalChain,
     
     
     
-    return true;
+    return false;
   }
 
   return true;
