@@ -143,8 +143,8 @@ add_task(async () => {
       is(rootChildCount(), 5, "Root has 5 children");
 
       
-      const identityPopup = document.getElementById("identity-popup");
       document.getElementById("identity-box").click();
+      const identityPopup = document.getElementById("identity-popup");
       await BrowserTestUtils.waitForPopupEvent(identityPopup, "shown");
 
       
