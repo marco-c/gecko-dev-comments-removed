@@ -130,6 +130,25 @@
 - (NSString* _Nullable)moxMenuItemMarkChar;
 
 
+- (NSNumber* _Nullable)moxLoaded;
+
+
+- (NSNumber* _Nullable)moxLoadingProgress;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 - (NSNumber* _Nullable)moxRowCount;

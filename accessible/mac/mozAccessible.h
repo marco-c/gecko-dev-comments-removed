@@ -70,6 +70,8 @@ inline mozAccessible* GetNativeFromGeckoAccessible(mozilla::a11y::AccessibleOrPr
 
 
 
+
+
 - (void)handleAccessibleEvent:(uint32_t)eventType;
 
 
