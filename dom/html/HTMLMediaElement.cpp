@@ -2288,6 +2288,8 @@ void HTMLMediaElement::AbortExistingLoads() {
   
   ClearResumeDelayedMediaPlaybackAgentIfNeeded();
 
+  StopListeningMediaControlKeyIfNeeded();
+
   
   
   AddRemoveSelfReference();
@@ -4397,8 +4399,6 @@ void HTMLMediaElement::PlayInternal(bool aHandlingUserInput) {
   UpdatePreloadAction();
   UpdateSrcMediaStreamPlaying();
 
-  StartListeningMediaControlKeyIfNeeded();
-
   
   
   
@@ -5472,6 +5472,8 @@ void HTMLMediaElement::MetadataLoaded(const MediaInfo* aInfo,
     mDefaultPlaybackStartPosition = 0.0;
   }
 
+  StartListeningMediaControlKeyIfNeeded();
+
   mWatchManager.ManualNotify(&HTMLMediaElement::UpdateReadyStateInternal);
 }
 
@@ -6134,8 +6136,6 @@ void HTMLMediaElement::CheckAutoplayDataReady() {
   AddRemoveSelfReference();
   UpdateSrcMediaStreamPlaying();
   UpdateAudioChannelPlayingState();
-
-  StartListeningMediaControlKeyIfNeeded();
 
   if (mDecoder) {
     SetPlayedOrSeeked(true);
@@ -7854,11 +7854,6 @@ void HTMLMediaElement::NotifyMediaControlPlaybackStateChanged() {
 }
 
 void HTMLMediaElement::StartListeningMediaControlKeyIfNeeded() {
-  if (mPaused) {
-    MEDIACONTROL_LOG("Not listening because media is paused");
-    return;
-  }
-
   
   
   
@@ -7883,16 +7878,6 @@ void HTMLMediaElement::StartListeningMediaControlKeyIfNeeded() {
   
   
   NotifyMediaControlPlaybackStateChanged();
-
-  
-  
-  
-  mMediaControlKeyListener->UpdateMediaAudibleState(IsAudible());
-
-  
-  
-  mMediaControlKeyListener->SetPictureInPictureModeEnabled(
-      IsBeingUsedInPictureInPictureMode());
 }
 
 void HTMLMediaElement::StopListeningMediaControlKeyIfNeeded() {
