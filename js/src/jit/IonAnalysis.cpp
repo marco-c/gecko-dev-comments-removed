@@ -4939,9 +4939,6 @@ bool jit::FoldLoadsWithUnbox(MIRGenerator* mir, MIRGraph& graph) {
       }
 
       
-      if (!graph.alloc().ensureBallast()) {
-        return false;
-      }
 
       MIRType type = unbox->type();
       MUnbox::Mode mode = unbox->mode();
