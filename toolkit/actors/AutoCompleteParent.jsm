@@ -23,14 +23,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "setTimeout",
-  "resource://gre/modules/Timer.jsm"
-);
-
-const PREF_SECURITY_DELAY = "security.notification_enable_delay";
-
 
 let currentBrowserWeakRef = null;
 let currentActor = null;
@@ -421,7 +413,6 @@ class AutoCompleteParent extends JSWindowActorParent {
           this.showPopupWithResults({ results, rect, dir });
           this.notifyListeners();
         }
-        this.delayPopupInput();
         break;
       }
 
@@ -448,25 +439,6 @@ class AutoCompleteParent extends JSWindowActorParent {
     
     
     return false;
-  }
-
-  
-  
-  
-  delayPopupInput() {
-    if (!this.openedPopup) {
-      return;
-    }
-    const popupDelay = Services.prefs.getIntPref(PREF_SECURITY_DELAY);
-    const items = Array.from(
-      this.openedPopup.getElementsByTagName("richlistitem")
-    );
-    items.forEach(item => (item.disabled = true));
-
-    setTimeout(
-      () => items.forEach(item => (item.disabled = false)),
-      popupDelay
-    );
   }
 
   notifyListeners() {
