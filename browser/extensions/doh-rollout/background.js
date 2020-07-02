@@ -404,12 +404,14 @@ const rollout = {
       return;
     }
 
-    
-    
-    
-    if (captiveState == "unlocked_portal" || captiveState == "not_captive") {
-      await rollout.heuristics("netchange");
+    if (captiveState == "locked_portal") {
+      return;
     }
+
+    
+    
+    
+    await rollout.heuristics("netchange");
   },
 
   async onCaptiveStateChanged({ state }) {
@@ -417,7 +419,7 @@ const rollout = {
     
     
     if (state == "unlocked_portal" || state == "not_captive") {
-      await rollout.heuristics("netchange");
+      await rollout.heuristics("captivechanged");
     }
   },
 };
