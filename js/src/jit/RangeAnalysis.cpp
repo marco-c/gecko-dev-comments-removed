@@ -1772,7 +1772,9 @@ void MArrayLength::computeRange(TempAllocator& alloc) {
   
   
   
-  setRange(Range::NewUInt32Range(alloc, 0, INT32_MAX));
+  
+  uint32_t max = JitOptions.warpBuilder ? UINT32_MAX : INT32_MAX;
+  setRange(Range::NewUInt32Range(alloc, 0, max));
 }
 
 void MInitializedLength::computeRange(TempAllocator& alloc) {

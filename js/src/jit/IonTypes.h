@@ -145,6 +145,9 @@ enum BailoutKind {
   Bailout_FirstExecution,
 
   
+  Bailout_NonInt32ArrayLength,
+
+  
 
   
   
@@ -246,6 +249,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "Bailout_Debugger";
     case Bailout_FirstExecution:
       return "Bailout_FirstExecution";
+    case Bailout_NonInt32ArrayLength:
+      return "Bailout_NonInt32ArrayLength";
 
     
     case Bailout_OverflowInvalidate:
