@@ -18,23 +18,6 @@
 #include "nsTextFrame.h"  
 #include "nsSVGUtils.h"   
 
-inline void nsStyleImage::EnsureCachedBIData() const {
-  if (!mCachedBIData) {
-    const_cast<nsStyleImage*>(this)->mCachedBIData =
-        mozilla::MakeUnique<CachedBorderImageData>();
-  }
-}
-
-inline void nsStyleImage::SetSubImage(uint8_t aIndex,
-                                      imgIContainer* aSubImage) const {
-  EnsureCachedBIData();
-  mCachedBIData->SetSubImage(aIndex, aSubImage);
-}
-
-inline imgIContainer* nsStyleImage::GetSubImage(uint8_t aIndex) const {
-  return (mCachedBIData) ? mCachedBIData->GetSubImage(aIndex) : nullptr;
-}
-
 bool nsStyleText::NewlineIsSignificant(const nsTextFrame* aContextFrame) const {
   NS_ASSERTION(aContextFrame->StyleText() == this, "unexpected aContextFrame");
   return NewlineIsSignificantStyle() &&
@@ -154,20 +137,11 @@ bool nsStyleDisplay::IsFixedPosContainingBlock(
   return true;
 }
 
-bool nsStyleDisplay::IsAbsPosContainingBlockForNonSVGTextFrames() const {
-  
-  
-  return IsAbsolutelyPositionedStyle() || IsRelativelyPositionedStyle() ||
-         (mWillChange.bits & mozilla::StyleWillChangeBits::ABSPOS_CB);
-}
-
 bool nsStyleDisplay::IsAbsPosContainingBlock(
     const nsIFrame* aContextFrame) const {
   mozilla::ComputedStyle* style = aContextFrame->Style();
   NS_ASSERTION(style->StyleDisplay() == this, "unexpected aContextFrame");
-  
-  
-  if (!IsAbsPosContainingBlockForNonSVGTextFrames() &&
+  if (!IsPositionedStyle() &&
       !IsFixedPosContainingBlockForNonSVGTextFrames(*style) &&
       (!IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() ||
        !aContextFrame->IsFrameOfType(
@@ -216,7 +190,7 @@ mozilla::StylePointerEvents nsStyleUI::GetEffectivePointerEvents(
 bool nsStyleBackground::HasLocalBackground() const {
   NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(i, mImage) {
     const nsStyleImageLayers::Layer& layer = mImage.mLayers[i];
-    if (!layer.mImage.IsEmpty() &&
+    if (!layer.mImage.IsNone() &&
         layer.mAttachment == mozilla::StyleImageLayerAttachment::Local) {
       return true;
     }

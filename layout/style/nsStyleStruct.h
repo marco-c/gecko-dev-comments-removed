@@ -1406,6 +1406,11 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
 
   bool IsFloatingStyle() const { return mozilla::StyleFloat::None != mFloat; }
 
+  bool IsPositionedStyle() const {
+    return mPosition != mozilla::StylePositionProperty::Static ||
+           (mWillChange.bits & mozilla::StyleWillChangeBits::ABSPOS_CB);
+  }
+
   bool IsAbsolutelyPositionedStyle() const {
     return mozilla::StylePositionProperty::Absolute == mPosition ||
            mozilla::StylePositionProperty::Fixed == mPosition;
@@ -1562,18 +1567,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
 
 
   inline bool IsAbsPosContainingBlock(const nsIFrame* aContextFrame) const;
-
-  
-
-
-
-
-
-
-
-
-
-  inline bool IsAbsPosContainingBlockForNonSVGTextFrames() const;
 
   
 

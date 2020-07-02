@@ -2076,7 +2076,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  int32_t ZIndex() const;
+  Maybe<int32_t> ZIndex() const;
 
   
 
@@ -3982,13 +3982,7 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-
-
-
-  bool IsStackingContext(const nsStyleDisplay* aStyleDisplay,
-                         const nsStylePosition* aStylePosition,
-                         const nsStyleEffects* aStyleEffects,
-                         bool aIsPositioned);
+  bool IsStackingContext(const nsStyleDisplay*, const nsStyleEffects*);
   bool IsStackingContext();
 
   virtual bool HonorPrintBackgroundSettings() { return true; }
