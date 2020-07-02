@@ -175,7 +175,7 @@ bool CanvasEventRingBuffer::WaitForAndRecalculateAvailableData() {
   uint32_t maxToRead = kStreamSize - bufPos;
   mAvailable = std::min(maxToRead, WaitForBytesToRead());
   if (!mAvailable) {
-    mGood = false;
+    SetIsBad();
     mBufPos = nullptr;
     return false;
   }
@@ -231,6 +231,7 @@ void CanvasEventRingBuffer::CheckAndSignalReader() {
   do {
     switch (mRead->state) {
       case State::Processing:
+      case State::Failed:
         return;
       case State::AboutToWait:
         
@@ -394,7 +395,7 @@ bool CanvasEventRingBuffer::WaitForReadCount(uint32_t aReadCount,
   mWrite->state = State::Waiting;
 
   
-  while (!mWriterServices->ReaderClosed()) {
+  while (!mWriterServices->ReaderClosed() && mRead->state != State::Failed) {
     if (mWriterSemaphore->Wait(Some(aTimeout))) {
       MOZ_ASSERT(mOurCount - mRead->count <= requiredDifference);
       return true;

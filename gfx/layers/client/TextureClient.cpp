@@ -372,6 +372,10 @@ TextureData* TextureData::Create(TextureForwarder* aAllocator,
       return new RecordedTextureData(canvasChild.forget(), aSize, aFormat,
                                      textureType);
     }
+
+    
+    
+    textureType = TextureType::Unknown;
   }
 
   switch (textureType) {

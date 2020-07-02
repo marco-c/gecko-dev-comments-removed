@@ -37,6 +37,11 @@ parent:
 
 
   async NotifyDeviceChanged();
+
+  
+
+
+  async Deactivate();
 };
 
 } 
