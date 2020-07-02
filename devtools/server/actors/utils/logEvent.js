@@ -69,6 +69,9 @@ function logEvent({ threadActor, frame, level, expression, bindings }) {
     columnNumber: column,
     arguments: value,
     level,
+    
+    
+    sourceId: sourceActor.internalSourceId,
   };
 
   const targetActor = threadActor._parent;
