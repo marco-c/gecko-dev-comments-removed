@@ -113,7 +113,7 @@ bool SVGAutoRenderState::IsPaintingToWindow(DrawTarget* aDrawTarget) {
 
 nsRect nsSVGUtils::GetPostFilterVisualOverflowRect(
     nsIFrame* aFrame, const nsRect& aPreFilterRect) {
-  MOZ_ASSERT(aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT,
+  MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT),
              "Called on invalid frame type");
 
   
@@ -162,11 +162,11 @@ void nsSVGUtils::ScheduleReflowSVG(nsIFrame* aFrame) {
   
   
 
-  if (aFrame->GetStateBits() & NS_FRAME_IS_NONDISPLAY) {
+  if (aFrame->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
     return;
   }
 
-  if (aFrame->GetStateBits() & (NS_FRAME_IS_DIRTY | NS_FRAME_FIRST_REFLOW)) {
+  if (aFrame->HasAnyStateBits(NS_FRAME_IS_DIRTY | NS_FRAME_FIRST_REFLOW)) {
     
     
     return;
@@ -183,8 +183,7 @@ void nsSVGUtils::ScheduleReflowSVG(nsIFrame* aFrame) {
 
     nsIFrame* f = aFrame->GetParent();
     while (f && !f->IsSVGOuterSVGFrame()) {
-      if (f->GetStateBits() &
-          (NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN)) {
+      if (f->HasAnyStateBits(NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN)) {
         return;
       }
       f->AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
@@ -199,7 +198,7 @@ void nsSVGUtils::ScheduleReflowSVG(nsIFrame* aFrame) {
                "Did not find nsSVGOuterSVGFrame!");
   }
 
-  if (outerSVGFrame->GetStateBits() & NS_FRAME_IN_REFLOW) {
+  if (outerSVGFrame->HasAnyStateBits(NS_FRAME_IN_REFLOW)) {
     
     
     
@@ -302,7 +301,7 @@ nsIFrame* nsSVGUtils::GetOuterSVGFrameAndCoveredRegion(nsIFrame* aFrame,
     return nullptr;
   }
 
-  if (aFrame->GetStateBits() & NS_FRAME_IS_NONDISPLAY) {
+  if (aFrame->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
     *aRect = nsRect(0, 0, 0, 0);
   } else {
     uint32_t flags =
@@ -539,7 +538,7 @@ class MixModeBlender {
     
     gfxContextAutoSaveRestore saver(mSourceCtx);
 
-    if (!(mFrame->GetStateBits() & NS_FRAME_IS_NONDISPLAY)) {
+    if (!mFrame->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
       
       
       gfxContextMatrixAutoSaveRestore matrixAutoSaveRestore(mSourceCtx);
@@ -578,7 +577,7 @@ void nsSVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
                                        imgDrawingParams& aImgParams,
                                        const nsIntRect* aDirtyRect) {
   NS_ASSERTION(!NS_SVGDisplayListPaintingEnabled() ||
-                   (aFrame->GetStateBits() & NS_FRAME_IS_NONDISPLAY) ||
+                   aFrame->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY) ||
                    aFrame->PresContext()->Document()->IsSVGGlyphsDocument(),
                "If display lists are enabled, only painting of non-display "
                "SVG should take this code path");
@@ -600,7 +599,7 @@ void nsSVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
     return;
   }
 
-  if (aDirtyRect && !(aFrame->GetStateBits() & NS_FRAME_IS_NONDISPLAY)) {
+  if (aDirtyRect && !aFrame->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
     
     
     
@@ -990,7 +989,7 @@ gfxRect nsSVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
   }
 
   nsSVGDisplayableFrame* svg = do_QueryFrame(aFrame);
-  const bool hasSVGLayout = aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT;
+  const bool hasSVGLayout = aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT);
   if (hasSVGLayout && !svg) {
     
     
@@ -1114,7 +1113,7 @@ gfxRect nsSVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
 }
 
 gfxPoint nsSVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(nsIFrame* aFrame) {
-  if (!(aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT)) {
+  if (!aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
     
     
     return gfxPoint();
@@ -1178,7 +1177,7 @@ gfxRect nsSVGUtils::GetRelativeRect(uint16_t aUnits,
 }
 
 bool nsSVGUtils::CanOptimizeOpacity(nsIFrame* aFrame) {
-  if (!(aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT)) {
+  if (!aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
     return false;
   }
   LayoutFrameType type = aFrame->Type();
