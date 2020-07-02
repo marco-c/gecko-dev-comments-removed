@@ -71,11 +71,6 @@ function assertEvent(event, data) {
         "navigate",
         "Then once the second doc is loaded, we get the navigate event"
       );
-      is(
-        data.readyState,
-        "complete",
-        "navigate is emitted only once the document is fully loaded"
-      );
       break;
     case 9:
       is(event, "tabNavigated", "Finally, the receive the client event");
@@ -121,10 +116,17 @@ function onMessage({ data }) {
 async function connectAndAttachTab(tab) {
   const target = await TargetFactory.forTab(tab);
   await target.attach();
-  const actorID = target.targetForm.actor;
+  const actorID = target.actorID;
   target.on("tabNavigated", function(packet) {
     assertEvent("tabNavigated", packet);
   });
+  
+  target.on("will-navigate", function(data) {
+    assertEvent("will-navigate", {
+      newURI: data.url,
+    });
+  });
+  target.on("navigate", () => assertEvent("navigate"));
   return { target, actorID };
 }
 
@@ -145,27 +147,6 @@ add_task(async function() {
   const tab = gBrowser.getTabForBrowser(browser);
   const { target, actorID } = await connectAndAttachTab(tab);
   await ContentTask.spawn(browser, [actorID], async function(actorId) {
-    const { require } = ChromeUtils.import(
-      "resource://devtools/shared/Loader.jsm"
-    );
-    const { DevToolsServer } = require("devtools/server/devtools-server");
-    const EventEmitter = require("devtools/shared/event-emitter");
-
-    
-    const targetActor = DevToolsServer.searchAllConnectionsForActor(actorId);
-    
-    EventEmitter.on(targetActor, "will-navigate", function(data) {
-      sendSyncMessage("devtools-test:event", {
-        event: "will-navigate",
-        data: { newURI: data.newURI },
-      });
-    });
-    EventEmitter.on(targetActor, "navigate", function(data) {
-      sendSyncMessage("devtools-test:event", {
-        event: "navigate",
-        data: { readyState: content.document.readyState },
-      });
-    });
     
     addEventListener(
       "DOMContentLoaded",
