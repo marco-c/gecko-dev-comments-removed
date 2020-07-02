@@ -6431,7 +6431,8 @@ Maybe<bool> nsContentUtils::IsPatternMatching(nsAString& aValue,
 
   
   
-  JSAutoRealm ar(cx, xpc::UnprivilegedJunkScope());
+  
+  JSAutoRealm ar(cx, xpc::PrivilegedJunkScope());
 
   
   

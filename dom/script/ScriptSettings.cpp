@@ -748,10 +748,15 @@ void AutoSlowOperation::CheckForInterrupt() {
   
   if (mIsMainThread) {
     
-    AutoJSAPI jsapi;
-    if (jsapi.Init(xpc::UnprivilegedJunkScope())) {
-      JS_CheckForInterrupt(jsapi.cx());
-    }
+    
+    
+    
+    
+    
+    
+    dom::AutoJSAPI jsapi;
+    MOZ_ALWAYS_TRUE(jsapi.Init(xpc::PrivilegedJunkScope()));
+    JS_CheckForInterrupt(jsapi.cx());
   }
 }
 

@@ -737,14 +737,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
       const WindowsHandle& aWidgetNativeData);
 
  private:
-  
-  
-  
-  
-  
-  void DispatchMessageManagerMessage(const nsAString& aMessageName,
-                                     const nsAString& aJSONData);
-
   void HandleDoubleTap(const CSSPoint& aPoint, const Modifiers& aModifiers,
                        const ScrollableLayerGuid& aGuid);
 

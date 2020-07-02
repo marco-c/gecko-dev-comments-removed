@@ -108,7 +108,10 @@ nsresult RegexEval(const nsAString& aPattern, const nsAString& aString,
   JSContext* cx = jsapi.cx();
   AutoDisableJSInterruptCallback disabler(cx);
 
-  JSAutoRealm ar(cx, xpc::UnprivilegedJunkScope());
+  
+  
+  
+  JSAutoRealm ar(cx, xpc::PrivilegedJunkScope());
 
   JS::RootedObject regexp(
       cx, JS::NewUCRegExpObject(cx, aPattern.BeginReading(), aPattern.Length(),

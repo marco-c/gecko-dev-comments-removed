@@ -2702,8 +2702,14 @@ void AsyncErrorReporter::SetException(JSContext* aCx,
 
 NS_IMETHODIMP AsyncErrorReporter::Run() {
   AutoJSAPI jsapi;
-  DebugOnly<bool> ok = jsapi.Init(xpc::UnprivilegedJunkScope());
-  MOZ_ASSERT(ok, "Problem with junk scope?");
+  
+  
+  
+  
+  
+  
+  DebugOnly<bool> ok = jsapi.Init(xpc::PrivilegedJunkScope());
+  MOZ_ASSERT(ok, "Problem with system global?");
   JSContext* cx = jsapi.cx();
   JS::Rooted<JSObject*> stack(cx);
   JS::Rooted<JSObject*> stackGlobal(cx);

@@ -440,11 +440,15 @@ void WorkerDebugger::ReportErrorToDebuggerOnMainThread(
     listener->OnError(aFilename, aLineno, aMessage);
   }
 
-  
-  
   AutoJSAPI jsapi;
-  DebugOnly<bool> ok = jsapi.Init(xpc::UnprivilegedJunkScope());
-  MOZ_ASSERT(ok, "UnprivilegedJunkScope should exist");
+  
+  
+  
+  
+  
+  
+  DebugOnly<bool> ok = jsapi.Init(xpc::PrivilegedJunkScope());
+  MOZ_ASSERT(ok, "PrivilegedJunkScope should exist");
 
   WorkerErrorReport report;
   report.mMessage = aMessage;

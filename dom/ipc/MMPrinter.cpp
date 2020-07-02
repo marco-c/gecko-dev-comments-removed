@@ -52,7 +52,11 @@ void MMPrinter::PrintImpl(char const* aLocation, const nsAString& aMsg,
   ErrorResult rv;
 
   AutoJSAPI jsapi;
-  MOZ_ALWAYS_TRUE(jsapi.Init(xpc::UnprivilegedJunkScope()));
+  
+  
+  
+  
+  MOZ_ALWAYS_TRUE(jsapi.Init(xpc::PrivilegedJunkScope()));
   JSContext* cx = jsapi.cx();
 
   ipc::StructuredCloneData data;
