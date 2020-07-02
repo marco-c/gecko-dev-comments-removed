@@ -4,21 +4,20 @@
 
 
 
-extern crate env_logger;
-extern crate log;
+#[macro_use]
+extern crate lazy_static;
+
 #[cfg(not(target_os = "android"))]
 use log::Log;
 use log::{Level, LevelFilter};
 use std::boxed::Box;
-use std::cmp;
 use std::collections::HashMap;
-use std::env;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::os::raw::c_int;
-use std::ptr;
-use std::sync::atomic::{AtomicPtr, Ordering};
-use std::sync::{Arc, RwLock};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::RwLock;
+use std::{cmp, env};
 
 extern "C" {
     fn ExternMozLog(tag: *const c_char, prio: c_int, text: *const c_char);
@@ -27,15 +26,16 @@ extern "C" {
     fn __android_log_write(prio: c_int, tag: *const c_char, text: *const c_char) -> c_int;
 }
 
+lazy_static! {
+    // This could be a proper static once [1] is fixed or parking_lot's const fn
+    // support is not nightly-only.
+    //
+    // [1]: https://github.com/rust-lang/rust/issues/73714
+    static ref LOG_MODULE_MAP: RwLock<HashMap<String, (LevelFilter, bool)>> = RwLock::new(HashMap::new());
+}
 
 
-
-
-
-
-
-static LOG_MODULE_MAP: AtomicPtr<Arc<RwLock<HashMap<&str, (LevelFilter, bool)>>>> =
-    AtomicPtr::new(ptr::null_mut());
+static LOGGING_ACTIVE: AtomicBool = AtomicBool::new(false);
 
 
 
@@ -43,7 +43,7 @@ static LOG_MODULE_MAP: AtomicPtr<Arc<RwLock<HashMap<&str, (LevelFilter, bool)>>>
 
 
 fn get_level_for_module<'a>(
-    map: &HashMap<&str, (LevelFilter, bool)>,
+    map: &HashMap<String, (LevelFilter, bool)>,
     key: &'a str,
 ) -> (&'a str, bool, LevelFilter) {
     if let Some((level, is_pattern_match)) = map.get(key) {
@@ -65,10 +65,7 @@ fn get_level_for_module<'a>(
 
 
 pub fn log_to_gecko(record: &log::Record) -> bool {
-    let module_map = LOG_MODULE_MAP.load(Ordering::Relaxed);
-
-    
-    if module_map.is_null() {
+    if !LOGGING_ACTIVE.load(Ordering::Relaxed) {
         return false;
     }
 
@@ -76,9 +73,9 @@ pub fn log_to_gecko(record: &log::Record) -> bool {
         Some(key) => key,
         None => return false,
     };
+
     let (mod_name, is_pattern_match, level) = {
-        let arc = Arc::clone(unsafe { &*module_map });
-        let map = arc.read().unwrap();
+        let map = LOG_MODULE_MAP.read().unwrap();
         get_level_for_module(&map, &key)
     };
 
@@ -132,50 +129,21 @@ pub extern "C" fn set_rust_log_level(module: *const c_char, level: u8) {
     };
 
     
-    let mod_name_str = unsafe { CStr::from_ptr(module) }.to_str().unwrap();
+    let mut mod_name = unsafe { CStr::from_ptr(module) }
+        .to_string_lossy()
+        .into_owned();
+
+    let is_pattern_match = mod_name.ends_with("::*");
 
     
     
-    let (mod_name, is_pattern_match) = if mod_name_str.ends_with("::*") {
-        (&mod_name_str[..mod_name_str.len() - 3], true)
-    } else {
-        (&mod_name_str[..], false)
-    };
-    
-    
-    
-    let mut map = HashMap::new();
-    
-    
-    map.insert(mod_name, (rust_level, is_pattern_match));
-    let mut new_map = Box::new(Arc::new(RwLock::new(map)));
-
-    
-    let myptr = if rust_level == LevelFilter::Off {
-        ptr::null_mut()
-    } else {
-        new_map.as_mut()
-    };
-
-    
-    
-    
-    
-    let old_ptr = LOG_MODULE_MAP.compare_and_swap(ptr::null_mut(), myptr, Ordering::SeqCst);
-    if old_ptr.is_null() {
-        if !myptr.is_null() {
-            log::set_max_level(rust_level);
-
-            
-            
-            let _ = Box::into_raw(new_map);
-        }
-        return;
+    if is_pattern_match {
+        let len = mod_name.len() - 3;
+        mod_name.truncate(len);
     }
 
-    
-    let arc = Arc::clone(unsafe { &*old_ptr });
-    let mut map = arc.write().unwrap();
+    LOGGING_ACTIVE.store(true, Ordering::Relaxed);
+    let mut map = LOG_MODULE_MAP.write().unwrap();
     map.insert(mod_name, (rust_level, is_pattern_match));
 
     
@@ -218,11 +186,7 @@ impl GeckoLogger {
     }
 
     fn should_log_to_gfx_critical_note(record: &log::Record) -> bool {
-        if record.level() == log::Level::Error && record.target().contains("webrender") {
-            true
-        } else {
-            false
-        }
+        record.level() == log::Level::Error && record.target().contains("webrender")
     }
 
     fn maybe_log_to_gfx_critical_note(&self, record: &log::Record) {
