@@ -218,6 +218,28 @@ class ContentParent final
 
 
 
+
+
+
+
+
+  static already_AddRefed<ContentParent> GetNewOrUsedLaunchingBrowserProcess(
+      Element* aFrameElement, const nsAString& aRemoteType,
+      hal::ProcessPriority aPriority =
+          hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
+      ContentParent* aOpener = nullptr, bool aPreferUsed = false);
+
+  RefPtr<ContentParent::LaunchPromise> WaitForLaunchAsync(
+      hal::ProcessPriority aPriority =
+          hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND);
+  bool WaitForLaunchSync(hal::ProcessPriority aPriority =
+                             hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND);
+
+  
+
+
+
+
   static already_AddRefed<ContentParent> GetNewOrUsedJSPluginProcess(
       uint32_t aPluginID, const hal::ProcessPriority& aPriority);
 
@@ -356,6 +378,11 @@ class ContentParent final
 
   
   void NotifyTabDestroyed(const TabId& aTabId, bool aNotifiedDestroying);
+
+  
+  
+  void AddKeepAlive();
+  void RemoveKeepAlive();
 
   TestShellParent* CreateTestShell();
 
@@ -751,18 +778,9 @@ class ContentParent final
   
   
   
-  bool BeginSubprocessLaunch(bool aIsSync, ProcessPriority aPriority);
+  bool BeginSubprocessLaunch(ProcessPriority aPriority);
   void LaunchSubprocessReject();
   bool LaunchSubprocessResolve(bool aIsSync, ProcessPriority aPriority);
-  
-  
-  
-  
-  
-  static already_AddRefed<ContentParent> GetNewOrUsedBrowserProcessInternal(
-      Element* aFrameElement, const nsAString& aRemoteType,
-      ProcessPriority aPriority, ContentParent* aOpener, bool aPreferUsed,
-      bool aIsSync);
 
   
   bool InitInternal(ProcessPriority aPriority);
@@ -1402,6 +1420,8 @@ class ContentParent final
   
   
   int32_t mNumDestroyingTabs;
+
+  uint32_t mNumKeepaliveCalls;
 
   
   
