@@ -459,6 +459,9 @@ var ReaderMode = {
 
     let serializer = new XMLSerializer();
     let serializedDoc = serializer.serializeToString(doc);
+    
+    
+    doc = null;
 
     let options = {
       classesToPreserve: CLASSES_TO_PRESERVE,
@@ -475,10 +478,6 @@ var ReaderMode = {
       Cu.reportError("Error in ReaderWorker: " + e);
       histogram.add(PARSE_ERROR_WORKER);
     }
-
-    
-    
-    doc = null;
 
     if (!article) {
       this.log("Worker did not return an article");
@@ -660,8 +659,11 @@ var ReaderMode = {
       }
       docFrag.append(pElem);
     }
-    preTag.parentNode.replaceChild(docFrag, preTag);
-    return doc;
+    
+    
+    let clone = doc.documentElement.cloneNode(true);
+    clone.querySelector("pre").replaceWith(docFrag);
+    return clone;
   },
 };
 
