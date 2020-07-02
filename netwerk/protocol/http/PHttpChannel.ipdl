@@ -14,11 +14,8 @@ include NeckoChannelParams;
 include IPCServiceWorkerDescriptor;
 include IPCStream;
 include HttpChannelParams;
-include PURLClassifierInfo;
 
 include "mozilla/net/NeckoMessageUtils.h";
-
-using nsIHttpChannel::FlashPluginState from "mozilla/net/NeckoMessageUtils.h";
 
 namespace mozilla {
 namespace net {
@@ -160,18 +157,6 @@ child:
 
   async AltDataCacheInputStreamAvailable(IPCStream? stream);
 
-  
-  async NotifyClassificationFlags(uint32_t aClassificationFlags, bool aIsThirdParty);
-
-  
-  
-  async NotifyFlashPluginStateChanged(FlashPluginState aState);
-
-  
-  async SetClassifierMatchedInfo(ClassifierInfo info);
-
-  
-  async SetClassifierMatchedTrackingInfo(ClassifierInfo info);
 
 both:
   
