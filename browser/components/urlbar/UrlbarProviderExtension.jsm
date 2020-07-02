@@ -187,6 +187,18 @@ class UrlbarProviderExtension extends UrlbarProvider {
 
 
 
+  async getViewUpdate(result) {
+    return this._notifyListener("getViewUpdate", result);
+  }
+
+  
+
+
+
+
+
+
+
 
   async startQuery(context, addCallback) {
     let extResults = await this._notifyListener("resultsRequested", context);
@@ -221,8 +233,14 @@ class UrlbarProviderExtension extends UrlbarProvider {
 
 
 
-  pickResult(result) {
-    this._notifyListener("resultPicked", result.payload);
+
+
+  pickResult(result, element) {
+    let dynamicElementName = "";
+    if (element && result.type == UrlbarUtils.RESULT_TYPE.DYNAMIC) {
+      dynamicElementName = element.getAttribute("name");
+    }
+    this._notifyListener("resultPicked", result.payload, dynamicElementName);
   }
 
   
@@ -351,6 +369,7 @@ class UrlbarProviderExtension extends UrlbarProvider {
 
 
 UrlbarProviderExtension.RESULT_TYPES = {
+  dynamic: UrlbarUtils.RESULT_TYPE.DYNAMIC,
   keyword: UrlbarUtils.RESULT_TYPE.KEYWORD,
   omnibox: UrlbarUtils.RESULT_TYPE.OMNIBOX,
   remote_tab: UrlbarUtils.RESULT_TYPE.REMOTE_TAB,

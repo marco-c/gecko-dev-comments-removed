@@ -13,6 +13,9 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   Preferences: "resource://gre/modules/Preferences.jsm",
+  UrlbarProviderExtension: "resource:///modules/UrlbarProviderExtension.jsm",
+  UrlbarResult: "resource:///modules/UrlbarResult.jsm",
+  UrlbarView: "resource:///modules/UrlbarView.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(
@@ -21,11 +24,21 @@ XPCOMUtils.defineLazyGetter(
   () => new Preferences({ defaultBranch: true })
 );
 
+let { EventManager } = ExtensionCommon;
+
 this.experiments_urlbar = class extends ExtensionAPI {
-  getAPI() {
+  getAPI(context) {
     return {
       experiments: {
         urlbar: {
+          addDynamicResultType: (name, type) => {
+            this._addDynamicResultType(name, type);
+          },
+
+          addDynamicViewTemplate: (name, viewTemplate) => {
+            this._addDynamicViewTemplate(name, viewTemplate);
+          },
+
           clearInput() {
             let window = BrowserWindowTracker.getTopWindow();
             window.gURLBar.value = "";
@@ -35,6 +48,20 @@ this.experiments_urlbar = class extends ExtensionAPI {
           engagementTelemetry: this._getDefaultSettingsAPI(
             "browser.urlbar.eventTelemetry.enabled"
           ),
+
+          onViewUpdateRequested: new EventManager({
+            context,
+            name: "experiments.urlbar.onViewUpdateRequested",
+            register: (fire, providerName) => {
+              let provider = UrlbarProviderExtension.getOrCreate(providerName);
+              provider.setEventListener("getViewUpdate", result => {
+                return fire.async(result.payload).catch(error => {
+                  throw context.normalizeError(error);
+                });
+              });
+              return () => provider.setEventListener("getViewUpdate", null);
+            },
+          }).api(),
         },
       },
     };
@@ -49,6 +76,9 @@ this.experiments_urlbar = class extends ExtensionAPI {
         defaultPreferences.set(pref, value);
       }
     }
+
+    this._removeDynamicViewTemplates();
+    this._removeDynamicResultTypes();
   }
 
   _getDefaultSettingsAPI(pref) {
@@ -81,5 +111,135 @@ this.experiments_urlbar = class extends ExtensionAPI {
         return false;
       },
     };
+  }
+
+  
+  
+  
+
+  
+  _dynamicResultTypeNames = new Set();
+
+  
+  _dynamicViewTemplateNames = new Set();
+
+  
+  
+  static extIDsByDynamicResultTypeName = new Map();
+
+  
+  
+  static extIDsByDynamicViewTemplateName = new Map();
+
+  
+
+
+
+
+
+
+
+
+  _addDynamicResultType(name, type) {
+    this._dynamicResultTypeNames.add(name);
+    this._addExtIDToDynamicResultTypeMap(
+      experiments_urlbar.extIDsByDynamicResultTypeName,
+      name
+    );
+    UrlbarResult.addDynamicResultType(name, type);
+  }
+
+  
+
+
+  _removeDynamicResultTypes() {
+    for (let name of this._dynamicResultTypeNames) {
+      let allRemoved = this._removeExtIDFromDynamicResultTypeMap(
+        experiments_urlbar.extIDsByDynamicResultTypeName,
+        name
+      );
+      if (allRemoved) {
+        UrlbarResult.removeDynamicResultType(name);
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  _addDynamicViewTemplate(name, viewTemplate) {
+    this._dynamicViewTemplateNames.add(name);
+    this._addExtIDToDynamicResultTypeMap(
+      experiments_urlbar.extIDsByDynamicViewTemplateName,
+      name
+    );
+    if (viewTemplate.stylesheet) {
+      viewTemplate.stylesheet = this.extension.baseURI.resolve(
+        viewTemplate.stylesheet
+      );
+    }
+    UrlbarView.addDynamicViewTemplate(name, viewTemplate);
+  }
+
+  
+
+
+  _removeDynamicViewTemplates() {
+    for (let name of this._dynamicViewTemplateNames) {
+      let allRemoved = this._removeExtIDFromDynamicResultTypeMap(
+        experiments_urlbar.extIDsByDynamicViewTemplateName,
+        name
+      );
+      if (allRemoved) {
+        UrlbarView.removeDynamicViewTemplate(name);
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  _addExtIDToDynamicResultTypeMap(map, dynamicTypeName) {
+    let extIDs = map.get(dynamicTypeName);
+    if (!extIDs) {
+      extIDs = new Set();
+      map.set(dynamicTypeName, extIDs);
+    }
+    extIDs.add(this.extension.id);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  _removeExtIDFromDynamicResultTypeMap(map, dynamicTypeName) {
+    let extIDs = map.get(dynamicTypeName);
+    extIDs.delete(this.extension.id);
+    if (!extIDs.size) {
+      map.delete(dynamicTypeName);
+      return true;
+    }
+    return false;
   }
 };

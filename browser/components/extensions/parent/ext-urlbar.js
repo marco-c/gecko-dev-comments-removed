@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 
@@ -127,11 +127,16 @@ this.urlbar = class extends ExtensionAPI {
           inputHandling: true,
           register: (fire, providerName) => {
             let provider = UrlbarProviderExtension.getOrCreate(providerName);
-            provider.setEventListener("resultPicked", async resultPayload => {
-              return fire.async(resultPayload).catch(error => {
-                throw context.normalizeError(error);
-              });
-            });
+            provider.setEventListener(
+              "resultPicked",
+              async (resultPayload, dynamicElementName) => {
+                return fire
+                  .async(resultPayload, dynamicElementName)
+                  .catch(error => {
+                    throw context.normalizeError(error);
+                  });
+              }
+            );
             return () => provider.setEventListener("resultPicked", null);
           },
         }).api(),

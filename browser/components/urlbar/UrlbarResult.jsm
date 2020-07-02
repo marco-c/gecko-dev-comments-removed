@@ -162,6 +162,7 @@ class UrlbarResult {
     let result = JsonSchemaValidator.validate(payload, schema, {
       allowExplicitUndefinedProperties: true,
       allowNullAsUndefinedProperties: true,
+      allowExtraProperties: this.type == UrlbarUtils.RESULT_TYPE.DYNAMIC,
     });
     if (!result.valid) {
       throw result.error;
@@ -266,5 +267,55 @@ class UrlbarResult {
         return highlights;
       }, {}),
     ];
+  }
+
+  static _dynamicResultTypesByName = new Map();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static addDynamicResultType(name, type = {}) {
+    if (/[^a-z0-9_-]/i.test(name)) {
+      Cu.reportError(`Illegal dynamic type name: ${name}`);
+      return;
+    }
+    this._dynamicResultTypesByName.set(name, type);
+  }
+
+  
+
+
+
+
+
+  static removeDynamicResultType(name) {
+    let type = this._dynamicResultTypesByName.get(name);
+    if (type) {
+      this._dynamicResultTypesByName.delete(name);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  static getDynamicResultType(name) {
+    return this._dynamicResultTypesByName.get(name);
   }
 }

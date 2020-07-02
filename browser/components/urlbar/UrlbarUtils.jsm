@@ -76,6 +76,8 @@ var UrlbarUtils = {
     REMOTE_TAB: 6,
     
     TIP: 7,
+    
+    DYNAMIC: 8,
 
     
     
@@ -895,6 +897,15 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
     },
   },
+  [UrlbarUtils.RESULT_TYPE.DYNAMIC]: {
+    type: "object",
+    required: ["dynamicType"],
+    properties: {
+      dynamicType: {
+        type: "string",
+      },
+    },
+  },
 };
 
 
@@ -1134,9 +1145,13 @@ class UrlbarProvider {
 
 
 
-  pickResult(result) {
-    throw new Error("Trying to access the base class, must be overridden");
-  }
+
+
+
+
+
+
+  pickResult(result, element) {}
 
   
 
@@ -1146,6 +1161,69 @@ class UrlbarProvider {
 
 
   onEngagement(isPrivate, state) {}
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getViewUpdate(result) {
+    return null;
+  }
 }
 
 

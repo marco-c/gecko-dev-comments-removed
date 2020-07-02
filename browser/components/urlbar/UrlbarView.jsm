@@ -10,14 +10,27 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
+  Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
+  UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "styleSheetService",
+  "@mozilla.org/content/style-sheet-service;1",
+  "nsIStyleSheetService"
+);
+
 
 
 const DEFAULT_REMOVE_STALE_ROWS_TIMEOUT = 400;
+
+
+const SELECTABLE_ELEMENT_SELECTOR = "[role=button], [selectable=true]";
 
 const getBoundsWithoutFlushing = element =>
   element.ownerGlobal.windowUtils.getBoundsWithoutFlushing(element);
@@ -60,6 +73,12 @@ class UrlbarView {
     
     
     this._queryContextCache = new QueryContextCache(5);
+
+    for (let viewTemplate of UrlbarView.dynamicViewTemplatesByName.values()) {
+      if (viewTemplate.stylesheet) {
+        this._addDynamicStylesheet(viewTemplate.stylesheet);
+      }
+    }
   }
 
   get oneOffSearchButtons() {
@@ -255,17 +274,18 @@ class UrlbarView {
 
 
   getClosestSelectableElement(element) {
-    let result = this.getResultFromElement(element);
-    if (result && result.type == UrlbarUtils.RESULT_TYPE.TIP) {
-      if (
-        element.classList.contains("urlbarView-tip-button") ||
-        element.classList.contains("urlbarView-tip-help")
-      ) {
-        return element;
-      }
+    let row = element.closest(".urlbarView-row");
+    if (!row) {
       return null;
     }
-    return element.closest(".urlbarView-row");
+    let closest = row;
+    if (
+      row.result.type == UrlbarUtils.RESULT_TYPE.TIP ||
+      row.result.type == UrlbarUtils.RESULT_TYPE.DYNAMIC
+    ) {
+      closest = element.closest(SELECTABLE_ELEMENT_SELECTOR);
+    }
+    return this._isElementVisible(closest) ? closest : null;
   }
 
   
@@ -591,6 +611,94 @@ class UrlbarView {
     this.input.handleCommand(event, where, params);
   }
 
+  static dynamicViewTemplatesByName = new Map();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static addDynamicViewTemplate(name, viewTemplate) {
+    this.dynamicViewTemplatesByName.set(name, viewTemplate);
+    if (viewTemplate.stylesheet) {
+      for (let window of BrowserWindowTracker.orderedWindows) {
+        window.gURLBar.view._addDynamicStylesheet(viewTemplate.stylesheet);
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+  static removeDynamicViewTemplate(name) {
+    let viewTemplate = this.dynamicViewTemplatesByName.get(name);
+    if (!viewTemplate) {
+      return;
+    }
+    this.dynamicViewTemplatesByName.delete(name);
+    if (viewTemplate.stylesheet) {
+      for (let window of BrowserWindowTracker.orderedWindows) {
+        window.gURLBar.view._removeDynamicStylesheet(viewTemplate.stylesheet);
+      }
+    }
+  }
+
   
 
   _createElement(name) {
@@ -844,7 +952,35 @@ class UrlbarView {
     item.addEventListener("focus", () => this.input.focus(), true);
   }
 
+  _createRowContentForDynamicType(item, result) {
+    let { dynamicType } = result.payload;
+    let viewTemplate = UrlbarView.dynamicViewTemplatesByName.get(dynamicType);
+    this._buildViewForDynamicType(dynamicType, item._content, viewTemplate);
+  }
+
+  _buildViewForDynamicType(type, parentNode, template) {
+    
+    for (let className of template.classList || []) {
+      parentNode.classList.add(className);
+    }
+    
+    for (let [name, value] of Object.entries(template.attributes || {})) {
+      parentNode.setAttribute(name, value);
+    }
+    if (template.name) {
+      parentNode.setAttribute("name", template.name);
+    }
+    
+    for (let childTemplate of template.children || []) {
+      let child = this._createElement(childTemplate.tag);
+      child.classList.add(`urlbarView-dynamic-${type}-${childTemplate.name}`);
+      parentNode.appendChild(child);
+      this._buildViewForDynamicType(type, child, childTemplate);
+    }
+  }
+
   _updateRow(item, result) {
+    let oldResult = item.result;
     let oldResultType = item.result && item.result.type;
     item.result = result;
     item.removeAttribute("stale");
@@ -853,7 +989,12 @@ class UrlbarView {
     let needsNewContent =
       oldResultType === undefined ||
       (oldResultType == UrlbarUtils.RESULT_TYPE.TIP) !=
-        (result.type == UrlbarUtils.RESULT_TYPE.TIP);
+        (result.type == UrlbarUtils.RESULT_TYPE.TIP) ||
+      (oldResultType == UrlbarUtils.RESULT_TYPE.DYNAMIC) !=
+        (result.type == UrlbarUtils.RESULT_TYPE.DYNAMIC) ||
+      (oldResultType == UrlbarUtils.RESULT_TYPE.DYNAMIC &&
+        result.type == UrlbarUtils.RESULT_TYPE.DYNAMIC &&
+        oldResult.dynamicType != result.dynamicType);
 
     if (needsNewContent) {
       if (item._content) {
@@ -863,8 +1004,11 @@ class UrlbarView {
       item._content = this._createElement("span");
       item._content.className = "urlbarView-row-inner";
       item.appendChild(item._content);
+      item.removeAttribute("dynamicType");
       if (item.result.type == UrlbarUtils.RESULT_TYPE.TIP) {
         this._createRowContentForTip(item);
+      } else if (item.result.type == UrlbarUtils.RESULT_TYPE.DYNAMIC) {
+        this._createRowContentForDynamicType(item, result);
       } else {
         this._createRowContent(item);
       }
@@ -886,6 +1030,10 @@ class UrlbarView {
       return;
     } else if (result.source == UrlbarUtils.RESULT_SOURCE.BOOKMARKS) {
       item.setAttribute("type", "bookmark");
+    } else if (result.type == UrlbarUtils.RESULT_TYPE.DYNAMIC) {
+      item.setAttribute("type", "dynamic");
+      this._updateRowForDynamicType(item, result);
+      return;
     } else {
       item.removeAttribute("type");
     }
@@ -1084,6 +1232,36 @@ class UrlbarView {
     }
   }
 
+  async _updateRowForDynamicType(item, result) {
+    item.setAttribute("dynamicType", result.payload.dynamicType);
+
+    
+    let provider = UrlbarProvidersManager.getProvider(result.providerName);
+    let viewUpdate = await provider.getViewUpdate(result);
+
+    
+    for (let [nodeName, update] of Object.entries(viewUpdate)) {
+      let node = item.querySelector(
+        `.urlbarView-dynamic-${result.payload.dynamicType}-${nodeName}`
+      );
+      for (let [attrName, value] of Object.entries(update.attributes || {})) {
+        node.setAttribute(attrName, value);
+      }
+      for (let [styleName, value] of Object.entries(update.style || {})) {
+        node.style[styleName] = value;
+      }
+      if (update.l10n) {
+        this.document.l10n.setAttributes(
+          node,
+          update.l10n.id,
+          update.l10n.args || undefined
+        );
+      } else if (update.textContent) {
+        node.textContent = update.textContent;
+      }
+    }
+  }
+
   _updateIndices() {
     for (let i = 0; i < this._rows.children.length; i++) {
       let item = this._rows.children[i];
@@ -1099,7 +1277,11 @@ class UrlbarView {
 
   _setRowVisibility(row, visible) {
     row.style.display = visible ? "" : "none";
-    if (!visible && row.result.type != UrlbarUtils.RESULT_TYPE.TIP) {
+    if (
+      !visible &&
+      row.result.type != UrlbarUtils.RESULT_TYPE.TIP &&
+      row.result.type != UrlbarUtils.RESULT_TYPE.DYNAMIC
+    ) {
       
       
       
@@ -1117,15 +1299,11 @@ class UrlbarView {
 
 
   _isElementVisible(element) {
-    if (!element.classList.contains("urlbarView-row")) {
-      element = element.closest(".urlbarView-row");
-    }
-
-    if (!element) {
+    if (!element || element.style.display == "none") {
       return false;
     }
-
-    return element.style.display != "none";
+    let row = element.closest(".urlbarView-row");
+    return row && row.style.display != "none";
   }
 
   _removeStaleRows() {
@@ -1178,42 +1356,39 @@ class UrlbarView {
 
 
 
-  _getFirstSelectableElement() {
-    let firstElementChild = this._rows.firstElementChild;
-    if (
-      firstElementChild &&
-      firstElementChild.result &&
-      firstElementChild.result.type == UrlbarUtils.RESULT_TYPE.TIP
-    ) {
-      firstElementChild = firstElementChild._elements.get("tipButton");
-    }
-    return firstElementChild;
+
+
+
+  _isSelectableElement(element) {
+    return this.getClosestSelectableElement(element) == element;
   }
 
   
+
+
+
+
+
+  _getFirstSelectableElement() {
+    let element = this._rows.firstElementChild;
+    if (element && !this._isSelectableElement(element)) {
+      element = this._getNextSelectableElement(element);
+    }
+    return element;
+  }
+
+  
+
 
 
 
 
   _getLastSelectableElement() {
-    let lastElementChild = this._rows.lastElementChild;
-
-    
-    while (lastElementChild && !this._isElementVisible(lastElementChild)) {
-      lastElementChild = this._getPreviousSelectableElement(lastElementChild);
+    let element = this._rows.lastElementChild;
+    if (element && !this._isSelectableElement(element)) {
+      element = this._getPreviousSelectableElement(element);
     }
-
-    if (
-      lastElementChild.result &&
-      lastElementChild.result.type == UrlbarUtils.RESULT_TYPE.TIP
-    ) {
-      lastElementChild = lastElementChild._elements.get("helpButton");
-      if (lastElementChild.style.display == "none") {
-        lastElementChild = this._getPreviousSelectableElement(lastElementChild);
-      }
-    }
-
-    return lastElementChild;
+    return element;
   }
 
   
@@ -1221,25 +1396,35 @@ class UrlbarView {
 
 
 
-  _getNextSelectableElement(element) {
-    let next;
-    if (element.classList.contains("urlbarView-tip-button")) {
-      next = element.closest(".urlbarView-row")._elements.get("helpButton");
-      if (next.style.display == "none") {
-        next = this._getNextSelectableElement(next);
-      }
-    } else if (element.classList.contains("urlbarView-tip-help")) {
-      next = element.closest(".urlbarView-row").nextElementSibling;
-    } else {
-      next = element.nextElementSibling;
-    }
 
-    if (!next) {
+
+
+
+
+  _getNextSelectableElement(element) {
+    let row = element.closest(".urlbarView-row");
+    if (!row) {
       return null;
     }
 
-    if (next.result && next.result.type == UrlbarUtils.RESULT_TYPE.TIP) {
-      next = next._elements.get("tipButton");
+    let next;
+    if (
+      row.result.type == UrlbarUtils.RESULT_TYPE.TIP ||
+      row.result.type == UrlbarUtils.RESULT_TYPE.DYNAMIC
+    ) {
+      let selectables = [...row.querySelectorAll(SELECTABLE_ELEMENT_SELECTOR)];
+      let index = selectables.indexOf(element);
+      if (index == selectables.length - 1) {
+        next = row.nextElementSibling;
+      } else {
+        next = selectables[index + 1];
+      }
+    } else {
+      next = row.nextElementSibling;
+    }
+
+    if (next && !this._isSelectableElement(next)) {
+      next = this._getNextSelectableElement(next);
     }
 
     return next;
@@ -1250,28 +1435,37 @@ class UrlbarView {
 
 
 
-  _getPreviousSelectableElement(element) {
-    let previous;
-    if (element.classList.contains("urlbarView-tip-button")) {
-      previous = element.closest(".urlbarView-row").previousElementSibling;
-    } else if (element.classList.contains("urlbarView-tip-help")) {
-      previous = element.closest(".urlbarView-row")._elements.get("tipButton");
-    } else {
-      previous = element.previousElementSibling;
-    }
 
-    if (!previous) {
+
+
+
+
+  _getPreviousSelectableElement(element) {
+    let row = element.closest(".urlbarView-row");
+    if (!row) {
       return null;
     }
 
+    let previous;
     if (
-      previous.result &&
-      previous.result.type == UrlbarUtils.RESULT_TYPE.TIP
+      row.result.type == UrlbarUtils.RESULT_TYPE.TIP ||
+      row.result.type == UrlbarUtils.RESULT_TYPE.DYNAMIC
     ) {
-      previous = previous._elements.get("helpButton");
-      if (previous.style.display == "none") {
-        previous = this._getPreviousSelectableElement(previous);
+      let selectables = [...row.querySelectorAll(SELECTABLE_ELEMENT_SELECTOR)];
+      let index = selectables.indexOf(element);
+      if (index == 0 || !selectables.length) {
+        previous = row.previousElementSibling;
+      } else if (index < 0) {
+        previous = selectables[selectables.length - 1];
+      } else {
+        previous = selectables[index - 1];
       }
+    } else {
+      previous = row.previousElementSibling;
+    }
+
+    if (previous && !this._isSelectableElement(previous)) {
+      previous = this._getPreviousSelectableElement(previous);
     }
 
     return previous;
@@ -1443,6 +1637,47 @@ class UrlbarView {
     }
     this.input.pickElement(tipButton, event);
     return true;
+  }
+
+  
+
+
+
+
+
+  async _addDynamicStylesheet(stylesheetURL) {
+    
+    
+    
+    
+    try {
+      let uri = Services.io.newURI(stylesheetURL);
+      let sheet = await styleSheetService.preloadSheetAsync(
+        uri,
+        Ci.nsIStyleSheetService.AGENT_SHEET
+      );
+      this.window.windowUtils.addSheet(sheet, Ci.nsIDOMWindowUtils.AGENT_SHEET);
+    } catch (ex) {
+      Cu.reportError(`Error adding dynamic stylesheet: ${ex}`);
+    }
+  }
+
+  
+
+
+
+
+
+  _removeDynamicStylesheet(stylesheetURL) {
+    
+    try {
+      this.window.windowUtils.removeSheetUsingURIString(
+        stylesheetURL,
+        Ci.nsIDOMWindowUtils.AGENT_SHEET
+      );
+    } catch (ex) {
+      Cu.reportError(`Error removing dynamic stylesheet: ${ex}`);
+    }
   }
 
   
