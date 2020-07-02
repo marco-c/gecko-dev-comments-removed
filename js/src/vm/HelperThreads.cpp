@@ -2217,13 +2217,9 @@ void HelperThread::handleCompressionWorkload(
     currentTask.emplace(task.get());
   }
 
-  {
-    AutoUnlockHelperThreadState unlock(locked);
-
-    
-    
-    task.release()->runTask();
-  }
+  
+  
+  task.release()->runTaskLocked(locked);
 
   currentTask.reset();
 
