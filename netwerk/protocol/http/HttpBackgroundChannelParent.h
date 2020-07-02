@@ -70,6 +70,22 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
   
   bool OnDiversion();
 
+  
+  bool OnNotifyClassificationFlags(uint32_t aClassificationFlags,
+                                   bool aIsThirdParty);
+
+  
+  bool OnNotifyFlashPluginStateChanged(nsIHttpChannel::FlashPluginState aState);
+
+  
+  bool OnSetClassifierMatchedInfo(const nsACString& aList,
+                                  const nsACString& aProvider,
+                                  const nsACString& aFullHash);
+
+  
+  bool OnSetClassifierMatchedTrackingInfo(const nsACString& aLists,
+                                          const nsACString& aFullHashes);
+
  protected:
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
