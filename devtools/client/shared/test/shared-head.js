@@ -68,6 +68,31 @@ const URL_ROOT_SSL = CHROME_URL_ROOT.replace(
   "https://example.com/"
 );
 
+
+const URL_ROOT_COM = URL_ROOT;
+const URL_ROOT_COM_SSL = URL_ROOT_SSL;
+
+
+
+
+const URL_ROOT_ORG = CHROME_URL_ROOT.replace(
+  "chrome://mochitests/content/",
+  "http://example.org/"
+);
+const URL_ROOT_ORG_SSL = CHROME_URL_ROOT.replace(
+  "chrome://mochitests/content/",
+  "https://example.org/"
+);
+const URL_ROOT_NET = CHROME_URL_ROOT.replace(
+  "chrome://mochitests/content/",
+  "http://example.org/"
+);
+
+const URL_ROOT_MOCHI_8888 = CHROME_URL_ROOT.replace(
+  "chrome://mochitests/content/",
+  "http://mochi.test:8888/"
+);
+
 try {
   Services.scriptloader.loadSubScript(
     "chrome://mochitests/content/browser/devtools/client/shared/test/telemetry-test-helpers.js",
