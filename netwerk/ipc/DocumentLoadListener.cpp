@@ -44,6 +44,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/RemoteWebProgress.h"
 #include "mozilla/dom/RemoteWebProgressRequest.h"
+#include "mozilla/ExtensionPolicyService.h"
 
 #ifdef ANDROID
 #  include "mozilla/widget/nsWindow.h"
@@ -1283,6 +1284,31 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
     }
   }
 
+  
+  
+  if (auto* addonPolicy = BasePrincipal::Cast(resultPrincipal)->AddonPolicy()) {
+    if (browsingContext->IsTop()) {
+      
+      
+      if (ExtensionPolicyService::GetSingleton().UseRemoteExtensions()) {
+        preferredRemoteType = NS_LITERAL_STRING(EXTENSION_REMOTE_TYPE);
+      } else {
+        preferredRemoteType = VoidString();
+      }
+
+      if (browsingContext->Group()->Id() !=
+          addonPolicy->GetBrowsingContextGroupId()) {
+        replaceBrowsingContext = true;
+        specificGroupId = addonPolicy->GetBrowsingContextGroupId();
+      }
+    } else {
+      
+      
+      preferredRemoteType =
+          browsingContext->GetParentWindowContext()->GetRemoteType();
+    }
+  }
+
   LOG(
       ("DocumentLoadListener GetRemoteTypeForPrincipal "
        "[this=%p, contentParent=%s, preferredRemoteType=%s]",
@@ -1310,6 +1336,14 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
   if (NS_WARN_IF(NS_FAILED(rv))) {
     LOG(("Process Switch Abort: getRemoteTypeForPrincipal threw an exception"));
     return false;
+  }
+
+  
+  
+  
+  if (browsingContext->IsTop() && currentRemoteType != remoteType &&
+      currentRemoteType.EqualsLiteral(EXTENSION_REMOTE_TYPE)) {
+    replaceBrowsingContext = true;
   }
 
   LOG(("GetRemoteTypeForPrincipal -> current:%s remoteType:%s",
