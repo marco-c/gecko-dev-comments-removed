@@ -5,7 +5,7 @@
 
 
 
-#include "nsSVGViewportFrame.h"
+#include "SVGViewportFrame.h"
 
 
 #include "gfx2DGlue.h"
@@ -16,18 +16,19 @@
 #include "nsSVGIntegrationUtils.h"
 #include "mozilla/dom/SVGViewportElement.h"
 
-using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::gfx;
 using namespace mozilla::image;
 
+namespace mozilla {
 
 
 
-void nsSVGViewportFrame::PaintSVG(gfxContext& aContext,
-                                  const gfxMatrix& aTransform,
-                                  imgDrawingParams& aImgParams,
-                                  const nsIntRect* aDirtyRect) {
+
+void SVGViewportFrame::PaintSVG(gfxContext& aContext,
+                                const gfxMatrix& aTransform,
+                                imgDrawingParams& aImgParams,
+                                const nsIntRect* aDirtyRect) {
   NS_ASSERTION(
       !NS_SVGDisplayListPaintingEnabled() || (mState & NS_FRAME_IS_NONDISPLAY),
       "If display lists are enabled, only painting of non-display "
@@ -54,7 +55,7 @@ void nsSVGViewportFrame::PaintSVG(gfxContext& aContext,
                                        aDirtyRect);
 }
 
-void nsSVGViewportFrame::ReflowSVG() {
+void SVGViewportFrame::ReflowSVG() {
   
   
   float x, y, width, height;
@@ -72,7 +73,7 @@ void nsSVGViewportFrame::ReflowSVG() {
   nsSVGDisplayContainerFrame::ReflowSVG();
 }
 
-void nsSVGViewportFrame::NotifySVGChanged(uint32_t aFlags) {
+void SVGViewportFrame::NotifySVGChanged(uint32_t aFlags) {
   MOZ_ASSERT(aFlags & (TRANSFORM_CHANGED | COORD_CONTEXT_CHANGED),
              "Invalidation logic may need adjusting");
 
@@ -121,8 +122,8 @@ void nsSVGViewportFrame::NotifySVGChanged(uint32_t aFlags) {
   nsSVGDisplayContainerFrame::NotifySVGChanged(aFlags);
 }
 
-SVGBBox nsSVGViewportFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
-                                                uint32_t aFlags) {
+SVGBBox SVGViewportFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
+                                              uint32_t aFlags) {
   
   
   
@@ -158,9 +159,9 @@ SVGBBox nsSVGViewportFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
   return bbox;
 }
 
-nsresult nsSVGViewportFrame::AttributeChanged(int32_t aNameSpaceID,
-                                              nsAtom* aAttribute,
-                                              int32_t aModType) {
+nsresult SVGViewportFrame::AttributeChanged(int32_t aNameSpaceID,
+                                            nsAtom* aAttribute,
+                                            int32_t aModType) {
   if (aNameSpaceID == kNameSpaceID_None &&
       !(GetStateBits() & NS_FRAME_IS_NONDISPLAY)) {
     SVGViewportElement* content =
@@ -223,7 +224,7 @@ nsresult nsSVGViewportFrame::AttributeChanged(int32_t aNameSpaceID,
   return NS_OK;
 }
 
-nsIFrame* nsSVGViewportFrame::GetFrameForPoint(const gfxPoint& aPoint) {
+nsIFrame* SVGViewportFrame::GetFrameForPoint(const gfxPoint& aPoint) {
   NS_ASSERTION(!NS_SVGDisplayListHitTestingEnabled() ||
                    (mState & NS_FRAME_IS_NONDISPLAY),
                "If display lists are enabled, only hit-testing of non-display "
@@ -245,20 +246,19 @@ nsIFrame* nsSVGViewportFrame::GetFrameForPoint(const gfxPoint& aPoint) {
 
 
 
-void nsSVGViewportFrame::NotifyViewportOrTransformChanged(uint32_t aFlags) {
+void SVGViewportFrame::NotifyViewportOrTransformChanged(uint32_t aFlags) {
   
   
   
   
   
-  NS_ERROR("Not called for nsSVGViewportFrame");
+  NS_ERROR("Not called for SVGViewportFrame");
 }
 
 
 
 
-bool nsSVGViewportFrame::HasChildrenOnlyTransform(
-    gfx::Matrix* aTransform) const {
+bool SVGViewportFrame::HasChildrenOnlyTransform(gfx::Matrix* aTransform) const {
   SVGViewportElement* content = static_cast<SVGViewportElement*>(GetContent());
 
   if (content->HasViewBoxOrSyntheticViewBox()) {
@@ -270,3 +270,5 @@ bool nsSVGViewportFrame::HasChildrenOnlyTransform(
   }
   return false;
 }
+
+}  
