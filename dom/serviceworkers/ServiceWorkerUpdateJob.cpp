@@ -518,12 +518,6 @@ void ServiceWorkerUpdateJob::ContinueAfterInstallEvent(
     return;
   }
 
-  
-  
-  if (!mRegistration->GetInstalling()) {
-    return FailUpdateJob(NS_ERROR_DOM_ABORT_ERR);
-  }
-
   MOZ_DIAGNOSTIC_ASSERT(mRegistration->GetInstalling());
   mRegistration->TransitionInstallingToWaiting();
 
