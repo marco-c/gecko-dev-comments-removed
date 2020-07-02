@@ -447,8 +447,8 @@ enum MouseButton {
 
 enum MouseButtonsFlag {
   eNoButtons = 0x00,
-  eLeftFlag = 0x01,
-  eRightFlag = 0x02,
+  ePrimaryFlag = 0x01,
+  eSecondaryFlag = 0x02,
   eMiddleFlag = 0x04,
   
   
