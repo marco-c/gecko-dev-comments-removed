@@ -4694,6 +4694,68 @@ class nsIFrame : public nsQueryFrame {
                                   bool aDumpHtml = false);
 #endif
 
+  
+
+
+
+
+
+
+
+
+  bool DisplayBackgroundUnconditional(nsDisplayListBuilder* aBuilder,
+                                      const nsDisplayListSet& aLists,
+                                      bool aForceBackground);
+  
+
+
+
+
+
+
+
+
+  void DisplayBorderBackgroundOutline(nsDisplayListBuilder* aBuilder,
+                                      const nsDisplayListSet& aLists,
+                                      bool aForceBackground = false);
+  
+
+
+  void DisplayOutlineUnconditional(nsDisplayListBuilder* aBuilder,
+                                   const nsDisplayListSet& aLists);
+  
+
+
+
+  void DisplayOutline(nsDisplayListBuilder* aBuilder,
+                      const nsDisplayListSet& aLists);
+
+  
+
+
+  void DisplayInsetBoxShadowUnconditional(nsDisplayListBuilder* aBuilder,
+                                          nsDisplayList* aList);
+
+  
+
+
+
+  void DisplayInsetBoxShadow(nsDisplayListBuilder* aBuilder,
+                             nsDisplayList* aList);
+
+  
+
+
+  void DisplayOutsetBoxShadowUnconditional(nsDisplayListBuilder* aBuilder,
+                                           nsDisplayList* aList);
+
+  
+
+
+
+  void DisplayOutsetBoxShadow(nsDisplayListBuilder* aBuilder,
+                              nsDisplayList* aList);
+
   bool ForceDescendIntoIfVisible() const { return mForceDescendIntoIfVisible; }
   void SetForceDescendIntoIfVisible(bool aForce) {
     mForceDescendIntoIfVisible = aForce;

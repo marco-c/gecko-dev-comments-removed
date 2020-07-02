@@ -2558,8 +2558,8 @@ bool nsIFrame::CanBeDynamicReflowRoot() const {
 
 
 
-void nsFrame::DisplayOutlineUnconditional(nsDisplayListBuilder* aBuilder,
-                                          const nsDisplayListSet& aLists) {
+void nsIFrame::DisplayOutlineUnconditional(nsDisplayListBuilder* aBuilder,
+                                           const nsDisplayListSet& aLists) {
   
   
   
@@ -2597,15 +2597,15 @@ void nsFrame::DisplayOutlineUnconditional(nsDisplayListBuilder* aBuilder,
   aLists.Outlines()->AppendNewToTop<nsDisplayOutline>(aBuilder, this);
 }
 
-void nsFrame::DisplayOutline(nsDisplayListBuilder* aBuilder,
-                             const nsDisplayListSet& aLists) {
+void nsIFrame::DisplayOutline(nsDisplayListBuilder* aBuilder,
+                              const nsDisplayListSet& aLists) {
   if (!IsVisibleForPainting()) return;
 
   DisplayOutlineUnconditional(aBuilder, aLists);
 }
 
-void nsFrame::DisplayInsetBoxShadowUnconditional(nsDisplayListBuilder* aBuilder,
-                                                 nsDisplayList* aList) {
+void nsIFrame::DisplayInsetBoxShadowUnconditional(
+    nsDisplayListBuilder* aBuilder, nsDisplayList* aList) {
   
   
   
@@ -2615,14 +2615,14 @@ void nsFrame::DisplayInsetBoxShadowUnconditional(nsDisplayListBuilder* aBuilder,
   }
 }
 
-void nsFrame::DisplayInsetBoxShadow(nsDisplayListBuilder* aBuilder,
-                                    nsDisplayList* aList) {
+void nsIFrame::DisplayInsetBoxShadow(nsDisplayListBuilder* aBuilder,
+                                     nsDisplayList* aList) {
   if (!IsVisibleForPainting()) return;
 
   DisplayInsetBoxShadowUnconditional(aBuilder, aList);
 }
 
-void nsFrame::DisplayOutsetBoxShadowUnconditional(
+void nsIFrame::DisplayOutsetBoxShadowUnconditional(
     nsDisplayListBuilder* aBuilder, nsDisplayList* aList) {
   
   
@@ -2633,8 +2633,8 @@ void nsFrame::DisplayOutsetBoxShadowUnconditional(
   }
 }
 
-void nsFrame::DisplayOutsetBoxShadow(nsDisplayListBuilder* aBuilder,
-                                     nsDisplayList* aList) {
+void nsIFrame::DisplayOutsetBoxShadow(nsDisplayListBuilder* aBuilder,
+                                      nsDisplayList* aList) {
   if (!IsVisibleForPainting()) return;
 
   DisplayOutsetBoxShadowUnconditional(aBuilder, aList);
@@ -2651,9 +2651,9 @@ nscolor nsIFrame::GetCaretColorAt(int32_t aOffset) {
   return nsLayoutUtils::GetColor(this, &nsStyleUI::mCaretColor);
 }
 
-bool nsFrame::DisplayBackgroundUnconditional(nsDisplayListBuilder* aBuilder,
-                                             const nsDisplayListSet& aLists,
-                                             bool aForceBackground) {
+bool nsIFrame::DisplayBackgroundUnconditional(nsDisplayListBuilder* aBuilder,
+                                              const nsDisplayListSet& aLists,
+                                              bool aForceBackground) {
   const bool hitTesting = aBuilder->IsForEventDelivery();
   if (hitTesting && !aBuilder->HitTestIsForVisibility()) {
     
@@ -2680,9 +2680,9 @@ bool nsFrame::DisplayBackgroundUnconditional(nsDisplayListBuilder* aBuilder,
   return false;
 }
 
-void nsFrame::DisplayBorderBackgroundOutline(nsDisplayListBuilder* aBuilder,
-                                             const nsDisplayListSet& aLists,
-                                             bool aForceBackground) {
+void nsIFrame::DisplayBorderBackgroundOutline(nsDisplayListBuilder* aBuilder,
+                                              const nsDisplayListSet& aLists,
+                                              bool aForceBackground) {
   
   
   
