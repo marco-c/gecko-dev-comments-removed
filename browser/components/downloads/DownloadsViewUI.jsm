@@ -842,6 +842,11 @@ DownloadsViewUI.DownloadElementShell.prototype = {
     
     
     const mimeInfo = DownloadsCommon.getMimeInfo(this.download);
+    if (!mimeInfo) {
+      throw new Error(
+        "Can't open download with unknown mime-type in system viewer"
+      );
+    }
     if (mimeInfo.preferredAction !== mimeInfo.useSystemDefault) {
       
       DownloadsCommon.log(

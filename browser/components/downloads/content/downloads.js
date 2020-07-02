@@ -938,9 +938,8 @@ var DownloadsView = {
     DownloadsViewController.updateCommands();
 
     let download = element._shell.download;
-    let { preferredAction, useSystemDefault } = DownloadsCommon.getMimeInfo(
-      download
-    );
+    let mimeInfo = DownloadsCommon.getMimeInfo(download);
+    let { preferredAction, useSystemDefault } = mimeInfo ? mimeInfo : {};
 
     
     let contextMenu = document.getElementById("downloadsContextMenu");
