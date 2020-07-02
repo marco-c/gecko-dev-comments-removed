@@ -25,9 +25,7 @@ const whitelist = {
 
     
     "resource://gre/modules/AppConstants.jsm",
-    "resource://gre/modules/AsyncShutdown.jsm",
     "resource://gre/modules/DeferredTask.jsm",
-    "resource://gre/modules/PromiseUtils.jsm",
     "resource://gre/modules/Services.jsm", 
     "resource://gre/modules/Timer.jsm",
     "resource://gre/modules/XPCOMUtils.jsm",
@@ -50,6 +48,8 @@ const whitelist = {
 
     
     "resource://gre/modules/TelemetryController.jsm", 
+    "resource://gre/modules/TelemetryControllerBase.jsm", 
+    "resource://gre/modules/TelemetryControllerContent.jsm", 
     "resource://gre/modules/TelemetryUtils.jsm", 
 
     
