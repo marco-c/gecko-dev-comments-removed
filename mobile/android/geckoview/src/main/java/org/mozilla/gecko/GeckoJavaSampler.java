@@ -8,11 +8,17 @@ package org.mozilla.gecko;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
+import java.util.Queue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.LinkedBlockingQueue;
 
+import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.gecko.annotation.WrapForJNI;
 
 
@@ -22,11 +28,39 @@ public class GeckoJavaSampler {
     private static SamplingRunnable sSamplingRunnable;
     private static ScheduledExecutorService sSamplingScheduler;
     private static ScheduledFuture<?> sSamplingFuture;
+    private static final MarkerStorage sMarkerStorage = new MarkerStorage();
+
+    
+
+
+
+    public static boolean isProfilerActive() {
+        
+        
+        return sSamplingRunnable != null && sSamplingFuture != null;
+    }
 
     
     
     @WrapForJNI
     private static native double getProfilerTime();
+
+    
+
+
+    public static @Nullable Double tryToGetProfilerTime() {
+        if (!isProfilerActive()) {
+            
+            return null;
+        }
+        if (!GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
+            
+            
+            return null;
+        }
+
+        return getProfilerTime();
+    }
 
     private static class Sample {
         public Frame[] mFrames;
@@ -55,6 +89,144 @@ public class GeckoJavaSampler {
         public String className;
     }
 
+    private static class Marker extends JNIObject {
+        
+
+
+        private String mMarkerName;
+        
+
+
+        private double mTime;
+        
+
+
+
+        private long mJavaTime;
+        
+
+
+
+        private double mEndTime;
+        
+
+
+
+        private long mEndJavaTime;
+        
+
+
+        private @Nullable String mText;
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        public Marker(@NonNull final String aMarkerName,
+                      @Nullable final Double aStartTime,
+                      @Nullable final Double aEndTime,
+                      @Nullable final String aText) {
+            mMarkerName = aMarkerName;
+            mText = aText;
+            if (aStartTime != null) {
+                
+                mTime = aStartTime;
+                if (aEndTime != null) {
+                    
+                    mEndTime = aEndTime;
+                } else {
+                    
+                    if (GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
+                        mEndTime = getProfilerTime();
+                    }
+                    if (mEndTime == 0.0d) {
+                        
+                        
+                        mEndJavaTime = SystemClock.elapsedRealtime();
+                    }
+                }
+            } else {
+                
+                if (aEndTime != null) {
+                    
+                    mTime = aEndTime;
+                } else {
+                    if (GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY)) {
+                        mTime = getProfilerTime();
+                    }
+                    if (mTime == 0.0d) {
+                        
+                        
+                        mJavaTime = SystemClock.elapsedRealtime();
+                    }
+                }
+            }
+        }
+
+        @WrapForJNI @Override 
+        protected native void disposeNative();
+
+        @WrapForJNI
+        public double getStartTime() {
+            if (mJavaTime != 0) {
+                return (mJavaTime -
+                    SystemClock.elapsedRealtime()) + getProfilerTime();
+            }
+            return mTime;
+        }
+
+        @WrapForJNI
+        public double getEndTime() {
+            if (mEndJavaTime != 0) {
+                return (mEndJavaTime -
+                    SystemClock.elapsedRealtime()) + getProfilerTime();
+            }
+            return mEndTime;
+        }
+
+        @WrapForJNI
+        public @NonNull String getMarkerName() {
+            return mMarkerName;
+        }
+
+        @WrapForJNI
+        public @Nullable String getMarkerText() {
+            return mText;
+        }
+    }
+
+    
+
+
+
+
+
+    public static void addMarker(@NonNull final String aMarkerName,
+                                 @Nullable final Double aStartTime,
+                                 @Nullable final Double aEndTime,
+                                 @Nullable final String aText) {
+        sMarkerStorage.addMarker(aMarkerName, aStartTime, aEndTime, aText);
+    }
+
     private static class SamplingRunnable implements Runnable {
         
         public final int mInterval;
@@ -69,9 +241,7 @@ public class GeckoJavaSampler {
         public SamplingRunnable(final int aInterval, final int aSampleCount) {
             
             mInterval = Math.max(1, aInterval);
-            
-            
-            mSampleCount = Math.min(aSampleCount, 120000);
+            mSampleCount = aSampleCount;
             mSamples = new Sample[mSampleCount];
             mSamplePos = 0;
 
@@ -125,6 +295,11 @@ public class GeckoJavaSampler {
     }
 
     @WrapForJNI
+    public static Marker pollNextMarker() {
+        return sMarkerStorage.pollNextMarker();
+    }
+
+    @WrapForJNI
     public synchronized static double getSampleTime(final int aSampleId) {
         Sample sample = getSample(aSampleId);
         if (sample != null) {
@@ -150,8 +325,69 @@ public class GeckoJavaSampler {
         return null;
     }
 
+
+    private static class MarkerStorage {
+        private volatile Queue<Marker> mMarkers;
+
+        MarkerStorage() {}
+
+        public synchronized void start(final int aMarkerCount) {
+            if (this.mMarkers != null) {
+                return;
+            }
+            this.mMarkers = new LinkedBlockingQueue<>(aMarkerCount);
+        }
+
+        public synchronized void stop() {
+            if (this.mMarkers == null) {
+                return;
+            }
+            this.mMarkers = null;
+        }
+
+        private void addMarker(@NonNull final String aMarkerName,
+                               @Nullable final Double aStartTime,
+                               @Nullable final Double aEndTime,
+                               @Nullable final String aText) {
+            Queue<Marker> markersQueue = this.mMarkers;
+            if (markersQueue == null) {
+                
+                return;
+            }
+
+            
+            
+            if (Looper.myLooper() != Looper.getMainLooper()) {
+                
+                
+                throw new AssertionError("Currently only main thread is supported for markers.");
+            }
+
+            Marker newMarker = new Marker(aMarkerName, aStartTime, aEndTime, aText);
+
+            boolean successful = markersQueue.offer(newMarker);
+            while (!successful) {
+                
+                markersQueue.poll();
+                successful = markersQueue.offer(newMarker);
+            }
+        }
+
+        private Marker pollNextMarker() {
+            Queue<Marker> markersQueue = this.mMarkers;
+            if (markersQueue == null) {
+                
+                return null;
+            }
+            
+            
+            return markersQueue.poll();
+        }
+    }
+
+
     @WrapForJNI
-    public static void start(final int aInterval, final int aSamples) {
+    public static void start(final int aInterval, final int aEntryCount) {
         synchronized (GeckoJavaSampler.class) {
             if (sSamplingRunnable != null) {
                 return;
@@ -161,7 +397,11 @@ public class GeckoJavaSampler {
                 return;
             }
 
-            sSamplingRunnable = new SamplingRunnable(aInterval, aSamples);
+            
+            
+            int limitedEntryCount = Math.min(aEntryCount, 120000);
+            sSamplingRunnable = new SamplingRunnable(aInterval, limitedEntryCount);
+            sMarkerStorage.start(limitedEntryCount);
             sSamplingScheduler = Executors.newSingleThreadScheduledExecutor();
             sSamplingFuture = sSamplingScheduler.scheduleAtFixedRate(sSamplingRunnable, 0, sSamplingRunnable.mInterval, TimeUnit.MILLISECONDS);
         }
@@ -203,6 +443,7 @@ public class GeckoJavaSampler {
             sSamplingScheduler = null;
             sSamplingRunnable = null;
             sSamplingFuture = null;
+            sMarkerStorage.stop();
         }
     }
 }
