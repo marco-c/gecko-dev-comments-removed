@@ -153,7 +153,7 @@ MODERN_MERCURIAL_VERSION = LooseVersion('4.8')
 MODERN_PYTHON_VERSION = LooseVersion('2.7.3')
 
 
-MODERN_RUST_VERSION = LooseVersion('1.41.1')
+MODERN_RUST_VERSION = LooseVersion('1.43.0')
 
 
 MODERN_NASM_VERSION = LooseVersion('2.14')
