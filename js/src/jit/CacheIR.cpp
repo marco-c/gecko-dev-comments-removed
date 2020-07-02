@@ -2300,6 +2300,24 @@ static Scalar::Type TypedThingElementType(JSObject* obj) {
                                      : PrimitiveArrayTypedObjectType(obj);
 }
 
+
+
+static bool AllowDoubleForUint32Array(TypedArrayObject* tarr, uint32_t index) {
+  if (TypedThingElementType(tarr) != Scalar::Type::Uint32) {
+    
+    return false;
+  }
+
+  if (index >= tarr->length()) {
+    return false;
+  }
+
+  Value res;
+  MOZ_ALWAYS_TRUE(tarr->getElementPure(index, &res));
+  MOZ_ASSERT(res.isNumber());
+  return res.isDouble();
+}
+
 AttachDecision GetPropIRGenerator::tryAttachTypedElement(
     HandleObject obj, ObjOperandId objId, uint32_t index,
     Int32OperandId indexId) {
@@ -2324,9 +2342,11 @@ AttachDecision GetPropIRGenerator::tryAttachTypedElement(
   
   
   if (layout == TypedThingLayout::TypedArray) {
-    writer.loadTypedArrayElementResult(objId, indexId,
-                                       TypedThingElementType(obj),
-                                        false);
+    TypedArrayObject* tarr = &obj->as<TypedArrayObject>();
+    bool allowDoubleForUint32 = AllowDoubleForUint32Array(tarr, index);
+    writer.loadTypedArrayElementResult(
+        objId, indexId, TypedThingElementType(obj),
+         false, allowDoubleForUint32);
   } else {
     writer.loadTypedObjectElementResult(objId, indexId, layout,
                                         TypedThingElementType(obj));
@@ -2354,13 +2374,27 @@ AttachDecision GetPropIRGenerator::tryAttachTypedArrayNonInt32Index(
     return AttachDecision::NoAction;
   }
 
+  TypedArrayObject* tarr = &obj->as<TypedArrayObject>();
+
+  
+  
+  
+  
+  bool allowDoubleForUint32 = false;
+  int32_t indexInt32;
+  if (mozilla::NumberEqualsInt32(idVal_.toNumber(), &indexInt32)) {
+    uint32_t index = uint32_t(indexInt32);
+    allowDoubleForUint32 = AllowDoubleForUint32Array(tarr, index);
+  }
+
   ValOperandId keyId = getElemKeyValueId();
   Int32OperandId indexId = writer.guardToTypedArrayIndex(keyId);
 
-  writer.guardShapeForClass(objId, obj->as<TypedArrayObject>().shape());
+  writer.guardShapeForClass(objId, tarr->shape());
 
   writer.loadTypedArrayElementResult(objId, indexId, TypedThingElementType(obj),
-                                      true);
+                                      true,
+                                     allowDoubleForUint32);
 
   
   writer.typeMonitorResult();
