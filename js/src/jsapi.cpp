@@ -1956,7 +1956,7 @@ JS_PUBLIC_API void JS::AssertObjectBelongsToCurrentThread(JSObject* obj) {
 
 
 JS_PUBLIC_API MOZ_NEVER_INLINE void SetHelperThreadTaskCallback(
-    void (*callback)(js::UniquePtr<js::RunnableTask>)) {
+    bool (*callback)(js::UniquePtr<js::RunnableTask>)) {
   HelperThreadTaskCallback = callback;
 }
 
