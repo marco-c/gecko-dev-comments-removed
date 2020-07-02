@@ -22,7 +22,6 @@ const {
 
 add_task(async function() {
   
-  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   const tab = await addTab("data:text/html,Root Node tests");
 
   const {
@@ -79,7 +78,6 @@ add_task(async function() {
 
 
 add_task(async function testRootNodeFrontIsCorrect() {
-  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   const tab = await addTab("data:text/html,<div id=div1>");
 
   const {

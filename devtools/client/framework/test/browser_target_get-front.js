@@ -2,8 +2,6 @@
 
 
 add_task(async function() {
-  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
-
   const tab = await addTab("about:blank");
   const target = await TargetFactory.forTab(tab);
   await target.attach();

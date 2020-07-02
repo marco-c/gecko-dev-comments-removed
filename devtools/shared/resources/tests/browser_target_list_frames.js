@@ -103,7 +103,6 @@ async function testBrowserFrames(mainRoot) {
 
 
 
-
   targetList.stopListening();
 }
 
@@ -111,7 +110,6 @@ async function testTabFrames(mainRoot) {
   info("Test TargetList against frames via a tab target");
 
   
-  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   const tab = await addTab(FISSION_TEST_URL);
   const descriptor = await mainRoot.getTab({ tab });
   const target = await descriptor.getTarget();

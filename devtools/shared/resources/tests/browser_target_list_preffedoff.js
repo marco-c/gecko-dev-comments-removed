@@ -102,7 +102,6 @@ async function testPreffedOffTab(mainRoot) {
   );
 
   
-  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   const tab = await addTab(FISSION_TEST_URL);
   const descriptor = await mainRoot.getTab({ tab });
   const target = await descriptor.getTarget();

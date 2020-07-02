@@ -20,7 +20,6 @@ async function testSwitchToTarget(client) {
 
   const { mainRoot } = client;
   
-  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   const firstTab = await addTab(
     `data:text/html,<iframe src="data:text/html,foo"></iframe>`
   );
@@ -38,7 +37,6 @@ async function testSwitchToTarget(client) {
   );
 
   
-  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   const secondTab = await addTab(
     `data:text/html,<iframe src="data:text/html,bar"></iframe>`
   );
