@@ -231,8 +231,9 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
   }
 
   
+  
   template <typename Predicate>
-  void RemoveElementsBy(Predicate aPredicate) {
+  void NonObservingRemoveElementsBy(Predicate aPredicate) {
     index_type i = 0;
     mArray.RemoveElementsBy([&](const elem_type& aItem) {
       if (aPredicate(aItem)) {

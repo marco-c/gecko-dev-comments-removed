@@ -1325,7 +1325,7 @@ void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
     
     
     
-    mListeners.RemoveElementsBy([](const Listener& aListener) {
+    mListeners.NonObservingRemoveElementsBy([](const Listener& aListener) {
       return aListener.mListenerType == Listener::eNoListener;
     });
     NotifyEventListenerRemoved(aEvent->mSpecifiedEventType);
