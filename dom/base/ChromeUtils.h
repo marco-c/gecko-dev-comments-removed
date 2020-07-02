@@ -13,6 +13,7 @@
 #include "mozilla/ErrorResult.h"
 #include "nsDOMNavigationTiming.h"  
 #include "nsIDOMProcessChild.h"
+#include "nsIDOMProcessParent.h"
 
 namespace mozilla {
 
@@ -219,6 +220,10 @@ class ChromeUtils {
                                       MediaControlKey aKey);
 
   static nsIDOMProcessChild* GetDomProcessChild(const GlobalObject&);
+
+  static void GetAllDOMProcesses(
+      GlobalObject& aGlobal, nsTArray<RefPtr<nsIDOMProcessParent>>& aParents,
+      ErrorResult& aRv);
 
   
   static void GetCurrentActiveMediaMetadata(const GlobalObject& aGlobal,

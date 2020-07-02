@@ -26,6 +26,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/IdleDeadline.h"
+#include "mozilla/dom/InProcessParent.h"
 #include "mozilla/dom/InProcessChild.h"
 #include "mozilla/dom/JSActorService.h"
 #include "mozilla/dom/MediaControlUtils.h"
@@ -1308,6 +1309,25 @@ nsIDOMProcessChild* ChromeUtils::GetDomProcessChild(const GlobalObject&) {
     return InProcessChild::Singleton();
   }
   return ContentChild::GetSingleton();
+}
+
+
+void ChromeUtils::GetAllDOMProcesses(
+    GlobalObject& aGlobal, nsTArray<RefPtr<nsIDOMProcessParent>>& aParents,
+    ErrorResult& aRv) {
+  if (!XRE_IsParentProcess()) {
+    aRv.ThrowNotAllowedError(
+        "getAllDOMProcesses() may only be called in the parent process");
+    return;
+  }
+  aParents.Clear();
+  
+  aParents.AppendElement(InProcessParent::Singleton());
+
+  
+  for (auto* cp : ContentParent::AllProcesses(ContentParent::eLive)) {
+    aParents.AppendElement(cp);
+  }
 }
 
 
