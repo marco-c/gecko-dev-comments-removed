@@ -52,7 +52,7 @@ enum class FeatureStatus {
   Denied,
 
   
-  Blacklisted,
+  Blocklisted,
 
   
   
