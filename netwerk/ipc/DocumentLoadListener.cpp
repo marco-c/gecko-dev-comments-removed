@@ -1120,44 +1120,51 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
 
   
   
-  
-  nsCOMPtr<nsIBrowser> browser;
-  bool isPreloadSwitch = false;
-  if (!browsingContext->GetParent()) {
-    Element* browserElement = browsingContext->GetEmbedderElement();
-    if (!browserElement) {
-      LOG(("Process Switch Abort: cannot get browser element"));
-      return false;
-    }
-    browser = browserElement->AsBrowser();
-    if (!browser) {
-      LOG(("Process Switch Abort: not loaded within nsIBrowser"));
-      return false;
-    }
-    bool loadedInTab = false;
-    if (NS_FAILED(browser->GetCanPerformProcessSwitch(&loadedInTab)) ||
-        !loadedInTab) {
-      LOG(("Process Switch Abort: browser is not loaded in a tab"));
-      return false;
-    }
+  Element* browserElement = browsingContext->Top()->GetEmbedderElement();
+  if (!browserElement) {
+    LOG(("Process Switch Abort: cannot get embedder element"));
+    return false;
+  }
+  nsCOMPtr<nsIBrowser> browser = browserElement->AsBrowser();
+  if (!browser) {
+    LOG(("Process Switch Abort: not loaded within nsIBrowser"));
+    return false;
+  }
 
-    
-    
-    nsAutoString isPreloadBrowserStr;
-    if (browserElement->GetAttr(kNameSpaceID_None, nsGkAtoms::preloadedState,
-                                isPreloadBrowserStr)) {
-      if (isPreloadBrowserStr.EqualsLiteral("consumed")) {
-        nsCOMPtr<nsIURI> originalURI;
-        if (NS_SUCCEEDED(
-                mChannel->GetOriginalURI(getter_AddRefs(originalURI)))) {
-          if (!originalURI->GetSpecOrDefault().EqualsLiteral("about:newtab")) {
-            LOG(("Process Switch: leaving preloaded browser"));
-            isPreloadSwitch = true;
-            browserElement->UnsetAttr(kNameSpaceID_None,
-                                      nsGkAtoms::preloadedState, true);
-          }
-        }
-      }
+  nsIBrowser::ProcessBehavior processBehavior =
+      nsIBrowser::PROCESS_BEHAVIOR_DISABLED;
+  nsresult rv = browser->GetProcessSwitchBehavior(&processBehavior);
+  if (NS_FAILED(rv)) {
+    MOZ_ASSERT_UNREACHABLE(
+        "nsIBrowser::GetProcessSwitchBehavior shouldn't fail");
+    LOG(("Process Switch Abort: failed to get process switch behavior"));
+    return false;
+  }
+
+  
+  
+  if (processBehavior == nsIBrowser::PROCESS_BEHAVIOR_DISABLED) {
+    LOG(("Process Switch Abort: switch disabled by <browser>"));
+    return false;
+  }
+  if (browsingContext->IsTop() &&
+      processBehavior == nsIBrowser::PROCESS_BEHAVIOR_SUBFRAME_ONLY) {
+    LOG(("Process Switch Abort: toplevel switch disabled by <browser>"));
+    return false;
+  }
+
+  bool isPreloadSwitch = false;
+  nsAutoString isPreloadBrowserStr;
+  if (browserElement->GetAttr(kNameSpaceID_None, nsGkAtoms::preloadedState,
+                              isPreloadBrowserStr) &&
+      isPreloadBrowserStr.EqualsLiteral("consumed")) {
+    nsCOMPtr<nsIURI> originalURI;
+    if (NS_SUCCEEDED(mChannel->GetOriginalURI(getter_AddRefs(originalURI))) &&
+        !originalURI->GetSpecOrDefault().EqualsLiteral("about:newtab")) {
+      LOG(("Process Switch: leaving preloaded browser"));
+      isPreloadSwitch = true;
+      browserElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::preloadedState,
+                                true);
     }
   }
 
@@ -1173,7 +1180,7 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
 
   
   nsCOMPtr<nsIPrincipal> resultPrincipal;
-  nsresult rv = nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
+  rv = nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
       mChannel, getter_AddRefs(resultPrincipal));
   if (NS_FAILED(rv)) {
     LOG(("Process Switch Abort: failed to get channel result principal"));
@@ -1267,21 +1274,26 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
   mDoingProcessSwitch = true;
 
   RefPtr<DocumentLoadListener> self = this;
+
   
-  
-  if (browsingContext->GetParent()) {
-    LOG(("Process Switch: Calling ChangeFrameRemoteness"));
+  if (processBehavior == nsIBrowser::PROCESS_BEHAVIOR_CUSTOM &&
+      browsingContext->IsTop()) {
+    LOG(("Process Switch: Calling nsIBrowser::PerformProcessSwitch"));
     
-    MOZ_ASSERT(!isCOOPSwitch);
-    browsingContext
-        ->ChangeFrameRemoteness(remoteType, mCrossProcessRedirectIdentifier)
+    
+    RefPtr<dom::Promise> domPromise;
+    browser->PerformProcessSwitch(remoteType, mCrossProcessRedirectIdentifier,
+                                  isCOOPSwitch, getter_AddRefs(domPromise));
+    MOZ_DIAGNOSTIC_ASSERT(domPromise,
+                          "PerformProcessSwitch didn't return a promise");
+
+    MozPromise<uint64_t, nsresult, true>::FromDomPromise(domPromise)
         ->Then(
             GetMainThreadSerialEventTarget(), __func__,
-            [self](BrowserParent* aBrowserParent) {
+            [self](uint64_t aCpId) {
               MOZ_ASSERT(self->mChannel,
                          "Something went wrong, channel got cancelled");
-              self->TriggerRedirectToRealChannel(
-                  Some(aBrowserParent->Manager()->ChildID()));
+              self->TriggerRedirectToRealChannel(Some(aCpId));
             },
             [self](nsresult aStatusCode) {
               MOZ_ASSERT(NS_FAILED(aStatusCode), "Status should be error");
@@ -1290,22 +1302,17 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
     return true;
   }
 
-  LOG(("Process Switch: Calling nsIBrowser::PerformProcessSwitch"));
-  
-  
-  RefPtr<dom::Promise> domPromise;
-  browser->PerformProcessSwitch(remoteType, mCrossProcessRedirectIdentifier,
-                                isCOOPSwitch, getter_AddRefs(domPromise));
-  MOZ_DIAGNOSTIC_ASSERT(domPromise,
-                        "PerformProcessSwitch didn't return a promise");
-
-  MozPromise<uint64_t, nsresult, true>::FromDomPromise(domPromise)
+  LOG(("Process Switch: Calling ChangeRemoteness"));
+  browsingContext
+      ->ChangeRemoteness(remoteType, mCrossProcessRedirectIdentifier,
+                         isCOOPSwitch)
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
-          [self](uint64_t aCpId) {
+          [self](BrowserParent* aBrowserParent) {
             MOZ_ASSERT(self->mChannel,
                        "Something went wrong, channel got cancelled");
-            self->TriggerRedirectToRealChannel(Some(aCpId));
+            self->TriggerRedirectToRealChannel(
+                Some(aBrowserParent->Manager()->ChildID()));
           },
           [self](nsresult aStatusCode) {
             MOZ_ASSERT(NS_FAILED(aStatusCode), "Status should be error");
