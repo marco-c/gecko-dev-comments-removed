@@ -40,8 +40,9 @@ VALID_LICENSES = [
     
     "Apache-2.0",
     "BSD-2-Clause",
+    "BSD-3-Clause",
     "BSD-3-Clause-Clear",
-    "GPL-3.0",
+    "CC0-1.0",
     "ISC",
     "ICU",
     "LGPL-2.1",
@@ -49,6 +50,9 @@ VALID_LICENSES = [
     "MIT",
     "MPL-1.1",
     "MPL-2.0",
+    "Unlicense",
+    "WTFPL",
+    "Zlib",
     
     "ACE",  
     "Anti-Grain-Geometry",  
@@ -452,7 +456,7 @@ class UpdateActions(object):
 
 class License(object):
     """Voluptuous validator which verifies the license(s) are valid as per our
-    whitelist."""
+    allow list."""
 
     def __call__(self, values):
         if isinstance(values, str):
