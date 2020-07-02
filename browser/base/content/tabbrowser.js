@@ -2056,8 +2056,14 @@
       
       b.permanentKey = new (Cu.getGlobalForObject(Services).Object)();
 
+      
+      
+      b.prepareToChangeRemoteness = () =>
+        SessionStore.prepareToChangeRemoteness(b);
+
       const defaultBrowserAttributes = {
         contextmenu: "contentAreaContextMenu",
+        maychangeremoteness: "true",
         message: "true",
         messagemanagergroup: "browsers",
         selectmenulist: "ContentSelectDropdown",
@@ -2702,6 +2708,9 @@
               gFissionBrowser,
               preferredRemoteType
             );
+        if (sameProcessAsFrameLoader) {
+          remoteType = sameProcessAsFrameLoader.messageManager.remoteType;
+        }
 
         
         
@@ -5708,6 +5717,138 @@
       );
       this.tabContainer.addEventListener("mouseover", tabContextFTLInserter);
       this.tabContainer.addEventListener("focus", tabContextFTLInserter, true);
+
+      
+      
+      
+      this.addEventListener("WillChangeBrowserRemoteness", event => {
+        let browser = event.originalTarget;
+        let tab = this.getTabForBrowser(browser);
+        if (!tab) {
+          return;
+        }
+
+        
+        
+        let evt = document.createEvent("Events");
+        evt.initEvent("BeforeTabRemotenessChange", true, false);
+        tab.dispatchEvent(evt);
+
+        let wasActive = document.activeElement == browser;
+
+        
+        this._outerWindowIDBrowserMap.delete(browser.outerWindowID);
+
+        
+        let filter = this._tabFilters.get(tab);
+        let oldListener = this._tabListeners.get(tab);
+        browser.webProgress.removeProgressListener(filter);
+        filter.removeProgressListener(oldListener);
+        let stateFlags = oldListener.mStateFlags;
+        let requestCount = oldListener.mRequestCount;
+
+        
+        oldListener.destroy();
+
+        let oldDroppedLinkHandler = browser.droppedLinkHandler;
+        let oldUserTypedValue = browser.userTypedValue;
+        let hadStartedLoad = browser.didStartLoadSinceLastUserTyping();
+
+        let didChange = didChangeEvent => {
+          browser.userTypedValue = oldUserTypedValue;
+          if (hadStartedLoad) {
+            browser.urlbarChangeTracker.startedLoad();
+          }
+
+          browser.droppedLinkHandler = oldDroppedLinkHandler;
+
+          
+          
+          
+          
+          browser.docShellIsActive = this.shouldActivateDocShell(browser);
+
+          
+          
+          
+          let listener = new TabProgressListener(
+            tab,
+            browser,
+            false,
+            false,
+            stateFlags,
+            requestCount
+          );
+          this._tabListeners.set(tab, listener);
+          filter.addProgressListener(listener, Ci.nsIWebProgress.NOTIFY_ALL);
+
+          
+          browser.webProgress.addProgressListener(
+            filter,
+            Ci.nsIWebProgress.NOTIFY_ALL
+          );
+
+          
+          let securityUI = browser.securityUI;
+          let state = securityUI
+            ? securityUI.state
+            : Ci.nsIWebProgressListener.STATE_IS_INSECURE;
+          this._callProgressListeners(
+            browser,
+            "onSecurityChange",
+            [browser.webProgress, null, state],
+            true,
+            false
+          );
+          let cbEvent = browser.getContentBlockingEvents();
+          
+          
+          this._callProgressListeners(
+            browser,
+            "onContentBlockingEvent",
+            [browser.webProgress, null, cbEvent, true],
+            true,
+            false
+          );
+
+          if (browser.isRemoteBrowser) {
+            
+            
+            
+            tab.removeAttribute("crashed");
+          } else {
+            browser.sendMessageToActor(
+              "Browser:AppTab",
+              { isAppTab: tab.pinned },
+              "BrowserTab"
+            );
+
+            
+            this._outerWindowIDBrowserMap.set(browser.outerWindowID, browser);
+          }
+
+          if (wasActive) {
+            browser.focus();
+          }
+
+          if (this.isFindBarInitialized(tab)) {
+            this.getCachedFindBar(tab).browser = browser;
+          }
+
+          browser.sendMessageToActor(
+            "Browser:HasSiblings",
+            this.tabs.length > 1,
+            "BrowserTab"
+          );
+
+          evt = document.createEvent("Events");
+          evt.initEvent("TabRemotenessChange", true, false);
+          tab.dispatchEvent(evt);
+        };
+        browser.addEventListener("DidChangeBrowserRemoteness", didChange, {
+          once: true,
+        });
+      });
     },
 
     setSuccessor(aTab, successorTab) {
@@ -5787,6 +5928,11 @@
       let remoteTab = aBrowser.frameLoader.remoteTab;
       E10SUtils.log().debug(`new tabID: ${remoteTab.tabId}`);
       return remoteTab.contentProcessId;
+    },
+
+    finishBrowserRemotenessChange(aBrowser, aSwitchId) {
+      let tab = this.getTabForBrowser(aBrowser);
+      SessionStore.finishTabRemotenessChange(tab, aSwitchId);
     },
   };
 

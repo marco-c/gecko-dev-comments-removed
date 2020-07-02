@@ -22,12 +22,14 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/net/DocumentLoadListener.h"
 #include "mozilla/NullPrincipal.h"
+#include "mozilla/MozPromiseInlines.h"
 #include "nsGlobalWindowOuter.h"
 #include "nsIWebBrowserChrome.h"
 #include "nsNetUtil.h"
 #include "nsSHistory.h"
 #include "nsSecureBrowserUI.h"
 #include "nsQueryObject.h"
+#include "nsIBrowser.h"
 
 using namespace mozilla::ipc;
 
@@ -390,6 +392,26 @@ void CanonicalBrowsingContext::PendingRemotenessChange::ProcessReady(
     return;
   }
 
+  
+  if (mPrepareToChangePromise) {
+    mPrepareToChangePromise->Then(
+        GetMainThreadSerialEventTarget(), __func__,
+        [self = RefPtr{this}, contentParent = RefPtr{aContentParent}](bool) {
+          self->Finish(contentParent);
+        },
+        [self = RefPtr{this}](nsresult aRv) { self->Cancel(aRv); });
+    return;
+  }
+
+  Finish(aContentParent);
+}
+
+void CanonicalBrowsingContext::PendingRemotenessChange::Finish(
+    ContentParent* aContentParent) {
+  if (!mPromise) {
+    return;
+  }
+
   RefPtr<CanonicalBrowsingContext> target(mTarget);
   if (target->IsDiscarded()) {
     Cancel(NS_ERROR_FAILURE);
@@ -403,16 +425,29 @@ void CanonicalBrowsingContext::PendingRemotenessChange::ProcessReady(
                           "We shouldn't be trying to change the remoteness of "
                           "non-remote iframes");
 
+    nsCOMPtr<nsIBrowser> browser = browserElement->AsBrowser();
+    if (!browser) {
+      Cancel(NS_ERROR_FAILURE);
+      return;
+    }
+
     RefPtr<nsFrameLoaderOwner> frameLoaderOwner =
         do_QueryObject(browserElement);
     MOZ_RELEASE_ASSERT(frameLoaderOwner,
                        "embedder browser must be nsFrameLoaderOwner");
 
     
+    nsresult rv = browser->BeforeChangeRemoteness();
+    if (NS_FAILED(rv)) {
+      Cancel(rv);
+      return;
+    }
+
+    
     
     ErrorResult error;
-    frameLoaderOwner->ChangeRemotenessToProcess(
-        aContentParent, mPendingSwitchId, mReplaceBrowsingContext, error);
+    frameLoaderOwner->ChangeRemotenessToProcess(aContentParent,
+                                                mReplaceBrowsingContext, error);
     if (error.Failed()) {
       Cancel(error.StealNSResult());
       return;
@@ -420,15 +455,24 @@ void CanonicalBrowsingContext::PendingRemotenessChange::ProcessReady(
 
     
     RefPtr<nsFrameLoader> frameLoader = frameLoaderOwner->GetFrameLoader();
-    if (RefPtr<BrowserParent> newBrowser = frameLoader->GetBrowserParent()) {
-      mPromise->Resolve(newBrowser, __func__);
-      Clear();
+    RefPtr<BrowserParent> newBrowser = frameLoader->GetBrowserParent();
+    if (!newBrowser) {
+      
+      
+      Cancel(NS_ERROR_UNEXPECTED);
       return;
     }
 
     
     
-    Cancel(NS_ERROR_UNEXPECTED);
+    bool loadResumed = false;
+    rv = browser->FinishChangeRemoteness(mPendingSwitchId, &loadResumed);
+    if (NS_FAILED(rv) || !loadResumed) {
+      newBrowser->ResumeLoad(mPendingSwitchId);
+    }
+
+    mPromise->Resolve(newBrowser, __func__);
+    Clear();
     return;
   }
 
@@ -553,6 +597,7 @@ void CanonicalBrowsingContext::PendingRemotenessChange::Clear() {
 
   mPromise = nullptr;
   mTarget = nullptr;
+  mPrepareToChangePromise = nullptr;
 }
 
 CanonicalBrowsingContext::PendingRemotenessChange::PendingRemotenessChange(
@@ -638,6 +683,24 @@ CanonicalBrowsingContext::ChangeRemoteness(const nsAString& aRemoteType,
   RefPtr<PendingRemotenessChange> change = new PendingRemotenessChange(
       this, promise, aPendingSwitchId, aReplaceBrowsingContext);
   mPendingRemotenessChange = change;
+
+  
+  
+  if (IsTop() && GetEmbedderElement()) {
+    nsCOMPtr<nsIBrowser> browser = GetEmbedderElement()->AsBrowser();
+    if (!browser) {
+      change->Cancel(NS_ERROR_FAILURE);
+      return promise.forget();
+    }
+
+    RefPtr<Promise> blocker;
+    nsresult rv = browser->PrepareToChangeRemoteness(getter_AddRefs(blocker));
+    if (NS_FAILED(rv)) {
+      change->Cancel(rv);
+      return promise.forget();
+    }
+    change->mPrepareToChangePromise = GenericPromise::FromDomPromise(blocker);
+  }
 
   ContentParent::GetNewOrUsedBrowserProcessAsync(
        nullptr,
