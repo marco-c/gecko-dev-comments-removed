@@ -871,9 +871,7 @@ nsresult HTMLFormElement::DoSecureToInsecureSubmitCheck(nsIURI* aActionURL,
   
   
   
-  Document* parent = OwnerDoc()->GetInProcessParentDocument();
-  bool isRootDocument = (!parent || nsContentUtils::IsChromeDoc(parent));
-  if (!isRootDocument) {
+  if (!OwnerDoc()->IsTopLevelContentDocument()) {
     return NS_OK;
   }
 
