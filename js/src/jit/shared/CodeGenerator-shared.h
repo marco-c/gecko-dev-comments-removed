@@ -369,6 +369,7 @@ class CodeGeneratorShared : public LElementVisitor {
   inline void restoreLiveIgnore(LInstruction* ins, LiveRegisterSet reg);
 
   
+  inline LiveRegisterSet liveVolatileRegs(LInstruction* ins);
   inline void saveLiveVolatile(LInstruction* ins);
   inline void restoreLiveVolatile(LInstruction* ins);
 

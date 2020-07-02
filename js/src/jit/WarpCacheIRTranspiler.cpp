@@ -249,7 +249,6 @@ bool WarpCacheIRTranspiler::emitGuardSpecificAtom(StringOperandId strId,
   MDefinition* str = getOperand(strId);
   JSString* expected = stringStubField(expectedOffset);
 
-  
   auto* ins = MGuardSpecificAtom::New(alloc(), str, &expected->asAtom());
   add(ins);
 
