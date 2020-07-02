@@ -15,8 +15,16 @@ const {
 
 const TEST_URI = CHROME_URL_ROOT + "doc_cubic-bezier-01.html";
 
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("ui.prefersReducedMotion");
+});
+
 add_task(async function() {
   const { host, doc } = await createHost("bottom", TEST_URI);
+  
+  
+  
+  Services.prefs.setIntPref("ui.prefersReducedMotion", 0);
 
   const container = doc.querySelector("#cubic-bezier-container");
   const w = new CubicBezierWidget(container, PREDEFINED.linear);
