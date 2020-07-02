@@ -4754,6 +4754,9 @@ nsGlobalWindowInner::ShowSlowScriptDialog(JSContext* aCx,
   }
   mHasHadSlowScript = true;
 
+  
+  SetCursor(NS_LITERAL_CSTRING("auto"), IgnoreErrors());
+
   if (XRE_IsContentProcess() && ProcessHangMonitor::Get()) {
     ProcessHangMonitor::SlowScriptAction action;
     RefPtr<ProcessHangMonitor> monitor = ProcessHangMonitor::Get();
