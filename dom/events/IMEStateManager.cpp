@@ -1224,7 +1224,7 @@ static void GetActionHint(nsIContent& aContent, nsAString& aActionHint) {
       if (IsNextFocusableElementTextControl(inputContent->AsElement())) {
         
         
-        aActionHint.AssignLiteral("next");
+        aActionHint.AssignLiteral("maybenext");
         return;
       }
     }
