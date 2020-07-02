@@ -28,11 +28,28 @@ var parentRunner = null;
 
 
 
+let isSameOrigin = function(w) {
+  try {
+    w.top.TestRunner;
+  } catch (e) {
+    if (e instanceof DOMException) {
+      return false;
+    }
+  }
+  return true;
+};
+let isXOrigin = !isSameOrigin(window);
+
+
+
+
 var isSingleTestRun =
   parent == window &&
   !(opener || (window.arguments && window.arguments[0].SimpleTest));
 try {
-  var isPrimaryTestWindow = !!parent.TestRunner || isSingleTestRun;
+  var isPrimaryTestWindow =
+    (isXOrigin && parent != window && parent == top) ||
+    (!isXOrigin && (!!parent.TestRunner || isSingleTestRun));
 } catch (e) {
   dump(
     "TEST-UNEXPECTED-FAIL, Exception caught: " +
@@ -47,6 +64,87 @@ try {
   );
 }
 
+let xOriginRunner = {
+  init(harnessWindow) {
+    this.harnessWindow = harnessWindow;
+    let url = new URL(document.URL);
+    this.testFile = url.pathname;
+    this.showTestReport = url.searchParams.get("showTestReport") == "true";
+    this.expected = url.searchParams.get("expected");
+  },
+  callHarnessMethod(applyOn, command, ...params) {
+    this.harnessWindow.postMessage(
+      {
+        harnessType: "SimpleTest",
+        applyOn,
+        command,
+        params,
+      },
+      "*"
+    );
+  },
+  getParameterInfo() {
+    let url = new URL(document.URL);
+    return {
+      currentTestURL: url.searchParams.get("currentTestURL"),
+      testRoot: url.searchParams.get("testRoot"),
+    };
+  },
+  addFailedTest(test) {
+    this.callHarnessMethod("runner", "addFailedTest", test);
+  },
+  expectAssertions(min, max) {
+    this.callHarnessMethod("runner", "expectAssertions", min, max);
+  },
+  requestLongerTimeout(factor) {
+    this.harnessWindow.postMessage(
+      {
+        harnessType: "SimpleTest",
+        command: "requestLongerTimeout",
+        applyOn: "runner",
+        params: [factor],
+      },
+      "*"
+    );
+  },
+  testFinished(tests) {
+    this.callHarnessMethod("runner", "testFinished", tests);
+  },
+  structuredLogger: {
+    info(msg) {
+      xOriginRunner.callHarnessMethod("logger", "structuredLogger.info", msg);
+    },
+    error(msg) {
+      xOriginRunner.callHarnessMethod("logger", "structuredLogger.error", msg);
+    },
+    activateBuffering() {
+      xOriginRunner.callHarnessMethod(
+        "logger",
+        "structuredLogger.activateBuffering"
+      );
+    },
+    deactivateBuffering() {
+      xOriginRunner.callHarnessMethod(
+        "logger",
+        "structuredLogger.deactivateBuffering"
+      );
+    },
+    testStatus(url, subtest, status, expected, diagnostic, stack) {
+      xOriginRunner.callHarnessMethod(
+        "logger",
+        "structuredLogger.testStatus",
+        url,
+        subtest,
+        status,
+        expected,
+        diagnostic,
+        stack
+      );
+    },
+  },
+};
+
+
 
 
 
@@ -57,19 +155,30 @@ try {
   function ancestor(w) {
     return w.parent != w
       ? w.parent
-      : w.opener || (w.arguments && w.arguments[0]);
+      : w.opener ||
+          (!isXOrigin &&
+            w.arguments &&
+            SpecialPowers.wrap(Window).isInstance(w.arguments[0]) &&
+            w.arguments[0]);
   }
 
   var w = ancestor(window);
-  while (w && (!parentRunner || !window.SpecialPowers)) {
+  while (w && !parentRunner) {
+    isXOrigin = !isSameOrigin(w);
+
+    if (isXOrigin) {
+      if (w.parent != w) {
+        w = w.top;
+      }
+      xOriginRunner.init(w);
+      parentRunner = xOriginRunner;
+    }
+
     if (!parentRunner) {
       parentRunner = w.TestRunner;
       if (!parentRunner && w.wrappedJSObject) {
         parentRunner = w.wrappedJSObject.TestRunner;
       }
-    }
-    if (!window.SpecialPowers) {
-      window.SpecialPowers = w.SpecialPowers;
     }
     w = ancestor(w);
   }
@@ -273,17 +382,18 @@ function recordIfMatchesFailurePattern(name, diag) {
 }
 
 SimpleTest.setExpected = function() {
-  if (parent.TestRunner) {
-    if (!Array.isArray(parent.TestRunner.expected)) {
-      SimpleTest.expected = parent.TestRunner.expected;
-    } else {
-      
-      SimpleTest.expected = parent.TestRunner.expected.filter(
-        ([pat]) => pat != "ASSERTION"
-      );
-      SimpleTest.num_failed = new Array(SimpleTest.expected.length);
-      SimpleTest.num_failed.fill(0);
-    }
+  if (!parentRunner) {
+    return;
+  }
+  if (!Array.isArray(parentRunner.expected)) {
+    SimpleTest.expected = parentRunner.expected;
+  } else {
+    
+    SimpleTest.expected = parentRunner.expected.filter(
+      ([pat]) => pat != "ASSERTION"
+    );
+    SimpleTest.num_failed = new Array(SimpleTest.expected.length);
+    SimpleTest.num_failed.fill(0);
   }
 };
 SimpleTest.setExpected();
@@ -368,7 +478,6 @@ SimpleTest.record = function(condition, name, diag, stack, expected) {
     stack.splice(0, 1);
     stack = stack.join("\n");
   }
-
   SimpleTest._logResult(test, successInfo, failureInfo, stack);
   SimpleTest._tests.push(test);
 };
@@ -464,6 +573,8 @@ SimpleTest.getTestFileURL = function(path) {
 
 SimpleTest._getCurrentTestURL = function() {
   return (
+    (SimpleTest.harnessParameters &&
+      SimpleTest.harnessParameters.currentTestURL) ||
     (parentRunner && parentRunner.currentTestURL) ||
     (typeof gTestPath == "string" && gTestPath) ||
     "unknown test url"
@@ -1331,7 +1442,6 @@ SimpleTest.finish = function() {
       expected: "FAIL",
       message: "TEST-UNEXPECTED-PASS",
     };
-
     SimpleTest._logResult(test, successInfo, failureInfo);
     SimpleTest._tests.push(test);
   } else if (usesFailurePatterns()) {
