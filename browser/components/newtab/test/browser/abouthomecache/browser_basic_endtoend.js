@@ -1,0 +1,22 @@
+
+
+
+"use strict";
+
+
+
+
+
+add_task(async function test_basic_behaviour() {
+  await BrowserTestUtils.withNewTab("about:home", async browser => {
+    
+    await clearCache();
+    await simulateRestart(browser);
+    await ensureCachedAboutHome(browser);
+
+    
+    
+    await simulateRestart(browser);
+    await ensureCachedAboutHome(browser);
+  });
+});
