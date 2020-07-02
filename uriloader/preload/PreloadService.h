@@ -39,21 +39,22 @@ class PreloadService {
   
   
   
-  bool RegisterPreload(PreloadHashKey* aKey, PreloaderBase* aPreload);
+  bool RegisterPreload(const PreloadHashKey& aKey, PreloaderBase* aPreload);
 
   
   
-  void DeregisterPreload(PreloadHashKey* aKey);
+  void DeregisterPreload(const PreloadHashKey& aKey);
 
   
   void ClearAllPreloads();
 
   
-  bool PreloadExists(PreloadHashKey* aKey);
+  bool PreloadExists(const PreloadHashKey& aKey);
 
   
   
-  already_AddRefed<PreloaderBase> LookupPreload(PreloadHashKey* aKey) const;
+  already_AddRefed<PreloaderBase> LookupPreload(
+      const PreloadHashKey& aKey) const;
 
   void SetSpeculationBase(nsIURI* aURI) { mSpeculationBaseURI = aURI; }
   already_AddRefed<nsIURI> GetPreloadURI(const nsAString& aURL);

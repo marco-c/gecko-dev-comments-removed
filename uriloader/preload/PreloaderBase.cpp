@@ -91,8 +91,8 @@ void PreloaderBase::AddLoadBackgroundFlag(nsIChannel* aChannel) {
   aChannel->SetLoadFlags(loadFlags | nsIRequest::LOAD_BACKGROUND);
 }
 
-void PreloaderBase::NotifyOpen(PreloadHashKey* aKey, dom::Document* aDocument,
-                               bool aIsPreload) {
+void PreloaderBase::NotifyOpen(const PreloadHashKey& aKey,
+                               dom::Document* aDocument, bool aIsPreload) {
   if (aDocument && !aDocument->Preloads().RegisterPreload(aKey, this)) {
     
     
@@ -102,11 +102,11 @@ void PreloaderBase::NotifyOpen(PreloadHashKey* aKey, dom::Document* aDocument,
     aDocument->Preloads().RegisterPreload(aKey, this);
   }
 
-  mKey = *aKey;
+  mKey = aKey;
   mIsUsed = !aIsPreload;
 }
 
-void PreloaderBase::NotifyOpen(PreloadHashKey* aKey, nsIChannel* aChannel,
+void PreloaderBase::NotifyOpen(const PreloadHashKey& aKey, nsIChannel* aChannel,
                                dom::Document* aDocument, bool aIsPreload) {
   NotifyOpen(aKey, aDocument, aIsPreload);
   mChannel = aChannel;
@@ -152,7 +152,7 @@ void PreloaderBase::NotifyUsage(LoadBackground aLoadBackground) {
 
 void PreloaderBase::RemoveSelf(dom::Document* aDocument) {
   if (aDocument) {
-    aDocument->Preloads().DeregisterPreload(&mKey);
+    aDocument->Preloads().DeregisterPreload(mKey);
   }
 }
 
