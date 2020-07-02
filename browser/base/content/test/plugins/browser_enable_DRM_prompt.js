@@ -1,33 +1,38 @@
-
-
-
-
 const TEST_URL =
   getRootDirectory(gTestPath).replace(
     "chrome://mochitests/content",
     "https://example.com"
   ) + "empty_file.html";
 
+
+
+
+
 add_task(async function() {
+  
+  
+  
+  let emeWasEnabled = Services.prefs.getBoolPref("media.eme.enabled", false);
+  let cdmWasEnabled = Services.prefs.getBoolPref(
+    "media.gmp-widevinecdm.enabled",
+    false
+  );
+
+  
+  registerCleanupFunction(function() {
+    
+    Services.prefs.unlockPref("media.eme.enabled");
+    Services.prefs.setBoolPref("media.eme.enabled", emeWasEnabled);
+    Services.prefs.setBoolPref("media.gmp-widevinecdm.enabled", cdmWasEnabled);
+  });
+});
+
+
+
+
+
+add_task(async function test_drm_prompt_shows_for_toplevel() {
   await BrowserTestUtils.withNewTab(TEST_URL, async function(browser) {
-    
-    
-    
-    let emeWasEnabled = Services.prefs.getBoolPref("media.eme.enabled", false);
-    let cdmWasEnabled = Services.prefs.getBoolPref(
-      "media.gmp-widevinecdm.enabled",
-      false
-    );
-
-    
-    registerCleanupFunction(function() {
-      Services.prefs.setBoolPref("media.eme.enabled", emeWasEnabled);
-      Services.prefs.setBoolPref(
-        "media.gmp-widevinecdm.enabled",
-        cdmWasEnabled
-      );
-    });
-
     
     Services.prefs.setBoolPref("media.eme.enabled", false);
     Services.prefs.setBoolPref("media.gmp-widevinecdm.enabled", false);
@@ -93,15 +98,6 @@ add_task(async function() {
 add_task(async function test_eme_locked() {
   await BrowserTestUtils.withNewTab(TEST_URL, async function(browser) {
     
-    let emeWasEnabled = Services.prefs.getBoolPref("media.eme.enabled", false);
-
-    
-    registerCleanupFunction(function() {
-      Services.prefs.setBoolPref("media.eme.enabled", emeWasEnabled);
-      Services.prefs.unlockPref("media.eme.enabled");
-    });
-
-    
     Services.prefs.setBoolPref("media.eme.enabled", false);
     Services.prefs.lockPref("media.eme.enabled");
 
@@ -138,6 +134,95 @@ add_task(async function test_eme_locked() {
       notification,
       null,
       "Notification should not be displayed since pref is locked"
+    );
+
+    
+    Services.prefs.unlockPref("media.eme.enabled");
+  });
+});
+
+
+
+
+
+add_task(async function test_drm_prompt_shows_for_cross_origin_iframe() {
+  await BrowserTestUtils.withNewTab(TEST_URL, async function(browser) {
+    
+    Services.prefs.setBoolPref("media.eme.enabled", false);
+    Services.prefs.setBoolPref("media.gmp-widevinecdm.enabled", false);
+
+    
+    
+    const CROSS_ORIGIN_URL = TEST_URL.replace("example.com", "example.org");
+    let result = await SpecialPowers.spawn(
+      browser,
+      [CROSS_ORIGIN_URL],
+      async function(crossOriginUrl) {
+        let frame = content.document.createElement("iframe");
+        frame.src = crossOriginUrl;
+        await new Promise(resolve => {
+          frame.addEventListener("load", () => {
+            resolve();
+          });
+          content.document.body.appendChild(frame);
+        });
+
+        return content.SpecialPowers.spawn(frame, [], async function() {
+          try {
+            let config = [
+              {
+                initDataTypes: ["webm"],
+                videoCapabilities: [
+                  { contentType: 'video/webm; codecs="vp9"' },
+                ],
+              },
+            ];
+            await content.navigator.requestMediaKeySystemAccess(
+              "com.widevine.alpha",
+              config
+            );
+          } catch (ex) {
+            return { rejected: true };
+          }
+          return { rejected: false };
+        });
+      }
+    );
+    is(
+      result.rejected,
+      true,
+      "EME request should be denied because EME disabled."
+    );
+
+    
+    let box = gBrowser.getNotificationBox(browser);
+    let notification = box.currentNotification;
+
+    ok(notification, "Notification should be visible");
+    is(
+      notification.getAttribute("value"),
+      "drmContentDisabled",
+      "Should be showing the right notification"
+    );
+
+    
+    let buttons = notification.querySelectorAll(".notification-button");
+    is(buttons.length, 1, "Should have one button.");
+
+    
+    
+    let refreshPromise = BrowserTestUtils.browserLoaded(browser);
+    buttons[0].click();
+
+    
+    await refreshPromise;
+
+    
+    let enabled = Services.prefs.getBoolPref("media.eme.enabled", true);
+    is(
+      enabled,
+      true,
+      "EME should be enabled after click on 'Enable DRM' button"
     );
   });
 });
