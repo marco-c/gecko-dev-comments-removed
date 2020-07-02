@@ -366,7 +366,7 @@ var gTests = [
           "the scary warning is hidden"
         );
       } else {
-        info("no non-scary window available on this test slave");
+        info("no non-scary window available on this test machine");
       }
 
       let indicator = promiseIndicatorWindow();
