@@ -388,7 +388,7 @@ class ShadowLayerForwarder final : public LayersIPCActor,
 
   CompositorBridgeChild* GetCompositorBridgeChild();
 
-  nsIEventTarget* GetEventTarget() { return mEventTarget; };
+  nsISerialEventTarget* GetEventTarget() { return mEventTarget; };
 
   bool IsThreadSafe() const override { return false; }
 
@@ -430,7 +430,7 @@ class ShadowLayerForwarder final : public LayersIPCActor,
 
 
 
-  nsCOMPtr<nsIEventTarget> mEventTarget;
+  nsCOMPtr<nsISerialEventTarget> mEventTarget;
 };
 
 class CompositableClient;
