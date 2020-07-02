@@ -60,8 +60,7 @@ class PrincipalVerifier final : public Runnable {
   void DispatchToInitiatingThread(nsresult aRv);
 
   
-  typedef nsTObserverArray<Listener*> ListenerList;
-  ListenerList mListenerList;
+  nsTObserverArray<Listener*> mListenerList;
 
   
   

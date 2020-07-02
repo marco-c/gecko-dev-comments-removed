@@ -293,9 +293,7 @@ class Manager::Factory {
       AutoRestore<bool> restore(sFactory->mInSyncAbortOrShutdown);
       sFactory->mInSyncAbortOrShutdown = true;
 
-      ManagerList::ForwardIterator iter(sFactory->mManagerList);
-      while (iter.HasMore()) {
-        Manager* manager = iter.GetNext();
+      for (auto* manager : sFactory->mManagerList.ForwardRange()) {
         if (aOrigin.IsVoid() || manager->mManagerId->QuotaOrigin() == aOrigin) {
           auto pinnedManager =
               SafeRefPtr{manager, AcquireStrongRefFromRawPtr{}};
@@ -323,10 +321,8 @@ class Manager::Factory {
       AutoRestore<bool> restore(sFactory->mInSyncAbortOrShutdown);
       sFactory->mInSyncAbortOrShutdown = true;
 
-      ManagerList::ForwardIterator iter(sFactory->mManagerList);
-      while (iter.HasMore()) {
-        auto pinnedManager =
-            SafeRefPtr{iter.GetNext(), AcquireStrongRefFromRawPtr{}};
+      for (auto* manager : sFactory->mManagerList.ForwardRange()) {
+        auto pinnedManager = SafeRefPtr{manager, AcquireStrongRefFromRawPtr{}};
         pinnedManager->Shutdown();
       }
     }
@@ -407,9 +403,8 @@ class Manager::Factory {
     
     
     
-    ManagerList::BackwardIterator iter(sFactory->mManagerList);
-    while (iter.HasMore()) {
-      Manager* manager = iter.GetNext();
+    
+    for (auto* manager : sFactory->mManagerList.BackwardRange()) {
       if (aState == manager->GetState() && *manager->mManagerId == aManagerId) {
         return {manager, AcquireStrongRefFromRawPtr{}};
       }
@@ -433,8 +428,7 @@ class Manager::Factory {
   
   
   
-  typedef nsTObserverArray<Manager*> ManagerList;
-  ManagerList mManagerList;
+  nsTObserverArray<Manager*> mManagerList;
 
   
   

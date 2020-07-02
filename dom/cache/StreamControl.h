@@ -73,8 +73,7 @@ class StreamControl {
  private:
   
   
-  typedef nsTObserverArray<RefPtr<ReadStream::Controllable>> ReadStreamList;
-  ReadStreamList mReadStreamList;
+  nsTObserverArray<RefPtr<ReadStream::Controllable>> mReadStreamList;
 };
 
 }  

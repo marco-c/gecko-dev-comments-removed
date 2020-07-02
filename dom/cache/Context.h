@@ -198,8 +198,7 @@ class Context final : public SafeRefCounted<Context> {
 
   
   
-  typedef nsTObserverArray<Activity*> ActivityList;
-  ActivityList mActivityList;
+  nsTObserverArray<Activity*> mActivityList;
 
   
   
