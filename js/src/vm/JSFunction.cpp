@@ -1735,6 +1735,17 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
   realm->scheduleDelazificationForDebugger();
 }
 
+js::GeneratorKind JSFunction::clonedSelfHostedGeneratorKind() const {
+  MOZ_ASSERT(hasSelfHostedLazyScript());
+
+  
+  
+  
+  MOZ_RELEASE_ASSERT(isExtended());
+  JSAtom* name = GetClonedSelfHostedFunctionName(this);
+  return runtimeFromMainThread()->getSelfHostedFunctionGeneratorKind(name);
+}
+
 
 
 static bool CreateDynamicFunction(JSContext* cx, const CallArgs& args,

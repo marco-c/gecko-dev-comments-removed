@@ -111,6 +111,17 @@ class JSFunction : public js::NativeObject {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   js::GCPtrAtom atom_;
 
  public:
@@ -469,8 +480,13 @@ class JSFunction : public js::NativeObject {
     if (hasBaseScript()) {
       return baseScript()->generatorKind();
     }
+    if (hasSelfHostedLazyScript()) {
+      return clonedSelfHostedGeneratorKind();
+    }
     return js::GeneratorKind::NotGenerator;
   }
+
+  js::GeneratorKind clonedSelfHostedGeneratorKind() const;
 
   bool isGenerator() const {
     return generatorKind() == js::GeneratorKind::Generator;

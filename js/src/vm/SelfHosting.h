@@ -26,7 +26,7 @@ bool IsSelfHostedFunctionWithName(JSFunction* fun, JSAtom* name);
 
 
 
-JSAtom* GetClonedSelfHostedFunctionName(JSFunction* fun);
+JSAtom* GetClonedSelfHostedFunctionName(const JSFunction* fun);
 
 
 
