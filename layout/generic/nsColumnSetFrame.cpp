@@ -1004,8 +1004,11 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
   
   
   
+  nscoord extraBlockSize = aReflowInput.CalcLineHeight() / 2;
+
   
-  const nscoord extraBlockSize = 600;
+  
+  bool foundFeasibleBSizeCloserToBest = !aUnboundedLastColumn;
 
   while (!aPresContext->HasPendingInterrupt()) {
     nscoord lastKnownFeasibleBSize = aConfig.mKnownFeasibleBSize;
@@ -1079,13 +1082,16 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
       
       
       nextGuess = aConfig.mKnownFeasibleBSize - 1;
-    } else if (aUnboundedLastColumn) {
+    } else if (!foundFeasibleBSizeCloserToBest) {
       
       
       nextGuess = aColData.mSumBSize / aConfig.mUsedColCount + extraBlockSize;
       
       nextGuess = clamped(nextGuess, aConfig.mKnownInfeasibleBSize + 1,
                           aConfig.mKnownFeasibleBSize - 1);
+      
+      
+      extraBlockSize *= 2;
     } else if (aConfig.mKnownFeasibleBSize == NS_UNCONSTRAINEDSIZE) {
       
       
@@ -1105,6 +1111,10 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
     MarkPrincipalChildrenDirty(this);
     aColData =
         ReflowColumns(aDesiredSize, aReflowInput, aStatus, aConfig, false);
+
+    if (!foundFeasibleBSizeCloserToBest && aColData.mFeasible) {
+      foundFeasibleBSizeCloserToBest = true;
+    }
 
     if (!aConfig.mIsBalancing) {
       
