@@ -38,7 +38,60 @@ var W3CTest = {
   
 
 
-  "runner": parent === this ? null : parent.TestRunner || parent.wrappedJSObject.TestRunner,
+
+
+
+  "runner": function() {
+
+    
+
+
+    var xOrigin = function(){
+        try {
+            void parent.TestRunner;
+            return false;
+        } catch {
+            return true;
+        }
+    }();
+    if (!xOrigin) {
+      return parent === this ? null : parent.TestRunner || parent.wrappedJSObject.TestRunner;
+    }
+    let documentURL = new URL(document.URL);
+    return {
+      currentTestURL: function() {
+        return documentURL.searchParams.get("currentTestURL");
+      }(),
+      testFinished(tests) {
+        parent.postMessage(
+          {
+            harnessType: "SimpleTest",
+            command: "testFinished",
+            applyOn: "runner",
+            params: [tests],
+          },
+          "*"
+        );
+      },
+      getParameterInfo() {
+        return { closeWhenDone: documentURL.searchParams.get("closeWhenDone") };
+      },
+      structuredLogger: {
+        testStatus(url, subtest, status, expected, diagnostic, stack) {
+          parent.postMessage(
+            {
+              harnessType: "SimpleTest",
+              command: "structuredLogger.testStatus",
+              applyOn: "logger",
+              params: [url, subtest, status, expected, diagnostic, stack],
+            },
+            "*"
+          );
+        },
+      },
+    };
+   }(),
+
 
   
 
