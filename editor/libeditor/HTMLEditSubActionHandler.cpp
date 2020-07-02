@@ -1287,7 +1287,8 @@ nsresult ParagraphStateAtSelection::CollectEditableFormatNodesInSelection(
     
     
     if (HTMLEditUtils::IsAnyTableElement(content) ||
-        HTMLEditUtils::IsList(content) || HTMLEditUtils::IsListItem(content)) {
+        HTMLEditUtils::IsAnyListElement(content) ||
+        HTMLEditUtils::IsListItem(content)) {
       aArrayOfContents.RemoveElementAt(i);
       aHTMLEditor.CollectChildren(content, aArrayOfContents, i,
                                   HTMLEditor::CollectListChildren::Yes,
@@ -4256,7 +4257,7 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
   }
 
   
-  if (HTMLEditUtils::IsList(leftBlockElement) &&
+  if (HTMLEditUtils::IsAnyListElement(leftBlockElement) &&
       HTMLEditUtils::IsListItem(rightBlockElement) &&
       rightBlockElement->GetParentNode() == leftBlockElement) {
     return EditActionHandled();
@@ -5282,7 +5283,7 @@ EditActionResult HTMLEditor::ChangeSelectedHardLinesToList(
       continue;
     }
 
-    if (HTMLEditUtils::IsList(content)) {
+    if (HTMLEditUtils::IsAnyListElement(content)) {
       
       
       
@@ -5394,7 +5395,7 @@ EditActionResult HTMLEditor::ChangeSelectedHardLinesToList(
         if (!curList) {
           curList = atContent.GetContainerAsElement();
           NS_WARNING_ASSERTION(
-              HTMLEditUtils::IsList(curList),
+              HTMLEditUtils::IsAnyListElement(curList),
               "Current list item parent is not a list element");
         }
         
@@ -5463,7 +5464,7 @@ EditActionResult HTMLEditor::ChangeSelectedHardLinesToList(
       continue;
     }
 
-    MOZ_ASSERT(!HTMLEditUtils::IsList(content) &&
+    MOZ_ASSERT(!HTMLEditUtils::IsAnyListElement(content) &&
                !HTMLEditUtils::IsListItem(content));
 
     
@@ -5670,7 +5671,7 @@ nsresult HTMLEditor::RemoveListAtSelectionAsSubAction() {
       }
       continue;
     }
-    if (HTMLEditUtils::IsList(content)) {
+    if (HTMLEditUtils::IsAnyListElement(content)) {
       
       nsresult rv =
           DestroyListStructureRecursively(MOZ_KnownLive(*content->AsElement()));
@@ -5949,7 +5950,7 @@ EditActionResult HTMLEditor::IndentAsSubAction() {
 nsresult HTMLEditor::IndentListChild(RefPtr<Element>* aCurList,
                                      const EditorDOMPoint& aCurPoint,
                                      nsIContent& aContent) {
-  MOZ_ASSERT(HTMLEditUtils::IsList(aCurPoint.GetContainer()),
+  MOZ_ASSERT(HTMLEditUtils::IsAnyListElement(aCurPoint.GetContainer()),
              "unexpected container");
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
 
@@ -5960,7 +5961,7 @@ nsresult HTMLEditor::IndentListChild(RefPtr<Element>* aCurList,
   
   if (nsIContent* nextEditableSibling =
           GetNextHTMLSibling(&aContent, SkipWhiteSpace::Yes)) {
-    if (HTMLEditUtils::IsList(nextEditableSibling) &&
+    if (HTMLEditUtils::IsAnyListElement(nextEditableSibling) &&
         aCurPoint.GetContainer()->NodeInfo()->NameAtom() ==
             nextEditableSibling->NodeInfo()->NameAtom() &&
         aCurPoint.GetContainer()->NodeInfo()->NamespaceID() ==
@@ -5981,7 +5982,7 @@ nsresult HTMLEditor::IndentListChild(RefPtr<Element>* aCurList,
   
   if (nsCOMPtr<nsIContent> previousEditableSibling =
           GetPriorHTMLSibling(&aContent, SkipWhiteSpace::Yes)) {
-    if (HTMLEditUtils::IsList(previousEditableSibling) &&
+    if (HTMLEditUtils::IsAnyListElement(previousEditableSibling) &&
         aCurPoint.GetContainer()->NodeInfo()->NameAtom() ==
             previousEditableSibling->NodeInfo()->NameAtom() &&
         aCurPoint.GetContainer()->NodeInfo()->NamespaceID() ==
@@ -6233,7 +6234,7 @@ nsresult HTMLEditor::HandleCSSIndentAtSelectionInternal() {
       continue;
     }
 
-    if (HTMLEditUtils::IsList(atContent.GetContainer())) {
+    if (HTMLEditUtils::IsAnyListElement(atContent.GetContainer())) {
       
       
       nsresult rv =
@@ -6442,7 +6443,7 @@ nsresult HTMLEditor::HandleHTMLIndentAtSelectionInternal() {
       continue;
     }
 
-    if (HTMLEditUtils::IsList(atContent.GetContainer())) {
+    if (HTMLEditUtils::IsAnyListElement(atContent.GetContainer())) {
       
       
       nsresult rv =
@@ -6923,8 +6924,8 @@ SplitRangeOffFromNodeResult HTMLEditor::HandleOutdentAtSelectionInternal() {
       
       
       if (startMargin > 0 &&
-          !(HTMLEditUtils::IsList(atContent.GetContainer()) &&
-            HTMLEditUtils::IsList(content))) {
+          !(HTMLEditUtils::IsAnyListElement(atContent.GetContainer()) &&
+            HTMLEditUtils::IsAnyListElement(content))) {
         indentedParentElement = parentContent->AsElement();
         firstContentToBeOutdented = content;
         lastContentToBeOutdented = content;
@@ -6943,9 +6944,9 @@ SplitRangeOffFromNodeResult HTMLEditor::HandleOutdentAtSelectionInternal() {
     
     
     
-    if (HTMLEditUtils::IsList(atContent.GetContainer())) {
+    if (HTMLEditUtils::IsAnyListElement(atContent.GetContainer())) {
       
-      if (HTMLEditUtils::IsList(content)) {
+      if (HTMLEditUtils::IsAnyListElement(content)) {
         
         nsresult rv = RemoveBlockContainerWithTransaction(
             MOZ_KnownLive(*content->AsElement()));
@@ -6963,7 +6964,7 @@ SplitRangeOffFromNodeResult HTMLEditor::HandleOutdentAtSelectionInternal() {
 
     
     
-    if (HTMLEditUtils::IsList(content)) {
+    if (HTMLEditUtils::IsAnyListElement(content)) {
       
       
       
@@ -6982,7 +6983,7 @@ SplitRangeOffFromNodeResult HTMLEditor::HandleOutdentAtSelectionInternal() {
           continue;
         }
 
-        if (HTMLEditUtils::IsList(lastChildContent)) {
+        if (HTMLEditUtils::IsAnyListElement(lastChildContent)) {
           
           
           
@@ -7192,7 +7193,7 @@ CreateElementResult HTMLEditor::ChangeListElementType(Element& aListElement,
       childContent = newListItemElement;
       continue;
     }
-    if (HTMLEditUtils::IsList(childContent->AsElement()) &&
+    if (HTMLEditUtils::IsAnyListElement(childContent->AsElement()) &&
         !childContent->IsHTMLElement(&aNewListTag)) {
       
       
@@ -7678,14 +7679,15 @@ nsresult HTMLEditor::AlignNodesAndDescendants(
     if (content->IsText() &&
         ((HTMLEditUtils::IsAnyTableElement(atContent.GetContainer()) &&
           !HTMLEditUtils::IsTableCellOrCaption(*atContent.GetContainer())) ||
-         HTMLEditUtils::IsList(atContent.GetContainer()) ||
+         HTMLEditUtils::IsAnyListElement(atContent.GetContainer()) ||
          IsEmptyNode(*content))) {
       continue;
     }
 
     
     
-    if (HTMLEditUtils::IsListItem(content) || HTMLEditUtils::IsList(content)) {
+    if (HTMLEditUtils::IsListItem(content) ||
+        HTMLEditUtils::IsAnyListElement(content)) {
       Element* listOrListItemElement = content->AsElement();
       AutoEditorDOMPointOffsetInvalidator lockChild(atContent);
       nsresult rv = RemoveAlignFromDescendants(
@@ -7709,7 +7711,7 @@ nsresult HTMLEditor::AlignNodesAndDescendants(
         continue;
       }
 
-      if (HTMLEditUtils::IsList(atContent.GetContainer())) {
+      if (HTMLEditUtils::IsAnyListElement(atContent.GetContainer())) {
         
         
         
@@ -7946,7 +7948,8 @@ EditActionResult HTMLEditor::MaybeDeleteTopMostEmptyAncestor(
       }
       
       
-      if (!HTMLEditUtils::IsList(atParentOfEmptyBlock.GetContainer())) {
+      if (!HTMLEditUtils::IsAnyListElement(
+              atParentOfEmptyBlock.GetContainer())) {
         RefPtr<Element> brElement =
             InsertBRElementWithTransaction(atParentOfEmptyBlock);
         if (NS_WARN_IF(Destroyed())) {
@@ -8080,7 +8083,7 @@ size_t HTMLEditor::CollectChildren(
   for (nsIContent* content = GetFirstEditableChild(aNode); content;
        content = content->GetNextSibling()) {
     if ((aCollectListChildren == CollectListChildren::Yes &&
-         (HTMLEditUtils::IsList(content) ||
+         (HTMLEditUtils::IsAnyListElement(content) ||
           HTMLEditUtils::IsListItem(content))) ||
         (aCollectTableChildren == CollectTableChildren::Yes &&
          HTMLEditUtils::IsAnyTableElement(content))) {
@@ -9062,7 +9065,7 @@ Element* HTMLEditor::GetParentListElementAtSelection() const {
     nsRange* range = SelectionRefPtr()->GetRangeAt(i);
     for (nsINode* parent = range->GetClosestCommonInclusiveAncestor(); parent;
          parent = parent->GetParentNode()) {
-      if (HTMLEditUtils::IsList(parent)) {
+      if (HTMLEditUtils::IsAnyListElement(parent)) {
         return parent->AsElement();
       }
     }
@@ -9080,7 +9083,7 @@ Element* HTMLEditor::GetDeepestEditableOnlyChildDivBlockquoteOrListElement(
   for (nsIContent* content = aNode.AsContent();
        content && content->IsElement() &&
        (content->IsAnyOfHTMLElements(nsGkAtoms::div, nsGkAtoms::blockquote) ||
-        HTMLEditUtils::IsList(content));
+        HTMLEditUtils::IsAnyListElement(content));
        content = content->GetFirstChild()) {
     if (CountEditableChildren(content) != 1) {
       return content->AsElement();
@@ -9752,7 +9755,8 @@ nsresult HTMLEditor::HandleInsertParagraphInListItemElement(Element& aListItem,
     DebugOnly<bool> advanced = atNextSiblingOfLeftList.AdvanceOffset();
     NS_WARNING_ASSERTION(advanced,
                          "Failed to advance offset after the right list node");
-    if (HTMLEditUtils::IsList(atNextSiblingOfLeftList.GetContainer())) {
+    if (HTMLEditUtils::IsAnyListElement(
+            atNextSiblingOfLeftList.GetContainer())) {
       
       nsresult rv = MoveNodeWithTransaction(aListItem, atNextSiblingOfLeftList);
       if (NS_WARN_IF(Destroyed())) {
@@ -10077,7 +10081,7 @@ nsresult HTMLEditor::RemoveBlockContainerElements(
     if (content->IsAnyOfHTMLElements(
             nsGkAtoms::table, nsGkAtoms::tr, nsGkAtoms::tbody, nsGkAtoms::td,
             nsGkAtoms::li, nsGkAtoms::blockquote, nsGkAtoms::div) ||
-        HTMLEditUtils::IsList(content)) {
+        HTMLEditUtils::IsAnyListElement(content)) {
       
       if (blockElement) {
         SplitRangeOffFromNodeResult removeMiddleContainerResult =
@@ -10228,7 +10232,8 @@ nsresult HTMLEditor::CreateOrChangeBlockContainerElement(
       continue;
     }
 
-    if (HTMLEditUtils::IsTable(content) || HTMLEditUtils::IsList(content) ||
+    if (HTMLEditUtils::IsTable(content) ||
+        HTMLEditUtils::IsAnyListElement(content) ||
         content->IsAnyOfHTMLElements(nsGkAtoms::tbody, nsGkAtoms::tr,
                                      nsGkAtoms::td, nsGkAtoms::li,
                                      nsGkAtoms::blockquote, nsGkAtoms::div)) {
@@ -10525,7 +10530,7 @@ nsresult HTMLEditor::JoinNearestEditableNodesWithTransaction(
   EditorDOMPoint ret(&aNodeRight, aNodeLeft.Length());
 
   
-  if (HTMLEditUtils::IsList(&aNodeLeft) || aNodeLeft.IsText()) {
+  if (HTMLEditUtils::IsAnyListElement(&aNodeLeft) || aNodeLeft.IsText()) {
     
     nsresult rv = JoinNodesWithTransaction(aNodeLeft, aNodeRight);
     if (NS_WARN_IF(Destroyed())) {
@@ -11220,7 +11225,7 @@ nsresult HTMLEditor::RemoveEmptyNodesIn(nsRange& aRange) {
       } else if ((isMailCite = HTMLEditUtils::IsMailCite(content)) ||
                  content->IsHTMLElement(nsGkAtoms::a) ||
                  HTMLEditUtils::IsInlineStyle(content) ||
-                 HTMLEditUtils::IsList(content) ||
+                 HTMLEditUtils::IsAnyListElement(content) ||
                  content->IsHTMLElement(nsGkAtoms::div)) {
         
         isCandidate = true;
@@ -11417,7 +11422,7 @@ nsresult HTMLEditor::LiftUpListItemElement(
   
   
   
-  if (!HTMLEditUtils::IsList(pointToInsertListItem.GetContainer()) &&
+  if (!HTMLEditUtils::IsAnyListElement(pointToInsertListItem.GetContainer()) &&
       HTMLEditUtils::IsListItem(&aListItemElement)) {
     nsresult rv = RemoveBlockContainerWithTransaction(aListItemElement);
     if (NS_WARN_IF(Destroyed())) {
@@ -11443,7 +11448,7 @@ nsresult HTMLEditor::LiftUpListItemElement(
 
 nsresult HTMLEditor::DestroyListStructureRecursively(Element& aListElement) {
   MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(HTMLEditUtils::IsList(&aListElement));
+  MOZ_ASSERT(HTMLEditUtils::IsAnyListElement(&aListElement));
 
   
   
@@ -11472,7 +11477,7 @@ nsresult HTMLEditor::DestroyListStructureRecursively(Element& aListElement) {
       continue;
     }
 
-    if (HTMLEditUtils::IsList(child)) {
+    if (HTMLEditUtils::IsAnyListElement(child)) {
       nsresult rv =
           DestroyListStructureRecursively(MOZ_KnownLive(*child->AsElement()));
       if (NS_FAILED(rv)) {
@@ -12144,7 +12149,7 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
     
     
     
-    if (HTMLEditUtils::IsList(atContent.GetContainer())) {
+    if (HTMLEditUtils::IsAnyListElement(atContent.GetContainer())) {
       
       
       

@@ -199,7 +199,7 @@ bool HTMLEditUtils::IsTableCellOrCaption(nsINode& aNode) {
 
 
 
-bool HTMLEditUtils::IsList(nsINode* aNode) {
+bool HTMLEditUtils::IsAnyListElement(nsINode* aNode) {
   MOZ_ASSERT(aNode);
   return aNode->IsAnyOfHTMLElements(nsGkAtoms::ul, nsGkAtoms::ol,
                                     nsGkAtoms::dl);
