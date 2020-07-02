@@ -126,7 +126,7 @@ void MediaController::UpdateMediaControlKeyToContentMediaIfNeeded(
     MediaControlKey aKey) {
   
   
-  if (!IsAnyMediaBeingControlled() || mShutdown) {
+  if (!mIsActive || mShutdown) {
     return;
   }
   
@@ -205,7 +205,7 @@ NS_IMETHODIMP MediaController::Notify(nsITimer* aTimer) {
     return NS_OK;
   }
 
-  if (!mIsRegisteredToService) {
+  if (!mIsActive) {
     LOG("Cancel deactivation timer because controller has been deactivated");
     return NS_OK;
   }
@@ -239,33 +239,33 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
 
 bool MediaController::ShouldActivateController() const {
   MOZ_ASSERT(!mShutdown);
-  return IsAnyMediaBeingControlled() && IsAudible() && !mIsRegisteredToService;
+  return IsAnyMediaBeingControlled() && IsAudible() && !mIsActive;
 }
 
 bool MediaController::ShouldDeactivateController() const {
   MOZ_ASSERT(!mShutdown);
-  return !IsAnyMediaBeingControlled() && mIsRegisteredToService;
+  return !IsAnyMediaBeingControlled() && mIsActive;
 }
 
 void MediaController::Activate() {
-  LOG("Activate");
   MOZ_ASSERT(!mShutdown);
   RefPtr<MediaControlService> service = MediaControlService::GetService();
-  if (service && !mIsRegisteredToService) {
-    mIsRegisteredToService = service->RegisterActiveMediaController(this);
-    MOZ_ASSERT(mIsRegisteredToService, "Fail to register controller!");
+  if (service && !mIsActive) {
+    LOG("Activate");
+    mIsActive = service->RegisterActiveMediaController(this);
+    MOZ_ASSERT(mIsActive, "Fail to register controller!");
   }
 }
 
 void MediaController::Deactivate() {
-  LOG("Deactivate");
   MOZ_ASSERT(!mShutdown);
   RefPtr<MediaControlService> service = MediaControlService::GetService();
   if (service) {
     service->GetAudioFocusManager().RevokeAudioFocus(this);
-    if (mIsRegisteredToService) {
-      mIsRegisteredToService = !service->UnregisterActiveMediaController(this);
-      MOZ_ASSERT(!mIsRegisteredToService, "Fail to unregister controller!");
+    if (mIsActive) {
+      LOG("Deactivate");
+      mIsActive = !service->UnregisterActiveMediaController(this);
+      MOZ_ASSERT(!mIsActive, "Fail to unregister controller!");
     }
   }
 }
