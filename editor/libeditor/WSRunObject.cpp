@@ -755,9 +755,11 @@ nsresult WSRunScanner::GetWSNodes() {
   return NS_OK;
 }
 
+template <typename EditorDOMPointType>
 bool WSRunScanner::InitializeRangeStartWithTextNode(
-    const EditorDOMPointInText& aPoint) {
+    const EditorDOMPointType& aPoint) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
+  MOZ_DIAGNOSTIC_ASSERT(aPoint.IsInTextNode());
 
   const nsTextFragment& textFragment = aPoint.ContainerAsText()->TextFragment();
   for (uint32_t i = std::min(aPoint.Offset(), textFragment.GetLength()); i;
@@ -787,15 +789,15 @@ bool WSRunScanner::InitializeRangeStartWithTextNode(
   return false;
 }
 
+template <typename EditorDOMPointType>
 void WSRunScanner::InitializeRangeStart(
-    const EditorDOMPoint& aPoint,
+    const EditorDOMPointType& aPoint,
     const nsIContent& aEditableBlockParentOrTopmostEditableInlineContent) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
   
   if (aPoint.IsInTextNode() && !aPoint.IsStartOfContainer()) {
-    if (InitializeRangeStartWithTextNode(
-            EditorDOMPointInText(aPoint.ContainerAsText(), aPoint.Offset()))) {
+    if (InitializeRangeStartWithTextNode(aPoint)) {
       return;
     }
     
@@ -848,7 +850,7 @@ void WSRunScanner::InitializeRangeStart(
     
     
     InitializeRangeStart(
-        EditorDOMPoint(previousLeafContentOrBlock->AsText(), 0),
+        EditorDOMPointInText(previousLeafContentOrBlock->AsText(), 0),
         aEditableBlockParentOrTopmostEditableInlineContent);
     return;
   }
@@ -860,13 +862,16 @@ void WSRunScanner::InitializeRangeStart(
 
   
   
-  InitializeRangeStart(EditorDOMPoint(previousLeafContentOrBlock->AsText(), 0),
-                       aEditableBlockParentOrTopmostEditableInlineContent);
+  InitializeRangeStart(
+      EditorDOMPointInText(previousLeafContentOrBlock->AsText(), 0),
+      aEditableBlockParentOrTopmostEditableInlineContent);
 }
 
+template <typename EditorDOMPointType>
 bool WSRunScanner::InitializeRangeEndWithTextNode(
-    const EditorDOMPointInText& aPoint) {
+    const EditorDOMPointType& aPoint) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
+  MOZ_DIAGNOSTIC_ASSERT(aPoint.IsInTextNode());
 
   const nsTextFragment& textFragment = aPoint.ContainerAsText()->TextFragment();
   for (uint32_t i = aPoint.Offset(); i < textFragment.GetLength(); i++) {
@@ -895,19 +900,19 @@ bool WSRunScanner::InitializeRangeEndWithTextNode(
   return false;
 }
 
+template <typename EditorDOMPointType>
 void WSRunScanner::InitializeRangeEnd(
-    const EditorDOMPoint& aPoint,
+    const EditorDOMPointType& aPoint,
     const nsIContent& aEditableBlockParentOrTopmostEditableInlineContent) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
   if (aPoint.IsInTextNode() && !aPoint.IsEndOfContainer()) {
-    if (InitializeRangeEndWithTextNode(
-            EditorDOMPointInText(aPoint.ContainerAsText(), aPoint.Offset()))) {
+    if (InitializeRangeEndWithTextNode(aPoint)) {
       return;
     }
     
     
-    InitializeRangeEnd(EditorDOMPoint::AtEndOf(*aPoint.ContainerAsText()),
+    InitializeRangeEnd(EditorDOMPointInText::AtEndOf(*aPoint.ContainerAsText()),
                        aEditableBlockParentOrTopmostEditableInlineContent);
     return;
   }
@@ -956,8 +961,9 @@ void WSRunScanner::InitializeRangeEnd(
   if (!nextLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
     
     
-    InitializeRangeEnd(EditorDOMPoint(nextLeafContentOrBlock->AsText(), 0),
-                       aEditableBlockParentOrTopmostEditableInlineContent);
+    InitializeRangeEnd(
+        EditorDOMPointInText(nextLeafContentOrBlock->AsText(), 0),
+        aEditableBlockParentOrTopmostEditableInlineContent);
     return;
   }
 
@@ -968,8 +974,9 @@ void WSRunScanner::InitializeRangeEnd(
 
   
   
-  InitializeRangeEnd(EditorDOMPoint::AtEndOf(*nextLeafContentOrBlock->AsText()),
-                     aEditableBlockParentOrTopmostEditableInlineContent);
+  InitializeRangeEnd(
+      EditorDOMPointInText::AtEndOf(*nextLeafContentOrBlock->AsText()),
+      aEditableBlockParentOrTopmostEditableInlineContent);
 }
 
 void WSRunScanner::GetRuns() {
