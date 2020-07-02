@@ -1,6 +1,6 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
+
 
 package org.mozilla.geckoview.test
 
@@ -75,7 +75,7 @@ class SessionLifecycleTest : BaseSessionTest() {
 
     @Test(expected = IllegalStateException::class)
     fun open_throwOnAlreadyOpen() {
-        // Throw exception if retrying to open again; otherwise we would leak the old open window.
+        
         sessionRule.session.open()
     }
 
@@ -97,12 +97,12 @@ class SessionLifecycleTest : BaseSessionTest() {
         sessionRule.session.waitForPageStop()
     }
 
-    @Ignore //Disable test for frequent failures Bug 1532186
+    @Ignore 
     @Test(expected = IllegalStateException::class)
     fun readFromParcel_throwOnAlreadyOpen() {
-        //disable readFromParcel_throwOnAlreadyOpen for frequent failures Bug 1532186
+        
         assumeThat(sessionRule.env.isDebugBuild, equalTo(true))
-        // Throw exception if retrying to open again; otherwise we would leak the old open window.
+        
         sessionRule.session.toParcel { parcel ->
             sessionRule.createOpenSession().readFromParcel(parcel)
         }
@@ -149,7 +149,7 @@ class SessionLifecycleTest : BaseSessionTest() {
     }
 
     @Test fun readFromParcel_closedSessionAfterReadParcel() {
-        // disable test on opt for frequently failing Bug 1519591
+        
         assumeThat(sessionRule.env.isDebugBuild, equalTo(true))
         val session = sessionRule.createOpenSession()
 
@@ -219,11 +219,11 @@ class SessionLifecycleTest : BaseSessionTest() {
         session.loadTestPath(HELLO_HTML_PATH)
         session.waitForPageStop()
 
-        // Disable navigation notifications on the old, open session.
+        
         assertThat("Old session navigation delegate should be null",
                    session.navigationDelegate, nullValue())
 
-        // Enable navigation notifications on the new, closed session.
+        
         var onLocationCount = 0
         sessionRule.session.navigationDelegate = object : Callbacks.NavigationDelegate {
             override fun onLocationChange(session: GeckoSession, url: String?) {
@@ -231,8 +231,8 @@ class SessionLifecycleTest : BaseSessionTest() {
             }
         }
 
-        // Transferring the old session to the new session should
-        // automatically re-enable navigation notifications.
+        
+        
         session.toParcel { parcel ->
             sessionRule.session.readFromParcel(parcel)
         }
@@ -245,7 +245,7 @@ class SessionLifecycleTest : BaseSessionTest() {
     }
 
     @Test fun readFromParcel_focusedInput() {
-        // When an input is focused, make sure SessionTextInput is still active after transferring.
+        
         mainSession.loadTestPath(INPUTS_PATH)
         mainSession.waitForPageStop()
 
@@ -261,9 +261,13 @@ class SessionLifecycleTest : BaseSessionTest() {
         var newSession: GeckoSession? = null
         mainSession.toParcel { parcel ->
             newSession = sessionRule.createFromParcel(parcel)
+            
+            
+            
+            sessionRule.transferPort(mainSession, newSession!!)
         }
 
-        // We generate an extra focus event during transfer.
+        
         newSession!!.waitUntilCalled(object : Callbacks.TextInputDelegate {
             @AssertCalled(count = 1)
             override fun restartInput(session: GeckoSession, reason: Int) {
@@ -276,7 +280,7 @@ class SessionLifecycleTest : BaseSessionTest() {
         newSession!!.waitUntilCalled(object : Callbacks.TextInputDelegate {
             @AssertCalled(count = 1)
             override fun restartInput(session: GeckoSession, reason: Int) {
-                // We generate an extra focus event during transfer.
+                
                 assertThat("Reason should be correct",
                            reason, equalTo(GeckoSession.TextInputDelegate.RESTART_REASON_BLUR))
             }
@@ -403,7 +407,7 @@ class SessionLifecycleTest : BaseSessionTest() {
     }
 
     @Test fun restoreInstanceState_sameOpenSession() {
-        // We should keep the session open when restoring the same open session.
+        
         val view = testRestoreInstanceState(mainSession, mainSession)
         assertThat("View session is unchanged", view.session, equalTo(mainSession))
         assertThat("View session is open", view.session!!.isOpen, equalTo(true))
@@ -411,7 +415,7 @@ class SessionLifecycleTest : BaseSessionTest() {
         sessionRule.waitForPageStop()
     }
 
-    @Ignore // Bug 1533934 - disabled createFromParcel on pgo for frequent failures
+    @Ignore 
     @Test fun createFromParcel() {
         val session = sessionRule.createOpenSession()
 
@@ -432,8 +436,8 @@ class SessionLifecycleTest : BaseSessionTest() {
     }
 
     @Test fun collectClosed() {
-        // We can't use a normal scoped function like `run` because
-        // those are inlined, which leaves a local reference.
+        
+        
         fun createSession(): QueuedWeakReference<GeckoSession> {
             return QueuedWeakReference<GeckoSession>(GeckoSession())
         }
@@ -467,7 +471,7 @@ class SessionLifecycleTest : BaseSessionTest() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitForPageStop()
 
-        // Deactivate the GeckoSession and confirm that rAF/setTimeout/etc callbacks do not run
+        
         mainSession.setActive(false)
         mainSession.evaluateJS(
             """function fail() {
@@ -480,7 +484,7 @@ class SessionLifecycleTest : BaseSessionTest() {
         val isNotGreen = mainSession.evaluateJS("document.documentElement.style.backgroundColor !== 'green'") as Boolean
         assertThat("requestAnimationFrame has not run yet", isNotGreen, equalTo(true))
 
-        // Reactivate the GeckoSession and confirm that rAF/setTimeout/etc callbacks now run
+        
         mainSession.setActive(true)
         mainSession.waitForJS("new Promise(resolve => requestAnimationFrame(() => { resolve(); }))");
         var isGreen = mainSession.evaluateJS("document.documentElement.style.backgroundColor === 'green'") as Boolean

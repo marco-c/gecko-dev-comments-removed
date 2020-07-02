@@ -1956,6 +1956,21 @@ public class GeckoSessionTestRule implements TestRule {
 
 
 
+
+    public void transferPort(@NonNull final GeckoSession fromSession, @NonNull final GeckoSession toSession) {
+        final WebExtension.Port port = mPorts.remove(fromSession);
+        if (port == null) {
+            throw new NullPointerException("Expected a valid port, got null instead");
+        }
+
+        mPorts.put(toSession, port);
+    }
+
+    
+
+
+
+
     public GeckoSession createOpenSession() {
         return createSession(mMainSession.getSettings(),  true);
     }
