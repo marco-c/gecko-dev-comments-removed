@@ -1641,6 +1641,13 @@ void DocAccessible::DoInitialUpdate() {
           ipcDoc->SendPDocAccessiblePlatformExtConstructor();
 #endif
         }
+#if !defined(XP_WIN)
+        
+        
+        
+        
+        ipcDoc->SetConstructedInParentProcess();
+#endif
       }
     }
   }

@@ -124,6 +124,12 @@ parent:
   async Batch(uint64_t aBatchType, BatchData[] aData);
 
 child:
+  
+
+
+
+  async ConstructedInParentProcess();
+
   async __delete__();
 
   
