@@ -11,7 +11,7 @@
 #include "FFmpegDataDecoder.h"
 #include "SimpleMap.h"
 #ifdef MOZ_WAYLAND_USE_VAAPI
-#  include "mozilla/widget/WaylandDMABufSurface.h"
+#  include "mozilla/widget/DMABufSurface.h"
 #  include "mozilla/LinkedList.h"
 #endif
 
@@ -55,10 +55,10 @@ namespace mozilla {
 
 
 
-class DMABufSurface final {
+class DMABufSurfaceWrapper final {
  public:
-  DMABufSurface(WaylandDMABufSurface* aSurface, FFmpegLibWrapper* aLib);
-  ~DMABufSurface();
+  DMABufSurfaceWrapper(DMABufSurface* aSurface, FFmpegLibWrapper* aLib);
+  ~DMABufSurfaceWrapper();
 
   
   void LockVAAPIData(AVCodecContext* aAVCodecContext, AVFrame* aAVFrame);
@@ -71,12 +71,12 @@ class DMABufSurface final {
   
   bool IsUsed() const { return mSurface->IsGlobalRefSet(); }
 
-  const RefPtr<WaylandDMABufSurfaceNV12> GetWaylandDMABufSurface() {
-    return mSurface->GetAsWaylandDMABufSurfaceNV12();
+  RefPtr<DMABufSurfaceYUV> GetDMABufSurface() const {
+    return mSurface->GetAsDMABufSurfaceYUV();
   }
 
  private:
-  const RefPtr<WaylandDMABufSurface> mSurface;
+  const RefPtr<DMABufSurface> mSurface;
   const FFmpegLibWrapper* mLib;
   AVBufferRef* mAVHWFramesContext;
   AVBufferRef* mHWAVBuffer;
@@ -156,7 +156,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
                                 MediaDataDecoder::DecodedData& aResults);
 
   void ReleaseUnusedVAAPIFrames();
-  DMABufSurface* GetUnusedDMABufSurface();
+  DMABufSurfaceWrapper* GetUnusedDMABufSurfaceWrapper();
   void ReleaseDMABufSurfaces();
 #endif
 
@@ -174,7 +174,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
   const bool mDisableHardwareDecoding;
   VADisplay mDisplay;
   bool mUseDMABufSurfaces;
-  nsTArray<DMABufSurface> mDMABufSurfaces;
+  nsTArray<DMABufSurfaceWrapper> mDMABufSurfaces;
 #endif
   RefPtr<KnowsCompositor> mImageAllocator;
   RefPtr<ImageContainer> mImageContainer;
