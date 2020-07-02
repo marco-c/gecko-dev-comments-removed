@@ -8,7 +8,10 @@
 #define mozilla_dom_InProcessChild_h
 
 #include "mozilla/dom/PInProcessChild.h"
+#include "mozilla/dom/JSProcessActorChild.h"
+#include "mozilla/dom/ProcessActor.h"
 #include "mozilla/StaticPtr.h"
+#include "nsIDOMProcessChild.h"
 
 namespace mozilla {
 namespace dom {
@@ -24,12 +27,15 @@ class InProcessParent;
 
 
 
-class InProcessChild final : public PInProcessChild {
+class InProcessChild final : public nsIDOMProcessChild,
+                             public PInProcessChild,
+                             public ProcessActor {
  public:
   friend class InProcessParent;
   friend class PInProcessChild;
 
-  NS_INLINE_DECL_REFCOUNTING(InProcessChild, final)
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIDOMPROCESSCHILD
 
   
   static InProcessChild* Singleton();
@@ -39,6 +45,9 @@ class InProcessChild final : public PInProcessChild {
   
   static IProtocol* ParentActorFor(IProtocol* aActor);
 
+  const nsAString& GetRemoteType() const override { return VoidString(); }
+  JSActor::Type GetSide() override { return JSActor::Type::Child; }
+
  private:
   
   
@@ -46,6 +55,8 @@ class InProcessChild final : public PInProcessChild {
   ~InProcessChild() = default;
 
   static StaticRefPtr<InProcessChild> sSingleton;
+
+  nsRefPtrHashtable<nsCStringHashKey, JSProcessActorChild> mProcessActors;
 };
 
 }  
