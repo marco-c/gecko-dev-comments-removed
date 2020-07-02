@@ -15,12 +15,10 @@
 #include <winternl.h>
 
 #include "mozilla/Assertions.h"
-#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/FileUtilsWin.h"
 #include "mozilla/IOInterposer.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/UniquePtr.h"
 #include "nsTArray.h"
 #include "nsWindowsDllInterceptor.h"
 #include "plstr.h"
@@ -111,155 +109,6 @@ typedef NTSTATUS(NTAPI* NtQueryFullAttributesFileFn)(
 
 
 
-
-
-
-
-
-template <typename Key, typename Value, unsigned LRUCapacity>
-class LRUCache {
- public:
-  static_assert(std::is_default_constructible_v<Key>);
-  static_assert(std::is_trivially_constructible_v<Key>);
-  static_assert(std::is_trivially_copyable_v<Key>);
-  static_assert(std::is_default_constructible_v<Value>);
-  static_assert(LRUCapacity <= 1024,
-                "This seems a bit big, is this the right cache for your use?");
-
-  void Clear() {
-    mozilla::MutexAutoLock lock(mMutex);
-    for (KeyAndValue* item = &mLRUArray[0]; item != &mLRUArray[mSize]; ++item) {
-      item->mValue = Value{};
-    }
-    mSize = 0;
-  }
-
-  
-  template <typename ToValue>
-  void Add(Key aKey, ToValue&& aValue) {
-    mozilla::MutexAutoLock lock(mMutex);
-
-    
-    
-    KeyAndValue* const item0 = &mLRUArray[0];
-    mSize = std::min(mSize + 1, LRUCapacity);
-    if (MOZ_LIKELY(mSize != 1)) {
-      
-      
-      std::move_backward(item0, item0 + mSize - 1, item0 + mSize);
-    }
-    item0->mKey = aKey;
-    item0->mValue = std::forward<ToValue>(aValue);
-    return;
-  }
-
-  
-  
-  template <typename ValueFunction>
-  Value FetchOrAdd(Key aKey, ValueFunction&& aValueFunction) {
-    Value value;
-    mozilla::MutexAutoLock lock(mMutex);
-
-    KeyAndValue* const item0 = &mLRUArray[0];
-    if (MOZ_UNLIKELY(mSize == 0)) {
-      
-      value = std::forward<ValueFunction>(aValueFunction)();
-      item0->mKey = aKey;
-      item0->mValue = value;
-      return value;
-    }
-
-    if (MOZ_LIKELY(item0->mKey == aKey)) {
-      
-#ifdef LRUCACHE_STATS
-      ++mCacheFoundAt[0];
-#endif  
-      value = item0->mValue;
-      return value;
-    }
-
-    for (KeyAndValue* item = item0 + 1; item != item0 + mSize; ++item) {
-      if (item->mKey == aKey) {
-        
-#ifdef LRUCACHE_STATS
-        ++mCacheFoundAt[unsigned(item - item0)];
-#endif  
-        value = item->mValue;
-        
-        std::rotate(item0, item, item + 1);
-        return value;
-      }
-    }
-
-    
-#ifdef LRUCACHE_STATS
-    ++mCacheFoundAt[LRUCapacity];
-#endif  
-    {
-      
-      
-      
-      
-      
-      
-      
-      
-      mozilla::MutexAutoUnlock unlock(mMutex);
-      value = std::forward<ValueFunction>(aValueFunction)();
-    }
-    
-    mSize = std::min(mSize + 1, LRUCapacity);
-    std::move_backward(item0, item0 + mSize - 1, item0 + mSize);
-    item0->mKey = aKey;
-    item0->mValue = value;
-    return value;
-  }
-
-#ifdef LRUCACHE_STATS
-  ~LRUCache() {
-    if (mSize != 0) {
-      fprintf(stderr, "***** LRUCache stats: (position -> hit count)\n");
-      for (unsigned i = 0; i < mSize; ++i) {
-        fprintf(stderr, "***** %3u -> %6u\n", i, mCacheFoundAt[i]);
-      }
-      fprintf(stderr, "***** not found -> %6u\n", mCacheFoundAt[LRUCapacity]);
-    }
-  }
-#endif  
-
- private:
-  struct KeyAndValue {
-    Key mKey;
-    Value mValue;
-
-    KeyAndValue() = default;
-    KeyAndValue(KeyAndValue&&) = default;
-    KeyAndValue& operator=(KeyAndValue&&) = default;
-  };
-
-  mozilla::Mutex mMutex{"LRU cache"};
-  unsigned mSize = 0;
-  KeyAndValue mLRUArray[LRUCapacity];
-#ifdef LRUCACHE_STATS
-  
-  unsigned mCacheFoundAt[LRUCapacity + 1] = {0u};
-#endif  
-};
-
-
-
-
-
-
-
-
-using HandleToFilenameCache = LRUCache<HANDLE, nsString, 32>;
-static mozilla::UniquePtr<HandleToFilenameCache> sHandleToFilenameCache;
-
-
-
-
-
 class WinIOAutoObservation : public mozilla::IOInterposeObserver::Observation {
  public:
   WinIOAutoObservation(mozilla::IOInterposeObserver::Operation aOp,
@@ -292,15 +141,6 @@ class WinIOAutoObservation : public mozilla::IOInterposeObserver::Observation {
     }
   }
 
-  void SetHandle(HANDLE aFileHandle) {
-    mFileHandle = aFileHandle;
-    if (aFileHandle && mHasQueriedFilename) {
-      
-      
-      sHandleToFilenameCache->Add(aFileHandle, mFilename);
-    }
-  }
-
   
   
   void Filename(nsAString& aFilename) override;
@@ -326,16 +166,10 @@ void WinIOAutoObservation::Filename(nsAString& aFilename) {
     return;
   }
 
-  if (mFileHandle) {
-    mFilename = sHandleToFilenameCache->FetchOrAdd(mFileHandle, [&]() {
-      nsString filename;
-      if (!mozilla::HandleToFilename(mFileHandle, mOffset, filename)) {
-        
-        
-        filename.Truncate();
-      }
-      return filename;
-    });
+  nsAutoString filename;
+  if (mFileHandle &&
+      mozilla::HandleToFilename(mFileHandle, mOffset, filename)) {
+    mFilename = filename;
   }
   mHasQueriedFilename = true;
 
@@ -380,12 +214,10 @@ static NTSTATUS NTAPI InterposedNtCreateFile(
   MOZ_ASSERT(gOriginalNtCreateFile);
 
   
-  NTSTATUS status = gOriginalNtCreateFile(
-      aFileHandle, aDesiredAccess, aObjectAttributes, aIoStatusBlock,
-      aAllocationSize, aFileAttributes, aShareAccess, aCreateDisposition,
-      aCreateOptions, aEaBuffer, aEaLength);
-  timer.SetHandle(*aFileHandle);
-  return status;
+  return gOriginalNtCreateFile(aFileHandle, aDesiredAccess, aObjectAttributes,
+                               aIoStatusBlock, aAllocationSize, aFileAttributes,
+                               aShareAccess, aCreateDisposition, aCreateOptions,
+                               aEaBuffer, aEaLength);
 }
 
 static NTSTATUS NTAPI InterposedNtReadFile(HANDLE aFileHandle, HANDLE aEvent,
@@ -511,11 +343,6 @@ void InitPoisonIOInterposer() {
   }
   sIOPoisoned = true;
 
-  if (!sHandleToFilenameCache) {
-    sHandleToFilenameCache = mozilla::MakeUnique<HandleToFilenameCache>();
-    mozilla::ClearOnShutdown(&sHandleToFilenameCache);
-  }
-
   
   MozillaRegisterDebugFD(1);
   MozillaRegisterDebugFD(2);
@@ -553,7 +380,6 @@ void ClearPoisonIOInterposer() {
     
     sIOPoisoned = false;
     sNtDllInterceptor.Clear();
-    sHandleToFilenameCache->Clear();
   }
 }
 

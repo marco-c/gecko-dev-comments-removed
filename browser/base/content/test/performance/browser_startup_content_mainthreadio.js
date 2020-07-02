@@ -345,12 +345,6 @@ add_task(async function() {
 
       
       
-      if (WIN && filename.startsWith("\\??\\pipe\\")) {
-        continue;
-      }
-
-      
-      
       
       
       if (MAC && filename.startsWith(tmpPath + "/org.mozilla.ipc.")) {
