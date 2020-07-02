@@ -1531,14 +1531,29 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   }
 
   rv = NS_OK;
-  if (mIPCClosed ||
-      !SendOnStartRequest(
+  bool ipcResult = false;
+  if (!mIPCClosed) {
+    
+    
+    
+    
+    if (!mIsMultiPart) {
+      ipcResult = mBgParent->OnStartRequest(
           *responseHead, useResponseHead,
           cleanedUpRequest ? cleanedUpRequestHeaders : requestHead->Headers(),
-          args)) {
-    rv = NS_ERROR_UNEXPECTED;
+          args);
+    } else {
+      ipcResult = SendOnStartRequest(
+          *responseHead, useResponseHead,
+          cleanedUpRequest ? cleanedUpRequestHeaders : requestHead->Headers(),
+          args);
+    }
   }
   requestHead->Exit();
+
+  if (mIPCClosed || !ipcResult) {
+    rv = NS_ERROR_UNEXPECTED;
+  }
 
   
   
