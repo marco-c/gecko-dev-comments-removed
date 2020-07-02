@@ -1540,6 +1540,19 @@ static const char* const kMainThreadName = "GeckoMain";
 
 
 
+template <typename Buffer>
+static void StoreMarker(Buffer& aBuffer, int aThreadId, const char* aMarkerName,
+                        JS::ProfilingCategoryPair aCategoryPair,
+                        const ProfilerMarkerPayload* aPayload,
+                        const mozilla::TimeStamp& aTime) {
+  aBuffer.PutObjects(ProfileBufferEntry::Kind::MarkerData, aThreadId,
+                     WrapProfileBufferUnownedCString(aMarkerName),
+                     static_cast<uint32_t>(aCategoryPair), aPayload,
+                     (aTime - CorePS::ProcessStartTime()).ToMilliseconds());
+}
+
+
+
 
 
 
@@ -4989,11 +5002,8 @@ static void racy_profiler_add_marker(const char* aMarkerName,
   TimeStamp origin = (aPayload && !aPayload->GetStartTime().IsNull())
                          ? aPayload->GetStartTime()
                          : TimeStamp::NowUnfuzzed();
-  TimeDuration delta = origin - CorePS::ProcessStartTime();
-  CorePS::CoreBuffer().PutObjects(
-      ProfileBufferEntry::Kind::MarkerData, racyRegisteredThread->ThreadId(),
-      WrapProfileBufferUnownedCString(aMarkerName),
-      static_cast<uint32_t>(aCategoryPair), aPayload, delta.ToMilliseconds());
+  StoreMarker(CorePS::CoreBuffer(), racyRegisteredThread->ThreadId(),
+              aMarkerName, aCategoryPair, aPayload, origin);
 }
 
 void profiler_add_marker(const char* aMarkerName,
@@ -5111,11 +5121,8 @@ static void maybelocked_profiler_add_marker_for_thread(
   TimeStamp origin = (!aPayload.GetStartTime().IsNull())
                          ? aPayload.GetStartTime()
                          : TimeStamp::NowUnfuzzed();
-  TimeDuration delta = origin - CorePS::ProcessStartTime();
-  CorePS::CoreBuffer().PutObjects(
-      ProfileBufferEntry::Kind::MarkerData, aThreadId,
-      WrapProfileBufferUnownedCString(aMarkerName),
-      static_cast<uint32_t>(aCategoryPair), &aPayload, delta.ToMilliseconds());
+  StoreMarker(CorePS::CoreBuffer(), aThreadId, aMarkerName, aCategoryPair,
+              &aPayload, origin);
 }
 
 void profiler_add_marker_for_thread(int aThreadId,
