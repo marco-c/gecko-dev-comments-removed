@@ -284,7 +284,7 @@ TEST(MultiWriterQueue, MultiWriterMultiReader)
 
 
 struct DequeWrapperST {
-  nsDeque mDQ;
+  nsDeque<void> mDQ;
 
   bool Push(int i) {
     mDQ.PushFront(reinterpret_cast<void*>(static_cast<uintptr_t>(i)));
