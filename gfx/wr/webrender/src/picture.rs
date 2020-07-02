@@ -4397,7 +4397,31 @@ impl PrimitiveList {
             .intersection(&prim_rect)
             .unwrap_or_else(LayoutRect::zero);
 
-        let instance_index = self.prim_instances.len();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let prims_len = self.prim_instances.len();
+        if prims_len == self.prim_instances.capacity() {
+            let next_alloc = match prims_len {
+                1 ..= 31 => 32 - prims_len,
+                32 ..= 256 => 512 - prims_len,
+                _ => prims_len * 2,
+            };
+
+            self.prim_instances.reserve(next_alloc);
+        }
+
+        let instance_index = prims_len;
         self.prim_instances.push(prim_instance);
 
         if let Some(cluster) = self.clusters.last_mut() {
@@ -4405,6 +4429,18 @@ impl PrimitiveList {
                 cluster.add_instance(&culling_rect, instance_index);
                 return;
             }
+        }
+
+        
+        let clusters_len = self.clusters.len();
+        if clusters_len == self.clusters.capacity() {
+            let next_alloc = match clusters_len {
+                1 ..= 15 => 16 - clusters_len,
+                16 ..= 127 => 128 - clusters_len,
+                _ => clusters_len * 2,
+            };
+
+            self.clusters.reserve(next_alloc);
         }
 
         let mut cluster = PrimitiveCluster::new(
