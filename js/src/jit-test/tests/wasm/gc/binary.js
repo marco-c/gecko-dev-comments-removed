@@ -1,4 +1,4 @@
-fv
+
 
 load(libdir + "wasm-binary.js");
 
