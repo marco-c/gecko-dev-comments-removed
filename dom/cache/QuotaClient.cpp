@@ -27,7 +27,6 @@ using mozilla::Some;
 using mozilla::Unused;
 using mozilla::dom::ContentParentId;
 using mozilla::dom::cache::DirPaddingFile;
-using mozilla::dom::cache::kCachesSQLiteFilename;
 using mozilla::dom::cache::Manager;
 using mozilla::dom::cache::QuotaInfo;
 using mozilla::dom::quota::AssertIsOnIOThread;
@@ -125,35 +124,15 @@ static nsresult LockedGetPaddingSizeFromDB(nsIFile* aDir,
   
   MOZ_DIAGNOSTIC_ASSERT(quotaInfo.mDirectoryLockId == -1);
 
-  nsCOMPtr<nsIFile> dbFile;
-  nsresult rv = aDir->Clone(getter_AddRefs(dbFile));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  rv = dbFile->Append(kCachesSQLiteFilename);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  bool exists = false;
-  rv = dbFile->Exists(&exists);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  
-  
-  
-  
-  
-  if (!exists) {
+  nsCOMPtr<mozIStorageConnection> conn;
+  nsresult rv = mozilla::dom::cache::OpenDBConnection(quotaInfo, aDir,
+                                                      getter_AddRefs(conn));
+  if (rv == NS_ERROR_FILE_NOT_FOUND ||
+      rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
+    
+    
     return NS_OK;
   }
-
-  nsCOMPtr<mozIStorageConnection> conn;
-  rv = mozilla::dom::cache::OpenDBConnection(quotaInfo, dbFile,
-                                             getter_AddRefs(conn));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -185,8 +164,6 @@ static nsresult LockedGetPaddingSizeFromDB(nsIFile* aDir,
 namespace mozilla {
 namespace dom {
 namespace cache {
-
-const auto kCachesSQLiteFilename = NS_LITERAL_STRING("caches.sqlite");
 
 CacheQuotaClient::CacheQuotaClient()
     : mDirPaddingFileMutex("DOMCacheQuotaClient.mDirPaddingFileMutex") {
@@ -483,7 +460,7 @@ nsresult CacheQuotaClient::GetUsageForOriginInternal(
       continue;
     }
 
-    if (leafName.Equals(kCachesSQLiteFilename) ||
+    if (leafName.EqualsLiteral("caches.sqlite") ||
         leafName.EqualsLiteral("caches.sqlite-wal")) {
       int64_t fileSize;
       rv = file->GetFileSize(&fileSize);
