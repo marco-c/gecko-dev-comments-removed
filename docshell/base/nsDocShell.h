@@ -442,6 +442,20 @@ class nsDocShell final : public nsDocLoader,
       bool aNotifyKeywordSearchLoading = false,
       nsIInputStream** aNewPostData = nullptr);
 
+  static bool ShouldLoadErrorPageWithoutFixup(nsresult aStatus);
+
+  
+  
+  
+  
+  
+  
+  
+  static nsresult FilterStatusForErrorPage(
+      nsresult aStatus, nsIChannel* aChannel, uint32_t aLoadType,
+      bool aIsTopFrame, bool aUseErrorPages, bool aIsInitialDocument,
+      bool* aSkippedUnknownProtocolNavigation = nullptr);
+
   
   static void MaybeNotifyKeywordSearchLoading(const nsString& aProvider,
                                               const nsString& aKeyword);
