@@ -311,11 +311,6 @@ class nsFloatManager {
 
 
 
-  enum {
-    
-    
-    DONT_CLEAR_PUSHED_FLOATS = (1 << 0)
-  };
   nscoord ClearFloats(nscoord aBCoord, mozilla::StyleClear aBreakType) const;
 
   

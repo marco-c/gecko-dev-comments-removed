@@ -1853,10 +1853,11 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
   if (aState.mFlags.mBlockNeedsFloatManager) {
     
     
-    auto [floatHeight, result] =
-        aState.ClearFloats(blockEndEdgeOfChildren, StyleClear::Both, nullptr,
-                           nsFloatManager::DONT_CLEAR_PUSHED_FLOATS);
-    blockEndEdgeOfChildren = std::max(blockEndEdgeOfChildren, floatHeight);
+    
+    
+    
+    std::tie(blockEndEdgeOfChildren, std::ignore) =
+        aState.ClearFloats(blockEndEdgeOfChildren, StyleClear::Both);
   }
 
   if (NS_UNCONSTRAINEDSIZE != aReflowInput.ComputedBSize()) {
@@ -1911,12 +1912,6 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
   } else {
     NS_ASSERTION(aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE,
                  "Shouldn't be incomplete if availableBSize is UNCONSTRAINED.");
-    if (aState.mBCoord == nscoord_MAX) {
-      
-      
-      
-      blockEndEdgeOfChildren = aState.mBCoord = aReflowInput.AvailableBSize();
-    }
     nscoord bSize = std::max(aState.mBCoord, aReflowInput.AvailableBSize());
     if (aReflowInput.AvailableBSize() == NS_UNCONSTRAINEDSIZE) {
       
@@ -3514,6 +3509,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
     nscoord bStartMargin = 0;
     bool mayNeedRetry = false;
     bool clearedFloats = false;
+    bool clearedPushedOrSplitFloat = false;
     if (applyBStartMargin) {
       
       
@@ -3598,6 +3594,8 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
         aState.mBCoord = clearBCoord;
 
         clearedFloats = result != ClearFloatsResult::BCoordNoChange;
+        clearedPushedOrSplitFloat =
+            result == ClearFloatsResult::FloatsPushedOrSplit;
 
         
         
@@ -3636,11 +3634,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
     
     
     if ((!aState.mReflowInput.mFlags.mIsTopOfPage || clearedFloats) &&
-        availSpace.BSize(wm) < 0) {
-      
-      
-      
-      
+        (availSpace.BSize(wm) < 0 || clearedPushedOrSplitFloat)) {
       
       
       
