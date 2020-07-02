@@ -11,6 +11,7 @@
 
 #include "nscore.h"
 #include "mozilla/LookAndFeel.h"
+#include "WinThemeData.h"
 #include "WinUtils.h"
 
 #include "nsWindowDefs.h"
@@ -64,28 +65,8 @@ enum CmdButtonIdx {
 };
 
 class nsUXThemeData {
-  
-  
-  
-  class ThemeHandle final {
-    Maybe<HANDLE> mHandle;
-
-   public:
-    ThemeHandle() = default;
-    ~ThemeHandle();
-
-    
-    ThemeHandle(const ThemeHandle&) = delete;
-    ThemeHandle(ThemeHandle&&) = delete;
-    ThemeHandle& operator=(const ThemeHandle&) = delete;
-    ThemeHandle& operator=(ThemeHandle&&) = delete;
-
-    operator HANDLE();
-    void OpenOnce(HWND aWindow, LPCWSTR aClassList);
-    void Close();
-  };
-
-  static ThemeHandle sThemes[eUXNumClasses];
+  static Maybe<std::unique_ptr<mozilla::widget::WinThemeData>>
+      sThemes[eUXNumClasses];
 
   
   
@@ -107,7 +88,7 @@ class nsUXThemeData {
   static bool sIsHighContrastOn;
 
   static void Invalidate();
-  static HANDLE GetTheme(nsUXThemeClass cls);
+  static mozilla::widget::WinThemeDataPtr GetTheme(nsUXThemeClass cls);
   static HMODULE GetThemeDLL();
 
   
