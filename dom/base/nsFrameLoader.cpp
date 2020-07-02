@@ -399,9 +399,13 @@ static void GetInitialRemoteTypeAndProcess(Element* aOwner,
     return;
   }
   RefPtr<ContentParent> contentParent = browserParent->Manager();
-  MOZ_DIAGNOSTIC_ASSERT(
-      !hasRemoteType || contentParent->GetRemoteType() == aRemoteType,
-      "If specified, remoteType attribute must match sameProcessAsFrameLoader");
+
+  
+  
+  
+  MOZ_ASSERT(!hasRemoteType || contentParent->GetRemoteType() == aRemoteType,
+             "If specified, remoteType attribute should match "
+             "sameProcessAsFrameLoader");
   aRemoteType = contentParent->GetRemoteType();
   *aChildID = contentParent->ChildID();
 }
