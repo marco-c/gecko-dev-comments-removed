@@ -116,11 +116,9 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
     
     
     if (mFrameLoader) {
-      if (aContextType != ChangeRemotenessContextType::DONT_PRESERVE) {
-        bc = mFrameLoader->GetBrowsingContext();
-        if (aContextType == ChangeRemotenessContextType::PRESERVE) {
-          mFrameLoader->SetWillChangeProcess();
-        }
+      bc = mFrameLoader->GetExtantBrowsingContext();
+      if (aContextType == ChangeRemotenessContextType::PRESERVE) {
+        mFrameLoader->SetWillChangeProcess();
       }
 
       

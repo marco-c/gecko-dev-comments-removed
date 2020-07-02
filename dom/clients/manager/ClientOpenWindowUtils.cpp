@@ -72,7 +72,9 @@ class WebProgressListener final : public nsIWebProgressListener,
 
     
     
-    aWebProgress->RemoveProgressListener(this);
+    nsCOMPtr<nsIWebProgress> webProgress =
+        mBrowsingContext->Canonical()->GetWebProgress();
+    webProgress->RemoveProgressListener(this);
 
     
     
@@ -236,51 +238,26 @@ void WaitForLoad(const ClientOpenWindowArgsParsed& aArgsValidated,
   MOZ_DIAGNOSTIC_ASSERT(aBrowsingContext);
 
   RefPtr<ClientOpPromise::Private> promise = aPromise;
-  nsresult rv;
-  nsCOMPtr<nsIWebProgress> webProgress;
-  if (nsIDocShell* docShell = aBrowsingContext->GetDocShell()) {
-    
-    
-    webProgress = nsDocShell::Cast(docShell);
-    nsFocusManager::FocusWindow(aBrowsingContext->GetDOMWindow(),
-                                CallerType::NonSystem);
-  } else {
-    
-    
-    
-    
-    
-    nsCOMPtr<Element> element = aBrowsingContext->GetEmbedderElement();
-    if (NS_WARN_IF(!element)) {
-      CopyableErrorResult result;
-      result.ThrowInvalidStateError("Unable to watch window for navigation");
-      promise->Reject(result, __func__);
-      return;
-    }
-
-    nsCOMPtr<nsIBrowser> browser = element->AsBrowser();
-    if (NS_WARN_IF(!browser)) {
-      CopyableErrorResult result;
-      result.ThrowInvalidStateError("Unable to watch window for navigation");
-      promise->Reject(result, __func__);
-      return;
-    }
-
-    rv = browser->GetRemoteWebProgressManager(getter_AddRefs(webProgress));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      CopyableErrorResult result;
-      result.ThrowInvalidStateError("Unable to watch window for navigation");
-      promise->Reject(result, __func__);
-      return;
-    }
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIWebProgress> webProgress =
+      aBrowsingContext->Canonical()->GetWebProgress();
+  if (NS_WARN_IF(!webProgress)) {
+    CopyableErrorResult result;
+    result.ThrowInvalidStateError("Unable to watch window for navigation");
+    promise->Reject(result, __func__);
+    return;
   }
 
   
   RefPtr<WebProgressListener> listener = new WebProgressListener(
       aBrowsingContext, aArgsValidated.baseURI, do_AddRef(promise));
 
-  rv = webProgress->AddProgressListener(listener,
-                                        nsIWebProgress::NOTIFY_STATE_WINDOW);
+  nsresult rv = webProgress->AddProgressListener(
+      listener, nsIWebProgress::NOTIFY_STATE_WINDOW);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     CopyableErrorResult result;
     
