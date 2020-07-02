@@ -1198,13 +1198,12 @@ void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
   EventMessage eventMessage = aEvent->mMessage;
 
   while (true) {
-    nsAutoTObserverArray<Listener, 2>::EndLimitedIterator iter(mListeners);
     Maybe<EventMessageAutoOverride> legacyAutoOverride;
-    while (iter.HasMore()) {
+    for (Listener& listenerRef : mListeners.EndLimitedRange()) {
       if (aEvent->mFlags.mImmediatePropagationStopped) {
         break;
       }
-      Listener* listener = &iter.GetNext();
+      Listener* listener = &listenerRef;
       
       
       
@@ -1334,9 +1333,9 @@ void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
       
       
       bool hasAnyListener = false;
-      nsAutoTObserverArray<Listener, 2>::ForwardIterator iter(mListeners);
-      while (iter.HasMore()) {
-        Listener* listener = &iter.GetNext();
+      
+      for (Listener& listenerRef : mListeners.ForwardRange()) {
+        Listener* listener = &listenerRef;
         if (EVENT_TYPE_EQUALS(listener, aEvent->mMessage,
                               aEvent->mSpecifiedEventType,
                                false)) {
@@ -1504,9 +1503,7 @@ nsresult EventListenerManager::GetListenerInfo(
   nsCOMPtr<EventTarget> target = mTarget;
   NS_ENSURE_STATE(target);
   aList.Clear();
-  nsAutoTObserverArray<Listener, 2>::ForwardIterator iter(mListeners);
-  while (iter.HasMore()) {
-    const Listener& listener = iter.GetNext();
+  for (const Listener& listener : mListeners.ForwardRange()) {
     
     
     if (listener.mListenerType == Listener::eJSEventListener &&
