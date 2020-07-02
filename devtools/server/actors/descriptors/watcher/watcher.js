@@ -33,6 +33,12 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   initialize: function(conn, options) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this._browser = options && options.browser;
+
+    if (this._browser) {
+      
+      
+      this.browsingContextID = this._browser.browsingContext.id;
+    }
   },
 
   destroy: function() {
@@ -45,17 +51,6 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
     
     protocol.Actor.prototype.destroy.call(this);
-  },
-
-  
-
-
-
-
-
-
-  get browsingContextID() {
-    return this._browser ? this._browser.browsingContext.id : null;
   },
 
   
