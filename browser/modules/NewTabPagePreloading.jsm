@@ -94,10 +94,6 @@ let NewTabPagePreloading = {
 
     oldBrowser.swapBrowsers(newBrowser);
 
-    
-    if (newBrowser.isRemoteBrowser) {
-      newBrowser._outerWindowID = oldBrowser._outerWindowID;
-    }
     newBrowser.permanentKey = oldBrowser.permanentKey;
 
     oldWin.gBrowser.getPanel(oldBrowser).remove();

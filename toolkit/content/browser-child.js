@@ -46,9 +46,3 @@ addMessageListener("BrowserElement:CreateAboutBlank", message => {
   );
   docShell.createAboutBlankContentViewer(principal, partitionedPrincipal);
 });
-
-
-
-var outerWindowID = docShell.outerWindowID;
-var browsingContextId = docShell.browsingContext.id;
-sendAsyncMessage("Browser:Init", { outerWindowID, browsingContextId });
