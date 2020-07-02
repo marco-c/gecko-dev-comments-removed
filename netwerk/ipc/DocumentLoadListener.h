@@ -284,6 +284,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   void Disconnect();
 
+  void MaybeReportBlockedByURLClassifier(nsresult aStatus);
+
   
   
   
