@@ -40,6 +40,7 @@
 #include "gfxGDIFontList.h"
 #include "gfxGDIFont.h"
 
+#include "mozilla/layers/CanvasChild.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/PaintThread.h"
 #include "mozilla/layers/ReadbackManagerD3D11.h"
@@ -539,11 +540,17 @@ mozilla::gfx::BackendType gfxWindowsPlatform::GetContentBackendFor(
 mozilla::gfx::BackendType gfxWindowsPlatform::GetPreferredCanvasBackend() {
   mozilla::gfx::BackendType backend = gfxPlatform::GetPreferredCanvasBackend();
 
-  if (backend == BackendType::DIRECT2D1_1 && gfx::gfxVars::UseWebRender() &&
-      !gfx::gfxVars::UseWebRenderANGLE()) {
+  if (backend == BackendType::DIRECT2D1_1) {
+    if (gfx::gfxVars::UseWebRender() && !gfx::gfxVars::UseWebRenderANGLE()) {
+      
+      
+      return BackendType::SKIA;
+    }
+
     
-    
-    return BackendType::SKIA;
+    if (CanvasChild::Deactivated()) {
+      return BackendType::SKIA;
+    }
   }
   return backend;
 }
