@@ -15,11 +15,22 @@
 
 #include "common.h"
 #include "DefaultBrowser.h"
+#include "EventLog.h"
 #include "Notification.h"
 #include "Policy.h"
 #include "Registry.h"
 #include "ScheduledTask.h"
 #include "Telemetry.h"
+
+
+
+
+#define REGISTRY_MUTEX_NAME \
+  L"" MOZ_APP_VENDOR MOZ_APP_BASENAME L"DefaultBrowserAgentRegistryMutex"
+
+
+
+#define REGISTRY_MUTEX_TIMEOUT_MS (3 * 1000)
 
 static void RemoveAllRegistryEntries() {
   mozilla::UniquePtr<wchar_t[]> installPath = mozilla::GetFullBinaryPath();
@@ -105,6 +116,79 @@ static void WriteInstallationRegistryEntry() {
 
 
 
+class RegistryMutex {
+ private:
+  nsAutoHandle mMutex;
+  bool mLocked;
+
+ public:
+  RegistryMutex() : mMutex(nullptr), mLocked(false) {}
+  ~RegistryMutex() {
+    Release();
+    
+  }
+
+  
+  bool Acquire() {
+    if (mLocked) {
+      return true;
+    }
+
+    if (mMutex.get() == nullptr) {
+      
+      
+      
+      
+      mMutex.own(CreateMutexW(nullptr, FALSE, REGISTRY_MUTEX_NAME));
+      if (mMutex.get() == nullptr) {
+        LOG_ERROR_MESSAGE(L"Couldn't open registry mutex: %#X", GetLastError());
+        return false;
+      }
+    }
+
+    DWORD mutexStatus =
+        WaitForSingleObject(mMutex.get(), REGISTRY_MUTEX_TIMEOUT_MS);
+    if (mutexStatus == WAIT_OBJECT_0) {
+      mLocked = true;
+    } else if (mutexStatus == WAIT_TIMEOUT) {
+      LOG_ERROR_MESSAGE(L"Timed out waiting for registry mutex");
+    } else if (mutexStatus == WAIT_ABANDONED) {
+      
+      
+      
+      
+      
+      LOG_ERROR_MESSAGE(L"Found abandoned registry mutex. Continuing...");
+      mLocked = true;
+    } else {
+      
+      
+      LOG_ERROR_MESSAGE(L"Failed to wait on registry mutex: %#X",
+                        GetLastError());
+    }
+    return mLocked;
+  }
+
+  bool IsLocked() { return mLocked; }
+
+  void Release() {
+    if (mLocked) {
+      if (mMutex.get() == nullptr) {
+        LOG_ERROR_MESSAGE(L"Unexpectedly missing registry mutex");
+        return;
+      }
+      BOOL success = ReleaseMutex(mMutex.get());
+      if (!success) {
+        LOG_ERROR_MESSAGE(L"Failed to release registry mutex");
+      }
+      mLocked = false;
+    }
+  }
+};
+
+
+
+
 
 
 
@@ -142,6 +226,8 @@ int wmain(int argc, wchar_t** argv) {
     ~ComUninitializer() { CoUninitialize(); }
   } kCUi;
 
+  RegistryMutex regMutex;
+
   
   
   if (!wcscmp(argv[1], L"uninstall") || !wcscmp(argv[1], L"unregister-task")) {
@@ -150,6 +236,22 @@ int wmain(int argc, wchar_t** argv) {
     }
 
     if (!wcscmp(argv[1], L"uninstall")) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      regMutex.Acquire();
+
       RemoveAllRegistryEntries();
     }
     return RemoveTask(argv[2]);
@@ -163,6 +265,16 @@ int wmain(int argc, wchar_t** argv) {
     if (argc < 3 || !argv[2]) {
       return E_INVALIDARG;
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    regMutex.Acquire();
+
     WriteInstallationRegistryEntry();
 
     return RegisterTask(argv[2]);
@@ -170,6 +282,10 @@ int wmain(int argc, wchar_t** argv) {
     if (argc < 3 || !argv[2]) {
       return E_INVALIDARG;
     }
+    
+    
+    regMutex.Acquire();
+
     WriteInstallationRegistryEntry();
 
     return UpdateTask(argv[2]);
@@ -177,6 +293,23 @@ int wmain(int argc, wchar_t** argv) {
     if (argc < 3 || !argv[2]) {
       return E_INVALIDARG;
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!regMutex.Acquire()) {
+      return HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION);
+    }
+
     DefaultBrowserResult defaultBrowserResult = GetDefaultBrowserInfo();
     if (defaultBrowserResult.isErr()) {
       return defaultBrowserResult.unwrapErr().AsHResult();
