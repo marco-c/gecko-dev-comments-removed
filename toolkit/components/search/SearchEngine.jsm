@@ -1842,10 +1842,10 @@ SearchEngine.prototype = {
   toJSON() {
     
     
-    if (gModernConfig && this._isBuiltin) {
+    if (gModernConfig && this._isAppProvided) {
       return {
         _name: this.name,
-        _isBuiltin: true,
+        _isAppProvided: true,
         _metaData: this._metaData,
       };
     }
