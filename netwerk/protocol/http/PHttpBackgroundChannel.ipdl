@@ -8,11 +8,8 @@
 include protocol PBackground;
 include NeckoChannelParams;
 include HttpChannelParams;
-include PURLClassifierInfo;
 
 include "mozilla/net/NeckoMessageUtils.h";
-
-using nsIHttpChannel::FlashPluginState from "mozilla/net/NeckoMessageUtils.h";
 
 namespace mozilla {
 namespace net {
@@ -23,11 +20,15 @@ async refcounted protocol PHttpBackgroundChannel
   manager PBackground;
 
 child:
-  async OnStartRequest(nsHttpResponseHead  responseHead,
-                       bool                useResponseHead,
-                       nsHttpHeaderArray   requestHeaders,
-                       HttpChannelOnStartRequestArgs args);
+  
+  
+  
+  
+  async OnStartRequestSent();
 
+  
+  
+  
   
   
   async OnTransportAndData(nsresult  channelStatus,
@@ -37,21 +38,14 @@ child:
                            nsCString data,
                            bool dataFromSocketProcess);
 
-
+  
+  
+  
   async OnStopRequest(nsresult channelStatus,
                       ResourceTimingStructArgs timing,
                       TimeStamp lastActiveTabOptimization,
                       nsHttpHeaderArray responseTrailers,
                       ConsoleReportCollected[] consoleReport);
-
-  async OnProgress(int64_t progress, int64_t progressMax);
-
-  async OnStatus(nsresult status);
-
-  
-  
-  
-  async OnAfterLastPart(nsresult aStatus);
 
   
   async FlushedForDiversion();
@@ -59,19 +53,6 @@ child:
   
   
   async DivertMessages();
-
-  
-  async NotifyClassificationFlags(uint32_t aClassificationFlags, bool aIsThirdParty);
-
-  
-  
-  async NotifyFlashPluginStateChanged(FlashPluginState aState);
-
-  
-  async SetClassifierMatchedInfo(ClassifierInfo info);
-
-  
-  async SetClassifierMatchedTrackingInfo(ClassifierInfo info);
 
   async __delete__();
 

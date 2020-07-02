@@ -40,10 +40,7 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
   void OnChannelClosed();
 
   
-  bool OnStartRequest(const nsHttpResponseHead& aResponseHead,
-                      const bool& aUseResponseHead,
-                      const nsHttpHeaderArray& aRequestHeaders,
-                      const HttpChannelOnStartRequestArgs& aArgs);
+  bool OnStartRequestSent();
 
   
   bool OnTransportAndData(const nsresult& aChannelStatus,
@@ -58,33 +55,8 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
                      const nsTArray<ConsoleReportCollected>& aConsoleReports);
 
   
-  bool OnAfterLastPart(const nsresult aStatus);
-
-  
-  bool OnProgress(const int64_t aProgress, const int64_t aProgressMax);
-
-  
-  bool OnStatus(const nsresult aStatus);
-
-  
   
   bool OnDiversion();
-
-  
-  bool OnNotifyClassificationFlags(uint32_t aClassificationFlags,
-                                   bool aIsThirdParty);
-
-  
-  bool OnNotifyFlashPluginStateChanged(nsIHttpChannel::FlashPluginState aState);
-
-  
-  bool OnSetClassifierMatchedInfo(const nsACString& aList,
-                                  const nsACString& aProvider,
-                                  const nsACString& aFullHash);
-
-  
-  bool OnSetClassifierMatchedTrackingInfo(const nsACString& aLists,
-                                          const nsACString& aFullHashes);
 
  protected:
   void ActorDestroy(ActorDestroyReason aWhy) override;

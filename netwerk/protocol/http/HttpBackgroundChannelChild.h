@@ -44,18 +44,13 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
 
   
   
-  void OnStartRequestReceived(Maybe<uint32_t> aMultiPartID);
+  void OnStartRequestReceived();
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   bool IsQueueEmpty() const { return mQueuedRunnables.IsEmpty(); }
 #endif
 
  protected:
-  IPCResult RecvOnStartRequest(const nsHttpResponseHead& aResponseHead,
-                               const bool& aUseResponseHead,
-                               const nsHttpHeaderArray& aRequestHeaders,
-                               const HttpChannelOnStartRequestArgs& aArgs);
-
   IPCResult RecvOnTransportAndData(const nsresult& aChannelStatus,
                                    const nsresult& aTransportStatus,
                                    const uint64_t& aOffset,
@@ -69,26 +64,11 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
       const nsHttpHeaderArray& aResponseTrailers,
       const nsTArray<ConsoleReportCollected>& aConsoleReports);
 
-  IPCResult RecvOnAfterLastPart(const nsresult& aStatus);
-
-  IPCResult RecvOnProgress(const int64_t& aProgress,
-                           const int64_t& aProgressMax);
-
-  IPCResult RecvOnStatus(const nsresult& aStatus);
-
   IPCResult RecvFlushedForDiversion();
 
   IPCResult RecvDivertMessages();
 
-  IPCResult RecvNotifyClassificationFlags(const uint32_t& aClassificationFlags,
-                                          const bool& aIsThirdParty);
-
-  IPCResult RecvNotifyFlashPluginStateChanged(
-      const nsIHttpChannel::FlashPluginState& aState);
-
-  IPCResult RecvSetClassifierMatchedInfo(const ClassifierInfo& info);
-
-  IPCResult RecvSetClassifierMatchedTrackingInfo(const ClassifierInfo& info);
+  IPCResult RecvOnStartRequestSent();
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
@@ -108,7 +88,12 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   
   
   
-  bool IsWaitingOnStartRequest();
+  
+  
+  
+  
+  
+  bool IsWaitingOnStartRequest(bool aDataFromSocketProcess = false);
 
   
   
@@ -119,6 +104,10 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   
   
   bool mStartReceived = false;
+
+  
+  
+  bool mStartSent = false;
 
   
   

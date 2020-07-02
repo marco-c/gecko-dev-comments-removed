@@ -83,12 +83,11 @@ bool HttpBackgroundChannelChild::ChannelClosed() {
   return !mChannelChild;
 }
 
-void HttpBackgroundChannelChild::OnStartRequestReceived(
-    Maybe<uint32_t> aMultiPartID) {
+void HttpBackgroundChannelChild::OnStartRequestReceived() {
   LOG(("HttpBackgroundChannelChild::OnStartRequestReceived [this=%p]\n", this));
   MOZ_ASSERT(OnSocketThread());
   MOZ_ASSERT(mChannelChild);
-  MOZ_ASSERT(!mStartReceived || *aMultiPartID > 0);
+  MOZ_ASSERT(!mStartReceived);  
 
   mStartReceived = true;
 
@@ -125,74 +124,30 @@ bool HttpBackgroundChannelChild::CreateBackgroundChannel() {
   return true;
 }
 
-IPCResult HttpBackgroundChannelChild::RecvOnAfterLastPart(
-    const nsresult& aStatus) {
-  LOG(("HttpBackgroundChannelChild::RecvOnAfterLastPart [this=%p]\n", this));
-  MOZ_ASSERT(OnSocketThread());
-
-  MOZ_ASSERT(mChannelChild, "no channel child in RecvOnAfterLastPart");
-  if (NS_WARN_IF(!mChannelChild)) {
-    return IPC_OK();
-  }
-
-  mChannelChild->ProcessOnAfterLastPart(aStatus);
-  return IPC_OK();
-}
-
-IPCResult HttpBackgroundChannelChild::RecvOnProgress(
-    const int64_t& aProgress, const int64_t& aProgressMax) {
-  LOG(("HttpBackgroundChannelChild::RecvOnProgress [this=%p]\n", this));
-  MOZ_ASSERT(OnSocketThread());
-
-  MOZ_ASSERT(mChannelChild, "no channel child in RecvOnProgress");
-  if (NS_WARN_IF(!mChannelChild)) {
-    return IPC_OK();
-  }
-
-  mChannelChild->ProcessOnProgress(aProgress, aProgressMax);
-  return IPC_OK();
-}
-
-IPCResult HttpBackgroundChannelChild::RecvOnStatus(const nsresult& aStatus) {
-  LOG(("HttpBackgroundChannelChild::RecvOnStatus [this=%p]\n", this));
-  MOZ_ASSERT(OnSocketThread());
-
-  MOZ_ASSERT(mChannelChild, "no channel child in RecvOnStatus");
-  if (NS_WARN_IF(!mChannelChild)) {
-    return IPC_OK();
-  }
-
-  mChannelChild->ProcessOnStatus(aStatus);
-  return IPC_OK();
-}
-
-bool HttpBackgroundChannelChild::IsWaitingOnStartRequest() {
+bool HttpBackgroundChannelChild::IsWaitingOnStartRequest(
+    bool aDataFromSocketProcess) {
   MOZ_ASSERT(OnSocketThread());
 
   
   
-  return !mStartReceived;
+  
+  
+  if (aDataFromSocketProcess) {
+    return !mStartReceived;
+  }
+
+  
+  
+  return (mStartSent && !mStartReceived);
 }
 
 
-IPCResult HttpBackgroundChannelChild::RecvOnStartRequest(
-    const nsHttpResponseHead& aResponseHead, const bool& aUseResponseHead,
-    const nsHttpHeaderArray& aRequestHeaders,
-    const HttpChannelOnStartRequestArgs& aArgs) {
-  LOG(("HttpBackgroundChannelChild::RecvOnStartRequest [this=%p]\n", this));
+IPCResult HttpBackgroundChannelChild::RecvOnStartRequestSent() {
+  LOG(("HttpBackgroundChannelChild::RecvOnStartRequestSent [this=%p]\n", this));
   MOZ_ASSERT(OnSocketThread());
+  MOZ_ASSERT(!mStartSent);  
 
-  MOZ_ASSERT(mChannelChild, "no channel child in RecvOnStartRequest");
-  if (NS_WARN_IF(!mChannelChild)) {
-    return IPC_OK();
-  }
-
-  mChannelChild->ProcessOnStartRequest(aResponseHead, aUseResponseHead,
-                                       aRequestHeaders, aArgs);
-  
-  
-  OnStartRequestReceived(aArgs.multiPartID());
-
+  mStartSent = true;
   return IPC_OK();
 }
 
@@ -219,8 +174,7 @@ IPCResult HttpBackgroundChannelChild::RecvOnTransportAndData(
     return IPC_OK();
   }
 
-  
-  if (IsWaitingOnStartRequest()) {
+  if (IsWaitingOnStartRequest(aDataFromSocketProcess)) {
     LOG(("  > pending until OnStartRequest [offset=%" PRIu64 " count=%" PRIu32
          "]\n",
          aOffset, aCount));
@@ -331,82 +285,6 @@ IPCResult HttpBackgroundChannelChild::RecvDivertMessages() {
   return IPC_OK();
 }
 
-IPCResult HttpBackgroundChannelChild::RecvNotifyClassificationFlags(
-    const uint32_t& aClassificationFlags, const bool& aIsThirdParty) {
-  LOG(
-      ("HttpBackgroundChannelChild::RecvNotifyClassificationFlags "
-       "classificationFlags=%" PRIu32 ", thirdparty=%d [this=%p]\n",
-       aClassificationFlags, static_cast<int>(aIsThirdParty), this));
-  MOZ_ASSERT(OnSocketThread());
-
-  if (NS_WARN_IF(!mChannelChild)) {
-    return IPC_OK();
-  }
-
-  
-  
-  mChannelChild->ProcessNotifyClassificationFlags(aClassificationFlags,
-                                                  aIsThirdParty);
-
-  return IPC_OK();
-}
-
-IPCResult HttpBackgroundChannelChild::RecvNotifyFlashPluginStateChanged(
-    const nsIHttpChannel::FlashPluginState& aState) {
-  LOG(
-      ("HttpBackgroundChannelChild::RecvNotifyFlashPluginStateChanged "
-       "[this=%p]\n",
-       this));
-  MOZ_ASSERT(OnSocketThread());
-
-  if (NS_WARN_IF(!mChannelChild)) {
-    return IPC_OK();
-  }
-
-  
-  
-  mChannelChild->ProcessNotifyFlashPluginStateChanged(aState);
-
-  return IPC_OK();
-}
-
-IPCResult HttpBackgroundChannelChild::RecvSetClassifierMatchedInfo(
-    const ClassifierInfo& info) {
-  LOG(("HttpBackgroundChannelChild::RecvSetClassifierMatchedInfo [this=%p]\n",
-       this));
-  MOZ_ASSERT(OnSocketThread());
-
-  if (NS_WARN_IF(!mChannelChild)) {
-    return IPC_OK();
-  }
-
-  
-  
-  mChannelChild->ProcessSetClassifierMatchedInfo(info.list(), info.provider(),
-                                                 info.fullhash());
-
-  return IPC_OK();
-}
-
-IPCResult HttpBackgroundChannelChild::RecvSetClassifierMatchedTrackingInfo(
-    const ClassifierInfo& info) {
-  LOG(
-      ("HttpBackgroundChannelChild::RecvSetClassifierMatchedTrackingInfo "
-       "[this=%p]\n",
-       this));
-  MOZ_ASSERT(OnSocketThread());
-
-  if (NS_WARN_IF(!mChannelChild)) {
-    return IPC_OK();
-  }
-
-  
-  
-  mChannelChild->ProcessSetClassifierMatchedTrackingInfo(info.list(),
-                                                         info.fullhash());
-
-  return IPC_OK();
-}
 void HttpBackgroundChannelChild::ActorDestroy(ActorDestroyReason aWhy) {
   LOG(("HttpBackgroundChannelChild::ActorDestroy[this=%p]\n", this));
   
