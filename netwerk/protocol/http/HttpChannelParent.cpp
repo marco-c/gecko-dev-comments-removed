@@ -83,6 +83,7 @@ HttpChannelParent::HttpChannelParent(dom::BrowserParent* iframeEmbedding,
       mCacheNeedFlowControlInitialized(false),
       mNeedFlowControl(true),
       mSuspendedForFlowControl(false),
+      mAfterOnStartRequestBegun(false),
       mIsMultiPart(false) {
   LOG(("Creating HttpChannelParent [this=%p]\n", this));
 
@@ -1397,6 +1398,8 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
     return NS_ERROR_UNEXPECTED;
   }
 
+  mAfterOnStartRequestBegun = true;
+
   
   
 
@@ -1511,6 +1514,9 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   args.selfAddr() = chan->GetSelfAddr();
   args.peerAddr() = chan->GetPeerAddr();
   args.timing() = GetTimingAttributes(mChannel);
+  if (mOverrideReferrerInfo) {
+    args.overrideReferrerInfo() = ToRefPtr(std::move(mOverrideReferrerInfo));
+  }
 
   nsHttpRequestHead* requestHead = chan->GetRequestHead();
   
@@ -2625,7 +2631,10 @@ HttpChannelParent::OnRedirectResult(bool succeeded) {
 
 void HttpChannelParent::OverrideReferrerInfoDuringBeginConnect(
     nsIReferrerInfo* aReferrerInfo) {
-  Unused << SendOverrideReferrerInfoDuringBeginConnect(aReferrerInfo);
+  MOZ_ASSERT(aReferrerInfo);
+  MOZ_ASSERT(!mAfterOnStartRequestBegun);
+
+  mOverrideReferrerInfo = aReferrerInfo;
 }
 
 }  

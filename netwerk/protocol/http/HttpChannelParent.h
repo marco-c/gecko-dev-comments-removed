@@ -318,6 +318,10 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
 
   
   
+  nsCOMPtr<nsIReferrerInfo> mOverrideReferrerInfo;
+
+  
+  
   
   uint8_t mIgnoreProgress : 1;
 
@@ -347,6 +351,10 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   uint8_t mCacheNeedFlowControlInitialized : 1;
   uint8_t mNeedFlowControl : 1;
   uint8_t mSuspendedForFlowControl : 1;
+
+  
+  
+  uint8_t mAfterOnStartRequestBegun : 1;
 
   
   

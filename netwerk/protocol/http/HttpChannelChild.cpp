@@ -540,6 +540,16 @@ void HttpChannelChild::OnStartRequest(
                               aArgs.appCacheClientId());
   }
 
+  if (aArgs.overrideReferrerInfo()) {
+    
+    
+    
+    
+    
+    Unused << SetReferrerInfoInternal(aArgs.overrideReferrerInfo(), false, true,
+                                      false);
+  }
+
   DoOnStartRequest(this, nullptr);
 }
 
@@ -3183,19 +3193,6 @@ mozilla::ipc::IPCResult HttpChannelChild::RecvAltDataCacheInputStreamAvailable(
   if (receiver) {
     receiver->OnInputStreamReady(stream);
   }
-
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
-HttpChannelChild::RecvOverrideReferrerInfoDuringBeginConnect(
-    nsIReferrerInfo* aReferrerInfo) {
-  
-  
-  
-  
-  
-  Unused << SetReferrerInfoInternal(aReferrerInfo, false, true, false);
 
   return IPC_OK();
 }
