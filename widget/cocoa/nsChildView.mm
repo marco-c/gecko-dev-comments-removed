@@ -230,7 +230,7 @@ nsChildView::nsChildView()
       mView(nullptr),
       mParentView(nil),
       mParentWidget(nullptr),
-      mViewTearDownLock("ChildViewTearDown"),
+      mCompositingLock("ChildViewCompositing"),
       mBackingScaleFactor(0.0),
       mVisible(false),
       mDrawing(false),
@@ -392,7 +392,7 @@ void nsChildView::Destroy() {
 
   
   
-  MutexAutoLock lock(mViewTearDownLock);
+  MutexAutoLock lock(mCompositingLock);
 
   if (mOnDestroyCalled) return;
   mOnDestroyCalled = true;
@@ -1379,10 +1379,14 @@ void nsChildView::HandleMainThreadCATransaction() {
     PaintWindow(LayoutDeviceIntRegion(GetBounds()));
   }
 
-  
-  
-  
-  mNativeLayerRoot->CommitToScreen();
+  {
+    
+    
+    
+    
+    MutexAutoLock lock(mCompositingLock);
+    mNativeLayerRoot->CommitToScreen();
+  }
 
   MaybeScheduleUnsuspendAsyncCATransactions();
 }
@@ -1707,7 +1711,7 @@ bool nsChildView::PreRender(WidgetRenderingContext* aContext) {
   
   
   
-  mViewTearDownLock.Lock();
+  mCompositingLock.Lock();
 
   if (aContext->mGL && gfxPlatform::CanMigrateMacGPUs()) {
     GLContextCGL::Cast(aContext->mGL)->MigrateToActiveGPU();
@@ -1716,7 +1720,7 @@ bool nsChildView::PreRender(WidgetRenderingContext* aContext) {
   return true;
 }
 
-void nsChildView::PostRender(WidgetRenderingContext* aContext) { mViewTearDownLock.Unlock(); }
+void nsChildView::PostRender(WidgetRenderingContext* aContext) { mCompositingLock.Unlock(); }
 
 RefPtr<layers::NativeLayerRoot> nsChildView::GetNativeLayerRoot() { return mNativeLayerRoot; }
 

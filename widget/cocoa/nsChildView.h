@@ -558,7 +558,8 @@ class nsChildView final : public nsBaseWidget {
 
   
   
-  mozilla::Mutex mViewTearDownLock;
+  
+  mozilla::Mutex mCompositingLock;
 
   mozilla::ViewRegion mNonDraggableRegion;
 
