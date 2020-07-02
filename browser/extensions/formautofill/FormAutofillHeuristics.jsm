@@ -1063,6 +1063,21 @@ this.FormAutofillHeuristics = {
     const getElementStrings = this._getElementStrings(element);
     for (let regexp of regexps) {
       for (let string of getElementStrings) {
+        
+        
+        
+        
+        
+        
+        
+        if (
+          ["address-level1", "address-line2", "address-line3"].includes(regexp)
+        ) {
+          string = string
+            .toLowerCase()
+            .split("united state")
+            .join("");
+        }
         if (this.RULES[regexp].test(string)) {
           return regexp;
         }
