@@ -24,7 +24,7 @@ mozilla::dom::ContentParent* ProtocolFuzzerHelper::CreateContentParent(
     const nsAString& aRemoteType) {
   auto* cp = new mozilla::dom::ContentParent(aRemoteType);
   
-  cp->GetIPCChannel()->mWorkerThread = GetCurrentSerialEventTarget();
+  cp->GetIPCChannel()->mWorkerThread = PR_GetCurrentThread();
   cp->GetIPCChannel()->mMonitor = new RefCountedMonitor();
   return cp;
 }

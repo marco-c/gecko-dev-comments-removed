@@ -5,42 +5,43 @@
 
 
 #include "ImageBridgeChild.h"
-
-#include <vector>  
-
-#include "ImageBridgeParent.h"  
-#include "ImageContainer.h"     
-#include "Layers.h"             
-#include "ShadowLayers.h"       
-#include "SynchronousTask.h"
-#include "base/platform_thread.h"      
-#include "base/process.h"              
-#include "mozilla/Assertions.h"        
-#include "mozilla/Monitor.h"           
-#include "mozilla/ReentrantMonitor.h"  
-#include "mozilla/StaticMutex.h"
-#include "mozilla/StaticPtr.h"  
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/gfx/Point.h"  
+#include <vector>                        
+#include "ImageBridgeParent.h"           
+#include "ImageContainer.h"              
+#include "Layers.h"                      
+#include "ShadowLayers.h"                
+#include "base/platform_thread.h"        
+#include "base/process.h"                
+#include "base/task.h"                   
+#include "base/thread.h"                 
+#include "mozilla/Assertions.h"          
+#include "mozilla/Monitor.h"             
+#include "mozilla/ReentrantMonitor.h"    
+#include "mozilla/ipc/MessageChannel.h"  
+#include "mozilla/ipc/Transport.h"       
 #include "mozilla/gfx/gfxVars.h"
-#include "mozilla/ipc/MessageChannel.h"         
-#include "mozilla/ipc/Transport.h"              
+#include "mozilla/gfx/Point.h"                         
+#include "mozilla/media/MediaSystemResourceManager.h"  
+#include "mozilla/media/MediaSystemResourceManagerChild.h"  
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/ImageClient.h"        
 #include "mozilla/layers/LayersMessages.h"     
 #include "mozilla/layers/TextureClient.h"      
-#include "mozilla/layers/TextureClient.h"
-#include "mozilla/media/MediaSystemResourceManager.h"  
-#include "mozilla/media/MediaSystemResourceManagerChild.h"  
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/mozalloc.h"  
 #include "mtransport/runnable_utils.h"
 #include "nsContentUtils.h"
 #include "nsISupportsImpl.h"         
 #include "nsTArray.h"                
 #include "nsTArrayForwardDeclare.h"  
-#include "nsThreadUtils.h"           
+#include "nsThread.h"
+#include "nsThreadUtils.h"  
+#include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPtr.h"  
+#include "mozilla/layers/TextureClient.h"
+#include "SynchronousTask.h"
 
 #if defined(XP_WIN)
 #  include "mozilla/gfx/DeviceManagerDx.h"
@@ -168,7 +169,10 @@ void ImageBridgeChild::CancelWaitForNotifyNotUsed(uint64_t aTextureId) {
 
 static StaticMutex sImageBridgeSingletonLock;
 static StaticRefPtr<ImageBridgeChild> sImageBridgeChildSingleton;
-static StaticRefPtr<nsISerialEventTarget> sImageBridgeChildThread;
+
+
+
+static StaticRefPtr<nsIThread> sImageBridgeChildThread;
 
 
 void ImageBridgeChild::ShutdownStep1(SynchronousTask* aTask) {
@@ -400,9 +404,8 @@ bool ImageBridgeChild::InitForContent(Endpoint<PImageBridgeChild>&& aEndpoint,
   gfxPlatform::GetPlatform();
 
   if (!sImageBridgeChildThread) {
-    nsCOMPtr<nsISerialEventTarget> thread;
-    nsresult rv =
-        NS_CreateBackgroundTaskQueue("ImageBridgeChld", getter_AddRefs(thread));
+    nsCOMPtr<nsIThread> thread;
+    nsresult rv = NS_NewNamedThread("ImageBridgeChld", getter_AddRefs(thread));
     MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv),
                        "Failed to start ImageBridgeChild thread!");
     sImageBridgeChildThread = thread.forget();
@@ -410,11 +413,10 @@ bool ImageBridgeChild::InitForContent(Endpoint<PImageBridgeChild>&& aEndpoint,
 
   RefPtr<ImageBridgeChild> child = new ImageBridgeChild(aNamespace);
 
-  child->GetThread()->Dispatch(NS_NewRunnableFunction(
-      "layers::ImageBridgeChild::Bind",
-      [child, endpoint = std::move(aEndpoint)]() mutable {
-        child->Bind(std::move(endpoint));
-      }));
+  RefPtr<Runnable> runnable = NewRunnableMethod<Endpoint<PImageBridgeChild>&&>(
+      "layers::ImageBridgeChild::Bind", child, &ImageBridgeChild::Bind,
+      std::move(aEndpoint));
+  child->GetThread()->Dispatch(runnable.forget());
 
   
   
@@ -511,9 +513,8 @@ void ImageBridgeChild::InitSameProcess(uint32_t aNamespace) {
   MOZ_ASSERT(!sImageBridgeChildSingleton);
   MOZ_ASSERT(!sImageBridgeChildThread);
 
-  nsCOMPtr<nsISerialEventTarget> thread;
-  nsresult rv =
-      NS_CreateBackgroundTaskQueue("ImageBridgeChld", getter_AddRefs(thread));
+  nsCOMPtr<nsIThread> thread;
+  nsresult rv = NS_NewNamedThread("ImageBridgeChld", getter_AddRefs(thread));
   MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv),
                      "Failed to start ImageBridgeChild thread!");
   sImageBridgeChildThread = thread.forget();
@@ -540,20 +541,17 @@ void ImageBridgeChild::InitWithGPUProcess(
   MOZ_ASSERT(!sImageBridgeChildSingleton);
   MOZ_ASSERT(!sImageBridgeChildThread);
 
-  nsCOMPtr<nsISerialEventTarget> thread;
-  nsresult rv =
-      NS_CreateBackgroundTaskQueue("ImageBridgeChld", getter_AddRefs(thread));
+  nsCOMPtr<nsIThread> thread;
+  nsresult rv = NS_NewNamedThread("ImageBridgeChld", getter_AddRefs(thread));
   MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv),
                      "Failed to start ImageBridgeChild thread!");
   sImageBridgeChildThread = thread.forget();
 
   RefPtr<ImageBridgeChild> child = new ImageBridgeChild(aNamespace);
 
-  child->GetThread()->Dispatch(NS_NewRunnableFunction(
-      "layers::ImageBridgeChild::Bind",
-      [child, endpoint = std::move(aEndpoint)]() mutable {
-        child->Bind(std::move(endpoint));
-      }));
+  child->GetThread()->Dispatch(NewRunnableMethod<Endpoint<PImageBridgeChild>&&>(
+      "layers::ImageBridgeChild::Bind", child, &ImageBridgeChild::Bind,
+      std::move(aEndpoint)));
 
   
   

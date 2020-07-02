@@ -5,7 +5,6 @@
 
 
 #include "nsISupportsImpl.h"
-
 #include "mozilla/Assertions.h"
 #ifdef MOZ_THREAD_SAFETY_OWNERSHIP_CHECKS_SUPPORTED
 #  include "nsThreadUtils.h"
@@ -45,26 +44,4 @@ void nsAutoOwningThread::AssertCurrentThreadOwnsMe(const char* msg) const {
 bool nsAutoOwningThread::IsCurrentThread() const {
   return mThread == PR_GetCurrentThread();
 }
-
-nsAutoOwningEventTarget::nsAutoOwningEventTarget()
-    : mTarget(GetCurrentSerialEventTarget()) {
-  mTarget->AddRef();
-}
-
-nsAutoOwningEventTarget::~nsAutoOwningEventTarget() {
-  nsCOMPtr<nsISerialEventTarget> target = dont_AddRef(mTarget);
-}
-
-void nsAutoOwningEventTarget ::AssertCurrentThreadOwnsMe(
-    const char* msg) const {
-  if (MOZ_UNLIKELY(!IsCurrentThread())) {
-    
-    MOZ_CRASH_UNSAFE(msg);
-  }
-}
-
-bool nsAutoOwningEventTarget::IsCurrentThread() const {
-  return mTarget->IsOnCurrentThread();
-}
-
 #endif
