@@ -1708,6 +1708,18 @@ child:
     
     async CreateWindowContext(WindowContextInitializer aInit);
     async DiscardWindowContext(uint64_t aContextId) returns (bool unused);
+
+parent:
+    
+    
+    
+    async FOGData(ByteBuf buf);
+
+child:
+    
+    
+    
+    async FlushFOGData() returns (ByteBuf buf);
 };
 
 }
