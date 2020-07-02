@@ -151,6 +151,32 @@ IPCResult HttpBackgroundChannelChild::RecvOnStartRequestSent() {
   return IPC_OK();
 }
 
+IPCResult HttpBackgroundChannelChild::RecvOnStartRequest(
+    const nsHttpResponseHead& aResponseHead, const bool& aUseResponseHead,
+    const nsHttpHeaderArray& aRequestHeaders,
+    const HttpChannelOnStartRequestArgs& aArgs) {
+  LOG(("HttpBackgroundChannelChild::RecvOnStartRequest [this=%p]\n", this));
+  MOZ_ASSERT(OnSocketThread());
+
+  MOZ_ASSERT(mChannelChild, "no channel child in RecvOnStartRequest");
+  if (NS_WARN_IF(!mChannelChild)) {
+    return IPC_OK();
+  }
+
+  
+  
+  
+  RecvOnStartRequestSent();
+
+  mChannelChild->ProcessOnStartRequest(aResponseHead, aUseResponseHead,
+                                       aRequestHeaders, aArgs);
+  
+  
+  OnStartRequestReceived();
+
+  return IPC_OK();
+}
+
 IPCResult HttpBackgroundChannelChild::RecvOnTransportAndData(
     const nsresult& aChannelStatus, const nsresult& aTransportStatus,
     const uint64_t& aOffset, const uint32_t& aCount, const nsCString& aData,

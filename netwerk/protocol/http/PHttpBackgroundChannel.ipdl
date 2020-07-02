@@ -26,6 +26,11 @@ child:
   
   async OnStartRequestSent();
 
+  async OnStartRequest(nsHttpResponseHead  responseHead,
+                       bool                useResponseHead,
+                       nsHttpHeaderArray   requestHeaders,
+                       HttpChannelOnStartRequestArgs args);
+
   
   
   

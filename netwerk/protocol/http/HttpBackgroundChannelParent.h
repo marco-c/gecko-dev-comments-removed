@@ -43,6 +43,12 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
   bool OnStartRequestSent();
 
   
+  bool OnStartRequest(const nsHttpResponseHead& aResponseHead,
+                      const bool& aUseResponseHead,
+                      const nsHttpHeaderArray& aRequestHeaders,
+                      const HttpChannelOnStartRequestArgs& aArgs);
+
+  
   bool OnTransportAndData(const nsresult& aChannelStatus,
                           const nsresult& aTransportStatus,
                           const uint64_t& aOffset, const uint32_t& aCount,
