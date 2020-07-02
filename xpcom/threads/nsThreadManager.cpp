@@ -202,6 +202,10 @@ void NS_SetMainThread() {
   }
   sTLSIsMainThread.set(true);
   MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  
+  SerialEventTargetGuard::InitTLS();
 }
 
 #ifdef DEBUG
