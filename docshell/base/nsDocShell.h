@@ -443,8 +443,6 @@ class nsDocShell final : public nsDocLoader,
       bool aNotifyKeywordSearchLoading = false,
       nsIInputStream** aNewPostData = nullptr);
 
-  static bool ShouldLoadErrorPageWithoutFixup(nsresult aStatus);
-
   
   
   
