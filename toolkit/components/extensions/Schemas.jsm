@@ -279,6 +279,17 @@ const POSTPROCESSORS = {
 
     return string;
   },
+  requireBackgroundServiceWorkerEnabled(value, context) {
+    if (WebExtensionPolicy.backgroundServiceWorkerEnabled) {
+      return value;
+    }
+
+    
+    
+    const msg = "background.service_worker is currently disabled";
+    context.logError(context.makeError(msg));
+    throw new Error(msg);
+  },
 };
 
 
