@@ -727,18 +727,13 @@ class MockRuntime extends EventTarget {
       }
     }
 
-    
-    let now = window.performance.now() / 1000.0;
-    const diff = now - internals.monotonicTimeToZeroBasedDocumentTime(now);
-    now += diff;
-    now *= 1000000;
-
     const frameData = {
       pose: this.pose_,
       mojoSpaceReset: mojo_space_reset,
       inputState: input_state,
       timeDelta: {
-        microseconds: now,
+        
+        microseconds: window.performance.now() * 1000,
       },
       frameId: this.next_frame_id_++,
       bufferHolder: null,
