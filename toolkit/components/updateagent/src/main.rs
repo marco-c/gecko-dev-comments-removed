@@ -8,7 +8,6 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod event_log;
 mod ole_utils;
 mod task_setup;
 pub mod taskschd;
@@ -29,7 +28,8 @@ pub static DESCRIPTION: &str = "Mozilla Update Agent";
 static BITS_JOB_NAME_PREFIX: &str = "MozillaUpdate ";
 
 fn main() {
-    log::set_logger(&event_log::EventLogger).unwrap();
+    let logger = wineventlog::EventLogger::new(DESCRIPTION);
+    log::set_boxed_logger(Box::new(logger)).unwrap();
     log::set_max_level(log::LevelFilter::Info);
 
     
