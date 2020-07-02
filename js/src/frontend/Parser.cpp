@@ -1906,10 +1906,7 @@ static bool InstantiateScriptStencils(JSContext* cx,
       MOZ_ASSERT(funbox->function()->isAsmJSNative());
     } else if (funbox->function()->isIncomplete()) {
       
-      
-      
-      MOZ_ASSERT(compilationInfo.lazy == nullptr ||
-                 compilationInfo.lazy->isBinAST());
+      MOZ_ASSERT(compilationInfo.lazy == nullptr);
 
       if (!CreateLazyScript(cx, compilationInfo, funbox)) {
         return false;

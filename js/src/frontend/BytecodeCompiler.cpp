@@ -799,7 +799,6 @@ static bool CompileLazyFunctionImpl(JSContext* cx, Handle<BaseScript*> lazy,
   
   
   MOZ_ASSERT(lazy->isReadyForDelazification());
-  MOZ_ASSERT(!lazy->isBinAST());
 
   AutoAssertReportedException assertException(cx);
   Rooted<JSFunction*> fun(cx, lazy->function());
