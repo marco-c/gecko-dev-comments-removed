@@ -58,6 +58,12 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
                      const nsTArray<ConsoleReportCollected>& aConsoleReports);
 
   
+  bool OnProgress(const int64_t aProgress, const int64_t aProgressMax);
+
+  
+  bool OnStatus(const nsresult aStatus);
+
+  
   
   bool OnDiversion();
 

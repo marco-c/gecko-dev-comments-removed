@@ -1832,8 +1832,12 @@ HttpChannelParent::OnProgress(nsIRequest* aRequest, int64_t aProgress,
 
   
   
+  MOZ_ASSERT(mBgParent);
+
   
-  if (!SendOnProgress(aProgress, aProgressMax)) {
+  
+  
+  if (!mBgParent || !mBgParent->OnProgress(aProgress, aProgressMax)) {
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -1863,7 +1867,11 @@ HttpChannelParent::OnStatus(nsIRequest* aRequest, nsresult aStatus,
   }
 
   
-  if (!SendOnStatus(aStatus)) {
+  
+  MOZ_ASSERT(mIPCClosed || mBgParent);
+
+  
+  if (!mBgParent || !mBgParent->OnStatus(aStatus)) {
     return NS_ERROR_UNEXPECTED;
   }
 
