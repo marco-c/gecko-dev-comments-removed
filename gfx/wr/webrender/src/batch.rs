@@ -1374,11 +1374,11 @@ impl BatchBuilder {
                         let surface_task = surface.render_tasks.map(|s| s.root);
 
                         match raster_config.composite_mode {
-                            PictureCompositeMode::TileCache { .. } => {
+                            PictureCompositeMode::TileCache { slice_id } => {
                                 
                                 
                                 
-                                let tile_cache = picture.tile_cache.as_ref().unwrap();
+                                let tile_cache = &ctx.tile_caches[&slice_id];
                                 let map_local_to_world = SpaceMapper::new_with_target(
                                     ROOT_SPATIAL_NODE_INDEX,
                                     tile_cache.spatial_node_index,
