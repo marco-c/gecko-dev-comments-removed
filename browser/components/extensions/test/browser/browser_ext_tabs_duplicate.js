@@ -10,29 +10,31 @@ add_task(async function testDuplicateTab() {
       permissions: ["tabs"],
     },
 
-    background: function() {
-      browser.tabs.query(
-        {
-          lastFocusedWindow: true,
-        },
-        function(tabs) {
-          let source = tabs[1];
-          
-          
-          browser.tabs.move(source.id, { index: 0 }, () => {
-            browser.tabs.duplicate(source.id, tab => {
-              browser.test.assertEq("http://example.net/", tab.url);
-              
-              browser.test.assertEq(1, tab.index);
-              
-              browser.test.assertTrue(tab.active);
+    background: async function() {
+      let [source] = await browser.tabs.query({
+        lastFocusedWindow: true,
+        active: true,
+      });
 
-              browser.tabs.remove([tab.id, source.id]);
-              browser.test.notifyPass("tabs.duplicate");
-            });
-          });
-        }
+      let tab = await browser.tabs.duplicate(source.id);
+
+      browser.test.assertEq(
+        "http://example.net/",
+        tab.url,
+        "duplicated tab should have the same URL as the source tab"
       );
+      browser.test.assertEq(
+        source.index + 1,
+        tab.index,
+        "duplicated tab should open next to the source tab"
+      );
+      browser.test.assertTrue(
+        tab.active,
+        "duplicated tab should be active by default"
+      );
+
+      await browser.tabs.remove([source.id, tab.id]);
+      browser.test.notifyPass("tabs.duplicate");
     },
   });
 
@@ -146,25 +148,25 @@ add_task(async function testDuplicatePinnedTab() {
       permissions: ["tabs"],
     },
 
-    background: function() {
-      browser.tabs.query(
-        {
-          lastFocusedWindow: true,
-        },
-        function(tabs) {
-          
-          browser.tabs.duplicate(tabs[0].id, tab => {
-            browser.test.assertEq("http://example.net/", tab.url);
-            
-            browser.test.assertEq(1, tab.index);
-            
-            browser.test.assertFalse(tab.pinned);
+    background: async function() {
+      let [source] = await browser.tabs.query({
+        lastFocusedWindow: true,
+        active: true,
+      });
+      let tab = await browser.tabs.duplicate(source.id);
 
-            browser.tabs.remove([tabs[0].id, tab.id]);
-            browser.test.notifyPass("tabs.duplicate.pinned");
-          });
-        }
+      browser.test.assertEq(
+        source.index + 1,
+        tab.index,
+        "duplicated tab should open next to the source tab"
       );
+      browser.test.assertFalse(
+        tab.pinned,
+        "duplicated tab should not be pinned by default, even if source tab is"
+      );
+
+      await browser.tabs.remove([source.id, tab.id]);
+      browser.test.notifyPass("tabs.duplicate.pinned");
     },
   });
 
@@ -261,11 +263,10 @@ add_task(async function testDuplicatePinnedTabAtIncorrectIndex() {
 });
 
 add_task(async function testDuplicateResolvePromiseRightAway() {
-  const BASE =
-    "http://mochi.test:8888/browser/browser/components/extensions/test/browser/";
-  const URL = BASE + "file_slowed_document.sjs";
-
-  await BrowserTestUtils.openNewForegroundTab(gBrowser, URL);
+  await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "http://mochi.test:8888/browser/browser/components/extensions/test/browser/file_slowed_document.sjs"
+  );
 
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
@@ -274,43 +275,38 @@ add_task(async function testDuplicateResolvePromiseRightAway() {
     },
 
     background: async function() {
-      browser.tabs.query(
-        {
-          lastFocusedWindow: true,
+      let [source] = await browser.tabs.query({
+        lastFocusedWindow: true,
+        active: true,
+      });
+
+      let resolvedRightAway = true;
+      browser.tabs.onUpdated.addListener(
+        (tabId, changeInfo, tab) => {
+          resolvedRightAway = false;
         },
-        async tabs => {
-          let resolvedRightAway = null;
-          browser.tabs.onUpdated.addListener(
-            (tabId, changeInfo, tab) => {
-              if (resolvedRightAway === null) {
-                resolvedRightAway = false;
-              }
-            },
-            { urls: [tabs[1].url] }
-          );
-
-          browser.tabs.duplicate(tabs[1].id, async tab => {
-            
-            
-            if (resolvedRightAway === null) {
-              resolvedRightAway = true;
-            }
-
-            
-            
-            let code = "document.URL";
-            let [result] = await browser.tabs.executeScript(tab.id, { code });
-            browser.test.assertEq(tab.url, result, "executeScript result");
-
-            await browser.tabs.remove([tabs[1].id, tab.id]);
-            if (resolvedRightAway) {
-              browser.test.notifyPass("tabs.duplicate.resolvePromiseRightAway");
-            } else {
-              browser.test.notifyFail("tabs.duplicate.resolvePromiseRightAway");
-            }
-          });
-        }
+        { urls: [source.url] }
       );
+
+      let tab = await browser.tabs.duplicate(source.id);
+      
+      
+      browser.test.assertTrue(
+        resolvedRightAway,
+        "tabs.duplicate() should resolve as soon as possible"
+      );
+
+      
+      let code = "document.URL";
+      let [result] = await browser.tabs.executeScript(tab.id, { code });
+      browser.test.assertEq(
+        source.url,
+        result,
+        "APIs such as tabs.executeScript should be queued until tabs.duplicate has restored the tab"
+      );
+
+      await browser.tabs.remove([source.id, tab.id]);
+      browser.test.notifyPass("tabs.duplicate.resolvePromiseRightAway");
     },
   });
 
