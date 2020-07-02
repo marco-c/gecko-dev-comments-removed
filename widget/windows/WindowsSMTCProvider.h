@@ -20,6 +20,11 @@ using SMTCProperty = ABI::Windows::Media::SystemMediaTransportControlsProperty;
 using ISMTCDisplayUpdater =
     ABI::Windows::Media::ISystemMediaTransportControlsDisplayUpdater;
 
+using ABI::Windows::Storage::Streams::IDataWriter;
+using ABI::Windows::Storage::Streams::IRandomAccessStream;
+using ABI::Windows::Storage::Streams::IRandomAccessStreamReference;
+using Microsoft::WRL::ComPtr;
+
 struct SMTCControlAttributes {
   bool mEnabled;
   bool mPlayPauseEnabled;
@@ -35,7 +40,7 @@ struct SMTCControlAttributes {
 };
 
 class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
-  NS_INLINE_DECL_REFCOUNTING(WindowsSMTCProvider, override)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WindowsSMTCProvider, override)
 
  public:
   WindowsSMTCProvider();
@@ -74,12 +79,25 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
                         const wchar_t* aAlbumArtist);
 
   
+  void LoadThumbnail(const nsTArray<mozilla::dom::MediaImage>& aArtwork);
   
-  bool SetThumbnail(const wchar_t* aUrl);
+  
+  void LoadImage(const char* aImageData, uint32_t aDataSize);
+  
+  
+  bool SetThumbnail();
 
   bool mInitialized = false;
-  Microsoft::WRL::ComPtr<ISMTC> mControls;
-  Microsoft::WRL::ComPtr<ISMTCDisplayUpdater> mDisplay;
+  ComPtr<ISMTC> mControls;
+  ComPtr<ISMTCDisplayUpdater> mDisplay;
+
+  
+  
+  
+  ComPtr<IDataWriter> mImageDataWriter;
+  ComPtr<IRandomAccessStream> mImageStream;
+  ComPtr<IRandomAccessStreamReference> mImageStreamReference;
+
   HWND mWindow;  
 
   
