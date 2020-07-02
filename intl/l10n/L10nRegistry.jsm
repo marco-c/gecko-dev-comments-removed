@@ -105,12 +105,13 @@ class L10nRegistryService {
       
       
       
+      let fileSources = [];
       for (let {entry, value} of Services.catMan.enumerateCategory("l10n-registry")) {
         if (!this.hasSource(entry)) {
-          const source = new FileSource(entry, locales, value);
-          this.registerSource(source);
+          fileSources.push(new FileSource(entry, locales, value));
         }
       }
+      this.registerSources(fileSources);
     } else {
       this._setSourcesFromSharedData();
       Services.cpmm.sharedData.addEventListener("change", this);
@@ -205,13 +206,18 @@ class L10nRegistryService {
 
 
 
-  registerSource(source) {
-    if (this.hasSource(source.name)) {
-      throw new Error(`Source with name "${source.name}" already registered.`);
-    }
-    this.sources.set(source.name, source);
 
-    if (isParentProcess) {
+
+
+
+  registerSources(sources) {
+    for (const source of sources) {
+      if (this.hasSource(source.name)) {
+        throw new Error(`Source with name "${source.name}" already registered.`);
+      }
+      this.sources.set(source.name, source);
+    }
+    if (isParentProcess && sources.length > 0) {
       this._synchronizeSharedData();
       Services.locale.availableLocales = this.getAvailableLocales();
     }
@@ -225,12 +231,18 @@ class L10nRegistryService {
 
 
 
-  updateSource(source) {
-    if (!this.hasSource(source.name)) {
-      throw new Error(`Source with name "${source.name}" is not registered.`);
+
+
+
+
+  updateSources(sources) {
+    for (const source of sources) {
+      if (!this.hasSource(source.name)) {
+        throw new Error(`Source with name "${source.name}" is not registered.`);
+      }
+      this.sources.set(source.name, source);
     }
-    this.sources.set(source.name, source);
-    if (isParentProcess) {
+    if (isParentProcess && sources.length > 0) {
       this._synchronizeSharedData();
       Services.locale.availableLocales = this.getAvailableLocales();
     }
@@ -241,9 +253,15 @@ class L10nRegistryService {
 
 
 
-  removeSource(sourceName) {
-    this.sources.delete(sourceName);
-    if (isParentProcess) {
+
+
+
+
+  removeSources(sourceNames) {
+    for (const sourceName of sourceNames) {
+      this.sources.delete(sourceName);
+    }
+    if (isParentProcess && sourceNames.length > 0) {
       this._synchronizeSharedData();
       Services.locale.availableLocales = this.getAvailableLocales();
     }
@@ -260,7 +278,11 @@ class L10nRegistryService {
         prePath: source.prePath,
       });
     }
-    Services.ppmm.sharedData.set("L10nRegistry:Sources", sources);
+    let sharedData = Services.ppmm.sharedData;
+    sharedData.set("L10nRegistry:Sources", sources);
+    
+    
+    sharedData.flush();
   }
 
   _setSourcesFromSharedData() {
@@ -269,17 +291,21 @@ class L10nRegistryService {
       console.warn(`[l10nregistry] Failed to fetch sources from shared data.`);
       return;
     }
+    let registerSourcesList = [];
     for (let [name, data] of sources.entries()) {
       if (!this.hasSource(name)) {
         const source = new FileSource(name, data.locales, data.prePath);
-        this.registerSource(source);
+        registerSourcesList.push(source);
       }
     }
+    this.registerSources(registerSourcesList);
+    let removeSourcesList = [];
     for (let name of this.sources.keys()) {
       if (!sources.has(name)) {
-        this.removeSource(name);
+        removeSourcesList.push(name);
       }
     }
+    this.removeSources(removeSourcesList);
   }
 
   
