@@ -368,14 +368,21 @@ already_AddRefed<BasePrincipal> ExpandedPrincipal::FromProperties(
 
 NS_IMETHODIMP
 ExpandedPrincipal::IsThirdPartyURI(nsIURI* aURI, bool* aRes) {
-  nsresult rv;
+  
+  
+  
+  
+
   for (const auto& principal : mPrincipals) {
-    rv = Cast(principal)->IsThirdPartyURI(aURI, aRes);
-    if (NS_WARN_IF(NS_FAILED(rv)) || !*aRes) {
-      return rv;
+    if (!Cast(principal)->AddonPolicy()) {
+      return Cast(principal)->IsThirdPartyURI(aURI, aRes);
     }
   }
 
-  *aRes = true;
-  return NS_OK;
+  if (mPrincipals.IsEmpty()) {
+    *aRes = true;
+    return NS_OK;
+  }
+
+  return Cast(mPrincipals[0])->IsThirdPartyURI(aURI, aRes);
 }

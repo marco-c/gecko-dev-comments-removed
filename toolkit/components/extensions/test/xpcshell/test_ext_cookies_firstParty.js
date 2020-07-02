@@ -46,6 +46,22 @@ function promiseLoadedCookies() {
       response.write("<html><script>fetch('/checkCookies');</script></html>");
     });
 
+    server.registerPathHandler("/nestedfetch", (request, response) => {
+      response.setStatusLine(request.httpVersion, 200, "OK");
+      response.setHeader("Content-Type", "text/html; charset=utf-8", false);
+      response.write(
+        "<html><iframe src='http://example.net/nestedfetch2'></iframe></html>"
+      );
+    });
+
+    server.registerPathHandler("/nestedfetch2", (request, response) => {
+      response.setStatusLine(request.httpVersion, 200, "OK");
+      response.setHeader("Content-Type", "text/html; charset=utf-8", false);
+      response.write(
+        "<html><iframe src='http://example.org/fetch'></iframe></html>"
+      );
+    });
+
     server.registerPathHandler("/ready", (request, response) => {
       response.setStatusLine(request.httpVersion, 200, "OK");
       response.setHeader("Content-Type", "text/html; charset=utf-8", false);
@@ -123,7 +139,31 @@ add_task(async function test_cookies_firstParty() {
   });
 
   
+  Assert.equal(await cookiesPromise, "none=a; lax=b; strict=c");
+  await contentPage.close();
+
+  
+  
+  cookiesPromise = promiseLoadedCookies();
+  contentPage = await ExtensionTestUtils.loadContentPage(url + "?nestedfetch", {
+    extension,
+  });
+
+  
   Assert.equal(await cookiesPromise, "none=a");
+  await contentPage.close();
+
+  
+  cookiesPromise = promiseLoadedCookies();
+  contentPage = await ExtensionTestUtils.loadContentPage(
+    url + "?nestedfetch2",
+    {
+      extension,
+    }
+  );
+
+  
+  Assert.equal(await cookiesPromise, "none=a; lax=b; strict=c");
   await contentPage.close();
 
   await extension.unload();

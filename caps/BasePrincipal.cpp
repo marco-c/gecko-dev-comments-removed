@@ -556,6 +556,11 @@ nsresult BasePrincipal::CheckMayLoadHelper(nsIURI* aURI,
 
 NS_IMETHODIMP
 BasePrincipal::IsThirdPartyURI(nsIURI* aURI, bool* aRes) {
+  if (AddonPolicy() && AddonAllowsLoad(aURI)) {
+    *aRes = false;
+    return NS_OK;
+  }
+
   *aRes = true;
   
   nsCOMPtr<nsIURI> prinURI;
