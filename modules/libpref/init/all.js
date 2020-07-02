@@ -300,14 +300,6 @@ pref("dom.keyboardevent.keypress.hack.use_legacy_keycode_and_charcode.addl", "")
 
 pref("dom.mouseevent.click.hack.use_legacy_non-primary_dispatch", "");
 
-#ifdef JS_BUILD_BINAST
-  
-  
-  
-  
-  pref("dom.script_loader.binast_encoding.domain.restrict.list", "*.facebook.com,static.xx.fbcdn.net,*.cloudflare.com,*.cloudflarestream.com,unpkg.com");
-#endif
-
 
 
 pref("browser.sessionhistory.max_total_viewers", -1);
