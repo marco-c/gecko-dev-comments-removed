@@ -12,8 +12,8 @@ const {
 } = require("devtools/shared/resources/legacy-target-watchers/legacy-workers-watcher");
 
 class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
-  constructor(...args) {
-    super(...args);
+  constructor(targetList, onTargetAvailable, onTargetDestroyed) {
+    super(targetList, onTargetAvailable, onTargetDestroyed);
     this._registrations = [];
     this._processTargets = new Set();
 
@@ -42,10 +42,22 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
     this._onRegistrationListChanged = this._onRegistrationListChanged.bind(
       this
     );
+    this._onNavigate = this._onNavigate.bind(this);
 
     
     
     this._isServiceWorkerWatcher = true;
+  }
+
+  
+
+
+
+
+
+
+  _recordWorkerTarget(workerTarget) {
+    return !!this._getRegistrationForWorkerTarget(workerTarget);
   }
 
   
@@ -54,8 +66,8 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
       return false;
     }
 
-    const swFronts = this._getAllServiceWorkerFronts();
-    return swFronts.some(({ id }) => id === workerTarget.id);
+    const registration = this._getRegistrationForWorkerTarget(workerTarget);
+    return registration && this._isRegistrationValidForTarget(registration);
   }
 
   
@@ -67,12 +79,23 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
     
     await this._onRegistrationListChanged();
 
+    if (this.target.isLocalTab) {
+      
+      
+      
+      this.target.on("navigate", this._onNavigate);
+    }
+
     await super.listen();
   }
 
   
   unlisten() {
     this._workersListener.removeListener(this._onRegistrationListChanged);
+
+    if (this.target.isLocalTab) {
+      this.target.off("navigate", this._onNavigate);
+    }
 
     super.unlisten();
   }
@@ -110,52 +133,80 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
     return super._onProcessDestroyed({ targetFront });
   }
 
-  async _onRegistrationListChanged() {
-    const {
-      registrations,
-    } = await this.rootFront.listServiceWorkerRegistrations();
+  _onNavigate() {
+    const allServiceWorkerTargets = this._getAllServiceWorkerTargets();
+    for (const target of allServiceWorkerTargets) {
+      const isRegisteredBefore = this.targetList.isTargetRegistered(target);
+      if (isRegisteredBefore) {
+        this.onTargetDestroyed(target);
+      }
 
-    this._registrations = registrations.filter(r =>
-      this._isRegistrationValid(r)
-    );
+      
+      
+      const isRegisteredAfter = this.targetList.isTargetRegistered(target);
+      const isValidTarget = this._supportWorkerTarget(target);
+      if (isValidTarget && !isRegisteredAfter) {
+        
+        
+        this.onTargetAvailable(target);
+      }
+    }
+  }
+
+  async _onRegistrationListChanged() {
+    await this._updateRegistrations();
 
     
     
     
     const allServiceWorkerTargets = this._getAllServiceWorkerTargets();
-    const swFronts = this._getAllServiceWorkerFronts();
     for (const target of allServiceWorkerTargets) {
-      const match = swFronts.find(({ id }) => id === target.id);
-      if (!match) {
+      const hasRegistration = this._getRegistrationForWorkerTarget(target);
+      if (!hasRegistration) {
         
         
         
-        this.onTargetDestroyed(target);
+        if (this.targetList.isTargetRegistered(target)) {
+          
+          
+          this.onTargetDestroyed(target);
+        }
+        
+        
+        
         this._removeTargetReferences(target);
       }
     }
   }
 
   
-  _getAllServiceWorkerFronts() {
-    return (
-      this._registrations
-        
-        
-        
-        .reduce((p, registration) => {
-          return [
-            registration.evaluatingWorker,
-            registration.activeWorker,
-            registration.installingWorker,
-            registration.waitingWorker,
-            ...p,
-          ];
-        }, [])
-        
-        
-        .filter(Boolean)
+  _removeTargetReferences(target) {
+    const allProcessTargets = this._getProcessTargets().filter(t =>
+      this.targetsByProcess.get(t)
     );
+
+    for (const processTarget of allProcessTargets) {
+      this.targetsByProcess.get(processTarget).delete(target);
+    }
+  }
+
+  async _updateRegistrations() {
+    const {
+      registrations,
+    } = await this.rootFront.listServiceWorkerRegistrations();
+
+    this._registrations = registrations;
+  }
+
+  _getRegistrationForWorkerTarget(workerTarget) {
+    return this._registrations.find(r => {
+      return (
+        r.evaluatingWorker?.id === workerTarget.id ||
+        r.activeWorker?.id === workerTarget.id ||
+        r.installingWorker?.id === workerTarget.id ||
+        r.waitingWorker?.id === workerTarget.id
+      );
+    });
   }
 
   _getProcessTargets() {
@@ -176,19 +227,8 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
   }
 
   
-  _removeTargetReferences(target) {
-    const allProcessTargets = this._getProcessTargets().filter(t =>
-      this.targetsByProcess.get(t)
-    );
-
-    for (const processTarget of allProcessTargets) {
-      this.targetsByProcess.get(processTarget).delete(target);
-    }
-  }
-
   
-  
-  _isRegistrationValid(registration) {
+  _isRegistrationValidForTarget(registration) {
     if (this.target.isParentProcess) {
       
       return true;
