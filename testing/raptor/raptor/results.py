@@ -586,7 +586,7 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
 
                     
                     
-                    new_result["type"] = "browsertime-pageload"
+                    new_result["type"] = "pageload"
 
                     
                     new_result["subtest_lower_is_better"] = True
