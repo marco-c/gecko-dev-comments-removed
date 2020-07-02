@@ -922,18 +922,19 @@ SearchService.prototype = {
     logConsole.debug("_loadEngines: start");
     let engines = await this._findEngineSelectorEngines();
 
-    let buildID = Services.appinfo.platformBuildID;
-    let rebuildCache =
-      gEnvironment.get("RELOAD_ENGINES") ||
+    let enginesCorrupted = false;
+
+    
+    
+    let majorChange =
       !cache.engines ||
       cache.version != SearchUtils.CACHE_VERSION ||
       cache.locale != Services.locale.requestedLocale ||
-      cache.buildID != buildID;
+      cache.buildID != Services.appinfo.platformBuildID;
 
-    let enginesCorrupted = false;
-    if (!rebuildCache) {
-      const notInCacheEngines = engine => {
-        return !cache.builtInEngineList.find(details => {
+    if (!majorChange) {
+      const engineInCacheList = engine => {
+        return cache.builtInEngineList.find(details => {
           return (
             engine.webExtension.id == details.id &&
             engine.webExtension.locale == details.locale
@@ -941,17 +942,17 @@ SearchService.prototype = {
         });
       };
 
-      rebuildCache =
-        !cache.builtInEngineList ||
-        cache.builtInEngineList.length != engines.length ||
-        engines.some(notInCacheEngines);
-
       if (
-        !rebuildCache &&
+        
+        
+        cache.builtInEngineList &&
+        cache.builtInEngineList.length == engines.length &&
+        engines.every(engineInCacheList) &&
+        
         cache.engines.filter(e => e._isAppProvided).length !=
           cache.builtInEngineList.length
       ) {
-        rebuildCache = true;
+        
         enginesCorrupted = true;
       }
     }
@@ -961,30 +962,10 @@ SearchService.prototype = {
       enginesCorrupted
     );
 
-    if (!rebuildCache) {
-      logConsole.debug("_loadEngines: loading from cache directories");
-      const newEngines = await this._loadEnginesFromConfig(engines, isReload);
-      for (let engine of newEngines) {
-        this._addEngineToStore(engine);
-      }
-      
-      
-      this._loadEnginesFromCache(cache, true);
-      this._loadEnginesMetadataFromCache(cache);
-      if (this._engines.size) {
-        logConsole.debug("_loadEngines: done using existing cache");
-        return;
-      }
-      logConsole.debug(
-        "_loadEngines: No valid engines found in cache. Loading engines from disk."
-      );
-    }
-
-    logConsole.debug(
-      "_loadEngines: Absent or outdated cache. Loading engines from disk."
-    );
     let newEngines = await this._loadEnginesFromConfig(engines, isReload);
-    newEngines.forEach(this._addEngineToStore, this);
+    for (let engine of newEngines) {
+      this._addEngineToStore(engine);
+    }
 
     logConsole.debug(
       "_loadEngines: loading",
@@ -998,15 +979,13 @@ SearchService.prototype = {
         true
       );
     }
+    this._startupExtensions.clear();
 
-    logConsole.debug(
-      "_loadEngines: loading user-installed engines from the obsolete cache"
-    );
     this._loadEnginesFromCache(cache, true);
 
     this._loadEnginesMetadataFromCache(cache);
 
-    logConsole.debug("_loadEngines: done using rebuilt cache");
+    logConsole.debug("_loadEngines: done");
   },
 
   
@@ -1564,6 +1543,8 @@ SearchService.prototype = {
     }
   },
 
+  
+  
   _loadEnginesFromCache(cache, skipAppProvided) {
     if (!cache.engines) {
       return;
@@ -2521,6 +2502,22 @@ SearchService.prototype = {
     initEngine = false,
     isReload
   ) {
+    
+    
+    
+    if (extension.startupReason == "APP_STARTUP") {
+      let engine = this._getEngineByWebExtensionDetails({
+        id: extension.id,
+        locale,
+      });
+      if (engine) {
+        logConsole.debug(
+          "Engine already loaded via cache, skipping due to APP_STARTUP:",
+          extension.id
+        );
+        return engine;
+      }
+    }
     let params = await this.getEngineParams(extension, manifest, locale, {
       initEngine,
     });
