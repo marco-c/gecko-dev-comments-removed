@@ -412,7 +412,10 @@ TimerThread::Run() {
           
           
           
-          timerRef = PostTimerEvent(timerRef.forget());
+          {
+            LogTimerEvent::Run run(timerRef.get());
+            timerRef = PostTimerEvent(timerRef.forget());
+          }
 
           if (timerRef) {
             
@@ -628,6 +631,8 @@ bool TimerThread::AddTimerInternal(nsTimerImpl* aTimer) {
   }
 
   TimeStamp now = TimeStamp::Now();
+
+  LogTimerEvent::LogDispatch(aTimer);
 
   UniquePtr<Entry>* entry = mTimers.AppendElement(
       MakeUnique<Entry>(now, aTimer->mTimeout, aTimer), mozilla::fallible);
