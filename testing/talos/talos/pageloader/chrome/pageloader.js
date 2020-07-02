@@ -110,7 +110,7 @@ SingleTimeout.prototype.clear = function() {
 
 var failTimeout = new SingleTimeout();
 
-function plInit() {
+async function plInit() {
   if (running) {
     return;
   }
@@ -212,118 +212,52 @@ function plInit() {
     
     window.resizeTo(10, 10);
 
-    var browserLoadFunc = function(ev) {
-      browserWindow.removeEventListener("load", browserLoadFunc, true);
+    await new Promise(resolve => {
+      browserWindow.addEventListener("load", resolve, {
+        capture: true,
+        once: true,
+      });
+    });
 
-      
-      
-      
-      setTimeout(function() {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let remoteType = E10SUtils.getRemoteTypeForURI(
-          pageUrls[0],
-           true,
-           Services.prefs.getBoolPref("fission.autostart")
-        );
-        let tabbrowser = browserWindow.gBrowser;
-        if (remoteType) {
-          tabbrowser.updateBrowserRemoteness(tabbrowser.selectedBrowser, {
-            remoteType,
-          });
-        } else {
-          tabbrowser.updateBrowserRemoteness(tabbrowser.selectedBrowser, {
-            remoteType: E10SUtils.NOT_REMOTE,
-          });
-        }
+    
+    
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-        browserWindow.resizeTo(winWidth, winHeight);
-        browserWindow.moveTo(0, 0);
-        browserWindow.focus();
-        content = browserWindow.gBrowser;
-        content.selectedBrowser.messageManager.loadFrameScript(
-          "chrome://pageloader/content/utils.js",
-          false,
-          true
-        );
+    browserWindow.resizeTo(winWidth, winHeight);
+    browserWindow.moveTo(0, 0);
+    browserWindow.focus();
+    content = browserWindow.gBrowser;
 
-        
-        if (useFNBPaint) {
-          content.selectedBrowser.messageManager.loadFrameScript(
-            "chrome://pageloader/content/lh_fnbpaint.js",
-            false,
-            true
-          );
-        } else if (useMozAfterPaint) {
-          content.selectedBrowser.messageManager.loadFrameScript(
-            "chrome://pageloader/content/lh_moz.js",
-            false,
-            true
-          );
-        } else if (useHero) {
-          content.selectedBrowser.messageManager.loadFrameScript(
-            "chrome://pageloader/content/lh_hero.js",
-            false,
-            true
-          );
-        } else if (usePDFPaint) {
-          content.selectedBrowser.messageManager.loadFrameScript(
-            "chrome://pageloader/content/lh_pdfpaint.js",
-            false,
-            true
-          );
-        } else {
-          content.selectedBrowser.messageManager.loadFrameScript(
-            "chrome://pageloader/content/lh_dummy.js",
-            false,
-            true
-          );
-        }
-        content.selectedBrowser.messageManager.loadFrameScript(
-          "chrome://pageloader/content/talos-content.js",
-          false
-        );
-        content.selectedBrowser.messageManager.loadFrameScript(
-          "resource://talos-powers/TalosContentProfiler.js",
-          false,
-          true
-        );
-        content.selectedBrowser.messageManager.loadFrameScript(
-          "chrome://pageloader/content/tscroll.js",
-          false,
-          true
-        );
-        content.selectedBrowser.messageManager.loadFrameScript(
-          "chrome://pageloader/content/Profiler.js",
-          false,
-          true
-        );
-        if (useA11y) {
-          content.selectedBrowser.messageManager.loadFrameScript(
-            "chrome://pageloader/content/a11y.js",
-            false,
-            true
-          );
-        }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let tab = content.selectedTab;
+    tab.addEventListener("TabRemotenessChange", function(evt) {
+      loadFrameScripts(tab.linkedBrowser);
+    });
+    loadFrameScripts(tab.linkedBrowser);
 
-        
-        
-        
-        
-        
-        setTimeout(plLoadPage, 2000);
-      }, 500);
-    };
-
-    browserWindow.addEventListener("load", browserLoadFunc, true);
+    
+    
+    
+    
+    
+    for (let extension of WebExtensionPolicy.getActiveExtensions()) {
+      await extension.readyPromise;
+    }
+    plLoadPage();
   } catch (e) {
     dumpLine("pageloader exception: " + e);
     plStop(true);
@@ -368,8 +302,30 @@ function plLoadPage() {
     removeLastAddedMsgListener = null;
   }
 
+  let tab = content.selectedTab;
+  tab.addEventListener("TabRemotenessChange", evt => {
+    addMsgListeners(tab.linkedBrowser);
+  });
+  addMsgListeners(tab.linkedBrowser);
+
+  failTimeout.register(loadFail, timeout);
   
-  let mm = content.selectedBrowser.messageManager;
+  TalosParentProfiler.mark("Opening " + pages[pageIndex].url.pathQueryRef);
+
+  if (useFNBPaint) {
+    isFNBPaintPending = true;
+  }
+
+  if (usePDFPaint) {
+    isPDFPaintPending = true;
+  }
+
+  startAndLoadURI(pageName);
+}
+
+function addMsgListeners(browser) {
+  let mm = browser.messageManager;
+  
   mm.addMessageListener("PageLoader:LoadEvent", ContentListener);
   mm.addMessageListener("PageLoader:RecordTime", ContentListener);
   mm.addMessageListener("PageLoader:IdleCallbackSet", ContentListener);
@@ -386,19 +342,45 @@ function plLoadPage() {
     );
     mm.removeMessageListener("PageLoader:Error", ContentListener);
   };
-  failTimeout.register(loadFail, timeout);
+}
+
+function loadFrameScripts(browser) {
+  let mm = browser.messageManager;
+
   
-  TalosParentProfiler.mark("Opening " + pages[pageIndex].url.pathQueryRef);
+  mm.loadFrameScript("chrome://pageloader/content/utils.js", false, true);
 
+  
   if (useFNBPaint) {
-    isFNBPaintPending = true;
+    mm.loadFrameScript(
+      "chrome://pageloader/content/lh_fnbpaint.js",
+      false,
+      true
+    );
+  } else if (useMozAfterPaint) {
+    mm.loadFrameScript("chrome://pageloader/content/lh_moz.js", false, true);
+  } else if (useHero) {
+    mm.loadFrameScript("chrome://pageloader/content/lh_hero.js", false, true);
+  } else if (usePDFPaint) {
+    mm.loadFrameScript(
+      "chrome://pageloader/content/lh_pdfpaint.js",
+      false,
+      true
+    );
+  } else {
+    mm.loadFrameScript("chrome://pageloader/content/lh_dummy.js", false, true);
   }
-
-  if (usePDFPaint) {
-    isPDFPaintPending = true;
+  mm.loadFrameScript("chrome://pageloader/content/talos-content.js", false);
+  mm.loadFrameScript(
+    "resource://talos-powers/TalosContentProfiler.js",
+    false,
+    true
+  );
+  mm.loadFrameScript("chrome://pageloader/content/tscroll.js", false, true);
+  mm.loadFrameScript("chrome://pageloader/content/Profiler.js", false, true);
+  if (useA11y) {
+    mm.loadFrameScript("chrome://pageloader/content/a11y.js", false, true);
   }
-
-  startAndLoadURI(pageName);
 }
 
 function startAndLoadURI(pageName) {
