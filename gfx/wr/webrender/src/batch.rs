@@ -181,18 +181,33 @@ pub struct BatchRects {
     batch: PictureRect,
     
     
-    
-    
-    
-    
-    items: Vec<PictureRect>,
+    items: Option<Vec<PictureRect>>,
 }
 
 impl BatchRects {
+    fn new() -> Self {
+        BatchRects {
+            batch: PictureRect::zero(),
+            items: None,
+        }
+    }
+
     #[inline]
     fn add_rect(&mut self, rect: &PictureRect) {
-        self.batch = self.batch.union(rect);
-        self.items.push(*rect);
+        let union = self.batch.union(rect);
+        
+        
+        
+        if let Some(items) = &mut self.items {
+            items.push(*rect);
+        } else if self.batch.area() + rect.area() > union.area() {
+            let mut items = Vec::with_capacity(16);
+            items.push(self.batch);
+            items.push(*rect);
+            self.items = Some(items);
+        }
+
+        self.batch = union;
     }
 
     #[inline]
@@ -201,13 +216,13 @@ impl BatchRects {
             return false;
         }
 
-        for item_rect in &self.items {
-            if item_rect.intersects(rect) {
-                return true;
-            }
+        if let Some(items) = &self.items {
+            items.iter().any(|item| item.intersects(rect))
+        } else {    
+            
+            
+            true
         }
-
-        false
     }
 }
 
@@ -312,19 +327,12 @@ impl AlphaBatchList {
                 new_batch.instances.reserve(prealloc);
                 selected_batch_index = Some(self.batches.len());
                 self.batches.push(new_batch);
-                self.batch_rects.push(BatchRects {
-                    batch: *z_bounding_rect,
-                    items: Vec::with_capacity(prealloc),
-                });
+                self.batch_rects.push(BatchRects::new());
             }
 
             self.current_batch_index = selected_batch_index.unwrap();
             self.batch_rects[self.current_batch_index].add_rect(z_bounding_rect);
             self.current_z_id = z_id;
-        } else if cfg!(debug_assertions) {
-            
-            
-            assert_eq!(self.batch_rects[self.current_batch_index].items.last(), Some(z_bounding_rect));
         }
 
         let batch = &mut self.batches[self.current_batch_index];
