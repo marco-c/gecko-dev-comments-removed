@@ -4476,10 +4476,10 @@ class HTMLEditor final : public TextEditor,
 
 
 
-    Element* GetMostAncestorListOrTableElement(
+    static Element* GetMostAncestorListOrTableElement(
         const nsTArray<OwningNonNull<nsIContent>>& aArrayOfTopMostChildContents,
         const nsTArray<OwningNonNull<Element>>&
-            aArrayOfListAndTableRelatedElements) const;
+            aArrayOfListAndTableRelatedElements);
 
     
 
