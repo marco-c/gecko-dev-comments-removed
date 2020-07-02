@@ -40,6 +40,10 @@ class RenderCompositor {
 
   
   
+  virtual void CancelFrame() {}
+
+  
+  
   
   virtual RenderedFrameId EndFrame(
       const nsTArray<DeviceIntRect>& aDirtyRects) = 0;
@@ -55,6 +59,11 @@ class RenderCompositor {
 
   
   virtual RenderedFrameId UpdateFrameId() { return GetNextRenderFrameId(); }
+
+  
+  virtual bool GetMappedBuffer(uint8_t** aData, int32_t* aStride) {
+    return false;
+  }
 
   virtual void Pause() = 0;
   virtual bool Resume() = 0;
