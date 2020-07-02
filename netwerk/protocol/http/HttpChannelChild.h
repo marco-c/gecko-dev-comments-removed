@@ -459,6 +459,10 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   uint8_t mIsLastPartOfMultiPart : 1;
 
+  
+  
+  uint8_t mSuspendForWaitCompleteRedirectSetup : 1;
+
   void FinishInterceptedRedirect();
   void CleanupRedirectingChannel(nsresult rv);
 
