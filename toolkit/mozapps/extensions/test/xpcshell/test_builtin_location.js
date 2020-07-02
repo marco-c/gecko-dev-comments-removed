@@ -1,6 +1,6 @@
 "use strict";
 
-/* globals browser */
+
 let scopes = AddonManager.SCOPE_PROFILE | AddonManager.SCOPE_APPLICATION;
 Services.prefs.setIntPref("extensions.enabledScopes", scopes);
 Services.prefs.setBoolPref(
@@ -29,7 +29,7 @@ async function getWrapper(id, hidden) {
   return wrapper;
 }
 
-// Tests installing an extension from the built-in location.
+
 add_task(async function test_builtin_location() {
   let id = "builtin@tests.mozilla.org";
   await AddonTestUtils.promiseStartupManager();
@@ -39,13 +39,14 @@ add_task(async function test_builtin_location() {
   notEqual(addon, null, "Addon is installed");
   ok(addon.isActive, "Addon is active");
   ok(addon.isPrivileged, "Addon is privileged");
+  ok(wrapper.extension.isAppProvided, "Addon is app provided");
   ok(!addon.hidden, "Addon is not hidden");
 
-  // Built-in extensions are not checked against the blocklist,
-  // so we shouldn't have loaded it.
+  
+  
   ok(!Services.blocklist.isLoaded, "Blocklist hasn't been loaded");
 
-  // After a restart, the extension should start up normally.
+  
   await promiseRestartManager();
   await wrapper.awaitStartup();
   await wrapper.awaitMessage("started");
@@ -55,7 +56,7 @@ add_task(async function test_builtin_location() {
   notEqual(addon, null, "Addon is installed");
   ok(addon.isActive, "Addon is active");
 
-  // After a restart that causes a database rebuild, it should still work
+  
   await promiseRestartManager("2");
   await wrapper.awaitStartup();
   await wrapper.awaitMessage("started");
@@ -65,7 +66,7 @@ add_task(async function test_builtin_location() {
   notEqual(addon, null, "Addon is installed");
   ok(addon.isActive, "Addon is active");
 
-  // After a restart that changes the schema version, it should still work
+  
   await promiseShutdownManager();
   Services.prefs.setIntPref("extensions.databaseSchema", 0);
   await promiseStartupManager();
@@ -85,7 +86,7 @@ add_task(async function test_builtin_location() {
   await AddonTestUtils.promiseShutdownManager();
 });
 
-// Tests installing a hidden extension from the built-in location.
+
 add_task(async function test_builtin_location_hidden() {
   let id = "hidden@tests.mozilla.org";
   await AddonTestUtils.promiseStartupManager();
@@ -95,13 +96,14 @@ add_task(async function test_builtin_location_hidden() {
   notEqual(addon, null, "Addon is installed");
   ok(addon.isActive, "Addon is active");
   ok(addon.isPrivileged, "Addon is privileged");
+  ok(wrapper.extension.isAppProvided, "Addon is app provided");
   ok(addon.hidden, "Addon is hidden");
 
   await wrapper.unload();
   await AddonTestUtils.promiseShutdownManager();
 });
 
-// Tests updates to builtin extensions
+
 add_task(async function test_builtin_update() {
   let id = "bleah@tests.mozilla.org";
   await AddonTestUtils.promiseStartupManager();
@@ -119,7 +121,7 @@ add_task(async function test_builtin_update() {
 
   await AddonTestUtils.promiseShutdownManager();
 
-  // Change the built-in
+  
   await setupBuiltinExtension({
     manifest: {
       applications: { gecko: { id } },
@@ -135,7 +137,7 @@ add_task(async function test_builtin_update() {
     updateReason = reason;
   });
 
-  // Re-start, with a new app version
+  
   await AddonTestUtils.promiseStartupManager("3");
 
   await wrapper.awaitMessage("started");

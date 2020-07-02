@@ -1296,6 +1296,12 @@ class ExtensionData {
 
   
   
+  get isAppProvided() {
+    return this.addonData.builtIn || this.addonData.isSystem;
+  }
+
+  
+  
   
   normalizeLocaleCode(locale) {
     return locale.replace(/_/g, "-");
