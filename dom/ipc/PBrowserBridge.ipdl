@@ -66,8 +66,6 @@ child:
 
   async SubFrameCrashed();
 
-  async AddBlockedNodeByClassifier();
-
 parent:
   
   async __delete__();

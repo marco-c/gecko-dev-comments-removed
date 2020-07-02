@@ -6018,63 +6018,6 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
   
   
   if (NS_FAILED(aStatus)) {
-    
-    
-    
-    
-    if (!isTopFrame &&
-        UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(aStatus)) {
-      UnblockEmbedderLoadEventForFailure();
-
-      
-      
-      if (!StaticPrefs::
-              privacy_trackingprotection_testing_report_blocked_node()) {
-        return NS_OK;
-      }
-
-      RefPtr<BrowsingContext> bc = GetBrowsingContext();
-      RefPtr<BrowsingContext> parentBC = bc->GetParent();
-
-      if (!parentBC) {
-        return NS_OK;
-      }
-
-      if (parentBC->IsInProcess()) {
-        
-        
-        nsCOMPtr<nsPIDOMWindowOuter> parentOuter = parentBC->GetDOMWindow();
-
-        if (!parentOuter) {
-          return NS_OK;
-        }
-
-        nsCOMPtr<nsPIDOMWindowInner> parentInner =
-            parentOuter->GetCurrentInnerWindow();
-
-        if (!parentInner) {
-          return NS_OK;
-        }
-
-        RefPtr<Document> parentDoc;
-        parentDoc = parentInner->GetExtantDoc();
-        if (!parentDoc) {
-          return NS_OK;
-        }
-
-        parentDoc->AddBlockedNodeByClassifier(bc->GetEmbedderElement());
-      } else {
-        
-        
-        RefPtr<BrowserChild> browserChild = BrowserChild::GetFrom(this);
-        if (browserChild) {
-          Unused << browserChild->SendReportBlockedEmbedderNodeByClassifier();
-        }
-      }
-
-      return NS_OK;
-    }
-
     nsCOMPtr<nsIInputStream> newPostData;
     nsCOMPtr<nsIURI> newURI =
         AttemptURIFixup(aChannel, aStatus, Some(mOriginalUriString), mLoadType,
