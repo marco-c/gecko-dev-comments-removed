@@ -926,14 +926,13 @@ nsresult JsepSessionImpl::HandleNegotiatedSession(
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  for (auto& midAndMaster : bundledMids) {
-    JsepTransceiver* bundledTransceiver =
-        GetTransceiverForMid(midAndMaster.first);
+  for (auto& [mid, transportOwner] : bundledMids) {
+    JsepTransceiver* bundledTransceiver = GetTransceiverForMid(mid);
     if (!bundledTransceiver) {
-      JSEP_SET_ERROR("No transceiver for bundled mid " << midAndMaster.first);
+      JSEP_SET_ERROR("No transceiver for bundled mid " << mid);
       return NS_ERROR_INVALID_ARG;
     }
-    bundledTransceiver->SetBundleLevel(midAndMaster.second->GetLevel());
+    bundledTransceiver->SetBundleLevel(transportOwner->GetLevel());
   }
 
   
