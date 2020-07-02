@@ -302,6 +302,13 @@ void GamepadManager::NewConnectionEvent(uint32_t aIndex, bool aConnected) {
 
   if (aConnected) {
     for (uint32_t i = 0; i < listeners.Length(); i++) {
+#ifdef NIGHTLY_BUILD
+      
+      if (!listeners[i]->IsSecureContext()) {
+        continue;
+      }
+#endif
+
       
       
       if (nsContentUtils::ShouldResistFingerprinting(
