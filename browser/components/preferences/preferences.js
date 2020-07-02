@@ -85,7 +85,13 @@ function init_all() {
   register_module("panePrivacy", gPrivacyPane);
   register_module("paneContainers", gContainersPane);
   if (Services.prefs.getBoolPref("browser.preferences.experimental")) {
-    document.getElementById("category-experimental").hidden = false;
+    
+    document.getElementById(
+      "category-experimental"
+    ).hidden = Services.prefs.getBoolPref(
+      "browser.preferences.experimental.hidden",
+      false
+    );
     register_module("paneExperimental", gExperimentalPane);
   }
   
@@ -207,7 +213,7 @@ async function gotoPref(aCategory) {
     }
 
     item = categories.querySelector(".category[value=" + category + "]");
-    if (!item) {
+    if (!item || item.hidden) {
       category = kDefaultCategoryInternalName;
       item = categories.querySelector(".category[value=" + category + "]");
     }
