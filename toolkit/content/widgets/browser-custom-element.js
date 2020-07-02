@@ -236,8 +236,6 @@
 
       this._remoteWebNavigation = null;
 
-      this._remoteWebProgress = null;
-
       this._characterSet = "";
 
       this._mayEnableCharacterEncodingMenu = null;
@@ -1076,6 +1074,7 @@
 
     construct() {
       elementsToDestroyOnUnload.add(this);
+      let wasRemote = !!this._remoteWebNavigation;
       this.resetFields();
       this.mInitialized = true;
       if (this.isRemoteBrowser) {
@@ -1097,21 +1096,7 @@
         
         this._csp = null;
 
-        let jsm = "resource://gre/modules/RemoteWebProgress.jsm";
-        let { RemoteWebProgressManager } = ChromeUtils.import(jsm, {});
-
-        let oldManager = this._remoteWebProgressManager;
-        this._remoteWebProgressManager = new RemoteWebProgressManager(this);
-        if (oldManager) {
-          
-          
-          
-          this._remoteWebProgressManager.swapListeners(oldManager);
-        }
-
-        this._remoteWebProgress = this._remoteWebProgressManager.topLevelWebProgress;
-
-        if (!oldManager) {
+        if (!wasRemote) {
           
           
           
@@ -1165,13 +1150,7 @@
       } catch (e) {}
 
       if (!this.isRemoteBrowser) {
-        
-        
-        
-        this._remoteWebProgressManager = null;
-        this._remoteWebProgress = null;
         this.restoreProgressListeners();
-
         this.addEventListener("pagehide", this.onPageHide, true);
       }
     }
@@ -1207,10 +1186,6 @@
       if (!this.isRemoteBrowser) {
         this.removeEventListener("pagehide", this.onPageHide, true);
       }
-    }
-
-    get remoteWebProgressManager() {
-      return this._remoteWebProgressManager;
     }
 
     updateForStateChange(aCharset, aDocumentURI, aContentType) {
@@ -1652,10 +1627,7 @@
         fieldsToSwap.push(
           ...[
             "_remoteWebNavigation",
-            "_remoteWebProgressManager",
-            "_remoteWebProgress",
             "_remoteFinder",
-            "_securityUI",
             "_documentURI",
             "_documentContentType",
             "_characterSet",
@@ -1701,14 +1673,6 @@
         
         this._remoteWebNavigation.swapBrowser(this);
         aOtherBrowser._remoteWebNavigation.swapBrowser(aOtherBrowser);
-
-        if (
-          this._remoteWebProgressManager &&
-          aOtherBrowser._remoteWebProgressManager
-        ) {
-          this._remoteWebProgressManager.swapBrowser(this);
-          aOtherBrowser._remoteWebProgressManager.swapBrowser(aOtherBrowser);
-        }
 
         if (this._remoteFinder) {
           this._remoteFinder.swapBrowser(this);
