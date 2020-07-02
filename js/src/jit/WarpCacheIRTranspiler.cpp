@@ -1555,27 +1555,37 @@ bool WarpCacheIRTranspiler::emitCallFunction(ObjOperandId calleeId,
   if (callInfo_->constructing()) {
     MOZ_ASSERT(flags.isConstructing());
 
-    callInfo_->thisArg()->setImplicitlyUsedUnchecked();
+    MDefinition* thisArg = callInfo_->thisArg();
 
     if (kind == CallKind::Native) {
       
       
-
       
-      callInfo_->setThis(constant(MagicValue(JS_IS_CONSTRUCTING)));
-
-      needsThisCheck = false;
+      MOZ_ASSERT_IF(!thisArg->isPhi(),
+                    thisArg->type() == MIRType::MagicIsConstructing);
     } else {
       MOZ_ASSERT(kind == CallKind::Scripted);
 
       
-      MDefinition* newTarget = callInfo_->getNewTarget();
-      auto* createThis = MCreateThis::New(alloc(), callee, newTarget);
-      add(createThis);
-      callInfo_->setThis(createThis);
+      
+      
+      
 
-      wrappedTarget = nullptr;
-      needsThisCheck = true;
+      if (!thisArg->isCreateThisWithTemplate()) {
+        
+        MOZ_ASSERT_IF(!thisArg->isPhi(),
+                      thisArg->type() == MIRType::MagicIsConstructing);
+
+        MDefinition* newTarget = callInfo_->getNewTarget();
+        auto* createThis = MCreateThis::New(alloc(), callee, newTarget);
+        add(createThis);
+
+        thisArg->setImplicitlyUsedUnchecked();
+        callInfo_->setThis(createThis);
+
+        wrappedTarget = nullptr;
+        needsThisCheck = true;
+      }
     }
   }
 
@@ -1617,9 +1627,26 @@ bool WarpCacheIRTranspiler::emitCallScriptedFunction(ObjOperandId calleeId,
   return emitCallFunction(calleeId, argcId, flags, CallKind::Scripted);
 }
 
+
 bool WarpCacheIRTranspiler::emitMetaTwoByte(MetaTwoByteKind kind,
                                             uint32_t functionObjectOffset,
                                             uint32_t templateObjectOffset) {
+  if (kind != MetaTwoByteKind::ScriptedTemplateObject) {
+    return true;
+  }
+
+  JSObject* templateObj = objectStubField(templateObjectOffset);
+  MConstant* templateConst = constant(ObjectValue(*templateObj));
+
+  
+  gc::InitialHeap heap = gc::DefaultHeap;
+
+  auto* createThis = MCreateThisWithTemplate::New(
+      alloc(),  nullptr, templateConst, heap);
+  add(createThis);
+
+  callInfo_->thisArg()->setImplicitlyUsedUnchecked();
+  callInfo_->setThis(createThis);
   return true;
 }
 
