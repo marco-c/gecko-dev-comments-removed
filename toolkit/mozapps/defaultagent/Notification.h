@@ -9,7 +9,40 @@
 
 #include "DefaultBrowser.h"
 
-void MaybeShowNotification(const DefaultBrowserInfo& browserInfo,
-                           const wchar_t* aumi);
+enum class NotificationType {
+  Initial,
+  Followup,
+};
+
+enum class NotificationShown {
+  NotShown,
+  Shown,
+  Error,
+};
+
+enum class NotificationAction {
+  DismissedByTimeout,
+  DismissedToActionCenter,
+  DismissedByButton,
+  DismissedByApplicationHidden,
+  RemindMeLater,
+  MakeFirefoxDefaultButton,
+  ToastClicked,
+  NoAction,  
+};
+
+struct NotificationActivities {
+  NotificationType type;
+  NotificationShown shown;
+  NotificationAction action;
+};
+
+NotificationActivities MaybeShowNotification(
+    const DefaultBrowserInfo& browserInfo, const wchar_t* aumi);
+
+
+std::string GetStringForNotificationType(NotificationType type);
+std::string GetStringForNotificationShown(NotificationShown shown);
+std::string GetStringForNotificationAction(NotificationAction action);
 
 #endif  
