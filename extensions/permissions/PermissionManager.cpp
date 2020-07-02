@@ -1779,6 +1779,8 @@ nsresult PermissionManager::AddInternal(
         break;
       }
 
+      PermissionEntry oldPermissionEntry = entry->GetPermissions()[index];
+
       
       
       
@@ -1802,13 +1804,29 @@ nsresult PermissionManager::AddInternal(
       entry->GetPermissions()[index].mExpireTime = aExpireTime;
       entry->GetPermissions()[index].mModificationTime = aModificationTime;
 
-      if (aDBOperation == eWriteToDB &&
-          IsPersistentExpire(aExpireType, aType)) {
-        
-        
-        
-        UpdateDB(op, id, EmptyCString(), EmptyCString(), aPermission,
-                 aExpireType, aExpireTime, aModificationTime);
+      if (aDBOperation == eWriteToDB) {
+        bool newIsPersistentExpire = IsPersistentExpire(aExpireType, aType);
+        bool oldIsPersistentExpire =
+            IsPersistentExpire(oldPermissionEntry.mExpireType, aType);
+
+        if (!newIsPersistentExpire && oldIsPersistentExpire) {
+          
+          
+          UpdateDB(eOperationRemoving, id, EmptyCString(), EmptyCString(), 0,
+                   nsIPermissionManager::EXPIRE_NEVER, 0, 0);
+        } else if (newIsPersistentExpire && !oldIsPersistentExpire) {
+          
+          
+          
+          UpdateDB(eOperationAdding, id, origin, aType, aPermission,
+                   aExpireType, aExpireTime, aModificationTime);
+        } else if (newIsPersistentExpire) {
+          
+          
+          
+          UpdateDB(op, id, EmptyCString(), EmptyCString(), aPermission,
+                   aExpireType, aExpireTime, aModificationTime);
+        }
       }
 
       if (aNotifyOperation == eNotify) {
