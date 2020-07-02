@@ -484,6 +484,10 @@ already_AddRefed<nsISupports> ReflectorToISupportsDynamic(JSObject* reflector,
 
 JSObject* UnprivilegedJunkScope();
 
+JSObject* UnprivilegedJunkScope(const mozilla::fallible_t&);
+
+bool IsUnprivilegedJunkScope(JSObject*);
+
 
 
 

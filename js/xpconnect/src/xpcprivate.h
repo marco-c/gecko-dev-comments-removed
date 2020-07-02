@@ -567,10 +567,27 @@ class XPCJSRuntime final : public mozilla::CycleCollectedJSRuntime {
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf);
 
-  JSObject* UnprivilegedJunkScope() { return mUnprivilegedJunkScope; }
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  JSObject* UnprivilegedJunkScope();
+  JSObject* UnprivilegedJunkScope(const mozilla::fallible_t&);
+
+  bool IsUnprivilegedJunkScope(JSObject*);
   JSObject* LoaderGlobal();
 
-  void InitSingletonScopes();
   void DeleteSingletonScopes();
 
   void SystemIsBeingShutDown();
@@ -621,7 +638,7 @@ class XPCJSRuntime final : public mozilla::CycleCollectedJSRuntime {
   nsTArray<xpcGCCallback> extraGCCallbacks;
   JS::GCSliceCallback mPrevGCSliceCallback;
   JS::DoCycleCollectionCallback mPrevDoCycleCollectionCallback;
-  JS::PersistentRootedObject mUnprivilegedJunkScope;
+  mozilla::WeakPtr<SandboxPrivate> mUnprivilegedJunkScope;
   JS::PersistentRootedObject mLoaderGlobal;
   RefPtr<AsyncFreeSnowWhite> mAsyncSnowWhiteFreer;
 

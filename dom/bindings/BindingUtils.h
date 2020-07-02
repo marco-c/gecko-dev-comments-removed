@@ -3165,6 +3165,7 @@ namespace binding_detail {
 
 
 JSObject* UnprivilegedJunkScopeOrWorkerGlobal();
+JSObject* UnprivilegedJunkScopeOrWorkerGlobal(const fallible_t&);
 
 
 bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,

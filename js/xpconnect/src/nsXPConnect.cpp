@@ -84,9 +84,6 @@ void nsXPConnect::InitJSContext() {
   gSelf->mContext = xpccx;
   gSelf->mRuntime = xpccx->Runtime();
 
-  
-  gSelf->mRuntime->InitSingletonScopes();
-
   mozJSComponentLoader::InitStatics();
 
   
