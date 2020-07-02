@@ -60,7 +60,7 @@ nsFrameLoaderOwner::ChangeRemotenessContextType
 nsFrameLoaderOwner::ShouldPreserveBrowsingContext(
     bool aIsRemote, bool aReplaceBrowsingContext) {
   if (aReplaceBrowsingContext) {
-    return ChangeRemotenessContextType::DONT_PRESERVE_BUT_PROPAGATE;
+    return ChangeRemotenessContextType::DONT_PRESERVE;
   }
 
   if (XRE_IsParentProcess()) {
@@ -116,11 +116,9 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
     
     
     if (mFrameLoader) {
-      if (aContextType != ChangeRemotenessContextType::DONT_PRESERVE) {
-        bc = mFrameLoader->GetBrowsingContext();
-        if (aContextType == ChangeRemotenessContextType::PRESERVE) {
-          mFrameLoader->SetWillChangeProcess();
-        }
+      bc = mFrameLoader->GetExtantBrowsingContext();
+      if (aContextType == ChangeRemotenessContextType::PRESERVE) {
+        mFrameLoader->SetWillChangeProcess();
       }
 
       
