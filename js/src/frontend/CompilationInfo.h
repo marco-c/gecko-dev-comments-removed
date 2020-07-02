@@ -12,7 +12,6 @@
 #include "mozilla/Variant.h"
 
 #include "ds/LifoAlloc.h"
-#include "frontend/ParserAtom.h"
 #include "frontend/SharedContext.h"
 #include "frontend/Stencil.h"
 #include "frontend/UsedNameTracker.h"
@@ -75,9 +74,6 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
   
   
   AutoKeepAtoms keepAtoms;
-
-  
-  ParserAtomsTable parserAtoms;
 
   Directives directives;
 
@@ -146,7 +142,6 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
         cx(cx),
         options(options),
         keepAtoms(cx),
-        parserAtoms(cx),
         directives(options.forceStrictMode()),
         scopeContext(enclosingScope, enclosingEnv),
         script(cx),
