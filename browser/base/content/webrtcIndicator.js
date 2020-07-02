@@ -26,6 +26,12 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/webrtcUI.jsm"
 );
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "BrowserWindowTracker",
+  "resource:///modules/BrowserWindowTracker.jsm"
+);
+
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "gScreenManager",
@@ -156,7 +162,7 @@ const WebRTCIndicator = {
     this.ensureOnScreen();
 
     if (!this.positionCustomized) {
-      this.centerOnPrimaryDisplay();
+      this.centerOnDisplay(initialLayout);
     }
     this.updatingIndicatorState = false;
   },
@@ -179,7 +185,11 @@ const WebRTCIndicator = {
 
 
 
-  centerOnPrimaryDisplay() {
+
+
+
+
+  centerOnDisplay(aInitialLayout) {
     
     
     
@@ -189,20 +199,55 @@ const WebRTCIndicator = {
       width: windowWidth,
     } = window.windowUtils.getBoundsWithoutFlushing(document.documentElement);
 
-    
-    
-    
-    let screen = gScreenManager.primaryScreen;
+    let screen;
+
+    if (aInitialLayout) {
+      
+      
+      let recentWindow = BrowserWindowTracker.getTopWindow();
+
+      let {
+        height: originatorHeight,
+        width: originatorWidth,
+      } = recentWindow.windowUtils.getBoundsWithoutFlushing(
+        recentWindow.document.documentElement
+      );
+
+      screen = gScreenManager.screenForRect(
+        recentWindow.screenX,
+        recentWindow.screenY,
+        originatorWidth,
+        originatorHeight
+      );
+    } else {
+      
+      
+      screen = gScreenManager.screenForRect(
+        window.screenX,
+        window.screenY,
+        windowWidth,
+        windowHeight
+      );
+    }
+
     let scaleFactor = screen.contentsScaleFactor / screen.defaultCSSScaleFactor;
 
+    
+    
+    
+    let leftDevPix = {};
     let widthDevPix = {};
-    screen.GetRectDisplayPix({}, {}, widthDevPix, {});
+    screen.GetRectDisplayPix(leftDevPix, {}, widthDevPix, {});
     let screenWidth = widthDevPix.value * scaleFactor;
 
+    
+    
+    
     let availTopDevPix = {};
     let availHeightDevPix = {};
     screen.GetAvailRectDisplayPix({}, availTopDevPix, {}, availHeightDevPix);
 
+    let left = leftDevPix.value * scaleFactor;
     let availHeight =
       (availTopDevPix.value + availHeightDevPix.value) * scaleFactor;
     
@@ -211,7 +256,7 @@ const WebRTCIndicator = {
     
     
     window.moveTo(
-      (screenWidth - windowWidth) / 2,
+      left + (screenWidth - windowWidth) / 2,
       availHeight - windowHeight - this.VERTICAL_OFFSET_PX
     );
   },
@@ -245,7 +290,6 @@ const WebRTCIndicator = {
     this.loaded = true;
 
     this.updateIndicatorState(true );
-    this.centerOnPrimaryDisplay();
 
     window.addEventListener("click", this);
     window.windowRoot.addEventListener("MozUpdateWindowPos", this);
