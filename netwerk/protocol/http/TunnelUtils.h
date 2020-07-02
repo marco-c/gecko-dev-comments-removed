@@ -221,7 +221,9 @@ class SpdyConnectTransaction final : public NullHttpTransaction {
   
   
   void ForcePlainText();
-  void MapStreamToHttpConnection(nsISocketTransport* aTransport,
+  
+  
+  bool MapStreamToHttpConnection(nsISocketTransport* aTransport,
                                  nsHttpConnectionInfo* aConnInfo,
                                  const nsACString& aFlat407Headers,
                                  int32_t aHttpResponseCode);
