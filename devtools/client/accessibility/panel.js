@@ -27,6 +27,11 @@ const EVENTS = {
   
   ACCESSIBILITY_INSPECTOR_UPDATED:
     "Accessibility:AccessibilityInspectorUpdated",
+  
+  INITIALIZED: "Accessibility:Initialized",
+  
+  
+  PROPERTIES_UPDATED: "Accessibility:PropertiesUpdated",
 };
 
 
