@@ -36,7 +36,12 @@ def _is_likely_cpp_header(filename):
 def Settings(**kwargs):
     if kwargs[ 'language' ] == 'cfamily':
         return FlagsForFile(kwargs['filename'])
-    return {}
+    
+    
+    
+    return {
+      'project_directory': '.',
+    }
 
 
 def FlagsForFile(filename):
