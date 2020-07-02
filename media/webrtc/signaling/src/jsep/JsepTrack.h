@@ -277,7 +277,7 @@ class JsepTrack {
 
   void AddToMsection(const std::vector<JsConstraints>& constraintsList,
                      sdp::Direction direction, SsrcGenerator& ssrcGenerator,
-                     bool requireRtxSsrcs, SdpMediaSection* msection);
+                     bool rtxEnabled, SdpMediaSection* msection);
 
   
   void SetRtxIsAllowed(bool aRtxIsAllowed) { mRtxIsAllowed = aRtxIsAllowed; }
