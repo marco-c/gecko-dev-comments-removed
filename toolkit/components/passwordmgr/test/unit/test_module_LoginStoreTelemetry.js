@@ -12,6 +12,13 @@ const { TelemetryTestUtils } = ChromeUtils.import(
 
 
 
+Services.prefs.setBoolPref(
+  "toolkit.telemetry.testing.overrideProductsCheck",
+  true
+);
+
+
+
 
 add_task(async function test_login_store_missing_telemetry() {
   
