@@ -410,6 +410,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     this._response.status = info.status;
     this._response.statusText = info.statusText;
     this._response.headersSize = info.headersSize;
+    this._response.waitingTime = info.waitingTime;
     
     this._discardResponseBody = !!info.discardResponseBody;
 
