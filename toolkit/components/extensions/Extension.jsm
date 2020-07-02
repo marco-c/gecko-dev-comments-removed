@@ -67,6 +67,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   OS: "resource://gre/modules/osfile.jsm",
   PluralForm: "resource://gre/modules/PluralForm.jsm",
   Schemas: "resource://gre/modules/Schemas.jsm",
+  ServiceWorkerCleanUp: "resource://gre/modules/ServiceWorkerCleanUp.jsm",
   XPIProvider: "resource://gre/modules/addons/XPIProvider.jsm",
 });
 
@@ -331,6 +332,32 @@ var ExtensionAddonObserver = {
       return;
     }
 
+    let baseURI = Services.io.newURI(`moz-extension://${uuid}/`);
+    let principal = Services.scriptSecurityManager.createContentPrincipal(
+      baseURI,
+      {}
+    );
+
+    
+    
+    
+    
+    
+    
+    if (WebExtensionPolicy.backgroundServiceWorkerEnabled) {
+      
+      
+      
+      
+      
+      
+      
+      AsyncShutdown.profileChangeTeardown.addBlocker(
+        `Clear ServiceWorkers for ${addon.id}`,
+        ServiceWorkerCleanUp.removeFromPrincipal(principal)
+      );
+    }
+
     if (!Services.prefs.getBoolPref(LEAVE_STORAGE_PREF, false)) {
       
       AsyncShutdown.profileChangeTeardown.addBlocker(
@@ -340,11 +367,6 @@ var ExtensionAddonObserver = {
 
       
       
-      let baseURI = Services.io.newURI(`moz-extension://${uuid}/`);
-      let principal = Services.scriptSecurityManager.createContentPrincipal(
-        baseURI,
-        {}
-      );
       Services.qms.clearStoragesForPrincipal(principal);
 
       

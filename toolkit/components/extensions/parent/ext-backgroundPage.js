@@ -111,8 +111,10 @@ class BackgroundPage extends HiddenExtensionPage {
 
 class BackgroundWorker {
   constructor(extension, options) {
+    this.registrationInfo = null;
     this.extension = extension;
     this.workerScript = options.service_worker;
+
     if (!this.workerScript) {
       throw new Error("Missing mandatory background.service_worker property");
     }
@@ -128,9 +130,10 @@ class BackgroundWorker {
   }
 
   shutdown() {
-    
-    
-    
+    if (this.registrationInfo) {
+      this.registrationInfo.forceShutdown();
+      this.registrationInfo = null;
+    }
   }
 }
 
