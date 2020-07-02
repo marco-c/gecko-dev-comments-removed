@@ -11221,6 +11221,10 @@ int main(int argc, char** argv, char** envp) {
     if (!sCompilerProcessFlags.append("--enable-avx")) {
       return EXIT_FAILURE;
     }
+    
+    
+    fprintf(stderr, "Error: AVX encodings are currently disabled\n");
+    return EXIT_FAILURE;
   }
 #endif
 
