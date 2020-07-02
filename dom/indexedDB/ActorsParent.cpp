@@ -13194,8 +13194,7 @@ void ConnectionPool::TransactionInfo::AddBlockingTransaction(
   
   
   
-  if (!mBlocking.Contains(&aTransactionInfo)) {
-    mBlocking.PutEntry(&aTransactionInfo);
+  if (mBlocking.EnsureInserted(&aTransactionInfo)) {
     mBlockingOrdered.AppendElement(WrapNotNullUnchecked(&aTransactionInfo));
   }
 }
