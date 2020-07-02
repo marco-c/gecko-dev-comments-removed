@@ -28,12 +28,18 @@
   TELEMETRY_BASE_URL "/" TELEMETRY_NAMESPACE "/" TELEMETRY_PING_DOCTYPE \
                      "/" TELEMETRY_PING_VERSION "/"
 
+
+
+
+#define MINIMUM_PING_PERIOD_SEC ((23 * 60 * 60) + (45 * 60))
+
 #if !defined(RRF_SUBKEY_WOW6464KEY)
 #  define RRF_SUBKEY_WOW6464KEY 0x00010000
 #endif  
 
 using TelemetryFieldResult = mozilla::WindowsErrorResult<std::string>;
 using FilePathResult = mozilla::WindowsErrorResult<std::wstring>;
+using BoolResult = mozilla::WindowsErrorResult<bool>;
 
 
 
@@ -266,6 +272,39 @@ static mozilla::WindowsError SendPing(const std::string defaultBrowser,
   return mozilla::WindowsError::CreateSuccess();
 }
 
+
+
+
+
+
+static BoolResult GetPingAlreadySentToday() {
+  const wchar_t* valueName = L"LastPingSentAt";
+  MaybeQwordResult readResult =
+      RegistryGetValueQword(IsPrefixed::Unprefixed, valueName);
+  if (readResult.isErr()) {
+    HRESULT hr = readResult.unwrapErr().AsHResult();
+    LOG_ERROR_MESSAGE(L"Unable to read registry: %#X", hr);
+    return BoolResult(mozilla::WindowsError::FromHResult(hr));
+  }
+  mozilla::Maybe<ULONGLONG> maybeValue = readResult.unwrap();
+  ULONGLONG now = GetCurrentTimestamp();
+  if (maybeValue.isSome()) {
+    ULONGLONG lastPingTime = maybeValue.value();
+    if (SecondsPassedSince(lastPingTime, now) < MINIMUM_PING_PERIOD_SEC) {
+      return true;
+    }
+  }
+
+  mozilla::WindowsErrorResult<mozilla::Ok> writeResult =
+      RegistrySetValueQword(IsPrefixed::Unprefixed, valueName, now);
+  if (writeResult.isErr()) {
+    HRESULT hr = readResult.unwrapErr().AsHResult();
+    LOG_ERROR_MESSAGE(L"Unable to write registry: %#X", hr);
+    return BoolResult(mozilla::WindowsError::FromHResult(hr));
+  }
+  return false;
+}
+
 HRESULT SendDefaultBrowserPing(
     const DefaultBrowserInfo& browserInfo,
     const NotificationActivities& activitiesPerformed) {
@@ -296,6 +335,25 @@ HRESULT SendDefaultBrowserPing(
   
   
   if (!IsOfficialTelemetry()) {
+    return S_OK;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  BoolResult pingAlreadySentResult = GetPingAlreadySentToday();
+  if (pingAlreadySentResult.isErr()) {
+    return pingAlreadySentResult.unwrapErr().AsHResult();
+  }
+  bool pingAlreadySent = pingAlreadySentResult.unwrap();
+  if (pingAlreadySent) {
     return S_OK;
   }
 

@@ -92,29 +92,6 @@ static ULONGLONG GetFollowupNotificationRequestTime() {
       .valueOr(0);
 }
 
-static ULONGLONG GetCurrentTimestamp() {
-  FILETIME filetime;
-  GetSystemTimeAsFileTime(&filetime);
-  ULARGE_INTEGER integerTime;
-  integerTime.u.LowPart = filetime.dwLowDateTime;
-  integerTime.u.HighPart = filetime.dwHighDateTime;
-  return integerTime.QuadPart;
-}
-
-static ULONGLONG SecondsPassedSince(ULONGLONG initialTime) {
-  ULONGLONG now = GetCurrentTimestamp();
-  
-  
-  if (initialTime >= now) {
-    return 0;
-  }
-
-  
-  return (now - initialTime) / 10  
-         / 1000                    
-         / 1000;                   
-}
-
 struct ToastStrings {
   mozilla::UniquePtr<wchar_t[]> text1;
   mozilla::UniquePtr<wchar_t[]> text2;

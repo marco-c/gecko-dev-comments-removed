@@ -10,4 +10,9 @@
 #define AGENT_REGKEY_NAME \
   L"SOFTWARE\\" MOZ_APP_VENDOR "\\" MOZ_APP_BASENAME "\\Default Browser Agent"
 
+ULONGLONG GetCurrentTimestamp();
+
+
+ULONGLONG SecondsPassedSince(ULONGLONG initialTime, ULONGLONG currentTime = 0);
+
 #endif  
