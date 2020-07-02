@@ -485,6 +485,14 @@ bool DOMLocalization::ApplyTranslations(
       hasMissingTranslation = true;
       continue;
     }
+    
+    
+    
+    
+    
+    if (aProto && !elem->IsInComposedDoc()) {
+      continue;
+    }
     L10nOverlays::TranslateElement(*elem, aTranslations[i].Value(), errors,
                                    aRv);
     if (NS_WARN_IF(aRv.Failed())) {
