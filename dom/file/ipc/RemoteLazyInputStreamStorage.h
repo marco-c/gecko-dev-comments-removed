@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_IPCBlobInputStreamStorage_h
-#define mozilla_dom_IPCBlobInputStreamStorage_h
+#ifndef mozilla_dom_RemoteLazyInputStreamStorage_h
+#define mozilla_dom_RemoteLazyInputStreamStorage_h
 
 #include "mozilla/RefPtr.h"
 #include "nsClassHashtable.h"
@@ -19,7 +19,7 @@ namespace dom {
 
 class IPCBlobInputStreamParentCallback;
 
-class IPCBlobInputStreamStorage final : public nsIObserver {
+class RemoteLazyInputStreamStorage final : public nsIObserver {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
@@ -27,7 +27,7 @@ class IPCBlobInputStreamStorage final : public nsIObserver {
   
   static void Initialize();
 
-  static IPCBlobInputStreamStorage* Get();
+  static RemoteLazyInputStreamStorage* Get();
 
   void AddStream(nsIInputStream* aInputStream, const nsID& aID, uint64_t aSize,
                  uint64_t aChildID);
@@ -48,8 +48,8 @@ class IPCBlobInputStreamStorage final : public nsIObserver {
       const nsID& aID);
 
  private:
-  IPCBlobInputStreamStorage() = default;
-  ~IPCBlobInputStreamStorage() = default;
+  RemoteLazyInputStreamStorage() = default;
+  ~RemoteLazyInputStreamStorage() = default;
 
   struct StreamData {
     nsCOMPtr<nsIInputStream> mInputStream;

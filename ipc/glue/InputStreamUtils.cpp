@@ -12,7 +12,7 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/IPCBlobInputStream.h"
 #include "mozilla/dom/IPCBlobInputStreamChild.h"
-#include "mozilla/dom/IPCBlobInputStreamStorage.h"
+#include "mozilla/dom/RemoteLazyInputStreamStorage.h"
 #include "mozilla/dom/quota/DecryptingInputStream_impl.h"
 #include "mozilla/dom/quota/IPCStreamCipherStrategy.h"
 #include "mozilla/ipc/IPCStreamDestination.h"
@@ -285,7 +285,7 @@ already_AddRefed<nsIInputStream> InputStreamHelper::DeserializeInputStream(
       const IPCBlobInputStreamRef& ref = params.get_IPCBlobInputStreamRef();
 
       nsCOMPtr<nsIInputStream> stream;
-      IPCBlobInputStreamStorage::Get()->GetStream(
+      RemoteLazyInputStreamStorage::Get()->GetStream(
           ref.id(), ref.start(), ref.length(), getter_AddRefs(stream));
       return stream.forget();
     }
