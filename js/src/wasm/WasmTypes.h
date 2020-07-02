@@ -3101,11 +3101,6 @@ extern uint64_t RoundUpToNextValidARMImmediate(uint64_t i);
 
 
 
-static const unsigned PageSize = 64 * 1024;
-
-
-
-
 
 
 

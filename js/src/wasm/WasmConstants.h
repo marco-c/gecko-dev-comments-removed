@@ -842,6 +842,11 @@ enum class FieldFlags { Mutable = 0x01, AllowedMask = 0x01 };
 
 
 
+
+static const unsigned PageSize = 64 * 1024;
+
+
+
 static const unsigned MaxTypes = 1000000;
 static const unsigned MaxFuncs = 1000000;
 static const unsigned MaxTables = 100000;
@@ -861,7 +866,7 @@ static const unsigned MaxParams = 1000;
 static const unsigned MaxResults = 1000;
 static const unsigned MaxStructFields = 1000;
 static const unsigned MaxMemoryLimitField = 65536;
-static const unsigned MaxMemoryPages = 16384;
+static const unsigned MaxMemoryPages = INT32_MAX / PageSize;
 static const unsigned MaxStringBytes = 100000;
 static const unsigned MaxModuleBytes = 1024 * 1024 * 1024;
 static const unsigned MaxFunctionBytes = 7654321;
