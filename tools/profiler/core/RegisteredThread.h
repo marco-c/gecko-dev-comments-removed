@@ -7,6 +7,7 @@
 #ifndef RegisteredThread_h
 #define RegisteredThread_h
 
+#include "GeckoProfiler.h"
 #include "platform.h"
 #include "ThreadInfo.h"
 
@@ -15,6 +16,7 @@
 #include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
 #include "nsIEventTarget.h"
+#include "nsIThread.h"
 
 
 
@@ -25,7 +27,7 @@ class RacyRegisteredThread final {
  public:
   explicit RacyRegisteredThread(int aThreadId)
       : mProfilingStackOwner(
-            mozilla::MakeNotNull<RefPtr<class ProfilingStackOwner>>()),
+            mozilla::MakeNotNull<RefPtr<mozilla::ProfilingStackOwner>>()),
         mThreadId(aThreadId),
         mSleep(AWAKE),
         mIsBeingProfiled(false) {
@@ -88,12 +90,12 @@ class RacyRegisteredThread final {
     return mProfilingStackOwner->ProfilingStack();
   }
 
-  class ProfilingStackOwner& ProfilingStackOwner() {
+  mozilla::ProfilingStackOwner& ProfilingStackOwner() {
     return *mProfilingStackOwner;
   }
 
  private:
-  mozilla::NotNull<RefPtr<class ProfilingStackOwner>> mProfilingStackOwner;
+  mozilla::NotNull<RefPtr<mozilla::ProfilingStackOwner>> mProfilingStackOwner;
 
   
   
@@ -167,8 +169,9 @@ class RegisteredThread final {
   
   
   
-  void GetRunningEventDelay(const TimeStamp& aNow, TimeDuration& aDelay,
-                            TimeDuration& aRunning);
+  void GetRunningEventDelay(const mozilla::TimeStamp& aNow,
+                            mozilla::TimeDuration& aDelay,
+                            mozilla::TimeDuration& aRunning);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
