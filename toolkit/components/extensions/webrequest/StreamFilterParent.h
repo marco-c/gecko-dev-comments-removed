@@ -178,7 +178,9 @@ class StreamFilterParent final : public PStreamFilterParent,
   nsCOMPtr<nsISupports> mContext;
   uint64_t mOffset;
 
-  volatile State mState;
+  
+  
+  Atomic<State, ReleaseAcquire> mState;
 };
 
 }  
