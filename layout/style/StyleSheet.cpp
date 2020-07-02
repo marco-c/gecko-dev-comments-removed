@@ -5,6 +5,7 @@
 
 
 #include "mozilla/StyleSheet.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/css/ErrorReporter.h"
@@ -895,7 +896,15 @@ void StyleSheet::UnparentChildren() {
              "by a document?");
   
   
-  for (StyleSheet* child : ChildSheets()) {
+  
+  
+  
+  
+  
+  
+  for (StyleSheet* child : Inner().mChildren) {
+    MOZ_ASSERT(!child->GetParentSheet() ||
+               child->GetParentSheet()->mInner == mInner);
     if (child->mParentSheet == this) {
       child->mParentSheet = nullptr;
     }
