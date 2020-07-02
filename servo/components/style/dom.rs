@@ -888,18 +888,6 @@ pub trait TElement:
     
     
     
-    
-    #[cfg(feature = "gecko")]
-    fn might_need_transitions_update(
-        &self,
-        old_values: Option<&ComputedValues>,
-        new_values: &ComputedValues,
-    ) -> bool;
-
-    
-    
-    
-    
     #[cfg(feature = "gecko")]
     fn needs_transitions_update(
         &self,

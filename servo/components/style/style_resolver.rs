@@ -307,7 +307,7 @@ where
     }
 
     
-    pub(crate) fn cascade_style_and_visited_for_pseudo_with_default_parents(
+    pub fn cascade_style_and_visited_for_pseudo_with_default_parents(
         &mut self,
         inputs: CascadeInputs,
         pseudo: &PseudoElement,
