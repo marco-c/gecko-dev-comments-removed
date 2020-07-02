@@ -1489,33 +1489,38 @@ class ScriptLoaderRunnable final : public nsIRunnable, public nsINamed {
       mWorkerPrivate->WorkerScriptLoaded();
     }
 
-    uint32_t firstIndex = UINT32_MAX;
-    uint32_t lastIndex = UINT32_MAX;
+    const auto [firstIndex,
+                lastIndex] = [this]() -> std::pair<uint32_t, uint32_t> {
+      
+      const auto begin = mLoadInfos.begin();
+      const auto end = mLoadInfos.end();
+      auto foundFirstIt =
+          std::find_if(begin, end, [](const ScriptLoadInfo& loadInfo) {
+            return !loadInfo.mExecutionScheduled;
+          });
 
-    
-    for (uint32_t index = 0; index < mLoadInfos.Length(); index++) {
-      if (!mLoadInfos[index].mExecutionScheduled) {
-        firstIndex = index;
-        break;
+      
+      
+      if (foundFirstIt == end) {
+        return std::pair(UINT32_MAX, UINT32_MAX);
       }
-    }
 
-    
-    
-    if (firstIndex != UINT32_MAX) {
-      for (uint32_t index = firstIndex; index < mLoadInfos.Length(); index++) {
-        ScriptLoadInfo& loadInfo = mLoadInfos[index];
+      const auto foundLastIt =
+          std::find_if(foundFirstIt, end, [](ScriptLoadInfo& loadInfo) {
+            if (!loadInfo.Finished()) {
+              return true;
+            }
 
-        if (!loadInfo.Finished()) {
-          break;
-        }
+            
+            loadInfo.mExecutionScheduled = true;
 
-        
-        loadInfo.mExecutionScheduled = true;
+            return false;
+          });
 
-        lastIndex = index;
-      }
-    }
+      return std::pair(foundFirstIt - begin, foundLastIt == foundFirstIt
+                                                 ? UINT32_MAX
+                                                 : foundLastIt - begin - 1);
+    }();
 
     
     
