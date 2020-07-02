@@ -66,7 +66,7 @@ def fixSymbols(line, jsonMode=False, slowWarning=False, breakpadSymsDir=None, hi
         
         stderr = open(os.devnull) if hide_errors else None
 
-        fix_stacks = Popen(args, stdin=PIPE, stdout=PIPE, stderr=stderr)
+        fix_stacks = Popen(args, stdin=PIPE, stdout=PIPE, stderr=stderr, universal_newlines=True)
 
         
         
