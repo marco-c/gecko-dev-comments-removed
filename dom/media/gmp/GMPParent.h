@@ -60,7 +60,7 @@ class GMPParent final
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPParent)
 
-  explicit GMPParent(AbstractThread* aMainThread);
+  explicit GMPParent(nsISerialEventTarget* aThread);
 
   RefPtr<GenericPromise> Init(GeckoMediaPluginServiceParent* aService,
                               nsIFile* aPluginDir);
@@ -214,7 +214,7 @@ class GMPParent final
   
   bool mHoldingSelfRef;
 
-  const RefPtr<AbstractThread> mMainThread;
+  const nsCOMPtr<nsISerialEventTarget> mWorkerThread;
 };
 
 }  
