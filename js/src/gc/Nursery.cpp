@@ -1529,9 +1529,14 @@ static inline double ClampDouble(double value, double min, double max) {
 }
 
 size_t js::Nursery::targetSize(JS::GCReason reason) {
+  
   if (gc::IsOOMReason(reason) || gc->systemHasLowMemory()) {
-    
     return 0;
+  }
+
+  
+  if (gc::IsShutdownReason(reason)) {
+    return capacity();
   }
 
   

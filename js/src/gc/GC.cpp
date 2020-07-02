@@ -4047,13 +4047,6 @@ void GCRuntime::unmarkWeakMaps() {
   }
 }
 
-static bool IsShutdownGC(JS::GCReason reason) {
-  return reason == JS::GCReason::WORKER_SHUTDOWN ||
-         reason == JS::GCReason::SHUTDOWN_CC ||
-         reason == JS::GCReason::DESTROY_RUNTIME ||
-         reason == JS::GCReason::XPCONNECT_SHUTDOWN;
-}
-
 bool GCRuntime::beginMarkPhase(JS::GCReason reason, AutoGCSession& session) {
 #ifdef DEBUG
   if (fullCompartmentChecks) {
@@ -4147,7 +4140,7 @@ bool GCRuntime::beginMarkPhase(JS::GCReason reason, AutoGCSession& session) {
 
     purgeRuntime();
 
-    if (IsShutdownGC(reason)) {
+    if (IsShutdownReason(reason)) {
       
       for (GCZonesIter zone(this); !zone.done(); zone.next()) {
         zone->clearRootsForShutdownGC();
@@ -4176,7 +4169,7 @@ bool GCRuntime::beginMarkPhase(JS::GCReason reason, AutoGCSession& session) {
 
 
 
-  if (!IsShutdownGC(reason) && reason != JS::GCReason::ROOTS_REMOVED) {
+  if (!IsShutdownReason(reason) && reason != JS::GCReason::ROOTS_REMOVED) {
     AutoLockHelperThreadState helperLock;
     HelperThreadState().startHandlingCompressionTasks(
         helperLock, GlobalHelperThreadState::ScheduleCompressionTask::GC);
@@ -6547,7 +6540,7 @@ static bool ShouldCleanUpEverything(JS::GCReason reason,
   
   
   
-  return IsShutdownGC(reason) || gckind == GC_SHRINK;
+  return IsShutdownReason(reason) || gckind == GC_SHRINK;
 }
 
 static bool ShouldSweepOnBackgroundThread(JS::GCReason reason) {
@@ -7256,7 +7249,7 @@ bool GCRuntime::checkIfGCAllowedInCurrentState(JS::GCReason reason) {
 
   
   
-  if (rt->isBeingDestroyed() && !IsShutdownGC(reason)) {
+  if (rt->isBeingDestroyed() && !IsShutdownReason(reason)) {
     return false;
   }
 
@@ -7333,13 +7326,13 @@ void GCRuntime::collect(bool nonincrementalByAPI, SliceBudget budget,
                           StateName(incrementalState));
 
   AutoTraceLog logGC(TraceLoggerForCurrentThread(), TraceLogger_GC);
-  AutoStopVerifyingBarriers av(rt, IsShutdownGC(reason));
+  AutoStopVerifyingBarriers av(rt, IsShutdownReason(reason));
   AutoEnqueuePendingParseTasksAfterGC aept(*this);
   AutoMaybeLeaveAtomsZone leaveAtomsZone(rt->mainContextFromOwnThread());
   AutoSetZoneSliceThresholds sliceThresholds(this);
 
 #ifdef DEBUG
-  if (IsShutdownGC(reason)) {
+  if (IsShutdownReason(reason)) {
     marker.markQueue.clear();
     marker.queuePos = 0;
   }
@@ -7368,7 +7361,7 @@ void GCRuntime::collect(bool nonincrementalByAPI, SliceBudget budget,
     if (!isIncrementalGCInProgress()) {
       if (cycleResult == ResetIncremental) {
         repeat = true;
-      } else if (rootsRemoved && IsShutdownGC(reason)) {
+      } else if (rootsRemoved && IsShutdownReason(reason)) {
         
         JS::PrepareForFullGC(rt->mainContextFromOwnThread());
         repeat = true;
