@@ -237,9 +237,7 @@ const rollout = {
     }
   },
 
-  async enterprisePolicyCheck(event, results) {
-    results.evaluateReason = event;
-
+  async enterprisePolicyCheck() {
     
     let policyEnableDoH = await browser.experiments.heuristics.checkEnterprisePolicies();
 
@@ -259,8 +257,6 @@ const rollout = {
 
     
     await this.setSetting(DOH_SKIP_HEURISTICS_PREF, true);
-
-    browser.experiments.heuristics.sendHeuristicsPing(policyEnableDoH, results);
   },
 
   async migrateLocalStoragePrefs() {
@@ -335,24 +331,12 @@ const rollout = {
   async init() {
     log("calling init");
 
-    
-    let doneFirstRun = await this.getSetting(DOH_DONE_FIRST_RUN_PREF, false);
+    await this.setSetting(DOH_DONE_FIRST_RUN_PREF, true);
 
     
     browser.experiments.heuristics.setupTelemetry();
 
-    
-    let results = await runHeuristics();
-
-    if (!doneFirstRun) {
-      log("first run!");
-      await this.setSetting(DOH_DONE_FIRST_RUN_PREF, true);
-      await this.enterprisePolicyCheck("first_run", results);
-    } else {
-      log("not first run!");
-      await this.enterprisePolicyCheck("startup", results);
-    }
-
+    await this.enterprisePolicyCheck();
     await this.trrPrefUserModifiedCheck();
 
     if (!(await stateManager.shouldRunHeuristics())) {
