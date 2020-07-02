@@ -971,12 +971,11 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
 
 
 already_AddRefed<ContentParent>
-ContentParent::GetNewOrUsedBrowserProcessInternal(Element* aFrameElement,
-                                                  const nsAString& aRemoteType,
-                                                  ProcessPriority aPriority,
-                                                  ContentParent* aOpener,
-                                                  bool aPreferUsed,
-                                                  bool aIsSync) {
+ContentParent::GetNewOrUsedLaunchingBrowserProcess(Element* aFrameElement,
+                                                   const nsAString& aRemoteType,
+                                                   ProcessPriority aPriority,
+                                                   ContentParent* aOpener,
+                                                   bool aPreferUsed) {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
           ("GetNewOrUsedProcess for type %s",
            NS_ConvertUTF16toUTF8(aRemoteType).get()));
@@ -988,9 +987,9 @@ ContentParent::GetNewOrUsedBrowserProcessInternal(Element* aFrameElement,
       && contentParents.Length() >= maxContentParents) {
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
             ("GetNewOrUsedProcess: returning Large Used process"));
-    return GetNewOrUsedBrowserProcessInternal(
+    return GetNewOrUsedLaunchingBrowserProcess(
         aFrameElement, NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE), aPriority,
-        aOpener, false, aIsSync);
+        aOpener, false);
   }
 
   
@@ -1013,7 +1012,7 @@ ContentParent::GetNewOrUsedBrowserProcessInternal(Element* aFrameElement,
            NS_ConvertUTF16toUTF8(aRemoteType).get()));
 
   contentParent = new ContentParent(aOpener, aRemoteType);
-  if (!contentParent->BeginSubprocessLaunch(aIsSync, aPriority)) {
+  if (!contentParent->BeginSubprocessLaunch(aPriority)) {
     
     contentParent->LaunchSubprocessReject();
     return nullptr;
@@ -1041,82 +1040,89 @@ ContentParent::GetNewOrUsedBrowserProcessAsync(Element* aFrameElement,
                                                ContentParent* aOpener,
                                                bool aPreferUsed) {
   
-  RefPtr<ContentParent> contentParent = GetNewOrUsedBrowserProcessInternal(
-      aFrameElement, aRemoteType, aPriority, aOpener, aPreferUsed,
-       false);
+  RefPtr<ContentParent> contentParent = GetNewOrUsedLaunchingBrowserProcess(
+      aFrameElement, aRemoteType, aPriority, aOpener, aPreferUsed);
   if (!contentParent) {
     
     return LaunchPromise::CreateAndReject(LaunchError(), __func__);
   }
-
-  MOZ_ASSERT(!contentParent->IsDead());
-  if (!contentParent->IsLaunching()) {
-    
-    return LaunchPromise::CreateAndResolve(contentParent, __func__);
-  }
-
-  
-  
-  
-  RefPtr<ProcessHandlePromise> ready =
-      contentParent->mSubprocess->WhenProcessHandleReady();
-  return ready->Then(
-      GetCurrentThreadSerialEventTarget(), __func__,
-      
-      [contentParent, aPriority]() {
-        if (contentParent->IsLaunching()) {
-          if (!contentParent->LaunchSubprocessResolve( false,
-                                                      aPriority)) {
-            contentParent->LaunchSubprocessReject();
-            return LaunchPromise::CreateAndReject(LaunchError(), __func__);
-          }
-          contentParent->mActivateTS = TimeStamp::Now();
-        } else if (contentParent->IsDead()) {
-          
-          
-          return LaunchPromise::CreateAndReject(LaunchError(), __func__);
-        }
-        return LaunchPromise::CreateAndResolve(contentParent, __func__);
-      },
-      
-      [contentParent]() {
-        if (contentParent->IsLaunching()) {
-          contentParent->LaunchSubprocessReject();
-        }
-        return LaunchPromise::CreateAndReject(LaunchError(), __func__);
-      });
+  return contentParent->WaitForLaunchAsync(aPriority);
 }
 
 
 already_AddRefed<ContentParent> ContentParent::GetNewOrUsedBrowserProcess(
     Element* aFrameElement, const nsAString& aRemoteType,
     ProcessPriority aPriority, ContentParent* aOpener, bool aPreferUsed) {
-  RefPtr<ContentParent> contentParent = GetNewOrUsedBrowserProcessInternal(
-      aFrameElement, aRemoteType, aPriority, aOpener, aPreferUsed,
-       true);
-  if (!contentParent) {
+  RefPtr<ContentParent> contentParent = GetNewOrUsedLaunchingBrowserProcess(
+      aFrameElement, aRemoteType, aPriority, aOpener, aPreferUsed);
+  if (!contentParent || !contentParent->WaitForLaunchSync(aPriority)) {
     
     return nullptr;
   }
+  return contentParent.forget();
+}
 
-  MOZ_ASSERT(!contentParent->IsDead());
-  if (!contentParent->IsLaunching()) {
-    
-    return contentParent.forget();
+RefPtr<ContentParent::LaunchPromise> ContentParent::WaitForLaunchAsync(
+    ProcessPriority aPriority) {
+  MOZ_DIAGNOSTIC_ASSERT(!IsDead());
+  if (!IsLaunching()) {
+    return LaunchPromise::CreateAndResolve(this, __func__);
   }
 
   
+  Telemetry::Accumulate(Telemetry::CONTENT_PROCESS_LAUNCH_IS_SYNC, 0);
+
   
   
-  const bool launchSuccess = contentParent->mSubprocess->WaitForProcessHandle();
+  
+  return mSubprocess->WhenProcessHandleReady()->Then(
+      GetCurrentThreadSerialEventTarget(), __func__,
+      
+      [self = RefPtr{this}, aPriority]() {
+        if (self->IsLaunching()) {
+          if (!self->LaunchSubprocessResolve( false,
+                                             aPriority)) {
+            self->LaunchSubprocessReject();
+            return LaunchPromise::CreateAndReject(LaunchError(), __func__);
+          }
+          self->mActivateTS = TimeStamp::Now();
+        } else if (self->IsDead()) {
+          
+          
+          return LaunchPromise::CreateAndReject(LaunchError(), __func__);
+        }
+        return LaunchPromise::CreateAndResolve(self, __func__);
+      },
+      
+      [self = RefPtr{this}]() {
+        if (self->IsLaunching()) {
+          self->LaunchSubprocessReject();
+        }
+        return LaunchPromise::CreateAndReject(LaunchError(), __func__);
+      });
+}
+
+bool ContentParent::WaitForLaunchSync(ProcessPriority aPriority) {
+  MOZ_DIAGNOSTIC_ASSERT(!IsDead());
+  if (!IsLaunching()) {
+    return true;
+  }
+
+  
+  Telemetry::Accumulate(Telemetry::CONTENT_PROCESS_LAUNCH_IS_SYNC, 1);
+
+  
+  
+  
+  bool launchSuccess = mSubprocess->WaitForProcessHandle();
   if (launchSuccess &&
-      contentParent->LaunchSubprocessResolve( true, aPriority)) {
-    contentParent->mActivateTS = TimeStamp::Now();
-    return contentParent.forget();
+      LaunchSubprocessResolve( true, aPriority)) {
+    mActivateTS = TimeStamp::Now();
+    return true;
   }
   
-  contentParent->LaunchSubprocessReject();
-  return nullptr;
+  LaunchSubprocessReject();
+  return false;
 }
 
 
@@ -1982,12 +1988,16 @@ bool ContentParent::ShouldKeepProcessAlive() {
     return true;
   }
 
-  if (!sBrowserContentParents) {
-    return false;
+  if (mNumKeepaliveCalls > 0) {
+    return true;
   }
 
   
   if (!IsAlive()) {
+    return false;
+  }
+
+  if (!sBrowserContentParents) {
     return false;
   }
 
@@ -2048,6 +2058,22 @@ void ContentParent::NotifyTabDestroying() {
   
   MarkAsDead();
   StartForceKillTimer();
+}
+
+void ContentParent::AddKeepAlive() {
+  
+  ++mNumKeepaliveCalls;
+}
+
+void ContentParent::RemoveKeepAlive() {
+  MOZ_DIAGNOSTIC_ASSERT(mNumKeepaliveCalls > 0);
+  --mNumKeepaliveCalls;
+
+  if (ManagedPBrowserParent().Count() == 0 && !ShouldKeepProcessAlive() &&
+      !TryToRecycle()) {
+    MarkAsDead();
+    MaybeAsyncSendShutDownMessage();
+  }
 }
 
 void ContentParent::StartForceKillTimer() {
@@ -2230,14 +2256,8 @@ void ContentParent::AppendSandboxParams(std::vector<std::string>& aArgs) {
 }
 #endif  
 
-bool ContentParent::BeginSubprocessLaunch(bool aIsSync,
-                                          ProcessPriority aPriority) {
+bool ContentParent::BeginSubprocessLaunch(ProcessPriority aPriority) {
   AUTO_PROFILER_LABEL("ContentParent::LaunchSubprocess", OTHER);
-
-  
-  
-  Telemetry::Accumulate(Telemetry::CONTENT_PROCESS_LAUNCH_IS_SYNC,
-                        static_cast<uint32_t>(aIsSync));
 
   if (!ContentProcessManager::GetSingleton()) {
     
@@ -2379,7 +2399,10 @@ bool ContentParent::LaunchSubprocessResolve(bool aIsSync,
 
 bool ContentParent::LaunchSubprocessSync(
     hal::ProcessPriority aInitialPriority) {
-  if (!BeginSubprocessLaunch( true, aInitialPriority)) {
+  
+  Telemetry::Accumulate(Telemetry::CONTENT_PROCESS_LAUNCH_IS_SYNC, 1);
+
+  if (!BeginSubprocessLaunch(aInitialPriority)) {
     return false;
   }
   const bool ok = mSubprocess->WaitForProcessHandle();
@@ -2392,7 +2415,10 @@ bool ContentParent::LaunchSubprocessSync(
 
 RefPtr<ContentParent::LaunchPromise> ContentParent::LaunchSubprocessAsync(
     hal::ProcessPriority aInitialPriority) {
-  if (!BeginSubprocessLaunch( false, aInitialPriority)) {
+  
+  Telemetry::Accumulate(Telemetry::CONTENT_PROCESS_LAUNCH_IS_SYNC, 0);
+
+  if (!BeginSubprocessLaunch(aInitialPriority)) {
     
     LaunchSubprocessReject();
     return LaunchPromise::CreateAndReject(LaunchError(), __func__);
@@ -2432,6 +2458,7 @@ ContentParent::ContentParent(ContentParent* aOpener,
       mJSPluginID(aJSPluginID),
       mRemoteWorkerActorData("ContentParent::mRemoteWorkerActorData"),
       mNumDestroyingTabs(0),
+      mNumKeepaliveCalls(0),
       mLifecycleState(LifecycleState::LAUNCHING),
       mIsForBrowser(!mRemoteType.IsEmpty()),
       mCalledClose(false),
