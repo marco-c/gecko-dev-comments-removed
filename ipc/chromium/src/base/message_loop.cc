@@ -15,6 +15,7 @@
 #include "base/thread_local.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
+#include "nsThreadUtils.h"
 
 #if defined(OS_MACOSX)
 #  include "base/message_pump_mac.h"
@@ -255,6 +256,13 @@ MessageLoop::MessageLoop(Type type, nsIEventTarget* aEventTarget)
     pump_ = new base::MessagePumpDefault();
   }
 #endif    
+
+  
+  
+  
+  if (!pump_->GetXPCOMThread()) {
+    mozilla::SerialEventTargetGuard::Set(mEventTarget);
+  }
 }
 
 MessageLoop::~MessageLoop() {
