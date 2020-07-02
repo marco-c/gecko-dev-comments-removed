@@ -26,7 +26,6 @@
 
 #include "jstypes.h"
 
-#include "frontend/BinASTRuntimeSupport.h"
 #include "frontend/NameAnalysisTypes.h"
 #include "frontend/SourceNotes.h"  
 #include "gc/Barrier.h"
@@ -85,6 +84,8 @@ class FunctionIndex;
 class FunctionBox;
 class ModuleSharedContext;
 class ScriptStencil;
+
+class BinASTSourceMetadata {};
 }  
 
 class ScriptCounts {
@@ -960,20 +961,6 @@ class ScriptSource {
   template <typename Unit>
   MOZ_MUST_USE bool initializeWithUnretrievableCompressedSource(
       JSContext* cx, UniqueChars&& raw, size_t rawLength, size_t sourceLength);
-
-#if defined(JS_BUILD_BINAST)
-
-  
-
-
-
-
-  MOZ_MUST_USE bool setBinASTSourceCopy(JSContext* cx, const uint8_t* buf,
-                                        size_t len);
-
-  const uint8_t* binASTSource();
-
-#endif 
 
  private:
   void performTaskWork(SourceCompressionTask* task);

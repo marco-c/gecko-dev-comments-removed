@@ -19,7 +19,6 @@
 
 #include "jstypes.h"  
 
-#include "js/BinASTFormat.h"    
 #include "js/CompileOptions.h"  
 #include "js/GCVector.h"        
 #include "js/Transcoding.h"     
@@ -130,20 +129,6 @@ extern JS_PUBLIC_API bool FinishMultiOffThreadScriptsDecoder(
     MutableHandle<GCVector<JSScript*>> scripts);
 
 extern JS_PUBLIC_API void CancelMultiOffThreadScriptsDecoder(
-    JSContext* cx, OffThreadToken* token);
-
-
-extern JS_PUBLIC_API bool CanDecodeBinASTOffThread(
-    JSContext* cx, const ReadOnlyCompileOptions& options, size_t length);
-
-
-extern JS_PUBLIC_API bool DecodeBinASTOffThread(
-    JSContext* cx, const ReadOnlyCompileOptions& options, const uint8_t* buf,
-    size_t length, JS::BinASTFormat format, OffThreadCompileCallback callback,
-    void* callbackData);
-
-
-extern JS_PUBLIC_API JSScript* FinishOffThreadBinASTDecode(
     JSContext* cx, OffThreadToken* token);
 
 }  
