@@ -7,10 +7,8 @@
 var EXPORTED_SYMBOLS = ["TelemetryUtils"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
-ChromeUtils.defineModuleGetter(
-  this,
-  "AppConstants",
-  "resource://gre/modules/AppConstants.jsm"
+const { TelemetryControllerBase } = ChromeUtils.import(
+  "resource://gre/modules/TelemetryControllerBase.jsm"
 );
 ChromeUtils.defineModuleGetter(
   this,
@@ -19,8 +17,6 @@ ChromeUtils.defineModuleGetter(
 );
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
-
-const PREF_TELEMETRY_ENABLED = "toolkit.telemetry.enabled";
 
 const IS_CONTENT_PROCESS = (function() {
   
@@ -58,6 +54,8 @@ var TelemetryUtils = {
   TELEMETRY_UPLOAD_DISABLED_TOPIC: "telemetry.upload.disabled",
 
   Preferences: Object.freeze({
+    ...TelemetryControllerBase.Preferences,
+
     
     ArchiveEnabled: "toolkit.telemetry.archive.enabled",
     CachedClientId: "toolkit.telemetry.cachedClientID",
@@ -67,14 +65,12 @@ var TelemetryUtils = {
     HealthPingEnabled: "toolkit.telemetry.healthping.enabled",
     IPCBatchTimeout: "toolkit.telemetry.ipcBatchTimeout",
     OverrideOfficialCheck: "toolkit.telemetry.send.overrideOfficialCheck",
-    OverridePreRelease: "toolkit.telemetry.testing.overridePreRelease",
     OverrideUpdateChannel: "toolkit.telemetry.overrideUpdateChannel",
     Server: "toolkit.telemetry.server",
     ShutdownPingSender: "toolkit.telemetry.shutdownPingSender.enabled",
     ShutdownPingSenderFirstSession:
       "toolkit.telemetry.shutdownPingSender.enabledFirstSession",
     TelemetryEnabled: "toolkit.telemetry.enabled",
-    Unified: "toolkit.telemetry.unified",
     UntrustedModulesPingFrequency:
       "toolkit.telemetry.untrustedModulesPing.frequency",
     UpdatePing: "toolkit.telemetry.updatePing.enabled",
@@ -94,10 +90,6 @@ var TelemetryUtils = {
     
     PrioPingEnabled: "toolkit.telemetry.prioping.enabled",
     PrioPingDataLimit: "toolkit.telemetry.prioping.dataLimit",
-
-    
-    LogLevel: "toolkit.telemetry.log.level",
-    LogDump: "toolkit.telemetry.log.dump",
 
     
     AcceptedPolicyDate: "datareporting.policy.dataSubmissionPolicyNotifiedTime",
@@ -131,7 +123,7 @@ var TelemetryUtils = {
 
 
   get isTelemetryEnabled() {
-    return Services.prefs.getBoolPref(PREF_TELEMETRY_ENABLED, false) === true;
+    return TelemetryControllerBase.isTelemetryEnabled;
   },
 
   
@@ -285,30 +277,6 @@ var TelemetryUtils = {
 
   monotonicNow() {
     return Services.telemetry.msSinceProcessStart();
-  },
-
-  
-
-
-  setTelemetryRecordingFlags() {
-    
-    
-    let prereleaseChannels = ["nightly", "aurora", "beta"];
-    if (!AppConstants.MOZILLA_OFFICIAL) {
-      
-      prereleaseChannels.push("default");
-    }
-    const isPrereleaseChannel = prereleaseChannels.includes(
-      AppConstants.MOZ_UPDATE_CHANNEL
-    );
-    const isReleaseCandidateOnBeta =
-      AppConstants.MOZ_UPDATE_CHANNEL === "release" &&
-      Services.prefs.getCharPref("app.update.channel", null) === "beta";
-    Services.telemetry.canRecordBase = true;
-    Services.telemetry.canRecordExtended =
-      isPrereleaseChannel ||
-      isReleaseCandidateOnBeta ||
-      Services.prefs.getBoolPref(this.Preferences.OverridePreRelease, false);
   },
 
   
