@@ -23,13 +23,12 @@ namespace dom {
 
 
 
-using ImagePromise = MozPromise<RefPtr<mozilla::gfx::DataSourceSurface>, bool,
+using ImagePromise = MozPromise<nsCOMPtr<imgIContainer>, bool,
                                  true>;
 class FetchImageHelper final {
  public:
-  NS_INLINE_DECL_REFCOUNTING(FetchImageHelper)
-
   explicit FetchImageHelper(const MediaImage& aImage);
+  ~FetchImageHelper();
 
   
   
@@ -74,8 +73,6 @@ class FetchImageHelper final {
     nsCOMPtr<nsIChannel> mChannel;
     nsCOMPtr<imgIContainer> mImage;
   };
-
-  ~FetchImageHelper();
 
   void ClearListenerIfNeeded();
   void HandleFetchSuccess(imgIContainer* aImage);
