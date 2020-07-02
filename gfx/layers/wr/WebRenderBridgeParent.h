@@ -399,6 +399,7 @@ class WebRenderBridgeParent final
   bool ShouldParentObserveEpoch();
   mozilla::ipc::IPCResult HandleShutdown();
 
+  void ResetPreviousSampleTime();
   
   
   bool AdvanceAnimations();

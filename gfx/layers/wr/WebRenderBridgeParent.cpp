@@ -1936,6 +1936,10 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvGetAPZTestData(
 
 void WebRenderBridgeParent::ActorDestroy(ActorDestroyReason aWhy) { Destroy(); }
 
+void WebRenderBridgeParent::ResetPreviousSampleTime() {
+  mPreviousFrameTimeStamp = TimeStamp();
+}
+
 bool WebRenderBridgeParent::AdvanceAnimations() {
   if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
     Maybe<TimeStamp> testingTimeStamp = cbp->GetTestingTimeStamp();
@@ -1954,10 +1958,14 @@ bool WebRenderBridgeParent::AdvanceAnimations() {
   const bool isAnimating =
       mAnimStorage->SampleAnimations(mPreviousFrameTimeStamp, lastComposeTime);
 
-  
-  
-  
-  mPreviousFrameTimeStamp = isAnimating ? lastComposeTime : TimeStamp();
+  if (isAnimating) {
+    mPreviousFrameTimeStamp = lastComposeTime;
+  } else {
+    
+    
+    
+    ResetPreviousSampleTime();
+  }
 
   return isAnimating;
 }
@@ -1990,7 +1998,7 @@ void WebRenderBridgeParent::CompositeToTarget(VsyncId aId,
 
   AUTO_PROFILER_TRACING_MARKER("Paint", "CompositeToTarget", GRAPHICS);
   if (mPaused || !mReceivedDisplayList) {
-    mPreviousFrameTimeStamp = TimeStamp();
+    ResetPreviousSampleTime();
     return;
   }
 
@@ -1999,7 +2007,7 @@ void WebRenderBridgeParent::CompositeToTarget(VsyncId aId,
     
     mSkippedComposite = true;
     mSkippedCompositeId = aId;
-    mPreviousFrameTimeStamp = TimeStamp();
+    ResetPreviousSampleTime();
 
     
     
@@ -2065,7 +2073,7 @@ void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
 
   if (!generateFrame) {
     
-    mPreviousFrameTimeStamp = TimeStamp();
+    ResetPreviousSampleTime();
     return;
   }
 
