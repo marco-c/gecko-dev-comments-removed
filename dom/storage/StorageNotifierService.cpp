@@ -57,12 +57,7 @@ void StorageNotifierService::Broadcast(StorageEvent* aEvent,
 
   RefPtr<StorageEvent> event = aEvent;
 
-  nsTObserverArray<RefPtr<StorageNotificationObserver>>::ForwardIterator iter(
-      service->mObservers);
-
-  while (iter.HasMore()) {
-    RefPtr<StorageNotificationObserver> observer = iter.GetNext();
-
+  for (const auto& observer : service->mObservers.ForwardRange()) {
     
     
     
@@ -80,27 +75,29 @@ void StorageNotifierService::Broadcast(StorageEvent* aEvent,
       continue;
     }
 
+    const auto pinnedObserver = observer;
+
     RefPtr<Runnable> r = NS_NewRunnableFunction(
         "StorageNotifierService::Broadcast",
-        [observer, event, aStorageType, aPrivateBrowsing,
+        [pinnedObserver, event, aStorageType, aPrivateBrowsing,
          aImmediateDispatch]() {
           
           
           if (!aImmediateDispatch &&
               !StorageUtils::PrincipalsEqual(
                   event->GetPrincipal(),
-                  observer->GetEffectiveStoragePrincipal())) {
+                  pinnedObserver->GetEffectiveStoragePrincipal())) {
             return;
           }
 
-          observer->ObserveStorageNotification(event, aStorageType,
-                                               aPrivateBrowsing);
+          pinnedObserver->ObserveStorageNotification(event, aStorageType,
+                                                     aPrivateBrowsing);
         });
 
     if (aImmediateDispatch) {
       r->Run();
     } else {
-      nsCOMPtr<nsIEventTarget> et = observer->GetEventTarget();
+      nsCOMPtr<nsIEventTarget> et = pinnedObserver->GetEventTarget();
       if (et) {
         et->Dispatch(r.forget());
       }
