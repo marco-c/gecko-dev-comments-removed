@@ -132,7 +132,7 @@ class PerftestOutput(object):
                     break
 
             support_data_by_type[data_type]["suites"].append(suite)
-            for measurement_name, value_info in data_set["values"].iteritems():
+            for measurement_name, value_info in data_set["values"].items():
                 
                 
                 if not isinstance(value_info, dict):
@@ -448,7 +448,7 @@ class PerftestOutput(object):
         _subtests = {}
         data = test["measurements"]["speedometer"]
         for page_cycle in data:
-            for sub, replicates in page_cycle[0].iteritems():
+            for sub, replicates in page_cycle[0].items():
                 
                 if sub not in _subtests.keys():
                     
@@ -555,7 +555,7 @@ class PerftestOutput(object):
         data = test["measurements"]["ares6"]
 
         for page_cycle in data:
-            for sub, replicates in page_cycle[0].iteritems():
+            for sub, replicates in page_cycle[0].items():
                 
                 if sub not in _subtests.keys():
                     
@@ -633,7 +633,7 @@ class RaptorOutput(PerftestOutput):
                 
                 
 
-                for measurement_name, replicates in test["measurements"].iteritems():
+                for measurement_name, replicates in test["measurements"].items():
                     new_subtest = {}
                     new_subtest["name"] = measurement_name
                     new_subtest["replicates"] = replicates
@@ -893,7 +893,7 @@ class RaptorOutput(PerftestOutput):
         _subtests = {}
         data = test["measurements"]["jetstream2"]
         for page_cycle in data:
-            for sub, replicates in page_cycle[0].iteritems():
+            for sub, replicates in page_cycle[0].items():
                 
                 if sub not in _subtests.keys():
                     
@@ -1115,7 +1115,7 @@ class RaptorOutput(PerftestOutput):
         _subtests = {}
         data = test["measurements"]["sunspider"]
         for page_cycle in data:
-            for sub, replicates in page_cycle[0].iteritems():
+            for sub, replicates in page_cycle[0].items():
                 
                 if sub not in _subtests.keys():
                     
@@ -1204,7 +1204,7 @@ class RaptorOutput(PerftestOutput):
         _subtests = {}
         data = test["measurements"]["assorted-dom"]
         for pagecycle in data:
-            for _sub, _value in pagecycle[0].iteritems():
+            for _sub, _value in pagecycle[0].items():
                 
                 if _sub not in _subtests.keys():
                     
@@ -1273,7 +1273,7 @@ class RaptorOutput(PerftestOutput):
                     _subtests[name]["shouldAlert"] = True
 
         for pagecycle in data:
-            for _sub, _value in pagecycle[0].iteritems():
+            for _sub, _value in pagecycle[0].items():
                 try:
                     percent_dropped = (
                         float(_value["droppedFrames"]) / _value["decodedFrames"] * 100.0
@@ -1460,7 +1460,7 @@ class BrowsertimeOutput(PerftestOutput):
                 suite = suites[test["name"]]
 
             if ("pageload" or "scenario") in test["type"]:
-                for measurement_name, replicates in test["measurements"].iteritems():
+                for measurement_name, replicates in test["measurements"].items():
                     if measurement_name not in suite["subtests"]:
                         subtest = {}
                         subtest["name"] = measurement_name

@@ -121,7 +121,7 @@ def median(series):
         return series[len(series)/2]
     else:
         
-        middle = len(series)/2  
+        middle = int(len(series)/2)  
         return 0.5*(series[middle-1] + series[middle])
 
 
