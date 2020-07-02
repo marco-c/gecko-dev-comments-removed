@@ -570,14 +570,6 @@ nsDragService::GetNumDropItems(uint32_t* aNumItems) {
     return NS_OK;
   }
 
-#ifdef MOZ_WAYLAND
-  
-  if (!mTargetDragContext) {
-    *aNumItems = 1;
-    return NS_OK;
-  }
-#endif
-
   bool isList = IsTargetContextList();
   if (isList)
     mSourceDataItems->GetLength(aNumItems);
@@ -1037,23 +1029,29 @@ void nsDragService::TargetDataReceived(GtkWidget* aWidget,
 bool nsDragService::IsTargetContextList(void) {
   bool retval = false;
 
-#ifdef MOZ_WAYLAND
   
-  if (!mTargetDragContext) return retval;
+  
+  
+  
+  if (mTargetDragContext &&
+      gtk_drag_get_source_widget(mTargetDragContext) == nullptr) {
+    return retval;
+  }
+
+  GList* tmp = nullptr;
+  if (mTargetDragContext) {
+    tmp = gdk_drag_context_list_targets(mTargetDragContext);
+  }
+#ifdef MOZ_WAYLAND
+  GList* tmp_head = nullptr;
+  if (mTargetWaylandDragContext) {
+    tmp_head = tmp = mTargetWaylandDragContext->GetTargets();
+  }
 #endif
 
   
   
-  
-  
-  if (gtk_drag_get_source_widget(mTargetDragContext) == nullptr) return retval;
-
-  GList* tmp;
-
-  
-  
-  for (tmp = gdk_drag_context_list_targets(mTargetDragContext); tmp;
-       tmp = tmp->next) {
+  for (; tmp; tmp = tmp->next) {
     
     GdkAtom atom = GDK_POINTER_TO_ATOM(tmp->data);
     gchar* name = nullptr;
@@ -1062,6 +1060,15 @@ bool nsDragService::IsTargetContextList(void) {
     g_free(name);
     if (retval) break;
   }
+
+#ifdef MOZ_WAYLAND
+  
+  
+  if (mTargetWaylandDragContext && tmp_head) {
+    g_list_free(tmp_head);
+  }
+#endif
+
   return retval;
 }
 
