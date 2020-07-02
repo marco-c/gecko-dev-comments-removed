@@ -404,7 +404,10 @@ AudioSegment AudioResampler::Resample(uint32_t aOutFrames) {
   }
 
   
-  if (!mResampler.CanResample(aOutFrames)) {
+  
+  
+  
+  if (!mResampler.CanResample(aOutFrames + 1)) {
     return segment;
   }
 
