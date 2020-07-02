@@ -3400,7 +3400,7 @@ void gfxPlatform::InitOpenGLConfig() {
   nsCString failureId;
   if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_OPENGL_LAYERS, &message,
                            failureId)) {
-    openGLFeature.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
+    openGLFeature.Disable(FeatureStatus::Blacklisted, message.get(), failureId);
   }
 }
 
