@@ -83,6 +83,9 @@ class GeckoProfile(object):
         
         env.update({
             'MOZ_PROFILER_STARTUP': '1',
+            
+            
+            'MOZ_PROFILER_STARTUP_NO_BASE': '1',
             'MOZ_PROFILER_STARTUP_INTERVAL': str(self.option('interval')),
             'MOZ_PROFILER_STARTUP_ENTRIES': str(self.option('entries')),
             'MOZ_PROFILER_STARTUP_FILTERS': str(self.option('threads'))
