@@ -50,6 +50,12 @@ class nsContentSecurityUtils {
   
   static void PerformCSPFrameAncestorAndXFOCheck(nsIChannel* aChannel);
 
+  
+  static bool IsDownloadAllowed(nsIChannel* aChannel,
+                                const nsAutoCString& aMimeTypeGuess);
+  
+  static void LogMessageToConsole(nsIHttpChannel* aChannel, const char* aMsg);
+
 #if defined(DEBUG)
   static void AssertAboutPageHasCSP(mozilla::dom::Document* aDocument);
 #endif
