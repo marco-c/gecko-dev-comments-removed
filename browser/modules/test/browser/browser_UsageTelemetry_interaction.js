@@ -286,6 +286,7 @@ add_task(async function webextension() {
         },
         sidebar_action: {
           default_panel: "sidebar.html",
+          open_at_install: false,
         },
       },
       files: {
@@ -428,6 +429,10 @@ add_task(async function webextension() {
     });
 
     await extension.unload();
+
+    
+    
+    window.SidebarUI.lastOpenedId = null;
 
     
     click("random_addon2_example_com-browser-action");
