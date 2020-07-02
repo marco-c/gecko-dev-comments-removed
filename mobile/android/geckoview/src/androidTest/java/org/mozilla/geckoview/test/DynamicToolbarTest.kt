@@ -97,7 +97,7 @@ class DynamicToolbarTest : BaseSessionTest() {
 
         
         
-        mainSession.evaluateJS("window.scrollTo({ top: 100, behevior: 'instant' })")
+        mainSession.evaluateJS("window.scrollTo({ top: 100, behavior: 'instant' })")
 
         
         
