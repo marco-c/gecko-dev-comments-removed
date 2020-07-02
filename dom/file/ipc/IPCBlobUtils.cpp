@@ -5,7 +5,7 @@
 
 
 #include "IPCBlobUtils.h"
-#include "IPCBlobInputStream.h"
+#include "RemoteLazyInputStream.h"
 #include "RemoteLazyInputStreamChild.h"
 #include "RemoteLazyInputStreamParent.h"
 #include "mozilla/dom/IPCBlob.h"
@@ -89,10 +89,10 @@ nsresult SerializeInputStreamParent(nsIInputStream* aInputStream,
   
   
   
-  nsCOMPtr<mozIRemoteLazyInputStream> ipcBlobInputStream =
+  nsCOMPtr<mozIRemoteLazyInputStream> remoteLazyInputStream =
       do_QueryInterface(aInputStream);
-  if (ipcBlobInputStream) {
-    stream = ipcBlobInputStream->GetInternalStream();
+  if (remoteLazyInputStream) {
+    stream = remoteLazyInputStream->GetInternalStream();
     
     
     

@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_IPCBlobInputStream_h
-#define mozilla_dom_IPCBlobInputStream_h
+#ifndef mozilla_dom_RemoteLazyInputStream_h
+#define mozilla_dom_RemoteLazyInputStream_h
 
 #include "mozilla/Mutex.h"
 #include "mozIRemoteLazyInputStream.h"
@@ -28,14 +28,14 @@ class RemoteLazyInputStreamChild;
     }                                                \
   }
 
-class IPCBlobInputStream final : public nsIAsyncInputStream,
-                                 public nsIInputStreamCallback,
-                                 public nsICloneableInputStreamWithRange,
-                                 public nsIIPCSerializableInputStream,
-                                 public nsIAsyncFileMetadata,
-                                 public nsIInputStreamLength,
-                                 public nsIAsyncInputStreamLength,
-                                 public mozIRemoteLazyInputStream {
+class RemoteLazyInputStream final : public nsIAsyncInputStream,
+                                    public nsIInputStreamCallback,
+                                    public nsICloneableInputStreamWithRange,
+                                    public nsIIPCSerializableInputStream,
+                                    public nsIAsyncFileMetadata,
+                                    public nsIInputStreamLength,
+                                    public nsIAsyncInputStreamLength,
+                                    public mozIRemoteLazyInputStream {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIINPUTSTREAM
@@ -49,7 +49,7 @@ class IPCBlobInputStream final : public nsIAsyncInputStream,
   NS_DECL_NSIINPUTSTREAMLENGTH
   NS_DECL_NSIASYNCINPUTSTREAMLENGTH
 
-  explicit IPCBlobInputStream(RemoteLazyInputStreamChild* aActor);
+  explicit RemoteLazyInputStream(RemoteLazyInputStreamChild* aActor);
 
   void StreamReady(already_AddRefed<nsIInputStream> aInputStream);
 
@@ -69,7 +69,7 @@ class IPCBlobInputStream final : public nsIAsyncInputStream,
   }
 
  private:
-  ~IPCBlobInputStream();
+  ~RemoteLazyInputStream();
 
   nsresult EnsureAsyncRemoteStream(const MutexAutoLock& aProofOfLock);
 
