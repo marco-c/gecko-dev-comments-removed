@@ -31,21 +31,49 @@
 #include "mozilla/fallible.h"
 #include "mozilla/MemoryReporting.h"
 
-namespace mozilla {
-
-namespace detail {
 
 
 
 
 
-
-
-
-
-
-class nsDequeBase {
+class nsDequeFunctor {
  public:
+  virtual void operator()(void* aObject) = 0;
+  virtual ~nsDequeFunctor() = default;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class nsDeque {
+  typedef mozilla::fallible_t fallible_t;
+
+ public:
+  
+
+
+
+
+
+
+
+  explicit nsDeque(nsDequeFunctor* aDeallocator = nullptr);
+
+  
+
+
+  ~nsDeque();
+
   
 
 
@@ -54,23 +82,16 @@ class nsDequeBase {
 
   inline size_t GetSize() const { return mSize; }
 
- protected:
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-
   
 
 
 
 
-
-
-
-  explicit nsDequeBase();
-
-  
-
-
-  ~nsDequeBase();
+  void Push(void* aItem) {
+    if (!Push(aItem, mozilla::fallible)) {
+      NS_ABORT_OOM(mSize * sizeof(void*));
+    }
+  }
 
   
 
@@ -79,6 +100,17 @@ class nsDequeBase {
 
 
   [[nodiscard]] bool Push(void* aItem, const fallible_t&);
+
+  
+
+
+
+
+  void PushFront(void* aItem) {
+    if (!PushFront(aItem, mozilla::fallible)) {
+      NS_ABORT_OOM(mSize * sizeof(void*));
+    }
+  }
 
   
 
@@ -124,171 +156,12 @@ class nsDequeBase {
 
   void* ObjectAt(size_t aIndex) const;
 
-  bool GrowCapacity();
-
-  
-
-
-  void Empty();
-
-  size_t mSize;
-  size_t mCapacity;
-  size_t mOrigin;
-  void* mBuffer[8];
-  void** mData;
-
-  nsDequeBase& operator=(const nsDequeBase& aOther) = delete;
-  nsDequeBase(const nsDequeBase& aOther) = delete;
-};
-}  
-}  
-
-
-
-
-
-
-template <typename T>
-class nsDequeFunctor {
- public:
-  virtual void operator()(T* aObject) = 0;
-  virtual ~nsDequeFunctor() = default;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-class nsDeque : public mozilla::detail::nsDequeBase {
-  typedef mozilla::fallible_t fallible_t;
-
- public:
   
 
 
 
 
-
-
-
-  explicit nsDeque(nsDequeFunctor<T>* aDeallocator = nullptr) {
-    MOZ_COUNT_CTOR(nsDeque);
-    mDeallocator = aDeallocator;
-  }
-
-  
-
-
-  ~nsDeque() {
-    MOZ_COUNT_DTOR(nsDeque);
-
-    Erase();
-    SetDeallocator(nullptr);
-  }
-
-  
-
-
-
-
-  inline void Push(T* aItem) {
-    if (!nsDequeBase::Push(aItem, mozilla::fallible)) {
-      NS_ABORT_OOM(mSize * sizeof(T*));
-    }
-  }
-
-  
-
-
-
-
-
-  [[nodiscard]] inline bool Push(T* aItem, const fallible_t& aFaillible) {
-    return nsDequeBase::Push(aItem, aFaillible);
-  }
-
-  
-
-
-
-
-  inline void PushFront(T* aItem) {
-    if (!nsDequeBase::PushFront(aItem, mozilla::fallible)) {
-      NS_ABORT_OOM(mSize * sizeof(T*));
-    }
-  }
-
-  
-
-
-
-
-
-  [[nodiscard]] bool PushFront(T* aItem, const fallible_t& aFallible) {
-    return nsDequeBase::PushFront(aItem, aFallible);
-  }
-
-  
-
-
-
-
-  inline T* Pop() { return static_cast<T*>(nsDequeBase::Pop()); }
-
-  
-
-
-
-
-  inline T* PopFront() { return static_cast<T*>(nsDequeBase::PopFront()); }
-
-  
-
-
-
-
-  inline T* Peek() const { return static_cast<T*>(nsDequeBase::Peek()); }
-
-  
-
-
-
-
-  inline T* PeekFront() const {
-    return static_cast<T*>(nsDequeBase::PeekFront());
-  }
-
-  
-
-
-
-
-
-  inline T* ObjectAt(size_t aIndex) const {
-    return static_cast<T*>(nsDequeBase::ObjectAt(aIndex));
-  }
-
-  
-
-
-
-
-  void Erase() {
-    if (mDeallocator && mSize) {
-      ForEach(*mDeallocator);
-    }
-    Empty();
-  }
+  void Erase();
 
   
 
@@ -300,11 +173,7 @@ class nsDeque : public mozilla::detail::nsDequeBase {
 
 
 
-  void ForEach(nsDequeFunctor<T>& aFunctor) const {
-    for (size_t i = 0; i < mSize; ++i) {
-      aFunctor(ObjectAt(i));
-    }
-  }
+  void ForEach(nsDequeFunctor& aFunctor) const;
 
   
   
@@ -325,7 +194,7 @@ class nsDeque : public mozilla::detail::nsDequeBase {
     bool operator!=(const ConstDequeIterator& aOther) const {
       return mIndex != aOther.mIndex;
     }
-    T* operator*() const {
+    void* operator*() const {
       
       MOZ_RELEASE_ASSERT(mIndex < mDeque.GetSize());
       return mDeque.ObjectAt(mIndex);
@@ -364,7 +233,7 @@ class nsDeque : public mozilla::detail::nsDequeBase {
     bool operator!=(const ConstIterator& aOther) const {
       return EffectiveIndex() != aOther.EffectiveIndex();
     }
-    T* operator*() const {
+    void* operator*() const {
       
       MOZ_RELEASE_ASSERT(mIndex < mDeque.GetSize());
       return mDeque.ObjectAt(mIndex);
@@ -387,20 +256,16 @@ class nsDeque : public mozilla::detail::nsDequeBase {
     return ConstIterator(*this, ConstIterator::EndIteratorIndex);
   }
 
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
-    size_t size = nsDequeBase::SizeOfExcludingThis(aMallocSizeOf);
-    if (mDeallocator) {
-      size += aMallocSizeOf(mDeallocator);
-    }
-    return size;
-  }
-
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
-    return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
-  }
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
  protected:
-  nsDequeFunctor<T>* mDeallocator;
+  size_t mSize;
+  size_t mCapacity;
+  size_t mOrigin;
+  nsDequeFunctor* mDeallocator;
+  void* mBuffer[8];
+  void** mData;
 
  private:
   
@@ -418,9 +283,12 @@ class nsDeque : public mozilla::detail::nsDequeBase {
 
   nsDeque& operator=(const nsDeque& aOther) = delete;
 
-  void SetDeallocator(nsDequeFunctor<T>* aDeallocator) {
-    delete mDeallocator;
-    mDeallocator = aDeallocator;
-  }
+  bool GrowCapacity();
+  void SetDeallocator(nsDequeFunctor* aDeallocator);
+
+  
+
+
+  void Empty();
 };
 #endif

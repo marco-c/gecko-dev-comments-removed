@@ -12,15 +12,13 @@
 
 #define modulus(x, y) ((x) % (y))
 
-namespace mozilla {
-namespace detail {
 
 
 
 
-
-nsDequeBase::nsDequeBase() {
-  MOZ_COUNT_CTOR(nsDequeBase);
+nsDeque::nsDeque(nsDequeFunctor* aDeallocator) {
+  MOZ_COUNT_CTOR(nsDeque);
+  mDeallocator = aDeallocator;
   mOrigin = mSize = 0;
   mData = mBuffer;  
   mCapacity = sizeof(mBuffer) / sizeof(mBuffer[0]);
@@ -30,29 +28,49 @@ nsDequeBase::nsDequeBase() {
 
 
 
-nsDequeBase::~nsDequeBase() {
-  MOZ_COUNT_DTOR(nsDequeBase);
+nsDeque::~nsDeque() {
+  MOZ_COUNT_DTOR(nsDeque);
 
+  Erase();
   if (mData && mData != mBuffer) {
     free(mData);
   }
-  mData = nullptr;
+  mData = 0;
+  SetDeallocator(0);
 }
 
-size_t nsDequeBase::SizeOfExcludingThis(
-    mozilla::MallocSizeOf aMallocSizeOf) const {
+size_t nsDeque::SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
   size_t size = 0;
   if (mData != mBuffer) {
     size += aMallocSizeOf(mData);
   }
 
+  if (mDeallocator) {
+    size += aMallocSizeOf(mDeallocator);
+  }
+
   return size;
+}
+
+size_t nsDeque::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+  return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
 }
 
 
 
 
-void nsDequeBase::Empty() {
+
+
+
+void nsDeque::SetDeallocator(nsDequeFunctor* aDeallocator) {
+  delete mDeallocator;
+  mDeallocator = aDeallocator;
+}
+
+
+
+
+void nsDeque::Empty() {
   if (mSize && mData) {
     memset(mData, 0, mCapacity * sizeof(*mData));
   }
@@ -63,11 +81,21 @@ void nsDequeBase::Empty() {
 
 
 
+void nsDeque::Erase() {
+  if (mDeallocator && mSize) {
+    ForEach(*mDeallocator);
+  }
+  Empty();
+}
 
 
 
 
-bool nsDequeBase::GrowCapacity() {
+
+
+
+
+bool nsDeque::GrowCapacity() {
   mozilla::CheckedInt<size_t> newCapacity = mCapacity;
   newCapacity *= 4;
 
@@ -116,7 +144,7 @@ bool nsDequeBase::GrowCapacity() {
 
 
 
-bool nsDequeBase::Push(void* aItem, const fallible_t&) {
+bool nsDeque::Push(void* aItem, const fallible_t&) {
   if (mSize == mCapacity && !GrowCapacity()) {
     return false;
   }
@@ -157,7 +185,7 @@ bool nsDequeBase::Push(void* aItem, const fallible_t&) {
 
 
 
-bool nsDequeBase::PushFront(void* aItem, const fallible_t&) {
+bool nsDeque::PushFront(void* aItem, const fallible_t&) {
   if (mOrigin == 0) {
     mOrigin = mCapacity - 1;
   } else {
@@ -181,13 +209,13 @@ bool nsDequeBase::PushFront(void* aItem, const fallible_t&) {
 
 
 
-void* nsDequeBase::Pop() {
-  void* result = nullptr;
+void* nsDeque::Pop() {
+  void* result = 0;
   if (mSize > 0) {
     --mSize;
     size_t offset = modulus(mSize + mOrigin, mCapacity);
     result = mData[offset];
-    mData[offset] = nullptr;
+    mData[offset] = 0;
     if (!mSize) {
       mOrigin = 0;
     }
@@ -201,12 +229,12 @@ void* nsDequeBase::Pop() {
 
 
 
-void* nsDequeBase::PopFront() {
-  void* result = nullptr;
+void* nsDeque::PopFront() {
+  void* result = 0;
   if (mSize > 0) {
     NS_ASSERTION(mOrigin < mCapacity, "Error: Bad origin");
     result = mData[mOrigin];
-    mData[mOrigin++] = nullptr;  
+    mData[mOrigin++] = 0;  
     mSize--;
     
     
@@ -223,8 +251,8 @@ void* nsDequeBase::PopFront() {
 
 
 
-void* nsDequeBase::Peek() const {
-  void* result = nullptr;
+void* nsDeque::Peek() const {
+  void* result = 0;
   if (mSize > 0) {
     result = mData[modulus(mSize - 1 + mOrigin, mCapacity)];
   }
@@ -237,8 +265,8 @@ void* nsDequeBase::Peek() const {
 
 
 
-void* nsDequeBase::PeekFront() const {
-  void* result = nullptr;
+void* nsDeque::PeekFront() const {
+  void* result = 0;
   if (mSize > 0) {
     result = mData[mOrigin];
   }
@@ -254,12 +282,24 @@ void* nsDequeBase::PeekFront() const {
 
 
 
-void* nsDequeBase::ObjectAt(size_t aIndex) const {
-  void* result = nullptr;
+void* nsDeque::ObjectAt(size_t aIndex) const {
+  void* result = 0;
   if (aIndex < mSize) {
     result = mData[modulus(mOrigin + aIndex, mCapacity)];
   }
   return result;
 }
-}  
-}  
+
+
+
+
+
+
+
+
+
+void nsDeque::ForEach(nsDequeFunctor& aFunctor) const {
+  for (size_t i = 0; i < mSize; ++i) {
+    aFunctor(ObjectAt(i));
+  }
+}

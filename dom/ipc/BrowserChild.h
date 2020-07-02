@@ -886,7 +886,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   
   nsClassHashtable<nsUint32HashKey, CoalescedMouseData> mCoalescedMouseData;
 
-  nsDeque<CoalescedMouseData> mToBeDispatchedMouseData;
+  nsDeque mToBeDispatchedMouseData;
 
   CoalescedWheelData mCoalescedWheelData;
   RefPtr<CoalescedMouseMoveFlusher> mCoalescedMouseEventFlusher;

@@ -381,10 +381,10 @@ class Http2Session final : public ASpdySession,
   nsClassHashtable<nsPtrHashKey<nsAHttpTransaction>, Http2Stream>
       mStreamTransactionHash;
 
-  nsDeque<Http2Stream> mReadyForWrite;
-  nsDeque<Http2Stream> mQueuedStreams;
-  nsDeque<Http2Stream> mPushesReadyForRead;
-  nsDeque<Http2Stream> mSlowConsumersReadyForRead;
+  nsDeque mReadyForWrite;
+  nsDeque mQueuedStreams;
+  nsDeque mPushesReadyForRead;
+  nsDeque mSlowConsumersReadyForRead;
   nsTArray<Http2PushedStream*> mPushedStreams;
 
   
@@ -527,7 +527,7 @@ class Http2Session final : public ASpdySession,
   bool mPreviousUsed;                     
 
   
-  nsDeque<Http2Stream> mGoAwayStreamsToRestart;
+  nsDeque mGoAwayStreamsToRestart;
 
   
   
