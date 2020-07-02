@@ -3747,20 +3747,6 @@ nsresult BrowserChild::PrepareProgressListenerData(
     rv = aWebProgress->GetLoadType(&loadType);
     NS_ENSURE_SUCCESS(rv, rv);
     aWebProgressData->loadType() = loadType;
-
-    
-    
-    
-    nsCOMPtr<mozIDOMWindowProxy> window;
-    rv = aWebProgress->GetDOMWindow(getter_AddRefs(window));
-    if (NS_SUCCEEDED(rv) && window) {
-      if (nsCOMPtr<nsPIDOMWindowOuter> outer =
-              nsPIDOMWindowOuter::From(window)) {
-        if (nsPIDOMWindowInner* inner = outer->GetCurrentInnerWindow()) {
-          aWebProgressData->innerDOMWindowID() = inner->WindowID();
-        }
-      }
-    }
   }
 
   nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
