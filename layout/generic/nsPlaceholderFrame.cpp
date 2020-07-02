@@ -113,8 +113,8 @@ void nsPlaceholderFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  if ((GetStateBits() & NS_FRAME_FIRST_REFLOW) &&
-      !(mOutOfFlowFrame->GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
+  if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW) &&
+      !mOutOfFlowFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     
     
     
@@ -174,7 +174,7 @@ void nsPlaceholderFrame::DestroyFrom(nsIFrame* aDestructRoot,
     
     
     
-    if ((GetStateBits() & PLACEHOLDER_FOR_POPUP) ||
+    if (HasAnyStateBits(PLACEHOLDER_FOR_POPUP) ||
         !nsLayoutUtils::IsProperAncestorFrame(aDestructRoot, oof)) {
       ChildListID listId = ChildListIDForOutOfFlow(GetStateBits(), oof);
       nsFrameManager* fm = PresContext()->FrameConstructor();
