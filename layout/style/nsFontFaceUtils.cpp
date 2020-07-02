@@ -96,9 +96,9 @@ static void ScheduleReflow(PresShell* aPresShell, nsIFrame* aFrame) {
     
     
     
-    if (f->GetStateBits() & NS_FRAME_IS_NONDISPLAY) {
+    if (f->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
       while (f) {
-        if (!(f->GetStateBits() & NS_FRAME_IS_NONDISPLAY)) {
+        if (!f->HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
           if (NS_SUBTREE_DIRTY(f)) {
             
             
