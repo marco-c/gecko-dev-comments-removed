@@ -131,7 +131,6 @@ const startupPhases = {
     {
       
       path: "ProfLD:compatibility.ini",
-      condition: !WIN, 
       write: 18,
       close: 1,
     },
@@ -219,7 +218,8 @@ const startupPhases = {
       
       path: "ProfD:xulstore/data.mdb",
       condition: WIN,
-      write: 1,
+      read: 1,
+      write: 3,
       fsync: 1,
     },
   ],
@@ -243,7 +243,7 @@ const startupPhases = {
       path: "ProfD:cookies.sqlite",
       condition: !LINUX,
       stat: 2,
-      read: 2,
+      read: 3,
       write: 1,
     },
     {
@@ -284,7 +284,7 @@ const startupPhases = {
       
       path: "ProfD:xulstore/data.mdb",
       condition: WIN,
-      read: 1,
+      read: 2,
     },
   ],
 
@@ -376,7 +376,7 @@ const startupPhases = {
       
       path: "ProfD:cert9.db",
       condition: WIN,
-      read: 2,
+      read: 5,
       stat: 2,
     },
     {
@@ -411,7 +411,7 @@ const startupPhases = {
       
       path: "ProfD:key4.db",
       condition: WIN,
-      read: 2,
+      read: 8,
       stat: 2,
     },
     {
@@ -466,6 +466,7 @@ const startupPhases = {
       ignoreIfUnused: true,
       fsync: 1,
       stat: 4,
+      read: 1,
       write: 2,
     },
     {
@@ -474,6 +475,7 @@ const startupPhases = {
       ignoreIfUnused: true,
       stat: 4,
       fsync: 3,
+      read: 36,
       write: 148,
     },
     {
@@ -488,7 +490,7 @@ const startupPhases = {
       path: "ProfD:places.sqlite",
       ignoreIfUnused: true,
       fsync: 2,
-      read: 1,
+      read: 4,
       stat: 3,
       write: 1310,
     },
@@ -498,6 +500,7 @@ const startupPhases = {
       ignoreIfUnused: true,
       fsync: 2,
       stat: 7,
+      read: 2,
       write: 7,
     },
     {
@@ -506,6 +509,7 @@ const startupPhases = {
       ignoreIfUnused: true,
       fsync: 2,
       stat: 7,
+      read: 7,
       write: 15,
     },
     {
@@ -520,7 +524,7 @@ const startupPhases = {
       path: "ProfD:favicons.sqlite",
       ignoreIfUnused: true,
       fsync: 3,
-      read: 4,
+      read: 8,
       stat: 4,
       write: 1300,
     },
@@ -785,6 +789,12 @@ add_task(async function() {
       
       
       if (LINUX && filename.startsWith("/dev/shm/")) {
+        continue;
+      }
+
+      
+      
+      if (WIN && filename.startsWith("\\??\\pipe\\")) {
         continue;
       }
 
