@@ -898,7 +898,7 @@ class StaticAnalysis(MachCommandBase):
             return (None, [])
         
         
-        f = tempfile.NamedTemporaryFile()
+        f = tempfile.NamedTemporaryFile(mode="wt")
         for source in sources:
             f.write(source+'\n')
         f.flush()
