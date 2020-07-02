@@ -1924,7 +1924,7 @@ void nsTableFrame::Reflow(nsPresContext* aPresContext,
   
   nsRect tableRect(0, 0, aDesiredSize.Width(), aDesiredSize.Height());
 
-  if (!ShouldApplyOverflowClipping(this, aReflowInput.mStyleDisplay)) {
+  if (!ShouldApplyOverflowClipping(aReflowInput.mStyleDisplay)) {
     
     LogicalMargin bcMargin = GetExcludedOuterBCBorder(wm);
     tableRect.Inflate(bcMargin.GetPhysicalMargin(wm));
@@ -2000,7 +2000,7 @@ void nsTableFrame::FixupPositionedTableParts(nsPresContext* aPresContext,
 bool nsTableFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) {
   
   
-  if (!ShouldApplyOverflowClipping(this, StyleDisplay())) {
+  if (!ShouldApplyOverflowClipping(StyleDisplay())) {
     nsRect bounds(nsPoint(0, 0), GetSize());
     WritingMode wm = GetWritingMode();
     LogicalMargin bcMargin = GetExcludedOuterBCBorder(wm);
