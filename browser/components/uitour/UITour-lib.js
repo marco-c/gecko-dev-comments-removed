@@ -614,9 +614,20 @@ if (typeof Mozilla == "undefined") {
 
 
 
-  Mozilla.UITour.showFirefoxAccounts = function(extraURLParams, email) {
+
+
+
+
+
+
+  Mozilla.UITour.showFirefoxAccounts = function(
+    extraURLParams,
+    entrypoint,
+    email
+  ) {
     _sendEvent("showFirefoxAccounts", {
       extraURLParams: JSON.stringify(extraURLParams),
+      entrypoint,
       email,
     });
   };
