@@ -33,6 +33,11 @@ interface nsIDOMProcessParent: nsISupports {
   
 
 
+  [infallible] readonly attribute long osPid;
+
+  
+
+
   JSProcessActorParent getActor(in ACString name);
 
   
