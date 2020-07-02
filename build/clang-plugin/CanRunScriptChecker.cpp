@@ -358,7 +358,7 @@ void CanRunScriptChecker::check(const MatchFinder::MatchResult &Result) {
   
   
   if (InvalidArg) {
-    const std::string invalidArgText = Lexer::getSourceText(
+    const StringRef invalidArgText = Lexer::getSourceText(
         CharSourceRange::getTokenRange(InvalidArg->getSourceRange()),
         Result.Context->getSourceManager(), Result.Context->getLangOpts());
     diag(InvalidArg->getExprLoc(), ErrorInvalidArg, DiagnosticIDs::Error)
