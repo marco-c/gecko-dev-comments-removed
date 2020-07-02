@@ -2523,6 +2523,10 @@ static void CollectJavaThreadProfileData(ProfileBuffer& aProfileBuffer) {
   
   
   
+
+  
+  
+  constexpr int threadId = 0;
   int sampleId = 0;
   while (true) {
     
@@ -2531,7 +2535,7 @@ static void CollectJavaThreadProfileData(ProfileBuffer& aProfileBuffer) {
       break;
     }
 
-    aProfileBuffer.AddThreadIdEntry(0);
+    aProfileBuffer.AddThreadIdEntry(threadId);
     aProfileBuffer.AddEntry(ProfileBufferEntry::Time(sampleTime));
     int frameId = 0;
     while (true) {
@@ -2548,6 +2552,52 @@ static void CollectJavaThreadProfileData(ProfileBuffer& aProfileBuffer) {
                                          Some(categoryPair));
     }
     sampleId++;
+  }
+
+  
+  while (true) {
+    
+    java::GeckoJavaSampler::Marker::LocalRef marker =
+        java::GeckoJavaSampler::PollNextMarker();
+    if (!marker) {
+      
+      break;
+    }
+
+    
+    nsCString markerName = marker->GetMarkerName()->ToCString();
+    jni::String::LocalRef text = marker->GetMarkerText();
+    TimeStamp startTime =
+        CorePS::ProcessStartTime() +
+        TimeDuration::FromMilliseconds(marker->GetStartTime());
+
+    double endTimeMs = marker->GetEndTime();
+    
+    
+    TimeStamp endTime = endTimeMs == 0
+                            ? startTime
+                            : CorePS::ProcessStartTime() +
+                                  TimeDuration::FromMilliseconds(endTimeMs);
+
+    
+    
+    if (!text) {
+      
+      const TimingMarkerPayload payload(startTime, endTime);
+
+      
+      StoreMarker(aProfileBuffer, threadId, markerName.get(),
+                  JS::ProfilingCategoryPair::JAVA_ANDROID, &payload, startTime);
+    } else {
+      
+      nsCString textString = text->ToCString();
+      const TextMarkerPayload payload(textString, startTime, endTime, Nothing(),
+                                      nullptr);
+
+      
+      StoreMarker(aProfileBuffer, threadId, markerName.get(),
+                  JS::ProfilingCategoryPair::JAVA_ANDROID, &payload, startTime);
+    }
   }
 }
 #endif
