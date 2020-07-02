@@ -98,13 +98,15 @@ class WorkerTargetFront extends TargetMixin(
     let response;
     try {
       response = await super.detach();
+
+      if (this.registration) {
+        
+        
+        await this.registration.allowShutdown();
+        this.registration = null;
+      }
     } catch (e) {
       this.logDetachError(e, "worker");
-    }
-
-    if (this.registration) {
-      await this.registration.allowShutdown();
-      this.registration = null;
     }
 
     return response;
