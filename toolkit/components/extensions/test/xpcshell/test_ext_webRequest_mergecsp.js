@@ -34,6 +34,7 @@ let extensionData = {
     let csp_value = undefined;
     browser.test.onMessage.addListener(function(msg, expectedCount) {
       csp_value = msg;
+      browser.test.sendMessage("csp-set");
     });
     browser.webRequest.onHeadersReceived.addListener(
       e => {
@@ -70,13 +71,17 @@ let extensionData = {
 
 
 
+
+
 async function test_csp(site_csp, ext1_csp, ext2_csp, expect) {
   let extension1 = await ExtensionTestUtils.loadExtension(extensionData);
   let extension2 = await ExtensionTestUtils.loadExtension(extensionData);
   await extension1.startup();
   await extension2.startup();
-  await extension1.sendMessage(ext1_csp);
-  await extension2.sendMessage(ext2_csp);
+  extension1.sendMessage(ext1_csp);
+  extension2.sendMessage(ext2_csp);
+  await extension1.awaitMessage("csp-set");
+  await extension2.awaitMessage("csp-set");
 
   let csp_value = encodeURIComponent(site_csp || "");
   let contentPage = await ExtensionTestUtils.loadContentPage(
@@ -94,10 +99,16 @@ async function test_csp(site_csp, ext1_csp, ext2_csp, expect) {
     };
   });
 
+  await contentPage.close();
+  await extension1.unload();
+  await extension2.unload();
+
   let action = {
     true: "loaded",
     false: "blocked",
   };
+
+  info(`test_csp: From "${site_csp}" to "${ext1_csp}" to "${ext2_csp}"`);
 
   equal(
     expect.img1_loaded,
@@ -119,10 +130,6 @@ async function test_csp(site_csp, ext1_csp, ext2_csp, expect) {
     results.script3_loaded,
     `expected third party script to be ${action[expect.script3_loaded]}`
   );
-
-  await contentPage.close();
-  await extension1.unload();
-  await extension2.unload();
 }
 
 add_task(async function test_webRequest_mergecsp() {
