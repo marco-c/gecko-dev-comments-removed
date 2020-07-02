@@ -262,30 +262,6 @@ nsresult SVGElement::BindToTree(BindContext& aContext, nsINode& aParent) {
         }));
   }
 
-  if (!MayHaveStyle()) {
-    return NS_OK;
-  }
-  const nsAttrValue* oldVal = mAttrs.GetAttr(nsGkAtoms::style);
-
-  if (oldVal && oldVal->Type() == nsAttrValue::eCSSDeclaration) {
-    
-    
-    
-    
-    
-    
-    nsAttrValue attrValue;
-    nsAutoString stringValue;
-    oldVal->ToString(stringValue);
-    
-    ParseStyleAttribute(stringValue, nullptr, attrValue, true);
-    
-    
-    bool oldValueSet;
-    rv = mAttrs.SetAndSwapAttr(nsGkAtoms::style, attrValue, &oldValueSet);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
   return NS_OK;
 }
 
