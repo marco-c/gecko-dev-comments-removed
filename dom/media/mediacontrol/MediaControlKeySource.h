@@ -76,6 +76,12 @@ class MediaControlKeySource {
   
   virtual void SetSupportedMediaKeys(const MediaKeysArray& aSupportedKeys) = 0;
 
+  
+  
+  
+  virtual void SetEnableFullScreen(bool aIsEnabled){};
+  virtual void SetEnablePictureInPictureMode(bool aIsEnabled){};
+
  protected:
   virtual ~MediaControlKeySource() = default;
   nsTArray<RefPtr<MediaControlKeyListener>> mListeners;
