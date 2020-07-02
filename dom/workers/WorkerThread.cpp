@@ -127,10 +127,12 @@ void WorkerThread::SetWorker(const WorkerThreadFriendKey& ,
 
       MOZ_ASSERT(mWorkerPrivate);
       MOZ_ASSERT(!mAcceptingNonWorkerRunnables);
-      MOZ_ASSERT(!mOtherThreadsDispatchingViaEventTarget,
-                 "XPCOM Dispatch hapenning at the same time our thread is "
-                 "being unset! This should not be possible!");
-
+      
+      
+      
+      
+      
+      
       while (mOtherThreadsDispatchingViaEventTarget) {
         mWorkerPrivateCondVar.Wait();
       }
