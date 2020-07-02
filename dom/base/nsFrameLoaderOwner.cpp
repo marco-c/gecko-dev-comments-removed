@@ -234,10 +234,13 @@ void nsFrameLoaderOwner::ChangeRemotenessToProcess(
     ContentParent* aContentParent, bool aReplaceBrowsingContext,
     mozilla::ErrorResult& rv) {
   MOZ_ASSERT(XRE_IsParentProcess());
+  bool isRemote = aContentParent != nullptr;
 
   std::function<void()> frameLoaderInit = [&] {
-    mFrameLoader->ConfigRemoteProcess(aContentParent->GetRemoteType(),
-                                      aContentParent);
+    if (isRemote) {
+      mFrameLoader->ConfigRemoteProcess(aContentParent->GetRemoteType(),
+                                        aContentParent);
+    }
 
     
     
@@ -249,10 +252,10 @@ void nsFrameLoaderOwner::ChangeRemotenessToProcess(
     mFrameLoader->LoadFrame(false);
   };
 
-  auto shouldPreserve = ShouldPreserveBrowsingContext(
-       true, aReplaceBrowsingContext);
-  ChangeRemotenessCommon(shouldPreserve,  true,
-                          true, frameLoaderInit, rv);
+  auto shouldPreserve =
+      ShouldPreserveBrowsingContext(isRemote, aReplaceBrowsingContext);
+  ChangeRemotenessCommon(shouldPreserve,  true, isRemote,
+                         frameLoaderInit, rv);
 }
 
 void nsFrameLoaderOwner::SubframeCrashed() {
