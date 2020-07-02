@@ -56,6 +56,7 @@ static const char* const kTestFileExtensions[] = {
     ".dc42",           
     ".deb",            
     ".definition",     
+    ".der",            
     ".desktop",        
     ".dex",            
     ".dht",            

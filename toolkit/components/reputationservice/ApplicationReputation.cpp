@@ -214,6 +214,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".deb",         
     ".definition",  
     ".desktop",     
+    
     ".dex",         
     ".dht",         
     ".dhtm",        

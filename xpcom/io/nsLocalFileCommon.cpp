@@ -42,6 +42,7 @@ const char* const sExecutableExts[] = {
   ".com",
   ".cpl",
   ".crt",
+  ".der",
   ".exe",
   ".fxp",         
   ".hlp",
