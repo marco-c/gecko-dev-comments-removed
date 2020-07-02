@@ -160,8 +160,7 @@ class Selection;
 
 
 #define NS_SUBTREE_DIRTY(_frame) \
-  (((_frame)->GetStateBits() &   \
-    (NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN)) != 0)
+  (_frame)->HasAnyStateBits(NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN)
 
 
 
@@ -1641,7 +1640,7 @@ class nsIFrame : public nsQueryFrame {
 
   
   bool TrackingVisibility() const {
-    return bool(GetStateBits() & NS_FRAME_VISIBILITY_IS_TRACKED);
+    return HasAnyStateBits(NS_FRAME_VISIBILITY_IS_TRACKED);
   }
 
   
@@ -3878,7 +3877,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   void UpdateStyleOfOwnedAnonBoxes(mozilla::ServoRestyleState& aRestyleState) {
-    if (GetStateBits() & NS_FRAME_OWNS_ANON_BOXES) {
+    if (HasAnyStateBits(NS_FRAME_OWNS_ANON_BOXES)) {
       DoUpdateStyleOfOwnedAnonBoxes(aRestyleState);
     }
   }
@@ -3933,7 +3932,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   void AppendOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) {
-    if (GetStateBits() & NS_FRAME_OWNS_ANON_BOXES) {
+    if (HasAnyStateBits(NS_FRAME_OWNS_ANON_BOXES)) {
       if (IsInlineFrame()) {
         
         
@@ -4508,7 +4507,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   bool FrameIsNonFirstInIBSplit() const {
-    return (GetStateBits() & NS_FRAME_PART_OF_IBSPLIT) &&
+    return HasAnyStateBits(NS_FRAME_PART_OF_IBSPLIT) &&
            FirstContinuation()->GetProperty(nsIFrame::IBSplitPrevSibling());
   }
 
@@ -4517,7 +4516,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   bool FrameIsNonLastInIBSplit() const {
-    return (GetStateBits() & NS_FRAME_PART_OF_IBSPLIT) &&
+    return HasAnyStateBits(NS_FRAME_PART_OF_IBSPLIT) &&
            FirstContinuation()->GetProperty(nsIFrame::IBSplitSibling());
   }
 
@@ -4526,7 +4525,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   bool IsContainerForFontSizeInflation() const {
-    return GetStateBits() & NS_FRAME_FONT_INFLATION_CONTAINER;
+    return HasAnyStateBits(NS_FRAME_FONT_INFLATION_CONTAINER);
   }
 
   
