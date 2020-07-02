@@ -502,11 +502,12 @@ add_task(async function checkSandboxedIframe() {
     
     
     
-    let elements = [
-      doc.querySelector(".title-text"),
-      doc.getElementById("errorCode"),
-    ];
     await ContentTaskUtils.waitForCondition(() => {
+      let elements = [
+        doc.querySelector(".title-text"),
+        doc.getElementById("errorCode"),
+      ];
+
       return elements.every(elem => !!elem.textContent.trim().length);
     });
 
