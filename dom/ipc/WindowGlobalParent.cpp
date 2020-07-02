@@ -472,14 +472,37 @@ void WindowGlobalParent::NotifyContentBlockingEvent(
 
   
   if (event) {
-    if (!GetBrowsingContext()->GetWebProgress()) {
+    
+    
+    
+    
+    
+    RefPtr<BrowserParent> browserParent =
+        static_cast<BrowserParent*>(Manager());
+    if (NS_WARN_IF(!browserParent)) {
+      return;
+    }
+
+    nsCOMPtr<nsIBrowser> browser;
+    nsCOMPtr<nsIWebProgress> manager;
+    nsCOMPtr<nsIWebProgressListener> managerAsListener;
+
+    if (!browserParent->GetWebProgressListener(
+            getter_AddRefs(browser), getter_AddRefs(manager),
+            getter_AddRefs(managerAsListener))) {
       return;
     }
 
     nsCOMPtr<nsIWebProgress> webProgress =
-        new RemoteWebProgress(0, false, BrowsingContext()->IsTopContent());
-    GetBrowsingContext()->Top()->GetWebProgress()->OnContentBlockingEvent(
-        webProgress, aRequest, event.value());
+        new RemoteWebProgress(manager, OuterWindowId(), InnerWindowId(), 0,
+                              false, BrowsingContext()->IsTopContent());
+
+    Unused << managerAsListener->OnContentBlockingEvent(webProgress, aRequest,
+                                                        event.value());
+    if (GetBrowsingContext()->Top()->GetWebProgress()) {
+      GetBrowsingContext()->Top()->GetWebProgress()->OnContentBlockingEvent(
+          webProgress, aRequest, event.value());
+    }
   }
 }
 

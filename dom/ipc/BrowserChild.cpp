@@ -3518,6 +3518,29 @@ NS_IMETHODIMP BrowserChild::OnStateChange(nsIWebProgress* aWebProgress,
   MOZ_TRY(PrepareProgressListenerData(aWebProgress, aRequest, webProgressData,
                                       requestData));
 
+  
+
+
+
+
+
+
+
+
+  if (document && webProgressData->isTopLevel() &&
+      (aStateFlags & nsIWebProgressListener::STATE_STOP) &&
+      (aStateFlags & nsIWebProgressListener::STATE_IS_WINDOW) &&
+      (aStateFlags & nsIWebProgressListener::STATE_IS_NETWORK)) {
+    RefPtr<nsDOMNavigationTiming> navigationTiming =
+        document->GetNavigationTiming();
+    if (navigationTiming) {
+      TimeDuration elapsedLoadTimeMS =
+          TimeStamp::Now() - navigationTiming->GetNavigationStartTimeStamp();
+      requestData.elapsedLoadTimeMS() =
+          Some(elapsedLoadTimeMS.ToMilliseconds());
+    }
+  }
+
   if (webProgressData->isTopLevel()) {
     stateChangeData.emplace();
 
@@ -3747,6 +3770,17 @@ nsresult BrowserChild::PrepareProgressListenerData(
     rv = aWebProgress->GetLoadType(&loadType);
     NS_ENSURE_SUCCESS(rv, rv);
     aWebProgressData->loadType() = loadType;
+
+    uint64_t outerDOMWindowID = 0;
+    uint64_t innerDOMWindowID = 0;
+    
+    
+    
+    Unused << aWebProgress->GetDOMWindowID(&outerDOMWindowID);
+    aWebProgressData->outerDOMWindowID() = outerDOMWindowID;
+
+    Unused << aWebProgress->GetInnerDOMWindowID(&innerDOMWindowID);
+    aWebProgressData->innerDOMWindowID() = innerDOMWindowID;
   }
 
   nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
