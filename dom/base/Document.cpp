@@ -13590,6 +13590,11 @@ static const char* GetFullscreenError(Document* aDoc, CallerType aCallerType) {
     return "FullscreenDeniedHidden";
   }
 
+  if (!FeaturePolicyUtils::IsFeatureAllowed(aDoc,
+                                            NS_LITERAL_STRING("fullscreen"))) {
+    return "FullscreenDeniedFeaturePolicy";
+  }
+
   
   
   BrowsingContext* bc = aDoc->GetBrowsingContext();
