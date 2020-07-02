@@ -71,8 +71,9 @@ using namespace mozilla;
 using namespace mozilla::css;
 using namespace mozilla::dom;
 using namespace mozilla::layout;
+using AbsPosReflowFlags = nsAbsoluteContainingBlock::AbsPosReflowFlags;
+using ClearFloatsResult = BlockReflowInput::ClearFloatsResult;
 using ShapeType = nsFloatManager::ShapeType;
-typedef nsAbsoluteContainingBlock::AbsPosReflowFlags AbsPosReflowFlags;
 
 static void MarkAllDescendantLinesDirty(nsBlockFrame* aBlock) {
   for (auto& line : aBlock->Lines()) {
@@ -2523,7 +2524,7 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState) {
 
       if (line->HasClearance()) {
         
-        if (newBCoord == curBCoord
+        if (result == ClearFloatsResult::BCoordNoChange
             
             
             
@@ -2533,7 +2534,7 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState) {
         }
       } else {
         
-        if (curBCoord != newBCoord) {
+        if (result != ClearFloatsResult::BCoordNoChange) {
           line->MarkDirty();
         }
       }
@@ -3484,7 +3485,9 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
     nscoord curBCoord = aState.mBCoord + aState.mPrevBEndMargin.get();
     if (auto [clearBCoord, result] =
             aState.ClearFloats(curBCoord, breakType, replacedBlock);
-        clearBCoord != curBCoord) {
+        result != ClearFloatsResult::BCoordNoChange) {
+      Unused << clearBCoord;
+
       
       if (!*aState.mReflowInput.mDiscoveredClearance) {
         *aState.mReflowInput.mDiscoveredClearance = frame;
@@ -3561,7 +3564,9 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
         nscoord curBCoord = aState.mBCoord + aState.mPrevBEndMargin.get();
         if (auto [clearBCoord, result] =
                 aState.ClearFloats(curBCoord, breakType, replacedBlock);
-            clearBCoord != curBCoord) {
+            result != ClearFloatsResult::BCoordNoChange) {
+          Unused << clearBCoord;
+
           
           
           treatWithClearance = true;
@@ -3592,7 +3597,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
             aState.ClearFloats(aState.mBCoord, breakType, replacedBlock);
         aState.mBCoord = clearBCoord;
 
-        clearedFloats = aState.mBCoord != currentBCoord;
+        clearedFloats = result != ClearFloatsResult::BCoordNoChange;
 
         
         
@@ -6704,8 +6709,10 @@ void nsBlockFrame::ReflowPushedFloats(BlockReflowInput& aState,
   }
 
   
+  
   if (auto [bCoord, result] = aState.ClearFloats(0, StyleClear::Both);
-      0 != bCoord) {
+      result != ClearFloatsResult::BCoordNoChange) {
+    Unused << bCoord;
     nsBlockFrame* prevBlock = static_cast<nsBlockFrame*>(GetPrevInFlow());
     if (prevBlock) {
       aState.mFloatBreakType = prevBlock->FindTrailingClear();
