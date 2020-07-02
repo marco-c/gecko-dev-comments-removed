@@ -25,21 +25,23 @@ ChromeUtils.defineModuleGetter(
 
 const MIN_STATUS_ANIMATION_DURATION = 1600;
 
-function getLogger() {
-  const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
-  let syncLog = Log.repository.getLogger("Sync.Browser");
-  syncLog.manageLevelFromPref("services.sync.log.logger.browser");
-  return syncLog;
-}
-
 var gSync = {
   _initialized: false,
   
   
   _syncStartTime: 0,
   _syncAnimationTimer: 0,
-  _log: getLogger(),
   _obs: ["weave:engine:sync:finish", "quit-application", UIState.ON_UPDATE],
+
+  get log() {
+    if (!this._log) {
+      const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
+      let syncLog = Log.repository.getLogger("Sync.Browser");
+      syncLog.manageLevelFromPref("services.sync.log.logger.browser");
+      this._log = syncLog;
+    }
+    return this._log;
+  },
 
   get fxaStrings() {
     delete this.fxaStrings;
@@ -279,7 +281,7 @@ var gSync = {
       await fxAccounts.device.refreshDeviceList({ ignoreCached: true });
       return true;
     } catch (e) {
-      this._log.error("Refreshing device list failed.", e);
+      this.log.error("Refreshing device list failed.", e);
       return false;
     }
   },
@@ -808,7 +810,7 @@ var gSync = {
       } else if (target.clientRecord) {
         oldSendTabClients.push(target.clientRecord);
       } else {
-        this._log.error(`Target ${target.id} unsuitable for send tab.`);
+        this.log.error(`Target ${target.id} unsuitable for send tab.`);
       }
     }
     
@@ -820,13 +822,13 @@ var gSync = {
     );
     if (!cryptoSDR.isLoggedIn) {
       if (cryptoSDR.uiBusy) {
-        this._log.info("Master password UI is busy - not sending the tabs");
+        this.log.info("Master password UI is busy - not sending the tabs");
         return false;
       }
       try {
         cryptoSDR.encrypt("bacon"); 
       } catch (e) {
-        this._log.info(
+        this.log.info(
           "Master password remains unlocked - not sending the tabs"
         );
         return false;
@@ -834,7 +836,7 @@ var gSync = {
     }
     let numFailed = 0;
     if (fxaCommandsDevices.length) {
-      this._log.info(
+      this.log.info(
         `Sending a tab to ${fxaCommandsDevices
           .map(d => d.name)
           .join(", ")} using FxA commands.`
@@ -844,7 +846,7 @@ var gSync = {
         { url, title }
       );
       for (let { device, error } of report.failed) {
-        this._log.error(
+        this.log.error(
           `Failed to send a tab with FxA commands for ${device.name}.`,
           error
         );
@@ -853,7 +855,7 @@ var gSync = {
     }
     for (let client of oldSendTabClients) {
       try {
-        this._log.info(`Sending a tab to ${client.name} using Sync.`);
+        this.log.info(`Sending a tab to ${client.name} using Sync.`);
         await Weave.Service.clientsEngine.sendURIToClientForDisplay(
           url,
           client.id,
@@ -861,7 +863,7 @@ var gSync = {
         );
       } catch (e) {
         numFailed++;
-        this._log.error("Could not send tab to device.", e);
+        this.log.error("Could not send tab to device.", e);
       }
     }
     return numFailed < targets.length; 
@@ -1325,7 +1327,7 @@ var gSync = {
         
         
         fxAccounts.commands.pollDeviceCommands().catch(e => {
-          this._log.error("Fetching missed remote commands failed.", e);
+          this.log.error("Fetching missed remote commands failed.", e);
         });
         Weave.Service.sync();
       });
@@ -1440,7 +1442,7 @@ var gSync = {
     } catch (ex) {
       
       
-      this._log.warn("failed to format lastSync time", date, ex);
+      this.log.warn("failed to format lastSync time", date, ex);
       return null;
     }
   },
