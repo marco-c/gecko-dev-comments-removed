@@ -8,6 +8,7 @@
 #include "gfxFont.h"          
 #include "gfxFontFeatures.h"  
 #include "gfxFontUtils.h"     
+#include "mozilla/ServoStyleConstsInlines.h"
 #include "nsCRT.h"            
 #include "nsDebug.h"          
 #include "nsISupports.h"
@@ -18,10 +19,10 @@
 
 using namespace mozilla;
 
-nsFont::nsFont(const FontFamilyList& aFontlist, nscoord aSize)
+nsFont::nsFont(const FontFamilyList& aFontlist, mozilla::Length aSize)
     : fontlist(aFontlist), size(aSize) {}
 
-nsFont::nsFont(StyleGenericFontFamily aGenericType, nscoord aSize)
+nsFont::nsFont(StyleGenericFontFamily aGenericType, mozilla::Length aSize)
     : fontlist(aGenericType), size(aSize) {}
 
 nsFont::nsFont(const nsFont& aOther) = default;
@@ -279,10 +280,7 @@ void nsFont::AddFontVariationsToStyle(gfxFontStyle* aStyle) const {
   const uint32_t kTagOpsz = TRUETYPE_TAG('o', 'p', 's', 'z');
   if (opticalSizing == NS_FONT_OPTICAL_SIZING_AUTO &&
       !fontVariationSettings.Contains(kTagOpsz, VariationTagComparator())) {
-    gfxFontVariation opsz = {
-        kTagOpsz,
-        
-        float(size) / float(AppUnitsPerCSSPixel())};
+    gfxFontVariation opsz = {kTagOpsz, size.ToCSSPixels()};
     aStyle->variationSettings.AppendElement(opsz);
   }
 

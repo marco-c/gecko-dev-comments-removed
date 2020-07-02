@@ -632,7 +632,7 @@ void MathMLTextRunFactory::RebuildTextRun(
 
   
   if (length) {
-    font.size = NSToCoordRound(font.size * mFontInflation);
+    font.size = font.size.ScaledBy(mFontInflation);
     nsPresContext* pc = styles[0]->mPresContext;
     nsFontMetrics::Params params;
     params.language = styles[0]->mLanguage;

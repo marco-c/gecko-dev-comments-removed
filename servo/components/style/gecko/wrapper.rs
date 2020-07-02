@@ -71,7 +71,6 @@ use crate::values::computed::font::GenericFontFamily;
 use crate::values::computed::Length;
 use crate::values::specified::length::FontBaseSize;
 use crate::CaseSensitivityExt;
-use app_units::Au;
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use selectors::attr::{AttrSelectorOperation, AttrSelectorOperator};
 use selectors::attr::{CaseSensitivity, NamespaceConstraint};
@@ -927,9 +926,7 @@ pub struct GeckoFontMetricsProvider {
     
     
     
-    
-    
-    pub font_size_cache: RefCell<Vec<(Atom, crate::gecko_bindings::structs::FontSizePrefs)>>,
+    pub font_size_cache: RefCell<Vec<(Atom, DefaultFontSizes)>>,
 }
 
 impl GeckoFontMetricsProvider {
@@ -952,8 +949,9 @@ impl FontMetricsProvider for GeckoFontMetricsProvider {
             return sizes.1.size_for_generic(font_family);
         }
         let sizes = unsafe { bindings::Gecko_GetBaseSize(font_name.as_ptr()) };
+        let size = sizes.size_for_generic(font_family);
         cache.push((font_name.clone(), sizes));
-        sizes.size_for_generic(font_family)
+        size
     }
 
     fn query(
@@ -967,7 +965,7 @@ impl FontMetricsProvider for GeckoFontMetricsProvider {
             None => return Default::default(),
         };
 
-        let size = Au::from(base_size.resolve(context));
+        let size = base_size.resolve(context);
         let style = context.style();
 
         let (wm, font) = match base_size {
@@ -987,15 +985,15 @@ impl FontMetricsProvider for GeckoFontMetricsProvider {
                 pc,
                 vertical_metrics,
                 font.gecko(),
-                size.0,
+                size,
                 
                 !context.in_media_query,
             )
         };
         FontMetrics {
-            x_height: Some(Au(gecko_metrics.mXSize).into()),
-            zero_advance_measure: if gecko_metrics.mChSize >= 0 {
-                Some(Au(gecko_metrics.mChSize).into())
+            x_height: Some(gecko_metrics.mXSize),
+            zero_advance_measure: if gecko_metrics.mChSize.px() >= 0. {
+                Some(gecko_metrics.mChSize)
             } else {
                 None
             },
@@ -1003,20 +1001,31 @@ impl FontMetricsProvider for GeckoFontMetricsProvider {
     }
 }
 
-impl structs::FontSizePrefs {
+
+#[derive(Debug)]
+#[repr(C)]
+pub struct DefaultFontSizes {
+    variable: Length,
+    serif: Length,
+    sans_serif: Length,
+    monospace: Length,
+    cursive: Length,
+    fantasy: Length,
+}
+
+impl DefaultFontSizes {
     fn size_for_generic(&self, font_family: GenericFontFamily) -> Length {
-        Au(match font_family {
-            GenericFontFamily::None => self.mDefaultVariableSize,
-            GenericFontFamily::Serif => self.mDefaultSerifSize,
-            GenericFontFamily::SansSerif => self.mDefaultSansSerifSize,
-            GenericFontFamily::Monospace => self.mDefaultMonospaceSize,
-            GenericFontFamily::Cursive => self.mDefaultCursiveSize,
-            GenericFontFamily::Fantasy => self.mDefaultFantasySize,
+        match font_family {
+            GenericFontFamily::None => self.variable,
+            GenericFontFamily::Serif => self.serif,
+            GenericFontFamily::SansSerif => self.sans_serif,
+            GenericFontFamily::Monospace => self.monospace,
+            GenericFontFamily::Cursive => self.cursive,
+            GenericFontFamily::Fantasy => self.fantasy,
             GenericFontFamily::MozEmoji => unreachable!(
                 "Should never get here, since this doesn't (yet) appear on font family"
             ),
-        })
-        .into()
+        }
     }
 }
 

@@ -15,6 +15,7 @@
 #include "gfxFontVariations.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/RefPtr.h"             
+#include "mozilla/ServoStyleConstsInlines.h"
 #include "mozilla/StyleColorInlines.h"  
 #include "nsCoord.h"                    
 #include "nsTArray.h"                   
@@ -38,7 +39,7 @@ struct nsFont final {
   CopyableTArray<gfxFontVariation> fontVariationSettings;
 
   
-  nscoord size = 0;
+  mozilla::NonNegativeLength size{0};
 
   
   
@@ -94,10 +95,10 @@ struct nsFont final {
   bool systemFont = false;
 
   
-  nsFont(const mozilla::FontFamilyList& aFontlist, nscoord aSize);
+  nsFont(const mozilla::FontFamilyList& aFontlist, mozilla::Length aSize);
 
   
-  nsFont(mozilla::StyleGenericFontFamily, nscoord aSize);
+  nsFont(mozilla::StyleGenericFontFamily, mozilla::Length aSize);
 
   
   nsFont(const nsFont& aFont);

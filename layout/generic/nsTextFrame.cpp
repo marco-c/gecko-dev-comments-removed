@@ -5626,13 +5626,14 @@ gfxFloat nsTextFrame::ComputeSelectionUnderlineHeight(
       
       
       
-      nscoord defaultFontSize =
+      Length defaultFontSize =
           aPresContext->Document()
               ->GetFontPrefsForLang(nullptr)
               ->GetDefaultFont(StyleGenericFontFamily::None)
               ->size;
-      int32_t zoomedFontSize = aPresContext->AppUnitsToDevPixels(
-          nsStyleFont::ZoomText(*aPresContext->Document(), defaultFontSize));
+      int32_t zoomedFontSize = aPresContext->CSSPixelsToDevPixels(
+          nsStyleFont::ZoomText(*aPresContext->Document(), defaultFontSize)
+              .ToCSSPixels());
       gfxFloat fontSize =
           std::min(gfxFloat(zoomedFontSize), aFontMetrics.emHeight);
       fontSize = std::max(fontSize, 1.0);
