@@ -773,6 +773,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void PlayInternal(bool aHandlingUserInput);
 
   
+  void PauseInternal();
+
+  
 
 
   void ChangeReadyState(nsMediaReadyState aState);
