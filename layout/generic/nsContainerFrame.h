@@ -698,6 +698,12 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
+  static nsIFrame* GetFirstNonAnonBoxInSubtree(nsIFrame* aFrame);
+
+  
+
+
+
 
 
   static void ReparentFloatsForInlineChild(nsIFrame* aOurBlock,

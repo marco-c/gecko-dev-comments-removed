@@ -131,45 +131,6 @@ static StyleContentDistribution ConvertLegacyStyleToJustifyContent(
 }
 
 
-static nsIFrame* GetFirstNonAnonBoxDescendant(nsIFrame* aFrame) {
-  while (aFrame) {
-    
-    
-    if (!aFrame->Style()->IsAnonBox() ||
-        nsCSSAnonBoxes::IsNonElement(aFrame->Style()->GetPseudoType())) {
-      break;
-    }
-
-    
-
-    
-    
-    
-    
-    
-    
-    
-    if (MOZ_UNLIKELY(aFrame->IsTableWrapperFrame())) {
-      nsIFrame* captionDescendant = GetFirstNonAnonBoxDescendant(
-          aFrame->GetChildList(kCaptionList).FirstChild());
-      if (captionDescendant) {
-        return captionDescendant;
-      }
-    } else if (MOZ_UNLIKELY(aFrame->IsTableFrame())) {
-      nsIFrame* colgroupDescendant = GetFirstNonAnonBoxDescendant(
-          aFrame->GetChildList(kColGroupList).FirstChild());
-      if (colgroupDescendant) {
-        return colgroupDescendant;
-      }
-    }
-
-    
-    aFrame = aFrame->PrincipalChildList().FirstChild();
-  }
-  return aFrame;
-}
-
-
 
 
 
@@ -4621,7 +4582,7 @@ void nsFlexContainerFrame::CreateFlexLineAndFlexItemInfo(
       
       
       
-      nsIFrame* targetFrame = GetFirstNonAnonBoxDescendant(frame);
+      nsIFrame* targetFrame = GetFirstNonAnonBoxInSubtree(frame);
       nsIContent* content = targetFrame->GetContent();
 
       
