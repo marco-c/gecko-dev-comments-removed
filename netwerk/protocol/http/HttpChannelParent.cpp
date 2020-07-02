@@ -83,7 +83,8 @@ HttpChannelParent::HttpChannelParent(dom::BrowserParent* iframeEmbedding,
       mCacheNeedFlowControlInitialized(false),
       mNeedFlowControl(true),
       mSuspendedForFlowControl(false),
-      mAfterOnStartRequestBegun(false) {
+      mAfterOnStartRequestBegun(false),
+      mStreamFilterAttached(false) {
   LOG(("Creating HttpChannelParent [this=%p]\n", this));
 
   
@@ -1541,7 +1542,8 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   
   
   
-  args.shouldWaitForOnStartRequestSent() = isDocument || hasSetCookie;
+  args.shouldWaitForOnStartRequestSent() =
+      isDocument || hasSetCookie || mStreamFilterAttached;
 
   rv = NS_OK;
 
@@ -2663,23 +2665,11 @@ void HttpChannelParent::OverrideReferrerInfoDuringBeginConnect(
   mOverrideReferrerInfo = aReferrerInfo;
 }
 
-auto HttpChannelParent::AttachStreamFilter(
-    Endpoint<extensions::PStreamFilterParent>&& aParentEndpoint,
-    Endpoint<extensions::PStreamFilterChild>&& aChildEndpoint)
-    -> RefPtr<ChildEndpointPromise> {
-  LOG(("HttpChannelParent::AttachStreamFilter [this=%p]", this));
+bool HttpChannelParent::AttachStreamFilter(
+    Endpoint<extensions::PStreamFilterParent>&& aEndpoint) {
   MOZ_ASSERT(!mAfterOnStartRequestBegun);
-
-  if (mIPCClosed) {
-    return ChildEndpointPromise::CreateAndReject(false, __func__);
-  }
-
-  
-  
-  MOZ_ASSERT(mBgParent);
-  return InvokeAsync(mBgParent->GetBackgroundTarget(), mBgParent.get(),
-                     __func__, &HttpBackgroundChannelParent::AttachStreamFilter,
-                     std::move(aParentEndpoint), std::move(aChildEndpoint));
+  mStreamFilterAttached = true;
+  return SendAttachStreamFilter(std::move(aEndpoint));
 }
 
 }  

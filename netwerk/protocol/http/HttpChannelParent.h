@@ -134,11 +134,8 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   void OverrideReferrerInfoDuringBeginConnect(nsIReferrerInfo* aReferrerInfo);
 
-  using ChildEndpointPromise =
-      MozPromise<ipc::Endpoint<extensions::PStreamFilterChild>, bool, true>;
-  [[nodiscard]] RefPtr<ChildEndpointPromise> AttachStreamFilter(
-      Endpoint<extensions::PStreamFilterParent>&& aParentEndpoint,
-      Endpoint<extensions::PStreamFilterChild>&& aChildEndpoint);
+  bool AttachStreamFilter(
+      Endpoint<extensions::PStreamFilterParent>&& aEndpoint);
 
  protected:
   
@@ -361,6 +358,12 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   
   uint8_t mAfterOnStartRequestBegun : 1;
+
+  
+  
+  
+  
+  uint8_t mStreamFilterAttached : 1;
 
   
   
