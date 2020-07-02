@@ -114,10 +114,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
 
   
   
-  int32_t other_pid_ = -1;
-
-  
-  
   
   
   size_t output_queue_length_;

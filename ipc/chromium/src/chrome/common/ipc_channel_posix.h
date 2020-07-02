@@ -143,10 +143,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   
   bool closed_;
 
-  
-  
-  int32_t other_pid_ = -1;
-
 #if defined(OS_MACOSX)
   struct PendingDescriptors {
     uint32_t id;
