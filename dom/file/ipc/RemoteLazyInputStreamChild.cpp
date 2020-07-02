@@ -59,7 +59,7 @@ class StreamNeededRunnable final : public CancelableRunnable {
 
 class StreamReadyRunnable final : public CancelableRunnable {
  public:
-  StreamReadyRunnable(IPCBlobInputStream* aDestinationStream,
+  StreamReadyRunnable(RemoteLazyInputStream* aDestinationStream,
                       already_AddRefed<nsIInputStream> aCreatedStream)
       : CancelableRunnable("dom::StreamReadyRunnable"),
         mDestinationStream(aDestinationStream),
@@ -75,7 +75,7 @@ class StreamReadyRunnable final : public CancelableRunnable {
   }
 
  private:
-  RefPtr<IPCBlobInputStream> mDestinationStream;
+  RefPtr<RemoteLazyInputStream> mDestinationStream;
   nsCOMPtr<nsIInputStream> mCreatedStream;
 };
 
@@ -105,7 +105,7 @@ class LengthNeededRunnable final : public CancelableRunnable {
 
 class LengthReadyRunnable final : public CancelableRunnable {
  public:
-  LengthReadyRunnable(IPCBlobInputStream* aDestinationStream, int64_t aSize)
+  LengthReadyRunnable(RemoteLazyInputStream* aDestinationStream, int64_t aSize)
       : CancelableRunnable("dom::LengthReadyRunnable"),
         mDestinationStream(aDestinationStream),
         mSize(aSize) {
@@ -119,7 +119,7 @@ class LengthReadyRunnable final : public CancelableRunnable {
   }
 
  private:
-  RefPtr<IPCBlobInputStream> mDestinationStream;
+  RefPtr<RemoteLazyInputStream> mDestinationStream;
   int64_t mSize;
 };
 
@@ -189,11 +189,11 @@ RemoteLazyInputStreamChild::ActorState RemoteLazyInputStreamChild::State() {
   return mState;
 }
 
-already_AddRefed<IPCBlobInputStream>
+already_AddRefed<RemoteLazyInputStream>
 RemoteLazyInputStreamChild::CreateStream() {
   bool shouldMigrate = false;
 
-  RefPtr<IPCBlobInputStream> stream;
+  RefPtr<RemoteLazyInputStream> stream;
 
   {
     MutexAutoLock lock(mMutex);
@@ -227,14 +227,14 @@ RemoteLazyInputStreamChild::CreateStream() {
         newActor->mPendingOperations.SwapElements(mPendingOperations);
 
         
-        stream = new IPCBlobInputStream(newActor);
+        stream = new RemoteLazyInputStream(newActor);
         newActor->mStreams.AppendElement(stream);
       }
 
       
       thread->MigrateActor(newActor);
     } else {
-      stream = new IPCBlobInputStream(this);
+      stream = new RemoteLazyInputStream(this);
       mStreams.AppendElement(stream);
     }
   }
@@ -248,7 +248,7 @@ RemoteLazyInputStreamChild::CreateStream() {
   return stream.forget();
 }
 
-void RemoteLazyInputStreamChild::ForgetStream(IPCBlobInputStream* aStream) {
+void RemoteLazyInputStreamChild::ForgetStream(RemoteLazyInputStream* aStream) {
   MOZ_ASSERT(aStream);
 
   RefPtr<RemoteLazyInputStreamChild> kungFuDeathGrip = this;
@@ -271,7 +271,7 @@ void RemoteLazyInputStreamChild::ForgetStream(IPCBlobInputStream* aStream) {
   mOwningEventTarget->Dispatch(runnable, NS_DISPATCH_NORMAL);
 }
 
-void RemoteLazyInputStreamChild::StreamNeeded(IPCBlobInputStream* aStream,
+void RemoteLazyInputStreamChild::StreamNeeded(RemoteLazyInputStream* aStream,
                                               nsIEventTarget* aEventTarget) {
   MutexAutoLock lock(mMutex);
 
@@ -306,7 +306,7 @@ mozilla::ipc::IPCResult RemoteLazyInputStreamChild::RecvStreamReady(
     const Maybe<IPCStream>& aStream) {
   nsCOMPtr<nsIInputStream> stream = mozilla::ipc::DeserializeIPCStream(aStream);
 
-  RefPtr<IPCBlobInputStream> pendingStream;
+  RefPtr<RemoteLazyInputStream> pendingStream;
   nsCOMPtr<nsIEventTarget> eventTarget;
 
   {
@@ -343,7 +343,7 @@ mozilla::ipc::IPCResult RemoteLazyInputStreamChild::RecvStreamReady(
   return IPC_OK();
 }
 
-void RemoteLazyInputStreamChild::LengthNeeded(IPCBlobInputStream* aStream,
+void RemoteLazyInputStreamChild::LengthNeeded(RemoteLazyInputStream* aStream,
                                               nsIEventTarget* aEventTarget) {
   MutexAutoLock lock(mMutex);
 
@@ -376,7 +376,7 @@ void RemoteLazyInputStreamChild::LengthNeeded(IPCBlobInputStream* aStream,
 
 mozilla::ipc::IPCResult RemoteLazyInputStreamChild::RecvLengthReady(
     const int64_t& aLength) {
-  RefPtr<IPCBlobInputStream> pendingStream;
+  RefPtr<RemoteLazyInputStream> pendingStream;
   nsCOMPtr<nsIEventTarget> eventTarget;
 
   {
