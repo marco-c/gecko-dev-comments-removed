@@ -43,6 +43,18 @@ impl Manager {
     }
 
     
+    pub fn clear_cache<'p, P>(
+        &mut self,
+        path: P,
+    )
+    where
+        P: Into<&'p Path>,
+    {
+        let path = path.into();
+        self.environments.remove(path);
+    }
+
+    
     pub fn get_or_create<'p, F, P>(
         &mut self,
         path: P,
