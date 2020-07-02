@@ -101,12 +101,6 @@ add_task(async function setup_head() {
       
       return;
     }
-
-    if (msg.errorMessage.includes('Unknown event: ["jsonfile", "load"')) {
-      
-      return;
-    }
-
     if (
       msg.errorMessage == "Refreshing device list failed." ||
       msg.errorMessage == "Skipping device list refresh; not signed in"

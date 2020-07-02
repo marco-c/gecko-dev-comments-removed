@@ -72,12 +72,6 @@ const FileInputStream = Components.Constructor(
   "init"
 );
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "Services",
-  "resource://gre/modules/Services.jsm"
-);
-
 
 
 
@@ -136,8 +130,6 @@ function JSONFile(config) {
     "JSON store: writing data",
     this._finalizeInternalBound
   );
-
-  Services.telemetry.setEventRecordingEnabled("jsonfile", true);
 }
 
 JSONFile.prototype = {
@@ -221,16 +213,6 @@ JSONFile.prototype = {
       
       
       
-      let cleansedBasename = OS.Path.basename(this.path)
-        .replace(/\.json$/, "")
-        .replaceAll(/[^a-zA-Z0-9_.]/g, "");
-      let errorNo = ex.winLastError || ex.unixErrno;
-      Services.telemetry.recordEvent(
-        "jsonfile",
-        "load",
-        cleansedBasename,
-        errorNo ? errorNo.toString() : ""
-      );
       if (!(ex instanceof OS.File.Error && ex.becauseNoSuchFile)) {
         Cu.reportError(ex);
 
@@ -241,12 +223,6 @@ JSONFile.prototype = {
           });
           await openInfo.file.close();
           await OS.File.move(this.path, openInfo.path);
-          Services.telemetry.recordEvent(
-            "jsonfile",
-            "load",
-            cleansedBasename,
-            "invalid_json"
-          );
         } catch (e2) {
           Cu.reportError(e2);
         }
