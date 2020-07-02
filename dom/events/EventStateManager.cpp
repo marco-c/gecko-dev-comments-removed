@@ -3889,9 +3889,7 @@ void EventStateManager::UpdateCursor(nsPresContext* aPresContext,
                                      WidgetEvent* aEvent,
                                      nsIFrame* aTargetFrame,
                                      nsEventStatus* aStatus) {
-  
-  
-  if (aTargetFrame && IsTopLevelRemoteTarget(aTargetFrame->GetContent())) {
+  if (aTargetFrame && IsRemoteTarget(aTargetFrame->GetContent())) {
     return;
   }
 
