@@ -128,18 +128,17 @@ nsBrowserStatusFilter::OnStateChange(nsIWebProgress* aWebProgress,
                                      nsresult aStatus) {
   if (!mListener) return NS_OK;
 
-  bool isTopLevel = true;
-  if (aWebProgress) {
-    aWebProgress->GetIsTopLevel(&isTopLevel);
-  }
-  if (!isTopLevel) {
-    return NS_OK;
-  }
-
   if (aStateFlags & STATE_START) {
     
+    
+    
+    
     if (aStateFlags & STATE_IS_DOCUMENT) {
-      ResetMembers();
+      bool isTopLevel = false;
+      aWebProgress->GetIsTopLevel(&isTopLevel);
+      if (!mIsLoadingDocument || isTopLevel) {
+        ResetMembers();
+      }
       mIsLoadingDocument = true;
     }
   } else if (aStateFlags & STATE_STOP) {
@@ -185,14 +184,6 @@ nsBrowserStatusFilter::OnProgressChange(nsIWebProgress* aWebProgress,
                                         int32_t aMaxTotalProgress) {
   if (!mListener) return NS_OK;
 
-  bool isTopLevel = true;
-  if (aWebProgress) {
-    aWebProgress->GetIsTopLevel(&isTopLevel);
-  }
-  if (!isTopLevel) {
-    return NS_OK;
-  }
-
   
   
   
@@ -218,14 +209,6 @@ nsBrowserStatusFilter::OnLocationChange(nsIWebProgress* aWebProgress,
                                         uint32_t aFlags) {
   if (!mListener) return NS_OK;
 
-  bool isTopLevel = true;
-  if (aWebProgress) {
-    aWebProgress->GetIsTopLevel(&isTopLevel);
-  }
-  if (!isTopLevel) {
-    return NS_OK;
-  }
-
   return mListener->OnLocationChange(aWebProgress, aRequest, aLocation, aFlags);
 }
 
@@ -234,14 +217,6 @@ nsBrowserStatusFilter::OnStatusChange(nsIWebProgress* aWebProgress,
                                       nsIRequest* aRequest, nsresult aStatus,
                                       const char16_t* aMessage) {
   if (!mListener) return NS_OK;
-
-  bool isTopLevel = true;
-  if (aWebProgress) {
-    aWebProgress->GetIsTopLevel(&isTopLevel);
-  }
-  if (!isTopLevel) {
-    return NS_OK;
-  }
 
   
   
@@ -268,14 +243,6 @@ nsBrowserStatusFilter::OnSecurityChange(nsIWebProgress* aWebProgress,
                                         nsIRequest* aRequest, uint32_t aState) {
   if (!mListener) return NS_OK;
 
-  bool isTopLevel = true;
-  if (aWebProgress) {
-    aWebProgress->GetIsTopLevel(&isTopLevel);
-  }
-  if (!isTopLevel) {
-    return NS_OK;
-  }
-
   return mListener->OnSecurityChange(aWebProgress, aRequest, aState);
 }
 
@@ -284,14 +251,6 @@ nsBrowserStatusFilter::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
                                               nsIRequest* aRequest,
                                               uint32_t aEvent) {
   if (!mListener) return NS_OK;
-
-  bool isTopLevel = true;
-  if (aWebProgress) {
-    aWebProgress->GetIsTopLevel(&isTopLevel);
-  }
-  if (!isTopLevel) {
-    return NS_OK;
-  }
 
   return mListener->OnContentBlockingEvent(aWebProgress, aRequest, aEvent);
 }
