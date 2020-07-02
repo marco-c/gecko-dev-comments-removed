@@ -74,9 +74,8 @@ NS_IMETHODIMP nsWindowMediator::RegisterWindow(nsIAppWindow* inWindow) {
   
   nsWindowInfo* windowInfo = new nsWindowInfo(inWindow, mTimeStamp);
 
-  ListenerArray::ForwardIterator iter(mListeners);
-  while (iter.HasMore()) {
-    iter.GetNext()->OnOpenWindow(inWindow);
+  for (const auto& listener : mListeners.ForwardRange()) {
+    listener->OnOpenWindow(inWindow);
   }
 
   if (mOldestWindow)
@@ -105,9 +104,8 @@ nsresult nsWindowMediator::UnregisterWindow(nsWindowInfo* inInfo) {
   }
 
   nsIAppWindow* window = inInfo->mWindow.get();
-  ListenerArray::ForwardIterator iter(mListeners);
-  while (iter.HasMore()) {
-    iter.GetNext()->OnCloseWindow(window);
+  for (const auto& listener : mListeners.ForwardRange()) {
+    listener->OnCloseWindow(window);
   }
 
   
