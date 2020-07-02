@@ -718,11 +718,11 @@ function Intl_NumberFormat_formatToParts(value) {
                             "Intl_NumberFormat_formatToParts");
     }
 
-    var internals = getNumberFormatInternals(nf);
-    var unitStyle = internals.style === "unit";
-
     
     var x = ToNumeric(value);
+
+    var internals = getNumberFormatInternals(nf);
+    var unitStyle = internals.style === "unit";
 
     
     return intl_FormatNumber(nf, x,  true, unitStyle);

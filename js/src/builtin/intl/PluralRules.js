@@ -197,10 +197,10 @@ function Intl_PluralRules_select(value) {
     }
 
     
-    getPluralRulesInternals(pluralRules);
+    let n = ToNumber(value);
 
     
-    let n = ToNumber(value);
+    getPluralRulesInternals(pluralRules);
 
     
     return intl_SelectPluralRule(pluralRules, n);

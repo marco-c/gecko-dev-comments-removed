@@ -16,6 +16,7 @@
 #include "vm/NativeObject.h"
 
 using UDateFormat = void*;
+struct UDateIntervalFormat;
 
 namespace js {
 
@@ -26,14 +27,18 @@ class DateTimeFormatObject : public NativeObject {
 
   static constexpr uint32_t INTERNALS_SLOT = 0;
   static constexpr uint32_t UDATE_FORMAT_SLOT = 1;
-  static constexpr uint32_t SLOT_COUNT = 2;
+  static constexpr uint32_t UDATE_INTERVAL_FORMAT_SLOT = 2;
+  static constexpr uint32_t SLOT_COUNT = 3;
 
   static_assert(INTERNALS_SLOT == INTL_INTERNALS_OBJECT_SLOT,
                 "INTERNALS_SLOT must match self-hosting define for internals "
                 "object slot");
 
   
-  static constexpr size_t UDateFormatEstimatedMemoryUse = 91626;
+  static constexpr size_t UDateFormatEstimatedMemoryUse = 91922;
+
+  
+  static constexpr size_t UDateIntervalFormatEstimatedMemoryUse = 119856;
 
   UDateFormat* getDateFormat() const {
     const auto& slot = getFixedSlot(UDATE_FORMAT_SLOT);
@@ -45,6 +50,18 @@ class DateTimeFormatObject : public NativeObject {
 
   void setDateFormat(UDateFormat* dateFormat) {
     setFixedSlot(UDATE_FORMAT_SLOT, PrivateValue(dateFormat));
+  }
+
+  UDateIntervalFormat* getDateIntervalFormat() const {
+    const auto& slot = getFixedSlot(UDATE_INTERVAL_FORMAT_SLOT);
+    if (slot.isUndefined()) {
+      return nullptr;
+    }
+    return static_cast<UDateIntervalFormat*>(slot.toPrivate());
+  }
+
+  void setDateIntervalFormat(UDateIntervalFormat* dateIntervalFormat) {
+    setFixedSlot(UDATE_INTERVAL_FORMAT_SLOT, PrivateValue(dateIntervalFormat));
   }
 
  private:
@@ -184,11 +201,32 @@ extern MOZ_MUST_USE bool intl_patternForStyle(JSContext* cx, unsigned argc,
 
 
 
+extern MOZ_MUST_USE bool intl_skeletonForPattern(JSContext* cx, unsigned argc,
+                                                 JS::Value* vp);
+
+
+
+
+
+
+
 
 
 
 extern MOZ_MUST_USE bool intl_FormatDateTime(JSContext* cx, unsigned argc,
                                              JS::Value* vp);
+
+
+
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool intl_FormatDateTimeRange(JSContext* cx, unsigned argc,
+                                                  JS::Value* vp);
 
 }  
 

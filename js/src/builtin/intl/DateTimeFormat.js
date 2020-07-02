@@ -96,6 +96,7 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     var pattern;
     if (lazyDateTimeFormatData.patternOption !== undefined) {
         pattern = lazyDateTimeFormatData.patternOption;
+        skeleton = intl_skeletonForPattern(pattern);
 
         internalProps.patternOption = lazyDateTimeFormatData.patternOption;
     } else if (lazyDateTimeFormatData.dateStyle !== undefined ||
@@ -106,6 +107,7 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
                                        lazyDateTimeFormatData.timeZone,
                                        formatOpt.hour12,
                                        formatOpt.hourCycle);
+        skeleton = intl_skeletonForPattern(pattern);
 
         internalProps.dateStyle = lazyDateTimeFormatData.dateStyle;
         internalProps.timeStyle = lazyDateTimeFormatData.timeStyle;
@@ -115,6 +117,7 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     }
 
     
+    internalProps.skeleton = skeleton;
     internalProps.pattern = pattern;
 
     
@@ -893,13 +896,91 @@ function Intl_DateTimeFormat_formatToParts(date) {
     }
 
     
-    getDateTimeFormatInternals(dtf);
-
-    
     var x = (date === undefined) ? std_Date_now() : ToNumber(date);
 
     
+    getDateTimeFormatInternals(dtf);
+
+    
     return intl_FormatDateTime(dtf, x,  true);
+}
+
+
+
+
+
+
+function Intl_DateTimeFormat_formatRange(startDate, endDate) {
+    
+    var dtf = this;
+
+    
+    if (!IsObject(dtf) || (dtf = GuardToDateTimeFormat(dtf)) === null) {
+        return callFunction(CallDateTimeFormatMethodIfWrapped, this, startDate, endDate,
+                            "Intl_DateTimeFormat_formatRange");
+    }
+
+    
+    if (startDate === undefined || endDate === undefined) {
+        ThrowTypeError(JSMSG_UNDEFINED_DATE, startDate === undefined ? "start" : "end",
+                       "formatRange");
+    }
+
+    
+    var x = ToNumber(startDate);
+
+    
+    var y = ToNumber(endDate);
+
+    
+    if (x > y) {
+        ThrowRangeError(JSMSG_START_AFTER_END_DATE, "formatRange");
+    }
+
+    
+    getDateTimeFormatInternals(dtf);
+
+    
+    return intl_FormatDateTimeRange(dtf, x, y,  false);
+}
+
+
+
+
+
+
+function Intl_DateTimeFormat_formatRangeToParts(startDate, endDate) {
+    
+    var dtf = this;
+
+    
+    if (!IsObject(dtf) || (dtf = GuardToDateTimeFormat(dtf)) === null) {
+        return callFunction(CallDateTimeFormatMethodIfWrapped, this, startDate, endDate,
+                            "Intl_DateTimeFormat_formatRangeToParts");
+    }
+
+    
+    if (startDate === undefined || endDate === undefined) {
+        ThrowTypeError(JSMSG_UNDEFINED_DATE, startDate === undefined ? "start" : "end",
+                       "formatRangeToParts");
+    }
+
+    
+    var x = ToNumber(startDate);
+
+    
+    var y = ToNumber(endDate);
+
+    
+    if (x > y) {
+        ThrowRangeError(JSMSG_START_AFTER_END_DATE, "formatRangeToParts");
+    }
+
+    
+    getDateTimeFormatInternals(dtf);
+
+    
+    return intl_FormatDateTimeRange(dtf, x, y,  true);
 }
 
 
