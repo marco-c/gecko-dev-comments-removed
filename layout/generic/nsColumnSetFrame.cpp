@@ -285,8 +285,10 @@ nsColumnSetFrame::ReflowConfig nsColumnSetFrame::ChooseColumnStrategy(
   int32_t numColumns = colStyle->mColumnCount;
 
   
-  bool isBalancing =
-      colStyle->mColumnFill == StyleColumnFill::Balance && !aForceAuto;
+  
+  bool isBalancing = (colStyle->mColumnFill == StyleColumnFill::Balance ||
+                      HasColumnSpanSiblings()) &&
+                     !aForceAuto;
   if (isBalancing) {
     const uint32_t kMaxNestedColumnBalancingDepth = 2;
     const uint32_t balancingDepth =
