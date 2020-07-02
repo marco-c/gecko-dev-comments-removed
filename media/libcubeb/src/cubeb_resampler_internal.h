@@ -283,8 +283,9 @@ public:
 
 
 
-  uint32_t input_needed_for_output(uint32_t output_frame_count) const
+  uint32_t input_needed_for_output(int32_t output_frame_count) const
   {
+    assert(output_frame_count >= 0); 
     int32_t unresampled_frames_left = samples_to_frames(resampling_in_buffer.length());
     int32_t resampled_frames_left = samples_to_frames(resampling_out_buffer.length());
     float input_frames_needed =
@@ -462,8 +463,9 @@ public:
 
 
 
-  size_t input_needed_for_output(uint32_t frames_needed) const
+  uint32_t input_needed_for_output(int32_t frames_needed) const
   {
+    assert(frames_needed >= 0); 
     return frames_needed;
   }
   

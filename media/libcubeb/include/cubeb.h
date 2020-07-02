@@ -505,6 +505,12 @@ CUBEB_EXPORT void cubeb_destroy(cubeb * context);
 
 
 
+
+
+
+
+
+
 CUBEB_EXPORT int cubeb_stream_init(cubeb * context,
                                    cubeb_stream ** stream,
                                    char const * stream_name,
