@@ -16,8 +16,8 @@
 #include "PresentationConnection.h"
 #include "PresentationTransportBuilderConstructor.h"
 
-using namespace mozilla;
-using namespace mozilla::dom;
+namespace mozilla {
+namespace dom {
 
 
 
@@ -246,3 +246,6 @@ PresentationResponderLoadingCallback::OnContentBlockingEvent(
   
   return NS_OK;
 }
+
+}  
+}  
