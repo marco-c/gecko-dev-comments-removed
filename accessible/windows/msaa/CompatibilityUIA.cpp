@@ -161,7 +161,7 @@ Maybe<bool> Compatibility::OnUIAMessage(WPARAM aWParam, LPARAM aLParam) {
   Telemetry::AutoTimer<Telemetry::A11Y_UIA_DETECTION_TIMING_MS> timer;
 
   
-  NS_NAMED_LITERAL_STRING(kStrHookShmem, "HOOK_SHMEM_");
+  constexpr auto kStrHookShmem = u"HOOK_SHMEM_"_ns;
 
   
   

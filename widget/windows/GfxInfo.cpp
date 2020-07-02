@@ -540,8 +540,8 @@ nsresult GfxInfo::Init() {
     DWORD memberIndex = 0;
 
     devinfoData.cbSize = sizeof(devinfoData);
-    NS_NAMED_LITERAL_STRING(driverKeyPre,
-                            "System\\CurrentControlSet\\Control\\Class\\");
+    constexpr auto driverKeyPre =
+        u"System\\CurrentControlSet\\Control\\Class\\"_ns;
     
     while (SetupDiEnumDeviceInfo(devinfo, memberIndex++, &devinfoData)) {
       
@@ -621,8 +621,8 @@ nsresult GfxInfo::Init() {
       nsAutoString driverVersion2;
       nsAutoString driverDate2;
 
-      NS_NAMED_LITERAL_STRING(driverKeyPre,
-                              "System\\CurrentControlSet\\Control\\Class\\");
+      constexpr auto driverKeyPre =
+          u"System\\CurrentControlSet\\Control\\Class\\"_ns;
       
       while (SetupDiEnumDeviceInfo(devinfo, memberIndex++, &devinfoData)) {
         

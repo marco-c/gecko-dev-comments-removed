@@ -143,7 +143,7 @@ static uint32_t gPrioDatasPerMetric;
 
 static uint32_t kNumMetaOrigins = 1;
 
-NS_NAMED_LITERAL_CSTRING(kUnknownOrigin, "__UNKNOWN__");
+constexpr auto kUnknownOrigin = "__UNKNOWN__"_ns;
 
 }  
 

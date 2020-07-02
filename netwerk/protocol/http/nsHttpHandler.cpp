@@ -720,8 +720,8 @@ nsresult nsHttpHandler::AddConnectionHeader(nsHttpRequestHead* request,
   
   
 
-  NS_NAMED_LITERAL_CSTRING(close, "close");
-  NS_NAMED_LITERAL_CSTRING(keepAlive, "keep-alive");
+  constexpr auto close = "close"_ns;
+  constexpr auto keepAlive = "keep-alive"_ns;
 
   const nsLiteralCString* connectionType = &close;
   if (caps & NS_HTTP_ALLOW_KEEPALIVE) {

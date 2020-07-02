@@ -482,7 +482,7 @@ bool nsMIMEInfoWin::GetDllLaunchInfo(nsIFile* aDll, nsIFile* aFile,
     
     
     nsAutoString params;
-    NS_NAMED_LITERAL_STRING(rundllSegment, "rundll32.exe ");
+    constexpr auto rundllSegment = u"rundll32.exe "_ns;
     int32_t index = appFilesystemCommand.Find(rundllSegment);
     if (index > kNotFound) {
       params.Append(
@@ -492,7 +492,7 @@ bool nsMIMEInfoWin::GetDllLaunchInfo(nsIFile* aDll, nsIFile* aFile,
     }
 
     
-    NS_NAMED_LITERAL_STRING(percentOneParam, "%1");
+    constexpr auto percentOneParam = u"%1"_ns;
     index = params.Find(percentOneParam);
     if (index == kNotFound)  
       return false;

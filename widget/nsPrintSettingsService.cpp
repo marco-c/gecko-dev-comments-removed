@@ -981,7 +981,7 @@ static nsresult GetAdjustedPrinterName(nsIPrintSettings* aPS, bool aUsePNP,
 
   
   
-  NS_NAMED_LITERAL_STRING(replSubstr, "_");
+  constexpr auto replSubstr = u"_"_ns;
   const char* replaceStr = " \n\r";
 
   int32_t x;

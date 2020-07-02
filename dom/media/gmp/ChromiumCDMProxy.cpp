@@ -155,7 +155,7 @@ void ChromiumCDMProxy::OnCDMCreated(uint32_t aPromiseId) {
     mKeys->OnCDMCreated(aPromiseId, cdm->PluginId());
   } else {
     
-    NS_NAMED_LITERAL_CSTRING(err, "Null CDM in OnCDMCreated()");
+    constexpr auto err = "Null CDM in OnCDMCreated()"_ns;
     ErrorResult rv;
     rv.ThrowInvalidStateError(err);
     mKeys->RejectPromise(aPromiseId, std::move(rv), err);

@@ -265,7 +265,7 @@ nsresult CanvasRenderingContextHelper::ParseParams(
   
   *outUsingCustomParseOptions = false;
   if (outParams.Length() == 0 && aEncoderOptions.isString()) {
-    NS_NAMED_LITERAL_STRING(mozParseOptions, "-moz-parse-options:");
+    constexpr auto mozParseOptions = u"-moz-parse-options:"_ns;
     nsAutoJSString paramString;
     if (!paramString.init(aCx, aEncoderOptions.toString())) {
       return NS_ERROR_FAILURE;

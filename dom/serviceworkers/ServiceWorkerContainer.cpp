@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ServiceWorkerContainer.h"
 
@@ -42,7 +42,7 @@
 #include "ServiceWorkerRegistration.h"
 #include "ServiceWorkerUtils.h"
 
-
+// This is defined to something else on Windows
 #ifdef DispatchMessage
 #  undef DispatchMessage
 #endif
@@ -81,9 +81,9 @@ bool IsServiceWorkersTestingEnabledInWindow(JSObject* const aGlobal) {
   return false;
 }
 
-}  
+}  // namespace
 
-
+/* static */
 bool ServiceWorkerContainer::IsEnabled(JSContext* aCx, JSObject* aGlobal) {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -111,7 +111,7 @@ bool ServiceWorkerContainer::IsEnabled(JSContext* aCx, JSObject* aGlobal) {
   return isTestingEnabled;
 }
 
-
+// static
 already_AddRefed<ServiceWorkerContainer> ServiceWorkerContainer::Create(
     nsIGlobalObject* aGlobal) {
   RefPtr<Inner> inner;
@@ -160,9 +160,9 @@ void ServiceWorkerContainer::ControllerChanged(ErrorResult& aRv) {
 
 using mozilla::dom::ipc::StructuredCloneData;
 
-
-
-
+// A ReceivedMessage represents a message sent via
+// Client.postMessage(). It is used as used both for queuing of
+// incoming messages and as an interface to DispatchMessage().
 struct MOZ_HEAP_CLASS ServiceWorkerContainer::ReceivedMessage {
   explicit ReceivedMessage(const ClientPostMessageArgs& aArgs)
       : mServiceWorker(aArgs.serviceWorker()) {
@@ -197,9 +197,9 @@ namespace {
 
 already_AddRefed<nsIURI> GetBaseURIFromGlobal(nsIGlobalObject* aGlobal,
                                               ErrorResult& aRv) {
-  
-  
-  
+  // It would be nice not to require a window here, but right
+  // now we don't have a great way to get the base URL just
+  // from the nsIGlobalObject.
   nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aGlobal);
   if (!window) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
@@ -221,14 +221,14 @@ already_AddRefed<nsIURI> GetBaseURIFromGlobal(nsIGlobalObject* aGlobal,
   return baseURI.forget();
 }
 
-}  
+}  // anonymous namespace
 
 already_AddRefed<Promise> ServiceWorkerContainer::Register(
     const nsAString& aScriptURL, const RegistrationOptions& aOptions,
     const CallerType aCallerType, ErrorResult& aRv) {
-  
-  
-  
+  // Note, we can't use GetGlobalIfValid() from the start here.  If we
+  // hit a storage failure we want to log a message with the final
+  // scope string we put together below.
   nsIGlobalObject* global = GetParentObject();
   if (!global) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
@@ -246,7 +246,7 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
     return nullptr;
   }
 
-  
+  // Don't use NS_ConvertUTF16toUTF8 because that doesn't let us handle OOM.
   nsAutoCString scriptURL;
   if (!AppendUTF16toUTF8(aScriptURL, scriptURL, fallible)) {
     aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
@@ -261,17 +261,17 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
     return nullptr;
   }
 
-  
-  
+  // Never allow script URL with moz-extension scheme if support is fully
+  // disabled by the 'extensions.background_service_worker.enabled' pref.
   if (scriptURI->SchemeIs("moz-extension") &&
       !StaticPrefs::extensions_backgroundServiceWorker_enabled_AtStartup()) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }
 
-  
-  
-  
+  // Allow a webextension principal to register a service worker script with
+  // a moz-extension url only if 'extensions.service_worker_register.allowed'
+  // is true.
   if (scriptURI->SchemeIs("moz-extension") &&
       aCallerType == CallerType::NonSystem &&
       (!baseURI->SchemeIs("moz-extension") ||
@@ -280,13 +280,13 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
     return nullptr;
   }
 
-  
-  
+  // In ServiceWorkerContainer.register() the scope argument is parsed against
+  // different base URLs depending on whether it was passed or not.
   nsCOMPtr<nsIURI> scopeURI;
 
-  
+  // Step 4. If none passed, parse against script's URL
   if (!aOptions.mScope.WasPassed()) {
-    NS_NAMED_LITERAL_CSTRING(defaultScope, "./");
+    constexpr auto defaultScope = "./"_ns;
     rv = NS_NewURI(getter_AddRefs(scopeURI), defaultScope, nullptr, scriptURI);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       nsAutoCString spec;
@@ -295,7 +295,7 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
       return nullptr;
     }
   } else {
-    
+    // Step 5. Parse against entry settings object's base URL.
     rv = NS_NewURI(getter_AddRefs(scopeURI), aOptions.mScope.Value(), nullptr,
                    baseURI);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -308,7 +308,7 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
     }
   }
 
-  
+  // Strip the any ref from both the script and scope URLs.
   nsCOMPtr<nsIURI> cloneWithoutRef;
   aRv = NS_GetURIWithoutRef(scriptURI, getter_AddRefs(cloneWithoutRef));
   if (aRv.Failed()) {
@@ -340,20 +340,20 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  
+  // The next section of code executes an NS_CheckContentLoadPolicy()
+  // check.  This is necessary to enforce the CSP of the calling client.
+  // Currently this requires an Document.  Once bug 965637 lands we
+  // should try to move this into ServiceWorkerScopeAndScriptAreValid()
+  // using the ClientInfo instead of doing a window-specific check here.
+  // See bug 1455077 for further investigation.
   nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new mozilla::net::LoadInfo(
-      doc->NodePrincipal(),  
-      doc->NodePrincipal(),  
-      doc,                   
+      doc->NodePrincipal(),  // loading principal
+      doc->NodePrincipal(),  // triggering principal
+      doc,                   // loading node
       nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
       nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER);
 
-  
+  // Check content policy.
   int16_t decision = nsIContentPolicy::ACCEPT;
   rv = NS_CheckContentLoadPolicy(scriptURI, secCheckLoadInfo,
                                  "application/javascript"_ns, &decision);
@@ -366,8 +366,8 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
     return nullptr;
   }
 
-  
-  
+  // Get the string representation for both the script and scope since
+  // we sanitized them above.
   nsCString cleanedScopeURL;
   aRv = scopeURI->GetSpec(cleanedScopeURL);
   if (aRv.Failed()) {
@@ -380,9 +380,9 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
     return nullptr;
   }
 
-  
-  
-  
+  // Verify that the global is valid and has permission to store
+  // data.  We perform this late so that we can report the final
+  // scope URL in any error message.
   Unused << GetGlobalIfValid(aRv, [&](Document* aDoc) {
     AutoTArray<nsString, 1> param;
     CopyUTF8toUTF16(cleanedScopeURL, *param.AppendElement());
@@ -594,9 +594,9 @@ Promise* ServiceWorkerContainer::GetReady(ErrorResult& aRv) {
             global->GetOrCreateServiceWorkerRegistration(aDescriptor);
         NS_ENSURE_TRUE_VOID(reg);
 
-        
-        
-        
+        // Don't resolve the ready promise until the registration has
+        // reached the right version.  This ensures that the active
+        // worker property is set correctly on the registration.
         reg->WhenVersionReached(
             aDescriptor.Version(),
             [outer, reg](bool aResult) { outer->MaybeResolve(reg); });
@@ -606,7 +606,7 @@ Promise* ServiceWorkerContainer::GetReady(ErrorResult& aRv) {
   return mReadyPromise;
 }
 
-
+// Testing only.
 void ServiceWorkerContainer::GetScopeForUrl(const nsAString& aUrl,
                                             nsString& aScope,
                                             ErrorResult& aRv) {
@@ -635,10 +635,10 @@ void ServiceWorkerContainer::GetScopeForUrl(const nsAString& aUrl,
 nsIGlobalObject* ServiceWorkerContainer::GetGlobalIfValid(
     ErrorResult& aRv,
     const std::function<void(Document*)>&& aStorageFailureCB) const {
-  
-  
-  
-  
+  // For now we require a window since ServiceWorkerContainer is
+  // not exposed on worker globals yet.  The main thing we need
+  // to fix here to support that is the storage access check via
+  // the nsIGlobalObject.
   nsPIDOMWindowInner* window = GetOwner();
   if (NS_WARN_IF(!window)) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
@@ -651,10 +651,10 @@ nsIGlobalObject* ServiceWorkerContainer::GetGlobalIfValid(
     return nullptr;
   }
 
-  
-  
-  
-  
+  // Don't allow a service worker to access service worker registrations
+  // from a window with storage disabled.  If these windows can access
+  // the registration it increases the chance they can bypass the storage
+  // block via postMessage(), etc.
   auto storageAllowed = StorageAllowedForWindow(window);
   if (NS_WARN_IF(storageAllowed != StorageAccess::eAllow)) {
     if (aStorageFailureCB) {
@@ -664,7 +664,7 @@ nsIGlobalObject* ServiceWorkerContainer::GetGlobalIfValid(
     return nullptr;
   }
 
-  
+  // Don't allow service workers when the document is chrome.
   if (NS_WARN_IF(doc->NodePrincipal()->IsSystemPrincipal())) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
@@ -691,8 +691,8 @@ void ServiceWorkerContainer::RunWithJSContext(F&& aCallable) {
     globalObject = do_QueryInterface(window);
   }
 
-  
-  
+  // If AutoJSAPI::Init() fails then either global is nullptr or not
+  // in a usable state.
   AutoJSAPI jsapi;
   if (!jsapi.Init(globalObject)) {
     return;
@@ -704,10 +704,10 @@ void ServiceWorkerContainer::RunWithJSContext(F&& aCallable) {
 void ServiceWorkerContainer::DispatchMessage(RefPtr<ReceivedMessage> aMessage) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
-  
-  
+  // When dispatching a message, either DOMContentLoaded has already
+  // been fired, or someone called startMessages() or set onmessage.
+  // Either way, a global object is supposed to be present. If it's
+  // not, we'd fail to initialize the JS API and exit.
   RunWithJSContext([this, message = std::move(aMessage)](
                        JSContext* const aCx, nsIGlobalObject* const aGlobal) {
     ErrorResult result;
@@ -766,11 +766,11 @@ nsresult FillInOriginNoSuffix(const ServiceWorkerDescriptor& aServiceWorker,
 already_AddRefed<ServiceWorker> GetOrCreateServiceWorkerWithoutWarnings(
     nsIGlobalObject* const aGlobal,
     const ServiceWorkerDescriptor& aDescriptor) {
-  
-  
-  
-  
-  
+  // In child-intercept mode we have to verify that the registration
+  // exists in the current process. This exact check is also performed
+  // (indirectly) in nsIGlobalObject::GetOrCreateServiceWorker, but it
+  // also emits a warning when the registration is not present. To
+  // to avoid having too many warnings, we do a precheck here.
   if (!ServiceWorkerParentInterceptEnabled()) {
     const RefPtr<ServiceWorkerManager> serviceWorkerManager =
         ServiceWorkerManager::GetInstance();
@@ -789,20 +789,20 @@ already_AddRefed<ServiceWorker> GetOrCreateServiceWorkerWithoutWarnings(
   return aGlobal->GetOrCreateServiceWorker(aDescriptor).forget();
 }
 
-}  
+}  // namespace
 
 Result<Ok, bool> ServiceWorkerContainer::FillInMessageEventInit(
     JSContext* const aCx, nsIGlobalObject* const aGlobal,
     ReceivedMessage& aMessage, MessageEventInit& aInit, ErrorResult& aRv) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Determining the source and origin should preceed attempting deserialization
+  // because on a "messageerror" event (i.e. when deserialization fails), the
+  // dispatched message needs to contain such an origin and source, per spec:
+  //
+  // "If this throws an exception, catch it, fire an event named messageerror
+  //  at destination, using MessageEvent, with the origin attribute initialized
+  //  to origin and the source attribute initialized to source, and then abort
+  //  these steps." - 6.4 of postMessage
+  //  See: https://w3c.github.io/ServiceWorker/#service-worker-postmessage
   const RefPtr<ServiceWorker> serviceWorkerInstance =
       GetOrCreateServiceWorkerWithoutWarnings(aGlobal, aMessage.mServiceWorker);
   if (serviceWorkerInstance) {
@@ -831,5 +831,5 @@ Result<Ok, bool> ServiceWorkerContainer::FillInMessageEventInit(
   return Ok();
 }
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla

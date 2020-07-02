@@ -3125,7 +3125,7 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
 
   
   if (!content && !mDocument->IsHTMLDocument()) {
-    NS_NAMED_LITERAL_STRING(nameSpace, "http://www.w3.org/1999/xhtml");
+    constexpr auto nameSpace = u"http://www.w3.org/1999/xhtml"_ns;
     
     nsCOMPtr<nsINodeList> list =
         mDocument->GetElementsByTagNameNS(nameSpace, u"a"_ns);
@@ -3215,7 +3215,7 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
     }
   } else {
     rv = NS_ERROR_FAILURE;
-    NS_NAMED_LITERAL_STRING(top, "top");
+    constexpr auto top = u"top"_ns;
     if (nsContentUtils::EqualsIgnoreASCIICase(aAnchorName, top)) {
       
       

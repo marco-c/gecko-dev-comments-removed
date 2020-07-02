@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsReadConfig.h"
 #include "nsJSConfigTriggers.h"
@@ -60,7 +60,7 @@ static nsresult DisplayError(void) {
   return promptService->Alert(nullptr, title.get(), err.get());
 }
 
-
+// nsISupports Implementation
 
 NS_IMPL_ISUPPORTS(nsReadConfig, nsIObserver)
 
@@ -87,8 +87,8 @@ NS_IMETHODIMP nsReadConfig::Observe(nsISupports* aSubject, const char* aTopic,
 
   if (!nsCRT::strcmp(aTopic, NS_PREFSERVICE_READ_TOPIC_ID)) {
     rv = readConfigFile();
-    
-    
+    // Don't show error alerts if the sandbox is enabled, just show
+    // sandbox warning.
     if (NS_FAILED(rv)) {
       if (sandboxEnabled) {
         nsContentUtils::ReportToConsoleNonLocalized(
@@ -112,9 +112,9 @@ NS_IMETHODIMP nsReadConfig::Observe(nsISupports* aSubject, const char* aTopic,
   return rv;
 }
 
-
-
-
+/**
+ * This is the blocklist for known bad autoconfig files.
+ */
 static const char* gBlockedConfigs[] = {"dsengine.cfg"};
 
 nsresult nsReadConfig::readConfigFile() {
@@ -132,7 +132,7 @@ nsresult nsReadConfig::readConfigFile() {
       prefService->GetDefaultBranch(nullptr, getter_AddRefs(defaultPrefBranch));
   if (NS_FAILED(rv)) return rv;
 
-  NS_NAMED_LITERAL_CSTRING(channel, MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL));
+  constexpr auto channel = nsLiteralCString{MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL)};
 
   bool sandboxEnabled =
       channel.EqualsLiteral("beta") || channel.EqualsLiteral("release");
@@ -150,31 +150,31 @@ nsresult nsReadConfig::readConfigFile() {
   for (size_t index = 0, len = mozilla::ArrayLength(gBlockedConfigs);
        index < len; ++index) {
     if (lockFileName == gBlockedConfigs[index]) {
-      
+      // This is NS_OK because we don't want to show an error to the user
       return rv;
     }
   }
 
-  
-  
+  // This needs to be read only once.
+  //
   if (!mRead) {
-    
+    // Initiate the new JS Context for Preference management
 
     rv = CentralizedAdminPrefManagerInit(sandboxEnabled);
     if (NS_FAILED(rv)) return rv;
 
-    
+    // Open and evaluate function calls to set/lock/unlock prefs
     rv = openAndEvaluateJSFile("prefcalls.js", 0, false, false);
     if (NS_FAILED(rv)) return rv;
 
     mRead = true;
   }
-  
+  // If the lockFileName is nullptr return ok, because no lockFile will be used
 
-  
-  
-  
-  
+  // Once the config file is read, we should check that the vendor name
+  // is consistent By checking for the vendor name after reading the config
+  // file we allow for the preference to be set (and locked) by the creator
+  // of the cfg file meaning the file can not be renamed (successfully).
 
   nsCOMPtr<nsIPrefBranch> prefBranch;
   rv = prefService->GetBranch(nullptr, getter_AddRefs(prefBranch));
@@ -196,28 +196,28 @@ nsresult nsReadConfig::readConfigFile() {
 
   rv = prefBranch->GetCharPref("general.config.filename", lockFileName);
   if (NS_FAILED(rv))
-    
-    
+    // There is NO REASON we should ever get here. This is POST reading
+    // of the config file.
     return NS_ERROR_FAILURE;
 
   rv = prefBranch->GetCharPref("general.config.vendor", lockVendor);
-  
+  // If vendor is not nullptr, do this check
   if (NS_SUCCEEDED(rv)) {
     fileNameLen = strlen(lockFileName.get());
 
-    
-    
-    
+    // lockVendor and lockFileName should be the same with the addtion of
+    // .cfg to the filename by checking this post reading of the cfg file
+    // this value can be set within the cfg file adding a level of security.
 
     if (PL_strncmp(lockFileName.get(), lockVendor.get(), fileNameLen - 4) != 0)
       return NS_ERROR_FAILURE;
   }
 
-  
+  // get the value of the autoconfig url
   nsAutoCString urlName;
   rv = prefBranch->GetCharPref("autoadmin.global_config_url", urlName);
   if (NS_SUCCEEDED(rv) && !urlName.IsEmpty()) {
-    
+    // Instantiating nsAutoConfig object if the pref is present
     mAutoConfig = new nsAutoConfig();
 
     rv = mAutoConfig->Init();
@@ -229,7 +229,7 @@ nsresult nsReadConfig::readConfigFile() {
   }
 
   return NS_OK;
-}  
+}  // ReadConfigFile
 
 nsresult nsReadConfig::openAndEvaluateJSFile(const char* aFileName,
                                              int32_t obscureValue,
@@ -271,7 +271,7 @@ nsresult nsReadConfig::openAndEvaluateJSFile(const char* aFileName,
   uint32_t amt = 0;
   rv = inStr->Available(&fs64);
   if (NS_FAILED(rv)) return rv;
-  
+  // This used to use PR_Malloc(), which doesn't support over 4GB.
   if (fs64 > UINT32_MAX) return NS_ERROR_FILE_TOO_BIG;
   uint32_t fs = (uint32_t)fs64;
 
@@ -282,7 +282,7 @@ nsresult nsReadConfig::openAndEvaluateJSFile(const char* aFileName,
   NS_ASSERTION((amt == fs), "failed to read the entire configuration file!!");
   if (NS_SUCCEEDED(rv)) {
     if (obscureValue > 0) {
-      
+      // Unobscure file by subtracting some value from every char.
       for (uint32_t i = 0; i < amt; i++) buf[i] -= obscureValue;
     }
     rv = EvaluateAdminConfigScript(buf, amt, aFileName, false, true, isEncoded,

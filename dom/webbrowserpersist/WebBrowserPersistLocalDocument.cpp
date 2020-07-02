@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WebBrowserPersistLocalDocument.h"
 #include "WebBrowserPersistDocumentParent.h"
@@ -189,7 +189,7 @@ already_AddRefed<nsISHEntry> WebBrowserPersistLocalDocument::GetHistory() {
   }
   nsCOMPtr<nsISupports> curDesc;
   nsresult rv = desc->GetCurrentDescriptor(getter_AddRefs(curDesc));
-  
+  // This can fail if, e.g., the document is a Print Preview.
   if (NS_FAILED(rv) || NS_WARN_IF(!curDesc)) {
     return nullptr;
   }
@@ -212,17 +212,17 @@ nsIURI* WebBrowserPersistLocalDocument::GetBaseURI() const {
 
 namespace {
 
-
+// Helper class for ReadResources().
 class ResourceReader final : public nsIWebBrowserPersistDocumentReceiver {
  public:
   ResourceReader(WebBrowserPersistLocalDocument* aParent,
                  nsIWebBrowserPersistResourceVisitor* aVisitor);
   nsresult OnWalkDOMNode(nsINode* aNode);
 
-  
-  
-  
-  
+  // This is called both to indicate the end of the document walk
+  // and when a subdocument is (maybe asynchronously) sent to the
+  // visitor.  The call to EndVisit needs to happen after both of
+  // those have finished.
   void DocumentDone(nsresult aStatus);
 
   NS_DECL_NSIWEBBROWSERPERSISTDOCUMENTRECEIVER
@@ -234,12 +234,12 @@ class ResourceReader final : public nsIWebBrowserPersistDocumentReceiver {
   nsCOMPtr<nsIURI> mCurrentBaseURI;
   uint32_t mPersistFlags;
 
-  
-  
-  
-  
+  // The number of DocumentDone calls after which EndVisit will be
+  // called on the visitor.  Counts the main document if it's still
+  // being walked and any outstanding asynchronous subdocument
+  // StartPersistence calls.
   size_t mOutstandingDocuments;
-  
+  // Collects the status parameters to DocumentDone calls.
   nsresult mEndStatus;
 
   nsresult OnWalkURI(const nsACString& aURISpec,
@@ -301,11 +301,11 @@ nsresult ResourceReader::OnWalkSubframe(nsINode* aNode) {
   nsresult rv = err.StealNSResult();
   if (NS_FAILED(rv)) {
     if (rv == NS_ERROR_NO_CONTENT) {
-      
+      // Just ignore frames with no content document.
       rv = NS_OK;
     }
-    
-    
+    // StartPersistence won't eventually call this if it failed,
+    // so this does so (to keep mOutstandingDocuments correct).
     DocumentDone(rv);
   }
   return rv;
@@ -326,8 +326,8 @@ ResourceReader::OnError(nsresult aFailure) {
 
 nsresult ResourceReader::OnWalkURI(nsIURI* aURI,
                                    nsContentPolicyType aContentPolicyType) {
-  
-  
+  // Test if this URI should be persisted. By default
+  // we should assume the URI  is persistable.
   bool doNotPersistURI;
   nsresult rv = NS_URIChainHasFlags(
       aURI, nsIProtocolHandler::URI_NON_PERSISTABLE, &doNotPersistURI);
@@ -349,7 +349,7 @@ nsresult ResourceReader::OnWalkURI(const nsACString& aURISpec,
   rv = NS_NewURI(getter_AddRefs(uri), aURISpec, mParent->GetCharacterSet(),
                  mCurrentBaseURI);
   if (NS_FAILED(rv)) {
-    
+    // We don't want to break saving a page in case of a malformed URI.
     return NS_OK;
   }
   return OnWalkURI(uri, aContentPolicyType);
@@ -357,8 +357,8 @@ nsresult ResourceReader::OnWalkURI(const nsACString& aURISpec,
 
 static void ExtractAttribute(dom::Element* aElement, const char* aAttribute,
                              const char* aNamespaceURI, nsCString& aValue) {
-  
-  
+  // Find the named URI attribute on the (element) node and store
+  // a reference to the URI that maps onto a local file name
 
   RefPtr<nsDOMAttributeMap> attrMap = aElement->Attributes();
 
@@ -396,7 +396,7 @@ static nsresult GetXMLStyleSheetLink(dom::ProcessingInstruction* aPI,
 }
 
 nsresult ResourceReader::OnWalkDOMNode(nsINode* aNode) {
-  
+  // Fixup xml-stylesheet processing instructions
   if (auto nodeAsPI = dom::ProcessingInstruction::FromNode(aNode)) {
     nsAutoString target;
     nodeAsPI->GetTarget(target);
@@ -411,7 +411,7 @@ nsresult ResourceReader::OnWalkDOMNode(nsINode* aNode) {
     return NS_OK;
   }
 
-  
+  // Test the node to see if it's an image, frame, iframe, css, js
   if (aNode->IsHTMLElement(nsGkAtoms::img)) {
     return OnWalkAttribute(aNode->AsElement(), nsIContentPolicy::TYPE_IMAGE,
                            "src");
@@ -473,7 +473,7 @@ nsresult ResourceReader::OnWalkDOMNode(nsINode* aNode) {
   }
 
   if (auto nodeAsLink = dom::HTMLLinkElement::FromNode(aNode)) {
-    
+    // Test if the link has a rel value indicating it to be a stylesheet
     nsAutoString linkRel;
     nodeAsLink->GetRel(linkRel);
     if (!linkRel.IsEmpty()) {
@@ -484,20 +484,20 @@ nsresult ResourceReader::OnWalkDOMNode(nsINode* aNode) {
       linkRel.BeginReading(start);
       linkRel.EndReading(end);
 
-      
+      // Walk through space delimited string looking for "stylesheet"
       for (current = start; current != end; ++current) {
-        
+        // Ignore whitespace
         if (nsCRT::IsAsciiSpace(*current)) {
           continue;
         }
 
-        
+        // Grab the next space delimited word
         nsReadingIterator<char16_t> startWord = current;
         do {
           ++current;
         } while (current != end && !nsCRT::IsAsciiSpace(*current));
 
-        
+        // Store the link for fix up if it says "stylesheet"
         if (Substring(startWord, current)
                 .LowerCaseEqualsLiteral("stylesheet")) {
           OnWalkAttribute(aNode->AsElement(), nsIContentPolicy::TYPE_STYLESHEET,
@@ -530,7 +530,7 @@ nsresult ResourceReader::OnWalkDOMNode(nsINode* aNode) {
   return NS_OK;
 }
 
-
+// Helper class for node rewriting in writeContent().
 class PersistNodeFixup final : public nsIDocumentEncoderNodeFixup {
  public:
   PersistNodeFixup(WebBrowserPersistLocalDocument* aParent,
@@ -588,9 +588,9 @@ PersistNodeFixup::PersistNodeFixup(WebBrowserPersistLocalDocument* aParent,
 
 nsresult PersistNodeFixup::GetNodeToFixup(nsINode* aNodeIn,
                                           nsINode** aNodeOut) {
-  
-  
-  
+  // Avoid mixups in FixupNode that could leak objects; this goes
+  // against the usual out parameter convention, but it's a private
+  // method so shouldn't be a problem.
   MOZ_ASSERT(!*aNodeOut);
 
   if (!IsFlagSet(IWBP::PERSIST_FLAGS_FIXUP_ORIGINAL_DOM)) {
@@ -604,7 +604,7 @@ nsresult PersistNodeFixup::GetNodeToFixup(nsINode* aNodeIn,
 }
 
 nsresult PersistNodeFixup::FixupURI(nsAString& aURI) {
-  
+  // get the current location of the file (absolutized)
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_NewURI(getter_AddRefs(uri), aURI, mParent->GetCharacterSet(),
                           mCurrentBaseURI);
@@ -615,7 +615,7 @@ nsresult PersistNodeFixup::FixupURI(nsAString& aURI) {
 
   const nsCString* replacement = mMap.Get(spec);
   if (!replacement) {
-    
+    // Note that most callers ignore this "failure".
     return NS_ERROR_FAILURE;
   }
   if (!replacement->IsEmpty()) {
@@ -658,7 +658,7 @@ nsresult PersistNodeFixup::FixupAnchor(nsINode* aNode) {
 
   RefPtr<nsDOMAttributeMap> attrMap = element->Attributes();
 
-  
+  // Make all anchor links absolute so they point off onto the Internet
   nsString attribute(u"href"_ns);
   RefPtr<dom::Attr> attr = attrMap->GetNamedItem(attribute);
   if (attr) {
@@ -666,12 +666,12 @@ nsresult PersistNodeFixup::FixupAnchor(nsINode* aNode) {
     attr->GetValue(oldValue);
     NS_ConvertUTF16toUTF8 oldCValue(oldValue);
 
-    
+    // Skip empty values and self-referencing bookmarks
     if (oldCValue.IsEmpty() || oldCValue.CharAt(0) == '#') {
       return NS_OK;
     }
 
-    
+    // if saving file to same location, we don't need to do any fixup
     bool isEqual;
     if (mTargetBaseURI &&
         NS_SUCCEEDED(mCurrentBaseURI->Equals(mTargetBaseURI, &isEqual)) &&
@@ -683,7 +683,7 @@ nsresult PersistNodeFixup::FixupAnchor(nsINode* aNode) {
     relativeURI = IsFlagSet(IWBP::PERSIST_FLAGS_FIXUP_LINKS_TO_DESTINATION)
                       ? mTargetBaseURI
                       : mCurrentBaseURI;
-    
+    // Make a new URI to replace the current one
     nsCOMPtr<nsIURI> newURI;
     nsresult rv = NS_NewURI(getter_AddRefs(newURI), oldCValue,
                             mParent->GetCharacterSet(), relativeURI);
@@ -739,7 +739,7 @@ nsresult PersistNodeFixup::FixupXMLStyleSheetLink(
   nsAutoString href;
   nsContentUtils::GetPseudoAttributeValue(data, nsGkAtoms::href, href);
 
-  
+  // Construct and set a new data value for the xml-stylesheet
   if (!aHref.IsEmpty() && !href.IsEmpty()) {
     nsAutoString alternate;
     nsAutoString charset;
@@ -791,7 +791,7 @@ PersistNodeFixup::FixupNode(nsINode* aNodeIn, bool* aSerializeCloneKids,
 
   MOZ_ASSERT(aNodeIn->IsContent());
 
-  
+  // Fixup xml-stylesheet processing instructions
   if (auto nodeAsPI = dom::ProcessingInstruction::FromNode(aNodeIn)) {
     nsAutoString target;
     nodeAsPI->GetTarget(target);
@@ -816,17 +816,17 @@ PersistNodeFixup::FixupNode(nsINode* aNodeIn, bool* aSerializeCloneKids,
     return NS_OK;
   }
 
-  
+  // BASE elements are replaced by a comment so relative links are not hosed.
   if (!IsFlagSet(IWBP::PERSIST_FLAGS_NO_BASE_TAG_MODIFICATIONS) &&
       content->IsHTMLElement(nsGkAtoms::base)) {
-    
-    
-    
+    // Base uses HTMLSharedElement, which would be awkward to implement
+    // FromContent on, since it represents multiple elements. Since we've
+    // already checked IsHTMLElement here, just cast as we were doing.
     auto* base = static_cast<dom::HTMLSharedElement*>(content.get());
     dom::Document* ownerDoc = base->OwnerDoc();
 
     nsAutoString href;
-    base->GetHref(href);  
+    base->GetHref(href);  // Doesn't matter if this fails
     nsAutoString commentText;
     commentText.AssignLiteral(" base ");
     if (!href.IsEmpty()) {
@@ -836,7 +836,7 @@ PersistNodeFixup::FixupNode(nsINode* aNodeIn, bool* aSerializeCloneKids,
     return NS_OK;
   }
 
-  
+  // Fix up href and file links in the elements
   RefPtr<dom::HTMLAnchorElement> nodeAsAnchor =
       dom::HTMLAnchorElement::FromNode(content);
   if (nodeAsAnchor) {
@@ -892,7 +892,7 @@ PersistNodeFixup::FixupNode(nsINode* aNodeIn, bool* aSerializeCloneKids,
   if (content->IsHTMLElement(nsGkAtoms::img)) {
     nsresult rv = GetNodeToFixup(aNodeIn, aNodeOut);
     if (NS_SUCCEEDED(rv) && *aNodeOut) {
-      
+      // Disable image loads
       nsCOMPtr<nsIImageLoadingContent> imgCon = do_QueryInterface(*aNodeOut);
       if (imgCon) {
         imgCon->SetLoadingEnabled(false);
@@ -922,11 +922,11 @@ PersistNodeFixup::FixupNode(nsINode* aNodeIn, bool* aSerializeCloneKids,
   if (content->IsSVGElement(nsGkAtoms::img)) {
     nsresult rv = GetNodeToFixup(aNodeIn, aNodeOut);
     if (NS_SUCCEEDED(rv) && *aNodeOut) {
-      
+      // Disable image loads
       nsCOMPtr<nsIImageLoadingContent> imgCon = do_QueryInterface(*aNodeOut);
       if (imgCon) imgCon->SetLoadingEnabled(false);
 
-      
+      // FixupAnchor(*aNodeOut);  // XXXjwatt: is this line needed?
       FixupAttribute(*aNodeOut, "href", "http://www.w3.org/1999/xlink");
     }
     return rv;
@@ -967,14 +967,14 @@ PersistNodeFixup::FixupNode(nsINode* aNodeIn, bool* aSerializeCloneKids,
   if (content->IsHTMLElement(nsGkAtoms::link)) {
     nsresult rv = GetNodeToFixup(aNodeIn, aNodeOut);
     if (NS_SUCCEEDED(rv) && *aNodeOut) {
-      
+      // First see if the link represents linked content
       rv = FixupAttribute(*aNodeOut, "href");
       if (NS_FAILED(rv)) {
-        
+        // Perhaps this link is actually an anchor to related content
         FixupAnchor(*aNodeOut);
       }
-      
-      
+      // TODO if "type" attribute == "text/css"
+      //        fixup stylesheet
     }
     return rv;
   }
@@ -1000,7 +1000,7 @@ PersistNodeFixup::FixupNode(nsINode* aNodeIn, bool* aSerializeCloneKids,
   if (nodeAsInput) {
     nsresult rv = GetNodeToFixup(aNodeIn, aNodeOut);
     if (NS_SUCCEEDED(rv) && *aNodeOut) {
-      
+      // Disable image loads
       nsCOMPtr<nsIImageLoadingContent> imgCon = do_QueryInterface(*aNodeOut);
       if (imgCon) {
         imgCon->SetLoadingEnabled(false);
@@ -1009,8 +1009,8 @@ PersistNodeFixup::FixupNode(nsINode* aNodeIn, bool* aSerializeCloneKids,
       FixupAttribute(*aNodeOut, "src");
 
       nsAutoString valueStr;
-      NS_NAMED_LITERAL_STRING(valueAttr, "value");
-      
+      constexpr auto valueAttr = u"value"_ns;
+      // Update element node attributes with user-entered form state
       RefPtr<dom::HTMLInputElement> outElt =
           dom::HTMLInputElement::FromNode((*aNodeOut)->AsContent());
       nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(*aNodeOut);
@@ -1026,7 +1026,7 @@ PersistNodeFixup::FixupNode(nsINode* aNodeIn, bool* aSerializeCloneKids,
         case NS_FORM_INPUT_TIME:
         case NS_FORM_INPUT_COLOR:
           nodeAsInput->GetValue(valueStr, dom::CallerType::System);
-          
+          // Avoid superfluous value="" serialization
           if (valueStr.IsEmpty()) {
             outElt->RemoveAttribute(valueAttr, IgnoreErrors());
           } else {
@@ -1050,7 +1050,7 @@ PersistNodeFixup::FixupNode(nsINode* aNodeIn, bool* aSerializeCloneKids,
   if (nodeAsTextArea) {
     nsresult rv = GetNodeToFixup(aNodeIn, aNodeOut);
     if (NS_SUCCEEDED(rv) && *aNodeOut) {
-      
+      // Tell the document encoder to serialize the text child we create below
       *aSerializeCloneKids = true;
 
       nsAutoString valueStr;
@@ -1077,7 +1077,7 @@ PersistNodeFixup::FixupNode(nsINode* aNodeIn, bool* aSerializeCloneKids,
   return NS_OK;
 }
 
-}  
+}  // unnamed namespace
 
 NS_IMETHODIMP
 WebBrowserPersistLocalDocument::ReadResources(
@@ -1116,9 +1116,9 @@ WebBrowserPersistLocalDocument::ReadResources(
     }
   } while (currentNode);
   reader->DocumentDone(rv);
-  
-  
-  
+  // If NS_FAILED(rv), it was / will be reported by an EndVisit call
+  // via DocumentDone.  This method must return a failure if and
+  // only if visitor won't be invoked.
   return NS_OK;
 }
 
@@ -1237,4 +1237,4 @@ WebBrowserPersistLocalDocument::WriteContent(
   return NS_OK;
 }
 
-}  
+}  // namespace mozilla

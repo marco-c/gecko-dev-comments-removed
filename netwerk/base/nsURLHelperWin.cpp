@@ -31,7 +31,7 @@ nsresult net_GetURLSpecFromActualFile(nsIFile* aFile, nsACString& result) {
   
   
   
-  NS_NAMED_LITERAL_CSTRING(prefix, "file:///");
+  constexpr auto prefix = "file:///"_ns;
 
   
   NS_ConvertUTF16toUTF8 ePath(path);

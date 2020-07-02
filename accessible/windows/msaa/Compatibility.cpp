@@ -295,12 +295,12 @@ static bool IsSystemOleAcc(nsCOMPtr<nsIFile>& aFile) {
 static bool IsTypelibPreferred() {
   
   
-  NS_NAMED_LITERAL_STRING(kUniversalMarshalerClsid,
-                          "{00020424-0000-0000-C000-000000000046}");
+  constexpr auto kUniversalMarshalerClsid =
+      u"{00020424-0000-0000-C000-000000000046}"_ns;
 
-  NS_NAMED_LITERAL_STRING(
-      kIAccessiblePSClsidPath,
-      "Interface\\{618736E0-3C3D-11CF-810C-00AA00389B71}\\ProxyStubClsid32");
+  constexpr auto kIAccessiblePSClsidPath =
+      "Interface\\{618736E0-3C3D-11CF-810C-00AA00389B71}"
+      u"\\ProxyStubClsid32"_ns;
 
   nsAutoString psClsid;
   if (!ReadCOMRegDefaultString(kIAccessiblePSClsidPath, psClsid)) {
@@ -314,9 +314,8 @@ static bool IsTypelibPreferred() {
 static bool IsIAccessibleTypelibRegistered() {
   
   
-  NS_NAMED_LITERAL_STRING(
-      kIAccessibleTypelibRegPath,
-      "TypeLib\\{1EA4DBF0-3C3B-11CF-810C-00AA00389B71}\\1.1\\0\\win32");
+  constexpr auto kIAccessibleTypelibRegPath =
+      u"TypeLib\\{1EA4DBF0-3C3B-11CF-810C-00AA00389B71}\\1.1\\0\\win32"_ns;
 
   nsAutoString typelibPath;
   if (!ReadCOMRegDefaultString(kIAccessibleTypelibRegPath, typelibPath)) {
@@ -334,9 +333,8 @@ static bool IsIAccessibleTypelibRegistered() {
 }
 
 static bool IsIAccessiblePSRegistered() {
-  NS_NAMED_LITERAL_STRING(
-      kIAccessiblePSRegPath,
-      "CLSID\\{03022430-ABC4-11D0-BDE2-00AA001A1953}\\InProcServer32");
+  constexpr auto kIAccessiblePSRegPath =
+      u"CLSID\\{03022430-ABC4-11D0-BDE2-00AA001A1953}\\InProcServer32"_ns;
 
   nsAutoString proxyStubPath;
   if (!ReadCOMRegDefaultString(kIAccessiblePSRegPath, proxyStubPath)) {

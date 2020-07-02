@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <windows.h>
 #include <winternl.h>
@@ -37,9 +37,9 @@ static nsString GetFullPath(const nsAString& aLeaf) {
 
 TEST(TestDllBlocklist, BlockDllByName)
 {
-  
-  
-  NS_NAMED_LITERAL_STRING(kLeafName, "TestDllBlocklist_MatchByName.dll");
+  // The DLL name has capital letters, so this also tests that the comparison
+  // is case-insensitive.
+  constexpr auto kLeafName = u"TestDllBlocklist_MatchByName.dll"_ns;
   nsString dllPath = GetFullPath(kLeafName);
 
   nsModuleHandle hDll(::LoadLibraryW(dllPath.get()));
@@ -50,7 +50,7 @@ TEST(TestDllBlocklist, BlockDllByName)
 
 TEST(TestDllBlocklist, BlockDllByVersion)
 {
-  NS_NAMED_LITERAL_STRING(kLeafName, "TestDllBlocklist_MatchByVersion.dll");
+  constexpr auto kLeafName = u"TestDllBlocklist_MatchByVersion.dll"_ns;
   nsString dllPath = GetFullPath(kLeafName);
 
   nsModuleHandle hDll(::LoadLibraryW(dllPath.get()));
@@ -61,7 +61,7 @@ TEST(TestDllBlocklist, BlockDllByVersion)
 
 TEST(TestDllBlocklist, AllowDllByVersion)
 {
-  NS_NAMED_LITERAL_STRING(kLeafName, "TestDllBlocklist_AllowByVersion.dll");
+  constexpr auto kLeafName = u"TestDllBlocklist_AllowByVersion.dll"_ns;
   nsString dllPath = GetFullPath(kLeafName);
 
   nsModuleHandle hDll(::LoadLibraryW(dllPath.get()));
@@ -72,17 +72,17 @@ TEST(TestDllBlocklist, AllowDllByVersion)
 
 TEST(TestDllBlocklist, NoOpEntryPoint)
 {
-  
-  
-  NS_NAMED_LITERAL_STRING(kLeafName, "TestDllBlocklist_NoOpEntryPoint.dll");
+  // DllMain of this dll has MOZ_RELEASE_ASSERT.  This test makes sure we load
+  // the module successfully without running DllMain.
+  constexpr auto kLeafName = u"TestDllBlocklist_NoOpEntryPoint.dll"_ns;
   nsString dllPath = GetFullPath(kLeafName);
 
   nsModuleHandle hDll(::LoadLibraryW(dllPath.get()));
 
 #if defined(MOZ_ASAN)
-  
-  
-  
+  // With ASAN, the test uses mozglue's blocklist where
+  // REDIRECT_TO_NOOP_ENTRYPOINT is ignored.  So LoadLibraryW
+  // is expected to fail.
   EXPECT_TRUE(!hDll);
   EXPECT_TRUE(!::GetModuleHandleW(kLeafName.get()));
 #else
@@ -106,16 +106,16 @@ TEST(TestDllBlocklist, BlocklistIntegrity)
   for (size_t i = 0; i < mozilla::ArrayLength(gWindowsDllBlocklist) - 1; ++i) {
     auto pEntry = pFirst + i;
 
-    
+    // Validate name
     EXPECT_TRUE(!!pEntry->mName);
     EXPECT_GT(strlen(pEntry->mName), 3);
 
-    
+    // Check the filename for valid characters.
     for (auto pch = pEntry->mName; *pch != 0; ++pch) {
       EXPECT_FALSE(*pch >= 'A' && *pch <= 'Z');
     }
 
-    
+    // Check for duplicate entries
     for (auto&& dupe : dupes) {
       EXPECT_NE(stricmp(dupe, pEntry->mName), 0);
     }
@@ -126,11 +126,11 @@ TEST(TestDllBlocklist, BlocklistIntegrity)
 
 TEST(TestDllBlocklist, BlockThreadWithLoadLibraryEntryPoint)
 {
-  
+  // Only supported on Nightly
 #if defined(NIGHTLY_BUILD)
   using ThreadProc = unsigned(__stdcall*)(void*);
 
-  NS_NAMED_LITERAL_STRING(kLeafNameW, "TestDllBlocklist_MatchByVersion.dll");
+  constexpr auto kLeafNameW = u"TestDllBlocklist_MatchByVersion.dll"_ns;
 
   nsString fullPathW = GetFullPath(kLeafNameW);
   EXPECT_FALSE(fullPathW.IsEmpty());
@@ -157,5 +157,5 @@ TEST(TestDllBlocklist, BlockThreadWithLoadLibraryEntryPoint)
   EXPECT_EQ(::WaitForSingleObject(threadA, INFINITE), WAIT_OBJECT_0);
   EXPECT_TRUE(::GetExitCodeThread(threadA, &exitCode) && !exitCode);
   EXPECT_TRUE(!::GetModuleHandleW(kLeafNameW.get()));
-#endif  
+#endif  // defined(NIGHTLY_BUILD)
 }

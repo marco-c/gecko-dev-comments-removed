@@ -960,8 +960,8 @@ static void StripRundll32(nsString& aCommandString) {
   
   
 
-  NS_NAMED_LITERAL_STRING(rundllSegment, "rundll32.exe ");
-  NS_NAMED_LITERAL_STRING(rundllSegmentShort, "rundll32 ");
+  constexpr auto rundllSegment = u"rundll32.exe "_ns;
+  constexpr auto rundllSegmentShort = u"rundll32 "_ns;
 
   
   int32_t strLen = rundllSegment.Length();
@@ -1197,7 +1197,7 @@ nsresult nsLocalFile::AppendInternal(const nsString& aNode,
     
     
     
-    NS_NAMED_LITERAL_STRING(doubleDot, "\\..");
+    constexpr auto doubleDot = u"\\.."_ns;
     nsAString::const_iterator start, end, offset;
     aNode.BeginReading(start);
     aNode.EndReading(end);

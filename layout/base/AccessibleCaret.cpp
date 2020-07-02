@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AccessibleCaret.h"
 
@@ -31,8 +31,9 @@ using namespace dom;
 
 NS_IMPL_ISUPPORTS(AccessibleCaret::DummyTouchListener, nsIDOMEventListener)
 
-NS_NAMED_LITERAL_STRING(AccessibleCaret::sTextOverlayElementId, "text-overlay");
-NS_NAMED_LITERAL_STRING(AccessibleCaret::sCaretImageElementId, "image");
+const nsLiteralString AccessibleCaret::sTextOverlayElementId =
+    u"text-overlay"_ns;
+const nsLiteralString AccessibleCaret::sCaretImageElementId = u"image"_ns;
 
 #define AC_PROCESS_ENUM_TO_STREAM(e) \
   case (e):                          \
@@ -65,12 +66,12 @@ std::ostream& operator<<(
 }
 #undef AC_PROCESS_ENUM_TO_STREAM
 
-
-
+// -----------------------------------------------------------------------------
+// Implementation of AccessibleCaret methods
 
 AccessibleCaret::AccessibleCaret(PresShell* aPresShell)
     : mPresShell(aPresShell) {
-  
+  // Check all resources required.
   if (mPresShell) {
     MOZ_ASSERT(RootFrame());
     MOZ_ASSERT(mPresShell->GetDocument());
@@ -101,13 +102,13 @@ void AccessibleCaret::SetAppearance(Appearance aAppearance) {
 
   mAppearance = aAppearance;
 
-  
+  // Need to reset rect since the cached rect will be compared in SetPosition.
   if (mAppearance == Appearance::None) {
     ClearCachedData();
   }
 }
 
-
+/* static */
 nsAutoString AccessibleCaret::AppearanceString(Appearance aAppearance) {
   nsAutoString string;
   switch (aAppearance) {
@@ -162,11 +163,11 @@ bool AccessibleCaret::Contains(const nsPoint& aPoint,
 }
 
 void AccessibleCaret::EnsureApzAware() {
-  
-  
-  
+  // If the caret element was cloned, the listener might have been lost. So
+  // if that's the case we register a dummy listener if there isn't one on
+  // the element already.
   if (!CaretElement().IsApzAware()) {
-    
+    // FIXME(emilio): Is this needed anymore?
     CaretElement().AddEventListener(u"touchstart"_ns, mDummyTouchListener,
                                     false);
   }
@@ -191,18 +192,18 @@ void AccessibleCaret::InjectCaretElement(Document* aDocument) {
   MOZ_ASSERT(!rv.Failed(), "Insert anonymous content should not fail!");
   MOZ_ASSERT(mCaretElementHolder, "We must have anonymous content!");
 
-  
-  
-  
+  // InsertAnonymousContent will clone the element to make an AnonymousContent.
+  // Since event listeners are not being cloned when cloning a node, we need to
+  // add the listener here.
   EnsureApzAware();
 }
 
 already_AddRefed<Element> AccessibleCaret::CreateCaretElement(
     Document* aDocument) const {
-  
-  
-  
-  
+  // Content structure of AccessibleCaret
+  // <div class="moz-accessiblecaret">  <- CaretElement()
+  //   <div id="text-overlay">          <- TextOverlayElement()
+  //   <div id="image">                 <- CaretImageElement()
 
   ErrorResult rv;
   RefPtr<Element> parent = aDocument->CreateHTMLElement(nsGkAtoms::div);
@@ -249,13 +250,13 @@ AccessibleCaret::PositionChangedResult AccessibleCaret::SetPosition(
       nsLayoutUtils::ClampRectToScrollFrames(aFrame, imaginaryCaretRectInFrame);
 
   if (imaginaryCaretRectInFrame.IsEmpty()) {
-    
+    // Don't bother to set the caret position since it's invisible.
     ClearCachedData();
     return PositionChangedResult::Invisible;
   }
 
-  
-  
+  // SetCaretElementStyle() requires the input rect relative to the custom
+  // content container frame.
   nsRect imaginaryCaretRectInContainerFrame = imaginaryCaretRectInFrame;
   nsLayoutUtils::TransformRect(aFrame, CustomContentContainerFrame(),
                                imaginaryCaretRectInContainerFrame);
@@ -271,7 +272,7 @@ AccessibleCaret::PositionChangedResult AccessibleCaret::SetPosition(
   nsRect imaginaryCaretRect = imaginaryCaretRectInFrame;
   nsLayoutUtils::TransformRect(aFrame, RootFrame(), imaginaryCaretRect);
 
-  
+  // Cache mImaginaryCaretRect, which is relative to the root frame.
   mImaginaryCaretRect = imaginaryCaretRect;
   mImaginaryCaretRectInContainerFrame = imaginaryCaretRectInContainerFrame;
   mImaginaryCaretReferenceFrame = aFrame;
@@ -294,8 +295,8 @@ void AccessibleCaret::SetCaretElementStyle(const nsRect& aRect,
                                            float aZoomLevel) {
   nsPoint position = CaretElementPosition(aRect);
   nsAutoString styleStr;
-  
-  
+  // We can't use AppendPrintf here, because it does locale-specific
+  // formatting of floating-point values.
   styleStr.AppendLiteral("left: ");
   styleStr.AppendFloat(nsPresContext::AppUnitsToFloatCSSPixels(position.x));
   styleStr.AppendLiteral("px; top: ");
@@ -311,7 +312,7 @@ void AccessibleCaret::SetCaretElementStyle(const nsRect& aRect,
   CaretElement().SetAttr(kNameSpaceID_None, nsGkAtoms::style, styleStr, true);
   AC_LOG("%s: %s", __FUNCTION__, NS_ConvertUTF16toUTF8(styleStr).get());
 
-  
+  // Set style string for children.
   SetTextOverlayElementStyle(aRect, aZoomLevel);
   SetCaretImageElementStyle(aRect, aZoomLevel);
 }
@@ -340,13 +341,13 @@ void AccessibleCaret::SetCaretImageElementStyle(const nsRect& aRect,
 }
 
 float AccessibleCaret::GetZoomLevel() {
-  
+  // Full zoom on desktop.
   float fullZoom = mPresShell->GetPresContext()->GetFullZoom();
 
-  
+  // Pinch-zoom on fennec.
   float resolution = mPresShell->GetCumulativeResolution();
 
   return fullZoom * resolution;
 }
 
-}  
+}  // namespace mozilla

@@ -637,7 +637,7 @@ void MatchGlob::Init(JSContext* aCx, const nsAString& aGlob,
   }
 
   
-  NS_NAMED_LITERAL_CSTRING(metaChars, ".+*?^${}()|[]\\");
+  constexpr auto metaChars = ".+*?^${}()|[]\\"_ns;
 
   nsAutoString escaped;
   escaped.Append('^');

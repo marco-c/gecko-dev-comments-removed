@@ -546,7 +546,7 @@ nsresult HTMLEditor::HideResizersInternal() {
   
   
 
-  NS_NAMED_LITERAL_STRING(mousedown, "mousedown");
+  constexpr auto mousedown = u"mousedown"_ns;
 
   
   

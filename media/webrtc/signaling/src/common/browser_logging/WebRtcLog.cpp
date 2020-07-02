@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WebRtcLog.h"
 
@@ -25,8 +25,8 @@ using mozilla::LogLevel;
 #if defined(ANDROID)
 static const char* default_tmp_dir = "/dev/null";
 static const char* default_log_name = "nspr";
-#else  
-NS_NAMED_LITERAL_CSTRING(default_log_name, "WebRTC.log");
+#else  // Assume a POSIX environment
+constexpr auto default_log_name = "WebRTC.log"_ns;
 #endif
 
 static mozilla::LazyLogModule sWebRtcLog("webrtc_trace");
@@ -42,7 +42,7 @@ class LogSinkImpl : public rtc::LogSink {
   }
 };
 
-
+// For RTC_LOG()
 static mozilla::StaticAutoPtr<LogSinkImpl> sSink;
 
 void GetWebRtcLogPrefs() {
@@ -87,11 +87,11 @@ void ConfigWebRtcLog(mozilla::LogLevel level) {
   }
   rtc::LogMessage::LogToDebug(log_level);
   if (level != mozilla::LogLevel::Disabled) {
-    
+    // always capture LOG(...) << ... logging in webrtc.org code to nspr logs
     if (!sSink) {
       sSink = new LogSinkImpl();
       rtc::LogMessage::AddLogToStream(sSink, log_level);
-      
+      // it's ok if this leaks to program end
     }
   } else if (sSink) {
     rtc::LogMessage::RemoveLogToStream(sSink);
@@ -116,8 +116,8 @@ void EnableWebRtcLog() {
   ConfigWebRtcLog(level);
 }
 
-
-
+// Called when we destroy the singletons from PeerConnectionCtx or if the
+// user changes logging in about:webrtc
 void StopWebRtcLog() {
   if (sSink) {
     rtc::LogMessage::RemoveLogToStream(sSink);
@@ -137,7 +137,7 @@ nsCString ConfigAecLog() {
   nsresult rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(tempDir));
   if (NS_SUCCEEDED(rv)) {
 #  ifdef XP_WIN
-    
+    // WebRTC wants a path encoded in the native charset, not UTF-8.
     nsAutoString temp;
     tempDir->GetPath(temp);
     NS_CopyUnicodeToNative(temp, aecLogDir);
