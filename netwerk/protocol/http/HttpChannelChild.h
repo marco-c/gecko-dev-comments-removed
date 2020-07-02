@@ -132,6 +132,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   nsresult CrossProcessRedirectFinished(nsresult aStatus);
 
  protected:
+  mozilla::ipc::IPCResult RecvOnStartRequestSent() override;
   mozilla::ipc::IPCResult RecvFailedAsyncOpen(const nsresult& status) override;
   mozilla::ipc::IPCResult RecvRedirect1Begin(
       const uint32_t& registrarId, const URIParams& newURI,
@@ -461,6 +462,13 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   
   uint8_t mSuspendForWaitCompleteRedirectSetup : 1;
+
+  
+  uint8_t mRecvOnStartRequestSentCalled : 1;
+
+  
+  
+  uint8_t mSuspendedByWaitingForPermissionAndCookie : 1;
 
   void FinishInterceptedRedirect();
   void CleanupRedirectingChannel(nsresult rv);

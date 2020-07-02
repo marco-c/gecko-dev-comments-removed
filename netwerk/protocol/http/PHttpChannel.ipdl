@@ -109,6 +109,13 @@ child:
 
   
   
+  
+  
+  
+  async OnStartRequestSent();
+
+  
+  
   async Redirect1Begin(uint32_t           registrarId,
                        URIParams          newOriginalUri,
                        uint32_t           newLoadFlags,
