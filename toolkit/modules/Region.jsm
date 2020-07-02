@@ -46,6 +46,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
+  "cacheBustEnabled",
+  "browser.region.update.enabled",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
   "localGeocodingEnabled",
   "browser.region.local-geocoding",
   false
@@ -60,15 +67,27 @@ const REGION_PREF = "browser.search.region";
 const COLLECTION_ID = "regions";
 
 
+const UPDATE_PREFIX = "browser.region.update";
+
+
+
+
+const UPDATE_INTERVAL = 60 * 60 * 24 * 14;
+
+
 
 
 
 
 class RegionDetector {
   
+  _home = null;
+  
+  _current = null;
+  
   _rsClient = null;
   
-  wifiDataPromise = null;
+  _wifiDataPromise = null;
   
   REGION_TOPIC = "browser-region";
   
@@ -86,8 +105,8 @@ class RegionDetector {
 
 
   init() {
-    let region = Services.prefs.getCharPref(REGION_PREF, null);
-    if (!region) {
+    this._home = Services.prefs.getCharPref(REGION_PREF, null);
+    if (cacheBustEnabled || !this._home) {
       Services.tm.idleDispatchToMainThread(this._fetchRegion.bind(this));
     }
     if (localGeocodingEnabled) {
@@ -95,7 +114,6 @@ class RegionDetector {
         this._setupRemoteSettings.bind(this)
       );
     }
-    this._home = region;
   }
 
   
@@ -106,6 +124,16 @@ class RegionDetector {
 
   get home() {
     return this._home;
+  }
+
+  
+
+
+
+
+
+  get current() {
+    return this._current;
   }
 
   
@@ -154,8 +182,7 @@ class RegionDetector {
     
     
     if (region != "US" || isTimezoneUS) {
-      log.info("Saving home region:", region);
-      this._setRegion(region, true);
+      this._setCurrentRegion(region, true);
     }
 
     
@@ -216,7 +243,59 @@ class RegionDetector {
 
 
 
-  _setRegion(region = "", notify = false) {
+
+  _setCurrentRegion(region = "") {
+    log.info("Setting current region:", region);
+    this._current = region;
+
+    let prefs = Services.prefs;
+    
+    let interval = prefs.getIntPref(
+      `${UPDATE_PREFIX}.interval`,
+      UPDATE_INTERVAL
+    );
+    let seenRegion = prefs.getCharPref(`${UPDATE_PREFIX}.region`, null);
+    let firstSeen = prefs.getIntPref(`${UPDATE_PREFIX}.first-seen`, 0);
+
+    
+    if (!this._home) {
+      this._setHomeRegion(region);
+    } else if (region != this._home && region != seenRegion) {
+      
+      
+      
+      prefs.setCharPref(`${UPDATE_PREFIX}.region`, region);
+      prefs.setIntPref(
+        `${UPDATE_PREFIX}.first-seen`,
+        Math.round(Date.now() / 1000)
+      );
+    } else if (region != this._home && region == seenRegion) {
+      
+      
+      if (Math.round(Date.now() / 1000) >= firstSeen + interval) {
+        this._setHomeRegion(region);
+      }
+    } else {
+      
+      prefs.clearUserPref(`${UPDATE_PREFIX}.region`);
+      prefs.clearUserPref(`${UPDATE_PREFIX}.first-seen`);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  _setHomeRegion(region, notify = true) {
+    if (region == this._home) {
+      return;
+    }
+    log.info("Updating home region:", region);
     this._home = region;
     Services.prefs.setCharPref("browser.search.region", region);
     if (notify) {
@@ -567,13 +646,13 @@ class RegionDetector {
     this.wifiService.startWatching(this);
 
     return new Promise(resolve => {
-      this.wifiDataPromise = resolve;
+      this._wifiDataPromise = resolve;
     });
   }
 
   onChange(accessPoints) {
     log.info("onChange called");
-    if (!accessPoints || !this.wifiDataPromise) {
+    if (!accessPoints || !this._wifiDataPromise) {
       return;
     }
 
@@ -582,10 +661,10 @@ class RegionDetector {
       this.wifiService = null;
     }
 
-    if (this.wifiDataPromise) {
+    if (this._wifiDataPromise) {
       let data = LocationHelper.formatWifiAccessPoints(accessPoints);
-      this.wifiDataPromise(data);
-      this.wifiDataPromise = null;
+      this._wifiDataPromise(data);
+      this._wifiDataPromise = null;
     }
   }
 }
