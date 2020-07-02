@@ -220,6 +220,8 @@ struct ParentLoadInfoForwarderArgs
 
   bool isThirdPartyContextToTopWindow;
 
+  bool isInThirdPartyContext;
+
   
   
   
