@@ -3646,6 +3646,11 @@ class nsIFrame : public nsQueryFrame {
   virtual nsresult PeekOffset(nsPeekOffsetStruct* aPos);
 
   
+  
+  static void GetLastLeaf(nsPresContext* aPresContext, nsIFrame** aFrame);
+  static void GetFirstLeaf(nsPresContext* aPresContext, nsIFrame** aFrame);
+
+  
 
 
 

@@ -281,11 +281,6 @@ class nsFrame : public nsIFrame {
 
   void CreateView();
 
-  
-  
-  static void GetLastLeaf(nsPresContext* aPresContext, nsIFrame** aFrame);
-  static void GetFirstLeaf(nsPresContext* aPresContext, nsIFrame** aFrame);
-
  private:
   
   bool HasCSSAnimations();
