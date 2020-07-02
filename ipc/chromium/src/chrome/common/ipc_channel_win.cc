@@ -15,6 +15,7 @@
 #include "base/rand_util.h"
 #include "base/string_util.h"
 #include "base/win_util.h"
+#include "chrome/common/ipc_channel_utils.h"
 #include "chrome/common/ipc_message_utils.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/LateWriteChecks.h"
@@ -23,6 +24,8 @@
 #ifdef FUZZING
 #  include "mozilla/ipc/Faulty.h"
 #endif
+
+using namespace mozilla::ipc;
 
 
 
@@ -422,6 +425,12 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
 
       Message& m = incoming_message_.ref();
 
+      
+      
+      
+      AddIPCProfilerMarker(m, other_pid_, MessageDirection::eReceiving,
+                           MessagePhase::TransferStart);
+
 #ifdef IPC_MESSAGE_DEBUG_EXTRA
       DLOG(INFO) << "received message on channel @" << this << " with type "
                  << m.type();
@@ -479,6 +488,9 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages(
     Pickle::BufferList::IterImpl& iter = partial_write_iter_.ref();
     iter.Advance(m->Buffers(), bytes_written);
     if (iter.Done()) {
+      AddIPCProfilerMarker(*m, other_pid_, MessageDirection::eSending,
+                           MessagePhase::TransferEnd);
+
       partial_write_iter_.reset();
       OutputQueuePop();
       
@@ -499,6 +511,9 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages(
   }
 
   Pickle::BufferList::IterImpl& iter = partial_write_iter_.ref();
+
+  AddIPCProfilerMarker(*m, other_pid_, MessageDirection::eSending,
+                       MessagePhase::TransferStart);
 
   
   
