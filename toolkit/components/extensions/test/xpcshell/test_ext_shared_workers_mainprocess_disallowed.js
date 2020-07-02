@@ -6,16 +6,28 @@
 
 
 
+
 add_task(async function test_spawn_shared_worker() {
-  const background = async function() {
-    const worker = new SharedWorker("worker.js");
-    await new Promise(resolve => {
-      worker.port.onmessage = resolve;
-      worker.port.postMessage("bgpage->worker");
-    });
+  const background = function() {
+    
+    
+    
+    browser.test.assertThrows(
+      () => {
+        try {
+          new SharedWorker("worker.js");
+        } catch (e) {
+          
+          
+          throw new Error(`${e}`);
+        }
+      },
+      /NS_ERROR_ABORT/,
+      "Got the expected failure in non-remote mode"
+    );
+
     browser.test.sendMessage("test-shared-worker:done");
   };
-
   const extension = ExtensionTestUtils.loadExtension({
     background,
     files: {
