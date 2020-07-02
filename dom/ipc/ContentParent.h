@@ -1364,6 +1364,8 @@ class ContentParent final
   void RemoveFromPool(nsTArray<ContentParent*>&);
   void AssertNotInPool();
 
+  void AssertAlive();
+
  private:
   
   RefPtr<ContentParent> mSelfRef;

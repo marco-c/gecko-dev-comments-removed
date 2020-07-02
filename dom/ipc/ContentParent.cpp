@@ -44,6 +44,7 @@
 #include "URIUtils.h"
 #include "gfxPlatform.h"
 #include "gfxPlatformFontList.h"
+#include "mozilla/AutoRestore.h"
 #include "mozilla/ContentBlocking.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/BenchmarkStorageParent.h"
@@ -612,6 +613,12 @@ static bool sCanLaunchSubprocesses;
 
 static bool sCreatedFirstContentProcess = false;
 
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+
+
+static bool sInProcessSelector = false;
+#endif
+
 
 static uint64_t gContentChildID = 1;
 
@@ -861,6 +868,11 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
     ContentParent* aOpener, const nsAString& aRemoteType,
     nsTArray<ContentParent*>& aContentParents, uint32_t aMaxContentParents,
     bool aPreferUsed) {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  AutoRestore ar(sInProcessSelector);
+  sInProcessSelector = true;
+#endif
+
   uint32_t numberOfParents = aContentParents.Length();
   nsTArray<RefPtr<nsIContentProcessInfo>> infos(numberOfParents);
   for (auto* cp : aContentParents) {
@@ -896,6 +908,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
               ("GetUsedProcess: Reused process %p (%u) for %s", retval.get(),
                (unsigned int)retval->ChildID(),
                NS_ConvertUTF16toUTF8(aRemoteType).get()));
+      retval->AssertAlive();
       return retval.forget();
     }
   } else {
@@ -909,6 +922,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
               ("GetUsedProcess: Reused random process %p (%d) for %s",
                random.get(), (unsigned int)random->ChildID(),
                NS_ConvertUTF16toUTF8(aRemoteType).get()));
+      random->AssertAlive();
       return random.forget();
     }
   }
@@ -923,7 +937,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
       !aRemoteType.EqualsLiteral(EXTENSION_REMOTE_TYPE) &&  
       (p = PreallocatedProcessManager::Take(aRemoteType)) &&
       !p->mShutdownPending) {
-    MOZ_DIAGNOSTIC_ASSERT(!p->IsDead());
+    p->AssertAlive();
 
     
     
@@ -960,6 +974,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
         cpId.AppendInt(static_cast<uint64_t>(p->ChildID()));
         obs->NotifyObservers(static_cast<nsIObserver*>(p), "process-type-set",
                              cpId.get());
+        p->AssertAlive();
       }
     } else {
       
@@ -1005,6 +1020,7 @@ ContentParent::GetNewOrUsedLaunchingBrowserProcess(Element* aFrameElement,
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
             ("GetNewOrUsedProcess: Used process %p (launching %d)",
              contentParent.get(), contentParent->IsLaunching()));
+    contentParent->AssertAlive();
     return contentParent.forget();
   }
 
@@ -1032,6 +1048,7 @@ ContentParent::GetNewOrUsedLaunchingBrowserProcess(Element* aFrameElement,
   MOZ_ASSERT(contentParent->IsLaunching());
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
           ("GetNewOrUsedProcess: new process %p", contentParent.get()));
+  contentParent->AssertAlive();
   return contentParent.forget();
 }
 
@@ -1638,8 +1655,7 @@ void ContentParent::ShutDownMessageManager() {
 
 void ContentParent::AddToPool(nsTArray<ContentParent*>& aPool) {
   MOZ_DIAGNOSTIC_ASSERT(!mIsInPool);
-  MOZ_DIAGNOSTIC_ASSERT(!IsDead());
-  MOZ_DIAGNOSTIC_ASSERT(!mShutdownPending);
+  AssertAlive();
   MOZ_DIAGNOSTIC_ASSERT(!mCalledKillHard);
   aPool.AppendElement(this);
   mIsInPool = true;
@@ -1665,6 +1681,11 @@ void ContentParent::AssertNotInPool() {
         !sBrowserContentParents->Get(mRemoteType)->Contains(this) ||
         !sCanLaunchSubprocesses);  
   }
+}
+
+void ContentParent::AssertAlive() {
+  MOZ_DIAGNOSTIC_ASSERT(!IsDead());
+  MOZ_DIAGNOSTIC_ASSERT(!mShutdownPending);
 }
 
 void ContentParent::RemoveFromList() {
@@ -1710,6 +1731,7 @@ void ContentParent::RemoveFromList() {
 void ContentParent::MarkAsDead() {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Verbose,
           ("Marking ContentProcess %p as dead", this));
+  MOZ_DIAGNOSTIC_ASSERT(!sInProcessSelector);
   if (!mShutdownPending) {
     RemoveFromList();
   }
