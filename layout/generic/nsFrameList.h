@@ -490,6 +490,18 @@ class nsFrameList {
 
   class Iterator {
    public:
+    
+    
+    
+    
+    
+    
+    using value_type = nsIFrame* const;
+    using pointer = value_type*;
+    using reference = value_type&;
+    using difference_type = ptrdiff_t;
+    using iterator_category = std::input_iterator_tag;
+
     Iterator(const nsFrameList& aList, nsIFrame* aCurrent)
         : mList(aList), mCurrent(aCurrent) {}
 

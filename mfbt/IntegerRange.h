@@ -12,6 +12,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/ReverseIterator.h"
 
+#include <iterator>
 #include <type_traits>
 
 namespace mozilla {
@@ -21,6 +22,18 @@ namespace detail {
 template <typename IntTypeT>
 class IntegerIterator {
  public:
+  
+  
+  
+  
+  
+  
+  using value_type = const IntTypeT;
+  using pointer = const value_type*;
+  using reference = const value_type&;
+  using difference_type = std::make_signed_t<IntTypeT>;
+  using iterator_category = std::input_iterator_tag;
+
   template <typename IntType>
   explicit IntegerIterator(IntType aCurrent) : mCurrent(aCurrent) {}
 
@@ -28,6 +41,10 @@ class IntegerIterator {
   explicit IntegerIterator(const IntegerIterator<IntType>& aOther)
       : mCurrent(aOther.mCurrent) {}
 
+  
+  
+  
+  
   IntTypeT operator*() const { return mCurrent; }
 
   
@@ -130,9 +147,9 @@ class IntegerRange {
   const_iterator cbegin() const { return begin(); }
   iterator end() const { return iterator(mEnd); }
   const_iterator cend() const { return end(); }
-  reverse_iterator rbegin() const { return reverse_iterator(mEnd); }
+  reverse_iterator rbegin() const { return reverse_iterator(iterator(mEnd)); }
   const_reverse_iterator crbegin() const { return rbegin(); }
-  reverse_iterator rend() const { return reverse_iterator(mBegin); }
+  reverse_iterator rend() const { return reverse_iterator(iterator(mBegin)); }
   const_reverse_iterator crend() const { return rend(); }
 
  private:

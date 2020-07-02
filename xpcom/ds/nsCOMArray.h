@@ -10,11 +10,12 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/ReverseIterator.h"
 
 #include "nsCycleCollectionNoteChild.h"
 #include "nsTArray.h"
 #include "nsISupports.h"
+
+#include <iterator>
 
 
 
@@ -24,7 +25,7 @@ class nsCOMArray_base {
   friend class nsArrayBase;
 
  protected:
-  nsCOMArray_base() {}
+  nsCOMArray_base() = default;
   explicit nsCOMArray_base(int32_t aCount) : mArray(aCount) {}
   nsCOMArray_base(const nsCOMArray_base& aOther);
   ~nsCOMArray_base();
@@ -207,14 +208,14 @@ class nsCOMArray : public nsCOMArray_base {
   typedef int32_t index_type;
   typedef mozilla::ArrayIterator<T*, nsCOMArray> iterator;
   typedef mozilla::ArrayIterator<const T*, nsCOMArray> const_iterator;
-  typedef mozilla::ReverseIterator<iterator> reverse_iterator;
-  typedef mozilla::ReverseIterator<const_iterator> const_reverse_iterator;
+  typedef std::reverse_iterator<iterator> reverse_iterator;
+  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
-  nsCOMArray() {}
+  nsCOMArray() = default;
   explicit nsCOMArray(int32_t aCount) : nsCOMArray_base(aCount) {}
   explicit nsCOMArray(const nsCOMArray<T>& aOther) : nsCOMArray_base(aOther) {}
   nsCOMArray(nsCOMArray<T>&& aOther) { SwapElements(aOther); }
-  ~nsCOMArray() {}
+  ~nsCOMArray() = default;
 
   
   nsCOMArray<T>& operator=(nsCOMArray<T>&& aOther) {

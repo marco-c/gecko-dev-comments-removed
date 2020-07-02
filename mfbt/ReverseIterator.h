@@ -17,9 +17,19 @@
 
 namespace mozilla {
 
+
+
+
+
 template <typename IteratorT>
 class ReverseIterator {
  public:
+  using value_type = typename IteratorT::value_type;
+  using pointer = typename IteratorT::pointer;
+  using reference = typename IteratorT::reference;
+  using difference_type = typename IteratorT::difference_type;
+  using iterator_category = typename IteratorT::iterator_category;
+
   template <typename Iterator>
   explicit ReverseIterator(Iterator aIter) : mCurrent(aIter) {}
 
@@ -27,9 +37,17 @@ class ReverseIterator {
   MOZ_IMPLICIT ReverseIterator(const ReverseIterator<Iterator>& aOther)
       : mCurrent(aOther.mCurrent) {}
 
+  
+  
+  
   decltype(*std::declval<IteratorT>()) operator*() const {
     IteratorT tmp = mCurrent;
     return *--tmp;
+  }
+
+  
+  difference_type operator-(const ReverseIterator& aOther) const {
+    return -(aOther.mCurrent - mCurrent);
   }
 
   
@@ -141,7 +159,6 @@ class IteratorRange {
   reverse_iterator rend() const { return reverse_iterator(mIterBegin); }
   const_reverse_iterator crend() const { return rend(); }
 
- private:
   IteratorT mIterBegin;
   IteratorT mIterEnd;
 };
