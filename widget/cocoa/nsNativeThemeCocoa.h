@@ -226,9 +226,7 @@ class nsNativeThemeCocoa : private nsNativeTheme, public nsITheme {
   };
 
   enum Widget : uint8_t {
-    eColorFill,  
-    eSheetBackground,
-    eDialogBackground,
+    eColorFill,       
     eMenuBackground,  
     eMenuIcon,        
     eMenuItem,        
@@ -271,8 +269,6 @@ class nsNativeThemeCocoa : private nsNativeTheme, public nsITheme {
     static WidgetInfo ColorFill(const mozilla::gfx::sRGBColor& aParams) {
       return WidgetInfo(Widget::eColorFill, aParams);
     }
-    static WidgetInfo SheetBackground() { return WidgetInfo(Widget::eSheetBackground, false); }
-    static WidgetInfo DialogBackground() { return WidgetInfo(Widget::eDialogBackground, false); }
     static WidgetInfo MenuBackground(const MenuBackgroundParams& aParams) {
       return WidgetInfo(Widget::eMenuBackground, aParams);
     }
