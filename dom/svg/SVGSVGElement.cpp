@@ -380,8 +380,7 @@ SMILTimeContainer* SVGSVGElement::GetTimedDocumentRoot() {
 nsresult SVGSVGElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   SMILAnimationController* smilController = nullptr;
 
-  
-  if (Document* doc = aContext.GetUncomposedDoc()) {
+  if (Document* doc = aContext.GetComposedDoc()) {
     if ((smilController = doc->GetAnimationController())) {
       
       if (WillBeOutermostSVG(aParent)) {
