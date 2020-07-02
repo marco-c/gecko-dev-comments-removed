@@ -233,17 +233,51 @@ ThirdPartyUtil::IsThirdPartyWindow(mozIDOMWindowProxy* aWindow, nsIURI* aURI,
   }
 
   nsPIDOMWindowOuter* current = nsPIDOMWindowOuter::From(aWindow);
-  auto* const browsingContext = current->GetBrowsingContext();
-  MOZ_ASSERT(browsingContext);
+  do {
+    
+    
+    nsPIDOMWindowOuter* parent = current->GetInProcessScriptableParent();
+    
+    
+    
+    
+    
+    if (parent == current) {
+      auto* const browsingContext = current->GetBrowsingContext();
+      MOZ_ASSERT(browsingContext);
 
-  WindowContext* wc = browsingContext->GetCurrentWindowContext();
-  if (NS_WARN_IF(!wc)) {
-    *aResult = true;
-    return NS_OK;
-  }
+      
+      
+      
+      
+      
+      *aResult = browsingContext->IsContentSubframe();
+      return NS_OK;
+    }
 
-  *aResult = wc->GetIsThirdPartyWindow();
-  return NS_OK;
+    nsCOMPtr<nsIPrincipal> currentPrincipal;
+    nsresult rv =
+        GetPrincipalFromWindow(current, getter_AddRefs(currentPrincipal));
+    NS_ENSURE_SUCCESS(rv, rv);
+    nsCOMPtr<nsIPrincipal> parentPrincipal;
+    rv = GetPrincipalFromWindow(parent, getter_AddRefs(parentPrincipal));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = currentPrincipal->IsThirdPartyPrincipal(parentPrincipal, &result);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    if (result) {
+      *aResult = true;
+      return NS_OK;
+    }
+
+    current = parent;
+  } while (1);
+
+  MOZ_ASSERT_UNREACHABLE("should've returned");
+  return NS_ERROR_UNEXPECTED;
 }
 
 nsresult ThirdPartyUtil::IsThirdPartyGlobal(

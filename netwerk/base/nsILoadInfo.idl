@@ -483,7 +483,7 @@ interface nsILoadInfo : nsISupports
 
 
 
-  [infallible] attribute boolean isInThirdPartyContext;
+  [infallible] readonly attribute boolean isInThirdPartyContext;
 
   
 
