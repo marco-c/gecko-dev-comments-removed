@@ -222,7 +222,7 @@ void nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   
-  if (!(GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER) &&
+  if (!HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER) &&
       IsVisibleForPainting()) {
     DisplayOutsetBoxShadowUnconditional(aBuilder, aLists.BorderBackground());
 
