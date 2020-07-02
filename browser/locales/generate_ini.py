@@ -13,17 +13,16 @@ import re
 import shutil
 
 
-def main(output, updater_ini, updater_ini_append, locale=None):
-    assert(locale is not None)
+def main(output, ini, ini_append=None, locale=None):
     fixup_re = re.compile('^(Info|Title)Text=')
     
-    with codecs.open(updater_ini, 'rb', 'utf_8') as f:
+    with codecs.open(ini, 'rb', 'utf_8') as f:
         for line in f:
             line = fixup_re.sub(r'\1=', line)
             line = line.replace('%MOZ_APP_DISPLAYNAME%',
                                 buildconfig.substs['MOZ_APP_DISPLAYNAME'])
             output.write(line)
-    if buildconfig.substs['OS_TARGET'] == 'WINNT':
+    if ini_append and buildconfig.substs['OS_TARGET'] == 'WINNT':
         
-        with codecs.open(updater_ini_append, 'rb', 'utf_8') as f:
+        with codecs.open(ini_append, 'rb', 'utf_8') as f:
             shutil.copyfileobj(f, output)
