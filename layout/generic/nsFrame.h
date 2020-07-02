@@ -252,13 +252,6 @@ class nsFrame : public nsIFrame {
       : nsFrame(aStyle, aPresContext, ClassID::nsFrame_id) {}
   virtual ~nsFrame();
 
- public:
-  
-
-
-
-  void CreateView();
-
  private:
   
   bool HasCSSAnimations();
