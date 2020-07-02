@@ -303,7 +303,7 @@ struct InlineBackgroundData {
 
   nsIFrame* GetPrevContinuation(nsIFrame* aFrame) {
     nsIFrame* prevCont = aFrame->GetPrevContinuation();
-    if (!prevCont && (aFrame->GetStateBits() & NS_FRAME_PART_OF_IBSPLIT)) {
+    if (!prevCont && aFrame->HasAnyStateBits(NS_FRAME_PART_OF_IBSPLIT)) {
       nsIFrame* block = aFrame->GetProperty(nsIFrame::IBSplitPrevSibling());
       if (block) {
         
@@ -318,7 +318,7 @@ struct InlineBackgroundData {
 
   nsIFrame* GetNextContinuation(nsIFrame* aFrame) {
     nsIFrame* nextCont = aFrame->GetNextContinuation();
-    if (!nextCont && (aFrame->GetStateBits() & NS_FRAME_PART_OF_IBSPLIT)) {
+    if (!nextCont && aFrame->HasAnyStateBits(NS_FRAME_PART_OF_IBSPLIT)) {
       
       aFrame = aFrame->FirstContinuation();
       nsIFrame* block = aFrame->GetProperty(nsIFrame::IBSplitSibling());
@@ -2019,7 +2019,7 @@ static bool IsHTMLStyleGeometryBox(StyleGeometryBox aBox) {
 
 static StyleGeometryBox ComputeBoxValue(nsIFrame* aForFrame,
                                         StyleGeometryBox aBox) {
-  if (!(aForFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT)) {
+  if (!aForFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
     
     
     if (IsSVGStyleGeometryBox(aBox)) {
