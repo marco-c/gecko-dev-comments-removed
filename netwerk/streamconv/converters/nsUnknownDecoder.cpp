@@ -289,29 +289,6 @@ nsUnknownDecoder::OnStopRequest(nsIRequest* request, nsresult aStatus) {
     DetermineContentType(request);
 
     
-
-
-
-
-    nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
-    if (channel) {
-      nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-      if (loadInfo->GetSkipContentSniffing()) {
-        if (mContentType.EqualsLiteral("text/html") ||
-            mContentType.EqualsLiteral("text/xml") ||
-            mContentType.EqualsLiteral("aplication/pdf")) {
-          Telemetry::AccumulateCategorical(
-              mozilla::Telemetry::LABELS_XCTO_NOSNIFF_TOPLEVEL_NAV_EXCEPTIONS::
-                  ExceptionScriptable);
-        } else {
-          Telemetry::AccumulateCategorical(
-              mozilla::Telemetry::LABELS_XCTO_NOSNIFF_TOPLEVEL_NAV_EXCEPTIONS::
-                  Exception);
-        }
-      }
-    }
-
-    
     
     
     nsCOMPtr<nsIForcePendingChannel> forcePendingChannel =
