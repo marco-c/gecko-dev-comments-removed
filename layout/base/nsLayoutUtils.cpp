@@ -4877,7 +4877,7 @@ already_AddRefed<nsFontMetrics> nsLayoutUtils::GetFontMetricsForComputedStyle(
   }
 
   nsFont font = styleFont->mFont;
-  font.size.ScaleBy(aInflation);
+  font.size = NSToCoordRound(font.size * aInflation);
   font.variantWidth = aVariantWidth;
   return aPresContext->DeviceContext()->GetMetricsFor(font, params);
 }
@@ -7506,8 +7506,7 @@ nsIFrame* nsLayoutUtils::GetReferenceFrame(nsIFrame* aFrame) {
       result |= gfx::ShapedTextFlags::TEXT_OPTIMIZE_SPEED;
       break;
     case StyleTextRendering::Auto:
-      if (aStyleFont->mFont.size.ToCSSPixels() <
-          aPresContext->GetAutoQualityMinFontSize()) {
+      if (aStyleFont->mFont.size < aPresContext->GetAutoQualityMinFontSize()) {
         result |= gfx::ShapedTextFlags::TEXT_OPTIMIZE_SPEED;
       }
       break;
@@ -8391,7 +8390,7 @@ float nsLayoutUtils::FontSizeInflationInner(const nsIFrame* aFrame,
   
   
   
-  nscoord styleFontSize = aFrame->StyleFont()->mFont.size.ToAppUnits();
+  nscoord styleFontSize = aFrame->StyleFont()->mFont.size;
   if (styleFontSize <= 0) {
     
     return 1.0;
@@ -10243,7 +10242,7 @@ nsLayoutUtils::ControlCharVisibilityDefault() {
 
 already_AddRefed<nsFontMetrics> nsLayoutUtils::GetMetricsFor(
     nsPresContext* aPresContext, bool aIsVertical,
-    const nsStyleFont* aStyleFont, Length aFontSize, bool aUseUserFontSet) {
+    const nsStyleFont* aStyleFont, nscoord aFontSize, bool aUseUserFontSet) {
   nsFont font = aStyleFont->mFont;
   font.size = aFontSize;
   gfxFont::Orientation orientation =
@@ -10276,7 +10275,7 @@ void nsLayoutUtils::ComputeSystemFont(nsFont* aSystemFont,
     aSystemFont->systemFont = fontStyle.systemFont;
     aSystemFont->weight = fontStyle.weight;
     aSystemFont->stretch = fontStyle.stretch;
-    aSystemFont->size = Length::FromPixels(fontStyle.size);
+    aSystemFont->size = CSSPixel::ToAppUnits(fontStyle.size);
     
     aSystemFont->sizeAdjust = fontStyle.sizeAdjust;
 
@@ -10300,8 +10299,9 @@ void nsLayoutUtils::ComputeSystemFont(nsFont* aSystemFont,
       
       
       
-      aSystemFont->size = Length::FromPixels(
-          std::max(aDefaultVariableFont->size.ToCSSPixels() - 2.0f, 0.0f));
+      aSystemFont->size = std::max(
+          aDefaultVariableFont->size - nsPresContext::CSSPointsToAppUnits(2),
+          0);
     }
 #endif
   }

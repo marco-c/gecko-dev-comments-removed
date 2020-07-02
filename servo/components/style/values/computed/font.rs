@@ -155,7 +155,7 @@ impl FontSize {
     
     pub fn medium() -> Self {
         Self {
-            size: NonNegative(Length::new(specified::FONT_MEDIUM_PX)),
+            size: NonNegative(Length::new(specified::FONT_MEDIUM_PX as CSSFloat)),
             keyword_info: KeywordInfo::medium(),
         }
     }

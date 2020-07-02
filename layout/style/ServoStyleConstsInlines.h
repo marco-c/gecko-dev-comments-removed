@@ -487,10 +487,6 @@ bool StyleCSSPixelLength::IsZero() const { return _0 == 0.0f; }
 
 void StyleCSSPixelLength::ScaleBy(float aScale) { _0 *= aScale; }
 
-StyleCSSPixelLength StyleCSSPixelLength::ScaledBy(float aScale) const {
-  return FromPixels(ToCSSPixels() * aScale);
-}
-
 nscoord StyleCSSPixelLength::ToAppUnits() const {
   
   

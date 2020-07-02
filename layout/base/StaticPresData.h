@@ -20,13 +20,13 @@ struct LangGroupFontPrefs {
   
   LangGroupFontPrefs()
       : mLangGroup(nullptr),
-        mMinimumFontSize({0}),
+        mMinimumFontSize(0),
         mDefaultVariableFont(),
-        mDefaultSerifFont(StyleGenericFontFamily::Serif, {0}),
-        mDefaultSansSerifFont(StyleGenericFontFamily::SansSerif, {0}),
-        mDefaultMonospaceFont(StyleGenericFontFamily::Monospace, {0}),
-        mDefaultCursiveFont(StyleGenericFontFamily::Cursive, {0}),
-        mDefaultFantasyFont(StyleGenericFontFamily::Fantasy, {0}) {
+        mDefaultSerifFont(StyleGenericFontFamily::Serif, 0),
+        mDefaultSansSerifFont(StyleGenericFontFamily::SansSerif, 0),
+        mDefaultMonospaceFont(StyleGenericFontFamily::Monospace, 0),
+        mDefaultCursiveFont(StyleGenericFontFamily::Cursive, 0),
+        mDefaultFantasyFont(StyleGenericFontFamily::Fantasy, 0) {
     mDefaultVariableFont.fontlist.SetDefaultFontType(
         StyleGenericFontFamily::Serif);
     
@@ -80,7 +80,7 @@ struct LangGroupFontPrefs {
   }
 
   nsStaticAtom* mLangGroup;
-  Length mMinimumFontSize;
+  nscoord mMinimumFontSize;
   nsFont mDefaultVariableFont;
   nsFont mDefaultSerifFont;
   nsFont mDefaultSansSerifFont;

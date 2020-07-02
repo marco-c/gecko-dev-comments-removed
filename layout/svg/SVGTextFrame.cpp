@@ -5140,9 +5140,7 @@ bool SVGTextFrame::UpdateFontSizeScaleFactor() {
   nsPresContext* presContext = PresContext();
 
   bool geometricPrecision = false;
-  CSSCoord min = std::numeric_limits<float>::max();
-  CSSCoord max = std::numeric_limits<float>::min();
-  bool anyText = false;
+  nscoord min = nscoord_MAX, max = nscoord_MIN;
 
   
   
@@ -5155,24 +5153,25 @@ bool SVGTextFrame::UpdateFontSizeScaleFactor() {
       geometricPrecision = f->StyleText()->mTextRendering ==
                            StyleTextRendering::Geometricprecision;
     }
-    const auto& fontSize = f->StyleFont()->mFont.size;
-    if (!fontSize.IsZero()) {
-      min = std::min(min, fontSize.ToCSSPixels());
-      max = std::max(max, fontSize.ToCSSPixels());
-      anyText = true;
+    nscoord size = f->StyleFont()->mFont.size;
+    if (size) {
+      min = std::min(min, size);
+      max = std::max(max, size);
     }
     f = it.Next();
   }
 
-  if (!anyText) {
+  if (min == nscoord_MAX) {
     
     mFontSizeScaleFactor = 1.0;
     return mFontSizeScaleFactor != oldFontSizeScaleFactor;
   }
 
+  double minSize = nsPresContext::AppUnitsToFloatCSSPixels(min);
+
   if (geometricPrecision) {
     
-    mFontSizeScaleFactor = PRECISE_SIZE / min;
+    mFontSizeScaleFactor = PRECISE_SIZE / minSize;
     return mFontSizeScaleFactor != oldFontSizeScaleFactor;
   }
 
@@ -5190,6 +5189,8 @@ bool SVGTextFrame::UpdateFontSizeScaleFactor() {
   }
   mLastContextScale = contextScale;
 
+  double maxSize = nsPresContext::AppUnitsToFloatCSSPixels(max);
+
   
   
   
@@ -5198,14 +5199,14 @@ bool SVGTextFrame::UpdateFontSizeScaleFactor() {
       presContext->AppUnitsPerDevPixel());
   contextScale *= cssPxPerDevPx;
 
-  double minTextRunSize = min * contextScale;
-  double maxTextRunSize = max * contextScale;
+  double minTextRunSize = minSize * contextScale;
+  double maxTextRunSize = maxSize * contextScale;
 
   if (minTextRunSize >= CLAMP_MIN_SIZE && maxTextRunSize <= CLAMP_MAX_SIZE) {
     
     
     mFontSizeScaleFactor = contextScale;
-  } else if (max / min > CLAMP_MAX_SIZE / CLAMP_MIN_SIZE) {
+  } else if (maxSize / minSize > CLAMP_MAX_SIZE / CLAMP_MIN_SIZE) {
     
     
     
@@ -5213,18 +5214,18 @@ bool SVGTextFrame::UpdateFontSizeScaleFactor() {
     
     
     if (maxTextRunSize <= CLAMP_MAX_SIZE) {
-      mFontSizeScaleFactor = CLAMP_MAX_SIZE / max;
+      mFontSizeScaleFactor = CLAMP_MAX_SIZE / maxSize;
     } else if (minTextRunSize >= CLAMP_MIN_SIZE) {
-      mFontSizeScaleFactor = CLAMP_MIN_SIZE / min;
+      mFontSizeScaleFactor = CLAMP_MIN_SIZE / minSize;
     } else {
       
       
       mFontSizeScaleFactor = contextScale;
     }
   } else if (minTextRunSize < CLAMP_MIN_SIZE) {
-    mFontSizeScaleFactor = CLAMP_MIN_SIZE / min;
+    mFontSizeScaleFactor = CLAMP_MIN_SIZE / minSize;
   } else {
-    mFontSizeScaleFactor = CLAMP_MAX_SIZE / max;
+    mFontSizeScaleFactor = CLAMP_MAX_SIZE / maxSize;
   }
 
   return mFontSizeScaleFactor != oldFontSizeScaleFactor;

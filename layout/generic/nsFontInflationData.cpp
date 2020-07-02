@@ -335,7 +335,7 @@ void nsFontInflationData::ScanTextIn(nsIFrame* aFrame) {
               ComputeApproximateLengthWithWhitespaceCompression(
                   content->AsText(), kid->StyleText());
           if (len != 0) {
-            nscoord fontSize = kid->StyleFont()->mFont.size.ToAppUnits();
+            nscoord fontSize = kid->StyleFont()->mFont.size;
             if (fontSize > 0) {
               mTextAmount += fontSize * len;
             }
@@ -344,20 +344,20 @@ void nsFontInflationData::ScanTextIn(nsIFrame* aFrame) {
       } else if (fType == LayoutFrameType::TextInput) {
         
         
-        nscoord fontSize = kid->StyleFont()->mFont.size.ToAppUnits();
+        nscoord fontSize = kid->StyleFont()->mFont.size;
         int32_t charCount = static_cast<nsTextControlFrame*>(kid)->GetCols();
         mTextAmount += charCount * fontSize;
       } else if (fType == LayoutFrameType::ComboboxControl) {
         
         
         
-        nscoord fontSize = kid->StyleFont()->mFont.size.ToAppUnits();
+        nscoord fontSize = kid->StyleFont()->mFont.size;
         int32_t charCount = CharCountOfLargestOption(
             static_cast<nsComboboxControlFrame*>(kid)->GetDropDown());
         mTextAmount += charCount * fontSize;
       } else if (fType == LayoutFrameType::ListControl) {
         
-        nscoord fontSize = kid->StyleFont()->mFont.size.ToAppUnits();
+        nscoord fontSize = kid->StyleFont()->mFont.size;
         int32_t charCount = CharCountOfLargestOption(kid);
         mTextAmount += charCount * fontSize;
       } else {

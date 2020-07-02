@@ -141,7 +141,7 @@ class nsRangeFrame final : public nsContainerFrame,
  private:
   
   
-  nscoord AutoCrossSize(mozilla::Length aEm);
+  nscoord AutoCrossSize(nscoord aEm);
 
   nsresult MakeAnonymousDiv(Element** aResult, PseudoStyleType aPseudoType,
                             nsTArray<ContentInfo>& aElements);

@@ -2732,9 +2732,8 @@ static inline nscoord ComputeLineHeight(ComputedStyle* aComputedStyle,
     
     
     
-    return aComputedStyle->StyleFont()
-        ->mFont.size.ScaledBy(lineHeight.AsNumber() * aFontSizeInflation)
-        .ToAppUnits();
+    return NSToCoordRound(lineHeight.number._0 * aFontSizeInflation *
+                          aComputedStyle->StyleFont()->mFont.size);
   }
 
   MOZ_ASSERT(lineHeight.IsNormal() || lineHeight.IsMozBlockHeight());
