@@ -9,6 +9,11 @@ ChromeUtils.defineModuleGetter(
   "Services",
   "resource://gre/modules/Services.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "FeatureGate",
+  "resource://featuregates/FeatureGate.jsm"
+);
 
 var EXPORTED_SYMBOLS = ["FeatureGateImplementation"];
 
@@ -110,6 +115,32 @@ class FeatureGateImplementation {
   }
 
   
+  get defaultValueOriginalValue() {
+    
+    return (
+      this._definition.defaultValueOriginalValue ?? {
+        default: this._definition.defaultValue,
+      }
+    );
+  }
+
+  
+
+
+
+
+
+
+
+  defaultValueWith(extraFacts) {
+    return FeatureGate.evaluateTargetedValue(
+      this.defaultValueOriginalValue,
+      extraFacts,
+      { mergeFactsWithDefault: true }
+    );
+  }
+
+  
 
 
 
@@ -117,6 +148,32 @@ class FeatureGateImplementation {
 
   get isPublic() {
     return this._definition.isPublic;
+  }
+
+  
+  get isPublicOriginalValue() {
+    
+    return (
+      this._definition.isPublicOriginalValue ?? {
+        default: this._definition.isPublic,
+      }
+    );
+  }
+
+  
+
+
+
+
+
+
+
+  isPublicWith(extraFacts) {
+    return FeatureGate.evaluateTargetedValue(
+      this.isPublicOriginalValue,
+      extraFacts,
+      { mergeFactsWithDefault: true }
+    );
   }
 
   
