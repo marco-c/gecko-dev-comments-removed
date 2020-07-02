@@ -597,6 +597,7 @@ const setup = {
 
   
   await rollout.migrateLocalStoragePrefs();
+  await browser.experiments.preferences.migrateNextDNSEndpoint();
 
   log("Watching `doh-rollout.enabled` pref");
   browser.experiments.preferences.onEnabledChanged.addListener(async () => {
