@@ -1674,11 +1674,10 @@ bool JSFunction::delazifySelfHostedLazyFunction(JSContext* cx,
 
   
   MOZ_ASSERT(fun->isSelfHostedBuiltin());
-  RootedAtom funAtom(cx, GetClonedSelfHostedFunctionName(fun));
-  if (!funAtom) {
+  Rooted<PropertyName*> funName(cx, GetClonedSelfHostedFunctionName(fun));
+  if (!funName) {
     return false;
   }
-  Rooted<PropertyName*> funName(cx, funAtom->asPropertyName());
   return cx->runtime()->cloneSelfHostedFunctionScript(cx, funName, fun);
 }
 
@@ -1742,7 +1741,7 @@ js::GeneratorKind JSFunction::clonedSelfHostedGeneratorKind() const {
   
   
   MOZ_RELEASE_ASSERT(isExtended());
-  JSAtom* name = GetClonedSelfHostedFunctionName(this);
+  PropertyName* name = GetClonedSelfHostedFunctionName(this);
   return runtimeFromMainThread()->getSelfHostedFunctionGeneratorKind(name);
 }
 
