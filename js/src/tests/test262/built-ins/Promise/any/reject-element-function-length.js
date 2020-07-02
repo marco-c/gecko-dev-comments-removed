@@ -15,7 +15,6 @@
 
 
 
-
 var rejectElementFunction;
 var thenable = {
   then(_, reject) {

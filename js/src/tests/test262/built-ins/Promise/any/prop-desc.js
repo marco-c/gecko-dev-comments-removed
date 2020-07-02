@@ -14,7 +14,6 @@
 
 
 
-
 verifyProperty(Promise, 'any', {
   configurable: true,
   writable: true,

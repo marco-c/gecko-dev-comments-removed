@@ -21,7 +21,6 @@
 
 
 
-
 verifyProperty(Promise.any, 'name', {
   configurable: true,
   writable: false,
