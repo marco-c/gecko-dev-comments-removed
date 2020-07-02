@@ -128,19 +128,6 @@ typedef Vector<UniqueChars, 0, SystemAllocPolicy> UniqueCharsVector;
 
 
 
-
-
-
-
-
-
-
-constexpr uintptr_t ExitOrJitEntryFPTag = 0x1;
-
-
-
-
-
 #define WASM_DECLARE_POD_VECTOR(Type, VectorName)   \
   }                                                 \
   }                                                 \
@@ -3201,16 +3188,14 @@ static_assert(MaxInlineMemoryFillLength < MinOffsetGuardLimit, "precondition");
 
 
 
-class Frame {
+struct Frame {
   
   
-  
-  
-  uint8_t* callerFP_;
+  Frame* callerFP;
 
   
   
-  TlsData* tls_;
+  TlsData* tls;
 
 #if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_ARM64)
   
@@ -3218,74 +3203,20 @@ class Frame {
   
   
   
- protected:  
   uintptr_t padding_;
-
- private:
 #endif
 
   
   
-  void* returnAddress_;
+  void* returnAddress;
 
- public:
-  static constexpr uint32_t tlsOffset() { return offsetof(Frame, tls_); }
-  static constexpr uint32_t callerFPOffset() {
-    return offsetof(Frame, callerFP_);
-  }
-  static constexpr uint32_t returnAddressOffset() {
-    return offsetof(Frame, returnAddress_);
-  }
+  
 
-  uint8_t* returnAddress() const {
-    return reinterpret_cast<uint8_t*>(returnAddress_);
-  }
-
-  void** addressOfReturnAddress() {
-    return reinterpret_cast<void**>(&returnAddress_);
-  }
-
-  uint8_t* rawCaller() const { return callerFP_; }
-  TlsData* tls() const { return tls_; }
-  Instance* instance() const { return tls()->instance; }
-
-  Frame* wasmCaller() const {
-    MOZ_ASSERT(!callerIsExitOrJitEntryFP());
-    return reinterpret_cast<Frame*>(callerFP_);
-  }
-
-  bool callerIsExitOrJitEntryFP() const {
-    return isExitOrJitEntryFP(callerFP_);
-  }
-
-  uint8_t* jitEntryCaller() const { return toJitEntryCaller(callerFP_); }
-
-  static const Frame* fromUntaggedWasmExitFP(const void* savedFP) {
-    MOZ_ASSERT(!isExitOrJitEntryFP(savedFP));
-    return reinterpret_cast<const Frame*>(savedFP);
-  }
-
-  static bool isExitOrJitEntryFP(const void* fp) {
-    return reinterpret_cast<uintptr_t>(fp) & ExitOrJitEntryFPTag;
-  }
-
-  static uint8_t* toJitEntryCaller(const void* fp) {
-    MOZ_ASSERT(isExitOrJitEntryFP(fp));
-    return reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(fp) &
-                                      ~ExitOrJitEntryFPTag);
-  }
-
-  static uint8_t* addExitOrJitEntryFPTag(const Frame* fp) {
-    MOZ_ASSERT(!isExitOrJitEntryFP(fp));
-    return reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(fp) |
-                                      ExitOrJitEntryFPTag);
-  }
+  Instance* instance() const { return tls->instance; }
 };
 
-static_assert(!std::is_polymorphic_v<Frame>, "Frame doesn't need a vtable.");
-
 #if defined(JS_CODEGEN_ARM64)
-static_assert(sizeof(Frame) % 16 == 0, "frame is aligned");
+static_assert(sizeof(Frame) % 16 == 0, "frame size");
 #endif
 
 
