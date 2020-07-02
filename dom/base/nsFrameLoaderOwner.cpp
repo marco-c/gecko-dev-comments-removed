@@ -284,9 +284,3 @@ void nsFrameLoaderOwner::SubframeCrashed() {
                           false,
                           false, frameLoaderInit, IgnoreErrors());
 }
-
-void nsFrameLoaderOwner::UnbindFromTree() {
-  
-  
-  mBrowserId = 0;
-}

@@ -74,12 +74,6 @@ class nsFrameLoaderOwner : public nsISupports {
 
   void SubframeCrashed();
 
-  
-  void UnbindFromTree();
-
-  uint64_t GetBrowserId() { return mBrowserId; }
-  void SetBrowserId(uint64_t aBrowserId) { mBrowserId = aBrowserId; }
-
  private:
   bool UseRemoteSubframes();
 
@@ -100,8 +94,6 @@ class nsFrameLoaderOwner : public nsISupports {
                               bool aSwitchingInProgressLoad, bool aIsRemote,
                               std::function<void()>& aFrameLoaderInit,
                               mozilla::ErrorResult& aRv);
-
-  uint64_t mBrowserId = 0;
 
  protected:
   virtual ~nsFrameLoaderOwner() = default;

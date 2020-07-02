@@ -189,13 +189,11 @@ bool BrowsingContext::SameOriginWithTop() {
 
 already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
     nsGlobalWindowInner* aParent, BrowsingContext* aOpener,
-    const nsAString& aName, Type aType, uint64_t aBrowserId) {
+    const nsAString& aName, Type aType) {
   if (aParent) {
     MOZ_DIAGNOSTIC_ASSERT(aParent->GetWindowContext());
     MOZ_DIAGNOSTIC_ASSERT(aParent->GetBrowsingContext()->mType == aType);
-    MOZ_DIAGNOSTIC_ASSERT(aParent->GetBrowsingContext()->GetBrowserId() == 0 ||
-                          aParent->GetBrowsingContext()->GetBrowserId() ==
-                              aBrowserId);
+    MOZ_DIAGNOSTIC_ASSERT(aParent->GetBrowsingContext()->GetBrowserId() != 0);
   }
 
   MOZ_DIAGNOSTIC_ASSERT(aType != Type::Chrome || XRE_IsParentProcess());
@@ -251,7 +249,9 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
   context->mFields.SetWithoutSyncing<IDX_OpenerPolicy>(
       nsILoadInfo::OPENER_POLICY_UNSAFE_NONE);
 
-  context->mFields.SetWithoutSyncing<IDX_BrowserId>(aBrowserId);
+  uint64_t browserId =
+      parentBC ? parentBC->GetBrowserId() : nsContentUtils::GenerateBrowserId();
+  context->mFields.SetWithoutSyncing<IDX_BrowserId>(browserId);
 
   if (aOpener && aOpener->SameOriginWithTop()) {
     
@@ -336,10 +336,8 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
 
 already_AddRefed<BrowsingContext> BrowsingContext::CreateIndependent(
     Type aType) {
-  uint64_t browserId =
-      aType == Type::Content ? nsContentUtils::GenerateBrowserId() : 0;
   RefPtr<BrowsingContext> bc(
-      CreateDetached(nullptr, nullptr, EmptyString(), aType, browserId));
+      CreateDetached(nullptr, nullptr, EmptyString(), aType));
   bc->mWindowless = bc->IsContent();
   bc->EnsureAttached();
   return bc.forget();
@@ -510,29 +508,6 @@ static bool OwnerAllowsFullscreen(const Element& aEmbedder) {
 
 void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
   mEmbeddedByThisProcess = true;
-
-  
-  
-  if (RefPtr<nsFrameLoaderOwner> owner = do_QueryObject(aEmbedder);
-      owner && !IsChrome()) {
-    uint64_t browserId = GetBrowserId();
-    uint64_t frameBrowserId = owner->GetBrowserId();
-
-    MOZ_DIAGNOSTIC_ASSERT(browserId != 0);
-
-    if (frameBrowserId == 0) {
-      
-      
-      
-      
-      MOZ_DIAGNOSTIC_ASSERT(IsTopContent());
-      MOZ_DIAGNOSTIC_ASSERT(Children().IsEmpty());
-      owner->SetBrowserId(browserId);
-    } else {
-      
-      MOZ_DIAGNOSTIC_ASSERT(browserId == frameBrowserId);
-    }
-  }
 
   
   
