@@ -4,7 +4,7 @@
 
 
 
-#include "nsSVGImageFrame.h"
+#include "SVGImageFrame.h"
 
 
 #include "gfxContext.h"
@@ -29,26 +29,48 @@
 #include "nsIReflowCallback.h"
 #include "mozilla/Unused.h"
 
-using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::gfx;
 using namespace mozilla::image;
 using namespace mozilla::dom::SVGPreserveAspectRatio_Binding;
 namespace SVGT = SVGGeometryProperty::Tags;
 
+namespace mozilla {
+
+class SVGImageListener final : public imgINotificationObserver {
+ public:
+  explicit SVGImageListener(SVGImageFrame* aFrame);
+
+  NS_DECL_ISUPPORTS
+  NS_DECL_IMGINOTIFICATIONOBSERVER
+
+  void SetFrame(SVGImageFrame* frame) { mFrame = frame; }
+
+ private:
+  ~SVGImageListener() = default;
+
+  SVGImageFrame* mFrame;
+};
 
 
-NS_QUERYFRAME_HEAD(nsSVGImageFrame)
-  NS_QUERYFRAME_ENTRY(nsSVGImageFrame)
+
+NS_QUERYFRAME_HEAD(SVGImageFrame)
+  NS_QUERYFRAME_ENTRY(SVGImageFrame)
 NS_QUERYFRAME_TAIL_INHERITING(SVGGeometryFrame)
 
-nsIFrame* NS_NewSVGImageFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
-  return new (aPresShell) nsSVGImageFrame(aStyle, aPresShell->GetPresContext());
+}  
+
+nsIFrame* NS_NewSVGImageFrame(mozilla::PresShell* aPresShell,
+                              mozilla::ComputedStyle* aStyle) {
+  return new (aPresShell)
+      mozilla::SVGImageFrame(aStyle, aPresShell->GetPresContext());
 }
 
-NS_IMPL_FRAMEARENA_HELPERS(nsSVGImageFrame)
+namespace mozilla {
 
-nsSVGImageFrame::~nsSVGImageFrame() {
+NS_IMPL_FRAMEARENA_HELPERS(SVGImageFrame)
+
+SVGImageFrame::~SVGImageFrame() {
   
   if (mListener) {
     nsCOMPtr<nsIImageLoadingContent> imageLoader =
@@ -56,13 +78,13 @@ nsSVGImageFrame::~nsSVGImageFrame() {
     if (imageLoader) {
       imageLoader->RemoveNativeObserver(mListener);
     }
-    reinterpret_cast<nsSVGImageListener*>(mListener.get())->SetFrame(nullptr);
+    reinterpret_cast<SVGImageListener*>(mListener.get())->SetFrame(nullptr);
   }
   mListener = nullptr;
 }
 
-void nsSVGImageFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
-                           nsIFrame* aPrevInFlow) {
+void SVGImageFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
+                         nsIFrame* aPrevInFlow) {
   NS_ASSERTION(aContent->IsSVGElement(nsGkAtoms::image),
                "Content is not an SVG image!");
 
@@ -80,7 +102,7 @@ void nsSVGImageFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     IncApproximateVisibleCount();
   }
 
-  mListener = new nsSVGImageListener(this);
+  mListener = new SVGImageListener(this);
   nsCOMPtr<nsIImageLoadingContent> imageLoader =
       do_QueryInterface(GetContent());
   if (!imageLoader) {
@@ -95,8 +117,8 @@ void nsSVGImageFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 }
 
 
-void nsSVGImageFrame::DestroyFrom(nsIFrame* aDestructRoot,
-                                  PostDestroyData& aPostDestroyData) {
+void SVGImageFrame::DestroyFrom(nsIFrame* aDestructRoot,
+                                PostDestroyData& aPostDestroyData) {
   if (GetStateBits() & NS_FRAME_IS_NONDISPLAY) {
     DecApproximateVisibleCount();
   }
@@ -117,7 +139,7 @@ void nsSVGImageFrame::DestroyFrom(nsIFrame* aDestructRoot,
 }
 
 
-void nsSVGImageFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
+void SVGImageFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
   SVGGeometryFrame::DidSetComputedStyle(aOldStyle);
 
   if (!mImageContainer || !aOldStyle) {
@@ -137,9 +159,8 @@ void nsSVGImageFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
 
 
 
-nsresult nsSVGImageFrame::AttributeChanged(int32_t aNameSpaceID,
-                                           nsAtom* aAttribute,
-                                           int32_t aModType) {
+nsresult SVGImageFrame::AttributeChanged(int32_t aNameSpaceID,
+                                         nsAtom* aAttribute, int32_t aModType) {
   if (aNameSpaceID == kNameSpaceID_None) {
     if (aAttribute == nsGkAtoms::preserveAspectRatio) {
       
@@ -174,7 +195,7 @@ nsresult nsSVGImageFrame::AttributeChanged(int32_t aNameSpaceID,
   return SVGGeometryFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
 }
 
-void nsSVGImageFrame::OnVisibilityChange(
+void SVGImageFrame::OnVisibilityChange(
     Visibility aNewVisibility, const Maybe<OnNonvisible>& aNonvisibleAction) {
   nsCOMPtr<nsIImageLoadingContent> imageLoader =
       do_QueryInterface(GetContent());
@@ -188,8 +209,8 @@ void nsSVGImageFrame::OnVisibilityChange(
   SVGGeometryFrame::OnVisibilityChange(aNewVisibility, aNonvisibleAction);
 }
 
-gfx::Matrix nsSVGImageFrame::GetRasterImageTransform(int32_t aNativeWidth,
-                                                     int32_t aNativeHeight) {
+gfx::Matrix SVGImageFrame::GetRasterImageTransform(int32_t aNativeWidth,
+                                                   int32_t aNativeHeight) {
   float x, y, width, height;
   SVGImageElement* element = static_cast<SVGImageElement*>(GetContent());
   SVGGeometryProperty::ResolveAll<SVGT::X, SVGT::Y, SVGT::Width, SVGT::Height>(
@@ -202,7 +223,7 @@ gfx::Matrix nsSVGImageFrame::GetRasterImageTransform(int32_t aNativeWidth,
   return viewBoxTM * gfx::Matrix::Translation(x, y);
 }
 
-gfx::Matrix nsSVGImageFrame::GetVectorImageTransform() {
+gfx::Matrix SVGImageFrame::GetVectorImageTransform() {
   float x, y;
   SVGImageElement* element = static_cast<SVGImageElement*>(GetContent());
   SVGGeometryProperty::ResolveAll<SVGT::X, SVGT::Y>(element, &x, &y);
@@ -214,7 +235,7 @@ gfx::Matrix nsSVGImageFrame::GetVectorImageTransform() {
   return gfx::Matrix::Translation(x, y);
 }
 
-bool nsSVGImageFrame::GetIntrinsicImageDimensions(
+bool SVGImageFrame::GetIntrinsicImageDimensions(
     mozilla::gfx::Size& aSize, mozilla::AspectRatio& aAspectRatio) const {
   if (!mImageContainer) {
     return false;
@@ -239,8 +260,8 @@ bool nsSVGImageFrame::GetIntrinsicImageDimensions(
   return true;
 }
 
-bool nsSVGImageFrame::TransformContextForPainting(gfxContext* aGfxContext,
-                                                  const gfxMatrix& aTransform) {
+bool SVGImageFrame::TransformContextForPainting(gfxContext* aGfxContext,
+                                                const gfxMatrix& aTransform) {
   gfx::Matrix imageTransform;
   if (mImageContainer->GetType() == imgIContainer::TYPE_VECTOR) {
     imageTransform = GetVectorImageTransform() * ToMatrix(aTransform);
@@ -272,10 +293,9 @@ bool nsSVGImageFrame::TransformContextForPainting(gfxContext* aGfxContext,
 
 
 
-void nsSVGImageFrame::PaintSVG(gfxContext& aContext,
-                               const gfxMatrix& aTransform,
-                               imgDrawingParams& aImgParams,
-                               const nsIntRect* aDirtyRect) {
+void SVGImageFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
+                             imgDrawingParams& aImgParams,
+                             const nsIntRect* aDirtyRect) {
   if (!StyleVisibility()->IsVisible()) {
     return;
   }
@@ -403,7 +423,7 @@ void nsSVGImageFrame::PaintSVG(gfxContext& aContext,
   }
 }
 
-bool nsSVGImageFrame::CreateWebRenderCommands(
+bool SVGImageFrame::CreateWebRenderCommands(
     mozilla::wr::DisplayListBuilder& aBuilder,
     mozilla::wr::IpcResourceUpdateQueue& aResources,
     const mozilla::layers::StackingContextHelper& aSc,
@@ -630,7 +650,7 @@ bool nsSVGImageFrame::CreateWebRenderCommands(
   return true;
 }
 
-nsIFrame* nsSVGImageFrame::GetFrameForPoint(const gfxPoint& aPoint) {
+nsIFrame* SVGImageFrame::GetFrameForPoint(const gfxPoint& aPoint) {
   if (!(GetStateBits() & NS_STATE_SVG_CLIPPATH_CHILD) && !GetHitTestFlags()) {
     return nullptr;
   }
@@ -679,7 +699,7 @@ nsIFrame* nsSVGImageFrame::GetFrameForPoint(const gfxPoint& aPoint) {
 
 
 
-void nsSVGImageFrame::ReflowSVG() {
+void SVGImageFrame::ReflowSVG() {
   NS_ASSERTION(nsSVGUtils::OuterSVGIsCallingReflowSVG(this),
                "This call is probably a wasteful mistake");
 
@@ -729,7 +749,7 @@ void nsSVGImageFrame::ReflowSVG() {
   }
 }
 
-bool nsSVGImageFrame::ReflowFinished() {
+bool SVGImageFrame::ReflowFinished() {
   mReflowCallbackPosted = false;
 
   
@@ -746,11 +766,9 @@ bool nsSVGImageFrame::ReflowFinished() {
   return false;
 }
 
-void nsSVGImageFrame::ReflowCallbackCanceled() {
-  mReflowCallbackPosted = false;
-}
+void SVGImageFrame::ReflowCallbackCanceled() { mReflowCallbackPosted = false; }
 
-uint16_t nsSVGImageFrame::GetHitTestFlags() {
+uint16_t SVGImageFrame::GetHitTestFlags() {
   uint16_t flags = 0;
 
   switch (StyleUI()->mPointerEvents) {
@@ -790,13 +808,12 @@ uint16_t nsSVGImageFrame::GetHitTestFlags() {
 
 
 
-NS_IMPL_ISUPPORTS(nsSVGImageListener, imgINotificationObserver)
+NS_IMPL_ISUPPORTS(SVGImageListener, imgINotificationObserver)
 
-nsSVGImageListener::nsSVGImageListener(nsSVGImageFrame* aFrame)
-    : mFrame(aFrame) {}
+SVGImageListener::SVGImageListener(SVGImageFrame* aFrame) : mFrame(aFrame) {}
 
-void nsSVGImageListener::Notify(imgIRequest* aRequest, int32_t aType,
-                                const nsIntRect* aData) {
+void SVGImageListener::Notify(imgIRequest* aRequest, int32_t aType,
+                              const nsIntRect* aData) {
   if (!mFrame) {
     return;
   }
@@ -835,3 +852,5 @@ void nsSVGImageListener::Notify(imgIRequest* aRequest, int32_t aType,
     nsSVGUtils::ScheduleReflowSVG(mFrame);
   }
 }
+
+}  

@@ -18,7 +18,6 @@
 #include "nsTArray.h"
 
 class nsIContent;
-class nsSVGUseFrame;
 
 nsresult NS_NewSVGSVGElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
@@ -27,6 +26,7 @@ nsresult NS_NewSVGUseElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
 namespace mozilla {
+class SVGUseFrame;
 struct URLExtraData;
 
 namespace dom {
@@ -35,7 +35,7 @@ typedef SVGGraphicsElement SVGUseElementBase;
 
 class SVGUseElement final : public SVGUseElementBase,
                             public nsStubMutationObserver {
-  friend class ::nsSVGUseFrame;
+  friend class mozilla::SVGUseFrame;
 
  protected:
   friend nsresult(::NS_NewSVGUseElement(
@@ -137,7 +137,7 @@ class SVGUseElement final : public SVGUseElementBase,
     SVGUseElement* mOwningUseElement;
   };
 
-  nsSVGUseFrame* GetFrame() const;
+  SVGUseFrame* GetFrame() const;
 
   virtual LengthAttributesInfo GetLengthInfo() override;
   virtual StringAttributesInfo GetStringInfo() override;

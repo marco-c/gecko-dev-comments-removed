@@ -12,27 +12,27 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/ReflowOutput.h"
 #include "mozilla/RelativeTo.h"
 #include "mozilla/StaticPrefs_nglayout.h"
+#include "mozilla/SVGImageContext.h"
+#include "mozilla/ToString.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/UniquePtr.h"
-#include "nsBoundingMetrics.h"
 #include "mozilla/layout/FrameChildList.h"
 #include "mozilla/layers/ScrollableLayerGuid.h"
-#include "nsThreadUtils.h"
-#include "nsCSSPropertyIDSet.h"
-#include "nsGkAtoms.h"
 #include "mozilla/gfx/2D.h"
-#include "Units.h"
-#include "mozilla/ToString.h"
-#include "mozilla/ReflowOutput.h"
-#include "ImageContainer.h"  
 #include "gfx2DGlue.h"
-#include "SVGImageContext.h"
+#include "gfxPoint.h"
+#include "nsBoundingMetrics.h"
+#include "nsCSSPropertyIDSet.h"
+#include "nsClassHashtable.h"
+#include "nsGkAtoms.h"
+#include "nsThreadUtils.h"
+#include "ImageContainer.h"  
+#include "Units.h"
 #include <limits>
 #include <algorithm>
-#include "gfxPoint.h"
-#include "nsClassHashtable.h"
 
 
 
@@ -2695,9 +2695,9 @@ class nsLayoutUtils {
 
 
   enum class SubtractDynamicToolbar { No, Yes };
-  static bool GetContentViewerSize(nsPresContext* aPresContext,
-                                   LayoutDeviceIntSize& aOutSize,
-                                   SubtractDynamicToolbar = SubtractDynamicToolbar::Yes);
+  static bool GetContentViewerSize(
+      nsPresContext* aPresContext, LayoutDeviceIntSize& aOutSize,
+      SubtractDynamicToolbar = SubtractDynamicToolbar::Yes);
 
  private:
   static bool UpdateCompositionBoundsForRCDRSF(

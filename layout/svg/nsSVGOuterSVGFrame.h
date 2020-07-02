@@ -14,9 +14,9 @@
 #include "nsRegion.h"
 
 class gfxContext;
-class nsSVGForeignObjectFrame;
 
 namespace mozilla {
+class SVGForeignObjectFrame;
 class PresShell;
 }  
 
@@ -125,8 +125,8 @@ class nsSVGOuterSVGFrame final : public nsSVGDisplayContainerFrame,
 
 
 
-  void RegisterForeignObject(nsSVGForeignObjectFrame* aFrame);
-  void UnregisterForeignObject(nsSVGForeignObjectFrame* aFrame);
+  void RegisterForeignObject(mozilla::SVGForeignObjectFrame* aFrame);
+  void UnregisterForeignObject(mozilla::SVGForeignObjectFrame* aFrame);
 
   virtual bool HasChildrenOnlyTransform(Matrix* aTransform) const override {
     
@@ -182,7 +182,7 @@ class nsSVGOuterSVGFrame final : public nsSVGDisplayContainerFrame,
   
   
   
-  mozilla::UniquePtr<nsTHashtable<nsPtrHashKey<nsSVGForeignObjectFrame>>>
+  mozilla::UniquePtr<nsTHashtable<nsPtrHashKey<mozilla::SVGForeignObjectFrame>>>
       mForeignObjectHash;
 
   nsRegion mInvalidRegion;
