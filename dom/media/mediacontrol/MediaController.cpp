@@ -167,7 +167,8 @@ void MediaController::NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
 }
 
 void MediaController::UpdateDeactivationTimerIfNeeded() {
-  bool shouldBeAlwaysActive = IsPlaying() || mIsInPictureInPictureMode;
+  bool shouldBeAlwaysActive =
+      IsPlaying() || IsMediaBeingUsedInPIPModeOrFullScreen();
   if (shouldBeAlwaysActive && mDeactivationTimer) {
     LOG("Cancel deactivation timer");
     mDeactivationTimer->Cancel();
@@ -185,6 +186,10 @@ void MediaController::UpdateDeactivationTimerIfNeeded() {
   }
 }
 
+bool MediaController::IsMediaBeingUsedInPIPModeOrFullScreen() const {
+  return mIsInPictureInPictureMode || mIsInFullScreenMode;
+}
+
 NS_IMETHODIMP MediaController::Notify(nsITimer* aTimer) {
   mDeactivationTimer = nullptr;
   if (mShutdown) {
@@ -195,7 +200,7 @@ NS_IMETHODIMP MediaController::Notify(nsITimer* aTimer) {
   
   
   
-  if (mIsInPictureInPictureMode) {
+  if (IsMediaBeingUsedInPIPModeOrFullScreen()) {
     LOG("Cancel deactivation timer because controller is in PIP mode");
     return NS_OK;
   }
@@ -239,7 +244,27 @@ void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
 
 bool MediaController::ShouldActivateController() const {
   MOZ_ASSERT(!mShutdown);
-  return IsAnyMediaBeingControlled() && IsAudible() && !mIsActive;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return IsAnyMediaBeingControlled() &&
+         (IsAudible() || IsMediaBeingUsedInPIPModeOrFullScreen()) && !mIsActive;
 }
 
 bool MediaController::ShouldDeactivateController() const {
@@ -278,6 +303,7 @@ void MediaController::SetIsInPictureInPictureMode(
   LOG("Set IsInPictureInPictureMode to %s",
       aIsInPictureInPictureMode ? "true" : "false");
   mIsInPictureInPictureMode = aIsInPictureInPictureMode;
+  UpdateActivatedStateIfNeeded();
   if (RefPtr<MediaControlService> service = MediaControlService::GetService();
       service && mIsInPictureInPictureMode) {
     service->NotifyControllerBeingUsedInPictureInPictureMode(this);
@@ -292,6 +318,7 @@ void MediaController::NotifyMediaFullScreenState(uint64_t aBrowsingContextId,
   }
   LOG("%s fullscreen", aIsInFullScreen ? "Entered" : "Left");
   mIsInFullScreenMode = aIsInFullScreen;
+  UpdateActivatedStateIfNeeded();
 }
 
 void MediaController::HandleActualPlaybackStateChanged() {
