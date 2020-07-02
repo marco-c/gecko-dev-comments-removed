@@ -1608,18 +1608,8 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetGridTemplateColumnsRows(
     const auto repeatLineNames = autoRepeatValue->line_names.AsSpan();
     MOZ_ASSERT(repeatLineNames.Length() >= 2);
     
-    
-    
-    MOZ_ASSERT(repeatLineNames.Length() ==
-               autoRepeatValue->track_sizes.len + 1);
-    
-    
-    
-    
-    const uint32_t numRepeatTracks =
-        std::min(aTrackInfo.mRemovedRepeatTracks.Length(),
-                 autoRepeatValue->track_sizes.len);
-    MOZ_ASSERT(repeatLineNames.Length() >= numRepeatTracks + 1);
+    const uint32_t numRepeatTracks = autoRepeatValue->track_sizes.len;
+    MOZ_ASSERT(repeatLineNames.Length() == numRepeatTracks + 1);
     
     const uint32_t totalNumRepeatTracks =
         aTrackInfo.mRemovedRepeatTracks.Length();
