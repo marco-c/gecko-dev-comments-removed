@@ -137,6 +137,7 @@ SheetLoadDataHashKey::SheetLoadDataHashKey(const css::SheetLoadData& aLoadData)
     : mURI(aLoadData.mURI),
       mPrincipal(aLoadData.mTriggeringPrincipal),
       mLoaderPrincipal(aLoadData.mLoader->LoaderPrincipal()),
+      mPartitionPrincipal(aLoadData.mLoader->PartitionedPrincipal()),
       mEncodingGuess(aLoadData.mGuessedEncoding),
       mCORSMode(aLoadData.mSheet->GetCORSMode()),
       mParsingMode(aLoadData.mSheet->ParsingMode()),
@@ -146,6 +147,7 @@ SheetLoadDataHashKey::SheetLoadDataHashKey(const css::SheetLoadData& aLoadData)
   MOZ_ASSERT(mURI);
   MOZ_ASSERT(mPrincipal);
   MOZ_ASSERT(mLoaderPrincipal);
+  MOZ_ASSERT(mPartitionPrincipal);
   aLoadData.mSheet->GetIntegrity(mSRIMetadata);
 }
 
@@ -159,12 +161,20 @@ bool SheetLoadDataHashKey::KeyEquals(const SheetLoadDataHashKey& aKey) const {
 
   LOG_URI("KeyEquals(%s)\n", mURI);
 
-  
-  
-
   if (!mPrincipal->Equals(aKey.mPrincipal)) {
     LOG((" > Principal mismatch\n"));
     return false;
+  }
+
+  
+  
+  
+  if (mPrincipal->Equals(mLoaderPrincipal) ||
+      aKey.mPrincipal->Equals(aKey.mLoaderPrincipal)) {
+    if (!mPartitionPrincipal->Equals(aKey.mPartitionPrincipal)) {
+      LOG((" > Partition principal mismatch\n"));
+      return false;
+    }
   }
 
   if (mCORSMode != aKey.mCORSMode) {
@@ -945,6 +955,7 @@ std::tuple<RefPtr<StyleSheet>, Loader::SheetState> Loader::CreateSheet(
 
   if (mSheets) {
     SheetLoadDataHashKey key(aURI, aTriggeringPrincipal, LoaderPrincipal(),
+                             PartitionedPrincipal(),
                              GetFallbackEncoding(*this, aLinkingContent,
                                                  aPreloadOrParentDataEncoding),
                              aCORSMode, aParsingMode, mCompatMode, sriMetadata,
@@ -2197,6 +2208,13 @@ nsIPrincipal* Loader::LoaderPrincipal() const {
   }
   
   return nsContentUtils::GetSystemPrincipal();
+}
+
+nsIPrincipal* Loader::PartitionedPrincipal() const {
+  if (mDocument && StaticPrefs::privacy_partition_network_state()) {
+    return mDocument->PartitionedPrincipal();
+  }
+  return LoaderPrincipal();
 }
 
 bool Loader::ShouldBypassCache() const {
