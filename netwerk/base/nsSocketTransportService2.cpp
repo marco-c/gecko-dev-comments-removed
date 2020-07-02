@@ -1085,6 +1085,9 @@ nsSocketTransportService::Run() {
   mRawThread = NS_GetCurrentThread();
 
   
+  SerialEventTargetGuard guard(this);
+
+  
   nsCOMPtr<nsIThreadInternal> threadInt = do_QueryInterface(mRawThread);
   threadInt->SetObserver(this);
 
