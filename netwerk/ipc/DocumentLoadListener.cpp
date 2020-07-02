@@ -1557,6 +1557,31 @@ void DocumentLoadListener::MaybeReportBlockedByURLClassifier(nsresult aStatus) {
   }
 }
 
+bool DocumentLoadListener::DocShellWillDisplayContent(nsresult aStatus) {
+  if (NS_SUCCEEDED(aStatus)) {
+    return true;
+  }
+
+  
+  
+  
+  
+
+  bool isInitialDocument = true;
+  if (WindowGlobalParent* currentWindow =
+          GetBrowsingContext()->GetCurrentWindowGlobal()) {
+    isInitialDocument = currentWindow->IsInitialDocument();
+  }
+
+  nsresult rv = nsDocShell::FilterStatusForErrorPage(
+      aStatus, mChannel, mLoadStateLoadType, GetBrowsingContext()->IsTop(),
+      GetBrowsingContext()->GetUseErrorPages(), isInitialDocument, nullptr);
+
+  
+  
+  return NS_FAILED(rv);
+}
+
 NS_IMETHODIMP
 DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   LOG(("DocumentLoadListener OnStartRequest [this=%p]", this));
@@ -1608,8 +1633,11 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   
   
   
+  
+  
+  
   bool willBeRemote = false;
-  if (status == NS_BINDING_ABORTED ||
+  if (!DocShellWillDisplayContent(status) ||
       !MaybeTriggerProcessSwitch(&willBeRemote)) {
     TriggerRedirectToRealChannel();
 

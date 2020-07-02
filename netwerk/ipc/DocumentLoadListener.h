@@ -290,6 +290,12 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
+  bool DocShellWillDisplayContent(nsresult aStatus);
+
+  
+  
+  
+  
   
   
   
