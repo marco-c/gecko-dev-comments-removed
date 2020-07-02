@@ -21,6 +21,7 @@ def test(mod, path, entity=None):
         
         if path in (
             "chrome/global/aboutReader.properties",
+            "chrome/global/charsetMenu.properties",
             "chrome/global/commonDialogs.properties",
             "chrome/global/intl.properties",
             "chrome/global/intl.css",
