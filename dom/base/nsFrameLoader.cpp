@@ -3199,12 +3199,20 @@ BrowsingContext* nsFrameLoader::GetBrowsingContext() {
 }
 
 BrowsingContext* nsFrameLoader::GetExtantBrowsingContext() {
+  if (!mPendingBrowsingContext) {
+    
+    
+    
+    return nullptr;
+  }
+
   BrowsingContext* browsingContext = nullptr;
   if (mRemoteBrowser) {
     browsingContext = mRemoteBrowser->GetBrowsingContext();
   } else if (mDocShell) {
     browsingContext = mDocShell->GetBrowsingContext();
   }
+
   MOZ_ASSERT_IF(browsingContext, browsingContext == mPendingBrowsingContext);
   return browsingContext;
 }
