@@ -553,31 +553,6 @@ Toolbox.prototype = {
   
 
 
-
-
-
-  async switchToTarget(newTarget) {
-    
-    this.emit("switch-target", newTarget);
-
-    
-    
-    
-    
-    const onAttached = this.once("top-target-attached");
-    await this.targetList.switchToTarget(newTarget);
-    await onAttached;
-
-    
-    await this._listFrames();
-    await this.initPerformance();
-
-    this.emit("switched-target", newTarget);
-  },
-
-  
-
-
   get target() {
     return this.targetList.targetFront;
   },
@@ -722,8 +697,13 @@ Toolbox.prototype = {
 
 
 
-  async _onTargetAvailable({ targetFront }) {
+  async _onTargetAvailable({ targetFront, isTargetSwitching }) {
     if (targetFront.isTopLevel) {
+      if (isTargetSwitching) {
+        
+        this.emit("switch-target", targetFront);
+      }
+
       
       
       targetFront.on("will-navigate", this._onWillNavigate);
@@ -742,8 +722,14 @@ Toolbox.prototype = {
       await this.store.dispatch(registerTarget(targetFront));
     }
 
-    if (targetFront.isTopLevel) {
-      this.emit("top-target-attached");
+    if (targetFront.isTopLevel && isTargetSwitching) {
+      
+      
+      
+      await this._listFrames();
+      await this.initPerformance();
+
+      this.emit("switched-target", targetFront);
     }
   },
 
@@ -842,8 +828,14 @@ Toolbox.prototype = {
         );
       });
 
+      
+      
       await this.targetList.startListening();
 
+      
+      
+      
+      
       
       
       await this.targetList.watchTargets(

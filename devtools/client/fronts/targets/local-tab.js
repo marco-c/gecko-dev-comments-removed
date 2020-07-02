@@ -160,7 +160,7 @@ class LocalTabTargetFront extends BrowsingContextTargetFront {
     
     
     if (targetSwitchingEnabled) {
-      toolbox.switchToTarget(newTarget);
+      toolbox.targetList.switchToTarget(newTarget);
     } else {
       gDevTools.showToolbox(newTarget);
     }
