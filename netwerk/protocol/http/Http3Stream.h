@@ -61,7 +61,7 @@ class Http3Stream final : public nsAHttpSegmentReader,
  private:
   ~Http3Stream() = default;
 
-  void GetHeadersString(const char* buf, uint32_t avail, uint32_t* countUsed);
+  bool GetHeadersString(const char* buf, uint32_t avail, uint32_t* countUsed);
   nsresult StartRequest();
   void FindRequestContentLength();
 
@@ -90,6 +90,7 @@ class Http3Stream final : public nsAHttpSegmentReader,
 
   enum SendStreamState {
     PREPARING_HEADERS,
+    WAITING_TO_ACTIVATE,
     SENDING_BODY,
     EARLY_RESPONSE,
     SEND_DONE
@@ -124,8 +125,6 @@ class Http3Stream final : public nsAHttpSegmentReader,
   Http3Session* mSession;
   RefPtr<nsAHttpTransaction> mTransaction;
   nsCString mFlatHttpRequestHeaders;
-  bool mRequestHeadersDone;
-  bool mRequestStarted;
   bool mQueued;
   bool mRequestBlockedOnRead;
   bool mDataReceived;
@@ -135,12 +134,6 @@ class Http3Stream final : public nsAHttpSegmentReader,
 
   
   RefPtr<nsISocketTransport> mSocketTransport;
-
-  
-  
-  
-  
-  bool mActivatingFailed;
 
   
   uint64_t mTotalSent;
