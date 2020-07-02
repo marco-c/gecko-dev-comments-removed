@@ -70,7 +70,7 @@ add_task(async function() {
   got = await promiseNewChannelResponse(TEST_URI_GOOD);
 
   
-  Assert.ok(got.message.extensions, "should have extensions");
+  Assert.ok(got.message.addons, "should have addons");
   Assert.ok(got.message.graphics, "should have graphics");
 
   
