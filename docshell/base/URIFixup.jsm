@@ -162,7 +162,7 @@ XPCOMUtils.defineLazyGetter(
 );
 
 
-XPCOMUtils.defineLazyGetter(this, "domainsWhitelist", () => {
+XPCOMUtils.defineLazyGetter(this, "knownDomains", () => {
   const branch = "browser.fixup.domainwhitelist.";
   let domains = new Set(
     Services.prefs
@@ -199,7 +199,7 @@ XPCOMUtils.defineLazyGetter(this, "domainsWhitelist", () => {
 
 
 
-XPCOMUtils.defineLazyGetter(this, "suffixesWhitelist", () => {
+XPCOMUtils.defineLazyGetter(this, "knownSuffixes", () => {
   const branch = "browser.fixup.domainsuffixwhitelist.";
   let suffixes = new Map();
   let prefs = Services.prefs
@@ -552,7 +552,7 @@ URIFixup.prototype = {
     return info;
   },
 
-  isDomainWhitelisted,
+  isDomainKnown,
 
   classID: Components.ID("{c6cf88b7-452e-47eb-bdc9-86e3561648ef}"),
   _xpcom_factory: XPCOMUtils.generateSingletonFactory(URIFixup),
@@ -632,7 +632,7 @@ URIFixupInfo.prototype = {
 
 
 
-function isDomainWhitelisted(asciiHost) {
+function isDomainKnown(asciiHost) {
   if (dnsFirstForSingleWords) {
     return true;
   }
@@ -645,7 +645,7 @@ function isDomainWhitelisted(asciiHost) {
     asciiHost = asciiHost.substring(0, asciiHost.length - 1);
     lastDotIndex = asciiHost.lastIndexOf(".");
   }
-  if (domainsWhitelist.has(asciiHost.toLowerCase())) {
+  if (knownDomains.has(asciiHost.toLowerCase())) {
     return true;
   }
   
@@ -657,7 +657,7 @@ function isDomainWhitelisted(asciiHost) {
   
   
   let lastPart = asciiHost.substr(lastDotIndex + 1);
-  let suffixes = suffixesWhitelist.get(lastPart);
+  let suffixes = knownSuffixes.get(lastPart);
   if (suffixes) {
     return Array.from(suffixes).some(s => asciiHost.endsWith(s));
   }
@@ -681,7 +681,7 @@ function checkAndFixPublicSuffix(info) {
     !asciiHost ||
     !asciiHost.includes(".") ||
     asciiHost.endsWith(".") ||
-    isDomainWhitelisted(asciiHost)
+    isDomainKnown(asciiHost)
   ) {
     return { suffix: "", hasUnknownSuffix: false };
   }
@@ -950,7 +950,7 @@ function keywordURIFixup(uriString, fixupInfo, isPrivateContext, postData) {
   let asciiHost = fixupInfo.fixedURI?.asciiHost;
   if (
     asciiHost &&
-    (isDomainWhitelisted(asciiHost) ||
+    (isDomainKnown(asciiHost) ||
       (asciiHost.endsWith(".") &&
         asciiHost.indexOf(".") != asciiHost.length - 1))
   ) {
@@ -1031,7 +1031,7 @@ function keywordURIFixupLegacy(
   
   
   let asciiHost = fixupInfo.fixedURI?.asciiHost;
-  if (asciiHost && isDomainWhitelisted(asciiHost)) {
+  if (asciiHost && isDomainKnown(asciiHost)) {
     return false;
   }
 

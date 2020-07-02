@@ -1346,6 +1346,7 @@ Search.prototype = {
       
       
       
+      
       let matched = await this._matchUnknownUrl();
       if (matched) {
         
@@ -1393,7 +1394,7 @@ Search.prototype = {
     let query, params;
     if (
       UrlbarTokenizer.looksLikeOrigin(this._searchString, {
-        ignoreWhitelist: true,
+        ignoreKnownDomains: true,
       })
     ) {
       [query, params] = this._originQuery;
@@ -1498,7 +1499,7 @@ Search.prototype = {
     }
     
     if (
-      !UrlbarTokenizer.looksLikeOrigin(searchStr, { ignoreWhitelist: true })
+      !UrlbarTokenizer.looksLikeOrigin(searchStr, { ignoreKnownDomains: true })
     ) {
       return false;
     }

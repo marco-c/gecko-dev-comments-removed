@@ -104,7 +104,7 @@ var UrlbarTokenizer = {
     
     let slashIndex = token.indexOf("/");
     let prePath = slashIndex != -1 ? token.slice(0, slashIndex) : token;
-    if (!this.looksLikeOrigin(prePath, { ignoreWhitelist: true })) {
+    if (!this.looksLikeOrigin(prePath, { ignoreKnownDomains: true })) {
       return false;
     }
 
@@ -143,7 +143,7 @@ var UrlbarTokenizer = {
     ) {
       return true;
     }
-    if (Services.uriFixup.isDomainWhitelisted(hostPort)) {
+    if (Services.uriFixup.isDomainKnown(hostPort)) {
       return true;
     }
     return false;
@@ -165,7 +165,7 @@ var UrlbarTokenizer = {
 
   looksLikeOrigin(
     token,
-    { ignoreWhitelist = false, noIp = false, noPort = false } = {}
+    { ignoreKnownDomains = false, noIp = false, noPort = false } = {}
   ) {
     if (!token.length) {
       return false;
@@ -204,12 +204,12 @@ var UrlbarTokenizer = {
 
     
     if (
-      !ignoreWhitelist &&
+      !ignoreKnownDomains &&
       !userinfo &&
       !hasPort &&
       this.REGEXP_SINGLE_WORD_HOST.test(hostPort)
     ) {
-      return Services.uriFixup.isDomainWhitelisted(hostPort);
+      return Services.uriFixup.isDomainKnown(hostPort);
     }
 
     return true;
