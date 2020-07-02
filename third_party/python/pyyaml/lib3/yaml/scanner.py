@@ -124,10 +124,13 @@ class Scanner:
 
     def peek_token(self):
         
+        
         while self.need_more_tokens():
             self.fetch_more_tokens()
         if self.tokens:
             return self.tokens[0]
+        else:
+            return None
 
     def get_token(self):
         
@@ -1166,6 +1169,7 @@ class Scanner:
         ' ':    '\x20',
         '\"':   '\"',
         '\\':   '\\',
+        '/':    '/',
         'N':    '\x85',
         '_':    '\xA0',
         'L':    '\u2028',
@@ -1285,18 +1289,12 @@ class Scanner:
             while True:
                 ch = self.peek(length)
                 if ch in '\0 \t\r\n\x85\u2028\u2029'    \
-                        or (not self.flow_level and ch == ':' and
-                                self.peek(length+1) in '\0 \t\r\n\x85\u2028\u2029') \
-                        or (self.flow_level and ch in ',:?[]{}'):
+                        or (ch == ':' and
+                                self.peek(length+1) in '\0 \t\r\n\x85\u2028\u2029'
+                                      + (u',[]{}' if self.flow_level else u''))\
+                        or (self.flow_level and ch in ',?[]{}'):
                     break
                 length += 1
-            
-            if (self.flow_level and ch == ':'
-                    and self.peek(length+1) not in '\0 \t\r\n\x85\u2028\u2029,[]{}'):
-                self.forward(length)
-                raise ScannerError("while scanning a plain scalar", start_mark,
-                    "found unexpected ':'", self.get_mark(),
-                    "Please check http://pyyaml.org/wiki/YAMLColonInFlowContext for details.")
             if length == 0:
                 break
             self.allow_simple_key = False
@@ -1435,10 +1433,3 @@ class Scanner:
             self.forward()
             return ch
         return ''
-
-
-
-
-
-
-
