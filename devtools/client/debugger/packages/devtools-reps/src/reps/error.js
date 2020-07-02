@@ -232,19 +232,17 @@ function parseStackString(stack) {
     let location;
 
     
-    
-    
-    
-    
-    
-    const result = frame.match(/^(.*)@(.*)$/);
-    if (result && result.length === 3) {
-      functionName = result[1];
+    const atCharIndex = frame.indexOf("@");
+    if (atCharIndex > -1) {
+      functionName = frame.slice(0, atCharIndex);
+      location = frame.slice(atCharIndex + 1);
+    }
 
+    if (location && location.includes(" -> ")) {
       
       
       
-      location = result[2].split(" -> ").pop();
+      location = location.split(" -> ").pop();
     }
 
     if (!functionName) {
