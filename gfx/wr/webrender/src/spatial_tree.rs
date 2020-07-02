@@ -59,6 +59,11 @@ impl SpatialNodeIndex {
 pub const ROOT_SPATIAL_NODE_INDEX: SpatialNodeIndex = SpatialNodeIndex(0);
 const TOPMOST_SCROLL_NODE_INDEX: SpatialNodeIndex = SpatialNodeIndex(1);
 
+
+
+
+const MIN_SCROLLABLE_AMOUNT: f32 = 0.01;
+
 impl SpatialNodeIndex {
     pub fn new(index: usize) -> Self {
         debug_assert!(index < ::std::u32::MAX as usize);
@@ -658,8 +663,8 @@ impl SpatialTree {
                             
                             
                             
-                            if info.scrollable_size.width > 0.0 ||
-                               info.scrollable_size.height > 0.0 {
+                            if info.scrollable_size.width > MIN_SCROLLABLE_AMOUNT ||
+                               info.scrollable_size.height > MIN_SCROLLABLE_AMOUNT {
                                 
                                 
                                 
