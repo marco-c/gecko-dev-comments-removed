@@ -250,6 +250,13 @@ uint16_t TraversalRule::DefaultMatch(Accessible* aAccessible) {
                nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
       }
       break;
+    case roles::LABEL:
+      if (IsFlatSubtree(aAccessible)) {
+        
+        return nsIAccessibleTraversalRule::FILTER_MATCH |
+               nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+      }
+      break;
     case roles::MENUITEM:
     case roles::LINK:
     case roles::PAGETAB:
