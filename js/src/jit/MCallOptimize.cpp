@@ -4107,6 +4107,8 @@ IonBuilder::InliningResult IonBuilder::inlineWasmCall(CallInfo& callInfo,
         current->add(postConversion);
         break;
       default:
+        
+        
         break;
     }
   }
