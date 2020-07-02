@@ -23,7 +23,7 @@ add_task(async function test_selectedEngine() {
   
   Services.prefs.setCharPref(kSelectedEnginePref, kTestEngineName);
 
-  Services.search.reset();
+  Services.search.wrappedJSObject.reset();
   await Services.search.init(true);
   Assert.equal(Services.search.defaultEngine.name, defaultEngineName);
 
@@ -32,7 +32,7 @@ add_task(async function test_selectedEngine() {
   
   Services.prefs.setCharPref(kDefaultenginenamePref, kTestEngineName);
 
-  Services.search.reset();
+  Services.search.wrappedJSObject.reset();
   await Services.search.init(true);
   Assert.equal(Services.search.defaultEngine.name, defaultEngineName);
 
@@ -54,7 +54,7 @@ add_task(async function test_persistAcrossRestarts() {
   Assert.equal(metadata.hash.length, 44);
 
   
-  Services.search.reset();
+  Services.search.wrappedJSObject.reset();
   await Services.search.init(true);
   Assert.equal(Services.search.defaultEngine.name, kTestEngineName);
 
@@ -78,7 +78,7 @@ add_task(async function test_ignoreInvalidHash() {
   await promiseSaveGlobalMetadata(metadata);
 
   
-  Services.search.reset();
+  Services.search.wrappedJSObject.reset();
   await Services.search.init(true);
   Assert.equal(Services.search.defaultEngine.name, getDefaultEngineName());
 });
@@ -158,7 +158,7 @@ add_task(async function test_fallback_kept_after_restart() {
   await promiseAfterCache();
 
   
-  Services.search.reset();
+  Services.search.wrappedJSObject.reset();
   await Services.search.init(true);
   Assert.equal(Services.search.defaultEngine.name, defaultName);
 });
