@@ -2639,9 +2639,21 @@ Nullable<WindowProxyHolder> nsGlobalWindowInner::GetParent(
 
 
 
+
+
+
+
+
+
 nsPIDOMWindowOuter* nsGlobalWindowInner::GetInProcessScriptableParent() {
   FORWARD_TO_OUTER(GetInProcessScriptableParent, (), nullptr);
 }
+
+
+
+
+
+
 
 
 

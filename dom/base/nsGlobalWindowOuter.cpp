@@ -3151,6 +3151,12 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::GetParentOuter() {
 
 
 
+
+
+
+
+
+
 nsPIDOMWindowOuter* nsGlobalWindowOuter::GetInProcessScriptableParent() {
   if (!mDocShell) {
     return nullptr;
@@ -3264,6 +3270,12 @@ static nsresult GetTopImpl(nsGlobalWindowOuter* aWin, nsIURI* aURIBeingLoaded,
 
   return NS_OK;
 }
+
+
+
+
+
+
 
 
 
