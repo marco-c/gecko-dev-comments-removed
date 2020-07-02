@@ -4,7 +4,7 @@
 
 
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Prefix {
     prefix: u8,
     len: u8,
