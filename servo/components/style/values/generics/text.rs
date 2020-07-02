@@ -63,7 +63,10 @@ impl<Value> Spacing<Value> {
     where
         F: FnOnce(&ParserContext, &mut Parser<'i, 't>) -> Result<Value, ParseError<'i>>,
     {
-        if input.try(|i| i.expect_ident_matching("normal")).is_ok() {
+        if input
+            .try_parse(|i| i.expect_ident_matching("normal"))
+            .is_ok()
+        {
             return Ok(Spacing::Normal);
         }
         parse(context, input).map(Spacing::Value)
@@ -76,7 +79,7 @@ fn line_height_moz_block_height_enabled(context: &ParserContext) -> bool {
         static_prefs::pref!("layout.css.line-height-moz-block-height.content.enabled")
 }
 
-/// A generic value for the `line-height` property.
+
 #[derive(
     Animate,
     Clone,
@@ -94,15 +97,15 @@ fn line_height_moz_block_height_enabled(context: &ParserContext) -> bool {
 )]
 #[repr(C, u8)]
 pub enum GenericLineHeight<N, L> {
-    /// `normal`
+    
     Normal,
-    /// `-moz-block-height`
+    
     #[cfg(feature = "gecko")]
     #[parse(condition = "line_height_moz_block_height_enabled")]
     MozBlockHeight,
-    /// `<number>`
+    
     Number(N),
-    /// `<length-percentage>`
+    
     Length(L),
 }
 
@@ -116,17 +119,17 @@ impl<N, L> ToAnimatedZero for LineHeight<N, L> {
 }
 
 impl<N, L> LineHeight<N, L> {
-    /// Returns `normal`.
+    
     #[inline]
     pub fn normal() -> Self {
         LineHeight::Normal
     }
 }
 
-/// Implements type for text-decoration-thickness
-/// which takes the grammar of auto | from-font | <length> | <percentage>
-///
-/// https://drafts.csswg.org/css-text-decor-4/
+
+
+
+
 #[repr(C, u8)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(

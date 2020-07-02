@@ -15,7 +15,7 @@
     use crate::values::specified::{Position, PositionComponent};
     use crate::parser::Parse;
 
-    // FIXME(emilio): These two mask types should be the same!
+    
     impl From<mask_origin::single_value::SpecifiedValue> for mask_clip::single_value::SpecifiedValue {
         fn from(origin: mask_origin::single_value::SpecifiedValue) -> mask_clip::single_value::SpecifiedValue {
             match origin {
@@ -42,10 +42,10 @@
         input: &mut Parser<'i, 't>,
     ) -> Result<Longhands, ParseError<'i>> {
         % for name in "image mode position_x position_y size repeat origin clip composite".split():
-        // Vec grows from 0 to 4 by default on first push().  So allocate with
-        // capacity 1, so in the common case of only one item we don't way
-        // overallocate, then shrink.  Note that we always push at least one
-        // item if parsing succeeds.
+        
+        
+        
+        
         let mut mask_${name} = Vec::with_capacity(1);
         % endfor
 
@@ -55,18 +55,18 @@
             % endfor
             loop {
                 if image.is_none() {
-                    if let Ok(value) = input.try(|input| mask_image::single_value
+                    if let Ok(value) = input.try_parse(|input| mask_image::single_value
                                                                    ::parse(context, input)) {
                         image = Some(value);
                         continue
                     }
                 }
                 if position.is_none() {
-                    if let Ok(value) = input.try(|input| Position::parse(context, input)) {
+                    if let Ok(value) = input.try_parse(|input| Position::parse(context, input)) {
                         position = Some(value);
 
-                        // Parse mask size, if applicable.
-                        size = input.try(|input| {
+                        
+                        size = input.try_parse(|input| {
                             input.expect_delim('/')?;
                             mask_size::single_value::parse(context, input)
                         }).ok();
@@ -76,7 +76,7 @@
                 }
                 % for name in "repeat origin clip composite mode".split():
                     if ${name}.is_none() {
-                        if let Ok(value) = input.try(|input| mask_${name}::single_value
+                        if let Ok(value) = input.try_parse(|input| mask_${name}::single_value
                                                                                ::parse(context, input)) {
                             ${name} = Some(value);
                             continue
@@ -207,10 +207,10 @@
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Longhands, ParseError<'i>> {
-        // Vec grows from 0 to 4 by default on first push().  So allocate with
-        // capacity 1, so in the common case of only one item we don't way
-        // overallocate, then shrink.  Note that we always push at least one
-        // item if parsing succeeds.
+        
+        
+        
+        
         let mut position_x = Vec::with_capacity(1);
         let mut position_y = Vec::with_capacity(1);
         let mut any = false;

@@ -16,12 +16,12 @@
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Longhands, ParseError<'i>> {
-        // `none` is ambiguous until we've finished parsing the shorthands, so we count the number
-        // of times we see it.
+        
+        
         let mut nones = 0u8;
         let (mut image, mut position, mut list_style_type, mut any) = (None, None, None, false);
         loop {
-            if input.try(|input| input.expect_ident_matching("none")).is_ok() {
+            if input.try_parse(|input| input.expect_ident_matching("none")).is_ok() {
                 nones = nones + 1;
                 if nones > 2 {
                     return Err(input.new_custom_error(SelectorParseErrorKind::UnexpectedIdent("none".into())))
@@ -31,7 +31,7 @@
             }
 
             if image.is_none() {
-                if let Ok(value) = input.try(|input| list_style_image::parse(context, input)) {
+                if let Ok(value) = input.try_parse(|input| list_style_image::parse(context, input)) {
                     image = Some(value);
                     any = true;
                     continue
@@ -39,7 +39,7 @@
             }
 
             if position.is_none() {
-                if let Ok(value) = input.try(|input| list_style_position::parse(context, input)) {
+                if let Ok(value) = input.try_parse(|input| list_style_position::parse(context, input)) {
                     position = Some(value);
                     any = true;
                     continue
@@ -50,7 +50,7 @@
             
             
             if list_style_type.is_none() {
-                if let Ok(value) = input.try(|input| list_style_type::parse(context, input)) {
+                if let Ok(value) = input.try_parse(|input| list_style_type::parse(context, input)) {
                     list_style_type = Some(value);
                     any = true;
                     continue

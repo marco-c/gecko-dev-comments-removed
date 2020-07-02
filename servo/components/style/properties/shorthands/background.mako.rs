@@ -4,7 +4,7 @@
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
 
-// TODO: other background-* properties
+
 <%helpers:shorthand name="background"
                     engines="gecko servo-2013 servo-2020"
                     sub_properties="background-color background-position-x background-position-y background-repeat
@@ -19,7 +19,7 @@
     use crate::values::specified::{AllowQuirks, Color, Position, PositionComponent};
     use crate::parser::Parse;
 
-    // FIXME(emilio): Should be the same type!
+    
     impl From<background_origin::single_value::SpecifiedValue> for background_clip::single_value::SpecifiedValue {
         fn from(origin: background_origin::single_value::SpecifiedValue) ->
             background_clip::single_value::SpecifiedValue {
@@ -41,15 +41,15 @@
         let mut background_color = None;
 
         % for name in "image position_x position_y repeat size attachment origin clip".split():
-        // Vec grows from 0 to 4 by default on first push().  So allocate with
-        // capacity 1, so in the common case of only one item we don't way
-        // overallocate, then shrink.  Note that we always push at least one
-        // item if parsing succeeds.
+        
+        
+        
+        
         let mut background_${name} = Vec::with_capacity(1);
         % endfor
         input.parse_comma_separated(|input| {
-            // background-color can only be in the last element, so if it
-            // is parsed anywhere before, the value is invalid.
+            
+            
             if background_color.is_some() {
                 return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
             }
@@ -59,19 +59,19 @@
             % endfor
             loop {
                 if background_color.is_none() {
-                    if let Ok(value) = input.try(|i| Color::parse(context, i)) {
+                    if let Ok(value) = input.try_parse(|i| Color::parse(context, i)) {
                         background_color = Some(value);
                         continue
                     }
                 }
                 if position.is_none() {
-                    if let Ok(value) = input.try(|input| {
+                    if let Ok(value) = input.try_parse(|input| {
                         Position::parse_three_value_quirky(context, input, AllowQuirks::No)
                     }) {
                         position = Some(value);
 
-                        // Parse background size, if applicable.
-                        size = input.try(|input| {
+                        
+                        size = input.try_parse(|input| {
                             input.expect_delim('/')?;
                             background_size::single_value::parse(context, input)
                         }).ok();
@@ -81,7 +81,7 @@
                 }
                 % for name in "image repeat attachment origin clip".split():
                     if ${name}.is_none() {
-                        if let Ok(value) = input.try(|input| background_${name}::single_value
+                        if let Ok(value) = input.try_parse(|input| background_${name}::single_value
                                                                                ::parse(context, input)) {
                             ${name} = Some(value);
                             continue
@@ -133,14 +133,14 @@
     impl<'a> ToCss for LonghandsToSerialize<'a>  {
         fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result where W: fmt::Write {
             let len = self.background_image.0.len();
-            // There should be at least one declared value
+            
             if len == 0 {
                 return Ok(());
             }
 
-            // If a value list length is differs then we don't do a shorthand serialization.
-            // The exceptions to this is color which appears once only and is serialized
-            // with the last item.
+            
+            
+            
             % for name in "image position_x position_y size repeat origin clip attachment".split():
                 if len != self.background_${name}.0.len() {
                     return Ok(());
@@ -206,10 +206,10 @@
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Longhands, ParseError<'i>> {
-        // Vec grows from 0 to 4 by default on first push().  So allocate with
-        // capacity 1, so in the common case of only one item we don't way
-        // overallocate, then shrink.  Note that we always push at least one
-        // item if parsing succeeds.
+        
+        
+        
+        
         let mut position_x = Vec::with_capacity(1);
         let mut position_y = Vec::with_capacity(1);
         let mut any = false;

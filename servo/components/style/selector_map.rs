@@ -609,9 +609,7 @@ fn find_bucket<'a>(
 
 
 #[derive(Debug, MallocSizeOf)]
-pub struct MaybeCaseInsensitiveHashMap<K: PrecomputedHash + Hash + Eq, V>(
-    PrecomputedHashMap<K, V>,
-);
+pub struct MaybeCaseInsensitiveHashMap<K: PrecomputedHash + Hash + Eq, V>(PrecomputedHashMap<K, V>);
 
 impl<V> MaybeCaseInsensitiveHashMap<Atom, V> {
     

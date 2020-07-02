@@ -39,18 +39,20 @@ impl Parse for RayFunction<Angle> {
         let mut contain = false;
         loop {
             if angle.is_none() {
-                angle = input.try(|i| Angle::parse(context, i)).ok();
+                angle = input.try_parse(|i| Angle::parse(context, i)).ok();
             }
 
             if size.is_none() {
-                size = input.try(RaySize::parse).ok();
+                size = input.try_parse(RaySize::parse).ok();
                 if size.is_some() {
                     continue;
                 }
             }
 
             if !contain {
-                contain = input.try(|i| i.expect_ident_matching("contain")).is_ok();
+                contain = input
+                    .try_parse(|i| i.expect_ident_matching("contain"))
+                    .is_ok();
                 if contain {
                     continue;
                 }
@@ -75,12 +77,12 @@ impl Parse for OffsetPath {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        // Parse none.
-        if input.try(|i| i.expect_ident_matching("none")).is_ok() {
+        
+        if input.try_parse(|i| i.expect_ident_matching("none")).is_ok() {
             return Ok(OffsetPath::none());
         }
 
-        // Parse possible functions.
+        
         let location = input.current_source_location();
         let function = input.expect_function()?.clone();
         input.parse_nested_block(move |i| {
@@ -99,21 +101,21 @@ impl Parse for OffsetPath {
     }
 }
 
-/// The direction of offset-rotate.
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 #[repr(u8)]
 pub enum OffsetRotateDirection {
-    /// Unspecified direction keyword.
+    
     #[css(skip)]
     None,
-    /// 0deg offset (face forward).
+    
     Auto,
-    /// 180deg offset (face backward).
+    
     Reverse,
 }
 
 impl OffsetRotateDirection {
-    /// Returns true if it is none (i.e. the keyword is not specified).
+    
     #[inline]
     fn is_none(&self) -> bool {
         *self == OffsetRotateDirection::None
@@ -125,26 +127,26 @@ fn direction_specified_and_angle_is_zero(direction: &OffsetRotateDirection, angl
     !direction.is_none() && angle.is_zero()
 }
 
-/// The specified offset-rotate.
-/// The syntax is: "[ auto | reverse ] || <angle>"
-///
-/// https://drafts.fxtf.org/motion-1/#offset-rotate-property
+
+
+
+
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub struct OffsetRotate {
-    /// [auto | reverse].
+    
     #[css(skip_if = "OffsetRotateDirection::is_none")]
     direction: OffsetRotateDirection,
-    /// <angle>.
-    /// If direction is None, this is a fixed angle which indicates a
-    /// constant clockwise rotation transformation applied to it by this
-    /// specified rotation angle. Otherwise, the angle will be added to
-    /// the angle of the direction in layout.
+    
+    
+    
+    
+    
     #[css(contextual_skip_if = "direction_specified_and_angle_is_zero")]
     angle: Angle,
 }
 
 impl OffsetRotate {
-    /// Returns the initial value, auto.
+    
     #[inline]
     pub fn auto() -> Self {
         OffsetRotate {
@@ -153,7 +155,7 @@ impl OffsetRotate {
         }
     }
 
-    /// Returns true if self is auto 0deg.
+    
     #[inline]
     pub fn is_auto(&self) -> bool {
         self.direction == OffsetRotateDirection::Auto && self.angle.is_zero()
@@ -166,12 +168,12 @@ impl Parse for OffsetRotate {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         let location = input.current_source_location();
-        let mut direction = input.try(OffsetRotateDirection::parse);
-        let angle = input.try(|i| Angle::parse(context, i));
+        let mut direction = input.try_parse(OffsetRotateDirection::parse);
+        let angle = input.try_parse(|i| Angle::parse(context, i));
         if direction.is_err() {
-            // The direction and angle could be any order, so give it a change to parse
-            // direction again.
-            direction = input.try(OffsetRotateDirection::parse);
+            
+            
+            direction = input.try_parse(OffsetRotateDirection::parse);
         }
 
         if direction.is_err() && angle.is_err() {
@@ -195,8 +197,8 @@ impl ToComputedValue for OffsetRotate {
         ComputedOffsetRotate {
             auto: !self.direction.is_none(),
             angle: if self.direction == OffsetRotateDirection::Reverse {
-                // The computed value should always convert "reverse" into "auto".
-                // e.g. "reverse calc(20deg + 10deg)" => "auto 210deg"
+                
+                
                 self.angle.to_computed_value(context) + ComputedAngle::from_degrees(180.0)
             } else {
                 self.angle.to_computed_value(context)

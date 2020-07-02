@@ -65,7 +65,7 @@
         let mut stretch = None;
         let size;
         % if engine == "gecko":
-            if let Ok(sys) = input.try(SystemFont::parse) {
+            if let Ok(sys) = input.try_parse(SystemFont::parse) {
                 return Ok(expanded! {
                      % for name in SYSTEM_FONT_LONGHANDS:
                          % if name == "font_size":
@@ -80,33 +80,33 @@
             }
         % endif
         loop {
-            // Special-case 'normal' because it is valid in each of
-            // font-style, font-weight, font-variant and font-stretch.
-            // Leaves the values to None, 'normal' is the initial value for each of them.
-            if input.try(|input| input.expect_ident_matching("normal")).is_ok() {
+            
+            
+            
+            if input.try_parse(|input| input.expect_ident_matching("normal")).is_ok() {
                 nb_normals += 1;
                 continue;
             }
             if style.is_none() {
-                if let Ok(value) = input.try(|input| font_style::parse(context, input)) {
+                if let Ok(value) = input.try_parse(|input| font_style::parse(context, input)) {
                     style = Some(value);
                     continue
                 }
             }
             if weight.is_none() {
-                if let Ok(value) = input.try(|input| font_weight::parse(context, input)) {
+                if let Ok(value) = input.try_parse(|input| font_weight::parse(context, input)) {
                     weight = Some(value);
                     continue
                 }
             }
             if variant_caps.is_none() {
-                if let Ok(value) = input.try(|input| font_variant_caps::parse(context, input)) {
+                if let Ok(value) = input.try_parse(|input| font_variant_caps::parse(context, input)) {
                     variant_caps = Some(value);
                     continue
                 }
             }
             if stretch.is_none() {
-                if let Ok(value) = input.try(FontStretchKeyword::parse) {
+                if let Ok(value) = input.try_parse(FontStretchKeyword::parse) {
                     stretch = Some(FontStretch::Keyword(value));
                     continue
                 }
@@ -122,7 +122,7 @@
             }
         };
 
-        let line_height = if input.try(|input| input.expect_delim('/')).is_ok() {
+        let line_height = if input.try_parse(|input| input.expect_delim('/')).is_ok() {
             Some(LineHeight::parse(context, input)?)
         } else {
             None
@@ -192,8 +192,8 @@
             % endfor
             % endif
 
-            // Only font-stretch keywords are allowed as part as the font
-            // shorthand.
+            
+            
             let font_stretch = match *self.font_stretch {
                 FontStretch::Keyword(kw) => kw,
                 FontStretch::Stretch(percentage) => {
@@ -233,7 +233,7 @@
 
     impl<'a> LonghandsToSerialize<'a> {
         % if engine == "gecko":
-        /// Check if some or all members are system fonts
+        
         fn check_system(&self) -> CheckSystemResult {
             let mut sys = None;
             let mut all = true;
@@ -325,24 +325,24 @@
         let mut ${prop} = None;
     % endfor
 
-        if input.try(|input| input.expect_ident_matching("normal")).is_ok() {
-            // Leave the values to None, 'normal' is the initial value for all the sub properties.
-        } else if input.try(|input| input.expect_ident_matching("none")).is_ok() {
-            // The 'none' value sets 'font-variant-ligatures' to 'none' and resets all other sub properties
-            // to their initial value.
+        if input.try_parse(|input| input.expect_ident_matching("normal")).is_ok() {
+            
+        } else if input.try_parse(|input| input.expect_ident_matching("none")).is_ok() {
+            
+            
         % if engine == "gecko":
             ligatures = Some(FontVariantLigatures::none());
         % endif
         } else {
             let mut has_custom_value: bool = false;
             loop {
-                if input.try(|input| input.expect_ident_matching("normal")).is_ok() ||
-                   input.try(|input| input.expect_ident_matching("none")).is_ok() {
+                if input.try_parse(|input| input.expect_ident_matching("normal")).is_ok() ||
+                   input.try_parse(|input| input.expect_ident_matching("none")).is_ok() {
                     return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
                 }
             % for prop in sub_properties:
                 if ${prop}.is_none() {
-                    if let Ok(value) = input.try(|i| font_variant_${prop}::parse(context, i)) {
+                    if let Ok(value) = input.try_parse(|i| font_variant_${prop}::parse(context, i)) {
                         has_custom_value = true;
                         ${prop} = Some(value);
                         continue
@@ -389,8 +389,8 @@
                 dest.write_str("normal")?;
             } else if has_none_ligatures {
                 if nb_normals == TOTAL_SUBPROPS - 1 {
-                    // Serialize to 'none' if 'font-variant-ligatures' is set to 'none' and all other
-                    // font feature properties are reset to their initial value.
+                    
+                    
                     dest.write_str("none")?;
                 } else {
                     return Ok(())
