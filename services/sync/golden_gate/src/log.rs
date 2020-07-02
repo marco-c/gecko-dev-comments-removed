@@ -8,11 +8,11 @@ use log::{Level, LevelFilter, Log, Metadata, Record};
 use moz_task::{Task, TaskRunnable, ThreadPtrHandle, ThreadPtrHolder};
 use nserror::nsresult;
 use nsstring::nsString;
-use xpcom::{interfaces::mozIServicesLogger, RefPtr};
+use xpcom::{interfaces::mozIServicesLogSink, RefPtr};
 
 pub struct LogSink {
     pub max_level: LevelFilter,
-    logger: Option<ThreadPtrHandle<mozIServicesLogger>>,
+    logger: Option<ThreadPtrHandle<mozIServicesLogSink>>,
 }
 
 impl Default for LogSink {
@@ -32,7 +32,7 @@ impl LogSink {
     
     
     #[inline]
-    pub fn new(max_level: LevelFilter, logger: ThreadPtrHandle<mozIServicesLogger>) -> LogSink {
+    pub fn new(max_level: LevelFilter, logger: ThreadPtrHandle<mozIServicesLogSink>) -> LogSink {
         LogSink {
             max_level,
             logger: Some(logger),
@@ -43,7 +43,7 @@ impl LogSink {
     
     
     
-    pub fn with_logger(logger: Option<&mozIServicesLogger>) -> Result<LogSink, nsresult> {
+    pub fn with_logger(logger: Option<&mozIServicesLogSink>) -> Result<LogSink, nsresult> {
         Ok(if let Some(logger) = logger {
             
             
@@ -54,10 +54,11 @@ impl LogSink {
             let rv = unsafe { logger.GetMaxLevel(&mut raw_max_level) };
             let max_level = if rv.succeeded() {
                 match raw_max_level as i64 {
-                    mozIServicesLogger::LEVEL_ERROR => LevelFilter::Error,
-                    mozIServicesLogger::LEVEL_WARN => LevelFilter::Warn,
-                    mozIServicesLogger::LEVEL_DEBUG => LevelFilter::Debug,
-                    mozIServicesLogger::LEVEL_TRACE => LevelFilter::Trace,
+                    mozIServicesLogSink::LEVEL_ERROR => LevelFilter::Error,
+                    mozIServicesLogSink::LEVEL_WARN => LevelFilter::Warn,
+                    mozIServicesLogSink::LEVEL_DEBUG => LevelFilter::Debug,
+                    mozIServicesLogSink::LEVEL_TRACE => LevelFilter::Trace,
+                    mozIServicesLogSink::LEVEL_INFO => LevelFilter::Info,
                     _ => LevelFilter::Off,
                 }
             } else {
@@ -65,7 +66,7 @@ impl LogSink {
             };
             LogSink::new(
                 max_level,
-                ThreadPtrHolder::new(cstr!("mozIServicesLogger"), RefPtr::new(logger))?,
+                ThreadPtrHolder::new(cstr!("mozIServicesLogSink"), RefPtr::new(logger))?,
             )
         } else {
             LogSink::default()
@@ -73,7 +74,7 @@ impl LogSink {
     }
 
     
-    pub fn logger(&self) -> Option<&mozIServicesLogger> {
+    pub fn logger(&self) -> Option<&mozIServicesLogSink> {
         self.logger.as_ref().and_then(|l| l.get())
     }
 
@@ -131,7 +132,7 @@ impl Log for LogSink {
 
 
 struct LogTask {
-    logger: ThreadPtrHandle<mozIServicesLogger>,
+    logger: ThreadPtrHandle<mozIServicesLogSink>,
     level: Level,
     message: nsString,
 }
@@ -152,7 +153,9 @@ impl Task for LogTask {
             Level::Trace => unsafe {
                 logger.Trace(&*self.message);
             },
-            _ => {}
+            Level::Info => unsafe {
+                logger.Info(&*self.message);
+            },
         }
     }
 
