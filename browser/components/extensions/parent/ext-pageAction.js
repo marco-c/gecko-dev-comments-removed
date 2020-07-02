@@ -21,9 +21,17 @@ ChromeUtils.defineModuleGetter(
   "PanelPopup",
   "resource:///modules/ExtensionPopups.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "BrowserUsageTelemetry",
+  "resource:///modules/BrowserUsageTelemetry.jsm"
+);
 
 var { DefaultWeakMap } = ExtensionUtils;
 
+var { ExtensionParent } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionParent.jsm"
+);
 var { PageActionBase } = ChromeUtils.import(
   "resource://gre/modules/ExtensionActions.jsm"
 );
@@ -53,6 +61,25 @@ class PageAction extends PageActionBase {
 this.pageAction = class extends ExtensionAPI {
   static for(extension) {
     return pageActionMap.get(extension);
+  }
+
+  static onUpdate(id, manifest) {
+    if (!("page_action" in manifest)) {
+      
+      
+      
+      BrowserUsageTelemetry.recordWidgetChange(makeWidgetId(id), null, "addon");
+    }
+  }
+
+  static onDisable(id) {
+    BrowserUsageTelemetry.recordWidgetChange(makeWidgetId(id), null, "addon");
+  }
+
+  static onUninstall(id) {
+    
+    
+    BrowserUsageTelemetry.recordWidgetChange(makeWidgetId(id), null, "addon");
   }
 
   async onManifestEntry(entryName) {
@@ -126,6 +153,20 @@ this.pageAction = class extends ExtensionAPI {
           },
         })
       );
+
+      if (this.extension.startupReason != "APP_STARTUP") {
+        
+        
+        ExtensionParent.browserStartupPromise.then(() => {
+          BrowserUsageTelemetry.recordWidgetChange(
+            widgetId,
+            this.browserPageAction.pinnedToUrlbar
+              ? "page-action-buttons"
+              : null,
+            "addon"
+          );
+        });
+      }
 
       
       

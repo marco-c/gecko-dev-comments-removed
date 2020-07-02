@@ -2089,6 +2089,51 @@ var BrowserTestUtils = {
     });
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  waitForTransition(element, timeout = 5000) {
+    return new Promise((resolve, reject) => {
+      let cleanup = () => {
+        element.removeEventListener("transitionrun", listener);
+        element.removeEventListener("transitionend", listener);
+      };
+
+      let timer = element.ownerGlobal.setTimeout(() => {
+        cleanup();
+        reject();
+      }, timeout);
+
+      let transitionCount = 0;
+
+      let listener = event => {
+        if (event.type == "transitionrun") {
+          transitionCount++;
+        } else {
+          transitionCount--;
+          if (transitionCount == 0) {
+            cleanup();
+            element.ownerGlobal.clearTimeout(timer);
+            resolve();
+          }
+        }
+      };
+
+      element.addEventListener("transitionrun", listener);
+      element.addEventListener("transitionend", listener);
+      element.addEventListener("transitioncancel", listener);
+    });
+  },
+
   _knownAboutPages: new Set(),
   _loadedAboutContentScript: false,
   
