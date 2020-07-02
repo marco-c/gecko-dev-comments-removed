@@ -3076,9 +3076,6 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
     case StyleAppearance::MozMacActiveSourceListSelection: {
       
       
-      
-      
-      
       if (VibrancyManager::SystemSupportsVibrancy() && IsInSourceList(aFrame)) {
         return Nothing();
       }
@@ -4279,32 +4276,6 @@ bool nsNativeThemeCocoa::IsWindowSheet(nsIFrame* aFrame) {
     return false;
   }
   return (widget->WindowType() == eWindowType_sheet);
-}
-
-bool nsNativeThemeCocoa::NeedToClearBackgroundBehindWidget(nsIFrame* aFrame,
-                                                           StyleAppearance aAppearance) {
-  switch (aAppearance) {
-    case StyleAppearance::MozMacSourceList:
-    
-    
-    
-    
-    case StyleAppearance::MozMacSourceListSelection:
-    case StyleAppearance::MozMacActiveSourceListSelection:
-    case StyleAppearance::MozMacVibrancyLight:
-    case StyleAppearance::MozMacVibrancyDark:
-    case StyleAppearance::MozMacVibrantTitlebarLight:
-    case StyleAppearance::MozMacVibrantTitlebarDark:
-    case StyleAppearance::Tooltip:
-    case StyleAppearance::Menupopup:
-    case StyleAppearance::Menuitem:
-    case StyleAppearance::Checkmenuitem:
-      return true;
-    case StyleAppearance::Dialog:
-      return IsWindowSheet(aFrame);
-    default:
-      return false;
-  }
 }
 
 nsITheme::ThemeGeometryType nsNativeThemeCocoa::ThemeGeometryTypeForWidget(
