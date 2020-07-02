@@ -7,7 +7,11 @@
 const createStore = require("devtools/client/shared/redux/create-store");
 const { combineReducers } = require("devtools/client/shared/vendor/redux");
 
-const reducers = {};
+const reducers = {
+  
+  
+  default: (state = {}) => state,
+};
 
 function createReducer(laterReducers = {}) {
   return combineReducers({
@@ -27,7 +31,14 @@ module.exports = () => {
   store.laterReducers = {};
 
   
-  
+
+
+
+
+
+
+
+
   store.injectReducer = (key, reducer) => {
     if (store.laterReducers[key]) {
       console.log(`Already loaded reducer: ${key}`);
