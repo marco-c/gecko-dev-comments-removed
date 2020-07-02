@@ -16,7 +16,7 @@
 
 namespace mozilla {
 
-enum class MediaFeatureChangeReason : uint8_t {
+enum class MediaFeatureChangeReason : uint16_t {
   
   
   
@@ -40,6 +40,10 @@ enum class MediaFeatureChangeReason : uint8_t {
   
   
   DisplayModeChange = 1 << 7,
+  
+  
+  
+  PreferenceChange = 1 << 8,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(MediaFeatureChangeReason)
