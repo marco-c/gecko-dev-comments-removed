@@ -341,6 +341,7 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateIndependent(
   RefPtr<BrowsingContext> bc(
       CreateDetached(nullptr, nullptr, EmptyString(), aType));
   bc->mWindowless = bc->IsContent();
+  bc->mEmbeddedByThisProcess = true;
   bc->EnsureAttached();
   return bc.forget();
 }
@@ -2179,13 +2180,10 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_PlatformOverride>,
 }
 
 bool BrowsingContext::CheckOnlyEmbedderCanSet(ContentParent* aSource) {
-  if (aSource) {
-    
-    MOZ_ASSERT(XRE_IsParentProcess());
-    return Canonical()->IsEmbeddedInProcess(aSource->ChildID());
+  if (XRE_IsParentProcess()) {
+    uint64_t childId = aSource ? aSource->ChildID() : 0;
+    return Canonical()->IsEmbeddedInProcess(childId);
   }
-
-  
   return mEmbeddedByThisProcess;
 }
 
