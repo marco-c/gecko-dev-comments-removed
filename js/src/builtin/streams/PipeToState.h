@@ -10,6 +10,7 @@
 #define builtin_streams_PipeToState_h
 
 #include "mozilla/Assertions.h"  
+#include "mozilla/WrappingOperations.h"  
 
 #include <stdint.h>  
 
@@ -86,24 +87,86 @@ class PipeToState : public NativeObject {
     SlotCount,
   };
 
+  
+  
+  
+  
+  
+  
+  
+  enum class ShutdownAction {
+    
+    AbortAlgorithm,
+
+    
+
+
+
+    AbortDestStream,
+
+    
+
+
+
+    CancelSource,
+
+    
+
+
+
+    CloseWriterWithErrorPropagation,
+
+  };
+
  private:
   enum Flags : uint32_t {
-    Flag_ShuttingDown = 0b0001,
+    
 
-    Flag_PreventClose = 0b0010,
-    Flag_PreventAbort = 0b0100,
-    Flag_PreventCancel = 0b1000,
 
-    Flag_PendingRead = 0b1'0000,
+
+
+
+
+
+
+
+
+    Flag_ShutdownActionBits = 0b0000'0011,
+
+    Flag_ShuttingDown = 0b0000'0100,
+
+    Flag_PendingRead = 0b0000'1000,
 #ifdef DEBUG
-    Flag_PendingReadWouldBeRejected = 0b10'0000,
+    Flag_PendingReadWouldBeRejected = 0b0001'0000,
 #endif
+
+    Flag_PreventClose = 0b0010'0000,
+    Flag_PreventAbort = 0b0100'0000,
+    Flag_PreventCancel = 0b1000'0000,
   };
 
   uint32_t flags() const { return getFixedSlot(Slot_Flags).toInt32(); }
   void setFlags(uint32_t flags) {
-    setFixedSlot(Slot_Flags, JS::Int32Value(flags));
+    setFixedSlot(Slot_Flags, JS::Int32Value(mozilla::WrapToSigned(flags)));
   }
+
+  
+  
+  
+  
+  
+  static constexpr ShutdownAction UninitializedAction =
+      ShutdownAction::AbortAlgorithm;
+
+  static_assert(Flag_ShutdownActionBits & 1,
+                "shutdown action bits must be low-order bits so that we can "
+                "cast ShutdownAction values directly to bits to store");
+
+  static constexpr uint32_t MaxAction =
+      static_cast<uint32_t>(ShutdownAction::CloseWriterWithErrorPropagation);
+
+  static_assert(MaxAction <= Flag_ShutdownActionBits,
+                "max action shouldn't overflow available bits to store it");
 
  public:
   static const JSClass class_;
@@ -142,6 +205,30 @@ class PipeToState : public NativeObject {
   void setShuttingDown() {
     MOZ_ASSERT(!shuttingDown());
     setFlags(flags() | Flag_ShuttingDown);
+  }
+
+  ShutdownAction shutdownAction() const {
+    MOZ_ASSERT(shuttingDown(),
+               "must be shutting down to have a shutdown action");
+
+    uint32_t bits = flags() & Flag_ShutdownActionBits;
+    static_assert(Flag_ShutdownActionBits & 1,
+                  "shutdown action bits are assumed to be low-order bits that "
+                  "don't have to be shifted down to ShutdownAction's range");
+
+    MOZ_ASSERT(bits <= MaxAction, "bits must encode a valid action");
+
+    return static_cast<ShutdownAction>(bits);
+  }
+
+  void setShutdownAction(ShutdownAction action) {
+    MOZ_ASSERT(shuttingDown(),
+               "must be protected by the |shuttingDown| boolean to save the "
+               "shutdown action");
+    MOZ_ASSERT(shutdownAction() == UninitializedAction,
+               "should only set shutdown action once");
+
+    setFlags(flags() | static_cast<uint32_t>(action));
   }
 
   bool preventClose() const { return flags() & Flag_PreventClose; }

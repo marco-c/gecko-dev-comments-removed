@@ -65,18 +65,6 @@ using js::WritableStream;
 using js::WritableStreamDefaultWriter;
 using js::WritableStreamDefaultWriterWrite;
 
-
-
-using Action = bool (*)(JSContext*, Handle<PipeToState*> state);
-
-static MOZ_MUST_USE bool DummyAction(JSContext* cx,
-                                     Handle<PipeToState*> state) {
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
-                            "pipeTo dummy action");
-  return false;
-}
-
 static ReadableStream* GetUnwrappedSource(JSContext* cx,
                                           Handle<PipeToState*> state) {
   cx->check(state);
@@ -134,8 +122,8 @@ static MOZ_MUST_USE bool Finalize(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static MOZ_MUST_USE bool ShutdownWithAction(
-    JSContext* cx, Handle<PipeToState*> state, Action action,
-    Handle<Maybe<Value>> originalError) {
+    JSContext* cx, Handle<PipeToState*> state,
+    PipeToState::ShutdownAction action, Handle<Maybe<Value>> originalError) {
   cx->check(state);
   cx->check(originalError);
 
@@ -146,6 +134,9 @@ static MOZ_MUST_USE bool ShutdownWithAction(
 
   
   state->setShuttingDown();
+
+  
+  state->setShutdownAction(action);
 
   
   
@@ -285,7 +276,9 @@ static MOZ_MUST_USE bool OnSourceErrored(
   
   
   else {
-    if (!ShutdownWithAction(cx, state, DummyAction, storedError)) {
+    if (!ShutdownWithAction(cx, state,
+                            PipeToState::ShutdownAction::AbortDestStream,
+                            storedError)) {
       return false;
     }
   }
@@ -327,7 +320,9 @@ static MOZ_MUST_USE bool OnDestErrored(JSContext* cx,
   
   
   else {
-    if (!ShutdownWithAction(cx, state, DummyAction, storedError)) {
+    if (!ShutdownWithAction(cx, state,
+                            PipeToState::ShutdownAction::CancelSource,
+                            storedError)) {
       return false;
     }
   }
@@ -362,7 +357,10 @@ static MOZ_MUST_USE bool OnSourceClosed(JSContext* cx,
   
   
   else {
-    if (!ShutdownWithAction(cx, state, DummyAction, noError)) {
+    if (!ShutdownWithAction(
+            cx, state,
+            PipeToState::ShutdownAction::CloseWriterWithErrorPropagation,
+            noError)) {
       return false;
     }
   }
@@ -426,7 +424,8 @@ static MOZ_MUST_USE bool OnDestClosed(JSContext* cx,
   
   
   else {
-    if (!ShutdownWithAction(cx, state, DummyAction, destClosed)) {
+    if (!ShutdownWithAction(
+            cx, state, PipeToState::ShutdownAction::CancelSource, destClosed)) {
       return false;
     }
   }
