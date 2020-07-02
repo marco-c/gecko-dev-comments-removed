@@ -8484,17 +8484,6 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
             
             return false;
           }
-        } else if (key->isKind(ParseNodeKind::BigIntExpr)) {
-          MOZ_ASSERT(accessorType == AccessorType::None);
-
-          RootedAtom keyAtom(cx, key->as<BigIntLiteral>().toAtom(cx));
-          if (!keyAtom) {
-            return false;
-          }
-          if (!emitAnonymousFunctionWithName(propVal, keyAtom)) {
-            
-            return false;
-          }
         } else if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
                    key->isKind(ParseNodeKind::StringExpr)) {
           MOZ_ASSERT(accessorType == AccessorType::None);
@@ -8505,7 +8494,17 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
             return false;
           }
         } else {
-          MOZ_ASSERT(key->isKind(ParseNodeKind::ComputedName));
+          MOZ_ASSERT(key->isKind(ParseNodeKind::ComputedName) ||
+                     key->isKind(ParseNodeKind::BigIntExpr));
+
+          
+          
+          if (key->isKind(ParseNodeKind::BigIntExpr)) {
+            MOZ_ASSERT(accessorType == AccessorType::None);
+            if (!emit1(JSOp::ToString)) {
+              return false;
+            }
+          }
 
           FunctionPrefixKind prefix = accessorType == AccessorType::None
                                           ? FunctionPrefixKind::None

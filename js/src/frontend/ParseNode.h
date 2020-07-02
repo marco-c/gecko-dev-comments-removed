@@ -1574,9 +1574,6 @@ class BigIntLiteral : public ParseNode {
   
   BigInt* create(JSContext* cx);
 
-  
-  JSAtom* toAtom(JSContext* cx);
-
   bool isZero();
 };
 
