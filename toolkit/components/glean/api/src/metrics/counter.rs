@@ -4,17 +4,30 @@
 
 use super::CommonMetricData;
 
+use crate::ipc::{need_ipc, with_ipc_payload, MetricId};
 
 
 
 
+
+#[derive(Debug)]
+pub enum CounterMetric {
+    Parent(CounterMetricImpl),
+    Child(CounterMetricIpc),
+}
 #[derive(Clone, Debug)]
-pub struct CounterMetric(pub(crate) glean_core::metrics::CounterMetric);
+pub struct CounterMetricImpl(pub(crate) glean_core::metrics::CounterMetric);
+#[derive(Debug)]
+pub struct CounterMetricIpc(MetricId);
 
 impl CounterMetric {
     
     pub fn new(meta: CommonMetricData) -> Self {
-        Self(glean_core::metrics::CounterMetric::new(meta))
+        if need_ipc() {
+            CounterMetric::Child(CounterMetricIpc(MetricId::new(meta)))
+        } else {
+            CounterMetric::Parent(CounterMetricImpl::new(meta))
+        }
     }
 
     
@@ -27,7 +40,18 @@ impl CounterMetric {
     
     
     pub fn add(&self, amount: i32) {
-        crate::with_glean(move |glean| self.0.add(glean, amount))
+        match self {
+            CounterMetric::Parent(p) => p.add(amount),
+            CounterMetric::Child(c) => {
+                with_ipc_payload(move |payload| {
+                    if let Some(v) = payload.counters.get_mut(&c.0) {
+                        *v += amount;
+                    } else {
+                        payload.counters.insert(c.0.clone(), amount);
+                    }
+                });
+            }
+        }
     }
 
     
@@ -42,6 +66,26 @@ impl CounterMetric {
     
     
     
+    pub fn test_get_value(&self, storage_name: &str) -> Option<i32> {
+        match self {
+            CounterMetric::Parent(p) => p.test_get_value(storage_name),
+            CounterMetric::Child(_c) => panic!(
+                "Cannot get test value for {:?} in non-parent process!",
+                self
+            ),
+        }
+    }
+}
+
+impl CounterMetricImpl {
+    pub fn new(meta: CommonMetricData) -> Self {
+        Self(glean_core::metrics::CounterMetric::new(meta))
+    }
+
+    pub fn add(&self, amount: i32) {
+        crate::with_glean(move |glean| self.0.add(glean, amount))
+    }
+
     pub fn test_get_value(&self, storage_name: &str) -> Option<i32> {
         crate::with_glean(move |glean| self.0.test_get_value(glean, storage_name))
     }
