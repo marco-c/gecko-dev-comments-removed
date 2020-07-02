@@ -131,8 +131,10 @@ class History final : public BaseHistory,
     return mDB->GetStatement(aQuery);
   }
 
-  bool IsShuttingDown() const { return mShuttingDown; }
-  Mutex& GetShutdownMutex() { return mShutdownMutex; }
+  bool IsShuttingDown() {
+    MutexAutoLock lockedScope(mShuttingDownMutex);
+    return mShuttingDown;
+  }
 
   
 
@@ -177,13 +179,19 @@ class History final : public BaseHistory,
   static History* gService;
 
   
+  
   bool mShuttingDown;
   
   
+  Mutex mShuttingDownMutex;
   
   
   
-  Mutex mShutdownMutex;
+  
+  Mutex mBlockShutdownMutex;
+
+  
+  friend class InsertVisitedURIs;
 
   
 

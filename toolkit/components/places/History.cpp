@@ -849,10 +849,11 @@ class InsertVisitedURIs final : public Runnable {
   }
 
   nsresult InnerRun() {
+    MOZ_ASSERT(!NS_IsMainThread());
     
-    MutexAutoLock lockedScope(mHistory->GetShutdownMutex());
+    MutexAutoLock lockedScope(mHistory->mBlockShutdownMutex);
+    
     if (mHistory->IsShuttingDown()) {
-      
       return NS_OK;
     }
 
@@ -1375,7 +1376,8 @@ History* History::gService = nullptr;
 
 History::History()
     : mShuttingDown(false),
-      mShutdownMutex("History::mShutdownMutex"),
+      mShuttingDownMutex("History::mShuttingDownMutex"),
+      mBlockShutdownMutex("History::mBlockShutdownMutex"),
       mRecentlyVisitedURIs(RECENTLY_VISITED_URIS_SIZE) {
   NS_ASSERTION(!gService, "Ruh-roh!  This service has already been created!");
   if (XRE_IsParentProcess()) {
@@ -1484,7 +1486,7 @@ NS_IMPL_ISUPPORTS(ConcurrentStatementsHolder, mozIStorageCompletionCallback)
 
 nsresult History::QueueVisitedStatement(RefPtr<VisitedQuery> aQuery) {
   MOZ_ASSERT(NS_IsMainThread());
-  if (mShuttingDown) {
+  if (IsShuttingDown()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -1760,7 +1762,9 @@ already_AddRefed<History> History::GetSingleton() {
 
 mozIStorageConnection* History::GetDBConn() {
   MOZ_ASSERT(NS_IsMainThread());
-  if (mShuttingDown) return nullptr;
+  if (IsShuttingDown()) {
+    return nullptr;
+  }
   if (!mDB) {
     mDB = Database::GetDatabase();
     NS_ENSURE_TRUE(mDB, nullptr);
@@ -1773,23 +1777,24 @@ mozIStorageConnection* History::GetDBConn() {
 }
 
 const mozIStorageConnection* History::GetConstDBConn() {
-  MOZ_ASSERT(mDB || mShuttingDown);
-  if (mShuttingDown || !mDB) {
-    return nullptr;
+  MOZ_ASSERT(!NS_IsMainThread());
+  {
+    MOZ_ASSERT(mDB || IsShuttingDown());
+    if (IsShuttingDown() || !mDB) {
+      return nullptr;
+    }
   }
   return mDB->MainConn();
 }
 
 void History::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
-
-  
-  
-  MutexAutoLock lockedScope(mShutdownMutex);
-  MOZ_ASSERT(!mShuttingDown && "Shutdown was called more than once!");
-
-  mShuttingDown = true;
-
+  MutexAutoLock lockedScope(mBlockShutdownMutex);
+  {
+    MutexAutoLock lockedScope(mShuttingDownMutex);
+    MOZ_ASSERT(!mShuttingDown && "Shutdown was called more than once!");
+    mShuttingDown = true;
+  }
   if (mConcurrentStatementsHolder) {
     mConcurrentStatementsHolder->Shutdown();
   }
@@ -1825,7 +1830,7 @@ History::VisitURI(nsIWidget* aWidget, nsIURI* aURI, nsIURI* aLastVisitedURI,
   MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_ARG(aURI);
 
-  if (mShuttingDown) {
+  if (IsShuttingDown()) {
     return NS_OK;
   }
 
@@ -1958,7 +1963,7 @@ History::SetURITitle(nsIURI* aURI, const nsAString& aTitle) {
   MOZ_ASSERT(NS_IsMainThread());
   NS_ENSURE_ARG(aURI);
 
-  if (mShuttingDown) {
+  if (IsShuttingDown()) {
     return NS_OK;
   }
 
