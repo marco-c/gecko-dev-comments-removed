@@ -70,13 +70,9 @@ class nsFrameLoaderOwner : public nsISupports {
   
   
   
-  
-  
-  
   enum class ChangeRemotenessContextType {
     DONT_PRESERVE = 0,
-    DONT_PRESERVE_BUT_PROPAGATE = 1,
-    PRESERVE = 2,
+    PRESERVE = 1,
   };
   void ChangeRemotenessCommon(const ChangeRemotenessContextType& aContextType,
                               bool aSwitchingInProgressLoad,

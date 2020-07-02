@@ -9,6 +9,7 @@
 
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/MediaControllerBinding.h"
+#include "mozilla/dom/BrowsingContextWebProgress.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/MozPromise.h"
 #include "nsCycleCollectionParticipant.h"
@@ -16,11 +17,12 @@
 #include "nsTArray.h"
 #include "nsTHashtable.h"
 #include "nsHashKeys.h"
-
-class nsISHistory;
 #include "nsISecureBrowserUI.h"
 
+class nsISHistory;
+class nsBrowserStatusFilter;
 class nsSecureBrowserUI;
+
 namespace mozilla {
 namespace net {
 class DocumentLoadListener;
@@ -146,11 +148,22 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   nsISecureBrowserUI* GetSecureBrowserUI();
 
+  BrowsingContextWebProgress* GetWebProgress() { return mWebProgress; }
+
   
   
   
   
   void UpdateSecurityStateForLocationOrMixedContentChange();
+
+  void MaybeAddAsProgressListener(nsIWebProgress* aWebProgress);
+
+  
+  
+  
+  
+  
+  void ReplacedBy(CanonicalBrowsingContext* aNewContext);
 
  protected:
   
@@ -229,6 +242,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   RefPtr<SessionHistoryEntry> mActiveEntry;
 
   RefPtr<nsSecureBrowserUI> mSecureBrowserUI;
+  RefPtr<BrowsingContextWebProgress> mWebProgress;
+  RefPtr<nsBrowserStatusFilter> mStatusFilter;
 };
 
 }  

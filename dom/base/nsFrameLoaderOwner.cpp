@@ -112,11 +112,9 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
     
     
     if (mFrameLoader) {
-      if (aContextType != ChangeRemotenessContextType::DONT_PRESERVE) {
-        bc = mFrameLoader->GetBrowsingContext();
-        if (aContextType == ChangeRemotenessContextType::PRESERVE) {
-          mFrameLoader->SetWillChangeProcess();
-        }
+      bc = mFrameLoader->GetExtantBrowsingContext();
+      if (aContextType == ChangeRemotenessContextType::PRESERVE) {
+        mFrameLoader->SetWillChangeProcess();
       }
 
       
@@ -198,8 +196,6 @@ void nsFrameLoaderOwner::ChangeRemoteness(
       ChangeRemotenessContextType::DONT_PRESERVE;
   if (ShouldPreserveBrowsingContext(aOptions)) {
     preserveType = ChangeRemotenessContextType::PRESERVE;
-  } else if (aOptions.mReplaceBrowsingContext) {
-    preserveType = ChangeRemotenessContextType::DONT_PRESERVE_BUT_PROPAGATE;
   }
 
   ChangeRemotenessCommon(preserveType, aOptions.mSwitchingInProgressLoad,
