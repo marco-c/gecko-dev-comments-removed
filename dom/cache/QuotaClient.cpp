@@ -203,21 +203,34 @@ CacheQuotaClient* CacheQuotaClient::Get() {
 
 CacheQuotaClient::Type CacheQuotaClient::GetType() { return DOMCACHE; }
 
-nsresult CacheQuotaClient::InitOrigin(PersistenceType aPersistenceType,
-                                      const nsACString& aGroup,
-                                      const nsACString& aOrigin,
-                                      const AtomicBool& aCanceled,
-                                      UsageInfo* aUsageInfo) {
+Result<UsageInfo, nsresult> CacheQuotaClient::InitOrigin(
+    PersistenceType aPersistenceType, const nsACString& aGroup,
+    const nsACString& aOrigin, const AtomicBool& aCanceled) {
+  AssertIsOnIOThread();
+
+  UsageInfo res;
+
+  nsresult rv =
+      GetUsageForOriginInternal(aPersistenceType, aGroup, aOrigin, aCanceled,
+                                 true, &res);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return Err(rv);
+  }
+
+  return res;
+}
+
+nsresult CacheQuotaClient::InitOriginWithoutTracking(
+    PersistenceType aPersistenceType, const nsACString& aGroup,
+    const nsACString& aOrigin, const AtomicBool& aCanceled) {
   AssertIsOnIOThread();
 
   
   
-  if (!aUsageInfo) {
-    return NS_OK;
-  }
-
-  return GetUsageForOriginInternal(aPersistenceType, aGroup, aOrigin, aCanceled,
-                                    true, aUsageInfo);
+  
+  
+  UNKNOWN_FILE_WARNING(NS_LITERAL_STRING(DOMCACHE_DIRECTORY_NAME));
+  return NS_OK;
 }
 
 Result<UsageInfo, nsresult> CacheQuotaClient::GetUsageForOrigin(
