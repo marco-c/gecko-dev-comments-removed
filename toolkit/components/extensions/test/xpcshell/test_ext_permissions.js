@@ -47,6 +47,10 @@ const observer = {
 };
 
 add_task(async function setup() {
+  
+  
+  await ExtensionPermissions._uninit();
+
   Services.prefs.setBoolPref(
     "extensions.webextOptionalPermissionPrompts",
     true

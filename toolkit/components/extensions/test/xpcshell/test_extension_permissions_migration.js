@@ -5,6 +5,13 @@ const { ExtensionPermissions } = ChromeUtils.import(
   "resource://gre/modules/ExtensionPermissions.jsm"
 );
 
+add_task(async function setup() {
+  
+  
+  
+  await ExtensionPermissions._uninit();
+});
+
 const GOOD_JSON_FILE = {
   "wikipedia@search.mozilla.org": {
     permissions: ["internal:privateBrowsingAllowed"],
