@@ -843,6 +843,7 @@ bool Module::instantiateLocalTable(JSContext* cx, const TableDesc& td,
   } else {
     table = Table::create(cx, td,  nullptr);
     if (!table) {
+      ReportOutOfMemory(cx);
       return false;
     }
   }
