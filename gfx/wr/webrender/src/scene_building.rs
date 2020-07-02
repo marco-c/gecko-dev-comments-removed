@@ -497,7 +497,7 @@ impl<'a> SceneBuilder<'a> {
             }
 
             
-            for instance in &main_prim_list.prim_instances[cluster.prim_range()] {
+            for instance in &cluster.prim_instances {
                 
                 update_shared_clips |= last_prim_clip_chain_id != instance.clip_chain_id;
                 last_prim_clip_chain_id = instance.clip_chain_id;
@@ -542,10 +542,8 @@ impl<'a> SceneBuilder<'a> {
             );
 
             
-            slices.last_mut().unwrap().prim_list.add_cluster(cluster, &main_prim_list.prim_instances);
+            slices.last_mut().unwrap().prim_list.add_cluster(cluster);
         }
-
-        main_prim_list.clear();
 
         
         for (slice_index, slice) in slices.drain(..).enumerate() {
@@ -3687,7 +3685,7 @@ impl FlattenedStackingContext {
                             
                             
                             
-                            for prim_instance in &self.prim_list.prim_instances[cluster.prim_range()] {
+                            for prim_instance in &cluster.prim_instances {
                                 let mut current_clip_chain_id = prim_instance.clip_chain_id;
 
                                 while current_clip_chain_id != ClipChainId::NONE {
