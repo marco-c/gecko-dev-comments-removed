@@ -517,6 +517,8 @@ function mainThreadFetch(
       return;
     }
 
+    channel.loadInfo.isInDevToolsContext = true;
+
     
     channel.loadFlags = aOptions.loadFromCache
       ? channel.LOAD_FROM_CACHE

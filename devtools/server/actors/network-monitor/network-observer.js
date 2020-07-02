@@ -90,12 +90,7 @@ function matchRequest(channel, filters) {
     channel.loadInfo.loadingDocument === null &&
     (channel.loadInfo.loadingPrincipal ===
       Services.scriptSecurityManager.getSystemPrincipal() ||
-      
-      
-      
-      
-      channel.loadInfo.internalContentPolicyType ===
-        Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET)
+      channel.loadInfo.isInDevToolsContext)
   ) {
     return false;
   }
