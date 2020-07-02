@@ -128,8 +128,18 @@ IDBResult<void, IDBSpecialValue::Invalid> Key::SetFromString(
 uint32_t Key::LengthOfEncodedBinary(const EncodedDataType* aPos,
                                     const EncodedDataType* aEnd) {
   MOZ_ASSERT(*aPos % Key::eMaxType == Key::eBinary, "Don't call me!");
-  const EncodedDataType* encodedSectionEnd;
-  return CalcDecodedStringySize<uint8_t>(aPos + 1, aEnd, &encodedSectionEnd);
+
+  const auto* iter = aPos + 1;
+  for (; iter < aEnd && *iter != eTerminator; ++iter) {
+    if (*iter & 0x80) {
+      ++iter;
+      
+      
+      MOZ_ASSERT(iter < aEnd);
+    }
+  }
+
+  return iter - aPos - 1;
 }
 
 IDBResult<void, IDBSpecialValue::Invalid> Key::ToLocaleAwareKey(
