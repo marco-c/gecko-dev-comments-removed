@@ -9,7 +9,7 @@ use super::CommonMetricData;
 
 
 #[derive(Clone, Debug)]
-pub struct CounterMetric(glean_core::metrics::CounterMetric);
+pub struct CounterMetric(pub(crate) glean_core::metrics::CounterMetric);
 
 impl CounterMetric {
     
