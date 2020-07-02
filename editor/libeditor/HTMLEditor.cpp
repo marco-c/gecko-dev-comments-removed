@@ -766,7 +766,7 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
         return NS_OK;
       }
       aKeyboardEvent->PreventDefault();
-      nsresult rv = OnInputText(NS_LITERAL_STRING("\t"));
+      nsresult rv = OnInputText(u"\t"_ns);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                            "TextEditor::OnInputText(\\t) failed");
       return EditorBase::ToGenericNSResult(rv);
@@ -935,7 +935,7 @@ NS_IMETHODIMP HTMLEditor::UpdateBaseURL() {
 
   
   RefPtr<nsContentList> baseElementList =
-      document->GetElementsByTagName(NS_LITERAL_STRING("base"));
+      document->GetElementsByTagName(u"base"_ns);
 
   
   
@@ -1221,7 +1221,7 @@ nsresult HTMLEditor::ReplaceHeadContentsWithSourceWithTransaction(
   }
 
   RefPtr<nsContentList> headElementList =
-      document->GetElementsByTagName(NS_LITERAL_STRING("head"));
+      document->GetElementsByTagName(u"head"_ns);
   if (NS_WARN_IF(!headElementList)) {
     return NS_ERROR_FAILURE;
   }
@@ -1237,12 +1237,10 @@ nsresult HTMLEditor::ReplaceHeadContentsWithSourceWithTransaction(
   nsAutoString inputString(aSourceToInsert);
 
   
-  inputString.ReplaceSubstring(NS_LITERAL_STRING("\r\n"),
-                               NS_LITERAL_STRING("\n"));
+  inputString.ReplaceSubstring(u"\r\n"_ns, u"\n"_ns);
 
   
-  inputString.ReplaceSubstring(NS_LITERAL_STRING("\r"),
-                               NS_LITERAL_STRING("\n"));
+  inputString.ReplaceSubstring(u"\r"_ns, u"\n"_ns);
 
   AutoPlaceholderBatch treatAsOneTransaction(*this);
 
@@ -1316,15 +1314,15 @@ NS_IMETHODIMP HTMLEditor::RebuildDocumentFromSource(
   nsReadingIterator<char16_t> endbody;
   aSourceString.BeginReading(beginbody);
   aSourceString.EndReading(endbody);
-  bool foundbody = CaseInsensitiveFindInReadable(NS_LITERAL_STRING("<body"),
-                                                 beginbody, endbody);
+  bool foundbody =
+      CaseInsensitiveFindInReadable(u"<body"_ns, beginbody, endbody);
 
   nsReadingIterator<char16_t> beginhead;
   nsReadingIterator<char16_t> endhead;
   aSourceString.BeginReading(beginhead);
   aSourceString.EndReading(endhead);
-  bool foundhead = CaseInsensitiveFindInReadable(NS_LITERAL_STRING("<head"),
-                                                 beginhead, endhead);
+  bool foundhead =
+      CaseInsensitiveFindInReadable(u"<head"_ns, beginhead, endhead);
   
   if (foundbody && beginhead.get() > beginbody.get()) {
     foundhead = false;
@@ -1337,7 +1335,7 @@ NS_IMETHODIMP HTMLEditor::RebuildDocumentFromSource(
 
   
   bool foundclosehead = CaseInsensitiveFindInReadable(
-      NS_LITERAL_STRING("</head>"), beginclosehead, endclosehead);
+      u"</head>"_ns, beginclosehead, endclosehead);
   
   if (foundhead && beginhead.get() > beginclosehead.get()) {
     foundclosehead = false;
@@ -1483,7 +1481,7 @@ NS_IMETHODIMP HTMLEditor::RebuildDocumentFromSource(
   nsReadingIterator<char16_t> beginclosebody = beginbody;
   nsReadingIterator<char16_t> endclosebody;
   aSourceString.EndReading(endclosebody);
-  if (!FindInReadable(NS_LITERAL_STRING(">"), beginclosebody, endclosebody)) {
+  if (!FindInReadable(u">"_ns, beginclosebody, endclosebody)) {
     NS_WARNING("'>' was not found");
     return NS_ERROR_FAILURE;
   }
@@ -2826,39 +2824,35 @@ already_AddRefed<Element> HTMLEditor::CreateElementWithDefaults(
   
   
   IgnoredErrorResult ignoredError;
-  newElement->SetAttribute(NS_LITERAL_STRING("_moz_dirty"), EmptyString(),
-                           ignoredError);
+  newElement->SetAttribute(u"_moz_dirty"_ns, EmptyString(), ignoredError);
   NS_WARNING_ASSERTION(!ignoredError.Failed(),
                        "Element::SetAttribute(_moz_dirty) failed, but ignored");
   ignoredError.SuppressException();
 
   
   if (realTagName == nsGkAtoms::table) {
-    newElement->SetAttr(nsGkAtoms::cellpadding, NS_LITERAL_STRING("2"),
-                        ignoredError);
+    newElement->SetAttr(nsGkAtoms::cellpadding, u"2"_ns, ignoredError);
     if (ignoredError.Failed()) {
       NS_WARNING("Element::SetAttr(nsGkAtoms::cellpadding, 2) failed");
       return nullptr;
     }
     ignoredError.SuppressException();
 
-    newElement->SetAttr(nsGkAtoms::cellspacing, NS_LITERAL_STRING("2"),
-                        ignoredError);
+    newElement->SetAttr(nsGkAtoms::cellspacing, u"2"_ns, ignoredError);
     if (ignoredError.Failed()) {
       NS_WARNING("Element::SetAttr(nsGkAtoms::cellspacing, 2) failed");
       return nullptr;
     }
     ignoredError.SuppressException();
 
-    newElement->SetAttr(nsGkAtoms::border, NS_LITERAL_STRING("1"),
-                        ignoredError);
+    newElement->SetAttr(nsGkAtoms::border, u"1"_ns, ignoredError);
     if (ignoredError.Failed()) {
       NS_WARNING("Element::SetAttr(nsGkAtoms::border, 1) failed");
       return nullptr;
     }
   } else if (realTagName == nsGkAtoms::td) {
     nsresult rv = SetAttributeOrEquivalent(newElement, nsGkAtoms::valign,
-                                           NS_LITERAL_STRING("top"), true);
+                                           u"top"_ns, true);
     if (NS_FAILED(rv)) {
       NS_WARNING(
           "HTMLEditor::SetAttributeOrEquivalent(nsGkAtoms::valign, top) "

@@ -2330,8 +2330,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvDestroy() {
     
     
     MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
-    mBrowserChildMessageManager->DispatchTrustedEvent(
-        NS_LITERAL_STRING("unload"));
+    mBrowserChildMessageManager->DispatchTrustedEvent(u"unload"_ns);
   }
 
   nsCOMPtr<nsIObserverService> observerService =

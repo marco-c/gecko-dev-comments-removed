@@ -34,7 +34,7 @@ static WinPaths& PathWhitelist() {
 }
 
 #ifdef XP_WIN
-const auto kDevicePathSpecifier = NS_LITERAL_STRING("\\\\?\\");
+const auto kDevicePathSpecifier = u"\\\\?\\"_ns;
 
 typedef char16_t char_path_t;
 #else
@@ -74,7 +74,7 @@ static void AllowUNCDirectory(char const* directory) {
   
   
   
-  if (!StringBeginsWith(path, NS_LITERAL_STRING("\\\\"))) {
+  if (!StringBeginsWith(path, u"\\\\"_ns)) {
     return;
   }
 
@@ -257,7 +257,7 @@ bool IsBlockedUNCPath(const nsAString& aFilePath) {
     return false;
   }
 
-  if (!StringBeginsWith(aFilePath, NS_LITERAL_STRING("\\\\"))) {
+  if (!StringBeginsWith(aFilePath, u"\\\\"_ns)) {
     return false;
   }
 

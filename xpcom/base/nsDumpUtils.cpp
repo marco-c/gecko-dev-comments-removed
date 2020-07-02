@@ -270,7 +270,7 @@ void FifoWatcher::RegisterCallback(const nsCString& aCommand,
   mFifoInfo.AppendElement(aFifoInfo);
 }
 
-FifoWatcher::~FifoWatcher() {}
+FifoWatcher::~FifoWatcher() = default;
 
 int FifoWatcher::OpenFd() {
   
@@ -292,7 +292,7 @@ int FifoWatcher::OpenFd() {
     }
   }
 
-  rv = file->AppendNative(NS_LITERAL_CSTRING("debug_info_trigger"));
+  rv = file->AppendNative("debug_info_trigger"_ns);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return -1;
   }

@@ -913,8 +913,8 @@ void Http3Session::Close(nsresult aReason) {
     mError = aReason;
     
     
-    Telemetry::Accumulate(Telemetry::HTTP3_CONNECTTION_CLOSE_CODE,
-                          NS_LITERAL_CSTRING("closing"), 37);
+    Telemetry::Accumulate(Telemetry::HTTP3_CONNECTTION_CLOSE_CODE, "closing"_ns,
+                          37);
     CloseInternal(true);
   }
 
@@ -1390,10 +1390,8 @@ void Http3Session::CloseConnectionTelemetry(CloseError& aError, bool aClosing) {
   
   
   
-  Telemetry::Accumulate(
-      Telemetry::HTTP3_CONNECTTION_CLOSE_CODE,
-      aClosing ? NS_LITERAL_CSTRING("closing") : NS_LITERAL_CSTRING("closed"),
-      value);
+  Telemetry::Accumulate(Telemetry::HTTP3_CONNECTTION_CLOSE_CODE,
+                        aClosing ? "closing"_ns : "closed"_ns, value);
 }
 
 }  

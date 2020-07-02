@@ -437,8 +437,7 @@ void nsUnknownDecoder::DetermineContentType(nsIRequest* aRequest) {
           spec.AppendLiteral("...");
         }
         httpChannel->LogMimeTypeMismatch(
-            NS_LITERAL_CSTRING("XTCOWithMIMEValueMissing"), false,
-            NS_ConvertUTF8toUTF16(spec),
+            "XTCOWithMIMEValueMissing"_ns, false, NS_ConvertUTF8toUTF16(spec),
             
             NS_ConvertUTF8toUTF16(type));
       }
@@ -885,8 +884,7 @@ void nsBinaryDetector::DetermineContentType(nsIRequest* aRequest) {
   }
   
   nsAutoCString contentTypeHdr;
-  Unused << httpChannel->GetResponseHeader(NS_LITERAL_CSTRING("Content-Type"),
-                                           contentTypeHdr);
+  Unused << httpChannel->GetResponseHeader("Content-Type"_ns, contentTypeHdr);
   nsAutoCString contentType;
   httpChannel->GetContentType(contentType);
 
@@ -910,8 +908,8 @@ void nsBinaryDetector::DetermineContentType(nsIRequest* aRequest) {
   
   
   nsAutoCString contentEncoding;
-  Unused << httpChannel->GetResponseHeader(
-      NS_LITERAL_CSTRING("Content-Encoding"), contentEncoding);
+  Unused << httpChannel->GetResponseHeader("Content-Encoding"_ns,
+                                           contentEncoding);
   if (!contentEncoding.IsEmpty()) {
     return;
   }

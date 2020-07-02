@@ -82,7 +82,7 @@ ServiceWorker::ServiceWorker(nsIGlobalObject* aGlobal,
   MOZ_DIAGNOSTIC_ASSERT(aGlobal);
   MOZ_DIAGNOSTIC_ASSERT(mInner);
 
-  KeepAliveIfHasListenersFor(NS_LITERAL_STRING("statechange"));
+  KeepAliveIfHasListenersFor(u"statechange"_ns);
 
   
   
@@ -153,13 +153,13 @@ void ServiceWorker::MaybeDispatchStateChangeEvent() {
   }
   mLastNotifiedState = mDescriptor.State();
 
-  DOMEventTargetHelper::DispatchTrustedEvent(NS_LITERAL_STRING("statechange"));
+  DOMEventTargetHelper::DispatchTrustedEvent(u"statechange"_ns);
 
   
   
   
   if (mLastNotifiedState == ServiceWorkerState::Redundant) {
-    IgnoreKeepAliveIfHasListenersFor(NS_LITERAL_STRING("statechange"));
+    IgnoreKeepAliveIfHasListenersFor(u"statechange"_ns);
   }
 }
 

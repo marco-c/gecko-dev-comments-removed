@@ -38,7 +38,7 @@ nsresult nsAppStartupNotifier::NotifyObservers(const char* aCategory) {
     
     
     
-    if (StringBeginsWith(contractId, NS_LITERAL_CSTRING("service,"))) {
+    if (StringBeginsWith(contractId, "service,"_ns)) {
       startupInstance = do_GetService(contractId.get() + 8, &rv);
     } else {
       startupInstance = do_CreateInstance(contractId.get(), &rv);

@@ -17,11 +17,10 @@ TEST(storage_statement_scoper, automatic_reset)
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
-  (void)db->ExecuteSimpleSQL(
-      NS_LITERAL_CSTRING("CREATE TABLE test (id INTEGER PRIMARY KEY)"));
+  (void)db->ExecuteSimpleSQL("CREATE TABLE test (id INTEGER PRIMARY KEY)"_ns);
 
   nsCOMPtr<mozIStorageStatement> stmt;
-  (void)db->CreateStatement(NS_LITERAL_CSTRING("SELECT * FROM sqlite_master"),
+  (void)db->CreateStatement("SELECT * FROM sqlite_master"_ns,
                             getter_AddRefs(stmt));
 
   
@@ -53,11 +52,10 @@ TEST(storage_statement_scoper, Abandon)
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
-  (void)db->ExecuteSimpleSQL(
-      NS_LITERAL_CSTRING("CREATE TABLE test (id INTEGER PRIMARY KEY)"));
+  (void)db->ExecuteSimpleSQL("CREATE TABLE test (id INTEGER PRIMARY KEY)"_ns);
 
   nsCOMPtr<mozIStorageStatement> stmt;
-  (void)db->CreateStatement(NS_LITERAL_CSTRING("SELECT * FROM sqlite_master"),
+  (void)db->CreateStatement("SELECT * FROM sqlite_master"_ns,
                             getter_AddRefs(stmt));
 
   

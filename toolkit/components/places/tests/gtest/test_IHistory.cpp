@@ -33,7 +33,7 @@ void expect_no_visit(nsLinkState aState) {
 already_AddRefed<nsIURI> new_test_uri() {
   
   static int32_t specNumber = 0;
-  nsCString spec = NS_LITERAL_CSTRING("http://mozilla.org/");
+  nsCString spec = "http://mozilla.org/"_ns;
   spec.AppendInt(specNumber++);
 
   
@@ -103,8 +103,7 @@ void test_wait_checkpoint() {
   
   nsCOMPtr<mozIStorageConnection> db = do_get_db();
   nsCOMPtr<mozIStorageAsyncStatement> stmt;
-  db->CreateAsyncStatement(NS_LITERAL_CSTRING("SELECT 1"),
-                           getter_AddRefs(stmt));
+  db->CreateAsyncStatement("SELECT 1"_ns, getter_AddRefs(stmt));
   RefPtr<PlacesAsyncStatementSpinner> spinner =
       new PlacesAsyncStatementSpinner();
   nsCOMPtr<mozIStoragePendingStatement> pending;

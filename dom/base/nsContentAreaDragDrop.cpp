@@ -392,9 +392,8 @@ void DragDataProducer::CreateLinkText(const nsAString& inURL,
   
   
   
-  nsAutoString linkText(NS_LITERAL_STRING("<a href=\"") + inURL +
-                        NS_LITERAL_STRING("\">") + inText +
-                        NS_LITERAL_STRING("</a>"));
+  nsAutoString linkText(u"<a href=\""_ns + inURL + u"\">"_ns + inText +
+                        u"</a>"_ns);
 
   outLinkText = linkText;
 }
@@ -815,10 +814,11 @@ nsresult DragDataProducer::AddStringsToDataTransfer(
     AddString(aDataTransfer, NS_LITERAL_STRING(kURLMime), dragData, principal);
     AddString(aDataTransfer, NS_LITERAL_STRING(kURLDataMime), mUrlString,
               principal);
+    AddString(aDataTransfer, NS_LITERAL_STRING(kURLDataMime), mUrlString,
+              principal);
     AddString(aDataTransfer, NS_LITERAL_STRING(kURLDescriptionMime),
               mTitleString, principal);
-    AddString(aDataTransfer, NS_LITERAL_STRING("text/uri-list"), mUrlString,
-              principal);
+    AddString(aDataTransfer, u"text/uri-list"_ns, mUrlString, principal);
   }
 
   
@@ -878,8 +878,7 @@ nsresult DragDataProducer::AddStringsToDataTransfer(
     if (!mIsAnchor) {
       AddString(aDataTransfer, NS_LITERAL_STRING(kURLDataMime), mUrlString,
                 principal);
-      AddString(aDataTransfer, NS_LITERAL_STRING("text/uri-list"), mUrlString,
-                principal);
+      AddString(aDataTransfer, u"text/uri-list"_ns, mUrlString, principal);
     }
   }
 

@@ -54,7 +54,7 @@ class RemoteMediaDataDecoder
   RefPtr<IRemoteDecoderChild> mChild;
   
   
-  nsCString mDescription = NS_LITERAL_CSTRING("RemoteMediaDataDecoder");
+  nsCString mDescription = "RemoteMediaDataDecoder"_ns;
   bool mIsHardwareAccelerated = false;
   nsCString mHardwareAcceleratedReason;
   ConversionRequired mConversion = ConversionRequired::kNeedNone;

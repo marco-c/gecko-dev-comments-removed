@@ -942,19 +942,19 @@ TEST_F(MP4MetadataTelemetryFixture, Telemetry) {
   
   TelemetryTestHelpers::GetAndClearHistogram(
       cx.GetJSContext(), mTelemetry,
-      NS_LITERAL_CSTRING(
+      nsLiteralCString(
           "MEDIA_MP4_PARSE_SAMPLE_DESCRIPTION_ENTRIES_HAVE_MULTIPLE_CODECS"),
       false );
 
   TelemetryTestHelpers::GetAndClearHistogram(
       cx.GetJSContext(), mTelemetry,
-      NS_LITERAL_CSTRING(
+      nsLiteralCString(
           "MEDIA_MP4_PARSE_SAMPLE_DESCRIPTION_ENTRIES_HAVE_MULTIPLE_CRYPTO"),
       false );
 
   TelemetryTestHelpers::GetAndClearHistogram(
       cx.GetJSContext(), mTelemetry,
-      NS_LITERAL_CSTRING("MEDIA_MP4_PARSE_NUM_SAMPLE_DESCRIPTION_ENTRIES"),
+      "MEDIA_MP4_PARSE_NUM_SAMPLE_DESCRIPTION_ENTRIES"_ns,
       false );
 
   

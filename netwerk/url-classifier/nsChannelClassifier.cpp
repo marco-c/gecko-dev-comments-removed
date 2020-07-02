@@ -122,8 +122,7 @@ void nsChannelClassifier::Start() {
   if (NS_FAILED(rv)) {
     
     
-    OnClassifyComplete(NS_OK, NS_LITERAL_CSTRING(""), NS_LITERAL_CSTRING(""),
-                       NS_LITERAL_CSTRING(""));
+    OnClassifyComplete(NS_OK, ""_ns, ""_ns, ""_ns);
   }
 }
 

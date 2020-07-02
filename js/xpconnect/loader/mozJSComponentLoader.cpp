@@ -347,7 +347,7 @@ static nsresult AnnotateScriptContents(CrashReporter::Annotation aName,
   
   
   
-  str.ReplaceSubstring(NS_LITERAL_CSTRING("\0"), NS_LITERAL_CSTRING("\\0"));
+  str.ReplaceSubstring("\0"_ns, "\\0"_ns);
 
   CrashReporter::AnnotateCrashReport(aName, str);
 
@@ -357,11 +357,11 @@ static nsresult AnnotateScriptContents(CrashReporter::Annotation aName,
 nsresult mozJSComponentLoader::AnnotateCrashReport() {
   Unused << AnnotateScriptContents(
       CrashReporter::Annotation::nsAsyncShutdownComponent,
-      NS_LITERAL_CSTRING("resource://gre/components/nsAsyncShutdown.js"));
+      "resource://gre/components/nsAsyncShutdown.js"_ns);
 
   Unused << AnnotateScriptContents(
       CrashReporter::Annotation::AsyncShutdownModule,
-      NS_LITERAL_CSTRING("resource://gre/modules/AsyncShutdown.jsm"));
+      "resource://gre/modules/AsyncShutdown.jsm"_ns);
 
   return NS_OK;
 }
@@ -401,8 +401,7 @@ const mozilla::Module* mozJSComponentLoader::LoadModule(FileLocation& aFile) {
   jsapi.Init();
   JSContext* cx = jsapi.cx();
 
-  bool isCriticalModule =
-      StringEndsWith(spec, NS_LITERAL_CSTRING("/nsAsyncShutdown.js"));
+  bool isCriticalModule = StringEndsWith(spec, "/nsAsyncShutdown.js"_ns);
 
   auto entry = MakeUnique<ModuleEntry>(RootingContext::get(cx));
   RootedValue exn(cx);
@@ -589,8 +588,7 @@ void mozJSComponentLoader::CreateLoaderGlobal(JSContext* aCx,
 JSObject* mozJSComponentLoader::GetSharedGlobal(JSContext* aCx) {
   if (!mLoaderGlobal) {
     JS::RootedObject globalObj(aCx);
-    CreateLoaderGlobal(aCx, NS_LITERAL_CSTRING("shared JSM global"),
-                       &globalObj);
+    CreateLoaderGlobal(aCx, "shared JSM global"_ns, &globalObj);
 
     
     

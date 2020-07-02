@@ -70,7 +70,7 @@ NS_IMETHODIMP AppCacheStorage::AsyncOpenURI(
   
   
   if (LoadInfo()->IsAnonymous()) {
-    cacheKey = NS_LITERAL_CSTRING("anon&") + cacheKey;
+    cacheKey = "anon&"_ns + cacheKey;
   }
 
   nsAutoCString scheme;

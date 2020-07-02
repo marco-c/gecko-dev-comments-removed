@@ -813,7 +813,7 @@ void nsRFPService::UpdateRFPPref() {
     
     
     if (!mInitialTZValue.IsEmpty()) {
-      nsAutoCString tzValue = NS_LITERAL_CSTRING("TZ=") + mInitialTZValue;
+      nsAutoCString tzValue = "TZ="_ns + mInitialTZValue;
       static char* tz = nullptr;
 
       
@@ -1057,7 +1057,7 @@ bool nsRFPService::GetSpoofedCode(const dom::Document* aDoc,
   
   if (aKeyboardEvent->mLocation ==
           dom::KeyboardEvent_Binding::DOM_KEY_LOCATION_RIGHT &&
-      StringEndsWith(aOut, NS_LITERAL_STRING("Left"))) {
+      StringEndsWith(aOut, u"Left"_ns)) {
     aOut.ReplaceLiteral(aOut.Length() - 4, 4, u"Right");
   }
 

@@ -126,7 +126,7 @@ void MediaFormatReader::DecoderData::ShutdownDecoder() {
   
   
   mDecoder = nullptr;
-  mDescription = NS_LITERAL_CSTRING("shutdown");
+  mDescription = "shutdown"_ns;
   mOwner->ScheduleUpdate(mType == MediaData::Type::AUDIO_DATA
                              ? TrackType::kAudioTrack
                              : TrackType::kVideoTrack);

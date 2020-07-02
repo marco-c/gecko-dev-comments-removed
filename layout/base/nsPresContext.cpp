@@ -522,7 +522,7 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
       mMissingFonts = nullptr;
     }
   }
-  if (StringBeginsWith(prefName, NS_LITERAL_CSTRING("font.")) ||
+  if (StringBeginsWith(prefName, "font."_ns) ||
       prefName.EqualsLiteral("intl.accept_languages")) {
     
     
@@ -534,14 +534,14 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
     
     mPrefChangePendingNeedsReflow = true;
   }
-  if (StringBeginsWith(prefName, NS_LITERAL_CSTRING("bidi."))) {
+  if (StringBeginsWith(prefName, "bidi."_ns)) {
     
     mPrefChangePendingNeedsReflow = true;
 
     
     
   }
-  if (StringBeginsWith(prefName, NS_LITERAL_CSTRING("gfx.font_rendering."))) {
+  if (StringBeginsWith(prefName, "gfx.font_rendering."_ns)) {
     
     mPrefChangePendingNeedsReflow = true;
   }
@@ -2352,8 +2352,7 @@ void nsPresContext::NotifyNonBlankPaint() {
 void nsPresContext::NotifyContentfulPaint() {
   if (!mHadContentfulPaint) {
 #if defined(MOZ_WIDGET_ANDROID)
-    (new AsyncEventDispatcher(mDocument,
-                              NS_LITERAL_STRING("MozFirstContentfulPaint"),
+    (new AsyncEventDispatcher(mDocument, u"MozFirstContentfulPaint"_ns,
                               CanBubble::eYes, ChromeOnlyDispatch::eYes))
         ->PostDOMEvent();
 #endif

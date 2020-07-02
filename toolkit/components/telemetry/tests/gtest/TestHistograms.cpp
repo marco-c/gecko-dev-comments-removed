@@ -21,8 +21,8 @@ TEST_F(TelemetryTestFixture, AccumulateCountHistogram) {
   ASSERT_STREQ(telemetryTestCountName, "TELEMETRY_TEST_COUNT")
       << "The histogram name is wrong";
 
-  GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_COUNT"), false);
+  GetAndClearHistogram(cx.GetJSContext(), mTelemetry, "TELEMETRY_TEST_COUNT"_ns,
+                       false);
 
   
   Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_COUNT, kExpectedValue / 2);
@@ -53,11 +53,11 @@ TEST_F(TelemetryTestFixture, AccumulateKeyedCountHistogram) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_KEYED_COUNT"), true);
+                       "TELEMETRY_TEST_KEYED_COUNT"_ns, true);
 
   
-  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_COUNT,
-                        NS_LITERAL_CSTRING("sample"), kExpectedValue);
+  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_COUNT, "sample"_ns,
+                        kExpectedValue);
 
   
   JS::RootedValue snapshot(cx.GetJSContext());
@@ -91,19 +91,16 @@ TEST_F(TelemetryTestFixture, TestKeyedKeysHistogram) {
   JS::RootedValue rval(cx.GetJSContext());
 
   GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_KEYED_KEYS"), true);
+                       "TELEMETRY_TEST_KEYED_KEYS"_ns, true);
 
   
   
-  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_KEYS,
-                        NS_LITERAL_CSTRING("not-allowed"), 1);
-  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_KEYS,
-                        NS_LITERAL_CSTRING("testkey"), 0);
+  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_KEYS, "not-allowed"_ns,
+                        1);
+  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_KEYS, "testkey"_ns, 0);
   
-  Telemetry::Accumulate("TELEMETRY_TEST_KEYED_KEYS",
-                        NS_LITERAL_CSTRING("not-allowed"), 1);
-  Telemetry::Accumulate("TELEMETRY_TEST_KEYED_KEYS",
-                        NS_LITERAL_CSTRING("CommonKey"), 1);
+  Telemetry::Accumulate("TELEMETRY_TEST_KEYED_KEYS", "not-allowed"_ns, 1);
+  Telemetry::Accumulate("TELEMETRY_TEST_KEYED_KEYS", "CommonKey"_ns, 1);
 
   
   JS::RootedValue snapshot(cx.GetJSContext());
@@ -158,7 +155,7 @@ TEST_F(TelemetryTestFixture, AccumulateCategoricalHistogram) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_CATEGORICAL"), false);
+                       "TELEMETRY_TEST_CATEGORICAL"_ns, false);
 
   
   
@@ -168,7 +165,7 @@ TEST_F(TelemetryTestFixture, AccumulateCategoricalHistogram) {
   
   
   Telemetry::AccumulateCategorical(Telemetry::TELEMETRY_TEST_CATEGORICAL,
-                                   NS_LITERAL_CSTRING("CommonLabel"));
+                                   "CommonLabel"_ns);
 
   
   JS::RootedValue snapshot(cx.GetJSContext());
@@ -206,21 +203,20 @@ TEST_F(TelemetryTestFixture, AccumulateKeyedCategoricalHistogram) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_KEYED_CATEGORICAL"),
-                       true);
+                       "TELEMETRY_TEST_KEYED_CATEGORICAL"_ns, true);
 
   
   
   Telemetry::AccumulateCategoricalKeyed(
-      NS_LITERAL_CSTRING("sample"),
+      "sample"_ns,
       Telemetry::LABELS_TELEMETRY_TEST_KEYED_CATEGORICAL::CommonLabel);
   
   Telemetry::AccumulateCategoricalKeyed(
-      NS_LITERAL_CSTRING("sample"),
+      "sample"_ns,
       Telemetry::LABELS_TELEMETRY_TEST_KEYED_CATEGORICAL::CommonLabel);
   
   Telemetry::AccumulateCategoricalKeyed(
-      NS_LITERAL_CSTRING("other-sample"),
+      "other-sample"_ns,
       Telemetry::LABELS_TELEMETRY_TEST_KEYED_CATEGORICAL::CommonLabel);
 
   
@@ -281,8 +277,8 @@ TEST_F(TelemetryTestFixture, AccumulateCountHistogram_MultipleSamples) {
 
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
-  GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_COUNT"), false);
+  GetAndClearHistogram(cx.GetJSContext(), mTelemetry, "TELEMETRY_TEST_COUNT"_ns,
+                       false);
 
   
   Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_COUNT, samples);
@@ -314,7 +310,7 @@ TEST_F(TelemetryTestFixture, AccumulateLinearHistogram_MultipleSamples) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_LINEAR"), false);
+                       "TELEMETRY_TEST_LINEAR"_ns, false);
 
   
   Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_LINEAR, samples);
@@ -353,7 +349,7 @@ TEST_F(TelemetryTestFixture, AccumulateLinearHistogram_DifferentSamples) {
 
   mTelemetry->ClearScalars();
   GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_LINEAR"), false);
+                       "TELEMETRY_TEST_LINEAR"_ns, false);
 
   
   Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_LINEAR, samples);
@@ -413,11 +409,11 @@ TEST_F(TelemetryTestFixture, AccumulateKeyedCountHistogram_MultipleSamples) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_KEYED_COUNT"), true);
+                       "TELEMETRY_TEST_KEYED_COUNT"_ns, true);
 
   
-  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_COUNT,
-                        NS_LITERAL_CSTRING("sample"), samples);
+  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_COUNT, "sample"_ns,
+                        samples);
 
   
   JS::RootedValue snapshot(cx.GetJSContext());
@@ -449,13 +445,13 @@ TEST_F(TelemetryTestFixture, TestKeyedLinearHistogram_MultipleSamples) {
 
   mTelemetry->ClearScalars();
   GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_KEYED_LINEAR"), true);
+                       "TELEMETRY_TEST_KEYED_LINEAR"_ns, true);
 
   const nsTArray<uint32_t> samples({1, 5, 250000, UINT_MAX});
   
   
-  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_LINEAR,
-                        NS_LITERAL_CSTRING("testkey"), samples);
+  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_LINEAR, "testkey"_ns,
+                        samples);
 
   
   JS::RootedValue snapshot(cx.GetJSContext());
@@ -517,14 +513,14 @@ TEST_F(TelemetryTestFixture, TestKeyedKeysHistogram_MultipleSamples) {
   const nsTArray<uint32_t> samples({false, false, true, 32, true});
 
   GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_KEYED_KEYS"), true);
+                       "TELEMETRY_TEST_KEYED_KEYS"_ns, true);
 
   
   
-  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_KEYS,
-                        NS_LITERAL_CSTRING("not-allowed"), samples);
-  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_KEYS,
-                        NS_LITERAL_CSTRING("testkey"), samples);
+  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_KEYS, "not-allowed"_ns,
+                        samples);
+  Telemetry::Accumulate(Telemetry::TELEMETRY_TEST_KEYED_KEYS, "testkey"_ns,
+                        samples);
 
   
   JS::RootedValue snapshot(cx.GetJSContext());
@@ -613,12 +609,11 @@ TEST_F(TelemetryTestFixture, TestKeyedKeysHistogram_MultipleSamples) {
 TEST_F(TelemetryTestFixture,
        AccumulateCategoricalHistogram_MultipleStringLabels) {
   const uint32_t kExpectedValue = 2;
-  const nsTArray<nsCString> labels(
-      {NS_LITERAL_CSTRING("CommonLabel"), NS_LITERAL_CSTRING("CommonLabel")});
+  const nsTArray<nsCString> labels({"CommonLabel"_ns, "CommonLabel"_ns});
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_CATEGORICAL"), false);
+                       "TELEMETRY_TEST_CATEGORICAL"_ns, false);
 
   
   Telemetry::AccumulateCategorical(Telemetry::TELEMETRY_TEST_CATEGORICAL,
@@ -658,8 +653,7 @@ TEST_F(TelemetryTestFixture,
   
   
 
-  const nsTArray<nsCString> badLabelArray(
-      {NS_LITERAL_CSTRING("CommonLabel"), NS_LITERAL_CSTRING("BadLabel")});
+  const nsTArray<nsCString> badLabelArray({"CommonLabel"_ns, "BadLabel"_ns});
 
   
   Telemetry::AccumulateCategorical(Telemetry::TELEMETRY_TEST_CATEGORICAL,
@@ -699,7 +693,7 @@ TEST_F(TelemetryTestFixture,
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_CATEGORICAL"), false);
+                       "TELEMETRY_TEST_CATEGORICAL"_ns, false);
 
   
   
@@ -747,12 +741,10 @@ TEST_F(TelemetryTestFixture,
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_KEYED_CATEGORICAL"),
-                       true);
+                       "TELEMETRY_TEST_KEYED_CATEGORICAL"_ns, true);
 
   
-  Telemetry::AccumulateCategoricalKeyed(NS_LITERAL_CSTRING("sampleKey"),
-                                        enumLabels);
+  Telemetry::AccumulateCategoricalKeyed("sampleKey"_ns, enumLabels);
 
   
   JS::RootedValue snapshot(cx.GetJSContext());
@@ -813,8 +805,8 @@ TEST_F(TelemetryTestFixture, AccumulateTimeDelta) {
 
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
-  GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_COUNT"), false);
+  GetAndClearHistogram(cx.GetJSContext(), mTelemetry, "TELEMETRY_TEST_COUNT"_ns,
+                       false);
 
   
   Telemetry::AccumulateTimeDelta(Telemetry::TELEMETRY_TEST_COUNT, start - delta,
@@ -857,24 +849,21 @@ TEST_F(TelemetryTestFixture, AccumulateKeyedTimeDelta) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
   GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
-                       NS_LITERAL_CSTRING("TELEMETRY_TEST_KEYED_COUNT"), true);
+                       "TELEMETRY_TEST_KEYED_COUNT"_ns, true);
 
   
   Telemetry::AccumulateTimeDelta(Telemetry::TELEMETRY_TEST_KEYED_COUNT,
-                                 NS_LITERAL_CSTRING("sample"), start - delta,
-                                 start);
+                                 "sample"_ns, start - delta, start);
 
   Telemetry::AccumulateTimeDelta(Telemetry::TELEMETRY_TEST_KEYED_COUNT,
-                                 NS_LITERAL_CSTRING("sample"), start - delta,
-                                 start);
+                                 "sample"_ns, start - delta, start);
 
   
   Telemetry::AccumulateTimeDelta(Telemetry::TELEMETRY_TEST_KEYED_COUNT,
-                                 NS_LITERAL_CSTRING("sample"), start + delta,
-                                 start);
+                                 "sample"_ns, start + delta, start);
 
   Telemetry::AccumulateTimeDelta(Telemetry::TELEMETRY_TEST_KEYED_COUNT,
-                                 NS_LITERAL_CSTRING("sample"), start, start);
+                                 "sample"_ns, start, start);
 
   
   JS::RootedValue snapshot(cx.GetJSContext());

@@ -79,7 +79,7 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
     nsAutoCString uriSpec;
     aURI->GetSpec(uriSpec);
     
-    if (StringBeginsWith(uriSpec, NS_LITERAL_CSTRING("resource://pdf.js/"))) {
+    if (StringBeginsWith(uriSpec, "resource://pdf.js/"_ns)) {
       return false;
     }
     if (!isImgOrStyleOrDTD) {

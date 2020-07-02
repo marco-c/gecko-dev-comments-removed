@@ -111,8 +111,7 @@ NS_IMETHODIMP nsTextToSubURI::UnEscapeURIForUI(const nsACString& aURIFragment,
   
   
   
-  if (convertURItoUnicode(NS_LITERAL_CSTRING("UTF-8"), unescapedSpec,
-                          _retval) != NS_OK) {
+  if (convertURItoUnicode("UTF-8"_ns, unescapedSpec, _retval) != NS_OK) {
     
     CopyUTF8toUTF16(aURIFragment, _retval);
   }

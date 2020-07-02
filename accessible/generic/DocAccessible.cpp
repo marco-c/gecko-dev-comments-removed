@@ -824,8 +824,7 @@ void DocAccessible::AttributeChangedImpl(Accessible* aAccessible,
   
   if (aNameSpaceID == kNameSpaceID_None) {
     
-    if (StringBeginsWith(nsDependentAtomString(aAttribute),
-                         NS_LITERAL_STRING("aria-"))) {
+    if (StringBeginsWith(nsDependentAtomString(aAttribute), u"aria-"_ns)) {
       ARIAAttributeChanged(aAccessible, aAttribute);
     }
   }

@@ -172,7 +172,7 @@ bool nsMacUtilsImpl::GetAppPath(nsCString& aAppPath) {
   
   
   
-  auto pattern = NS_LITERAL_CSTRING("/Contents/MacOS/");
+  auto pattern = "/Contents/MacOS/"_ns;
   nsAutoCString::const_iterator start, end;
   appBinaryPath.BeginReading(start);
   appBinaryPath.EndReading(end);

@@ -183,9 +183,9 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
     
     
     
-    (new mozilla::AsyncEventDispatcher(
-         owner, NS_LITERAL_STRING("XULFrameLoaderCreated"),
-         mozilla::CanBubble::eYes, mozilla::ChromeOnlyDispatch::eYes))
+    (new mozilla::AsyncEventDispatcher(owner, u"XULFrameLoaderCreated"_ns,
+                                       mozilla::CanBubble::eYes,
+                                       mozilla::ChromeOnlyDispatch::eYes))
         ->RunDOMEventWhenSafe();
   }
 }

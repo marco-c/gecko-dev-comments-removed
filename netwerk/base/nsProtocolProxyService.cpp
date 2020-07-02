@@ -325,7 +325,7 @@ class nsAsyncResolveRequest final : public nsIRunnable,
       
       
       
-      mPACString = NS_LITERAL_CSTRING("DIRECT;");
+      mPACString = "DIRECT;"_ns;
       mStatus = NS_OK;
 
       LOG(("pac not available, use DIRECT\n"));

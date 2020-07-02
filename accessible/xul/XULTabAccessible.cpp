@@ -87,8 +87,7 @@ Relation XULTabAccessible::RelationByType(RelationType aType) const {
 
   
   ErrorResult rv;
-  nsIContent* parent =
-      mContent->AsElement()->Closest(NS_LITERAL_STRING("tabs"), rv);
+  nsIContent* parent = mContent->AsElement()->Closest(u"tabs"_ns, rv);
   if (!parent) return rel;
 
   nsCOMPtr<nsIDOMXULRelatedElement> tabsElm =

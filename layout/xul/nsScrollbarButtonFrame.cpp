@@ -125,7 +125,7 @@ bool nsScrollbarButtonFrame::HandleButtonPress(nsPresContext* aPresContext,
   
   AutoWeakFrame weakFrame(this);
   mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::active,
-                                 NS_LITERAL_STRING("true"), true);
+                                 u"true"_ns, true);
 
   PresShell::SetCapturingContent(mContent, CaptureFlags::IgnoreAllowedState);
 

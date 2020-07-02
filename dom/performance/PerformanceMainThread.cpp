@@ -117,7 +117,7 @@ PerformanceTiming* PerformanceMainThread::Timing() {
 void PerformanceMainThread::DispatchBufferFullEvent() {
   RefPtr<Event> event = NS_NewDOMEvent(this, nullptr, nullptr);
   
-  event->InitEvent(NS_LITERAL_STRING("resourcetimingbufferfull"), true, false);
+  event->InitEvent(u"resourcetimingbufferfull"_ns, true, false);
   event->SetTrusted(true);
   DispatchEvent(*event);
 }

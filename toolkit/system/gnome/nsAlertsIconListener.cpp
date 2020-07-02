@@ -327,7 +327,7 @@ nsresult nsAlertsIconListener::InitAlertAsync(nsIAlertNotification* aAlert,
   
   
   if (title.IsEmpty()) {
-    mAlertTitle = NS_LITERAL_CSTRING(" ");
+    mAlertTitle = " "_ns;
   } else {
     mAlertTitle = NS_ConvertUTF16toUTF8(title);
   }

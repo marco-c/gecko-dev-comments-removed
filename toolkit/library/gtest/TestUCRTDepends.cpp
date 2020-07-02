@@ -80,7 +80,7 @@ TEST(TestUCRTDepends, AppDir)
       }
       
       EXPECT_TRUE(StringBeginsWith(nsDependentString(wfd.cFileName),
-                                   NS_LITERAL_STRING("api-ms-win-crt-"),
+                                   u"api-ms-win-crt-"_ns,
                                    nsCaseInsensitiveStringComparator));
     } else {  
       

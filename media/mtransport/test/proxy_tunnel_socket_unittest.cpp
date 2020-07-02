@@ -104,7 +104,7 @@ TEST_F(NrTcpSocketTest, TestConnected) {
   
   ASSERT_TRUE(!mConnected);
 
-  mSProxy->OnConnected(NS_LITERAL_CSTRING("http"));
+  mSProxy->OnConnected("http"_ns);
 
   ASSERT_TRUE(mConnected);
 }

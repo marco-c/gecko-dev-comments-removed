@@ -308,7 +308,7 @@ bool WorkerLoadInfo::PrincipalURIMatchesScriptURL() {
 
   
   if (mPrincipal->IsSystemPrincipal()) {
-    if (scheme == NS_LITERAL_CSTRING("blob")) {
+    if (scheme == "blob"_ns) {
       return true;
     }
 
@@ -323,15 +323,14 @@ bool WorkerLoadInfo::PrincipalURIMatchesScriptURL() {
   
   
   if (mPrincipal->GetIsNullPrincipal()) {
-    return scheme == NS_LITERAL_CSTRING("data") ||
-           scheme == NS_LITERAL_CSTRING("blob");
+    return scheme == "data"_ns || scheme == "blob"_ns;
   }
 
   
   
   
   
-  if (scheme == NS_LITERAL_CSTRING("blob")) {
+  if (scheme == "blob"_ns) {
     return true;
   }
 

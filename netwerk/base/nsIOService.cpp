@@ -271,13 +271,11 @@ nsresult nsIOService::Init() {
   PrefsChanged();
 
   mSocketProcessTopicBlackList.PutEntry(
-      NS_LITERAL_CSTRING(NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID));
+      nsLiteralCString(NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID));
   mSocketProcessTopicBlackList.PutEntry(
-      NS_LITERAL_CSTRING(NS_XPCOM_SHUTDOWN_OBSERVER_ID));
-  mSocketProcessTopicBlackList.PutEntry(
-      NS_LITERAL_CSTRING("xpcom-shutdown-threads"));
-  mSocketProcessTopicBlackList.PutEntry(
-      NS_LITERAL_CSTRING("profile-do-change"));
+      nsLiteralCString(NS_XPCOM_SHUTDOWN_OBSERVER_ID));
+  mSocketProcessTopicBlackList.PutEntry("xpcom-shutdown-threads"_ns);
+  mSocketProcessTopicBlackList.PutEntry("profile-do-change"_ns);
 
   
   mObserverService = services::GetObserverService();
@@ -850,9 +848,8 @@ nsresult nsIOService::GetCachedProtocolHandler(const char* scheme,
 }
 
 static bool UsesExternalProtocolHandler(const char* aScheme) {
-  if (NS_LITERAL_CSTRING("file").Equals(aScheme) ||
-      NS_LITERAL_CSTRING("chrome").Equals(aScheme) ||
-      NS_LITERAL_CSTRING("resource").Equals(aScheme)) {
+  if ("file"_ns.Equals(aScheme) || "chrome"_ns.Equals(aScheme) ||
+      "resource"_ns.Equals(aScheme)) {
     
     
     
@@ -861,7 +858,7 @@ static bool UsesExternalProtocolHandler(const char* aScheme) {
 
   
   
-  if (NS_LITERAL_CSTRING("ftp").Equals(aScheme) &&
+  if ("ftp"_ns.Equals(aScheme) &&
       !Preferences::GetBool("network.ftp.enabled", true) &&
       Preferences::GetBool("network.protocol-handler.external.ftp", true)) {
     return true;
@@ -1605,7 +1602,7 @@ nsIOService::Observe(nsISupports* subject, const char* topic,
       SetOffline(false);
     }
   } else if (!strcmp(topic, kProfileDoChange)) {
-    if (data && NS_LITERAL_STRING("startup").Equals(data)) {
+    if (data && u"startup"_ns.Equals(data)) {
       
       InitializeNetworkLinkService();
       

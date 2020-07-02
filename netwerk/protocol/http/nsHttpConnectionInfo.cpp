@@ -446,8 +446,8 @@ nsresult nsHttpConnectionInfo::CreateWildCard(nsHttpConnectionInfo** outParam) {
   }
 
   RefPtr<nsHttpConnectionInfo> clone;
-  clone = new nsHttpConnectionInfo(NS_LITERAL_CSTRING("*"), 0, mNPNToken,
-                                   mUsername, mTopWindowOrigin, mProxyInfo,
+  clone = new nsHttpConnectionInfo("*"_ns, 0, mNPNToken, mUsername,
+                                   mTopWindowOrigin, mProxyInfo,
                                    mOriginAttributes, true, mIsHttp3);
   
   clone->SetAnonymous(GetAnonymous());

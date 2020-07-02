@@ -433,11 +433,11 @@ nsresult PushErrorDispatcher::NotifyWorkers() {
       (!mPrincipal || mPrincipal->IsSystemPrincipal())) {
     
     return nsContentUtils::ReportToConsoleNonLocalized(
-        mMessage, mFlags, NS_LITERAL_CSTRING("Push"), nullptr, 
-        nullptr,                                               
-        EmptyString(),                                         
-        0,                                                     
-        0, 
+        mMessage, mFlags, "Push"_ns, nullptr, 
+        nullptr,                              
+        EmptyString(),                        
+        0,                                    
+        0,                                    
         nsContentUtils::eOMIT_LOCATION);
   }
 
@@ -472,11 +472,11 @@ nsresult PushErrorDispatcher::HandleNoChildProcesses() {
     return rv;
   }
   return nsContentUtils::ReportToConsoleNonLocalized(
-      mMessage, mFlags, NS_LITERAL_CSTRING("Push"), nullptr, 
-      scopeURI,                                              
-      EmptyString(),                                         
-      0,                                                     
-      0,                                                     
+      mMessage, mFlags, "Push"_ns, nullptr, 
+      scopeURI,                             
+      EmptyString(),                        
+      0,                                    
+      0,                                    
       nsContentUtils::eOMIT_LOCATION);
 }
 

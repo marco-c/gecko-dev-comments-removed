@@ -796,7 +796,7 @@ void AudioBufferSourceNode::NotifyMainThreadTrackEnded() {
         return NS_OK;
       }
 
-      mNode->DispatchTrustedEvent(NS_LITERAL_STRING("ended"));
+      mNode->DispatchTrustedEvent(u"ended"_ns);
       
       mNode->DestroyMediaTrack();
       return NS_OK;

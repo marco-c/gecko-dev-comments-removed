@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #import <Cocoa/Cocoa.h>
 
@@ -16,7 +16,7 @@
 #include "nsCocoaUtils.h"
 #include "mozilla/Preferences.h"
 
-// This must be included last:
+
 #include "nsObjCExceptions.h"
 
 using namespace mozilla;
@@ -27,9 +27,9 @@ const int kSaveTypeControlTag = 1;
 static bool gCallSecretHiddenFileAPI = false;
 const char kShowHiddenFilesPref[] = "filepicker.showHiddenFiles";
 
-/**
- * This class is an observer of NSPopUpButton selection change.
- */
+
+
+
 @interface NSPopUpButtonObserver : NSObject {
   NSPopUpButton* mPopUpButton;
   NSOpenPanel* mOpenPanel;
@@ -43,11 +43,11 @@ const char kShowHiddenFilesPref[] = "filepicker.showHiddenFiles";
 
 NS_IMPL_ISUPPORTS(nsFilePicker, nsIFilePicker)
 
-// We never want to call the secret show hidden files API unless the pref
-// has been set. Once the pref has been set we always need to call it even
-// if it disappears so that we stop showing hidden files if a user deletes
-// the pref. If the secret API was used once and things worked out it should
-// continue working for subsequent calls so the user is at no more risk.
+
+
+
+
+
 static void SetShowHiddenFileState(NSSavePanel* panel) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -57,7 +57,7 @@ static void SetShowHiddenFileState(NSSavePanel* panel) {
   }
 
   if (gCallSecretHiddenFileAPI) {
-    // invoke a method to get a Cocoa-internal nav view
+    
     SEL navViewSelector = @selector(_navView);
     NSMethodSignature* navViewSignature = [panel methodSignatureForSelector:navViewSelector];
     if (!navViewSignature) return;
@@ -66,11 +66,11 @@ static void SetShowHiddenFileState(NSSavePanel* panel) {
     [navViewInvocation setTarget:panel];
     [navViewInvocation invoke];
 
-    // get the returned nav view
+    
     id navView = nil;
     [navViewInvocation getReturnValue:&navView];
 
-    // invoke the secret show hidden file state method on the nav view
+    
     SEL showHiddenFilesSelector = @selector(setShowsHiddenFiles:);
     NSMethodSignature* showHiddenFilesSignature =
         [navView methodSignatureForSelector:showHiddenFilesSelector];
@@ -97,10 +97,10 @@ NSView* nsFilePicker::GetAccessoryView() {
 
   NSView* accessoryView = [[[NSView alloc] initWithFrame:NSMakeRect(0, 0, 0, 0)] autorelease];
 
-  // Set a label's default value.
+  
   NSString* label = @"Format:";
 
-  // Try to get the localized string.
+  
   nsCOMPtr<nsIStringBundleService> sbs = do_GetService(NS_STRINGBUNDLE_CONTRACTID);
   nsCOMPtr<nsIStringBundle> bundle;
   nsresult rv =
@@ -114,7 +114,7 @@ NSView* nsFilePicker::GetAccessoryView() {
     }
   }
 
-  // set up label text field
+  
   NSTextField* textField = [[[NSTextField alloc] init] autorelease];
   [textField setEditable:NO];
   [textField setSelectable:NO];
@@ -126,7 +126,7 @@ NSView* nsFilePicker::GetAccessoryView() {
   [textField setTag:0];
   [textField sizeToFit];
 
-  // set up popup button
+  
   NSPopUpButton* popupButton = [[[NSPopUpButton alloc] initWithFrame:NSMakeRect(0, 0, 0, 0)
                                                            pullsDown:NO] autorelease];
   uint32_t numMenuItems = mTitles.Length();
@@ -149,13 +149,13 @@ NSView* nsFilePicker::GetAccessoryView() {
   if (mSelectedTypeIndex >= 0 && (uint32_t)mSelectedTypeIndex < numMenuItems)
     [popupButton selectItemAtIndex:mSelectedTypeIndex];
   [popupButton setTag:kSaveTypeControlTag];
-  [popupButton sizeToFit];  // we have to do sizeToFit to get the height calculated for us
-  // This is just a default width that works well, doesn't truncate the vast majority of
-  // things that might end up in the menu.
+  [popupButton sizeToFit];  
+  
+  
   [popupButton setFrameSize:NSMakeSize(180, [popupButton frame].size.height)];
 
-  // position everything based on control sizes with kAccessoryViewPadding pix padding
-  // on each side kAccessoryViewPadding pix horizontal padding between controls
+  
+  
   float greatestHeight = [textField frame].size.height;
   if ([popupButton frame].size.height > greatestHeight)
     greatestHeight = [popupButton frame].size.height;
@@ -180,7 +180,7 @@ NSView* nsFilePicker::GetAccessoryView() {
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
-// Display the file dialog
+
 nsresult nsFilePicker::Show(int16_t* retval) {
   NS_ENSURE_ARG_POINTER(retval);
 
@@ -191,8 +191,8 @@ nsresult nsFilePicker::Show(int16_t* retval) {
   mFiles.Clear();
   nsCOMPtr<nsIFile> theFile;
 
-  // Note that GetLocalFolder shares a lot of code with GetLocalFiles.
-  // Could combine the functions and just pass the mode in.
+  
+  
   switch (mMode) {
     case modeOpen:
       userClicksOK = GetLocalFiles(false, mFiles);
@@ -222,7 +222,7 @@ nsresult nsFilePicker::Show(int16_t* retval) {
 }
 
 static void UpdatePanelFileTypes(NSOpenPanel* aPanel, NSArray* aFilters) {
-  // If we show all file types, also "expose" bundles' contents.
+  
   [aPanel setTreatsFilePackagesAsDirectories:!aFilters];
 
   [aPanel setAllowedFileTypes:aFilters];
@@ -255,7 +255,7 @@ static void UpdatePanelFileTypes(NSOpenPanel* aPanel, NSArray* aFilters) {
 }
 @end
 
-// Use OpenPanel to do a GetFile. Returns |returnOK| if the user presses OK in the dialog.
+
 int16_t nsFilePicker::GetLocalFiles(bool inAllowMultiple, nsCOMArray<nsIFile>& outFiles) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
 
@@ -264,7 +264,7 @@ int16_t nsFilePicker::GetLocalFiles(bool inAllowMultiple, nsCOMArray<nsIFile>& o
 
   SetShowHiddenFileState(thePanel);
 
-  // Set the options for how the get file dialog will appear
+  
   SetDialogTitle(mTitle, thePanel);
   [thePanel setAllowsMultipleSelection:inAllowMultiple];
   [thePanel setCanSelectHiddenExtension:YES];
@@ -272,15 +272,15 @@ int16_t nsFilePicker::GetLocalFiles(bool inAllowMultiple, nsCOMArray<nsIFile>& o
   [thePanel setCanChooseFiles:YES];
   [thePanel setResolvesAliases:YES];
 
-  // Get filters
-  // filters may be null, if we should allow all file types.
+  
+  
   NSArray* filters = GetFilterList();
 
-  // set up default directory
+  
   NSString* theDir = PanelDefaultDirectory();
 
-  // if this is the "Choose application..." dialog, and no other start
-  // dir has been set, then use the Applications folder.
+  
+  
   if (!theDir) {
     if (filters && [filters count] == 1 &&
         [(NSString*)[filters objectAtIndex:0] isEqualToString:@"app"])
@@ -296,7 +296,7 @@ int16_t nsFilePicker::GetLocalFiles(bool inAllowMultiple, nsCOMArray<nsIFile>& o
   int result;
   nsCocoaUtils::PrepareForNativeAppModalDialog();
   if (mFilters.Length() > 1) {
-    // [NSURL initWithString:] (below) throws an exception if URLString is nil.
+    
 
     NSPopUpButtonObserver* observer = [[NSPopUpButtonObserver alloc] init];
 
@@ -318,7 +318,7 @@ int16_t nsFilePicker::GetLocalFiles(bool inAllowMultiple, nsCOMArray<nsIFile>& o
     [[NSNotificationCenter defaultCenter] removeObserver:observer];
     [observer release];
   } else {
-    // If we show all file types, also "expose" bundles' contents.
+    
     if (!filters) {
       [thePanel setTreatsFilePackagesAsDirectories:YES];
     }
@@ -329,11 +329,11 @@ int16_t nsFilePicker::GetLocalFiles(bool inAllowMultiple, nsCOMArray<nsIFile>& o
 
   if (result == NSFileHandlingPanelCancelButton) return retVal;
 
-  // Converts data from a NSArray of NSURL to the returned format.
-  // We should be careful to not call [thePanel URLs] more than once given that
-  // it creates a new array each time.
-  // We are using Fast Enumeration, thus the NSURL array is created once then
-  // iterated.
+  
+  
+  
+  
+  
   for (NSURL* url in [thePanel URLs]) {
     if (!url) {
       continue;
@@ -354,7 +354,7 @@ int16_t nsFilePicker::GetLocalFiles(bool inAllowMultiple, nsCOMArray<nsIFile>& o
   NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(0);
 }
 
-// Use OpenPanel to do a GetFolder. Returns |returnOK| if the user presses OK in the dialog.
+
 int16_t nsFilePicker::GetLocalFolder(nsIFile** outFile) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
   NS_ASSERTION(outFile, "this protected member function expects a null initialized out pointer");
@@ -364,7 +364,7 @@ int16_t nsFilePicker::GetLocalFolder(nsIFile** outFile) {
 
   SetShowHiddenFileState(thePanel);
 
-  // Set the options for how the get file dialog will appear
+  
   SetDialogTitle(mTitle, thePanel);
   [thePanel setAllowsMultipleSelection:NO];
   [thePanel setCanSelectHiddenExtension:YES];
@@ -373,10 +373,10 @@ int16_t nsFilePicker::GetLocalFolder(nsIFile** outFile) {
   [thePanel setResolvesAliases:YES];
   [thePanel setCanCreateDirectories:YES];
 
-  // packages != folders
+  
   [thePanel setTreatsFilePackagesAsDirectories:NO];
 
-  // set up default directory
+  
   NSString* theDir = PanelDefaultDirectory();
   if (theDir) {
     [thePanel setDirectoryURL:[NSURL fileURLWithPath:theDir isDirectory:YES]];
@@ -387,7 +387,7 @@ int16_t nsFilePicker::GetLocalFolder(nsIFile** outFile) {
 
   if (result == NSFileHandlingPanelCancelButton) return retVal;
 
-  // get the path for the folder (we allow just 1, so that's all we get)
+  
   NSURL* theURL = [[thePanel URLs] objectAtIndex:0];
   if (theURL) {
     nsCOMPtr<nsIFile> localFile;
@@ -405,7 +405,7 @@ int16_t nsFilePicker::GetLocalFolder(nsIFile** outFile) {
   NS_OBJC_END_TRY_ABORT_BLOCK_RETURN(0);
 }
 
-// Returns |returnOK| if the user presses OK in the dialog.
+
 int16_t nsFilePicker::PutLocalFile(nsIFile** outFile) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
   NS_ASSERTION(outFile, "this protected member function expects a null initialized out pointer");
@@ -417,58 +417,58 @@ int16_t nsFilePicker::PutLocalFile(nsIFile** outFile) {
 
   SetDialogTitle(mTitle, thePanel);
 
-  // set up accessory view for file format options
+  
   NSView* accessoryView = GetAccessoryView();
   [thePanel setAccessoryView:accessoryView];
 
-  // set up default file name
+  
   NSString* defaultFilename = [NSString stringWithCharacters:(const unichar*)mDefaultFilename.get()
                                                       length:mDefaultFilename.Length()];
 
-  // Set up the allowed type. This prevents the extension from being selected.
+  
   NSString* extension = defaultFilename.pathExtension;
   if (extension.length != 0) {
     thePanel.allowedFileTypes = @[ extension ];
   }
-  // Allow users to change the extension.
+  
   thePanel.allowsOtherFileTypes = YES;
 
-  // If extensions are hidden and we’re saving a file with multiple extensions,
-  // only the last extension will be hidden in the panel (".tar.gz" will become
-  // ".tar"). If the remaining extension is known, the OS will think that we're
-  // trying to add a non-default extension. To avoid the confusion, we ensure
-  // that all extensions are shown in the panel if the remaining extension is
-  // known by the OS.
+  
+  
+  
+  
+  
+  
   NSString* fileName = [[defaultFilename lastPathComponent] stringByDeletingPathExtension];
   NSString* otherExtension = fileName.pathExtension;
   if (otherExtension.length != 0) {
-    // There's another extension here. Get the UTI.
+    
     CFStringRef type = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension,
                                                              (CFStringRef)otherExtension, NULL);
     if (type) {
       if (!CFStringHasPrefix(type, CFSTR("dyn."))) {
-        // We have a UTI, otherwise the type would have a "dyn." prefix. Ensure
-        // extensions are shown in the panel.
+        
+        
         [thePanel setExtensionHidden:NO];
       }
       CFRelease(type);
     }
   }
 
-  // set up default directory
+  
   NSString* theDir = PanelDefaultDirectory();
   if (theDir) {
     [thePanel setDirectoryURL:[NSURL fileURLWithPath:theDir isDirectory:YES]];
   }
 
-  // load the panel
+  
   nsCocoaUtils::PrepareForNativeAppModalDialog();
   [thePanel setNameFieldStringValue:defaultFilename];
   int result = [thePanel runModal];
   nsCocoaUtils::CleanUpAfterNativeAppModalDialog();
   if (result == NSFileHandlingPanelCancelButton) return retVal;
 
-  // get the save type
+  
   NSPopUpButton* popupButton = [accessoryView viewWithTag:kSaveTypeControlTag];
   if (popupButton) {
     mSelectedTypeIndex = [popupButton indexOfSelectedItem];
@@ -482,8 +482,8 @@ int16_t nsFilePicker::PutLocalFile(nsIFile** outFile) {
     if (macLocalFile && NS_SUCCEEDED(macLocalFile->InitWithCFURL((CFURLRef)fileURL))) {
       *outFile = localFile;
       NS_ADDREF(*outFile);
-      // We tell if we are replacing or not by just looking to see if the file exists.
-      // The user could not have hit OK and not meant to replace the file.
+      
+      
       if ([[NSFileManager defaultManager] fileExistsAtPath:[fileURL path]])
         retVal = returnReplace;
       else
@@ -513,12 +513,12 @@ NSArray* nsFilePicker::GetFilterList() {
     return nil;
   }
 
-  if (filterWide.Equals(NS_LITERAL_STRING("*"))) {
+  if (filterWide.Equals(u"*"_ns)) {
     return nil;
   }
 
-  // The extensions in filterWide are in the format "*.ext" but are expected
-  // in the format "ext" by NSOpenPanel. So we need to filter some characters.
+  
+  
   NSMutableString* filterString = [[[NSMutableString alloc]
       initWithString:[NSString
                          stringWithCharacters:reinterpret_cast<const unichar*>(filterWide.get())
@@ -536,8 +536,8 @@ NSArray* nsFilePicker::GetFilterList() {
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
-// Sets the dialog title to whatever it should be.  If it fails, eh,
-// the OS will provide a sensible default.
+
+
 void nsFilePicker::SetDialogTitle(const nsString& inTitle, id aPanel) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -552,8 +552,8 @@ void nsFilePicker::SetDialogTitle(const nsString& inTitle, id aPanel) {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-// Converts path from an nsIFile into a NSString path
-// If it fails, returns an empty string.
+
+
 NSString* nsFilePicker::PanelDefaultDirectory() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
@@ -574,7 +574,7 @@ NS_IMETHODIMP nsFilePicker::GetFile(nsIFile** aFile) {
   NS_ENSURE_ARG_POINTER(aFile);
   *aFile = nullptr;
 
-  // just return the first file
+  
   if (mFiles.Count() > 0) {
     *aFile = mFiles.ObjectAt(0);
     NS_IF_ADDREF(*aFile);
@@ -603,7 +603,7 @@ NS_IMETHODIMP nsFilePicker::SetDefaultString(const nsAString& aString) {
 
 NS_IMETHODIMP nsFilePicker::GetDefaultString(nsAString& aString) { return NS_ERROR_FAILURE; }
 
-// The default extension to use for files
+
 NS_IMETHODIMP nsFilePicker::GetDefaultExtension(nsAString& aExtension) {
   aExtension.Truncate();
   return NS_OK;
@@ -611,12 +611,12 @@ NS_IMETHODIMP nsFilePicker::GetDefaultExtension(nsAString& aExtension) {
 
 NS_IMETHODIMP nsFilePicker::SetDefaultExtension(const nsAString& aExtension) { return NS_OK; }
 
-// Append an entry to the filters array
+
 NS_IMETHODIMP
 nsFilePicker::AppendFilter(const nsAString& aTitle, const nsAString& aFilter) {
-  // "..apps" has to be translated with native executable extensions.
+  
   if (aFilter.EqualsLiteral("..apps")) {
-    mFilters.AppendElement(NS_LITERAL_STRING("*.app"));
+    mFilters.AppendElement(u"*.app"_ns);
   } else {
     mFilters.AppendElement(aFilter);
   }
@@ -625,13 +625,13 @@ nsFilePicker::AppendFilter(const nsAString& aTitle, const nsAString& aFilter) {
   return NS_OK;
 }
 
-// Get the filter index - do we still need this?
+
 NS_IMETHODIMP nsFilePicker::GetFilterIndex(int32_t* aFilterIndex) {
   *aFilterIndex = mSelectedTypeIndex;
   return NS_OK;
 }
 
-// Set the filter index - do we still need this?
+
 NS_IMETHODIMP nsFilePicker::SetFilterIndex(int32_t aFilterIndex) {
   mSelectedTypeIndex = aFilterIndex;
   return NS_OK;

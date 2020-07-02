@@ -495,7 +495,7 @@ TEST(TestFile, Unprefixed)
   gTestWithPrefix_Win = false;
 #endif
 
-  SetupAndTestFunctions(NS_LITERAL_STRING("mozfiletests"),
+  SetupAndTestFunctions(u"mozfiletests"_ns,
                          true,
                          true);
 
@@ -508,7 +508,7 @@ TEST(TestFile, Unprefixed)
 
 TEST(TestFile, PrefixedOnWin)
 {
-  SetupAndTestFunctions(NS_LITERAL_STRING("mozfiletests"),
+  SetupAndTestFunctions(u"mozfiletests"_ns,
                          true,
                          true);
 }
@@ -536,7 +536,7 @@ TEST(TestFile, PrefixedOnWin_ComponentEndsWithPeriod)
 {
   
   
-  SetupAndTestFunctions(NS_LITERAL_STRING("mozfiletests."),
+  SetupAndTestFunctions(u"mozfiletests."_ns,
                          true,
                          false);
 }

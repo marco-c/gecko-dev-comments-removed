@@ -498,7 +498,7 @@ nsresult nsIconChannel::GetHIconFromFile(bool aNonBlocking, HICON* hIcon) {
     
     
     
-    filePath = NS_LITERAL_STRING(".") + NS_ConvertUTF8toUTF16(defFileExt);
+    filePath = u"."_ns + NS_ConvertUTF8toUTF16(defFileExt);
   }
 
   if (aNonBlocking) {

@@ -661,7 +661,7 @@ nsCSPContext::GetAllowsNavigateTo(nsIURI* aURI, bool aIsFormSubmission,
           blockedURIForReporting,                     
           nsCSPContext::BlockedContentSource::eSelf,  
           nullptr,                                    
-          NS_LITERAL_STRING("navigate-to"),           
+          u"navigate-to"_ns,                          
           i,                                          
           EmptyString(),                              
           NS_ConvertUTF8toUTF16(spec),                
@@ -775,13 +775,11 @@ nsCSPContext::LogViolationDetails(
     }
 
     switch (aViolationType) {
-      CASE_CHECK_AND_REPORT(EVAL, SCRIPT, NS_LITERAL_STRING(""),
-                            CSP_UNSAFE_EVAL, EVAL_VIOLATION_OBSERVER_TOPIC);
-      CASE_CHECK_AND_REPORT(INLINE_STYLE, STYLESHEET, NS_LITERAL_STRING(""),
-                            CSP_UNSAFE_INLINE,
+      CASE_CHECK_AND_REPORT(EVAL, SCRIPT, u""_ns, CSP_UNSAFE_EVAL,
+                            EVAL_VIOLATION_OBSERVER_TOPIC);
+      CASE_CHECK_AND_REPORT(INLINE_STYLE, STYLESHEET, u""_ns, CSP_UNSAFE_INLINE,
                             INLINE_STYLE_VIOLATION_OBSERVER_TOPIC);
-      CASE_CHECK_AND_REPORT(INLINE_SCRIPT, SCRIPT, NS_LITERAL_STRING(""),
-                            CSP_UNSAFE_INLINE,
+      CASE_CHECK_AND_REPORT(INLINE_SCRIPT, SCRIPT, u""_ns, CSP_UNSAFE_INLINE,
                             INLINE_SCRIPT_VIOLATION_OBSERVER_TOPIC);
       CASE_CHECK_AND_REPORT(NONCE_SCRIPT, SCRIPT, aNonce, CSP_UNSAFE_INLINE,
                             SCRIPT_NONCE_VIOLATION_OBSERVER_TOPIC);
@@ -1253,14 +1251,13 @@ nsresult nsCSPContext::SendReports(
       continue;
     }
 
-    rv = uploadChannel->SetUploadStream(
-        sis, NS_LITERAL_CSTRING("application/csp-report"), -1);
+    rv = uploadChannel->SetUploadStream(sis, "application/csp-report"_ns, -1);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
     nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(reportChannel));
     if (httpChannel) {
-      rv = httpChannel->SetRequestMethod(NS_LITERAL_CSTRING("POST"));
+      rv = httpChannel->SetRequestMethod("POST"_ns);
       MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
 
@@ -1334,8 +1331,7 @@ nsresult nsCSPContext::FireViolationEvent(
 
   RefPtr<mozilla::dom::Event> event =
       mozilla::dom::SecurityPolicyViolationEvent::Constructor(
-          eventTarget, NS_LITERAL_STRING("securitypolicyviolation"),
-          aViolationEventInit);
+          eventTarget, u"securitypolicyviolation"_ns, aViolationEventInit);
   event->SetTrusted(true);
 
   ErrorResult rv;
@@ -1641,7 +1637,7 @@ nsCSPContext::Permits(Element* aTriggeringElement,
     
     nsAutoCString uriSpec;
     aURI->GetSpec(uriSpec);
-    if (StringBeginsWith(uriSpec, NS_LITERAL_CSTRING("resource://pdf.js/"))) {
+    if (StringBeginsWith(uriSpec, "resource://pdf.js/"_ns)) {
       *outPermits = true;
       return NS_OK;
     }

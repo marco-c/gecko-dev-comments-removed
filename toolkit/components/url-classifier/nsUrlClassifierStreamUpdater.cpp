@@ -162,9 +162,8 @@ nsresult nsUrlClassifierStreamUpdater::FetchUpdate(
     nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = httpChannel->SetRequestHeader(
-        NS_LITERAL_CSTRING("X-HTTP-Method-Override"),
-        NS_LITERAL_CSTRING("POST"), false);
+    rv = httpChannel->SetRequestHeader("X-HTTP-Method-Override"_ns, "POST"_ns,
+                                       false);
     NS_ENSURE_SUCCESS(rv, rv);
   } else if (!aRequestPayload.IsEmpty()) {
     rv = AddRequestBody(aRequestPayload);
@@ -175,16 +174,14 @@ nsresult nsUrlClassifierStreamUpdater::FetchUpdate(
   
   
   if (aUpdateUrl->SchemeIs("file") || aUpdateUrl->SchemeIs("data")) {
-    mChannel->SetContentType(
-        NS_LITERAL_CSTRING("application/vnd.google.safebrowsing-update"));
+    mChannel->SetContentType("application/vnd.google.safebrowsing-update"_ns);
   } else {
     
 
     
     nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
-    rv = httpChannel->SetRequestHeader(NS_LITERAL_CSTRING("Connection"),
-                                       NS_LITERAL_CSTRING("close"), false);
+    rv = httpChannel->SetRequestHeader("Connection"_ns, "close"_ns, false);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -355,17 +352,17 @@ nsUrlClassifierStreamUpdater::UpdateUrlRequested(const nsACString& aUrl,
   }
 
   
-  if (StringBeginsWith(aUrl, NS_LITERAL_CSTRING("data:")) ||
-      StringBeginsWith(aUrl, NS_LITERAL_CSTRING("file:"))) {
+  if (StringBeginsWith(aUrl, "data:"_ns) ||
+      StringBeginsWith(aUrl, "file:"_ns)) {
     update->mUrl = aUrl;
   } else {
     
     
     
-    if (!StringBeginsWith(aUrl, NS_LITERAL_CSTRING("localhost"))) {
-      update->mUrl = NS_LITERAL_CSTRING("https://") + aUrl;
+    if (!StringBeginsWith(aUrl, "localhost"_ns)) {
+      update->mUrl = "https://"_ns + aUrl;
     } else {
-      update->mUrl = NS_LITERAL_CSTRING("http://") + aUrl;
+      update->mUrl = "http://"_ns + aUrl;
     }
   }
   update->mTable = aTable;
@@ -543,14 +540,13 @@ nsresult nsUrlClassifierStreamUpdater::AddRequestBody(
   nsCOMPtr<nsIUploadChannel> uploadChannel = do_QueryInterface(mChannel, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = uploadChannel->SetUploadStream(strStream,
-                                      NS_LITERAL_CSTRING("text/plain"), -1);
+  rv = uploadChannel->SetUploadStream(strStream, "text/plain"_ns, -1);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = httpChannel->SetRequestMethod(NS_LITERAL_CSTRING("POST"));
+  rv = httpChannel->SetRequestMethod("POST"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;

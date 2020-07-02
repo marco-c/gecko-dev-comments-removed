@@ -538,7 +538,7 @@ nsresult nsPrintSettingsService::ReadPrefs(nsIPrintSettings* aPS,
 
   if (aFlags & nsIPrintSettings::kInitSaveToFileName) {
     if (GETSTRPREF(kPrintToFileName, str)) {
-      if (StringEndsWith(str, NS_LITERAL_STRING(".ps"))) {
+      if (StringEndsWith(str, u".ps"_ns)) {
         
         
         

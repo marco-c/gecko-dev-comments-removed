@@ -103,8 +103,7 @@ nsresult ContentBlockingAllowList::Check(
   
   
   std::pair<const nsLiteralCString, bool> types[] = {
-      {NS_LITERAL_CSTRING("trackingprotection"), false},
-      {NS_LITERAL_CSTRING("trackingprotection-pb"), true}};
+      {"trackingprotection"_ns, false}, {"trackingprotection-pb"_ns, true}};
 
   for (const auto& type : types) {
     if (aIsPrivateBrowsing != type.second) {
@@ -155,7 +154,7 @@ nsresult ContentBlockingAllowList::Check(
   
   
   
-  nsAutoCString escaped(NS_LITERAL_CSTRING("https://"));
+  nsAutoCString escaped("https://"_ns);
   nsAutoCString temp;
   nsresult rv = aDocumentPrincipal->GetHostPort(temp);
   
@@ -200,7 +199,7 @@ nsresult ContentBlockingAllowList::Check(
   
   
   
-  nsAutoCString escaped(NS_LITERAL_CSTRING("https://"));
+  nsAutoCString escaped("https://"_ns);
   nsAutoCString temp;
   nsresult rv = aURIBeingLoaded->GetHostPort(temp);
   

@@ -11,7 +11,7 @@ class nsPrintSettingsAndroid : public nsPrintSettings {
   nsPrintSettingsAndroid() {
     
     SetOutputFormat(nsIPrintSettings::kOutputFormatPDF);
-    SetPrinterName(NS_LITERAL_STRING("PDF printer"));
+    SetPrinterName(u"PDF printer"_ns);
   }
 };
 

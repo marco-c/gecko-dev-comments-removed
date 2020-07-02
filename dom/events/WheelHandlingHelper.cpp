@@ -302,8 +302,7 @@ void WheelTransaction::OnFailToScrollTarget() {
     
     nsContentUtils::DispatchEventOnlyToChrome(
         sTargetFrame->GetContent()->OwnerDoc(), sTargetFrame->GetContent(),
-        NS_LITERAL_STRING("MozMouseScrollFailed"), CanBubble::eYes,
-        Cancelable::eYes);
+        u"MozMouseScrollFailed"_ns, CanBubble::eYes, Cancelable::eYes);
   }
   
   
@@ -329,7 +328,7 @@ void WheelTransaction::OnTimeout(nsITimer* aTimer, void* aClosure) {
     
     nsContentUtils::DispatchEventOnlyToChrome(
         frame->GetContent()->OwnerDoc(), frame->GetContent(),
-        NS_LITERAL_STRING("MozMouseScrollTransactionTimeout"), CanBubble::eYes,
+        u"MozMouseScrollTransactionTimeout"_ns, CanBubble::eYes,
         Cancelable::eYes);
   }
 }

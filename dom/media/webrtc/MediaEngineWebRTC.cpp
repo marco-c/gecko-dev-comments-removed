@@ -166,7 +166,7 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
                                                scaryKind || scarySource);
     aDevices->AppendElement(MakeRefPtr<MediaDevice>(
         vSource, vSource->GetName(), NS_ConvertUTF8toUTF16(vSource->GetUUID()),
-        vSource->GetGroupId(), NS_LITERAL_STRING("")));
+        vSource->GetGroupId(), u""_ns));
   }
 
   if (mHasTabVideoSource || aCapEngine == camera::BrowserEngine) {
@@ -174,7 +174,7 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
     aDevices->AppendElement(MakeRefPtr<MediaDevice>(
         tabVideoSource, tabVideoSource->GetName(),
         NS_ConvertUTF8toUTF16(tabVideoSource->GetUUID()),
-        tabVideoSource->GetGroupId(), NS_LITERAL_STRING("")));
+        tabVideoSource->GetGroupId(), u""_ns));
   }
 }
 
@@ -205,7 +205,7 @@ void MediaEngineWebRTC::EnumerateMicrophoneDevices(
           devices[i]->MaxChannels(), mDelayAgnostic, mExtendedFilter);
       RefPtr<MediaDevice> device = MakeRefPtr<MediaDevice>(
           source, source->GetName(), NS_ConvertUTF8toUTF16(source->GetUUID()),
-          source->GetGroupId(), NS_LITERAL_STRING(""));
+          source->GetGroupId(), u""_ns);
       if (devices[i]->Preferred()) {
 #ifdef DEBUG
         if (!foundPreferredDevice) {
@@ -246,7 +246,7 @@ void MediaEngineWebRTC::EnumerateSpeakerDevices(
       
       
       
-      uuid.Append(NS_LITERAL_STRING("_Speaker"));
+      uuid.Append(u"_Speaker"_ns);
       nsString groupId(device->GroupID());
       if (device->Preferred()) {
         
@@ -298,7 +298,7 @@ void MediaEngineWebRTC::EnumerateDevices(
     aDevices->AppendElement(MakeRefPtr<MediaDevice>(
         audioCaptureSource, audioCaptureSource->GetName(),
         NS_ConvertUTF8toUTF16(audioCaptureSource->GetUUID()),
-        audioCaptureSource->GetGroupId(), NS_LITERAL_STRING("")));
+        audioCaptureSource->GetGroupId(), u""_ns));
   } else if (aMediaSource == dom::MediaSourceEnum::Microphone) {
     EnumerateMicrophoneDevices(aWindowId, aDevices);
   }

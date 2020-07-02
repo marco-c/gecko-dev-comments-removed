@@ -490,8 +490,7 @@ SMILValue SMILCSSValueType::ValueFromAnimationValue(
   
   
   
-  static const nsLiteralString kPlaceholderText =
-      NS_LITERAL_STRING("[SVG animation of CSS]");
+  static const nsLiteralString kPlaceholderText = u"[SVG animation of CSS]"_ns;
   if (doc && !nsStyleUtil::CSPAllowsInlineStyle(nullptr, doc, nullptr, 0, 0,
                                                 kPlaceholderText, nullptr)) {
     return result;

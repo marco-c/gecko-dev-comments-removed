@@ -54,7 +54,7 @@ void GetAttribute(nsIAppWindow* inWindow, const nsAString& inAttribute,
 
 
 void GetWindowType(nsIAppWindow* aWindow, nsString& outType) {
-  GetAttribute(aWindow, NS_LITERAL_STRING("windowtype"), outType);
+  GetAttribute(aWindow, u"windowtype"_ns, outType);
 }
 
 

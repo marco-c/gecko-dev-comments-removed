@@ -91,7 +91,7 @@ static void CacheDirAndAutoClear(nsIProperties* aDirSvc, const char* aDirKey,
   MOZ_ALWAYS_SUCCEEDS(dirToCache->GetPath(**cacheVar));
 
   
-  if (Substring(**cacheVar, 0, 2).Equals(NS_LITERAL_STRING("\\\\"))) {
+  if (Substring(**cacheVar, 0, 2).Equals(u"\\\\"_ns)) {
     (*cacheVar)->InsertLiteral(u"??\\UNC", 1);
   }
 }
@@ -588,7 +588,7 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
   
   
   AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_ANY,
-                   sContentTempDir, NS_LITERAL_STRING("\\*"));
+                   sContentTempDir, u"\\*"_ns);
 
   
   
@@ -602,29 +602,28 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
   } else {
     
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_READONLY,
-                     sLocalAppDataDir,
-                     NS_LITERAL_STRING("\\Microsoft\\Windows\\Fonts\\*"));
+                     sLocalAppDataDir, u"\\Microsoft\\Windows\\Fonts\\*"_ns);
 
     
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_READONLY,
-                     sBinDir, NS_LITERAL_STRING("\\*"));
+                     sBinDir, u"\\*"_ns);
 
     
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_READONLY,
-                     sProfileDir, NS_LITERAL_STRING("\\chrome\\*"));
+                     sProfileDir, u"\\chrome\\*"_ns);
 
     
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_READONLY,
-                     sProfileDir, NS_LITERAL_STRING("\\extensions\\*"));
+                     sProfileDir, u"\\extensions\\*"_ns);
 
     
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_READONLY,
-                     sUserExtensionsDevDir, NS_LITERAL_STRING("\\*"));
+                     sUserExtensionsDevDir, u"\\*"_ns);
 
 #ifdef ENABLE_SYSTEM_EXTENSION_DIRS
     
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_READONLY,
-                     sUserExtensionsDir, NS_LITERAL_STRING("\\*"));
+                     sUserExtensionsDir, u"\\*"_ns);
 #endif
   }
 
@@ -1125,40 +1124,34 @@ bool SandboxBroker::SetSecurityLevelForPluginProcess(int32_t aSandboxLevel) {
 
   
   AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_ANY,
-                   sPluginTempDir, NS_LITERAL_STRING("\\*"));
+                   sPluginTempDir, u"\\*"_ns);
 
   if (aSandboxLevel >= 2) {
     
     
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_ANY,
-                     sRoamingAppDataDir,
-                     NS_LITERAL_STRING("\\Macromedia\\Flash Player\\*"));
+                     sRoamingAppDataDir, u"\\Macromedia\\Flash Player\\*"_ns);
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_ANY,
-                     sLocalAppDataDir,
-                     NS_LITERAL_STRING("\\Macromedia\\Flash Player\\*"));
+                     sLocalAppDataDir, u"\\Macromedia\\Flash Player\\*"_ns);
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_ANY,
-                     sRoamingAppDataDir,
-                     NS_LITERAL_STRING("\\Adobe\\Flash Player\\*"));
+                     sRoamingAppDataDir, u"\\Adobe\\Flash Player\\*"_ns);
 
     
     
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_DIR_ANY,
-                     sRoamingAppDataDir, NS_LITERAL_STRING("\\Macromedia"));
+                     sRoamingAppDataDir, u"\\Macromedia"_ns);
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_QUERY,
-                     sRoamingAppDataDir, NS_LITERAL_STRING("\\Macromedia\\"));
+                     sRoamingAppDataDir, u"\\Macromedia\\"_ns);
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_DIR_ANY,
-                     sRoamingAppDataDir,
-                     NS_LITERAL_STRING("\\Macromedia\\Flash Player"));
+                     sRoamingAppDataDir, u"\\Macromedia\\Flash Player"_ns);
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_DIR_ANY,
-                     sLocalAppDataDir, NS_LITERAL_STRING("\\Macromedia"));
+                     sLocalAppDataDir, u"\\Macromedia"_ns);
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_DIR_ANY,
-                     sLocalAppDataDir,
-                     NS_LITERAL_STRING("\\Macromedia\\Flash Player"));
+                     sLocalAppDataDir, u"\\Macromedia\\Flash Player"_ns);
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_DIR_ANY,
-                     sRoamingAppDataDir, NS_LITERAL_STRING("\\Adobe"));
+                     sRoamingAppDataDir, u"\\Adobe"_ns);
     AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_DIR_ANY,
-                     sRoamingAppDataDir,
-                     NS_LITERAL_STRING("\\Adobe\\Flash Player"));
+                     sRoamingAppDataDir, u"\\Adobe\\Flash Player"_ns);
   }
 
   

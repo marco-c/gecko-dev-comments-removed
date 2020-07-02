@@ -38,16 +38,16 @@ static Maybe<VideoFacingModeEnum> GetFacingMode(const nsString& aDeviceName) {
   
   
 
-  if (aDeviceName.Find(NS_LITERAL_STRING("Facing back")) != kNotFound) {
+  if (aDeviceName.Find(u"Facing back"_ns) != kNotFound) {
     return Some(VideoFacingModeEnum::Environment);
   }
-  if (aDeviceName.Find(NS_LITERAL_STRING("Facing front")) != kNotFound) {
+  if (aDeviceName.Find(u"Facing front"_ns) != kNotFound) {
     return Some(VideoFacingModeEnum::User);
   }
 #endif  
 #ifdef XP_MACOSX
   
-  if (aDeviceName.Find(NS_LITERAL_STRING("Face")) != -1) {
+  if (aDeviceName.Find(u"Face"_ns) != -1) {
     return Some(VideoFacingModeEnum::User);
   }
 #endif
@@ -55,10 +55,10 @@ static Maybe<VideoFacingModeEnum> GetFacingMode(const nsString& aDeviceName) {
   
   
 
-  if (aDeviceName.Find(NS_LITERAL_STRING("Front")) != kNotFound) {
+  if (aDeviceName.Find(u"Front"_ns) != kNotFound) {
     return Some(VideoFacingModeEnum::User);
   }
-  if (aDeviceName.Find(NS_LITERAL_STRING("Rear")) != kNotFound) {
+  if (aDeviceName.Find(u"Rear"_ns) != kNotFound) {
     return Some(VideoFacingModeEnum::Environment);
   }
 #endif  

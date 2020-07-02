@@ -1662,7 +1662,7 @@ nsresult nsAutoCompleteController::CompleteValue(nsString& aValue)
       
       
       
-      SetValueOfInputTo(mSearchString + NS_LITERAL_STRING(" >> ") + aValue,
+      SetValueOfInputTo(mSearchString + u" >> "_ns + aValue,
                         nsIAutoCompleteInput::TEXTVALUE_REASON_COMPLETEDEFAULT);
 
       endSelect = mSearchString.Length() + 4 + aValue.Length();

@@ -551,13 +551,13 @@ class nsNavHistory final : public nsSupportsWeakReference,
 
 
 inline bool IsQueryURI(const nsCString& uri) {
-  return StringBeginsWith(uri, NS_LITERAL_CSTRING(PLACES_URI_PREFIX));
+  return StringBeginsWith(uri, nsLiteralCString(PLACES_URI_PREFIX));
 }
 
 
 inline const nsDependentCSubstring QueryURIToQuery(const nsCString& uri) {
   NS_ASSERTION(IsQueryURI(uri), "should only be called for query URIs");
-  return Substring(uri, NS_LITERAL_CSTRING(PLACES_URI_PREFIX).Length());
+  return Substring(uri, nsLiteralCString(PLACES_URI_PREFIX).Length());
 }
 
 #endif  

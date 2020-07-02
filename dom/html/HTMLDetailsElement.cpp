@@ -49,8 +49,8 @@ nsresult HTMLDetailsElement::BeforeSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       }
       
       
-      mToggleEventDispatcher = new AsyncEventDispatcher(
-          this, NS_LITERAL_STRING("toggle"), CanBubble::eNo);
+      mToggleEventDispatcher =
+          new AsyncEventDispatcher(this, u"toggle"_ns, CanBubble::eNo);
       mToggleEventDispatcher->PostDOMEvent();
     }
   }

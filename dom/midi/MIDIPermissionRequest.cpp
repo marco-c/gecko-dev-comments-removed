@@ -29,8 +29,8 @@ MIDIPermissionRequest::MIDIPermissionRequest(nsPIDOMWindowInner* aWindow,
                                              const MIDIOptions& aOptions)
     : ContentPermissionRequestBase(
           aWindow->GetDoc()->NodePrincipal(), aWindow,
-          NS_LITERAL_CSTRING(""),  
-          NS_LITERAL_CSTRING("midi")),
+          ""_ns,  
+          "midi"_ns),
       mPromise(aPromise),
       mNeedsSysex(aOptions.mSysex) {
   MOZ_ASSERT(aWindow);
@@ -45,7 +45,7 @@ MIDIPermissionRequest::GetTypes(nsIArray** aTypes) {
   NS_ENSURE_ARG_POINTER(aTypes);
   nsTArray<nsString> options;
   if (mNeedsSysex) {
-    options.AppendElement(NS_LITERAL_STRING("sysex"));
+    options.AppendElement(u"sysex"_ns);
   }
   return nsContentPermissionUtils::CreatePermissionArray(mType, options,
                                                          aTypes);
@@ -80,8 +80,7 @@ MIDIPermissionRequest::Run() {
   }
 
   
-  if (nsContentUtils::IsExactSitePermAllow(mPrincipal,
-                                           NS_LITERAL_CSTRING("midi-sysex"))) {
+  if (nsContentUtils::IsExactSitePermAllow(mPrincipal, "midi-sysex"_ns)) {
     Allow(JS::UndefinedHandleValue);
     return NS_OK;
   }

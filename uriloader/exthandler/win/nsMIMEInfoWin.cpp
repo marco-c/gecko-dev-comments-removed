@@ -220,12 +220,10 @@ nsMIMEInfoWin::GetEnumerator(nsISimpleEnumerator** _retval) {
   nsCOMArray<nsIVariant> properties;
 
   nsCOMPtr<nsIVariant> variant;
-  GetProperty(NS_LITERAL_STRING("defaultApplicationIconURL"),
-              getter_AddRefs(variant));
+  GetProperty(u"defaultApplicationIconURL"_ns, getter_AddRefs(variant));
   if (variant) properties.AppendObject(variant);
 
-  GetProperty(NS_LITERAL_STRING("customApplicationIconURL"),
-              getter_AddRefs(variant));
+  GetProperty(u"customApplicationIconURL"_ns, getter_AddRefs(variant));
   if (variant) properties.AppendObject(variant);
 
   return NS_NewArrayEnumerator(_retval, properties, NS_GET_IID(nsIVariant));
@@ -291,8 +289,8 @@ nsresult nsMIMEInfoWin::LoadUriInternal(nsIURI* aURL) {
         do_GetService(NS_ITEXTTOSUBURI_CONTRACTID, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    if (NS_FAILED(textToSubURI->UnEscapeNonAsciiURI(NS_LITERAL_CSTRING("UTF-8"),
-                                                    urlSpec, utf16Spec))) {
+    if (NS_FAILED(textToSubURI->UnEscapeNonAsciiURI("UTF-8"_ns, urlSpec,
+                                                    utf16Spec))) {
       CopyASCIItoUTF16(urlSpec, utf16Spec);
     }
 
@@ -382,14 +380,12 @@ bool nsMIMEInfoWin::GetAppsVerbCommandHandler(const nsAString& appExeName,
 
   
   uint32_t value;
-  if (NS_SUCCEEDED(
-          appKey->ReadIntValue(NS_LITERAL_STRING("NoOpenWith"), &value)) &&
+  if (NS_SUCCEEDED(appKey->ReadIntValue(u"NoOpenWith"_ns, &value)) &&
       value == 1)
     return false;
 
   nsAutoString dummy;
-  if (NS_SUCCEEDED(
-          appKey->ReadStringValue(NS_LITERAL_STRING("NoOpenWith"), dummy)))
+  if (NS_SUCCEEDED(appKey->ReadStringValue(u"NoOpenWith"_ns, dummy)))
     return false;
 
   appKey->Close();
@@ -445,12 +441,11 @@ bool nsMIMEInfoWin::GetDllLaunchInfo(nsIFile* aDll, nsIFile* aFile,
 
   
   uint32_t value;
-  rv = appKey->ReadIntValue(NS_LITERAL_STRING("NoOpenWith"), &value);
+  rv = appKey->ReadIntValue(u"NoOpenWith"_ns, &value);
   if (NS_SUCCEEDED(rv) && value == 1) return false;
 
   nsAutoString dummy;
-  if (NS_SUCCEEDED(
-          appKey->ReadStringValue(NS_LITERAL_STRING("NoOpenWith"), dummy)))
+  if (NS_SUCCEEDED(appKey->ReadStringValue(u"NoOpenWith"_ns, dummy)))
     return false;
 
   appKey->Close();
@@ -664,7 +659,7 @@ nsMIMEInfoWin::GetPossibleLocalHandlers(nsIArray** _retval) {
       nsAutoString appProgId;
       if (NS_SUCCEEDED(regKey->ReadStringValue(EmptyString(), appProgId))) {
         
-        if (appProgId != NS_LITERAL_STRING("XPSViewer.Document")) {
+        if (appProgId != u"XPSViewer.Document"_ns) {
           nsAutoString appFilesystemCommand;
           if (GetProgIDVerbCommandHandler(appProgId, appFilesystemCommand,
                                           false) &&
@@ -735,8 +730,8 @@ nsMIMEInfoWin::GetPossibleLocalHandlers(nsIArray** _retval) {
 
     
     
-    workingRegistryPath = NS_LITERAL_STRING(
-        "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\");
+    workingRegistryPath = nsLiteralString(
+        u"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\");
     workingRegistryPath += fileExtToUse;
     workingRegistryPath.AppendLiteral("\\OpenWithList");
 
@@ -768,8 +763,8 @@ nsMIMEInfoWin::GetPossibleLocalHandlers(nsIArray** _retval) {
 
     
     
-    workingRegistryPath = NS_LITERAL_STRING(
-        "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\");
+    workingRegistryPath = nsLiteralString(
+        u"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\");
     workingRegistryPath += fileExtToUse;
     workingRegistryPath.AppendLiteral("\\OpenWithProgids");
 
@@ -803,11 +798,9 @@ nsMIMEInfoWin::GetPossibleLocalHandlers(nsIArray** _retval) {
                  nsIWindowsRegKey::ACCESS_QUERY_VALUE);
     if (NS_SUCCEEDED(rv)) {
       nsAutoString perceivedType;
-      rv = regKey->ReadStringValue(NS_LITERAL_STRING("PerceivedType"),
-                                   perceivedType);
+      rv = regKey->ReadStringValue(u"PerceivedType"_ns, perceivedType);
       if (NS_SUCCEEDED(rv)) {
-        nsAutoString openWithListPath(
-            NS_LITERAL_STRING("SystemFileAssociations\\"));
+        nsAutoString openWithListPath(u"SystemFileAssociations\\"_ns);
         openWithListPath.Append(perceivedType);  
         openWithListPath.AppendLiteral("\\OpenWithList");
 
@@ -839,7 +832,7 @@ nsMIMEInfoWin::GetPossibleLocalHandlers(nsIArray** _retval) {
   
   
 
-  workingRegistryPath = NS_LITERAL_STRING("*\\OpenWithList");
+  workingRegistryPath = u"*\\OpenWithList"_ns;
 
   rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT,
                     workingRegistryPath, nsIWindowsRegKey::ACCESS_QUERY_VALUE);
@@ -862,7 +855,7 @@ nsMIMEInfoWin::GetPossibleLocalHandlers(nsIArray** _retval) {
   }
 
   
-  workingRegistryPath = NS_LITERAL_STRING("Applications");
+  workingRegistryPath = u"Applications"_ns;
 
   rv =
       regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT, workingRegistryPath,

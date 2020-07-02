@@ -597,10 +597,10 @@ nsFormFillController::OnTextEntered(Event* aEvent, bool itemWasSelected,
 
   IgnoredErrorResult ignored;
   RefPtr<Event> event = mFocusedInput->OwnerDoc()->CreateEvent(
-      NS_LITERAL_STRING("Events"), CallerType::System, ignored);
+      u"Events"_ns, CallerType::System, ignored);
   NS_ENSURE_STATE(event);
 
-  event->InitEvent(NS_LITERAL_STRING("DOMAutoComplete"), true, true);
+  event->InitEvent(u"DOMAutoComplete"_ns, true, true);
 
   
   

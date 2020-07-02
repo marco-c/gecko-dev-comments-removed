@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #import <Cocoa/Cocoa.h>
 #import <SystemConfiguration/SystemConfiguration.h>
@@ -23,19 +23,19 @@ class nsOSXSystemProxySettings final : public nsISystemProxySettings {
   nsOSXSystemProxySettings();
   nsresult Init();
 
-  // called by OSX when the proxy settings have changed
+  
   void ProxyHasChanged();
 
-  // is there a PAC url specified in the system configuration
+  
   bool IsAutoconfigEnabled() const;
-  // retrieve the pac url
+  
   nsresult GetAutoconfigURL(nsAutoCString& aResult) const;
 
-  // Find the SystemConfiguration proxy & port for a given URI
+  
   nsresult FindSCProxyPort(const nsACString& aScheme, nsACString& aResultHost, int32_t& aResultPort,
                            bool& aResultSocksProxy);
 
-  // is host:port on the proxy exception list?
+  
   bool IsInExceptionList(const nsACString& aHost) const;
 
  private:
@@ -45,7 +45,7 @@ class nsOSXSystemProxySettings final : public nsISystemProxySettings {
   SCDynamicStoreRef mSystemDynamicStore;
   NSDictionary* mProxyDict;
 
-  // Mapping of URI schemes to SystemConfiguration keys
+  
   struct SchemeMapping {
     const char* mScheme;
     CFStringRef mEnabled;
@@ -64,7 +64,7 @@ nsOSXSystemProxySettings::GetMainThreadOnly(bool* aMainThreadOnly) {
   return NS_OK;
 }
 
-// Mapping of URI schemes to SystemConfiguration keys
+
 const nsOSXSystemProxySettings::SchemeMapping nsOSXSystemProxySettings::gSchemeMappingList[] = {
     {"http", kSCPropNetProxiesHTTPEnable, kSCPropNetProxiesHTTPProxy, kSCPropNetProxiesHTTPPort,
      false},
@@ -87,14 +87,14 @@ nsOSXSystemProxySettings::nsOSXSystemProxySettings() : mSystemDynamicStore(NULL)
 nsresult nsOSXSystemProxySettings::Init() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
 
-  // Register for notification of proxy setting changes
-  // See:
-  // http://developer.apple.com/documentation/Networking/Conceptual/CFNetwork/CFStreamTasks/chapter_4_section_5.html
+  
+  
+  
   mSystemDynamicStore =
       SCDynamicStoreCreate(NULL, CFSTR("Mozilla"), ProxyHasChangedWrapper, &mContext);
   if (!mSystemDynamicStore) return NS_ERROR_FAILURE;
 
-  // Set up the store to monitor any changes to the proxies
+  
   CFStringRef proxiesKey = SCDynamicStoreKeyCreateProxies(NULL);
   if (!proxiesKey) return NS_ERROR_FAILURE;
 
@@ -105,14 +105,14 @@ nsresult nsOSXSystemProxySettings::Init() {
   SCDynamicStoreSetNotificationKeys(mSystemDynamicStore, keyArray, NULL);
   CFRelease(keyArray);
 
-  // Add the dynamic store to the run loop
+  
   CFRunLoopSourceRef storeRLSource =
       SCDynamicStoreCreateRunLoopSource(NULL, mSystemDynamicStore, 0);
   if (!storeRLSource) return NS_ERROR_FAILURE;
   CFRunLoopAddSource(CFRunLoopGetCurrent(), storeRLSource, kCFRunLoopCommonModes);
   CFRelease(storeRLSource);
 
-  // Load the initial copy of proxy info
+  
   mProxyDict = (NSDictionary*)SCDynamicStoreCopyProxies(mSystemDynamicStore);
   if (!mProxyDict) return NS_ERROR_FAILURE;
 
@@ -127,8 +127,8 @@ nsOSXSystemProxySettings::~nsOSXSystemProxySettings() {
   [mProxyDict release];
 
   if (mSystemDynamicStore) {
-    // Invalidate the dynamic store's run loop source
-    // to get the store out of the run loop
+    
+    
     CFRunLoopSourceRef rls = SCDynamicStoreCreateRunLoopSource(NULL, mSystemDynamicStore, 0);
     if (rls) {
       CFRunLoopSourceInvalidate(rls);
@@ -157,22 +157,22 @@ nsresult nsOSXSystemProxySettings::FindSCProxyPort(const nsACString& aScheme,
   NS_ENSURE_TRUE(mProxyDict != NULL, NS_ERROR_FAILURE);
 
   for (const SchemeMapping* keys = gSchemeMappingList; keys->mScheme != NULL; ++keys) {
-    // Check for matching scheme (when appropriate)
+    
     if (strcasecmp(keys->mScheme, PromiseFlatCString(aScheme).get()) && !keys->mIsSocksProxy)
       continue;
 
-    // Check the proxy is enabled
+    
     NSNumber* enabled = [mProxyDict objectForKey:(NSString*)keys->mEnabled];
     NS_ENSURE_TRUE(enabled == NULL || [enabled isKindOfClass:[NSNumber class]], NS_ERROR_FAILURE);
     if ([enabled intValue] == 0) continue;
 
-    // Get the proxy host
+    
     NSString* host = [mProxyDict objectForKey:(NSString*)keys->mHost];
     if (host == NULL) break;
     NS_ENSURE_TRUE([host isKindOfClass:[NSString class]], NS_ERROR_FAILURE);
     aResultHost.Assign([host UTF8String]);
 
-    // Get the proxy port
+    
     NSNumber* port = [mProxyDict objectForKey:(NSString*)keys->mPort];
     NS_ENSURE_TRUE([port isKindOfClass:[NSNumber class]], NS_ERROR_FAILURE);
     aResultPort = [port intValue];
@@ -261,9 +261,9 @@ nsresult nsOSXSystemProxySettings::GetProxyForURI(const nsACString& aSpec,
   if (NS_FAILED(rv) || IsInExceptionList(aHost)) {
     aResult.AssignLiteral("DIRECT");
   } else if (proxySocks) {
-    aResult.Assign(NS_LITERAL_CSTRING("SOCKS ") + proxyHost + nsPrintfCString(":%d", proxyPort));
+    aResult.Assign("SOCKS "_ns + proxyHost + nsPrintfCString(":%d", proxyPort));
   } else {
-    aResult.Assign(NS_LITERAL_CSTRING("PROXY ") + proxyHost + nsPrintfCString(":%d", proxyPort));
+    aResult.Assign("PROXY "_ns + proxyHost + nsPrintfCString(":%d", proxyPort));
   }
 
   return NS_OK;

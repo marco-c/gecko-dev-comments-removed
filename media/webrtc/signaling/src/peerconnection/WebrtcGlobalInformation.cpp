@@ -54,8 +54,7 @@ class RequestManager {
     mozilla::StaticMutexAutoLock lock(sMutex);
 
     int id = ++sLastRequestId;
-    auto result =
-        sRequests.insert(std::make_pair(id, Request(id, aCallback, aParam)));
+    auto result = sRequests.try_emplace(id, id, aCallback, aParam);
 
     if (!result.second) {
       return nullptr;
@@ -283,8 +282,7 @@ static void OnGetLogging_m(WebrtcGlobalChild* aThisChild, const int aRequestId,
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!aLogList.IsEmpty()) {
-    if (!aLogList.AppendElement(NS_LITERAL_STRING("+++++++ END ++++++++"),
-                                fallible)) {
+    if (!aLogList.AppendElement(u"+++++++ END ++++++++"_ns, fallible)) {
       mozalloc_handle_oom(0);
     }
   }

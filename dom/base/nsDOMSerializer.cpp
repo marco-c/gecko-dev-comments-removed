@@ -33,7 +33,7 @@ static already_AddRefed<nsIDocumentEncoder> SetUpEncoder(
 
   
   nsresult rv = encoder->NativeInit(
-      doc, NS_LITERAL_STRING("application/xhtml+xml"),
+      doc, u"application/xhtml+xml"_ns,
       nsIDocumentEncoder::OutputRaw |
           nsIDocumentEncoder::OutputDontRewriteEncodingDeclaration);
 

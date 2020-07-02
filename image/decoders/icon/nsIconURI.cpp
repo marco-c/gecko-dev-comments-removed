@@ -267,7 +267,7 @@ nsresult nsMozIconURI::SetSpecInternal(const nsACString& aSpec) {
     return NS_OK;
   }
 
-  if (StringBeginsWith(iconPath, NS_LITERAL_CSTRING("//"))) {
+  if (StringBeginsWith(iconPath, "//"_ns)) {
     
     if (iconPath.Length() > SANE_FILE_NAME_LEN) {
       return NS_ERROR_MALFORMED_URI;

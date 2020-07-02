@@ -215,7 +215,7 @@ bool MatchInPutList(const InternalRequest& aRequest,
 
     nsCString varyHeaders;
     ErrorResult rv;
-    cachedResponseHeaders->Get(NS_LITERAL_CSTRING("vary"), varyHeaders, rv);
+    cachedResponseHeaders->Get("vary"_ns, varyHeaders, rv);
     MOZ_ALWAYS_TRUE(!rv.Failed());
 
     

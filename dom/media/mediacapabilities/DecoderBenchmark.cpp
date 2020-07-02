@@ -112,7 +112,7 @@ nsCString KeyUtil::FindLevel(const uint32_t aLevels[], const size_t length,
                              uint32_t aValue) {
   MOZ_ASSERT(aValue);
   if (aValue <= aLevels[0]) {
-    return NS_LITERAL_CSTRING("Level0");
+    return "Level0"_ns;
   }
   nsAutoCString level("Level");
   size_t lastIndex = length - 1;
@@ -132,21 +132,21 @@ nsCString KeyUtil::FindLevel(const uint32_t aLevels[], const size_t length,
     return std::move(level);
   }
   MOZ_CRASH("Array is not sorted");
-  return NS_LITERAL_CSTRING("");
+  return ""_ns;
 }
 
 
 nsCString KeyUtil::BitDepthToStr(uint8_t aBitDepth) {
   switch (aBitDepth) {
     case 8:  
-      return NS_LITERAL_CSTRING("-8bit");
+      return "-8bit"_ns;
     case 10:  
     case 12:  
     case 16:  
-      return NS_LITERAL_CSTRING("-non8bit");
+      return "-non8bit"_ns;
   }
   MOZ_ASSERT_UNREACHABLE("invalid color depth value");
-  return NS_LITERAL_CSTRING("");
+  return ""_ns;
 }
 
 

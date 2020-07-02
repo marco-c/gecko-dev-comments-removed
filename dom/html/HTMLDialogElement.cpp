@@ -46,8 +46,8 @@ void HTMLDialogElement::Close(
 
   RemoveFromTopLayerIfNeeded();
 
-  RefPtr<AsyncEventDispatcher> eventDispatcher = new AsyncEventDispatcher(
-      this, NS_LITERAL_STRING("close"), CanBubble::eNo);
+  RefPtr<AsyncEventDispatcher> eventDispatcher =
+      new AsyncEventDispatcher(this, u"close"_ns, CanBubble::eNo);
   eventDispatcher->PostDOMEvent();
 }
 
@@ -183,9 +183,9 @@ void HTMLDialogElement::RunCancelDialogSteps() {
   
   
   bool defaultAction = true;
-  nsContentUtils::DispatchTrustedEvent(
-      OwnerDoc(), this, NS_LITERAL_STRING("cancel"), CanBubble::eNo,
-      Cancelable::eYes, &defaultAction);
+  nsContentUtils::DispatchTrustedEvent(OwnerDoc(), this, u"cancel"_ns,
+                                       CanBubble::eNo, Cancelable::eYes,
+                                       &defaultAction);
 
   
   

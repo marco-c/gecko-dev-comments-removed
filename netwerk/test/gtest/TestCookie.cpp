@@ -755,39 +755,39 @@ TEST(TestCookie, TestCookieMain)
   
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr->RemoveAll()));
   
+  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->AddNative("cookiemgr.test"_ns,  
+                                                 "/foo"_ns,            
+                                                 "test1"_ns,           
+                                                 "yes"_ns,             
+                                                 false,      
+                                                 false,      
+                                                 true,       
+                                                 INT64_MAX,  
+                                                 &attrs,     
+                                                 nsICookie::SAMESITE_NONE,
+                                                 nsICookie::SCHEME_HTTPS)));
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->AddNative(
-      NS_LITERAL_CSTRING("cookiemgr.test"),  
-      NS_LITERAL_CSTRING("/foo"),            
-      NS_LITERAL_CSTRING("test1"),           
-      NS_LITERAL_CSTRING("yes"),             
-      false,                                 
-      false,                                 
-      true,                                  
-      INT64_MAX,                             
-      &attrs,                                
+      "cookiemgr.test"_ns,             
+      "/foo"_ns,                       
+      "test2"_ns,                      
+      "yes"_ns,                        
+      false,                           
+      true,                            
+      true,                            
+      PR_Now() / PR_USEC_PER_SEC + 2,  
+      &attrs,                          
       nsICookie::SAMESITE_NONE, nsICookie::SCHEME_HTTPS)));
-  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->AddNative(
-      NS_LITERAL_CSTRING("cookiemgr.test"),  
-      NS_LITERAL_CSTRING("/foo"),            
-      NS_LITERAL_CSTRING("test2"),           
-      NS_LITERAL_CSTRING("yes"),             
-      false,                                 
-      true,                                  
-      true,                                  
-      PR_Now() / PR_USEC_PER_SEC + 2,        
-      &attrs,                                
-      nsICookie::SAMESITE_NONE, nsICookie::SCHEME_HTTPS)));
-  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->AddNative(
-      NS_LITERAL_CSTRING("new.domain"),  
-      NS_LITERAL_CSTRING("/rabbit"),     
-      NS_LITERAL_CSTRING("test3"),       
-      NS_LITERAL_CSTRING("yes"),         
-      false,                             
-      false,                             
-      true,                              
-      INT64_MAX,                         
-      &attrs,                            
-      nsICookie::SAMESITE_NONE, nsICookie::SCHEME_HTTPS)));
+  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->AddNative("new.domain"_ns,  
+                                                 "/rabbit"_ns,     
+                                                 "test3"_ns,       
+                                                 "yes"_ns,         
+                                                 false,            
+                                                 false,      
+                                                 true,       
+                                                 INT64_MAX,  
+                                                 &attrs,     
+                                                 nsICookie::SAMESITE_NONE,
+                                                 nsICookie::SCHEME_HTTPS)));
   
   nsTArray<RefPtr<nsICookie>> cookies;
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr->GetCookies(cookies)));
@@ -808,26 +808,24 @@ TEST(TestCookie, TestCookieMain)
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_NOT_CONTAIN, "test2=yes"));
   
   uint32_t hostCookies = 0;
-  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CountCookiesFromHost(
-      NS_LITERAL_CSTRING("cookiemgr.test"), &hostCookies)));
+  EXPECT_TRUE(NS_SUCCEEDED(
+      cookieMgr2->CountCookiesFromHost("cookiemgr.test"_ns, &hostCookies)));
   EXPECT_EQ(hostCookies, 2u);
   
   bool found;
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(
-      NS_LITERAL_CSTRING("new.domain"), NS_LITERAL_CSTRING("/rabbit"),
-      NS_LITERAL_CSTRING("test3"), &attrs, &found)));
+      "new.domain"_ns, "/rabbit"_ns, "test3"_ns, &attrs, &found)));
   EXPECT_TRUE(found);
 
   
   PR_Sleep(4 * PR_TicksPerSecond());
   
   
-  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CountCookiesFromHost(
-      NS_LITERAL_CSTRING("cookiemgr.test"), &hostCookies)));
+  EXPECT_TRUE(NS_SUCCEEDED(
+      cookieMgr2->CountCookiesFromHost("cookiemgr.test"_ns, &hostCookies)));
   EXPECT_EQ(hostCookies, 2u);
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(
-      NS_LITERAL_CSTRING("cookiemgr.test"), NS_LITERAL_CSTRING("/foo"),
-      NS_LITERAL_CSTRING("test2"), &attrs, &found)));
+      "cookiemgr.test"_ns, "/foo"_ns, "test2"_ns, &attrs, &found)));
   EXPECT_TRUE(found);
   
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr->RemoveAll()));
@@ -844,14 +842,14 @@ TEST(TestCookie, TestCookieMain)
   nsAutoCString name;
   nsAutoCString expected;
   for (int32_t i = 0; i < 60; ++i) {
-    name = NS_LITERAL_CSTRING("test");
+    name = "test"_ns;
     name.AppendInt(i);
-    name += NS_LITERAL_CSTRING("=creation");
+    name += "=creation"_ns;
     SetACookie(cookieService, "http://creation.ordering.tests/", name.get());
 
     if (i >= 10) {
       expected += name;
-      if (i < 59) expected += NS_LITERAL_CSTRING("; ");
+      if (i < 59) expected += "; "_ns;
     }
   }
   GetACookie(cookieService, "http://creation.ordering.tests/", cookie);
@@ -860,13 +858,13 @@ TEST(TestCookie, TestCookieMain)
   cookieMgr->RemoveAll();
 
   for (int32_t i = 0; i < 60; ++i) {
-    name = NS_LITERAL_CSTRING("test");
+    name = "test"_ns;
     name.AppendInt(i);
-    name += NS_LITERAL_CSTRING("=delete_non_security");
+    name += "=delete_non_security"_ns;
 
     
     if (i < 50) {
-      name += NS_LITERAL_CSTRING("; secure");
+      name += "; secure"_ns;
       SetACookie(cookieService, "https://creation.ordering.tests/", name.get());
     } else {
       

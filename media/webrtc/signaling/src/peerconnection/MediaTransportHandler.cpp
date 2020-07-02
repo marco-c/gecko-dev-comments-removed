@@ -257,7 +257,7 @@ static nsresult addNrIceServer(const nsString& aIceUrl,
     
     int32_t questionmark = path.FindChar('?');
     if (questionmark >= 0) {
-      const nsCString match = NS_LITERAL_CSTRING("transport=");
+      const nsCString match = "transport="_ns;
 
       for (int32_t i = questionmark, endPos; i >= 0; i = endPos) {
         endPos = path.FindCharInSet("&", i + 1);

@@ -215,19 +215,16 @@ NS_IMETHODIMP nsDeviceContextSpecX::Init(nsIWidget* aWidget, nsIPrintSettings* a
     
     
     
-    Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE, NS_LITERAL_STRING("pdf_file"),
-                         1);
+    Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE, u"pdf_file"_ns, 1);
   } else {
     PMDestinationType destination;
     OSStatus status = ::PMSessionGetDestinationType(mPrintSession, mPrintSettings, &destination);
     if (status == noErr &&
         (destination == kPMDestinationFile || destination == kPMDestinationPreview ||
          destination == kPMDestinationProcessPDF)) {
-      Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE, NS_LITERAL_STRING("pdf_file"),
-                           1);
+      Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE, u"pdf_file"_ns, 1);
     } else {
-      Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE, NS_LITERAL_STRING("unknown"),
-                           1);
+      Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE, u"unknown"_ns, 1);
     }
   }
 

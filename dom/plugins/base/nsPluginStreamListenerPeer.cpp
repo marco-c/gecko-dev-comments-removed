@@ -436,8 +436,8 @@ nsresult nsPluginStreamListenerPeer::SetUpStreamListener(nsIRequest* request,
     
     
     nsAutoCString lastModified;
-    if (NS_SUCCEEDED(httpChannel->GetResponseHeader(
-            NS_LITERAL_CSTRING("last-modified"), lastModified)) &&
+    if (NS_SUCCEEDED(
+            httpChannel->GetResponseHeader("last-modified"_ns, lastModified)) &&
         !lastModified.IsEmpty()) {
       PRTime time64;
       PR_ParseTimeString(lastModified.get(), true,

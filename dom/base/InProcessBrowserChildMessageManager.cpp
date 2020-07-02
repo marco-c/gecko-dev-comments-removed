@@ -212,7 +212,7 @@ void InProcessBrowserChildMessageManager::FireUnloadEvent() {
 
   
   mPreventEventsEscaping = true;
-  DOMEventTargetHelper::DispatchTrustedEvent(NS_LITERAL_STRING("unload"));
+  DOMEventTargetHelper::DispatchTrustedEvent(u"unload"_ns);
 
   
   

@@ -151,7 +151,7 @@ TEST(NtPathToDosPath, Tests)
   EXPECT_TRUE(TestNtPathToDosPath(L"\\Device\\LanmanRedirector\\127.0.0.1\\C$",
                                   L"\\\\127.0.0.1\\C$"));
 
-  DriveMapping drvMapping(NS_LITERAL_STRING("\\\\127.0.0.1\\C$"));
+  DriveMapping drvMapping(u"\\\\127.0.0.1\\C$"_ns);
   
   if (drvMapping.Init()) {
     wchar_t expected[] = L" :\\";

@@ -123,16 +123,16 @@ nsresult AsyncStatement::initialize(Connection* aDBConnection,
   aSQLStatement.BeginReading(start);
   aSQLStatement.EndReading(end);
   e = end;
-  while (::FindInReadable(NS_LITERAL_CSTRING(" LIKE"), start, e, c)) {
+  while (::FindInReadable(" LIKE"_ns, start, e, c)) {
     
     
     
     nsACString::const_iterator s1, s2, s3;
     s1 = s2 = s3 = start;
 
-    if (!(::FindInReadable(NS_LITERAL_CSTRING(" LIKE ?"), s1, end, c) ||
-          ::FindInReadable(NS_LITERAL_CSTRING(" LIKE :"), s2, end, c) ||
-          ::FindInReadable(NS_LITERAL_CSTRING(" LIKE @"), s3, end, c))) {
+    if (!(::FindInReadable(" LIKE ?"_ns, s1, end, c) ||
+          ::FindInReadable(" LIKE :"_ns, s2, end, c) ||
+          ::FindInReadable(" LIKE @"_ns, s3, end, c))) {
       
       
       

@@ -233,7 +233,7 @@ nsBaseFilePicker::AppendFilters(int32_t aFilterMask) {
     titleBundle->GetStringFromName("appsTitle", title);
     
     
-    AppendFilter(title, NS_LITERAL_STRING("..apps"));
+    AppendFilter(title, u"..apps"_ns);
   }
   return NS_OK;
 }

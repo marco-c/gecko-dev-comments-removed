@@ -402,8 +402,7 @@ nsIntRect XULTreeGridCellAccessible::BoundsInCSSPixels() const {
   
   
   nsresult rv;
-  nsIntRect rect =
-      mTree->GetCoordsForCellItem(mRow, mColumn, NS_LITERAL_STRING("cell"), rv);
+  nsIntRect rect = mTree->GetCoordsForCellItem(mRow, mColumn, u"cell"_ns, rv);
   if (NS_FAILED(rv)) {
     return nsIntRect();
   }
@@ -535,8 +534,7 @@ XULTreeGridCellAccessible::NativeAttributes() {
 
   
   if (mColumn->Cycler())
-    nsAccUtils::SetAccAttr(attributes, nsGkAtoms::cycles,
-                           NS_LITERAL_STRING("true"));
+    nsAccUtils::SetAccAttr(attributes, nsGkAtoms::cycles, u"true"_ns);
 
   return attributes.forget();
 }

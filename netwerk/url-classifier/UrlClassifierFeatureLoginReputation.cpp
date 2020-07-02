@@ -22,15 +22,14 @@ StaticRefPtr<UrlClassifierFeatureLoginReputation> gFeatureLoginReputation;
 }  
 
 UrlClassifierFeatureLoginReputation::UrlClassifierFeatureLoginReputation()
-    : UrlClassifierFeatureBase(
-          NS_LITERAL_CSTRING(LOGIN_REPUTATION_FEATURE_NAME),
-          EmptyCString(),  
-          NS_LITERAL_CSTRING(PREF_PASSWORD_ALLOW_TABLE),
-          EmptyCString(),  
-          EmptyCString(),  
-          EmptyCString(),  
-          EmptyCString(),  
-          EmptyCString())  
+    : UrlClassifierFeatureBase(nsLiteralCString(LOGIN_REPUTATION_FEATURE_NAME),
+                               EmptyCString(),  
+                               nsLiteralCString(PREF_PASSWORD_ALLOW_TABLE),
+                               EmptyCString(),  
+                               EmptyCString(),  
+                               EmptyCString(),  
+                               EmptyCString(),  
+                               EmptyCString())  
 {}
 
  const char* UrlClassifierFeatureLoginReputation::Name() {

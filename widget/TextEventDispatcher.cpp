@@ -370,10 +370,8 @@ nsresult TextEventDispatcher::CommitComposition(
     
     compositionCommitEvent.mData.SetIsVoid(false);
     
-    compositionCommitEvent.mData.ReplaceSubstring(NS_LITERAL_STRING("\r\n"),
-                                                  NS_LITERAL_STRING("\n"));
-    compositionCommitEvent.mData.ReplaceSubstring(NS_LITERAL_STRING("\r"),
-                                                  NS_LITERAL_STRING("\n"));
+    compositionCommitEvent.mData.ReplaceSubstring(u"\r\n"_ns, u"\n"_ns);
+    compositionCommitEvent.mData.ReplaceSubstring(u"\r"_ns, u"\n"_ns);
   }
   rv = DispatchEvent(widget, compositionCommitEvent, aStatus);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -808,8 +806,8 @@ void TextEventDispatcher::PendingComposition::ReplaceNativeLineBreakers() {
 
   nsAutoString nativeString(mString);
   
-  mString.ReplaceSubstring(NS_LITERAL_STRING("\r\n"), NS_LITERAL_STRING("\n"));
-  mString.ReplaceSubstring(NS_LITERAL_STRING("\r"), NS_LITERAL_STRING("\n"));
+  mString.ReplaceSubstring(u"\r\n"_ns, u"\n"_ns);
+  mString.ReplaceSubstring(u"\r"_ns, u"\n"_ns);
 
   
   
@@ -838,8 +836,7 @@ void TextEventDispatcher::PendingComposition::AdjustRange(
   
   if (nativeRange.mStartOffset > 0) {
     nsAutoString preText(Substring(aNativeString, 0, nativeRange.mStartOffset));
-    preText.ReplaceSubstring(NS_LITERAL_STRING("\r\n"),
-                             NS_LITERAL_STRING("\n"));
+    preText.ReplaceSubstring(u"\r\n"_ns, u"\n"_ns);
     aRange.mStartOffset = preText.Length();
   }
   if (nativeRange.Length() == 0) {
@@ -847,7 +844,7 @@ void TextEventDispatcher::PendingComposition::AdjustRange(
   } else {
     nsAutoString clause(Substring(aNativeString, nativeRange.mStartOffset,
                                   nativeRange.Length()));
-    clause.ReplaceSubstring(NS_LITERAL_STRING("\r\n"), NS_LITERAL_STRING("\n"));
+    clause.ReplaceSubstring(u"\r\n"_ns, u"\n"_ns);
     aRange.mEndOffset = aRange.mStartOffset + clause.Length();
   }
 }

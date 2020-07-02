@@ -153,8 +153,7 @@ NS_IMETHODIMP DefaultURI::GetHost(nsACString& aHost) {
   
   
   
-  if (StringBeginsWith(aHost, NS_LITERAL_CSTRING("[")) &&
-      StringEndsWith(aHost, NS_LITERAL_CSTRING("]")) &&
+  if (StringBeginsWith(aHost, "["_ns) && StringEndsWith(aHost, "]"_ns) &&
       aHost.FindChar(':') != kNotFound) {
     aHost = Substring(aHost, 1, aHost.Length() - 2);
   }
@@ -495,7 +494,7 @@ DefaultURI::Mutator::SetPathQueryRef(const nsACString& aPathQueryRef,
   }
 
   nsAutoCString pathQueryRef(aPathQueryRef);
-  if (!StringBeginsWith(pathQueryRef, NS_LITERAL_CSTRING("/"))) {
+  if (!StringBeginsWith(pathQueryRef, "/"_ns)) {
     pathQueryRef.Insert('/', 0);
   }
 

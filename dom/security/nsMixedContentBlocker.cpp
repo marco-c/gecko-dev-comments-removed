@@ -268,7 +268,7 @@ bool nsMixedContentBlocker::IsPotentiallyTrustworthyOnion(nsIURI* aURL) {
   nsAutoCString host;
   nsresult rv = aURL->GetHost(host);
   NS_ENSURE_SUCCESS(rv, false);
-  return StringEndsWith(host, NS_LITERAL_CSTRING(".onion"));
+  return StringEndsWith(host, ".onion"_ns);
 }
 
 
@@ -699,8 +699,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
                         EmptyString(),  
                         0,              
                         0,              
-                        nsIScriptError::errorFlag,
-                        NS_LITERAL_CSTRING("blockAllMixedContent"),
+                        nsIScriptError::errorFlag, "blockAllMixedContent"_ns,
                         requestingWindow->Id(),
                         !!aLoadInfo->GetOriginAttributes().mPrivateBrowsingId);
     *aDecision = REJECT_REQUEST;

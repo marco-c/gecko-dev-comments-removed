@@ -721,9 +721,9 @@ void WebAudioDecodeJob::OnFailure(ErrorCode aErrorCode) {
   if (nsPIDOMWindowInner* pWindow = mContext->GetParentObject()) {
     doc = pWindow->GetExtantDoc();
   }
-  nsContentUtils::ReportToConsole(
-      nsIScriptError::errorFlag, NS_LITERAL_CSTRING("Media"), doc,
-      nsContentUtils::eDOM_PROPERTIES, errorMessage);
+  nsContentUtils::ReportToConsole(nsIScriptError::errorFlag, "Media"_ns, doc,
+                                  nsContentUtils::eDOM_PROPERTIES,
+                                  errorMessage);
 
   
   

@@ -309,7 +309,7 @@ bool nsCSPParser::path(nsCSPHostSrc* aCspHost) {
     
     
     
-    aCspHost->appendPath(NS_LITERAL_STRING("/"));
+    aCspHost->appendPath(u"/"_ns);
     return true;
   }
   
@@ -426,7 +426,7 @@ nsCSPBaseSrc* nsCSPParser::keywordSource() {
     if (!CSP_IsDirective(mCurDir[0],
                          nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE)) {
       
-      AutoTArray<nsString, 1> params = {NS_LITERAL_STRING("strict-dynamic")};
+      AutoTArray<nsString, 1> params = {u"strict-dynamic"_ns};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
                                "ignoringStrictDynamic", params);
       return nullptr;
@@ -469,9 +469,8 @@ nsCSPBaseSrc* nsCSPParser::keywordSource() {
     if (!CSP_IsDirective(mCurDir[0],
                          nsIContentSecurityPolicy::NAVIGATE_TO_DIRECTIVE)) {
       
-      AutoTArray<nsString, 2> params = {
-          NS_LITERAL_STRING("unsafe-allow-redirects"),
-          NS_LITERAL_STRING("navigate-to")};
+      AutoTArray<nsString, 2> params = {u"unsafe-allow-redirects"_ns,
+                                        u"navigate-to"_ns};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
                                "IgnoringSourceWithinDirective", params);
       return nullptr;
@@ -646,7 +645,7 @@ nsCSPBaseSrc* nsCSPParser::sourceExpression() {
   
   
   if (mCurToken.EqualsASCII("*")) {
-    return new nsCSPHostSrc(NS_LITERAL_STRING("*"));
+    return new nsCSPHostSrc(u"*"_ns);
   }
 
   
@@ -971,7 +970,7 @@ void nsCSPParser::directive() {
   
   
   if (mCurDir.Length() < 1) {
-    AutoTArray<nsString, 1> params = {NS_LITERAL_STRING("directive missing")};
+    AutoTArray<nsString, 1> params = {u"directive missing"_ns};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
                              "failedToParseUnrecognizedSource", params);
     return;
@@ -993,8 +992,7 @@ void nsCSPParser::directive() {
   
   if (cspDir->equals(nsIContentSecurityPolicy::BLOCK_ALL_MIXED_CONTENT)) {
     if (mCurDir.Length() > 1) {
-      AutoTArray<nsString, 1> params = {
-          NS_LITERAL_STRING("block-all-mixed-content")};
+      AutoTArray<nsString, 1> params = {u"block-all-mixed-content"_ns};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
                                "ignoreSrcForDirective", params);
     }
@@ -1007,8 +1005,7 @@ void nsCSPParser::directive() {
   
   if (cspDir->equals(nsIContentSecurityPolicy::UPGRADE_IF_INSECURE_DIRECTIVE)) {
     if (mCurDir.Length() > 1) {
-      AutoTArray<nsString, 1> params = {
-          NS_LITERAL_STRING("upgrade-insecure-requests")};
+      AutoTArray<nsString, 1> params = {u"upgrade-insecure-requests"_ns};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
                                "ignoreSrcForDirective", params);
     }
@@ -1075,7 +1072,7 @@ void nsCSPParser::directive() {
           !srcStr.EqualsASCII(CSP_EnumToUTF8Keyword(CSP_UNSAFE_EVAL)) &&
           !StringBeginsWith(
               srcStr, nsDependentString(CSP_EnumToUTF16Keyword(CSP_NONCE))) &&
-          !StringBeginsWith(srcStr, NS_LITERAL_STRING("'sha"))) {
+          !StringBeginsWith(srcStr, u"'sha"_ns)) {
         AutoTArray<nsString, 1> params = {srcStr};
         logWarningErrorToConsole(nsIScriptError::warningFlag,
                                  "ignoringSrcForStrictDynamic", params);
@@ -1093,7 +1090,7 @@ void nsCSPParser::directive() {
               cspDir->equals(nsIContentSecurityPolicy::STYLE_SRC_DIRECTIVE))) {
     mUnsafeInlineKeywordSrc->invalidate();
     
-    AutoTArray<nsString, 1> params = {NS_LITERAL_STRING("'unsafe-inline'")};
+    AutoTArray<nsString, 1> params = {u"'unsafe-inline'"_ns};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
                              "ignoringSrcWithinScriptStyleSrc", params);
   }

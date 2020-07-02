@@ -51,7 +51,7 @@ PerformanceTimingData* PerformanceTimingData::Create(
   
   
   if (aInitiatorType.IsEmpty()) {
-    aInitiatorType = NS_LITERAL_STRING("other");
+    aInitiatorType = u"other"_ns;
   }
 
   

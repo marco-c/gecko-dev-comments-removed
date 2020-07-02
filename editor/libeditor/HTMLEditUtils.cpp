@@ -256,8 +256,7 @@ bool HTMLEditUtils::IsMozDiv(nsINode* aNode) {
   MOZ_ASSERT(aNode);
   return aNode->IsHTMLElement(nsGkAtoms::div) &&
          aNode->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                                         NS_LITERAL_STRING("_moz"),
-                                         eIgnoreCase);
+                                         u"_moz"_ns, eIgnoreCase);
 }
 
 
@@ -269,14 +268,14 @@ bool HTMLEditUtils::IsMailCite(nsINode* aNode) {
   
   if (aNode->IsElement() &&
       aNode->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                                      NS_LITERAL_STRING("cite"), eIgnoreCase)) {
+                                      u"cite"_ns, eIgnoreCase)) {
     return true;
   }
 
   
   if (aNode->IsElement() &&
       aNode->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::mozquote,
-                                      NS_LITERAL_STRING("true"), eIgnoreCase)) {
+                                      u"true"_ns, eIgnoreCase)) {
     return true;
   }
 

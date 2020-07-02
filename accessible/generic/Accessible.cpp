@@ -675,9 +675,8 @@ void Accessible::SetSelected(bool aSelect) {
     if (select->State() & states::MULTISELECTABLE) {
       if (mContent->IsElement() && ARIARoleMap()) {
         if (aSelect) {
-          mContent->AsElement()->SetAttr(kNameSpaceID_None,
-                                         nsGkAtoms::aria_selected,
-                                         NS_LITERAL_STRING("true"), true);
+          mContent->AsElement()->SetAttr(
+              kNameSpaceID_None, nsGkAtoms::aria_selected, u"true"_ns, true);
         } else {
           mContent->AsElement()->UnsetAttr(kNameSpaceID_None,
                                            nsGkAtoms::aria_selected, true);
@@ -957,7 +956,7 @@ already_AddRefed<nsIPersistentProperties> Accessible::Attributes() {
   if (roleMapEntry) {
     if (roleMapEntry->Is(nsGkAtoms::searchbox)) {
       nsAccUtils::SetAccAttr(attributes, nsGkAtoms::textInputType,
-                             NS_LITERAL_STRING("search"));
+                             u"search"_ns);
     }
 
     nsAutoString live;
@@ -983,21 +982,18 @@ already_AddRefed<nsIPersistentProperties> Accessible::NativeAttributes() {
   if (HasNumericValue()) {
     nsAutoString valuetext;
     Value(valuetext);
-    attributes->SetStringProperty(NS_LITERAL_CSTRING("valuetext"), valuetext,
-                                  unused);
+    attributes->SetStringProperty("valuetext"_ns, valuetext, unused);
   }
 
   
   if (State() & states::CHECKABLE) {
-    nsAccUtils::SetAccAttr(attributes, nsGkAtoms::checkable,
-                           NS_LITERAL_STRING("true"));
+    nsAccUtils::SetAccAttr(attributes, nsGkAtoms::checkable, u"true"_ns);
   }
 
   
   nsAutoString name;
   if (Name(name) != eNameFromSubtree && !name.IsVoid()) {
-    attributes->SetStringProperty(NS_LITERAL_CSTRING("explicit-name"),
-                                  NS_LITERAL_STRING("true"), unused);
+    attributes->SetStringProperty("explicit-name"_ns, u"true"_ns, unused);
   }
 
   
@@ -1010,13 +1006,11 @@ already_AddRefed<nsIPersistentProperties> Accessible::NativeAttributes() {
   if (itemCount) {
     nsAutoString itemCountStr;
     itemCountStr.AppendInt(itemCount);
-    attributes->SetStringProperty(NS_LITERAL_CSTRING("child-item-count"),
-                                  itemCountStr, unused);
+    attributes->SetStringProperty("child-item-count"_ns, itemCountStr, unused);
   }
 
   if (hierarchical) {
-    attributes->SetStringProperty(NS_LITERAL_CSTRING("hierarchical"),
-                                  NS_LITERAL_STRING("true"), unused);
+    attributes->SetStringProperty("hierarchical"_ns, u"true"_ns, unused);
   }
 
   
@@ -1035,7 +1029,7 @@ already_AddRefed<nsIPersistentProperties> Accessible::NativeAttributes() {
 
   nsAutoString id;
   if (nsCoreUtils::GetID(mContent, id))
-    attributes->SetStringProperty(NS_LITERAL_CSTRING("id"), id, unused);
+    attributes->SetStringProperty("id"_ns, id, unused);
 
   
   nsAutoString _class;
@@ -1051,8 +1045,7 @@ already_AddRefed<nsIPersistentProperties> Accessible::NativeAttributes() {
   
   if (auto htmlElement = nsGenericHTMLElement::FromNode(mContent)) {
     if (htmlElement->Draggable()) {
-      nsAccUtils::SetAccAttr(attributes, nsGkAtoms::draggable,
-                             NS_LITERAL_STRING("true"));
+      nsAccUtils::SetAccAttr(attributes, nsGkAtoms::draggable, u"true"_ns);
     }
   }
 
@@ -1759,8 +1752,7 @@ Relation Accessible::RelationByType(RelationType aType) const {
         nsIContent* buttonEl = nullptr;
         if (doc->AllowXULXBL()) {
           nsCOMPtr<nsIHTMLCollection> possibleDefaultButtons =
-              doc->GetElementsByAttribute(NS_LITERAL_STRING("default"),
-                                          NS_LITERAL_STRING("true"));
+              doc->GetElementsByAttribute(u"default"_ns, u"true"_ns);
           if (possibleDefaultButtons) {
             uint32_t length = possibleDefaultButtons->Length();
             

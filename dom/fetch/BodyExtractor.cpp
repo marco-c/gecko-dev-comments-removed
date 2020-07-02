@@ -102,8 +102,7 @@ nsresult BodyExtractor<Document>::GetAsStream(
 
     
     ErrorResult res;
-    serializer->SerializeToStream(*mBody, output, NS_LITERAL_STRING("UTF-8"),
-                                  res);
+    serializer->SerializeToStream(*mBody, output, u"UTF-8"_ns, res);
     if (NS_WARN_IF(res.Failed())) {
       return res.StealNSResult();
     }

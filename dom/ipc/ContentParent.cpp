@@ -1841,13 +1841,13 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
   if (obs) {
     RefPtr<nsHashPropertyBag> props = new nsHashPropertyBag();
 
-    props->SetPropertyAsUint64(NS_LITERAL_STRING("childID"), mChildID);
+    props->SetPropertyAsUint64(u"childID"_ns, mChildID);
 
     if (AbnormalShutdown == why) {
-      Telemetry::Accumulate(Telemetry::SUBPROCESS_ABNORMAL_ABORT,
-                            NS_LITERAL_CSTRING("content"), 1);
+      Telemetry::Accumulate(Telemetry::SUBPROCESS_ABNORMAL_ABORT, "content"_ns,
+                            1);
 
-      props->SetPropertyAsBool(NS_LITERAL_STRING("abnormal"), true);
+      props->SetPropertyAsBool(u"abnormal"_ns, true);
 
       nsAutoString dumpID;
       
@@ -1859,7 +1859,7 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
         if (!mCreatedPairedMinidumps) {
           if (mCrashReporter->GenerateCrashReport(OtherPid())) {
             
-            Unused << props->SetPropertyAsBool(NS_LITERAL_STRING("isLikelyOOM"),
+            Unused << props->SetPropertyAsBool(u"isLikelyOOM"_ns,
                                                mCrashReporter->IsLikelyOOM());
           }
         }
@@ -1872,7 +1872,7 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
       }
 
       if (!dumpID.IsEmpty()) {
-        props->SetPropertyAsAString(NS_LITERAL_STRING("dumpID"), dumpID);
+        props->SetPropertyAsAString(u"dumpID"_ns, dumpID);
       }
     }
     nsAutoString cpId;
@@ -2856,39 +2856,38 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
 
   {
     nsTArray<BlobURLRegistrationData> registrations;
-    BlobURLProtocolHandler::ForEachBlobURL([&](BlobImpl* aBlobImpl,
-                                               nsIPrincipal* aPrincipal,
-                                               const nsACString& aURI,
-                                               bool aRevoked) {
-      nsAutoCString origin;
-      nsresult rv = aPrincipal->GetOrigin(origin);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return false;
-      }
+    BlobURLProtocolHandler::ForEachBlobURL(
+        [&](BlobImpl* aBlobImpl, nsIPrincipal* aPrincipal,
+            const nsACString& aURI, bool aRevoked) {
+          nsAutoCString origin;
+          nsresult rv = aPrincipal->GetOrigin(origin);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return false;
+          }
 
-      
-      
-      
-      
-      
-      if (!StringBeginsWith(origin, NS_LITERAL_CSTRING("moz-extension://")) &&
-          !aPrincipal->IsSystemPrincipal()) {
-        return true;
-      }
+          
+          
+          
+          
+          
+          if (!StringBeginsWith(origin, "moz-extension://"_ns) &&
+              !aPrincipal->IsSystemPrincipal()) {
+            return true;
+          }
 
-      IPCBlob ipcBlob;
-      rv = IPCBlobUtils::Serialize(aBlobImpl, this, ipcBlob);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return false;
-      }
+          IPCBlob ipcBlob;
+          rv = IPCBlobUtils::Serialize(aBlobImpl, this, ipcBlob);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            return false;
+          }
 
-      registrations.AppendElement(BlobURLRegistrationData(
-          nsCString(aURI), ipcBlob, aPrincipal, aRevoked));
+          registrations.AppendElement(BlobURLRegistrationData(
+              nsCString(aURI), ipcBlob, aPrincipal, aRevoked));
 
-      rv = TransmitPermissionsForPrincipal(aPrincipal);
-      Unused << NS_WARN_IF(NS_FAILED(rv));
-      return true;
-    });
+          rv = TransmitPermissionsForPrincipal(aPrincipal);
+          Unused << NS_WARN_IF(NS_FAILED(rv));
+          return true;
+        });
 
     if (!registrations.IsEmpty()) {
       Unused << SendInitBlobURLs(registrations);
@@ -3199,7 +3198,7 @@ ContentParent::GetName(nsAString& aName) {
 NS_IMETHODIMP
 ContentParent::GetState(nsIPropertyBag** aResult) {
   auto props = MakeRefPtr<nsHashPropertyBag>();
-  props->SetPropertyAsAString(NS_LITERAL_STRING("remoteTypePrefix"),
+  props->SetPropertyAsAString(u"remoteTypePrefix"_ns,
                               RemoteTypePrefix(mRemoteType));
   *aResult = props.forget().downcast<nsIWritablePropertyBag>().take();
   return NS_OK;
@@ -3284,7 +3283,7 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
       return NS_ERROR_NOT_AVAILABLE;
     }
   } else if (!strcmp(aTopic, NS_IPC_IOSERVICE_SET_CONNECTIVITY_TOPIC)) {
-    if (!SendSetConnectivity(NS_LITERAL_STRING("true").Equals(aData))) {
+    if (!SendSetConnectivity(u"true"_ns.Equals(aData))) {
       return NS_ERROR_NOT_AVAILABLE;
     }
   } else if (!strcmp(aTopic, NS_IPC_CAPTIVE_PORTAL_SET_STATE)) {
@@ -3650,8 +3649,7 @@ void ContentParent::GeneratePairedMinidump(const char* aReason) {
                                   reason);
 
     
-    if (mCrashReporter->GenerateMinidumpAndPair(
-            this, nullptr, NS_LITERAL_CSTRING("browser"))) {
+    if (mCrashReporter->GenerateMinidumpAndPair(this, nullptr, "browser"_ns)) {
       mCreatedPairedMinidumps = mCrashReporter->FinalizeCrashReport();
     }
   }
@@ -4544,10 +4542,10 @@ mozilla::ipc::IPCResult ContentParent::RecvRecordingDeviceEvents(
     
     
     RefPtr<nsHashPropertyBag> props = new nsHashPropertyBag();
-    props->SetPropertyAsUint64(NS_LITERAL_STRING("childID"), ChildID());
-    props->SetPropertyAsBool(NS_LITERAL_STRING("isAudio"), aIsAudio);
-    props->SetPropertyAsBool(NS_LITERAL_STRING("isVideo"), aIsVideo);
-    props->SetPropertyAsAString(NS_LITERAL_STRING("requestURL"), aPageURL);
+    props->SetPropertyAsUint64(u"childID"_ns, ChildID());
+    props->SetPropertyAsBool(u"isAudio"_ns, aIsAudio);
+    props->SetPropertyAsBool(u"isVideo"_ns, aIsVideo);
+    props->SetPropertyAsAString(u"requestURL"_ns, aPageURL);
 
     obs->NotifyObservers((nsIPropertyBag2*)props, "recording-device-ipc-events",
                          aRecordingStatus.get());
@@ -5462,9 +5460,8 @@ void ContentParent::BroadcastBlobURLRegistration(const nsACString& aURI,
 
   uint64_t originHash = ComputeLoadedOriginHash(aPrincipal);
 
-  bool toBeSent =
-      StringBeginsWith(origin, NS_LITERAL_CSTRING("moz-extension://")) ||
-      aPrincipal->IsSystemPrincipal();
+  bool toBeSent = StringBeginsWith(origin, "moz-extension://"_ns) ||
+                  aPrincipal->IsSystemPrincipal();
 
   nsCString uri(aURI);
   IPC::Principal principal(aPrincipal);
@@ -5501,9 +5498,8 @@ void ContentParent::BroadcastBlobURLUnregistration(
 
   uint64_t originHash = ComputeLoadedOriginHash(aPrincipal);
 
-  bool toBeSent =
-      StringBeginsWith(origin, NS_LITERAL_CSTRING("moz-extension://")) ||
-      aPrincipal->IsSystemPrincipal();
+  bool toBeSent = StringBeginsWith(origin, "moz-extension://"_ns) ||
+                  aPrincipal->IsSystemPrincipal();
 
   nsCString uri(aURI);
 

@@ -47,8 +47,7 @@
 #include "DriverCrashGuard.h"
 #include "nsIReferrerInfo.h"
 
-#define CHILD_PROCESS_SHUTDOWN_MESSAGE \
-  NS_LITERAL_STRING("child-process-shutdown")
+#define CHILD_PROCESS_SHUTDOWN_MESSAGE u"child-process-shutdown"_ns
 
 
 

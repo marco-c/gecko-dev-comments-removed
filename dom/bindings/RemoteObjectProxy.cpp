@@ -31,7 +31,7 @@ bool RemoteObjectProxyBase::defineProperty(
   
   
   
-  return ReportCrossOriginDenial(aCx, aId, NS_LITERAL_CSTRING("define"));
+  return ReportCrossOriginDenial(aCx, aId, "define"_ns);
 }
 
 bool RemoteObjectProxyBase::ownPropertyKeys(
@@ -60,7 +60,7 @@ bool RemoteObjectProxyBase::delete_(JSContext* aCx,
   
   
   
-  return ReportCrossOriginDenial(aCx, aId, NS_LITERAL_CSTRING("delete"));
+  return ReportCrossOriginDenial(aCx, aId, "delete"_ns);
 }
 
 bool RemoteObjectProxyBase::getPrototypeIfOrdinary(

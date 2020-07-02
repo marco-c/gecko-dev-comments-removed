@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsMenuUtilsX.h"
 
@@ -32,11 +32,11 @@ void nsMenuUtilsX::DispatchCommandTo(nsIContent* aTargetContent) {
         new dom::XULCommandEvent(doc, doc->GetPresContext(), nullptr);
 
     IgnoredErrorResult rv;
-    event->InitCommandEvent(NS_LITERAL_STRING("command"), true, true,
+    event->InitCommandEvent(u"command"_ns, true, true,
                             nsGlobalWindowInner::Cast(doc->GetInnerWindow()), 0, false, false,
                             false, false, nullptr, 0, rv);
-    // FIXME: Should probably figure out how to init this with the actual
-    // pressed keys, but this is a big old edge case anyway. -dwh
+    
+    
     if (!rv.Failed()) {
       event->SetTrusted(true);
       aTargetContent->DispatchEvent(*event);
@@ -47,10 +47,10 @@ void nsMenuUtilsX::DispatchCommandTo(nsIContent* aTargetContent) {
 NSString* nsMenuUtilsX::GetTruncatedCocoaLabel(const nsString& itemLabel) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
-  // We want to truncate long strings to some reasonable pixel length but there is no
-  // good API for doing that which works for all OS versions and architectures. For now
-  // we'll do nothing for consistency and depend on good user interface design to limit
-  // string lengths.
+  
+  
+  
+  
   return [NSString stringWithCharacters:reinterpret_cast<const unichar*>(itemLabel.get())
                                  length:itemLabel.Length()];
 
@@ -98,15 +98,15 @@ nsMenuBarX* nsMenuUtilsX::GetHiddenWindowMenuBar() {
     return nullptr;
 }
 
-// It would be nice if we could localize these edit menu names.
+
 NSMenuItem* nsMenuUtilsX::GetStandardEditMenuItem() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
-  // In principle we should be able to allocate this once and then always
-  // return the same object.  But weird interactions happen between native
-  // app-modal dialogs and Gecko-modal dialogs that open above them.  So what
-  // we return here isn't always released before it needs to be added to
-  // another menu.  See bmo bug 468393.
+  
+  
+  
+  
+  
   NSMenuItem* standardEditMenuItem = [[[NSMenuItem alloc] initWithTitle:@"Edit"
                                                                  action:nil
                                                           keyEquivalent:@""] autorelease];
@@ -114,52 +114,52 @@ NSMenuItem* nsMenuUtilsX::GetStandardEditMenuItem() {
   [standardEditMenuItem setSubmenu:standardEditMenu];
   [standardEditMenu release];
 
-  // Add Undo
+  
   NSMenuItem* undoItem = [[NSMenuItem alloc] initWithTitle:@"Undo"
                                                     action:@selector(undo:)
                                              keyEquivalent:@"z"];
   [standardEditMenu addItem:undoItem];
   [undoItem release];
 
-  // Add Redo
+  
   NSMenuItem* redoItem = [[NSMenuItem alloc] initWithTitle:@"Redo"
                                                     action:@selector(redo:)
                                              keyEquivalent:@"Z"];
   [standardEditMenu addItem:redoItem];
   [redoItem release];
 
-  // Add separator
+  
   [standardEditMenu addItem:[NSMenuItem separatorItem]];
 
-  // Add Cut
+  
   NSMenuItem* cutItem = [[NSMenuItem alloc] initWithTitle:@"Cut"
                                                    action:@selector(cut:)
                                             keyEquivalent:@"x"];
   [standardEditMenu addItem:cutItem];
   [cutItem release];
 
-  // Add Copy
+  
   NSMenuItem* copyItem = [[NSMenuItem alloc] initWithTitle:@"Copy"
                                                     action:@selector(copy:)
                                              keyEquivalent:@"c"];
   [standardEditMenu addItem:copyItem];
   [copyItem release];
 
-  // Add Paste
+  
   NSMenuItem* pasteItem = [[NSMenuItem alloc] initWithTitle:@"Paste"
                                                      action:@selector(paste:)
                                               keyEquivalent:@"v"];
   [standardEditMenu addItem:pasteItem];
   [pasteItem release];
 
-  // Add Delete
+  
   NSMenuItem* deleteItem = [[NSMenuItem alloc] initWithTitle:@"Delete"
                                                       action:@selector(delete:)
                                                keyEquivalent:@""];
   [standardEditMenu addItem:deleteItem];
   [deleteItem release];
 
-  // Add Select All
+  
   NSMenuItem* selectAllItem = [[NSMenuItem alloc] initWithTitle:@"Select All"
                                                          action:@selector(selectAll:)
                                                   keyEquivalent:@"a"];
@@ -179,8 +179,8 @@ bool nsMenuUtilsX::NodeIsHiddenOrCollapsed(nsIContent* inContent) {
                                               nsGkAtoms::_true, eCaseMatters));
 }
 
-// Determines how many items are visible among the siblings in a menu that are
-// before the given child. This will not count the application menu.
+
+
 int nsMenuUtilsX::CalculateNativeInsertionPoint(nsMenuObjectX* aParent, nsMenuObjectX* aChild) {
   int insertionPoint = 0;
   nsMenuObjectTypeX parentType = aParent->MenuObjectType();
@@ -189,7 +189,7 @@ int nsMenuUtilsX::CalculateNativeInsertionPoint(nsMenuObjectX* aParent, nsMenuOb
     uint32_t numMenus = menubarParent->GetMenuCount();
     for (uint32_t i = 0; i < numMenus; i++) {
       nsMenuX* currMenu = menubarParent->GetMenuAt(i);
-      if (currMenu == aChild) return insertionPoint;  // we found ourselves, break out
+      if (currMenu == aChild) return insertionPoint;  
       if (currMenu && [currMenu->NativeMenuItem() menu]) insertionPoint++;
     }
   } else if (parentType == eSubmenuObjectType || parentType == eStandaloneNativeMenuObjectType) {
@@ -201,9 +201,9 @@ int nsMenuUtilsX::CalculateNativeInsertionPoint(nsMenuObjectX* aParent, nsMenuOb
 
     uint32_t numItems = menuParent->GetItemCount();
     for (uint32_t i = 0; i < numItems; i++) {
-      // Using GetItemAt instead of GetVisibleItemAt to avoid O(N^2)
+      
       nsMenuObjectX* currItem = menuParent->GetItemAt(i);
-      if (currItem == aChild) return insertionPoint;  // we found ourselves, break out
+      if (currItem == aChild) return insertionPoint;  
       NSMenuItem* nativeItem = nil;
       nsMenuObjectTypeX currItemType = currItem->MenuObjectType();
       if (currItemType == eSubmenuObjectType)

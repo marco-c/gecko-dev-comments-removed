@@ -368,7 +368,7 @@ void AltSvcMapping::GetConnectionInfo(
 
 void AltSvcMapping::Serialize(nsCString& out) {
   
-  out = mHttps ? NS_LITERAL_CSTRING("https:") : NS_LITERAL_CSTRING("http:");
+  out = mHttps ? "https:"_ns : "http:"_ns;
   out.Append(mOriginHost);
   out.Append(':');
   out.AppendInt(mOriginPort);
@@ -472,11 +472,9 @@ AltSvcMapping::AltSvcMapping(DataStorage* storage, int32_t epoch,
     
 #undef _NS_NEXT_TOKEN
 
-    MakeHashKey(
-        mHashKey,
-        mHttps ? NS_LITERAL_CSTRING("https") : NS_LITERAL_CSTRING("http"),
-        mOriginHost, mOriginPort, mPrivate, mIsolated, mTopWindowOrigin,
-        mOriginAttributes);
+    MakeHashKey(mHashKey, mHttps ? "https"_ns : "http"_ns, mOriginHost,
+                mOriginPort, mPrivate, mIsolated, mTopWindowOrigin,
+                mOriginAttributes);
   } while (false);
 }
 
@@ -1069,7 +1067,7 @@ void AltSvcCache::UpdateAltServiceMapping(
     }
   } else {
     
-    nsAutoCString origin(NS_LITERAL_CSTRING("http://"));
+    nsAutoCString origin("http://"_ns);
 
     
     

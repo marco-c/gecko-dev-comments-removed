@@ -43,9 +43,9 @@ namespace {
 
 void SendJSWarning(Document* aDocument, const char* aWarningName,
                    const nsTArray<nsString>& aWarningArgs) {
-  nsContentUtils::ReportToConsole(
-      nsIScriptError::warningFlag, NS_LITERAL_CSTRING("HTML"), aDocument,
-      nsContentUtils::eFORMS_PROPERTIES, aWarningName, aWarningArgs);
+  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "HTML"_ns,
+                                  aDocument, nsContentUtils::eFORMS_PROPERTIES,
+                                  aWarningName, aWarningArgs);
 }
 
 void RetrieveFileName(Blob* aBlob, nsAString& aFilename) {
@@ -142,10 +142,9 @@ nsresult FSURLEncoded::AddNameValuePair(const nsAString& aName,
 
   
   if (mQueryString.IsEmpty()) {
-    mQueryString += convName + NS_LITERAL_CSTRING("=") + convValue;
+    mQueryString += convName + "="_ns + convValue;
   } else {
-    mQueryString += NS_LITERAL_CSTRING("&") + convName +
-                    NS_LITERAL_CSTRING("=") + convValue;
+    mQueryString += "&"_ns + convName + "="_ns + convValue;
   }
 
   return NS_OK;
@@ -255,7 +254,7 @@ nsresult FSURLEncoded::GetEncodedSubmission(nsIURI* aURI,
         return NS_ERROR_OUT_OF_MEMORY;
       }
 
-      path += NS_LITERAL_CSTRING("&force-plain-text=Y&body=") + escapedBody;
+      path += "&force-plain-text=Y&body="_ns + escapedBody;
 
       return NS_MutateURI(aURI).SetPathQueryRef(path).Finalize(aOutURI);
     } else {
@@ -288,8 +287,7 @@ nsresult FSURLEncoded::GetEncodedSubmission(nsIURI* aURI,
       
       
       rv = NS_MutateURI(aURI)
-               .SetQuery(mQueryString.IsEmpty() ? NS_LITERAL_CSTRING("?")
-                                                : mQueryString)
+               .SetQuery(mQueryString.IsEmpty() ? "?"_ns : mQueryString)
                .Finalize(aOutURI);
     } else {
       nsAutoCString path;
@@ -374,8 +372,7 @@ FSMultipartFormData::~FSMultipartFormData() {
 nsIInputStream* FSMultipartFormData::GetSubmissionBody(
     uint64_t* aContentLength) {
   
-  mPostDataChunk +=
-      NS_LITERAL_CSTRING("--") + mBoundary + NS_LITERAL_CSTRING("--" CRLF);
+  mPostDataChunk += "--"_ns + mBoundary + nsLiteralCString("--" CRLF);
 
   
   AddPostDataStream();
@@ -404,10 +401,10 @@ nsresult FSMultipartFormData::AddNameValuePair(const nsAString& aName,
   
   
   
-  mPostDataChunk +=
-      NS_LITERAL_CSTRING("--") + mBoundary + NS_LITERAL_CSTRING(CRLF) +
-      NS_LITERAL_CSTRING("Content-Disposition: form-data; name=\"") + nameStr +
-      NS_LITERAL_CSTRING("\"" CRLF CRLF) + valueStr + NS_LITERAL_CSTRING(CRLF);
+  mPostDataChunk += "--"_ns + mBoundary + nsLiteralCString(CRLF) +
+                    "Content-Disposition: form-data; name=\""_ns + nameStr +
+                    nsLiteralCString("\"" CRLF CRLF) + valueStr +
+                    nsLiteralCString(CRLF);
 
   return NS_OK;
 }
@@ -518,8 +515,7 @@ nsresult FSMultipartFormData::AddNameDirectoryPair(const nsAString& aName,
   rv = EncodeVal(dirname16, dirname, true);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  AddDataChunk(nameStr, dirname, NS_LITERAL_CSTRING("application/octet-stream"),
-               nullptr, 0);
+  AddDataChunk(nameStr, dirname, "application/octet-stream"_ns, nullptr, 0);
   return NS_OK;
 }
 
@@ -532,16 +528,14 @@ void FSMultipartFormData::AddDataChunk(const nsACString& aName,
   
   
   
-  mPostDataChunk +=
-      NS_LITERAL_CSTRING("--") + mBoundary + NS_LITERAL_CSTRING(CRLF);
+  mPostDataChunk += "--"_ns + mBoundary + nsLiteralCString(CRLF);
   
   
   
-  mPostDataChunk +=
-      NS_LITERAL_CSTRING("Content-Disposition: form-data; name=\"") + aName +
-      NS_LITERAL_CSTRING("\"; filename=\"") + aFilename +
-      NS_LITERAL_CSTRING("\"" CRLF) + NS_LITERAL_CSTRING("Content-Type: ") +
-      aContentType + NS_LITERAL_CSTRING(CRLF CRLF);
+  mPostDataChunk += "Content-Disposition: form-data; name=\""_ns + aName +
+                    "\"; filename=\""_ns + aFilename +
+                    nsLiteralCString("\"" CRLF) + "Content-Type: "_ns +
+                    aContentType + nsLiteralCString(CRLF CRLF);
 
   
   
@@ -629,8 +623,7 @@ nsresult FSTextPlain::AddNameValuePair(const nsAString& aName,
   
   
   
-  mBody.Append(aName + NS_LITERAL_STRING("=") + aValue +
-               NS_LITERAL_STRING(CRLF));
+  mBody.Append(aName + u"="_ns + aValue + NS_LITERAL_STRING(CRLF));
 
   return NS_OK;
 }
@@ -676,7 +669,7 @@ nsresult FSTextPlain::GetEncodedSubmission(nsIURI* aURI,
       return NS_ERROR_OUT_OF_MEMORY;
     }
 
-    path += NS_LITERAL_CSTRING("&force-plain-text=Y&body=") + escapedBody;
+    path += "&force-plain-text=Y&body="_ns + escapedBody;
 
     rv = NS_MutateURI(aURI).SetPathQueryRef(path).Finalize(aOutURI);
   } else {
@@ -745,7 +738,7 @@ nsresult EncodingFormSubmission::EncodeVal(const nsAString& aStr,
     aOut.Adopt(nsLinebreakConverter::ConvertLineBreaks(
         aOut.get(), nsLinebreakConverter::eLinebreakAny,
         nsLinebreakConverter::eLinebreakSpace));
-    aOut.ReplaceSubstring(NS_LITERAL_CSTRING("\""), NS_LITERAL_CSTRING("\\\""));
+    aOut.ReplaceSubstring("\""_ns, "\\\""_ns);
   }
 
   return NS_OK;

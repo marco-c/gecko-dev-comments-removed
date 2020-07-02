@@ -111,8 +111,8 @@ nsresult nsDocElementBoxFrame::CreateAnonymousContent(
                         dom::NOT_FROM_PARSER);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mTooltipContent->SetAttr(kNameSpaceID_None, nsGkAtoms::_default,
-                           NS_LITERAL_STRING("true"), false);
+  mTooltipContent->SetAttr(kNameSpaceID_None, nsGkAtoms::_default, u"true"_ns,
+                           false);
 
   
   
@@ -138,6 +138,6 @@ NS_QUERYFRAME_TAIL_INHERITING(nsBoxFrame)
 
 #ifdef DEBUG_FRAME_DUMP
 nsresult nsDocElementBoxFrame::GetFrameName(nsAString& aResult) const {
-  return MakeFrameName(NS_LITERAL_STRING("DocElementBox"), aResult);
+  return MakeFrameName(u"DocElementBox"_ns, aResult);
 }
 #endif

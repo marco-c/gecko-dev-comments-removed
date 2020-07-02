@@ -292,16 +292,11 @@ void nsXULTooltipListener::AddTooltipSupport(nsIContent* aNode) {
   MOZ_ASSERT(aNode);
   MOZ_ASSERT(this == sInstance);
 
-  aNode->AddSystemEventListener(NS_LITERAL_STRING("mouseout"), this, false,
-                                false);
-  aNode->AddSystemEventListener(NS_LITERAL_STRING("mousemove"), this, false,
-                                false);
-  aNode->AddSystemEventListener(NS_LITERAL_STRING("mousedown"), this, false,
-                                false);
-  aNode->AddSystemEventListener(NS_LITERAL_STRING("mouseup"), this, false,
-                                false);
-  aNode->AddSystemEventListener(NS_LITERAL_STRING("dragstart"), this, true,
-                                false);
+  aNode->AddSystemEventListener(u"mouseout"_ns, this, false, false);
+  aNode->AddSystemEventListener(u"mousemove"_ns, this, false, false);
+  aNode->AddSystemEventListener(u"mousedown"_ns, this, false, false);
+  aNode->AddSystemEventListener(u"mouseup"_ns, this, false, false);
+  aNode->AddSystemEventListener(u"dragstart"_ns, this, true, false);
 }
 
 void nsXULTooltipListener::RemoveTooltipSupport(nsIContent* aNode) {
@@ -311,11 +306,11 @@ void nsXULTooltipListener::RemoveTooltipSupport(nsIContent* aNode) {
   
   RefPtr<nsXULTooltipListener> instance = this;
 
-  aNode->RemoveSystemEventListener(NS_LITERAL_STRING("mouseout"), this, false);
-  aNode->RemoveSystemEventListener(NS_LITERAL_STRING("mousemove"), this, false);
-  aNode->RemoveSystemEventListener(NS_LITERAL_STRING("mousedown"), this, false);
-  aNode->RemoveSystemEventListener(NS_LITERAL_STRING("mouseup"), this, false);
-  aNode->RemoveSystemEventListener(NS_LITERAL_STRING("dragstart"), this, true);
+  aNode->RemoveSystemEventListener(u"mouseout"_ns, this, false);
+  aNode->RemoveSystemEventListener(u"mousemove"_ns, this, false);
+  aNode->RemoveSystemEventListener(u"mousedown"_ns, this, false);
+  aNode->RemoveSystemEventListener(u"mouseup"_ns, this, false);
+  aNode->RemoveSystemEventListener(u"dragstart"_ns, this, true);
 }
 
 #ifdef MOZ_XUL
@@ -393,8 +388,8 @@ nsresult nsXULTooltipListener::ShowTooltip() {
 
       
       
-      currentTooltip->AddSystemEventListener(NS_LITERAL_STRING("popuphiding"),
-                                             this, false, false);
+      currentTooltip->AddSystemEventListener(u"popuphiding"_ns, this, false,
+                                             false);
 
       
       
@@ -405,13 +400,12 @@ nsresult nsXULTooltipListener::ShowTooltip() {
         
         
         
-        doc->AddSystemEventListener(NS_LITERAL_STRING("DOMMouseScroll"), this,
-                                    true);
-        doc->AddSystemEventListener(NS_LITERAL_STRING("mousedown"), this, true);
-        doc->AddSystemEventListener(NS_LITERAL_STRING("mouseup"), this, true);
+        doc->AddSystemEventListener(u"DOMMouseScroll"_ns, this, true);
+        doc->AddSystemEventListener(u"mousedown"_ns, this, true);
+        doc->AddSystemEventListener(u"mouseup"_ns, this, true);
 #ifndef XP_WIN
         
-        doc->AddSystemEventListener(NS_LITERAL_STRING("keydown"), this, true);
+        doc->AddSystemEventListener(u"keydown"_ns, this, true);
 #endif
       }
       mSourceNode = nullptr;
@@ -450,8 +444,8 @@ void nsXULTooltipListener::LaunchTooltip() {
       
       return;
     }
-    currentTooltip->SetAttr(kNameSpaceID_None, nsGkAtoms::titletip,
-                            NS_LITERAL_STRING("true"), true);
+    currentTooltip->SetAttr(kNameSpaceID_None, nsGkAtoms::titletip, u"true"_ns,
+                            true);
   } else {
     currentTooltip->UnsetAttr(kNameSpaceID_None, nsGkAtoms::titletip, true);
   }
@@ -625,19 +619,16 @@ nsresult nsXULTooltipListener::DestroyTooltip() {
     nsCOMPtr<Document> doc = currentTooltip->GetComposedDoc();
     if (doc) {
       
-      doc->RemoveSystemEventListener(NS_LITERAL_STRING("DOMMouseScroll"), this,
-                                     true);
-      doc->RemoveSystemEventListener(NS_LITERAL_STRING("mousedown"), this,
-                                     true);
-      doc->RemoveSystemEventListener(NS_LITERAL_STRING("mouseup"), this, true);
+      doc->RemoveSystemEventListener(u"DOMMouseScroll"_ns, this, true);
+      doc->RemoveSystemEventListener(u"mousedown"_ns, this, true);
+      doc->RemoveSystemEventListener(u"mouseup"_ns, this, true);
 #ifndef XP_WIN
-      doc->RemoveSystemEventListener(NS_LITERAL_STRING("keydown"), this, true);
+      doc->RemoveSystemEventListener(u"keydown"_ns, this, true);
 #endif
     }
 
     
-    currentTooltip->RemoveSystemEventListener(NS_LITERAL_STRING("popuphiding"),
-                                              this, false);
+    currentTooltip->RemoveSystemEventListener(u"popuphiding"_ns, this, false);
   }
 
   

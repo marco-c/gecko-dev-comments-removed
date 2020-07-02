@@ -817,9 +817,9 @@ bool BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat) {
           
           nsIContent* content = prevFrame->GetContent();
           if (content && content->IsElement() &&
-              content->AsElement()->AttrValueIs(
-                  kNameSpaceID_None, nsGkAtoms::align,
-                  NS_LITERAL_STRING("left"), eIgnoreCase)) {
+              content->AsElement()->AttrValueIs(kNameSpaceID_None,
+                                                nsGkAtoms::align, u"left"_ns,
+                                                eIgnoreCase)) {
             keepFloatOnSameLine = true;
             
             

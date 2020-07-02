@@ -62,8 +62,7 @@ NodeInfo::NodeInfo(nsAtom* aName, nsAtom* aPrefix, int32_t aNamespaceID,
   
   
   if (aPrefix) {
-    mQualifiedName = nsDependentAtomString(mInner.mPrefix) +
-                     NS_LITERAL_STRING(":") +
+    mQualifiedName = nsDependentAtomString(mInner.mPrefix) + u":"_ns +
                      nsDependentAtomString(mInner.mName);
   } else {
     mInner.mName->ToString(mQualifiedName);

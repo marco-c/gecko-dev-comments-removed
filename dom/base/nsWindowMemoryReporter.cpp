@@ -117,7 +117,7 @@ nsWindowMemoryReporter* nsWindowMemoryReporter::Get() {
 }
 
 static nsCString GetWindowURISpec(nsGlobalWindowInner* aWindow) {
-  NS_ENSURE_TRUE(aWindow, NS_LITERAL_CSTRING(""));
+  NS_ENSURE_TRUE(aWindow, ""_ns);
 
   nsCOMPtr<Document> doc = aWindow->GetExtantDoc();
   if (doc) {
@@ -127,18 +127,18 @@ static nsCString GetWindowURISpec(nsGlobalWindowInner* aWindow) {
   }
   nsCOMPtr<nsIScriptObjectPrincipal> scriptObjPrincipal =
       do_QueryObject(aWindow);
-  NS_ENSURE_TRUE(scriptObjPrincipal, NS_LITERAL_CSTRING(""));
+  NS_ENSURE_TRUE(scriptObjPrincipal, ""_ns);
 
   
   
   
   
   if (!aWindow->GetOuterWindow()) {
-    return NS_LITERAL_CSTRING("");
+    return ""_ns;
   }
   nsIPrincipal* principal = scriptObjPrincipal->GetPrincipal();
   if (!principal) {
-    return NS_LITERAL_CSTRING("");
+    return ""_ns;
   }
   nsCString spec;
   principal->GetAsciiSpec(spec);
@@ -152,7 +152,7 @@ static void AppendWindowURI(nsGlobalWindowInner* aWindow, nsACString& aStr,
   if (spec.IsEmpty()) {
     
     
-    aStr += NS_LITERAL_CSTRING("[system]");
+    aStr += "[system]"_ns;
     return;
   }
   if (aAnonymize && !aWindow->IsChromeWindow()) {
@@ -224,29 +224,28 @@ static void CollectWindowReports(nsGlobalWindowInner* aWindow,
     top = aWindow->GetInProcessTopInternal();
   }
 
-  windowPath += NS_LITERAL_CSTRING("window-objects/");
+  windowPath += "window-objects/"_ns;
 
   if (top) {
-    windowPath += NS_LITERAL_CSTRING("top(");
+    windowPath += "top("_ns;
     AppendWindowURI(top->GetCurrentInnerWindowInternal(), windowPath,
                     aAnonymize);
     windowPath.AppendPrintf(", id=%" PRIu64 ")", top->WindowID());
 
     aTopWindowPaths->Put(aWindow->WindowID(), windowPath);
 
-    windowPath += aWindow->IsFrozen() ? NS_LITERAL_CSTRING("/cached/")
-                                      : NS_LITERAL_CSTRING("/active/");
+    windowPath += aWindow->IsFrozen() ? "/cached/"_ns : "/active/"_ns;
   } else {
     if (aGhostWindowIDs->Contains(aWindow->WindowID())) {
-      windowPath += NS_LITERAL_CSTRING("top(none)/ghost/");
+      windowPath += "top(none)/ghost/"_ns;
     } else {
-      windowPath += NS_LITERAL_CSTRING("top(none)/detached/");
+      windowPath += "top(none)/detached/"_ns;
     }
   }
 
-  windowPath += NS_LITERAL_CSTRING("window(");
+  windowPath += "window("_ns;
   AppendWindowURI(aWindow, windowPath, aAnonymize);
-  windowPath += NS_LITERAL_CSTRING(")");
+  windowPath += ")"_ns;
 
   
   nsCString censusWindowPath(windowPath);
@@ -257,21 +256,21 @@ static void CollectWindowReports(nsGlobalWindowInner* aWindow,
 
 
 
-#define REPORT_SIZE(_pathTail, _field, _desc)                  \
-  ReportSize(windowPath, _pathTail, windowSizes._field,        \
-             NS_LITERAL_CSTRING(_desc), aHandleReport, aData); \
+#define REPORT_SIZE(_pathTail, _field, _desc)                \
+  ReportSize(windowPath, _pathTail, windowSizes._field,      \
+             nsLiteralCString(_desc), aHandleReport, aData); \
   aWindowTotalSizes->_field += windowSizes._field;
 
 
 
-#define REPORT_SUM_SIZE(_pathTail, _amount, _desc)                      \
-  ReportSize(windowPath, _pathTail, _amount, NS_LITERAL_CSTRING(_desc), \
+#define REPORT_SUM_SIZE(_pathTail, _amount, _desc)                    \
+  ReportSize(windowPath, _pathTail, _amount, nsLiteralCString(_desc), \
              aHandleReport, aData);
 
 
-#define REPORT_COUNT(_pathTail, _field, _desc)                  \
-  ReportCount(censusWindowPath, _pathTail, windowSizes._field,  \
-              NS_LITERAL_CSTRING(_desc), aHandleReport, aData); \
+#define REPORT_COUNT(_pathTail, _field, _desc)                 \
+  ReportCount(censusWindowPath, _pathTail, windowSizes._field, \
+              nsLiteralCString(_desc), aHandleReport, aData);  \
   aWindowTotalSizes->_field += windowSizes._field;
 
   
@@ -529,7 +528,7 @@ nsWindowMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
          EmptyCString(), path, nsIMemoryReporter::KIND_OTHER,
         nsIMemoryReporter::UNITS_COUNT,
          1,
-         NS_LITERAL_CSTRING("A ghost window."), aData);
+         "A ghost window."_ns, aData);
   }
 
   
@@ -566,10 +565,10 @@ nsWindowMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
   nsXULPrototypeCache::CollectMemoryReports(aHandleReport, aData);
 #endif
 
-#define REPORT(_path, _amount, _desc)                                \
-  aHandleReport->Callback(EmptyCString(), NS_LITERAL_CSTRING(_path), \
-                          KIND_OTHER, UNITS_BYTES, _amount,          \
-                          NS_LITERAL_CSTRING(_desc), aData);
+#define REPORT(_path, _amount, _desc)                                          \
+  aHandleReport->Callback(EmptyCString(), nsLiteralCString(_path), KIND_OTHER, \
+                          UNITS_BYTES, _amount, nsLiteralCString(_desc),       \
+                          aData);
 
   REPORT("window-objects/dom/element-nodes",
          windowTotalSizes.mDOMElementNodesSize,

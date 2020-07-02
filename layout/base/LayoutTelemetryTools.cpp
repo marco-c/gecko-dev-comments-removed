@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/layout/LayoutTelemetryTools.h"
 
@@ -13,24 +13,24 @@
 using namespace mozilla;
 using namespace mozilla::layout_telemetry;
 
-// Returns the key name expected by telemetry. Keep to date with
-// toolkits/components/telemetry/Histograms.json.
+
+
 static nsLiteralCString SubsystemTelemetryKey(LayoutSubsystem aSubsystem) {
   switch (aSubsystem) {
     default:
       MOZ_CRASH("Unexpected LayoutSubsystem value");
     case LayoutSubsystem::Restyle:
-      return nsLiteralCString("Restyle");
+      return "Restyle"_ns;
     case LayoutSubsystem::Reflow:
-      return nsLiteralCString("ReflowOther");
+      return "ReflowOther"_ns;
     case LayoutSubsystem::ReflowFlex:
-      return nsLiteralCString("ReflowFlex");
+      return "ReflowFlex"_ns;
     case LayoutSubsystem::ReflowGrid:
-      return nsLiteralCString("ReflowGrid");
+      return "ReflowGrid"_ns;
     case LayoutSubsystem::ReflowTable:
-      return nsLiteralCString("ReflowTable");
+      return "ReflowTable"_ns;
     case LayoutSubsystem::ReflowText:
-      return nsLiteralCString("ReflowText");
+      return "ReflowText"_ns;
   }
 }
 
@@ -70,9 +70,9 @@ void Data::PingReqsPerFlushTelemetry(FlushType aFlushType) {
     auto styleFlushReqs = mReqsPerFlush[FlushKind::Style].value();
     auto layoutFlushReqs = mReqsPerFlush[FlushKind::Layout].value();
     Telemetry::Accumulate(Telemetry::PRESSHELL_REQS_PER_LAYOUT_FLUSH,
-                          NS_LITERAL_CSTRING("Style"), styleFlushReqs);
+                          "Style"_ns, styleFlushReqs);
     Telemetry::Accumulate(Telemetry::PRESSHELL_REQS_PER_LAYOUT_FLUSH,
-                          NS_LITERAL_CSTRING("Layout"), layoutFlushReqs);
+                          "Layout"_ns, layoutFlushReqs);
     mReqsPerFlush[FlushKind::Style] = SaturateUint8(0);
     mReqsPerFlush[FlushKind::Layout] = SaturateUint8(0);
   } else {
@@ -87,15 +87,15 @@ void Data::PingFlushPerTickTelemetry(FlushType aFlushType) {
   auto flushKind = ToKind(aFlushType);
   auto styleFlushes = mFlushesPerTick[FlushKind::Style].value();
   if (styleFlushes > 0) {
-    Telemetry::Accumulate(Telemetry::PRESSHELL_FLUSHES_PER_TICK,
-                          NS_LITERAL_CSTRING("Style"), styleFlushes);
+    Telemetry::Accumulate(Telemetry::PRESSHELL_FLUSHES_PER_TICK, "Style"_ns,
+                          styleFlushes);
     mFlushesPerTick[FlushKind::Style] = SaturateUint8(0);
   }
 
   auto layoutFlushes = mFlushesPerTick[FlushKind::Layout].value();
   if (flushKind == FlushKind::Layout && layoutFlushes > 0) {
-    Telemetry::Accumulate(Telemetry::PRESSHELL_FLUSHES_PER_TICK,
-                          NS_LITERAL_CSTRING("Layout"), layoutFlushes);
+    Telemetry::Accumulate(Telemetry::PRESSHELL_FLUSHES_PER_TICK, "Layout"_ns,
+                          layoutFlushes);
     mFlushesPerTick[FlushKind::Layout] = SaturateUint8(0);
   }
 }
@@ -135,7 +135,7 @@ AutoRecord::AutoRecord(Data* aLayoutTelemetry, LayoutSubsystem aSubsystem)
       mDurationMs(0.0) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  // If we're re-entering the same subsystem, don't update the current record.
+  
   if (mParentRecord) {
     if (mParentRecord->mSubsystem == mSubsystem) {
       return;
@@ -144,8 +144,8 @@ AutoRecord::AutoRecord(Data* aLayoutTelemetry, LayoutSubsystem aSubsystem)
     mLayoutTelemetry = mParentRecord->mLayoutTelemetry;
     MOZ_ASSERT(mLayoutTelemetry);
 
-    // If we're entering a new subsystem, record the amount of time spent in the
-    // parent record before setting the new current record.
+    
+    
     mParentRecord->mDurationMs +=
         (mStartTime - mParentRecord->mStartTime).ToMilliseconds();
   }
@@ -155,7 +155,7 @@ AutoRecord::AutoRecord(Data* aLayoutTelemetry, LayoutSubsystem aSubsystem)
 
 AutoRecord::~AutoRecord() {
   if (sCurrentRecord != this) {
-    // If this record is not head of the list, do nothing.
+    
     return;
   }
 
@@ -164,13 +164,13 @@ AutoRecord::~AutoRecord() {
   mLayoutTelemetry->mLayoutSubsystemDurationMs[mSubsystem] += mDurationMs;
 
   if (mParentRecord) {
-    // Restart the parent recording from this point
+    
     mParentRecord->mStartTime = now;
   }
 
-  // Unlink this record from the current record list
+  
   sCurrentRecord = mParentRecord;
 }
 
-}  // namespace layout_telemetry
-}  // namespace mozilla
+}  
+}  

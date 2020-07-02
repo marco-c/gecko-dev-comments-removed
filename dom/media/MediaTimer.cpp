@@ -26,7 +26,7 @@ MediaTimer::MediaTimer(bool aFuzzy)
   
   
   RefPtr<SharedThreadPool> threadPool(
-      SharedThreadPool::Get(NS_LITERAL_CSTRING("MediaTimer"), 1));
+      SharedThreadPool::Get("MediaTimer"_ns, 1));
   mThread = threadPool.get();
   mTimer = NS_NewTimer(mThread);
 }

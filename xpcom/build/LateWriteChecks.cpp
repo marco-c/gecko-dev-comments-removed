@@ -205,7 +205,7 @@ void LateWriteObserver::Observe(
 
   
   
-  nsAutoString finalName(NS_LITERAL_STRING("Telemetry.LateWriteFinal-"));
+  nsAutoString finalName(u"Telemetry.LateWriteFinal-"_ns);
   for (int i = 0; i < 20; ++i) {
     finalName.AppendPrintf("%02x", sha1[i]);
   }

@@ -236,7 +236,7 @@ uint32_t nsPlainTextSerializer::OutputManager::GetOutputLength() const {
 nsPlainTextSerializer::nsPlainTextSerializer()
     : mFloatingLines(-1),
       mLineBreakDue(false),
-      kSpace(NS_LITERAL_STRING(" "))  
+      kSpace(u" "_ns)  
 {
   mHeadLevel = 0;
   mHasWrittenCiteBlockquote = false;
@@ -794,7 +794,7 @@ nsresult nsPlainTextSerializer::DoOpenContainer(const nsAtom* aTag) {
           kTabSize;  
     }
   } else if (aTag == nsGkAtoms::q) {
-    Write(NS_LITERAL_STRING("\""));
+    Write(u"\""_ns);
   }
 
   
@@ -848,22 +848,22 @@ void nsPlainTextSerializer::OpenContainerForOutputFormatted(
     }
   } else if (aTag == nsGkAtoms::sup && mSettings.GetStructs() &&
              !currentNodeIsConverted) {
-    Write(NS_LITERAL_STRING("^"));
+    Write(u"^"_ns);
   } else if (aTag == nsGkAtoms::sub && mSettings.GetStructs() &&
              !currentNodeIsConverted) {
-    Write(NS_LITERAL_STRING("_"));
+    Write(u"_"_ns);
   } else if (aTag == nsGkAtoms::code && mSettings.GetStructs() &&
              !currentNodeIsConverted) {
-    Write(NS_LITERAL_STRING("|"));
+    Write(u"|"_ns);
   } else if ((aTag == nsGkAtoms::strong || aTag == nsGkAtoms::b) &&
              mSettings.GetStructs() && !currentNodeIsConverted) {
-    Write(NS_LITERAL_STRING("*"));
+    Write(u"*"_ns);
   } else if ((aTag == nsGkAtoms::em || aTag == nsGkAtoms::i) &&
              mSettings.GetStructs() && !currentNodeIsConverted) {
-    Write(NS_LITERAL_STRING("/"));
+    Write(u"/"_ns);
   } else if (aTag == nsGkAtoms::u && mSettings.GetStructs() &&
              !currentNodeIsConverted) {
-    Write(NS_LITERAL_STRING("_"));
+    Write(u"_"_ns);
   }
 
   
@@ -1000,7 +1000,7 @@ nsresult nsPlainTextSerializer::DoCloseContainer(const nsAtom* aTag) {
     }
     mLineBreakDue = true;
   } else if (aTag == nsGkAtoms::q) {
-    Write(NS_LITERAL_STRING("\""));
+    Write(u"\""_ns);
   } else if (IsCssBlockLevelElement(mElement)) {
     
     
@@ -1057,16 +1057,16 @@ void nsPlainTextSerializer::CloseContainerForOutputFormatted(
     Write(kSpace);
   } else if (aTag == nsGkAtoms::code && mSettings.GetStructs() &&
              !currentNodeIsConverted) {
-    Write(NS_LITERAL_STRING("|"));
+    Write(u"|"_ns);
   } else if ((aTag == nsGkAtoms::strong || aTag == nsGkAtoms::b) &&
              mSettings.GetStructs() && !currentNodeIsConverted) {
-    Write(NS_LITERAL_STRING("*"));
+    Write(u"*"_ns);
   } else if ((aTag == nsGkAtoms::em || aTag == nsGkAtoms::i) &&
              mSettings.GetStructs() && !currentNodeIsConverted) {
-    Write(NS_LITERAL_STRING("/"));
+    Write(u"/"_ns);
   } else if (aTag == nsGkAtoms::u && mSettings.GetStructs() &&
              !currentNodeIsConverted) {
-    Write(NS_LITERAL_STRING("_"));
+    Write(u"_"_ns);
   }
 }
 
@@ -1183,8 +1183,7 @@ nsresult nsPlainTextSerializer::DoAddLeaf(const nsAtom* aTag) {
     } else if (NS_SUCCEEDED(
                    GetAttributeValue(nsGkAtoms::title, imageDescription)) &&
                !imageDescription.IsEmpty()) {
-      imageDescription =
-          NS_LITERAL_STRING(" [") + imageDescription + NS_LITERAL_STRING("] ");
+      imageDescription = u" ["_ns + imageDescription + u"] "_ns;
     }
 
     Write(imageDescription);

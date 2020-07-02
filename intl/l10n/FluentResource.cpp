@@ -30,8 +30,8 @@ already_AddRefed<FluentResource> FluentResource::Constructor(
 
   if (res->mHasErrors) {
     nsContentUtils::LogSimpleConsoleError(
-        NS_LITERAL_STRING("Errors encountered while parsing Fluent Resource."),
-        "chrome", false, true );
+        u"Errors encountered while parsing Fluent Resource."_ns, "chrome",
+        false, true );
   }
   return res.forget();
 }

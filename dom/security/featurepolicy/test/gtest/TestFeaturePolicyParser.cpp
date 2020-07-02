@@ -14,9 +14,9 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-#define URL_SELF NS_LITERAL_CSTRING("https://example.com")
-#define URL_EXAMPLE_COM NS_LITERAL_CSTRING("http://example.com")
-#define URL_EXAMPLE_NET NS_LITERAL_CSTRING("http://example.net")
+#define URL_SELF "https://example.com"_ns
+#define URL_EXAMPLE_COM "http://example.com"_ns
+#define URL_EXAMPLE_NET "http://example.net"_ns
 
 void CheckParser(const nsAString& aInput, bool aExpectedResults,
                  uint32_t aExpectedFeatures,
@@ -47,123 +47,116 @@ TEST(FeaturePolicyParser, Basic)
   CheckParser(EmptyString(), true, 0, parsedFeatures);
 
   
-  CheckParser(NS_LITERAL_STRING("   "), true, 0, parsedFeatures);
+  CheckParser(u"   "_ns, true, 0, parsedFeatures);
 
   
-  CheckParser(NS_LITERAL_STRING("non-existing-feature"), true, 0,
+  CheckParser(u"non-existing-feature"_ns, true, 0, parsedFeatures);
+  CheckParser(u"non-existing-feature;another-feature"_ns, true, 0,
               parsedFeatures);
-  CheckParser(NS_LITERAL_STRING("non-existing-feature;another-feature"), true,
-              0, parsedFeatures);
 
   
-  CheckParser(NS_LITERAL_STRING("camera"), true, 1, parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u"camera"_ns, true, 1, parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].HasAllowList());
 
   
-  CheckParser(NS_LITERAL_STRING(" camera "), true, 1, parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u" camera "_ns, true, 1, parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].HasAllowList());
 
   
-  CheckParser(NS_LITERAL_STRING("camera;"), true, 1, parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u"camera;"_ns, true, 1, parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].HasAllowList());
 
   
-  CheckParser(NS_LITERAL_STRING(";camera;"), true, 1, parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u";camera;"_ns, true, 1, parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].HasAllowList());
 
   
-  CheckParser(NS_LITERAL_STRING("camera;microphone"), true, 2, parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u"camera;microphone"_ns, true, 2, parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].HasAllowList());
-  ASSERT_TRUE(parsedFeatures[1].Name().Equals(NS_LITERAL_STRING("microphone")));
+  ASSERT_TRUE(parsedFeatures[1].Name().Equals(u"microphone"_ns));
   ASSERT_TRUE(parsedFeatures[1].HasAllowList());
 
   
-  CheckParser(NS_LITERAL_STRING(" camera ; microphone "), true, 2,
-              parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u" camera ; microphone "_ns, true, 2, parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].HasAllowList());
-  ASSERT_TRUE(parsedFeatures[1].Name().Equals(NS_LITERAL_STRING("microphone")));
+  ASSERT_TRUE(parsedFeatures[1].Name().Equals(u"microphone"_ns));
   ASSERT_TRUE(parsedFeatures[1].HasAllowList());
 
   
-  CheckParser(NS_LITERAL_STRING("camera;microphone;foobar"), true, 2,
-              parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u"camera;microphone;foobar"_ns, true, 2, parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].HasAllowList());
-  ASSERT_TRUE(parsedFeatures[1].Name().Equals(NS_LITERAL_STRING("microphone")));
+  ASSERT_TRUE(parsedFeatures[1].Name().Equals(u"microphone"_ns));
   ASSERT_TRUE(parsedFeatures[1].HasAllowList());
 
   
-  CheckParser(NS_LITERAL_STRING("camera      'self'"), true, 1, parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u"camera      'self'"_ns, true, 1, parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].AllowListContains(selfPrincipal));
 
   
-  CheckParser(NS_LITERAL_STRING("camera      'self'    "), true, 1,
-              parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u"camera      'self'    "_ns, true, 1, parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].AllowListContains(selfPrincipal));
 
   
-  CheckParser(NS_LITERAL_STRING("camera      'self"), true, 1, parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u"camera      'self"_ns, true, 1, parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].HasAllowList());
   ASSERT_TRUE(!parsedFeatures[0].AllowListContains(selfPrincipal));
 
   
-  CheckParser(NS_LITERAL_STRING("camera      'selF'"), true, 1, parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u"camera      'selF'"_ns, true, 1, parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].AllowListContains(selfPrincipal));
 
   
-  CheckParser(NS_LITERAL_STRING("camera * 'self' none' a.com 123"), true, 1,
-              parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u"camera * 'self' none' a.com 123"_ns, true, 1, parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].AllowsAll());
 
   
-  CheckParser(NS_LITERAL_STRING("camera 'none' a.com b.org c.net d.co.uk"),
-              true, 1, parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u"camera 'none' a.com b.org c.net d.co.uk"_ns, true, 1,
+              parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].AllowsNone());
 
   
-  CheckParser(NS_LITERAL_STRING("camera * a.com b.org c.net d.co.uk"), true, 1,
+  CheckParser(u"camera * a.com b.org c.net d.co.uk"_ns, true, 1,
               parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].AllowsAll());
 
   
-  CheckParser(NS_LITERAL_STRING("camera 'self'"), true, 1, parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u"camera 'self'"_ns, true, 1, parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].AllowListContains(selfPrincipal));
 
   
-  CheckParser(NS_LITERAL_STRING("camera http://example.com http://example.net"),
-              true, 1, parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u"camera http://example.com http://example.net"_ns, true, 1,
+              parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(!parsedFeatures[0].AllowListContains(selfPrincipal));
   ASSERT_TRUE(parsedFeatures[0].AllowListContains(exampleComPrincipal));
   ASSERT_TRUE(parsedFeatures[0].AllowListContains(exampleNetPrincipal));
 
   
-  CheckParser(
-      NS_LITERAL_STRING("camera http://example.com 'self' http://example.net"),
-      true, 1, parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u"camera http://example.com 'self' http://example.net"_ns, true,
+              1, parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].AllowListContains(selfPrincipal));
   ASSERT_TRUE(parsedFeatures[0].AllowListContains(exampleComPrincipal));
   ASSERT_TRUE(parsedFeatures[0].AllowListContains(exampleNetPrincipal));
 
   
-  CheckParser(NS_LITERAL_STRING(
-                  "camera http://example.com 'self' http://example.net *"),
-              true, 1, parsedFeatures);
-  ASSERT_TRUE(parsedFeatures[0].Name().Equals(NS_LITERAL_STRING("camera")));
+  CheckParser(u"camera http://example.com 'self' http://example.net *"_ns, true,
+              1, parsedFeatures);
+  ASSERT_TRUE(parsedFeatures[0].Name().Equals(u"camera"_ns));
   ASSERT_TRUE(parsedFeatures[0].AllowsAll());
 }

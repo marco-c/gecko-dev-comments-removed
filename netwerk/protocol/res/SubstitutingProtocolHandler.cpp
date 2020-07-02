@@ -617,8 +617,7 @@ nsresult SubstitutingProtocolHandler::ResolveURI(nsIURI* uri,
     if (baseDir) {
       nsAutoCString basePath;
       rv = baseURI->GetFilePath(basePath);
-      if (NS_SUCCEEDED(rv) &&
-          !StringEndsWith(basePath, NS_LITERAL_CSTRING("/"))) {
+      if (NS_SUCCEEDED(rv) && !StringEndsWith(basePath, "/"_ns)) {
         
         
         

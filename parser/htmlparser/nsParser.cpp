@@ -795,7 +795,7 @@ nsresult nsParser::Parse(const nsAString& aSourceBuffer, void* aKey,
       
 
       pc->mContextType = CParserContext::eCTString;
-      pc->SetMimeType(NS_LITERAL_CSTRING("application/xml"));
+      pc->SetMimeType("application/xml"_ns);
       pc->mDTDMode = eDTDMode_full_standards;
 
       mUnusedInput.Truncate();
@@ -876,7 +876,7 @@ nsParser::ParseFragment(const nsAString& aSourceBuffer,
   } else {
     
     
-    result = Parse(aSourceBuffer + NS_LITERAL_STRING("</"), &theContext, false);
+    result = Parse(aSourceBuffer + u"</"_ns, &theContext, false);
     fragSink->DidBuildContent();
 
     if (NS_SUCCEEDED(result)) {

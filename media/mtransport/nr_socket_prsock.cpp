@@ -250,7 +250,7 @@ static nsIThread* GetIOThreadAndAddUse_s() {
 #if defined(MOZILLA_INTERNAL_API)
   
   if (!sThread) {
-    sThread = new SingletonThreadHolder(NS_LITERAL_CSTRING("mtransport"));
+    sThread = new SingletonThreadHolder("mtransport"_ns);
     NS_DispatchToMainThread(mozilla::WrapRunnableNM(&ClearSingletonOnShutdown));
   }
   

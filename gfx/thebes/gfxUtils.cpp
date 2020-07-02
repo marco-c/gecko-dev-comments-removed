@@ -1367,8 +1367,7 @@ class GetFeatureStatusWorkerRunnable final
                                  const nsCOMPtr<nsIGfxInfo>& gfxInfo,
                                  int32_t feature, nsACString& failureId,
                                  int32_t* status)
-      : WorkerMainThreadRunnable(workerPrivate,
-                                 NS_LITERAL_CSTRING("GFX :: GetFeatureStatus")),
+      : WorkerMainThreadRunnable(workerPrivate, "GFX :: GetFeatureStatus"_ns),
         mGfxInfo(gfxInfo),
         mFeature(feature),
         mStatus(status),
@@ -1481,7 +1480,6 @@ void gfxUtils::RemoveShaderCacheFromDiskIfNecessary() {
   Preferences::SetCString(GFX_SHADER_CHECK_BUILD_VERSION_PREF, buildID);
   Preferences::SetString(GFX_SHADER_CHECK_DEVICE_ID_PREF, deviceID);
   Preferences::SetString(GFX_SHADER_CHECK_DRIVER_VERSION_PREF, driverVersion);
-  return;
 }
 
 

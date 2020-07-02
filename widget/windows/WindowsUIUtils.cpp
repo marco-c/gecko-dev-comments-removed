@@ -365,10 +365,9 @@ RefPtr<SharePromise> WindowsUIUtils::Share(nsAutoString aTitle,
 
 
 
-    auto wTitle =
-        ConvertToWindowsString((title.IsVoid() || title.Length() == 0)
-                                   ? nsAutoString(NS_LITERAL_STRING(" "))
-                                   : title);
+    auto wTitle = ConvertToWindowsString((title.IsVoid() || title.Length() == 0)
+                                             ? nsAutoString(u" "_ns)
+                                             : title);
     if (wTitle.isErr() ||
         FAILED(spDataPackageProperties->put_Title(wTitle.unwrap().get()))) {
       promiseHolder->Reject(NS_ERROR_FAILURE, __func__);
