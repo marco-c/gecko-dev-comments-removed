@@ -4,7 +4,6 @@
 
 use super::CommonMetricData;
 
-use crate::ipc::{need_ipc, MetricId};
 
 
 
@@ -33,27 +32,14 @@ use crate::ipc::{need_ipc, MetricId};
 
 
 
-
-
-#[derive(Debug)]
-pub enum StringMetric {
-    Parent(StringMetricImpl),
-    Child(StringMetricIpc),
-}
 
 #[derive(Clone, Debug)]
-pub struct StringMetricImpl(pub(crate) glean_core::metrics::StringMetric);
-#[derive(Debug)]
-pub struct StringMetricIpc(MetricId);
+pub struct StringMetric(pub(crate) glean_core::metrics::StringMetric);
 
 impl StringMetric {
     
     pub fn new(meta: CommonMetricData) -> Self {
-        if need_ipc() {
-            StringMetric::Child(StringMetricIpc(MetricId::new(meta)))
-        } else {
-            StringMetric::Parent(StringMetricImpl::new(meta))
-        }
+        Self(glean_core::metrics::StringMetric::new(meta))
     }
 
     
@@ -67,17 +53,7 @@ impl StringMetric {
     
     
     pub fn set<S: Into<String>>(&self, value: S) {
-        match self {
-            StringMetric::Parent(p) => p.set(value),
-            
-            StringMetric::Child(_c) => {
-                log::error!(
-                    "Unable to set string metric {:?} in non-main process. Ignoring.",
-                    self
-                );
-                
-            }
-        };
+        crate::with_glean(move |glean| self.0.set(glean, value))
     }
 
     
@@ -93,26 +69,6 @@ impl StringMetric {
     
     
     pub fn test_get_value(&self, storage_name: &str) -> Option<String> {
-        match self {
-            StringMetric::Parent(p) => p.test_get_value(storage_name),
-            StringMetric::Child(_c) => panic!(
-                "Cannot get test value for {:?} in non-parent process!",
-                self
-            ),
-        }
-    }
-}
-
-impl StringMetricImpl {
-    fn new(meta: CommonMetricData) -> Self {
-        Self(glean_core::metrics::StringMetric::new(meta))
-    }
-
-    fn set<S: Into<String>>(&self, value: S) {
-        crate::with_glean(move |glean| self.0.set(glean, value))
-    }
-
-    fn test_get_value(&self, storage_name: &str) -> Option<String> {
         crate::with_glean(move |glean| self.0.test_get_value(glean, storage_name))
     }
 }

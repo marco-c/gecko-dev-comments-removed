@@ -7,14 +7,12 @@ use std::sync::RwLock;
 use glean_core::metrics::MetricType;
 
 use super::{BooleanMetric, CommonMetricData, CounterMetric, ErrorType, StringMetric};
-use crate::ipc::need_ipc;
 
 
 
 
 mod private {
     use super::{BooleanMetric, CommonMetricData, CounterMetric, StringMetric};
-    use crate::ipc::need_ipc;
 
     
     
@@ -52,11 +50,7 @@ mod private {
         type Inner = glean_core::metrics::StringMetric;
 
         fn from_inner(metric: Self::Inner) -> Self {
-            assert!(
-                !need_ipc(),
-                "Labeled String metrics are not supported in non-main processes"
-            );
-            StringMetric::Parent(crate::metrics::string::StringMetricImpl(metric))
+            StringMetric(metric)
         }
 
         fn new_inner(meta: CommonMetricData) -> Self::Inner {
@@ -71,8 +65,7 @@ mod private {
         type Inner = glean_core::metrics::CounterMetric;
 
         fn from_inner(metric: Self::Inner) -> Self {
-            assert!(!need_ipc());
-            CounterMetric::Parent(crate::metrics::counter::CounterMetricImpl(metric))
+            CounterMetric(metric)
         }
 
         fn new_inner(meta: CommonMetricData) -> Self::Inner {
@@ -158,16 +151,12 @@ where
     
     
     pub fn get(&self, label: &str) -> T {
-        if need_ipc() {
-            panic!("Use of labeled metrics in IPC land not yet implemented!");
-        } else {
-            let mut core = self
-                .core
-                .write()
-                .expect("lock of wrapped metric was poisoned");
-            let inner = core.get(label);
-            T::from_inner(inner)
-        }
+        let mut core = self
+            .core
+            .write()
+            .expect("lock of wrapped metric was poisoned");
+        let inner = core.get(label);
+        T::from_inner(inner)
     }
 
     
