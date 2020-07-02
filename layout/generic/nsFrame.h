@@ -79,32 +79,6 @@ class PresShell;
 
 
 
-
-
-
-
-
-
-
-#define NS_DECL_FRAMEARENA_HELPERS(class)                                      \
-  NS_DECL_QUERYFRAME_TARGET(class)                                             \
-  static constexpr nsIFrame::ClassID kClassID = nsIFrame::ClassID::class##_id; \
-  void* operator new(size_t, mozilla::PresShell*) MOZ_MUST_OVERRIDE;           \
-  nsQueryFrame::FrameIID GetFrameId() const override MOZ_MUST_OVERRIDE {       \
-    return nsQueryFrame::class##_id;                                           \
-  }
-
-#define NS_IMPL_FRAMEARENA_HELPERS(class)                             \
-  void* class ::operator new(size_t sz, mozilla::PresShell* aShell) { \
-    return aShell->AllocateFrame(nsQueryFrame::class##_id, sz);       \
-  }
-
-#define NS_DECL_ABSTRACT_FRAME(class)                                         \
-  void* operator new(size_t, mozilla::PresShell*) MOZ_MUST_OVERRIDE = delete; \
-  nsQueryFrame::FrameIID GetFrameId() const override MOZ_MUST_OVERRIDE = 0;
-
-
-
 struct nsBoxLayoutMetrics;
 struct nsRect;
 
@@ -145,7 +119,7 @@ class nsFrame : public nsIFrame {
   
   NS_DECL_QUERYFRAME
   NS_DECL_QUERYFRAME_TARGET(nsFrame)
-  virtual nsQueryFrame::FrameIID GetFrameId() const MOZ_MUST_OVERRIDE {
+  nsQueryFrame::FrameIID GetFrameId() const override MOZ_MUST_OVERRIDE {
     return kFrameIID;
   }
   void* operator new(size_t, mozilla::PresShell*) MOZ_MUST_OVERRIDE;
