@@ -8,9 +8,13 @@
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
+  JSONFile: "resource://gre/modules/JSONFile.jsm",
   OS: "resource://gre/modules/osfile.jsm",
 });
 
@@ -53,6 +57,80 @@ const VERSION_KEY = "_version";
 const VERSION_VALUE = 1;
 
 const KEY_PREFIX = "id-";
+
+
+let prefs;
+
+
+class LegacyPermissionStore {
+  async lazyInit() {
+    if (!this._initPromise) {
+      this._initPromise = this._init();
+    }
+    return this._initPromise;
+  }
+
+  async _init() {
+    let path = OS.Path.join(OS.Constants.Path.profileDir, FILE_NAME);
+
+    prefs = new JSONFile({ path });
+    prefs.data = {};
+
+    try {
+      let { buffer } = await OS.File.read(path);
+      prefs.data = JSON.parse(new TextDecoder().decode(buffer));
+    } catch (e) {
+      if (!e.becauseNoSuchFile) {
+        Cu.reportError(e);
+      }
+    }
+  }
+
+  async has(extensionId) {
+    await this.lazyInit();
+    return !!prefs.data[extensionId];
+  }
+
+  async get(extensionId) {
+    await this.lazyInit();
+
+    let perms = prefs.data[extensionId];
+    if (!perms) {
+      perms = emptyPermissions();
+    }
+
+    return perms;
+  }
+
+  async put(extensionId, permissions) {
+    await this.lazyInit();
+    prefs.data[extensionId] = permissions;
+    prefs.saveSoon();
+  }
+
+  async delete(extensionId) {
+    await this.lazyInit();
+    if (prefs.data[extensionId]) {
+      delete prefs.data[extensionId];
+      prefs.saveSoon();
+    }
+  }
+
+  async uninitForTest() {
+    if (!this._initPromise) {
+      return;
+    }
+
+    await this._initPromise;
+    await prefs.finalize();
+    prefs = null;
+    this._initPromise = null;
+  }
+
+  async resetVersionForTest() {
+    throw new Error("Not supported");
+  }
+}
 
 class PermissionStore {
   async _init() {
@@ -161,12 +239,22 @@ class PermissionStore {
     return this._store.delete(VERSION_KEY);
   }
 
-  get initPromiseForTest() {
+  async uninitForTest() {
+    
+    
     return this._initPromise;
   }
 }
 
-let store = new PermissionStore();
+
+function createStore(useRkv = AppConstants.NIGHTLY_BUILD) {
+  if (useRkv) {
+    return new PermissionStore();
+  }
+  return new LegacyPermissionStore();
+}
+
+let store = createStore();
 
 var ExtensionPermissions = {
   async _update(extensionId, perms) {
@@ -297,9 +385,11 @@ var ExtensionPermissions = {
   },
 
   
+  _useLegacyStorageBackend: false,
+
+  
   async _uninit() {
-    
-    await store.initPromiseForTest;
-    store = new PermissionStore();
+    await store.uninitForTest();
+    store = createStore(!this._useLegacyStorageBackend);
   },
 };

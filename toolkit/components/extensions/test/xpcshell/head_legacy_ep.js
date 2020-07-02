@@ -1,0 +1,13 @@
+"use strict";
+
+
+
+
+{
+  const { ExtensionPermissions } = ChromeUtils.import(
+    "resource://gre/modules/ExtensionPermissions.jsm"
+  );
+
+  ExtensionPermissions._useLegacyStorageBackend = true;
+  ExtensionPermissions._uninit();
+}
