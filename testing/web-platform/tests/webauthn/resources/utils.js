@@ -18,6 +18,17 @@ function uint8ArrayToBase64url(array) {
 }
 
 
+function uint8ArrayToHex(array) {
+  const hexTable = '0123456789abcdef';
+  let s = '';
+  for (let i = 0; i < array.length; i++) {
+    s += hexTable.charAt(array[i] >> 4);
+    s += hexTable.charAt(array[i] & 15);
+  }
+  return s;
+}
+
+
 
 function convertDERSignatureToSubtle(der) {
   let index = -1;
@@ -158,13 +169,7 @@ class Cbor {
     return this.slice.length == 0;
   }
   get hex() {
-    const hexTable = '0123456789abcdef';
-    let s = '';
-    for (let i = 0; i < this.data.length; i++) {
-      s += hexTable.charAt(this.data[i] >> 4);
-      s += hexTable.charAt(this.data[i] & 15);
-    }
-    return s;
+    return uint8ArrayToHex(this.data);
   }
   compare(other) {
     if (this.length < other.length) {
