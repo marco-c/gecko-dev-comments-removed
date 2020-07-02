@@ -29,20 +29,21 @@ use std::slice::Iter;
 use style_traits::{CssWriter, ParseError, ParsingMode, StyleParseErrorKind, ToCss};
 
 
-
-
-
-pub struct AnimationRules(
-    pub Option<Arc<Locked<PropertyDeclarationBlock>>>,
-    pub Option<Arc<Locked<PropertyDeclarationBlock>>>,
-);
-
-impl AnimationRules {
+#[derive(Default)]
+pub struct AnimationDeclarations {
     
-    pub fn is_empty(&self) -> bool {
-        self.0.is_none() && self.1.is_none()
+    pub animations: Option<Arc<Locked<PropertyDeclarationBlock>>>,
+    
+    pub transitions: Option<Arc<Locked<PropertyDeclarationBlock>>>,
+}
+
+impl AnimationDeclarations {
+    
+    pub(crate) fn is_empty(&self) -> bool {
+        self.animations.is_none() && self.transitions.is_none()
     }
 }
+
 
 
 

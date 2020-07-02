@@ -14,6 +14,7 @@ use crate::properties::animated_properties::{AnimationValue, AnimationValueMap};
 use crate::properties::longhands::animation_direction::computed_value::single_value::T as AnimationDirection;
 use crate::properties::longhands::animation_fill_mode::computed_value::single_value::T as AnimationFillMode;
 use crate::properties::longhands::animation_play_state::computed_value::single_value::T as AnimationPlayState;
+use crate::properties::AnimationDeclarations;
 use crate::properties::{
     ComputedValues, Importance, LonghandId, LonghandIdSet, PropertyDeclarationBlock,
     PropertyDeclarationId,
@@ -1241,7 +1242,7 @@ impl DocumentAnimationSet {
         key: &AnimationSetKey,
         time: f64,
         shared_lock: &SharedRwLock,
-    ) -> AnimationAndTransitionDeclarations {
+    ) -> AnimationDeclarations {
         let sets = self.sets.read();
         let set = match sets.get(key) {
             Some(set) => set,
@@ -1256,7 +1257,7 @@ impl DocumentAnimationSet {
             let block = PropertyDeclarationBlock::from_animation_value_map(&map);
             Arc::new(shared_lock.wrap(block))
         });
-        AnimationAndTransitionDeclarations {
+        AnimationDeclarations {
             animations,
             transitions,
         }
@@ -1267,23 +1268,6 @@ impl DocumentAnimationSet {
         if let Some(set) = self.sets.write().get_mut(key) {
             set.cancel_all_animations();
         }
-    }
-}
-
-
-
-#[derive(Default)]
-pub struct AnimationAndTransitionDeclarations {
-    
-    pub animations: Option<Arc<Locked<PropertyDeclarationBlock>>>,
-    
-    pub transitions: Option<Arc<Locked<PropertyDeclarationBlock>>>,
-}
-
-impl AnimationAndTransitionDeclarations {
-    
-    pub(crate) fn is_empty(&self) -> bool {
-        self.animations.is_none() && self.transitions.is_none()
     }
 }
 
