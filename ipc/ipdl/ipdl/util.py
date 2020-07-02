@@ -2,12 +2,11 @@
 
 
 
-import hashlib
+import zlib
 
 
 
 
 def hash_str(s):
     assert isinstance(s, str)
-    return int.from_bytes(hashlib.md5(s.encode('utf-8')).digest(),
-                          byteorder='big')
+    return zlib.adler32(s.encode('utf-8'))
