@@ -26,6 +26,10 @@ struct BytecodeInfo {
   bool loopHeadCanOsr : 1;
 
   
+  
+  bool jumpTargetNormallyReachable : 1;
+
+  
   bool hasResumeOffset : 1;
 
   void init(unsigned depth) {
@@ -33,6 +37,13 @@ struct BytecodeInfo {
     MOZ_ASSERT_IF(initialized, stackDepth == depth);
     initialized = true;
     stackDepth = depth;
+  }
+
+  void setJumpTarget(bool normallyReachable) {
+    jumpTarget = true;
+    if (normallyReachable) {
+      jumpTargetNormallyReachable = true;
+    }
   }
 };
 

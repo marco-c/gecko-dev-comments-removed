@@ -1409,25 +1409,7 @@ AbortReasonOr<Ok> IonBuilder::maybeAddOsrTypeBarriers() {
   
 
   MBasicBlock* osrBlock = graph().osrBlock();
-  if (!osrBlock) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(graph().hasTryBlock());
-    return abort(AbortReason::Disable,
-                 "OSR block only reachable through catch block");
-  }
+  MOZ_ASSERT(osrBlock);
 
   MBasicBlock* preheader = osrBlock->getSuccessor(0);
   MBasicBlock* header = preheader->getSuccessor(0);
