@@ -30,9 +30,10 @@ GECKOVIEW_STREAMING_PRODUCT = 'geckoview_streaming'
 SUPPORTED_PRODUCTS = {
     'firefox': 'Firefox',
     'fennec': 'Fennec',
-    'geckoview': 'Geckoview',
     GECKOVIEW_STREAMING_PRODUCT: 'GeckoviewStreaming',
     'thunderbird': 'Thunderbird',
+    
+    
 }
 
 SUPPORTED_OPERATING_SYSTEMS = [
