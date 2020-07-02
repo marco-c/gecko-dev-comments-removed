@@ -4519,7 +4519,8 @@ class HTMLEditor final : public TextEditor,
 
 
   EditorRawDOMPoint GetBetterInsertionPointFor(
-      nsIContent& aContentToInsert, const EditorRawDOMPoint& aPointToInsert);
+      nsIContent& aContentToInsert,
+      const EditorRawDOMPoint& aPointToInsert) const;
 
   
 
