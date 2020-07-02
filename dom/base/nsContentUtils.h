@@ -3201,6 +3201,13 @@ class nsContentUtils {
 
   static bool IsMessageInputEvent(const IPC::Message& aMsg);
 
+  
+
+
+
+
+  static bool IsMessageCriticalInputEvent(const IPC::Message& aMsg);
+
   static void AsyncPrecreateStringBundles();
 
   static bool ContentIsLink(nsIContent* aContent);
