@@ -4232,7 +4232,7 @@ bool GCRuntime::beginMarkPhase(JS::GCReason reason, AutoGCSession& session) {
 
 
 
-  {
+  if (!IsShutdownGC(reason) && reason != JS::GCReason::ROOTS_REMOVED) {
     AutoLockHelperThreadState helperLock;
     HelperThreadState().startHandlingCompressionTasks(
         helperLock, GlobalHelperThreadState::ScheduleCompressionTask::GC);
