@@ -134,9 +134,6 @@ interface nsISHEntry : nsISupports
     [infallible] attribute boolean saveLayoutStateFlag;
 
     
-    [infallible] attribute boolean expirationStatus;
-
-    
 
 
 
