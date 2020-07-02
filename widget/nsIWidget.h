@@ -945,16 +945,6 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual LayoutDeviceIntSize GetCompositionSize() {
-    return GetBounds().Size();
-  }
-
-  
-
-
-
-
-
 
   virtual void SetBackgroundColor(const nscolor& aColor) {}
 
