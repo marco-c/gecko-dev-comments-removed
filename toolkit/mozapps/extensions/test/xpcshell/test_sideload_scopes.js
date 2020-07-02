@@ -4,10 +4,6 @@
 
 "use strict";
 
-const { AddonSettings } = ChromeUtils.import(
-  "resource://gre/modules/addons/AddonSettings.jsm"
-);
-
 
 
 
@@ -66,11 +62,9 @@ add_task(async function test_sideloads_legacy() {
 
 add_task(async function test_sideloads_disabled() {
   
-  Services.prefs.clearUserPref("extensions.sideloadScopes");
-  Assert.equal(
-    AddonManager.SCOPE_PROFILE,
-    AddonSettings.SCOPES_SIDELOAD,
-    "sideload limited to profile"
+  Services.prefs.setIntPref(
+    "extensions.sideloadScopes",
+    AddonManager.SCOPE_PROFILE
   );
 
   

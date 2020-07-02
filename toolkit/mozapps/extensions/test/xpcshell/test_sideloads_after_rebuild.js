@@ -39,7 +39,10 @@ add_task(async function test_sideloads_after_rebuild() {
   
   await promiseShutdownManager();
   
-  Services.prefs.clearUserPref("extensions.sideloadScopes");
+  Services.prefs.setIntPref(
+    "extensions.sideloadScopes",
+    AddonManager.SCOPE_PROFILE
+  );
 
   
   await createWebExtension(
