@@ -23,12 +23,38 @@ var TargetActorRegistry = {
     browsingContextTargetActors.delete(targetActor);
   },
 
+  
+
+
+
+
+
+
   getTargetActor(browsingContextID) {
     for (const actor of browsingContextTargetActors) {
-      if (actor.browsingContextID == browsingContextID) {
+      if (
+        actor.browsingContextID == browsingContextID ||
+        (browsingContextID === null && actor.typeName === "parentProcessTarget")
+      ) {
         return actor;
       }
     }
+    return null;
+  },
+
+  
+
+
+
+
+
+  getParentProcessTargetActor() {
+    for (const actor of browsingContextTargetActors) {
+      if (actor.typeName === "parentProcessTarget") {
+        return actor;
+      }
+    }
+
     return null;
   },
 };

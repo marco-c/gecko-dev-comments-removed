@@ -186,15 +186,27 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     }
 
     
-    
-    
-    
-    
-    
-    
-    const targetActor = TargetActorRegistry.getTargetActor(
-      this.browsingContextID
-    );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    const targetActor = this.browsingContextID
+      ? TargetActorRegistry.getTargetActor(this.browsingContextID)
+      : TargetActorRegistry.getParentProcessTargetActor();
     if (targetActor) {
       await targetActor.watchTargetResources(resourceTypes);
     }
@@ -233,6 +245,14 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
           resourceTypes,
         });
       }
+    }
+
+    
+    const targetActor = this.browsingContextID
+      ? TargetActorRegistry.getTargetActor(this.browsingContextID)
+      : TargetActorRegistry.getParentProcessTargetActor();
+    if (targetActor) {
+      targetActor.unwatchTargetResources(resourceTypes);
     }
 
     
