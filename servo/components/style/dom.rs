@@ -479,23 +479,25 @@ pub trait TElement:
     
     
     
-    fn animation_rules(&self) -> AnimationRules {
+    fn animation_rules(&self, context: &SharedStyleContext) -> AnimationRules {
         if !self.may_have_animations() {
             return AnimationRules(None, None);
         }
 
-        AnimationRules(self.animation_rule(), self.transition_rule())
+        AnimationRules(self.animation_rule(context), self.transition_rule(context))
     }
 
     
-    fn animation_rule(&self) -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
-        None
-    }
+    fn animation_rule(
+        &self,
+        _: &SharedStyleContext,
+    ) -> Option<Arc<Locked<PropertyDeclarationBlock>>>;
 
     
-    fn transition_rule(&self) -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
-        None
-    }
+    fn transition_rule(
+        &self,
+        context: &SharedStyleContext,
+    ) -> Option<Arc<Locked<PropertyDeclarationBlock>>>;
 
     
     fn state(&self) -> ElementState;
@@ -729,9 +731,7 @@ pub trait TElement:
     
     
     
-    fn may_have_animations(&self) -> bool {
-        false
-    }
+    fn may_have_animations(&self) -> bool;
 
     
     #[cfg(feature = "gecko")]
@@ -748,14 +748,14 @@ pub trait TElement:
     
     
     
-    fn has_animations(&self) -> bool;
+    fn has_animations(&self, context: &SharedStyleContext) -> bool;
 
     
     fn has_css_animations(&self, context: &SharedStyleContext) -> bool;
 
     
     
-    fn has_css_transitions(&self) -> bool;
+    fn has_css_transitions(&self, context: &SharedStyleContext) -> bool;
 
     
     fn has_animation_restyle_hints(&self) -> bool {
