@@ -16,6 +16,9 @@ class AudioDeviceInfo;
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(cubeb_stream_prefs)
 
 namespace mozilla {
+
+class AudioThreadRegistry;
+
 namespace CubebUtils {
 
 typedef cubeb_devid AudioDeviceID;
@@ -29,6 +32,10 @@ void InitLibrary();
 void ShutdownLibrary();
 
 bool SandboxEnabled();
+
+
+
+AudioThreadRegistry* GetAudioThreadRegistry();
 
 
 uint32_t MaxNumberOfChannels();
