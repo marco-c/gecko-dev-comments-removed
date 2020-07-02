@@ -78,6 +78,9 @@ const { LocalizationHelper, localizeMarkup } = require("devtools/shared/l10n");
 const INSPECTOR_L10N = new LocalizationHelper(
   "devtools/client/locales/inspector.properties"
 );
+const {
+  FluentL10n,
+} = require("devtools/client/shared/fluent-l10n/fluent-l10n");
 
 
 const INITIAL_SIDEBAR_SIZE = 350;
@@ -189,6 +192,9 @@ Inspector.prototype = {
   async init() {
     
     localizeMarkup(this.panelDoc);
+
+    this._fluentL10n = new FluentL10n();
+    await this._fluentL10n.init(["devtools/client/compatibility.ftl"]);
 
     
     
@@ -330,6 +336,10 @@ Inspector.prototype = {
 
   get cssProperties() {
     return this._cssProperties.cssProperties;
+  },
+
+  get fluentL10n() {
+    return this._fluentL10n;
   },
 
   
