@@ -309,7 +309,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
 
   
   
-  uint32_t mRedirectChannelId = 0;
+  uint64_t mRedirectChannelId = 0;
 
   PBOverrideStatus mPBOverride;
 

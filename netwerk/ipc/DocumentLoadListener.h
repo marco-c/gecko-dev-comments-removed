@@ -137,16 +137,16 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   static bool OpenFromParent(dom::CanonicalBrowsingContext* aBrowsingContext,
                              nsDocShellLoadState* aLoadState,
-                             uint64_t aOuterWindowId, uint32_t* aOutIdent);
+                             uint64_t aOuterWindowId, uint64_t* aOutIdent);
 
   
   
   
-  static void CleanupParentLoadAttempt(uint32_t aLoadIdent);
+  static void CleanupParentLoadAttempt(uint64_t aLoadIdent);
 
   
   static RefPtr<OpenPromise> ClaimParentLoad(DocumentLoadListener** aListener,
-                                             uint32_t aLoadIdent);
+                                             uint64_t aLoadIdent);
 
   
   
@@ -415,7 +415,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  uint32_t mRedirectChannelId = 0;
+  uint64_t mRedirectChannelId = 0;
   
   
   

@@ -277,7 +277,7 @@ struct DocShellLoadStateInit
   
   
 
-  uint32_t LoadIdentifier;
+  uint64_t LoadIdentifier;
 };
 
 struct TimedChannelInfo

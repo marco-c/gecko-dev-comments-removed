@@ -1585,7 +1585,7 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
     if (ContentParent* cp = Canonical()->GetContentParent()) {
       
       
-      uint32_t loadIdentifier = 0;
+      uint64_t loadIdentifier = 0;
       if (Canonical()->AttemptLoadURIInParent(aLoadState, &loadIdentifier)) {
         aLoadState->SetLoadIdentifier(loadIdentifier);
       }

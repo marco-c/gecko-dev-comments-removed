@@ -540,8 +540,7 @@ auto DocumentLoadListener::Open(
 
 bool DocumentLoadListener::OpenFromParent(
     dom::CanonicalBrowsingContext* aBrowsingContext,
-    nsDocShellLoadState* aLoadState, uint64_t aOuterWindowId,
-    uint32_t* aOutIdent) {
+    nsDocShellLoadState* aLoadState, uint64_t aOuterWindowId, uint64_t* aOutIdent) {
   LOG(("DocumentLoadListener::OpenFromParent"));
 
   
@@ -616,16 +615,18 @@ bool DocumentLoadListener::OpenFromParent(
     
     nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
         RedirectChannelRegistrar::GetOrCreate();
-    rv = registrar->RegisterChannel(nullptr, aOutIdent);
+    uint64_t loadIdentifier = aLoadState->GetLoadIdentifier();
+    *aOutIdent = loadIdentifier;
+    rv = registrar->RegisterChannel(nullptr, loadIdentifier);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
     
-    rv = registrar->LinkChannels(*aOutIdent, listener, nullptr);
+    rv = registrar->LinkChannels(loadIdentifier, listener, nullptr);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
   return !!promise;
 }
 
-void DocumentLoadListener::CleanupParentLoadAttempt(uint32_t aLoadIdent) {
+void DocumentLoadListener::CleanupParentLoadAttempt(uint64_t aLoadIdent) {
   nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
       RedirectChannelRegistrar::GetOrCreate();
 
@@ -643,7 +644,7 @@ void DocumentLoadListener::CleanupParentLoadAttempt(uint32_t aLoadIdent) {
 }
 
 auto DocumentLoadListener::ClaimParentLoad(DocumentLoadListener** aListener,
-                                           uint32_t aLoadIdent)
+                                           uint64_t aLoadIdent)
     -> RefPtr<OpenPromise> {
   nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
       RedirectChannelRegistrar::GetOrCreate();
@@ -1369,8 +1370,9 @@ DocumentLoadListener::RedirectToRealChannel(
   nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
       RedirectChannelRegistrar::GetOrCreate();
   MOZ_ASSERT(registrar);
+  mRedirectChannelId = nsContentUtils::GenerateLoadIdentifier();
   MOZ_ALWAYS_SUCCEEDS(
-      registrar->RegisterChannel(mChannel, &mRedirectChannelId));
+      registrar->RegisterChannel(mChannel, mRedirectChannelId));
 
   if (aDestinationProcess) {
     dom::ContentParent* cp =

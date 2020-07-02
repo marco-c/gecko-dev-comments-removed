@@ -9710,6 +9710,14 @@ uint64_t nsContentUtils::GenerateWindowId() {
 }
 
 
+static Atomic<uint64_t> gNextLoadIdentifier(0);
+
+
+uint64_t nsContentUtils::GenerateLoadIdentifier() {
+  return GenerateProcessSpecificId(++gNextLoadIdentifier);
+}
+
+
 bool nsContentUtils::GetUserIsInteracting() {
   return UserInteractionObserver::sUserActive;
 }

@@ -238,8 +238,8 @@ class nsDocShellLoadState final {
     return mCancelContentJSEpoch;
   }
 
-  void SetLoadIdentifier(uint32_t aIdent) { mLoadIdentifier = aIdent; }
-  uint32_t GetLoadIdentifier() const { return mLoadIdentifier; }
+  void SetLoadIdentifier(uint64_t aIdent) { mLoadIdentifier = aIdent; }
+  uint64_t GetLoadIdentifier() const { return mLoadIdentifier; }
 
   
   
@@ -415,7 +415,7 @@ class nsDocShellLoadState final {
   
   
   
-  uint32_t mLoadIdentifier;
+  uint64_t mLoadIdentifier;
 };
 
 #endif 

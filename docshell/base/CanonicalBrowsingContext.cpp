@@ -813,7 +813,7 @@ MediaController* CanonicalBrowsingContext::GetMediaController() {
 }
 
 bool CanonicalBrowsingContext::AttemptLoadURIInParent(
-    nsDocShellLoadState* aLoadState, uint32_t* aLoadIdentifier) {
+    nsDocShellLoadState* aLoadState, uint64_t* aLoadIdentifier) {
   
   
   if (!IsTopContent() || !GetContentParent() ||
