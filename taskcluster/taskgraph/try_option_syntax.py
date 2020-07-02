@@ -569,7 +569,7 @@ class TryOptionSyntax(object):
         attr = task.attributes.get
 
         def check_run_on_projects():
-            return set(['try', 'all']) & set(attr('run_on_projects', []))
+            return {'all'} & set(attr('run_on_projects', []))
 
         
         if attr('unittest_variant') == 'fission':
