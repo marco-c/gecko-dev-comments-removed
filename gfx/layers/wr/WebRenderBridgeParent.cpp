@@ -1950,14 +1950,14 @@ bool WebRenderBridgeParent::AdvanceAnimations() {
       
       
       
-      return AnimationHelper::SampleAnimations(mAnimStorage, *testingTimeStamp,
-                                               *testingTimeStamp);
+      return mAnimStorage->SampleAnimations(*testingTimeStamp,
+                                            *testingTimeStamp);
     }
   }
 
   TimeStamp lastComposeTime = mCompositorScheduler->GetLastComposeTime();
-  const bool isAnimating = AnimationHelper::SampleAnimations(
-      mAnimStorage, mPreviousFrameTimeStamp, lastComposeTime);
+  const bool isAnimating =
+      mAnimStorage->SampleAnimations(mPreviousFrameTimeStamp, lastComposeTime);
 
   
   

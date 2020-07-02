@@ -147,9 +147,20 @@ class CompositorAnimationStorage final {
 
   void SetAnimations(uint64_t aId, const AnimationArray& aAnimations);
 
-  const AnimationsTable& Animations() const { return mAnimations; }
+  
 
-  bool HasAnimations() const { return !mAnimations.empty(); }
+
+
+
+
+
+
+
+
+
+
+  bool SampleAnimations(TimeStamp aPreviousFrameTime,
+                        TimeStamp aCurrentFrameTime);
 
   
 
