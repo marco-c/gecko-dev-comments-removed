@@ -14,6 +14,7 @@
 
 
 
+
 "use strict";
 
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -89,6 +90,10 @@ function init_all() {
   } else {
     
     document.getElementById("template-paneSync").remove();
+  }
+  if (Services.prefs.getBoolPref("browser.preferences.experimental")) {
+    document.getElementById("category-experimental").hidden = false;
+    register_module("paneExperimental", gExperimentalPane);
   }
   register_module("paneSearchResults", gSearchResultsPane);
   gSearchResultsPane.init();
