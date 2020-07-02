@@ -449,9 +449,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   
   
-  uint64_t mCrossProcessRedirectIdentifier = 0;
-
-  
   uint64_t mLoadIdentifier = 0;
 
   
