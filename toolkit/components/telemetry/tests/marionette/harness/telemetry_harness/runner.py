@@ -28,7 +28,7 @@ class TelemetryTestRunner(BaseMarionetteTestRunner):
                 
                 
                 
-                "browser.search.geoip.url": "data:application/json,{\"country_code\": \"DE\"}",
+                "browser.region.network.url": "",
                 
                 "browser.cache.disk.smart_size.enabled": False,
                 "toolkit.telemetry.server": "{}/pings".format(SERVER_URL),
