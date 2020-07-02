@@ -89,6 +89,10 @@ class GeckoInstance(object):
         
         "geo.wifi.scan": False,
 
+        
+        
+        "idle.lastDailyNotification": -1,
+
         "javascript.options.showInConsole": True,
 
         
@@ -198,7 +202,7 @@ class GeckoInstance(object):
         self._update_profile(value)
 
     def _update_profile(self, profile=None, profile_name=None):
-        """Check if the profile has to be created, or replaced
+        """Check if the profile has to be created, or replaced.
 
         :param profile: A Profile instance to be used.
         :param name: Profile name to be used in the path.
