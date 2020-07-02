@@ -436,25 +436,6 @@ class nsDocShell final : public nsDocLoader,
       nsLoadFlags aLoadFlags, uint32_t aCacheKey, nsresult& rv,
       nsIChannel** aChannel);
 
-  static already_AddRefed<nsIURI> AttemptURIFixup(
-      nsIChannel* aChannel, nsresult aStatus,
-      const mozilla::Maybe<nsCString>& aOriginalURIString, uint32_t aLoadType,
-      bool aIsTopFrame, bool aAllowKeywordFixup, bool aUsePrivateBrowsing,
-      bool aNotifyKeywordSearchLoading = false,
-      nsIInputStream** aNewPostData = nullptr);
-
-  
-  
-  
-  
-  
-  
-  
-  static nsresult FilterStatusForErrorPage(
-      nsresult aStatus, nsIChannel* aChannel, uint32_t aLoadType,
-      bool aIsTopFrame, bool aUseErrorPages, bool aIsInitialDocument,
-      bool* aSkippedUnknownProtocolNavigation = nullptr);
-
   
   static void MaybeNotifyKeywordSearchLoading(const nsString& aProvider,
                                               const nsString& aKeyword);
@@ -759,9 +740,9 @@ class nsDocShell final : public nsDocLoader,
       uint32_t aResponseStatus, mozilla::dom::BrowsingContext* aBrowsingContext,
       nsIWidget* aWidget, uint32_t aLoadType);
 
-  static already_AddRefed<nsIURIFixupInfo> KeywordToURI(
-      const nsACString& aKeyword, bool aIsPrivateContext,
-      nsIInputStream** aPostData);
+  already_AddRefed<nsIURIFixupInfo> KeywordToURI(const nsACString& aKeyword,
+                                                 bool aIsPrivateContext,
+                                                 nsIInputStream** aPostData);
 
   
   
@@ -1183,6 +1164,7 @@ class nsDocShell final : public nsDocLoader,
   bool mAllowMedia : 1;
   bool mAllowDNSPrefetch : 1;
   bool mAllowWindowControl : 1;
+  bool mUseErrorPages : 1;
   bool mCSSErrorReportingEnabled : 1;
   bool mAllowAuth : 1;
   bool mAllowKeywordFixup : 1;

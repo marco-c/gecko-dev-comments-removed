@@ -44,7 +44,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/RemoteWebProgress.h"
 #include "mozilla/dom/RemoteWebProgressRequest.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
 
 #ifdef ANDROID
 #  include "mozilla/widget/nsWindow.h"
@@ -176,7 +175,7 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
     
     
     
-    if (NS_SUCCEEDED(rv) && !mUsedContentHandler && !m_targetStreamListener) {
+    if (!mUsedContentHandler && !m_targetStreamListener) {
       m_targetStreamListener = mListener;
       return m_targetStreamListener->OnStartRequest(request);
     }
@@ -199,8 +198,7 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
       nsCOMPtr<nsIMultiPartChannel> multiPartChannel =
           do_QueryInterface(request);
       if (!multiPartChannel && !mCloned) {
-        DisconnectChildListeners(NS_FAILED(rv) ? rv : NS_BINDING_RETARGETED,
-                                 rv);
+        DisconnectChildListeners();
       }
     }
     return rv;
@@ -216,14 +214,14 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
     LOG(("ParentProcessDocumentOpenInfo dtor [this=%p]", this));
   }
 
-  void DisconnectChildListeners(nsresult aStatus, nsresult aLoadGroupStatus) {
+  void DisconnectChildListeners() {
     
     
     
     
     RefPtr<DocumentLoadListener> doc = do_GetInterface(ToSupports(mListener));
     MOZ_ASSERT(doc);
-    doc->DisconnectListeners(aStatus, aLoadGroupStatus);
+    doc->DisconnectListeners(NS_BINDING_RETARGETED, NS_OK);
     mListener->SetListenerAfterRedirect(nullptr);
   }
 
@@ -522,7 +520,6 @@ auto DocumentLoadListener::Open(
   mTiming = aTiming;
   mSrcdocData = aLoadState->SrcdocData();
   mBaseURI = aLoadState->BaseURI();
-  mOriginalUriString = aLoadState->GetOriginalURIString();
   if (StaticPrefs::fission_sessionHistoryInParent() &&
       browsingContext->GetSessionHistory()) {
     mSessionHistoryInfo =
@@ -1086,7 +1083,6 @@ void DocumentLoadListener::SerializeRedirectData(
   aArgs.baseUri() = mBaseURI;
   aArgs.loadStateLoadFlags() = mLoadStateLoadFlags;
   aArgs.loadStateLoadType() = mLoadStateLoadType;
-  aArgs.originalUriString() = mOriginalUriString;
   if (mSessionHistoryInfo) {
     aArgs.sessionHistoryInfo().emplace(
         mSessionHistoryInfo->mId, MakeUnique<mozilla::dom::SessionHistoryInfo>(
@@ -1541,48 +1537,6 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
           });
 }
 
-void DocumentLoadListener::MaybeReportBlockedByURLClassifier(nsresult aStatus) {
-  if (!GetBrowsingContext() || GetBrowsingContext()->IsTop() ||
-      !StaticPrefs::privacy_trackingprotection_testing_report_blocked_node()) {
-    return;
-  }
-
-  if (!UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(aStatus)) {
-    return;
-  }
-
-  RefPtr<WindowGlobalParent> parent =
-      GetBrowsingContext()->GetParentWindowContext();
-  if (parent) {
-    Unused << parent->SendAddBlockedFrameNodeByClassifier(GetBrowsingContext());
-  }
-}
-
-bool DocumentLoadListener::DocShellWillDisplayContent(nsresult aStatus) {
-  if (NS_SUCCEEDED(aStatus)) {
-    return true;
-  }
-
-  
-  
-  
-  
-
-  bool isInitialDocument = true;
-  if (WindowGlobalParent* currentWindow =
-          GetBrowsingContext()->GetCurrentWindowGlobal()) {
-    isInitialDocument = currentWindow->IsInitialDocument();
-  }
-
-  nsresult rv = nsDocShell::FilterStatusForErrorPage(
-      aStatus, mChannel, mLoadStateLoadType, GetBrowsingContext()->IsTop(),
-      GetBrowsingContext()->GetUseErrorPages(), isInitialDocument, nullptr);
-
-  
-  
-  return NS_FAILED(rv);
-}
-
 NS_IMETHODIMP
 DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   LOG(("DocumentLoadListener OnStartRequest [this=%p]", this));
@@ -1629,16 +1583,11 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
 
   mInitiatedRedirectToRealChannel = true;
 
-  MaybeReportBlockedByURLClassifier(status);
-
-  
-  
-  
   
   
   
   bool willBeRemote = false;
-  if (!DocShellWillDisplayContent(status) ||
+  if (status == NS_BINDING_ABORTED ||
       !MaybeTriggerProcessSwitch(&willBeRemote)) {
     TriggerRedirectToRealChannel();
 

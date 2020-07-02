@@ -378,6 +378,7 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mAllowMedia(true),
       mAllowDNSPrefetch(true),
       mAllowWindowControl(true),
+      mUseErrorPages(true),
       mCSSErrorReportingEnabled(false),
       mAllowAuth(mItemType == typeContent),
       mAllowKeywordFixup(false),
@@ -712,6 +713,12 @@ nsDocShell::LoadURI(nsDocShellLoadState* aLoadState, bool aSetNavigating) {
   }
   AutoPopupStatePusher statePusher(popupState);
 
+  if (aLoadState->GetOriginalURIString().isSome()) {
+    
+    
+    mOriginalUriString = *aLoadState->GetOriginalURIString();
+  }
+
   if (aLoadState->GetCancelContentJSEpoch().isSome()) {
     SetCancelContentJSEpoch(*aLoadState->GetCancelContentJSEpoch());
   }
@@ -800,16 +807,7 @@ nsDocShell::LoadURI(nsDocShellLoadState* aLoadState, bool aSetNavigating) {
   MOZ_ASSERT(aLoadState->SHEntry() == nullptr,
              "SHEntry should be null when calling InternalLoad from LoadURI");
 
-  rv = InternalLoad(aLoadState);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (aLoadState->GetOriginalURIString().isSome()) {
-    
-    
-    mOriginalUriString = *aLoadState->GetOriginalURIString();
-  }
-
-  return NS_OK;
+  return InternalLoad(aLoadState);  
 }
 
 void nsDocShell::MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState) {
@@ -1870,13 +1868,13 @@ already_AddRefed<nsILoadURIDelegate> nsDocShell::GetLoadURIDelegate() {
 
 NS_IMETHODIMP
 nsDocShell::GetUseErrorPages(bool* aUseErrorPages) {
-  *aUseErrorPages = mBrowsingContext->GetUseErrorPages();
+  *aUseErrorPages = mUseErrorPages;
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsDocShell::SetUseErrorPages(bool aUseErrorPages) {
-  mBrowsingContext->SetUseErrorPages(aUseErrorPages);
+  mUseErrorPages = aUseErrorPages;
   return NS_OK;
 }
 
@@ -3610,7 +3608,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     error = "nssFailure2";
   }
 
-  if (mBrowsingContext->GetUseErrorPages()) {
+  if (mUseErrorPages) {
     
     nsresult loadedPage =
         LoadErrorPage(aURI, aURL, errorPage.get(), error, messageStr.get(),
@@ -5614,279 +5612,6 @@ already_AddRefed<nsIURIFixupInfo> nsDocShell::KeywordToURI(
   return info.forget();
 }
 
-
-already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
-    nsIChannel* aChannel, nsresult aStatus,
-    const mozilla::Maybe<nsCString>& aOriginalURIString, uint32_t aLoadType,
-    bool aIsTopFrame, bool aAllowKeywordFixup, bool aUsePrivateBrowsing,
-    bool aNotifyKeywordSearchLoading, nsIInputStream** aNewPostData) {
-  if (aStatus != NS_ERROR_UNKNOWN_HOST && aStatus != NS_ERROR_NET_RESET &&
-      aStatus != NS_ERROR_CONNECTION_REFUSED) {
-    return nullptr;
-  }
-
-  if (!(aLoadType == LOAD_NORMAL && aIsTopFrame) && !aAllowKeywordFixup) {
-    return nullptr;
-  }
-
-  nsCOMPtr<nsIURI> url;
-  nsresult rv = aChannel->GetURI(getter_AddRefs(url));
-  if (NS_FAILED(rv)) {
-    return nullptr;
-  }
-
-  
-  
-  
-  nsCOMPtr<nsIURI> newURI;
-  nsCOMPtr<nsIInputStream> newPostData;
-
-  nsAutoCString oldSpec;
-  url->GetSpec(oldSpec);
-
-  
-  
-  
-  nsAutoString keywordProviderName, keywordAsSent;
-  if (aStatus == NS_ERROR_UNKNOWN_HOST && aAllowKeywordFixup) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nsAutoCString scheme;
-    Unused << url->GetScheme(scheme);
-    if (Preferences::GetBool("keyword.enabled", false) &&
-        StringBeginsWith(scheme, NS_LITERAL_CSTRING("http"))) {
-      bool attemptFixup = false;
-      nsAutoCString host;
-      Unused << url->GetHost(host);
-      if (host.FindChar('.') == kNotFound) {
-        attemptFixup = true;
-      } else {
-        
-        nsCOMPtr<nsIEffectiveTLDService> tldService =
-            do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
-        if (tldService) {
-          nsAutoCString suffix;
-          attemptFixup =
-              NS_SUCCEEDED(tldService->GetKnownPublicSuffix(url, suffix)) &&
-              suffix.IsEmpty();
-        }
-      }
-      if (attemptFixup) {
-        nsCOMPtr<nsIURIFixupInfo> info;
-        
-        if (aOriginalURIString && !aOriginalURIString->IsEmpty()) {
-          info = KeywordToURI(*aOriginalURIString, aUsePrivateBrowsing,
-                              getter_AddRefs(newPostData));
-        } else {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          bool isACE;
-          nsAutoCString utf8Host;
-          nsCOMPtr<nsIIDNService> idnSrv =
-              do_GetService(NS_IDNSERVICE_CONTRACTID);
-          if (idnSrv && NS_SUCCEEDED(idnSrv->IsACE(host, &isACE)) && isACE &&
-              NS_SUCCEEDED(idnSrv->ConvertACEtoUTF8(host, utf8Host))) {
-            info = KeywordToURI(utf8Host, aUsePrivateBrowsing,
-                                getter_AddRefs(newPostData));
-          } else {
-            info = KeywordToURI(host, aUsePrivateBrowsing,
-                                getter_AddRefs(newPostData));
-          }
-        }
-        if (info) {
-          info->GetPreferredURI(getter_AddRefs(newURI));
-          if (newURI) {
-            info->GetKeywordAsSent(keywordAsSent);
-            info->GetKeywordProviderName(keywordProviderName);
-          }
-        }
-      }
-    }
-  }
-
-  
-  
-  
-  
-  
-  if (aStatus == NS_ERROR_UNKNOWN_HOST || aStatus == NS_ERROR_NET_RESET) {
-    bool doCreateAlternate = true;
-
-    
-    
-
-    if (aLoadType != LOAD_NORMAL || !aIsTopFrame) {
-      doCreateAlternate = false;
-    } else {
-      
-      if (newURI) {
-        bool sameURI = false;
-        url->Equals(newURI, &sameURI);
-        if (!sameURI) {
-          
-          
-          doCreateAlternate = false;
-        }
-      }
-
-      if (doCreateAlternate) {
-        nsCOMPtr<nsILoadInfo> info = aChannel->LoadInfo();
-        
-        
-        if (!info->RedirectChain().IsEmpty()) {
-          doCreateAlternate = false;
-        }
-      }
-    }
-    if (doCreateAlternate) {
-      newURI = nullptr;
-      newPostData = nullptr;
-      keywordProviderName.Truncate();
-      keywordAsSent.Truncate();
-      nsCOMPtr<nsIURIFixup> uriFixup = components::URIFixup::Service();
-      if (uriFixup) {
-        uriFixup->CreateFixupURI(
-            oldSpec, nsIURIFixup::FIXUP_FLAGS_MAKE_ALTERNATE_URI,
-            getter_AddRefs(newPostData), getter_AddRefs(newURI));
-      }
-    }
-  } else if (aStatus == NS_ERROR_CONNECTION_REFUSED &&
-             Preferences::GetBool("browser.fixup.fallback-to-https", false)) {
-    
-    if (SchemeIsHTTP(url)) {
-      int32_t port = 0;
-      url->GetPort(&port);
-
-      
-      if (port == -1) {
-        newURI = nullptr;
-        newPostData = nullptr;
-        Unused << NS_MutateURI(url)
-                      .SetScheme(NS_LITERAL_CSTRING("https"))
-                      .Finalize(getter_AddRefs(newURI));
-      }
-    }
-  }
-
-  
-  
-  
-  if (newURI) {
-    
-    
-    bool sameURI = false;
-    url->Equals(newURI, &sameURI);
-    if (!sameURI) {
-      if (aNewPostData) {
-        newPostData.forget(aNewPostData);
-      }
-      if (aNotifyKeywordSearchLoading) {
-        
-        
-        MaybeNotifyKeywordSearchLoading(keywordProviderName, keywordAsSent);
-      }
-      return newURI.forget();
-    }
-  }
-
-  return nullptr;
-}
-
-nsresult nsDocShell::FilterStatusForErrorPage(
-    nsresult aStatus, nsIChannel* aChannel, uint32_t aLoadType,
-    bool aIsTopFrame, bool aUseErrorPages, bool aIsInitialDocument,
-    bool* aSkippedUnknownProtocolNavigation) {
-  
-  if ((aStatus == NS_ERROR_UNKNOWN_HOST ||
-       aStatus == NS_ERROR_CONNECTION_REFUSED ||
-       aStatus == NS_ERROR_UNKNOWN_PROXY_HOST ||
-       aStatus == NS_ERROR_PROXY_CONNECTION_REFUSED ||
-       aStatus == NS_ERROR_PROXY_FORBIDDEN ||
-       aStatus == NS_ERROR_PROXY_NOT_IMPLEMENTED ||
-       aStatus == NS_ERROR_PROXY_AUTHENTICATION_FAILED ||
-       aStatus == NS_ERROR_PROXY_TOO_MANY_REQUESTS ||
-       aStatus == NS_ERROR_MALFORMED_URI ||
-       aStatus == NS_ERROR_BLOCKED_BY_POLICY) &&
-      (aIsTopFrame || aUseErrorPages)) {
-    return aStatus;
-  }
-
-  if (aStatus == NS_ERROR_NET_TIMEOUT ||
-      aStatus == NS_ERROR_PROXY_GATEWAY_TIMEOUT ||
-      aStatus == NS_ERROR_REDIRECT_LOOP ||
-      aStatus == NS_ERROR_UNKNOWN_SOCKET_TYPE ||
-      aStatus == NS_ERROR_NET_INTERRUPT || aStatus == NS_ERROR_NET_RESET ||
-      aStatus == NS_ERROR_PROXY_BAD_GATEWAY || aStatus == NS_ERROR_OFFLINE ||
-      aStatus == NS_ERROR_MALWARE_URI || aStatus == NS_ERROR_PHISHING_URI ||
-      aStatus == NS_ERROR_UNWANTED_URI || aStatus == NS_ERROR_HARMFUL_URI ||
-      aStatus == NS_ERROR_UNSAFE_CONTENT_TYPE ||
-      aStatus == NS_ERROR_REMOTE_XUL ||
-      aStatus == NS_ERROR_INTERCEPTION_FAILED ||
-      aStatus == NS_ERROR_NET_INADEQUATE_SECURITY ||
-      aStatus == NS_ERROR_NET_HTTP2_SENT_GOAWAY ||
-      aStatus == NS_ERROR_NET_HTTP3_PROTOCOL_ERROR ||
-      aStatus == NS_ERROR_DOM_BAD_URI || aStatus == NS_ERROR_FILE_NOT_FOUND ||
-      aStatus == NS_ERROR_FILE_ACCESS_DENIED ||
-      aStatus == NS_ERROR_CORRUPTED_CONTENT ||
-      aStatus == NS_ERROR_INVALID_CONTENT_ENCODING ||
-      NS_ERROR_GET_MODULE(aStatus) == NS_ERROR_MODULE_SECURITY) {
-    
-    return aStatus;
-  }
-
-  if (aStatus == NS_ERROR_UNKNOWN_PROTOCOL) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsILoadInfo> info = aChannel->LoadInfo();
-    if (!info->TriggeringPrincipal()->IsSystemPrincipal() &&
-        StaticPrefs::dom_no_unknown_protocol_error_enabled() &&
-        !aIsInitialDocument) {
-      if (aSkippedUnknownProtocolNavigation) {
-        *aSkippedUnknownProtocolNavigation = true;
-      }
-      return NS_OK;
-    }
-    return aStatus;
-  }
-
-  if (aStatus == NS_ERROR_DOCUMENT_NOT_CACHED) {
-    
-    
-    
-    if (!(aLoadType & LOAD_CMD_HISTORY)) {
-      return NS_ERROR_OFFLINE;
-    }
-    return aStatus;
-  }
-
-  return NS_OK;
-}
-
 nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
                                  nsIChannel* aChannel, nsresult aStatus) {
   MOZ_LOG(gDocShellLeakLog, LogLevel::Debug,
@@ -6019,56 +5744,287 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
   
   
   
-  if (NS_FAILED(aStatus)) {
-    nsCOMPtr<nsIInputStream> newPostData;
-    nsCOMPtr<nsIURI> newURI =
-        AttemptURIFixup(aChannel, aStatus, Some(mOriginalUriString), mLoadType,
-                        isTopFrame, mAllowKeywordFixup, UsePrivateBrowsing(),
-                        true, getter_AddRefs(newPostData));
-    if (newURI) {
-      nsAutoCString newSpec;
-      newURI->GetSpec(newSpec);
-      NS_ConvertUTF8toUTF16 newSpecW(newSpec);
+  if (url && NS_FAILED(aStatus)) {
+    if (aStatus == NS_ERROR_FILE_NOT_FOUND ||
+        aStatus == NS_ERROR_FILE_ACCESS_DENIED ||
+        aStatus == NS_ERROR_CORRUPTED_CONTENT ||
+        aStatus == NS_ERROR_INVALID_CONTENT_ENCODING) {
+      UnblockEmbedderLoadEventForFailure();
+      DisplayLoadError(aStatus, url, nullptr, aChannel);
+      return NS_OK;
+    }
 
-      nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-      MOZ_ASSERT(loadInfo, "loadInfo is required on all channels");
-      nsCOMPtr<nsIPrincipal> triggeringPrincipal =
-          loadInfo->TriggeringPrincipal();
+    
+    
+    
+    
+    if (!isTopFrame &&
+        UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(aStatus)) {
+      UnblockEmbedderLoadEventForFailure();
 
       
       
-      
-      
-      if (SchemeIsHTTP(url)) {
-        int32_t port = 0;
-        rv = url->GetPort(&port);
+      if (!StaticPrefs::
+              privacy_trackingprotection_testing_report_blocked_node()) {
+        return NS_OK;
+      }
 
+      RefPtr<BrowsingContext> bc = GetBrowsingContext();
+      RefPtr<BrowsingContext> parentBC = bc->GetParent();
+
+      if (!parentBC) {
+        return NS_OK;
+      }
+
+      if (parentBC->IsInProcess()) {
         
-        if (NS_SUCCEEDED(rv) && port == -1) {
-          nsCOMPtr<nsIURI> httpsURI;
-          rv = NS_MutateURI(url)
-                   .SetScheme(NS_LITERAL_CSTRING("https"))
-                   .Finalize(getter_AddRefs(httpsURI));
+        
+        nsCOMPtr<nsPIDOMWindowOuter> parentOuter = parentBC->GetDOMWindow();
 
-          if (NS_SUCCEEDED(rv)) {
-            nsCOMPtr<nsIIOService> ios = do_GetIOService();
-            if (ios) {
-              nsCOMPtr<nsISpeculativeConnect> speculativeService =
-                  do_QueryInterface(ios);
-              if (speculativeService) {
-                speculativeService->SpeculativeConnect(
-                    httpsURI, triggeringPrincipal, nullptr);
+        if (!parentOuter) {
+          return NS_OK;
+        }
+
+        nsCOMPtr<nsPIDOMWindowInner> parentInner =
+            parentOuter->GetCurrentInnerWindow();
+
+        if (!parentInner) {
+          return NS_OK;
+        }
+
+        RefPtr<Document> parentDoc;
+        parentDoc = parentInner->GetExtantDoc();
+        if (!parentDoc) {
+          return NS_OK;
+        }
+
+        parentDoc->AddBlockedNodeByClassifier(bc->GetEmbedderElement());
+      } else {
+        
+        
+        RefPtr<BrowserChild> browserChild = BrowserChild::GetFrom(this);
+        if (browserChild) {
+          Unused << browserChild->SendReportBlockedEmbedderNodeByClassifier();
+        }
+      }
+
+      return NS_OK;
+    }
+
+    if ((aStatus == NS_ERROR_UNKNOWN_HOST || aStatus == NS_ERROR_NET_RESET ||
+         aStatus == NS_ERROR_CONNECTION_REFUSED) &&
+        ((mLoadType == LOAD_NORMAL && isTopFrame) || mAllowKeywordFixup)) {
+      
+      
+      
+      nsCOMPtr<nsIURI> newURI;
+      nsCOMPtr<nsIInputStream> newPostData;
+
+      nsAutoCString oldSpec;
+      url->GetSpec(oldSpec);
+
+      
+      
+      
+      nsAutoString keywordProviderName, keywordAsSent;
+      if (aStatus == NS_ERROR_UNKNOWN_HOST && mAllowKeywordFixup) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        nsAutoCString scheme;
+        Unused << url->GetScheme(scheme);
+        if (Preferences::GetBool("keyword.enabled", false) &&
+            StringBeginsWith(scheme, NS_LITERAL_CSTRING("http"))) {
+          bool attemptFixup = false;
+          nsAutoCString host;
+          Unused << url->GetHost(host);
+          if (host.FindChar('.') == kNotFound) {
+            attemptFixup = true;
+          } else {
+            
+            nsCOMPtr<nsIEffectiveTLDService> tldService =
+                do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+            if (tldService) {
+              nsAutoCString suffix;
+              attemptFixup =
+                  NS_SUCCEEDED(tldService->GetKnownPublicSuffix(url, suffix)) &&
+                  suffix.IsEmpty();
+            }
+          }
+          if (attemptFixup) {
+            nsCOMPtr<nsIURIFixupInfo> info;
+            
+            if (!mOriginalUriString.IsEmpty()) {
+              info = KeywordToURI(mOriginalUriString, UsePrivateBrowsing(),
+                                  getter_AddRefs(newPostData));
+            } else {
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              bool isACE;
+              nsAutoCString utf8Host;
+              nsCOMPtr<nsIIDNService> idnSrv =
+                  do_GetService(NS_IDNSERVICE_CONTRACTID);
+              if (idnSrv && NS_SUCCEEDED(idnSrv->IsACE(host, &isACE)) &&
+                  isACE &&
+                  NS_SUCCEEDED(idnSrv->ConvertACEtoUTF8(host, utf8Host))) {
+                info = KeywordToURI(utf8Host, UsePrivateBrowsing(),
+                                    getter_AddRefs(newPostData));
+              } else {
+                info = KeywordToURI(host, UsePrivateBrowsing(),
+                                    getter_AddRefs(newPostData));
+              }
+            }
+            if (info) {
+              info->GetPreferredURI(getter_AddRefs(newURI));
+              if (newURI) {
+                info->GetKeywordAsSent(keywordAsSent);
+                info->GetKeywordProviderName(keywordProviderName);
               }
             }
           }
         }
       }
 
-      LoadURIOptions loadURIOptions;
-      loadURIOptions.mTriggeringPrincipal = triggeringPrincipal;
-      loadURIOptions.mCsp = loadInfo->GetCspToInherit();
-      loadURIOptions.mPostData = newPostData;
-      return LoadURI(newSpecW, loadURIOptions);
+      
+      
+      
+      
+      
+      if (aStatus == NS_ERROR_UNKNOWN_HOST || aStatus == NS_ERROR_NET_RESET) {
+        bool doCreateAlternate = true;
+
+        
+        
+
+        if (mLoadType != LOAD_NORMAL || !isTopFrame) {
+          doCreateAlternate = false;
+        } else {
+          
+          if (newURI) {
+            bool sameURI = false;
+            url->Equals(newURI, &sameURI);
+            if (!sameURI) {
+              
+              
+              doCreateAlternate = false;
+            }
+          }
+
+          if (doCreateAlternate) {
+            nsCOMPtr<nsILoadInfo> info = aChannel->LoadInfo();
+            
+            
+            if (!info->RedirectChain().IsEmpty()) {
+              doCreateAlternate = false;
+            }
+          }
+        }
+        if (doCreateAlternate) {
+          newURI = nullptr;
+          newPostData = nullptr;
+          keywordProviderName.Truncate();
+          keywordAsSent.Truncate();
+          nsCOMPtr<nsIURIFixup> uriFixup = components::URIFixup::Service();
+          if (uriFixup) {
+            uriFixup->CreateFixupURI(
+                oldSpec, nsIURIFixup::FIXUP_FLAGS_MAKE_ALTERNATE_URI,
+                getter_AddRefs(newPostData), getter_AddRefs(newURI));
+          }
+        }
+      } else if (aStatus == NS_ERROR_CONNECTION_REFUSED &&
+                 Preferences::GetBool("browser.fixup.fallback-to-https",
+                                      false)) {
+        
+        if (SchemeIsHTTP(url)) {
+          int32_t port = 0;
+          url->GetPort(&port);
+
+          
+          if (port == -1) {
+            newURI = nullptr;
+            newPostData = nullptr;
+            Unused << NS_MutateURI(url)
+                          .SetScheme(NS_LITERAL_CSTRING("https"))
+                          .Finalize(getter_AddRefs(newURI));
+          }
+        }
+      }
+
+      
+      
+      
+      if (newURI) {
+        
+        
+        bool sameURI = false;
+        url->Equals(newURI, &sameURI);
+        if (!sameURI) {
+          nsAutoCString newSpec;
+          newURI->GetSpec(newSpec);
+          NS_ConvertUTF8toUTF16 newSpecW(newSpec);
+
+          
+          
+          MaybeNotifyKeywordSearchLoading(keywordProviderName, keywordAsSent);
+
+          nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+          MOZ_ASSERT(loadInfo, "loadInfo is required on all channels");
+          nsCOMPtr<nsIPrincipal> triggeringPrincipal =
+              loadInfo->TriggeringPrincipal();
+
+          
+          
+          
+          
+          if (SchemeIsHTTP(url)) {
+            int32_t port = 0;
+            rv = url->GetPort(&port);
+
+            
+            if (NS_SUCCEEDED(rv) && port == -1) {
+              nsCOMPtr<nsIURI> httpsURI;
+              rv = NS_MutateURI(url)
+                       .SetScheme(NS_LITERAL_CSTRING("https"))
+                       .Finalize(getter_AddRefs(httpsURI));
+
+              if (NS_SUCCEEDED(rv)) {
+                nsCOMPtr<nsIIOService> ios = do_GetIOService();
+                if (ios) {
+                  nsCOMPtr<nsISpeculativeConnect> speculativeService =
+                      do_QueryInterface(ios);
+                  if (speculativeService) {
+                    speculativeService->SpeculativeConnect(
+                        httpsURI, triggeringPrincipal, nullptr);
+                  }
+                }
+              }
+            }
+          }
+
+          LoadURIOptions loadURIOptions;
+          loadURIOptions.mTriggeringPrincipal = triggeringPrincipal;
+          loadURIOptions.mCsp = loadInfo->GetCspToInherit();
+          loadURIOptions.mPostData = newPostData;
+          return LoadURI(newSpecW, loadURIOptions);
+        }
+      }
     }
 
     
@@ -6084,27 +6040,77 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
                                 aStatus == NS_ERROR_CONTENT_BLOCKED);
     UnblockEmbedderLoadEventForFailure(fireFrameErrorEvent);
 
-    bool isInitialDocument =
-        !GetExtantDocument() || GetExtantDocument()->IsInitialDocument();
-    bool skippedUnknownProtocolNavigation = false;
-    aStatus = FilterStatusForErrorPage(aStatus, aChannel, mLoadType, isTopFrame,
-                                       mBrowsingContext->GetUseErrorPages(),
-                                       isInitialDocument,
-                                       &skippedUnknownProtocolNavigation);
-    if (NS_FAILED(aStatus)) {
+    
+    if ((aStatus == NS_ERROR_UNKNOWN_HOST ||
+         aStatus == NS_ERROR_CONNECTION_REFUSED ||
+         aStatus == NS_ERROR_UNKNOWN_PROXY_HOST ||
+         aStatus == NS_ERROR_PROXY_CONNECTION_REFUSED ||
+         aStatus == NS_ERROR_PROXY_FORBIDDEN ||
+         aStatus == NS_ERROR_PROXY_NOT_IMPLEMENTED ||
+         aStatus == NS_ERROR_PROXY_AUTHENTICATION_FAILED ||
+         aStatus == NS_ERROR_PROXY_TOO_MANY_REQUESTS ||
+         aStatus == NS_ERROR_MALFORMED_URI ||
+         aStatus == NS_ERROR_BLOCKED_BY_POLICY) &&
+        (isTopFrame || mUseErrorPages)) {
       DisplayLoadError(aStatus, url, nullptr, aChannel);
-    } else if (skippedUnknownProtocolNavigation) {
-      nsTArray<nsString> params;
-      if (NS_FAILED(
-              NS_GetSanitizedURIStringFromURI(url, *params.AppendElement()))) {
-        params.LastElement().AssignLiteral(u"(unknown uri)");
+    } else if (aStatus == NS_ERROR_NET_TIMEOUT ||
+               aStatus == NS_ERROR_PROXY_GATEWAY_TIMEOUT ||
+               aStatus == NS_ERROR_REDIRECT_LOOP ||
+               aStatus == NS_ERROR_UNKNOWN_SOCKET_TYPE ||
+               aStatus == NS_ERROR_NET_INTERRUPT ||
+               aStatus == NS_ERROR_NET_RESET ||
+               aStatus == NS_ERROR_PROXY_BAD_GATEWAY ||
+               aStatus == NS_ERROR_OFFLINE || aStatus == NS_ERROR_MALWARE_URI ||
+               aStatus == NS_ERROR_PHISHING_URI ||
+               aStatus == NS_ERROR_UNWANTED_URI ||
+               aStatus == NS_ERROR_HARMFUL_URI ||
+               aStatus == NS_ERROR_UNSAFE_CONTENT_TYPE ||
+               aStatus == NS_ERROR_REMOTE_XUL ||
+               aStatus == NS_ERROR_INTERCEPTION_FAILED ||
+               aStatus == NS_ERROR_NET_INADEQUATE_SECURITY ||
+               aStatus == NS_ERROR_NET_HTTP2_SENT_GOAWAY ||
+               aStatus == NS_ERROR_NET_HTTP3_PROTOCOL_ERROR ||
+               aStatus == NS_ERROR_DOM_BAD_URI ||
+               NS_ERROR_GET_MODULE(aStatus) == NS_ERROR_MODULE_SECURITY) {
+      
+      DisplayLoadError(aStatus, url, nullptr, aChannel);
+    } else if (aStatus == NS_ERROR_UNKNOWN_PROTOCOL) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      nsCOMPtr<nsILoadInfo> info = aChannel->LoadInfo();
+      Document* doc = GetDocument();
+      if (!info->TriggeringPrincipal()->IsSystemPrincipal() &&
+          StaticPrefs::dom_no_unknown_protocol_error_enabled() && doc &&
+          !doc->IsInitialDocument()) {
+        nsTArray<nsString> params;
+        if (NS_FAILED(NS_GetSanitizedURIStringFromURI(
+                url, *params.AppendElement()))) {
+          params.LastElement().AssignLiteral(u"(unknown uri)");
+        }
+        nsContentUtils::ReportToConsole(
+            nsIScriptError::warningFlag, NS_LITERAL_CSTRING("DOM"), doc,
+            nsContentUtils::eDOM_PROPERTIES,
+            "UnknownProtocolNavigationPrevented", params);
+      } else {
+        DisplayLoadError(aStatus, url, nullptr, aChannel);
       }
-      nsContentUtils::ReportToConsole(
-          nsIScriptError::warningFlag, NS_LITERAL_CSTRING("DOM"),
-          GetExtantDocument(), nsContentUtils::eDOM_PROPERTIES,
-          "UnknownProtocolNavigationPrevented", params);
+    } else if (aStatus == NS_ERROR_DOCUMENT_NOT_CACHED) {
+      
+      
+      
+      if (!(mLoadType & LOAD_CMD_HISTORY)) {
+        aStatus = NS_ERROR_OFFLINE;
+      }
+      DisplayLoadError(aStatus, url, nullptr, aChannel);
     }
-  } else {
+  } else if (url && NS_SUCCEEDED(aStatus)) {
     
     nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
     PredictorLearnRedirect(url, aChannel, loadInfo->GetOriginAttributes());
@@ -12061,12 +12067,6 @@ nsDocShell::ResumeRedirectedLoad(uint64_t aIdentifier, int32_t aHistoryIndex) {
         }
 
         self->InternalLoad(aLoadState);
-
-        if (aLoadState->GetOriginalURIString().isSome()) {
-          
-          
-          self->mOriginalUriString = *aLoadState->GetOriginalURIString();
-        }
 
         for (auto& endpoint : aStreamFilterEndpoints) {
           extensions::StreamFilterParent::Attach(

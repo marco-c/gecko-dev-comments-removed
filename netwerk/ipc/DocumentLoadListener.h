@@ -284,14 +284,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   void Disconnect();
 
-  void MaybeReportBlockedByURLClassifier(nsresult aStatus);
-
-  
-  
-  
-  
-  bool DocShellWillDisplayContent(nsresult aStatus);
-
   
   
   
@@ -451,8 +443,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   
   bool mCancelled = false;
-
-  Maybe<nsCString> mOriginalUriString;
 
   
   
