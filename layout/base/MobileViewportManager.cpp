@@ -245,213 +245,224 @@ static LayoutDeviceToLayerScale ZoomToResolution(
          aCssToDev * ParentLayerToLayerScale(1);
 }
 
-void MobileViewportManager::UpdateResolution(
-    const CSSSize& aViewportOrContentSize,
-    const Maybe<float>& aDisplayWidthChangeRatio, UpdateType aType) {
-  if (!mContext) {
+void MobileViewportManager::UpdateResolutionForFirstPaint(
+    const CSSSize& aViewportSize) {
+  ScreenIntSize displaySize = ViewAs<ScreenPixel>(
+      mDisplaySize, PixelCastJustification::LayoutDeviceIsScreenForBounds);
+  nsViewportInfo viewportInfo = mContext->GetViewportInfo(displaySize);
+  ScreenIntSize compositionSize = GetCompositionSize(displaySize);
+
+  if (mRestoreResolution) {
+    LayoutDeviceToLayerScale restoreResolution(*mRestoreResolution);
+    CSSToLayoutDeviceScale cssToDev = mContext->CSSToDevPixelScale();
+    CSSToScreenScale restoreZoom =
+        ResolutionToZoom(restoreResolution, cssToDev);
+    if (mRestoreDisplaySize) {
+      CSSSize prevViewport =
+          mContext->GetViewportInfo(*mRestoreDisplaySize).GetSize();
+      float restoreDisplayWidthChangeRatio =
+          (mRestoreDisplaySize->width > 0)
+              ? (float)compositionSize.width / (float)mRestoreDisplaySize->width
+              : 1.0f;
+
+      restoreZoom =
+          ScaleZoomWithDisplayWidth(restoreZoom, restoreDisplayWidthChangeRatio,
+                                    aViewportSize, prevViewport);
+    }
+    MVM_LOG("%p: restored zoom is %f\n", this, restoreZoom.scale);
+    restoreZoom = ClampZoom(restoreZoom, viewportInfo);
+
+    ApplyNewZoom(displaySize, restoreZoom);
     return;
   }
 
+  CSSToScreenScale defaultZoom = viewportInfo.GetDefaultZoom();
+  MVM_LOG("%p: default zoom from viewport is %f\n", this, defaultZoom.scale);
+  if (!viewportInfo.IsDefaultZoomValid()) {
+    defaultZoom =
+        ComputeIntrinsicScale(viewportInfo, compositionSize, aViewportSize);
+  }
+  MOZ_ASSERT(viewportInfo.GetMinZoom() <= defaultZoom &&
+             defaultZoom <= viewportInfo.GetMaxZoom());
+
+  ApplyNewZoom(displaySize, defaultZoom);
+}
+
+void MobileViewportManager::UpdateResolutionForViewportSizeChange(
+    const CSSSize& aViewportSize,
+    const Maybe<float>& aDisplayWidthChangeRatio) {
   ScreenIntSize displaySize = ViewAs<ScreenPixel>(
       mDisplaySize, PixelCastJustification::LayoutDeviceIsScreenForBounds);
   nsViewportInfo viewportInfo = mContext->GetViewportInfo(displaySize);
 
-  CSSToLayoutDeviceScale cssToDev = mContext->CSSToDevPixelScale();
-  LayoutDeviceToLayerScale res(mContext->GetResolution());
-  CSSToScreenScale zoom = ResolutionToZoom(res, cssToDev);
+  CSSToScreenScale zoom = GetZoom();
   
   
   MOZ_ASSERT(zoom > CSSToScreenScale(0.0f), "zoom factor must be positive");
 
-  Maybe<CSSToScreenScale> newZoom;
+  MOZ_ASSERT(!mIsFirstPaint);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (!aDisplayWidthChangeRatio) {
+    UpdateVisualViewportSize(displaySize, zoom);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+
+  
+  
+  
+  CSSSize contentSize = aViewportSize;
+  if (Maybe<CSSRect> scrollableRect =
+          mContext->CalculateScrollableRectForRSF()) {
+    contentSize = scrollableRect->Size();
+  }
+
+  
+  ScreenSize minZoomDisplaySize = contentSize * viewportInfo.GetMinZoom();
+  ScreenSize maxZoomDisplaySize = contentSize * viewportInfo.GetMaxZoom();
+
+  ScreenSize newDisplaySize(displaySize);
+  ScreenSize oldDisplaySize = newDisplaySize / *aDisplayWidthChangeRatio;
+
+  
+  
+  float a(minZoomDisplaySize.width);
+  float b(maxZoomDisplaySize.width);
+  float c(oldDisplaySize.width);
+  float d(newDisplaySize.width);
+
+  
+  
+  
+  
+
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  float denominator = clamped(c, a, b);
+
+  float adjustedRatio = d / denominator;
+  CSSToScreenScale adjustedZoom = ScaleZoomWithDisplayWidth(
+      zoom, adjustedRatio, aViewportSize, mMobileViewportSize);
+  CSSToScreenScale newZoom = ClampZoom(adjustedZoom, viewportInfo);
+
+  ApplyNewZoom(displaySize, newZoom);
+}
+
+void MobileViewportManager::UpdateResolutionForContentSizeChange(
+    const CSSSize& aContentSize) {
+  ScreenIntSize displaySize = ViewAs<ScreenPixel>(
+      mDisplaySize, PixelCastJustification::LayoutDeviceIsScreenForBounds);
+  nsViewportInfo viewportInfo = mContext->GetViewportInfo(displaySize);
+
+  CSSToScreenScale zoom = GetZoom();
+  
+  
+  MOZ_ASSERT(zoom > CSSToScreenScale(0.0f), "zoom factor must be positive");
 
   ScreenIntSize compositionSize = GetCompositionSize(displaySize);
-  CSSToScreenScale intrinsicScale = ComputeIntrinsicScale(
-      viewportInfo, compositionSize, aViewportOrContentSize);
+  CSSToScreenScale intrinsicScale =
+      ComputeIntrinsicScale(viewportInfo, compositionSize, aContentSize);
 
-  if (aType == UpdateType::ViewportSize) {
-    const CSSSize& viewportSize = aViewportOrContentSize;
-    if (mIsFirstPaint) {
-      CSSToScreenScale defaultZoom;
-      if (mRestoreResolution) {
-        LayoutDeviceToLayerScale restoreResolution(mRestoreResolution.value());
-        CSSToScreenScale restoreZoom =
-            ResolutionToZoom(restoreResolution, cssToDev);
-        if (mRestoreDisplaySize) {
-          CSSSize prevViewport =
-              mContext->GetViewportInfo(mRestoreDisplaySize.value()).GetSize();
-          float restoreDisplayWidthChangeRatio =
-              (mRestoreDisplaySize.value().width > 0)
-                  ? (float)compositionSize.width /
-                        (float)mRestoreDisplaySize.value().width
-                  : 1.0f;
-
-          restoreZoom = ScaleZoomWithDisplayWidth(
-              restoreZoom, restoreDisplayWidthChangeRatio, viewportSize,
-              prevViewport);
-        }
-        defaultZoom = restoreZoom;
-        MVM_LOG("%p: restored zoom is %f\n", this, defaultZoom.scale);
-        defaultZoom = ClampZoom(defaultZoom, viewportInfo);
-      } else {
-        defaultZoom = viewportInfo.GetDefaultZoom();
-        MVM_LOG("%p: default zoom from viewport is %f\n", this,
-                defaultZoom.scale);
-        if (!viewportInfo.IsDefaultZoomValid()) {
-          defaultZoom = intrinsicScale;
-        }
-      }
-      MOZ_ASSERT(viewportInfo.GetMinZoom() <= defaultZoom &&
-                 defaultZoom <= viewportInfo.GetMaxZoom());
-
-      
-      newZoom = Some(defaultZoom);
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (aDisplayWidthChangeRatio) {
-        
-        
-        
-        
-        
-        
-        
-        
-
-        
-        
-        
-
-        
-        
-        
-        CSSSize contentSize = aViewportOrContentSize;
-        if (Maybe<CSSRect> scrollableRect =
-                mContext->CalculateScrollableRectForRSF()) {
-          contentSize = scrollableRect->Size();
-        }
-
-        
-        ScreenSize minZoomDisplaySize = contentSize * viewportInfo.GetMinZoom();
-        ScreenSize maxZoomDisplaySize = contentSize * viewportInfo.GetMaxZoom();
-
-        float ratio = aDisplayWidthChangeRatio.value();
-        ScreenSize newDisplaySize(displaySize);
-        ScreenSize oldDisplaySize = newDisplaySize / ratio;
-
-        
-        
-        float a(minZoomDisplaySize.width);
-        float b(maxZoomDisplaySize.width);
-        float c(oldDisplaySize.width);
-        float d(newDisplaySize.width);
-
-        
-        
-        
-        
-
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        
-        float denominator = clamped(c, a, b);
-
-        float adjustedRatio = d / denominator;
-        CSSToScreenScale adjustedZoom = ScaleZoomWithDisplayWidth(
-            zoom, adjustedRatio, viewportSize, mMobileViewportSize);
-        newZoom = Some(ClampZoom(adjustedZoom, viewportInfo));
-      }
+  
+  
+  
+  if (!mRestoreResolution && !mContext->IsResolutionUpdatedByApz() &&
+      !viewportInfo.IsDefaultZoomValid()) {
+    if (zoom != intrinsicScale) {
+      ApplyNewZoom(displaySize, intrinsicScale);
     }
-  } else {  
-    MOZ_ASSERT(aType == UpdateType::ContentSize);
-    MOZ_ASSERT(aDisplayWidthChangeRatio.isNothing());
-
-    
-    
-    
-    if (!mRestoreResolution && !mContext->IsResolutionUpdatedByApz() &&
-        !viewportInfo.IsDefaultZoomValid()) {
-      if (zoom != intrinsicScale) {
-        newZoom = Some(intrinsicScale);
-      }
-    } else {
-      
-      
-      
-      CSSToScreenScale clampedZoom = zoom;
-
-      if (clampedZoom < intrinsicScale) {
-        clampedZoom = intrinsicScale;
-      }
-
-      
-      clampedZoom = ClampZoom(clampedZoom, viewportInfo);
-
-      if (clampedZoom != zoom) {
-        newZoom = Some(clampedZoom);
-      }
-    }
+    return;
   }
 
   
   
   
-  if (newZoom) {
-    
-    
-    MOZ_ASSERT(*newZoom > CSSToScreenScale(0.0f),
-               "zoom factor must be positive");
-    LayoutDeviceToLayerScale resolution = ZoomToResolution(*newZoom, cssToDev);
-    MVM_LOG("%p: setting resolution %f\n", this, resolution.scale);
-    mContext->SetResolutionAndScaleTo(
-        resolution.scale, ResolutionChangeOrigin::MainThreadAdjustment);
+  CSSToScreenScale clampedZoom = zoom;
 
-    MVM_LOG("%p: New zoom is %f\n", this, newZoom->scale);
+  if (clampedZoom < intrinsicScale) {
+    clampedZoom = intrinsicScale;
   }
 
   
-  
-  if (newZoom || aType == UpdateType::ViewportSize) {
-    UpdateVisualViewportSize(displaySize, newZoom ? *newZoom : zoom);
+  clampedZoom = ClampZoom(clampedZoom, viewportInfo);
+
+  if (clampedZoom != zoom) {
+    ApplyNewZoom(displaySize, clampedZoom);
   }
+}
+
+void MobileViewportManager::ApplyNewZoom(const ScreenIntSize& aDisplaySize,
+                                         const CSSToScreenScale& aNewZoom) {
+  
+  
+  
+
+  
+  
+  MOZ_ASSERT(aNewZoom > CSSToScreenScale(0.0f), "zoom factor must be positive");
+
+  CSSToLayoutDeviceScale cssToDev = mContext->CSSToDevPixelScale();
+  LayoutDeviceToLayerScale resolution = ZoomToResolution(aNewZoom, cssToDev);
+  MVM_LOG("%p: setting resolution %f\n", this, resolution.scale);
+  mContext->SetResolutionAndScaleTo(
+      resolution.scale, ResolutionChangeOrigin::MainThreadAdjustment);
+
+  MVM_LOG("%p: New zoom is %f\n", this, aNewZoom.scale);
+
+  UpdateVisualViewportSize(aDisplaySize, aNewZoom);
 }
 
 ScreenIntSize MobileViewportManager::GetCompositionSize(
@@ -587,6 +598,7 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
   
   
   
+  
 
   if (!mContext) {
     return;
@@ -595,6 +607,7 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
   Maybe<float> displayWidthChangeRatio;
   if (Maybe<LayoutDeviceIntSize> newDisplaySize =
           mContext->GetContentViewerSize()) {
+    
     
     if (mDisplaySize.width > 0) {
       if (aForceAdjustResolution ||
@@ -643,8 +656,11 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
       (aForceAdjustResolution || mContext->AllowZoomingForDocument())) {
     MVM_LOG("%p: Updating resolution because %d || %d\n", this,
             aForceAdjustResolution, mContext->AllowZoomingForDocument());
-    UpdateResolution(viewport, displayWidthChangeRatio,
-                     UpdateType::ViewportSize);
+    if (mIsFirstPaint) {
+      UpdateResolutionForFirstPaint(viewport);
+    } else {
+      UpdateResolutionForViewportSizeChange(viewport, displayWidthChangeRatio);
+    }
   } else {
     
     
@@ -701,7 +717,6 @@ void MobileViewportManager::ShrinkToDisplaySizeIfNeeded() {
           mContext->CalculateScrollableRectForRSF()) {
     MVM_LOG("%p: ShrinkToDisplaySize using scrollableRect %s\n", this,
             Stringify(scrollableRect->Size()).c_str());
-    UpdateResolution(scrollableRect->Size(), Nothing(),
-                     UpdateType::ContentSize);
+    UpdateResolutionForContentSizeChange(scrollableRect->Size());
   }
 }

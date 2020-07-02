@@ -150,17 +150,15 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
   
 
+  void UpdateResolutionForFirstPaint(const mozilla::CSSSize& aViewportSize);
+  void UpdateResolutionForViewportSizeChange(
+      const mozilla::CSSSize& aViewportSize,
+      const mozilla::Maybe<float>& aDisplayWidthChangeRatio);
+  void UpdateResolutionForContentSizeChange(
+      const mozilla::CSSSize& aContentSize);
 
-
-
-
-
-  enum class UpdateType { ViewportSize, ContentSize };
-
-  
-  void UpdateResolution(const mozilla::CSSSize& aViewportOrContentSize,
-                        const mozilla::Maybe<float>& aDisplayWidthChangeRatio,
-                        UpdateType aType);
+  void ApplyNewZoom(const mozilla::ScreenIntSize& aDisplaySize,
+                    const mozilla::CSSToScreenScale& aNewZoom);
 
   void UpdateVisualViewportSize(const mozilla::ScreenIntSize& aDisplaySize,
                                 const mozilla::CSSToScreenScale& aZoom);
