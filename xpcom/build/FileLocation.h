@@ -17,6 +17,8 @@ class nsZipItem;
 
 namespace mozilla {
 
+class CacheAwareZipReader;
+
 class FileLocation {
  public:
   
@@ -47,7 +49,12 @@ class FileLocation {
 
 
 
-  FileLocation(nsIFile* aZip, const char* aPath);
+  FileLocation(nsIFile* aFile, const char* aPath);
+
+  
+
+
+  FileLocation(CacheAwareZipReader* aZip, const char* aPath);
 
   FileLocation(nsZipArchive* aZip, const char* aPath);
 
@@ -61,9 +68,11 @@ class FileLocation {
 
   void Init(nsIFile* aFile);
 
-  void Init(nsIFile* aZip, const char* aPath);
+  void Init(nsIFile* aFile, const char* aPath);
 
   void Init(nsZipArchive* aZip, const char* aPath);
+
+  void Init(CacheAwareZipReader* aZip, const char* aPath);
 
   
 
@@ -78,7 +87,7 @@ class FileLocation {
 
   already_AddRefed<nsIFile> GetBaseFile();
 
-  nsZipArchive* GetBaseZip() { return mBaseZip; }
+  CacheAwareZipReader* GetBaseZip() { return mBaseZip; }
 
   
 
@@ -119,7 +128,7 @@ class FileLocation {
    protected:
     friend class FileLocation;
     nsZipItem* mItem;
-    RefPtr<nsZipArchive> mZip;
+    RefPtr<CacheAwareZipReader> mZip;
     mozilla::AutoFDClose mFd;
   };
 
@@ -131,7 +140,7 @@ class FileLocation {
 
  private:
   nsCOMPtr<nsIFile> mBaseFile;
-  RefPtr<nsZipArchive> mBaseZip;
+  RefPtr<CacheAwareZipReader> mBaseZip;
   nsCString mPath;
 }; 
 

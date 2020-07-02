@@ -23,12 +23,16 @@
 #include "nsRefPtrHashtable.h"
 #include "nsTHashtable.h"
 #include "nsIZipReader.h"
-#include "nsZipArchive.h"
 #include "nsWeakReference.h"
 #include "nsIObserver.h"
 #include "mozilla/Attributes.h"
+#include "nsZipArchive.h"
 
 class nsZipReaderCache;
+
+namespace mozilla {
+class CacheAwareZipReader;
+}  
 
 
 
@@ -72,9 +76,9 @@ class nsJAR final : public nsIZipReader {
 
  protected:
   
-  nsCOMPtr<nsIFile> mZipFile;   
-  nsCString mOuterZipEntry;     
-  RefPtr<nsZipArchive> mZip;    
+  nsCOMPtr<nsIFile> mZipFile;  
+  nsCString mOuterZipEntry;    
+  RefPtr<mozilla::CacheAwareZipReader> mZip;  
   PRIntervalTime mReleaseTime;  
   nsZipReaderCache*
       mCache;  

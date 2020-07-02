@@ -26,7 +26,7 @@ using namespace mozilla;
 
 
 nsJAR::nsJAR()
-    : mZip(new nsZipArchive()),
+    : mZip(nullptr),
       mReleaseTime(PR_INTERVAL_NO_TIMEOUT),
       mCache(nullptr),
       mLock("nsJAR::mLock"),
@@ -87,12 +87,13 @@ nsJAR::Open(nsIFile* zipFile) {
 
   
   
-  RefPtr<nsZipArchive> zip = mozilla::Omnijar::GetReader(zipFile);
+  RefPtr<CacheAwareZipReader> zip = mozilla::Omnijar::GetReader(zipFile);
   if (zip) {
     mZip = zip;
     mSkipArchiveClosing = true;
     return NS_OK;
   }
+  mZip = new CacheAwareZipReader();
   return mZip->OpenArchive(zipFile);
 }
 
@@ -102,7 +103,7 @@ nsJAR::OpenInner(nsIZipReader* aZipReader, const nsACString& aZipEntry) {
   if (mOpened) return NS_ERROR_FAILURE;  
 
   nsJAR* outerJAR = static_cast<nsJAR*>(aZipReader);
-  RefPtr<nsZipArchive> innerZip =
+  RefPtr<CacheAwareZipReader> innerZip =
       mozilla::Omnijar::GetInnerReader(outerJAR->mZipFile, aZipEntry);
   if (innerZip) {
     mOpened = true;
@@ -124,11 +125,12 @@ nsJAR::OpenInner(nsIZipReader* aZipReader, const nsACString& aZipEntry) {
   mOuterZipEntry.Assign(aZipEntry);
 
   RefPtr<nsZipHandle> handle;
-  rv = nsZipHandle::Init(static_cast<nsJAR*>(aZipReader)->mZip.get(),
+  rv = nsZipHandle::Init(static_cast<nsJAR*>(aZipReader)->mZip->GetZipArchive(),
                          PromiseFlatCString(aZipEntry).get(),
                          getter_AddRefs(handle));
   if (NS_FAILED(rv)) return rv;
 
+  mZip = new CacheAwareZipReader();
   return mZip->OpenArchive(handle);
 }
 
@@ -144,6 +146,7 @@ nsJAR::OpenMemory(void* aData, uint32_t aLength) {
                                   getter_AddRefs(handle));
   if (NS_FAILED(rv)) return rv;
 
+  mZip = new CacheAwareZipReader();
   return mZip->OpenArchive(handle);
 }
 
@@ -165,7 +168,7 @@ nsJAR::Close() {
   if (mSkipArchiveClosing) {
     
     mSkipArchiveClosing = false;
-    mZip = new nsZipArchive();
+    mZip = nullptr;
     return NS_OK;
   }
 
@@ -301,7 +304,7 @@ nsresult nsJAR::GetNSPRFileDesc(PRFileDesc** aNSPRFileDesc) {
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<nsZipHandle> handle = mZip->GetFD();
+  RefPtr<nsZipHandle> handle = mZip->GetZipArchive()->GetFD();
   if (!handle) {
     return NS_ERROR_FAILURE;
   }
