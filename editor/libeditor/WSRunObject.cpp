@@ -810,42 +810,7 @@ void WSRunScanner::InitializeRangeStart(
         HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
             start, aEditableBlockParentOrTopmostEditableInlineContent,
             mEditingHost);
-    if (previousLeafContentOrBlock) {
-      if (HTMLEditUtils::IsBlockElement(*previousLeafContentOrBlock)) {
-        mStartNode = start.GetContainer();
-        mStartOffset = start.Offset();
-        mStartReason = WSType::OtherBlockBoundary;
-        mStartReasonContent = previousLeafContentOrBlock;
-      } else if (previousLeafContentOrBlock->IsText() &&
-                 previousLeafContentOrBlock->IsEditable()) {
-        if (!previousLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
-          
-          
-          start.Set(previousLeafContentOrBlock->AsText(), 0);
-          continue;
-        }
-
-        if (InitializeRangeStartWithTextNode(EditorDOMPointInText::AtEndOf(
-                *previousLeafContentOrBlock->AsText()))) {
-          return;
-        }
-
-        
-        
-        start.Set(previousLeafContentOrBlock->AsText(), 0);
-      } else {
-        
-        
-        mStartNode = start.GetContainer();
-        mStartOffset = start.Offset();
-        if (previousLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)) {
-          mStartReason = WSType::BRElement;
-        } else {
-          mStartReason = WSType::SpecialContent;
-        }
-        mStartReasonContent = previousLeafContentOrBlock;
-      }
-    } else {
+    if (!previousLeafContentOrBlock) {
       
       
       mStartNode = start.GetContainer();
@@ -855,6 +820,42 @@ void WSRunScanner::InitializeRangeStart(
       
       mStartReasonContent = const_cast<nsIContent*>(
           &aEditableBlockParentOrTopmostEditableInlineContent);
+      return;
+    }
+
+    if (HTMLEditUtils::IsBlockElement(*previousLeafContentOrBlock)) {
+      mStartNode = start.GetContainer();
+      mStartOffset = start.Offset();
+      mStartReason = WSType::OtherBlockBoundary;
+      mStartReasonContent = previousLeafContentOrBlock;
+    } else if (previousLeafContentOrBlock->IsText() &&
+               previousLeafContentOrBlock->IsEditable()) {
+      if (!previousLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
+        
+        
+        start.Set(previousLeafContentOrBlock->AsText(), 0);
+        continue;
+      }
+
+      if (InitializeRangeStartWithTextNode(EditorDOMPointInText::AtEndOf(
+              *previousLeafContentOrBlock->AsText()))) {
+        return;
+      }
+
+      
+      
+      start.Set(previousLeafContentOrBlock->AsText(), 0);
+    } else {
+      
+      
+      mStartNode = start.GetContainer();
+      mStartOffset = start.Offset();
+      if (previousLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)) {
+        mStartReason = WSType::BRElement;
+      } else {
+        mStartReason = WSType::SpecialContent;
+      }
+      mStartReasonContent = previousLeafContentOrBlock;
     }
   }
 }
@@ -912,44 +913,7 @@ void WSRunScanner::InitializeRangeEnd(
         HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
             end, aEditableBlockParentOrTopmostEditableInlineContent,
             mEditingHost);
-    if (nextLeafContentOrBlock) {
-      if (HTMLEditUtils::IsBlockElement(*nextLeafContentOrBlock)) {
-        
-        mEndNode = end.GetContainer();
-        mEndOffset = end.Offset();
-        mEndReason = WSType::OtherBlockBoundary;
-        mEndReasonContent = nextLeafContentOrBlock;
-      } else if (nextLeafContentOrBlock->IsText() &&
-                 nextLeafContentOrBlock->IsEditable()) {
-        if (!nextLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
-          
-          
-          end.Set(nextLeafContentOrBlock->AsText(), 0);
-          continue;
-        }
-
-        if (InitializeRangeEndWithTextNode(
-                EditorDOMPointInText(nextLeafContentOrBlock->AsText(), 0))) {
-          return;
-        }
-
-        
-        
-        end.SetToEndOf(nextLeafContentOrBlock->AsText());
-      } else {
-        
-        
-        
-        mEndNode = end.GetContainer();
-        mEndOffset = end.Offset();
-        if (nextLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)) {
-          mEndReason = WSType::BRElement;
-        } else {
-          mEndReason = WSType::SpecialContent;
-        }
-        mEndReasonContent = nextLeafContentOrBlock;
-      }
-    } else {
+    if (!nextLeafContentOrBlock) {
       
       
       mEndNode = end.GetContainer();
@@ -959,6 +923,44 @@ void WSRunScanner::InitializeRangeEnd(
       
       mEndReasonContent = const_cast<nsIContent*>(
           &aEditableBlockParentOrTopmostEditableInlineContent);
+      return;
+    }
+
+    if (HTMLEditUtils::IsBlockElement(*nextLeafContentOrBlock)) {
+      
+      mEndNode = end.GetContainer();
+      mEndOffset = end.Offset();
+      mEndReason = WSType::OtherBlockBoundary;
+      mEndReasonContent = nextLeafContentOrBlock;
+    } else if (nextLeafContentOrBlock->IsText() &&
+               nextLeafContentOrBlock->IsEditable()) {
+      if (!nextLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
+        
+        
+        end.Set(nextLeafContentOrBlock->AsText(), 0);
+        continue;
+      }
+
+      if (InitializeRangeEndWithTextNode(
+              EditorDOMPointInText(nextLeafContentOrBlock->AsText(), 0))) {
+        return;
+      }
+
+      
+      
+      end.SetToEndOf(nextLeafContentOrBlock->AsText());
+    } else {
+      
+      
+      
+      mEndNode = end.GetContainer();
+      mEndOffset = end.Offset();
+      if (nextLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)) {
+        mEndReason = WSType::BRElement;
+      } else {
+        mEndReason = WSType::SpecialContent;
+      }
+      mEndReasonContent = nextLeafContentOrBlock;
     }
   }
 }
