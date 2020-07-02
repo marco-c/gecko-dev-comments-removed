@@ -230,10 +230,13 @@ LoadInfo::LoadInfo(
 
         mDocumentHasLoaded = innerWindow->IsDocumentLoaded();
 
-        if (innerWindow->IsFrame()) {
+        if (bc->IsFrame()) {
           
           
           mDocumentHasLoaded = false;
+          
+          
+          
           nsGlobalWindowOuter* topOuter =
               innerWindow->GetInProcessScriptableTopInternal();
           if (topOuter) {

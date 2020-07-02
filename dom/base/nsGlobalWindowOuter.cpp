@@ -1689,7 +1689,7 @@ nsresult nsGlobalWindowOuter::EnsureScriptEnvironment() {
   
   
   
-  mContext = new nsJSContext(!IsFrame(), this);
+  mContext = new nsJSContext(mBrowsingContext->IsTop(), this);
   return NS_OK;
 }
 
@@ -5268,7 +5268,7 @@ void nsGlobalWindowOuter::MoveToOuter(int32_t aXPos, int32_t aYPos,
 
 
 
-  if (!CanMoveResizeWindows(aCallerType) || IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsFrame()) {
     return;
   }
 
@@ -5325,7 +5325,7 @@ void nsGlobalWindowOuter::MoveByOuter(int32_t aXDif, int32_t aYDif,
 
 
 
-  if (!CanMoveResizeWindows(aCallerType) || IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsFrame()) {
     return;
   }
 
@@ -5376,7 +5376,7 @@ void nsGlobalWindowOuter::ResizeToOuter(int32_t aWidth, int32_t aHeight,
 
 
 
-  if (!CanMoveResizeWindows(aCallerType) || IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsFrame()) {
     return;
   }
 
@@ -5404,7 +5404,7 @@ void nsGlobalWindowOuter::ResizeByOuter(int32_t aWidthDif, int32_t aHeightDif,
 
 
 
-  if (!CanMoveResizeWindows(aCallerType) || IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsFrame()) {
     return;
   }
 
@@ -5450,7 +5450,7 @@ void nsGlobalWindowOuter::SizeToContentOuter(CallerType aCallerType,
 
 
 
-  if (!CanMoveResizeWindows(aCallerType) || IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerType) || mBrowsingContext->IsFrame()) {
     return;
   }
 
@@ -6066,7 +6066,7 @@ bool nsGlobalWindowOuter::CanClose() {
 }
 
 void nsGlobalWindowOuter::CloseOuter(bool aTrustedCaller) {
-  if (!mDocShell || IsInModalState() || IsFrame()) {
+  if (!mDocShell || IsInModalState() || mBrowsingContext->IsFrame()) {
     
     
     
@@ -6162,7 +6162,7 @@ nsresult nsGlobalWindowOuter::Close() {
 void nsGlobalWindowOuter::ForceClose() {
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
 
-  if (IsFrame() || !mDocShell) {
+  if (mBrowsingContext->IsFrame() || !mDocShell) {
     
     
     return;
