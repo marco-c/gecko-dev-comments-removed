@@ -4825,10 +4825,6 @@ class BaseCompiler final : public BaseCompilerInterface {
     pushResults(type, controlItem().stackHeight);
   }
 
-  void pushCallResults(ResultType type, const StackResultsLoc& loc) {
-    pushResults(type, fr.stackResultsBase(loc.bytes()));
-  }
-
   
   
   
@@ -5789,6 +5785,19 @@ class BaseCompiler final : public BaseCompilerInterface {
     CallSiteDesc desc(call.lineOrBytecode, CallSiteDesc::Symbolic);
     return masm.wasmCallBuiltinInstanceMethod(
         desc, instanceArg, builtin.identity, builtin.failureMode);
+  }
+
+  void pushCallResults(const FunctionCall& call, ResultType type,
+                       const StackResultsLoc& loc) {
+#if defined(JS_CODEGEN_ARM)
+    
+    
+    
+    
+    
+    MOZ_ASSERT(!call.usesSystemAbi || call.hardFP);
+#endif
+    pushResults(type, fr.stackResultsBase(loc.bytes()));
   }
 
   
@@ -10113,7 +10122,7 @@ bool BaseCompiler::emitCall() {
   popValueStackBy(numArgs);
 
   captureResultRegisters(resultType);
-  pushCallResults(resultType, results);
+  pushCallResults(baselineCall, resultType, results);
 
   return true;
 }
@@ -10170,7 +10179,7 @@ bool BaseCompiler::emitCallIndirect() {
   popValueStackBy(numArgs);
 
   captureResultRegisters(resultType);
-  pushCallResults(resultType, results);
+  pushCallResults(baselineCall, resultType, results);
 
   return true;
 }
