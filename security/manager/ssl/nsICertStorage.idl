@@ -261,4 +261,12 @@ interface nsICertStorage : nsISupports {
 
   [must_use]
   Array<Array<octet> > findCertsBySubject(in Array<octet> subject);
+
+  
+
+
+
+
+  [must_use]
+  int32_t GetRemainingOperationCount();
 };
