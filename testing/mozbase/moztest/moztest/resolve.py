@@ -693,20 +693,26 @@ class TestResolver(MozbuildObject):
             return True
         return False
 
-    def get_wpt_group(self, test):
-        """Given a test object, set the group (aka manifest) that it belongs to.
+    def get_wpt_group(self, test, depth=3):
+        """Given a test object set the group (aka manifest) that it belongs to.
+
+        If a custom value for `depth` is provided, it will override the default
+        value of 3 path components.
 
         Args:
             test (dict): Test object for the particular suite and subsuite.
+            depth (int, optional): Custom number of path elements.
 
         Returns:
             str: The group the given test belongs to.
         """
         
         
-        
-        components = 3 if test['name'].startswith('/_mozilla') else 2
-        group = '/'.join(test['name'].split('/')[:components])
+        depth = depth + 1 if test['name'].startswith('/_mozilla') else depth
+
+        group = os.path.dirname(test['name'])
+        while group.count('/') > depth:
+            group = os.path.dirname(group)
         return group
 
     def add_wpt_manifest_data(self):
