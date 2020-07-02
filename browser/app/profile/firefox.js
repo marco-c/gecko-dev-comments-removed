@@ -2179,6 +2179,9 @@ pref("devtools.netmonitor.har.enableAutoExportToFile", false);
 pref("devtools.netmonitor.features.webSockets", true);
 
 
+pref("devtools.netmonitor.audits.slow", 500);
+
+
 pref("devtools.netmonitor.features.serverSentEvents", false);
 
 
