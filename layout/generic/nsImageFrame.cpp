@@ -1765,8 +1765,21 @@ static bool OldImageHasDifferentRatio(const nsImageFrame& aFrame,
   
   
   const bool hasRequest = true;
-  MOZ_ASSERT(currentRatio == ComputeAspectRatio(&aImage, hasRequest, aFrame),
-             "aspect-ratio got out of sync during paint? How?");
+#ifdef DEBUG
+  auto currentRatioRecomputed = ComputeAspectRatio(&aImage, hasRequest, aFrame);
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(
+      (!currentRatioRecomputed && aImage.GetIntrinsicRatio() == Nothing()) ||
+          currentRatio == currentRatioRecomputed,
+      "aspect-ratio got out of sync during paint? How?");
+#endif
   auto oldRatio = ComputeAspectRatio(aPrevImage, hasRequest, aFrame);
   return oldRatio != currentRatio;
 }
