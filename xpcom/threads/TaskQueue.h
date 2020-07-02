@@ -9,6 +9,7 @@
 
 #include <queue>
 
+#include "mozilla/AbstractThread.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
@@ -17,9 +18,6 @@
 #include "mozilla/Unused.h"
 #include "nsIDirectTaskDispatcher.h"
 #include "nsThreadUtils.h"
-
-class nsIEventTarget;
-class nsIRunnable;
 
 namespace mozilla {
 
@@ -66,6 +64,20 @@ class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
 
   TaskDispatcher& TailDispatcher() override;
 
+  NS_IMETHOD Dispatch(already_AddRefed<nsIRunnable> aEvent,
+                      uint32_t aFlags) override {
+    nsCOMPtr<nsIRunnable> runnable = aEvent;
+    {
+      MonitorAutoLock mon(mQueueMonitor);
+      return DispatchLocked( runnable, aFlags,
+                            NormalDispatch);
+    }
+    
+    
+    
+    
+  }
+
   [[nodiscard]] nsresult Dispatch(
       already_AddRefed<nsIRunnable> aRunnable,
       DispatchReason aReason = NormalDispatch) override {
@@ -81,7 +93,7 @@ class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
   }
 
   
-  using AbstractThread::Dispatch;
+  using nsIEventTarget::Dispatch;
 
   
   
@@ -103,10 +115,6 @@ class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
   
   
   bool IsCurrentThreadIn() const override;
-
-  
-  
-  already_AddRefed<nsISerialEventTarget> WrapAsEventTarget();
 
  protected:
   virtual ~TaskQueue();

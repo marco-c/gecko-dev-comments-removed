@@ -187,11 +187,9 @@ BackgroundEventTarget::CreateBackgroundTaskQueue(const char* aName) {
   RefPtr<TaskQueue> queue = new TaskQueue(do_AddRef(this), aName,
                                           false,
                                           true);
-  nsCOMPtr<nsISerialEventTarget> target(queue->WrapAsEventTarget());
+  mTaskQueues.AppendElement(queue);
 
-  mTaskQueues.AppendElement(queue.forget());
-
-  return target.forget();
+  return queue.forget();
 }
 
 extern "C" {
