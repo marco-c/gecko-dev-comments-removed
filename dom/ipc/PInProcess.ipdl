@@ -1,0 +1,28 @@
+
+
+
+
+
+
+include protocol PWindowGlobal;
+
+include DOMTypes;
+
+namespace mozilla {
+namespace dom {
+
+
+
+
+
+
+
+
+
+async refcounted protocol PInProcess
+{
+  manages PWindowGlobal;
+};
+
+} 
+} 

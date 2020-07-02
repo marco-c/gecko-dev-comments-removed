@@ -4,16 +4,18 @@
 
 
 
-#include "mozilla/ipc/InProcessParent.h"
-#include "mozilla/ipc/InProcessChild.h"
+#include "mozilla/dom/InProcessParent.h"
+#include "mozilla/dom/InProcessChild.h"
 #include "nsIObserverService.h"
 #include "mozilla/Services.h"
+
+using namespace mozilla::ipc;
 
 
 
 
 namespace mozilla {
-namespace ipc {
+namespace dom {
 
 StaticRefPtr<InProcessParent> InProcessParent::sSingleton;
 StaticRefPtr<InProcessChild> InProcessChild::sSingleton;
