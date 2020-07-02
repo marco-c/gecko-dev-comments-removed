@@ -71,7 +71,7 @@ class SharedStyleSheetCache final : public nsIMemoryReporter {
   
   void LoadStarted(const SheetLoadDataHashKey&, css::SheetLoadData&);
   
-  void DeferSheetLoad(css::SheetLoadData&);
+  void DeferSheetLoad(const SheetLoadDataHashKey&, css::SheetLoadData&);
 
   enum class StartLoads {
     Always,
