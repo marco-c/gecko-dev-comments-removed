@@ -229,7 +229,8 @@ import java.lang.reflect.Proxy;
 
     @Override
     public boolean performEditorAction(final int editorAction) {
-        if (editorAction == EditorInfo.IME_ACTION_PREVIOUS) {
+        if (editorAction == EditorInfo.IME_ACTION_PREVIOUS &&
+            !mIMEActionHint.equals("previous")) {
             
             
             getView().post(new Runnable() {
@@ -639,7 +640,9 @@ import java.lang.reflect.Proxy;
         switch (keyCode) {
             case KeyEvent.KEYCODE_ENTER:
                 if ((event.getFlags() & KeyEvent.FLAG_EDITOR_ACTION) != 0 &&
-                        mIMEActionHint.equalsIgnoreCase("next")) {
+                        mIMEActionHint.equals("maybenext")) {
+                    
+                    
                     return new KeyEvent(event.getDownTime(), event.getEventTime(), event.getAction(), KeyEvent.KEYCODE_TAB, 0);
                 }
                 break;
