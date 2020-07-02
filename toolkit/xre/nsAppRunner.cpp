@@ -105,6 +105,9 @@
 #  include "mozilla/WindowsProcessMitigations.h"
 #  include "mozilla/WinHeaderOnlyUtils.h"
 #  include "mozilla/mscom/ProcessRuntime.h"
+#  if defined(MOZ_GECKO_PROFILER)
+#    include "mozilla/mscom/ProfilerMarkers.h"
+#  endif  
 #  include "mozilla/widget/AudioSession.h"
 #  include "WinTokenUtils.h"
 
@@ -4256,7 +4259,11 @@ nsresult XREMain::XRE_mainRun() {
   dllServices->StartUntrustedModulesProcessor();
   auto dllServicesDisable =
       MakeScopeExit([&dllServices]() { dllServices->DisableFull(); });
-#endif  
+
+#  if defined(MOZ_GECKO_PROFILER)
+  mozilla::mscom::InitProfilerMarkers();
+#  endif  
+#endif    
 
 #ifdef NS_FUNCTION_TIMER
   
