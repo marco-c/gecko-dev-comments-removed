@@ -16,6 +16,7 @@
 namespace mozilla {
 namespace layers {
 class Animation;
+class Layers;
 
 typedef nsTArray<layers::Animation> AnimationArray;
 
@@ -162,6 +163,14 @@ class CompositorAnimationStorage final {
 
 
   bool SampleAnimations(TimeStamp aPreviousFrameTime,
+                        TimeStamp aCurrentFrameTime);
+
+  
+
+
+
+
+  bool SampleAnimations(Layer* aRoot, TimeStamp aPreviousFrameTime,
                         TimeStamp aCurrentFrameTime);
 
   
