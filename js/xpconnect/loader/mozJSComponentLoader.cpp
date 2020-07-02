@@ -731,7 +731,15 @@ nsresult mozJSComponentLoader::ObjectForLocation(
   
 
   bool writeToCache = false;
-  StartupCache* cache = StartupCache::GetSingleton();
+
+  
+  
+  
+  
+  
+  
+  StartupCache* cache =
+      XRE_IsParentProcess() ? StartupCache::GetSingleton() : nullptr;
 
   aInfo.EnsureResolvedURI();
 
