@@ -547,9 +547,8 @@ impl Default for FontSizeKeyword {
     ToCss,
     ToResolvedValue,
     ToShmem,
-    Serialize,
-    Deserialize,
 )]
+#[cfg_attr(feature = "servo", derive(Serialize, Deserialize))]
 
 pub struct KeywordInfo {
     
