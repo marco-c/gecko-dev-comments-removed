@@ -1494,13 +1494,7 @@ Loader::Completed Loader::ParseSheet(const nsACString& aBytes,
 
 void Loader::NotifyObservers(SheetLoadData& aData, nsresult aStatus) {
   RecordUseCountersIfNeeded(mDocument, aData.mUseCounters.get());
-
-  
-  
-  
-  
-  
-  if (!aData.mSheet->IsConstructed()) {
+  if (aData.mURI) {
     MOZ_DIAGNOSTIC_ASSERT(mOngoingLoadCount);
     --mOngoingLoadCount;
   }
@@ -1659,8 +1653,6 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
         matched, IsPreload::No, aObserver, principal, aInfo.mReferrerInfo,
         aInfo.mContent);
     data->mLineNumber = aLineNumber;
-
-    ++mOngoingLoadCount;
 
     
     

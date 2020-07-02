@@ -697,9 +697,11 @@ already_AddRefed<dom::Promise> StyleSheet::Replace(const nsACString& aText,
   
   SetModificationDisallowed(true);
 
+  
+  
   auto* loader = mConstructorDocument->CSSLoader();
   auto loadData = MakeRefPtr<css::SheetLoadData>(
-      loader, GetBaseURI(), this,  false,
+      loader, nullptr, this,  false,
       css::Loader::UseSystemPrincipal::No, css::Loader::IsPreload::No,
        nullptr,
        nullptr, mConstructorDocument->NodePrincipal(),
