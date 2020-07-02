@@ -151,7 +151,7 @@ void SVGGeometryFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
         
         
         element->ClearAnyCachedPath();
-      } else if (GetStateBits() & NS_STATE_SVG_CLIPPATH_CHILD) {
+      } else if (HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD)) {
         if (StyleSVG()->mClipRule != oldStyleSVG->mClipRule) {
           
           
@@ -256,7 +256,7 @@ void SVGGeometryFrame::PaintSVG(gfxContext& aContext,
 nsIFrame* SVGGeometryFrame::GetFrameForPoint(const gfxPoint& aPoint) {
   FillRule fillRule;
   uint16_t hitTestFlags;
-  if (GetStateBits() & NS_STATE_SVG_CLIPPATH_CHILD) {
+  if (HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD)) {
     hitTestFlags = SVG_HIT_TEST_FILL;
     fillRule = nsSVGUtils::ToFillRule(StyleSVG()->mClipRule);
   } else {
@@ -319,7 +319,7 @@ void SVGGeometryFrame::ReflowSVG() {
   NS_ASSERTION(nsSVGUtils::OuterSVGIsCallingReflowSVG(this),
                "This call is probably a wasteful mistake");
 
-  MOZ_ASSERT(!(GetStateBits() & NS_FRAME_IS_NONDISPLAY),
+  MOZ_ASSERT(!HasAnyStateBits(NS_FRAME_IS_NONDISPLAY),
              "ReflowSVG mechanism not designed for this");
 
   if (!nsSVGUtils::NeedsReflowSVG(this)) {
@@ -361,7 +361,7 @@ void SVGGeometryFrame::ReflowSVG() {
 
   
   
-  if (!(GetParent()->GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
+  if (!GetParent()->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     InvalidateFrame();
   }
 }
@@ -477,8 +477,8 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 #endif
 
     FillRule fillRule = nsSVGUtils::ToFillRule(
-        (GetStateBits() & NS_STATE_SVG_CLIPPATH_CHILD) ? StyleSVG()->mClipRule
-                                                       : StyleSVG()->mFillRule);
+        HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD) ? StyleSVG()->mClipRule
+                                                     : StyleSVG()->mFillRule);
     RefPtr<Path> pathInUserSpace = element->GetOrBuildPath(tmpDT, fillRule);
     if (!pathInUserSpace) {
       return bbox;
@@ -620,8 +620,8 @@ void SVGGeometryFrame::Render(gfxContext* aContext, uint32_t aRenderComponents,
   }
 
   FillRule fillRule = nsSVGUtils::ToFillRule(
-      (GetStateBits() & NS_STATE_SVG_CLIPPATH_CHILD) ? StyleSVG()->mClipRule
-                                                     : StyleSVG()->mFillRule);
+      HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD) ? StyleSVG()->mClipRule
+                                                   : StyleSVG()->mFillRule);
 
   SVGGeometryElement* element = static_cast<SVGGeometryElement*>(GetContent());
 
@@ -637,7 +637,7 @@ void SVGGeometryFrame::Render(gfxContext* aContext, uint32_t aRenderComponents,
   gfxContextMatrixAutoSaveRestore autoRestoreTransform(aContext);
   aContext->SetMatrixDouble(aTransform);
 
-  if (GetStateBits() & NS_STATE_SVG_CLIPPATH_CHILD) {
+  if (HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD)) {
     
     
     RefPtr<Path> path = element->GetOrBuildPath(drawTarget, fillRule);
