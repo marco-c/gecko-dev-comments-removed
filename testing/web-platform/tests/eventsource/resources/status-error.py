@@ -1,15 +1,15 @@
 def main(request, response):
-  status = (request.GET.first("status", "404"), "HAHAHAHA")
-  headers = [("Content-Type", "text/event-stream")]
+  status = (request.GET.first(b"status", b"404"), b"HAHAHAHA")
+  headers = [(b"Content-Type", b"text/event-stream")]
 
   
   
   
   
   
-  if status[0] in ["204", "205"]:
-      body = ""
+  if status[0] in [b"204", b"205"]:
+      body = b""
   else:
-      body = "data: data\n\n"
+      body = b"data: data\n\n"
 
   return status, headers, body
