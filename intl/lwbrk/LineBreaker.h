@@ -72,8 +72,14 @@ static inline bool NS_IsSpace(char16_t u) {
 }
 
 static inline bool NS_NeedsPlatformNativeHandling(char16_t aChar) {
-  return (0x0e01 <= aChar && aChar <= 0x0fff) ||  
-         (0x1780 <= aChar && aChar <= 0x17ff);    
+  return
+#if ANDROID  
+             
+      (0x0e01 <= aChar && aChar <= 0x0eff) ||  
+#else
+      (0x0e01 <= aChar && aChar <= 0x0fff) ||  
+#endif
+      (0x1780 <= aChar && aChar <= 0x17ff);  
 }
 
 }  

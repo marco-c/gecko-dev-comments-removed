@@ -367,10 +367,18 @@ static inline bool IS_NONBREAKABLE_SPACE(char16_t u) {
 }
 
 static inline bool IS_HYPHEN(char16_t u) {
-  return (u == U_HYPHEN || u == 0x058A ||  
-          u == 0x2010 ||                   
+  return (u == U_HYPHEN || u == 0x2010 ||  
           u == 0x2012 ||                   
-          u == 0x2013);                    
+          u == 0x2013 ||                   
+#if ANDROID
+          
+
+
+
+
+          u == 0x0F0B ||  
+#endif
+          u == 0x058A);  
 }
 
 static int8_t GetClass(uint32_t u, LineBreaker::Strictness aLevel,
@@ -618,8 +626,10 @@ static int8_t GetClass(uint32_t u, LineBreaker::Strictness aLevel,
         return GETCLASSFROMTABLE(gLBClass00, uint16_t(U_HYPHEN));
       }
     } else if (0x0F00 == h) {
-      if (0x08 == l || 0x0C == l || 0x12 == l) {
-        return CLASS_NON_BREAKABLE;
+      
+      if (0x34 == l || 0x7f == l || 0x85 == l || 0xbe == l || 0xbf == l ||
+          0xd2 == l) {
+        return CLASS_BREAKABLE;
       }
     } else if (0x1800 == h) {
       if (0x0E == l) {
