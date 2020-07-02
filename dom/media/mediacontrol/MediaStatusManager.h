@@ -112,6 +112,10 @@ class IMediaInfoUpdater {
                             MediaSessionAction aAction) = 0;
   virtual void DisableAction(uint64_t aBrowsingContextId,
                              MediaSessionAction aAction) = 0;
+
+  
+  virtual void NotifyMediaFullScreenState(uint64_t aBrowsingContextId,
+                                          bool aIsInFullScreen) = 0;
 };
 
 

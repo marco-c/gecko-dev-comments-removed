@@ -285,6 +285,15 @@ void MediaController::SetIsInPictureInPictureMode(
   UpdateDeactivationTimerIfNeeded();
 }
 
+void MediaController::NotifyMediaFullScreenState(uint64_t aBrowsingContextId,
+                                                 bool aIsInFullScreen) {
+  if (mIsInFullScreenMode == aIsInFullScreen) {
+    return;
+  }
+  LOG("%s fullscreen", aIsInFullScreen ? "Entered" : "Left");
+  mIsInFullScreenMode = aIsInFullScreen;
+}
+
 void MediaController::HandleActualPlaybackStateChanged() {
   
   

@@ -106,6 +106,8 @@ class MediaController final : public DOMEventTargetHelper,
                                  MediaAudibleState aState) override;
   void SetIsInPictureInPictureMode(uint64_t aBrowsingContextId,
                                    bool aIsInPictureInPictureMode) override;
+  void NotifyMediaFullScreenState(uint64_t aBrowsingContextId,
+                                  bool aIsInFullScreen) override;
 
   
   
@@ -146,6 +148,7 @@ class MediaController final : public DOMEventTargetHelper,
   bool mIsActive = false;
   bool mShutdown = false;
   bool mIsInPictureInPictureMode = false;
+  bool mIsInFullScreenMode = false;
 
   
   
