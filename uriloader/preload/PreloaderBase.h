@@ -11,7 +11,6 @@
 #include "nsIChannelEventSink.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIRedirectResultListener.h"
-#include "nsITimer.h"
 #include "nsIURI.h"
 #include "nsTArray.h"
 #include "nsProxyRelease.h"
@@ -142,7 +141,6 @@ class PreloaderBase : public SupportsWeakPtr<PreloaderBase>,
 
  private:
   void NotifyNodeEvent(nsINode* aNode);
-  void CancelUsageTimer();
 
   
   
@@ -170,21 +168,6 @@ class PreloaderBase : public SupportsWeakPtr<PreloaderBase>,
     nsCOMPtr<nsIChannel> mRedirectChannel;
   };
 
-  
-  class UsageTimer final : public nsITimerCallback {
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSITIMERCALLBACK
-
-    UsageTimer(PreloaderBase* aPreload, dom::Document* aDocument)
-        : mDocument(aDocument), mPreload(aPreload) {}
-
-   private:
-    ~UsageTimer() = default;
-
-    WeakPtr<dom::Document> mDocument;
-    WeakPtr<PreloaderBase> mPreload;
-  };
-
  private:
   
   
@@ -192,10 +175,6 @@ class PreloaderBase : public SupportsWeakPtr<PreloaderBase>,
 
   
   nsTArray<RedirectRecord> mRedirectRecords;
-
-  
-  
-  nsCOMPtr<nsITimer> mUsageTimer;
 
   
   
