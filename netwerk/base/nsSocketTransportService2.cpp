@@ -778,6 +778,9 @@ nsSocketTransportService::Init() {
   UpdatePrefs();
 
   nsCOMPtr<nsIObserverService> obsSvc = services::GetObserverService();
+  
+  
+  
   if (obsSvc) {
     obsSvc->AddObserver(this, "profile-initial-state", false);
     obsSvc->AddObserver(this, "last-pb-context-exited", false);
