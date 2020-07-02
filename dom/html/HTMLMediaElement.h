@@ -1345,11 +1345,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
-  void CreateStopMediaControlTimerIfNeeded();
-  static void StopMediaControlTimerCallback(nsITimer* aTimer, void* aClosure);
-
-  
-  
   void ClearStopMediaControlTimerIfNeeded();
 
   
@@ -1573,9 +1568,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   nsCOMPtr<nsITimer> mVideoDecodeSuspendTimer;
-
-  
-  nsCOMPtr<nsITimer> mStopMediaControlTimer;
 
   
   RefPtr<MediaKeys> mMediaKeys;
