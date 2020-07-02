@@ -20,11 +20,18 @@ var HeuristicsRegExp = {
     email: new RegExp(
       "e.?mail" +
       "|courriel" + 
+      "|correo.*electr(o|ó)nico" + 
       "|メールアドレス" + 
       "|Электронной.?Почты" + 
       "|邮件|邮箱" + 
       "|電郵地址" + 
-        "|(?:이메일|전자.?우편|[Ee]-?mail)(.?주소)?", 
+      "|ഇ-മെയില്‍|ഇലക്ട്രോണിക്.?" +
+      "മെയിൽ" + 
+      "|ایمیل|پست.*الکترونیک" + 
+      "|ईमेल|इलॅक्ट्रॉनिक.?मेल" + 
+      "|(\\b|_)eposta(\\b|_)" + 
+        "|(?:이메일|전자.?우편|[Ee]-?mail)(.?주소)?" 
+          .normalize("NFKC"), 
       "iu"
     ),
 
@@ -37,7 +44,10 @@ var HeuristicsRegExp = {
       "|電話" + 
       "|telefone|telemovel" + 
       "|телефон" + 
+      "|मोबाइल" + 
+      "|(\\b|_|\\*)telefon(\\b|_|\\*)" + 
       "|电话" + 
+      "|മൊബൈല്‍" + 
         "|(?:전화|핸드폰|휴대폰|휴대전화)(?:.?번호)?", 
       "iu"
     ),
@@ -45,13 +55,14 @@ var HeuristicsRegExp = {
     
     organization: new RegExp(
       "company|business|organization|organisation" +
-      "|firma|firmenname" + 
+      "|(?<!con)firma|firmenname" + 
       "|empresa" + 
       "|societe|société" + 
       "|ragione.?sociale" + 
       "|会社" + 
       "|название.?компании" + 
       "|单位|公司" + 
+      "|شرکت" + 
         "|회사|직장", 
       "iu"
     ),
@@ -66,9 +77,10 @@ var HeuristicsRegExp = {
       "|adresse" + 
       "|indirizzo" + 
       "|^住所$|住所1" + 
-      "|morada|endereço" + 
+      "|morada|((?<!identificação do )endereço)" + 
       "|Адрес" + 
       "|地址" + 
+      "|(\\b|_)adres(?! (başlığı(nız)?|tarifi))(\\b|_)" + 
         "|^주소.?$|주소.?1", 
       "iu"
     ),
@@ -112,14 +124,17 @@ var HeuristicsRegExp = {
       "|Город" + 
       "|市" + 
       "|分區" + 
-        "|^시[^도·・]|시[·・]?군[·・]?구", 
+      "|شهر" + 
+      "|शहर" + 
+      "|ग्राम|गाँव" + 
+      "|നഗരം|ഗ്രാമം" + 
+      "|((\\b|_|\\*)([İii̇]l[cç]e(miz|niz)?)(\\b|_|\\*))" + 
+        "|^시[^도·・]|시[·・]?군[·・]?구" 
+          .normalize("NFKC"), 
       "iu"
     ),
     "address-level1": new RegExp(
-      
-      
-      
-      "state|county|region|province" +
+      "(?<!(united|hist|history).?)state|county|region|province" +
       "|land" + 
       "|county|principality" + 
       "|都道府県" + 
@@ -127,7 +142,12 @@ var HeuristicsRegExp = {
       "|область" + 
       "|省" + 
       "|地區" + 
-        "|^시[·・]?도", 
+      "|സംസ്ഥാനം" + 
+      "|استان" + 
+      "|राज्य" + 
+      "|((\\b|_|\\*)(eyalet|[şs]ehir|[İii̇]l(imiz)?|kent)(\\b|_|\\*))" + 
+        "|^시[·・]?도" 
+          .normalize("NFKC"), 
       "iu"
     ),
     "postal-code": new RegExp(
@@ -140,17 +160,23 @@ var HeuristicsRegExp = {
       "|郵便番号" + 
       "|codigo|codpos|\\bcep\\b" + 
       "|Почтовый.?Индекс" + 
+      "|पिन.?कोड" + 
+      "|പിന്‍കോഡ്" + 
       "|邮政编码|邮编" + 
       "|郵遞區號" + 
+      "|(\\b|_)posta kodu(\\b|_)" + 
         "|우편.?번호", 
       "iu"
     ),
     country: new RegExp(
       "country|countries" +
       "|país|pais" + 
-      "|国" + 
+      "|(\\b|_)land(\\b|_)(?!.*(mark.*))" + 
+      "|(?<!(入|出))国" + 
       "|国家" + 
-        "|국가|나라", 
+      "|국가|나라" + 
+      "|(\\b|_)(ülke|ulce|ulke)(\\b|_)" + 
+        "|کشور", 
       "iu"
     ),
 
@@ -159,10 +185,12 @@ var HeuristicsRegExp = {
       "^name|full.?name|your.?name|customer.?name|bill.?name|ship.?name" +
       "|name.*first.*last|firstandlastname" +
       "|nombre.*y.*apellidos" + 
-      "|^nom" + 
+      "|^nom(?!bre)" + 
       "|お名前|氏名" + 
       "|^nome" + 
+      "|نام.*نام.*خانوادگی" + 
       "|姓名" + 
+      "|(\\b|_|\\*)ad[ı]? soyad[ı]?(\\b|_|\\*)" + 
         "|성명", 
       "iu"
     ),
@@ -174,25 +202,32 @@ var HeuristicsRegExp = {
       "|名" + 
       "|nome" + 
       "|Имя" + 
-        "|이름", 
+      "|نام" + 
+      "|이름" + 
+      "|പേര്" + 
+      "|(\\b|_|\\*)(isim|ad|ad(i|ı|iniz|ınız)?)(\\b|_|\\*)" + 
+        "|नाम", 
       "iu"
     ),
     "additional-name": new RegExp(
       "middle.*name|mname|middle$" +
       "|apellido.?materno|lastlastname" + 
-        
-        "middle.*initial|m\\.i\\.|mi$|\\bmi\\b",
+        "middle.*initial|m\\.i\\.|mi$|\\bmi\\b", 
       "iu"
     ),
     "family-name": new RegExp(
       "last.*name|lname|surname|last$|secondname|family.*name" +
       "|nachname" + 
-      "|apellido" + 
-      "|famille|^nom" + 
+      "|apellidos?" + 
+      "|famille|^nom(?!bre)" + 
       "|cognome" + 
       "|姓" + 
-      "|morada|apelidos|surename|sobrenome" + 
+      "|apelidos|surename|sobrenome" + 
       "|Фамилия" + 
+      "|نام.*خانوادگی" + 
+      "|उपनाम" + 
+      "|മറുപേര്" + 
+      "|(\\b|_|\\*)(soyisim|soyad(i|ı|iniz|ınız)?)(\\b|_|\\*)" + 
         "|\\b성(?:[^명]|\\b)", 
       "iu"
     ),
@@ -214,14 +249,14 @@ var HeuristicsRegExp = {
     "cc-number": new RegExp(
       "(add)?(?:card|cc|acct).?(?:number|#|no|num|field)" +
       "|(cc|kk)nr" + 
-      "|nummer" + 
-      "|credito|numero|número" + 
-      "|numéro" + 
+      "|(?<!telefon|haus|person|fødsels)nummer" + 
       "|カード番号" + 
       "|Номер.*карты" + 
       "|信用卡号|信用卡号码" + 
       "|信用卡卡號" + 
-        "|카드", 
+      "|카드" + 
+        
+        "|(numero|número|numéro)(?!.*(document|fono|phone|réservation))",
       "iu"
     ),
     "cc-exp-month": new RegExp(
