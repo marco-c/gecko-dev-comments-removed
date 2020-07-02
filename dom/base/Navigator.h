@@ -150,6 +150,10 @@ class Navigator final : public nsISupports, public nsWrapperCache {
 
   
   
+  void ClearPlatformCache();
+
+  
+  
   void ClearUserAgentCache();
 
   bool Vibrate(uint32_t aDuration);
