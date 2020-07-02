@@ -603,6 +603,10 @@ class nsDocShell final : public nsDocLoader,
   nsresult AddChildSHEntryToParent(nsISHEntry* aNewEntry, int32_t aChildOffset,
                                    bool aCloneChildren);
 
+  nsresult AddChildSHEntryInternal(nsISHEntry* aCloneRef, nsISHEntry* aNewEntry,
+                                   int32_t aChildOffset, uint32_t aLoadType,
+                                   bool aCloneChildren);
+
   
   
   

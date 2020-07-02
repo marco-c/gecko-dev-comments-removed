@@ -2817,10 +2817,29 @@ nsDocShell::AddChildSHEntry(nsISHEntry* aCloneRef, nsISHEntry* aNewEntry,
       rv = mOSHE->AddChild(aNewEntry, aChildOffset, UseRemoteSubframes());
     }
   } else {
-    RefPtr<ChildSHistory> shistory = GetRootSessionHistory();
-    if (shistory) {
-      rv = shistory->LegacySHistory()->AddChildSHEntryHelper(
-          aCloneRef, aNewEntry, mBrowsingContext, aCloneChildren);
+    rv = AddChildSHEntryInternal(aCloneRef, aNewEntry, aChildOffset, aLoadType,
+                                 aCloneChildren);
+  }
+  return rv;
+}
+
+nsresult nsDocShell::AddChildSHEntryInternal(nsISHEntry* aCloneRef,
+                                             nsISHEntry* aNewEntry,
+                                             int32_t aChildOffset,
+                                             uint32_t aLoadType,
+                                             bool aCloneChildren) {
+  nsresult rv = NS_OK;
+  if (GetSessionHistory()) {
+    rv = GetSessionHistory()->LegacySHistory()->AddChildSHEntryHelper(
+        aCloneRef, aNewEntry, mBrowsingContext, aCloneChildren);
+  } else {
+    
+    nsCOMPtr<nsIDocShell> parent =
+        do_QueryInterface(GetAsSupports(mParent), &rv);
+    if (parent) {
+      rv = static_cast<nsDocShell*>(parent.get())
+               ->AddChildSHEntryInternal(aCloneRef, aNewEntry, aChildOffset,
+                                         aLoadType, aCloneChildren);
     }
   }
   return rv;
@@ -2865,7 +2884,8 @@ nsresult nsDocShell::AddChildSHEntryToParent(nsISHEntry* aNewEntry,
 
 NS_IMETHODIMP
 nsDocShell::RemoveFromSessionHistory() {
-  RefPtr<ChildSHistory> sessionHistory = GetRootSessionHistory();
+  RefPtr<ChildSHistory> sessionHistory =
+      mBrowsingContext->Top()->GetChildSessionHistory();
   if (!sessionHistory) {
     return NS_OK;
   }
@@ -9937,7 +9957,8 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
 
   
   
-  RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
+  RefPtr<ChildSHistory> rootSH =
+      mBrowsingContext->Top()->GetChildSessionHistory();
   if (!rootSH) {
     updateSHistory = false;
     updateGHistory = false;  
@@ -10534,12 +10555,15 @@ nsresult nsDocShell::AddToSessionHistory(
   nsCOMPtr<nsISHEntry> entry;
 
   
+  nsCOMPtr<nsIDocShellTreeItem> root;
+  GetInProcessSameTypeRootTreeItem(getter_AddRefs(root));
+  
 
 
 
 
   if (LOAD_TYPE_HAS_FLAGS(mLoadType, LOAD_FLAGS_REPLACE_HISTORY) &&
-      !mBrowsingContext->IsTop()) {
+      root != static_cast<nsIDocShellTreeItem*>(this)) {
     
     entry = mOSHE;
     if (entry) {
@@ -10549,7 +10573,10 @@ nsresult nsDocShell::AddToSessionHistory(
 
   
   if (!entry) {
-    RefPtr<ChildSHistory> shistory = GetRootSessionHistory();
+    nsCOMPtr<nsIWebNavigation> webnav = do_QueryInterface(root);
+    NS_ENSURE_TRUE(webnav, NS_ERROR_FAILURE);
+
+    RefPtr<ChildSHistory> shistory = webnav->GetSessionHistory();
     entry = new nsSHEntry(shistory ? shistory->LegacySHistory() : nullptr);
   }
 
@@ -10678,7 +10705,7 @@ nsresult nsDocShell::AddToSessionHistory(
                 resultPrincipalURI, loadReplace, referrerInfo, srcdoc,
                 srcdocEntry, baseURI, saveLayoutState, expired);
 
-  if (mBrowsingContext->IsTop() && GetSessionHistory()) {
+  if (root == static_cast<nsIDocShellTreeItem*>(this) && GetSessionHistory()) {
     bool shouldPersist = ShouldAddToSessionHistory(aURI, aChannel);
     Maybe<int32_t> previousEntryIndex;
     Maybe<int32_t> loadedEntryIndex;
@@ -10879,9 +10906,16 @@ already_AddRefed<nsISHEntry> nsDocShell::SetHistoryEntry(
 }
 
 already_AddRefed<ChildSHistory> nsDocShell::GetRootSessionHistory() {
-  RefPtr<ChildSHistory> childSHistory =
-      mBrowsingContext->Top()->GetChildSessionHistory();
-  return childSHistory.forget();
+  nsCOMPtr<nsIDocShellTreeItem> root;
+  nsresult rv = GetInProcessSameTypeRootTreeItem(getter_AddRefs(root));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+  nsCOMPtr<nsIWebNavigation> webnav = do_QueryInterface(root);
+  if (!webnav) {
+    return nullptr;
+  }
+  return webnav->GetSessionHistory();
 }
 
 nsresult nsDocShell::GetHttpChannel(nsIChannel* aChannel,
