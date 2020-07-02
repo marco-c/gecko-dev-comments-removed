@@ -410,10 +410,7 @@ already_AddRefed<PreloaderBase> FetchDriver::FindPreload(nsIURI* aURI) {
 
   
 
-  
-  
-  auto preloadKey =
-      PreloadHashKey::CreateAsFetch(aURI, cors, mRequest->ReferrerPolicy_());
+  auto preloadKey = PreloadHashKey::CreateAsFetch(aURI, cors);
   return mDocument->Preloads().LookupPreload(&preloadKey);
 }
 

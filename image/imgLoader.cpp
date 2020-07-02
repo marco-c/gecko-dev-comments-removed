@@ -748,30 +748,7 @@ static bool ValidateSecurityInfo(imgRequest* request, bool forcePrincipalCheck,
                                  int32_t corsmode,
                                  nsIPrincipal* triggeringPrincipal,
                                  Document* aLoadingDocument,
-                                 nsContentPolicyType aPolicyType,
-                                 nsIReferrerInfo* aReferrerInfo) {
-  
-  
-  
-  
-  
-  
-  
-  
-  ReferrerPolicy referrerPolicy = ReferrerPolicy::_empty;
-  if (aReferrerInfo) {
-    referrerPolicy = aReferrerInfo->ReferrerPolicy();
-  }
-
-  ReferrerPolicy requestReferrerPolicy = ReferrerPolicy::_empty;
-  if (request->GetReferrerInfo()) {
-    requestReferrerPolicy = request->GetReferrerInfo()->ReferrerPolicy();
-  }
-
-  if (referrerPolicy != requestReferrerPolicy) {
-    return false;
-  }
-
+                                 nsContentPolicyType aPolicyType) {
   
   
   if (request->GetCORSMode() != corsmode) {
@@ -1709,11 +1686,9 @@ bool imgLoader::ValidateRequestWithNewChannel(
 
       if (aLinkPreload) {
         MOZ_ASSERT(aLoadingDocument);
-        MOZ_ASSERT(aReferrerInfo);
         proxy->PrioritizeAsPreload();
         auto preloadKey = PreloadHashKey::CreateAsImage(
-            aURI, aTriggeringPrincipal, ConvertToCORSMode(aCORSMode),
-            aReferrerInfo->ReferrerPolicy());
+            aURI, aTriggeringPrincipal, ConvertToCORSMode(aCORSMode));
         proxy->NotifyOpen(&preloadKey, aLoadingDocument, true);
       }
 
@@ -1778,11 +1753,9 @@ bool imgLoader::ValidateRequestWithNewChannel(
 
   if (aLinkPreload) {
     MOZ_ASSERT(aLoadingDocument);
-    MOZ_ASSERT(aReferrerInfo);
     req->PrioritizeAsPreload();
     auto preloadKey = PreloadHashKey::CreateAsImage(
-        aURI, aTriggeringPrincipal, ConvertToCORSMode(aCORSMode),
-        aReferrerInfo->ReferrerPolicy());
+        aURI, aTriggeringPrincipal, ConvertToCORSMode(aCORSMode));
     req->NotifyOpen(&preloadKey, aLoadingDocument, true);
   }
 
@@ -1853,7 +1826,7 @@ bool imgLoader::ValidateEntry(
 
   if (!ValidateSecurityInfo(request, aEntry->ForcePrincipalCheck(), aCORSMode,
                             aTriggeringPrincipal, aLoadingDocument,
-                            aLoadPolicyType, aReferrerInfo)) {
+                            aLoadPolicyType)) {
     return false;
   }
 
@@ -2244,10 +2217,8 @@ nsresult imgLoader::LoadImage(
 
   
   if (StaticPrefs::network_preload() && !aLinkPreload && aLoadingDocument) {
-    auto key = PreloadHashKey::CreateAsImage(
-        aURI, aTriggeringPrincipal, ConvertToCORSMode(corsmode),
-        aReferrerInfo ? aReferrerInfo->ReferrerPolicy()
-                      : ReferrerPolicy::_empty);
+    auto key = PreloadHashKey::CreateAsImage(aURI, aTriggeringPrincipal,
+                                             ConvertToCORSMode(corsmode));
     if (RefPtr<PreloaderBase> preload =
             aLoadingDocument->Preloads().LookupPreload(&key)) {
       RefPtr<imgRequestProxy> proxy = do_QueryObject(preload);
@@ -2475,11 +2446,9 @@ nsresult imgLoader::LoadImage(
 
     if (aLinkPreload) {
       MOZ_ASSERT(aLoadingDocument);
-      MOZ_ASSERT(aReferrerInfo);
       proxy->PrioritizeAsPreload();
       auto preloadKey = PreloadHashKey::CreateAsImage(
-          aURI, aTriggeringPrincipal, ConvertToCORSMode(corsmode),
-          aReferrerInfo->ReferrerPolicy());
+          aURI, aTriggeringPrincipal, ConvertToCORSMode(corsmode));
       proxy->NotifyOpen(&preloadKey, aLoadingDocument, true);
     }
 
