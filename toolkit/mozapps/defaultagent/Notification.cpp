@@ -61,6 +61,19 @@ static bool GetFollowupNotificationShown() {
       .valueOr(false);
 }
 
+static bool SetFollowupNotificationSuppressed(bool value) {
+  return !RegistrySetValueBool(IsPrefixed::Unprefixed,
+                               L"FollowupNotificationSuppressed", value)
+              .isErr();
+}
+
+static bool GetFollowupNotificationSuppressed() {
+  return RegistryGetValueBool(IsPrefixed::Unprefixed,
+                              L"FollowupNotificationSuppressed")
+      .unwrapOr(mozilla::Some(false))
+      .valueOr(false);
+}
+
 
 
 static bool SetFollowupNotificationRequestTime(ULONGLONG time) {
@@ -416,12 +429,20 @@ void MaybeShowNotification(const DefaultBrowserInfo& browserInfo,
       GetFollowupNotificationRequestTime();
   bool followupNotificationRequested = followupNotificationRequestTime != 0;
   bool followupNotificationShown = GetFollowupNotificationShown();
-  if (followupNotificationRequested && !followupNotificationShown) {
+  if (followupNotificationRequested && !followupNotificationShown &&
+      !GetFollowupNotificationSuppressed()) {
     ULONGLONG secondsSinceRequestTime =
         SecondsPassedSince(followupNotificationRequestTime);
 
     if (secondsSinceRequestTime >= SEVEN_DAYS_IN_SECONDS) {
-      ShowNotification(NotificationType::Followup, aumi);
+      
+      
+      
+      if (browserInfo.currentDefaultBrowser == Browser::EdgeWithBlink) {
+        ShowNotification(NotificationType::Followup, aumi);
+      } else {
+        SetFollowupNotificationSuppressed(true);
+      }
     }
   }
 }
