@@ -81,7 +81,7 @@ class MakeBackend(CommonBackend):
                     
                     
                     ret.append('%s%s: %s' % (
-                        tier, ':' if tier != 'default' else '', stub_file))
+                        tier, ':' if tier in ('export', 'libs', 'misc') else '', stub_file))
             for output in outputs:
                 ret.append('%s: %s ;' % (output, stub_file))
                 ret.append('GARBAGE += %s' % output)
