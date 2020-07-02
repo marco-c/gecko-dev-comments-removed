@@ -748,11 +748,24 @@ nsresult WSRunScanner::GetWSNodes() {
     editableBlockParentOrTopmotEditableInlineContent = scanStartContent;
   }
 
+  InitializeRangeStart(mScanStartPoint,
+                       *editableBlockParentOrTopmotEditableInlineContent);
+  InitializeRangeEnd(mScanStartPoint,
+                     *editableBlockParentOrTopmotEditableInlineContent);
+  return NS_OK;
+}
+
+void WSRunScanner::InitializeRangeStart(
+    const EditorDOMPoint& aPoint,
+    const nsIContent& aEditableBlockParentOrTopmostEditableInlineContent) {
+  MOZ_ASSERT(aPoint.IsSetAndValid());
+
+  EditorDOMPoint start(aPoint);
   
-  if (Text* textNode = mScanStartPoint.GetContainerAsText()) {
+  if (Text* textNode = aPoint.GetContainerAsText()) {
     const nsTextFragment* textFrag = &textNode->TextFragment();
-    if (!mScanStartPoint.IsStartOfContainer()) {
-      for (uint32_t i = mScanStartPoint.Offset(); i; i--) {
+    if (!aPoint.IsStartOfContainer()) {
+      for (uint32_t i = aPoint.Offset(); i; i--) {
         
         if (i > textFrag->GetLength()) {
           MOZ_ASSERT_UNREACHABLE("looking beyond end of text fragment");
@@ -765,7 +778,7 @@ nsresult WSRunScanner::GetWSNodes() {
             mStartOffset = i;
             mStartReason = WSType::NormalText;
             mStartReasonContent = textNode;
-            break;
+            return;
           }
           
           mFirstNBSPNode = textNode;
@@ -785,7 +798,7 @@ nsresult WSRunScanner::GetWSNodes() {
     
     nsIContent* previousLeafContentOrBlock =
         HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-            start, *editableBlockParentOrTopmotEditableInlineContent,
+            start, aEditableBlockParentOrTopmostEditableInlineContent,
             mEditingHost);
     if (previousLeafContentOrBlock) {
       if (HTMLEditUtils::IsBlockElement(*previousLeafContentOrBlock)) {
@@ -817,7 +830,7 @@ nsresult WSRunScanner::GetWSNodes() {
                 mStartOffset = pos + 1;
                 mStartReason = WSType::NormalText;
                 mStartReasonContent = textNode;
-                break;
+                return;
               }
               
               mFirstNBSPNode = textNode;
@@ -851,10 +864,18 @@ nsresult WSRunScanner::GetWSNodes() {
       mStartReason = WSType::CurrentBlockBoundary;
       
       
-      mStartReasonContent = editableBlockParentOrTopmotEditableInlineContent;
+      mStartReasonContent = const_cast<nsIContent*>(
+          &aEditableBlockParentOrTopmostEditableInlineContent);
     }
   }
+}
 
+void WSRunScanner::InitializeRangeEnd(
+    const EditorDOMPoint& aPoint,
+    const nsIContent& aEditableBlockParentOrTopmostEditableInlineContent) {
+  MOZ_ASSERT(aPoint.IsSetAndValid());
+
+  EditorDOMPoint end(aPoint);
   
   if (Text* textNode = end.GetContainerAsText()) {
     
@@ -873,7 +894,7 @@ nsresult WSRunScanner::GetWSNodes() {
             mEndOffset = i;
             mEndReason = WSType::NormalText;
             mEndReasonContent = textNode;
-            break;
+            return;
           }
           
           mLastNBSPNode = textNode;
@@ -893,7 +914,7 @@ nsresult WSRunScanner::GetWSNodes() {
     
     nsIContent* nextLeafContentOrBlock =
         HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-            end, *editableBlockParentOrTopmotEditableInlineContent,
+            end, aEditableBlockParentOrTopmostEditableInlineContent,
             mEditingHost);
     if (nextLeafContentOrBlock) {
       if (HTMLEditUtils::IsBlockElement(*nextLeafContentOrBlock)) {
@@ -926,7 +947,7 @@ nsresult WSRunScanner::GetWSNodes() {
                 mEndOffset = pos;
                 mEndReason = WSType::NormalText;
                 mEndReasonContent = textNode;
-                break;
+                return;
               }
               
               mLastNBSPNode = textNode;
@@ -961,11 +982,10 @@ nsresult WSRunScanner::GetWSNodes() {
       mEndReason = WSType::CurrentBlockBoundary;
       
       
-      mEndReasonContent = editableBlockParentOrTopmotEditableInlineContent;
+      mEndReasonContent = const_cast<nsIContent*>(
+          &aEditableBlockParentOrTopmostEditableInlineContent);
     }
   }
-
-  return NS_OK;
 }
 
 void WSRunScanner::GetRuns() {
