@@ -949,6 +949,16 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
       p->mRemoteType.Assign(aRemoteType);
       
       Unused << p->SendRemoteType(p->mRemoteType);
+
+      nsCOMPtr<nsIObserverService> obs =
+          mozilla::services::GetObserverService();
+
+      if (obs) {
+        nsAutoString cpId;
+        cpId.AppendInt(static_cast<uint64_t>(p->ChildID()));
+        obs->NotifyObservers(static_cast<nsIObserver*>(p), "process-type-set",
+                             cpId.get());
+      }
     } else {
       
       MOZ_RELEASE_ASSERT(p->mRemoteType.EqualsLiteral(DEFAULT_REMOTE_TYPE) &&
