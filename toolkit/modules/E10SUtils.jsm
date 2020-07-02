@@ -824,7 +824,6 @@ var E10SUtils = {
     
     
     if (
-      requiredRemoteType != NOT_REMOTE &&
       uriObject &&
       (remoteSubframes || documentChannel) &&
       documentChannelPermittedForURI(uriObject)
@@ -855,7 +854,6 @@ var E10SUtils = {
 
     if (
       (aRemoteSubframes || documentChannel) &&
-      wantRemoteType != NOT_REMOTE &&
       documentChannelPermittedForURI(aURI)
     ) {
       
@@ -893,7 +891,6 @@ var E10SUtils = {
     if (
       AppConstants.MOZ_WIDGET_TOOLKIT != "android" &&
       (useRemoteSubframes || documentChannel) &&
-      wantRemoteType != NOT_REMOTE &&
       documentChannelPermittedForURI(aURI)
     ) {
       return true;

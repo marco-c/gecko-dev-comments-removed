@@ -183,7 +183,7 @@ nsDocShellLoadState::~nsDocShellLoadState() {}
 
 nsresult nsDocShellLoadState::CreateFromPendingChannel(
     nsIChannel* aPendingChannel, uint64_t aLoadIdentifier,
-    nsDocShellLoadState** aResult) {
+    uint64_t aRegistrarId, nsDocShellLoadState** aResult) {
   
   
   nsCOMPtr<nsIURI> uri;
@@ -195,6 +195,7 @@ nsresult nsDocShellLoadState::CreateFromPendingChannel(
   RefPtr<nsDocShellLoadState> loadState =
       new nsDocShellLoadState(uri, aLoadIdentifier);
   loadState->mPendingRedirectedChannel = aPendingChannel;
+  loadState->mChannelRegistrarId = aRegistrarId;
 
   
   

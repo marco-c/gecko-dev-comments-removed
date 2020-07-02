@@ -272,6 +272,11 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                         nsTArray<ParentEndpoint>&& aStreamFilterEndpoints);
 
   
+  
+  RefPtr<PDocumentChannelParent::RedirectToRealChannelPromise>
+  RedirectToParentProcess(uint32_t aRedirectFlags, uint32_t aLoadFlags);
+
+  
   already_AddRefed<LoadInfo> CreateLoadInfo(
       dom::CanonicalBrowsingContext* aBrowsingContext,
       nsDocShellLoadState* aLoadState, uint64_t aOuterWindowId);

@@ -79,6 +79,7 @@
 #include "mozilla/dom/JSWindowActorChild.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/net/DocumentChannel.h"
+#include "mozilla/net/ParentChannelWrapper.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "ReferrerInfo.h"
 
@@ -206,6 +207,7 @@
 #include "nsSHEntry.h"
 #include "nsStructuredCloneContainer.h"
 #include "nsSubDocumentFrame.h"
+#include "nsURILoader.h"
 #include "nsView.h"
 #include "nsViewManager.h"
 #include "nsViewSourceHandler.h"
@@ -9436,8 +9438,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
       outRequest.forget(aRequest);
     }
 
-    return OpenInitializedChannel(channel, uriLoader,
-                                  nsIURILoader::REDIRECTED_CHANNEL);
+    return OpenRedirectedChannel(aLoadState);
   }
 
   
@@ -9723,15 +9724,10 @@ static nsresult AppendSegmentToString(nsIInputStream* aIn, void* aClosure,
   return openFlags;
 }
 
-nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
-                                            nsIURILoader* aURILoader,
-                                            uint32_t aOpenFlags) {
-  nsresult rv = NS_OK;
-
+void nsDocShell::UpdateMixedContentChannelForNewLoad(nsIChannel* aChannel) {
   if (mLoadType == LOAD_NORMAL_ALLOW_MIXED_CONTENT ||
       mLoadType == LOAD_RELOAD_ALLOW_MIXED_CONTENT) {
-    rv = SetMixedContentChannel(aChannel);
-    NS_ENSURE_SUCCESS(rv, rv);
+    SetMixedContentChannel(aChannel);
   } else if (mMixedContentChannel) {
     
 
@@ -9742,11 +9738,20 @@ nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
 
 
 
-    rv = nsContentUtils::CheckSameOrigin(mMixedContentChannel, aChannel);
+    nsresult rv =
+        nsContentUtils::CheckSameOrigin(mMixedContentChannel, aChannel);
     if (NS_FAILED(rv) || NS_FAILED(SetMixedContentChannel(aChannel))) {
       SetMixedContentChannel(nullptr);
     }
   }
+}
+
+nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
+                                            nsIURILoader* aURILoader,
+                                            uint32_t aOpenFlags) {
+  nsresult rv = NS_OK;
+
+  UpdateMixedContentChannelForNewLoad(aChannel);
 
   
   auto cleanupInitialClient =
@@ -9756,21 +9761,6 @@ nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
   NS_ENSURE_TRUE(win, NS_ERROR_FAILURE);
 
   MaybeCreateInitialClientSource();
-
-  if (aOpenFlags & nsIURILoader::REDIRECTED_CHANNEL) {
-    nsCOMPtr<nsILoadInfo> loadInfo;
-    aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
-
-    LoadInfo* li = static_cast<LoadInfo*>(loadInfo.get());
-    if (loadInfo->GetExternalContentPolicyType() ==
-        nsIContentPolicy::TYPE_DOCUMENT) {
-      li->UpdateBrowsingContextID(mBrowsingContext->Id());
-    } else if (loadInfo->GetExternalContentPolicyType() ==
-               nsIContentPolicy::TYPE_SUBDOCUMENT) {
-      li->UpdateFrameBrowsingContextID(mBrowsingContext->Id());
-    }
-  }
-  
 
   
   
@@ -9794,12 +9784,6 @@ nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
     rv = AddClientChannelHelperInChild(
         aChannel, win->EventTargetFor(TaskCategory::Other));
     docChannel->SetInitialClientInfo(GetInitialClientInfo());
-  } else if (aOpenFlags & nsIURILoader::REDIRECTED_CHANNEL) {
-    
-    
-    CreateReservedSourceIfNeeded(aChannel,
-                                 win->EventTargetFor(TaskCategory::Other));
-    rv = NS_OK;
   } else {
     rv = AddClientChannelHelper(aChannel, std::move(noReservedClient),
                                 GetInitialClientInfo(),
@@ -9818,6 +9802,81 @@ nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
   
   cleanupInitialClient.release();
 
+  return NS_OK;
+}
+
+nsresult nsDocShell::OpenRedirectedChannel(nsDocShellLoadState* aLoadState) {
+  nsCOMPtr<nsIChannel> channel = aLoadState->GetPendingRedirectedChannel();
+  MOZ_ASSERT(channel);
+
+  UpdateMixedContentChannelForNewLoad(channel);
+
+  
+  auto cleanupInitialClient =
+      MakeScopeExit([&] { mInitialClientSource.reset(); });
+
+  nsCOMPtr<nsPIDOMWindowOuter> win = GetWindow();
+  NS_ENSURE_TRUE(win, NS_ERROR_FAILURE);
+
+  MaybeCreateInitialClientSource();
+
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  channel->GetLoadInfo(getter_AddRefs(loadInfo));
+
+  LoadInfo* li = static_cast<LoadInfo*>(loadInfo.get());
+  if (loadInfo->GetExternalContentPolicyType() ==
+      nsIContentPolicy::TYPE_DOCUMENT) {
+    li->UpdateBrowsingContextID(mBrowsingContext->Id());
+  } else if (loadInfo->GetExternalContentPolicyType() ==
+             nsIContentPolicy::TYPE_SUBDOCUMENT) {
+    li->UpdateFrameBrowsingContextID(mBrowsingContext->Id());
+  }
+  
+
+  
+  
+  CreateReservedSourceIfNeeded(channel,
+                               win->EventTargetFor(TaskCategory::Other));
+
+  RefPtr<nsDocumentOpenInfo> loader =
+      new nsDocumentOpenInfo(this, nsIURILoader::DONT_RETARGET, nullptr);
+  channel->SetLoadGroup(mLoadGroup);
+
+  MOZ_ALWAYS_SUCCEEDS(loader->Prepare());
+
+  nsresult rv = NS_OK;
+  if (XRE_IsParentProcess()) {
+    
+    
+
+    
+    
+    
+    
+    RefPtr<ParentChannelWrapper> wrapper =
+        new ParentChannelWrapper(channel, loader);
+    wrapper->Register(aLoadState->GetPendingRedirectChannelRegistrarId());
+
+    mLoadGroup->AddRequest(channel, nullptr);
+  } else if (nsCOMPtr<nsIChildChannel> childChannel =
+                 do_QueryInterface(channel)) {
+    
+    
+    
+    rv = childChannel->CompleteRedirectSetup(loader);
+  } else {
+    
+    
+    
+    rv = channel->AsyncOpen(loader);
+  }
+  if (rv == NS_ERROR_NO_CONTENT) {
+    return NS_OK;
+  }
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  cleanupInitialClient.release();
   return NS_OK;
 }
 

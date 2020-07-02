@@ -50,6 +50,7 @@ class nsDocShellLoadState final {
 
   static nsresult CreateFromPendingChannel(nsIChannel* aPendingChannel,
                                            uint64_t aLoadIdentifier,
+                                           uint64_t aRegistarId,
                                            nsDocShellLoadState** aResult);
 
   static nsresult CreateFromLoadURIOptions(
@@ -228,6 +229,10 @@ class nsDocShellLoadState final {
 
   nsIChannel* GetPendingRedirectedChannel() {
     return mPendingRedirectedChannel;
+  }
+
+  uint64_t GetPendingRedirectChannelRegistrarId() const {
+    return mChannelRegistrarId;
   }
 
   void SetOriginalURIString(const nsCString& aOriginalURI) {
@@ -425,6 +430,11 @@ class nsDocShellLoadState final {
   
   
   mozilla::Maybe<int32_t> mCancelContentJSEpoch;
+
+  
+  
+  
+  uint64_t mChannelRegistrarId;
 
   
   

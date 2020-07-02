@@ -18,6 +18,10 @@ class ParentChannelWrapper : public nsIParentChannel {
   ParentChannelWrapper(nsIChannel* aChannel, nsIStreamListener* aListener)
       : mChannel(aChannel), mListener(aListener) {}
 
+  
+  
+  void Register(uint64_t aRegistrarId);
+
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPARENTCHANNEL
   NS_FORWARD_NSISTREAMLISTENER(mListener->)

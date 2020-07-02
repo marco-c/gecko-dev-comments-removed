@@ -687,19 +687,6 @@ NS_IMETHODIMP nsURILoader::OpenURI(nsIChannel* channel, uint32_t aFlags,
     }
   }
 
-  if (aFlags & nsIURILoader::REDIRECTED_CHANNEL) {
-    
-    
-    
-    if (nsCOMPtr<nsIChildChannel> childChannel = do_QueryInterface(channel)) {
-      return childChannel->CompleteRedirectSetup(loader);
-    }
-
-    
-    
-    
-  }
-
   
   
   
