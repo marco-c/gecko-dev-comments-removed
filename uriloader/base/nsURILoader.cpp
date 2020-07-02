@@ -395,13 +395,15 @@ nsresult nsDocumentOpenInfo::DispatchContent(nsIRequest* request,
   
   
   
+  
+  
+  
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(request));
   if (httpChannel) {
     bool requestSucceeded;
     rv = httpChannel->GetRequestSucceeded(&requestSucceeded);
     if (NS_FAILED(rv) || !requestSucceeded) {
-      
-      return NS_ERROR_FILE_NOT_FOUND;
+      return NS_OK;
     }
   }
 
