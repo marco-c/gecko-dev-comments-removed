@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getOwnPropertyDescriptor(Symbol(), 'foo'), undefined);
+assert.sameValue(Object.getOwnPropertyDescriptor(Symbol('foo'), 'description'), undefined);
+
+reportCompare(0, 0);

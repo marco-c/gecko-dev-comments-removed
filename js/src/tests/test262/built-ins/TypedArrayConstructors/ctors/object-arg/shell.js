@@ -489,6 +489,8 @@ var NaNs = [
 
 
 
+
+
 var typedArrayConstructors = [
   Float64Array,
   Float32Array,
@@ -533,6 +535,37 @@ function testWithTypedArrayConstructors(f, selected) {
       throw e;
     }
   }
+}
+
+
+
+
+
+
+
+function testWithNonAtomicsFriendlyTypedArrayConstructors(f) {
+  testWithTypedArrayConstructors(f, [
+    Float64Array,
+    Float32Array,
+    Uint8ClampedArray
+  ]);
+}
+
+
+
+
+
+
+
+function testWithAtomicsFriendlyTypedArrayConstructors(f) {
+  testWithTypedArrayConstructors(f, [
+    Int32Array,
+    Int16Array,
+    Int8Array,
+    Uint32Array,
+    Uint16Array,
+    Uint8Array,
+  ]);
 }
 
 

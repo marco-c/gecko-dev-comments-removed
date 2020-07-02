@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Atomics.waitAsync, 'function');
+
+reportCompare(0, 0);

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert(isConstructor(Symbol));
+assert.sameValue(Object.getPrototypeOf(Symbol), Function.prototype);
+
+reportCompare(0, 0);

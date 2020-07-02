@@ -19,8 +19,7 @@
 
 
 
-
-assert.throws(RangeError, () => {
+assert.throws(TypeError, () => {
   new Intl.NumberFormat([], { style: "currency", unit: "test" })
 });
 

@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var revocableTarget = Proxy.revocable({}, {});
+revocableTarget.revoke();
+
+var revocable = Proxy.revocable(revocableTarget.proxy, {});
+assert.sameValue(typeof revocable.proxy, "object");
+
+reportCompare(0, 0);

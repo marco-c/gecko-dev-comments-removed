@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var value = undefined;
+value ??= class {};
+
+assert.sameValue(value.name, "value", "value");
+
+reportCompare(0, 0);

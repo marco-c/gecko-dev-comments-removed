@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(AggregateError.prototype.hasOwnProperty("errors"), false);
+
+reportCompare(0, 0);

@@ -17,11 +17,39 @@
 
 
 
-var other = $262.createRealm().global;
-var C = new other.Function();
-C.prototype = null;
-var B = C.bind().bind();
 
-assert.sameValue(Object.getPrototypeOf(new B()), other.Object.prototype);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var realm1 = $262.createRealm().global;
+var realm2 = $262.createRealm().global;
+var realm3 = $262.createRealm().global;
+var realm4 = $262.createRealm().global;
+
+var newTarget = new realm1.Function();
+newTarget.prototype = 1;
+
+var boundNewTarget = realm2.Function.prototype.bind.call(newTarget);
+var boundBoundNewTarget = realm3.Function.prototype.bind.call(boundNewTarget);
+var object = Reflect.construct(realm4.Object, [], boundBoundNewTarget);
+
+assert(object instanceof realm1.Object);
+assert.sameValue(Object.getPrototypeOf(object), realm1.Object.prototype);
 
 reportCompare(0, 0);

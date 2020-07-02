@@ -14,11 +14,24 @@ assert.throws(TypeError, () => {
 });
 
 for (const unit of ["test", "MILE", "kB"]) {
-  for (const style of [undefined, "decimal", "currency", "unit"]) {
+  
+  for (const style of [undefined, "decimal", "unit"]) {
     assert.throws(RangeError, () => {
       new Intl.NumberFormat([], { style, unit })
     }, `{ style: ${style}, unit: ${unit} }`);
   }
+
+  const style = "currency";
+
+  
+  assert.throws(TypeError, () => {
+    new Intl.NumberFormat([], { style, unit })
+  }, `{ style: ${style}, unit: ${unit} }`);
+
+  
+  assert.throws(RangeError, () => {
+    new Intl.NumberFormat([], { style, unit, currency: "USD" })
+  }, `{ style: ${style}, unit: ${unit} }`);
 }
 
 const nf = new Intl.NumberFormat([], {

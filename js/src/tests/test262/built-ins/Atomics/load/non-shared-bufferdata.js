@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+testWithAtomicsFriendlyTypedArrayConstructors(TA => {
+  const view = new TA(
+    new ArrayBuffer(TA.BYTES_PER_ELEMENT * 4)
+  );
+
+  assert.sameValue(Atomics.load(view, 0), 0, 'Atomics.load(view, 0) returns 0');
+});
+
+reportCompare(0, 0);

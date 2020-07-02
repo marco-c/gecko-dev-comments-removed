@@ -25,6 +25,14 @@ const expected = [
   "fractionalSecondDigits",
 ];
 
-assert.compareArray(Object.getOwnPropertyNames(options), expected);
+let actual = Object.getOwnPropertyNames(options);
+
+
+
+assert(arrayContains(actual, expected));
+for (var i = 1; i < expected.length; i++) {
+  
+  assert(actual.indexOf(expected[i-1]) < actual.indexOf(expected[i]));
+}
 
 reportCompare(0, 0);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var value = 0;
+value ||= function() {};
+
+assert.sameValue(value.name, "value", "value");
+
+reportCompare(0, 0);

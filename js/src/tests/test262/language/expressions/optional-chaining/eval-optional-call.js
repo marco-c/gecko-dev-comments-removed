@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const a = "global";
+const b = (a => eval?.("a"))("local")
+
+assert.sameValue(b, a);
+
+reportCompare(0, 0);

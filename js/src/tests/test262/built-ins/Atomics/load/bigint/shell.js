@@ -11,6 +11,8 @@
 
 
 
+
+
 var TypedArray = Object.getPrototypeOf(Int8Array);
 
 
@@ -18,11 +20,12 @@ var TypedArray = Object.getPrototypeOf(Int8Array);
 
 
 
-function testWithBigIntTypedArrayConstructors(f) {
+
+function testWithBigIntTypedArrayConstructors(f, selected) {
   
 
 
-  var constructors = [
+  var constructors = selected || [
     BigInt64Array,
     BigUint64Array
   ];

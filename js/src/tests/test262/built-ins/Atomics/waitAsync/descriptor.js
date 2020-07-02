@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Atomics, 'waitAsync', {
+  configurable: true,
+  writable: true,
+  enumerable: false,
+});
+
+reportCompare(0, 0);

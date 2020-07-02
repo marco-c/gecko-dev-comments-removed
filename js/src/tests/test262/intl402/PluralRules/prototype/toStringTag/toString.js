@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.prototype.toString.call(Intl.PluralRules.prototype), "[object Intl.PluralRules]");
+assert.sameValue(Object.prototype.toString.call(new Intl.PluralRules()), "[object Intl.PluralRules]");
+
+reportCompare(0, 0);

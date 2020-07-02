@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+delete Intl.Collator.prototype[Symbol.toStringTag];
+
+assert.sameValue(Object.prototype.toString.call(Intl.Collator.prototype), "[object Object]");
+assert.sameValue(Object.prototype.toString.call(new Intl.Collator()), "[object Object]");
+
+reportCompare(0, 0);

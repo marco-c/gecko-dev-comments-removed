@@ -29,6 +29,8 @@ function $DETACHBUFFER(buffer) {
 
 
 
+
+
 var TypedArray = Object.getPrototypeOf(Int8Array);
 
 
@@ -36,11 +38,12 @@ var TypedArray = Object.getPrototypeOf(Int8Array);
 
 
 
-function testWithBigIntTypedArrayConstructors(f) {
+
+function testWithBigIntTypedArrayConstructors(f, selected) {
   
 
 
-  var constructors = [
+  var constructors = selected || [
     BigInt64Array,
     BigUint64Array
   ];
@@ -55,6 +58,8 @@ function testWithBigIntTypedArrayConstructors(f) {
     }
   }
 }
+
+
 
 
 
@@ -118,6 +123,37 @@ function testWithTypedArrayConstructors(f, selected) {
       throw e;
     }
   }
+}
+
+
+
+
+
+
+
+function testWithNonAtomicsFriendlyTypedArrayConstructors(f) {
+  testWithTypedArrayConstructors(f, [
+    Float64Array,
+    Float32Array,
+    Uint8ClampedArray
+  ]);
+}
+
+
+
+
+
+
+
+function testWithAtomicsFriendlyTypedArrayConstructors(f) {
+  testWithTypedArrayConstructors(f, [
+    Int32Array,
+    Int16Array,
+    Int8Array,
+    Uint32Array,
+    Uint16Array,
+    Uint8Array,
+  ]);
 }
 
 

@@ -15,6 +15,10 @@ const expected = [
   "weekday", "year", "month", "day",
   
   "hour", "minute", "second",
+  
+  "dateStyle",
+  
+  "timeStyle",
 
   
   "localeMatcher",
@@ -24,10 +28,6 @@ const expected = [
   "hourCycle",
   
   "timeZone",
-  
-  "dateStyle",
-  
-  "timeStyle",
   
   "weekday",
   "era",
@@ -39,6 +39,10 @@ const expected = [
   "second",
   "timeZoneName",
   "formatMatcher",
+  
+  "dateStyle",
+  
+  "timeStyle",
 ];
 
 const actual = [];

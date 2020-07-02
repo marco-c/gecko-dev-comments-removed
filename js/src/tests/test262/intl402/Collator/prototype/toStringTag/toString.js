@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.prototype.toString.call(Intl.Collator.prototype), "[object Intl.Collator]");
+assert.sameValue(Object.prototype.toString.call(new Intl.Collator()), "[object Intl.Collator]");
+
+reportCompare(0, 0);

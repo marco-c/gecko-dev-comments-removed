@@ -12,11 +12,10 @@
 
 
 
+
 var revocationFunction = Proxy.revocable({}, {}).revoke;
 
 assert.sameValue(Object.prototype.hasOwnProperty.call(revocationFunction, "prototype"), false);
-assert.throws(TypeError, function() {
-  new revocationFunction();
-});
+assert.sameValue(isConstructor(revocationFunction), false);
 
 reportCompare(0, 0);

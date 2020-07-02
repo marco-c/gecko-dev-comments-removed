@@ -18,11 +18,38 @@
 
 
 
-var other = $262.createRealm().global;
-var C = new other.Function();
-C.prototype = null;
-var P = new Proxy(C, {});
 
-assert.sameValue(Object.getPrototypeOf(new P()), other.Object.prototype);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var realm1 = $262.createRealm().global;
+var realm2 = $262.createRealm().global;
+var realm3 = $262.createRealm().global;
+
+var newTarget = new realm1.Function();
+newTarget.prototype = false;
+
+var newTargetProxy = new realm2.Proxy(newTarget, {});
+var array = Reflect.construct(realm3.Array, [], newTargetProxy);
+
+assert(array instanceof realm1.Array);
+assert.sameValue(Object.getPrototypeOf(array), realm1.Array.prototype);
 
 reportCompare(0, 0);

@@ -19,9 +19,6 @@
 
 
 
-
-
-
-assert.throws(SyntaxError, () => Function("-->"));
+Function("-->");
 
 reportCompare(0, 0);
