@@ -46,6 +46,9 @@ XPCOMUtils.defineLazyGetter(this, "gEncoder", function() {
   return new TextEncoder();
 });
 
+
+const CACHE_INVALIDATION_DELAY = 1000;
+
 const CACHE_FILENAME = "search.json.mozlz4";
 
 
@@ -59,12 +62,6 @@ class SearchCache {
   constructor(searchService) {
     this._searchService = searchService;
   }
-
-  QueryInterface = ChromeUtils.generateQI([Ci.nsIObserver]);
-
-  
-  static CACHE_INVALIDATION_DELAY = 1000;
-
   
 
 
@@ -96,32 +93,14 @@ class SearchCache {
 
   _searchService;
 
-  addObservers() {
-    Services.obs.addObserver(this, SearchUtils.TOPIC_ENGINE_MODIFIED);
-    Services.obs.addObserver(this, SearchUtils.TOPIC_SEARCH_SERVICE);
-  }
-
-  
-
-
-  removeObservers() {
-    Services.obs.removeObserver(this, SearchUtils.TOPIC_ENGINE_MODIFIED);
-    Services.obs.removeObserver(this, SearchUtils.TOPIC_SEARCH_SERVICE);
-  }
-
   
 
 
 
 
 
-
-
-
-
-  async get(origin = "") {
+  async get() {
     let json;
-    await this._ensurePendingWritesCompleted(origin);
     try {
       let cacheFilePath = OS.Path.join(
         OS.Constants.Path.profileDir,
@@ -156,15 +135,15 @@ class SearchCache {
 
 
 
-  _delayedWrite() {
+  delayedWrite() {
     if (this._batchTask) {
       this._batchTask.disarm();
     } else {
       let task = async () => {
         logConsole.debug("batchTask: Invalidating engine cache");
-        await this._write();
+        await this.write();
       };
-      this._batchTask = new DeferredTask(task, this.CACHE_INVALIDATION_DELAY);
+      this._batchTask = new DeferredTask(task, CACHE_INVALIDATION_DELAY);
     }
     this._batchTask.arm();
   }
@@ -177,27 +156,26 @@ class SearchCache {
 
 
 
-  async _ensurePendingWritesCompleted(origin = "") {
+  async ensurePendingWritesCompleted(origin = "") {
     
-    if (!this._batchTask) {
-      return;
-    }
-    logConsole.debug("finalizing batch task");
-    let task = this._batchTask;
-    this._batchTask = null;
-    
-    
-    if (origin == "test") {
-      task.disarm();
-    } else {
-      await task.finalize();
+    if (this._batchTask) {
+      logConsole.debug("finalizing batch task");
+      let task = this._batchTask;
+      this._batchTask = null;
+      
+      
+      if (origin == "test") {
+        task.disarm();
+      } else {
+        await task.finalize();
+      }
     }
   }
 
   
 
 
-  async _write() {
+  async write() {
     if (this._batchTask) {
       this._batchTask.disarm();
     }
@@ -260,7 +238,7 @@ class SearchCache {
 
   setAttribute(name, val) {
     this._metaData[name] = val;
-    this._delayedWrite();
+    this.delayedWrite();
   }
 
   
@@ -273,10 +251,8 @@ class SearchCache {
 
 
   setVerifiedAttribute(name, val) {
-    this._metaData[name] = val;
-    this._metaData[this.getHashName(name)] = getVerificationHash(val);
-    console.log(this._metaData);
-    this._delayedWrite();
+    this.setAttribute(name, val);
+    this.setAttribute(this.getHashName(name), getVerificationHash(val));
   }
 
   
@@ -351,30 +327,6 @@ class SearchCache {
       if (ex && typeof ex == "object") {
         state.latestError.stack = ex.stack || undefined;
       }
-    }
-  }
-
-  
-  observe(engine, topic, verb) {
-    switch (topic) {
-      case SearchUtils.TOPIC_ENGINE_MODIFIED:
-        switch (verb) {
-          case SearchUtils.MODIFIED_TYPE.ADDED:
-          case SearchUtils.MODIFIED_TYPE.CHANGED:
-          case SearchUtils.MODIFIED_TYPE.REMOVED:
-            this._delayedWrite();
-            break;
-        }
-        break;
-      case SearchUtils.TOPIC_SEARCH_SERVICE:
-        switch (verb) {
-          case "init-complete":
-          case "reinit-complete":
-          case "engines-reloaded":
-            this._delayedWrite();
-            break;
-        }
-        break;
     }
   }
 }

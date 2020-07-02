@@ -156,7 +156,7 @@ add_task(async function test_cache_write() {
   Services.tm.dispatchToMainThread(() => {
     
     
-    Services.search.wrappedJSObject._cache
+    Services.search
       .QueryInterface(Ci.nsIObserver)
       .observe(null, "browser-search-engine-modified", "engine-removed");
   });

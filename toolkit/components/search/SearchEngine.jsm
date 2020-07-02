@@ -137,29 +137,26 @@ function ENSURE_WARN(assertion, message, resultCode) {
   }
 }
 
+function loadListener(channel, engine, callback) {
+  this._channel = channel;
+  this._bytes = [];
+  this._engine = engine;
+  this._callback = callback;
+}
+loadListener.prototype = {
+  _callback: null,
+  _channel: null,
+  _countRead: 0,
+  _engine: null,
+  _stream: null,
 
-
-
-class loadListener {
-  _bytes = [];
-  _callback = null;
-  _channel = null;
-  _countRead = 0;
-  _engine = null;
-  _stream = null;
-  QueryInterface = ChromeUtils.generateQI([
+  QueryInterface: ChromeUtils.generateQI([
     Ci.nsIRequestObserver,
     Ci.nsIStreamListener,
     Ci.nsIChannelEventSink,
     Ci.nsIInterfaceRequestor,
     Ci.nsIProgressEventSink,
-  ]);
-
-  constructor(channel, engine, callback) {
-    this._channel = channel;
-    this._engine = engine;
-    this._callback = callback;
-  }
+  ]),
 
   
   onStartRequest(request) {
@@ -167,7 +164,7 @@ class loadListener {
     this._stream = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
       Ci.nsIBinaryInputStream
     );
-  }
+  },
 
   onStopRequest(request, statusCode) {
     logConsole.debug("loadListener: Stopping request:", request.name);
@@ -185,7 +182,7 @@ class loadListener {
     this._callback(this._bytes, this._engine);
     this._channel = null;
     this._engine = null;
-  }
+  },
 
   
   onDataAvailable(request, inputStream, offset, count) {
@@ -194,23 +191,23 @@ class loadListener {
     
     this._bytes = this._bytes.concat(this._stream.readByteArray(count));
     this._countRead += count;
-  }
+  },
 
   
   asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
     this._channel = newChannel;
     callback.onRedirectVerifyCallback(Cr.NS_OK);
-  }
+  },
 
   
   getInterface(iid) {
     return this.QueryInterface(iid);
-  }
+  },
 
   
-  onProgress(request, progress, progressMax) {}
-  onStatus(request, status, statusArg) {}
-}
+  onProgress(request, progress, progressMax) {},
+  onStatus(request, status, statusArg) {},
+};
 
 
 
@@ -544,11 +541,6 @@ function getInternalAliases(engine) {
 
 
 
-class EngineURL {
-  params = [];
-  rels = [];
-
-  
 
 
 
@@ -565,61 +557,61 @@ class EngineURL {
 
 
 
+function EngineURL(mimeType, requestMethod, template, resultDomain) {
+  if (!mimeType || !requestMethod || !template) {
+    throw Components.Exception(
+      "missing mimeType, method or template for EngineURL!",
+      Cr.NS_ERROR_INVALID_ARG
+    );
+  }
 
+  var method = requestMethod.toUpperCase();
+  var type = mimeType.toLowerCase();
 
-  constructor(mimeType, requestMethod, template, resultDomain) {
-    if (!mimeType || !requestMethod || !template) {
+  if (method != "GET" && method != "POST") {
+    throw Components.Exception(
+      'method passed to EngineURL must be "GET" or "POST"',
+      Cr.NS_ERROR_INVALID_ARG
+    );
+  }
+
+  this.type = type;
+  this.method = method;
+  this.params = [];
+  this.rels = [];
+
+  var templateURI = SearchUtils.makeURI(template);
+  if (!templateURI) {
+    throw Components.Exception(
+      "new EngineURL: template is not a valid URI!",
+      Cr.NS_ERROR_FAILURE
+    );
+  }
+
+  switch (templateURI.scheme) {
+    case "http":
+    case "https":
+      
+      
+      
+      this.template = template;
+      break;
+    default:
       throw Components.Exception(
-        "missing mimeType, method or template for EngineURL!",
-        Cr.NS_ERROR_INVALID_ARG
-      );
-    }
-
-    var method = requestMethod.toUpperCase();
-    var type = mimeType.toLowerCase();
-
-    if (method != "GET" && method != "POST") {
-      throw Components.Exception(
-        'method passed to EngineURL must be "GET" or "POST"',
-        Cr.NS_ERROR_INVALID_ARG
-      );
-    }
-
-    this.type = type;
-    this.method = method;
-
-    var templateURI = SearchUtils.makeURI(template);
-    if (!templateURI) {
-      throw Components.Exception(
-        "new EngineURL: template is not a valid URI!",
+        "new EngineURL: template uses invalid scheme!",
         Cr.NS_ERROR_FAILURE
       );
-    }
-
-    switch (templateURI.scheme) {
-      case "http":
-      case "https":
-        
-        
-        
-        this.template = template;
-        break;
-      default:
-        throw Components.Exception(
-          "new EngineURL: template uses invalid scheme!",
-          Cr.NS_ERROR_FAILURE
-        );
-    }
-
-    this.templateHost = templateURI.host;
-    
-    
-    this.resultDomain = resultDomain || this.templateHost;
   }
 
+  this.templateHost = templateURI.host;
+  
+  
+  this.resultDomain = resultDomain || this.templateHost;
+}
+EngineURL.prototype = {
   addParam(name, value, purpose) {
     this.params.push(new QueryParameter(name, value, purpose));
-  }
+  },
 
   
 
@@ -651,7 +643,7 @@ class EngineURL {
     } else {
       this.addParam(param.name, param.value || undefined, purpose);
     }
-  }
+  },
 
   getSubmission(searchTerms, engine, purpose) {
     var url = ParamSubstitution(this.template, searchTerms, engine);
@@ -724,16 +716,16 @@ class EngineURL {
     }
 
     return new Submission(Services.io.newURI(url), postData);
-  }
+  },
 
   _getTermsParameterName() {
     let queryParam = this.params.find(p => p.value == "{" + USER_DEFINED + "}");
     return queryParam ? queryParam.name : "";
-  }
+  },
 
   _hasRelation(rel) {
     return this.rels.some(e => e == rel.toLowerCase());
-  }
+  },
 
   _initWithJSON(json) {
     if (!json.params) {
@@ -750,7 +742,7 @@ class EngineURL {
         this.addParam(param.name, param.value, param.purpose || undefined);
       }
     }
-  }
+  },
 
   
 
@@ -774,167 +766,132 @@ class EngineURL {
     }
 
     return json;
+  },
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function SearchEngine(options = {}) {
+  if (!("isAppProvided" in options)) {
+    throw new Error("isAppProvided missing from options.");
   }
-}
+  this._isAppProvided = options.isAppProvided;
+  
+  
+  
+  this._definedAlias = null;
+  this._urls = [];
+  this._metaData = {};
 
-
-
-
-class SearchEngine {
-  QueryInterface = ChromeUtils.generateQI([Ci.nsISearchEngine]);
-  
-  _metaData = {};
-  
-  _data = null;
-  
-  
-  
-  _loadPath = null;
-  
-  _description = "";
-  
-  
-  _engineToUpdate = null;
-  
-  
-  _hasPreferredIcon = null;
-  
-  _name = null;
-  
-  _queryCharset = null;
-  
-  __searchForm = null;
-  
-  
-  _confirm = null;
-  
-  
-  _useNow = null;
-  
-  
-  _installCallback = null;
-  
-  _updateInterval = null;
-  
-  _updateURL = null;
-  
-  _iconUpdateURL = null;
-  
-  _extensionID = null;
-  
-  _locale = null;
-  
-  _isAppProvided = false;
-  
-  _orderHint = null;
-  
-  _telemetryId = null;
-  
-  
-  
-  _engineAddedToStore = false;
-  
-  
-  
-  _definedAlias = null;
-  
-  _urls = [];
-  
-  __internalAliases = null;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  constructor(options = {}) {
-    if (!("isAppProvided" in options)) {
-      throw new Error("isAppProvided missing from options.");
+  let file, uri;
+  if ("name" in options) {
+    this._shortName = sanitizeName(options.name);
+  } else if ("shortName" in options) {
+    this._shortName = options.shortName;
+  } else if ("fileURI" in options && options.fileURI instanceof Ci.nsIFile) {
+    file = options.fileURI;
+  } else if ("uri" in options) {
+    let optionsURI = options.uri;
+    if (typeof optionsURI == "string") {
+      optionsURI = SearchUtils.makeURI(optionsURI);
     }
-    this._isAppProvided = options.isAppProvided;
-
-    let file, uri;
-    if ("name" in options) {
-      this._shortName = sanitizeName(options.name);
-    } else if ("shortName" in options) {
-      this._shortName = options.shortName;
-    } else if ("fileURI" in options && options.fileURI instanceof Ci.nsIFile) {
-      file = options.fileURI;
-    } else if ("uri" in options) {
-      let optionsURI = options.uri;
-      if (typeof optionsURI == "string") {
-        optionsURI = SearchUtils.makeURI(optionsURI);
-      }
-      
-      if (!optionsURI || !(optionsURI instanceof Ci.nsIURI)) {
-        throw new Components.Exception(
-          "options.uri isn't a string nor an nsIURI",
-          Cr.NS_ERROR_INVALID_ARG
-        );
-      }
-      switch (optionsURI.scheme) {
-        case "https":
-        case "http":
-        case "ftp":
-        case "data":
-        case "file":
-        case "resource":
-        case "chrome":
-          uri = optionsURI;
-          break;
-        default:
-          throw Components.Exception(
-            "Invalid URI passed to SearchEngine constructor",
-            Cr.NS_ERROR_INVALID_ARG
-          );
-      }
-    } else {
-      throw Components.Exception(
-        "Invalid name/fileURI/uri options passed to SearchEngine",
+    
+    if (!optionsURI || !(optionsURI instanceof Ci.nsIURI)) {
+      throw new Components.Exception(
+        "options.uri isn't a string nor an nsIURI",
         Cr.NS_ERROR_INVALID_ARG
       );
     }
-
-    if (!this._shortName) {
-      
-      
-      let shortName;
-      if (file) {
-        shortName = file.leafName;
-      } else if (uri && uri instanceof Ci.nsIURL) {
-        if (
-          this._isAppProvided ||
-          (gEnvironment.get("XPCSHELL_TEST_PROFILE_DIR") &&
-            uri.scheme == "resource")
-        ) {
-          shortName = uri.fileName;
-        }
-      }
-      if (shortName && shortName.endsWith(".xml")) {
-        this._shortName = shortName.slice(0, -4);
-      }
-      this._loadPath = this.getAnonymizedLoadPath(file, uri);
+    switch (optionsURI.scheme) {
+      case "https":
+      case "http":
+      case "ftp":
+      case "data":
+      case "file":
+      case "resource":
+      case "chrome":
+        uri = optionsURI;
+        break;
+      default:
+        throw Components.Exception(
+          "Invalid URI passed to SearchEngine constructor",
+          Cr.NS_ERROR_INVALID_ARG
+        );
     }
+  } else {
+    throw Components.Exception(
+      "Invalid name/fileURI/uri options passed to SearchEngine",
+      Cr.NS_ERROR_INVALID_ARG
+    );
   }
+
+  if (!this._shortName) {
+    
+    
+    let shortName;
+    if (file) {
+      shortName = file.leafName;
+    } else if (uri && uri instanceof Ci.nsIURL) {
+      if (
+        this._isAppProvided ||
+        (gEnvironment.get("XPCSHELL_TEST_PROFILE_DIR") &&
+          uri.scheme == "resource")
+      ) {
+        shortName = uri.fileName;
+      }
+    }
+    if (shortName && shortName.endsWith(".xml")) {
+      this._shortName = shortName.slice(0, -4);
+    }
+    this._loadPath = this.getAnonymizedLoadPath(file, uri);
+  }
+}
+
+SearchEngine.prototype = {
+  
+  _metaData: null,
+  
+  _data: null,
+  
+  
+  
+  _loadPath: null,
+  
+  _description: "",
+  
+  
+  _engineToUpdate: null,
+  
+  
+  _hasPreferredIcon: null,
+  
+  _name: null,
+  
+  _queryCharset: null,
+  
+  __searchForm: null,
   get _searchForm() {
     return this.__searchForm;
-  }
+  },
   set _searchForm(value) {
     if (/^https?:/i.test(value)) {
       this.__searchForm = value;
@@ -944,7 +901,36 @@ class SearchEngine {
         this._name || "the current engine"
       );
     }
-  }
+  },
+  
+  
+  _confirm: false,
+  
+  
+  _useNow: false,
+  
+  
+  _installCallback: null,
+  
+  _updateInterval: null,
+  
+  _updateURL: null,
+  
+  _iconUpdateURL: null,
+  
+  _extensionID: null,
+  
+  _locale: null,
+  
+  _isAppProvided: false,
+  
+  _orderHint: null,
+  
+  _telemetryId: null,
+  
+  
+  
+  _engineAddedToStore: false,
 
   
 
@@ -966,7 +952,7 @@ class SearchEngine {
 
     
     this._initFromData();
-  }
+  },
 
   
 
@@ -999,7 +985,7 @@ class SearchEngine {
     var listener = new loadListener(chan, this, this._onLoad);
     chan.notificationCallbacks = listener;
     chan.asyncOpen(listener);
-  }
+  },
 
   
 
@@ -1012,7 +998,7 @@ class SearchEngine {
     await this._retrieveSearchXMLData(uri.spec);
     
     this._initFromData();
-  }
+  },
 
   
 
@@ -1037,7 +1023,7 @@ class SearchEngine {
       request.open("GET", url, true);
       request.send();
     });
-  }
+  },
 
   
 
@@ -1059,7 +1045,7 @@ class SearchEngine {
     }
 
     return null;
-  }
+  },
 
   _confirmAddEngine() {
     var stringBundle = Services.strings.createBundle(SEARCH_BUNDLE);
@@ -1108,7 +1094,7 @@ class SearchEngine {
     );
 
     return { confirmed: confirm, useNow: checked.value };
-  }
+  },
 
   
 
@@ -1253,7 +1239,7 @@ class SearchEngine {
     if (engine._installCallback) {
       engine._installCallback();
     }
-  }
+  },
 
   
 
@@ -1273,7 +1259,7 @@ class SearchEngine {
     };
 
     return JSON.stringify(keyObj);
-  }
+  },
 
   
 
@@ -1295,7 +1281,7 @@ class SearchEngine {
     this._iconMapObj = this._iconMapObj || {};
     let key = this._getIconKey(width, height);
     this._iconMapObj[key] = uriSpec;
-  }
+  },
 
   
 
@@ -1405,7 +1391,7 @@ class SearchEngine {
         chan.asyncOpen(listener);
         break;
     }
-  }
+  },
 
   
 
@@ -1438,7 +1424,7 @@ class SearchEngine {
     
     
     this._data = null;
-  }
+  },
 
   
 
@@ -1487,7 +1473,7 @@ class SearchEngine {
     }
 
     this._urls.push(url);
-  }
+  },
 
   
 
@@ -1530,7 +1516,7 @@ class SearchEngine {
       }
     }
     this._setUrls(params);
-  }
+  },
 
   
 
@@ -1575,7 +1561,7 @@ class SearchEngine {
     }
 
     this.__searchForm = params.searchForm;
-  }
+  },
 
   
 
@@ -1589,7 +1575,7 @@ class SearchEngine {
     this._iconMapObj = null;
     this._initFromMetadata(params.name, params);
     SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
-  }
+  },
 
   
 
@@ -1611,7 +1597,7 @@ class SearchEngine {
     this.setAttr("overriddenBy", params.extensionID);
     this._setUrls(params);
     SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
-  }
+  },
 
   
 
@@ -1625,7 +1611,7 @@ class SearchEngine {
       this.clearAttr("overriddenBy");
       SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
     }
-  }
+  },
 
   
 
@@ -1727,7 +1713,7 @@ class SearchEngine {
     }
 
     this._urls.push(url);
-  }
+  },
 
   
 
@@ -1749,7 +1735,7 @@ class SearchEngine {
     }
 
     this._setIcon(element.textContent, isPrefered, width, height);
-  }
+  },
 
   
 
@@ -1815,7 +1801,7 @@ class SearchEngine {
         Cr.NS_ERROR_FAILURE
       );
     }
-  }
+  },
 
   
 
@@ -1859,7 +1845,7 @@ class SearchEngine {
       engineURL._initWithJSON(url);
       this._urls.push(engineURL);
     }
-  }
+  },
 
   
 
@@ -1920,29 +1906,29 @@ class SearchEngine {
     }
 
     return json;
-  }
+  },
 
   setAttr(name, val) {
     this._metaData[name] = val;
-  }
+  },
 
   getAttr(name) {
     return this._metaData[name] || undefined;
-  }
+  },
 
   clearAttr(name) {
     delete this._metaData[name];
-  }
+  },
 
   
   get alias() {
     return this.getAttr("alias") || this._definedAlias;
-  }
+  },
   set alias(val) {
     var value = val ? val.trim() : null;
     this.setAttr("alias", value);
     SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
-  }
+  },
 
   
 
@@ -1962,7 +1948,7 @@ class SearchEngine {
       return telemetryId + "-addon";
     }
     return telemetryId;
-  }
+  },
 
   
 
@@ -1973,36 +1959,36 @@ class SearchEngine {
   get identifier() {
     
     return this.isAppProvided ? this._shortName : null;
-  }
+  },
 
   get description() {
     return this._description;
-  }
+  },
 
   get hidden() {
     return this.getAttr("hidden") || false;
-  }
+  },
   set hidden(val) {
     var value = !!val;
     if (value != this.hidden) {
       this.setAttr("hidden", value);
       SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
     }
-  }
+  },
 
   get iconURI() {
     if (this._iconURI) {
       return this._iconURI;
     }
     return null;
-  }
+  },
 
   get _iconURL() {
     if (!this._iconURI) {
       return "";
     }
     return this._iconURI.spec;
-  }
+  },
 
   
   
@@ -2013,7 +1999,7 @@ class SearchEngine {
     }
 
     return this._loadPath;
-  }
+  },
 
   
   
@@ -2120,7 +2106,7 @@ class SearchEngine {
     }
 
     return prefix + id + suffix;
-  }
+  },
 
   get _isDistribution() {
     return !!(
@@ -2130,7 +2116,7 @@ class SearchEngine {
         ""
       )
     );
-  }
+  },
 
   get isAppProvided() {
     
@@ -2156,28 +2142,30 @@ class SearchEngine {
     }
 
     return false;
-  }
+  },
 
   get _hasUpdates() {
     
     let selfURL = this._getURLOfType(SearchUtils.URL_TYPE.OPENSEARCH, "self");
     return !!(this._updateURL || this._iconUpdateURL || selfURL);
-  }
+  },
 
   get name() {
     return this._name;
-  }
+  },
 
   get searchForm() {
     return this._getSearchFormWithPurpose();
-  }
+  },
 
+  
+  __internalAliases: null,
   get _internalAliases() {
     if (!this.__internalAliases) {
       this.__internalAliases = getInternalAliases(this);
     }
     return this.__internalAliases;
-  }
+  },
 
   _getSearchFormWithPurpose(purpose) {
     
@@ -2204,14 +2192,14 @@ class SearchEngine {
     }
 
     return ParamSubstitution(this._searchForm, "", this);
-  }
+  },
 
   get queryCharset() {
     if (this._queryCharset) {
       return this._queryCharset;
     }
     return (this._queryCharset = "windows-1252"); 
-  }
+  },
 
   get _defaultMobileResponseType() {
     let type = SearchUtils.URL_TYPE.SEARCH;
@@ -2237,7 +2225,7 @@ class SearchEngine {
     });
 
     return type;
-  }
+  },
 
   
   getSubmission(data, responseType, purpose) {
@@ -2275,12 +2263,12 @@ class SearchEngine {
       );
     }
     return url.getSubmission(submissionData, this, purpose);
-  }
+  },
 
   
   supportsResponseType(type) {
     return this._getURLOfType(type) != null;
-  }
+  },
 
   
   getResultDomain(responseType) {
@@ -2296,7 +2284,7 @@ class SearchEngine {
       return url.resultDomain;
     }
     return "";
-  }
+  },
 
   
 
@@ -2326,11 +2314,14 @@ class SearchEngine {
       path: templateUrl.filePath.toLowerCase(),
       termsParameterName,
     };
-  }
+  },
+
+  
+  QueryInterface: ChromeUtils.generateQI([Ci.nsISearchEngine]),
 
   get wrappedJSObject() {
     return this;
-  }
+  },
 
   
 
@@ -2356,7 +2347,7 @@ class SearchEngine {
       return this._iconMapObj[key];
     }
     return null;
-  }
+  },
 
   
 
@@ -2387,7 +2378,7 @@ class SearchEngine {
     }
 
     return result;
-  }
+  },
 
   
 
@@ -2449,26 +2440,22 @@ class SearchEngine {
         }
       }
     }
-  }
+  },
+};
+
+
+function Submission(uri, postData = null) {
+  this._uri = uri;
+  this._postData = postData;
 }
-
-
-
-
-class Submission {
-  QueryInterface = ChromeUtils.generateQI([Ci.nsISearchSubmission]);
-
-  constructor(uri, postData = null) {
-    this._uri = uri;
-    this._postData = postData;
-  }
-
+Submission.prototype = {
   get uri() {
     return this._uri;
-  }
+  },
   get postData() {
     return this._postData;
-  }
-}
+  },
+  QueryInterface: ChromeUtils.generateQI([Ci.nsISearchSubmission]),
+};
 
 var EXPORTED_SYMBOLS = ["SearchEngine", "getVerificationHash"];
