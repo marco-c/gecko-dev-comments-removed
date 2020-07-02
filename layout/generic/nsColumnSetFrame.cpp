@@ -999,6 +999,14 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
   
   bool maybeContinuousBreakingDetected = false;
 
+  
+  
+  
+  
+  
+  
+  const nscoord extraBlockSize = 600;
+
   while (!aPresContext->HasPendingInterrupt()) {
     nscoord lastKnownFeasibleBSize = aConfig.mKnownFeasibleBSize;
 
@@ -1065,8 +1073,7 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
 
     nscoord nextGuess =
         (aConfig.mKnownFeasibleBSize + aConfig.mKnownInfeasibleBSize) / 2;
-    
-    if (aConfig.mKnownFeasibleBSize - nextGuess < 600 &&
+    if (aConfig.mKnownFeasibleBSize - nextGuess < extraBlockSize &&
         !maybeContinuousBreakingDetected) {
       
       
@@ -1075,8 +1082,7 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
     } else if (aUnboundedLastColumn) {
       
       
-      
-      nextGuess = aColData.mSumBSize / aConfig.mUsedColCount + 600;
+      nextGuess = aColData.mSumBSize / aConfig.mUsedColCount + extraBlockSize;
       
       nextGuess = clamped(nextGuess, aConfig.mKnownInfeasibleBSize + 1,
                           aConfig.mKnownFeasibleBSize - 1);
@@ -1084,7 +1090,7 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
       
       
       
-      nextGuess = aConfig.mKnownInfeasibleBSize * 2 + 600;
+      nextGuess = aConfig.mKnownInfeasibleBSize * 2 + extraBlockSize;
     }
     
     nextGuess = std::min(availableContentBSize, nextGuess);
