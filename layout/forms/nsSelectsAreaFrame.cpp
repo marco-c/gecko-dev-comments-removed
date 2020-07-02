@@ -174,7 +174,7 @@ void nsSelectsAreaFrame::Reflow(nsPresContext* aPresContext,
   if (isInDropdownMode) {
     
     
-    if (!(GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
+    if (!HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
       oldBSize = BSize(wm);
     } else {
       oldBSize = NS_UNCONSTRAINEDSIZE;
