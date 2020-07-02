@@ -5,7 +5,7 @@
 
 
 #include "RemoteLazyInputStreamChild.h"
-#include "IPCBlobInputStreamThread.h"
+#include "RemoteLazyInputStreamThread.h"
 
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/dom/WorkerCommon.h"
@@ -205,14 +205,14 @@ RemoteLazyInputStreamChild::CreateStream() {
     
     
     if (mState == eActive &&
-        !IPCBlobInputStreamThread::IsOnFileEventTarget(mOwningEventTarget)) {
+        !RemoteLazyInputStreamThread::IsOnFileEventTarget(mOwningEventTarget)) {
       MOZ_ASSERT(mStreams.IsEmpty());
 
       shouldMigrate = true;
       mState = eActiveMigrating;
 
-      RefPtr<IPCBlobInputStreamThread> thread =
-          IPCBlobInputStreamThread::GetOrCreate();
+      RefPtr<RemoteLazyInputStreamThread> thread =
+          RemoteLazyInputStreamThread::GetOrCreate();
       MOZ_ASSERT(thread, "We cannot continue without DOMFile thread.");
 
       
@@ -412,7 +412,8 @@ void RemoteLazyInputStreamChild::Migrated() {
   mWorkerRef = nullptr;
 
   mOwningEventTarget = GetCurrentSerialEventTarget();
-  MOZ_ASSERT(IPCBlobInputStreamThread::IsOnFileEventTarget(mOwningEventTarget));
+  MOZ_ASSERT(
+      RemoteLazyInputStreamThread::IsOnFileEventTarget(mOwningEventTarget));
 
   
   if (mStreams.IsEmpty()) {
