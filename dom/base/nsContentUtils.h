@@ -3145,6 +3145,11 @@ class nsContentUtils {
   
 
 
+  static uint64_t GenerateBrowserId();
+
+  
+
+
 
   static uint64_t GenerateBrowsingContextId();
 
