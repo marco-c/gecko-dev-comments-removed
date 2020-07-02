@@ -105,17 +105,15 @@ extern mozilla::LazyLogModule gPageCacheLog;
   PR_END_MACRO
 
 
-#define ITERATE_LISTENERS(body)                                              \
-  PR_BEGIN_MACRO {                                                           \
-    nsAutoTObserverArray<nsWeakPtr, 2>::EndLimitedIterator iter(mListeners); \
-    while (iter.HasMore()) {                                                 \
-      nsCOMPtr<nsISHistoryListener> listener =                               \
-          do_QueryReferent(iter.GetNext());                                  \
-      if (listener) {                                                        \
-        body                                                                 \
-      }                                                                      \
-    }                                                                        \
-  }                                                                          \
+#define ITERATE_LISTENERS(body)                                           \
+  PR_BEGIN_MACRO {                                                        \
+    for (const nsWeakPtr& weakPtr : mListeners.EndLimitedRange()) {       \
+      nsCOMPtr<nsISHistoryListener> listener = do_QueryReferent(weakPtr); \
+      if (listener) {                                                     \
+        body                                                              \
+      }                                                                   \
+    }                                                                     \
+  }                                                                       \
   PR_END_MACRO
 
 

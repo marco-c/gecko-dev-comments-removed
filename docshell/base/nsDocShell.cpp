@@ -531,10 +531,8 @@ already_AddRefed<nsDocShell> nsDocShell::Create(
 }
 
 void nsDocShell::DestroyChildren() {
-  nsCOMPtr<nsIDocShellTreeItem> shell;
-  nsTObserverArray<nsDocLoader*>::ForwardIterator iter(mChildList);
-  while (iter.HasMore()) {
-    shell = do_QueryObject(iter.GetNext());
+  for (auto* child : mChildList.ForwardRange()) {
+    nsCOMPtr<nsIDocShellTreeItem> shell = do_QueryObject(child);
     NS_ASSERTION(shell, "docshell has null child");
 
     if (shell) {
@@ -1564,9 +1562,8 @@ nsDocShell::SetAffectPrivateSessionLifetime(bool aAffectLifetime) {
   }
   mAffectPrivateSessionLifetime = aAffectLifetime;
 
-  nsTObserverArray<nsDocLoader*>::ForwardIterator iter(mChildList);
-  while (iter.HasMore()) {
-    nsCOMPtr<nsIDocShell> shell = do_QueryObject(iter.GetNext());
+  for (auto* child : mChildList.ForwardRange()) {
+    nsCOMPtr<nsIDocShell> shell = do_QueryObject(child);
     if (shell) {
       shell->SetAffectPrivateSessionLifetime(aAffectLifetime);
     }
@@ -1917,9 +1914,8 @@ nsDocShell::HistoryPurged(int32_t aNumEntries) {
   mPreviousEntryIndex = std::max(-1, mPreviousEntryIndex - aNumEntries);
   mLoadedEntryIndex = std::max(0, mLoadedEntryIndex - aNumEntries);
 
-  nsTObserverArray<nsDocLoader*>::ForwardIterator iter(mChildList);
-  while (iter.HasMore()) {
-    nsCOMPtr<nsIDocShell> shell = do_QueryObject(iter.GetNext());
+  for (auto* child : mChildList.ForwardRange()) {
+    nsCOMPtr<nsIDocShell> shell = do_QueryObject(child);
     if (shell) {
       shell->HistoryPurged(aNumEntries);
     }
@@ -1958,9 +1954,8 @@ nsresult nsDocShell::HistoryEntryRemoved(int32_t aIndex) {
     --mLoadedEntryIndex;
   }
 
-  nsTObserverArray<nsDocLoader*>::ForwardIterator iter(mChildList);
-  while (iter.HasMore()) {
-    nsCOMPtr<nsIDocShell> shell = do_QueryObject(iter.GetNext());
+  for (auto* child : mChildList.ForwardRange()) {
+    nsCOMPtr<nsIDocShell> shell = do_QueryObject(child);
     if (shell) {
       static_cast<nsDocShell*>(shell.get())->HistoryEntryRemoved(aIndex);
     }
@@ -2412,9 +2407,8 @@ void nsDocShell::RecomputeCanExecuteScripts() {
   
   
   if (old != mCanExecuteScripts) {
-    nsTObserverArray<nsDocLoader*>::ForwardIterator iter(mChildList);
-    while (iter.HasMore()) {
-      static_cast<nsDocShell*>(iter.GetNext())->RecomputeCanExecuteScripts();
+    for (auto* child : mChildList.ForwardRange()) {
+      static_cast<nsDocShell*>(child)->RecomputeCanExecuteScripts();
     }
   }
 }
@@ -2499,9 +2493,8 @@ void nsDocShell::MaybeClearStorageAccessFlag() {
     mScriptGlobal->ParentWindowChanged();
 
     
-    nsTObserverArray<nsDocLoader*>::ForwardIterator iter(mChildList);
-    while (iter.HasMore()) {
-      nsCOMPtr<nsIDocShell> child = do_QueryObject(iter.GetNext());
+    for (auto* childDocLoader : mChildList.ForwardRange()) {
+      nsCOMPtr<nsIDocShell> child = do_QueryObject(childDocLoader);
       if (child) {
         static_cast<nsDocShell*>(child.get())->MaybeClearStorageAccessFlag();
       }
@@ -2609,9 +2602,8 @@ nsDocShell::SetTreeOwner(nsIDocShellTreeOwner* aTreeOwner) {
 
   mTreeOwner = aTreeOwner;  
 
-  nsTObserverArray<nsDocLoader*>::ForwardIterator iter(mChildList);
-  while (iter.HasMore()) {
-    nsCOMPtr<nsIDocShellTreeItem> child = do_QueryObject(iter.GetNext());
+  for (auto* childDocLoader : mChildList.ForwardRange()) {
+    nsCOMPtr<nsIDocShellTreeItem> child = do_QueryObject(childDocLoader);
     NS_ENSURE_TRUE(child, NS_ERROR_FAILURE);
 
     if (child->ItemType() == mItemType) {
@@ -3914,9 +3906,8 @@ nsDocShell::Stop(uint32_t aStopFlags) {
     Stop();
   }
 
-  nsTObserverArray<nsDocLoader*>::ForwardIterator iter(mChildList);
-  while (iter.HasMore()) {
-    nsCOMPtr<nsIWebNavigation> shellAsNav(do_QueryObject(iter.GetNext()));
+  for (auto* child : mChildList.ForwardRange()) {
+    nsCOMPtr<nsIWebNavigation> shellAsNav(do_QueryObject(child));
     if (shellAsNav) {
       shellAsNav->Stop(aStopFlags);
     }
@@ -4531,9 +4522,8 @@ nsDocShell::SetIsActive(bool aIsActive) {
 
   
   
-  nsTObserverArray<nsDocLoader*>::ForwardIterator iter(mChildList);
-  while (iter.HasMore()) {
-    nsCOMPtr<nsIDocShell> docshell = do_QueryObject(iter.GetNext());
+  for (auto* child : mChildList.ForwardRange()) {
+    nsCOMPtr<nsIDocShell> docshell = do_QueryObject(child);
     if (!docshell) {
       continue;
     }
@@ -5258,9 +5248,8 @@ nsDocShell::SuspendRefreshURIs() {
   }
 
   
-  nsTObserverArray<nsDocLoader*>::ForwardIterator iter(mChildList);
-  while (iter.HasMore()) {
-    nsCOMPtr<nsIDocShell> shell = do_QueryObject(iter.GetNext());
+  for (auto* child : mChildList.ForwardRange()) {
+    nsCOMPtr<nsIDocShell> shell = do_QueryObject(child);
     if (shell) {
       shell->SuspendRefreshURIs();
     }
@@ -5274,9 +5263,8 @@ nsDocShell::ResumeRefreshURIs() {
   RefreshURIFromQueue();
 
   
-  nsTObserverArray<nsDocLoader*>::ForwardIterator iter(mChildList);
-  while (iter.HasMore()) {
-    nsCOMPtr<nsIDocShell> shell = do_QueryObject(iter.GetNext());
+  for (auto* child : mChildList.ForwardRange()) {
+    nsCOMPtr<nsIDocShell> shell = do_QueryObject(child);
     if (shell) {
       shell->ResumeRefreshURIs();
     }
@@ -6685,9 +6673,8 @@ nsDocShell::BeginRestore(nsIContentViewer* aContentViewer, bool aTop) {
 }
 
 nsresult nsDocShell::BeginRestoreChildren() {
-  nsTObserverArray<nsDocLoader*>::ForwardIterator iter(mChildList);
-  while (iter.HasMore()) {
-    nsCOMPtr<nsIDocShell> child = do_QueryObject(iter.GetNext());
+  for (auto* childDocLoader : mChildList.ForwardRange()) {
+    nsCOMPtr<nsIDocShell> child = do_QueryObject(childDocLoader);
     if (child) {
       nsresult rv = child->BeginRestore(nullptr, false);
       NS_ENSURE_SUCCESS(rv, rv);
@@ -6701,9 +6688,8 @@ nsDocShell::FinishRestore() {
   
   
 
-  nsTObserverArray<nsDocLoader*>::ForwardIterator iter(mChildList);
-  while (iter.HasMore()) {
-    nsCOMPtr<nsIDocShell> child = do_QueryObject(iter.GetNext());
+  for (auto* childDocLoader : mChildList.ForwardRange()) {
+    nsCOMPtr<nsIDocShell> child = do_QueryObject(childDocLoader);
     if (child) {
       child->FinishRestore();
     }
@@ -7260,9 +7246,8 @@ nsresult nsDocShell::RestoreFromHistory() {
 
   
   
-  nsTObserverArray<nsDocLoader*>::ForwardIterator iter(mChildList);
-  while (iter.HasMore()) {
-    nsCOMPtr<nsIDocShell> child = do_QueryObject(iter.GetNext());
+  for (auto* childDocLoader : mChildList.ForwardRange()) {
+    nsCOMPtr<nsIDocShell> child = do_QueryObject(childDocLoader);
     if (child) {
       child->ResumeRefreshURIs();
     }
@@ -10770,7 +10755,6 @@ nsresult nsDocShell::AddToSessionHistory(
       }
     }
   } else {
-
     
     
     WindowContext* topWc = mBrowsingContext->GetTopWindowContext();
