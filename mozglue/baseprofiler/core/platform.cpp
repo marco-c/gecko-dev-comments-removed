@@ -2552,6 +2552,13 @@ void profiler_init(void* aStackTop) {
       return;
     }
 
+    
+    
+    
+    if (getenv("MOZ_PROFILER_STARTUP_NO_BASE")) {
+      return;
+    }
+
     LOG("- MOZ_PROFILER_STARTUP is set");
 
     

@@ -4052,6 +4052,14 @@ void GetProfilerEnvVarsForChildProcess(
   }
 
   aSetEnv("MOZ_PROFILER_STARTUP", "1");
+
+  
+  
+  
+  if (getenv("MOZ_PROFILER_STARTUP_NO_BASE")) {
+    aSetEnv("MOZ_PROFILER_STARTUP_NO_BASE", "1");
+  }
+
   auto capacityString =
       Smprintf("%u", unsigned(ActivePS::Capacity(lock).Value()));
   aSetEnv("MOZ_PROFILER_STARTUP_ENTRIES", capacityString.get());
