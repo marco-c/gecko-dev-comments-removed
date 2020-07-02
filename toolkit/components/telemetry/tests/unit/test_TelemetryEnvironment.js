@@ -761,12 +761,14 @@ function checkSystemSection(data, assertProcessData) {
   Assert.ok("D2DEnabled" in gfxData);
   Assert.ok("DWriteEnabled" in gfxData);
   Assert.ok("Headless" in gfxData);
+  Assert.ok("EmbeddedInFirefoxReality" in gfxData);
   
   
   
   if (gIsWindows) {
     Assert.equal(typeof gfxData.D2DEnabled, "boolean");
     Assert.equal(typeof gfxData.DWriteEnabled, "boolean");
+    Assert.equal(typeof gfxData.EmbeddedInFirefoxReality, "boolean");
     
     
   }

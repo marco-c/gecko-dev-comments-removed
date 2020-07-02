@@ -41,6 +41,7 @@ extern nsXREDirProvider* gDirServiceProvider;
 
 extern const mozilla::XREAppData* gAppData;
 extern bool gSafeMode;
+extern bool gFxREmbedded;
 
 extern int gArgc;
 extern char** gArgv;

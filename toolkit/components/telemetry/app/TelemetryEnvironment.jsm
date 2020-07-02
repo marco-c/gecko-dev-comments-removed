@@ -1979,6 +1979,7 @@ EnvironmentCache.prototype = {
       DWriteEnabled: getGfxField("DWriteEnabled", null),
       ContentBackend: getGfxField("ContentBackend", null),
       Headless: getGfxField("isHeadless", null),
+      EmbeddedInFirefoxReality: getGfxField("EmbeddedInFirefoxReality", null),
       
       
       
