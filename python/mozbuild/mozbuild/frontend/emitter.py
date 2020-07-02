@@ -174,7 +174,7 @@ class TreeMetadataEmitter(LoggingMixin):
 
             if isinstance(out, Context):
                 
-                contexts[out.objdir] = out
+                contexts[os.path.normcase(out.objdir)] = out
 
                 start = time.time()
                 
@@ -217,11 +217,11 @@ class TreeMetadataEmitter(LoggingMixin):
         ]
 
         idl_sources = {}
-        for root, cls, attrs in ((self.config.substs.get('WEBIDL_ROOT'),
+        for root, cls, attrs in ((os.path.normcase(self.config.substs.get('WEBIDL_ROOT')),
                                   WebIDLCollection, webidl_attrs),
-                                 (self.config.substs.get('IPDL_ROOT'),
+                                 (os.path.normcase(self.config.substs.get('IPDL_ROOT')),
                                   IPDLCollection, ipdl_attrs),
-                                 (self.config.substs.get('XPCOM_ROOT'),
+                                 (os.path.normcase(self.config.substs.get('XPCOM_ROOT')),
                                   XPCOMComponentManifests, xpcom_attrs)):
             if root:
                 collection = cls(contexts[root])
