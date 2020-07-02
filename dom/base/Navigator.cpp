@@ -1375,6 +1375,17 @@ Promise* Navigator::Share(const ShareData& aData, ErrorResult& aRv) {
   }
 
   
+  auto* doc = mWindow->GetExtantDoc();
+
+  if (StaticPrefs::dom_webshare_requireinteraction() &&
+      !doc->ConsumeTransientUserGestureActivation()) {
+    aRv.ThrowNotAllowedError(
+        "User activation was already consumed "
+        "or share() was not activated by a user gesture.");
+    return nullptr;
+  }
+
+  
   
   bool someMemberPassed = aData.mTitle.WasPassed() || aData.mText.WasPassed() ||
                           aData.mUrl.WasPassed();
@@ -1383,9 +1394,6 @@ Promise* Navigator::Share(const ShareData& aData, ErrorResult& aRv) {
         "Must have a title, text, or url in the ShareData dictionary");
     return nullptr;
   }
-
-  
-  auto doc = mWindow->GetExtantDoc();
 
   
   nsCOMPtr<nsIURI> url;
@@ -1413,16 +1421,6 @@ Promise* Navigator::Share(const ShareData& aData, ErrorResult& aRv) {
     text.Assign(NS_ConvertUTF16toUTF8(aData.mText.Value()));
   } else {
     text.SetIsVoid(true);
-  }
-
-  
-  
-  
-  if (StaticPrefs::dom_webshare_requireinteraction() &&
-      !UserActivation::IsHandlingUserInput()) {
-    NS_WARNING("Attempt to share not triggered by user activation");
-    aRv.Throw(NS_ERROR_DOM_NOT_ALLOWED_ERR);
-    return nullptr;
   }
 
   
