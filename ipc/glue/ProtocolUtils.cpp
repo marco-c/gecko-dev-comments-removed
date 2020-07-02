@@ -318,24 +318,24 @@ const MessageChannel* IProtocol::GetIPCChannel() const {
 }
 
 void IProtocol::SetEventTargetForActor(IProtocol* aActor,
-                                       nsIEventTarget* aEventTarget) {
+                                       nsISerialEventTarget* aEventTarget) {
   
   aActor->SetManager(this);
   mToplevel->SetEventTargetForActorInternal(aActor, aEventTarget);
 }
 
 void IProtocol::ReplaceEventTargetForActor(IProtocol* aActor,
-                                           nsIEventTarget* aEventTarget) {
+                                           nsISerialEventTarget* aEventTarget) {
   MOZ_ASSERT(aActor->Manager());
   mToplevel->ReplaceEventTargetForActor(aActor, aEventTarget);
 }
 
-nsIEventTarget* IProtocol::GetActorEventTarget() {
+nsISerialEventTarget* IProtocol::GetActorEventTarget() {
   
-  RefPtr<nsIEventTarget> target = GetActorEventTarget(this);
+  RefPtr<nsISerialEventTarget> target = GetActorEventTarget(this);
   return target;
 }
-already_AddRefed<nsIEventTarget> IProtocol::GetActorEventTarget(
+already_AddRefed<nsISerialEventTarget> IProtocol::GetActorEventTarget(
     IProtocol* aActor) {
   return mToplevel->GetActorEventTarget(aActor);
 }
@@ -598,7 +598,7 @@ bool IToplevelProtocol::Open(MessageChannel* aChannel,
 }
 
 bool IToplevelProtocol::Open(MessageChannel* aChannel,
-                             nsIEventTarget* aEventTarget,
+                             nsISerialEventTarget* aEventTarget,
                              mozilla::ipc::Side aSide) {
   SetOtherProcessId(base::GetCurrentProcId());
   return GetIPCChannel()->Open(aChannel, aEventTarget, aSide);
@@ -649,7 +649,8 @@ int32_t IToplevelProtocol::Register(IProtocol* aRouted) {
   
   if (IProtocol* manager = aRouted->Manager()) {
     MutexAutoLock lock(mEventTargetMutex);
-    if (nsCOMPtr<nsIEventTarget> target = mEventTargetMap.Get(manager->Id())) {
+    if (nsCOMPtr<nsISerialEventTarget> target =
+            mEventTargetMap.Get(manager->Id())) {
       MOZ_ASSERT(!mEventTargetMap.Contains(id),
                  "Don't insert with an existing ID");
       mEventTargetMap.Put(id, target);
@@ -786,14 +787,14 @@ bool IToplevelProtocol::ShmemDestroyed(const Message& aMsg) {
   return true;
 }
 
-already_AddRefed<nsIEventTarget> IToplevelProtocol::GetMessageEventTarget(
+already_AddRefed<nsISerialEventTarget> IToplevelProtocol::GetMessageEventTarget(
     const Message& aMsg) {
   int32_t route = aMsg.routing_id();
 
   Maybe<MutexAutoLock> lock;
   lock.emplace(mEventTargetMutex);
 
-  nsCOMPtr<nsIEventTarget> target = mEventTargetMap.Get(route);
+  nsCOMPtr<nsISerialEventTarget> target = mEventTargetMap.Get(route);
 
   if (aMsg.is_constructor()) {
     ActorHandle handle;
@@ -805,7 +806,8 @@ already_AddRefed<nsIEventTarget> IToplevelProtocol::GetMessageEventTarget(
 #ifdef DEBUG
     
     
-    nsCOMPtr<nsIEventTarget> existingTgt = mEventTargetMap.Get(handle.mId);
+    nsCOMPtr<nsISerialEventTarget> existingTgt =
+        mEventTargetMap.Get(handle.mId);
     MOZ_ASSERT(existingTgt == target || existingTgt == nullptr);
 #endif 
 
@@ -815,23 +817,23 @@ already_AddRefed<nsIEventTarget> IToplevelProtocol::GetMessageEventTarget(
   return target.forget();
 }
 
-already_AddRefed<nsIEventTarget> IToplevelProtocol::GetActorEventTarget(
+already_AddRefed<nsISerialEventTarget> IToplevelProtocol::GetActorEventTarget(
     IProtocol* aActor) {
   MOZ_RELEASE_ASSERT(aActor->Id() != kNullActorId &&
                      aActor->Id() != kFreedActorId);
 
   MutexAutoLock lock(mEventTargetMutex);
-  nsCOMPtr<nsIEventTarget> target = mEventTargetMap.Get(aActor->Id());
+  nsCOMPtr<nsISerialEventTarget> target = mEventTargetMap.Get(aActor->Id());
   return target.forget();
 }
 
-nsIEventTarget* IToplevelProtocol::GetActorEventTarget() {
+nsISerialEventTarget* IToplevelProtocol::GetActorEventTarget() {
   
   return nullptr;
 }
 
 void IToplevelProtocol::SetEventTargetForActorInternal(
-    IProtocol* aActor, nsIEventTarget* aEventTarget) {
+    IProtocol* aActor, nsISerialEventTarget* aEventTarget) {
   
   MOZ_RELEASE_ASSERT(aActor != this);
 
@@ -854,7 +856,7 @@ void IToplevelProtocol::SetEventTargetForActorInternal(
 }
 
 void IToplevelProtocol::ReplaceEventTargetForActor(
-    IProtocol* aActor, nsIEventTarget* aEventTarget) {
+    IProtocol* aActor, nsISerialEventTarget* aEventTarget) {
   
   MOZ_RELEASE_ASSERT(aActor != this);
 
