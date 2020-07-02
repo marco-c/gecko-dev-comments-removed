@@ -340,13 +340,14 @@ class EngineRecord {
   }
 }
 
-class TelemetryRecord {
+
+
+class SyncRecord {
   constructor(allowedEngines, why) {
     this.allowedEngines = allowedEngines;
     
     
     this.failureReason = undefined;
-    this.uid = "";
     this.syncNodeType = null;
     this.when = Date.now();
     this.startTime = tryGetMonotonicTimestamp();
@@ -393,7 +394,6 @@ class TelemetryRecord {
       this.failureReason = SyncTelemetry.transformError(error);
     }
 
-    this.uid = fxAccounts.telemetry.getSanitizedUID() || EMPTY_UID;
     this.syncNodeType = Weave.Service.identity.telemetryNodeType;
 
     
@@ -551,6 +551,8 @@ function cleanErrorMessage(error) {
   return error;
 }
 
+
+
 class SyncTelemetryImpl {
   constructor(allowedEngines) {
     log.manageLevelFromPref("services.sync.log.logger.telemetry");
@@ -571,6 +573,7 @@ class SyncTelemetryImpl {
     this.lastSubmissionTime = Telemetry.msSinceProcessStart();
     this.lastUID = EMPTY_UID;
     this.lastSyncNodeType = null;
+    this.currentSyncNodeType = null;
     
     
     
@@ -752,6 +755,8 @@ class SyncTelemetryImpl {
       );
       TelemetryController.submitExternalPing("sync", record, {
         usePingSender: true,
+      }).catch(err => {
+        log.error("failed to submit ping", err);
       });
       return true;
     }
@@ -778,7 +783,7 @@ class SyncTelemetryImpl {
       
       this.current = null;
     }
-    this.current = new TelemetryRecord(this.allowedEngines, why);
+    this.current = new SyncRecord(this.allowedEngines, why);
   }
 
   
@@ -834,8 +839,8 @@ class SyncTelemetryImpl {
     return true;
   }
 
-  shouldSubmitForDataChange() {
-    let newID = this.current.uid;
+  _shouldSubmitForDataChange() {
+    let newID = fxAccounts.telemetry.getSanitizedUID() || EMPTY_UID;
     let oldID = this.lastUID;
     if (
       newID != EMPTY_UID &&
@@ -843,6 +848,9 @@ class SyncTelemetryImpl {
       
       newID != oldID
     ) {
+      log.trace(
+        `shouldSubmitForDataChange - uid from '${oldID}' -> '${newID}'`
+      );
       return true;
     }
     
@@ -850,14 +858,35 @@ class SyncTelemetryImpl {
     
     
     if (
-      this.current.syncNodeType &&
       this.lastSyncNodeType &&
-      this.current.syncNodeType != this.lastSyncNodeType
+      this.currentSyncNodeType != this.lastSyncNodeType
     ) {
+      log.trace(
+        `shouldSubmitForDataChange - nodeType from '${this.lastSyncNodeType}' -> '${this.currentSyncNodeType}'`
+      );
       return true;
     }
-    
+    log.trace("shouldSubmitForDataChange - no need to submit");
     return false;
+  }
+
+  maybeSubmitForDataChange() {
+    if (this._shouldSubmitForDataChange()) {
+      log.info(
+        "Early submission of sync telemetry due to changed IDs/NodeType"
+      );
+      this.finish("idchange"); 
+      this.lastSubmissionTime = Telemetry.msSinceProcessStart();
+    }
+
+    
+    let current_uid = fxAccounts.telemetry.getSanitizedUID();
+    if (current_uid) {
+      this.lastUID = current_uid;
+    }
+    if (this.currentSyncNodeType) {
+      this.lastSyncNodeType = this.currentSyncNodeType;
+    }
   }
 
   maybeSubmitForInterval() {
@@ -880,26 +909,19 @@ class SyncTelemetryImpl {
       return;
     }
     this.current.finished(error);
-    if (this.payloads.length) {
-      if (this.shouldSubmitForDataChange()) {
-        log.info("Early submission of sync telemetry due to changed IDs");
-        this.finish("idchange");
-        this.lastSubmissionTime = Telemetry.msSinceProcessStart();
-      }
-    }
+    this.currentSyncNodeType = this.current.syncNodeType;
     
-    if (this.current.uid !== EMPTY_UID) {
-      this.lastUID = this.current.uid;
-    }
-    if (this.current.syncNodeType) {
-      this.lastSyncNodeType = this.current.syncNodeType;
-    }
+    
+    
+    this.maybeSubmitForDataChange();
     if (this.payloads.length < this.maxPayloadCount) {
       this.payloads.push(this.current.toJSON());
     } else {
       ++this.discarded;
     }
     this.current = null;
+    
+    
     this.maybeSubmitForInterval();
   }
 
@@ -910,6 +932,8 @@ class SyncTelemetryImpl {
   }
 
   _recordEvent(eventDetails) {
+    this.maybeSubmitForDataChange();
+
     if (this.events.length >= this.maxEventsCount) {
       log.warn("discarding event - already queued our maximum", eventDetails);
       return;

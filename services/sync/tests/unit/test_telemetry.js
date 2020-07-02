@@ -1291,6 +1291,8 @@ add_task(async function test_node_type_change() {
   let telem = get_sync_test_telemetry();
   telem.submissionInterval = 60 * 60 * 1000;
   
+  telem.lastSyncNodeType = null;
+  
   await Service.sync();
   await Service.sync();
   
@@ -1306,6 +1308,16 @@ add_task(async function test_node_type_change() {
   equal(pings[1].syncs.length, 1, "1 sync in second ping");
   equal(pings[1].syncNodeType, "second-node-type");
   await promiseStopServer(server);
+});
+
+add_task(async function test_ids() {
+  let telem = get_sync_test_telemetry();
+  Assert.ok(!telem._shouldSubmitForDataChange());
+  fxAccounts.telemetry._setHashedUID("new_uid");
+  Assert.ok(telem._shouldSubmitForDataChange());
+  telem.maybeSubmitForDataChange();
+  
+  Assert.ok(!telem._shouldSubmitForDataChange());
 });
 
 add_task(async function test_deletion_request_ping() {
