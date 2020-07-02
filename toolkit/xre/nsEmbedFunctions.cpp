@@ -948,7 +948,7 @@ TestShellParent* GetOrCreateTestShellParent() {
     
     
     RefPtr<ContentParent> parent = ContentParent::GetNewOrUsedBrowserProcess(
-        nullptr, NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE));
+        nullptr, NS_LITERAL_STRING_FROM_CSTRING(DEFAULT_REMOTE_TYPE));
     parent.forget(&gContentParent);
   } else if (!gContentParent->IsAlive()) {
     return nullptr;

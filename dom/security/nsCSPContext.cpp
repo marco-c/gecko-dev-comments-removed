@@ -473,15 +473,17 @@ void nsCSPContext::reportInlineViolation(
   
   
   if (!aNonce.IsEmpty()) {
-    observerSubject =
-        (aContentType == nsIContentPolicy::TYPE_SCRIPT)
-            ? NS_LITERAL_STRING(SCRIPT_NONCE_VIOLATION_OBSERVER_TOPIC)
-            : NS_LITERAL_STRING(STYLE_NONCE_VIOLATION_OBSERVER_TOPIC);
+    observerSubject = (aContentType == nsIContentPolicy::TYPE_SCRIPT)
+                          ? NS_LITERAL_STRING_FROM_CSTRING(
+                                SCRIPT_NONCE_VIOLATION_OBSERVER_TOPIC)
+                          : NS_LITERAL_STRING_FROM_CSTRING(
+                                STYLE_NONCE_VIOLATION_OBSERVER_TOPIC);
   } else {
-    observerSubject =
-        (aContentType == nsIContentPolicy::TYPE_SCRIPT)
-            ? NS_LITERAL_STRING(SCRIPT_HASH_VIOLATION_OBSERVER_TOPIC)
-            : NS_LITERAL_STRING(STYLE_HASH_VIOLATION_OBSERVER_TOPIC);
+    observerSubject = (aContentType == nsIContentPolicy::TYPE_SCRIPT)
+                          ? NS_LITERAL_STRING_FROM_CSTRING(
+                                SCRIPT_HASH_VIOLATION_OBSERVER_TOPIC)
+                          : NS_LITERAL_STRING_FROM_CSTRING(
+                                STYLE_HASH_VIOLATION_OBSERVER_TOPIC);
   }
 
   nsAutoString sourceFile;
@@ -706,24 +708,24 @@ nsCSPContext::GetAllowsNavigateTo(nsIURI* aURI, bool aIsFormSubmission,
 
 
 
-#define CASE_CHECK_AND_REPORT(violationType, contentPolicyType, nonceOrHash, \
-                              keyword, observerTopic)                        \
-  case nsIContentSecurityPolicy::VIOLATION_TYPE_##violationType:             \
-    PR_BEGIN_MACRO                                                           \
-    if (!mPolicies[p]->allows(nsIContentPolicy::TYPE_##contentPolicyType,    \
-                              keyword, nonceOrHash, false)) {                \
-      nsAutoString violatedDirective;                                        \
-      bool reportSample = false;                                             \
-      mPolicies[p]->getDirectiveStringAndReportSampleForContentType(         \
-          nsIContentPolicy::TYPE_##contentPolicyType, violatedDirective,     \
-          &reportSample);                                                    \
-      AsyncReportViolation(aTriggeringElement, aCSPEventListener, nullptr,   \
-                           blockedContentSource, nullptr, violatedDirective, \
-                           p, NS_LITERAL_STRING(observerTopic), aSourceFile, \
-                           reportSample ? aScriptSample : EmptyString(),     \
-                           aLineNum, aColumnNum);                            \
-    }                                                                        \
-    PR_END_MACRO;                                                            \
+#define CASE_CHECK_AND_REPORT(violationType, contentPolicyType, nonceOrHash,   \
+                              keyword, observerTopic)                          \
+  case nsIContentSecurityPolicy::VIOLATION_TYPE_##violationType:               \
+    PR_BEGIN_MACRO                                                             \
+    if (!mPolicies[p]->allows(nsIContentPolicy::TYPE_##contentPolicyType,      \
+                              keyword, nonceOrHash, false)) {                  \
+      nsAutoString violatedDirective;                                          \
+      bool reportSample = false;                                               \
+      mPolicies[p]->getDirectiveStringAndReportSampleForContentType(           \
+          nsIContentPolicy::TYPE_##contentPolicyType, violatedDirective,       \
+          &reportSample);                                                      \
+      AsyncReportViolation(                                                    \
+          aTriggeringElement, aCSPEventListener, nullptr,                      \
+          blockedContentSource, nullptr, violatedDirective, p,                 \
+          NS_LITERAL_STRING_FROM_CSTRING(observerTopic), aSourceFile,          \
+          reportSample ? aScriptSample : EmptyString(), aLineNum, aColumnNum); \
+    }                                                                          \
+    PR_END_MACRO;                                                              \
     break
 
 

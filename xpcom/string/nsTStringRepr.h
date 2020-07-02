@@ -257,6 +257,21 @@ class nsTStringRepr {
   
   
   
+  
+  
+  
+  template <size_t N, typename = std::enable_if_t<!std::is_same_v<
+                          const char (&)[N], const char_type (&)[N]>>>
+  inline bool EqualsLiteral(const char_type (&aStr)[N]) const {
+    return *this == nsTLiteralString<char_type>(aStr);
+  }
+
+  
+  
+  
+  
+  
+  
   bool NS_FASTCALL LowerCaseEqualsASCII(const char* aData,
                                         size_type aLen) const;
   bool NS_FASTCALL LowerCaseEqualsASCII(const char* aData) const;

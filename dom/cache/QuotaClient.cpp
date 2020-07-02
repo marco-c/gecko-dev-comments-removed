@@ -223,7 +223,7 @@ nsresult CacheQuotaClient::InitOriginWithoutTracking(
   
   
   
-  UNKNOWN_FILE_WARNING(NS_LITERAL_STRING(DOMCACHE_DIRECTORY_NAME));
+  UNKNOWN_FILE_WARNING(NS_LITERAL_STRING_FROM_CSTRING(DOMCACHE_DIRECTORY_NAME));
   return NS_OK;
 }
 
@@ -383,7 +383,7 @@ Result<UsageInfo, nsresult> CacheQuotaClient::GetUsageForOriginInternal(
     return Err(rv);
   }
 
-  rv = dir->Append(NS_LITERAL_STRING(DOMCACHE_DIRECTORY_NAME));
+  rv = dir->Append(NS_LITERAL_STRING_FROM_CSTRING(DOMCACHE_DIRECTORY_NAME));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     REPORT_TELEMETRY_ERR_IN_INIT(aInitializing, kQuotaExternalError,
                                  Cache_Append);

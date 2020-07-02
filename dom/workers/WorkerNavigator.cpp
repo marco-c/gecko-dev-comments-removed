@@ -79,7 +79,7 @@ void WorkerNavigator::GetAppName(nsString& aAppName,
     
     
     aAppName = StaticPrefs::privacy_resistFingerprinting()
-                   ? NS_LITERAL_STRING(SPOOFED_APPNAME)
+                   ? NS_LITERAL_STRING_FROM_CSTRING(SPOOFED_APPNAME)
                    : mProperties.mAppNameOverridden;
   } else {
     aAppName = mProperties.mAppName;
@@ -98,7 +98,7 @@ void WorkerNavigator::GetAppVersion(nsString& aAppVersion,
     
     
     aAppVersion = StaticPrefs::privacy_resistFingerprinting()
-                      ? NS_LITERAL_STRING(SPOOFED_APPVERSION)
+                      ? NS_LITERAL_STRING_FROM_CSTRING(SPOOFED_APPVERSION)
                       : mProperties.mAppVersionOverridden;
   } else {
     aAppVersion = mProperties.mAppVersion;
@@ -116,7 +116,7 @@ void WorkerNavigator::GetPlatform(nsString& aPlatform, CallerType aCallerType,
     
     
     aPlatform = StaticPrefs::privacy_resistFingerprinting()
-                    ? NS_LITERAL_STRING(SPOOFED_PLATFORM)
+                    ? NS_LITERAL_STRING_FROM_CSTRING(SPOOFED_PLATFORM)
                     : mProperties.mPlatformOverridden;
   } else {
     aPlatform = mProperties.mPlatform;

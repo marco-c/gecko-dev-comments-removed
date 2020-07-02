@@ -811,35 +811,35 @@ nsresult DragDataProducer::AddStringsToDataTransfer(
     title.ReplaceChar("\r\n", ' ');
     dragData += title;
 
-    AddString(aDataTransfer, NS_LITERAL_STRING(kURLMime), dragData, principal);
-    AddString(aDataTransfer, NS_LITERAL_STRING(kURLDataMime), mUrlString,
+    AddString(aDataTransfer, NS_LITERAL_STRING_FROM_CSTRING(kURLMime), dragData,
               principal);
-    AddString(aDataTransfer, NS_LITERAL_STRING(kURLDataMime), mUrlString,
+    AddString(aDataTransfer, NS_LITERAL_STRING_FROM_CSTRING(kURLDataMime),
+              mUrlString, principal);
+    AddString(aDataTransfer,
+              NS_LITERAL_STRING_FROM_CSTRING(kURLDescriptionMime), mTitleString,
               principal);
-    AddString(aDataTransfer, NS_LITERAL_STRING(kURLDescriptionMime),
-              mTitleString, principal);
     AddString(aDataTransfer, u"text/uri-list"_ns, mUrlString, principal);
   }
 
   
   if (!mContextString.IsEmpty())
-    AddString(aDataTransfer, NS_LITERAL_STRING(kHTMLContext), mContextString,
-              principal);
+    AddString(aDataTransfer, NS_LITERAL_STRING_FROM_CSTRING(kHTMLContext),
+              mContextString, principal);
 
   
   if (!mInfoString.IsEmpty())
-    AddString(aDataTransfer, NS_LITERAL_STRING(kHTMLInfo), mInfoString,
-              principal);
+    AddString(aDataTransfer, NS_LITERAL_STRING_FROM_CSTRING(kHTMLInfo),
+              mInfoString, principal);
 
   
   if (!mHtmlString.IsEmpty())
-    AddString(aDataTransfer, NS_LITERAL_STRING(kHTMLMime), mHtmlString,
-              principal);
+    AddString(aDataTransfer, NS_LITERAL_STRING_FROM_CSTRING(kHTMLMime),
+              mHtmlString, principal);
 
   
   
   
-  AddString(aDataTransfer, NS_LITERAL_STRING(kTextMime),
+  AddString(aDataTransfer, NS_LITERAL_STRING_FROM_CSTRING(kTextMime),
             mIsAnchor ? mUrlString : mTitleString, principal);
 
   
@@ -849,8 +849,9 @@ nsresult DragDataProducer::AddStringsToDataTransfer(
   if (mImage) {
     RefPtr<nsVariantCC> variant = new nsVariantCC();
     variant->SetAsISupports(mImage);
-    aDataTransfer->SetDataWithPrincipal(NS_LITERAL_STRING(kNativeImageMime),
-                                        variant, 0, principal);
+    aDataTransfer->SetDataWithPrincipal(
+        NS_LITERAL_STRING_FROM_CSTRING(kNativeImageMime), variant, 0,
+        principal);
 
     
     
@@ -861,23 +862,26 @@ nsresult DragDataProducer::AddStringsToDataTransfer(
     if (dataProvider) {
       RefPtr<nsVariantCC> variant = new nsVariantCC();
       variant->SetAsISupports(dataProvider);
-      aDataTransfer->SetDataWithPrincipal(NS_LITERAL_STRING(kFilePromiseMime),
-                                          variant, 0, principal);
+      aDataTransfer->SetDataWithPrincipal(
+          NS_LITERAL_STRING_FROM_CSTRING(kFilePromiseMime), variant, 0,
+          principal);
     }
 
-    AddString(aDataTransfer, NS_LITERAL_STRING(kFilePromiseURLMime),
+    AddString(aDataTransfer,
+              NS_LITERAL_STRING_FROM_CSTRING(kFilePromiseURLMime),
               mImageSourceString, principal);
-    AddString(aDataTransfer, NS_LITERAL_STRING(kFilePromiseDestFilename),
+    AddString(aDataTransfer,
+              NS_LITERAL_STRING_FROM_CSTRING(kFilePromiseDestFilename),
               mImageDestFileName, principal);
 #if defined(XP_MACOSX)
-    AddString(aDataTransfer, NS_LITERAL_STRING(kImageRequestMime),
+    AddString(aDataTransfer, NS_LITERAL_STRING_FROM_CSTRING(kImageRequestMime),
               mImageRequestMime, principal,  true);
 #endif
 
     
     if (!mIsAnchor) {
-      AddString(aDataTransfer, NS_LITERAL_STRING(kURLDataMime), mUrlString,
-                principal);
+      AddString(aDataTransfer, NS_LITERAL_STRING_FROM_CSTRING(kURLDataMime),
+                mUrlString, principal);
       AddString(aDataTransfer, u"text/uri-list"_ns, mUrlString, principal);
     }
   }

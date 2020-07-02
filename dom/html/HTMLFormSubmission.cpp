@@ -623,7 +623,7 @@ nsresult FSTextPlain::AddNameValuePair(const nsAString& aName,
   
   
   
-  mBody.Append(aName + u"="_ns + aValue + NS_LITERAL_STRING(CRLF));
+  mBody.Append(aName + u"="_ns + aValue + NS_LITERAL_STRING_FROM_CSTRING(CRLF));
 
   return NS_OK;
 }

@@ -1355,11 +1355,12 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
       browsingContext->Group()->Toplevels().Length() == 1) {
     if (IsLargeAllocationLoad(browsingContext, mChannel)) {
       preferredRemoteType.Assign(
-          NS_LITERAL_STRING(LARGE_ALLOCATION_REMOTE_TYPE));
+          NS_LITERAL_STRING_FROM_CSTRING(LARGE_ALLOCATION_REMOTE_TYPE));
       isLargeAllocSwitch = true;
     } else if (preferredRemoteType.EqualsLiteral(
                    LARGE_ALLOCATION_REMOTE_TYPE)) {
-      preferredRemoteType.Assign(NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE));
+      preferredRemoteType.Assign(
+          NS_LITERAL_STRING_FROM_CSTRING(DEFAULT_REMOTE_TYPE));
       isLargeAllocSwitch = true;
     }
   }
@@ -1371,13 +1372,13 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
     
     nsAutoCString siteOrigin;
     resultPrincipal->GetSiteOrigin(siteOrigin);
-    preferredRemoteType.Assign(
-        NS_LITERAL_STRING(WITH_COOP_COEP_REMOTE_TYPE_PREFIX));
+    preferredRemoteType.AssignLiteral(WITH_COOP_COEP_REMOTE_TYPE_PREFIX);
     preferredRemoteType.Append(NS_ConvertUTF8toUTF16(siteOrigin));
   } else if (isCOOPSwitch) {
     
     
-    preferredRemoteType.Assign(NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE));
+    preferredRemoteType.Assign(
+        NS_LITERAL_STRING_FROM_CSTRING(DEFAULT_REMOTE_TYPE));
   }
   MOZ_DIAGNOSTIC_ASSERT(!contentParent || !preferredRemoteType.IsEmpty(),
                         "Unexpected empty remote type!");

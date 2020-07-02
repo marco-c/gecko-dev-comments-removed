@@ -142,24 +142,11 @@ static_assert(kSQLiteGrowthIncrement >= 0 &&
 
 
 
-#define DATA_FILE_NAME "data.sqlite"
+#define DATA_FILE_NAME u"data.sqlite"
 
 
 
-#define JOURNAL_FILE_NAME "data.sqlite-journal"
-
-
-
-
-
-
-
-
-
-
-
-
-#define USAGE_FILE_NAME "usage"
+#define JOURNAL_FILE_NAME u"data.sqlite-journal"
 
 
 
@@ -172,9 +159,22 @@ static_assert(kSQLiteGrowthIncrement >= 0 &&
 
 
 
+#define USAGE_FILE_NAME u"usage"
 
 
-#define USAGE_JOURNAL_FILE_NAME "usage-journal"
+
+
+
+
+
+
+
+
+
+
+
+
+#define USAGE_JOURNAL_FILE_NAME u"usage-journal"
 
 static const uint32_t kUsageFileSize = 12;
 static const uint32_t kUsageFileCookie = 0x420a420a;
@@ -251,12 +251,12 @@ const uint32_t kPreparedDatastoreTimeoutMs = 20000;
 
 
 
-#define LS_ARCHIVE_FILE_NAME "ls-archive.sqlite"
+#define LS_ARCHIVE_FILE_NAME u"ls-archive.sqlite"
 
 
 
 
-#define WEB_APPS_STORE_FILE_NAME "webappsstore.sqlite"
+#define WEB_APPS_STORE_FILE_NAME u"webappsstore.sqlite"
 
 
 const uint32_t kShadowMaxWALSize = 512 * 1024;
@@ -690,7 +690,7 @@ nsresult GetArchiveFile(const nsAString& aStoragePath, nsIFile** aArchiveFile) {
 
   nsCOMPtr<nsIFile> archiveFile = archiveFileOrErr.unwrap();
 
-  nsresult rv = archiveFile->Append(NS_LITERAL_STRING(LS_ARCHIVE_FILE_NAME));
+  nsresult rv = archiveFile->Append(nsLiteralString(LS_ARCHIVE_FILE_NAME));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -829,8 +829,7 @@ nsresult GetShadowFile(const nsAString& aBasePath, nsIFile** aArchiveFile) {
 
   nsCOMPtr<nsIFile> archiveFile = archiveFileOrErr.unwrap();
 
-  nsresult rv =
-      archiveFile->Append(NS_LITERAL_STRING(WEB_APPS_STORE_FILE_NAME));
+  nsresult rv = archiveFile->Append(nsLiteralString(WEB_APPS_STORE_FILE_NAME));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1104,7 +1103,7 @@ nsresult GetUsageFile(const nsAString& aDirectoryPath, nsIFile** aUsageFile) {
 
   nsCOMPtr<nsIFile> usageFile = usageFileOrErr.unwrap();
 
-  nsresult rv = usageFile->Append(NS_LITERAL_STRING(USAGE_FILE_NAME));
+  nsresult rv = usageFile->Append(nsLiteralString(USAGE_FILE_NAME));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1127,7 +1126,7 @@ nsresult GetUsageJournalFile(const nsAString& aDirectoryPath,
   nsCOMPtr<nsIFile> usageJournalFile = usageJournalFileOrErr.unwrap();
 
   nsresult rv =
-      usageJournalFile->Append(NS_LITERAL_STRING(USAGE_JOURNAL_FILE_NAME));
+      usageJournalFile->Append(nsLiteralString(USAGE_JOURNAL_FILE_NAME));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -4276,7 +4275,8 @@ nsresult Connection::EnsureStorageConnection() {
       return rv;
     }
 
-    rv = directoryEntry->Append(NS_LITERAL_STRING(LS_DIRECTORY_NAME));
+    rv = directoryEntry->Append(
+        NS_LITERAL_STRING_FROM_CSTRING(LS_DIRECTORY_NAME));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -4286,7 +4286,7 @@ nsresult Connection::EnsureStorageConnection() {
       return rv;
     }
 
-    rv = directoryEntry->Append(NS_LITERAL_STRING(DATA_FILE_NAME));
+    rv = directoryEntry->Append(nsLiteralString(DATA_FILE_NAME));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -4325,7 +4325,8 @@ nsresult Connection::EnsureStorageConnection() {
 
   nsCOMPtr<nsIFile> directoryEntry = directoryEntryOrErr.unwrap();
 
-  rv = directoryEntry->Append(NS_LITERAL_STRING(LS_DIRECTORY_NAME));
+  rv =
+      directoryEntry->Append(NS_LITERAL_STRING_FROM_CSTRING(LS_DIRECTORY_NAME));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -4348,7 +4349,7 @@ nsresult Connection::EnsureStorageConnection() {
     }
   }
 
-  rv = directoryEntry->Append(NS_LITERAL_STRING(DATA_FILE_NAME));
+  rv = directoryEntry->Append(nsLiteralString(DATA_FILE_NAME));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -7370,7 +7371,8 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
                                        mOrigin);
   }
 
-  rv = directoryEntry->Append(NS_LITERAL_STRING(LS_DIRECTORY_NAME));
+  rv =
+      directoryEntry->Append(NS_LITERAL_STRING_FROM_CSTRING(LS_DIRECTORY_NAME));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -7391,7 +7393,7 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
     return rv;
   }
 
-  rv = directoryEntry->Append(NS_LITERAL_STRING(DATA_FILE_NAME));
+  rv = directoryEntry->Append(nsLiteralString(DATA_FILE_NAME));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -8823,7 +8825,7 @@ Result<UsageInfo, nsresult> QuotaClient::InitOrigin(
 
   MOZ_ASSERT(directory);
 
-  rv = directory->Append(NS_LITERAL_STRING(LS_DIRECTORY_NAME));
+  rv = directory->Append(NS_LITERAL_STRING_FROM_CSTRING(LS_DIRECTORY_NAME));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     REPORT_TELEMETRY_INIT_ERR(kQuotaExternalError, LS_Append);
     return Err(rv);
@@ -8921,7 +8923,7 @@ Result<UsageInfo, nsresult> QuotaClient::InitOrigin(
     return Err(rv);
   }
 
-  rv = file->Append(NS_LITERAL_STRING(DATA_FILE_NAME));
+  rv = file->Append(nsLiteralString(DATA_FILE_NAME));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     REPORT_TELEMETRY_INIT_ERR(kQuotaExternalError, LS_Append2);
     return Err(rv);
@@ -9056,7 +9058,7 @@ nsresult QuotaClient::InitOriginWithoutTracking(
   
   
   
-  UNKNOWN_FILE_WARNING(NS_LITERAL_STRING(LS_DIRECTORY_NAME));
+  UNKNOWN_FILE_WARNING(NS_LITERAL_STRING_FROM_CSTRING(LS_DIRECTORY_NAME));
   return NS_OK;
 }
 

@@ -832,16 +832,16 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
                       
                       
                       nsAutoString remoteType(contentParent->GetRemoteType());
-                      if (StringBeginsWith(
-                              remoteType,
-                              NS_LITERAL_STRING(FISSION_WEB_REMOTE_TYPE))) {
+                      if (StringBeginsWith(remoteType,
+                                           NS_LITERAL_STRING_FROM_CSTRING(
+                                               FISSION_WEB_REMOTE_TYPE))) {
                         
                         
                         
                         type = mozilla::ProcType::WebIsolated;
                       } else if (StringBeginsWith(
-                                     remoteType,
-                                     NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE))) {
+                                     remoteType, NS_LITERAL_STRING_FROM_CSTRING(
+                                                     DEFAULT_REMOTE_TYPE))) {
                         type = mozilla::ProcType::Web;
                       } else if (remoteType.EqualsLiteral(FILE_REMOTE_TYPE)) {
                         type = mozilla::ProcType::File;
@@ -856,7 +856,7 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
                         type = mozilla::ProcType::PrivilegedMozilla;
                       } else if (StringBeginsWith(
                                      remoteType,
-                                     NS_LITERAL_STRING(
+                                     NS_LITERAL_STRING_FROM_CSTRING(
                                          WITH_COOP_COEP_REMOTE_TYPE_PREFIX))) {
                         type = mozilla::ProcType::WebCOOPCOEP;
                       } else if (remoteType.EqualsLiteral(

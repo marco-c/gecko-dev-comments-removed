@@ -347,7 +347,7 @@ UploadLastDir::ContentPrefCallback::HandleCompletion(uint16_t aReason) {
     
     
     mFilePicker->SetDisplaySpecialDirectory(
-        NS_LITERAL_STRING(NS_OS_DESKTOP_DIR));
+        NS_LITERAL_STRING_FROM_CSTRING(NS_OS_DESKTOP_DIR));
   }
 
   mFilePicker->Open(mFpCallback);
