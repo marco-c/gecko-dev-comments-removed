@@ -156,7 +156,15 @@ nsClipboard::SetData(nsITransferable* aTransferable, nsIClipboardOwner* aOwner,
     
     if (flavorStr.EqualsLiteral(kUnicodeMime)) {
       LOGCLIP(("    text targets\n"));
-      gtk_target_list_add_text_targets(list, 0);
+
+      
+      
+      
+      
+      gtk_target_list_add(list, gdk_atom_intern("UTF8_STRING", FALSE), 0, 0);
+      gtk_target_list_add(list, gdk_atom_intern("COMPOUND_TEXT", FALSE), 0, 0);
+      gtk_target_list_add(list, gdk_atom_intern("TEXT", FALSE), 0, 0);
+      gtk_target_list_add(list, GDK_SELECTION_TYPE_STRING, 0, 0);
       continue;
     }
 
