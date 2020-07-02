@@ -97,18 +97,18 @@ class LogAdapter {
   get maxLevel() {
     let level = this.log.level;
     if (level <= Log.Level.All) {
-      return Ci.mozIServicesLogSink.LEVEL_TRACE;
+      return Ci.mozIServicesLogger.LEVEL_TRACE;
     }
     if (level <= Log.Level.Info) {
-      return Ci.mozIServicesLogSink.LEVEL_DEBUG;
+      return Ci.mozIServicesLogger.LEVEL_DEBUG;
     }
     if (level <= Log.Level.Warn) {
-      return Ci.mozIServicesLogSink.LEVEL_WARN;
+      return Ci.mozIServicesLogger.LEVEL_WARN;
     }
     if (level <= Log.Level.Error) {
-      return Ci.mozIServicesLogSink.LEVEL_ERROR;
+      return Ci.mozIServicesLogger.LEVEL_ERROR;
     }
-    return Ci.mozIServicesLogSink.LEVEL_OFF;
+    return Ci.mozIServicesLogger.LEVEL_OFF;
   }
 
   trace(message) {
