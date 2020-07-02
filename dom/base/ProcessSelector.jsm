@@ -39,10 +39,6 @@ MinTabSelector.prototype = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIContentProcessProvider]),
 
   provideProcess(aType, aOpener, aProcesses, aMaxCount) {
-    if (aProcesses.length < aMaxCount) {
-      return Ci.nsIContentProcessProvider.NEW_PROCESS;
-    }
-
     let min = Number.MAX_VALUE;
     let candidate = Ci.nsIContentProcessProvider.NEW_PROCESS;
 
@@ -50,8 +46,9 @@ MinTabSelector.prototype = {
     
     
     
-    
-    for (let i = 0; i < aMaxCount; i++) {
+    let numIters = Math.min(aProcesses.length, aMaxCount);
+
+    for (let i = 0; i < numIters; i++) {
       let process = aProcesses[i];
       let tabCount = process.tabCount;
       if (process.opener === aOpener && tabCount < min) {
@@ -60,6 +57,13 @@ MinTabSelector.prototype = {
       }
     }
 
+    
+    
+    if (min > 0 && aProcesses.length < aMaxCount) {
+      return Ci.nsIContentProcessProvider.NEW_PROCESS;
+    }
+
+    
     return candidate;
   },
 };

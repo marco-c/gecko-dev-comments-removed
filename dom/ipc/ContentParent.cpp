@@ -860,6 +860,14 @@ already_AddRefed<ContentParent> ContentParent::MinTabSelect(
     }
   }
 
+  
+  
+  if (min > 0 &&
+      aContentParents.Length() < static_cast<uint32_t>(aMaxContentParents)) {
+    return nullptr;
+  }
+
+  
   return candidate.forget();
 }
 
@@ -916,8 +924,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
     
     NS_WARNING("nsIContentProcessProvider failed to return a process");
     RefPtr<ContentParent> random;
-    if (aContentParents.Length() >= aMaxContentParents &&
-        (random = MinTabSelect(aContentParents, aOpener, aMaxContentParents))) {
+    if ((random = MinTabSelect(aContentParents, aOpener, aMaxContentParents))) {
       MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
               ("GetUsedProcess: Reused random process %p (%d) for %s",
                random.get(), (unsigned int)random->ChildID(),
