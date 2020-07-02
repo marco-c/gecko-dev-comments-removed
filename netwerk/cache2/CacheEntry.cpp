@@ -1642,14 +1642,18 @@ bool CacheEntry::Purge(uint32_t aWhat) {
       }
   }
 
-  if (mState == WRITING || mState == LOADING || mFrecency == 0) {
-    
-    
-    
-    
-    
-    LOG(("  state=%s, frecency=%1.10f", StateString(mState), mFrecency));
-    return false;
+  {
+    mozilla::MutexAutoLock lock(mLock);
+
+    if (mState == WRITING || mState == LOADING || mFrecency == 0) {
+      
+      
+      
+      
+      
+      LOG(("  state=%s, frecency=%1.10f", StateString(mState), mFrecency));
+      return false;
+    }
   }
 
   if (NS_SUCCEEDED(mFileStatus) && mFile->IsWriteInProgress()) {
