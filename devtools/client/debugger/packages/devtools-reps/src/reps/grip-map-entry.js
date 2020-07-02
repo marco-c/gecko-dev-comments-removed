@@ -13,6 +13,15 @@ const { MODE } = require("./constants");
 
 
 
+
+
+
+
+
+
+
+
+
 GripMapEntry.propTypes = {
   object: PropTypes.object,
   

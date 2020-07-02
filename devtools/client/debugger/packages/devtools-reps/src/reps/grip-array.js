@@ -23,6 +23,7 @@ const DEFAULT_TITLE = "Array";
 
 
 
+
 GripArray.propTypes = {
   object: PropTypes.object.isRequired,
   
@@ -31,10 +32,11 @@ GripArray.propTypes = {
   onDOMNodeMouseOver: PropTypes.func,
   onDOMNodeMouseOut: PropTypes.func,
   onInspectIconClick: PropTypes.func,
+  shouldRenderTooltip: PropTypes.bool,
 };
 
 function GripArray(props) {
-  const { object, mode = MODE.SHORT } = props;
+  const { object, mode = MODE.SHORT, shouldRenderTooltip } = props;
 
   let brackets;
   const needSpace = function(space) {
@@ -44,6 +46,7 @@ function GripArray(props) {
   const config = {
     "data-link-actor-id": object.actor,
     className: "objectBox objectBox-array",
+    title: shouldRenderTooltip ? "Array" : null,
   };
 
   const title = getTitle(props, object);
@@ -81,10 +84,7 @@ function GripArray(props) {
   brackets = needSpace(items.length > 0);
 
   return span(
-    {
-      "data-link-actor-id": object.actor,
-      className: "objectBox objectBox-array",
-    },
+    config,
     title,
     span(
       {

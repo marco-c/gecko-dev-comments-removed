@@ -17,14 +17,16 @@ const nodeConstants = require("../shared/dom-node-constants");
 
 
 
+
 CommentNode.propTypes = {
   object: PropTypes.object.isRequired,
   
   mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+  shouldRenderTooltip: PropTypes.bool,
 };
 
 function CommentNode(props) {
-  const { object, mode = MODE.SHORT } = props;
+  const { object, mode = MODE.SHORT, shouldRenderTooltip } = props;
 
   let { textContent } = object.preview;
   if (mode === MODE.TINY) {
@@ -33,13 +35,24 @@ function CommentNode(props) {
     textContent = cropString(textContent, 50);
   }
 
-  return span(
-    {
-      className: "objectBox theme-comment",
-      "data-link-actor-id": object.actor,
-    },
-    `<!-- ${textContent} -->`
-  );
+  const config = getElementConfig({ object, textContent, shouldRenderTooltip });
+
+  return span(config, `<!-- ${textContent} -->`);
+}
+
+function getElementConfig(opts) {
+  const { object, shouldRenderTooltip } = opts;
+
+  
+  const uncroppedText = shouldRenderTooltip
+    ? cropString(object.preview.textContent)
+    : null;
+
+  return {
+    className: "objectBox theme-comment",
+    "data-link-actor-id": object.actor,
+    title: shouldRenderTooltip ? `<!-- ${uncroppedText} -->` : null,
+  };
 }
 
 

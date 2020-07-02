@@ -17,16 +17,18 @@ const ModePropType = PropTypes.oneOf(
 
 
 
+
 ArrayRep.propTypes = {
   mode: ModePropType,
   object: PropTypes.array.isRequired,
+  shouldRenderTooltip: PropTypes.bool,
 };
 
 function ArrayRep(props) {
-  const { object, mode = MODE.SHORT } = props;
+  const { object, mode = MODE.SHORT, shouldRenderTooltip = true } = props;
 
-  let items;
   let brackets;
+  let items;
   const needSpace = function(space) {
     return space ? { left: "[ ", right: " ]" } : { left: "[", right: "]" };
   };
@@ -40,7 +42,6 @@ function ArrayRep(props) {
         span(
           {
             className: "more-ellipsis",
-            title: "more…",
           },
           "…"
         ),
@@ -55,6 +56,7 @@ function ArrayRep(props) {
   return span(
     {
       className: "objectBox objectBox-array",
+      title: shouldRenderTooltip ? "Array" : null,
     },
     span(
       {
@@ -103,7 +105,6 @@ function arrayIterator(props, array, max) {
       span(
         {
           className: "more-ellipsis",
-          title: "more…",
         },
         "…"
       )
@@ -112,6 +113,7 @@ function arrayIterator(props, array, max) {
 
   return items;
 }
+
 
 
 

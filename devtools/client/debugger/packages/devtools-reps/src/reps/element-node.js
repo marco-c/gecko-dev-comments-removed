@@ -20,6 +20,7 @@ const MAX_ATTRIBUTE_LENGTH = 50;
 
 
 
+
 ElementNode.propTypes = {
   object: PropTypes.object.isRequired,
   inspectIconTitle: PropTypes.string,
@@ -29,112 +30,126 @@ ElementNode.propTypes = {
   onDOMNodeMouseOver: PropTypes.func,
   onDOMNodeMouseOut: PropTypes.func,
   onInspectIconClick: PropTypes.func,
+  shouldRenderTooltip: PropTypes.bool,
 };
 
 function ElementNode(props) {
+  const { object, mode, shouldRenderTooltip } = props;
+
+  const {
+    isAfterPseudoElement,
+    isBeforePseudoElement,
+    isMarkerPseudoElement,
+  } = object.preview;
+
+  let renderElements = [];
+  const isInTree = object.preview && object.preview.isConnected === true;
+  let config = getElementConfig({ ...props, isInTree });
+  const inspectIcon = getInspectIcon({ ...props, isInTree });
+
+  
+  if (isAfterPseudoElement || isBeforePseudoElement || isMarkerPseudoElement) {
+    const pseudoNodeElement = getPseudoNodeElement(object);
+
+    
+    if (shouldRenderTooltip) {
+      const tooltipString = pseudoNodeElement.content;
+      config = getElementConfig({ ...props, tooltipString, isInTree });
+    }
+
+    
+    renderElements = [
+      span(pseudoNodeElement.config, pseudoNodeElement.content),
+    ];
+  } else if (mode === MODE.TINY) {
+    
+    const tinyElements = getTinyElements(object);
+
+    
+    if (shouldRenderTooltip) {
+      
+      const tooltipString = tinyElements.reduce(function(acc, cur) {
+        return acc.concat(cur.content);
+      }, "");
+
+      config = getElementConfig({ ...props, tooltipString, isInTree });
+    }
+
+    
+    const tinyElementsRender = tinyElements.reduce(function(acc, cur) {
+      acc.push(span(cur.config, cur.content));
+      return acc;
+    }, []);
+
+    
+    renderElements = tinyElementsRender;
+  } else {
+    
+    renderElements = getElements(props);
+  }
+
+  return span(config, ...renderElements, inspectIcon ? inspectIcon : null);
+}
+
+function getElementConfig(opts) {
   const {
     object,
-    inspectIconTitle,
-    mode,
+    isInTree,
     onDOMNodeClick,
     onDOMNodeMouseOver,
     onDOMNodeMouseOut,
-    onInspectIconClick,
-  } = props;
-  const elements = getElements(object, mode);
+    shouldRenderTooltip,
+    tooltipString,
+  } = opts;
 
-  const isInTree = object.preview && object.preview.isConnected === true;
-
-  const baseConfig = {
+  
+  const config = {
     "data-link-actor-id": object.actor,
     className: "objectBox objectBox-node",
   };
-  let inspectIcon;
+
+  
   if (isInTree) {
     if (onDOMNodeClick) {
-      Object.assign(baseConfig, {
+      Object.assign(config, {
         onClick: _ => onDOMNodeClick(object),
-        className: `${baseConfig.className} clickable`,
+        className: `${config.className} clickable`,
       });
     }
 
     if (onDOMNodeMouseOver) {
-      Object.assign(baseConfig, {
+      Object.assign(config, {
         onMouseOver: _ => onDOMNodeMouseOver(object),
       });
     }
 
     if (onDOMNodeMouseOut) {
-      Object.assign(baseConfig, {
+      Object.assign(config, {
         onMouseOut: _ => onDOMNodeMouseOut(object),
-      });
-    }
-
-    if (onInspectIconClick) {
-      inspectIcon = button({
-        className: "open-inspector",
-        
-        title: inspectIconTitle || "Click to select the node in the inspector",
-        onClick: e => {
-          if (onDOMNodeClick) {
-            e.stopPropagation();
-          }
-
-          onInspectIconClick(object, e);
-        },
       });
     }
   }
 
-  return span(baseConfig, ...elements, inspectIcon);
+  
+  if (tooltipString && shouldRenderTooltip) {
+    config.title = tooltipString;
+  }
+
+  
+  return config;
 }
 
-function getElements(grip, mode) {
-  const {
-    attributes,
-    nodeName,
-    isAfterPseudoElement,
-    isBeforePseudoElement,
-    isMarkerPseudoElement,
-  } = grip.preview;
+function getElements(opts) {
+  const { object: grip } = opts;
+
+  const { attributes, nodeName } = grip.preview;
+
   const nodeNameElement = span(
     {
       className: "tag-name",
     },
     nodeName
   );
-
-  let pseudoNodeName;
-  if (isAfterPseudoElement) {
-    pseudoNodeName = "after";
-  } else if (isBeforePseudoElement) {
-    pseudoNodeName = "before";
-  } else if (isMarkerPseudoElement) {
-    pseudoNodeName = "marker";
-  }
-  if (pseudoNodeName) {
-    return [span({ className: "attrName" }, `::${pseudoNodeName}`)];
-  }
-
-  if (mode === MODE.TINY) {
-    const elements = [nodeNameElement];
-    if (attributes.id) {
-      elements.push(span({ className: "attrName" }, `#${attributes.id}`));
-    }
-    if (attributes.class) {
-      elements.push(
-        span(
-          { className: "attrName" },
-          attributes.class
-            .trim()
-            .split(/\s+/)
-            .map(cls => `.${cls}`)
-            .join("")
-        )
-      );
-    }
-    return elements;
-  }
 
   const attributeKeys = Object.keys(attributes);
   if (attributeKeys.includes("class")) {
@@ -174,6 +189,91 @@ function getElements(grip, mode) {
     ...attributeElements,
     span({ className: "angleBracket" }, ">"),
   ];
+}
+
+function getTinyElements(grip) {
+  const { attributes, nodeName } = grip.preview;
+
+  
+  const elements = [
+    {
+      config: { className: "tag-name" },
+      content: nodeName,
+    },
+  ];
+
+  
+  if (attributes.id) {
+    elements.push({
+      config: { className: "attrName" },
+      content: `#${attributes.id}`,
+    });
+  }
+
+  
+  if (attributes.class) {
+    const elementClasses = attributes.class
+      .trim()
+      .split(/\s+/)
+      .map(cls => `.${cls}`)
+      .join("");
+    elements.push({
+      config: { className: "attrName" },
+      content: elementClasses,
+    });
+  }
+
+  return elements;
+}
+
+function getPseudoNodeElement(grip) {
+  const {
+    isAfterPseudoElement,
+    isBeforePseudoElement,
+    isMarkerPseudoElement,
+  } = grip.preview;
+
+  let pseudoNodeName;
+
+  if (isAfterPseudoElement) {
+    pseudoNodeName = "after";
+  } else if (isBeforePseudoElement) {
+    pseudoNodeName = "before";
+  } else if (isMarkerPseudoElement) {
+    pseudoNodeName = "marker";
+  }
+
+  return {
+    config: { className: "attrName" },
+    content: `::${pseudoNodeName}`,
+  };
+}
+
+function getInspectIcon(opts) {
+  const {
+    object,
+    isInTree,
+    onInspectIconClick,
+    inspectIconTitle,
+    onDOMNodeClick,
+  } = opts;
+
+  if (!isInTree || !onInspectIconClick) {
+    return null;
+  }
+
+  return button({
+    className: "open-inspector",
+    
+    title: inspectIconTitle || "Click to select the node in the inspector",
+    onClick: e => {
+      if (onDOMNodeClick) {
+        e.stopPropagation();
+      }
+
+      onInspectIconClick(object, e);
+    },
+  });
 }
 
 

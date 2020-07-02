@@ -23,6 +23,7 @@ ErrorRep.propTypes = {
   mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
   
   renderStacktrace: PropTypes.func,
+  shouldRenderTooltip: PropTypes.bool,
 };
 
 
@@ -41,7 +42,7 @@ ErrorRep.propTypes = {
 
 
 function ErrorRep(props) {
-  const { object, mode, depth } = props;
+  const { object, mode, shouldRenderTooltip, depth } = props;
   const preview = object.preview;
   const customFormat = props.customFormat && mode !== MODE.TINY && !depth;
 
@@ -101,6 +102,7 @@ function ErrorRep(props) {
       className: `objectBox-stackTrace ${
         customFormat ? "reps-custom-format" : ""
       }`,
+      title: shouldRenderTooltip ? `${name}: "${preview.message}"` : null,
     },
     ...content
   );

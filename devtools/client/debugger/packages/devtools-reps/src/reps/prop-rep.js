@@ -28,7 +28,9 @@ PropRep.propTypes = {
   
   
   suppressQuotes: PropTypes.bool,
+  shouldRenderTooltip: PropTypes.bool,
 };
+
 
 
 
@@ -40,6 +42,7 @@ PropRep.propTypes = {
 function PropRep(props) {
   const Grip = require("./grip");
   const { Rep } = require("./rep");
+  const shouldRenderTooltip = props.shouldRenderTooltip;
 
   let { name, mode, equal, suppressQuotes } = props;
 
@@ -50,7 +53,13 @@ function PropRep(props) {
     if (!suppressQuotes) {
       name = maybeEscapePropertyName(name);
     }
-    key = span({ className: "nodeName" }, name);
+    key = span(
+      {
+        className: "nodeName",
+        title: shouldRenderTooltip ? name : null,
+      },
+      name
+    );
   } else {
     key = Rep({
       ...props,

@@ -12,12 +12,14 @@ const { getGripType, isGrip, wrapRender } = require("./rep-utils");
 
 
 
+
 DateTime.propTypes = {
   object: PropTypes.object.isRequired,
+  shouldRenderTooltip: PropTypes.bool,
 };
 
 function DateTime(props) {
-  const grip = props.object;
+  const { object: grip, shouldRenderTooltip } = props;
   let date;
   try {
     const dateObject = new Date(grip.preview.timestamp);
@@ -25,20 +27,44 @@ function DateTime(props) {
     
     dateObject.toISOString();
 
+    const dateObjectString = dateObject.toString();
+
+    const config = getElementConfig({
+      grip,
+      dateObjectString,
+      shouldRenderTooltip,
+    });
+
     date = span(
-      {
-        "data-link-actor-id": grip.actor,
-        className: "objectBox",
-      },
+      config,
       getTitle(grip),
-      span({ className: "Date" }, dateObject.toString())
+      span({ className: "Date" }, dateObjectString)
     );
   } catch (e) {
-    date = span({ className: "objectBox" }, "Invalid Date");
+    date = span(
+      {
+        className: "objectBox",
+        title: shouldRenderTooltip ? "Invalid Date" : null,
+      },
+      "Invalid Date"
+    );
   }
 
   return date;
 }
+
+function getElementConfig(opts) {
+  const { grip, dateObjectString, shouldRenderTooltip } = opts;
+
+  return {
+    "data-link-actor-id": grip.actor,
+    className: "objectBox",
+    title: shouldRenderTooltip ? `${grip.class} ${dateObjectString}` : null,
+  };
+}
+
+
+
 
 function getTitle(grip) {
   return span(
