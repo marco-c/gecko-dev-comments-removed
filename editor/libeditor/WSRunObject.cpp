@@ -73,7 +73,9 @@ WSRunScanner::WSRunScanner(const HTMLEditor* aHTMLEditor,
     : mScanStartPoint(aScanStartPoint),
       mScanEndPoint(aScanEndPoint),
       mEditingHost(aHTMLEditor->GetActiveEditingHost()),
-      mPRE(false),
+      mPRE(mScanStartPoint.IsInContentNode() &&
+           EditorUtils::IsContentPreformatted(
+               *mScanStartPoint.ContainerAsContent())),
       mHTMLEditor(aHTMLEditor) {
   MOZ_ASSERT(
       *nsContentUtils::ComparePoints(aScanStartPoint.ToRawRangeBoundary(),
@@ -81,7 +83,6 @@ WSRunScanner::WSRunScanner(const HTMLEditor* aHTMLEditor,
   DebugOnly<nsresult> rvIgnored = GetWSNodes();
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "WSRunScanner::GetWSNodes() failed, but ignored");
-  GetRuns();
 }
 
 template <typename PT, typename CT>
@@ -609,7 +610,7 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
   if (index != WSFragmentArray::NoIndex) {
     
     for (WSFragmentArray::index_type i = index + 1; i; i--) {
-      const WSFragment& fragment = mFragments[i - 1];
+      const WSFragment& fragment = WSFragmentArrayRef()[i - 1];
       if (!fragment.IsVisibleAndMiddleOfHardLine()) {
         continue;
       }
@@ -646,8 +647,8 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
   WSFragmentArray::index_type index = FindNearestFragmentIndex(aPoint, true);
   if (index != WSFragmentArray::NoIndex) {
     
-    for (size_t i = index; i < mFragments.Length(); i++) {
-      const WSFragment& fragment = mFragments[i];
+    for (size_t i = index; i < WSFragmentArrayRef().Length(); i++) {
+      const WSFragment& fragment = WSFragmentArrayRef()[i];
       if (!fragment.IsVisibleAndMiddleOfHardLine()) {
         continue;
       }
@@ -681,7 +682,7 @@ nsresult WSRunObject::AdjustWhiteSpace() {
     
     return NS_OK;
   }
-  for (const WSFragment& fragment : mFragments) {
+  for (const WSFragment& fragment : WSFragmentArrayRef()) {
     if (!fragment.IsVisibleAndMiddleOfHardLine()) {
       continue;
     }
@@ -954,16 +955,16 @@ void WSRunScanner::InitializeRangeEnd(
       aEditableBlockParentOrTopmostEditableInlineContent);
 }
 
-void WSRunScanner::GetRuns() {
-  MOZ_ASSERT(mFragments.IsEmpty());
+void WSRunScanner::EnsureWSFragments() {
+  if (!mFragments.IsEmpty()) {
+    return;
+  }
 
   
   
   
   
-  mPRE =
-      mScanStartPoint.IsInContentNode() &&
-      EditorUtils::IsContentPreformatted(*mScanStartPoint.ContainerAsContent());
+
   
   
   if (mPRE ||
@@ -1615,8 +1616,9 @@ WSRunScanner::FindNearestFragmentIndex(const EditorDOMPointBase<PT, CT>& aPoint,
                                        bool aForward) const {
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
-  for (WSFragmentArray::index_type i = 0; i < mFragments.Length(); i++) {
-    const WSFragment& fragment = mFragments[i];
+  for (WSFragmentArray::index_type i = 0; i < WSFragmentArrayRef().Length();
+       i++) {
+    const WSFragment& fragment = WSFragmentArrayRef()[i];
     int32_t comp = fragment.mStartNode
                        ? *nsContentUtils::ComparePoints(
                              aPoint.ToRawRangeBoundary(),
@@ -1640,12 +1642,13 @@ WSRunScanner::FindNearestFragmentIndex(const EditorDOMPointBase<PT, CT>& aPoint,
     if (!comp) {
       
       
-      return aForward ? (i + 1 < mFragments.Length() ? i + 1
-                                                     : WSFragmentArray::NoIndex)
+      return aForward ? (i + 1 < WSFragmentArrayRef().Length()
+                             ? i + 1
+                             : WSFragmentArray::NoIndex)
                       : i;
     }
 
-    if (i == mFragments.Length() - 1) {
+    if (i == WSFragmentArrayRef().Length() - 1) {
       
       
       
@@ -1979,7 +1982,7 @@ nsresult WSRunObject::MaybeReplaceInclusiveNextNBSPWithASCIIWhiteSpace(
 }
 
 nsresult WSRunObject::Scrub() {
-  for (const WSFragment& fragment : mFragments) {
+  for (const WSFragment& fragment : WSFragmentArrayRef()) {
     if (fragment.IsMiddleOfHardLine()) {
       continue;
     }

@@ -527,6 +527,10 @@ class MOZ_STACK_CLASS WSRunScanner {
   };
 
   using WSFragmentArray = AutoTArray<WSFragment, 3>;
+  const WSFragmentArray& WSFragmentArrayRef() const {
+    const_cast<WSRunScanner*>(this)->EnsureWSFragments();
+    return mFragments;
+  }
 
   
 
@@ -696,7 +700,7 @@ class MOZ_STACK_CLASS WSRunScanner {
     EditorDOMPointInText mLast;
   };
 
-  void GetRuns();
+  void EnsureWSFragments();
   void InitializeWithSingleFragment(
       WSFragment::Visible aIsVisible,
       WSFragment::StartOfHardLine aIsStartOfHardLine,
@@ -726,8 +730,6 @@ class MOZ_STACK_CLASS WSRunScanner {
   
   bool mPRE;
 
-  WSFragmentArray mFragments;
-
   
   const HTMLEditor* mHTMLEditor;
 
@@ -735,6 +737,12 @@ class MOZ_STACK_CLASS WSRunScanner {
   BoundaryData mStart;
   BoundaryData mEnd;
   NoBreakingSpaceData mNBSPData;
+
+ private:
+  
+  
+  
+  WSFragmentArray mFragments;
 };
 
 class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
