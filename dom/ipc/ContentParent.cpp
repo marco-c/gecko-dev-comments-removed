@@ -3391,28 +3391,28 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
 
 
 bool ContentParent::ShouldSyncPreference(const char16_t* aData) {
-#define BLACKLIST_ENTRY(s) \
+#define PARENT_ONLY_PREF_LIST_ENTRY(s) \
   { s, (sizeof(s) / sizeof(char16_t)) - 1 }
-  struct BlacklistEntry {
+  struct ParentOnlyPrefListEntry {
     const char16_t* mPrefBranch;
     size_t mLen;
   };
   
-  static const BlacklistEntry sContentPrefBranchBlacklist[] = {
-      BLACKLIST_ENTRY(u"app.update.lastUpdateTime."),
-      BLACKLIST_ENTRY(u"datareporting.policy."),
-      BLACKLIST_ENTRY(u"browser.safebrowsing.provider."),
-      BLACKLIST_ENTRY(u"browser.shell."),
-      BLACKLIST_ENTRY(u"browser.slowStartup."),
-      BLACKLIST_ENTRY(u"browser.startup."),
-      BLACKLIST_ENTRY(u"extensions.getAddons.cache."),
-      BLACKLIST_ENTRY(u"media.gmp-manager."),
-      BLACKLIST_ENTRY(u"media.gmp-gmpopenh264."),
-      BLACKLIST_ENTRY(u"privacy.sanitize."),
+  static const ParentOnlyPrefListEntry sParentOnlyPrefBranchList[] = {
+      PARENT_ONLY_PREF_LIST_ENTRY(u"app.update.lastUpdateTime."),
+      PARENT_ONLY_PREF_LIST_ENTRY(u"datareporting.policy."),
+      PARENT_ONLY_PREF_LIST_ENTRY(u"browser.safebrowsing.provider."),
+      PARENT_ONLY_PREF_LIST_ENTRY(u"browser.shell."),
+      PARENT_ONLY_PREF_LIST_ENTRY(u"browser.slowStartup."),
+      PARENT_ONLY_PREF_LIST_ENTRY(u"browser.startup."),
+      PARENT_ONLY_PREF_LIST_ENTRY(u"extensions.getAddons.cache."),
+      PARENT_ONLY_PREF_LIST_ENTRY(u"media.gmp-manager."),
+      PARENT_ONLY_PREF_LIST_ENTRY(u"media.gmp-gmpopenh264."),
+      PARENT_ONLY_PREF_LIST_ENTRY(u"privacy.sanitize."),
   };
-#undef BLACKLIST_ENTRY
+#undef PARENT_ONLY_PREF_LIST_ENTRY
 
-  for (const auto& entry : sContentPrefBranchBlacklist) {
+  for (const auto& entry : sParentOnlyPrefBranchList) {
     if (NS_strncmp(entry.mPrefBranch, aData, entry.mLen) == 0) {
       return false;
     }
