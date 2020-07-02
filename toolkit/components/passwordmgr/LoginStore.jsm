@@ -77,10 +77,11 @@ const MAX_DATE_MS = 8640000000000000;
 
 
 
-function LoginStore(aPath) {
+function LoginStore(aPath, aBackupPath = "") {
   JSONFile.call(this, {
     path: aPath,
     dataPostProcessor: this._dataPostProcessor.bind(this),
+    backupTo: aBackupPath,
   });
 }
 

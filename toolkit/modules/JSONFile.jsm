@@ -110,6 +110,8 @@ const kSaveDelayMs = 1500;
 
 
 
+
+
 function JSONFile(config) {
   this.path = config.path;
 
@@ -128,6 +130,10 @@ function JSONFile(config) {
   this._options = {};
   if (config.compression) {
     this._options.compression = config.compression;
+  }
+
+  if (config.backupTo) {
+    this._options.backupTo = config.backupTo;
   }
 
   this._finalizeAt = config.finalizeAt || AsyncShutdown.profileBeforeChange;
