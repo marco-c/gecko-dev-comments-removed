@@ -8701,14 +8701,16 @@ nsMargin nsLayoutUtils::ScrollbarAreaToExcludeFromCompositionBoundsFor(
 
 
 nsSize nsLayoutUtils::CalculateCompositionSizeForFrame(
-    nsIFrame* aFrame, bool aSubtractScrollbars) {
+    nsIFrame* aFrame, bool aSubtractScrollbars,
+    const nsSize* aOverrideScrollPortSize) {
   
   
   
   nsIScrollableFrame* scrollableFrame = aFrame->GetScrollTargetFrame();
   nsRect rect = scrollableFrame ? scrollableFrame->GetScrollPortRect()
                                 : aFrame->GetRect();
-  nsSize size = rect.Size();
+  nsSize size =
+      aOverrideScrollPortSize ? *aOverrideScrollPortSize : rect.Size();
 
   nsPresContext* presContext = aFrame->PresContext();
   PresShell* presShell = presContext->PresShell();

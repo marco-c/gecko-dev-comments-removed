@@ -2706,7 +2706,8 @@ class nsLayoutUtils {
 
 
   static nsSize CalculateCompositionSizeForFrame(
-      nsIFrame* aFrame, bool aSubtractScrollbars = true);
+      nsIFrame* aFrame, bool aSubtractScrollbars = true,
+      const nsSize* aOverrideScrollPortSize = nullptr);
 
   
 
