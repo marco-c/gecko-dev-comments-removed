@@ -32,6 +32,7 @@ class nsIPrincipal;
 
 namespace mozilla {
 
+class PreloadHashKey;
 class SharedStyleSheetCache;
 class SheetLoadDataHashKey;
 class StyleSheet;
@@ -564,6 +565,10 @@ class Loader final {
   
   static void MarkLoadTreeFailed(SheetLoadData&,
                                  Loader* aOnlyForLoader = nullptr);
+
+  
+  
+  void MaybeNotifyPreloadUsed(SheetLoadData&);
 
   nsRefPtrHashtable<nsStringHashKey, StyleSheet> mInlineSheets;
 
