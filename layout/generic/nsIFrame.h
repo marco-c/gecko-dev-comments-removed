@@ -694,6 +694,7 @@ class nsIFrame : public nsQueryFrame {
     MOZ_ASSERT(mComputedStyle);
     MOZ_ASSERT(mPresContext);
     mozilla::PodZero(&mOverflow);
+    MOZ_COUNT_CTOR(nsIFrame);
   }
 
   nsPresContext* PresContext() const { return mPresContext; }
@@ -719,7 +720,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
-                    nsIFrame* aPrevInFlow) = 0;
+                    nsIFrame* aPrevInFlow);
 
   using PostDestroyData = mozilla::layout::PostFrameDestroyData;
   struct MOZ_RAII AutoPostDestroyData {
@@ -798,7 +799,7 @@ class nsIFrame : public nsQueryFrame {
 
 
   virtual void DestroyFrom(nsIFrame* aDestructRoot,
-                           PostDestroyData& aPostDestroyData) = 0;
+                           PostDestroyData& aPostDestroyData);
   friend class nsFrameList;  
   friend class nsLineBox;    
   friend class nsContainerFrame;  
@@ -806,6 +807,16 @@ class nsIFrame : public nsQueryFrame {
   friend class nsFrame;           
   template <class Source>
   friend class do_QueryFrameHelper;  
+
+  virtual ~nsIFrame();
+
+ private:
+  
+  bool HasCSSAnimations();
+
+  
+  bool HasCSSTransitions();
+
  public:
   
 

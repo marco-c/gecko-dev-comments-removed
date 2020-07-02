@@ -68,25 +68,11 @@ class nsFrame : public nsIFrame {
   }
   void* operator new(size_t, mozilla::PresShell*) MOZ_MUST_OVERRIDE;
 
-  
-  void Init(nsIContent* aContent, nsContainerFrame* aParent,
-            nsIFrame* aPrevInFlow) override;
-  void DestroyFrom(nsIFrame* aDestructRoot,
-                   PostDestroyData& aPostDestroyData) override;
-
  protected:
   
   nsFrame(ComputedStyle* aStyle, nsPresContext* aPresContext, ClassID aID);
   explicit nsFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
       : nsFrame(aStyle, aPresContext, ClassID::nsFrame_id) {}
-  virtual ~nsFrame();
-
- private:
-  
-  bool HasCSSAnimations();
-
-  
-  bool HasCSSTransitions();
 };
 
 #endif 
