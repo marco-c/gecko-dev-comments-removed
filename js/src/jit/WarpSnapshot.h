@@ -402,6 +402,28 @@ class WarpScriptSnapshot : public TempObject {
 
 
 
+
+
+class WarpBailoutInfo {
+  
+  
+  
+  bool failedBoundsCheck_ = false;
+
+  
+  
+  bool failedLexicalCheck_ = false;
+
+ public:
+  bool failedBoundsCheck() const { return failedBoundsCheck_; }
+  void setFailedBoundsCheck() { failedBoundsCheck_ = true; }
+
+  bool failedLexicalCheck() const { return failedLexicalCheck_; }
+  void setFailedLexicalCheck() { failedLexicalCheck_ = true; }
+};
+
+
+
 class WarpSnapshot : public TempObject {
   
   WarpScriptSnapshot* script_;
@@ -411,8 +433,11 @@ class WarpSnapshot : public TempObject {
   WarpGCPtr<LexicalEnvironmentObject*> globalLexicalEnv_;
   WarpGCPtr<JSObject*> globalLexicalEnvThis_;
 
+  const WarpBailoutInfo bailoutInfo_;
+
  public:
-  explicit WarpSnapshot(JSContext* cx, WarpScriptSnapshot* script);
+  explicit WarpSnapshot(JSContext* cx, WarpScriptSnapshot* script,
+                        const WarpBailoutInfo& bailoutInfo);
 
   WarpScriptSnapshot* script() const { return script_; }
 
@@ -422,6 +447,8 @@ class WarpSnapshot : public TempObject {
   JSObject* globalLexicalEnvThis() const { return globalLexicalEnvThis_; }
 
   void trace(JSTracer* trc);
+
+  const WarpBailoutInfo& bailoutInfo() const { return bailoutInfo_; }
 
 #ifdef JS_JITSPEW
   void dump() const;

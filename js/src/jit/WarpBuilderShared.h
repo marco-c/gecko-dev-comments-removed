@@ -13,19 +13,23 @@ namespace js {
 namespace jit {
 
 class CallInfo;
+class WarpSnapshot;
 
 
 
 
 class WarpBuilderShared {
+  WarpSnapshot& snapshot_;
   MIRGenerator& mirGen_;
   TempAllocator& alloc_;
 
  protected:
   MBasicBlock* current;
 
-  WarpBuilderShared(MIRGenerator& mirGen, MBasicBlock* current_);
+  WarpBuilderShared(WarpSnapshot& snapshot, MIRGenerator& mirGen,
+                    MBasicBlock* current_);
 
+  WarpSnapshot& snapshot() const { return snapshot_; }
   MIRGenerator& mirGen() { return mirGen_; }
   TempAllocator& alloc() { return alloc_; }
 

@@ -20,22 +20,25 @@ class MDefinition;
 class MInstruction;
 class MIRGenerator;
 class WarpCacheIR;
+class WarpSnapshot;
 class CallInfo;
 
 using MDefinitionStackVector = Vector<MDefinition*, 8, SystemAllocPolicy>;
 
 
-MOZ_MUST_USE bool TranspileCacheIRToMIR(MIRGenerator& mirGen,
+MOZ_MUST_USE bool TranspileCacheIRToMIR(WarpSnapshot& snapshot,
+                                        MIRGenerator& mirGen,
                                         BytecodeLocation loc,
                                         MBasicBlock* current,
-                                        const WarpCacheIR* snapshot,
+                                        const WarpCacheIR* cacheIRSnapshot,
                                         const MDefinitionStackVector& inputs);
 
 
-MOZ_MUST_USE bool TranspileCacheIRToMIR(MIRGenerator& mirGen,
+MOZ_MUST_USE bool TranspileCacheIRToMIR(WarpSnapshot& snapshot,
+                                        MIRGenerator& mirGen,
                                         BytecodeLocation loc,
                                         MBasicBlock* current,
-                                        const WarpCacheIR* snapshot,
+                                        const WarpCacheIR* cacheIRSnapshot,
                                         CallInfo& callInfo);
 
 }  
