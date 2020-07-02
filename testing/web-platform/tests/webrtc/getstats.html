@@ -81,12 +81,10 @@
   // This function starts the test.
   test.step(function() {
     gFirstConnection = new RTCPeerConnection(null);
-    test.add_cleanup(() => gFirstConnection.close());
     gFirstConnection.onicecandidate = onIceCandidateToFirst;
     gFirstConnection.oniceconnectionstatechange = onIceConnectionStateChange;
 
     gSecondConnection = new RTCPeerConnection(null);
-    test.add_cleanup(() => gSecondConnection.close());
     gSecondConnection.onicecandidate = onIceCandidateToSecond;
 
     // The createDataChannel is necessary and sufficient to make
