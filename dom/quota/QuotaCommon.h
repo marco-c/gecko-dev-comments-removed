@@ -42,6 +42,17 @@
           .get())
 
 
+
+
+
+#ifdef DEBUG
+#  define WARN_IF_FILE_IS_UNKNOWN(_file) \
+    mozilla::dom::quota::WarnIfFileIsUnknown(_file, __FILE__, __LINE__)
+#else
+#  define WARN_IF_FILE_IS_UNKNOWN(_file) Result<bool, nsresult>(false)
+#endif
+
+
 #ifdef NIGHTLY_BUILD
 #  define REPORT_TELEMETRY_INIT_ERR(_key, _label)   \
     mozilla::Telemetry::AccumulateCategoricalKeyed( \
@@ -184,6 +195,12 @@ class IntCString : public nsAutoCString {
  public:
   explicit IntCString(int64_t aInteger) { AppendInt(aInteger); }
 };
+
+#ifdef DEBUG
+Result<bool, nsresult> WarnIfFileIsUnknown(nsIFile& aFile,
+                                           const char* aSourceFile,
+                                           int32_t aSourceLine);
+#endif
 
 }  
 }  
