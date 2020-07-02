@@ -432,14 +432,10 @@ class MOZ_STACK_CLASS WSRunScanner {
     nsCOMPtr<nsINode> mEndNode;    
     int32_t mStartOffset;          
     int32_t mEndOffset;            
-    
-    WSFragment *mLeft, *mRight;
 
     WSFragment()
         : mStartOffset(0),
           mEndOffset(0),
-          mLeft(nullptr),
-          mRight(nullptr),
           mLeftWSType(WSType::NotInitialized),
           mRightWSType(WSType::NotInitialized),
           mIsVisible(Visible::No),
@@ -555,6 +551,16 @@ class MOZ_STACK_CLASS WSRunScanner {
 
   template <typename PT, typename CT>
   const WSFragment* FindNearestFragment(
+      const EditorDOMPointBase<PT, CT>& aPoint, bool aForward) const {
+    WSFragmentArray::index_type index =
+        FindNearestFragmentIndex(aPoint, aForward);
+    if (index == WSFragmentArray::NoIndex) {
+      return nullptr;
+    }
+    return &mFragments[index];
+  }
+  template <typename PT, typename CT>
+  WSFragmentArray::index_type FindNearestFragmentIndex(
       const EditorDOMPointBase<PT, CT>& aPoint, bool aForward) const;
 
   
