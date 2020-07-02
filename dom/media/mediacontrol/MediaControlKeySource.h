@@ -66,6 +66,24 @@ class MediaControlKeySource {
   virtual void Close();
   virtual bool IsOpened() const = 0;
 
+  
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+  virtual void SetControlledTabBrowsingContextId(
+      Maybe<uint64_t> aTopLevelBrowsingContextId){};
+
   virtual void SetPlaybackState(MediaSessionPlaybackState aState);
   virtual MediaSessionPlaybackState GetPlaybackState() const;
 
