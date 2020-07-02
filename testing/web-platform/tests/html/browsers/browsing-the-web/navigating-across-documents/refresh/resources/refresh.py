@@ -1,4 +1,4 @@
 def main(request, response):
-    response.headers.set("Content-Type", "text/plain")
-    response.headers.set("Refresh", "0;./refreshed.txt?\x80\xFF") 
-    response.content = "Not refreshed.\n"
+    response.headers.set(b"Content-Type", b"text/plain")
+    response.headers.set(b"Refresh", b"0;./refreshed.txt?\x80\xFF") 
+    response.content = u"Not refreshed.\n"
