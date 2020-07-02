@@ -371,10 +371,15 @@ NetworkObserver.prototype = {
       
       
       
-      this._createNetworkEvent(subject, {
-        blockedReason: reason,
-        blockingExtension: id,
-      });
+
+      
+      
+      if (id || reason) {
+        this._createNetworkEvent(subject, {
+          blockedReason: reason,
+          blockingExtension: id,
+        });
+      }
     }
   },
 
