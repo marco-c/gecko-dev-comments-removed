@@ -16,9 +16,9 @@
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/TextureClient.h"   
-#include "AndroidSurfaceTexture.h"
-#include "AndroidNativeWindow.h"
 #ifdef MOZ_WIDGET_ANDROID
+#  include "AndroidSurfaceTexture.h"
+#  include "AndroidNativeWindow.h"
 #  include "mozilla/java/GeckoSurfaceWrappers.h"
 #endif
 

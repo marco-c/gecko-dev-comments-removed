@@ -7,13 +7,16 @@
 #ifndef GFX_GLIMAGES_H
 #define GFX_GLIMAGES_H
 
-#include "AndroidSurfaceTexture.h"
 #include "GLContextTypes.h"
 #include "GLTypes.h"
 #include "ImageContainer.h"     
 #include "ImageTypes.h"         
 #include "nsCOMPtr.h"           
 #include "mozilla/gfx/Point.h"  
+
+#ifdef MOZ_WIDGET_ANDROID
+#  include "AndroidSurfaceTexture.h"
+#endif
 
 namespace mozilla {
 namespace layers {
