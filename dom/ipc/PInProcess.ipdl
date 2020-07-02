@@ -9,7 +9,7 @@ include protocol PWindowGlobal;
 include DOMTypes;
 
 namespace mozilla {
-namespace ipc {
+namespace dom {
 
 
 

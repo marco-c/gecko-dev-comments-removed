@@ -4,20 +4,16 @@
 
 
 
-#ifndef mozilla_ipc_InProcessParent_h
-#define mozilla_ipc_InProcessParent_h
+#ifndef mozilla_dom_InProcessParent_h
+#define mozilla_dom_InProcessParent_h
 
-#include "mozilla/ipc/PInProcessParent.h"
+#include "mozilla/dom/PInProcessParent.h"
 #include "mozilla/StaticPtr.h"
 
 namespace mozilla {
 namespace dom {
 class PWindowGlobalParent;
 class PWindowGlobalChild;
-}  
-
-namespace ipc {
-
 class InProcessChild;
 
 
