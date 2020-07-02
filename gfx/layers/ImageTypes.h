@@ -95,7 +95,7 @@ enum class ImageFormat {
 
 
 
-  WAYLAND_DMABUF,
+  DMABUF,
 };
 
 enum class StereoMode {

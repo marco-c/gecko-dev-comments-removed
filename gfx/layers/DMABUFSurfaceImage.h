@@ -4,27 +4,27 @@
 
 
 
-#ifndef WAYLAND_SURFACE_DMABUF_H
-#define WAYLAND_SURFACE_DMABUF_H
+#ifndef SURFACE_DMABUF_H
+#define SURFACE_DMABUF_H
 
 #include "ImageContainer.h"
-#include "mozilla/widget/WaylandDMABufSurface.h"
+#include "mozilla/widget/DMABufSurface.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/layers/TextureClient.h"
 
 namespace mozilla {
 namespace layers {
 
-class WaylandDMABUFSurfaceImage : public Image {
+class DMABUFSurfaceImage : public Image {
  public:
-  explicit WaylandDMABUFSurfaceImage(WaylandDMABufSurface* aSurface)
-      : Image(nullptr, ImageFormat::WAYLAND_DMABUF), mSurface(aSurface) {
+  explicit DMABUFSurfaceImage(DMABufSurface* aSurface)
+      : Image(nullptr, ImageFormat::DMABUF), mSurface(aSurface) {
     mSurface->GlobalRefAdd();
   }
 
-  ~WaylandDMABUFSurfaceImage() { mSurface->GlobalRefRelease(); }
+  ~DMABUFSurfaceImage() { mSurface->GlobalRefRelease(); }
 
-  WaylandDMABufSurface* GetSurface() { return mSurface; }
+  DMABufSurface* GetSurface() { return mSurface; }
 
   gfx::IntSize GetSize() const override {
     return gfx::IntSize::Truncate(mSurface->GetWidth(), mSurface->GetHeight());
@@ -37,7 +37,7 @@ class WaylandDMABUFSurfaceImage : public Image {
   TextureClient* GetTextureClient(KnowsCompositor* aKnowsCompositor) override;
 
  private:
-  RefPtr<WaylandDMABufSurface> mSurface;
+  RefPtr<DMABufSurface> mSurface;
   RefPtr<TextureClient> mTextureClient;
 };
 

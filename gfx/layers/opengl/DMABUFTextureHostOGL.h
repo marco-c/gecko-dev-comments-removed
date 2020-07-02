@@ -4,14 +4,14 @@
 
 
 
-#ifndef MOZILLA_GFX_WAYLANDDMABUFTEXTUREHOSTOGL_H
-#define MOZILLA_GFX_WAYLANDDMABUFTEXTUREHOSTOGL_H
+#ifndef MOZILLA_GFX_DMABUFTEXTUREHOSTOGL_H
+#define MOZILLA_GFX_DMABUFTEXTUREHOSTOGL_H
 
 #include "mozilla/gfx/2D.h"
 #include "mozilla/layers/CompositorOGL.h"
 #include "mozilla/layers/TextureHostOGL.h"
 
-class WaylandDMABufSurface;
+class DMABufSurface;
 
 namespace mozilla {
 namespace layers {
@@ -19,11 +19,10 @@ namespace layers {
 
 
 
-class WaylandDMABUFTextureHostOGL : public TextureHost {
+class DMABUFTextureHostOGL : public TextureHost {
  public:
-  WaylandDMABUFTextureHostOGL(TextureFlags aFlags,
-                              const SurfaceDescriptor& aDesc);
-  virtual ~WaylandDMABUFTextureHostOGL();
+  DMABUFTextureHostOGL(TextureFlags aFlags, const SurfaceDescriptor& aDesc);
+  virtual ~DMABUFTextureHostOGL();
 
   void SetTextureSourceProvider(TextureSourceProvider* aProvider) override;
 
@@ -47,7 +46,7 @@ class WaylandDMABUFTextureHostOGL : public TextureHost {
   gfx::IntSize GetSize() const override;
 
 #ifdef MOZ_LAYERS_HAVE_LOG
-  const char* Name() override { return "WaylandDMABUFTextureHostOGL"; }
+  const char* Name() override { return "DMABUFTextureHostOGL"; }
 #endif
   uint32_t NumSubTextures() override;
 
@@ -73,7 +72,7 @@ class WaylandDMABUFTextureHostOGL : public TextureHost {
 
  protected:
   RefPtr<GLTextureSource> mTextureSource;
-  RefPtr<WaylandDMABufSurface> mSurface;
+  RefPtr<DMABufSurface> mSurface;
 };
 
 }  
