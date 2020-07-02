@@ -99,6 +99,7 @@ class TargetList {
     
     this.listenForWorkers = false;
     this.listenForServiceWorkers = false;
+    this.destroyServiceWorkersOnNavigation = false;
   }
 
   
