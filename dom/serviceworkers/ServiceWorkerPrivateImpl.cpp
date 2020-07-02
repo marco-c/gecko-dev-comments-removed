@@ -43,7 +43,6 @@
 #include "mozilla/dom/InternalRequest.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/RemoteWorkerControllerChild.h"
-#include "mozilla/dom/RemoteWorkerManager.h"  
 #include "mozilla/dom/ServiceWorkerBinding.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
@@ -187,12 +186,6 @@ nsresult ServiceWorkerPrivateImpl::Initialize() {
     return rv;
   }
 
-  auto remoteType = RemoteWorkerManager::GetRemoteType(
-      principal, WorkerType::WorkerTypeService);
-  if (NS_WARN_IF(remoteType.isErr())) {
-    return remoteType.unwrapErr();
-  }
-
   mRemoteWorkerData = RemoteWorkerData(
       NS_ConvertUTF8toUTF16(mOuter->mInfo->ScriptSpec()), baseScriptURL,
       baseScriptURL,  VoidString(),
@@ -211,8 +204,7 @@ nsresult ServiceWorkerPrivateImpl::Initialize() {
       
        nullptr,
 
-      storageAccess, std::move(serviceWorkerData), regInfo->AgentClusterId(),
-      remoteType.unwrap());
+      storageAccess, std::move(serviceWorkerData), regInfo->AgentClusterId());
 
   mRemoteWorkerData.referrerInfo() = MakeAndAddRef<ReferrerInfo>();
 
