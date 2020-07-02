@@ -54,7 +54,7 @@ typedef struct Dav1dTileContext Dav1dTileContext;
 #include "src/msac.h"
 #include "src/picture.h"
 #include "src/recon.h"
-#include "src/ref_mvs.h"
+#include "src/refmvs.h"
 #include "src/thread.h"
 
 typedef struct Dav1dDSPContext {
@@ -146,7 +146,7 @@ struct Dav1dFrameContext {
     Dav1dPicture cur; 
     Dav1dThreadPicture sr_cur; 
     Dav1dRef *mvs_ref;
-    refmvs *mvs, *ref_mvs[7];
+    refmvs_temporal_block *mvs, *ref_mvs[7];
     Dav1dRef *ref_mvs_ref[7];
     Dav1dRef *cur_segmap_ref, *prev_segmap_ref;
     uint8_t *cur_segmap;
@@ -187,7 +187,7 @@ struct Dav1dFrameContext {
     const uint8_t *qm[2 ][N_RECT_TX_SIZES][3 ];
     BlockContext *a;
     int a_sz ;
-    AV1_COMMON *libaom_cm; 
+    refmvs_frame rf;
     uint8_t jnt_weights[7][7];
     int bitdepth_max;
 
@@ -290,6 +290,7 @@ struct Dav1dTileContext {
     uint16_t al_pal[2 ][32 ][3 ][8 ];
     uint8_t pal_sz_uv[2 ][32 ];
     uint8_t txtp_map[32 * 32]; 
+    refmvs_tile rt;
     ALIGN(union, 64) {
         struct {
             union {

@@ -66,7 +66,10 @@ static unsigned parse_proc_cpuinfo(const char *flag) {
         
         
         if (!strchr(line, '\n') && strlen(line) > strlen(flag)) {
-            if (fseeko(file, -strlen(flag), SEEK_CUR))
+            
+            
+            
+            if (fseek(file, -strlen(flag), SEEK_CUR))
                 break;
         }
     }

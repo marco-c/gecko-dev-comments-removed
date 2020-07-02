@@ -66,8 +66,8 @@ typedef struct Dav1dSettings {
     int all_layers; 
     unsigned frame_size_limit; 
     uint8_t reserved[32]; 
-    Dav1dPicAllocator allocator;
-    Dav1dLogger logger;
+    Dav1dPicAllocator allocator; 
+    Dav1dLogger logger; 
 } Dav1dSettings;
 
 

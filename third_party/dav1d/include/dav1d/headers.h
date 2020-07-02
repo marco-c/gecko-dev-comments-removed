@@ -336,7 +336,8 @@ typedef struct Dav1dFrameHeader {
     enum Dav1dFrameType frame_type; 
     int width[2 ], height;
     int frame_offset; 
-    int temporal_id, spatial_id; 
+    int temporal_id; 
+    int spatial_id; 
 
     int show_existing_frame;
     int existing_frame_idx;

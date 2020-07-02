@@ -31,7 +31,11 @@
 #include "src/cpu.h"
 
 static unsigned flags = 0;
-#if ARCH_X86
+
+#if __has_feature(memory_sanitizer)
+
+static unsigned flags_mask = 0;
+#elif ARCH_X86
 
 static unsigned flags_mask = ~DAV1D_X86_CPU_FLAG_AVX512ICL;
 #else

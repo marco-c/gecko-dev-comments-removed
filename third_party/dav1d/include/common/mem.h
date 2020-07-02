@@ -41,9 +41,9 @@
 
 
 static inline void *dav1d_alloc_aligned(size_t sz, size_t align) {
+    assert(!(align & (align - 1)));
 #ifdef HAVE_POSIX_MEMALIGN
     void *ptr;
-    assert(!(align & (align - 1)));
     if (posix_memalign(&ptr, align, sz)) return NULL;
     return ptr;
 #elif defined(HAVE_ALIGNED_MALLOC)

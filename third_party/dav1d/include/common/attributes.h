@@ -159,4 +159,8 @@ static inline int clzll(const unsigned long long mask) {
 }
 #endif 
 
+#ifndef __has_feature
+#define __has_feature(x) 0
+#endif
+
 #endif 
