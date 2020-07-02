@@ -3860,6 +3860,7 @@ void nsFlexContainerFrame::GenerateFlexLines(
   AddOrRemoveStateBits(NS_STATE_FLEX_NORMAL_FLOW_CHILDREN_IN_CSS_ORDER,
                        iter.ItemsAreAlreadyInOrder());
 
+  bool prevItemRequestedBreakAfter = false;
   const bool useMozBoxCollapseBehavior =
       ShouldUseMozBoxCollapseBehavior(aReflowInput.mStyleDisplay);
 
@@ -3872,9 +3873,12 @@ void nsFlexContainerFrame::GenerateFlexLines(
     }
 
     
+    
     if (!isSingleLine && !curLine->IsEmpty() &&
-        childFrame->StyleDisplay()->BreakBefore()) {
+        (prevItemRequestedBreakAfter ||
+         childFrame->StyleDisplay()->BreakBefore())) {
       curLine = ConstructNewFlexLine();
+      prevItemRequestedBreakAfter = false;
     }
 
     if (useMozBoxCollapseBehavior &&
@@ -3932,9 +3936,9 @@ void nsFlexContainerFrame::GenerateFlexLines(
     curLine->AddLastItemToMainSizeTotals();
 
     
-    if (!isSingleLine && childFrame->GetNextSibling() &&
-        childFrame->StyleDisplay()->BreakAfter()) {
-      curLine = ConstructNewFlexLine();
+    
+    if (!isSingleLine && childFrame->StyleDisplay()->BreakAfter()) {
+      prevItemRequestedBreakAfter = true;
     }
     itemIdxInContainer++;
   }
