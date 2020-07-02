@@ -72,6 +72,27 @@ class LoginManagerPrompter {
     return ChromeUtils.generateQI([Ci.nsILoginManagerPrompter]);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   promptToSavePassword(
     aBrowser,
     aLogin,
@@ -764,6 +785,9 @@ class LoginManagerPrompter {
   }
 
   
+
+  
+
 
   static _updateLogin(login, aNewLogin) {
     var now = Date.now();
