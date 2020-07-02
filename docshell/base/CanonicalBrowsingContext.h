@@ -150,8 +150,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   MediaController* GetMediaController();
 
-  bool AttemptLoadURIInParent(nsDocShellLoadState* aLoadState,
-                              uint64_t* aLoadIdentifier);
+  bool AttemptLoadURIInParent(nsDocShellLoadState* aLoadState);
 
   
   nsISecureBrowserUI* GetSecureBrowserUI();
@@ -225,7 +224,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   
-  void EndDocumentLoad(net::DocumentLoadListener* aLoad);
+  void EndDocumentLoad(bool aForProcessSwitch);
 
   
   

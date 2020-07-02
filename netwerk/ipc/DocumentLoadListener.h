@@ -137,7 +137,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   static bool OpenFromParent(dom::CanonicalBrowsingContext* aBrowsingContext,
                              nsDocShellLoadState* aLoadState,
-                             uint64_t aOuterWindowId, uint64_t* aOutIdent);
+                             uint64_t aOuterWindowId);
 
   
   
@@ -227,6 +227,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                              bool aIsCrossProcess, uint32_t aRedirectFlags,
                              uint32_t aLoadFlags,
                              dom::ContentParent* aParent) const;
+
+  uint64_t GetLoadIdentifier() const { return mLoadIdentifier; }
 
  protected:
   virtual ~DocumentLoadListener();
@@ -439,6 +441,9 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   uint64_t mCrossProcessRedirectIdentifier = 0;
+
+  
+  uint64_t mLoadIdentifier = 0;
 
   
   bool mCancelled = false;

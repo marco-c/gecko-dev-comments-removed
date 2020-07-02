@@ -813,7 +813,7 @@ MediaController* CanonicalBrowsingContext::GetMediaController() {
 }
 
 bool CanonicalBrowsingContext::AttemptLoadURIInParent(
-    nsDocShellLoadState* aLoadState, uint64_t* aLoadIdentifier) {
+    nsDocShellLoadState* aLoadState) {
   
   
   if (!IsTopContent() || !GetContentParent() ||
@@ -866,18 +866,21 @@ bool CanonicalBrowsingContext::AttemptLoadURIInParent(
   
   
   
-  return net::DocumentLoadListener::OpenFromParent(
-      this, aLoadState, outerWindowId, aLoadIdentifier);
+  return net::DocumentLoadListener::OpenFromParent(this, aLoadState,
+                                                   outerWindowId);
 }
 
 void CanonicalBrowsingContext::StartDocumentLoad(
     net::DocumentLoadListener* aLoad) {
   mCurrentLoad = aLoad;
+  SetCurrentLoadIdentifier(Some(aLoad->GetLoadIdentifier()));
 }
-void CanonicalBrowsingContext::EndDocumentLoad(
-    net::DocumentLoadListener* aLoad) {
-  if (mCurrentLoad == aLoad) {
-    mCurrentLoad = nullptr;
+
+void CanonicalBrowsingContext::EndDocumentLoad(bool aForProcessSwitch) {
+  mCurrentLoad = nullptr;
+
+  if (!aForProcessSwitch) {
+    SetCurrentLoadIdentifier(Nothing());
   }
 }
 

@@ -46,8 +46,10 @@ class nsDocShellLoadState final {
   explicit nsDocShellLoadState(
       const mozilla::dom::DocShellLoadStateInit& aLoadState);
   explicit nsDocShellLoadState(const nsDocShellLoadState& aOther);
+  nsDocShellLoadState(nsIURI* aURI, uint64_t aLoadIdentifier);
 
   static nsresult CreateFromPendingChannel(nsIChannel* aPendingChannel,
+                                           uint64_t aLoadIdentifier,
                                            nsDocShellLoadState** aResult);
 
   static nsresult CreateFromLoadURIOptions(
@@ -160,6 +162,12 @@ class nsDocShellLoadState final {
 
   void SetSourceBrowsingContext(BrowsingContext* aSourceBrowsingContext);
 
+  const MaybeDiscarded<BrowsingContext>& TargetBrowsingContext() const {
+    return mTargetBrowsingContext;
+  }
+
+  void SetTargetBrowsingContext(BrowsingContext* aTargetBrowsingContext);
+
   nsIURI* BaseURI() const;
 
   void SetBaseURI(nsIURI* aBaseURI);
@@ -238,8 +246,13 @@ class nsDocShellLoadState final {
     return mCancelContentJSEpoch;
   }
 
-  void SetLoadIdentifier(uint64_t aIdent) { mLoadIdentifier = aIdent; }
   uint64_t GetLoadIdentifier() const { return mLoadIdentifier; }
+
+  void SetChannelInitialized(bool aInitilized) {
+    mChannelInitialized = aInitilized;
+  }
+
+  bool GetChannelInitialized() const { return mChannelInitialized; }
 
   
   
@@ -358,6 +371,10 @@ class nsDocShellLoadState final {
   nsString mTarget;
 
   
+  
+  MaybeDiscarded<BrowsingContext> mTargetBrowsingContext;
+
+  
   nsCOMPtr<nsIInputStream> mPostDataStream;
 
   
@@ -414,8 +431,11 @@ class nsDocShellLoadState final {
   
   
   
+  const uint64_t mLoadIdentifier;
+
   
-  uint64_t mLoadIdentifier;
+  
+  bool mChannelInitialized;
 };
 
 #endif 

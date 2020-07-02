@@ -305,7 +305,7 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvInternalLoad(
   
   
 
-  targetBC->InternalLoad(aLoadState, nullptr, nullptr);
+  targetBC->InternalLoad(aLoadState);
   return IPC_OK();
 }
 

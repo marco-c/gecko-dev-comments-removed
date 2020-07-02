@@ -266,27 +266,11 @@ class nsDocShell final : public nsDocLoader,
 
 
 
+  nsresult OnLinkClickSync(nsIContent* aContent,
+                           nsDocShellLoadState* aLoadState,
+                           bool aNoOpenerImplied,
+                           nsIPrincipal* aTriggeringPrincipal);
 
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult OnLinkClickSync(
-      nsIContent* aContent, nsIURI* aURI, const nsAString& aTargetSpec,
-      const nsAString& aFileName, nsIInputStream* aPostDataStream = nullptr,
-      nsIInputStream* aHeadersDataStream = nullptr,
-      bool aNoOpenerImplied = false, nsIDocShell** aDocShell = nullptr,
-      nsIRequest** aRequest = nullptr, bool aIsUserTriggered = false,
-      nsIPrincipal* aTriggeringPrincipal = nullptr,
-      nsIContentSecurityPolicy* aCsp = nullptr);
   
 
 
@@ -418,8 +402,7 @@ class nsDocShell final : public nsDocLoader,
 
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  nsresult InternalLoad(nsDocShellLoadState* aLoadState,
-                        nsIDocShell** aDocShell, nsIRequest** aRequest);
+  nsresult InternalLoad(nsDocShellLoadState* aLoadState);
 
   
   void MaybeClearStorageAccessFlag();
@@ -632,8 +615,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  nsresult DoURILoad(nsDocShellLoadState* aLoadState, nsIDocShell** aDocShell,
-                     nsIRequest** aRequest);
+  nsresult DoURILoad(nsDocShellLoadState* aLoadState, nsIRequest** aRequest);
 
   static nsresult AddHeadersToChannel(nsIInputStream* aHeadersData,
                                       nsIChannel* aChannel);
@@ -977,8 +959,7 @@ class nsDocShell final : public nsDocLoader,
 
   
   
-  nsresult PerformRetargeting(nsDocShellLoadState* aLoadState,
-                              nsIDocShell** aDocShell, nsIRequest** aRequest);
+  nsresult PerformRetargeting(nsDocShellLoadState* aLoadState);
 
   
   

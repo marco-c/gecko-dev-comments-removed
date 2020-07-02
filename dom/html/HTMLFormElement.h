@@ -10,6 +10,7 @@
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/BrowsingContext.h"
 #include "nsCOMPtr.h"
 #include "nsIForm.h"
 #include "nsIFormControl.h"
@@ -575,6 +576,12 @@ class HTMLFormElement final : public nsGenericHTMLElement,
   nsWeakPtr mWebProgress;
 
   
+  RefPtr<BrowsingContext> mTargetContext;
+  
+
+  Maybe<uint64_t> mCurrentLoadId;
+
+  
   nsGenericHTMLFormElement* mDefaultSubmitElement;
 
   
@@ -620,8 +627,6 @@ class HTMLFormElement final : public nsGenericHTMLElement,
   
   bool mGeneratingReset;
   
-  bool mIsSubmitting;
-  
   bool mDeferSubmission;
   
   bool mNotifiedObservers;
@@ -638,6 +643,8 @@ class HTMLFormElement final : public nsGenericHTMLElement,
   bool mIsFiringSubmissionEvents;
 
  private:
+  bool IsSubmitting() const;
+
   NotNull<const Encoding*> GetSubmitEncoding();
   ~HTMLFormElement();
 };
