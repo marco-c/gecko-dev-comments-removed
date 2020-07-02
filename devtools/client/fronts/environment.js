@@ -17,30 +17,18 @@ const { environmentSpec } = require("devtools/shared/specs/environment");
 
 
 
-
 class EnvironmentFront extends FrontClassWithSpec(environmentSpec) {
-  constructor(client, form) {
-    super(client, form);
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
     this._client = client;
-    if (form) {
-      this._form = form;
-      this.actorID = form.actor;
-      this.manage(this);
-    }
   }
 
   get actor() {
-    return this._form.actor;
+    return this.actorID;
   }
+
   get _transport() {
     return this._client._transport;
-  }
-
-  
-
-
-  getBindings() {
-    return super.bindings();
   }
 }
 
