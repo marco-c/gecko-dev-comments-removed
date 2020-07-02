@@ -21,23 +21,15 @@ def _get_crate_name(crate_path):
 
 
 CARGO_LOCK = mozpath.join(buildconfig.topsrcdir, "Cargo.lock")
+CARGO_TOML = mozpath.join(buildconfig.topsrcdir, "Cargo.toml")
 
 
-def _generate(output, cbindgen_crate_path, metadata_crate_path,
-              in_tree_dependencies):
+def _run_process(args):
     env = os.environ.copy()
     env['CARGO'] = str(buildconfig.substs['CARGO'])
     env['RUSTC'] = str(buildconfig.substs['RUSTC'])
 
-    p = subprocess.Popen([
-        buildconfig.substs['CBINDGEN'],
-        metadata_crate_path,
-        "--lockfile",
-        CARGO_LOCK,
-        "--crate",
-        _get_crate_name(cbindgen_crate_path),
-        "--cpp-compat"
-    ], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(args, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     stdout, stderr = p.communicate()
     stdout = six.ensure_text(stdout)
@@ -45,7 +37,45 @@ def _generate(output, cbindgen_crate_path, metadata_crate_path,
     if p.returncode != 0:
         print(stdout)
         print(stderr)
-        return p.returncode
+    return (stdout, p.returncode)
+
+
+def generate_metadata(output, cargo_config):
+    stdout, returncode = _run_process([
+        buildconfig.substs['CARGO'],
+        "metadata",
+        "--all-features",
+        "--format-version",
+        "1",
+        "--manifest-path",
+        CARGO_TOML
+    ])
+
+    if returncode != 0:
+        return returncode
+
+    output.write(stdout)
+
+    
+    
+    return set([CARGO_LOCK, CARGO_TOML])
+
+
+def generate(output, metadata_path, cbindgen_crate_path, *in_tree_dependencies):
+    stdout, returncode = _run_process([
+        buildconfig.substs['CBINDGEN'],
+        buildconfig.topsrcdir,
+        "--lockfile",
+        CARGO_LOCK,
+        "--crate",
+        _get_crate_name(cbindgen_crate_path),
+        "--metadata",
+        metadata_path,
+        "--cpp-compat"
+    ])
+
+    if returncode != 0:
+        return returncode
 
     output.write(stdout)
 
@@ -59,22 +89,3 @@ def _generate(output, cbindgen_crate_path, metadata_crate_path,
                     deps.add(mozpath.join(path, file))
 
     return deps
-
-
-def generate(output, cbindgen_crate_path, *in_tree_dependencies):
-    metadata_crate_path = mozpath.join(buildconfig.topsrcdir,
-                                       "toolkit", "library", "rust")
-    return _generate(output, cbindgen_crate_path, metadata_crate_path,
-                     in_tree_dependencies)
-
-
-
-
-
-
-
-
-def generate_with_same_crate(output, cbindgen_crate_path,
-                             *in_tree_dependencies):
-    return _generate(output, cbindgen_crate_path, cbindgen_crate_path,
-                     in_tree_dependencies)
