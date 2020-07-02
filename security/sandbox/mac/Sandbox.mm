@@ -1,13 +1,13 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// The Mac sandbox module is a static library (a Library in moz.build terms)
-// that can be linked into any binary (for example plugin-container or XUL).
-// It must not have dependencies on any other Mozilla module.  This is why,
-// for example, it has its own OS X version detection code, rather than
-// linking to nsCocoaFeatures.mm in XUL.
+
+
+
+
+
+
+
+
+
 
 #include "Sandbox.h"
 
@@ -25,46 +25,46 @@
 #include "SandboxPolicyUtility.h"
 #include "SandboxPolicySocket.h"
 
-// XXX There are currently problems with the /usr/include/sandbox.h file on
-// some/all of the Macs in Mozilla's build system. Further,
-// sandbox_init_with_parameters is not included in the header.  For the time
-// being (until this problem is resolved), we refer directly to what we need
-// from it, rather than including it here.
-extern "C" int sandbox_init(const char* profile, uint64_t flags, char** errorbuf);
+
 extern "C" int sandbox_init_with_parameters(const char* profile, uint64_t flags,
                                             const char* const parameters[], char** errorbuf);
 extern "C" void sandbox_free_error(char* errorbuf);
 extern "C" int sandbox_check(pid_t pid, const char* operation, int type, ...);
 
-#define MAC_OS_X_VERSION_10_0_HEX 0x00001000
-#define MAC_OS_X_VERSION_10_6_HEX 0x00001060
-#define MAC_OS_X_VERSION_10_7_HEX 0x00001070
-#define MAC_OS_X_VERSION_10_8_HEX 0x00001080
-#define MAC_OS_X_VERSION_10_9_HEX 0x00001090
-#define MAC_OS_X_VERSION_10_10_HEX 0x000010A0
 
-// Note about "major", "minor" and "bugfix" in the following code:
-//
-// The code decomposes an OS X version number into these components, and in
-// doing so follows Apple's terminology in Gestalt.h.  But this is very
-// misleading, because in other contexts Apple uses the "minor" component of
-// an OS X version number to indicate a "major" release (for example the "9"
-// in OS X 10.9.5), and the "bugfix" component to indicate a "minor" release
-// (for example the "5" in OS X 10.9.5).
+
+
+
+
+
+
 
 class OSXVersion {
  public:
-  static int32_t OSXVersionMinor();
+  static void Get(int32_t& aMajor, int32_t& aMinor);
 
  private:
   static void GetSystemVersion(int32_t& aMajor, int32_t& aMinor, int32_t& aBugFix);
-  static int32_t GetVersionNumber();
-  static int32_t mOSXVersion;
+  static bool mCached;
+  static int32_t mOSXVersionMajor;
+  static int32_t mOSXVersionMinor;
 };
 
-int32_t OSXVersion::mOSXVersion = -1;
+bool OSXVersion::mCached = false;
+int32_t OSXVersion::mOSXVersionMajor;
+int32_t OSXVersion::mOSXVersionMinor;
 
-int32_t OSXVersion::OSXVersionMinor() { return (GetVersionNumber() & 0xF0) >> 4; }
+void OSXVersion::Get(int32_t& aMajor, int32_t& aMinor) {
+  if (!mCached) {
+    int32_t major, minor, bugfix;
+    GetSystemVersion(major, minor, bugfix);
+    mOSXVersionMajor = major;
+    mOSXVersionMinor = minor;
+    mCached = true;
+  }
+  aMajor = mOSXVersionMajor;
+  aMinor = mOSXVersionMinor;
+}
 
 void OSXVersion::GetSystemVersion(int32_t& aMajor, int32_t& aMinor, int32_t& aBugFix) {
   SInt32 major = 0, minor = 0, bugfix = 0;
@@ -99,8 +99,8 @@ void OSXVersion::GetSystemVersion(int32_t& aMajor, int32_t& aMinor, int32_t& aBu
   CFRelease(sysVersionPlist);
   CFRelease(versions);
 
-  // If 'major' isn't what we expect, assume the oldest version of OS X we
-  // currently support (OS X 10.6).
+  
+  
   if (major != 10) {
     aMajor = 10;
     aMinor = 6;
@@ -110,15 +110,6 @@ void OSXVersion::GetSystemVersion(int32_t& aMajor, int32_t& aMinor, int32_t& aBu
     aMinor = minor;
     aBugFix = bugfix;
   }
-}
-
-int32_t OSXVersion::GetVersionNumber() {
-  if (mOSXVersion == -1) {
-    int32_t major, minor, bugfix;
-    GetSystemVersion(major, minor, bugfix);
-    mOSXVersion = MAC_OS_X_VERSION_10_0_HEX + (minor << 4) + bugfix;
-  }
-  return mOSXVersion;
 }
 
 bool GetRealPath(std::string& aOutputPath, const char* aInputPath) {
@@ -157,8 +148,8 @@ void MacSandboxInfo::AppendAsParams(std::vector<std::string>& aParams) const {
       this->AppendReadPathParams(aParams);
       break;
     default:
-      // Before supporting a new process type, add a case statement
-      // here to append any neccesary process-type-specific params.
+      
+      
       MOZ_RELEASE_ASSERT(false);
       break;
   }
@@ -184,7 +175,7 @@ void MacSandboxInfo::AppendPluginPathParam(std::vector<std::string>& aParams) co
   aParams.push_back(this->pluginPath);
 }
 
-/* static */
+
 void MacSandboxInfo::AppendFileAccessParam(std::vector<std::string>& aParams,
                                            bool aHasFilePrivileges) {
   if (aHasFilePrivileges) {
@@ -245,10 +236,16 @@ namespace mozilla {
 bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
   std::vector<const char*> params;
   std::string profile;
-  std::string macOSMinor = std::to_string(OSXVersion::OSXVersionMinor());
 
-  // Used for the Flash sandbox. Declared here so that they
-  // stay in scope until sandbox_init_with_parameters is called.
+  
+  
+  int32_t major = 0, minor = 0;
+  OSXVersion::Get(major, minor);
+  MOZ_ASSERT(minor >= 0 && minor < 100);
+  std::string combinedVersion = std::to_string((major * 100) + minor);
+
+  
+  
   std::string flashCacheDir, flashTempDir, flashPath;
 
   if (aInfo.type == MacSandboxType_Flash) {
@@ -262,8 +259,8 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
     params.push_back("SANDBOX_LEVEL_2");
     params.push_back(aInfo.level == 2 ? "TRUE" : "FALSE");
 
-    params.push_back("MAC_OS_MINOR");
-    params.push_back(macOSMinor.c_str());
+    params.push_back("MAC_OS_VERSION");
+    params.push_back(combinedVersion.c_str());
 
     params.push_back("HOME_PATH");
     params.push_back(getenv("HOME"));
@@ -274,7 +271,7 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
     }
     params.push_back(flashPath.c_str());
 
-    // User cache dir
+    
     params.push_back("DARWIN_USER_CACHE_DIR");
     char confStrBuf[PATH_MAX];
     if (!confstr(_CS_DARWIN_USER_CACHE_DIR, confStrBuf, sizeof(confStrBuf))) {
@@ -285,7 +282,7 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
     }
     params.push_back(flashCacheDir.c_str());
 
-    // User temp dir
+    
     params.push_back("DARWIN_USER_TEMP_DIR");
     if (!confstr(_CS_DARWIN_USER_TEMP_DIR, confStrBuf, sizeof(confStrBuf))) {
       return false;
@@ -354,8 +351,8 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
       params.push_back(aInfo.level == 2 ? "TRUE" : "FALSE");
       params.push_back("SANDBOX_LEVEL_3");
       params.push_back(aInfo.level == 3 ? "TRUE" : "FALSE");
-      params.push_back("MAC_OS_MINOR");
-      params.push_back(macOSMinor.c_str());
+      params.push_back("MAC_OS_VERSION");
+      params.push_back(combinedVersion.c_str());
       params.push_back("APP_PATH");
       params.push_back(aInfo.appPath.c_str());
       params.push_back("PROFILE_DIR");
@@ -391,7 +388,7 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
         params.push_back("DEBUG_WRITE_DIR");
         params.push_back(aInfo.debugWriteDir.c_str());
       }
-#endif  // DEBUG
+#endif  
 
       if (aInfo.hasFilePrivileges) {
         profile.append(SandboxPolicyContentFileAddend);
@@ -418,10 +415,10 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
     return false;
   }
 
-// In order to avoid relying on any other Mozilla modules (as described at the
-// top of this file), we use our own #define instead of the existing MOZ_LOG
-// infrastructure. This can be used by developers to debug the macOS sandbox
-// policy.
+
+
+
+
 #define MAC_SANDBOX_PRINT_POLICY 0
 #if MAC_SANDBOX_PRINT_POLICY
   printf("Sandbox params for PID %d:\n", getpid());
@@ -431,7 +428,7 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
   printf("Sandbox profile:\n%s\n", profile.c_str());
 #endif
 
-  // The parameters array is null terminated.
+  
   params.push_back(nullptr);
 
   char* errorbuf = NULL;
@@ -455,23 +452,23 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
   return true;
 }
 
-/*
- * Fill |aInfo| with content sandbox params parsed from the provided
- * command line arguments. Return false if any sandbox parameters needed
- * for early startup of the sandbox are not present in the arguments.
- */
+
+
+
+
+
 bool GetContentSandboxParamsFromArgs(int aArgc, char** aArgv, MacSandboxInfo& aInfo) {
-  // Ensure we find these paramaters in the command
-  // line arguments. Return false if any are missing.
+  
+  
   bool foundSandboxLevel = false;
   bool foundValidSandboxLevel = false;
   bool foundAppPath = false;
 
-  // Read access directories used in testing
+  
   int nTestingReadPaths = 0;
   std::string testingReadPaths[MAX_CONTENT_TESTING_READ_PATHS] = {};
 
-  // Collect sandbox params from CLI arguments
+  
   for (int i = 0; i < aArgc; i++) {
     if ((strcmp(aArgv[i], "-sbLevel") == 0) && (i + 1 < aArgc)) {
       std::stringstream ss(aArgv[i + 1]);
@@ -537,9 +534,9 @@ bool GetContentSandboxParamsFromArgs(int aArgc, char** aArgv, MacSandboxInfo& aI
       i++;
       continue;
     }
-#endif  // DEBUG
+#endif  
 
-    // Handle crash server positional argument
+    
     if (strstr(aArgv[i], "gecko-crash-server-pipe") != NULL) {
       aInfo.crashServerPort.assign(aArgv[i]);
       continue;
@@ -575,11 +572,11 @@ bool GetContentSandboxParamsFromArgs(int aArgc, char** aArgv, MacSandboxInfo& aI
 }
 
 bool GetUtilitySandboxParamsFromArgs(int aArgc, char** aArgv, MacSandboxInfo& aInfo) {
-  // Ensure we find these paramaters in the command
-  // line arguments. Return false if any are missing.
+  
+  
   bool foundAppPath = false;
 
-  // Collect sandbox params from CLI arguments
+  
   for (int i = 0; i < aArgc; i++) {
     if (strcmp(aArgv[i], "-sbLogging") == 0) {
       aInfo.shouldLog = true;
@@ -593,7 +590,7 @@ bool GetUtilitySandboxParamsFromArgs(int aArgc, char** aArgv, MacSandboxInfo& aI
       continue;
     }
 
-    // Handle crash server positional argument
+    
     if (strstr(aArgv[i], "gecko-crash-server-pipe") != NULL) {
       aInfo.crashServerPort.assign(aArgv[i]);
       continue;
@@ -614,16 +611,16 @@ bool GetSocketSandboxParamsFromArgs(int aArgc, char** aArgv, MacSandboxInfo& aIn
 }
 
 bool GetPluginSandboxParamsFromArgs(int aArgc, char** aArgv, MacSandboxInfo& aInfo) {
-  // Ensure we find these paramaters in the command
-  // line arguments. Return false if any are missing.
+  
+  
   bool foundAppPath = false;
   bool foundPluginPath = false;
 
-  // Read access directories used in testing
+  
   int nTestingReadPaths = 0;
   std::string testingReadPaths[MAX_GMP_TESTING_READ_PATHS] = {};
 
-  // Collect sandbox params from CLI arguments
+  
   for (int i = 0; i < aArgc; i++) {
     if (strcmp(aArgv[i], "-sbLogging") == 0) {
       aInfo.shouldLog = true;
@@ -659,7 +656,7 @@ bool GetPluginSandboxParamsFromArgs(int aArgc, char** aArgv, MacSandboxInfo& aIn
       continue;
     }
 
-    // Handle crash server positional argument
+    
     if (strstr(aArgv[i], "gecko-crash-server-pipe") != NULL) {
       aInfo.crashServerPort.assign(aArgv[i]);
       continue;
@@ -684,16 +681,16 @@ bool GetPluginSandboxParamsFromArgs(int aArgc, char** aArgv, MacSandboxInfo& aIn
   return true;
 }
 
-/*
- * Returns true if no errors were encountered or if early sandbox startup is
- * not enabled for this process. Returns false if an error was encountered.
- */
+
+
+
+
 bool StartMacSandboxIfEnabled(const MacSandboxType aSandboxType, int aArgc, char** aArgv,
                               std::string& aErrorMessage) {
   bool earlyStartupEnabled = false;
 
-  // Check for the -sbStartup CLI parameter which
-  // indicates we should start the sandbox now.
+  
+  
   for (int i = 0; i < aArgc; i++) {
     if (strcmp(aArgv[i], "-sbStartup") == 0) {
       earlyStartupEnabled = true;
@@ -701,9 +698,9 @@ bool StartMacSandboxIfEnabled(const MacSandboxType aSandboxType, int aArgc, char
     }
   }
 
-  // The sandbox will be started later when/if parent
-  // sends the sandbox startup message. Return true
-  // indicating no errors occurred.
+  
+  
+  
   if (!earlyStartupEnabled) {
     return true;
   }
@@ -711,8 +708,8 @@ bool StartMacSandboxIfEnabled(const MacSandboxType aSandboxType, int aArgc, char
   MacSandboxInfo info;
   info.type = aSandboxType;
 
-  // For now, early start is only implemented
-  // for content and utility sandbox types.
+  
+  
   switch (aSandboxType) {
     case MacSandboxType_Content:
       if (!GetContentSandboxParamsFromArgs(aArgc, aArgv, info)) {
@@ -745,8 +742,8 @@ bool StartMacSandboxIfEnabled(const MacSandboxType aSandboxType, int aArgc, char
 bool IsMacSandboxStarted() { return sandbox_check(getpid(), NULL, 0) == 1; }
 
 #ifdef DEBUG
-// sandbox_check returns 1 if the specified process is sandboxed
-void AssertMacSandboxEnabled() { MOZ_ASSERT(sandbox_check(getpid(), NULL, 0) == 1); }
-#endif /* DEBUG */
 
-}  // namespace mozilla
+void AssertMacSandboxEnabled() { MOZ_ASSERT(sandbox_check(getpid(), NULL, 0) == 1); }
+#endif 
+
+}  
