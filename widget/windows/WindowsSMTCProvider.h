@@ -22,6 +22,7 @@ using SMTCProperty = ABI::Windows::Media::SystemMediaTransportControlsProperty;
 using ISMTCDisplayUpdater =
     ABI::Windows::Media::ISystemMediaTransportControlsDisplayUpdater;
 
+using ABI::Windows::Foundation::IAsyncOperation;
 using ABI::Windows::Storage::Streams::IDataWriter;
 using ABI::Windows::Storage::Streams::IRandomAccessStream;
 using ABI::Windows::Storage::Streams::IRandomAccessStreamReference;
@@ -93,6 +94,9 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
   bool SetThumbnail();
   void ClearThumbnail();
 
+  nsresult UpdateThumbnailOnMainThread(const nsAString& aUrl);
+  void CancelPendingStoreAsyncOperation() const;
+
   bool mInitialized = false;
   ComPtr<ISMTC> mControls;
   ComPtr<ISMTCDisplayUpdater> mDisplay;
@@ -103,8 +107,17 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
   ComPtr<IDataWriter> mImageDataWriter;
   ComPtr<IRandomAccessStream> mImageStream;
   ComPtr<IRandomAccessStreamReference> mImageStreamReference;
+  ComPtr<IAsyncOperation<unsigned int>> mStoreAsyncOperation;
+
   
-  nsString mImageSrc;
+  
+  
+  
+  
+  
+  
+  nsString mThumbnailUrl;
+  nsString mProcessingUrl;
 
   
   CopyableTArray<mozilla::dom::MediaImage> mArtwork;
