@@ -828,35 +828,37 @@ void WSRunScanner::InitializeRangeStart(
       mStartOffset = start.Offset();
       mStartReason = WSType::OtherBlockBoundary;
       mStartReasonContent = previousLeafContentOrBlock;
-    } else if (previousLeafContentOrBlock->IsText() &&
-               previousLeafContentOrBlock->IsEditable()) {
-      if (!previousLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
-        
-        
-        start.Set(previousLeafContentOrBlock->AsText(), 0);
-        continue;
-      }
+      return;
+    }
 
-      if (InitializeRangeStartWithTextNode(EditorDOMPointInText::AtEndOf(
-              *previousLeafContentOrBlock->AsText()))) {
-        return;
-      }
-
-      
-      
-      start.Set(previousLeafContentOrBlock->AsText(), 0);
-    } else {
+    if (!previousLeafContentOrBlock->IsText() ||
+        !previousLeafContentOrBlock->IsEditable()) {
       
       
       mStartNode = start.GetContainer();
       mStartOffset = start.Offset();
-      if (previousLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)) {
-        mStartReason = WSType::BRElement;
-      } else {
-        mStartReason = WSType::SpecialContent;
-      }
+      mStartReason = previousLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)
+                         ? WSType::BRElement
+                         : WSType::SpecialContent;
       mStartReasonContent = previousLeafContentOrBlock;
+      return;
     }
+
+    if (!previousLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
+      
+      
+      start.Set(previousLeafContentOrBlock->AsText(), 0);
+      continue;
+    }
+
+    if (InitializeRangeStartWithTextNode(EditorDOMPointInText::AtEndOf(
+            *previousLeafContentOrBlock->AsText()))) {
+      return;
+    }
+
+    
+    
+    start.Set(previousLeafContentOrBlock->AsText(), 0);
   }
 }
 
@@ -932,36 +934,38 @@ void WSRunScanner::InitializeRangeEnd(
       mEndOffset = end.Offset();
       mEndReason = WSType::OtherBlockBoundary;
       mEndReasonContent = nextLeafContentOrBlock;
-    } else if (nextLeafContentOrBlock->IsText() &&
-               nextLeafContentOrBlock->IsEditable()) {
-      if (!nextLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
-        
-        
-        end.Set(nextLeafContentOrBlock->AsText(), 0);
-        continue;
-      }
+      return;
+    }
 
-      if (InitializeRangeEndWithTextNode(
-              EditorDOMPointInText(nextLeafContentOrBlock->AsText(), 0))) {
-        return;
-      }
-
-      
-      
-      end.SetToEndOf(nextLeafContentOrBlock->AsText());
-    } else {
+    if (!nextLeafContentOrBlock->IsText() ||
+        !nextLeafContentOrBlock->IsEditable()) {
       
       
       
       mEndNode = end.GetContainer();
       mEndOffset = end.Offset();
-      if (nextLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)) {
-        mEndReason = WSType::BRElement;
-      } else {
-        mEndReason = WSType::SpecialContent;
-      }
+      mEndReason = nextLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)
+                       ? WSType::BRElement
+                       : WSType::SpecialContent;
       mEndReasonContent = nextLeafContentOrBlock;
+      return;
     }
+
+    if (!nextLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
+      
+      
+      end.Set(nextLeafContentOrBlock->AsText(), 0);
+      continue;
+    }
+
+    if (InitializeRangeEndWithTextNode(
+            EditorDOMPointInText(nextLeafContentOrBlock->AsText(), 0))) {
+      return;
+    }
+
+    
+    
+    end.SetToEndOf(nextLeafContentOrBlock->AsText());
   }
 }
 
