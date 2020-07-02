@@ -216,16 +216,16 @@ add_task(async function navigate_around() {
       
       
       whitelist["security.sandbox.content.write_path_whitelist"] = {
-        min: 50,
-        max: 51,
+        min: 49,
+        max: 55,
       };
       whitelist["security.sandbox.content.read_path_whitelist"] = {
-        min: 50,
-        max: 51,
+        min: 49,
+        max: 55,
       };
       whitelist["security.sandbox.content.force-namespace"] = {
-        min: 50,
-        max: 51,
+        min: 49,
+        max: 55,
       };
     } else if (AppConstants.platform == "win") {
       
@@ -241,12 +241,12 @@ add_task(async function navigate_around() {
       
       
       whitelist["security.sandbox.content.read_path_whitelist"] = {
-        min: 50,
-        max: 51,
+        min: 49,
+        max: 55,
       };
       whitelist["security.sandbox.logging.enabled"] = {
-        min: 50,
-        max: 51,
+        min: 49,
+        max: 55,
       };
     }
   }
