@@ -32,7 +32,8 @@ void PlatformShutdown() {}
 
 void ProxyCreated(ProxyAccessible* aProxy, uint32_t) {
   ProxyAccessible* parent = aProxy->Parent();
-  if (parent && nsAccUtils::MustPrune(parent)) {
+  if ((parent && nsAccUtils::MustPrune(parent)) || aProxy->Role() == roles::WHITESPACE) {
+    
     
     
     
@@ -43,14 +44,15 @@ void ProxyCreated(ProxyAccessible* aProxy, uint32_t) {
   
   
   Class type;
-  if (aProxy->IsTable())
+  if (aProxy->IsTable()) {
     type = [mozTableAccessible class];
-  else if (aProxy->IsTableRow())
+  } else if (aProxy->IsTableRow()) {
     type = [mozTableRowAccessible class];
-  else if (aProxy->IsTableCell())
+  } else if (aProxy->IsTableCell()) {
     type = [mozTableCellAccessible class];
-  else
+  } else {
     type = GetTypeFromRole(aProxy->Role());
+  }
 
   mozAccessible* mozWrapper = [[type alloc] initWithAccessible:aProxy];
   aProxy->SetWrapper(reinterpret_cast<uintptr_t>(mozWrapper));

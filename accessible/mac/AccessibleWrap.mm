@@ -44,7 +44,7 @@ mozAccessible* AccessibleWrap::GetNativeObject() {
     
     Accessible* parent = Parent();
     bool mustBePruned = parent && nsAccUtils::MustPrune(parent);
-    if (!IsXULTooltip() && !IsDefunct() && !mustBePruned) {
+    if (!IsXULTooltip() && !IsDefunct() && !mustBePruned && Role() != roles::WHITESPACE) {
       mNativeObject = [[GetNativeType() alloc] initWithAccessible:this];
     }
   }
