@@ -3900,7 +3900,9 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
   
   if (aOp == TextDrawOperation::MEASURE) {
     aError = NS_OK;
-    double actualBoundingBoxLeft = processor.mBoundingBox.X() - offsetX;
+    
+    
+    double actualBoundingBoxLeft = offsetX - processor.mBoundingBox.X();
     double actualBoundingBoxRight = processor.mBoundingBox.XMost() - offsetX;
     double actualBoundingBoxAscent =
         -processor.mBoundingBox.Y() - baselineAnchor;
