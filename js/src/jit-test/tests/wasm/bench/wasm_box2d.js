@@ -3049,7 +3049,9 @@ drainJobQueue();
 
 const bytecode = os.file.readFile(scriptdir + 'wasm_box2d.wasm', 'binary');
 
-setBufferStreamParams( 1,  1000);
+if (typeof setBufferStreamParams == 'function') {
+    setBufferStreamParams( 1,  1000);
+}
 const cacheEntry = streamCacheEntry(bytecode);
 
 runBox2d(cacheEntry);

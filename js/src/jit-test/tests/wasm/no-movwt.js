@@ -1,3 +1,5 @@
+
+
 setARMHwCapFlags('vfp');
 
 if (typeof WebAssembly !== "undefined") {

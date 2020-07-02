@@ -1,6 +1,8 @@
 
 
 
+
+
 var module = new WebAssembly.Module(wasmTextToBinary(`(module
   (import "env" "v_v" (func $vv))
   (export "v_v" (func $vv))
