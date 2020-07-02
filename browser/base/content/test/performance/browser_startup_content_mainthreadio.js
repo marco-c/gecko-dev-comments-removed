@@ -61,6 +61,11 @@ const MAC = AppConstants.platform == "macosx";
 
 
 
+
+
+
+
+
 const processes = {
   "Web Content": [
     {
@@ -146,7 +151,7 @@ const processes = {
   ],
 };
 
-function expandWhitelistPath(path) {
+function expandPathWithDirServiceKey(path) {
   if (path.includes(":")) {
     let [prefix, suffix] = path.split(":");
     let [key, property] = prefix.split(".");
@@ -275,17 +280,18 @@ add_task(async function() {
       entry => !("condition" in entry) || entry.condition
     );
     processes[process].forEach(entry => {
-      entry.path = expandWhitelistPath(entry.path, entry.canonicalize);
+      entry.listedPath = entry.path;
+      entry.path = expandPathWithDirServiceKey(entry.path, entry.canonicalize);
     });
   }
 
-  let tmpPath = expandWhitelistPath("TmpD:").toLowerCase();
+  let tmpPath = expandPathWithDirServiceKey("TmpD:").toLowerCase();
   let shouldPass = true;
   for (let procName in processes) {
-    let whitelist = processes[procName];
+    let knownIOList = processes[procName];
     info(
-      `whitelisted paths for ${procName} process:\n` +
-        whitelist
+      `known main thread IO paths for ${procName} process:\n` +
+        knownIOList
           .map(e => {
             let operations = Object.keys(e)
               .filter(k => !["path", "condition"].includes(k))
@@ -352,7 +358,7 @@ add_task(async function() {
       }
 
       let expected = false;
-      for (let entry of whitelist) {
+      for (let entry of knownIOList) {
         if (pathMatches(entry.path, filename)) {
           entry[marker.operation] = (entry[marker.operation] || 0) - 1;
           entry._used = true;
@@ -379,7 +385,7 @@ add_task(async function() {
       }
     }
 
-    if (!whitelist.length) {
+    if (!knownIOList.length) {
       continue;
     }
     
@@ -394,12 +400,21 @@ add_task(async function() {
     if (!markers.length) {
       
       
+      
       continue;
     }
 
-    for (let entry of whitelist) {
+    for (let entry of knownIOList) {
       for (let op in entry) {
-        if (["path", "condition", "ignoreIfUnused", "_used"].includes(op)) {
+        if (
+          [
+            "listedPath",
+            "path",
+            "condition",
+            "ignoreIfUnused",
+            "_used",
+          ].includes(op)
+        ) {
           continue;
         }
         let message = `${op} on ${entry.path} `;
@@ -413,7 +428,10 @@ add_task(async function() {
         ok(entry[op] >= 0, `${message} in ${procName} process`);
       }
       if (!("_used" in entry) && !entry.ignoreIfUnused) {
-        ok(false, `unused whitelist entry ${procName}: ${entry.path}`);
+        ok(
+          false,
+          `no main thread IO when we expected some for process ${procName}: ${entry.path} (${entry.listedPath})`
+        );
         shouldPass = false;
       }
     }

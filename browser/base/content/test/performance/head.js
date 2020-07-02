@@ -194,7 +194,7 @@ function reportUnexpectedReflows(reflows, expectedReflows = []) {
         `Unused expected reflow at ${firstFrame}:\nStack:\n` +
           reflow.stack.map(frame => "  " + frame).join("\n") +
           "\n" +
-          "This is probably a good thing - just remove it from the whitelist."
+          "This is probably a good thing - just remove it from the list of reflows."
       );
     } else {
       if (reflow.count > reflow.maxCount) {

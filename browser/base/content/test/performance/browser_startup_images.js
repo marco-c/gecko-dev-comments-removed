@@ -20,7 +20,16 @@
 
 
 
-const whitelist = [
+
+
+
+
+
+
+
+
+
+const knownUnshownImages = [
   {
     file: "chrome://global/skin/icons/arrow-left.svg",
     platforms: ["linux", "win", "macosx"],
@@ -74,7 +83,7 @@ add_task(async function() {
   await startupRecorder.done;
 
   let data = Cu.cloneInto(startupRecorder.data.images, {});
-  let filteredWhitelist = whitelist.filter(el => {
+  let knownImagesForPlatform = knownUnshownImages.filter(el => {
     return el.platforms.includes(AppConstants.platform);
   });
 
@@ -82,20 +91,20 @@ add_task(async function() {
   let shownImages = data["image-drawing"];
 
   for (let loaded of loadedImages.values()) {
-    let whitelistItem = filteredWhitelist.find(el => {
+    let knownImage = knownImagesForPlatform.find(el => {
       if (window.devicePixelRatio >= 2 && el.hidpi && el.hidpi == loaded) {
         return true;
       }
       return el.file == loaded;
     });
-    if (whitelistItem) {
+    if (knownImage) {
       if (
-        !whitelistItem.intermittentShown ||
-        !whitelistItem.intermittentShown.includes(AppConstants.platform)
+        !knownImage.intermittentShown ||
+        !knownImage.intermittentShown.includes(AppConstants.platform)
       ) {
         todo(
           shownImages.has(loaded),
-          `Whitelisted image ${loaded} should not have been shown.`
+          `Image ${loaded} should not have been shown.`
         );
       }
       continue;
@@ -107,7 +116,7 @@ add_task(async function() {
   }
 
   
-  for (let item of filteredWhitelist) {
+  for (let item of knownImagesForPlatform) {
     if (
       !item.intermittentNotLoaded ||
       !item.intermittentNotLoaded.includes(AppConstants.platform)
@@ -116,13 +125,13 @@ add_task(async function() {
         if (item.hidpi != "<not loaded>") {
           ok(
             loadedImages.has(item.hidpi),
-            `Whitelisted image ${item.hidpi} should have been loaded.`
+            `Image ${item.hidpi} should have been loaded.`
           );
         }
       } else {
         ok(
           loadedImages.has(item.file),
-          `Whitelisted image ${item.file} should have been loaded.`
+          `Image ${item.file} should have been loaded.`
         );
       }
     }

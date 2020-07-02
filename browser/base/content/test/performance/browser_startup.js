@@ -26,7 +26,7 @@ const startupPhases = {
   
   
   "before profile selection": {
-    whitelist: {
+    allowlist: {
       modules: new Set([
         "resource:///modules/BrowserGlue.jsm",
         "resource://gre/modules/AppConstants.jsm",
@@ -41,10 +41,12 @@ const startupPhases = {
   },
 
   
+  
+  
 
   
   "before opening first browser window": {
-    blacklist: {
+    denylist: {
       modules: new Set([]),
     },
   },
@@ -53,7 +55,7 @@ const startupPhases = {
   
   
   "before first paint": {
-    blacklist: {
+    denylist: {
       components: new Set(["nsSearchService.js"]),
       modules: new Set([
         "chrome://webcompat/content/data/ua_overrides.jsm",
@@ -77,7 +79,7 @@ const startupPhases = {
   
   
   "before handling user events": {
-    blacklist: {
+    denylist: {
       components: new Set([
         "PageIconProtocolHandler.js",
         "PlacesCategoriesStarter.js",
@@ -108,7 +110,7 @@ const startupPhases = {
   
   
   "before becoming idle": {
-    blacklist: {
+    denylist: {
       components: new Set(["UnifiedComplete.js"]),
       modules: new Set([
         "resource://gre/modules/AsyncPrefs.jsm",
@@ -126,32 +128,9 @@ if (
     "default-theme@mozilla.org"
   ) == "default-theme@mozilla.org"
 ) {
-  startupPhases["before profile selection"].whitelist.modules.add(
+  startupPhases["before profile selection"].allowlist.modules.add(
     "resource://gre/modules/XULStore.jsm"
   );
-}
-
-if (!gBrowser.selectedBrowser.isRemoteBrowser) {
-  
-  
-  
-  
-  info(
-    "merging the 'before handling user events' blacklist into the " +
-      "'before first paint' one when e10s is disabled."
-  );
-  let from = startupPhases["before handling user events"].blacklist;
-  let to = startupPhases["before first paint"].blacklist;
-  for (let scriptType in from) {
-    if (!(scriptType in to)) {
-      to[scriptType] = from[scriptType];
-    } else {
-      for (let item of from[scriptType]) {
-        to[scriptType].add(item);
-      }
-    }
-  }
-  startupPhases["before handling user events"].blacklist = null;
 }
 
 add_task(async function() {
@@ -219,14 +198,14 @@ add_task(async function() {
 
   for (let phase in startupPhases) {
     let loadedList = data[phase];
-    let whitelist = startupPhases[phase].whitelist || null;
-    if (whitelist) {
-      for (let scriptType in whitelist) {
+    let allowlist = startupPhases[phase].allowlist || null;
+    if (allowlist) {
+      for (let scriptType in allowlist) {
         loadedList[scriptType] = loadedList[scriptType].filter(c => {
-          if (!whitelist[scriptType].has(c)) {
+          if (!allowlist[scriptType].has(c)) {
             return true;
           }
-          whitelist[scriptType].delete(c);
+          allowlist[scriptType].delete(c);
           return false;
         });
         is(
@@ -239,19 +218,19 @@ add_task(async function() {
           record(false, message, undefined, getStack(scriptType, script));
         }
         is(
-          whitelist[scriptType].size,
+          allowlist[scriptType].size,
           0,
-          `all ${scriptType} whitelist entries should have been used`
+          `all ${scriptType} allowlist entries should have been used`
         );
-        for (let script of whitelist[scriptType]) {
-          ok(false, `unused ${scriptType} whitelist entry: ${script}`);
+        for (let script of allowlist[scriptType]) {
+          ok(false, `unused ${scriptType} allowlist entry: ${script}`);
         }
       }
     }
-    let blacklist = startupPhases[phase].blacklist || null;
-    if (blacklist) {
-      for (let scriptType in blacklist) {
-        for (let file of blacklist[scriptType]) {
+    let denylist = startupPhases[phase].denylist || null;
+    if (denylist) {
+      for (let scriptType in denylist) {
+        for (let file of denylist[scriptType]) {
           let loaded = loadedList[scriptType].includes(file);
           let message = `${file} is not allowed ${phase}`;
           if (!loaded) {

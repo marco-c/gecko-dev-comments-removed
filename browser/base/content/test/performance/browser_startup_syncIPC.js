@@ -326,11 +326,11 @@ add_task(async function() {
 
   let shouldPass = true;
   for (let phase in phases) {
-    let whitelist = startupPhases[phase];
-    if (whitelist.length) {
+    let knownIPCList = startupPhases[phase];
+    if (knownIPCList.length) {
       info(
-        `whitelisted sync IPC ${phase}:\n` +
-          whitelist
+        `known sync IPC ${phase}:\n` +
+          knownIPCList
             .map(e => `  ${e.name} - at most ${e.maxCount} times`)
             .join("\n")
       );
@@ -339,7 +339,7 @@ add_task(async function() {
     let markers = phases[phase];
     for (let marker of markers) {
       let expected = false;
-      for (let entry of whitelist) {
+      for (let entry of knownIPCList) {
         if (marker == entry.name) {
           entry.maxCount = (entry.maxCount || 0) - 1;
           entry._used = true;
@@ -353,7 +353,7 @@ add_task(async function() {
       }
     }
 
-    for (let entry of whitelist) {
+    for (let entry of knownIPCList) {
       let message = `sync IPC ${entry.name} `;
       if (entry.maxCount == 0) {
         message += "happened as many times as expected";
@@ -366,7 +366,7 @@ add_task(async function() {
       ok(entry.maxCount >= 0, `${message} ${phase}`);
 
       if (!("_used" in entry) && !entry.ignoreIfUnused) {
-        ok(false, `unused whitelist entry ${phase}: ${entry.name}`);
+        ok(false, `unused known IPC entry ${phase}: ${entry.name}`);
         shouldPass = false;
       }
     }

@@ -72,6 +72,11 @@ const MAC = AppConstants.platform == "macosx";
 
 
 
+
+
+
+
+
 const startupPhases = {
   
   
@@ -559,7 +564,7 @@ for (let name of [
   });
 }
 
-function expandWhitelistPath(path, canonicalize = false) {
+function expandPathWithDirServiceKey(path, canonicalize = false) {
   if (path.includes(":")) {
     let [prefix, suffix] = path.split(":");
     let [key, property] = prefix.split(".");
@@ -729,6 +734,7 @@ add_task(async function() {
     if (!foundIOMarkers) {
       
       
+      
       return;
     }
   }
@@ -739,17 +745,17 @@ add_task(async function() {
     );
     startupPhases[phase].forEach(entry => {
       entry.listedPath = entry.path;
-      entry.path = expandWhitelistPath(entry.path, entry.canonicalize);
+      entry.path = expandPathWithDirServiceKey(entry.path, entry.canonicalize);
     });
   }
 
-  let tmpPath = expandWhitelistPath("TmpD:").toLowerCase();
+  let tmpPath = expandPathWithDirServiceKey("TmpD:").toLowerCase();
   let shouldPass = true;
   for (let phase in phases) {
-    let whitelist = startupPhases[phase];
+    let knownIOList = startupPhases[phase];
     info(
-      `whitelisted paths ${phase}:\n` +
-        whitelist
+      `known main thread IO paths during ${phase}:\n` +
+        knownIOList
           .map(e => {
             let operations = Object.keys(e)
               .filter(k => k != "path")
@@ -797,7 +803,7 @@ add_task(async function() {
       }
 
       let expected = false;
-      for (let entry of whitelist) {
+      for (let entry of knownIOList) {
         if (pathMatches(entry.path, filename)) {
           entry[marker.operation] = (entry[marker.operation] || 0) - 1;
           entry._used = true;
@@ -824,7 +830,7 @@ add_task(async function() {
       }
     }
 
-    for (let entry of whitelist) {
+    for (let entry of knownIOList) {
       for (let op in entry) {
         if (
           [
@@ -851,7 +857,7 @@ add_task(async function() {
       if (!("_used" in entry) && !entry.ignoreIfUnused) {
         ok(
           false,
-          `unused whitelist entry ${phase}: ${entry.path} (${entry.listedPath})`
+          `no main thread IO when we expected some during ${phase}: ${entry.path} (${entry.listedPath})`
         );
         shouldPass = false;
       }

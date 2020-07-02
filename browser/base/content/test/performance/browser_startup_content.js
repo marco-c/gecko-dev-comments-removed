@@ -12,12 +12,13 @@
 
 
 
+
 "use strict";
 
 
 const kDumpAllStacks = false;
 
-const whitelist = {
+const known_scripts = {
   modules: new Set([
     "chrome://mochikit/content/ShutdownLeaksCollector.jsm",
 
@@ -76,17 +77,13 @@ const whitelist = {
 
 
 
-
-const intermittently_loaded_whitelist = {
+const intermittently_loaded_scripts = {
   modules: new Set([
     "resource://gre/modules/nsAsyncShutdown.jsm",
     "resource://gre/modules/sessionstore/Utils.jsm",
 
     
     "resource://gre/modules/sessionstore/SessionHistory.jsm",
-
-    "resource://specialpowers/SpecialPowersChild.jsm",
-    "resource://specialpowers/WrapPrivileged.jsm",
 
     
     
@@ -95,6 +92,8 @@ const intermittently_loaded_whitelist = {
     
     "resource://testing-common/BrowserTestUtilsChild.jsm",
     "resource://testing-common/ContentEventListenerChild.jsm",
+    "resource://specialpowers/SpecialPowersChild.jsm",
+    "resource://specialpowers/WrapPrivileged.jsm",
   ]),
   frameScripts: new Set([]),
   processScripts: new Set([
@@ -104,7 +103,7 @@ const intermittently_loaded_whitelist = {
   ]),
 };
 
-const blacklist = {
+const forbiddenScripts = {
   services: new Set([
     "@mozilla.org/base/telemetry-startup;1",
     "@mozilla.org/embedcomp/default-tooltiptextprovider;1",
@@ -184,17 +183,17 @@ add_task(async function() {
 
   let loadedList = {};
 
-  for (let scriptType in whitelist) {
+  for (let scriptType in known_scripts) {
     loadedList[scriptType] = Object.keys(loadedInfo[scriptType]).filter(c => {
-      if (!whitelist[scriptType].has(c)) {
+      if (!known_scripts[scriptType].has(c)) {
         return true;
       }
-      whitelist[scriptType].delete(c);
+      known_scripts[scriptType].delete(c);
       return false;
     });
 
     loadedList[scriptType] = loadedList[scriptType].filter(c => {
-      return !intermittently_loaded_whitelist[scriptType].has(c);
+      return !intermittently_loaded_scripts[scriptType].has(c);
     });
 
     is(
@@ -213,15 +212,15 @@ add_task(async function() {
     }
 
     is(
-      whitelist[scriptType].size,
+      known_scripts[scriptType].size,
       0,
-      `all ${scriptType} whitelist entries should have been used`
+      `all known ${scriptType} scripts should have been loaded`
     );
 
-    for (let script of whitelist[scriptType]) {
+    for (let script of known_scripts[scriptType]) {
       ok(
         false,
-        `${scriptType} is whitelisted for content process startup but wasn't used: ${script}`
+        `${scriptType} is expected to load for content process startup but wasn't: ${script}`
       );
     }
 
@@ -239,13 +238,13 @@ add_task(async function() {
     }
   }
 
-  for (let scriptType in blacklist) {
-    for (let script of blacklist[scriptType]) {
+  for (let scriptType in forbiddenScripts) {
+    for (let script of forbiddenScripts[scriptType]) {
       let loaded = script in loadedInfo[scriptType];
       if (loaded) {
         record(
           false,
-          `Unexpected ${scriptType} loaded during content process startup: ${script}`,
+          `Forbidden ${scriptType} loaded during content process startup: ${script}`,
           undefined,
           loadedInfo[scriptType][script]
         );
