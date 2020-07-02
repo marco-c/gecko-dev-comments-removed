@@ -942,48 +942,47 @@ gfxFontEntry* gfxDWriteFontList::CreateFontEntry(
       mSystemFonts;
 #endif
   RefPtr<IDWriteFontFamily> family;
-  HRESULT hr =
-      collection->GetFontFamily(aFamily->Index(), getter_AddRefs(family));
-  
-  
-  
-  
-  bool foundFamily = false;
+  bool foundExpectedFamily = false;
   const nsCString& familyName =
       aFamily->DisplayName().AsString(SharedFontList());
-  if (SUCCEEDED(hr) && family) {
-    RefPtr<IDWriteLocalizedStrings> names;
-    hr = family->GetFamilyNames(getter_AddRefs(names));
-    if (SUCCEEDED(hr) && names) {
-      nsAutoCString name;
-      if (GetEnglishOrFirstName(name, names)) {
-        foundFamily = name.Equals(familyName);
+  if (aFamily->Index() < collection->GetFontFamilyCount()) {
+    HRESULT hr =
+        collection->GetFontFamily(aFamily->Index(), getter_AddRefs(family));
+    
+    
+    
+    
+    if (SUCCEEDED(hr) && family) {
+      RefPtr<IDWriteLocalizedStrings> names;
+      hr = family->GetFamilyNames(getter_AddRefs(names));
+      if (SUCCEEDED(hr) && names) {
+        nsAutoCString name;
+        if (GetEnglishOrFirstName(name, names)) {
+          foundExpectedFamily = name.Equals(familyName);
+        }
       }
     }
   }
-  if (!foundFamily) {
+  if (!foundExpectedFamily) {
     
     
     UINT32 index;
     BOOL exists;
     NS_ConvertUTF8toUTF16 name16(familyName);
-    hr = collection->FindFamilyName(
+    HRESULT hr = collection->FindFamilyName(
         reinterpret_cast<const WCHAR*>(name16.BeginReading()), &index, &exists);
-    if (SUCCEEDED(hr) && exists && index != UINT_MAX) {
-      hr = collection->GetFontFamily(index, getter_AddRefs(family));
-      if (FAILED(hr) || !family) {
-        return nullptr;
-      }
+    if (FAILED(hr) || !exists || index == UINT_MAX ||
+        FAILED(collection->GetFontFamily(index, getter_AddRefs(family))) ||
+        !family) {
+      return nullptr;
     }
   }
   RefPtr<IDWriteFont> font;
-  family->GetFont(aFace->mIndex, getter_AddRefs(font));
-  if (!font) {
+  if (FAILED(family->GetFont(aFace->mIndex, getter_AddRefs(font))) || !font) {
     return nullptr;
   }
   nsAutoCString faceName;
-  hr = GetDirectWriteFontName(font, faceName);
-  if (FAILED(hr)) {
+  if (FAILED(GetDirectWriteFontName(font, faceName))) {
     return nullptr;
   }
   auto fe = new gfxDWriteFontEntry(faceName, font, !aFamily->IsBundled());
