@@ -784,7 +784,7 @@ void nsPluginFrame::DidReflow(nsPresContext* aPresContext,
                               const ReflowInput* aReflowInput) {
   
   
-  if (GetStateBits() & NS_FRAME_FIRST_REFLOW) {
+  if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     nsCOMPtr<nsIObjectLoadingContent> objContent(do_QueryInterface(mContent));
     NS_ASSERTION(objContent, "Why not an object loading content?");
     objContent->HasNewFrame(this);

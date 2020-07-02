@@ -153,7 +153,7 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
 
   
   
-  if (!(GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
+  if (!HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     
     SetDesiredSize(aDesiredSize, aReflowInput, mSize.width, mSize.height);
     aDesiredSize.SetOverflowAreasToDesiredBounds();

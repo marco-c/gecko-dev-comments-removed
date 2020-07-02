@@ -352,8 +352,7 @@ already_AddRefed<SourceSurface> nsSVGPatternFrame::PaintPattern(
 
   
   
-  if (!(patternWithChildren->GetStateBits() &
-        NS_FRAME_DRAWING_AS_PAINTSERVER)) {
+  if (!patternWithChildren->HasAnyStateBits(NS_FRAME_DRAWING_AS_PAINTSERVER)) {
     AutoSetRestorePaintServerState paintServer(patternWithChildren);
     for (nsIFrame* kid = firstKid; kid; kid = kid->GetNextSibling()) {
       gfxMatrix tm = *(patternWithChildren->mCTM);

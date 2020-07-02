@@ -7462,7 +7462,7 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
     
     nsIFrame* grandparentFrame = parentFrame->GetParent();
     if (grandparentFrame && grandparentFrame->IsXULBoxFrame() &&
-        (grandparentFrame->HasAnyStateBits(NS_STATE_BOX_WRAPS_KIDS_IN_BLOCK)) &&
+        grandparentFrame->HasAnyStateBits(NS_STATE_BOX_WRAPS_KIDS_IN_BLOCK) &&
         
         aChild == AnyKidsNeedBlockParent(
                       parentFrame->PrincipalChildList().FirstChild()) &&
