@@ -101,10 +101,10 @@ __webpack_require__.r(__webpack_exports__);
  var react_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
  var react_dom__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_1__);
  var _components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
- var _components_HeroText__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(7);
- var _components_FxCards__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(8);
+ var _components_HeroText__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
+ var _components_FxCards__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9);
  var _components_MSLocalized__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(4);
- var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(5);
+ var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(6);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -269,8 +269,10 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
- var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
+ var _Zap__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
+ var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(7);
+
 
 
 
@@ -287,7 +289,7 @@ const MultiStageAboutWelcome = props => {
     
     props.screens.forEach(screen => {
       if (index === screen.order) {
-        _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__["AboutWelcomeUtils"].sendImpressionTelemetry(`${props.message_id}_${screen.id}`);
+        _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_3__["AboutWelcomeUtils"].sendImpressionTelemetry(`${props.message_id}_${screen.id}`);
       }
     }); 
 
@@ -314,12 +316,12 @@ const MultiStageAboutWelcome = props => {
   Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(() => {
     (async () => {
       if (metricsFlowUri) {
-        setFlowParams((await _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__["AboutWelcomeUtils"].fetchFlowParams(metricsFlowUri)));
+        setFlowParams((await _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_3__["AboutWelcomeUtils"].fetchFlowParams(metricsFlowUri)));
       }
     })();
   }, [metricsFlowUri]); 
 
-  const handleTransition = index < props.screens.length ? Object(react__WEBPACK_IMPORTED_MODULE_0__["useCallback"])(() => setScreenIndex(prevState => prevState + 1), []) : _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__["AboutWelcomeUtils"].handleUserAction({
+  const handleTransition = index < props.screens.length ? Object(react__WEBPACK_IMPORTED_MODULE_0__["useCallback"])(() => setScreenIndex(prevState => prevState + 1), []) : _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_3__["AboutWelcomeUtils"].handleUserAction({
     type: "OPEN_ABOUT_PAGE",
     data: {
       args: "home",
@@ -332,7 +334,7 @@ const MultiStageAboutWelcome = props => {
     (async () => {
       const importable = JSON.parse((await window.AWGetImportableSites()));
       const showImportable = useImportable && importable.length >= 5;
-      _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__["AboutWelcomeUtils"].sendImpressionTelemetry(`${props.message_id}_SITES`, {
+      _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_3__["AboutWelcomeUtils"].sendImpressionTelemetry(`${props.message_id}_SITES`, {
         display: showImportable ? "importable" : "static",
         importable: importable.length
       });
@@ -367,7 +369,7 @@ class WelcomeScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCom
       data
     } = action;
     let url = new URL(data.args);
-    Object(_asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__["addUtmParams"])(url, `aboutwelcome-${UTMTerm}-screen`);
+    Object(_asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_4__["addUtmParams"])(url, `aboutwelcome-${UTMTerm}-screen`);
 
     if (action.addFlowParams && flowParams) {
       url.searchParams.append("device_id", flowParams.deviceId);
@@ -378,7 +380,7 @@ class WelcomeScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCom
     data = { ...data,
       args: url.toString()
     };
-    _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__["AboutWelcomeUtils"].handleUserAction({
+    _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_3__["AboutWelcomeUtils"].handleUserAction({
       type,
       data
     });
@@ -406,7 +408,7 @@ class WelcomeScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCom
     } 
 
 
-    _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__["AboutWelcomeUtils"].sendActionTelemetry(props.messageId, event.currentTarget.value);
+    _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_3__["AboutWelcomeUtils"].sendActionTelemetry(props.messageId, event.currentTarget.value);
     let {
       action
     } = targetContent;
@@ -414,11 +416,11 @@ class WelcomeScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCom
     if (action.type === "OPEN_URL") {
       this.handleOpenURL(action, props.flowParams, props.UTMTerm);
     } else if (action.type) {
-      _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__["AboutWelcomeUtils"].handleUserAction(action); 
+      _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_3__["AboutWelcomeUtils"].handleUserAction(action); 
 
       if (action.type === "SHOW_MIGRATION_WIZARD") {
         await window.AWWaitForMigrationClose();
-        _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__["AboutWelcomeUtils"].sendActionTelemetry(props.messageId, "migrate_close");
+        _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_3__["AboutWelcomeUtils"].sendActionTelemetry(props.messageId, "migrate_close");
       }
     } 
 
@@ -516,9 +518,10 @@ class WelcomeScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCom
       className: `brand-logo ${hasSecondaryTopCTA ? "cta-top" : ""}`
     }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
       className: "welcome-text"
-    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
+    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_Zap__WEBPACK_IMPORTED_MODULE_2__["Zap"], {
+      hasZap: content.zap,
       text: content.title
-    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", null)), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
+    }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
       text: content.subtitle
     }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h2", null))), content.tiles ? this.renderTiles() : null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
       text: content.primary_button ? content.primary_button.label : null
@@ -587,7 +590,60 @@ const Localized = ({
     textNode = text;
   }
 
-  return children ? react__WEBPACK_IMPORTED_MODULE_0___default.a.cloneElement(children, props, textNode) : react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", props, textNode);
+  if (!children) {
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", props, textNode);
+  } else if (textNode) {
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.cloneElement(children, props, textNode);
+  }
+
+  return react__WEBPACK_IMPORTED_MODULE_0___default.a.cloneElement(children, props);
+};
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "Zap", function() { return Zap; });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+ var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
+
+
+
+
+
+const MS_STRING_PROP = "string_id";
+const Zap = props => {
+  if (!props.text) {
+    return null;
+  }
+
+  if (props.hasZap) {
+    if (typeof props.text === "object" && props.text[MS_STRING_PROP]) {
+      return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
+        text: props.text
+      }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", {
+        className: "welcomeZap"
+      }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", {
+        "data-l10n-name": "zap"
+      })));
+    } else if (typeof props.text === "string") {
+      
+      let titleArray = props.text.split(" ");
+      let lastWord = `${titleArray.pop()}`;
+      return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", {
+        className: "welcomeZap"
+      }, titleArray.join(" ").concat(" "), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("span", null, lastWord));
+    }
+  } else {
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
+      text: props.text
+    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", null));
+  }
+
+  return null;
 };
 
  }),
@@ -828,9 +884,9 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "FxCards", function() { return FxCards; });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6);
- var _asrouter_templates_OnboardingMessage_OnboardingMessage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
- var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5);
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(7);
+ var _asrouter_templates_OnboardingMessage_OnboardingMessage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(10);
+ var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
