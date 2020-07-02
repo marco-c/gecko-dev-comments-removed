@@ -55,11 +55,6 @@
 
       if (gMultiProcessBrowser) {
         messageManager.addMessageListener("Browser:Init", this);
-      } else {
-        this._outerWindowIDBrowserMap.set(
-          this.selectedBrowser.outerWindowID,
-          this.selectedBrowser
-        );
       }
       messageManager.addMessageListener("RefreshBlocker:Blocked", this);
 
@@ -100,8 +95,6 @@
     _tabFilters: new Map(),
 
     _isBusy: false,
-
-    _outerWindowIDBrowserMap: new Map(),
 
     arrowKeysShouldWrap: AppConstants == "macosx",
 
@@ -763,7 +756,13 @@
     },
 
     getBrowserForOuterWindowID(aID) {
-      return this._outerWindowIDBrowserMap.get(aID);
+      for (let b of this.browsers) {
+        if (b.outerWindowID == aID) {
+          return b;
+        }
+      }
+
+      return null;
     },
 
     getTabForBrowser(aBrowser) {
@@ -1810,9 +1809,6 @@
       let wasActive = document.activeElement == aBrowser;
 
       
-      this._outerWindowIDBrowserMap.delete(aBrowser.outerWindowID);
-
-      
       let filter = this._tabFilters.get(tab);
       let listener = this._tabListeners.get(tab);
       aBrowser.webProgress.removeProgressListener(filter);
@@ -1917,9 +1913,6 @@
           { isAppTab: tab.pinned },
           "BrowserTab"
         );
-
-        
-        this._outerWindowIDBrowserMap.set(aBrowser.outerWindowID, aBrowser);
       }
 
       if (wasActive) {
@@ -2213,11 +2206,7 @@
         }
       }
 
-      let {
-        uriIsAboutBlank,
-        remoteType,
-        usingPreloadedContent,
-      } = aTab._browserParams;
+      let { uriIsAboutBlank, usingPreloadedContent } = aTab._browserParams;
       delete aTab._browserParams;
       delete aTab._cachedCurrentURI;
 
@@ -2269,15 +2258,6 @@
       
       if (!usingPreloadedContent) {
         browser.docShellIsActive = false;
-      }
-
-      
-      
-      
-      
-      
-      if (remoteType == E10SUtils.NOT_REMOTE) {
-        this._outerWindowIDBrowserMap.set(browser.outerWindowID, browser);
       }
 
       
@@ -2357,8 +2337,6 @@
       };
 
       SessionStore.resetBrowserToLazyState(aTab);
-
-      this._outerWindowIDBrowserMap.delete(browser.outerWindowID);
 
       
       let filter = this._tabFilters.get(aTab);
@@ -3652,8 +3630,6 @@
       var browser = this.getBrowserForTab(aTab);
 
       if (aTab.linkedPanel) {
-        this._outerWindowIDBrowserMap.delete(browser.outerWindowID);
-
         
         
         
@@ -4033,14 +4009,7 @@
       
       this._swapRegisteredOpenURIs(ourBrowser, aOtherBrowser);
 
-      
-      this._outerWindowIDBrowserMap.delete(ourBrowser.outerWindowID);
       let remoteBrowser = aOtherBrowser.ownerGlobal.gBrowser;
-      if (remoteBrowser) {
-        remoteBrowser._outerWindowIDBrowserMap.delete(
-          aOtherBrowser.outerWindowID
-        );
-      }
 
       
       
@@ -4058,15 +4027,6 @@
         let ourOuterWindowID = ourBrowser._outerWindowID;
         ourBrowser._outerWindowID = aOtherBrowser._outerWindowID;
         aOtherBrowser._outerWindowID = ourOuterWindowID;
-      }
-
-      
-      this._outerWindowIDBrowserMap.set(ourBrowser.outerWindowID, ourBrowser);
-      if (remoteBrowser) {
-        remoteBrowser._outerWindowIDBrowserMap.set(
-          aOtherBrowser.outerWindowID,
-          aOtherBrowser
-        );
       }
 
       
@@ -5160,7 +5120,6 @@
             return undefined;
           }
 
-          this._outerWindowIDBrowserMap.set(browser.outerWindowID, browser);
           browser.sendMessageToActor(
             "Browser:AppTab",
             { isAppTab: tab.pinned },
@@ -5667,9 +5626,6 @@
         let wasActive = document.activeElement == browser;
 
         
-        this._outerWindowIDBrowserMap.delete(browser.outerWindowID);
-
-        
         let filter = this._tabFilters.get(tab);
         let oldListener = this._tabListeners.get(tab);
         browser.webProgress.removeProgressListener(filter);
@@ -5752,9 +5708,6 @@
               { isAppTab: tab.pinned },
               "BrowserTab"
             );
-
-            
-            this._outerWindowIDBrowserMap.set(browser.outerWindowID, browser);
           }
 
           if (wasActive) {
