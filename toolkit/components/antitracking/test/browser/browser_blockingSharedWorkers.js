@@ -65,11 +65,7 @@ AntiTracking.runTestInNormalAndPrivateMode(
   },
   async _ => {
     
-    if (allowListed) {
-      await hasStorageAccessInitially();
-    } else {
-      await noStorageAccessInitially();
-    }
+    await hasStorageAccessInitially();
 
     new SharedWorker("a.js", "foo");
     ok(true, "SharedWorker is allowed");
