@@ -148,7 +148,6 @@ StartupCache::StartupCache()
     : mTableLock("StartupCache::mTableLock"),
       mDirty(false),
       mWrittenOnce(false),
-      mStartupWriteInitiated(false),
       mCurTableReferenced(false),
       mRequestedCount(0),
       mCacheEntriesBaseOffset(0),
@@ -493,7 +492,6 @@ size_t StartupCache::HeapSizeOfIncludingThis(
 Result<Ok, nsresult> StartupCache::WriteToDisk() {
   mTableLock.AssertCurrentThreadOwns();
 
-  mStartupWriteInitiated = true;
   if (!mDirty || mWrittenOnce) {
     return Ok();
   }
@@ -661,7 +659,6 @@ void StartupCache::EnsureShutdownWriteComplete() {
     
     
     WaitOnPrefetchThread();
-    mStartupWriteInitiated = false;
     mDirty = true;
     mCacheData.reset();
     
@@ -740,7 +737,6 @@ void StartupCache::MaybeWriteOffMainThread() {
 
   
   WaitOnPrefetchThread();
-  mStartupWriteInitiated = false;
   mDirty = true;
   mCacheData.reset();
 
@@ -806,7 +802,6 @@ nsresult StartupCache::ResetStartupWriteTimerCheckingReadCount() {
 }
 
 nsresult StartupCache::ResetStartupWriteTimer() {
-  mStartupWriteInitiated = false;
   mDirty = true;
   nsresult rv = NS_OK;
   if (!mTimer)
@@ -824,18 +819,7 @@ nsresult StartupCache::ResetStartupWriteTimer() {
 
 bool StartupCache::StartupWriteComplete() {
   
-  
-  if (!mStartupWriteInitiated || mDirty) {
-    return false;
-  }
-  
-  
-  
-  if (!mTableLock.TryLock()) {
-    return false;
-  }
-  mTableLock.Unlock();
-  return mStartupWriteInitiated && !mDirty;
+  return !mDirty && mWrittenOnce;
 }
 
 
