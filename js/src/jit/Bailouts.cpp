@@ -228,7 +228,8 @@ bool jit::ExceptionHandlerBailout(JSContext* cx,
     
     
     if (excInfo.propagatingIonExceptionForDebugMode()) {
-      bailoutInfo->bailoutKind = mozilla::Some(Bailout_IonExceptionDebugMode);
+      bailoutInfo->bailoutKind =
+          mozilla::Some(BailoutKind::IonExceptionDebugMode);
     }
 
     rfe->kind = ResumeFromException::RESUME_BAILOUT;
@@ -283,7 +284,7 @@ void jit::CheckFrequentBailouts(JSContext* cx, JSScript* script,
       
       
       
-      if (bailoutKind != Bailout_FirstExecution &&
+      if (bailoutKind != BailoutKind::FirstExecution &&
           !script->hadFrequentBailouts()) {
         script->setHadFrequentBailouts();
       }

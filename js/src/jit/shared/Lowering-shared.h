@@ -316,7 +316,7 @@ class LIRGeneratorShared {
   
   
   void assignSafepoint(LInstruction* ins, MInstruction* mir,
-                       BailoutKind kind = Bailout_DuringVMCall);
+                       BailoutKind kind = BailoutKind::DuringVMCall);
 
   
   void assignWasmSafepoint(LInstruction* ins, MInstruction* mir);

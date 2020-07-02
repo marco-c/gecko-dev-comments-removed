@@ -58,223 +58,223 @@ static const SnapshotOffset INVALID_RECOVER_OFFSET = uint32_t(-1);
 static const SnapshotOffset INVALID_SNAPSHOT_OFFSET = uint32_t(-1);
 
 
-enum BailoutKind {
+enum class BailoutKind : uint8_t {
   
   
 
   
-  Bailout_Inevitable,
+  Inevitable,
 
   
   
   
-  Bailout_DuringVMCall,
+  DuringVMCall,
 
   
-  Bailout_TooManyArguments,
+  TooManyArguments,
 
   
-  Bailout_DynamicNameNotFound,
+  DynamicNameNotFound,
 
   
-  Bailout_StringArgumentsEval,
-
-  
-  
-  
-  Bailout_Overflow,
-
-  
-  
-  Bailout_Round,
+  StringArgumentsEval,
 
   
   
   
-  Bailout_NonPrimitiveInput,
+  Overflow,
 
   
-  Bailout_PrecisionLoss,
-
   
-  Bailout_TypeBarrierO,
-  
-  Bailout_TypeBarrierV,
-  
-  Bailout_MonitorTypes,
-
-  
-  Bailout_Hole,
-
-  
-  Bailout_NoDenseElementsGuard,
-
-  
-  Bailout_NegativeIndex,
-
-  
-  Bailout_NonIntegerIndex,
+  Round,
 
   
   
   
-  
-  
-  
-  Bailout_ObjectIdentityOrTypeGuard,
+  NonPrimitiveInput,
 
   
-  Bailout_SpecificAtomGuard,
+  PrecisionLoss,
 
   
-  Bailout_SpecificSymbolGuard,
+  TypeBarrierO,
+  
+  TypeBarrierV,
+  
+  MonitorTypes,
 
   
-  Bailout_NonInt32Input,
-  Bailout_NonNumericInput,  
-  Bailout_NonBooleanInput,
-  Bailout_NonObjectInput,
-  Bailout_NonStringInput,
-  Bailout_NonSymbolInput,
-  Bailout_NonBigIntInput,
+  Hole,
 
   
-  Bailout_Debugger,
+  NoDenseElementsGuard,
 
   
-  Bailout_FirstExecution,
+  NegativeIndex,
 
   
-  Bailout_NonInt32ArrayLength,
-
-  
-
-  
-  
-
-  
-  Bailout_OverflowInvalidate,
+  NonIntegerIndex,
 
   
   
   
   
-  Bailout_DoubleOutput,
+  
+  
+  ObjectIdentityOrTypeGuard,
+
+  
+  SpecificAtomGuard,
+
+  
+  SpecificSymbolGuard,
+
+  
+  NonInt32Input,
+  NonNumericInput,  
+  NonBooleanInput,
+  NonObjectInput,
+  NonStringInput,
+  NonSymbolInput,
+  NonBigIntInput,
+
+  
+  Debugger,
+
+  
+  FirstExecution,
+
+  
+  NonInt32ArrayLength,
 
   
 
   
   
-  Bailout_ArgumentCheck,
 
   
-  Bailout_BoundsCheck,
+  OverflowInvalidate,
 
   
   
   
-  Bailout_ShapeGuard,
+  
+  DoubleOutput,
 
   
-  Bailout_ValueGuard,
 
   
-  Bailout_NullOrUndefinedGuard,
+  
+  ArgumentCheck,
 
   
-  Bailout_UninitializedLexical,
+  BoundsCheck,
 
   
-  Bailout_IonExceptionDebugMode,
+  
+  
+  ShapeGuard,
 
-  Bailout_Limit
+  
+  ValueGuard,
+
+  
+  NullOrUndefinedGuard,
+
+  
+  UninitializedLexical,
+
+  
+  IonExceptionDebugMode,
+
+  Limit
 };
 
 inline const char* BailoutKindString(BailoutKind kind) {
   switch (kind) {
     
-    case Bailout_Inevitable:
-      return "Bailout_Inevitable";
-    case Bailout_DuringVMCall:
-      return "Bailout_DuringVMCall";
-    case Bailout_TooManyArguments:
-      return "Bailout_TooManyArguments";
-    case Bailout_DynamicNameNotFound:
-      return "Bailout_DynamicNameNotFound";
-    case Bailout_StringArgumentsEval:
-      return "Bailout_StringArgumentsEval";
-    case Bailout_Overflow:
-      return "Bailout_Overflow";
-    case Bailout_Round:
-      return "Bailout_Round";
-    case Bailout_NonPrimitiveInput:
-      return "Bailout_NonPrimitiveInput";
-    case Bailout_PrecisionLoss:
-      return "Bailout_PrecisionLoss";
-    case Bailout_TypeBarrierO:
-      return "Bailout_TypeBarrierO";
-    case Bailout_TypeBarrierV:
-      return "Bailout_TypeBarrierV";
-    case Bailout_MonitorTypes:
-      return "Bailout_MonitorTypes";
-    case Bailout_Hole:
-      return "Bailout_Hole";
-    case Bailout_NoDenseElementsGuard:
-      return "Bailout_NoDenseElementsGuard";
-    case Bailout_NegativeIndex:
-      return "Bailout_NegativeIndex";
-    case Bailout_NonIntegerIndex:
-      return "Bailout_NonIntegerIndex";
-    case Bailout_ObjectIdentityOrTypeGuard:
-      return "Bailout_ObjectIdentityOrTypeGuard";
-    case Bailout_SpecificAtomGuard:
-      return "Bailout_SpecifcAtomGuard";
-    case Bailout_SpecificSymbolGuard:
-      return "Bailout_SpecifcSymbolGuard";
-    case Bailout_NonInt32Input:
-      return "Bailout_NonInt32Input";
-    case Bailout_NonNumericInput:
-      return "Bailout_NonNumericInput";
-    case Bailout_NonBooleanInput:
-      return "Bailout_NonBooleanInput";
-    case Bailout_NonObjectInput:
-      return "Bailout_NonObjectInput";
-    case Bailout_NonStringInput:
-      return "Bailout_NonStringInput";
-    case Bailout_NonSymbolInput:
-      return "Bailout_NonSymbolInput";
-    case Bailout_NonBigIntInput:
-      return "Bailout_NonBigIntInput";
-    case Bailout_Debugger:
-      return "Bailout_Debugger";
-    case Bailout_FirstExecution:
-      return "Bailout_FirstExecution";
-    case Bailout_NonInt32ArrayLength:
-      return "Bailout_NonInt32ArrayLength";
+    case BailoutKind::Inevitable:
+      return "BailoutKind::Inevitable";
+    case BailoutKind::DuringVMCall:
+      return "BailoutKind::DuringVMCall";
+    case BailoutKind::TooManyArguments:
+      return "BailoutKind::TooManyArguments";
+    case BailoutKind::DynamicNameNotFound:
+      return "BailoutKind::DynamicNameNotFound";
+    case BailoutKind::StringArgumentsEval:
+      return "BailoutKind::StringArgumentsEval";
+    case BailoutKind::Overflow:
+      return "BailoutKind::Overflow";
+    case BailoutKind::Round:
+      return "BailoutKind::Round";
+    case BailoutKind::NonPrimitiveInput:
+      return "BailoutKind::NonPrimitiveInput";
+    case BailoutKind::PrecisionLoss:
+      return "BailoutKind::PrecisionLoss";
+    case BailoutKind::TypeBarrierO:
+      return "BailoutKind::TypeBarrierO";
+    case BailoutKind::TypeBarrierV:
+      return "BailoutKind::TypeBarrierV";
+    case BailoutKind::MonitorTypes:
+      return "BailoutKind::MonitorTypes";
+    case BailoutKind::Hole:
+      return "BailoutKind::Hole";
+    case BailoutKind::NoDenseElementsGuard:
+      return "BailoutKind::NoDenseElementsGuard";
+    case BailoutKind::NegativeIndex:
+      return "BailoutKind::NegativeIndex";
+    case BailoutKind::NonIntegerIndex:
+      return "BailoutKind::NonIntegerIndex";
+    case BailoutKind::ObjectIdentityOrTypeGuard:
+      return "BailoutKind::ObjectIdentityOrTypeGuard";
+    case BailoutKind::SpecificAtomGuard:
+      return "BailoutKind::SpecifcAtomGuard";
+    case BailoutKind::SpecificSymbolGuard:
+      return "BailoutKind::SpecifcSymbolGuard";
+    case BailoutKind::NonInt32Input:
+      return "BailoutKind::NonInt32Input";
+    case BailoutKind::NonNumericInput:
+      return "BailoutKind::NonNumericInput";
+    case BailoutKind::NonBooleanInput:
+      return "BailoutKind::NonBooleanInput";
+    case BailoutKind::NonObjectInput:
+      return "BailoutKind::NonObjectInput";
+    case BailoutKind::NonStringInput:
+      return "BailoutKind::NonStringInput";
+    case BailoutKind::NonSymbolInput:
+      return "BailoutKind::NonSymbolInput";
+    case BailoutKind::NonBigIntInput:
+      return "BailoutKind::NonBigIntInput";
+    case BailoutKind::Debugger:
+      return "BailoutKind::Debugger";
+    case BailoutKind::FirstExecution:
+      return "BailoutKind::FirstExecution";
+    case BailoutKind::NonInt32ArrayLength:
+      return "BailoutKind::NonInt32ArrayLength";
 
     
-    case Bailout_OverflowInvalidate:
-      return "Bailout_OverflowInvalidate";
-    case Bailout_DoubleOutput:
-      return "Bailout_DoubleOutput";
+    case BailoutKind::OverflowInvalidate:
+      return "BailoutKind::OverflowInvalidate";
+    case BailoutKind::DoubleOutput:
+      return "BailoutKind::DoubleOutput";
 
     
-    case Bailout_ArgumentCheck:
-      return "Bailout_ArgumentCheck";
-    case Bailout_BoundsCheck:
-      return "Bailout_BoundsCheck";
-    case Bailout_ShapeGuard:
-      return "Bailout_ShapeGuard";
-    case Bailout_ValueGuard:
-      return "Bailout_ValueGuard";
-    case Bailout_NullOrUndefinedGuard:
-      return "Bailout_NullOrUndefinedGuard";
-    case Bailout_UninitializedLexical:
-      return "Bailout_UninitializedLexical";
-    case Bailout_IonExceptionDebugMode:
-      return "Bailout_IonExceptionDebugMode";
+    case BailoutKind::ArgumentCheck:
+      return "BailoutKind::ArgumentCheck";
+    case BailoutKind::BoundsCheck:
+      return "BailoutKind::BoundsCheck";
+    case BailoutKind::ShapeGuard:
+      return "BailoutKind::ShapeGuard";
+    case BailoutKind::ValueGuard:
+      return "BailoutKind::ValueGuard";
+    case BailoutKind::NullOrUndefinedGuard:
+      return "BailoutKind::NullOrUndefinedGuard";
+    case BailoutKind::UninitializedLexical:
+      return "BailoutKind::UninitializedLexical";
+    case BailoutKind::IonExceptionDebugMode:
+      return "BailoutKind::IonExceptionDebugMode";
 
-    case Bailout_Limit:
+    case BailoutKind::Limit:
       break;
   }
 

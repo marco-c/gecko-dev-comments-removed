@@ -2906,7 +2906,7 @@ bool WarpBuilder::buildBailoutForColdIC(BytecodeLocation loc, CacheKind kind) {
 
   
   
-  MBail* bail = MBail::New(alloc(), Bailout_FirstExecution);
+  MBail* bail = MBail::New(alloc(), BailoutKind::FirstExecution);
   current->add(bail);
 
   MIRType resultType;
