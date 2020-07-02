@@ -22,6 +22,7 @@
 #include "mozilla/Mutex.h"
 #include "prtime.h"
 #include "nsICaptivePortalService.h"
+#include "nsIObserverService.h"
 
 #define NS_N(x) (sizeof(x) / sizeof(*x))
 
@@ -58,7 +59,8 @@ class nsIOService final : public nsIIOService,
                           public nsINetUtil,
                           public nsISpeculativeConnect,
                           public nsSupportsWeakReference,
-                          public nsIIOServiceInternal {
+                          public nsIIOServiceInternal,
+                          public nsIObserverService {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIIOSERVICE
@@ -66,6 +68,7 @@ class nsIOService final : public nsIIOService,
   NS_DECL_NSINETUTIL
   NS_DECL_NSISPECULATIVECONNECT
   NS_DECL_NSIIOSERVICEINTERNAL
+  NS_DECL_NSIOBSERVERSERVICE
 
   
   
@@ -245,6 +248,14 @@ class nsIOService final : public nsIIOService,
   
   
   nsTArray<std::function<void()>> mPendingEvents;
+
+  
+  nsTHashtable<nsCStringHashKey> mObserverTopicForSocketProcess;
+  
+  
+  nsTHashtable<nsCStringHashKey> mSocketProcessTopicBlackList;
+
+  nsCOMPtr<nsIObserverService> mObserverService;
 
  public:
   
