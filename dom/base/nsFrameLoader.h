@@ -157,6 +157,9 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   mozilla::dom::BrowsingContext* GetBrowsingContext();
   mozilla::dom::BrowsingContext* GetExtantBrowsingContext();
+  mozilla::dom::BrowsingContext* GetMaybePendingBrowsingContext() {
+    return mPendingBrowsingContext;
+  }
 
   
 
