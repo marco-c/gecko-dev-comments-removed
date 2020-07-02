@@ -4,9 +4,9 @@
 
 
 
+use crate::values::specified::ui::CursorKind;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
-use values::specified::ui::CursorKind;
 
 
 
