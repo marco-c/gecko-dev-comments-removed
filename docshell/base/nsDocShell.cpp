@@ -6177,6 +6177,7 @@ nsresult nsDocShell::EnsureContentViewer() {
 nsresult nsDocShell::CreateAboutBlankContentViewer(
     nsIPrincipal* aPrincipal, nsIPrincipal* aPartitionedPrincipal,
     nsIContentSecurityPolicy* aCSP, nsIURI* aBaseURI,
+    const Maybe<nsILoadInfo::CrossOriginEmbedderPolicy>& aCOEP,
     bool aTryToSaveOldPresentation, bool aCheckPermitUnload,
     WindowGlobalChild* aActor) {
   RefPtr<Document> blankDoc;
@@ -6305,6 +6306,8 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
         blankDoc->SetCsp(cspToInherit);
       }
 
+      blankDoc->SetEmbedderPolicy(aCOEP);
+
       
       
       blankDoc->SetBaseURI(aBaseURI);
@@ -6360,6 +6363,7 @@ nsresult nsDocShell::CreateContentViewerForActor(
       aWindowActor->DocumentPrincipal(), aWindowActor->DocumentPrincipal(),
        nullptr,
        nullptr,
+       Nothing(),
        true,
        true, aWindowActor);
   if (NS_SUCCEEDED(rv)) {
@@ -10759,7 +10763,7 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
     
     rv = CreateAboutBlankContentViewer(
         loadState->PrincipalToInherit(),
-        loadState->PartitionedPrincipalToInherit(), nullptr, nullptr,
+        loadState->PartitionedPrincipalToInherit(), nullptr, nullptr, Nothing(),
         aEntry != mOSHE);
 
     if (NS_FAILED(rv)) {

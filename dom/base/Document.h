@@ -1079,9 +1079,13 @@ class Document : public nsINode,
 
   uint32_t GetSandboxFlags() const { return mSandboxFlags; }
 
-  Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> GetEmbedderPolicyFromHTTP()
-      const {
-    return mEmbedderPolicyFromHTTP;
+  Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> GetEmbedderPolicy() const {
+    return mEmbedderPolicy;
+  }
+
+  void SetEmbedderPolicy(
+      const Maybe<nsILoadInfo::CrossOriginEmbedderPolicy>& aCOEP) {
+    mEmbedderPolicy = aCOEP;
   }
 
   
@@ -4671,7 +4675,8 @@ class Document : public nsINode,
   uint32_t mSandboxFlags;
 
   
-  Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> mEmbedderPolicyFromHTTP;
+  
+  Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> mEmbedderPolicy;
 
   nsCString mContentLanguage;
 

@@ -26,19 +26,7 @@ static nsILoadInfo::CrossOriginEmbedderPolicy InheritedPolicy(
     return inherit->GetEmbedderPolicy();
   }
 
-  RefPtr<dom::BrowsingContext> opener = aBrowsingContext->GetOpener();
-  if (!opener) {
-    return nsILoadInfo::EMBEDDER_POLICY_NULL;
-  }
-  
-  
-  inherit = opener->GetCurrentWindowContext();
-
-  if (!inherit) {
-    return nsILoadInfo::EMBEDDER_POLICY_NULL;
-  }
-
-  return inherit->GetEmbedderPolicy();
+  return nsILoadInfo::EMBEDDER_POLICY_NULL;
 }
 
 
@@ -108,7 +96,7 @@ WindowGlobalInit WindowGlobalActor::WindowInitializer(
   mozilla::Get<WindowContext::IDX_IsSecureContext>(init.context().mFields) =
       aWindow->IsSecureContext();
 
-  auto policy = doc->GetEmbedderPolicyFromHTTP();
+  auto policy = doc->GetEmbedderPolicy();
   if (policy.isSome()) {
     mozilla::Get<WindowContext::IDX_EmbedderPolicy>(init.context().mFields) =
         policy.ref();

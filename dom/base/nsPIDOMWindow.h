@@ -18,6 +18,7 @@
 #include "mozilla/TaskCategory.h"
 #include "js/TypeDecls.h"
 #include "nsRefPtrHashtable.h"
+#include "nsILoadInfo.h"
 
 
 #define DOM_WINDOW_DESTROYED_TOPIC "dom-window-destroyed"
@@ -787,7 +788,9 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   
   
-  virtual void SetInitialPrincipalToSubject(nsIContentSecurityPolicy* aCSP) = 0;
+  virtual void SetInitialPrincipalToSubject(
+      nsIContentSecurityPolicy* aCSP,
+      const mozilla::Maybe<nsILoadInfo::CrossOriginEmbedderPolicy>& aCoep) = 0;
 
   
   
