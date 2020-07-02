@@ -74,15 +74,9 @@ WSRunScanner::WSRunScanner(const HTMLEditor* aHTMLEditor,
       mScanEndPoint(aScanEndPoint),
       mEditingHost(aHTMLEditor->GetActiveEditingHost()),
       mPRE(false),
-      mStartOffset(0),
-      mEndOffset(0),
-      mFirstNBSPOffset(0),
-      mLastNBSPOffset(0),
       mStartRun(nullptr),
       mEndRun(nullptr),
-      mHTMLEditor(aHTMLEditor),
-      mStartReason(WSType::NotInitialized),
-      mEndReason(WSType::NotInitialized) {
+      mHTMLEditor(aHTMLEditor) {
   MOZ_ASSERT(
       *nsContentUtils::ComparePoints(aScanStartPoint.ToRawRangeBoundary(),
                                      aScanEndPoint.ToRawRangeBoundary()) <= 0);
@@ -635,12 +629,11 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
     }
   }
 
-  if (mStartReasonContent != mStartNode) {
+  if (mStart.GetReasonContent() != mStart.PointRef().GetContainer()) {
     
-    return WSScanResult(mStartReasonContent, mStartReason);
+    return WSScanResult(mStart.GetReasonContent(), mStart.RawReason());
   }
-  return WSScanResult(EditorDOMPoint(mStartReasonContent, mStartOffset),
-                      mStartReason);
+  return WSScanResult(mStart.PointRef(), mStart.RawReason());
 }
 
 template <typename PT, typename CT>
@@ -671,19 +664,18 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
     }
   }
 
-  if (mEndReasonContent != mEndNode) {
+  if (mEnd.GetReasonContent() != mEnd.PointRef().GetContainer()) {
     
-    return WSScanResult(mEndReasonContent, mEndReason);
+    return WSScanResult(mEnd.GetReasonContent(), mEnd.RawReason());
   }
-  return WSScanResult(EditorDOMPoint(mEndReasonContent, mEndOffset),
-                      mEndReason);
+  return WSScanResult(mEnd.PointRef(), mEnd.RawReason());
 }
 
 nsresult WSRunObject::AdjustWhiteSpace() {
   
   
   
-  if (!mLastNBSPNode) {
+  if (!mNBSPData.FoundNBSP()) {
     
     return NS_OK;
   }
@@ -770,19 +762,14 @@ bool WSRunScanner::InitializeRangeStartWithTextNode(
     }
 
     if (ch == HTMLEditUtils::kNBSP) {
-      mFirstNBSPNode = aPoint.ContainerAsText();
-      mFirstNBSPOffset = i - 1;
-      if (!mLastNBSPNode) {
-        mLastNBSPNode = aPoint.ContainerAsText();
-        mLastNBSPOffset = i - 1;
-      }
+      mNBSPData.NotifyNBSP(
+          EditorDOMPointInText(aPoint.ContainerAsText(), i - 1),
+          NoBreakingSpaceData::Scanning::Backward);
       continue;
     }
 
-    mStartNode = aPoint.ContainerAsText();
-    mStartOffset = i;
-    mStartReason = WSType::NormalText;
-    mStartReasonContent = aPoint.ContainerAsText();
+    mStart = BoundaryData(EditorDOMPoint(aPoint.ContainerAsText(), i),
+                          *aPoint.ContainerAsText(), WSType::NormalText);
     return true;
   }
 
@@ -815,21 +802,19 @@ void WSRunScanner::InitializeRangeStart(
   if (!previousLeafContentOrBlock) {
     
     
-    mStartNode = aPoint.GetContainer();
-    mStartOffset = aPoint.Offset();
-    mStartReason = WSType::CurrentBlockBoundary;
     
     
-    mStartReasonContent = const_cast<nsIContent*>(
-        &aEditableBlockParentOrTopmostEditableInlineContent);
+    mStart =
+        BoundaryData(aPoint,
+                     const_cast<nsIContent&>(
+                         aEditableBlockParentOrTopmostEditableInlineContent),
+                     WSType::CurrentBlockBoundary);
     return;
   }
 
   if (HTMLEditUtils::IsBlockElement(*previousLeafContentOrBlock)) {
-    mStartNode = aPoint.GetContainer();
-    mStartOffset = aPoint.Offset();
-    mStartReason = WSType::OtherBlockBoundary;
-    mStartReasonContent = previousLeafContentOrBlock;
+    mStart = BoundaryData(aPoint, *previousLeafContentOrBlock,
+                          WSType::OtherBlockBoundary);
     return;
   }
 
@@ -837,12 +822,11 @@ void WSRunScanner::InitializeRangeStart(
       !previousLeafContentOrBlock->IsEditable()) {
     
     
-    mStartNode = aPoint.GetContainer();
-    mStartOffset = aPoint.Offset();
-    mStartReason = previousLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)
-                       ? WSType::BRElement
-                       : WSType::SpecialContent;
-    mStartReasonContent = previousLeafContentOrBlock;
+    mStart =
+        BoundaryData(aPoint, *previousLeafContentOrBlock,
+                     previousLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)
+                         ? WSType::BRElement
+                         : WSType::SpecialContent);
     return;
   }
 
@@ -881,19 +865,13 @@ bool WSRunScanner::InitializeRangeEndWithTextNode(
     }
 
     if (ch == HTMLEditUtils::kNBSP) {
-      mLastNBSPNode = aPoint.ContainerAsText();
-      mLastNBSPOffset = i;
-      if (!mFirstNBSPNode) {
-        mFirstNBSPNode = aPoint.ContainerAsText();
-        mFirstNBSPOffset = i;
-      }
+      mNBSPData.NotifyNBSP(EditorDOMPointInText(aPoint.ContainerAsText(), i),
+                           NoBreakingSpaceData::Scanning::Forward);
       continue;
     }
 
-    mEndNode = aPoint.ContainerAsText();
-    mEndOffset = i;
-    mEndReason = WSType::NormalText;
-    mEndReasonContent = aPoint.ContainerAsText();
+    mEnd = BoundaryData(EditorDOMPoint(aPoint.ContainerAsText(), i),
+                        *aPoint.ContainerAsText(), WSType::NormalText);
     return true;
   }
 
@@ -925,22 +903,19 @@ void WSRunScanner::InitializeRangeEnd(
   if (!nextLeafContentOrBlock) {
     
     
-    mEndNode = aPoint.GetContainer();
-    mEndOffset = aPoint.Offset();
-    mEndReason = WSType::CurrentBlockBoundary;
     
     
-    mEndReasonContent = const_cast<nsIContent*>(
-        &aEditableBlockParentOrTopmostEditableInlineContent);
+    mEnd = BoundaryData(aPoint,
+                        const_cast<nsIContent&>(
+                            aEditableBlockParentOrTopmostEditableInlineContent),
+                        WSType::CurrentBlockBoundary);
     return;
   }
 
   if (HTMLEditUtils::IsBlockElement(*nextLeafContentOrBlock)) {
     
-    mEndNode = aPoint.GetContainer();
-    mEndOffset = aPoint.Offset();
-    mEndReason = WSType::OtherBlockBoundary;
-    mEndReasonContent = nextLeafContentOrBlock;
+    mEnd = BoundaryData(aPoint, *nextLeafContentOrBlock,
+                        WSType::OtherBlockBoundary);
     return;
   }
 
@@ -949,12 +924,10 @@ void WSRunScanner::InitializeRangeEnd(
     
     
     
-    mEndNode = aPoint.GetContainer();
-    mEndOffset = aPoint.Offset();
-    mEndReason = nextLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)
-                     ? WSType::BRElement
-                     : WSType::SpecialContent;
-    mEndReasonContent = nextLeafContentOrBlock;
+    mEnd = BoundaryData(aPoint, *nextLeafContentOrBlock,
+                        nextLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)
+                            ? WSType::BRElement
+                            : WSType::SpecialContent);
     return;
   }
 
@@ -1002,7 +975,7 @@ void WSRunScanner::GetRuns() {
 
   
   
-  if (!mFirstNBSPNode && !mLastNBSPNode &&
+  if (!mNBSPData.FoundNBSP() &&
       (StartsFromHardLineBreak() || EndsByBlockBoundary())) {
     InitializeWithSingleFragment(
         WSFragment::Visible::No,
@@ -1015,57 +988,74 @@ void WSRunScanner::GetRuns() {
 
   
   mStartRun = new WSFragment();
-  mStartRun->mStartNode = mStartNode;
-  mStartRun->mStartOffset = mStartOffset;
+  if (mStart.PointRef().IsSet()) {
+    mStartRun->mStartNode = mStart.PointRef().GetContainer();
+    mStartRun->mStartOffset = mStart.PointRef().Offset();
+  }
 
   if (StartsFromHardLineBreak()) {
     
     mStartRun->MarkAsStartOfHardLine();
-    mStartRun->mEndNode = mFirstNBSPNode;
-    mStartRun->mEndOffset = mFirstNBSPOffset;
-    mStartRun->SetStartFrom(mStartReason);
+    if (mNBSPData.FirstPointRef().IsSet()) {
+      mStartRun->mEndNode = mNBSPData.FirstPointRef().GetContainer();
+      mStartRun->mEndOffset = mNBSPData.FirstPointRef().Offset();
+    }
+    mStartRun->SetStartFrom(mStart.RawReason());
     mStartRun->SetEndByNormalWiteSpaces();
 
     
     WSFragment* normalRun = new WSFragment();
     mStartRun->mRight = normalRun;
     normalRun->MarkAsVisible();
-    normalRun->mStartNode = mFirstNBSPNode;
-    normalRun->mStartOffset = mFirstNBSPOffset;
+    if (mNBSPData.FirstPointRef().IsSet()) {
+      normalRun->mStartNode = mNBSPData.FirstPointRef().GetContainer();
+      normalRun->mStartOffset = mNBSPData.FirstPointRef().Offset();
+    }
     normalRun->SetStartFromLeadingWhiteSpaces();
     normalRun->mLeft = mStartRun;
     if (!EndsByBlockBoundary()) {
       
-      normalRun->SetEndBy(mEndReason);
-      normalRun->mEndNode = mEndNode;
-      normalRun->mEndOffset = mEndOffset;
+      normalRun->SetEndBy(mEnd.RawReason());
+      if (mEnd.PointRef().IsSet()) {
+        normalRun->mEndNode = mEnd.PointRef().GetContainer();
+        normalRun->mEndOffset = mEnd.PointRef().Offset();
+      }
       mEndRun = normalRun;
     } else {
       
       
       
       
-      if (mLastNBSPNode == mEndNode && mLastNBSPOffset == mEndOffset - 1) {
+      if (mNBSPData.LastPointRef().IsSet() && mEnd.PointRef().IsSet() &&
+          mNBSPData.LastPointRef().GetContainer() ==
+              mEnd.PointRef().GetContainer() &&
+          mNBSPData.LastPointRef().Offset() == mEnd.PointRef().Offset() - 1) {
         
-        normalRun->SetEndBy(mEndReason);
-        normalRun->mEndNode = mEndNode;
-        normalRun->mEndOffset = mEndOffset;
+        normalRun->SetEndBy(mEnd.RawReason());
+        normalRun->mEndNode = mEnd.PointRef().GetContainer();
+        normalRun->mEndOffset = mEnd.PointRef().Offset();
         mEndRun = normalRun;
       } else {
-        normalRun->mEndNode = mLastNBSPNode;
-        normalRun->mEndOffset = mLastNBSPOffset + 1;
+        if (mNBSPData.LastPointRef().IsSet()) {
+          normalRun->mEndNode = mNBSPData.LastPointRef().GetContainer();
+          normalRun->mEndOffset = mNBSPData.LastPointRef().Offset() + 1;
+        }
         normalRun->SetEndByTrailingWhiteSpaces();
 
         
         WSFragment* lastRun = new WSFragment();
         lastRun->MarkAsEndOfHardLine();
-        lastRun->mStartNode = mLastNBSPNode;
-        lastRun->mStartOffset = mLastNBSPOffset + 1;
-        lastRun->mEndNode = mEndNode;
-        lastRun->mEndOffset = mEndOffset;
+        if (mNBSPData.LastPointRef().IsSet()) {
+          lastRun->mStartNode = mNBSPData.LastPointRef().GetContainer();
+          lastRun->mStartOffset = mNBSPData.LastPointRef().Offset() + 1;
+        }
+        if (mEnd.PointRef().IsSet()) {
+          lastRun->mEndNode = mEnd.PointRef().GetContainer();
+          lastRun->mEndOffset = mEnd.PointRef().Offset();
+        }
         lastRun->SetStartFromNormalWhiteSpaces();
         lastRun->mLeft = normalRun;
-        lastRun->SetEndBy(mEndReason);
+        lastRun->SetEndBy(mEnd.RawReason());
         mEndRun = lastRun;
         normalRun->mRight = lastRun;
       }
@@ -1073,28 +1063,35 @@ void WSRunScanner::GetRuns() {
   } else {
     MOZ_ASSERT(!StartsFromHardLineBreak());
     mStartRun->MarkAsVisible();
-    mStartRun->mEndNode = mLastNBSPNode;
-    mStartRun->mEndOffset = mLastNBSPOffset + 1;
-    mStartRun->SetStartFrom(mStartReason);
+    if (mNBSPData.LastPointRef().IsSet()) {
+      mStartRun->mEndNode = mNBSPData.LastPointRef().GetContainer();
+      mStartRun->mEndOffset = mNBSPData.LastPointRef().Offset() + 1;
+    }
+    mStartRun->SetStartFrom(mStart.RawReason());
 
     
     
     
     
-    if (mLastNBSPNode == mEndNode && mLastNBSPOffset == (mEndOffset - 1)) {
-      mStartRun->SetEndBy(mEndReason);
-      mStartRun->mEndNode = mEndNode;
-      mStartRun->mEndOffset = mEndOffset;
+    if (mNBSPData.LastPointRef().IsSet() && mEnd.PointRef().IsSet() &&
+        mNBSPData.LastPointRef().GetContainer() ==
+            mEnd.PointRef().GetContainer() &&
+        mNBSPData.LastPointRef().Offset() == mEnd.PointRef().Offset() - 1) {
+      mStartRun->SetEndBy(mEnd.RawReason());
+      mStartRun->mEndNode = mEnd.PointRef().GetContainer();
+      mStartRun->mEndOffset = mEnd.PointRef().Offset();
       mEndRun = mStartRun;
     } else {
       
       WSFragment* lastRun = new WSFragment();
       lastRun->MarkAsEndOfHardLine();
-      lastRun->mStartNode = mLastNBSPNode;
-      lastRun->mStartOffset = mLastNBSPOffset + 1;
+      if (mNBSPData.LastPointRef().IsSet()) {
+        lastRun->mStartNode = mNBSPData.LastPointRef().GetContainer();
+        lastRun->mStartOffset = mNBSPData.LastPointRef().Offset() + 1;
+      }
       lastRun->SetStartFromNormalWhiteSpaces();
       lastRun->mLeft = mStartRun;
-      lastRun->SetEndBy(mEndReason);
+      lastRun->SetEndBy(mEnd.RawReason());
       mEndRun = lastRun;
       mStartRun->mRight = lastRun;
       mStartRun->SetEndByTrailingWhiteSpaces();
@@ -1123,8 +1120,10 @@ void WSRunScanner::InitializeWithSingleFragment(
 
   mStartRun = new WSFragment();
 
-  mStartRun->mStartNode = mStartNode;
-  mStartRun->mStartOffset = mStartOffset;
+  if (mStart.PointRef().IsSet()) {
+    mStartRun->mStartNode = mStart.PointRef().GetContainer();
+    mStartRun->mStartOffset = mStart.PointRef().Offset();
+  }
   if (aIsVisible == WSFragment::Visible::Yes) {
     mStartRun->MarkAsVisible();
   }
@@ -1134,10 +1133,12 @@ void WSRunScanner::InitializeWithSingleFragment(
   if (aIsEndOfHardLine == WSFragment::EndOfHardLine::Yes) {
     mStartRun->MarkAsEndOfHardLine();
   }
-  mStartRun->mEndNode = mEndNode;
-  mStartRun->mEndOffset = mEndOffset;
-  mStartRun->SetStartFrom(mStartReason);
-  mStartRun->SetEndBy(mEndReason);
+  if (mEnd.PointRef().IsSet()) {
+    mStartRun->mEndNode = mEnd.PointRef().GetContainer();
+    mStartRun->mEndOffset = mEnd.PointRef().Offset();
+  }
+  mStartRun->SetStartFrom(mStart.RawReason());
+  mStartRun->SetEndBy(mEnd.RawReason());
 
   mEndRun = mStartRun;
 }
@@ -1353,7 +1354,7 @@ EditorDOMPointInText WSRunScanner::GetInclusiveNextEditableCharPoint(
     return EditorDOMPointInText(point.ContainerAsText(), point.Offset());
   }
 
-  if (point.GetContainer() == mEndReasonContent) {
+  if (point.GetContainer() == mEnd.GetReasonContent()) {
     return EditorDOMPointInText();
   }
 
@@ -1375,7 +1376,7 @@ EditorDOMPointInText WSRunScanner::GetInclusiveNextEditableCharPoint(
            *nextContent, *editableBlockParentOrTopmotEditableInlineContent,
            mEditingHost)) {
     if (!nextContent->IsText() || !nextContent->IsEditable()) {
-      if (nextContent == mEndReasonContent) {
+      if (nextContent == mEnd.GetReasonContent()) {
         break;  
       }
       continue;
@@ -1421,7 +1422,7 @@ EditorDOMPointInText WSRunScanner::GetPreviousEditableCharPoint(
     return EditorDOMPointInText(point.ContainerAsText(), point.Offset() - 1);
   }
 
-  if (point.GetContainer() == mStartReasonContent) {
+  if (point.GetContainer() == mStart.GetReasonContent()) {
     return EditorDOMPointInText();
   }
 
@@ -1445,7 +1446,7 @@ EditorDOMPointInText WSRunScanner::GetPreviousEditableCharPoint(
                *editableBlockParentOrTopmotEditableInlineContent,
                mEditingHost)) {
     if (!previousContent->IsText() || !previousContent->IsEditable()) {
-      if (previousContent == mStartReasonContent) {
+      if (previousContent == mStart.GetReasonContent()) {
         break;  
       }
       continue;

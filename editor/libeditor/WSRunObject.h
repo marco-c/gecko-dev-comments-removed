@@ -379,62 +379,42 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
 
-  nsIContent* GetStartReasonContent() const { return mStartReasonContent; }
-  nsIContent* GetEndReasonContent() const { return mEndReasonContent; }
+  nsIContent* GetStartReasonContent() const {
+    return mStart.GetReasonContent();
+  }
+  nsIContent* GetEndReasonContent() const { return mEnd.GetReasonContent(); }
 
-  bool StartsFromNormalText() const {
-    return mStartReason == WSType::NormalText;
-  }
-  bool StartsFromSpecialContent() const {
-    return mStartReason == WSType::SpecialContent;
-  }
-  bool StartsFromBRElement() const { return mStartReason == WSType::BRElement; }
+  bool StartsFromNormalText() const { return mStart.IsNormalText(); }
+  bool StartsFromSpecialContent() const { return mStart.IsSpecialContent(); }
+  bool StartsFromBRElement() const { return mStart.IsBRElement(); }
   bool StartsFromCurrentBlockBoundary() const {
-    return mStartReason == WSType::CurrentBlockBoundary;
+    return mStart.IsCurrentBlockBoundary();
   }
   bool StartsFromOtherBlockElement() const {
-    return mStartReason == WSType::OtherBlockBoundary;
+    return mStart.IsOtherBlockBoundary();
   }
-  bool StartsFromBlockBoundary() const {
-    return mStartReason == WSType::CurrentBlockBoundary ||
-           mStartReason == WSType::OtherBlockBoundary;
-  }
-  bool StartsFromHardLineBreak() const {
-    return mStartReason == WSType::CurrentBlockBoundary ||
-           mStartReason == WSType::OtherBlockBoundary ||
-           mStartReason == WSType::BRElement;
-  }
-  bool EndsByNormalText() const { return mEndReason == WSType::NormalText; }
-  bool EndsBySpecialContent() const {
-    return mEndReason == WSType::SpecialContent;
-  }
-  bool EndsByBRElement() const { return mEndReason == WSType::BRElement; }
+  bool StartsFromBlockBoundary() const { return mStart.IsBlockBoundary(); }
+  bool StartsFromHardLineBreak() const { return mStart.IsHardLineBreak(); }
+  bool EndsByNormalText() const { return mEnd.IsNormalText(); }
+  bool EndsBySpecialContent() const { return mEnd.IsSpecialContent(); }
+  bool EndsByBRElement() const { return mEnd.IsBRElement(); }
   bool EndsByCurrentBlockBoundary() const {
-    return mEndReason == WSType::CurrentBlockBoundary;
+    return mEnd.IsCurrentBlockBoundary();
   }
-  bool EndsByOtherBlockElement() const {
-    return mEndReason == WSType::OtherBlockBoundary;
-  }
-  bool EndsByBlockBoundary() const {
-    return mEndReason == WSType::CurrentBlockBoundary ||
-           mEndReason == WSType::OtherBlockBoundary;
-  }
+  bool EndsByOtherBlockElement() const { return mEnd.IsOtherBlockBoundary(); }
+  bool EndsByBlockBoundary() const { return mEnd.IsBlockBoundary(); }
 
   MOZ_NEVER_INLINE_DEBUG dom::Element* StartReasonOtherBlockElementPtr() const {
-    MOZ_DIAGNOSTIC_ASSERT(mStartReasonContent->IsElement());
-    return mStartReasonContent->AsElement();
+    return mStart.OtherBlockElementPtr();
   }
   MOZ_NEVER_INLINE_DEBUG dom::HTMLBRElement* StartReasonBRElementPtr() const {
-    MOZ_DIAGNOSTIC_ASSERT(mStartReasonContent->IsHTMLElement(nsGkAtoms::br));
-    return static_cast<dom::HTMLBRElement*>(mStartReasonContent.get());
+    return mStart.BRElementPtr();
   }
   MOZ_NEVER_INLINE_DEBUG dom::Element* EndReasonOtherBlockElementPtr() const {
-    MOZ_DIAGNOSTIC_ASSERT(mEndReasonContent->IsElement());
-    return mEndReasonContent->AsElement();
+    return mEnd.OtherBlockElementPtr();
   }
   MOZ_NEVER_INLINE_DEBUG dom::HTMLBRElement* EndReasonBRElementPtr() const {
-    MOZ_DIAGNOSTIC_ASSERT(mEndReasonContent->IsHTMLElement(nsGkAtoms::br));
-    return static_cast<dom::HTMLBRElement*>(mEndReasonContent.get());
+    return mEnd.BRElementPtr();
   }
 
   
@@ -632,6 +612,83 @@ class MOZ_STACK_CLASS WSRunScanner {
 
   char16_t GetCharAt(dom::Text* aTextNode, int32_t aOffset) const;
 
+  class MOZ_STACK_CLASS BoundaryData final {
+   public:
+    BoundaryData() : mReason(WSType::NotInitialized) {}
+    template <typename EditorDOMPointType>
+    BoundaryData(const EditorDOMPointType& aPoint, nsIContent& aReasonContent,
+                 WSType aReason)
+        : mReasonContent(&aReasonContent), mPoint(aPoint), mReason(aReason) {}
+    bool Initialized() const { return mReasonContent && mPoint.IsSet(); }
+
+    nsIContent* GetReasonContent() const { return mReasonContent; }
+    const EditorDOMPoint& PointRef() const { return mPoint; }
+    WSType RawReason() const { return mReason; }
+
+    bool IsNormalText() const { return mReason == WSType::NormalText; }
+    bool IsSpecialContent() const { return mReason == WSType::SpecialContent; }
+    bool IsBRElement() const { return mReason == WSType::BRElement; }
+    bool IsCurrentBlockBoundary() const {
+      return mReason == WSType::CurrentBlockBoundary;
+    }
+    bool IsOtherBlockBoundary() const {
+      return mReason == WSType::OtherBlockBoundary;
+    }
+    bool IsBlockBoundary() const {
+      return mReason == WSType::CurrentBlockBoundary ||
+             mReason == WSType::OtherBlockBoundary;
+    }
+    bool IsHardLineBreak() const {
+      return mReason == WSType::CurrentBlockBoundary ||
+             mReason == WSType::OtherBlockBoundary ||
+             mReason == WSType::BRElement;
+    }
+    MOZ_NEVER_INLINE_DEBUG dom::Element* OtherBlockElementPtr() const {
+      MOZ_DIAGNOSTIC_ASSERT(mReasonContent->IsElement());
+      return mReasonContent->AsElement();
+    }
+    MOZ_NEVER_INLINE_DEBUG dom::HTMLBRElement* BRElementPtr() const {
+      MOZ_DIAGNOSTIC_ASSERT(mReasonContent->IsHTMLElement(nsGkAtoms::br));
+      return static_cast<dom::HTMLBRElement*>(mReasonContent.get());
+    }
+
+   private:
+    nsCOMPtr<nsIContent> mReasonContent;
+    EditorDOMPoint mPoint;
+    
+    
+    
+    WSType mReason;
+  };
+
+  class MOZ_STACK_CLASS NoBreakingSpaceData final {
+   public:
+    enum class Scanning { Forward, Backward };
+    void NotifyNBSP(const EditorDOMPointInText& aPoint,
+                    Scanning aScanningDirection) {
+      MOZ_ASSERT(aPoint.IsSetAndValid());
+      MOZ_ASSERT(aPoint.IsCharNBSP());
+      if (!mFirst.IsSet() || aScanningDirection == Scanning::Backward) {
+        mFirst = aPoint;
+      }
+      if (!mLast.IsSet() || aScanningDirection == Scanning::Forward) {
+        mLast = aPoint;
+      }
+    }
+
+    const EditorDOMPointInText& FirstPointRef() const { return mFirst; }
+    const EditorDOMPointInText& LastPointRef() const { return mLast; }
+
+    bool FoundNBSP() const {
+      MOZ_ASSERT(mFirst.IsSet() == mLast.IsSet());
+      return mFirst.IsSet();
+    }
+
+   private:
+    EditorDOMPointInText mFirst;
+    EditorDOMPointInText mLast;
+  };
+
   void GetRuns();
   void ClearRuns();
   void InitializeWithSingleFragment(
@@ -664,41 +721,18 @@ class MOZ_STACK_CLASS WSRunScanner {
   bool mPRE;
 
   
-  nsCOMPtr<nsINode> mStartNode;
-  int32_t mStartOffset;
-
-  
-  nsCOMPtr<nsINode> mEndNode;
-  int32_t mEndOffset;
-
-  
-  RefPtr<dom::Text> mFirstNBSPNode;
-  int32_t mFirstNBSPOffset;
-
-  
-  RefPtr<dom::Text> mLastNBSPNode;
-  int32_t mLastNBSPOffset;
-
-  
   WSFragment* mStartRun;
 
   
   WSFragment* mEndRun;
 
   
-  nsCOMPtr<nsIContent> mStartReasonContent;
-  nsCOMPtr<nsIContent> mEndReasonContent;
-
-  
   const HTMLEditor* mHTMLEditor;
 
- private:
-  
-  
-  
-  
-  WSType mStartReason;
-  WSType mEndReason;
+ protected:
+  BoundaryData mStart;
+  BoundaryData mEnd;
+  NoBreakingSpaceData mNBSPData;
 };
 
 class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
@@ -895,13 +929,6 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
       const WSFragment& aRun, const EditorDOMPoint& aPoint);
 
   MOZ_CAN_RUN_SCRIPT nsresult Scrub();
-
-  EditorDOMPoint StartPoint() const {
-    return EditorDOMPoint(mStartNode, mStartOffset);
-  }
-  EditorDOMPoint EndPoint() const {
-    return EditorDOMPoint(mEndNode, mEndOffset);
-  }
 
   
   
