@@ -1618,9 +1618,19 @@ mozilla::ipc::IPCResult DocAccessibleChild::RecvChildAtPoint(
     if (result) {
       
       
-      *aResultDoc = result->Document()->IPCDoc();
-      *aResultID =
-          result->IsDoc() ? 0 : reinterpret_cast<uint64_t>(result->UniqueID());
+      DocAccessibleChild* resultDoc = result->Document()->IPCDoc();
+      
+      
+      
+      
+      
+      
+      if (resultDoc && resultDoc->IsConstructedInParentProcess()) {
+        *aResultDoc = resultDoc;
+        *aResultID = result->IsDoc()
+                         ? 0
+                         : reinterpret_cast<uint64_t>(result->UniqueID());
+      }
     }
   }
 
