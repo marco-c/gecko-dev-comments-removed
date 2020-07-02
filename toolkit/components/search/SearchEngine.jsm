@@ -778,11 +778,12 @@ EngineURL.prototype = {
 
 
 
+
 function SearchEngine(options = {}) {
-  if (!("isBuiltin" in options)) {
-    throw new Error("isBuiltin missing from options.");
+  if (!("isAppProvided" in options)) {
+    throw new Error("isAppProvided missing from options.");
   }
-  this._isBuiltin = options.isBuiltin;
+  this._isAppProvided = options.isAppProvided;
   
   
   
@@ -840,7 +841,7 @@ function SearchEngine(options = {}) {
       shortName = file.leafName;
     } else if (uri && uri instanceof Ci.nsIURL) {
       if (
-        this._isBuiltin ||
+        this._isAppProvided ||
         (gEnvironment.get("XPCSHELL_TEST_PROFILE_DIR") &&
           uri.scheme == "resource")
       ) {
@@ -910,7 +911,7 @@ SearchEngine.prototype = {
   
   _locale: null,
   
-  _isBuiltin: false,
+  _isAppProvided: false,
   
   _orderHint: null,
   
@@ -1859,7 +1860,7 @@ SearchEngine.prototype = {
       _iconMapObj: this._iconMapObj,
       _metaData: this._metaData,
       _urls: this._urls,
-      _isBuiltin: this._isBuiltin,
+      _isAppProvided: this._isAppProvided,
       _orderHint: this._orderHint,
       _telemetryId: this._telemetryId,
     };
@@ -2108,11 +2109,11 @@ SearchEngine.prototype = {
     
     
     if (gModernConfig) {
-      return !!(this._extensionID && this._isBuiltin);
+      return !!(this._extensionID && this._isAppProvided);
     }
 
     if (this._extensionID) {
-      return this._isBuiltin || this._isDistribution;
+      return this._isAppProvided || this._isDistribution;
     }
 
     
