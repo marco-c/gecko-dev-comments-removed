@@ -14,13 +14,12 @@
 #include "SVGFilters.h"
 #include "mozilla/ServoStyleConsts.h"
 
-class nsSVGFilterFrame;
-
 namespace mozilla {
+class SVGFilterFrame;
+
 namespace dom {
 class SVGFilterElement;
 }  
-}  
 
 
 
@@ -63,16 +62,13 @@ class SVGFilterElement;
 
 
 
-class nsSVGFilterInstance {
-  using StyleFilter = mozilla::StyleFilter;
-  typedef mozilla::SVGAnimatedNumber SVGAnimatedNumber;
-  typedef mozilla::SVGAnimatedNumberPair SVGAnimatedNumberPair;
-  typedef mozilla::gfx::Point3D Point3D;
-  typedef mozilla::gfx::IntRect IntRect;
-  typedef mozilla::gfx::SourceSurface SourceSurface;
-  typedef mozilla::gfx::FilterPrimitiveDescription FilterPrimitiveDescription;
-  typedef mozilla::dom::SVGFE SVGFE;
-  typedef mozilla::dom::UserSpaceMetrics UserSpaceMetrics;
+class SVGFilterInstance {
+  typedef gfx::Point3D Point3D;
+  typedef gfx::IntRect IntRect;
+  typedef gfx::SourceSurface SourceSurface;
+  typedef gfx::FilterPrimitiveDescription FilterPrimitiveDescription;
+  typedef dom::SVGFE SVGFE;
+  typedef dom::UserSpaceMetrics UserSpaceMetrics;
 
  public:
   
@@ -83,11 +79,11 @@ class nsSVGFilterInstance {
 
 
 
-  nsSVGFilterInstance(const StyleFilter& aFilter, nsIFrame* aTargetFrame,
-                      nsIContent* aTargetContent,
-                      const UserSpaceMetrics& aMetrics,
-                      const gfxRect& aTargetBBox,
-                      const gfxSize& aUserSpaceToFilterSpaceScale);
+  SVGFilterInstance(const StyleFilter& aFilter, nsIFrame* aTargetFrame,
+                    nsIContent* aTargetContent,
+                    const UserSpaceMetrics& aMetrics,
+                    const gfxRect& aTargetBBox,
+                    const gfxSize& aUserSpaceToFilterSpaceScale);
 
   
 
@@ -137,7 +133,7 @@ class nsSVGFilterInstance {
   
 
 
-  nsSVGFilterFrame* GetFilterFrame(nsIFrame* aTargetFrame);
+  SVGFilterFrame* GetFilterFrame(nsIFrame* aTargetFrame);
 
   
 
@@ -217,12 +213,12 @@ class nsSVGFilterInstance {
   
 
 
-  const mozilla::dom::SVGFilterElement* mFilterElement;
+  const dom::SVGFilterElement* mFilterElement;
 
   
 
 
-  nsSVGFilterFrame* mFilterFrame;
+  SVGFilterFrame* mFilterFrame;
 
   
 
@@ -265,5 +261,7 @@ class nsSVGFilterInstance {
 
   bool mInitialized;
 };
+
+}  
 
 #endif

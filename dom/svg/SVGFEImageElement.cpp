@@ -174,7 +174,7 @@ already_AddRefed<DOMSVGAnimatedString> SVGFEImageElement::Href() {
 
 
 FilterPrimitiveDescription SVGFEImageElement::GetPrimitiveDescription(
-    nsSVGFilterInstance* aInstance, const IntRect& aFilterSubregion,
+    SVGFilterInstance* aInstance, const IntRect& aFilterSubregion,
     const nsTArray<bool>& aInputsAreTainted,
     nsTArray<RefPtr<SourceSurface>>& aInputImages) {
   nsIFrame* frame = GetPrimaryFrame();

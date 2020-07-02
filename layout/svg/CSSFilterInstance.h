@@ -15,17 +15,18 @@
 #include "nsColor.h"
 #include "mozilla/ServoStyleConsts.h"
 
+namespace mozilla {
 
 
 
 
 
-class nsCSSFilterInstance {
-  using StyleFilter = mozilla::StyleFilter;
-  typedef mozilla::gfx::sRGBColor sRGBColor;
-  typedef mozilla::gfx::FilterPrimitiveDescription FilterPrimitiveDescription;
-  typedef mozilla::gfx::IntPoint IntPoint;
-  typedef mozilla::gfx::Size Size;
+
+class CSSFilterInstance {
+  typedef gfx::sRGBColor sRGBColor;
+  typedef gfx::FilterPrimitiveDescription FilterPrimitiveDescription;
+  typedef gfx::IntPoint IntPoint;
+  typedef gfx::Size Size;
 
  public:
   
@@ -39,10 +40,9 @@ class nsCSSFilterInstance {
 
 
 
-  nsCSSFilterInstance(
-      const StyleFilter& aFilter, nscolor aShadowFallbackColor,
-      const nsIntRect& aTargetBoundsInFilterSpace,
-      const gfxMatrix& aFrameSpaceInCSSPxToFilterSpaceTransform);
+  CSSFilterInstance(const StyleFilter& aFilter, nscolor aShadowFallbackColor,
+                    const nsIntRect& aTargetBoundsInFilterSpace,
+                    const gfxMatrix& aFrameSpaceInCSSPxToFilterSpaceTransform);
 
   
 
@@ -140,5 +140,7 @@ class nsCSSFilterInstance {
 
   gfxMatrix mFrameSpaceInCSSPxToFilterSpaceTransform;
 };
+
+}  
 
 #endif

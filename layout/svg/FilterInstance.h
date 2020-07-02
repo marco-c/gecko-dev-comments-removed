@@ -23,14 +23,14 @@
 
 class gfxContext;
 class nsIFrame;
-class nsSVGFilterPaintCallback;
 struct WrFiltersHolder;
 
 namespace mozilla {
+class SVGFilterPaintCallback;
+
 namespace dom {
 class UserSpaceMetrics;
 }  
-}  
 
 
 
@@ -48,18 +48,14 @@ class UserSpaceMetrics;
 
 
 
-class nsFilterInstance {
-  template <typename T>
-  using Span = mozilla::Span<T>;
-  using StyleFilter = mozilla::StyleFilter;
-
-  typedef mozilla::gfx::IntRect IntRect;
-  typedef mozilla::gfx::SourceSurface SourceSurface;
-  typedef mozilla::gfx::DrawTarget DrawTarget;
-  typedef mozilla::gfx::FilterPrimitiveDescription FilterPrimitiveDescription;
-  typedef mozilla::gfx::FilterDescription FilterDescription;
-  typedef mozilla::dom::UserSpaceMetrics UserSpaceMetrics;
-  typedef mozilla::image::imgDrawingParams imgDrawingParams;
+class FilterInstance {
+  typedef gfx::IntRect IntRect;
+  typedef gfx::SourceSurface SourceSurface;
+  typedef gfx::DrawTarget DrawTarget;
+  typedef gfx::FilterPrimitiveDescription FilterPrimitiveDescription;
+  typedef gfx::FilterDescription FilterDescription;
+  typedef dom::UserSpaceMetrics UserSpaceMetrics;
+  typedef image::imgDrawingParams imgDrawingParams;
 
  public:
   
@@ -88,7 +84,7 @@ class nsFilterInstance {
 
 
   static void PaintFilteredFrame(nsIFrame* aFilteredFrame, gfxContext* aCtx,
-                                 nsSVGFilterPaintCallback* aPaintCallback,
+                                 SVGFilterPaintCallback* aPaintCallback,
                                  const nsRegion* aDirtyArea,
                                  imgDrawingParams& aImgParams,
                                  float aOpacity = 1.0f);
@@ -157,16 +153,16 @@ class nsFilterInstance {
 
 
 
-  nsFilterInstance(nsIFrame* aTargetFrame, nsIContent* aTargetContent,
-                   const UserSpaceMetrics& aMetrics,
-                   Span<const StyleFilter> aFilterChain,
-                   bool aFilterInputIsTainted,
-                   nsSVGFilterPaintCallback* aPaintCallback,
-                   const gfxMatrix& aPaintTransform,
-                   const nsRegion* aPostFilterDirtyRegion = nullptr,
-                   const nsRegion* aPreFilterDirtyRegion = nullptr,
-                   const nsRect* aPreFilterVisualOverflowRectOverride = nullptr,
-                   const gfxRect* aOverrideBBox = nullptr);
+  FilterInstance(nsIFrame* aTargetFrame, nsIContent* aTargetContent,
+                 const UserSpaceMetrics& aMetrics,
+                 Span<const StyleFilter> aFilterChain,
+                 bool aFilterInputIsTainted,
+                 SVGFilterPaintCallback* aPaintCallback,
+                 const gfxMatrix& aPaintTransform,
+                 const nsRegion* aPostFilterDirtyRegion = nullptr,
+                 const nsRegion* aPreFilterDirtyRegion = nullptr,
+                 const nsRect* aPreFilterVisualOverflowRectOverride = nullptr,
+                 const gfxRect* aOverrideBBox = nullptr);
 
   
 
@@ -335,7 +331,7 @@ class nsFilterInstance {
 
   const UserSpaceMetrics& mMetrics;
 
-  nsSVGFilterPaintCallback* mPaintCallback;
+  SVGFilterPaintCallback* mPaintCallback;
 
   
 
@@ -388,5 +384,7 @@ class nsFilterInstance {
   FilterDescription mFilterDescription;
   bool mInitialized;
 };
+
+}  
 
 #endif

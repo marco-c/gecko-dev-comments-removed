@@ -26,9 +26,9 @@ class nsAtom;
 class nsIURI;
 class nsSVGClipPathFrame;
 class nsSVGPaintServerFrame;
-class nsSVGFilterFrame;
 
 namespace mozilla {
+class SVGFilterFrame;
 class SVGMarkerFrame;
 class SVGMaskFrame;
 
@@ -273,7 +273,7 @@ class SVGObserverUtils {
 
 
   static ReferenceState GetAndObserveFilters(
-      nsIFrame* aFilteredFrame, nsTArray<nsSVGFilterFrame*>* aFilterFrames);
+      nsIFrame* aFilteredFrame, nsTArray<SVGFilterFrame*>* aFilterFrames);
 
   
 
@@ -281,7 +281,7 @@ class SVGObserverUtils {
 
 
   static ReferenceState GetFiltersIfObserving(
-      nsIFrame* aFilteredFrame, nsTArray<nsSVGFilterFrame*>* aFilterFrames);
+      nsIFrame* aFilteredFrame, nsTArray<SVGFilterFrame*>* aFilterFrames);
 
   
 

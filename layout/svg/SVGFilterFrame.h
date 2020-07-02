@@ -21,18 +21,25 @@ struct nsRect;
 
 namespace mozilla {
 class SVGAnimatedLength;
+class SVGFilterInstance;
 class PresShell;
+
 namespace dom {
 class SVGFilterElement;
 }  
 }  
 
-class nsSVGFilterFrame final : public nsSVGContainerFrame {
-  friend nsIFrame* NS_NewSVGFilterFrame(mozilla::PresShell* aPresShell,
-                                        ComputedStyle* aStyle);
+nsIFrame* NS_NewSVGFilterFrame(mozilla::PresShell* aPresShell,
+                               mozilla::ComputedStyle* aStyle);
+
+namespace mozilla {
+
+class SVGFilterFrame final : public nsSVGContainerFrame {
+  friend nsIFrame* ::NS_NewSVGFilterFrame(mozilla::PresShell* aPresShell,
+                                          ComputedStyle* aStyle);
 
  protected:
-  explicit nsSVGFilterFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
+  explicit SVGFilterFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
       : nsSVGContainerFrame(aStyle, aPresContext, kClassID),
         mLoopFlag(false),
         mNoHRefURI(false) {
@@ -40,7 +47,7 @@ class nsSVGFilterFrame final : public nsSVGContainerFrame {
   }
 
  public:
-  NS_DECL_FRAMEARENA_HELPERS(nsSVGFilterFrame)
+  NS_DECL_FRAMEARENA_HELPERS(SVGFilterFrame)
 
   
   virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
@@ -55,13 +62,13 @@ class nsSVGFilterFrame final : public nsSVGContainerFrame {
 #endif
 
  private:
-  friend class nsSVGFilterInstance;
+  friend class SVGFilterInstance;
 
   
 
 
 
-  nsSVGFilterFrame* GetReferencedFilter();
+  SVGFilterFrame* GetReferencedFilter();
 
   
   uint16_t GetEnumValue(uint32_t aIndex, nsIContent* aDefault);
@@ -82,5 +89,7 @@ class nsSVGFilterFrame final : public nsSVGContainerFrame {
   bool mLoopFlag;
   bool mNoHRefURI;
 };
+
+}  
 
 #endif
