@@ -172,6 +172,9 @@ AutofillProfileAutoCompleteSearch.prototype = {
     let isAddressField = FormAutofillUtils.isAddressField(
       activeFieldDetail.fieldName
     );
+    const isCreditCardField = FormAutofillUtils.isCreditCardField(
+      activeFieldDetail.fieldName
+    );
     let isInputAutofilled = activeFieldDetail.state == FIELD_STATES.AUTO_FILLED;
     let allFieldNames = activeSection.allFieldNames;
     let filledRecordGUID = activeSection.filledRecordGUID;
@@ -188,10 +191,13 @@ AutofillProfileAutoCompleteSearch.prototype = {
     
     
     
+    
     if (
       !searchPermitted ||
       !savedFieldNames.has(activeFieldDetail.fieldName) ||
-      (!isInputAutofilled && filledRecordGUID) ||
+      (!isInputAutofilled &&
+        filledRecordGUID &&
+        !(isCreditCardField && activeInput.value === "")) ||
       (isAddressField &&
         allFieldNames.filter(field => savedFieldNames.has(field)).length <
           FormAutofillUtils.AUTOFILL_FIELDS_THRESHOLD)
