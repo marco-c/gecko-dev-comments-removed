@@ -20,12 +20,6 @@ async refcounted protocol PHttpBackgroundChannel
   manager PBackground;
 
 child:
-  
-  
-  
-  
-  async OnStartRequestSent();
-
   async OnStartRequest(nsHttpResponseHead  responseHead,
                        bool                useResponseHead,
                        nsHttpHeaderArray   requestHeaders,

@@ -73,8 +73,6 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
 
   IPCResult RecvDivertMessages();
 
-  IPCResult RecvOnStartRequestSent();
-
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   void CreateDataBridge();
@@ -93,12 +91,7 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   
   
   
-  
-  
-  
-  
-  
-  bool IsWaitingOnStartRequest(bool aDataFromSocketProcess = false);
+  bool IsWaitingOnStartRequest();
 
   
   
@@ -109,10 +102,6 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   
   
   bool mStartReceived = false;
-
-  
-  
-  bool mStartSent = false;
 
   
   

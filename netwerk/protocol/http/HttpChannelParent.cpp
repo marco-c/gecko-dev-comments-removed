@@ -1535,8 +1535,6 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   if (!mIPCClosed) {
     
     
-    
-    
     if (!mIsMultiPart) {
       ipcResult = mBgParent->OnStartRequest(
           *responseHead, useResponseHead,
@@ -1554,19 +1552,6 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   if (mIPCClosed || !ipcResult) {
     rv = NS_ERROR_UNEXPECTED;
   }
-
-  
-  
-  
-  
-  
-  if (NS_SUCCEEDED(rv) && !multiPartID) {
-    MOZ_ASSERT(mBgParent);
-    if (!mBgParent->OnStartRequestSent()) {
-      rv = NS_ERROR_UNEXPECTED;
-    }
-  }
-
   return rv;
 }
 
