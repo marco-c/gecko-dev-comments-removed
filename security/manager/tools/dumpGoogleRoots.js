@@ -13,6 +13,10 @@
 
 
 
+var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+Services.prefs.setBoolPref("network.process.enabled", false);
+
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
