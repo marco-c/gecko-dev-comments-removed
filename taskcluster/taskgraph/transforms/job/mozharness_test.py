@@ -6,6 +6,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import json
 import os
+import re
 
 import six
 from six import text_type
@@ -176,7 +177,9 @@ def mozharness_test_on_docker(config, job, taskdesc):
     }
 
     
-    if 'web-platform-tests' in test['suite'] or 'test-verify-wpt' in test['suite']:
+    
+    if ('web-platform-tests' in test['suite'] or
+        re.match('test-(coverage|verify)-wpt', test['suite'])):
         env['TESTS_BY_MANIFEST_URL'] = {
             'artifact-reference': '<decision/public/tests-by-manifest.json.gz>'}
 
@@ -319,7 +322,9 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
     }
 
     
-    if 'web-platform-tests' in test['suite'] or 'test-verify-wpt' in test['suite']:
+    
+    if ('web-platform-tests' in test['suite'] or
+        re.match('test-(coverage|verify)-wpt', test['suite'])):
         env['TESTS_BY_MANIFEST_URL'] = {
             'artifact-reference': '<decision/public/tests-by-manifest.json.gz>'}
 
@@ -474,7 +479,9 @@ def mozharness_test_on_script_engine_autophone(config, job, taskdesc):
     }
 
     
-    if 'web-platform-tests' in test['suite'] or 'test-verify-wpt' in test['suite']:
+    
+    if ('web-platform-tests' in test['suite'] or
+        re.match('test-(coverage|verify)-wpt', test['suite'])):
         env['TESTS_BY_MANIFEST_URL'] = {
             'artifact-reference': '<decision/public/tests-by-manifest.json.gz>'}
 
