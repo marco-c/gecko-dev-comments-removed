@@ -342,9 +342,9 @@ class RemoteSettingsClient extends EventEmitter {
     let { verifySignature = false } = options;
 
     if (syncIfEmpty && !(await Utils.hasLocalData(this))) {
+      
+      
       try {
-        
-        
         const importedFromDump = gLoadDump ? await this._importJSONDump() : -1;
         if (importedFromDump < 0) {
           
@@ -508,7 +508,7 @@ class RemoteSettingsClient extends EventEmitter {
             const metadata = await this.httpClient().getData({
               query: { _expected: expectedTimestamp },
             });
-            await this.db.saveMetadata(metadata);
+            await this.db.importChanges(metadata);
             
             
             if (this.verifySignature && importedFromDump.length == 0) {
@@ -737,6 +737,11 @@ class RemoteSettingsClient extends EventEmitter {
         "duration"
       );
     }
+    if (result < 0) {
+      console.debug(`${this.identifier} no dump available`);
+    } else {
+      console.info(`${this.identifier} imported ${result} records from dump`);
+    }
     return result;
   }
 
@@ -844,20 +849,10 @@ class RemoteSettingsClient extends EventEmitter {
       return syncResult;
     }
 
-    
-    const toDelete = remoteRecords.filter(r => r.deleted);
-    const toInsert = remoteRecords.filter(r => !r.deleted);
-    console.debug(
-      `${this.identifier} ${toDelete.length} to delete, ${toInsert.length} to insert`
-    );
-
     const start = Cu.now() * 1000;
-    
-    await this.db.deleteBulk(toDelete);
-    
-    await this.db.importBulk(toInsert);
-    await this.db.saveLastModified(remoteTimestamp);
-    await this.db.saveMetadata(metadata);
+    await this.db.importChanges(metadata, remoteTimestamp, remoteRecords, {
+      clear: retry,
+    });
     if (gTimingEnabled) {
       const end = Cu.now() * 1000;
       PerformanceCounters.storeExecutionTime(
@@ -909,12 +904,11 @@ class RemoteSettingsClient extends EventEmitter {
           console.debug(`${this.identifier} previous data was invalid`);
         }
 
-        
-        
-        console.debug(`${this.identifier} clear local data`);
-        await this.db.clear();
-
         if (!localTrustworthy && !retry) {
+          
+          
+          console.debug(`${this.identifier} clear local data`);
+          await this.db.clear();
           
           console.error(`${this.identifier} local data was corrupted`);
           throw new CorruptedDataError(this.identifier);
@@ -922,16 +916,22 @@ class RemoteSettingsClient extends EventEmitter {
           
           
           if (localTrustworthy) {
-            
-            console.debug(
-              `${this.identifier} Restore previous data (timestamp=${localTimestamp})`
+            await this.db.importChanges(
+              localMetadata,
+              localTimestamp,
+              localRecords,
+              {
+                clear: true, 
+              }
             );
-            await this.db.importBulk(localRecords);
-            await this.db.saveLastModified(localTimestamp);
-            await this.db.saveMetadata(localMetadata);
           } else {
             
-            await this._importJSONDump();
+            const imported = await this._importJSONDump();
+            
+            
+            if (imported < 0) {
+              await this.db.clear();
+            }
           }
         }
         throw e;

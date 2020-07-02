@@ -201,13 +201,18 @@ add_task(async function test_selector_db_modification() {
   const engineSelector = new SearchEngineSelector();
   
   const db = await RemoteSettings(SearchUtils.SETTINGS_KEY).db;
-  await db.clear();
-  await db.create({
-    default: "yes",
-    engineName: "askjeeves",
-    appliesTo: [{ included: { everywhere: true } }],
-  });
-  await db.saveLastModified(42);
+  await db.importChanges(
+    {},
+    42,
+    [
+      {
+        default: "yes",
+        engineName: "askjeeves",
+        appliesTo: [{ included: { everywhere: true } }],
+      },
+    ],
+    { clear: true }
+  );
 
   
   
@@ -242,13 +247,20 @@ add_task(async function test_selector_db_modification_never_succeeds() {
   const engineSelector = new SearchEngineSelector();
   
   const db = RemoteSettings(SearchUtils.SETTINGS_KEY).db;
-  await db.clear();
-  await db.create({
-    default: "yes",
-    engineName: "askjeeves",
-    appliesTo: [{ included: { everywhere: true } }],
-  });
-  await db.saveLastModified(42);
+  await db.importChanges(
+    {},
+    42,
+    [
+      {
+        default: "yes",
+        engineName: "askjeeves",
+        appliesTo: [{ included: { everywhere: true } }],
+      },
+    ],
+    {
+      clear: true,
+    }
+  );
 
   
   
@@ -277,13 +289,20 @@ add_task(async function test_empty_results() {
   const engineSelector = new SearchEngineSelector();
   
   const db = await RemoteSettings(SearchUtils.SETTINGS_KEY).db;
-  await db.clear();
-  await db.create({
-    default: "yes",
-    engineName: "askjeeves",
-    appliesTo: [{ included: { everywhere: true } }],
-  });
-  await db.saveLastModified(42);
+  await db.importChanges(
+    {},
+    42,
+    [
+      {
+        default: "yes",
+        engineName: "askjeeves",
+        appliesTo: [{ included: { everywhere: true } }],
+      },
+    ],
+    {
+      clear: true,
+    }
+  );
 
   
   

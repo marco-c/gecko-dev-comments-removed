@@ -1,8 +1,8 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
 
-/* eslint no-unused-vars: ["error", {vars: "local", args: "none"}] */
+
+
+
+
 
 if (!_TEST_FILE[0].includes("toolkit/mozapps/extensions/test/xpcshell/")) {
   ok(
@@ -21,13 +21,13 @@ const PREF_DISABLE_SECURITY =
   "security.turn_off_all_security_so_that_" +
   "viruses_can_take_over_this_computer";
 
-// Maximum error in file modification times. Some file systems don't store
-// modification times exactly. As long as we are closer than this then it
-// still passes.
+
+
+
 const MAX_TIME_DIFFERENCE = 3000;
 
-// Time to reset file modified time relative to Date.now() so we can test that
-// times are modified (10 hours old).
+
+
 const MAKE_FILE_OLD_DIFFERENCE = 10 * 3600 * 1000;
 
 var { AppConstants } = ChromeUtils.import(
@@ -137,7 +137,7 @@ const {
   writeFilesToZip,
 } = AddonTestUtils;
 
-// WebExtension wrapper for ease of testing
+
 ExtensionTestUtils.init(this);
 
 AddonTestUtils.init(this);
@@ -208,7 +208,7 @@ Object.defineProperty(this, "TEST_UNPACKED", {
   },
 });
 
-// We need some internal bits of AddonManager
+
 var AMscope = ChromeUtils.import(
   "resource://gre/modules/AddonManager.jsm",
   null
@@ -396,17 +396,17 @@ function delay(msec) {
   });
 }
 
-/**
- * Returns a map of Addon objects for installed add-ons with the given
- * IDs. The returned map contains a key for the ID of each add-on that
- * is found. IDs for add-ons which do not exist are not present in the
- * map.
- *
- * @param {sequence<string>} ids
- *        The list of add-on IDs to get.
- * @returns {Promise<string, Addon>}
- *        Map of add-ons that were found.
- */
+
+
+
+
+
+
+
+
+
+
+
 async function getAddons(ids) {
   let addons = new Map();
   for (let addon of await AddonManager.getAddonsByIDs(ids)) {
@@ -417,17 +417,17 @@ async function getAddons(ids) {
   return addons;
 }
 
-/**
- * Checks that the given add-on has the given expected properties.
- *
- * @param {string} id
- *        The id of the add-on.
- * @param {Addon?} addon
- *        The add-on object, or null if the add-on does not exist.
- * @param {object?} expected
- *        An object containing the expected values for properties of the
- *        add-on, or null if the add-on is expected not to exist.
- */
+
+
+
+
+
+
+
+
+
+
+
 function checkAddon(id, addon, expected) {
   info(`Checking state of addon ${id}`);
 
@@ -449,15 +449,15 @@ function checkAddon(id, addon, expected) {
   }
 }
 
-/**
- * Tests that an add-on does appear in the crash report annotations, if
- * crash reporting is enabled. The test will fail if the add-on is not in the
- * annotation.
- * @param  aId
- *         The ID of the add-on
- * @param  aVersion
- *         The version of the add-on
- */
+
+
+
+
+
+
+
+
+
 function do_check_in_crash_annotation(aId, aVersion) {
   if (!AppConstants.MOZ_CRASHREPORTER) {
     return;
@@ -476,15 +476,15 @@ function do_check_in_crash_annotation(aId, aVersion) {
   );
 }
 
-/**
- * Tests that an add-on does not appear in the crash report annotations, if
- * crash reporting is enabled. The test will fail if the add-on is in the
- * annotation.
- * @param  aId
- *         The ID of the add-on
- * @param  aVersion
- *         The version of the add-on
- */
+
+
+
+
+
+
+
+
+
 function do_check_not_in_crash_annotation(aId, aVersion) {
   if (!AppConstants.MOZ_CRASHREPORTER) {
     return;
@@ -518,7 +518,7 @@ function do_get_file_hash(aFile, aAlgorithm) {
   fis.init(aFile, -1, -1, false);
   crypto.updateFromStream(fis, aFile.fileSize);
 
-  // return the two-digit hexadecimal code for a byte
+  
   let toHexString = charCode => ("0" + charCode.toString(16)).slice(-2);
 
   let binary = crypto.finish(false);
@@ -526,13 +526,13 @@ function do_get_file_hash(aFile, aAlgorithm) {
   return aAlgorithm + ":" + hash.join("");
 }
 
-/**
- * Returns an extension uri spec
- *
- * @param  aProfileDir
- *         The extension install directory
- * @return a uri spec pointing to the root of the extension
- */
+
+
+
+
+
+
+
 function do_get_addon_root_uri(aProfileDir, aId) {
   let path = aProfileDir.clone();
   path.append(aId);
@@ -550,13 +550,13 @@ function do_get_expected_addon_name(aId) {
   return aId + ".xpi";
 }
 
-/**
- * Returns the file containing the add-on. For packed add-ons, this is
- * an XPI file. For unpacked add-ons, it is the add-on's root directory.
- *
- * @param {Addon} addon
- * @returns {nsIFile}
- */
+
+
+
+
+
+
+
 function getAddonFile(addon) {
   let uri = addon.getResourceURI("");
   if (uri instanceof Ci.nsIJARURI) {
@@ -565,17 +565,17 @@ function getAddonFile(addon) {
   return uri.QueryInterface(Ci.nsIFileURL).file;
 }
 
-/**
- * Check that an array of actual add-ons is the same as an array of
- * expected add-ons.
- *
- * @param  aActualAddons
- *         The array of actual add-ons to check.
- * @param  aExpectedAddons
- *         The array of expected add-ons to check against.
- * @param  aProperties
- *         An array of properties to check.
- */
+
+
+
+
+
+
+
+
+
+
+
 function do_check_addons(aActualAddons, aExpectedAddons, aProperties) {
   Assert.notEqual(aActualAddons, null);
   Assert.equal(aActualAddons.length, aExpectedAddons.length);
@@ -584,16 +584,16 @@ function do_check_addons(aActualAddons, aExpectedAddons, aProperties) {
   }
 }
 
-/**
- * Check that the actual add-on is the same as the expected add-on.
- *
- * @param  aActualAddon
- *         The actual add-on to check.
- * @param  aExpectedAddon
- *         The expected add-on to check against.
- * @param  aProperties
- *         An array of properties to check.
- */
+
+
+
+
+
+
+
+
+
+
 function do_check_addon(aActualAddon, aExpectedAddon, aProperties) {
   Assert.notEqual(aActualAddon, null);
 
@@ -601,7 +601,7 @@ function do_check_addon(aActualAddon, aExpectedAddon, aProperties) {
     let actualValue = aActualAddon[aProperty];
     let expectedValue = aExpectedAddon[aProperty];
 
-    // Check that all undefined expected properties are null on actual add-on
+    
     if (!(aProperty in aExpectedAddon)) {
       if (actualValue !== undefined && actualValue !== null) {
         do_throw(
@@ -684,28 +684,28 @@ function do_check_addon(aActualAddon, aExpectedAddon, aProperties) {
   });
 }
 
-/**
- * Check that the actual author is the same as the expected author.
- *
- * @param  aActual
- *         The actual author to check.
- * @param  aExpected
- *         The expected author to check against.
- */
+
+
+
+
+
+
+
+
 function do_check_author(aActual, aExpected) {
   Assert.equal(aActual.toString(), aExpected.name);
   Assert.equal(aActual.name, aExpected.name);
   Assert.equal(aActual.url, aExpected.url);
 }
 
-/**
- * Check that the actual screenshot is the same as the expected screenshot.
- *
- * @param  aActual
- *         The actual screenshot to check.
- * @param  aExpected
- *         The expected screenshot to check against.
- */
+
+
+
+
+
+
+
+
 function do_check_screenshot(aActual, aExpected) {
   Assert.equal(aActual.toString(), aExpected.url);
   Assert.equal(aActual.url, aExpected.url);
@@ -717,15 +717,15 @@ function do_check_screenshot(aActual, aExpected) {
   Assert.equal(aActual.caption, aExpected.caption);
 }
 
-/**
- * Check that the actual compatibility override is the same as the expected
- * compatibility override.
- *
- * @param  aAction
- *         The actual compatibility override to check.
- * @param  aExpected
- *         The expected compatibility override to check against.
- */
+
+
+
+
+
+
+
+
+
 function do_check_compatibilityoverride(aActual, aExpected) {
   Assert.equal(aActual.type, aExpected.type);
   Assert.equal(aActual.minVersion, aExpected.minVersion);
@@ -749,18 +749,18 @@ function isExtensionInBootstrappedList(aDir, aId) {
   return AddonTestUtils.addonsList.hasExtension(aDir, aId);
 }
 
-/**
- * Writes a manifest.json manifest into an extension using the properties passed
- * in a JS object.
- *
- * @param   aManifest
- *          The data to write
- * @param   aDir
- *          The install directory to add the extension to
- * @param   aId
- *          An optional string to override the default installation aId
- * @return  A file pointing to where the extension was installed
- */
+
+
+
+
+
+
+
+
+
+
+
+
 function promiseWriteWebManifestForExtension(
   aData,
   aDir,
@@ -864,7 +864,7 @@ class EventChecker {
     }
   }
 
-  // Add-on listener events
+  
   getExpectedEvent(aId) {
     if (!(aId in this.expectedEvents)) {
       return null;
@@ -981,13 +981,13 @@ class EventChecker {
     return this.checkAddonEvent("onOperationCancelled", addon);
   }
 
-  // Install listener events.
+  
   checkInstall(event, install, details = {}) {
-    // Lazy initialization of the plugin host means we can get spurious
-    // install events for plugins. If we're not looking for plugin
-    // installs, ignore them completely. If we *are* looking for plugin
-    // installs, the onus is on the individual test to ensure it waits
-    // for the plugin host to have done its initial work.
+    
+    
+    
+    
+    
     if (this.ignorePlugins && install.type == "plugin") {
       info(`Ignoring install event for plugin ${install.id}`);
       return undefined;
@@ -1081,8 +1081,8 @@ class EventChecker {
   }
 
   onInstallCancelled(install) {
-    // If the install was cancelled by a listener returning false from
-    // onInstallStarted, then the state will revert to STATE_DOWNLOADED.
+    
+    
     return this.checkInstall("onInstallCancelled", install, {
       state: ["STATE_CANCELED", "STATE_DOWNLOADED"],
       error: 0,
@@ -1112,20 +1112,20 @@ class EventChecker {
   }
 }
 
-/**
- * Run the giving callback function, and expect the given set of add-on
- * and install listener events to be emitted, and returns a promise
- * which resolves when they have all been observed.
- *
- * If `callback` returns a promise, all events are expected to be
- * observed by the time the promise resolves. If not, simply waits for
- * all events to be observed before resolving the returned promise.
- *
- * @param {object} details
- * @param {function} callback
- * @returns {Promise}
- */
-/* exported expectEvents */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function expectEvents(details, callback) {
   let checker = new EventChecker(details);
 
@@ -1161,15 +1161,15 @@ async function promiseInstallWebExtension(aData) {
   return addon;
 }
 
-// By default use strict compatibility
+
 Services.prefs.setBoolPref("extensions.strictCompatibility", true);
 
-// Ensure signature checks are enabled by default
+
 Services.prefs.setBoolPref(PREF_XPI_SIGNATURES_REQUIRED, true);
 
 Services.prefs.setBoolPref("extensions.experiments.enabled", true);
 
-// Copies blocklistFile (an nsIFile) to gProfD/blocklist.xml.
+
 function copyBlocklistToProfile(blocklistFile) {
   var dest = gProfD.clone();
   dest.append("blocklist.xml");
@@ -1196,7 +1196,6 @@ async function mockGfxBlocklistItems(items) {
     Services.prefs.getCharPref("services.blocklist.gfx.collection"),
     { bucketNamePref: "services.blocklist.bucket" }
   );
-  await client.db.clear();
   const records = items.map(item => {
     if (item.id && item.last_modified) {
       return item;
@@ -1210,41 +1209,42 @@ async function mockGfxBlocklistItems(items) {
     };
   });
   const collectionTimestamp = Math.max(...records.map(r => r.last_modified));
-  await client.db.importBulk(records);
-  await client.db.saveLastModified(collectionTimestamp);
+  await client.db.importChanges({}, collectionTimestamp, records, {
+    clear: true,
+  });
   let rv = await bsPass.GfxBlocklistRS.checkForEntries();
   return rv;
 }
 
-/**
- * Change the schema version of the JSON extensions database
- */
+
+
+
 async function changeXPIDBVersion(aNewVersion) {
   let json = await loadJSON(gExtensionsJSON.path);
   json.schemaVersion = aNewVersion;
   await saveJSON(json, gExtensionsJSON.path);
 }
 
-/**
- * Load a file into a string
- */
+
+
+
 async function loadFile(aFile) {
   let buffer = await OS.File.read(aFile);
   return new TextDecoder().decode(buffer);
 }
 
-/**
- * Raw load of a JSON file
- */
+
+
+
 async function loadJSON(aFile) {
   let data = await loadFile(aFile);
   info("Loaded JSON file " + aFile);
   return JSON.parse(data);
 }
 
-/**
- * Raw save of a JSON blob to file
- */
+
+
+
 async function saveJSON(aData, aFile) {
   info("Starting to save JSON file " + aFile);
   await OS.File.writeAtomic(
@@ -1316,9 +1316,9 @@ async function setInitialState(addon, initialState) {
 async function setupBuiltinExtension(extensionData) {
   let xpi = await AddonTestUtils.createTempWebExtensionFile(extensionData);
 
-  // The built-in location requires a resource: URL that maps to a
-  // jar: or file: URL.  This would typically be something bundled
-  // into omni.ja but for testing we just use a temp file.
+  
+  
+  
   let base = Services.io.newURI(`jar:file:${xpi.path}!/`);
   let resProto = Services.io
     .getProtocolHandler("resource")
