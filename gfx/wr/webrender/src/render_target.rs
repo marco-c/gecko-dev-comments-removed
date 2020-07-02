@@ -383,6 +383,18 @@ impl RenderTarget for ColorRenderTarget {
                     
                     
                     
+                    
+                    let prealloc_batch_count = if pic.prim_list.clusters.len() > 1 {
+                        128
+                    } else {
+                        0
+                    };
+
+                    
+                    
+                    
+                    
+                    
                     let alpha_batch_builder = AlphaBatchBuilder::new(
                         self.screen_size,
                         ctx.break_advanced_blend_batches,
@@ -390,6 +402,7 @@ impl RenderTarget for ColorRenderTarget {
                         *task_id,
                         render_tasks.get_task_address(*task_id),
                         PrimitiveVisibilityMask::all(),
+                        prealloc_batch_count,
                     );
 
                     let mut batch_builder = BatchBuilder::new(
