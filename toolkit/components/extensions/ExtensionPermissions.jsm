@@ -24,6 +24,10 @@ XPCOMUtils.defineLazyGetter(
   () => ExtensionParent.StartupCache
 );
 
+XPCOMUtils.defineLazyServiceGetters(this, {
+  gUUIDGenerator: ["@mozilla.org/uuid-generator;1", "nsIUUIDGenerator"],
+});
+
 ChromeUtils.defineModuleGetter(
   this,
   "KeyValueService",
@@ -135,10 +139,41 @@ class LegacyPermissionStore {
 class PermissionStore {
   async _init() {
     const dir = FileUtils.getDir("ProfD", ["extension-store"], true);
-    this._store = await KeyValueService.getOrCreate(dir.path, "permissions");
+    try {
+      this._store = await KeyValueService.getOrCreate(dir.path, "permissions");
+    } catch (ex) {
+      
+      Cu.reportError(ex);
+      await this.recreateCorruptDatabase(dir.path);
+    }
     if (!(await this._store.has(VERSION_KEY))) {
       await this.maybeMigrateData();
     }
+  }
+
+  async recreateCorruptDatabase(path) {
+    try {
+      let uuid = gUUIDGenerator
+        .generateUUID()
+        .toString()
+        .slice(1, -1);
+      const backupFolder = FileUtils.getDir(
+        "ProfD",
+        ["extension-store.corrupt"],
+        true
+      );
+      backupFolder.append(uuid);
+      await OS.File.move(path, backupFolder.path, { noCopy: true });
+      
+      await OS.File.removeDir(path);
+      await OS.File.makeDir(path);
+    } catch (ex) {
+      
+      Cu.reportError(ex);
+    }
+
+    
+    this._store = await KeyValueService.getOrCreate(path, "permissions");
   }
 
   lazyInit() {
