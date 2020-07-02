@@ -95,6 +95,16 @@ class CanonicalBrowsingContext final : public BrowsingContext {
       nsDocShellLoadState* aLoadState, nsIChannel* aChannel);
   void SessionHistoryCommit(uint64_t aSessionHistoryEntryId);
 
+  
+  
+  
+  
+  
+  
+  void NotifyOnHistoryReload(bool& aCanReload,
+                             Maybe<RefPtr<nsDocShellLoadState>>& aLoadState,
+                             Maybe<bool>& aReloadActiveEntry);
+
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 

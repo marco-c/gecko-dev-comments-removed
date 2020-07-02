@@ -3768,7 +3768,7 @@ nsDocShell::Reload(uint32_t aReloadFlags) {
   if (!IsNavigationAllowed()) {
     return NS_OK;  
   }
-  nsresult rv;
+
   NS_ASSERTION(((aReloadFlags & INTERNAL_LOAD_FLAGS_LOADURI_SETUP_FLAGS) == 0),
                "Reload command not updated to use load flags!");
   NS_ASSERTION((aReloadFlags & EXTRA_LOAD_FLAGS) == 0,
@@ -3780,6 +3780,38 @@ nsDocShell::Reload(uint32_t aReloadFlags) {
   
   
   RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
+  if (StaticPrefs::fission_sessionHistoryInParent()) {
+    RefPtr<nsDocShell> docShell(this);
+    RefPtr<Document> doc(GetDocument());
+    RefPtr<BrowsingContext> browsingContext(mBrowsingContext);
+    nsCOMPtr<nsIURI> currentURI(mCurrentURI);
+    nsCOMPtr<nsIReferrerInfo> referrerInfo(mReferrerInfo);
+    ContentChild::GetSingleton()->SendNotifyOnHistoryReload(
+        mBrowsingContext,
+        [docShell, doc, loadType, browsingContext, currentURI, referrerInfo](
+            Tuple<bool, Maybe<RefPtr<nsDocShellLoadState>>, Maybe<bool>>&&
+                aResult) {
+          bool canReload;
+          Maybe<RefPtr<nsDocShellLoadState>> loadState;
+          Maybe<bool> reloadingActiveEntry;
+
+          Tie(canReload, loadState, reloadingActiveEntry) = aResult;
+
+          if (!canReload) {
+            return;
+          }
+
+          if (loadState.isSome()) {
+            docShell->LoadHistoryEntry(loadState.ref(), loadType,
+                                       reloadingActiveEntry.ref());
+          } else {
+            ReloadDocument(docShell, doc, loadType, browsingContext, currentURI,
+                           referrerInfo);
+          }
+        },
+        [](ResponseRejectReason) {});
+  }
+
   bool canReload = true;
   if (rootSH) {
     rootSH->LegacySHistory()->NotifyOnHistoryReload(&canReload);
@@ -3791,87 +3823,94 @@ nsDocShell::Reload(uint32_t aReloadFlags) {
 
   
   if (mOSHE) {
-    rv = LoadHistoryEntry(mOSHE, loadType);
-  } else if (mLSHE) {  
-                       
-    rv = LoadHistoryEntry(mLSHE, loadType);
-  } else {
-    RefPtr<Document> doc(GetDocument());
-
-    if (!doc) {
-      return NS_OK;
-    }
-
-    
-    uint32_t flags = INTERNAL_LOAD_FLAGS_NONE;
-    nsAutoString srcdoc;
-    nsIURI* baseURI = nullptr;
-    nsCOMPtr<nsIURI> originalURI;
-    nsCOMPtr<nsIURI> resultPrincipalURI;
-    bool loadReplace = false;
-
-    nsIPrincipal* triggeringPrincipal = doc->NodePrincipal();
-    nsCOMPtr<nsIContentSecurityPolicy> csp = doc->GetCsp();
-
-    nsAutoString contentTypeHint;
-    doc->GetContentType(contentTypeHint);
-
-    if (doc->IsSrcdocDocument()) {
-      doc->GetSrcdocData(srcdoc);
-      flags |= INTERNAL_LOAD_FLAGS_IS_SRCDOC;
-      baseURI = doc->GetBaseURI();
-    } else {
-      srcdoc = VoidString();
-    }
-    nsCOMPtr<nsIChannel> chan = doc->GetChannel();
-    if (chan) {
-      uint32_t loadFlags;
-      chan->GetLoadFlags(&loadFlags);
-      loadReplace = loadFlags & nsIChannel::LOAD_REPLACE;
-      nsCOMPtr<nsIHttpChannel> httpChan(do_QueryInterface(chan));
-      if (httpChan) {
-        httpChan->GetOriginalURI(getter_AddRefs(originalURI));
-      }
-
-      nsCOMPtr<nsILoadInfo> loadInfo = chan->LoadInfo();
-      loadInfo->GetResultPrincipalURI(getter_AddRefs(resultPrincipalURI));
-    }
-
-    if (!triggeringPrincipal) {
-      MOZ_ASSERT(false, "Reload needs a valid triggeringPrincipal");
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    
-    nsCOMPtr<nsIURI> currentURI = mCurrentURI;
-
-    
-    Maybe<nsCOMPtr<nsIURI>> emplacedResultPrincipalURI;
-    emplacedResultPrincipalURI.emplace(std::move(resultPrincipalURI));
-
-    RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(currentURI);
-    loadState->SetReferrerInfo(mReferrerInfo);
-    loadState->SetOriginalURI(originalURI);
-    loadState->SetMaybeResultPrincipalURI(emplacedResultPrincipalURI);
-    loadState->SetLoadReplace(loadReplace);
-    loadState->SetTriggeringPrincipal(triggeringPrincipal);
-    loadState->SetPrincipalToInherit(triggeringPrincipal);
-    loadState->SetCsp(csp);
-    loadState->SetLoadFlags(flags);
-    loadState->SetTypeHint(NS_ConvertUTF16toUTF8(contentTypeHint));
-    loadState->SetLoadType(loadType);
-    loadState->SetFirstParty(true);
-    loadState->SetSrcdocData(srcdoc);
-    loadState->SetSourceBrowsingContext(mBrowsingContext);
-    loadState->SetBaseURI(baseURI);
-    loadState->SetHasValidUserGestureActivation(
-        mBrowsingContext &&
-        mBrowsingContext->HasValidTransientUserGestureActivation());
-    rv = InternalLoad(loadState);
+    return LoadHistoryEntry(mOSHE, loadType);
   }
 
-  return rv;
+  if (mLSHE) {  
+    return LoadHistoryEntry(mLSHE, loadType);
+  }
+
+  return ReloadDocument(this, GetDocument(), loadType, mBrowsingContext,
+                        mCurrentURI, mReferrerInfo);
+}
+
+
+nsresult nsDocShell::ReloadDocument(nsDocShell* aDocShell, Document* aDocument,
+                                    uint32_t aLoadType,
+                                    BrowsingContext* aBrowsingContext,
+                                    nsIURI* aCurrentURI,
+                                    nsIReferrerInfo* aReferrerInfo) {
+  if (!aDocument) {
+    return NS_OK;
+  }
+
+  
+  uint32_t flags = INTERNAL_LOAD_FLAGS_NONE;
+  nsAutoString srcdoc;
+  nsIURI* baseURI = nullptr;
+  nsCOMPtr<nsIURI> originalURI;
+  nsCOMPtr<nsIURI> resultPrincipalURI;
+  bool loadReplace = false;
+
+  nsIPrincipal* triggeringPrincipal = aDocument->NodePrincipal();
+  nsCOMPtr<nsIContentSecurityPolicy> csp = aDocument->GetCsp();
+
+  nsAutoString contentTypeHint;
+  aDocument->GetContentType(contentTypeHint);
+
+  if (aDocument->IsSrcdocDocument()) {
+    aDocument->GetSrcdocData(srcdoc);
+    flags |= INTERNAL_LOAD_FLAGS_IS_SRCDOC;
+    baseURI = aDocument->GetBaseURI();
+  } else {
+    srcdoc = VoidString();
+  }
+  nsCOMPtr<nsIChannel> chan = aDocument->GetChannel();
+  if (chan) {
+    uint32_t loadFlags;
+    chan->GetLoadFlags(&loadFlags);
+    loadReplace = loadFlags & nsIChannel::LOAD_REPLACE;
+    nsCOMPtr<nsIHttpChannel> httpChan(do_QueryInterface(chan));
+    if (httpChan) {
+      httpChan->GetOriginalURI(getter_AddRefs(originalURI));
+    }
+
+    nsCOMPtr<nsILoadInfo> loadInfo = chan->LoadInfo();
+    loadInfo->GetResultPrincipalURI(getter_AddRefs(resultPrincipalURI));
+  }
+
+  if (!triggeringPrincipal) {
+    MOZ_ASSERT(false, "Reload needs a valid triggeringPrincipal");
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  nsCOMPtr<nsIURI> currentURI = aCurrentURI;
+
+  
+  Maybe<nsCOMPtr<nsIURI>> emplacedResultPrincipalURI;
+  emplacedResultPrincipalURI.emplace(std::move(resultPrincipalURI));
+
+  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(currentURI);
+  loadState->SetReferrerInfo(aReferrerInfo);
+  loadState->SetOriginalURI(originalURI);
+  loadState->SetMaybeResultPrincipalURI(emplacedResultPrincipalURI);
+  loadState->SetLoadReplace(loadReplace);
+  loadState->SetTriggeringPrincipal(triggeringPrincipal);
+  loadState->SetPrincipalToInherit(triggeringPrincipal);
+  loadState->SetCsp(csp);
+  loadState->SetLoadFlags(flags);
+  loadState->SetTypeHint(NS_ConvertUTF16toUTF8(contentTypeHint));
+  loadState->SetLoadType(aLoadType);
+  loadState->SetFirstParty(true);
+  loadState->SetSrcdocData(srcdoc);
+  loadState->SetSourceBrowsingContext(aBrowsingContext);
+  loadState->SetBaseURI(baseURI);
+  loadState->SetHasValidUserGestureActivation(
+      aBrowsingContext &&
+      aBrowsingContext->HasValidTransientUserGestureActivation());
+  return aDocShell->InternalLoad(loadState);
 }
 
 NS_IMETHODIMP
@@ -10754,18 +10793,12 @@ nsresult nsDocShell::AddToSessionHistory(
 }
 
 nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
-  if (!IsNavigationAllowed()) {
-    return NS_OK;
-  }
-
   NS_ENSURE_TRUE(aEntry, NS_ERROR_FAILURE);
+
   nsresult rv;
   RefPtr<nsDocShellLoadState> loadState;
   rv = aEntry->CreateLoadInfo(getter_AddRefs(loadState));
   NS_ENSURE_SUCCESS(rv, rv);
-  
-  
-  loadState->SetLoadType(aLoadType);
 
   
   
@@ -10773,7 +10806,22 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
   
   nsCOMPtr<nsISHEntry> kungFuDeathGrip(aEntry);
 
-  if (SchemeIsJavascript(loadState->URI())) {
+  return LoadHistoryEntry(loadState, aLoadType, aEntry == mOSHE);
+}
+
+nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
+                                      uint32_t aLoadType,
+                                      bool aReloadingActiveEntry) {
+  if (!IsNavigationAllowed()) {
+    return NS_OK;
+  }
+
+  
+  
+  aLoadState->SetLoadType(aLoadType);
+
+  nsresult rv;
+  if (SchemeIsJavascript(aLoadState->URI())) {
     
     
     
@@ -10782,9 +10830,9 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
     
     
     rv = CreateAboutBlankContentViewer(
-        loadState->PrincipalToInherit(),
-        loadState->PartitionedPrincipalToInherit(), nullptr, nullptr, Nothing(),
-        aEntry != mOSHE);
+        aLoadState->PrincipalToInherit(),
+        aLoadState->PartitionedPrincipalToInherit(), nullptr, nullptr,
+        Nothing(), !aReloadingActiveEntry);
 
     if (NS_FAILED(rv)) {
       
@@ -10793,13 +10841,13 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
       return NS_OK;
     }
 
-    if (!loadState->TriggeringPrincipal()) {
+    if (!aLoadState->TriggeringPrincipal()) {
       
       
       
       nsCOMPtr<nsIPrincipal> principal =
           NullPrincipal::CreateWithInheritedAttributes(this);
-      loadState->SetTriggeringPrincipal(principal);
+      aLoadState->SetTriggeringPrincipal(principal);
     }
   }
 
@@ -10807,7 +10855,7 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
 
 
 
-  if ((aLoadType & LOAD_CMD_RELOAD) && loadState->PostDataStream()) {
+  if ((aLoadType & LOAD_CMD_RELOAD) && aLoadState->PostDataStream()) {
     bool repost;
     rv = ConfirmRepost(&repost);
     if (NS_FAILED(rv)) {
@@ -10821,14 +10869,13 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
   }
 
   
-  MOZ_ASSERT(loadState->TriggeringPrincipal(),
+  MOZ_ASSERT(aLoadState->TriggeringPrincipal(),
              "need a valid triggeringPrincipal to load from history");
-  if (!loadState->TriggeringPrincipal()) {
+  if (!aLoadState->TriggeringPrincipal()) {
     return NS_ERROR_FAILURE;
   }
 
-  rv = InternalLoad(loadState);
-  return rv;
+  return InternalLoad(aLoadState);  
 }
 
 NS_IMETHODIMP

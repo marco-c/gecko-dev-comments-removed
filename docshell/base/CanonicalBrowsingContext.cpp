@@ -315,6 +315,28 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
   
 }
 
+void CanonicalBrowsingContext::NotifyOnHistoryReload(
+    bool& aCanReload, Maybe<RefPtr<nsDocShellLoadState>>& aLoadState,
+    Maybe<bool>& aReloadActiveEntry) {
+  GetSessionHistory()->NotifyOnHistoryReload(&aCanReload);
+  if (!aCanReload) {
+    return;
+  }
+
+  if (mActiveEntry) {
+    aLoadState.emplace();
+    mActiveEntry->CreateLoadInfo(getter_AddRefs(aLoadState.ref()));
+    aReloadActiveEntry.emplace(true);
+  } else if (!mLoadingEntries.IsEmpty()) {
+    aLoadState.emplace();
+    mLoadingEntries.LastElement()->CreateLoadInfo(
+        getter_AddRefs(aLoadState.ref()));
+    aReloadActiveEntry.emplace(false);
+  }
+  
+  
+}
+
 JSObject* CanonicalBrowsingContext::WrapObject(
     JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
   return CanonicalBrowsingContext_Binding::Wrap(aCx, this, aGivenProto);
