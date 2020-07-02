@@ -1072,7 +1072,15 @@ nscoord BlockReflowInput::ClearFloats(nscoord aBCoord, StyleClear aBreakType,
   nscoord newBCoord = aBCoord;
 
   if (aBreakType != StyleClear::None) {
-    newBCoord = FloatManager()->ClearFloats(newBCoord, aBreakType, aFlags);
+    if (!(aFlags & nsFloatManager::DONT_CLEAR_PUSHED_FLOATS) &&
+        FloatManager()->ClearContinues(aBreakType)) {
+      
+      
+      
+      newBCoord = nscoord_MAX;
+    } else {
+      newBCoord = FloatManager()->ClearFloats(newBCoord, aBreakType);
+    }
   }
 
   if (aReplacedBlock) {

@@ -316,8 +316,7 @@ class nsFloatManager {
     
     DONT_CLEAR_PUSHED_FLOATS = (1 << 0)
   };
-  nscoord ClearFloats(nscoord aBCoord, mozilla::StyleClear aBreakType,
-                      uint32_t aFlags = 0) const;
+  nscoord ClearFloats(nscoord aBCoord, mozilla::StyleClear aBreakType) const;
 
   
 

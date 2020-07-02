@@ -453,14 +453,8 @@ nsresult nsFloatManager::List(FILE* out) const {
 }
 #endif
 
-nscoord nsFloatManager::ClearFloats(nscoord aBCoord, StyleClear aBreakType,
-                                    uint32_t aFlags) const {
-  if (!(aFlags & DONT_CLEAR_PUSHED_FLOATS) && ClearContinues(aBreakType)) {
-    
-    
-    
-    return nscoord_MAX;
-  }
+nscoord nsFloatManager::ClearFloats(nscoord aBCoord,
+                                    StyleClear aBreakType) const {
   if (!HasAnyFloats()) {
     return aBCoord;
   }
