@@ -15,8 +15,6 @@ const { GeckoViewUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   ActorManagerParent: "resource://gre/modules/ActorManagerParent.jsm",
   EventDispatcher: "resource://gre/modules/Messaging.jsm",
-  GeckoViewTelemetryController:
-    "resource://gre/modules/GeckoViewTelemetryController.jsm",
   Preferences: "resource://gre/modules/Preferences.jsm",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -200,11 +198,6 @@ class GeckoViewStartup {
             handler: _ => this.GeckoViewRemoteDebugger,
           }
         );
-
-        
-        
-        
-        GeckoViewTelemetryController.setup();
 
         ChromeUtils.import("resource://gre/modules/NotificationDB.jsm");
 
