@@ -944,9 +944,9 @@ struct ReflowInput : public SizeComputationInput {
     
     
     
-    return (mFrame->GetStateBits() & NS_FRAME_IS_DIRTY) || IsIResize() ||
+    return mFrame->HasAnyStateBits(NS_FRAME_IS_DIRTY) || IsIResize() ||
            (IsBResize() &&
-            (mFrame->GetStateBits() & NS_FRAME_CONTAINS_RELATIVE_BSIZE));
+            mFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE));
   }
 
   
