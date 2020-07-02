@@ -60,6 +60,13 @@ pub enum SortKey {
 
 
 
+
+
+
+
+/// cbindgen:destructor-attributes=MOZ_NEVER_INLINE
+/// cbindgen:copy-constructor-attributes=MOZ_NEVER_INLINE
+/// cbindgen:eq-attributes=MOZ_NEVER_INLINE
 #[repr(u8)]
 #[derive(
     Clone,
