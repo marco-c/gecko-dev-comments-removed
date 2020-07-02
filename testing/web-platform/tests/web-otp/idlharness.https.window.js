@@ -1,0 +1,16 @@
+
+
+
+
+
+'use strict';
+
+idl_test(
+  ['web-otp'],
+  ['credential-management'],
+  idlArray => {
+    idlArray.add_objects({
+      
+    });
+  }
+);
