@@ -33,6 +33,7 @@
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/SVGTextFrame.h"
 #include "mozilla/Unused.h"
 #include "mozilla/ViewportFrame.h"
 #include "mozilla/ViewportUtils.h"
@@ -108,7 +109,6 @@
 #include "nsSVGIntegrationUtils.h"
 #include "nsSVGUtils.h"
 #include "SVGImageContext.h"
-#include "SVGTextFrame.h"
 #include "nsStyleStructInlines.h"
 #include "nsStyleTransformMatrix.h"
 #include "nsIFrameInlines.h"
@@ -867,6 +867,7 @@ static nsRect GetDisplayPortFromMarginsData(
     float h = screenRect.height;
     
     
+    
     float sx = fmin(1.0, (aMarginsData->mMargins.LeftRight() + w) / w * 0.25);
     float sy = fmin(1.0, (aMarginsData->mMargins.TopBottom() + h) / h * 0.25);
     posAlignment.width = fmax(128.0, 512.0 * round(sx * w / 512.0));
@@ -963,8 +964,10 @@ static nsRect GetDisplayPortFromMarginsData(
   screenRect += scrollPosScreen;
   float x = posAlignment.width * floor(screenRect.x / posAlignment.width);
   float y = posAlignment.height * floor(screenRect.y / posAlignment.height);
-  float w = sizeAlignment.width * ceil(screenRect.width / sizeAlignment.width + 1);
-  float h = sizeAlignment.height * ceil(screenRect.height / sizeAlignment.height + 1);
+  float w =
+      sizeAlignment.width * ceil(screenRect.width / sizeAlignment.width + 1);
+  float h =
+      sizeAlignment.height * ceil(screenRect.height / sizeAlignment.height + 1);
   screenRect = ScreenRect(x, y, w, h);
   screenRect -= scrollPosScreen;
 
