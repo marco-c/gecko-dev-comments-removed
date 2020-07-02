@@ -555,7 +555,7 @@ class MediaStreamTrack : public DOMEventTargetHelper,
 
 
 
-  void SetReadyState(MediaStreamTrackState aState);
+  virtual void SetReadyState(MediaStreamTrackState aState);
 
   
 
