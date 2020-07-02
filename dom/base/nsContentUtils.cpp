@@ -10235,16 +10235,6 @@ nsContentUtils::GetSubresourceCacheValidationInfo(nsIRequest* aRequest) {
     if (!info.mMustRevalidate) {
       Unused << httpChannel->IsNoCacheResponse(&info.mMustRevalidate);
     }
-
-    
-    if (!info.mMustRevalidate) {
-      nsAutoCString cacheHeader;
-      Unused << httpChannel->GetResponseHeader(
-          NS_LITERAL_CSTRING("Cache-Control"), cacheHeader);
-      if (PL_strcasestr(cacheHeader.get(), "must-revalidate")) {
-        info.mMustRevalidate = true;
-      }
-    }
   }
 
   return info;
