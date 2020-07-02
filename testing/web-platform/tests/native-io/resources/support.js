@@ -1,0 +1,7 @@
+
+const kBadNativeIoNames = [
+  "Uppercase",
+  "has-dash",
+  "has.dot",
+  "has/slash",
+];
