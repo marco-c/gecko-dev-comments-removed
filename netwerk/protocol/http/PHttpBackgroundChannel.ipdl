@@ -46,6 +46,11 @@ child:
   async OnStatus(nsresult status);
 
   
+  
+  
+  async OnAfterLastPart(nsresult aStatus);
+
+  
   async FlushedForDiversion();
 
   
