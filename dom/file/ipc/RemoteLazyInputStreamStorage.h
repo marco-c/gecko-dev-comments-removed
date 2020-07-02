@@ -17,7 +17,7 @@ struct nsID;
 namespace mozilla {
 namespace dom {
 
-class IPCBlobInputStreamParentCallback;
+class RemoteLazyInputStreamParentCallback;
 
 class RemoteLazyInputStreamStorage final : public nsIObserver {
  public:
@@ -42,9 +42,9 @@ class RemoteLazyInputStreamStorage final : public nsIObserver {
                  nsIInputStream** aInputStream);
 
   void StoreCallback(const nsID& aID,
-                     IPCBlobInputStreamParentCallback* aCallback);
+                     RemoteLazyInputStreamParentCallback* aCallback);
 
-  already_AddRefed<IPCBlobInputStreamParentCallback> TakeCallback(
+  already_AddRefed<RemoteLazyInputStreamParentCallback> TakeCallback(
       const nsID& aID);
 
  private:
@@ -53,7 +53,7 @@ class RemoteLazyInputStreamStorage final : public nsIObserver {
 
   struct StreamData {
     nsCOMPtr<nsIInputStream> mInputStream;
-    RefPtr<IPCBlobInputStreamParentCallback> mCallback;
+    RefPtr<RemoteLazyInputStreamParentCallback> mCallback;
 
     
     
