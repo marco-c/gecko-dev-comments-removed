@@ -5469,6 +5469,8 @@ IncrementalProgress GCRuntime::endSweepingSweepGroup(JSFreeOp* fop,
     return NotFinished;
   }
 
+  MOZ_ASSERT(marker.isDrained());
+
   
   
   markOnBackgroundThreadDuringSweeping = false;
@@ -5609,9 +5611,13 @@ void js::gc::SweepMarkTask::run() {
 }
 
 IncrementalProgress GCRuntime::joinSweepMarkTask() {
+  MOZ_ASSERT_IF(!sweepMarkTaskStarted, sweepMarkTask.isIdle());
   joinTask(sweepMarkTask, gcstats::PhaseKind::SWEEP_MARK);
 
-  return sweepMarkTaskStarted ? sweepMarkResult : Finished;
+  IncrementalProgress result =
+      sweepMarkTaskStarted ? sweepMarkResult : Finished;
+  sweepMarkTaskStarted = false;
+  return result;
 }
 
 IncrementalProgress GCRuntime::markUntilBudgetExhausted(
@@ -6226,12 +6232,8 @@ IncrementalProgress GCRuntime::performSweepActions(SliceBudget& budget) {
   SweepAction::Args args{this, &fop, budget};
   IncrementalProgress progress = sweepActions->run(args);
 
-  if (sweepMarkTaskStarted) {
-    joinSweepMarkTask();
-    sweepMarkTaskStarted = false;
-    if (sweepMarkResult == NotFinished) {
-      progress = NotFinished;
-    }
+  if (sweepMarkTaskStarted && joinSweepMarkTask() == NotFinished) {
+    progress = NotFinished;
   }
 
   MOZ_ASSERT_IF(progress == NotFinished, isIncremental);
