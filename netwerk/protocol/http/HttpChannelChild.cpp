@@ -2305,6 +2305,8 @@ HttpChannelChild::Suspend() {
   NS_ENSURE_TRUE(RemoteChannelExists() || mInterceptListener,
                  NS_ERROR_NOT_AVAILABLE);
 
+  LogCallingScriptLocation(this);
+
   
   
   
@@ -2331,6 +2333,8 @@ HttpChannelChild::Resume() {
   NS_ENSURE_TRUE(RemoteChannelExists() || mInterceptListener,
                  NS_ERROR_NOT_AVAILABLE);
   NS_ENSURE_TRUE(mSuspendCount > 0, NS_ERROR_UNEXPECTED);
+
+  LogCallingScriptLocation(this);
 
   nsresult rv = NS_OK;
 
