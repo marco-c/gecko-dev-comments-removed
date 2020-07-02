@@ -31,15 +31,20 @@ add_task(async function() {
   snapshot = Services.telemetry.getSnapshotForHistograms("main", true);
   Assert.notEqual(histValue(LABELS_STARTUP_CACHE_REQUESTS.HitMemory), 0);
   Assert.equal(histValue(LABELS_STARTUP_CACHE_REQUESTS.HitDisk), 0);
-  Assert.less(histValue(LABELS_STARTUP_CACHE_REQUESTS.Miss), 9);
+
+  
+  
+  
+  
+  Assert.less(histValue(LABELS_STARTUP_CACHE_REQUESTS.Miss), 50);
   await BrowserTestUtils.closeWindow(newWin);
 
   Services.obs.notifyObservers(null, "startupcache-invalidate", "memoryOnly");
   newWin = await BrowserTestUtils.openNewBrowserWindow();
   snapshot = Services.telemetry.getSnapshotForHistograms("main", true);
-  Assert.less(histValue(LABELS_STARTUP_CACHE_REQUESTS.HitMemory), 4);
+  Assert.less(histValue(LABELS_STARTUP_CACHE_REQUESTS.HitMemory), 50);
   Assert.notEqual(histValue(LABELS_STARTUP_CACHE_REQUESTS.HitDisk), 0);
   
-  Assert.less(histValue(LABELS_STARTUP_CACHE_REQUESTS.Miss), 5);
+  Assert.less(histValue(LABELS_STARTUP_CACHE_REQUESTS.Miss), 50);
   await BrowserTestUtils.closeWindow(newWin);
 });
