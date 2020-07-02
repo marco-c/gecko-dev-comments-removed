@@ -1,0 +1,36 @@
+
+
+
+
+
+
+#ifndef GeckoViewTelemetryPersistence_h__
+#define GeckoViewTelemetryPersistence_h__
+
+namespace TelemetryGeckoViewPersistence {
+
+
+
+
+
+
+
+
+
+
+void InitPersistence();
+
+
+
+
+void DeInitPersistence();
+
+
+
+
+
+void ClearPersistenceData();
+
+}  
+
+#endif  

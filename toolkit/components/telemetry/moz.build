@@ -75,6 +75,7 @@ SOURCES += [
     'core/TelemetryOrigin.cpp',
     'core/TelemetryScalar.cpp',
     'geckoview/streaming/GeckoViewStreamingTelemetry.cpp',
+    'geckoview/TelemetryGeckoViewPersistence.cpp',
     'other/CombinedStacks.cpp',
     'other/ProcessedStack.cpp',
     'other/TelemetryIOInterposeObserver.cpp',
@@ -227,6 +228,32 @@ GeneratedFile(
     'glean_checks',
     script='build_scripts/run_glean_parser.py',
     inputs=['geckoview/streaming/metrics.yaml'])
+
+
+
+
+
+if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'android':
+    
+    
+    
+    
+    DEFINES['MOZ_TELEMETRY_GECKOVIEW'] = True
+
+    EXTRA_JS_MODULES += [
+        'geckoview/GeckoViewTelemetryController.jsm',
+    ]
+
+
+
+if CONFIG['ENABLE_TESTS']:
+    XPIDL_SOURCES += [
+        'geckoview/nsITelemetryGeckoViewTesting.idl'
+    ]
+
+    SOURCES += [
+        'geckoview/TelemetryGeckoViewTesting.cpp'
+    ]
 
 with Files('**'):
     BUG_COMPONENT = ('Toolkit', 'Telemetry')

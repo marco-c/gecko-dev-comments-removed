@@ -1279,6 +1279,15 @@ already_AddRefed<nsITelemetry> TelemetryImpl::CreateTelemetryInstance() {
   telemetry->InitMemoryReporter();
   InitHistogramRecordingEnabled();  
 
+#if defined(MOZ_TELEMETRY_GECKOVIEW)
+  
+  
+  
+  if (GetCurrentProduct() == SupportedProduct::Geckoview) {
+    TelemetryGeckoViewPersistence::InitPersistence();
+  }
+#endif
+
   return ret.forget();
 }
 
@@ -1298,6 +1307,12 @@ void TelemetryImpl::ShutdownTelemetry() {
   TelemetryEvent::DeInitializeGlobalState();
   TelemetryOrigin::DeInitializeGlobalState();
   TelemetryIPCAccumulator::DeInitializeGlobalState();
+
+#if defined(MOZ_TELEMETRY_GECKOVIEW)
+  if (GetCurrentProduct() == SupportedProduct::Geckoview) {
+    TelemetryGeckoViewPersistence::DeInitPersistence();
+  }
+#endif
 }
 
 void TelemetryImpl::StoreSlowSQL(const nsACString& sql, uint32_t delay,
@@ -1743,6 +1758,24 @@ NS_IMETHODIMP
 TelemetryImpl::ClearEvents() {
   TelemetryEvent::ClearEvents();
   return NS_OK;
+}
+
+NS_IMETHODIMP
+TelemetryImpl::ClearProbes() {
+#if defined(MOZ_TELEMETRY_GECKOVIEW)
+  
+  if (GetCurrentProduct() != SupportedProduct::Geckoview) {
+    MOZ_ASSERT(false, "ClearProbes is only supported on GeckoView");
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  TelemetryScalar::ClearScalars();
+  TelemetryGeckoViewPersistence::ClearPersistenceData();
+  return NS_OK;
+#else
+  return NS_ERROR_FAILURE;
+#endif
 }
 
 NS_IMETHODIMP

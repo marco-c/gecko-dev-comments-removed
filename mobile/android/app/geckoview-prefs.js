@@ -22,6 +22,8 @@ pref("dom.ipc.processCount", 1);
 pref("dom.ipc.processPrelaunch.enabled", false);
 
 
+pref("toolkit.telemetry.isGeckoViewMode", true);
+
 pref("toolkit.telemetry.eventping.enabled", false);
 
 pref("toolkit.lazyHiddenWindow", true);

@@ -628,6 +628,18 @@ interface nsITelemetry : nsISupports
 
 
 
+
+
+
+
+
+
+  void clearProbes();
+
+  
+
+
+
   void earlyInit();
 
   
