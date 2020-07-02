@@ -1597,6 +1597,8 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
             
             .ElseIf(request == FIONBIO, Allow())
             
+            .ElseIf(request == FIONREAD, Allow())
+            
             
             .ElseIf(request == TCGETS, Error(ENOTTY))
             
