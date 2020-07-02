@@ -81,6 +81,12 @@ struct AnimatedValue final {
   AnimatedValueType mValue;
 };
 
+struct WrAnimations {
+  nsTArray<wr::WrOpacityProperty> mOpacityArrays;
+  nsTArray<wr::WrTransformProperty> mTransformArrays;
+  nsTArray<wr::WrColorProperty> mColorArrays;
+};
+
 
 
 
@@ -136,11 +142,7 @@ class CompositorAnimationStorage final {
   
 
 
-  AnimatedValueTable::Iterator ConstAnimatedValueTableIter() const {
-    return mAnimatedValues.ConstIter();
-  }
-
-  uint32_t AnimatedValueCount() const { return mAnimatedValues.Count(); }
+  WrAnimations CollectWebRenderAnimations() const;
 
   
 
