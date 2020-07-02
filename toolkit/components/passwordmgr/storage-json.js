@@ -20,11 +20,6 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
-  "LoginImport",
-  "resource://gre/modules/LoginImport.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
   "LoginStore",
   "resource://gre/modules/LoginStore.jsm"
 );
@@ -105,36 +100,6 @@ class LoginManagerStorage_json {
         
         this.log("Opening database at", this._store.path);
         await this._store.load();
-
-        
-        
-        
-        
-        try {
-          if (Services.prefs.getBoolPref("signon.importedFromSqlite")) {
-            return;
-          }
-        } catch (ex) {
-          
-        }
-
-        
-        let sqlitePath = OS.Path.join(
-          OS.Constants.Path.profileDir,
-          "signons.sqlite"
-        );
-        if (await OS.File.exists(sqlitePath)) {
-          let loginImport = new LoginImport(this._store, sqlitePath);
-          
-          
-          
-          
-          await loginImport.import().catch(Cu.reportError);
-          this._store.saveSoon();
-        }
-
-        
-        Services.prefs.setBoolPref("signon.importedFromSqlite", true);
       })().catch(Cu.reportError);
     } catch (e) {
       this.log("Initialization failed:", e);
