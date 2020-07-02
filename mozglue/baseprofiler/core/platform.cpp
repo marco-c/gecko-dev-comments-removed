@@ -230,6 +230,8 @@ static uint32_t StartupExtraDefaultFeatures() {
   return ProfilerFeature::MainThreadIO;
 }
 
+class MOZ_RAII PSAutoTryLock;
+
 
 
 
@@ -249,7 +251,44 @@ class MOZ_RAII PSAutoLock {
   }
 
  private:
+  
+  
+  friend class PSAutoTryLock;
+  friend class Maybe<const PSAutoLock>;
+
+  
+  
+  explicit PSAutoLock(int) { gPSMutex.AssertCurrentThreadOwns(); }
+
   static detail::BaseProfilerMutex gPSMutex;
+};
+
+
+
+
+class MOZ_RAII PSAutoTryLock {
+ public:
+  PSAutoTryLock() {
+    if (PSAutoLock::gPSMutex.TryLock()) {
+      mMaybePSAutoLock.emplace(0);
+    }
+  }
+
+  
+  [[nodiscard]] bool IsLocked() const { return mMaybePSAutoLock.isSome(); }
+
+  
+  
+  [[nodiscard]] const PSAutoLock& LockRef() const {
+    MOZ_ASSERT(IsLocked());
+    return mMaybePSAutoLock.ref();
+  }
+
+ private:
+  
+  
+  
+  Maybe<const PSAutoLock> mMaybePSAutoLock;
 };
 
 detail::BaseProfilerMutex PSAutoLock::gPSMutex;
