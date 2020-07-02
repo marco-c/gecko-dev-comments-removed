@@ -1425,11 +1425,6 @@ EnvironmentCache.prototype = {
       return;
     }
 
-    if (!Services.search) {
-      
-      return;
-    }
-
     this._log.trace(
       "_updateSearchEngine - isInitialized: " + Services.search.isInitialized
     );
