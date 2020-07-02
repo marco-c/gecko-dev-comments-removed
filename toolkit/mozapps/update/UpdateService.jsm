@@ -3392,13 +3392,7 @@ UpdateManager.prototype = {
         }
         updates = this._loadXMLFileIntoArray(FILE_UPDATES_XML);
       }
-      delete this._updates;
-      Object.defineProperty(this, "_updates", {
-        value: updates,
-        writable: true,
-        configurable: true,
-        enumerable: true,
-      });
+      this._updatesCache = updates;
     }
   },
 
@@ -3503,32 +3497,25 @@ UpdateManager.prototype = {
   
 
 
-
-
-  get _updates() {
-    delete this._updates;
-    let updates = this._loadXMLFileIntoArray(FILE_UPDATES_XML);
-    Object.defineProperty(this, "_updates", {
-      value: updates,
-      writable: true,
-      configurable: true,
-      enumerable: true,
-    });
-    return this._updates;
+  _getUpdates() {
+    if (!this._updatesCache) {
+      this._updatesCache = this._loadXMLFileIntoArray(FILE_UPDATES_XML);
+    }
+    return this._updatesCache;
   },
 
   
 
 
   getUpdateAt: function UM_getUpdateAt(aIndex) {
-    return this._updates[aIndex];
+    return this._getUpdates()[aIndex];
   },
 
   
 
 
-  get updateCount() {
-    return this._updates.length;
+  getUpdateCount() {
+    return this._getUpdates().length;
   },
 
   
@@ -3541,9 +3528,10 @@ UpdateManager.prototype = {
     if (!aActiveUpdate && this._activeUpdate) {
       this._updatesDirty = true;
       
-      this._updates.unshift(this._activeUpdate);
+      let updates = this._getUpdates();
+      updates.unshift(this._activeUpdate);
       
-      this._updates.splice(10);
+      updates.splice(10);
     }
 
     this._activeUpdate = aActiveUpdate;
@@ -3671,7 +3659,7 @@ UpdateManager.prototype = {
     if (this._updatesDirty) {
       this._updatesDirty = false;
       promises[1] = this._writeUpdatesToXMLFile(
-        this._updates,
+        this._getUpdates(),
         FILE_UPDATES_XML
       ).then(wroteSuccessfully =>
         handleCriticalWriteResult(wroteSuccessfully, FILE_UPDATES_XML)
