@@ -50,7 +50,7 @@ const isCrossOriginIsolated = window.crossOriginIsolated;
 
 
 var ecmaGlobals = [
-  { name: "AggregateError", insecureContext: true, nightly: true },
+  { name: "AggregateError", insecureContext: true },
   { name: "Array", insecureContext: true },
   { name: "ArrayBuffer", insecureContext: true },
   { name: "Atomics", insecureContext: true },

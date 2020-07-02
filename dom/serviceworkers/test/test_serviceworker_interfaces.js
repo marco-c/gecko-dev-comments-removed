@@ -22,7 +22,7 @@
 
 
 var ecmaGlobals = [
-  { name: "AggregateError", nightly: true },
+  "AggregateError",
   "Array",
   "ArrayBuffer",
   "Atomics",
