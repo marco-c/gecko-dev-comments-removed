@@ -2166,8 +2166,6 @@ nsresult HttpBaseChannel::ProcessCrossOriginResourcePolicyHeader() {
   if (mLoadInfo->GetExternalContentPolicyType() ==
           nsIContentPolicy::TYPE_DOCUMENT ||
       mLoadInfo->GetExternalContentPolicyType() ==
-          nsIContentPolicy::TYPE_SUBDOCUMENT ||
-      mLoadInfo->GetExternalContentPolicyType() ==
           nsIContentPolicy::TYPE_WEBSOCKET) {
     return NS_OK;
   }
@@ -2182,9 +2180,17 @@ nsresult HttpBaseChannel::ProcessCrossOriginResourcePolicyHeader() {
   Unused << mResponseHead->GetHeader(nsHttp::Cross_Origin_Resource_Policy,
                                      content);
 
-  
-  
   if (StaticPrefs::browser_tabs_remote_useCrossOriginEmbedderPolicy()) {
+    
+    
+    if (mLoadInfo->GetExternalContentPolicyType() ==
+            nsIContentPolicy::TYPE_SUBDOCUMENT &&
+        mLoadInfo->GetLoadingEmbedderPolicy() ==
+            nsILoadInfo::EMBEDDER_POLICY_NULL) {
+      return NS_OK;
+    }
+    
+    
     
     
     if (content.IsEmpty() && mLoadInfo->GetLoadingEmbedderPolicy() ==
