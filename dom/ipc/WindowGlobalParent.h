@@ -20,7 +20,7 @@
 #include "nsRefPtrHashtable.h"
 #include "nsWrapperCache.h"
 #include "nsISupports.h"
-#include "nsIDOMProcessParent.h"
+#include "nsIContentParent.h"
 #include "mozilla/dom/WindowGlobalActor.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/net/CookieJarSettings.h"
@@ -92,8 +92,6 @@ class WindowGlobalParent final : public WindowContext,
   
   
   already_AddRefed<BrowserParent> GetBrowserParent();
-
-  ContentParent* GetContentParent();
 
   void ReceiveRawMessage(const JSActorMessageMeta& aMeta,
                          ipc::StructuredCloneData&& aData,
@@ -175,7 +173,7 @@ class WindowGlobalParent final : public WindowContext,
 
   ContentBlockingLog* GetContentBlockingLog() { return &mContentBlockingLog; }
 
-  nsIDOMProcessParent* GetDomProcess();
+  nsIContentParent* GetContentParent();
 
   nsICookieJarSettings* CookieJarSettings() { return mCookieJarSettings; }
 

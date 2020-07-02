@@ -78,18 +78,16 @@ NS_IMETHODIMP JSProcessActorProtocol::Observe(nsISupports* aSubject,
                                               const char* aTopic,
                                               const char16_t* aData) {
   MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
+  MOZ_ASSERT(!XRE_IsParentProcess());
 
-  nsCOMPtr<nsIDOMProcessChild> manager;
-  if (XRE_IsParentProcess()) {
-    manager = InProcessChild::Singleton();
-  } else {
-    manager = ContentChild::GetSingleton();
-  }
+  ErrorResult error;
+  RefPtr<JSProcessActorChild> actor =
+      ContentChild::GetSingleton()->GetActor(mName, error);
 
-  RefPtr<JSProcessActorChild> actor;
-  nsresult rv = manager->GetActor(mName, getter_AddRefs(actor));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    
+  
+  if (NS_WARN_IF(error.Failed())) {
+    nsresult rv = error.StealNSResult();
+
     if (rv == NS_ERROR_NOT_AVAILABLE) {
       return NS_OK;
     }
@@ -107,6 +105,12 @@ NS_IMETHODIMP JSProcessActorProtocol::Observe(nsISupports* aSubject,
 }
 
 void JSProcessActorProtocol::AddObservers() {
+  
+  
+  if (XRE_IsParentProcess()) {
+    return;
+  }
+
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   for (auto& topic : mChild.mObservers) {
     

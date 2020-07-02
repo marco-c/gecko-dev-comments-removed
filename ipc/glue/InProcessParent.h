@@ -1,0 +1,62 @@
+
+
+
+
+
+
+#ifndef mozilla_ipc_InProcessParent_h
+#define mozilla_ipc_InProcessParent_h
+
+#include "mozilla/ipc/PInProcessParent.h"
+#include "mozilla/StaticPtr.h"
+
+namespace mozilla {
+namespace dom {
+class PWindowGlobalParent;
+class PWindowGlobalChild;
+}  
+
+namespace ipc {
+
+class InProcessChild;
+
+
+
+
+
+
+
+
+
+class InProcessParent final : public nsIObserver, public PInProcessParent {
+ public:
+  friend class InProcessChild;
+  friend class PInProcessParent;
+
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+
+  
+  static InProcessParent* Singleton();
+
+  
+  
+  
+  static IProtocol* ChildActorFor(IProtocol* aActor);
+
+ private:
+  
+  virtual void ActorDestroy(ActorDestroyReason aWhy) override;
+  ~InProcessParent() = default;
+
+  static void Startup();
+  static void Shutdown();
+
+  static StaticRefPtr<InProcessParent> sSingleton;
+  static bool sShutdown;
+};
+
+}  
+}  
+
+#endif  
