@@ -396,7 +396,14 @@ nsresult nsMenuFrame::HandleEvent(nsPresContext* aPresContext,
   } else if (
 #ifndef NSCONTEXTMENUISMOUSEUP
       (aEvent->mMessage == eMouseUp &&
-       aEvent->AsMouseEvent()->mButton == MouseButton::eSecondary) &&
+       (aEvent->AsMouseEvent()->mButton == MouseButton::eSecondary
+#  ifdef XP_MACOSX
+        
+        
+        || (aEvent->AsMouseEvent()->mButton == MouseButton::ePrimary &&
+            aEvent->AsMouseEvent()->IsControl())
+#  endif
+            )) &&
 #else
       aEvent->mMessage == eContextMenu &&
 #endif
@@ -417,6 +424,11 @@ nsresult nsMenuFrame::HandleEvent(nsPresContext* aPresContext,
     }
   } else if (aEvent->mMessage == eMouseUp &&
              aEvent->AsMouseEvent()->mButton == MouseButton::ePrimary &&
+#ifdef XP_MACOSX
+             
+             
+             !aEvent->AsMouseEvent()->IsControl() &&
+#endif
              !IsMenu() && !IsDisabled()) {
     
     *aEventStatus = nsEventStatus_eConsumeNoDefault;
