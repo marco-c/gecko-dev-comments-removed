@@ -6259,6 +6259,8 @@ bool Debugger::observesWasm(wasm::Instance* instance) const {
 
 bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
                                 AbstractFramePtr to, ScriptFrameIter& iter) {
+  MOZ_ASSERT(from != to);
+
   
   
   DebugEnvironments::forwardLiveFrame(cx, from, to);
@@ -6293,23 +6295,14 @@ bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
     }
 
     
-    dbg->frames.remove(from);
-
-    
     if (!dbg->frames.putNew(to, frameobj)) {
-      
-      
-      
-      
-      
-      
-      JSFreeOp* fop = cx->runtime()->defaultFreeOp();
-      frameobj->freeFrameIterData(fop);
-      frameobj->maybeDecrementStepperCounter(fop, to);
-
       ReportOutOfMemory(cx);
       return false;
     }
+
+    
+    
+    dbg->frames.remove(from);
   }
 
   
