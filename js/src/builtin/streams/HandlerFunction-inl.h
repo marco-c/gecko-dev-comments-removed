@@ -69,6 +69,17 @@ inline MOZ_MUST_USE JSFunction* NewHandlerWithExtra(
   return handlerFun;
 }
 
+inline MOZ_MUST_USE JSFunction* NewHandlerWithExtraValue(
+    JSContext* cx, Native handler, JS::Handle<JSObject*> target,
+    JS::Handle<JS::Value> extra) {
+  cx->check(extra);
+  JSFunction* handlerFun = NewHandler(cx, handler, target);
+  if (handlerFun) {
+    handlerFun->setExtendedSlot(StreamHandlerFunctionSlot_Extra, extra);
+  }
+  return handlerFun;
+}
+
 
 
 
@@ -85,12 +96,19 @@ inline MOZ_MUST_USE T* TargetFromHandler(const JS::CallArgs& args) {
 
 
 
+inline MOZ_MUST_USE JS::Value ExtraValueFromHandler(const JS::CallArgs& args) {
+  JSFunction& func = args.callee().as<JSFunction>();
+  return func.getExtendedSlot(StreamHandlerFunctionSlot_Extra);
+}
+
+
+
+
+
+
 template <class T>
 inline MOZ_MUST_USE T* ExtraFromHandler(const JS::CallArgs& args) {
-  JSFunction& func = args.callee().as<JSFunction>();
-  return &func.getExtendedSlot(StreamHandlerFunctionSlot_Extra)
-              .toObject()
-              .as<T>();
+  return &ExtraValueFromHandler(args).toObject().as<T>();
 }
 
 }  
