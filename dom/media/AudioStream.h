@@ -304,6 +304,7 @@ class AudioStream final
 
   template <typename Function, typename... Args>
   int InvokeCubeb(Function aFunction, Args&&... aArgs);
+  bool CheckThreadIdChanged();
 
   
   Monitor mMonitor;
@@ -337,6 +338,9 @@ class AudioStream final
   
   
   RefPtr<AudioDeviceInfo> mSinkInfo;
+  
+  std::atomic<int> mAudioThreadId;
+  const bool mSandboxed = false;
 };
 
 }  
