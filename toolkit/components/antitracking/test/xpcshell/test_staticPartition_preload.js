@@ -98,14 +98,19 @@ add_task(async () => {
 
   const tests = [
     {
+      
+      
+      hints: 2,
       prefValue: true,
       originAttributes: { partitionKey: "(http,example.org)" },
-      hints: 2,
     },
     {
-      prefValue: false,
+      
+      
+      
       hints: 1,
       originAttributes: {},
+      prefValue: false,
     },
   ];
 
