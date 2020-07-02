@@ -5654,6 +5654,8 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
     
     
     if (classContentsIfConstructor) {
+      MOZ_ASSERT(funbox->fieldInitializers.isNothing(),
+                 "FieldInitializers should only be set once");
       funbox->fieldInitializers = setupFieldInitializers(
           classContentsIfConstructor, FieldPlacement::Instance);
       if (!funbox->fieldInitializers) {
