@@ -256,7 +256,7 @@ class WebAPI extends APIObject {
       
       
       
-      sourceHost: triggeringPrincipal.URI && triggeringPrincipal.URI.host,
+      sourceHost: triggeringPrincipal.host,
       sourceURL: triggeringPrincipal.URI && triggeringPrincipal.URI.spec,
     };
     return this._apiTask("createInstall", [installOptions], installInfo => {

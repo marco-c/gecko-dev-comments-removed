@@ -39,15 +39,8 @@ amContentHandler.prototype = {
     const { triggeringPrincipal } = loadInfo;
     let browsingContext = loadInfo.targetBrowsingContext;
 
-    let sourceHost;
-    let sourceURL;
-    try {
-      sourceURL = triggeringPrincipal.URI.spec;
-      sourceHost = triggeringPrincipal.URI.host;
-    } catch (err) {
-      
-      
-    }
+    let sourceHost = triggeringPrincipal.host;
+    let sourceURL = triggeringPrincipal.URI?.spec;
 
     let install = {
       uri: uri.spec,
