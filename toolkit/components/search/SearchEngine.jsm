@@ -781,6 +781,67 @@ class EngineURL {
 
 
 class SearchEngine {
+  QueryInterface = ChromeUtils.generateQI([Ci.nsISearchEngine]);
+  
+  _metaData = {};
+  
+  _data = null;
+  
+  
+  
+  _loadPath = null;
+  
+  _description = "";
+  
+  
+  _engineToUpdate = null;
+  
+  
+  _hasPreferredIcon = null;
+  
+  _name = null;
+  
+  _queryCharset = null;
+  
+  __searchForm = null;
+  
+  
+  _confirm = null;
+  
+  
+  _useNow = null;
+  
+  
+  _installCallback = null;
+  
+  _updateInterval = null;
+  
+  _updateURL = null;
+  
+  _iconUpdateURL = null;
+  
+  _extensionID = null;
+  
+  _locale = null;
+  
+  _isAppProvided = false;
+  
+  _orderHint = null;
+  
+  _telemetryId = null;
+  
+  
+  
+  _engineAddedToStore = false;
+  
+  
+  
+  _definedAlias = null;
+  
+  _urls = [];
+  
+  __internalAliases = null;
+
   
 
 
@@ -807,12 +868,6 @@ class SearchEngine {
       throw new Error("isAppProvided missing from options.");
     }
     this._isAppProvided = options.isAppProvided;
-    
-    
-    
-    this._definedAlias = null;
-    this._urls = [];
-    this._metaData = {};
 
     let file, uri;
     if ("name" in options) {
@@ -877,28 +932,6 @@ class SearchEngine {
       this._loadPath = this.getAnonymizedLoadPath(file, uri);
     }
   }
-  
-  _metaData = null;
-  
-  _data = null;
-  
-  
-  
-  _loadPath = null;
-  
-  _description = "";
-  
-  
-  _engineToUpdate = null;
-  
-  
-  _hasPreferredIcon = null;
-  
-  _name = null;
-  
-  _queryCharset = null;
-  
-  __searchForm = null;
   get _searchForm() {
     return this.__searchForm;
   }
@@ -912,35 +945,6 @@ class SearchEngine {
       );
     }
   }
-  
-  
-  _confirm = null;
-  
-  
-  _useNow = null;
-  
-  
-  _installCallback = null;
-  
-  _updateInterval = null;
-  
-  _updateURL = null;
-  
-  _iconUpdateURL = null;
-  
-  _extensionID = null;
-  
-  _locale = null;
-  
-  _isAppProvided = false;
-  
-  _orderHint = null;
-  
-  _telemetryId = null;
-  
-  
-  
-  _engineAddedToStore = false;
 
   
 
@@ -2168,9 +2172,6 @@ class SearchEngine {
     return this._getSearchFormWithPurpose();
   }
 
-  
-  __internalAliases = null;
-
   get _internalAliases() {
     if (!this.__internalAliases) {
       this.__internalAliases = getInternalAliases(this);
@@ -2326,9 +2327,6 @@ class SearchEngine {
       termsParameterName,
     };
   }
-
-  
-  QueryInterface = ChromeUtils.generateQI([Ci.nsISearchEngine]);
 
   get wrappedJSObject() {
     return this;
