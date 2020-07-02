@@ -1905,6 +1905,10 @@ class LogTaskBase {
   };
 };
 
+
+template <>
+LogTaskBase<nsIRunnable>::Run::Run(nsIRunnable* aEvent, bool aWillRunAgain);
+
 class MicroTaskRunnable;
 
 typedef LogTaskBase<nsIRunnable> LogRunnable;
