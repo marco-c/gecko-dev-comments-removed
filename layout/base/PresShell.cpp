@@ -5294,11 +5294,21 @@ void PresShell::UpdateCanvasBackground() {
     
     
     
-    bool drawBackgroundImage;
-    bool drawBackgroundColor;
-    mCanvasBackgroundColor = nsCSSRendering::DetermineBackgroundColor(
-        mPresContext, bgStyle, rootStyleFrame, drawBackgroundImage,
-        drawBackgroundColor);
+    bool drawBackgroundImage = false;
+    bool drawBackgroundColor = false;
+    const nsStyleDisplay* disp = rootStyleFrame->StyleDisplay();
+    if (rootStyleFrame->IsThemed(disp) &&
+        disp->mAppearance != StyleAppearance::MozWinGlass &&
+        disp->mAppearance != StyleAppearance::MozWinBorderlessGlass) {
+      
+      
+      
+      mCanvasBackgroundColor = NS_RGBA(0, 0, 0, 0);
+    } else {
+      mCanvasBackgroundColor = nsCSSRendering::DetermineBackgroundColor(
+          mPresContext, bgStyle, rootStyleFrame, drawBackgroundImage,
+          drawBackgroundColor);
+    }
     mHasCSSBackgroundColor = drawBackgroundColor;
     if (mPresContext->IsRootContentDocumentCrossProcess() &&
         !IsTransparentContainerElement(mPresContext)) {
