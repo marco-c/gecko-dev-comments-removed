@@ -129,6 +129,10 @@ pref("app.update.elevation.promptMaxAttempts", 2);
 
 
 
+pref("app.update.notifyDuringDownload", false);
+
+
+
 
 
 
