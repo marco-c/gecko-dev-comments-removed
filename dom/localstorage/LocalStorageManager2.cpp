@@ -310,7 +310,6 @@ LocalStorageManager2::Preload(nsIPrincipal* aPrincipal, JSContext* aContext,
   
   
   
-  
   rv = helper->Dispatch();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -407,7 +406,7 @@ nsresult AsyncRequestHelper::Dispatch() {
   AssertIsOnOwningThread();
 
   nsCOMPtr<nsIEventTarget> domFileThread =
-      RemoteLazyInputStreamThread::GetOrCreate();
+      IPCBlobInputStreamThread::GetOrCreate();
   if (NS_WARN_IF(!domFileThread)) {
     return NS_ERROR_FAILURE;
   }

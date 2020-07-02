@@ -1,0 +1,60 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_IPCBlobInputStreamThread_h
+#define mozilla_dom_IPCBlobInputStreamThread_h
+
+#include "mozilla/dom/IPCBlobInputStreamChild.h"
+#include "nsIEventTarget.h"
+#include "nsIObserver.h"
+#include "nsTArray.h"
+
+class nsIThread;
+
+namespace mozilla {
+namespace dom {
+
+class IPCBlobInputStreamChild;
+
+class IPCBlobInputStreamThread final : public nsIObserver,
+                                       public nsIEventTarget {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+  NS_DECL_NSIEVENTTARGET
+
+  static bool IsOnFileEventTarget(nsIEventTarget* aEventTarget);
+
+  static IPCBlobInputStreamThread* Get();
+
+  static IPCBlobInputStreamThread* GetOrCreate();
+
+  void MigrateActor(IPCBlobInputStreamChild* aActor);
+
+  bool Initialize();
+
+  void InitializeOnMainThread();
+
+ private:
+  ~IPCBlobInputStreamThread() = default;
+
+  void MigrateActorInternal(IPCBlobInputStreamChild* aActor);
+
+  nsCOMPtr<nsIThread> mThread;
+
+  
+  
+  nsTArray<RefPtr<IPCBlobInputStreamChild>> mPendingActors;
+};
+
+bool IsOnDOMFileThread();
+
+void AssertIsOnDOMFileThread();
+
+}  
+}  
+
+#endif  

@@ -6,7 +6,7 @@
 
 #include "TemporaryFileBlobImpl.h"
 
-#include "RemoteLazyInputStreamThread.h"
+#include "IPCBlobInputStreamThread.h"
 #include "nsFileStreams.h"
 #include "nsIFile.h"
 #include "nsIFileStreams.h"
@@ -77,8 +77,8 @@ class TemporaryFileInputStream final : public nsFileInputStream {
 
   ~TemporaryFileInputStream() {
     
-    RefPtr<RemoteLazyInputStreamThread> thread =
-        RemoteLazyInputStreamThread::GetOrCreate();
+    RefPtr<IPCBlobInputStreamThread> thread =
+        IPCBlobInputStreamThread::GetOrCreate();
     if (NS_WARN_IF(!thread)) {
       return;
     }

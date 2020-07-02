@@ -7,6 +7,7 @@
 #include "LSObject.h"
 
 #include "ActorsChild.h"
+#include "IPCBlobInputStreamThread.h"
 #include "LocalStorageCommon.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -18,7 +19,6 @@
 #include "nsContentUtils.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "nsThread.h"
-#include "RemoteLazyInputStreamThread.h"
 
 
 
@@ -100,11 +100,9 @@ class NestedEventTargetWrapper final : public nsISerialEventTarget {
 
 
 
-
 class RequestHelper final : public Runnable, public LSRequestChildCallback {
   enum class State {
     
-
 
 
     Initial,
@@ -219,7 +217,7 @@ void LSObject::Initialize() {
   MOZ_ASSERT(NS_IsMainThread());
 
   nsCOMPtr<nsIEventTarget> domFileThread =
-      RemoteLazyInputStreamThread::GetOrCreate();
+      IPCBlobInputStreamThread::GetOrCreate();
   if (NS_WARN_IF(!domFileThread)) {
     return;
   }
@@ -1129,8 +1127,8 @@ nsresult RequestHelper::StartAndReturnResponse(LSRequestResponse& aResponse) {
         new NestedEventTargetWrapper(mNestedEventTarget);
 
     nsCOMPtr<nsIEventTarget> domFileThread =
-        XRE_IsParentProcess() ? RemoteLazyInputStreamThread::GetOrCreate()
-                              : RemoteLazyInputStreamThread::Get();
+        XRE_IsParentProcess() ? IPCBlobInputStreamThread::GetOrCreate()
+                              : IPCBlobInputStreamThread::Get();
     if (NS_WARN_IF(!domFileThread)) {
       return NS_ERROR_FAILURE;
     }

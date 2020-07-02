@@ -5,10 +5,10 @@
 
 
 include protocol PBackground;
+include protocol PIPCBlobInputStream;
 include protocol PChildToParentStream;
 include protocol PParentToChildStream;
 include protocol PFileDescriptorSet;
-include protocol PRemoteLazyInputStream;
 
 include IPCBlob;
 

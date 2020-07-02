@@ -1,0 +1,99 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_IPCBlobInputStreamParent_h
+#define mozilla_dom_IPCBlobInputStreamParent_h
+
+#include "mozilla/dom/PIPCBlobInputStreamParent.h"
+
+class nsIInputStream;
+
+namespace mozilla {
+
+namespace net {
+class SocketProcessParent;
+}
+
+namespace dom {
+
+class NS_NO_VTABLE IPCBlobInputStreamParentCallback {
+ public:
+  virtual void ActorDestroyed(const nsID& aID) = 0;
+
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
+ protected:
+  virtual ~IPCBlobInputStreamParentCallback() = default;
+};
+
+class IPCBlobInputStreamParent final : public PIPCBlobInputStreamParent {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(IPCBlobInputStreamParent, final)
+
+  
+  
+  
+  template <typename M>
+  static already_AddRefed<IPCBlobInputStreamParent> Create(
+      nsIInputStream* aInputStream, uint64_t aSize, uint64_t aChildID,
+      nsresult* aRv, M* aManager);
+
+  static already_AddRefed<IPCBlobInputStreamParent> Create(
+      const nsID& aID, uint64_t aSize,
+      mozilla::ipc::PBackgroundParent* aManager);
+
+  static already_AddRefed<IPCBlobInputStreamParent> Create(
+      const nsID& aID, uint64_t aSize,
+      mozilla::net::SocketProcessParent* aManager);
+
+  void ActorDestroy(IProtocol::ActorDestroyReason aReason) override;
+
+  const nsID& ID() const { return mID; }
+
+  uint64_t Size() const { return mSize; }
+
+  void SetCallback(IPCBlobInputStreamParentCallback* aCallback);
+
+  mozilla::ipc::IPCResult RecvStreamNeeded();
+
+  mozilla::ipc::IPCResult RecvLengthNeeded();
+
+  mozilla::ipc::IPCResult RecvClose();
+
+  mozilla::ipc::IPCResult Recv__delete__() override;
+
+  bool HasValidStream() const;
+
+ private:
+  IPCBlobInputStreamParent(const nsID& aID, uint64_t aSize,
+                           ContentParent* aManager);
+
+  IPCBlobInputStreamParent(const nsID& aID, uint64_t aSize,
+                           mozilla::ipc::PBackgroundParent* aManager);
+
+  IPCBlobInputStreamParent(const nsID& aID, uint64_t aSize,
+                           mozilla::net::SocketProcessParent* aManager);
+
+  ~IPCBlobInputStreamParent() = default;
+
+  const nsID mID;
+  const uint64_t mSize;
+
+  
+  
+  ContentParent* mContentManager;
+  mozilla::ipc::PBackgroundParent* mPBackgroundManager;
+  mozilla::net::SocketProcessParent* mSocketProcessManager;
+
+  RefPtr<IPCBlobInputStreamParentCallback> mCallback;
+
+  bool mMigrating;
+};
+
+}  
+}  
+
+#endif  

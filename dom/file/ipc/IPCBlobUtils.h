@@ -236,7 +236,6 @@
 
 
 
-
 namespace mozilla {
 
 namespace ipc {
@@ -250,6 +249,7 @@ namespace dom {
 class IPCBlob;
 class ContentChild;
 class ContentParent;
+class PIPCBlobInputStreamParent;
 
 namespace IPCBlobUtils {
 
@@ -269,6 +269,14 @@ nsresult Serialize(BlobImpl* aBlobImpl, ContentParent* aManager,
 nsresult Serialize(BlobImpl* aBlobImpl,
                    mozilla::ipc::PBackgroundParent* aManager,
                    IPCBlob& aIPCBlob);
+
+nsresult SerializeInputStream(nsIInputStream* aInputStream, uint64_t aSize,
+                              PIPCBlobInputStreamParent*& aActorParent,
+                              ContentParent* aManager);
+
+nsresult SerializeInputStream(nsIInputStream* aInputStream, uint64_t aSize,
+                              PIPCBlobInputStreamParent*& aActorParent,
+                              mozilla::ipc::PBackgroundParent* aManager);
 
 
 
