@@ -715,11 +715,20 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
                                                   BytecodeLocation loc) {
   
   
+  
+  
+  
+  
+  
+  
+  
 
   MOZ_ASSERT(loc.opHasIC());
 
   const ICEntry& entry = getICEntry(loc);
   ICStub* stub = entry.firstStub();
+
+  uint32_t offset = loc.bytecodeToOffset(script_);
 
   if (stub->isFallback()) {
     [[maybe_unused]] unsigned line, column;
@@ -731,6 +740,16 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
             ") for JSOp::%s @ %s:%u:%u",
             stub->toFallbackStub()->enteredCount(), CodeName(loc.getOp()),
             script_->filename(), line, column);
+
+    
+    if (stub->toFallbackStub()->enteredCount() != 0) {
+      return Ok();
+    }
+
+    
+    if (!AddOpSnapshot<WarpBailout>(alloc_, snapshots, offset)) {
+      return abort(AbortReason::Alloc);
+    }
     return Ok();
   }
 
@@ -846,7 +865,6 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
 
   JitCode* jitCode = stub->jitCode();
 
-  uint32_t offset = loc.bytecodeToOffset(script_);
   if (!AddOpSnapshot<WarpCacheIR>(alloc_, snapshots, offset, jitCode, stubInfo,
                                   stubDataCopy)) {
     return abort(AbortReason::Alloc);

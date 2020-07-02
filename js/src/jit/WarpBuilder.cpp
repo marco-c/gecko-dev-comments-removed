@@ -39,7 +39,8 @@ BytecodeSite* WarpBuilder::newBytecodeSite(BytecodeLocation loc) {
   return new (alloc()) BytecodeSite(info().inlineScriptTree(), pc);
 }
 
-const WarpOpSnapshot* WarpBuilder::getOpSnapshotImpl(BytecodeLocation loc) {
+const WarpOpSnapshot* WarpBuilder::getOpSnapshotImpl(
+    BytecodeLocation loc, WarpOpSnapshot::Kind kind) {
   uint32_t offset = loc.bytecodeToOffset(script_);
 
   
@@ -48,7 +49,8 @@ const WarpOpSnapshot* WarpBuilder::getOpSnapshotImpl(BytecodeLocation loc) {
     opSnapshotIter_ = opSnapshotIter_->getNext();
   }
 
-  if (!opSnapshotIter_ || opSnapshotIter_->offset() != offset) {
+  if (!opSnapshotIter_ || opSnapshotIter_->offset() != offset ||
+      opSnapshotIter_->kind() != kind) {
     return nullptr;
   }
 
@@ -1681,6 +1683,11 @@ bool WarpBuilder::buildCallOp(BytecodeLocation loc) {
                                  cacheIRSnapshot, callInfo);
   }
 
+  if (getOpSnapshot<WarpBailout>(loc)) {
+    callInfo.setImplicitlyUsedUnchecked();
+    return buildBailoutForColdIC(loc, CacheKind::Call);
+  }
+
   
 
   bool needsThisCheck = false;
@@ -2726,6 +2733,13 @@ bool WarpBuilder::buildIC(BytecodeLocation loc, CacheKind kind,
                                  cacheIRSnapshot, inputs_);
   }
 
+  if (getOpSnapshot<WarpBailout>(loc)) {
+    for (MDefinition* input : inputs) {
+      input->setImplicitlyUsedUnchecked();
+    }
+    return buildBailoutForColdIC(loc, kind);
+  }
+
   
   auto getInput = [&](size_t index) -> MDefinition* {
     MOZ_ASSERT(index < numInputs);
@@ -2883,6 +2897,55 @@ bool WarpBuilder::buildIC(BytecodeLocation loc, CacheKind kind,
       
       MOZ_CRASH("Unexpected kind");
   }
+
+  return true;
+}
+
+bool WarpBuilder::buildBailoutForColdIC(BytecodeLocation loc, CacheKind kind) {
+  MOZ_ASSERT(loc.opHasIC());
+
+  
+  
+  MBail* bail = MBail::New(alloc(), Bailout_FirstExecution);
+  current->add(bail);
+
+  MIRType resultType;
+  switch (kind) {
+    case CacheKind::UnaryArith:
+    case CacheKind::BinaryArith:
+    case CacheKind::GetName:
+    case CacheKind::GetProp:
+    case CacheKind::GetElem:
+    case CacheKind::GetPropSuper:
+    case CacheKind::GetElemSuper:
+    case CacheKind::GetIntrinsic:
+    case CacheKind::Call:
+    case CacheKind::ToPropertyKey:
+      resultType = MIRType::Value;
+      break;
+    case CacheKind::BindName:
+    case CacheKind::GetIterator:
+    case CacheKind::NewObject:
+      resultType = MIRType::Object;
+      break;
+    case CacheKind::TypeOf:
+      resultType = MIRType::String;
+      break;
+    case CacheKind::ToBool:
+    case CacheKind::Compare:
+    case CacheKind::In:
+    case CacheKind::HasOwn:
+    case CacheKind::InstanceOf:
+      resultType = MIRType::Boolean;
+      break;
+    case CacheKind::SetProp:
+    case CacheKind::SetElem:
+      return true;  
+  }
+
+  auto* ins = MUnreachableResult::New(alloc(), resultType);
+  current->add(ins);
+  current->push(ins);
 
   return true;
 }

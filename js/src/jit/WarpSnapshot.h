@@ -34,6 +34,7 @@ class CacheIRStubInfo;
   _(WarpRest)                    \
   _(WarpNewArray)                \
   _(WarpNewObject)               \
+  _(WarpBailout)                 \
   _(WarpCacheIR)
 
 
@@ -82,6 +83,7 @@ class WarpOpSnapshot : public TempObject,
 
  public:
   uint32_t offset() const { return offset_; }
+  Kind kind() const { return kind_; }
 
   template <typename T>
   const T* as() const {
@@ -227,6 +229,20 @@ class WarpLambda : public WarpOpSnapshot {
   BaseScript* baseScript() const { return baseScript_; }
   FunctionFlags flags() const { return flags_; }
   uint16_t nargs() const { return nargs_; }
+
+  void traceData(JSTracer* trc);
+
+#ifdef JS_JITSPEW
+  void dumpData(GenericPrinter& out) const;
+#endif
+};
+
+
+class WarpBailout : public WarpOpSnapshot {
+ public:
+  static constexpr Kind ThisKind = Kind::WarpBailout;
+
+  explicit WarpBailout(uint32_t offset) : WarpOpSnapshot(ThisKind, offset) {}
 
   void traceData(JSTracer* trc);
 
