@@ -37,7 +37,6 @@ pub struct SwTile {
     y: i32,
     fbo_id: u32,
     color_id: u32,
-    depth_id: u32,
     tex_id: u32,
     pbo_id: u32,
     dirty_rect: DeviceIntRect,
@@ -216,10 +215,18 @@ pub struct SwCompositor {
     frame_surfaces: Vec<(NativeSurfaceId, DeviceIntPoint, DeviceIntRect)>,
     cur_tile: NativeTileId,
     draw_tile: Option<DrawTileHelper>,
+    
+    max_tile_size: DeviceIntSize,
+    
+    
+    
+    
+    depth_id: u32,
 }
 
 impl SwCompositor {
     pub fn new(gl: swgl::Context, native_gl: Option<Rc<dyn gl::Gl>>, compositor: Option<WrCompositor>) -> Self {
+        let depth_id = gl.gen_textures(1)[0];
         SwCompositor {
             gl,
             compositor,
@@ -232,6 +239,8 @@ impl SwCompositor {
             },
             draw_tile: native_gl.as_ref().map(|gl| DrawTileHelper::new(gl.clone())),
             native_gl,
+            max_tile_size: DeviceIntSize::zero(),
+            depth_id,
         }
     }
 
@@ -245,7 +254,6 @@ impl SwCompositor {
     fn deinit_tile(&self, tile: &SwTile) {
         self.gl.delete_framebuffers(&[tile.fbo_id]);
         self.gl.delete_textures(&[tile.color_id]);
-        self.gl.delete_textures(&[tile.depth_id]);
         if let Some(native_gl) = &self.native_gl {
             native_gl.delete_textures(&[tile.tex_id]);
             native_gl.delete_buffers(&[tile.pbo_id]);
@@ -270,6 +278,10 @@ impl Compositor for SwCompositor {
         if let Some(compositor) = &mut self.compositor {
             compositor.create_surface(id, virtual_offset, tile_size, is_opaque);
         }
+        self.max_tile_size = DeviceIntSize::new(
+            self.max_tile_size.width.max(tile_size.width),
+            self.max_tile_size.height.max(tile_size.height),
+        );
         self.surfaces.insert(
             id,
             SwSurface {
@@ -294,6 +306,8 @@ impl Compositor for SwCompositor {
             self.deinit_surface(surface);
         }
 
+        self.gl.delete_textures(&[self.depth_id]);
+
         self.deinit_shader();
 
         if let Some(compositor) = &mut self.compositor {
@@ -306,35 +320,13 @@ impl Compositor for SwCompositor {
             compositor.create_tile(id);
         }
         if let Some(surface) = self.surfaces.get_mut(&id.surface_id) {
-            let texs = self.gl.gen_textures(2);
-            let color_id = texs[0];
-            self.gl.set_texture_buffer(
-                color_id,
-                gl::RGBA8,
-                surface.tile_size.width,
-                surface.tile_size.height,
-                0,
-                ptr::null_mut(),
-                0,
-                0,
-            );
-            let depth_id = texs[1];
-            self.gl.set_texture_buffer(
-                depth_id,
-                gl::DEPTH_COMPONENT16,
-                surface.tile_size.width,
-                surface.tile_size.height,
-                0,
-                ptr::null_mut(),
-                0,
-                0,
-            );
+            let color_id = self.gl.gen_textures(1)[0];
             let fbo_id = self.gl.gen_framebuffers(1)[0];
             self.gl.bind_framebuffer(gl::DRAW_FRAMEBUFFER, fbo_id);
             self.gl
                 .framebuffer_texture_2d(gl::DRAW_FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::TEXTURE_2D, color_id, 0);
             self.gl
-                .framebuffer_texture_2d(gl::DRAW_FRAMEBUFFER, gl::DEPTH_ATTACHMENT, gl::TEXTURE_2D, depth_id, 0);
+                .framebuffer_texture_2d(gl::DRAW_FRAMEBUFFER, gl::DEPTH_ATTACHMENT, gl::TEXTURE_2D, self.depth_id, 0);
             self.gl.bind_framebuffer(gl::DRAW_FRAMEBUFFER, 0);
 
             let mut tex_id = 0;
@@ -375,7 +367,6 @@ impl Compositor for SwCompositor {
                 y: id.y,
                 fbo_id,
                 color_id,
-                depth_id,
                 tex_id,
                 pbo_id,
                 dirty_rect: DeviceIntRect::zero(),
@@ -447,15 +438,24 @@ impl Compositor for SwCompositor {
                     surface.tile_size.width,
                     surface.tile_size.height,
                 );
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 self.gl.set_texture_buffer(
-                    tile.depth_id,
+                    self.depth_id,
                     gl::DEPTH_COMPONENT16,
                     valid_rect.size.width,
                     valid_rect.size.height,
                     0,
                     ptr::null_mut(),
-                    surface.tile_size.width,
-                    surface.tile_size.height,
+                    self.max_tile_size.width,
+                    self.max_tile_size.height,
                 );
                 surface_info.fbo_id = tile.fbo_id;
                 surface_info.origin -= valid_rect.origin.to_vector();
