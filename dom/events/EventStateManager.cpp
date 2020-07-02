@@ -735,7 +735,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
         
         
         
-        if (IsRemoteTarget(GetFocusedContent())) {
+        if (IsTopLevelRemoteTarget(GetFocusedContent())) {
           
           
           
@@ -789,7 +789,7 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       
       
       if (aEvent->IsWaitingReplyFromRemoteProcess() &&
-          !aEvent->PropagationStopped() && !IsRemoteTarget(content)) {
+          !aEvent->PropagationStopped() && !IsTopLevelRemoteTarget(content)) {
         aEvent->ResetWaitingReplyFromRemoteProcessState();
       }
     } break;
@@ -1390,6 +1390,10 @@ void EventStateManager::DispatchCrossProcessEvent(WidgetEvent* aEvent,
 }
 
 bool EventStateManager::IsRemoteTarget(nsIContent* target) {
+  return BrowserParent::GetFrom(target) || BrowserBridgeChild::GetFrom(target);
+}
+
+bool EventStateManager::IsTopLevelRemoteTarget(nsIContent* target) {
   return !!BrowserParent::GetFrom(target);
 }
 
@@ -1469,8 +1473,8 @@ bool EventStateManager::HandleCrossProcessEvent(WidgetEvent* aEvent,
 void EventStateManager::CreateClickHoldTimer(nsPresContext* inPresContext,
                                              nsIFrame* inDownFrame,
                                              WidgetGUIEvent* inMouseDownEvent) {
-  if (!inMouseDownEvent->IsTrusted() || IsRemoteTarget(mGestureDownContent) ||
-      sIsPointerLocked) {
+  if (!inMouseDownEvent->IsTrusted() ||
+      IsTopLevelRemoteTarget(mGestureDownContent) || sIsPointerLocked) {
     return;
   }
 
@@ -2881,7 +2885,7 @@ void EventStateManager::DecideGestureEvent(WidgetGestureNotifyEvent* aEvent,
     
     
     
-    if (current && IsRemoteTarget(current->GetContent())) {
+    if (current && IsTopLevelRemoteTarget(current->GetContent())) {
       panDirection = WidgetGestureNotifyEvent::ePanBoth;
       
       displayPanFeedback = false;
@@ -3885,7 +3889,9 @@ void EventStateManager::UpdateCursor(nsPresContext* aPresContext,
                                      WidgetEvent* aEvent,
                                      nsIFrame* aTargetFrame,
                                      nsEventStatus* aStatus) {
-  if (aTargetFrame && IsRemoteTarget(aTargetFrame->GetContent())) {
+  
+  
+  if (aTargetFrame && IsTopLevelRemoteTarget(aTargetFrame->GetContent())) {
     return;
   }
 
@@ -4210,7 +4216,7 @@ nsIFrame* EventStateManager::DispatchMouseOrPointerEvent(
 
     
     
-    if (IsRemoteTarget(targetContent)) {
+    if (IsTopLevelRemoteTarget(targetContent)) {
       if (aMessage == eMouseOut) {
         
         UniquePtr<WidgetMouseEvent> remoteEvent =
@@ -4709,7 +4715,8 @@ void EventStateManager::GenerateDragDropEnterExit(nsPresContext* aPresContext,
           nsIContent* target = sLastDragOverFrame
                                    ? sLastDragOverFrame.GetFrame()->GetContent()
                                    : nullptr;
-          if (IsRemoteTarget(target)) {
+          
+          if (IsTopLevelRemoteTarget(target)) {
             
             
             

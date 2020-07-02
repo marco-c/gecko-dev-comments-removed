@@ -386,7 +386,8 @@ nsINode* FocusManager::FocusedDOMNode() const {
   
   
   if (focusedElm) {
-    if (EventStateManager::IsRemoteTarget(focusedElm)) {
+    
+    if (EventStateManager::IsTopLevelRemoteTarget(focusedElm)) {
       return nullptr;
     }
     return focusedElm;

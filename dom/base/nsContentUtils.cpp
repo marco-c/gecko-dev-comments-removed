@@ -6105,8 +6105,7 @@ bool nsContentUtils::IsSubDocumentTabbable(nsIContent* aContent) {
 
   
   
-  if (EventStateManager::IsRemoteTarget(aContent) ||
-      BrowserBridgeChild::GetFrom(aContent)) {
+  if (EventStateManager::IsRemoteTarget(aContent)) {
     return true;
   }
 

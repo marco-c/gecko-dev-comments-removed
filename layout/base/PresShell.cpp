@@ -7691,8 +7691,9 @@ nsIFrame* PresShell::EventHandler::ComputeRootFrameToHandleEventWithPopup(
 
   
   
+  
   if (aCapturingContent &&
-      EventStateManager::IsRemoteTarget(aCapturingContent)) {
+      EventStateManager::IsTopLevelRemoteTarget(aCapturingContent)) {
     *aIsCapturingContentIgnored = true;
   }
 

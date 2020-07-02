@@ -367,7 +367,7 @@ bool nsXULElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
   
   
   if (aWithMouse && IsNonList(mNodeInfo) &&
-      !EventStateManager::IsRemoteTarget(this)) {
+      !EventStateManager::IsTopLevelRemoteTarget(this)) {
     return false;
   }
 #endif
