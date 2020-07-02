@@ -172,7 +172,7 @@ class TestChecksConfigure(unittest.TestCase):
             'check_prog("FOO", ("unknown", "unknown-2", "unknown 3"), '
             'allow_missing=True)')
         self.assertEqual(status, 0)
-        self.assertEqual(config, {'FOO': ':'})
+        self.assertEqual(config, {})
         self.assertEqual(out, 'checking for foo... not found\n')
 
     @unittest.skipIf(not sys.platform.startswith('win'), 'Windows-only test')
@@ -433,7 +433,7 @@ class TestChecksConfigure(unittest.TestCase):
         self.assertEqual(config, {})
         self.assertEqual(out, textwrap.dedent('''\
             checking for a... '''  
-                '''
+                '''  # noqa: E128
             DEBUG: a: Trying known-a
             ERROR: Paths provided to find_program must be a list of strings, not %r
         ''' % mozpath.dirname(self.OTHER_A)))
@@ -574,7 +574,6 @@ class TestChecksConfigure(unittest.TestCase):
         self.assertEqual(status, 1)
         self.assertEqual(config, {
             'JAVA': java,
-            'JARSIGNER': ':',
         })
         self.assertEqual(out, textwrap.dedent('''\
              checking for java... %s

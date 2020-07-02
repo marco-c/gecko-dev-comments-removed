@@ -36,6 +36,6 @@ def cancel_action(parameters, graph_config, input, task_group_id, task_id):
             
             
             
-            logger.info('Task is past its deadline and cannot be cancelled.'.format(task_id))
+            logger.info('Task {} is past its deadline and cannot be cancelled.'.format(task_id))
             return
         raise
