@@ -1104,7 +1104,7 @@ static void SyncViewsAndInvalidateDescendants(nsIFrame* aFrame,
 
   for (const auto& [list, listID] : aFrame->ChildLists()) {
     for (nsIFrame* child : list) {
-      if (!(child->GetStateBits() & NS_FRAME_OUT_OF_FLOW)) {
+      if (!child->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
         
         if (child->IsPlaceholderFrame()) {
           
@@ -1207,7 +1207,7 @@ static void StyleChangeReflow(nsIFrame* aFrame, nsChangeHint aHint) {
   }
 
   nsFrameState dirtyBits;
-  if (aFrame->GetStateBits() & NS_FRAME_FIRST_REFLOW) {
+  if (aFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     dirtyBits = nsFrameState(0);
   } else if ((aHint & nsChangeHint_NeedDirtyReflow) ||
              dirtyType == IntrinsicDirty::StyleChange) {
@@ -1434,7 +1434,7 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
           
           if (cont->IsAbsPosContainingBlock()) {
             if (!cont->IsAbsoluteContainer() &&
-                (cont->GetStateBits() & NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN)) {
+                cont->HasAnyStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN)) {
               cont->MarkAsAbsoluteContainingBlock();
             }
           } else {
@@ -1495,7 +1495,7 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
               nsChangeHint_UpdateSubtreeOverflow);
       }
 
-      if (!(frame->GetStateBits() & NS_FRAME_MAY_BE_TRANSFORMED)) {
+      if (!frame->HasAnyStateBits(NS_FRAME_MAY_BE_TRANSFORMED)) {
         
         
         
@@ -1640,8 +1640,8 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
 
             
             
-            if (!(hintFrame->GetStateBits() &
-                  (NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN))) {
+            if (!hintFrame->HasAnyStateBits(NS_FRAME_IS_DIRTY |
+                                            NS_FRAME_HAS_DIRTY_CHILDREN)) {
               mOverflowChangedTracker.AddFrame(
                   hintFrame, OverflowChangedTracker::CHILDREN_CHANGED);
             }
@@ -1654,8 +1654,8 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
                          "Not expecting non-SVG children");
               
               
-              if (!(childFrame->GetStateBits() &
-                    (NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN))) {
+              if (!childFrame->HasAnyStateBits(NS_FRAME_IS_DIRTY |
+                                               NS_FRAME_HAS_DIRTY_CHILDREN)) {
                 mOverflowChangedTracker.AddFrame(
                     childFrame, OverflowChangedTracker::CHILDREN_CHANGED);
               }
@@ -1671,8 +1671,8 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
         }
         
         
-        if (!(frame->GetStateBits() &
-              (NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN))) {
+        if (!frame->HasAnyStateBits(NS_FRAME_IS_DIRTY |
+                                    NS_FRAME_HAS_DIRTY_CHILDREN)) {
           if (hint & (nsChangeHint_UpdateOverflow |
                       nsChangeHint_UpdatePostTransformOverflow)) {
             OverflowChangedTracker::ChangeKind changeKind;
@@ -3566,7 +3566,7 @@ void RestyleManager::ReparentFrameDescendants(nsIFrame* aFrame,
   for (const auto& childList : aFrame->ChildLists()) {
     for (nsIFrame* child : childList.mList) {
       
-      if (!(child->GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&
+      if (!child->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
           child != aProviderChild) {
         DoReparentComputedStyleForFirstLine(child, aStyleSet);
       }
