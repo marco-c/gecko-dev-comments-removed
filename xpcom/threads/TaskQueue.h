@@ -53,11 +53,10 @@ class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
 
  public:
   explicit TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
-                     bool aSupportsTailDispatch = false,
-                     bool aRetainFlags = false);
+                     bool aSupportsTailDispatch = false);
 
   TaskQueue(already_AddRefed<nsIEventTarget> aTarget, const char* aName,
-            bool aSupportsTailDispatch = false, bool aRetainFlags = false);
+            bool aSupportsTailDispatch = false);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIDIRECTTASKDISPATCHER
@@ -195,11 +194,6 @@ class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
   };
 
   TaskDispatcher* mTailDispatcher;
-
-  
-  
-  
-  bool mShouldRetainFlags;
 
   
   
