@@ -43,10 +43,6 @@ add_task(async function() {
   filterButtons.forEach(filterButton => {
     ok(filterIsEnabled(filterButton), "filter is enabled");
   });
-
-  
-  await waitFor(() => findMessage(hud, "Expected color but found ‘blouge’"));
-
   
   await closeTabAndToolbox();
 });

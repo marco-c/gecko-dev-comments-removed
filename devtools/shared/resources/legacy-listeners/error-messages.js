@@ -44,13 +44,11 @@ module.exports = async function({
 
   
   
-  
   messages = messages.filter(message => {
     return (
-      (webConsoleFront.traits.newCacheStructure ||
-        !message._type ||
-        message._type == "PageError") &&
-      message.pageError.category !== "CSS Parser"
+      webConsoleFront.traits.newCacheStructure ||
+      !message._type ||
+      message._type == "PageError"
     );
   });
 
@@ -71,11 +69,6 @@ module.exports = async function({
   onAvailable(messages);
 
   webConsoleFront.on("pageError", message => {
-    
-    if (message.pageError.category === "CSS Parser") {
-      return;
-    }
-
     message.resourceType = ResourceWatcher.TYPES.ERROR_MESSAGE;
     onAvailable([message]);
   });
