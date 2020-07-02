@@ -114,6 +114,7 @@ class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
   
   
   bool IsCurrentThreadIn() const override;
+  using nsISerialEventTarget::IsOnCurrentThread;
 
  protected:
   virtual ~TaskQueue();
