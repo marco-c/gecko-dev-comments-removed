@@ -44,7 +44,7 @@ const INVALID_SEGMENT_INDEX: i32 = 0xffff;
 const CLIP_RECTANGLE_TILE_SIZE: i32 = 128;
 
 
-const CLIP_RECTANGLE_AREA_THRESHOLD: f32 = (CLIP_RECTANGLE_TILE_SIZE * CLIP_RECTANGLE_TILE_SIZE * 4) as f32;
+const CLIP_RECTANGLE_AREA_THRESHOLD: i32 = CLIP_RECTANGLE_TILE_SIZE * CLIP_RECTANGLE_TILE_SIZE * 4;
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -3136,7 +3136,7 @@ impl ClipBatcher {
     
     fn add_tiled_clip_mask(
         &mut self,
-        mask_screen_rect: DeviceRect,
+        mask_screen_rect: DeviceIntRect,
         local_clip_rect: LayoutRect,
         clip_spatial_node_index: SpatialNodeIndex,
         spatial_tree: &SpatialTree,
@@ -3151,7 +3151,6 @@ impl ClipBatcher {
             return false;
         }
 
-        let mask_screen_rect_size = mask_screen_rect.size.to_i32();
         let clip_spatial_node = &spatial_tree
             .spatial_nodes[clip_spatial_node_index.0 as usize];
 
@@ -3179,13 +3178,13 @@ impl ClipBatcher {
         
         
         let world_device_rect = world_clip_rect * device_pixel_scale;
-        let x_tiles = (mask_screen_rect_size.width + CLIP_RECTANGLE_TILE_SIZE-1) / CLIP_RECTANGLE_TILE_SIZE;
-        let y_tiles = (mask_screen_rect_size.height + CLIP_RECTANGLE_TILE_SIZE-1) / CLIP_RECTANGLE_TILE_SIZE;
+        let x_tiles = (mask_screen_rect.size.width + CLIP_RECTANGLE_TILE_SIZE-1) / CLIP_RECTANGLE_TILE_SIZE;
+        let y_tiles = (mask_screen_rect.size.height + CLIP_RECTANGLE_TILE_SIZE-1) / CLIP_RECTANGLE_TILE_SIZE;
 
         
         
         
-        let mask_origin = mask_screen_rect.origin.to_vector();
+        let mask_origin = mask_screen_rect.origin.to_f32().to_vector();
         let clip_list = self.get_batch_list(is_first_clip);
 
         for y in 0 .. y_tiles {
@@ -3195,8 +3194,8 @@ impl ClipBatcher {
                     y * CLIP_RECTANGLE_TILE_SIZE,
                 );
                 let p1 = DeviceIntPoint::new(
-                    (p0.x + CLIP_RECTANGLE_TILE_SIZE).min(mask_screen_rect_size.width),
-                    (p0.y + CLIP_RECTANGLE_TILE_SIZE).min(mask_screen_rect_size.height),
+                    (p0.x + CLIP_RECTANGLE_TILE_SIZE).min(mask_screen_rect.size.width),
+                    (p0.y + CLIP_RECTANGLE_TILE_SIZE).min(mask_screen_rect.size.height),
                 );
                 let normalized_sub_rect = DeviceIntRect::new(
                     p0,
@@ -3247,7 +3246,7 @@ impl ClipBatcher {
         spatial_tree: &SpatialTree,
         transforms: &mut TransformPalette,
         clip_data_store: &ClipDataStore,
-        actual_rect: DeviceRect,
+        actual_rect: DeviceIntRect,
         world_rect: &WorldRect,
         device_pixel_scale: DevicePixelScale,
         task_origin: DevicePoint,
@@ -3280,7 +3279,7 @@ impl ClipBatcher {
                 tile_rect: LayoutRect::zero(),
                 sub_rect: DeviceRect::new(
                     DevicePoint::zero(),
-                    actual_rect.size,
+                    actual_rect.size.to_f32(),
                 ),
                 task_origin,
                 screen_origin,
