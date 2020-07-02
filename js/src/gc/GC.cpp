@@ -7703,7 +7703,11 @@ Realm* js::NewRealm(JSContext* cx, JSPrincipals* principals,
 
     const JSPrincipals* trusted = rt->trustedPrincipals();
     bool isSystem = principals && principals == trusted;
-    if (isSystem) {
+    
+    
+    
+    if (isSystem &&
+        compSpec != JS::CompartmentSpecifier::NewCompartmentInSystemZone) {
       zoneHolder->setIsSystemZone();
     }
 
