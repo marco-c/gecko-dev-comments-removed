@@ -1,8 +1,8 @@
-# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 include('/media/webrtc/webrtc.mozbuild')
 
 if CONFIG['MOZ_WEBRTC']:
@@ -29,6 +29,16 @@ if CONFIG['MOZ_WEBRTC']:
         UNIFIED_SOURCES += [
             'android_video_capture/device_info_android.cc',
             'android_video_capture/video_capture_android.cc',
+        ]
+    elif CONFIG['OS_TARGET'] == 'Darwin':
+        UNIFIED_SOURCES += [
+            'objc_video_capture/device_info.mm',
+            'objc_video_capture/device_info_objc.mm',
+            'objc_video_capture/rtc_video_capture_objc.mm',
+            'objc_video_capture/video_capture.mm',
+        ]
+        CMMFLAGS += [
+            '-fobjc-arc',
         ]
 
     if CONFIG['OS_TARGET'] != 'Android':
@@ -85,7 +95,7 @@ IPDL_SOURCES += [
     'PMedia.ipdl',
     'PMediaSystemResourceManager.ipdl',
 ]
-# /dom/base needed for nsGlobalWindow.h in MediaChild.cpp
+
 LOCAL_INCLUDES += [
     '/dom/base',
 ]
