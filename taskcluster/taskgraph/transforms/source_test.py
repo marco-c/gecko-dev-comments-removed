@@ -43,9 +43,9 @@ source_test_description_schema = Schema({
     
     
     
-    Optional('require-build'): {
-        text_type: text_type,
-    },
+    Optional('require-build'): optionally_keyed_by(
+        'project', {text_type: text_type}
+    ),
 
     
     
@@ -175,6 +175,7 @@ def handle_platform(config, jobs):
     """
     fields = [
         'fetches.toolchain',
+        'require-build',
         'worker-type',
         'worker',
     ]
@@ -183,7 +184,7 @@ def handle_platform(config, jobs):
         platform = job['platform']
 
         for field in fields:
-            resolve_keyed_by(job, field, item_name=job['name'])
+            resolve_keyed_by(job, field, item_name=job['name'], project=config.params['project'])
 
         if 'treeherder' in job:
             job['treeherder']['platform'] = platform
