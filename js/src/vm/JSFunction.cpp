@@ -654,9 +654,16 @@ XDRResult js::XDRInterpretedFunction(XDRState<mode>* xdr,
     }
     objp.set(fun);
 
-    bool singleton = (xdrFlags & HasSingletonType);
-    if (!JSFunction::setTypeForScriptedFunction(cx, fun, singleton)) {
-      return xdr->fail(JS::TranscodeResult_Throw);
+    
+    
+    
+    
+    
+    if (enclosingScope) {
+      bool singleton = (xdrFlags & HasSingletonType);
+      if (!JSFunction::setTypeForScriptedFunction(cx, fun, singleton)) {
+        return xdr->fail(JS::TranscodeResult_Throw);
+      }
     }
   }
 
