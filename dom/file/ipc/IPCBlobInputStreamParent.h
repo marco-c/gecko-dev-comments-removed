@@ -12,6 +12,11 @@
 class nsIInputStream;
 
 namespace mozilla {
+
+namespace net {
+class SocketProcessParent;
+}
+
 namespace dom {
 
 class NS_NO_VTABLE IPCBlobInputStreamParentCallback {
@@ -40,6 +45,10 @@ class IPCBlobInputStreamParent final : public PIPCBlobInputStreamParent {
       const nsID& aID, uint64_t aSize,
       mozilla::ipc::PBackgroundParent* aManager);
 
+  static already_AddRefed<IPCBlobInputStreamParent> Create(
+      const nsID& aID, uint64_t aSize,
+      mozilla::net::SocketProcessParent* aManager);
+
   void ActorDestroy(IProtocol::ActorDestroyReason aReason) override;
 
   const nsID& ID() const { return mID; }
@@ -65,6 +74,9 @@ class IPCBlobInputStreamParent final : public PIPCBlobInputStreamParent {
   IPCBlobInputStreamParent(const nsID& aID, uint64_t aSize,
                            mozilla::ipc::PBackgroundParent* aManager);
 
+  IPCBlobInputStreamParent(const nsID& aID, uint64_t aSize,
+                           mozilla::net::SocketProcessParent* aManager);
+
   ~IPCBlobInputStreamParent() = default;
 
   const nsID mID;
@@ -74,6 +86,7 @@ class IPCBlobInputStreamParent final : public PIPCBlobInputStreamParent {
   
   ContentParent* mContentManager;
   mozilla::ipc::PBackgroundParent* mPBackgroundManager;
+  mozilla::net::SocketProcessParent* mSocketProcessManager;
 
   RefPtr<IPCBlobInputStreamParentCallback> mCallback;
 

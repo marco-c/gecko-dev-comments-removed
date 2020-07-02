@@ -78,6 +78,13 @@ bool IPCBlobInputStreamThread::IsOnFileEventTarget(
     nsIEventTarget* aEventTarget) {
   MOZ_ASSERT(aEventTarget);
 
+  
+  
+  
+  if (XRE_IsSocketProcess()) {
+    return true;
+  }
+
   mozilla::StaticMutexAutoLock lock(gIPCBlobThreadMutex);
   return gIPCBlobThread && aEventTarget == gIPCBlobThread->mThread;
 }
