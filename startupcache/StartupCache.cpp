@@ -33,6 +33,7 @@
 #include "nsXULAppAPI.h"
 #include "nsIProtocolHandler.h"
 #include "GeckoProfiler.h"
+#include "nsAppRunner.h"
 
 #if defined(XP_WIN)
 #  include <windows.h>
@@ -83,6 +84,9 @@ static const size_t STARTUP_CACHE_RESERVE_CAPACITY = 450;
 
 
 static const size_t STARTUP_CACHE_MAX_CAPACITY = 5000;
+
+
+static uint8_t STARTUP_CACHE_WRITE_TIMEOUT = 60;
 
 #define STARTUP_CACHE_NAME "startupCache." SC_WORDSIZE "." SC_ENDIAN
 
@@ -161,6 +165,10 @@ nsresult StartupCache::Init() {
       do_GetService(NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX "jar"));
 
   nsresult rv;
+
+  if (mozilla::RunningGTest()) {
+    STARTUP_CACHE_WRITE_TIMEOUT = 3;
+  }
 
   
   
@@ -795,9 +803,9 @@ nsresult StartupCache::ResetStartupWriteTimerCheckingReadCount() {
     rv = mTimer->Cancel();
   NS_ENSURE_SUCCESS(rv, rv);
   
-  mTimer->InitWithNamedFuncCallback(StartupCache::WriteTimeout, this, 60000,
-                                    nsITimer::TYPE_ONE_SHOT,
-                                    "StartupCache::WriteTimeout");
+  mTimer->InitWithNamedFuncCallback(
+      StartupCache::WriteTimeout, this, STARTUP_CACHE_WRITE_TIMEOUT * 1000,
+      nsITimer::TYPE_ONE_SHOT, "StartupCache::WriteTimeout");
   return NS_OK;
 }
 
@@ -810,9 +818,9 @@ nsresult StartupCache::ResetStartupWriteTimer() {
     rv = mTimer->Cancel();
   NS_ENSURE_SUCCESS(rv, rv);
   
-  mTimer->InitWithNamedFuncCallback(StartupCache::WriteTimeout, this, 60000,
-                                    nsITimer::TYPE_ONE_SHOT,
-                                    "StartupCache::WriteTimeout");
+  mTimer->InitWithNamedFuncCallback(
+      StartupCache::WriteTimeout, this, STARTUP_CACHE_WRITE_TIMEOUT * 1000,
+      nsITimer::TYPE_ONE_SHOT, "StartupCache::WriteTimeout");
   return NS_OK;
 }
 
