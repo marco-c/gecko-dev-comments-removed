@@ -265,7 +265,18 @@ function loadFrameScriptUtils(browser = gBrowser.selectedBrowser) {
 Services.prefs.setBoolPref("devtools.inspector.three-pane-enabled", true);
 
 
+
 Services.prefs.setBoolPref("dom.ipc.processPrelaunch.enabled", false);
+
+
+
+
+
+Services.prefs.setBoolPref(
+  "javascript.options.asyncstack_capture_debuggee_only",
+  false
+);
+
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.dump.emit");
   Services.prefs.clearUserPref("devtools.inspector.three-pane-enabled");
@@ -274,6 +285,9 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.toolbox.previousHost");
   Services.prefs.clearUserPref("devtools.toolbox.splitconsoleEnabled");
   Services.prefs.clearUserPref("devtools.toolbox.splitconsoleHeight");
+  Services.prefs.clearUserPref(
+    "javascript.options.asyncstack_capture_debuggee_only"
+  );
 });
 
 registerCleanupFunction(async function cleanup() {
