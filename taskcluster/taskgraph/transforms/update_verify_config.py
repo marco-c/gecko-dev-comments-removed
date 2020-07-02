@@ -34,7 +34,7 @@ INCLUDE_VERSION_REGEXES = {
     
     "esr": r"'^\d+\.\d+(\.\d+)?esr$'",
     
-    "esr68-next": r"'^(52|60)+\.\d+(\.\d+)?esr$'",
+    "esr78-next": r"'^(52|60|68)+\.\d+(\.\d+)?esr$'",
 }
 
 MAR_CHANNEL_ID_OVERRIDE_REGEXES = {
