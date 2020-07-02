@@ -152,11 +152,14 @@ class MOZ_MUST_USE_TYPE IDBResult : public detail::IDBResultBase<T, S...> {
 
   
   
-  T& Unwrap() {
-    return const_cast<T&>(static_cast<const IDBResult*>(this)->Unwrap());
+  T Unwrap() {
+    return std::move(
+        this->mVariant.template as<typename IDBResult::ValueType>().mValue);
   }
 
-  const T& Unwrap() const {
+  
+  
+  const T& Inspect() const {
     return this->mVariant.template as<typename IDBResult::ValueType>().mValue;
   }
 };
