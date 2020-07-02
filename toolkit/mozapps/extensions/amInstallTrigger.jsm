@@ -151,8 +151,16 @@ InstallTrigger.prototype = {
       }
     }
 
-    let sourceHost = this._principal.host;
-    let sourceURL = this._principal.URI?.spec;
+    let sourceHost;
+    let sourceURL;
+
+    try {
+      sourceHost = this._principal.URI.host;
+      sourceURL = this._principal.URI.spec;
+    } catch (err) {
+      
+      
+    }
 
     let installData = {
       uri: url.spec,
