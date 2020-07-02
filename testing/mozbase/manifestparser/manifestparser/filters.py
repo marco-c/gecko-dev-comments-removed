@@ -295,13 +295,16 @@ class chunk_by_manifest(InstanceFilter):
         for manifest in manifests:
             mtests = [t for t in tests if t['manifest'] == manifest]
             tests_by_manifest.append(mtests)
-        tests_by_manifest.sort(reverse=True, key=lambda x: len(x))
+        
+        
+        
+        tests_by_manifest.sort(reverse=True, key=lambda x: (len(x), x[0]['manifest']))
 
         tests_by_chunk = [[] for i in range(self.total_chunks)]
         for batch in tests_by_manifest:
             
             
-            tests_by_chunk.sort(key=lambda x: len(x))
+            tests_by_chunk.sort(key=lambda x: (len(x), x[0]['manifest'] if len(x) else ""))
             tests_by_chunk[0].extend(batch)
 
         return (t for t in tests_by_chunk[self.this_chunk - 1])
