@@ -29,13 +29,6 @@ XPCOMUtils.defineLazyGetter(this, "logger", () =>
   Log.repository.getLogger("Urlbar.Provider.TopSites")
 );
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "topSitesRows",
-  "browser.newtabpage.activity-stream.topSitesRows",
-  TOP_SITES_DEFAULT_ROWS
-);
-
 
 
 
@@ -125,12 +118,25 @@ class ProviderTopSites extends UrlbarProvider {
     
     
     sites = sites.filter(site => site);
+
+    
+    
+    
+    if (this.topSitesRows === undefined) {
+      XPCOMUtils.defineLazyPreferenceGetter(
+        this,
+        "topSitesRows",
+        "browser.newtabpage.activity-stream.topSitesRows",
+        TOP_SITES_DEFAULT_ROWS
+      );
+    }
+
     
     
     
     let numTopSites = Math.min(
       UrlbarPrefs.get("maxRichResults"),
-      TOP_SITES_MAX_SITES_PER_ROW * topSitesRows
+      TOP_SITES_MAX_SITES_PER_ROW * this.topSitesRows
     );
     sites = sites.slice(0, numTopSites);
 
