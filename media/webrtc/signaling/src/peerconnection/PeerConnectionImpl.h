@@ -395,18 +395,6 @@ class PeerConnectionImpl final
                                       uint16_t aStream);
 
   
-  
-  
-  void OnSdpParseError(const char* errorMessage);
-
-  
-  
-  void ClearSdpParseErrorMessages();
-
-  
-  const std::vector<std::string>& GetSdpParseErrors();
-
-  
   dom::RTCSignalingState GetSignalingState() const;
 
   void OnSetDescriptionSuccess(bool rollback, bool remote);
@@ -513,6 +501,8 @@ class PeerConnectionImpl final
 
   void StoreConfigurationForAboutWebrtc(const RTCConfiguration& aConfig);
 
+  dom::Sequence<dom::RTCSdpParsingErrorInternal> GetLastSdpParsingErrors()
+      const;
   
   
   

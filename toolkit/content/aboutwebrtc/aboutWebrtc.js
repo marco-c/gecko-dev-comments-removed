@@ -480,7 +480,7 @@ PeerConnection.prototype = {
     div.classList = "peer-connection-config";
     
     const cfg = (obj, key, elem) => {
-      elem.append(br(), `${key}: `, key in obj ? `${obj[key]}` : notProvided());
+      elem.append(br(), `${key}: `, key in obj ? obj[key] : notProvided());
     };
     
     const pro = (obj, key, elem) => {
@@ -574,7 +574,15 @@ SDPStats.prototype = {
         )
       );
       const historyDiv = new FoldableSection(historyElem).render();
-      historyDiv.appendChild(renderElement("pre", history.sdp));
+      if (history.errors.length) {
+        historyDiv.append(
+          renderElement("h5", getString("sdp_parsing_errors_heading"))
+        );
+      }
+      for (const { lineNumber, error } of history.errors) {
+        historyDiv.append(renderElement("br"), `${lineNumber}: ${error}`);
+      }
+      historyDiv.append(renderElement("pre", history.sdp));
       historyElem.appendChild(historyDiv);
       div.appendChild(historyElem);
     }
