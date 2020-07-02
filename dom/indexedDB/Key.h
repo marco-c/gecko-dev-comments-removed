@@ -129,17 +129,15 @@ class Key {
     return res;
   }
 
-  nsAutoString ToString() const {
+  void ToString(nsString& aString) const {
     MOZ_ASSERT(IsString());
     const EncodedDataType* pos = BufferStart();
-    nsAutoString res;
-    DecodeString(pos, BufferEnd(), res);
+    DecodeString(pos, BufferEnd(), aString);
     MOZ_ASSERT(pos >= BufferEnd());
-    return res;
   }
 
   IDBResult<void, IDBSpecialValue::Invalid> SetFromString(
-      const nsAString& aString);
+      const nsAString& aString, ErrorResult& aRv);
 
   void SetFromInteger(int64_t aInt) {
     mBuffer.Truncate();
@@ -151,7 +149,7 @@ class Key {
   
   
   IDBResult<void, IDBSpecialValue::Invalid> SetFromJSVal(
-      JSContext* aCx, JS::Handle<JS::Value> aVal);
+      JSContext* aCx, JS::Handle<JS::Value> aVal, ErrorResult& aRv);
 
   nsresult ToJSVal(JSContext* aCx, JS::MutableHandle<JS::Value> aVal) const;
 
@@ -159,10 +157,11 @@ class Key {
 
   
   IDBResult<void, IDBSpecialValue::Invalid> AppendItem(
-      JSContext* aCx, bool aFirstOfArray, JS::Handle<JS::Value> aVal);
+      JSContext* aCx, bool aFirstOfArray, JS::Handle<JS::Value> aVal,
+      ErrorResult& aRv);
 
   IDBResult<void, IDBSpecialValue::Invalid> ToLocaleAwareKey(
-      Key& aTarget, const nsCString& aLocale) const;
+      Key& aTarget, const nsCString& aLocale, ErrorResult& aRv) const;
 
   void FinishArray() { TrimBuffer(); }
 
@@ -194,11 +193,12 @@ class Key {
   template <typename ArrayConversionPolicy>
   static IDBResult<void, IDBSpecialValue::Invalid> ConvertArrayValueToKey(
       JSContext* const aCx, JS::HandleObject aObject,
-      ArrayConversionPolicy&& aPolicy) {
+      ArrayConversionPolicy&& aPolicy, ErrorResult& aRv) {
     
     uint32_t len;
     if (!JS::GetArrayLength(aCx, aObject, &len)) {
-      return {Exception, ErrorResult{NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR}};
+      aRv.Throw(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
+      return Exception;
     }
 
     
@@ -214,13 +214,15 @@ class Key {
     while (index < len) {
       JS::RootedId indexId(aCx);
       if (!JS_IndexToId(aCx, index, &indexId)) {
-        return {Exception, ErrorResult{NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR}};
+        aRv.Throw(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
+        return Exception;
       }
 
       
       bool hop;
       if (!JS_HasOwnPropertyById(aCx, aObject, indexId, &hop)) {
-        return {Exception, ErrorResult{NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR}};
+        aRv.Throw(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
+        return Exception;
       }
 
       
@@ -231,7 +233,8 @@ class Key {
       
       JS::RootedValue entry(aCx);
       if (!JS_GetPropertyById(aCx, aObject, indexId, &entry)) {
-        return {Exception, ErrorResult{NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR}};
+        aRv.Throw(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
+        return Exception;
       }
 
       
@@ -239,8 +242,8 @@ class Key {
       
       
       
-      auto result = aPolicy.ConvertSubkey(aCx, entry, index);
-      if (!result.Is(Ok)) {
+      auto result = aPolicy.ConvertSubkey(aCx, entry, index, aRv);
+      if (!result.Is(Ok, aRv)) {
         return result;
       }
 
@@ -280,28 +283,32 @@ class Key {
 
   
   IDBResult<void, IDBSpecialValue::Invalid> EncodeJSVal(
-      JSContext* aCx, JS::Handle<JS::Value> aVal, uint8_t aTypeOffset);
+      JSContext* aCx, JS::Handle<JS::Value> aVal, uint8_t aTypeOffset,
+      ErrorResult& aRv);
 
   IDBResult<void, IDBSpecialValue::Invalid> EncodeString(
-      const nsAString& aString, uint8_t aTypeOffset);
+      const nsAString& aString, uint8_t aTypeOffset, ErrorResult& aRv);
 
   template <typename T>
   IDBResult<void, IDBSpecialValue::Invalid> EncodeString(Span<const T> aInput,
-                                                         uint8_t aTypeOffset);
+                                                         uint8_t aTypeOffset,
+                                                         ErrorResult& aRv);
 
   template <typename T>
   IDBResult<void, IDBSpecialValue::Invalid> EncodeAsString(Span<const T> aInput,
-                                                           uint8_t aType);
+                                                           uint8_t aType,
+                                                           ErrorResult& aRv);
 
   IDBResult<void, IDBSpecialValue::Invalid> EncodeLocaleString(
       const nsDependentString& aString, uint8_t aTypeOffset,
-      const nsCString& aLocale);
+      const nsCString& aLocale, ErrorResult& aRv);
 
   void EncodeNumber(double aFloat, uint8_t aType);
 
   IDBResult<void, IDBSpecialValue::Invalid> EncodeBinary(JSObject* aObject,
                                                          bool aIsViewObject,
-                                                         uint8_t aTypeOffset);
+                                                         uint8_t aTypeOffset,
+                                                         ErrorResult& aRv);
 
   
   
@@ -345,7 +352,7 @@ class Key {
 
   IDBResult<void, IDBSpecialValue::Invalid> EncodeJSValInternal(
       JSContext* aCx, JS::Handle<JS::Value> aVal, uint8_t aTypeOffset,
-      uint16_t aRecursionDepth);
+      uint16_t aRecursionDepth, ErrorResult& aRv);
 
   static nsresult DecodeJSValInternal(const EncodedDataType*& aPos,
                                       const EncodedDataType* aEnd,
