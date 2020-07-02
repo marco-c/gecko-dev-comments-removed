@@ -66,6 +66,18 @@ pub struct ResolvedElementStyles {
     pub pseudos: EagerPseudoStyles,
 }
 
+impl ResolvedElementStyles {
+    
+    pub fn primary_style(&self) -> &Arc<ComputedValues> {
+        &self.primary.style.0
+    }
+
+    
+    pub fn primary_style_mut(&mut self) -> &mut Arc<ComputedValues> {
+        &mut self.primary.style.0
+    }
+}
+
 impl PrimaryStyle {
     
     pub fn style(&self) -> &ComputedValues {
