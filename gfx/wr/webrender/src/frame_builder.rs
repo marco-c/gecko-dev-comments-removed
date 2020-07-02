@@ -15,7 +15,7 @@ use crate::gpu_types::TransformData;
 use crate::internal_types::{FastHashMap, PlaneSplitter, SavedTargetIndex};
 use crate::picture::{PictureUpdateState, SurfaceInfo, ROOT_SURFACE_INDEX, SurfaceIndex, RecordedDirtyRegion};
 use crate::picture::{RetainedTiles, TileCacheInstance, DirtyRegion, SurfaceRenderTasks, SubpixelMode};
-use crate::picture::{BackdropKind, TileCacheLogger};
+use crate::picture::{BackdropKind, TileCacheLogger, PictureUpdateStateBuffers};
 use crate::prim_store::{SpaceMapper, PictureIndex, PrimitiveDebugId, PrimitiveScratchBuffer};
 use crate::prim_store::{DeferredResolve, PrimitiveVisibilityMask};
 use crate::profiler::{FrameProfileCounters, TextureCacheProfileCounters, ResourceProfileCounters};
@@ -121,10 +121,13 @@ pub struct FrameBuilder {
     
     pending_retained_tiles: RetainedTiles,
     pub globals: FrameGlobalResources,
+
     
     
     #[cfg_attr(any(feature = "capture", feature = "replay"), serde(skip))]
     surfaces: Vec<SurfaceInfo>,
+    #[cfg_attr(any(feature = "capture", feature = "replay"), serde(skip))]
+    picture_update_buffers: PictureUpdateStateBuffers,
 }
 
 pub struct FrameVisibilityContext<'a> {
@@ -242,6 +245,7 @@ impl FrameBuilder {
             pending_retained_tiles: RetainedTiles::new(),
             globals: FrameGlobalResources::empty(),
             surfaces: Vec::new(),
+            picture_update_buffers: PictureUpdateStateBuffers::default(),
         }
     }
 
@@ -262,6 +266,7 @@ impl FrameBuilder {
 
     pub fn memory_pressure(&mut self) {
         self.surfaces = Vec::new();
+        self.picture_update_buffers.memory_pressure();
     }
 
     
@@ -350,6 +355,7 @@ impl FrameBuilder {
         
         
         PictureUpdateState::update_all(
+            &mut self.picture_update_buffers,
             &mut self.surfaces,
             scene.root_pic_index,
             &mut scene.prim_store.pictures,
