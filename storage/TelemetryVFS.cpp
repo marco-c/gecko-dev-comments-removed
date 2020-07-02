@@ -16,6 +16,10 @@
 #include "mozilla/IOInterposer.h"
 #include "nsEscape.h"
 
+#ifdef XP_WIN
+#  include "mozilla/StaticPrefs_dom.h"
+#endif
+
 
 #define LAST_KNOWN_VFS_VERSION 3
 
@@ -570,6 +574,43 @@ int xAccess(sqlite3_vfs* vfs, const char* zName, int flags, int* pResOut) {
 }
 
 int xFullPathname(sqlite3_vfs* vfs, const char* zName, int nOut, char* zOut) {
+#if defined(XP_WIN)
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  if (StaticPrefs::dom_quotaManager_overrideXFullPathname() &&
+      ((zName[0] == '/' && zName[1] == '/' && zName[2] == '?' &&
+        zName[3] == '/') ||
+       (zName[0] == '\\' && zName[1] == '\\' && zName[2] == '?' &&
+        zName[3] == '\\'))) {
+    MOZ_ASSERT(nOut >= vfs->mxPathname);
+    MOZ_ASSERT(nOut > strlen(zName));
+
+    size_t index = 0;
+    while (zName[index] != '\0') {
+      if (zName[index] == '/') {
+        zOut[index] = '\\';
+      } else {
+        zOut[index] = zName[index];
+      }
+
+      index++;
+    }
+    zOut[index] = '\0';
+
+    return SQLITE_OK;
+  }
+#endif
+
   sqlite3_vfs* orig_vfs = static_cast<sqlite3_vfs*>(vfs->pAppData);
   return orig_vfs->xFullPathname(orig_vfs, zName, nOut, zOut);
 }
