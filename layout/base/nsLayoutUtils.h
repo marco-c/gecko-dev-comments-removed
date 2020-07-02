@@ -2694,9 +2694,16 @@ class nsLayoutUtils {
 
 
 
+  enum class SubtractDynamicToolbar { No, Yes };
   static bool GetContentViewerSize(nsPresContext* aPresContext,
-                                   LayoutDeviceIntSize& aOutSize);
+                                   LayoutDeviceIntSize& aOutSize,
+                                   SubtractDynamicToolbar = SubtractDynamicToolbar::Yes);
 
+ private:
+  static bool UpdateCompositionBoundsForRCDRSF(
+      mozilla::ParentLayerRect& aCompBounds, nsPresContext* aPresContext);
+
+ public:
   
 
 
