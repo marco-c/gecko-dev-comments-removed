@@ -21,6 +21,7 @@ function getDebuggerSourceURL(source) {
   
   
   if (
+    introType === "injectedScript" ||
     introType === "eval" ||
     introType === "debugger eval" ||
     introType === "Function" ||
