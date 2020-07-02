@@ -1108,7 +1108,7 @@ class WebExtensionTest : BaseSessionTest() {
         val messageDelegate = object : WebExtension.MessageDelegate {
             override fun onMessage(nativeApp: String, message: Any,
                                    sender: WebExtension.MessageSender): GeckoResult<Any>? {
-                assertEquals(extension, sender.webExtension)
+                assertEquals(extension!!.id, sender.webExtension.id)
                 assertEquals(WebExtension.MessageSender.ENV_TYPE_EXTENSION,
                         sender.environmentType)
                 result.complete(message as String)
@@ -1117,8 +1117,9 @@ class WebExtensionTest : BaseSessionTest() {
             }
         }
 
-        extension = sessionRule.waitForResult(controller.installBuiltIn(
-                "resource://android/assets/web_extensions/extension-page-update/"))
+        extension = sessionRule.waitForResult(controller.ensureBuiltIn(
+                "resource://android/assets/web_extensions/extension-page-update/",
+                "extension-page-update@tests.mozilla.org"))
 
         val sessionController = mainSession.webExtensionController
         sessionController.setMessageDelegate(extension, messageDelegate, "browser")
@@ -1163,6 +1164,16 @@ class WebExtensionTest : BaseSessionTest() {
         })
 
         
+        
+        
+        val ensure = sessionRule.waitForResult(controller.ensureBuiltIn(
+                "resource://android/assets/web_extensions/extension-page-update/",
+                "extension-page-update@tests.mozilla.org"))
+
+        assertThat("ID match", ensure.id, equalTo(extension.id))
+        assertThat("version match", ensure.metaData!!.version, equalTo(extension.metaData!!.version))
+
+        
         sessionRule.waitForResult(pageStop)
 
         assertThat("Url should load WebExtension page", page, endsWith("/tab.html"))
@@ -1183,7 +1194,7 @@ class WebExtensionTest : BaseSessionTest() {
             @AssertCalled
             override fun onCloseTab(source: WebExtension?,
                                     session: GeckoSession): GeckoResult<AllowOrDeny> {
-                assertEquals(extension, source)
+                assertEquals(extension.id, source!!.id)
                 assertEquals(mainSession, session)
                 return GeckoResult.ALLOW
             }

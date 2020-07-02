@@ -593,11 +593,48 @@ public class WebExtensionController {
     @AnyThread
     public GeckoResult<WebExtension> installBuiltIn(final @NonNull String uri) {
         WebExtensionInstallResult result = new WebExtensionInstallResult();
-        final GeckoBundle bundle = new GeckoBundle(2);
+        final GeckoBundle bundle = new GeckoBundle(1);
         bundle.putString("locationUri", uri);
-        bundle.putString("installId", result.installId);
         EventDispatcher.getInstance().dispatch("GeckoView:WebExtension:InstallBuiltIn",
                         bundle, result);
+        return result.then(extension -> {
+            registerWebExtension(extension);
+            return GeckoResult.fromValue(extension);
+        });
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @NonNull
+    @AnyThread
+    public GeckoResult<WebExtension> ensureBuiltIn(final @NonNull String uri,
+                                                   final @Nullable String id) {
+        WebExtensionInstallResult result = new WebExtensionInstallResult();
+        final GeckoBundle bundle = new GeckoBundle(2);
+        bundle.putString("locationUri", uri);
+        bundle.putString("webExtensionId", id);
+        EventDispatcher.getInstance().dispatch("GeckoView:WebExtension:EnsureBuiltIn",
+                bundle, result);
         return result.then(extension -> {
             registerWebExtension(extension);
             return GeckoResult.fromValue(extension);
