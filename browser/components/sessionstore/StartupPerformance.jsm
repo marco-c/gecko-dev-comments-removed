@@ -88,9 +88,7 @@ var StartupPerformance = {
   
   
   _onRestorationStarts(isAutoRestore) {
-    if (Services.profiler) {
-      Services.profiler.AddMarker("_onRestorationStarts");
-    }
+    ChromeUtils.addProfilerMarker("_onRestorationStarts");
     this._latestRestoredTimeStamp = this._startTimeStamp = Date.now();
     this._totalNumberOfEagerTabs = 0;
     this._totalNumberOfTabs = 0;
@@ -223,9 +221,7 @@ var StartupPerformance = {
               
               
               if (!event.detail.isRemotenessUpdate) {
-                if (Services.profiler) {
-                  Services.profiler.AddMarker("SSTabRestored");
-                }
+                ChromeUtils.addProfilerMarker("SSTabRestored");
                 this._latestRestoredTimeStamp = Date.now();
                 this._totalNumberOfEagerTabs += 1;
               }
