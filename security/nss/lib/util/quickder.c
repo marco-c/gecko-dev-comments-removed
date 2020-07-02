@@ -742,15 +742,18 @@ DecodeItem(void* dest,
                     switch (tagnum) {
                         
                         case SEC_ASN1_INTEGER: {
-                            
-
-
                             SECItem* destItem = (SECItem*)((char*)dest +
                                                            templateEntry->offset);
                             if (destItem && (siUnsignedInteger == destItem->type)) {
-                                while (temp.len > 1 && temp.data[0] == 0) { 
+                                
+
+                                if (temp.len > 1 && temp.data[0] == 0) {
                                     temp.data++;
                                     temp.len--;
+                                    if (!(temp.data[0] & 0x80)) {
+                                        PORT_SetError(SEC_ERROR_BAD_DER);
+                                        rv = SECFailure;
+                                    }
                                 }
                             }
                             break;
