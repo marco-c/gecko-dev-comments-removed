@@ -1184,11 +1184,7 @@ bool LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion,
       
       
       IntRegion opaqueRegion;
-#ifdef XP_MACOSX
-      opaqueRegion =
-          mCompositor->GetWidget()->GetOpaqueWidgetRegion().ToUnknownRegion();
-#endif
-      opaqueRegion.AndWith(mRenderBounds);
+      opaqueRegion.And(aOpaqueRegion, mRenderBounds);
 
       
       
