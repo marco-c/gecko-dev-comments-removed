@@ -62,6 +62,10 @@ bool ConvolutionFilter::ComputeResizeFilter(ResizeMethod aResizeMethod,
                                             int32_t aDstSize) {
   typedef SkConvolutionFilter1D::ConvolutionFixed Fixed;
 
+  if (aSrcSize < 0 || aDstSize < 0) {
+    return false;
+  }
+
   UniquePtr<SkBitmapFilter> bitmapFilter;
   switch (aResizeMethod) {
     case ResizeMethod::BOX:
@@ -102,8 +106,20 @@ bool ConvolutionFilter::ComputeResizeFilter(ResizeMethod aResizeMethod,
   
   
 
-  mFilter->reserveAdditional(aDstSize,
-                             int32_t(ceil(aDstSize * srcSupport * 2)));
+  
+  
+  
+  
+  
+  
+  const int32_t maxToPassToReserveAdditional = 1717986913;
+
+  int32_t filterValueCount = int32_t(ceil(aDstSize * srcSupport * 2));
+  if (aDstSize > maxToPassToReserveAdditional || filterValueCount < 0 ||
+      filterValueCount > maxToPassToReserveAdditional) {
+    return false;
+  }
+  mFilter->reserveAdditional(aDstSize, filterValueCount);
   for (int32_t destI = 0; destI < aDstSize; destI++) {
     
     
