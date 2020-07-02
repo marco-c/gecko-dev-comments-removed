@@ -85,6 +85,12 @@ loader.lazyRequireGetter(
   "devtools/shared/constants",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "isRemoteFrame",
+  "devtools/shared/layout/utils",
+  true
+);
 
 const kStateHover = 0x00000004; 
 
@@ -912,7 +918,14 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
   onPick(event) {
-    if (!this._isPicking) {
+    if (
+      !this._isPicking ||
+      
+      
+      
+      
+      isRemoteFrame(event.originalTarget || event.target)
+    ) {
       return;
     }
 
@@ -946,7 +959,14 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
   async onHovered(event) {
-    if (!this._isPicking) {
+    if (
+      !this._isPicking ||
+      
+      
+      
+      
+      isRemoteFrame(event.originalTarget || event.target)
+    ) {
       return;
     }
 
@@ -977,7 +997,15 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
   onKey(event) {
-    if (!this._currentAccessible || !this._isPicking) {
+    if (
+      !this._currentAccessible ||
+      !this._isPicking ||
+      
+      
+      
+      
+      isRemoteFrame(event.originalTarget || event.target)
+    ) {
       return;
     }
 
@@ -994,7 +1022,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     switch (event.keyCode) {
       
       case event.DOM_VK_RETURN:
-        this._onPick(event);
+        this.onPick(event);
         break;
       
       case event.DOM_VK_ESCAPE:
