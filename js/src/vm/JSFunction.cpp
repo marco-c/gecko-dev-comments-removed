@@ -2196,7 +2196,6 @@ static inline JSFunction* NewFunctionClone(JSContext* cx, HandleFunction fun,
 JSFunction* js::CloneFunctionReuseScript(JSContext* cx, HandleFunction fun,
                                          HandleObject enclosingEnv,
                                          gc::AllocKind allocKind,
-                                         NewObjectKind newKind,
                                          HandleObject proto) {
   MOZ_ASSERT(cx->realm() == fun->realm());
   MOZ_ASSERT(NewFunctionEnvironmentIsWellFormed(cx, enclosingEnv));
@@ -2210,10 +2209,9 @@ JSFunction* js::CloneFunctionReuseScript(JSContext* cx, HandleFunction fun,
   
   bool setTypeForFunction = proto && fun->staticPrototype() != proto &&
                             fun->group()->maybeInterpretedFunction();
-  if (setTypeForFunction) {
-    
-    newKind = TenuredObject;
-  }
+
+  
+  NewObjectKind newKind = setTypeForFunction ? TenuredObject : GenericObject;
 
   RootedFunction clone(cx,
                        NewFunctionClone(cx, fun, newKind, allocKind, proto));
