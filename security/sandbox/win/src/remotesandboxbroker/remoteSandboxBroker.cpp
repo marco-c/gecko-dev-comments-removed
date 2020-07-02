@@ -49,7 +49,7 @@ bool RemoteSandboxBroker::LaunchApp(
   
   
   
-  mIPCLaunchThread = GetCurrentEventTarget();
+  mIPCLaunchThread = GetCurrentSerialEventTarget();
 
   mParameters.path() = nsDependentString(aPath);
   mParameters.args() = nsDependentString(aArguments);
@@ -77,9 +77,14 @@ bool RemoteSandboxBroker::LaunchApp(
     return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   };
 
-  mParent.Launch(mParameters.shareHandles())
-      ->Then(GetCurrentSerialEventTarget(), __func__, std::move(resolve),
-             std::move(reject));
+  
+  
+  
+  
+  
+  nsCOMPtr<nsISerialEventTarget> target = NS_GetCurrentThread();
+  mParent.Launch(mParameters.shareHandles(), target)
+      ->Then(target, __func__, std::move(resolve), std::move(reject));
 
   
   SpinEventLoopUntil([&]() { return res != Pending; });

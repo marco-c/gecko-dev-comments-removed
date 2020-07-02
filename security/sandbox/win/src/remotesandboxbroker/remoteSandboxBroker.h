@@ -56,7 +56,7 @@ class RemoteSandboxBroker : public AbstractSandboxBroker {
   
   
   
-  nsCOMPtr<nsIEventTarget> mIPCLaunchThread;
+  nsCOMPtr<nsISerialEventTarget> mIPCLaunchThread;
 
   
   bool mShutdown = false;
