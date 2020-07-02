@@ -120,9 +120,9 @@ class ThreadBound final {
     AccessCountType& mAccessCount;
   };
 
-  template <typename U>
-  using AccessorFor =
-      Accessor<std::is_const<typename std::remove_reference<U>::type>::value>;
+  auto Access() { return Accessor<false>{*this}; }
+
+  auto Access() const { return Accessor<true>{*this}; }
 
  private:
   bool IsCorrectThread() const { return mThread == PR_GetCurrentThread(); }
@@ -137,9 +137,6 @@ class ThreadBound final {
 
 #undef MOZ_DEFINE_THREAD_BOUND_ASSERT
 };
-
-#define MOZ_ACCESS_THREAD_BOUND(value, name) \
-  decltype(value)::AccessorFor<decltype(*&value)> name(value)
 
 }  
 
