@@ -71,6 +71,11 @@ ChromeUtils.defineModuleGetter(
   "WebChannel",
   "resource://gre/modules/WebChannel.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "PanelMultiView",
+  "resource:///modules/PanelMultiView.jsm"
+);
 
 
 
@@ -575,7 +580,10 @@ DevToolsStartup.prototype = {
         });
         itemsToDisplay.push(doc.getElementById("goOfflineMenuitem"));
 
-        const developerItems = doc.getElementById("PanelUI-developerItems");
+        const developerItems = PanelMultiView.getViewNode(
+          doc,
+          "PanelUI-developerItems"
+        );
         CustomizableUI.clearSubview(developerItems);
         CustomizableUI.fillSubviewFromMenuItems(itemsToDisplay, developerItems);
       },
@@ -590,8 +598,7 @@ DevToolsStartup.prototype = {
         
         this.hookKeyShortcuts(doc.defaultView);
 
-        
-        if (doc.getElementById("PanelUI-developerItems")) {
+        if (PanelMultiView.getViewNode(doc, "PanelUI-developerItems")) {
           return;
         }
         const view = doc.createXULElement("panelview");

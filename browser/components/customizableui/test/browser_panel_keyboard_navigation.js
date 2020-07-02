@@ -100,7 +100,6 @@ add_task(async function testEnterKeyBehaviors() {
     "The last button should be focused after navigating upward"
   );
 
-  let promise = BrowserTestUtils.waitForEvent(PanelUI.helpView, "ViewShown");
   
   while (
     !focusedElement ||
@@ -111,9 +110,11 @@ add_task(async function testEnterKeyBehaviors() {
     focusedElement = document.commandDispatcher.focusedElement;
   }
   EventUtils.synthesizeKey("KEY_Enter");
-  await promise;
 
-  let helpButtons = getEnabledNavigableElementsForView(PanelUI.helpView);
+  let helpView = document.getElementById("PanelUI-helpView");
+  await BrowserTestUtils.waitForEvent(helpView, "ViewShown");
+
+  let helpButtons = getEnabledNavigableElementsForView(helpView);
   Assert.ok(
     helpButtons[0].classList.contains("subviewbutton-back"),
     "First button in help view should be a back button"
@@ -150,7 +151,7 @@ add_task(async function testEnterKeyBehaviors() {
   }
 
   
-  promise = BrowserTestUtils.waitForEvent(PanelUI.mainView, "ViewShown");
+  let promise = BrowserTestUtils.waitForEvent(PanelUI.mainView, "ViewShown");
   EventUtils.synthesizeKey("KEY_Enter");
   await promise;
 
@@ -204,12 +205,12 @@ add_task(async function testLeftRightKeys() {
 
   
   
-  let promise = BrowserTestUtils.waitForEvent(PanelUI.helpView, "ViewShown");
   EventUtils.synthesizeKey("KEY_ArrowRight");
-  await promise;
+  let helpView = document.getElementById("PanelUI-helpView");
+  await BrowserTestUtils.waitForEvent(helpView, "ViewShown");
 
   
-  promise = BrowserTestUtils.waitForEvent(PanelUI.mainView, "ViewShown");
+  let promise = BrowserTestUtils.waitForEvent(PanelUI.mainView, "ViewShown");
   EventUtils.synthesizeKey("KEY_ArrowLeft");
   await promise;
 
@@ -321,9 +322,9 @@ add_task(async function testSpaceDownAfterTabNavigation() {
 
   
   
-  let promise = BrowserTestUtils.waitForEvent(PanelUI.helpView, "ViewShown");
   EventUtils.synthesizeKey(" ", { type: "keydown" });
-  await promise;
+  let helpView = document.getElementById("PanelUI-helpView");
+  await BrowserTestUtils.waitForEvent(helpView, "ViewShown");
 
   await gCUITestUtils.hideMainMenu();
 });
