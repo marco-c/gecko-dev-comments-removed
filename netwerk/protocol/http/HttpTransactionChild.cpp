@@ -457,6 +457,8 @@ HttpTransactionChild::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
     mDataBridgeParent = nullptr;
   }
 
+  mTransactionPump = nullptr;
+
   
   if (mCanceled) {
     return mStatus;
