@@ -58,25 +58,66 @@ struct GlyphMetrics {
 
 
 
-fn supports_subpixel_aa() -> bool {
-    let mut cg_context = CGContext::create_bitmap_context(
+
+
+
+
+
+
+
+
+
+
+
+
+fn determine_font_smoothing_mode() -> Option<FontRenderMode> {
+    let mut smooth_context = CGContext::create_bitmap_context(
         None,
-        1,
-        1,
+        12,
+        12,
         8,
-        4,
+        12 * 4,
         &CGColorSpace::create_device_rgb(),
         kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little,
     );
-    let ct_font = core_text::font::new_from_name("Helvetica", 16.).unwrap();
-    cg_context.set_should_smooth_fonts(true);
-    cg_context.set_should_antialias(true);
-    cg_context.set_rgb_fill_color(1.0, 1.0, 1.0, 1.0);
-    let point = CGPoint { x: -1., y: 0. };
-    let glyph = '|' as CGGlyph;
-    ct_font.draw_glyphs(&[glyph], &[point], cg_context.clone());
-    let data = cg_context.data();
-    data[0] != data[1] || data[1] != data[2]
+    smooth_context.set_should_smooth_fonts(true);
+    smooth_context.set_should_antialias(true);
+    smooth_context.set_rgb_fill_color(1.0, 1.0, 1.0, 1.0);
+    let mut gray_context = CGContext::create_bitmap_context(
+        None,
+        12,
+        12,
+        8,
+        12 * 4,
+        &CGColorSpace::create_device_rgb(),
+        kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little,
+    );
+    gray_context.set_should_smooth_fonts(false);
+    gray_context.set_should_antialias(true);
+    gray_context.set_rgb_fill_color(1.0, 1.0, 1.0, 1.0);
+    
+    let ct_font = core_text::font::new_from_name("Lucida Grande", 12.).unwrap();
+    let point = CGPoint { x: 0., y: 0. };
+    let glyph = 'X' as CGGlyph;
+    ct_font.draw_glyphs(&[glyph], &[point], smooth_context.clone());
+    ct_font.draw_glyphs(&[glyph], &[point], gray_context.clone());
+    let mut mode = None;
+    for (smooth, gray) in smooth_context.data().chunks(4).zip(gray_context.data().chunks(4)) {
+        if smooth[0] != smooth[1] || smooth[1] != smooth[2] {
+            return Some(FontRenderMode::Subpixel);
+        }
+        if smooth[0] != gray[0] || smooth[1] != gray[1] || smooth[2] != gray[2] {
+            mode = Some(FontRenderMode::Alpha);
+        }
+    }
+    return mode;
+}
+
+
+
+
+lazy_static! {
+    static ref FONT_SMOOTHING_MODE: Option<FontRenderMode> = determine_font_smoothing_mode();
 }
 
 fn should_use_white_on_black(color: ColorU) -> bool {
@@ -272,7 +313,7 @@ fn is_bitmap_font(ct_font: &CTFont) -> bool {
 
 impl FontContext {
     pub fn new() -> Result<FontContext, ResourceCacheError> {
-        debug!("Test for subpixel AA support: {}", supports_subpixel_aa());
+        debug!("Test for subpixel AA support: {:?}", *FONT_SMOOTHING_MODE);
 
         
         let contrast = 0.0;
@@ -470,6 +511,22 @@ impl FontContext {
     }
 
     pub fn prepare_font(font: &mut FontInstance) {
+        
+        
+        
+        if font.flags.contains(FontInstanceFlags::FONT_SMOOTHING) ||
+            font.render_mode == FontRenderMode::Subpixel {
+            match *FONT_SMOOTHING_MODE {
+                Some(mode) => {
+                    font.render_mode = font.render_mode.limit_by(mode);
+                    font.flags.insert(FontInstanceFlags::FONT_SMOOTHING);
+                }
+                None => {
+                    font.render_mode = font.render_mode.limit_by(FontRenderMode::Alpha);
+                    font.flags.remove(FontInstanceFlags::FONT_SMOOTHING);
+                }
+            }
+        }
         match font.render_mode {
             FontRenderMode::Mono => {
                 
