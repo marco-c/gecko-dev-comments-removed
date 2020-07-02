@@ -220,6 +220,13 @@ function getEvalResult(
     
     
     
+    if (!noSideEffectDebugger.hasDebuggee(dbgWindow.unsafeDereference())) {
+      return null;
+    }
+
+    
+    
+    
     frame = frame ? noSideEffectDebugger.adoptFrame(frame) : null;
     dbgWindow = noSideEffectDebugger.adoptDebuggeeValue(dbgWindow);
     if (bindings) {
