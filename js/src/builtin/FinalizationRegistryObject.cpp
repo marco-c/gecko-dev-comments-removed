@@ -154,7 +154,7 @@ const JSClassOps FinalizationRegistrationsObject::classOps_ = {
     nullptr,                                    
     nullptr,                                    
     nullptr,                                    
-    nullptr,                                    
+    FinalizationRegistrationsObject::trace,     
 };
 
 
@@ -178,9 +178,20 @@ FinalizationRegistrationsObject* FinalizationRegistrationsObject::create(
 }
 
 
+void FinalizationRegistrationsObject::trace(JSTracer* trc, JSObject* obj) {
+  if (!trc->traceWeakEdges()) {
+    return;
+  }
+
+  auto* self = &obj->as<FinalizationRegistrationsObject>();
+  TraceRange(trc, self->records()->length(), self->records()->begin(),
+             "FinalizationRegistrationsObject records");
+}
+
+
 void FinalizationRegistrationsObject::finalize(JSFreeOp* fop, JSObject* obj) {
-  auto rv = &obj->as<FinalizationRegistrationsObject>();
-  fop->delete_(obj, rv->records(), MemoryUse::FinalizationRecordVector);
+  auto* self = &obj->as<FinalizationRegistrationsObject>();
+  fop->delete_(obj, self->records(), MemoryUse::FinalizationRecordVector);
 }
 
 inline WeakFinalizationRecordVector*
@@ -348,6 +359,8 @@ void FinalizationRegistryObject::trace(JSTracer* trc, JSObject* obj) {
     registrations->trace(trc);
   }
 
+  
+  
   
 
   if (FinalizationRecordVector* records = registry->recordsToBeCleanedUp()) {
