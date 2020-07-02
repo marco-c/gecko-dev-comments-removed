@@ -286,10 +286,6 @@ using LauncherVoidResultWithLineInfo = LauncherResultWithLineInfo<Ok>;
 
 
 
-#define LAUNCHER_ERROR_FROM_RESULT(result) ::mozilla::Err(result.inspectErr())
-
-
-
 
 const DWORD kWaitForInputIdleTimeoutMS = 10 * 1000;
 
