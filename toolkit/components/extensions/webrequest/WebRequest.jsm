@@ -145,7 +145,7 @@ class HeaderChanger {
     
     
     
-    let headersAlreadySet = new Set();
+    let headersAlreadySet = new Set(["content-security-policy"]);
     for (let { name, value, binaryValue } of headers) {
       if (binaryValue) {
         value = String.fromCharCode(...binaryValue);
@@ -195,15 +195,7 @@ class RequestHeaderChanger extends HeaderChanger {
 }
 
 class ResponseHeaderChanger extends HeaderChanger {
-  didModifyCSP = false;
-
   setHeader(name, value, merge, opts, lowerCaseName) {
-    if (value && lowerCaseName === "content-security-policy") {
-      
-      
-      merge = this.didModifyCSP;
-      this.didModifyCSP = true;
-    }
     try {
       this.channel.setResponseHeader(name, value, merge);
     } catch (e) {
