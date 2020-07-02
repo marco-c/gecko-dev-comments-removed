@@ -428,7 +428,7 @@ void nsComboboxControlFrame::ReflowDropdown(nsPresContext* aPresContext,
       std::max(kidReflowInput.ComputedISize(), forcedISize));
 
   
-  if (!mDroppedDown && GetStateBits() & NS_FRAME_FIRST_REFLOW) {
+  if (!mDroppedDown && HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     nsView* view = mDropdownFrame->GetView();
     nsViewManager* viewManager = view->GetViewManager();
     viewManager->SetViewVisibility(view, nsViewVisibility_kHide);
@@ -668,7 +668,7 @@ void nsComboboxControlFrame::NotifyGeometryChange() {
   
   
   
-  if (IsDroppedDown() && !(GetStateBits() & NS_FRAME_IS_DIRTY) &&
+  if (IsDroppedDown() && !HasAnyStateBits(NS_FRAME_IS_DIRTY) &&
       !mDelayedShowDropDown) {
     
     
