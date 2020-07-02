@@ -16495,5 +16495,34 @@ bool Document::UseRegularPrincipal() const {
   return EffectiveStoragePrincipal() == NodePrincipal();
 }
 
+bool Document::HasThirdPartyChannel() {
+  nsCOMPtr<nsIChannel> channel = GetChannel();
+  if (channel) {
+    
+    bool thirdParty = true;
+
+    nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil = services::GetThirdPartyUtil();
+    if (!thirdPartyUtil) {
+      return thirdParty;
+    }
+
+    
+    nsresult rv =
+        thirdPartyUtil->IsThirdPartyChannel(channel, nullptr, &thirdParty);
+    if (NS_FAILED(rv)) {
+      
+      thirdParty = true;
+    }
+
+    return thirdParty;
+  }
+
+  if (mParentDocument) {
+    return mParentDocument->HasThirdPartyChannel();
+  }
+
+  return false;
+}
+
 }  
 }  
