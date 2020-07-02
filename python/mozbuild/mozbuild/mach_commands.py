@@ -1096,6 +1096,23 @@ class RunProgram(MachCommandBase):
                 args = [unicode(a, encoding) if not isinstance(a, unicode) else a
                         for a in args]
 
+        some_debugging_option = debug or debugger or debugger_args
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if sys.platform.startswith('win') and not some_debugging_option and \
+                '-console' not in args and '--console' not in args and \
+                '-attach-console' not in args and '--attach-console' not in args:
+            args.append('-attach-console')
+
         extra_env = {
             'MOZ_DEVELOPER_REPO_DIR': self.topsrcdir,
             'MOZ_DEVELOPER_OBJ_DIR': self.topobjdir,
@@ -1110,7 +1127,7 @@ class RunProgram(MachCommandBase):
         if disable_e10s:
             extra_env['MOZ_FORCE_DISABLE_E10S'] = '1'
 
-        if debug or debugger or debugger_args:
+        if some_debugging_option:
             if 'INSIDE_EMACS' in os.environ:
                 self.log_manager.terminal_handler.setLevel(logging.WARNING)
 
