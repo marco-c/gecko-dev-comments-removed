@@ -1755,6 +1755,48 @@ void MacroAssembler::ceilDoubleToInt32(FloatRegister src, Register dest,
   bind(&end);
 }
 
+void MacroAssembler::truncDoubleToInt32(FloatRegister src, Register dest,
+                                        Label* fail) {
+  Label lessThanOrEqualMinusOne;
+
+  
+  {
+    ScratchDoubleScope scratch(*this);
+    loadConstantDouble(-1, scratch);
+    branchDouble(Assembler::DoubleLessThanOrEqualOrUnordered, src, scratch,
+                 &lessThanOrEqualMinusOne);
+  }
+
+  
+  vmovmskpd(src, dest);
+  branchTest32(Assembler::NonZero, dest, Imm32(1), fail);
+
+  
+  bind(&lessThanOrEqualMinusOne);
+  truncateDoubleToInt32(src, dest, fail);
+}
+
+void MacroAssembler::truncFloat32ToInt32(FloatRegister src, Register dest,
+                                         Label* fail) {
+  Label lessThanOrEqualMinusOne;
+
+  
+  {
+    ScratchFloat32Scope scratch(*this);
+    loadConstantFloat32(-1.f, scratch);
+    branchFloat(Assembler::DoubleLessThanOrEqualOrUnordered, src, scratch,
+                &lessThanOrEqualMinusOne);
+  }
+
+  
+  vmovmskps(src, dest);
+  branchTest32(Assembler::NonZero, dest, Imm32(1), fail);
+
+  
+  bind(&lessThanOrEqualMinusOne);
+  truncateFloat32ToInt32(src, dest, fail);
+}
+
 void MacroAssembler::roundFloat32ToInt32(FloatRegister src, Register dest,
                                          FloatRegister temp, Label* fail) {
   ScratchFloat32Scope scratch(*this);

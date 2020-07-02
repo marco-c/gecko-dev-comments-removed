@@ -1039,6 +1039,11 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void roundDoubleToInt32(FloatRegister src, Register dest, FloatRegister temp,
                           Label* fail) PER_SHARED_ARCH;
 
+  void truncFloat32ToInt32(FloatRegister src, Register dest,
+                           Label* fail) PER_SHARED_ARCH;
+  void truncDoubleToInt32(FloatRegister src, Register dest,
+                          Label* fail) PER_SHARED_ARCH;
+
   
   
   void randomDouble(Register rng, FloatRegister dest, Register64 temp0,
