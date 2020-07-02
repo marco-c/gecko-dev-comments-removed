@@ -1333,7 +1333,6 @@ nsDocShell::GatherCharsetMenuTelemetry() {
       Telemetry::AccumulateCategorical(
           Telemetry::LABELS_ENCODING_OVERRIDE_SITUATION::Labeled);
       break;
-    case kCharsetFromParentForced:
     case kCharsetFromUserForced:
       
       Telemetry::AccumulateCategorical(
