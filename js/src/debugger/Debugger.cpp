@@ -628,55 +628,35 @@ bool Debugger::getFrame(JSContext* cx, const FrameIter& iter,
 
   FrameMap::AddPtr p = frames.lookupForAdd(referent);
   if (!p) {
-    RootedDebuggerFrame frame(cx);
-
-    
-    
-    
-    
     Rooted<AbstractGeneratorObject*> genObj(cx);
     if (referent.isGeneratorFrame()) {
-      {
-        AutoRealm ar(cx, referent.callee());
-        genObj = GetGeneratorObjectForFrame(cx, referent);
-      }
-      if (genObj) {
-        GeneratorWeakMap::Ptr gp = generatorFrames.lookup(genObj);
-        if (gp) {
-          frame = gp->value();
-          MOZ_ASSERT(&frame->unwrappedGenerator() == genObj);
+      AutoRealm ar(cx, referent.callee());
+      genObj = GetGeneratorObjectForFrame(cx, referent);
 
-          
-          
-          
-          if (!frame->resume(iter)) {
-            return false;
-          }
-          if (!ensureExecutionObservabilityOfFrame(cx, referent)) {
-            return false;
-          }
-        }
-      }
+      
+      
+      
+      
+      MOZ_ASSERT_IF(genObj, !generatorFrames.has(genObj));
 
       
       
       
     }
 
+    
+    RootedObject proto(
+        cx, &object->getReservedSlot(JSSLOT_DEBUG_FRAME_PROTO).toObject());
+    RootedNativeObject debugger(cx, object);
+
+    RootedDebuggerFrame frame(
+        cx, DebuggerFrame::create(cx, proto, debugger, &iter, genObj));
     if (!frame) {
-      
-      RootedObject proto(
-          cx, &object->getReservedSlot(JSSLOT_DEBUG_FRAME_PROTO).toObject());
-      RootedNativeObject debugger(cx, object);
+      return false;
+    }
 
-      frame = DebuggerFrame::create(cx, proto, debugger, &iter, genObj);
-      if (!frame) {
-        return false;
-      }
-
-      if (!ensureExecutionObservabilityOfFrame(cx, referent)) {
-        return false;
-      }
+    if (!ensureExecutionObservabilityOfFrame(cx, referent)) {
+      return false;
     }
 
     if (!frames.add(p, referent, frame)) {
