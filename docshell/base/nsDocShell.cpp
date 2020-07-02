@@ -712,12 +712,6 @@ nsDocShell::LoadURI(nsDocShellLoadState* aLoadState, bool aSetNavigating) {
   }
   AutoPopupStatePusher statePusher(popupState);
 
-  if (aLoadState->GetOriginalURIString().isSome()) {
-    
-    
-    mOriginalUriString = *aLoadState->GetOriginalURIString();
-  }
-
   if (aLoadState->GetCancelContentJSEpoch().isSome()) {
     SetCancelContentJSEpoch(*aLoadState->GetCancelContentJSEpoch());
   }
@@ -806,7 +800,16 @@ nsDocShell::LoadURI(nsDocShellLoadState* aLoadState, bool aSetNavigating) {
   MOZ_ASSERT(aLoadState->SHEntry() == nullptr,
              "SHEntry should be null when calling InternalLoad from LoadURI");
 
-  return InternalLoad(aLoadState);  
+  rv = InternalLoad(aLoadState);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (aLoadState->GetOriginalURIString().isSome()) {
+    
+    
+    mOriginalUriString = *aLoadState->GetOriginalURIString();
+  }
+
+  return NS_OK;
 }
 
 void nsDocShell::MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState) {
@@ -12058,6 +12061,12 @@ nsDocShell::ResumeRedirectedLoad(uint64_t aIdentifier, int32_t aHistoryIndex) {
         }
 
         self->InternalLoad(aLoadState);
+
+        if (aLoadState->GetOriginalURIString().isSome()) {
+          
+          
+          self->mOriginalUriString = *aLoadState->GetOriginalURIString();
+        }
 
         for (auto& endpoint : aStreamFilterEndpoints) {
           extensions::StreamFilterParent::Attach(

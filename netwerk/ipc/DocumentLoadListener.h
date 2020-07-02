@@ -446,6 +446,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   bool mCancelled = false;
 
+  Maybe<nsCString> mOriginalUriString;
+
   
   
   base::ProcessId mOtherPid = 0;
