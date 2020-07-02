@@ -27,6 +27,8 @@ class nsPIDOMWindowInner;
 namespace mozilla {
 class AsyncLogger;
 class AudioCaptureTrack;
+class CrossGraphTransmitter;
+class CrossGraphReceiver;
 };  
 
 extern mozilla::AsyncLogger gMTGTraceLogger;
@@ -382,6 +384,8 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   virtual ProcessedMediaTrack* AsProcessedTrack() { return nullptr; }
   virtual AudioNodeTrack* AsAudioNodeTrack() { return nullptr; }
   virtual ForwardedInputTrack* AsForwardedInputTrack() { return nullptr; }
+  virtual CrossGraphTransmitter* AsCrossGraphTransmitter() { return nullptr; }
+  virtual CrossGraphReceiver* AsCrossGraphReceiver() { return nullptr; }
 
   
   
@@ -1064,6 +1068,10 @@ class MediaTrackGraph {
 
 
   AudioCaptureTrack* CreateAudioCaptureTrack();
+
+  CrossGraphTransmitter* CreateCrossGraphTransmitter(
+      CrossGraphReceiver* aReceiver);
+  CrossGraphReceiver* CreateCrossGraphReceiver(TrackRate aTransmitterRate);
 
   
 

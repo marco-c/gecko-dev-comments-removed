@@ -167,7 +167,8 @@ class AudioDriftCorrection final {
 
 
 
-  AudioSegment RequestFrames(const AudioSegment& aInput, int aOutputFrames) {
+  AudioSegment RequestFrames(const AudioSegment& aInput,
+                             int32_t aOutputFrames) {
     
     
     if (aInput.GetDuration()) {
@@ -180,7 +181,11 @@ class AudioDriftCorrection final {
     
     mResampler.UpdateOutRate(receivingRate);
     
-    return mResampler.Resample(aOutputFrames);
+    AudioSegment output = mResampler.Resample(aOutputFrames);
+    if (output.IsEmpty()) {
+      output.AppendNullData(aOutputFrames);
+    }
+    return output;
   }
 
  private:
