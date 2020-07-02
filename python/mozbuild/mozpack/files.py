@@ -378,7 +378,10 @@ class AbsoluteSymlinkFile(File):
         
         
         
-        if not hasattr(os, 'symlink') or platform.system() == 'Windows':
+        
+        js_on_windows = platform.system() == 'Windows' and \
+            self.path.endswith((".js", ".jsm"))
+        if not hasattr(os, 'symlink') or js_on_windows:
             return File.copy(self, dest, skip_if_older=skip_if_older)
 
         
