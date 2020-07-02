@@ -1332,17 +1332,15 @@ void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
     if (IsDeviceType(aEvent->mMessage)) {
       
       
-      bool hasAnyListener = false;
-      
-      for (Listener& listenerRef : mListeners.ForwardRange()) {
-        Listener* listener = &listenerRef;
-        if (EVENT_TYPE_EQUALS(listener, aEvent->mMessage,
-                              aEvent->mSpecifiedEventType,
-                               false)) {
-          hasAnyListener = true;
-          break;
-        }
-      }
+      const auto [begin, end] = mListeners.NonObservingRange();
+      const bool hasAnyListener =
+          std::any_of(begin, end, [aEvent](const Listener& listenerRef) {
+            const Listener* listener = &listenerRef;
+            return EVENT_TYPE_EQUALS(listener, aEvent->mMessage,
+                                     aEvent->mSpecifiedEventType,
+                                      false);
+          });
+
       if (!hasAnyListener) {
         DisableDevice(aEvent->mMessage);
       }
