@@ -343,6 +343,11 @@ test_description_schema = Schema({
     
     
     
+    Optional('built-projects-only'): bool,
+
+    
+    
+    
     Optional('fission-run-on-projects'): optionally_keyed_by(
         'test-platform',
         Any([text_type], 'built-projects')),
@@ -644,6 +649,7 @@ def set_defaults(config, tasks):
         task.setdefault('run-as-administrator', False)
         task.setdefault('chunks', 1)
         task.setdefault('run-on-projects', 'built-projects')
+        task.setdefault('built-projects-only', False)
         task.setdefault('instance-size', 'default')
         task.setdefault('max-run-time', 3600)
         task.setdefault('reboot', False)
@@ -1261,6 +1267,19 @@ def handle_run_on_projects(config, tasks):
     for task in tasks:
         if task['run-on-projects'] == 'built-projects':
             task['run-on-projects'] = task['build-attributes'].get('run_on_projects', ['all'])
+
+        if task.pop('built-projects-only', False):
+            built_projects = set(task['build-attributes'].get('run_on_projects', {'all'}))
+            run_on_projects = set(task.get('run-on-projects', set()))
+
+            
+            
+            
+            
+            if 'all' in run_on_projects:
+                task['run-on-projects'] = sorted(built_projects)
+            elif 'all' not in built_projects:
+                task['run-on-projects'] = sorted(run_on_projects & built_projects)
         yield task
 
 
