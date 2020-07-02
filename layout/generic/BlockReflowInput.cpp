@@ -710,7 +710,8 @@ bool BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat) {
   
   if (StyleClear::None != floatDisplay->mBreakType) {
     
-    mBCoord = ClearFloats(mBCoord, floatDisplay->mBreakType);
+    auto [bCoord, result] = ClearFloats(mBCoord, floatDisplay->mBreakType);
+    mBCoord = bCoord;
   }
   
   nsFlowAreaRect floatAvailableSpace =
@@ -1049,9 +1050,9 @@ void BlockReflowInput::PlaceBelowCurrentLineFloats(nsLineBox* aLine) {
   aLine->AppendFloats(mBelowCurrentLineFloats);
 }
 
-nscoord BlockReflowInput::ClearFloats(nscoord aBCoord, StyleClear aBreakType,
-                                      nsIFrame* aReplacedBlock,
-                                      uint32_t aFlags) {
+std::tuple<nscoord, BlockReflowInput::ClearFloatsResult>
+BlockReflowInput::ClearFloats(nscoord aBCoord, StyleClear aBreakType,
+                              nsIFrame* aReplacedBlock, uint32_t aFlags) {
 #ifdef DEBUG
   if (nsBlockFrame::gNoisyReflow) {
     nsFrame::IndentBy(stdout, nsBlockFrame::gNoiseIndent);
@@ -1066,7 +1067,7 @@ nscoord BlockReflowInput::ClearFloats(nscoord aBCoord, StyleClear aBreakType,
 #endif
 
   if (!FloatManager()->HasAnyFloats()) {
-    return aBCoord;
+    return {aBCoord, ClearFloatsResult::BCoordNoChange};
   }
 
   nscoord newBCoord = aBCoord;
@@ -1077,10 +1078,10 @@ nscoord BlockReflowInput::ClearFloats(nscoord aBCoord, StyleClear aBreakType,
       
       
       
-      newBCoord = nscoord_MAX;
-    } else {
-      newBCoord = FloatManager()->ClearFloats(newBCoord, aBreakType);
+      return {nscoord_MAX, ClearFloatsResult::FloatsPushedOrSplit};
     }
+
+    newBCoord = FloatManager()->ClearFloats(newBCoord, aBreakType);
   }
 
   if (aReplacedBlock) {
@@ -1106,5 +1107,8 @@ nscoord BlockReflowInput::ClearFloats(nscoord aBCoord, StyleClear aBreakType,
   }
 #endif
 
-  return newBCoord;
+  ClearFloatsResult result = newBCoord == aBCoord
+                                 ? ClearFloatsResult::BCoordNoChange
+                                 : ClearFloatsResult::BCoordAdvanced;
+  return {newBCoord, result};
 }
