@@ -20,7 +20,8 @@ RUST_TESTS = [
 for feature in gkrust_features:
     
     
-    if feature != 'gecko_refcount_logging':
+    
+    if feature not in ('gecko_refcount_logging', 'glean_with_gecko'):
         RUST_TEST_FEATURES.append(feature)
 
 if CONFIG['CPU_ARCH'] != 'x86':
