@@ -5555,14 +5555,9 @@ bool nsContentUtils::CheckForSubFrameDrop(nsIDragSession* aDragSession,
     return true;
   }
 
-  Document* targetDoc = target->OwnerDoc();
-  nsPIDOMWindowOuter* targetWin = targetDoc->GetWindow();
-  if (!targetWin) {
-    return true;
-  }
-
   
-  if (targetWin->GetBrowsingContext()->IsChrome()) {
+  BrowsingContext* targetBC = target->OwnerDoc()->GetBrowsingContext();
+  if (targetBC->IsChrome()) {
     return false;
   }
 
@@ -5573,13 +5568,13 @@ bool nsContentUtils::CheckForSubFrameDrop(nsIDragSession* aDragSession,
   if (doc) {
     
     
-    do {
-      doc = doc->GetInProcessParentDocument();
-      if (doc == targetDoc) {
+    for (BrowsingContext* bc = doc->GetBrowsingContext()->GetParent(); bc;
+         bc = bc->GetParent()) {
+      if (bc == targetBC) {
         
         return true;
       }
-    } while (doc);
+    }
   }
 
   return false;
