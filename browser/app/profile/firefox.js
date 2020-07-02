@@ -314,7 +314,11 @@ pref("browser.urlbar.switchTabs.adoptIntoActiveWindow", false);
 pref("browser.urlbar.openintab", false);
 
 
+#ifdef EARLY_BETA_OR_EARLIER
+pref("browser.urlbar.richSuggestions.tail", true);
+#else
 pref("browser.urlbar.richSuggestions.tail", false);
+#endif
 
 
 
