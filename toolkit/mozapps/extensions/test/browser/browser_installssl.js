@@ -111,7 +111,10 @@ function run_install_tests(callback) {
 
 
 
-add_test(function() {
+add_test(async function test_builtin_required() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[PREF_INSTALL_REQUIREBUILTINCERTS, true]],
+  });
   
   add_install_test(HTTP, null, SUCCESS);
   add_install_test(HTTPS, null, NETWORK_FAILURE);
@@ -173,7 +176,7 @@ add_test(function() {
 
 
 
-add_test(async function() {
+add_test(async function test_builtin_not_required() {
   await SpecialPowers.pushPrefEnv({
     set: [[PREF_INSTALL_REQUIREBUILTINCERTS, false]],
   });
@@ -244,9 +247,9 @@ add_test(() => {
 
 
 
-add_test(async function() {
+add_test(async function test_builtin_required_overrides() {
   await SpecialPowers.pushPrefEnv({
-    clear: [[PREF_INSTALL_REQUIREBUILTINCERTS]],
+    set: [[PREF_INSTALL_REQUIREBUILTINCERTS, true]],
   });
 
   
@@ -310,7 +313,7 @@ add_test(async function() {
 
 
 
-add_test(async function() {
+add_test(async function test_builtin_not_required_overrides() {
   await SpecialPowers.pushPrefEnv({
     set: [[PREF_INSTALL_REQUIREBUILTINCERTS, false]],
   });
