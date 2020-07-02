@@ -45,22 +45,8 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
   bool Open() override;
   void Close() override;
 
-  
-  
-  bool SetControlAttributes(SMTCControlAttributes aAttributes);
-
   void SetPlaybackState(
       mozilla::dom::MediaSessionPlaybackState aState) override;
-
-  
-  
-  bool SetThumbnail(const wchar_t* aUrl);
-
-  
-  
-  
-  bool SetMusicMetadata(const wchar_t* aArtist, const wchar_t* aTitle,
-                        const wchar_t* aAlbumArtist);
 
   void SetMediaMetadata(
       const mozilla::dom::MediaMetadataBase& aMetadata) override;
@@ -74,6 +60,20 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
   bool RegisterEvents();
   bool InitDisplayAndControls();
   void OnButtonPressed(mozilla::dom::MediaControlKey aKey);
+
+  
+  
+  bool SetControlAttributes(SMTCControlAttributes aAttributes);
+
+  
+  
+  
+  bool SetMusicMetadata(const wchar_t* aArtist, const wchar_t* aTitle,
+                        const wchar_t* aAlbumArtist);
+
+  
+  
+  bool SetThumbnail(const wchar_t* aUrl);
 
   
   bool Update();
