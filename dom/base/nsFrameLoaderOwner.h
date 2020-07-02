@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef nsFrameLoaderOwner_h_
 #define nsFrameLoaderOwner_h_
@@ -16,10 +16,10 @@ namespace dom {
 class BrowsingContext;
 class BrowserBridgeChild;
 struct RemotenessOptions;
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
 
-// IID for the FrameLoaderOwner interface
+
 #define NS_FRAMELOADEROWNER_IID                      \
   {                                                  \
     0x1b4fd25c, 0x2e57, 0x11e9, {                    \
@@ -27,13 +27,13 @@ struct RemotenessOptions;
     }                                                \
   }
 
-// Mixin that handles ownership of nsFrameLoader for Frame elements
-// (XULFrameElement, HTMLI/FrameElement, etc...). Manages information when doing
-// FrameLoader swaps.
-//
-// This class is considered an XPCOM mixin. This means that while we inherit
-// from ISupports in order to be QI'able, we expect the classes that inherit
-// nsFrameLoaderOwner to actually implement ISupports for us.
+
+
+
+
+
+
+
 class nsFrameLoaderOwner : public nsISupports {
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_FRAMELOADEROWNER_IID)
@@ -45,32 +45,31 @@ class nsFrameLoaderOwner : public nsISupports {
   mozilla::dom::BrowsingContext* GetBrowsingContext();
   mozilla::dom::BrowsingContext* GetExtantBrowsingContext();
 
-  // Destroy (if it exists) and recreate our frameloader, based on new
-  // remoteness requirements.
-  //
-  // This method is called by frontend code when it wants to perform a
-  // remoteness update, and allows for behaviour such as preserving
-  // BrowsingContexts across process switches during navigation.
-  //
-  // See the WebIDL definition for more details.
+  
+  
+  
+  
+  
+  
+  
+  
   void ChangeRemoteness(const mozilla::dom::RemotenessOptions& aOptions,
                         mozilla::ErrorResult& rv);
 
-  // Like `ChangeRemoteness` but switches to an already-created
-  // `BrowserBridgeChild`. This method is used when performing remote subframe
-  // process switches.
+  
+  
+  
   void ChangeRemotenessWithBridge(mozilla::dom::BrowserBridgeChild* aBridge,
                                   mozilla::ErrorResult& rv);
 
-  // Like `ChangeRemoteness`, but switches into an already-created
-  // `ContentParent`. This method is used when performing toplevel process
-  // switches. If `aContentParent` is nullptr, switches into the parent process.
-  //
-  // If `aReplaceBrowsingContext` is set, BrowsingContext preservation will be
-  // disabled for this process switch.
+  
+  
+  
+  
+  
+  
   void ChangeRemotenessToProcess(mozilla::dom::ContentParent* aContentParent,
                                  bool aReplaceBrowsingContext,
-                                 mozilla::dom::BrowsingContextGroup* aGroup,
                                  mozilla::ErrorResult& rv);
 
   void SubframeCrashed();
@@ -78,12 +77,12 @@ class nsFrameLoaderOwner : public nsISupports {
  private:
   bool UseRemoteSubframes();
 
-  // The enum class for determine how to handle previous BrowsingContext during
-  // the change remoteness. It could be followings
-  // 1. DONT_PRESERVE
-  //    Create a whole new BrowsingContext.
-  // 2. PRESERVE
-  //    Preserve the previous BrowsingContext.
+  
+  
+  
+  
+  
+  
   enum class ChangeRemotenessContextType {
     DONT_PRESERVE = 0,
     PRESERVE = 1,
@@ -93,7 +92,6 @@ class nsFrameLoaderOwner : public nsISupports {
 
   void ChangeRemotenessCommon(const ChangeRemotenessContextType& aContextType,
                               bool aSwitchingInProgressLoad, bool aIsRemote,
-                              mozilla::dom::BrowsingContextGroup* aGroup,
                               std::function<void()>& aFrameLoaderInit,
                               mozilla::ErrorResult& aRv);
 
@@ -104,4 +102,4 @@ class nsFrameLoaderOwner : public nsISupports {
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsFrameLoaderOwner, NS_FRAMELOADEROWNER_IID)
 
-#endif  // nsFrameLoaderOwner_h_
+#endif  
