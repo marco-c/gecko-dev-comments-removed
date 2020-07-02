@@ -101,8 +101,7 @@ class MobileViewportManager final : public nsIDOMEventListener,
 
 
 
-  void ShrinkToDisplaySizeIfNeeded(nsViewportInfo& aViewportInfo,
-                                   const mozilla::ScreenIntSize& aDisplaySize);
+  void ShrinkToDisplaySizeIfNeeded();
 
   
 
@@ -159,9 +158,7 @@ class MobileViewportManager final : public nsIDOMEventListener,
   enum class UpdateType { ViewportSize, ContentSize };
 
   
-  void UpdateResolution(const nsViewportInfo& aViewportInfo,
-                        const mozilla::ScreenIntSize& aDisplaySize,
-                        const mozilla::CSSSize& aViewportOrContentSize,
+  void UpdateResolution(const mozilla::CSSSize& aViewportOrContentSize,
                         const mozilla::Maybe<float>& aDisplayWidthChangeRatio,
                         UpdateType aType);
 
