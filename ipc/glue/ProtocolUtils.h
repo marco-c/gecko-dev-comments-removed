@@ -860,7 +860,7 @@ class ManagedEndpoint {
 
 class ActorLifecycleProxy {
  public:
-  NS_INLINE_DECL_REFCOUNTING(ActorLifecycleProxy)
+  NS_INLINE_DECL_REFCOUNTING_ONEVENTTARGET(ActorLifecycleProxy)
 
   IProtocol* Get() { return mActor; }
 

@@ -68,12 +68,38 @@ class nsAutoOwningThread {
   void* mThread;
 };
 
+class nsISerialEventTarget;
+class nsAutoOwningEventTarget {
+ public:
+  nsAutoOwningEventTarget();
+  ~nsAutoOwningEventTarget();
+
+  
+  
+  
+  
+  
+  template <int N>
+  void AssertOwnership(const char (&aMsg)[N]) const {
+    AssertCurrentThreadOwnsMe(aMsg);
+  }
+
+  bool IsCurrentThread() const;
+
+ private:
+  void AssertCurrentThreadOwnsMe(const char* aMsg) const;
+
+  nsISerialEventTarget* mTarget;
+};
+
 #  define NS_DECL_OWNINGTHREAD nsAutoOwningThread _mOwningThread;
+#  define NS_DECL_OWNINGEVENTTARGET nsAutoOwningEventTarget _mOwningThread;
 #  define NS_ASSERT_OWNINGTHREAD(_class) \
     _mOwningThread.AssertOwnership(#_class " not thread-safe")
 #else  
 
 #  define NS_DECL_OWNINGTHREAD
+#  define NS_DECL_OWNINGEVENTTARGET
 #  define NS_ASSERT_OWNINGTHREAD(_class) ((void)0)
 
 #endif  
@@ -567,33 +593,33 @@ class ThreadSafeAutoRefCnt {
 
 
 
-#define NS_INLINE_DECL_REFCOUNTING_META(_class, _decl, _destroy, ...) \
- public:                                                              \
-  _decl(MozExternalRefCountType) AddRef(void) __VA_ARGS__ {           \
-    MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(_class)                        \
-    MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");              \
-    NS_ASSERT_OWNINGTHREAD(_class);                                   \
-    ++mRefCnt;                                                        \
-    NS_LOG_ADDREF(this, mRefCnt, #_class, sizeof(*this));             \
-    return mRefCnt;                                                   \
-  }                                                                   \
-  _decl(MozExternalRefCountType) Release(void) __VA_ARGS__ {          \
-    MOZ_ASSERT(int32_t(mRefCnt) > 0, "dup release");                  \
-    NS_ASSERT_OWNINGTHREAD(_class);                                   \
-    --mRefCnt;                                                        \
-    NS_LOG_RELEASE(this, mRefCnt, #_class);                           \
-    if (mRefCnt == 0) {                                               \
-      mRefCnt = 1; /* stabilize */                                    \
-      _destroy;                                                       \
-      return 0;                                                       \
-    }                                                                 \
-    return mRefCnt;                                                   \
-  }                                                                   \
-  using HasThreadSafeRefCnt = std::false_type;                        \
-                                                                      \
- protected:                                                           \
-  nsAutoRefCnt mRefCnt;                                               \
-  NS_DECL_OWNINGTHREAD                                                \
+#define NS_INLINE_DECL_REFCOUNTING_META(_class, _decl, _destroy, _owning, ...) \
+ public:                                                                       \
+  _decl(MozExternalRefCountType) AddRef(void) __VA_ARGS__ {                    \
+    MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(_class)                                 \
+    MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");                       \
+    NS_ASSERT_OWNINGTHREAD(_class);                                            \
+    ++mRefCnt;                                                                 \
+    NS_LOG_ADDREF(this, mRefCnt, #_class, sizeof(*this));                      \
+    return mRefCnt;                                                            \
+  }                                                                            \
+  _decl(MozExternalRefCountType) Release(void) __VA_ARGS__ {                   \
+    MOZ_ASSERT(int32_t(mRefCnt) > 0, "dup release");                           \
+    NS_ASSERT_OWNINGTHREAD(_class);                                            \
+    --mRefCnt;                                                                 \
+    NS_LOG_RELEASE(this, mRefCnt, #_class);                                    \
+    if (mRefCnt == 0) {                                                        \
+      mRefCnt = 1; /* stabilize */                                             \
+      _destroy;                                                                \
+      return 0;                                                                \
+    }                                                                          \
+    return mRefCnt;                                                            \
+  }                                                                            \
+  using HasThreadSafeRefCnt = std::false_type;                                 \
+                                                                               \
+ protected:                                                                    \
+  nsAutoRefCnt mRefCnt;                                                        \
+  _owning                                                                      \
  public:
 
 
@@ -606,14 +632,16 @@ class ThreadSafeAutoRefCnt {
 
 
 #define NS_INLINE_DECL_REFCOUNTING_WITH_DESTROY(_class, _destroy, ...) \
-  NS_INLINE_DECL_REFCOUNTING_META(_class, NS_METHOD_, _destroy, __VA_ARGS__)
+  NS_INLINE_DECL_REFCOUNTING_META(_class, NS_METHOD_, _destroy,        \
+                                  NS_DECL_OWNINGTHREAD, __VA_ARGS__)
 
 
 
 
 
 #define NS_INLINE_DECL_VIRTUAL_REFCOUNTING_WITH_DESTROY(_class, _destroy, ...) \
-  NS_INLINE_DECL_REFCOUNTING_META(_class, NS_IMETHOD_, _destroy, __VA_ARGS__)
+  NS_INLINE_DECL_REFCOUNTING_META(_class, NS_IMETHOD_, _destroy,               \
+                                  NS_DECL_OWNINGTHREAD, __VA_ARGS__)
 
 
 
@@ -624,6 +652,16 @@ class ThreadSafeAutoRefCnt {
 
 #define NS_INLINE_DECL_REFCOUNTING(_class, ...) \
   NS_INLINE_DECL_REFCOUNTING_WITH_DESTROY(_class, delete (this), __VA_ARGS__)
+
+
+
+
+
+
+
+#define NS_INLINE_DECL_REFCOUNTING_ONEVENTTARGET(_class, ...)        \
+  NS_INLINE_DECL_REFCOUNTING_META(_class, NS_METHOD_, delete (this), \
+                                  NS_DECL_OWNINGEVENTTARGET, __VA_ARGS__)
 
 #define NS_INLINE_DECL_THREADSAFE_REFCOUNTING_META(_class, _decl, _destroy, \
                                                    ...)                     \
