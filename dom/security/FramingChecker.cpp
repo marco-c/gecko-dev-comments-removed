@@ -80,12 +80,21 @@ bool FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
 
   while (ctx) {
     nsCOMPtr<nsIPrincipal> principal;
-    WindowGlobalParent* window = ctx->Canonical()->GetCurrentWindowGlobal();
-    if (window) {
-      
-      
-      
-      principal = window->DocumentPrincipal();
+    
+    
+    
+    
+    
+    if (XRE_IsParentProcess()) {
+      WindowGlobalParent* window = ctx->Canonical()->GetCurrentWindowGlobal();
+      if (window) {
+        
+        
+        
+        principal = window->DocumentPrincipal();
+      }
+    } else if (nsPIDOMWindowOuter* windowOuter = ctx->GetDOMWindow()) {
+      principal = nsGlobalWindowOuter::Cast(windowOuter)->GetPrincipal();
     }
 
     if (principal && principal->IsSystemPrincipal()) {
@@ -160,8 +169,6 @@ static bool ShouldIgnoreFrameOptions(nsIChannel* aChannel,
 
 bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
                                        nsIContentSecurityPolicy* aCsp) {
-  MOZ_ASSERT(XRE_IsParentProcess(), "check frame options only in parent");
-
   if (!aChannel) {
     return true;
   }
