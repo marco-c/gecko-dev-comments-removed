@@ -107,9 +107,6 @@ var whitelist = [
   { file: "resource://gre/greprefs.js" },
 
   
-  { file: "resource://pdf.js/build/pdf.worker.js" },
-
-  
   { file: "resource://gre/res/fonts/mathfontSTIXGeneral.properties" },
   { file: "resource://gre/res/fonts/mathfontUnicode.properties" },
 
