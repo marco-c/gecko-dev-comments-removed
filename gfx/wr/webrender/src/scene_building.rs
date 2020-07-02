@@ -23,7 +23,7 @@ use crate::hit_test::{HitTestingItem, HitTestingScene};
 use crate::intern::Interner;
 use crate::internal_types::{FastHashMap, FastHashSet, LayoutPrimitiveInfo, Filter};
 use crate::picture::{Picture3DContext, PictureCompositeMode, PicturePrimitive, PictureOptions, SliceId};
-use crate::picture::{BlitReason, OrderedPictureChild, PrimitiveList, TileCacheInstance, ClusterFlags};
+use crate::picture::{BlitReason, OrderedPictureChild, PrimitiveList, ClusterFlags, TileCacheParams};
 use crate::prim_store::PrimitiveInstance;
 use crate::prim_store::{PrimitiveInstanceKind, NinePatchDescriptor, PrimitiveStore};
 use crate::prim_store::{InternablePrimitive, SegmentInstanceIndex, PictureIndex};
@@ -304,7 +304,7 @@ pub struct SceneBuilder<'a> {
     quality_settings: QualitySettings,
 
     
-    tile_caches: FastHashMap<SliceId, Box<TileCacheInstance>>,
+    tile_caches: FastHashMap<SliceId, TileCacheParams>,
 }
 
 impl<'a> SceneBuilder<'a> {
@@ -4019,7 +4019,7 @@ fn create_tile_cache(
     clip_store: &mut ClipStore,
     picture_cache_spatial_nodes: &mut FastHashSet<SpatialNodeIndex>,
     frame_builder_config: &FrameBuilderConfig,
-    tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
+    tile_caches: &mut FastHashMap<SliceId, TileCacheParams>,
 ) -> PrimitiveInstance {
     
     
@@ -4056,17 +4056,19 @@ fn create_tile_cache(
         );
     }
 
-    let tile_cache = Box::new(TileCacheInstance::new(
+    let slice_id = SliceId::new(slice);
+
+    
+    
+    tile_caches.insert(slice_id, TileCacheParams {
         slice,
         slice_flags,
-        scroll_root,
+        spatial_node_index: scroll_root,
         background_color,
         shared_clips,
-        parent_clip_chain_id,
-        frame_builder_config,
-    ));
-    let slice_id = SliceId::new(slice);
-    tile_caches.insert(slice_id, tile_cache);
+        shared_clip_chain: parent_clip_chain_id,
+        virtual_surface_size: frame_builder_config.compositor_kind.get_virtual_surface_size(),
+    });
 
     let pic_index = prim_store.pictures.alloc().init(PicturePrimitive::new_image(
         Some(PictureCompositeMode::TileCache { slice_id }),

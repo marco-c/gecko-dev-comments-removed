@@ -32,7 +32,7 @@ use crate::hit_test::{HitTest, HitTester, SharedHitTester};
 use crate::intern::DataStore;
 use crate::internal_types::{DebugOutput, FastHashMap, RenderedDocument, ResultMsg};
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
-use crate::picture::{RetainedTiles, TileCacheLogger, PictureScratchBuffer};
+use crate::picture::{TileCacheLogger, PictureScratchBuffer, SliceId, TileCacheInstance, TileCacheParams};
 use crate::prim_store::{PrimitiveScratchBuffer, PrimitiveInstance};
 use crate::prim_store::{PrimitiveInstanceKind, PrimTemplateCommonData, PrimitiveStore};
 use crate::prim_store::interned::*;
@@ -58,7 +58,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::time::{UNIX_EPOCH, SystemTime};
-use std::u32;
+use std::{mem, u32};
 #[cfg(feature = "capture")]
 use std::path::PathBuf;
 #[cfg(feature = "replay")]
@@ -466,6 +466,10 @@ struct Document {
 
     
     prev_composite_descriptor: CompositeDescriptor,
+
+    
+    
+    dirty_rects_are_valid: bool,
 }
 
 impl Document {
@@ -507,6 +511,7 @@ impl Document {
             #[cfg(feature = "replay")]
             loaded_scene: Scene::new(),
             prev_composite_descriptor: CompositeDescriptor::empty(),
+            dirty_rects_are_valid: true,
         }
     }
 
@@ -629,6 +634,7 @@ impl Document {
         resource_profile: &mut ResourceProfileCounters,
         debug_flags: DebugFlags,
         tile_cache_logger: &mut TileCacheLogger,
+        tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
     ) -> RenderedDocument {
         let accumulated_scale_factor = self.view.accumulated_scale_factor();
         let pan = self.view.frame.pan.to_f32() / accumulated_scale_factor;
@@ -656,12 +662,15 @@ impl Document {
                 &mut self.render_task_counters,
                 debug_flags,
                 tile_cache_logger,
+                tile_caches,
+                self.dirty_rects_are_valid,
             );
 
             frame
         };
 
         self.frame_is_valid = true;
+        self.dirty_rects_are_valid = true;
 
         let is_new_scene = self.has_built_scene;
         self.has_built_scene = false;
@@ -716,36 +725,74 @@ impl Document {
         self.scene.spatial_tree.scroll_node(origin, id, clamp)
     }
 
+    
+    
+    
+    fn update_tile_caches_for_new_scene(
+        &mut self,
+        mut requested_tile_caches: FastHashMap<SliceId, TileCacheParams>,
+        tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
+        resource_cache: &mut ResourceCache,
+    ) {
+        let mut new_tile_caches = FastHashMap::default();
+        new_tile_caches.reserve(requested_tile_caches.len());
+
+        
+        
+        for (slice_id, params) in requested_tile_caches.drain() {
+            let tile_cache = match tile_caches.remove(&slice_id) {
+                Some(mut existing_tile_cache) => {
+                    
+                    existing_tile_cache.prepare_for_new_scene(params);
+                    existing_tile_cache
+                }
+                None => {
+                    
+                    Box::new(TileCacheInstance::new(params))
+                }
+            };
+
+            new_tile_caches.insert(slice_id, tile_cache);
+        }
+
+        
+        
+        let unused_tile_caches = mem::replace(
+            tile_caches,
+            new_tile_caches,
+        );
+
+        if !unused_tile_caches.is_empty() {
+            
+            
+            self.dirty_rects_are_valid = false;
+
+            
+            for (_, tile_cache) in unused_tile_caches {
+                tile_cache.destroy(resource_cache);
+            }
+        }
+    }
+
     pub fn new_async_scene_ready(
         &mut self,
-        built_scene: BuiltScene,
+        mut built_scene: BuiltScene,
         recycler: &mut Recycler,
+        tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
+        resource_cache: &mut ResourceCache,
     ) {
         self.frame_is_valid = false;
         self.hit_tester_is_valid = false;
 
-        
-        
-        
-        
-        
-        
-        
-        let mut retained_tiles = RetainedTiles::new();
-        self.scene.prim_store.destroy(
-            &mut retained_tiles,
-            &mut self.scene.tile_caches,
+        self.update_tile_caches_for_new_scene(
+            mem::replace(&mut built_scene.tile_caches, FastHashMap::default()),
+            tile_caches,
+            resource_cache,
         );
+
         let old_scrolling_states = self.scene.spatial_tree.drain();
-
         self.scene = built_scene;
-
-        
-        
-        self.frame_builder.set_retained_resources(retained_tiles);
-
         self.scratch.recycle(recycler);
-
         self.scene.spatial_tree.finalize_and_apply_pending_scroll_offsets(old_scrolling_states);
     }
 }
@@ -814,6 +861,10 @@ pub struct RenderBackend {
     capture_config: Option<CaptureConfig>,
     #[cfg(feature = "replay")]
     loaded_resource_sequence_id: u32,
+
+    
+    
+    tile_caches: FastHashMap<SliceId, Box<TileCacheInstance>>,
 }
 
 impl RenderBackend {
@@ -859,6 +910,7 @@ impl RenderBackend {
             capture_config: None,
             #[cfg(feature = "replay")]
             loaded_resource_sequence_id: 0,
+            tile_caches: FastHashMap::default(),
         }
     }
 
@@ -1035,6 +1087,8 @@ impl RenderBackend {
                     doc.new_async_scene_ready(
                         built_scene,
                         &mut self.recycler,
+                        &mut self.tile_caches,
+                        &mut self.resource_cache,
                     );
                 }
 
@@ -1558,6 +1612,7 @@ impl RenderBackend {
                     &mut profile_counters.resources,
                     self.debug_flags,
                     &mut self.tile_cache_logger,
+                    &mut self.tile_caches,
                 );
 
                 debug!("generated frame for document {:?} with {} passes",
@@ -1770,6 +1825,7 @@ impl RenderBackend {
                     &mut profile_counters.resources,
                     self.debug_flags,
                     &mut self.tile_cache_logger,
+                    &mut self.tile_caches,
                 );
                 
                 
@@ -1992,6 +2048,7 @@ impl RenderBackend {
                         render_task_counters: RenderTaskGraphCounters::new(),
                         loaded_scene: scene.clone(),
                         prev_composite_descriptor: CompositeDescriptor::empty(),
+                        dirty_rects_are_valid: false,
                     };
                     entry.insert(doc);
                 }

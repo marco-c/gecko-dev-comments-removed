@@ -110,7 +110,6 @@ use crate::debug_colors;
 use euclid::{vec2, vec3, Point2D, Scale, Size2D, Vector2D, Rect, Transform3D, SideOffsets2D};
 use euclid::approxeq::ApproxEq;
 use crate::filterdata::SFilterData;
-use crate::frame_builder::FrameBuilderConfig;
 use crate::intern::ItemUid;
 use crate::internal_types::{FastHashMap, FastHashSet, PlaneSplitter, Filter, PlaneSplitAnchor, TextureSource};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureState, PictureContext};
@@ -260,63 +259,6 @@ impl<Src, Dst> From<CoordinateSpaceMapping<Src, Dst>> for TransformKey {
 struct PictureInfo {
     
     _spatial_node_index: SpatialNodeIndex,
-}
-
-
-pub struct PictureCacheState {
-    
-    pub tiles: FastHashMap<TileOffset, Box<Tile>>,
-    
-    spatial_node_comparer: SpatialNodeComparer,
-    
-    opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
-    
-    color_bindings: FastHashMap<PropertyBindingId, ColorBindingInfo>,
-    
-    root_transform: TransformKey,
-    
-    current_tile_size: DeviceIntSize,
-    
-    allocations: PictureCacheRecycledAllocations,
-    
-    pub native_surface: Option<NativeSurface>,
-    
-    pub external_native_surface_cache: FastHashMap<ExternalNativeSurfaceKey, ExternalNativeSurface>,
-    
-    virtual_offset: DeviceIntPoint,
-    
-    frame_id: FrameId,
-}
-
-pub struct PictureCacheRecycledAllocations {
-    old_opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
-    old_color_bindings: FastHashMap<PropertyBindingId, ColorBindingInfo>,
-    compare_cache: FastHashMap<PrimitiveComparisonKey, PrimitiveCompareResult>,
-}
-
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct RetainedTiles {
-    
-    #[cfg_attr(feature = "capture", serde(skip))] 
-    pub caches: FastHashMap<usize, PictureCacheState>,
-}
-
-impl RetainedTiles {
-    pub fn new() -> Self {
-        RetainedTiles {
-            caches: FastHashMap::default(),
-        }
-    }
-
-    
-    pub fn merge(&mut self, other: RetainedTiles) {
-        assert!(self.caches.is_empty() || other.caches.is_empty());
-        if self.caches.is_empty() {
-            self.caches = other.caches;
-        }
-    }
 }
 
 
@@ -2276,6 +2218,26 @@ impl SliceId {
 }
 
 
+
+pub struct TileCacheParams {
+    
+    pub slice: usize,
+    
+    pub slice_flags: SliceFlags,
+    
+    pub spatial_node_index: SpatialNodeIndex,
+    
+    
+    pub background_color: Option<ColorF>,
+    
+    pub shared_clips: Vec<ClipInstance>,
+    
+    pub shared_clip_chain: ClipChainId,
+    
+    pub virtual_surface_size: i32,
+}
+
+
 pub struct TileCacheInstance {
     
     
@@ -2388,21 +2350,11 @@ enum SurfacePromotionResult {
 }
 
 impl TileCacheInstance {
-    pub fn new(
-        slice: usize,
-        slice_flags: SliceFlags,
-        spatial_node_index: SpatialNodeIndex,
-        background_color: Option<ColorF>,
-        shared_clips: Vec<ClipInstance>,
-        shared_clip_chain: ClipChainId,
-        fb_config: &FrameBuilderConfig,
-    ) -> Self {
-        let virtual_surface_size = fb_config.compositor_kind.get_virtual_surface_size();
-
+    pub fn new(params: TileCacheParams) -> Self {
         TileCacheInstance {
-            slice,
-            slice_flags,
-            spatial_node_index,
+            slice: params.slice,
+            slice_flags: params.slice_flags,
+            spatial_node_index: params.spatial_node_index,
             tiles: FastHashMap::default(),
             map_local_to_surface: SpaceMapper::new(
                 ROOT_SPATIAL_NODE_INDEX,
@@ -2425,19 +2377,19 @@ impl TileCacheInstance {
             local_rect: PictureRect::zero(),
             local_clip_rect: PictureRect::zero(),
             surface_index: SurfaceIndex(0),
-            background_color,
+            background_color: params.background_color,
             backdrop: BackdropInfo::empty(),
             subpixel_mode: SubpixelMode::Allow,
             root_transform: TransformKey::Local,
-            shared_clips,
-            shared_clip_chain,
+            shared_clips: params.shared_clips,
+            shared_clip_chain: params.shared_clip_chain,
             current_tile_size: DeviceIntSize::zero(),
             frames_until_size_eval: 0,
             fract_offset: PictureVector2D::zero(),
             
             virtual_offset: DeviceIntPoint::new(
-                virtual_surface_size / 2,
-                virtual_surface_size / 2,
+                params.virtual_surface_size / 2,
+                params.virtual_surface_size / 2,
             ),
             compare_cache: FastHashMap::default(),
             native_surface: None,
@@ -2447,6 +2399,46 @@ impl TileCacheInstance {
             z_id_opaque: ZBufferId::invalid(),
             external_native_surface_cache: FastHashMap::default(),
             frame_id: FrameId::INVALID,
+        }
+    }
+
+    
+    
+    
+    pub fn prepare_for_new_scene(
+        &mut self,
+        params: TileCacheParams,
+    ) {
+        
+        assert_eq!(self.slice, params.slice);
+
+        
+        
+        
+        self.slice_flags = params.slice_flags;
+        self.spatial_node_index = params.spatial_node_index;
+        self.background_color = params.background_color;
+        self.shared_clips = params.shared_clips;
+        self.shared_clip_chain = params.shared_clip_chain;
+
+        
+        
+        self.frames_until_size_eval = 0;
+    }
+
+    
+    
+    pub fn destroy(
+        self,
+        resource_cache: &mut ResourceCache,
+    ) {
+        if let Some(native_surface) = self.native_surface {
+            resource_cache.destroy_compositor_surface(native_surface.opaque);
+            resource_cache.destroy_compositor_surface(native_surface.alpha);
+        }
+
+        for (_, external_surface) in self.external_native_surface_cache {
+            resource_cache.destroy_compositor_surface(external_surface.native_surface_id)
         }
     }
 
@@ -2568,50 +2560,6 @@ impl TileCacheInstance {
         }
 
         
-        if let Some(prev_state) = frame_state.retained_tiles.caches.remove(&self.slice) {
-            self.tiles.extend(prev_state.tiles);
-            self.root_transform = prev_state.root_transform;
-            self.spatial_node_comparer = prev_state.spatial_node_comparer;
-            self.opacity_bindings = prev_state.opacity_bindings;
-            self.color_bindings = prev_state.color_bindings;
-            self.current_tile_size = prev_state.current_tile_size;
-            self.native_surface = prev_state.native_surface;
-            self.external_native_surface_cache = prev_state.external_native_surface_cache;
-            self.virtual_offset = prev_state.virtual_offset;
-            self.frame_id = prev_state.frame_id;
-
-            fn recycle_map<K: std::cmp::Eq + std::hash::Hash, V>(
-                ideal_len: usize,
-                dest: &mut FastHashMap<K, V>,
-                src: FastHashMap<K, V>,
-            ) {
-                if dest.capacity() < src.capacity() {
-                    if src.capacity() < 3 * ideal_len {
-                        *dest = src;
-                    } else {
-                        dest.clear();
-                        dest.reserve(ideal_len);
-                    }
-                }
-            }
-            recycle_map(
-                self.opacity_bindings.len(),
-                &mut self.old_opacity_bindings,
-                prev_state.allocations.old_opacity_bindings,
-            );
-            recycle_map(
-                self.color_bindings.len(),
-                &mut self.old_color_bindings,
-                prev_state.allocations.old_color_bindings,
-            );
-            recycle_map(
-                prev_state.allocations.compare_cache.len(),
-                &mut self.compare_cache,
-                prev_state.allocations.compare_cache,
-            );
-        }
-
-        
         
         self.frame_id.advance();
 
@@ -2662,6 +2610,7 @@ impl TileCacheInstance {
                     frame_state.resource_cache.destroy_compositor_surface(native_surface.alpha);
                 }
                 self.tiles.clear();
+                self.tile_rect = TileRect::zero();
                 self.current_tile_size = desired_tile_size;
             }
 
@@ -4663,43 +4612,6 @@ impl PicturePrimitive {
                 filter.is_visible()
             }
             _ => true,
-        }
-    }
-
-    
-    
-    
-    
-    pub fn destroy(
-        &mut self,
-        retained_tiles: &mut RetainedTiles,
-        tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
-    ) {
-        if let Some(PictureCompositeMode::TileCache { slice_id }) = self.requested_composite_mode {
-            if let Some(tile_cache) = tile_caches.remove(&slice_id) {
-                if !tile_cache.tiles.is_empty() {
-                    retained_tiles.caches.insert(
-                        tile_cache.slice,
-                        PictureCacheState {
-                            tiles: tile_cache.tiles,
-                            spatial_node_comparer: tile_cache.spatial_node_comparer,
-                            opacity_bindings: tile_cache.opacity_bindings,
-                            color_bindings: tile_cache.color_bindings,
-                            root_transform: tile_cache.root_transform,
-                            current_tile_size: tile_cache.current_tile_size,
-                            native_surface: tile_cache.native_surface,
-                            external_native_surface_cache: tile_cache.external_native_surface_cache,
-                            virtual_offset: tile_cache.virtual_offset,
-                            frame_id: tile_cache.frame_id,
-                            allocations: PictureCacheRecycledAllocations {
-                                old_opacity_bindings: tile_cache.old_opacity_bindings,
-                                old_color_bindings: tile_cache.old_color_bindings,
-                                compare_cache: tile_cache.compare_cache,
-                            },
-                        },
-                    );
-                }
-            }
         }
     }
 
