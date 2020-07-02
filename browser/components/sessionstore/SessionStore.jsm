@@ -463,6 +463,22 @@ var SessionStore = {
 
 
 
+  ensureInitialized(window) {
+    if (SessionStoreInternal._sessionInitialized && !window.__SSi) {
+      
+
+
+
+
+      SessionStoreInternal.onLoad(window);
+    }
+  },
+
+  
+
+
+
+
 
 
   isFormatVersionCompatible(version) {

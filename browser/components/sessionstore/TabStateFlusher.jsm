@@ -6,6 +6,12 @@
 
 var EXPORTED_SYMBOLS = ["TabStateFlusher"];
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "SessionStore",
+  "resource:///modules/sessionstore/SessionStore.jsm"
+);
+
 
 
 
@@ -92,6 +98,15 @@ var TabStateFlusherInternal = {
 
       requestNativeListener = browser.frameLoader.requestTabStateFlush(id);
     }
+    
+
+
+
+
+
+
+
+    SessionStore.ensureInitialized(browser.ownerGlobal);
 
     let mm = browser.messageManager;
     mm.sendAsyncMessage("SessionStore:flush", { id });
