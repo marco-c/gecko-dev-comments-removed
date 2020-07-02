@@ -248,7 +248,7 @@ var PreferenceExperiments = {
 
 
   async init() {
-    CleanupManager.addCleanupHandler(this.saveStartupPrefs.bind(this));
+    CleanupManager.addCleanupHandler(() => this.saveStartupPrefs());
 
     for (const experiment of await this.getAllActive()) {
       

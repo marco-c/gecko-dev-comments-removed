@@ -169,7 +169,6 @@ var Normandy = {
         
       }
     }
-    await PreferenceRollouts.uninit();
   },
 
   
