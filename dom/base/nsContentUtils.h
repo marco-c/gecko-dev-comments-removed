@@ -553,23 +553,6 @@ class nsContentUtils {
 
   static uint16_t ReverseDocumentPosition(uint16_t aDocumentPosition);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static Document* GetSubdocumentWithOuterWindowId(Document* aDocument,
-                                                   uint64_t aOuterWindowId);
-
   static const nsDependentSubstring TrimCharsInSet(const char* aSet,
                                                    const nsAString& aValue);
 
