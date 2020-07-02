@@ -15,7 +15,6 @@
 
 #include "jstypes.h"
 #include "gc/GCRuntime.h"
-#include "gc/IteratorUtils.h"
 #include "gc/Zone.h"
 #include "vm/Compartment.h"
 #include "vm/Runtime.h"
@@ -36,23 +35,34 @@ enum ZoneSelector { WithAtoms, SkipAtoms };
 
 
 
-class NonAtomZonesIter {
+class ZonesIter {
   gc::AutoEnterIteration iterMarker;
+  JS::Zone* atomsZone;
   JS::Zone** it;
   JS::Zone** end;
 
  public:
-  NonAtomZonesIter(gc::GCRuntime* gc)
-      : iterMarker(gc), it(gc->zones().begin()), end(gc->zones().end()) {
-    skipHelperThreadZones();
+  ZonesIter(gc::GCRuntime* gc, ZoneSelector selector)
+      : iterMarker(gc),
+        atomsZone(selector == WithAtoms ? gc->atomsZone.ref() : nullptr),
+        it(gc->zones().begin()),
+        end(gc->zones().end()) {
+    if (!atomsZone) {
+      skipHelperThreadZones();
+    }
   }
-  NonAtomZonesIter(JSRuntime* rt) : NonAtomZonesIter(&rt->gc) {}
+  ZonesIter(JSRuntime* rt, ZoneSelector selector)
+      : ZonesIter(&rt->gc, selector) {}
 
-  bool done() const { return it == end; }
+  bool done() const { return !atomsZone && it == end; }
 
   void next() {
     MOZ_ASSERT(!done());
-    it++;
+    if (atomsZone) {
+      atomsZone = nullptr;
+    } else {
+      it++;
+    }
     skipHelperThreadZones();
   }
 
@@ -64,56 +74,16 @@ class NonAtomZonesIter {
 
   JS::Zone* get() const {
     MOZ_ASSERT(!done());
-    return *it;
+    return atomsZone ? atomsZone : *it;
   }
 
   operator JS::Zone*() const { return get(); }
   JS::Zone* operator->() const { return get(); }
-};
-
-
-
-class ZonesIter {
-  JS::Zone* atomsZone;
-  NonAtomZonesIter otherZones;
-
- public:
-  ZonesIter(gc::GCRuntime* gc, ZoneSelector selector)
-      : atomsZone(selector == WithAtoms ? gc->atomsZone.ref() : nullptr),
-        otherZones(gc) {}
-  ZonesIter(JSRuntime* rt, ZoneSelector selector)
-      : ZonesIter(&rt->gc, selector) {}
-
-  bool done() const { return !atomsZone && otherZones.done(); }
-
-  JS::Zone* get() const {
-    MOZ_ASSERT(!done());
-    return atomsZone ? atomsZone : otherZones.get();
-  }
-
-  void next() {
-    MOZ_ASSERT(!done());
-    if (atomsZone) {
-      atomsZone = nullptr;
-      return;
-    }
-
-    otherZones.next();
-  }
-
-  operator JS::Zone*() const { return get(); }
-  JS::Zone* operator->() const { return get(); }
-};
-
-
-
-class AllZonesIter : public ZonesIter {
- public:
-  AllZonesIter(gc::GCRuntime* gc) : ZonesIter(gc, WithAtoms) {}
-  AllZonesIter(JSRuntime* rt) : AllZonesIter(&rt->gc) {}
 };
 
 struct CompartmentsInZoneIter {
+  using ItemType = JS::Compartment;
+
   explicit CompartmentsInZoneIter(JS::Zone* zone) : zone(zone) {
     it = zone->compartments().begin();
   }
@@ -148,7 +118,6 @@ class RealmsInCompartmentIter {
  public:
   explicit RealmsInCompartmentIter(JS::Compartment* comp) : comp(comp) {
     it = comp->realms().begin();
-    MOZ_ASSERT(!done(), "Compartments must have at least one realm");
   }
 
   bool done() const {
@@ -169,28 +138,94 @@ class RealmsInCompartmentIter {
   JS::Realm* operator->() const { return get(); }
 };
 
-using RealmsInZoneIter =
-    NestedIterator<CompartmentsInZoneIter, RealmsInCompartmentIter>;
+class RealmsInZoneIter {
+  CompartmentsInZoneIter comp;
+  mozilla::Maybe<RealmsInCompartmentIter> realm;
+
+ public:
+  using ItemType = JS::Realm;
+
+  explicit RealmsInZoneIter(JS::Zone* zone) : comp(zone) {
+    settleOnCompartment();
+  }
+
+  void settleOnCompartment() {
+    if (!comp.done()) {
+      realm.emplace(comp.get());
+      MOZ_ASSERT(!realm->done(), "compartment must have at least one realm");
+    }
+  }
+
+  bool done() const {
+    MOZ_ASSERT(comp.done() == realm.isNothing());
+    return comp.done();
+  }
+  void next() {
+    MOZ_ASSERT(!done());
+
+    realm->next();
+
+    if (realm->done()) {
+      realm.reset();
+      comp.next();
+      settleOnCompartment();
+    }
+  }
+
+  JS::Realm* get() const { return realm->get(); }
+
+  operator JS::Realm*() const { return get(); }
+  JS::Realm* operator->() const { return get(); }
+};
 
 
 
 
 template <class ZonesIterT, class InnerIterT>
-class CompartmentsOrRealmsIterT
-    : public NestedIterator<ZonesIterT, InnerIterT> {
+class CompartmentsOrRealmsIterT {
+  using T = typename InnerIterT::ItemType;
+
   gc::AutoEnterIteration iterMarker;
+  ZonesIterT zone;
+  mozilla::Maybe<InnerIterT> inner;
 
  public:
   explicit CompartmentsOrRealmsIterT(gc::GCRuntime* gc)
-      : NestedIterator<ZonesIterT, InnerIterT>(gc), iterMarker(gc) {}
+      : iterMarker(gc), zone(gc, SkipAtoms) {
+    if (!zone.done()) {
+      inner.emplace(zone);
+    }
+  }
   explicit CompartmentsOrRealmsIterT(JSRuntime* rt)
       : CompartmentsOrRealmsIterT(&rt->gc) {}
+
+  bool done() const { return zone.done(); }
+
+  void next() {
+    MOZ_ASSERT(!done());
+    MOZ_ASSERT(!inner.ref().done());
+    inner->next();
+    if (inner->done()) {
+      inner.reset();
+      zone.next();
+      if (!zone.done()) {
+        inner.emplace(zone);
+      }
+    }
+  }
+
+  T* get() const {
+    MOZ_ASSERT(!done());
+    return *inner;
+  }
+
+  operator T*() const { return get(); }
+  T* operator->() const { return get(); }
 };
 
 using CompartmentsIter =
-    CompartmentsOrRealmsIterT<NonAtomZonesIter, CompartmentsInZoneIter>;
-using RealmsIter =
-    CompartmentsOrRealmsIterT<NonAtomZonesIter, RealmsInZoneIter>;
+    CompartmentsOrRealmsIterT<ZonesIter, CompartmentsInZoneIter>;
+using RealmsIter = CompartmentsOrRealmsIterT<ZonesIter, RealmsInZoneIter>;
 
 }  
 
