@@ -14,6 +14,7 @@
 #include "mozilla/WinHeaderOnlyUtils.h"
 
 #include "DefaultBrowser.h"
+#include "Notification.h"
 #include "Policy.h"
 #include "ScheduledTask.h"
 #include "Telemetry.h"
@@ -111,12 +112,13 @@ static void RemoveAllRegistryEntries() {
 
 
 
+
 int wmain(int argc, wchar_t** argv) {
   if (argc < 2 || !argv[1]) {
     return E_INVALIDARG;
   }
 
-  HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+  HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
   if (FAILED(hr)) {
     return hr;
   }
@@ -153,11 +155,17 @@ int wmain(int argc, wchar_t** argv) {
     }
     return UpdateTask(argv[2]);
   } else if (!wcscmp(argv[1], L"do-task")) {
+    if (argc < 3 || !argv[2]) {
+      return E_INVALIDARG;
+    }
     DefaultBrowserResult defaultBrowserResult = GetDefaultBrowserInfo();
     if (defaultBrowserResult.isErr()) {
       return defaultBrowserResult.unwrapErr().AsHResult();
     }
     DefaultBrowserInfo browserInfo = defaultBrowserResult.unwrap();
+
+    MaybeShowNotification(browserInfo, argv[2]);
+
     if (!IsTelemetryDisabled()) {
       return SendDefaultBrowserPing(browserInfo);
     }

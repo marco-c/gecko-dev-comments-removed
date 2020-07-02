@@ -97,7 +97,7 @@ HRESULT RegisterTask(const wchar_t* uniqueToken,
   ENSURE(taskSettings->put_StopIfGoingOnBatteries(VARIANT_FALSE));
   
   
-  BStrPtr execTimeLimitBStr = BStrPtr(SysAllocString(L"PT5M"));
+  BStrPtr execTimeLimitBStr = BStrPtr(SysAllocString(L"PT35M"));
   ENSURE(taskSettings->put_ExecutionTimeLimit(execTimeLimitBStr.get()));
 
   RefPtr<IRegistrationInfo> regInfo;
@@ -179,7 +179,10 @@ HRESULT RegisterTask(const wchar_t* uniqueToken,
       BStrPtr(SysAllocString(mozilla::GetFullBinaryPath().get()));
   ENSURE(execAction->put_Path(binaryPathBStr.get()));
 
-  BStrPtr argsBStr = BStrPtr(SysAllocString(L"do-task"));
+  std::wstring taskArgs = L"do-task \"";
+  taskArgs += uniqueToken;
+  taskArgs += L"\"";
+  BStrPtr argsBStr = BStrPtr(SysAllocString(taskArgs.c_str()));
   ENSURE(execAction->put_Arguments(argsBStr.get()));
 
   std::wstring taskName(kTaskName);

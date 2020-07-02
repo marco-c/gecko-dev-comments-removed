@@ -1,0 +1,15 @@
+
+
+
+
+
+
+#ifndef __DEFAULT_BROWSER_NOTIFICATION_H__
+#define __DEFAULT_BROWSER_NOTIFICATION_H__
+
+#include "DefaultBrowser.h"
+
+void MaybeShowNotification(const DefaultBrowserInfo& browserInfo,
+                           const wchar_t* aumi);
+
+#endif  
