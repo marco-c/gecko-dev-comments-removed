@@ -2881,13 +2881,6 @@ class nsLayoutUtils {
 
 
 
-  static void SetVisualViewportSize(PresShell* aPresShell, CSSSize aSize);
-
-  
-
-
-
-
 
 
   static bool CanScrollOriginClobberApz(ScrollOrigin aScrollOrigin);
