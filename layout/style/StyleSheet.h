@@ -530,8 +530,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   void ApplicableStateChanged(bool aApplicable);
 
-  void UnparentChildren();
-
   void LastRelease();
 
   
