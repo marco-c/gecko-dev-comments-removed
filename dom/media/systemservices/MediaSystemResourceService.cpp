@@ -77,7 +77,9 @@ void MediaSystemResourceService::Acquire(
     
     mozilla::Unused << aParent->SendResponse(aId, true );
     return;
-  } else if (!aWillWait) {
+  }
+
+  if (!aWillWait) {
     
     
     mozilla::Unused << aParent->SendResponse(aId, false );
