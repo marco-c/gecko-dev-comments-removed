@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_RemoteLazyInputStream_h
-#define mozilla_dom_RemoteLazyInputStream_h
+#ifndef mozilla_RemoteLazyInputStream_h
+#define mozilla_RemoteLazyInputStream_h
 
 #include "mozilla/Mutex.h"
 #include "mozIRemoteLazyInputStream.h"
@@ -17,7 +17,6 @@
 #include "nsCOMPtr.h"
 
 namespace mozilla {
-namespace dom {
 
 class RemoteLazyInputStreamChild;
 
@@ -126,7 +125,6 @@ class RemoteLazyInputStream final : public nsIAsyncInputStream,
   Mutex mMutex;
 };
 
-}  
 }  
 
 #endif  

@@ -11,7 +11,6 @@
 #include "RemoteLazyInputStreamStorage.h"
 
 namespace mozilla {
-namespace dom {
 
 template <typename M>
 
@@ -227,5 +226,4 @@ bool RemoteLazyInputStreamParent::HasValidStream() const {
   return RemoteLazyInputStreamStorage::Get()->HasStream(mID);
 }
 
-}  
 }  
