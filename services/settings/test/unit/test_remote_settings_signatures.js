@@ -545,7 +545,7 @@ add_task(async function test_check_synchronization_with_signatures() {
   };
 
   
-  equal((await client.get()).length, 2, "collection was restored");
+  equal((await client.get()).length, 2);
 
   registerHandlers(badSigGoodOldResponses);
 
@@ -558,7 +558,7 @@ add_task(async function test_check_synchronization_with_signatures() {
 
   
   
-  equal(syncEventSent, false, "event was not sent");
+  equal(syncEventSent, false);
 
   
   
@@ -595,18 +595,14 @@ add_task(async function test_check_synchronization_with_signatures() {
   
   
   
-  const localId = "0602b1b2-12ab-4d3a-b6fb-593244e7b035";
-  await client.db.importChanges(
-    { signature: { x5u, signature: "abc" } },
-    null,
-    [
-      { ...RECORD2, last_modified: 1234567890, serialNumber: "abc" },
-      { id: localId },
-    ],
-    {
-      clear: true,
-    }
+  await client.db.clear();
+  await client.db.saveMetadata({ signature: { x5u, signature: "abc" } });
+  await client.db.create(
+    { ...RECORD2, last_modified: 1234567890, serialNumber: "abc" },
+    { synced: true, useRecordId: true }
   );
+  const localId = "0602b1b2-12ab-4d3a-b6fb-593244e7b035";
+  await client.db.create({ id: localId }, { synced: true, useRecordId: true });
 
   let syncData = null;
   client.on("sync", ({ data }) => {
@@ -792,20 +788,14 @@ add_task(async function test_check_synchronization_with_signatures() {
     },
   };
   
+  await client.db.saveLastModified(4000);
+  await client.db.saveMetadata({ signature: { x5u, signature: "aa" } });
   
-  await client.db.importChanges(
-    {
-      signature: { x5u, signature: "aa" },
-    },
-    4000,
-    [
-      {
-        id: "extraId",
-        last_modified: 42,
-      },
-    ]
-  );
-
+  
+  await client.db.create({
+    id: "extraId",
+    last_modified: 42,
+  });
   equal((await client.get()).length, 1);
 
   
