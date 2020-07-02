@@ -86,6 +86,10 @@ add_task(async function test_sendtab_send() {
     { name: "Device 2" },
     { id: "dev3", name: "Device 3" },
   ];
+  
+  
+  
+  const expectedTelemetryStreamID = "4";
   const tab = { title: "Foo", url: "https://foo.bar/" };
   const report = await sendTab.send(to, tab);
   Assert.equal(report.succeeded.length, 1);
@@ -101,7 +105,7 @@ add_task(async function test_sendtab_send() {
       object: "command-sent",
       method: COMMAND_SENDTAB_TAIL,
       value: "dev3-san",
-      extra: { flowID: "1" },
+      extra: { flowID: "1", streamID: expectedTelemetryStreamID },
     },
   ]);
 });
@@ -182,6 +186,10 @@ add_task(async function test_sendtab_receive() {
 
   for (let { cmd, device, payload } of commands._invokes) {
     Assert.equal(cmd, COMMAND_SENDTAB);
+    
+    Assert.equal(payload.flowID, "1");
+    
+    payload.flowID = "ignore-me";
     Assert.deepEqual(await sendTab.handle(device.id, payload), {
       title: "tab title",
       uri: "http://example.com",
@@ -193,13 +201,40 @@ add_task(async function test_sendtab_receive() {
       object: "command-sent",
       method: COMMAND_SENDTAB_TAIL,
       value: "devid-san",
-      extra: { flowID: "1" },
+      extra: { flowID: "1", streamID: "2" },
     },
     {
       object: "command-received",
       method: COMMAND_SENDTAB_TAIL,
       value: "devid-san",
-      extra: { flowID: "1" },
+      extra: { flowID: "1", streamID: "2" },
+    },
+  ]);
+});
+
+
+
+add_task(async function test_sendtab_receive_old_client() {
+  const fxai = FxaInternalMock();
+  const sendTab = new SendTab(null, fxai);
+  sendTab._decrypt = bytes => {
+    return bytes;
+  };
+  const data = { entries: [{ title: "title", url: "url" }] };
+  
+  const payload = {
+    flowID: "flow-id",
+    encrypted: new TextEncoder("utf8").encode(JSON.stringify(data)),
+  };
+  await sendTab.handle("sender-id", payload);
+  Assert.deepEqual(fxai.telemetry._events, [
+    {
+      object: "command-received",
+      method: COMMAND_SENDTAB_TAIL,
+      value: "sender-id-san",
+      
+      
+      extra: { flowID: "flow-id", streamID: undefined },
     },
   ]);
 });
