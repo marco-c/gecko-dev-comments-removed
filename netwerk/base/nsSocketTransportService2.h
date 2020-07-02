@@ -145,12 +145,10 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   
 
-  nsCOMPtr<nsIThread> mThread;  
   
   
-  nsCOMPtr<nsIDirectTaskDispatcher>
-      mDirectTaskDispatcher;  
-  UniquePtr<PollableEvent> mPollableEvent;
+  
+  nsIThread* mRawThread;
 
   
   already_AddRefed<nsIThread> GetThreadSafely();
@@ -161,11 +159,21 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   
 
+  Atomic<bool> mInitialized;
+  
+  Atomic<bool> mShuttingDown;
   Mutex mLock;
-  bool mInitialized;
-  bool mShuttingDown;
+  
+
   
   
+  
+  
+  nsCOMPtr<nsIThread> mThread;
+  
+  
+  nsCOMPtr<nsIDirectTaskDispatcher> mDirectTaskDispatcher;
+  UniquePtr<PollableEvent> mPollableEvent;
   bool mOffline;
   bool mGoingOffline;
 
@@ -213,7 +221,6 @@ class nsSocketTransportService final : public nsPISocketTransportService,
 
   SocketContext* mActiveList; 
   SocketContext* mIdleList;   
-  nsIThread* mRawThread;
 
   uint32_t mActiveListSize;
   uint32_t mIdleListSize;
