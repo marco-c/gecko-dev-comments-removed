@@ -119,7 +119,10 @@ add_task(async function eventsWhenNavigatingFrameSet({ client }) {
   await loadURL(DOC);
   await assertEventOrder({
     history: historyFrom,
-    expectedEvents: [DESTROYED, CLEARED, DESTROYED, CLEARED, CREATED],
+    
+    
+    
+    expectedEvents: [DESTROYED, CLEARED, DESTROYED, CREATED],
   });
 
   const destroyedContextIds = historyFrom.findEvents(DESTROYED);
