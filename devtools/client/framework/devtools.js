@@ -51,6 +51,9 @@ const {
 const FORBIDDEN_IDS = new Set(["toolbox", ""]);
 const MAX_ORDINAL = 99;
 
+const CONTENT_FISSION_ENABLED_PREF = "devtools.contenttoolbox.fission";
+const FISSION_AUTOSTART_PREF = "fission.autostart";
+
 
 
 
@@ -833,6 +836,31 @@ DevTools.prototype = {
 
   getToolboxes() {
     return Array.from(this._toolboxes.values());
+  },
+
+  
+
+
+
+
+  isFissionContentToolboxEnabled() {
+    if (typeof this._isFissionContentToolboxEnabled === "undefined") {
+      const isContentFissionEnabled = Services.prefs.getBoolPref(
+        CONTENT_FISSION_ENABLED_PREF,
+        false
+      );
+
+      
+      
+      
+      const isFissionEnabled = Services.prefs.getBoolPref(
+        FISSION_AUTOSTART_PREF,
+        false
+      );
+      this._isFissionContentToolboxEnabled =
+        isFissionEnabled && isContentFissionEnabled;
+    }
+    return this._isFissionContentToolboxEnabled;
   },
 };
 
