@@ -51,21 +51,30 @@ class AsyncLogger {
     char mPayload[PAYLOAD_TOTAL_SIZE - MPSC_MSG_RESERVERD];
   };
 
+
+
+#if !defined(HAVE_64BIT_BUILD)
+#  define PADDING 8
+#else
+#  define PADDING 0
+#endif
+
   
   struct TracePayload {
-    
-    int mTID;
-    
-    
-    uint32_t mDurationUs;
     
     
     TimeStamp mTimestamp;
     
     
+    uint32_t mDurationUs;
+    
+    int mTID;
+    
+    
     
     char mName[PAYLOAD_TOTAL_SIZE - sizeof(TracingPhase) - sizeof(int) -
-               sizeof(uint32_t) - sizeof(TimeStamp) - MPSC_MSG_RESERVERD];
+               sizeof(uint32_t) - sizeof(TimeStamp) - MPSC_MSG_RESERVERD -
+               PADDING];
     
     
     
@@ -73,6 +82,7 @@ class AsyncLogger {
     
     TracingPhase mPhase;
   };
+#undef PADDING
   
   explicit AsyncLogger(const char* aLogModuleName,
                        AsyncLogger::AsyncLoggerOutputMode aMode =
