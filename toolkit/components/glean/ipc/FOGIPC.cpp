@@ -12,18 +12,37 @@
 #include "nsThreadUtils.h"
 
 using mozilla::dom::ContentParent;
+using mozilla::ipc::ByteBuf;
 using FlushFOGDataPromise = mozilla::dom::ContentParent::FlushFOGDataPromise;
 
 namespace mozilla {
 namespace glean {
 
+extern "C" {
+uint32_t fog_serialize_ipc_buf();
+uint32_t fog_give_ipc_buf(uint8_t* buf, uint32_t buf_len);
+void fog_use_ipc_buf(uint8_t* buf, uint32_t buf_len);
+}
 
 
 
 
 
 
-void FlushFOGData(std::function<void(ipc::ByteBuf&&)>&& aResolver) {}
+
+void FlushFOGData(std::function<void(ipc::ByteBuf&&)>&& aResolver) {
+  ByteBuf buf;
+  uint32_t ipcBufferSize = fog_serialize_ipc_buf();
+  bool ok = buf.Allocate(ipcBufferSize);
+  if (!ok) {
+    return;
+  }
+  uint32_t writtenLen = fog_give_ipc_buf(buf.mData, buf.mLen);
+  if (writtenLen != ipcBufferSize) {
+    return;
+  }
+  aResolver(std::move(buf));
+}
 
 
 
@@ -65,7 +84,7 @@ void FlushAllChildData(
 
 
 
-void FOGData(ipc::ByteBuf&& buf) {}
+void FOGData(ipc::ByteBuf&& buf) { fog_use_ipc_buf(buf.mData, buf.mLen); }
 
 
 
