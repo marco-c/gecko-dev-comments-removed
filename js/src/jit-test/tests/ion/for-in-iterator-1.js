@@ -24,7 +24,6 @@ for (var i = 1; i < 6; i++) {
 
     
     
-    while (!res.start)
+    while (!res.start || !res.end)
         res = test(values);
-    assertEq(!res.start || !res.end, false);
 }
