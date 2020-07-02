@@ -654,7 +654,13 @@ class JSTerm extends Component {
 
 
   _execute() {
-    const executeString = this.getSelectedText() || this._getValue();
+    const value = this._getValue();
+    
+    
+    const executeString = this.props.editorMode
+      ? this.getSelectedText() || value
+      : value;
+
     if (!executeString) {
       return;
     }
