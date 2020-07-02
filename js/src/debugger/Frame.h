@@ -247,9 +247,6 @@ class DebuggerFrame : public NativeObject {
 
 
   void clearGeneratorInfo(JSFreeOp* fop);
-  void clearGeneratorInfo(
-      JSFreeOp* fop, Debugger* owner,
-      Debugger::GeneratorWeakMap::Enum* maybeGeneratorFramesEnum = nullptr);
 
   
 

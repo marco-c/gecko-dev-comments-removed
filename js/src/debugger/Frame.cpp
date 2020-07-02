@@ -352,64 +352,37 @@ bool DebuggerFrame::setGeneratorInfo(JSContext* cx,
                                      Handle<AbstractGeneratorObject*> genObj) {
   cx->check(this);
 
-  Debugger::GeneratorWeakMap::AddPtr p =
-      owner()->generatorFrames.lookupForAdd(genObj);
-  if (p) {
-    MOZ_ASSERT(p->value() == this);
-    MOZ_ASSERT(&unwrappedGenerator() == genObj);
-    return true;
-  }
+  MOZ_ASSERT(!hasGeneratorInfo());
+  MOZ_ASSERT(!genObj->isClosed());
 
   
   
   
   
   
-  
-  
-  
-  UniquePtr<GeneratorInfo> info;
-  RootedScript script(cx);
-  if (!genObj->isClosed()) {
-    script = genObj->callee().nonLazyScript();
-    info.reset(cx->new_<GeneratorInfo>(genObj, script));
-    if (!info) {
-      ReportOutOfMemory(cx);
-      return false;
-    }
-  }
 
-  if (!owner()->generatorFrames.relookupOrAdd(p, genObj, this)) {
-    ReportOutOfMemory(cx);
+  RootedScript script(cx, genObj->callee().nonLazyScript());
+  auto info = cx->make_unique<GeneratorInfo>(genObj, script);
+  if (!info) {
     return false;
   }
-  auto generatorFramesGuard =
-      MakeScopeExit([&] { owner()->generatorFrames.remove(genObj); });
 
-  if (script) {
-    AutoRealm ar(cx, script);
+  AutoRealm ar(cx, script);
 
-    
-    
-    
-    
-    if (!Debugger::ensureExecutionObservabilityOfScript(cx, script)) {
-      return false;
-    }
-
-    if (!DebugScript::incrementGeneratorObserverCount(cx, script)) {
-      return false;
-    }
+  
+  
+  
+  
+  if (!Debugger::ensureExecutionObservabilityOfScript(cx, script)) {
+    return false;
   }
 
-  if (info) {
-    InitReservedSlot(this, GENERATOR_INFO_SLOT, info.release(),
-                     MemoryUse::DebuggerFrameGeneratorInfo);
-  } else {
-    setReservedSlot(GENERATOR_INFO_SLOT, UndefinedValue());
+  if (!DebugScript::incrementGeneratorObserverCount(cx, script)) {
+    return false;
   }
-  generatorFramesGuard.release();
 
+  InitReservedSlot(this, GENERATOR_INFO_SLOT, info.release(),
+                   MemoryUse::DebuggerFrameGeneratorInfo);
   return true;
 }
 
@@ -436,25 +409,6 @@ void DebuggerFrame::clearGeneratorInfo(JSFreeOp* fop) {
   
   setReservedSlot(GENERATOR_INFO_SLOT, UndefinedValue());
   fop->delete_(this, info, MemoryUse::DebuggerFrameGeneratorInfo);
-}
-
-void DebuggerFrame::clearGeneratorInfo(
-    JSFreeOp* fop, Debugger* owner,
-    Debugger::GeneratorWeakMap::Enum* maybeGeneratorFramesEnum) {
-  if (!hasGeneratorInfo()) {
-    return;
-  }
-
-  
-  
-  GeneratorInfo* info = generatorInfo();
-  if (maybeGeneratorFramesEnum) {
-    maybeGeneratorFramesEnum->removeFront();
-  } else {
-    owner->generatorFrames.remove(&info->unwrappedGenerator());
-  }
-
-  clearGeneratorInfo(fop);
 }
 
 
