@@ -112,6 +112,9 @@ class ProviderSearchTips extends UrlbarProvider {
 
     
     this.showedTipTypeInCurrentEngagement = TIPS.NONE;
+
+    
+    this._seenWindows = new WeakSet();
   }
 
   
@@ -275,7 +278,34 @@ class ProviderSearchTips extends UrlbarProvider {
 
 
 
-  onLocationChange(uri, webProgress, flags) {
+
+
+  async onLocationChange(window, uri, webProgress, flags) {
+    let instance = (this._onLocationChangeInstance = {});
+
+    
+    
+    if (!this._seenWindows.has(window)) {
+      this._seenWindows.add(window);
+
+      
+      await window.gBrowserInit.firstContentWindowPaintPromise;
+      if (instance != this._onLocationChangeInstance) {
+        return;
+      }
+
+      
+      
+      
+      await new Promise(resolve => {
+        let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+        timer.initWithCallback(resolve, 500, Ci.nsITimer.TYPE_ONE_SHOT);
+      });
+      if (instance != this._onLocationChangeInstance) {
+        return;
+      }
+    }
+
     
     
     if (
@@ -285,7 +315,6 @@ class ProviderSearchTips extends UrlbarProvider {
       return;
     }
 
-    let window = BrowserWindowTracker.getTopWindow();
     
     
     
@@ -316,19 +345,9 @@ class ProviderSearchTips extends UrlbarProvider {
     let instance = {};
     this._maybeShowTipForUrlInstance = instance;
 
-    let ignoreShowLimits = UrlbarPrefs.get("searchTips.test.ignoreShowLimits");
-
     
-    if ((await isBrowserShowingNotification()) && !ignoreShowLimits) {
-      return;
-    }
-
     
-    let date = await lastBrowserUpdateDate();
-    if (Date.now() - date <= LAST_UPDATE_THRESHOLD_MS && !ignoreShowLimits) {
-      return;
-    }
-
+    
     
     let tip;
     let isNewtab = ["about:newtab", "about:home"].includes(urlStr);
@@ -342,10 +361,24 @@ class ProviderSearchTips extends UrlbarProvider {
       return;
     }
 
+    let ignoreShowLimits = UrlbarPrefs.get("searchTips.test.ignoreShowLimits");
+
     
     
     let shownCount = UrlbarPrefs.get(`tipShownCount.${tip}`);
     if (shownCount >= MAX_SHOWN_COUNT && !ignoreShowLimits) {
+      return;
+    }
+
+    
+    
+    if ((await isBrowserShowingNotification()) && !ignoreShowLimits) {
+      return;
+    }
+
+    
+    let date = await lastBrowserUpdateDate();
+    if (Date.now() - date <= LAST_UPDATE_THRESHOLD_MS && !ignoreShowLimits) {
       return;
     }
 

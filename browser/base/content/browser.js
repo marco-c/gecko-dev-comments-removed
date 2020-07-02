@@ -2110,13 +2110,15 @@ var gBrowserInit = {
     
   },
 
+  
+
+
+  get firstContentWindowPaintPromise() {
+    return this._firstContentWindowPaintDeferred.promise;
+  },
+
   _setInitialFocus() {
     let initiallyFocusedElement = document.commandDispatcher.focusedElement;
-
-    this._firstBrowserPaintDeferred = {};
-    this._firstBrowserPaintDeferred.promise = new Promise(resolve => {
-      this._firstBrowserPaintDeferred.resolve = resolve;
-    });
 
     
     
@@ -2136,7 +2138,7 @@ var gBrowserInit = {
       if (gBrowser.selectedBrowser.isRemoteBrowser) {
         
         
-        this._firstBrowserPaintDeferred.promise.then(() => {
+        this._firstContentWindowPaintDeferred.promise.then(() => {
           
           
           if (
@@ -2532,6 +2534,12 @@ var gBrowserInit = {
     window.browserDOMWindow = null;
   },
 };
+
+XPCOMUtils.defineLazyGetter(
+  gBrowserInit,
+  "_firstContentWindowPaintDeferred",
+  () => PromiseUtils.defer()
+);
 
 gBrowserInit.idleTasksFinishedPromise = new Promise(resolve => {
   gBrowserInit.idleTaskPromiseResolve = resolve;
@@ -5261,6 +5269,7 @@ var XULBrowserWindow = {
       SafeBrowsingNotificationBox.onLocationChange(aLocationURI);
 
       UrlbarProviderSearchTips.onLocationChange(
+        window,
         aLocationURI,
         aWebProgress,
         aFlags
