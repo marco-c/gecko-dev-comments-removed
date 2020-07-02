@@ -27,9 +27,6 @@ child:
 
   
   
-  
-  
-  
   async OnTransportAndData(nsresult  channelStatus,
                            nsresult  transportStatus,
                            uint64_t  offset,
@@ -37,9 +34,7 @@ child:
                            nsCString data,
                            bool dataFromSocketProcess);
 
-  
-  
-  
+
   async OnStopRequest(nsresult channelStatus,
                       ResourceTimingStructArgs timing,
                       TimeStamp lastActiveTabOptimization,
