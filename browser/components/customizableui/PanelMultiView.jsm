@@ -328,6 +328,19 @@ var PanelMultiView = class extends AssociatedToNode {
       panelNode.remove();
     }
   }
+  
+
+
+
+
+  static getViewNode(doc, id) {
+    let viewCacheTemplate = doc.getElementById("appMenu-viewCache");
+
+    return (
+      doc.getElementById(id) ||
+      viewCacheTemplate.content.querySelector("#" + id)
+    );
+  }
 
   
 
@@ -616,7 +629,7 @@ var PanelMultiView = class extends AssociatedToNode {
     
     
     let subviews = Array.from(this._viewStack.children);
-    let viewCache = this.document.getElementById(viewCacheId);
+    let viewCache = this.document.getElementById("appMenu-viewCache");
     for (let subview of subviews) {
       viewCache.appendChild(subview);
     }
@@ -649,7 +662,7 @@ var PanelMultiView = class extends AssociatedToNode {
   async _showSubView(viewIdOrNode, anchor) {
     let viewNode =
       typeof viewIdOrNode == "string"
-        ? this.document.getElementById(viewIdOrNode)
+        ? PanelMultiView.getViewNode(this.document, viewIdOrNode)
         : viewIdOrNode;
     if (!viewNode) {
       Cu.reportError(new Error(`Subview ${viewIdOrNode} doesn't exist.`));

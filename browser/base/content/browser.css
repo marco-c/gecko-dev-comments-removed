@@ -861,6 +861,13 @@ menupopup[emptyplacesresult="true"] > .hide-if-empty-places-result {
 }
 
 
+:root[pocketdisabled=true] #context-pocket,
+:root[pocketdisabled=true] #context-savelinktopocket,
+:root[pocketdisabled=true] #appMenu-library-pocket-button {
+  display: none;
+}
+
+
 
 #fullscr-toggler {
   height: 1px;

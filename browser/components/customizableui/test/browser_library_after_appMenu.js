@@ -11,9 +11,9 @@ add_task(async function test_library_after_appMenu() {
   await gCUITestUtils.openMainMenu();
 
   
+  document.getElementById("appMenu-library-button").click();
   let libraryView = document.getElementById("appMenu-libraryView");
   let promise = BrowserTestUtils.waitForEvent(libraryView, "ViewShown");
-  document.getElementById("appMenu-library-button").click();
   await promise;
 
   
@@ -22,9 +22,9 @@ add_task(async function test_library_after_appMenu() {
   await promise;
 
   
+  document.getElementById("appMenu-library-history-button").click();
   let historyView = document.getElementById("PanelUI-history");
   promise = BrowserTestUtils.waitForEvent(historyView, "ViewShown");
-  document.getElementById("appMenu-library-history-button").click();
   await promise;
 
   Assert.ok(PanelView.forNode(historyView).active);
