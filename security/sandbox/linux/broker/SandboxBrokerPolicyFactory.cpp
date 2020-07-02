@@ -12,11 +12,10 @@
 #include "mozilla/Array.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/SandboxLaunch.h"
 #include "mozilla/SandboxSettings.h"
-#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/SandboxLaunch.h"
 #include "mozilla/dom/ContentChild.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
@@ -278,35 +277,17 @@ static void AddSharedMemoryPaths(SandboxBroker::Policy* aPolicy, pid_t aPid) {
   }
 }
 
-static void AddDynamicPathList(SandboxBroker::Policy* policy,
-                               const char* aPathListPref, int perms) {
-  nsAutoCString pathList;
-  nsresult rv = Preferences::GetCString(aPathListPref, pathList);
-  if (NS_SUCCEEDED(rv)) {
-    for (const nsACString& path : pathList.Split(',')) {
-      nsCString trimPath(path);
-      trimPath.Trim(" ", true, true);
-      policy->AddDynamic(perms, trimPath.get());
-    }
-  }
-}
-
-void SandboxBrokerPolicyFactory::InitContentPolicy() {
-  const bool headless =
-      StaticPrefs::security_sandbox_content_headless_AtStartup();
-
+SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory() {
   
   
   SandboxBroker::Policy* policy = new SandboxBroker::Policy;
   
   
-  if (!headless) {
-    
-    policy->AddFilePrefix(rdwr, "/dev", "nvidia");
+  
+  policy->AddFilePrefix(rdwr, "/dev", "nvidia");
 
-    
-    policy->AddDir(rdwr, "/dev/dri");
-  }
+  
+  policy->AddDir(rdwr, "/dev/dri");
 
   
   policy->AddPath(rdwr, "/dev/null");
@@ -332,16 +313,12 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
   policy->AddDir(rdonly, "/run/host/user-fonts");
   policy->AddDir(rdonly, "/var/cache/fontconfig");
 
-  if (!headless) {
-    AddMesaSysfsPaths(policy);
-  }
+  AddMesaSysfsPaths(policy);
   AddLdconfigPaths(policy);
   AddLdLibraryEnvPaths(policy);
 
-  if (!headless) {
-    
-    policy->AddPath(rdonly, "/proc/modules");
-  }
+  
+  policy->AddPath(rdonly, "/proc/modules");
 
   
   if (const auto xdgConfigPath = PR_GetEnv("XDG_CONFIG_PATH")) {
@@ -494,44 +471,87 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
   }
 #endif
 
-  if (!headless) {
-    
-    
-    const char* bumblebeeSocket = PR_GetEnv("BUMBLEBEE_SOCKET");
-    if (bumblebeeSocket == nullptr) {
-      bumblebeeSocket = "/var/run/bumblebee.socket";
-    }
-    policy->AddPath(SandboxBroker::MAY_CONNECT, bumblebeeSocket);
+  
+  
+  const char* bumblebeeSocket = PR_GetEnv("BUMBLEBEE_SOCKET");
+  if (bumblebeeSocket == nullptr) {
+    bumblebeeSocket = "/var/run/bumblebee.socket";
+  }
+  policy->AddPath(SandboxBroker::MAY_CONNECT, bumblebeeSocket);
 
 #if defined(MOZ_WIDGET_GTK)
-    
-    
+  
+  
 #  if defined(MOZ_WAYLAND)
-    if (GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
-      policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
-    }
-#  else
+  if (GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
     policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
+  }
+#  else
+  policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
 #  endif
-    if (const auto xauth = PR_GetEnv("XAUTHORITY")) {
-      policy->AddPath(rdonly, xauth);
-    }
+  if (const auto xauth = PR_GetEnv("XAUTHORITY")) {
+    policy->AddPath(rdonly, xauth);
+  }
 #endif
+
+  mCommonContentPolicy.reset(policy);
+}
+
+UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
+    int aPid, bool aFileProcess) {
+  
+  
+  
+  
+
+  MOZ_ASSERT(NS_IsMainThread());
+  
+  if (GetEffectiveContentSandboxLevel() <= 1) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(mCommonContentPolicy);
+  UniquePtr<SandboxBroker::Policy> policy(
+      new SandboxBroker::Policy(*mCommonContentPolicy));
+
+  const int level = GetEffectiveContentSandboxLevel();
+
+  
+  
+  AddDynamicPathList(policy.get(),
+                     "security.sandbox.content.write_path_whitelist", rdwr);
+
+  
+  AddDynamicPathList(policy.get(),
+                     "security.sandbox.content.read_path_whitelist", rdonly);
+
+  
+  
+  
+  
+  if (level <= 2 || aFileProcess) {
+    policy->AddDir(rdonly, "/");
+    
+    
+    
   }
 
   
-  
-  AddDynamicPathList(policy, "security.sandbox.content.write_path_whitelist",
-                     rdwr);
+  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/maps", aPid).get());
 
   
-  AddDynamicPathList(policy, "security.sandbox.content.read_path_whitelist",
-                     rdonly);
+  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/statm", aPid).get());
+  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/smaps", aPid).get());
+
+  
+  
+  
+  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/status", aPid).get());
 
   
   nsCOMPtr<nsIFile> tmpDir;
-  rv = NS_GetSpecialDirectory(NS_APP_CONTENT_PROCESS_TEMP_DIR,
-                              getter_AddRefs(tmpDir));
+  nsresult rv = NS_GetSpecialDirectory(NS_APP_CONTENT_PROCESS_TEMP_DIR,
+                                       getter_AddRefs(tmpDir));
   if (NS_SUCCEEDED(rv)) {
     nsAutoCString tmpPath;
     rv = tmpDir->GetNativePath(tmpPath);
@@ -540,6 +560,7 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
     }
   }
 
+  
   
   
   nsCOMPtr<nsIFile> profileDir;
@@ -571,7 +592,6 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
     }
   }
 
-  const int level = GetEffectiveContentSandboxLevel();
   bool allowPulse = false;
   bool allowAlsa = false;
   if (level < 4) {
@@ -590,6 +610,8 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
 
   if (allowPulse) {
     policy->AddDir(rdwrcr, "/dev/shm");
+  } else {
+    AddSharedMemoryPaths(policy.get(), aPid);
   }
 
 #ifdef MOZ_WIDGET_GTK
@@ -618,63 +640,29 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
 
   
   
-  if (!headless && HasAtiDrivers()) {
+  if (HasAtiDrivers()) {
     policy->AddDir(rdonly, "/opt/amdgpu/share");
     policy->AddPath(rdonly, "/sys/module/amdgpu");
     
     policy->AddDir(access, "/sys");
   }
 
-  mCommonContentPolicy.reset(policy);
-}
-
-UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
-    int aPid, bool aFileProcess) {
-  
-  
-
-  MOZ_ASSERT(NS_IsMainThread());
-
-  const int level = GetEffectiveContentSandboxLevel();
-  
-  if (level <= 1) {
-    return nullptr;
-  }
-
-  std::call_once(mContentInited, [this] { InitContentPolicy(); });
-  MOZ_ASSERT(mCommonContentPolicy);
-  UniquePtr<SandboxBroker::Policy> policy(
-      new SandboxBroker::Policy(*mCommonContentPolicy));
-
-  
-  
-  if (level <= 2 || aFileProcess) {
-    policy->AddDir(rdonly, "/");
-    
-    
-    
-  }
-
-  
-  
-  
-  AddSharedMemoryPaths(policy.get(), aPid);
-
-  
-  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/maps", aPid).get());
-
-  
-  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/statm", aPid).get());
-  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/smaps", aPid).get());
-
-  
-  
-  
-  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/status", aPid).get());
-
   
   policy->FixRecursivePermissions();
   return policy;
+}
+
+void SandboxBrokerPolicyFactory::AddDynamicPathList(
+    SandboxBroker::Policy* policy, const char* aPathListPref, int perms) {
+  nsAutoCString pathList;
+  nsresult rv = Preferences::GetCString(aPathListPref, pathList);
+  if (NS_SUCCEEDED(rv)) {
+    for (const nsACString& path : pathList.Split(',')) {
+      nsCString trimPath(path);
+      trimPath.Trim(" ", true, true);
+      policy->AddDynamic(perms, trimPath.get());
+    }
+  }
 }
 
  UniquePtr<SandboxBroker::Policy>

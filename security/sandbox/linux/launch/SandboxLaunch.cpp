@@ -33,7 +33,6 @@
 #include "mozilla/SandboxSettings.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/Unused.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
@@ -171,16 +170,14 @@ static bool ContentNeedsSysVIPC() {
   }
 #endif
 
-  if (!StaticPrefs::security_sandbox_content_headless_AtStartup()) {
-    
-    if (PR_GetEnv("VGL_ISACTIVE") != nullptr) {
-      return true;
-    }
+  
+  if (PR_GetEnv("VGL_ISACTIVE") != nullptr) {
+    return true;
+  }
 
-    
-    if (HasAtiDrivers()) {
-      return true;
-    }
+  
+  if (HasAtiDrivers()) {
+    return true;
   }
 
   return false;
@@ -296,10 +293,6 @@ void SandboxLaunchPrepare(GeckoProcessType aType,
     } else {
       flags |= CLONE_NEWIPC;
     }
-
-    if (StaticPrefs::security_sandbox_content_headless_AtStartup()) {
-      aOptions->env_map["MOZ_HEADLESS"] = "1";
-    }
   }
 
   
@@ -324,14 +317,11 @@ void SandboxLaunchPrepare(GeckoProcessType aType,
     case GeckoProcessType_Content:
       if (level >= 4) {
         canChroot = true;
-
         
         
         
         static const bool canCloneNet =
-            StaticPrefs::security_sandbox_content_headless_AtStartup() ||
-            (IsDisplayLocal() && !PR_GetEnv("RENDERDOC_CAPTUREOPTS"));
-
+            IsDisplayLocal() && !PR_GetEnv("RENDERDOC_CAPTUREOPTS");
         if (canCloneNet) {
           flags |= CLONE_NEWNET;
         }
