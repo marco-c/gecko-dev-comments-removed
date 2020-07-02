@@ -932,3 +932,10 @@ already_AddRefed<nsITheme> do_GetBasicNativeThemeDoNotUseDirectly() {
   }
   return do_AddRef(gInstance);
 }
+
+
+#ifdef ANDROID
+already_AddRefed<nsITheme> do_GetNativeThemeDoNotUseDirectly() {
+  return do_GetBasicNativeThemeDoNotUseDirectly();
+}
+#endif
