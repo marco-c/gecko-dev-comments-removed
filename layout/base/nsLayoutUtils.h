@@ -936,6 +936,8 @@ class nsLayoutUtils {
 
 
 
+
+
   static nsRect TransformFrameRectToAncestor(
       const nsIFrame* aFrame, const nsRect& aRect, const nsIFrame* aAncestor,
       bool* aPreservesAxisAlignedRectangles = nullptr,
