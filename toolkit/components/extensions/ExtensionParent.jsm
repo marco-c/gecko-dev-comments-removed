@@ -1178,8 +1178,12 @@ class HiddenXULWindow {
     }
 
     chromeDoc.documentElement.appendChild(browser);
-    await awaitFrameLoader;
 
+    
+    
+    browser.getBoundingClientRect();
+
+    await awaitFrameLoader;
     return browser;
   }
 }

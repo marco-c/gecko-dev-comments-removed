@@ -248,7 +248,12 @@ class ContentPage {
 
     chromeDoc.documentElement.appendChild(browser);
 
+    
+    
+    browser.getBoundingClientRect();
+
     await awaitFrameLoader;
+
     this.browser = browser;
 
     this.loadFrameScript(frameScript);
