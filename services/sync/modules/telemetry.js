@@ -593,33 +593,6 @@ class SyncTelemetryImpl {
     
     
     
-    let devicesList = devices.filter(
-      d => !d.pushEndpointExpired && d.lastAccessTime != null
-    );
-    
-    
-    devicesList.sort((a, b) => a.lastAccessTime - b.lastAccessTime);
-    let seenNames = new Map();
-    for (let device of devicesList) {
-      seenNames.set(device.name, device);
-    }
-    devicesList = Array.from(seenNames.values());
-    
-    
-    
-    
-    
-    let threshold = Services.prefs.getIntPref(
-      "identity.fxaccounts.telemetry.staleDeviceThreshold",
-      1000 * 60 * 60 * 24 * 30 * 2
-    );
-    if (threshold != -1) {
-      let limit = Date.now() - threshold;
-      devicesList = devicesList.filter(d => d.lastAccessTime >= limit);
-    }
-    
-    
-    
     
     let extraInfoMap = new Map();
     if (this.syncIsEnabled()) {
@@ -634,7 +607,7 @@ class SyncTelemetryImpl {
       }
     }
     
-    return devicesList.map(d => {
+    return devices.map(d => {
       let { os, version, syncID } = extraInfoMap.get(d.id) || {
         os: undefined,
         version: undefined,

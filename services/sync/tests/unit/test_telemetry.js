@@ -1052,7 +1052,6 @@ add_task(async function test_fxa_device_telem() {
     let keep2Sync = Utils.makeGUID();
     let curdevSync = Utils.makeGUID();
     let fxaDevices = [
-      
       {
         id: curdev,
         isCurrentDevice: true,
@@ -1061,58 +1060,13 @@ add_task(async function test_fxa_device_telem() {
         type: "desktop",
         name: "current device",
       },
-      
       {
-        id: Utils.makeGUID(),
-        isCurrentDevice: false,
-        lastAccessTime: Date.now() - 1000 * 60 * 60 * 24 * 15,
-        pushEndpointExpired: true,
-        type: "desktop",
-        name: "push expired",
-      },
-      
-      {
-        id: Utils.makeGUID(),
-        isCurrentDevice: false,
-        lastAccessTime: Date.now() - 1000 * 60 * 60 * 24 * 15,
-        pushEndpointExpired: false,
-        type: "mobile",
-        name: "dupe",
-      },
-      {
-        
         id: keep0,
         isCurrentDevice: false,
         lastAccessTime: Date.now() - 1000 * 60 * 60 * 24 * 10,
         pushEndpointExpired: false,
         type: "mobile",
         name: "dupe",
-      },
-      {
-        id: Utils.makeGUID(),
-        isCurrentDevice: false,
-        lastAccessTime: Date.now() - 1000 * 60 * 60 * 24 * 12,
-        pushEndpointExpired: false,
-        type: "mobile",
-        name: "dupe",
-      },
-      
-      {
-        id: Utils.makeGUID(),
-        isCurrentDevice: false,
-        lastAccessTime: Date.now() - 1000 * 60 * 60 * 24 * 90,
-        pushEndpointExpired: false,
-        type: "desktop",
-        name: "too old",
-      },
-      
-      {
-        id: Utils.makeGUID(),
-        isCurrentDevice: false,
-        lastAccessTime: null,
-        pushEndpointExpired: false,
-        type: "desktop",
-        name: "null date",
       },
       
       {
