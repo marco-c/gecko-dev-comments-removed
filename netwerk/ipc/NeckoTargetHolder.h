@@ -18,20 +18,20 @@ namespace net {
 
 class NeckoTargetHolder {
  public:
-  explicit NeckoTargetHolder(nsIEventTarget* aNeckoTarget)
+  explicit NeckoTargetHolder(nsISerialEventTarget* aNeckoTarget)
       : mNeckoTarget(aNeckoTarget) {}
 
  protected:
   virtual ~NeckoTargetHolder() = default;
   
-  virtual already_AddRefed<nsIEventTarget> GetNeckoTarget();
+  virtual already_AddRefed<nsISerialEventTarget> GetNeckoTarget();
   
   
   nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable,
                     uint32_t aDispatchFlags = NS_DISPATCH_NORMAL);
 
   
-  nsCOMPtr<nsIEventTarget> mNeckoTarget;
+  nsCOMPtr<nsISerialEventTarget> mNeckoTarget;
 };
 
 }  

@@ -144,7 +144,7 @@ class DataChannelConnection final : public net::NeckoTargetHolder
   
   
   static Maybe<RefPtr<DataChannelConnection>> Create(
-      DataConnectionListener* aListener, nsIEventTarget* aTarget,
+      DataConnectionListener* aListener, nsISerialEventTarget* aTarget,
       MediaTransportHandler* aHandler, const uint16_t aLocalPort,
       const uint16_t aNumStreams, const Maybe<uint64_t>& aMaxMessageSize);
 
@@ -233,7 +233,7 @@ class DataChannelConnection final : public net::NeckoTargetHolder
 
  private:
   DataChannelConnection(DataConnectionListener* aListener,
-                        nsIEventTarget* aTarget,
+                        nsISerialEventTarget* aTarget,
                         MediaTransportHandler* aHandler);
 
   bool Init(const uint16_t aLocalPort, const uint16_t aNumStreams,
@@ -557,7 +557,7 @@ class DataChannel {
   nsCString mRecvBuffer;
   nsTArray<UniquePtr<BufferedOutgoingMsg>>
       mBufferedData;  
-  nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
+  nsCOMPtr<nsISerialEventTarget> mMainThreadEventTarget;
   mutable Mutex mStatsLock;  
   TrafficCounters mTrafficCounters;
 };

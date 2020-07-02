@@ -92,7 +92,7 @@ class nsPACMan final : public nsIStreamLoaderObserver,
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
 
-  explicit nsPACMan(nsIEventTarget* mainThreadEventTarget);
+  explicit nsPACMan(nsISerialEventTarget* mainThreadEventTarget);
 
   
 
