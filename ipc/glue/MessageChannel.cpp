@@ -874,8 +874,8 @@ bool MessageChannel::Open(MessageChannel* aTargetChan,
   mChannelState = ChannelOpening;
   MOZ_ALWAYS_SUCCEEDS(
       aEventTarget->Dispatch(NewNonOwningRunnableMethod<MessageChannel*, Side>(
-          "ipc::MessageChannel::OnOpenAsSlave", aTargetChan,
-          &MessageChannel::OnOpenAsSlave, this, oppSide)));
+          "ipc::MessageChannel::OpenAsOtherThread", aTargetChan,
+          &MessageChannel::OpenAsOtherThread, this, oppSide)));
 
   while (ChannelOpening == mChannelState) mMonitor->Wait();
   MOZ_RELEASE_ASSERT(ChannelConnected == mChannelState,
@@ -883,7 +883,8 @@ bool MessageChannel::Open(MessageChannel* aTargetChan,
   return (ChannelConnected == mChannelState);
 }
 
-void MessageChannel::OnOpenAsSlave(MessageChannel* aTargetChan, Side aSide) {
+void MessageChannel::OpenAsOtherThread(MessageChannel* aTargetChan,
+                                       Side aSide) {
   
   MOZ_ASSERT(ChannelClosed == mChannelState, "Not currently closed");
   MOZ_ASSERT(ChannelOpening == aTargetChan->mChannelState,
