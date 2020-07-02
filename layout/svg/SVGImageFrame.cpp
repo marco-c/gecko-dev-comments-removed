@@ -90,7 +90,7 @@ void SVGImageFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
   SVGGeometryFrame::Init(aContent, aParent, aPrevInFlow);
 
-  if (GetStateBits() & NS_FRAME_IS_NONDISPLAY) {
+  if (HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
     
     
     
@@ -119,7 +119,7 @@ void SVGImageFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
 void SVGImageFrame::DestroyFrom(nsIFrame* aDestructRoot,
                                 PostDestroyData& aPostDestroyData) {
-  if (GetStateBits() & NS_FRAME_IS_NONDISPLAY) {
+  if (HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
     DecApproximateVisibleCount();
   }
 
@@ -651,7 +651,7 @@ bool SVGImageFrame::CreateWebRenderCommands(
 }
 
 nsIFrame* SVGImageFrame::GetFrameForPoint(const gfxPoint& aPoint) {
-  if (!(GetStateBits() & NS_STATE_SVG_CLIPPATH_CHILD) && !GetHitTestFlags()) {
+  if (!HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD) && !GetHitTestFlags()) {
     return nullptr;
   }
 
@@ -703,7 +703,7 @@ void SVGImageFrame::ReflowSVG() {
   NS_ASSERTION(nsSVGUtils::OuterSVGIsCallingReflowSVG(this),
                "This call is probably a wasteful mistake");
 
-  MOZ_ASSERT(!(GetStateBits() & NS_FRAME_IS_NONDISPLAY),
+  MOZ_ASSERT(!HasAnyStateBits(NS_FRAME_IS_NONDISPLAY),
              "ReflowSVG mechanism not designed for this");
 
   if (!nsSVGUtils::NeedsReflowSVG(this)) {
@@ -744,7 +744,7 @@ void SVGImageFrame::ReflowSVG() {
 
   
   
-  if (!(GetParent()->GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
+  if (!GetParent()->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     InvalidateFrame();
   }
 }

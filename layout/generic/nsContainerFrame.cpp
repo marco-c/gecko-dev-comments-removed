@@ -56,8 +56,9 @@ void nsContainerFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     
     
     
-    if (aPrevInFlow->GetStateBits() & NS_FRAME_HAS_CHILD_WITH_VIEW)
+    if (aPrevInFlow->HasAnyStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW)) {
       AddStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW);
+    }
   }
 }
 
@@ -76,7 +77,7 @@ void nsContainerFrame::SetInitialChildList(ChildListID aListID,
   } else if (aListID == kBackdropList) {
     MOZ_ASSERT(StyleDisplay()->mTopLayer != StyleTopLayer::None,
                "Only top layer frames should have backdrop");
-    MOZ_ASSERT(GetStateBits() & NS_FRAME_OUT_OF_FLOW,
+    MOZ_ASSERT(HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
                "Top layer frames should be out-of-flow");
     MOZ_ASSERT(!GetProperty(BackdropProperty()),
                "We shouldn't have setup backdrop frame list before");
@@ -1133,7 +1134,7 @@ void nsContainerFrame::ReflowChild(nsIFrame* aKidFrame,
 
 
 void nsContainerFrame::PositionChildViews(nsIFrame* aFrame) {
-  if (!(aFrame->GetStateBits() & NS_FRAME_HAS_CHILD_WITH_VIEW)) {
+  if (!aFrame->HasAnyStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW)) {
     return;
   }
 
@@ -1308,7 +1309,7 @@ void nsContainerFrame::ReflowOverflowContainerChildren(
       NS_ASSERTION(prevInFlow,
                    "overflow container frame must have a prev-in-flow");
       NS_ASSERTION(
-          frame->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER,
+          frame->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER),
           "overflow container frame must have overflow container bit set");
       WritingMode wm = frame->GetWritingMode();
       nsSize containerSize = aReflowInput.AvailableSize(wm).GetPhysicalSize(wm);
@@ -1332,7 +1333,7 @@ void nsContainerFrame::ReflowOverflowContainerChildren(
 
       
       if (!frameStatus.IsFullyComplete()) {
-        if (frame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) {
+        if (frame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
           
           
           frameStatus.SetOverflowIncomplete();
@@ -1349,7 +1350,7 @@ void nsContainerFrame::ReflowOverflowContainerChildren(
                        "Someone forgot a NextInFlowNeedsReflow flag");
           nif = PresShell()->FrameConstructor()->CreateContinuingFrame(frame,
                                                                        this);
-        } else if (!(nif->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER)) {
+        } else if (!nif->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER)) {
           
           nsresult rv = nif->GetParent()->StealFrame(nif);
           if (NS_FAILED(rv)) {
@@ -1403,7 +1404,7 @@ static bool TryRemoveFrame(nsIFrame* aFrame,
 
 bool nsContainerFrame::MaybeStealOverflowContainerFrame(nsIFrame* aChild) {
   bool removed = false;
-  if (MOZ_UNLIKELY(aChild->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER)) {
+  if (MOZ_UNLIKELY(aChild->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER))) {
     
     removed = ::TryRemoveFrame(this, OverflowContainersProperty(), aChild);
     if (!removed) {
@@ -1456,7 +1457,7 @@ nsresult nsContainerFrame::StealFrame(nsIFrame* aChild) {
 
 nsFrameList nsContainerFrame::StealFramesAfter(nsIFrame* aChild) {
   NS_ASSERTION(
-      !aChild || !(aChild->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER),
+      !aChild || !aChild->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER),
       "StealFramesAfter doesn't handle overflow containers");
   NS_ASSERTION(!IsBlockFrame(), "unexpected call");
 
@@ -1662,7 +1663,7 @@ bool nsContainerFrame::PushIncompleteChildren(
         
         
         
-        if ((childNIF->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER) ||
+        if (childNIF->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER) ||
             (parent != this && parent != GetNextInFlow())) {
           parent->StealFrame(childNIF);
           childNIF->RemoveStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
@@ -2768,7 +2769,7 @@ nsRect nsContainerFrame::ComputeSimpleTightBounds(
 }
 
 void nsContainerFrame::PushDirtyBitToAbsoluteFrames() {
-  if (!(GetStateBits() & NS_FRAME_IS_DIRTY)) {
+  if (!HasAnyStateBits(NS_FRAME_IS_DIRTY)) {
     return;  
   }
   if (!HasAbsolutelyPositionedChildren()) {
@@ -2895,13 +2896,13 @@ void nsOverflowContinuationTracker::SetUpListWalker() {
   if (mOverflowContList) {
     nsIFrame* cur = mOverflowContList->FirstChild();
     if (mSkipOverflowContainerChildren) {
-      while (cur && (cur->GetPrevInFlow()->GetStateBits() &
-                     NS_FRAME_IS_OVERFLOW_CONTAINER)) {
+      while (cur && cur->GetPrevInFlow()->HasAnyStateBits(
+                        NS_FRAME_IS_OVERFLOW_CONTAINER)) {
         mPrevOverflowCont = cur;
         cur = cur->GetNextSibling();
       }
-      while (cur && (!(cur->GetStateBits() & NS_FRAME_OUT_OF_FLOW) ==
-                     mWalkOOFFrames)) {
+      while (cur &&
+             (cur->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) != mWalkOOFFrames)) {
         mPrevOverflowCont = cur;
         cur = cur->GetNextSibling();
       }
@@ -2932,7 +2933,7 @@ void nsOverflowContinuationTracker::StepForward() {
   if (mSkipOverflowContainerChildren) {
     nsIFrame* cur = mPrevOverflowCont->GetNextSibling();
     while (cur &&
-           (!(cur->GetStateBits() & NS_FRAME_OUT_OF_FLOW) == mWalkOOFFrames)) {
+           (cur->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) != mWalkOOFFrames)) {
       mPrevOverflowCont = cur;
       cur = cur->GetNextSibling();
     }
@@ -2949,7 +2950,7 @@ nsresult nsOverflowContinuationTracker::Insert(nsIFrame* aOverflowCont,
   MOZ_ASSERT(aOverflowCont, "null frame pointer");
   MOZ_ASSERT(!mSkipOverflowContainerChildren ||
                  mWalkOOFFrames ==
-                     !!(aOverflowCont->GetStateBits() & NS_FRAME_OUT_OF_FLOW),
+                     aOverflowCont->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
              "shouldn't insert frame that doesn't match walker type");
   MOZ_ASSERT(aOverflowCont->GetPrevInFlow(),
              "overflow containers must have a prev-in-flow");
@@ -2962,14 +2963,14 @@ nsresult nsOverflowContinuationTracker::Insert(nsIFrame* aOverflowCont,
   
   
   if (addToList && aOverflowCont->GetParent() == mParent &&
-      (aOverflowCont->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER) &&
+      aOverflowCont->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER) &&
       mOverflowContList && mOverflowContList->ContainsFrame(aOverflowCont)) {
     addToList = false;
     mPrevOverflowCont = aOverflowCont->GetPrevSibling();
   }
 
   if (addToList) {
-    if (aOverflowCont->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER) {
+    if (aOverflowCont->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER)) {
       
       
       NS_ASSERTION(!(mOverflowContList &&
@@ -3025,12 +3026,11 @@ nsresult nsOverflowContinuationTracker::Insert(nsIFrame* aOverflowCont,
 
   
   StepForward();
-  NS_ASSERTION(
-      mPrevOverflowCont == aOverflowCont ||
-          (mSkipOverflowContainerChildren &&
-           (mPrevOverflowCont->GetStateBits() & NS_FRAME_OUT_OF_FLOW) !=
-               (aOverflowCont->GetStateBits() & NS_FRAME_OUT_OF_FLOW)),
-      "OverflowContTracker in unexpected state");
+  NS_ASSERTION(mPrevOverflowCont == aOverflowCont ||
+                   (mSkipOverflowContainerChildren &&
+                    mPrevOverflowCont->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) !=
+                        aOverflowCont->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)),
+               "OverflowContTracker in unexpected state");
 
   if (addToList) {
     
@@ -3038,10 +3038,10 @@ nsresult nsOverflowContinuationTracker::Insert(nsIFrame* aOverflowCont,
     
     
     nsIFrame* f = aOverflowCont->GetNextInFlow();
-    if (f && (!(f->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER) ||
+    if (f && (!f->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER) ||
               (!reparented && f->GetParent() == mParent) ||
               (reparented && f->GetParent() != mParent))) {
-      if (!(f->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER)) {
+      if (!f->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER)) {
         rv = f->GetParent()->StealFrame(f);
         NS_ENSURE_SUCCESS(rv, rv);
       }

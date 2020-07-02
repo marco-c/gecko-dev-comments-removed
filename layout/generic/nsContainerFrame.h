@@ -855,9 +855,9 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 #define IS_TRUE_OVERFLOW_CONTAINER(frame)                      \
-  ((frame->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER) && \
-   !((frame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&         \
-     frame->IsAbsolutelyPositioned()))
+  ((frame)->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER) && \
+   !((frame)->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&         \
+     (frame)->IsAbsolutelyPositioned()))
 
 
 
