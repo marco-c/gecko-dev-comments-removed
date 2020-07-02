@@ -678,6 +678,7 @@ class LoginManagerParent extends JSWindowActorParent {
       newPasswordField,
       oldPasswordField,
       dismissedPrompt,
+      possibleValues,
     }
   ) {
     function recordLoginUse(login) {
@@ -841,7 +842,8 @@ class LoginManagerParent extends JSWindowActorParent {
           dismissedPrompt,
           notifySaved,
           autoSavedStorageGUID,
-          autoFilledLoginGuid
+          autoFilledLoginGuid,
+          possibleValues
         );
       } else if (!existingLogin.username && formLogin.username) {
         log("...empty username update, prompting to change.");
@@ -853,7 +855,8 @@ class LoginManagerParent extends JSWindowActorParent {
           dismissedPrompt,
           notifySaved,
           autoSavedStorageGUID,
-          autoFilledLoginGuid
+          autoFilledLoginGuid,
+          possibleValues
         );
       } else {
         recordLoginUse(existingLogin);
@@ -868,11 +871,14 @@ class LoginManagerParent extends JSWindowActorParent {
       formLogin,
       dismissedPrompt,
       notifySaved,
-      autoFilledLoginGuid
+      autoFilledLoginGuid,
+      possibleValues
     );
   }
 
   
+
+
 
 
 
@@ -901,6 +907,10 @@ class LoginManagerParent extends JSWindowActorParent {
       usernameField = null,
       oldPasswordField,
       triggeredByFillingGenerated = false,
+      possibleValues = {
+        usernames: new Set(),
+        passwords: new Set(),
+      },
     }
   ) {
     log(
@@ -1208,7 +1218,8 @@ class LoginManagerParent extends JSWindowActorParent {
           true, 
           notifySaved,
           autoSavedStorageGUID, 
-          autoFilledLoginGuid
+          autoFilledLoginGuid,
+          possibleValues
         );
       } else if (!existingLogin.username && formLogin.username) {
         log("...empty username update, prompting to change.");
@@ -1219,7 +1230,8 @@ class LoginManagerParent extends JSWindowActorParent {
           true, 
           notifySaved,
           autoSavedStorageGUID, 
-          autoFilledLoginGuid
+          autoFilledLoginGuid,
+          possibleValues
         );
       } else {
         log("_onPasswordEditedOrGenerated: No change to existing login");
@@ -1238,7 +1250,8 @@ class LoginManagerParent extends JSWindowActorParent {
             true, 
             notifySaved,
             autoSavedStorageGUID, 
-            autoFilledLoginGuid
+            autoFilledLoginGuid,
+            possibleValues
           );
         }
       }
@@ -1250,7 +1263,8 @@ class LoginManagerParent extends JSWindowActorParent {
       formLogin,
       true, 
       notifySaved,
-      autoFilledLoginGuid
+      autoFilledLoginGuid,
+      possibleValues
     );
   }
 

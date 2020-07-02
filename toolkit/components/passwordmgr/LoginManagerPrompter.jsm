@@ -77,7 +77,11 @@ class LoginManagerPrompter {
     aLogin,
     dismissed = false,
     notifySaved = false,
-    autoFilledLoginGuid = ""
+    autoFilledLoginGuid = "",
+    possibleValues = {
+      usernames: new Set(),
+      passwords: new Set(),
+    }
   ) {
     log.debug("promptToSavePassword");
     let inPrivateBrowsing = PrivateBrowsingUtils.isBrowserPrivate(aBrowser);
@@ -501,6 +505,116 @@ class LoginManagerPrompter {
       showOptions.dismissed && showOptions.extraAttr == "attention"
         ? ATTENTION_NOTIFICATION_TIMEOUT_MS
         : NOTIFICATION_TIMEOUT_MS;
+
+    let options = Object.assign(
+      {
+        timeout: Date.now() + timeoutMs,
+        persistWhileVisible: true,
+        passwordNotificationType: type,
+        hideClose: true,
+        eventCallback(topic) {
+          switch (topic) {
+            case "showing":
+              log.debug("showing");
+              currentNotification = this;
+
+              
+              if (!this.timeShown) {
+                histogram.add(PROMPT_DISPLAYED);
+                Services.obs.notifyObservers(
+                  null,
+                  "weave:telemetry:histogram",
+                  histogramName
+                );
+              }
+
+              chromeDoc
+                .getElementById("password-notification-password")
+                .removeAttribute("focused");
+              chromeDoc
+                .getElementById("password-notification-username")
+                .removeAttribute("focused");
+              chromeDoc
+                .getElementById("password-notification-username")
+                .addEventListener("input", onInput);
+              chromeDoc
+                .getElementById("password-notification-username")
+                .addEventListener("keyup", onKeyUp);
+              chromeDoc
+                .getElementById("password-notification-password")
+                .addEventListener("keyup", onKeyUp);
+              chromeDoc
+                .getElementById("password-notification-password")
+                .addEventListener("input", onInput);
+              let toggleBtn = chromeDoc.getElementById(
+                "password-notification-visibilityToggle"
+              );
+
+              if (
+                Services.prefs.getBoolPref(
+                  "signon.rememberSignons.visibilityToggle"
+                )
+              ) {
+                toggleBtn.addEventListener("command", onVisibilityToggle);
+                toggleBtn.setAttribute("label", togglePasswordLabel);
+                toggleBtn.setAttribute("accesskey", togglePasswordAccessKey);
+
+                let hideToggle =
+                  LoginHelper.isMasterPasswordSet() ||
+                  
+                  !!autoFilledLoginGuid ||
+                  
+                  (this.timeShown && this.wasDismissed) ||
+                  
+                  
+                  
+                  
+                  (messageStringID == "updateLoginMsgAddUsername" &&
+                    login.timePasswordChanged <
+                      Date.now() - VISIBILITY_TOGGLE_MAX_PW_AGE_MS);
+                toggleBtn.setAttribute("hidden", hideToggle);
+              }
+              break;
+            case "shown": {
+              log.debug("shown");
+              writeDataToUI();
+              let anchorIcon = this.anchorElement;
+              if (anchorIcon && this.options.extraAttr == "attention") {
+                anchorIcon.removeAttribute("extraAttr");
+                delete this.options.extraAttr;
+              }
+              break;
+            }
+            case "dismissed":
+              
+              this.wasDismissed = true;
+            
+            case "removed": {
+              
+              
+              log.debug(topic);
+              currentNotification = null;
+
+              let usernameField = chromeDoc.getElementById(
+                "password-notification-username"
+              );
+              usernameField.removeEventListener("input", onInput);
+              usernameField.removeEventListener("keyup", onKeyUp);
+              let passwordField = chromeDoc.getElementById(
+                "password-notification-password"
+              );
+              passwordField.removeEventListener("input", onInput);
+              passwordField.removeEventListener("keyup", onKeyUp);
+              passwordField.removeEventListener("command", onVisibilityToggle);
+              break;
+            }
+          }
+          return false;
+        },
+      },
+      showOptions
+    );
+
     let notification = PopupNotifications.show(
       browser,
       notificationID,
@@ -508,117 +622,7 @@ class LoginManagerPrompter {
       "password-notification-icon",
       mainAction,
       secondaryActions,
-      Object.assign(
-        {
-          timeout: Date.now() + timeoutMs,
-          persistWhileVisible: true,
-          passwordNotificationType: type,
-          hideClose: true,
-          eventCallback(topic) {
-            switch (topic) {
-              case "showing":
-                log.debug("showing");
-                currentNotification = this;
-
-                
-                if (!this.timeShown) {
-                  histogram.add(PROMPT_DISPLAYED);
-                  Services.obs.notifyObservers(
-                    null,
-                    "weave:telemetry:histogram",
-                    histogramName
-                  );
-                }
-
-                chromeDoc
-                  .getElementById("password-notification-password")
-                  .removeAttribute("focused");
-                chromeDoc
-                  .getElementById("password-notification-username")
-                  .removeAttribute("focused");
-                chromeDoc
-                  .getElementById("password-notification-username")
-                  .addEventListener("input", onInput);
-                chromeDoc
-                  .getElementById("password-notification-username")
-                  .addEventListener("keyup", onKeyUp);
-                chromeDoc
-                  .getElementById("password-notification-password")
-                  .addEventListener("keyup", onKeyUp);
-                chromeDoc
-                  .getElementById("password-notification-password")
-                  .addEventListener("input", onInput);
-                let toggleBtn = chromeDoc.getElementById(
-                  "password-notification-visibilityToggle"
-                );
-
-                if (
-                  Services.prefs.getBoolPref(
-                    "signon.rememberSignons.visibilityToggle"
-                  )
-                ) {
-                  toggleBtn.addEventListener("command", onVisibilityToggle);
-                  toggleBtn.setAttribute("label", togglePasswordLabel);
-                  toggleBtn.setAttribute("accesskey", togglePasswordAccessKey);
-
-                  let hideToggle =
-                    LoginHelper.isMasterPasswordSet() ||
-                    
-                    !!autoFilledLoginGuid ||
-                    
-                    (this.timeShown && this.wasDismissed) ||
-                    
-                    
-                    
-                    
-                    (messageStringID == "updateLoginMsgAddUsername" &&
-                      login.timePasswordChanged <
-                        Date.now() - VISIBILITY_TOGGLE_MAX_PW_AGE_MS);
-                  toggleBtn.setAttribute("hidden", hideToggle);
-                }
-                break;
-              case "shown": {
-                log.debug("shown");
-                writeDataToUI();
-                let anchorIcon = this.anchorElement;
-                if (anchorIcon && this.options.extraAttr == "attention") {
-                  anchorIcon.removeAttribute("extraAttr");
-                  delete this.options.extraAttr;
-                }
-                break;
-              }
-              case "dismissed":
-                
-                this.wasDismissed = true;
-              
-              case "removed": {
-                
-                
-                log.debug(topic);
-                currentNotification = null;
-
-                let usernameField = chromeDoc.getElementById(
-                  "password-notification-username"
-                );
-                usernameField.removeEventListener("input", onInput);
-                usernameField.removeEventListener("keyup", onKeyUp);
-                let passwordField = chromeDoc.getElementById(
-                  "password-notification-password"
-                );
-                passwordField.removeEventListener("input", onInput);
-                passwordField.removeEventListener("keyup", onKeyUp);
-                passwordField.removeEventListener(
-                  "command",
-                  onVisibilityToggle
-                );
-                break;
-              }
-            }
-            return false;
-          },
-        },
-        showOptions
-      )
+      options
     );
 
     if (notifySaved) {
@@ -647,6 +651,11 @@ class LoginManagerPrompter {
 
 
 
+
+
+
+
+
   promptToChangePassword(
     aBrowser,
     aOldLogin,
@@ -654,7 +663,11 @@ class LoginManagerPrompter {
     dismissed = false,
     notifySaved = false,
     autoSavedLoginGuid = "",
-    autoFilledLoginGuid = ""
+    autoFilledLoginGuid = "",
+    possibleValues = {
+      usernames: new Set(),
+      passwords: new Set(),
+    }
   ) {
     let login = aOldLogin.clone();
     login.origin = aNewLogin.origin;
