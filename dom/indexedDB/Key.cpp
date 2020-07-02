@@ -31,6 +31,72 @@
 
 namespace mozilla::dom::indexedDB {
 
+namespace {
+
+
+template <typename ArrayConversionPolicy>
+IDBResult<void, IDBSpecialValue::Invalid> ConvertArrayValueToKey(
+    JSContext* const aCx, JS::HandleObject aObject,
+    ArrayConversionPolicy&& aPolicy) {
+  
+  uint32_t len;
+  if (!JS::GetArrayLength(aCx, aObject, &len)) {
+    return {Exception, ErrorResult{NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR}};
+  }
+
+  
+  aPolicy.AddToSeenSet(aCx, aObject);
+
+  
+  aPolicy.BeginSubkeyList();
+
+  
+  uint32_t index = 0;
+
+  
+  while (index < len) {
+    JS::RootedId indexId(aCx);
+    if (!JS_IndexToId(aCx, index, &indexId)) {
+      return {Exception, ErrorResult{NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR}};
+    }
+
+    
+    bool hop;
+    if (!JS_HasOwnPropertyById(aCx, aObject, indexId, &hop)) {
+      return {Exception, ErrorResult{NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR}};
+    }
+
+    
+    if (!hop) {
+      return Invalid;
+    }
+
+    
+    JS::RootedValue entry(aCx);
+    if (!JS_GetPropertyById(aCx, aObject, indexId, &entry)) {
+      return {Exception, ErrorResult{NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR}};
+    }
+
+    
+    
+    
+    
+    
+    auto result = aPolicy.ConvertSubkey(aCx, entry, index);
+    if (!result.Is(Ok)) {
+      return result;
+    }
+
+    
+    index += 1;
+  }
+
+  
+  aPolicy.EndSubkeyList();
+  return Ok();
+}
+}  
+
 
 
 
@@ -372,8 +438,8 @@ IDBResult<void, IDBSpecialValue::Invalid> Key::EncodeJSValInternal(
 
     
     if (builtinClass == js::ESClass::Array) {
-      ArrayValueEncoder encoder(*this, aTypeOffset, aRecursionDepth);
-      return ConvertArrayValueToKey(aCx, object, encoder);
+      return ConvertArrayValueToKey(
+          aCx, object, ArrayValueEncoder{*this, aTypeOffset, aRecursionDepth});
     }
   }
 
