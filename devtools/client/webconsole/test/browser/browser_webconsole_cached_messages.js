@@ -59,7 +59,7 @@ add_task(async function() {
   info("Log different type of messages to fill the cache");
   await logMessages();
 
-  info("Open the console");
+  info("Select the console");
   hud = await openConsole();
 
   await testMessagesVisibility(hud);
@@ -177,8 +177,9 @@ async function testMessagesVisibility(hud, checkNetworkMessage = true) {
   }
 
   
-  await waitFor(() =>
-    findMessage(hud, "cssColorBug611032", ".message.warn.css")
+  await waitFor(
+    () => findMessage(hud, "cssColorBug611032", ".message.warn.css"),
+    "Couldn't find the CSS warning message"
   );
   ok(true, "css warning message is visible");
 }

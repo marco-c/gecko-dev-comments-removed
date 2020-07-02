@@ -346,13 +346,23 @@ class WebConsoleUI {
     );
   }
 
+  async watchCssMessages() {
+    const { resourceWatcher } = this.hud;
+    await resourceWatcher.watchResources([resourceWatcher.TYPES.CSS_MESSAGE], {
+      onAvailable: this._onResourceAvailable,
+    });
+  }
+
   _onResourceAvailable({ resourceType, targetFront, resource }) {
+    const { TYPES } = this.hud.resourceWatcher;
     
     if (
-      resourceType === this.hud.resourceWatcher.TYPES.ERROR_MESSAGE &&
-      resource.pageError.isForwardedFromContentProcess &&
-      (this.isBrowserToolboxConsole || this.isBrowserConsole) &&
-      this.fissionSupport
+      !this.wrapper ||
+      ((resourceType === TYPES.ERROR_MESSAGE ||
+        resourceType === TYPES.CSS_MESSAGE) &&
+        resource.pageError?.isForwardedFromContentProcess &&
+        (this.isBrowserToolboxConsole || this.isBrowserConsole) &&
+        this.fissionSupport)
     ) {
       return;
     }
