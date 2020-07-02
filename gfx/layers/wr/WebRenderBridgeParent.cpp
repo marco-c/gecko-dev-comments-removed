@@ -1733,13 +1733,8 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvClearCachedResources() {
   
   ScheduleGenerateFrame();
 
-  
-  for (const auto& id : mActiveAnimations) {
-    mAnimStorage->ClearById(id.first);
-  }
-  mActiveAnimations.clear();
-  std::queue<CompositorAnimationIdsForEpoch>().swap(
-      mCompositorAnimationsToDelete);  
+  ClearAnimationResources();
+
   return IPC_OK();
 }
 
@@ -2356,12 +2351,7 @@ void WebRenderBridgeParent::ClearResources() {
   txn.RemovePipeline(mPipelineId);
   mApi->SendTransaction(txn);
 
-  for (const auto& id : mActiveAnimations) {
-    mAnimStorage->ClearById(id.first);
-  }
-  mActiveAnimations.clear();
-  std::queue<CompositorAnimationIdsForEpoch>().swap(
-      mCompositorAnimationsToDelete);  
+  ClearAnimationResources();
 
   if (IsRootWebRenderBridgeParent()) {
     mCompositorScheduler->Destroy();
@@ -2372,6 +2362,15 @@ void WebRenderBridgeParent::ClearResources() {
   mAsyncImageManager = nullptr;
   mApi = nullptr;
   mCompositorBridge = nullptr;
+}
+
+void WebRenderBridgeParent::ClearAnimationResources() {
+  for (const auto& id : mActiveAnimations) {
+    mAnimStorage->ClearById(id.first);
+  }
+  mActiveAnimations.clear();
+  std::queue<CompositorAnimationIdsForEpoch>().swap(
+      mCompositorAnimationsToDelete);  
 }
 
 bool WebRenderBridgeParent::ShouldParentObserveEpoch() {
