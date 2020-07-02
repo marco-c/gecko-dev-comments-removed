@@ -47,12 +47,6 @@ using mozilla::MakeEnumeratedRange;
 
 
 
-static_assert(MaxMemoryInitialPages <=
-                  ArrayBufferObject::MaxBufferByteLength / PageSize,
-              "Memory sizing constraint");
-
-
-
 
 static_assert(MaxMemoryAccessSize >= 8, "MaxMemoryAccessSize too low");
 static_assert(MaxMemoryAccessSize <= 64, "MaxMemoryAccessSize too high");
