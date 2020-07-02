@@ -117,7 +117,7 @@ bool nsInlineFrame::IsSelfEmpty() {
   if (haveStart || haveEnd) {
     
     
-    if ((GetStateBits() & NS_FRAME_PART_OF_IBSPLIT) &&
+    if (HasAnyStateBits(NS_FRAME_PART_OF_IBSPLIT) &&
         StyleBorder()->mBoxDecorationBreak == StyleBoxDecorationBreak::Slice) {
       
       
@@ -305,7 +305,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       
       
       
-      if ((GetStateBits() & NS_FRAME_FIRST_REFLOW) && mFrames.IsEmpty() &&
+      if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW) && mFrames.IsEmpty() &&
           !GetNextInFlow()) {
         
         
@@ -333,7 +333,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   
 #ifdef DEBUG
-  if (GetStateBits() & NS_FRAME_FIRST_REFLOW) {
+  if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     
     
     
@@ -342,7 +342,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
                  "overflow list is not empty for initial reflow");
   }
 #endif
-  if (!(GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
+  if (!HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     DrainSelfOverflowListInternal(aReflowInput.mLineLayout->GetInFirstLine());
   }
 
@@ -802,7 +802,7 @@ nsIFrame::LogicalSides nsInlineFrame::GetLogicalSkipSides(
 
   if (!IsFirst()) {
     nsInlineFrame* prev = (nsInlineFrame*)GetPrevContinuation();
-    if ((GetStateBits() & NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET) ||
+    if (HasAnyStateBits(NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET) ||
         (prev && (prev->mRect.height || prev->mRect.width))) {
       
       
@@ -814,7 +814,7 @@ nsIFrame::LogicalSides nsInlineFrame::GetLogicalSkipSides(
   }
   if (!IsLast()) {
     nsInlineFrame* next = (nsInlineFrame*)GetNextContinuation();
-    if ((GetStateBits() & NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET) ||
+    if (HasAnyStateBits(NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET) ||
         (next && (next->mRect.height || next->mRect.width))) {
       
       
@@ -825,7 +825,7 @@ nsIFrame::LogicalSides nsInlineFrame::GetLogicalSkipSides(
     }
   }
 
-  if (GetStateBits() & NS_FRAME_PART_OF_IBSPLIT) {
+  if (HasAnyStateBits(NS_FRAME_PART_OF_IBSPLIT)) {
     
     
     
@@ -866,9 +866,9 @@ a11y::AccType nsInlineFrame::AccessibleType() {
 
 void nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
     ServoRestyleState& aRestyleState) {
-  MOZ_ASSERT(GetStateBits() & NS_FRAME_OWNS_ANON_BOXES,
+  MOZ_ASSERT(HasAnyStateBits(NS_FRAME_OWNS_ANON_BOXES),
              "Why did we get called?");
-  MOZ_ASSERT(GetStateBits() & NS_FRAME_PART_OF_IBSPLIT,
+  MOZ_ASSERT(HasAnyStateBits(NS_FRAME_PART_OF_IBSPLIT),
              "Why did we have the NS_FRAME_OWNS_ANON_BOXES bit set?");
   
   

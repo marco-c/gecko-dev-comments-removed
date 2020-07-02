@@ -102,9 +102,9 @@ class nsInlineFrame : public nsContainerFrame {
   bool IsFirst() const {
     
     
-    return (GetStateBits() & NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET)
-               ? !!(GetStateBits() & NS_INLINE_FRAME_BIDI_VISUAL_IS_FIRST)
-               : (!GetPrevInFlow());
+    return HasAnyStateBits(NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET)
+               ? HasAnyStateBits(NS_INLINE_FRAME_BIDI_VISUAL_IS_FIRST)
+               : !GetPrevInFlow();
   }
 
   
@@ -113,9 +113,9 @@ class nsInlineFrame : public nsContainerFrame {
   bool IsLast() const {
     
     
-    return (GetStateBits() & NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET)
-               ? !!(GetStateBits() & NS_INLINE_FRAME_BIDI_VISUAL_IS_LAST)
-               : (!GetNextInFlow());
+    return HasAnyStateBits(NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET)
+               ? HasAnyStateBits(NS_INLINE_FRAME_BIDI_VISUAL_IS_LAST)
+               : !GetNextInFlow();
   }
 
   
