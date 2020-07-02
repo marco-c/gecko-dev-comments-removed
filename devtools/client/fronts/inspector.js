@@ -89,11 +89,27 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     this.pageStyle = await super.getPageStyle();
   }
 
+  async getCompatibilityFront() {
+    
+    
+    
+    if (this._compatibility === undefined) {
+      try {
+        this._compatibility = await super.getCompatibility();
+      } catch (error) {
+        this._compatibility = null;
+      }
+    }
+
+    return this._compatibility;
+  }
+
   async _startChangesFront() {
     await this.targetFront.getFront("changes");
   }
 
   destroy() {
+    this._compatibility = null;
     
     
     

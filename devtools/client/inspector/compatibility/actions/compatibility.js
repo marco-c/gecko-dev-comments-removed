@@ -183,31 +183,46 @@ function updateTopLevelTarget(target) {
 }
 
 async function _getNodeIssues(node, targetBrowsers) {
-  const pageStyle = node.inspectorFront.pageStyle;
-  const styles = await pageStyle.getApplied(node, {
-    skipPseudo: false,
-  });
+  let declarationBlocksIssues = [];
+  const compatibility = await node.inspectorFront.getCompatibilityFront();
+  
+  
+  
+  
+  if (compatibility) {
+    declarationBlocksIssues = await compatibility.getNodeCssIssues(
+      node,
+      targetBrowsers
+    );
+  } else {
+    const pageStyle = node.inspectorFront.pageStyle;
+    const styles = await pageStyle.getApplied(node, {
+      skipPseudo: false,
+    });
 
-  const declarationBlocks = styles
-    .map(({ rule }) => rule.declarations.filter(d => !d.commentOffsets))
-    .filter(declarations => declarations.length);
+    const declarationBlocks = styles
+      .map(({ rule }) => rule.declarations.filter(d => !d.commentOffsets))
+      .filter(declarations => declarations.length);
 
-  return declarationBlocks
-    .map(declarationBlock =>
-      mdnCompatibility.getCSSDeclarationBlockIssues(
-        declarationBlock,
-        targetBrowsers
+    declarationBlocksIssues = declarationBlocks
+      .map(declarationBlock =>
+        mdnCompatibility.getCSSDeclarationBlockIssues(
+          declarationBlock,
+          targetBrowsers
+        )
       )
-    )
-    .flat()
-    .reduce((issues, issue) => {
-      
-      return issues.find(
-        i => i.type === issue.type && i.property === issue.property
-      )
-        ? issues
-        : [...issues, issue];
-    }, []);
+      .flat()
+      .reduce((issues, issue) => {
+        
+        return issues.find(
+          i => i.type === issue.type && i.property === issue.property
+        )
+          ? issues
+          : [...issues, issue];
+      }, []);
+  }
+
+  return declarationBlocksIssues;
 }
 
 async function _inspectNode(node, targetBrowsers, walker, dispatch) {
