@@ -70,13 +70,6 @@ function ToNumber(v) {
 
 
 
-function RequireObjectCoercible(v) {
-    if (v === undefined || v === null)
-        ThrowTypeError(JSMSG_CANT_CONVERT_TO, ToString(v), "object");
-}
-
-
-
 function SameValueZero(x, y) {
     return x === y || (x !== x && y !== y);
 }

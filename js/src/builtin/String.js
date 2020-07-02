@@ -19,10 +19,15 @@ function IsStringMatchOptimizable() {
            RegExpProto[std_match] === RegExpMatch;
 }
 
+function ThrowIncompatibleMethod(name, thisv) {
+    ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO, "String", name, ToString(thisv));
+}
+
 
 function String_match(regexp) {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("match", this);
 
     
     var isPatternString = (typeof regexp === "string");
@@ -61,7 +66,8 @@ function String_match(regexp) {
 
 function String_matchAll(regexp) {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("matchAll", this);
 
     
     if (regexp !== undefined && regexp !== null) {
@@ -105,7 +111,10 @@ function String_matchAll(regexp) {
 
 function String_pad(maxLength, fillString, padEnd) {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod(padEnd ? "padEnd" : "padStart", this);
+
+    
     let str = ToString(this);
 
     
@@ -175,7 +184,8 @@ function Substring(str, from, length) {
 
 function String_replace(searchValue, replaceValue) {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("replace", this);
 
     
     if (!(typeof searchValue === "string" && StringProtoHasNoReplace()) &&
@@ -239,7 +249,8 @@ function String_replace(searchValue, replaceValue) {
 
 function String_replaceAll(searchValue, replaceValue) {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("replaceAll", this);
 
     
     if (searchValue !== undefined && searchValue !== null) {
@@ -359,7 +370,8 @@ function IsStringSearchOptimizable() {
 
 function String_search(regexp) {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("search", this);
 
     
     var isPatternString = (typeof regexp === "string");
@@ -399,7 +411,8 @@ function StringProtoHasNoSplit() {
 
 function String_split(separator, limit) {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("split", this);
 
     
     
@@ -467,7 +480,10 @@ function String_split(separator, limit) {
 
 function String_substring(start, end) {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("substring", this);
+
+    
     var str = ToString(this);
 
     
@@ -506,7 +522,10 @@ function String_substring(start, end) {
 
 function String_substr(start, length) {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("substr", this);
+
+    
     var str = ToString(this);
 
     
@@ -541,7 +560,10 @@ function String_substr(start, length) {
 
 function String_concat(arg1) {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("concat", this);
+
+    
     var str = ToString(this);
 
     
@@ -575,7 +597,10 @@ function String_concat(arg1) {
 
 function String_slice(start, end) {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("slice", this);
+
+    
     var str = ToString(this);
 
     
@@ -607,7 +632,10 @@ function String_slice(start, end) {
 
 function String_codePointAt(pos) {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("codePointAt", this);
+
+    
     var S = ToString(this);
 
     
@@ -638,7 +666,10 @@ function String_codePointAt(pos) {
 
 function String_repeat(count) {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("repeat", this);
+
+    
     var S = ToString(this);
 
     
@@ -678,8 +709,16 @@ function String_repeat(count) {
 
 
 function String_iterator() {
-    RequireObjectCoercible(this);
+    
+    if (this === undefined || this === null) {
+        ThrowTypeError(JSMSG_INCOMPATIBLE_PROTO2, "String", "Symbol.iterator",
+                       ToString(this));
+    }
+
+    
     var S = ToString(this);
+
+    
     var iterator = NewStringIterator();
     UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_TARGET, S);
     UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_NEXT_INDEX, 0);
@@ -735,7 +774,10 @@ var collatorCache = new Record();
 
 function String_localeCompare(that) {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("localeCompare", this);
+
+    
     var S = ToString(this);
     var That = ToString(that);
 
@@ -768,7 +810,8 @@ function String_localeCompare(that) {
 
 function String_toLocaleLowerCase() {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("toLocaleLowerCase", this);
 
     
     var string = ToString(this);
@@ -809,7 +852,8 @@ function String_toLocaleLowerCase() {
 
 function String_toLocaleUpperCase() {
     
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("toLocaleUpperCase", this);
 
     
     var string = ToString(this);
@@ -895,55 +939,64 @@ function String_static_raw(callSite) {
 
 
 function String_big() {
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("big", this);
     return "<big>" + ToString(this) + "</big>";
 }
 
 
 function String_blink() {
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("blink", this);
     return "<blink>" + ToString(this) + "</blink>";
 }
 
 
 function String_bold() {
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("bold", this);
     return "<b>" + ToString(this) + "</b>";
 }
 
 
 function String_fixed() {
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("fixed", this);
     return "<tt>" + ToString(this) + "</tt>";
 }
 
 
 function String_italics() {
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("italics", this);
     return "<i>" + ToString(this) + "</i>";
 }
 
 
 function String_small() {
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("small", this);
     return "<small>" + ToString(this) + "</small>";
 }
 
 
 function String_strike() {
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("strike", this);
     return "<strike>" + ToString(this) + "</strike>";
 }
 
 
 function String_sub() {
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("sub", this);
     return "<sub>" + ToString(this) + "</sub>";
 }
 
 
 function String_sup() {
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("sup", this);
     return "<sup>" + ToString(this) + "</sup>";
 }
 
@@ -954,29 +1007,32 @@ function EscapeAttributeValue(v) {
 
 
 function String_anchor(name) {
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("anchor", this);
     var S = ToString(this);
     return '<a name="' + EscapeAttributeValue(name) + '">' + S + "</a>";
 }
 
 
 function String_fontcolor(color) {
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("fontcolor", this);
     var S = ToString(this);
     return '<font color="' + EscapeAttributeValue(color) + '">' + S + "</font>";
 }
 
 
 function String_fontsize(size) {
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("fontsize", this);
     var S = ToString(this);
     return '<font size="' + EscapeAttributeValue(size) + '">' + S + "</font>";
 }
 
 
 function String_link(url) {
-    RequireObjectCoercible(this);
+    if (this === undefined || this === null)
+        ThrowIncompatibleMethod("link", this);
     var S = ToString(this);
     return '<a href="' + EscapeAttributeValue(url) + '">' + S + "</a>";
 }
-
