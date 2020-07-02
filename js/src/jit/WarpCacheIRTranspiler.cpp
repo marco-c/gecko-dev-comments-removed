@@ -1701,7 +1701,7 @@ static void MaybeSetImplicitlyUsed(uint32_t numInstructionIdsBefore,
 
   
   
-  MDefinition* inputUse = input->maybeMostRecentDefUse();
+  MDefinition* inputUse = input->maybeMostRecentlyAddedDefUse();
   if (inputUse && inputUse->id() >= numInstructionIdsBefore) {
     return;
   }
