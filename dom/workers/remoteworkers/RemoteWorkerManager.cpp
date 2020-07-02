@@ -10,6 +10,7 @@
 
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/dom/ContentChild.h"  
 #include "mozilla/dom/RemoteWorkerParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/BackgroundUtils.h"
@@ -37,18 +38,6 @@ bool IsServiceWorker(const RemoteWorkerData& aData) {
          OptionalServiceWorkerData::TServiceWorkerData;
 }
 
-
-
-
-
-
-
-
-
-bool IsServiceWorkerRemoteType(const nsAString& aRemoteType) {
-  return IsWebRemoteType(aRemoteType) && !IsWebCoopCoepRemoteType(aRemoteType);
-}
-
 void TransmitPermissionsAndBlobURLsForPrincipalInfo(
     ContentParent* aContentParent, const PrincipalInfo& aPrincipalInfo) {
   AssertIsOnMainThread();
@@ -69,6 +58,111 @@ void TransmitPermissionsAndBlobURLsForPrincipalInfo(
 }
 
 }  
+
+
+Result<nsString, nsresult> RemoteWorkerManager::GetRemoteType(
+    const nsCOMPtr<nsIPrincipal>& aPrincipal, WorkerType aWorkerType) {
+  AssertIsOnMainThread();
+
+  if (aWorkerType != WorkerType::WorkerTypeService &&
+      aWorkerType != WorkerType::WorkerTypeShared) {
+    
+    
+    return Err(NS_ERROR_UNEXPECTED);
+  }
+
+  nsString remoteType;
+
+  
+  
+  if (!BrowserTabsRemoteAutostart()) {
+    return remoteType;
+  }
+
+  auto* contentChild = ContentChild::GetSingleton();
+
+  bool isSystem = !!BasePrincipal::Cast(aPrincipal)->IsSystemPrincipal();
+  bool isMozExtension =
+      !isSystem && !!BasePrincipal::Cast(aPrincipal)->AddonPolicy();
+
+  if (aWorkerType == WorkerType::WorkerTypeShared && !contentChild &&
+      !isSystem) {
+    
+    
+    
+    
+    
+    
+    
+    
+    return Err(NS_ERROR_ABORT);
+  }
+
+  bool separatePrivilegedMozilla = Preferences::GetBool(
+      "browser.tabs.remote.separatePrivilegedMozillaWebContentProcess", false);
+
+  if (isMozExtension) {
+    remoteType.Assign(NS_LITERAL_STRING(EXTENSION_REMOTE_TYPE));
+  } else if (separatePrivilegedMozilla) {
+    bool isPrivilegedMozilla = false;
+    aPrincipal->IsURIInPrefList("browser.tabs.remote.separatedMozillaDomains",
+                                &isPrivilegedMozilla);
+
+    if (isPrivilegedMozilla) {
+      remoteType.Assign(NS_LITERAL_STRING(PRIVILEGEDMOZILLA_REMOTE_TYPE));
+    } else {
+      remoteType.Assign(aWorkerType == WorkerType::WorkerTypeShared &&
+                                contentChild
+                            ? contentChild->GetRemoteType()
+                            : NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE));
+    }
+  } else {
+    remoteType.Assign(NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE));
+  }
+
+  return remoteType;
+}
+
+
+bool RemoteWorkerManager::IsRemoteTypeAllowed(const RemoteWorkerData& aData) {
+  AssertIsOnMainThread();
+
+  
+  
+  
+  
+  if (!BrowserTabsRemoteAutostart()) {
+    return true;
+  }
+
+  const auto& principalInfo = aData.principalInfo();
+
+  auto* contentChild = ContentChild::GetSingleton();
+  if (!contentChild) {
+    
+    
+    return principalInfo.type() == PrincipalInfo::TSystemPrincipalInfo;
+  }
+
+  auto principalOrErr = PrincipalInfoToPrincipal(principalInfo);
+  if (NS_WARN_IF(principalOrErr.isErr())) {
+    return false;
+  }
+  nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
+
+  
+  
+  
+  bool isServiceWorker = aData.serviceWorkerData().type() ==
+                         OptionalServiceWorkerData::TServiceWorkerData;
+  auto remoteType = GetRemoteType(
+      principal, isServiceWorker ? WorkerTypeService : WorkerTypeShared);
+  if (NS_WARN_IF(remoteType.isErr())) {
+    return false;
+  }
+
+  return remoteType.unwrap().Equals(contentChild->GetRemoteType());
+}
 
 
 already_AddRefed<RemoteWorkerManager> RemoteWorkerManager::GetOrCreate() {
@@ -111,27 +205,24 @@ void RemoteWorkerManager::RegisterActor(RemoteWorkerServiceParent* aActor) {
   MOZ_ASSERT(!mChildActors.Contains(aActor));
   mChildActors.AppendElement(aActor);
 
-  nsTArray<Pending> unlaunched;
-
-  RefPtr<ContentParent> contentParent =
-      BackgroundParent::GetContentParent(aActor->Manager());
-  auto scopeExit =
-      MakeScopeExit([&] { NS_ReleaseOnMainThread(contentParent.forget()); });
-  const auto& remoteType = contentParent->GetRemoteType();
-
   if (!mPendings.IsEmpty()) {
+    const auto& remoteType = GetRemoteTypeForActor(aActor);
+    nsTArray<Pending> unlaunched;
+
     
     for (Pending& p : mPendings) {
       if (p.mController->IsTerminated()) {
         continue;
       }
 
-      if (IsServiceWorker(p.mData) && !IsServiceWorkerRemoteType(remoteType)) {
+      const auto& workerRemoteType = p.mData.remoteType();
+
+      if (MatchRemoteType(remoteType, workerRemoteType)) {
+        LaunchInternal(p.mController, aActor, p.mData);
+      } else {
         unlaunched.AppendElement(std::move(p));
         continue;
       }
-
-      LaunchInternal(p.mController, aActor, p.mData);
     }
 
     std::swap(mPendings, unlaunched);
@@ -227,6 +318,28 @@ void RemoteWorkerManager::AsyncCreationFailed(
   NS_DispatchToCurrentThread(r.forget());
 }
 
+
+nsString RemoteWorkerManager::GetRemoteTypeForActor(
+    const RemoteWorkerServiceParent* aActor) {
+  AssertIsInMainProcess();
+  AssertIsOnBackgroundThread();
+
+  MOZ_ASSERT(aActor);
+
+  RefPtr<ContentParent> contentParent =
+      BackgroundParent::GetContentParent(aActor->Manager());
+  auto scopeExit =
+      MakeScopeExit([&] { NS_ReleaseOnMainThread(contentParent.forget()); });
+
+  if (NS_WARN_IF(!contentParent)) {
+    return EmptyString();
+  }
+
+  nsString aRemoteType(contentParent->GetRemoteType());
+
+  return aRemoteType;
+}
+
 template <typename Callback>
 void RemoteWorkerManager::ForEachActor(Callback&& aCallback) const {
   AssertIsOnBackgroundThread();
@@ -290,11 +403,13 @@ RemoteWorkerManager::SelectTargetActorForServiceWorker(
 
   RemoteWorkerServiceParent* actor = nullptr;
 
+  const auto& workerRemoteType = aData.remoteType();
+
   ForEachActor([&](RemoteWorkerServiceParent* aActor,
                    RefPtr<ContentParent>&& aContentParent) {
     const auto& remoteType = aContentParent->GetRemoteType();
 
-    if (IsServiceWorkerRemoteType(remoteType)) {
+    if (MatchRemoteType(remoteType, workerRemoteType)) {
       auto lock = aContentParent->mRemoteWorkerActorData.Lock();
 
       if (lock->mCount || !lock->mShutdownStarted) {
@@ -327,7 +442,7 @@ RemoteWorkerManager::SelectTargetActorForServiceWorker(
 
 RemoteWorkerServiceParent*
 RemoteWorkerManager::SelectTargetActorForSharedWorker(
-    base::ProcessId aProcessId) const {
+    base::ProcessId aProcessId, const RemoteWorkerData& aData) const {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(!mChildActors.IsEmpty());
 
@@ -335,7 +450,10 @@ RemoteWorkerManager::SelectTargetActorForSharedWorker(
 
   ForEachActor([&](RemoteWorkerServiceParent* aActor,
                    RefPtr<ContentParent>&& aContentParent) {
-    if (IsWebCoopCoepRemoteType(aContentParent->GetRemoteType())) {
+    bool matchRemoteType =
+        MatchRemoteType(aContentParent->GetRemoteType(), aData.remoteType());
+
+    if (!matchRemoteType) {
       return true;
     }
 
@@ -378,8 +496,9 @@ RemoteWorkerServiceParent* RemoteWorkerManager::SelectTargetActor(
     return nullptr;
   }
 
-  return IsServiceWorker(aData) ? SelectTargetActorForServiceWorker(aData)
-                                : SelectTargetActorForSharedWorker(aProcessId);
+  return IsServiceWorker(aData)
+             ? SelectTargetActorForServiceWorker(aData)
+             : SelectTargetActorForSharedWorker(aProcessId, aData);
 }
 
 void RemoteWorkerManager::LaunchNewContentProcess(
@@ -401,7 +520,8 @@ void RemoteWorkerManager::LaunchNewContentProcess(
                                 principalInfo = aData.principalInfo(),
                                 bgEventTarget = std::move(bgEventTarget),
                                 self = RefPtr<RemoteWorkerManager>(this)](
-                                   const CallbackParamType& aValue) mutable {
+                                   const CallbackParamType& aValue,
+                                   const nsString& remoteType) mutable {
     if (aValue.IsResolve()) {
       if (isServiceWorker) {
         TransmitPermissionsAndBlobURLsForPrincipalInfo(aValue.ResolveValue(),
@@ -413,12 +533,21 @@ void RemoteWorkerManager::LaunchNewContentProcess(
       NS_ProxyRelease(__func__, bgEventTarget, self.forget());
     } else {
       
-      nsCOMPtr<nsIRunnable> r =
-          NS_NewRunnableFunction(__func__, [self = std::move(self)] {
+      nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+          __func__, [self = std::move(self), remoteType] {
+            nsTArray<Pending> uncancelled;
             auto pendings = std::move(self->mPendings);
+
             for (const auto& pending : pendings) {
-              pending.mController->CreationFailed();
+              const auto& workerRemoteType = pending.mData.remoteType();
+              if (self->MatchRemoteType(remoteType, workerRemoteType)) {
+                pending.mController->CreationFailed();
+              } else {
+                uncancelled.AppendElement(pending);
+              }
             }
+
+            std::swap(self->mPendings, uncancelled);
           });
 
       bgEventTarget->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
@@ -426,14 +555,19 @@ void RemoteWorkerManager::LaunchNewContentProcess(
   };
 
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-      __func__, [callback = std::move(processLaunchCallback)]() mutable {
+      __func__, [callback = std::move(processLaunchCallback),
+                 workerRemoteType = aData.remoteType()]() mutable {
+        auto remoteType = workerRemoteType.IsEmpty()
+                              ? NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE)
+                              : workerRemoteType;
+
         ContentParent::GetNewOrUsedBrowserProcessAsync(
              nullptr,
-             NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE))
+             remoteType)
             ->Then(GetCurrentSerialEventTarget(), __func__,
-                   [callback = std::move(callback)](
-                       const CallbackParamType& aValue) mutable {
-                     callback(aValue);
+                   [callback = std::move(callback),
+                    remoteType](const CallbackParamType& aValue) mutable {
+                     callback(aValue, remoteType);
                    });
       });
 

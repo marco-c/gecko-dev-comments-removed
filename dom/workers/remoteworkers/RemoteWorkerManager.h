@@ -11,6 +11,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/RemoteWorkerTypes.h"
+#include "mozilla/dom/WorkerPrivate.h"  
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
 
@@ -34,6 +35,47 @@ class RemoteWorkerManager final {
   void Launch(RemoteWorkerController* aController,
               const RemoteWorkerData& aData, base::ProcessId aProcessId);
 
+  static bool MatchRemoteType(const nsAString& processRemoteType,
+                              const nsAString& workerRemoteType) {
+    if (processRemoteType.Equals(workerRemoteType)) {
+      return true;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (IsWebCoopCoepRemoteType(processRemoteType)) {
+      return false;
+    }
+
+    
+    
+    if ((workerRemoteType.IsEmpty() || IsWebRemoteType(workerRemoteType)) &&
+        IsWebRemoteType(processRemoteType)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  
+
+
+
+  static Result<nsString, nsresult> GetRemoteType(
+      const nsCOMPtr<nsIPrincipal>& aPrincipal, WorkerType aWorkerType);
+
+  
+
+
+
+  static bool IsRemoteTypeAllowed(const RemoteWorkerData& aData);
+
  private:
   RemoteWorkerManager();
   ~RemoteWorkerManager();
@@ -45,7 +87,7 @@ class RemoteWorkerManager final {
       const RemoteWorkerData& aData) const;
 
   RemoteWorkerServiceParent* SelectTargetActorForSharedWorker(
-      base::ProcessId aProcessId) const;
+      base::ProcessId aProcessId, const RemoteWorkerData& aData) const;
 
   void LaunchInternal(RemoteWorkerController* aController,
                       RemoteWorkerServiceParent* aTargetActor,
@@ -55,6 +97,9 @@ class RemoteWorkerManager final {
   void LaunchNewContentProcess(const RemoteWorkerData& aData);
 
   void AsyncCreationFailed(RemoteWorkerController* aController);
+
+  static nsString GetRemoteTypeForActor(
+      const RemoteWorkerServiceParent* aActor);
 
   
   

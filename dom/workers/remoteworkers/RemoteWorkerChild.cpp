@@ -32,6 +32,7 @@
 #include "mozilla/dom/FetchEventOpProxyChild.h"
 #include "mozilla/dom/IndexedDatabaseManager.h"
 #include "mozilla/dom/MessagePort.h"
+#include "mozilla/dom/RemoteWorkerManager.h"  
 #include "mozilla/dom/RemoteWorkerTypes.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
 #include "mozilla/dom/ServiceWorkerInterceptController.h"
@@ -311,6 +312,14 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(RemoteWorkerData&& aData) {
   Unused << NS_WARN_IF(!IndexedDatabaseManager::GetOrCreate());
 
   auto scopeExit = MakeScopeExit([&] { TransitionStateToTerminated(); });
+
+  
+  
+  
+  
+  if (!RemoteWorkerManager::IsRemoteTypeAllowed(aData)) {
+    return NS_ERROR_UNEXPECTED;
+  }
 
   auto principalOrErr = PrincipalInfoToPrincipal(aData.principalInfo());
   if (NS_WARN_IF(principalOrErr.isErr())) {
