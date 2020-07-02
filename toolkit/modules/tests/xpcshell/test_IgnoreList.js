@@ -161,14 +161,7 @@ add_task(async function test_ignoreList_updates() {
 add_task(async function test_ignoreList_db_modification() {
   
   const db = await RemoteSettings(IGNORELIST_KEY).db;
-  await db.clear();
-  for (const data of IGNORELIST_TEST_DATA) {
-    await db.create({
-      id: data.id,
-      matches: data.matches,
-    });
-  }
-  await db.saveLastModified(42);
+  await db.importChanges({}, 42, IGNORELIST_TEST_DATA, { clear: true });
 
   
   
@@ -198,14 +191,7 @@ add_task(async function test_ignoreList_db_modification() {
 add_task(async function test_ignoreList_db_modification_never_succeeds() {
   
   const db = await RemoteSettings(IGNORELIST_KEY).db;
-  await db.clear();
-  for (const data of IGNORELIST_TEST_DATA) {
-    await db.create({
-      id: data.id,
-      matches: data.matches,
-    });
-  }
-  await db.saveLastModified(42);
+  await db.importChanges({}, 42, IGNORELIST_TEST_DATA, { clear: true });
 
   
   

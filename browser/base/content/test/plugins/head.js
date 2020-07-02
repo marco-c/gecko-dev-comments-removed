@@ -296,8 +296,7 @@ let JSONBlocklistWrapper = {
       }
       await blocklistObj.ensureInitialized();
       let db = await blocklistObj._client.db;
-      await db.clear();
-      await db.importBulk(newData);
+      await db.importChanges({}, 42, newData, { clear: true });
       
       
       await blocklistObj._onUpdate();

@@ -942,10 +942,10 @@ add_task(async function test_syncs_clients_with_local_database() {
   
   new RemoteSettingsClient("addons", {
     bucketNamePref: "services.blocklist.bucket", 
-  }).db.saveLastModified(42);
+  }).db.importChanges({}, 42);
   new RemoteSettingsClient("recipes", {
     bucketNamePref: "services.settings.default_bucket", 
-  }).db.saveLastModified(43);
+  }).db.importChanges({}, 43);
 
   let error;
   try {

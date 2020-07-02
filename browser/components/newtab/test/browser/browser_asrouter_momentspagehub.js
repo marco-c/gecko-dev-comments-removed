@@ -28,16 +28,20 @@ add_task(async function test_with_rs_messages() {
   );
   const initialMessageCount = ASRouter.state.messages.length;
   const client = RemoteSettings("cfr");
-  await client.db.clear();
-  await client.db.create({
-    
-    
-    ...msg,
-    id: `MOMENTS_MOCHITEST_${Date.now()}`,
-    targeting: "true",
-  });
-  await client.db.saveLastModified(42); 
-
+  await client.db.importChanges(
+    {},
+    42,
+    [
+      {
+        
+        
+        ...msg,
+        id: `MOMENTS_MOCHITEST_${Date.now()}`,
+        targeting: "true",
+      },
+    ],
+    { clear: true }
+  );
   
   await ASRouter._updateMessageProviders();
   
@@ -67,8 +71,7 @@ add_task(async function test_with_rs_messages() {
       id: `MOMENTS_MOCHITEST_${Date.now()}`,
       priority: 2,
       targeting: "true",
-    },
-    { useRecordId: true }
+    }
   );
 
   

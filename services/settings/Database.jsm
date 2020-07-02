@@ -10,9 +10,11 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   IDBHelpers: "resource://services-settings/IDBHelpers.jsm",
+  Utils: "resource://services-settings/Utils.jsm",
   CommonUtils: "resource://services-common/utils.js",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
 });
+XPCOMUtils.defineLazyGetter(this, "console", () => Utils.log);
 
 var EXPORTED_SYMBOLS = ["Database"];
 
@@ -74,51 +76,87 @@ class Database {
     return sort ? sortObjects(sort, results) : results;
   }
 
-  async importBulk(toInsert) {
+  async importChanges(metadata, timestamp, records = [], options = {}) {
+    const { clear = false } = options;
     const _cid = this.identifier;
     try {
       await executeIDB(
-        "records",
-        (store, rejectTransaction) => {
-          IDBHelpers.bulkOperationHelper(
-            store,
-            {
-              reject: rejectTransaction,
-            },
-            "put",
-            toInsert.map(item => {
-              return Object.assign({ _cid }, item);
-            })
-          );
-        },
-        { desc: "importBulk() in " + this.identifier }
-      );
-    } catch (e) {
-      throw new IDBHelpers.IndexedDBError(e, "importBulk()", this.identifier);
-    }
-  }
+        ["collections", "timestamps", "records"],
+        (stores, rejectTransaction) => {
+          const [storeMetadata, storeTimestamps, storeRecords] = stores;
 
-  async deleteBulk(toDelete) {
-    const _cid = this.identifier;
-    try {
-      await executeIDB(
-        "records",
-        (store, rejectTransaction) => {
+          if (clear) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            storeRecords.delete(
+              IDBKeyRange.bound([_cid], [_cid, []], false, true)
+            );
+          }
+
+          
+          if (metadata === null) {
+            storeMetadata.delete(_cid);
+          } else if (metadata) {
+            storeMetadata.put({ cid: _cid, metadata });
+          }
+          
+          if (timestamp === null) {
+            storeTimestamps.delete(_cid);
+          } else if (timestamp) {
+            storeTimestamps.put({ cid: _cid, value: timestamp });
+          }
+
+          if (records.length == 0) {
+            return;
+          }
+
+          
+          const toDelete = records.filter(r => r.deleted);
+          const toInsert = records.filter(r => !r.deleted);
+          console.debug(
+            `${_cid} ${toDelete.length} to delete, ${toInsert.length} to insert`
+          );
+          
           IDBHelpers.bulkOperationHelper(
-            store,
+            storeRecords,
             {
               reject: rejectTransaction,
+              completion() {
+                
+                IDBHelpers.bulkOperationHelper(
+                  storeRecords,
+                  {
+                    reject: rejectTransaction,
+                  },
+                  "put",
+                  toInsert.map(item => ({ ...item, _cid }))
+                );
+              },
             },
             "delete",
-            toDelete.map(item => {
-              return [_cid, item.id];
-            })
+            toDelete.map(item => [_cid, item.id])
           );
         },
-        { desc: "deleteBulk() in " + this.identifier }
+        { desc: "importChanges() in " + _cid }
       );
     } catch (e) {
-      throw new IDBHelpers.IndexedDBError(e, "deleteBulk()", this.identifier);
+      throw new IDBHelpers.IndexedDBError(e, "importChanges()", _cid);
     }
   }
 
@@ -142,30 +180,6 @@ class Database {
     return entry ? entry.value : null;
   }
 
-  async saveLastModified(lastModified) {
-    const value = parseInt(lastModified, 10) || null;
-    try {
-      await executeIDB(
-        "timestamps",
-        store => {
-          if (value === null) {
-            store.delete(this.identifier);
-          } else {
-            store.put({ cid: this.identifier, value });
-          }
-        },
-        { desc: "saveLastModified() in " + this.identifier }
-      );
-    } catch (e) {
-      throw new IDBHelpers.IndexedDBError(
-        e,
-        "saveLastModified()",
-        this.identifier
-      );
-    }
-    return value;
-  }
-
   async getMetadata() {
     let entry = null;
     try {
@@ -180,25 +194,6 @@ class Database {
       throw new IDBHelpers.IndexedDBError(e, "getMetadata()", this.identifier);
     }
     return entry ? entry.metadata : null;
-  }
-
-  async saveMetadata(metadata) {
-    try {
-      await executeIDB(
-        "collections",
-        store => {
-          if (metadata === null) {
-            store.delete(this.identifier);
-          } else {
-            store.put({ cid: this.identifier, metadata });
-          }
-        },
-        { desc: "saveMetadata() in " + this.identifier }
-      );
-      return metadata;
-    } catch (e) {
-      throw new IDBHelpers.IndexedDBError(e, "saveMetadata()", this.identifier);
-    }
   }
 
   async getAttachment(attachmentId) {
@@ -247,40 +242,7 @@ class Database {
 
   async clear() {
     try {
-      await this.saveLastModified(null);
-      await this.saveMetadata(null);
-      await executeIDB(
-        "records",
-        store => {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          return store.delete(
-            IDBKeyRange.bound(
-              [this.identifier],
-              [this.identifier, []],
-              false,
-              true
-            )
-          );
-        },
-        { desc: "clear() in " + this.identifier }
-      );
+      await this.importChanges(null, null, [], { clear: true });
     } catch (e) {
       throw new IDBHelpers.IndexedDBError(e, "clear()", this.identifier);
     }
@@ -372,7 +334,7 @@ const gPendingWriteOperations = new Set();
 
 
 
-async function executeIDB(storeName, callback, options = {}) {
+async function executeIDB(storeNames, callback, options = {}) {
   if (!gDB) {
     
     
@@ -403,7 +365,7 @@ async function executeIDB(storeName, callback, options = {}) {
   const { mode = "readwrite", desc = "" } = options;
   let { promise, transaction } = IDBHelpers.executeIDB(
     gDB,
-    storeName,
+    storeNames,
     mode,
     callback,
     desc
