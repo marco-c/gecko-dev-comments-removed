@@ -503,13 +503,7 @@ class nsContextMenu {
 
     var showInspectA11Y =
       showInspect &&
-      
-      
-      (Services.appinfo.accessibilityEnabled ||
-        Services.prefs.getBoolPref(
-          "devtools.accessibility.auto-init.enabled",
-          false
-        )) &&
+      Services.prefs.getBoolPref("devtools.accessibility.enabled", false) &&
       this.inTabBrowser &&
       Services.prefs.getBoolPref("devtools.enabled", true) &&
       Services.prefs.getBoolPref("devtools.accessibility.enabled", true) &&

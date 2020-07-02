@@ -107,9 +107,7 @@ AccessibilityPanel.prototype = {
     await this.accessibilityProxy.initialize();
 
     
-    
     if (
-      this.accessibilityProxy.supports.autoInit &&
       this.accessibilityProxy.canBeEnabled &&
       !this.accessibilityProxy.enabled
     ) {
@@ -210,7 +208,6 @@ AccessibilityPanel.prototype = {
       audit,
       simulate,
       enableAccessibility,
-      disableAccessibility,
       resetAccessiblity,
       startListeningForLifecycleEvents,
       stopListeningForLifecycleEvents,
@@ -229,7 +226,6 @@ AccessibilityPanel.prototype = {
       audit,
       simulate,
       enableAccessibility,
-      disableAccessibility,
       resetAccessiblity,
       startListeningForLifecycleEvents,
       stopListeningForLifecycleEvents,

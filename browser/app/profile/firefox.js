@@ -2205,8 +2205,6 @@ pref("devtools.dom.enabled", false);
 
 pref("devtools.accessibility.enabled", true);
 
-pref("devtools.accessibility.auto-init.enabled", true);
-
 
 pref("devtools.webconsole.filter.error", true);
 pref("devtools.webconsole.filter.warn", true);
