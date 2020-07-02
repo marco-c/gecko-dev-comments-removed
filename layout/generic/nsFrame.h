@@ -146,11 +146,6 @@ class nsFrame : public nsIFrame {
 
   
   
-  virtual ContentOffsets CalcContentOffsetsFromFramePoint(
-      const nsPoint& aPoint);
-
-  
-  
 
 #ifdef DEBUG
   

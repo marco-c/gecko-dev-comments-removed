@@ -2163,6 +2163,11 @@ class nsIFrame : public nsQueryFrame {
   }
 
   
+  
+  virtual ContentOffsets CalcContentOffsetsFromFramePoint(
+      const nsPoint& aPoint);
+
+  
 
 
 
