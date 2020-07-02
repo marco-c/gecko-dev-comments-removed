@@ -36,6 +36,7 @@ class PluralRulesObject : public NativeObject {
                 "object slot");
 
   
+  
   static constexpr size_t UNumberFormatterEstimatedMemoryUse = 750;
 
   

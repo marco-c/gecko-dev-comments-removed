@@ -35,6 +35,7 @@ class NumberFormatObject : public NativeObject {
                 "object slot");
 
   
+  
   static constexpr size_t EstimatedMemoryUse = 750;
 
   UNumberFormatter* getNumberFormatter() const {

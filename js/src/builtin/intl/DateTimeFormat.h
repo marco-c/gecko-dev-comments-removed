@@ -33,7 +33,7 @@ class DateTimeFormatObject : public NativeObject {
                 "object slot");
 
   
-  static constexpr size_t EstimatedMemoryUse = 91626;
+  static constexpr size_t UDateFormatEstimatedMemoryUse = 91626;
 
   UDateFormat* getDateFormat() const {
     const auto& slot = getFixedSlot(UDATE_FORMAT_SLOT);
