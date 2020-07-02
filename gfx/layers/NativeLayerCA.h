@@ -187,15 +187,17 @@ class NativeLayerCA : public NativeLayer {
   gfx::IntPoint GetPosition() override;
   gfx::IntRect GetRect() override;
   RefPtr<gfx::DrawTarget> NextSurfaceAsDrawTarget(
-      const gfx::IntRegion& aUpdateRegion,
+      const gfx::IntRect& aDisplayRect, const gfx::IntRegion& aUpdateRegion,
       gfx::BackendType aBackendType) override;
-  Maybe<GLuint> NextSurfaceAsFramebuffer(const gfx::IntRegion& aUpdateRegion,
+  Maybe<GLuint> NextSurfaceAsFramebuffer(const gfx::IntRect& aDisplayRect,
+                                         const gfx::IntRegion& aUpdateRegion,
                                          bool aNeedsDepth) override;
   void NotifySurfaceReady() override;
   void DiscardBackbuffers() override;
   bool IsOpaque() override;
   void SetClipRect(const Maybe<gfx::IntRect>& aClipRect) override;
   Maybe<gfx::IntRect> ClipRect() override;
+  gfx::IntRect CurrentSurfaceDisplayRect() override;
   void SetSurfaceIsFlipped(bool aIsFlipped) override;
   bool SurfaceIsFlipped() override;
 
@@ -239,6 +241,7 @@ class NativeLayerCA : public NativeLayer {
   
   template <typename F>
   void HandlePartialUpdate(const MutexAutoLock&,
+                           const gfx::IntRect& aDisplayRect,
                            const gfx::IntRegion& aUpdateRegion, F&& aCopyFn);
 
   struct SurfaceWithInvalidRegion {
@@ -266,10 +269,12 @@ class NativeLayerCA : public NativeLayer {
     
     void ApplyChanges(const gfx::IntSize& aSize, bool aIsOpaque,
                       const gfx::IntPoint& aPosition,
+                      const gfx::IntRect& aDisplayRect,
                       const Maybe<gfx::IntRect>& aClipRect, float aBackingScale,
                       bool aSurfaceIsFlipped,
                       CFTypeRefPtr<IOSurfaceRef> aFrontSurface);
 
+    
     
     
     
@@ -279,6 +284,7 @@ class NativeLayerCA : public NativeLayer {
     CALayer* mOpaquenessTintLayer = nullptr;  
 
     bool mMutatedPosition = true;
+    bool mMutatedDisplayRect = true;
     bool mMutatedClipRect = true;
     bool mMutatedBackingScale = true;
     bool mMutatedSurfaceIsFlipped = true;
@@ -324,6 +330,8 @@ class NativeLayerCA : public NativeLayer {
   
   
   Maybe<SurfaceWithInvalidRegion> mInProgressSurface;
+  Maybe<gfx::IntRegion> mInProgressUpdateRegion;
+  Maybe<gfx::IntRect> mInProgressDisplayRect;
 
   
   
@@ -344,6 +352,7 @@ class NativeLayerCA : public NativeLayer {
   Representation mOffscreenRepresentation;
 
   gfx::IntPoint mPosition;
+  gfx::IntRect mDisplayRect;
   const gfx::IntSize mSize;
   Maybe<gfx::IntRect> mClipRect;
   float mBackingScale = 1.0f;

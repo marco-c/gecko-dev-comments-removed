@@ -122,13 +122,16 @@ class NativeLayer {
 
   
   
-  virtual void SetValidRect(const gfx::IntRect& aValidRect) = 0;
-  virtual gfx::IntRect GetValidRect() = 0;
+  virtual void SetClipRect(const Maybe<gfx::IntRect>& aClipRect) = 0;
+  virtual Maybe<gfx::IntRect> ClipRect() = 0;
 
   
   
-  virtual void SetClipRect(const Maybe<gfx::IntRect>& aClipRect) = 0;
-  virtual Maybe<gfx::IntRect> ClipRect() = 0;
+  
+  
+  
+  
+  virtual gfx::IntRect CurrentSurfaceDisplayRect() = 0;
 
   
   
@@ -145,9 +148,22 @@ class NativeLayer {
   
   
   
+  
+  
+  
+  
+  
+  
   virtual RefPtr<gfx::DrawTarget> NextSurfaceAsDrawTarget(
-      const gfx::IntRegion& aUpdateRegion, gfx::BackendType aBackendType) = 0;
+      const gfx::IntRect& aDisplayRect, const gfx::IntRegion& aUpdateRegion,
+      gfx::BackendType aBackendType) = 0;
 
+  
+  
+  
+  
+  
+  
   
   
   
@@ -172,7 +188,8 @@ class NativeLayer {
   
   
   virtual Maybe<GLuint> NextSurfaceAsFramebuffer(
-      const gfx::IntRegion& aUpdateRegion, bool aNeedsDepth) = 0;
+      const gfx::IntRect& aDisplayRect, const gfx::IntRegion& aUpdateRegion,
+      bool aNeedsDepth) = 0;
 
   
   

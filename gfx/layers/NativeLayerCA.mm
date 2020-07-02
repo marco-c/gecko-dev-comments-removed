@@ -432,16 +432,6 @@ IntRect NativeLayerCA::GetRect() {
   return IntRect(mPosition, mSize);
 }
 
-void NativeLayerCA::SetValidRect(const gfx::IntRect& aValidRect) {
-  MutexAutoLock lock(mMutex);
-  mValidRect = aValidRect;
-}
-
-IntRect NativeLayerCA::GetValidRect() {
-  MutexAutoLock lock(mMutex);
-  return mValidRect;
-}
-
 void NativeLayerCA::SetBackingScale(float aBackingScale) {
   MutexAutoLock lock(mMutex);
 
@@ -468,6 +458,11 @@ void NativeLayerCA::SetClipRect(const Maybe<gfx::IntRect>& aClipRect) {
 Maybe<gfx::IntRect> NativeLayerCA::ClipRect() {
   MutexAutoLock lock(mMutex);
   return mClipRect;
+}
+
+gfx::IntRect NativeLayerCA::CurrentSurfaceDisplayRect() {
+  MutexAutoLock lock(mMutex);
+  return mDisplayRect;
 }
 
 NativeLayerCA::Representation::~Representation() {
@@ -519,44 +514,36 @@ bool NativeLayerCA::NextSurface(const MutexAutoLock& aLock) {
 }
 
 template <typename F>
-void NativeLayerCA::HandlePartialUpdate(const MutexAutoLock& aLock,
-                                        const gfx::IntRegion& aUpdateRegion, F&& aCopyFn) {
+void NativeLayerCA::HandlePartialUpdate(const MutexAutoLock& aLock, const IntRect& aDisplayRect,
+                                        const IntRegion& aUpdateRegion, F&& aCopyFn) {
   MOZ_RELEASE_ASSERT(IntRect({}, mSize).Contains(aUpdateRegion.GetBounds()),
                      "The update region should be within the surface bounds.");
+  MOZ_RELEASE_ASSERT(IntRect({}, mSize).Contains(aDisplayRect),
+                     "The display rect should be within the surface bounds.");
+
+  MOZ_RELEASE_ASSERT(!mInProgressUpdateRegion);
+  MOZ_RELEASE_ASSERT(!mInProgressDisplayRect);
+  mInProgressUpdateRegion = Some(aUpdateRegion);
+  mInProgressDisplayRect = Some(aDisplayRect);
 
   InvalidateRegionThroughoutSwapchain(aLock, aUpdateRegion);
 
-  gfx::IntRegion copyRegion;
-  copyRegion.Sub(mInProgressSurface->mInvalidRegion, aUpdateRegion);
+  if (mFrontSurface) {
+    
+    gfx::IntRegion copyRegion;
+    copyRegion.Sub(mInProgressSurface->mInvalidRegion, aUpdateRegion);
+    copyRegion.SubOut(mFrontSurface->mInvalidRegion);
 
-  
-
-  if (!copyRegion.IsEmpty()) {
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-
-    if (mFrontSurface) {
+    if (!copyRegion.IsEmpty()) {
       
       aCopyFn(mFrontSurface->mSurface, copyRegion);
       mInProgressSurface->mInvalidRegion.SubOut(copyRegion);
     }
   }
-
-  
 }
 
-RefPtr<gfx::DrawTarget> NativeLayerCA::NextSurfaceAsDrawTarget(const gfx::IntRegion& aUpdateRegion,
+RefPtr<gfx::DrawTarget> NativeLayerCA::NextSurfaceAsDrawTarget(const IntRect& aDisplayRect,
+                                                               const IntRegion& aUpdateRegion,
                                                                gfx::BackendType aBackendType) {
   MutexAutoLock lock(mMutex);
   if (!NextSurface(lock)) {
@@ -568,7 +555,7 @@ RefPtr<gfx::DrawTarget> NativeLayerCA::NextSurfaceAsDrawTarget(const gfx::IntReg
   RefPtr<gfx::DrawTarget> dt = mInProgressLockedIOSurface->GetAsDrawTargetLocked(aBackendType);
 
   HandlePartialUpdate(
-      lock, aUpdateRegion,
+      lock, aDisplayRect, aUpdateRegion,
       [&](CFTypeRefPtr<IOSurfaceRef> validSource, const gfx::IntRegion& copyRegion) {
         RefPtr<MacIOSurface> source = new MacIOSurface(validSource);
         source->Lock(true);
@@ -587,7 +574,8 @@ RefPtr<gfx::DrawTarget> NativeLayerCA::NextSurfaceAsDrawTarget(const gfx::IntReg
   return dt;
 }
 
-Maybe<GLuint> NativeLayerCA::NextSurfaceAsFramebuffer(const gfx::IntRegion& aUpdateRegion,
+Maybe<GLuint> NativeLayerCA::NextSurfaceAsFramebuffer(const IntRect& aDisplayRect,
+                                                      const IntRegion& aUpdateRegion,
                                                       bool aNeedsDepth) {
   MutexAutoLock lock(mMutex);
   if (!NextSurface(lock)) {
@@ -601,7 +589,7 @@ Maybe<GLuint> NativeLayerCA::NextSurfaceAsFramebuffer(const gfx::IntRegion& aUpd
   }
 
   HandlePartialUpdate(
-      lock, aUpdateRegion,
+      lock, aDisplayRect, aUpdateRegion,
       [&](CFTypeRefPtr<IOSurfaceRef> validSource, const gfx::IntRegion& copyRegion) {
         
         MOZ_RELEASE_ASSERT(mSurfacePoolHandle->gl());
@@ -639,10 +627,20 @@ void NativeLayerCA::NotifySurfaceReady() {
     mFrontSurface = Nothing();
   }
 
+  MOZ_RELEASE_ASSERT(mInProgressUpdateRegion);
   IOSurfaceDecrementUseCount(mInProgressSurface->mSurface.get());
   mFrontSurface = std::move(mInProgressSurface);
-  mFrontSurface->mInvalidRegion = IntRect();
+  mFrontSurface->mInvalidRegion.SubOut(mInProgressUpdateRegion.extract());
   ForAllRepresentations([&](Representation& r) { r.mMutatedFrontSurface = true; });
+
+  MOZ_RELEASE_ASSERT(mInProgressDisplayRect);
+  if (!mDisplayRect.IsEqualInterior(*mInProgressDisplayRect)) {
+    mDisplayRect = *mInProgressDisplayRect;
+    ForAllRepresentations([&](Representation& r) { r.mMutatedDisplayRect = true; });
+  }
+  mInProgressDisplayRect = Nothing();
+  MOZ_RELEASE_ASSERT(mFrontSurface->mInvalidRegion.Intersect(mDisplayRect).IsEmpty(),
+                     "Parts of the display rect are invalid! This shouldn't happen.");
 }
 
 void NativeLayerCA::DiscardBackbuffers() {
@@ -673,8 +671,8 @@ void NativeLayerCA::ForAllRepresentations(F aFn) {
 void NativeLayerCA::ApplyChanges(WhichRepresentation aRepresentation) {
   MutexAutoLock lock(mMutex);
   GetRepresentation(aRepresentation)
-      .ApplyChanges(mSize, mIsOpaque, mPosition, mClipRect, mBackingScale, mSurfaceIsFlipped,
-                    mFrontSurface ? mFrontSurface->mSurface : nullptr);
+      .ApplyChanges(mSize, mIsOpaque, mPosition, mDisplayRect, mClipRect, mBackingScale,
+                    mSurfaceIsFlipped, mFrontSurface ? mFrontSurface->mSurface : nullptr);
 }
 
 CALayer* NativeLayerCA::UnderlyingCALayer(WhichRepresentation aRepresentation) {
@@ -684,6 +682,7 @@ CALayer* NativeLayerCA::UnderlyingCALayer(WhichRepresentation aRepresentation) {
 
 void NativeLayerCA::Representation::ApplyChanges(const IntSize& aSize, bool aIsOpaque,
                                                  const IntPoint& aPosition,
+                                                 const IntRect& aDisplayRect,
                                                  const Maybe<IntRect>& aClipRect,
                                                  float aBackingScale, bool aSurfaceIsFlipped,
                                                  CFTypeRefPtr<IOSurfaceRef> aFrontSurface) {
@@ -739,10 +738,6 @@ void NativeLayerCA::Representation::ApplyChanges(const IntSize& aSize, bool aIsO
   
   
 
-  auto globalClipOrigin = aClipRect ? aClipRect->TopLeft() : gfx::IntPoint{};
-  auto globalLayerOrigin = aPosition;
-  auto clipToLayerOffset = globalLayerOrigin - globalClipOrigin;
-
   if (mMutatedBackingScale) {
     mContentCALayer.bounds =
         CGRectMake(0, 0, aSize.width / aBackingScale, aSize.height / aBackingScale);
@@ -752,19 +747,24 @@ void NativeLayerCA::Representation::ApplyChanges(const IntSize& aSize, bool aIsO
     mContentCALayer.contentsScale = aBackingScale;
   }
 
-  if (mMutatedBackingScale || mMutatedClipRect) {
+  if (mMutatedBackingScale || mMutatedPosition || mMutatedDisplayRect || mMutatedClipRect) {
+    auto clipFromDisplayRect = aDisplayRect.IsEqualInterior(IntRect({}, aSize))
+                                   ? Nothing()
+                                   : Some(aDisplayRect + aPosition);
+    auto effectiveClip = IntersectMaybeRects(aClipRect, clipFromDisplayRect);
+    auto globalClipOrigin = effectiveClip ? effectiveClip->TopLeft() : aPosition;
+    auto globalLayerOrigin = aPosition;
+    auto clipToLayerOffset = globalLayerOrigin - globalClipOrigin;
+
     mWrappingCALayer.position =
         CGPointMake(globalClipOrigin.x / aBackingScale, globalClipOrigin.y / aBackingScale);
-    if (aClipRect) {
+    if (effectiveClip) {
       mWrappingCALayer.masksToBounds = YES;
-      mWrappingCALayer.bounds =
-          CGRectMake(0, 0, aClipRect->Width() / aBackingScale, aClipRect->Height() / aBackingScale);
+      mWrappingCALayer.bounds = CGRectMake(0, 0, effectiveClip->Width() / aBackingScale,
+                                           effectiveClip->Height() / aBackingScale);
     } else {
       mWrappingCALayer.masksToBounds = NO;
     }
-  }
-
-  if (mMutatedBackingScale || mMutatedPosition || mMutatedClipRect) {
     mContentCALayer.position =
         CGPointMake(clipToLayerOffset.x / aBackingScale, clipToLayerOffset.y / aBackingScale);
     if (mOpaquenessTintLayer) {
@@ -788,6 +788,7 @@ void NativeLayerCA::Representation::ApplyChanges(const IntSize& aSize, bool aIsO
   mMutatedPosition = false;
   mMutatedBackingScale = false;
   mMutatedSurfaceIsFlipped = false;
+  mMutatedDisplayRect = false;
   mMutatedClipRect = false;
   mMutatedFrontSurface = false;
 }
