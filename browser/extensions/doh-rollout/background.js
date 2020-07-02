@@ -39,9 +39,6 @@ const ROLLOUT_TRR_MODE_PREF = "doh-rollout.mode";
 const DOH_SELF_ENABLED_PREF = "doh-rollout.self-enabled";
 
 
-const DOH_DOORHANGER_SHOWN_PREF = "doh-rollout.doorhanger-shown";
-
-
 const DOH_DOORHANGER_USER_DECISION_PREF = "doh-rollout.doorhanger-decision";
 
 
@@ -101,18 +98,6 @@ const stateManager = {
     await browser.experiments.heuristics.sendStatePing(state);
   },
 
-  async rememberDoorhangerShown() {
-    
-    
-    log("Remembering that doorhanger has been shown");
-    await rollout.setSetting(DOH_DOORHANGER_SHOWN_PREF, true);
-  },
-
-  async rememberDoorhangerDecision(decision) {
-    log("Remember doorhanger decision:", decision);
-    await rollout.setSetting(DOH_DOORHANGER_USER_DECISION_PREF, decision, true);
-  },
-
   async rememberDisableHeuristics() {
     log("Remembering to never run heuristics again");
     await rollout.setSetting(DOH_DISABLED_PREF, true);
@@ -134,86 +119,11 @@ const stateManager = {
 
     return true;
   },
-
-  async shouldShowDoorhanger() {
-    let doorhangerShown = await rollout.getSetting(
-      DOH_DOORHANGER_SHOWN_PREF,
-      false
-    );
-    log("Should show doorhanger:", !doorhangerShown);
-
-    return !doorhangerShown;
-  },
-
-  async showDoorhanger() {
-    rollout.addDoorhangerListeners();
-
-    let doorhangerShown = await browser.experiments.doorhanger.show({
-      name: browser.i18n.getMessage("doorhangerName"),
-      text: "<> " + browser.i18n.getMessage("doorhangerBodyNew"),
-      okLabel: browser.i18n.getMessage("doorhangerButtonOk"),
-      okAccessKey: browser.i18n.getMessage("doorhangerButtonOkAccessKey"),
-      cancelLabel: browser.i18n.getMessage("doorhangerButtonCancel2"),
-      cancelAccessKey: browser.i18n.getMessage(
-        "doorhangerButtonCancelAccessKey"
-      ),
-    });
-
-    if (!doorhangerShown) {
-      
-      
-      log("Profile is new, doorhanger not shown.");
-      await stateManager.setState("UIOk");
-      await stateManager.rememberDoorhangerDecision("NewProfile");
-      await stateManager.rememberDoorhangerShown();
-      rollout.removeDoorhangerListeners();
-    }
-  },
 };
 
 const rollout = {
   
   lastNetworkChangeTime: 0,
-
-  addDoorhangerListeners() {
-    browser.experiments.doorhanger.onDoorhangerAccept.addListener(
-      rollout.doorhangerAcceptListener
-    );
-
-    browser.experiments.doorhanger.onDoorhangerDecline.addListener(
-      rollout.doorhangerDeclineListener
-    );
-  },
-
-  removeDoorhangerListeners() {
-    browser.experiments.doorhanger.onDoorhangerAccept.removeListener(
-      rollout.doorhangerAcceptListener
-    );
-
-    browser.experiments.doorhanger.onDoorhangerDecline.removeListener(
-      rollout.doorhangerDeclineListener
-    );
-  },
-
-  async doorhangerAcceptListener(tabId) {
-    log("Doorhanger accepted on tab", tabId);
-    await stateManager.setState("UIOk");
-    await stateManager.rememberDoorhangerDecision("UIOk");
-    await stateManager.rememberDoorhangerShown();
-    rollout.removeDoorhangerListeners();
-  },
-
-  async doorhangerDeclineListener(tabId) {
-    log("Doorhanger declined on tab", tabId);
-    await stateManager.setState("UIDisabled");
-    await stateManager.rememberDoorhangerDecision("UIDisabled");
-    let results = await runHeuristics();
-    results.evaluateReason = "doorhangerDecline";
-    browser.experiments.heuristics.sendHeuristicsPing("disable_doh", results);
-    await stateManager.rememberDisableHeuristics();
-    await stateManager.rememberDoorhangerShown();
-    rollout.removeDoorhangerListeners();
-  },
 
   async heuristics(evaluateReason) {
     let shouldRunHeuristics = await stateManager.shouldRunHeuristics();
@@ -240,9 +150,6 @@ const rollout = {
       await stateManager.setState("disabled");
     } else {
       await stateManager.setState("enabled");
-      if (await stateManager.shouldShowDoorhanger()) {
-        await stateManager.showDoorhanger();
-      }
     }
   },
 
@@ -373,7 +280,6 @@ const rollout = {
     const legacyLocalStorageKeys = [
       "doneFirstRun",
       "skipHeuristicsCheck",
-      DOH_DOORHANGER_SHOWN_PREF,
       DOH_DOORHANGER_USER_DECISION_PREF,
       DOH_DISABLED_PREF,
     ];
@@ -584,8 +490,6 @@ const setup = {
     } catch (e) {
       
     }
-
-    await browser.experiments.doorhanger.cancel();
   },
 };
 
