@@ -76,7 +76,7 @@ JSObject* js::WritableStreamDefaultWriterAbort(
 
 
 
-JSObject* js::WritableStreamDefaultWriterClose(
+PromiseObject* js::WritableStreamDefaultWriterClose(
     JSContext* cx, Handle<WritableStreamDefaultWriter*> unwrappedWriter) {
   
   
@@ -139,6 +139,45 @@ JSObject* js::WritableStreamDefaultWriterClose(
 
   
   return promise;
+}
+
+
+
+
+
+PromiseObject* js::WritableStreamDefaultWriterCloseWithErrorPropagation(
+    JSContext* cx, Handle<WritableStreamDefaultWriter*> unwrappedWriter) {
+  
+  
+  WritableStream* unwrappedStream = UnwrapStreamFromWriter(cx, unwrappedWriter);
+  if (!unwrappedStream) {
+    return nullptr;
+  }
+
+  
+  
+  
+  if (WritableStreamCloseQueuedOrInFlight(unwrappedStream) ||
+      unwrappedStream->closed()) {
+    return PromiseResolvedWithUndefined(cx);
+  }
+
+  
+  
+  if (unwrappedStream->errored()) {
+    Rooted<Value> storedError(cx, unwrappedStream->storedError());
+    if (!cx->compartment()->wrap(cx, &storedError)) {
+      return nullptr;
+    }
+
+    return PromiseObject::unforgeableReject(cx, storedError);
+  }
+
+  
+  MOZ_ASSERT(unwrappedStream->writable() ^ unwrappedStream->erroring());
+
+  
+  return WritableStreamDefaultWriterClose(cx, unwrappedWriter);
 }
 
 using GetField = JSObject* (WritableStreamDefaultWriter::*)() const;
