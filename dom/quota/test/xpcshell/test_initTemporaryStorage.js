@@ -10,8 +10,17 @@
 
 
 
+
 async function testSteps() {
-  const originDirPath = "storage/default/https+++foo.example.com";
+  const defaultRepositoryPath = "storage/default";
+  const originDirPaths = [
+    `${defaultRepositoryPath}/https+++foo.example.com`,
+    
+    
+    
+    `${defaultRepositoryPath}/https+++example.com.`,
+  ];
+
   const metadataFileName = ".metadata-v2";
 
   info("Initializing");
@@ -25,8 +34,20 @@ async function testSteps() {
 
   info("Creating an empty directory");
 
-  let originDir = getRelativeFile(originDirPath);
-  originDir.create(Ci.nsIFile.DIRECTORY_TYPE, parseInt("0755", 8));
+  let originDirs = [];
+  for (let originDirPath of originDirPaths) {
+    let originDir = getRelativeFile(originDirPath);
+    originDir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+    originDirs.push(originDir);
+  }
+
+  info("Creating an empty cache directory for origin that ends with period");
+
+  let originDirPathEndsWithPeriod = originDirPaths.find(path =>
+    path.endsWith(".")
+  );
+  let cacheDir = getRelativeFile(`${originDirPathEndsWithPeriod}/cache`);
+  cacheDir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
 
   info("Initializing the temporary storage");
 
@@ -38,10 +59,12 @@ async function testSteps() {
       "initTemporaryStorage()"
   );
 
-  let metadataFile = originDir.clone();
-  metadataFile.append(metadataFileName);
+  for (let originDir of originDirs) {
+    let metadataFile = originDir.clone();
+    metadataFile.append(metadataFileName);
 
-  ok(metadataFile.exists(), "Directory metadata file does exist");
+    ok(metadataFile.exists(), "Directory metadata file does exist");
+  }
 
   info("Verifying initialization status");
 
