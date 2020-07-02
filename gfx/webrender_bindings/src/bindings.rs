@@ -905,6 +905,13 @@ extern "C" {
         epochs_being_rendered: &WrPipelineIdEpochs,
     );
     fn apz_deregister_sampler(window_id: WrWindowId);
+
+    fn omta_register_sampler(window_id: WrWindowId);
+    fn omta_sample(
+        window_id: WrWindowId,
+        transaction: &mut Transaction
+    );
+    fn omta_deregister_sampler(window_id: WrWindowId);
 }
 
 struct APZCallbacks {
@@ -985,7 +992,10 @@ impl SamplerCallback {
 
 impl AsyncPropertySampler for SamplerCallback {
     fn register(&self) {
-        unsafe { apz_register_sampler(self.window_id) }
+        unsafe {
+            apz_register_sampler(self.window_id);
+            omta_register_sampler(self.window_id);
+        }
     }
 
     fn sample(
@@ -995,18 +1005,23 @@ impl AsyncPropertySampler for SamplerCallback {
     ) -> Vec<FrameMsg> {
         let mut transaction = Transaction::new();
         unsafe {
+            
+            
+            omta_sample(self.window_id, &mut transaction);
             apz_sample_transforms(
                 self.window_id,
                 &mut transaction,
                 &epochs_being_rendered.iter().map(WrPipelineIdAndEpoch::from).collect(),
             )
         };
-        
         transaction.get_frame_ops()
     }
 
     fn deregister(&self) {
-        unsafe { apz_deregister_sampler(self.window_id) }
+        unsafe {
+            apz_deregister_sampler(self.window_id);
+            omta_deregister_sampler(self.window_id);
+        }
     }
 }
 
