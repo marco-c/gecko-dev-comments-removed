@@ -1114,42 +1114,31 @@ static bool IsLargeAllocationLoad(CanonicalBrowsingContext* aBrowsingContext,
 #endif
 }
 
-bool DocumentLoadListener::MaybeTriggerProcessSwitch(
-    bool* aWillSwitchToRemote) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_DIAGNOSTIC_ASSERT(!mDoingProcessSwitch,
-                        "Already in the middle of switching?");
-  MOZ_DIAGNOSTIC_ASSERT(mChannel);
-  MOZ_DIAGNOSTIC_ASSERT(mParentChannelListener);
-  MOZ_DIAGNOSTIC_ASSERT(aWillSwitchToRemote);
-
-  LOG(("DocumentLoadListener MaybeTriggerProcessSwitch [this=%p]", this));
-
-  
-  RefPtr<CanonicalBrowsingContext> browsingContext =
-      mParentChannelListener->GetBrowsingContext();
-  if (NS_WARN_IF(!browsingContext)) {
+static bool ContextCanProcessSwitch(
+    CanonicalBrowsingContext* aBrowsingContext) {
+  if (NS_WARN_IF(!aBrowsingContext)) {
     LOG(("Process Switch Abort: no browsing context"));
     return false;
   }
-  if (!browsingContext->IsContent()) {
+  if (!aBrowsingContext->IsContent()) {
     LOG(("Process Switch Abort: non-content browsing context"));
     return false;
   }
-  if (browsingContext->GetParent() && !browsingContext->UseRemoteSubframes()) {
+  if (aBrowsingContext->GetParent() &&
+      !aBrowsingContext->UseRemoteSubframes()) {
     LOG(("Process Switch Abort: remote subframes disabled"));
     return false;
   }
 
-  if (browsingContext->GetParentWindowContext() &&
-      browsingContext->GetParentWindowContext()->IsInProcess()) {
+  if (aBrowsingContext->GetParentWindowContext() &&
+      aBrowsingContext->GetParentWindowContext()->IsInProcess()) {
     LOG(("Process Switch Abort: Subframe with in-process parent"));
     return false;
   }
 
   
   
-  Element* browserElement = browsingContext->Top()->GetEmbedderElement();
+  Element* browserElement = aBrowsingContext->Top()->GetEmbedderElement();
   if (!browserElement) {
     LOG(("Process Switch Abort: cannot get embedder element"));
     return false;
@@ -1176,101 +1165,123 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
     LOG(("Process Switch Abort: switch disabled by <browser>"));
     return false;
   }
-  if (browsingContext->IsTop() &&
+  if (aBrowsingContext->IsTop() &&
       processBehavior == nsIBrowser::PROCESS_BEHAVIOR_SUBFRAME_ONLY) {
     LOG(("Process Switch Abort: toplevel switch disabled by <browser>"));
     return false;
   }
 
-  bool isPreloadSwitch = false;
-  nsAutoString isPreloadBrowserStr;
-  if (browserElement->GetAttr(kNameSpaceID_None, nsGkAtoms::preloadedState,
-                              isPreloadBrowserStr) &&
-      isPreloadBrowserStr.EqualsLiteral("consumed")) {
-    nsCOMPtr<nsIURI> originalURI;
-    if (NS_SUCCEEDED(mChannel->GetOriginalURI(getter_AddRefs(originalURI))) &&
-        !originalURI->GetSpecOrDefault().EqualsLiteral("about:newtab")) {
-      LOG(("Process Switch: leaving preloaded browser"));
-      isPreloadSwitch = true;
-      browserElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::preloadedState,
-                                true);
-    }
-  }
+  return true;
+}
+
+bool DocumentLoadListener::MaybeTriggerProcessSwitch(
+    bool* aWillSwitchToRemote) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_DIAGNOSTIC_ASSERT(!mDoingProcessSwitch,
+                        "Already in the middle of switching?");
+  MOZ_DIAGNOSTIC_ASSERT(mChannel);
+  MOZ_DIAGNOSTIC_ASSERT(mParentChannelListener);
+  MOZ_DIAGNOSTIC_ASSERT(aWillSwitchToRemote);
+
+  LOG(("DocumentLoadListener MaybeTriggerProcessSwitch [this=%p]", this));
 
   
-  nsCOMPtr<nsIPrincipal> currentPrincipal;
-  if (RefPtr<WindowGlobalParent> wgp =
-          browsingContext->GetCurrentWindowGlobal()) {
-    currentPrincipal = wgp->DocumentPrincipal();
+  RefPtr<CanonicalBrowsingContext> browsingContext =
+      mParentChannelListener->GetBrowsingContext();
+  if (!ContextCanProcessSwitch(browsingContext)) {
+    return false;
   }
-  RefPtr<ContentParent> contentParent = browsingContext->GetContentParent();
-  MOZ_ASSERT(!OtherPid() || contentParent,
-             "Only PPDC is allowed to not have an existing ContentParent");
 
   
   nsCOMPtr<nsIPrincipal> resultPrincipal;
-  rv = nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
+  nsresult rv = nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
       mChannel, getter_AddRefs(resultPrincipal));
   if (NS_FAILED(rv)) {
     LOG(("Process Switch Abort: failed to get channel result principal"));
     return false;
   }
 
-  
-  
-  bool isCOOPSwitch = HasCrossOriginOpenerPolicyMismatch();
-  nsILoadInfo::CrossOriginOpenerPolicy coop =
-      nsILoadInfo::OPENER_POLICY_UNSAFE_NONE;
-  if (!browsingContext->IsTop()) {
-    coop = browsingContext->Top()->GetOpenerPolicy();
-  } else if (nsCOMPtr<nsIHttpChannelInternal> httpChannel =
-                 do_QueryInterface(mChannel)) {
-    MOZ_ALWAYS_SUCCEEDS(httpChannel->GetCrossOriginOpenerPolicy(&coop));
-  }
-
-  nsAutoString currentRemoteType;
-  if (contentParent) {
+  nsAutoString currentRemoteType(VoidString());
+  if (RefPtr<ContentParent> contentParent =
+          browsingContext->GetContentParent()) {
     currentRemoteType = contentParent->GetRemoteType();
-  } else {
-    currentRemoteType = VoidString();
   }
-  nsAutoString preferredRemoteType = currentRemoteType;
+  MOZ_ASSERT_IF(currentRemoteType.IsEmpty(), !OtherPid());
+
+  
+  nsAutoString preferredRemoteType(currentRemoteType);
+  bool replaceBrowsingContext = false;
+  uint64_t specificGroupId = 0;
 
   
   
-  
-  
-  bool isLargeAllocSwitch = false;
-  if (browsingContext->IsTop() &&
-      browsingContext->Group()->Toplevels().Length() == 1) {
-    if (IsLargeAllocationLoad(browsingContext, mChannel)) {
-      preferredRemoteType.Assign(
-          NS_LITERAL_STRING(LARGE_ALLOCATION_REMOTE_TYPE));
-      isLargeAllocSwitch = true;
-    } else if (preferredRemoteType.EqualsLiteral(
-                   LARGE_ALLOCATION_REMOTE_TYPE)) {
-      preferredRemoteType.Assign(NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE));
-      isLargeAllocSwitch = true;
+  {
+    Element* browserElement = browsingContext->Top()->GetEmbedderElement();
+
+    nsAutoString isPreloadBrowserStr;
+    if (browserElement->GetAttr(kNameSpaceID_None, nsGkAtoms::preloadedState,
+                                isPreloadBrowserStr) &&
+        isPreloadBrowserStr.EqualsLiteral("consumed")) {
+      nsCOMPtr<nsIURI> originalURI;
+      if (NS_SUCCEEDED(mChannel->GetOriginalURI(getter_AddRefs(originalURI))) &&
+          !originalURI->GetSpecOrDefault().EqualsLiteral("about:newtab")) {
+        LOG(("Process Switch: leaving preloaded browser"));
+        replaceBrowsingContext = true;
+        browserElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::preloadedState,
+                                  true);
+      }
     }
   }
 
-  if (coop ==
-      nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP) {
+  
+  
+  {
+    bool isCOOPSwitch = HasCrossOriginOpenerPolicyMismatch();
+    replaceBrowsingContext |= isCOOPSwitch;
+
     
     
-    
-    nsAutoCString siteOrigin;
-    resultPrincipal->GetSiteOrigin(siteOrigin);
-    preferredRemoteType.Assign(
-        NS_LITERAL_STRING(WITH_COOP_COEP_REMOTE_TYPE_PREFIX));
-    preferredRemoteType.Append(NS_ConvertUTF8toUTF16(siteOrigin));
-  } else if (isCOOPSwitch) {
-    
-    
-    preferredRemoteType.Assign(NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE));
+    nsILoadInfo::CrossOriginOpenerPolicy coop =
+        nsILoadInfo::OPENER_POLICY_UNSAFE_NONE;
+    if (!browsingContext->IsTop()) {
+      coop = browsingContext->Top()->GetOpenerPolicy();
+    } else if (nsCOMPtr<nsIHttpChannelInternal> httpChannel =
+                   do_QueryInterface(mChannel)) {
+      MOZ_ALWAYS_SUCCEEDS(httpChannel->GetCrossOriginOpenerPolicy(&coop));
+    }
+
+    if (coop ==
+        nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP) {
+      
+      
+      
+      nsAutoCString siteOrigin;
+      resultPrincipal->GetSiteOrigin(siteOrigin);
+      preferredRemoteType =
+          NS_LITERAL_STRING(WITH_COOP_COEP_REMOTE_TYPE_PREFIX);
+      AppendUTF8toUTF16(siteOrigin, preferredRemoteType);
+    } else if (isCOOPSwitch) {
+      
+      
+      preferredRemoteType = NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE);
+    }
   }
-  MOZ_DIAGNOSTIC_ASSERT(!contentParent || !preferredRemoteType.IsEmpty(),
-                        "Unexpected empty remote type!");
+
+  
+  
+  
+  
+  if (browsingContext->IsTop() &&
+      browsingContext->Group()->Toplevels().Length() == 1) {
+    if (IsLargeAllocationLoad(browsingContext, mChannel)) {
+      preferredRemoteType = NS_LITERAL_STRING(LARGE_ALLOCATION_REMOTE_TYPE);
+      replaceBrowsingContext = true;
+    } else if (preferredRemoteType.EqualsLiteral(
+                   LARGE_ALLOCATION_REMOTE_TYPE)) {
+      preferredRemoteType = NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE);
+      replaceBrowsingContext = true;
+    }
+  }
 
   LOG(
       ("DocumentLoadListener GetRemoteTypeForPrincipal "
@@ -1283,6 +1294,12 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
   if (!e10sUtils) {
     LOG(("Process Switch Abort: Could not import E10SUtils"));
     return false;
+  }
+
+  
+  nsCOMPtr<nsIPrincipal> currentPrincipal;
+  if (auto* wgp = browsingContext->GetCurrentWindowGlobal()) {
+    currentPrincipal = wgp->DocumentPrincipal();
   }
 
   nsAutoString remoteType;
@@ -1300,8 +1317,7 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
        NS_ConvertUTF16toUTF8(remoteType).get()));
 
   
-  if (currentRemoteType == remoteType && !isCOOPSwitch && !isPreloadSwitch &&
-      !isLargeAllocSwitch) {
+  if (currentRemoteType == remoteType && !replaceBrowsingContext) {
     LOG(("Process Switch Abort: type (%s) is compatible",
          NS_ConvertUTF16toUTF8(remoteType).get()));
     return false;
@@ -1325,8 +1341,7 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
   LOG(("Process Switch: Calling ChangeRemoteness"));
   browsingContext
       ->ChangeRemoteness(remoteType, mCrossProcessRedirectIdentifier,
-                         isCOOPSwitch || isLargeAllocSwitch,
-                          0)
+                         replaceBrowsingContext, specificGroupId)
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
           [self = RefPtr{this}](BrowserParent* aBrowserParent) {
