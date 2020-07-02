@@ -144,26 +144,26 @@ nsresult TaskQueue::Runner::Run() {
   }
   MOZ_ASSERT(event.event);
 
+  
+  
+  
+  
+  
   {
-    LogRunnable::Run log(event.event);
-
-    
-    
-    
-    
-    
+    AutoTaskGuard g(mQueue);
+    SerialEventTargetGuard tg(mQueue);
     {
-      AutoTaskGuard g(mQueue);
-      SerialEventTargetGuard tg(mQueue);
-      event.event->Run();
-    }
+      LogRunnable::Run log(event.event);
 
-    
-    
-    
-    
-    
-    event.event = nullptr;
+      event.event->Run();
+
+      
+      
+      
+      
+      
+      event.event = nullptr;
+    }
   }
 
   {
