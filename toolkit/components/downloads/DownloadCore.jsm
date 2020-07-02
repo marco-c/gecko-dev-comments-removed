@@ -1354,6 +1354,12 @@ DownloadSource.prototype = {
 
 
 
+  loadingPrincipal: null,
+
+  
+
+
+
 
   toSerializable() {
     if (this.adjustChannel) {
@@ -1382,6 +1388,12 @@ DownloadSource.prototype = {
       serializable.referrerInfo = E10SUtils.serializeReferrerInfo(
         this.referrerInfo
       );
+    }
+
+    if (this.loadingPrincipal) {
+      serializable.loadingPrincipal = isString(this.loadingPrincipal)
+        ? this.loadingPrincipal
+        : E10SUtils.serializePrincipal(this.loadingPrincipal);
     }
 
     serializeUnknownProperties(this, serializable);
@@ -1445,6 +1457,17 @@ DownloadSource.fromSerializable = function(aSerializable) {
       } else {
         source.referrerInfo = E10SUtils.deserializeReferrerInfo(
           aSerializable.referrerInfo
+        );
+      }
+    }
+    if ("loadingPrincipal" in aSerializable) {
+      
+      
+      if (aSerializable.loadingPrincipal instanceof Ci.nsIPrincipal) {
+        source.loadingPrincipal = aSerializable.loadingPrincipal;
+      } else {
+        source.loadingPrincipal = E10SUtils.deserializePrincipal(
+          aSerializable.loadingPrincipal
         );
       }
     }
@@ -2216,11 +2239,21 @@ DownloadCopySaver.prototype = {
       const open = async () => {
         
         
-        const channel = NetUtil.newChannel({
-          uri: download.source.url,
-          loadUsingSystemPrincipal: true,
-          contentPolicyType: Ci.nsIContentPolicy.TYPE_SAVEAS_DOWNLOAD,
-        });
+        let channel;
+        if (download.source.loadingPrincipal) {
+          channel = NetUtil.newChannel({
+            uri: download.source.url,
+            contentPolicyType: Ci.nsIContentPolicy.TYPE_SAVEAS_DOWNLOAD,
+            loadingPrincipal: download.source.loadingPrincipal,
+            securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+          });
+        } else {
+          channel = NetUtil.newChannel({
+            uri: download.source.url,
+            contentPolicyType: Ci.nsIContentPolicy.TYPE_SAVEAS_DOWNLOAD,
+            loadUsingSystemPrincipal: true,
+          });
+        }
         if (channel instanceof Ci.nsIPrivateBrowsingChannel) {
           channel.setPrivate(download.source.isPrivate);
         }
