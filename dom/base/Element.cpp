@@ -3100,10 +3100,8 @@ static const char* GetFullscreenError(CallerType aCallerType,
     return nullptr;
   }
 
-  
-  if (!FeaturePolicyUtils::IsFeatureAllowed(aDocument,
-                                            NS_LITERAL_STRING("fullscreen"))) {
-    return "FullscreenDeniedFeaturePolicy";
+  if (const char* error = aDocument->GetFullscreenError(aCallerType)) {
+    return error;
   }
 
   

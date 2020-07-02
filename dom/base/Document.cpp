@@ -13596,7 +13596,7 @@ static bool HasFullscreenSubDocument(Document& aDoc) {
 
 
 
-static const char* GetFullscreenError(Document* aDoc, CallerType aCallerType) {
+const char* Document::GetFullscreenError(CallerType aCallerType) {
   if (!StaticPrefs::full_screen_api_enabled()) {
     return "FullscreenDeniedDisabled";
   }
@@ -13607,13 +13607,18 @@ static const char* GetFullscreenError(Document* aDoc, CallerType aCallerType) {
     return nullptr;
   }
 
-  if (!aDoc->IsVisible()) {
+  if (!IsVisible()) {
     return "FullscreenDeniedHidden";
+  }
+
+  if (!FeaturePolicyUtils::IsFeatureAllowed(this,
+                                            NS_LITERAL_STRING("fullscreen"))) {
+    return "FullscreenDeniedFeaturePolicy";
   }
 
   
   
-  BrowsingContext* bc = aDoc->GetBrowsingContext();
+  BrowsingContext* bc = GetBrowsingContext();
   if (!bc || !bc->FullscreenAllowed()) {
     return "FullscreenDeniedContainerNotAllowed";
   }
@@ -13645,7 +13650,7 @@ bool Document::FullscreenElementReadyCheck(FullscreenRequest& aRequest) {
     aRequest.Reject("FullscreenDeniedLostWindow");
     return false;
   }
-  if (const char* msg = GetFullscreenError(this, aRequest.mCallerType)) {
+  if (const char* msg = GetFullscreenError(aRequest.mCallerType)) {
     aRequest.Reject(msg);
     return false;
   }
@@ -13936,10 +13941,6 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
   }
   aRequest->MayResolvePromise();
   return true;
-}
-
-bool Document::FullscreenEnabled(CallerType aCallerType) {
-  return !GetFullscreenError(this, aCallerType);
 }
 
 void Document::ClearOrientationPendingPromise() {

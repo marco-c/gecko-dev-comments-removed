@@ -3331,7 +3331,11 @@ class Document : public nsINode,
   void MozSetImageElement(const nsAString& aImageElementId, Element* aElement);
   nsIURI* GetDocumentURIObject() const;
   
-  bool FullscreenEnabled(CallerType aCallerType);
+  const char* GetFullscreenError(CallerType);
+  bool FullscreenEnabled(CallerType aCallerType) {
+    return !GetFullscreenError(aCallerType);
+  }
+
   Element* GetTopLayerTop();
   
   Element* GetUnretargetedFullScreenElement();
