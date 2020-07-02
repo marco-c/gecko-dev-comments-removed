@@ -208,6 +208,7 @@ void nsGenericHTMLFrameElement::UnbindFromTree(bool aNullParent) {
     mFrameLoader = nullptr;
   }
 
+  nsFrameLoaderOwner::UnbindFromTree();
   nsGenericHTMLElement::UnbindFromTree(aNullParent);
 }
 
@@ -255,9 +256,8 @@ nsresult nsGenericHTMLFrameElement::AfterSetAttr(
         }
       }
     } else if (aName == nsGkAtoms::mozbrowser) {
-      mReallyIsBrowser =
-          !!aValue && StaticPrefs::dom_mozBrowserFramesEnabled() &&
-          XRE_IsParentProcess() && NodePrincipal()->IsSystemPrincipal();
+      mReallyIsBrowser = !!aValue && XRE_IsParentProcess() &&
+                         NodePrincipal()->IsSystemPrincipal();
     }
   }
 

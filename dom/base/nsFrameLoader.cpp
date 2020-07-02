@@ -83,6 +83,7 @@
 #include "mozilla/dom/MozFrameLoaderOwnerBinding.h"
 #include "mozilla/dom/SessionStoreListener.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/dom/XULFrameElement.h"
 #include "mozilla/gfx/CrossProcessPaint.h"
 #include "nsGenericHTMLFrameElement.h"
 #include "GeckoProfiler.h"
@@ -296,22 +297,48 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   GetFrameName(aOwner, frameName);
 
   
+  uint64_t browserId = parentBC->GetBrowserId();
+  RefPtr<nsFrameLoaderOwner> owner = do_QueryObject(aOwner);
+
+  
   
   
   
   
   
   if (IsTopContent(parentBC, aOwner)) {
+    if (owner && owner->GetBrowserId() != 0) {
+      
+      
+      browserId = owner->GetBrowserId();
+
+      
+      
+      
+      MOZ_DIAGNOSTIC_ASSERT(browserId != parentBC->GetBrowserId());
+    } else {
+      browserId = nsContentUtils::GenerateBrowserId();
+      if (owner) {
+        owner->SetBrowserId(browserId);
+      }
+    }
+
     
-    return BrowsingContext::CreateDetached(nullptr, opener, frameName,
-                                           BrowsingContext::Type::Content);
+    return BrowsingContext::CreateDetached(
+        nullptr, opener, frameName, BrowsingContext::Type::Content, browserId);
   }
 
   MOZ_ASSERT(!aOpenWindowInfo,
              "Can't have openWindowInfo for non-toplevel context");
 
+  if (owner) {
+    MOZ_DIAGNOSTIC_ASSERT(owner->GetBrowserId() == 0 ||
+                          owner->GetBrowserId() == browserId);
+    owner->SetBrowserId(browserId);
+  }
+
   return BrowsingContext::CreateDetached(parentInner, nullptr, frameName,
-                                         parentBC->GetType());
+                                         parentBC->GetType(), browserId);
 }
 
 static bool InitialLoadIsRemote(Element* aOwner) {
@@ -1294,6 +1321,13 @@ nsresult nsFrameLoader::SwapWithOtherRemoteLoader(
   MaybeUpdatePrimaryBrowserParent(eBrowserParentRemoved);
   aOther->MaybeUpdatePrimaryBrowserParent(eBrowserParentRemoved);
 
+  
+  
+  
+  uint64_t ourBrowserId = aThisOwner->GetBrowserId();
+  aThisOwner->SetBrowserId(aOtherOwner->GetBrowserId());
+  aOtherOwner->SetBrowserId(ourBrowserId);
+
   SetOwnerContent(otherContent);
   aOther->SetOwnerContent(ourContent);
 
@@ -1707,6 +1741,13 @@ nsresult nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   SetTreeOwnerAndChromeEventHandlerOnDocshellTree(
       otherDocshell, ourOwner,
       ourBc->IsContent() ? ourChromeEventHandler.get() : nullptr);
+
+  
+  
+  
+  uint64_t ourBrowserId = aThisOwner->GetBrowserId();
+  aThisOwner->SetBrowserId(aOtherOwner->GetBrowserId());
+  aOtherOwner->SetBrowserId(ourBrowserId);
 
   
   
