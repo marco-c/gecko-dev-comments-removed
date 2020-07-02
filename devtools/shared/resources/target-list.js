@@ -133,7 +133,7 @@ class TargetList {
       }
       
       
-      this.stopListening();
+      this.stopListening({ onlyLegacy: true });
 
       
       this._targets.clear();
@@ -157,7 +157,7 @@ class TargetList {
     
     
     if (targetFront.isTopLevel) {
-      await this.startListening();
+      await this.startListening({ onlyLegacy: true });
     }
   }
 
@@ -189,7 +189,14 @@ class TargetList {
 
 
 
-  async startListening() {
+
+
+
+
+
+
+
+  async startListening({ onlyLegacy = false } = {}) {
     let types = [];
     if (this.targetFront.isParentProcess) {
       const fissionBrowserToolboxEnabled = Services.prefs.getBoolPref(
@@ -234,6 +241,12 @@ class TargetList {
       if (supportsWatcher) {
         const watcher = await this.descriptorFront.getWatcher();
         if (watcher.traits[type]) {
+          
+          
+          
+          if (onlyLegacy) {
+            continue;
+          }
           if (!this._startedListeningToWatcher) {
             this._startedListeningToWatcher = true;
             watcher.on("target-available", this._onTargetAvailable);
@@ -251,7 +264,15 @@ class TargetList {
     }
   }
 
-  stopListening() {
+  
+
+
+
+
+
+
+
+  stopListening({ onlyLegacy = false } = {}) {
     for (const type of TargetList.ALL_TYPES) {
       if (!this._isListening(type)) {
         continue;
@@ -263,7 +284,12 @@ class TargetList {
       if (supportsWatcher) {
         const watcher = this.descriptorFront.getCachedWatcher();
         if (watcher && watcher.traits[type]) {
-          watcher.unwatchTargets(type);
+          
+          
+          
+          if (!onlyLegacy) {
+            watcher.unwatchTargets(type);
+          }
           continue;
         }
       }
