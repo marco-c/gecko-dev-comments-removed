@@ -89,7 +89,7 @@ static void MarkAllDescendantLinesDirty(nsBlockFrame* aBlock) {
 
 static void MarkSameFloatManagerLinesDirty(nsBlockFrame* aBlock) {
   nsBlockFrame* blockWithFloatMgr = aBlock;
-  while (!(blockWithFloatMgr->GetStateBits() & NS_BLOCK_FLOAT_MGR)) {
+  while (!blockWithFloatMgr->HasAnyStateBits(NS_BLOCK_FLOAT_MGR)) {
     nsBlockFrame* bf = do_QueryFrame(blockWithFloatMgr->GetParent());
     if (!bf) {
       break;
@@ -451,7 +451,7 @@ void nsBlockFrame::DestroyFrom(nsIFrame* aDestructRoot,
     delete overflowLines;
   }
 
-  if (GetStateBits() & NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS) {
+  if (HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS)) {
     SafelyDestroyFrameListProp(aDestructRoot, aPostDestroyData, presShell,
                                OverflowOutOfFlowsProperty());
     RemoveStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS);
@@ -718,7 +718,7 @@ void nsBlockFrame::MarkIntrinsicISizesDirty() {
   nsBlockFrame* dirtyBlock = static_cast<nsBlockFrame*>(FirstContinuation());
   dirtyBlock->mCachedMinISize = NS_INTRINSIC_ISIZE_UNKNOWN;
   dirtyBlock->mCachedPrefISize = NS_INTRINSIC_ISIZE_UNKNOWN;
-  if (!(GetStateBits() & NS_BLOCK_NEEDS_BIDI_RESOLUTION)) {
+  if (!HasAnyStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION)) {
     for (nsIFrame* frame = dirtyBlock; frame;
          frame = frame->GetNextContinuation()) {
       frame->AddStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION);
@@ -734,8 +734,7 @@ void nsBlockFrame::CheckIntrinsicCacheAgainstShrinkWrapState() {
     return;
   }
   bool inflationEnabled = !presContext->mInflationDisabledForShrinkWrap;
-  if (inflationEnabled !=
-      !!(GetStateBits() & NS_BLOCK_FRAME_INTRINSICS_INFLATED)) {
+  if (inflationEnabled != HasAnyStateBits(NS_BLOCK_FRAME_INTRINSICS_INFLATED)) {
     mCachedMinISize = NS_INTRINSIC_ISIZE_UNKNOWN;
     mCachedPrefISize = NS_INTRINSIC_ISIZE_UNKNOWN;
     if (inflationEnabled) {
@@ -778,7 +777,7 @@ nscoord nsBlockFrame::GetMinISize(gfxContext* aRenderingContext) {
     curFrame->LazyMarkLinesDirty();
   }
 
-  if (GetStateBits() & NS_BLOCK_NEEDS_BIDI_RESOLUTION) {
+  if (HasAnyStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION)) {
     ResolveBidi();
   }
 
@@ -865,7 +864,9 @@ nscoord nsBlockFrame::GetPrefISize(gfxContext* aRenderingContext) {
     curFrame->LazyMarkLinesDirty();
   }
 
-  if (GetStateBits() & NS_BLOCK_NEEDS_BIDI_RESOLUTION) ResolveBidi();
+  if (HasAnyStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION)) {
+    ResolveBidi();
+  }
   InlinePrefISizeData data;
   for (nsBlockFrame* curFrame = this; curFrame;
        curFrame = static_cast<nsBlockFrame*>(curFrame->GetNextContinuation())) {
@@ -1332,8 +1333,9 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   BlockReflowInput state(*reflowInput, aPresContext, this, blockStartMarginRoot,
                          blockEndMarginRoot, needFloatManager, consumedBSize);
 
-  if (GetStateBits() & NS_BLOCK_NEEDS_BIDI_RESOLUTION)
+  if (HasAnyStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION)) {
     static_cast<nsBlockFrame*>(FirstContinuation())->ResolveBidi();
+  }
 
   
   nsOverflowAreas ocBounds;
@@ -1357,13 +1359,13 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   
   
   
-  if (!(GetStateBits() & NS_FRAME_IS_DIRTY) && reflowInput->IsIResize()) {
+  if (!HasAnyStateBits(NS_FRAME_IS_DIRTY) && reflowInput->IsIResize()) {
     PrepareResizeReflow(state);
   }
 
   
   
-  if (!(GetStateBits() & NS_FRAME_IS_DIRTY) && reflowInput->mCBReflowInput &&
+  if (!HasAnyStateBits(NS_FRAME_IS_DIRTY) && reflowInput->mCBReflowInput &&
       reflowInput->mCBReflowInput->IsIResize() &&
       reflowInput->mStyleText->mTextIndent.HasPercent() && !mLines.empty()) {
     mLines.front()->MarkDirty();
@@ -1387,7 +1389,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     nsBlockFrame* nif = static_cast<nsBlockFrame*>(GetNextInFlow());
     while (nif) {
       if (nif->HasPushedFloatsFromPrevContinuation()) {
-        if (nif->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER) {
+        if (nif->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER)) {
           state.mReflowStatus.SetOverflowIncomplete();
         } else {
           state.mReflowStatus.SetIncomplete();
@@ -1556,7 +1558,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       
       
       
-      if (haveInterrupt && (GetStateBits() & NS_FRAME_IS_DIRTY)) {
+      if (haveInterrupt && HasAnyStateBits(NS_FRAME_IS_DIRTY)) {
         absoluteContainer->MarkAllFramesDirty();
       } else {
         absoluteContainer->MarkSizeDependentFramesDirty();
@@ -2144,7 +2146,7 @@ bool nsBlockFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) {
 }
 
 void nsBlockFrame::LazyMarkLinesDirty() {
-  if (GetStateBits() & NS_BLOCK_LOOK_FOR_DIRTY_FRAMES) {
+  if (HasAnyStateBits(NS_BLOCK_LOOK_FOR_DIRTY_FRAMES)) {
     for (LineIterator line = LinesBegin(), line_end = LinesEnd();
          line != line_end; ++line) {
       int32_t n = line->GetChildCount();
@@ -2374,8 +2376,8 @@ void nsBlockFrame::PropagateFloatDamage(BlockReflowInput& aState,
 static bool LineHasClear(nsLineBox* aLine) {
   return aLine->IsBlock()
              ? (aLine->GetBreakTypeBefore() != StyleClear::None ||
-                (aLine->mFirstChild->GetStateBits() &
-                 NS_BLOCK_HAS_CLEAR_CHILDREN) ||
+                aLine->mFirstChild->HasAnyStateBits(
+                    NS_BLOCK_HAS_CLEAR_CHILDREN) ||
                 !nsBlockFrame::BlockCanIntersectFloats(aLine->mFirstChild))
              : aLine->HasFloatBreakAfter();
 }
@@ -2392,7 +2394,7 @@ void nsBlockFrame::ReparentFloats(nsIFrame* aFirstFrame,
   aOldParent->CollectFloats(aFirstFrame, list, aReparentSiblings);
   if (list.NotEmpty()) {
     for (nsIFrame* f : list) {
-      MOZ_ASSERT(!(f->GetStateBits() & NS_FRAME_IS_PUSHED_FLOAT),
+      MOZ_ASSERT(!f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT),
                  "CollectFloats should've removed that bit");
       ReparentFrame(f, aOldParent, this);
     }
@@ -2445,9 +2447,9 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState) {
   AutoNoisyIndenter indent(gNoisyReflow);
 #endif
 
-  bool selfDirty = (GetStateBits() & NS_FRAME_IS_DIRTY) ||
+  bool selfDirty = HasAnyStateBits(NS_FRAME_IS_DIRTY) ||
                    (aState.mReflowInput.IsBResize() &&
-                    (GetStateBits() & NS_FRAME_CONTAINS_RELATIVE_BSIZE));
+                    HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE));
 
   
   
@@ -2472,7 +2474,7 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState) {
   
   bool reflowedFloat =
       mFloats.NotEmpty() &&
-      (mFloats.FirstChild()->GetStateBits() & NS_FRAME_IS_PUSHED_FLOAT);
+      mFloats.FirstChild()->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT);
   bool lastLineMovedUp = false;
   
   StyleClear inlineFloatBreakType = aState.mFloatBreakType;
@@ -2492,7 +2494,7 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState) {
     
     
     if (!line->IsDirty() && line->IsBlock() &&
-        (line->mFirstChild->GetStateBits() & NS_BLOCK_HAS_CLEAR_CHILDREN)) {
+        line->mFirstChild->HasAnyStateBits(NS_BLOCK_HAS_CLEAR_CHILDREN)) {
       line->MarkDirty();
     }
 
@@ -2843,7 +2845,7 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState) {
   bool skipPull = willReflowAgain && heightConstrained;
   if (!skipPull && heightConstrained && aState.mNextInFlow &&
       (aState.mReflowInput.mFlags.mNextInFlowUntouched && !lastLineMovedUp &&
-       !(GetStateBits() & NS_FRAME_IS_DIRTY) && !reflowedFloat)) {
+       !HasAnyStateBits(NS_FRAME_IS_DIRTY) && !reflowedFloat)) {
     
     
     
@@ -3055,7 +3057,7 @@ void nsBlockFrame::MarkLineDirtyForInterrupt(nsLineBox* aLine) {
   
   
   
-  if (GetStateBits() & NS_FRAME_IS_DIRTY) {
+  if (HasAnyStateBits(NS_FRAME_IS_DIRTY)) {
     
     
     int32_t n = aLine->GetChildCount();
@@ -3330,7 +3332,7 @@ bool nsBlockFrame::IsSelfEmpty() {
   
   
   
-  if (GetStateBits() & NS_BLOCK_MARGIN_ROOT) {
+  if (HasAnyStateBits(NS_BLOCK_MARGIN_ROOT)) {
     return false;
   }
 
@@ -3945,7 +3947,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
             
             
             if (!madeContinuation &&
-                (NS_FRAME_IS_OVERFLOW_CONTAINER & nextFrame->GetStateBits())) {
+                nextFrame->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER)) {
               nsOverflowContinuationTracker::AutoFinish fini(
                   aState.mOverflowTracker, frame);
               nsContainerFrame* parent = nextFrame->GetParent();
@@ -4013,7 +4015,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
           } else {  
             
             if (!madeContinuation &&
-                !(NS_FRAME_IS_OVERFLOW_CONTAINER & nextFrame->GetStateBits())) {
+                !nextFrame->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER)) {
               
               
               nsresult rv = nextFrame->GetParent()->StealFrame(nextFrame);
@@ -4640,7 +4642,7 @@ static bool CheckPlaceholderInLine(nsIFrame* aBlock, nsLineBox* aLine,
   if (!aFC) return true;
   NS_ASSERTION(!aFC->mFloat->GetPrevContinuation(),
                "float in a line should never be a continuation");
-  NS_ASSERTION(!(aFC->mFloat->GetStateBits() & NS_FRAME_IS_PUSHED_FLOAT),
+  NS_ASSERTION(!aFC->mFloat->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT),
                "float in a line should never be a pushed float");
   nsIFrame* ph = aFC->mFloat->FirstInFlow()->GetPlaceholderFrame();
   for (nsIFrame* f = ph; f; f = f->GetParent()) {
@@ -5019,7 +5021,7 @@ void nsBlockFrame::PushLines(BlockReflowInput& aState,
     if (floats.NotEmpty()) {
 #ifdef DEBUG
       for (nsIFrame* f : floats) {
-        MOZ_ASSERT(!(f->GetStateBits() & NS_FRAME_IS_PUSHED_FLOAT),
+        MOZ_ASSERT(!f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT),
                    "CollectFloats should've removed that bit");
       }
 #endif
@@ -5188,7 +5190,7 @@ bool nsBlockFrame::DrainSelfOverflowList() {
     if (oofs.mList.NotEmpty()) {
 #ifdef DEBUG
       for (nsIFrame* f : oofs.mList) {
-        MOZ_ASSERT(!(f->GetStateBits() & NS_FRAME_IS_PUSHED_FLOAT),
+        MOZ_ASSERT(!f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT),
                    "CollectFloats should've removed that bit");
       }
 #endif
@@ -5255,7 +5257,7 @@ void nsBlockFrame::DrainSelfPushedFloats() {
     
     nsIFrame* insertionPrevSibling = nullptr; 
     for (nsIFrame* f = mFloats.FirstChild();
-         f && (f->GetStateBits() & NS_FRAME_IS_PUSHED_FLOAT);
+         f && f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT);
          f = f->GetNextSibling()) {
       insertionPrevSibling = f;
     }
@@ -5348,7 +5350,7 @@ void nsBlockFrame::SetOverflowLines(FrameLines* aOverflowLines) {
   NS_ASSERTION(aOverflowLines->mLines.front()->mFirstChild ==
                    aOverflowLines->mFrames.FirstChild(),
                "invalid overflow lines / frames");
-  NS_ASSERTION(!(GetStateBits() & NS_BLOCK_HAS_OVERFLOW_LINES),
+  NS_ASSERTION(!HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_LINES),
                "Overwriting existing overflow lines");
 
   
@@ -5358,7 +5360,7 @@ void nsBlockFrame::SetOverflowLines(FrameLines* aOverflowLines) {
 }
 
 nsFrameList* nsBlockFrame::GetOverflowOutOfFlows() const {
-  if (!(GetStateBits() & NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS)) {
+  if (!HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS)) {
     return nullptr;
   }
   nsFrameList* result = GetPropTableFrames(OverflowOutOfFlowsProperty());
@@ -5370,11 +5372,11 @@ nsFrameList* nsBlockFrame::GetOverflowOutOfFlows() const {
 void nsBlockFrame::SetOverflowOutOfFlows(const nsFrameList& aList,
                                          nsFrameList* aPropValue) {
   MOZ_ASSERT(
-      !!(GetStateBits() & NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS) == !!aPropValue,
+      HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS) == !!aPropValue,
       "state does not match value");
 
   if (aList.IsEmpty()) {
-    if (!(GetStateBits() & NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS)) {
+    if (!HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS)) {
       return;
     }
     nsFrameList* list = RemovePropTableFrames(OverflowOutOfFlowsProperty());
@@ -5382,7 +5384,7 @@ void nsBlockFrame::SetOverflowOutOfFlows(const nsFrameList& aList,
     list->Clear();
     list->Delete(PresShell());
     RemoveStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS);
-  } else if (GetStateBits() & NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS) {
+  } else if (HasAnyStateBits(NS_BLOCK_HAS_OVERFLOW_OUT_OF_FLOWS)) {
     NS_ASSERTION(aPropValue == GetPropTableFrames(OverflowOutOfFlowsProperty()),
                  "prop value mismatch");
     *aPropValue = aList;
@@ -5556,7 +5558,7 @@ void nsBlockFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
     NS_ASSERTION(!aOldFrame->GetPrevContinuation(),
                  "RemoveFrame should not be called on pushed floats.");
     for (nsIFrame* f = aOldFrame;
-         f && !(f->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER);
+         f && !f->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
          f = f->GetNextContinuation()) {
       MarkSameFloatManagerLinesDirty(
           static_cast<nsBlockFrame*>(f->GetParent()));
@@ -5582,7 +5584,7 @@ static bool ShouldPutNextSiblingOnNewLine(nsIFrame* aLastFrame) {
   }
   
   if (type == LayoutFrameType::Text &&
-      !(aLastFrame->GetStateBits() & TEXT_OFFSETS_NEED_FIXING)) {
+      !aLastFrame->HasAnyStateBits(TEXT_OFFSETS_NEED_FIXING)) {
     return aLastFrame->HasSignificantTerminalNewline();
   }
   return false;
@@ -5895,7 +5897,7 @@ void nsBlockFrame::UpdateFirstLetterStyle(ServoRestyleState& aRestyleState) {
   
   
   nsIFrame* inFlowFrame = letterFrame;
-  if (inFlowFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) {
+  if (inFlowFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
     inFlowFrame = inFlowFrame->GetPlaceholderFrame();
   }
   nsIFrame* styleParent = CorrectStyleParentFrame(inFlowFrame->GetParent(),
@@ -5937,7 +5939,9 @@ static nsIFrame* FindChildContaining(nsBlockFrame* aFrame,
       block = block->GetNextContinuation();
     } while (block);
     if (!child) return nullptr;
-    if (!(child->GetStateBits() & NS_FRAME_OUT_OF_FLOW)) break;
+    if (!child->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+      break;
+    }
     aFindFrame = child->GetPlaceholderFrame();
   }
 
@@ -6106,10 +6110,10 @@ void nsBlockFrame::DoRemoveFrameInternal(nsIFrame* aDeletedFrame,
   
   ClearLineCursor();
 
-  if (aDeletedFrame->GetStateBits() &
-      (NS_FRAME_OUT_OF_FLOW | NS_FRAME_IS_OVERFLOW_CONTAINER)) {
+  if (aDeletedFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW |
+                                     NS_FRAME_IS_OVERFLOW_CONTAINER)) {
     if (!aDeletedFrame->GetPrevInFlow()) {
-      NS_ASSERTION(aDeletedFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW,
+      NS_ASSERTION(aDeletedFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
                    "Expected out-of-flow frame");
       DoRemoveOutOfFlowFrame(aDeletedFrame);
     } else {
@@ -6221,8 +6225,8 @@ void nsBlockFrame::DoRemoveFrameInternal(nsIFrame* aDeletedFrame,
 #endif
 
     
-    if (deletedNextContinuation && deletedNextContinuation->GetStateBits() &
-                                       NS_FRAME_IS_OVERFLOW_CONTAINER) {
+    if (deletedNextContinuation && deletedNextContinuation->HasAnyStateBits(
+                                       NS_FRAME_IS_OVERFLOW_CONTAINER)) {
       deletedNextContinuation->GetParent()->DeleteNextInFlowChild(
           deletedNextContinuation, false);
       deletedNextContinuation = nullptr;
@@ -6385,7 +6389,7 @@ static bool FindLineFor(nsIFrame* aChild, const nsFrameList& aFrameList,
 nsresult nsBlockFrame::StealFrame(nsIFrame* aChild) {
   MOZ_ASSERT(aChild->GetParent() == this);
 
-  if ((aChild->GetStateBits() & NS_FRAME_OUT_OF_FLOW) && aChild->IsFloating()) {
+  if (aChild->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) && aChild->IsFloating()) {
     RemoveFloat(aChild);
     return NS_OK;
   }
@@ -6394,7 +6398,7 @@ nsresult nsBlockFrame::StealFrame(nsIFrame* aChild) {
     return NS_OK;
   }
 
-  MOZ_ASSERT(!(aChild->GetStateBits() & NS_FRAME_OUT_OF_FLOW));
+  MOZ_ASSERT(!aChild->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW));
 
   nsLineList::iterator line;
   if (FindLineFor(aChild, mFrames, mLines.begin(), mLines.end(), &line)) {
@@ -6442,8 +6446,8 @@ void nsBlockFrame::DeleteNextInFlowChild(nsIFrame* aNextInFlow,
                                          bool aDeletingEmptyFrames) {
   MOZ_ASSERT(aNextInFlow->GetPrevInFlow(), "bad next-in-flow");
 
-  if (aNextInFlow->GetStateBits() &
-      (NS_FRAME_OUT_OF_FLOW | NS_FRAME_IS_OVERFLOW_CONTAINER)) {
+  if (aNextInFlow->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW |
+                                   NS_FRAME_IS_OVERFLOW_CONTAINER)) {
     nsContainerFrame::DeleteNextInFlowChild(aNextInFlow, aDeletingEmptyFrames);
   } else {
 #ifdef DEBUG
@@ -6494,7 +6498,7 @@ LogicalRect nsBlockFrame::AdjustFloatAvailableSpace(
 nscoord nsBlockFrame::ComputeFloatISize(BlockReflowInput& aState,
                                         const LogicalRect& aFloatAvailableSpace,
                                         nsIFrame* aFloat) {
-  MOZ_ASSERT(aFloat->GetStateBits() & NS_FRAME_OUT_OF_FLOW,
+  MOZ_ASSERT(aFloat->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
              "aFloat must be an out-of-flow frame");
 
   
@@ -6515,7 +6519,7 @@ void nsBlockFrame::ReflowFloat(BlockReflowInput& aState,
                                LogicalMargin& aFloatOffsets,
                                bool aFloatPushedDown,
                                nsReflowStatus& aReflowStatus) {
-  MOZ_ASSERT(aFloat->GetStateBits() & NS_FRAME_OUT_OF_FLOW,
+  MOZ_ASSERT(aFloat->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
              "aFloat must be an out-of-flow frame");
 
   
@@ -6646,7 +6650,7 @@ void nsBlockFrame::ReflowPushedFloats(BlockReflowInput& aState,
   
   nsIFrame* f = mFloats.FirstChild();
   nsIFrame* prev = nullptr;
-  while (f && (f->GetStateBits() & NS_FRAME_IS_PUSHED_FLOAT)) {
+  while (f && f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
     MOZ_ASSERT(prev == f->GetPrevSibling());
     
     
@@ -6893,8 +6897,9 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);
     for (nsIFrame* f : mFloats) {
-      if (f->GetStateBits() & NS_FRAME_IS_PUSHED_FLOAT)
+      if (f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
         BuildDisplayListForChild(aBuilder, f, aLists);
+      }
     }
   }
 
@@ -6910,7 +6915,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       TextOverflow::WillProcessLines(aBuilder, this);
 
   const bool hasDescendantPlaceHolders =
-      (GetStateBits() & NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO) ||
+      HasAnyStateBits(NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO) ||
       ForceDescendIntoIfVisible() || aBuilder->GetIncludeAllOutOfFlows();
 
   const auto ShouldDescendIntoLine = [&](const nsRect& aLineArea) -> bool {
@@ -6918,7 +6923,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     const bool descendAlways =
-        (GetStateBits() & NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO) ||
+        HasAnyStateBits(NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO) ||
         aBuilder->GetIncludeAllOutOfFlows();
 
     return descendAlways || aLineArea.Intersects(aBuilder->GetDirtyRect()) ||
@@ -7116,7 +7121,7 @@ a11y::AccType nsBlockFrame::AccessibleType() {
 #endif
 
 void nsBlockFrame::ClearLineCursor() {
-  if (!(GetStateBits() & NS_BLOCK_HAS_LINE_CURSOR)) {
+  if (!HasAnyStateBits(NS_BLOCK_HAS_LINE_CURSOR)) {
     return;
   }
 
@@ -7125,7 +7130,7 @@ void nsBlockFrame::ClearLineCursor() {
 }
 
 void nsBlockFrame::SetupLineCursor() {
-  if (GetStateBits() & NS_BLOCK_HAS_LINE_CURSOR || mLines.empty()) {
+  if (HasAnyStateBits(NS_BLOCK_HAS_LINE_CURSOR) || mLines.empty()) {
     return;
   }
 
@@ -7134,7 +7139,7 @@ void nsBlockFrame::SetupLineCursor() {
 }
 
 nsLineBox* nsBlockFrame::GetFirstLineContaining(nscoord y) {
-  if (!(GetStateBits() & NS_BLOCK_HAS_LINE_CURSOR)) {
+  if (!HasAnyStateBits(NS_BLOCK_HAS_LINE_CURSOR)) {
     return nullptr;
   }
 
@@ -7163,7 +7168,7 @@ nsLineBox* nsBlockFrame::GetFirstLineContaining(nscoord y) {
 
 void nsBlockFrame::ChildIsDirty(nsIFrame* aChild) {
   
-  if (aChild->GetStateBits() & NS_FRAME_OUT_OF_FLOW &&
+  if (aChild->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
       aChild->IsAbsolutelyPositioned()) {
     
   } else if (aChild == GetOutsideMarker()) {
@@ -7196,7 +7201,7 @@ void nsBlockFrame::ChildIsDirty(nsIFrame* aChild) {
     
     
     
-    if (!(aChild->GetStateBits() & NS_FRAME_OUT_OF_FLOW)) {
+    if (!aChild->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
       AddStateBits(NS_BLOCK_LOOK_FOR_DIRTY_FRAMES);
     } else {
       NS_ASSERTION(aChild->IsFloating(), "should be a float");
@@ -7250,7 +7255,7 @@ void nsBlockFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
 
   if (!aPrevInFlow ||
-      aPrevInFlow->GetStateBits() & NS_BLOCK_NEEDS_BIDI_RESOLUTION) {
+      aPrevInFlow->HasAnyStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION)) {
     AddStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION);
   }
 
@@ -7322,8 +7327,8 @@ void nsBlockFrame::SetInitialChildList(ChildListID aListID,
 
 void nsBlockFrame::SetMarkerFrameForListItem(nsIFrame* aMarkerFrame) {
   MOZ_ASSERT(aMarkerFrame);
-  MOZ_ASSERT((GetStateBits() & (NS_BLOCK_FRAME_HAS_INSIDE_MARKER |
-                                NS_BLOCK_FRAME_HAS_OUTSIDE_MARKER)) == 0,
+  MOZ_ASSERT(!HasAnyStateBits(NS_BLOCK_FRAME_HAS_INSIDE_MARKER |
+                              NS_BLOCK_FRAME_HAS_OUTSIDE_MARKER),
              "How can we have a ::marker frame already?");
 
   if (StyleList()->mListStylePosition == NS_STYLE_LIST_STYLE_POSITION_INSIDE) {
@@ -7470,7 +7475,9 @@ void nsBlockFrame::CheckFloats(BlockReflowInput& aState) {
   bool equal = true;
   uint32_t i = 0;
   for (nsIFrame* f : mFloats) {
-    if (f->GetStateBits() & NS_FRAME_IS_PUSHED_FLOAT) continue;
+    if (f->HasAnyStateBits(NS_FRAME_IS_PUSHED_FLOAT)) {
+      continue;
+    }
     storedFloats.AppendElement(f);
     if (i < lineFloats.Length() && lineFloats.ElementAt(i) != f) {
       equal = false;
@@ -7514,7 +7521,7 @@ void nsBlockFrame::CheckFloats(BlockReflowInput& aState) {
 void nsBlockFrame::IsMarginRoot(bool* aBStartMarginRoot,
                                 bool* aBEndMarginRoot) {
   nsIFrame* parent = GetParent();
-  if (!(GetStateBits() & NS_BLOCK_MARGIN_ROOT)) {
+  if (!HasAnyStateBits(NS_BLOCK_MARGIN_ROOT)) {
     if (!parent || parent->IsFloatContainingBlock()) {
       *aBStartMarginRoot = false;
       *aBEndMarginRoot = false;
@@ -7541,7 +7548,7 @@ bool nsBlockFrame::BlockNeedsFloatManager(nsIFrame* aBlock) {
   NS_ASSERTION(aBlock->IsBlockFrameOrSubclass(), "aBlock must be a block");
 
   nsIFrame* parent = aBlock->GetParent();
-  return (aBlock->GetStateBits() & NS_BLOCK_FLOAT_MGR) ||
+  return (aBlock->HasAnyStateBits(NS_BLOCK_FLOAT_MGR)) ||
          (parent && !parent->IsFloatContainingBlock());
 }
 
@@ -7549,7 +7556,7 @@ bool nsBlockFrame::BlockNeedsFloatManager(nsIFrame* aBlock) {
 bool nsBlockFrame::BlockCanIntersectFloats(nsIFrame* aFrame) {
   return aFrame->IsBlockFrameOrSubclass() &&
          !aFrame->IsFrameOfType(nsIFrame::eReplaced) &&
-         !(aFrame->GetStateBits() & NS_BLOCK_FLOAT_MGR);
+         !aFrame->HasAnyStateBits(NS_BLOCK_FLOAT_MGR);
 }
 
 
@@ -7743,7 +7750,7 @@ void nsBlockFrame::UpdatePseudoElementStyles(ServoRestyleState& aRestyleState) {
 }
 
 nsIFrame* nsBlockFrame::GetFirstLetter() const {
-  if (!(GetStateBits() & NS_BLOCK_HAS_FIRST_LETTER_STYLE)) {
+  if (!HasAnyStateBits(NS_BLOCK_HAS_FIRST_LETTER_STYLE)) {
     
     return nullptr;
   }
