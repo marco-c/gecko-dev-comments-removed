@@ -68,27 +68,6 @@
       return ["remote"];
     }
 
-    attributeChangedCallback(name, oldValue, newValue) {
-      
-      
-      
-      
-      
-      
-      let rebuildFrameLoaders =
-        LazyModules.E10SUtils.rebuildFrameloadersOnRemotenessChange ||
-        this.ownerGlobal.docShell.nsILoadContext.useRemoteSubframes;
-      if (
-        !rebuildFrameLoaders &&
-        name === "remote" &&
-        oldValue != newValue &&
-        this.isConnectedAndReady
-      ) {
-        this.destroy();
-        this.construct();
-      }
-    }
-
     constructor() {
       super();
 

@@ -1825,19 +1825,11 @@
       let oldSameProcessAsFrameLoader = aBrowser.sameProcessAsFrameLoader;
       let oldUserTypedValue = aBrowser.userTypedValue;
       let hadStartedLoad = aBrowser.didStartLoadSinceLastUserTyping();
-      let parent = aBrowser.parentNode;
 
       
 
       
       aBrowser.destroy();
-      
-      let rebuildFrameLoaders =
-        E10SUtils.rebuildFrameloadersOnRemotenessChange ||
-        window.docShell.nsILoadContext.useRemoteSubframes;
-      if (!rebuildFrameLoaders) {
-        aBrowser.remove();
-      }
 
       
       
@@ -1847,12 +1839,6 @@
         aBrowser.sameProcessAsFrameLoader = oldSameProcessAsFrameLoader;
       }
 
-      
-      
-      
-      
-      
-      
       if (shouldBeRemote) {
         aBrowser.setAttribute("remote", "true");
         aBrowser.setAttribute("remoteType", remoteType);
@@ -1861,21 +1847,15 @@
         aBrowser.removeAttribute("remoteType");
       }
 
-      if (!rebuildFrameLoaders) {
-        parent.appendChild(aBrowser);
-      } else {
-        
-        
-        
-        aBrowser.changeRemoteness({
-          remoteType,
-        });
-        
-        
-        
-        
-        aBrowser.construct();
-      }
+      
+      
+      
+      aBrowser.changeRemoteness({
+        remoteType,
+      });
+
+      
+      aBrowser.construct();
 
       aBrowser.userTypedValue = oldUserTypedValue;
       if (hadStartedLoad) {
