@@ -614,6 +614,8 @@ interface nsITelemetry : nsISupports
   
 
 
+
+
   void clearEvents();
 
   
