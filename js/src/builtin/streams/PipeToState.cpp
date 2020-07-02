@@ -128,13 +128,133 @@ static MOZ_MUST_USE bool ActAndFinalize(JSContext* cx,
                                         Handle<PipeToState*> state,
                                         Handle<Maybe<Value>> error) {
   
+  Rooted<JSObject*> p(cx);
+  switch (state->shutdownAction()) {
+    
+    
+    case PipeToState::ShutdownAction::AbortAlgorithm: {
+      MOZ_ASSERT(error.get().isSome());
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
+                                "any required actions during abortAlgorithm");
+      return false;
+    }
+
+    
+    
+    
+    case PipeToState::ShutdownAction::AbortDestStream: {
+      MOZ_ASSERT(error.get().isSome());
+
+      Rooted<WritableStream*> unwrappedDest(cx, GetUnwrappedDest(cx, state));
+      if (!unwrappedDest) {
+        return false;
+      }
+
+      Rooted<Value> sourceStoredError(cx, *error.get());
+      cx->check(sourceStoredError);
+
+      p = WritableStreamAbort(cx, unwrappedDest, sourceStoredError);
+      break;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    case PipeToState::ShutdownAction::CancelSource: {
+      MOZ_ASSERT(error.get().isSome());
+
+      Rooted<ReadableStream*> unwrappedSource(cx,
+                                              GetUnwrappedSource(cx, state));
+      if (!unwrappedSource) {
+        return false;
+      }
+
+      Rooted<Value> reason(cx, *error.get());
+      cx->check(reason);
+
+      p = ReadableStreamCancel(cx, unwrappedSource, reason);
+      break;
+    }
+
+    
+    
+    
+    
+    case PipeToState::ShutdownAction::CloseWriterWithErrorPropagation: {
+      MOZ_ASSERT(error.get().isNothing());
+
+      Rooted<WritableStreamDefaultWriter*> writer(cx, state->writer());
+      cx->check(writer);  
+
+      p = WritableStreamDefaultWriterCloseWithErrorPropagation(cx, writer);
+      break;
+    }
+  }
+  if (!p) {
+    return false;
+  }
+
   
   
+  Rooted<JSFunction*> onFulfilled(cx);
+  {
+    Rooted<Value> optionalError(
+        cx, error.isSome()
+                ? *error.get()
+                : MagicValue(JS_READABLESTREAM_PIPETO_FINALIZE_WITHOUT_ERROR));
+    onFulfilled = NewHandlerWithExtraValue(cx, Finalize, state, optionalError);
+    if (!onFulfilled) {
+      return false;
+    }
+  }
+
   
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
-                            "perform action then finalize");
-  return false;
+  auto OnRejected = [](JSContext* cx, unsigned argc, Value* vp) {
+    CallArgs args = CallArgsFromVp(argc, vp);
+
+    Rooted<PipeToState*> state(cx, TargetFromHandler<PipeToState>(args));
+    cx->check(state);
+
+    Rooted<Maybe<Value>> newError(cx, Some(args[0]));
+    cx->check(newError);
+    if (!Finalize(cx, state, newError)) {
+      return false;
+    }
+
+    args.rval().setUndefined();
+    return true;
+  };
+
+  Rooted<JSFunction*> onRejected(cx, NewHandler(cx, OnRejected, state));
+  if (!onRejected) {
+    return false;
+  }
+
+  return JS::AddPromiseReactions(cx, p, onFulfilled, onRejected);
 }
 
 static MOZ_MUST_USE bool ActAndFinalize(JSContext* cx, unsigned argc,
