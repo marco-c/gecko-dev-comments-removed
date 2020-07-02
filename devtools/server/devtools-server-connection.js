@@ -207,10 +207,7 @@ DevToolsServerConnection.prototype = {
       if (typeof actor !== "object") {
         
         throw new Error(
-          "Unexpected actor constructor/function in ActorPool " +
-            "for actorID=" +
-            actorID +
-            "."
+          `Unexpected actor constructor/function in Pool for actorID "${actorID}".`
         );
       }
 
@@ -494,31 +491,24 @@ DevToolsServerConnection.prototype = {
   },
 
   dumpPool(pool, output = [], dumpedPools) {
-    let label;
-    let actorIds = [];
-    let children = [];
+    const actorIds = [];
+    const children = [];
 
     if (dumpedPools.has(pool)) {
       return;
     }
     dumpedPools.add(pool);
-    
-    if (pool._actors) {
-      actorIds = Object.keys(pool._actors);
-      children = Object.values(pool._actors);
-      label = pool.label || "";
-    }
 
     
-    else if (pool.__poolMap) {
-      for (const actor of pool.poolChildren()) {
-        children.push(actor);
-        actorIds.push(actor.actorID);
-      }
-      label = pool.label || pool.actorID;
-    } else {
+    if (!pool.__poolMap) {
       return;
     }
+
+    for (const actor of pool.poolChildren()) {
+      children.push(actor);
+      actorIds.push(actor.actorID);
+    }
+    const label = pool.label || pool.actorID;
 
     output.push([label, actorIds]);
     dump(`- ${label}: ${JSON.stringify(actorIds)}\n`);

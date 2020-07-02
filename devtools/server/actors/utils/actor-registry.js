@@ -45,7 +45,6 @@ const ActorRegistry = {
 
 
 
-
   registerModule(id, options) {
     if (id in gRegisteredModules) {
       return;

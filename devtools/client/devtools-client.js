@@ -626,7 +626,7 @@ DevToolsClient.prototype = {
     
     
     for (const pool of this._pools) {
-      pool.cleanup();
+      pool.destroy();
     }
   },
 

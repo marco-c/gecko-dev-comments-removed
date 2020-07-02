@@ -133,11 +133,6 @@ class Pool extends EventEmitter {
   }
 
   
-  isEmpty() {
-    return !this.__poolMap || this._poolMap.size == 0;
-  }
-
-  
   *poolChildren() {
     if (!this.__poolMap) {
       return;
@@ -203,14 +198,6 @@ class Pool extends EventEmitter {
     this.conn.removeActorPool(this);
     this.__poolMap.clear();
     this.__poolMap = null;
-  }
-
-  
-
-
-
-  cleanup() {
-    this.destroy();
   }
 }
 
