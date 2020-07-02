@@ -1451,6 +1451,31 @@ static bool TryAppendNativeProperties(JSContext* cx, HandleObject obj,
   return true;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 bool JSStructuredCloneWriter::traverseObject(HandleObject obj, ESClass cls) {
   size_t count;
   bool optimized = false;
@@ -1508,6 +1533,26 @@ bool JSStructuredCloneWriter::traverseObject(HandleObject obj, ESClass cls) {
   return out.writePair(SCTAG_OBJECT_OBJECT, 0);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 bool JSStructuredCloneWriter::traverseMap(HandleObject obj) {
   Rooted<GCVector<Value>> newEntries(context(), GCVector<Value>(context()));
   {
@@ -1540,6 +1585,9 @@ bool JSStructuredCloneWriter::traverseMap(HandleObject obj) {
   return out.writePair(SCTAG_MAP_OBJECT, 0);
 }
 
+
+
+
 bool JSStructuredCloneWriter::traverseSet(HandleObject obj) {
   Rooted<GCVector<Value>> keys(context(), GCVector<Value>(context()));
   {
@@ -1571,25 +1619,6 @@ bool JSStructuredCloneWriter::traverseSet(HandleObject obj) {
   
   return out.writePair(SCTAG_SET_OBJECT, 0);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 bool JSStructuredCloneWriter::traverseSavedFrame(HandleObject obj) {
   RootedSavedFrame savedFrame(context(), obj->maybeUnwrapAs<SavedFrame>());
@@ -3028,6 +3057,79 @@ JSObject* JSStructuredCloneReader::readSavedFrame(uint32_t principalsTag) {
 }
 
 
+
+
+
+
+
+
+
+
+class ChildCounter {
+  JSContext* cx;
+  Vector<size_t> counts;
+  size_t objsLength;
+  size_t objCountsIndex;
+
+ public:
+  explicit ChildCounter(JSContext* cx)
+   : cx(cx), counts(cx), objsLength(0) {}
+
+  void noteObjIsOnTopOfStack() { objCountsIndex = counts.length() - 1; }
+
+  
+  
+  
+  bool postStartRead(HandleValueVector objs) {
+    if (objs.length() == objsLength) {
+      
+      return true;
+    }
+
+    
+    MOZ_ASSERT(objs.length() == objsLength + 1);
+    objsLength = objs.length();
+    if (objs.back().toObject().is<SavedFrame>()) {
+      return counts.append(0);
+    }
+
+    
+    return true;
+  }
+
+  
+  
+  bool handleEndOfChildren(HandleValueVector objs) {
+    MOZ_ASSERT(objsLength > 0);
+    objsLength--;
+
+    if (objs.back().toObject().is<SavedFrame>()) {
+      if (counts.back() != 1) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_SC_BAD_SERIALIZED_DATA,
+                                  "must have single SavedFrame parent");
+        return false;
+      }
+
+      counts.popBack();
+    }
+    return true;
+  }
+
+  
+  
+  
+  bool checkSingleParentFrame() {
+    
+    
+    
+    
+    
+    return ++counts[objCountsIndex] == 1;
+  }
+};
+
+
 bool JSStructuredCloneReader::read(MutableHandleValue vp) {
   if (!readHeader()) {
     return false;
@@ -3037,10 +3139,12 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp) {
     return false;
   }
 
+  ChildCounter childCounter(context());
+
   
   
   
-  if (!startRead(vp)) {
+  if (!startRead(vp) || !childCounter.postStartRead(objs)) {
     return false;
   }
 
@@ -3048,6 +3152,7 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp) {
   while (objs.length() != 0) {
     
     RootedObject obj(context(), &objs.back().toObject());
+    childCounter.noteObjIsOnTopOfStack();
 
     uint32_t tag, data;
     if (!in.getPair(&tag, &data)) {
@@ -3055,6 +3160,10 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp) {
     }
 
     if (tag == SCTAG_END_OF_KEYS) {
+      if (!childCounter.handleEndOfChildren(objs)) {
+        return false;
+      }
+
       
       
       MOZ_ALWAYS_TRUE(in.readPair(&tag, &data));
@@ -3075,9 +3184,8 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp) {
     
     
     
-    
     RootedValue key(context());
-    if (!startRead(&key)) {
+    if (!startRead(&key) || !childCounter.postStartRead(objs)) {
       return false;
     }
 
@@ -3085,6 +3193,9 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp) {
                           obj->is<SavedFrame>())) {
       
       
+      if (!childCounter.handleEndOfChildren(objs)) {
+        return false;
+      }
       objs.popBack();
       continue;
     }
@@ -3107,17 +3218,27 @@ bool JSStructuredCloneReader::read(MutableHandleValue vp) {
       } else if (key.isObject() && key.toObject().is<SavedFrame>()) {
         parentFrame = &key.toObject().as<SavedFrame>();
       } else {
+        JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
+                                  JSMSG_SC_BAD_SERIALIZED_DATA,
+                                  "invalid SavedFrame parent");
         return false;
       }
 
-      obj->as<SavedFrame>().initParent(parentFrame);
+      if (!childCounter.checkSingleParentFrame()) {
+        
+        
+        
+      } else {
+        obj->as<SavedFrame>().initParent(parentFrame);
+      }
+
       continue;
     }
 
     
     
     RootedValue val(context());
-    if (!startRead(&val)) {
+    if (!startRead(&val) || !childCounter.postStartRead(objs)) {
       return false;
     }
 
