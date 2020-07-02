@@ -2,7 +2,7 @@
 
 
 
-#![cfg_attr(feature = "cargo-clippy", allow(needless_lifetimes))]
+#![cfg_attr(feature = "cargo-clippy", allow(clippy::needless_lifetimes))]
 
 extern crate std;
 

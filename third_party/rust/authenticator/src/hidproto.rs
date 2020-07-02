@@ -4,7 +4,10 @@
 
 
 
-#![cfg_attr(feature = "cargo-clippy", allow(cast_lossless, needless_lifetimes))]
+#![cfg_attr(
+    feature = "cargo-clippy",
+    allow(clippy::cast_lossless, clippy::needless_lifetimes)
+)]
 
 use std::mem;
 
