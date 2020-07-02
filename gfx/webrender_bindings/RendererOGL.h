@@ -84,8 +84,7 @@ class RendererOGL {
   
   RendererOGL(RefPtr<RenderThread>&& aThread,
               UniquePtr<RenderCompositor> aCompositor, wr::WindowId aWindowId,
-              wr::Renderer* aRenderer, layers::CompositorBridgeParent* aBridge,
-              void* aSoftwareContext = nullptr);
+              wr::Renderer* aRenderer, layers::CompositorBridgeParent* aBridge);
 
   
   void Pause();
@@ -118,7 +117,6 @@ class RendererOGL {
   wr::Renderer* mRenderer;
   layers::CompositorBridgeParent* mBridge;
   wr::WindowId mWindowId;
-  void* mSoftwareContext;
   TimeStamp mFrameStartTime;
 
   bool mDisableNativeCompositor;

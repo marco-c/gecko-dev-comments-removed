@@ -777,9 +777,13 @@ void RenderThread::InitDeviceTask() {
   MOZ_ASSERT(IsInRenderThread());
   MOZ_ASSERT(!mSharedGL);
 
+  if (gfx::gfxVars::UseSoftwareWebRender()) {
+    
+    return;
+  }
+
   mSharedGL = CreateGLContext();
-  if (gfx::gfxVars::UseWebRenderProgramBinaryDisk() &&
-      !gfx::gfxVars::UseSoftwareWebRender()) {
+  if (gfx::gfxVars::UseWebRenderProgramBinaryDisk()) {
     mProgramCache = MakeUnique<WebRenderProgramCache>(ThreadPool().Raw());
   }
   
@@ -867,7 +871,7 @@ gl::GLContext* RenderThread::SharedGL() {
     mSharedGL = CreateGLContext();
     mShaders = nullptr;
   }
-  if (mSharedGL && !mShaders && !gfx::gfxVars::UseSoftwareWebRender()) {
+  if (mSharedGL && !mShaders) {
     mShaders = MakeUnique<WebRenderShaders>(mSharedGL, mProgramCache.get());
   }
 
