@@ -1015,7 +1015,7 @@ void js::Nursery::collect(JS::GCReason reason) {
   maybeResizeNursery(reason);
 
   
-  if (isEnabled() && previousGC.nurseryUsedBytes) {
+  if (previousGC.nurseryUsedBytes) {
     
     
     
