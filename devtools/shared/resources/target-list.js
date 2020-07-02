@@ -25,6 +25,14 @@ const {
   LegacyWorkersWatcher,
 } = require("devtools/shared/resources/legacy-target-watchers/legacy-workers-watcher");
 
+
+loader.lazyRequireGetter(
+  this,
+  "TargetFactory",
+  "devtools/client/framework/target",
+  true
+);
+
 class TargetList {
   
 
@@ -58,6 +66,15 @@ class TargetList {
     this.targetFront = targetFront;
     targetFront.setTargetType(this.getTargetType(targetFront));
     targetFront.setIsTopLevel(true);
+
+    
+    
+    this.onLocalTabRemotenessChange = this.onLocalTabRemotenessChange.bind(
+      this
+    );
+    if (targetFront.isLocalTab) {
+      targetFront.on("remoteness-change", this.onLocalTabRemotenessChange);
+    }
 
     
     this._listenersStarted = new Set();
@@ -452,8 +469,40 @@ class TargetList {
 
 
 
+  async onLocalTabRemotenessChange(targetFront) {
+    
+    const client = targetFront.client;
+
+    
+    
+    
+    
+    
+    
+    
+    targetFront.shouldCloseClient = false;
+
+    
+    await targetFront.once("target-destroyed");
+
+    
+    const newTarget = await TargetFactory.forTab(targetFront.localTab, client);
+
+    this.switchToTarget(newTarget);
+  }
+
+  
+
+
+
+
+
+
   async switchToTarget(newTarget) {
     newTarget.setIsTopLevel(true);
+    if (newTarget.isLocalTab) {
+      newTarget.on("remoteness-change", this.onLocalTabRemotenessChange);
+    }
 
     
     await this._onTargetAvailable(newTarget, true);

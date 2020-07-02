@@ -126,44 +126,22 @@ class LocalTabTargetFront extends BrowsingContextTargetFront {
     );
 
     
-    const client = this.client;
-
+    
+    
     if (targetSwitchingEnabled) {
-      
-      
-      
-      
-      
-      
-      
-      this.shouldCloseClient = false;
-
-      
-      
-      await this.once("target-destroyed");
-    } else {
-      
-      
-      
-      await toolbox.destroy();
+      this.emit("remoteness-change", this);
+      return;
     }
 
     
     
     
-    const newTarget = await TargetFactory.forTab(
-      this.localTab,
-      targetSwitchingEnabled ? client : null
-    );
+    await toolbox.destroy();
 
     
-    
-    
-    if (targetSwitchingEnabled) {
-      toolbox.targetList.switchToTarget(newTarget);
-    } else {
-      gDevTools.showToolbox(newTarget);
-    }
+    const newTarget = await TargetFactory.forTab(this.localTab, null);
+
+    gDevTools.showToolbox(newTarget);
   }
 }
 exports.LocalTabTargetFront = LocalTabTargetFront;
