@@ -3518,29 +3518,6 @@ NS_IMETHODIMP BrowserChild::OnStateChange(nsIWebProgress* aWebProgress,
   MOZ_TRY(PrepareProgressListenerData(aWebProgress, aRequest, webProgressData,
                                       requestData));
 
-  
-
-
-
-
-
-
-
-
-  if (document && webProgressData->isTopLevel() &&
-      (aStateFlags & nsIWebProgressListener::STATE_STOP) &&
-      (aStateFlags & nsIWebProgressListener::STATE_IS_WINDOW) &&
-      (aStateFlags & nsIWebProgressListener::STATE_IS_NETWORK)) {
-    RefPtr<nsDOMNavigationTiming> navigationTiming =
-        document->GetNavigationTiming();
-    if (navigationTiming) {
-      TimeDuration elapsedLoadTimeMS =
-          TimeStamp::Now() - navigationTiming->GetNavigationStartTimeStamp();
-      requestData.elapsedLoadTimeMS() =
-          Some(elapsedLoadTimeMS.ToMilliseconds());
-    }
-  }
-
   if (webProgressData->isTopLevel()) {
     stateChangeData.emplace();
 
