@@ -1556,7 +1556,9 @@ SearchService.prototype = {
 
     let skippedEngines = 0;
     for (let engine of cache.engines) {
-      if (skipAppProvided && engine._isAppProvided) {
+      
+      
+      if (skipAppProvided && (engine._isAppProvided || engine._isBuiltin)) {
         ++skippedEngines;
         continue;
       }
