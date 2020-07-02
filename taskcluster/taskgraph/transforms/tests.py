@@ -667,12 +667,7 @@ def set_defaults(config, tasks):
         task.setdefault('loopback-audio', False)
         task.setdefault('loopback-video', False)
         task.setdefault('limit-platforms', [])
-        
-        
-        if ('linux1804' in task['test-platform']):
-            task.setdefault('docker-image', {'in-tree': 'ubuntu1804-test'})
-        else:
-            task.setdefault('docker-image', {'in-tree': 'desktop1604-test'})
+        task.setdefault('docker-image', {'in-tree': 'ubuntu1804-test'})
         task.setdefault('checkout', False)
         task.setdefault('require-signed-extensions', False)
         task.setdefault('variants', [])
