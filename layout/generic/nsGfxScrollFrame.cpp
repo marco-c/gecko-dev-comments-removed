@@ -476,7 +476,13 @@ bool nsHTMLScrollFrame::TryLayout(ScrollReflowInput* aState,
   ROOT_SCROLLBAR_LOG("TryLayout with VV %s\n",
                      Stringify(visualViewportSize).c_str());
   mozilla::PresShell* presShell = PresShell();
-  if (mHelper.mIsRoot && presShell->IsVisualViewportSizeSet()) {
+  
+  
+  
+  
+  
+  
+  if (mHelper.mIsRoot && presShell->GetMobileViewportManager()) {
     visualViewportSize = nsLayoutUtils::CalculateCompositionSizeForFrame(
         this, false, &layoutSize);
 
