@@ -150,10 +150,6 @@ child:
   async Redirect3Complete();
 
   
-  async AssociateApplicationCache(nsCString groupID,
-                                  nsCString clientID);
-
-  
   
   async ReportSecurityMessage(nsString messageTag, nsString messageCategory);
 
