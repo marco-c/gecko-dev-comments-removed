@@ -339,6 +339,11 @@ const browsingContextTargetPrototype = {
 
 
   onResourceAvailable(resources) {
+    if (!this.actorID) {
+      
+      return;
+    }
+
     this.emit("resource-available-form", resources);
   },
 

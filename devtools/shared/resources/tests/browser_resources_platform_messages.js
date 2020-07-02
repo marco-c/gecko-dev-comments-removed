@@ -15,6 +15,18 @@ add_task(async function() {
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
 
+  info("Test platform messages legacy listener");
+  await testPlatformMessagesResources();
+  await testPlatformMessagesResourcesWithIgnoreExistingResources();
+
+  info("Test platform messages server listener");
+  await pushPref("devtools.testing.enableServerWatcherSupport", true);
+  await testPlatformMessagesResources();
+  await testPlatformMessagesResourcesWithIgnoreExistingResources();
+  await pushPref("devtools.testing.enableServerWatcherSupport", false);
+});
+
+async function testPlatformMessagesResources() {
   const {
     client,
     resourceWatcher,
@@ -85,15 +97,9 @@ add_task(async function() {
   Services.console.reset();
   targetList.stopListening();
   await client.close();
-});
+}
 
-add_task(async function() {
-  info("Test ignoreExistingResources option for PLATFORM_MESSAGE");
-
-  
-  
-  await pushPref("dom.ipc.processPrelaunch.enabled", false);
-
+async function testPlatformMessagesResourcesWithIgnoreExistingResources() {
   const {
     client,
     resourceWatcher,
@@ -143,4 +149,4 @@ add_task(async function() {
   Services.console.reset();
   await targetList.stopListening();
   await client.close();
-});
+}
