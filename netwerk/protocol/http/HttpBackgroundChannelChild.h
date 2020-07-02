@@ -40,6 +40,9 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   void OnChannelClosed();
 
   
+  bool ChannelClosed();
+
+  
   
   void OnStartRequestReceived();
 
@@ -110,8 +113,6 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   
   
   nsTArray<nsCOMPtr<nsIRunnable>> mQueuedRunnables;
-
-  RefPtr<BackgroundDataBridgeChild> mDataBridgeChild;
 };
 
 }  
