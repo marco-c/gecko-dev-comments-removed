@@ -77,9 +77,6 @@ enum class BailoutKind : uint8_t {
   DynamicNameNotFound,
 
   
-  StringArgumentsEval,
-
-  
   
   
   Overflow,
@@ -100,8 +97,6 @@ enum class BailoutKind : uint8_t {
   TypeBarrierO,
   
   TypeBarrierV,
-  
-  MonitorTypes,
 
   
   Hole,
@@ -111,9 +106,6 @@ enum class BailoutKind : uint8_t {
 
   
   NegativeIndex,
-
-  
-  NonIntegerIndex,
 
   
   
@@ -201,8 +193,6 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "BailoutKind::TooManyArguments";
     case BailoutKind::DynamicNameNotFound:
       return "BailoutKind::DynamicNameNotFound";
-    case BailoutKind::StringArgumentsEval:
-      return "BailoutKind::StringArgumentsEval";
     case BailoutKind::Overflow:
       return "BailoutKind::Overflow";
     case BailoutKind::Round:
@@ -215,16 +205,12 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "BailoutKind::TypeBarrierO";
     case BailoutKind::TypeBarrierV:
       return "BailoutKind::TypeBarrierV";
-    case BailoutKind::MonitorTypes:
-      return "BailoutKind::MonitorTypes";
     case BailoutKind::Hole:
       return "BailoutKind::Hole";
     case BailoutKind::NoDenseElementsGuard:
       return "BailoutKind::NoDenseElementsGuard";
     case BailoutKind::NegativeIndex:
       return "BailoutKind::NegativeIndex";
-    case BailoutKind::NonIntegerIndex:
-      return "BailoutKind::NonIntegerIndex";
     case BailoutKind::ObjectIdentityOrTypeGuard:
       return "BailoutKind::ObjectIdentityOrTypeGuard";
     case BailoutKind::SpecificAtomGuard:
