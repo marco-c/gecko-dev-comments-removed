@@ -118,6 +118,8 @@ input[type="url"]:read-only {
   -moz-context-properties: fill;
   fill: currentColor;
   min-width: auto;
+  
+  flex: 0 0 auto;
 }
 
 .delete-button:dir(rtl),
