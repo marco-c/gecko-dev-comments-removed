@@ -40,6 +40,16 @@ class Pool extends EventEmitter {
     return this.conn.poolFor(this.actorID);
   }
 
+  
+
+
+
+
+  isTopPool() {
+    const parent = this.getParent();
+    return !parent || parent === this;
+  }
+
   poolFor(actorID) {
     return this.conn.poolFor(actorID);
   }

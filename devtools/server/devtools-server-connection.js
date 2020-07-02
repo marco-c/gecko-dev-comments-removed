@@ -476,7 +476,16 @@ DevToolsServerConnection.prototype = {
 
     this.emit("closed", status, this.prefix);
 
-    this._extraPools.forEach(p => p.destroy());
+    
+    
+    
+    
+    
+    
+    
+    const topLevelPools = this._extraPools.filter(p => p.isTopPool());
+    topLevelPools.forEach(p => p.destroy());
+
     this._extraPools = null;
 
     this.rootActor = null;

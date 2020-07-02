@@ -116,6 +116,12 @@ ActorPool.prototype = {
       console.log(`>> ${actor}`);
     }
   },
+
+  
+  
+  isTopPool() {
+    return true;
+  },
 };
 
 exports.ActorPool = ActorPool;
