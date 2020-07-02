@@ -8,20 +8,21 @@
 
 
 use crate::bezier::Bezier;
-use crate::context::SharedStyleContext;
-use crate::dom::{OpaqueNode, TElement, TNode};
-use crate::font_metrics::FontMetricsProvider;
+use crate::context::{CascadeInputs, SharedStyleContext};
+use crate::dom::{OpaqueNode, TDocument, TElement, TNode};
 use crate::properties::animated_properties::AnimationValue;
 use crate::properties::longhands::animation_direction::computed_value::single_value::T as AnimationDirection;
 use crate::properties::longhands::animation_fill_mode::computed_value::single_value::T as AnimationFillMode;
 use crate::properties::longhands::animation_play_state::computed_value::single_value::T as AnimationPlayState;
-use crate::properties::LonghandIdSet;
-use crate::properties::{self, CascadeMode, ComputedValues, LonghandId};
-use crate::stylesheets::keyframes_rule::{KeyframesStep, KeyframesStepValue};
-use crate::stylesheets::Origin;
+use crate::properties::{
+    ComputedValues, Importance, LonghandId, LonghandIdSet, PropertyDeclarationBlock,
+    PropertyDeclarationId,
+};
+use crate::rule_tree::CascadeLevel;
+use crate::style_resolver::StyleResolverForElement;
+use crate::stylesheets::keyframes_rule::{KeyframesAnimation, KeyframesStep, KeyframesStepValue};
 use crate::values::animated::{Animate, Procedure};
-use crate::values::computed::Time;
-use crate::values::computed::TimingFunction;
+use crate::values::computed::{Time, TimingFunction};
 use crate::values::generics::box_::AnimationIterationCount;
 use crate::values::generics::easing::{StepPosition, TimingFunction as GenericTimingFunction};
 use crate::Atom;
@@ -173,99 +174,221 @@ pub enum KeyframesIterationState {
 }
 
 
-#[derive(Clone, MallocSizeOf)]
-struct ComputedKeyframeStep {
-    step: KeyframesStep,
 
-    #[ignore_malloc_size_of = "ComputedValues"]
-    style: Arc<ComputedValues>,
 
-    timing_function: TimingFunction,
+
+struct IntermediateComputedKeyframe {
+    declarations: PropertyDeclarationBlock,
+    timing_function: Option<TimingFunction>,
+    start_percentage: f32,
 }
 
-impl ComputedKeyframeStep {
-    fn generate_for_keyframes<E>(
+impl IntermediateComputedKeyframe {
+    fn new(start_percentage: f32) -> Self {
+        IntermediateComputedKeyframe {
+            declarations: PropertyDeclarationBlock::new(),
+            timing_function: None,
+            start_percentage,
+        }
+    }
+
+    
+    
+    fn generate_for_keyframes(
+        animation: &KeyframesAnimation,
+        context: &SharedStyleContext,
+        base_style: &ComputedValues,
+    ) -> Vec<Self> {
+        let mut intermediate_steps: Vec<Self> = Vec::with_capacity(animation.steps.len());
+        let mut current_step = IntermediateComputedKeyframe::new(0.);
+        for step in animation.steps.iter() {
+            let start_percentage = step.start_percentage.0;
+            if start_percentage != current_step.start_percentage {
+                let new_step = IntermediateComputedKeyframe::new(start_percentage);
+                intermediate_steps.push(std::mem::replace(&mut current_step, new_step));
+            }
+
+            current_step.update_from_step(step, context, base_style);
+        }
+        intermediate_steps.push(current_step);
+
+        
+        
+        debug_assert!(intermediate_steps.first().unwrap().start_percentage == 0.);
+        debug_assert!(intermediate_steps.last().unwrap().start_percentage == 1.);
+
+        intermediate_steps
+    }
+
+    fn update_from_step(
+        &mut self,
+        step: &KeyframesStep,
+        context: &SharedStyleContext,
+        base_style: &ComputedValues,
+    ) {
+        
+        
+        let guard = &context.guards.author;
+        if let Some(timing_function) = step.get_animation_timing_function(&guard) {
+            self.timing_function = Some(timing_function.to_computed_value_without_context());
+        }
+
+        let block = match step.value {
+            KeyframesStepValue::ComputedValues => return,
+            KeyframesStepValue::Declarations { ref block } => block,
+        };
+
+        
+        
+        let guard = block.read_with(&guard);
+        for declaration in guard.normal_declaration_iter() {
+            if let PropertyDeclarationId::Longhand(id) = declaration.id() {
+                if id == LonghandId::Display {
+                    continue;
+                }
+
+                if !id.is_animatable() {
+                    continue;
+                }
+            }
+
+            self.declarations.push(
+                declaration.to_physical(base_style.writing_mode),
+                Importance::Normal,
+            );
+        }
+    }
+
+    fn resolve_style<E>(
+        self,
         element: E,
-        steps: &[KeyframesStep],
         context: &SharedStyleContext,
         base_style: &Arc<ComputedValues>,
-        font_metrics_provider: &dyn FontMetricsProvider,
+        resolver: &mut StyleResolverForElement<E>,
+    ) -> Arc<ComputedValues>
+    where
+        E: TElement,
+    {
+        if !self.declarations.any_normal() {
+            return base_style.clone();
+        }
+
+        let document = element.as_node().owner_doc();
+        let locked_block = Arc::new(document.shared_lock().wrap(self.declarations));
+        let mut important_rules_changed = false;
+        let rule_node = base_style.rules().clone();
+        let new_node = context.stylist.rule_tree().update_rule_at_level(
+            CascadeLevel::Animations,
+            Some(locked_block.borrow_arc()),
+            &rule_node,
+            &context.guards,
+            &mut important_rules_changed,
+        );
+
+        if new_node.is_none() {
+            return base_style.clone();
+        }
+
+        let inputs = CascadeInputs {
+            rules: new_node,
+            visited_rules: base_style.visited_rules().cloned(),
+        };
+        resolver
+            .cascade_style_and_visited_with_default_parents(inputs)
+            .0
+    }
+}
+
+
+#[derive(Clone, MallocSizeOf)]
+struct ComputedKeyframe {
+    
+    
+    timing_function: TimingFunction,
+
+    
+    
+    start_percentage: f32,
+
+    
+    
+    values: Vec<AnimationValue>,
+}
+
+impl ComputedKeyframe {
+    fn generate_for_keyframes<E>(
+        element: E,
+        animation: &KeyframesAnimation,
+        context: &SharedStyleContext,
+        base_style: &Arc<ComputedValues>,
         default_timing_function: TimingFunction,
+        resolver: &mut StyleResolverForElement<E>,
     ) -> Vec<Self>
     where
         E: TElement,
     {
-        let mut previous_style = base_style.clone();
-        steps
+        let mut animating_properties = LonghandIdSet::new();
+        for property in animation.properties_changed.iter() {
+            debug_assert!(property.is_animatable());
+            animating_properties.insert(property.to_physical(base_style.writing_mode));
+        }
+
+        let animation_values_from_style: Vec<AnimationValue> = animating_properties
             .iter()
-            .cloned()
-            .map(|step| match step.value {
-                KeyframesStepValue::ComputedValues => ComputedKeyframeStep {
-                    step,
-                    style: base_style.clone(),
-                    timing_function: default_timing_function,
-                },
-                KeyframesStepValue::Declarations {
-                    block: ref declarations,
-                } => {
-                    let guard = declarations.read_with(context.guards.author);
-
-                    let iter = || {
-                        
-                        
-                        
-                        
-                        guard
-                            .normal_declaration_iter()
-                            .filter(|declaration| declaration.is_animatable())
-                            .map(|decl| (decl, Origin::Author))
-                    };
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    let computed_style = properties::apply_declarations::<E, _, _>(
-                        context.stylist.device(),
-                         None,
-                        previous_style.rules(),
-                        &context.guards,
-                        iter,
-                        Some(&previous_style),
-                        Some(&previous_style),
-                        Some(&previous_style),
-                        font_metrics_provider,
-                        CascadeMode::Unvisited {
-                            visited_rules: None,
-                        },
-                        context.quirks_mode(),
-                         None,
-                        &mut Default::default(),
-                        Some(element),
-                    );
-
-                    
-                    
-                    
-                    let timing_function = if step.declared_timing_function {
-                        computed_style.get_box().animation_timing_function_at(0)
-                    } else {
-                        default_timing_function
-                    };
-
-                    previous_style = computed_style.clone();
-                    ComputedKeyframeStep {
-                        step,
-                        style: computed_style,
-                        timing_function,
-                    }
-                },
+            .map(|property| {
+                AnimationValue::from_computed_values(property, &**base_style)
+                    .expect("Unexpected non-animatable property.")
             })
-            .collect()
+            .collect();
+
+        let intermediate_steps =
+            IntermediateComputedKeyframe::generate_for_keyframes(animation, context, base_style);
+
+        let mut computed_steps: Vec<Self> = Vec::with_capacity(intermediate_steps.len());
+        for (step_index, step) in intermediate_steps.into_iter().enumerate() {
+            let start_percentage = step.start_percentage;
+            let timing_function = step.timing_function.unwrap_or(default_timing_function);
+            let properties_changed_in_step = step.declarations.longhands().clone();
+            let step_style = step.resolve_style(element, context, base_style, resolver);
+
+            let values = {
+                
+                
+                
+                
+                
+                
+                let default_values = if start_percentage == 0. || start_percentage == 1.0 {
+                    &animation_values_from_style
+                } else {
+                    debug_assert!(step_index != 0);
+                    &computed_steps[step_index - 1].values
+                };
+
+                
+                
+                
+                animating_properties
+                    .iter()
+                    .zip(default_values.iter())
+                    .map(|(longhand, default_value)| {
+                        if properties_changed_in_step.contains(longhand) {
+                            AnimationValue::from_computed_values(longhand, &step_style)
+                                .unwrap_or_else(|| default_value.clone())
+                        } else {
+                            default_value.clone()
+                        }
+                    })
+                    .collect()
+            };
+
+            computed_steps.push(ComputedKeyframe {
+                timing_function,
+                start_percentage,
+                values,
+            });
+        }
+        computed_steps
     }
 }
 
@@ -282,7 +405,7 @@ pub struct Animation {
     properties_changed: LonghandIdSet,
 
     
-    computed_steps: Vec<ComputedKeyframeStep>,
+    computed_steps: Vec<ComputedKeyframe>,
 
     
     
@@ -517,7 +640,7 @@ impl Animation {
                 next_keyframe_index = self
                     .computed_steps
                     .iter()
-                    .position(|step| total_progress as f32 <= step.step.start_percentage.0);
+                    .position(|step| total_progress as f32 <= step.start_percentage);
                 prev_keyframe_index = next_keyframe_index
                     .and_then(|pos| if pos != 0 { Some(pos - 1) } else { None })
                     .unwrap_or(0);
@@ -527,7 +650,7 @@ impl Animation {
                     .computed_steps
                     .iter()
                     .rev()
-                    .position(|step| total_progress as f32 <= 1. - step.step.start_percentage.0)
+                    .position(|step| total_progress as f32 <= 1. - step.start_percentage)
                     .map(|pos| num_steps - pos - 1);
                 prev_keyframe_index = next_keyframe_index
                     .and_then(|pos| {
@@ -553,58 +676,46 @@ impl Animation {
             None => return,
         };
 
-        let update_with_single_keyframe_style = |style, computed_style: &Arc<ComputedValues>| {
+        let update_with_single_keyframe_style = |style, keyframe: &ComputedKeyframe| {
             let mutable_style = Arc::make_mut(style);
-            for property in self.properties_changed.iter().filter_map(|longhand| {
-                AnimationValue::from_computed_values(longhand, &**computed_style)
-            }) {
-                property.set_in_style_for_servo(mutable_style);
+            for value in keyframe.values.iter() {
+                value.set_in_style_for_servo(mutable_style);
             }
         };
 
-        
-        let prev_keyframe_style = &prev_keyframe.style;
-        let next_keyframe_style = &next_keyframe.style;
         if total_progress <= 0.0 {
-            update_with_single_keyframe_style(style, &prev_keyframe_style);
+            update_with_single_keyframe_style(style, &prev_keyframe);
             return;
         }
 
         if total_progress >= 1.0 {
-            update_with_single_keyframe_style(style, &next_keyframe_style);
+            update_with_single_keyframe_style(style, &next_keyframe);
             return;
         }
 
         let relative_timespan =
-            (next_keyframe.step.start_percentage.0 - prev_keyframe.step.start_percentage.0).abs();
+            (next_keyframe.start_percentage - prev_keyframe.start_percentage).abs();
         let relative_duration = relative_timespan as f64 * duration;
         let last_keyframe_ended_at = match self.current_direction {
             AnimationDirection::Normal => {
-                self.started_at + (duration * prev_keyframe.step.start_percentage.0 as f64)
+                self.started_at + (duration * prev_keyframe.start_percentage as f64)
             },
             AnimationDirection::Reverse => {
-                self.started_at + (duration * (1. - prev_keyframe.step.start_percentage.0 as f64))
+                self.started_at + (duration * (1. - prev_keyframe.start_percentage as f64))
             },
             _ => unreachable!(),
         };
-        let relative_progress = (now - last_keyframe_ended_at) / relative_duration;
 
+        let relative_progress = (now - last_keyframe_ended_at) / relative_duration;
         let mut new_style = (**style).clone();
-        let mut update_style_for_longhand = |longhand| {
-            let from = AnimationValue::from_computed_values(longhand, &prev_keyframe_style)?;
-            let to = AnimationValue::from_computed_values(longhand, &next_keyframe_style)?;
+        for (from, to) in prev_keyframe.values.iter().zip(next_keyframe.values.iter()) {
             PropertyAnimation {
-                from,
-                to,
+                from: from.clone(),
+                to: to.clone(),
                 timing_function: prev_keyframe.timing_function,
                 duration: relative_duration as f64,
             }
             .update(&mut new_style, relative_progress);
-            None::<()>
-        };
-
-        for property in self.properties_changed.iter() {
-            update_style_for_longhand(property);
         }
 
         *Arc::make_mut(style) = new_style;
@@ -850,7 +961,7 @@ impl ElementAnimationSet {
         element: E,
         context: &SharedStyleContext,
         new_style: &Arc<ComputedValues>,
-        font_metrics: &dyn crate::font_metrics::FontMetricsProvider,
+        resolver: &mut StyleResolverForElement<E>,
     ) where
         E: TElement,
     {
@@ -860,7 +971,7 @@ impl ElementAnimationSet {
             }
         }
 
-        maybe_start_animations(element, &context, &new_style, self, font_metrics);
+        maybe_start_animations(element, &context, &new_style, self, resolver);
     }
 
     
@@ -1022,7 +1133,7 @@ pub fn maybe_start_animations<E>(
     context: &SharedStyleContext,
     new_style: &Arc<ComputedValues>,
     animation_state: &mut ElementAnimationSet,
-    font_metrics_provider: &dyn FontMetricsProvider,
+    resolver: &mut StyleResolverForElement<E>,
 ) where
     E: TElement,
 {
@@ -1077,13 +1188,13 @@ pub fn maybe_start_animations<E>(
             AnimationPlayState::Running => AnimationState::Pending,
         };
 
-        let computed_steps = ComputedKeyframeStep::generate_for_keyframes::<E>(
+        let computed_steps = ComputedKeyframe::generate_for_keyframes(
             element,
-            &keyframe_animation.steps,
+            &keyframe_animation,
             context,
             new_style,
-            font_metrics_provider,
             new_style.get_box().animation_timing_function_mod(i),
+            resolver,
         );
 
         let new_animation = Animation {

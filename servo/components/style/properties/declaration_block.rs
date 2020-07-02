@@ -323,6 +323,13 @@ impl PropertyDeclarationBlock {
 
     
     
+    #[inline]
+    pub fn longhands(&self) -> &LonghandIdSet {
+        &self.longhands
+    }
+
+    
+    
     
     
     #[inline]
