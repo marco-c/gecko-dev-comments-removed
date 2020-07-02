@@ -141,6 +141,10 @@ class nsColumnSetFrame final : public nsContainerFrame {
 
     
     
+    int32_t mColCount = 1;
+
+    
+    
     
     bool mHasExcessBSize = false;
 

@@ -553,13 +553,12 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
 
   const nscoord computedBSize =
       aReflowInput.mParentReflowInput->ComputedBSize();
-  int columnCount = 0;
   nscoord contentBEnd = 0;
   bool reflowNext = false;
 
   while (child) {
     const bool isMeasuringFeasibleContentBSize =
-        aUnboundedLastColumn && columnCount == aConfig.mUsedColCount - 1 &&
+        aUnboundedLastColumn && colData.mColCount == aConfig.mUsedColCount &&
         aConfig.mIsBalancing;
 
     
@@ -644,7 +643,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
       childContentBEnd = nsLayoutUtils::CalculateContentBEnd(wm, child);
 
       COLUMN_SET_LOG("%s: Skipping child #%d %p (incremental %d): status=%s",
-                     __func__, columnCount, child, skipIncremental,
+                     __func__, colData.mColCount, child, skipIncremental,
                      ToString(aStatus).c_str());
     } else {
       LogicalSize availSize(wm, aConfig.mColISize, aConfig.mColMaxBSize);
@@ -674,7 +673,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
 
       COLUMN_SET_LOG(
           "%s: Reflowing child #%d %p: availSize=(%d,%d), kidCBSize=(%d,%d)",
-          __func__, columnCount, child, availSize.ISize(wm),
+          __func__, colData.mColCount, child, availSize.ISize(wm),
           availSize.BSize(wm), kidCBSize.ISize(wm), kidCBSize.BSize(wm));
 
       
@@ -740,7 +739,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
       COLUMN_SET_LOG(
           "%s: Reflowed child #%d %p: status=%s, desiredSize=(%d,%d), "
           "childContentBEnd=%d, CarriedOutBEndMargin=%d (ignored)",
-          __func__, columnCount, child, ToString(aStatus).c_str(),
+          __func__, colData.mColCount, child, ToString(aStatus).c_str(),
           kidDesiredSize.ISize(wm), kidDesiredSize.BSize(wm), childContentBEnd,
           kidDesiredSize.mCarriedOutBEndMargin.get());
     }
@@ -834,7 +833,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
     
     
     
-    if (columnCount >= aConfig.mUsedColCount - 1 &&
+    if (colData.mColCount >= aConfig.mUsedColCount &&
         (aConfig.mIsBalancing ||
          (!aConfig.mForceAuto &&
           !aReflowInput.mFlags.mColumnSetWrapperHasNoBSizeLeft))) {
@@ -871,7 +870,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowChildren(
 
     
     child = child->GetNextSibling();
-    ++columnCount;
+    ++colData.mColCount;
 
     if (child) {
       childOrigin.I(wm) += aConfig.mColISize + aConfig.mColGap;
@@ -1015,7 +1014,7 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
       
       
       
-      if (mFrames.GetLength() == aConfig.mUsedColCount) {
+      if (aColData.mColCount == aConfig.mUsedColCount) {
         aConfig.mKnownInfeasibleBSize =
             std::max(aConfig.mKnownInfeasibleBSize, aColData.mLastBSize - 1);
       }
