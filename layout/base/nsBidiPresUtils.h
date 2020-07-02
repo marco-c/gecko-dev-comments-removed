@@ -348,6 +348,14 @@ class nsBidiPresUtils {
     return ParagraphDirection(aFrame) == FrameDirection(aFrame);
   }
 
+  
+  
+  
+  static bool IsReversedDirectionFrame(nsIFrame* aFrame) {
+    mozilla::FrameBidiData bidiData = aFrame->GetBidiData();
+    return !IS_SAME_DIRECTION(bidiData.embeddingLevel, bidiData.baseLevel);
+  }
+
   enum Mode { MODE_DRAW, MODE_MEASURE };
 
   
