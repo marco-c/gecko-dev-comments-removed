@@ -165,10 +165,6 @@ child:
 
   
   async SetClassifierMatchedTrackingInfo(ClassifierInfo info);
- 
-  
-  
-  async OnAfterLastPart(nsresult aStatus);
 
 both:
   
