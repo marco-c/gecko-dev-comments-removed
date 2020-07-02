@@ -23,6 +23,7 @@ from mozpack.executables import (
 
 
 STDCXX_MAX_VERSION = Version('3.4.19')
+CXXABI_MAX_VERSION = Version('1.3.7')
 GLIBC_MAX_VERSION = Version('2.17')
 LIBGCC_MAX_VERSION = Version('4.8')
 
@@ -97,10 +98,7 @@ def iter_symbols(binary):
             addr = int(m.group(0), 16)
             
             
-            flags = line[m.end():][:7]
             
-            weak = 'w' in flags
-
             rest = line[m.end() + 9:].split()
             
             
@@ -119,7 +117,6 @@ def iter_symbols(binary):
                 'size': int(rest[1], 16) if ty == ELF else 0,
                 'name': name,
                 'version': ver or None,
-                'weak': weak,
             }
     else:
         export_table = False
@@ -147,7 +144,6 @@ def iter_symbols(binary):
                 'size': 0,
                 'name': name,
                 'version': None,
-                'weak': None,
             }
 
 
@@ -167,11 +163,6 @@ def check_dep_versions(target, binary, lib, prefix, max_version):
         for sym in at_least_one(iter_symbols(binary)):
             
             if sym['addr'] != 0:
-                continue
-
-            
-            
-            if sym['weak']:
                 continue
 
             
@@ -195,6 +186,8 @@ def check_dep_versions(target, binary, lib, prefix, max_version):
 def check_stdcxx(target, binary):
     check_dep_versions(
         target, binary, 'libstdc++', 'GLIBCXX', STDCXX_MAX_VERSION)
+    check_dep_versions(
+        target, binary, 'libstdc++', 'CXXABI', CXXABI_MAX_VERSION)
 
 
 def check_libgcc(target, binary):

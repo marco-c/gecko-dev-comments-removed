@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <mozilla/Assertions.h>
+#include <cxxabi.h>
 
 
 
@@ -144,6 +145,14 @@ namespace std {
 
 template basic_ios<char, char_traits<char>>::operator bool() const;
 }  
+
+#if !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
+
+
+void operator delete(void* ptr, size_t size) noexcept(true) {
+  ::operator delete(ptr);
+}
+#endif
 #endif
 
 #if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 23)
@@ -154,3 +163,18 @@ template basic_string<char, char_traits<char>, allocator<char>>::basic_string(
     const basic_string&, size_t, const allocator<char>&);
 }  
 #endif
+
+
+
+
+
+
+
+
+
+
+
+extern "C" int __cxa_thread_atexit_impl(void (*dtor)(void*), void* obj,
+                                        void* dso_handle) {
+  return __cxxabiv1::__cxa_thread_atexit(dtor, obj, dso_handle);
+}
