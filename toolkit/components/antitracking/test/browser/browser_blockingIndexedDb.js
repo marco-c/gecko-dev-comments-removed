@@ -70,7 +70,11 @@ AntiTracking.runTestInNormalAndPrivateMode(
   
   async _ => {
     
-    await hasStorageAccessInitially();
+    if (allowListed) {
+      await hasStorageAccessInitially();
+    } else {
+      await noStorageAccessInitially();
+    }
 
     indexedDB.open("test", "1");
     ok(true, "IDB should be allowed");

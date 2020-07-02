@@ -65,7 +65,11 @@ AntiTracking.runTestInNormalAndPrivateMode(
   },
   async _ => {
     
-    await hasStorageAccessInitially();
+    if (allowListed) {
+      await hasStorageAccessInitially();
+    } else {
+      await noStorageAccessInitially();
+    }
 
     localStorage.foo = 42;
     ok(true, "LocalStorage is allowed");

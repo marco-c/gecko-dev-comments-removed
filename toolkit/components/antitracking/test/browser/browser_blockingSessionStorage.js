@@ -88,7 +88,11 @@ AntiTracking.runTestInNormalAndPrivateMode(
   },
   async _ => {
     
-    await hasStorageAccessInitially();
+    if (allowListed) {
+      await hasStorageAccessInitially();
+    } else {
+      await noStorageAccessInitially();
+    }
 
     sessionStorage.foo = 42;
     ok(true, "SessionStorage is always allowed");

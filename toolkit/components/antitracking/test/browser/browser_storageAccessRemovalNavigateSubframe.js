@@ -11,7 +11,11 @@ AntiTracking.runTest(
   
   async _ => {
     
-    await hasStorageAccessInitially();
+    if (allowListed) {
+      await hasStorageAccessInitially();
+    } else {
+      await noStorageAccessInitially();
+    }
 
     
     let [threw, rejected] = await callRequestStorageAccess();
@@ -36,8 +40,6 @@ AntiTracking.runTest(
   
   async _ => {
     
-    
-    
-    await hasStorageAccessInitially();
+    await noStorageAccessInitially();
   }
 );

@@ -120,7 +120,11 @@ AntiTracking.runTestInNormalAndPrivateMode(
   
   async _ => {
     
-    await hasStorageAccessInitially();
+    if (allowListed) {
+      await hasStorageAccessInitially();
+    } else {
+      await noStorageAccessInitially();
+    }
 
     is(document.cookie, "", "No cookies for me");
 
