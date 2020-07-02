@@ -297,6 +297,8 @@ class FormAutofillSection {
     }
     log.debug("profile in autofillFields:", profile);
 
+    let focusedInput = focusedDetail.elementWeakRef.get();
+
     this.filledRecordGUID = profile.guid;
     for (let fieldDetail of this.fieldDetails) {
       
@@ -317,12 +319,12 @@ class FormAutofillSection {
         
         
         
-        let focusedInput = focusedDetail.elementWeakRef.get();
         if (
           element == focusedInput ||
           (element != focusedInput && !element.value) ||
           fieldDetail.state == FIELD_STATES.AUTO_FILLED
         ) {
+          element.focus({ preventScroll: true });
           element.setUserInput(value);
           this._changeFieldState(fieldDetail, FIELD_STATES.AUTO_FILLED);
         }
@@ -336,6 +338,7 @@ class FormAutofillSection {
         
         if (!option.selected) {
           option.selected = true;
+          element.focus({ preventScroll: true });
           element.dispatchEvent(
             new element.ownerGlobal.Event("input", { bubbles: true })
           );
@@ -347,6 +350,7 @@ class FormAutofillSection {
         this._changeFieldState(fieldDetail, FIELD_STATES.AUTO_FILLED);
       }
     }
+    focusedInput.focus({ preventScroll: true });
   }
 
   
