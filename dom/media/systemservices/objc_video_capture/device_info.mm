@@ -1,15 +1,15 @@
-/*
- *  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #if !defined(__has_feature) || !__has_feature(objc_arc)
-#error "This file requires ARC support."
+#  error "This file requires ARC support."
 #endif
 
 #include <AVFoundation/AVFoundation.h>
@@ -25,32 +25,24 @@ using namespace webrtc;
 using namespace videocapturemodule;
 
 static NSArray* camera_presets = @[
-  AVCaptureSessionPreset352x288,
-  AVCaptureSessionPreset640x480,
-  AVCaptureSessionPreset1280x720
+  AVCaptureSessionPreset352x288, AVCaptureSessionPreset640x480, AVCaptureSessionPreset1280x720
 ];
 
 #define IOS_UNSUPPORTED()                                                        \
   RTC_LOG(LS_ERROR) << __FUNCTION__ << " is not supported on the iOS platform."; \
   return -1;
 
-VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo() {
-  return new DeviceInfoIos();
-}
+VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo() { return new DeviceInfoIos(); }
 
-DeviceInfoIos::DeviceInfoIos() {
-  this->Init();
-}
+DeviceInfoIos::DeviceInfoIos() { this->Init(); }
 
-DeviceInfoIos::~DeviceInfoIos() {
-  [_captureInfo registerOwner:nil];
-}
+DeviceInfoIos::~DeviceInfoIos() { [_captureInfo registerOwner:nil]; }
 
 int32_t DeviceInfoIos::Init() {
   _captureInfo = [[DeviceInfoIosObjC alloc] init];
   [_captureInfo registerOwner:this];
 
-  // Fill in all device capabilities.
+  
   int deviceCount = [DeviceInfoIosObjC captureDeviceCount];
 
   for (int i = 0; i < deviceCount; i++) {
@@ -80,19 +72,12 @@ int32_t DeviceInfoIos::Init() {
   return 0;
 }
 
-uint32_t DeviceInfoIos::NumberOfDevices() {
-  return [DeviceInfoIosObjC captureDeviceCount];
-}
+uint32_t DeviceInfoIos::NumberOfDevices() { return [DeviceInfoIosObjC captureDeviceCount]; }
 
-int32_t DeviceInfoIos::GetDeviceName(uint32_t deviceNumber,
-                                     char* deviceNameUTF8,
-                                     uint32_t deviceNameUTF8Length,
-                                     char* deviceUniqueIdUTF8,
-                                     uint32_t deviceUniqueIdUTF8Length,
-                                     char* productUniqueIdUTF8,
-                                     uint32_t productUniqueIdUTF8Length,
-                                     pid_t* pid) {
-
+int32_t DeviceInfoIos::GetDeviceName(uint32_t deviceNumber, char* deviceNameUTF8,
+                                     uint32_t deviceNameUTF8Length, char* deviceUniqueIdUTF8,
+                                     uint32_t deviceUniqueIdUTF8Length, char* productUniqueIdUTF8,
+                                     uint32_t productUniqueIdUTF8Length, pid_t* pid) {
   if (deviceNumber >= NumberOfDevices()) {
     return -1;
   }
@@ -149,8 +134,7 @@ int32_t DeviceInfoIos::GetCapability(const char* deviceUniqueIdUTF8,
 
 int32_t DeviceInfoIos::DisplayCaptureSettingsDialogBox(const char* deviceUniqueIdUTF8,
                                                        const char* dialogTitleUTF8,
-                                                       void* parentWindow,
-                                                       uint32_t positionX,
+                                                       void* parentWindow, uint32_t positionX,
                                                        uint32_t positionY) {
   IOS_UNSUPPORTED();
 }
