@@ -121,6 +121,46 @@ static MOZ_MUST_USE bool Finalize(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
+
+
+
+static MOZ_MUST_USE bool ActAndFinalize(JSContext* cx,
+                                        Handle<PipeToState*> state,
+                                        Handle<Maybe<Value>> error) {
+  
+  
+  
+  
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                            JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
+                            "perform action then finalize");
+  return false;
+}
+
+static MOZ_MUST_USE bool ActAndFinalize(JSContext* cx, unsigned argc,
+                                        Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  Rooted<PipeToState*> state(cx, TargetFromHandler<PipeToState>(args));
+  cx->check(state);
+
+  Rooted<Maybe<Value>> optionalError(cx, Nothing());
+  if (Value maybeError = ExtraValueFromHandler(args);
+      !maybeError.isMagic(JS_READABLESTREAM_PIPETO_FINALIZE_WITHOUT_ERROR)) {
+    optionalError = Some(maybeError);
+  }
+  cx->check(optionalError);
+
+  if (!ActAndFinalize(cx, state, optionalError)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+
+
 static MOZ_MUST_USE bool ShutdownWithAction(
     JSContext* cx, Handle<PipeToState*> state,
     PipeToState::ShutdownAction action, Handle<Maybe<Value>> originalError) {
@@ -149,18 +189,41 @@ static MOZ_MUST_USE bool ShutdownWithAction(
     
     
     
+    
+    
+    
+    
+
+    
+    
+    if (PromiseObject* p = state->lastWriteRequest()) {
+      Rooted<PromiseObject*> lastWriteRequest(cx, p);
+
+      Rooted<Value> extra(
+          cx,
+          originalError.isSome()
+              ? *originalError.get()
+              : MagicValue(JS_READABLESTREAM_PIPETO_FINALIZE_WITHOUT_ERROR));
+
+      Rooted<JSFunction*> actAndfinalize(
+          cx, NewHandlerWithExtraValue(cx, ActAndFinalize, state, extra));
+      if (!actAndfinalize) {
+        return false;
+      }
+
+      return JS::AddPromiseReactions(cx, lastWriteRequest, actAndfinalize,
+                                     actAndfinalize);
+    }
+
+    
+    
   }
 
   
   
   
   
-
-  
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
-                            "pipeTo shutdown with action");
-  return false;
+  return ActAndFinalize(cx, state, originalError);
 }
 
 
@@ -199,20 +262,23 @@ static MOZ_MUST_USE bool Shutdown(JSContext* cx, Handle<PipeToState*> state,
     if (PromiseObject* p = state->lastWriteRequest()) {
       Rooted<PromiseObject*> lastWriteRequest(cx, p);
 
-      Rooted<Value> optionalError(
+      Rooted<Value> extra(
           cx,
           error.isSome()
               ? *error.get()
               : MagicValue(JS_READABLESTREAM_PIPETO_FINALIZE_WITHOUT_ERROR));
 
       Rooted<JSFunction*> finalize(
-          cx, NewHandlerWithExtraValue(cx, Finalize, state, optionalError));
+          cx, NewHandlerWithExtraValue(cx, Finalize, state, extra));
       if (!finalize) {
         return false;
       }
 
       return JS::AddPromiseReactions(cx, lastWriteRequest, finalize, finalize);
     }
+
+    
+    
   }
 
   
