@@ -460,6 +460,8 @@ void HttpChannelChild::OnStartRequest(
     return;
   }
 
+  
+  
   mComputedCrossOriginOpenerPolicy = aArgs.openerPolicy();
 
   if (!mCanceled && NS_SUCCEEDED(mStatus)) {
@@ -513,8 +515,6 @@ void HttpChannelChild::OnStartRequest(
   
   
   
-
-  mTracingEnabled = false;
 
   ResourceTimingStructArgsToTimingsStruct(aArgs.timing(), mTransactionTimings);
 
@@ -657,6 +657,11 @@ void HttpChannelChild::DoOnStartRequest(nsIRequest* aRequest,
   nsresult rv;
 
   LOG(("HttpChannelChild::DoOnStartRequest [this=%p]\n", this));
+
+  
+  
+  
+  mTracingEnabled = false;
 
   
   MOZ_ASSERT(mListener || mOnStartRequestCalled);
