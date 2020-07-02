@@ -43,15 +43,18 @@ class Http3Stream final : public nsAHttpSegmentReader,
   void SetQueued(bool aStatus) { mQueued = aStatus; }
   bool Queued() const { return mQueued; }
 
-  bool Done() const { return mState == DONE; }
+  bool Done() const { return mRecvState == RECV_DONE; }
 
   void Close(nsresult aResult);
   bool RecvdData() const { return mDataReceived; }
 
   nsAHttpTransaction* Transaction() { return mTransaction; }
-  bool RecvdFin() const { return mState == RECEIVED_FIN; }
-  bool RecvdReset() const { return mState == RECEIVED_RESET; }
-  void SetRecvdReset() { mState = RECEIVED_RESET; }
+  bool RecvdFin() const { return mFin; }
+  bool RecvdReset() const { return mResetRecv; }
+  void SetRecvdReset() {
+    mResetRecv = true;
+    mRecvState = RECEIVED_RESET;
+  }
 
   void SetResponseHeaders(nsTArray<uint8_t>& aResponseHeaders, bool fin);
 
@@ -85,47 +88,37 @@ class Http3Stream final : public nsAHttpSegmentReader,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  enum StreamState {
+  enum SendStreamState {
     PREPARING_HEADERS,
     SENDING_BODY,
     EARLY_RESPONSE,
+    SEND_DONE
+  } mSendState;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  enum RecvStreamState {
     READING_HEADERS,
     READING_DATA,
     RECEIVED_FIN,
     RECEIVED_RESET,
-    DONE
-  } mState;
+    RECV_DONE
+  } mRecvState;
 
   uint64_t mStreamId;
   Http3Session* mSession;
@@ -136,6 +129,7 @@ class Http3Stream final : public nsAHttpSegmentReader,
   bool mQueued;
   bool mRequestBlockedOnRead;
   bool mDataReceived;
+  bool mResetRecv;
   nsTArray<uint8_t> mFlatResponseHeaders;
   uint32_t mRequestBodyLenRemaining;
 
