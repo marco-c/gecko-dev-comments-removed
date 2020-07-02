@@ -1304,12 +1304,7 @@ void Accessible::ApplyARIAState(uint64_t* aState) const {
 }
 
 void Accessible::Value(nsString& aValue) const {
-  const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
-
-  if ((roleMapEntry && roleMapEntry->valueRule != eNoValue) ||
-      
-      
-      HasNumericValue()) {
+  if (HasNumericValue()) {
     
     
     
@@ -1329,6 +1324,7 @@ void Accessible::Value(nsString& aValue) const {
     return;
   }
 
+  const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
   if (!roleMapEntry) {
     return;
   }
