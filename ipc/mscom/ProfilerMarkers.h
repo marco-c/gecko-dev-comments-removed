@@ -1,0 +1,18 @@
+
+
+
+
+
+
+#ifndef mozilla_mscom_ProfilerMarkers_h
+#define mozilla_mscom_ProfilerMarkers_h
+
+namespace mozilla {
+namespace mscom {
+
+void InitProfilerMarkers();
+
+}  
+}  
+
+#endif  
