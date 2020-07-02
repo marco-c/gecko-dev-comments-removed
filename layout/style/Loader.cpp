@@ -1122,7 +1122,8 @@ void Loader::InsertChildSheet(StyleSheet& aSheet, StyleSheet& aParentSheet) {
 
 
 
-nsresult Loader::LoadSheet(SheetLoadData& aLoadData, SheetState aSheetState) {
+nsresult Loader::LoadSheet(SheetLoadData& aLoadData, SheetState aSheetState,
+                           PendingLoad aPendingLoad) {
   LOG(("css::Loader::LoadSheet"));
   MOZ_ASSERT(aLoadData.mURI, "Need a URI to load");
   MOZ_ASSERT(aLoadData.mSheet, "Need a sheet to load into");
@@ -1132,9 +1133,16 @@ nsresult Loader::LoadSheet(SheetLoadData& aLoadData, SheetState aSheetState) {
 
   LOG_URI("  Load from: '%s'", aLoadData.mURI);
 
-  ++mOngoingLoadCount;
-  if (aLoadData.mParentData) {
-    ++aLoadData.mParentData->mPendingChildren;
+  
+  
+  if (aPendingLoad == PendingLoad::No) {
+    IncrementOngoingLoadCount();
+
+    
+    
+    if (aLoadData.mParentData) {
+      ++aLoadData.mParentData->mPendingChildren;
+    }
   }
 
   nsresult rv = NS_OK;
@@ -1492,14 +1500,13 @@ Loader::Completed Loader::ParseSheet(const nsACString& aBytes,
   
   
   
-  BlockOnload();
+  
   nsCOMPtr<nsISerialEventTarget> target = DispatchTarget();
   sheet->ParseSheet(*this, aBytes, aLoadData)
       ->Then(
           target, __func__,
           [loadData = RefPtr<SheetLoadData>(&aLoadData)](bool aDummy) {
             MOZ_ASSERT(NS_IsMainThread());
-            loadData->mLoader->UnblockOnload( false);
             loadData->SheetFinishedParsingAsync();
           },
           [] { MOZ_CRASH("rejected parse promise"); });
@@ -1509,9 +1516,11 @@ Loader::Completed Loader::ParseSheet(const nsACString& aBytes,
 void Loader::NotifyObservers(SheetLoadData& aData, nsresult aStatus) {
   RecordUseCountersIfNeeded(mDocument, aData.mUseCounters.get());
   if (aData.mURI) {
-    MOZ_DIAGNOSTIC_ASSERT(mOngoingLoadCount);
-    --mOngoingLoadCount;
     aData.NotifyStop(aStatus);
+    
+    
+    
+    DecrementOngoingLoadCount();
   }
 
   if (aData.mMustNotify) {
@@ -2051,10 +2060,7 @@ nsresult Loader::PostLoadEvent(RefPtr<SheetLoadData> aLoadData) {
     NS_WARNING("failed to dispatch stylesheet load event");
     mPostedEvents.RemoveElement(aLoadData);
   } else {
-    ++mOngoingLoadCount;
-
-    
-    BlockOnload();
+    IncrementOngoingLoadCount();
 
     
     aLoadData->mMustNotify = true;
@@ -2080,8 +2086,6 @@ void Loader::HandleLoadEvent(SheetLoadData& aEvent) {
 
   mPostedEvents.RemoveElement(&aEvent);
   SheetComplete(aEvent, NS_OK);
-
-  UnblockOnload(true);
 }
 
 void Loader::Stop() {
