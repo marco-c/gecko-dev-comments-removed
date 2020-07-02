@@ -1347,6 +1347,10 @@ class ContentParent final
                          StructuredCloneData&& aData,
                          StructuredCloneData&& aStack);
 
+  void AddToPool(nsTArray<ContentParent*>&);
+  void RemoveFromPool(nsTArray<ContentParent*>&);
+  void AssertNotInPool();
+
  private:
   
   RefPtr<ContentParent> mSelfRef;
@@ -1417,23 +1421,25 @@ class ContentParent final
 
   LifecycleState mLifecycleState;
 
-  bool mIsForBrowser;
+  uint8_t mIsForBrowser : 1;
 
   
   
-  bool mCalledClose;
-  bool mCalledKillHard;
-  bool mCreatedPairedMinidumps;
-  bool mShutdownPending;
-  bool mIPCOpen;
+  uint8_t mCalledClose : 1;
+  uint8_t mCalledKillHard : 1;
+  uint8_t mCreatedPairedMinidumps : 1;
+  uint8_t mShutdownPending : 1;
+  uint8_t mIPCOpen : 1;
 
   
   
-  bool mIsRemoteInputEventQueueEnabled;
+  uint8_t mIsRemoteInputEventQueueEnabled : 1;
 
   
   
-  bool mIsInputPriorityEventEnabled;
+  uint8_t mIsInputPriorityEventEnabled : 1;
+
+  uint8_t mIsInPool : 1;
 
   RefPtr<nsConsoleService> mConsoleService;
   nsConsoleService* GetConsoleService();
