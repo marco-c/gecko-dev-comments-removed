@@ -3805,6 +3805,18 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  static nsIFrame* CorrectStyleParentFrame(
+      nsIFrame* aProspectiveParent, mozilla::PseudoStyleType aChildPseudo);
+
+  
+
+
+
+
+
+
+
+
 
 
 

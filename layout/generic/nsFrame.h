@@ -233,18 +233,6 @@ class nsFrame : public nsIFrame {
   void DisplayOutsetBoxShadow(nsDisplayListBuilder* aBuilder,
                               nsDisplayList* aList);
 
-  
-
-
-
-
-
-
-
-
-  static nsIFrame* CorrectStyleParentFrame(
-      nsIFrame* aProspectiveParent, mozilla::PseudoStyleType aChildPseudo);
-
  protected:
   
   nsFrame(ComputedStyle* aStyle, nsPresContext* aPresContext, ClassID aID);
