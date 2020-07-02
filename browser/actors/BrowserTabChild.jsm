@@ -6,6 +6,8 @@
 
 var EXPORTED_SYMBOLS = ["BrowserTabChild"];
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 ChromeUtils.defineModuleGetter(
   this,
   "E10SUtils",
@@ -30,6 +32,8 @@ class BrowserTabChild extends JSWindowActorChild {
         let context = this.manager.browsingContext;
         let loadContext = context.docShell.QueryInterface(Ci.nsILoadContext);
         let userContextId = loadContext.originAttributes.userContextId;
+
+        this.initializeRPM();
 
         this.sendAsyncMessage("Browser:WindowCreated", { userContextId });
         break;
@@ -108,6 +112,26 @@ class BrowserTabChild extends JSWindowActorChild {
         docShell.charset = message.data.value;
         docShell.gatherCharsetMenuTelemetry();
         break;
+    }
+  }
+
+  
+  
+  
+  
+  
+  initializeRPM() {
+    
+    let url = this.document.documentURI.replace(/[\#?].*$/, "");
+
+    let registeredURLs = Services.cpmm.sharedData.get("RemotePageManager:urls");
+
+    if (registeredURLs && registeredURLs.has(url)) {
+      let { ChildMessagePort } = ChromeUtils.import(
+        "resource://gre/modules/remotepagemanager/RemotePageManagerChild.jsm"
+      );
+      
+      new ChildMessagePort(this.contentWindow);
     }
   }
 }

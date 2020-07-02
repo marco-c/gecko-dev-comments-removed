@@ -13,37 +13,3 @@ Services.cpmm.addMessageListener("gmp-plugin-crash", ({ data }) => {
     .getService(Ci.mozIGeckoMediaPluginService)
     .RunPluginCrashCallbacks(data.pluginID, data.pluginName);
 });
-
-let ProcessObserver = {
-  init() {
-    Services.obs.addObserver(this, "chrome-document-global-created");
-    Services.obs.addObserver(this, "content-document-global-created");
-  },
-
-  observe(subject, topic, data) {
-    switch (topic) {
-      case "chrome-document-global-created":
-      case "content-document-global-created": {
-        
-        let window = subject;
-        let url = window.document.documentURI.replace(/[#?].*$/, "");
-
-        let registeredURLs = Services.cpmm.sharedData.get(
-          "RemotePageManager:urls"
-        );
-        if (registeredURLs && registeredURLs.has(url)) {
-          let { ChildMessagePort } = ChromeUtils.import(
-            "resource://gre/modules/remotepagemanager/RemotePageManagerChild.jsm"
-          );
-          
-          new ChildMessagePort(window);
-        }
-        break;
-      }
-    }
-  },
-};
-
-ProcessObserver.init();
-
-ProcessObserver.init = null;
