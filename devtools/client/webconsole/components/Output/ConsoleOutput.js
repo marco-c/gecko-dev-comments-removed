@@ -61,6 +61,7 @@ class ConsoleOutput extends Component {
       visibleMessages: PropTypes.array.isRequired,
       networkMessageActiveTabId: PropTypes.string.isRequired,
       onFirstMeaningfulPaint: PropTypes.func.isRequired,
+      editorMode: PropTypes.bool.isRequired,
     };
   }
 
@@ -69,7 +70,7 @@ class ConsoleOutput extends Component {
     this.onContextMenu = this.onContextMenu.bind(this);
     this.maybeScrollToBottom = this.maybeScrollToBottom.bind(this);
 
-    this.resizeObserver = new ResizeObserver(() => {
+    this.resizeObserver = new ResizeObserver(entries => {
       
       
       
@@ -100,7 +101,7 @@ class ConsoleOutput extends Component {
       { root: this.outputNode, threshold: [0.5] }
     );
 
-    this.resizeObserver.observe(this.outputNode);
+    this.resizeObserver.observe(this.getElementToObserve());
 
     const { serviceContainer, onFirstMeaningfulPaint, dispatch } = this.props;
     serviceContainer.attachRefToWebConsoleUI("outputScroller", this.outputNode);
@@ -119,6 +120,10 @@ class ConsoleOutput extends Component {
   }
 
   componentWillUpdate(nextProps, nextState) {
+    if (nextProps.editorMode !== this.props.editorMode) {
+      this.resizeObserver.disconnect();
+    }
+
     const { outputNode } = this;
     if (!outputNode?.lastChild) {
       
@@ -166,10 +171,14 @@ class ConsoleOutput extends Component {
       (this.scrolledToBottom && visibleMessagesDelta > 0 && !isOpeningGroup);
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps) {
     this.maybeScrollToBottom();
     if (this?.outputNode?.lastChild) {
       this.lastMessageIntersectionObserver.observe(this.outputNode.lastChild);
+    }
+
+    if (prevProps.editorMode !== this.props.editorMode) {
+      this.resizeObserver.observe(this.getElementToObserve());
     }
   }
 
@@ -185,6 +194,15 @@ class ConsoleOutput extends Component {
     }
 
     this.scrolledToBottom = true;
+  }
+
+  getElementToObserve() {
+    
+    
+    
+    return this.props.editorMode
+      ? this.outputNode
+      : this.outputNode?.parentNode;
   }
 
   onContextMenu(e) {
