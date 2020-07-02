@@ -24,6 +24,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   OS: "resource://gre/modules/osfile.jsm",
 });
 
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "handlerSvc",
+  "@mozilla.org/uriloader/handler-service;1",
+  "nsIHandlerService"
+);
+
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 
 var gDownloadElementButtons = {
@@ -457,9 +464,21 @@ DownloadsViewUI.DownloadElementShell.prototype = {
       
       
       if (this.download.succeeded) {
+        DownloadsCommon.log(
+          "_updateStateInner, target exists? ",
+          this.download.target.path,
+          this.download.target.exists
+        );
         if (this.download.target.exists) {
           
           this.element.setAttribute("exists", "true");
+
+          const isPDF = DownloadsCommon.isFileOfType(
+            this.download,
+            "application/pdf"
+          );
+          this.element.toggleAttribute("is-pdf", isPDF);
+
           let sizeWithUnits = DownloadsViewUI.getSizeWithUnits(this.download);
           if (this.isPanel) {
             
@@ -728,6 +747,9 @@ DownloadsViewUI.DownloadElementShell.prototype = {
       case "cmd_delete":
         
         return this.download.stopped;
+      case "downloadsCmd_openInSystemViewer":
+      case "downloadsCmd_alwaysOpenInSystemViewer":
+        return DownloadsCommon.isFileOfType(this.download, "application/pdf");
     }
     return DownloadsViewUI.isCommandName(aCommand) && !!this[aCommand];
   },
@@ -806,5 +828,40 @@ DownloadsViewUI.DownloadElementShell.prototype = {
 
   cmd_delete() {
     DownloadsCommon.deleteDownload(this.download).catch(Cu.reportError);
+  },
+
+  downloadsCmd_openInSystemViewer() {
+    
+    
+    DownloadsCommon.openDownload(this.download, {
+      useSystemDefault: true,
+    }).catch(Cu.reportError);
+  },
+
+  downloadsCmd_alwaysOpenInSystemViewer() {
+    
+    
+    const mimeInfo = DownloadsCommon.getMimeInfo(this.download);
+    if (mimeInfo.preferredAction !== mimeInfo.useSystemDefault) {
+      
+      DownloadsCommon.log(
+        "downloadsCmd_alwaysOpenInSystemViewer command for download: ",
+        this.download,
+        "switching to use system default for " + mimeInfo.type
+      );
+      mimeInfo.preferredAction = mimeInfo.useSystemDefault;
+      mimeInfo.alwaysAskBeforeHandling = false;
+    } else {
+      DownloadsCommon.log(
+        "downloadsCmd_alwaysOpenInSystemViewer command for download: ",
+        this.download,
+        "currently uses system default, switching to handleInternally"
+      );
+      
+      mimeInfo.preferredAction = mimeInfo.handleInternally;
+      mimeInfo.alwaysAskBeforeHandling = true;
+    }
+    handlerSvc.store(mimeInfo);
+    DownloadsCommon.openDownload(this.download).catch(Cu.reportError);
   },
 };

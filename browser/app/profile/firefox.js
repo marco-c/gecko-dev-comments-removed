@@ -360,6 +360,13 @@ pref("browser.download.animateNotifications", true);
 pref("browser.download.panel.shown", false);
 
 
+pref("browser.download.openInSystemViewerContextMenuItem", true);
+
+
+pref("browser.download.alwaysOpenInSystemViewerContextMenuItem", true);
+
+
+
 
 pref("browser.download.autohideButton", true);
 

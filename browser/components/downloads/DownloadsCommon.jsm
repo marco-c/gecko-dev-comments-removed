@@ -229,6 +229,8 @@ var PrefObserver = {
 PrefObserver.register({
   
   animateNotifications: true,
+  openInSystemViewerContextMenuItem: true,
+  alwaysOpenInSystemViewerContextMenuItem: true,
 });
 
 
@@ -294,6 +296,20 @@ var DownloadsCommon = {
 
   get animateNotifications() {
     return PrefObserver.animateNotifications;
+  },
+
+  
+
+
+  get openInSystemViewerItemEnabled() {
+    return PrefObserver.openInSystemViewerContextMenuItem;
+  },
+
+  
+
+
+  get alwaysOpenInSystemViewerItemEnabled() {
+    return PrefObserver.alwaysOpenInSystemViewerContextMenuItem;
   },
 
   
@@ -603,6 +619,9 @@ var DownloadsCommon = {
   },
 
   
+
+
+
 
 
 

@@ -734,6 +734,9 @@ Download.prototype = {
 
 
 
+
+
+
   launch(options = {}) {
     if (!this.succeeded) {
       return Promise.reject(

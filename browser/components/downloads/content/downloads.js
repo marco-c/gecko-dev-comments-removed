@@ -937,6 +937,11 @@ var DownloadsView = {
 
     DownloadsViewController.updateCommands();
 
+    let download = element._shell.download;
+    let { preferredAction, useSystemDefault } = DownloadsCommon.getMimeInfo(
+      download
+    );
+
     
     let contextMenu = document.getElementById("downloadsContextMenu");
     contextMenu.setAttribute("state", element.getAttribute("state"));
@@ -949,6 +954,30 @@ var DownloadsView = {
       "temporary-block",
       element.classList.contains("temporary-block")
     );
+    if (element.hasAttribute("is-pdf")) {
+      contextMenu.setAttribute("is-pdf", "true");
+      let alwaysUseSystemViewerItem = contextMenu.querySelector(
+        ".downloadAlwaysUseSystemDefaultMenuItem"
+      );
+      if (preferredAction === useSystemDefault) {
+        alwaysUseSystemViewerItem.setAttribute("checked", "true");
+      } else {
+        alwaysUseSystemViewerItem.removeAttribute("checked");
+      }
+      alwaysUseSystemViewerItem.toggleAttribute(
+        "enabled",
+        DownloadsCommon.alwaysOpenInSystemViewerItemEnabled
+      );
+      let useSystemViewerItem = contextMenu.querySelector(
+        ".downloadUseSystemDefaultMenuItem"
+      );
+      useSystemViewerItem.toggleAttribute(
+        "enabled",
+        DownloadsCommon.openInSystemViewerItemEnabled
+      );
+    } else {
+      contextMenu.removeAttribute("is-pdf");
+    }
   },
 
   onDownloadDragStart(aEvent) {
@@ -1088,6 +1117,22 @@ class DownloadsViewItem extends DownloadsViewUI.DownloadElementShell {
     
     
     
+    
+    
+    DownloadsPanel.hidePanel();
+  }
+
+  downloadsCmd_openInSystemViewer() {
+    super.downloadsCmd_openInSystemViewer();
+
+    
+    
+    DownloadsPanel.hidePanel();
+  }
+
+  downloadsCmd_alwaysOpenInSystemViewer() {
+    super.downloadsCmd_alwaysOpenInSystemViewer();
+
     
     
     DownloadsPanel.hidePanel();
