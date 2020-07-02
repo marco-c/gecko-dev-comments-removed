@@ -11,7 +11,6 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/SyncRunnable.h"
-#include "mozilla/Telemetry.h"
 #include "nsTHashtable.h"
 #include "RecordedCanvasEventImpl.h"
 
@@ -100,10 +99,7 @@ static void EnsureAllClosed() {
 
 CanvasTranslator::CanvasTranslator(
     already_AddRefed<CanvasThreadHolder> aCanvasThreadHolder)
-    : gfx::InlineTranslator(), mCanvasThreadHolder(aCanvasThreadHolder) {
-  
-  Telemetry::ScalarAdd(Telemetry::ScalarID::GFX_CANVAS_REMOTE_ACTIVATED, 1);
-}
+    : gfx::InlineTranslator(), mCanvasThreadHolder(aCanvasThreadHolder) {}
 
 CanvasTranslator::~CanvasTranslator() {
   if (mReferenceTextureData) {
@@ -125,30 +121,26 @@ mozilla::ipc::IPCResult CanvasTranslator::RecvInitTranslator(
     const CrossProcessSemaphoreHandle& aReaderSem,
     const CrossProcessSemaphoreHandle& aWriterSem) {
   mTextureType = aTextureType;
+#if defined(XP_WIN)
+  if (!CheckForFreshCanvasDevice(__LINE__)) {
+    gfxCriticalNote << "GFX: CanvasTranslator failed to get device";
+    return IPC_FAIL(this, "Failed to get canvas device.");
+  }
+#endif
 
-  
-  
   mStream = MakeUnique<CanvasEventRingBuffer>();
   if (!mStream->InitReader(aReadHandle, aReaderSem, aWriterSem,
                            MakeUnique<RingBufferReaderServices>(this))) {
     return IPC_FAIL(this, "Failed to initialize ring buffer reader.");
   }
 
-#if defined(XP_WIN)
-  if (!CheckForFreshCanvasDevice(__LINE__)) {
-    gfxCriticalNote << "GFX: CanvasTranslator failed to get device";
-    return IPC_OK();
-  }
-#endif
-
   mTranslationTaskQueue = mCanvasThreadHolder->CreateWorkerTaskQueue();
   return RecvResumeTranslation();
 }
 
 ipc::IPCResult CanvasTranslator::RecvResumeTranslation() {
-  if (mDeactivated) {
-    
-    return IPC_OK();
+  if (!IsValid()) {
+    return IPC_FAIL(this, "Canvas Translation failed.");
   }
 
   MOZ_ALWAYS_SUCCEEDS(mTranslationTaskQueue->Dispatch(
@@ -163,13 +155,6 @@ void CanvasTranslator::StartTranslation() {
     MOZ_ALWAYS_SUCCEEDS(mTranslationTaskQueue->Dispatch(
         NewRunnableMethod("CanvasTranslator::StartTranslation", this,
                           &CanvasTranslator::StartTranslation)));
-  }
-
-  
-  if (!mStream->good()) {
-    Telemetry::ScalarAdd(
-        Telemetry::ScalarID::GFX_CANVAS_REMOTE_DEACTIVATED_BAD_STREAM, 1);
-    Deactivate();
   }
 }
 
@@ -203,32 +188,6 @@ void CanvasTranslator::FinishShutdown() {
   canvasTranslators.RemoveEntry(this);
 }
 
-void CanvasTranslator::Deactivate() {
-  if (mDeactivated) {
-    return;
-  }
-  mDeactivated = true;
-
-  
-  
-  mStream->SetIsBad();
-  mCanvasThreadHolder->DispatchToCanvasThread(
-      NewRunnableMethod("CanvasTranslator::SendDeactivate", this,
-                        &CanvasTranslator::SendDeactivate));
-
-  {
-    
-    gfx::AutoSerializeWithMoz2D serializeWithMoz2D(GetBackendType());
-    for (auto const& entry : mTextureDatas) {
-      entry.second->Unlock();
-    }
-  }
-
-  
-  
-  mSurfaceDescriptorsMonitor.NotifyAll();
-}
-
 bool CanvasTranslator::TranslateRecording() {
   MOZ_ASSERT(CanvasThreadHolder::IsInCanvasWorker());
 
@@ -252,11 +211,6 @@ bool CanvasTranslator::TranslateRecording() {
 
           return recordedEvent->PlayEvent(this);
         });
-
-    
-    if (!mStream->good()) {
-      return true;
-    }
 
     if (!success && !HandleExtensionEvent(eventType)) {
       if (mDeviceResetInProgress) {
@@ -287,6 +241,7 @@ bool CanvasTranslator::TranslateRecording() {
     eventType = mStream->ReadNextEvent();
   }
 
+  mIsValid = false;
   return true;
 }
 
@@ -395,15 +350,7 @@ bool CanvasTranslator::CheckForFreshCanvasDevice(int aLineNumber) {
                                   true);
 
   mDevice = gfx::DeviceManagerDx::Get()->GetCanvasDevice();
-  if (!mDevice) {
-    
-    Telemetry::ScalarAdd(
-        Telemetry::ScalarID::GFX_CANVAS_REMOTE_DEACTIVATED_NO_DEVICE, 1);
-    Deactivate();
-    return false;
-  }
-
-  return CreateReferenceTexture();
+  return mDevice && CreateReferenceTexture();
 #else
   return false;
 #endif
@@ -478,11 +425,6 @@ UniquePtr<SurfaceDescriptor> CanvasTranslator::WaitForSurfaceDescriptor(
   DescriptorMap::iterator result;
   while ((result = mSurfaceDescriptors.find(aDrawTarget)) ==
          mSurfaceDescriptors.end()) {
-    
-    if (mDeactivated) {
-      return nullptr;
-    }
-
     mSurfaceDescriptorsMonitor.Wait();
   }
 

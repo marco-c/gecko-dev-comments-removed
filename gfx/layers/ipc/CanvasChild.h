@@ -29,14 +29,7 @@ class CanvasChild final : public PCanvasChild {
 
   explicit CanvasChild(Endpoint<PCanvasChild>&& aEndpoint);
 
-  
-
-
-  static bool Deactivated() { return mDeactivated; }
-
   ipc::IPCResult RecvNotifyDeviceChanged();
-
-  ipc::IPCResult RecvDeactivate();
 
   
 
@@ -133,8 +126,6 @@ class CanvasChild final : public PCanvasChild {
   ~CanvasChild() final;
 
   static const uint32_t kCacheDataSurfaceThreshold = 10;
-
-  static bool mDeactivated;
 
   RefPtr<CanvasDrawEventRecorder> mRecorder;
   TextureType mTextureType = TextureType::Unknown;

@@ -13,7 +13,6 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/ipc/Shmem.h"  
 #include "mozilla/layers/AsyncImagePipelineManager.h"
-#include "mozilla/layers/BufferTexture.h"
 #include "mozilla/layers/CompositableTransactionParent.h"  
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/Compositor.h"         
@@ -168,25 +167,6 @@ void TextureHost::SetLastFwdTransactionId(uint64_t aTransactionId) {
   mFwdTransactionId = aTransactionId;
 }
 
-already_AddRefed<TextureHost> CreateDummyBufferTextureHost(
-    mozilla::layers::LayersBackend aBackend,
-    mozilla::layers::TextureFlags aFlags) {
-  
-  aFlags &= ~TextureFlags::DEALLOCATE_CLIENT;
-  UniquePtr<TextureData> textureData(BufferTextureData::Create(
-      gfx::IntSize(1, 1), gfx::SurfaceFormat::B8G8R8A8, gfx::BackendType::SKIA,
-      aBackend, aFlags, TextureAllocationFlags::ALLOC_DEFAULT, nullptr));
-  SurfaceDescriptor surfDesc;
-  textureData->Serialize(surfDesc);
-  const SurfaceDescriptorBuffer& bufferDesc =
-      surfDesc.get_SurfaceDescriptorBuffer();
-  const MemoryOrShmem& data = bufferDesc.data();
-  RefPtr<TextureHost> host =
-      new MemoryTextureHost(reinterpret_cast<uint8_t*>(data.get_uintptr_t()),
-                            bufferDesc.desc(), aFlags);
-  return host.forget();
-}
-
 already_AddRefed<TextureHost> TextureHost::Create(
     const SurfaceDescriptor& aDesc, const ReadLockDescriptor& aReadLock,
     ISurfaceAllocator* aDeallocator, LayersBackend aBackend,
@@ -247,10 +227,8 @@ already_AddRefed<TextureHost> TextureHost::Create(
           aDeallocator->AsCompositorBridgeParentBase()
               ->LookupSurfaceDescriptorForClientDrawTarget(desc.drawTarget());
       if (!realDesc) {
-        gfxCriticalNote << "Failed to get descriptor for recorded texture.";
-        
-        result = CreateDummyBufferTextureHost(aBackend, aFlags);
-        break;
+        NS_WARNING("Failed to get descriptor for recorded texture.");
+        return nullptr;
       }
 
       result = TextureHost::Create(*realDesc, aReadLock, aDeallocator, aBackend,
