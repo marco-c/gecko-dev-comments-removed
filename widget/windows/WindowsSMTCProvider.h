@@ -84,6 +84,9 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
   void LoadThumbnail(const nsTArray<mozilla::dom::MediaImage>& aArtwork);
   
   
+  void LoadImageAtIndex(const size_t aIndex);
+  
+  
   void LoadImage(const char* aImageData, uint32_t aDataSize);
   
   
@@ -102,6 +105,9 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
   ComPtr<IRandomAccessStreamReference> mImageStreamReference;
   
   nsString mImageSrc;
+
+  
+  CopyableTArray<mozilla::dom::MediaImage> mArtwork;
 
   mozilla::UniquePtr<mozilla::dom::FetchImageHelper> mImageFetcher;
   mozilla::MozPromiseRequestHolder<mozilla::dom::ImagePromise>

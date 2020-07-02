@@ -399,22 +399,16 @@ static nsresult GetEncodedImageBuffer(imgIContainer* aImage,
 void WindowsSMTCProvider::LoadThumbnail(
     const nsTArray<mozilla::dom::MediaImage>& aArtwork) {
   MOZ_ASSERT(NS_IsMainThread());
+  
+  mArtwork = aArtwork;
+  LoadImageAtIndex(0);
+}
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+void WindowsSMTCProvider::LoadImageAtIndex(const size_t aIndex) {
+  MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
-  if (aArtwork.IsEmpty() ||
-      aArtwork[0].mSrc.Find(NS_LITERAL_CSTRING("file:///"), false, 0, 0) == 0) {
-    LOG("Clear the thumbnail since there is no valid image url");
+  if (aIndex >= mArtwork.Length()) {
+    LOG("Clear the thumbnail since there is no available image");
     mImageFetchRequest.DisconnectIfExists();
     mImageSrc = EmptyString();
     ClearThumbnail();
@@ -422,27 +416,40 @@ void WindowsSMTCProvider::LoadThumbnail(
     return;
   }
 
+  const mozilla::dom::MediaImage& image = mArtwork[aIndex];
+
   
   
-  if (mImageSrc == aArtwork[0].mSrc) {
+  if (mImageSrc == image.mSrc) {
     LOG("Keep the thumbnail since the image url is same");
     return;
   }
 
+  
+  
+  
+  
+
+  if (image.mSrc.Find(NS_LITERAL_CSTRING("file:///"), false, 0, 0) == 0) {
+    LOG("Skip the local file. Try next");
+    mImageFetchRequest.DisconnectIfExists();
+    LoadImageAtIndex(aIndex + 1);
+    return;
+  }
+
   mImageFetchRequest.DisconnectIfExists();
-  mImageSrc = aArtwork[0].mSrc;
+  mImageSrc = image.mSrc;
 
   
   ClearThumbnail();
   RefreshDisplay();
 
-  mImageFetcher =
-      mozilla::MakeUnique<mozilla::dom::FetchImageHelper>(aArtwork[0]);
+  mImageFetcher = mozilla::MakeUnique<mozilla::dom::FetchImageHelper>(image);
   RefPtr<WindowsSMTCProvider> self = this;
   mImageFetcher->FetchImage()
       ->Then(
           AbstractThread::MainThread(), __func__,
-          [this, self](const nsCOMPtr<imgIContainer>& aImage) {
+          [this, self, aIndex](const nsCOMPtr<imgIContainer>& aImage) {
             LOG("The image is fetched successfully");
             mImageFetchRequest.Complete();
 
@@ -459,14 +466,16 @@ void WindowsSMTCProvider::LoadThumbnail(
                                       getter_AddRefs(inputStream), &size, &src);
             if (NS_FAILED(rv) || !inputStream || size == 0 || !src) {
               LOG("Failed to get the image buffer info");
+              LoadImageAtIndex(aIndex + 1);
               return;
             }
 
             LoadImage(src, size);
           },
-          [this, self](bool) {
-            LOG("Failed to fetch image");
+          [this, self, aIndex](bool) {
+            LOG("Failed to fetch image. Try next image");
             mImageFetchRequest.Complete();
+            LoadImageAtIndex(aIndex + 1);
           })
       ->Track(mImageFetchRequest);
 }
