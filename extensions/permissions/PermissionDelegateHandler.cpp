@@ -154,16 +154,20 @@ bool PermissionDelegateHandler::Initialize() {
 static bool IsCrossOriginContentToTop(Document* aDocument) {
   MOZ_ASSERT(aDocument);
 
-  BrowsingContext* topBrowsingContext = aDocument->GetBrowsingContext()->Top();
+  RefPtr<BrowsingContext> bc = aDocument->GetBrowsingContext();
+  if (!bc) {
+    return true;
+  }
+  RefPtr<BrowsingContext> topBC = bc->Top();
 
   
   
   
-  if (!topBrowsingContext->IsInProcess()) {
+  if (!topBC->IsInProcess()) {
     return true;
   }
 
-  RefPtr<Document> topDoc = topBrowsingContext->GetDocument();
+  RefPtr<Document> topDoc = topBC->GetDocument();
   if (!topDoc) {
     return true;
   }
@@ -248,11 +252,15 @@ nsresult PermissionDelegateHandler::GetPermission(const nsACString& aType,
   }
 
   nsIPrincipal* principal = mPrincipal;
+  
+  
+  RefPtr<BrowsingContext> bc = mDocument->GetBrowsingContext();
+
   if ((info->mPolicy == DelegatePolicy::eDelegateUseTopOrigin ||
        (info->mPolicy == DelegatePolicy::eDelegateUseFeaturePolicy &&
-        StaticPrefs::dom_security_featurePolicy_enabled()))) {
-    RefPtr<WindowContext> topWC =
-        mDocument->GetWindowContext()->TopWindowContext();
+        StaticPrefs::dom_security_featurePolicy_enabled())) &&
+      bc) {
+    RefPtr<WindowContext> topWC = bc->GetTopWindowContext();
 
     if (topWC->IsInProcess()) {
       
