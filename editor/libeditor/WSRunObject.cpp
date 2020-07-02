@@ -206,8 +206,8 @@ already_AddRefed<Element> WSRunObject::InsertBreak(
   
   
 
-  WSFragment* beforeRun = FindNearestRun(aPointToInsert, false);
-  WSFragment* afterRun = FindNearestRun(aPointToInsert, true);
+  const WSFragment* beforeRun = FindNearestFragment(aPointToInsert, false);
+  const WSFragment* afterRun = FindNearestFragment(aPointToInsert, true);
 
   EditorDOMPoint pointToInsert(aPointToInsert);
   {
@@ -310,13 +310,14 @@ nsresult WSRunObject::InsertText(Document& aDocument,
     return NS_OK;
   }
 
-  WSFragment* beforeRun = FindNearestRun(mScanStartPoint, false);
+  const WSFragment* beforeRun = FindNearestFragment(mScanStartPoint, false);
   
   
   
   
   WSRunObject afterRunObject(MOZ_KnownLive(mHTMLEditor), mScanEndPoint);
-  WSFragment* afterRun = afterRunObject.FindNearestRun(mScanEndPoint, true);
+  const WSFragment* afterRun =
+      afterRunObject.FindNearestFragment(mScanEndPoint, true);
 
   EditorDOMPoint pointToInsert(mScanStartPoint);
   nsAutoString theString(aStringToInsert);
@@ -614,7 +615,7 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
   
   MOZ_ASSERT(aPoint.IsSet());
 
-  WSFragment* run = FindNearestRun(aPoint, false);
+  const WSFragment* run = FindNearestFragment(aPoint, false);
 
   
   for (; run; run = run->mLeft) {
@@ -650,7 +651,7 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
   
   MOZ_ASSERT(aPoint.IsSet());
 
-  WSFragment* run = FindNearestRun(aPoint, true);
+  const WSFragment* run = FindNearestFragment(aPoint, true);
 
   
   for (; run; run = run->mRight) {
@@ -1143,9 +1144,9 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
   }
 
   
-  WSFragment* beforeRun = FindNearestRun(mScanStartPoint, false);
-  WSFragment* afterRun =
-      aEndObject->FindNearestRun(aEndObject->mScanStartPoint, true);
+  const WSFragment* beforeRun = FindNearestFragment(mScanStartPoint, false);
+  const WSFragment* afterRun =
+      aEndObject->FindNearestFragment(aEndObject->mScanStartPoint, true);
 
   if (!beforeRun && !afterRun) {
     return NS_OK;
@@ -1251,8 +1252,8 @@ nsresult WSRunObject::PrepareToSplitAcrossBlocksPriv() {
   
 
   
-  WSFragment* beforeRun = FindNearestRun(mScanStartPoint, false);
-  WSFragment* afterRun = FindNearestRun(mScanStartPoint, true);
+  const WSFragment* beforeRun = FindNearestFragment(mScanStartPoint, false);
+  const WSFragment* afterRun = FindNearestFragment(mScanStartPoint, true);
 
   
   if (afterRun && afterRun->IsVisibleAndMiddleOfHardLine()) {
@@ -1614,7 +1615,7 @@ nsresult WSRunObject::ReplaceASCIIWhiteSpacesWithOneNBSP(
 }
 
 template <typename PT, typename CT>
-WSRunScanner::WSFragment* WSRunScanner::FindNearestRun(
+const WSRunScanner::WSFragment* WSRunScanner::FindNearestFragment(
     const EditorDOMPointBase<PT, CT>& aPoint, bool aForward) const {
   MOZ_ASSERT(aPoint.IsSetAndValid());
 

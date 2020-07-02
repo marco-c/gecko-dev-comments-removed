@@ -573,8 +573,8 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
   template <typename PT, typename CT>
-  WSFragment* FindNearestRun(const EditorDOMPointBase<PT, CT>& aPoint,
-                             bool aForward) const;
+  const WSFragment* FindNearestFragment(
+      const EditorDOMPointBase<PT, CT>& aPoint, bool aForward) const;
 
   
 
