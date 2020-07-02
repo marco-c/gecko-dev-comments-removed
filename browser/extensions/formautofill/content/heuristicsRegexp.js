@@ -181,6 +181,22 @@ var HeuristicsRegExp = {
     ),
 
     
+    
+    
+    
+    "cc-name": new RegExp(
+      "card.?(?:holder|owner)|name.*(\\b)?on(\\b)?.*card" +
+      "|(?:card|cc).?name|cc.?full.?name" +
+      "|karteninhaber" + 
+      "|nombre.*tarjeta" + 
+      "|nom.*carte" + 
+      "|nome.*cart" + 
+      "|名前" + 
+      "|Имя.*карты" + 
+      "|信用卡开户名|开户名|持卡人姓名" + 
+        "|持卡人姓名", 
+      "iu"
+    ),
     name: new RegExp(
       "^name|full.?name|your.?name|customer.?name|bill.?name|ship.?name" +
       "|name.*first.*last|firstandlastname" +
@@ -233,19 +249,8 @@ var HeuristicsRegExp = {
     ),
 
     
-    "cc-name": new RegExp(
-      "card.?(?:holder|owner)|name.*(\\b)?on(\\b)?.*card" +
-      "|(?:card|cc).?name|cc.?full.?name" +
-      "|karteninhaber" + 
-      "|nombre.*tarjeta" + 
-      "|nom.*carte" + 
-      "|nome.*cart" + 
-      "|名前" + 
-      "|Имя.*карты" + 
-      "|信用卡开户名|开户名|持卡人姓名" + 
-        "|持卡人姓名", 
-      "iu"
-    ),
+    
+    
     "cc-number": new RegExp(
       "(add)?(?:card|cc|acct).?(?:number|#|no|num|field)" +
       "|(cc|kk)nr" + 
