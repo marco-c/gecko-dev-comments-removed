@@ -11,16 +11,6 @@
 #include "mozilla/dom/PWebGLChild.h"
 #include "mozilla/dom/IpdlQueue.h"
 
-
-
-
-
-
-
-
-
-#include "mozilla/dom/WebGLParent.h"
-
 namespace mozilla {
 
 class ClientWebGLContext;

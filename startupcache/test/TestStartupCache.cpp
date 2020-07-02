@@ -66,11 +66,6 @@ TestStartupCache::TestStartupCache() {
   
   MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(env);
 #endif
-
-  if (!StartupCache::GetSingleton()) {
-    StartupCache::PartialInitSingleton(nullptr);
-    StartupCache::FullyInitSingleton();
-  }
   StartupCache::GetSingleton()->InvalidateCache();
 }
 TestStartupCache::~TestStartupCache() {
