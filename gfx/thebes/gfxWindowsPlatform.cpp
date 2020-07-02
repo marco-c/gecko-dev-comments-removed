@@ -1262,7 +1262,7 @@ static void InitializeANGLEConfig() {
   nsCString failureId;
   if (!gfxPlatform::IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_DIRECT3D_11_ANGLE,
                                         &message, failureId)) {
-    d3d11ANGLE.Disable(FeatureStatus::Blacklisted, message.get(), failureId);
+    d3d11ANGLE.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
   }
 }
 
@@ -1318,7 +1318,7 @@ void gfxWindowsPlatform::InitializeD3D11Config() {
         adaptorId.EqualsLiteral("0x1916") ||
         adaptorId.EqualsLiteral("0x1902")) {
 #ifdef RELEASE_OR_BETA
-      d3d11.Disable(FeatureStatus::Blacklisted, "Blacklisted, see bug 1351349",
+      d3d11.Disable(FeatureStatus::Blocklisted, "Blacklisted, see bug 1351349",
                     NS_LITERAL_CSTRING("FEATURE_FAILURE_BUG_1351349"));
 #else
       Preferences::SetBool("gfx.compositor.clearstate", true);
@@ -1331,7 +1331,7 @@ void gfxWindowsPlatform::InitializeD3D11Config() {
   if (StaticPrefs::layers_d3d11_enable_blacklist_AtStartup() &&
       !gfxPlatform::IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_DIRECT3D_11_LAYERS,
                                         &message, failureId)) {
-    d3d11.Disable(FeatureStatus::Blacklisted, message.get(), failureId);
+    d3d11.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
   }
 }
 
@@ -1362,7 +1362,7 @@ void gfxWindowsPlatform::InitializeAdvancedLayersConfig() {
   nsCString message, failureId;
   if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_ADVANCED_LAYERS, &message,
                            failureId)) {
-    al.Disable(FeatureStatus::Blacklisted, message.get(), failureId);
+    al.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
   } else if (gfxVars::UseWebRender()) {
     al.Disable(FeatureStatus::Blocked,
                "Blocked from fallback candidate by WebRender usage",
@@ -1514,7 +1514,7 @@ void gfxWindowsPlatform::InitializeD2DConfig() {
   nsCString failureId;
   if (!gfxPlatform::IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_DIRECT2D, &message,
                                         failureId)) {
-    d2d1.Disable(FeatureStatus::Blacklisted, message.get(), failureId);
+    d2d1.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
   }
 
   if (!d2d1.IsEnabled() &&
@@ -1595,7 +1595,7 @@ bool gfxWindowsPlatform::InitGPUProcessSupport() {
   nsCString failureId;
   if (!gfxPlatform::IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_GPU_PROCESS,
                                         &message, failureId)) {
-    gpuProc.Disable(FeatureStatus::Blacklisted, message.get(), failureId);
+    gpuProc.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
     return false;
   }
 
