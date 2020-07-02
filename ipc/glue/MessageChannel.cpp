@@ -567,9 +567,7 @@ MessageChannel::MessageChannel(const char* aName, IToplevelProtocol* aListener)
       mChannelState(ChannelClosed),
       mSide(UnknownSide),
       mIsCrossProcess(false),
-      mWorkerLoop(nullptr),
       mChannelErrorTask(nullptr),
-      mWorkerThread(nullptr),
       mTimeoutMs(kNoTimeout),
       mInTimeoutSecondHalf(false),
       mNextSeqno(0),
@@ -709,19 +707,6 @@ bool MessageChannel::CanSend() const {
   return Connected();
 }
 
-void MessageChannel::WillDestroyCurrentMessageLoop() {
-#if defined(DEBUG)
-  CrashReporter::AnnotateCrashReport(
-      CrashReporter::Annotation::IPCFatalErrorProtocol,
-      nsDependentCString(mName));
-  MOZ_CRASH("MessageLoop destroyed before MessageChannel that's bound to it");
-#endif
-
-  
-  MonitorAutoLock lock(*mMonitor);
-  mWorkerLoop = nullptr;
-}
-
 void MessageChannel::Clear() {
   
   
@@ -774,17 +759,12 @@ void MessageChannel::Clear() {
     gParentProcessBlocker = nullptr;
   }
 
-  if (mWorkerLoop) {
-    mWorkerLoop->RemoveDestructionObserver(this);
-  }
-
   gUnresolvedResponses -= mPendingResponses.size();
   for (auto& pair : mPendingResponses) {
     pair.second.get()->Reject(ResponseRejectReason::ChannelClosed);
   }
   mPendingResponses.clear();
 
-  mWorkerLoop = nullptr;
   if (mLink != nullptr && mIsCrossProcess) {
     ChannelCountReporter::Decrement(mName);
   }
@@ -820,9 +800,8 @@ bool MessageChannel::Open(mozilla::UniquePtr<Transport> aTransport,
   MOZ_ASSERT(!mLink, "Open() called > once");
 
   mMonitor = new RefCountedMonitor();
-  mWorkerLoop = MessageLoop::current();
-  mWorkerThread = PR_GetCurrentThread();
-  mWorkerLoop->AddDestructionObserver(this);
+  mWorkerThread = GetCurrentSerialEventTarget();
+  MOZ_ASSERT(mWorkerThread, "We should always be on a nsISerialEventTarget");
   mListener->OnIPCChannelOpened();
 
   auto link = MakeUnique<ProcessLink>(this);
@@ -835,7 +814,7 @@ bool MessageChannel::Open(mozilla::UniquePtr<Transport> aTransport,
 }
 
 bool MessageChannel::Open(MessageChannel* aTargetChan,
-                          nsIEventTarget* aEventTarget, Side aSide) {
+                          nsISerialEventTarget* aEventTarget, Side aSide) {
   
 
   
@@ -854,7 +833,7 @@ bool MessageChannel::Open(MessageChannel* aTargetChan,
   MOZ_ASSERT(aTargetChan, "Need a target channel");
   MOZ_ASSERT(ChannelClosed == mChannelState, "Not currently closed");
 
-  CommonThreadOpenInit(aTargetChan, aSide);
+  CommonThreadOpenInit(aTargetChan, GetCurrentSerialEventTarget(), aSide);
 
   Side oppSide = UnknownSide;
   switch (aSide) {
@@ -872,10 +851,10 @@ bool MessageChannel::Open(MessageChannel* aTargetChan,
 
   MonitorAutoLock lock(*mMonitor);
   mChannelState = ChannelOpening;
-  MOZ_ALWAYS_SUCCEEDS(
-      aEventTarget->Dispatch(NewNonOwningRunnableMethod<MessageChannel*, Side>(
+  MOZ_ALWAYS_SUCCEEDS(aEventTarget->Dispatch(
+      NewNonOwningRunnableMethod<MessageChannel*, nsISerialEventTarget*, Side>(
           "ipc::MessageChannel::OpenAsOtherThread", aTargetChan,
-          &MessageChannel::OpenAsOtherThread, this, oppSide)));
+          &MessageChannel::OpenAsOtherThread, this, aEventTarget, oppSide)));
 
   while (ChannelOpening == mChannelState) mMonitor->Wait();
   MOZ_RELEASE_ASSERT(ChannelConnected == mChannelState,
@@ -884,13 +863,14 @@ bool MessageChannel::Open(MessageChannel* aTargetChan,
 }
 
 void MessageChannel::OpenAsOtherThread(MessageChannel* aTargetChan,
+                                       nsISerialEventTarget* aThread,
                                        Side aSide) {
   
   MOZ_ASSERT(ChannelClosed == mChannelState, "Not currently closed");
   MOZ_ASSERT(ChannelOpening == aTargetChan->mChannelState,
              "Target channel not in the process of opening");
 
-  CommonThreadOpenInit(aTargetChan, aSide);
+  CommonThreadOpenInit(aTargetChan, aThread, aSide);
   mMonitor = aTargetChan->mMonitor;
 
   MonitorAutoLock lock(*mMonitor);
@@ -902,10 +882,10 @@ void MessageChannel::OpenAsOtherThread(MessageChannel* aTargetChan,
 }
 
 void MessageChannel::CommonThreadOpenInit(MessageChannel* aTargetChan,
+                                          nsISerialEventTarget* aThread,
                                           Side aSide) {
-  mWorkerLoop = MessageLoop::current();
-  mWorkerThread = PR_GetCurrentThread();
-  mWorkerLoop->AddDestructionObserver(this);
+  MOZ_ASSERT(aThread);
+  mWorkerThread = aThread;
   mListener->OnIPCChannelOpened();
 
   mLink = MakeUnique<ThreadLink>(this, aTargetChan);
@@ -914,7 +894,8 @@ void MessageChannel::CommonThreadOpenInit(MessageChannel* aTargetChan,
 
 bool MessageChannel::OpenOnSameThread(MessageChannel* aTargetChan,
                                       mozilla::ipc::Side aSide) {
-  CommonThreadOpenInit(aTargetChan, aSide);
+  nsCOMPtr<nsISerialEventTarget> currentThread = GetCurrentSerialEventTarget();
+  CommonThreadOpenInit(aTargetChan, currentThread, aSide);
 
   Side oppSide = UnknownSide;
   switch (aSide) {
@@ -934,7 +915,7 @@ bool MessageChannel::OpenOnSameThread(MessageChannel* aTargetChan,
   mMonitor = new RefCountedMonitor();
 
   mChannelState = ChannelOpening;
-  aTargetChan->CommonThreadOpenInit(this, oppSide);
+  aTargetChan->CommonThreadOpenInit(this, currentThread, oppSide);
 
   aTargetChan->mIsSameThreadChannel = true;
   aTargetChan->mMonitor = mMonitor;
@@ -2003,13 +1984,13 @@ void MessageChannel::MessageTask::Post() {
   mScheduled = true;
 
   RefPtr<MessageTask> self = this;
-  nsCOMPtr<nsIEventTarget> eventTarget =
+  nsCOMPtr<nsISerialEventTarget> eventTarget =
       mChannel->mListener->GetMessageEventTarget(mMessage);
 
   if (eventTarget) {
     eventTarget->Dispatch(self.forget(), NS_DISPATCH_NORMAL);
-  } else if (mChannel->mWorkerLoop) {
-    mChannel->mWorkerLoop->PostTask(self.forget());
+  } else {
+    mChannel->mWorkerThread->Dispatch(self.forget());
   }
 }
 
@@ -2412,9 +2393,7 @@ void MessageChannel::OnChannelConnected(int32_t peer_id) {
   mPeerPidSet = true;
   mPeerPid = peer_id;
   RefPtr<CancelableRunnable> task = mOnChannelConnectedTask;
-  if (mWorkerLoop) {
-    mWorkerLoop->PostTask(task.forget());
-  }
+  mWorkerThread->Dispatch(task.forget());
 }
 
 void MessageChannel::DispatchOnChannelConnected() {
@@ -2605,9 +2584,9 @@ void MessageChannel::OnNotifyMaybeChannelError() {
         &MessageChannel::OnNotifyMaybeChannelError);
     RefPtr<Runnable> task = mChannelErrorTask;
     
-    if (mWorkerLoop) {
-      mWorkerLoop->PostDelayedTask(task.forget(), 10);
-    }
+    
+    
+    mWorkerThread->Dispatch(task.forget());
     return;
   }
 
@@ -2617,14 +2596,14 @@ void MessageChannel::OnNotifyMaybeChannelError() {
 void MessageChannel::PostErrorNotifyTask() {
   mMonitor->AssertCurrentThreadOwns();
 
-  if (mChannelErrorTask || !mWorkerLoop) return;
+  if (mChannelErrorTask) return;
 
   
   mChannelErrorTask = NewNonOwningCancelableRunnableMethod(
       "ipc::MessageChannel::OnNotifyMaybeChannelError", this,
       &MessageChannel::OnNotifyMaybeChannelError);
   RefPtr<Runnable> task = mChannelErrorTask;
-  mWorkerLoop->PostTask(task.forget());
+  mWorkerThread->Dispatch(task.forget());
 }
 
 
@@ -2785,7 +2764,7 @@ void MessageChannel::DebugAbort(const char* file, int line, const char* cond,
 }
 
 void MessageChannel::DumpInterruptStack(const char* const pfx) const {
-  NS_WARNING_ASSERTION(MessageLoop::current() != mWorkerLoop,
+  NS_WARNING_ASSERTION(!mWorkerThread->IsOnCurrentThread(),
                        "The worker thread had better be paused in a debugger!");
 
   printf_stderr("%sMessageChannel 'backtrace':\n", pfx);
@@ -2817,7 +2796,8 @@ void MessageChannel::AddProfilerMarker(const IPC::Message* aMessage,
 }
 
 int32_t MessageChannel::GetTopmostMessageRoutingId() const {
-  MOZ_RELEASE_ASSERT(MessageLoop::current() == mWorkerLoop);
+  AssertWorkerThread();
+
   if (mCxxStackFrames.empty()) {
     return MSG_ROUTING_NONE;
   }
