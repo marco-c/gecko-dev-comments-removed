@@ -332,6 +332,13 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
       NS_ASSERTION(HasMore(), "iterating beyond end of array");
       return base_type::mArray.Elements()[base_type::mPosition++];
     }
+
+    
+    
+    
+    void Remove() {
+      return base_type::mArray.RemoveElementAt(base_type::mPosition - 1);
+    }
   };
 
   
@@ -355,6 +362,13 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
     elem_type& GetNext() {
       NS_ASSERTION(HasMore(), "iterating beyond end of array");
       return base_type::mArray.Elements()[base_type::mPosition++];
+    }
+
+    
+    
+    
+    void Remove() {
+      return base_type::mArray.RemoveElementAt(base_type::mPosition - 1);
     }
 
    private:
