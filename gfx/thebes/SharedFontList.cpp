@@ -615,7 +615,12 @@ void FontList::ShareBlocksToProcess(nsTArray<base::SharedMemoryHandle>* aBlocks,
     base::SharedMemoryHandle* handle =
         aBlocks->AppendElement(base::SharedMemory::NULLHandle());
     if (!shmem->ShareToProcess(aPid, handle)) {
-      MOZ_CRASH("failed to share block");
+      
+      
+      
+      
+      aBlocks->Clear();
+      return;
     }
   }
 }
