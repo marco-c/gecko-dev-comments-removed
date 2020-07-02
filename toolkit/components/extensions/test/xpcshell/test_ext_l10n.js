@@ -34,7 +34,7 @@ add_task(async function setup() {
     Services.locale.requestedLocales,
     "resource://l10ntest/"
   );
-  L10nRegistry.registerSource(source);
+  L10nRegistry.registerSources([source]);
 });
 
 
