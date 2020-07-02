@@ -458,7 +458,7 @@ static bool ReadFulfilled(JSContext* cx, Handle<PipeToState*> state,
   cx->check(state);
   cx->check(result);
 
-  state->clearReadPending();
+  state->clearPendingRead();
 
   
   
@@ -534,28 +534,13 @@ static bool ReadFulfilled(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-static bool ReadRejected(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  MOZ_ASSERT(args.length() == 1);
-
-  Rooted<PipeToState*> state(cx, TargetFromHandler<PipeToState>(args));
-  cx->check(state);
-
-  state->clearReadPending();
-
-  
-
-  args.rval().setUndefined();
-  return true;
-}
-
 static bool ReadFromSource(JSContext* cx, unsigned argc, Value* vp);
 
 static MOZ_MUST_USE bool ReadFromSource(JSContext* cx,
                                         Handle<PipeToState*> state) {
   cx->check(state);
 
-  MOZ_ASSERT(!state->isReadPending(),
+  MOZ_ASSERT(!state->hasPendingRead(),
              "should only have one read in flight at a time, because multiple "
              "reads could cause the latter read to ignore backpressure "
              "signals");
@@ -634,10 +619,39 @@ static MOZ_MUST_USE bool ReadFromSource(JSContext* cx,
     return false;
   }
 
+#ifdef DEBUG
+  MOZ_ASSERT(!state->pendingReadWouldBeRejected());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto ReadRejected = [](JSContext* cx, unsigned argc, Value* vp) {
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() == 1);
+
+    Rooted<PipeToState*> state(cx, TargetFromHandler<PipeToState>(args));
+    cx->check(state);
+
+    state->setPendingReadWouldBeRejected();
+
+    args.rval().setUndefined();
+    return true;
+  };
+
   Rooted<JSFunction*> readRejected(cx, NewHandler(cx, ReadRejected, state));
   if (!readRejected) {
     return false;
   }
+#else
+  auto readRejected = nullptr;
+#endif
 
   
   
@@ -658,7 +672,7 @@ static MOZ_MUST_USE bool ReadFromSource(JSContext* cx,
   
   
   
-  state->setReadPending();
+  state->setPendingRead();
   return true;
 }
 
