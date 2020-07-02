@@ -516,7 +516,7 @@ void SVGMarkerObserver::OnRenderingChange() {
   MOZ_ASSERT(frame->IsFrameOfType(nsIFrame::eSVG), "SVG frame expected");
 
   
-  if (!(frame->GetStateBits() & NS_FRAME_IN_REFLOW)) {
+  if (!frame->HasAnyStateBits(NS_FRAME_IN_REFLOW)) {
     
     
     
@@ -545,7 +545,7 @@ void nsSVGPaintingProperty::OnRenderingChange() {
     return;
   }
 
-  if (frame->GetStateBits() & NS_FRAME_SVG_LAYOUT) {
+  if (frame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
     frame->InvalidateFrameSubtree();
   } else {
     for (nsIFrame* f = frame; f;
