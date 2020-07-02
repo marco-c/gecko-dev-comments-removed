@@ -6,13 +6,7 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { Preferences } = ChromeUtils.import(
-  "resource://gre/modules/Preferences.jsm"
-);
 const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
-const { LogManager } = ChromeUtils.import(
-  "resource://services-common/logmanager.js"
-);
 
 
 
@@ -30,21 +24,6 @@ XPCOMUtils.defineLazyGetter(exports, "log", function() {
   let log = Log.repository.getLogger("FirefoxAccounts");
   log.manageLevelFromPref(PREF_LOG_LEVEL);
   return log;
-});
-
-XPCOMUtils.defineLazyGetter(exports, "logManager", function() {
-  let logs = [
-    "Sync",
-    "Services.Common",
-    "FirefoxAccounts",
-    "Hawk",
-    "browserwindow.syncui",
-    "BookmarkSyncUtils",
-    "addons.xpi",
-  ];
-
-  
-  return new LogManager(new Preferences("services.sync."), logs, "sync");
 });
 
 

@@ -38,8 +38,8 @@ const {
   kSyncMasterPasswordLocked,
 } = ChromeUtils.import("resource://services-sync/constants.js");
 const { Svc, Utils } = ChromeUtils.import("resource://services-sync/util.js");
-const { logManager } = ChromeUtils.import(
-  "resource://gre/modules/FxAccountsCommon.js"
+const { LogManager } = ChromeUtils.import(
+  "resource://services-common/logmanager.js"
 );
 const { Async } = ChromeUtils.import("resource://services-common/async.js");
 const { CommonUtils } = ChromeUtils.import(
@@ -866,6 +866,18 @@ ErrorHandler.prototype = {
     
     this._log = Log.repository.getLogger("Sync.ErrorHandler");
     this._log.manageLevelFromPref("services.sync.log.logger.service.main");
+
+    let logs = [
+      "Sync",
+      "Services.Common",
+      "FirefoxAccounts",
+      "Hawk",
+      "browserwindow.syncui",
+      "BookmarkSyncUtils",
+      "addons.xpi",
+    ];
+
+    this._logManager = new LogManager(Svc.Prefs, logs, "sync");
   },
 
   observe(subject, topic, data) {
@@ -950,7 +962,7 @@ ErrorHandler.prototype = {
             
             
             if (!Svc.Prefs.get("log.keepLogsOnReset", false)) {
-              return logManager.removeAllLogs().then(() => {
+              return this._logManager.removeAllLogs().then(() => {
                 Svc.Obs.notify("weave:service:remove-file-log");
               });
             }
@@ -988,11 +1000,11 @@ ErrorHandler.prototype = {
 
   async resetFileLog() {
     
-    if (logManager.sawError) {
+    if (this._logManager.sawError) {
       await this._dumpAddons();
     }
-    const logType = await logManager.resetFileLog();
-    if (logType == logManager.ERROR_LOG_WRITTEN) {
+    const logType = await this._logManager.resetFileLog();
+    if (logType == this._logManager.ERROR_LOG_WRITTEN) {
       Cu.reportError(
         "Sync encountered an error - see about:sync-log for the log file."
       );
