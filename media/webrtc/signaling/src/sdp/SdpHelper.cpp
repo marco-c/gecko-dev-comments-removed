@@ -83,7 +83,7 @@ bool SdpHelper::AreOldTransportParamsValid(const Sdp& oldAnswer,
     return false;
   }
 
-  if (IsBundleSlave(oldAnswer, level)) {
+  if (!HasOwnTransport(oldAnswer, level)) {
     
     
     return false;
@@ -91,7 +91,7 @@ bool SdpHelper::AreOldTransportParamsValid(const Sdp& oldAnswer,
 
   if (newOffer.GetMediaSection(level).GetAttributeList().HasAttribute(
           SdpAttribute::kBundleOnlyAttribute) &&
-      IsBundleSlave(newOffer, level)) {
+      !HasOwnTransport(newOffer, level)) {
     
     
     return false;
@@ -237,12 +237,12 @@ nsresult SdpHelper::GetBundledMids(const Sdp& sdp, BundledMids* bundledMids) {
   return NS_OK;
 }
 
-bool SdpHelper::IsBundleSlave(const Sdp& sdp, uint16_t level) {
+bool SdpHelper::HasOwnTransport(const Sdp& sdp, uint16_t level) {
   auto& msection = sdp.GetMediaSection(level);
 
   if (!msection.GetAttributeList().HasAttribute(SdpAttribute::kMidAttribute)) {
     
-    return false;
+    return true;
   }
   std::string mid(msection.GetAttributeList().GetMid());
 
@@ -251,15 +251,15 @@ bool SdpHelper::IsBundleSlave(const Sdp& sdp, uint16_t level) {
   if (NS_FAILED(rv)) {
     
     MOZ_ASSERT(false);
-    return false;
+    return true;
   }
 
   if (bundledMids.count(mid) && level != bundledMids[mid]->GetLevel()) {
     
-    return true;
+    return false;
   }
 
-  return false;
+  return true;
 }
 
 nsresult SdpHelper::GetMidFromLevel(const Sdp& sdp, uint16_t level,
