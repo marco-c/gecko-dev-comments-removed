@@ -50,21 +50,21 @@ if CONFIG['WRAP_STL_INCLUDES']:
         
         
         template_file = SRCDIR + '/%s-stl-wrapper.template.h' % stl_compiler
-        output_dir = '../dist/stl_wrappers'
+        output_dir = '/dist/stl_wrappers'
         
         
         
         outputs = tuple(['stl.sentinel'] + ['%s/%s' % (output_dir, h) for h in stl_headers])
         GeneratedFile(
             *outputs, script='make-stl-wrappers.py', entry_point='gen_wrappers',
-            flags=[output_dir, stl_compiler, template_file] + stl_headers)
+            flags=[TOPOBJDIR + output_dir, stl_compiler, template_file] + stl_headers)
 
     
     
     
     
     if CONFIG['OS_TARGET'] == 'WINNT':
-        GeneratedFile('../dist/stl_wrappers/windows.h',
+        GeneratedFile('/dist/stl_wrappers/windows.h',
                       script='make-windows-h-wrapper.py',
                       entry_point='generate',
                       inputs = ['windows-h-constant.decls.h',
@@ -74,8 +74,8 @@ if CONFIG['WRAP_STL_INCLUDES']:
 
 if CONFIG['WRAP_SYSTEM_INCLUDES']:
     include('system-headers.mozbuild')
-    output_dir = '../dist/system_wrappers'
+    output_dir = '/dist/system_wrappers'
     outputs = tuple(['system-header.sentinel'] + ['%s/%s' % (output_dir, h) for h in stl_headers + system_headers])
     GeneratedFile(*outputs, script='make-system-wrappers.py',
                   entry_point='gen_wrappers',
-                  flags = [output_dir] + stl_headers + system_headers)
+                  flags = [TOPOBJDIR + output_dir] + stl_headers + system_headers)
