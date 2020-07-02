@@ -795,37 +795,11 @@ bool IonCacheIRCompiler::emitGuardSpecificAtom(StringOperandId strId,
     return false;
   }
 
-  Label done;
-  masm.branchPtr(Assembler::Equal, str, ImmGCPtr(atom), &done);
-
-  
-  
-  masm.branchTest32(Assembler::NonZero, Address(str, JSString::offsetOfFlags()),
-                    Imm32(JSString::ATOM_BIT), failure->label());
-
-  
-  masm.branch32(Assembler::NotEqual, Address(str, JSString::offsetOfLength()),
-                Imm32(atom->length()), failure->label());
-
-  
-  
   LiveRegisterSet volatileRegs(GeneralRegisterSet::Volatile(),
                                liveVolatileFloatRegs());
-  masm.PushRegsInMask(volatileRegs);
+  volatileRegs.takeUnchecked(scratch);
 
-  masm.setupUnalignedABICall(scratch);
-  masm.movePtr(ImmGCPtr(atom), scratch);
-  masm.passABIArg(scratch);
-  masm.passABIArg(str);
-  masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, EqualStringsHelperPure));
-  masm.mov(ReturnReg, scratch);
-
-  LiveRegisterSet ignore;
-  ignore.add(scratch);
-  masm.PopRegsInMaskIgnore(volatileRegs, ignore);
-  masm.branchIfFalseBool(scratch, failure->label());
-
-  masm.bind(&done);
+  masm.guardSpecificAtom(str, atom, scratch, volatileRegs, failure->label());
   return true;
 }
 
