@@ -1024,6 +1024,15 @@ class nsLayoutUtils {
 
 
 
+  static const nsIFrame* FindNearestCommonAncestorFrameWithinBlock(
+      const nsTextFrame* aFrame1, const nsTextFrame* aFrame2);
+
+  
+
+
+
+
+
 
 
 

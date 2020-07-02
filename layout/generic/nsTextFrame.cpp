@@ -1914,8 +1914,16 @@ bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
     };
 
     const nsIFrame* ancestor =
-        nsLayoutUtils::FindNearestCommonAncestorFrame(aFrame1, aFrame2);
-    MOZ_ASSERT(ancestor);
+        nsLayoutUtils::FindNearestCommonAncestorFrameWithinBlock(aFrame1,
+                                                                 aFrame2);
+
+    if (!ancestor) {
+      
+      
+      
+      
+      return false;
+    }
 
     
     
