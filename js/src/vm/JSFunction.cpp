@@ -2077,6 +2077,15 @@ JSFunction* js::NewFunctionWithProto(
 bool js::GetFunctionPrototype(JSContext* cx, js::GeneratorKind generatorKind,
                               js::FunctionAsyncKind asyncKind,
                               js::MutableHandleObject proto) {
+  
+  
+  
+  
+  if (cx->realm()->isSelfHostingRealm()) {
+    proto.set(nullptr);
+    return true;
+  }
+
   if (generatorKind == js::GeneratorKind::NotGenerator) {
     if (asyncKind == js::FunctionAsyncKind::SyncFunction) {
       proto.set(nullptr);
