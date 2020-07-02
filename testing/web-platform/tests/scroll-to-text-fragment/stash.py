@@ -1,13 +1,13 @@
 import time
 
 def main(request, response):
-    key = request.GET.first("key")
+    key = request.GET.first(b"key")
 
-    if request.method == "POST":
+    if request.method == u"POST":
         
-        request.server.stash.put(key, request.body, '/scroll-to-text-fragment/')
-        return "ok"
+        request.server.stash.put(key, request.body, u'/scroll-to-text-fragment/')
+        return u"ok"
     else:
         
-        value = request.server.stash.take(key, '/scroll-to-text-fragment/')
+        value = request.server.stash.take(key, u'/scroll-to-text-fragment/')
         return value
