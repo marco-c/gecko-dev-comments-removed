@@ -249,7 +249,7 @@ namespace dom {
 class IPCBlob;
 class ContentChild;
 class ContentParent;
-class PIPCBlobInputStreamParent;
+class PRemoteLazyInputStreamParent;
 
 namespace IPCBlobUtils {
 
@@ -271,11 +271,11 @@ nsresult Serialize(BlobImpl* aBlobImpl,
                    IPCBlob& aIPCBlob);
 
 nsresult SerializeInputStream(nsIInputStream* aInputStream, uint64_t aSize,
-                              PIPCBlobInputStreamParent*& aActorParent,
+                              PRemoteLazyInputStreamParent*& aActorParent,
                               ContentParent* aManager);
 
 nsresult SerializeInputStream(nsIInputStream* aInputStream, uint64_t aSize,
-                              PIPCBlobInputStreamParent*& aActorParent,
+                              PRemoteLazyInputStreamParent*& aActorParent,
                               mozilla::ipc::PBackgroundParent* aManager);
 
 
