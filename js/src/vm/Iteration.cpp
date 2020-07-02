@@ -1532,12 +1532,22 @@ bool GlobalObject::initIteratorProto(JSContext* cx,
 
   RootedObject proto(
       cx, GlobalObject::createBlankPrototype<PlainObject>(cx, global));
-  if (!proto ||
-      !DefinePropertiesAndFunctions(cx, proto, nullptr, iterator_methods)) {
+  if (!proto) {
     return false;
   }
 
+  
+  
+  
   global->setReservedSlot(ITERATOR_PROTO, ObjectValue(*proto));
+
+  if (!DefinePropertiesAndFunctions(cx, proto, nullptr, iterator_methods)) {
+    
+    
+    
+    return false;
+  }
+
   return true;
 }
 

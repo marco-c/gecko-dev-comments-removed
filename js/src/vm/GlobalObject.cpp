@@ -4,7 +4,6 @@
 
 
 
-
 #include "vm/GlobalObject.h"
 
 #include "jsdate.h"
@@ -292,6 +291,23 @@ bool GlobalObject::resolveConstructor(JSContext* cx,
       global->getPrototype(JSProto_Object).isUndefined()) {
     return resolveConstructor(cx, global, JSProto_Object,
                               IfClassIsDisabled::DoNothing);
+  }
+
+  
+  
+  
+  
+  if (key == JSProto_GeneratorFunction &&
+      !global->getSlotRef(ITERATOR_PROTO).isObject()) {
+    if (!getOrCreateIteratorPrototype(cx, global)) {
+      return false;
+    }
+
+    
+    
+    if (global->isStandardClassResolved(key)) {
+      return true;
+    }
   }
 
   
