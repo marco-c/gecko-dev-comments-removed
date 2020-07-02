@@ -2573,6 +2573,12 @@ bool DebugAPI::onSingleStep(JSContext* cx) {
 
         
         
+        if (genObj.isClosed()) {
+          continue;
+        }
+
+        
+        
         MOZ_ASSERT(genObj.isSuspended());
 
         if (genObj.callee().hasBaseScript() &&
