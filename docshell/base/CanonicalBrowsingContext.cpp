@@ -942,16 +942,8 @@ MediaController* CanonicalBrowsingContext::GetMediaController() {
   return mTabMediaController;
 }
 
-bool CanonicalBrowsingContext::AttemptLoadURIInParent(
-    nsDocShellLoadState* aLoadState) {
-  
-  
-  if (!IsTopContent() || !GetContentParent() ||
-      !StaticPrefs::browser_tabs_documentchannel() ||
-      !StaticPrefs::browser_tabs_documentchannel_parent_initiated()) {
-    return false;
-  }
-
+bool CanonicalBrowsingContext::SupportsLoadingInParent(
+    nsDocShellLoadState* aLoadState, uint64_t* aOuterWindowId) {
   
   
   
@@ -969,7 +961,6 @@ bool CanonicalBrowsingContext::AttemptLoadURIInParent(
     return false;
   }
 
-  uint64_t outerWindowId = 0;
   if (WindowGlobalParent* global = GetCurrentWindowGlobal()) {
     nsCOMPtr<nsIURI> currentURI = global->GetDocumentURI();
     if (currentURI) {
@@ -990,20 +981,72 @@ bool CanonicalBrowsingContext::AttemptLoadURIInParent(
       return false;
     }
 
-    outerWindowId = global->OuterWindowId();
+    *aOuterWindowId = global->OuterWindowId();
+  }
+  return true;
+}
+
+bool CanonicalBrowsingContext::LoadInParent(nsDocShellLoadState* aLoadState,
+                                            bool aSetNavigating) {
+  
+  
+  
+  
+  if (!IsTopContent() || !GetContentParent() ||
+      !StaticPrefs::browser_tabs_documentchannel() ||
+      !StaticPrefs::browser_tabs_documentchannel_parent_controlled()) {
+    return false;
+  }
+
+  uint64_t outerWindowId = 0;
+  if (!SupportsLoadingInParent(aLoadState, &outerWindowId)) {
+    return false;
   }
 
   
   
   
-  return net::DocumentLoadListener::OpenFromParent(this, aLoadState,
-                                                   outerWindowId);
+  
+  return net::DocumentLoadListener::LoadInParent(this, aLoadState,
+                                                 outerWindowId, aSetNavigating);
 }
 
-void CanonicalBrowsingContext::StartDocumentLoad(
+bool CanonicalBrowsingContext::AttemptSpeculativeLoadInParent(
+    nsDocShellLoadState* aLoadState) {
+  
+  
+  
+  
+  if (!IsTopContent() || !GetContentParent() ||
+      !StaticPrefs::browser_tabs_documentchannel() ||
+      !StaticPrefs::browser_tabs_documentchannel_parent_initiated() ||
+      StaticPrefs::browser_tabs_documentchannel_parent_controlled()) {
+    return false;
+  }
+
+  uint64_t outerWindowId = 0;
+  if (!SupportsLoadingInParent(aLoadState, &outerWindowId)) {
+    return false;
+  }
+
+  
+  
+  
+  return net::DocumentLoadListener::SpeculativeLoadInParent(this, aLoadState,
+                                                            outerWindowId);
+}
+
+bool CanonicalBrowsingContext::StartDocumentLoad(
     net::DocumentLoadListener* aLoad) {
+  
+  
+  if (StaticPrefs::browser_tabs_documentchannel_parent_controlled() &&
+      mCurrentLoad) {
+    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
+  }
   mCurrentLoad = aLoad;
   SetCurrentLoadIdentifier(Some(aLoad->GetLoadIdentifier()));
+  return true;
 }
 
 void CanonicalBrowsingContext::EndDocumentLoad(bool aForProcessSwitch) {

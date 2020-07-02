@@ -161,7 +161,17 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   MediaController* GetMediaController();
 
-  bool AttemptLoadURIInParent(nsDocShellLoadState* aLoadState);
+  
+  
+  
+  
+  bool LoadInParent(nsDocShellLoadState* aLoadState, bool aSetNavigating);
+
+  
+  
+  
+  
+  bool AttemptSpeculativeLoadInParent(nsDocShellLoadState* aLoadState);
 
   
   nsISecureBrowserUI* GetSecureBrowserUI();
@@ -231,11 +241,15 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   friend class net::DocumentLoadListener;
   
   
-  void StartDocumentLoad(net::DocumentLoadListener* aLoad);
+  
+  bool StartDocumentLoad(net::DocumentLoadListener* aLoad);
   
   
   
   void EndDocumentLoad(bool aForProcessSwitch);
+
+  bool SupportsLoadingInParent(nsDocShellLoadState* aLoadState,
+                               uint64_t* aOuterWindowId);
 
   
   

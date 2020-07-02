@@ -9,6 +9,7 @@
 
 #include "mozilla/MozPromise.h"
 #include "mozilla/Variant.h"
+#include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/NeckoParent.h"
@@ -107,6 +108,9 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   struct OpenPromiseFailedType {
     nsresult mStatus;
     nsresult mLoadGroupStatus;
+    
+    
+    bool mSwitchedProcess = false;
   };
 
   typedef MozPromise<OpenPromiseSucceededType, OpenPromiseFailedType,
@@ -134,10 +138,18 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
+  static bool LoadInParent(dom::CanonicalBrowsingContext* aBrowsingContext,
+                           nsDocShellLoadState* aLoadState,
+                           uint64_t aOuterWindowId, bool aSetNavigating);
+
   
-  static bool OpenFromParent(dom::CanonicalBrowsingContext* aBrowsingContext,
-                             nsDocShellLoadState* aLoadState,
-                             uint64_t aOuterWindowId);
+  
+  
+  
+  
+  static bool SpeculativeLoadInParent(
+      dom::CanonicalBrowsingContext* aBrowsingContext,
+      nsDocShellLoadState* aLoadState, uint64_t aOuterWindowId);
 
   
   
@@ -225,14 +237,22 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                              dom::ContentParent* aParent) const;
 
   uint64_t GetLoadIdentifier() const { return mLoadIdentifier; }
+  dom::CanonicalBrowsingContext* GetBrowsingContext() const;
+
+  uint32_t GetLoadType() const { return mLoadStateLoadType; }
 
  protected:
   virtual ~DocumentLoadListener();
 
  private:
+  RefPtr<OpenPromise> OpenInParent(nsDocShellLoadState* aLoadState,
+                                   uint64_t aOuterWindowId,
+                                   bool aSupportsRedirectToRealChannel);
+
   friend class ParentProcessDocumentOpenInfo;
   
-  void DisconnectListeners(nsresult aStatus, nsresult aLoadGroupStatus);
+  void DisconnectListeners(nsresult aStatus, nsresult aLoadGroupStatus,
+                           bool aSwitchedProcess = false);
 
   
   
@@ -241,8 +261,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  void TriggerRedirectToRealChannel(
-      const Maybe<uint64_t>& aDestinationProcess = Nothing());
+  void TriggerRedirectToRealChannel(const Maybe<uint64_t>& aDestinationProcess);
 
   
   
@@ -280,8 +299,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   already_AddRefed<LoadInfo> CreateLoadInfo(
       dom::CanonicalBrowsingContext* aBrowsingContext,
       nsDocShellLoadState* aLoadState, uint64_t aOuterWindowId);
-
-  dom::CanonicalBrowsingContext* GetBrowsingContext();
 
   void AddURIVisit(nsIChannel* aChannel, uint32_t aLoadFlags);
   bool HasCrossOriginOpenerPolicyMismatch() const;
@@ -456,17 +473,20 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   Maybe<nsCString> mOriginalUriString;
 
+  bool mSupportsRedirectToRealChannel = true;
+
   
   
   base::ProcessId mOtherPid = 0;
 
   void RejectOpenPromise(nsresult aStatus, nsresult aLoadGroupStatus,
-                         const char* aLocation) {
+                         bool aSwitchedProcess, const char* aLocation) {
     
     
     if (!mOpenPromiseResolved && mOpenPromise) {
-      mOpenPromise->Reject(OpenPromiseFailedType({aStatus, aLoadGroupStatus}),
-                           aLocation);
+      mOpenPromise->Reject(
+          OpenPromiseFailedType({aStatus, aLoadGroupStatus, aSwitchedProcess}),
+          aLocation);
       mOpenPromiseResolved = true;
     }
   }
