@@ -963,7 +963,7 @@ class BrowserParent final : public PBrowserParent,
   bool mIsDestroyed : 1;
   
   
-  bool mTabSetsCursor : 1;
+  bool mRemoteTargetSetsCursor : 1;
 
   
   

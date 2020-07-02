@@ -215,7 +215,7 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mDocShellIsActive(false),
       mMarkedDestroying(false),
       mIsDestroyed(false),
-      mTabSetsCursor(false),
+      mRemoteTargetSetsCursor(false),
       mPreserveLayers(false),
       mRenderLayers(true),
       mActiveInPriorityManager(false),
@@ -1354,7 +1354,7 @@ void BrowserParent::MouseEnterIntoWidget() {
   if (widget) {
     
     
-    mTabSetsCursor = true;
+    mRemoteTargetSetsCursor = true;
     if (mCursor != eCursorInvalid) {
       widget->SetCursor(mCursor, mCustomCursor, mCustomCursorHotspotX,
                         mCustomCursorHotspotY);
@@ -1396,13 +1396,13 @@ void BrowserParent::SendRealMouseEvent(WidgetMouseEvent& aEvent) {
     
     
     if (eMouseEnterIntoWidget == aEvent.mMessage) {
-      mTabSetsCursor = true;
+      mRemoteTargetSetsCursor = true;
       if (mCursor != eCursorInvalid) {
         widget->SetCursor(mCursor, mCustomCursor, mCustomCursorHotspotX,
                           mCustomCursorHotspotY);
       }
     } else if (eMouseExitFromWidget == aEvent.mMessage) {
-      mTabSetsCursor = false;
+      mRemoteTargetSetsCursor = false;
     }
   }
   if (!mIsReadyToHandleInputEvents) {
@@ -2073,7 +2073,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvSetCursor(
   mCustomCursorHotspotX = aHotspotX;
   mCustomCursorHotspotY = aHotspotY;
 
-  if (!mTabSetsCursor) {
+  if (!mRemoteTargetSetsCursor) {
     return IPC_OK();
   }
 
