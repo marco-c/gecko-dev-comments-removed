@@ -511,10 +511,15 @@ class PeerConnectionImpl final
 
   void RecordIceRestartStatistics(JsepSdpType type);
 
+  void StoreConfigurationForAboutWebrtc(const RTCConfiguration& aConfig);
+
   
   
   
   Timecard* mTimeCard;
+
+  
+  dom::RTCConfigurationInternal mJsConfiguration;
 
   mozilla::dom::RTCSignalingState mSignalingState;
 
