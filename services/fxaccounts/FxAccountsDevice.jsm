@@ -222,8 +222,15 @@ class FxAccountsDevice {
             
             
             
+            
+            
+            
+            
             const ourDevice = devices.find(device => device.isCurrentDevice);
-            if (ourDevice && ourDevice.pushEndpointExpired) {
+            if (
+              ourDevice &&
+              (ourDevice.pushCallback === null || ourDevice.pushEndpointExpired)
+            ) {
               await this._fxai.fxaPushService.unsubscribe();
               await this._registerOrUpdateDevice(currentState, accountData);
             }
