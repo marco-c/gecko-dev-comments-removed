@@ -42,7 +42,9 @@ def get_generated_sources():
     with open(gen_sources, 'r') as f:
         data = json.load(f)
     for f in data['sources']:
-        yield f, mozpath.join(buildconfig.topobjdir, f)
+        
+        if mozpath.basename(f) != 'symverscript':
+            yield f, mozpath.join(buildconfig.topobjdir, f)
     
     base = 'ipc/ipdl/_ipdlheaders'
     finder = FileFinder(mozpath.join(buildconfig.topobjdir, base))
