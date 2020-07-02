@@ -115,6 +115,10 @@ if CONFIG['MOZ_GECKO_PROFILER']:
         LOCAL_INCLUDES += [
             
             '/toolkit/crashreporter/google-breakpad/src/common/android/include',
+        ]
+
+    if CONFIG['MOZ_LINKER']:
+        LOCAL_INCLUDES += [
             'lul',
         ]
 
