@@ -4467,10 +4467,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
-    void CollectListAndTableRelatedElementsAt(
+    static void CollectTableAndAnyListElementsOfInclusiveAncestorsAt(
         nsIContent& aContent,
-        nsTArray<OwningNonNull<Element>>& aOutArrayOfListAndTableElements)
-        const;
+        nsTArray<OwningNonNull<Element>>& aOutArrayOfListAndTableElements);
 
     
 
