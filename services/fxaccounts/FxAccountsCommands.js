@@ -234,8 +234,10 @@ class SendTab {
         const bytes = encoder.encode(JSON.stringify(targetData));
         const encrypted = await this._encrypt(bytes, device);
         
-        const payload = { encrypted, flowID };
-        await this._commands.invoke(COMMAND_SENDTAB, device, payload); 
+        
+        
+        const payload = { encrypted };
+        await this._commands.invoke(COMMAND_SENDTAB, device, payload);
         this._fxai.telemetry.recordEvent(
           "command-sent",
           COMMAND_SENDTAB_TAIL,
@@ -264,7 +266,7 @@ class SendTab {
   }
 
   
-  async handle(senderID, { encrypted, flowID: deprecatedFlowID }) {
+  async handle(senderID, { encrypted }) {
     const bytes = await this._decrypt(encrypted);
     const decoder = new TextDecoder("utf8");
     const data = JSON.parse(decoder.decode(bytes));
@@ -280,7 +282,7 @@ class SendTab {
       "command-received",
       COMMAND_SENDTAB_TAIL,
       this._fxai.telemetry.sanitizeDeviceId(senderID),
-      { flowID: flowID || deprecatedFlowID, streamID }
+      { flowID, streamID }
     );
 
     return {

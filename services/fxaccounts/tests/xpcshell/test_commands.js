@@ -187,7 +187,8 @@ add_task(async function test_sendtab_receive() {
   for (let { cmd, device, payload } of commands._invokes) {
     Assert.equal(cmd, COMMAND_SENDTAB);
     
-    Assert.equal(payload.flowID, "1");
+    
+    Assert.ok(!payload.hasOwnProperty("flowID"));
     
     payload.flowID = "ignore-me";
     Assert.deepEqual(await sendTab.handle(device.id, payload), {
@@ -234,7 +235,7 @@ add_task(async function test_sendtab_receive_old_client() {
       value: "sender-id-san",
       
       
-      extra: { flowID: "flow-id", streamID: undefined },
+      extra: { flowID: undefined, streamID: undefined },
     },
   ]);
 });
