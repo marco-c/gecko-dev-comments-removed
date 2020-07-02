@@ -3495,10 +3495,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     return;
   }
 
-  
-  
-  mAddClipRectToLayer =
-      !(mIsRoot && mOuter->PresShell()->GetIsViewportOverridden());
+  mAddClipRectToLayer = true;
 
   
   
