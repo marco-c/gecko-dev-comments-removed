@@ -17,6 +17,10 @@ var expect = '';
 if (typeof gczeal !== 'undefined')
     gczeal(0)
 
+if (typeof numberToDouble !== 'function') {
+    var numberToDouble = SpecialPowers.Cu.getJSTestingFunctions().numberToDouble;
+}
+
 test();
 
 
@@ -495,7 +499,7 @@ function test()
 
     
     
-    check(() => (new Float32Array(Math.sqrt(4))).length == 2);
+    check(() => (new Float32Array(numberToDouble(2))).length == 2);
     check(() => (new Float32Array({ length: 10 })).length == 10);
     check(() => (new Float32Array({})).length == 0);
     check(() => new Float32Array("3").length === 3);

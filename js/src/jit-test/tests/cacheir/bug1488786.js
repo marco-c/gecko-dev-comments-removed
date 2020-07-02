@@ -18,7 +18,7 @@ for (var i = 0; i < 30; i++) {
 
 
 
-var y = Math.hypot(1,0);
+var y = numberToDouble(1);
 var z = 2**31-1;
 
 var a = -1;

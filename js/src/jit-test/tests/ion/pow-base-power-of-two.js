@@ -22,7 +22,7 @@ function test(x, y, z) {
 
     function double(v) {
         
-        return `Math.cbrt(${v * v * v})`;
+        return `numberToDouble(${v})`;
     }
 
     function addTests(fn) {

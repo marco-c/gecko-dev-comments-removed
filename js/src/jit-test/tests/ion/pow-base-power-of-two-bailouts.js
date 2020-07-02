@@ -22,7 +22,7 @@ function test(x) {
 
     function double(v) {
         
-        return Math.cbrt(v * v * v)
+        return numberToDouble(v);
     }
 
     

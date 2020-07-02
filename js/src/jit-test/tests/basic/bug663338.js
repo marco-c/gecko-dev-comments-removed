@@ -22,5 +22,5 @@ assertEq(parseInt('0', 10), 0);
 assertEq(parseInt('-0', 10), -0);
 
 
-assertEq(parseInt(Math.asin(0), 10), 0); 
-assertEq(parseInt(Math.asin(-0), 10), 0); 
+assertEq(parseInt(numberToDouble(0), 10), 0);
+assertEq(parseInt(numberToDouble(-0), 10), 0);

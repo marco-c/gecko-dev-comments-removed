@@ -32,7 +32,7 @@ var ys = [
 
 function Double(x) {
   
-  return x < 0 ? -Math.hypot(x) : Math.hypot(x);
+  return numberToDouble(x);
 }
 
 var zs = [
