@@ -14,11 +14,11 @@ const directory_promise = (async () => {
 
   
   
-  await new Promise(resolve => step_timeout(resolve, 100))
+  await new Promise(resolve => step_timeout(resolve, 100));
 
   await window.test_driver.bless(
       'show a file picker.<br />Please select an empty directory');
-  const entries = await self.chooseFileSystemEntries({type: 'open-directory'});
+  const entries = await self.showDirectoryPicker();
   assert_true(entries instanceof FileSystemHandle);
   assert_true(entries instanceof FileSystemDirectoryHandle);
   for await (const entry of entries.getEntries()) {

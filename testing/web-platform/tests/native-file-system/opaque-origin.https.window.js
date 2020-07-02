@@ -44,8 +44,9 @@ async function verify_results_from_sandboxed_child_window(test) {
   const event_watcher = new EventWatcher(test, self, 'message');
 
   const first_message_event = await event_watcher.wait_for('message');
-  assert_equals(first_message_event.data,
-    'chooseFileSystemEntries(): REJECTED: SecurityError');
+  assert_equals(
+      first_message_event.data,
+      'showDirectoryPicker(): REJECTED: SecurityError');
 
   const second_message_event = await event_watcher.wait_for('message');
   assert_equals(second_message_event.data,
@@ -53,30 +54,33 @@ async function verify_results_from_sandboxed_child_window(test) {
 }
 
 promise_test(async test => {
-  await verify_does_not_exist_in_data_uri_iframe(
-    test, 'chooseFileSystemEntries');
-}, 'chooseFileSystemEntries() must be undefined for data URI iframes.');
+  await verify_does_not_exist_in_data_uri_iframe(test, 'showDirectoryPicker');
+}, 'showDirectoryPicker() must be undefined for data URI iframes.');
 
 promise_test(async test => {
   await verify_does_not_exist_in_data_uri_iframe(
     test, 'FileSystemDirectoryHandle');
 }, 'FileSystemDirectoryHandle must be undefined for data URI iframes.');
 
-promise_test(async test => {
-  add_iframe(test, kSandboxWindowUrl, 'allow-scripts');
-  await verify_results_from_sandboxed_child_window(test);
-}, 'getOriginPrivateDirectory() and ' +
-'chooseFileSystemEntries() must reject in a sandboxed iframe.');
+promise_test(
+    async test => {
+      add_iframe(test, kSandboxWindowUrl,  'allow-scripts');
+      await verify_results_from_sandboxed_child_window(test);
+    },
+    'getOriginPrivateDirectory() and ' +
+        'showDirectoryPicker() must reject in a sandboxed iframe.');
 
-promise_test(async test => {
-  const child_window_url = kSandboxWindowUrl +
-    '?pipe=header(Content-Security-Policy, sandbox allow-scripts)';
+promise_test(
+    async test => {
+      const child_window_url = kSandboxWindowUrl +
+          '?pipe=header(Content-Security-Policy, sandbox allow-scripts)';
 
-  const child_window = window.open(child_window_url);
-  test.add_cleanup(() => {
-    child_window.close();
-  });
+      const child_window = window.open(child_window_url);
+      test.add_cleanup(() => {
+        child_window.close();
+      });
 
-  await verify_results_from_sandboxed_child_window(test);
-}, 'getOriginPrivateDirectory() and '
-+ 'chooseFileSystemEntries() must reject in a sandboxed opened window.');
+      await verify_results_from_sandboxed_child_window(test);
+    },
+    'getOriginPrivateDirectory() and ' +
+        'showDirectoryPicker() must reject in a sandboxed opened window.');
