@@ -129,22 +129,6 @@ bool BytecodeAnalysis::init(TempAllocator& alloc) {
             targetInfo.setJumpTarget( false);
           }
         }
-
-        
-        
-        BytecodeLocation endOfTryLoc(script_,
-                                     it.toRawBytecode() + it.codeOffset());
-        MOZ_ASSERT(endOfTryLoc.is(JSOp::Goto));
-
-        BytecodeLocation afterTryLoc(
-            script_, endOfTryLoc.toRawBytecode() + endOfTryLoc.jumpOffset());
-        MOZ_ASSERT(afterTryLoc > endOfTryLoc);
-
-        
-        
-        uint32_t afterTryOffset = afterTryLoc.bytecodeToOffset(script_);
-        infos_[afterTryOffset].init(stackDepth);
-        infos_[afterTryOffset].setJumpTarget(normallyReachable);
         break;
       }
 

@@ -1107,13 +1107,6 @@ bool WarpBuilder::build_JumpTarget(BytecodeLocation loc) {
         }
         lastIns->toGoto()->initSuccessor(0, joinBlock);
         continue;
-
-      case PendingEdge::Kind::GotoWithFake:
-        if (!addEdge(source,  0)) {
-          return false;
-        }
-        lastIns->toGotoWithFake()->initSuccessor(1, joinBlock);
-        continue;
     }
     MOZ_CRASH("Invalid kind");
   }
@@ -2674,42 +2667,15 @@ bool WarpBuilder::build_Try(BytecodeLocation loc) {
   
   
 
-  
-  
-  BytecodeLocation endOfTryLoc = loc.getEndOfTryLocation();
-  MOZ_ASSERT(endOfTryLoc.is(JSOp::Goto));
-
-  BytecodeLocation afterTryLoc = endOfTryLoc.getJumpTarget();
-  MOZ_ASSERT(afterTryLoc > endOfTryLoc);
-
-  
-  MOZ_ASSERT(info().osrPc() < endOfTryLoc.toRawBytecode() ||
-             info().osrPc() >= afterTryLoc.toRawBytecode());
-
   graph().setHasTryBlock();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
   MBasicBlock* pred = current;
   if (!startNewBlock(pred, loc.next())) {
     return false;
   }
 
-  pred->end(MGotoWithFake::New(alloc(), current, nullptr));
-  return addPendingEdge(PendingEdge::NewGotoWithFake(pred), afterTryLoc);
+  pred->end(MGoto::New(alloc(), current));
+  return true;
 }
 
 bool WarpBuilder::build_Exception(BytecodeLocation) {

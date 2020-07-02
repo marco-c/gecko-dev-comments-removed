@@ -47,7 +47,8 @@ bool TryEmitter::emitTry() {
   
   depth_ = bce_->bytecodeSection().stackDepth();
 
-  if (!bce_->emitN(JSOp::Try, 4, &tryOpOffset_)) {
+  tryOpOffset_ = bce_->bytecodeSection().offset();
+  if (!bce_->emit1(JSOp::Try)) {
     return false;
   }
 
@@ -67,12 +68,6 @@ bool TryEmitter::emitTryEnd() {
       return false;
     }
   }
-
-  
-  jsbytecode* trypc = bce_->bytecodeSection().code(tryOpOffset_);
-  BytecodeOffsetDiff offset = bce_->bytecodeSection().offset() - tryOpOffset_;
-  MOZ_ASSERT(JSOp(*trypc) == JSOp::Try);
-  SET_CODE_OFFSET(trypc, offset.value());
 
   
   if (!bce_->emitJump(JSOp::Goto, &catchAndFinallyJump_)) {

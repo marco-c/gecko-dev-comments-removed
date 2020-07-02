@@ -1986,26 +1986,6 @@ class MTest : public MAryControlInstruction<1, 2>, public TestPolicy::Data {
 };
 
 
-
-
-class MGotoWithFake : public MAryControlInstruction<0, 2>,
-                      public NoTypePolicy::Data {
-  MGotoWithFake(MBasicBlock* successor, MBasicBlock* fake)
-      : MAryControlInstruction(classOpcode) {
-    setSuccessor(0, successor);
-    setSuccessor(1, fake);
-  }
-
- public:
-  INSTRUCTION_HEADER(GotoWithFake)
-  TRIVIAL_NEW_WRAPPERS
-
-  MBasicBlock* target() const { return getSuccessor(0); }
-
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
-};
-
-
 class MReturn : public MAryControlInstruction<1, 0>,
                 public BoxInputsPolicy::Data {
   explicit MReturn(MDefinition* ins) : MAryControlInstruction(classOpcode) {

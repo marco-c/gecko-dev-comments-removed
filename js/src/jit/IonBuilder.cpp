@@ -3076,39 +3076,12 @@ AbortReasonOr<Ok> IonBuilder::visitTry() {
     return abort(AbortReason::Disable, "Try-catch during analysis");
   }
 
-  
-  
-  jsbytecode* endpc = pc + GET_CODE_OFFSET(pc);
-  MOZ_ASSERT(JSOp(*endpc) == JSOp::Goto);
-  MOZ_ASSERT(GET_JUMP_OFFSET(endpc) > 0);
-
-  jsbytecode* afterTry = endpc + GET_JUMP_OFFSET(endpc);
-
-  
-  
-  MOZ_ASSERT(info().osrPc() < endpc || info().osrPc() >= afterTry);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
   graph().setHasTryBlock();
 
   MBasicBlock* tryBlock;
   MOZ_TRY_VAR(tryBlock, newBlock(current, GetNextPc(pc)));
 
-  current->end(MGotoWithFake::New(alloc(), tryBlock, nullptr));
-  MOZ_TRY(addPendingEdge(PendingEdge::NewGotoWithFake(current), afterTry));
+  current->end(MGoto::New(alloc(), tryBlock));
 
   return startTraversingBlock(tryBlock);
 }
@@ -3244,11 +3217,6 @@ AbortReasonOr<Ok> IonBuilder::visitJumpTarget(JSOp op) {
       case PendingEdge::Kind::Goto:
         MOZ_TRY(addEdge(source, 0));
         lastIns->toGoto()->initSuccessor(0, joinBlock);
-        continue;
-
-      case PendingEdge::Kind::GotoWithFake:
-        MOZ_TRY(addEdge(source, 0));
-        lastIns->toGotoWithFake()->initSuccessor(1, joinBlock);
         continue;
     }
     MOZ_CRASH("Invalid kind");
