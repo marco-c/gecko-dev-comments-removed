@@ -634,11 +634,10 @@ class Selection final : public nsSupportsWeakReference,
   
   
   
-  nsresult GetPrimaryOrCaretFrameForNodeOffset(nsIContent* aContent,
-                                               uint32_t aOffset,
-                                               nsIFrame** aReturnFrame,
-                                               int32_t* aOffsetUsed,
-                                               bool aVisual) const;
+  nsIFrame* GetPrimaryOrCaretFrameForNodeOffset(nsIContent* aContent,
+                                                uint32_t aOffset,
+                                                int32_t* aOffsetUsed,
+                                                bool aVisual) const;
 
   
   nsresult GetCachedFrameOffset(nsIFrame* aFrame, int32_t inOffset,
