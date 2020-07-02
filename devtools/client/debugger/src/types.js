@@ -424,6 +424,10 @@ export type Source = {
   +isOriginal: boolean,
 };
 
+export type DisplaySource = Source & {
+  +displayURL: string,
+};
+
 
 
 
