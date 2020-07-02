@@ -88,7 +88,7 @@ nsresult SerializeInputStreamParent(nsIInputStream* aInputStream,
   
   
   
-  nsCOMPtr<mozIIPCBlobInputStream> ipcBlobInputStream =
+  nsCOMPtr<mozIRemoteLazyInputStream> ipcBlobInputStream =
       do_QueryInterface(aInputStream);
   if (ipcBlobInputStream) {
     stream = ipcBlobInputStream->GetInternalStream();

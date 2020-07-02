@@ -22,7 +22,7 @@
 #include "IndexedDatabaseInlines.h"
 #include "js/Array.h"  
 #include "js/Date.h"   
-#include <mozIIPCBlobInputStream.h>
+#include <mozIRemoteLazyInputStream.h>
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
@@ -2758,7 +2758,8 @@ nsresult BackgroundRequestChild::PreprocessHelper::ProcessStream() {
   
   
 
-  nsCOMPtr<mozIIPCBlobInputStream> blobInputStream = do_QueryInterface(mStream);
+  nsCOMPtr<mozIRemoteLazyInputStream> blobInputStream =
+      do_QueryInterface(mStream);
   MOZ_ASSERT(blobInputStream);
 
   nsCOMPtr<nsIInputStream> internalInputStream =
