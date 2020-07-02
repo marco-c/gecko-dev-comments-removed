@@ -310,7 +310,10 @@ class EventSourceImpl final : public nsIObserver,
     }
 
     ~EventSourceServiceNotifier() {
-      mEventSourceImpl->AssertIsOnTargetThread();
+      
+      
+      
+      
       if (mConnectionOpened) {
         
         
