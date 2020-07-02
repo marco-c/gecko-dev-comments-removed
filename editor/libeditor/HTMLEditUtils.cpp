@@ -159,7 +159,7 @@ bool HTMLEditUtils::IsAnyTableElement(nsINode* aNode) {
 
 
 
-bool HTMLEditUtils::IsTableElementButNotTable(nsINode* aNode) {
+bool HTMLEditUtils::IsAnyTableElementButNotTable(nsINode* aNode) {
   MOZ_ASSERT(aNode);
   return aNode->IsAnyOfHTMLElements(nsGkAtoms::tr, nsGkAtoms::td, nsGkAtoms::th,
                                     nsGkAtoms::thead, nsGkAtoms::tfoot,
