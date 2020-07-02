@@ -30,7 +30,6 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "mozilla/dom/SyncedContextInlines.h"
-#include "mozilla/dom/XULFrameElement.h"
 #include "mozilla/net/DocumentLoadListener.h"
 #include "mozilla/net/RequestContextService.h"
 #include "mozilla/Assertions.h"
@@ -51,7 +50,6 @@
 #include "nsGlobalWindowOuter.h"
 #include "nsIObserverService.h"
 #include "nsContentUtils.h"
-#include "nsQueryObject.h"
 #include "nsSandboxFlags.h"
 #include "nsScriptError.h"
 #include "nsThreadUtils.h"
@@ -189,14 +187,10 @@ bool BrowsingContext::SameOriginWithTop() {
 
 already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
     nsGlobalWindowInner* aParent, BrowsingContext* aOpener,
-    const nsAString& aName, Type aType, uint64_t aBrowserId) {
-  if (aParent) {
-    MOZ_DIAGNOSTIC_ASSERT(aParent->GetWindowContext());
-    MOZ_DIAGNOSTIC_ASSERT(aParent->GetBrowsingContext()->mType == aType);
-    MOZ_DIAGNOSTIC_ASSERT(aParent->GetBrowsingContext()->GetBrowserId() == 0 ||
-                          aParent->GetBrowsingContext()->GetBrowserId() ==
-                              aBrowserId);
-  }
+    const nsAString& aName, Type aType) {
+  MOZ_DIAGNOSTIC_ASSERT(!aParent ||
+                        aParent->GetBrowsingContext()->mType == aType);
+  MOZ_DIAGNOSTIC_ASSERT(!aParent || aParent->GetWindowContext());
 
   MOZ_DIAGNOSTIC_ASSERT(aType != Type::Chrome || XRE_IsParentProcess());
 
@@ -238,7 +232,6 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
     context->mFields.SetWithoutSyncing<IDX_OpenerId>(aOpener->Id());
     context->mFields.SetWithoutSyncing<IDX_HadOriginalOpener>(true);
   }
-
   if (aParent) {
     MOZ_DIAGNOSTIC_ASSERT(parentBC->Group() == context->Group());
     MOZ_DIAGNOSTIC_ASSERT(parentBC->mType == context->mType);
@@ -250,8 +243,6 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
 
   context->mFields.SetWithoutSyncing<IDX_OpenerPolicy>(
       nsILoadInfo::OPENER_POLICY_UNSAFE_NONE);
-
-  context->mFields.SetWithoutSyncing<IDX_BrowserId>(aBrowserId);
 
   if (aOpener && aOpener->SameOriginWithTop()) {
     
@@ -336,10 +327,8 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
 
 already_AddRefed<BrowsingContext> BrowsingContext::CreateIndependent(
     Type aType) {
-  uint64_t browserId =
-      aType == Type::Content ? nsContentUtils::GenerateBrowserId() : 0;
   RefPtr<BrowsingContext> bc(
-      CreateDetached(nullptr, nullptr, EmptyString(), aType, browserId));
+      CreateDetached(nullptr, nullptr, EmptyString(), aType));
   bc->mWindowless = bc->IsContent();
   bc->EnsureAttached();
   return bc.forget();
@@ -510,29 +499,6 @@ static bool OwnerAllowsFullscreen(const Element& aEmbedder) {
 
 void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
   mEmbeddedByThisProcess = true;
-
-  
-  
-  if (RefPtr<nsFrameLoaderOwner> owner = do_QueryObject(aEmbedder);
-      owner && !IsChrome()) {
-    uint64_t browserId = GetBrowserId();
-    uint64_t frameBrowserId = owner->GetBrowserId();
-
-    MOZ_DIAGNOSTIC_ASSERT(browserId != 0);
-
-    if (frameBrowserId == 0) {
-      
-      
-      
-      
-      MOZ_DIAGNOSTIC_ASSERT(IsTopContent());
-      MOZ_DIAGNOSTIC_ASSERT(Children().IsEmpty());
-      owner->SetBrowserId(browserId);
-    } else {
-      
-      MOZ_DIAGNOSTIC_ASSERT(browserId == frameBrowserId);
-    }
-  }
 
   
   
@@ -2434,13 +2400,6 @@ void BrowsingContext::DidSet(FieldIndex<IDX_HasSessionHistory>,
              "We don't support turning off session history.");
 
   CreateChildSHistory();
-}
-
-bool BrowsingContext::CanSet(FieldIndex<IDX_BrowserId>, const uint32_t& aValue,
-                             ContentParent* aSource) {
-  
-  
-  return GetBrowserId() == 0 && IsTop() && Children().IsEmpty();
 }
 
 }  
