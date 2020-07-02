@@ -8,7 +8,7 @@
 
 
 
-const ConsoleMessages = require("devtools/server/actors/resources/console-messages");
+const Resources = require("devtools/server/actors/resources/index");
 
 add_task(
   threadFrontTest(async ({ threadActor, threadFront, debuggee, client }) => {
@@ -22,12 +22,17 @@ add_task(
       },
     };
     
-    ConsoleMessages.watch(targetActor, {
-      onAvailable: messages => {
-        if (messages.length > 0) {
-          lastMessage = messages[0].message;
-        }
-      },
+    
+    Resources.watchTargetResources(targetActor, [
+      Resources.TYPES.CONSOLE_MESSAGE,
+    ]);
+    
+    
+    
+    targetActor.on("resource-available-form", resources => {
+      if (resources[0].resourceType == Resources.TYPES.CONSOLE_MESSAGE) {
+        lastMessage = resources[0].message;
+      }
     });
 
     const packet = await executeOnNextTickAndWaitForPause(

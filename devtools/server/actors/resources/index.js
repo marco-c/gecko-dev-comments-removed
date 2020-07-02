@@ -10,15 +10,105 @@ const TYPES = {
 };
 exports.TYPES = TYPES;
 
-const resources = {
-  [TYPES.CONSOLE_MESSAGE]: "devtools/server/actors/resources/console-messages",
-  [TYPES.PLATFORM_MESSAGE]:
-    "devtools/server/actors/resources/platform-messages",
+
+
+const Resources = {
+  [TYPES.CONSOLE_MESSAGE]: {
+    path: "devtools/server/actors/resources/console-messages",
+  },
+  [TYPES.PLATFORM_MESSAGE]: {
+    path: "devtools/server/actors/resources/platform-messages",
+  },
 };
 
-const LISTENERS = {};
-for (const [type, path] of Object.entries(resources)) {
-  loader.lazyRequireGetter(LISTENERS, type, path);
+for (const resource of Object.values(Resources)) {
+  
+  
+  
+  
+  resource.watchers = new WeakMap();
+
+  
+  
+  loader.lazyRequireGetter(resource, "WatcherClass", resource.path);
 }
 
-exports.LISTENERS = LISTENERS;
+
+
+
+
+
+
+
+
+
+
+
+
+
+function watchTargetResources(targetActor, resourceTypes) {
+  for (const resourceType of resourceTypes) {
+    if (!(resourceType in Resources)) {
+      throw new Error(`Unsupported resource type '${resourceType}'`);
+    }
+    
+    const { watchers, WatcherClass } = Resources[resourceType];
+
+    
+    if (watchers.has(targetActor)) {
+      continue;
+    }
+
+    const watcher = new WatcherClass(targetActor, {
+      onAvailable: targetActor.onResourceAvailable,
+    });
+    watchers.set(targetActor, watcher);
+  }
+}
+exports.watchTargetResources = watchTargetResources;
+
+
+
+
+
+
+
+
+
+
+
+function unwatchTargetResources(targetActor, resourceTypes) {
+  for (const resourceType of resourceTypes) {
+    if (!(resourceType in Resources)) {
+      throw new Error(`Unsupported resource type '${resourceType}'`);
+    }
+    
+    const { watchers } = Resources[resourceType];
+
+    const watcher = watchers.get(targetActor);
+    watcher.destroy();
+    watchers.delete(resourceType);
+  }
+}
+exports.unwatchTargetResources = unwatchTargetResources;
+
+
+
+
+
+
+
+
+
+
+
+function getResourceWatcher(targetActor, resourceType) {
+  if (!(resourceType in Resources)) {
+    throw new Error(`Unsupported resource type '${resourceType}'`);
+  }
+  
+  const { watchers } = Resources[resourceType];
+
+  return watchers.get(targetActor);
+}
+exports.getResourceWatcher = getResourceWatcher;

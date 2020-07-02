@@ -310,16 +310,17 @@ const browsingContextTargetPrototype = {
     this._onWorkerTargetActorListChanged = this._onWorkerTargetActorListChanged.bind(
       this
     );
+    this.onResourceAvailable = this.onResourceAvailable.bind(this);
 
     TargetActorRegistry.registerTargetActor(this);
 
     
     
-    this._watchedResources = new Set();
+    
+    this._resourceWatchers = new Map();
   },
 
   
-
 
 
 
@@ -328,14 +329,11 @@ const browsingContextTargetPrototype = {
 
 
   watchTargetResources(resourceTypes) {
-    for (const resourceType of resourceTypes) {
-      
-      if (this._watchedResources.has(resourceType)) {
-        continue;
-      }
-      this._watchedResources.add(resourceType);
-      this._watchResource(resourceType);
-    }
+    return Resources.watchTargetResources(this, resourceTypes);
+  },
+
+  unwatchTargetResources(resourceTypes) {
+    return Resources.unwatchTargetResources(this, resourceTypes);
   },
 
   
@@ -345,32 +343,8 @@ const browsingContextTargetPrototype = {
 
 
 
-
-  unwatchTargetResources(resourceTypes) {
-    for (const resourceType of resourceTypes) {
-      if (!this._watchedResources.has(resourceType)) {
-        continue;
-      }
-      this._watchedResources.delete(resourceType);
-      this._unwatchResource(resourceType);
-    }
-  },
-
-  _watchResource(resourceType) {
-    if (!(resourceType in Resources.LISTENERS)) {
-      throw new Error(`Unsupported resource type '${resourceType}'`);
-    }
-    const onAvailable = resources => {
-      this.emit("resource-available-form", resources);
-    };
-    Resources.LISTENERS[resourceType].watch(this, { onAvailable });
-  },
-
-  _unwatchResource(resourceType) {
-    if (!(resourceType in Resources.LISTENERS)) {
-      throw new Error(`Unsupported resource type '${resourceType}'`);
-    }
-    Resources.LISTENERS[resourceType].unwatch(this);
+  onResourceAvailable(resources) {
+    this.emit("resource-available-form", resources);
   },
 
   traits: null,
@@ -627,8 +601,8 @@ const browsingContextTargetPrototype = {
     this.exit();
     Actor.prototype.destroy.call(this);
     TargetActorRegistry.unregisterTargetActor(this);
-    if (this._watchedResources) {
-      this.unwatchTargetResources([...this._watchedResources]);
+    if (this._resourceWatchers) {
+      this.unwatchTargetResources([...this._resourceWatchers.keys()]);
     }
   },
 

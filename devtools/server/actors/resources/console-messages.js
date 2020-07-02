@@ -26,7 +26,6 @@ loader.lazyRequireGetter(
   true
 );
 
-const listeners = new WeakMap();
 
 
 
@@ -38,98 +37,85 @@ const listeners = new WeakMap();
 
 
 
+class ConsoleMessageWatcher {
+  constructor(targetActor, { onAvailable }) {
+    
+    
+    
+    
+    targetActor.attach();
 
-function watch(targetActor, { onAvailable }) {
-  if (listeners.has(targetActor)) {
-    throw new Error(
-      "Already listening to console messages for this target actor"
+    
+    const onConsoleAPICall = message => {
+      onAvailable([
+        {
+          resourceType: CONSOLE_MESSAGE,
+          message: prepareConsoleMessageForRemote(targetActor, message),
+        },
+      ]);
+    };
+
+    
+    
+    const listener = new ConsoleAPIListener(
+      targetActor.window,
+      onConsoleAPICall,
+      targetActor.consoleAPIListenerOptions
     );
-  }
+    this.listener = listener;
+    listener.init();
 
-  
-  
-  
-  
-  targetActor.attach();
+    
+    const winStartTime =
+      targetActor.window && targetActor.window.performance
+        ? targetActor.window.performance.timing.navigationStart
+        : 0;
 
-  
-  const onConsoleAPICall = message => {
-    onAvailable([
-      {
+    const cachedMessages = listener.getCachedMessages(!targetActor.isRootActor);
+    const messages = [];
+    
+    
+    for (const message of cachedMessages) {
+      if (
+        message.innerID === "ServiceWorker" &&
+        winStartTime > message.timeStamp
+      ) {
+        continue;
+      }
+      messages.push({
         resourceType: CONSOLE_MESSAGE,
         message: prepareConsoleMessageForRemote(targetActor, message),
-      },
-    ]);
-  };
-
-  
-  
-  const listener = new ConsoleAPIListener(
-    targetActor.window,
-    onConsoleAPICall,
-    targetActor.consoleAPIListenerOptions
-  );
-  listener.init();
-  listeners.set(targetActor, listener);
-
-  
-  const winStartTime =
-    targetActor.window && targetActor.window.performance
-      ? targetActor.window.performance.timing.navigationStart
-      : 0;
-
-  const cachedMessages = listener.getCachedMessages(!targetActor.isRootActor);
-  const messages = [];
-  
-  
-  for (const message of cachedMessages) {
-    if (
-      message.innerID === "ServiceWorker" &&
-      winStartTime > message.timeStamp
-    ) {
-      continue;
+      });
     }
-    messages.push({
-      resourceType: CONSOLE_MESSAGE,
-      message: prepareConsoleMessageForRemote(targetActor, message),
-    });
+    onAvailable(messages);
   }
-  onAvailable(messages);
+
+  
+
+
+  destroy() {
+    if (this.listener) {
+      this.listener.destroy();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  onLogPoint(message) {
+    if (!this.listener) {
+      throw new Error("This target actor isn't listening to console messages");
+    }
+    this.listener.handler(message);
+  }
 }
 
-
-
-
-
-
-
-function unwatch(targetActor) {
-  const listener = listeners.get(targetActor);
-  if (!listener) {
-    return;
-  }
-  listener.destroy();
-  listeners.delete(targetActor);
-}
-
-function onLogPoint(targetActor, message) {
-  const listener = listeners.get(targetActor);
-  if (!listener) {
-    targetActor._consoleActor.onConsoleAPICall(message);
-    return;
-    
-    
-    
-    
-  }
-  listener.handler(message);
-}
-
-module.exports = {
-  watch,
-  unwatch,
-  onLogPoint,
-};
+module.exports = ConsoleMessageWatcher;
 
 
 

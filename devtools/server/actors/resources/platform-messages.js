@@ -15,60 +15,64 @@ const {
 const { stringIsLong } = require("devtools/server/actors/object/utils");
 const { LongStringActor } = require("devtools/server/actors/string");
 
-const listeners = new WeakMap();
-
-
-
-
-
-
-
-
-
-
-
-
-function watch(targetActor, { onAvailable }) {
-  if (listeners.has(targetActor)) {
-    throw new Error(
-      "Already listening to console messages for this target actor"
-    );
-  }
-
+class PlatformMessageWatcher {
   
-  if (!targetActor.isRootActor) {
-    return;
-  }
 
-  
-  const listener = {
-    QueryInterface: ChromeUtils.generateQI([Ci.nsIConsoleListener]),
-    observe(message) {
-      if (!shouldHandleMessage(message)) {
-        return;
-      }
 
-      onAvailable([buildResourceFromMessage(targetActor, message)]);
-    },
-  };
 
-  
-  
-  const cachedMessages = Services.console.getMessageArray();
-  Services.console.registerListener(listener);
-  listeners.set(targetActor, listener);
 
-  
-  const messages = [];
-  for (const message of cachedMessages) {
-    if (!shouldHandleMessage(message)) {
-      continue;
+
+
+
+
+
+
+  constructor(targetActor, { onAvailable }) {
+    
+    if (!targetActor.isRootActor) {
+      return;
     }
 
-    messages.push(buildResourceFromMessage(targetActor, message));
+    
+    const listener = {
+      QueryInterface: ChromeUtils.generateQI([Ci.nsIConsoleListener]),
+      observe(message) {
+        if (!shouldHandleMessage(message)) {
+          return;
+        }
+
+        onAvailable([buildResourceFromMessage(targetActor, message)]);
+      },
+    };
+
+    
+    
+    const cachedMessages = Services.console.getMessageArray();
+    Services.console.registerListener(listener);
+    this.listener = listener;
+
+    
+    const messages = [];
+    for (const message of cachedMessages) {
+      if (!shouldHandleMessage(message)) {
+        continue;
+      }
+
+      messages.push(buildResourceFromMessage(targetActor, message));
+    }
+    onAvailable(messages);
   }
-  onAvailable(messages);
+
+  
+
+
+  destroy() {
+    if (this.listener) {
+      Services.console.unregisterListener(this.listener);
+    }
+  }
 }
+module.exports = PlatformMessageWatcher;
 
 
 
@@ -100,26 +104,6 @@ function buildResourceFromMessage(targetActor, message) {
     resourceType: PLATFORM_MESSAGE,
   };
 }
-
-
-
-
-
-
-
-function unwatch(targetActor) {
-  const listener = listeners.get(targetActor);
-  if (!listener) {
-    return;
-  }
-  Services.console.unregisterListener(listener);
-  listeners.delete(targetActor);
-}
-
-module.exports = {
-  watch,
-  unwatch,
-};
 
 
 

@@ -5,11 +5,10 @@
 "use strict";
 
 const { formatDisplayName } = require("devtools/server/actors/frame");
-loader.lazyRequireGetter(
-  this,
-  "ConsoleMessages",
-  "devtools/server/actors/resources/console-messages"
-);
+const {
+  TYPES,
+  getResourceWatcher,
+} = require("devtools/server/actors/resources/index");
 
 
 function getThrownMessage(completion) {
@@ -73,7 +72,20 @@ function logEvent({ threadActor, frame, level, expression, bindings }) {
   };
 
   const targetActor = threadActor._parent;
-  ConsoleMessages.onLogPoint(targetActor, message);
+  
+  
+  const consoleMessageWatcher = getResourceWatcher(
+    targetActor,
+    TYPES.CONSOLE_MESSAGE
+  );
+  if (consoleMessageWatcher) {
+    consoleMessageWatcher.onLogPoint(message);
+  } else {
+    
+    
+    targetActor._consoleActor.onConsoleAPICall(message);
+  }
+
   return undefined;
 }
 
