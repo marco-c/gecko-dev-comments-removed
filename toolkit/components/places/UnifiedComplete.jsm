@@ -344,8 +344,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   PlacesRemoteTabsAutocompleteProvider:
     "resource://gre/modules/PlacesRemoteTabsAutocompleteProvider.jsm",
-  PlacesSearchAutocompleteProvider:
-    "resource://gre/modules/PlacesSearchAutocompleteProvider.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   ProfileAge: "resource://gre/modules/ProfileAge.jsm",
@@ -354,6 +352,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.jsm",
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
+  UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.jsm",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
@@ -958,17 +957,6 @@ Search.prototype = {
       }
     };
 
-    if (UrlbarPrefs.get("restyleSearches")) {
-      
-      
-      
-      
-      await PlacesSearchAutocompleteProvider.ensureReady();
-      if (!this.pending) {
-        return;
-      }
-    }
-
     
     
     
@@ -996,7 +984,7 @@ Search.prototype = {
 
     
     
-    let tokenAliasEngines = await PlacesSearchAutocompleteProvider.tokenAliasEngines();
+    let tokenAliasEngines = await UrlbarSearchUtils.tokenAliasEngines();
     if (this._trimmedOriginalSearchString == "@" && tokenAliasEngines.length) {
       this._autocompleteSearch.finishSearch(true);
       return;
@@ -1234,7 +1222,7 @@ Search.prototype = {
     }
 
     
-    let engines = await PlacesSearchAutocompleteProvider.tokenAliasEngines();
+    let engines = await UrlbarSearchUtils.tokenAliasEngines();
     for (let { engine, tokenAliases } of engines) {
       for (let alias of tokenAliases) {
         if (alias.startsWith(token.toLocaleLowerCase())) {
@@ -1515,9 +1503,7 @@ Search.prototype = {
       return false;
     }
 
-    let engine = await PlacesSearchAutocompleteProvider.engineForDomainPrefix(
-      searchStr
-    );
+    let engine = await UrlbarSearchUtils.engineForDomainPrefix(searchStr);
     if (!engine) {
       return false;
     }
@@ -1559,7 +1545,7 @@ Search.prototype = {
   },
 
   async _matchSearchEngineAlias(alias) {
-    let engine = await PlacesSearchAutocompleteProvider.engineForAlias(alias);
+    let engine = await UrlbarSearchUtils.engineForAlias(alias);
     if (!engine) {
       return false;
     }
@@ -1578,14 +1564,19 @@ Search.prototype = {
   },
 
   async _matchCurrentSearchEngine() {
-    let engine = this._engineName
-      ? Services.search.getEngineByName(this._engineName)
-      : await PlacesSearchAutocompleteProvider.currentEngine(
-          this._inPrivateWindow
-        );
+    let engine;
+    if (this._engineName) {
+      engine = Services.search.getEngineByName(this._engineName);
+    } else if (this._inPrivateWindow) {
+      engine = Services.search.defaultPrivateEngine;
+    } else {
+      engine = Services.search.defaultEngine;
+    }
+
     if (!engine || !this.pending) {
       return false;
     }
+
     
     
     
@@ -1841,9 +1832,7 @@ Search.prototype = {
 
   _maybeRestyleSearchMatch(match) {
     
-    let parseResult = PlacesSearchAutocompleteProvider.parseSubmissionURL(
-      match.value
-    );
+    let parseResult = Services.search.parseSubmissionURL(match.value);
     if (!parseResult) {
       return;
     }

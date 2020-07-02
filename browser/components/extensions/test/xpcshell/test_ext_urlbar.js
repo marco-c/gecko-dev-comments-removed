@@ -1357,13 +1357,7 @@ add_task(async function test_privateBrowsing_allowed_onQueryCanceled() {
   await startPromise;
 
   
-  Assert.ok(provider.isActive(context));
-  Assert.equal(provider.getPriority(context), 0);
-
-  
-  await Promise.all(
-    ["onBehaviorRequested", "onQueryCanceled"].map(msg => ext.awaitMessage(msg))
-  );
+  await ext.awaitMessage("onQueryCanceled");
 
   await ext.unload();
 });
