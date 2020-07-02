@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+#include "nsSVGSymbolFrame.h"
+
+#include "mozilla/PresShell.h"
+
+using namespace mozilla;
+
+nsIFrame* NS_NewSVGSymbolFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
+  return new (aPresShell)
+      nsSVGSymbolFrame(aStyle, aPresShell->GetPresContext());
+}
+
+NS_IMPL_FRAMEARENA_HELPERS(nsSVGSymbolFrame)
+
+
+
+
+NS_QUERYFRAME_HEAD(nsSVGSymbolFrame)
+  NS_QUERYFRAME_ENTRY(nsSVGSymbolFrame)
+NS_QUERYFRAME_TAIL_INHERITING(nsSVGViewportFrame)
+
+#ifdef DEBUG
+void nsSVGSymbolFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
+                            nsIFrame* aPrevInFlow) {
+  NS_ASSERTION(aContent->IsSVGElement(nsGkAtoms::symbol),
+               "Content is not an SVG 'symbol' element!");
+
+  nsSVGViewportFrame::Init(aContent, aParent, aPrevInFlow);
+}
+#endif 

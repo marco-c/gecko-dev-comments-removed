@@ -1,0 +1,41 @@
+
+
+
+
+
+
+#ifndef __NS_SVGINNERSVGFRAME_H__
+#define __NS_SVGINNERSVGFRAME_H__
+
+#include "nsSVGViewportFrame.h"
+
+namespace mozilla {
+class PresShell;
+}  
+
+class nsSVGInnerSVGFrame final : public nsSVGViewportFrame {
+  friend nsIFrame* NS_NewSVGInnerSVGFrame(mozilla::PresShell* aPresShell,
+                                          ComputedStyle* aStyle);
+
+ protected:
+  explicit nsSVGInnerSVGFrame(ComputedStyle* aStyle,
+                              nsPresContext* aPresContext)
+      : nsSVGViewportFrame(aStyle, aPresContext, kClassID) {}
+
+ public:
+  NS_DECL_QUERYFRAME
+  NS_DECL_FRAMEARENA_HELPERS(nsSVGInnerSVGFrame)
+
+#ifdef DEBUG
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override;
+#endif
+
+#ifdef DEBUG_FRAME_DUMP
+  virtual nsresult GetFrameName(nsAString& aResult) const override {
+    return MakeFrameName(NS_LITERAL_STRING("SVGInnerSVG"), aResult);
+  }
+#endif
+};
+
+#endif

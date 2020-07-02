@@ -25,13 +25,11 @@
 class nsAtom;
 class nsIURI;
 class nsSVGClipPathFrame;
+class nsSVGMarkerFrame;
 class nsSVGPaintServerFrame;
 class nsSVGFilterFrame;
-
+class nsSVGMaskFrame;
 namespace mozilla {
-class SVGMarkerFrame;
-class SVGMaskFrame;
-
 namespace dom {
 class CanvasRenderingContext2D;
 class SVGGeometryElement;
@@ -255,7 +253,7 @@ class SVGObserverUtils {
 
 
   static bool GetAndObserveMarkers(nsIFrame* aMarkedFrame,
-                                   SVGMarkerFrame* (*aFrames)[3]);
+                                   nsSVGMarkerFrame* (*aFrames)[3]);
 
   
 
@@ -346,7 +344,7 @@ class SVGObserverUtils {
 
 
   static ReferenceState GetAndObserveMasks(
-      nsIFrame* aMaskedFrame, nsTArray<SVGMaskFrame*>* aMaskFrames);
+      nsIFrame* aMaskedFrame, nsTArray<nsSVGMaskFrame*>* aMaskFrames);
 
   
 

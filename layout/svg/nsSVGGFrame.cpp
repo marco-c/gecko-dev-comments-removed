@@ -5,7 +5,7 @@
 
 
 
-#include "SVGGFrame.h"
+#include "nsSVGGFrame.h"
 
 
 #include "mozilla/PresShell.h"
@@ -16,27 +16,24 @@
 #include "SVGGraphicsElement.h"
 #include "SVGTransformableElement.h"
 
+using namespace mozilla;
 using namespace mozilla::dom;
 
 
 
 
-nsIFrame* NS_NewSVGGFrame(mozilla::PresShell* aPresShell,
-                          mozilla::ComputedStyle* aStyle) {
-  return new (aPresShell)
-      mozilla::SVGGFrame(aStyle, aPresShell->GetPresContext());
+nsIFrame* NS_NewSVGGFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
+  return new (aPresShell) nsSVGGFrame(aStyle, aPresShell->GetPresContext());
 }
 
-namespace mozilla {
-
-NS_IMPL_FRAMEARENA_HELPERS(SVGGFrame)
+NS_IMPL_FRAMEARENA_HELPERS(nsSVGGFrame)
 
 #ifdef DEBUG
-void SVGGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
-                     nsIFrame* aPrevInFlow) {
+void nsSVGGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
+                       nsIFrame* aPrevInFlow) {
   NS_ASSERTION(aContent->IsSVGElement() &&
                    static_cast<SVGElement*>(aContent)->IsTransformable(),
-               "The element is not transformable");
+               "The element doesn't support nsIDOMSVGTransformable");
 
   nsSVGDisplayContainerFrame::Init(aContent, aParent, aPrevInFlow);
 }
@@ -45,8 +42,8 @@ void SVGGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
 
 
-nsresult SVGGFrame::AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                     int32_t aModType) {
+nsresult nsSVGGFrame::AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                       int32_t aModType) {
   if (aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::transform) {
     
     
@@ -57,5 +54,3 @@ nsresult SVGGFrame::AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
 
   return NS_OK;
 }
-
-}  

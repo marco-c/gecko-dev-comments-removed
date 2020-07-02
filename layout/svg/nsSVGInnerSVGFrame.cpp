@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+#include "nsSVGInnerSVGFrame.h"
+
+#include "mozilla/PresShell.h"
+
+using namespace mozilla;
+
+nsIFrame* NS_NewSVGInnerSVGFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
+  return new (aPresShell)
+      nsSVGInnerSVGFrame(aStyle, aPresShell->GetPresContext());
+}
+
+NS_IMPL_FRAMEARENA_HELPERS(nsSVGInnerSVGFrame)
+
+
+
+
+NS_QUERYFRAME_HEAD(nsSVGInnerSVGFrame)
+  NS_QUERYFRAME_ENTRY(nsSVGInnerSVGFrame)
+  NS_QUERYFRAME_ENTRY(nsISVGSVGFrame)
+NS_QUERYFRAME_TAIL_INHERITING(nsSVGViewportFrame)
+
+#ifdef DEBUG
+void nsSVGInnerSVGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
+                              nsIFrame* aPrevInFlow) {
+  NS_ASSERTION(aContent->IsSVGElement(nsGkAtoms::svg),
+               "Content is not an SVG 'svg' element!");
+
+  nsSVGViewportFrame::Init(aContent, aParent, aPrevInFlow);
+}
+#endif 

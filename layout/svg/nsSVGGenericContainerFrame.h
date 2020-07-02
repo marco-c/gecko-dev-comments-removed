@@ -21,22 +21,17 @@ namespace mozilla {
 class PresShell;
 }  
 
-nsIFrame* NS_NewSVGGenericContainerFrame(mozilla::PresShell* aPresShell,
-                                         mozilla::ComputedStyle* aStyle);
-
-namespace mozilla {
-
-class SVGGenericContainerFrame final : public nsSVGDisplayContainerFrame {
-  friend nsIFrame* ::NS_NewSVGGenericContainerFrame(
+class nsSVGGenericContainerFrame final : public nsSVGDisplayContainerFrame {
+  friend nsIFrame* NS_NewSVGGenericContainerFrame(
       mozilla::PresShell* aPresShell, ComputedStyle* aStyle);
 
  protected:
-  explicit SVGGenericContainerFrame(ComputedStyle* aStyle,
-                                    nsPresContext* aPresContext)
+  explicit nsSVGGenericContainerFrame(ComputedStyle* aStyle,
+                                      nsPresContext* aPresContext)
       : nsSVGDisplayContainerFrame(aStyle, aPresContext, kClassID) {}
 
  public:
-  NS_DECL_FRAMEARENA_HELPERS(SVGGenericContainerFrame)
+  NS_DECL_FRAMEARENA_HELPERS(nsSVGGenericContainerFrame)
 
   
   virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
@@ -51,7 +46,5 @@ class SVGGenericContainerFrame final : public nsSVGDisplayContainerFrame {
   
   virtual gfxMatrix GetCanvasTM() override;
 };
-
-}  
 
 #endif  

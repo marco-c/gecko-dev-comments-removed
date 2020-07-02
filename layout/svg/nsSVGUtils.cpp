@@ -34,7 +34,9 @@
 #include "nsSVGContainerFrame.h"
 #include "nsSVGDisplayableFrame.h"
 #include "nsSVGFilterPaintCallback.h"
+#include "nsSVGInnerSVGFrame.h"
 #include "nsSVGIntegrationUtils.h"
+#include "nsSVGMaskFrame.h"
 #include "nsSVGOuterSVGFrame.h"
 #include "nsSVGPaintServerFrame.h"
 #include "nsTextFrame.h"
@@ -44,7 +46,6 @@
 #include "mozilla/SVGContextPaint.h"
 #include "mozilla/SVGForeignObjectFrame.h"
 #include "mozilla/SVGGeometryFrame.h"
-#include "mozilla/SVGMaskFrame.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGTextFrame.h"
 #include "mozilla/Unused.h"
@@ -438,7 +439,7 @@ void nsSVGUtils::DetermineMaskUsage(nsIFrame* aFrame, bool aHandleOpacity,
 
   const nsStyleSVGReset* svgReset = firstFrame->StyleSVGReset();
 
-  nsTArray<SVGMaskFrame*> maskFrames;
+  nsTArray<nsSVGMaskFrame*> maskFrames;
   
   SVGObserverUtils::GetAndObserveMasks(firstFrame, &maskFrames);
   aUsage.shouldGenerateMaskLayer = (maskFrames.Length() > 0);
@@ -652,7 +653,7 @@ void nsSVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
   
 
   nsSVGClipPathFrame* clipPathFrame;
-  nsTArray<SVGMaskFrame*> maskFrames;
+  nsTArray<nsSVGMaskFrame*> maskFrames;
   
   
   
@@ -666,7 +667,7 @@ void nsSVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
     return;
   }
 
-  SVGMaskFrame* maskFrame = maskFrames.IsEmpty() ? nullptr : maskFrames[0];
+  nsSVGMaskFrame* maskFrame = maskFrames.IsEmpty() ? nullptr : maskFrames[0];
 
   MixModeBlender blender(aFrame, &aContext);
   gfxContext* target = blender.ShouldCreateDrawTargetForBlend()
@@ -697,8 +698,9 @@ void nsSVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
     if (maskUsage.shouldGenerateMaskLayer && maskFrame) {
       StyleMaskMode maskMode =
           aFrame->StyleSVGReset()->mMask.mLayers[0].mMaskMode;
-      SVGMaskFrame::MaskParams params(&aContext, aFrame, aTransform,
-                                      maskUsage.opacity, maskMode, aImgParams);
+      nsSVGMaskFrame::MaskParams params(&aContext, aFrame, aTransform,
+                                        maskUsage.opacity, maskMode,
+                                        aImgParams);
       
       
       maskTransform = aContext.CurrentMatrix();
