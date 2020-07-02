@@ -1457,7 +1457,7 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
 
 
     APPEND_TO_DRIVER_BLOCKLIST2(OperatingSystem::Windows7,
-                                DeviceFamily::IntelHDGraphicsToHaswell,
+                                DeviceFamily::IntelHaswell,
                                 nsIGfxInfo::FEATURE_DIRECT2D,
                                 nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
                                 DRIVER_BUILD_ID_LESS_THAN_OR_EQUAL, 4578,
