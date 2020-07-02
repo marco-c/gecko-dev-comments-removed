@@ -17,7 +17,7 @@ use crate::properties::longhands::animation_fill_mode::computed_value::single_va
 use crate::properties::longhands::animation_play_state::computed_value::single_value::T as AnimationPlayState;
 use crate::properties::LonghandIdSet;
 use crate::properties::{self, CascadeMode, ComputedValues, LonghandId};
-use crate::stylesheets::keyframes_rule::{KeyframesAnimation, KeyframesStep, KeyframesStepValue};
+use crate::stylesheets::keyframes_rule::{KeyframesStep, KeyframesStepValue};
 use crate::stylesheets::Origin;
 use crate::values::animated::{Animate, Procedure};
 use crate::values::computed::Time;
@@ -174,6 +174,103 @@ pub enum KeyframesIterationState {
 
 
 #[derive(Clone, MallocSizeOf)]
+struct ComputedKeyframeStep {
+    step: KeyframesStep,
+
+    #[ignore_malloc_size_of = "ComputedValues"]
+    style: Arc<ComputedValues>,
+
+    timing_function: TimingFunction,
+}
+
+impl ComputedKeyframeStep {
+    fn generate_for_keyframes<E>(
+        element: E,
+        steps: &[KeyframesStep],
+        context: &SharedStyleContext,
+        base_style: &Arc<ComputedValues>,
+        font_metrics_provider: &dyn FontMetricsProvider,
+        default_timing_function: TimingFunction,
+    ) -> Vec<Self>
+    where
+        E: TElement,
+    {
+        let mut previous_style = base_style.clone();
+        steps
+            .iter()
+            .cloned()
+            .map(|step| match step.value {
+                KeyframesStepValue::ComputedValues => ComputedKeyframeStep {
+                    step,
+                    style: base_style.clone(),
+                    timing_function: default_timing_function,
+                },
+                KeyframesStepValue::Declarations {
+                    block: ref declarations,
+                } => {
+                    let guard = declarations.read_with(context.guards.author);
+
+                    let iter = || {
+                        
+                        
+                        
+                        
+                        guard
+                            .normal_declaration_iter()
+                            .filter(|declaration| declaration.is_animatable())
+                            .map(|decl| (decl, Origin::Author))
+                    };
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    let computed_style = properties::apply_declarations::<E, _, _>(
+                        context.stylist.device(),
+                         None,
+                        previous_style.rules(),
+                        &context.guards,
+                        iter,
+                        Some(&previous_style),
+                        Some(&previous_style),
+                        Some(&previous_style),
+                        font_metrics_provider,
+                        CascadeMode::Unvisited {
+                            visited_rules: None,
+                        },
+                        context.quirks_mode(),
+                         None,
+                        &mut Default::default(),
+                        Some(element),
+                    );
+
+                    
+                    
+                    
+                    let timing_function = if step.declared_timing_function {
+                        computed_style.get_box().animation_timing_function_at(0)
+                    } else {
+                        default_timing_function
+                    };
+
+                    previous_style = computed_style.clone();
+                    ComputedKeyframeStep {
+                        step,
+                        style: computed_style,
+                        timing_function,
+                    }
+                },
+            })
+            .collect()
+    }
+}
+
+
+#[derive(Clone, MallocSizeOf)]
 pub struct Animation {
     
     pub node: OpaqueNode,
@@ -182,7 +279,10 @@ pub struct Animation {
     pub name: Atom,
 
     
-    pub keyframes_animation: KeyframesAnimation,
+    properties_changed: LonghandIdSet,
+
+    
+    computed_steps: Vec<ComputedKeyframeStep>,
 
     
     
@@ -377,14 +477,7 @@ impl Animation {
 
     
     
-    fn update_style<E>(
-        &self,
-        context: &SharedStyleContext,
-        style: &mut Arc<ComputedValues>,
-        font_metrics_provider: &dyn FontMetricsProvider,
-    ) where
-        E: TElement,
-    {
+    fn update_style(&self, context: &SharedStyleContext, style: &mut Arc<ComputedValues>) {
         let duration = self.duration;
         let started_at = self.started_at;
 
@@ -396,7 +489,7 @@ impl Animation {
             AnimationState::Canceled => return,
         };
 
-        debug_assert!(!self.keyframes_animation.steps.is_empty());
+        debug_assert!(!self.computed_steps.is_empty());
 
         let mut total_progress = (now - started_at) / duration;
         if total_progress < 0. &&
@@ -417,34 +510,34 @@ impl Animation {
         
         let next_keyframe_index;
         let prev_keyframe_index;
+        let num_steps = self.computed_steps.len();
+        debug_assert!(num_steps > 0);
         match self.current_direction {
             AnimationDirection::Normal => {
                 next_keyframe_index = self
-                    .keyframes_animation
-                    .steps
+                    .computed_steps
                     .iter()
-                    .position(|step| total_progress as f32 <= step.start_percentage.0);
+                    .position(|step| total_progress as f32 <= step.step.start_percentage.0);
                 prev_keyframe_index = next_keyframe_index
                     .and_then(|pos| if pos != 0 { Some(pos - 1) } else { None })
                     .unwrap_or(0);
             },
             AnimationDirection::Reverse => {
                 next_keyframe_index = self
-                    .keyframes_animation
-                    .steps
+                    .computed_steps
                     .iter()
                     .rev()
-                    .position(|step| total_progress as f32 <= 1. - step.start_percentage.0)
-                    .map(|pos| self.keyframes_animation.steps.len() - pos - 1);
+                    .position(|step| total_progress as f32 <= 1. - step.step.start_percentage.0)
+                    .map(|pos| num_steps - pos - 1);
                 prev_keyframe_index = next_keyframe_index
                     .and_then(|pos| {
-                        if pos != self.keyframes_animation.steps.len() - 1 {
+                        if pos != num_steps - 1 {
                             Some(pos + 1)
                         } else {
                             None
                         }
                     })
-                    .unwrap_or(self.keyframes_animation.steps.len() - 1)
+                    .unwrap_or(num_steps - 1)
             },
             _ => unreachable!(),
         }
@@ -454,86 +547,47 @@ impl Animation {
             prev_keyframe_index, next_keyframe_index
         );
 
-        let prev_keyframe = &self.keyframes_animation.steps[prev_keyframe_index];
+        let prev_keyframe = &self.computed_steps[prev_keyframe_index];
         let next_keyframe = match next_keyframe_index {
-            Some(target) => &self.keyframes_animation.steps[target],
+            Some(index) => &self.computed_steps[index],
             None => return,
         };
 
         let update_with_single_keyframe_style = |style, computed_style: &Arc<ComputedValues>| {
             let mutable_style = Arc::make_mut(style);
-            for property in self
-                .keyframes_animation
-                .properties_changed
-                .iter()
-                .filter_map(|longhand| {
-                    AnimationValue::from_computed_values(longhand, &**computed_style)
-                })
-            {
+            for property in self.properties_changed.iter().filter_map(|longhand| {
+                AnimationValue::from_computed_values(longhand, &**computed_style)
+            }) {
                 property.set_in_style_for_servo(mutable_style);
             }
         };
 
         
-        let prev_keyframe_style = compute_style_for_animation_step::<E>(
-            context,
-            prev_keyframe,
-            style,
-            &self.cascade_style,
-            font_metrics_provider,
-        );
+        let prev_keyframe_style = &prev_keyframe.style;
+        let next_keyframe_style = &next_keyframe.style;
         if total_progress <= 0.0 {
             update_with_single_keyframe_style(style, &prev_keyframe_style);
             return;
         }
 
-        let next_keyframe_style = compute_style_for_animation_step::<E>(
-            context,
-            next_keyframe,
-            &prev_keyframe_style,
-            &self.cascade_style,
-            font_metrics_provider,
-        );
         if total_progress >= 1.0 {
             update_with_single_keyframe_style(style, &next_keyframe_style);
             return;
         }
 
         let relative_timespan =
-            (next_keyframe.start_percentage.0 - prev_keyframe.start_percentage.0).abs();
+            (next_keyframe.step.start_percentage.0 - prev_keyframe.step.start_percentage.0).abs();
         let relative_duration = relative_timespan as f64 * duration;
         let last_keyframe_ended_at = match self.current_direction {
             AnimationDirection::Normal => {
-                self.started_at + (duration * prev_keyframe.start_percentage.0 as f64)
+                self.started_at + (duration * prev_keyframe.step.start_percentage.0 as f64)
             },
             AnimationDirection::Reverse => {
-                self.started_at + (duration * (1. - prev_keyframe.start_percentage.0 as f64))
+                self.started_at + (duration * (1. - prev_keyframe.step.start_percentage.0 as f64))
             },
             _ => unreachable!(),
         };
         let relative_progress = (now - last_keyframe_ended_at) / relative_duration;
-
-        
-        
-        let timing_function = if prev_keyframe.declared_timing_function {
-            
-            
-            prev_keyframe_style
-                .get_box()
-                .animation_timing_function_at(0)
-        } else {
-            
-            
-            let index = match style
-                .get_box()
-                .animation_name_iter()
-                .position(|animation_name| Some(&self.name) == animation_name.as_atom())
-            {
-                Some(index) => index,
-                None => return warn!("Tried to update a style with a cancelled animation."),
-            };
-            style.get_box().animation_timing_function_mod(index)
-        };
 
         let mut new_style = (**style).clone();
         let mut update_style_for_longhand = |longhand| {
@@ -542,14 +596,14 @@ impl Animation {
             PropertyAnimation {
                 from,
                 to,
-                timing_function,
+                timing_function: prev_keyframe.timing_function,
                 duration: relative_duration as f64,
             }
             .update(&mut new_style, relative_progress);
             None::<()>
         };
 
-        for property in self.keyframes_animation.properties_changed.iter() {
+        for property in self.properties_changed.iter() {
             update_style_for_longhand(property);
         }
 
@@ -724,16 +778,13 @@ impl ElementAnimationSet {
         }
     }
 
-    pub(crate) fn apply_active_animations<E>(
+    pub(crate) fn apply_active_animations(
         &mut self,
         context: &SharedStyleContext,
         style: &mut Arc<ComputedValues>,
-        font_metrics: &dyn crate::font_metrics::FontMetricsProvider,
-    ) where
-        E: TElement,
-    {
+    ) {
         for animation in &self.animations {
-            animation.update_style::<E>(context, style, font_metrics);
+            animation.update_style(context, style);
         }
 
         for transition in &self.transitions {
@@ -778,13 +829,18 @@ impl ElementAnimationSet {
                 .count()
     }
 
-    fn has_active_transition_or_animation(&self) -> bool {
+    
+    pub fn has_active_animation(&self) -> bool {
         self.animations
             .iter()
-            .any(|animation| animation.state != AnimationState::Canceled) ||
-            self.transitions
-                .iter()
-                .any(|transition| transition.state != AnimationState::Canceled)
+            .any(|animation| animation.state != AnimationState::Canceled)
+    }
+
+    
+    pub fn has_active_transition(&self) -> bool {
+        self.transitions
+            .iter()
+            .any(|transition| transition.state != AnimationState::Canceled)
     }
 
     
@@ -794,6 +850,7 @@ impl ElementAnimationSet {
         element: E,
         context: &SharedStyleContext,
         new_style: &Arc<ComputedValues>,
+        font_metrics: &dyn crate::font_metrics::FontMetricsProvider,
     ) where
         E: TElement,
     {
@@ -803,21 +860,18 @@ impl ElementAnimationSet {
             }
         }
 
-        maybe_start_animations(element, &context, &new_style, self);
+        maybe_start_animations(element, &context, &new_style, self, font_metrics);
     }
 
     
     
-    pub fn update_transitions_for_new_style<E>(
+    pub fn update_transitions_for_new_style(
         &mut self,
         context: &SharedStyleContext,
         opaque_node: OpaqueNode,
         old_style: Option<&Arc<ComputedValues>>,
         after_change_style: &Arc<ComputedValues>,
-        font_metrics: &dyn crate::font_metrics::FontMetricsProvider,
-    ) where
-        E: TElement,
-    {
+    ) {
         
         
         let mut before_change_style = match old_style {
@@ -829,9 +883,9 @@ impl ElementAnimationSet {
         
         
         
-        if self.has_active_transition_or_animation() {
+        if self.has_active_transition() || self.has_active_animation() {
             before_change_style = before_change_style.clone();
-            self.apply_active_animations::<E>(context, &mut before_change_style, font_metrics);
+            self.apply_active_animations(context, &mut before_change_style);
         }
 
         let transitioning_properties = start_transitions_if_applicable(
@@ -961,55 +1015,6 @@ pub fn start_transitions_if_applicable(
     properties_that_transition
 }
 
-fn compute_style_for_animation_step<E>(
-    context: &SharedStyleContext,
-    step: &KeyframesStep,
-    previous_style: &ComputedValues,
-    style_from_cascade: &Arc<ComputedValues>,
-    font_metrics_provider: &dyn FontMetricsProvider,
-) -> Arc<ComputedValues>
-where
-    E: TElement,
-{
-    match step.value {
-        KeyframesStepValue::ComputedValues => style_from_cascade.clone(),
-        KeyframesStepValue::Declarations {
-            block: ref declarations,
-        } => {
-            let guard = declarations.read_with(context.guards.author);
-
-            
-            
-            let computed = properties::apply_declarations::<E, _>(
-                context.stylist.device(),
-                 None,
-                previous_style.rules(),
-                &context.guards,
-                
-                
-                
-                
-                guard
-                    .normal_declaration_iter()
-                    .filter(|declaration| declaration.is_animatable())
-                    .map(|decl| (decl, Origin::Author)),
-                Some(previous_style),
-                Some(previous_style),
-                Some(previous_style),
-                font_metrics_provider,
-                CascadeMode::Unvisited {
-                    visited_rules: None,
-                },
-                context.quirks_mode(),
-                 None,
-                &mut Default::default(),
-                 None,
-            );
-            computed
-        },
-    }
-}
-
 
 
 pub fn maybe_start_animations<E>(
@@ -1017,6 +1022,7 @@ pub fn maybe_start_animations<E>(
     context: &SharedStyleContext,
     new_style: &Arc<ComputedValues>,
     animation_state: &mut ElementAnimationSet,
+    font_metrics_provider: &dyn FontMetricsProvider,
 ) where
     E: TElement,
 {
@@ -1033,7 +1039,7 @@ pub fn maybe_start_animations<E>(
             continue;
         }
 
-        let anim = match context.stylist.get_animation(name, element) {
+        let keyframe_animation = match context.stylist.get_animation(name, element) {
             Some(animation) => animation,
             None => continue,
         };
@@ -1044,7 +1050,7 @@ pub fn maybe_start_animations<E>(
         
         
         
-        if anim.steps.is_empty() {
+        if keyframe_animation.steps.is_empty() {
             continue;
         }
 
@@ -1071,10 +1077,20 @@ pub fn maybe_start_animations<E>(
             AnimationPlayState::Running => AnimationState::Pending,
         };
 
+        let computed_steps = ComputedKeyframeStep::generate_for_keyframes::<E>(
+            element,
+            &keyframe_animation.steps,
+            context,
+            new_style,
+            font_metrics_provider,
+            new_style.get_box().animation_timing_function_mod(i),
+        );
+
         let new_animation = Animation {
             node: element.as_node().opaque(),
             name: name.clone(),
-            keyframes_animation: anim.clone(),
+            properties_changed: keyframe_animation.properties_changed,
+            computed_steps,
             started_at: animation_start,
             duration: duration as f64,
             fill_mode: box_style.animation_fill_mode_mod(i),
