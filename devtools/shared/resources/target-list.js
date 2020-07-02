@@ -99,7 +99,6 @@ class TargetList {
     
     this.listenForWorkers = false;
     this.listenForServiceWorkers = false;
-    this.destroyServiceWorkersOnNavigation = false;
   }
 
   
@@ -424,10 +423,6 @@ class TargetList {
     
     
     await this.startListening();
-  }
-
-  isTargetRegistered(targetFront) {
-    return this._targets.has(targetFront);
   }
 }
 
