@@ -2628,8 +2628,7 @@ void nsGlobalWindowOuter::SetDocShell(nsDocShell* aDocShell) {
   MOZ_RELEASE_ASSERT(!parentContext ||
                      GetBrowsingContextGroup() == parentContext->Group());
 
-  mTopLevelOuterContentWindow =
-      !mIsChrome && GetInProcessScriptableTopInternal() == this;
+  mTopLevelOuterContentWindow = mBrowsingContext->IsTopContent();
 
   
   
