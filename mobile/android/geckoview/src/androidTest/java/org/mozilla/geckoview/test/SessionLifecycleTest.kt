@@ -261,10 +261,6 @@ class SessionLifecycleTest : BaseSessionTest() {
         var newSession: GeckoSession? = null
         mainSession.toParcel { parcel ->
             newSession = sessionRule.createFromParcel(parcel)
-            
-            
-            
-            sessionRule.transferPort(mainSession, newSession!!)
         }
 
         
