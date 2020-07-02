@@ -145,18 +145,28 @@ class U2FHIDTokenManager final : public U2FTokenTransport {
   class Transaction {
    public:
     Transaction(uint64_t aId, const nsTArray<uint8_t>& aRpIdHash,
+                const Maybe<nsTArray<uint8_t>>& aAppIdHash,
                 const nsCString& aClientDataJSON,
                 bool aForceNoneAttestation = false)
         : mId(aId),
           mRpIdHash(aRpIdHash.Clone()),
           mClientDataJSON(aClientDataJSON),
-          mForceNoneAttestation(aForceNoneAttestation) {}
+          mForceNoneAttestation(aForceNoneAttestation) {
+      if (aAppIdHash) {
+        mAppIdHash = Some(aAppIdHash->Clone());
+      } else {
+        mAppIdHash = Nothing();
+      }
+    }
 
     
     uint64_t mId;
 
     
     nsTArray<uint8_t> mRpIdHash;
+
+    
+    Maybe<nsTArray<uint8_t>> mAppIdHash;
 
     
     nsCString mClientDataJSON;
