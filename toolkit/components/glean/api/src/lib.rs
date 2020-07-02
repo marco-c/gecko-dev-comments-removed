@@ -18,7 +18,7 @@ pub extern crate uuid;
 pub mod metrics;
 pub mod ping_upload;
 
-mod ipc;
+pub mod ipc;
 
 
 fn with_glean<F, R>(f: F) -> R
