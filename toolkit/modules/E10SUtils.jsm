@@ -147,6 +147,33 @@ function documentChannelPermittedForURI(aURI) {
   );
 }
 
+function canProcessSwitchWithDocumentChannel(
+  aURI,
+  aRemoteSubframes,
+  aDesiredRemoteType,
+  aBrowsingContext
+) {
+  if (
+    aBrowsingContext &&
+    aBrowsingContext.top &&
+    aBrowsingContext.inRDMPane &&
+    aBrowsingContext.embedderElementType == "iframe" &&
+    aDesiredRemoteType == NOT_REMOTE
+  ) {
+    
+    
+    
+    
+    
+    
+    return false;
+  }
+  return (
+    (aRemoteSubframes || documentChannel) &&
+    documentChannelPermittedForURI(aURI)
+  );
+}
+
 
 
 
@@ -825,8 +852,12 @@ var E10SUtils = {
     
     if (
       uriObject &&
-      (remoteSubframes || documentChannel) &&
-      documentChannelPermittedForURI(uriObject)
+      canProcessSwitchWithDocumentChannel(
+        uriObject,
+        remoteSubframes,
+        requiredRemoteType,
+        browser.browsingContext
+      )
     ) {
       mustChangeProcess = false;
       newFrameloader = false;
@@ -853,8 +884,11 @@ var E10SUtils = {
     );
 
     if (
-      (aRemoteSubframes || documentChannel) &&
-      documentChannelPermittedForURI(aURI)
+      canProcessSwitchWithDocumentChannel(
+        aURI,
+        aRemoteSubframes,
+        wantRemoteType
+      )
     ) {
       
       return true;
@@ -890,8 +924,12 @@ var E10SUtils = {
     
     if (
       AppConstants.MOZ_WIDGET_TOOLKIT != "android" &&
-      (useRemoteSubframes || documentChannel) &&
-      documentChannelPermittedForURI(aURI)
+      canProcessSwitchWithDocumentChannel(
+        aURI,
+        useRemoteSubframes,
+        wantRemoteType,
+        aDocShell.browsingContext
+      )
     ) {
       return true;
     }
