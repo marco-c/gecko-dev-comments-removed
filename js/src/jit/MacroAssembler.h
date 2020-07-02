@@ -858,16 +858,16 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
 
   
-  inline void swap16SignExtend(Register reg) PER_SHARED_ARCH;
+  inline void byteSwap16SignExtend(Register reg) PER_SHARED_ARCH;
 
   
-  inline void swap16ZeroExtend(Register reg) PER_SHARED_ARCH;
+  inline void byteSwap16ZeroExtend(Register reg) PER_SHARED_ARCH;
 
   
-  inline void swap32(Register reg) PER_SHARED_ARCH;
+  inline void byteSwap32(Register reg) PER_SHARED_ARCH;
 
   
-  inline void swap64(Register64 reg) PER_ARCH;
+  inline void byteSwap64(Register64 reg) PER_ARCH;
 
   
   
