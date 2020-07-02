@@ -9,6 +9,9 @@
 #include <fstream>
 #include <string>
 
+#include <windows.h>
+
+#include "common.h"
 #include "EventLog.h"
 
 #include "json/json.h"
@@ -305,13 +308,48 @@ static BoolResult GetPingAlreadySentToday() {
   return false;
 }
 
+
+
+
+
+
+
+
+
+static TelemetryFieldResult GetAndUpdatePreviousDefaultBrowser(
+    const std::string& currentDefault, Browser prevDefault) {
+  const wchar_t* registryValueName = L"PingCurrentDefault";
+
+  MaybeStringResult readResult =
+      RegistryGetValueString(IsPrefixed::Unprefixed, registryValueName);
+  if (readResult.isErr()) {
+    HRESULT hr = readResult.unwrapErr().AsHResult();
+    LOG_ERROR_MESSAGE(L"Unable to read registry: %#X", hr);
+    return TelemetryFieldResult(mozilla::WindowsError::FromHResult(hr));
+  }
+  mozilla::Maybe<std::string> maybeValue = readResult.unwrap();
+  std::string oldCurrentDefault;
+  if (maybeValue.isSome()) {
+    oldCurrentDefault = maybeValue.value();
+  } else {
+    oldCurrentDefault = GetStringForBrowser(prevDefault);
+  }
+
+  mozilla::WindowsErrorResult<mozilla::Ok> writeResult = RegistrySetValueString(
+      IsPrefixed::Unprefixed, registryValueName, currentDefault.c_str());
+  if (writeResult.isErr()) {
+    HRESULT hr = readResult.unwrapErr().AsHResult();
+    LOG_ERROR_MESSAGE(L"Unable to write registry: %#X", hr);
+    return TelemetryFieldResult(mozilla::WindowsError::FromHResult(hr));
+  }
+  return oldCurrentDefault;
+}
+
 HRESULT SendDefaultBrowserPing(
     const DefaultBrowserInfo& browserInfo,
     const NotificationActivities& activitiesPerformed) {
   std::string currentDefaultBrowser =
       GetStringForBrowser(browserInfo.currentDefaultBrowser);
-  std::string previousDefaultBrowser =
-      GetStringForBrowser(browserInfo.previousDefaultBrowser);
   std::string notificationType =
       GetStringForNotificationType(activitiesPerformed.type);
   std::string notificationShown =
@@ -356,6 +394,17 @@ HRESULT SendDefaultBrowserPing(
   if (pingAlreadySent) {
     return S_OK;
   }
+
+  
+  
+  
+  TelemetryFieldResult previousDefaultBrowserResult =
+      GetAndUpdatePreviousDefaultBrowser(currentDefaultBrowser,
+                                         browserInfo.previousDefaultBrowser);
+  if (previousDefaultBrowserResult.isErr()) {
+    return previousDefaultBrowserResult.unwrapErr().AsHResult();
+  }
+  std::string previousDefaultBrowser = previousDefaultBrowserResult.unwrap();
 
   return SendPing(currentDefaultBrowser, previousDefaultBrowser, osVersion,
                   osLocale, notificationType, notificationShown,
