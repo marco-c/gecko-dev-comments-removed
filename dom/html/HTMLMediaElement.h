@@ -1831,6 +1831,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   void AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName, bool aNotify);
 
+  RefPtr<GenericPromise> SetSrcMediaStreamSink(AudioDeviceInfo* aSink);
+
   
   TimeDurationAccumulator mPlayTime;
 
