@@ -4564,24 +4564,26 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "CardGrid", function() { return CardGrid; });
  var _DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(27);
  var _DSEmptyState_DSEmptyState_jsx__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(40);
- var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
- var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
+ var _FluentOrText_FluentOrText_jsx__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(39);
+ var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
 
 
 
 
 
 
-class CardGrid extends react__WEBPACK_IMPORTED_MODULE_2___default.a.PureComponent {
+
+class CardGrid extends react__WEBPACK_IMPORTED_MODULE_3___default.a.PureComponent {
   renderCards() {
     const recs = this.props.data.recommendations.slice(0, this.props.items);
     const cards = [];
 
     for (let index = 0; index < this.props.items; index++) {
       const rec = recs[index];
-      cards.push(!rec || rec.placeholder ? react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(_DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__["PlaceholderDSCard"], {
+      cards.push(!rec || rec.placeholder ? react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__["PlaceholderDSCard"], {
         key: `dscard-${index}`
-      }) : react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(_DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__["DSCard"], {
+      }) : react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_DSCard_DSCard_jsx__WEBPACK_IMPORTED_MODULE_0__["DSCard"], {
         key: `dscard-${rec.id}`,
         pos: rec.pos,
         flightId: rec.flight_id,
@@ -4611,7 +4613,7 @@ class CardGrid extends react__WEBPACK_IMPORTED_MODULE_2___default.a.PureComponen
 
 
     const variantClass = this.props.display_variant ? `ds-card-grid-${this.props.display_variant}` : ``;
-    return react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
+    return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
       className: `ds-card-grid ds-card-grid-${this.props.border} ${variantClass}`
     }, cards);
   }
@@ -4627,15 +4629,17 @@ class CardGrid extends react__WEBPACK_IMPORTED_MODULE_2___default.a.PureComponen
 
 
     const isEmpty = data.recommendations.length === 0;
-    return react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", null, this.props.title && react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
+    return react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", null, this.props.title && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
       className: "ds-header"
-    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
       className: "title"
-    }, this.props.title), this.props.context && react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
+    }, this.props.title), this.props.context && react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_FluentOrText_FluentOrText_jsx__WEBPACK_IMPORTED_MODULE_2__["FluentOrText"], {
+      message: this.props.context
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
       className: "ds-context"
-    }, this.props.context)), isEmpty ? react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement("div", {
+    }))), isEmpty ? react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement("div", {
       className: "ds-card-grid empty"
-    }, react__WEBPACK_IMPORTED_MODULE_2___default.a.createElement(_DSEmptyState_DSEmptyState_jsx__WEBPACK_IMPORTED_MODULE_1__["DSEmptyState"], {
+    }, react__WEBPACK_IMPORTED_MODULE_3___default.a.createElement(_DSEmptyState_DSEmptyState_jsx__WEBPACK_IMPORTED_MODULE_1__["DSEmptyState"], {
       status: data.status,
       dispatch: this.props.dispatch,
       feed: this.props.feed
@@ -6592,11 +6596,31 @@ class CollectionCardGrid extends react__WEBPACK_IMPORTED_MODULE_4___default.a.Pu
 
     const {
       title,
-      context
+      context,
+      sponsored_by_override,
+      sponsor
     } = spocs.data[placement.name] || {}; 
 
     if (!title) {
       return null;
+    }
+
+    let sponsoredByMessage = ""; 
+
+    if (sponsored_by_override || sponsored_by_override === "") {
+      
+      
+      
+      sponsoredByMessage = sponsored_by_override;
+    } else if (sponsor) {
+      sponsoredByMessage = {
+        id: `newtab-label-sponsored-by`,
+        values: {
+          sponsor
+        }
+      };
+    } else if (context) {
+      sponsoredByMessage = context;
     } 
     
     
@@ -6620,7 +6644,7 @@ class CollectionCardGrid extends react__WEBPACK_IMPORTED_MODULE_4___default.a.Pu
       className: "ds-collection-card-grid"
     }, react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(content_src_components_DiscoveryStreamComponents_CardGrid_CardGrid__WEBPACK_IMPORTED_MODULE_1__["CardGrid"], {
       title: title,
-      context: context,
+      context: sponsoredByMessage,
       data: recsData,
       feed: feed,
       border: this.props.border,

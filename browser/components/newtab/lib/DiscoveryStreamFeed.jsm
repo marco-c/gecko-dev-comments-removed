@@ -598,6 +598,11 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
     const items = spocs.items || spocs;
     const title = spocs.title || "";
     const context = spocs.context || "";
+    const sponsor = spocs.sponsor || "";
+    
+    
+    
+    const { sponsored_by_override } = spocs;
     
     
     const { flight_id } = spocs;
@@ -605,6 +610,8 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       items,
       title,
       context,
+      sponsor,
+      sponsored_by_override,
       ...(flight_id ? { flight_id } : {}),
     };
   }
@@ -669,6 +676,8 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
                 items: normalizedSpocsItems,
                 title,
                 context,
+                sponsor,
+                sponsored_by_override,
               } = this.normalizeSpocsItems(freshSpocs);
 
               if (!normalizedSpocsItems || !normalizedSpocsItems.length) {
@@ -723,6 +732,8 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
                 [placement.name]: {
                   title,
                   context,
+                  sponsor,
+                  sponsored_by_override,
                   items: dupesResult,
                 },
               };
