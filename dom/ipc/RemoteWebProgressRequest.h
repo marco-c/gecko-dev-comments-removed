@@ -7,31 +7,21 @@
 
 #include "nsIChannel.h"
 #include "nsIClassifiedChannel.h"
-#include "nsIRemoteWebProgressRequest.h"
 
 namespace mozilla {
 namespace dom {
 
-class RemoteWebProgressRequest final : public nsIRemoteWebProgressRequest,
-                                       public nsIChannel,
+class RemoteWebProgressRequest final : public nsIChannel,
                                        public nsIClassifiedChannel {
  public:
   NS_DECL_ISUPPORTS
-  NS_DECL_NSIREMOTEWEBPROGRESSREQUEST
   NS_DECL_NSICHANNEL
   NS_DECL_NSICLASSIFIEDCHANNEL
   NS_DECL_NSIREQUEST
 
-  RemoteWebProgressRequest()
-      : mURI(nullptr), mOriginalURI(nullptr), mMatchedList(VoidCString()) {}
-
   RemoteWebProgressRequest(nsIURI* aURI, nsIURI* aOriginalURI,
-                           const nsACString& aMatchedList,
-                           const Maybe<uint64_t>& aMaybeElapsedLoadTimeMS)
-      : mURI(aURI),
-        mOriginalURI(aOriginalURI),
-        mMatchedList(aMatchedList),
-        mMaybeElapsedLoadTimeMS(aMaybeElapsedLoadTimeMS) {}
+                           const nsACString& aMatchedList)
+      : mURI(aURI), mOriginalURI(aOriginalURI), mMatchedList(aMatchedList) {}
 
  protected:
   ~RemoteWebProgressRequest() = default;
@@ -40,13 +30,6 @@ class RemoteWebProgressRequest final : public nsIRemoteWebProgressRequest,
   nsCOMPtr<nsIURI> mURI;
   nsCOMPtr<nsIURI> mOriginalURI;
   nsCString mMatchedList;
-
-  
-  
-  
-  
-  
-  Maybe<uint64_t> mMaybeElapsedLoadTimeMS;
 };
 
 }  

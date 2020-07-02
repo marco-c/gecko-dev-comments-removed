@@ -115,12 +115,6 @@ struct RequestData
   nsIURI requestURI;
   nsIURI originalRequestURI;
   nsCString matchedList;
-  
-  
-  
-  
-  
-  uint64_t? elapsedLoadTimeMS;
 };
 
 struct WebProgressStateChangeData
