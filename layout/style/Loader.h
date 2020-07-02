@@ -118,60 +118,7 @@ class SheetLoadDataHashKey : public PLDHashEntryHdr {
     return KeyEquals(*aKey);
   }
 
-  bool KeyEquals(const SheetLoadDataHashKey& aKey) const {
-    {
-      bool eq;
-      if (NS_FAILED(mURI->Equals(aKey.mURI, &eq)) || !eq) {
-        return false;
-      }
-    }
-
-    
-    
-
-    if (!mPrincipal->Equals(aKey.mPrincipal)) {
-      return false;
-    }
-
-    if (mCORSMode != aKey.mCORSMode) {
-      return false;
-    }
-
-    if (mParsingMode != aKey.mParsingMode) {
-      return false;
-    }
-
-    if (mCompatMode != aKey.mCompatMode) {
-      return false;
-    }
-
-    
-    
-    
-    
-    
-    if (mEncodingGuess != aKey.mEncodingGuess) {
-      return false;
-    }
-
-    
-    
-    
-    
-    
-    if (mIsLinkPreload != aKey.mIsLinkPreload) {
-      const auto& linkPreloadMetadata =
-          mIsLinkPreload ? mSRIMetadata : aKey.mSRIMetadata;
-      const auto& consumerPreloadMetadata =
-          mIsLinkPreload ? aKey.mSRIMetadata : mSRIMetadata;
-
-      if (!consumerPreloadMetadata.CanTrustBeDelegatedTo(linkPreloadMetadata)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
+  bool KeyEquals(const SheetLoadDataHashKey&) const;
 
   static const SheetLoadDataHashKey* KeyToPointer(
       const SheetLoadDataHashKey& aKey) {
