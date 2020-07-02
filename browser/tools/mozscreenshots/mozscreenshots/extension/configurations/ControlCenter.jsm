@@ -297,8 +297,6 @@ async function openIdentityPopup(expand) {
   let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
   let gBrowser = browserWindow.gBrowser;
   let { gIdentityHandler } = gBrowser.ownerGlobal;
-  
-  gIdentityHandler._initializePopup();
   gIdentityHandler._identityPopup.hidePopup();
   
   if (AppConstants.platform == "macosx") {

@@ -2192,9 +2192,8 @@ var gProtectionsHandler = {
     this._trackingProtectionIconContainer.setAttribute("open", "true");
 
     
-    let openPanels = Array.from(document.querySelectorAll("panel[openpanel]"));
-    for (let panel of openPanels) {
-      PanelMultiView.hidePopup(panel);
+    if (gIdentityHandler._identityPopup.state != "closed") {
+      PanelMultiView.hidePopup(gIdentityHandler._identityPopup);
     }
 
     
