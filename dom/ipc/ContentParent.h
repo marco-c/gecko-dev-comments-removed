@@ -193,7 +193,7 @@ class ContentParent final
 
 
   static already_AddRefed<ContentParent> MinTabSelect(
-      const nsTArray<ContentParent*>& aContentParents,
+      const nsTArray<ContentParent*>& aContentParents, ContentParent* aOpener,
       int32_t maxContentParents);
 
   
@@ -206,12 +206,12 @@ class ContentParent final
       Element* aFrameElement, const nsAString& aRemoteType,
       hal::ProcessPriority aPriority =
           hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
-      bool aPreferUsed = false);
+      ContentParent* aOpener = nullptr, bool aPreferUsed = false);
   static already_AddRefed<ContentParent> GetNewOrUsedBrowserProcess(
       Element* aFrameElement, const nsAString& aRemoteType,
       hal::ProcessPriority aPriority =
           hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
-      bool aPreferUsed = false);
+      ContentParent* aOpener = nullptr, bool aPreferUsed = false);
 
   
 
@@ -227,7 +227,7 @@ class ContentParent final
       Element* aFrameElement, const nsAString& aRemoteType,
       hal::ProcessPriority aPriority =
           hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
-      bool aPreferUsed = false);
+      ContentParent* aOpener = nullptr, bool aPreferUsed = false);
 
   RefPtr<ContentParent::LaunchPromise> WaitForLaunchAsync(
       hal::ProcessPriority aPriority =
@@ -416,6 +416,7 @@ class ContentParent final
 
   GeckoChildProcessHost* Process() const { return mSubprocess; }
 
+  ContentParent* Opener() const { return mOpener; }
   nsIContentProcessInfo* ScriptableHelper() const { return mScriptableHelper; }
 
   mozilla::dom::ProcessMessageManager* GetMessageManager() const {
@@ -754,11 +755,12 @@ class ContentParent final
       const OriginAttributes& aOriginAttributes);
 
   explicit ContentParent(int32_t aPluginID)
-      : ContentParent(EmptyString(), aPluginID) {}
-  explicit ContentParent(const nsAString& aRemoteType)
-      : ContentParent(aRemoteType, nsFakePluginTag::NOT_JSPLUGIN) {}
+      : ContentParent(nullptr, EmptyString(), aPluginID) {}
+  ContentParent(ContentParent* aOpener, const nsAString& aRemoteType)
+      : ContentParent(aOpener, aRemoteType, nsFakePluginTag::NOT_JSPLUGIN) {}
 
-  ContentParent(const nsAString& aRemoteType, int32_t aPluginID);
+  ContentParent(ContentParent* aOpener, const nsAString& aRemoteType,
+                int32_t aPluginID);
 
   
   
@@ -1352,8 +1354,9 @@ class ContentParent final
  private:
   
   static already_AddRefed<ContentParent> GetUsedBrowserProcess(
-      const nsAString& aRemoteType, nsTArray<ContentParent*>& aContentParents,
-      uint32_t aMaxContentParents, bool aPreferUsed);
+      ContentParent* aOpener, const nsAString& aRemoteType,
+      nsTArray<ContentParent*>& aContentParents, uint32_t aMaxContentParents,
+      bool aPreferUsed);
 
   
   already_AddRefed<JSProcessActorParent> GetActor(const nsACString& aName,
@@ -1380,6 +1383,7 @@ class ContentParent final
   const TimeStamp mLaunchTS;  
   TimeStamp mLaunchYieldTS;   
   TimeStamp mActivateTS;
+  ContentParent* mOpener;
 
   bool mIsAPreallocBlocker;  
 
