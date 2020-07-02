@@ -1885,26 +1885,33 @@ bool TypeAnalyzer::specializePhis() {
     
     MBasicBlock* preHeader = graph.osrPreHeaderBlock();
     MBasicBlock* header = preHeader->getSingleSuccessor();
-    MOZ_ASSERT(header->isLoopHeader());
 
-    for (MPhiIterator phi(header->phisBegin()); phi != header->phisEnd();
-         phi++) {
-      MPhi* preHeaderPhi = phi->getOperand(0)->toPhi();
-      MOZ_ASSERT(preHeaderPhi->block() == preHeader);
+    if (header->isLoopHeader()) {
+      for (MPhiIterator phi(header->phisBegin()); phi != header->phisEnd();
+           phi++) {
+        MPhi* preHeaderPhi = phi->getOperand(0)->toPhi();
+        MOZ_ASSERT(preHeaderPhi->block() == preHeader);
 
-      if (preHeaderPhi->type() == MIRType::Value) {
-        
-        continue;
+        if (preHeaderPhi->type() == MIRType::Value) {
+          
+          continue;
+        }
+
+        MIRType loopType = phi->type();
+        if (!respecialize(preHeaderPhi, loopType)) {
+          return false;
+        }
       }
-
-      MIRType loopType = phi->type();
-      if (!respecialize(preHeaderPhi, loopType)) {
+      if (!propagateAllPhiSpecializations()) {
         return false;
       }
-    }
-
-    if (!propagateAllPhiSpecializations()) {
-      return false;
+    } else {
+      
+      
+      
+      
+      MOZ_ASSERT(header->isPendingLoopHeader());
+      MOZ_ASSERT(header->numPredecessors() == 1);
     }
   }
 
