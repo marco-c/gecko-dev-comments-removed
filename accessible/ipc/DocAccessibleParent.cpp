@@ -11,7 +11,7 @@
 #include "xpcAccessibleDocument.h"
 #include "xpcAccEvents.h"
 #include "nsAccUtils.h"
-#include "nsCoreUtils.h"
+#include "TextRange.h"
 
 #if defined(XP_WIN)
 #  include "AccessibleWrap.h"
@@ -499,6 +499,15 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvAnnouncementEvent(
 
   return IPC_OK();
 }
+
+mozilla::ipc::IPCResult DocAccessibleParent::RecvTextSelectionChangeEvent(
+    const uint64_t& aID, nsTArray<TextRangeData>&& aSelection) {
+  
+  
+  
+  return RecvEvent(aID, nsIAccessibleEvent::EVENT_TEXT_SELECTION_CHANGED);
+}
+
 #endif
 
 mozilla::ipc::IPCResult DocAccessibleParent::RecvRoleChangedEvent(

@@ -21,6 +21,7 @@ namespace a11y {
 
 class DocAccessible;
 class EventQueue;
+class TextRange;
 
 
 enum EIsFromUserInput {
@@ -379,6 +380,11 @@ class AccTextSelChangeEvent : public AccEvent {
 
 
   bool IsCaretMoveOnly() const;
+
+  
+
+
+  void SelectionRanges(nsTArray<a11y::TextRange>* aRanges) const;
 
  private:
   RefPtr<dom::Selection> mSel;
