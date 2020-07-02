@@ -25,7 +25,6 @@ using namespace mozilla;
 
 
 
-
 static bool GetFlatpakPortalEnv() {
   bool shouldUsePortal;
   char* path;
@@ -33,7 +32,8 @@ static bool GetFlatpakPortalEnv() {
   if (g_file_test(path, G_FILE_TEST_EXISTS)) {
     shouldUsePortal = true;
   } else {
-    shouldUsePortal = (g_getenv("GTK_USE_PORTAL") != nullptr);
+    const char* portalEnvString = g_getenv("GTK_USE_PORTAL");
+    shouldUsePortal = portalEnvString != nullptr && atoi(portalEnvString) != 0;
   }
   g_free(path);
   return shouldUsePortal;
