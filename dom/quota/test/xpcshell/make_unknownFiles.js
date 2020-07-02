@@ -156,5 +156,6 @@ async function testSteps() {
     storage.close();
 
     createUnknownFileIn(`${originRelativePath}/ls`);
+    createUnknownDirectoryIn(`${originRelativePath}/ls`);
   }
 }
