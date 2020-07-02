@@ -7,16 +7,14 @@ import gdb
 
 def get_header_ptr(value, ptr_t):
     
-    assert value.type.strip_typedefs().tag.startswith('js::gc::CellHeaderWith')
+    
     return value['header_'].cast(ptr_t)
 
 
 def get_header_length_and_flags(value):
     
-    assert value.type.strip_typedefs().tag == \
-        'js::gc::CellHeaderWithLengthAndFlags'
-    header = value['header_']
-    flags = header['header_']
+    
+    flags = value['header_']
     try:
         length = value['length_']
     except gdb.error:

@@ -79,15 +79,14 @@ enum NewObjectKind {
 
 
 
-class ObjectGroup : public gc::TenuredCell {
+class ObjectGroup : public gc::TenuredCellWithNonGCPointer<const JSClass> {
  public:
   class Property;
 
- private:
   
-  using HeaderWithJSClass = gc::CellHeaderWithNonGCPointer<const JSClass>;
-  HeaderWithJSClass headerAndClasp_;
+  const JSClass* clasp() const { return headerPtr(); }
 
+ private:
   
   GCPtr<TaggedProto> proto_;  
 
@@ -147,10 +146,7 @@ class ObjectGroup : public gc::TenuredCell {
   
 
  private:
-  static inline uint32_t offsetOfClasp() {
-    return offsetof(ObjectGroup, headerAndClasp_) +
-           HeaderWithJSClass::offsetOfPtr();
-  }
+  static inline uint32_t offsetOfClasp() { return offsetOfHeaderPtr(); }
 
   static inline uint32_t offsetOfProto() {
     return offsetof(ObjectGroup, proto_);
@@ -174,7 +170,6 @@ class ObjectGroup : public gc::TenuredCell {
   friend class js::jit::MacroAssembler;
 
  public:
-  const JSClass* clasp() const { return headerAndClasp_.ptr(); }
 
   bool hasDynamicPrototype() const { return proto_.isDynamic(); }
 
@@ -431,7 +426,6 @@ class ObjectGroup : public gc::TenuredCell {
   void finalize(JSFreeOp* fop);
 
   static const JS::TraceKind TraceKind = JS::TraceKind::ObjectGroup;
-  const gc::CellHeader& cellHeader() const { return headerAndClasp_; }
 
  public:
   const ObjectGroupFlags* addressOfFlags() const { return &flags_; }
