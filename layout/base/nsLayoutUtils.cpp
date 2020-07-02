@@ -10246,8 +10246,9 @@ void nsLayoutUtils::ComputeSystemFont(nsFont* aSystemFont,
       
       
       
-      aSystemFont->size = Length::FromPixels(
-          std::max(aDefaultVariableFont->size.ToCSSPixels() - 2.0f, 0.0f));
+      auto newSize =
+          aDefaultVariableFont->size.ToCSSPixels() - CSSPixel::FromPoints(2.0f);
+      aSystemFont->size = Length::FromPixels(std::max(float(newSize), 0.0f));
     }
 #endif
   }
