@@ -26,7 +26,7 @@
 #include "js/Class.h"          
 #include "js/Promise.h"        
 #include "js/RootingAPI.h"     
-#include "js/Value.h"          
+#include "js/Value.h"  
 #include "vm/PromiseObject.h"  
 
 #include "builtin/streams/HandlerFunction-inl.h"  
@@ -47,6 +47,7 @@ using JS::Int32Value;
 using JS::MagicValue;
 using JS::ObjectValue;
 using JS::Rooted;
+using JS::UndefinedHandleValue;
 using JS::Value;
 
 using js::ExtraValueFromHandler;
@@ -57,12 +58,14 @@ using js::PipeToState;
 using js::PromiseObject;
 using js::ReadableStream;
 using js::ReadableStreamDefaultReader;
+using js::ReadableStreamReaderGenericRelease;
 using js::TargetFromHandler;
 using js::UnwrapReaderFromStream;
 using js::UnwrapStreamFromWriter;
 using js::UnwrapWriterFromStream;
 using js::WritableStream;
 using js::WritableStreamDefaultWriter;
+using js::WritableStreamDefaultWriterRelease;
 using js::WritableStreamDefaultWriterWrite;
 
 static ReadableStream* GetUnwrappedSource(JSContext* cx,
@@ -92,10 +95,37 @@ static bool WritableAndNotClosing(const WritableStream* unwrappedDest) {
 
 static MOZ_MUST_USE bool Finalize(JSContext* cx, Handle<PipeToState*> state,
                                   Handle<Maybe<Value>> error) {
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
-                            "finalize with optional error");
-  return false;
+  cx->check(state);
+  cx->check(error);
+
+  
+  Rooted<WritableStreamDefaultWriter*> writer(cx, state->writer());
+  cx->check(writer);
+  if (!WritableStreamDefaultWriterRelease(cx, writer)) {
+    return false;
+  }
+
+  
+  Rooted<ReadableStreamDefaultReader*> reader(cx, state->reader());
+  cx->check(reader);
+  if (!ReadableStreamReaderGenericRelease(cx, reader)) {
+    return false;
+  }
+
+  
+  
+
+  Rooted<PromiseObject*> promise(cx, state->promise());
+  cx->check(promise);
+
+  
+  if (error.isSome()) {
+    Rooted<Value> errorVal(cx, *error.get());
+    return PromiseObject::reject(cx, promise, errorVal);
+  }
+
+  
+  return PromiseObject::resolve(cx, promise, UndefinedHandleValue);
 }
 
 static MOZ_MUST_USE bool Finalize(JSContext* cx, unsigned argc, Value* vp) {
