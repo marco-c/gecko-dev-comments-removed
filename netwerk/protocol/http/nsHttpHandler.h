@@ -50,10 +50,12 @@ class EventTokenBucket;
 class Tickler;
 class nsHttpConnection;
 class nsHttpConnectionInfo;
+class HttpHandlerInitArgs;
 class HttpTransactionShell;
 class AltSvcMapping;
 class TRR;
 class TRRServiceChannel;
+class SocketProcessChild;
 
 
 
@@ -508,6 +510,10 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   void NotifyObservers(nsIChannel* chan, const char* event);
 
   void SetFastOpenOSSupport();
+
+  friend class SocketProcessChild;
+  void SetHttpHandlerInitArgs(const HttpHandlerInitArgs& aArgs);
+  void SetDeviceModelId(const nsCString& aModelId);
 
   
   
