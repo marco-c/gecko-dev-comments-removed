@@ -32,7 +32,6 @@
 #include "ipc/nsGUIEventIPC.h"
 #include "js/JSON.h"
 #include "mozilla/AsyncEventDispatcher.h"
-#include "mozilla/AutoResizeReflowSquasher.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/EventListenerManager.h"
@@ -1167,33 +1166,17 @@ mozilla::ipc::IPCResult BrowserChild::RecvUpdateDimensions(
   ScreenIntSize screenSize = GetInnerSize();
   ScreenIntRect screenRect = GetOuterRect();
 
-  {
-#ifdef MOZ_WIDGET_ANDROID
-    
-    
-    
-    
-    
-#else
-    AutoResizeReflowSquasher squasher(GetTopLevelPresShell());
-#endif
+  
+  
+  
+  
+  nsCOMPtr<nsIBaseWindow> baseWin = do_QueryInterface(WebNavigation());
+  baseWin->SetPositionAndSize(0, 0, screenSize.width, screenSize.height,
+                              nsIBaseWindow::eRepaint);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIBaseWindow> baseWin = do_QueryInterface(WebNavigation());
-    baseWin->SetPositionAndSize(0, 0, screenSize.width, screenSize.height,
-                                nsIBaseWindow::eRepaint);
-
-    mPuppetWidget->Resize(screenRect.x + mClientOffset.x + mChromeOffset.x,
-                          screenRect.y + mClientOffset.y + mChromeOffset.y,
-                          screenSize.width, screenSize.height, true);
-  }
+  mPuppetWidget->Resize(screenRect.x + mClientOffset.x + mChromeOffset.x,
+                        screenRect.y + mClientOffset.y + mChromeOffset.y,
+                        screenSize.width, screenSize.height, true);
 
   RecvSafeAreaInsetsChanged(mPuppetWidget->GetSafeAreaInsets());
 
@@ -3175,13 +3158,15 @@ mozilla::ipc::IPCResult BrowserChild::RecvUIResolutionChanged(
   ScreenIntSize screenSize = GetInnerSize();
   if (mHasValidInnerSize && oldScreenSize != screenSize) {
     ScreenIntRect screenRect = GetOuterRect();
-    mPuppetWidget->Resize(screenRect.x + mClientOffset.x + mChromeOffset.x,
-                          screenRect.y + mClientOffset.y + mChromeOffset.y,
-                          screenSize.width, screenSize.height, true);
 
+    
     nsCOMPtr<nsIBaseWindow> baseWin = do_QueryInterface(WebNavigation());
     baseWin->SetPositionAndSize(0, 0, screenSize.width, screenSize.height,
                                 nsIBaseWindow::eRepaint);
+
+    mPuppetWidget->Resize(screenRect.x + mClientOffset.x + mChromeOffset.x,
+                          screenRect.y + mClientOffset.y + mChromeOffset.y,
+                          screenSize.width, screenSize.height, true);
   }
 
   return IPC_OK();
