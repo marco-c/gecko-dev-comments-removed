@@ -6,9 +6,13 @@
 
 
 
+use neqo_common::qwarn;
+
 #[derive(Default, Debug)]
 
 pub struct Stats {
+    conn_display_info: String,
+
     
     pub packets_rx: usize,
     
@@ -17,4 +21,22 @@ pub struct Stats {
     pub dups_rx: usize,
     
     pub dropped_rx: usize,
+    
+    pub resumed: bool,
+}
+
+impl Stats {
+    pub fn init(&mut self, conn_info: String) {
+        self.conn_display_info = conn_info;
+    }
+
+    pub fn pkt_dropped(&mut self, reason: impl AsRef<str>) {
+        self.dropped_rx += 1;
+        qwarn!(
+            [self.conn_display_info],
+            "Dropped received packet: {}; Total: {}",
+            reason.as_ref(),
+            self.dropped_rx
+        )
+    }
 }

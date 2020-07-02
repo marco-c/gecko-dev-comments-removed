@@ -244,10 +244,9 @@ mod test {
     
     
     
-    #[allow(clippy::replace_consts)]
     fn overflow_interval() {
         init();
-        let interval = Interval::from(Duration::from_micros(std::u64::MAX));
+        let interval = Interval::from(Duration::from_micros(u64::max_value()));
         let res: Res<PRTime> = interval.try_into();
         assert!(res.is_err());
     }
