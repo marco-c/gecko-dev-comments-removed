@@ -634,6 +634,8 @@ class Nursery {
   
   void setCurrentChunk(unsigned chunkno);
 
+  bool initFirstChunk(AutoLockGCBgAlloc& lock);
+
   
   
   void poisonAndInitCurrentChunk(size_t extent = NurseryChunkUsableSize);
