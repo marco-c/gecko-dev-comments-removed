@@ -11,11 +11,15 @@ RustLibrary('gkrust', gkrust_features, is_gkrust=True)
 
 
 RUST_TESTS = [
-    'glean',
     'selectors',
     'servo_arc',
     'stylo_tests',
 ]
+
+if not CONFIG['MOZ_CODE_COVERAGE']:
+    
+    
+    RUST_TESTS += ['glean']
 
 for feature in gkrust_features:
     
