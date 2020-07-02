@@ -129,7 +129,7 @@ IPCBlobInputStreamChild::IPCBlobInputStreamChild(const nsID& aID,
       mID(aID),
       mSize(aSize),
       mState(eActive),
-      mOwningEventTarget(GetCurrentThreadSerialEventTarget()) {
+      mOwningEventTarget(GetCurrentSerialEventTarget()) {
   
   
   if (!NS_IsMainThread()) {
@@ -408,7 +408,7 @@ void IPCBlobInputStreamChild::Migrated() {
 
   mWorkerRef = nullptr;
 
-  mOwningEventTarget = GetCurrentThreadSerialEventTarget();
+  mOwningEventTarget = GetCurrentSerialEventTarget();
   MOZ_ASSERT(IPCBlobInputStreamThread::IsOnFileEventTarget(mOwningEventTarget));
 
   

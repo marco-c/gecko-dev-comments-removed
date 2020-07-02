@@ -192,7 +192,7 @@ NS_IMETHODIMP ParentProcessDocumentChannel::AsyncOpen(
 
   RefPtr<ParentProcessDocumentChannel> self = this;
   promise->Then(
-      GetCurrentThreadSerialEventTarget(), __func__,
+      GetCurrentSerialEventTarget(), __func__,
       [self](DocumentLoadListener::OpenPromiseSucceededType&& aResolveValue) {
         
         
@@ -201,7 +201,7 @@ NS_IMETHODIMP ParentProcessDocumentChannel::AsyncOpen(
                     std::move(aResolveValue.mStreamFilterEndpoints),
                     aResolveValue.mRedirectFlags, aResolveValue.mLoadFlags)
                 ->Then(
-                    GetCurrentThreadSerialEventTarget(), __func__,
+                    GetCurrentSerialEventTarget(), __func__,
                     [self](RedirectToRealChannelPromise::ResolveOrRejectValue&&
                                aValue) -> RefPtr<RedirectToRealChannelPromise> {
                       MOZ_ASSERT(aValue.IsResolve());

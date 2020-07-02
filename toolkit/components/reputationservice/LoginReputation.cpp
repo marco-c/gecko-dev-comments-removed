@@ -355,7 +355,7 @@ nsresult LoginReputationService::QueryLoginWhitelist(QueryRequest* aRequest) {
 
   mLoginWhitelist->QueryLoginWhitelist(aRequest->mParam)
       ->Then(
-          GetCurrentThreadSerialEventTarget(), __func__,
+          GetCurrentSerialEventTarget(), __func__,
           [self, aRequest, startTimeMs](VerdictType aResolveValue) -> void {
             
             MOZ_ASSERT(NS_IsMainThread());

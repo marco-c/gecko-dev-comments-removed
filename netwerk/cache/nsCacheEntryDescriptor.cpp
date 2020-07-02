@@ -30,7 +30,7 @@ class nsAsyncDoomEvent : public mozilla::Runnable {
       : mozilla::Runnable("nsAsyncDoomEvent") {
     mDescriptor = descriptor;
     mListener = listener;
-    mEventTarget = GetCurrentThreadEventTarget();
+    mEventTarget = GetCurrentEventTarget();
     
     
     

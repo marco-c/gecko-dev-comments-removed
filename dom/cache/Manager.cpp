@@ -717,7 +717,7 @@ class Manager::CachePutAllAction final : public DBAction {
     MOZ_DIAGNOSTIC_ASSERT(!mConn);
 
     MOZ_DIAGNOSTIC_ASSERT(!mTarget);
-    mTarget = GetCurrentThreadSerialEventTarget();
+    mTarget = GetCurrentSerialEventTarget();
     MOZ_DIAGNOSTIC_ASSERT(mTarget);
 
     

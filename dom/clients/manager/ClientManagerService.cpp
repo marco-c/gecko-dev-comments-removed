@@ -124,7 +124,7 @@ ClientManagerService::ClientManagerService() : mShutdown(false) {
     
     
     
-    OnShutdown()->Then(GetCurrentThreadSerialEventTarget(), __func__, []() {
+    OnShutdown()->Then(GetCurrentSerialEventTarget(), __func__, []() {
       
       
       
@@ -356,7 +356,7 @@ class PromiseListHolder final {
   RefPtr<ClientOpPromise> GetResultPromise() {
     RefPtr<PromiseListHolder> kungFuDeathGrip = this;
     return mResultPromise->Then(
-        GetCurrentThreadSerialEventTarget(), __func__,
+        GetCurrentSerialEventTarget(), __func__,
         [kungFuDeathGrip](const ClientOpPromise::ResolveOrRejectValue& aValue) {
           return ClientOpPromise::CreateAndResolveOrReject(aValue, __func__);
         });
@@ -369,7 +369,7 @@ class PromiseListHolder final {
 
     RefPtr<PromiseListHolder> self(this);
     mPromiseList.LastElement()->Then(
-        GetCurrentThreadSerialEventTarget(), __func__,
+        GetCurrentSerialEventTarget(), __func__,
         [self](const ClientOpResult& aResult) {
           
           
@@ -560,7 +560,7 @@ RefPtr<ClientOpPromise> ClientManagerService::GetInfoAndState(
 
     
     return source->ExecutionReadyPromise()->Then(
-        GetCurrentThreadSerialEventTarget(), __func__,
+        GetCurrentSerialEventTarget(), __func__,
         [self, aArgs]() -> RefPtr<ClientOpPromise> {
           ClientSourceParent* source =
               self->FindSource(aArgs.id(), aArgs.principalInfo());

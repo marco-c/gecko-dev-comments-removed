@@ -90,7 +90,7 @@ class ChannelEventRunnable final : public ChannelEventWrapper {
 
 
 StreamFilterParent::StreamFilterParent()
-    : mMainThread(GetCurrentThreadEventTarget()),
+    : mMainThread(GetCurrentEventTarget()),
       mIOThread(mMainThread),
       mQueue(new ChannelEventQueue(static_cast<nsIStreamListener*>(this))),
       mBufferMutex("StreamFilter buffer mutex"),
@@ -471,13 +471,10 @@ StreamFilterParent::OnStartRequest(nsIRequest* aRequest) {
   if (aRequest != mChannel) {
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
     nsCOMPtr<nsILoadInfo> loadInfo = channel ? channel->LoadInfo() : nullptr;
+    mChannel = channel;
 
-    if (loadInfo && loadInfo->RedirectChain().IsEmpty()) {
-      MOZ_DIAGNOSTIC_ASSERT(
-          !loadInfo->RedirectChainIncludingInternalRedirects().IsEmpty(),
-          "We should be performing an internal redirect.");
-      mChannel = channel;
-    } else {
+    if (!(loadInfo &&
+          loadInfo->RedirectChainIncludingInternalRedirects().IsEmpty())) {
       mDisconnected = true;
 
       RefPtr<StreamFilterParent> self(this);
@@ -549,6 +546,7 @@ StreamFilterParent::OnStartRequest(nsIRequest* aRequest) {
 NS_IMETHODIMP
 StreamFilterParent::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
   AssertIsMainThread();
+  MOZ_ASSERT(aRequest == mChannel);
 
   mReceivedStop = true;
   if (mDisconnected) {

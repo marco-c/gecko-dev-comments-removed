@@ -49,7 +49,7 @@ bool RemoteSandboxBroker::LaunchApp(
   
   
   
-  mIPCLaunchThread = GetCurrentThreadEventTarget();
+  mIPCLaunchThread = GetCurrentEventTarget();
 
   mParameters.path() = nsDependentString(aPath);
   mParameters.args() = nsDependentString(aArguments);
@@ -78,7 +78,7 @@ bool RemoteSandboxBroker::LaunchApp(
   };
 
   mParent.Launch(mParameters.shareHandles())
-      ->Then(GetCurrentThreadSerialEventTarget(), __func__, std::move(resolve),
+      ->Then(GetCurrentSerialEventTarget(), __func__, std::move(resolve),
              std::move(reject));
 
   

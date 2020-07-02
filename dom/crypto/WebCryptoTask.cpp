@@ -317,7 +317,7 @@ void WebCryptoTask::DispatchWithPromise(Promise* aResultPromise) {
   }
 
   
-  mOriginalEventTarget = GetCurrentThreadSerialEventTarget();
+  mOriginalEventTarget = GetCurrentSerialEventTarget();
 
   
   

@@ -71,7 +71,7 @@ nsresult nsDNSPrefetch::Prefetch(uint32_t flags) {
   
   
   
-  nsCOMPtr<nsIEventTarget> target = mozilla::GetCurrentThreadEventTarget();
+  nsCOMPtr<nsIEventTarget> target = mozilla::GetCurrentEventTarget();
 
   flags |= nsIDNSService::GetFlagsFromTRRMode(mTRRMode);
 

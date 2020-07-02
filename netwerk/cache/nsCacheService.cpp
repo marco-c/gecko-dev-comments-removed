@@ -357,7 +357,7 @@ class nsDoomEvent : public Runnable {
     mKey.Append(key);
     mStoragePolicy = session->StoragePolicy();
     mListener = listener;
-    mEventTarget = GetCurrentThreadEventTarget();
+    mEventTarget = GetCurrentEventTarget();
     
     
     
@@ -908,7 +908,7 @@ nsresult nsCacheService::CreateRequest(nsCacheSession* session,
   if (!listener) return NS_OK;  
 
   
-  (*request)->mEventTarget = GetCurrentThreadEventTarget();
+  (*request)->mEventTarget = GetCurrentEventTarget();
 
   return NS_OK;
 }

@@ -310,7 +310,7 @@ void ClientNavigateOpChild::Init(const ClientNavigateOpConstructorArgs& aArgs) {
   
   
   if (!mSerialEventTarget) {
-    mSerialEventTarget = GetCurrentThreadSerialEventTarget();
+    mSerialEventTarget = GetCurrentSerialEventTarget();
   }
 
   

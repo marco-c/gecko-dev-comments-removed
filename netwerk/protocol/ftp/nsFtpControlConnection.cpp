@@ -100,8 +100,7 @@ nsresult nsFtpControlConnection::Connect(nsIProxyInfo* proxyInfo,
   mSocket->SetQoSBits(gFtpHandler->GetControlQoSBits());
 
   
-  if (eventSink)
-    mSocket->SetEventSink(eventSink, GetCurrentThreadEventTarget());
+  if (eventSink) mSocket->SetEventSink(eventSink, GetCurrentEventTarget());
 
   
   
@@ -134,7 +133,7 @@ nsresult nsFtpControlConnection::WaitData(
   NS_ENSURE_STATE(mSocketInput);
 
   mListener = listener;
-  return mSocketInput->AsyncWait(this, 0, 0, GetCurrentThreadEventTarget());
+  return mSocketInput->AsyncWait(this, 0, 0, GetCurrentEventTarget());
 }
 
 nsresult nsFtpControlConnection::Disconnect(nsresult status) {

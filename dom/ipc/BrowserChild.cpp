@@ -3865,7 +3865,7 @@ BrowserChild::DoesWindowSupportProtectedMedia() {
   
   return SendIsWindowSupportingProtectedMedia(ChromeOuterWindowID())
       ->Then(
-          GetCurrentThreadSerialEventTarget(), __func__,
+          GetCurrentSerialEventTarget(), __func__,
           [self](bool isSupported) {
             
             
