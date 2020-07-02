@@ -620,7 +620,7 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
 
                     
                     
-                    new_result["type"] = "browsertime-%s" % test["type"]
+                    new_result["type"] = "benchmark"
 
                     
                     
