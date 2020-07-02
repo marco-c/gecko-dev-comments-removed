@@ -1029,6 +1029,16 @@ class FrecencyComparator {
     return a->GetFrecency() == b->GetFrecency();
   }
   bool LessThan(CacheEntry* a, CacheEntry* b) const {
+    
+    
+    
+    if (a->GetFrecency() == 0.0 && b->GetFrecency() > 0.0) {
+      return false;
+    }
+    if (a->GetFrecency() > 0.0 && b->GetFrecency() == 0.0) {
+      return true;
+    }
+
     return a->GetFrecency() < b->GetFrecency();
   }
 };
@@ -1396,8 +1406,6 @@ void CacheStorageService::MemoryPool::PurgeOverMemoryLimit() {
     PurgeExpired();
   }
 
-  bool frecencyNeedsSort = true;
-
   
   
   
@@ -1407,18 +1415,18 @@ void CacheStorageService::MemoryPool::PurgeOverMemoryLimit() {
 #if 0
   if (mMemorySize > memoryLimit) {
     LOG(("  memory data consumption over the limit, abandon disk backed data"));
-    PurgeByFrecency(frecencyNeedsSort, CacheEntry::PURGE_DATA_ONLY_DISK_BACKED);
+    PurgeByFrecency(CacheEntry::PURGE_DATA_ONLY_DISK_BACKED);
   }
 
   if (mMemorySize > memoryLimit) {
     LOG(("  metadata consumtion over the limit, abandon disk backed entries"));
-    PurgeByFrecency(frecencyNeedsSort, CacheEntry::PURGE_WHOLE_ONLY_DISK_BACKED);
+    PurgeByFrecency(CacheEntry::PURGE_WHOLE_ONLY_DISK_BACKED);
   }
 #endif
 
   if (mMemorySize > memoryLimit) {
     LOG(("  memory data consumption over the limit, abandon any entry"));
-    PurgeByFrecency(frecencyNeedsSort, CacheEntry::PURGE_WHOLE);
+    PurgeByFrecency(CacheEntry::PURGE_WHOLE);
   }
 
   LOG(("  purging took %1.2fms", (TimeStamp::Now() - start).ToMilliseconds()));
@@ -1451,23 +1459,31 @@ void CacheStorageService::MemoryPool::PurgeExpired() {
   }
 }
 
-void CacheStorageService::MemoryPool::PurgeByFrecency(bool& aFrecencyNeedsSort,
-                                                      uint32_t aWhat) {
+void CacheStorageService::MemoryPool::PurgeByFrecency(uint32_t aWhat) {
   MOZ_ASSERT(IsOnManagementThread());
 
-  if (aFrecencyNeedsSort) {
-    mFrecencyArray.Sort(FrecencyComparator());
-    aFrecencyNeedsSort = false;
-  }
+  
+  
+  uint32_t const memoryLimit = Limit() * 0.9;
 
-  uint32_t const memoryLimit = Limit();
+  
+  
+  
+  static size_t const kFrecencyArrayLengthLimit = 2000;
+
+  LOG(("MemoryPool::PurgeByFrecency, len=%zu", mFrecencyArray.Length()));
+
+  mFrecencyArray.Sort(FrecencyComparator());
 
   for (uint32_t i = 0;
        mMemorySize > memoryLimit && i < mFrecencyArray.Length();) {
-    if (CacheIOThread::YieldAndRerun()) return;
+    if (mFrecencyArray.Length() <= kFrecencyArrayLengthLimit &&
+        CacheIOThread::YieldAndRerun()) {
+      LOG(("MemoryPool::PurgeByFrecency interrupted"));
+      return;
+    }
 
     RefPtr<CacheEntry> entry = mFrecencyArray[i];
-
     if (entry->Purge(aWhat)) {
       LOG(("  abandoned (%d), entry=%p, frecency=%1.10f", aWhat, entry.get(),
            entry->GetFrecency()));
@@ -1477,6 +1493,8 @@ void CacheStorageService::MemoryPool::PurgeByFrecency(bool& aFrecencyNeedsSort,
     
     ++i;
   }
+
+  LOG(("MemoryPool::PurgeByFrecency done"));
 }
 
 void CacheStorageService::MemoryPool::PurgeAll(uint32_t aWhat) {
