@@ -514,6 +514,8 @@ class Nursery {
   };
   PreviousGC previousGC;
 
+  double smoothedGrowthFactor;
+
   
   
   
