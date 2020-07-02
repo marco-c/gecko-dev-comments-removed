@@ -662,6 +662,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
   bool mIsScrollParent : 1;
 
   
+  
   bool mAddClipRectToLayer : 1;
 
   
