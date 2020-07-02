@@ -738,9 +738,7 @@ class AudioCallbackDriver : public GraphDriver,
 
   AudioMixer mMixer;
   
-
-  std::atomic<std::thread::id> mAudioThreadId;
-
+  std::atomic<int> mAudioThreadId;
   
 
 
