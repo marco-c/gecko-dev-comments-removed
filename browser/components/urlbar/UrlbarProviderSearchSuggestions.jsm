@@ -112,13 +112,35 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
 
 
+  _isTokenOrRestrictionPresent(queryContext) {
+    return (
+      queryContext.searchString.startsWith("@") ||
+      (queryContext.restrictSource &&
+        queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.SEARCH) ||
+      queryContext.tokens.some(
+        t => t.type == UrlbarTokenizer.TYPE.RESTRICT_SEARCH
+      )
+    );
+  }
+
+  
+
+
+
+
+
+
+
 
 
 
   _allowSuggestions(queryContext) {
     if (
       !queryContext.allowSearchSuggestions ||
-      !UrlbarPrefs.get("suggest.searches") ||
+      
+      
+      (!UrlbarPrefs.get("suggest.searches") &&
+        !this._isTokenOrRestrictionPresent(queryContext)) ||
       !UrlbarPrefs.get("browser.search.suggest.enabled") ||
       (queryContext.isPrivate &&
         !UrlbarPrefs.get("browser.search.suggest.enabled.private"))
@@ -144,7 +166,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     
     
     
-    if (queryContext.searchString.startsWith("@")) {
+    if (this._isTokenOrRestrictionPresent(queryContext)) {
       return true;
     }
 
