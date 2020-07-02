@@ -1333,6 +1333,7 @@ final_reordering_syllable_indic (const hb_ot_shape_plan_t *plan,
 	goto reph_move;
       }
     }
+    
 
     
 

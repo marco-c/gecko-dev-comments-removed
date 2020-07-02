@@ -143,7 +143,7 @@ hb_ot_layout_kern (const hb_ot_shape_plan_t *plan,
 
 
 bool
-OT::GDEF::is_blacklisted (hb_blob_t *blob,
+OT::GDEF::is_blocklisted (hb_blob_t *blob,
 			  hb_face_t *face) const
 {
 #ifdef HB_NO_OT_LAYOUT_BLACKLIST
@@ -392,7 +392,7 @@ hb_ot_layout_get_ligature_carets (hb_font_t      *font,
 
 
 bool
-OT::GSUB::is_blacklisted (hb_blob_t *blob HB_UNUSED,
+OT::GSUB::is_blocklisted (hb_blob_t *blob HB_UNUSED,
 			  hb_face_t *face) const
 {
 #ifdef HB_NO_OT_LAYOUT_BLACKLIST
@@ -402,7 +402,7 @@ OT::GSUB::is_blacklisted (hb_blob_t *blob HB_UNUSED,
 }
 
 bool
-OT::GPOS::is_blacklisted (hb_blob_t *blob HB_UNUSED,
+OT::GPOS::is_blocklisted (hb_blob_t *blob HB_UNUSED,
 			  hb_face_t *face HB_UNUSED) const
 {
 #ifdef HB_NO_OT_LAYOUT_BLACKLIST
@@ -1202,72 +1202,6 @@ hb_ot_layout_collect_lookups (hb_face_t      *face,
   g.feature_variation_collect_lookups (&feature_indexes, lookup_indexes);
 }
 
-#ifdef HB_EXPERIMENTAL_API
-
-
-
-
-
-
-
-
-
-
-
-void
-hb_ot_layout_closure_lookups (hb_face_t      *face,
-			      hb_tag_t        table_tag,
-			      const hb_set_t *glyphs,
-			      hb_set_t       *lookup_indexes )
-{
-  hb_set_t visited_lookups, inactive_lookups;
-  OT::hb_closure_lookups_context_t c (face, glyphs, &visited_lookups, &inactive_lookups);
-
-  for (unsigned lookup_index : + hb_iter (lookup_indexes))
-  {
-    switch (table_tag)
-    {
-      case HB_OT_TAG_GSUB:
-      {
-	const OT::SubstLookup& l = face->table.GSUB->table->get_lookup (lookup_index);
-	l.closure_lookups (&c, lookup_index);
-	break;
-      }
-      case HB_OT_TAG_GPOS:
-      {
-	const OT::PosLookup& l = face->table.GPOS->table->get_lookup (lookup_index);
-	l.closure_lookups (&c, lookup_index);
-	break;
-      }
-    }
-  }
-
-  hb_set_union (lookup_indexes, &visited_lookups);
-  hb_set_subtract (lookup_indexes, &inactive_lookups);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-void
-hb_ot_layout_closure_features (hb_face_t      *face,
-			       hb_tag_t        table_tag,
-			       const hb_map_t *lookup_indexes, 
-			       hb_set_t       *feature_indexes )
-{
-  const OT::GSUBGPOS &g = get_gsubgpos_table (face, table_tag);
-  g.closure_features (lookup_indexes, feature_indexes);
-}
-#endif
-
 
 #ifndef HB_NO_LAYOUT_COLLECT_GLYPHS
 
@@ -1428,7 +1362,6 @@ hb_ot_layout_lookup_would_substitute (hb_face_t            *face,
   OT::hb_would_apply_context_t c (face, glyphs, glyphs_length, (bool) zero_context);
 
   const OT::SubstLookup& l = face->table.GSUB->table->get_lookup (lookup_index);
-
   return l.would_apply (&c, &face->table.GSUB->accels[lookup_index]);
 }
 
@@ -1446,7 +1379,7 @@ void
 hb_ot_layout_substitute_start (hb_font_t    *font,
 			       hb_buffer_t  *buffer)
 {
-_hb_ot_layout_set_glyph_props (font, buffer);
+  _hb_ot_layout_set_glyph_props (font, buffer);
 }
 
 void
@@ -1781,12 +1714,6 @@ hb_ot_layout_feature_get_name_ids (hb_face_t       *face,
 
 
 
-
-
-
-
-
-
 unsigned int
 hb_ot_layout_feature_get_characters (hb_face_t      *face,
 				     hb_tag_t        table_tag,
@@ -1796,24 +1723,10 @@ hb_ot_layout_feature_get_characters (hb_face_t      *face,
 				     hb_codepoint_t *characters  )
 {
   const OT::GSUBGPOS &g = get_gsubgpos_table (face, table_tag);
-
-  hb_tag_t feature_tag = g.get_feature_tag (feature_index);
-  const OT::Feature &f = g.get_feature (feature_index);
-
-  const OT::FeatureParams &feature_params = f.get_feature_params ();
-
-  const OT::FeatureParamsCharacterVariants& cv_params =
-    feature_params.get_character_variants_params(feature_tag);
-
-  unsigned int len = 0;
-  if (char_count && characters && start_offset < cv_params.characters.len)
-  {
-    len = hb_min (cv_params.characters.len - start_offset, *char_count);
-    for (unsigned int i = 0; i < len; ++i)
-      characters[i] = cv_params.characters[start_offset + i];
-  }
-  if (char_count) *char_count = len;
-  return cv_params.characters.len;
+  return g.get_feature (feature_index)
+	  .get_feature_params ()
+	  .get_character_variants_params(g.get_feature_tag (feature_index))
+	  .get_characters (start_offset, char_count, characters);
 }
 #endif
 
@@ -1982,13 +1895,17 @@ inline void hb_ot_map_t::apply (const Proxy &proxy,
 void hb_ot_map_t::substitute (const hb_ot_shape_plan_t *plan, hb_font_t *font, hb_buffer_t *buffer) const
 {
   GSUBProxy proxy (font->face);
+  if (!buffer->message (font, "start table GSUB")) return;
   apply (proxy, plan, font, buffer);
+  (void)buffer->message (font, "end table GSUB");
 }
 
 void hb_ot_map_t::position (const hb_ot_shape_plan_t *plan, hb_font_t *font, hb_buffer_t *buffer) const
 {
   GPOSProxy proxy (font->face);
+  if (!buffer->message (font, "start table GPOS")) return;
   apply (proxy, plan, font, buffer);
+  (void)buffer->message (font, "end table GPOS");
 }
 
 void
@@ -2031,4 +1948,62 @@ hb_ot_layout_get_baseline (hb_font_t                   *font,
   return result;
 }
 #endif
+
+
+struct hb_get_glyph_alternates_dispatch_t :
+       hb_dispatch_context_t<hb_get_glyph_alternates_dispatch_t, unsigned>
+{
+  static return_t default_return_value () { return 0; }
+  bool stop_sublookup_iteration (return_t r) const { return r; }
+
+  hb_face_t *face;
+
+  hb_get_glyph_alternates_dispatch_t (hb_face_t *face) :
+					face (face) {}
+
+  private:
+  template <typename T, typename ...Ts> auto
+  _dispatch (const T &obj, hb_priority<1>, Ts&&... ds) HB_AUTO_RETURN
+  ( obj.get_glyph_alternates (hb_forward<Ts> (ds)...) )
+  template <typename T, typename ...Ts> auto
+  _dispatch (const T &obj, hb_priority<0>, Ts&&... ds) HB_AUTO_RETURN
+  ( default_return_value () )
+  public:
+  template <typename T, typename ...Ts> auto
+  dispatch (const T &obj, Ts&&... ds) HB_AUTO_RETURN
+  ( _dispatch (obj, hb_prioritize, hb_forward<Ts> (ds)...) )
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN unsigned
+hb_ot_layout_lookup_get_glyph_alternates (hb_face_t      *face,
+					  unsigned        lookup_index,
+					  hb_codepoint_t  glyph,
+					  unsigned        start_offset,
+					  unsigned       *alternate_count  ,
+					  hb_codepoint_t *alternate_glyphs )
+{
+  hb_get_glyph_alternates_dispatch_t c (face);
+  const OT::SubstLookup &lookup = face->table.GSUB->table->get_lookup (lookup_index);
+  auto ret = lookup.dispatch (&c, glyph, start_offset, alternate_count, alternate_glyphs);
+  if (!ret && alternate_count) *alternate_count = 0;
+  return ret;
+}
+
 #endif

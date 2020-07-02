@@ -262,20 +262,6 @@ hb_ot_layout_collect_lookups (hb_face_t      *face,
 			      const hb_tag_t *features,
 			      hb_set_t       *lookup_indexes );
 
-#ifdef HB_EXPERIMENTAL_API
-HB_EXTERN void
-hb_ot_layout_closure_lookups (hb_face_t      *face,
-			      hb_tag_t        table_tag,
-			      const hb_set_t *glyphs,
-			      hb_set_t       *lookup_indexes );
-
-HB_EXTERN void
-hb_ot_layout_closure_features (hb_face_t      *face,
-			       hb_tag_t        table_tag,
-			       const hb_map_t *lookup_indexes, 
-			       hb_set_t       *feature_indexes );
-#endif
-
 HB_EXTERN void
 hb_ot_layout_lookup_collect_glyphs (hb_face_t    *face,
 				    hb_tag_t      table_tag,
@@ -336,6 +322,14 @@ hb_ot_layout_feature_with_variations_get_lookups (hb_face_t    *face,
 
 HB_EXTERN hb_bool_t
 hb_ot_layout_has_substitution (hb_face_t *face);
+
+HB_EXTERN unsigned
+hb_ot_layout_lookup_get_glyph_alternates (hb_face_t      *face,
+					  unsigned        lookup_index,
+					  hb_codepoint_t  glyph,
+					  unsigned        start_offset,
+					  unsigned       *alternate_count ,
+					  hb_codepoint_t *alternate_glyphs );
 
 HB_EXTERN hb_bool_t
 hb_ot_layout_lookup_would_substitute (hb_face_t            *face,
@@ -462,7 +456,6 @@ hb_ot_layout_get_baseline (hb_font_t                   *font,
 			   hb_tag_t                     script_tag,
 			   hb_tag_t                     language_tag,
 			   hb_position_t               *coord        );
-
 
 HB_END_DECLS
 
