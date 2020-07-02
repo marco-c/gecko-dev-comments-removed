@@ -2704,7 +2704,10 @@ nsresult nsStandardURL::SetFilePath(const nsACString& input) {
     
     ShiftFromQuery(1 - mFilepath.mLen);
     
-    mPath.mLen = 1;
+    
+    mPath.mLen = 1 + (mQuery.mLen >= 0 ? (mQuery.mLen + 1) : 0) +
+                 (mRef.mLen >= 0 ? (mRef.mLen + 1) : 0);
+    
     mDirectory.mLen = 1;
     mFilepath.mLen = 1;
     
