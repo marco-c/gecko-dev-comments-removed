@@ -579,7 +579,7 @@ void JitCode::finalize(JSFreeOp* fop) {
                                                headerSize_ + bufferSize_))) {
     pool_->addRef();
   }
-  cellHeaderAndCode_.setPtr(nullptr);
+  setHeaderPtr(nullptr);
 
   
   
