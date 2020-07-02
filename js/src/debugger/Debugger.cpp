@@ -664,9 +664,7 @@ bool Debugger::getFrame(JSContext* cx, const FrameIter& iter,
     }
 
     auto terminateDebuggerFrameGuard = MakeScopeExit([&] {
-      frame->freeFrameIterData(cx->defaultFreeOp());
-      frame->clearGeneratorInfo(cx->runtime()->defaultFreeOp());
-      generatorFrames.remove(genObj);
+      terminateDebuggerFrame(cx->defaultFreeOp(), this, frame, referent);
     });
 
     if (genObj) {
@@ -720,8 +718,8 @@ bool Debugger::getFrame(JSContext* cx, Handle<AbstractGeneratorObject*> genObj,
   }
 
   if (!p.add(cx, generatorFrames, genObj, result)) {
-    result->freeFrameIterData(cx->defaultFreeOp());
-    result->clearGeneratorInfo(cx->runtime()->defaultFreeOp());
+    terminateDebuggerFrame(cx->runtime()->defaultFreeOp(), this, result,
+                           NullFramePtr());
     return false;
   }
 
@@ -896,6 +894,15 @@ bool DebugAPI::slowPathOnResumeFrame(JSContext* cx, AbstractFramePtr frame) {
   
   
   
+  auto terminateDebuggerFramesGuard = MakeScopeExit([&] {
+    Debugger::terminateDebuggerFrames(cx, frame);
+
+    MOZ_ASSERT(!DebugAPI::inFrameMaps(frame));
+  });
+
+  
+  
+  
   FrameIter iter(cx);
   MOZ_ASSERT(iter.abstractFramePtr() == frame);
   for (Realm::DebuggerVectorEntry& entry : frame.global()->getDebuggers()) {
@@ -913,6 +920,8 @@ bool DebugAPI::slowPathOnResumeFrame(JSContext* cx, AbstractFramePtr frame) {
       }
     }
   }
+
+  terminateDebuggerFramesGuard.release();
 
   return slowPathOnEnterFrame(cx, frame);
 }
@@ -1066,8 +1075,11 @@ bool DebugAPI::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
     
     
     
-    Debugger::removeFromFrameMapsAndClearBreakpointsIn(
-        cx, frame, success && completion.get().suspending());
+    if (success && completion.get().suspending()) {
+      Debugger::suspendGeneratorDebuggerFrames(cx, frame);
+    } else {
+      Debugger::terminateDebuggerFrames(cx, frame);
+    }
   });
 
   
@@ -1197,8 +1209,15 @@ bool DebugAPI::slowPathOnNewGenerator(JSContext* cx, AbstractFramePtr frame,
   
   
   
+
+  
+  
+  
+  auto terminateDebuggerFramesGuard =
+      MakeScopeExit([&] { Debugger::terminateDebuggerFrames(cx, frame); });
+
   bool ok = true;
-  Debugger::forEachDebuggerFrame(
+  Debugger::forEachOnStackDebuggerFrame(
       frame, [&](Debugger* dbg, DebuggerFrame* frameObjPtr) {
         if (!ok) {
           return;
@@ -1209,8 +1228,6 @@ bool DebugAPI::slowPathOnNewGenerator(JSContext* cx, AbstractFramePtr frame,
         AutoRealm ar(cx, frameObj);
 
         if (!frameObj->setGeneratorInfo(cx, genObj)) {
-          ReportOutOfMemory(cx);
-
           
           
           
@@ -1224,7 +1241,13 @@ bool DebugAPI::slowPathOnNewGenerator(JSContext* cx, AbstractFramePtr frame,
           ok = false;
         }
       });
-  return ok;
+
+  if (!ok) {
+    return false;
+  }
+
+  terminateDebuggerFramesGuard.release();
+  return true;
 }
 
 
@@ -3241,7 +3264,7 @@ bool Debugger::updateExecutionObservabilityOfScripts(
 
 template <typename FrameFn>
 
-void Debugger::forEachDebuggerFrame(AbstractFramePtr frame, FrameFn fn) {
+void Debugger::forEachOnStackDebuggerFrame(AbstractFramePtr frame, FrameFn fn) {
   for (Realm::DebuggerVectorEntry& entry : frame.global()->getDebuggers()) {
     Debugger* dbg = entry.dbg;
     if (FrameMap::Ptr frameEntry = dbg->frames.lookup(frame)) {
@@ -3250,11 +3273,37 @@ void Debugger::forEachDebuggerFrame(AbstractFramePtr frame, FrameFn fn) {
   }
 }
 
+template <typename FrameFn>
+
+void Debugger::forEachOnStackOrSuspendedDebuggerFrame(JSContext* cx,
+                                                      AbstractFramePtr frame,
+                                                      FrameFn fn) {
+  Rooted<AbstractGeneratorObject*> genObj(
+      cx, frame.isGeneratorFrame() ? GetGeneratorObjectForFrame(cx, frame)
+                                   : nullptr);
+
+  for (Realm::DebuggerVectorEntry& entry : frame.global()->getDebuggers()) {
+    Debugger* dbg = entry.dbg;
+
+    DebuggerFrame* frameObj = nullptr;
+    if (FrameMap::Ptr frameEntry = dbg->frames.lookup(frame)) {
+      frameObj = frameEntry->value();
+    } else if (GeneratorWeakMap::Ptr frameEntry =
+                   dbg->generatorFrames.lookup(genObj)) {
+      frameObj = frameEntry->value();
+    }
+
+    if (frameObj) {
+      fn(dbg, frameObj);
+    }
+  }
+}
+
 
 bool Debugger::getDebuggerFrames(AbstractFramePtr frame,
                                  MutableHandle<DebuggerFrameVector> frames) {
   bool hadOOM = false;
-  forEachDebuggerFrame(frame, [&](Debugger*, DebuggerFrame* frameobj) {
+  forEachOnStackDebuggerFrame(frame, [&](Debugger*, DebuggerFrame* frameobj) {
     if (!hadOOM && !frames.append(frameobj)) {
       hadOOM = true;
     }
@@ -3849,8 +3898,16 @@ void DebugAPI::sweepAll(JSFreeOp* fop) {
            e.popFront()) {
         DebuggerFrame* frameObj = e.front().value();
         if (IsAboutToBeFinalizedUnbarriered(&frameObj)) {
-          e.removeFront();
-          frameObj->clearGeneratorInfo(fop);
+          
+          
+          
+          
+          
+          
+          
+          
+          Debugger::terminateDebuggerFrame(fop, dbg, frameObj, NullFramePtr(),
+                                           nullptr, &e);
         }
       }
     }
@@ -4711,23 +4768,6 @@ void Debugger::removeDebuggeeGlobal(JSFreeOp* fop, GlobalObject* global,
   
   
   
-  for (FrameMap::Enum e(frames); !e.empty(); e.popFront()) {
-    AbstractFramePtr frame = e.front().key();
-    DebuggerFrame* frameobj = e.front().value();
-    if (frame.hasGlobal(global)) {
-      frameobj->freeFrameIterData(fop);
-      frameobj->maybeDecrementStepperCounter(fop, frame);
-      e.removeFront();
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
   
   
   
@@ -4736,11 +4776,17 @@ void Debugger::removeDebuggeeGlobal(JSFreeOp* fop, GlobalObject* global,
   if (fromSweep == FromSweep::No) {
     for (GeneratorWeakMap::Enum e(generatorFrames); !e.empty(); e.popFront()) {
       AbstractGeneratorObject& genObj = *e.front().key();
-      DebuggerFrame& frameObj = *e.front().value();
-      if (genObj.isClosed() || &genObj.callee().global() == global) {
-        e.removeFront();
-        frameObj.clearGeneratorInfo(fop);
+      if (&genObj.global() == global) {
+        terminateDebuggerFrame(fop, this, e.front().value(), NullFramePtr(),
+                               nullptr, &e);
       }
+    }
+  }
+
+  for (FrameMap::Enum e(frames); !e.empty(); e.popFront()) {
+    AbstractFramePtr frame = e.front().key();
+    if (frame.hasGlobal(global)) {
+      terminateDebuggerFrame(fop, this, e.front().value(), frame, &e);
     }
   }
 
@@ -6267,9 +6313,9 @@ bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
 
   
   
-  auto removeDebuggerFramesOnExit = MakeScopeExit([&] {
-    removeFromFrameMapsAndClearBreakpointsIn(cx, from);
-    removeFromFrameMapsAndClearBreakpointsIn(cx, to);
+  auto terminateDebuggerFramesOnExit = MakeScopeExit([&] {
+    terminateDebuggerFrames(cx, from);
+    terminateDebuggerFrames(cx, to);
 
     MOZ_ASSERT(!DebugAPI::inFrameMaps(from));
     MOZ_ASSERT(!DebugAPI::inFrameMaps(to));
@@ -6306,7 +6352,7 @@ bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
   }
 
   
-  removeDebuggerFramesOnExit.release();
+  terminateDebuggerFramesOnExit.release();
 
   MOZ_ASSERT(!DebugAPI::inFrameMaps(from));
   MOZ_ASSERT_IF(!frames.empty(), DebugAPI::inFrameMaps(to));
@@ -6316,40 +6362,39 @@ bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
 
 bool DebugAPI::inFrameMaps(AbstractFramePtr frame) {
   bool foundAny = false;
-  Debugger::forEachDebuggerFrame(
+  Debugger::forEachOnStackDebuggerFrame(
       frame, [&](Debugger*, DebuggerFrame* frameobj) { foundAny = true; });
   return foundAny;
 }
 
 
-void Debugger::removeFromFrameMapsAndClearBreakpointsIn(JSContext* cx,
-                                                        AbstractFramePtr frame,
-                                                        bool suspending) {
-  forEachDebuggerFrame(frame, [&](Debugger* dbg, DebuggerFrame* frameobj) {
-    JSFreeOp* fop = cx->runtime()->defaultFreeOp();
-    frameobj->freeFrameIterData(fop);
+void Debugger::suspendGeneratorDebuggerFrames(JSContext* cx,
+                                              AbstractFramePtr frame) {
+  JSFreeOp* fop = cx->runtime()->defaultFreeOp();
+  forEachOnStackDebuggerFrame(
+      frame, [&](Debugger* dbg, DebuggerFrame* dbgFrame) {
+        dbg->frames.remove(frame);
 
-    dbg->frames.remove(frame);
-
-    if (frameobj->hasGeneratorInfo()) {
-      
-      
-      
-      if (!suspending) {
-        
 #if DEBUG
-        AbstractGeneratorObject& genObj = frameobj->unwrappedGenerator();
+        MOZ_ASSERT(dbgFrame->hasGeneratorInfo());
+        AbstractGeneratorObject& genObj = dbgFrame->unwrappedGenerator();
         GeneratorWeakMap::Ptr p = dbg->generatorFrames.lookup(&genObj);
         MOZ_ASSERT(p);
-        MOZ_ASSERT(p->value() == frameobj);
+        MOZ_ASSERT(p->value() == dbgFrame);
 #endif
-        dbg->generatorFrames.remove(&frameobj->unwrappedGenerator());
-        frameobj->clearGeneratorInfo(fop);
-      }
-    } else {
-      frameobj->maybeDecrementStepperCounter(fop, frame);
-    }
-  });
+
+        dbgFrame->suspend(fop);
+      });
+}
+
+
+void Debugger::terminateDebuggerFrames(JSContext* cx, AbstractFramePtr frame) {
+  JSFreeOp* fop = cx->runtime()->defaultFreeOp();
+
+  forEachOnStackOrSuspendedDebuggerFrame(
+      cx, frame, [&](Debugger* dbg, DebuggerFrame* dbgFrame) {
+        Debugger::terminateDebuggerFrame(fop, dbg, dbgFrame, frame);
+      });
 
   
   
@@ -6358,6 +6403,38 @@ void Debugger::removeFromFrameMapsAndClearBreakpointsIn(JSContext* cx,
     DebugScript::clearBreakpointsIn(cx->runtime()->defaultFreeOp(), script,
                                     nullptr, nullptr);
   }
+}
+
+
+void Debugger::terminateDebuggerFrame(
+    JSFreeOp* fop, Debugger* dbg, DebuggerFrame* dbgFrame,
+    AbstractFramePtr frame, FrameMap::Enum* maybeFramesEnum,
+    GeneratorWeakMap::Enum* maybeGeneratorFramesEnum) {
+  
+  
+  
+  
+  MOZ_ASSERT_IF(!frame, !maybeFramesEnum);
+  MOZ_ASSERT_IF(!frame, dbgFrame->hasGeneratorInfo());
+  MOZ_ASSERT_IF(!dbgFrame->hasGeneratorInfo(), !maybeGeneratorFramesEnum);
+
+  if (frame) {
+    if (maybeFramesEnum) {
+      maybeFramesEnum->removeFront();
+    } else {
+      dbg->frames.remove(frame);
+    }
+  }
+
+  if (dbgFrame->hasGeneratorInfo()) {
+    if (maybeGeneratorFramesEnum) {
+      maybeGeneratorFramesEnum->removeFront();
+    } else {
+      dbg->generatorFrames.remove(&dbgFrame->unwrappedGenerator());
+    }
+  }
+
+  dbgFrame->terminate(fop, frame);
 }
 
 DebuggerDebuggeeLink* Debugger::getDebuggeeLink() {
@@ -6409,7 +6486,7 @@ void DebugAPI::handleUnrecoverableIonBailoutError(
   
   
   
-  Debugger::removeFromFrameMapsAndClearBreakpointsIn(cx, frame);
+  Debugger::terminateDebuggerFrames(cx, frame);
 }
 
 

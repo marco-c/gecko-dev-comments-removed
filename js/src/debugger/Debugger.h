@@ -895,9 +895,35 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   static const JSFunctionSpec methods[];
   static const JSFunctionSpec static_methods[];
 
-  static void removeFromFrameMapsAndClearBreakpointsIn(JSContext* cx,
-                                                       AbstractFramePtr frame,
-                                                       bool suspending = false);
+  
+
+
+
+  static void suspendGeneratorDebuggerFrames(JSContext* cx,
+                                             AbstractFramePtr frame);
+
+  
+
+
+
+  static void terminateDebuggerFrames(JSContext* cx, AbstractFramePtr frame);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static void terminateDebuggerFrame(
+      JSFreeOp* fop, Debugger* dbg, DebuggerFrame* dbgFrame,
+      AbstractFramePtr frame, FrameMap::Enum* maybeFramesEnum = nullptr,
+      GeneratorWeakMap::Enum* maybeGeneratorFramesEnum = nullptr);
+
   static bool updateExecutionObservabilityOfFrames(
       JSContext* cx, const DebugAPI::ExecutionObservableSet& obs,
       IsObserving observing);
@@ -909,7 +935,11 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
       IsObserving observing);
 
   template <typename FrameFn >
-  static void forEachDebuggerFrame(AbstractFramePtr frame, FrameFn fn);
+  static void forEachOnStackDebuggerFrame(AbstractFramePtr frame, FrameFn fn);
+  template <typename FrameFn >
+  static void forEachOnStackOrSuspendedDebuggerFrame(JSContext* cx,
+                                                     AbstractFramePtr frame,
+                                                     FrameFn fn);
 
   
 

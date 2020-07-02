@@ -256,6 +256,7 @@ DebuggerFrame* DebuggerFrame::create(
 
   if (maybeGenerator) {
     if (!frame->setGeneratorInfo(cx, maybeGenerator)) {
+      frame->freeFrameIterData(cx->runtime()->defaultFreeOp());
       return nullptr;
     }
   }
@@ -386,7 +387,19 @@ bool DebuggerFrame::setGeneratorInfo(JSContext* cx,
   return true;
 }
 
-void DebuggerFrame::clearGeneratorInfo(JSFreeOp* fop) {
+void DebuggerFrame::terminate(JSFreeOp* fop, AbstractFramePtr frame) {
+  if (frameIterData()) {
+    
+    
+    
+    MOZ_ASSERT_IF(!frame, hasGeneratorInfo());
+
+    freeFrameIterData(fop);
+    if (frame && !hasGeneratorInfo()) {
+      maybeDecrementStepperCounter(fop, frame);
+    }
+  }
+
   if (!hasGeneratorInfo()) {
     return;
   }
@@ -409,6 +422,15 @@ void DebuggerFrame::clearGeneratorInfo(JSFreeOp* fop) {
   
   setReservedSlot(GENERATOR_INFO_SLOT, UndefinedValue());
   fop->delete_(this, info, MemoryUse::DebuggerFrameGeneratorInfo);
+}
+
+void DebuggerFrame::suspend(JSFreeOp* fop) {
+  
+  
+  
+  MOZ_ASSERT(hasGeneratorInfo());
+
+  freeFrameIterData(fop);
 }
 
 
@@ -1193,9 +1215,9 @@ void DebuggerFrame::finalize(JSFreeOp* fop, JSObject* obj) {
 
   
   
+  
   MOZ_ASSERT(!frameobj.hasGeneratorInfo());
-
-  frameobj.freeFrameIterData(fop);
+  MOZ_ASSERT(!frameobj.frameIterData());
   OnStepHandler* onStepHandler = frameobj.onStepHandler();
   if (onStepHandler) {
     onStepHandler->drop(fop, &frameobj);
