@@ -109,34 +109,6 @@ class CompositorAnimationStorage final {
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorAnimationStorage)
  public:
-  
-
-
-
-
-
-
-  void SetAnimatedValue(uint64_t aId, AnimatedValue* aPreviousValue,
-                        gfx::Matrix4x4&& aTransformInDevSpace,
-                        gfx::Matrix4x4&& aFrameTransform,
-                        const TransformData& aData);
-
-  
-
-
-  void SetAnimatedValue(uint64_t aId, AnimatedValue* aPreviousValue,
-                        float aOpacity);
-
-  
-
-
-  void SetAnimatedValue(uint64_t aId, AnimatedValue* aPreviousValue,
-                        nscolor aColor);
-
-  
-
-
-  AnimatedValue* GetAnimatedValue(const uint64_t& aId) const;
 
   OMTAValue GetOMTAValue(const uint64_t& aId) const;
 
@@ -176,11 +148,45 @@ class CompositorAnimationStorage final {
   
 
 
-  void Clear();
   void ClearById(const uint64_t& aId);
 
  private:
   ~CompositorAnimationStorage(){};
+
+  
+
+
+  AnimatedValue* GetAnimatedValue(const uint64_t& aId) const;
+
+  
+
+
+
+
+
+
+  void SetAnimatedValue(uint64_t aId, AnimatedValue* aPreviousValue,
+                        gfx::Matrix4x4&& aTransformInDevSpace,
+                        gfx::Matrix4x4&& aFrameTransform,
+                        const TransformData& aData);
+
+  
+
+
+  void SetAnimatedValue(uint64_t aId, AnimatedValue* aPreviousValue,
+                        float aOpacity);
+
+  
+
+
+  void SetAnimatedValue(uint64_t aId, AnimatedValue* aPreviousValue,
+                        nscolor aColor);
+
+  void ApplyAnimatedValue(
+      Layer* aLayer, nsCSSPropertyID aProperty, AnimatedValue* aPreviousValue,
+      const nsTArray<RefPtr<RawServoAnimationValue>>& aValues);
+
+  void Clear();
 
  private:
   AnimatedValueTable mAnimatedValues;
