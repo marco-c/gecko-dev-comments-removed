@@ -4337,15 +4337,10 @@ void HTMLMediaElement::DispatchEventsWhenPlayWasNotAllowed() {
 }
 
 void HTMLMediaElement::MaybeNotifyAutoplayBlocked() {
-  Document* topLevelDoc = OwnerDoc()->GetTopLevelContentDocument();
-  if (!topLevelDoc) {
-    return;
-  }
-
   
   
   RefPtr<AsyncEventDispatcher> asyncDispatcher =
-      new AsyncEventDispatcher(topLevelDoc, u"GloballyAutoplayBlocked"_ns,
+      new AsyncEventDispatcher(OwnerDoc(), u"GloballyAutoplayBlocked"_ns,
                                CanBubble::eYes, ChromeOnlyDispatch::eYes);
   asyncDispatcher->PostDOMEvent();
 }
