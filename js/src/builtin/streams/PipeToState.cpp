@@ -26,6 +26,7 @@
 #include "js/Class.h"          
 #include "js/Promise.h"        
 #include "js/RootingAPI.h"     
+#include "js/Value.h"          
 #include "vm/PromiseObject.h"  
 
 #include "builtin/streams/HandlerFunction-inl.h"  
@@ -43,12 +44,15 @@ using JS::CallArgs;
 using JS::CallArgsFromVp;
 using JS::Handle;
 using JS::Int32Value;
+using JS::MagicValue;
 using JS::ObjectValue;
 using JS::Rooted;
 using JS::Value;
 
+using js::ExtraValueFromHandler;
 using js::GetErrorMessage;
 using js::NewHandler;
+using js::NewHandlerWithExtraValue;
 using js::PipeToState;
 using js::PromiseObject;
 using js::ReadableStream;
@@ -96,6 +100,35 @@ static WritableStream* GetUnwrappedDest(JSContext* cx,
 static bool WritableAndNotClosing(const WritableStream* unwrappedDest) {
   return unwrappedDest->writable() &&
          WritableStreamCloseQueuedOrInFlight(unwrappedDest);
+}
+
+static MOZ_MUST_USE bool Finalize(JSContext* cx, Handle<PipeToState*> state,
+                                  Handle<Maybe<Value>> error) {
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                            JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
+                            "finalize with optional error");
+  return false;
+}
+
+static MOZ_MUST_USE bool Finalize(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  Rooted<PipeToState*> state(cx, TargetFromHandler<PipeToState>(args));
+  cx->check(state);
+
+  Rooted<Maybe<Value>> optionalError(cx, Nothing());
+  if (Value maybeError = ExtraValueFromHandler(args);
+      !maybeError.isMagic(JS_READABLESTREAM_PIPETO_FINALIZE_WITHOUT_ERROR)) {
+    optionalError = Some(maybeError);
+  }
+  cx->check(optionalError);
+
+  if (!Finalize(cx, state, optionalError)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
 }
 
 
@@ -165,15 +198,34 @@ static MOZ_MUST_USE bool Shutdown(JSContext* cx, Handle<PipeToState*> state,
     
     
     
+    
+    
+    
+    
+
+    
+    
+    if (PromiseObject* p = state->lastWriteRequest()) {
+      Rooted<PromiseObject*> lastWriteRequest(cx, p);
+
+      Rooted<Value> optionalError(
+          cx,
+          error.isSome()
+              ? *error.get()
+              : MagicValue(JS_READABLESTREAM_PIPETO_FINALIZE_WITHOUT_ERROR));
+
+      Rooted<JSFunction*> finalize(
+          cx, NewHandlerWithExtraValue(cx, Finalize, state, optionalError));
+      if (!finalize) {
+        return false;
+      }
+
+      return JS::AddPromiseReactions(cx, lastWriteRequest, finalize, finalize);
+    }
   }
 
   
-
-  
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
-                            "pipeTo shutdown");
-  return false;
+  return Finalize(cx, state, error);
 }
 
 
@@ -190,6 +242,37 @@ static MOZ_MUST_USE bool OnSourceErrored(
   if (!cx->compartment()->wrap(cx, &storedError)) {
     return false;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
   
@@ -227,6 +310,14 @@ static MOZ_MUST_USE bool OnDestErrored(JSContext* cx,
 
   
   
+  
+  
+  
+  
+  
+
+  
+  
   if (state->preventCancel()) {
     if (!Shutdown(cx, state, storedError)) {
       return false;
@@ -254,6 +345,13 @@ static MOZ_MUST_USE bool OnSourceClosed(JSContext* cx,
   cx->check(state);
 
   Rooted<Maybe<Value>> noError(cx, Nothing());
+
+  
+  
+  
+  
+  
+  
 
   
   if (state->preventClose()) {
@@ -306,6 +404,18 @@ static MOZ_MUST_USE bool OnDestClosed(JSContext* cx,
 
     destClosed = Some(v.get());
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
   if (state->preventCancel()) {
@@ -464,6 +574,22 @@ static bool ReadFulfilled(JSContext* cx, Handle<PipeToState*> state,
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (state->shuttingDown()) {
+    return true;
+  }
 
   {
     bool done;
