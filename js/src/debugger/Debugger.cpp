@@ -6000,7 +6000,7 @@ bool Debugger::CallData::adoptFrame() {
 
   RootedDebuggerFrame adoptedFrame(cx);
   if (frameObj->isOnStack()) {
-    FrameIter iter(*frameObj->frameIterData());
+    FrameIter iter = frameObj->getFrameIter(cx);
     if (!dbg->observesFrame(iter)) {
       JS_ReportErrorASCII(cx, "Debugger.Frame's global is not a debuggee");
       return false;
@@ -6287,20 +6287,9 @@ bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
     Debugger* dbg = Debugger::fromChildJSObject(frameobj);
 
     
-    frameobj->freeFrameIterData(cx->runtime()->defaultFreeOp());
-    ScriptFrameIter::Data* data = iter.copyData();
-    if (!data) {
-      
-      
-      
-      
-      
-      
-      
-      
+    if (!frameobj->replaceFrameIterData(cx, iter)) {
       return false;
     }
-    frameobj->setFrameIterData(data);
 
     
     dbg->frames.remove(from);
