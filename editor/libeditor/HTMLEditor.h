@@ -4383,6 +4383,11 @@ class HTMLEditor final : public TextEditor,
                        char16_t** aCfcontext);
 
   nsresult StripFormattingNodes(nsIContent& aNode, bool aOnlyList = false);
+
+  
+
+
+
   nsresult CreateDOMFragmentFromPaste(
       const nsAString& aInputString, const nsAString& aContextStr,
       const nsAString& aInfoStr, nsCOMPtr<nsINode>* aOutFragNode,
