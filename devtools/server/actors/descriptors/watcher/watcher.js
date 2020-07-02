@@ -6,7 +6,6 @@
 
 const protocol = require("devtools/shared/protocol");
 const { watcherSpec } = require("devtools/shared/specs/watcher");
-const Services = require("Services");
 
 const Resources = require("devtools/server/actors/resources/index");
 const {
@@ -70,11 +69,6 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   },
 
   form() {
-    const enableServerWatcher = Services.prefs.getBoolPref(
-      "devtools.testing.enableServerWatcherSupport",
-      false
-    );
-
     return {
       actor: this.actorID,
       traits: {
@@ -88,9 +82,8 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
           
           
           
-          [Resources.TYPES.CONSOLE_MESSAGE]:
-            enableServerWatcher && !!this._browser,
-          [Resources.TYPES.PLATFORM_MESSAGE]: enableServerWatcher,
+          [Resources.TYPES.CONSOLE_MESSAGE]: false,
+          [Resources.TYPES.PLATFORM_MESSAGE]: false,
         },
       },
     };
