@@ -63,7 +63,7 @@ nsresult nsTitleBarFrame::HandleEvent(nsPresContext* aPresContext,
 
   switch (aEvent->mMessage) {
     case eMouseDown: {
-      if (aEvent->AsMouseEvent()->mButton == MouseButton::eLeft) {
+      if (aEvent->AsMouseEvent()->mButton == MouseButton::ePrimary) {
         
         if (aPresContext->IsChrome()) {
           
@@ -84,7 +84,7 @@ nsresult nsTitleBarFrame::HandleEvent(nsPresContext* aPresContext,
 
     case eMouseUp: {
       if (mTrackingMouseMove &&
-          aEvent->AsMouseEvent()->mButton == MouseButton::eLeft) {
+          aEvent->AsMouseEvent()->mButton == MouseButton::ePrimary) {
         
         mTrackingMouseMove = false;
 

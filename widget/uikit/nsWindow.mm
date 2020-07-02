@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #import <UIKit/UIEvent.h>
 #import <UIKit/UIGraphics.h>
@@ -56,28 +56,28 @@ static CGRect DevPixelsToUIKitPoints(const LayoutDeviceIntRect& aRect, CGFloat a
                     (CGFloat)aRect.width / aBackingScale, (CGFloat)aRect.height / aBackingScale);
 }
 
-// Used to retain a Cocoa object for the remainder of a method's execution.
+
 class nsAutoRetainUIKitObject {
  public:
   nsAutoRetainUIKitObject(id anObject) { mObject = [anObject retain]; }
   ~nsAutoRetainUIKitObject() { [mObject release]; }
 
  private:
-  id mObject;  // [STRONG]
+  id mObject;  
 };
 
 @interface ChildView : UIView {
  @public
-  nsWindow* mGeckoChild;  // weak ref
+  nsWindow* mGeckoChild;  
   BOOL mWaitingForPaint;
   CFMutableDictionaryRef mTouches;
   int mNextTouchID;
 }
-// sets up our view, attaching it to its owning gecko view
+
 - (id)initWithFrame:(CGRect)inFrame geckoChild:(nsWindow*)inChild;
-// Our Gecko child was Destroy()ed
+
 - (void)widgetDestroyed;
-// Tear down this ChildView
+
 - (void)delayedTearDown;
 - (void)sendMouseEvent:(EventMessage)aType
                  point:(LayoutDeviceIntPoint)aPoint
@@ -87,7 +87,7 @@ class nsAutoRetainUIKitObject {
 - (void)drawUsingOpenGL;
 - (void)drawUsingOpenGLCallback;
 - (void)sendTouchEvent:(EventMessage)aType touches:(NSSet*)aTouches widget:(nsWindow*)aWindow;
-// Event handling (UIResponder)
+
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event;
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event;
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event;
@@ -135,7 +135,7 @@ class nsAutoRetainUIKitObject {
 
   event.mRefPoint = aPoint;
   event.mClickCount = 1;
-  event.button = MouseButton::eLeft;
+  event.button = MouseButton::ePrimary;
   event.mTime = PR_IntervalNow();
   event.inputSource = MouseEvent_Binding::MOZ_SOURCE_UNKNOWN;
 
@@ -156,8 +156,8 @@ class nsAutoRetainUIKitObject {
 
 - (void)sendTouchEvent:(EventMessage)aType touches:(NSSet*)aTouches widget:(nsWindow*)aWindow {
   WidgetTouchEvent event(true, aType, aWindow);
-  // XXX: I think nativeEvent.timestamp * 1000 is probably usable here but
-  // I don't care that much right now.
+  
+  
   event.mTime = PR_IntervalNow();
   event.mTouches.SetCapacity(aTouches.count);
   for (UITouch* touch in aTouches) {
@@ -166,7 +166,7 @@ class nsAutoRetainUIKitObject {
     LayoutDeviceIntPoint radius = UIKitPointsToDevPixels([touch majorRadius], [touch majorRadius]);
     void* value;
     if (!CFDictionaryGetValueIfPresent(mTouches, touch, (const void**)&value)) {
-      // This shouldn't happen.
+      
       NS_ASSERTION(false, "Got a touch that we didn't know about");
       continue;
     }
@@ -222,13 +222,13 @@ class nsAutoRetainUIKitObject {
 
 - (void)setNeedsDisplayInRect:(CGRect)aRect {
   if ([self isUsingMainThreadOpenGL]) {
-    // Draw without calling drawRect. This prevent us from
-    // needing to access the normal window buffer surface unnecessarily, so we
-    // waste less time synchronizing the two surfaces.
+    
+    
+    
     if (!mWaitingForPaint) {
       mWaitingForPaint = YES;
-      // Use NSRunLoopCommonModes instead of the default NSDefaultRunLoopMode
-      // so that the timer also fires while a native menu is open.
+      
+      
       [self performSelector:@selector(drawUsingOpenGLCallback)
                  withObject:nil
                  afterDelay:0
@@ -258,16 +258,16 @@ class nsAutoRetainUIKitObject {
   mGeckoChild->PaintWindow(region);
 }
 
-// Called asynchronously after setNeedsDisplay in order to avoid entering the
-// normal drawing machinery.
+
+
 - (void)drawUsingOpenGLCallback {
   if (mWaitingForPaint) {
     [self drawUsingOpenGL];
   }
 }
 
-// The display system has told us that a portion of our view is dirty. Tell
-// gecko to paint it
+
+
 - (void)drawRect:(CGRect)aRect {
   CGContextRef cgContext = UIGraphicsGetCurrentContext();
   [self drawRect:aRect inContext:cgContext];
@@ -287,22 +287,22 @@ class nsAutoRetainUIKitObject {
 #endif
 
   if (true) {
-    // For Gecko-initiated repaints in OpenGL mode, drawUsingOpenGL is
-    // directly called from a delayed perform callback - without going through
-    // drawRect.
-    // Paints that come through here are triggered by something that Cocoa
-    // controls, for example by window resizing or window focus changes.
+    
+    
+    
+    
+    
 
-    // Do GL composition and return.
+    
     [self drawUsingOpenGL];
     return;
   }
   AUTO_PROFILER_LABEL("ChildView::drawRect", OTHER);
 
-  // The CGContext that drawRect supplies us with comes with a transform that
-  // scales one user space unit to one Cocoa point, which can consist of
-  // multiple dev pixels. But Gecko expects its supplied context to be scaled
-  // to device pixels, so we need to reverse the scaling.
+  
+  
+  
+  
   double scale = mGeckoChild->BackingScaleFactor();
   CGContextSaveGState(aContext);
   CGContextScaleCTM(aContext, 1.0 / scale, 1.0 / scale);
@@ -316,13 +316,13 @@ class nsAutoRetainUIKitObject {
       NSToIntRound(aRect.origin.x * scale), NSToIntRound(aRect.origin.y * scale),
       NSToIntRound(aRect.size.width * scale), NSToIntRound(aRect.size.height * scale));
 
-  // Create Cairo objects.
+  
   RefPtr<gfxQuartzSurface> targetSurface;
 
   RefPtr<gfxContext> targetContext;
   if (gfxPlatform::GetPlatform()->SupportsAzureContentForType(gfx::BackendType::CAIRO)) {
-    // This is dead code unless you mess with prefs, but keep it around for
-    // debugging.
+    
+    
     targetSurface = new gfxQuartzSurface(aContext, backingSize);
     targetSurface->SetAllowUseAsSource(false);
     RefPtr<gfx::DrawTarget> dt =
@@ -337,9 +337,9 @@ class nsAutoRetainUIKitObject {
   } else {
     MOZ_ASSERT_UNREACHABLE("COREGRAPHICS is the only supported backend");
   }
-  MOZ_ASSERT(targetContext);  // already checked for valid draw targets above
+  MOZ_ASSERT(targetContext);  
 
-  // Set up the clip region.
+  
   targetContext->NewPath();
   for (auto iter = region.RectIter(); !iter.Done(); iter.Next()) {
     const LayoutDeviceIntRect& r = iter.Get();
@@ -347,14 +347,14 @@ class nsAutoRetainUIKitObject {
   }
   targetContext->Clip();
 
-  // nsAutoRetainCocoaObject kungFuDeathGrip(self);
+  
   bool painted = false;
   if (mGeckoChild->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_BASIC) {
     nsBaseWidget::AutoLayerManagerSetup setupLayerManager(mGeckoChild, targetContext,
                                                           BufferMode::BUFFER_NONE);
     painted = mGeckoChild->PaintWindow(region);
   } else if (mGeckoChild->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_CLIENT) {
-    // We only need this so that we actually get DidPaintWindow fired
+    
     painted = mGeckoChild->PaintWindow(region);
   }
 
@@ -363,12 +363,12 @@ class nsAutoRetainUIKitObject {
 
   CGContextRestoreGState(aContext);
 
-  // Undo the scale transform so that from now on the context is in
-  // CocoaPoints again.
+  
+  
   CGContextRestoreGState(aContext);
   if (!painted && [self isOpaque]) {
-    // Gecko refused to draw, but we've claimed to be opaque, so we have to
-    // draw something--fill with white.
+    
+    
     CGContextSetRGBFillColor(aContext, 1, 1, 1, 1);
     CGContextFillRect(aContext, aRect);
   }
@@ -393,8 +393,8 @@ class nsAutoRetainUIKitObject {
 nsWindow::nsWindow() : mNativeView(nullptr), mVisible(false), mParent(nullptr) {}
 
 nsWindow::~nsWindow() {
-  [mNativeView widgetDestroyed];  // Safe if mNativeView is nil.
-  TearDownView();                 // Safe if called twice.
+  [mNativeView widgetDestroyed];  
+  TearDownView();                 
 }
 
 void nsWindow::TearDownView() {
@@ -411,9 +411,9 @@ bool nsWindow::IsTopLevel() {
          mWindowType == eWindowType_invisible;
 }
 
-//
-// nsIWidget
-//
+
+
+
 
 nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                           const LayoutDeviceIntRect& aRect, nsWidgetInitData* aInitData) {
@@ -425,7 +425,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   if (parent == nullptr && nativeParent) parent = nativeParent->mGeckoChild;
   if (parent && nativeParent == nullptr) nativeParent = parent->mNativeView;
 
-  // for toplevel windows, bounds are fixed to full screen size
+  
   if (parent == nullptr) {
     if (nsAppShell::gWindow == nil) {
       mBounds = UIKitScreenManager::GetBounds();
@@ -443,7 +443,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   ALOG("nsWindow[%p]::Create bounds: %d %d %d %d", (void*)this, mBounds.x, mBounds.y, mBounds.width,
        mBounds.height);
 
-  // Set defaults which can be overriden from aInitData in BaseCreate
+  
   mWindowType = eWindowType_toplevel;
   mBorderStyle = eBorderStyle_default;
 
@@ -474,7 +474,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
 void nsWindow::Destroy() {
   for (uint32_t i = 0; i < mChildren.Length(); ++i) {
-    // why do we still have children?
+    
     mChildren[i]->SetParent(nullptr);
   }
 
@@ -484,7 +484,7 @@ void nsWindow::Destroy() {
 
   nsBaseWidget::Destroy();
 
-  // ReportDestroyEvent();
+  
 
   TearDownView();
 
@@ -519,9 +519,9 @@ void nsWindow::Show(bool aState) {
 void nsWindow::Move(double aX, double aY) {
   if (!mNativeView || (mBounds.x == aX && mBounds.y == aY)) return;
 
-  // XXX: handle this
-  // The point we have is in Gecko coordinates (origin top-left). Convert
-  // it to Cocoa ones (origin bottom-left).
+  
+  
+  
   mBounds.x = aX;
   mBounds.y = aY;
 
@@ -575,7 +575,7 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
 
   mSizeMode = static_cast<nsSizeMode>(aMode);
   if (aMode == nsSizeMode_Maximized || aMode == nsSizeMode_Fullscreen) {
-    // Resize to fill screen
+    
     nsBaseWidget::InfallibleMakeFullScreen(true);
   }
   ReportSizeModeEvent(aMode);
@@ -619,7 +619,7 @@ void nsWindow::ReportMoveEvent() { NotifyWindowMoved(mBounds.x, mBounds.y); }
 
 void nsWindow::ReportSizeModeEvent(nsSizeMode aMode) {
   if (mWidgetListener) {
-    // This is terrible.
+    
     nsSizeMode theMode;
     switch (aMode) {
       case nsSizeMode_Maximized:
@@ -655,7 +655,7 @@ LayoutDeviceIntPoint nsWindow::WidgetToScreenOffset() {
   CGPoint temp = [mNativeView convertPoint:temp toView:nil];
 
   if (!mParent && nsAppShell::gWindow) {
-    // convert to screen coords
+    
     temp = [nsAppShell::gWindow convertPoint:temp toWindow:nil];
   }
 
@@ -675,7 +675,7 @@ nsresult nsWindow::DispatchEvent(mozilla::WidgetGUIEvent* aEvent, nsEventStatus&
 }
 
 void nsWindow::SetInputContext(const InputContext& aContext, const InputContextAction& aAction) {
-  // TODO: actually show VKB
+  
   mInputContext = aContext;
 }
 
@@ -714,7 +714,7 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
       break;
 
     case NS_NATIVE_PLUGIN_PORT:
-      // not implemented
+      
       break;
 
     case NS_RAW_NATIVE_IME_CONTEXT:

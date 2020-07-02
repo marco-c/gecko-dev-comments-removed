@@ -91,7 +91,7 @@ nsresult HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
     mHandlingEvent = true;
     switch (aVisitor.mEvent->mMessage) {
       case eMouseDown:
-        if (mouseEvent->mButton == MouseButton::eLeft) {
+        if (mouseEvent->mButton == MouseButton::ePrimary) {
           
           
           LayoutDeviceIntPoint* curPoint =
