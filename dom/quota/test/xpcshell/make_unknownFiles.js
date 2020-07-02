@@ -65,15 +65,6 @@ async function testSteps() {
     ok(request.result === true, "The origin directory was created");
 
     createUnknownFileIn(originRelativePath);
-  }
-
-  
-  {
-    const request = initStorageAndOrigin(principal, "default");
-    await requestFinished(request);
-
-    ok(request.result === false, "The origin directory was not created");
-
     createUnknownDirectoryIn(originRelativePath);
   }
 
