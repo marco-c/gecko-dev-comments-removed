@@ -14,6 +14,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/ServoStyleConstsInlines.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/StyleColorInlines.h"
 #include "mozilla/UniquePtr.h"
@@ -88,20 +89,23 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
 
 
 
-  static nscoord ZoomText(const mozilla::dom::Document&, nscoord aSize);
+
+
+  static mozilla::Length ZoomText(const mozilla::dom::Document&,
+                                  mozilla::Length);
 
   nsFont mFont;
-  nscoord mSize;  
-                  
-                  
-                  
-                  
-                  
+
+  
+  
+  
+  
+  mozilla::NonNegativeLength mSize;
 
   
   
   float mFontSizeFactor;
-  nscoord mFontSizeOffset;
+  mozilla::Length mFontSizeOffset;
   mozilla::StyleFontSizeKeyword mFontSizeKeyword;
 
   mozilla::StyleGenericFontFamily mGenericID;
@@ -125,8 +129,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   bool mAllowZoomAndMinSize;
 
   
-  nscoord mScriptUnconstrainedSize;
-  nscoord mScriptMinSize;  
+  mozilla::NonNegativeLength mScriptUnconstrainedSize;
+  mozilla::Length mScriptMinSize;
   float mScriptSizeMultiplier;
   RefPtr<nsAtom> mLanguage;
 };

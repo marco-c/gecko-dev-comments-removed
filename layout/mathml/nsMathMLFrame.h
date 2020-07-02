@@ -238,7 +238,7 @@ class nsMathMLFrame : public nsIMathMLFrame {
     
     emHeight = fm->EmHeight();
 #else
-    emHeight = NSToCoordRound(float(fm->Font().size));
+    emHeight = fm->Font().size.ToAppUnits();
 #endif
   }
 

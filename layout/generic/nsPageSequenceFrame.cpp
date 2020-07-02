@@ -63,7 +63,8 @@ nsPageSequenceFrame::nsPageSequenceFrame(ComputedStyle* aStyle,
            ->Document()
            ->GetFontPrefsForLang(aStyle->StyleFont()->mLanguage)
            ->GetDefaultFont(StyleGenericFontFamily::Serif);
-  mPageData->mHeadFootFont.size = nsPresContext::CSSPointsToAppUnits(10);
+  mPageData->mHeadFootFont.size =
+      Length::FromPixels(CSSPixel::FromPoints(10.0f));
 
   
   SetPageNumberFormat("pagenumber", "%1$d", true);
