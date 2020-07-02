@@ -664,12 +664,13 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
   }
 
   
-  bool hasFlags;
-  rv = NS_URIChainHasFlags(
-      targetBaseURI, nsIProtocolHandler::URI_LOADABLE_BY_SUBSUMERS, &hasFlags);
+  bool targetURIIsLoadableBySubsumers = false;
+  rv = NS_URIChainHasFlags(targetBaseURI,
+                           nsIProtocolHandler::URI_LOADABLE_BY_SUBSUMERS,
+                           &targetURIIsLoadableBySubsumers);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (hasFlags) {
+  if (targetURIIsLoadableBySubsumers) {
     
     
     rv = CheckLoadURIFlags(
@@ -711,11 +712,14 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
   }
 
   
-  rv = NS_URIChainHasFlags(
-      aTargetURI, nsIProtocolHandler::URI_LOADABLE_BY_EXTENSIONS, &hasFlags);
+  bool targetURIIsLoadableByExtensions = false;
+  rv = NS_URIChainHasFlags(aTargetURI,
+                           nsIProtocolHandler::URI_LOADABLE_BY_EXTENSIONS,
+                           &targetURIIsLoadableByExtensions);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (hasFlags && BasePrincipal::Cast(aPrincipal)->AddonPolicy()) {
+  if (targetURIIsLoadableByExtensions &&
+      BasePrincipal::Cast(aPrincipal)->AddonPolicy()) {
     return NS_OK;
   }
 
@@ -872,11 +876,11 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
   }
 
   
-  bool hasFlags = false;
+  bool targetURIIsUIResource = false;
   rv = NS_URIChainHasFlags(aTargetURI, nsIProtocolHandler::URI_IS_UI_RESOURCE,
-                           &hasFlags);
+                           &targetURIIsUIResource);
   NS_ENSURE_SUCCESS(rv, rv);
-  if (hasFlags) {
+  if (targetURIIsUIResource) {
     if (aFlags & nsIScriptSecurityManager::ALLOW_CHROME) {
       
       
@@ -948,10 +952,11 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
   }
 
   
+  bool targetURIIsLocalFile = false;
   rv = NS_URIChainHasFlags(aTargetURI, nsIProtocolHandler::URI_IS_LOCAL_FILE,
-                           &hasFlags);
+                           &targetURIIsLocalFile);
   NS_ENSURE_SUCCESS(rv, rv);
-  if (hasFlags) {
+  if (targetURIIsLocalFile) {
     
     
     bool isAllowlisted;
