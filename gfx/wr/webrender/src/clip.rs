@@ -566,7 +566,11 @@ impl ClipNodeInfo {
                     let visible_rect = if repeat {
                         *clipped_rect
                     } else {
-                        clipped_rect.intersection(&rect).unwrap()
+                        
+                        
+                        
+                        
+                        clipped_rect.intersection(&rect).unwrap_or(*clipped_rect)
                     };
 
                     let repetitions = image_tiling::repetitions(
