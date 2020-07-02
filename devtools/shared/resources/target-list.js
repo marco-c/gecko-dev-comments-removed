@@ -122,10 +122,29 @@ class TargetList {
     }
 
     
-    const targetType = this.getTargetType(targetFront);
+    
+    
+    if (targetFront.isTopLevel) {
+      
+      for (const target of this._targets) {
+        
+        const isDestroyedTargetSwitching = target == this.targetFront;
+        this._onTargetDestroyed(target, isDestroyedTargetSwitching);
+      }
+      
+      
+      this.stopListening();
 
+      
+      this._targets.clear();
+
+      
+      this.targetFront = targetFront;
+    }
+
+    
+    const targetType = this.getTargetType(targetFront);
     targetFront.setTargetType(targetType);
-    targetFront.setIsTopLevel(targetFront == this.targetFront);
 
     this._targets.add(targetFront);
 
@@ -134,6 +153,12 @@ class TargetList {
       targetFront,
       isTargetSwitching,
     });
+
+    
+    
+    if (targetFront.isTopLevel) {
+      await this.startListening();
+    }
   }
 
   _onTargetDestroyed(targetFront, isTargetSwitching = false) {
@@ -402,27 +427,10 @@ class TargetList {
 
 
   async switchToTarget(newTarget) {
-    
-    for (const target of this._targets) {
-      
-      const isTargetSwitching = target == this.targetFront;
-      this._onTargetDestroyed(target, isTargetSwitching);
-    }
-    this.stopListening();
-
-    
-    this._targets.clear();
-
-    
-    
-    this.targetFront = newTarget;
+    newTarget.setIsTopLevel(true);
 
     
     await this._onTargetAvailable(newTarget, true);
-
-    
-    
-    await this.startListening();
   }
 
   isTargetRegistered(targetFront) {
