@@ -59,9 +59,8 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
   
   
   
-  bool SetMusicMetadata(mozilla::Maybe<const wchar_t*> aArtist,
-                        const wchar_t* aTitle,
-                        mozilla::Maybe<const wchar_t*> aAlbumArtist);
+  bool SetMusicMetadata(const wchar_t* aArtist, const wchar_t* aTitle,
+                        const wchar_t* aAlbumArtist);
 
   void SetMediaMetadata(
       const mozilla::dom::MediaMetadataBase& aMetadata) override;
