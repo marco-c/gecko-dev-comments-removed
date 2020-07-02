@@ -124,10 +124,7 @@ DevToolsServerConnection.prototype = {
 
 
 
-
-
-
-  removeActorPool(actorPool, noCleanup) {
+  removeActorPool(actorPool) {
     
     
     
@@ -150,10 +147,7 @@ DevToolsServerConnection.prototype = {
     }
     const index = this._extraPools.lastIndexOf(actorPool);
     if (index > -1) {
-      const pool = this._extraPools.splice(index, 1);
-      if (!noCleanup) {
-        pool.forEach(p => p.destroy());
-      }
+      this._extraPools.splice(index, 1);
     }
   },
 
