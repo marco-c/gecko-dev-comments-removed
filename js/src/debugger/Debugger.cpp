@@ -6258,19 +6258,18 @@ bool Debugger::observesWasm(wasm::Instance* instance) const {
 
 bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
                                 AbstractFramePtr to, ScriptFrameIter& iter) {
-  auto removeFromDebuggerFramesOnExit = MakeScopeExit([&] {
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT_IF(DebugAPI::inFrameMaps(to), !DebugAPI::inFrameMaps(from));
-    removeFromFrameMapsAndClearBreakpointsIn(cx, from);
+  
+  
+  DebugEnvironments::forwardLiveFrame(cx, from, to);
 
-    
-    
-    DebugEnvironments::forwardLiveFrame(cx, from, to);
+  
+  
+  auto removeDebuggerFramesOnExit = MakeScopeExit([&] {
+    removeFromFrameMapsAndClearBreakpointsIn(cx, from);
+    removeFromFrameMapsAndClearBreakpointsIn(cx, to);
+
+    MOZ_ASSERT(!DebugAPI::inFrameMaps(from));
+    MOZ_ASSERT(!DebugAPI::inFrameMaps(to));
   });
 
   
@@ -6283,13 +6282,6 @@ bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
     return false;
   }
 
-  
-  
-  
-  
-  auto removeToDebuggerFramesOnExit =
-      MakeScopeExit([&] { removeFromFrameMapsAndClearBreakpointsIn(cx, to); });
-
   for (size_t i = 0; i < frames.length(); i++) {
     HandleDebuggerFrame frameobj = frames[i];
     Debugger* dbg = Debugger::fromChildJSObject(frameobj);
@@ -6298,7 +6290,6 @@ bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
     frameobj->freeFrameIterData(cx->runtime()->defaultFreeOp());
     ScriptFrameIter::Data* data = iter.copyData();
     if (!data) {
-      
       
       
       
@@ -6322,7 +6313,6 @@ bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
       
       
       
-      
       JSFreeOp* fop = cx->runtime()->defaultFreeOp();
       frameobj->freeFrameIterData(fop);
       frameobj->maybeDecrementStepperCounter(fop, to);
@@ -6333,8 +6323,10 @@ bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
   }
 
   
-  removeToDebuggerFramesOnExit.release();
+  removeDebuggerFramesOnExit.release();
 
+  MOZ_ASSERT(!DebugAPI::inFrameMaps(from));
+  MOZ_ASSERT_IF(!frames.empty(), DebugAPI::inFrameMaps(to));
   return true;
 }
 
