@@ -4320,6 +4320,14 @@ void nsWindow::DispatchPluginSettingEvents() {
   }
 }
 
+void nsWindow::DispatchCustomEvent(const nsString& eventName) {
+  if (Document* doc = GetDocument()) {
+    if (nsPIDOMWindowOuter* win = doc->GetWindow()) {
+      win->DispatchCustomEvent(eventName, ChromeOnlyDispatch::eYes);
+    }
+  }
+}
+
 bool nsWindow::TouchEventShouldStartDrag(EventMessage aEventMessage,
                                          LayoutDeviceIntPoint aEventPoint) {
   
@@ -5952,6 +5960,17 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
                                   MouseButton::ePrimary, MOUSE_INPUT_SOURCE());
       DispatchPendingEvents();
       break;
+
+    case WM_NCLBUTTONDOWN: {
+      
+      
+      
+      
+      if (WithinDraggableRegion(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam))) {
+        DispatchCustomEvent(NS_LITERAL_STRING("draggableregionleftmousedown"));
+      }
+      break;
+    }
 
     case WM_APPCOMMAND: {
       MSG nativeMsg = WinUtils::InitMSG(msg, wParam, lParam, mWnd);
