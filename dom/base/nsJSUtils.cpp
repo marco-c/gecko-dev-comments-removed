@@ -14,6 +14,7 @@
 #include "nsJSUtils.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
+#include "js/BinASTFormat.h"  
 #include "js/CompilationAndEvaluation.h"
 #include "js/Date.h"
 #include "js/Modules.h"  
@@ -307,12 +308,70 @@ nsresult nsJSUtils::ExecutionContext::JoinDecode(
 
 nsresult nsJSUtils::ExecutionContext::JoinDecodeBinAST(
     JS::OffThreadToken** aOffThreadToken) {
+#ifdef JS_BUILD_BINAST
+  if (mSkip) {
+    return mRv;
+  }
+
+  MOZ_ASSERT(!mWantsReturnValue);
+  MOZ_ASSERT(!mExpectScopeChain);
+
+  mScript.set(JS::FinishOffThreadBinASTDecode(mCx, *aOffThreadToken));
+  *aOffThreadToken = nullptr;  
+
+  if (!mScript) {
+    mSkip = true;
+    mRv = EvaluationExceptionToNSResult(mCx);
+    return mRv;
+  }
+
+  if (mEncodeBytecode && !StartIncrementalEncoding(mCx, mScript)) {
+    mSkip = true;
+    mRv = EvaluationExceptionToNSResult(mCx);
+    return mRv;
+  }
+
+  return NS_OK;
+#else
   return NS_ERROR_NOT_IMPLEMENTED;
+#endif
 }
 
 nsresult nsJSUtils::ExecutionContext::DecodeBinAST(
     JS::CompileOptions& aCompileOptions, const uint8_t* aBuf, size_t aLength) {
+#ifdef JS_BUILD_BINAST
+  MOZ_ASSERT(mScopeChain.length() == 0,
+             "BinAST decoding is not supported in non-syntactic scopes");
+
+  if (mSkip) {
+    return mRv;
+  }
+
+  MOZ_ASSERT(aBuf);
+  MOZ_ASSERT(mRetValue.isUndefined());
+#  ifdef DEBUG
+  mWantsReturnValue = !aCompileOptions.noScriptRval;
+#  endif
+
+  mScript.set(JS::DecodeBinAST(mCx, aCompileOptions, aBuf, aLength,
+                               JS::BinASTFormat::Multipart));
+
+  if (!mScript) {
+    mSkip = true;
+    mRv = EvaluationExceptionToNSResult(mCx);
+    return mRv;
+  }
+
+  if (mEncodeBytecode && !StartIncrementalEncoding(mCx, mScript)) {
+    mSkip = true;
+    mRv = EvaluationExceptionToNSResult(mCx);
+    return mRv;
+  }
+
+  return NS_OK;
+#else
   return NS_ERROR_NOT_IMPLEMENTED;
+#endif
 }
 
 JSScript* nsJSUtils::ExecutionContext::GetScript() {

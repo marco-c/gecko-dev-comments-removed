@@ -1,0 +1,18 @@
+
+
+
+
+
+
+#include "frontend/BinASTParserBase.h"
+
+#include "vm/JSContext-inl.h"
+
+namespace js::frontend {
+
+BinASTParserBase::BinASTParserBase(JSContext* cx,
+                                   CompilationInfo& compilationInfo)
+    : ParserSharedBase(cx, compilationInfo,
+                       ParserSharedBase::Kind::BinASTParser) {}
+
+}  

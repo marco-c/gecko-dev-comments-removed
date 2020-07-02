@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifndef js_BinASTFormat_h
+#define js_BinASTFormat_h
+
+namespace JS {
+
+enum class BinASTFormat { Multipart, Context };
+
+} 
+
+#endif 

@@ -1,0 +1,23 @@
+#![deny(warnings)]
+
+
+
+#[cfg(feature = "heavyweight")]
+pub mod demodulize;
+
+
+
+#[cfg(feature = "heavyweight")]
+pub mod deconstantize;
+
+
+
+#[cfg(feature = "heavyweight")]
+pub mod pluralize;
+
+
+
+#[cfg(feature = "heavyweight")]
+pub mod singularize;
+
+mod constants;

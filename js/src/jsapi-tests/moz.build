@@ -152,6 +152,17 @@ if CONFIG['NIGHTLY_BUILD']:
         'testErrorInterceptorGC.cpp',
     ]
 
+if CONFIG['JS_BUILD_BINAST'] and CONFIG['JS_STANDALONE'] and not CONFIG['FUZZING']:
+    
+    
+    
+    
+    
+    
+    UNIFIED_SOURCES += [
+        'testBinASTReader.cpp',
+    ]
+
 if CONFIG['OS_ARCH'] not in ('WINNT', 'Darwin') and CONFIG['OS_TARGET'] != 'Android':
     
     UNIFIED_SOURCES += [

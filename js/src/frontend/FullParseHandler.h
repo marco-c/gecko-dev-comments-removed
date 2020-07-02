@@ -30,6 +30,8 @@ class TokenStreamAnyChars;
 enum class SourceKind {
   
   Text,
+  
+  Binary,
 };
 
 
