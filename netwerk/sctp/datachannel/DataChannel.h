@@ -360,7 +360,7 @@ class DataChannelConnection final : public net::NeckoTargetHolder
   Channels mChannels;
   
   uint32_t mCurrentStream = 0;
-  nsDeque mPending;  
+  nsDeque<DataChannel> mPending;  
   
   size_t mNegotiatedIdLimit = 0;  
   uint8_t mPendingType = PENDING_NONE;

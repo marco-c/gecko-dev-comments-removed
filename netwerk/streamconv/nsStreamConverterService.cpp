@@ -172,12 +172,9 @@ typedef nsClassHashtable<nsCStringHashKey, BFSTableData> BFSHashTable;
 
 
 
-class CStreamConvDeallocator : public nsDequeFunctor {
+class CStreamConvDeallocator : public nsDequeFunctor<nsCString> {
  public:
-  void operator()(void* anObject) override {
-    nsCString* string = (nsCString*)anObject;
-    delete string;
-  }
+  void operator()(nsCString* anObject) override { delete anObject; }
 };
 
 
