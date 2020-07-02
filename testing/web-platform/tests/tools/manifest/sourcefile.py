@@ -585,6 +585,7 @@ class SourceFile(object):
         assert self.root is not None
         return self.root.findall(".//{http://www.w3.org/1999/xhtml}meta[@name='fuzzy']")
 
+
     @cached_property
     def fuzzy(self):
         
