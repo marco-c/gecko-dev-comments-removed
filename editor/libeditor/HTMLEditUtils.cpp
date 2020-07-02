@@ -148,7 +148,7 @@ bool HTMLEditUtils::IsListItem(nsINode* aNode) {
 
 
 
-bool HTMLEditUtils::IsTableElement(nsINode* aNode) {
+bool HTMLEditUtils::IsAnyTableElement(nsINode* aNode) {
   MOZ_ASSERT(aNode);
   return aNode->IsAnyOfHTMLElements(
       nsGkAtoms::table, nsGkAtoms::tr, nsGkAtoms::td, nsGkAtoms::th,

@@ -304,7 +304,7 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
     
     
     
-    if (!HTMLEditUtils::IsTableElement(arrayOfTopMostChildContents[0])) {
+    if (!HTMLEditUtils::IsAnyTableElement(arrayOfTopMostChildContents[0])) {
       cellSelectionMode = false;
     }
   }
@@ -3127,7 +3127,7 @@ HTMLEditor::AutoHTMLFragmentBoundariesFixer::GetMostAncestorListOrTableElement(
     const {
   Element* lastFoundAncestorListOrTableElement = nullptr;
   for (auto& content : aArrayOfTopMostChildContents) {
-    if (HTMLEditUtils::IsTableElement(content) &&
+    if (HTMLEditUtils::IsAnyTableElement(content) &&
         !content->IsHTMLElement(nsGkAtoms::table)) {
       Element* tableElement = nullptr;
       for (Element* maybeTableElement = content->GetParentElement();
@@ -3214,7 +3214,7 @@ HTMLEditor::AutoHTMLFragmentBoundariesFixer::FindReplaceableTableElement(
   for (Element* element =
            aContentMaybeInTableElement.GetAsElementOrParentElement();
        element; element = element->GetParentElement()) {
-    if (!HTMLEditUtils::IsTableElement(element) ||
+    if (!HTMLEditUtils::IsAnyTableElement(element) ||
         element->IsHTMLElement(nsGkAtoms::table)) {
       
       
