@@ -842,11 +842,6 @@ enum class FieldFlags { Mutable = 0x01, AllowedMask = 0x01 };
 
 
 
-
-static const unsigned PageSize = 64 * 1024;
-
-
-
 static const unsigned MaxTypes = 1000000;
 static const unsigned MaxFuncs = 1000000;
 static const unsigned MaxTables = 100000;
@@ -854,10 +849,7 @@ static const unsigned MaxImports = 100000;
 static const unsigned MaxExports = 100000;
 static const unsigned MaxGlobals = 1000000;
 static const unsigned MaxDataSegments = 100000;
-static const unsigned MaxDataSegmentLengthPages = 16384;
 static const unsigned MaxElemSegments = 10000000;
-static const unsigned MaxElemSegmentLength = 10000000;
-static const unsigned MaxTableLimitField = UINT32_MAX;
 static const unsigned MaxTableLength = 10000000;
 static const unsigned MaxLocals = 50000;
 static const unsigned MaxParams = 1000;
@@ -865,15 +857,16 @@ static const unsigned MaxParams = 1000;
 
 static const unsigned MaxResults = 1000;
 static const unsigned MaxStructFields = 1000;
-static const unsigned MaxMemoryLimitField = 65536;
-static const unsigned MaxMemoryPages = INT32_MAX / PageSize;
+static const unsigned MaxMemoryMaximumPages = 65536;
 static const unsigned MaxStringBytes = 100000;
 static const unsigned MaxModuleBytes = 1024 * 1024 * 1024;
 static const unsigned MaxFunctionBytes = 7654321;
 
 
 
+static const unsigned MaxTableInitialLength = 10000000;
 static const unsigned MaxBrTableElems = 1000000;
+static const unsigned MaxMemoryInitialPages = 16384;
 static const unsigned MaxCodeSectionBytes = MaxModuleBytes;
 static const unsigned MaxResultsForJitEntry = 1;
 static const unsigned MaxResultsForJitExit = 1;

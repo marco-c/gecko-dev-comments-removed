@@ -2774,15 +2774,15 @@ bool IsRoundingFunction(SymbolicAddress callee, jit::RoundingMode* mode);
 
 
 struct Limits {
-  uint64_t initial;
-  Maybe<uint64_t> maximum;
+  uint32_t initial;
+  Maybe<uint32_t> maximum;
 
   
   
   Shareable shared;
 
   Limits() = default;
-  explicit Limits(uint64_t initial, const Maybe<uint64_t>& maximum = Nothing(),
+  explicit Limits(uint32_t initial, const Maybe<uint32_t>& maximum = Nothing(),
                   Shareable shared = Shareable::False)
       : initial(initial), maximum(maximum), shared(shared) {}
 };
@@ -2814,17 +2814,15 @@ struct TableDesc {
   TableKind kind;
   bool importedOrExported;
   uint32_t globalDataOffset;
-  uint32_t initialLength;
-  Maybe<uint32_t> maximumLength;
+  Limits limits;
 
   TableDesc() = default;
-  TableDesc(TableKind kind, uint32_t initialLength,
-            Maybe<uint32_t> maximumLength, bool importedOrExported = false)
+  TableDesc(TableKind kind, const Limits& limits,
+            bool importedOrExported = false)
       : kind(kind),
         importedOrExported(importedOrExported),
         globalDataOffset(UINT32_MAX),
-        initialLength(initialLength),
-        maximumLength(maximumLength) {}
+        limits(limits) {}
 };
 
 typedef Vector<TableDesc, 0, SystemAllocPolicy> TableDescVector;
@@ -3035,7 +3033,7 @@ class CalleeDesc {
     CalleeDesc c;
     c.which_ = WasmTable;
     c.u.table.globalDataOffset_ = desc.globalDataOffset;
-    c.u.table.minLength_ = desc.initialLength;
+    c.u.table.minLength_ = desc.limits.initial;
     c.u.table.funcTypeId_ = funcTypeId;
     return c;
   }
@@ -3092,11 +3090,14 @@ class CalleeDesc {
 
 
 
-static const uint64_t HighestValidARMImmediate = 0xff000000;
-
 extern bool IsValidARMImmediate(uint32_t i);
 
-extern uint64_t RoundUpToNextValidARMImmediate(uint64_t i);
+extern uint32_t RoundUpToNextValidARMImmediate(uint32_t i);
+
+
+
+
+static const unsigned PageSize = 64 * 1024;
 
 
 
@@ -3171,7 +3172,7 @@ extern bool IsValidBoundsCheckImmediate(uint32_t i);
 
 
 
-extern size_t ComputeMappedSize(uint64_t maxSize);
+extern size_t ComputeMappedSize(uint32_t maxSize);
 
 
 

@@ -45,9 +45,11 @@ using mozilla::MakeEnumeratedRange;
 #  endif
 #endif
 
-static_assert(MaxMemoryPages ==
+
+
+static_assert(MaxMemoryInitialPages <=
                   ArrayBufferObject::MaxBufferByteLength / PageSize,
-              "invariant");
+              "Memory sizing constraint");
 
 
 
@@ -589,10 +591,8 @@ bool wasm::IsValidARMImmediate(uint32_t i) {
   return valid;
 }
 
-uint64_t wasm::RoundUpToNextValidARMImmediate(uint64_t i) {
-  MOZ_ASSERT(i <= HighestValidARMImmediate);
-  static_assert(HighestValidARMImmediate == 0xff000000,
-                "algorithm relies on specific constant");
+uint32_t wasm::RoundUpToNextValidARMImmediate(uint32_t i) {
+  MOZ_ASSERT(i <= 0xff000000);
 
   if (i <= 16 * 1024 * 1024) {
     i = i ? mozilla::RoundUpPow2(i) : 0;
@@ -613,7 +613,7 @@ bool wasm::IsValidBoundsCheckImmediate(uint32_t i) {
 #endif
 }
 
-size_t wasm::ComputeMappedSize(uint64_t maxSize) {
+size_t wasm::ComputeMappedSize(uint32_t maxSize) {
   MOZ_ASSERT(maxSize % PageSize == 0);
 
   
@@ -621,9 +621,9 @@ size_t wasm::ComputeMappedSize(uint64_t maxSize) {
   
 
 #ifdef JS_CODEGEN_ARM
-  uint64_t boundsCheckLimit = RoundUpToNextValidARMImmediate(maxSize);
+  uint32_t boundsCheckLimit = RoundUpToNextValidARMImmediate(maxSize);
 #else
-  uint64_t boundsCheckLimit = maxSize;
+  uint32_t boundsCheckLimit = maxSize;
 #endif
   MOZ_ASSERT(IsValidBoundsCheckImmediate(boundsCheckLimit));
 
