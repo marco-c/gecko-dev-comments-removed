@@ -111,6 +111,12 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     await targetHelperModule.createTargets(this, watchedResources);
   },
 
+  
+
+
+
+
+
   unwatchTargets(targetType) {
     const isWatchingTargets = WatcherRegistry.unwatchTargets(this, targetType);
     if (!isWatchingTargets) {
@@ -137,6 +143,14 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   notifyTargetDestroyed(actor) {
     this.emit("target-destroyed-form", actor);
   },
+
+  
+
+
+
+
+
+
 
   getParentBrowsingContextID(browsingContextID) {
     const browsingContext = BrowsingContext.get(browsingContextID);
