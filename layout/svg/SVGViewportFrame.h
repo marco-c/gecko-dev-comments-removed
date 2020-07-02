@@ -13,17 +13,20 @@
 
 class gfxContext;
 
+namespace mozilla {
 
 
-class nsSVGViewportFrame : public nsSVGDisplayContainerFrame,
-                           public nsISVGSVGFrame {
+
+
+class SVGViewportFrame : public nsSVGDisplayContainerFrame,
+                         public nsISVGSVGFrame {
  protected:
-  nsSVGViewportFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
-                     nsIFrame::ClassID aID)
+  SVGViewportFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
+                   nsIFrame::ClassID aID)
       : nsSVGDisplayContainerFrame(aStyle, aPresContext, aID) {}
 
  public:
-  NS_DECL_ABSTRACT_FRAME(nsSVGViewportFrame)
+  NS_DECL_ABSTRACT_FRAME(SVGViewportFrame)
 
   virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                                     int32_t aModType) override;
@@ -44,5 +47,7 @@ class nsSVGViewportFrame : public nsSVGDisplayContainerFrame,
   
   virtual void NotifyViewportOrTransformChanged(uint32_t aFlags) override;
 };
+
+}  
 
 #endif  
