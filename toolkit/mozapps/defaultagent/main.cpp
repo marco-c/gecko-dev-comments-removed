@@ -17,6 +17,7 @@
 #include "DefaultBrowser.h"
 #include "Notification.h"
 #include "Policy.h"
+#include "Registry.h"
 #include "ScheduledTask.h"
 #include "Telemetry.h"
 
@@ -92,6 +93,22 @@ static void RemoveAllRegistryEntries() {
 
 
 
+static void WriteInstallationRegistryEntry() {
+  mozilla::WindowsErrorResult<mozilla::Ok> result =
+      RegistrySetValueBool(IsPrefixed::Prefixed, L"Installed", true);
+  if (result.isErr()) {
+    LOG_ERROR_MESSAGE(L"Failed to write installation registry entry: %#X",
+                      result.unwrapErr().AsHResult());
+  }
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -146,11 +163,15 @@ int wmain(int argc, wchar_t** argv) {
     if (argc < 3 || !argv[2]) {
       return E_INVALIDARG;
     }
+    WriteInstallationRegistryEntry();
+
     return RegisterTask(argv[2]);
   } else if (!wcscmp(argv[1], L"update-task")) {
     if (argc < 3 || !argv[2]) {
       return E_INVALIDARG;
     }
+    WriteInstallationRegistryEntry();
+
     return UpdateTask(argv[2]);
   } else if (!wcscmp(argv[1], L"do-task")) {
     if (argc < 3 || !argv[2]) {

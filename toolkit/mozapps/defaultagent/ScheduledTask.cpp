@@ -16,6 +16,8 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 
+#include "DefaultBrowser.h"
+
 const wchar_t* kTaskVendor = L"" MOZ_APP_VENDOR;
 
 const wchar_t* kTaskName = L"" MOZ_APP_DISPLAYNAME " Default Browser Agent ";
@@ -41,6 +43,14 @@ using BStrPtr = mozilla::UniquePtr<OLECHAR, SysFreeStringDeleter>;
 
 HRESULT RegisterTask(const wchar_t* uniqueToken,
                      BSTR startTime ) {
+  
+  
+  
+  
+  
+  
+  MaybeMigrateCurrentDefault();
+
   
   RemoveTask(uniqueToken);
 
