@@ -77,6 +77,9 @@ pub enum Error {
     InvalidRetry,
     InvalidStreamId,
     
+    
+    KeysExhausted,
+    
     KeysNotFound,
     
     

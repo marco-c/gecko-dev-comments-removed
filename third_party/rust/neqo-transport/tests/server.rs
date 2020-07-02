@@ -412,6 +412,37 @@ fn retry_bad_token() {
 }
 
 
+
+
+
+
+#[test]
+fn retry_after_pto() {
+    let mut client = default_client();
+    let mut server = default_server();
+    server.set_retry_required(true);
+    let mut now = now();
+
+    let ci = client.process(None, now).dgram();
+    assert!(ci.is_some()); 
+
+    
+    now += Duration::from_secs(1);
+    let pto1 = client.process(None, now).dgram();
+    assert!(pto1.unwrap().len() >= 1200);
+    let pto2 = client.process(None, now).dgram();
+    assert!(pto2.unwrap().len() >= 1200);
+    let cb = client.process(None, now).callback();
+    assert_ne!(cb, Duration::new(0, 0));
+
+    let retry = server.process(ci, now).dgram();
+    assertions::assert_retry(&retry.as_ref().unwrap());
+
+    let ci2 = client.process(retry, now).dgram();
+    assert!(ci2.unwrap().len() >= 1200);
+}
+
+
 fn client_initial_aead_and_hp(dcid: &[u8]) -> (Aead, HpKey) {
     const INITIAL_SALT: &[u8] = &[
         0xaf, 0xbf, 0xec, 0x28, 0x99, 0x93, 0xd2, 0x4c, 0x9e, 0x97, 0x86, 0xf1, 0x9c, 0x61, 0x11,
@@ -717,14 +748,10 @@ fn version_negotiation() {
     }
     assert!(found, "valid version not found");
 
+    
     let res = client.process(Some(vn), now());
-    assert_eq!(res, Output::None);
-    match client.state() {
-        State::Closed(err) => {
-            assert_eq!(*err, ConnectionError::Transport(Error::VersionNegotiation))
-        }
-        _ => panic!("Invalid client state"),
-    }
+    assert!(res.callback() > Duration::new(0, 120));
+    assert_eq!(client.state(), &State::WaitInitial);
 }
 
 #[test]

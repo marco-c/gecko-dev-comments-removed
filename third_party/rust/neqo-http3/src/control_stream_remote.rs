@@ -6,7 +6,7 @@
 
 use crate::hframe::{HFrame, HFrameReader};
 use crate::{Error, Res};
-use neqo_common::{qdebug, qinfo};
+use neqo_common::{matches, qdebug, qinfo};
 use neqo_transport::Connection;
 
 
@@ -41,6 +41,11 @@ impl ControlStreamRemote {
         }
         self.stream_id = Some(stream_id);
         Ok(())
+    }
+
+    
+    pub fn is_recv_stream(&self, stream_id: u64) -> bool {
+        matches!(self.stream_id, Some(id) if id == stream_id)
     }
 
     
