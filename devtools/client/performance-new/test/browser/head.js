@@ -206,7 +206,29 @@ async function makeSureProfilerPopupIsEnabled() {
 
 
 
-async function toggleOpenProfilerPopup() {
+
+
+
+function waitForProfilerPopupEvent(eventName) {
+  return new Promise(resolve => {
+    function handleEvent(event) {
+      if (event.target.getAttribute("viewId") === "PanelUI-profiler") {
+        window.removeEventListener(eventName, handleEvent);
+        resolve();
+      }
+    }
+    window.addEventListener(eventName, handleEvent);
+  });
+}
+
+
+
+
+
+
+
+
+async function _toggleOpenProfilerPopup(window) {
   info("Toggle open the profiler popup.");
 
   info("> Find the profiler menu button.");
@@ -215,9 +237,68 @@ async function toggleOpenProfilerPopup() {
     throw new Error("Could not find the profiler button in the menu.");
   }
 
+  const popupShown = waitForProfilerPopupEvent("popupshown");
+
   info("> Trigger a click on the profiler menu button.");
   profilerButton.click();
+
+  if (profilerButton.getAttribute("open") !== "true") {
+    throw new Error(
+      "This test assumes that the button will have an open=true attribute after clicking it."
+    );
+  }
+
+  info("> Wait for the popup to be shown.");
+  await popupShown;
+  
+  
   await tick();
+}
+
+
+
+
+
+
+
+async function _closePopup(window) {
+  const popupHiddenPromise = waitForProfilerPopupEvent("popuphidden");
+  info("> Trigger an escape key to hide the popup");
+  EventUtils.synthesizeKey("KEY_Escape");
+
+  info("> Wait for the popup to be hidden.");
+  await popupHiddenPromise;
+  
+  
+  await tick();
+}
+
+
+
+
+
+
+async function withPopupOpen(window, callback) {
+  await _toggleOpenProfilerPopup(window);
+  await callback();
+  await _closePopup(window);
+}
+
+
+
+
+
+
+
+
+
+async function openPopupAndEnsureCloses(window, callback) {
+  await _toggleOpenProfilerPopup(window);
+  
+  const popupHiddenPromise = waitForProfilerPopupEvent("popuphidden");
+  await callback();
+  info("> Verifying that the popup was closed by the test.");
+  await popupHiddenPromise;
 }
 
 
