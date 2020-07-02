@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["EncryptedMediaChild"];
+
+class EncryptedMediaChild extends JSWindowActorChild {
+  
+  
+  
+  
+  observe(aSubject, aTopic, aData) {
+    this.sendAsyncMessage("EMEVideo:ContentMediaKeysRequest", aData);
+  }
+}
