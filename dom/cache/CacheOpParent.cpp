@@ -221,13 +221,11 @@ already_AddRefed<nsIInputStream> CacheOpParent::DeserializeCacheStream(
 void CacheOpParent::ProcessCrossOriginResourcePolicyHeader(
     ErrorResult& aRv, const nsTArray<SavedResponse>& aResponses) {
   
-  RequestMode mode = RequestMode::No_cors;
   nsILoadInfo::CrossOriginEmbedderPolicy loadingCOEP =
       nsILoadInfo::EMBEDDER_POLICY_NULL;
   Maybe<PrincipalInfo> principalInfo;
   switch (mOpArgs.type()) {
     case CacheOpArgs::TCacheMatchArgs: {
-      mode = mOpArgs.get_CacheMatchArgs().request().mode();
       loadingCOEP =
           mOpArgs.get_CacheMatchArgs().request().loadingEmbedderPolicy();
       principalInfo = mOpArgs.get_CacheMatchArgs().request().principalInfo();
@@ -235,7 +233,6 @@ void CacheOpParent::ProcessCrossOriginResourcePolicyHeader(
     }
     case CacheOpArgs::TCacheMatchAllArgs: {
       if (mOpArgs.get_CacheMatchAllArgs().maybeRequest().isSome()) {
-        mode = mOpArgs.get_CacheMatchAllArgs().maybeRequest().ref().mode();
         loadingCOEP = mOpArgs.get_CacheMatchAllArgs()
                           .maybeRequest()
                           .ref()
@@ -253,11 +250,6 @@ void CacheOpParent::ProcessCrossOriginResourcePolicyHeader(
   }
 
   
-  if (mode == RequestMode::Cors) {
-    return;
-  }
-
-  
   
   if (principalInfo.isNothing() ||
       principalInfo.ref().type() != PrincipalInfo::TContentPrincipalInfo) {
@@ -268,6 +260,10 @@ void CacheOpParent::ProcessCrossOriginResourcePolicyHeader(
 
   nsAutoCString corp;
   for (auto it = aResponses.cbegin(); it != aResponses.cend(); ++it) {
+    if (it->mValue.type() != ResponseType::Opaque &&
+        it->mValue.type() != ResponseType::Opaqueredirect) {
+      continue;
+    }
     corp.Assign(EmptyCString());
     for (auto headerIt = it->mValue.headers().cbegin();
          headerIt != it->mValue.headers().cend(); ++headerIt) {
