@@ -35,7 +35,7 @@ add_task(async function() {
   
   const wait = waitForDOM(
     document,
-    "#messages-panel .message-list-table .message-list-item",
+    "#messages-view .message-list-table .message-list-item",
     2
   );
 
@@ -45,13 +45,13 @@ add_task(async function() {
   
   EventUtils.sendMouseEvent(
     { type: "click" },
-    document.querySelector("#messages-tab")
+    document.querySelector("#response-tab")
   );
   await wait;
 
   
   const frames = document.querySelectorAll(
-    "#messages-panel .message-list-table .message-list-item"
+    "#messages-view .message-list-table .message-list-item"
   );
 
   
@@ -64,7 +64,7 @@ add_task(async function() {
     }
   };
   const filterInput = document.querySelector(
-    "#messages-panel .devtools-filterinput"
+    "#messages-view .devtools-filterinput"
   );
   filterInput.focus();
   type("/Payload [0-9]+/");
@@ -73,7 +73,7 @@ add_task(async function() {
   await waitUntil(() => getDisplayedMessages(store.getState()).length == 2);
 
   const filteredFrames = document.querySelectorAll(
-    "#messages-panel .message-list-table .message-list-item"
+    "#messages-view .message-list-table .message-list-item"
   );
   is(filteredFrames.length, 2, "There should be two frames");
 

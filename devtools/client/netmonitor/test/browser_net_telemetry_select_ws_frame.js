@@ -42,20 +42,20 @@ add_task(async function() {
   
   const wait = waitForDOM(
     document,
-    "#messages-panel .message-list-table .message-list-item",
+    "#messages-view .message-list-table .message-list-item",
     2
   );
 
   
   EventUtils.sendMouseEvent(
     { type: "click" },
-    document.querySelector("#messages-tab")
+    document.querySelector("#response-tab")
   );
   await wait;
 
   
   const frames = document.querySelectorAll(
-    "#messages-panel .message-list-table .message-list-item"
+    "#messages-view .message-list-table .message-list-item"
   );
 
   

@@ -35,12 +35,12 @@ add_task(async function() {
   
   EventUtils.sendMouseEvent(
     { type: "click" },
-    document.querySelector("#messages-tab")
+    document.querySelector("#response-tab")
   );
 
   const wait = waitForDOM(
     document,
-    "#messages-panel .msg-connection-closed-message"
+    "#messages-view .msg-connection-closed-message"
   );
 
   
@@ -50,7 +50,7 @@ add_task(async function() {
   await wait;
 
   is(
-    !!document.querySelector("#messages-panel .msg-connection-closed-message"),
+    !!document.querySelector("#messages-view .msg-connection-closed-message"),
     true,
     "Connection closed message should be displayed"
   );

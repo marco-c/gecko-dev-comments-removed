@@ -34,7 +34,7 @@ add_task(async function() {
   
   let wait = waitForDOM(
     document,
-    "#messages-panel .message-list-table .message-list-item",
+    "#messages-view .message-list-table .message-list-item",
     4
   );
 
@@ -44,13 +44,13 @@ add_task(async function() {
   
   EventUtils.sendMouseEvent(
     { type: "click" },
-    document.querySelector("#messages-tab")
+    document.querySelector("#response-tab")
   );
   await wait;
 
   
   const frames = document.querySelectorAll(
-    "#messages-panel .message-list-table .message-list-item"
+    "#messages-view .message-list-table .message-list-item"
   );
 
   
@@ -58,7 +58,7 @@ add_task(async function() {
 
   
   const clearButton = document.querySelector(
-    "#messages-panel .message-list-clear-button"
+    "#messages-view .message-list-clear-button"
   );
   clearButton.click();
   is(
@@ -71,12 +71,12 @@ add_task(async function() {
   EventUtils.sendMouseEvent({ type: "mousedown" }, requests[1]);
   wait = waitForDOM(
     document,
-    "#messages-panel .message-list-table .message-list-item",
+    "#messages-view .message-list-table .message-list-item",
     2
   );
   await wait;
   const secondRequestFrames = document.querySelectorAll(
-    "#messages-panel .message-list-table .message-list-item"
+    "#messages-view .message-list-table .message-list-item"
   );
   is(secondRequestFrames.length, 2, "There should be two frames");
 

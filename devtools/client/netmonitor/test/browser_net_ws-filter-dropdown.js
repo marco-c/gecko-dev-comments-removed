@@ -34,7 +34,7 @@ add_task(async function() {
   
   let wait = waitForDOM(
     document,
-    "#messages-panel .message-list-table .message-list-item",
+    "#messages-view .message-list-table .message-list-item",
     4
   );
 
@@ -44,13 +44,13 @@ add_task(async function() {
   
   EventUtils.sendMouseEvent(
     { type: "click" },
-    document.querySelector("#messages-tab")
+    document.querySelector("#response-tab")
   );
   await wait;
 
   
   const frames = document.querySelectorAll(
-    "#messages-panel .message-list-table .message-list-item"
+    "#messages-view .message-list-table .message-list-item"
   );
 
   
@@ -70,7 +70,7 @@ add_task(async function() {
   sentOption.click();
 
   const sentFrames = document.querySelectorAll(
-    "#messages-panel .message-list-table .message-list-item"
+    "#messages-view .message-list-table .message-list-item"
   );
   is(sentFrames.length, 2, "There should be two frames");
   is(
@@ -92,7 +92,7 @@ add_task(async function() {
   receivedOption.click();
 
   const receivedFrames = document.querySelectorAll(
-    "#messages-panel .message-list-table .message-list-item"
+    "#messages-view .message-list-table .message-list-item"
   );
   is(receivedFrames.length, 2, "There should be two frames");
   is(
@@ -110,12 +110,12 @@ add_task(async function() {
   EventUtils.sendMouseEvent({ type: "mousedown" }, requests[1]);
   wait = waitForDOM(
     document,
-    "#messages-panel .message-list-table .message-list-item",
+    "#messages-view .message-list-table .message-list-item",
     3
   );
   await wait;
   const secondRequestFrames = document.querySelectorAll(
-    "#messages-panel .message-list-table .message-list-item"
+    "#messages-view .message-list-table .message-list-item"
   );
   is(secondRequestFrames.length, 3, "There should be three frames");
   is(

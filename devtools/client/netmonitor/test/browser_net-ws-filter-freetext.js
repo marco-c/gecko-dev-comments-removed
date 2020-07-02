@@ -36,7 +36,7 @@ add_task(async function() {
   
   const wait = waitForDOM(
     document,
-    "#messages-panel .message-list-table .message-list-item",
+    "#messages-view .message-list-table .message-list-item",
     6
   );
 
@@ -46,13 +46,13 @@ add_task(async function() {
   
   EventUtils.sendMouseEvent(
     { type: "click" },
-    document.querySelector("#messages-tab")
+    document.querySelector("#response-tab")
   );
   await wait;
 
   
   const frames = document.querySelectorAll(
-    "#messages-panel .message-list-table .message-list-item"
+    "#messages-view .message-list-table .message-list-item"
   );
 
   
@@ -65,7 +65,7 @@ add_task(async function() {
     }
   };
   const filterInput = document.querySelector(
-    "#messages-panel .devtools-filterinput"
+    "#messages-view .devtools-filterinput"
   );
   filterInput.focus();
   type("Payload 2");
@@ -74,7 +74,7 @@ add_task(async function() {
   await waitUntil(() => getDisplayedMessages(store.getState()).length == 2);
 
   const filteredFrames = document.querySelectorAll(
-    "#messages-panel .message-list-table .message-list-item"
+    "#messages-view .message-list-table .message-list-item"
   );
   is(filteredFrames.length, 2, "There should be two frames");
 
@@ -84,11 +84,11 @@ add_task(async function() {
   await waitUntil(
     () =>
       document.querySelectorAll(
-        "#messages-panel .message-list-table .message-list-item"
+        "#messages-view .message-list-table .message-list-item"
       ).length == 2
   );
   const secondRequestFrames = document.querySelectorAll(
-    "#messages-panel .message-list-table .message-list-item"
+    "#messages-view .message-list-table .message-list-item"
   );
   is(secondRequestFrames.length, 2, "There should be two frames");
   is(filterInput.value, "", "The filter input is cleared");

@@ -25,7 +25,7 @@ add_task(async function() {
   
   
   
-  store.dispatch(Actions.selectDetailsPanelTab("messages"));
+  store.dispatch(Actions.selectDetailsPanelTab("response"));
 
   
   const waitForEvents = waitForNetworkEvents(monitor, 3);
@@ -52,13 +52,13 @@ add_task(async function() {
   
   await waitForDOMIfNeeded(
     document,
-    "#messages-panel .message-list-table .message-list-item",
+    "#messages-view .message-list-table .message-list-item",
     2
   );
 
   
   const firstFramePayload = document.querySelector(
-    "#messages-panel .message-list-table .message-list-item .message-list-payload"
+    "#messages-view .message-list-table .message-list-item .message-list-payload"
   );
   is(firstFramePayload.textContent.trim(), "readyState:loading");
 

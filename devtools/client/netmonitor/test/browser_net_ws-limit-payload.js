@@ -35,7 +35,7 @@ add_task(async function() {
   
   const wait = waitForDOM(
     document,
-    "#messages-panel .message-list-table .message-list-item",
+    "#messages-view .message-list-table .message-list-item",
     2
   );
 
@@ -45,13 +45,13 @@ add_task(async function() {
   
   EventUtils.sendMouseEvent(
     { type: "click" },
-    document.querySelector("#messages-tab")
+    document.querySelector("#response-tab")
   );
   await wait;
 
   
   const frames = document.querySelectorAll(
-    "#messages-panel .message-list-table .message-list-item"
+    "#messages-view .message-list-table .message-list-item"
   );
 
   
@@ -61,14 +61,14 @@ add_task(async function() {
   await waitForTick();
   EventUtils.sendMouseEvent({ type: "mousedown" }, frames[0]);
 
-  await waitForDOM(document, "#messages-panel .truncated-data-message");
+  await waitForDOM(document, "#messages-view .truncated-data-message");
 
   ok(
-    document.querySelector("#messages-panel .truncated-data-message"),
+    document.querySelector("#messages-view .truncated-data-message"),
     "Truncated data header shown"
   );
   is(
-    document.querySelector("#messages-panel .message-rawData-payload")
+    document.querySelector("#messages-view .message-rawData-payload")
       .textContent.length,
     100,
     "Payload size is kept to the limit"
