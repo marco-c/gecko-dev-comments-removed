@@ -397,23 +397,26 @@ const rollout = {
       captiveState = await browser.captivePortal.getState();
     } catch (e) {
       
-    }
-
-    if (captiveState == "locked_portal") {
+      
+      
+      
+      await rollout.heuristics("netchange");
       return;
     }
 
     
     
     
-    await rollout.heuristics("netchange");
+    if (captiveState == "unlocked_portal" || captiveState == "not_captive") {
+      await rollout.heuristics("netchange");
+    }
   },
 
   async onCaptiveStateChanged({ state }) {
     log("onCaptiveStateChanged", state);
     
     
-    if (state == "unlocked_portal") {
+    if (state == "unlocked_portal" || state == "not_captive") {
       await rollout.heuristics("netchange");
     }
   },

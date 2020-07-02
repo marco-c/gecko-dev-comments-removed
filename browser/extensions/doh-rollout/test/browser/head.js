@@ -288,6 +288,7 @@ function simulateNetworkChange() {
   
   
   Services.obs.notifyObservers(null, "network:link-status-changed", "up");
+  Services.obs.notifyObservers(null, "captive-portal-login-success");
 }
 
 async function ensureTRRMode(mode) {
