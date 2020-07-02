@@ -4,7 +4,7 @@
 
 "use strict";
 
-const EventEmitter = require("devtools/shared/event-emitter");
+const Services = require("Services");
 
 loader.lazyRequireGetter(
   this,
@@ -29,10 +29,10 @@ class AccessibilityProxy {
     this._accessibilityWalkerFronts = new Set();
     this.lifecycleEvents = new Map();
     this.accessibilityEvents = new Map();
-    this._updateTargetListeners = new EventEmitter();
     this.supports = {};
 
     this.audit = this.audit.bind(this);
+    this.disableAccessibility = this.disableAccessibility.bind(this);
     this.enableAccessibility = this.enableAccessibility.bind(this);
     this.getAccessibilityTreeRoot = this.getAccessibilityTreeRoot.bind(this);
     this.resetAccessiblity = this.resetAccessiblity.bind(this);
@@ -45,9 +45,6 @@ class AccessibilityProxy {
     this.startListeningForParentLifecycleEvents = this.startListeningForParentLifecycleEvents.bind(
       this
     );
-    this.startListeningForTargetUpdated = this.startListeningForTargetUpdated.bind(
-      this
-    );
     this.stopListeningForAccessibilityEvents = this.stopListeningForAccessibilityEvents.bind(
       this
     );
@@ -55,9 +52,6 @@ class AccessibilityProxy {
       this
     );
     this.stopListeningForParentLifecycleEvents = this.stopListeningForParentLifecycleEvents.bind(
-      this
-    );
-    this.stopListeningForTargetUpdated = this.stopListeningForTargetUpdated.bind(
       this
     );
     this.highlightAccessible = this.highlightAccessible.bind(this);
@@ -91,7 +85,7 @@ class AccessibilityProxy {
   }
 
   get currentTarget() {
-    return this.toolbox.targetList.targetFront;
+    return this._currentTarget;
   }
 
   
@@ -140,12 +134,14 @@ class AccessibilityProxy {
     return combinedAudit;
   }
 
-  startListeningForTargetUpdated(onTargetUpdated) {
-    this._updateTargetListeners.on("target-updated", onTargetUpdated);
-  }
-
-  stopListeningForTargetUpdated(onTargetUpdated) {
-    this._updateTargetListeners.off("target-updated", onTargetUpdated);
+  async disableAccessibility() {
+    
+    
+    
+    
+    const disabled = this.accessibilityFront.once("shutdown");
+    await this.parentAccessibilityFront.disable();
+    await disabled;
   }
 
   async enableAccessibility() {
@@ -284,7 +280,8 @@ class AccessibilityProxy {
 
   async resetAccessiblity() {
     const { enabled } = this.accessibilityFront;
-    const { canBeEnabled, canBeDisabled } = this.parentAccessibilityFront;
+    const { canBeEnabled, canBeDisabled } =
+      this.parentAccessibilityFront || this.accessibilityFront;
     return { enabled, canBeDisabled, canBeEnabled };
   }
 
@@ -390,15 +387,58 @@ class AccessibilityProxy {
     });
   }
 
+  
+
+
+
+
+  async initializeProxyForPanel(targetFront) {
+    await this.onTargetAvailable({ targetFront });
+
+    
+    
+    if (!this.parentAccessibilityFront) {
+      this.parentAccessibilityFront = await this._currentTarget.client.mainRoot.getFront(
+        "parentaccessibility"
+      );
+    }
+
+    this.simulatorFront = this.accessibilityFront.simulatorFront;
+    if (this.simulatorFront) {
+      this.simulate = types => this.simulatorFront.simulate({ types });
+    } else {
+      this.simulate = null;
+    }
+
+    
+    
+    for (const [type, listeners] of this.lifecycleEvents.entries()) {
+      for (const listener of listeners.values()) {
+        this.accessibilityFront.on(type, listener);
+      }
+    }
+  }
+
   async initialize() {
-    await this.toolbox.targetList.watchTargets(
-      [this.toolbox.targetList.TYPES.FRAME],
-      this.onTargetAvailable,
-      this.onTargetDestroyed
-    );
-    this.parentAccessibilityFront = await this.toolbox.targetList.rootFront.getFront(
-      "parentaccessibility"
-    );
+    try {
+      await this.toolbox.targetList.watchTargets(
+        [this.toolbox.targetList.TYPES.FRAME],
+        this.onTargetAvailable,
+        this.onTargetDestroyed
+      );
+      
+      
+      
+      this.supports.autoInit = Services.prefs.getBoolPref(
+        "devtools.accessibility.auto-init.enabled",
+        false
+      );
+
+      return true;
+    } catch (e) {
+      
+      return false;
+    }
   }
 
   destroy() {
@@ -410,7 +450,6 @@ class AccessibilityProxy {
 
     this.lifecycleEvents.clear();
     this.accessibilityEvents.clear();
-    this._updateTargetListeners = null;
 
     this.accessibilityFront = null;
     this.parentAccessibilityFront = null;
@@ -493,7 +532,7 @@ class AccessibilityProxy {
     }
   }
 
-  async onTargetAvailable({ targetFront, isTargetSwitching }) {
+  async onTargetAvailable({ targetFront }) {
     targetFront.watchFronts(
       "accessibility",
       this.onAccessibilityFrontAvailable,
@@ -501,37 +540,33 @@ class AccessibilityProxy {
     );
 
     if (!targetFront.isTopLevel) {
-      return;
+      return null;
     }
 
+    if (this._updatePromise && this._currentTarget === targetFront) {
+      return this._updatePromise;
+    }
+
+    this._currentTarget = targetFront;
     this._accessibilityWalkerFronts.clear();
 
-    this.accessibilityFront = await this.currentTarget.getFront(
-      "accessibility"
-    );
-    
-    
-    
-    
-    
-    
-    
-    this.simulatorFront = this.accessibilityFront.simulatorFront;
-    if (this.simulatorFront) {
-      this.simulate = types => this.simulatorFront.simulate({ types });
-    } else {
-      this.simulate = null;
-    }
+    this._updatePromise = (async () => {
+      this.accessibilityFront = await this._currentTarget.getFront(
+        "accessibility"
+      );
+      
+      
+      await this.accessibilityFront.bootstrap();
+      
+      
+      
+      
+      
+      
+      
+    })();
 
-    
-    
-    for (const [type, listeners] of this.lifecycleEvents.entries()) {
-      for (const listener of listeners.values()) {
-        this.accessibilityFront.on(type, listener);
-      }
-    }
-
-    this._updateTargetListeners.emit("target-updated", { isTargetSwitching });
+    return this._updatePromise;
   }
 
   async onTargetDestroyed({ targetFront }) {

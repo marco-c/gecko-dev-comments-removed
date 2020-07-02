@@ -103,6 +103,8 @@ AccessibilityView.prototype = {
 
 
 
+
+
   async initialize({
     supports,
     fluentBundles,
@@ -113,6 +115,7 @@ AccessibilityView.prototype = {
     audit,
     simulate,
     enableAccessibility,
+    disableAccessibility,
     resetAccessiblity,
     startListeningForLifecycleEvents,
     stopListeningForLifecycleEvents,
@@ -133,6 +136,7 @@ AccessibilityView.prototype = {
       audit,
       simulate,
       enableAccessibility,
+      disableAccessibility,
       resetAccessiblity,
       startListeningForLifecycleEvents,
       stopListeningForLifecycleEvents,

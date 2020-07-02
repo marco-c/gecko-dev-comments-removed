@@ -192,6 +192,7 @@ class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
     const accessibilityFront = await documentNodeFront.targetFront.getFront(
       "accessibility"
     );
+    await accessibilityFront.bootstrap();
 
     return accessibilityFront.accessibleWalkerFront.children();
   }
@@ -329,6 +330,7 @@ class AccessibleWalkerFront extends FrontClassWithSpec(accessibleWalkerSpec) {
     );
     const frameNodeFront = (await domWalkerFront.getRootNode()).parentNode();
     const accessibilityFront = await parentTarget.getFront("accessibility");
+    await accessibilityFront.bootstrap();
     const { accessibleWalkerFront } = accessibilityFront;
     const frameAccessibleFront = await accessibleWalkerFront.getAccessibleFor(
       frameNodeFront
@@ -441,11 +443,20 @@ class AccessibilityFront extends FrontClassWithSpec(accessibilitySpec) {
     this.formAttributeName = "accessibilityActor";
   }
 
-  async initialize() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  async bootstrap() {
     this.accessibleWalkerFront = await super.getWalker();
     this.simulatorFront = await super.getSimulator();
-    const { enabled } = await super.bootstrap();
-    this.enabled = enabled;
+    ({ enabled: this.enabled } = await super.bootstrap());
   }
 
   init() {

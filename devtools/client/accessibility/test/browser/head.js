@@ -51,6 +51,32 @@ const MENU_INDEXES = {
 
 
 
+async function initA11y() {
+  if (Services.appinfo.accessibilityEnabled) {
+    return Cc["@mozilla.org/accessibilityService;1"].getService(
+      Ci.nsIAccessibilityService
+    );
+  }
+
+  const initPromise = new Promise(resolve => {
+    const observe = () => {
+      Services.obs.removeObserver(observe, "a11y-init-or-shutdown");
+      resolve();
+    };
+    Services.obs.addObserver(observe, "a11y-init-or-shutdown");
+  });
+
+  const a11yService = Cc["@mozilla.org/accessibilityService;1"].getService(
+    Ci.nsIAccessibilityService
+  );
+  await initPromise;
+  return a11yService;
+}
+
+
+
+
+
 function waitForAccessibilityShutdown() {
   return new Promise(resolve => {
     if (!Services.appinfo.accessibilityEnabled) {
@@ -92,6 +118,7 @@ async function shutdownAccessibility(browser) {
 
 registerCleanupFunction(async () => {
   info("Cleaning up...");
+  Services.prefs.clearUserPref("devtools.accessibility.auto-init.enabled");
   Services.prefs.clearUserPref("devtools.accessibility.enabled");
   Services.prefs.clearUserPref("devtools.contenttoolbox.fission");
 });
@@ -825,4 +852,19 @@ function addA11YPanelTask(msg, uri, task, options = {}) {
 function reload(target, waitForTargetEvent = "navigate") {
   executeSoon(() => target.reload());
   return once(target, waitForTargetEvent);
+}
+
+
+
+
+
+
+
+
+
+async function checkHighlighted(toolbox, expected) {
+  await BrowserTestUtils.waitForCondition(async function() {
+    const isHighlighted = await toolbox.isToolHighlighted("accessibility");
+    return isHighlighted === expected;
+  });
 }
