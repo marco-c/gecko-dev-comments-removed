@@ -23,6 +23,7 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/SchedulerGroup.h"
+#include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/dom/DOMMozPromiseRequestHolder.h"
@@ -224,7 +225,7 @@ already_AddRefed<nsIURI> GetBaseURIFromGlobal(nsIGlobalObject* aGlobal,
 
 already_AddRefed<Promise> ServiceWorkerContainer::Register(
     const nsAString& aScriptURL, const RegistrationOptions& aOptions,
-    ErrorResult& aRv) {
+    const CallerType aCallerType, ErrorResult& aRv) {
   
   
   
@@ -257,6 +258,25 @@ already_AddRefed<Promise> ServiceWorkerContainer::Register(
       NS_NewURI(getter_AddRefs(scriptURI), scriptURL, nullptr, baseURI);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.ThrowTypeError<MSG_INVALID_URL>(scriptURL);
+    return nullptr;
+  }
+
+  
+  
+  if (scriptURI->SchemeIs("moz-extension") &&
+      !StaticPrefs::extensions_backgroundServiceWorker_enabled_AtStartup()) {
+    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    return nullptr;
+  }
+
+  
+  
+  
+  if (scriptURI->SchemeIs("moz-extension") &&
+      aCallerType == CallerType::NonSystem &&
+      (!baseURI->SchemeIs("moz-extension") ||
+       !StaticPrefs::extensions_serviceWorkerRegister_allowed())) {
+    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
   }
 
