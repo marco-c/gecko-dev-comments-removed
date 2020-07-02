@@ -32,6 +32,18 @@
 
 #define REGISTRY_MUTEX_TIMEOUT_MS (3 * 1000)
 
+
+
+
+
+
+
+static bool IsPrefixedValueName(const wchar_t* valueName) {
+  
+  
+  return wcschr(valueName, L'|') != nullptr;
+}
+
 static void RemoveAllRegistryEntries() {
   mozilla::UniquePtr<wchar_t[]> installPath = mozilla::GetFullBinaryPath();
   if (!PathRemoveFileSpecW(installPath.get())) {
@@ -61,6 +73,10 @@ static void RemoveAllRegistryEntries() {
       mozilla::MakeUnique<wchar_t[]>(maxValueNameLen);
 
   DWORD valueIndex = 0;
+  
+  
+  
+  bool keyStillInUse = false;
 
   while (true) {
     DWORD valueNameLen = maxValueNameLen;
@@ -80,19 +96,18 @@ static void RemoveAllRegistryEntries() {
       
     } else {
       valueIndex++;
+      if (IsPrefixedValueName(valueName.get())) {
+        
+        
+        keyStillInUse = true;
+      }
     }
-  }
-
-  
-  if (ERROR_SUCCESS != RegQueryInfoKeyW(regKey.get(), nullptr, nullptr, nullptr,
-                                        nullptr, nullptr, nullptr, &valueIndex,
-                                        nullptr, nullptr, nullptr, nullptr)) {
-    return;
   }
 
   regKey.reset();
 
-  if (valueIndex == 0) {
+  
+  if (!keyStillInUse) {
     RegDeleteKeyW(HKEY_CURRENT_USER, AGENT_REGKEY_NAME);
   }
 }
