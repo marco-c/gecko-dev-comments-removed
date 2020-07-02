@@ -24,6 +24,7 @@
 #include "nsCaret.h"
 #include "nsIBaseWindow.h"
 #include "nsIAppWindow.h"
+#include "nsTextControlFrame.h"
 #include "nsViewManager.h"
 #include "nsFrameSelection.h"
 #include "mozilla/dom/Document.h"
@@ -2678,6 +2679,15 @@ void nsFocusManager::ScrollIntoView(PresShell* aPresShell, nsIContent* aContent,
       aContent, ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
       ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
       ScrollFlags::ScrollOverflowHidden);
+  
+  
+  if (aFlags & FLAG_BYMOUSE) {
+    return;
+  }
+  
+  if (nsTextControlFrame* tf = do_QueryFrame(aContent->GetPrimaryFrame())) {
+    tf->ScrollSelectionIntoViewAsync(nsTextControlFrame::ScrollAncestors::Yes);
+  }
 }
 
 void nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow,
