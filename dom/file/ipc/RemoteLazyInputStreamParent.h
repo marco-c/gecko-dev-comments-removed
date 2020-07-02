@@ -4,20 +4,22 @@
 
 
 
-#ifndef mozilla_dom_RemoteLazyInputStreamParent_h
-#define mozilla_dom_RemoteLazyInputStreamParent_h
+#ifndef mozilla_RemoteLazyInputStreamParent_h
+#define mozilla_RemoteLazyInputStreamParent_h
 
-#include "mozilla/dom/PRemoteLazyInputStreamParent.h"
+#include "mozilla/PRemoteLazyInputStreamParent.h"
 
 class nsIInputStream;
 
 namespace mozilla {
 
+namespace dom {
+class ContentParent;
+}
+
 namespace net {
 class SocketProcessParent;
 }
-
-namespace dom {
 
 class NS_NO_VTABLE RemoteLazyInputStreamParentCallback {
  public:
@@ -69,7 +71,7 @@ class RemoteLazyInputStreamParent final : public PRemoteLazyInputStreamParent {
 
  private:
   RemoteLazyInputStreamParent(const nsID& aID, uint64_t aSize,
-                              ContentParent* aManager);
+                              mozilla::dom::ContentParent* aManager);
 
   RemoteLazyInputStreamParent(const nsID& aID, uint64_t aSize,
                               mozilla::ipc::PBackgroundParent* aManager);
@@ -84,7 +86,7 @@ class RemoteLazyInputStreamParent final : public PRemoteLazyInputStreamParent {
 
   
   
-  ContentParent* mContentManager;
+  mozilla::dom::ContentParent* mContentManager;
   mozilla::ipc::PBackgroundParent* mPBackgroundManager;
   mozilla::net::SocketProcessParent* mSocketProcessManager;
 
@@ -93,7 +95,6 @@ class RemoteLazyInputStreamParent final : public PRemoteLazyInputStreamParent {
   bool mMigrating;
 };
 
-}  
 }  
 
 #endif  

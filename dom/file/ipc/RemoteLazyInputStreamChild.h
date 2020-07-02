@@ -4,20 +4,22 @@
 
 
 
-#ifndef mozilla_dom_RemoteLazyInputStreamChild_h
-#define mozilla_dom_RemoteLazyInputStreamChild_h
+#ifndef mozilla_RemoteLazyInputStreamChild_h
+#define mozilla_RemoteLazyInputStreamChild_h
 
-#include "mozilla/dom/PRemoteLazyInputStreamChild.h"
-#include "mozilla/dom/RemoteLazyInputStream.h"
+#include "mozilla/PRemoteLazyInputStreamChild.h"
+#include "mozilla/RemoteLazyInputStream.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/UniquePtr.h"
 #include "nsTArray.h"
 
 namespace mozilla {
-namespace dom {
 
 class RemoteLazyInputStream;
+
+namespace dom {
 class ThreadSafeWorkerRef;
+}
 
 class RemoteLazyInputStreamChild final : public PRemoteLazyInputStreamChild {
  public:
@@ -96,10 +98,9 @@ class RemoteLazyInputStreamChild final : public PRemoteLazyInputStreamChild {
 
   nsCOMPtr<nsISerialEventTarget> mOwningEventTarget;
 
-  RefPtr<ThreadSafeWorkerRef> mWorkerRef;
+  RefPtr<dom::ThreadSafeWorkerRef> mWorkerRef;
 };
 
-}  
 }  
 
 #endif  
