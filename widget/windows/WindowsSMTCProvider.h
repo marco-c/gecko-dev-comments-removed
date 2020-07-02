@@ -58,12 +58,15 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
   ~WindowsSMTCProvider();
   void UnregisterEvents();
   bool RegisterEvents();
-  bool InitDisplayAndControls();
   void OnButtonPressed(mozilla::dom::MediaControlKey aKey);
+
+  bool InitDisplayAndControls();
 
   
   
   bool SetControlAttributes(SMTCControlAttributes aAttributes);
+
+  bool RefreshDisplay();
 
   
   
@@ -74,9 +77,6 @@ class WindowsSMTCProvider final : public mozilla::dom::MediaControlKeySource {
   
   
   bool SetThumbnail(const wchar_t* aUrl);
-
-  
-  bool Update();
 
   bool mInitialized = false;
   Microsoft::WRL::ComPtr<ISMTC> mControls;
