@@ -111,16 +111,13 @@ class ImageDecoderListener final : public nsIStreamListener,
   NS_IMETHOD
   OnStopRequest(nsIRequest* aRequest, nsresult aStatus) override {
     
-    
-    if (mImage) {
-      mImage->OnImageDataComplete(aRequest, nullptr, aStatus, true);
+    if (!mImage || NS_FAILED(aStatus)) {
+      mCallback->OnImageReady(nullptr, mImage ? aStatus : NS_ERROR_FAILURE);
+      return NS_OK;
     }
 
-    nsCOMPtr<imgIContainer> container;
-    if (NS_SUCCEEDED(aStatus)) {
-      container = this;
-    }
-
+    mImage->OnImageDataComplete(aRequest, nullptr, aStatus, true);
+    nsCOMPtr<imgIContainer> container = this;
     mCallback->OnImageReady(container, aStatus);
     return NS_OK;
   }
