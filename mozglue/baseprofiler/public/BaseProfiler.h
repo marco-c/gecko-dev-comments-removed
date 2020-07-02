@@ -197,19 +197,31 @@ class RacyFeatures {
 
   MFBT_API static void SetUnpaused();
 
+  MFBT_API static void SetSamplingPaused();
+
+  MFBT_API static void SetSamplingUnpaused();
+
   MFBT_API static bool IsActive();
 
   MFBT_API static bool IsActiveWithFeature(uint32_t aFeature);
 
+  
+  
   MFBT_API static bool IsActiveAndUnpaused();
+
+  
+  
+  MFBT_API static bool IsActiveAndSamplingUnpaused();
 
  private:
   static constexpr uint32_t Active = 1u << 31;
   static constexpr uint32_t Paused = 1u << 30;
+  static constexpr uint32_t SamplingPaused = 1u << 29;
 
 
-#  define NO_OVERLAP(n_, str_, Name_, desc_) \
-    static_assert(ProfilerFeature::Name_ != Paused, "bad feature value");
+#  define NO_OVERLAP(n_, str_, Name_, desc_)                \
+    static_assert(ProfilerFeature::Name_ != SamplingPaused, \
+                  "bad feature value");
 
   BASE_PROFILER_FOR_EACH_FEATURE(NO_OVERLAP);
 
@@ -359,9 +371,13 @@ MFBT_API void profiler_remove_sampled_counter(BaseProfilerCount* aCounter);
 
 
 
-
 MFBT_API void profiler_pause();
 MFBT_API void profiler_resume();
+
+
+
+MFBT_API void profiler_pause_sampling();
+MFBT_API void profiler_resume_sampling();
 
 
 
@@ -420,6 +436,10 @@ inline bool profiler_thread_is_being_profiled() {
 
 
 MFBT_API bool profiler_is_paused();
+
+
+
+MFBT_API bool profiler_is_sampling_paused();
 
 
 MFBT_API bool profiler_thread_is_sleeping();

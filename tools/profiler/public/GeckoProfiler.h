@@ -239,10 +239,14 @@ class RacyFeatures {
 
   static void SetUnpaused() { sActiveAndFeatures &= ~Paused; }
 
+  static void SetSamplingPaused() { sActiveAndFeatures |= SamplingPaused; }
+
+  static void SetSamplingUnpaused() { sActiveAndFeatures &= ~SamplingPaused; }
+
   static mozilla::Maybe<uint32_t> FeaturesIfActive() {
     if (uint32_t af = sActiveAndFeatures; af & Active) {
       
-      return Some(af & ~(Active | Paused));
+      return Some(af & ~(Active | Paused | SamplingPaused));
     }
     return Nothing();
   }
@@ -250,7 +254,8 @@ class RacyFeatures {
   static mozilla::Maybe<uint32_t> FeaturesIfActiveAndUnpaused() {
     if (uint32_t af = sActiveAndFeatures; (af & (Active | Paused)) == Active) {
       
-      return Some(af & ~Active);
+      
+      return Some(af & ~(Active | SamplingPaused));
     }
     return Nothing();
   }
@@ -262,18 +267,29 @@ class RacyFeatures {
     return (af & Active) && (af & aFeature);
   }
 
+  
+  
   static bool IsActiveAndUnpaused() {
     uint32_t af = sActiveAndFeatures;  
     return (af & Active) && !(af & Paused);
   }
 
+  
+  
+  static bool IsActiveAndSamplingUnpaused() {
+    uint32_t af = sActiveAndFeatures;  
+    return (af & Active) && !(af & (Paused | SamplingPaused));
+  }
+
  private:
   static constexpr uint32_t Active = 1u << 31;
   static constexpr uint32_t Paused = 1u << 30;
+  static constexpr uint32_t SamplingPaused = 1u << 29;
 
 
-#  define NO_OVERLAP(n_, str_, Name_, desc_) \
-    static_assert(ProfilerFeature::Name_ != Paused, "bad feature value");
+#  define NO_OVERLAP(n_, str_, Name_, desc_)                \
+    static_assert(ProfilerFeature::Name_ != SamplingPaused, \
+                  "bad feature value");
 
   PROFILER_FOR_EACH_FEATURE(NO_OVERLAP);
 
@@ -467,6 +483,11 @@ void profiler_resume();
 
 
 
+void profiler_pause_sampling();
+void profiler_resume_sampling();
+
+
+
 
 
 void profiler_thread_sleep();
@@ -543,6 +564,10 @@ inline bool profiler_is_active_and_thread_is_registered() {
 
 
 bool profiler_is_paused();
+
+
+
+bool profiler_is_sampling_paused();
 
 
 bool profiler_thread_is_sleeping();

@@ -152,7 +152,7 @@ class ActorReadyGeckoProfilerInterface {
 
     
     
-    Services.profiler.PauseSampling();
+    Services.profiler.Pause();
 
     let profile;
     try {

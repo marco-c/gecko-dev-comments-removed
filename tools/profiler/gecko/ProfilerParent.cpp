@@ -672,6 +672,28 @@ void ProfilerParent::ProfilerResumed() {
 }
 
 
+void ProfilerParent::ProfilerPausedSampling() {
+  if (!NS_IsMainThread()) {
+    return;
+  }
+
+  ProfilerParentTracker::Enumerate([](ProfilerParent* profilerParent) {
+    Unused << profilerParent->SendPauseSampling();
+  });
+}
+
+
+void ProfilerParent::ProfilerResumedSampling() {
+  if (!NS_IsMainThread()) {
+    return;
+  }
+
+  ProfilerParentTracker::Enumerate([](ProfilerParent* profilerParent) {
+    Unused << profilerParent->SendResumeSampling();
+  });
+}
+
+
 void ProfilerParent::ClearAllPages() {
   if (!NS_IsMainThread()) {
     return;

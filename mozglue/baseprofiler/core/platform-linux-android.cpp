@@ -502,8 +502,8 @@ static void paf_prepare() {
   PSAutoLock lock;
 
   if (ActivePS::Exists(lock)) {
-    ActivePS::SetWasPaused(lock, ActivePS::IsPaused(lock));
-    ActivePS::SetIsPaused(lock, true);
+    ActivePS::SetWasSamplingPaused(lock, ActivePS::IsSamplingPaused(lock));
+    ActivePS::SetIsSamplingPaused(lock, true);
   }
 }
 
@@ -514,8 +514,8 @@ static void paf_parent() {
   PSAutoLock lock;
 
   if (ActivePS::Exists(lock)) {
-    ActivePS::SetIsPaused(lock, ActivePS::WasPaused(lock));
-    ActivePS::SetWasPaused(lock, false);
+    ActivePS::SetIsSamplingPaused(lock, ActivePS::WasSamplingPaused(lock));
+    ActivePS::SetWasSamplingPaused(lock, false);
   }
 }
 

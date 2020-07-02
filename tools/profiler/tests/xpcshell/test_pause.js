@@ -12,18 +12,71 @@ function run_test() {
 
   Services.profiler.StartProfiler(1000, 10, []);
 
+  
   Assert.ok(Services.profiler.IsActive());
+  Assert.ok(!Services.profiler.IsPaused());
+  Assert.ok(!Services.profiler.IsSamplingPaused());
 
+  
+  Services.profiler.Pause();
+
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
+
+  
   Services.profiler.PauseSampling();
 
+  Assert.ok(Services.profiler.IsActive());
   Assert.ok(Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
 
   Services.profiler.ResumeSampling();
 
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
+
+  
+  Services.profiler.Resume();
+
+  Assert.ok(Services.profiler.IsActive());
   Assert.ok(!Services.profiler.IsPaused());
+  Assert.ok(!Services.profiler.IsSamplingPaused());
+
+  
+  Services.profiler.PauseSampling();
+
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(!Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
+
+  
+  Services.profiler.Pause();
+
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
+
+  
+  Services.profiler.Resume();
+
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(!Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
+
+  
+  Services.profiler.ResumeSampling();
+
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(!Services.profiler.IsPaused());
+  Assert.ok(!Services.profiler.IsSamplingPaused());
 
   Services.profiler.StopProfiler();
   Assert.ok(!Services.profiler.IsActive());
+  
   Assert.ok(!Services.profiler.IsPaused());
+  Assert.ok(!Services.profiler.IsSamplingPaused());
+
   do_test_finished();
 }

@@ -453,7 +453,7 @@ function getActiveConfiguration() {
 
   
   
-  Services.profiler.PauseSampling();
+  Services.profiler.Pause();
 
   const { activeConfiguration } = Services.profiler;
   if (!activeConfiguration) {

@@ -191,7 +191,7 @@ async function captureProfile(pageContext) {
 
   
   
-  Services.profiler.PauseSampling();
+  Services.profiler.Pause();
 
   const profile = await Services.profiler
     .getProfileDataAsGzippedArrayBuffer()
