@@ -19,6 +19,7 @@ use crate::properties::{
     PropertyDeclarationId,
 };
 use crate::rule_tree::CascadeLevel;
+use crate::shared_lock::{Locked, SharedRwLock};
 use crate::style_resolver::StyleResolverForElement;
 use crate::stylesheets::keyframes_rule::{KeyframesAnimation, KeyframesStep, KeyframesStepValue};
 use crate::values::animated::{Animate, Procedure};
@@ -26,6 +27,8 @@ use crate::values::computed::{Time, TimingFunction};
 use crate::values::generics::box_::AnimationIterationCount;
 use crate::values::generics::easing::{StepPosition, TimingFunction as GenericTimingFunction};
 use crate::Atom;
+use fxhash::FxHashMap;
+use parking_lot::RwLock;
 use servo_arc::Arc;
 use std::fmt;
 
@@ -394,9 +397,6 @@ impl ComputedKeyframe {
 #[derive(Clone, MallocSizeOf)]
 pub struct Animation {
     
-    pub node: OpaqueNode,
-
-    
     pub name: Atom,
 
     
@@ -737,9 +737,6 @@ impl fmt::Debug for Animation {
 #[derive(Clone, Debug, MallocSizeOf)]
 pub struct Transition {
     
-    pub node: OpaqueNode,
-
-    
     
     pub start_time: f64,
 
@@ -891,7 +888,7 @@ impl ElementAnimationSet {
     }
 
     pub(crate) fn apply_active_animations(
-        &mut self,
+        &self,
         context: &SharedStyleContext,
         style: &mut Arc<ComputedValues>,
     ) {
@@ -987,7 +984,6 @@ impl ElementAnimationSet {
         &mut self,
         might_need_transitions_update: bool,
         context: &SharedStyleContext,
-        opaque_node: OpaqueNode,
         old_style: Option<&Arc<ComputedValues>>,
         after_change_style: &Arc<ComputedValues>,
     ) {
@@ -1015,7 +1011,6 @@ impl ElementAnimationSet {
 
         let transitioning_properties = start_transitions_if_applicable(
             context,
-            opaque_node,
             &before_change_style,
             after_change_style,
             self,
@@ -1037,7 +1032,6 @@ impl ElementAnimationSet {
     fn start_transition_if_applicable(
         &mut self,
         context: &SharedStyleContext,
-        opaque_node: OpaqueNode,
         longhand_id: LonghandId,
         index: usize,
         old_style: &ComputedValues,
@@ -1079,7 +1073,6 @@ impl ElementAnimationSet {
         
         let reversing_adjusted_start_value = property_animation.from.clone();
         let mut new_transition = Transition {
-            node: opaque_node,
             start_time: now + delay,
             delay,
             property_animation,
@@ -1143,11 +1136,78 @@ impl ElementAnimationSet {
     }
 }
 
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
+
+pub struct AnimationSetKey(pub OpaqueNode);
+
+#[derive(Clone, Debug, Default, MallocSizeOf)]
+
+pub struct DocumentAnimationSet {
+    
+    #[ignore_malloc_size_of = "Arc is hard"]
+    pub sets: Arc<RwLock<FxHashMap<AnimationSetKey, ElementAnimationSet>>>,
+}
+
+impl DocumentAnimationSet {
+    
+    pub fn has_active_animations(&self, key: &AnimationSetKey) -> bool {
+        self.sets
+            .read()
+            .get(key)
+            .map(|set| set.has_active_animation())
+            .unwrap_or(false)
+    }
+
+    
+    pub fn has_active_transitions(&self, key: &AnimationSetKey) -> bool {
+        self.sets
+            .read()
+            .get(key)
+            .map(|set| set.has_active_transition())
+            .unwrap_or(false)
+    }
+
+    
+    
+    pub fn get_animation_declarations(
+        &self,
+        key: &AnimationSetKey,
+        time: f64,
+        shared_lock: &SharedRwLock,
+    ) -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
+        self.sets
+            .read()
+            .get(key)
+            .and_then(|set| set.get_value_map_for_active_animations(time))
+            .map(|map| {
+                let block = PropertyDeclarationBlock::from_animation_value_map(&map);
+                Arc::new(shared_lock.wrap(block))
+            })
+    }
+
+    
+    
+    pub fn get_transition_declarations(
+        &self,
+        key: &AnimationSetKey,
+        time: f64,
+        shared_lock: &SharedRwLock,
+    ) -> Option<Arc<Locked<PropertyDeclarationBlock>>> {
+        self.sets
+            .read()
+            .get(key)
+            .and_then(|set| set.get_value_map_for_active_transitions(time))
+            .map(|map| {
+                let block = PropertyDeclarationBlock::from_animation_value_map(&map);
+                Arc::new(shared_lock.wrap(block))
+            })
+    }
+}
+
 
 
 pub fn start_transitions_if_applicable(
     context: &SharedStyleContext,
-    opaque_node: OpaqueNode,
     old_style: &ComputedValues,
     new_style: &Arc<ComputedValues>,
     animation_state: &mut ElementAnimationSet,
@@ -1162,7 +1222,6 @@ pub fn start_transitions_if_applicable(
         properties_that_transition.insert(physical_property);
         animation_state.start_transition_if_applicable(
             context,
-            opaque_node,
             physical_property,
             transition.index,
             old_style,
@@ -1245,7 +1304,6 @@ pub fn maybe_start_animations<E>(
         );
 
         let new_animation = Animation {
-            node: element.as_node().opaque(),
             name: name.clone(),
             properties_changed: keyframe_animation.properties_changed,
             computed_steps,
