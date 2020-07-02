@@ -230,7 +230,6 @@ js::Nursery::Nursery(GCRuntime* gc)
       canAllocateBigInts_(true),
       reportTenurings_(0),
       minorGCTriggerReason_(JS::GCReason::NO_REASON),
-      smoothedGrowthFactor(1.0),
       decommitTask(gc)
 #ifdef JS_GC_ZEAL
       ,
@@ -312,8 +311,6 @@ void js::Nursery::enable() {
   setCurrentChunk(0);
   setStartPosition();
   poisonAndInitCurrentChunk();
-  smoothedGrowthFactor = 1.0;
-
 #ifdef JS_GC_ZEAL
   if (gc->hasZealMode(ZealMode::GenerationalGC)) {
     enterZealMode();
@@ -1539,36 +1536,28 @@ size_t js::Nursery::targetSize(JS::GCReason reason) {
   
   
   
-  double fractionPromoted =
+  const double fractionPromoted =
       double(previousGC.tenuredBytes) / double(previousGC.nurseryCapacity);
 
   
-  static const double PromotionGoal = 0.02;
-
-  double growthFactor = fractionPromoted / PromotionGoal;
-
   
-  
-  static const double GrowthRange = 2.0;
-  growthFactor = ClampDouble(growthFactor, 1.0 / GrowthRange, GrowthRange);
+  static const double GrowThreshold = 0.03;
+  static const double ShrinkThreshold = 0.01;
+  static const double PromotionGoal = (GrowThreshold + ShrinkThreshold) / 2.0;
 
   
-  
-  smoothedGrowthFactor = 0.75 * smoothedGrowthFactor + 0.25 * growthFactor;
-
-  
-  static const double GoalWidth = 1.5;
-  if (smoothedGrowthFactor > (1.0 / GoalWidth) &&
-      smoothedGrowthFactor < GoalWidth) {
+  if (fractionPromoted > ShrinkThreshold && fractionPromoted < GrowThreshold) {
     return capacity();
   }
 
+  const double growthFactor =
+      ClampDouble(fractionPromoted / PromotionGoal, 0.5, 2.0);
+
   
   
-  MOZ_ASSERT(smoothedGrowthFactor <= 2.0);
   MOZ_ASSERT(capacity() < SIZE_MAX / 2);
 
-  return roundSize(size_t(double(capacity()) * smoothedGrowthFactor));
+  return roundSize(size_t(double(capacity()) * growthFactor));
 }
 
 
