@@ -580,8 +580,6 @@ class nsHtml5StreamParser final : public nsISupports {
 
   nsCString mTLD;
 
-  bool mUseJapaneseDetector;
-
   
 
 
