@@ -4,7 +4,6 @@
 
 "use strict";
 
-const Services = require("Services");
 const {
   reloadInspectorAndLog,
   selectNodeFront,
@@ -12,6 +11,7 @@ const {
 const {
   closeToolboxAndLog,
   garbageCollect,
+  isFissionEnabled,
   recordPendingPaints,
   runTest,
   testSetup,
@@ -24,11 +24,15 @@ const { gDevTools } = require("devtools/client/framework/devtools");
 const TEST_URL = PAGES_BASE_URL + "custom/inspector/index.html";
 
 module.exports = async function() {
-  
-  
-  Services.prefs.setBoolPref("devtools.contenttoolbox.fission", false);
-
   const tab = await testSetup(TEST_URL, { disableCache: true });
+
+  
+  
+  
+  if (isFissionEnabled()) {
+    await testTeardown();
+    return;
+  }
 
   const domReference = await getContentDOMReference("#initial-node", tab);
   let toolbox = await openToolboxWithInspectNode(domReference, tab);
@@ -48,7 +52,6 @@ module.exports = async function() {
   await new Promise(r => setTimeout(r, 1000));
   await garbageCollect();
 
-  Services.prefs.clearUserPref("devtools.contenttoolbox.fission");
   await testTeardown();
 };
 
