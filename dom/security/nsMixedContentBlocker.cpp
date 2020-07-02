@@ -711,23 +711,22 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   WindowContext* topWC = requestingWindow->TopWindowContext();
-  bool rootIsPotentiallyTrustWorthy = topWC->GetIsPotentiallyTrustWorthy();
+  bool rootHasSecureConnection = topWC->GetIsSecure();
   bool allowMixedContent = topWC->GetAllowMixedContent();
 
   
   
   
-  if (contentType == TYPE_SUBDOCUMENT && !rootIsPotentiallyTrustWorthy) {
-    bool potentiallyTrustWorthyParentExists = false;
+  if (contentType == TYPE_SUBDOCUMENT && !rootHasSecureConnection) {
+    bool httpsParentExists = false;
 
     RefPtr<WindowContext> curWindow = requestingWindow;
-    while (!potentiallyTrustWorthyParentExists && curWindow) {
-      potentiallyTrustWorthyParentExists =
-          curWindow->GetIsPotentiallyTrustWorthy();
+    while (!httpsParentExists && curWindow) {
+      httpsParentExists = curWindow->GetIsSecure();
       curWindow = curWindow->GetParentWindowContext();
     }
 
-    if (!potentiallyTrustWorthyParentExists) {
+    if (!httpsParentExists) {
       *aDecision = nsIContentPolicy::ACCEPT;
       return NS_OK;
     }

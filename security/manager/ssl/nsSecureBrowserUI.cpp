@@ -114,7 +114,7 @@ void nsSecureBrowserUI::UpdateForLocationOrMixedContentChange() {
   
   
   nsCOMPtr<nsITransportSecurityInfo> securityInfo;
-  if (win && win->GetIsPotentiallyTrustWorthy()) {
+  if (win && win->GetIsSecure()) {
     securityInfo = win->GetSecurityInfo();
     if (securityInfo) {
       MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
@@ -148,8 +148,7 @@ void nsSecureBrowserUI::UpdateForLocationOrMixedContentChange() {
   static const uint32_t kLoadedMixedContentFlags =
       nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT |
       nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT;
-  if (win && win->GetIsPotentiallyTrustWorthy() &&
-      (mState & kLoadedMixedContentFlags)) {
+  if (win && win->GetIsSecure() && (mState & kLoadedMixedContentFlags)) {
     
     mState = mState >> 4 << 4;
     
