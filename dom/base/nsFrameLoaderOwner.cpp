@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsFrameLoaderOwner.h"
 #include "nsFrameLoader.h"
@@ -64,19 +64,19 @@ nsFrameLoaderOwner::ShouldPreserveBrowsingContext(
   }
 
   if (XRE_IsParentProcess()) {
-    
+    // Don't preserve for remote => parent loads.
     if (!aIsRemote) {
       return ChangeRemotenessContextType::DONT_PRESERVE;
     }
 
-    
+    // Don't preserve for parent => remote loads.
     if (mFrameLoader && !mFrameLoader->IsRemoteFrame()) {
       return ChangeRemotenessContextType::DONT_PRESERVE;
     }
   }
 
-  
-  
+  // We will preserve our browsing context if either fission is enabled, or the
+  // `preserve_browsing_contexts` pref is active.
   if (UseRemoteSubframes() ||
       StaticPrefs::fission_preserve_browsing_contexts()) {
     return ChangeRemotenessContextType::PRESERVE;
@@ -86,85 +86,87 @@ nsFrameLoaderOwner::ShouldPreserveBrowsingContext(
 
 void nsFrameLoaderOwner::ChangeRemotenessCommon(
     const ChangeRemotenessContextType& aContextType,
-    bool aSwitchingInProgressLoad, bool aIsRemote,
+    bool aSwitchingInProgressLoad, bool aIsRemote, BrowsingContextGroup* aGroup,
     std::function<void()>& aFrameLoaderInit, mozilla::ErrorResult& aRv) {
+  MOZ_ASSERT_IF(aGroup, aContextType != ChangeRemotenessContextType::PRESERVE);
+
   RefPtr<mozilla::dom::BrowsingContext> bc;
   bool networkCreated = false;
 
-  
-  
-  
+  // In this case, we're not reparenting a frameloader, we're just destroying
+  // our current one and creating a new one, so we can use ourselves as the
+  // owner.
   RefPtr<Element> owner = do_QueryObject(this);
   MOZ_ASSERT(owner);
 
-  
-  
-  
-  
-  
+  // When we destroy the original frameloader, it will stop blocking the parent
+  // document's load event, and immediately trigger the load event if there are
+  // no other blockers. Since we're going to be adding a new blocker as soon as
+  // we recreate the frame loader, this is not what we want, so add our own
+  // blocker until the process is complete.
   Document* doc = owner->OwnerDoc();
   doc->BlockOnload();
   auto cleanup = MakeScopeExit([&]() { doc->UnblockOnload(false); });
 
   {
-    
-    
-    
-    
+    // Introduce a script blocker to ensure no JS is executed during the
+    // nsFrameLoader teardown & recreation process. Unload listeners will be run
+    // for the previous document, and the load will be started for the new one,
+    // at the end of this block.
     nsAutoScriptBlocker sb;
 
-    
-    
+    // If we already have a Frameloader, destroy it, possibly preserving its
+    // browsing context.
     if (mFrameLoader) {
-      
-      
-      
-      
+      // Calling `GetBrowsingContext` here will force frameloader
+      // initialization if it hasn't already happened, which we neither need
+      // or want, so we use the initial (possibly pending) browsing context
+      // directly, instead.
       bc = mFrameLoader->GetMaybePendingBrowsingContext();
       if (aContextType == ChangeRemotenessContextType::PRESERVE) {
         mFrameLoader->SetWillChangeProcess();
       }
 
-      
-      
+      // Preserve the networkCreated status, as nsDocShells created after a
+      // process swap may shouldn't change their dynamically-created status.
       networkCreated = mFrameLoader->IsNetworkCreated();
       mFrameLoader->Destroy(aSwitchingInProgressLoad);
       mFrameLoader = nullptr;
     }
 
     mFrameLoader = nsFrameLoader::Recreate(
-        owner, bc, aIsRemote, networkCreated,
+        owner, bc, aGroup, aIsRemote, networkCreated,
         aContextType == ChangeRemotenessContextType::PRESERVE);
     if (NS_WARN_IF(!mFrameLoader)) {
       aRv.Throw(NS_ERROR_FAILURE);
       return;
     }
 
-    
-    
-    
+    // Invoke the frame loader initialization callback to perform setup on our
+    // new nsFrameLoader. This may cause our ErrorResult to become errored, so
+    // double-check after calling.
     aFrameLoaderInit();
     if (NS_WARN_IF(aRv.Failed())) {
       return;
     }
   }
 
-  
-  
-  
+  // If we're switching process for an in progress load, then suppress
+  // progress events from the new BrowserParent to prevent duplicate
+  // events for the new initial about:blank and the new 'start' event.
   if (aSwitchingInProgressLoad && mFrameLoader->GetBrowserParent()) {
     mFrameLoader->GetBrowserParent()
         ->SuspendProgressEventsUntilAfterNextLoadStarts();
   }
 
-  
-  
+  // Now that we've got a new FrameLoader, we need to reset our
+  // nsSubDocumentFrame to use the new FrameLoader.
   if (nsSubDocumentFrame* ourFrame = do_QueryFrame(owner->GetPrimaryFrame())) {
     ourFrame->ResetFrameLoader();
   }
 
-  
-  
+  // If the element is focused, or the current mouse over target then
+  // we need to update that state for the new BrowserParent too.
   if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
     if (fm->GetFocusedElement() == owner) {
       fm->ActivateRemoteFrameIfNeeded(*owner);
@@ -178,11 +180,11 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
   }
 
   if (owner->IsXULElement()) {
-    
-    
-    
-    
-    
+    // Assuming this element is a XULFrameElement, once we've reset our
+    // FrameLoader, fire an event to act like we've recreated ourselves, similar
+    // to what XULFrameElement does after rebinding to the tree.
+    // ChromeOnlyDispatch is turns on to make sure this isn't fired into
+    // content.
     (new mozilla::AsyncEventDispatcher(
          owner, NS_LITERAL_STRING("XULFrameLoaderCreated"),
          mozilla::CanBubble::eYes, mozilla::ChromeOnlyDispatch::eYes))
@@ -207,9 +209,9 @@ void nsFrameLoaderOwner::ChangeRemoteness(
   };
 
   auto shouldPreserve = ShouldPreserveBrowsingContext(
-      isRemote,  false);
+      isRemote, /* replaceBrowsingContext */ false);
   ChangeRemotenessCommon(shouldPreserve, aOptions.mSwitchingInProgressLoad,
-                         isRemote, frameLoaderInit, rv);
+                         isRemote, /* group */ nullptr, frameLoaderInit, rv);
 }
 
 void nsFrameLoaderOwner::ChangeRemotenessWithBridge(BrowserBridgeChild* aBridge,
@@ -228,14 +230,16 @@ void nsFrameLoaderOwner::ChangeRemotenessWithBridge(BrowserBridgeChild* aBridge,
   };
 
   ChangeRemotenessCommon(ChangeRemotenessContextType::PRESERVE,
-                          true,
-                          true, frameLoaderInit, rv);
+                         /* inProgress */ true,
+                         /* isRemote */ true, /* group */ nullptr,
+                         frameLoaderInit, rv);
 }
 
 void nsFrameLoaderOwner::ChangeRemotenessToProcess(
     ContentParent* aContentParent, bool aReplaceBrowsingContext,
-    mozilla::ErrorResult& rv) {
+    BrowsingContextGroup* aGroup, mozilla::ErrorResult& rv) {
   MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT_IF(aGroup, aReplaceBrowsingContext);
   bool isRemote = aContentParent != nullptr;
 
   std::function<void()> frameLoaderInit = [&] {
@@ -244,20 +248,20 @@ void nsFrameLoaderOwner::ChangeRemotenessToProcess(
                                         aContentParent);
     }
 
-    
-    
-    
-    
-    
-    
-    
+    // FIXME(bug 1644779): We'd like to stop triggering a load here, as this
+    // reads the attributes, such as `src`, on the <browser> element, and could
+    // start another load which will be clobbered shortly.
+    //
+    // This is OK for now, as we're mimicing the existing process switching
+    // behaviour, and <browser> elements created by tabbrowser don't have the
+    // `src` attribute specified.
     mFrameLoader->LoadFrame(false);
   };
 
   auto shouldPreserve =
       ShouldPreserveBrowsingContext(isRemote, aReplaceBrowsingContext);
-  ChangeRemotenessCommon(shouldPreserve,  true, isRemote,
-                         frameLoaderInit, rv);
+  ChangeRemotenessCommon(shouldPreserve, /* inProgress */ true, isRemote,
+                         aGroup, frameLoaderInit, rv);
 }
 
 void nsFrameLoaderOwner::SubframeCrashed() {
@@ -285,6 +289,6 @@ void nsFrameLoaderOwner::SubframeCrashed() {
   };
 
   ChangeRemotenessCommon(ChangeRemotenessContextType::PRESERVE,
-                          false,
-                          false, frameLoaderInit, IgnoreErrors());
+                         /* inProgress */ false, /* isRemote */ false,
+                         /* group */ nullptr, frameLoaderInit, IgnoreErrors());
 }
