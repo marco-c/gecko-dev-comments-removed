@@ -60,24 +60,28 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Available(
     return NS_BASE_STREAM_CLOSED;
   }
 
-  
-  *aLengthOut = PlainLength();
-  if (*aLengthOut > 0) {
-    return NS_OK;
+  int64_t oldPos, endPos;
+  nsresult rv = Tell(&oldPos);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
-  
-  
-  
-  uint32_t bytesRead;
-  do {
-    nsresult rv = ParseNextChunk(&bytesRead);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-    *aLengthOut = PlainLength();
-  } while (*aLengthOut == 0 && bytesRead);
+  rv = Seek(SEEK_END, 0);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
+  rv = Tell(&endPos);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  rv = Seek(SEEK_SET, oldPos);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  *aLengthOut = endPos - oldPos;
   return NS_OK;
 }
 
@@ -255,6 +259,10 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Tell(
     return NS_BASE_STREAM_CLOSED;
   }
 
+  if (!EnsureBuffers()) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
   int64_t basePosition;
   nsresult rv = (*mBaseSeekableStream)->Tell(&basePosition);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -327,6 +335,9 @@ NS_IMETHODIMP DecryptingInputStream<CipherStrategy>::Seek(const int32_t aWhence,
           if (NS_WARN_IF(NS_FAILED(rv))) {
             return Err(rv);
           }
+
+          mNextByte = 0;
+          mPlainBytes = 0;
 
           uint32_t bytesRead;
           rv = ParseNextChunk(&bytesRead);
