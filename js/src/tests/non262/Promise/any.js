@@ -1,8 +1,6 @@
 
 
 
-
-
 function expectedError() {
   reportCompare(true, false, "expected error");
 }
