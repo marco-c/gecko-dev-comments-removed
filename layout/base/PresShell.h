@@ -828,6 +828,8 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
+
+
   nsresult RenderDocument(const nsRect& aRect, RenderDocumentFlags aFlags,
                           nscolor aBackgroundColor,
                           gfxContext* aRenderedContext);

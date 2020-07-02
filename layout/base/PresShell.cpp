@@ -4575,6 +4575,9 @@ nsresult PresShell::RenderDocument(const nsRect& aRect,
   if (!(aFlags & RenderDocumentFlags::AsyncDecodeImages)) {
     flags |= PaintFrameFlags::SyncDecodeImages;
   }
+  if (aFlags & RenderDocumentFlags::UseHighQualityScaling) {
+    flags |= PaintFrameFlags::UseHighQualityScaling;
+  }
   if (aFlags & RenderDocumentFlags::UseWidgetLayers) {
     
     nsView* view = rootFrame->GetView();

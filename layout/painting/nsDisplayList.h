@@ -669,6 +669,16 @@ class nsDisplayListBuilder {
   
 
 
+
+  void SetUseHighQualityScaling(bool aUseHighQualityScaling) {
+    mUseHighQualityScaling = aUseHighQualityScaling;
+  }
+  bool UseHighQualityScaling() const {
+    return mIsPaintingToWindow || mUseHighQualityScaling;
+  }
+  
+
+
   void SetPaintingForWebRender(bool aForWebRender) {
     mIsPaintingForWebRender = true;
   }
@@ -2014,6 +2024,7 @@ class nsDisplayListBuilder {
   bool mIsInChromePresContext;
   bool mSyncDecodeImages;
   bool mIsPaintingToWindow;
+  bool mUseHighQualityScaling;
   bool mIsPaintingForWebRender;
   bool mIsCompositingCheap;
   bool mContainsPluginItem;
