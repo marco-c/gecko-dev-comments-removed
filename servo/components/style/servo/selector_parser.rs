@@ -29,7 +29,7 @@ use style_traits::{ParseError, StyleParseErrorKind};
 
 
 
-#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToShmem)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, ToShmem)]
 #[allow(missing_docs)]
 #[repr(usize)]
 pub enum PseudoElement {

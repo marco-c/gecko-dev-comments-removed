@@ -751,11 +751,22 @@ pub trait TElement:
     fn has_animations(&self, context: &SharedStyleContext) -> bool;
 
     
-    fn has_css_animations(&self, context: &SharedStyleContext) -> bool;
+    
+    
+    fn has_css_animations(
+        &self,
+        context: &SharedStyleContext,
+        pseudo_element: Option<PseudoElement>,
+    ) -> bool;
 
     
     
-    fn has_css_transitions(&self, context: &SharedStyleContext) -> bool;
+    
+    fn has_css_transitions(
+        &self,
+        context: &SharedStyleContext,
+        pseudo_element: Option<PseudoElement>,
+    ) -> bool;
 
     
     fn has_animation_restyle_hints(&self) -> bool {
