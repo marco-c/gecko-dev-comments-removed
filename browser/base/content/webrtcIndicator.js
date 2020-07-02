@@ -89,10 +89,11 @@ const WebRTCIndicator = {
 
     this.updateWindowAttr("sharingvideo", webrtcUI.showCameraIndicator);
     this.updateWindowAttr("sharingaudio", webrtcUI.showMicrophoneIndicator);
-    this.updateWindowAttr(
-      "sharingscreen",
-      webrtcUI.showScreenSharingIndicator.startsWith("Screen")
+
+    let sharingScreen = webrtcUI.showScreenSharingIndicator.startsWith(
+      "Screen"
     );
+    this.updateWindowAttr("sharingscreen", sharingScreen);
 
     
     
@@ -123,6 +124,30 @@ const WebRTCIndicator = {
       this.updateWindowAttr("sharingbrowserwindow");
       this.sharingBrowserWindow = false;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let displayShare = document.getElementById("display-share");
+    let labelledBy;
+    if (sharingScreen) {
+      labelledBy = "screen-share-info";
+    } else if (this.sharingBrowserWindow) {
+      labelledBy = "browser-window-share-info";
+    } else if (sharingWindow) {
+      labelledBy = "window-share-info";
+    }
+    displayShare.setAttribute("aria-labelledby", labelledBy);
 
     
     
