@@ -46,7 +46,7 @@ class RelocationOverlay : public Cell {
   
   RelocationOverlay* next_;
 
-  RelocationOverlay(Cell* dst, uintptr_t flags);
+  explicit RelocationOverlay(Cell* dst);
 
  public:
   static const RelocationOverlay* fromCell(const Cell* cell) {

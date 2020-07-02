@@ -3107,6 +3107,69 @@ static inline void TraceWholeCell(TenuringTracer& mover, JSObject* object) {
   mover.traceObject(object);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static inline void PreventDeduplicationOfReachableStrings(JSString* str) {
+  MOZ_ASSERT(str->isTenured());
+  MOZ_ASSERT(!str->isForwarded());
+
+  JSLinearString* baseOrRelocOverlay = str->nurseryBaseOrRelocOverlay();
+
+  
+  
+  while (true) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (baseOrRelocOverlay->isForwarded()) {
+      JSLinearString* tenuredBase = Forwarded(baseOrRelocOverlay);
+      if (!tenuredBase->hasBase()) {
+        break;
+      }
+      baseOrRelocOverlay = StringRelocationOverlay::fromCell(baseOrRelocOverlay)
+                               ->savedNurseryBaseOrRelocOverlay();
+    } else {
+      JSLinearString* base = baseOrRelocOverlay;
+      if (base->isTenured()) {
+        break;
+      }
+      if (base->isDeduplicatable()) {
+        base->setNonDeduplicatable();
+      }
+      if (!base->hasBase()) {
+        break;
+      }
+      baseOrRelocOverlay = base->nurseryBaseOrRelocOverlay();
+    }
+  }
+}
+
 static inline void TraceWholeCell(TenuringTracer& mover, JSString* str) {
   MOZ_ASSERT_IF(str->storeBuffer(),
                 str->storeBuffer()->markingNondeduplicatable);
@@ -3114,62 +3177,8 @@ static inline void TraceWholeCell(TenuringTracer& mover, JSString* str) {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   if (str->hasBase()) {
-    MOZ_ASSERT(str->isTenured());
-    MOZ_ASSERT(!str->isForwarded());
-
-    JSLinearString* baseOrRelocOverlay = str->nurseryBaseOrRelocOverlay();
-
-    
-    
-    while (true) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (baseOrRelocOverlay->isForwarded()) {
-        JSLinearString* tenuredBase =
-            Forwarded(reinterpret_cast<JSLinearString*>(baseOrRelocOverlay));
-        if (!tenuredBase->hasBase()) {
-          break;
-        }
-        baseOrRelocOverlay =
-            StringRelocationOverlay::fromCell(baseOrRelocOverlay)
-                ->savedNurseryBaseOrRelocOverlay();
-      } else {
-        JSLinearString* base = baseOrRelocOverlay;
-        if (base->isTenured()) {
-          break;
-        }
-        if (base->isDeduplicatable()) {
-          base->setNonDeduplicatable();
-        }
-        if (!base->hasBase()) {
-          break;
-        }
-        baseOrRelocOverlay = base->nurseryBaseOrRelocOverlay();
-      }
-    }
+    PreventDeduplicationOfReachableStrings(str);
   }
 
   str->traceChildren(&mover);
@@ -3592,10 +3601,9 @@ JSString* js::TenuringTracer::moveToTenured(JSString* src) {
   if (src->length() < MAX_DEDUPLICATABLE_STRING_LENGTH && src->isLinear() &&
       src->isDeduplicatable() && nursery().stringDeDupSet.isSome()) {
     if (auto p = nursery().stringDeDupSet->lookup(src)) {
+      
       dst = *p;
-
       StringRelocationOverlay::forwardCell(src, dst);
-
       gcprobes::PromoteToTenured(src, dst);
       return dst;
     }
@@ -3609,13 +3617,11 @@ JSString* js::TenuringTracer::moveToTenured(JSString* src) {
     }
   } else {
     dst = allocTenuredString(src, zone, dstKind);
+    dst->clearNonDeduplicatable();
   }
 
-  auto overlay = StringRelocationOverlay::forwardCell(src, dst);
-  
-  
-  
-  dst->clearNonDeduplicatable();
+  auto* overlay = StringRelocationOverlay::forwardCell(src, dst);
+  MOZ_ASSERT(dst->isDeduplicatable());
   
   
   insertIntoStringFixupList(overlay);

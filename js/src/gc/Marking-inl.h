@@ -114,24 +114,13 @@ inline RelocatedCellHeader::RelocatedCellHeader(Cell* location,
   header_ = ptr | flags | FORWARD_BIT;
 }
 
-inline RelocationOverlay::RelocationOverlay(Cell* dst, uintptr_t flags)
-    : header_(dst, flags) {}
+inline RelocationOverlay::RelocationOverlay(Cell* dst) : header_(dst, 0) {}
 
 
 inline RelocationOverlay* RelocationOverlay::forwardCell(Cell* src, Cell* dst) {
   MOZ_ASSERT(!src->isForwarded());
   MOZ_ASSERT(!dst->isForwarded());
-
-  
-  
-  
-  
-  
-  
-  
-  
-  uintptr_t flags = reinterpret_cast<CellHeader*>(dst)->flags();
-  return new (src) RelocationOverlay(dst, flags);
+  return new (src) RelocationOverlay(dst);
 }
 
 inline bool IsAboutToBeFinalizedDuringMinorSweep(Cell** cellp) {

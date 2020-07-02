@@ -1345,16 +1345,6 @@ bool AutoStableStringChars::init(JSContext* cx, JSString* s) {
 
   MOZ_ASSERT(state_ == Uninitialized);
 
-  auto _atexit = mozilla::MakeScopeExit([this] {
-    
-    
-    
-    if (s_ && !s_->isAtom() && s_->isDeduplicatable()) {
-      s_->setNonDeduplicatable();
-      preventedDeduplication_ = true;
-    }
-  });
-
   
   
   if (baseIsInline(linearString)) {
@@ -1370,6 +1360,13 @@ bool AutoStableStringChars::init(JSContext* cx, JSString* s) {
     twoByteChars_ = linearString->rawTwoByteChars();
   }
 
+  
+  
+  if (!linearString->isTenured() && linearString->isDeduplicatable()) {
+    linearString->setNonDeduplicatable();
+    preventedDeduplication_ = true;
+  }
+
   s_ = linearString;
   return true;
 }
@@ -1381,16 +1378,6 @@ bool AutoStableStringChars::initTwoByte(JSContext* cx, JSString* s) {
   }
 
   MOZ_ASSERT(state_ == Uninitialized);
-
-  auto _atexit = mozilla::MakeScopeExit([this] {
-    
-    
-    
-    if (s_ && !s_->isAtom() && s_->isDeduplicatable()) {
-      s_->setNonDeduplicatable();
-      preventedDeduplication_ = true;
-    }
-  });
 
   if (linearString->hasLatin1Chars()) {
     return copyAndInflateLatin1Chars(cx, linearString);
@@ -1404,6 +1391,14 @@ bool AutoStableStringChars::initTwoByte(JSContext* cx, JSString* s) {
 
   state_ = TwoByte;
   twoByteChars_ = linearString->rawTwoByteChars();
+
+  
+  
+  if (!linearString->isTenured() && linearString->isDeduplicatable()) {
+    linearString->setNonDeduplicatable();
+    preventedDeduplication_ = true;
+  }
+
   s_ = linearString;
   return true;
 }
