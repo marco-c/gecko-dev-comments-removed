@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 CONFIGURE_SUBST_FILES += ['cairo-features.h']
 
@@ -28,7 +28,7 @@ if CONFIG['MOZ_WIDGET_TOOLKIT'] not in ('cocoa', 'uikit'):
         'cairo-pdf-operators.c',
         'cairo-pdf-surface.c',
         'cairo-truetype-subset.c',
-        # cairo-type1-subset.c should be here, but it's only supported on freetype platforms
+        
         'cairo-type1-fallback.c',
         'cairo-type3-glyph-surface.c',
     ]
@@ -100,10 +100,10 @@ if CONFIG['MOZ_ENABLE_CAIRO_FT']:
     ]
 
 SOURCES += [
-    'cairo-bentley-ottmann-rectangular.c', # redefinition of '_cairo_bo_trap'
-    'cairo-bentley-ottmann-rectilinear.c', # redefinition of '_cairo_bo_trap'
-    'cairo-bentley-ottmann.c', # redefinition of '_cairo_bo_trap'
-    'cairo-surface-wrapper.c', #  redefinition of '_copy_transformed_pattern'
+    'cairo-bentley-ottmann-rectangular.c', 
+    'cairo-bentley-ottmann-rectilinear.c', 
+    'cairo-bentley-ottmann.c', 
+    'cairo-surface-wrapper.c', 
 ]
 
 UNIFIED_SOURCES += [
@@ -175,7 +175,7 @@ UNIFIED_SOURCES += [
     'cairo.c',
 ]
 
-# We allow warnings for third-party code that can be updated from upstream.
+
 AllowCompilerWarnings()
 
 FINAL_LIBRARY = 'gkmedias'
@@ -192,24 +192,24 @@ for var in ('MOZ_TREE_CAIRO', 'MOZ_TREE_PIXMAN'):
 
 if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
     DEFINES['HAVE_CXX11_ATOMIC_PRIMITIVES'] = True
-    # We would normally use autoconf to set these up, using AC_CHECK_SIZEOF.
-    # But AC_CHECK_SIZEOF requires running programs to determine the sizes,
-    # and that doesn't work so well with cross-compiling.  So instead we
-    # use these magic macros, available since at least GCC 4.3, to define
-    # the preprocessor macros cairo wanted from autoconf.
+    
+    
+    
+    
+    
     DEFINES['SIZEOF_VOID_P'] = '__SIZEOF_POINTER__'
     DEFINES['SIZEOF_INT'] = '__SIZEOF_INT__'
     DEFINES['SIZEOF_LONG'] = '__SIZEOF_LONG__'
     DEFINES['SIZEOF_LONG_LONG'] = '__SIZEOF_LONG_LONG__'
 
-# Normally determined by cairo's configure script.
+
 DEFINES['HAVE_UINT64_T'] = True
 
 if CONFIG['MOZ_TREE_FREETYPE']:
     DEFINES['HAVE_FT_LIBRARY_SETLCDFILTER'] = True
-    DEFINES['FT_LCD_FILTER_H'] = '%s/modules/freetype2/include/freetype/ftlcdfil.h' % TOPSRCDIR
+    DEFINES['FT_LCD_FILTER_H'] = '../../../modules/freetype2/include/freetype/ftlcdfil.h'
 
-# Suppress warnings in third-party code.
+
 CFLAGS += [
     '-Wno-enum-compare',
     '-Wno-int-to-pointer-cast',
@@ -239,7 +239,7 @@ if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
 else:
     CFLAGS += ['-Wno-unused-but-set-variable']
 
-# See bug 386897.
+
 if CONFIG['CC_TYPE'] in ('clang', 'gcc') and CONFIG['OS_TARGET'] == 'Android' and CONFIG['MOZ_OPTIMIZE']:
     CFLAGS += ['-O2']
     CXXFLAGS += ['-O2']
