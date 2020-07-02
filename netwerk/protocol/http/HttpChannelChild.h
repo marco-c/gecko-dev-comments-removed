@@ -420,6 +420,16 @@ class HttpChannelChild final : public PHttpChannelChild,
   bool mDoDiagnosticAssertWhenOnStopNotCalledOnDestroy = false;
   bool mAsyncOpenSucceeded = false;
   bool mSuccesfullyRedirected = false;
+  
+  enum BckChildQueueStatus {
+    
+    BCKCHILD_UNKNOWN,
+    
+    BCKCHILD_EMPTY,
+    
+    BCKCHILD_NON_EMPTY
+  };
+  Atomic<BckChildQueueStatus> mBackgroundChildQueueFinalState;
   Maybe<ActorDestroyReason> mActorDestroyReason;
 #endif
 
