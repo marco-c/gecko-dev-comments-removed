@@ -23,7 +23,7 @@ PlacesShutdownBlocker::PlacesShutdownBlocker(const nsString& aName)
   
   
   nsCOMPtr<nsIAsyncShutdownService> asyncShutdown =
-      services::GetAsyncShutdown();
+      services::GetAsyncShutdownService();
   MOZ_ASSERT(asyncShutdown);
   if (asyncShutdown) {
     nsCOMPtr<nsIAsyncShutdownBarrier> barrier;

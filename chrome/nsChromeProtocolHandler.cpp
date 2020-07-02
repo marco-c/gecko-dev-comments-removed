@@ -119,8 +119,7 @@ nsChromeProtocolHandler::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
   if (!nsChromeRegistry::gChromeRegistry) {
     
     
-    nsCOMPtr<nsIChromeRegistry> reg =
-        mozilla::services::GetChromeRegistryService();
+    nsCOMPtr<nsIChromeRegistry> reg = mozilla::services::GetChromeRegistry();
     NS_ENSURE_TRUE(nsChromeRegistry::gChromeRegistry, NS_ERROR_FAILURE);
   }
 

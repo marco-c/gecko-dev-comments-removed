@@ -13,11 +13,15 @@ def service(name, iface, contractid):
     services.append((name, iface, contractid))
 
 
-service('ChromeRegistryService', 'nsIChromeRegistry',
+
+
+
+
+service('ChromeRegistry', 'nsIChromeRegistry',
         "@mozilla.org/chrome/chrome-registry;1")
-service('ToolkitChromeRegistryService', 'nsIToolkitChromeRegistry',
+service('ToolkitChromeRegistry', 'nsIToolkitChromeRegistry',
         "@mozilla.org/chrome/chrome-registry;1")
-service('XULChromeRegistryService', 'nsIXULChromeRegistry',
+service('XULChromeRegistry', 'nsIXULChromeRegistry',
         "@mozilla.org/chrome/chrome-registry;1")
 service('DirectoryService', 'nsIProperties',
         "@mozilla.org/file/directory_service;1"),
@@ -29,11 +33,11 @@ service('StringBundleService', 'nsIStringBundleService',
         "@mozilla.org/intl/stringbundle;1")
 service('PermissionManager', 'nsIPermissionManager',
         "@mozilla.org/permissionmanager;1")
-service('PreferencesService', 'nsIPrefService',
+service('PrefService', 'nsIPrefService',
         "@mozilla.org/preferences-service;1")
 service('ServiceWorkerManager', 'nsIServiceWorkerManager',
         "@mozilla.org/serviceworkers/manager;1")
-service('AsyncShutdown', 'nsIAsyncShutdownService',
+service('AsyncShutdownService', 'nsIAsyncShutdownService',
         "@mozilla.org/async-shutdown-service;1")
 service('UUIDGenerator', 'nsIUUIDGenerator',
         "@mozilla.org/uuid-generator;1")
@@ -47,9 +51,9 @@ service('CacheStorageService', 'nsICacheStorageService',
         "@mozilla.org/netwerk/cache-storage-service;1")
 service('URIClassifier', 'nsIURIClassifier',
         "@mozilla.org/uriclassifierservice")
-service('ActivityDistributor', 'nsIHttpActivityDistributor',
+service('HttpActivityDistributor', 'nsIHttpActivityDistributor',
         "@mozilla.org/network/http-activity-distributor;1")
-service('HistoryService', 'mozilla::IHistory',
+service('History', 'mozilla::IHistory',
         "@mozilla.org/browser/history;1")
 service('ThirdPartyUtil', 'mozIThirdPartyUtil',
         "@mozilla.org/thirdpartyutil;1")
@@ -69,7 +73,7 @@ service('Bits', 'nsIBits',
 
 
 
-service('AppInfoService', 'nsIXULRuntime',
+service('XULRuntime', 'nsIXULRuntime',
         "@mozilla.org/xre/app-info;1")
 
 if buildconfig.substs.get('ENABLE_REMOTE_AGENT'):

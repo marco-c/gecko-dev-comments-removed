@@ -221,7 +221,7 @@ nsString MediaStatusManager::GetDefaultFaviconURL() const {
   
   
   
-  nsCOMPtr<nsIChromeRegistry> regService = services::GetChromeRegistryService();
+  nsCOMPtr<nsIChromeRegistry> regService = services::GetChromeRegistry();
   if (!regService) {
     return EmptyString();
   }

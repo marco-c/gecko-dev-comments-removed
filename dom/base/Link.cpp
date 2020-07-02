@@ -140,7 +140,7 @@ EventStates Link::LinkState() const {
     
     
     if (mHistory && hrefURI) {
-      if (nsCOMPtr<IHistory> history = services::GetHistoryService()) {
+      if (nsCOMPtr<IHistory> history = services::GetHistory()) {
         self->mRegistered = true;
         history->RegisterVisitedCallback(hrefURI, self);
         
@@ -552,7 +552,7 @@ void Link::UnregisterFromHistory() {
 
   
   if (mHistory && mCachedURI) {
-    if (nsCOMPtr<IHistory> history = services::GetHistoryService()) {
+    if (nsCOMPtr<IHistory> history = services::GetHistory()) {
       history->UnregisterVisitedCallback(mCachedURI, this);
       mRegistered = false;
     }
