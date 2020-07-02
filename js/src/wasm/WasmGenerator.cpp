@@ -560,8 +560,7 @@ bool ModuleGenerator::linkCallSites() {
           
           Offsets offsets;
           offsets.begin = masm_.currentOffset();
-          masm_.loadPtr(Address(FramePointer, offsetof(Frame, tls)),
-                        WasmTlsReg);
+          masm_.loadPtr(Address(FramePointer, Frame::tlsOffset()), WasmTlsReg);
           CodeOffset jumpOffset = masm_.farJumpWithPatch();
           offsets.end = masm_.currentOffset();
           if (masm_.oom()) {
