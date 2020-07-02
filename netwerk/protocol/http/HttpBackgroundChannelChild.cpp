@@ -132,32 +132,14 @@ bool HttpBackgroundChannelChild::CreateBackgroundChannel() {
   return true;
 }
 
-bool HttpBackgroundChannelChild::IsWaitingOnStartRequest(
-    bool aDataFromSocketProcess) {
+bool HttpBackgroundChannelChild::IsWaitingOnStartRequest() {
   MOZ_ASSERT(OnSocketThread());
 
   
   
-  
-  
-  if (aDataFromSocketProcess) {
-    return !mStartReceived;
-  }
-
-  
-  
-  return (mStartSent && !mStartReceived);
+  return !mStartReceived;
 }
 
-
-IPCResult HttpBackgroundChannelChild::RecvOnStartRequestSent() {
-  LOG(("HttpBackgroundChannelChild::RecvOnStartRequestSent [this=%p]\n", this));
-  MOZ_ASSERT(OnSocketThread());
-  MOZ_ASSERT(!mStartSent);  
-
-  mStartSent = true;
-  return IPC_OK();
-}
 
 IPCResult HttpBackgroundChannelChild::RecvOnStartRequest(
     const nsHttpResponseHead& aResponseHead, const bool& aUseResponseHead,
@@ -170,11 +152,6 @@ IPCResult HttpBackgroundChannelChild::RecvOnStartRequest(
   if (NS_WARN_IF(!mChannelChild)) {
     return IPC_OK();
   }
-
-  
-  
-  
-  RecvOnStartRequestSent();
 
   mChannelChild->ProcessOnStartRequest(aResponseHead, aUseResponseHead,
                                        aRequestHeaders, aArgs);
@@ -208,7 +185,8 @@ IPCResult HttpBackgroundChannelChild::RecvOnTransportAndData(
     return IPC_OK();
   }
 
-  if (IsWaitingOnStartRequest(aDataFromSocketProcess)) {
+  
+  if (IsWaitingOnStartRequest()) {
     LOG(("  > pending until OnStartRequest [offset=%" PRIu64 " count=%" PRIu32
          "]\n",
          aOffset, aCount));
