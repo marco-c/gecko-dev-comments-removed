@@ -482,7 +482,11 @@ def get_raptor_test_list(args, oskey):
         
         
         
-        if args.browsertime and next_test.get('measure') is None:
+        if (
+            args.browsertime
+            and next_test.get("measure") is None
+            and next_test.get("type") == "pageload"
+        ):
             next_test['measure'] = "fnbpaint, fcp, dcf, loadtime"
 
         
