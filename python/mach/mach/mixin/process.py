@@ -116,7 +116,7 @@ class ProcessExecutionMixin(LoggingMixin):
 
         use_env = ensure_subprocess_env(use_env)
         if pass_thru:
-            proc = subprocess.Popen(args, cwd=cwd, env=use_env)
+            proc = subprocess.Popen(args, cwd=cwd, env=use_env, close_fds=False)
             status = None
             
             
