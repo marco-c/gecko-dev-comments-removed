@@ -7,3 +7,5 @@ user_pref("browser.cache.disk.smart_size.enabled", true);
 
 
 user_pref("extensions.webextensions.warnings-as-errors", false);
+
+user_pref("toolkit.telemetry.server", "");
