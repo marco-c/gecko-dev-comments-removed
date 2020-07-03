@@ -14,6 +14,7 @@
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPrefs_security.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ChildProcessChannelListener.h"
@@ -797,15 +798,9 @@ void DocumentLoadListener::Cancel(const nsresult& aStatusCode) {
       ("DocumentLoadListener Cancel [this=%p, "
        "aStatusCode=%" PRIx32 " ]",
        this, static_cast<uint32_t>(aStatusCode)));
-  mCancelled = true;
-
-  if (mDoingProcessSwitch) {
-    
-    
-    
+  if (mOpenPromiseResolved) {
     return;
   }
-
   if (mChannel) {
     mChannel->Cancel(aStatusCode);
   }
@@ -826,12 +821,16 @@ void DocumentLoadListener::DisconnectListeners(nsresult aStatus,
 
   Disconnect();
 
-  
-  
-  
-  
-  
-  mStreamFilterRequests.Clear();
+  if (!aSwitchedProcess) {
+    
+    
+    
+    
+    
+    
+    
+    mStreamFilterRequests.Clear();
+  }
 }
 
 void DocumentLoadListener::RedirectToRealChannelFinished(nsresult aRv) {
@@ -887,11 +886,7 @@ void DocumentLoadListener::FinishReplacementChannelSetup(nsresult aResult) {
       ctx->EndDocumentLoad(false);
     }
   });
-
-  if (mDoingProcessSwitch) {
-    DisconnectListeners(NS_BINDING_ABORTED, NS_BINDING_ABORTED,
-                        NS_SUCCEEDED(aResult));
-  }
+  mStreamFilterRequests.Clear();
 
   nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
       RedirectChannelRegistrar::GetOrCreate();
@@ -1309,8 +1304,8 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
 
   
   nsCOMPtr<nsIPrincipal> currentPrincipal;
-  if (RefPtr<WindowGlobalParent> wgp =
-          browsingContext->GetCurrentWindowGlobal()) {
+  RefPtr<WindowGlobalParent> wgp = browsingContext->GetCurrentWindowGlobal();
+  if (wgp) {
     currentPrincipal = wgp->DocumentPrincipal();
   }
   RefPtr<ContentParent> contentParent = browsingContext->GetContentParent();
@@ -1429,7 +1424,18 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
        NS_ConvertUTF16toUTF8(currentRemoteType).get(),
        NS_ConvertUTF16toUTF8(remoteType).get()));
 
+  
+  
   mDoingProcessSwitch = true;
+  if (wgp) {
+    if (RefPtr<BrowserParent> browserParent = wgp->GetBrowserParent()) {
+      
+      
+      
+      browserParent->SuspendProgressEventsUntilAfterNextLoadStarts();
+    }
+  }
+  DisconnectListeners(NS_BINDING_ABORTED, NS_BINDING_ABORTED, true);
 
   LOG(("Process Switch: Calling ChangeRemoteness"));
   browsingContext
