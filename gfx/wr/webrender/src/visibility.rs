@@ -420,42 +420,6 @@ pub fn update_primitive_visibility(
                     );
 
                 
-                
-                
-                let mut vis_flags = PrimitiveVisibilityFlags::empty();
-
-                if let Some(ref mut tile_cache) = frame_state.tile_cache {
-                    
-                    
-                    
-                    match tile_cache.update_prim_dependencies(
-                        prim_instance,
-                        cluster.spatial_node_index,
-                        clip_chain.as_ref(),
-                        prim_local_rect,
-                        frame_context,
-                        frame_state.data_stores,
-                        frame_state.clip_store,
-                        &store.pictures,
-                        frame_state.resource_cache,
-                        &store.color_bindings,
-                        &frame_state.surface_stack,
-                        &mut frame_state.composite_state,
-                    ) {
-                        Some(flags) => {
-                            vis_flags = flags;
-                        }
-                        None => {
-                            prim_instance.visibility_info = PrimitiveVisibilityIndex::INVALID;
-                            
-                            
-                            frame_state.clip_chain_stack.pop_clip();
-                            continue;
-                        }
-                    }
-                }
-
-                
                 frame_state.clip_chain_stack.pop_clip();
 
                 let clip_chain = match clip_chain {
@@ -524,6 +488,41 @@ pub fn update_primitive_visibility(
                         }
                         prim_instance.visibility_info = PrimitiveVisibilityIndex::INVALID;
                         continue;
+                    }
+                }
+
+                
+                
+                
+                let mut vis_flags = PrimitiveVisibilityFlags::empty();
+
+                if let Some(ref mut tile_cache) = frame_state.tile_cache {
+                    
+                    
+                    
+                    match tile_cache.update_prim_dependencies(
+                        prim_instance,
+                        cluster.spatial_node_index,
+                        &clip_chain,
+                        prim_local_rect,
+                        frame_context,
+                        frame_state.data_stores,
+                        frame_state.clip_store,
+                        &store.pictures,
+                        frame_state.resource_cache,
+                        &store.color_bindings,
+                        &frame_state.surface_stack,
+                        &mut frame_state.composite_state,
+                    ) {
+                        Some(flags) => {
+                            vis_flags = flags;
+                        }
+                        None => {
+                            prim_instance.visibility_info = PrimitiveVisibilityIndex::INVALID;
+                            
+                            
+                            continue;
+                        }
                     }
                 }
 
