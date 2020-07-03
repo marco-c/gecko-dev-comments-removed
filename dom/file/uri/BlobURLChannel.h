@@ -22,14 +22,6 @@ class BlobURLChannel final : public nsBaseChannel {
  public:
   BlobURLChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo);
 
-  
-  
-  void InitFailed();
-
-  
-  
-  void Initialize();
-
  private:
   ~BlobURLChannel();
 
@@ -38,12 +30,7 @@ class BlobURLChannel final : public nsBaseChannel {
 
   void OnChannelDone() override;
 
-  
-  nsCOMPtr<nsIInputStream> mInputStream;
-
-  
-  
-  bool mInitialized;
+  bool mContentStreamOpened;
 };
 
 }  
