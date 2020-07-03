@@ -984,8 +984,9 @@ function makeDReportMap(aJSONReports) {
 
     
     
+    
     path = path.replace(
-      /^(explicit\/window-objects\/top\(.*, id=)\d+\)/,
+      /^((?:explicit|event-counts)\/window-objects\/top\(.*, id=)\d+\)/,
       "$1NNN)"
     );
 
