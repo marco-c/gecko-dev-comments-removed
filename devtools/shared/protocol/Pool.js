@@ -116,16 +116,11 @@ class Pool extends EventEmitter {
   }
 
   
-  actor(actorID) {
-    if (this.__poolMap) {
-      return this._poolMap.get(actorID);
-    }
-    return null;
-  }
 
-  
-  
-  get(actorID) {
+
+
+
+  getActorByID(actorID) {
     if (this.__poolMap) {
       return this._poolMap.get(actorID);
     }

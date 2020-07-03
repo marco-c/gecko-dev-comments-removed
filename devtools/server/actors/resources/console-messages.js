@@ -280,7 +280,7 @@ function getConsoleTableMessageItems(targetActor, result) {
   const needEntries = ["Map", "WeakMap", "Set", "WeakSet"].includes(dataType);
   const ignoreNonIndexedProperties = isArray(tableItemGrip);
 
-  const tableItemActor = targetActor.actor(tableItemGrip.actor);
+  const tableItemActor = targetActor.getActorByID(tableItemGrip.actor);
   if (!tableItemActor) {
     return null;
   }
@@ -304,7 +304,7 @@ function getConsoleTableMessageItems(targetActor, result) {
           const grip = desc[key];
 
           
-          const actor = grip && targetActor.actor(grip.actor);
+          const actor = grip && targetActor.getActorByID(grip.actor);
           if (actor) {
             const res = actor
               .enumProperties({

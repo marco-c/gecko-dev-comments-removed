@@ -2080,7 +2080,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     const needEntries = ["Map", "WeakMap", "Set", "WeakSet"].includes(dataType);
     const ignoreNonIndexedProperties = isArray(tableItemGrip);
 
-    const tableItemActor = this.actor(tableItemGrip.actor);
+    const tableItemActor = this.getActorByID(tableItemGrip.actor);
     if (!tableItemActor) {
       return null;
     }
@@ -2104,7 +2104,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
             const grip = desc[key];
 
             
-            const actor = grip && this.actor(grip.actor);
+            const actor = grip && this.getActorByID(grip.actor);
             if (actor) {
               const res = actor
                 .enumProperties({

@@ -16,7 +16,6 @@ const {
   rawCropString,
   sanitizeString,
   wrapRender,
-  isGrip,
   ELLIPSIS,
   uneatLastUrlCharsRegex,
   urlRegex,
@@ -357,11 +356,17 @@ function isLongString(object) {
 }
 
 function supportsObject(object, noGrip = false) {
-  if (noGrip === false && isGrip(object)) {
+  
+  if (getGripType(object, noGrip) == "string") {
+    return true;
+  }
+
+  
+  if (!noGrip) {
     return isLongString(object);
   }
 
-  return getGripType(object, noGrip) == "string";
+  return false;
 }
 
 

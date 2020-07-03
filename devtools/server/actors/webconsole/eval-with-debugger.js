@@ -538,8 +538,8 @@ function getDbgWindow(options, dbg, webConsole) {
   
   
   const actor =
-    webConsole.actor(options.selectedObjectActor) ||
-    webConsole.parentActor.actor(options.selectedObjectActor);
+    webConsole.getActorByID(options.selectedObjectActor) ||
+    webConsole.parentActor.getActorByID(options.selectedObjectActor);
 
   if (!actor) {
     return { bindSelf: null, dbgWindow };

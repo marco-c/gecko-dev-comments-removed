@@ -25,7 +25,7 @@ function LazyPool(conn) {
 
 LazyPool.prototype = extend(Pool.prototype, {
   
-  actor: function(actorID) {
+  getActorByID: function(actorID) {
     if (this.__poolMap) {
       const entry = this._poolMap.get(actorID);
       if (entry instanceof LazyActor) {
@@ -34,12 +34,6 @@ LazyPool.prototype = extend(Pool.prototype, {
       return entry;
     }
     return null;
-  },
-
-  
-  
-  get: function(actorID) {
-    return this.actor(actorID);
   },
 });
 
