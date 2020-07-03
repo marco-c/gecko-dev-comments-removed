@@ -230,7 +230,6 @@ js::Nursery::Nursery(GCRuntime* gc)
       canAllocateBigInts_(true),
       reportTenurings_(0),
       minorGCTriggerReason_(JS::GCReason::NO_REASON),
-      smoothedGrowthFactor(1.0),
       decommitTask(gc)
 #ifdef JS_GC_ZEAL
       ,
@@ -320,7 +319,8 @@ bool js::Nursery::initFirstChunk(AutoLockGCBgAlloc& lock) {
   setStartPosition();
   poisonAndInitCurrentChunk();
 
-  smoothedGrowthFactor = 1.0;
+  
+  smoothedGrowthFactor.reset();
 
   return true;
 }
@@ -1534,7 +1534,7 @@ static inline double ClampDouble(double value, double min, double max) {
 size_t js::Nursery::targetSize(JS::GCReason reason) {
   
   if (gc::IsOOMReason(reason) || gc->systemHasLowMemory()) {
-    smoothedGrowthFactor = 1.0;
+    smoothedGrowthFactor.reset();
     return 0;
   }
 
@@ -1562,21 +1562,23 @@ size_t js::Nursery::targetSize(JS::GCReason reason) {
 
   
   
-  smoothedGrowthFactor = 0.75 * smoothedGrowthFactor + 0.25 * growthFactor;
+  if (smoothedGrowthFactor) {
+    growthFactor = 0.75 * smoothedGrowthFactor.value() + 0.25 * growthFactor;
+  }
+  smoothedGrowthFactor = mozilla::Some(growthFactor);
 
   
   static const double GoalWidth = 1.5;
-  if (smoothedGrowthFactor > (1.0 / GoalWidth) &&
-      smoothedGrowthFactor < GoalWidth) {
+  if (growthFactor > (1.0 / GoalWidth) && growthFactor < GoalWidth) {
     return capacity();
   }
 
   
   
-  MOZ_ASSERT(smoothedGrowthFactor <= 2.0);
+  MOZ_ASSERT(growthFactor <= 2.0);
   MOZ_ASSERT(capacity() < SIZE_MAX / 2);
 
-  return roundSize(size_t(double(capacity()) * smoothedGrowthFactor));
+  return roundSize(size_t(double(capacity()) * growthFactor));
 }
 
 

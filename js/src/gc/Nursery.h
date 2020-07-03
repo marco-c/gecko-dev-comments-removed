@@ -9,6 +9,7 @@
 #define gc_Nursery_h
 
 #include "mozilla/EnumeratedArray.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
 
 #include "gc/GCParallelTask.h"
@@ -514,7 +515,7 @@ class Nursery {
   };
   PreviousGC previousGC;
 
-  double smoothedGrowthFactor;
+  mozilla::Maybe<double> smoothedGrowthFactor;
 
   
   
