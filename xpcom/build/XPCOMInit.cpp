@@ -462,7 +462,7 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
   
   mozilla::SharedThreadPool::InitStatics();
 
-  mozilla::scache::StartupCache::GetSingleton();
+  mozilla::scache::StartupCache::FullyInitSingleton();
   mozilla::AvailableMemoryTracker::Init();
 
   

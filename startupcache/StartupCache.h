@@ -171,6 +171,17 @@ class StartupCache : public nsIMemoryReporter {
 
   static StartupCache* GetSingletonNoInit();
   static StartupCache* GetSingleton();
+
+  
+  
+  
+  static nsresult PartialInitSingleton(nsIFile* aProfileLocalDir);
+
+  
+  
+  
+  static nsresult FullyInitSingleton();
+
   static void DeleteSingleton();
 
   
@@ -189,7 +200,8 @@ class StartupCache : public nsIMemoryReporter {
   friend class StartupCacheInfo;
 
   Result<Ok, nsresult> LoadArchive();
-  nsresult Init();
+  nsresult PartialInit(nsIFile* aProfileLocalDir);
+  nsresult FullyInit();
 
   
   
@@ -204,7 +216,6 @@ class StartupCache : public nsIMemoryReporter {
   void WaitOnPrefetchThread();
   void StartPrefetchMemoryThread();
 
-  static nsresult InitSingleton();
   static void WriteTimeout(nsITimer* aTimer, void* aClosure);
   void MaybeWriteOffMainThread();
   static void ThreadedPrefetch(void* aClosure);
