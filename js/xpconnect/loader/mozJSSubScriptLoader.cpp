@@ -24,7 +24,6 @@
 
 #include "mozilla/ContentPrincipal.h"
 #include "mozilla/dom/ScriptLoader.h"
-#include "mozilla/Omnijar.h"
 #include "mozilla/ScriptPreloader.h"
 #include "mozilla/SystemPrincipal.h"
 #include "mozilla/scache/StartupCache.h"
@@ -251,10 +250,6 @@ bool mozJSSubScriptLoader::ReadScript(JS::MutableHandle<JSScript*> script,
                                       bool useCompilationScope) {
   
   
-  AutoSuspendStartupCacheWrites suspendScache;
-
-  
-  
   nsCOMPtr<nsIChannel> chan;
   nsCOMPtr<nsIInputStream> instream;
   nsresult rv;
@@ -455,15 +450,7 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
   bool ignoreCache =
       options.ignoreCache || !isSystem || scheme.EqualsLiteral("blob");
 
-  
-  
-  
-  
-  
-  
-  StartupCache* cache = (ignoreCache || !XRE_IsParentProcess())
-                            ? nullptr
-                            : StartupCache::GetSingleton();
+  StartupCache* cache = ignoreCache ? nullptr : StartupCache::GetSingleton();
 
   nsAutoCString cachePath;
   SubscriptCachePath(cx, uri, targetObj, cachePath);
