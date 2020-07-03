@@ -9014,6 +9014,18 @@ Result<UsageInfo, nsresult> QuotaClient::InitOrigin(
       break;
     }
 
+    bool isDirectory;
+    rv = file->IsDirectory(&isDirectory);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      REPORT_TELEMETRY_INIT_ERR(kQuotaExternalError, LS_IsDirectory4);
+      return Err(rv);
+    }
+
+    if (isDirectory) {
+      Unused << WARN_IF_FILE_IS_UNKNOWN(*file);
+      continue;
+    }
+
     nsString leafName;
     rv = file->GetLeafName(leafName);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -9021,25 +9033,11 @@ Result<UsageInfo, nsresult> QuotaClient::InitOrigin(
       return Err(rv);
     }
 
-    
-    
     if (leafName.EqualsLiteral(DATA_FILE_NAME) ||
-        leafName.EqualsLiteral(USAGE_FILE_NAME)) {
-      
+        leafName.EqualsLiteral(JOURNAL_FILE_NAME) ||
+        leafName.EqualsLiteral(USAGE_FILE_NAME) ||
+        leafName.EqualsLiteral(USAGE_JOURNAL_FILE_NAME)) {
       continue;
-    }
-
-    if (leafName.EqualsLiteral(JOURNAL_FILE_NAME)) {
-      bool isDirectory;
-      rv = file->IsDirectory(&isDirectory);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        REPORT_TELEMETRY_INIT_ERR(kQuotaExternalError, LS_IsDirectory4);
-        return Err(rv);
-      }
-
-      if (!isDirectory) {
-        continue;
-      }
     }
 
     Unused << WARN_IF_FILE_IS_UNKNOWN(*file);
