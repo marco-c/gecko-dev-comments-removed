@@ -123,8 +123,9 @@ requireHacker.global_hook("default", (path, module) => {
       ),
 
     chrome: () =>
-      `module.exports = { Cc: {}, Ci: {}, Cu: {}, components: {stack: {caller: ""}} }`,
-    ChromeUtils: () => `module.exports = { import: () => ({}) }`,
+      `module.exports = { Cc: {}, Ci: {}, Cu: { now: () => {}}, components: {stack: {caller: ""}} }`,
+    ChromeUtils: () =>
+      `module.exports = { addProfilerMarker: () => {}, import: () => ({}) }`,
     
     
     "devtools/shared/l10n": () =>
