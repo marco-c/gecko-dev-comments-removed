@@ -1648,6 +1648,10 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
       CASES_FOR_getegid:
         return Allow();
 
+      
+      case __NR_uname:
+        return Allow();
+
       default:
         return SandboxPolicyCommon::EvaluateSyscall(sysno);
     }
