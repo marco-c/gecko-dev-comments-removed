@@ -296,7 +296,7 @@ transforms = TransformSequence()
 
 test_description_schema = Schema({
     
-    'description': text_type,
+    Required('description'): text_type,
 
     
     Optional('suite'): Any(
@@ -319,7 +319,7 @@ test_description_schema = Schema({
 
     
     
-    'treeherder-symbol': text_type,
+    Required('treeherder-symbol'): text_type,
 
     
     
@@ -535,20 +535,20 @@ test_description_schema = Schema({
     
 
     
-    'build-platform': text_type,
+    Required('build-platform'): text_type,
 
     
-    'build-label': text_type,
+    Required('build-label'): text_type,
 
     
     
     Optional('build-signing-label'): text_type,
 
     
-    'build-attributes': {text_type: object},
+    Required('build-attributes'): {text_type: object},
 
     
-    'test-platform': text_type,
+    Required('test-platform'): text_type,
 
     
     
@@ -558,23 +558,23 @@ test_description_schema = Schema({
     ),
 
     
-    'test-name': text_type,
+    Required('test-name'): text_type,
 
     
     Optional('product'): text_type,
 
     
-    Exclusive(Optional('when'), 'optimization'): {
+    Exclusive('when', 'optimization'): {
         Optional('files-changed'): [text_type],
     },
 
     
     
-    Exclusive(Optional('optimization'), 'optimization'): OptimizationSchema,
+    Exclusive('optimization', 'optimization'): OptimizationSchema,
 
     
     
-    Exclusive(Optional('schedules-component'), 'optimization'): Any(
+    Exclusive('schedules-component', 'optimization'): Any(
         text_type,
         [text_type],
     ),
@@ -595,14 +595,14 @@ test_description_schema = Schema({
     
     Optional('target'): optionally_keyed_by(
         'test-platform',
-        Any(text_type, None, {'index': text_type, 'name': text_type}),
+        Any(text_type, None, {Required('index'): text_type, Required('name'): text_type}),
     ),
 
     
     Optional('fetches'): {
         text_type: optionally_keyed_by('test-platform', [text_type])
     },
-}, required=True)
+})
 
 
 @transforms.add
