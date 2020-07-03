@@ -13,6 +13,8 @@
 
 
 
+use crate::{FuncType, TypeDef};
+
 
 
 
@@ -24,6 +26,12 @@ pub trait WasmType: PartialEq<crate::Type> + PartialEq + Eq {
     
     
     fn to_parser_type(&self) -> crate::Type;
+}
+
+pub trait WasmTypeDef {
+    type FuncType: WasmFuncType;
+
+    fn as_func(&self) -> Option<&Self::FuncType>;
 }
 
 
@@ -277,7 +285,7 @@ pub trait WasmGlobalType {
 
 pub trait WasmModuleResources {
     
-    type FuncType: WasmFuncType;
+    type TypeDef: WasmTypeDef;
     
     type TableType: WasmTableType;
     
@@ -286,7 +294,7 @@ pub trait WasmModuleResources {
     type GlobalType: WasmGlobalType;
 
     
-    fn type_at(&self, at: u32) -> Option<&Self::FuncType>;
+    fn type_at(&self, at: u32) -> Option<&Self::TypeDef>;
     
     fn table_at(&self, at: u32) -> Option<&Self::TableType>;
     
@@ -294,7 +302,7 @@ pub trait WasmModuleResources {
     
     fn global_at(&self, at: u32) -> Option<&Self::GlobalType>;
     
-    fn func_type_id_at(&self, at: u32) -> Option<u32>;
+    fn func_type_at(&self, at: u32) -> Option<&<Self::TypeDef as WasmTypeDef>::FuncType>;
     
     fn element_type_at(&self, at: u32) -> Option<crate::Type>;
 
@@ -311,12 +319,12 @@ impl<T> WasmModuleResources for &'_ T
 where
     T: ?Sized + WasmModuleResources,
 {
-    type FuncType = T::FuncType;
+    type TypeDef = T::TypeDef;
     type TableType = T::TableType;
     type MemoryType = T::MemoryType;
     type GlobalType = T::GlobalType;
 
-    fn type_at(&self, at: u32) -> Option<&Self::FuncType> {
+    fn type_at(&self, at: u32) -> Option<&Self::TypeDef> {
         T::type_at(self, at)
     }
     fn table_at(&self, at: u32) -> Option<&Self::TableType> {
@@ -328,8 +336,8 @@ where
     fn global_at(&self, at: u32) -> Option<&Self::GlobalType> {
         T::global_at(self, at)
     }
-    fn func_type_id_at(&self, at: u32) -> Option<u32> {
-        T::func_type_id_at(self, at)
+    fn func_type_at(&self, at: u32) -> Option<&<T::TypeDef as WasmTypeDef>::FuncType> {
+        T::func_type_at(self, at)
     }
     fn element_type_at(&self, at: u32) -> Option<crate::Type> {
         T::element_type_at(self, at)
@@ -349,6 +357,17 @@ where
 impl WasmType for crate::Type {
     fn to_parser_type(&self) -> crate::Type {
         *self
+    }
+}
+
+impl<'a> WasmTypeDef for TypeDef<'a> {
+    type FuncType = FuncType;
+
+    fn as_func(&self) -> Option<&Self::FuncType> {
+        match self {
+            TypeDef::Func(f) => Some(f),
+            _ => None,
+        }
     }
 }
 

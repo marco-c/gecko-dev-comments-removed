@@ -202,7 +202,7 @@ pub struct FuncTranslationState {
     heaps: HashMap<MemoryIndex, ir::Heap>,
 
     
-    tables: HashMap<TableIndex, ir::Table>,
+    pub(crate) tables: HashMap<TableIndex, ir::Table>,
 
     
     
@@ -446,7 +446,7 @@ impl FuncTranslationState {
 
     
     
-    pub(crate) fn get_table<FE: FuncEnvironment + ?Sized>(
+    pub(crate) fn get_or_create_table<FE: FuncEnvironment + ?Sized>(
         &mut self,
         func: &mut ir::Function,
         index: u32,

@@ -105,6 +105,10 @@ pub static CVTSS2SD: [u8; 3] = [0xf3, 0x0f, 0x5a];
 
 
 
+pub static CVTTPS2DQ: [u8; 3] = [0xf3, 0x0f, 0x5b];
+
+
+
 pub static CVTTSD2SI: [u8; 3] = [0xf2, 0x0f, 0x2c];
 
 
@@ -298,6 +302,17 @@ pub static OR_IMM8_SIGN_EXTEND: [u8; 1] = [0x83];
 
 
 pub static ORPS: [u8; 2] = [0x0f, 0x56];
+
+
+pub static PABSB: [u8; 4] = [0x66, 0x0f, 0x38, 0x1c];
+
+
+
+pub static PABSD: [u8; 4] = [0x66, 0x0f, 0x38, 0x1e];
+
+
+
+pub static PABSW: [u8; 4] = [0x66, 0x0f, 0x38, 0x1d];
 
 
 

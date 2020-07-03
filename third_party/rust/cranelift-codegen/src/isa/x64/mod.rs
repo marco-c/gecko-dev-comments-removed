@@ -40,7 +40,7 @@ impl X64Backend {
     fn compile_vcode(&self, func: &Function, flags: Flags) -> CodegenResult<VCode<inst::Inst>> {
         
         
-        let abi = Box::new(abi::X64ABIBody::new(&func, flags));
+        let abi = Box::new(abi::X64ABIBody::new(&func, flags)?);
         compile::compile::<Self>(&func, self, abi)
     }
 }

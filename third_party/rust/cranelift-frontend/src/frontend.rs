@@ -207,6 +207,11 @@ impl<'a> FunctionBuilder<'a> {
     }
 
     
+    pub fn current_block(&self) -> Option<Block> {
+        self.position.expand()
+    }
+
+    
     pub fn set_srcloc(&mut self, srcloc: ir::SourceLoc) {
         self.srcloc = srcloc;
     }
@@ -221,6 +226,11 @@ impl<'a> FunctionBuilder<'a> {
             user_param_count: 0,
         };
         block
+    }
+
+    
+    pub fn insert_block_after(&mut self, block: Block, after: Block) {
+        self.func.layout.insert_block_after(block, after);
     }
 
     

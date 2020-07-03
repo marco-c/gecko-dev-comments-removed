@@ -1,12 +1,15 @@
-use crate::isa::x64::inst::*;
+use log::debug;
 use regalloc::Reg;
 
-fn low8willSXto64(x: u32) -> bool {
+use crate::binemit::Reloc;
+use crate::isa::x64::inst::*;
+
+fn low8_will_sign_extend_to_64(x: u32) -> bool {
     let xs = (x as i32) as i64;
     xs == ((xs << 56) >> 56)
 }
 
-fn low8willSXto32(x: u32) -> bool {
+fn low8_will_sign_extend_to_32(x: u32) -> bool {
     let xs = x as i32;
     xs == ((xs << 24) >> 24)
 }
@@ -21,49 +24,116 @@ fn low8willSXto32(x: u32) -> bool {
 
 
 #[inline(always)]
-fn mkModRegRM(m0d: u8, encRegG: u8, rmE: u8) -> u8 {
+fn encode_modrm(m0d: u8, enc_reg_g: u8, rm_e: u8) -> u8 {
     debug_assert!(m0d < 4);
-    debug_assert!(encRegG < 8);
-    debug_assert!(rmE < 8);
-    ((m0d & 3) << 6) | ((encRegG & 7) << 3) | (rmE & 7)
+    debug_assert!(enc_reg_g < 8);
+    debug_assert!(rm_e < 8);
+    ((m0d & 3) << 6) | ((enc_reg_g & 7) << 3) | (rm_e & 7)
 }
 
 #[inline(always)]
-fn mkSIB(shift: u8, encIndex: u8, encBase: u8) -> u8 {
+fn encode_sib(shift: u8, enc_index: u8, enc_base: u8) -> u8 {
     debug_assert!(shift < 4);
-    debug_assert!(encIndex < 8);
-    debug_assert!(encBase < 8);
-    ((shift & 3) << 6) | ((encIndex & 7) << 3) | (encBase & 7)
+    debug_assert!(enc_index < 8);
+    debug_assert!(enc_base < 8);
+    ((shift & 3) << 6) | ((enc_index & 7) << 3) | (enc_base & 7)
 }
 
 
+#[inline(always)]
+fn int_reg_enc(reg: Reg) -> u8 {
+    debug_assert!(reg.is_real());
+    debug_assert_eq!(reg.get_class(), RegClass::I64);
+    reg.get_hw_encoding()
+}
+
 
 #[inline(always)]
-fn iregEnc(reg: Reg) -> u8 {
+fn reg_enc(reg: Reg) -> u8 {
     debug_assert!(reg.is_real());
     reg.get_hw_encoding()
 }
 
 
 
-const F_NONE: u32 = 0;
 
+#[repr(transparent)]
+#[derive(Clone, Copy)]
+struct RexFlags(u8);
 
-const F_RETAIN_REDUNDANT_REX: u32 = 1;
+impl RexFlags {
+    
+    #[inline(always)]
+    fn set_w() -> Self {
+        Self(0)
+    }
+    
+    #[inline(always)]
+    fn clear_w() -> Self {
+        Self(1)
+    }
 
+    #[inline(always)]
+    fn always_emit(&mut self) -> &mut Self {
+        self.0 = self.0 | 2;
+        self
+    }
 
+    #[inline(always)]
+    fn must_clear_w(&self) -> bool {
+        (self.0 & 1) != 0
+    }
+    #[inline(always)]
+    fn must_always_emit(&self) -> bool {
+        (self.0 & 2) != 0
+    }
 
-const F_CLEAR_REX_W: u32 = 2;
+    #[inline(always)]
+    fn emit_two_op(&self, sink: &mut MachBuffer<Inst>, enc_g: u8, enc_e: u8) {
+        let w = if self.must_clear_w() { 0 } else { 1 };
+        let r = (enc_g >> 3) & 1;
+        let x = 0;
+        let b = (enc_e >> 3) & 1;
+        let rex = 0x40 | (w << 3) | (r << 2) | (x << 1) | b;
+        if rex != 0x40 || self.must_always_emit() {
+            sink.put1(rex);
+        }
+    }
+
+    #[inline(always)]
+    fn emit_three_op(&self, sink: &mut MachBuffer<Inst>, enc_g: u8, enc_index: u8, enc_base: u8) {
+        let w = if self.must_clear_w() { 0 } else { 1 };
+        let r = (enc_g >> 3) & 1;
+        let x = (enc_index >> 3) & 1;
+        let b = (enc_base >> 3) & 1;
+        let rex = 0x40 | (w << 3) | (r << 2) | (x << 1) | b;
+        if rex != 0x40 || self.must_always_emit() {
+            sink.put1(rex);
+        }
+    }
+}
 
 
 
 
 
 enum LegacyPrefix {
-    PfxNone,
-    Pfx66,
-    PfxF2,
-    PfxF3,
+    None,
+    _66,
+    _F2,
+    _F3,
+}
+
+impl LegacyPrefix {
+    #[inline(always)]
+    fn emit(&self, sink: &mut MachBuffer<Inst>) {
+        match self {
+            LegacyPrefix::_66 => sink.put1(0x66),
+            LegacyPrefix::_F2 => sink.put1(0xF2),
+            LegacyPrefix::_F3 => sink.put1(0xF3),
+            LegacyPrefix::None => (),
+        }
+    }
 }
 
 
@@ -84,116 +154,112 @@ enum LegacyPrefix {
 
 
 
-fn emit_REX_OPCODES_MODRM_SIB_IMM_encG_memE(
+
+
+
+
+
+
+
+fn emit_std_enc_mem(
     sink: &mut MachBuffer<Inst>,
     prefix: LegacyPrefix,
     opcodes: u32,
-    mut numOpcodes: usize,
-    encG: u8,
-    memE: &Addr,
-    flags: u32,
+    mut num_opcodes: usize,
+    enc_g: u8,
+    mem_e: &Amode,
+    rex: RexFlags,
 ) {
     
     
     
-    let clearRexW = (flags & F_CLEAR_REX_W) != 0;
-    let retainRedundant = (flags & F_RETAIN_REDUNDANT_REX) != 0;
 
-    
-    match prefix {
-        LegacyPrefix::Pfx66 => sink.put1(0x66),
-        LegacyPrefix::PfxF2 => sink.put1(0xF2),
-        LegacyPrefix::PfxF3 => sink.put1(0xF3),
-        LegacyPrefix::PfxNone => (),
-    }
-    match memE {
-        Addr::IR { simm32, base: regE } => {
+    prefix.emit(sink);
+
+    match mem_e {
+        Amode::ImmReg { simm32, base } => {
             
-            let encE = iregEnc(*regE);
-            let w = if clearRexW { 0 } else { 1 };
-            let r = (encG >> 3) & 1;
-            let x = 0;
-            let b = (encE >> 3) & 1;
-            let rex = 0x40 | (w << 3) | (r << 2) | (x << 1) | b;
-            if rex != 0x40 || retainRedundant {
-                sink.put1(rex);
+            let enc_e = int_reg_enc(*base);
+            rex.emit_two_op(sink, enc_g, enc_e);
+
+            
+            
+            while num_opcodes > 0 {
+                num_opcodes -= 1;
+                sink.put1(((opcodes >> (num_opcodes << 3)) & 0xFF) as u8);
             }
-            
-            
-            while numOpcodes > 0 {
-                numOpcodes -= 1;
-                sink.put1(((opcodes >> (numOpcodes << 3)) & 0xFF) as u8);
-            }
+
             
             
             if *simm32 == 0
-                && encE != regs::ENC_RSP
-                && encE != regs::ENC_RBP
-                && encE != regs::ENC_R12
-                && encE != regs::ENC_R13
+                && enc_e != regs::ENC_RSP
+                && enc_e != regs::ENC_RBP
+                && enc_e != regs::ENC_R12
+                && enc_e != regs::ENC_R13
             {
                 
                 
                 
-                sink.put1(mkModRegRM(0, encG & 7, encE & 7));
-            } else if *simm32 == 0 && (encE == regs::ENC_RSP || encE == regs::ENC_R12) {
-                sink.put1(mkModRegRM(0, encG & 7, 4));
+                sink.put1(encode_modrm(0, enc_g & 7, enc_e & 7));
+            } else if *simm32 == 0 && (enc_e == regs::ENC_RSP || enc_e == regs::ENC_R12) {
+                sink.put1(encode_modrm(0, enc_g & 7, 4));
                 sink.put1(0x24);
-            } else if low8willSXto32(*simm32) && encE != regs::ENC_RSP && encE != regs::ENC_R12 {
-                sink.put1(mkModRegRM(1, encG & 7, encE & 7));
+            } else if low8_will_sign_extend_to_32(*simm32)
+                && enc_e != regs::ENC_RSP
+                && enc_e != regs::ENC_R12
+            {
+                sink.put1(encode_modrm(1, enc_g & 7, enc_e & 7));
                 sink.put1((simm32 & 0xFF) as u8);
-            } else if encE != regs::ENC_RSP && encE != regs::ENC_R12 {
-                sink.put1(mkModRegRM(2, encG & 7, encE & 7));
+            } else if enc_e != regs::ENC_RSP && enc_e != regs::ENC_R12 {
+                sink.put1(encode_modrm(2, enc_g & 7, enc_e & 7));
                 sink.put4(*simm32);
-            } else if (encE == regs::ENC_RSP || encE == regs::ENC_R12) && low8willSXto32(*simm32) {
+            } else if (enc_e == regs::ENC_RSP || enc_e == regs::ENC_R12)
+                && low8_will_sign_extend_to_32(*simm32)
+            {
                 
-                sink.put1(mkModRegRM(1, encG & 7, 4));
+                sink.put1(encode_modrm(1, enc_g & 7, 4));
                 sink.put1(0x24);
                 sink.put1((simm32 & 0xFF) as u8);
-            } else if encE == regs::ENC_R12 || encE == regs::ENC_RSP {
+            } else if enc_e == regs::ENC_R12 || enc_e == regs::ENC_RSP {
                 
                 
-                sink.put1(mkModRegRM(2, encG & 7, 4));
+                sink.put1(encode_modrm(2, enc_g & 7, 4));
                 sink.put1(0x24);
                 sink.put4(*simm32);
             } else {
-                unreachable!("emit_REX_OPCODES_MODRM_SIB_IMM_encG_memE: IR");
+                unreachable!("ImmReg");
             }
         }
-        
-        Addr::IRRS {
+
+        Amode::ImmRegRegShift {
             simm32,
-            base: regBase,
-            index: regIndex,
+            base: reg_base,
+            index: reg_index,
             shift,
         } => {
-            let encBase = iregEnc(*regBase);
-            let encIndex = iregEnc(*regIndex);
+            let enc_base = int_reg_enc(*reg_base);
+            let enc_index = int_reg_enc(*reg_index);
+
             
-            let w = if clearRexW { 0 } else { 1 };
-            let r = (encG >> 3) & 1;
-            let x = (encIndex >> 3) & 1;
-            let b = (encBase >> 3) & 1;
-            let rex = 0x40 | (w << 3) | (r << 2) | (x << 1) | b;
-            if rex != 0x40 || retainRedundant {
-                sink.put1(rex);
+            rex.emit_three_op(sink, enc_g, enc_index, enc_base);
+
+            
+            while num_opcodes > 0 {
+                num_opcodes -= 1;
+                sink.put1(((opcodes >> (num_opcodes << 3)) & 0xFF) as u8);
             }
+
             
-            while numOpcodes > 0 {
-                numOpcodes -= 1;
-                sink.put1(((opcodes >> (numOpcodes << 3)) & 0xFF) as u8);
-            }
-            
-            if low8willSXto32(*simm32) && encIndex != regs::ENC_RSP {
-                sink.put1(mkModRegRM(1, encG & 7, 4));
-                sink.put1(mkSIB(*shift, encIndex & 7, encBase & 7));
+            if low8_will_sign_extend_to_32(*simm32) && enc_index != regs::ENC_RSP {
+                sink.put1(encode_modrm(1, enc_g & 7, 4));
+                sink.put1(encode_sib(*shift, enc_index & 7, enc_base & 7));
                 sink.put1(*simm32 as u8);
-            } else if encIndex != regs::ENC_RSP {
-                sink.put1(mkModRegRM(2, encG & 7, 4));
-                sink.put1(mkSIB(*shift, encIndex & 7, encBase & 7));
+            } else if enc_index != regs::ENC_RSP {
+                sink.put1(encode_modrm(2, enc_g & 7, 4));
+                sink.put1(encode_sib(*shift, enc_index & 7, enc_base & 7));
                 sink.put4(*simm32);
             } else {
-                panic!("emit_REX_OPCODES_MODRM_SIB_IMM_encG_memE: IRRS");
+                panic!("ImmRegRegShift");
             }
         }
     }
@@ -203,84 +269,65 @@ fn emit_REX_OPCODES_MODRM_SIB_IMM_encG_memE(
 
 
 
-
-
-
-fn emit_REX_OPCODES_MODRM_encG_encE(
+fn emit_std_enc_enc(
     sink: &mut MachBuffer<Inst>,
     prefix: LegacyPrefix,
     opcodes: u32,
-    mut numOpcodes: usize,
-    encG: u8,
-    encE: u8,
-    flags: u32,
+    mut num_opcodes: usize,
+    enc_g: u8,
+    enc_e: u8,
+    rex: RexFlags,
 ) {
     
     
     
     
-    let clearRexW = (flags & F_CLEAR_REX_W) != 0;
-    let retainRedundant = (flags & F_RETAIN_REDUNDANT_REX) != 0;
 
     
-    match prefix {
-        LegacyPrefix::Pfx66 => sink.put1(0x66),
-        LegacyPrefix::PfxF2 => sink.put1(0xF2),
-        LegacyPrefix::PfxF3 => sink.put1(0xF3),
-        LegacyPrefix::PfxNone => (),
+    prefix.emit(sink);
+
+    
+    rex.emit_two_op(sink, enc_g, enc_e);
+
+    
+    while num_opcodes > 0 {
+        num_opcodes -= 1;
+        sink.put1(((opcodes >> (num_opcodes << 3)) & 0xFF) as u8);
     }
 
     
-    let w = if clearRexW { 0 } else { 1 };
-    let r = (encG >> 3) & 1;
-    let x = 0;
-    let b = (encE >> 3) & 1;
-    let rex = 0x40 | (w << 3) | (r << 2) | (x << 1) | b;
-
-    if rex != 0x40 || retainRedundant {
-        sink.put1(rex);
-    }
-
     
-    while numOpcodes > 0 {
-        numOpcodes -= 1;
-        sink.put1(((opcodes >> (numOpcodes << 3)) & 0xFF) as u8);
-    }
-    
-    
-    sink.put1(mkModRegRM(3, encG & 7, encE & 7));
+    sink.put1(encode_modrm(3, enc_g & 7, enc_e & 7));
 }
 
 
 
 
-fn emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
+fn emit_std_reg_mem(
     sink: &mut MachBuffer<Inst>,
     prefix: LegacyPrefix,
     opcodes: u32,
-    numOpcodes: usize,
-    regG: Reg,
-    memE: &Addr,
-    flags: u32,
+    num_opcodes: usize,
+    reg_g: Reg,
+    mem_e: &Amode,
+    rex: RexFlags,
 ) {
-    
-    let encG = iregEnc(regG);
-    emit_REX_OPCODES_MODRM_SIB_IMM_encG_memE(sink, prefix, opcodes, numOpcodes, encG, memE, flags);
+    let enc_g = reg_enc(reg_g);
+    emit_std_enc_mem(sink, prefix, opcodes, num_opcodes, enc_g, mem_e, rex);
 }
 
-fn emit_REX_OPCODES_MODRM_regG_regE(
+fn emit_std_reg_reg(
     sink: &mut MachBuffer<Inst>,
     prefix: LegacyPrefix,
     opcodes: u32,
-    numOpcodes: usize,
-    regG: Reg,
-    regE: Reg,
-    flags: u32,
+    num_opcodes: usize,
+    reg_g: Reg,
+    reg_e: Reg,
+    rex: RexFlags,
 ) {
-    
-    let encG = iregEnc(regG);
-    let encE = iregEnc(regE);
-    emit_REX_OPCODES_MODRM_encG_encE(sink, prefix, opcodes, numOpcodes, encG, encE, flags);
+    let enc_g = reg_enc(reg_g);
+    let enc_e = reg_enc(reg_e);
+    emit_std_enc_enc(sink, prefix, opcodes, num_opcodes, enc_g, enc_e, rex);
 }
 
 
@@ -289,7 +336,7 @@ fn emit_simm(sink: &mut MachBuffer<Inst>, size: u8, simm32: u32) {
         8 | 4 => sink.put4(simm32),
         2 => sink.put2(simm32 as u16),
         1 => sink.put1(simm32 as u8),
-        _ => panic!("x64::Inst::emit_simm: unreachable"),
+        _ => unreachable!(),
     }
 }
 
@@ -345,168 +392,165 @@ fn emit_simm(sink: &mut MachBuffer<Inst>, size: u8, simm32: u32) {
 
 
 
-pub(crate) fn emit(inst: &Inst, sink: &mut MachBuffer<Inst>) {
+pub(crate) fn emit(
+    inst: &Inst,
+    sink: &mut MachBuffer<Inst>,
+    _flags: &settings::Flags,
+    state: &mut EmitState,
+) {
     match inst {
-        Inst::Nop { len: 0 } => {}
         Inst::Alu_RMI_R {
             is_64,
             op,
-            src: srcE,
-            dst: regG,
+            src,
+            dst: reg_g,
         } => {
-            let flags = if *is_64 { F_NONE } else { F_CLEAR_REX_W };
-            if *op == RMI_R_Op::Mul {
+            let rex = if *is_64 {
+                RexFlags::set_w()
+            } else {
+                RexFlags::clear_w()
+            };
+
+            if *op == AluRmiROpcode::Mul {
                 
                 
-                match srcE {
-                    RMI::R { reg: regE } => {
-                        emit_REX_OPCODES_MODRM_regG_regE(
+                match src {
+                    RegMemImm::Reg { reg: reg_e } => {
+                        emit_std_reg_reg(
                             sink,
-                            LegacyPrefix::PfxNone,
+                            LegacyPrefix::None,
                             0x0FAF,
                             2,
-                            regG.to_reg(),
-                            *regE,
-                            flags,
+                            reg_g.to_reg(),
+                            *reg_e,
+                            rex,
                         );
                     }
-                    RMI::M { addr } => {
-                        emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
+
+                    RegMemImm::Mem { addr } => {
+                        emit_std_reg_mem(
                             sink,
-                            LegacyPrefix::PfxNone,
+                            LegacyPrefix::None,
                             0x0FAF,
                             2,
-                            regG.to_reg(),
-                            addr,
-                            flags,
+                            reg_g.to_reg(),
+                            &addr.finalize(state),
+                            rex,
                         );
                     }
-                    RMI::I { simm32 } => {
-                        let useImm8 = low8willSXto32(*simm32);
+
+                    RegMemImm::Imm { simm32 } => {
+                        let useImm8 = low8_will_sign_extend_to_32(*simm32);
                         let opcode = if useImm8 { 0x6B } else { 0x69 };
                         
-                        emit_REX_OPCODES_MODRM_regG_regE(
+                        emit_std_reg_reg(
                             sink,
-                            LegacyPrefix::PfxNone,
+                            LegacyPrefix::None,
                             opcode,
                             1,
-                            regG.to_reg(),
-                            regG.to_reg(),
-                            flags,
+                            reg_g.to_reg(),
+                            reg_g.to_reg(),
+                            rex,
                         );
                         emit_simm(sink, if useImm8 { 1 } else { 4 }, *simm32);
                     }
                 }
             } else {
-                let (opcode_R, opcode_M, subopcode_I) = match op {
-                    RMI_R_Op::Add => (0x01, 0x03, 0),
-                    RMI_R_Op::Sub => (0x29, 0x2B, 5),
-                    RMI_R_Op::And => (0x21, 0x23, 4),
-                    RMI_R_Op::Or => (0x09, 0x0B, 1),
-                    RMI_R_Op::Xor => (0x31, 0x33, 6),
-                    RMI_R_Op::Mul => panic!("unreachable"),
+                let (opcode_r, opcode_m, subopcode_i) = match op {
+                    AluRmiROpcode::Add => (0x01, 0x03, 0),
+                    AluRmiROpcode::Sub => (0x29, 0x2B, 5),
+                    AluRmiROpcode::And => (0x21, 0x23, 4),
+                    AluRmiROpcode::Or => (0x09, 0x0B, 1),
+                    AluRmiROpcode::Xor => (0x31, 0x33, 6),
+                    AluRmiROpcode::Mul => panic!("unreachable"),
                 };
-                match srcE {
-                    RMI::R { reg: regE } => {
+
+                match src {
+                    RegMemImm::Reg { reg: reg_e } => {
                         
                         
                         
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        emit_REX_OPCODES_MODRM_regG_regE(
+                        emit_std_reg_reg(
                             sink,
-                            LegacyPrefix::PfxNone,
-                            opcode_R,
+                            LegacyPrefix::None,
+                            opcode_r,
                             1,
-                            *regE,
-                            regG.to_reg(),
-                            flags,
+                            *reg_e,
+                            reg_g.to_reg(),
+                            rex,
                         );
                         
                         
                     }
-                    RMI::M { addr } => {
+
+                    RegMemImm::Mem { addr } => {
                         
-                        emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
+                        emit_std_reg_mem(
                             sink,
-                            LegacyPrefix::PfxNone,
-                            opcode_M,
+                            LegacyPrefix::None,
+                            opcode_m,
                             1,
-                            regG.to_reg(),
-                            addr,
-                            flags,
+                            reg_g.to_reg(),
+                            &addr.finalize(state),
+                            rex,
                         );
                     }
-                    RMI::I { simm32 } => {
-                        let useImm8 = low8willSXto32(*simm32);
-                        let opcode = if useImm8 { 0x83 } else { 0x81 };
+
+                    RegMemImm::Imm { simm32 } => {
+                        let use_imm8 = low8_will_sign_extend_to_32(*simm32);
+                        let opcode = if use_imm8 { 0x83 } else { 0x81 };
                         
-                        let encG = iregEnc(regG.to_reg());
-                        emit_REX_OPCODES_MODRM_encG_encE(
+                        let enc_g = int_reg_enc(reg_g.to_reg());
+                        emit_std_enc_enc(
                             sink,
-                            LegacyPrefix::PfxNone,
+                            LegacyPrefix::None,
                             opcode,
                             1,
-                            subopcode_I,
-                            encG,
-                            flags,
+                            subopcode_i,
+                            enc_g,
+                            rex,
                         );
-                        emit_simm(sink, if useImm8 { 1 } else { 4 }, *simm32);
+                        emit_simm(sink, if use_imm8 { 1 } else { 4 }, *simm32);
                     }
                 }
             }
         }
+
         Inst::Imm_R {
             dst_is_64,
             simm64,
             dst,
         } => {
-            let encDst = iregEnc(dst.to_reg());
+            let enc_dst = int_reg_enc(dst.to_reg());
             if *dst_is_64 {
                 
                 
-                sink.put1(0x48 | ((encDst >> 3) & 1));
-                sink.put1(0xB8 | (encDst & 7));
+                sink.put1(0x48 | ((enc_dst >> 3) & 1));
+                sink.put1(0xB8 | (enc_dst & 7));
                 sink.put8(*simm64);
             } else {
-                if ((encDst >> 3) & 1) == 1 {
+                if ((enc_dst >> 3) & 1) == 1 {
                     sink.put1(0x41);
                 }
-                sink.put1(0xB8 | (encDst & 7));
+                sink.put1(0xB8 | (enc_dst & 7));
                 sink.put4(*simm64 as u32);
             }
         }
+
         Inst::Mov_R_R { is_64, src, dst } => {
-            let flags = if *is_64 { F_NONE } else { F_CLEAR_REX_W };
-            emit_REX_OPCODES_MODRM_regG_regE(
-                sink,
-                LegacyPrefix::PfxNone,
-                0x89,
-                1,
-                *src,
-                dst.to_reg(),
-                flags,
-            );
+            let rex = if *is_64 {
+                RexFlags::set_w()
+            } else {
+                RexFlags::clear_w()
+            };
+            emit_std_reg_reg(sink, LegacyPrefix::None, 0x89, 1, *src, dst.to_reg(), rex);
         }
-        Inst::MovZX_M_R { extMode, addr, dst } => {
-            match extMode {
+
+        Inst::MovZX_RM_R { ext_mode, src, dst } => {
+            let (opcodes, num_opcodes, rex_flags) = match ext_mode {
                 ExtMode::BL => {
                     
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
-                        sink,
-                        LegacyPrefix::PfxNone,
-                        0x0FB6,
-                        2,
-                        dst.to_reg(),
-                        addr,
-                        F_CLEAR_REX_W,
-                    )
+                    (0x0FB6, 2, RexFlags::clear_w())
                 }
                 ExtMode::BQ => {
                     
@@ -514,324 +558,323 @@ pub(crate) fn emit(inst: &Inst, sink: &mut MachBuffer<Inst>) {
                     
                     
                     
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
-                        sink,
-                        LegacyPrefix::PfxNone,
-                        0x0FB6,
-                        2,
-                        dst.to_reg(),
-                        addr,
-                        F_NONE,
-                    )
+                    (0x0FB6, 2, RexFlags::set_w())
                 }
                 ExtMode::WL => {
                     
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
-                        sink,
-                        LegacyPrefix::PfxNone,
-                        0x0FB7,
-                        2,
-                        dst.to_reg(),
-                        addr,
-                        F_CLEAR_REX_W,
-                    )
+                    (0x0FB7, 2, RexFlags::clear_w())
                 }
                 ExtMode::WQ => {
                     
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
-                        sink,
-                        LegacyPrefix::PfxNone,
-                        0x0FB7,
-                        2,
-                        dst.to_reg(),
-                        addr,
-                        F_NONE,
-                    )
+                    (0x0FB7, 2, RexFlags::set_w())
                 }
                 ExtMode::LQ => {
                     
                     
                     
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
-                        sink,
-                        LegacyPrefix::PfxNone,
-                        0x8B,
-                        1,
-                        dst.to_reg(),
-                        addr,
-                        F_CLEAR_REX_W,
-                    )
+                    
+                    
+                    (0x8B, 1, RexFlags::clear_w())
                 }
+            };
+
+            match src {
+                RegMem::Reg { reg: src } => emit_std_reg_reg(
+                    sink,
+                    LegacyPrefix::None,
+                    opcodes,
+                    num_opcodes,
+                    dst.to_reg(),
+                    *src,
+                    rex_flags,
+                ),
+                RegMem::Mem { addr: src } => emit_std_reg_mem(
+                    sink,
+                    LegacyPrefix::None,
+                    opcodes,
+                    num_opcodes,
+                    dst.to_reg(),
+                    &src.finalize(state),
+                    rex_flags,
+                ),
             }
         }
-        Inst::Mov64_M_R { addr, dst } => emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
+
+        Inst::Mov64_M_R { src, dst } => emit_std_reg_mem(
             sink,
-            LegacyPrefix::PfxNone,
+            LegacyPrefix::None,
             0x8B,
             1,
             dst.to_reg(),
-            addr,
-            F_NONE,
+            &src.finalize(state),
+            RexFlags::set_w(),
         ),
-        Inst::MovSX_M_R { extMode, addr, dst } => {
-            match extMode {
+
+        Inst::LoadEffectiveAddress { addr, dst } => emit_std_reg_mem(
+            sink,
+            LegacyPrefix::None,
+            0x8D,
+            1,
+            dst.to_reg(),
+            &addr.finalize(state),
+            RexFlags::set_w(),
+        ),
+
+        Inst::MovSX_RM_R { ext_mode, src, dst } => {
+            let (opcodes, num_opcodes, rex_flags) = match ext_mode {
                 ExtMode::BL => {
                     
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
-                        sink,
-                        LegacyPrefix::PfxNone,
-                        0x0FBE,
-                        2,
-                        dst.to_reg(),
-                        addr,
-                        F_CLEAR_REX_W,
-                    )
+                    (0x0FBE, 2, RexFlags::clear_w())
                 }
                 ExtMode::BQ => {
                     
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
-                        sink,
-                        LegacyPrefix::PfxNone,
-                        0x0FBE,
-                        2,
-                        dst.to_reg(),
-                        addr,
-                        F_NONE,
-                    )
+                    (0x0FBE, 2, RexFlags::set_w())
                 }
                 ExtMode::WL => {
                     
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
-                        sink,
-                        LegacyPrefix::PfxNone,
-                        0x0FBF,
-                        2,
-                        dst.to_reg(),
-                        addr,
-                        F_CLEAR_REX_W,
-                    )
+                    (0x0FBF, 2, RexFlags::clear_w())
                 }
                 ExtMode::WQ => {
                     
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
-                        sink,
-                        LegacyPrefix::PfxNone,
-                        0x0FBF,
-                        2,
-                        dst.to_reg(),
-                        addr,
-                        F_NONE,
-                    )
+                    (0x0FBF, 2, RexFlags::set_w())
                 }
                 ExtMode::LQ => {
                     
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
-                        sink,
-                        LegacyPrefix::PfxNone,
-                        0x63,
-                        1,
-                        dst.to_reg(),
-                        addr,
-                        F_NONE,
-                    )
+                    (0x63, 1, RexFlags::set_w())
                 }
+            };
+
+            match src {
+                RegMem::Reg { reg: src } => emit_std_reg_reg(
+                    sink,
+                    LegacyPrefix::None,
+                    opcodes,
+                    num_opcodes,
+                    dst.to_reg(),
+                    *src,
+                    rex_flags,
+                ),
+                RegMem::Mem { addr: src } => emit_std_reg_mem(
+                    sink,
+                    LegacyPrefix::None,
+                    opcodes,
+                    num_opcodes,
+                    dst.to_reg(),
+                    &src.finalize(state),
+                    rex_flags,
+                ),
             }
         }
-        Inst::Mov_R_M { size, src, addr } => {
+
+        Inst::Mov_R_M { size, src, dst } => {
+            let dst = &dst.finalize(state);
+
             match size {
                 1 => {
                     
                     
                     
-                    let encSrc = iregEnc(*src);
-                    let retainRedundantRex = if encSrc >= 4 && encSrc <= 7 {
-                        F_RETAIN_REDUNDANT_REX
-                    } else {
-                        0
+                    let mut rex = RexFlags::clear_w();
+
+                    let enc_src = int_reg_enc(*src);
+                    if enc_src >= 4 && enc_src <= 7 {
+                        rex.always_emit();
                     };
+
                     
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
-                        sink,
-                        LegacyPrefix::PfxNone,
-                        0x88,
-                        1,
-                        *src,
-                        addr,
-                        F_CLEAR_REX_W | retainRedundantRex,
-                    )
+                    emit_std_reg_mem(sink, LegacyPrefix::None, 0x88, 1, *src, dst, rex)
                 }
+
                 2 => {
                     
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
+                    emit_std_reg_mem(
                         sink,
-                        LegacyPrefix::Pfx66,
+                        LegacyPrefix::_66,
                         0x89,
                         1,
                         *src,
-                        addr,
-                        F_CLEAR_REX_W,
+                        dst,
+                        RexFlags::clear_w(),
                     )
                 }
+
                 4 => {
                     
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
+                    emit_std_reg_mem(
                         sink,
-                        LegacyPrefix::PfxNone,
+                        LegacyPrefix::None,
                         0x89,
                         1,
                         *src,
-                        addr,
-                        F_CLEAR_REX_W,
+                        dst,
+                        RexFlags::clear_w(),
                     )
                 }
+
                 8 => {
                     
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
+                    emit_std_reg_mem(
                         sink,
-                        LegacyPrefix::PfxNone,
+                        LegacyPrefix::None,
                         0x89,
                         1,
                         *src,
-                        addr,
-                        F_NONE,
+                        dst,
+                        RexFlags::set_w(),
                     )
                 }
+
                 _ => panic!("x64::Inst::Mov_R_M::emit: unreachable"),
             }
         }
+
         Inst::Shift_R {
             is_64,
             kind,
             num_bits,
             dst,
         } => {
-            let encDst = iregEnc(dst.to_reg());
+            let enc_dst = int_reg_enc(dst.to_reg());
             let subopcode = match kind {
                 ShiftKind::Left => 4,
                 ShiftKind::RightZ => 5,
                 ShiftKind::RightS => 7,
             };
+
+            let rex = if *is_64 {
+                RexFlags::set_w()
+            } else {
+                RexFlags::clear_w()
+            };
+
             match num_bits {
                 None => {
                     
                     
-                    emit_REX_OPCODES_MODRM_encG_encE(
-                        sink,
-                        LegacyPrefix::PfxNone,
-                        0xD3,
-                        1,
-                        subopcode,
-                        encDst,
-                        if *is_64 { F_NONE } else { F_CLEAR_REX_W },
-                    );
+                    emit_std_enc_enc(sink, LegacyPrefix::None, 0xD3, 1, subopcode, enc_dst, rex);
                 }
+
                 Some(num_bits) => {
                     
                     
                     
                     
-                    emit_REX_OPCODES_MODRM_encG_encE(
-                        sink,
-                        LegacyPrefix::PfxNone,
-                        0xC1,
-                        1,
-                        subopcode,
-                        encDst,
-                        if *is_64 { F_NONE } else { F_CLEAR_REX_W },
-                    );
+                    emit_std_enc_enc(sink, LegacyPrefix::None, 0xC1, 1, subopcode, enc_dst, rex);
                     sink.put1(*num_bits);
                 }
             }
         }
+
         Inst::Cmp_RMI_R {
             size,
-            src: srcE,
-            dst: regG,
+            src: src_e,
+            dst: reg_g,
         } => {
-            let mut retainRedundantRex = 0;
-            let mut prefix = LegacyPrefix::PfxNone;
-            if *size == 1 {
-                
-                
-                let encG = iregEnc(*regG);
-                if encG >= 4 && encG <= 7 {
-                    retainRedundantRex = F_RETAIN_REDUNDANT_REX;
-                }
-            }
+            let mut prefix = LegacyPrefix::None;
             if *size == 2 {
-                prefix = LegacyPrefix::Pfx66;
+                prefix = LegacyPrefix::_66;
             }
-            let mut flags = match size {
-                8 => F_NONE,
-                4 | 2 => F_CLEAR_REX_W,
-                1 => F_CLEAR_REX_W | retainRedundantRex,
+
+            let mut rex = match size {
+                8 => RexFlags::set_w(),
+                4 | 2 => RexFlags::clear_w(),
+                1 => {
+                    let mut rex = RexFlags::clear_w();
+                    
+                    let enc_g = int_reg_enc(*reg_g);
+                    if enc_g >= 4 && enc_g <= 7 {
+                        rex.always_emit();
+                    }
+                    rex
+                }
                 _ => panic!("x64::Inst::Cmp_RMI_R::emit: unreachable"),
             };
-            match srcE {
-                RMI::R { reg: regE } => {
-                    let opcode = if *size == 1 { 0x38 } else { 0x39 };
+
+            match src_e {
+                RegMemImm::Reg { reg: reg_e } => {
                     if *size == 1 {
                         
-                        
-                        let encE = iregEnc(*regE);
-                        if encE >= 4 && encE <= 7 {
-                            flags |= F_RETAIN_REDUNDANT_REX;
+                        let enc_e = int_reg_enc(*reg_e);
+                        if enc_e >= 4 && enc_e <= 7 {
+                            rex.always_emit();
                         }
                     }
+
                     
-                    emit_REX_OPCODES_MODRM_regG_regE(sink, prefix, opcode, 1, *regE, *regG, flags);
+                    
+                    let opcode = if *size == 1 { 0x38 } else { 0x39 };
+                    emit_std_reg_reg(sink, prefix, opcode, 1, *reg_e, *reg_g, rex);
                 }
-                RMI::M { addr } => {
+
+                RegMemImm::Mem { addr } => {
+                    let addr = &addr.finalize(state);
+                    
                     let opcode = if *size == 1 { 0x3A } else { 0x3B };
-                    
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
-                        sink, prefix, opcode, 1, *regG, addr, flags,
-                    );
+                    emit_std_reg_mem(sink, prefix, opcode, 1, *reg_g, addr, rex);
                 }
-                RMI::I { simm32 } => {
+
+                RegMemImm::Imm { simm32 } => {
                     
                     
-                    let useImm8 = low8willSXto32(*simm32);
+                    let use_imm8 = low8_will_sign_extend_to_32(*simm32);
+
+                    
                     let opcode = if *size == 1 {
                         0x80
-                    } else if useImm8 {
+                    } else if use_imm8 {
                         0x83
                     } else {
                         0x81
                     };
-                    
-                    let encG = iregEnc(*regG);
-                    emit_REX_OPCODES_MODRM_encG_encE(
-                        sink, prefix, opcode, 1, 7, 
-                        encG, flags,
-                    );
-                    emit_simm(sink, if useImm8 { 1 } else { *size }, *simm32);
+
+                    let enc_g = int_reg_enc(*reg_g);
+                    emit_std_enc_enc(sink, prefix, opcode, 1, 7 , enc_g, rex);
+                    emit_simm(sink, if use_imm8 { 1 } else { *size }, *simm32);
                 }
             }
         }
+
+        Inst::Setcc { cc, dst } => {
+            let opcode = 0x0f90 + cc.get_enc() as u32;
+            let mut rex_flags = RexFlags::clear_w();
+            rex_flags.always_emit();
+            emit_std_enc_enc(
+                sink,
+                LegacyPrefix::None,
+                opcode,
+                2,
+                0,
+                reg_enc(dst.to_reg()),
+                rex_flags,
+            );
+        }
+
         Inst::Push64 { src } => {
             match src {
-                RMI::R { reg } => {
-                    let encReg = iregEnc(*reg);
-                    let rex = 0x40 | ((encReg >> 3) & 1);
+                RegMemImm::Reg { reg } => {
+                    let enc_reg = int_reg_enc(*reg);
+                    let rex = 0x40 | ((enc_reg >> 3) & 1);
                     if rex != 0x40 {
                         sink.put1(rex);
                     }
-                    sink.put1(0x50 | (encReg & 7));
+                    sink.put1(0x50 | (enc_reg & 7));
                 }
-                RMI::M { addr } => {
-                    emit_REX_OPCODES_MODRM_SIB_IMM_encG_memE(
+
+                RegMemImm::Mem { addr } => {
+                    let addr = &addr.finalize(state);
+                    emit_std_enc_mem(
                         sink,
-                        LegacyPrefix::PfxNone,
+                        LegacyPrefix::None,
                         0xFF,
                         1,
                         6, 
                         addr,
-                        F_CLEAR_REX_W,
+                        RexFlags::clear_w(),
                     );
                 }
-                RMI::I { simm32 } => {
-                    if low8willSXto64(*simm32) {
+
+                RegMemImm::Imm { simm32 } => {
+                    if low8_will_sign_extend_to_64(*simm32) {
                         sink.put1(0x6A);
                         sink.put1(*simm32 as u8);
                     } else {
@@ -841,8 +884,9 @@ pub(crate) fn emit(inst: &Inst, sink: &mut MachBuffer<Inst>) {
                 }
             }
         }
+
         Inst::Pop64 { dst } => {
-            let encDst = iregEnc(dst.to_reg());
+            let encDst = int_reg_enc(dst.to_reg());
             if encDst >= 8 {
                 
                 
@@ -850,168 +894,226 @@ pub(crate) fn emit(inst: &Inst, sink: &mut MachBuffer<Inst>) {
             }
             sink.put1(0x58 + (encDst & 7));
         }
-        
-        
-        
-        Inst::CallUnknown { dest } => {
+
+        Inst::CallKnown {
+            dest, loc, opcode, ..
+        } => {
+            sink.put1(0xE8);
+            
+            
+            sink.add_reloc(*loc, Reloc::X86CallPCRel4, &dest, -4);
+            sink.put4(0);
+            if opcode.is_call() {
+                sink.add_call_site(*loc, *opcode);
+            }
+        }
+
+        Inst::CallUnknown {
+            dest, opcode, loc, ..
+        } => {
             match dest {
-                RM::R { reg } => {
-                    let regEnc = iregEnc(*reg);
-                    emit_REX_OPCODES_MODRM_encG_encE(
+                RegMem::Reg { reg } => {
+                    let reg_enc = int_reg_enc(*reg);
+                    emit_std_enc_enc(
                         sink,
-                        LegacyPrefix::PfxNone,
+                        LegacyPrefix::None,
                         0xFF,
                         1,
                         2, 
-                        regEnc,
-                        F_CLEAR_REX_W,
+                        reg_enc,
+                        RexFlags::clear_w(),
                     );
                 }
-                RM::M { addr } => {
-                    emit_REX_OPCODES_MODRM_SIB_IMM_encG_memE(
+
+                RegMem::Mem { addr } => {
+                    let addr = &addr.finalize(state);
+                    emit_std_enc_mem(
                         sink,
-                        LegacyPrefix::PfxNone,
+                        LegacyPrefix::None,
                         0xFF,
                         1,
                         2, 
                         addr,
-                        F_CLEAR_REX_W,
+                        RexFlags::clear_w(),
                     );
                 }
             }
+            if opcode.is_call() {
+                sink.add_call_site(*loc, *opcode);
+            }
         }
+
         Inst::Ret {} => sink.put1(0xC3),
 
-        Inst::JmpKnown { dest } => {
-            let disp = dest.as_offset32_or_zero() - 5;
-            let disp = disp as u32;
+        Inst::JmpKnown { dst } => {
             let br_start = sink.cur_offset();
             let br_disp_off = br_start + 1;
             let br_end = br_start + 5;
-            if let Some(l) = dest.as_label() {
-                sink.use_label_at_offset(br_disp_off, l, LabelUse::Rel32);
+            if let Some(l) = dst.as_label() {
+                sink.use_label_at_offset(br_disp_off, l, LabelUse::JmpRel32);
                 sink.add_uncond_branch(br_start, br_end, l);
             }
+
+            let disp = dst.as_offset32_or_zero();
+            let disp = disp as u32;
             sink.put1(0xE9);
             sink.put4(disp);
         }
-        Inst::JmpCondSymm {
+
+        Inst::JmpCond {
             cc,
             taken,
             not_taken,
         } => {
             
-
-            
-            
-            
-            
-            let taken_disp = taken.as_offset32_or_zero() - 6;
-            let taken_disp = taken_disp as u32;
             let cond_start = sink.cur_offset();
             let cond_disp_off = cond_start + 2;
             let cond_end = cond_start + 6;
             if let Some(l) = taken.as_label() {
-                sink.use_label_at_offset(cond_disp_off, l, LabelUse::Rel32);
+                sink.use_label_at_offset(cond_disp_off, l, LabelUse::JmpRel32);
                 let inverted: [u8; 6] =
-                    [0x0F, 0x80 + (cc.invert().get_enc()), 0xFA, 0xFF, 0xFF, 0xFF];
+                    [0x0F, 0x80 + (cc.invert().get_enc()), 0x00, 0x00, 0x00, 0x00];
                 sink.add_cond_branch(cond_start, cond_end, l, &inverted[..]);
             }
+
+            let taken_disp = taken.as_offset32_or_zero();
+            let taken_disp = taken_disp as u32;
             sink.put1(0x0F);
             sink.put1(0x80 + cc.get_enc());
             sink.put4(taken_disp);
 
             
-
-            let nt_disp = not_taken.as_offset32_or_zero() - 5;
-            let nt_disp = nt_disp as u32;
             let uncond_start = sink.cur_offset();
             let uncond_disp_off = uncond_start + 1;
             let uncond_end = uncond_start + 5;
             if let Some(l) = not_taken.as_label() {
-                sink.use_label_at_offset(uncond_disp_off, l, LabelUse::Rel32);
+                sink.use_label_at_offset(uncond_disp_off, l, LabelUse::JmpRel32);
                 sink.add_uncond_branch(uncond_start, uncond_end, l);
             }
+
+            let nt_disp = not_taken.as_offset32_or_zero();
+            let nt_disp = nt_disp as u32;
             sink.put1(0xE9);
             sink.put4(nt_disp);
         }
+
         Inst::JmpUnknown { target } => {
             match target {
-                RM::R { reg } => {
-                    let regEnc = iregEnc(*reg);
-                    emit_REX_OPCODES_MODRM_encG_encE(
+                RegMem::Reg { reg } => {
+                    let reg_enc = int_reg_enc(*reg);
+                    emit_std_enc_enc(
                         sink,
-                        LegacyPrefix::PfxNone,
+                        LegacyPrefix::None,
                         0xFF,
                         1,
                         4, 
-                        regEnc,
-                        F_CLEAR_REX_W,
+                        reg_enc,
+                        RexFlags::clear_w(),
                     );
                 }
-                RM::M { addr } => {
-                    emit_REX_OPCODES_MODRM_SIB_IMM_encG_memE(
+
+                RegMem::Mem { addr } => {
+                    let addr = &addr.finalize(state);
+                    emit_std_enc_mem(
                         sink,
-                        LegacyPrefix::PfxNone,
+                        LegacyPrefix::None,
                         0xFF,
                         1,
                         4, 
                         addr,
-                        F_CLEAR_REX_W,
+                        RexFlags::clear_w(),
                     );
                 }
             }
         }
-        Inst::XMM_R_R { op, src, dst } => {
-            let flags = F_CLEAR_REX_W;
-            let opcode = match op {
-                SSE_Op::SSE_Movss => 0x0F10,
-                SSE_Op::SSE2_Movsd => 0x0F10,
-                _ => unimplemented!("XMM_R_R opcode"),
+
+        Inst::XMM_Mov_RM_R {
+            op,
+            src: src_e,
+            dst: reg_g,
+        } => {
+            let rex = RexFlags::clear_w();
+            let (prefix, opcode) = match op {
+                SseOpcode::Movaps => (LegacyPrefix::None, 0x0F28),
+                SseOpcode::Movd => (LegacyPrefix::_66, 0x0F6E),
+                SseOpcode::Movsd => (LegacyPrefix::_F2, 0x0F10),
+                SseOpcode::Movss => (LegacyPrefix::_F3, 0x0F10),
+                _ => unimplemented!("Opcode {:?} not implemented", op),
             };
-            let prefix = match op {
-                SSE_Op::SSE_Movss => LegacyPrefix::PfxF3,
-                SSE_Op::SSE2_Movsd => LegacyPrefix::PfxF2,
-                _ => unimplemented!("XMM_R_R opcode"),
-            };
-            emit_REX_OPCODES_MODRM_regG_regE(sink, prefix, opcode, 2, dst.to_reg(), *src, flags);
+
+            match src_e {
+                RegMem::Reg { reg: reg_e } => {
+                    emit_std_reg_reg(sink, prefix, opcode, 2, reg_g.to_reg(), *reg_e, rex);
+                }
+
+                RegMem::Mem { addr } => {
+                    let addr = &addr.finalize(state);
+                    emit_std_reg_mem(sink, prefix, opcode, 2, reg_g.to_reg(), addr, rex);
+                }
+            }
         }
+
         Inst::XMM_RM_R {
             op,
-            src: srcE,
-            dst: regG,
+            src: src_e,
+            dst: reg_g,
         } => {
-            let flags = F_CLEAR_REX_W;
-            let opcode = match op {
-                SSE_Op::SSE_Addss => 0x0F58,
-                SSE_Op::SSE_Subss => 0x0F5C,
-                _ => unimplemented!("XMM_RM_R opcode"),
+            let rex = RexFlags::clear_w();
+            let (prefix, opcode) = match op {
+                SseOpcode::Addss => (LegacyPrefix::_F3, 0x0F58),
+                SseOpcode::Andps => (LegacyPrefix::None, 0x0F54),
+                SseOpcode::Andnps => (LegacyPrefix::None, 0x0F55),
+                SseOpcode::Divss => (LegacyPrefix::_F3, 0x0F5E),
+                SseOpcode::Mulss => (LegacyPrefix::_F3, 0x0F59),
+                SseOpcode::Orps => (LegacyPrefix::None, 0x0F56),
+                SseOpcode::Subss => (LegacyPrefix::_F3, 0x0F5C),
+                SseOpcode::Sqrtss => (LegacyPrefix::_F3, 0x0F51),
+                _ => unimplemented!("Opcode {:?} not implemented", op),
             };
-            match srcE {
-                RM::R { reg: regE } => {
-                    emit_REX_OPCODES_MODRM_regG_regE(
-                        sink,
-                        LegacyPrefix::PfxF3,
-                        opcode,
-                        2,
-                        regG.to_reg(),
-                        *regE,
-                        flags,
-                    );
+
+            match src_e {
+                RegMem::Reg { reg: reg_e } => {
+                    emit_std_reg_reg(sink, prefix, opcode, 2, reg_g.to_reg(), *reg_e, rex);
                 }
-                RM::M { addr } => {
-                    emit_REX_OPCODES_MODRM_SIB_IMM_regG_memE(
-                        sink,
-                        LegacyPrefix::PfxF3,
-                        opcode,
-                        2,
-                        regG.to_reg(),
-                        addr,
-                        flags,
-                    );
+
+                RegMem::Mem { addr } => {
+                    let addr = &addr.finalize(state);
+                    emit_std_reg_mem(sink, prefix, opcode, 2, reg_g.to_reg(), addr, rex);
                 }
             }
         }
-        _ => panic!("x64_emit: unhandled: {} ", inst.show_rru(None)),
+        Inst::XMM_Mov_R_M { op, src, dst } => {
+            let rex = RexFlags::clear_w();
+            let (prefix, opcode) = match op {
+                SseOpcode::Movd => (LegacyPrefix::_66, 0x0F7E),
+                SseOpcode::Movss => (LegacyPrefix::_F3, 0x0F11),
+                _ => unimplemented!("Emit xmm mov r m"),
+            };
+
+            let dst = &dst.finalize(state);
+            emit_std_reg_mem(sink, prefix, opcode, 2, *src, dst, rex);
+        }
+        Inst::Hlt => {
+            sink.put1(0xcc);
+        }
+
+        Inst::Ud2 { trap_info } => {
+            sink.add_trap(trap_info.0, trap_info.1);
+            sink.put1(0x0f);
+            sink.put1(0x0b);
+        }
+
+        Inst::VirtualSPOffsetAdj { offset } => {
+            debug!(
+                "virtual sp offset adjusted by {} -> {}",
+                offset,
+                state.virtual_sp_offset + offset
+            );
+            state.virtual_sp_offset += offset;
+        }
+
+        Inst::Nop { .. } | Inst::EpiloguePlaceholder => {
+            
+        }
     }
 }

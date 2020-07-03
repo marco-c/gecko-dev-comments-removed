@@ -14,7 +14,7 @@ use crate::ir::Inst as IRInst;
 use crate::ir::{InstructionData, Opcode, TrapCode, Type};
 use crate::machinst::lower::*;
 use crate::machinst::*;
-use crate::CodegenResult;
+use crate::{CodegenError, CodegenResult};
 
 use crate::isa::aarch64::inst::*;
 use crate::isa::aarch64::AArch64Backend;
@@ -193,7 +193,7 @@ impl NarrowValueMode {
 }
 
 
-pub(crate) fn output_to_reg<C: LowerCtx<I = Inst>>(ctx: &mut C, out: InsnOutput) -> Writable<Reg> {
+pub(crate) fn get_output_reg<C: LowerCtx<I = Inst>>(ctx: &mut C, out: InsnOutput) -> Writable<Reg> {
     ctx.get_output(out.insn, out.output)
 }
 
@@ -202,12 +202,12 @@ pub(crate) fn output_to_reg<C: LowerCtx<I = Inst>>(ctx: &mut C, out: InsnOutput)
 
 
 
-pub(crate) fn input_to_reg<C: LowerCtx<I = Inst>>(
+pub(crate) fn put_input_in_reg<C: LowerCtx<I = Inst>>(
     ctx: &mut C,
     input: InsnInput,
     narrow_mode: NarrowValueMode,
 ) -> Reg {
-    debug!("input_to_reg: input {:?}", input);
+    debug!("put_input_in_reg: input {:?}", input);
     let ty = ctx.input_ty(input.insn, input.input);
     let from_bits = ty_bits(ty) as u8;
     let inputs = ctx.get_input(input.insn, input.input);
@@ -302,7 +302,7 @@ pub(crate) fn input_to_reg<C: LowerCtx<I = Inst>>(
 
 
 
-fn input_to_rs<C: LowerCtx<I = Inst>>(
+fn put_input_in_rs<C: LowerCtx<I = Inst>>(
     ctx: &mut C,
     input: InsnInput,
     narrow_mode: NarrowValueMode,
@@ -317,13 +317,13 @@ fn input_to_rs<C: LowerCtx<I = Inst>>(
 
             
             if let Some(shiftimm) = input_to_shiftimm(ctx, shift_amt) {
-                let reg = input_to_reg(ctx, shiftee, narrow_mode);
+                let reg = put_input_in_reg(ctx, shiftee, narrow_mode);
                 return ResultRS::RegShift(reg, ShiftOpAndAmt::new(ShiftOp::LSL, shiftimm));
             }
         }
     }
 
-    ResultRS::Reg(input_to_reg(ctx, input, narrow_mode))
+    ResultRS::Reg(put_input_in_reg(ctx, input, narrow_mode))
 }
 
 
@@ -331,7 +331,7 @@ fn input_to_rs<C: LowerCtx<I = Inst>>(
 
 
 
-fn input_to_rse<C: LowerCtx<I = Inst>>(
+fn put_input_in_rse<C: LowerCtx<I = Inst>>(
     ctx: &mut C,
     input: InsnInput,
     narrow_mode: NarrowValueMode,
@@ -349,7 +349,7 @@ fn input_to_rse<C: LowerCtx<I = Inst>>(
             && ((narrow_mode.is_32bit() && out_bits < 32)
                 || (!narrow_mode.is_32bit() && out_bits < 64))
         {
-            let reg = input_to_reg(ctx, InsnInput { insn, input: 0 }, NarrowValueMode::None);
+            let reg = put_input_in_reg(ctx, InsnInput { insn, input: 0 }, NarrowValueMode::None);
             let extendop = match (narrow_mode, out_bits) {
                 (NarrowValueMode::SignExtend32, 1) | (NarrowValueMode::SignExtend64, 1) => {
                     ExtendOp::SXTB
@@ -394,15 +394,15 @@ fn input_to_rse<C: LowerCtx<I = Inst>>(
                 (false, 32) => ExtendOp::UXTW,
                 _ => unreachable!(),
             };
-            let reg = input_to_reg(ctx, InsnInput { insn, input: 0 }, NarrowValueMode::None);
+            let reg = put_input_in_reg(ctx, InsnInput { insn, input: 0 }, NarrowValueMode::None);
             return ResultRSE::RegExtend(reg, extendop);
         }
     }
 
-    ResultRSE::from_rs(input_to_rs(ctx, input, narrow_mode))
+    ResultRSE::from_rs(put_input_in_rs(ctx, input, narrow_mode))
 }
 
-pub(crate) fn input_to_rse_imm12<C: LowerCtx<I = Inst>>(
+pub(crate) fn put_input_in_rse_imm12<C: LowerCtx<I = Inst>>(
     ctx: &mut C,
     input: InsnInput,
     narrow_mode: NarrowValueMode,
@@ -413,10 +413,10 @@ pub(crate) fn input_to_rse_imm12<C: LowerCtx<I = Inst>>(
         }
     }
 
-    ResultRSEImm12::from_rse(input_to_rse(ctx, input, narrow_mode))
+    ResultRSEImm12::from_rse(put_input_in_rse(ctx, input, narrow_mode))
 }
 
-pub(crate) fn input_to_rs_immlogic<C: LowerCtx<I = Inst>>(
+pub(crate) fn put_input_in_rs_immlogic<C: LowerCtx<I = Inst>>(
     ctx: &mut C,
     input: InsnInput,
     narrow_mode: NarrowValueMode,
@@ -429,20 +429,22 @@ pub(crate) fn input_to_rs_immlogic<C: LowerCtx<I = Inst>>(
         }
     }
 
-    ResultRSImmLogic::from_rs(input_to_rs(ctx, input, narrow_mode))
+    ResultRSImmLogic::from_rs(put_input_in_rs(ctx, input, narrow_mode))
 }
 
-pub(crate) fn input_to_reg_immshift<C: LowerCtx<I = Inst>>(
+pub(crate) fn put_input_in_reg_immshift<C: LowerCtx<I = Inst>>(
     ctx: &mut C,
     input: InsnInput,
+    shift_width_bits: usize,
 ) -> ResultRegImmShift {
     if let Some(imm_value) = input_to_const(ctx, input) {
+        let imm_value = imm_value & ((shift_width_bits - 1) as u64);
         if let Some(immshift) = ImmShift::maybe_from_u64(imm_value) {
             return ResultRegImmShift::ImmShift(immshift);
         }
     }
 
-    ResultRegImmShift::Reg(input_to_reg(ctx, input, NarrowValueMode::None))
+    ResultRegImmShift::Reg(put_input_in_reg(ctx, input, NarrowValueMode::None))
 }
 
 
@@ -546,7 +548,7 @@ pub(crate) fn lower_address<C: LowerCtx<I = Inst>>(
 
     
     if addends.len() == 1 {
-        let reg = input_to_reg(ctx, addends[0], NarrowValueMode::ZeroExtend64);
+        let reg = put_input_in_reg(ctx, addends[0], NarrowValueMode::ZeroExtend64);
         return MemArg::RegOffset(reg, offset as i64, elem_ty);
     }
 
@@ -560,9 +562,9 @@ pub(crate) fn lower_address<C: LowerCtx<I = Inst>>(
                 maybe_input_insn_multi(ctx, addends[i], &[Opcode::Uextend, Opcode::Sextend])
             {
                 
-                let r1 = input_to_reg(ctx, addends[1 - i], NarrowValueMode::ZeroExtend64);
+                let r1 = put_input_in_reg(ctx, addends[1 - i], NarrowValueMode::ZeroExtend64);
                 
-                let r2 = input_to_reg(
+                let r2 = put_input_in_reg(
                     ctx,
                     InsnInput {
                         insn: ext_insn,
@@ -596,8 +598,8 @@ pub(crate) fn lower_address<C: LowerCtx<I = Inst>>(
 
     
     if addends.len() == 2 && offset == 0 {
-        let ra = input_to_reg(ctx, addends[0], NarrowValueMode::ZeroExtend64);
-        let rb = input_to_reg(ctx, addends[1], NarrowValueMode::ZeroExtend64);
+        let ra = put_input_in_reg(ctx, addends[0], NarrowValueMode::ZeroExtend64);
+        let rb = put_input_in_reg(ctx, addends[1], NarrowValueMode::ZeroExtend64);
         return MemArg::reg_plus_reg(ra, rb);
     }
 
@@ -609,7 +611,7 @@ pub(crate) fn lower_address<C: LowerCtx<I = Inst>>(
 
     
     for addend in addends {
-        let reg = input_to_reg(ctx, *addend, NarrowValueMode::ZeroExtend64);
+        let reg = put_input_in_reg(ctx, *addend, NarrowValueMode::ZeroExtend64);
 
         
         
@@ -726,6 +728,77 @@ pub(crate) fn lower_fp_condcode(cc: FloatCC) -> Cond {
     }
 }
 
+pub(crate) fn lower_vector_compare<C: LowerCtx<I = Inst>>(
+    ctx: &mut C,
+    rd: Writable<Reg>,
+    mut rn: Reg,
+    mut rm: Reg,
+    ty: Type,
+    cond: Cond,
+) -> CodegenResult<()> {
+    match ty {
+        F32X4 | F64X2 | I8X16 | I16X8 | I32X4 => {}
+        _ => {
+            return Err(CodegenError::Unsupported(format!(
+                "unsupported SIMD type: {:?}",
+                ty
+            )));
+        }
+    };
+
+    let is_float = match ty {
+        F32X4 | F64X2 => true,
+        _ => false,
+    };
+    
+    
+    
+    
+    
+    let (alu_op, swap) = match (is_float, cond) {
+        (false, Cond::Eq) => (VecALUOp::Cmeq, false),
+        (false, Cond::Ne) => (VecALUOp::Cmeq, false),
+        (false, Cond::Ge) => (VecALUOp::Cmge, false),
+        (false, Cond::Gt) => (VecALUOp::Cmgt, false),
+        (false, Cond::Le) => (VecALUOp::Cmge, true),
+        (false, Cond::Lt) => (VecALUOp::Cmgt, true),
+        (false, Cond::Hs) => (VecALUOp::Cmhs, false),
+        (false, Cond::Hi) => (VecALUOp::Cmhi, false),
+        (false, Cond::Ls) => (VecALUOp::Cmhs, true),
+        (false, Cond::Lo) => (VecALUOp::Cmhi, true),
+        (true, Cond::Eq) => (VecALUOp::Fcmeq, false),
+        (true, Cond::Ne) => (VecALUOp::Fcmeq, false),
+        (true, Cond::Mi) => (VecALUOp::Fcmgt, true),
+        (true, Cond::Ls) => (VecALUOp::Fcmge, true),
+        (true, Cond::Ge) => (VecALUOp::Fcmge, false),
+        (true, Cond::Gt) => (VecALUOp::Fcmgt, false),
+        _ => unreachable!(),
+    };
+
+    if swap {
+        std::mem::swap(&mut rn, &mut rm);
+    }
+
+    ctx.emit(Inst::VecRRR {
+        alu_op,
+        rd,
+        rn,
+        rm,
+        ty,
+    });
+
+    if cond == Cond::Ne {
+        ctx.emit(Inst::VecMisc {
+            op: VecMisc2::Not,
+            rd,
+            rn: rd.to_reg(),
+            ty: I8X16,
+        });
+    }
+
+    Ok(())
+}
+
 
 
 
@@ -762,6 +835,7 @@ pub fn ty_bits(ty: Type) -> usize {
         IFLAGS | FFLAGS => 32,
         B8X8 | I8X8 | B16X4 | I16X4 | B32X2 | I32X2 => 64,
         B8X16 | I8X16 | B16X8 | I16X8 | B32X4 | I32X4 | B64X2 | I64X2 => 128,
+        F32X4 | F64X2 => 128,
         _ => panic!("ty_bits() on unknown type: {:?}", ty),
     }
 }
@@ -925,8 +999,8 @@ pub(crate) fn lower_icmp_or_ifcmp_to_flags<C: LowerCtx<I = Inst>>(
         },
     ];
     let ty = ctx.input_ty(insn, 0);
-    let rn = input_to_reg(ctx, inputs[0], narrow_mode);
-    let rm = input_to_rse_imm12(ctx, inputs[1], narrow_mode);
+    let rn = put_input_in_reg(ctx, inputs[0], narrow_mode);
+    let rm = put_input_in_rse_imm12(ctx, inputs[1], narrow_mode);
     debug!("lower_icmp_or_ifcmp_to_flags: rn = {:?} rm = {:?}", rn, rm);
     let alu_op = choose_32_64(ty, ALUOp::SubS32, ALUOp::SubS64);
     let rd = writable_zero_reg();
@@ -946,8 +1020,8 @@ pub(crate) fn lower_fcmp_or_ffcmp_to_flags<C: LowerCtx<I = Inst>>(ctx: &mut C, i
             input: 1,
         },
     ];
-    let rn = input_to_reg(ctx, inputs[0], NarrowValueMode::None);
-    let rm = input_to_reg(ctx, inputs[1], NarrowValueMode::None);
+    let rn = put_input_in_reg(ctx, inputs[0], NarrowValueMode::None);
+    let rm = put_input_in_reg(ctx, inputs[1], NarrowValueMode::None);
     match bits {
         32 => {
             ctx.emit(Inst::FpuCmp32 { rn, rm });

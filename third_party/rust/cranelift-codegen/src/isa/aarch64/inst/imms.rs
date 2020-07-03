@@ -305,6 +305,14 @@ impl Imm12 {
     }
 
     
+    pub fn zero() -> Self {
+        Imm12 {
+            bits: 0,
+            shift12: false,
+        }
+    }
+
+    
     pub fn shift_bits(&self) -> u32 {
         if self.shift12 {
             0b01

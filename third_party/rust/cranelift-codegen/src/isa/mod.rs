@@ -150,6 +150,7 @@ pub enum LookupError {
 
 
 
+#[derive(Clone)]
 pub struct Builder {
     triple: Triple,
     setup: settings::Builder,

@@ -133,6 +133,10 @@ pub trait LowerCtx {
     
     
     
+    
+    
+    
+    
     fn get_output(&self, ir_inst: Inst, idx: usize) -> Writable<Reg>;
 
     

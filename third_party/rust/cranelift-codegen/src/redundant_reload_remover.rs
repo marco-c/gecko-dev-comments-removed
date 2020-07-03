@@ -635,7 +635,11 @@ impl RedundantReloadRemover {
                 
                 dfg.replace(inst).fill_nop(arg);
                 let ok = func.update_encoding(inst, isa).is_ok();
-                debug_assert!(ok, "fill_nop encoding missing for this type");
+                debug_assert!(
+                    ok,
+                    "fill_nop encoding missing for this type: `{}`",
+                    func.dfg.display_inst(inst, isa)
+                );
             }
             Transform::ChangeToCopyToSSA(ty, reg) => {
                 

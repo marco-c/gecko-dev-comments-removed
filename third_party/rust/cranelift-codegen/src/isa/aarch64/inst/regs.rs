@@ -292,7 +292,7 @@ pub fn show_freg_sized(reg: Reg, mb_rru: Option<&RealRegUniverse>, size: InstSiz
 }
 
 
-pub fn show_vreg_scalar(reg: Reg, mb_rru: Option<&RealRegUniverse>) -> String {
+pub fn show_vreg_scalar(reg: Reg, mb_rru: Option<&RealRegUniverse>, ty: Type) -> String {
     let mut s = reg.show_rru(mb_rru);
     if reg.get_class() != RegClass::V128 {
         
@@ -302,7 +302,14 @@ pub fn show_vreg_scalar(reg: Reg, mb_rru: Option<&RealRegUniverse>) -> String {
     if reg.is_real() {
         
         if reg.get_class() == RegClass::V128 && s.starts_with("v") {
-            s.replace_range(0..1, "d");
+            let replacement = match ty {
+                I64 | F64 => "d",
+                I8X16 => "b",
+                I16X8 => "h",
+                I32X4 => "s",
+                _ => unimplemented!(),
+            };
+            s.replace_range(0..1, replacement);
         }
     } else {
         

@@ -302,7 +302,11 @@ fn fallthroughs(func: &mut Function) {
                 Opcode::Fallthrough => {
                     
                     
-                    debug_assert_eq!(destination, succ, "Illegal fall-through in {}", block)
+                    debug_assert_eq!(
+                        destination, succ,
+                        "Illegal fallthrough from {} to {}, but {}'s successor is {}",
+                        block, destination, block, succ
+                    )
                 }
                 Opcode::Jump => {
                     

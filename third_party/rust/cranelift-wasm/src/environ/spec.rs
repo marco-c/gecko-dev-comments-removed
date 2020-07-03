@@ -136,7 +136,12 @@ pub trait TargetEnvironment {
     
     
     
-    fn reference_type(&self) -> ir::Type {
+    
+    
+    
+    
+    fn reference_type(&self, ty: WasmType) -> ir::Type {
+        let _ = ty;
         match self.pointer_type() {
             ir::types::I32 => ir::types::R32,
             ir::types::I64 => ir::types::R64,
@@ -355,6 +360,7 @@ pub trait FuncEnvironment: TargetEnvironment {
         &mut self,
         pos: FuncCursor,
         table_index: TableIndex,
+        table: ir::Table,
         delta: ir::Value,
         init_value: ir::Value,
     ) -> WasmResult<ir::Value>;
@@ -362,16 +368,18 @@ pub trait FuncEnvironment: TargetEnvironment {
     
     fn translate_table_get(
         &mut self,
-        pos: FuncCursor,
+        builder: &mut FunctionBuilder,
         table_index: TableIndex,
+        table: ir::Table,
         index: ir::Value,
     ) -> WasmResult<ir::Value>;
 
     
     fn translate_table_set(
         &mut self,
-        pos: FuncCursor,
+        builder: &mut FunctionBuilder,
         table_index: TableIndex,
+        table: ir::Table,
         value: ir::Value,
         index: ir::Value,
     ) -> WasmResult<()>;
@@ -417,7 +425,42 @@ pub trait FuncEnvironment: TargetEnvironment {
     fn translate_elem_drop(&mut self, pos: FuncCursor, seg_index: u32) -> WasmResult<()>;
 
     
-    fn translate_ref_func(&mut self, pos: FuncCursor, func_index: u32) -> WasmResult<ir::Value>;
+    
+    
+    
+    
+    
+    
+    
+    
+    fn translate_ref_null(&mut self, mut pos: FuncCursor, ty: WasmType) -> WasmResult<ir::Value> {
+        let _ = ty;
+        Ok(pos.ins().null(self.reference_type(ty)))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn translate_ref_is_null(
+        &mut self,
+        mut pos: FuncCursor,
+        value: ir::Value,
+    ) -> WasmResult<ir::Value> {
+        let is_null = pos.ins().is_null(value);
+        Ok(pos.ins().bint(ir::types::I32, is_null))
+    }
+
+    
+    fn translate_ref_func(
+        &mut self,
+        pos: FuncCursor,
+        func_index: FuncIndex,
+    ) -> WasmResult<ir::Value>;
 
     
     

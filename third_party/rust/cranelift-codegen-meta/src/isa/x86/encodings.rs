@@ -233,6 +233,32 @@ impl PerCpuModeEncodings {
 
     
     
+    
+    fn enc_r32_r64_instp(
+        &mut self,
+        inst: &Instruction,
+        template: Template,
+        instp: InstructionPredicateNode,
+    ) {
+        self.enc32_func(inst.bind(R32), template.nonrex(), |builder| {
+            builder.inst_predicate(instp.clone())
+        });
+
+        
+        
+        self.enc64_func(inst.bind(R32), template.rex(), |builder| {
+            builder.inst_predicate(instp.clone())
+        });
+        self.enc64_func(inst.bind(R32), template.nonrex(), |builder| {
+            builder.inst_predicate(instp.clone())
+        });
+        self.enc64_func(inst.bind(R64), template.rex().w(), |builder| {
+            builder.inst_predicate(instp)
+        });
+    }
+
+    
+    
     fn enc_r32_r64_rex_only(&mut self, inst: impl Into<InstSpec>, template: Template) {
         let inst: InstSpec = inst.into();
         self.enc32(inst.bind(R32), template.nonrex());
@@ -810,6 +836,11 @@ fn define_memory(
             recipe.opcodes(&MOV_LOAD),
             is_load_complex_length_two.clone(),
         );
+        e.enc_r32_r64_instp(
+            load_complex,
+            recipe.opcodes(&MOV_LOAD),
+            is_load_complex_length_two.clone(),
+        );
         e.enc_x86_64_instp(
             uload32_complex,
             recipe.opcodes(&MOV_LOAD),
@@ -851,6 +882,11 @@ fn define_memory(
 
     for recipe in &[rec_stWithIndex, rec_stWithIndexDisp8, rec_stWithIndexDisp32] {
         e.enc_i32_i64_instp(
+            store_complex,
+            recipe.opcodes(&MOV_STORE),
+            is_store_complex_length_three.clone(),
+        );
+        e.enc_r32_r64_instp(
             store_complex,
             recipe.opcodes(&MOV_STORE),
             is_store_complex_length_three.clone(),
@@ -947,6 +983,10 @@ fn define_memory(
     for &ty in &[F64, F32] {
         e.enc64_rec(fill_nop.bind(ty), rec_ffillnull, 0);
         e.enc32_rec(fill_nop.bind(ty), rec_ffillnull, 0);
+    }
+    for &ty in &[R64, R32] {
+        e.enc64_rec(fill_nop.bind(ty), rec_fillnull, 0);
+        e.enc32_rec(fill_nop.bind(ty), rec_fillnull, 0);
     }
 
     
@@ -1355,6 +1395,7 @@ fn define_alu(
     let rotr = shared.by_name("rotr");
     let rotr_imm = shared.by_name("rotr_imm");
     let selectif = shared.by_name("selectif");
+    let selectif_spectre_guard = shared.by_name("selectif_spectre_guard");
     let sshr = shared.by_name("sshr");
     let sshr_imm = shared.by_name("sshr_imm");
     let trueff = shared.by_name("trueff");
@@ -1568,6 +1609,11 @@ fn define_alu(
 
     
     e.enc_i32_i64(selectif, rec_cmov.opcodes(&CMOV_OVERFLOW));
+    
+    
+    
+    
+    e.enc_i32_i64(selectif_spectre_guard, rec_cmov.opcodes(&CMOV_OVERFLOW));
 }
 
 #[inline(never)]
@@ -1596,10 +1642,9 @@ fn define_simd(
     let fdiv = shared.by_name("fdiv");
     let fill = shared.by_name("fill");
     let fill_nop = shared.by_name("fill_nop");
-    let fmax = shared.by_name("fmax");
-    let fmin = shared.by_name("fmin");
     let fmul = shared.by_name("fmul");
     let fsub = shared.by_name("fsub");
+    let iabs = shared.by_name("iabs");
     let iadd = shared.by_name("iadd");
     let icmp = shared.by_name("icmp");
     let imul = shared.by_name("imul");
@@ -1635,7 +1680,10 @@ fn define_simd(
     let usub_sat = shared.by_name("usub_sat");
     let vconst = shared.by_name("vconst");
     let vselect = shared.by_name("vselect");
+    let x86_cvtt2si = x86.by_name("x86_cvtt2si");
     let x86_insertps = x86.by_name("x86_insertps");
+    let x86_fmax = x86.by_name("x86_fmax");
+    let x86_fmin = x86.by_name("x86_fmin");
     let x86_movlhps = x86.by_name("x86_movlhps");
     let x86_movsd = x86.by_name("x86_movsd");
     let x86_packss = x86.by_name("x86_packss");
@@ -1902,6 +1950,13 @@ fn define_simd(
             rec_evex_reg_rm_128.opcodes(&VCVTUDQ2PS),
             Some(use_avx512vl_simd), 
         );
+
+        e.enc_both_inferred(
+            x86_cvtt2si
+                .bind(vector(I32, sse_vector_size))
+                .bind(vector(F32, sse_vector_size)),
+            rec_furm.opcodes(&CVTTPS2DQ),
+        );
     }
 
     
@@ -2137,6 +2192,12 @@ fn define_simd(
     }
 
     
+    for (ty, opcodes) in &[(I8, &PABSB[..]), (I16, &PABSW[..]), (I32, &PABSD)] {
+        let iabs = iabs.bind(vector(*ty, sse_vector_size));
+        e.enc_both_inferred_maybe_isap(iabs, rec_furm.opcodes(opcodes), Some(use_ssse3_simd));
+    }
+
+    
     let band = shared.by_name("band");
     let band_not = shared.by_name("band_not");
     for ty in ValueType::all_lane_types().filter(allowed_simd_type) {
@@ -2268,10 +2329,10 @@ fn define_simd(
         (F64, fmul, &MULPD[..]),
         (F32, fdiv, &DIVPS[..]),
         (F64, fdiv, &DIVPD[..]),
-        (F32, fmin, &MINPS[..]),
-        (F64, fmin, &MINPD[..]),
-        (F32, fmax, &MAXPS[..]),
-        (F64, fmax, &MAXPD[..]),
+        (F32, x86_fmin, &MINPS[..]),
+        (F64, x86_fmin, &MINPD[..]),
+        (F32, x86_fmax, &MAXPS[..]),
+        (F64, x86_fmax, &MAXPD[..]),
     ] {
         let inst = inst.bind(vector(*ty, sse_vector_size));
         e.enc_both_inferred(inst, rec_fa.opcodes(opcodes));
