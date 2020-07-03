@@ -863,20 +863,47 @@ static nsRect GetDisplayPortFromMarginsData(
     
     
     
-    float w = screenRect.width;
-    float h = screenRect.height;
     
-    
-    
-    float sx = fmin(1.0, (aMarginsData->mMargins.LeftRight() + w) / w * 0.25);
-    float sy = fmin(1.0, (aMarginsData->mMargins.TopBottom() + h) / h * 0.25);
-    posAlignment.width = fmax(128.0, 512.0 * round(sx * w / 512.0));
-    posAlignment.height = fmax(128.0, 512.0 * round(sy * h / 512.0));
+    float defaultAlignment = 128.0;
+    sizeAlignment = ScreenSize(defaultAlignment, defaultAlignment);
+
     
     
     
     
-    sizeAlignment = ScreenSize(128, 128);
+
+    
+    
+    
+    float xMargin = aMarginsData->mMargins.LeftRight();
+    float yMargin = aMarginsData->mMargins.TopBottom();
+    bool hasXMargins = xMargin > 1.0;
+    bool hasYMargins = yMargin > 1.0;
+
+    
+    
+    float multiple = 256.0;
+
+    if (hasXMargins) {
+      
+      
+      
+      float w = screenRect.width;
+      float sx = fmin(1.0, (xMargin + w) / w * 0.25);
+      posAlignment.width =
+          fmax(defaultAlignment, multiple * round(sx * w / multiple));
+    } else {
+      posAlignment.width = defaultAlignment;
+    }
+
+    if (hasYMargins) {
+      float h = screenRect.height;
+      float sy = fmin(1.0, (yMargin + h) / h * 0.25);
+      posAlignment.height =
+          fmax(defaultAlignment, multiple * round(sy * h / multiple));
+    } else {
+      posAlignment.height = defaultAlignment;
+    }
   } else if (StaticPrefs::layers_enable_tiles_AtStartup()) {
     
     
@@ -8610,8 +8637,7 @@ nsRect nsLayoutUtils::GetBoxShadowRectForFrame(nsIFrame* aFrame,
 
 
 bool nsLayoutUtils::GetContentViewerSize(
-    nsPresContext* aPresContext,
-    LayoutDeviceIntSize& aOutSize,
+    nsPresContext* aPresContext, LayoutDeviceIntSize& aOutSize,
     SubtractDynamicToolbar aSubtractDynamicToolbar) {
   nsCOMPtr<nsIDocShell> docShell = aPresContext->GetDocShell();
   if (!docShell) {
@@ -8644,8 +8670,7 @@ bool nsLayoutUtils::GetContentViewerSize(
 }
 
 bool nsLayoutUtils::UpdateCompositionBoundsForRCDRSF(
-    ParentLayerRect& aCompBounds,
-    nsPresContext* aPresContext) {
+    ParentLayerRect& aCompBounds, nsPresContext* aPresContext) {
   LayoutDeviceIntSize contentSize;
   if (!GetContentViewerSize(aPresContext, contentSize,
                             SubtractDynamicToolbar::No)) {
