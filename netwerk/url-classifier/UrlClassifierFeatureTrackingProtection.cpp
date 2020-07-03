@@ -81,15 +81,7 @@ UrlClassifierFeatureTrackingProtection::MaybeCreate(nsIChannel* aChannel) {
 
   nsCOMPtr<nsILoadContext> loadContext;
   NS_QueryNotificationCallbacks(aChannel, loadContext);
-  if (!loadContext) {
-    
-    
-    if (!StaticPrefs::privacy_trackingprotection_enabled() &&
-        !(NS_UsePrivateBrowsing(aChannel) &&
-          StaticPrefs::privacy_trackingprotection_pbmode_enabled())) {
-      return nullptr;
-    }
-  } else if (!loadContext->UseTrackingProtection()) {
+  if (!loadContext || !loadContext->UseTrackingProtection()) {
     return nullptr;
   }
 
