@@ -450,7 +450,15 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
   bool ignoreCache =
       options.ignoreCache || !isSystem || scheme.EqualsLiteral("blob");
 
-  StartupCache* cache = ignoreCache ? nullptr : StartupCache::GetSingleton();
+  
+  
+  
+  
+  
+  
+  StartupCache* cache = (ignoreCache || !XRE_IsParentProcess())
+                            ? nullptr
+                            : StartupCache::GetSingleton();
 
   nsAutoCString cachePath;
   SubscriptCachePath(cx, uri, targetObj, cachePath);

@@ -22,10 +22,13 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/AutoMemMap.h"
 #include "mozilla/Compression.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/Omnijar.h"
 #include "mozilla/Result.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/UniquePtrExtensions.h"
 
 
 
@@ -78,47 +81,149 @@
 
 
 namespace mozilla {
+namespace dom {
+class ContentParent;
+}
+namespace ipc {
+class GeckoChildProcessHost;
+}  
 
 namespace scache {
 
+class StartupCacheChild;
+
+#ifdef XP_UNIX
+
+
+
+static const int kStartupCacheFd = 11;
+#endif
+
+
+
+
+static const int kStartupCacheEntryNotRequested = INT_MAX;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MaybeOwnedCharPtr {
+ public:
+  char* mPtr;
+  bool mOwned;
+
+  ~MaybeOwnedCharPtr() {
+    if (mOwned) {
+      delete[] mPtr;
+    }
+  }
+
+  MaybeOwnedCharPtr(const MaybeOwnedCharPtr& other);
+  MaybeOwnedCharPtr& operator=(const MaybeOwnedCharPtr& other);
+
+  MaybeOwnedCharPtr(MaybeOwnedCharPtr&& other)
+      : mPtr(std::exchange(other.mPtr, nullptr)),
+        mOwned(std::exchange(other.mOwned, false)) {}
+
+  MaybeOwnedCharPtr& operator=(MaybeOwnedCharPtr&& other) {
+    std::swap(mPtr, other.mPtr);
+    std::swap(mOwned, other.mOwned);
+    return *this;
+  }
+
+  MaybeOwnedCharPtr& operator=(decltype(nullptr)) {
+    mPtr = nullptr;
+    mOwned = false;
+    return *this;
+  }
+
+  explicit operator bool() const { return !!mPtr; }
+
+  char* get() { return mPtr; }
+
+  explicit MaybeOwnedCharPtr(char* aBytes) : mPtr(aBytes), mOwned(false) {}
+
+  explicit MaybeOwnedCharPtr(UniquePtr<char[]>&& aBytes)
+      : mPtr(aBytes.release()), mOwned(true) {}
+
+  explicit MaybeOwnedCharPtr(size_t size)
+      : mPtr(new char[size]), mOwned(true) {}
+};
+
+enum class StartupCacheEntryFlags {
+  Shared,
+  RequestedByChild,
+  AddedThisSession,
+};
+
 struct StartupCacheEntry {
-  UniquePtr<char[]> mData;
+  MaybeOwnedCharPtr mData;
   uint32_t mOffset;
   uint32_t mCompressedSize;
   uint32_t mUncompressedSize;
   int32_t mHeaderOffsetInFile;
   int32_t mRequestedOrder;
-  bool mRequested;
+  EnumSet<StartupCacheEntryFlags> mFlags;
 
   MOZ_IMPLICIT StartupCacheEntry(uint32_t aOffset, uint32_t aCompressedSize,
-                                 uint32_t aUncompressedSize)
+                                 uint32_t aUncompressedSize,
+                                 EnumSet<StartupCacheEntryFlags> aFlags)
       : mData(nullptr),
         mOffset(aOffset),
         mCompressedSize(aCompressedSize),
         mUncompressedSize(aUncompressedSize),
         mHeaderOffsetInFile(0),
-        mRequestedOrder(0),
-        mRequested(false) {}
+        mRequestedOrder(kStartupCacheEntryNotRequested),
+        mFlags(aFlags) {}
 
   StartupCacheEntry(UniquePtr<char[]> aData, size_t aLength,
-                    int32_t aRequestedOrder)
+                    int32_t aRequestedOrder,
+                    EnumSet<StartupCacheEntryFlags> aFlags)
       : mData(std::move(aData)),
         mOffset(0),
         mCompressedSize(0),
         mUncompressedSize(aLength),
         mHeaderOffsetInFile(0),
-        mRequestedOrder(0),
-        mRequested(true) {}
+        mRequestedOrder(aRequestedOrder),
+        mFlags(aFlags) {}
 
   struct Comparator {
     using Value = std::pair<const nsCString*, StartupCacheEntry*>;
 
     bool Equals(const Value& a, const Value& b) const {
-      return a.second->mRequestedOrder == b.second->mRequestedOrder;
+      
+      
+      
+      
+      return a.second->mFlags.contains(
+                 StartupCacheEntryFlags::RequestedByChild) ==
+                 b.second->mFlags.contains(
+                     StartupCacheEntryFlags::RequestedByChild) &&
+             a.second->mRequestedOrder == b.second->mRequestedOrder;
     }
 
     bool LessThan(const Value& a, const Value& b) const {
-      return a.second->mRequestedOrder < b.second->mRequestedOrder;
+      bool requestedByChildA =
+          a.second->mFlags.contains(StartupCacheEntryFlags::RequestedByChild);
+      bool requestedByChildB =
+          b.second->mFlags.contains(StartupCacheEntryFlags::RequestedByChild);
+      if (requestedByChildA == requestedByChildB) {
+        return a.second->mRequestedOrder < b.second->mRequestedOrder;
+      } else {
+        return requestedByChildA;
+      }
     }
   };
 };
@@ -131,10 +236,26 @@ class StartupCacheListener final : public nsIObserver {
   NS_DECL_NSIOBSERVER
 };
 
+
+
+
+
+
+enum class ProcessType : uint8_t {
+  Uninitialized,
+  Parent,
+  Web,
+  Extension,
+  PrivilegedAbout,
+};
+
 class StartupCache : public nsIMemoryReporter {
   friend class StartupCacheListener;
+  friend class StartupCacheChild;
 
  public:
+  using Table = HashMap<nsCString, StartupCacheEntry>;
+
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
 
@@ -147,11 +268,10 @@ class StartupCache : public nsIMemoryReporter {
   nsresult GetBuffer(const char* id, const char** outbuf, uint32_t* length);
 
   
-  nsresult PutBuffer(const char* id, UniquePtr<char[]>&& inbuf,
-                     uint32_t length);
+  nsresult PutBuffer(const char* id, UniquePtr<char[]>&& inbuf, uint32_t length,
+                     bool isFromChildProcess = false);
 
-  
-  void InvalidateCache(bool memoryOnly = false);
+  void InvalidateCache();
 
   
   
@@ -169,7 +289,7 @@ class StartupCache : public nsIMemoryReporter {
   nsresult GetDebugObjectOutputStream(nsIObjectOutputStream* aStream,
                                       nsIObjectOutputStream** outStream);
 
-  static StartupCache* GetSingletonNoInit();
+  static ProcessType GetChildProcessType(const nsAString& remoteType);
   static StartupCache* GetSingleton();
 
   
@@ -182,14 +302,22 @@ class StartupCache : public nsIMemoryReporter {
   
   static nsresult FullyInitSingleton();
 
+  static nsresult InitChildSingleton(char* aScacheHandleStr,
+                                     char* aScacheSizeStr);
+
   static void DeleteSingleton();
+  static void InitContentChild(dom::ContentParent& parent);
+
+  void AddStartupCacheCmdLineArgs(ipc::GeckoChildProcessHost& procHost,
+                                  std::vector<std::string>& aExtraOpts);
+  nsresult ParseStartupCacheCmdLineArgs(char* aScacheHandleStr,
+                                        char* aScacheSizeStr);
 
   
   
   size_t HeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
   bool ShouldCompactCache();
-  nsresult ResetStartupWriteTimerCheckingReadCount();
   nsresult ResetStartupWriteTimer();
   bool StartupWriteComplete();
 
@@ -202,6 +330,13 @@ class StartupCache : public nsIMemoryReporter {
   Result<Ok, nsresult> LoadArchive();
   nsresult PartialInit(nsIFile* aProfileLocalDir);
   nsresult FullyInit();
+  nsresult InitChild(StartupCacheChild* cacheChild);
+
+  
+  void InvalidateCacheImpl(bool memoryOnly = false);
+
+  nsresult ResetStartupWriteTimerCheckingReadCount();
+  nsresult ResetStartupWriteTimerImpl();
 
   
   
@@ -213,36 +348,69 @@ class StartupCache : public nsIMemoryReporter {
   
   Result<Ok, nsresult> WriteToDisk();
 
+  Result<Ok, nsresult> DecompressEntry(StartupCacheEntry& aEntry);
+
+  Result<Ok, nsresult> LoadEntriesOffDisk();
+
+  Result<Ok, nsresult> LoadEntriesFromSharedMemory();
+
   void WaitOnPrefetchThread();
   void StartPrefetchMemoryThread();
 
   static void WriteTimeout(nsITimer* aTimer, void* aClosure);
+  static void SendEntriesTimeout(nsITimer* aTimer, void* aClosure);
   void MaybeWriteOffMainThread();
   static void ThreadedPrefetch(void* aClosure);
 
-  HashMap<nsCString, StartupCacheEntry> mTable;
+  EnumSet<ProcessType> mInitializedProcesses{};
+  nsCString mContentStartupFinishedTopic;
+
+  Table mTable;
   
   
   
   nsTArray<decltype(mTable)> mOldTables;
   nsCOMPtr<nsIFile> mFile;
   loader::AutoMemMap mCacheData;
-  Mutex mTableLock;
+  loader::AutoMemMap mSharedData;
+  UniqueFileHandle mSharedDataHandle;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mutable Mutex mLock;
 
   nsCOMPtr<nsIObserverService> mObserverService;
   RefPtr<StartupCacheListener> mListener;
-  nsCOMPtr<nsITimer> mTimer;
+  nsCOMPtr<nsITimer> mWriteTimer;
+  nsCOMPtr<nsITimer> mSendEntriesTimer;
 
   Atomic<bool> mDirty;
   Atomic<bool> mWrittenOnce;
   bool mCurTableReferenced;
+  bool mLoaded;
+  bool mFullyInitialized;
   uint32_t mRequestedCount;
+  uint32_t mPrefetchSize;
+  uint32_t mSharedDataSize;
   size_t mCacheEntriesBaseOffset;
 
   static StaticRefPtr<StartupCache> gStartupCache;
   static bool gShutdownInitiated;
   static bool gIgnoreDiskCache;
   static bool gFoundDiskCacheOnInit;
+
+  Atomic<StartupCacheChild*> mChildActor;
   PRThread* mPrefetchThread;
   UniquePtr<Compression::LZ4FrameDecompressionContext> mDecompressionContext;
 #ifdef DEBUG
