@@ -106,6 +106,9 @@ NS_IMETHODIMP InsertNodeTransaction::DoTransaction() {
 
   ErrorResult error;
   container->InsertBefore(contentToInsert, refChild, error);
+  
+  
+  error.WouldReportJSException();
   if (error.Failed()) {
     NS_WARNING("nsINode::InsertBefore() failed");
     return error.StealNSResult();

@@ -93,6 +93,9 @@ DeleteNodeTransaction::UndoTransaction() {
   
   
   parentNode->InsertBefore(contentToDelete, refContent, error);
+  
+  
+  error.WouldReportJSException();
   if (error.Failed()) {
     NS_WARNING("nsINode::InsertBefore() failed");
     return error.StealNSResult();

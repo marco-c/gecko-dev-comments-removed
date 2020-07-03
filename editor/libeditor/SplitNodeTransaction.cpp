@@ -188,6 +188,9 @@ NS_IMETHODIMP SplitNodeTransaction::RedoTransaction() {
   
   containerParentNode->InsertBefore(newLeftContent,
                                     startOfRightContent.GetContainer(), error);
+  
+  
+  error.WouldReportJSException();
   NS_WARNING_ASSERTION(!error.Failed(), "nsINode::InsertBefore() failed");
   return error.StealNSResult();
 }

@@ -132,6 +132,9 @@ NS_IMETHODIMP JoinNodeTransaction::UndoTransaction() {
 
   
   parentNode->InsertBefore(leftContent, rightContent, error);
+  
+  
+  error.WouldReportJSException();
   NS_WARNING_ASSERTION(!error.Failed(), "nsINode::InsertBefore() failed");
   return error.StealNSResult();
 }
