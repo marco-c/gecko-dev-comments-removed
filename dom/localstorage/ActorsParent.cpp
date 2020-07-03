@@ -142,24 +142,11 @@ static_assert(kSQLiteGrowthIncrement >= 0 &&
 
 
 
-#define DATA_FILE_NAME u"data.sqlite"
+constexpr auto kDataFileName = u"data.sqlite"_ns;
 
 
 
-#define JOURNAL_FILE_NAME u"data.sqlite-journal"
-
-
-
-
-
-
-
-
-
-
-
-
-#define USAGE_FILE_NAME u"usage"
+constexpr auto kJournalFileName = u"data.sqlite-journal"_ns;
 
 
 
@@ -172,9 +159,22 @@ static_assert(kSQLiteGrowthIncrement >= 0 &&
 
 
 
+constexpr auto kUsageFileName = u"usage"_ns;
 
 
-#define USAGE_JOURNAL_FILE_NAME u"usage-journal"
+
+
+
+
+
+
+
+
+
+
+
+
+constexpr auto kUsageJournalFileName = u"usage-journal"_ns;
 
 static const uint32_t kUsageFileSize = 12;
 static const uint32_t kUsageFileCookie = 0x420a420a;
@@ -1103,7 +1103,7 @@ nsresult GetUsageFile(const nsAString& aDirectoryPath, nsIFile** aUsageFile) {
 
   nsCOMPtr<nsIFile> usageFile = usageFileOrErr.unwrap();
 
-  nsresult rv = usageFile->Append(nsLiteralString(USAGE_FILE_NAME));
+  nsresult rv = usageFile->Append(kUsageFileName);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1125,8 +1125,7 @@ nsresult GetUsageJournalFile(const nsAString& aDirectoryPath,
 
   nsCOMPtr<nsIFile> usageJournalFile = usageJournalFileOrErr.unwrap();
 
-  nsresult rv =
-      usageJournalFile->Append(nsLiteralString(USAGE_JOURNAL_FILE_NAME));
+  nsresult rv = usageJournalFile->Append(kUsageJournalFileName);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -4286,7 +4285,7 @@ nsresult Connection::EnsureStorageConnection() {
       return rv;
     }
 
-    rv = directoryEntry->Append(nsLiteralString(DATA_FILE_NAME));
+    rv = directoryEntry->Append(kDataFileName);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -4349,7 +4348,7 @@ nsresult Connection::EnsureStorageConnection() {
     }
   }
 
-  rv = directoryEntry->Append(nsLiteralString(DATA_FILE_NAME));
+  rv = directoryEntry->Append(kDataFileName);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -7393,7 +7392,7 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
     return rv;
   }
 
-  rv = directoryEntry->Append(nsLiteralString(DATA_FILE_NAME));
+  rv = directoryEntry->Append(kDataFileName);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -8923,7 +8922,7 @@ Result<UsageInfo, nsresult> QuotaClient::InitOrigin(
     return Err(rv);
   }
 
-  rv = file->Append(nsLiteralString(DATA_FILE_NAME));
+  rv = file->Append(kDataFileName);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     REPORT_TELEMETRY_INIT_ERR(kQuotaExternalError, LS_Append2);
     return Err(rv);
@@ -9033,10 +9032,9 @@ Result<UsageInfo, nsresult> QuotaClient::InitOrigin(
       return Err(rv);
     }
 
-    if (leafName.EqualsLiteral(DATA_FILE_NAME) ||
-        leafName.EqualsLiteral(JOURNAL_FILE_NAME) ||
-        leafName.EqualsLiteral(USAGE_FILE_NAME) ||
-        leafName.EqualsLiteral(USAGE_JOURNAL_FILE_NAME)) {
+    if (leafName.Equals(kDataFileName) || leafName.Equals(kJournalFileName) ||
+        leafName.Equals(kUsageFileName) ||
+        leafName.Equals(kUsageJournalFileName)) {
       continue;
     }
 
