@@ -4012,7 +4012,7 @@ nsDocShell::GetSessionHistoryXPCOM(nsISupports** aSessionHistory) {
 
 
 NS_IMETHODIMP
-nsDocShell::LoadPage(nsISupports* aPageDescriptor, uint32_t aDisplayType) {
+nsDocShell::LoadPageAsViewSource(nsISupports* aPageDescriptor) {
   nsCOMPtr<nsISHEntry> shEntryIn(do_QueryInterface(aPageDescriptor));
 
   
@@ -4035,30 +4035,28 @@ nsDocShell::LoadPage(nsISupports* aPageDescriptor, uint32_t aDisplayType) {
   
   
   
-  if (nsIWebPageDescriptor::DISPLAY_AS_SOURCE == aDisplayType) {
-    nsCString spec, newSpec;
+  nsCString spec, newSpec;
 
-    
-    nsCOMPtr<nsIURI> oldUri = shEntry->GetURI();
+  
+  nsCOMPtr<nsIURI> oldUri = shEntry->GetURI();
 
-    oldUri->GetSpec(spec);
-    newSpec.AppendLiteral("view-source:");
-    newSpec.Append(spec);
+  oldUri->GetSpec(spec);
+  newSpec.AppendLiteral("view-source:");
+  newSpec.Append(spec);
 
-    nsCOMPtr<nsIURI> newUri;
-    rv = NS_NewURI(getter_AddRefs(newUri), newSpec);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    shEntry->SetURI(newUri);
-    shEntry->SetOriginalURI(nullptr);
-    shEntry->SetResultPrincipalURI(nullptr);
-    
-    
-    
-    
-    shEntry->SetTriggeringPrincipal(nsContentUtils::GetSystemPrincipal());
+  nsCOMPtr<nsIURI> newUri;
+  rv = NS_NewURI(getter_AddRefs(newUri), newSpec);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
+  shEntry->SetURI(newUri);
+  shEntry->SetOriginalURI(nullptr);
+  shEntry->SetResultPrincipalURI(nullptr);
+  
+  
+  
+  
+  shEntry->SetTriggeringPrincipal(nsContentUtils::GetSystemPrincipal());
 
   rv = LoadHistoryEntry(shEntry, LOAD_HISTORY);
   return rv;
