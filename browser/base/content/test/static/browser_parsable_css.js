@@ -13,7 +13,7 @@ let whitelist = [
   
   { sourceName: /codemirror\.css$/i, isFromDevTools: true },
   {
-    sourceName: /devtools\/content\/debugger\/src\/components\/([A-z\/]+).css/i,
+    sourceName: /devtools\/client\/debugger\/src\/components\/([A-z\/]+).css/i,
     isFromDevTools: true,
   },
   

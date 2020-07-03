@@ -2,7 +2,7 @@
 
 
 
-@import url("chrome://devtools/skin/splitters.css");
+@import url("resource://devtools/client/themes/splitters.css");
 @namespace html url("http://www.w3.org/1999/xhtml");
 
 :root {

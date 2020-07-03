@@ -881,12 +881,24 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
                            &targetURIIsUIResource);
   NS_ENSURE_SUCCESS(rv, rv);
   if (targetURIIsUIResource) {
-    
-    
-    
-    
-    
     if (aFlags & nsIScriptSecurityManager::ALLOW_CHROME) {
+      
+      
+      
+      
+      
+      
+      
+      
+      bool sourceIsUIResource;
+      rv = NS_URIChainHasFlags(aSourceBaseURI,
+                               nsIProtocolHandler::URI_IS_UI_RESOURCE,
+                               &sourceIsUIResource);
+      NS_ENSURE_SUCCESS(rv, rv);
+      if (sourceIsUIResource) {
+        return NS_OK;
+      }
+
       if (targetScheme.EqualsLiteral("resource")) {
         if (StaticPrefs::security_all_resource_uri_content_accessible()) {
           return NS_OK;
