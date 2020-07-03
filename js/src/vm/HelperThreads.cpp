@@ -2039,18 +2039,12 @@ void HelperThread::handleWasmTier2GeneratorWorkload(
       HelperThreadState().wasmTier2GeneratorWorklist(locked).popCopy());
 
   wasm::Tier2GeneratorTask* task = wasmTier2GeneratorTask();
-  {
-    AutoUnlockHelperThreadState unlock(locked);
-    task->runTask();
-  }
+
+  
+  task->runTaskLocked(locked);
 
   currentTask.reset();
-  js_delete(task);
 
-  
-  
-  
-  HelperThreadState().incWasmTier2GeneratorsFinished(locked);
   HelperThreadState().notifyAll(GlobalHelperThreadState::CONSUMER, locked);
 }
 

@@ -63,6 +63,21 @@ class Module::Tier2GeneratorTaskImpl : public Tier2GeneratorTask {
 
   void cancel() override { cancelled_ = true; }
 
+  void runTaskLocked(AutoLockHelperThreadState& locked) override {
+    {
+      AutoUnlockHelperThreadState unlock(locked);
+      runTask();
+    }
+
+    
+    
+    
+    HelperThreadState().incWasmTier2GeneratorsFinished(locked);
+
+    
+    js_delete(this);
+  }
+
   void runTask() override {
     CompileTier2(*compileArgs_, bytecode_->bytes, *module_, &cancelled_);
   }
