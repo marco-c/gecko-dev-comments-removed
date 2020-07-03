@@ -35,7 +35,7 @@ haz_run_schema = Schema({
     
     
     
-    Required('secrets', default=False): Any(bool, [text_type]),
+    Optional('secrets'): Any(bool, [text_type]),
 
     
     Required('workdir'): text_type,

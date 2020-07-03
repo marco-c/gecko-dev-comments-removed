@@ -63,7 +63,7 @@ packaging_description_schema = schema.extend({
 
         
         
-        Required('comm-checkout', default=False): bool,
+        Optional('comm-checkout'): bool,
     },
 
     

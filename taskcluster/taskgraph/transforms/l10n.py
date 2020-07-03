@@ -72,7 +72,7 @@ l10n_description_schema = schema.extend({
 
         
         
-        Required('comm-checkout', default=False): bool,
+        Optional('comm-checkout'): bool,
     },
     
     Optional('index'): {
@@ -101,11 +101,10 @@ l10n_description_schema = schema.extend({
 
     
     
-    Required('docker-image', default=None): _by_platform(Any(
+    Optional('docker-image'): _by_platform(
         
         {'in-tree': text_type},
-        None,
-    )),
+    ),
 
     Optional('fetches'): {
         text_type: _by_platform([text_type]),
@@ -116,7 +115,7 @@ l10n_description_schema = schema.extend({
     
     
     
-    Required('secrets', default=False): _by_platform(Any(bool, [text_type])),
+    Optional('secrets'): _by_platform(Any(bool, [text_type])),
 
     
     Required('treeherder'): {
