@@ -6057,9 +6057,20 @@ ContentParent::RecvStorageAccessPermissionGrantedForOrigin(
     const MaybeDiscarded<BrowsingContext>& aParentContext,
     const Principal& aTrackingPrincipal, const nsCString& aTrackingOrigin,
     const int& aAllowMode,
+    const Maybe<ContentBlockingNotifier::StorageAccessPermissionGrantedReason>&
+        aReason,
     StorageAccessPermissionGrantedForOriginResolver&& aResolver) {
   if (aParentContext.IsNullOrDiscarded()) {
     return IPC_OK();
+  }
+
+  
+  
+  
+  if (aReason) {
+    ContentBlockingNotifier::ReportUnblockingToConsole(
+        aParentContext.get_canonical(), NS_ConvertUTF8toUTF16(aTrackingOrigin),
+        aReason.value());
   }
 
   ContentBlocking::SaveAccessForOriginOnParentProcess(
