@@ -16,6 +16,31 @@
 using namespace js;
 using namespace js::jit;
 
+void IonCompileTask::runTaskLocked(AutoLockHelperThreadState& locked) {
+  
+  
+  alloc().lifoAlloc()->setReadWrite();
+
+  {
+    AutoUnlockHelperThreadState unlock(locked);
+    runTask();
+  }
+
+  FinishOffThreadIonCompile(this, locked);
+
+  JSRuntime* rt = script()->runtimeFromAnyThread();
+
+  
+  
+  
+  
+  
+  
+  
+  rt->mainContextFromAnyThread()->requestInterrupt(
+      InterruptReason::AttachIonCompilations);
+}
+
 void IonCompileTask::runTask() {
   
   TraceLoggerThread* logger = TraceLoggerForCurrentThread();

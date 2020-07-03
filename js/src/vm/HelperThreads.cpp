@@ -240,8 +240,8 @@ bool js::StartOffThreadIonFree(jit::IonCompileTask* task,
 
 
 
-static void FinishOffThreadIonCompile(jit::IonCompileTask* task,
-                                      const AutoLockHelperThreadState& lock) {
+void js::FinishOffThreadIonCompile(jit::IonCompileTask* task,
+                                   const AutoLockHelperThreadState& lock) {
   AutoEnterOOMUnsafeRegion oomUnsafe;
   if (!HelperThreadState().ionFinishedList(lock).append(task)) {
     oomUnsafe.crash("FinishOffThreadIonCompile");
@@ -2100,31 +2100,9 @@ void HelperThread::handleIonWorkload(AutoLockHelperThreadState& locked) {
   jit::IonCompileTask* task =
       HelperThreadState().highestPriorityPendingIonCompile(locked);
 
-  
-  
-  task->alloc().lifoAlloc()->setReadWrite();
-
   currentTask.emplace(task);
 
-  JSRuntime* rt = task->script()->runtimeFromAnyThread();
-
-  {
-    AutoUnlockHelperThreadState unlock(locked);
-
-    task->runTask();
-  }
-
-  FinishOffThreadIonCompile(task, locked);
-
-  
-  
-  
-  
-  
-  
-  
-  rt->mainContextFromAnyThread()->requestInterrupt(
-      InterruptReason::AttachIonCompilations);
+  task->runTaskLocked(locked);
 
   currentTask.reset();
 
