@@ -204,14 +204,8 @@ NS_IMETHODIMP ParentProcessDocumentChannel::AsyncOpen(
         p->ChainTo(aResolveValue.mPromise.forget(), __func__);
       },
       [self](DocumentLoadListener::OpenPromiseFailedType&& aRejectValue) {
-        
-        
-        
-        
-        if (!aRejectValue.mSwitchedProcess) {
-          self->DisconnectChildListeners(aRejectValue.mStatus,
-                                         aRejectValue.mLoadGroupStatus);
-        }
+        self->DisconnectChildListeners(aRejectValue.mStatus,
+                                       aRejectValue.mLoadGroupStatus);
         self->RemoveObserver();
       });
   return NS_OK;

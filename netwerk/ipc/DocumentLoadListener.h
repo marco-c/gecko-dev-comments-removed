@@ -468,6 +468,9 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   uint64_t mLoadIdentifier = 0;
 
+  
+  bool mCancelled = false;
+
   Maybe<nsCString> mOriginalUriString;
 
   bool mSupportsRedirectToRealChannel = true;

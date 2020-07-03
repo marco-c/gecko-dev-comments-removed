@@ -46,7 +46,7 @@ child:
   
   
   
-  async DisconnectChildListeners(nsresult aStatus, nsresult aLoadGroupReason, bool aSwitchedProcess);
+  async DisconnectChildListeners(nsresult aStatus, nsresult aLoadGroupReason);
 
   
   
