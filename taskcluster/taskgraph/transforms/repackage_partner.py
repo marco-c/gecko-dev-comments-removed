@@ -38,9 +38,6 @@ PACKAGE_FORMATS['installer-stub']['args'].extend(["--package-name", "{package-na
 
 packaging_description_schema = schema.extend({
     
-    Required('depname', default='build'): text_type,
-
-    
     Optional('label'): text_type,
 
     

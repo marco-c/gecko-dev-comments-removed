@@ -32,9 +32,6 @@ logger = logging.getLogger(__name__)
 
 beetmover_description_schema = schema.extend({
     
-    Required('depname', default='build'): text_type,
-
-    
     Required('label'): text_type,
 
     
