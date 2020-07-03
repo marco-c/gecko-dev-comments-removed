@@ -4420,7 +4420,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  static void CollectTopMostChildNodesCompletelyInRange(
+  static void CollectTopMostChildContentsCompletelyInRange(
       const EditorRawDOMPoint& aStartPoint, const EditorRawDOMPoint& aEndPoint,
       nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents);
 
