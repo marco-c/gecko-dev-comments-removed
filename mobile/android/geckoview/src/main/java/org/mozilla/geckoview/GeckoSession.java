@@ -1289,12 +1289,22 @@ public class GeckoSession implements Parcelable {
         session.mWindow = null;
     }
 
+    
+
+
+
+    @Deprecated 
     @Override 
     @AnyThread
     public int describeContents() {
         return 0;
     }
 
+    
+
+
+
+    @Deprecated 
     @Override 
     @AnyThread
     public void writeToParcel(final Parcel out, final int flags) {
@@ -1304,6 +1314,11 @@ public class GeckoSession implements Parcelable {
     }
 
     
+    
+
+
+
+    @Deprecated 
     @AnyThread
     @SuppressWarnings("checkstyle:javadocmethod")
     public void readFromParcel(final @NonNull Parcel source) {
@@ -1317,6 +1332,11 @@ public class GeckoSession implements Parcelable {
         transferFrom(window, settings, id);
     }
 
+    
+
+
+
+    @Deprecated 
     public static final Creator<GeckoSession> CREATOR = new Creator<GeckoSession>() {
         @Override
         @AnyThread
