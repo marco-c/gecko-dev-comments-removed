@@ -1467,15 +1467,14 @@ EditorDOMPointInText WSRunScanner::GetEndOfCollapsibleASCIIWhiteSpaces(
   
   
   
-  for (EditorDOMPointInText atEndOfPreviousTextNode =
-           EditorDOMPointInText::AtEndOf(
-               *aPointAtASCIIWhiteSpace.ContainerAsText());
-       ;) {
+  EditorDOMPointInText afterLastWhiteSpace =
+      EditorDOMPointInText::AtEndOf(*aPointAtASCIIWhiteSpace.ContainerAsText());
+  for (EditorDOMPointInText atEndOfPreviousTextNode = afterLastWhiteSpace;;) {
     EditorDOMPointInText atStartOfNextTextNode =
         GetInclusiveNextEditableCharPoint(atEndOfPreviousTextNode);
     if (!atStartOfNextTextNode.IsSet()) {
       
-      return atEndOfPreviousTextNode;
+      return afterLastWhiteSpace;
     }
 
     
@@ -1487,7 +1486,7 @@ EditorDOMPointInText WSRunScanner::GetEndOfCollapsibleASCIIWhiteSpaces(
     
     
     if (!atStartOfNextTextNode.IsCharASCIISpace()) {
-      return atEndOfPreviousTextNode;
+      return afterLastWhiteSpace;
     }
 
     
@@ -1500,7 +1499,7 @@ EditorDOMPointInText WSRunScanner::GetEndOfCollapsibleASCIIWhiteSpaces(
     }
 
     
-    atEndOfPreviousTextNode =
+    afterLastWhiteSpace = atEndOfPreviousTextNode =
         EditorDOMPointInText::AtEndOf(*atStartOfNextTextNode.ContainerAsText());
   }
 }
@@ -1527,14 +1526,14 @@ EditorDOMPointInText WSRunScanner::GetFirstASCIIWhiteSpacePointCollapsedTo(
   
   
   
-  for (EditorDOMPointInText atStartOfPreviousTextNode =
-           EditorDOMPointInText(aPointAtASCIIWhiteSpace.ContainerAsText(), 0);
-       ;) {
+  EditorDOMPointInText atLastWhiteSpace =
+      EditorDOMPointInText(aPointAtASCIIWhiteSpace.ContainerAsText(), 0);
+  for (EditorDOMPointInText atStartOfPreviousTextNode = atLastWhiteSpace;;) {
     EditorDOMPointInText atLastCharOfNextTextNode =
         GetPreviousEditableCharPoint(atStartOfPreviousTextNode);
     if (!atLastCharOfNextTextNode.IsSet()) {
       
-      return atStartOfPreviousTextNode;
+      return atLastWhiteSpace;
     }
 
     
@@ -1546,7 +1545,7 @@ EditorDOMPointInText WSRunScanner::GetFirstASCIIWhiteSpacePointCollapsedTo(
     
     
     if (!atLastCharOfNextTextNode.IsCharASCIISpace()) {
-      return atStartOfPreviousTextNode;
+      return atLastWhiteSpace;
     }
 
     
@@ -1559,7 +1558,7 @@ EditorDOMPointInText WSRunScanner::GetFirstASCIIWhiteSpacePointCollapsedTo(
     }
 
     
-    atStartOfPreviousTextNode =
+    atLastWhiteSpace = atStartOfPreviousTextNode =
         EditorDOMPointInText(atLastCharOfNextTextNode.ContainerAsText(), 0);
   }
 }
