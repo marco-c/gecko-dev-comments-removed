@@ -137,6 +137,7 @@ async function testSteps() {
     await requestFinished(request);
 
     createUnknownFileIn(`${originRelativePath}/sdb`);
+    createUnknownDirectoryIn(`${originRelativePath}/sdb`);
   }
 
   
