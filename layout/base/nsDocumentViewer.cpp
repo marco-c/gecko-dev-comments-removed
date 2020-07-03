@@ -475,7 +475,6 @@ class nsDocumentViewer final : public nsIContentViewer,
   
   int32_t mHintCharsetSource;
   const Encoding* mHintCharset;
-  const Encoding* mForceCharacterSet;
 
   bool mIsPageMode;
   bool mInitializedForPrintPreview;
@@ -591,7 +590,6 @@ nsDocumentViewer::nsDocumentViewer()
 #endif    
       mHintCharsetSource(kCharsetUninitialized),
       mHintCharset(nullptr),
-      mForceCharacterSet(nullptr),
       mIsPageMode(false),
       mInitializedForPrintPreview(false),
       mHidden(false) {
@@ -2758,46 +2756,6 @@ void nsDocumentViewer::EmulatePrefersColorSchemeInternal(
     aPc->SetOverridePrefersColorScheme(aOverride);
   };
   PropagateToPresContextsHelper(childFn, presContextFn);
-}
-
-NS_IMETHODIMP nsDocumentViewer::GetForceCharacterSet(
-    nsACString& aForceCharacterSet) {
-  auto encoding = nsDocumentViewer::GetForceCharset();
-  if (encoding) {
-    encoding->Name(aForceCharacterSet);
-  } else {
-    aForceCharacterSet.Truncate();
-  }
-  return NS_OK;
-}
-
-
-NS_IMETHODIMP_(const Encoding*)
-nsDocumentViewer::GetForceCharset() { return mForceCharacterSet; }
-
-NS_IMETHODIMP
-nsDocumentViewer::SetForceCharacterSet(const nsACString& aForceCharacterSet) {
-  
-  const Encoding* encoding = nullptr;
-  if (!aForceCharacterSet.IsEmpty()) {
-    if (!(encoding = Encoding::ForLabel(aForceCharacterSet))) {
-      
-      return NS_ERROR_INVALID_ARG;
-    }
-  }
-  nsDocumentViewer::SetForceCharset(encoding);
-  return NS_OK;
-}
-
-
-NS_IMETHODIMP_(void)
-nsDocumentViewer::SetForceCharset(const Encoding* aEncoding) {
-  mForceCharacterSet = aEncoding;
-  auto childFn = [aEncoding](nsDocumentViewer* aChild) {
-    aChild->SetForceCharset(aEncoding);
-  };
-  
-  CallChildren(childFn);
 }
 
 NS_IMETHODIMP nsDocumentViewer::GetHintCharacterSet(

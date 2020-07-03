@@ -213,18 +213,6 @@ void nsHTMLDocument::TryUserForcedCharset(nsIContentViewer* aCv,
     return;
   }
 
-  const Encoding* forceCharsetFromDocShell = nullptr;
-  if (aCv) {
-    
-    forceCharsetFromDocShell = aCv->GetForceCharset();
-  }
-
-  if (forceCharsetFromDocShell && IsAsciiCompatible(forceCharsetFromDocShell)) {
-    aEncoding = WrapNotNull(forceCharsetFromDocShell);
-    aCharsetSource = kCharsetFromUserForced;
-    return;
-  }
-
   if (aDocShell) {
     
     auto encoding = nsDocShell::Cast(aDocShell)->GetForcedCharset();
