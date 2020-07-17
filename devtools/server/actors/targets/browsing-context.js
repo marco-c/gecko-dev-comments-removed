@@ -440,6 +440,10 @@ const browsingContextTargetPrototype = {
     return this.docShell && this.docShell.browsingContext.id;
   },
 
+  get browserId() {
+    return this.docShell && this.docShell.browsingContext.browserId;
+  },
+
   
 
 

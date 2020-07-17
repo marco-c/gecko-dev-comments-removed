@@ -35,12 +35,29 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     protocol.Actor.prototype.initialize.call(this, conn);
     this._browser = options && options.browser;
 
-    if (this._browser) {
-      
-      
-      this.browsingContextID = this._browser.browsingContext.id;
-    }
     this.notifyResourceAvailable = this.notifyResourceAvailable.bind(this);
+  },
+
+  
+
+
+
+
+
+
+
+  get browserElement() {
+    return this._browser;
+  },
+
+  
+
+
+
+
+
+  get browserId() {
+    return this._browser?.browserId;
   },
 
   destroy: function() {
@@ -85,7 +102,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
           
           
           [Resources.TYPES.CONSOLE_MESSAGE]:
-            enableServerWatcher && !!this._browser,
+            enableServerWatcher && !!this.browserElement,
           [Resources.TYPES.PLATFORM_MESSAGE]: enableServerWatcher,
         },
       },
@@ -245,8 +262,8 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-    const targetActor = this.browsingContextID
-      ? TargetActorRegistry.getTargetActor(this.browsingContextID)
+    const targetActor = this.browserElement
+      ? TargetActorRegistry.getTargetActor(this.browserId)
       : TargetActorRegistry.getParentProcessTargetActor();
     if (targetActor) {
       await targetActor.watchTargetResources(resourceTypes);
@@ -284,7 +301,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
     
     
-    if (!this._browser || this._browser.browsingContext) {
+    if (!this.browserElement || this.browserElement.browsingContext) {
       for (const targetType in TARGET_HELPERS) {
         
         
@@ -303,8 +320,8 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     }
 
     
-    const targetActor = this.browsingContextID
-      ? TargetActorRegistry.getTargetActor(this.browsingContextID)
+    const targetActor = this.browserElement
+      ? TargetActorRegistry.getTargetActor(this.browserId)
       : TargetActorRegistry.getParentProcessTargetActor();
     if (targetActor) {
       targetActor.unwatchTargetResources(contentProcessResourceTypes);

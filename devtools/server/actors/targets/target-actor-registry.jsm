@@ -30,11 +30,11 @@ var TargetActorRegistry = {
 
 
 
-  getTargetActor(browsingContextID) {
+  getTargetActor(browserId) {
     for (const actor of browsingContextTargetActors) {
       if (
-        actor.browsingContextID == browsingContextID ||
-        (browsingContextID === null && actor.typeName === "parentProcessTarget")
+        actor.browserId == browserId ||
+        (browserId === null && actor.typeName === "parentProcessTarget")
       ) {
         return actor;
       }
@@ -43,7 +43,6 @@ var TargetActorRegistry = {
   },
 
   
-
 
 
 

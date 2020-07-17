@@ -43,6 +43,9 @@ const { ActorManagerParent } = ChromeUtils.import(
 
 
 
+
+
+
 const watchedDataByWatcherActor = new Map();
 
 
@@ -80,7 +83,7 @@ function getWatchedData(watcher, { createData = false } = {}) {
       
       
       
-      browsingContextID: watcher.browsingContextID,
+      browserId: watcher.browserId,
       
       connectionPrefix: watcher.conn.prefix,
     };

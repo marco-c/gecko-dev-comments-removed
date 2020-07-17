@@ -22,7 +22,7 @@ async function createTargets(watcher, watchedResources) {
   
   
   const browsingContexts = getFilteredRemoteBrowsingContext(
-    watcher.browsingContextID
+    watcher.browserElement
   );
   const promises = [];
   for (const browsingContext of browsingContexts) {
@@ -38,7 +38,7 @@ async function createTargets(watcher, watchedResources) {
       .instantiateTarget({
         watcherActorID: watcher.actorID,
         connectionPrefix: watcher.conn.prefix,
-        browsingContextID: watcher.browsingContextID,
+        browserId: watcher.browserId,
         watchedResources: watcher.watchedResources,
       });
     promises.push(promise);
@@ -55,7 +55,7 @@ async function createTargets(watcher, watchedResources) {
 async function destroyTargets(watcher) {
   
   const browsingContexts = getFilteredRemoteBrowsingContext(
-    watcher.browsingContextID
+    watcher.browserElement
   );
   const promises = [];
   for (const browsingContext of browsingContexts) {
@@ -68,7 +68,7 @@ async function destroyTargets(watcher) {
       .getActor("DevToolsFrame")
       .destroyTarget({
         watcherActorID: watcher.actorID,
-        browsingContextID: watcher.browsingContextID,
+        browserId: watcher.browserId,
       });
     promises.push(promise);
   }
@@ -85,28 +85,7 @@ async function destroyTargets(watcher) {
 
 
 async function watchResources({ watcher, resourceTypes }) {
-  
-  
-  const watchingAdditionalTargets = WatcherRegistry.isWatchingTargets(
-    watcher,
-    "frame"
-  );
-  const { browsingContextID } = watcher;
-  const browsingContexts = watchingAdditionalTargets
-    ? getFilteredRemoteBrowsingContext(browsingContextID)
-    : [];
-  
-  
-  if (browsingContextID) {
-    const topBrowsingContext = BrowsingContext.get(browsingContextID);
-    
-    
-    
-    
-    if (topBrowsingContext.currentWindowGlobal.osPid != -1) {
-      browsingContexts.push(topBrowsingContext);
-    }
-  }
+  const browsingContexts = getWatchingBrowsingContexts(watcher);
   const promises = [];
   for (const browsingContext of browsingContexts) {
     logWindowGlobal(
@@ -118,7 +97,7 @@ async function watchResources({ watcher, resourceTypes }) {
       .getActor("DevToolsFrame")
       .watchFrameResources({
         watcherActorID: watcher.actorID,
-        browsingContextID: watcher.browsingContextID,
+        browserId: watcher.browserId,
         resourceTypes,
       });
     promises.push(promise);
@@ -133,28 +112,7 @@ async function watchResources({ watcher, resourceTypes }) {
 
 
 function unwatchResources({ watcher, resourceTypes }) {
-  
-  
-  const watchingAdditionalTargets = WatcherRegistry.isWatchingTargets(
-    watcher,
-    "frame"
-  );
-  const { browsingContextID } = watcher;
-  const browsingContexts = watchingAdditionalTargets
-    ? getFilteredRemoteBrowsingContext(browsingContextID)
-    : [];
-  
-  
-  if (browsingContextID) {
-    const topBrowsingContext = BrowsingContext.get(browsingContextID);
-    
-    
-    
-    
-    if (topBrowsingContext.currentWindowGlobal.osPid != -1) {
-      browsingContexts.push(topBrowsingContext);
-    }
-  }
+  const browsingContexts = getWatchingBrowsingContexts(watcher);
   for (const browsingContext of browsingContexts) {
     logWindowGlobal(
       browsingContext.currentWindowGlobal,
@@ -165,7 +123,7 @@ function unwatchResources({ watcher, resourceTypes }) {
       .getActor("DevToolsFrame")
       .unwatchFrameResources({
         watcherActorID: watcher.actorID,
-        browsingContextID: watcher.browsingContextID,
+        browserId: watcher.browserId,
         resourceTypes,
       });
   }
@@ -186,14 +144,48 @@ module.exports = {
 
 
 
+function getWatchingBrowsingContexts(watcher) {
+  
+  
+  const watchingAdditionalTargets = WatcherRegistry.isWatchingTargets(
+    watcher,
+    "frame"
+  );
+  const { browserElement } = watcher;
+  const browsingContexts = watchingAdditionalTargets
+    ? getFilteredRemoteBrowsingContext(browserElement)
+    : [];
+  
+  
+  if (browserElement) {
+    const topBrowsingContext = browserElement.browsingContext;
+    
+    
+    
+    
+    if (topBrowsingContext.currentWindowGlobal.osPid != -1) {
+      browsingContexts.push(topBrowsingContext);
+    }
+  }
+  return browsingContexts;
+}
 
-function getFilteredRemoteBrowsingContext(watchedBrowsingContextID) {
+
+
+
+
+
+
+
+
+
+function getFilteredRemoteBrowsingContext(browserElement) {
   return getAllRemoteBrowsingContexts(
-    watchedBrowsingContextID
+    browserElement?.browsingContext
   ).filter(browsingContext =>
     shouldNotifyWindowGlobal(
       browsingContext.currentWindowGlobal,
-      watchedBrowsingContextID
+      browserElement?.browserId
     )
   );
 }
@@ -210,7 +202,7 @@ function getFilteredRemoteBrowsingContext(watchedBrowsingContextID) {
 
 
 
-function getAllRemoteBrowsingContexts(browsingContextID) {
+function getAllRemoteBrowsingContexts(topBrowsingContext) {
   const browsingContexts = [];
 
   
@@ -238,8 +230,8 @@ function getAllRemoteBrowsingContexts(browsingContextID) {
   }
 
   
-  if (browsingContextID) {
-    walk(BrowsingContext.get(browsingContextID));
+  if (topBrowsingContext) {
+    walk(topBrowsingContext);
     
     browsingContexts.shift();
   } else {
@@ -261,7 +253,7 @@ function getAllRemoteBrowsingContexts(browsingContextID) {
 
 
 
-function shouldNotifyWindowGlobal(windowGlobal, watchedBrowsingContextID) {
+function shouldNotifyWindowGlobal(windowGlobal, watchedBrowserId) {
   const browsingContext = windowGlobal.browsingContext;
   
   if (browsingContext.currentRemoteType == "extension") {
@@ -282,10 +274,7 @@ function shouldNotifyWindowGlobal(windowGlobal, watchedBrowsingContextID) {
     return false;
   }
 
-  if (
-    watchedBrowsingContextID &&
-    browsingContext.top.id != watchedBrowsingContextID
-  ) {
+  if (watchedBrowserId && browsingContext.browserId != watchedBrowserId) {
     return false;
   }
 
@@ -307,7 +296,9 @@ function logWindowGlobal(windowGlobal, message) {
   const browsingContext = windowGlobal.browsingContext;
   dump(
     message +
-      " | BrowsingContext.id: " +
+      " | BrowsingContext.browserId: " +
+      browsingContext.browserId +
+      " id: " +
       browsingContext.id +
       " Inner Window ID: " +
       windowGlobal.innerWindowId +
