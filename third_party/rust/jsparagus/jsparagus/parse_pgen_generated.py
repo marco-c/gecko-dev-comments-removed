@@ -11,6 +11,7 @@ def state_43_actions(parser, lexer):
     replay = [StateTermValue(0, Nt(InitNt(goal=Nt('grammar'))), value, False)]
     del parser.stack[-1:]
     parser.shift_list(replay, lexer)
+    state_86_actions(parser, lexer)
     return
 
 def state_44_actions(parser, lexer):
@@ -20,6 +21,7 @@ def state_44_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('nt_defs'), value, False)]
     del parser.stack[-1:]
     parser.shift_list(replay, lexer)
+    state_84_actions(parser, lexer)
     return
 
 def state_45_actions(parser, lexer):
@@ -29,6 +31,7 @@ def state_45_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('token_defs'), value, False)]
     del parser.stack[-1:]
     parser.shift_list(replay, lexer)
+    state_85_actions(parser, lexer)
     return
 
 def state_46_actions(parser, lexer):
@@ -38,6 +41,7 @@ def state_46_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('nt_defs'), value, False)]
     del parser.stack[-2:]
     parser.shift_list(replay, lexer)
+    state_84_actions(parser, lexer)
     return
 
 def state_47_actions(parser, lexer):
@@ -47,6 +51,7 @@ def state_47_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('token_defs'), value, False)]
     del parser.stack[-2:]
     parser.shift_list(replay, lexer)
+    state_85_actions(parser, lexer)
     return
 
 def state_48_actions(parser, lexer):
@@ -56,6 +61,7 @@ def state_48_actions(parser, lexer):
     replay = [StateTermValue(0, Nt(InitNt(goal=Nt('grammar'))), value, False)]
     del parser.stack[-2:]
     parser.shift_list(replay, lexer)
+    state_86_actions(parser, lexer)
     return
 
 def state_49_actions(parser, lexer):
@@ -65,6 +71,7 @@ def state_49_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('nt_def'), value, False)]
     del parser.stack[-4:]
     parser.shift_list(replay, lexer)
+    state_112_actions(parser, lexer)
     return
 
 def state_50_actions(parser, lexer):
@@ -74,6 +81,7 @@ def state_50_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('prods'), value, False)]
     del parser.stack[-1:]
     parser.shift_list(replay, lexer)
+    state_98_actions(parser, lexer)
     return
 
 def state_51_actions(parser, lexer):
@@ -83,6 +91,7 @@ def state_51_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('terms'), value, False)]
     del parser.stack[-1:]
     parser.shift_list(replay, lexer)
+    state_101_actions(parser, lexer)
     return
 
 def state_52_actions(parser, lexer):
@@ -92,6 +101,7 @@ def state_52_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('symbol'), value, False)]
     del parser.stack[-1:]
     parser.shift_list(replay, lexer)
+    state_95_actions(parser, lexer)
     return
 
 def state_53_actions(parser, lexer):
@@ -101,6 +111,7 @@ def state_53_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('symbol'), value, False)]
     del parser.stack[-1:]
     parser.shift_list(replay, lexer)
+    state_95_actions(parser, lexer)
     return
 
 def state_54_actions(parser, lexer):
@@ -110,6 +121,7 @@ def state_54_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('prods'), value, False)]
     del parser.stack[-1:]
     parser.shift_list(replay, lexer)
+    state_98_actions(parser, lexer)
     return
 
 def state_55_actions(parser, lexer):
@@ -119,6 +131,7 @@ def state_55_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('token_def'), value, False)]
     del parser.stack[-4:]
     parser.shift_list(replay, lexer)
+    state_104_actions(parser, lexer)
     return
 
 def state_56_actions(parser, lexer):
@@ -128,6 +141,7 @@ def state_56_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('nt_def'), value, False)]
     del parser.stack[-5:]
     parser.shift_list(replay, lexer)
+    state_112_actions(parser, lexer)
     return
 
 def state_57_actions(parser, lexer):
@@ -137,6 +151,7 @@ def state_57_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('prods'), value, False)]
     del parser.stack[-2:]
     parser.shift_list(replay, lexer)
+    state_98_actions(parser, lexer)
     return
 
 def state_58_actions(parser, lexer):
@@ -146,6 +161,7 @@ def state_58_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('prod'), value, False)]
     del parser.stack[-2:]
     parser.shift_list(replay, lexer)
+    state_105_actions(parser, lexer)
     return
 
 def state_59_actions(parser, lexer):
@@ -155,6 +171,7 @@ def state_59_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('terms'), value, False)]
     del parser.stack[-2:]
     parser.shift_list(replay, lexer)
+    state_101_actions(parser, lexer)
     return
 
 def state_60_actions(parser, lexer):
@@ -164,6 +181,7 @@ def state_60_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('term'), value, False)]
     del parser.stack[-2:]
     parser.shift_list(replay, lexer)
+    state_118_actions(parser, lexer)
     return
 
 def state_61_actions(parser, lexer):
@@ -173,6 +191,7 @@ def state_61_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('nt_def'), value, False)]
     del parser.stack[-5:]
     parser.shift_list(replay, lexer)
+    state_112_actions(parser, lexer)
     return
 
 def state_62_actions(parser, lexer):
@@ -182,6 +201,7 @@ def state_62_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('nt_def'), value, False)]
     del parser.stack[-5:]
     parser.shift_list(replay, lexer)
+    state_112_actions(parser, lexer)
     return
 
 def state_63_actions(parser, lexer):
@@ -191,6 +211,7 @@ def state_63_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('token_def'), value, False)]
     del parser.stack[-5:]
     parser.shift_list(replay, lexer)
+    state_104_actions(parser, lexer)
     return
 
 def state_64_actions(parser, lexer):
@@ -200,6 +221,7 @@ def state_64_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('prod'), value, False)]
     del parser.stack[-3:]
     parser.shift_list(replay, lexer)
+    state_105_actions(parser, lexer)
     return
 
 def state_65_actions(parser, lexer):
@@ -209,6 +231,7 @@ def state_65_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('reducer'), value, False)]
     del parser.stack[-2:]
     parser.shift_list(replay, lexer)
+    state_106_actions(parser, lexer)
     return
 
 def state_66_actions(parser, lexer):
@@ -218,6 +241,7 @@ def state_66_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('expr'), value, False)]
     del parser.stack[-1:]
     parser.shift_list(replay, lexer)
+    state_114_actions(parser, lexer)
     return
 
 def state_67_actions(parser, lexer):
@@ -227,6 +251,7 @@ def state_67_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('expr'), value, False)]
     del parser.stack[-1:]
     parser.shift_list(replay, lexer)
+    state_114_actions(parser, lexer)
     return
 
 def state_68_actions(parser, lexer):
@@ -236,6 +261,7 @@ def state_68_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('nt_def'), value, False)]
     del parser.stack[-6:]
     parser.shift_list(replay, lexer)
+    state_112_actions(parser, lexer)
     return
 
 def state_69_actions(parser, lexer):
@@ -245,6 +271,7 @@ def state_69_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('nt_def'), value, False)]
     del parser.stack[-6:]
     parser.shift_list(replay, lexer)
+    state_112_actions(parser, lexer)
     return
 
 def state_70_actions(parser, lexer):
@@ -254,6 +281,7 @@ def state_70_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('nt_def'), value, False)]
     del parser.stack[-6:]
     parser.shift_list(replay, lexer)
+    state_112_actions(parser, lexer)
     return
 
 def state_71_actions(parser, lexer):
@@ -263,6 +291,7 @@ def state_71_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('nt_def'), value, False)]
     del parser.stack[-7:]
     parser.shift_list(replay, lexer)
+    state_112_actions(parser, lexer)
     return
 
 def state_72_actions(parser, lexer):
@@ -272,6 +301,7 @@ def state_72_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('expr'), value, False)]
     del parser.stack[-3:]
     parser.shift_list(replay, lexer)
+    state_114_actions(parser, lexer)
     return
 
 def state_73_actions(parser, lexer):
@@ -281,6 +311,7 @@ def state_73_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('expr_args'), value, False)]
     del parser.stack[-1:]
     parser.shift_list(replay, lexer)
+    state_115_actions(parser, lexer)
     return
 
 def state_74_actions(parser, lexer):
@@ -290,6 +321,7 @@ def state_74_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('expr'), value, False)]
     del parser.stack[-4:]
     parser.shift_list(replay, lexer)
+    state_114_actions(parser, lexer)
     return
 
 def state_75_actions(parser, lexer):
@@ -299,6 +331,7 @@ def state_75_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('expr'), value, False)]
     del parser.stack[-4:]
     parser.shift_list(replay, lexer)
+    state_114_actions(parser, lexer)
     return
 
 def state_76_actions(parser, lexer):
@@ -308,6 +341,7 @@ def state_76_actions(parser, lexer):
     replay = [StateTermValue(0, Nt('expr_args'), value, False)]
     del parser.stack[-3:]
     parser.shift_list(replay, lexer)
+    state_115_actions(parser, lexer)
     return
 
 def state_77_actions(parser, lexer):
@@ -318,6 +352,7 @@ def state_77_actions(parser, lexer):
     replay = replay + parser.stack[-1:]
     del parser.stack[-2:]
     parser.shift_list(replay, lexer)
+    state_116_actions(parser, lexer)
     return
 
 def state_78_actions(parser, lexer):
@@ -328,6 +363,7 @@ def state_78_actions(parser, lexer):
     replay = replay + parser.stack[-1:]
     del parser.stack[-3:]
     parser.shift_list(replay, lexer)
+    state_116_actions(parser, lexer)
     return
 
 def state_79_actions(parser, lexer):
@@ -338,40 +374,433 @@ def state_79_actions(parser, lexer):
     replay = replay + parser.stack[-1:]
     del parser.stack[-2:]
     parser.shift_list(replay, lexer)
+    state_118_actions(parser, lexer)
     return
+
+def state_80_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(23)
+    top = parser.stack.pop()
+    top = StateTermValue(23, top.term, top.value, top.new_line)
+    parser.stack.append(top)
+    return
+
+def state_81_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(12)
+    top = parser.stack.pop()
+    top = StateTermValue(12, top.term, top.value, top.new_line)
+    parser.stack.append(top)
+    return
+
+def state_82_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(13)
+    top = parser.stack.pop()
+    top = StateTermValue(13, top.term, top.value, top.new_line)
+    parser.stack.append(top)
+    return
+
+def state_83_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(11)
+    top = parser.stack.pop()
+    top = StateTermValue(11, top.term, top.value, top.new_line)
+    parser.stack.append(top)
+    return
+
+def state_84_actions(parser, lexer):
+
+    value = None
+    if parser.top_state() in [10]:
+        state_81_actions(parser, lexer)
+        return
+    if parser.top_state() in [11]:
+        state_82_actions(parser, lexer)
+        return
+
+def state_85_actions(parser, lexer):
+
+    value = None
+    if parser.top_state() in [10]:
+        state_83_actions(parser, lexer)
+        return
+
+def state_86_actions(parser, lexer):
+
+    value = None
+    if parser.top_state() in [10]:
+        state_80_actions(parser, lexer)
+        return
+
+def state_87_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(44)
+    state_44_actions(parser, lexer)
+    return
+
+def state_88_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(46)
+    state_46_actions(parser, lexer)
+    return
+
+def state_89_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(4)
+    top = parser.stack.pop()
+    top = StateTermValue(4, top.term, top.value, top.new_line)
+    parser.stack.append(top)
+    return
+
+def state_90_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(5)
+    top = parser.stack.pop()
+    top = StateTermValue(5, top.term, top.value, top.new_line)
+    parser.stack.append(top)
+    return
+
+def state_91_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(6)
+    top = parser.stack.pop()
+    top = StateTermValue(6, top.term, top.value, top.new_line)
+    parser.stack.append(top)
+    return
+
+def state_92_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(7)
+    top = parser.stack.pop()
+    top = StateTermValue(7, top.term, top.value, top.new_line)
+    parser.stack.append(top)
+    return
+
+def state_93_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(8)
+    top = parser.stack.pop()
+    top = StateTermValue(8, top.term, top.value, top.new_line)
+    parser.stack.append(top)
+    return
+
+def state_94_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(9)
+    top = parser.stack.pop()
+    top = StateTermValue(9, top.term, top.value, top.new_line)
+    parser.stack.append(top)
+    return
+
+def state_95_actions(parser, lexer):
+
+    value = None
+    if parser.top_state() in [0, 1, 2, 3, 4, 5, 6, 7, 8]:
+        state_94_actions(parser, lexer)
+        return
+
+def state_96_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(45)
+    state_45_actions(parser, lexer)
+    return
+
+def state_97_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(47)
+    state_47_actions(parser, lexer)
+    return
+
+def state_98_actions(parser, lexer):
+
+    value = None
+    if parser.top_state() in [0]:
+        state_89_actions(parser, lexer)
+        return
+    if parser.top_state() in [1]:
+        state_90_actions(parser, lexer)
+        return
+    if parser.top_state() in [2]:
+        state_91_actions(parser, lexer)
+        return
+    if parser.top_state() in [3]:
+        state_92_actions(parser, lexer)
+        return
+
+def state_99_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(50)
+    state_50_actions(parser, lexer)
+    return
+
+def state_100_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(57)
+    state_57_actions(parser, lexer)
+    return
+
+def state_101_actions(parser, lexer):
+
+    value = None
+    if parser.top_state() in [0, 1, 2, 3, 4, 5, 6, 7]:
+        state_93_actions(parser, lexer)
+        return
+
+def state_102_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(51)
+    state_51_actions(parser, lexer)
+    return
+
+def state_103_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(59)
+    state_59_actions(parser, lexer)
+    return
+
+def state_104_actions(parser, lexer):
+
+    value = None
+    if parser.top_state() in [10]:
+        state_96_actions(parser, lexer)
+        return
+    if parser.top_state() in [11]:
+        state_97_actions(parser, lexer)
+        return
+
+def state_105_actions(parser, lexer):
+
+    value = None
+    if parser.top_state() in [0, 1, 2, 3]:
+        state_99_actions(parser, lexer)
+        return
+    if parser.top_state() in [4, 5, 6, 7]:
+        state_100_actions(parser, lexer)
+        return
+
+def state_106_actions(parser, lexer):
+
+    value = None
+    if parser.top_state() in [8]:
+        state_107_actions(parser, lexer)
+        return
+
+def state_107_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(38)
+    top = parser.stack.pop()
+    top = StateTermValue(38, top.term, top.value, top.new_line)
+    parser.stack.append(top)
+    return
+
+def state_108_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(65)
+    state_65_actions(parser, lexer)
+    return
+
+def state_109_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(73)
+    state_73_actions(parser, lexer)
+    return
+
+def state_110_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(42)
+    top = parser.stack.pop()
+    top = StateTermValue(42, top.term, top.value, top.new_line)
+    parser.stack.append(top)
+    return
+
+def state_111_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(76)
+    state_76_actions(parser, lexer)
+    return
+
+def state_112_actions(parser, lexer):
+
+    value = None
+    if parser.top_state() in [10, 11]:
+        state_87_actions(parser, lexer)
+        return
+    if parser.top_state() in [12, 13]:
+        state_88_actions(parser, lexer)
+        return
+
+def state_113_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(41)
+    top = parser.stack.pop()
+    top = StateTermValue(41, top.term, top.value, top.new_line)
+    parser.stack.append(top)
+    return
+
+def state_114_actions(parser, lexer):
+
+    value = None
+    if parser.top_state() in [15]:
+        state_108_actions(parser, lexer)
+        return
+    if parser.top_state() in [14]:
+        state_109_actions(parser, lexer)
+        return
+    if parser.top_state() in [16]:
+        state_110_actions(parser, lexer)
+        return
+    if parser.top_state() in [17]:
+        state_111_actions(parser, lexer)
+        return
+
+def state_115_actions(parser, lexer):
+
+    value = None
+    if parser.top_state() in [14]:
+        state_113_actions(parser, lexer)
+        return
+
+def state_116_actions(parser, lexer):
+
+    value = None
+    if parser.top_state() in [10]:
+        state_117_actions(parser, lexer)
+        return
+
+def state_117_actions(parser, lexer):
+
+    value = None
+    parser.replay_action(43)
+    state_43_actions(parser, lexer)
+    return
+
+def state_118_actions(parser, lexer):
+
+    value = None
+    if parser.top_state() in [0, 1, 2, 3, 4, 5, 6, 7]:
+        state_102_actions(parser, lexer)
+        return
+    if parser.top_state() in [8]:
+        state_103_actions(parser, lexer)
+        return
 
 actions = [
     
 
-    {'nt': 2, 'COMMENT': 3, 'goal': 4, 'token': 6, 'var': 7, Nt('grammar'): 43, Nt('nt_defs'): 1, Nt('nt_def'): 44, Nt('token_defs'): 5, Nt('token_def'): 45, Nt(InitNt(goal=Nt('grammar'))): 8},
+    {'}': 49, 'IDENT': 52, 'STR': 53, 'COMMENT': 54, Nt('prods'): 4, Nt('prod'): 50, Nt('terms'): 8, Nt('term'): 51, Nt('symbol'): 9},
 
     
 
-    {End(): 77, 'goal': 4, 'COMMENT': 3, 'nt': 2, Nt('nt_def'): 46},
+    {'}': 61, 'IDENT': 52, 'STR': 53, 'COMMENT': 54, Nt('prods'): 5, Nt('prod'): 50, Nt('terms'): 8, Nt('term'): 51, Nt('symbol'): 9},
 
     
 
-    {'IDENT': 10},
+    {'}': 62, 'IDENT': 52, 'STR': 53, 'COMMENT': 54, Nt('prods'): 6, Nt('prod'): 50, Nt('terms'): 8, Nt('term'): 51, Nt('symbol'): 9},
 
     
 
-    {'nt': 11, 'goal': 12},
+    {'}': 69, 'IDENT': 52, 'STR': 53, 'COMMENT': 54, Nt('prods'): 7, Nt('prod'): 50, Nt('terms'): 8, Nt('term'): 51, Nt('symbol'): 9},
 
     
 
-    {'nt': 13},
+    {'}': 56, 'IDENT': 52, 'STR': 53, Nt('prod'): 57, Nt('terms'): 8, Nt('term'): 51, Nt('symbol'): 9},
 
     
 
-    {'nt': 2, 'COMMENT': 3, 'goal': 4, 'token': 6, 'var': 7, Nt('nt_defs'): 14, Nt('nt_def'): 44, Nt('token_def'): 47},
+    {'}': 68, 'IDENT': 52, 'STR': 53, Nt('prod'): 57, Nt('terms'): 8, Nt('term'): 51, Nt('symbol'): 9},
 
     
 
-    {'IDENT': 15},
+    {'}': 70, 'IDENT': 52, 'STR': 53, Nt('prod'): 57, Nt('terms'): 8, Nt('term'): 51, Nt('symbol'): 9},
 
     
 
-    {'token': 16},
+    {'}': 71, 'IDENT': 52, 'STR': 53, Nt('prod'): 57, Nt('terms'): 8, Nt('term'): 51, Nt('symbol'): 9},
+
+    
+
+    {';': 58, 'IDENT': 52, 'STR': 53, '=>': 15, Nt('term'): 59, Nt('symbol'): 9, Nt('reducer'): 38},
+
+    
+
+    {'=>': 79, 'STR': 79, 'IDENT': 79, ';': 79, '?': 60, Nt('reducer'): 79, Nt('symbol'): 79, Nt('term'): 79},
+
+    
+
+    {'nt': 18, 'COMMENT': 19, 'goal': 20, 'token': 21, 'var': 22, Nt('grammar'): 43, Nt('nt_defs'): 12, Nt('nt_def'): 44, Nt('token_defs'): 11, Nt('token_def'): 45, Nt(InitNt(goal=Nt('grammar'))): 23},
+
+    
+
+    {'nt': 18, 'COMMENT': 19, 'goal': 20, 'token': 21, 'var': 22, Nt('nt_defs'): 13, Nt('nt_def'): 44, Nt('token_def'): 47},
+
+    
+
+    {End(): 77, 'goal': 20, 'COMMENT': 19, 'nt': 18, Nt('nt_def'): 46},
+
+    
+
+    {End(): 78, 'goal': 20, 'COMMENT': 19, 'nt': 18, Nt('nt_def'): 46},
+
+    
+
+    {')': 72, 'MATCH': 66, 'IDENT': 39, 'Some': 40, 'None': 67, Nt('expr_args'): 41, Nt('expr'): 73},
+
+    
+
+    {'MATCH': 66, 'IDENT': 39, 'Some': 40, 'None': 67, Nt('expr'): 65},
+
+    
+
+    {'MATCH': 66, 'IDENT': 39, 'Some': 40, 'None': 67, Nt('expr'): 42},
+
+    
+
+    {'MATCH': 66, 'IDENT': 39, 'Some': 40, 'None': 67, Nt('expr'): 76},
+
+    
+
+    {'IDENT': 25},
+
+    
+
+    {'nt': 26, 'goal': 27},
+
+    
+
+    {'nt': 28},
+
+    
+
+    {'IDENT': 29},
+
+    
+
+    {'token': 30},
 
     
 
@@ -383,51 +812,43 @@ actions = [
 
     
 
-    {'{': 17},
+    {'{': 0},
 
     
 
-    {'IDENT': 18},
+    {'IDENT': 31},
 
     
 
-    {'nt': 19},
+    {'nt': 32},
 
     
 
-    {'IDENT': 20},
+    {'IDENT': 33},
 
     
 
-    {End(): 78, 'goal': 4, 'COMMENT': 3, 'nt': 2, Nt('nt_def'): 46},
+    {'=': 34},
 
     
 
-    {'=': 21},
+    {'IDENT': 35},
 
     
 
-    {'IDENT': 22},
+    {'{': 1},
 
     
 
-    {'}': 49, 'IDENT': 52, 'STR': 53, 'COMMENT': 54, Nt('prods'): 23, Nt('prod'): 50, Nt('terms'): 24, Nt('term'): 51, Nt('symbol'): 25},
+    {'IDENT': 36},
 
     
 
-    {'{': 26},
+    {'{': 2},
 
     
 
-    {'IDENT': 27},
-
-    
-
-    {'{': 28},
-
-    
-
-    {'STR': 29},
+    {'STR': 37},
 
     
 
@@ -435,27 +856,7 @@ actions = [
 
     
 
-    {'}': 56, 'IDENT': 52, 'STR': 53, Nt('prod'): 57, Nt('terms'): 24, Nt('term'): 51, Nt('symbol'): 25},
-
-    
-
-    {';': 58, 'IDENT': 52, 'STR': 53, '=>': 31, Nt('term'): 59, Nt('symbol'): 25, Nt('reducer'): 30},
-
-    
-
-    {'=>': 79, 'STR': 79, 'IDENT': 79, ';': 79, '?': 60, Nt('reducer'): 79, Nt('symbol'): 79, Nt('term'): 79},
-
-    
-
-    {'}': 61, 'IDENT': 52, 'STR': 53, 'COMMENT': 54, Nt('prods'): 32, Nt('prod'): 50, Nt('terms'): 24, Nt('term'): 51, Nt('symbol'): 25},
-
-    
-
-    {'{': 33},
-
-    
-
-    {'}': 62, 'IDENT': 52, 'STR': 53, 'COMMENT': 54, Nt('prods'): 34, Nt('prod'): 50, Nt('terms'): 24, Nt('term'): 51, Nt('symbol'): 25},
+    {'{': 3},
 
     
 
@@ -467,51 +868,19 @@ actions = [
 
     
 
-    {'MATCH': 66, 'IDENT': 35, 'Some': 36, 'None': 67, Nt('expr'): 65},
+    {'(': 14},
 
     
 
-    {'}': 68, 'IDENT': 52, 'STR': 53, Nt('prod'): 57, Nt('terms'): 24, Nt('term'): 51, Nt('symbol'): 25},
+    {'(': 16},
 
     
 
-    {'}': 69, 'IDENT': 52, 'STR': 53, 'COMMENT': 54, Nt('prods'): 37, Nt('prod'): 50, Nt('terms'): 24, Nt('term'): 51, Nt('symbol'): 25},
-
-    
-
-    {'}': 70, 'IDENT': 52, 'STR': 53, Nt('prod'): 57, Nt('terms'): 24, Nt('term'): 51, Nt('symbol'): 25},
-
-    
-
-    {'(': 38},
-
-    
-
-    {'(': 39},
-
-    
-
-    {'}': 71, 'IDENT': 52, 'STR': 53, Nt('prod'): 57, Nt('terms'): 24, Nt('term'): 51, Nt('symbol'): 25},
-
-    
-
-    {')': 72, 'MATCH': 66, 'IDENT': 35, 'Some': 36, 'None': 67, Nt('expr_args'): 40, Nt('expr'): 73},
-
-    
-
-    {'MATCH': 66, 'IDENT': 35, 'Some': 36, 'None': 67, Nt('expr'): 41},
-
-    
-
-    {')': 74, ',': 42},
+    {')': 74, ',': 17},
 
     
 
     {')': 75},
-
-    
-
-    {'MATCH': 66, 'IDENT': 35, 'Some': 36, 'None': 67, Nt('expr'): 76},
 
     
 
@@ -661,6 +1030,162 @@ actions = [
 
     state_79_actions,
 
+    
+
+    state_80_actions,
+
+    
+
+    state_81_actions,
+
+    
+
+    state_82_actions,
+
+    
+
+    state_83_actions,
+
+    
+
+    state_84_actions,
+
+    
+
+    state_85_actions,
+
+    
+
+    state_86_actions,
+
+    
+
+    state_87_actions,
+
+    
+
+    state_88_actions,
+
+    
+
+    state_89_actions,
+
+    
+
+    state_90_actions,
+
+    
+
+    state_91_actions,
+
+    
+
+    state_92_actions,
+
+    
+
+    state_93_actions,
+
+    
+
+    state_94_actions,
+
+    
+
+    state_95_actions,
+
+    
+
+    state_96_actions,
+
+    
+
+    state_97_actions,
+
+    
+
+    state_98_actions,
+
+    
+
+    state_99_actions,
+
+    
+
+    state_100_actions,
+
+    
+
+    state_101_actions,
+
+    
+
+    state_102_actions,
+
+    
+
+    state_103_actions,
+
+    
+
+    state_104_actions,
+
+    
+
+    state_105_actions,
+
+    
+
+    state_106_actions,
+
+    
+
+    state_107_actions,
+
+    
+
+    state_108_actions,
+
+    
+
+    state_109_actions,
+
+    
+
+    state_110_actions,
+
+    
+
+    state_111_actions,
+
+    
+
+    state_112_actions,
+
+    
+
+    state_113_actions,
+
+    
+
+    state_114_actions,
+
+    
+
+    state_115_actions,
+
+    
+
+    state_116_actions,
+
+    
+
+    state_117_actions,
+
+    
+
+    state_118_actions,
+
 ]
 
 error_codes = [
@@ -669,9 +1194,12 @@ error_codes = [
     None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
     None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
     None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+    None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+    None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+    None, None, None, None, None, None, None,
 ]
 
-goal_nt_to_init_state = {'grammar': 0}
+goal_nt_to_init_state = {'grammar': 10}
 
 class DefaultMethods:
     def nt_defs_single(self, x0):

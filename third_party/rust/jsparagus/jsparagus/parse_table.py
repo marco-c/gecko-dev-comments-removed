@@ -11,7 +11,7 @@ import itertools
 from . import types
 from .utils import consume, keep_until, split
 from .ordered import OrderedSet, OrderedFrozenSet
-from .actions import Action, FilterFlag
+from .actions import Action, Replay, Reduce, FilterStates, Seq
 from .grammar import End, ErrorSymbol, InitNt, Nt
 from .rewrites import CanonicalGrammar
 from .lr0 import LR0Generator, Term
@@ -19,6 +19,9 @@ from .aps import APS, Edge, Path
 
 
 StateId = int
+
+
+DelayedAction = typing.Union[Action, typing.Tuple[Action, ...]]
 
 
 class StateAndTransitions:
@@ -42,6 +45,10 @@ class StateAndTransitions:
     locations: OrderedFrozenSet[str]
 
     
+    
+    delayed_actions: OrderedFrozenSet[DelayedAction]
+
+    
     terminals: typing.Dict[str, StateId]
 
     
@@ -52,10 +59,6 @@ class StateAndTransitions:
 
     
     epsilon: typing.List[typing.Tuple[Action, StateId]]
-
-    
-    
-    delayed_actions: OrderedFrozenSet[Action]
 
     
     backedges: OrderedSet[Edge]
@@ -73,7 +76,7 @@ class StateAndTransitions:
             self,
             index: StateId,
             locations: OrderedFrozenSet[str],
-            delayed_actions: OrderedFrozenSet[Action] = OrderedFrozenSet()
+            delayed_actions: OrderedFrozenSet[DelayedAction] = OrderedFrozenSet()
     ) -> None:
         assert isinstance(locations, OrderedFrozenSet)
         assert isinstance(delayed_actions, OrderedFrozenSet)
@@ -182,8 +185,15 @@ class StateAndTransitions:
         self.errors = {
             k: state_map[s] for k, s in self.errors.items()
         }
+        
+        
+        epsilon_by_dest = collections.defaultdict(list)
+        for k, s in self.epsilon:
+            epsilon_by_dest[state_map[s]].append(k.rewrite_state_indexes(state_map))
         self.epsilon = [
-            (k.rewrite_state_indexes(state_map), state_map[s]) for k, s in self.epsilon
+            (k, s)
+            for s, ks in epsilon_by_dest.items()
+            for k in ks[0].fold_by_destination(ks)
         ]
         self.backedges = OrderedSet(
             Edge(state_map[edge.src], apply_on_term(edge.term))
@@ -352,9 +362,14 @@ class ParseTable:
         self.remove_all_unreachable_state(verbose, progress)
         
         
+        self.lower_reduce_actions(verbose, progress)
+        
         self.fold_identical_endings(verbose, progress)
         
-        self.group_epsilon_states(verbose, progress)
+        
+        self.group_nonterminal_states(verbose, progress)
+        
+        
 
     def save(self, filename: os.PathLike) -> None:
         with open(filename, 'wb') as f:
@@ -382,6 +397,7 @@ class ParseTable:
         for s in self.states:
             if s is not None:
                 s.rewrite_state_indexes(state_map)
+                self.assert_state_invariants(s)
         self.named_goals = [
             (nt, state_map[s]) for nt, s in self.named_goals
         ]
@@ -397,7 +413,7 @@ class ParseTable:
     def new_state(
             self,
             locations: OrderedFrozenSet[str],
-            delayed_actions: OrderedFrozenSet[Action] = OrderedFrozenSet()
+            delayed_actions: OrderedFrozenSet[DelayedAction] = OrderedFrozenSet()
     ) -> typing.Tuple[bool, StateAndTransitions]:
         """Get or create state with an LR0 location and delayed actions. Returns a tuple
         where the first element is whether the element is newly created, and
@@ -414,7 +430,7 @@ class ParseTable:
     def get_state(
             self,
             locations: OrderedFrozenSet[str],
-            delayed_actions: OrderedFrozenSet[Action] = OrderedFrozenSet()
+            delayed_actions: OrderedFrozenSet[DelayedAction] = OrderedFrozenSet()
     ) -> StateAndTransitions:
         """Like new_state(), but only returns the state without returning whether it is
         newly created or not."""
@@ -538,6 +554,8 @@ class ParseTable:
         for e in src.backedges:
             assert e.term is not None
             assert self.states[e.src][e.term] == src.index
+        if not self.assume_inconsistent:
+            assert not src.is_inconsistent()
 
     def remove_unreachable_states(
             self,
@@ -636,7 +654,7 @@ class ParseTable:
             self.debug_dump()
 
     def term_is_shifted(self, term: typing.Optional[Term]) -> bool:
-        return not (isinstance(term, Action) and term.update_stack())
+        return not isinstance(term, Action) or term.follow_edge()
 
     def is_valid_path(
             self,
@@ -1126,7 +1144,7 @@ class ParseTable:
                 
                 
                 locations: OrderedSet[str] = OrderedSet()
-                delayed: OrderedSet[Action] = OrderedSet()
+                delayed: OrderedSet[DelayedAction] = OrderedSet()
                 new_shift_map: typing.DefaultDict[
                     Term,
                     typing.List[typing.Tuple[StateAndTransitions, typing.List[Edge]]]
@@ -1314,6 +1332,138 @@ class ParseTable:
         self.states = [s for s in self.states if s is not None]
         self.rewrite_reordered_state_indexes()
 
+    def lower_reduce_actions(self, verbose: bool, progress: bool) -> None:
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if verbose or progress:
+            print("Lower Reduce actions.")
+
+        maybe_unreachable_set: OrderedSet[StateId] = OrderedSet()
+
+        def transform() -> typing.Iterator[None]:
+            for s in self.states:
+                term, _ = next(iter(s.epsilon), (None, None))
+                if self.term_is_shifted(term):
+                    continue
+                assert len(s.epsilon) == 1
+                yield  
+                reduce_state = s
+                if verbose:
+                    print("Inlining shift-operation for state {}".format(str(reduce_state)))
+
+                
+                
+                
+                
+                
+                
+                
+                aps = APS.start(s.index)
+                states_by_replay_term = collections.defaultdict(list)
+                
+                
+                for reduced_aps in aps.shift_next(self):
+                    
+                    
+                    
+                    iter_aps = reduced_aps
+                    next_is_action = self.states[iter_aps.state].epsilon != []
+                    has_replay = iter_aps.replay != []
+                    assert next_is_action is False and has_replay is True
+                    while (not next_is_action) and has_replay:
+                        
+                        
+                        next_aps = list(iter_aps.shift_next(self))
+                        if len(next_aps) == 0:
+                            
+                            
+                            
+                            
+                            
+                            break
+                        assert len(next_aps) == 1
+                        iter_aps = next_aps[0]
+                        next_is_action = self.states[iter_aps.state].epsilon != []
+                        has_replay = iter_aps.replay != []
+                    
+                    
+                    replay_list = [e.src for e in iter_aps.shift]
+                    assert len(replay_list) >= 2
+                    replay_term = Replay(replay_list[1:])
+                    states_by_replay_term[replay_term].append(replay_list[0])
+
+                
+                filter_by_replay_term = {
+                    replay_term: FilterStates(states)
+                    for replay_term, states in states_by_replay_term.items()
+                }
+
+                
+                reduce_term, _ = next(iter(s.epsilon))
+                if isinstance(reduce_term, Reduce):
+                    unwind_term: Action = reduce_term.unwind
+                else:
+                    assert isinstance(reduce_term, Seq)
+                    assert isinstance(reduce_term.actions[-1], Reduce)
+                    unwind_term = Seq(list(reduce_term.actions[:-1]) + [reduce_term.actions[-1].unwind])
+
+                
+                
+                self.remove_edge(reduce_state, reduce_term, maybe_unreachable_set)
+
+                
+                
+                locations = reduce_state.locations
+                delayed: OrderedFrozenSet[DelayedAction] = OrderedFrozenSet(filter_by_replay_term.items())
+                is_new, filter_state = self.new_state(locations, delayed)
+                self.add_edge(reduce_state, unwind_term, filter_state.index)
+                if not is_new:
+                    for replay_term, filter_term in filter_by_replay_term.items():
+                        assert filter_term in filter_state
+                        replay_state = self.states[filter_state[filter_term]]
+                        assert replay_term in replay_state
+                        
+                    
+                    
+                    continue
+
+                for replay_term, filter_term in filter_by_replay_term.items():
+                    dest_idx = replay_term.replay_steps[-1]
+                    dest = self.states[dest_idx]
+
+                    
+                    locations = dest.locations
+                    delayed = OrderedFrozenSet(itertools.chain(dest.delayed_actions, [replay_term]))
+                    is_new, replay_state = self.new_state(locations, delayed)
+                    self.add_edge(filter_state, filter_term, replay_state.index)
+                    assert (not is_new) == (replay_term in replay_state)
+
+                    
+                    if is_new:
+                        dest_idx = replay_term.replay_steps[-1]
+                        self.add_edge(replay_state, replay_term, dest_idx)
+                    
+                    assert not replay_state.is_inconsistent()
+
+                
+                
+                assert not reduce_state.is_inconsistent()
+                assert not filter_state.is_inconsistent()
+
+        consume(transform(), progress)
+
     def fold_identical_endings(self, verbose: bool, progress: bool) -> None:
         
         
@@ -1376,6 +1526,28 @@ class ParseTable:
         self.states.extend(shift_states)
         self.states.extend(from_shf_action_states)
         self.states.extend(from_act_action_states)
+        self.rewrite_reordered_state_indexes()
+
+    def group_nonterminal_states(self, verbose: bool, progress: bool) -> None:
+        
+        
+        
+        freq_count = collections.Counter(nt for s in self.states for nt in s.nonterminals)
+        freq_nt, _ = zip(*freq_count.most_common())
+
+        def state_value(s: StateAndTransitions) -> float:
+            value = 0.0
+            if len(s.epsilon) != 0:
+                return 4.0
+            if len(s.nonterminals) == 0:
+                return 2.0
+            i = 1.0
+            for nt in freq_nt:
+                if nt in s:
+                    value += i
+                i /= 2.0
+            return -value
+        self.states.sort(key=state_value)
         self.rewrite_reordered_state_indexes()
 
     def count_shift_states(self) -> int:

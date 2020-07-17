@@ -1,5 +1,5 @@
 from __future__ import annotations
-# mypy: disallow-untyped-defs, disallow-incomplete-defs, disallow-untyped-calls
+
 
 import typing
 import dataclasses
@@ -8,7 +8,7 @@ from .ordered import OrderedFrozenSet
 from .grammar import Element, ErrorSymbol, InitNt, Nt
 from . import types, grammar
 
-# Avoid circular reference between this module and parse_table.py
+
 if typing.TYPE_CHECKING:
     from .parse_table import StateId
 
@@ -18,68 +18,68 @@ class StackDiff:
     """
     __slots__ = ['pop', 'nt', 'replay']
 
-    # Example: We have shifted `b * c X Y`. We want to reduce `b * c` to Mul.
-    #
-    # In the initial LR0 pass over the grammar, this produces a Reduce edge.
-    #
-    # action         pop          replay
-    # -------------- ------       ---------
-    # Reduce         3 (`b * c`)  2 (`X Y`)
-    #   The parser moves `X Y` to the replay queue, pops `b * c`, creates the
-    #   new `Mul` nonterminal, consults the stack and parse table to determine
-    #   the new state id, then replays the new nonterminal. Reduce leaves `X Y`
-    #   on the runtime replay queue. It's the runtime's responsibility to
-    #   notice that they are there and replay them.
-    #
-    # Later, the Reduce edge might be lowered into an [Unwind; FilterState;
-    # Replay] sequence, which encode both the Reduce action, and the expected
-    # behavior of the runtime.
-    #
-    # action         pop          replay
-    # -------------- ------       ---------
-    # Unwind         3            2
-    #   The parser moves `X Y` to the replay queue, pops `b * c`, creates the
-    #   new `Mul` nonterminal, and inserts it at the front of the replay queue.
-    #
-    # FilterState    ---          ---
-    #   Determines the new state id, if it's context-dependent.
-    #   This doesn't touch the stack, so no StackDiff.
-    #
-    # Replay         0            -3
-    #   Shift the three elements we left on the replay queue back to the stack:
-    #   `(b*c) X Y`.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    # Number of elements to be popped from the stack, this is used when
-    # reducing the stack with a non-terminal.
-    #
-    # This number is always positive or zero.
+    
+    
+    
+    
     pop: int
 
-    # When reducing, a non-terminal is pushed after removing all replayed and
-    # popped elements. If not None, this is the non-terminal which is produced
-    # by reducing the action.
+    
+    
+    
     nt: typing.Union[Nt, ErrorSymbol, None]
 
-    # Number of terms this action moves from the stack to the runtime replay
-    # queue (not counting `self.nt`), or from the replay queue to the stack if
-    # negative.
-    #
-    # When executing actions, some lookahead might have been used to make the
-    # parse table consistent. Replayed terms are popped before popping any
-    # elements from the stack, and they are added in reversed order in the
-    # replay list, such that they would be shifted after shifting the `reduced`
-    # non-terminal.
-    #
-    # This number might also be negative, in which case some lookahead terms
-    # are expected to exists in the replay list, and they are shifted back.
-    # This must happen only follow_edge is True.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     replay: int
 
 
 class Action:
     __slots__ = ["_hash"]
 
-    # Cached hash.
+    
     _hash: typing.Optional[int]
 
     def __init__(self) -> None:
@@ -152,6 +152,15 @@ class Action:
         the new indexes"""
         return self
 
+    def fold_by_destination(self, actions: typing.List[Action]) -> typing.List[Action]:
+        """If after rewriting state indexes, multiple condition are reaching the same
+        destination state, we attempt to fold them by destination. Not
+        implementing this function can lead to the introduction of inconsistent
+        states, as the conditions might be redundant. """
+
+        
+        return actions
+
     def __eq__(self, other: object) -> bool:
         if self.__class__ != other.__class__:
             return False
@@ -191,7 +200,7 @@ class Replay(Action):
     this does not Shift a term given as argument as the replay action should
     always be garanteed and that we want to maximize the sharing of code when
     possible."""
-    __slots__ = ['replay_dest']
+    __slots__ = ['replay_steps']
 
     replay_steps: typing.Tuple[StateId, ...]
 
@@ -225,9 +234,9 @@ class Unwind(Action):
 
     def __init__(self, nt: Nt, pop: int, replay: int = 0) -> None:
         super().__init__()
-        self.nt = nt    # Non-terminal which is reduced
-        self.pop = pop  # Number of stack elements which should be replayed.
-        self.replay = replay  # List of terms to shift back
+        self.nt = nt    
+        self.pop = pop  
+        self.replay = replay  
 
     def __str__(self) -> str:
         return "Unwind({}, {}, {})".format(self.nt, self.pop, self.replay)
@@ -306,9 +315,9 @@ class Lookahead(Action):
         self.accept = accept
 
     def is_inconsistent(self) -> bool:
-        # A lookahead restriction cannot be encoded in code, it has to be
-        # solved using fix_with_lookahead, which encodes the lookahead
-        # resolution in the generated parse table.
+        
+        
+        
         return True
 
     def is_condition(self) -> bool:
@@ -343,15 +352,15 @@ class CheckNotOnNewLine(Action):
     offset: int
 
     def __init__(self, offset: int = 0) -> None:
-        # assert offset >= -1 and "Smaller offsets are not supported on all backends."
+        
         super().__init__()
         self.offset = offset
 
     def is_inconsistent(self) -> bool:
-        # We can only look at stacked terminals. Having an offset of 0 implies
-        # that we are looking for the next terminal, which is not yet shifted.
-        # Therefore this action is inconsistent as long as the terminal is not
-        # on the stack.
+        
+        
+        
+        
         return self.offset >= 0
 
     def is_condition(self) -> bool:
@@ -384,7 +393,7 @@ class FilterStates(Action):
 
     def __init__(self, states: typing.Iterable[StateId]):
         super().__init__()
-        # Set of states which can follow this transition.
+        
         self.states = OrderedFrozenSet(sorted(states))
 
     def is_condition(self) -> bool:
@@ -403,6 +412,15 @@ class FilterStates(Action):
     def rewrite_state_indexes(self, state_map: typing.Dict[StateId, StateId]) -> FilterStates:
         states = list(state_map[s] for s in self.states)
         return FilterStates(states)
+
+    def fold_by_destination(self, actions: typing.List[Action]) -> typing.List[Action]:
+        states: typing.List[StateId] = []
+        for a in actions:
+            if not isinstance(a, FilterStates):
+                
+                return actions
+            states.extend(a.states)
+        return [FilterStates(states)]
 
     def __str__(self) -> str:
         return "FilterStates({})".format(self.states)
@@ -472,13 +490,13 @@ class PopFlag(Action):
         return "PopFlag({})".format(self.flag)
 
 
-# OutputExpr: An expression mini-language that compiles very directly to code
-# in the output language (Rust or Python). An OutputExpr is one of:
-#
-# str - an identifier in the generated code
-# int - an index into the runtime stack
-# None or Some(FunCallArg) - an optional value
-#
+
+
+
+
+
+
+
 OutputExpr = typing.Union[str, int, None, grammar.Some]
 
 
@@ -506,12 +524,12 @@ class FunCall(Action):
             offset: int = 0,
     ) -> None:
         super().__init__()
-        self.trait = trait        # Trait on which this method is implemented.
-        self.method = method      # Method and argument to be read for calling it.
-        self.fallible = fallible  # Whether the function call can fail.
-        self.offset = offset      # Offset to add to each argument offset.
-        self.args = args          # Tuple of arguments offsets.
-        self.set_to = set_to      # Temporary variable name to set with the result.
+        self.trait = trait        
+        self.method = method      
+        self.fallible = fallible  
+        self.offset = offset      
+        self.args = args          
+        self.set_to = set_to      
 
     def __str__(self) -> str:
         return "{} = {}::{}({}){} [off: {}]".format(
@@ -545,7 +563,7 @@ class Seq(Action):
 
     def __init__(self, actions: typing.Sequence[Action]) -> None:
         super().__init__()
-        self.actions = tuple(actions)   # Ordered list of actions to execute.
+        self.actions = tuple(actions)   
         assert all([not a.is_condition() for a in actions])
         assert all([not isinstance(a, Seq) for a in actions])
         assert all([a.follow_edge() for a in actions[:-1]])

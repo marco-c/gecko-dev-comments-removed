@@ -248,6 +248,8 @@ pub struct VarScopeData {
     
     pub first_frame_slot: FrameSlot,
 
+    pub function_has_extensible_scope: bool,
+
     
     
     
@@ -255,13 +257,18 @@ pub struct VarScopeData {
 }
 
 impl VarScopeData {
-    pub fn new(var_count: usize, enclosing: ScopeIndex) -> Self {
+    pub fn new(
+        var_count: usize,
+        function_has_extensible_scope: bool,
+        enclosing: ScopeIndex,
+    ) -> Self {
         let capacity = var_count;
 
         Self {
             base: BaseScopeData::new(capacity),
             
             first_frame_slot: FrameSlot::new(0),
+            function_has_extensible_scope,
             enclosing,
         }
     }
@@ -446,10 +453,10 @@ pub struct FunctionScopeData {
     
     pub base: BaseScopeData<Option<BindingName>>,
 
-    has_parameter_exprs: bool,
+    pub has_parameter_exprs: bool,
 
-    non_positional_formal_start: usize,
-    var_start: usize,
+    pub non_positional_formal_start: usize,
+    pub var_start: usize,
 
     
     
@@ -464,6 +471,8 @@ pub struct FunctionScopeData {
     
     
     pub enclosing: ScopeIndex,
+
+    pub function_index: ScriptStencilIndex,
 }
 
 impl FunctionScopeData {
@@ -473,6 +482,7 @@ impl FunctionScopeData {
         non_positional_formal_start: usize,
         max_var_count: usize,
         enclosing: ScopeIndex,
+        function_index: ScriptStencilIndex,
     ) -> Self {
         let capacity = positional_parameter_count + non_positional_formal_start + max_var_count;
 
@@ -484,6 +494,7 @@ impl FunctionScopeData {
             
             first_frame_slot: FrameSlot::new(0),
             enclosing,
+            function_index,
         }
     }
 }
