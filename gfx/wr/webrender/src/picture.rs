@@ -5887,7 +5887,6 @@ impl PicturePrimitive {
 
         
         let actual_composite_mode = match self.requested_composite_mode {
-            Some(PictureCompositeMode::Filter(ref filter)) if filter.is_noop() => None,
             Some(PictureCompositeMode::TileCache { slice_id }) => {
                 
                 
