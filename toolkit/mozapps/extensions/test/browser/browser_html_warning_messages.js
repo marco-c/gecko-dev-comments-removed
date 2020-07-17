@@ -128,9 +128,13 @@ add_task(async function testBlocked() {
 });
 
 add_task(async function testUnsignedDisabled() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["xpinstall.signatures.required", true]],
-  });
+  
+  
+  
+  
+  
+  const sigPref = "xpinstall.signatures.required";
+  Services.prefs.setBoolPref(sigPref, true);
 
   let id = "unsigned@mochi.test";
   gProvider.createAddons([
@@ -151,7 +155,20 @@ add_task(async function testUnsignedDisabled() {
     type: "error",
   });
 
-  await SpecialPowers.popPrefEnv();
+  
+  
+  
+  
+  delete window.SpecialPowers;
+  Services.prefs.setBoolPref(sigPref, false);
+  await TestUtils.waitForCondition(() => {
+    try {
+      return !!windowGlobalChild.getActor("SpecialPowers");
+    } catch (e) {
+      return false;
+    }
+  }, "wait for SpecialPowers to be reloaded");
+  ok(window.SpecialPowers, "SpecialPowers should be re-defined");
 });
 
 add_task(async function testUnsignedLangpackDisabled() {
