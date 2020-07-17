@@ -3971,7 +3971,9 @@ IonBuilder::InliningResult IonBuilder::inlineScriptedCall(CallInfo& callInfo,
   }
 
   
-  MOZ_TRY(callInfo.pushCallStack(&mirGen_, current));
+  if (!callInfo.pushCallStack(&mirGen_, current)) {
+    return abort(AbortReason::Alloc);
+  }
 
   MResumePoint* outerResumePoint =
       MResumePoint::New(alloc(), current, pc, MResumePoint::Outer);
@@ -4802,7 +4804,9 @@ AbortReasonOr<Ok> IonBuilder::inlineCalls(CallInfo& callInfo,
 
   MBasicBlock* dispatchBlock = current;
   callInfo.setImplicitlyUsedUnchecked();
-  MOZ_TRY(callInfo.pushCallStack(&mirGen_, dispatchBlock));
+  if (!callInfo.pushCallStack(&mirGen_, dispatchBlock)) {
+    return abort(AbortReason::Alloc);
+  }
 
   
   
@@ -5449,7 +5453,9 @@ AbortReasonOr<Ok> IonBuilder::jsop_funcall(uint32_t argc) {
   
   
   
-  MOZ_TRY(callInfo.savePriorCallStack(&mirGen_, current, argc + 2));
+  if (!callInfo.savePriorCallStack(&mirGen_, current, argc + 2)) {
+    return abort(AbortReason::Alloc);
+  }
 
   
   current->shimmySlots(funcDepth - 1);
@@ -5800,18 +5806,17 @@ AbortReasonOr<Ok> IonBuilder::jsop_funapplyarray(uint32_t argc) {
   return pushTypeBarrier(apply, types, BarrierKind::TypeSet);
 }
 
-AbortReasonOr<Ok> CallInfo::savePriorCallStack(MIRGenerator* mir,
-                                               MBasicBlock* current,
-                                               size_t peekDepth) {
+bool CallInfo::savePriorCallStack(MIRGenerator* mir, MBasicBlock* current,
+                                  size_t peekDepth) {
   MOZ_ASSERT(priorArgs_.empty());
   if (!priorArgs_.reserve(peekDepth)) {
-    return mir->abort(AbortReason::Alloc);
+    return false;
   }
   while (peekDepth) {
     priorArgs_.infallibleAppend(current->peek(0 - int32_t(peekDepth)));
     peekDepth--;
   }
-  return Ok();
+  return true;
 }
 
 AbortReasonOr<Ok> IonBuilder::jsop_funapplyarguments(uint32_t argc) {
@@ -5877,7 +5882,9 @@ AbortReasonOr<Ok> IonBuilder::jsop_funapplyarguments(uint32_t argc) {
 
   CallInfo callInfo(alloc(), pc,  false,
                      BytecodeIsPopped(pc));
-  MOZ_TRY(callInfo.savePriorCallStack(&mirGen_, current, 4));
+  if (!callInfo.savePriorCallStack(&mirGen_, current, 4)) {
+    return abort(AbortReason::Alloc);
+  }
 
   
   MDefinition* vp = current->pop();
