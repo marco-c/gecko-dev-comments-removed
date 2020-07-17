@@ -297,6 +297,10 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   static const uint32_t INDEX_VALUE_BIT = js::Bit(10);
   static const uint32_t INDEX_VALUE_SHIFT = 16;
 
+  static const uint32_t PINNED_ATOM_BIT = js::Bit(11);
+
+  
+  
   
   static const uint32_t NON_DEDUP_BIT = js::Bit(11);
 
@@ -1153,7 +1157,17 @@ class JSAtom : public JSLinearString {
   
   MOZ_ALWAYS_INLINE void morphIntoPermanentAtom() {
     MOZ_ASSERT(static_cast<JSString*>(this)->isAtom());
-    setFlagBit(PERMANENT_ATOM_MASK);
+    setFlagBit(PERMANENT_ATOM_MASK | PINNED_ATOM_BIT);
+  }
+
+  MOZ_ALWAYS_INLINE
+  bool isPinned() const { return flags() & PINNED_ATOM_BIT; }
+
+  
+  MOZ_ALWAYS_INLINE void setPinned() {
+    MOZ_ASSERT(static_cast<JSString*>(this)->isAtom());
+    MOZ_ASSERT(!isPinned());
+    setFlagBit(PINNED_ATOM_BIT);
   }
 
   inline js::HashNumber hash() const;
@@ -1228,7 +1242,8 @@ MOZ_ALWAYS_INLINE JSAtom* JSLinearString::morphAtomizedStringIntoAtom(
 MOZ_ALWAYS_INLINE JSAtom* JSLinearString::morphAtomizedStringIntoPermanentAtom(
     js::HashNumber hash) {
   MOZ_ASSERT(!isAtom());
-  setFlagBit(PERMANENT_ATOM_MASK);
+  setFlagBit(PERMANENT_ATOM_MASK | PINNED_ATOM_BIT);
+  setFlagBit(ATOM_BIT);
   JSAtom* atom = &asAtom();
   atom->initHash(hash);
   return atom;
