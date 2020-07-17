@@ -350,6 +350,11 @@ class WeakMap
 
   bool markEntries(GCMarker* marker) override;
 
+ protected:
+  
+  
+  bool findSweepGroupEdges() override;
+
   
 
 
@@ -365,11 +370,6 @@ class WeakMap
   }
   void exposeGCThingToActiveJS(JSObject* obj) const {
     JS::ExposeObjectToActiveJS(obj);
-  }
-
-  bool findSweepGroupEdges() override {
-    
-    return true;
   }
 
   void sweep() override;
@@ -396,8 +396,6 @@ class WeakMap
 class ObjectValueWeakMap : public WeakMap<HeapPtr<JSObject*>, HeapPtr<Value>> {
  public:
   ObjectValueWeakMap(JSContext* cx, JSObject* obj) : WeakMap(cx, obj) {}
-
-  bool findSweepGroupEdges() override;
 
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf);
 };
