@@ -5562,9 +5562,8 @@ bool nsContentUtils::CheckForSubFrameDrop(nsIDragSession* aDragSession,
 
   
   
-  RefPtr<Document> doc;
-  aDragSession->GetSourceDocument(getter_AddRefs(doc));
-  if (doc) {
+  RefPtr<Document> doc(aDragSession->GetSourceDocument());
+  if (doc && doc->GetBrowsingContext()) {
     
     
     for (BrowsingContext* bc = doc->GetBrowsingContext()->GetParent(); bc;
