@@ -19,6 +19,7 @@
 #include "frontend/SharedContext.h"        
 #include "vm/AsyncFunctionResolveKind.h"   
 #include "vm/JSScript.h"                   
+#include "vm/ModuleBuilder.h"              
 #include "vm/Opcodes.h"                    
 #include "vm/Scope.h"                      
 #include "wasm/AsmJS.h"                    
@@ -298,13 +299,8 @@ bool FunctionEmitter::emitTopLevelFunction(unsigned index) {
   if (bce_->sc->isModuleContext()) {
     
     
-
-    JS::Rooted<ModuleObject*> module(bce_->cx,
-                                     bce_->sc->asModuleContext()->module());
-    if (!module->noteFunctionDeclaration(bce_->cx, index)) {
-      return false;
-    }
-    return true;
+    return bce_->sc->asModuleContext()->builder.noteFunctionDeclaration(
+        bce_->cx, index);
   }
 
   MOZ_ASSERT(bce_->sc->isGlobalContext() || bce_->sc->isEvalContext());
