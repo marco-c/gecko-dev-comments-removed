@@ -3981,7 +3981,8 @@ bool DebuggerWeakMap<UnbarrieredKey, Wrapper,
     }
   }
 
-  return true;
+  
+  return Base::findSweepGroupEdges();
 }
 
 const JSClassOps DebuggerInstanceObject::classOps_ = {
