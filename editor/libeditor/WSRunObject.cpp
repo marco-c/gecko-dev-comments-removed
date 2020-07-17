@@ -205,6 +205,14 @@ already_AddRefed<Element> WSRunObject::InsertBreak(
   const WSFragment* beforeRun = FindNearestFragment(aPointToInsert, false);
   const WSFragment* afterRun = FindNearestFragment(aPointToInsert, true);
 
+  const Maybe<const WSFragment> visibleWSFragmentInMiddleOfLine =
+      TextFragmentData(mStart, mEnd, mNBSPData, mPRE)
+          .CreateWSFragmentForVisibleAndMiddleOfLine();
+  const PointPosition pointPositionWithVisibleWhiteSpaces =
+      visibleWSFragmentInMiddleOfLine.isSome()
+          ? visibleWSFragmentInMiddleOfLine.ref().ComparePoint(aPointToInsert)
+          : PointPosition::NotInSameDOMTree;
+
   EditorDOMPoint pointToInsert(aPointToInsert);
   {
     
@@ -226,9 +234,13 @@ already_AddRefed<Element> WSRunObject::InsertBreak(
             "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
         return nullptr;
       }
-    } else if (afterRun->IsVisibleAndMiddleOfHardLine()) {
-      
-      
+    }
+    
+    
+    else if (pointPositionWithVisibleWhiteSpaces ==
+                 PointPosition::StartOfFragment ||
+             pointPositionWithVisibleWhiteSpaces ==
+                 PointPosition::MiddleOfFragment) {
       EditorDOMPointInText atNextCharOfInsertionPoint =
           GetInclusiveNextEditableCharPoint(pointToInsert);
       if (atNextCharOfInsertionPoint.IsSet() &&
@@ -267,10 +279,18 @@ already_AddRefed<Element> WSRunObject::InsertBreak(
             "WSRunObject::DeleteTextAndTextNodesWithTransaction() failed");
         return nullptr;
       }
-    } else if (beforeRun->IsVisibleAndMiddleOfHardLine()) {
+    }
+    
+    
+    else if (pointPositionWithVisibleWhiteSpaces ==
+                 PointPosition::MiddleOfFragment ||
+             pointPositionWithVisibleWhiteSpaces ==
+                 PointPosition::EndOfFragment) {
       
-      nsresult rv = MaybeReplacePreviousNBSPWithASCIIWhiteSpace(*beforeRun,
-                                                                pointToInsert);
+      
+      
+      nsresult rv = MaybeReplacePreviousNBSPWithASCIIWhiteSpace(
+          visibleWSFragmentInMiddleOfLine.ref(), pointToInsert);
       if (NS_FAILED(rv)) {
         NS_WARNING(
             "WSRunObject::MaybeReplacePreviousNBSPWithASCIIWhiteSpace() "
