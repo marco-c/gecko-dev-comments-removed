@@ -267,13 +267,6 @@ class SVGOuterSVGAnonChildFrame final : public SVGDisplayContainerFrame {
   }
 };
 
-
-
-
-template <typename... Atoms>
-bool IsAnyAtomEqual(const nsAString& aString, nsAtom* aFirst, Atoms... aArgs);
-bool IsAnyAtomEqual(const nsAString& aString);
-
 }  
 
 #endif
