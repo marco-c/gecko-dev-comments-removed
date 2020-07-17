@@ -4,9 +4,6 @@
 
 #include "base/memory/ref_counted.h"
 
-#include <limits>
-#include <type_traits>
-
 #include "base/threading/thread_collision_warner.h"
 
 namespace base {
@@ -38,32 +35,12 @@ RefCountedThreadSafeBase::~RefCountedThreadSafeBase() {
 
 
 
-
-
-
 #if defined(ARCH_CPU_64_BITS)
 void RefCountedBase::AddRefImpl() const {
   
   
   
-  
-  
-  
-  
-  
-  
-  CHECK(++ref_count_ != 0);
-}
-
-void RefCountedBase::ReleaseImpl() const {
-  
-  
-  
-  
-  
-  
-  
-  CHECK(--ref_count_ != std::numeric_limits<decltype(ref_count_)>::max());
+  CHECK(++ref_count_ > 0);
 }
 #endif
 

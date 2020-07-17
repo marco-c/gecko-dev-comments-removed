@@ -10,9 +10,8 @@
 #include <tuple>
 #include <vector>
 
-#include <string>
-
 #include "base/macros.h"
+#include "base/strings/string16.h"
 #include "base/win/scoped_handle.h"
 #include "sandbox/win/src/restricted_token_utils.h"
 #include "sandbox/win/src/security_level.h"
@@ -118,7 +117,7 @@ class RestrictedToken {
   
   
   
-  DWORD DeleteAllPrivileges(const std::vector<std::wstring>* exceptions);
+  DWORD DeleteAllPrivileges(const std::vector<base::string16>* exceptions);
 
   
   

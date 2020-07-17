@@ -13,11 +13,10 @@
 #include <type_traits>
 
 #include "base/logging.h"
-#include "base/no_destructor.h"
 #include "base/numerics/safe_math.h"
-#include "base/strings/string_util.h"
+#include "base/scoped_clear_last_error.h"
 #include "base/strings/utf_string_conversions.h"
-#include "base/third_party/double_conversion/double-conversion/double-conversion.h"
+#include "base/third_party/dmg_fp/dmg_fp.h"
 
 namespace base {
 
@@ -361,29 +360,21 @@ string16 NumberToString16(unsigned long long value) {
   return IntToStringT<string16, unsigned long long>::IntToString(value);
 }
 
-static const double_conversion::DoubleToStringConverter*
-GetDoubleToStringConverter() {
-  static NoDestructor<double_conversion::DoubleToStringConverter> converter(
-      double_conversion::DoubleToStringConverter::EMIT_POSITIVE_EXPONENT_SIGN,
-      nullptr, nullptr, 'e', -6, 12, 0, 0);
-  return converter.get();
-}
-
 std::string NumberToString(double value) {
+  
   char buffer[32];
-  double_conversion::StringBuilder builder(buffer, sizeof(buffer));
-  GetDoubleToStringConverter()->ToShortest(value, &builder);
-  return std::string(buffer, builder.position());
+  dmg_fp::g_fmt(buffer, value);
+  return std::string(buffer);
 }
 
 base::string16 NumberToString16(double value) {
+  
   char buffer[32];
-  double_conversion::StringBuilder builder(buffer, sizeof(buffer));
-  GetDoubleToStringConverter()->ToShortest(value, &builder);
+  dmg_fp::g_fmt(buffer, value);
 
   
   
-  return base::string16(&buffer[0], &buffer[builder.position()]);
+  return base::string16(&buffer[0], &buffer[strlen(buffer)]);
 }
 
 bool StringToInt(StringPiece input, int* output) {
@@ -426,16 +417,12 @@ bool StringToSizeT(StringPiece16 input, size_t* output) {
   return String16ToIntImpl(input, output);
 }
 
-template <typename STRING, typename CHAR>
-bool StringToDoubleImpl(STRING input, const CHAR* data, double* output) {
-  static NoDestructor<double_conversion::StringToDoubleConverter> converter(
-      double_conversion::StringToDoubleConverter::ALLOW_LEADING_SPACES |
-          double_conversion::StringToDoubleConverter::ALLOW_TRAILING_JUNK,
-      0.0, 0, nullptr, nullptr);
+bool StringToDouble(const std::string& input, double* output) {
+  
+  internal::ScopedClearLastError clear_errno;
 
-  int processed_characters_count;
-  *output = converter->StringToDouble(data, input.size(),
-                                      &processed_characters_count);
+  char* endptr = nullptr;
+  *output = dmg_fp::strtod(input.c_str(), &endptr);
 
   
   
@@ -444,19 +431,21 @@ bool StringToDoubleImpl(STRING input, const CHAR* data, double* output) {
   
   
   
-  return !input.empty() && *output != HUGE_VAL && *output != -HUGE_VAL &&
-         static_cast<size_t>(processed_characters_count) == input.size() &&
-         !IsUnicodeWhitespace(input[0]);
+  
+  
+  return errno == 0 &&
+         !input.empty() &&
+         input.c_str() + input.length() == endptr &&
+         !isspace(input[0]);
 }
 
-bool StringToDouble(StringPiece input, double* output) {
-  return StringToDoubleImpl(input, input.data(), output);
-}
 
-bool StringToDouble(StringPiece16 input, double* output) {
-  return StringToDoubleImpl(
-      input, reinterpret_cast<const uint16_t*>(input.data()), output);
-}
+
+
+
+
+
+
 
 std::string HexEncode(const void* bytes, size_t size) {
   static const char kHexChars[] = "0123456789ABCDEF";
@@ -470,10 +459,6 @@ std::string HexEncode(const void* bytes, size_t size) {
     ret[(i * 2) + 1] = kHexChars[b & 0xf];
   }
   return ret;
-}
-
-std::string HexEncode(base::span<const uint8_t> bytes) {
-  return HexEncode(bytes.data(), bytes.size());
 }
 
 bool HexStringToInt(StringPiece input, int* output) {
@@ -496,8 +481,7 @@ bool HexStringToUInt64(StringPiece input, uint64_t* output) {
       input.begin(), input.end(), output);
 }
 
-template <typename Container>
-static bool HexStringToByteContainer(StringPiece input, Container* output) {
+bool HexStringToBytes(StringPiece input, std::vector<uint8_t>* output) {
   DCHECK_EQ(output->size(), 0u);
   size_t count = input.size();
   if (count == 0 || (count % 2) != 0)
@@ -510,34 +494,6 @@ static bool HexStringToByteContainer(StringPiece input, Container* output) {
       return false;
     }
     output->push_back((msb << 4) | lsb);
-  }
-  return true;
-}
-
-bool HexStringToBytes(StringPiece input, std::vector<uint8_t>* output) {
-  return HexStringToByteContainer(input, output);
-}
-
-bool HexStringToString(StringPiece input, std::string* output) {
-  return HexStringToByteContainer(input, output);
-}
-
-bool HexStringToSpan(StringPiece input, base::span<uint8_t> output) {
-  size_t count = input.size();
-  if (count == 0 || (count % 2) != 0)
-    return false;
-
-  if (count / 2 != output.size())
-    return false;
-
-  for (uintptr_t i = 0; i < count / 2; ++i) {
-    uint8_t msb = 0;  
-    uint8_t lsb = 0;  
-    if (!CharToDigit<16>(input[i * 2], &msb) ||
-        !CharToDigit<16>(input[i * 2 + 1], &lsb)) {
-      return false;
-    }
-    output[i] = (msb << 4) | lsb;
   }
   return true;
 }

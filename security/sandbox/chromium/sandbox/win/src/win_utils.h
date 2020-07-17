@@ -7,11 +7,11 @@
 
 #include <stddef.h>
 #include <windows.h>
-#include <memory>
 #include <string>
 
 #include "base/macros.h"
 #include "base/stl_util.h"
+#include "base/strings/string16.h"
 #include "sandbox/win/src/nt_internals.h"
 
 namespace sandbox {
@@ -79,36 +79,37 @@ struct LocalFreeDeleter {
 
 
 
-bool ConvertToLongPath(std::wstring* path,
-                       const std::wstring* drive_letter = nullptr);
+bool ConvertToLongPath(base::string16* path,
+                       const base::string16* drive_letter = nullptr);
 
 
 
 
 
 
-DWORD IsReparsePoint(const std::wstring& full_path);
+DWORD IsReparsePoint(const base::string16& full_path);
 
 
 bool SameObject(HANDLE handle, const wchar_t* full_path);
 
 
-bool GetPathFromHandle(HANDLE handle, std::wstring* path);
+bool GetPathFromHandle(HANDLE handle, base::string16* path);
 
 
 
-bool GetNtPathFromWin32Path(const std::wstring& path, std::wstring* nt_path);
-
-
-
-
-HKEY GetReservedKeyFromName(const std::wstring& name);
+bool GetNtPathFromWin32Path(const base::string16& path,
+                            base::string16* nt_path);
 
 
 
 
+HKEY GetReservedKeyFromName(const base::string16& name);
 
-bool ResolveRegistryName(std::wstring name, std::wstring* resolved_name);
+
+
+
+
+bool ResolveRegistryName(base::string16 name, base::string16* resolved_name);
 
 
 
@@ -120,18 +121,7 @@ bool WriteProtectedChildMemory(HANDLE child_process,
                                DWORD writeProtection = PAGE_WRITECOPY);
 
 
-
-
-
-
-
-bool CopyToChildMemory(HANDLE child,
-                       const void* local_buffer,
-                       size_t buffer_bytes,
-                       void** remote_buffer);
-
-
-bool IsPipe(const std::wstring& path);
+bool IsPipe(const base::string16& path);
 
 
 DWORD GetLastErrorFromNtStatus(NTSTATUS status);
@@ -140,12 +130,6 @@ DWORD GetLastErrorFromNtStatus(NTSTATUS status);
 
 
 void* GetProcessBaseAddress(HANDLE process);
-
-
-
-DWORD GetTokenInformation(HANDLE token,
-                          TOKEN_INFORMATION_CLASS info_class,
-                          std::unique_ptr<BYTE[]>* buffer);
 
 }  
 

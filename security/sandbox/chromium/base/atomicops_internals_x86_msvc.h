@@ -11,10 +11,17 @@
 
 #include <intrin.h>
 
-#include <atomic>
-
 #include "base/macros.h"
 #include "build/build_config.h"
+
+#if defined(ARCH_CPU_64_BITS) || defined(__MINGW32__)
+
+
+
+
+
+#undef MemoryBarrier
+#endif
 
 namespace base {
 namespace subtle {
@@ -47,6 +54,18 @@ inline Atomic32 Barrier_AtomicIncrement(volatile Atomic32* ptr,
 inline Atomic32 NoBarrier_AtomicIncrement(volatile Atomic32* ptr,
                                           Atomic32 increment) {
   return Barrier_AtomicIncrement(ptr, increment);
+}
+
+inline void MemoryBarrier() {
+#if defined(ARCH_CPU_64_BITS)
+  
+  __faststorefence();
+#else
+  
+  LONG barrier;
+
+  _InterlockedOr(&barrier, 0);
+#endif
 }
 
 inline Atomic32 Acquire_CompareAndSwap(volatile Atomic32* ptr,
@@ -85,7 +104,7 @@ inline Atomic32 Acquire_Load(volatile const Atomic32* ptr) {
 }
 
 inline Atomic32 Release_Load(volatile const Atomic32* ptr) {
-  std::atomic_thread_fence(std::memory_order_seq_cst);
+  MemoryBarrier();
   return *ptr;
 }
 
@@ -154,7 +173,7 @@ inline Atomic64 Acquire_Load(volatile const Atomic64* ptr) {
 }
 
 inline Atomic64 Release_Load(volatile const Atomic64* ptr) {
-  std::atomic_thread_fence(std::memory_order_seq_cst);
+  MemoryBarrier();
   return *ptr;
 }
 

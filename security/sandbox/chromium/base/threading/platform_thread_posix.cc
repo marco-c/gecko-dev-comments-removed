@@ -273,7 +273,7 @@ void PlatformThread::Join(PlatformThreadHandle thread_handle) {
   
   
   base::internal::ScopedBlockingCallWithBaseSyncPrimitives scoped_blocking_call(
-      FROM_HERE, base::BlockingType::MAY_BLOCK);
+      base::BlockingType::MAY_BLOCK);
   CHECK_EQ(0, pthread_join(thread_handle.platform_handle(), nullptr));
 }
 

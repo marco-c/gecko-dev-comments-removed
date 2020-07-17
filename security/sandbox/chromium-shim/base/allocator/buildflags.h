@@ -15,6 +15,4 @@
 
 #include "build/buildflag.h"
 
-#define BUILDFLAG_INTERNAL_USE_TCMALLOC() (0)
-
 #endif  

@@ -10,9 +10,8 @@
 #include <map>
 #include <set>
 
-#include <string>
-
 #include "base/macros.h"
+#include "base/strings/string16.h"
 #include "sandbox/win/src/interception.h"
 #include "sandbox/win/src/sandbox_types.h"
 #include "sandbox/win/src/target_process.h"
@@ -22,14 +21,14 @@ namespace sandbox {
 
 
 
-typedef std::map<const std::wstring, std::set<std::wstring>> HandleMap;
+typedef std::map<const base::string16, std::set<base::string16>> HandleMap;
 
 
 struct HandleListEntry {
   size_t record_bytes;     
   size_t offset_to_names;  
   size_t name_count;
-  wchar_t handle_type[1];
+  base::char16 handle_type[1];
 };
 
 
@@ -50,7 +49,8 @@ class HandleCloser {
   
   
   
-  ResultCode AddHandle(const wchar_t* handle_type, const wchar_t* handle_name);
+  ResultCode AddHandle(const base::char16* handle_type,
+                       const base::char16* handle_name);
 
   
   bool InitializeTargetHandles(TargetProcess* target);
@@ -69,7 +69,7 @@ class HandleCloser {
 };
 
 
-bool GetHandleName(HANDLE handle, std::wstring* handle_name);
+bool GetHandleName(HANDLE handle, base::string16* handle_name);
 
 }  
 

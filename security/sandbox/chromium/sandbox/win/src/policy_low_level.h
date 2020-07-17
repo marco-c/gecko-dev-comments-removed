@@ -10,9 +10,8 @@
 
 #include <list>
 
-#include <string>
-
 #include "base/macros.h"
+#include "base/strings/string16.h"
 #include "sandbox/win/src/ipc_tags.h"
 #include "sandbox/win/src/policy_engine_opcodes.h"
 #include "sandbox/win/src/policy_engine_params.h"
@@ -42,6 +41,10 @@
 
 
 namespace sandbox {
+
+
+const size_t kMaxServiceCount = 64;
+static_assert(IPC_LAST_TAG <= kMaxServiceCount, "kMaxServiceCount is too low");
 
 
 
@@ -90,7 +93,7 @@ class LowLevelPolicy {
   
   
   
-  bool AddRule(IpcTag service, PolicyRule* rule);
+  bool AddRule(int service, PolicyRule* rule);
 
   
   
@@ -99,7 +102,7 @@ class LowLevelPolicy {
  private:
   struct RuleNode {
     const PolicyRule* rule;
-    IpcTag service;
+    int service;
   };
   std::list<RuleNode> rules_;
   PolicyGlobal* policy_store_;
@@ -168,7 +171,7 @@ class PolicyRule {
                        int state,
                        bool last_call,
                        int* skip_count,
-                       std::wstring* fragment);
+                       base::string16* fragment);
 
   
   

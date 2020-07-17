@@ -152,19 +152,6 @@ class BASE_EXPORT SequencedTaskRunner : public TaskRunner {
                                 object.release());
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual bool RunsTasksInCurrentSequence() const = 0;
-
  protected:
   ~SequencedTaskRunner() override = default;
 

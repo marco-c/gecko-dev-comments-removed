@@ -16,8 +16,6 @@
 #include "base/synchronization/waitable_event.h"
 #include "base/threading/scoped_blocking_call.h"
 #include "base/threading/thread_restrictions.h"
-#include "base/time/time.h"
-#include "base/time/time_override.h"
 
 
 
@@ -154,14 +152,17 @@ class SyncWaiter : public WaitableEvent::Waiter {
 };
 
 void WaitableEvent::Wait() {
-  bool result = TimedWait(TimeDelta::Max());
+  bool result = TimedWaitUntil(TimeTicks::Max());
   DCHECK(result) << "TimedWait() should never fail with infinite timeout";
 }
 
 bool WaitableEvent::TimedWait(const TimeDelta& wait_delta) {
-  if (wait_delta <= TimeDelta())
-    return IsSignaled();
+  
+  
+  return TimedWaitUntil(TimeTicks::Now() + wait_delta);
+}
 
+bool WaitableEvent::TimedWaitUntil(const TimeTicks& end_time) {
   
   
   
@@ -170,8 +171,10 @@ bool WaitableEvent::TimedWait(const TimeDelta& wait_delta) {
       scoped_blocking_call;
   if (waiting_is_blocking_) {
     event_activity.emplace(this);
-    scoped_blocking_call.emplace(FROM_HERE, BlockingType::MAY_BLOCK);
+    scoped_blocking_call.emplace(BlockingType::MAY_BLOCK);
   }
+
+  const bool finite_time = !end_time.is_max();
 
   kernel_->lock_.Acquire();
   if (kernel_->signaled_) {
@@ -196,44 +199,42 @@ bool WaitableEvent::TimedWait(const TimeDelta& wait_delta) {
   
   
 
-  
-  
-  
-  
-  const TimeTicks end_time =
-      wait_delta.is_max() ? TimeTicks::Max()
-                          : subtle::TimeTicksNowIgnoringOverride() + wait_delta;
-  for (TimeDelta remaining = wait_delta; remaining > TimeDelta() && !sw.fired();
-       remaining = end_time.is_max()
-                       ? TimeDelta::Max()
-                       : end_time - subtle::TimeTicksNowIgnoringOverride()) {
-    if (end_time.is_max())
+  for (;;) {
+    
+    Optional<TimeTicks> current_time;
+    if (finite_time)
+      current_time = TimeTicks::Now();
+
+    if (sw.fired() || (finite_time && *current_time >= end_time)) {
+      const bool return_value = sw.fired();
+
+      
+      
+      
+      
+      
+      sw.Disable();
+      sw.lock()->Release();
+
+      
+      
+      
+      
+      
+      kernel_->lock_.Acquire();
+      kernel_->Dequeue(&sw, &sw);
+      kernel_->lock_.Release();
+
+      return return_value;
+    }
+
+    if (finite_time) {
+      const TimeDelta max_wait(end_time - *current_time);
+      sw.cv()->TimedWait(max_wait);
+    } else {
       sw.cv()->Wait();
-    else
-      sw.cv()->TimedWait(remaining);
+    }
   }
-
-  
-  const bool return_value = sw.fired();
-
-  
-  
-  
-  
-  
-  sw.Disable();
-  sw.lock()->Release();
-
-  
-  
-  
-  
-  
-  kernel_->lock_.Acquire();
-  kernel_->Dequeue(&sw, &sw);
-  kernel_->lock_.Release();
-
-  return return_value;
 }
 
 
@@ -250,7 +251,7 @@ size_t WaitableEvent::WaitMany(WaitableEvent** raw_waitables,
                                size_t count) {
   DCHECK(count) << "Cannot wait on no events";
   internal::ScopedBlockingCallWithBaseSyncPrimitives scoped_blocking_call(
-      FROM_HERE, BlockingType::MAY_BLOCK);
+      BlockingType::MAY_BLOCK);
   
   debug::ScopedEventWaitActivity event_activity(raw_waitables[0]);
 
