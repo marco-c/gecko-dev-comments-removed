@@ -5,20 +5,19 @@
 
 #include "RemoteDecoderModule.h"
 
-#include "base/thread.h"
-#include "mozilla/dom/ContentChild.h"  
-#include "mozilla/layers/SynchronousTask.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/SyncRunnable.h"
+#include "mozilla/dom/ContentChild.h"  
+#include "mozilla/layers/SynchronousTask.h"
 
 #ifdef MOZ_AV1
 #  include "AOMDecoder.h"
 #endif
+#include "OpusDecoder.h"
 #include "RemoteAudioDecoder.h"
 #include "RemoteDecoderManagerChild.h"
 #include "RemoteMediaDataDecoder.h"
 #include "RemoteVideoDecoder.h"
-#include "OpusDecoder.h"
 #include "VideoUtils.h"
 #include "VorbisDecoder.h"
 #include "WAVDecoder.h"

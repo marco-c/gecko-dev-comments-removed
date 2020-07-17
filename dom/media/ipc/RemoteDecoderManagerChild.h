@@ -5,9 +5,9 @@
 
 #ifndef include_dom_media_ipc_RemoteDecoderManagerChild_h
 #define include_dom_media_ipc_RemoteDecoderManagerChild_h
+#include "GPUVideoImage.h"
 #include "mozilla/PRemoteDecoderManagerChild.h"
 #include "mozilla/layers/VideoBridgeUtils.h"
-#include "GPUVideoImage.h"
 
 namespace mozilla {
 
@@ -25,7 +25,7 @@ class RemoteDecoderManagerChild final
   static RemoteDecoderManagerChild* GetGPUProcessSingleton();
 
   
-  static nsIThread* GetManagerThread();
+  static nsISerialEventTarget* GetManagerThread();
 
   
   
@@ -51,6 +51,7 @@ class RemoteDecoderManagerChild final
   bool DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
   
+  static void InitializeThread();
   static void InitForRDDProcess(
       Endpoint<PRemoteDecoderManagerChild>&& aVideoManager);
   static void InitForGPUProcess(
@@ -80,9 +81,6 @@ class RemoteDecoderManagerChild final
   bool DeallocPRemoteDecoderChild(PRemoteDecoderChild* actor);
 
  private:
-  
-  static void InitializeThread();
-
   explicit RemoteDecoderManagerChild(layers::VideoBridgeSource aSource);
   ~RemoteDecoderManagerChild() = default;
 
