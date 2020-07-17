@@ -13,6 +13,7 @@ function CallModuleResolveHook(module, specifier, expectedMinimumStatus)
 }
 
 
+
 function ModuleGetExportedNames(exportStarSet = [])
 {
     if (!IsObject(this) || !IsModule(this)) {
@@ -97,6 +98,7 @@ function ModuleSetStatus(module, newStatus)
 
 
 
+
 function ModuleResolveExport(exportName, resolveSet = [])
 {
     if (!IsObject(this) || !IsModule(this)) {
@@ -134,6 +136,9 @@ function ModuleResolveExport(exportName, resolveSet = [])
         if (exportName === e.exportName) {
             let importedModule = CallModuleResolveHook(module, e.moduleRequest,
                                                        MODULE_STATUS_UNLINKED);
+
+            
+
             return callFunction(importedModule.resolveExport, importedModule, e.importName,
                                 resolveSet);
         }
@@ -183,6 +188,7 @@ function IsResolvedBinding(resolution)
 }
 
 
+
 function GetModuleNamespace(module)
 {
     
@@ -213,6 +219,7 @@ function GetModuleNamespace(module)
 }
 
 
+
 function ModuleNamespaceCreate(module, exports)
 {
     callFunction(ArraySort, exports);
@@ -225,6 +232,7 @@ function ModuleNamespaceCreate(module, exports)
         let name = exports[i];
         let binding = callFunction(module.resolveExport, module, name);
         assert(IsResolvedBinding(binding), "Failed to resolve binding");
+        
         AddModuleNamespaceBinding(ns, name, binding.module, binding.bindingName);
     }
 
@@ -332,7 +340,6 @@ function ModuleInstantiate()
 
 
 
-
 function InnerModuleLinking(module, stack, index)
 {
     
@@ -367,13 +374,14 @@ function InnerModuleLinking(module, stack, index)
     
     _DefineDataProperty(stack, stack.length, module);
 
-		
+    
     let requestedModules = module.requestedModules;
     for (let i = 0; i < requestedModules.length; i++) {
         
         let required = requestedModules[i].moduleSpecifier;
         let requiredModule = CallModuleResolveHook(module, required, MODULE_STATUS_UNLINKED);
 
+        
         index = InnerModuleLinking(requiredModule, stack, index);
 
         
@@ -428,7 +436,6 @@ function InnerModuleLinking(module, stack, index)
 
 
 
-
 function InitializeEnvironment()
 {
     
@@ -469,6 +476,8 @@ function InitializeEnvironment()
                 ThrowResolutionError(module, resolution, "import", imp.importName,
                                      imp.lineNumber, imp.columnNumber);
             }
+
+            
 
             CreateImportBinding(env, imp.localName, resolution.module, resolution.bindingName);
         }
@@ -538,6 +547,7 @@ function RecordModuleEvaluationError(module, error)
 }
 
 
+
 function ModuleEvaluate()
 {
     if (!IsObject(this) || !IsModule(this))
@@ -578,13 +588,16 @@ function ModuleEvaluate()
         throw error;
     }
 
+    
     assert(module.status === MODULE_STATUS_EVALUATED,
            "Bad module status after successful evaluation");
     assert(stack.length === 0,
            "Stack should be empty after successful evaluation");
 
+    
     return undefined;
 }
+
 
 
 function InnerModuleEvaluation(module, stack, index)
