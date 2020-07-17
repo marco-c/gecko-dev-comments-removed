@@ -2244,7 +2244,10 @@ bool CookieService::SetCookiesFromIPC(const nsACString& aBaseDomain,
                                       const OriginAttributes& aAttrs,
                                       nsIURI* aHostURI, bool aFromHttp,
                                       const nsTArray<CookieStruct>& aCookies) {
-  MOZ_ASSERT(IsInitialized());
+  if (!IsInitialized()) {
+    
+    return true;
+  }
 
   CookieStorage* storage = PickStorage(aAttrs);
   int64_t currentTimeInUsec = PR_Now();
