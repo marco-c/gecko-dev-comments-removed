@@ -34,7 +34,9 @@
 #include "nsIScriptContext.h"
 #include "nsJSUtils.h"
 #include "nsString.h"
-#include "ThreadLocal.h"
+
+
+#include "ActorsChild.h"
 
 namespace mozilla {
 namespace dom {

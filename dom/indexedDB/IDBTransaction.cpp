@@ -26,7 +26,6 @@
 #include "nsTHashtable.h"
 #include "ProfilerHelpers.h"
 #include "ReportInternalError.h"
-#include "ThreadLocal.h"
 
 
 #include "ActorsChild.h"
