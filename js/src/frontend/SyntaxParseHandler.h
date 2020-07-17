@@ -90,6 +90,9 @@ class SyntaxParseHandler {
     
     NodePotentialAsyncKeyword,
 
+    
+    NodePrivateName,
+
     NodeDottedProperty,
     NodeOptionalDottedProperty,
     NodeElement,
@@ -203,6 +206,10 @@ class SyntaxParseHandler {
 
   NameNodeType newObjectLiteralPropertyName(JSAtom* atom, const TokenPos& pos) {
     return NodeName;
+  }
+
+  NameNodeType newPrivateName(JSAtom* atom, const TokenPos& pos) {
+    return NodePrivateName;
   }
 
   NumericLiteralType newNumber(double value, DecimalPoint decimalPoint,
@@ -679,6 +686,8 @@ class SyntaxParseHandler {
   bool isAsyncKeyword(Node node, JSContext* cx) {
     return node == NodePotentialAsyncKeyword;
   }
+
+  bool isPrivateName(Node node) { return node == NodePrivateName; }
 
   PropertyName* maybeDottedProperty(Node node) {
     
