@@ -15,10 +15,13 @@
 #include <winternl.h>
 
 #include "mozilla/Assertions.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/FileUtilsWin.h"
 #include "mozilla/IOInterposer.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/SmallArrayLRUCache.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtr.h"
 #include "nsTArray.h"
 #include "nsWindowsDllInterceptor.h"
 #include "plstr.h"
@@ -109,6 +112,16 @@ typedef NTSTATUS(NTAPI* NtQueryFullAttributesFileFn)(
 
 
 
+
+
+
+using HandleToFilenameCache = mozilla::SmallArrayLRUCache<HANDLE, nsString, 32>;
+static mozilla::UniquePtr<HandleToFilenameCache> sHandleToFilenameCache;
+
+
+
+
+
 class WinIOAutoObservation : public mozilla::IOInterposeObserver::Observation {
  public:
   WinIOAutoObservation(mozilla::IOInterposeObserver::Operation aOp,
@@ -141,6 +154,15 @@ class WinIOAutoObservation : public mozilla::IOInterposeObserver::Observation {
     }
   }
 
+  void SetHandle(HANDLE aFileHandle) {
+    mFileHandle = aFileHandle;
+    if (aFileHandle && mHasQueriedFilename) {
+      
+      
+      sHandleToFilenameCache->Add(aFileHandle, mFilename);
+    }
+  }
+
   
   
   void Filename(nsAString& aFilename) override;
@@ -166,10 +188,16 @@ void WinIOAutoObservation::Filename(nsAString& aFilename) {
     return;
   }
 
-  nsAutoString filename;
-  if (mFileHandle &&
-      mozilla::HandleToFilename(mFileHandle, mOffset, filename)) {
-    mFilename = filename;
+  if (mFileHandle) {
+    mFilename = sHandleToFilenameCache->FetchOrAdd(mFileHandle, [&]() {
+      nsString filename;
+      if (!mozilla::HandleToFilename(mFileHandle, mOffset, filename)) {
+        
+        
+        filename.Truncate();
+      }
+      return filename;
+    });
   }
   mHasQueriedFilename = true;
 
@@ -214,10 +242,12 @@ static NTSTATUS NTAPI InterposedNtCreateFile(
   MOZ_ASSERT(gOriginalNtCreateFile);
 
   
-  return gOriginalNtCreateFile(aFileHandle, aDesiredAccess, aObjectAttributes,
-                               aIoStatusBlock, aAllocationSize, aFileAttributes,
-                               aShareAccess, aCreateDisposition, aCreateOptions,
-                               aEaBuffer, aEaLength);
+  NTSTATUS status = gOriginalNtCreateFile(
+      aFileHandle, aDesiredAccess, aObjectAttributes, aIoStatusBlock,
+      aAllocationSize, aFileAttributes, aShareAccess, aCreateDisposition,
+      aCreateOptions, aEaBuffer, aEaLength);
+  timer.SetHandle(*aFileHandle);
+  return status;
 }
 
 static NTSTATUS NTAPI InterposedNtReadFile(HANDLE aFileHandle, HANDLE aEvent,
@@ -343,6 +373,16 @@ void InitPoisonIOInterposer() {
   }
   sIOPoisoned = true;
 
+  MOZ_RELEASE_ASSERT(!sHandleToFilenameCache);
+  sHandleToFilenameCache = mozilla::MakeUnique<HandleToFilenameCache>();
+  mozilla::RunOnShutdown([]() {
+    
+    
+    
+    
+    sHandleToFilenameCache->Shutdown();
+  });
+
   
   MozillaRegisterDebugFD(1);
   MozillaRegisterDebugFD(2);
@@ -375,11 +415,12 @@ void InitPoisonIOInterposer() {
 }
 
 void ClearPoisonIOInterposer() {
-  MOZ_ASSERT(false);
+  MOZ_ASSERT(false, "Never called! See bug 1647107");
   if (sIOPoisoned) {
     
     sIOPoisoned = false;
     sNtDllInterceptor.Clear();
+    sHandleToFilenameCache->Clear();
   }
 }
 
