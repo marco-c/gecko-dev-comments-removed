@@ -150,7 +150,7 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin,
         """
         from mozhttpd import MozHttpd
         from mozprofile import Preferences
-        from mozdevice import ADBDeviceFactory, ADBTimeoutError
+        from mozdevice import ADBDevice, ADBTimeoutError
         from six import string_types
         from marionette_driver.marionette import Marionette
 
@@ -225,16 +225,16 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin,
         
         
         
-        sdcard_test_root = '/sdcard/test_root'
-        adbdevice = ADBDeviceFactory(adb=adb,
-                                     device='emulator-5554',
-                                     test_root=sdcard_test_root)
+        sdcard_test_root = '/sdcard/tests'
+        adbdevice = ADBDevice(adb=adb,
+                              device='emulator-5554',
+                              test_root=sdcard_test_root)
         if adbdevice.test_root != sdcard_test_root:
             
             
             
             adbdevice.test_root = sdcard_test_root
-        adbdevice.mkdir(outputdir, parents=True)
+        adbdevice.mkdir(outputdir)
 
         try:
             
