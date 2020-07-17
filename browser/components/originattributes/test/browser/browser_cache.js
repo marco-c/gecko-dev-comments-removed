@@ -37,6 +37,7 @@ let suffixes = [
   "import.js",
   "worker.js",
   "sharedworker.js",
+  "font.woff",
 ];
 
 
