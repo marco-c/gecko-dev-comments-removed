@@ -137,6 +137,7 @@ struct MOZ_RAII CompilationInfo : public JS::CustomAutoRooter {
   
   struct RewindToken {
     FunctionBox* funbox = nullptr;
+    size_t funcDataLength = 0;
   };
 
   RewindToken getRewindToken();
