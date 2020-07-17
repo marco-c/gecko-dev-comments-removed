@@ -1,15 +1,14 @@
+import random
 import time
 
 def main(request, response):
     
-    headers = [('Cache-Control', 'no-cache, must-revalidate'),
-               ('Pragma', 'no-cache')]
+    headers = [(b'Cache-Control', b'no-cache, must-revalidate'),
+               (b'Pragma', b'no-cache')]
 
     
-    content_type = 'application/javascript'
+    content_type = b'application/javascript'
 
-    headers.append(('Content-Type', content_type))
+    headers.append((b'Content-Type', content_type))
     
-    
-    return headers, '// %s %s' % (time.time(), time.clock())
-
+    return headers, u'// %s %s' % (time.time(), random.random())

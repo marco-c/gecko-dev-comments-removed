@@ -1,11 +1,11 @@
-import time
+import random
 
 def main(request, response):
-    headers = [('Content-Type', 'application/javascript'),
-               ('Cache-Control', 'max-age=0')]
+    headers = [(b'Content-Type', b'application/javascript'),
+               (b'Cache-Control', b'max-age=0')]
     
-    body = '''
+    body = u'''
 // %s
 importScripts('update-during-installation-worker.js');
-    '''.strip() % time.clock()
+    '''.strip() % (random.random())
     return headers, body

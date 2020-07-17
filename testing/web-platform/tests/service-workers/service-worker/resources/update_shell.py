@@ -7,9 +7,8 @@
 
 
 import os
+import random
 import time
-
-from six import PY3
 
 from wptserve.utils import isomorphic_encode
 
@@ -20,8 +19,7 @@ def main(request, response):
              (b'Content-Type', b'application/javascript')]
 
   
-  
-  timestamp = u'// %s %s' % (time.time(), time.perf_counter() if PY3 else time.clock())
+  timestamp = u'// %s %s' % (time.time(), random.random())
   body = isomorphic_encode(timestamp) + b'\n'
 
   
