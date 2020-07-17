@@ -6,7 +6,7 @@
 
 
 
-use neqo_common::{hex, hex_with_len, matches, Decoder};
+use neqo_common::{hex, hex_with_len, Decoder};
 use neqo_crypto::random;
 
 use std::borrow::Borrow;
@@ -142,7 +142,6 @@ pub trait ConnectionIdManager: ConnectionIdDecoder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use neqo_common::matches;
     use test_fixture::fixture_init;
 
     #[test]

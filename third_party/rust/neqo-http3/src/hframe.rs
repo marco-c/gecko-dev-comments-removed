@@ -170,6 +170,7 @@ impl HFrameReader {
     
     
     
+    
     pub fn receive(
         &mut self,
         conn: &mut Connection,
@@ -178,7 +179,10 @@ impl HFrameReader {
         loop {
             let to_read = std::cmp::min(self.min_remaining(), MAX_READ_SIZE);
             let mut buf = vec![0; to_read];
-            let (output, read, fin) = match conn.stream_recv(stream_id, &mut buf)? {
+            let (output, read, fin) = match conn
+                .stream_recv(stream_id, &mut buf)
+                .map_err(|e| Error::map_stream_recv_errors(&e))?
+            {
                 (0, f) => (None, false, f),
                 (amount, f) => {
                     qtrace!(
@@ -210,6 +214,8 @@ impl HFrameReader {
         }
     }
 
+    
+    
     fn consume(&mut self, mut input: Decoder) -> Res<Option<HFrame>> {
         match &mut self.state {
             HFrameReaderState::GetType { decoder } => {
@@ -332,7 +338,6 @@ impl HFrameReader {
 mod tests {
     use super::{Encoder, Error, HFrame, HFrameReader, HSettings};
     use crate::settings::{HSetting, HSettingType};
-    use neqo_common::matches;
     use neqo_crypto::AuthenticationStatus;
     use neqo_transport::{Connection, StreamType};
     use num_traits::Num;

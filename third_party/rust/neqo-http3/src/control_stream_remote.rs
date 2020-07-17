@@ -6,7 +6,7 @@
 
 use crate::hframe::{HFrame, HFrameReader};
 use crate::{Error, Res};
-use neqo_common::{matches, qdebug, qinfo};
+use neqo_common::{qdebug, qinfo};
 use neqo_transport::Connection;
 
 
