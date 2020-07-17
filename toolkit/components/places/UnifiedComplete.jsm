@@ -1337,16 +1337,6 @@ Search.prototype = {
   },
 
   
-  
-  
-  
-  _getPrefixRank(prefix) {
-    return ["http://www.", "http://", "https://www.", "https://"].indexOf(
-      prefix
-    );
-  },
-
-  
 
 
 
@@ -1413,10 +1403,7 @@ Search.prototype = {
         
         
         
-        
-        
-        
-        let prefixRank = this._getPrefixRank(prefix);
+        let prefixRank = UrlbarUtils.getPrefixRank(prefix);
         for (let i = 0; i < this._usedURLs.length; ++i) {
           if (!this._usedURLs[i]) {
             
@@ -1427,10 +1414,9 @@ Search.prototype = {
             key: existingKey,
             prefix: existingPrefix,
             type: existingType,
-            comment: existingComment,
           } = this._usedURLs[i];
 
-          let existingPrefixRank = this._getPrefixRank(existingPrefix);
+          let existingPrefixRank = UrlbarUtils.getPrefixRank(existingPrefix);
           if (ObjectUtils.deepEqual(existingKey, urlMapKey)) {
             isDupe = true;
 
@@ -1477,23 +1463,10 @@ Search.prototype = {
             } else {
               
               
-              if (match.comment != existingComment) {
-                isDupe = false;
-                continue;
-              }
-
-              if (prefixRank <= existingPrefixRank) {
-                break; 
-              } else {
-                this._usedURLs[i] = {
-                  key: urlMapKey,
-                  action,
-                  type: match.type,
-                  prefix,
-                  comment: match.comment,
-                };
-                return { index: i, replace: true };
-              }
+              
+              
+              isDupe = false;
+              continue;
             }
           }
         }
