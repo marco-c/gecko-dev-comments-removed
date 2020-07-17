@@ -51,6 +51,7 @@
 #include "mozilla/Unused.h"
 #include "mozilla/Telemetry.h"
 
+#include "mozilla/dom/IOUtils.h"
 #include "mozilla/dom/workerinternals/RuntimeService.h"
 
 
@@ -226,16 +227,6 @@ void RunWatchdog(void* arg) {
 
 
 
-
-
-class PR_CloseDelete {
- public:
-  constexpr PR_CloseDelete() = default;
-
-  PR_CloseDelete(const PR_CloseDelete& aOther) = default;
-
-  void operator()(PRFileDesc* aPtr) const { PR_Close(aPtr); }
-};
 
 
 
