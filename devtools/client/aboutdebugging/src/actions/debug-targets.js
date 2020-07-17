@@ -144,23 +144,10 @@ function pushServiceWorker(id, registrationFront) {
   return async (_, getState) => {
     try {
       
-
-
-
-
-
-
-
-
-
-      const { isParentInterceptEnabled } = registrationFront.traits;
-      if (registrationFront.push && isParentInterceptEnabled) {
-        await registrationFront.push();
-      } else {
-        const clientWrapper = getCurrentClient(getState().runtimes);
-        const workerActor = await clientWrapper.getServiceWorkerFront({ id });
-        await workerActor.push();
-      }
+      
+      
+      
+      await registrationFront.push();
     } catch (e) {
       console.error(e);
     }

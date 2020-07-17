@@ -66,13 +66,7 @@ class WorkerTargetFront extends TargetMixin(
     this._attach = (async () => {
       const response = await super.attach();
 
-      if (this.isServiceWorker && this.getTrait("isParentInterceptEnabled")) {
-        
-        
-        
-        
-        
-        
+      if (this.isServiceWorker) {
         this.registration = await this._getRegistrationIfActive();
         if (this.registration) {
           await this.registration.preventShutdown();
