@@ -54,7 +54,6 @@ class NetworkObserver {
     ChannelEventSinkFactory.getService().registerCollector(this);
 
     this._redirectMap = new Map();
-    this._windowIdToFrameIdMap = new Map();
 
     
     this._browserSuspendedChannels = new Map();
@@ -237,7 +236,7 @@ class NetworkObserver {
       isNavigationRequest: httpChannel.isMainDocumentChannel,
       cause: causeType,
       causeString: causeTypeToString(causeType),
-      frameId: this.frameId(httpChannel, causeType),
+      frameId: this.frameId(httpChannel),
       
       loaderId: [
         Ci.nsIContentPolicy.TYPE_DOCUMENT,
@@ -268,6 +267,7 @@ class NetworkObserver {
     } catch (e) {
       
     }
+
     this.emit("response", httpChannel, {
       requestId: requestId(httpChannel),
       securityDetails: getSecurityDetails(httpChannel),
@@ -280,7 +280,7 @@ class NetworkObserver {
       statusText: httpChannel.responseStatusText,
       cause: causeType,
       causeString: causeTypeToString(causeType),
-      frameId: this.frameId(httpChannel, causeType),
+      frameId: this.frameId(httpChannel),
       
       loaderId: [
         Ci.nsIContentPolicy.TYPE_DOCUMENT,
@@ -349,31 +349,9 @@ class NetworkObserver {
   
 
 
-
-
-
-
-
-
-
-  frameId(httpChannel, causeType) {
-    const loadContext = getLoadContext(httpChannel);
-    const wrappedChannel = ChannelWrapper.get(httpChannel);
-
-    
-    
-    if (causeType == Ci.nsIContentPolicy.TYPE_DOCUMENT) {
-      this._windowIdToFrameIdMap.clear();
-    }
-
-    let frameId = loadContext.id;
-    if (frameId) {
-      this._windowIdToFrameIdMap.set(wrappedChannel.windowId, frameId);
-    } else {
-      frameId = this._windowIdToFrameIdMap.get(wrappedChannel.windowId);
-    }
-
-    return frameId;
+  frameId(httpChannel) {
+    const loadInfo = httpChannel.loadInfo;
+    return loadInfo.frameBrowsingContext?.id || loadInfo.browsingContext.id;
   }
 }
 
