@@ -1,0 +1,14 @@
+
+
+
+'use strict';
+
+idl_test(
+  ['deprecation-reporting'],
+  ['reporting'],
+  idl_array => {
+    idl_array.add_objects({
+      
+    });
+  }
+);
