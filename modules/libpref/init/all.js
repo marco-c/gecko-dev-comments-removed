@@ -986,16 +986,6 @@ pref("dom.popup_allowed_events", "change click dblclick auxclick mouseup pointer
 pref("dom.serviceWorkers.disable_open_click_delay", 1000);
 
 pref("dom.storage.enabled", true);
-
-
-
-
-
-#ifdef EARLY_BETA_OR_EARLIER
-pref("dom.storage.next_gen", true);
-#else
-pref("dom.storage.next_gen", false);
-#endif
 pref("dom.storage.shadow_writes", true);
 pref("dom.storage.snapshot_prefill", 16384);
 pref("dom.storage.snapshot_gradual_prefill", 4096);
