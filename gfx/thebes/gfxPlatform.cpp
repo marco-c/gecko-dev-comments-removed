@@ -1236,10 +1236,7 @@ bool gfxPlatform::CanMigrateMacGPUs() {
   bool forceDisable = pMigration == 0;
   bool forceEnable = pMigration == 2;
 
-  
-  bool blocked = UseWebRender();
-
-  return forceEnable || (!forceDisable && !blocked);
+  return forceEnable || !forceDisable;
 }
 
 static bool sLayersIPCIsUp = false;
