@@ -12,6 +12,31 @@
 namespace mozilla {
 namespace interceptor {
 
+template <typename MMPolicy>
+struct GetProcAddressSelector;
+
+template <>
+struct GetProcAddressSelector<MMPolicyOutOfProcess> {
+  FARPROC operator()(HMODULE aModule, const char* aName,
+                     const MMPolicyOutOfProcess& aMMPolicy) const {
+    auto exportSection =
+        mozilla::nt::PEExportSection<MMPolicyOutOfProcess>::Get(aModule,
+                                                                aMMPolicy);
+    return exportSection.GetProcAddress(aName);
+  }
+};
+
+template <>
+struct GetProcAddressSelector<MMPolicyInProcess> {
+  FARPROC operator()(HMODULE aModule, const char* aName,
+                     const MMPolicyInProcess&) const {
+    
+    
+    
+    return ::GetProcAddress(aModule, aName);
+  }
+};
+
 template <typename VMPolicy>
 class WindowsDllPatcherBase {
  protected:
@@ -25,11 +50,12 @@ class WindowsDllPatcherBase {
       FARPROC aOriginalFunction) {
     ReadOnlyTargetFunction<MMPolicyT> origFn(mVMPolicy, aOriginalFunction);
 #if defined(_M_IX86) || defined(_M_X64)
+    uintptr_t abstarget = 0;
+
     
     
-    if (origFn[0] == 0xeb) {
-      int8_t offset = (int8_t)(origFn[1]);
-      uintptr_t abstarget = origFn.GetAddress() + 2 + offset;
+    if (origFn.IsRelativeShortJump(&abstarget)) {
+      int8_t offset = abstarget - origFn.GetAddress() - 2;
 
 #  if defined(_M_X64)
       
@@ -37,7 +63,7 @@ class WindowsDllPatcherBase {
       
       if ((offset < 0) && (origFn.IsValidAtOffset(2 + offset))) {
         ReadOnlyTargetFunction<MMPolicyT> redirectFn(mVMPolicy, abstarget);
-        if ((redirectFn[0] == 0xff) && (redirectFn[1] == 0x25)) {
+        if (redirectFn.IsIndirectNearJump(&abstarget)) {
           return redirectFn;
         }
       }
@@ -59,28 +85,19 @@ class WindowsDllPatcherBase {
       return EnsureTargetIsAccessible(std::move(origFn), abstarget);
     }
 
-#  if defined(_M_IX86)
     
     
-    if (origFn[0] == 0xff && origFn[1] == 0x25) {
-      uintptr_t abstarget = (origFn + 2).template ChasePointer<uintptr_t*>();
-      return EnsureTargetIsAccessible(std::move(origFn), abstarget);
-    }
-#  elif defined(_M_X64)
-    
-    
-    if (origFn[0] == 0x48 && origFn[1] == 0xff && origFn[2] == 0x25) {
-      uintptr_t abstarget = (origFn + 3).ChasePointerFromDisp();
+    if (origFn.IsIndirectNearJump(&abstarget)) {
       return EnsureTargetIsAccessible(std::move(origFn), abstarget);
     }
 
-    if (origFn[0] == 0xe9) {
+#  if defined(_M_X64)
+    if (origFn.IsRelativeNearJump(&abstarget)) {
       
-      uintptr_t abstarget = (origFn + 1).ReadDisp32AsAbsolute();
       return EnsureTargetIsAccessible(std::move(origFn), abstarget);
     }
-#  endif
-#endif  
+#  endif  
+#endif    
 
     return origFn;
   }
@@ -88,7 +105,7 @@ class WindowsDllPatcherBase {
  private:
   ReadOnlyTargetFunction<MMPolicyT> EnsureTargetIsAccessible(
       ReadOnlyTargetFunction<MMPolicyT> aOrigFn, uintptr_t aRedirAddress) {
-    if (!mVMPolicy.IsPageAccessible(reinterpret_cast<void*>(aRedirAddress))) {
+    if (!mVMPolicy.IsPageAccessible(aRedirAddress)) {
       return aOrigFn;
     }
 
@@ -97,7 +114,8 @@ class WindowsDllPatcherBase {
 
  public:
   FARPROC GetProcAddress(HMODULE aModule, const char* aName) const {
-    return mVMPolicy.GetProcAddress(aModule, aName);
+    GetProcAddressSelector<MMPolicyT> selector;
+    return selector(aModule, aName, mVMPolicy);
   }
 
  protected:
