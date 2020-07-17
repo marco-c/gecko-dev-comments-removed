@@ -21,7 +21,7 @@ add_task(async function() {
 
   info("Navigate to a page that runs in the child process");
   const onEditorReady = ui.editors[0].getSourceEditor();
-  const onTargetSwitched = toolbox.once("switched-target");
+  const onTargetSwitched = toolbox.targetList.once("switched-target");
   await navigateToAndWaitForStyleSheets(CONTENT_PROCESS_URI, ui);
   
   
