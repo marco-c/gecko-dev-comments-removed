@@ -596,50 +596,11 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
                                                  : nsPrintData::eIsPrinting);
   RefPtr<nsPrintData> printData = mPrt;
 
-  
-  printData->mPrintSettings = aPrintSettings;
-  if (!printData->mPrintSettings) {
-    rv = GetGlobalPrintSettings(getter_AddRefs(printData->mPrintSettings));
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  rv = EnsureSettingsHasPrinterNameSet(printData->mPrintSettings);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  printData->mPrintSettings->SetIsCancelled(false);
-  printData->mPrintSettings->GetShrinkToFit(&printData->mShrinkToFit);
-
   if (mIsCreatingPrintPreview) {
     
     
     
     mPrtPreview = nullptr;
-  }
-
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIPrintSession> printSession;
-  bool remotePrintJobListening = false;
-  if (!mIsCreatingPrintPreview) {
-    rv = printData->mPrintSettings->GetPrintSession(
-        getter_AddRefs(printSession));
-    if (NS_FAILED(rv) || !printSession) {
-      printSession = do_CreateInstance("@mozilla.org/gfx/printsession;1", &rv);
-      NS_ENSURE_SUCCESS(rv, rv);
-      printData->mPrintSettings->SetPrintSession(printSession);
-    } else {
-      RefPtr<layout::RemotePrintJobChild> remotePrintJob =
-          printSession->GetRemotePrintJob();
-      if (remotePrintJob) {
-        
-        
-        printData->mPrintProgressListeners.AppendElement(remotePrintJob);
-        remotePrintJobListening = true;
-      }
-    }
   }
 
   if (aWebProgressListener != nullptr) {
@@ -696,6 +657,45 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   if (!printData->mPrintObject->mDocument ||
       !printData->mPrintObject->mDocument->GetRootElement())
     return NS_ERROR_GFX_PRINTER_STARTDOC;
+
+  
+  printData->mPrintSettings = aPrintSettings;
+  if (!printData->mPrintSettings) {
+    rv = GetGlobalPrintSettings(getter_AddRefs(printData->mPrintSettings));
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  rv = EnsureSettingsHasPrinterNameSet(printData->mPrintSettings);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  printData->mPrintSettings->SetIsCancelled(false);
+  printData->mPrintSettings->GetShrinkToFit(&printData->mShrinkToFit);
+
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIPrintSession> printSession;
+  bool remotePrintJobListening = false;
+  if (!mIsCreatingPrintPreview) {
+    rv = printData->mPrintSettings->GetPrintSession(
+        getter_AddRefs(printSession));
+    if (NS_FAILED(rv) || !printSession) {
+      printSession = do_CreateInstance("@mozilla.org/gfx/printsession;1", &rv);
+      NS_ENSURE_SUCCESS(rv, rv);
+      printData->mPrintSettings->SetPrintSession(printSession);
+    } else {
+      RefPtr<layout::RemotePrintJobChild> remotePrintJob =
+          printSession->GetRemotePrintJob();
+      if (remotePrintJob) {
+        
+        
+        printData->mPrintProgressListeners.AppendElement(remotePrintJob);
+        remotePrintJobListening = true;
+      }
+    }
+  }
 
   
   bool isSelection = IsThereARangeSelection(printData->mCurrentFocusWin);
