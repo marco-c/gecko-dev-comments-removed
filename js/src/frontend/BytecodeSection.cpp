@@ -106,10 +106,6 @@ bool js::frontend::EmitScriptThingsVector(JSContext* cx,
     }
 
     bool operator()(const FunctionIndex& index) {
-      
-      
-      
-      
       output[i] = JS::GCCellPtr(compilationInfo.functions[index]);
       return true;
     }
