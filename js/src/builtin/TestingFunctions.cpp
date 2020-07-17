@@ -5054,6 +5054,10 @@ static bool GetModuleEnvironmentNames(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+  
+  
+  ids.eraseIfEqual(NameToId(cx->names().starNamespaceStar));
+
   uint32_t length = ids.length();
   RootedArrayObject array(cx, NewDenseFullyAllocatedArray(cx, length));
   if (!array) {

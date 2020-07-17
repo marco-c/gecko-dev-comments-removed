@@ -136,9 +136,9 @@ function ModuleResolveExport(exportName, resolveSet = [])
         if (exportName === e.exportName) {
             let importedModule = CallModuleResolveHook(module, e.moduleRequest,
                                                        MODULE_STATUS_UNLINKED);
-
-            
-
+            if (e.importName === "*") {
+                return {module: importedModule, bindingName: "*namespace*"};
+            }
             return callFunction(importedModule.resolveExport, importedModule, e.importName,
                                 resolveSet);
         }
@@ -233,7 +233,17 @@ function ModuleNamespaceCreate(module, exports)
         let binding = callFunction(module.resolveExport, module, name);
         assert(IsResolvedBinding(binding), "Failed to resolve binding");
         
-        AddModuleNamespaceBinding(ns, name, binding.module, binding.bindingName);
+        if (binding.bindingName === "*namespace*") {
+            let namespace = GetModuleNamespace(binding.module);
+
+            
+            
+            
+            EnsureModuleEnvironmentNamespace(binding.module, namespace);
+            AddModuleNamespaceBinding(ns, name, binding.module, binding.bindingName);
+        } else {
+            AddModuleNamespaceBinding(ns, name, binding.module, binding.bindingName);
+        }
     }
 
     return ns;
@@ -477,9 +487,21 @@ function InitializeEnvironment()
                                      imp.lineNumber, imp.columnNumber);
             }
 
-            
+            if (resolution.bindingName === "*namespace*") {
+                let namespace = GetModuleNamespace(resolution.module);
 
-            CreateImportBinding(env, imp.localName, resolution.module, resolution.bindingName);
+                
+                
+                
+                
+                
+                EnsureModuleEnvironmentNamespace(resolution.module, namespace);
+                CreateImportBinding(env, imp.localName, resolution.module,
+                                    resolution.bindingName);
+            } else {
+                CreateImportBinding(env, imp.localName, resolution.module,
+                                    resolution.bindingName);
+            }
         }
     }
 
