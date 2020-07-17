@@ -188,6 +188,17 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
       
       if (
+        context.heuristicResult &&
+        context.heuristicResult.providerName == "Autofill" &&
+        result.providerName != "Autofill" &&
+        context.heuristicResult.payload?.url == result.payload.url &&
+        context.heuristicResult.type == result.type
+      ) {
+        continue;
+      }
+
+      
+      if (
         result.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
         result.payload.inPrivateWindow &&
         !canShowPrivateSearch
