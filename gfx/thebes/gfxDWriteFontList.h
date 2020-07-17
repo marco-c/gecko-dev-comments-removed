@@ -39,9 +39,6 @@
 
 
 
-class gfxDWriteFontEntry;
-
-
 
 
 class gfxDWriteFontFamily final : public gfxFontFamily {
@@ -217,6 +214,7 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
  protected:
   friend class gfxDWriteFont;
   friend class gfxDWriteFontList;
+  friend class gfxDWriteFontFamily;
 
   virtual nsresult CopyFontTable(uint32_t aTableTag,
                                  nsTArray<uint8_t>& aBuffer) override;
@@ -253,6 +251,10 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
   bool mForceGDIClassic;
   bool mHasVariations;
   bool mHasVariationsInitialized;
+
+  
+  
+  bool mMayUseGDIAccess = false;
 
   mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontDWrite> mUnscaledFont;
   mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontDWrite>
