@@ -491,12 +491,22 @@ nsresult GfxInfo::Init() {
   
   
 
-  if (_wcsnicmp(displayDevice.DeviceKey, DEVICE_KEY_PREFIX,
-                ArrayLength(DEVICE_KEY_PREFIX) - 1) != 0)
-    return rv;
-
   
-  mDeviceKey[0] = displayDevice.DeviceKey + ArrayLength(DEVICE_KEY_PREFIX) - 1;
+
+
+
+  if (displayDevice.DeviceKey[0] != '\0') {
+    if (_wcsnicmp(displayDevice.DeviceKey, DEVICE_KEY_PREFIX,
+                  ArrayLength(DEVICE_KEY_PREFIX) - 1) != 0) {
+      return rv;
+    }
+
+    
+    mDeviceKey[0] =
+        displayDevice.DeviceKey + ArrayLength(DEVICE_KEY_PREFIX) - 1;
+  } else {
+    mDeviceKey[0] = EmptyString();
+  }
 
   mDeviceID[0] = displayDevice.DeviceID;
   mDeviceString[0] = displayDevice.DeviceString;
