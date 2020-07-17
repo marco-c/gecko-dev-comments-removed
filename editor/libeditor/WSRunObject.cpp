@@ -606,34 +606,27 @@ nsresult WSRunObject::DeleteWSForward() {
 template <typename PT, typename CT>
 WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
     const EditorDOMPointBase<PT, CT>& aPoint) const {
-  
-  
-  
   MOZ_ASSERT(aPoint.IsSet());
 
-  WSFragmentArray::index_type index = FindNearestFragmentIndex(aPoint, false);
-  if (index != WSFragmentArray::NoIndex) {
+  
+  
+  Maybe<WSFragment> visibleWSFragmentInMiddleOfLine =
+      TextFragmentData(mStart, mEnd, mNBSPData, mPRE)
+          .CreateWSFragmentForVisibleAndMiddleOfLine();
+  if (visibleWSFragmentInMiddleOfLine.isSome() &&
+      visibleWSFragmentInMiddleOfLine.ref().RawStartPoint().IsBefore(aPoint)) {
+    EditorDOMPointInText atPreviousChar = GetPreviousEditableCharPoint(aPoint);
     
-    for (WSFragmentArray::index_type i = index + 1; i; i--) {
-      const WSFragment& fragment = WSFragmentArrayRef()[i - 1];
-      if (!fragment.IsVisibleAndMiddleOfHardLine()) {
-        continue;
-      }
-      EditorDOMPointInText atPreviousChar =
-          GetPreviousEditableCharPoint(aPoint);
-      
-      if (atPreviousChar.IsSet() && !atPreviousChar.IsContainerEmpty()) {
-        MOZ_ASSERT(!atPreviousChar.IsEndOfContainer());
-        return WSScanResult(
-            atPreviousChar.NextPoint(),
-            atPreviousChar.IsCharASCIISpace() || atPreviousChar.IsCharNBSP()
-                ? WSType::NormalWhiteSpaces
-                : WSType::NormalText);
-      }
-      
+    if (atPreviousChar.IsSet() && !atPreviousChar.IsContainerEmpty()) {
+      MOZ_ASSERT(!atPreviousChar.IsEndOfContainer());
+      return WSScanResult(atPreviousChar.NextPoint(),
+                          atPreviousChar.IsCharASCIISpaceOrNBSP()
+                              ? WSType::NormalWhiteSpaces
+                              : WSType::NormalText);
     }
   }
 
+  
   if (mStart.GetReasonContent() != mStart.PointRef().GetContainer()) {
     
     return WSScanResult(mStart.GetReasonContent(), mStart.RawReason());
@@ -644,34 +637,28 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
 template <typename PT, typename CT>
 WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
     const EditorDOMPointBase<PT, CT>& aPoint) const {
-  
-  
-  
   MOZ_ASSERT(aPoint.IsSet());
 
-  WSFragmentArray::index_type index = FindNearestFragmentIndex(aPoint, true);
-  if (index != WSFragmentArray::NoIndex) {
+  
+  
+  Maybe<WSFragment> visibleWSFragmentInMiddleOfLine =
+      TextFragmentData(mStart, mEnd, mNBSPData, mPRE)
+          .CreateWSFragmentForVisibleAndMiddleOfLine();
+  if (visibleWSFragmentInMiddleOfLine.isSome() &&
+      aPoint.EqualsOrIsBefore(
+          visibleWSFragmentInMiddleOfLine.ref().RawEndPoint())) {
+    EditorDOMPointInText atNextChar = GetInclusiveNextEditableCharPoint(aPoint);
     
-    for (size_t i = index; i < WSFragmentArrayRef().Length(); i++) {
-      const WSFragment& fragment = WSFragmentArrayRef()[i];
-      if (!fragment.IsVisibleAndMiddleOfHardLine()) {
-        continue;
-      }
-      EditorDOMPointInText atNextChar =
-          GetInclusiveNextEditableCharPoint(aPoint);
-      
-      if (atNextChar.IsSet() && !atNextChar.IsContainerEmpty()) {
-        return WSScanResult(
-            atNextChar,
-            !atNextChar.IsEndOfContainer() &&
-                    (atNextChar.IsCharASCIISpace() || atNextChar.IsCharNBSP())
-                ? WSType::NormalWhiteSpaces
-                : WSType::NormalText);
-      }
-      
+    if (atNextChar.IsSet() && !atNextChar.IsContainerEmpty()) {
+      return WSScanResult(
+          atNextChar,
+          !atNextChar.IsEndOfContainer() && atNextChar.IsCharASCIISpaceOrNBSP()
+              ? WSType::NormalWhiteSpaces
+              : WSType::NormalText);
     }
   }
 
+  
   if (mEnd.GetReasonContent() != mEnd.PointRef().GetContainer()) {
     
     return WSScanResult(mEnd.GetReasonContent(), mEnd.RawReason());
