@@ -25,11 +25,23 @@ class MOZ_STACK_CLASS WarpOracle {
   HandleScript outerScript_;
   WarpBailoutInfo bailoutInfo_;
 
+  
+  
+  
+  
+  Vector<JSObject*, 8, SystemAllocPolicy> nurseryObjects_;
+  using NurseryObjectsMap =
+      HashMap<JSObject*, uint32_t, DefaultHasher<JSObject*>, SystemAllocPolicy>;
+  NurseryObjectsMap nurseryObjectsMap_;
+
  public:
   WarpOracle(JSContext* cx, MIRGenerator& mirGen, HandleScript outerScript);
 
   MIRGenerator& mirGen() { return mirGen_; }
   WarpBailoutInfo& bailoutInfo() { return bailoutInfo_; }
+
+  MOZ_MUST_USE bool registerNurseryObject(JSObject* obj,
+                                          uint32_t* nurseryIndex);
 
   AbortReasonOr<WarpSnapshot*> createSnapshot();
 
