@@ -250,17 +250,6 @@ class ObjectFront extends FrontClassWithSpec(objectSpec) {
   
 
 
-  getScope() {
-    if (this._grip.class !== "Function") {
-      console.error("scope is only valid for function grips.");
-      return null;
-    }
-    return super.scope();
-  }
-
-  
-
-
   async getProxySlots() {
     if (this._grip.class !== "Proxy") {
       console.error("getProxySlots is only valid for proxy grips.");
