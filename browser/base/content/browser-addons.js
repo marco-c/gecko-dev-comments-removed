@@ -79,6 +79,8 @@ customElements.define(
         return;
       }
 
+      
+      delta = Math.max(delta, 400);
       delta /= 1000;
 
       
