@@ -46,7 +46,7 @@ add_task(async function() {
   
   const promises = [hud.ui.once("messages-cleared")];
   if (isTargetSwitchingEnabled()) {
-    promises.push(hud.toolbox.once("switched-target"));
+    promises.push(hud.targetList.once("switched-target"));
   }
 
   gBrowser.goBack();
