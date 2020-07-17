@@ -1229,7 +1229,7 @@ const browsingContextTargetPrototype = {
           continue;
         }
         
-        const onStyleSheetParsed = getSheetText(sheet, this._consoleActor)
+        const onStyleSheetParsed = getSheetText(sheet)
           .then(text => {
             InspectorUtils.parseStyleSheet(sheet, text,  false);
           })
