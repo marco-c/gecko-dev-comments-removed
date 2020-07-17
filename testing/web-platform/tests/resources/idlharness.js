@@ -2393,12 +2393,12 @@ IdlInterface.prototype.test_member_attribute = function(member)
                 } else {
                     promise_rejects_js(a_test, TypeError,
                                     this.get_interface_object().prototype[member.name])
-                        .then(function() {
+                        .then(a_test.step_func(function() {
                             
                             
                             this.do_interface_attribute_asserts(this.get_interface_object().prototype,
                                                                 member, a_test);
-                        }.bind(this));
+                        }.bind(this)));
                 }
             } else {
                 assert_equals(this.get_interface_object().prototype[member.name], undefined,
