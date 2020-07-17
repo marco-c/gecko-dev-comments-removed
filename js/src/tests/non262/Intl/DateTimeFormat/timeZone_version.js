@@ -1,0 +1,17 @@
+
+
+
+
+const tzdata = "2020a";
+
+if (typeof getICUOptions === "undefined") {
+    var getICUOptions = SpecialPowers.Cu.getJSTestingFunctions().getICUOptions;
+}
+
+var options = getICUOptions();
+
+assertEq(options.tzdata, tzdata);
+
+if (typeof reportCompare === "function")
+    reportCompare(0, 0, "ok");
+
