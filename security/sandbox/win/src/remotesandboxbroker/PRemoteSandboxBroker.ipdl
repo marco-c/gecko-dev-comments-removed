@@ -3,7 +3,7 @@
 
 
 
-using mozilla::dom::NativeThreadId from "mozilla/dom/TabMessageUtils.h";
+using mozilla::dom::NativeThreadId from "mozilla/dom/NativeThreadId.h";
 
 namespace mozilla {
 

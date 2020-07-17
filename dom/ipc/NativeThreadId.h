@@ -1,0 +1,16 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_NativeThreadId_h
+#define mozilla_dom_NativeThreadId_h
+
+#include "nsExceptionHandler.h"
+
+namespace mozilla::dom {
+typedef CrashReporter::ThreadId NativeThreadId;
+}
+
+#endif
