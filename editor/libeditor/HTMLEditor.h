@@ -928,7 +928,7 @@ class HTMLEditor final : public TextEditor,
   
 
 
-  bool IsVisibleBRElement(const nsINode* aNode);
+  bool IsVisibleBRElement(const nsINode* aNode) const;
 
   
 
