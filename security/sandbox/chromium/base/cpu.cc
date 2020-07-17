@@ -13,7 +13,6 @@
 #include <utility>
 
 #include "base/stl_util.h"
-#include "build/build_config.h"
 
 #if defined(ARCH_CPU_ARM_FAMILY) && (defined(OS_ANDROID) || defined(OS_LINUX))
 #include "base/files/file_util.h"
@@ -27,6 +26,44 @@
 #endif
 
 namespace base {
+
+#if defined(ARCH_CPU_X86_FAMILY)
+namespace internal {
+
+std::tuple<int, int, int, int> ComputeX86FamilyAndModel(
+    const std::string& vendor,
+    int signature) {
+  int family = (signature >> 8) & 0xf;
+  int model = (signature >> 4) & 0xf;
+  int ext_family = 0;
+  int ext_model = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  if (family == 0xf || (family == 0x6 && vendor == "GenuineIntel")) {
+    ext_model = (signature >> 16) & 0xf;
+    model += ext_model << 4;
+  }
+  
+  
+  
+  
+  
+  if (family == 0xf) {
+    ext_family = (signature >> 20) & 0xff;
+    family += ext_family;
+  }
+
+  return {family, model, ext_family, ext_model};
+}
+
+}  
+#endif  
 
 CPU::CPU()
   : signature_(0),
@@ -48,6 +85,7 @@ CPU::CPU()
     has_avx2_(false),
     has_aesni_(false),
     has_non_stop_time_stamp_counter_(false),
+    is_running_in_vm_(false),
     cpu_vendor_("unknown") {
   Initialize();
 }
@@ -156,7 +194,6 @@ void CPU::Initialize() {
   memcpy(cpu_string, &cpu_info[1], kVendorNameSize);
   cpu_string[kVendorNameSize] = '\0';
   cpu_vendor_ = cpu_string;
-  bool hypervisor = false;
 
   
   if (num_ids > 0) {
@@ -167,11 +204,9 @@ void CPU::Initialize() {
     }
     signature_ = cpu_info[0];
     stepping_ = cpu_info[0] & 0xf;
-    model_ = ((cpu_info[0] >> 4) & 0xf) + ((cpu_info[0] >> 12) & 0xf0);
-    family_ = (cpu_info[0] >> 8) & 0xf;
     type_ = (cpu_info[0] >> 12) & 0x3;
-    ext_model_ = (cpu_info[0] >> 16) & 0xf;
-    ext_family_ = (cpu_info[0] >> 20) & 0xff;
+    std::tie(family_, model_, ext_family_, ext_model_) =
+        internal::ComputeX86FamilyAndModel(cpu_vendor_, signature_);
     has_mmx_ =   (cpu_info[3] & 0x00800000) != 0;
     has_sse_ =   (cpu_info[3] & 0x02000000) != 0;
     has_sse2_ =  (cpu_info[3] & 0x04000000) != 0;
@@ -186,7 +221,7 @@ void CPU::Initialize() {
     
     
     
-    hypervisor = (cpu_info[2] & 0x80000000) != 0;
+    is_running_in_vm_ = (cpu_info[2] & 0x80000000) != 0;
 
     
     
@@ -235,7 +270,7 @@ void CPU::Initialize() {
     has_non_stop_time_stamp_counter_ = (cpu_info[3] & (1 << 8)) != 0;
   }
 
-  if (!has_non_stop_time_stamp_counter_ && hypervisor) {
+  if (!has_non_stop_time_stamp_counter_ && is_running_in_vm_) {
     int cpu_info_hv[4] = {};
     __cpuid(cpu_info_hv, 0x40000000);
     if (cpu_info_hv[1] == 0x7263694D &&  
@@ -251,8 +286,14 @@ void CPU::Initialize() {
       has_non_stop_time_stamp_counter_ = true;
     }
   }
-#elif defined(ARCH_CPU_ARM_FAMILY) && (defined(OS_ANDROID) || defined(OS_LINUX))
+#elif defined(ARCH_CPU_ARM_FAMILY)
+#if (defined(OS_ANDROID) || defined(OS_LINUX))
   cpu_brand_ = *CpuInfoBrand();
+#elif defined(OS_WIN)
+  
+  
+  has_non_stop_time_stamp_counter_ = true;
+#endif
 #endif
 }
 

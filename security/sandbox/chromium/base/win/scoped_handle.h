@@ -19,8 +19,8 @@
 #include <intrin.h>
 #define BASE_WIN_GET_CALLER _ReturnAddress()
 #elif defined(COMPILER_GCC)
-#define BASE_WIN_GET_CALLER __builtin_extract_return_addr(\
-    __builtin_return_address(0))
+#define BASE_WIN_GET_CALLER \
+  __builtin_extract_return_addr(__builtin_return_address(0))
 #endif
 
 namespace base {
@@ -38,7 +38,7 @@ namespace win {
 template <class Traits, class Verifier>
 class GenericScopedHandle {
  public:
-  typedef typename Traits::Handle Handle;
+  using Handle = typename Traits::Handle;
 
   GenericScopedHandle() : handle_(Traits::NullHandle()) {}
 
@@ -51,13 +51,9 @@ class GenericScopedHandle {
     Set(other.Take());
   }
 
-  ~GenericScopedHandle() {
-    Close();
-  }
+  ~GenericScopedHandle() { Close(); }
 
-  bool IsValid() const {
-    return Traits::IsHandleValid(handle_);
-  }
+  bool IsValid() const { return Traits::IsHandleValid(handle_); }
 
   GenericScopedHandle& operator=(GenericScopedHandle&& other) {
     DCHECK_NE(this, &other);
@@ -80,9 +76,7 @@ class GenericScopedHandle {
     }
   }
 
-  Handle Get() const {
-    return handle_;
-  }
+  Handle Get() const { return handle_; }
 
   
   Handle Take() WARN_UNUSED_RESULT {
@@ -119,20 +113,18 @@ class GenericScopedHandle {
 
 class HandleTraits {
  public:
-  typedef HANDLE Handle;
+  using Handle = HANDLE;
 
   
   static bool BASE_EXPORT CloseHandle(HANDLE handle);
 
   
   static bool IsHandleValid(HANDLE handle) {
-    return handle != NULL && handle != INVALID_HANDLE_VALUE;
+    return handle != nullptr && handle != INVALID_HANDLE_VALUE;
   }
 
   
-  static HANDLE NullHandle() {
-    return NULL;
-  }
+  static HANDLE NullHandle() { return nullptr; }
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(HandleTraits);
@@ -141,12 +133,16 @@ class HandleTraits {
 
 class DummyVerifierTraits {
  public:
-  typedef HANDLE Handle;
+  using Handle = HANDLE;
 
-  static void StartTracking(HANDLE handle, const void* owner,
-                            const void* pc1, const void* pc2) {}
-  static void StopTracking(HANDLE handle, const void* owner,
-                           const void* pc1, const void* pc2) {}
+  static void StartTracking(HANDLE handle,
+                            const void* owner,
+                            const void* pc1,
+                            const void* pc2) {}
+  static void StopTracking(HANDLE handle,
+                           const void* owner,
+                           const void* pc1,
+                           const void* pc2) {}
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(DummyVerifierTraits);
@@ -155,18 +151,22 @@ class DummyVerifierTraits {
 
 class BASE_EXPORT VerifierTraits {
  public:
-  typedef HANDLE Handle;
+  using Handle = HANDLE;
 
-  static void StartTracking(HANDLE handle, const void* owner,
-                            const void* pc1, const void* pc2);
-  static void StopTracking(HANDLE handle, const void* owner,
-                           const void* pc1, const void* pc2);
+  static void StartTracking(HANDLE handle,
+                            const void* owner,
+                            const void* pc1,
+                            const void* pc2);
+  static void StopTracking(HANDLE handle,
+                           const void* owner,
+                           const void* pc1,
+                           const void* pc2);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(VerifierTraits);
 };
 
-typedef GenericScopedHandle<HandleTraits, VerifierTraits> ScopedHandle;
+using ScopedHandle = GenericScopedHandle<HandleTraits, VerifierTraits>;
 
 
 

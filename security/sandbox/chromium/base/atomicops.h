@@ -39,15 +39,6 @@
 #include "base/base_export.h"
 #include "build/build_config.h"
 
-#if defined(OS_WIN) && (defined(ARCH_CPU_64_BITS) || defined(__MINGW32__))
-
-
-
-
-
-#undef MemoryBarrier
-#endif
-
 namespace base {
 namespace subtle {
 
@@ -101,7 +92,6 @@ Atomic32 Barrier_AtomicIncrement(volatile Atomic32* ptr,
 
 
 
-
 Atomic32 Acquire_CompareAndSwap(volatile Atomic32* ptr,
                                 Atomic32 old_value,
                                 Atomic32 new_value);
@@ -109,7 +99,6 @@ Atomic32 Release_CompareAndSwap(volatile Atomic32* ptr,
                                 Atomic32 old_value,
                                 Atomic32 new_value);
 
-void MemoryBarrier();
 void NoBarrier_Store(volatile Atomic32* ptr, Atomic32 value);
 void Acquire_Store(volatile Atomic32* ptr, Atomic32 value);
 void Release_Store(volatile Atomic32* ptr, Atomic32 value);

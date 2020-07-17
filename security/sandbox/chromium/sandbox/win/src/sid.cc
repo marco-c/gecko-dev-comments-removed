@@ -151,7 +151,7 @@ bool Sid::IsValid() const {
 }
 
 
-bool Sid::ToSddlString(base::string16* sddl_string) const {
+bool Sid::ToSddlString(std::wstring* sddl_string) const {
   LPWSTR sid = nullptr;
   if (!::ConvertSidToStringSid(GetPSID(), &sid))
     return false;

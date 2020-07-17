@@ -17,6 +17,9 @@ const char kDisableBreakpad[]               = "disable-breakpad";
 const char kDisableFeatures[] = "disable-features";
 
 
+const char kDisableLowEndDeviceMode[] = "disable-low-end-device-mode";
+
+
 
 
 const char kEnableCrashReporter[]           = "enable-crash-reporter";
@@ -25,13 +28,7 @@ const char kEnableCrashReporter[]           = "enable-crash-reporter";
 const char kEnableFeatures[] = "enable-features";
 
 
-const char kFullMemoryCrashReport[]         = "full-memory-crash-report";
-
-
 const char kEnableLowEndDeviceMode[]        = "enable-low-end-device-mode";
-
-
-const char kDisableLowEndDeviceMode[]       = "disable-low-end-device-mode";
 
 
 
@@ -44,42 +41,17 @@ const char kDisableLowEndDeviceMode[]       = "disable-low-end-device-mode";
 const char kForceFieldTrials[]              = "force-fieldtrials";
 
 
+const char kFullMemoryCrashReport[] = "full-memory-crash-report";
+
+
+
+
+
+
+const char kLogBestEffortTasks[] = "log-best-effort-tasks";
+
+
 const char kNoErrorDialogs[]                = "noerrdialogs";
-
-
-
-const char kTestChildProcess[]              = "test-child-process";
-
-
-
-
-const char kTestDoNotInitializeIcu[]        = "test-do-not-initialize-icu";
-
-
-
-const char kV[]                             = "v";
-
-
-
-
-
-
-
-
-
-
-const char kVModule[]                       = "vmodule";
-
-
-const char kWaitForDebugger[]               = "wait-for-debugger";
-
-
-
-const char kTraceToFile[]                   = "trace-to-file";
-
-
-
-const char kTraceToFileName[]               = "trace-to-file-name";
 
 
 
@@ -102,7 +74,45 @@ const char kProfilingFile[] = "profiling-file";
 
 const char kProfilingFlush[] = "profiling-flush";
 
+
+
+const char kTestChildProcess[] = "test-child-process";
+
+
+
+
+const char kTestDoNotInitializeIcu[] = "test-do-not-initialize-icu";
+
+
+
+const char kTraceToFile[] = "trace-to-file";
+
+
+
+const char kTraceToFileName[] = "trace-to-file-name";
+
+
+
+const char kV[] = "v";
+
+
+
+
+
+
+
+
+
+
+const char kVModule[] = "vmodule";
+
+
+const char kWaitForDebugger[] = "wait-for-debugger";
+
 #if defined(OS_WIN)
+
+const char kDisableHighResTimer[] = "disable-highres-timer";
+
 
 const char kDisableUsbKeyboardDetect[]      = "disable-usb-keyboard-detect";
 #endif
@@ -126,17 +136,14 @@ const char kEnableCrashReporterForTesting[] =
 
 
 const char kEnableReachedCodeProfiler[] = "enable-reached-code-profiler";
+#endif
+
+#if defined(OS_LINUX)
 
 
 
 
-
-
-
-
-
-
-const char kOrderfileMemoryOptimization[] = "orderfile-memory-optimization";
+const char kEnableThreadInstructionCount[] = "enable-thread-instruction-count";
 #endif
 
 }  

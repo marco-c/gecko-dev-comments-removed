@@ -19,13 +19,18 @@ struct FakeBindState;
 
 namespace internal {
 
-class CallbackBase;
-class CallbackBaseCopyable;
-
 class BindStateBase;
+class FinallyExecutorCommon;
+class ThenAndCatchExecutorCommon;
+
+template <typename ReturnType>
+class PostTaskExecutor;
 
 template <typename Functor, typename... BoundArgs>
 struct BindState;
+
+class CallbackBase;
+class CallbackBaseCopyable;
 
 struct BindStateBaseRefCountTraits {
   static void Destruct(const BindStateBase*);
@@ -33,7 +38,6 @@ struct BindStateBaseRefCountTraits {
 
 template <typename T>
 using PassingType = std::conditional_t<std::is_scalar<T>::value, T, T&&>;
-
 
 
 
@@ -135,6 +139,12 @@ class BASE_EXPORT CallbackBase {
   void Reset();
 
  protected:
+  friend class FinallyExecutorCommon;
+  friend class ThenAndCatchExecutorCommon;
+
+  template <typename ReturnType>
+  friend class PostTaskExecutor;
+
   using InvokeFuncStorage = BindStateBase::InvokeFuncStorage;
 
   

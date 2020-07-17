@@ -25,6 +25,10 @@
 #include "sandbox/win/fuzzer/fuzzer_types.h"
 #endif
 
+#include <stddef.h>
+#include <memory>
+#include <vector>
+
 #include "base/memory/ref_counted.h"
 #include "sandbox/win/src/sandbox_policy.h"
 #include "sandbox/win/src/sandbox_types.h"
@@ -33,6 +37,7 @@
 namespace sandbox {
 
 class BrokerServices;
+class PolicyDiagnosticsReceiver;
 class ProcessState;
 class TargetPolicy;
 class TargetServices;
@@ -105,6 +110,18 @@ class BrokerServices {
   
   virtual ResultCode AddTargetPeer(HANDLE peer_process) = 0;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual ResultCode GetPolicyDiagnostics(
+      std::unique_ptr<PolicyDiagnosticsReceiver> receiver) = 0;
+
  protected:
   ~BrokerServices() {}
 };
@@ -166,6 +183,36 @@ class TargetServices {
 
  protected:
   ~TargetServices() {}
+};
+
+class PolicyInfo {
+ public:
+  
+  
+  virtual const char* JsonString() = 0;
+  virtual ~PolicyInfo() {}
+};
+
+
+
+class PolicyList {
+ public:
+  virtual std::vector<std::unique_ptr<PolicyInfo>>::iterator begin() = 0;
+  virtual std::vector<std::unique_ptr<PolicyInfo>>::iterator end() = 0;
+  virtual size_t size() const = 0;
+  virtual ~PolicyList() {}
+};
+
+
+class PolicyDiagnosticsReceiver {
+ public:
+  
+  
+  virtual void ReceiveDiagnostics(std::unique_ptr<PolicyList> policies) = 0;
+  
+  
+  virtual void OnError(ResultCode code) = 0;
+  virtual ~PolicyDiagnosticsReceiver() {}
 };
 
 }  

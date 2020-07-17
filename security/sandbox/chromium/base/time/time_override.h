@@ -33,12 +33,12 @@ class BASE_EXPORT ScopedTimeClockOverrides {
   
   ~ScopedTimeClockOverrides();
 
- private:
-#if DCHECK_IS_ON()
-  static bool overrides_active_;
-#endif
+  static bool overrides_active() { return overrides_active_; }
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(ScopedTimeClockOverrides);
+ private:
+  static bool overrides_active_;
+
+  DISALLOW_COPY_AND_ASSIGN(ScopedTimeClockOverrides);
 };
 
 
