@@ -142,7 +142,7 @@ void AppShutdown::Init(AppShutdownMode aMode) {
 
   
   
-  if (auto* cache = scache::StartupCache::GetSingletonNoInit()) {
+  if (auto* cache = scache::StartupCache::GetSingleton()) {
     cache->MaybeInitShutdownWrite();
   }
 }
@@ -152,7 +152,7 @@ void AppShutdown::MaybeFastShutdown(ShutdownPhase aPhase) {
   
   
   if (aPhase == sFastShutdownPhase || aPhase == sLateWriteChecksPhase) {
-    if (auto* cache = scache::StartupCache::GetSingletonNoInit()) {
+    if (auto* cache = scache::StartupCache::GetSingleton()) {
       cache->EnsureShutdownWriteComplete();
     }
 
