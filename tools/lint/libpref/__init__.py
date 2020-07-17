@@ -16,14 +16,14 @@ from mozlint.pathutils import expand_exclusions
 
 
 IGNORE_PREFS = {
-    'devtools.console.stdout.chrome',   
-    'devtools.console.stdout.content',  
-    'fission.autostart',                
-    'browser.dom.window.dump.enabled',  
-    'apz.fling_curve_function_y2',      
-    'dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled',  
+    "devtools.console.stdout.chrome",  
+    "devtools.console.stdout.content",  
+    "fission.autostart",  
+    "browser.dom.window.dump.enabled",  
+    "apz.fling_curve_function_y2",  
+    "dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled",  
 }
-PATTERN = re.compile(r'\s*pref\(\s*\"(?P<pref>.+)\"\s*,\s*(?P<val>.+)\)\s*;.*')
+PATTERN = re.compile(r"\s*pref\(\s*\"(?P<pref>.+)\"\s*,\s*(?P<val>.+)\)\s*;.*")
 
 
 def get_names(pref_list_filename):
@@ -32,17 +32,16 @@ def get_names(pref_list_filename):
     
     
     
-    file = open(pref_list_filename).read().replace('@', '')
+    file = open(pref_list_filename).read().replace("@", "")
     try:
         pref_list = yaml.safe_load(file)
     except (IOError, ValueError) as e:
-        print('{}: error:\n  {}'
-              .format(pref_list_filename, e), file=sys.stderr)
+        print("{}: error:\n  {}".format(pref_list_filename, e), file=sys.stderr)
         sys.exit(1)
 
     for pref in pref_list:
-        if pref['name'] not in IGNORE_PREFS:
-            pref_names[pref['name']] = pref['value']
+        if pref["name"] not in IGNORE_PREFS:
+            pref_names[pref["name"]] = pref["value"]
 
     return pref_names
 
@@ -53,21 +52,23 @@ def check_against(path, pref_names):
     errors = []
     prefs = read_prefs(path)
     for pref in prefs:
-        if pref['name'] in pref_names:
-            errors.extend(check_value_for_pref(pref, pref_names[pref['name']], path))
+        if pref["name"] in pref_names:
+            errors.extend(check_value_for_pref(pref, pref_names[pref["name"]], path))
     return errors
 
 
 def check_value_for_pref(some_pref, some_value, path):
     errors = []
-    if some_pref['value'] == some_value:
-        errors.append({
-            'path': path,
-            'message': some_pref['raw'],
-            'lineno': some_pref['line'],
-            'hint': 'Remove the duplicate pref or add it to IGNORE_PREFS.',
-            'level': 'error',
-        })
+    if some_pref["value"] == some_value:
+        errors.append(
+            {
+                "path": path,
+                "message": some_pref["raw"],
+                "lineno": some_pref["line"],
+                "hint": "Remove the duplicate pref or add it to IGNORE_PREFS.",
+                "level": "error",
+            }
+        )
     return errors
 
 
@@ -79,17 +80,19 @@ def read_prefs(path):
         for lineno, line in enumerate(source, start=1):
             match = PATTERN.match(line)
             if match:
-                prefs.append({
-                    'name': match.group('pref'),
-                    'value': evaluate_pref(match.group('val')),
-                    'line': lineno,
-                    'raw': line
-                })
+                prefs.append(
+                    {
+                        "name": match.group("pref"),
+                        "value": evaluate_pref(match.group("val")),
+                        "line": lineno,
+                        "raw": line,
+                    }
+                )
     return prefs
 
 
 def evaluate_pref(value):
-    bools = {'true': True, 'false': False}
+    bools = {"true": True, "false": False}
     if value in bools:
         return bools[value]
     elif value.isdigit():
@@ -100,8 +103,8 @@ def evaluate_pref(value):
 def checkdupes(paths, config, **kwargs):
     results = []
     errors = []
-    pref_names = get_names(config['support-files'][0])
-    files = list(expand_exclusions(paths, config, kwargs['root']))
+    pref_names = get_names(config["support-files"][0])
+    files = list(expand_exclusions(paths, config, kwargs["root"]))
     for file in files:
         errors.extend(check_against(file, pref_names))
     for error in errors:

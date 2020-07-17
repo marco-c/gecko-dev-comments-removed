@@ -7,8 +7,8 @@ import os
 import re
 
 
-def run_perfdocs(config, logger=None, paths=None, verify=True, generate=False):
-    '''
+def run_perfdocs(config, logger=None, paths=None, generate=True):
+    """
     Build up performance testing documentation dynamically by combining
     text data from YAML files that reside in `perfdoc` folders
     across the `testing` directory. Each directory is expected to have
@@ -28,9 +28,7 @@ def run_perfdocs(config, logger=None, paths=None, verify=True, generate=False):
     suite.
 
     Usage for verification: ./mach lint -l perfdocs
-    Usage for generation: Not Implemented
-
-    Currently, doc generation is not implemented - only validation.
+    Usage for generation: ./mach lint -l perfdocs --fix
 
     For validation, see the Verifier class for a description of how
     it works.
@@ -43,15 +41,14 @@ def run_perfdocs(config, logger=None, paths=None, verify=True, generate=False):
         output the linting warnings/errors.
     :param list paths: The paths that are being tested. Used to filter
         out errors from files outside of these paths.
-    :param bool verify: If true, the verification will be performed.
-    :param bool generate: If true, the docs will be generated.
-    '''
+    :param bool generate: If true, the docs will be (re)generated.
+    """
     from perfdocs.logger import PerfDocLogger
 
-    top_dir = os.environ.get('WORKSPACE', None)
+    top_dir = os.environ.get("WORKSPACE", None)
     if not top_dir:
         floc = os.path.abspath(__file__)
-        top_dir = floc.split('tools')[0]
+        top_dir = floc.split("tools")[0]
 
     PerfDocLogger.LOGGER = logger
     
@@ -59,15 +56,21 @@ def run_perfdocs(config, logger=None, paths=None, verify=True, generate=False):
     PerfDocLogger.PATHS = rel_paths
 
     
-    testing_dir = os.path.join(top_dir, 'testing')
+    testing_dir = os.path.join(top_dir, "testing")
     if not os.path.exists(testing_dir):
         raise Exception("Cannot locate testing directory at %s" % testing_dir)
 
     
-    if generate:
-        raise NotImplementedError
-    if verify:
-        from perfdocs.verifier import Verifier
+    from perfdocs.generator import Generator
+    from perfdocs.verifier import Verifier
 
-        verifier = Verifier(testing_dir, top_dir)
-        verifier.validate_tree()
+    
+    verifier = Verifier(testing_dir, top_dir)
+    verifier.validate_tree()
+
+    if not PerfDocLogger.FAILED:
+        
+        
+        
+        generator = Generator(verifier, generate=generate, workspace=top_dir)
+        generator.generate_perfdocs()
