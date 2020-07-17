@@ -111,30 +111,6 @@ add_task(async function basicGetAndPost() {
         }),
       ],
     });
-
-    
-    
-    
-    
-    for (let token of Object.values(UrlbarTokenizer.RESTRICT)) {
-      let search = `${token} ${alias} query string`;
-      let searchQuery =
-        token == UrlbarTokenizer.RESTRICT.SEARCH &&
-        search.startsWith(UrlbarTokenizer.RESTRICT.SEARCH)
-          ? search.substring(2)
-          : search;
-      await check_autocomplete({
-        search,
-        searchParam: "enable-actions",
-        matches: [
-          makeSearchMatch(search, {
-            engineName: "MozSearch",
-            searchQuery,
-            heuristic: true,
-          }),
-        ],
-      });
-    }
   }
   await cleanup();
 });
