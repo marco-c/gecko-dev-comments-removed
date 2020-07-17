@@ -179,8 +179,18 @@ nsHyphenator::nsHyphenator(nsIURI* aURI, bool aHyphenateCapitalized)
     
     
     
+    
     nsAutoCString path;
     aURI->GetFilePath(path);
+#if XP_WIN
+    
+    
+    
+    
+    if (path.Length() > 2 && path[0] == '/' && path[2] == ':') {
+      path.Cut(0, 1);
+    }
+#endif
     UniquePtr<const HyphDic> dic(mapped_hyph_load_dictionary(path.get()));
     if (dic) {
       mDict = AsVariant(std::move(dic));
