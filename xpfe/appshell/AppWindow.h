@@ -195,6 +195,8 @@ class AppWindow final : public nsIBaseWindow,
   NS_IMETHOD ForceRoundedDimensions();
   NS_IMETHOD GetAvailScreenSize(int32_t* aAvailWidth, int32_t* aAvailHeight);
 
+  void FinishFullscreenChange(bool aInFullscreen);
+
   void ApplyChromeFlags();
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void SizeShell();
   void OnChromeLoaded();
@@ -245,6 +247,47 @@ class AppWindow final : public nsIBaseWindow,
   nsresult GetPersistentValue(const nsAtom* aAttr, nsAString& aValue);
   nsresult SetPersistentValue(const nsAtom* aAttr, const nsAString& aValue);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class FullscreenChangeState : uint8_t {
+    
+    NotChanging,
+    
+    WillChange,
+    
+    WidgetResized,
+    
+    WidgetEnteredFullscreen,
+    
+    WidgetExitedFullscreen,
+  };
+
   nsChromeTreeOwner* mChromeTreeOwner;
   nsContentTreeOwner* mContentTreeOwner;
   nsContentTreeOwner* mPrimaryContentTreeOwner;
@@ -257,6 +300,7 @@ class AppWindow final : public nsIBaseWindow,
   nsCOMPtr<nsIXULBrowserWindow> mXULBrowserWindow;
   nsCOMPtr<nsIDocShellTreeItem> mPrimaryContentShell;
   nsresult mModalStatus;
+  FullscreenChangeState mFullscreenChangeState;
   bool mContinueModalLoop;
   bool mDebuting;            
   bool mChromeLoaded;        
