@@ -19,13 +19,6 @@ module.exports = {
     "mozilla/no-aArgs": "error",
     
     "mozilla/reject-importGlobalProperties": ["error", "everything"],
-    
-    
-    
-    "mozilla/reject-some-requires": [
-      "error",
-      "^devtools/shared/platform/(chome|content)/",
-    ],
     "mozilla/var-only-at-top-level": "error",
     "mozilla/use-chromeutils-import": ["error", { allowCu: true }],
   },
