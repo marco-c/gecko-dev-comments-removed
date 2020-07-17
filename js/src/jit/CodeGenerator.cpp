@@ -5098,7 +5098,7 @@ void CodeGenerator::visitCallNative(LCallNative* call) {
   
   
   
-  masm.Push(ObjectValue(*target->rawJSFunction()));
+  masm.Push(ObjectValue(*target->rawNativeJSFunction()));
 
   
   masm.loadJSContext(argContextReg);
@@ -5108,7 +5108,7 @@ void CodeGenerator::visitCallNative(LCallNative* call) {
   masm.Push(argUintNReg);
 
   if (call->mir()->maybeCrossRealm()) {
-    masm.movePtr(ImmGCPtr(target->rawJSFunction()), tempReg);
+    masm.movePtr(ImmGCPtr(target->rawNativeJSFunction()), tempReg);
     masm.switchToObjectRealm(tempReg, tempReg);
   }
 
@@ -5247,7 +5247,7 @@ void CodeGenerator::visitCallDOMNative(LCallDOMNative* call) {
   
   
   
-  masm.Push(ObjectValue(*target->rawJSFunction()));
+  masm.Push(ObjectValue(*target->rawNativeJSFunction()));
 
   
   
@@ -5277,7 +5277,7 @@ void CodeGenerator::visitCallDOMNative(LCallDOMNative* call) {
 
   if (call->mir()->maybeCrossRealm()) {
     
-    masm.movePtr(ImmGCPtr(target->rawJSFunction()), argJSContext);
+    masm.movePtr(ImmGCPtr(target->rawNativeJSFunction()), argJSContext);
     masm.switchToObjectRealm(argJSContext, argJSContext);
   }
 
