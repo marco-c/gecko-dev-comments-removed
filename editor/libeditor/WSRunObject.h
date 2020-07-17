@@ -1234,7 +1234,9 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult ReplaceASCIIWhiteSpacesWithOneNBSP(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult
+  ReplaceASCIIWhiteSpacesWithOneNBSP(
+      HTMLEditor& aHTMLEditor,
       const EditorDOMPointInText& aAtFirstASCIIWhiteSpace,
       const EditorDOMPointInText& aEndOfCollapsibleASCIIWhiteSpaces);
 
