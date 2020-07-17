@@ -1047,6 +1047,52 @@ WSRunScanner::TextFragmentData::CreateWSFragmentForVisibleAndMiddleOfLine()
   }
 
   
+  
+  const auto leadingWhiteSpaceRange =
+      GetInvisibleLeadingWhiteSpaceRange<EditorRawDOMRange>();
+  const bool maybeHaveLeadingWhiteSpaces =
+      leadingWhiteSpaceRange.StartRef().IsSet() ||
+      leadingWhiteSpaceRange.EndRef().IsSet();
+  if (maybeHaveLeadingWhiteSpaces &&
+      leadingWhiteSpaceRange.StartRef() == mStart.PointRef() &&
+      leadingWhiteSpaceRange.EndRef() == mEnd.PointRef()) {
+    return Nothing();
+  }
+  const auto trailingWhiteSpaceRange =
+      GetInvisibleTrailingWhiteSpaceRange<EditorRawDOMRange>();
+  const bool maybeHaveTrailingWhiteSpaces =
+      trailingWhiteSpaceRange.StartRef().IsSet() ||
+      trailingWhiteSpaceRange.EndRef().IsSet();
+  if (maybeHaveTrailingWhiteSpaces &&
+      trailingWhiteSpaceRange.StartRef() == mStart.PointRef() &&
+      trailingWhiteSpaceRange.EndRef() == mEnd.PointRef()) {
+    return Nothing();
+  }
+
+  if (!StartsFromHardLineBreak()) {
+    fragment.MarkAsVisible();
+    if (mStart.PointRef().IsSet()) {
+      fragment.mStartNode = mStart.PointRef().GetContainer();
+      fragment.mStartOffset = mStart.PointRef().Offset();
+    }
+    fragment.SetStartFrom(mStart.RawReason());
+    if (!maybeHaveTrailingWhiteSpaces) {
+      fragment.mEndNode = mEnd.PointRef().GetContainer();
+      fragment.mEndOffset = mEnd.PointRef().Offset();
+      fragment.SetEndBy(mEnd.RawReason());
+      
+      
+      return Some(fragment);
+    }
+    if (trailingWhiteSpaceRange.StartRef().IsSet()) {
+      fragment.mEndNode = trailingWhiteSpaceRange.StartRef().GetContainer();
+      fragment.mEndOffset = trailingWhiteSpaceRange.StartRef().Offset();
+    }
+    fragment.SetEndByTrailingWhiteSpaces();
+    return Some(fragment);
+  }
+
+  
   return Nothing();
 }
 
@@ -1129,31 +1175,16 @@ void WSRunScanner::TextFragmentData::InitializeWSFragmentArray(
   }
 
   if (!StartsFromHardLineBreak()) {
-    WSFragment* startRun = aFragments.AppendElement();
-    startRun->MarkAsVisible();
-    if (mStart.PointRef().IsSet()) {
-      startRun->mStartNode = mStart.PointRef().GetContainer();
-      startRun->mStartOffset = mStart.PointRef().Offset();
-    }
-    startRun->SetStartFrom(mStart.RawReason());
-    if (!maybeHaveTrailingWhiteSpaces) {
-      startRun->mEndNode = mEnd.PointRef().GetContainer();
-      startRun->mEndOffset = mEnd.PointRef().Offset();
-      startRun->SetEndBy(mEnd.RawReason());
+    aFragments.AppendElement(CreateWSFragmentForVisibleAndMiddleOfLine().ref());
+    if (!aFragments[0].EndsByTrailingWhiteSpaces()) {
       return;
     }
-
-    if (trailingWhiteSpaceRange.StartRef().IsSet()) {
-      startRun->mEndNode = trailingWhiteSpaceRange.StartRef().GetContainer();
-      startRun->mEndOffset = trailingWhiteSpaceRange.StartRef().Offset();
-    }
-    startRun->SetEndByTrailingWhiteSpaces();
 
     
     WSFragment* lastRun = aFragments.AppendElement();
     lastRun->MarkAsEndOfHardLine();
-    lastRun->mStartNode = startRun->mEndNode;
-    lastRun->mStartOffset = startRun->mEndOffset;
+    lastRun->mStartNode = aFragments[0].mEndNode;
+    lastRun->mStartOffset = aFragments[0].mEndOffset;
     lastRun->SetStartFromNormalWhiteSpaces();
     
     lastRun->SetEndBy(mEnd.RawReason());
