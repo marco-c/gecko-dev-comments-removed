@@ -5,7 +5,9 @@
 
 function getResolution() {
   let resolution = -1; 
-  resolution = SpecialPowers.getDOMWindowUtils(window).getResolution();
+  
+  
+  resolution = SpecialPowers.getDOMWindowUtils(window.top).getResolution();
   return resolution;
 }
 
@@ -162,16 +164,79 @@ function getBoundingClientRectRelativeToVisualViewport(aElement) {
 
 
 
+
+
+
+function getTargetOrigin(aTarget) {
+  let origin = { left: 0, top: 0 };
+
+  
+  
+  if (aTarget instanceof Window) {
+    
+    return origin;
+  }
+
+  
+  
+  
+  
+  let rect = aTarget.getBoundingClientRect();
+  origin.left += rect.left;
+  origin.top += rect.top;
+
+  
+  
+  
+  while (aTarget.ownerDocument.defaultView.frameElement) {
+    let iframe = aTarget.ownerDocument.defaultView.frameElement;
+    
+    
+    
+    let style = iframe.ownerDocument.defaultView.getComputedStyle(iframe);
+    let borderLeft = parseFloat(style.borderLeftWidth) || 0;
+    let borderTop = parseFloat(style.borderTopWidth) || 0;
+    let paddingLeft = parseFloat(style.paddingLeft) || 0;
+    let paddingTop = parseFloat(style.paddingTop) || 0;
+    rect = iframe.getBoundingClientRect();
+    origin.left += rect.left + borderLeft + paddingLeft;
+    origin.top += rect.top + borderTop + paddingTop;
+    aTarget = iframe;
+  }
+
+  
+  
+  
+  
+  var offsetX = {},
+    offsetY = {};
+  let rootUtils = SpecialPowers.getDOMWindowUtils(window.top);
+  rootUtils.getVisualViewportOffsetRelativeToLayoutViewport(offsetX, offsetY);
+  origin.left -= offsetX.value;
+  origin.top -= offsetY.value;
+  return origin;
+}
+
+
+
 function coordinatesRelativeToScreen(aX, aY, aTarget) {
-  var targetWindow = windowForTarget(aTarget);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   var utils = SpecialPowers.getDOMWindowUtils(window);
   var deviceScale = utils.screenPixelsPerCSSPixel;
   var deviceScaleNoOverride = utils.screenPixelsPerCSSPixelNoOverride;
   var resolution = getResolution();
-  var rect =
-    aTarget instanceof Window
-      ? { left: 0, top: 0 } 
-      : getBoundingClientRectRelativeToVisualViewport(aTarget);
+  var origin = getTargetOrigin(aTarget);
   
   
   
@@ -179,11 +244,11 @@ function coordinatesRelativeToScreen(aX, aY, aTarget) {
   
   return {
     x:
-      targetWindow.mozInnerScreenX * deviceScaleNoOverride +
-      (rect.left + aX) * resolution * deviceScale,
+      window.top.mozInnerScreenX * deviceScaleNoOverride +
+      (origin.left + aX) * resolution * deviceScale,
     y:
-      targetWindow.mozInnerScreenY * deviceScaleNoOverride +
-      (rect.top + aY) * resolution * deviceScale,
+      window.top.mozInnerScreenY * deviceScaleNoOverride +
+      (origin.top + aY) * resolution * deviceScale,
   };
 }
 
