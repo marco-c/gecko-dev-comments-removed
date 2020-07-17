@@ -227,7 +227,7 @@ interface nsISHEntry : nsISupports
     
 
 
-    [infallible] readonly attribute nsISHistory shistory;
+    [noscript, infallible] attribute nsISHistory shistory;
 
     
 
