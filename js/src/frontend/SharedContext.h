@@ -386,12 +386,8 @@ class FunctionBox : public SharedContext {
   bool isAnnexB : 1;
 
   
+  
   bool useAsm : 1;
-
-  
-  
-  
-  bool isAsmJSModule_ : 1;
 
   
   bool hasParameterExprs : 1;
@@ -481,7 +477,7 @@ class FunctionBox : public SharedContext {
   }
 
   MOZ_MUST_USE bool setAsmJSModule(const JS::WasmModule* module);
-  bool isAsmJSModule() const { return isAsmJSModule_; }
+  bool isAsmJSModule() const { return flags_.isAsmJSNative(); }
 
   bool hasEnclosingScopeIndex() const { return enclosingScopeIndex_.isSome(); }
   ScopeIndex getEnclosingScopeIndex() const { return *enclosingScopeIndex_; }

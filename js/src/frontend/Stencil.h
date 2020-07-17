@@ -383,9 +383,6 @@ class ScriptStencil {
   mozilla::Maybe<ScopeIndex> lazyFunctionEnclosingScopeIndex_;
 
   
-  bool isAsmJSModule : 1;
-
-  
   
   bool isStandaloneFunction : 1;
 
@@ -402,7 +399,6 @@ class ScriptStencil {
 
   explicit ScriptStencil(JSContext* cx)
       : gcThings(cx),
-        isAsmJSModule(false),
         isStandaloneFunction(false),
         wasFunctionEmitted(false),
         isSingletonFunction(false) {}
@@ -412,7 +408,7 @@ class ScriptStencil {
   void trace(JSTracer* trc);
 
   bool isFunction() const {
-    return isAsmJSModule ||
+    return functionFlags.isAsmJSNative() ||
            immutableFlags.hasFlag(ImmutableScriptFlagsEnum::IsFunction);
   }
 };

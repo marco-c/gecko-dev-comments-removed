@@ -23,6 +23,7 @@
 #include "frontend/ModuleSharedContext.h"
 #include "frontend/Parser.h"
 #include "js/SourceText.h"
+#include "vm/FunctionFlags.h"          
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
@@ -644,8 +645,7 @@ JSFunction* frontend::StandaloneFunctionCompiler<Unit>::compile(
     
     MOZ_ASSERT(funbox->isAsmJSModule());
     MOZ_ASSERT(compilationInfo.asmJS.has(funbox->index()));
-
-    compilationInfo.topLevel.get().isAsmJSModule = true;
+    MOZ_ASSERT(compilationInfo.topLevel.get().functionFlags.isAsmJSNative());
     funbox->copyScriptFields(compilationInfo.topLevel.get());
   }
 
