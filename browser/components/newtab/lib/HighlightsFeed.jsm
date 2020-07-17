@@ -94,8 +94,8 @@ this.HighlightsFeed = class HighlightsFeed {
   }
 
   postInit() {
-    SectionsManager.enableSection(SECTION_ID);
-    this.fetchHighlights({ broadcast: true });
+    SectionsManager.enableSection(SECTION_ID, true );
+    this.fetchHighlights({ broadcast: true, isStartup: true });
     this.downloadsManager.init(this.store);
   }
 
@@ -240,7 +240,7 @@ this.HighlightsFeed = class HighlightsFeed {
       
       
       if (!page.image && page.type !== "download") {
-        this.fetchImage(page);
+        this.fetchImage(page, options.isStartup);
       }
 
       
@@ -285,7 +285,8 @@ this.HighlightsFeed = class HighlightsFeed {
     SectionsManager.updateSection(
       SECTION_ID,
       { rows: highlights },
-      shouldBroadcast
+      shouldBroadcast,
+      options.isStartup
     );
   }
 
@@ -293,7 +294,7 @@ this.HighlightsFeed = class HighlightsFeed {
 
 
 
-  fetchImage(page) {
+  fetchImage(page, isStartup = false) {
     
     const { preview_image_url: imageUrl, url } = page;
     return Screenshots.maybeCacheScreenshot(
@@ -301,7 +302,13 @@ this.HighlightsFeed = class HighlightsFeed {
       imageUrl || url,
       "image",
       image => {
-        SectionsManager.updateSectionCard(SECTION_ID, url, { image }, true);
+        SectionsManager.updateSectionCard(
+          SECTION_ID,
+          url,
+          { image },
+          true,
+          isStartup
+        );
       }
     );
   }
@@ -315,7 +322,10 @@ this.HighlightsFeed = class HighlightsFeed {
         break;
       case at.SYSTEM_TICK:
       case at.TOP_SITES_UPDATED:
-        this.fetchHighlights({ broadcast: false });
+        this.fetchHighlights({
+          broadcast: false,
+          isStartup: !!action.meta?.isStartup,
+        });
         break;
       case at.PREF_CHANGED:
         
