@@ -193,7 +193,10 @@ nsresult nsTextEquivUtils::AppendFromAccessible(Accessible* aAccessible,
   
   
   if (isEmptyTextEquiv) {
-    if (ShouldIncludeInSubtreeCalculation(aAccessible)) {
+    uint32_t nameRule = GetRoleRule(aAccessible->Role());
+    if (nameRule == eNameFromSubtreeRule ||
+        (nameRule & eNameFromSubtreeIfReqRule &&
+         aAccessible != sInitiatorAcc)) {
       rv = AppendFromAccessibleChildren(aAccessible, aString);
       NS_ENSURE_SUCCESS(rv, rv);
 
@@ -322,32 +325,4 @@ uint32_t nsTextEquivUtils::GetRoleRule(role aRole) {
   }
 
 #undef ROLE
-}
-
-bool nsTextEquivUtils::ShouldIncludeInSubtreeCalculation(
-    Accessible* aAccessible) {
-  uint32_t nameRule = GetRoleRule(aAccessible->Role());
-  if (nameRule == eNameFromSubtreeRule) {
-    return true;
-  }
-  if (!(nameRule & eNameFromSubtreeIfReqRule)) {
-    return false;
-  }
-
-  if (aAccessible == sInitiatorAcc) {
-    
-    
-    
-    return false;
-  }
-
-  role initiatorRole = sInitiatorAcc->Role();
-  if (initiatorRole == roles::OUTLINEITEM &&
-      aAccessible->Role() == roles::GROUPING) {
-    
-    
-    return false;
-  }
-
-  return true;
 }

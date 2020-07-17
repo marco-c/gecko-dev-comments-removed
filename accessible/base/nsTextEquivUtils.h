@@ -153,12 +153,6 @@ class nsTextEquivUtils {
 
 
   static uint32_t GetRoleRule(mozilla::a11y::roles::Role aRole);
-
-  
-
-
-
-  static bool ShouldIncludeInSubtreeCalculation(Accessible* aAccessible);
 };
 
 #endif
