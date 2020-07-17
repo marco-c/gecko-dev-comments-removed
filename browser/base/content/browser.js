@@ -1429,16 +1429,6 @@ var gKeywordURIFixup = {
 
     this.check(browser, fixupInfo);
   },
-
-  receiveMessage({ target: browser, data: fixupInfo }) {
-    
-    
-    this.check(browser, {
-      fixedURI: fixupInfo.fixedURI ? makeURI(fixupInfo.fixedURI) : null,
-      keywordProviderName: fixupInfo.keywordProviderName,
-      preferredURI: makeURI(fixupInfo.preferredURI),
-    });
-  },
 };
 
 function serializeInputStream(aStream) {
