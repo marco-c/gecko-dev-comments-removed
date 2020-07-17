@@ -52,20 +52,20 @@ def run_perfdocs(config, logger=None, paths=None, generate=True):
 
     PerfDocLogger.LOGGER = logger
     
-    rel_paths = [re.sub(top_dir, "", path) for path in paths]
+    rel_paths = [re.sub(".*testing", "testing", path) for path in paths]
     PerfDocLogger.PATHS = rel_paths
 
-    target_dir = [os.path.join(top_dir, i) for i in rel_paths]
-    for path in target_dir:
-        if not os.path.exists(path):
-            raise Exception("Cannot locate directory at %s" % path)
+    
+    testing_dir = os.path.join(top_dir, "testing")
+    if not os.path.exists(testing_dir):
+        raise Exception("Cannot locate testing directory at %s" % testing_dir)
 
     
     from perfdocs.generator import Generator
     from perfdocs.verifier import Verifier
 
     
-    verifier = Verifier(top_dir)
+    verifier = Verifier(testing_dir, top_dir)
     verifier.validate_tree()
 
     if not PerfDocLogger.FAILED:
