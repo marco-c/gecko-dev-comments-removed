@@ -14,7 +14,6 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
   UrlbarResult: "resource:///modules/UrlbarResult.jsm",
   UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.jsm",
@@ -45,7 +44,7 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
 
 
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
+    return UrlbarUtils.PROVIDER_TYPE.PROFILE;
   }
 
   get PRIORITY() {
@@ -61,34 +60,12 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
 
 
   async isActive(queryContext) {
-    
-    
-    if (
-      !queryContext.searchString.startsWith("@") ||
-      queryContext.tokens.length != 1
-    ) {
-      return false;
-    }
-
-    this._engines = await UrlbarSearchUtils.tokenAliasEngines();
-    if (!this._engines.length) {
-      return false;
-    }
-
+    this._engines = [];
     if (queryContext.searchString.trim() == "@") {
-      return true;
+      this._engines = await UrlbarSearchUtils.tokenAliasEngines();
     }
 
-    
-    
-    if (UrlbarPrefs.get("autoFill") && queryContext.allowAutofill) {
-      this._autofillResult = this._getAutofillResult(queryContext);
-      if (this._autofillResult) {
-        return true;
-      }
-    }
-
-    return false;
+    return this._engines.length;
   }
 
   
@@ -112,25 +89,19 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
       return;
     }
 
-    if (queryContext.searchString.trim() == "@") {
-      for (let { engine, tokenAliases } of this._engines) {
-        let result = new UrlbarResult(
-          UrlbarUtils.RESULT_TYPE.SEARCH,
-          UrlbarUtils.RESULT_SOURCE.SEARCH,
-          ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-            engine: [engine.name, UrlbarUtils.HIGHLIGHT.TYPED],
-            keyword: [tokenAliases[0], UrlbarUtils.HIGHLIGHT.TYPED],
-            query: ["", UrlbarUtils.HIGHLIGHT.TYPED],
-            icon: engine.iconURI ? engine.iconURI.spec : "",
-            keywordOffer: UrlbarUtils.KEYWORD_OFFER.SHOW,
-          })
-        );
-        addCallback(this, result);
-      }
-    } else if (this._autofillResult) {
-      addCallback(this, this._autofillResult);
-      this.queries.delete(queryContext);
-      return;
+    for (let { engine, tokenAliases } of this._engines) {
+      let result = new UrlbarResult(
+        UrlbarUtils.RESULT_TYPE.SEARCH,
+        UrlbarUtils.RESULT_SOURCE.SEARCH,
+        ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+          engine: [engine.name, UrlbarUtils.HIGHLIGHT.TYPED],
+          keyword: [tokenAliases[0], UrlbarUtils.HIGHLIGHT.TYPED],
+          query: ["", UrlbarUtils.HIGHLIGHT.TYPED],
+          icon: engine.iconURI ? engine.iconURI.spec : null,
+          keywordOffer: UrlbarUtils.KEYWORD_OFFER.SHOW,
+        })
+      );
+      addCallback(this, result);
     }
 
     this.queries.delete(queryContext);
@@ -150,48 +121,7 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
 
 
   cancelQuery(queryContext) {
-    delete this._autofillResult;
     this.queries.delete(queryContext);
-  }
-
-  _getAutofillResult(queryContext) {
-    let token = queryContext.tokens[0];
-    
-    for (let { engine, tokenAliases } of this._engines) {
-      for (let alias of tokenAliases) {
-        if (alias.startsWith(token.lowerCaseValue)) {
-          
-          let aliasPreservingUserCase =
-            token.value + alias.substr(token.value.length);
-          let value = aliasPreservingUserCase + " ";
-          let result = new UrlbarResult(
-            UrlbarUtils.RESULT_TYPE.SEARCH,
-            UrlbarUtils.RESULT_SOURCE.SEARCH,
-            ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-              engine: [engine.name, UrlbarUtils.HIGHLIGHT.TYPED],
-              keyword: [aliasPreservingUserCase, UrlbarUtils.HIGHLIGHT.TYPED],
-              query: ["", UrlbarUtils.HIGHLIGHT.TYPED],
-              icon: engine.iconURI ? engine.iconURI.spec : "",
-              keywordOffer: UrlbarUtils.KEYWORD_OFFER.HIDE,
-              
-              suggestion: undefined,
-              tailPrefix: undefined,
-              tail: undefined,
-              tailOffsetIndex: -1,
-              isSearchHistory: false,
-            })
-          );
-          result.heuristic = true;
-          result.autofill = {
-            value,
-            selectionStart: queryContext.searchString.length,
-            selectionEnd: value.length,
-          };
-          return result;
-        }
-      }
-    }
-    return null;
   }
 }
 

@@ -48,8 +48,6 @@ const heuristicOrder = [
   "UrlbarProviderSearchTips",
   "Omnibox",
   "UnifiedComplete",
-  "Autofill",
-  "TokenAliasEngines",
   "HeuristicFallback",
 ];
 
@@ -67,6 +65,8 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
   
   
+
+
 
 
 
@@ -131,17 +131,21 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     let resultsWithSuggestedIndex = [];
     let formHistoryResults = new Set();
     let formHistorySuggestions = new Set();
-    
-    
-    let strippedUrlToTopPrefixAndTitle = new Map();
     let maxFormHistoryCount = Math.min(
       UrlbarPrefs.get("maxHistoricalSearchSuggestions"),
       context.maxResults
     );
+    let hasUnifiedComplete = false;
 
     
     
     for (let result of context.results) {
+      
+      
+      if (result.providerName == "UnifiedComplete") {
+        hasUnifiedComplete = true;
+      }
+
       
       
       
@@ -180,28 +184,16 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       ) {
         canShowTailSuggestions = false;
       }
+    }
 
-      if (result.type == UrlbarUtils.RESULT_TYPE.URL && result.payload.url) {
-        let [strippedUrl, prefix] = UrlbarUtils.stripPrefixAndTrim(
-          result.payload.url,
-          {
-            stripHttp: true,
-            stripHttps: true,
-            stripWww: true,
-            trimEmptyQuery: true,
-          }
-        );
-        let prefixRank = UrlbarUtils.getPrefixRank(prefix);
-        let topPrefixData = strippedUrlToTopPrefixAndTitle.get(strippedUrl);
-        let topPrefixRank = topPrefixData ? topPrefixData.rank : -1;
-        if (topPrefixRank < prefixRank) {
-          strippedUrlToTopPrefixAndTitle.set(strippedUrl, {
-            prefix,
-            title: result.payload.title,
-            rank: prefixRank,
-          });
-        }
-      }
+    
+    
+    
+    if (
+      !hasUnifiedComplete &&
+      context.pendingHeuristicProviders.has("UnifiedComplete")
+    ) {
+      return false;
     }
 
     
@@ -209,62 +201,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     for (let result of context.results) {
       
       if (result.heuristic && result != context.heuristicResult) {
-        continue;
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (
-        !result.heuristic &&
-        result.type == UrlbarUtils.RESULT_TYPE.URL &&
-        result.payload.url
-      ) {
-        let [strippedUrl, prefix] = UrlbarUtils.stripPrefixAndTrim(
-          result.payload.url,
-          {
-            stripHttp: true,
-            stripHttps: true,
-            stripWww: true,
-            trimEmptyQuery: true,
-          }
-        );
-        let topPrefixData = strippedUrlToTopPrefixAndTitle.get(strippedUrl);
-        
-        
-        
-        if (topPrefixData && prefix != topPrefixData.prefix) {
-          let prefixRank = UrlbarUtils.getPrefixRank(prefix);
-          if (
-            topPrefixData.rank > prefixRank &&
-            prefix.endsWith("www.") == topPrefixData.prefix.endsWith("www.")
-          ) {
-            continue;
-          } else if (
-            topPrefixData.rank > prefixRank &&
-            result.payload?.title == topPrefixData.title
-          ) {
-            continue;
-          }
-        }
-      }
-
-      
-      if (
-        context.heuristicResult &&
-        context.heuristicResult.providerName == "Autofill" &&
-        result.providerName != "Autofill" &&
-        context.heuristicResult.payload?.url == result.payload.url &&
-        context.heuristicResult.type == result.type
-      ) {
         continue;
       }
 
@@ -389,6 +325,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     }
 
     context.results = sortedResults;
+    return true;
   }
 
   

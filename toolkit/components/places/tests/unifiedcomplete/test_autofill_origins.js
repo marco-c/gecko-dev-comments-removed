@@ -1,0 +1,524 @@
+
+
+
+
+"use strict";
+
+addAutofillTasks(true);
+
+
+
+add_task(async function trailingSlash() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://example.com/",
+    },
+  ]);
+  await check_autocomplete({
+    search: "example.com/",
+    autofilled: "example.com/",
+    completed: "http://example.com/",
+    matches: [
+      {
+        value: "example.com/",
+        comment: "example.com/",
+        style: ["autofill", "heuristic"],
+      },
+    ],
+  });
+  await cleanup();
+});
+
+
+
+add_task(async function trailingSlashWWW() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://www.example.com/",
+    },
+  ]);
+  await check_autocomplete({
+    search: "example.com/",
+    autofilled: "example.com/",
+    completed: "http://www.example.com/",
+    matches: [
+      {
+        value: "example.com/",
+        comment: "www.example.com/",
+        style: ["autofill", "heuristic"],
+      },
+    ],
+  });
+  await cleanup();
+});
+
+
+add_task(async function port() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://example.com:8888/",
+    },
+  ]);
+  await check_autocomplete({
+    search: "ex",
+    autofilled: "example.com:8888/",
+    completed: "http://example.com:8888/",
+    matches: [
+      {
+        value: "example.com:8888/",
+        comment: "example.com:8888",
+        style: ["autofill", "heuristic"],
+      },
+    ],
+  });
+  await cleanup();
+});
+
+
+
+add_task(async function portPartial() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://example.com:8888/",
+    },
+  ]);
+  await check_autocomplete({
+    search: "example.com:8",
+    autofilled: "example.com:8888/",
+    completed: "http://example.com:8888/",
+    matches: [
+      {
+        value: "example.com:8888/",
+        comment: "example.com:8888",
+        style: ["autofill", "heuristic"],
+      },
+    ],
+  });
+  await cleanup();
+});
+
+
+
+add_task(async function preserveCase() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://example.com/",
+    },
+  ]);
+  await check_autocomplete({
+    search: "EXaM",
+    autofilled: "EXaMple.com/",
+    completed: "http://example.com/",
+    matches: [
+      {
+        value: "example.com/",
+        comment: "example.com",
+        style: ["autofill", "heuristic"],
+      },
+    ],
+  });
+  await cleanup();
+});
+
+
+
+
+add_task(async function preserveCasePort() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://example.com:8888/",
+    },
+  ]);
+  await check_autocomplete({
+    search: "EXaM",
+    autofilled: "EXaMple.com:8888/",
+    completed: "http://example.com:8888/",
+    matches: [
+      {
+        value: "example.com:8888/",
+        comment: "example.com:8888",
+        style: ["autofill", "heuristic"],
+      },
+    ],
+  });
+  await cleanup();
+});
+
+
+add_task(async function portNoMatch1() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://example.com:8888/",
+    },
+  ]);
+  await check_autocomplete({
+    search: "example.com:89",
+    matches: [],
+  });
+  await cleanup();
+});
+
+
+add_task(async function portNoMatch2() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://example.com:8888/",
+    },
+  ]);
+  await check_autocomplete({
+    search: "example.com:9",
+    matches: [],
+  });
+  await cleanup();
+});
+
+
+add_task(async function trailingSlash() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://example.com/",
+    },
+  ]);
+  await check_autocomplete({
+    search: "example/",
+    matches: [],
+  });
+  await cleanup();
+});
+
+
+add_task(async function multidotted() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://www.example.co.jp:8888/",
+    },
+  ]);
+  await check_autocomplete({
+    search: "www.example.co.",
+    completed: "http://www.example.co.jp:8888/",
+    matches: [
+      {
+        value: "www.example.co.jp:8888/",
+        comment: "www.example.co.jp:8888",
+        style: ["autofill", "heuristic"],
+      },
+    ],
+  });
+  await cleanup();
+});
+
+add_task(async function test_ip() {
+  for (let str of [
+    "192.168.1.1/",
+    "255.255.255.255:8080/",
+    "[2001:db8::1428:57ab]/",
+    "[::c0a8:5909]/",
+    "[::1]/",
+  ]) {
+    info("testing " + str);
+    await PlacesTestUtils.addVisits("http://" + str);
+    for (let i = 1; i < str.length; ++i) {
+      await check_autocomplete({
+        search: str.substring(0, i),
+        completed: "http://" + str,
+        matches: [
+          {
+            value: str,
+            comment: str.replace(/\/$/, ""), 
+            style: ["autofill", "heuristic"],
+          },
+        ],
+      });
+    }
+    await cleanup();
+  }
+});
+
+
+add_task(async function large_number_host() {
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "http://12345example.it:8888/",
+    },
+  ]);
+  await check_autocomplete({
+    search: "1234",
+    completed: "http://12345example.it:8888/",
+    matches: [
+      {
+        value: "12345example.it:8888/",
+        comment: "12345example.it:8888",
+        style: ["autofill", "heuristic"],
+      },
+    ],
+  });
+  await cleanup();
+});
+
+
+
+
+
+add_task(async function groupByHost() {
+  
+  
+  
+  
+  
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example.com/" },
+
+    { uri: "https://example.com/" },
+    { uri: "https://example.com/" },
+
+    { uri: "https://mozilla.org/" },
+    { uri: "https://mozilla.org/" },
+    { uri: "https://mozilla.org/" },
+    { uri: "https://mozilla.org/" },
+  ]);
+
+  let httpFrec = frecencyForUrl("http://example.com/");
+  let httpsFrec = frecencyForUrl("https://example.com/");
+  let otherFrec = frecencyForUrl("https://mozilla.org/");
+  Assert.less(httpFrec, httpsFrec, "Sanity check");
+  Assert.less(httpsFrec, otherFrec, "Sanity check");
+
+  
+  
+  let threshold = await getOriginAutofillThreshold();
+  Assert.less(httpFrec, threshold, "http origin should be < threshold");
+  Assert.less(httpsFrec, threshold, "https origin should be < threshold");
+  Assert.ok(threshold <= otherFrec, "Other origin should cross threshold");
+
+  Assert.ok(
+    threshold <= httpFrec + httpsFrec,
+    "http and https origin added together should cross threshold"
+  );
+
+  
+  await check_autocomplete({
+    search: "ex",
+    autofilled: "example.com/",
+    completed: "https://example.com/",
+    matches: [
+      {
+        value: "example.com/",
+        comment: "https://example.com",
+        style: ["autofill", "heuristic"],
+      },
+    ],
+  });
+
+  await cleanup();
+});
+
+
+
+
+add_task(async function groupByHostNonDefaultStddevMultiplier() {
+  let stddevMultiplier = 1.5;
+  Services.prefs.setCharPref(
+    "browser.urlbar.autoFill.stddevMultiplier",
+    Number(stddevMultiplier).toFixed(1)
+  );
+
+  await PlacesTestUtils.addVisits([
+    { uri: "http://example.com/" },
+    { uri: "http://example.com/" },
+
+    { uri: "https://example.com/" },
+    { uri: "https://example.com/" },
+    { uri: "https://example.com/" },
+
+    { uri: "https://foo.com/" },
+    { uri: "https://foo.com/" },
+    { uri: "https://foo.com/" },
+
+    { uri: "https://mozilla.org/" },
+    { uri: "https://mozilla.org/" },
+    { uri: "https://mozilla.org/" },
+    { uri: "https://mozilla.org/" },
+    { uri: "https://mozilla.org/" },
+  ]);
+
+  let httpFrec = frecencyForUrl("http://example.com/");
+  let httpsFrec = frecencyForUrl("https://example.com/");
+  let otherFrec = frecencyForUrl("https://mozilla.org/");
+  Assert.less(httpFrec, httpsFrec, "Sanity check");
+  Assert.less(httpsFrec, otherFrec, "Sanity check");
+
+  
+  
+  let threshold = await getOriginAutofillThreshold();
+  Assert.less(httpFrec, threshold, "http origin should be < threshold");
+  Assert.less(httpsFrec, threshold, "https origin should be < threshold");
+  Assert.ok(threshold <= otherFrec, "Other origin should cross threshold");
+
+  Assert.ok(
+    threshold <= httpFrec + httpsFrec,
+    "http and https origin added together should cross threshold"
+  );
+
+  
+  await check_autocomplete({
+    search: "ex",
+    autofilled: "example.com/",
+    completed: "https://example.com/",
+    matches: [
+      {
+        value: "example.com/",
+        comment: "https://example.com",
+        style: ["autofill", "heuristic"],
+      },
+    ],
+  });
+
+  Services.prefs.clearUserPref("browser.urlbar.autoFill.stddevMultiplier");
+
+  await cleanup();
+});
+
+
+
+add_task(async function suggestHistoryFalse_bookmark_multiple() {
+  
+  
+  Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
+
+  let search = "ex";
+  let baseURL = "http://example.com/";
+  let bookmarkedURL = baseURL + "bookmarked";
+
+  
+  
+  
+  
+  
+
+  await PlacesTestUtils.addVisits([
+    {
+      uri: baseURL + "other1",
+    },
+  ]);
+  await check_autocomplete({
+    search,
+    matches: [],
+  });
+
+  await PlacesTestUtils.addVisits([
+    {
+      uri: bookmarkedURL,
+    },
+  ]);
+  await check_autocomplete({
+    search,
+    matches: [],
+  });
+
+  await PlacesTestUtils.addVisits([
+    {
+      uri: baseURL + "other2",
+    },
+  ]);
+  await check_autocomplete({
+    search,
+    matches: [],
+  });
+
+  
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: bookmarkedURL,
+  });
+  await check_autocomplete({
+    search,
+    autofilled: "example.com/",
+    completed: baseURL,
+    matches: [
+      {
+        value: "example.com/",
+        comment: "example.com",
+        style: ["autofill", "heuristic"],
+      },
+      {
+        value: bookmarkedURL,
+        comment: "A bookmark",
+        style: ["bookmark"],
+      },
+    ],
+  });
+
+  await cleanup();
+});
+
+
+
+
+add_task(async function suggestHistoryFalse_bookmark_prefix_multiple() {
+  
+  
+  Services.prefs.setBoolPref("browser.urlbar.suggest.history", false);
+
+  let search = "http://ex";
+  let baseURL = "http://example.com/";
+  let bookmarkedURL = baseURL + "bookmarked";
+
+  
+  
+  
+  
+  
+
+  await PlacesTestUtils.addVisits([
+    {
+      uri: baseURL + "other1",
+    },
+  ]);
+  await check_autocomplete({
+    search,
+    matches: [],
+  });
+
+  await PlacesTestUtils.addVisits([
+    {
+      uri: bookmarkedURL,
+    },
+  ]);
+  await check_autocomplete({
+    search,
+    matches: [],
+  });
+
+  await PlacesTestUtils.addVisits([
+    {
+      uri: baseURL + "other2",
+    },
+  ]);
+  await check_autocomplete({
+    search,
+    matches: [],
+  });
+
+  
+  await PlacesTestUtils.addBookmarkWithDetails({
+    uri: bookmarkedURL,
+  });
+  await check_autocomplete({
+    search,
+    autofilled: "http://example.com/",
+    completed: baseURL,
+    matches: [
+      {
+        value: "http://example.com/",
+        comment: "example.com",
+        style: ["autofill", "heuristic"],
+      },
+      {
+        value: bookmarkedURL,
+        comment: "A bookmark",
+        style: ["bookmark"],
+      },
+    ],
+  });
+
+  await cleanup();
+});
