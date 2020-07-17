@@ -12,6 +12,7 @@ class PerfDocLogger(object):
     them into through the StructuredLogger provided by lint.
     """
 
+    TOP_DIR = ""
     PATHS = []
     LOGGER = None
     FAILED = False
@@ -51,8 +52,7 @@ class PerfDocLogger(object):
         
         for file in files:
             
-            
-            fpath = re.sub(".*testing", "testing", file)
+            fpath = re.sub(PerfDocLogger.TOP_DIR, "", file)
 
             
             
