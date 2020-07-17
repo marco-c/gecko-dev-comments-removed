@@ -3,6 +3,9 @@
 
 "use strict";
 
+
+Services.prefs.setBoolPref("extensions.blocklist.useMLBF", false);
+
 const BLOCKLIST_DATA = [
   {
     guid: "/^abcd.*/",
