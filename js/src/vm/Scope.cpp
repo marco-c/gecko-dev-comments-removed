@@ -2071,7 +2071,6 @@ bool ScopeCreationData::create(JSContext* cx,
 bool ScopeCreationData::create(JSContext* cx,
                                frontend::CompilationInfo& compilationInfo,
                                Handle<ModuleScope::Data*> dataArg,
-                               HandleModuleObject module,
                                Handle<AbstractScopePtr> enclosing,
                                ScopeIndex* index) {
   
@@ -2084,6 +2083,10 @@ bool ScopeCreationData::create(JSContext* cx,
   }
 
   MOZ_ASSERT(enclosing.get().is<GlobalScope>());
+
+  
+  
+  RootedModuleObject module(cx, nullptr);
 
   
   
@@ -2142,6 +2145,16 @@ UniquePtr<FunctionScope::Data> ScopeCreationData::releaseData<FunctionScope>(
 
   return UniquePtr<FunctionScope::Data>(
       static_cast<FunctionScope::Data*>(data_.release()));
+}
+
+template <>
+UniquePtr<ModuleScope::Data> ScopeCreationData::releaseData<ModuleScope>(
+    CompilationInfo& compilationInfo) {
+  
+  data<ModuleScope>().module = compilationInfo.module;
+
+  return UniquePtr<ModuleScope::Data>(
+      static_cast<ModuleScope::Data*>(data_.release()));
 }
 
 template <class SpecificScopeType>
