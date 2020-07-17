@@ -23,6 +23,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
+  Log: "resource://gre/modules/Log.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   PlacesUIUtils: "resource:///modules/PlacesUIUtils.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
@@ -659,6 +660,30 @@ var UrlbarUtils = {
     }
     return context.heuristicResult;
   },
+
+  
+
+
+
+
+
+
+  getLogger({ prefix = "" } = {}) {
+    if (!this._logger) {
+      this._logger = Log.repository.getLogger("urlbar");
+      this._logger.manageLevelFromPref("browser.urlbar.loglevel");
+      this._logger.addAppender(
+        new Log.ConsoleAppender(new Log.BasicFormatter())
+      );
+    }
+    if (prefix) {
+      
+      
+      
+      return Log.repository.getLoggerWithMessagePrefix("urlbar", prefix + "::");
+    }
+    return this._logger;
+  },
 };
 
 XPCOMUtils.defineLazyGetter(UrlbarUtils.ICON, "DEFAULT", () => {
@@ -1100,6 +1125,12 @@ class UrlbarMuxer {
 
 
 class UrlbarProvider {
+  constructor() {
+    XPCOMUtils.defineLazyGetter(this, "logger", () =>
+      UrlbarUtils.getLogger({ prefix: `Provider.${this.name}` })
+    );
+  }
+
   
 
 

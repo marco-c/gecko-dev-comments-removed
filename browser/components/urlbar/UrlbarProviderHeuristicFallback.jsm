@@ -16,7 +16,6 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
-  Log: "resource://gre/modules/Log.jsm",
   Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
@@ -24,10 +23,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
-
-XPCOMUtils.defineLazyGetter(this, "logger", () =>
-  Log.repository.getLogger("Urlbar.Provider.HeuristicFallback")
-);
 
 
 
@@ -83,7 +78,6 @@ class ProviderHeuristicFallback extends UrlbarProvider {
 
 
   async startQuery(queryContext, addCallback) {
-    logger.info(`Starting query for ${queryContext.searchString}`);
     let instance = {};
     this.queries.set(queryContext, instance);
 
@@ -131,7 +125,6 @@ class ProviderHeuristicFallback extends UrlbarProvider {
 
 
   cancelQuery(queryContext) {
-    logger.info(`Canceling query for ${queryContext.searchString}`);
     this.queries.delete(queryContext);
   }
 

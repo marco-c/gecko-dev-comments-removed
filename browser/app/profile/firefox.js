@@ -290,6 +290,9 @@ pref("browser.urlbar.speculativeConnect.enabled", true);
 pref("browser.urlbar.filter.javascript", true);
 
 
+pref("browser.urlbar.loglevel", "Error");
+
+
 pref("browser.urlbar.maxRichResults", 10);
 
 
