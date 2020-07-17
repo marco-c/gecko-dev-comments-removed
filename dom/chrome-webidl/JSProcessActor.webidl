@@ -49,6 +49,12 @@ dictionary ProcessActorOptions {
   sequence<UTF8String> remoteTypes;
 
   
+
+
+
+  boolean includeParent = false;
+
+  
   ProcessActorSidedOptions parent;
   ProcessActorChildOptions child;
 };
