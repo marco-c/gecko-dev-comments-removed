@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+assertThrowsInstanceOf(() => Iterator.prototype.map.call([], x => x), TypeError);
+
+if (typeof reportCompare == 'function')
+  reportCompare(0, 0);
