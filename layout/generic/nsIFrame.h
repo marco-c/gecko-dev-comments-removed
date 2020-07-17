@@ -5146,6 +5146,11 @@ class nsIFrame : public nsQueryFrame {
     
     
     
+    
+    
+    
+    
+    
     bool mSawBeforeType;
     
     bool mLastCharWasPunctuation;

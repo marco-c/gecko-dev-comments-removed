@@ -8417,14 +8417,6 @@ nsresult nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos) {
     case eSelectWord: {
       bool wordSelectEatSpace = ShouldWordSelectionEatSpace(*aPos);
 
-      
-      
-      
-      
-      
-      
-      
-      
       PeekWordState state;
       int32_t offsetAdjustment = 0;
       bool done = false;
