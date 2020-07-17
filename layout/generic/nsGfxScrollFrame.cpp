@@ -3428,6 +3428,48 @@ static void ClipListsExceptCaret(nsDisplayListCollection* aLists,
                        cache);
 }
 
+
+
+
+
+
+
+
+
+
+
+class MOZ_RAII AutoContainsBlendModeCapturer {
+  nsDisplayListBuilder& mBuilder;
+  bool mSavedContainsBlendMode;
+
+ public:
+  explicit AutoContainsBlendModeCapturer(nsDisplayListBuilder& aBuilder)
+      : mBuilder(aBuilder),
+        mSavedContainsBlendMode(aBuilder.ContainsBlendMode()) {
+    mBuilder.SetContainsBlendMode(false);
+  }
+
+  bool CaptureContainsBlendMode() {
+    
+    
+    bool capturedBlendMode = mBuilder.ContainsBlendMode();
+    mBuilder.SetContainsBlendMode(false);
+    return capturedBlendMode;
+  }
+
+  ~AutoContainsBlendModeCapturer() {
+    
+    
+    
+    
+    
+    
+    bool uncapturedContainsBlendMode = mBuilder.ContainsBlendMode();
+    mBuilder.SetContainsBlendMode(mSavedContainsBlendMode ||
+                                  uncapturedContainsBlendMode);
+  }
+};
+
 void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                          const nsDisplayListSet& aLists) {
   SetAndNullOnExit<const nsIFrame> tmpBuilder(
@@ -3640,6 +3682,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 
   nsDisplayListCollection set(aBuilder);
+  AutoContainsBlendModeCapturer blendCapture(*aBuilder);
 
   bool willBuildAsyncZoomContainer =
       mWillBuildScrollableLayer && aBuilder->ShouldBuildAsyncZoomContainer() &&
@@ -3855,6 +3898,32 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
     nsDisplayList resultList;
     set.SerializeWithCorrectZOrder(&resultList, mOuter->GetContent());
+
+    if (blendCapture.CaptureContainsBlendMode()) {
+      
+      
+      
+      
+      
+      nsDisplayItem* blendContainer =
+          nsDisplayBlendContainer::CreateForMixBlendMode(
+              aBuilder, mOuter, &resultList,
+              aBuilder->CurrentActiveScrolledRoot());
+      resultList.AppendToTop(blendContainer);
+
+      
+      
+      
+      
+      
+      if (aBuilder->IsRetainingDisplayList()) {
+        if (aBuilder->IsPartialUpdate()) {
+          aBuilder->SetPartialBuildFailed(true);
+        } else {
+          aBuilder->SetDisablePartialUpdates(true);
+        }
+      }
+    }
 
     mozilla::layers::FrameMetrics::ViewID viewID =
         nsLayoutUtils::FindOrCreateIDFor(mScrolledFrame->GetContent());
