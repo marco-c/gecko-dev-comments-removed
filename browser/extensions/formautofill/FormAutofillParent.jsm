@@ -594,6 +594,8 @@ class FormAutofillParent extends JSWindowActorParent {
     }
 
     
+    
+    
     if (creditCard.guid) {
       
       setUsedStatus(3);
@@ -642,47 +644,25 @@ class FormAutofillParent extends JSWindowActorParent {
       );
     } else {
       
+      
+      
+      setUsedStatus(1);
+
+      
       Services.telemetry.scalarAdd(
         "formautofill.creditCards.fill_type_manual",
         1
       );
       this._recordFormFillingTime("creditCard", "manual", timeStartedFillingMS);
+    }
 
-      let existingGuid = await gFormAutofillStorage.creditCards.getDuplicateGuid(
-        creditCard.record
-      );
-
-      if (existingGuid) {
-        creditCard.guid = existingGuid;
-
-        let originalCCData = await gFormAutofillStorage.creditCards.get(
-          creditCard.guid
-        );
-
-        gFormAutofillStorage.creditCards._normalizeRecord(creditCard.record);
-
-        
-        
-        let recordUnchanged = true;
-        for (let field in creditCard.record) {
-          if (field == "cc-number") {
-            continue;
-          }
-          if (creditCard.record[field] != originalCCData[field]) {
-            recordUnchanged = false;
-            break;
-          }
-        }
-
-        if (recordUnchanged) {
-          
-          
-          
-          setUsedStatus(1);
-          gFormAutofillStorage.creditCards.notifyUsed(creditCard.guid);
-          return false;
-        }
-      }
+    
+    let dupGuid = await gFormAutofillStorage.creditCards.getDuplicateGuid(
+      creditCard.record
+    );
+    if (dupGuid) {
+      gFormAutofillStorage.creditCards.notifyUsed(dupGuid);
+      return false;
     }
 
     
