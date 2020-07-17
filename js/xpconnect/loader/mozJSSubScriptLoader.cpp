@@ -24,6 +24,7 @@
 
 #include "mozilla/ContentPrincipal.h"
 #include "mozilla/dom/ScriptLoader.h"
+#include "mozilla/Omnijar.h"
 #include "mozilla/ScriptPreloader.h"
 #include "mozilla/SystemPrincipal.h"
 #include "mozilla/scache/StartupCache.h"
@@ -248,6 +249,10 @@ bool mozJSSubScriptLoader::ReadScript(JS::MutableHandle<JSScript*> script,
                                       const char* uriStr, nsIIOService* serv,
                                       bool wantReturnValue,
                                       bool useCompilationScope) {
+  
+  
+  AutoSuspendStartupCacheWrites suspendScache;
+
   
   
   nsCOMPtr<nsIChannel> chan;
