@@ -336,9 +336,7 @@ impl FontContext {
         } else {
             
             Err(ResourceCacheError::new(
-                
-                
-                panic!("Failed to initialize FreeType - {}", result)
+                format!("Failed to initialize FreeType - {}", result)
             ))
         }
     }
