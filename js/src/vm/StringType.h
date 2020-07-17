@@ -1471,20 +1471,6 @@ static inline UniqueChars StringToNewUTF8CharsZ(JSContext* maybecx,
 
 
 
-template <typename CharT>
-extern JSLinearString* NewString(
-    JSContext* cx, UniquePtr<CharT[], JS::FreePolicy> chars, size_t length,
-    js::gc::InitialHeap heap = js::gc::DefaultHeap);
-
-
-template <typename CharT>
-extern JSLinearString* NewStringDontDeflate(
-    JSContext* cx, UniquePtr<CharT[], JS::FreePolicy> chars, size_t length,
-    js::gc::InitialHeap heap = js::gc::DefaultHeap);
-
-
-
-
 
 template <js::AllowGC allowGC, typename CharT>
 extern JSLinearString* NewString(
