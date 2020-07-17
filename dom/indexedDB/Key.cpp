@@ -21,7 +21,6 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/FloatingPoint.h"
-#include "mozilla/ReverseIterator.h"
 #include "mozIStorageStatement.h"
 #include "mozIStorageValueArray.h"
 #include "nsAlgorithm.h"
@@ -569,17 +568,8 @@ IDBResult<void, IDBSpecialValue::Invalid> Key::EncodeAsString(
 
   MOZ_ASSERT(size.isValid());
 
-  
-  
-  
-  
-  const auto inputRange = mozilla::detail::IteratorRange(
-      aInput.Elements(), aInput.Elements() + aInput.Length());
-
-  bool anyMultibyte = false;
-  for (const auto val : inputRange) {
+  for (const auto val : aInput) {
     if (val > ONE_BYTE_LIMIT) {
-      anyMultibyte = true;
       size += char16_t(val) > TWO_BYTE_LIMIT ? 2 : 1;
       if (!size.isValid()) {
         IDB_REPORT_INTERNAL_ERR();
@@ -608,33 +598,19 @@ IDBResult<void, IDBSpecialValue::Invalid> Key::EncodeAsString(
   *(buffer++) = aType;
 
   
-  if (anyMultibyte) {
-    for (const auto val : inputRange) {
-      if (val <= ONE_BYTE_LIMIT) {
-        *(buffer++) = val + ONE_BYTE_ADJUST;
-      } else if (char16_t(val) <= TWO_BYTE_LIMIT) {
-        char16_t c = char16_t(val) + TWO_BYTE_ADJUST + 0x8000;
-        *(buffer++) = (char)(c >> 8);
-        *(buffer++) = (char)(c & 0xFF);
-      } else {
-        uint32_t c = (uint32_t(val) << THREE_BYTE_SHIFT) | 0x00C00000;
-        *(buffer++) = (char)(c >> 16);
-        *(buffer++) = (char)(c >> 8);
-        *(buffer++) = (char)c;
-      }
+  for (const auto val : aInput) {
+    if (val <= ONE_BYTE_LIMIT) {
+      *(buffer++) = val + ONE_BYTE_ADJUST;
+    } else if (char16_t(val) <= TWO_BYTE_LIMIT) {
+      char16_t c = char16_t(val) + TWO_BYTE_ADJUST + 0x8000;
+      *(buffer++) = (char)(c >> 8);
+      *(buffer++) = (char)(c & 0xFF);
+    } else {
+      uint32_t c = (uint32_t(val) << THREE_BYTE_SHIFT) | 0x00C00000;
+      *(buffer++) = (char)(c >> 16);
+      *(buffer++) = (char)(c >> 8);
+      *(buffer++) = (char)c;
     }
-  } else {
-    
-    
-    
-    
-    
-    
-    const auto inputLen = std::distance(inputRange.cbegin(), inputRange.cend());
-    MOZ_ASSERT(inputLen == size);
-    std::transform(inputRange.cbegin(), inputRange.cend(), buffer,
-                   [](auto value) { return value + ONE_BYTE_ADJUST; });
-    buffer += inputLen;
   }
 
   
