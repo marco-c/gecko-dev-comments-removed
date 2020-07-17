@@ -366,12 +366,6 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   
   
-  uint8_t mStreamFilterAttached : 1;
-
-  
-  
-  
-  
   uint8_t mAsyncOpenBarrier = 0;
 };
 
