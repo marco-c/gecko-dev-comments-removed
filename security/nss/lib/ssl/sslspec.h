@@ -171,6 +171,9 @@ struct ssl3CipherSpecStr {
 
     
     SSLMaskingContext *maskContext;
+
+    
+    PRUint64 deprotectionFailures;
 };
 
 typedef void (*sslCipherSpecChangedFunc)(void *arg,
