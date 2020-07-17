@@ -54,8 +54,7 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
                 continue;
             }
             state = goto as usize;
-            self.state_stack.push(state);
-            self.node_stack.shift();
+            self.shift_replayed(state);
             
             if state >= TABLES.shift_count {
                 assert!(state < TABLES.action_count + TABLES.shift_count);
@@ -68,6 +67,17 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
             debug_assert!(state < TABLES.shift_count);
         }
         Ok(false)
+    }
+    #[inline(always)]
+    fn shift_replayed(&mut self, state: usize) {
+        
+        
+        
+        
+        
+        
+        self.state_stack.push(state);
+        self.node_stack.shift();
     }
     fn unshift(&mut self) {
         self.state_stack.pop().unwrap();
@@ -82,6 +92,9 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
     }
     fn epsilon(&mut self, state: usize) {
         *self.state_stack.last_mut().unwrap() = state;
+    }
+    fn top_state(&self) -> usize {
+        self.state()
     }
     fn check_not_on_new_line(&mut self, peek: usize) -> Result<'alloc, bool> {
         let sv = {

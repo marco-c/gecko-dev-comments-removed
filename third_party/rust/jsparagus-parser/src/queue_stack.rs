@@ -129,6 +129,7 @@ impl<T> QueueStack<T> {
     
     
     
+    #[inline(always)]
     pub fn shift(&mut self) {
         assert!(self.can_shift());
         self.top += 1;

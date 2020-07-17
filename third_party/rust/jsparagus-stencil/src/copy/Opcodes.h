@@ -2564,12 +2564,8 @@
 
 
 
-
-
-
-
  \
-    MACRO(Try, try_, NULL, 5, 0, 0, JOF_CODE_OFFSET) \
+    MACRO(Try, try_, NULL, 1, 0, 0, JOF_BYTE) \
     
 
 

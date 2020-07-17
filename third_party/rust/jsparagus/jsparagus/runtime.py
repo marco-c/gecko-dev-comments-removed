@@ -175,6 +175,21 @@ class Parser:
             else:
                 break
 
+    def replay_action(self, dest):
+        
+        
+        
+        
+        
+        
+        state = self.stack[-1].state
+        stv = self.replay.pop()
+        if self.debug:
+            self._dbg_where("(inline-replay: {})".format(repr(stv.term)))
+        goto = self.actions[state].get(stv.term, ERROR)
+        assert goto == dest
+        self.stack.append(StateTermValue(dest, stv.term, stv.value, stv.new_line))
+
     def shift_list(self, stv_list, lexer):
         self.replay.extend(reversed(stv_list))
 
@@ -208,6 +223,9 @@ class Parser:
             assert self.stack[0].term is None
             assert isinstance(self.stack[1].term, Nt)
             return self.stack[1].value
+
+    def top_state(self):
+        return self.stack[-1].state
 
     def check_not_on_new_line(self, lexer, peek):
         if peek <= 0:

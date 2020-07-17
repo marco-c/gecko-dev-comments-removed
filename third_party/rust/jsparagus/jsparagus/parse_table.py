@@ -6,6 +6,7 @@ import hashlib
 import os
 import pickle
 import typing
+import itertools
 
 from . import types
 from .utils import consume, keep_until, split
@@ -118,15 +119,17 @@ class StateAndTransitions:
             
             
             
+            
             if any(not k.is_condition() for k, s in self.epsilon):
                 return True
-            if any(not isinstance(k.condition(), FilterFlag) for k, s in self.epsilon):
+            iterator = iter(self.epsilon)
+            first, _ = next(iterator)
+            if any(not first.check_same_variable(k) for k, s in iterator):
                 return True
             
             
-            if len(set(k.condition().flag for k, s in self.epsilon)) > 1:  
-                return True
-            if len(self.epsilon) != len(set(k.condition().value for k, s in self.epsilon)):  
+            pairs = itertools.combinations((k for k, s in self.epsilon), 2)
+            if any(not k1.check_different_values(k2) for k1, k2 in pairs):
                 return True
         else:
             try:
