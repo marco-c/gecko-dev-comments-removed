@@ -6,6 +6,7 @@
 add_task(async function test_support_toolbar_properties_on_findbar() {
   const TOOLBAR_COLOR = "#ff00ff";
   const TOOLBAR_TEXT_COLOR = "#9400ff";
+  const ACCENT_COLOR_INACTIVE = "#ffff00";
   
   
   gBrowser.selectedTab.focus();
@@ -14,6 +15,7 @@ add_task(async function test_support_toolbar_properties_on_findbar() {
       theme: {
         colors: {
           frame: ACCENT_COLOR,
+          frame_inactive: ACCENT_COLOR_INACTIVE,
           tab_background_text: TEXT_COLOR,
           toolbar: TOOLBAR_COLOR,
           bookmark_text: TOOLBAR_TEXT_COLOR,
@@ -45,6 +47,15 @@ add_task(async function test_support_toolbar_properties_on_findbar() {
     hexToCSS(TOOLBAR_TEXT_COLOR),
     "Findbar button text color should be the same as toolbar text color."
   );
+
+  
+  let window2 = await BrowserTestUtils.openNewBrowserWindow();
+  Assert.equal(
+    window.getComputedStyle(gFindBar).backgroundColor,
+    hexToCSS(ACCENT_COLOR_INACTIVE),
+    "Findbar background changed in inactive window."
+  );
+  await BrowserTestUtils.closeWindow(window2);
 
   await extension.unload();
 });
