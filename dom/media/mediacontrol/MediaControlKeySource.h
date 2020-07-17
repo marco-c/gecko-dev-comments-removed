@@ -18,6 +18,27 @@ namespace dom {
 
 
 
+struct SeekDetails {
+  SeekDetails() = default;
+  explicit SeekDetails(double aSeekTime) : mSeekTime(aSeekTime) {}
+  SeekDetails(double aSeekTime, bool aFastSeek)
+      : mSeekTime(aSeekTime), mFastSeek(aFastSeek) {}
+  double mSeekTime = 0.0;
+  bool mFastSeek = false;
+};
+
+struct MediaControlAction {
+  MediaControlAction() = default;
+  explicit MediaControlAction(MediaControlKey aKey) : mKey(aKey) {}
+  MediaControlAction(MediaControlKey aKey, const SeekDetails& aDetails)
+      : mKey(aKey), mDetails(Some(aDetails)) {}
+  MediaControlKey mKey = MediaControlKey::EndGuard_;
+  Maybe<SeekDetails> mDetails;
+};
+
+
+
+
 
 
 
@@ -26,7 +47,7 @@ class MediaControlKeyListener {
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
   MediaControlKeyListener() = default;
 
-  virtual void OnKeyPressed(MediaControlKey aKey) = 0;
+  virtual void OnActionPerformed(const MediaControlAction& aAction) = 0;
 
  protected:
   virtual ~MediaControlKeyListener() = default;
@@ -39,7 +60,7 @@ class MediaControlKeyListener {
 class MediaControlKeyHandler final : public MediaControlKeyListener {
  public:
   NS_INLINE_DECL_REFCOUNTING(MediaControlKeyHandler, override)
-  void OnKeyPressed(MediaControlKey aKey) override;
+  void OnActionPerformed(const MediaControlAction& aAction) override;
 
  private:
   virtual ~MediaControlKeyHandler() = default;

@@ -66,7 +66,6 @@ class MediaSession final : public nsISupports, public nsWrapperCache {
 
   
   void NotifyHandler(const MediaSessionActionDetails& aDetails);
-  void NotifyHandler(MediaSessionAction aAction);
 
   void Shutdown();
 

@@ -37,7 +37,7 @@ class MediaControlKeyManager final : public MediaControlKeySource,
   MediaSessionPlaybackState GetPlaybackState() const override;
 
   
-  void OnKeyPressed(MediaControlKey aKey) override;
+  void OnActionPerformed(const MediaControlAction& aAction) override;
 
   
   

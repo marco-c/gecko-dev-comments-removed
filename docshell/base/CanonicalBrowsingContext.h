@@ -8,7 +8,7 @@
 #define mozilla_dom_CanonicalBrowsingContext_h
 
 #include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/dom/MediaControllerBinding.h"
+#include "mozilla/dom/MediaControlKeySource.h"
 #include "mozilla/dom/BrowsingContextWebProgress.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/MozPromise.h"
@@ -131,7 +131,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   
   
-  void UpdateMediaControlKey(MediaControlKey aKey);
+  void UpdateMediaControlAction(const MediaControlAction& aAction);
 
   
   using BrowsingContext::LoadURI;

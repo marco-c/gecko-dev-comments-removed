@@ -195,7 +195,13 @@ void MediaControlService::GenerateTestMediaControlKey(MediaControlKey aKey) {
   if (!StaticPrefs::media_mediacontrol_testingevents_enabled()) {
     return;
   }
-  mMediaKeysHandler->OnKeyPressed(aKey);
+  
+  if (aKey == MediaControlKey::Seekto) {
+    mMediaKeysHandler->OnActionPerformed(
+        MediaControlAction(aKey, SeekDetails()));
+  } else {
+    mMediaKeysHandler->OnActionPerformed(MediaControlAction(aKey));
+  }
 }
 
 MediaMetadataBase MediaControlService::GetMainControllerMediaMetadata() const {
