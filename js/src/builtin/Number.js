@@ -14,7 +14,7 @@ var numberFormatCache = new Record();
 
 function Number_toLocaleString() {
     
-    var x = callFunction(std_Number_valueOf, this);
+    var x = callFunction(ThisNumberValueForToLocaleString, this);
 
     
     var locales = arguments.length > 0 ? arguments[0] : undefined;
