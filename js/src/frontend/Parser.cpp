@@ -2058,7 +2058,7 @@ static bool InstantiateTopLevel(JSContext* cx,
   ScriptStencil& stencil = compilationInfo.topLevel.get();
 
   
-  if (compilationInfo.topLevelAsmJS) {
+  if (stencil.isAsmJSModule) {
     return true;
   }
 
