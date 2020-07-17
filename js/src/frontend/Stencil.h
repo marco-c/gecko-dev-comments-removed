@@ -363,7 +363,6 @@ class ScriptStencil {
   js::UniquePtr<js::ImmutableScriptData> immutableScriptData = nullptr;
 
   
-  
   SourceExtent extent = {};
 
   
