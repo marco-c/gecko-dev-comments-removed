@@ -52,28 +52,24 @@ async function createTargets(watcher, watchedResources) {
 
 
 
-async function destroyTargets(watcher) {
+function destroyTargets(watcher) {
   
   const browsingContexts = getFilteredRemoteBrowsingContext(
     watcher.browserElement
   );
-  const promises = [];
   for (const browsingContext of browsingContexts) {
     logWindowGlobal(
       browsingContext.currentWindowGlobal,
       "Existing WindowGlobal"
     );
 
-    const promise = browsingContext.currentWindowGlobal
+    browsingContext.currentWindowGlobal
       .getActor("DevToolsFrame")
       .destroyTarget({
         watcherActorID: watcher.actorID,
         browserId: watcher.browserId,
       });
-    promises.push(promise);
   }
-  
-  return Promise.all(promises);
 }
 
 
