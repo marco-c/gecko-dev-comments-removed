@@ -2051,12 +2051,12 @@ nsresult HTMLEditor::InsertBRElement(const EditorDOMPoint& aPointToBreak) {
     }
   } else {
     EditorDOMPoint pointToBreak(aPointToBreak);
-    WSRunObject wsObj(*this, pointToBreak);
+    WSRunScanner wsRunScanner(*this, pointToBreak);
     brElementIsAfterBlock =
-        wsObj.ScanPreviousVisibleNodeOrBlockBoundaryFrom(pointToBreak)
+        wsRunScanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(pointToBreak)
             .ReachedBlockBoundary();
     brElementIsBeforeBlock =
-        wsObj.ScanNextVisibleNodeOrBlockBoundaryFrom(pointToBreak)
+        wsRunScanner.ScanNextVisibleNodeOrBlockBoundaryFrom(pointToBreak)
             .ReachedBlockBoundary();
     
     
@@ -2532,11 +2532,11 @@ EditActionResult HTMLEditor::HandleDeleteAroundCollapsedSelection(
   }
 
   
-  WSRunObject wsObj(*this, startPoint);
+  WSRunScanner wsRunScanner(*this, startPoint);
   WSScanResult scanFromStartPointResult =
       aDirectionAndAmount == nsIEditor::eNext
-          ? wsObj.ScanNextVisibleNodeOrBlockBoundaryFrom(startPoint)
-          : wsObj.ScanPreviousVisibleNodeOrBlockBoundaryFrom(startPoint);
+          ? wsRunScanner.ScanNextVisibleNodeOrBlockBoundaryFrom(startPoint)
+          : wsRunScanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(startPoint);
   if (!scanFromStartPointResult.GetContent()) {
     return EditActionCanceled();
   }
@@ -2568,7 +2568,7 @@ EditActionResult HTMLEditor::HandleDeleteAroundCollapsedSelection(
     EditActionResult result = HandleDeleteCollapsedSelectionAtAtomicContent(
         aDirectionAndAmount, aStripWrappers,
         MOZ_KnownLive(*scanFromStartPointResult.GetContent()), startPoint,
-        wsObj);
+        wsRunScanner);
     NS_WARNING_ASSERTION(
         result.Succeeded(),
         "HTMLEditor::HandleDeleteCollapsedSelectionAtAtomicContent() failed");
@@ -2583,7 +2583,7 @@ EditActionResult HTMLEditor::HandleDeleteAroundCollapsedSelection(
         HandleDeleteCollapsedSelectionAtOtherBlockBoundary(
             aDirectionAndAmount, aStripWrappers,
             MOZ_KnownLive(*scanFromStartPointResult.ElementPtr()), startPoint,
-            wsObj);
+            wsRunScanner);
     NS_WARNING_ASSERTION(
         result.Succeeded(),
         "HTMLEditor::HandleDeleteCollapsedSelectionAtOtherBlockBoundary() "
@@ -4042,15 +4042,15 @@ nsresult HTMLEditor::InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
     return NS_OK;
   }
 
-  WSRunObject wsObj(*this, aPointToInsert);
+  WSRunScanner wsRunScanner(*this, aPointToInsert);
   
   
-  if (!wsObj.StartsFromHardLineBreak()) {
+  if (!wsRunScanner.StartsFromHardLineBreak()) {
     return NS_OK;
   }
   
   
-  if (!wsObj.EndsByBlockBoundary()) {
+  if (!wsRunScanner.EndsByBlockBoundary()) {
     return NS_OK;
   }
 
