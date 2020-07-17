@@ -274,8 +274,6 @@ class KeyframeEffect : public AnimationEffect {
                                 bool aIsRunning);
   void ResetIsRunningOnCompositor();
 
-  void ResetPartialPrerendered();
-
   
   
   

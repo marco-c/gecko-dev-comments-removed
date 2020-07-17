@@ -10,7 +10,6 @@
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/ComputedTimingFunction.h"  
 #include "mozilla/layers/LayersMessages.h"   
-#include "mozilla/layers/LayersTypes.h"      
 #include "mozilla/TimeStamp.h"               
 #include "mozilla/TimingParams.h"
 #include "X11UndefineNone.h"
@@ -53,13 +52,6 @@ struct PropertyAnimation {
   float mPlaybackRate;
   dom::IterationCompositeOperation mIterationComposite;
   bool mIsNotPlaying;
-
-  void ResetLastCompositionValues() {
-    mCurrentIterationOnLastCompose = 0;
-    mSegmentIndexOnLastCompose = 0;
-    mProgressOnLastCompose.SetNull();
-    mPortionInSegmentOnLastCompose.SetNull();
-  }
 };
 
 struct PropertyAnimationGroup {
@@ -73,11 +65,6 @@ struct PropertyAnimationGroup {
     mAnimations.Clear();
     mBaseStyle = nullptr;
   }
-  void ResetLastCompositionValues() {
-    for (PropertyAnimation& animation : mAnimations) {
-      animation.ResetLastCompositionValues();
-    }
-  }
 };
 
 struct AnimationStorageData {
@@ -88,9 +75,6 @@ struct AnimationStorageData {
   Maybe<TransformData> mTransformData;
   
   RefPtr<gfx::Path> mCachedMotionPath;
-  
-  
-  LayersId mLayersId;
 
   AnimationStorageData() = default;
   AnimationStorageData(AnimationStorageData&& aOther) = default;

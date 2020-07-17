@@ -2189,11 +2189,6 @@ class nsLayoutUtils {
   
 
 
-  static bool IsInPositionFixedSubtree(const nsIFrame* aFrame);
-
-  
-
-
 
 
 

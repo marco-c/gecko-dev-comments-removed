@@ -3105,14 +3105,6 @@ BrowserChild::OnHideTooltip() {
   return NS_OK;
 }
 
-void BrowserChild::NotifyJankedAnimations(
-    const nsTArray<uint64_t>& aJankedAnimations) {
-  MOZ_ASSERT(mPuppetWidget);
-  RefPtr<LayerManager> lm = mPuppetWidget->GetLayerManager();
-  MOZ_ASSERT(lm);
-  lm->UpdatePartialPrerenderedAnimations(aJankedAnimations);
-}
-
 mozilla::ipc::IPCResult BrowserChild::RecvRequestNotifyAfterRemotePaint() {
   
   CompositorBridgeChild* compositor = CompositorBridgeChild::Get();

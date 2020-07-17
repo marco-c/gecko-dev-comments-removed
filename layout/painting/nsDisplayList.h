@@ -6727,7 +6727,7 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
   using TransformReferenceBox = nsStyleTransformMatrix::TransformReferenceBox;
 
  public:
-  enum class PrerenderDecision : uint8_t { No, Full, Partial };
+  enum class PrerenderDecision { No, Full, Partial };
 
   
 
@@ -6747,7 +6747,7 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
 
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                      nsDisplayList* aList, const nsRect& aChildrenBuildingRect,
-                     PrerenderDecision aPrerenderDecision);
+                     bool aAllowAsyncAnimation);
 
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                      nsDisplayList* aList, const nsRect& aChildrenBuildingRect,
@@ -7006,9 +7006,6 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
       float aAppUnitsPerPixel);
 
   struct PrerenderInfo {
-    bool CanUseAsyncAnimations() const {
-      return mDecision != PrerenderDecision::No && mHasAnimations;
-    }
     PrerenderDecision mDecision = PrerenderDecision::No;
     bool mHasAnimations = true;
   };
@@ -7055,10 +7052,6 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
     return mFrame->Extend3DContext() || Combines3DTransformWithAncestors();
   }
 
-  bool IsPartialPrerender() const {
-    return mPrerenderDecision == PrerenderDecision::Partial;
-  }
-
   void AddSizeOfExcludingThis(nsWindowSizes&) const override;
 
  private:
@@ -7089,7 +7082,6 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
   nsRect mChildBounds;
   
   nsRect mBounds;
-  PrerenderDecision mPrerenderDecision : 2;
   
   
   
@@ -7097,9 +7089,11 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
   
   
   
-  bool mIsTransformSeparator : 1;
+  bool mIsTransformSeparator;
   
-  bool mShouldFlatten : 1;
+  bool mAllowAsyncAnimation;
+  
+  bool mShouldFlatten;
 };
 
 

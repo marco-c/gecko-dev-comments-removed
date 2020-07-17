@@ -14,7 +14,6 @@
 #include "mozilla/webrender/WebRenderTypes.h"  
 #include "mozilla/TimeStamp.h"                 
 #include "mozilla/TimingParams.h"
-#include "mozilla/Types.h"  
 #include "mozilla/Variant.h"
 #include "X11UndefineNone.h"
 #include <unordered_map>
@@ -116,7 +115,7 @@ class AnimationHelper {
 
 
   static AnimationStorageData ExtractAnimations(
-      const LayersId& aLayersId, const AnimationArray& aAnimations);
+      const AnimationArray& aAnimations);
 
   
 
@@ -135,16 +134,6 @@ class AnimationHelper {
   static gfx::Matrix4x4 ServoAnimationValueToMatrix4x4(
       const nsTArray<RefPtr<RawServoAnimationValue>>& aValue,
       const TransformData& aTransformData, gfx::Path* aCachedMotionPath);
-
-  
-
-
-
-
-  static bool ShouldBeJank(const LayoutDeviceIntRect& aPrerenderedRect,
-                           SideBits aOverflowedSides,
-                           const gfx::Matrix4x4& aTransform,
-                           const ParentLayerRect& aClipRect);
 };
 
 }  

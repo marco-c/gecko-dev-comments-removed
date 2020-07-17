@@ -421,30 +421,6 @@ class Animation : public DOMEventTargetHelper,
 
   int32_t& CachedChildIndexRef() { return mCachedChildIndex; }
 
-  void SetPartialPrerendered(uint64_t aIdOnCompositor) {
-    mIdOnCompositor = aIdOnCompositor;
-    mIsPartialPrerendered = true;
-  }
-  bool IsPartialPrerendered() const { return mIsPartialPrerendered; }
-  uint64_t IdOnCompositor() const { return mIdOnCompositor; }
-  
-
-
-
-  void ResetPartialPrerendered() {
-    MOZ_ASSERT(mIsPartialPrerendered);
-    mIsPartialPrerendered = false;
-    mIdOnCompositor = 0;
-  }
-  
-
-
-
-  void UpdatePartialPrerendered() {
-    ResetPartialPrerendered();
-    PostUpdate();
-  }
-
  protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
   void CancelNoUpdate();
@@ -642,11 +618,6 @@ class Animation : public DOMEventTargetHelper,
   RefPtr<MicroTaskRunnable> mFinishNotificationTask;
 
   nsString mId;
-
- private:
-  
-  uint64_t mIdOnCompositor = 0;
-  bool mIsPartialPrerendered = false;
 };
 
 }  

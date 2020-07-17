@@ -524,7 +524,7 @@ bool LayerTransactionParent::SetLayerAttributes(
   } else {
     layer->SetMaskLayer(nullptr);
   }
-  layer->SetCompositorAnimations(mId, common.compositorAnimations());
+  layer->SetCompositorAnimations(common.compositorAnimations());
   
   
   if (mAnimStorage && layer->GetCompositorAnimationsId() &&

@@ -2615,9 +2615,13 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
     
     
     
-    if (frame->PresShell() == presShell &&
-        nsLayoutUtils::IsInPositionFixedSubtree(frame)) {
-      return true;
+    if (frame->PresShell() == presShell) {
+      for (; frame; frame = frame->GetParent()) {
+        if (frame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
+            nsLayoutUtils::IsReallyFixedPos(frame)) {
+          return true;
+        }
+      }
     }
     return false;
   }();

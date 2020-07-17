@@ -98,14 +98,6 @@ class APZSampler {
   void MarkAsyncTransformAppliedToContent(const LayerMetricsWrapper& aLayer);
   bool HasUnusedAsyncTransform(const LayerMetricsWrapper& aLayer);
 
-  
-
-
-
-  ParentLayerRect GetCompositionBounds(
-      const LayersId& aLayersId,
-      const ScrollableLayerGuid::ViewID& aScrollId) const;
-
   ScrollableLayerGuid GetGuid(const LayerMetricsWrapper& aLayer);
 
   ScreenMargin GetGeckoFixedLayerMargins() const;
