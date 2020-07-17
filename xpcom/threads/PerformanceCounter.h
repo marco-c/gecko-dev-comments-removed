@@ -94,22 +94,22 @@ class PerformanceCounter final {
   
 
 
-  const DispatchCounter& GetDispatchCounter();
+  const DispatchCounter& GetDispatchCounter() const;
 
   
 
 
-  uint64_t GetExecutionDuration();
+  uint64_t GetExecutionDuration() const;
 
   
 
 
-  uint32_t GetDispatchCount(DispatchCategory aCategory);
+  uint32_t GetDispatchCount(DispatchCategory aCategory) const;
 
   
 
 
-  uint64_t GetTotalDispatchCount();
+  uint64_t GetTotalDispatchCount() const;
 
   
 

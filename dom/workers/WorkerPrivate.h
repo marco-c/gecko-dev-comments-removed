@@ -478,8 +478,6 @@ class WorkerPrivate : public RelativeTimeline {
 
   void EnsurePerformanceStorage();
 
-  void EnsurePerformanceCounter();
-
   bool GetExecutionGranted() const;
   void SetExecutionGranted(bool aGranted);
 
@@ -493,7 +491,13 @@ class WorkerPrivate : public RelativeTimeline {
 
   PerformanceStorage* GetPerformanceStorage();
 
-  PerformanceCounter* GetPerformanceCounter();
+  PerformanceCounter& MutablePerformanceCounterRef() const {
+    return *mPerformanceCounter;
+  }
+
+  const PerformanceCounter& PerformanceCounterRef() const {
+    return MutablePerformanceCounterRef();
+  }
 
   bool IsAcceptingEvents() {
     AssertIsOnParentThread();
@@ -1094,7 +1098,7 @@ class WorkerPrivate : public RelativeTimeline {
   const nsString mScriptURL;
 
   
-  nsString mWorkerName;
+  const nsString mWorkerName;
 
   const WorkerType mWorkerType;
 
@@ -1308,7 +1312,9 @@ class WorkerPrivate : public RelativeTimeline {
   
   bool mIsInAutomation;
 
-  RefPtr<mozilla::PerformanceCounter> mPerformanceCounter;
+  const RefPtr<mozilla::PerformanceCounter> mPerformanceCounter =
+      MakeRefPtr<mozilla::PerformanceCounter>(nsPrintfCString(
+          "Worker:%s", NS_ConvertUTF16toUTF8(mWorkerName).get()));
 
   nsString mId;
 
