@@ -164,6 +164,9 @@ class SendBatchRunnable : public Runnable {
 };  
 
 
+
+
+
 void SendBatch(const StaticMutexAutoLock& aLock) {
   if (!gDelegate) {
     NS_WARNING(
