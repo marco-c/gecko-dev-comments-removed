@@ -58,7 +58,7 @@ void AnimationSurfaceProvider::DropImageReference() {
   }
 
   
-  NS_ReleaseOnMainThread("AnimationSurfaceProvider::mImage", mImage.forget());
+  SurfaceCache::ReleaseImageOnMainThread(mImage.forget());
 }
 
 void AnimationSurfaceProvider::Reset() {

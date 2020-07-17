@@ -444,6 +444,18 @@ struct SurfaceCache {
 
   static IntSize ClampSize(const ImageKey aImageKey, const IntSize& aSize);
 
+  
+
+
+
+  static void ReleaseImageOnMainThread(already_AddRefed<image::Image> aImage,
+                                       bool aAlwaysProxy = false);
+
+  
+
+
+  static void ClearReleasingImages();
+
  private:
   virtual ~SurfaceCache() = 0;  
 };

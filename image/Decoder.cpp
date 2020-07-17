@@ -86,7 +86,7 @@ Decoder::~Decoder() {
   if (mImage && !NS_IsMainThread()) {
     
     
-    NS_ReleaseOnMainThread(mImage.forget());
+    SurfaceCache::ReleaseImageOnMainThread(mImage.forget());
   }
 }
 
