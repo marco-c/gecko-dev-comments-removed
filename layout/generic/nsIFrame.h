@@ -3753,6 +3753,22 @@ class nsIFrame : public nsQueryFrame {
 
   virtual nsresult PeekOffset(nsPeekOffsetStruct* aPos);
 
+ private:
+  nsresult PeekOffsetForCharacter(nsPeekOffsetStruct* aPos, int32_t offset);
+  nsresult PeekOffsetForWord(nsPeekOffsetStruct* aPos, int32_t offset);
+  nsresult PeekOffsetForLine(nsPeekOffsetStruct* aPos);
+  nsresult PeekOffsetForLineEdge(nsPeekOffsetStruct* aPos);
+
+  
+
+
+
+
+
+
+  nsresult PeekOffsetForParagraph(nsPeekOffsetStruct* aPos);
+
+ public:
   
   
   static void GetLastLeaf(nsIFrame** aFrame);
@@ -5215,15 +5231,6 @@ class nsIFrame : public nsQueryFrame {
                                           bool aForward, bool aPunctAfter,
                                           bool aWhitespaceAfter,
                                           bool aIsKeyboardSelect);
-
-  
-
-
-
-
-
-
-  nsresult PeekOffsetParagraph(nsPeekOffsetStruct* aPos);
 
  private:
   

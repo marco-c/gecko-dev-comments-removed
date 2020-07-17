@@ -8241,7 +8241,7 @@ static nsContentAndOffset FindLineBreakingFrame(nsIFrame* aFrame,
   return result;
 }
 
-nsresult nsIFrame::PeekOffsetParagraph(nsPeekOffsetStruct* aPos) {
+nsresult nsIFrame::PeekOffsetForParagraph(nsPeekOffsetStruct* aPos) {
   nsIFrame* frame = this;
   nsContentAndOffset blockFrameOrBR;
   blockFrameOrBR.mContent = nullptr;
@@ -8341,77 +8341,305 @@ static void SetPeekResultFromFrame(nsPeekOffsetStruct& aPos, nsIFrame* aFrame,
   }
 }
 
-nsresult nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos) {
-  MOZ_ASSERT(aPos && !HasAnyStateBits(NS_FRAME_IS_DIRTY));
-  nsresult result = NS_ERROR_FAILURE;
+nsresult nsIFrame::PeekOffsetForCharacter(nsPeekOffsetStruct* aPos,
+                                          int32_t offset) {
+  nsIFrame* current = this;
+
+  bool eatingNonRenderableWS = false;
+  nsIFrame::FrameSearchResult peekSearchState = CONTINUE;
+  bool jumpedLine = false;
+  bool movedOverNonSelectableText = false;
+
+  while (peekSearchState != FOUND) {
+    bool movingInFrameDirection =
+        IsMovingInFrameDirection(current, aPos->mDirection, aPos->mVisual);
+
+    if (eatingNonRenderableWS) {
+      peekSearchState =
+          current->PeekOffsetNoAmount(movingInFrameDirection, &offset);
+    } else {
+      PeekOffsetCharacterOptions options;
+      options.mRespectClusters = aPos->mAmount == eSelectCluster;
+      peekSearchState = current->PeekOffsetCharacter(movingInFrameDirection,
+                                                     &offset, options);
+    }
+
+    movedOverNonSelectableText |= (peekSearchState == CONTINUE_UNSELECTABLE);
+
+    if (peekSearchState != FOUND) {
+      bool movedOverNonSelectable = false;
+      MOZ_TRY(current->GetFrameFromDirection(
+          *aPos, &current, &offset, &jumpedLine, &movedOverNonSelectable));
+      MOZ_ASSERT(current);
+
+      
+      
+      if (jumpedLine) {
+        eatingNonRenderableWS = true;
+      }
+
+      
+      
+      movedOverNonSelectableText |= movedOverNonSelectable;
+    }
+
+    
+    
+    
+    if (peekSearchState == FOUND && movedOverNonSelectableText &&
+        !aPos->mExtend) {
+      int32_t start, end;
+      current->GetOffsets(start, end);
+      offset = aPos->mDirection == eDirNext ? 0 : end - start;
+    }
+  }
 
   
-  FrameContentRange range = GetRangeForFrame(this);
-  int32_t offset = aPos->mStartOffset - range.start;
+  SetPeekResultFromFrame(*aPos, current, offset, OffsetIsAtLineEdge::No);
+  
+  
+  
+  if (offset < 0 && jumpedLine && aPos->mDirection == eDirPrevious &&
+      current->HasSignificantTerminalNewline()) {
+    --aPos->mContentOffset;
+  }
+  return NS_OK;
+}
+
+nsresult nsIFrame::PeekOffsetForWord(nsPeekOffsetStruct* aPos, int32_t offset) {
   nsIFrame* current = this;
+  bool wordSelectEatSpace = ShouldWordSelectionEatSpace(*aPos);
+
+  PeekWordState state;
+  bool done = false;
+  while (!done) {
+    bool movingInFrameDirection =
+        IsMovingInFrameDirection(current, aPos->mDirection, aPos->mVisual);
+
+    done = current->PeekOffsetWord(movingInFrameDirection, wordSelectEatSpace,
+                                   aPos->mIsKeyboardSelect, &offset, &state,
+                                   aPos->mTrimSpaces) == FOUND;
+
+    if (!done) {
+      nsIFrame* nextFrame;
+      int32_t nextFrameOffset;
+      bool jumpedLine, movedOverNonSelectableText;
+      nsresult result = current->GetFrameFromDirection(
+          *aPos, &nextFrame, &nextFrameOffset, &jumpedLine,
+          &movedOverNonSelectableText);
+      
+      
+      if (NS_FAILED(result) ||
+          (jumpedLine && !wordSelectEatSpace && state.mSawBeforeType)) {
+        done = true;
+        
+        
+        
+        if (jumpedLine && wordSelectEatSpace &&
+            current->HasSignificantTerminalNewline()) {
+          offset -= 1;
+        }
+      } else {
+        MOZ_ASSERT(nextFrame);
+        if (jumpedLine) {
+          state.mContext.Truncate();
+        }
+        current = nextFrame;
+        offset = nextFrameOffset;
+        
+        if (wordSelectEatSpace && jumpedLine) {
+          state.SetSawBeforeType();
+        }
+      }
+    }
+  }
+
+  
+  SetPeekResultFromFrame(*aPos, current, offset, OffsetIsAtLineEdge::No);
+  return NS_OK;
+}
+
+nsresult nsIFrame::PeekOffsetForLine(nsPeekOffsetStruct* aPos) {
+  nsAutoLineIterator iter;
+  nsIFrame* blockFrame = this;
+  nsresult result = NS_ERROR_FAILURE;
+
+  while (NS_FAILED(result)) {
+    int32_t thisLine;
+    MOZ_TRY_VAR(thisLine,
+                blockFrame->GetLineNumber(aPos->mScrollViewStop, &blockFrame));
+    iter = blockFrame->GetLineIterator();
+    MOZ_ASSERT(iter, "GetLineNumber() succeeded but no block frame?");
+
+    int edgeCase = 0;  
+
+    bool doneLooping = false;  
+    
+    
+    
+    nsIFrame* lastFrame = this;
+    do {
+      result = nsIFrame::GetNextPrevLineFromeBlockFrame(
+          PresContext(), aPos, blockFrame, thisLine,
+          edgeCase);  
+
+      
+      if (NS_SUCCEEDED(result) &&
+          (!aPos->mResultFrame || aPos->mResultFrame == lastFrame)) {
+        aPos->mResultFrame = nullptr;
+        if (aPos->mDirection == eDirPrevious) {
+          thisLine--;
+        } else {
+          thisLine++;
+        }
+      } else {               
+        doneLooping = true;  
+      }
+
+      lastFrame = aPos->mResultFrame;  
+
+      
+      if (NS_SUCCEEDED(result) && aPos->mResultFrame &&
+          blockFrame != aPos->mResultFrame) {
+        
+
+
+
+
+
+
+        bool searchTableBool = false;
+        if (aPos->mResultFrame->IsTableWrapperFrame() ||
+            aPos->mResultFrame->IsTableCellFrame()) {
+          nsIFrame* frame =
+              aPos->mResultFrame->PrincipalChildList().FirstChild();
+          
+          
+          while (frame) {
+            iter = frame->GetLineIterator();
+            if (iter) {
+              aPos->mResultFrame = frame;
+              searchTableBool = true;
+              result = NS_OK;
+              break;  
+            }
+            result = NS_ERROR_FAILURE;
+            frame = frame->PrincipalChildList().FirstChild();
+          }
+        }
+
+        if (!searchTableBool) {
+          iter = aPos->mResultFrame->GetLineIterator();
+          result = iter ? NS_OK : NS_ERROR_FAILURE;
+        }
+
+        
+        if (NS_SUCCEEDED(result) && iter) {
+          doneLooping = false;
+          if (aPos->mDirection == eDirPrevious) {
+            edgeCase = 1;  
+          } else {
+            edgeCase = -1;  
+          }
+          thisLine = 0;  
+          
+          
+          blockFrame = aPos->mResultFrame;
+        } else {
+          
+          
+          result = NS_OK;
+          break;
+        }
+      }
+    } while (!doneLooping);
+  }
+  return result;
+}
+
+nsresult nsIFrame::PeekOffsetForLineEdge(nsPeekOffsetStruct* aPos) {
+  
+  nsIFrame* blockFrame = AdjustFrameForSelectionStyles(this);
+  int32_t thisLine;
+  MOZ_TRY_VAR(thisLine,
+              blockFrame->GetLineNumber(aPos->mScrollViewStop, &blockFrame));
+  nsAutoLineIterator it = blockFrame->GetLineIterator();
+  MOZ_ASSERT(it, "GetLineNumber() succeeded but no block frame?");
+
+  int32_t lineFrameCount;
+  nsIFrame* firstFrame;
+  nsRect usedRect;
+  nsIFrame* baseFrame = nullptr;
+  bool endOfLine = (eSelectEndLine == aPos->mAmount);
+
+  if (aPos->mVisual && PresContext()->BidiEnabled()) {
+    bool lineIsRTL = it->GetDirection();
+    bool isReordered;
+    nsIFrame* lastFrame;
+    MOZ_TRY(
+        it->CheckLineOrder(thisLine, &isReordered, &firstFrame, &lastFrame));
+    baseFrame = endOfLine ? lastFrame : firstFrame;
+    if (baseFrame) {
+      bool frameIsRTL =
+          (nsBidiPresUtils::FrameDirection(baseFrame) == NSBIDI_RTL);
+      
+      
+      
+      if (frameIsRTL != lineIsRTL) {
+        endOfLine = !endOfLine;
+      }
+    }
+  } else {
+    it->GetLine(thisLine, &firstFrame, &lineFrameCount, usedRect);
+
+    nsIFrame* frame = firstFrame;
+    bool lastFrameWasEditable = false;
+    for (int32_t count = lineFrameCount; count;
+         --count, frame = frame->GetNextSibling()) {
+      if (frame->IsGeneratedContentFrame()) {
+        continue;
+      }
+      
+      
+      if (endOfLine && lineFrameCount > 1 && frame->IsBrFrame() &&
+          lastFrameWasEditable == frame->GetContent()->IsEditable()) {
+        continue;
+      }
+      lastFrameWasEditable =
+          frame->GetContent() && frame->GetContent()->IsEditable();
+      baseFrame = frame;
+      if (!endOfLine) {
+        break;
+      }
+    }
+  }
+  if (!baseFrame) {
+    return NS_ERROR_FAILURE;
+  }
+  FrameTarget targetFrame = DrillDownToSelectionFrame(baseFrame, endOfLine, 0);
+  SetPeekResultFromFrame(*aPos, targetFrame.frame, endOfLine ? -1 : 0,
+                         OffsetIsAtLineEdge::Yes);
+  if (endOfLine && targetFrame.frame->HasSignificantTerminalNewline()) {
+    
+    
+    --aPos->mContentOffset;
+  }
+  if (!aPos->mResultContent) {
+    return NS_ERROR_FAILURE;
+  }
+  return NS_OK;
+}
+
+nsresult nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos) {
+  MOZ_ASSERT(aPos && !HasAnyStateBits(NS_FRAME_IS_DIRTY));
+
+  
+  int32_t offset = aPos->mStartOffset - GetRangeForFrame(this).start;
 
   switch (aPos->mAmount) {
     case eSelectCharacter:
-    case eSelectCluster: {
-      bool eatingNonRenderableWS = false;
-      nsIFrame::FrameSearchResult peekSearchState = CONTINUE;
-      bool jumpedLine = false;
-      bool movedOverNonSelectableText = false;
-
-      while (peekSearchState != FOUND) {
-        bool movingInFrameDirection =
-            IsMovingInFrameDirection(current, aPos->mDirection, aPos->mVisual);
-
-        if (eatingNonRenderableWS) {
-          peekSearchState =
-              current->PeekOffsetNoAmount(movingInFrameDirection, &offset);
-        } else {
-          PeekOffsetCharacterOptions options;
-          options.mRespectClusters = aPos->mAmount == eSelectCluster;
-          peekSearchState = current->PeekOffsetCharacter(movingInFrameDirection,
-                                                         &offset, options);
-        }
-
-        movedOverNonSelectableText |=
-            (peekSearchState == CONTINUE_UNSELECTABLE);
-
-        if (peekSearchState != FOUND) {
-          bool movedOverNonSelectable = false;
-          MOZ_TRY(current->GetFrameFromDirection(
-              *aPos, &current, &offset, &jumpedLine, &movedOverNonSelectable));
-
-          
-          
-          if (jumpedLine) eatingNonRenderableWS = true;
-
-          
-          
-          movedOverNonSelectableText |= movedOverNonSelectable;
-        }
-
-        
-        
-        
-        if (peekSearchState == FOUND && movedOverNonSelectableText &&
-            !aPos->mExtend) {
-          int32_t start, end;
-          current->GetOffsets(start, end);
-          offset = aPos->mDirection == eDirNext ? 0 : end - start;
-        }
-      }
-
-      
-      SetPeekResultFromFrame(*aPos, current, offset, OffsetIsAtLineEdge::No);
-      
-      
-      
-      if (offset < 0 && jumpedLine && aPos->mDirection == eDirPrevious &&
-          current->HasSignificantTerminalNewline()) {
-        --aPos->mContentOffset;
-      }
-
-      break;
-    }
+    case eSelectCluster:
+      return PeekOffsetForCharacter(aPos, offset);
     case eSelectWordNoSpace:
       
       
@@ -8424,225 +8652,15 @@ nsresult nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos) {
       }
       
       [[fallthrough]];
-    case eSelectWord: {
-      bool wordSelectEatSpace = ShouldWordSelectionEatSpace(*aPos);
-
-      PeekWordState state;
-      bool done = false;
-      while (!done) {
-        bool movingInFrameDirection =
-            IsMovingInFrameDirection(current, aPos->mDirection, aPos->mVisual);
-
-        done =
-            current->PeekOffsetWord(movingInFrameDirection, wordSelectEatSpace,
-                                    aPos->mIsKeyboardSelect, &offset, &state,
-                                    aPos->mTrimSpaces) == FOUND;
-
-        if (!done) {
-          nsIFrame* nextFrame;
-          int32_t nextFrameOffset;
-          bool jumpedLine, movedOverNonSelectableText;
-          result = current->GetFrameFromDirection(*aPos, &nextFrame,
-                                                  &nextFrameOffset, &jumpedLine,
-                                                  &movedOverNonSelectableText);
-          
-          
-          if (NS_FAILED(result) ||
-              (jumpedLine && !wordSelectEatSpace && state.mSawBeforeType)) {
-            done = true;
-            
-            
-            
-            if (jumpedLine && wordSelectEatSpace &&
-                current->HasSignificantTerminalNewline()) {
-              offset -= 1;
-            }
-          } else {
-            if (jumpedLine) {
-              state.mContext.Truncate();
-            }
-            current = nextFrame;
-            offset = nextFrameOffset;
-            
-            if (wordSelectEatSpace && jumpedLine) state.SetSawBeforeType();
-          }
-        }
-      }
-
-      
-      SetPeekResultFromFrame(*aPos, current, offset, OffsetIsAtLineEdge::No);
-      break;
-    }
-    case eSelectLine: {
-      nsAutoLineIterator iter;
-      nsIFrame* blockFrame = this;
-
-      while (NS_FAILED(result)) {
-        int32_t thisLine;
-        MOZ_TRY_VAR(thisLine, blockFrame->GetLineNumber(aPos->mScrollViewStop,
-                                                        &blockFrame));
-        iter = blockFrame->GetLineIterator();
-        MOZ_ASSERT(iter, "GetLineNumber() succeeded but no block frame?");
-
-        int edgeCase = 0;  
-
-        bool doneLooping = false;  
-        
-        
-        
-        nsIFrame* lastFrame = this;
-        do {
-          result = nsIFrame::GetNextPrevLineFromeBlockFrame(
-              PresContext(), aPos, blockFrame, thisLine,
-              edgeCase);  
-
-          
-          if (NS_SUCCEEDED(result) &&
-              (!aPos->mResultFrame || aPos->mResultFrame == lastFrame)) {
-            aPos->mResultFrame = nullptr;
-            if (aPos->mDirection == eDirPrevious)
-              thisLine--;
-            else
-              thisLine++;
-          } else                 
-            doneLooping = true;  
-
-          lastFrame = aPos->mResultFrame;  
-
-          
-          if (NS_SUCCEEDED(result) && aPos->mResultFrame &&
-              blockFrame != aPos->mResultFrame) {
-            
-
-
-
-
-
-
-            bool searchTableBool = false;
-            if (aPos->mResultFrame->IsTableWrapperFrame() ||
-                aPos->mResultFrame->IsTableCellFrame()) {
-              nsIFrame* frame =
-                  aPos->mResultFrame->PrincipalChildList().FirstChild();
-              
-              
-              while (frame) {
-                iter = frame->GetLineIterator();
-                if (iter) {
-                  aPos->mResultFrame = frame;
-                  searchTableBool = true;
-                  result = NS_OK;
-                  break;  
-                }
-                result = NS_ERROR_FAILURE;
-                frame = frame->PrincipalChildList().FirstChild();
-              }
-            }
-
-            if (!searchTableBool) {
-              iter = aPos->mResultFrame->GetLineIterator();
-              result = iter ? NS_OK : NS_ERROR_FAILURE;
-            }
-
-            
-            if (NS_SUCCEEDED(result) && iter) {
-              doneLooping = false;
-              if (aPos->mDirection == eDirPrevious)
-                edgeCase = 1;  
-              else
-                edgeCase = -1;  
-              thisLine = 0;     
-              
-              
-              blockFrame = aPos->mResultFrame;
-            } else {
-              
-              
-              result = NS_OK;
-              break;
-            }
-          }
-        } while (!doneLooping);
-      }
-      return result;
-    }
-
-    case eSelectParagraph:
-      return PeekOffsetParagraph(aPos);
-
+    case eSelectWord:
+      return PeekOffsetForWord(aPos, offset);
+    case eSelectLine:
+      return PeekOffsetForLine(aPos);
     case eSelectBeginLine:
-    case eSelectEndLine: {
-      
-      nsIFrame* blockFrame = AdjustFrameForSelectionStyles(this);
-      int32_t thisLine;
-      MOZ_TRY_VAR(thisLine, blockFrame->GetLineNumber(aPos->mScrollViewStop,
-                                                      &blockFrame));
-      nsAutoLineIterator it = blockFrame->GetLineIterator();
-      MOZ_ASSERT(it, "GetLineNumber() succeeded but no block frame?");
-
-      int32_t lineFrameCount;
-      nsIFrame* firstFrame;
-      nsRect usedRect;
-      nsIFrame* baseFrame = nullptr;
-      bool endOfLine = (eSelectEndLine == aPos->mAmount);
-
-      if (aPos->mVisual && PresContext()->BidiEnabled()) {
-        bool lineIsRTL = it->GetDirection();
-        bool isReordered;
-        nsIFrame* lastFrame;
-        result =
-            it->CheckLineOrder(thisLine, &isReordered, &firstFrame, &lastFrame);
-        baseFrame = endOfLine ? lastFrame : firstFrame;
-        if (baseFrame) {
-          bool frameIsRTL =
-              (nsBidiPresUtils::FrameDirection(baseFrame) == NSBIDI_RTL);
-          
-          
-          
-          if (frameIsRTL != lineIsRTL) {
-            endOfLine = !endOfLine;
-          }
-        }
-      } else {
-        it->GetLine(thisLine, &firstFrame, &lineFrameCount, usedRect);
-
-        nsIFrame* frame = firstFrame;
-        bool lastFrameWasEditable = false;
-        for (int32_t count = lineFrameCount; count;
-             --count, frame = frame->GetNextSibling()) {
-          if (frame->IsGeneratedContentFrame()) {
-            continue;
-          }
-          
-          
-          if (endOfLine && lineFrameCount > 1 && frame->IsBrFrame() &&
-              lastFrameWasEditable == frame->GetContent()->IsEditable()) {
-            continue;
-          }
-          lastFrameWasEditable =
-              frame->GetContent() && frame->GetContent()->IsEditable();
-          baseFrame = frame;
-          if (!endOfLine) {
-            break;
-          }
-        }
-      }
-      if (!baseFrame) return NS_ERROR_FAILURE;
-      FrameTarget targetFrame =
-          DrillDownToSelectionFrame(baseFrame, endOfLine, 0);
-      SetPeekResultFromFrame(*aPos, targetFrame.frame, endOfLine ? -1 : 0,
-                             OffsetIsAtLineEdge::Yes);
-      if (endOfLine && targetFrame.frame->HasSignificantTerminalNewline()) {
-        
-        
-        --aPos->mContentOffset;
-      }
-      if (!aPos->mResultContent) {
-        return NS_ERROR_FAILURE;
-      }
-      return NS_OK;
-    }
-
+    case eSelectEndLine:
+      return PeekOffsetForLineEdge(aPos);
+    case eSelectParagraph:
+      return PeekOffsetForParagraph(aPos);
     default: {
       NS_ASSERTION(false, "Invalid amount");
       return NS_ERROR_FAILURE;
