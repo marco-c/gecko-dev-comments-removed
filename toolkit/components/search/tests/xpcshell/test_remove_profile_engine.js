@@ -1,6 +1,9 @@
 
 
 
+
+
+
 add_task(async function run_test() {
   
   let dir = do_get_profile().clone();
@@ -15,14 +18,16 @@ add_task(async function run_test() {
   Assert.ok(file.exists());
 
   await AddonTestUtils.promiseStartupManager();
+  let cacheWrittenPromise = promiseAfterCache();
   await Services.search.init();
+  await cacheWrittenPromise;
 
   
   useHttpServer();
+  cacheWrittenPromise = promiseAfterCache();
   await addTestEngines([{ name: "basic", xmlFileName: "engine-override.xml" }]);
-  await promiseAfterCache();
+  await cacheWrittenPromise;
   let data = await promiseCacheData();
-
   
   
   for (let engine of data.engines) {
@@ -33,7 +38,9 @@ add_task(async function run_test() {
 
   await promiseSaveCacheData(data);
 
+  cacheWrittenPromise = promiseAfterCache();
   await asyncReInit();
+  await cacheWrittenPromise;
 
   
   let engine = Services.search.getEngineByName("basic");
