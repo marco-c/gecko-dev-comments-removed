@@ -1254,6 +1254,7 @@ class Layer {
   
   
   void SetCompositorAnimations(
+      const LayersId& aLayersId,
       const CompositorAnimations& aCompositorAnimations);
   
   
@@ -1467,6 +1468,9 @@ class Layer {
   }
   const Maybe<TransformData>& GetTransformData() const {
     return mAnimationInfo.GetTransformData();
+  }
+  const LayersId& GetAnimationLayersId() const {
+    return mAnimationInfo.GetLayersId();
   }
 
   Maybe<uint64_t> GetAnimationGeneration() const {

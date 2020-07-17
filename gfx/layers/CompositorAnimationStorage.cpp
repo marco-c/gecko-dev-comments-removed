@@ -137,12 +137,13 @@ void CompositorAnimationStorage::SetAnimatedValue(uint64_t aId,
 }
 
 void CompositorAnimationStorage::SetAnimations(uint64_t aId,
+                                               const LayersId& aLayersId,
                                                const AnimationArray& aValue) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   MutexAutoLock lock(mLock);
 
   mAnimations[aId] = std::make_unique<AnimationStorageData>(
-      AnimationHelper::ExtractAnimations(aValue));
+      AnimationHelper::ExtractAnimations(aLayersId, aValue));
 
   
   
