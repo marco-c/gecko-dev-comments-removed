@@ -16,6 +16,7 @@
 #include "nsDeviceContext.h"
 #include "nsIBaseWindow.h"
 #include "nsIDocShell.h"
+#include "nsIPrintSettings.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "nsIWidget.h"
@@ -112,14 +113,38 @@ void Gecko_MediaFeatures_GetDeviceSize(const Document* aDocument,
   *aHeight = size.height;
 }
 
+uint32_t Gecko_MediaFeatures_GetMonochromeBitsPerPixel(
+    const Document* aDocument) {
+  
+  
+  
+  static constexpr uint32_t kDefaultMonochromeBpp = 8;
+
+  nsPresContext* pc = aDocument->GetPresContext();
+  if (!pc) {
+    return 0;
+  }
+  nsIPrintSettings* ps = pc->GetPrintSettings();
+  if (!ps) {
+    return 0;
+  }
+  bool color = true;
+  ps->GetPrintInColor(&color);
+  return color ? 0 : kDefaultMonochromeBpp;
+}
+
 uint32_t Gecko_MediaFeatures_GetColorDepth(const Document* aDocument) {
+  if (Gecko_MediaFeatures_GetMonochromeBitsPerPixel(aDocument) != 0) {
+    
+    return 0;
+  }
+
   
   
   uint32_t depth = 24;
 
   if (!nsContentUtils::ShouldResistFingerprinting(aDocument)) {
     if (nsDeviceContext* dx = GetDeviceContextFor(aDocument)) {
-      
       dx->GetDepth(depth);
     }
   }
