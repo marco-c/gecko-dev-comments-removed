@@ -844,16 +844,20 @@ nsresult WSRunScanner::GetWSNodes() {
     editableBlockParentOrTopmotEditableInlineContent = scanStartContent;
   }
 
-  InitializeRangeStart(mScanStartPoint,
-                       *editableBlockParentOrTopmotEditableInlineContent);
-  InitializeRangeEnd(mScanStartPoint,
-                     *editableBlockParentOrTopmotEditableInlineContent);
+  mStart = BoundaryData::ScanWhiteSpaceStartFrom(
+      mScanStartPoint, *editableBlockParentOrTopmotEditableInlineContent,
+      mEditingHost, &mNBSPData);
+  mEnd = BoundaryData::ScanWhiteSpaceEndFrom(
+      mScanStartPoint, *editableBlockParentOrTopmotEditableInlineContent,
+      mEditingHost, &mNBSPData);
   return NS_OK;
 }
 
+
 template <typename EditorDOMPointType>
-bool WSRunScanner::InitializeRangeStartWithTextNode(
-    const EditorDOMPointType& aPoint) {
+Maybe<WSRunScanner::BoundaryData>
+WSRunScanner::BoundaryData::ScanWhiteSpaceStartInTextNode(
+    const EditorDOMPointType& aPoint, NoBreakingSpaceData* aNBSPData) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
   MOZ_DIAGNOSTIC_ASSERT(aPoint.IsInTextNode());
 
@@ -866,98 +870,105 @@ bool WSRunScanner::InitializeRangeStartWithTextNode(
     }
 
     if (ch == HTMLEditUtils::kNBSP) {
-      mNBSPData.NotifyNBSP(
-          EditorDOMPointInText(aPoint.ContainerAsText(), i - 1),
-          NoBreakingSpaceData::Scanning::Backward);
+      if (aNBSPData) {
+        aNBSPData->NotifyNBSP(
+            EditorDOMPointInText(aPoint.ContainerAsText(), i - 1),
+            NoBreakingSpaceData::Scanning::Backward);
+      }
       continue;
     }
 
-    mStart = BoundaryData(EditorDOMPoint(aPoint.ContainerAsText(), i),
-                          *aPoint.ContainerAsText(), WSType::NormalText);
-    return true;
+    return Some(BoundaryData(EditorDOMPoint(aPoint.ContainerAsText(), i),
+                             *aPoint.ContainerAsText(), WSType::NormalText));
   }
 
-  return false;
+  return Nothing();
 }
 
+
 template <typename EditorDOMPointType>
-void WSRunScanner::InitializeRangeStart(
+WSRunScanner::BoundaryData WSRunScanner::BoundaryData::ScanWhiteSpaceStartFrom(
     const EditorDOMPointType& aPoint,
-    const nsIContent& aEditableBlockParentOrTopmostEditableInlineContent) {
+    const nsIContent& aEditableBlockParentOrTopmostEditableInlineContent,
+    const Element* aEditingHost, NoBreakingSpaceData* aNBSPData) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
   
   if (aPoint.IsInTextNode() && !aPoint.IsStartOfContainer()) {
-    if (InitializeRangeStartWithTextNode(aPoint)) {
-      return;
+    Maybe<BoundaryData> startInTextNode =
+        BoundaryData::ScanWhiteSpaceStartInTextNode(aPoint, aNBSPData);
+    if (startInTextNode.isSome()) {
+      return startInTextNode.ref();
     }
     
     
-    InitializeRangeStart(EditorDOMPoint(aPoint.ContainerAsText(), 0),
-                         aEditableBlockParentOrTopmostEditableInlineContent);
-    return;
+    return BoundaryData::ScanWhiteSpaceStartFrom(
+        EditorDOMPoint(aPoint.ContainerAsText(), 0),
+        aEditableBlockParentOrTopmostEditableInlineContent, aEditingHost,
+        aNBSPData);
   }
 
   
   nsIContent* previousLeafContentOrBlock =
       HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
           aPoint, aEditableBlockParentOrTopmostEditableInlineContent,
-          mEditingHost);
+          aEditingHost);
   if (!previousLeafContentOrBlock) {
     
     
     
     
-    mStart =
-        BoundaryData(aPoint,
-                     const_cast<nsIContent&>(
-                         aEditableBlockParentOrTopmostEditableInlineContent),
-                     WSType::CurrentBlockBoundary);
-    return;
+    return BoundaryData(aPoint,
+                        const_cast<nsIContent&>(
+                            aEditableBlockParentOrTopmostEditableInlineContent),
+                        WSType::CurrentBlockBoundary);
   }
 
   if (HTMLEditUtils::IsBlockElement(*previousLeafContentOrBlock)) {
-    mStart = BoundaryData(aPoint, *previousLeafContentOrBlock,
-                          WSType::OtherBlockBoundary);
-    return;
+    return BoundaryData(aPoint, *previousLeafContentOrBlock,
+                        WSType::OtherBlockBoundary);
   }
 
   if (!previousLeafContentOrBlock->IsText() ||
       !previousLeafContentOrBlock->IsEditable()) {
     
     
-    mStart =
-        BoundaryData(aPoint, *previousLeafContentOrBlock,
-                     previousLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)
-                         ? WSType::BRElement
-                         : WSType::SpecialContent);
-    return;
+    return BoundaryData(aPoint, *previousLeafContentOrBlock,
+                        previousLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)
+                            ? WSType::BRElement
+                            : WSType::SpecialContent);
   }
 
   if (!previousLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
     
     
-    InitializeRangeStart(
+    return BoundaryData::ScanWhiteSpaceStartFrom(
         EditorDOMPointInText(previousLeafContentOrBlock->AsText(), 0),
-        aEditableBlockParentOrTopmostEditableInlineContent);
-    return;
+        aEditableBlockParentOrTopmostEditableInlineContent, aEditingHost,
+        aNBSPData);
   }
 
-  if (InitializeRangeStartWithTextNode(EditorDOMPointInText::AtEndOf(
-          *previousLeafContentOrBlock->AsText()))) {
-    return;
+  Maybe<BoundaryData> startInTextNode =
+      BoundaryData::ScanWhiteSpaceStartInTextNode(
+          EditorDOMPointInText::AtEndOf(*previousLeafContentOrBlock->AsText()),
+          aNBSPData);
+  if (startInTextNode.isSome()) {
+    return startInTextNode.ref();
   }
 
   
   
-  InitializeRangeStart(
+  return BoundaryData::ScanWhiteSpaceStartFrom(
       EditorDOMPointInText(previousLeafContentOrBlock->AsText(), 0),
-      aEditableBlockParentOrTopmostEditableInlineContent);
+      aEditableBlockParentOrTopmostEditableInlineContent, aEditingHost,
+      aNBSPData);
 }
 
+
 template <typename EditorDOMPointType>
-bool WSRunScanner::InitializeRangeEndWithTextNode(
-    const EditorDOMPointType& aPoint) {
+Maybe<WSRunScanner::BoundaryData>
+WSRunScanner::BoundaryData::ScanWhiteSpaceEndInTextNode(
+    const EditorDOMPointType& aPoint, NoBreakingSpaceData* aNBSPData) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
   MOZ_DIAGNOSTIC_ASSERT(aPoint.IsInTextNode());
 
@@ -969,58 +980,62 @@ bool WSRunScanner::InitializeRangeEndWithTextNode(
     }
 
     if (ch == HTMLEditUtils::kNBSP) {
-      mNBSPData.NotifyNBSP(EditorDOMPointInText(aPoint.ContainerAsText(), i),
-                           NoBreakingSpaceData::Scanning::Forward);
+      if (aNBSPData) {
+        aNBSPData->NotifyNBSP(EditorDOMPointInText(aPoint.ContainerAsText(), i),
+                              NoBreakingSpaceData::Scanning::Forward);
+      }
       continue;
     }
 
-    mEnd = BoundaryData(EditorDOMPoint(aPoint.ContainerAsText(), i),
-                        *aPoint.ContainerAsText(), WSType::NormalText);
-    return true;
+    return Some(BoundaryData(EditorDOMPoint(aPoint.ContainerAsText(), i),
+                             *aPoint.ContainerAsText(), WSType::NormalText));
   }
 
-  return false;
+  return Nothing();
 }
 
+
 template <typename EditorDOMPointType>
-void WSRunScanner::InitializeRangeEnd(
+WSRunScanner::BoundaryData WSRunScanner::BoundaryData::ScanWhiteSpaceEndFrom(
     const EditorDOMPointType& aPoint,
-    const nsIContent& aEditableBlockParentOrTopmostEditableInlineContent) {
+    const nsIContent& aEditableBlockParentOrTopmostEditableInlineContent,
+    const Element* aEditingHost, NoBreakingSpaceData* aNBSPData) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
   if (aPoint.IsInTextNode() && !aPoint.IsEndOfContainer()) {
-    if (InitializeRangeEndWithTextNode(aPoint)) {
-      return;
+    Maybe<BoundaryData> endInTextNode =
+        BoundaryData::ScanWhiteSpaceEndInTextNode(aPoint, aNBSPData);
+    if (endInTextNode.isSome()) {
+      return endInTextNode.ref();
     }
     
     
-    InitializeRangeEnd(EditorDOMPointInText::AtEndOf(*aPoint.ContainerAsText()),
-                       aEditableBlockParentOrTopmostEditableInlineContent);
-    return;
+    return BoundaryData::ScanWhiteSpaceEndFrom(
+        EditorDOMPointInText::AtEndOf(*aPoint.ContainerAsText()),
+        aEditableBlockParentOrTopmostEditableInlineContent, aEditingHost,
+        aNBSPData);
   }
 
   
   nsIContent* nextLeafContentOrBlock =
       HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
           aPoint, aEditableBlockParentOrTopmostEditableInlineContent,
-          mEditingHost);
+          aEditingHost);
   if (!nextLeafContentOrBlock) {
     
     
     
     
-    mEnd = BoundaryData(aPoint,
+    return BoundaryData(aPoint,
                         const_cast<nsIContent&>(
                             aEditableBlockParentOrTopmostEditableInlineContent),
                         WSType::CurrentBlockBoundary);
-    return;
   }
 
   if (HTMLEditUtils::IsBlockElement(*nextLeafContentOrBlock)) {
     
-    mEnd = BoundaryData(aPoint, *nextLeafContentOrBlock,
+    return BoundaryData(aPoint, *nextLeafContentOrBlock,
                         WSType::OtherBlockBoundary);
-    return;
   }
 
   if (!nextLeafContentOrBlock->IsText() ||
@@ -1028,32 +1043,33 @@ void WSRunScanner::InitializeRangeEnd(
     
     
     
-    mEnd = BoundaryData(aPoint, *nextLeafContentOrBlock,
+    return BoundaryData(aPoint, *nextLeafContentOrBlock,
                         nextLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)
                             ? WSType::BRElement
                             : WSType::SpecialContent);
-    return;
   }
 
   if (!nextLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
     
     
-    InitializeRangeEnd(
+    return BoundaryData::ScanWhiteSpaceEndFrom(
         EditorDOMPointInText(nextLeafContentOrBlock->AsText(), 0),
-        aEditableBlockParentOrTopmostEditableInlineContent);
-    return;
+        aEditableBlockParentOrTopmostEditableInlineContent, aEditingHost,
+        aNBSPData);
   }
 
-  if (InitializeRangeEndWithTextNode(
-          EditorDOMPointInText(nextLeafContentOrBlock->AsText(), 0))) {
-    return;
+  Maybe<BoundaryData> endInTextNode = BoundaryData::ScanWhiteSpaceEndInTextNode(
+      EditorDOMPointInText(nextLeafContentOrBlock->AsText(), 0), aNBSPData);
+  if (endInTextNode.isSome()) {
+    return endInTextNode.ref();
   }
 
   
   
-  InitializeRangeEnd(
+  return BoundaryData::ScanWhiteSpaceEndFrom(
       EditorDOMPointInText::AtEndOf(*nextLeafContentOrBlock->AsText()),
-      aEditableBlockParentOrTopmostEditableInlineContent);
+      aEditableBlockParentOrTopmostEditableInlineContent, aEditingHost,
+      aNBSPData);
 }
 
 EditorDOMRange
