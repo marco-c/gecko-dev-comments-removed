@@ -74,6 +74,10 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   float GetSTFPercent() const { return mPageData->mShrinkToFitRatio; }
 
   
+  
+  float GetPrintPreviewScale() const;
+
+  
   nsresult StartPrint(nsPresContext* aPresContext,
                       nsIPrintSettings* aPrintSettings,
                       const nsAString& aDocTitle, const nsAString& aDocURL);
@@ -113,10 +117,7 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   void SetPageNumberFormat(const nsAString& aFormatStr, bool aForPageNumOnly);
 
   
-  
-  void SetDesiredSize(ReflowOutput& aDesiredSize,
-                      const ReflowInput& aReflowInput, nscoord aWidth,
-                      nscoord aHeight);
+  void PopulateReflowOutput(ReflowOutput&, const ReflowInput&);
 
   
   
@@ -130,6 +131,7 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   nsMargin mMargin;
 
   nsSize mSize;
+
   nsSharedPageData* mPageData;  
 
   
@@ -138,6 +140,8 @@ class nsPageSequenceFrame final : public nsContainerFrame {
   int32_t mPrintRangeType;
   int32_t mFromPageNum;
   int32_t mToPageNum;
+  
+  nscoord mAvailableISize = -1;
   nsTArray<int32_t> mPageRanges;
   nsTArray<RefPtr<mozilla::dom::HTMLCanvasElement> > mCurrentCanvasList;
 

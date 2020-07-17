@@ -460,7 +460,12 @@ class nsPresContext : public nsISupports,
 
 
 
-  float GetPrintPreviewScale() { return mPPScale; }
+
+
+
+
+
+  float GetPrintPreviewScaleForSequenceFrame() { return mPPScale; }
   void SetPrintPreviewScale(float aScale) { mPPScale = aScale; }
 
   nsDeviceContext* DeviceContext() const { return mDeviceContext; }
