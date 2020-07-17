@@ -18,14 +18,6 @@ class DeviceFront extends FrontClassWithSpec(deviceSpec) {
 
     
     this.formAttributeName = "deviceActor";
-
-    
-    
-    
-    
-    this.on("multi-e10s-updated", (e, isMultiE10s) => {
-      this.emit("can-debug-sw-updated", !isMultiE10s);
-    });
   }
 
   
