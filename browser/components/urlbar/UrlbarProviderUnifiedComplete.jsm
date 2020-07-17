@@ -84,17 +84,8 @@ class ProviderUnifiedComplete extends UrlbarProvider {
         acResult,
         urls
       );
-      
-      
-      
-      
-      
-      if (!results.length) {
-        addCallback(this, null);
-      } else {
-        for (let result of results) {
-          addCallback(this, result);
-        }
+      for (let result of results) {
+        addCallback(this, result);
       }
     });
     this.queries.delete(queryContext);

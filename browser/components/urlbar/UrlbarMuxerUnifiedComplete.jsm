@@ -48,6 +48,7 @@ const heuristicOrder = [
   "UrlbarProviderSearchTips",
   "Omnibox",
   "UnifiedComplete",
+  "Autofill",
   "HeuristicFallback",
 ];
 
@@ -65,8 +66,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
   
   
-
-
 
 
 
@@ -135,17 +134,10 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       UrlbarPrefs.get("maxHistoricalSearchSuggestions"),
       context.maxResults
     );
-    let hasUnifiedComplete = false;
 
     
     
     for (let result of context.results) {
-      
-      
-      if (result.providerName == "UnifiedComplete") {
-        hasUnifiedComplete = true;
-      }
-
       
       
       
@@ -184,16 +176,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       ) {
         canShowTailSuggestions = false;
       }
-    }
-
-    
-    
-    
-    if (
-      !hasUnifiedComplete &&
-      context.pendingHeuristicProviders.has("UnifiedComplete")
-    ) {
-      return false;
     }
 
     
@@ -325,7 +307,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     }
 
     context.results = sortedResults;
-    return true;
   }
 
   
