@@ -4,7 +4,6 @@
 
 "use strict";
 
-const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 
 loader.lazyRequireGetter(
@@ -34,7 +33,6 @@ class AccessibilityProxy {
     this.supports = {};
 
     this.audit = this.audit.bind(this);
-    this.disableAccessibility = this.disableAccessibility.bind(this);
     this.enableAccessibility = this.enableAccessibility.bind(this);
     this.getAccessibilityTreeRoot = this.getAccessibilityTreeRoot.bind(this);
     this.resetAccessiblity = this.resetAccessiblity.bind(this);
@@ -148,16 +146,6 @@ class AccessibilityProxy {
 
   stopListeningForTargetUpdated(onTargetUpdated) {
     this._updateTargetListeners.off("target-updated", onTargetUpdated);
-  }
-
-  async disableAccessibility() {
-    
-    
-    
-    
-    const disabled = this.accessibilityFront.once("shutdown");
-    await this.parentAccessibilityFront.disable();
-    await disabled;
   }
 
   async enableAccessibility() {
@@ -410,13 +398,6 @@ class AccessibilityProxy {
     );
     this.parentAccessibilityFront = await this.toolbox.targetList.rootFront.getFront(
       "parentaccessibility"
-    );
-    
-    
-    
-    this.supports.autoInit = Services.prefs.getBoolPref(
-      "devtools.accessibility.auto-init.enabled",
-      false
     );
   }
 
