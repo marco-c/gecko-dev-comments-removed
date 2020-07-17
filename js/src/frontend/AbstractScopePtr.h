@@ -96,11 +96,6 @@ class AbstractScopePtr {
 
   
   
-  
-  bool getOrCreateScope(JSContext* cx, MutableHandleScope scope);
-
-  
-  
   template <typename T>
   bool is() const {
     static_assert(std::is_base_of_v<Scope, T>,

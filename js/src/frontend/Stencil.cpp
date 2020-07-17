@@ -58,6 +58,32 @@ bool frontend::EnvironmentShapeCreationData::createShape(
   return data_.match(m);
 }
 
+
+
+
+
+
+
+
+
+
+bool ScopeCreationData::getOrCreateEnclosingScope(JSContext* cx,
+                                                  MutableHandleScope scope) {
+  if (enclosing_.isScopeCreationData()) {
+    ScopeCreationData& enclosingData = enclosing_.scopeCreationData().get();
+    if (enclosingData.hasScope()) {
+      scope.set(enclosingData.getScope());
+      return true;
+    }
+
+    scope.set(enclosingData.createScope(cx, enclosing_.compilationInfo()));
+    return !!scope;
+  }
+
+  scope.set(enclosing_.scope());
+  return true;
+}
+
 JSFunction* ScopeCreationData::function(
     frontend::CompilationInfo& compilationInfo) {
   return compilationInfo.functions[*functionIndex_];

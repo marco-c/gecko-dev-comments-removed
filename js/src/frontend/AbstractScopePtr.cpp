@@ -26,32 +26,6 @@ CompilationInfo& AbstractScopePtr::compilationInfo() const {
   return data.compilationInfo;
 }
 
-
-
-
-
-
-
-
-
-
-bool AbstractScopePtr::getOrCreateScope(JSContext* cx,
-                                        MutableHandleScope scope) {
-  if (isScopeCreationData()) {
-    MutableHandle<ScopeCreationData> scd = scopeCreationData();
-    if (scd.get().hasScope()) {
-      scope.set(scd.get().getScope());
-      return true;
-    }
-
-    scope.set(scd.get().createScope(cx, compilationInfo()));
-    return scope;
-  }
-
-  scope.set(this->scope());
-  return true;
-}
-
 Scope* AbstractScopePtr::getExistingScope() const {
   if (scope_.is<HeapPtrScope>()) {
     return scope_.as<HeapPtrScope>();
