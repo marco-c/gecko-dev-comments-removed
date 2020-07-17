@@ -93,10 +93,12 @@ class IOInterposeObserver {
 
     const char* Reference() const { return mReference; }
 
+    virtual const char* FileType() const { return "File"; }
+
     
     virtual void Filename(nsAString& aString) { aString.Truncate(); }
 
-    virtual ~Observation() {}
+    virtual ~Observation() = default;
 
    protected:
     void Report();
@@ -120,7 +122,7 @@ class IOInterposeObserver {
 
   virtual void Observe(Observation& aObservation) = 0;
 
-  virtual ~IOInterposeObserver() {}
+  virtual ~IOInterposeObserver() = default;
 
  protected:
   
