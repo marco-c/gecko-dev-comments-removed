@@ -44,9 +44,6 @@ class DebianBootstrapper(
     ]
 
     
-    DISTRO_PACKAGES = []
-
-    
     DEBIAN_PACKAGES = [
         
         
@@ -59,6 +56,7 @@ class DebianBootstrapper(
         'libcurl4-openssl-dev',
         'libdbus-1-dev',
         'libdbus-glib-1-dev',
+        'libdrm-dev',
         'libgtk-3-dev',
         'libgtk2.0-dev',
         'libpulse-dev',
@@ -69,17 +67,11 @@ class DebianBootstrapper(
     ]
 
     
-    BROWSER_DISTRO_PACKAGES = []
-
-    
     
     MOBILE_ANDROID_COMMON_PACKAGES = [
         'openjdk-8-jdk-headless',  
         'wget',  
     ]
-
-    
-    MOBILE_ANDROID_DISTRO_PACKAGES = []
 
     def __init__(self, distro, version, dist_id, codename, **kwargs):
         BaseBootstrapper.__init__(self, **kwargs)
@@ -89,7 +81,7 @@ class DebianBootstrapper(
         self.dist_id = dist_id
         self.codename = codename
 
-        self.packages = self.COMMON_PACKAGES + self.DISTRO_PACKAGES
+        self.packages = list(self.COMMON_PACKAGES)
         if self.distro == 'debian':
             self.packages += self.DEBIAN_PACKAGES
         
@@ -106,9 +98,6 @@ class DebianBootstrapper(
                 self.packages.append('python-pip')
 
             self.packages.append('python-dev')
-        self.browser_packages = self.BROWSER_COMMON_PACKAGES + self.BROWSER_DISTRO_PACKAGES
-        self.mobile_android_packages = self.MOBILE_ANDROID_COMMON_PACKAGES + \
-            self.MOBILE_ANDROID_DISTRO_PACKAGES
 
     def install_system_packages(self):
         
@@ -144,7 +133,7 @@ class DebianBootstrapper(
 
     def ensure_browser_packages(self, artifact_mode=False):
         
-        self.apt_install(*self.browser_packages)
+        self.apt_install(*self.BROWSER_COMMON_PACKAGES)
         modern = self.is_nasm_modern()
         if not modern:
             self.apt_install('nasm')
@@ -153,7 +142,7 @@ class DebianBootstrapper(
         
         
         
-        self.apt_install(*self.mobile_android_packages)
+        self.apt_install(*self.MOBILE_ANDROID_COMMON_PACKAGES)
 
         
         self.ensure_java()
