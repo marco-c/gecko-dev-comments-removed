@@ -71,6 +71,7 @@ class ExtensionGlobal {
 
     MessageChannel.addListener(global, "Extension:Capture", this);
     MessageChannel.addListener(global, "Extension:DetectLanguage", this);
+    MessageChannel.addListener(global, "Extension:Execute", this);
     MessageChannel.addListener(global, "WebNavigation:GetFrame", this);
     MessageChannel.addListener(global, "WebNavigation:GetAllFrames", this);
   }
@@ -102,6 +103,11 @@ class ExtensionGlobal {
           ExtensionPageChild.expectViewLoad(this.global, data.viewType);
         }
         return;
+    }
+    
+    
+    if (!isContentScriptProcess && messageName === "Extension:Execute") {
+      return;
     }
 
     
