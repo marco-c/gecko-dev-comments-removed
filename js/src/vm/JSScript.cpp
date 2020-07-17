@@ -3718,6 +3718,9 @@ bool JSScript::fullyInitFromStencil(JSContext* cx,
     }
   }
 
+  
+  
+
 #ifdef JS_STRUCTURED_SPEW
   
   
