@@ -276,6 +276,8 @@ TouchSimulator.prototype = {
         this.getContent(evt.target),
         evt.clientX,
         evt.clientY,
+        evt.screenX,
+        evt.screenY,
         type
       );
     }
@@ -318,56 +320,21 @@ TouchSimulator.prototype = {
 
 
 
-  synthesizeNativeTap(win, x, y) {
-    const pt = this.coordinatesRelativeToScreen(win, x, y);
-    const utils = win.windowUtils;
 
-    
-    
-    
-    
-    
-    utils.sendNativeTouchTap(pt.x, pt.y, false, null);
-    return true;
-  },
 
-  synthesizeNativeTouch(win, x, y, type) {
-    const pt = this.coordinatesRelativeToScreen(win, x, y);
+
+
+
+
+  synthesizeNativeTouch(win, x, y, screenX, screenY, type) {
+    
+    
     const utils = win.windowUtils;
+    const deviceScale = utils.screenPixelsPerCSSPixelNoOverride;
+    const pt = { x: screenX * deviceScale, y: screenY * deviceScale };
+
     utils.sendNativeTouchPoint(0, TOUCH_STATES[type], pt.x, pt.y, 1, 90, null);
     return true;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  coordinatesRelativeToScreen(win, x, y) {
-    const utils = win.windowUtils;
-    
-    
-    
-    const deviceScale = utils.screenPixelsPerCSSPixelNoOverride;
-
-    const resolution = utils.getResolution();
-    const offsetX = {};
-    const offsetY = {};
-
-    utils.getVisualViewportOffsetRelativeToLayoutViewport(offsetX, offsetY);
-
-    return {
-      x: (win.mozInnerScreenX + (x - offsetX.value) * resolution) * deviceScale,
-      y: (win.mozInnerScreenY + (y - offsetY.value) * resolution) * deviceScale,
-    };
   },
 
   sendTouchEvent(evt, target, name) {
