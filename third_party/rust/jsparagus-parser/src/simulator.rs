@@ -5,6 +5,7 @@
 
 
 use crate::parser::Parser;
+use arrayvec::ArrayVec;
 use ast::SourceLocation;
 use generated_parser::{
     noop_actions, ParseError, ParserTrait, Result, StackValue, TermValue, TerminalId, Token, TABLES,
@@ -22,12 +23,22 @@ pub struct Simulator<'alloc, 'parser> {
     node_stack: &'parser [TermValue<StackValue<'alloc>>],
     
     
-    sim_state_stack: Vec<usize>,
     
     
-    sim_node_stack: Vec<TermValue<()>>,
     
-    replay_stack: Vec<TermValue<()>>,
+    sim_state_stack: ArrayVec<[usize; 4]>,
+    
+    
+    
+    
+    
+    sim_node_stack: ArrayVec<[TermValue<()>; 4]>,
+    
+    
+    
+    
+    
+    replay_stack: ArrayVec<[TermValue<()>; 4]>,
 }
 
 impl<'alloc, 'parser> ParserTrait<'alloc, ()> for Simulator<'alloc, 'parser> {
@@ -119,9 +130,9 @@ impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
             sp,
             state_stack,
             node_stack,
-            sim_state_stack: vec![],
-            sim_node_stack: vec![],
-            replay_stack: vec![],
+            sim_state_stack: ArrayVec::new(),
+            sim_node_stack: ArrayVec::new(),
+            replay_stack: ArrayVec::new(),
         }
     }
 
