@@ -321,13 +321,7 @@ static bool AggregateError(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-
   if (!args.requireAtLeast(cx, "AggregateError", 1)) {
-    return false;
-  }
-
-  RootedArrayObject errorsList(cx, IterableToArray(cx, args.get(0)));
-  if (!errorsList) {
     return false;
   }
 
@@ -336,6 +330,13 @@ static bool AggregateError(JSContext* cx, unsigned argc, Value* vp) {
   Rooted<ErrorObject*> obj(
       cx, CreateErrorObject(cx, args, 1, JSEXN_AGGREGATEERR, proto));
   if (!obj) {
+    return false;
+  }
+
+  
+
+  RootedArrayObject errorsList(cx, IterableToArray(cx, args.get(0)));
+  if (!errorsList) {
     return false;
   }
 
