@@ -106,7 +106,7 @@ this.RecommendationProviderSwitcher = class RecommendationProviderSwitcher {
   
 
 
-  setVersion(isStartup = false) {
+  setVersion() {
     const version = this.store.getState().Prefs.values[
       PREF_PERSONALIZATION_VERSION
     ];
@@ -128,9 +128,6 @@ this.RecommendationProviderSwitcher = class RecommendationProviderSwitcher {
         type: at.DISCOVERY_STREAM_PERSONALIZATION_VERSION,
         data: {
           version,
-        },
-        meta: {
-          isStartup,
         },
       })
     );
@@ -181,7 +178,7 @@ this.RecommendationProviderSwitcher = class RecommendationProviderSwitcher {
   onAction(action) {
     switch (action.type) {
       case at.INIT:
-        this.setVersion(true );
+        this.setVersion();
         break;
       case at.DISCOVERY_STREAM_CONFIG_CHANGE:
         this.teardown();

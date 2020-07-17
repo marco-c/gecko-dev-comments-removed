@@ -128,13 +128,7 @@ this.PrefsFeed = class PrefsFeed {
 
     
     this.store.dispatch(
-      ac.BroadcastToContent({
-        type: at.PREFS_INITIAL_VALUES,
-        data: values,
-        meta: {
-          isStartup: true,
-        },
-      })
+      ac.BroadcastToContent({ type: at.PREFS_INITIAL_VALUES, data: values })
     );
   }
 
