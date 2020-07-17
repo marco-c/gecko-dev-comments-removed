@@ -23,10 +23,6 @@
 
 
 
-
-
-Services.prefs.setBoolPref("extensions.blocklist.useMLBF", false);
-
 const URI_EXTENSION_BLOCKLIST_DIALOG =
   "chrome://mozapps/content/extensions/blocklist.xhtml";
 
@@ -34,6 +30,12 @@ const URI_EXTENSION_BLOCKLIST_DIALOG =
 Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false);
 
 Services.prefs.setBoolPref("extensions.webextPermissionPrompts", false);
+
+
+const useMLBF = Services.prefs.getBoolPref(
+  "extensions.blocklist.useMLBF",
+  false
+);
 
 var testserver = createHttpServer({ hosts: ["example.com"] });
 
@@ -57,6 +59,8 @@ const BLOCK_APP = [
     minVersion: "2",
   },
 ];
+
+const BLOCK_APP_FILTER_EXPRESSION = `env.appinfo.ID == "xpcshell@tests.mozilla.org" && env.appinfo.version >= "2" && env.appinfo.version < "3"`;
 
 function softBlockApp(id) {
   return {
@@ -104,6 +108,7 @@ function softBlockManual(id) {
 }
 
 const BLOCKLIST_DATA = {
+  empty_blocklist: [],
   app_update: [
     softBlockApp("softblock1"),
     softBlockApp("softblock2"),
@@ -226,6 +231,43 @@ const BLOCKLIST_DATA = {
 
 
 
+
+if (useMLBF) {
+  Assert.ok(Services.prefs.getBoolPref("extensions.blocklist.useMLBF.stashes"));
+  for (let [key, blocks] of Object.entries(BLOCKLIST_DATA)) {
+    BLOCKLIST_DATA[key] = [];
+    for (let block of blocks) {
+      let { guid } = block;
+      if (guid.includes("RegExp")) {
+        guid = "regexpblock@tests.mozilla.org";
+      } else if (!guid.startsWith("soft") && !guid.startsWith("hard")) {
+        throw new Error(`Unexpected mock addon ID: ${guid}`);
+      }
+
+      const { minVersion = "1", maxVersion = "3", targetApplication } =
+        block.versionRange?.[0] || {};
+
+      for (let v = minVersion; v <= maxVersion; ++v) {
+        BLOCKLIST_DATA[key].push({
+          
+          filter_expression: targetApplication && BLOCK_APP_FILTER_EXPRESSION,
+          stash: {
+            
+            blocked: [`${guid}:${v}.0`, `${guid}:${v}`],
+            unblocked: [],
+          },
+        });
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
 var WindowWatcher = {
   openWindow(parent, url, name, features, openArgs) {
     
@@ -280,7 +322,7 @@ registrar.registerFactory(
 
 function Pload_blocklist(aId) {
   return AddonTestUtils.loadBlocklistRawData({
-    extensions: BLOCKLIST_DATA[aId],
+    [useMLBF ? "extensionsMLBF" : "extensions"]: BLOCKLIST_DATA[aId],
   });
 }
 
@@ -366,6 +408,20 @@ function check_addon(
   aExpectedSoftDisabled,
   aExpectedState
 ) {
+  if (useMLBF) {
+    if (aAddon.id.startsWith("soft")) {
+      if (aExpectedState === Ci.nsIBlocklistService.STATE_SOFTBLOCKED) {
+        
+        
+        
+        
+        aExpectedUserDisabled = aAddon.userDisabled;
+        aExpectedSoftDisabled = false;
+        aExpectedState = Ci.nsIBlocklistService.STATE_BLOCKED;
+      }
+    }
+  }
+
   Assert.notEqual(aAddon, null);
   info(
     "Testing " +
@@ -428,8 +484,41 @@ function check_addon(
   }
 }
 
+async function promiseRestartManagerWithAppChange(version) {
+  await promiseShutdownManager();
+  await promiseStartupManagerWithAppChange(version);
+}
+
+async function promiseStartupManagerWithAppChange(version) {
+  if (version) {
+    AddonTestUtils.appInfo.version = version;
+  }
+  if (useMLBF) {
+    
+    
+    
+    
+    
+    
+    
+    await Blocklist.ExtensionBlocklist._updateMLBF();
+  }
+  await promiseStartupManager();
+}
+
 add_task(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1");
+  if (useMLBF) {
+    const { ClientEnvironmentBase } = ChromeUtils.import(
+      "resource://gre/modules/components-utils/ClientEnvironment.jsm"
+    );
+    Object.defineProperty(ClientEnvironmentBase, "appinfo", {
+      configurable: true,
+      get() {
+        return gAppInfo;
+      },
+    });
+  }
 
   
   let pattern = /^(soft|hard|regexp)block([1-9]*)@/;
@@ -503,7 +592,7 @@ add_task(async function run_app_update_test() {
 });
 
 add_task(async function app_update_step_2() {
-  await promiseRestartManager("2");
+  await promiseRestartManagerWithAppChange("2");
 
   let [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
 
@@ -530,7 +619,7 @@ add_task(async function app_update_step_2() {
 add_task(async function app_update_step_3() {
   await promiseRestartManager();
 
-  await promiseRestartManager("2.5");
+  await promiseRestartManagerWithAppChange("2.5");
 
   let [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
 
@@ -549,7 +638,7 @@ add_task(async function app_update_step_3() {
 });
 
 add_task(async function app_update_step_4() {
-  await promiseRestartManager("1");
+  await promiseRestartManagerWithAppChange("1");
 
   let [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
 
@@ -615,7 +704,7 @@ add_task(async function update_schema_2() {
 
   await changeXPIDBVersion(100);
   gAppInfo.version = "2";
-  await promiseStartupManager();
+  await promiseStartupManagerWithAppChange();
 
   let [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
 
@@ -645,7 +734,7 @@ add_task(async function update_schema_3() {
   await promiseShutdownManager();
   await changeXPIDBVersion(100);
   gAppInfo.version = "2.5";
-  await promiseStartupManager();
+  await promiseStartupManagerWithAppChange();
 
   let [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
 
@@ -690,7 +779,7 @@ add_task(async function update_schema_5() {
 
   await changeXPIDBVersion(100);
   gAppInfo.version = "1";
-  await promiseStartupManager();
+  await promiseStartupManagerWithAppChange();
 
   let [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
 
@@ -720,7 +809,7 @@ add_task(async function update_schema_5() {
 
 
 add_task(async function run_blocklist_update_test() {
-  await AddonTestUtils.loadBlocklistRawData({ extensions: [] });
+  await Pload_blocklist("empty_blocklist");
   await promiseRestartManager();
 
   let [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
@@ -794,7 +883,7 @@ add_task(async function run_blocklist_update_test() {
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
 
-  await AddonTestUtils.loadBlocklistRawData({ extensions: [] });
+  await Pload_blocklist("empty_blocklist");
   await promiseRestartManager();
 
   [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
@@ -1093,16 +1182,12 @@ add_task(async function run_manual_update_test() {
 
   [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
 
-  check_addon(s1, "2.0", true, true, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  check_addon(s2, "2.0", true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  check_addon(
-    s3,
-    "2.0",
-    false,
-    false,
-    Ci.nsIBlocklistService.STATE_SOFTBLOCKED
-  );
-  check_addon(s4, "2.0", true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
+  
+  const sv2 = useMLBF ? "1.0" : "2.0";
+  check_addon(s1, sv2, true, true, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
+  check_addon(s2, sv2, true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
+  check_addon(s3, sv2, false, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
+  check_addon(s4, sv2, true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
   
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
@@ -1168,15 +1253,11 @@ add_task(async function run_manual_update_2_test() {
 
   [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
 
-  check_addon(s1, "2.0", true, true, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  check_addon(s2, "2.0", true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
-  check_addon(
-    s3,
-    "2.0",
-    false,
-    false,
-    Ci.nsIBlocklistService.STATE_SOFTBLOCKED
-  );
+  
+  const sv2 = useMLBF ? "1.0" : "2.0";
+  check_addon(s1, sv2, true, true, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
+  check_addon(s2, sv2, true, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
+  check_addon(s3, sv2, false, false, Ci.nsIBlocklistService.STATE_SOFTBLOCKED);
   
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
