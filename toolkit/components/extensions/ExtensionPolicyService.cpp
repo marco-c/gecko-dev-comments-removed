@@ -467,10 +467,7 @@ void ExtensionPolicyService::CheckDocument(Document* aDocument) {
         
         
         
-        
-        
-        !group.EqualsLiteral("browsers") &&
-        !group.EqualsLiteral("webext-browsers")) {
+        !group.EqualsLiteral("browsers")) {
       return;
     }
 

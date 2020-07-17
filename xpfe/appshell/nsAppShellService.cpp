@@ -428,18 +428,8 @@ WindowlessBrowser::GetDocShell(nsIDocShell** aDocShell) {
 }
 
 NS_IMETHODIMP
-nsAppShellService::CreateWindowlessBrowser(bool aIsChrome, uint32_t aChromeMask,
+nsAppShellService::CreateWindowlessBrowser(bool aIsChrome,
                                            nsIWindowlessBrowser** aResult) {
-  if (aChromeMask) {
-    MOZ_DIAGNOSTIC_ASSERT(aIsChrome, "Got chrome flags for non-chrome browser");
-    if (aChromeMask & ~(nsIWebBrowserChrome::CHROME_REMOTE_WINDOW |
-                        nsIWebBrowserChrome::CHROME_FISSION_WINDOW |
-                        nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW)) {
-      NS_ERROR("Received unexpected chrome flags");
-      return NS_ERROR_FAILURE;
-    }
-  }
-
   
 
 
@@ -471,16 +461,6 @@ nsAppShellService::CreateWindowlessBrowser(bool aIsChrome, uint32_t aChromeMask,
   RefPtr<BrowsingContext> browsingContext = BrowsingContext::CreateIndependent(
       aIsChrome ? BrowsingContext::Type::Chrome
                 : BrowsingContext::Type::Content);
-
-  if (aChromeMask & nsIWebBrowserChrome::CHROME_REMOTE_WINDOW) {
-    browsingContext->SetRemoteTabs(true);
-  }
-  if (aChromeMask & nsIWebBrowserChrome::CHROME_FISSION_WINDOW) {
-    browsingContext->SetRemoteSubframes(true);
-  }
-  if (aChromeMask & nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW) {
-    browsingContext->SetPrivateBrowsing(true);
-  }
 
   
 
