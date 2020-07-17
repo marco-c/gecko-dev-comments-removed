@@ -6,6 +6,7 @@
 
 
 include protocol PBackground;
+include protocol PStreamFilter;
 include NeckoChannelParams;
 include HttpChannelParams;
 include PURLClassifierInfo;
@@ -72,6 +73,8 @@ child:
 
   
   async SetClassifierMatchedTrackingInfo(ClassifierInfo info);
+
+  async AttachStreamFilter(Endpoint<PStreamFilterParent> aEndpoint);
 
   async __delete__();
 
