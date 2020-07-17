@@ -984,25 +984,16 @@ nsExternalHelperAppService::LoadURI(nsIURI* aURI,
 
     
     
-    if (bc->IsTop() && !bc->HadOriginalOpener() && wgp) {
+    if (bc->IsTop() && !bc->HadOriginalOpener()) {
       RefPtr<nsIURI> uri = wgp->GetDocumentURI();
       foundAccessibleFrame =
           uri && uri->GetSpecOrDefault().EqualsLiteral("about:blank");
     }
 
-    while (!foundAccessibleFrame) {
-      if (wgp) {
-        foundAccessibleFrame =
-            aTriggeringPrincipal->Subsumes(wgp->DocumentPrincipal());
-      }
-      
-      
-      BrowsingContext* parent = bc->GetParent();
-      if (!parent) {
-        break;
-      }
-      bc = parent;
-      wgp = parent->Canonical()->GetCurrentWindowGlobal();
+    while (wgp && !foundAccessibleFrame) {
+      foundAccessibleFrame =
+          aTriggeringPrincipal->Subsumes(wgp->DocumentPrincipal());
+      wgp = wgp->GetParentWindowContext();
     }
     if (!foundAccessibleFrame) {
       return NS_OK;  
