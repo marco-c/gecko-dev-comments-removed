@@ -82,7 +82,52 @@ add_task(async function() {
     
     promise = promiseLoadURL();
     gURLBar.value = value;
+    let spy = sinon.spy(UrlbarUtils, "getHeuristicResultFor");
     EventUtils.synthesizeKey("KEY_Enter");
+    spy.restore();
+    Assert.ok(spy.called, "invoked getHeuristicResultFor");
     Assert.deepEqual(await promise, args, "Check arguments are coherent");
+  }
+});
+
+
+
+add_task(async function no_heuristic_test() {
+  sandbox = sinon.createSandbox();
+
+  let stub = sandbox
+    .stub(UrlbarUtils, "getHeuristicResultFor")
+    .callsFake(async function() {
+      throw new Error("I failed!");
+    });
+
+  registerCleanupFunction(async () => {
+    sandbox.restore();
+    await UrlbarTestUtils.formHistory.clear();
+  });
+
+  async function promiseLoadURL() {
+    return new Promise(resolve => {
+      sandbox.stub(gURLBar, "_loadURL").callsFake(function() {
+        sandbox.restore();
+        
+        
+        resolve(Array.from(arguments).slice(0, 3));
+      });
+    });
+  }
+
+  
+  
+  
+  
+  for (let value of TEST_STRINGS) {
+    let promise = promiseLoadURL();
+    gURLBar.value = value;
+    EventUtils.synthesizeKey("KEY_Enter");
+    Assert.ok(stub.called, "invoked getHeuristicResultFor");
+    
+    
+    new URL((await promise)[0]);
   }
 });
