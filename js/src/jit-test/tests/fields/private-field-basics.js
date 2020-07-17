@@ -1,9 +1,6 @@
 
 
 
-
-
-
 class A {
   #x = 10
 
@@ -59,9 +56,11 @@ for (var i = 0; i < 1000; i++) {
 function assertThrows(fun, errorType) {
   try {
     fun();
-    assertEq(true, false, 'Expected error, but none was thrown');
+    throw 'Expected error, but none was thrown';
   } catch (e) {
-    assertEq(e instanceof errorType, true, 'Wrong error type thrown');
+    if (!(e instanceof errorType)) {
+      throw 'Wrong error type thrown';
+    }
   }
 }
 
@@ -130,6 +129,9 @@ for (var i = 1; i < 1000; i++) {
 
 assertThrows(() => initIC(alreadyConstructedB), TypeError);
 
+assertThrows(() => initIC(alreadyConstructedB), TypeError);
+
+
 
 
 
@@ -137,9 +139,10 @@ assertThrows(() => initIC(alreadyConstructedB), TypeError);
 
 
 var elements = [];
-for (var i = 0; i < 999; i++) {
+for (var i = 0; i < 99; i++) {
   elements.push(new B);
 }
+elements.push({});
 elements.push({});
 
 function getterCheck(e) {
@@ -156,11 +159,13 @@ try {
     getterCheck(e);
     checksPassed++;
   }
-  assertEq(true, false, 'Shouldnt arrive here');  
+  throw `Shouldn't arrive here`;
 } catch (e) {
-  assertEq(e instanceof TypeError, true)
+  if (!(e instanceof TypeError)) {
+    throw e;
+  }
   
-  assertEq(checksPassed, elements.length - 1);
+  assertEq(checksPassed, elements.length - 2);
 }
 
 checksPassed = 0;
@@ -169,16 +174,35 @@ try {
     setterCheck(e);
     checksPassed++;
   }
-  assertEq(true, false, 'Shouldnt arrive here');  
+  throw `Shouldn't arrive here`;
 } catch (e) {
-  assertEq(e instanceof TypeError, true)
+  if (!(e instanceof TypeError)) {
+    throw e;
+  }
   
-  assertEq(checksPassed, elements.length - 1);
+  assertEq(checksPassed, elements.length - 2);
 }
 
 
 for (var index in elements) {
-  if (index < elements.length - 1) {
+  if (index < elements.length - 2) {
     assertEq(B.gx(elements[index]), 13);
+  } else {
+    assertThrows(() => {
+      B.gx(elements[index]);
+    }, TypeError);
+  }
+}
+
+
+for (var i = 0; i < 100; i++) {
+  var inputs = [{a: 1}, {b: 2}, {c: 3}, {d: 4}, {e: 5}];
+  for (var o of inputs) {
+    assertThrows(() => B.gx(o), TypeError);
+    assertThrows(() => B.sx(o), TypeError);
+    new B(o);
+    assertEq(B.gx(o), 12);
+    B.sx(o);
+    assertEq(B.gx(o), 13);
   }
 }

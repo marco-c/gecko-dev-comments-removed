@@ -588,6 +588,12 @@ static bool IsCacheableNoProperty(JSContext* cx, JSObject* obj,
     return false;
   }
 
+  
+  
+  if (pc && JSOp(*pc) == JSOp::GetPrivateElem) {
+    return false;
+  }
+
   return CheckHasNoSuchProperty(cx, obj, id);
 }
 
@@ -1687,6 +1693,12 @@ AttachDecision GetPropIRGenerator::tryAttachProxy(HandleObject obj,
                                                   HandleId id) {
   ProxyStubType type = GetProxyStubType(cx_, obj, id);
   if (type == ProxyStubType::None) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  
+  if (JSOp(*pc_) == JSOp::GetPrivateElem) {
     return AttachDecision::NoAction;
   }
 
@@ -4381,7 +4393,8 @@ AttachDecision SetPropIRGenerator::tryAttachMegamorphicSetElement(
     HandleObject obj, ObjOperandId objId, ValOperandId rhsId) {
   MOZ_ASSERT(IsPropertySetOp(JSOp(*pc_)));
 
-  if (mode_ != ICState::Mode::Megamorphic || cacheKind_ != CacheKind::SetElem) {
+  if (mode_ != ICState::Mode::Megamorphic || cacheKind_ != CacheKind::SetElem ||
+      IsPrivateElemOp(JSOp(*pc_))) {
     return AttachDecision::NoAction;
   }
 
@@ -4473,7 +4486,10 @@ bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
   }
 
   
-  if (!obj->nonProxyIsExtensible()) {
+  
+  bool isInitPrivateElem = JSOp(*pc_) == JSOp::InitPrivateElem;
+  bool canAddNewProperty = obj->nonProxyIsExtensible() || isInitPrivateElem;
+  if (!canAddNewProperty) {
     return false;
   }
 
