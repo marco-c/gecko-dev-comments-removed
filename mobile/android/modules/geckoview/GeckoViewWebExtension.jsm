@@ -875,6 +875,19 @@ var GeckoViewWebExtension = {
         this.pageActionClick(aData.extensionId);
         break;
       }
+      case "GeckoView:WebExtension:MenuClick": {
+        aCallback.onError(`Not implemented`);
+        break;
+      }
+      case "GeckoView:WebExtension:MenuShow": {
+        aCallback.onError(`Not implemented`);
+        break;
+      }
+      case "GeckoView:WebExtension:MenuHide": {
+        aCallback.onError(`Not implemented`);
+        break;
+      }
+
       
       case "GeckoView:RegisterWebExtension": {
         let uri;
