@@ -133,7 +133,7 @@ TestInterfaceJS.prototype = {
   testThrowNsresultFromNative(x) {
     
     
-    Services.netUtils.notImplemented();
+    Services.io.notImplemented();
   },
 
   testThrowCallbackError(callback) {
