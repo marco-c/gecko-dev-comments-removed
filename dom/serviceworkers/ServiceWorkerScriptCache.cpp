@@ -18,6 +18,7 @@
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/net/CookieJarSettings.h"
+#include "mozilla/StaticPrefs_extensions.h"
 #include "nsICacheInfoChannel.h"
 #include "nsIStreamLoader.h"
 #include "nsIThreadRetargetableRequest.h"
@@ -877,6 +878,58 @@ CompareNetwork::OnStreamComplete(nsIStreamLoader* aLoader,
   nsCOMPtr<nsIRequest> request;
   rv = aLoader->GetRequest(getter_AddRefs(request));
   if (NS_WARN_IF(NS_FAILED(rv))) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
+  MOZ_ASSERT(channel, "How come we don't have any channel?");
+
+  nsCOMPtr<nsIURI> uri;
+  channel->GetOriginalURI(getter_AddRefs(uri));
+  bool isExtension = uri->SchemeIs("moz-extension");
+
+  if (isExtension &&
+      !StaticPrefs::extensions_backgroundServiceWorker_enabled_AtStartup()) {
+    
+    
+    return NS_ERROR_FAILURE;
+  }
+
+  if (isExtension) {
+    
+    
+    
+
+    
+    
+    nsCOMPtr<nsIURI> channelURL;
+    rv = channel->GetURI(getter_AddRefs(channelURL));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    nsCString channelURLSpec;
+    MOZ_ALWAYS_SUCCEEDS(channelURL->GetSpec(channelURLSpec));
+
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(!mURLList.IsEmpty());
+    if (channelURLSpec != mURLList[0]) {
+      mURLList.AppendElement(channelURLSpec);
+    }
+
+    char16_t* buffer = nullptr;
+    size_t len = 0;
+
+    rv = ScriptLoader::ConvertToUTF16(channel, aString, aLen, u"UTF-8"_ns,
+                                      nullptr, buffer, len);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    mBuffer.Adopt(buffer, len);
+
+    rv = NS_OK;
     return NS_OK;
   }
 
