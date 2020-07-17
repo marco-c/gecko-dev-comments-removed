@@ -230,6 +230,7 @@ js::Nursery::Nursery(GCRuntime* gc)
       canAllocateBigInts_(true),
       reportTenurings_(0),
       minorGCTriggerReason_(JS::GCReason::NO_REASON),
+      smoothedGrowthFactor(1.0),
       decommitTask(gc)
 #ifdef JS_GC_ZEAL
       ,
@@ -319,7 +320,7 @@ bool js::Nursery::initFirstChunk(AutoLockGCBgAlloc& lock) {
   poisonAndInitCurrentChunk();
 
   
-  smoothedGrowthFactor.reset();
+  clearRecentGrowthData();
 
   return true;
 }
@@ -1535,14 +1536,17 @@ size_t js::Nursery::targetSize(JSGCInvocationKind kind, JS::GCReason reason) {
   
   if (kind == GC_SHRINK || gc::IsOOMReason(reason) ||
       gc->systemHasLowMemory()) {
-    smoothedGrowthFactor.reset();
+    clearRecentGrowthData();
     return 0;
   }
 
   
   if (gc::IsShutdownReason(reason)) {
+    clearRecentGrowthData();
     return capacity();
   }
+
+  TimeStamp now = ReallyNow();
 
   
   
@@ -1561,12 +1565,16 @@ size_t js::Nursery::targetSize(JSGCInvocationKind kind, JS::GCReason reason) {
   static const double GrowthRange = 2.0;
   growthFactor = ClampDouble(growthFactor, 1.0 / GrowthRange, GrowthRange);
 
+#ifndef JS_MORE_DETERMINISTIC
   
   
-  if (smoothedGrowthFactor) {
-    growthFactor = 0.75 * smoothedGrowthFactor.value() + 0.25 * growthFactor;
+  if (lastResizeTime &&
+      now - lastResizeTime < TimeDuration::FromMilliseconds(200)) {
+    growthFactor = 0.75 * smoothedGrowthFactor + 0.25 * growthFactor;
   }
-  smoothedGrowthFactor = mozilla::Some(growthFactor);
+  lastResizeTime = now;
+  smoothedGrowthFactor = growthFactor;
+#endif
 
   
   static const double GoalWidth = 1.5;
@@ -1580,6 +1588,13 @@ size_t js::Nursery::targetSize(JSGCInvocationKind kind, JS::GCReason reason) {
   MOZ_ASSERT(capacity() < SIZE_MAX / 2);
 
   return roundSize(size_t(double(capacity()) * growthFactor));
+}
+
+void js::Nursery::clearRecentGrowthData() {
+#ifndef JS_MORE_DETERMINISTIC
+  lastResizeTime = TimeStamp();
+  smoothedGrowthFactor = 1.0;
+#endif
 }
 
 
