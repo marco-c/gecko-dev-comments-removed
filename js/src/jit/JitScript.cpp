@@ -462,7 +462,7 @@ void JitScript::purgeOptimizedStubs(JSScript* script) {
   MOZ_ASSERT(script->jitScript() == this);
 
   Zone* zone = script->zone();
-  if (zone->isGCSweeping() && IsAboutToBeFinalizedDuringSweep(*script)) {
+  if (IsAboutToBeFinalizedUnbarriered(&script)) {
     
     
     
