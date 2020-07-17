@@ -141,9 +141,7 @@ class DNSLookup {
   }
 }
 
-DNSLookup.prototype.QueryInterface = ChromeUtils.generateQI([
-  Ci.nsIDNSListener,
-]);
+DNSLookup.prototype.QueryInterface = ChromeUtils.generateQI(["nsIDNSListener"]);
 
 
 

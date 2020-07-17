@@ -129,8 +129,8 @@ function rescaleIcon(byteArray, contentType, size = 32) {
 
 const ParamPreferenceCache = {
   QueryInterface: ChromeUtils.generateQI([
-    Ci.nsIObserver,
-    Ci.nsISupportsWeakReference,
+    "nsIObserver",
+    "nsISupportsWeakReference",
   ]),
 
   initCache() {
@@ -592,7 +592,7 @@ class EngineURL {
 
 
 class SearchEngine {
-  QueryInterface = ChromeUtils.generateQI([Ci.nsISearchEngine]);
+  QueryInterface = ChromeUtils.generateQI(["nsISearchEngine"]);
   
   _metaData = {};
   
@@ -1680,7 +1680,7 @@ class SearchEngine {
 
 
 class Submission {
-  QueryInterface = ChromeUtils.generateQI([Ci.nsISearchSubmission]);
+  QueryInterface = ChromeUtils.generateQI(["nsISearchSubmission"]);
 
   constructor(uri, postData = null) {
     this._uri = uri;

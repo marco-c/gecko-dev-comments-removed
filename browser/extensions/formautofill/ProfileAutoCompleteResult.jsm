@@ -43,7 +43,7 @@ class ProfileAutoCompleteResult {
     log.debug("Constructing new ProfileAutoCompleteResult:", [...arguments]);
 
     
-    this.QueryInterface = ChromeUtils.generateQI([Ci.nsIAutoCompleteResult]);
+    this.QueryInterface = ChromeUtils.generateQI(["nsIAutoCompleteResult"]);
 
     
     this.searchString = searchString;

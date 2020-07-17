@@ -94,7 +94,7 @@ PlacesController.prototype = {
   
   disableUserActions: false,
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIClipboardOwner]),
+  QueryInterface: ChromeUtils.generateQI(["nsIClipboardOwner"]),
 
   
   LosingOwnership: function PC_LosingOwnership(aXferable) {

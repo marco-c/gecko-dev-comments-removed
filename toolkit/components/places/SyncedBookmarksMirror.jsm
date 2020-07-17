@@ -686,8 +686,8 @@ class SyncedBookmarksMirror {
       }
       let callback = {
         QueryInterface: ChromeUtils.generateQI([
-          Ci.mozISyncedBookmarksMirrorProgressListener,
-          Ci.mozISyncedBookmarksMirrorCallback,
+          "mozISyncedBookmarksMirrorProgressListener",
+          "mozISyncedBookmarksMirrorCallback",
         ]),
         
         onFetchLocalTree: (took, itemCount, deleteCount, problemsBag) => {

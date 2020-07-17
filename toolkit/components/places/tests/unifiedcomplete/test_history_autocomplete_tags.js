@@ -39,11 +39,11 @@ AutoCompleteInput.prototype = {
     invalidate() {},
 
     
-    QueryInterface: ChromeUtils.generateQI([Ci.nsIAutoCompletePopup]),
+    QueryInterface: ChromeUtils.generateQI(["nsIAutoCompletePopup"]),
   },
 
   
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIAutoCompleteInput]),
+  QueryInterface: ChromeUtils.generateQI(["nsIAutoCompleteInput"]),
 };
 
 async function ensure_tag_results(uris, searchTerm) {

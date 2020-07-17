@@ -69,6 +69,6 @@ class Target {
   
 
   get QueryInterface() {
-    return ChromeUtils.generateQI([Ci.nsIHttpRequestHandler]);
+    return ChromeUtils.generateQI(["nsIHttpRequestHandler"]);
   }
 }

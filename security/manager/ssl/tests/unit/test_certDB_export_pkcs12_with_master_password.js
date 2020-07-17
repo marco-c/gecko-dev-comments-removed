@@ -20,7 +20,7 @@ var gPrompt = {
   password: "password",
   clickOk: true,
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIPrompt]),
+  QueryInterface: ChromeUtils.generateQI(["nsIPrompt"]),
 
   
   
@@ -43,7 +43,7 @@ var gPrompt = {
 };
 
 const gPromptFactory = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIPromptFactory]),
+  QueryInterface: ChromeUtils.generateQI(["nsIPromptFactory"]),
   getPrompt: (aWindow, aIID) => gPrompt,
 };
 

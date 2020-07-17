@@ -126,7 +126,7 @@ function getL10n() {
 
 
 var MigratorPrototype = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIBrowserProfileMigrator]),
+  QueryInterface: ChromeUtils.generateQI(["nsIBrowserProfileMigrator"]),
 
   
 

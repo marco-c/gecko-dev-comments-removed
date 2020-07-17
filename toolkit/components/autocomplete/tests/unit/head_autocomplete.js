@@ -60,7 +60,7 @@ AutoCompleteInputBase.prototype = {
   },
 
   
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIAutoCompleteInput]),
+  QueryInterface: ChromeUtils.generateQI(["nsIAutoCompleteInput"]),
 };
 
 
@@ -112,7 +112,7 @@ AutoCompleteResultBase.prototype = {
   removeValueAt(aRowIndex) {},
 
   
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIAutoCompleteResult]),
+  QueryInterface: ChromeUtils.generateQI(["nsIAutoCompleteResult"]),
 };
 
 
@@ -141,8 +141,8 @@ AutoCompleteSearchBase.prototype = {
 
   
   QueryInterface: ChromeUtils.generateQI([
-    Ci.nsIFactory,
-    Ci.nsIAutoCompleteSearch,
+    "nsIFactory",
+    "nsIAutoCompleteSearch",
   ]),
 
   
@@ -167,7 +167,7 @@ AutocompletePopupBase.prototype = {
       }
     }
   },
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIAutoCompletePopup]),
+  QueryInterface: ChromeUtils.generateQI(["nsIAutoCompletePopup"]),
 };
 
 

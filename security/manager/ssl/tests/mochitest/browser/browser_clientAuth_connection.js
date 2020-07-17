@@ -117,7 +117,7 @@ const gClientAuthDialogs = {
     return false;
   },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIClientAuthDialogs]),
+  QueryInterface: ChromeUtils.generateQI(["nsIClientAuthDialogs"]),
 };
 
 add_task(async function setup() {
@@ -144,7 +144,11 @@ add_task(async function setup() {
   
   
   await readCertificate("client-cert-via-intermediate.pem", ",,");
-  gExpectedClientCertificateChoices = 2;
+  
+  
+  
+  await readCertificate("client-cert-with-ocsp-signing.pem", ",,");
+  gExpectedClientCertificateChoices = 3;
 });
 
 
@@ -276,7 +280,7 @@ add_task(async function testCertFilteringWithIntermediate() {
   );
   let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
   nssComponent.addEnterpriseIntermediate(intermediateBytes);
-  gExpectedClientCertificateChoices = 3;
+  gExpectedClientCertificateChoices = 4;
   gClientAuthDialogs.state = DialogState.RETURN_CERT_SELECTED;
   await testHelper("Ask Every Time", "https://requireclientcert.example.com/");
   sdr.logoutAndTeardown();

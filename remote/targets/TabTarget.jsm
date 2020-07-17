@@ -154,6 +154,6 @@ class TabTarget extends Target {
   
 
   get QueryInterface() {
-    return ChromeUtils.generateQI([Ci.nsIHttpRequestHandler, Ci.nsIObserver]);
+    return ChromeUtils.generateQI(["nsIHttpRequestHandler", "nsIObserver"]);
   }
 }

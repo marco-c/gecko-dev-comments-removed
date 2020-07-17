@@ -153,7 +153,7 @@ class RemoteAgentClass {
   
 
   get QueryInterface() {
-    return ChromeUtils.generateQI([Ci.nsIRemoteAgent]);
+    return ChromeUtils.generateQI(["nsIRemoteAgent"]);
   }
 }
 

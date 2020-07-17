@@ -31,11 +31,11 @@ const checkRedirected = (url, redirectURI) => {
     
     xhr.channel.notificationCallbacks = {
       QueryInterface: ChromeUtils.generateQI([
-        Ci.nsIInterfaceRequestor,
-        Ci.nsIChannelEventSync,
+        "nsIInterfaceRequestor",
+        "nsIChannelEventSync",
       ]),
 
-      getInterface: ChromeUtils.generateQI([Ci.nsIChannelEventSink]),
+      getInterface: ChromeUtils.generateQI(["nsIChannelEventSink"]),
 
       asyncOnChannelRedirect(oldChannel, newChannel, flags, callback) {
         let responseURL = newChannel.URI.spec;

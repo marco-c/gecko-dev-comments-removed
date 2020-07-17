@@ -812,7 +812,7 @@ var AddonTestUtils = {
         );
       },
 
-      QueryInterface: ChromeUtils.generateQI([Ci.nsIX509CertDB]),
+      QueryInterface: ChromeUtils.generateQI(["nsIX509CertDB"]),
     };
 
     
@@ -1461,7 +1461,7 @@ var AddonTestUtils = {
         return null;
       },
 
-      QueryInterface: ChromeUtils.generateQI([Ci.nsIDirectoryServiceProvider]),
+      QueryInterface: ChromeUtils.generateQI(["nsIDirectoryServiceProvider"]),
     };
     Services.dirsvc.registerProvider(dirProvider);
 

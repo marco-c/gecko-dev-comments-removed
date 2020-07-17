@@ -74,7 +74,7 @@ var gBookmarksObserver = {
   },
 
   
-  QueryInterface: ChromeUtils.generateQI([Ci.nsINavBookmarkObserver]),
+  QueryInterface: ChromeUtils.generateQI(["nsINavBookmarkObserver"]),
 };
 
 var gBookmarkSkipObserver = {
@@ -129,7 +129,7 @@ var gBookmarkSkipObserver = {
   },
 
   
-  QueryInterface: ChromeUtils.generateQI([Ci.nsINavBookmarkObserver]),
+  QueryInterface: ChromeUtils.generateQI(["nsINavBookmarkObserver"]),
 };
 
 add_task(async function setup() {

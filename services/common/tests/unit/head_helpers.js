@@ -182,7 +182,7 @@ function ensureThrows(func) {
 
 
 var PACSystemSettings = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsISystemProxySettings]),
+  QueryInterface: ChromeUtils.generateQI(["nsISystemProxySettings"]),
 
   
   

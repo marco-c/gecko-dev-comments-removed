@@ -124,7 +124,7 @@ function terminateFirefox(completion) {
         completion();
       }
     },
-    QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
+    QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
   };
 
   process.runAsync(args, args.length, processObserver);
@@ -171,7 +171,7 @@ function launchProcess(file, args, env, timeoutMS, handler, attemptCount) {
 
       handler(true);
     },
-    QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
+    QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
   };
 
   
@@ -191,7 +191,7 @@ function launchProcess(file, args, env, timeoutMS, handler, attemptCount) {
         });
       }
     },
-    QueryInterface: ChromeUtils.generateQI([Ci.nsITimerCallback]),
+    QueryInterface: ChromeUtils.generateQI(["nsITimerCallback"]),
   };
 
   info("launching application: " + file.path);

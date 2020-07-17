@@ -129,7 +129,7 @@ add_task(async function() {
   );
   
   let systemProxySettings = {
-    QueryInterface: ChromeUtils.generateQI([Ci.nsISystemProxySettings]),
+    QueryInterface: ChromeUtils.generateQI(["nsISystemProxySettings"]),
     mainThreadOnly: true,
     PACURI: null,
     getProxyForURI: (aSpec, aScheme, aHost, aPort) => {

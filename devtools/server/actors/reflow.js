@@ -24,7 +24,6 @@
 
 
 
-const { Ci } = require("chrome");
 const ChromeUtils = require("ChromeUtils");
 const protocol = require("devtools/shared/protocol");
 const EventEmitter = require("devtools/shared/event-emitter");
@@ -460,8 +459,8 @@ class ReflowObserver extends Observable {
 }
 
 ReflowObserver.prototype.QueryInterface = ChromeUtils.generateQI([
-  Ci.nsIReflowObserver,
-  Ci.nsISupportsWeakReference,
+  "nsIReflowObserver",
+  "nsISupportsWeakReference",
 ]);
 
 

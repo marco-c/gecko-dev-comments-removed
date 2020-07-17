@@ -31,7 +31,7 @@ function MockContentPermissionType(type) {
 }
 
 MockContentPermissionType.prototype = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIContentPermissionType]),
+  QueryInterface: ChromeUtils.generateQI(["nsIContentPermissionType"]),
   
   
   
@@ -54,7 +54,7 @@ function MockContentPermissionRequest(typesArray) {
 }
 
 MockContentPermissionRequest.prototype = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIContentPermissionRequest]),
+  QueryInterface: ChromeUtils.generateQI(["nsIContentPermissionRequest"]),
   
   
   

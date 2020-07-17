@@ -177,5 +177,5 @@ FormAutoCompleteResult.prototype = {
   },
 
   
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIAutoCompleteResult]),
+  QueryInterface: ChromeUtils.generateQI(["nsIAutoCompleteResult"]),
 };

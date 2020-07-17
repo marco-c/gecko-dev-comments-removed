@@ -1438,8 +1438,8 @@ BookmarksTracker.prototype = {
   },
 
   QueryInterface: ChromeUtils.generateQI([
-    Ci.nsINavBookmarkObserver,
-    Ci.nsISupportsWeakReference,
+    "nsINavBookmarkObserver",
+    "nsISupportsWeakReference",
   ]),
 
   

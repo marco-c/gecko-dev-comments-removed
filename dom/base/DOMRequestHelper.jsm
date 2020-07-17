@@ -42,8 +42,8 @@ DOMRequestIpcHelper.prototype = {
 
 
   QueryInterface: ChromeUtils.generateQI([
-    Ci.nsISupportsWeakReference,
-    Ci.nsIObserver,
+    "nsISupportsWeakReference",
+    "nsIObserver",
   ]),
 
   

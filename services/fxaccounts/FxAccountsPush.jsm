@@ -60,7 +60,7 @@ FxAccountsPushService.prototype = {
   
 
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
+  QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
   
 
 

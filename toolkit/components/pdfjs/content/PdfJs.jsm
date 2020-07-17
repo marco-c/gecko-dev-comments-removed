@@ -75,7 +75,7 @@ function initializeDefaultPreferences() {
 
 
 const gPdfFakeHandlerInfo = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIMIMEInfo]),
+  QueryInterface: ChromeUtils.generateQI(["nsIMIMEInfo"]),
   getFileExtensions() {
     return ["pdf"];
   },
@@ -91,7 +91,7 @@ const gPdfFakeHandlerInfo = {
 };
 
 var PdfJs = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
+  QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
   _initialized: false,
   _cachedIsDefault: true,
 

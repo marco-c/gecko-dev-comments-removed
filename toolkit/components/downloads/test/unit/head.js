@@ -1042,7 +1042,7 @@ add_task(function test_common_initialize() {
   
   
   let mock = {
-    QueryInterface: ChromeUtils.generateQI([Ci.nsIHelperAppLauncherDialog]),
+    QueryInterface: ChromeUtils.generateQI(["nsIHelperAppLauncherDialog"]),
     promptForSaveToFileAsync(
       aLauncher,
       aWindowContext,

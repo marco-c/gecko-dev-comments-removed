@@ -72,14 +72,14 @@ add_task(async function test_converter_abort_should_stop_data_sending() {
   
   const chan = {
     QueryInterface: ChromeUtils.generateQI([
-      Ci.nsIChannel,
-      Ci.nsIWritablePropertyBag,
+      "nsIChannel",
+      "nsIWritablePropertyBag",
     ]),
     URI: Services.io.newURI("data:application/json,{}"),
     
     loadInfo,
     notificationCallbacks: {
-      QueryInterface: ChromeUtils.generateQI([Ci.nsIInterfaceRequestor]),
+      QueryInterface: ChromeUtils.generateQI(["nsIInterfaceRequestor"]),
       getInterface() {
         
         return docShell;
@@ -90,7 +90,7 @@ add_task(async function test_converter_abort_should_stop_data_sending() {
   };
   let onStartFired = false;
   const listener = {
-    QueryInterface: ChromeUtils.generateQI([Ci.nsIStreamListener]),
+    QueryInterface: ChromeUtils.generateQI(["nsIStreamListener"]),
     onStartRequest() {
       onStartFired = true;
       
@@ -130,14 +130,14 @@ add_task(async function test_converter_principal_needs_matching() {
   
   const chan = {
     QueryInterface: ChromeUtils.generateQI([
-      Ci.nsIChannel,
-      Ci.nsIWritablePropertyBag,
+      "nsIChannel",
+      "nsIWritablePropertyBag",
     ]),
     URI: Services.io.newURI("data:application/json,{}"),
     
     loadInfo,
     notificationCallbacks: {
-      QueryInterface: ChromeUtils.generateQI([Ci.nsIInterfaceRequestor]),
+      QueryInterface: ChromeUtils.generateQI(["nsIInterfaceRequestor"]),
       getInterface() {
         
         return docShell;
@@ -151,7 +151,7 @@ add_task(async function test_converter_principal_needs_matching() {
   };
   let onStartFired = false;
   const listener = {
-    QueryInterface: ChromeUtils.generateQI([Ci.nsIStreamListener]),
+    QueryInterface: ChromeUtils.generateQI(["nsIStreamListener"]),
     onStartRequest() {
       onStartFired = true;
     },

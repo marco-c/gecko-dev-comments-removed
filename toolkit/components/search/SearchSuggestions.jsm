@@ -217,8 +217,8 @@ SuggestAutoComplete.prototype = {
 
   
   QueryInterface: ChromeUtils.generateQI([
-    Ci.nsIAutoCompleteSearch,
-    Ci.nsIAutoCompleteObserver,
+    "nsIAutoCompleteSearch",
+    "nsIAutoCompleteObserver",
   ]),
 };
 

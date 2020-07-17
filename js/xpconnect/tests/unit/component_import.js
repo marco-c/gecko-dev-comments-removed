@@ -66,7 +66,7 @@ BarComponent.prototype =
   },
 
   
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIClassInfo])
+  QueryInterface: ChromeUtils.generateQI(["nsIClassInfo"])
 };
 
 const Assert = {

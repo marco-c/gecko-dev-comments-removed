@@ -12,7 +12,7 @@ add_task(async function() {
   
   let good = true;
   const listener = {
-    QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
+    QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
     observe: function(subject) {
       if (
         subject instanceof Ci.nsIScriptError &&

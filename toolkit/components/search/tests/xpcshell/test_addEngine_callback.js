@@ -13,11 +13,11 @@ const { MockRegistrar } = ChromeUtils.import(
 
 
 var promptService = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIPromptService]),
+  QueryInterface: ChromeUtils.generateQI(["nsIPromptService"]),
   confirmEx() {},
 };
 var prompt = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIPrompt]),
+  QueryInterface: ChromeUtils.generateQI(["nsIPrompt"]),
   alert() {},
 };
 

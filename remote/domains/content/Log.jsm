@@ -65,7 +65,7 @@ class Log extends ContentProcessDomain {
   
 
   get QueryInterface() {
-    return ChromeUtils.generateQI([Ci.nsIConsoleListener]);
+    return ChromeUtils.generateQI(["nsIConsoleListener"]);
   }
 }
 

@@ -27,45 +27,8 @@ function handleWindowEvent(e) {
   }
 }
 
-function defineNoReturnMethod(fn) {
-  return function method() {
-    if (!this._domRequestReady) {
-      
-      let args = [this, ...arguments];
-      this._pendingAPICalls.push(method.bind.apply(fn, args));
-      return;
-    }
-    if (this._isAlive()) {
-      fn.apply(this, arguments);
-    }
-  };
-}
-
-function definePromiseMethod(msgName) {
-  return function() {
-    return this._sendAsyncRequest(msgName);
-  };
-}
-
 function BrowserElementParent() {
   debug("Creating new BrowserElementParent object");
-  this._promiseCounter = 0;
-  this._domRequestReady = false;
-  this._pendingAPICalls = [];
-  this._pendingPromises = {};
-  this._pendingDOMFullscreen = false;
-
-  Services.obs.addObserver(
-    this,
-    "oop-frameloader-crashed",
-     true
-  );
-  Services.obs.addObserver(
-    this,
-    "ask-children-to-execute-copypaste-command",
-     true
-  );
-  Services.obs.addObserver(this, "back-docommand",  true);
 }
 
 BrowserElementParent.prototype = {
@@ -73,9 +36,8 @@ BrowserElementParent.prototype = {
   classID: Components.ID("{9f171ac4-0939-4ef8-b360-3408aedc3060}"),
   contractID: "@mozilla.org/dom/browser-element-api;1",
   QueryInterface: ChromeUtils.generateQI([
-    Ci.nsIBrowserElementAPI,
-    Ci.nsIObserver,
-    Ci.nsISupportsWeakReference,
+    "nsIBrowserElementAPI",
+    "nsISupportsWeakReference",
   ]),
 
   setFrameLoader(frameLoader) {
@@ -99,7 +61,7 @@ BrowserElementParent.prototype = {
     if (!this._window._browserElementParents) {
       this._window._browserElementParents = new WeakMap();
       let handler = handleWindowEvent.bind(this._window);
-      let windowEvents = ["visibilitychange", "fullscreenchange"];
+      let windowEvents = ["visibilitychange"];
       for (let event of windowEvents) {
         Services.els.addSystemEventListener(
           this._window,
@@ -125,21 +87,6 @@ BrowserElementParent.prototype = {
     this._mm.sendAsyncMessage("browser-element-api:destroy");
   },
 
-  _runPendingAPICall() {
-    if (!this._pendingAPICalls) {
-      return;
-    }
-    for (let i = 0; i < this._pendingAPICalls.length; i++) {
-      try {
-        this._pendingAPICalls[i]();
-      } catch (e) {
-        
-        debug("Exception when running pending API call: " + e);
-      }
-    }
-    delete this._pendingAPICalls;
-  },
-
   _setupMessageListener() {
     this._mm = this._frameLoader.messageManager;
     this._mm.addMessageListener("browser-element-api:call", this);
@@ -156,36 +103,10 @@ BrowserElementParent.prototype = {
     
     let mmCalls = {
       hello: this._recvHello,
-      loadstart: this._fireProfiledEventFromMsg,
-      loadend: this._fireProfiledEventFromMsg,
-      close: this._fireEventFromMsg,
-      error: this._fireEventFromMsg,
-      firstpaint: this._fireProfiledEventFromMsg,
-      documentfirstpaint: this._fireProfiledEventFromMsg,
-      "got-can-go-back": this._gotAsyncResult,
-      "got-can-go-forward": this._gotAsyncResult,
-      "requested-dom-fullscreen": this._requestedDOMFullscreen,
-      "fullscreen-origin-change": this._fullscreenOriginChange,
-      "exit-dom-fullscreen": this._exitDomFullscreen,
-      scrollviewchange: this._handleScrollViewChange,
-      caretstatechanged: this._handleCaretStateChanged,
     };
 
     let mmSecuritySensitiveCalls = {
-      audioplaybackchange: this._fireEventFromMsg,
       showmodalprompt: this._handleShowModalPrompt,
-      contextmenu: this._fireCtxMenuEvent,
-      securitychange: this._fireEventFromMsg,
-      locationchange: this._fireEventFromMsg,
-      iconchange: this._fireEventFromMsg,
-      scrollareachanged: this._fireEventFromMsg,
-      titlechange: this._fireProfiledEventFromMsg,
-      opensearch: this._fireEventFromMsg,
-      metachange: this._fireEventFromMsg,
-      resize: this._fireEventFromMsg,
-      activitydone: this._fireEventFromMsg,
-      scroll: this._fireEventFromMsg,
-      opentab: this._fireEventFromMsg,
     };
 
     if (aMsg.data.msg_name in mmCalls) {
@@ -219,60 +140,6 @@ BrowserElementParent.prototype = {
     return this._frameElement.ownerGlobal;
   },
 
-  get _windowUtils() {
-    return this._window.windowUtils;
-  },
-
-  promptAuth(authDetail, callback) {
-    let evt;
-    let callbackCalled = false;
-    let cancelCallback = function() {
-      if (!callbackCalled) {
-        callbackCalled = true;
-        callback(false, null, null);
-      }
-    };
-
-    
-    if (authDetail.isOnlyPassword) {
-      cancelCallback();
-      return;
-    }
-
-    
-    let detail = {
-      host: authDetail.host,
-      path: authDetail.path,
-      realm: authDetail.realm,
-      isProxy: authDetail.isProxy,
-    };
-
-    evt = this._createEvent(
-      "usernameandpasswordrequired",
-      detail,
-       true
-    );
-    Cu.exportFunction(
-      function(username, password) {
-        if (callbackCalled) {
-          return;
-        }
-        callbackCalled = true;
-        callback(true, username, password);
-      },
-      evt.detail,
-      { defineAs: "authenticate" }
-    );
-
-    Cu.exportFunction(cancelCallback, evt.detail, { defineAs: "cancel" });
-
-    this._frameElement.dispatchEvent(evt);
-
-    if (!evt.defaultPrevented) {
-      cancelCallback();
-    }
-  },
-
   _sendAsyncMsg(msg, data) {
     try {
       if (!data) {
@@ -297,47 +164,6 @@ BrowserElementParent.prototype = {
     if (this._window.document.hidden) {
       this._ownerVisibilityChange();
     }
-
-    if (!this._domRequestReady) {
-      
-      
-      this._domRequestReady = true;
-      this._runPendingAPICall();
-    }
-  },
-
-  _fireCtxMenuEvent(data) {
-    let detail = data.json;
-    let evtName = detail.msg_name;
-
-    debug("fireCtxMenuEventFromMsg: " + evtName + " " + detail);
-    let evt = this._createEvent(evtName, detail,  true);
-
-    if (detail.contextmenu) {
-      var self = this;
-      Cu.exportFunction(
-        function(id) {
-          self._sendAsyncMsg("fire-ctx-callback", { menuitem: id });
-        },
-        evt.detail,
-        { defineAs: "contextMenuItemSelected" }
-      );
-    }
-
-    
-    
-    
-    return !this._frameElement.dispatchEvent(evt);
-  },
-
-  
-
-
-  _fireProfiledEventFromMsg(data) {
-    if (Services.profiler !== undefined) {
-      Services.profiler.AddMarker(data.json.msg_name);
-    }
-    this._fireEventFromMsg(data);
   },
 
   
@@ -411,51 +237,6 @@ BrowserElementParent.prototype = {
     }
   },
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  _handleCaretStateChanged(data) {
-    let evt = this._createEvent(
-      "caretstatechanged",
-      data.json,
-       false
-    );
-
-    let self = this;
-    function sendDoCommandMsg(cmd) {
-      let data = { command: cmd };
-      self._sendAsyncMsg("copypaste-do-command", data);
-    }
-    Cu.exportFunction(sendDoCommandMsg, evt.detail, {
-      defineAs: "sendDoCommandMsg",
-    });
-
-    this._frameElement.dispatchEvent(evt);
-  },
-
-  _handleScrollViewChange(data) {
-    let evt = this._createEvent(
-      "scrollviewchange",
-      data.json,
-       false
-    );
-    this._frameElement.dispatchEvent(evt);
-  },
-
   _createEvent(evtName, detail, cancelable) {
     
     
@@ -477,184 +258,16 @@ BrowserElementParent.prototype = {
   
 
 
-
-
-
-
-
-
-
-
-
-  _sendAsyncRequest(msgName, args) {
-    let id = "req_" + this._promiseCounter++;
-    let resolve, reject;
-    let p = new this._window.Promise((res, rej) => {
-      resolve = res;
-      reject = rej;
-    });
-    let self = this;
-    let send = function() {
-      if (!self._isAlive()) {
-        return;
-      }
-      if (self._sendAsyncMsg(msgName, { id, args })) {
-        self._pendingPromises[id] = { p, resolve, reject };
-      } else {
-        reject(new this._window.DOMException("fail"));
-      }
-    };
-    if (this._domRequestReady) {
-      send();
-    } else {
-      
-      this._pendingAPICalls.push(send);
-    }
-    return p;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  _gotAsyncResult(data) {
-    let p = this._pendingPromises[data.json.id];
-    delete this._pendingPromises[data.json.id];
-
-    if ("successRv" in data.json) {
-      debug("Successful gotAsyncResult.");
-      let clientObj = Cu.cloneInto(data.json.successRv, this._window);
-      p.resolve(clientObj);
-    } else {
-      debug("Got error in gotAsyncResult.");
-      p.reject(
-        new this._window.DOMException(
-          Cu.cloneInto(data.json.errorMsg, this._window)
-        )
-      );
-    }
-  },
-
-  sendMouseEvent: defineNoReturnMethod(function(
-    type,
-    x,
-    y,
-    button,
-    clickCount,
-    modifiers
-  ) {
-    
-    
-    
-    
-    this._sendAsyncMsg("send-mouse-event", {
-      type,
-      x,
-      y,
-      button,
-      clickCount,
-      modifiers,
-    });
-  }),
-
-  getCanGoBack: definePromiseMethod("get-can-go-back"),
-  getCanGoForward: definePromiseMethod("get-can-go-forward"),
-
-  goBack: defineNoReturnMethod(function() {
-    this._sendAsyncMsg("go-back");
-  }),
-
-  goForward: defineNoReturnMethod(function() {
-    this._sendAsyncMsg("go-forward");
-  }),
-
-  reload: defineNoReturnMethod(function(hardReload) {
-    this._sendAsyncMsg("reload", { hardReload });
-  }),
-
-  stop: defineNoReturnMethod(function() {
-    this._sendAsyncMsg("stop");
-  }),
-
-  
-
-
   _ownerVisibilityChange() {
     this._sendAsyncMsg("owner-visibility-change", {
       visible: !this._window.document.hidden,
     });
   },
 
-  _requestedDOMFullscreen() {
-    this._pendingDOMFullscreen = true;
-    this._windowUtils.remoteFrameFullscreenChanged(this._frameElement);
-  },
-
-  _fullscreenOriginChange(data) {
-    Services.obs.notifyObservers(
-      this._frameElement,
-      "fullscreen-origin-change",
-      data.json.originNoSuffix
-    );
-  },
-
-  _exitDomFullscreen(data) {
-    this._windowUtils.remoteFrameFullscreenReverted();
-  },
-
   _handleOwnerEvent(evt) {
     switch (evt.type) {
       case "visibilitychange":
         this._ownerVisibilityChange();
-        break;
-      case "fullscreenchange":
-        if (!this._window.document.fullscreenElement) {
-          this._sendAsyncMsg("exit-fullscreen");
-        } else if (this._pendingDOMFullscreen) {
-          this._pendingDOMFullscreen = false;
-          this._sendAsyncMsg("entered-fullscreen");
-        }
-        break;
-    }
-  },
-
-  _fireFatalError() {
-    let evt = this._createEvent(
-      "error",
-      { type: "fatal" },
-       false
-    );
-    this._frameElement.dispatchEvent(evt);
-  },
-
-  observe(subject, topic, data) {
-    switch (topic) {
-      case "oop-frameloader-crashed":
-        if (this._isAlive() && subject == this._frameLoader) {
-          this._fireFatalError();
-        }
-        break;
-      case "ask-children-to-execute-copypaste-command":
-        if (this._isAlive() && this._frameElement == subject.wrappedJSObject) {
-          this._sendAsyncMsg("copypaste-do-command", { command: data });
-        }
-        break;
-      case "back-docommand":
-        if (this._isAlive() && this._frameLoader.visible) {
-          this.goBack();
-        }
-        break;
-      default:
-        debug("Unknown topic: " + topic);
         break;
     }
   },

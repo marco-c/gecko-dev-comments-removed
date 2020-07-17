@@ -81,7 +81,7 @@ function StorageSyncService() {
 StorageSyncService._singleton = null;
 
 StorageSyncService.prototype = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIInterfaceRequestor]),
+  QueryInterface: ChromeUtils.generateQI(["nsIInterfaceRequestor"]),
 
   
   

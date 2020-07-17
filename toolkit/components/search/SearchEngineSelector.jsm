@@ -87,7 +87,7 @@ class SearchEngineSelector {
 
 
   constructor(listener) {
-    this.QueryInterface = ChromeUtils.generateQI([Ci.nsIObserver]);
+    this.QueryInterface = ChromeUtils.generateQI(["nsIObserver"]);
     this._remoteConfig = RemoteSettings(SearchUtils.SETTINGS_KEY);
     this._listenerAdded = false;
     this._onConfigurationUpdated = this._onConfigurationUpdated.bind(this);

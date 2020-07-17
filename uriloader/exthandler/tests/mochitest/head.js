@@ -77,8 +77,8 @@ function createMockedObjects(createHandlerApp) {
     
     timeDownloadStarted: Date.now() * 1000,
     QueryInterface: ChromeUtils.generateQI([
-      Ci.nsICancelable,
-      Ci.nsIHelperAppLauncher,
+      "nsICancelable",
+      "nsIHelperAppLauncher",
     ]),
   };
 

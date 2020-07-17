@@ -232,7 +232,7 @@ registerCleanupFunction(function() {
 
 
 const ConsoleObserver = {
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver]),
+  QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
 
   observe: function(subject) {
     const message = subject.wrappedJSObject.arguments[0];

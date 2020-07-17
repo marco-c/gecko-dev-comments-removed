@@ -18,7 +18,7 @@ const gTokenPasswordDialogs = {
     return false; 
   },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsITokenPasswordDialogs]),
+  QueryInterface: ChromeUtils.generateQI(["nsITokenPasswordDialogs"]),
 };
 
 let gMockPrompter = {
@@ -27,14 +27,14 @@ let gMockPrompter = {
     return false;
   },
 
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIPrompt]),
+  QueryInterface: ChromeUtils.generateQI(["nsIPrompt"]),
 };
 
 
 
 let gWindowWatcher = {
   getNewPrompter: () => gMockPrompter,
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIWindowWatcher]),
+  QueryInterface: ChromeUtils.generateQI(["nsIWindowWatcher"]),
 };
 
 add_task(function setup() {

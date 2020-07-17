@@ -295,7 +295,7 @@ function mockPromptService() {
   let promptService = {
     
     _response: 0,
-    QueryInterface: ChromeUtils.generateQI([Ci.nsIPromptService]),
+    QueryInterface: ChromeUtils.generateQI(["nsIPromptService"]),
     confirmEx: () => promptService._response,
   };
 
