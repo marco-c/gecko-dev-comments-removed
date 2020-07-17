@@ -332,7 +332,7 @@ def mozharness_on_generic_worker(config, job, taskdesc):
         "{}/third_party/python/six".format(env['GECKO_PATH']),
     ])
 
-    if taskdesc.get('needs-sccache'):
+    if taskdesc.get('use-sccache'):
         worker['command'] = [
             
             
