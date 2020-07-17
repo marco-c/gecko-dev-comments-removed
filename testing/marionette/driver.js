@@ -1758,22 +1758,13 @@ GeckoDriver.prototype.switchToParentFrame = async function() {
 
 
 GeckoDriver.prototype.switchToFrame = async function(cmd) {
-  let curWindow = assert.open(this.getCurrentWindow());
-  await this._handleUserPrompts();
+  const { element, focus = false, id } = cmd.parameters;
 
-  let { focus = false, id } = cmd.parameters;
+  const curWindow = assert.open(this.getCurrentWindow());
+  await this._handleUserPrompts();
 
   if (typeof id == "number") {
     assert.unsignedShort(id, `Expected id to be unsigned short, got ${id}`);
-  }
-
-  
-  
-  let byFrame;
-  if (typeof cmd.parameters.element == "string") {
-    byFrame = WebElement.fromUUID(cmd.parameters.element, Context.Chrome);
-  } else if (cmd.parameters.element) {
-    byFrame = WebElement.fromJSON(cmd.parameters.element);
   }
 
   const checkLoad = function(win) {
@@ -1797,64 +1788,48 @@ GeckoDriver.prototype.switchToFrame = async function(cmd) {
     let foundFrame = null;
 
     
-    if (typeof id == "undefined" && !byFrame) {
+    let byFrame;
+    if (typeof element == "string") {
+      byFrame = WebElement.fromUUID(element, Context.Chrome);
+    } else if (element) {
+      byFrame = WebElement.fromJSON(element);
+    }
+
+    if (id == null && !byFrame) {
       this.curFrame = null;
-      if (focus) {
-        this.mainFrame.focus();
-      }
-      await checkLoad(curWindow);
-      return;
-    }
-
-    
-    if (byFrame) {
-      let wantedFrame = this.curBrowser.seenEls.get(byFrame);
-
-      
-      if (
-        wantedFrame.tagName == "xul:browser" ||
-        wantedFrame.tagName == "browser"
-      ) {
-        curWindow = wantedFrame.contentWindow;
-        this.curFrame = curWindow;
-        if (focus) {
-          this.curFrame.focus();
-        }
-        await checkLoad(curWindow);
-        return;
-      }
-
-      
-      let frames = curWindow.document.getElementsByTagName("iframe");
-      let numFrames = frames.length;
-      for (let i = 0; i < numFrames; i++) {
-        let wrappedEl = new XPCNativeWrapper(frames[i]);
-        let wrappedWanted = new XPCNativeWrapper(wantedFrame);
-        if (wrappedEl == wrappedWanted) {
-          curWindow = frames[i].contentWindow;
-          this.curFrame = curWindow;
-          if (focus) {
-            this.curFrame.focus();
-          }
-          await checkLoad(curWindow);
-          return;
-        }
-      }
-    }
-
-    if (typeof id == "number") {
+    } else if (typeof id == "number") {
       if (curWindow.frames[id]) {
-        foundFrame = id;
-        let frameEl = curWindow.frames[foundFrame].frameElement;
-        curWindow = frameEl.contentWindow;
-        this.curFrame = curWindow;
-        if (focus) {
-          this.curFrame.focus();
-        }
-        await checkLoad(curWindow);
+        const frameEl = curWindow.frames[id].frameElement;
+        this.curFrame = frameEl.contentWindow;
       } else {
-        throw new NoSuchFrameError(`Unable to locate frame: ${id}`);
+        throw new NoSuchFrameError(`Unable to locate frame with index: ${id}`);
       }
+    } else {
+      const wantedFrame = this.curBrowser.seenEls.get(byFrame);
+
+      
+      if (["browser", "xul:browser"].includes(wantedFrame.tagName)) {
+        this.curFrame = wantedFrame.contentWindow;
+      } else {
+        const frames = curWindow.document.getElementsByTagName("iframe");
+        const wrappedWanted = new XPCNativeWrapper(wantedFrame);
+
+        foundFrame = Array.prototype.find.call(frames, frame => {
+          return new XPCNativeWrapper(frame) === wrappedWanted;
+        });
+        if (foundFrame) {
+          this.curFrame = foundFrame.contentWindow;
+        } else {
+          throw new NoSuchFrameError(`Unable to locate frame: ${byFrame}`);
+        }
+      }
+    }
+
+    const frameWindow = this.curFrame || this.mainFrame;
+    await checkLoad(frameWindow);
+
+    if (focus) {
+      frameWindow.focus();
     }
   } else if (this.context == Context.Content) {
     cmd.commandID = cmd.id;
