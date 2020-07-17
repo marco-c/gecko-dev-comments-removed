@@ -38,7 +38,8 @@ const PerformanceController = {
 
 
 
-  async initialize(targetFront, performanceFront) {
+  async initialize(toolbox, targetFront, performanceFront) {
+    this.toolbox = toolbox;
     this.target = targetFront;
     this.front = performanceFront;
 
