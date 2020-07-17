@@ -2351,20 +2351,7 @@ void HTMLMediaElement::NoSupportedMediaSourceError(
   if (mDecoder) {
     ShutdownDecoder();
   }
-
-  bool isThirdPartyLoad = false;
-  nsresult rv = mSrcAttrTriggeringPrincipal->IsThirdPartyURI(mLoadingSrc,
-                                                             &isThirdPartyLoad);
-  if (NS_SUCCEEDED(rv) && isThirdPartyLoad) {
-    
-    
-    
-    mErrorSink->SetError(MEDIA_ERR_SRC_NOT_SUPPORTED,
-                         "Failed to open media"_ns);
-  } else {
-    mErrorSink->SetError(MEDIA_ERR_SRC_NOT_SUPPORTED, aErrorDetails);
-  }
-
+  mErrorSink->SetError(MEDIA_ERR_SRC_NOT_SUPPORTED, aErrorDetails);
   RemoveMediaTracks();
   ChangeDelayLoadStatus(false);
   UpdateAudioChannelPlayingState();
