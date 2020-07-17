@@ -87,12 +87,6 @@ const processes = {
     },
     {
       
-      path: "XREAppFeat:webcompat@mozilla.org.xpi",
-      condition: !WIN,
-      stat: 1,
-    },
-    {
-      
       path: "XREAppFeat:formautofill@mozilla.org.xpi",
       condition: !WIN,
       ignoreIfUnused: true,
@@ -117,12 +111,6 @@ const processes = {
       condition: WIN,
       stat: 1,
     },
-    {
-      
-      path: "XREAppFeat:webcompat@mozilla.org.xpi",
-      condition: !WIN,
-      stat: 1,
-    },
   ],
   WebExtensions: [
     {
@@ -140,12 +128,6 @@ const processes = {
       
       path: "XCurProcD:",
       condition: WIN,
-      stat: 1,
-    },
-    {
-      
-      path: "XREAppFeat:webcompat@mozilla.org.xpi",
-      condition: !WIN,
       stat: 1,
     },
   ],
