@@ -98,7 +98,7 @@ void CanonicalBrowsingContext::GetCurrentRemoteType(nsACString& aRemoteType,
                                                     ErrorResult& aRv) const {
   
   if (mProcessId == 0) {
-    aRemoteType.Assign(VoidCString());
+    aRemoteType = NOT_REMOTE_TYPE;
     return;
   }
 
@@ -108,7 +108,7 @@ void CanonicalBrowsingContext::GetCurrentRemoteType(nsACString& aRemoteType,
     return;
   }
 
-  aRemoteType.Assign(cp->GetRemoteType());
+  aRemoteType = cp->GetRemoteType();
 }
 
 void CanonicalBrowsingContext::SetOwnerProcessId(uint64_t aProcessId) {

@@ -100,7 +100,7 @@ Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
     return Err(NS_ERROR_UNEXPECTED);
   }
 
-  nsCString remoteType = VoidCString();
+  nsCString remoteType = NOT_REMOTE_TYPE;
 
   
   

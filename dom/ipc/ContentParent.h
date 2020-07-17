@@ -61,6 +61,9 @@
 #define PRIVILEGEDMOZILLA_REMOTE_TYPE "privilegedmozilla"_ns
 
 
+#define NOT_REMOTE_TYPE VoidCString()
+
+
 #define FISSION_WEB_REMOTE_TYPE "webIsolated"_ns
 #define WITH_COOP_COEP_REMOTE_TYPE_PREFIX "webCOOP+COEP="_ns
 #define LARGE_ALLOCATION_REMOTE_TYPE "webLargeAllocation"_ns
