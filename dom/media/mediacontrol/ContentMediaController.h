@@ -71,6 +71,8 @@ class ContentMediaAgent : public IMediaInfoUpdater {
                      MediaSessionAction aAction) override;
   void NotifyMediaFullScreenState(uint64_t aBrowsingContextId,
                                   bool aIsInFullScreen) override;
+  void UpdatePositionState(uint64_t aBrowsingContextId,
+                           const PositionState& aState) override;
 
   
   

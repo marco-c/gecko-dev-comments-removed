@@ -338,6 +338,16 @@ void MediaStatusManager::DisableAction(uint64_t aBrowsingContextId,
   NotifySupportedKeysChangedIfNeeded(aBrowsingContextId);
 }
 
+void MediaStatusManager::UpdatePositionState(uint64_t aBrowsingContextId,
+                                             const PositionState& aState) {
+  
+  if (!mActiveMediaSessionContextId ||
+      *mActiveMediaSessionContextId != aBrowsingContextId) {
+    return;
+  }
+  mPositionStateChangedEvent.Notify(aState);
+}
+
 void MediaStatusManager::NotifySupportedKeysChangedIfNeeded(
     uint64_t aBrowsingContextId) {
   

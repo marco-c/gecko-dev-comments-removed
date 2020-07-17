@@ -116,6 +116,10 @@ class IMediaInfoUpdater {
   
   virtual void NotifyMediaFullScreenState(uint64_t aBrowsingContextId,
                                           bool aIsInFullScreen) = 0;
+
+  
+  virtual void UpdatePositionState(uint64_t aBrowsingContextId,
+                                   const PositionState& aState) = 0;
 };
 
 
@@ -159,6 +163,8 @@ class MediaStatusManager : public IMediaInfoUpdater {
                     MediaSessionAction aAction) override;
   void DisableAction(uint64_t aBrowsingContextId,
                      MediaSessionAction aAction) override;
+  void UpdatePositionState(uint64_t aBrowsingContextId,
+                           const PositionState& aState) override;
 
   
   
@@ -173,6 +179,9 @@ class MediaStatusManager : public IMediaInfoUpdater {
   
   MediaEventSource<MediaMetadataBase>& MetadataChangedEvent() {
     return mMetadataChangedEvent;
+  }
+  MediaEventSource<PositionState>& PositionChangedEvent() {
+    return mPositionStateChangedEvent;
   }
 
   
@@ -247,6 +256,7 @@ class MediaStatusManager : public IMediaInfoUpdater {
   MediaEventProducer<MediaMetadataBase> mMetadataChangedEvent;
   MediaEventProducer<nsTArray<MediaSessionAction>>
       mSupportedActionsChangedEvent;
+  MediaEventProducer<PositionState> mPositionStateChangedEvent;
   MediaPlaybackStatus mPlaybackStatusDelegate;
 };
 
