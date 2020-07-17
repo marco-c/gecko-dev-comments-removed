@@ -1262,12 +1262,6 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
       const VisibleWhiteSpacesData& aVisibleWhiteSpacesData);
 
   
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  DeleteInvisibleASCIIWhiteSpacesInternal();
-
-  
   
   HTMLEditor& mHTMLEditor;
 };
