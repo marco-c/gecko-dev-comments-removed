@@ -244,6 +244,14 @@ nsChangeHint ComputedStyle::CalcStyleDifference(const ComputedStyle& aNewStyle,
     }
   }
 
+  if (HasAuthorSpecifiedBorderOrBackground() !=
+          aNewStyle.HasAuthorSpecifiedBorderOrBackground() &&
+      StyleDisplay()->HasAppearance()) {
+    
+    
+    hint |= nsChangeHint_AllReflowHints | nsChangeHint_RepaintFrame;
+  }
+
   MOZ_ASSERT(NS_IsHintSubset(hint, nsChangeHint_AllHints),
              "Added a new hint without bumping AllHints?");
   return hint & ~nsChangeHint_NeutralChange;
