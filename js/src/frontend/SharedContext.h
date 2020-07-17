@@ -341,6 +341,8 @@ class FunctionBox : public SharedContext {
 
   
   
+  
+  
   JSAtom* atom_ = nullptr;
 
   
@@ -565,14 +567,14 @@ class FunctionBox : public SharedContext {
     atom_ = atom;
     flags_.setInferredName();
     if (isFunctionFieldCopiedToStencil) {
-      copyUpdatedFlags();
+      copyUpdatedAtomAndFlags();
     }
   }
   void setGuessedAtom(JSAtom* atom) {
     atom_ = atom;
     flags_.setGuessedAtom();
     if (isFunctionFieldCopiedToStencil) {
-      copyUpdatedFlags();
+      copyUpdatedAtomAndFlags();
     }
   }
 
@@ -709,7 +711,7 @@ class FunctionBox : public SharedContext {
   
   
   
-  void copyUpdatedFlags();
+  void copyUpdatedAtomAndFlags();
 };
 
 #undef FLAG_GETTER_SETTER

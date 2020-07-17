@@ -359,6 +359,10 @@ class ScriptStencil {
   SourceExtent extent = {};
 
   
+  
+  JSAtom* functionAtom = nullptr;
+
+  
   FunctionFlags functionFlags = {};
 
   
