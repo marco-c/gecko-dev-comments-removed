@@ -10,6 +10,7 @@
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/ComputedTimingFunction.h"  
 #include "mozilla/layers/LayersMessages.h"   
+#include "mozilla/layers/LayersTypes.h"      
 #include "mozilla/TimeStamp.h"               
 #include "mozilla/TimingParams.h"
 #include "X11UndefineNone.h"
@@ -75,6 +76,9 @@ struct AnimationStorageData {
   Maybe<TransformData> mTransformData;
   
   RefPtr<gfx::Path> mCachedMotionPath;
+  
+  
+  LayersId mLayersId;
 
   AnimationStorageData() = default;
   AnimationStorageData(AnimationStorageData&& aOther) = default;

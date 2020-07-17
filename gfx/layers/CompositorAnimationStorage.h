@@ -122,7 +122,8 @@ class CompositorAnimationStorage final {
   
 
 
-  void SetAnimations(uint64_t aId, const AnimationArray& aAnimations);
+  void SetAnimations(uint64_t aId, const LayersId& aLayersId,
+                     const AnimationArray& aAnimations);
 
   
 

@@ -115,7 +115,7 @@ class AnimationHelper {
 
 
   static AnimationStorageData ExtractAnimations(
-      const AnimationArray& aAnimations);
+      const LayersId& aLayersId, const AnimationArray& aAnimations);
 
   
 
