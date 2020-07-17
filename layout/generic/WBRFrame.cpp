@@ -6,7 +6,7 @@
 
 
 
-#include "nsFrame.h"
+#include "nsIFrame.h"
 
 using namespace mozilla;
 

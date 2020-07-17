@@ -60,7 +60,7 @@
 #include "nsAnimationManager.h"
 #include "nsNameSpaceManager.h"  
 #include "nsFlexContainerFrame.h"
-#include "nsFrame.h"
+#include "nsIFrame.h"
 #include "FrameLayerBuilder.h"
 #include "nsViewManager.h"
 #include "nsView.h"

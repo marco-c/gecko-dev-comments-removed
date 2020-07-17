@@ -7,7 +7,7 @@
 
 
 #include "nsAttrValue.h"
-#include "nsFrame.h"
+#include "nsIFrame.h"
 #include "nsDisplayList.h"
 #include "FrameLayerBuilder.h"
 #include "nsPrintfCString.h"

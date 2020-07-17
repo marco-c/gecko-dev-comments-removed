@@ -63,6 +63,7 @@
 #include "nsFrameList.h"
 #include "nsFrameState.h"
 #include "mozilla/ReflowInput.h"
+#include "nsHTMLParts.h"
 #include "nsITheme.h"
 #include "nsLayoutUtils.h"
 #include "nsQueryFrame.h"
@@ -813,13 +814,27 @@ class nsIFrame : public nsQueryFrame {
   friend class nsLineBox;    
   friend class nsContainerFrame;  
                                   
-  friend class nsFrame;           
   template <class Source>
   friend class do_QueryFrameHelper;  
 
   virtual ~nsIFrame();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void operator delete(void* aPtr, size_t sz);
+
  private:
+  
+  void* operator new(size_t sz) noexcept(true);
+
   
   bool HasCSSAnimations();
 
