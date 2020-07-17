@@ -17,7 +17,6 @@
 #include <vector>
 
 #include "base/base_export.h"
-#include "base/bit_cast.h"
 #include "base/compiler_specific.h"
 #include "base/stl_util.h"
 #include "base/strings/string16.h"
@@ -161,6 +160,7 @@ BASE_EXPORT const string16& EmptyString16();
 
 BASE_EXPORT extern const wchar_t kWhitespaceWide[];  
 BASE_EXPORT extern const char16 kWhitespaceUTF16[];  
+BASE_EXPORT extern const char16 kWhitespaceNoCrLfUTF16[];  
 BASE_EXPORT extern const char kWhitespaceASCII[];
 BASE_EXPORT extern const char16 kWhitespaceASCIIAs16[];  
 
@@ -184,11 +184,11 @@ BASE_EXPORT bool RemoveChars(const std::string& input,
 
 BASE_EXPORT bool ReplaceChars(const string16& input,
                               StringPiece16 replace_chars,
-                              const string16& replace_with,
+                              StringPiece16 replace_with,
                               string16* output);
 BASE_EXPORT bool ReplaceChars(const std::string& input,
                               StringPiece replace_chars,
-                              const std::string& replace_with,
+                              StringPiece replace_with,
                               std::string* output);
 
 enum TrimPositions {
@@ -204,10 +204,10 @@ enum TrimPositions {
 
 
 
-BASE_EXPORT bool TrimString(const string16& input,
+BASE_EXPORT bool TrimString(StringPiece16 input,
                             StringPiece16 trim_chars,
                             string16* output);
-BASE_EXPORT bool TrimString(const std::string& input,
+BASE_EXPORT bool TrimString(StringPiece input,
                             StringPiece trim_chars,
                             std::string* output);
 
@@ -229,37 +229,63 @@ BASE_EXPORT void TruncateUTF8ToByteSize(const std::string& input,
 #if defined(WCHAR_T_IS_UTF16)
 
 
+
+
+
+
+
+
+
+
 inline wchar_t* as_writable_wcstr(char16* str) {
-  return bit_cast<wchar_t*>(str);
+  return reinterpret_cast<wchar_t*>(str);
 }
 
 inline wchar_t* as_writable_wcstr(string16& str) {
-  return bit_cast<wchar_t*>(data(str));
+  return reinterpret_cast<wchar_t*>(data(str));
 }
 
 inline const wchar_t* as_wcstr(const char16* str) {
-  return bit_cast<const wchar_t*>(str);
+  return reinterpret_cast<const wchar_t*>(str);
 }
 
 inline const wchar_t* as_wcstr(StringPiece16 str) {
-  return bit_cast<const wchar_t*>(str.data());
+  return reinterpret_cast<const wchar_t*>(str.data());
 }
 
 
 inline char16* as_writable_u16cstr(wchar_t* str) {
-  return bit_cast<char16*>(str);
+  return reinterpret_cast<char16*>(str);
 }
 
 inline char16* as_writable_u16cstr(std::wstring& str) {
-  return bit_cast<char16*>(data(str));
+  return reinterpret_cast<char16*>(data(str));
 }
 
 inline const char16* as_u16cstr(const wchar_t* str) {
-  return bit_cast<const char16*>(str);
+  return reinterpret_cast<const char16*>(str);
 }
 
 inline const char16* as_u16cstr(WStringPiece str) {
-  return bit_cast<const char16*>(str.data());
+  return reinterpret_cast<const char16*>(str.data());
+}
+
+
+
+inline WStringPiece AsWStringPiece(StringPiece16 str) {
+  return WStringPiece(as_wcstr(str.data()), str.size());
+}
+
+inline StringPiece16 AsStringPiece16(WStringPiece str) {
+  return StringPiece16(as_u16cstr(str.data()), str.size());
+}
+
+inline std::wstring AsWString(StringPiece16 str) {
+  return std::wstring(as_wcstr(str.data()), str.size());
+}
+
+inline string16 AsString16(WStringPiece str) {
+  return string16(as_u16cstr(str.data()), str.size());
 }
 #endif  
 
@@ -270,12 +296,12 @@ inline const char16* as_u16cstr(WStringPiece str) {
 
 
 
-BASE_EXPORT TrimPositions TrimWhitespace(const string16& input,
+BASE_EXPORT TrimPositions TrimWhitespace(StringPiece16 input,
                                          TrimPositions positions,
                                          string16* output);
 BASE_EXPORT StringPiece16 TrimWhitespace(StringPiece16 input,
                                          TrimPositions positions);
-BASE_EXPORT TrimPositions TrimWhitespaceASCII(const std::string& input,
+BASE_EXPORT TrimPositions TrimWhitespaceASCII(StringPiece input,
                                               TrimPositions positions,
                                               std::string* output);
 BASE_EXPORT StringPiece TrimWhitespaceASCII(StringPiece input,
@@ -307,16 +333,18 @@ BASE_EXPORT bool ContainsOnlyChars(StringPiece16 input,
 
 
 
-
-
-
-
-
-
-
-
-
 BASE_EXPORT bool IsStringUTF8(StringPiece str);
+
+
+
+BASE_EXPORT bool IsStringUTF8AllowingNoncharacters(StringPiece str);
+
+
+
+
+
+
+
 BASE_EXPORT bool IsStringASCII(StringPiece str);
 BASE_EXPORT bool IsStringASCII(StringPiece16 str);
 #if defined(WCHAR_T_IS_UTF32)
@@ -382,6 +410,10 @@ inline bool IsAsciiLower(Char c) {
 template <typename Char>
 inline bool IsAsciiDigit(Char c) {
   return c >= '0' && c <= '9';
+}
+template <typename Char>
+inline bool IsAsciiPrintable(Char c) {
+  return c >= ' ' && c <= '~';
 }
 
 template <typename Char>
@@ -453,12 +485,10 @@ BASE_EXPORT void ReplaceSubstringsAfterOffset(
 
 
 
-
-
-
-
 BASE_EXPORT char* WriteInto(std::string* str, size_t length_with_null);
 BASE_EXPORT char16* WriteInto(string16* str, size_t length_with_null);
+
+
 
 
 
@@ -505,6 +535,25 @@ BASE_EXPORT std::string ReplaceStringPlaceholders(
 BASE_EXPORT string16 ReplaceStringPlaceholders(const string16& format_string,
                                                const string16& a,
                                                size_t* offset);
+
+#if defined(OS_WIN) && defined(BASE_STRING16_IS_STD_U16STRING)
+BASE_EXPORT TrimPositions TrimWhitespace(WStringPiece input,
+                                         TrimPositions positions,
+                                         std::wstring* output);
+
+BASE_EXPORT WStringPiece TrimWhitespace(WStringPiece input,
+                                        TrimPositions positions);
+
+BASE_EXPORT bool TrimString(WStringPiece input,
+                            WStringPiece trim_chars,
+                            std::wstring* output);
+
+BASE_EXPORT WStringPiece TrimString(WStringPiece input,
+                                    WStringPiece trim_chars,
+                                    TrimPositions positions);
+
+BASE_EXPORT wchar_t* WriteInto(std::wstring* str, size_t length_with_null);
+#endif
 
 }  
 

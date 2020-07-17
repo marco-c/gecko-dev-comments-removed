@@ -21,8 +21,14 @@ ProcessHandle GetCurrentProcessHandle() {
 }
 
 ProcessId GetProcId(ProcessHandle process) {
+  if (process == base::kNullProcessHandle)
+    return 0;
   
-  return GetProcessId(process);
+  
+  ProcessId result = GetProcessId(process);
+  CHECK(result != 0 || GetLastError() != ERROR_INVALID_HANDLE)
+      << "process handle = " << process;
+  return result;
 }
 
 ProcessId GetParentProcessId(ProcessHandle process) {

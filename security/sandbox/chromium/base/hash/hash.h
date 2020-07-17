@@ -2,8 +2,8 @@
 
 
 
-#ifndef BASE_HASH_H_
-#define BASE_HASH_H_
+#ifndef BASE_HASH_HASH_H_
+#define BASE_HASH_HASH_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -13,10 +13,14 @@
 #include <utility>
 
 #include "base/base_export.h"
+#include "base/containers/span.h"
 #include "base/logging.h"
 #include "base/strings/string16.h"
+#include "base/strings/string_piece.h"
 
 namespace base {
+
+
 
 
 
@@ -33,6 +37,18 @@ BASE_EXPORT uint32_t Hash(const string16& str);
 
 
 
+BASE_EXPORT size_t FastHash(base::span<const uint8_t> data);
+inline size_t FastHash(StringPiece str) {
+  return FastHash(as_bytes(make_span(str)));
+}
+
+
+
+
+
+
+
+BASE_EXPORT uint32_t PersistentHash(base::span<const uint8_t> data);
 BASE_EXPORT uint32_t PersistentHash(const void* data, size_t length);
 BASE_EXPORT uint32_t PersistentHash(const std::string& str);
 

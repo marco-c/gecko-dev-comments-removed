@@ -183,6 +183,10 @@ bool IsValidImageSection(HANDLE section,
 UNICODE_STRING* AnsiToUnicode(const char* string);
 
 
+bool NtGetPathFromHandle(HANDLE handle,
+                         std::unique_ptr<wchar_t, NtAllocDeleter>* path);
+
+
 class AutoProtectMemory {
  public:
   AutoProtectMemory()
