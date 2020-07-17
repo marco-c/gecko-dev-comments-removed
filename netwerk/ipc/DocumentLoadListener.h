@@ -318,12 +318,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  bool MaybeHandleLoadErrorWithURIFixup(nsresult aStatus);
-
-  
-  
-  
-  
   
   
   

@@ -9576,10 +9576,6 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
                                                      loadFlags, this, cacheKey,
                                                      uriModified, isXFOError);
     MOZ_ASSERT(channel);
-
-    
-    
-    mAllowKeywordFixup = false;
   } else if (!CreateAndConfigureRealChannelForLoadState(
                  mBrowsingContext, aLoadState, loadInfo, this, this,
                  GetOriginAttributes(), loadFlags, cacheKey, rv,
