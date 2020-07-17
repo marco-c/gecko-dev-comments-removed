@@ -406,6 +406,12 @@ class HttpChannelChild final : public PHttpChannelChild,
   bool mDoDiagnosticAssertWhenOnStopNotCalledOnDestroy = false;
   bool mAsyncOpenSucceeded = false;
   bool mSuccesfullyRedirected = false;
+  bool mRemoteChannelExistedAtCancel = false;
+  bool mEverHadBgChildAtAsyncOpen = false;
+  bool mEverHadBgChildAtConnectParent = false;
+  bool mCreateBackgroundChannelFailed = false;
+  bool mBgInitFailCallbackTriggered = false;
+  bool mCanSendAtCancel = false;
   
   enum BckChildQueueStatus {
     
