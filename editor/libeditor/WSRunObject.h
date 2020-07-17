@@ -950,8 +950,12 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
   MOZ_CAN_RUN_SCRIPT nsresult DeleteWSForward();
 
   
-  
-  MOZ_CAN_RUN_SCRIPT nsresult AdjustWhiteSpace();
+
+
+
+  template <typename EditorDOMPointType>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult NormalizeWhiteSpacesAround(
+      HTMLEditor& aHTMLEditor, const EditorDOMPointType& aSacnStartPoint);
 
  protected:
   MOZ_CAN_RUN_SCRIPT nsresult PrepareToDeleteRangePriv(WSRunObject* aEndObject);
