@@ -536,6 +536,7 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
         
         
         
+        
         EditorRawDOMPoint pointToAdjust(GetCompositionEndPoint());
         if (!pointToAdjust.IsSet()) {
           
@@ -544,9 +545,12 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
             return NS_ERROR_FAILURE;
           }
         }
-        rv = WSRunObject::NormalizeVisibleWhiteSpacesAt(*this, pointToAdjust);
+        rv = WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
+            *this, pointToAdjust);
         if (NS_FAILED(rv)) {
-          NS_WARNING("WSRunObject::NormalizeVisibleWhiteSpacesAt() failed");
+          NS_WARNING(
+              "WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt() "
+              "failed");
           return rv;
         }
 
@@ -558,7 +562,7 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
                 !TopLevelEditSubActionDataRef().mSelectedRange->IsSet())) {
           return NS_ERROR_FAILURE;
         }
-        rv = WSRunObject::NormalizeVisibleWhiteSpacesAt(
+        rv = WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
             *this,
             TopLevelEditSubActionDataRef().mSelectedRange->StartRawPoint());
         if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
@@ -566,19 +570,22 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
         }
         NS_WARNING_ASSERTION(
             NS_SUCCEEDED(rv),
-            "WSRunObject::NormalizeVisibleWhiteSpacesAt() failed, but ignored");
+            "WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt() "
+            "failed, but ignored");
         
         
         if (TopLevelEditSubActionDataRef().mSelectedRange->IsCollapsed()) {
-          nsresult rv = WSRunObject::NormalizeVisibleWhiteSpacesAt(
-              *this,
-              TopLevelEditSubActionDataRef().mSelectedRange->EndRawPoint());
+          nsresult rv =
+              WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
+                  *this,
+                  TopLevelEditSubActionDataRef().mSelectedRange->EndRawPoint());
           if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
             return NS_ERROR_EDITOR_DESTROYED;
           }
-          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                               "WSRunObject::NormalizeVisibleWhiteSpacesAt() "
-                               "failed, but ignored");
+          NS_WARNING_ASSERTION(
+              NS_SUCCEEDED(rv),
+              "WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt() "
+              "failed, but ignored");
         }
         break;
       }
@@ -1494,11 +1501,11 @@ EditActionResult HTMLEditor::HandleInsertText(
     if (!compositionEndPoint.IsSet()) {
       compositionEndPoint = compositionStartPoint;
     }
-    nsresult rv = WSRunObject::ReplaceText(
+    nsresult rv = WhiteSpaceVisibilityKeeper::ReplaceText(
         *this, aInsertionString,
         EditorDOMRange(compositionStartPoint, compositionEndPoint));
     if (NS_FAILED(rv)) {
-      NS_WARNING("WSRunObject::ReplaceText() failed");
+      NS_WARNING("WhiteSpaceVisibilityKeeper::ReplaceText() failed");
       return EditActionHandled(rv);
     }
 
@@ -1636,10 +1643,10 @@ EditActionResult HTMLEditor::HandleInsertText(
         
         if (subStr.Equals(tabStr)) {
           EditorRawDOMPoint pointAfterInsertedSpaces;
-          nsresult rv = WSRunObject::InsertText(*this, spacesStr, currentPoint,
-                                                &pointAfterInsertedSpaces);
+          nsresult rv = WhiteSpaceVisibilityKeeper::InsertText(
+              *this, spacesStr, currentPoint, &pointAfterInsertedSpaces);
           if (NS_FAILED(rv)) {
-            NS_WARNING("WSRunObject::InsertText() failed");
+            NS_WARNING("WhiteSpaceVisibilityKeeper::InsertText() failed");
             return EditActionHandled(rv);
           }
           pos++;
@@ -1650,9 +1657,9 @@ EditActionResult HTMLEditor::HandleInsertText(
         
         else if (subStr.Equals(newlineStr)) {
           Result<RefPtr<Element>, nsresult> result =
-              WSRunObject::InsertBRElement(*this, currentPoint);
+              WhiteSpaceVisibilityKeeper::InsertBRElement(*this, currentPoint);
           if (result.isErr()) {
-            NS_WARNING("WSRunObject::InsertBRElement() failed");
+            NS_WARNING("WhiteSpaceVisibilityKeeper::InsertBRElement() failed");
             return EditActionHandled(result.inspectErr());
           }
           pos++;
@@ -1675,10 +1682,10 @@ EditActionResult HTMLEditor::HandleInsertText(
               "Perhaps, newBRElement has been moved or removed unexpectedly");
         } else {
           EditorRawDOMPoint pointAfterInsertedString;
-          nsresult rv = WSRunObject::InsertText(*this, subStr, currentPoint,
-                                                &pointAfterInsertedString);
+          nsresult rv = WhiteSpaceVisibilityKeeper::InsertText(
+              *this, subStr, currentPoint, &pointAfterInsertedString);
           if (NS_FAILED(rv)) {
-            NS_WARNING("WSRunObject::InsertText() failed");
+            NS_WARNING("WhiteSpaceVisibilityKeeper::InsertText() failed");
             return EditActionHandled(rv);
           }
           MOZ_ASSERT(pointAfterInsertedString.IsSet());
@@ -2077,9 +2084,9 @@ nsresult HTMLEditor::InsertBRElement(const EditorDOMPoint& aPointToBreak) {
       pointToBreak = splitLinkNodeResult.SplitPoint();
     }
     Result<RefPtr<Element>, nsresult> result =
-        WSRunObject::InsertBRElement(*this, pointToBreak);
+        WhiteSpaceVisibilityKeeper::InsertBRElement(*this, pointToBreak);
     if (result.isErr()) {
-      NS_WARNING("WSRunObject::InsertBRElement() failed");
+      NS_WARNING("WhiteSpaceVisibilityKeeper::InsertBRElement() failed");
       return result.inspectErr();
     }
     brElement = result.unwrap();
@@ -2616,16 +2623,19 @@ EditActionResult HTMLEditor::HandleDeleteCollapsedSelectionAtWhiteSpaces(
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (aDirectionAndAmount == nsIEditor::eNext) {
-    nsresult rv =
-        WSRunObject::DeleteInclusiveNextWhiteSpace(*this, aPointToDelete);
+    nsresult rv = WhiteSpaceVisibilityKeeper::DeleteInclusiveNextWhiteSpace(
+        *this, aPointToDelete);
     if (NS_FAILED(rv)) {
-      NS_WARNING("WSRunObject::DeleteInclusiveNextWhiteSpace() failed");
+      NS_WARNING(
+          "WhiteSpaceVisibilityKeeper::DeleteInclusiveNextWhiteSpace() failed");
       return EditActionHandled(rv);
     }
   } else {
-    nsresult rv = WSRunObject::DeletePreviousWhiteSpace(*this, aPointToDelete);
+    nsresult rv = WhiteSpaceVisibilityKeeper::DeletePreviousWhiteSpace(
+        *this, aPointToDelete);
     if (NS_FAILED(rv)) {
-      NS_WARNING("WSRunObject::DeletePreviousWhiteSpace() failed");
+      NS_WARNING(
+          "WhiteSpaceVisibilityKeeper::DeletePreviousWhiteSpace() failed");
       return EditActionHandled(rv);
     }
   }
@@ -2672,13 +2682,13 @@ EditActionResult HTMLEditor::HandleDeleteCollapsedSelectionAtTextNode(
     startToDelete = range->StartRef();
     endToDelete = range->EndRef();
   }
-  nsresult rv =
-      WSRunObject::PrepareToDeleteRange(*this, &startToDelete, &endToDelete);
+  nsresult rv = WhiteSpaceVisibilityKeeper::PrepareToDeleteRange(
+      *this, &startToDelete, &endToDelete);
   if (NS_WARN_IF(Destroyed())) {
     return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
   }
   if (NS_FAILED(rv)) {
-    NS_WARNING("WSRunObject::PrepareToDeleteRange() failed");
+    NS_WARNING("WhiteSpaceVisibilityKeeper::PrepareToDeleteRange() failed");
     return EditActionResult(rv);
   }
   if (MaybeHasMutationEventListeners(
@@ -2853,13 +2863,13 @@ EditActionResult HTMLEditor::HandleDeleteCollapsedSelectionAtAtomicContent(
       }
 
       
-      nsresult rv = WSRunObject::PrepareToDeleteNode(
+      nsresult rv = WhiteSpaceVisibilityKeeper::PrepareToDeleteNode(
           *this, MOZ_KnownLive(forwardScanFromCaretResult.BRElementPtr()));
       if (NS_WARN_IF(Destroyed())) {
         return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
       }
       if (NS_FAILED(rv)) {
-        NS_WARNING("WSRunObject::PrepareToDeleteNode() failed");
+        NS_WARNING("WhiteSpaceVisibilityKeeper::PrepareToDeleteNode() failed");
         return EditActionHandled(rv);
       }
       rv = DeleteNodeWithTransaction(
@@ -2876,13 +2886,13 @@ EditActionResult HTMLEditor::HandleDeleteCollapsedSelectionAtAtomicContent(
 
   
   
-  nsresult rv =
-      WSRunObject::PrepareToDeleteNode(*this, MOZ_KnownLive(&aAtomicContent));
+  nsresult rv = WhiteSpaceVisibilityKeeper::PrepareToDeleteNode(
+      *this, MOZ_KnownLive(&aAtomicContent));
   if (NS_WARN_IF(Destroyed())) {
     return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
   }
   if (NS_FAILED(rv)) {
-    NS_WARNING("WSRunObject::PrepareToDeleteNode() failed");
+    NS_WARNING("WhiteSpaceVisibilityKeeper::PrepareToDeleteNode() failed");
     return EditActionResult(rv);
   }
   
@@ -3187,13 +3197,13 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
   
   if (!IsPlaintextEditor()) {
     AutoTransactionsConserveSelection dontChangeMySelection(*this);
-    nsresult rv = WSRunObject::PrepareToDeleteRange(*this, &firstRangeStart,
-                                                    &firstRangeEnd);
+    nsresult rv = WhiteSpaceVisibilityKeeper::PrepareToDeleteRange(
+        *this, &firstRangeStart, &firstRangeEnd);
     if (NS_WARN_IF(Destroyed())) {
       return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
     }
     if (NS_FAILED(rv)) {
-      NS_WARNING("WSRunObject::PrepareToDeleteRange() failed");
+      NS_WARNING("WhiteSpaceVisibilityKeeper::PrepareToDeleteRange() failed");
       return EditActionResult(rv);
     }
     if (MaybeHasMutationEventListeners(
@@ -4283,24 +4293,24 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
         advanced,
         "Failed to advance offset to after child of rightBlockElement, "
         "leftBlockElement is a descendant of the child");
-    nsresult rv = WSRunObject::DeleteInvisibleASCIIWhiteSpaces(
+    nsresult rv = WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces(
         *this, EditorDOMPoint::AtEndOf(leftBlockElement));
     if (NS_FAILED(rv)) {
       NS_WARNING(
-          "WSRunObject::DeleteInvisibleASCIIWhiteSpaces() failed at left "
-          "block");
+          "WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces() "
+          "failed at left block");
       return EditActionIgnored(rv);
     }
 
     {
       
       AutoTrackDOMPoint tracker(RangeUpdaterRef(), &atRightBlockChild);
-      nsresult rv = WSRunObject::DeleteInvisibleASCIIWhiteSpaces(
+      nsresult rv = WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces(
           *this, atRightBlockChild);
       if (NS_FAILED(rv)) {
         NS_WARNING(
-            "WSRunObject::DeleteInvisibleASCIIWhiteSpaces() failed at right "
-            "block child");
+            "WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces() "
+            "failed at right block child");
         return EditActionIgnored(rv);
       }
 
@@ -4388,12 +4398,12 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
                                   &atLeftBlockChild)) {
     MOZ_ASSERT(leftBlockElement == atLeftBlockChild.GetContainer());
 
-    nsresult rv = WSRunObject::DeleteInvisibleASCIIWhiteSpaces(
+    nsresult rv = WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces(
         *this, EditorDOMPoint(rightBlockElement, 0));
     if (NS_FAILED(rv)) {
       NS_WARNING(
-          "WSRunObject::DeleteInvisibleASCIIWhiteSpaces() failed at right "
-          "block");
+          "WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces() "
+          "failed at right block");
       return EditActionIgnored(rv);
     }
 
@@ -4401,12 +4411,12 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
       
       
       AutoTrackDOMPoint tracker(RangeUpdaterRef(), &atLeftBlockChild);
-      rv = WSRunObject::DeleteInvisibleASCIIWhiteSpaces(
+      rv = WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces(
           *this, EditorDOMPoint(leftBlockElement, atLeftBlockChild.Offset()));
       if (NS_FAILED(rv)) {
         NS_WARNING(
-            "WSRunObject::DeleteInvisibleASCIIWhiteSpaces() failed at left "
-            "block child");
+            "WhiteSpaceVisibilityKeeper::DeleteInvisibleASCIIWhiteSpaces() "
+            "failed at left block child");
         return EditActionIgnored(rv);
       }
       
@@ -4541,10 +4551,10 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
   
 
   
-  nsresult rv = WSRunObject::PrepareToJoinBlocks(*this, *leftBlockElement,
-                                                 *rightBlockElement);
+  nsresult rv = WhiteSpaceVisibilityKeeper::PrepareToJoinBlocks(
+      *this, *leftBlockElement, *rightBlockElement);
   if (NS_FAILED(rv)) {
-    NS_WARNING("WSRunObject::PrepareToJoinBlocks() failed");
+    NS_WARNING("WhiteSpaceVisibilityKeeper::PrepareToJoinBlocks() failed");
     return EditActionIgnored(rv);
   }
   
@@ -9293,19 +9303,20 @@ nsresult HTMLEditor::HandleInsertParagraphInHeadingElement(Element& aHeader,
 
   
   nsCOMPtr<nsINode> node = &aNode;
-  nsresult rv = WSRunObject::PrepareToSplitAcrossBlocks(*this, address_of(node),
-                                                        &aOffset);
+  nsresult rv = WhiteSpaceVisibilityKeeper::PrepareToSplitAcrossBlocks(
+      *this, address_of(node), &aOffset);
   if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
   if (NS_FAILED(rv)) {
-    NS_WARNING("WSRunObject::PrepareToSplitAcrossBlocks() failed");
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::PrepareToSplitAcrossBlocks() failed");
     return rv;
   }
   if (!node->IsContent()) {
     NS_WARNING(
-        "WSRunObject::PrepareToSplitAcrossBlocks() returned Document or "
-        "something non-content node");
+        "WhiteSpaceVisibilityKeeper::PrepareToSplitAcrossBlocks() returned "
+        "Document or something non-content node");
     return NS_ERROR_FAILURE;
   }
 
@@ -9601,19 +9612,20 @@ nsresult HTMLEditor::SplitParagraph(
 
   nsCOMPtr<nsINode> selNode = aStartOfRightNode.GetContainer();
   int32_t selOffset = aStartOfRightNode.Offset();
-  nsresult rv = WSRunObject::PrepareToSplitAcrossBlocks(
+  nsresult rv = WhiteSpaceVisibilityKeeper::PrepareToSplitAcrossBlocks(
       *this, address_of(selNode), &selOffset);
   if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
   if (NS_FAILED(rv)) {
-    NS_WARNING("WSRunObject::PrepareToSplitAcrossBlocks() failed");
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::PrepareToSplitAcrossBlocks() failed");
     return rv;
   }
   if (!selNode->IsContent()) {
     NS_WARNING(
-        "WSRunObject::PrepareToSplitAcrossBlocks() returned Document or "
-        "something non-content node");
+        "WhiteSpaceVisibilityKeeper::PrepareToSplitAcrossBlocks() returned "
+        "Document or something non-content node");
     return NS_ERROR_FAILURE;
   }
 
@@ -9803,19 +9815,20 @@ nsresult HTMLEditor::HandleInsertParagraphInListItemElement(Element& aListItem,
   
   
   nsCOMPtr<nsINode> selNode = &aNode;
-  nsresult rv = WSRunObject::PrepareToSplitAcrossBlocks(
+  nsresult rv = WhiteSpaceVisibilityKeeper::PrepareToSplitAcrossBlocks(
       *this, address_of(selNode), &aOffset);
   if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
   if (NS_FAILED(rv)) {
-    NS_WARNING("WSRunObject::PrepareToSplitAcrossBlocks() failed");
+    NS_WARNING(
+        "WhiteSpaceVisibilityKeeper::PrepareToSplitAcrossBlocks() failed");
     return rv;
   }
   if (!selNode->IsContent()) {
     NS_WARNING(
-        "WSRunObject::PrepareToSplitAcrossBlocks() returned document node or "
-        "something non-content node");
+        "WhiteSpaceVisibilityKeeper::PrepareToSplitAcrossBlocks() returned "
+        "document node or something non-content node");
     return NS_ERROR_FAILURE;
   }
 

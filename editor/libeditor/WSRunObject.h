@@ -22,18 +22,6 @@
 
 namespace mozilla {
 
-
-
-
-
-
-
-
-
-
-
-
-
 class WSRunScanner;
 
 
@@ -267,7 +255,7 @@ class MOZ_STACK_CLASS WSScanResult final {
   WSType mReason;
 };
 
-class WSRunObject;
+class WhiteSpaceVisibilityKeeper;
 
 class MOZ_STACK_CLASS WSRunScanner final {
  public:
@@ -1077,10 +1065,17 @@ class MOZ_STACK_CLASS WSRunScanner final {
  private:
   TextFragmentData mTextFragmentDataAtStart;
 
-  friend class WSRunObject;
+  friend class WhiteSpaceVisibilityKeeper;
 };
 
-class WSRunObject final {
+
+
+
+
+
+
+
+class WhiteSpaceVisibilityKeeper final {
  private:
   using AutoTransactionsConserveSelection =
       EditorBase::AutoTransactionsConserveSelection;
@@ -1090,9 +1085,10 @@ class WSRunObject final {
   using VisibleWhiteSpacesData = WSRunScanner::VisibleWhiteSpacesData;
 
  public:
-  WSRunObject() = delete;
-  explicit WSRunObject(const WSRunObject& aOther) = delete;
-  WSRunObject(WSRunObject&& aOther) = delete;
+  WhiteSpaceVisibilityKeeper() = delete;
+  explicit WhiteSpaceVisibilityKeeper(
+      const WhiteSpaceVisibilityKeeper& aOther) = delete;
+  WhiteSpaceVisibilityKeeper(WhiteSpaceVisibilityKeeper&& aOther) = delete;
 
   
 
@@ -1173,9 +1169,9 @@ class WSRunObject final {
       HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
       const EditorDOMPointType& aPointToInsert,
       EditorRawDOMPoint* aPointAfterInsertedString = nullptr) {
-    return WSRunObject::ReplaceText(aHTMLEditor, aStringToInsert,
-                                    EditorDOMRange(aPointToInsert),
-                                    aPointAfterInsertedString);
+    return WhiteSpaceVisibilityKeeper::ReplaceText(
+        aHTMLEditor, aStringToInsert, EditorDOMRange(aPointToInsert),
+        aPointAfterInsertedString);
   }
 
   
