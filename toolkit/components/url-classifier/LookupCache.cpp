@@ -421,7 +421,7 @@ bool LookupCache::IsCanonicalizedIP(const nsACString& aHost) {
 
 
 
-nsresult LookupCache::GetLookupWhitelistFragments(
+nsresult LookupCache::GetLookupEntitylistFragments(
     const nsACString& aSpec, nsTArray<nsCString>* aFragments) {
   aFragments->Clear();
 

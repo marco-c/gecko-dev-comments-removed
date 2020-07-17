@@ -35,8 +35,8 @@ class UrlClassifierFeatureFactory final {
   static void GetFeatureNames(nsTArray<nsCString>& aArray);
 
   static already_AddRefed<nsIUrlClassifierFeature> CreateFeatureWithTables(
-      const nsACString& aName, const nsTArray<nsCString>& aBlacklistTables,
-      const nsTArray<nsCString>& aWhitelistTables);
+      const nsACString& aName, const nsTArray<nsCString>& aBlocklistTables,
+      const nsTArray<nsCString>& aEntitylistTables);
 
   
   static bool IsClassifierBlockingErrorCode(nsresult aError);

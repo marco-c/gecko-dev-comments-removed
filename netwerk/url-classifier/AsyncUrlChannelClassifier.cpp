@@ -136,8 +136,8 @@ const nsTArray<nsCString>& URIData::Fragments() {
   if (mFragments.IsEmpty()) {
     nsresult rv;
 
-    if (mURIType == nsIUrlClassifierFeature::pairwiseWhitelistURI) {
-      rv = LookupCache::GetLookupWhitelistFragments(mURISpec, &mFragments);
+    if (mURIType == nsIUrlClassifierFeature::pairwiseEntitylistURI) {
+      rv = LookupCache::GetLookupEntitylistFragments(mURISpec, &mFragments);
     } else {
       rv = LookupCache::GetLookupFragments(mURISpec, &mFragments);
     }
@@ -261,8 +261,8 @@ class FeatureData {
   enum State {
     eUnclassified,
     eNoMatch,
-    eMatchBlacklist,
-    eMatchWhitelist,
+    eMatchBlocklist,
+    eMatchEntitylist,
   };
 
  public:
@@ -285,8 +285,8 @@ class FeatureData {
   State mState;
   nsCOMPtr<nsIUrlClassifierFeature> mFeature;
 
-  nsTArray<RefPtr<TableData>> mBlacklistTables;
-  nsTArray<RefPtr<TableData>> mWhitelistTables;
+  nsTArray<RefPtr<TableData>> mBlocklistTables;
+  nsTArray<RefPtr<TableData>> mEntitylistTables;
 
   
   nsCString mHostInPrefTables[2];
@@ -313,13 +313,13 @@ nsresult FeatureData::Initialize(FeatureTask* aTask, nsIChannel* aChannel,
   mFeature = aFeature;
 
   nsresult rv = InitializeList(
-      aTask, aChannel, nsIUrlClassifierFeature::blacklist, mBlacklistTables);
+      aTask, aChannel, nsIUrlClassifierFeature::blocklist, mBlocklistTables);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  rv = InitializeList(aTask, aChannel, nsIUrlClassifierFeature::whitelist,
-                      mWhitelistTables);
+  rv = InitializeList(aTask, aChannel, nsIUrlClassifierFeature::entitylist,
+                      mEntitylistTables);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -337,54 +337,54 @@ void FeatureData::DoLookup(nsUrlClassifierDBServiceWorker* aWorkerClassifier) {
   
   
   
-  if (!mHostInPrefTables[nsIUrlClassifierFeature::whitelist].IsEmpty()) {
-    UC_LOG(("FeatureData::DoLookup[%p] - whitelisted by pref", this));
-    mState = eMatchWhitelist;
+  if (!mHostInPrefTables[nsIUrlClassifierFeature::entitylist].IsEmpty()) {
+    UC_LOG(("FeatureData::DoLookup[%p] - entitylisted by pref", this));
+    mState = eMatchEntitylist;
     return;
   }
 
   
 
-  bool isBlacklisted =
-      !mHostInPrefTables[nsIUrlClassifierFeature::blacklist].IsEmpty();
+  bool isBlocklisted =
+      !mHostInPrefTables[nsIUrlClassifierFeature::blocklist].IsEmpty();
 
-  UC_LOG(("FeatureData::DoLookup[%p] - blacklisted by pref: %d", this,
-          isBlacklisted));
+  UC_LOG(("FeatureData::DoLookup[%p] - blocklisted by pref: %d", this,
+          isBlocklisted));
 
-  if (isBlacklisted == false) {
+  if (isBlocklisted == false) {
     
     
     
-    for (TableData* tableData : mBlacklistTables) {
+    for (TableData* tableData : mBlocklistTables) {
       if (tableData->DoLookup(aWorkerClassifier)) {
-        isBlacklisted = true;
+        isBlocklisted = true;
         break;
       }
     }
   }
 
-  UC_LOG(("FeatureData::DoLookup[%p] - blacklisted before whitelisting: %d",
-          this, isBlacklisted));
+  UC_LOG(("FeatureData::DoLookup[%p] - blocklisted before entitylisting: %d",
+          this, isBlocklisted));
 
-  if (!isBlacklisted) {
+  if (!isBlocklisted) {
     mState = eNoMatch;
     return;
   }
 
   
 
-  for (TableData* tableData : mWhitelistTables) {
+  for (TableData* tableData : mEntitylistTables) {
     
     
     if (tableData->DoLookup(aWorkerClassifier)) {
-      UC_LOG(("FeatureData::DoLookup[%p] - whitelisted by table", this));
-      mState = eMatchWhitelist;
+      UC_LOG(("FeatureData::DoLookup[%p] - entitylisted by table", this));
+      mState = eMatchEntitylist;
       return;
     }
   }
 
-  UC_LOG(("FeatureData::DoLookup[%p] - blacklisted", this));
-  mState = eMatchBlacklist;
+  UC_LOG(("FeatureData::DoLookup[%p] - blocklisted", this));
+  mState = eMatchBlocklist;
 }
 
 bool FeatureData::MaybeCompleteClassification(nsIChannel* aChannel) {
@@ -403,16 +403,16 @@ bool FeatureData::MaybeCompleteClassification(nsIChannel* aChannel) {
            this));
       return true;
 
-    case eMatchWhitelist:
+    case eMatchEntitylist:
       UC_LOG(
-          ("FeatureData::MaybeCompleteClassification[%p] - whitelisted. Let's "
+          ("FeatureData::MaybeCompleteClassification[%p] - entitylisted. Let's "
            "move on",
            this));
       return true;
 
-    case eMatchBlacklist:
+    case eMatchBlocklist:
       UC_LOG(
-          ("FeatureData::MaybeCompleteClassification[%p] - blacklisted", this));
+          ("FeatureData::MaybeCompleteClassification[%p] - blocklisted", this));
       break;
 
     case eUnclassified:
@@ -420,11 +420,11 @@ bool FeatureData::MaybeCompleteClassification(nsIChannel* aChannel) {
       break;
   }
 
-  MOZ_ASSERT(mState == eMatchBlacklist);
+  MOZ_ASSERT(mState == eMatchBlocklist);
 
   
-  nsAutoCString skipList;
-  nsresult rv = mFeature->GetSkipHostList(skipList);
+  nsAutoCString exceptionList;
+  nsresult rv = mFeature->GetExceptionHostList(exceptionList);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     UC_LOG(
         ("FeatureData::MaybeCompleteClassification[%p] - error. Let's move on",
@@ -432,28 +432,29 @@ bool FeatureData::MaybeCompleteClassification(nsIChannel* aChannel) {
     return true;
   }
 
-  if (!mBlacklistTables.IsEmpty() &&
-      nsContentUtils::IsURIInList(mBlacklistTables[0]->URI(), skipList)) {
+  if (!mBlocklistTables.IsEmpty() &&
+      nsContentUtils::IsURIInList(mBlocklistTables[0]->URI(), exceptionList)) {
     UC_LOG(
-        ("FeatureData::MaybeCompleteClassification[%p] - uri found in skiplist",
+        ("FeatureData::MaybeCompleteClassification[%p] - uri found in "
+         "exceptionlist",
          this));
     return true;
   }
 
   nsTArray<nsCString> list;
   nsTArray<nsCString> hashes;
-  if (!mHostInPrefTables[nsIUrlClassifierFeature::blacklist].IsEmpty()) {
-    list.AppendElement(mHostInPrefTables[nsIUrlClassifierFeature::blacklist]);
+  if (!mHostInPrefTables[nsIUrlClassifierFeature::blocklist].IsEmpty()) {
+    list.AppendElement(mHostInPrefTables[nsIUrlClassifierFeature::blocklist]);
 
     
     
     Completion complete;
     complete.FromPlaintext(
-        mHostInPrefTables[nsIUrlClassifierFeature::blacklist]);
+        mHostInPrefTables[nsIUrlClassifierFeature::blocklist]);
     hashes.AppendElement(complete.ToString());
   }
 
-  for (TableData* tableData : mBlacklistTables) {
+  for (TableData* tableData : mBlocklistTables) {
     if (tableData->MatchState() == TableData::eMatch) {
       list.AppendElement(tableData->Table());
 

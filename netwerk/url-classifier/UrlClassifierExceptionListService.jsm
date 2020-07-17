@@ -2,7 +2,7 @@
 
 
 
-this.UrlClassifierSkipListService = function() {};
+this.UrlClassifierExceptionListService = function() {};
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
@@ -71,18 +71,20 @@ class Feature {
 
     let entriesAsString = entries.join(",").toLowerCase();
     if (observer) {
-      observer.onSkipListUpdate(entriesAsString);
+      observer.onExceptionListUpdate(entriesAsString);
     } else {
       for (let obs of this.observers) {
-        obs.onSkipListUpdate(entriesAsString);
+        obs.onExceptionListUpdate(entriesAsString);
       }
     }
   }
 }
 
-UrlClassifierSkipListService.prototype = {
+UrlClassifierExceptionListService.prototype = {
   classID: Components.ID("{b9f4fd03-9d87-4bfd-9958-85a821750ddc}"),
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIUrlClassifierSkipListService]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIUrlClassifierExceptionListService,
+  ]),
 
   features: {},
   _initialized: false,
@@ -131,7 +133,7 @@ UrlClassifierSkipListService.prototype = {
     }
   },
 
-  registerAndRunSkipListObserver(feature, prefName, observer) {
+  registerAndRunExceptionListObserver(feature, prefName, observer) {
     
     
     
@@ -153,7 +155,7 @@ UrlClassifierSkipListService.prototype = {
     this.features[feature].addAndRunObserver(observer);
   },
 
-  unregisterSkipListObserver(feature, observer) {
+  unregisterExceptionListObserver(feature, observer) {
     if (!this.features[feature]) {
       return;
     }
@@ -167,4 +169,4 @@ UrlClassifierSkipListService.prototype = {
   },
 };
 
-var EXPORTED_SYMBOLS = ["UrlClassifierSkipListService"];
+var EXPORTED_SYMBOLS = ["UrlClassifierExceptionListService"];

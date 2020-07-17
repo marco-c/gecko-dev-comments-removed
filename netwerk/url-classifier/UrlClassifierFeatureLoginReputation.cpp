@@ -91,10 +91,10 @@ UrlClassifierFeatureLoginReputation::GetURIByListType(
   NS_ENSURE_ARG_POINTER(aChannel);
   NS_ENSURE_ARG_POINTER(aURIType);
   NS_ENSURE_ARG_POINTER(aURI);
-  MOZ_ASSERT(aListType == nsIUrlClassifierFeature::whitelist,
+  MOZ_ASSERT(aListType == nsIUrlClassifierFeature::entitylist,
              "UrlClassifierFeatureLoginReputation is meant to be used just to "
-             "whitelist URLs");
-  *aURIType = nsIUrlClassifierFeature::URIType::whitelistURI;
+             "entitylist URLs");
+  *aURIType = nsIUrlClassifierFeature::URIType::entitylistURI;
   return aChannel->GetURI(aURI);
 }
 

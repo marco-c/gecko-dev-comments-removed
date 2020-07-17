@@ -34,10 +34,11 @@ function waitForEvent(element, eventName) {
 }
 
 add_task(async function test_list_changes() {
-  let skipListService = Cc[
-    "@mozilla.org/url-classifier/skip-list-service;1"
-  ].getService(Ci.nsIUrlClassifierSkipListService);
+  let exceptionListService = Cc[
+    "@mozilla.org/url-classifier/exception-list-service;1"
+  ].getService(Ci.nsIUrlClassifierExceptionListService);
 
+  
   
   Services.prefs.setStringPref(FEATURE_TRACKING_PREF_NAME, "");
 
@@ -61,7 +62,7 @@ add_task(async function test_list_changes() {
   await db.importChanges({}, 42, records);
   let promise = waitForEvent(updateEvent, "update");
 
-  skipListService.registerAndRunSkipListObserver(
+  exceptionListService.registerAndRunExceptionListObserver(
     FEATURE_TRACKING_NAME,
     FEATURE_TRACKING_PREF_NAME,
     obs
@@ -134,8 +135,11 @@ add_task(async function test_list_changes() {
     "Has several items in the list"
   );
 
-  skipListService.unregisterSkipListObserver(FEATURE_TRACKING_NAME, obs);
-  skipListService.clear();
+  exceptionListService.unregisterExceptionListObserver(
+    FEATURE_TRACKING_NAME,
+    obs
+  );
+  exceptionListService.clear();
 
   await db.clear();
 });
@@ -145,10 +149,11 @@ add_task(async function test_list_changes() {
 
 
 add_task(async function test_list_init_data() {
-  let skipListService = Cc[
-    "@mozilla.org/url-classifier/skip-list-service;1"
-  ].getService(Ci.nsIUrlClassifierSkipListService);
+  let exceptionListService = Cc[
+    "@mozilla.org/url-classifier/exception-list-service;1"
+  ].getService(Ci.nsIUrlClassifierExceptionListService);
 
+  
   
   Services.prefs.setStringPref(FEATURE_TRACKING_PREF_NAME, "");
 
@@ -193,7 +198,7 @@ add_task(async function test_list_init_data() {
     let event = new CustomEvent("update", { detail: data });
     updateEvent.dispatchEvent(event);
   };
-  skipListService.registerAndRunSkipListObserver(
+  exceptionListService.registerAndRunExceptionListObserver(
     FEATURE_TRACKING_NAME,
     FEATURE_TRACKING_PREF_NAME,
     obs
@@ -211,7 +216,7 @@ add_task(async function test_list_init_data() {
   
   promise = waitForEvent(updateEvent, "update");
 
-  skipListService.registerAndRunSkipListObserver(
+  exceptionListService.registerAndRunExceptionListObserver(
     FEATURE_SOCIAL_NAME,
     FEATURE_SOCIAL_PREF_NAME,
     obs
@@ -253,7 +258,7 @@ add_task(async function test_list_init_data() {
 
   promise = waitForEvent(updateEvent, "update");
 
-  skipListService.registerAndRunSkipListObserver(
+  exceptionListService.registerAndRunExceptionListObserver(
     FEATURE_FINGERPRINTING_NAME,
     FEATURE_FINGERPRINTING_PREF_NAME,
     obs
@@ -267,10 +272,19 @@ add_task(async function test_list_init_data() {
     "Has several items in the list"
   );
 
-  skipListService.unregisterSkipListObserver(FEATURE_TRACKING_NAME, obs);
-  skipListService.unregisterSkipListObserver(FEATURE_SOCIAL_NAME, obs);
-  skipListService.unregisterSkipListObserver(FEATURE_FINGERPRINTING_NAME, obs);
-  skipListService.clear();
+  exceptionListService.unregisterExceptionListObserver(
+    FEATURE_TRACKING_NAME,
+    obs
+  );
+  exceptionListService.unregisterExceptionListObserver(
+    FEATURE_SOCIAL_NAME,
+    obs
+  );
+  exceptionListService.unregisterExceptionListObserver(
+    FEATURE_FINGERPRINTING_NAME,
+    obs
+  );
+  exceptionListService.clear();
 
   await db.clear();
 });

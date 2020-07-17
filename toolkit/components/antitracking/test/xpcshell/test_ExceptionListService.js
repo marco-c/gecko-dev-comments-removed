@@ -27,9 +27,10 @@ function waitForEvent(element, eventName) {
 
 add_task(async _ => {
   let peuService = Cc[
-    "@mozilla.org/partitioning/skip-list-service;1"
-  ].getService(Ci.nsIPartitioningSkipListService);
+    "@mozilla.org/partitioning/exception-list-service;1"
+  ].getService(Ci.nsIPartitioningExceptionListService);
 
+  
   
   Services.prefs.setStringPref(PREF_NAME, "");
 
@@ -52,7 +53,7 @@ add_task(async _ => {
     let event = new CustomEvent("update", { detail: data });
     updateEvent.dispatchEvent(event);
   };
-  peuService.registerAndRunSkipListObserver(obs);
+  peuService.registerAndRunExceptionListObserver(obs);
   let list = await promise;
   Assert.equal(list, "", "No items in the list");
 
@@ -103,6 +104,6 @@ add_task(async _ => {
     "Has several items in the list"
   );
 
-  peuService.unregisterSkipListObserver(obs);
+  peuService.unregisterExceptionListObserver(obs);
   await db.clear();
 });

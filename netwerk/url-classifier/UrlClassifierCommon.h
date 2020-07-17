@@ -46,8 +46,8 @@ class UrlClassifierCommon final {
 
   
   
-  static nsresult CreatePairwiseWhiteListURI(nsIChannel* aChannel,
-                                             nsIURI** aURI);
+  static nsresult CreatePairwiseEntityListURI(nsIChannel* aChannel,
+                                              nsIURI** aURI);
 
   static void AnnotateChannel(nsIChannel* aChannel,
                               uint32_t aClassificationFlags,

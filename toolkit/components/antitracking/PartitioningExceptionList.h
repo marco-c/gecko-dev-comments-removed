@@ -1,0 +1,41 @@
+
+
+
+
+
+
+#ifndef mozilla_PartitioningExceptionList_h
+#define mozilla_PartitioningExceptionList_h
+
+#include "nsIPartitioningExceptionListService.h"
+#include "nsTArrayForwardDeclare.h"
+
+class nsIChannel;
+class nsIPrincipal;
+
+namespace mozilla {
+
+class PartitioningExceptionList : public nsIPartitioningExceptionListObserver {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIPARTITIONINGEXCEPTIONLISTOBSERVER
+
+  static bool Check(const nsACString& aFirstPartyOrigin,
+                    const nsACString& aThirdPartyOrigin);
+
+ private:
+  static PartitioningExceptionList* GetOrCreate();
+
+  PartitioningExceptionList() = default;
+  virtual ~PartitioningExceptionList() = default;
+
+  nsresult Init();
+  void Shutdown();
+
+  nsCOMPtr<nsIPartitioningExceptionListService> mService;
+  nsTArray<nsCString> mExceptionList;
+};
+
+}  
+
+#endif  

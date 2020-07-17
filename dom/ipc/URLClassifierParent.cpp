@@ -88,8 +88,8 @@ class IPCFeature final : public nsIUrlClassifierFeature {
   }
 
   NS_IMETHOD
-  GetSkipHostList(nsACString& aList) override {
-    aList = mIPCFeature.skipHostList();
+  GetExceptionHostList(nsACString& aList) override {
+    aList = mIPCFeature.exceptionHostList();
     return NS_OK;
   }
 
@@ -114,9 +114,9 @@ class IPCFeature final : public nsIUrlClassifierFeature {
     
     nsCOMPtr<nsIURI> uri = mURI;
     uri.forget(aURI);
-    *aURIType = aListType == nsIUrlClassifierFeature::blacklist
-                    ? nsIUrlClassifierFeature::URIType::blacklistURI
-                    : nsIUrlClassifierFeature::URIType::whitelistURI;
+    *aURIType = aListType == nsIUrlClassifierFeature::blocklist
+                    ? nsIUrlClassifierFeature::URIType::blocklistURI
+                    : nsIUrlClassifierFeature::URIType::entitylistURI;
     return NS_OK;
   }
 
@@ -155,7 +155,7 @@ mozilla::ipc::IPCResult URLClassifierLocalParent::StartClassify(
   
   
   rv = uriClassifier->AsyncClassifyLocalWithFeatures(
-      aURI, features, nsIUrlClassifierFeature::blacklist, this);
+      aURI, features, nsIUrlClassifierFeature::blocklist, this);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     OnClassifyComplete(nsTArray<RefPtr<nsIUrlClassifierFeatureResult>>());
     return IPC_OK();

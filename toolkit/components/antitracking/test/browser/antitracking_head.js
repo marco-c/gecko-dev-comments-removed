@@ -418,19 +418,19 @@ this.AntiTracking = {
         
         
         if (item[0] == "urlclassifier.trackingAnnotationSkipURLs") {
-          info("Waiting for the skip list service to initialize...");
+          info("Waiting for the exception list service to initialize...");
           let classifier = Cc[
             "@mozilla.org/url-classifier/dbservice;1"
           ].getService(Ci.nsIURIClassifier);
           let feature = classifier.getFeatureByName("tracking-annotation");
           await TestUtils.waitForCondition(() => {
             for (let x of item[1].toLowerCase().split(",")) {
-              if (feature.skipHostList.split(",").includes(x)) {
+              if (feature.exceptionHostList.split(",").includes(x)) {
                 return true;
               }
             }
             return false;
-          }, "Skip list service initialized");
+          }, "Exception list service initialized");
           break;
         }
       }

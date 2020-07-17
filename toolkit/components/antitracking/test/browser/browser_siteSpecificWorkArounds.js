@@ -1,7 +1,7 @@
 
 
 AntiTracking.runTest(
-  "localStorage with a tracker that is whitelisted via a pref",
+  "localStorage with a tracker that is entitylisted via a pref",
   async _ => {
     let shouldThrow = [
       SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT,
@@ -39,7 +39,7 @@ AntiTracking.runTest(
 ); 
 
 AntiTracking.runTest(
-  "localStorage with a tracker that is whitelisted via a fancy pref",
+  "localStorage with a tracker that is entitylisted via a fancy pref",
   async _ => {
     let shouldThrow = [
       SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT,
@@ -82,7 +82,7 @@ AntiTracking.runTest(
 ); 
 
 AntiTracking.runTest(
-  "localStorage with a tracker that is whitelisted via a misconfigured pref",
+  "localStorage with a tracker that is entitylisted via a misconfigured pref",
   async _ => {
     try {
       localStorage.foo = 42;

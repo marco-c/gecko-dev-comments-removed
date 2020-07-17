@@ -63,20 +63,22 @@ class Feature {
     let entries = this.prefValue.concat(this.remoteEntries);
     let entriesAsString = entries.join(";").toLowerCase();
     if (observer) {
-      observer.onSkipListUpdate(entriesAsString);
+      observer.onExceptionListUpdate(entriesAsString);
     } else {
       for (let obs of this.observers) {
-        obs.onSkipListUpdate(entriesAsString);
+        obs.onExceptionListUpdate(entriesAsString);
       }
     }
   }
 }
 
-this.PartitioningSkipListService = function() {};
+this.PartitioningExceptionListService = function() {};
 
-PartitioningSkipListService.prototype = {
+PartitioningExceptionListService.prototype = {
   classID: Components.ID("{ab94809d-33f0-4f28-af38-01efbd3baf22}"),
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIPartitioningSkipListService]),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIPartitioningExceptionListService,
+  ]),
 
   _initialized: false,
 
@@ -122,7 +124,7 @@ PartitioningSkipListService.prototype = {
     this.feature.notifyObservers();
   },
 
-  registerAndRunSkipListObserver(observer) {
+  registerAndRunExceptionListObserver(observer) {
     
     
     
@@ -135,7 +137,7 @@ PartitioningSkipListService.prototype = {
     this.feature.addAndRunObserver(observer);
   },
 
-  unregisterSkipListObserver(observer) {
+  unregisterExceptionListObserver(observer) {
     if (!this.feature) {
       return;
     }
@@ -143,4 +145,4 @@ PartitioningSkipListService.prototype = {
   },
 };
 
-var EXPORTED_SYMBOLS = ["PartitioningSkipListService"];
+var EXPORTED_SYMBOLS = ["PartitioningExceptionListService"];

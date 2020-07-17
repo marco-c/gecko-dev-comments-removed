@@ -16,8 +16,8 @@ namespace net {
 
 struct UrlClassifierFeatureFlash::FlashFeature {
   const char* mName;
-  const char* mBlacklistPrefTables;
-  const char* mWhitelistPrefTables;
+  const char* mBlocklistPrefTables;
+  const char* mEntitylistPrefTables;
   bool mSubdocumentOnly;
   nsIHttpChannel::FlashPluginState mFlashPluginState;
   RefPtr<UrlClassifierFeatureFlash> mFeature;
@@ -44,8 +44,8 @@ UrlClassifierFeatureFlash::UrlClassifierFeatureFlash(
     const UrlClassifierFeatureFlash::FlashFeature& aFlashFeature)
     : UrlClassifierFeatureBase(
           nsDependentCString(aFlashFeature.mName),
-          nsDependentCString(aFlashFeature.mBlacklistPrefTables),
-          nsDependentCString(aFlashFeature.mWhitelistPrefTables),
+          nsDependentCString(aFlashFeature.mBlocklistPrefTables),
+          nsDependentCString(aFlashFeature.mEntitylistPrefTables),
           EmptyCString(),  
           EmptyCString(),  
           EmptyCString(),  
@@ -190,9 +190,9 @@ UrlClassifierFeatureFlash::GetURIByListType(
   NS_ENSURE_ARG_POINTER(aURI);
 
   
-  *aURIType = aListType == nsIUrlClassifierFeature::blacklist
-                  ? nsIUrlClassifierFeature::URIType::blacklistURI
-                  : nsIUrlClassifierFeature::URIType::whitelistURI;
+  *aURIType = aListType == nsIUrlClassifierFeature::blocklist
+                  ? nsIUrlClassifierFeature::URIType::blocklistURI
+                  : nsIUrlClassifierFeature::URIType::entitylistURI;
   return aChannel->GetURI(aURI);
 }
 

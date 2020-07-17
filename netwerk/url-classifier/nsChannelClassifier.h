@@ -46,7 +46,7 @@ class nsChannelClassifier final : public nsIURIClassifierCallback,
   
   nsresult StartInternal();
   
-  bool IsHostnameWhitelisted(nsIURI* aUri, const nsACString& aWhitelisted);
+  bool IsHostnameEntitylisted(nsIURI* aUri, const nsACString& aEntitylisted);
 
   void AddShutdownObserver();
   void RemoveShutdownObserver();
