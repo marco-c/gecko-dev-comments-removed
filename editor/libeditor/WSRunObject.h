@@ -766,6 +766,9 @@ class MOZ_STACK_CLASS WSRunScanner {
     bool EndsByBRElement() const { return mEnd.IsBRElement(); }
     bool EndsByBlockBoundary() const { return mEnd.IsBlockBoundary(); }
 
+    const EditorDOMPoint& StartRef() const { return mStart.PointRef(); }
+    const EditorDOMPoint& EndRef() const { return mEnd.PointRef(); }
+
     
 
 
@@ -891,6 +894,18 @@ class MOZ_STACK_CLASS WSRunScanner {
     Maybe<WSFragment> CreateWSFragmentForVisibleAndMiddleOfLine() const;
 
    private:
+    
+
+
+
+
+    bool IsPreformattedOrSurrondedByVisibleContent() const {
+      return mIsPreformatted ||
+             ((StartsFromNormalText() || StartsFromSpecialContent()) &&
+              (EndsByNormalText() || EndsBySpecialContent() ||
+               EndsByBRElement()));
+    }
+
     BoundaryData mStart;
     BoundaryData mEnd;
     NoBreakingSpaceData mNBSPData;

@@ -338,18 +338,19 @@ nsresult WSRunObject::InsertText(Document& aDocument,
     return NS_OK;
   }
 
-  const WSFragment* beforeRun = FindNearestFragment(mScanStartPoint, false);
   TextFragmentData textFragmentDataAtStart(mStart, mEnd, mNBSPData, mPRE);
+  const bool insertionPointEqualsOrIsBeforeStartOfText =
+      mScanStartPoint.EqualsOrIsBefore(textFragmentDataAtStart.StartRef());
   
   
   
   
   WSRunObject afterRunObject(MOZ_KnownLive(mHTMLEditor), mScanEndPoint);
-  const WSFragment* afterRun =
-      afterRunObject.FindNearestFragment(mScanEndPoint, true);
   TextFragmentData textFragmentDataAtEnd(
       afterRunObject.mStart, afterRunObject.mEnd, afterRunObject.mNBSPData,
       afterRunObject.mPRE);
+  const bool insertionPointAfterEndOfText =
+      textFragmentDataAtEnd.EndRef().EqualsOrIsBefore(mScanEndPoint);
 
   const EditorDOMRange invisibleLeadingWhiteSpaceRangeAtStart =
       textFragmentDataAtStart
@@ -470,18 +471,28 @@ nsresult WSRunObject::InsertText(Document& aDocument,
 
   if (nsCRT::IsAsciiSpace(theString[0])) {
     
-    if (beforeRun) {
-      if (beforeRun->IsStartOfHardLine()) {
+    
+    if (invisibleLeadingWhiteSpaceRangeAtStart.IsPositioned()) {
+      theString.SetCharAt(kNBSP, 0);
+    }
+    
+    
+    else if (pointPositionWithVisibleWhiteSpacesAtStart ==
+                 PointPosition::MiddleOfFragment ||
+             pointPositionWithVisibleWhiteSpacesAtStart ==
+                 PointPosition::EndOfFragment) {
+      EditorDOMPointInText atPreviousChar =
+          GetPreviousEditableCharPoint(pointToInsert);
+      if (atPreviousChar.IsSet() && !atPreviousChar.IsEndOfContainer() &&
+          atPreviousChar.IsCharASCIISpace()) {
         theString.SetCharAt(kNBSP, 0);
-      } else if (beforeRun->IsVisible()) {
-        EditorDOMPointInText atPreviousChar =
-            GetPreviousEditableCharPoint(pointToInsert);
-        if (atPreviousChar.IsSet() && !atPreviousChar.IsEndOfContainer() &&
-            atPreviousChar.IsCharASCIISpace()) {
-          theString.SetCharAt(kNBSP, 0);
-        }
       }
-    } else if (StartsFromHardLineBreak()) {
+    }
+    
+    
+    
+    else if (textFragmentDataAtStart.StartsFromHardLineBreak() &&
+             insertionPointEqualsOrIsBeforeStartOfText) {
       theString.SetCharAt(kNBSP, 0);
     }
   }
@@ -491,23 +502,29 @@ nsresult WSRunObject::InsertText(Document& aDocument,
 
   if (nsCRT::IsAsciiSpace(theString[lastCharIndex])) {
     
-    if (afterRun) {
-      if (afterRun->IsEndOfHardLine()) {
+    
+    if (invisibleTrailingWhiteSpaceRangeAtEnd.IsPositioned()) {
+      theString.SetCharAt(kNBSP, lastCharIndex);
+    }
+    
+    
+    
+    if (pointPositionWithVisibleWhiteSpacesAtStart ==
+            PointPosition::StartOfFragment ||
+        pointPositionWithVisibleWhiteSpacesAtStart ==
+            PointPosition::MiddleOfFragment) {
+      EditorDOMPointInText atNextChar =
+          GetInclusiveNextEditableCharPoint(pointToInsert);
+      if (atNextChar.IsSet() && !atNextChar.IsEndOfContainer() &&
+          atNextChar.IsCharASCIISpace()) {
         theString.SetCharAt(kNBSP, lastCharIndex);
-      } else if (afterRun->IsVisible()) {
-        EditorDOMPointInText atNextChar =
-            GetInclusiveNextEditableCharPoint(pointToInsert);
-        if (atNextChar.IsSet() && !atNextChar.IsEndOfContainer() &&
-            atNextChar.IsCharASCIISpace()) {
-          theString.SetCharAt(kNBSP, lastCharIndex);
-        }
       }
-    } else if (afterRunObject.EndsByBlockBoundary()) {
-      
-      
-      
-      
-      
+    }
+    
+    
+    
+    else if (textFragmentDataAtEnd.EndsByBlockBoundary() &&
+             insertionPointAfterEndOfText) {
       theString.SetCharAt(kNBSP, lastCharIndex);
     }
   }
@@ -1126,9 +1143,7 @@ Maybe<WSRunScanner::WSFragment>
 WSRunScanner::TextFragmentData::CreateWSFragmentForVisibleAndMiddleOfLine()
     const {
   WSFragment fragment;
-  if (mIsPreformatted ||
-      ((StartsFromNormalText() || StartsFromSpecialContent()) &&
-       (EndsByNormalText() || EndsBySpecialContent() || EndsByBRElement()))) {
+  if (IsPreformattedOrSurrondedByVisibleContent()) {
     fragment.MarkAsVisible();
     if (mStart.PointRef().IsSet()) {
       fragment.mStartNode = mStart.PointRef().GetContainer();
@@ -1239,9 +1254,7 @@ void WSRunScanner::TextFragmentData::InitializeWSFragmentArray(
 
   
   
-  if (mIsPreformatted ||
-      ((StartsFromNormalText() || StartsFromSpecialContent()) &&
-       (EndsByNormalText() || EndsBySpecialContent() || EndsByBRElement()))) {
+  if (IsPreformattedOrSurrondedByVisibleContent()) {
     aFragments.AppendElement(CreateWSFragmentForVisibleAndMiddleOfLine().ref());
     return;
   }
