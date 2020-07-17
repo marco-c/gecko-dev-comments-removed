@@ -56,13 +56,11 @@ class FirefoxDataProvider {
     this.onFrameSent = this.onFrameSent.bind(this);
     this.onFrameReceived = this.onFrameReceived.bind(this);
 
-    this.onEventSourceConnectionOpened = this.onEventSourceConnectionOpened.bind(
-      this
-    );
     this.onEventSourceConnectionClosed = this.onEventSourceConnectionClosed.bind(
       this
     );
     this.onEventReceived = this.onEventReceived.bind(this);
+    this.setEventStreamFlag = this.setEventStreamFlag.bind(this);
   }
 
   
@@ -399,7 +397,7 @@ class FirefoxDataProvider {
 
 
 
-  onNetworkEventUpdate(data) {
+  async onNetworkEventUpdate(data) {
     const { packet, networkInfo } = data;
     const { actor } = networkInfo;
     const { updateType } = packet;
@@ -421,6 +419,12 @@ class FirefoxDataProvider {
           headersSize: networkInfo.response.headersSize,
           waitingTime: networkInfo.response.waitingTime,
         });
+
+        
+        if (networkInfo.response.mimeType?.includes("text/event-stream")) {
+          await this.setEventStreamFlag(actor);
+        }
+
         this.emitForTests(TEST_EVENTS.STARTED_RECEIVING_RESPONSE, actor);
         break;
       case "responseContent":
@@ -447,7 +451,7 @@ class FirefoxDataProvider {
     
     this.pushRequestToQueue(actor, { [`${updateType}Available`]: true });
 
-    this.onPayloadDataReceived(actor);
+    await this.onPayloadDataReceived(actor);
 
     this.emitForTests(TEST_EVENTS.NETWORK_EVENT_UPDATED, actor);
   }
@@ -800,14 +804,6 @@ class FirefoxDataProvider {
   
 
 
-  async onEventSourceConnectionOpened(httpChannelId) {
-    
-    
-    
-    if (this.actionsEnabled && this.actions.setEventStreamFlag) {
-      await this.actions.setEventStreamFlag(httpChannelId);
-    }
-  }
 
   async onEventSourceConnectionClosed(httpChannelId) {
     if (this.actionsEnabled && this.actions.closeConnection) {
@@ -818,6 +814,12 @@ class FirefoxDataProvider {
   async onEventReceived(httpChannelId, data) {
     
     this.addMessage(httpChannelId, data);
+  }
+
+  async setEventStreamFlag(actorId) {
+    if (this.actionsEnabled && this.actions.setEventStreamFlag) {
+      await this.actions.setEventStreamFlag(actorId, true);
+    }
   }
 
   

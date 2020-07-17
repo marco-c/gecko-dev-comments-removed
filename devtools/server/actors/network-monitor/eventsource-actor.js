@@ -63,9 +63,7 @@ const EventSourceActor = ActorClassWithSpec(eventSourceSpec, {
 
   
 
-  eventSourceConnectionOpened(httpChannelId) {
-    this.emit("serverEventSourceConnectionOpened", httpChannelId);
-  },
+  eventSourceConnectionOpened(httpChannelId) {},
 
   eventSourceConnectionClosed(httpChannelId) {
     this.emit("serverEventSourceConnectionClosed", httpChannelId);
