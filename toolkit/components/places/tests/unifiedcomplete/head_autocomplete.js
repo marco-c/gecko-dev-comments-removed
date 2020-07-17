@@ -45,14 +45,6 @@ var {
 }
 
 
-{
-  
-  let file = do_get_file("autofill_tasks.js", false);
-  let uri = Services.io.newFileURI(file);
-  XPCOMUtils.defineLazyScriptGetter(this, "addAutofillTasks", uri.spec);
-}
-
-
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
@@ -275,10 +267,6 @@ async function check_autocomplete(test) {
     };
   });
   let expectedSearches = 1;
-  if (test.incompleteSearch) {
-    controller.startSearch(test.incompleteSearch);
-    expectedSearches++;
-  }
 
   info("Searching for: '" + test.search + "'");
   controller.startSearch(test.search);

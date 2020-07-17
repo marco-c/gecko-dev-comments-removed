@@ -49,6 +49,40 @@ add_task(async function initXPCShellDependencies() {
 
 
 
+
+
+
+
+
+var gDBConn;
+function DBConn(aForceNewConnection) {
+  if (!aForceNewConnection) {
+    let db = PlacesUtils.history.DBConnection;
+    if (db.connectionReady) {
+      return db;
+    }
+  }
+
+  
+  if (!gDBConn || aForceNewConnection) {
+    let file = Services.dirsvc.get("ProfD", Ci.nsIFile);
+    file.append("places.sqlite");
+    let dbConn = (gDBConn = Services.storage.openDatabase(file));
+
+    TestUtils.topicObserved("profile-before-change").then(() =>
+      dbConn.asyncClose()
+    );
+  }
+
+  return gDBConn.connectionReady ? gDBConn : null;
+}
+
+
+
+
+
+
+
 function createContext(searchString = "foo", properties = {}) {
   info(`Creating new queryContext with searchString: ${searchString}`);
   let context = new UrlbarQueryContext(
@@ -284,6 +318,69 @@ async function addTestTailSuggestionsEngine(suggestionsFn = null) {
 
 
 
+function testEngine_setup() {
+  add_task(async function setup() {
+    await cleanupPlaces();
+    let engine = await addTestSuggestionsEngine();
+    let oldDefaultEngine = await Services.search.getDefault();
+
+    registerCleanupFunction(async () => {
+      Services.prefs.clearUserPref("browser.urlbar.suggest.searches");
+      Services.prefs.clearUserPref(
+        "browser.search.separatePrivateDefault.ui.enabled"
+      );
+      Services.search.setDefault(oldDefaultEngine);
+    });
+
+    Services.search.setDefault(engine);
+    Services.prefs.setBoolPref(
+      "browser.search.separatePrivateDefault.ui.enabled",
+      false
+    );
+    Services.prefs.setBoolPref("browser.urlbar.suggest.searches", false);
+  });
+}
+
+async function cleanupPlaces() {
+  Services.prefs.clearUserPref("browser.urlbar.autoFill");
+  Services.prefs.clearUserPref("browser.urlbar.autoFill.searchEngines");
+
+  await PlacesUtils.bookmarks.eraseEverything();
+  await PlacesUtils.history.clear();
+}
+
+
+
+
+
+
+
+function frecencyForUrl(aURI) {
+  let url = aURI;
+  if (aURI instanceof Ci.nsIURI) {
+    url = aURI.spec;
+  } else if (aURI instanceof URL) {
+    url = aURI.href;
+  }
+  let stmt = DBConn().createStatement(
+    "SELECT frecency FROM moz_places WHERE url_hash = hash(?1) AND url = ?1"
+  );
+  stmt.bindByIndex(0, url);
+  try {
+    if (!stmt.executeStep()) {
+      throw new Error("No result for frecency.");
+    }
+    return stmt.getInt32(0);
+  } finally {
+    stmt.finalize();
+  }
+}
+
+
+
+
+
+
 
 
 
@@ -389,6 +486,82 @@ function makeOmniboxResult(
 
 
 
+function makeKeywordSearchResult(
+  queryContext,
+  { uri, keyword, title, iconUri, postData, heuristic = false }
+) {
+  let result = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.KEYWORD,
+    UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+      title: [title ? title : uri, UrlbarUtils.HIGHLIGHT.TYPED],
+      url: [uri, UrlbarUtils.HIGHLIGHT.TYPED],
+      keyword: [keyword, UrlbarUtils.HIGHLIGHT.TYPED],
+      input: [queryContext.searchString, UrlbarUtils.HIGHLIGHT.TYPED],
+      postData,
+      icon: typeof iconUri != "undefined" ? iconUri : `page-icon:${uri}`,
+    })
+  );
+
+  if (heuristic) {
+    result.heuristic = heuristic;
+  }
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function makePrioritySearchResult(
+  queryContext,
+  { engineName, engineIconUri, heuristic }
+) {
+  let result = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.SEARCH,
+    UrlbarUtils.RESULT_SOURCE.SEARCH,
+    ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+      engine: [engineName, UrlbarUtils.HIGHLIGHT.TYPED],
+      icon: engineIconUri ? engineIconUri : "",
+    })
+  );
+
+  if (heuristic) {
+    result.heuristic = heuristic;
+  }
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -408,6 +581,7 @@ function makeSearchResult(
     engineIconUri,
     heuristic = false,
     keywordOffer,
+    providerName,
   }
 ) {
   if (!keywordOffer) {
@@ -453,9 +627,16 @@ function makeSearchResult(
     result.payload.lowerCaseSuggestion = result.payload.suggestion.toLocaleLowerCase();
   }
 
+  if (providerName) {
+    result.providerName = providerName;
+  }
+
   result.heuristic = heuristic;
   return result;
 }
+
+
+
 
 
 
@@ -475,7 +656,7 @@ function makeSearchResult(
 
 function makeVisitResult(
   queryContext,
-  { title, uri, iconUri, tags = null, heuristic = false }
+  { title, uri, iconUri, tags = null, heuristic = false, providerName }
 ) {
   let payload = {
     url: [uri, UrlbarUtils.HIGHLIGHT.TYPED],
@@ -494,6 +675,10 @@ function makeVisitResult(
     ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, payload)
   );
 
+  if (providerName) {
+    result.providerName = providerName;
+  }
+
   result.heuristic = heuristic;
   return result;
 }
@@ -508,7 +693,21 @@ function makeVisitResult(
 
 
 
-async function check_results({ context, matches = [] } = {}) {
+
+
+
+
+
+
+
+
+async function check_results({
+  context,
+  incompleteSearch,
+  autofilled,
+  completed,
+  matches = [],
+} = {}) {
   if (!context) {
     return;
   }
@@ -530,7 +729,34 @@ async function check_results({ context, matches = [] } = {}) {
       autofillFirstResult() {},
     },
   });
+
+  if (incompleteSearch) {
+    let incompleteContext = createContext(incompleteSearch, {
+      isPrivate: context.isPrivate,
+    });
+    controller.startQuery(incompleteContext);
+  }
   await controller.startQuery(context);
+
+  if (autofilled) {
+    Assert.ok(context.results[0], "There is a first result.");
+    Assert.ok(
+      context.results[0].autofill,
+      "The first result is an autofill result"
+    );
+    Assert.equal(
+      context.results[0].autofill.value,
+      autofilled,
+      "The correct value was autofilled."
+    );
+    if (completed) {
+      Assert.equal(
+        context.results[0].payload.url,
+        completed,
+        "The completed autofill value is correct."
+      );
+    }
+  }
 
   Assert.equal(
     context.results.length,
@@ -549,4 +775,14 @@ async function check_results({ context, matches = [] } = {}) {
     context.results.map(m => m.heuristic),
     "Heuristic results are correctly flagged."
   );
+
+  matches.forEach((match, i) => {
+    if (match.providerName) {
+      Assert.equal(
+        match.providerName,
+        context.results[i].providerName,
+        `The result at index ${i} is from the correct provider.`
+      );
+    }
+  });
 }
