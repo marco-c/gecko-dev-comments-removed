@@ -7,14 +7,13 @@
 #ifndef GFX_VR_SERVICE_VRSERVICE_H
 #define GFX_VR_SERVICE_VRSERVICE_H
 
-#include "mozilla/Atomics.h"
 #include "moz_external_vr.h"
 #include "base/process.h"  
+#include "mozilla/UniquePtr.h"
 
-namespace base {
-class Thread;
-}  
+class nsIThread;
 namespace mozilla {
+class BackgroundHangMonitor;
 namespace gfx {
 
 class VRSession;
@@ -58,7 +57,10 @@ class VRService {
   VRBrowserState mBrowserState;
 
   UniquePtr<VRSession> mSession;
-  base::Thread* mServiceThread;
+  nsCOMPtr<nsIThread> mServiceThread;
+  
+  UniquePtr<mozilla::BackgroundHangMonitor> mBackgroundHangMonitor;
+
   bool mShutdownRequested;
 
   
