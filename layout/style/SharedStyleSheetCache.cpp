@@ -317,12 +317,6 @@ void SharedStyleSheetCache::LoadCompletedInternal(
                  "should not get a forced unique inner during parsing");
       data->mSheet->SetComplete();
       data->ScheduleLoadEventIfNeeded();
-    } else if (data->mSheet->IsApplicable()) {
-      if (dom::Document* doc = data->mLoader->GetDocument()) {
-        
-        
-        doc->PostStyleSheetApplicableStateChangeEvent(*data->mSheet);
-      }
     }
 
     aDatasToNotify.AppendElement(data);

@@ -15,15 +15,18 @@ add_task(async function() {
   
 
   info("Open a page that runs in the parent process");
-  const { ui } = await openStyleEditorForURL(PARENT_PROCESS_URI);
+  const { toolbox, ui } = await openStyleEditorForURL(PARENT_PROCESS_URI);
   await waitUntil(() => ui.editors.length === 3);
   ok(true, `Three style sheets for ${PARENT_PROCESS_URI}`);
 
   info("Navigate to a page that runs in the child process");
   const onEditorReady = ui.editors[0].getSourceEditor();
-  await navigateToAndWaitForStyleSheets(CONTENT_PROCESS_URI, ui, 2);
+  const onTargetSwitched = toolbox.once("switched-target");
+  await navigateToAndWaitForStyleSheets(CONTENT_PROCESS_URI, ui);
   
   
+  await onTargetSwitched;
+  await waitUntil(() => ui.editors.length === 2);
   ok(true, `Two sheets present for ${CONTENT_PROCESS_URI}`);
 
   info("Wait until the editor is ready");

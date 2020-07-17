@@ -47,16 +47,6 @@ class ResourceWatcher {
 
 
 
-  getAllResources(resourceType) {
-    return this._cache.filter(r => r.resourceType === resourceType);
-  }
-
-  
-
-
-
-
-
 
 
 
@@ -70,11 +60,7 @@ class ResourceWatcher {
 
 
   async watchResources(resources, options) {
-    const {
-      onAvailable,
-      onDestroyed,
-      ignoreExistingResources = false,
-    } = options;
+    const { onAvailable, ignoreExistingResources = false } = options;
 
     
     
@@ -99,16 +85,8 @@ class ResourceWatcher {
     await this._watchAllTargets();
 
     for (const resource of resources) {
-      
-      
-      if (this._availableListeners.count(resource) === 0) {
-        await this._startListening(resource);
-      }
-      this._availableListeners.on(resource, onAvailable);
-
-      if (onDestroyed) {
-        this._destroyedListeners.on(resource, onDestroyed);
-      }
+      await this._startListening(resource);
+      this._registerListeners(resource, options);
     }
 
     if (!ignoreExistingResources) {
@@ -124,28 +102,34 @@ class ResourceWatcher {
     const { onAvailable, onDestroyed } = options;
 
     for (const resource of resources) {
+      this._availableListeners.off(resource, onAvailable);
       if (onDestroyed) {
         this._destroyedListeners.off(resource, onDestroyed);
       }
-
-      const hadAtLeastOneListener =
-        this._availableListeners.count(resource) > 0;
-      this._availableListeners.off(resource, onAvailable);
-      if (
-        hadAtLeastOneListener &&
-        this._availableListeners.count(resource) === 0
-      ) {
-        this._stopListening(resource);
-      }
+      this._stopListening(resource);
     }
 
     
     let listeners = 0;
-    for (const count of this._listenerCount.values()) {
+    for (const count of this._listenerCount) {
       listeners += count;
     }
     if (listeners <= 0) {
       this._unwatchAllTargets();
+    }
+  }
+
+  
+
+
+
+
+
+
+  _registerListeners(resource, { onAvailable, onDestroyed }) {
+    this._availableListeners.on(resource, onAvailable);
+    if (onDestroyed) {
+      this._destroyedListeners.on(resource, onDestroyed);
     }
   }
 
@@ -455,7 +439,6 @@ ResourceWatcher.TYPES = ResourceWatcher.prototype.TYPES = {
   PLATFORM_MESSAGE: "platform-message",
   DOCUMENT_EVENT: "document-event",
   ROOT_NODE: "root-node",
-  STYLESHEET: "stylesheet",
 };
 module.exports = { ResourceWatcher };
 
@@ -492,8 +475,6 @@ const LegacyListeners = {
   },
   [ResourceWatcher.TYPES
     .ROOT_NODE]: require("devtools/shared/resources/legacy-listeners/root-node"),
-  [ResourceWatcher.TYPES
-    .STYLESHEET]: require("devtools/shared/resources/legacy-listeners/stylesheet"),
 };
 
 
