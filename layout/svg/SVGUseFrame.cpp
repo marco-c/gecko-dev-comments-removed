@@ -8,6 +8,7 @@
 
 #include "mozilla/PresShell.h"
 #include "mozilla/SVGObserverUtils.h"
+#include "mozilla/SVGUtils.h"
 #include "mozilla/dom/MutationEvent.h"
 #include "mozilla/dom/SVGUseElement.h"
 
@@ -58,8 +59,8 @@ void SVGUseFrame::PositionAttributeChanged() {
   mCanvasTM = nullptr;
   nsLayoutUtils::PostRestyleEvent(GetContent()->AsElement(), RestyleHint{0},
                                   nsChangeHint_InvalidateRenderingObservers);
-  nsSVGUtils::ScheduleReflowSVG(this);
-  nsSVGUtils::NotifyChildrenOfSVGChange(this, TRANSFORM_CHANGED);
+  SVGUtils::ScheduleReflowSVG(this);
+  SVGUtils::NotifyChildrenOfSVGChange(this, TRANSFORM_CHANGED);
 }
 
 void SVGUseFrame::DimensionAttributeChanged(bool aHadValidDimensions,
@@ -73,14 +74,14 @@ void SVGUseFrame::DimensionAttributeChanged(bool aHadValidDimensions,
   if (invalidate) {
     nsLayoutUtils::PostRestyleEvent(GetContent()->AsElement(), RestyleHint{0},
                                     nsChangeHint_InvalidateRenderingObservers);
-    nsSVGUtils::ScheduleReflowSVG(this);
+    SVGUtils::ScheduleReflowSVG(this);
   }
 }
 
 void SVGUseFrame::HrefChanged() {
   nsLayoutUtils::PostRestyleEvent(GetContent()->AsElement(), RestyleHint{0},
                                   nsChangeHint_InvalidateRenderingObservers);
-  nsSVGUtils::ScheduleReflowSVG(this);
+  SVGUtils::ScheduleReflowSVG(this);
 }
 
 
@@ -120,7 +121,7 @@ void SVGUseFrame::NotifySVGChanged(uint32_t aFlags) {
       
       
       
-      nsSVGUtils::ScheduleReflowSVG(this);
+      SVGUtils::ScheduleReflowSVG(this);
     }
   }
 

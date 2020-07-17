@@ -19,7 +19,6 @@
 #include "nsIReferrerInfo.h"
 #include "nsStringFwd.h"
 #include "nsStubMutationObserver.h"
-#include "nsSVGUtils.h"
 #include "nsCycleCollectionParticipant.h"
 
 class nsAtom;

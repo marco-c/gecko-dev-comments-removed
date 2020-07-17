@@ -13,7 +13,7 @@
 #include "nsIFrame.h"
 #include "mozilla/ISVGDisplayableFrame.h"
 #include "mozilla/SVGContainerFrame.h"
-#include "nsSVGIntegrationUtils.h"
+#include "mozilla/SVGUtils.h"
 #include "mozilla/dom/SVGViewportElement.h"
 
 using namespace mozilla::dom;
@@ -46,9 +46,8 @@ void SVGViewportFrame::PaintSVG(gfxContext& aContext,
     }
 
     autoSR.SetContext(&aContext);
-    gfxRect clipRect =
-        nsSVGUtils::GetClipRectForFrame(this, x, y, width, height);
-    nsSVGUtils::SetClipRect(&aContext, aTransform, clipRect);
+    gfxRect clipRect = SVGUtils::GetClipRectForFrame(this, x, y, width, height);
+    SVGUtils::SetClipRect(&aContext, aTransform, clipRect);
   }
 
   SVGDisplayContainerFrame::PaintSVG(aContext, aTransform, aImgParams,
@@ -94,7 +93,7 @@ void SVGViewportFrame::NotifySVGChanged(uint32_t aFlags) {
       
       
       
-      nsSVGUtils::ScheduleReflowSVG(this);
+      SVGUtils::ScheduleReflowSVG(this);
     }
 
     
@@ -130,7 +129,7 @@ SVGBBox SVGViewportFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 
   SVGBBox bbox;
 
-  if (aFlags & nsSVGUtils::eForGetClientRects) {
+  if (aFlags & SVGUtils::eForGetClientRects) {
     
     
     
@@ -171,20 +170,20 @@ nsresult SVGViewportFrame::AttributeChanged(int32_t aNameSpaceID,
       nsLayoutUtils::PostRestyleEvent(
           mContent->AsElement(), RestyleHint{0},
           nsChangeHint_InvalidateRenderingObservers);
-      nsSVGUtils::ScheduleReflowSVG(this);
+      SVGUtils::ScheduleReflowSVG(this);
 
       if (content->HasViewBoxOrSyntheticViewBox()) {
         
         mCanvasTM = nullptr;
         content->ChildrenOnlyTransformChanged();
-        nsSVGUtils::NotifyChildrenOfSVGChange(this, TRANSFORM_CHANGED);
+        SVGUtils::NotifyChildrenOfSVGChange(this, TRANSFORM_CHANGED);
       } else {
         uint32_t flags = COORD_CONTEXT_CHANGED;
         if (mCanvasTM && mCanvasTM->IsSingular()) {
           mCanvasTM = nullptr;
           flags |= TRANSFORM_CHANGED;
         }
-        nsSVGUtils::NotifyChildrenOfSVGChange(this, flags);
+        SVGUtils::NotifyChildrenOfSVGChange(this, flags);
       }
 
     } else if (aAttribute == nsGkAtoms::transform ||
@@ -194,7 +193,7 @@ nsresult SVGViewportFrame::AttributeChanged(int32_t aNameSpaceID,
       
       mCanvasTM = nullptr;
 
-      nsSVGUtils::NotifyChildrenOfSVGChange(
+      SVGUtils::NotifyChildrenOfSVGChange(
           this, aAttribute == nsGkAtoms::viewBox
                     ? TRANSFORM_CHANGED | COORD_CONTEXT_CHANGED
                     : TRANSFORM_CHANGED);
@@ -208,7 +207,7 @@ nsresult SVGViewportFrame::AttributeChanged(int32_t aNameSpaceID,
         nsLayoutUtils::PostRestyleEvent(
             mContent->AsElement(), RestyleHint{0},
             nsChangeHint_InvalidateRenderingObservers);
-        nsSVGUtils::ScheduleReflowSVG(this);
+        SVGUtils::ScheduleReflowSVG(this);
       } else if (aAttribute == nsGkAtoms::viewBox ||
                  (aAttribute == nsGkAtoms::preserveAspectRatio &&
                   content->HasViewBoxOrSyntheticViewBox())) {

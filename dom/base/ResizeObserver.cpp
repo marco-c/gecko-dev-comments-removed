@@ -8,9 +8,9 @@
 
 #include "mozilla/dom/DOMRect.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/SVGUtils.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
-#include "nsSVGUtils.h"
 #include <limits>
 
 namespace mozilla {
@@ -62,7 +62,7 @@ static nsSize GetTargetSize(Element* aTarget, ResizeObserverBoxOptions aBox) {
     
     
     
-    gfxRect bbox = nsSVGUtils::GetBBox(frame);
+    gfxRect bbox = SVGUtils::GetBBox(frame);
     size.width = NSFloatPixelsToAppUnits(bbox.width, AppUnitsPerCSSPixel());
     size.height = NSFloatPixelsToAppUnits(bbox.height, AppUnitsPerCSSPixel());
   } else {

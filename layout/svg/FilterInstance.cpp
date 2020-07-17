@@ -26,10 +26,9 @@
 #include "mozilla/ISVGDisplayableFrame.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/SVGFilterInstance.h"
+#include "mozilla/SVGUtils.h"
 #include "CSSFilterInstance.h"
 #include "SVGFilterPaintCallback.h"
-#include "nsSVGIntegrationUtils.h"
-#include "nsSVGUtils.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::gfx;
@@ -87,7 +86,7 @@ void FilterInstance::PaintFilteredFrame(nsIFrame* aFilteredFrame,
   aCtx->SetMatrixDouble(reverseScaleMatrix * aCtx->CurrentMatrixDouble());
 
   gfxMatrix scaleMatrixInDevUnits =
-      scaleMatrix * nsSVGUtils::GetCSSPxToDevPxMatrix(aFilteredFrame);
+      scaleMatrix * SVGUtils::GetCSSPxToDevPxMatrix(aFilteredFrame);
 
   
   
@@ -134,7 +133,7 @@ bool FilterInstance::BuildWebRenderFilters(nsIFrame* aFilteredFrame,
   
   gfxMatrix scaleMatrix;
   gfxMatrix scaleMatrixInDevUnits =
-      scaleMatrix * nsSVGUtils::GetCSSPxToDevPxMatrix(aFilteredFrame);
+      scaleMatrix * SVGUtils::GetCSSPxToDevPxMatrix(aFilteredFrame);
 
   
   
@@ -368,7 +367,7 @@ nsRegion FilterInstance::GetPostFilterDirtyArea(
     return nsRegion();
   }
 
-  gfxMatrix tm = nsSVGUtils::GetCanvasTM(aFilteredFrame);
+  gfxMatrix tm = SVGUtils::GetCanvasTM(aFilteredFrame);
   auto filterChain = aFilteredFrame->StyleEffects()->mFilters.AsSpan();
   UniquePtr<UserSpaceMetrics> metrics =
       UserSpaceMetricsForFrame(aFilteredFrame);
@@ -389,7 +388,7 @@ nsRegion FilterInstance::GetPostFilterDirtyArea(
 
 nsRegion FilterInstance::GetPreFilterNeededArea(
     nsIFrame* aFilteredFrame, const nsRegion& aPostFilterDirtyRegion) {
-  gfxMatrix tm = nsSVGUtils::GetCanvasTM(aFilteredFrame);
+  gfxMatrix tm = SVGUtils::GetCanvasTM(aFilteredFrame);
   auto filterChain = aFilteredFrame->StyleEffects()->mFilters.AsSpan();
   UniquePtr<UserSpaceMetrics> metrics =
       UserSpaceMetricsForFrame(aFilteredFrame);
@@ -421,7 +420,7 @@ nsRect FilterInstance::GetPostFilterBounds(nsIFrame* aFilteredFrame,
     preFilterRegionPtr = &preFilterRegion;
   }
 
-  gfxMatrix tm = nsSVGUtils::GetCanvasTM(aFilteredFrame);
+  gfxMatrix tm = SVGUtils::GetCanvasTM(aFilteredFrame);
   auto filterChain = aFilteredFrame->StyleEffects()->mFilters.AsSpan();
   UniquePtr<UserSpaceMetrics> metrics =
       UserSpaceMetricsForFrame(aFilteredFrame);
@@ -457,9 +456,9 @@ FilterInstance::FilterInstance(
   } else {
     MOZ_ASSERT(mTargetFrame,
                "Need to supply a frame when there's no aOverrideBBox");
-    mTargetBBox = nsSVGUtils::GetBBox(mTargetFrame,
-                                      nsSVGUtils::eUseFrameBoundsForOuterSVG |
-                                          nsSVGUtils::eBBoxIncludeFillGeometry);
+    mTargetBBox =
+        SVGUtils::GetBBox(mTargetFrame, SVGUtils::eUseFrameBoundsForOuterSVG |
+                                            SVGUtils::eBBoxIncludeFillGeometry);
   }
 
   
@@ -609,7 +608,7 @@ static void UpdateNeededBounds(const nsIntRegion& aRegion, nsIntRect& aBounds) {
 
   bool overflow;
   IntSize surfaceSize =
-      nsSVGUtils::ConvertToSurfaceSize(SizeDouble(aBounds.Size()), &overflow);
+      SVGUtils::ConvertToSurfaceSize(SizeDouble(aBounds.Size()), &overflow);
   if (overflow) {
     aBounds.SizeTo(surfaceSize);
   }
@@ -658,9 +657,9 @@ void FilterInstance::BuildSourcePaint(SourceInfo* aSource,
                        gfxMatrix::Translation(-neededRect.TopLeft()));
   GeneralPattern pattern;
   if (aSource == &mFillPaint) {
-    nsSVGUtils::MakeFillPatternFor(mTargetFrame, ctx, &pattern, aImgParams);
+    SVGUtils::MakeFillPatternFor(mTargetFrame, ctx, &pattern, aImgParams);
   } else if (aSource == &mStrokePaint) {
-    nsSVGUtils::MakeStrokePatternFor(mTargetFrame, ctx, &pattern, aImgParams);
+    SVGUtils::MakeStrokePatternFor(mTargetFrame, ctx, &pattern, aImgParams);
   }
 
   if (pattern.GetPattern()) {
@@ -723,7 +722,7 @@ void FilterInstance::BuildSourceImage(DrawTarget* aDest,
   
   RefPtr<gfxContext> ctx = gfxContext::CreateOrNull(offscreenDT);
   MOZ_ASSERT(ctx);  
-  gfxMatrix devPxToCssPxTM = nsSVGUtils::GetCSSPxToDevPxMatrix(mTargetFrame);
+  gfxMatrix devPxToCssPxTM = SVGUtils::GetCSSPxToDevPxMatrix(mTargetFrame);
   DebugOnly<bool> invertible = devPxToCssPxTM.Invert();
   MOZ_ASSERT(invertible);
   ctx->SetMatrixDouble(devPxToCssPxTM * mPaintTransform *
@@ -902,7 +901,7 @@ gfxMatrix FilterInstance::GetUserSpaceToFrameSpaceInCSSPxTransform() const {
     return gfxMatrix();
   }
   return gfxMatrix::Translation(
-      -nsSVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(mTargetFrame));
+      -SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(mTargetFrame));
 }
 
 }  

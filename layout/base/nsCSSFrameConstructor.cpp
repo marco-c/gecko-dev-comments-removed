@@ -119,7 +119,7 @@
 
 #include "nsMathMLParts.h"
 #include "mozilla/dom/SVGTests.h"
-#include "nsSVGUtils.h"
+#include "mozilla/SVGUtils.h"
 
 #include "nsRefreshDriver.h"
 #include "nsTextNode.h"
@@ -354,7 +354,7 @@ static inline bool IsDisplayContents(const nsIContent* aContent) {
 
 static bool IsFrameForSVG(const nsIFrame* aFrame) {
   return aFrame->IsFrameOfType(nsIFrame::eSVG) ||
-         nsSVGUtils::IsInSVGTextSubtree(aFrame);
+         SVGUtils::IsInSVGTextSubtree(aFrame);
 }
 
 static bool IsLastContinuationForColumnContent(const nsIFrame* aFrame) {
@@ -956,7 +956,7 @@ nsContainerFrame* nsFrameConstructorState::GetGeometricParent(
   
 
   if (aContentParentFrame &&
-      nsSVGUtils::IsInSVGTextSubtree(aContentParentFrame)) {
+      SVGUtils::IsInSVGTextSubtree(aContentParentFrame)) {
     return aContentParentFrame;
   }
 
@@ -3177,9 +3177,8 @@ const nsCSSFrameConstructor::FrameConstructionData*
 nsCSSFrameConstructor::FindTextData(const Text& aTextContent,
                                     nsIFrame* aParentFrame) {
   if (aParentFrame && IsFrameForSVG(aParentFrame)) {
-    nsIFrame* ancestorFrame =
-        nsSVGUtils::GetFirstNonAAncestorFrame(aParentFrame);
-    if (!ancestorFrame || !nsSVGUtils::IsInSVGTextSubtree(ancestorFrame)) {
+    nsIFrame* ancestorFrame = SVGUtils::GetFirstNonAAncestorFrame(aParentFrame);
+    if (!ancestorFrame || !SVGUtils::IsInSVGTextSubtree(ancestorFrame)) {
       return nullptr;
     }
 
@@ -4569,7 +4568,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructNonScrollableBlockWithConstructor(
   if ((aDisplay->IsAbsolutelyPositionedStyle() || aDisplay->IsFloatingStyle() ||
        aDisplay->DisplayInside() == StyleDisplayInside::FlowRoot ||
        clipPaginatedOverflow) &&
-      !nsSVGUtils::IsInSVGTextSubtree(aParentFrame)) {
+      !SVGUtils::IsInSVGTextSubtree(aParentFrame)) {
     flags = NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS;
     if (clipPaginatedOverflow) {
       flags |= NS_BLOCK_CLIP_PAGINATED_OVERFLOW;
@@ -5122,7 +5121,7 @@ void nsCSSFrameConstructor::DoAddFrameConstructionItems(
     ItemFlags aFlags) {
   auto flags = aFlags + ItemFlag::AllowPageBreak;
   if (aParentFrame) {
-    if (nsSVGUtils::IsInSVGTextSubtree(aParentFrame)) {
+    if (SVGUtils::IsInSVGTextSubtree(aParentFrame)) {
       flags += ItemFlag::IsWithinSVGText;
     }
     if (aParentFrame->IsBlockFrame() && aParentFrame->GetParent() &&
@@ -9945,7 +9944,7 @@ void nsCSSFrameConstructor::CreateLetterFrame(
     const nsStyleDisplay* display = sc->StyleDisplay();
     nsFirstLetterFrame* letterFrame;
     if (display->IsFloatingStyle() &&
-        !nsSVGUtils::IsInSVGTextSubtree(aParentFrame)) {
+        !SVGUtils::IsInSVGTextSubtree(aParentFrame)) {
       
       letterFrame = CreateFloatingLetterFrame(state, aTextContent, textFrame,
                                               aParentFrame, parentComputedStyle,

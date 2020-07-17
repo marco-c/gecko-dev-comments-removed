@@ -13,9 +13,9 @@
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIObjectLoadingContent.h"
 #include "nsSubDocumentFrame.h"
-#include "nsSVGIntegrationUtils.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SVGForeignObjectFrame.h"
+#include "mozilla/SVGUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/SVGSVGElement.h"
@@ -601,7 +601,7 @@ void nsDisplayOuterSVG::HitTest(nsDisplayListBuilder* aBuilder,
       outerSVGFrame->PrincipalChildList().FirstChild());
 
   nsIFrame* frame =
-      nsSVGUtils::HitTestChildren(anonKid, svgViewportRelativePoint);
+      SVGUtils::HitTestChildren(anonKid, svgViewportRelativePoint);
   if (frame) {
     aOutFrames->AppendElement(frame);
   }
@@ -637,10 +637,10 @@ void nsDisplayOuterSVG::Paint(nsDisplayListBuilder* aBuilder,
   imgDrawingParams imgParams(aBuilder->GetImageDecodeFlags());
   
   
-  gfxMatrix tm = nsSVGUtils::GetCSSPxToDevPxMatrix(mFrame) *
+  gfxMatrix tm = SVGUtils::GetCSSPxToDevPxMatrix(mFrame) *
                  gfxMatrix::Translation(devPixelOffset);
-  nsSVGUtils::PaintFrameWithEffects(mFrame, *aContext, tm, imgParams,
-                                    &contentAreaDirtyRect);
+  SVGUtils::PaintFrameWithEffects(mFrame, *aContext, tm, imgParams,
+                                  &contentAreaDirtyRect);
   nsDisplayItemGenericImageGeometry::UpdateDrawResult(this, imgParams.result);
   aContext->Restore();
 
@@ -695,7 +695,7 @@ nsresult SVGOuterSVGFrame::AttributeChanged(int32_t aNameSpaceID,
       
       mCanvasTM = nullptr;
 
-      nsSVGUtils::NotifyChildrenOfSVGChange(
+      SVGUtils::NotifyChildrenOfSVGChange(
           PrincipalChildList().FirstChild(),
           aAttribute == nsGkAtoms::viewBox
               ? TRANSFORM_CHANGED | COORD_CONTEXT_CHANGED
@@ -852,8 +852,8 @@ void SVGOuterSVGFrame::NotifyViewportOrTransformChanged(uint32_t aFlags) {
     }
   }
 
-  nsSVGUtils::NotifyChildrenOfSVGChange(PrincipalChildList().FirstChild(),
-                                        aFlags);
+  SVGUtils::NotifyChildrenOfSVGChange(PrincipalChildList().FirstChild(),
+                                      aFlags);
 }
 
 

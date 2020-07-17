@@ -11,6 +11,7 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/DocumentStyleRootIterator.h"
+#include "mozilla/EffectSet.h"
 #include "mozilla/GeckoBindings.h"
 #include "mozilla/LayerAnimationInfo.h"
 #include "mozilla/layers/AnimationInfo.h"
@@ -20,8 +21,13 @@
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSetInlines.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/SVGIntegrationUtils.h"
+#include "mozilla/SVGObserverUtils.h"
+#include "mozilla/SVGTextFrame.h"
+#include "mozilla/SVGUtils.h"
 #include "mozilla/Unused.h"
 #include "mozilla/ViewportFrame.h"
+#include "mozilla/IntegerRange.h"
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/ElementInlines.h"
@@ -45,12 +51,7 @@
 #include "nsStyleUtil.h"
 #include "nsTransitionManager.h"
 #include "StickyScrollContainer.h"
-#include "mozilla/EffectSet.h"
-#include "mozilla/IntegerRange.h"
-#include "SVGObserverUtils.h"
-#include "SVGTextFrame.h"
 #include "ActiveLayerTracker.h"
-#include "nsSVGIntegrationUtils.h"
 
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
@@ -653,7 +654,7 @@ static nsIFrame* GetFrameForChildrenOnlyTransformHint(nsIFrame* aFrame) {
   if (aFrame->IsSVGOuterSVGFrame()) {
     aFrame = aFrame->PrincipalChildList().FirstChild();
     MOZ_ASSERT(aFrame->IsSVGOuterSVGAnonChildFrame(),
-               "Where is the nsSVGOuterSVGFrame's anon child??");
+               "Where is the SVGOuterSVGFrame's anon child??");
   }
   MOZ_ASSERT(aFrame->IsFrameOfType(nsIFrame::eSVG | nsIFrame::eSVGContainer),
              "Children-only transforms only expected on SVG frames");
@@ -928,7 +929,7 @@ static bool ContainingBlockChangeAffectsDescendants(
         nsIFrame* outOfFlow = nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
         
         
-        NS_ASSERTION(!nsSVGUtils::IsInSVGTextSubtree(outOfFlow),
+        NS_ASSERTION(!SVGUtils::IsInSVGTextSubtree(outOfFlow),
                      "SVG text frames can't be out of flow");
         auto* display = outOfFlow->StyleDisplay();
         if (display->IsAbsolutelyPositionedStyle()) {
@@ -1028,7 +1029,7 @@ static void DoApplyRenderingChangeToTree(nsIFrame* aFrame,
           aFrame->IsFrameOfType(nsIFrame::eSVG) &&
           !aFrame->IsSVGOuterSVGFrame()) {
         
-        nsSVGUtils::ScheduleReflowSVG(aFrame);
+        SVGUtils::ScheduleReflowSVG(aFrame);
       }
 
       ActiveLayerTracker::NotifyNeedsRepaint(aFrame);
@@ -1039,7 +1040,7 @@ static void DoApplyRenderingChangeToTree(nsIFrame* aFrame,
       needInvalidatingPaint = true;
 
       ActiveLayerTracker::NotifyRestyle(aFrame, eCSSProperty_opacity);
-      if (nsSVGIntegrationUtils::UsingEffectsForFrame(aFrame)) {
+      if (SVGIntegrationUtils::UsingEffectsForFrame(aFrame)) {
         
         
         aFrame->InvalidateFrameSubtree();
@@ -1545,7 +1546,7 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
       
       
       if ((hint & nsChangeHint_UpdateOpacityLayer) &&
-          nsSVGUtils::CanOptimizeOpacity(frame)) {
+          SVGUtils::CanOptimizeOpacity(frame)) {
         hint &= ~nsChangeHint_UpdateOpacityLayer;
         hint |= nsChangeHint_RepaintFrame;
       }
