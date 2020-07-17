@@ -488,6 +488,11 @@ class HttpChannelChild final : public PHttpChannelChild,
   void CleanupRedirectingChannel(nsresult rv);
 
   
+  
+  
+  void NotifyOrReleaseListeners(nsresult rv);
+
+  
   bool RemoteChannelExists() { return CanSend() && !mKeptAlive; }
 
   void AssociateApplicationCache(const nsCString& groupID,
