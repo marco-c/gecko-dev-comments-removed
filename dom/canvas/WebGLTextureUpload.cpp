@@ -102,9 +102,8 @@ static UniquePtr<webgl::TexUnpackBlob> FromImageBitmap(
   
   
   
-  return MakeUnique<webgl::TexUnpackSurface>(webgl, target, size.x, size.y,
-                                             size.z, surf,
-                                             cloneData->mAlphaType, false);
+  return MakeUnique<webgl::TexUnpackSurface>(
+      webgl, target, size.x, size.y, size.z, surf, cloneData->mAlphaType);
 }
 
 static UniquePtr<webgl::TexUnpackBlob> FromImageData(
@@ -151,7 +150,7 @@ static UniquePtr<webgl::TexUnpackBlob> FromImageData(
   
 
   return MakeUnique<webgl::TexUnpackSurface>(webgl, target, size.x, size.y,
-                                             size.z, surf, alphaType, true);
+                                             size.z, surf, alphaType);
 }
 
 UniquePtr<webgl::TexUnpackBlob> WebGLContext::FromDomElem(
@@ -255,8 +254,8 @@ UniquePtr<webgl::TexUnpackBlob> WebGLContext::FromDomElem(
   }
 
   MOZ_ASSERT(dataSurf);
-  return MakeUnique<webgl::TexUnpackSurface>(
-      this, target, size.x, size.y, size.z, dataSurf, sfer.mAlphaType, true);
+  return MakeUnique<webgl::TexUnpackSurface>(this, target, size.x, size.y,
+                                             size.z, dataSurf, sfer.mAlphaType);
 }
 
 
