@@ -749,10 +749,6 @@ class FormAutofillParent extends JSWindowActorParent {
     }
 
     let browser = this.manager.browsingContext.top.embedderElement;
-    if (browser && browser.outerBrowser) {
-      
-      browser = browser.outerBrowser;
-    }
 
     
     

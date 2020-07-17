@@ -31,11 +31,6 @@ class LinkHandlerParent extends JSWindowActorParent {
       return;
     }
 
-    if (browser.outerBrowser) {
-      
-      browser = browser.outerBrowser;
-    }
-
     let win = browser.ownerGlobal;
 
     let gBrowser = win.gBrowser;

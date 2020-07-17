@@ -266,10 +266,6 @@ class PopupBlockingParent extends JSWindowActorParent {
       return;
     }
 
-    if (browser.outerBrowser) {
-      browser = browser.outerBrowser; 
-    }
-
     browser.popupBlocker._updateBlockedPopupEntries(this.browsingContext, data);
   }
 }

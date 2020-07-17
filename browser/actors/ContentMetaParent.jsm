@@ -11,11 +11,6 @@ class ContentMetaParent extends JSWindowActorParent {
     if (message.name == "Meta:SetPageInfo") {
       let browser = this.manager.browsingContext.top.embedderElement;
       if (browser) {
-        if (browser.outerBrowser) {
-          
-          browser = browser.outerBrowser;
-        }
-
         let gBrowser = browser.ownerGlobal.gBrowser;
         if (gBrowser) {
           gBrowser.setPageInfo(

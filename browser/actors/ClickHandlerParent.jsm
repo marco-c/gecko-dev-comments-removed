@@ -55,9 +55,6 @@ class ClickHandlerParent extends JSWindowActorParent {
     
     
     let browser = this.manager.browsingContext.top.embedderElement;
-    if (browser.outerBrowser) {
-      browser = browser.outerBrowser; 
-    }
     let window = browser.ownerGlobal;
 
     if (!data.href) {
@@ -124,9 +121,6 @@ class ClickHandlerParent extends JSWindowActorParent {
     for (let listener of gContentClickListeners) {
       try {
         let browser = this.browsingContext.top.embedderElement;
-        if (browser.outerBrowser) {
-          browser = browser.outerBrowser; 
-        }
 
         listener.onContentClick(browser, data);
       } catch (ex) {

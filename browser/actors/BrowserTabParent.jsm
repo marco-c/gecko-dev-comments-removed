@@ -16,10 +16,6 @@ class BrowserTabParent extends JSWindowActorParent {
       return; 
     }
 
-    if (browser.outerBrowser) {
-      browser = browser.outerBrowser; 
-    }
-
     let gBrowser = browser.ownerGlobal.gBrowser;
 
     switch (message.name) {
