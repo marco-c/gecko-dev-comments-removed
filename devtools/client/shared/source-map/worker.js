@@ -4245,7 +4245,7 @@ async function convertToJSON(buffer) {
   
   
   cachedWasmModule = cachedWasmModule || loadConverterModule();
-  return convertDwarf(buffer, (await cachedWasmModule));
+  return convertDwarf(buffer, await cachedWasmModule);
 }
 
 async function loadConverterModule() {
