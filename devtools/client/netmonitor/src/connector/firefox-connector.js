@@ -32,7 +32,6 @@ class FirefoxConnector {
     this.disconnect = this.disconnect.bind(this);
     this.willNavigate = this.willNavigate.bind(this);
     this.navigate = this.navigate.bind(this);
-    this.displayCachedEvents = this.displayCachedEvents.bind(this);
     this.sendHTTPRequest = this.sendHTTPRequest.bind(this);
     this.setPreferences = this.setPreferences.bind(this);
     this.triggerActivity = this.triggerActivity.bind(this);
@@ -44,9 +43,9 @@ class FirefoxConnector {
 
     
     this.getLongString = this.getLongString.bind(this);
-    this.getNetworkRequest = this.getNetworkRequest.bind(this);
     this.onTargetAvailable = this.onTargetAvailable.bind(this);
     this.onResourceAvailable = this.onResourceAvailable.bind(this);
+    this.onResourceUpdated = this.onResourceUpdated.bind(this);
   }
 
   get currentTarget() {
@@ -114,7 +113,9 @@ class FirefoxConnector {
   }
 
   async resume() {
-    await this.addListeners();
+    
+    
+    await this.addListeners(true);
   }
 
   async onTargetAvailable({ targetFront, isTargetSwitching }) {
@@ -146,26 +147,35 @@ class FirefoxConnector {
 
     
     this.responsiveFront = await this.currentTarget.getFront("responsive");
-
-    
-    if (this.actions) {
-      this.displayCachedEvents();
-    }
   }
 
   async onResourceAvailable({ resourceType, targetFront, resource }) {
-    if (resourceType === this.toolbox.resourceWatcher.TYPES.DOCUMENT_EVENT) {
+    const { TYPES } = this.toolbox.resourceWatcher;
+    if (resourceType === TYPES.DOCUMENT_EVENT) {
       this.onDocEvent(resource);
+      return;
+    }
+
+    if (resourceType === TYPES.NETWORK_EVENT) {
+      this.dataProvider.onNetworkResourceAvailable(resource);
     }
   }
 
-  async addListeners() {
-    this.webConsoleFront.on("networkEvent", this.dataProvider.onNetworkEvent);
-    this.webConsoleFront.on(
-      "networkEventUpdate",
-      this.dataProvider.onNetworkEventUpdate
-    );
+  async onResourceUpdated({ resourceType, targetFront, resource }) {
+    if (resourceType === this.toolbox.resourceWatcher.TYPES.NETWORK_EVENT) {
+      this.dataProvider.onNetworkResourceUpdated(resource);
+    }
+  }
 
+  async addListeners(ignoreExistingResources = false) {
+    await this.toolbox.resourceWatcher.watchResources(
+      [this.toolbox.resourceWatcher.TYPES.NETWORK_EVENT],
+      {
+        onAvailable: this.onResourceAvailable,
+        onUpdated: this.onResourceUpdated,
+        ignoreExistingResources,
+      }
+    );
     
     if (Services.prefs.getBoolPref("devtools.netmonitor.features.webSockets")) {
       try {
@@ -206,6 +216,13 @@ class FirefoxConnector {
   }
 
   removeListeners() {
+    this.toolbox.resourceWatcher.unwatchResources(
+      [this.toolbox.resourceWatcher.TYPES.NETWORK_EVENT],
+      {
+        onAvailable: this.onResourceAvailable,
+        onUpdated: this.onResourceUpdated,
+      }
+    );
     const webSocketFront = this.currentTarget.getCachedFront("webSocket");
     if (webSocketFront) {
       webSocketFront.off(
@@ -218,17 +235,6 @@ class FirefoxConnector {
       );
       webSocketFront.off("frameReceived", this.dataProvider.onFrameReceived);
       webSocketFront.off("frameSent", this.dataProvider.onFrameSent);
-    }
-
-    if (this.webConsoleFront) {
-      this.webConsoleFront.off(
-        "networkEvent",
-        this.dataProvider.onNetworkEvent
-      );
-      this.webConsoleFront.off(
-        "networkEventUpdate",
-        this.dataProvider.onNetworkEventUpdate
-      );
     }
 
     const eventSourceFront = this.currentTarget.getCachedFront("eventSource");
@@ -297,23 +303,6 @@ class FirefoxConnector {
     const panel = this.toolbox.getPanel("netmonitor");
     if (panel) {
       panel.emit("reloaded");
-    }
-  }
-
-  
-
-
-  displayCachedEvents() {
-    for (const networkInfo of this.webConsoleFront.getNetworkEvents()) {
-      
-      this.dataProvider.onNetworkEvent(networkInfo);
-      
-      for (const updateType of networkInfo.updates) {
-        this.dataProvider.onNetworkEventUpdate({
-          packet: { updateType },
-          networkInfo,
-        });
-      }
     }
   }
 
@@ -463,16 +452,6 @@ class FirefoxConnector {
     }
     this.currentActivity = ACTIVITY_TYPE.NONE;
     return Promise.reject(new Error("Invalid activity type"));
-  }
-
-  
-
-
-
-
-
-  getNetworkRequest(id) {
-    return this.dataProvider.getNetworkRequest(id);
   }
 
   

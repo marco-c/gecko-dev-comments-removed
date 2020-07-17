@@ -60,15 +60,18 @@ add_task(async function task() {
 async function testNetmonitor(toolbox) {
   const monitor = toolbox.getCurrentPanel();
 
-  const { store, windowRequire } = monitor.panelWin;
+  const { document, store, windowRequire } = monitor.panelWin;
   const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
   const { getSortedRequests } = windowRequire(
     "devtools/client/netmonitor/src/selectors/index"
   );
 
   store.dispatch(Actions.batchEnable(false));
-
+  const requestItem = document.querySelector(".request-list-item");
   await waitUntil(() => store.getState().requests.requests.length > 0);
+  
+  
+  await waitForDOM(requestItem, ".requests-list-timings-total");
 
   is(
     store.getState().requests.requests.length,

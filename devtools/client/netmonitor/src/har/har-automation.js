@@ -88,7 +88,7 @@ HarAutomation.prototype = {
     
     this.collector = new HarCollector({
       webConsoleFront: this.webConsoleFront,
-      devToolsClient: this.devToolsClient,
+      resourceWatcher: this.toolbox.resourceWatcher,
     });
 
     this.collector.start();

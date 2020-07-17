@@ -753,10 +753,6 @@ Toolbox.prototype = {
     await targetFront.attach();
 
     
-    const webConsoleFront = await targetFront.getFront("console");
-    await webConsoleFront.startListeners(["NetworkActivity"]);
-
-    
     
     
     
@@ -841,6 +837,16 @@ Toolbox.prototype = {
         TargetList.ALL_TYPES,
         this._onTargetAvailable,
         this._onTargetDestroyed
+      );
+
+      
+      
+      
+      
+      
+      await this.resourceWatcher.watchResources(
+        [this.resourceWatcher.TYPES.NETWORK_EVENT],
+        { onAvailable: () => {}, onUpdated: () => {} }
       );
 
       await domReady;
