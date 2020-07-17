@@ -1,6 +1,5 @@
 from __future__ import absolute_import, print_function
 import os
-import shutil
 import time
 
 from marionette_harness import MarionetteTestCase
@@ -502,22 +501,11 @@ class TestFirefoxRefresh(MarionetteTestCase):
         MarionetteTestCase.tearDown(self)
 
         
-        import errno
-        import stat
-
-        def handleRemoveReadonly(func, path, exc):
-            excvalue = exc[1]
-            if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
-                os.chmod(path, stat.S_IRWXU | stat.S_IRWXG |
-                         stat.S_IRWXO)  
-                func(path)
-            else:
-                raise
+        import mozfile
 
         for cleanup in self.cleanups:
             if cleanup.desktop_backup_path:
-                shutil.rmtree(cleanup.desktop_backup_path,
-                              ignore_errors=False, onerror=handleRemoveReadonly)
+                mozfile.remove(cleanup.desktop_backup_path)
 
             if cleanup.reset_profile_path:
                 
@@ -530,20 +518,10 @@ class TestFirefoxRefresh(MarionetteTestCase):
                 
                 different_path = cleanup.reset_profile_local_path != cleanup.reset_profile_path
                 if cleanup.reset_profile_local_path and different_path:
-                    shutil.rmtree(cleanup.reset_profile_local_path,
-                                  ignore_errors=False, onerror=handleRemoveReadonly)
+                    mozfile.remove(cleanup.reset_profile_local_path)
 
                 
-                os = self.marionette.session_capabilities["platformName"]
-                
-                if os == "windows" and not cleanup.reset_profile_path.startswith('\\\\?\\'):
-                    profile_path = r"\\?\%s" % cleanup.reset_profile_path
-                else:
-                    profile_path = cleanup.reset_profile_path
-
-                
-                shutil.rmtree(profile_path,
-                              ignore_errors=False, onerror=handleRemoveReadonly)
+                mozfile.remove(cleanup.reset_profile_path)
 
     def doReset(self):
         profileName = "marionette-test-profile-" + str(int(time.time() * 1000))
