@@ -11,7 +11,6 @@
 
 #include "jstypes.h"
 #include "jit/BaselineIC.h"
-#include "jit/TrialInlining.h"
 #include "js/UniquePtr.h"
 #include "util/TrailingArray.h"
 #include "vm/TypeInference.h"
@@ -54,87 +53,6 @@ static IonScript* const IonDisabledScriptPtr =
     reinterpret_cast<IonScript*>(IonDisabledScript);
 static IonScript* const IonCompilingScriptPtr =
     reinterpret_cast<IonScript*>(IonCompilingScript);
-
-class JitScript;
-class InliningRoot;
-
-class alignas(uintptr_t) ICScript final : public TrailingArray {
- public:
-  ICScript(JitScript* jitScript, uint32_t warmUpCount, Offset endOffset,
-           InliningRoot* inliningRoot = nullptr)
-      : jitScript_(jitScript),
-        inliningRoot_(inliningRoot),
-        warmUpCount_(warmUpCount),
-        endOffset_(endOffset) {}
-
-  JitScript* jitScript() { return jitScript_; }
-
-  MOZ_MUST_USE bool initICEntries(JSContext* cx, JSScript* script);
-
-  ICEntry& icEntry(size_t index) {
-    MOZ_ASSERT(index < numICEntries());
-    return icEntries()[index];
-  }
-
-  InliningRoot* inliningRoot() const { return inliningRoot_; }
-
-  static constexpr size_t offsetOfFirstStub(uint32_t entryIndex) {
-    return sizeof(ICScript) + entryIndex * sizeof(ICEntry) +
-           ICEntry::offsetOfFirstStub();
-  }
-
-  static constexpr Offset offsetOfWarmUpCount() {
-    return offsetof(ICScript, warmUpCount_);
-  }
-
-  static constexpr Offset offsetOfICEntries() { return sizeof(ICScript); }
-  uint32_t numICEntries() const {
-    return numElements<ICEntry>(icEntriesOffset(), endOffset());
-  }
-
-  ICEntry* interpreterICEntryFromPCOffset(uint32_t pcOffset);
-
-  ICEntry* maybeICEntryFromPCOffset(uint32_t pcOffset);
-  ICEntry* maybeICEntryFromPCOffset(uint32_t pcOffset,
-                                    ICEntry* prevLookedUpEntry);
-
-  ICEntry& icEntryFromPCOffset(uint32_t pcOffset);
-  ICEntry& icEntryFromPCOffset(uint32_t pcOffset, ICEntry* prevLookedUpEntry);
-
-  FallbackICStubSpace* fallbackStubSpace();
-  void purgeOptimizedStubs(Zone* zone);
-
-  void trace(JSTracer* trc);
-
- private:
-  
-  
-  
-  JitScript* jitScript_;
-
-  
-  
-  InliningRoot* inliningRoot_ = nullptr;
-
-  
-  
-  
-  mozilla::Atomic<uint32_t, mozilla::Relaxed> warmUpCount_ = {};
-
-  
-  Offset endOffset_;
-
-  Offset icEntriesOffset() const { return offsetOfICEntries(); }
-  Offset endOffset() const { return endOffset_; }
-
-  ICEntry* icEntries() { return offsetToPointer<ICEntry>(icEntriesOffset()); }
-
-  friend class JitScript;
-};
-
-
-
-
 
 
 
@@ -262,6 +180,11 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   IonScript* ionScript_ = nullptr;
 
   
+  
+  
+  mozilla::Atomic<uint32_t, mozilla::Relaxed> warmUpCount_ = {};
+
+  
   Offset typeSetOffset_ = 0;
 
   
@@ -293,9 +216,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   };
   Flags flags_ = {};  
 
-  js::UniquePtr<InliningRoot> inliningRoot_;
-
-  ICScript icScript_;
   
 
   Offset icEntriesOffset() const { return offsetOfICEntries(); }
@@ -303,7 +223,7 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   Offset bytecodeTypeMapOffset() const { return bytecodeTypeMapOffset_; }
   Offset endOffset() const { return endOffset_; }
 
-  ICEntry* icEntries() { return icScript_.icEntries(); }
+  ICEntry* icEntries() { return offsetToPointer<ICEntry>(icEntriesOffset()); }
 
   StackTypeSet* typeArrayDontCheckGeneration() {
     MOZ_ASSERT(IsTypeInferenceEnabled());
@@ -344,7 +264,8 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   }
 #endif
 
-  void initBytecodeTypeMap(JSScript* script);
+  MOZ_MUST_USE bool initICEntriesAndBytecodeTypeMap(JSContext* cx,
+                                                    JSScript* script);
 
   MOZ_MUST_USE bool ensureHasCachedIonData(JSContext* cx, HandleScript script);
 
@@ -382,7 +303,9 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
     return inlinedCompilations.append(info);
   }
 
-  uint32_t numICEntries() const { return icScript_.numICEntries(); }
+  uint32_t numICEntries() const {
+    return numElements<ICEntry>(icEntriesOffset(), typeSetOffset());
+  }
   uint32_t numTypeSets() const {
     MOZ_ASSERT(IsTypeInferenceEnabled());
     return numElements<StackTypeSet>(typeSetOffset(), bytecodeTypeMapOffset());
@@ -490,16 +413,11 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   static constexpr size_t offsetOfIonScript() {
     return offsetof(JitScript, ionScript_);
   }
-  static constexpr size_t offsetOfICScript() {
-    return offsetof(JitScript, icScript_);
-  }
   static constexpr size_t offsetOfWarmUpCount() {
-    return offsetOfICScript() + ICScript::offsetOfWarmUpCount();
+    return offsetof(JitScript, warmUpCount_);
   }
 
-  uint32_t warmUpCount() const { return icScript_.warmUpCount_; }
-  void incWarmUpCount(uint32_t amount) { icScript_.warmUpCount_ += amount; }
-  void resetWarmUpCount(uint32_t count) { icScript_.warmUpCount_ = count; }
+  uint32_t warmUpCount() const { return warmUpCount_; }
 
 #ifdef DEBUG
   void printTypes(JSContext* cx, HandleScript script);
@@ -526,36 +444,25 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
     *fallbackStubs += fallbackStubSpace_.sizeOfExcludingThis(mallocSizeOf);
   }
 
-  ICEntry& icEntry(size_t index) { return icScript_.icEntry(index); }
+  ICEntry& icEntry(size_t index) {
+    MOZ_ASSERT(index < numICEntries());
+    return icEntries()[index];
+  }
 
-  
-  
   void noteAccessedGetter(uint32_t pcOffset);
-  
-  
   void noteHasDenseAdd(uint32_t pcOffset);
 
   void trace(JSTracer* trc);
   void purgeOptimizedStubs(JSScript* script);
 
-  ICEntry* interpreterICEntryFromPCOffset(uint32_t pcOffset) {
-    return icScript_.interpreterICEntryFromPCOffset(pcOffset);
-  }
+  ICEntry* interpreterICEntryFromPCOffset(uint32_t pcOffset);
 
-  ICEntry* maybeICEntryFromPCOffset(uint32_t pcOffset) {
-    return icScript_.maybeICEntryFromPCOffset(pcOffset);
-  }
+  ICEntry* maybeICEntryFromPCOffset(uint32_t pcOffset);
   ICEntry* maybeICEntryFromPCOffset(uint32_t pcOffset,
-                                    ICEntry* prevLookedUpEntry) {
-    return icScript_.maybeICEntryFromPCOffset(pcOffset, prevLookedUpEntry);
-  }
+                                    ICEntry* prevLookedUpEntry);
 
-  ICEntry& icEntryFromPCOffset(uint32_t pcOffset) {
-    return icScript_.icEntryFromPCOffset(pcOffset);
-  };
-  ICEntry& icEntryFromPCOffset(uint32_t pcOffset, ICEntry* prevLookedUpEntry) {
-    return icScript_.icEntryFromPCOffset(pcOffset, prevLookedUpEntry);
-  }
+  ICEntry& icEntryFromPCOffset(uint32_t pcOffset);
+  ICEntry& icEntryFromPCOffset(uint32_t pcOffset, ICEntry* prevLookedUpEntry);
 
   MOZ_MUST_USE bool addDependentWasmImport(JSContext* cx,
                                            wasm::Instance& instance,
@@ -670,12 +577,6 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
     MOZ_ASSERT(isIonCompilingOffThread());
     setIonScriptImpl(script, nullptr);
   }
-  ICScript* icScript() { return &icScript_; }
-
-  bool hasInliningRoot() const { return !!inliningRoot_; }
-  InliningRoot* inliningRoot() const { return inliningRoot_.get(); }
-  InliningRoot* getOrCreateInliningRoot(JSContext* cx);
-  void clearInliningRoot() { inliningRoot_.reset(); }
 };
 
 

@@ -27,8 +27,12 @@ inline void EmitRepushTailCallReg(MacroAssembler& masm) {
   
 }
 
-inline void EmitCallIC(MacroAssembler& masm, CodeOffset* callOffset) {
+inline void EmitCallIC(MacroAssembler& masm, const ICEntry* entry,
+                       CodeOffset* callOffset) {
   
+  masm.loadPtr(AbsoluteAddress(entry).offset(ICEntry::offsetOfFirstStub()),
+               ICStubReg);
+
   
   
   static_assert(R2 == ValueOperand(r1, r0));

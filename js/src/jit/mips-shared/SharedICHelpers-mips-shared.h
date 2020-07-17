@@ -39,8 +39,12 @@ inline void EmitRepushTailCallReg(MacroAssembler& masm) {
   
 }
 
-inline void EmitCallIC(MacroAssembler& masm, CodeOffset* callOffset) {
+inline void EmitCallIC(MacroAssembler& masm, const ICEntry* entry,
+                       CodeOffset* callOffset) {
   
+  masm.loadPtr(AbsoluteAddress(entry).offset(ICEntry::offsetOfFirstStub()),
+               ICStubReg);
+
   
   
   masm.loadPtr(Address(ICStubReg, ICStub::offsetOfStubCode()), R2.scratchReg());

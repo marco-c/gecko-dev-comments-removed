@@ -60,7 +60,6 @@ class BaselineFrame {
   ICEntry* interpreterICEntry_;
 
   JSObject* envChain_;        
-  ICScript* icScript_;        
   ArgumentsObject* argsObj_;  
 
   
@@ -82,10 +81,6 @@ class BaselineFrame {
 #endif
   uint32_t loReturnValue_;  
   uint32_t hiReturnValue_;
-#if JS_BITS_PER_WORD == 32
-  
-  uint32_t padding_;
-#endif
 
  public:
   
@@ -101,6 +96,7 @@ class BaselineFrame {
 
   JSObject* environmentChain() const { return envChain_; }
   void setEnvironmentChain(JSObject* envChain) { envChain_ = envChain; }
+  inline JSObject** addressOfEnvironmentChain() { return &envChain_; }
 
   template <typename SpecificEnvironment>
   inline void pushOnEnvironmentChain(SpecificEnvironment& env);
@@ -222,6 +218,7 @@ class BaselineFrame {
     flags_ &= ~RUNNING_IN_INTERPRETER;
     interpreterScript_ = nullptr;
     interpreterPC_ = nullptr;
+    interpreterICEntry_ = nullptr;
   }
 
   void initInterpFieldsForGeneratorThrowOrReturn(JSScript* script,
@@ -287,8 +284,6 @@ class BaselineFrame {
   
   
   void setInterpreterFieldsForPrologue(JSScript* script);
-
-  ICScript* icScript() const;
 
   bool hasReturnValue() const { return flags_ & HAS_RVAL; }
   MutableHandleValue returnValue() {
@@ -419,9 +414,6 @@ class BaselineFrame {
   }
   static int reverseOffsetOfInterpreterICEntry() {
     return -int(Size()) + offsetof(BaselineFrame, interpreterICEntry_);
-  }
-  static int reverseOffsetOfICScript() {
-    return -int(Size()) + offsetof(BaselineFrame, icScript_);
   }
   static int reverseOffsetOfLocal(size_t index) {
     return -int(Size()) - (index + 1) * sizeof(Value);

@@ -103,8 +103,10 @@ class RetAddrEntry {
     CallVM,
 
     
-    
     NonOpCallVM,
+
+    
+    WarmupCounter,
 
     
     StackCheck,

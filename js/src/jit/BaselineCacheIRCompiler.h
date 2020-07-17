@@ -24,8 +24,8 @@ enum class BaselineCacheIRStubKind { Regular, Monitored, Updated };
 ICStub* AttachBaselineCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
                                   CacheKind kind,
                                   BaselineCacheIRStubKind stubKind,
-                                  JSScript* outerScript, ICScript* icScript,
-                                  ICFallbackStub* stub, bool* attached);
+                                  JSScript* outerScript, ICFallbackStub* stub,
+                                  bool* attached);
 
 
 class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {

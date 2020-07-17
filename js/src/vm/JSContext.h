@@ -45,7 +45,6 @@ class WellKnownParserAtoms;
 }  
 
 namespace jit {
-class ICScript;
 class JitActivation;
 class JitContext;
 class DebugModeOSRVolatileJitFrameIter;
@@ -467,10 +466,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   }
 #endif
 
-  static size_t offsetOfInlinedICScript() {
-    return offsetof(JSContext, inlinedICScript_);
-  }
-
  public:
   js::InterpreterStack& interpreterStack() {
     return runtime()->interpreterStack();
@@ -870,12 +865,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
     return interruptBits_ & uint32_t(reason);
   }
 
-  
-  
-  
-  
-  js::ContextData<js::jit::ICScript*> inlinedICScript_;
-
  public:
   void* addressOfInterruptBits() { return &interruptBits_; }
   void* addressOfJitStackLimit() { return &jitStackLimit; }
@@ -885,8 +874,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   void* addressOfZone() { return &zone_; }
 
   const void* addressOfRealm() const { return &realm_; }
-
-  void* addressOfInlinedICScript() { return &inlinedICScript_; }
 
   
   

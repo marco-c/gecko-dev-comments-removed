@@ -1708,13 +1708,6 @@ bool WarpCacheIRTranspiler::emitCallScriptedFunction(ObjOperandId calleeId,
   return emitCallFunction(calleeId, argcId, flags, CallKind::Scripted);
 }
 
-bool WarpCacheIRTranspiler::emitCallInlinedFunction(ObjOperandId calleeId,
-                                                    Int32OperandId argcId,
-                                                    uint32_t icScriptOffset,
-                                                    CallFlags flags) {
-  return emitCallFunction(calleeId, argcId, flags, CallKind::Scripted);
-}
-
 
 bool WarpCacheIRTranspiler::emitMetaTwoByte(MetaTwoByteKind kind,
                                             uint32_t functionObjectOffset,
