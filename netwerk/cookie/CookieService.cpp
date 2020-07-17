@@ -1386,7 +1386,7 @@ bool CookieService::ParseAttributes(nsIConsoleReportCollector* aCRC,
       } else {
         CookieLogging::LogMessageToConsole(
             aCRC, aHostURI, nsIScriptError::infoFlag, CONSOLE_SAMESITE_CATEGORY,
-            "CookieSameSiteValueInvalid"_ns,
+            "CookieSameSiteValueInvalid2"_ns,
             AutoTArray<nsString, 1>{NS_ConvertUTF8toUTF16(aCookieData.name())});
       }
     }
@@ -1406,7 +1406,7 @@ bool CookieService::ParseAttributes(nsIConsoleReportCollector* aCRC,
         StaticPrefs::network_cookie_sameSite_noneRequiresSecure()) {
       CookieLogging::LogMessageToConsole(
           aCRC, aHostURI, nsIScriptError::infoFlag, CONSOLE_SAMESITE_CATEGORY,
-          "CookieRejectedNonRequiresSecure"_ns,
+          "CookieRejectedNonRequiresSecure2"_ns,
           AutoTArray<nsString, 1>{NS_ConvertUTF8toUTF16(aCookieData.name())});
       return newCookie;
     }
@@ -1414,7 +1414,7 @@ bool CookieService::ParseAttributes(nsIConsoleReportCollector* aCRC,
     
     CookieLogging::LogMessageToConsole(
         aCRC, aHostURI, nsIScriptError::warningFlag, CONSOLE_SAMESITE_CATEGORY,
-        "CookieRejectedNonRequiresSecureForBeta"_ns,
+        "CookieRejectedNonRequiresSecureForBeta2"_ns,
         AutoTArray<nsString, 2>{NS_ConvertUTF8toUTF16(aCookieData.name()),
                                 SAMESITE_MDN_URL});
   }
@@ -1424,12 +1424,12 @@ bool CookieService::ParseAttributes(nsIConsoleReportCollector* aCRC,
     if (laxByDefault) {
       CookieLogging::LogMessageToConsole(
           aCRC, aHostURI, nsIScriptError::infoFlag, CONSOLE_SAMESITE_CATEGORY,
-          "CookieLaxForced"_ns,
+          "CookieLaxForced2"_ns,
           AutoTArray<nsString, 1>{NS_ConvertUTF8toUTF16(aCookieData.name())});
     } else {
       CookieLogging::LogMessageToConsole(
           aCRC, aHostURI, nsIScriptError::warningFlag,
-          CONSOLE_SAMESITE_CATEGORY, "CookieLaxForcedForBeta"_ns,
+          CONSOLE_SAMESITE_CATEGORY, "CookieLaxForcedForBeta2"_ns,
           AutoTArray<nsString, 2>{NS_ConvertUTF8toUTF16(aCookieData.name()),
                                   SAMESITE_MDN_URL});
     }
