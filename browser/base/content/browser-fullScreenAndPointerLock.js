@@ -345,7 +345,9 @@ var FullScreen = {
   },
 
   exitDomFullScreen() {
-    document.exitFullscreen();
+    if (document.fullscreen) {
+      document.exitFullscreen();
+    }
   },
 
   handleEvent(event) {
@@ -520,6 +522,17 @@ var FullScreen = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
   _sendMessageToTheRightContent(aActor, aMessage) {
     if (aActor.hasBeenDestroyed()) {
       
@@ -530,6 +543,9 @@ var FullScreen = {
     let parentBC = childBC.parent;
 
     while (parentBC) {
+      if (!childBC.currentWindowGlobal || !parentBC.currentWindowGlobal) {
+        break;
+      }
       let childPid = childBC.currentWindowGlobal.osPid;
       let parentPid = parentBC.currentWindowGlobal.osPid;
 
@@ -541,7 +557,7 @@ var FullScreen = {
       }
     }
 
-    if (parentBC) {
+    if (parentBC && parentBC.currentWindowGlobal) {
       let parentActor = parentBC.currentWindowGlobal.getActor("DOMFullscreen");
       parentActor.sendAsyncMessage(aMessage, {
         remoteFrameBC: childBC,
@@ -554,8 +570,10 @@ var FullScreen = {
     
     
     
-    aActor.requestOrigin.sendAsyncMessage(aMessage, {});
-    aActor.requestOrigin = null;
+    if (!aActor.requestOrigin.hasBeenDestroyed()) {
+      aActor.requestOrigin.sendAsyncMessage(aMessage, {});
+      aActor.requestOrigin = null;
+    }
     return true;
   },
 
