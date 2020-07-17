@@ -57,7 +57,11 @@ class BaselineFrame {
   
   JSScript* interpreterScript_;
   jsbytecode* interpreterPC_;
-  ICEntry* interpreterICEntry_;
+
+  union {
+    ICEntry* interpreterICEntry_;  
+    ICScript* compilerICScript_;   
+  };
 
   JSObject* envChain_;        
   ArgumentsObject* argsObj_;  
@@ -212,13 +216,13 @@ class BaselineFrame {
     return UndefinedValue();
   }
 
-  void prepareForBaselineInterpreterToJitOSR() {
+  void prepareForBaselineInterpreterToJitOSR(ICScript* icScript) {
     
     
     flags_ &= ~RUNNING_IN_INTERPRETER;
     interpreterScript_ = nullptr;
     interpreterPC_ = nullptr;
-    interpreterICEntry_ = nullptr;
+    compilerICScript_ = icScript;
   }
 
   void initInterpFieldsForGeneratorThrowOrReturn(JSScript* script,
@@ -284,6 +288,11 @@ class BaselineFrame {
   
   
   void setInterpreterFieldsForPrologue(JSScript* script);
+
+  ICScript* compilerICScript() const {
+    MOZ_ASSERT(!runningInInterpreter());
+    return compilerICScript_;
+  }
 
   bool hasReturnValue() const { return flags_ & HAS_RVAL; }
   MutableHandleValue returnValue() {
@@ -414,6 +423,9 @@ class BaselineFrame {
   }
   static int reverseOffsetOfInterpreterICEntry() {
     return -int(Size()) + offsetof(BaselineFrame, interpreterICEntry_);
+  }
+  static int reverseOffsetOfCompilerICScript() {
+    return -int(Size()) + offsetof(BaselineFrame, compilerICScript_);
   }
   static int reverseOffsetOfLocal(size_t index) {
     return -int(Size()) - (index + 1) * sizeof(Value);
