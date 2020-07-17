@@ -4612,6 +4612,9 @@ class HTMLEditor final : public TextEditor,
 
   bool OurWindowHasFocus() const;
 
+  EditorDOMPoint GetNewCaretPointAfterInsertingHTML(
+      const EditorDOMPoint& lastInsertedPoint) const;
+
   
 
 
