@@ -2363,8 +2363,18 @@ static JSAtom* SymbolToFunctionName(JSContext* cx, JS::Symbol* symbol,
   
   if (desc) {
     
-    if (!sb.append('[') || !sb.append(desc) || !sb.append(']')) {
-      return nullptr;
+    
+    
+    
+    if (symbol->isPrivateName()) {
+      if (!sb.append(desc)) {
+        return nullptr;
+      }
+    } else {
+      
+      if (!sb.append('[') || !sb.append(desc) || !sb.append(']')) {
+        return nullptr;
+      }
     }
   }
   return sb.finishAtom();
