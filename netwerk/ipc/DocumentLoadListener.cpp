@@ -545,9 +545,8 @@ auto DocumentLoadListener::Open(
   mSrcdocData = aLoadState->SrcdocData();
   mBaseURI = aLoadState->BaseURI();
   mOriginalUriString = aLoadState->GetOriginalURIString();
-  if (StaticPrefs::fission_sessionHistoryInParent()) {
-    
-    
+  if (StaticPrefs::fission_sessionHistoryInParent() &&
+      browsingContext->GetSessionHistory()) {
     mSessionHistoryInfo =
         browsingContext->CreateSessionHistoryEntryForLoad(aLoadState, mChannel);
   }
