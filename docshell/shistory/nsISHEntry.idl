@@ -216,7 +216,7 @@ interface nsISHEntry : nsISupports
 
 
 
-    attribute boolean scrollRestorationIsManual;
+    [infallible] attribute boolean scrollRestorationIsManual;
 
     
 
