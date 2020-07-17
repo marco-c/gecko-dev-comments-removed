@@ -1396,6 +1396,34 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
     return NS_OK;
   }
 
+  TextFragmentData textFragmentDataAtStart(mStart, mEnd, mNBSPData, mPRE);
+  const Maybe<const WSFragment>
+      nonPreformattedVisibleWSFragmentInMiddleOfLineAtStart =
+          beforeRun && !textFragmentDataAtStart.IsPreformatted()
+              ? textFragmentDataAtStart
+                    .CreateWSFragmentForVisibleAndMiddleOfLine()
+              : Nothing();
+  const PointPosition
+      pointPositionWithNonPreformattedVisibleWhiteSpacesAtStart =
+          nonPreformattedVisibleWSFragmentInMiddleOfLineAtStart.isSome()
+              ? nonPreformattedVisibleWSFragmentInMiddleOfLineAtStart.ref()
+                    .ComparePoint(mScanStartPoint)
+              : PointPosition::NotInSameDOMTree;
+  TextFragmentData textFragmentDataAtEnd(aEndObject->mStart, aEndObject->mEnd,
+                                         aEndObject->mNBSPData,
+                                         aEndObject->mPRE);
+  const Maybe<const WSFragment>
+      nonPreformattedVisibleWSFragmentInMiddleOfLineAtEnd =
+          afterRun && !textFragmentDataAtEnd.IsPreformatted()
+              ? textFragmentDataAtEnd
+                    .CreateWSFragmentForVisibleAndMiddleOfLine()
+              : Nothing();
+  const PointPosition pointPositionWithNonPreformattedVisibleWhiteSpacesAtEnd =
+      nonPreformattedVisibleWSFragmentInMiddleOfLineAtEnd.isSome()
+          ? nonPreformattedVisibleWSFragmentInMiddleOfLineAtEnd.ref()
+                .ComparePoint(aEndObject->mScanStartPoint)
+          : PointPosition::NotInSameDOMTree;
+
   if (afterRun) {
     
     if (afterRun->IsStartOfHardLine()) {
@@ -1412,7 +1440,12 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
       }
     }
     
-    else if (afterRun->IsVisibleAndMiddleOfHardLine() && !aEndObject->mPRE) {
+    
+    
+    else if (pointPositionWithNonPreformattedVisibleWhiteSpacesAtEnd ==
+                 PointPosition::StartOfFragment ||
+             pointPositionWithNonPreformattedVisibleWhiteSpacesAtEnd ==
+                 PointPosition::MiddleOfFragment) {
       if ((beforeRun && beforeRun->IsStartOfHardLine()) ||
           (!beforeRun && StartsFromHardLineBreak())) {
         
@@ -1460,7 +1493,13 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
     return rv;
   }
 
-  if (beforeRun->IsVisibleAndMiddleOfHardLine() && !mPRE) {
+  
+  
+  
+  if (pointPositionWithNonPreformattedVisibleWhiteSpacesAtStart ==
+          PointPosition::MiddleOfFragment ||
+      pointPositionWithNonPreformattedVisibleWhiteSpacesAtStart ==
+          PointPosition::EndOfFragment) {
     if ((afterRun && (afterRun->IsEndOfHardLine() || afterRun->IsVisible())) ||
         (!afterRun && aEndObject->EndsByBlockBoundary())) {
       
