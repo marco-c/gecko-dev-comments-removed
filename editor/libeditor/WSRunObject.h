@@ -424,6 +424,8 @@ class MOZ_STACK_CLASS WSRunScanner {
  protected:
   using EditorType = EditorBase::EditorType;
 
+  class TextFragmentData;
+
   
   
   
@@ -433,13 +435,14 @@ class MOZ_STACK_CLASS WSRunScanner {
     int32_t mStartOffset;          
     int32_t mEndOffset;            
 
+   private:
     WSFragment()
         : mStartOffset(0),
           mEndOffset(0),
           mLeftWSType(WSType::NotInitialized),
-          mRightWSType(WSType::NotInitialized),
-          mIsVisible(Visible::No) {}
+          mRightWSType(WSType::NotInitialized) {}
 
+   public:
     EditorDOMPoint StartPoint() const {
       return EditorDOMPoint(mStartNode, mStartOffset);
     }
@@ -452,15 +455,6 @@ class MOZ_STACK_CLASS WSRunScanner {
     EditorRawDOMPoint RawEndPoint() const {
       return EditorRawDOMPoint(mEndNode, mEndOffset);
     }
-
-    enum class Visible : bool { No, Yes };
-
-    
-
-
-
-    void MarkAsVisible() { mIsVisible = Visible::Yes; }
-    bool IsVisible() const { return mIsVisible == Visible::Yes; }
 
     
 
@@ -542,7 +536,8 @@ class MOZ_STACK_CLASS WSRunScanner {
 
    private:
     WSType mLeftWSType, mRightWSType;
-    Visible mIsVisible;
+
+    friend class WSRunScanner::TextFragmentData;
   };
 
   using PointPosition = WSFragment::PointPosition;
