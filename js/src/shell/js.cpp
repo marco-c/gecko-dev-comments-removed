@@ -7553,28 +7553,35 @@ static bool AddMarkObservers(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  
-  
-  
-  
-  
-  cx->runtime()->gc.evictNursery();
-
   RootedObject observersArg(cx, &args[0].toObject());
-  RootedValue v(cx);
   uint32_t length;
   if (!GetLengthProperty(cx, observersArg, &length)) {
     return false;
   }
+
+  RootedValue value(cx);
+  RootedObject object(cx);
   for (uint32_t i = 0; i < length; i++) {
-    if (!JS_GetElement(cx, observersArg, i, &v)) {
+    if (!JS_GetElement(cx, observersArg, i, &value)) {
       return false;
     }
-    if (!v.isObject()) {
+
+    if (!value.isObject()) {
       JS_ReportErrorASCII(cx, "argument must be an Array of objects");
       return false;
     }
-    if (!markObservers->get().append(&v.toObject())) {
+
+    object = &value.toObject();
+    if (gc::IsInsideNursery(object)) {
+      
+      
+      
+      
+      
+      cx->runtime()->gc.evictNursery();
+    }
+
+    if (!markObservers->get().append(object)) {
       return false;
     }
   }
