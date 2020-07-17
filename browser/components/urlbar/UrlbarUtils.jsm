@@ -1004,6 +1004,9 @@ class UrlbarQueryContext {
   
 
 
+
+
+
   get fixupInfo() {
     if (this.searchString && !this._fixupInfo) {
       let flags =
@@ -1013,10 +1016,14 @@ class UrlbarQueryContext {
         flags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
       }
 
-      this._fixupInfo = Services.uriFixup.getFixupURIInfo(
+      let info = Services.uriFixup.getFixupURIInfo(
         this.searchString.trim(),
         flags
       );
+      this._fixupInfo = {
+        href: info.fixedURI.spec,
+        isSearch: !!info.keywordAsSent,
+      };
     }
 
     return this._fixupInfo || null;
