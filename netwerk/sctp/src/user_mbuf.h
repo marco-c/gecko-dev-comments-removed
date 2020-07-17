@@ -55,7 +55,10 @@ struct mbuf * m_gethdr(int how, short type);
 struct mbuf * m_get(int how, short type);
 struct mbuf * m_free(struct mbuf *m);
 void m_clget(struct mbuf *m, int how);
-
+struct mbuf * m_getm2(struct mbuf *m, int len, int how, short type, int flags, int allonebuf);
+struct mbuf *m_uiotombuf(struct uio *uio, int how, int len, int align, int flags);
+u_int m_length(struct mbuf *m0, struct mbuf **last);
+struct mbuf *m_last(struct mbuf *m);
 
 
 void mbuf_initialize(void *);
@@ -107,7 +110,7 @@ void             m_cat(struct mbuf *m, struct mbuf *n);
 void		 m_adj(struct mbuf *, int);
 void  mb_free_ext(struct mbuf *);
 void  m_freem(struct mbuf *);
-struct m_tag	*m_tag_alloc(u_int32_t, int, int, int);
+struct m_tag	*m_tag_alloc(uint32_t, int, int, int);
 struct mbuf	*m_copym(struct mbuf *, int, int, int);
 void		 m_copyback(struct mbuf *, int, int, caddr_t);
 struct mbuf	*m_pullup(struct mbuf *, int);
@@ -124,35 +127,6 @@ void		 m_copydata(const struct mbuf *, int, int, caddr_t);
 
 #define	MT_NOINIT	255	/* Not a type but a flag to allocate
 				   a non-initialized mbuf */
-
-
-
-
-
-
-
-struct mbstat {
-	u_long	m_mbufs;	
-	u_long	m_mclusts;	
-
-	u_long	m_drain;	
-	u_long	m_mcfail;	
-	u_long	m_mpfail;	
-	u_long	m_msize;	
-	u_long	m_mclbytes;	
-	u_long	m_minclsize;	
-	u_long	m_mlen;		
-	u_long	m_mhlen;	
-
-	
-	short	m_numtypes;
-
-	
-	u_long	sf_iocnt;	
-	u_long	sf_allocfail;	
-	u_long	sf_allocwait;	
-};
-
 
 
 
@@ -187,9 +161,9 @@ struct m_hdr {
 
 struct m_tag {
 	SLIST_ENTRY(m_tag)	m_tag_link;	
-	u_int16_t		m_tag_id;	
-	u_int16_t		m_tag_len;	
-	u_int32_t		m_tag_cookie;	
+	uint16_t		m_tag_id;	
+	uint16_t		m_tag_len;	
+	uint32_t		m_tag_cookie;	
 	void			(*m_tag_free)(struct m_tag *);
 };
 
@@ -204,8 +178,8 @@ struct pkthdr {
 	
 	int		 csum_flags;	
 	int		 csum_data;	
-	u_int16_t	 tso_segsz;	
-	u_int16_t	 ether_vtag;	
+	uint16_t	 tso_segsz;	
+	uint16_t	 ether_vtag;	
 	SLIST_HEAD(packet_tags, m_tag) tags; 
 };
 
@@ -349,9 +323,6 @@ void		 m_tag_free_default(struct m_tag *);
 extern int max_linkhdr;    
 extern int max_protohdr; 
 
-extern struct mbstat	mbstat;		
-
-
 
 
 
@@ -370,9 +341,9 @@ extern struct mbstat	mbstat;
 
 
 #define	M_LEADINGSPACE(m)						\
-	((m)->m_flags & M_EXT ?						\
+	(((m)->m_flags & M_EXT) ?					\
 	    (M_WRITABLE(m) ? (m)->m_data - (m)->m_ext.ext_buf : 0):	\
-	    (m)->m_flags & M_PKTHDR ? (m)->m_data - (m)->m_pktdat :	\
+	    ((m)->m_flags & M_PKTHDR)? (m)->m_data - (m)->m_pktdat :	\
 	    (m)->m_data - (m)->m_dat)
 
 
@@ -382,7 +353,7 @@ extern struct mbstat	mbstat;
 
 
 #define	M_TRAILINGSPACE(m)						\
-	((m)->m_flags & M_EXT ?						\
+	(((m)->m_flags & M_EXT) ?					\
 	    (M_WRITABLE(m) ? (m)->m_ext.ext_buf + (m)->m_ext.ext_size	\
 		- ((m)->m_data + (m)->m_len) : 0) :			\
 	    &(m)->m_dat[MLEN] - ((m)->m_data + (m)->m_len))
@@ -433,5 +404,10 @@ extern struct mbstat	mbstat;
                 ("%s: MH_ALIGN not a virgin mbuf", __func__));          \
 	(m)->m_data += (MHLEN - (len)) & ~(sizeof(long) - 1);		\
 } while (0)
+
+#define M_SIZE(m)						\
+		(((m)->m_flags & M_EXT) ? (m)->m_ext.ext_size :	\
+		((m)->m_flags & M_PKTHDR) ? MHLEN :		\
+		MLEN)
 
 #endif

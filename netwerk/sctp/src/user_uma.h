@@ -46,11 +46,11 @@ typedef struct uma_zone * uma_zone_t;
 typedef struct uma_keg * uma_keg_t;
 
 struct uma_cache {
-    int stub; 
+	int stub; 
 };
 
 struct uma_keg {
-    int stub; 
+	int stub; 
 };
 
 struct uma_zone {
@@ -83,16 +83,14 @@ struct uma_zone {
 
 uma_zone_t
 uma_zcreate(char *name, size_t size, uma_ctor ctor, uma_dtor dtor,
-	    uma_init uminit, uma_fini fini, int align, u_int32_t flags);
+	    uma_init uminit, uma_fini fini, int align, uint32_t flags);
 
 
 #define uma_zone_set_max(zone, number)
 
 uma_zone_t
 uma_zcreate(char *name, size_t size, uma_ctor ctor, uma_dtor dtor,
-	    uma_init uminit, uma_fini fini, int align, u_int32_t flags)
-{
-    return NULL; 
-
+	    uma_init uminit, uma_fini fini, int align, uint32_t flags) {
+	return NULL; 
 }
 #endif
