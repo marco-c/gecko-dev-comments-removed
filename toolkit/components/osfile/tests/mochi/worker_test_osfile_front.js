@@ -3,7 +3,8 @@
 
 
 
-importScripts("worker_test_osfile_shared.js");
+
+importScripts("chrome://mochikit/content/tests/SimpleTest/WorkerSimpleTest.js");
 importScripts("resource://gre/modules/workers/require.js");
 
 var SharedAll = require("resource://gre/modules/osfile/osfile_shared_allthreads.jsm");

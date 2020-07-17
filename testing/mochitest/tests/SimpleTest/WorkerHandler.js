@@ -1,13 +1,19 @@
 
 
 
-function worker_handler(worker) {
+
+
+
+
+function listenForTests(worker, opts = { verbose: true }) {
   worker.onerror = function(error) {
     error.preventDefault();
     ok(false, "Worker error " + error.message);
   };
   worker.onmessage = function(msg) {
-    ok(true, "MAIN: onmessage " + JSON.stringify(msg.data));
+    if (opts && opts.verbose) {
+      ok(true, "MAIN: onmessage " + JSON.stringify(msg.data));
+    }
     switch (msg.data.kind) {
       case "is":
         SimpleTest.ok(
