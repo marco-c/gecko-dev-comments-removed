@@ -765,6 +765,12 @@ if __name__ == "__main__":
         extra_asmflags = []
         
         extra_ldflags = ['-Wl,-Bsymbolic-functions']
+        
+        
+        
+        
+        
+        extra_ldflags += ['-fuse-ld=gold', '-Wl,--gc-sections', '-Wl,--icf=safe']
 
         if 'LD_LIBRARY_PATH' in os.environ:
             os.environ['LD_LIBRARY_PATH'] = ('%s/lib64/:%s' %
