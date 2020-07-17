@@ -10,6 +10,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/StaticMutex.h"
 #include "nsRefPtrHashtable.h"
 
@@ -54,20 +55,28 @@ class RefMessageBody final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefMessageBody)
 
   RefMessageBody(const nsID& aPortID,
-                 UniquePtr<ipc::StructuredCloneData>&& aCloneData)
-      : mPortID(aPortID),
-        mCloneData(std::move(aCloneData)),
-        mMaxCount(Nothing()),
-        mCount(0) {}
+                 UniquePtr<ipc::StructuredCloneData>&& aCloneData);
 
   const nsID& PortID() const { return mPortID; }
 
-  ipc::StructuredCloneData* CloneData() { return mCloneData.get(); }
+  void Read(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
+            const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
+
+  
+  
+  bool TakeTransferredPortsAsSequence(
+      Sequence<OwningNonNull<mozilla::dom::MessagePort>>& aPorts);
 
  private:
   ~RefMessageBody() = default;
 
   const nsID mPortID;
+
+  
+  
+  
+  Mutex mMutex;
+
   UniquePtr<ipc::StructuredCloneData> mCloneData;
 
   
