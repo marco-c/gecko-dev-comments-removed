@@ -2707,14 +2707,6 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
 
     
     switch (kind) {
-      case ElemSegmentKind::Declared: {
-        if (!(elemType.isReference() &&
-              env->isRefSubtypeOf(elemType, RefType::func()))) {
-          return d.fail(
-              "declared segment's element type must be subtype of funcref");
-        }
-        break;
-      }
       case ElemSegmentKind::Active:
       case ElemSegmentKind::ActiveWithTableIndex: {
         ValType tblElemType = ToElemValType(env->tables[seg->tableIndex].kind);
@@ -2726,6 +2718,7 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
         }
         break;
       }
+      case ElemSegmentKind::Declared:
       case ElemSegmentKind::Passive: {
         
         MOZ_ASSERT(elemType.isReference());
