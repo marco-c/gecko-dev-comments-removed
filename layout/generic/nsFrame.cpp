@@ -8111,8 +8111,7 @@ nsresult nsIFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
         if (aPos->mDirection == eDirNext && (resultFrame == nearStoppingFrame))
           break;
         
-        frameTraversal->Prev();
-        resultFrame = frameTraversal->CurrentItem();
+        resultFrame = frameTraversal->Traverse( false);
         if (!resultFrame) return NS_ERROR_FAILURE;
       }
 
@@ -8151,8 +8150,7 @@ nsresult nsIFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
         if (aPos->mDirection == eDirNext && (resultFrame == farStoppingFrame))
           break;
         
-        frameTraversal->Next();
-        nsIFrame* tempFrame = frameTraversal->CurrentItem();
+        nsIFrame* tempFrame = frameTraversal->Traverse( true);
         if (!tempFrame) break;
         resultFrame = tempFrame;
       }
@@ -8871,9 +8869,15 @@ nsresult nsIFrame::GetFrameFromDirection(
   *aOutJumpedLine = false;
   *aOutMovedOverNonSelectableText = false;
 
-  nsresult result;
   nsPresContext* presContext = PresContext();
   bool needsVisualTraversal = aVisual && presContext->BidiEnabled();
+  nsCOMPtr<nsIFrameEnumerator> frameTraversal;
+  MOZ_TRY(NS_NewFrameTraversal(getter_AddRefs(frameTraversal), presContext,
+                               this, eLeaf, needsVisualTraversal,
+                               aScrollViewStop,
+                               true,  
+                               false  
+                               ));
 
   
   bool selectable = false;
@@ -8899,21 +8903,7 @@ nsresult nsIFrame::GetFrameFromDirection(
         return NS_ERROR_FAILURE;  
     }
 
-    nsCOMPtr<nsIFrameEnumerator> frameTraversal;
-    result = NS_NewFrameTraversal(getter_AddRefs(frameTraversal), presContext,
-                                  traversedFrame, eLeaf, needsVisualTraversal,
-                                  aScrollViewStop,
-                                  true,  
-                                  false  
-    );
-    if (NS_FAILED(result)) return result;
-
-    if (aDirection == eDirNext)
-      frameTraversal->Next();
-    else
-      frameTraversal->Prev();
-
-    traversedFrame = frameTraversal->CurrentItem();
+    traversedFrame = frameTraversal->Traverse(aDirection == eDirNext);
     if (!traversedFrame) {
       return NS_ERROR_FAILURE;
     }
