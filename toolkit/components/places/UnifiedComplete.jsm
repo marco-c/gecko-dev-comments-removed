@@ -340,7 +340,6 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 XPCOMUtils.defineLazyModuleGetters(this, {
   AboutPagesUtils: "resource://gre/modules/AboutPagesUtils.jsm",
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
-  ExtensionSearchHandler: "resource://gre/modules/ExtensionSearchHandler.jsm",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   PlacesRemoteTabsAutocompleteProvider:
     "resource://gre/modules/PlacesRemoteTabsAutocompleteProvider.jsm",
@@ -1272,16 +1271,6 @@ Search.prototype = {
     
     
 
-    if (this._heuristicToken) {
-      
-      let matched = await this._matchExtensionHeuristicResult(
-        this._heuristicToken
-      );
-      if (matched) {
-        return true;
-      }
-    }
-
     if (this.pending && this._enableActions && this._heuristicToken) {
       
       let matched = await this._matchSearchEngineAlias(this._heuristicToken);
@@ -1367,18 +1356,6 @@ Search.prototype = {
       });
     }
     return gotResult;
-  },
-
-  _matchExtensionHeuristicResult(keyword) {
-    if (
-      ExtensionSearchHandler.isKeywordRegistered(keyword) &&
-      substringAfter(this._originalSearchString, keyword)
-    ) {
-      let description = ExtensionSearchHandler.getDescription(keyword);
-      this._addExtensionMatch(this._originalSearchString, description);
-      return true;
-    }
-    return false;
   },
 
   async _matchPlacesKeyword(keyword) {
@@ -1519,20 +1496,6 @@ Search.prototype = {
       this._keywordSubstitute = engine.getResultDomain();
     }
     return true;
-  },
-
-  _addExtensionMatch(content, comment) {
-    this._addMatch({
-      value: makeActionUrl("extension", {
-        content,
-        keyword: this._heuristicToken,
-      }),
-      comment,
-      icon: "chrome://browser/content/extension.svg",
-      style: "action extension",
-      frecency: Infinity,
-      type: UrlbarUtils.RESULT_GROUP.EXTENSION,
-    });
   },
 
   
