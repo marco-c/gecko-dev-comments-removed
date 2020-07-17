@@ -6707,22 +6707,11 @@ void GCRuntime::incrementalSlice(SliceBudget& budget,
       [[fallthrough]];
 
     case State::Finalize:
-      
-      
-      if (!budget.isUnlimited()) {
-        AutoLockHelperThreadState lock;
-        if (sweepTask.wasStarted(lock)) {
-          requestSliceAfterBackgroundTask = true;
-          break;
-        }
+      if (waitForBackgroundTask(sweepTask, budget) == NotFinished) {
+        break;
       }
 
-      {
-        gcstats::AutoPhase ap(stats(),
-                              gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
-        waitBackgroundSweepEnd();
-        cancelRequestedGCAfterBackgroundTask();
-      }
+      assertBackgroundSweepingFinished();
 
       {
         
@@ -6764,21 +6753,8 @@ void GCRuntime::incrementalSlice(SliceBudget& budget,
       [[fallthrough]];
 
     case State::Decommit:
-      
-      
-      if (!budget.isUnlimited()) {
-        AutoLockHelperThreadState lock;
-        if (decommitTask.wasStarted(lock)) {
-          requestSliceAfterBackgroundTask = true;
-          break;
-        }
-      }
-
-      {
-        gcstats::AutoPhase ap(stats(),
-                              gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
-        decommitTask.join();
-        cancelRequestedGCAfterBackgroundTask();
+      if (waitForBackgroundTask(decommitTask, budget) == NotFinished) {
+        break;
       }
 
       incrementalState = State::Finish;
@@ -6810,6 +6786,26 @@ bool GCRuntime::hasForegroundWork() const {
       
       return true;
   }
+}
+
+IncrementalProgress GCRuntime::waitForBackgroundTask(GCParallelTask& task,
+                                                     SliceBudget& budget) {
+  
+  
+  if (!budget.isUnlimited()) {
+    AutoLockHelperThreadState lock;
+    if (task.wasStarted(lock)) {
+      requestSliceAfterBackgroundTask = true;
+      return NotFinished;
+    }
+  }
+
+  
+  gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
+  task.join();
+  cancelRequestedGCAfterBackgroundTask();
+
+  return Finished;
 }
 
 gc::AbortReason gc::IsIncrementalGCUnsafe(JSRuntime* rt) {
