@@ -58,6 +58,38 @@ static IonScript* const IonCompilingScriptPtr =
 class JitScript;
 class InliningRoot;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class alignas(uintptr_t) ICScript final : public TrailingArray {
  public:
   ICScript(JitScript* jitScript, uint32_t warmUpCount, Offset endOffset,
