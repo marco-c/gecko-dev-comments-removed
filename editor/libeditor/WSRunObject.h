@@ -456,6 +456,11 @@ class MOZ_STACK_CLASS WSRunScanner {
           mRightWSType(WSType::NotInitialized) {}
 
    public:
+    bool IsInitialized() const {
+      return mLeftWSType != WSType::NotInitialized ||
+             mRightWSType != WSType::NotInitialized;
+    }
+
     EditorDOMPoint StartPoint() const {
       return EditorDOMPoint(mStartNode, mStartOffset);
     }
@@ -986,29 +991,28 @@ class MOZ_STACK_CLASS WSRunScanner {
 
       
       
-      Maybe<VisibleWhiteSpacesData> visibleWhiteSpaces =
-          CreateVisibleWhiteSpacesData();
-      if (visibleWhiteSpaces.isNothing()) {
+      const VisibleWhiteSpacesData& visibleWhiteSpaces =
+          VisibleWhiteSpacesDataRef();
+      if (!visibleWhiteSpaces.IsInitialized()) {
         return false;
       }
       
-      if (!visibleWhiteSpaces.ref().StartPoint().IsSet()) {
+      if (!visibleWhiteSpaces.StartPoint().IsSet()) {
         return true;
       }
-      if (!visibleWhiteSpaces.ref().StartPoint().EqualsOrIsBefore(aPoint)) {
+      if (!visibleWhiteSpaces.StartPoint().EqualsOrIsBefore(aPoint)) {
         return false;
       }
       
-      if (visibleWhiteSpaces.ref().EndsByTrailingWhiteSpaces()) {
+      if (visibleWhiteSpaces.EndsByTrailingWhiteSpaces()) {
         return true;
       }
       
       
-      if (visibleWhiteSpaces.ref().StartPoint() ==
-          visibleWhiteSpaces.ref().EndPoint()) {
+      if (visibleWhiteSpaces.StartPoint() == visibleWhiteSpaces.EndPoint()) {
         return true;
       }
-      return aPoint.IsBefore(visibleWhiteSpaces.ref().EndPoint());
+      return aPoint.IsBefore(visibleWhiteSpaces.EndPoint());
     }
 
     
@@ -1040,7 +1044,10 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
 
-    Maybe<VisibleWhiteSpacesData> CreateVisibleWhiteSpacesData() const;
+
+
+
+    const VisibleWhiteSpacesData& VisibleWhiteSpacesDataRef() const;
 
    private:
     
@@ -1062,6 +1069,7 @@ class MOZ_STACK_CLASS WSRunScanner {
     RefPtr<const Element> mEditingHost;
     mutable Maybe<EditorDOMRange> mLeadingWhiteSpaceRange;
     mutable Maybe<EditorDOMRange> mTrailingWhiteSpaceRange;
+    mutable Maybe<VisibleWhiteSpacesData> mVisibleWhiteSpacesData;
     
     
     
