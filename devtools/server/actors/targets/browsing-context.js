@@ -636,14 +636,6 @@ const browsingContextTargetPrototype = {
 
 
   _shouldAddNewGlobalAsDebuggee(wrappedGlobal) {
-    if (
-      wrappedGlobal.hostAnnotations &&
-      wrappedGlobal.hostAnnotations.type == "document" &&
-      wrappedGlobal.hostAnnotations.element === this.window
-    ) {
-      return true;
-    }
-
     
     const global = unwrapDebuggerObjectGlobal(wrappedGlobal);
     if (!global) {
