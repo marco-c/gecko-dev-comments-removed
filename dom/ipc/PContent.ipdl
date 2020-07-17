@@ -258,7 +258,7 @@ struct JSWindowActorInfo
   
   nsCString[] observers;
   nsString[] matches;
-  nsCString[] remoteTypes;
+  nsString[] remoteTypes;
   nsString[] messageManagerGroups;
 };
 
@@ -271,7 +271,7 @@ struct JSProcessActorInfo
 
     
     nsCString[] observers;
-    nsCString[] remoteTypes;
+    nsString[] remoteTypes;
 };
 
 struct GMPAPITags
@@ -632,7 +632,7 @@ child:
     
 
 
-    async RemoteType(nsCString aRemoteType);
+    async RemoteType(nsString aRemoteType);
 
     
 

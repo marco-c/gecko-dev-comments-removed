@@ -23,10 +23,6 @@ class nsQueryActorParent;
 namespace mozilla {
 namespace dom {
 
-class JSActorManager;
-class JSActorMessageMeta;
-class QueryPromiseHandler;
-
 enum class JSActorMessageKind {
   Message,
   Query,
@@ -35,13 +31,19 @@ enum class JSActorMessageKind {
   EndGuard_,
 };
 
+class JSActorMessageMeta;
+class QueryPromiseHandler;
+
 
 class JSActor : public nsISupports, public nsWrapperCache {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(JSActor)
 
-  explicit JSActor(nsISupports* aGlobal = nullptr);
+  JSActor();
+
+  enum class Type { Parent, Child };
+  enum class CallbackFunction { WillDestroy, DidDestroy, ActorCreated };
 
   const nsCString& Name() const { return mName; }
 
@@ -53,7 +55,13 @@ class JSActor : public nsISupports, public nsWrapperCache {
                                       JS::Handle<JS::Value> aObj,
                                       ErrorResult& aRv);
 
-  nsIGlobalObject* GetParentObject() const { return mGlobal; };
+  void ReceiveRawMessage(const JSActorMessageMeta& aMetadata,
+                         ipc::StructuredCloneData&& aData,
+                         ipc::StructuredCloneData&& aStack);
+
+  virtual nsIGlobalObject* GetParentObject() const = 0;
+
+  void RejectPendingQueries();
 
  protected:
   
@@ -69,39 +77,26 @@ class JSActor : public nsISupports, public nsWrapperCache {
   static bool AllowMessage(const JSActorMessageMeta& aMetadata,
                            size_t aDataLength);
 
-  
-  using OtherSideCallback = std::function<already_AddRefed<JSActorManager>()>;
-  static void SendRawMessageInProcess(const JSActorMessageMeta& aMeta,
-                                      ipc::StructuredCloneData&& aData,
-                                      ipc::StructuredCloneData&& aStack,
-                                      OtherSideCallback&& aGetOtherSide);
-
   virtual ~JSActor() = default;
 
   void SetName(const nsACString& aName);
 
-  bool CanSend() const { return mCanSend; }
-
   void StartDestroy();
+
   void AfterDestroy();
 
-  enum class CallbackFunction { WillDestroy, DidDestroy, ActorCreated };
   void InvokeCallback(CallbackFunction willDestroy);
 
-  virtual void ClearManager() = 0;
-
  private:
-  friend class JSActorManager;
   friend class ::nsQueryActorChild;   
   friend class ::nsQueryActorParent;  
 
   nsresult QueryInterfaceActor(const nsIID& aIID, void** aPtr);
 
-  
-  
   void ReceiveMessageOrQuery(JSContext* aCx,
                              const JSActorMessageMeta& aMetadata,
                              JS::Handle<JS::Value> aData, ErrorResult& aRv);
+
   void ReceiveQueryReply(JSContext* aCx, const JSActorMessageMeta& aMetadata,
                          JS::Handle<JS::Value> aData, ErrorResult& aRv);
 
@@ -133,12 +128,10 @@ class JSActor : public nsISupports, public nsWrapperCache {
     uint64_t mQueryId;
   };
 
-  nsCOMPtr<nsIGlobalObject> mGlobal;
   nsCOMPtr<nsISupports> mWrappedJS;
   nsCString mName;
   nsRefPtrHashtable<nsUint64HashKey, Promise> mPendingQueries;
-  uint64_t mNextQueryId = 0;
-  bool mCanSend = true;
+  uint64_t mNextQueryId;
 };
 
 }  

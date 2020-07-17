@@ -20,21 +20,22 @@ class JSProcessActorChild final : public JSActor {
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(JSProcessActorChild,
                                                          JSActor)
 
-  explicit JSProcessActorChild(nsISupports* aGlobal = nullptr)
-      : JSActor(aGlobal) {}
+  nsIGlobalObject* GetParentObject() const override {
+    return xpc::NativeGlobal(xpc::PrivilegedJunkScope());
+  }
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   static already_AddRefed<JSProcessActorChild> Constructor(
       GlobalObject& aGlobal) {
-    return MakeAndAddRef<JSProcessActorChild>(aGlobal.GetAsSupports());
+    return MakeAndAddRef<JSProcessActorChild>();
   }
 
   nsIDOMProcessChild* Manager() const { return mManager; }
 
   void Init(const nsACString& aName, nsIDOMProcessChild* aManager);
-  void ClearManager() override;
+  void AfterDestroy();
 
  protected:
   
@@ -48,6 +49,7 @@ class JSProcessActorChild final : public JSActor {
  private:
   ~JSProcessActorChild() { MOZ_ASSERT(!mManager); }
 
+  bool mCanSend = true;
   nsCOMPtr<nsIDOMProcessChild> mManager;
 };
 

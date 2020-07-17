@@ -79,17 +79,21 @@ NS_IMETHODIMP JSProcessActorProtocol::Observe(nsISupports* aSubject,
                                               const char16_t* aData) {
   MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
 
-  RefPtr<JSActorManager> manager;
+  nsCOMPtr<nsIDOMProcessChild> manager;
   if (XRE_IsParentProcess()) {
     manager = InProcessChild::Singleton();
   } else {
     manager = ContentChild::GetSingleton();
   }
 
-  
-  RefPtr<JSActor> actor = manager->GetActor(mName, IgnoreErrors());
-  if (!actor) {
-    return NS_OK;
+  RefPtr<JSProcessActorChild> actor;
+  nsresult rv = manager->GetActor(mName, getter_AddRefs(actor));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    if (rv == NS_ERROR_NOT_AVAILABLE) {
+      return NS_OK;
+    }
+    return rv;
   }
 
   
@@ -121,7 +125,7 @@ void JSProcessActorProtocol::RemoveObservers() {
 }
 
 bool JSProcessActorProtocol::RemoteTypePrefixMatches(
-    const nsDependentCSubstring& aRemoteType) {
+    const nsDependentSubstring& aRemoteType) {
   for (auto& remoteType : mRemoteTypes) {
     if (StringBeginsWith(aRemoteType, remoteType)) {
       return true;
@@ -130,7 +134,7 @@ bool JSProcessActorProtocol::RemoteTypePrefixMatches(
   return false;
 }
 
-bool JSProcessActorProtocol::Matches(const nsACString& aRemoteType) {
+bool JSProcessActorProtocol::Matches(const nsAString& aRemoteType) {
   if (!mRemoteTypes.IsEmpty() &&
       !RemoteTypePrefixMatches(RemoteTypePrefix(aRemoteType))) {
     return false;
