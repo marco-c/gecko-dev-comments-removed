@@ -5,9 +5,9 @@
 
 #ifndef include_dom_media_ipc_RemoteDecoderManagerChild_h
 #define include_dom_media_ipc_RemoteDecoderManagerChild_h
-#include "GPUVideoImage.h"
 #include "mozilla/PRemoteDecoderManagerChild.h"
 #include "mozilla/layers/VideoBridgeUtils.h"
+#include "GPUVideoImage.h"
 
 namespace mozilla {
 
@@ -25,7 +25,7 @@ class RemoteDecoderManagerChild final
   static RemoteDecoderManagerChild* GetGPUProcessSingleton();
 
   
-  static nsISerialEventTarget* GetManagerThread();
+  static nsIThread* GetManagerThread();
 
   
   
@@ -51,7 +51,6 @@ class RemoteDecoderManagerChild final
   bool DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
   
-  static void InitializeThread();
   static void InitForRDDProcess(
       Endpoint<PRemoteDecoderManagerChild>&& aVideoManager);
   static void InitForGPUProcess(
@@ -64,11 +63,13 @@ class RemoteDecoderManagerChild final
   
   void RunWhenGPUProcessRecreated(already_AddRefed<Runnable> aTask);
 
+  bool CanSend();
   layers::VideoBridgeSource GetSource() const { return mSource; }
 
  protected:
   void InitIPDL();
 
+  void ActorDestroy(ActorDestroyReason aWhy) override;
   void ActorDealloc() override;
 
   void HandleFatalError(const char* aMsg) const override;
@@ -81,6 +82,9 @@ class RemoteDecoderManagerChild final
   bool DeallocPRemoteDecoderChild(PRemoteDecoderChild* actor);
 
  private:
+  
+  static void InitializeThread();
+
   explicit RemoteDecoderManagerChild(layers::VideoBridgeSource aSource);
   ~RemoteDecoderManagerChild() = default;
 
@@ -93,6 +97,9 @@ class RemoteDecoderManagerChild final
 
   
   layers::VideoBridgeSource mSource;
+
+  
+  bool mCanSend = false;
 };
 
 }  
