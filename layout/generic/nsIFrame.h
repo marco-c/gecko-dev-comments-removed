@@ -536,11 +536,11 @@ static void ReleaseValue(T* aPropertyValue) {
   (int(((mozilla::LogModule*)(_lm))->Level()) & (_bit))
 
 #ifdef DEBUG
-#  define NS_FRAME_LOG(_bit, _args)                          \
-    PR_BEGIN_MACRO                                           \
-    if (NS_FRAME_LOG_TEST(nsFrame::sFrameLogModule, _bit)) { \
-      printf_stderr _args;                                   \
-    }                                                        \
+#  define NS_FRAME_LOG(_bit, _args)                           \
+    PR_BEGIN_MACRO                                            \
+    if (NS_FRAME_LOG_TEST(nsIFrame::sFrameLogModule, _bit)) { \
+      printf_stderr _args;                                    \
+    }                                                         \
     PR_END_MACRO
 #else
 #  define NS_FRAME_LOG(_bit, _args)
@@ -552,11 +552,11 @@ static void ReleaseValue(T* aPropertyValue) {
 
 #  define NS_FRAME_TRACE_OUT(_method) Trace(_method, false)
 
-#  define NS_FRAME_TRACE(_bit, _args)                        \
-    PR_BEGIN_MACRO                                           \
-    if (NS_FRAME_LOG_TEST(nsFrame::sFrameLogModule, _bit)) { \
-      TraceMsg _args;                                        \
-    }                                                        \
+#  define NS_FRAME_TRACE(_bit, _args)                         \
+    PR_BEGIN_MACRO                                            \
+    if (NS_FRAME_LOG_TEST(nsIFrame::sFrameLogModule, _bit)) { \
+      TraceMsg _args;                                         \
+    }                                                         \
     PR_END_MACRO
 
 #  define NS_FRAME_TRACE_REFLOW_IN(_method) Trace(_method, true)

@@ -209,7 +209,7 @@ static void InitBoxMetrics(nsIFrame* aFrame, bool aClear) {
   nsBoxLayoutMetrics* metrics = new nsBoxLayoutMetrics();
   aFrame->SetProperty(BoxMetricsProperty(), metrics);
 
-  static_cast<nsFrame*>(aFrame)->nsFrame::MarkIntrinsicISizesDirty();
+  aFrame->nsIFrame::MarkIntrinsicISizesDirty();
   metrics->mBlockAscent = 0;
   metrics->mLastSize.SizeTo(0, 0);
 }
@@ -486,7 +486,7 @@ NS_IMPL_FRAMEARENA_HELPERS(nsIFrame)
 
 
 void nsFrame::operator delete(void*, size_t) {
-  MOZ_CRASH("nsFrame::operator delete should never be called");
+  MOZ_CRASH("nsIFrame::operator delete should never be called");
 }
 
 NS_QUERYFRAME_HEAD(nsFrame)
@@ -1634,7 +1634,7 @@ void nsIFrame::CreateView() {
   SetView(view);
 
   NS_FRAME_LOG(NS_FRAME_TRACE_CALLS,
-               ("nsFrame::CreateView: frame=%p view=%p", this, view));
+               ("nsIFrame::CreateView: frame=%p view=%p", this, view));
 }
 
 
@@ -2839,13 +2839,13 @@ static void DisplayDebugBorders(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) {
   
   
-  if (nsFrame::GetShowFrameBorders() && !aFrame->GetRect().IsEmpty()) {
+  if (nsIFrame::GetShowFrameBorders() && !aFrame->GetRect().IsEmpty()) {
     aLists.Outlines()->AppendNewToTop<nsDisplayGeneric>(
         aBuilder, aFrame, PaintDebugBorder, "DebugBorder",
         DisplayItemType::TYPE_DEBUG_BORDER);
   }
   
-  if (nsFrame::GetShowEventTargetFrameBorder() &&
+  if (nsIFrame::GetShowEventTargetFrameBorder() &&
       aFrame->PresShell()->GetDrawEventTargetFrame() == aFrame) {
     aLists.Outlines()->AppendNewToTop<nsDisplayGeneric>(
         aBuilder, aFrame, PaintEventTargetBorder, "EventTargetBorder",
@@ -4884,11 +4884,11 @@ nsresult nsIFrame::SelectByTypeAtPoint(nsPresContext* aPresContext,
   if (!offsets.content) return NS_ERROR_FAILURE;
 
   int32_t offset;
-  nsIFrame* theFrame = nsFrameSelection::GetFrameForNodeOffset(
+  nsIFrame* frame = nsFrameSelection::GetFrameForNodeOffset(
       offsets.content, offsets.offset, offsets.associate, &offset);
-  if (!theFrame) return NS_ERROR_FAILURE;
-
-  nsFrame* frame = static_cast<nsFrame*>(theFrame);
+  if (!frame) {
+    return NS_ERROR_FAILURE;
+  }
   return frame->PeekBackwardAndForward(aBeginAmountType, aEndAmountType, offset,
                                        aBeginAmountType != eSelectWord,
                                        aSelectFlags);
@@ -5191,9 +5191,8 @@ NS_IMETHODIMP nsIFrame::HandleRelease(nsPresContext* aPresContext,
   
   
   RefPtr<nsFrameSelection> frameSelection;
-  if (activeFrame != this &&
-      static_cast<nsFrame*>(activeFrame)->DetermineDisplaySelection() !=
-          nsISelectionController::SELECTION_OFF) {
+  if (activeFrame != this && activeFrame->DetermineDisplaySelection() !=
+                                 nsISelectionController::SELECTION_OFF) {
     frameSelection = activeFrame->GetFrameSelection();
   }
 
@@ -5657,8 +5656,7 @@ nsIFrame::ContentOffsets nsIFrame::GetContentOffsetsFromPoint(
   } else {
     pt = aPoint;
   }
-  return static_cast<nsFrame*>(closest.frame)
-      ->CalcContentOffsetsFromFramePoint(pt);
+  return closest.frame->CalcContentOffsetsFromFramePoint(pt);
 
   
   
@@ -6050,7 +6048,7 @@ LogicalSize nsIFrame::ComputeSize(gfxContext* aRenderingContext,
                                   ComputeSizeFlags aFlags) {
   MOZ_ASSERT(!GetIntrinsicRatio(),
              "Please override this method and call "
-             "nsFrame::ComputeSizeWithIntrinsicDimensions instead.");
+             "nsIFrame::ComputeSizeWithIntrinsicDimensions instead.");
   LogicalSize result =
       ComputeAutoSize(aRenderingContext, aWM, aCBSize, aAvailableISize, aMargin,
                       aBorder, aPadding, aFlags);
@@ -7577,7 +7575,7 @@ int32_t nsIFrame::ContentIndexInContainer(const nsIFrame* aFrame) {
 
 
 
-void DebugListFrameTree(nsIFrame* aFrame) { ((nsFrame*)aFrame)->List(stderr); }
+void DebugListFrameTree(nsIFrame* aFrame) { ((nsIFrame*)aFrame)->List(stderr); }
 
 nsAutoCString nsIFrame::ListTag() const {
   nsAutoString tmp;
@@ -8831,9 +8829,9 @@ Result<bool, nsresult> nsIFrame::IsVisuallyAtLineEdge(
 
   bool frameIsRTL = (nsBidiPresUtils::FrameDirection(*framePtr) == NSBIDI_RTL);
   if ((frameIsRTL == lineIsRTL) == (aDirection == eDirPrevious)) {
-    nsFrame::GetFirstLeaf(framePtr);
+    nsIFrame::GetFirstLeaf(framePtr);
   } else {
-    nsFrame::GetLastLeaf(framePtr);
+    nsIFrame::GetLastLeaf(framePtr);
   }
   return *framePtr == this;
 }
@@ -8853,7 +8851,7 @@ Result<bool, nsresult> nsIFrame::IsLogicallyAtLineEdge(
   }
 
   if (aDirection == eDirPrevious) {
-    nsFrame::GetFirstLeaf(&firstFrame);
+    nsIFrame::GetFirstLeaf(&firstFrame);
     return firstFrame == this;
   }
 
@@ -8862,11 +8860,11 @@ Result<bool, nsresult> nsIFrame::IsLogicallyAtLineEdge(
   for (; lineFrameCount > 1; lineFrameCount--) {
     result = it->GetNextSiblingOnLine(lastFrame, aLine);
     if (NS_FAILED(result) || !lastFrame) {
-      NS_ERROR("should not be reached nsFrame");
+      NS_ERROR("should not be reached nsIFrame");
       return Err(NS_ERROR_FAILURE);
     }
   }
-  nsFrame::GetLastLeaf(&lastFrame);
+  nsIFrame::GetLastLeaf(&lastFrame);
   return lastFrame == this;
 }
 
@@ -9692,7 +9690,7 @@ static nsIFrame* GetCorrectedParent(const nsIFrame* aFrame) {
     }
   }
 
-  return nsFrame::CorrectStyleParentFrame(parent, pseudo);
+  return nsIFrame::CorrectStyleParentFrame(parent, pseudo);
 }
 
 

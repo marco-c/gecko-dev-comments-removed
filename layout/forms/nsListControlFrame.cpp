@@ -876,7 +876,7 @@ nsresult nsListControlFrame::HandleEvent(nsPresContext* aPresContext,
   
   
   if (IsContentDisabled()) {
-    return nsFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
+    return nsIFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
   }
 
   return nsHTMLScrollFrame::HandleEvent(aPresContext, aEvent, aEventStatus);

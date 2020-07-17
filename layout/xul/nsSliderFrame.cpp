@@ -559,7 +559,7 @@ nsresult nsSliderFrame::HandleEvent(nsPresContext* aPresContext,
           StopDrag();
           
           
-          return nsFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
+          return nsIFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
         }
         break;
 
@@ -635,7 +635,7 @@ nsresult nsSliderFrame::HandleEvent(nsPresContext* aPresContext,
   if (aEvent->mMessage == eMouseOut && mChange)
     HandleRelease(aPresContext, aEvent, aEventStatus);
 
-  return nsFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
+  return nsIFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
 }
 
 

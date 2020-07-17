@@ -186,7 +186,7 @@ nsresult nsTableRowGroupFrame::InitRepeatedFrame(
 }
 
 
-static void DisplayRows(nsDisplayListBuilder* aBuilder, nsFrame* aFrame,
+static void DisplayRows(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                         const nsDisplayListSet& aLists) {
   nscoord overflowAbove;
   nsTableRowGroupFrame* f = static_cast<nsTableRowGroupFrame*>(aFrame);

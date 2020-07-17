@@ -4845,7 +4845,7 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
 #ifdef DEBUG
   if (gDumpRangePaintList) {
     fprintf(stderr, "CreateRangePaintInfo --- before ClipListToRange:\n");
-    nsFrame::PrintDisplayList(&(info->mBuilder), info->mList);
+    nsIFrame::PrintDisplayList(&(info->mBuilder), info->mList);
   }
 #endif
 
@@ -4856,7 +4856,7 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
 #ifdef DEBUG
   if (gDumpRangePaintList) {
     fprintf(stderr, "CreateRangePaintInfo --- after ClipListToRange:\n");
-    nsFrame::PrintDisplayList(&(info->mBuilder), info->mList);
+    nsIFrame::PrintDisplayList(&(info->mBuilder), info->mList);
   }
 #endif
 
@@ -7999,7 +7999,7 @@ Document* PresShell::GetPrimaryContentDocument() {
 
 #ifdef DEBUG
 void PresShell::ShowEventTargetDebug() {
-  if (nsFrame::GetShowEventTargetFrameBorder() && GetCurrentEventFrame()) {
+  if (nsIFrame::GetShowEventTargetFrameBorder() && GetCurrentEventFrame()) {
     if (mDrawEventTargetFrame) {
       mDrawEventTargetFrame->InvalidateFrame();
     }

@@ -173,7 +173,7 @@ nsresult nsGfxButtonControlFrame::HandleEvent(nsPresContext* aPresContext,
   
 
   if (IsContentDisabled()) {
-    return nsFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
+    return nsIFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
   }
   return NS_OK;
 }

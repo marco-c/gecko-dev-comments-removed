@@ -65,7 +65,7 @@ void nsContainerFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 void nsContainerFrame::SetInitialChildList(ChildListID aListID,
                                            nsFrameList& aChildList) {
 #ifdef DEBUG
-  nsFrame::VerifyDirtyBitSet(aChildList);
+  nsIFrame::VerifyDirtyBitSet(aChildList);
   for (nsIFrame* f : aChildList) {
     MOZ_ASSERT(f->GetParent() == this, "Unexpected parent");
   }
@@ -372,7 +372,7 @@ class nsDisplaySelectionOverlay : public nsPaintedDisplayItem {
   
 
 
-  nsDisplaySelectionOverlay(nsDisplayListBuilder* aBuilder, nsFrame* aFrame,
+  nsDisplaySelectionOverlay(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                             int16_t aSelectionValue)
       : nsPaintedDisplayItem(aBuilder, aFrame),
         mSelectionValue(aSelectionValue) {

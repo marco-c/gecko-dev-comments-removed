@@ -4643,7 +4643,7 @@ void nsCSSFrameConstructor::FlushAccumulatedBlock(
   auto anonPseudo = PseudoStyleType::mozMathMLAnonymousBlock;
 
   ComputedStyle* parentContext =
-      nsFrame::CorrectStyleParentFrame(aParentFrame, anonPseudo)->Style();
+      nsIFrame::CorrectStyleParentFrame(aParentFrame, anonPseudo)->Style();
   ServoStyleSet* styleSet = mPresShell->StyleSet();
   RefPtr<ComputedStyle> blockContext;
   blockContext =
@@ -9515,7 +9515,7 @@ void nsCSSFrameConstructor::ProcessChildren(
 
     if (aCanHaveGeneratedContent) {
       auto* styleParentFrame =
-          nsFrame::CorrectStyleParentFrame(aFrame, PseudoStyleType::NotPseudo);
+          nsIFrame::CorrectStyleParentFrame(aFrame, PseudoStyleType::NotPseudo);
       computedStyle = styleParentFrame->Style();
       if (computedStyle->StyleDisplay()->IsListItem() &&
           (listItem = do_QueryFrame(aFrame)) &&
@@ -9672,7 +9672,7 @@ void nsCSSFrameConstructor::WrapFramesInFirstLineFrame(
 
   if (!aLineFrame) {
     
-    ComputedStyle* parentStyle = nsFrame::CorrectStyleParentFrame(
+    ComputedStyle* parentStyle = nsIFrame::CorrectStyleParentFrame(
                                      aBlockFrame, PseudoStyleType::firstLine)
                                      ->Style();
     RefPtr<ComputedStyle> firstLineStyle =
@@ -9899,7 +9899,7 @@ void nsCSSFrameConstructor::CreateLetterFrame(
   
   
   
-  nsIFrame* parentFrame = nsFrame::CorrectStyleParentFrame(
+  nsIFrame* parentFrame = nsIFrame::CorrectStyleParentFrame(
       aParentFrame, PseudoStyleType::firstLetter);
 
   ComputedStyle* parentComputedStyle = parentFrame->Style();
@@ -9914,7 +9914,7 @@ void nsCSSFrameConstructor::CreateLetterFrame(
 
   if (sc) {
     if (parentFrame->IsLineFrame()) {
-      nsIFrame* parentIgnoringFirstLine = nsFrame::CorrectStyleParentFrame(
+      nsIFrame* parentIgnoringFirstLine = nsIFrame::CorrectStyleParentFrame(
           aBlockFrame, PseudoStyleType::firstLetter);
 
       sc = mPresShell->StyleSet()->ReparentComputedStyle(

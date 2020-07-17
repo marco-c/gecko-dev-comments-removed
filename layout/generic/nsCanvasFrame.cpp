@@ -274,7 +274,7 @@ void nsCanvasFrame::AppendFrames(ChildListID aListID, nsFrameList& aFrameList) {
                  "invalid child list");
     }
   }
-  nsFrame::VerifyDirtyBitSet(aFrameList);
+  nsIFrame::VerifyDirtyBitSet(aFrameList);
 #endif
   nsContainerFrame::AppendFrames(aListID, aFrameList);
 }
@@ -841,7 +841,7 @@ void nsCanvasFrame::Reflow(nsPresContext* aPresContext,
 nsresult nsCanvasFrame::GetContentForEvent(WidgetEvent* aEvent,
                                            nsIContent** aContent) {
   NS_ENSURE_ARG_POINTER(aContent);
-  nsresult rv = nsFrame::GetContentForEvent(aEvent, aContent);
+  nsresult rv = nsIFrame::GetContentForEvent(aEvent, aContent);
   if (NS_FAILED(rv) || !*aContent) {
     nsIFrame* kid = mFrames.FirstChild();
     if (kid) {

@@ -1973,8 +1973,7 @@ void nsTableFrame::FixupPositionedTableParts(nsPresContext* aPresContext,
     
     
     
-    nsFrame* positionedFrame = static_cast<nsFrame*>(positionedPart);
-    positionedFrame->FinishReflowWithAbsoluteFrames(
+    positionedPart->FinishReflowWithAbsoluteFrames(
         PresContext(), desiredSize, reflowInput, reflowStatus, true);
 
     

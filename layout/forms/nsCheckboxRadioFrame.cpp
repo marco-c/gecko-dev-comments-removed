@@ -170,7 +170,7 @@ nsresult nsCheckboxRadioFrame::HandleEvent(nsPresContext* aPresContext,
                                            nsEventStatus* aEventStatus) {
   
   if (IsContentDisabled()) {
-    return nsFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
+    return nsIFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
   }
   return NS_OK;
 }

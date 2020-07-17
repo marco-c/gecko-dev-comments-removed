@@ -53,7 +53,7 @@ class nsButtonFrameRenderer {
                             gfxContext& aRenderingContext,
                             const nsRect& aDirtyRect, const nsRect& aRect);
 
-  void SetFrame(nsFrame* aFrame, nsPresContext* aPresContext);
+  void SetFrame(nsIFrame* aFrame, nsPresContext* aPresContext);
 
   void SetDisabled(bool aDisabled, bool notify);
 
@@ -72,7 +72,7 @@ class nsButtonFrameRenderer {
   
   RefPtr<ComputedStyle> mInnerFocusStyle;
 
-  nsFrame* mFrame;
+  nsIFrame* mFrame;
 };
 
 #endif

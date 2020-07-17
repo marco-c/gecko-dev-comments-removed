@@ -19,7 +19,7 @@
 
 
 
-class nsLeafFrame : public nsFrame {
+class nsLeafFrame : public nsIFrame {
  public:
   NS_DECL_ABSTRACT_FRAME(nsLeafFrame)
 
@@ -56,12 +56,13 @@ class nsLeafFrame : public nsFrame {
   virtual bool IsFrameOfType(uint32_t aFlags) const override {
     
     
-    return nsFrame::IsFrameOfType(aFlags & ~(nsIFrame::eReplacedContainsBlock));
+    return nsIFrame::IsFrameOfType(aFlags &
+                                   ~(nsIFrame::eReplacedContainsBlock));
   }
 
  protected:
   nsLeafFrame(ComputedStyle* aStyle, nsPresContext* aPresContext, ClassID aID)
-      : nsFrame(aStyle, aPresContext, aID) {}
+      : nsIFrame(aStyle, aPresContext, aID) {}
 
   virtual ~nsLeafFrame();
 

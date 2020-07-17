@@ -71,7 +71,7 @@ nsresult nsHTMLButtonControlFrame::HandleEvent(nsPresContext* aPresContext,
 
   
   
-  return nsFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
+  return nsIFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
 }
 
 bool nsHTMLButtonControlFrame::ShouldClipPaintingToBorderBox() {
