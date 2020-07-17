@@ -114,7 +114,6 @@ bool CanvasEventRingBuffer::WaitForAndRecalculateAvailableSpace() {
   uint32_t maxToWrite = kStreamSize - bufPos;
   mAvailable = std::min(maxToWrite, WaitForBytesToWrite());
   if (!mAvailable) {
-    mGood = false;
     mBufPos = nullptr;
     return false;
   }
@@ -402,13 +401,16 @@ bool CanvasEventRingBuffer::WaitForReadCount(uint32_t aReadCount,
     }
   }
 
+  
+  
+  mWrite->state = State::Failed;
+  mGood = false;
   return false;
 }
 
 uint32_t CanvasEventRingBuffer::WaitForBytesToWrite() {
   uint32_t streamFullReadCount = mOurCount - kStreamSize;
   if (!WaitForReadCount(streamFullReadCount + 1, kTimeout)) {
-    mGood = false;
     return 0;
   }
 

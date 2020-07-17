@@ -166,7 +166,8 @@ void CanvasTranslator::StartTranslation() {
   }
 
   
-  if (!mStream->good()) {
+  
+  if (!mStream->good() && !mStream->WriterFailed()) {
     Telemetry::ScalarAdd(
         Telemetry::ScalarID::GFX_CANVAS_REMOTE_DEACTIVATED_BAD_STREAM, 1);
     Deactivate();

@@ -127,8 +127,6 @@ enum class LogReason : int {
   UnscaledFontNotFound,
   ScaledFontNotFound,
   InvalidLayerType,  
-  PlayEventFailed,
-  InvalidConstrainedValueRead,
   
   MustBeLessThanThis = 101,
 };
