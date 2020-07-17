@@ -300,7 +300,6 @@ GfxInfo::GetAdapterDeviceID2(nsAString& aAdapterDeviceID) {
 }
 
 
-
 NS_IMETHODIMP
 GfxInfo::GetAdapterSubsysID(nsAString& aAdapterSubsysID) { return NS_ERROR_FAILURE; }
 
@@ -380,10 +379,9 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
                                    "FEATURE_FAILURE_MAC_INTELHD4000_NO_SWIZZLE");
     
     
-    IMPLEMENT_MAC_DRIVER_BLOCKLIST(OperatingSystem::OSX, DeviceFamily::All,
-                                   nsIGfxInfo::FEATURE_GL_SWIZZLE,
-                                   nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
-                                   "FEATURE_FAILURE_MAC_GPU_SWITCHING_NO_SWIZZLE");
+    IMPLEMENT_MAC_DRIVER_BLOCKLIST(
+        OperatingSystem::OSX, DeviceFamily::All, nsIGfxInfo::FEATURE_GL_SWIZZLE,
+        nsIGfxInfo::FEATURE_BLOCKED_DEVICE, "FEATURE_FAILURE_MAC_GPU_SWITCHING_NO_SWIZZLE");
 
 #ifdef NIGHTLY_BUILD
     IMPLEMENT_MAC_DRIVER_BLOCKLIST(

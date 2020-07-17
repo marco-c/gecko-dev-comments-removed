@@ -2956,7 +2956,8 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
       }
 
       bool isDisabled = IsDisabled(aFrame, eventState) || IsReadOnly(aFrame);
-      return Some(WidgetInfo::TextBox(TextBoxParams{isDisabled, isFocused,  false}));
+      return Some(
+          WidgetInfo::TextBox(TextBoxParams{isDisabled, isFocused,  false}));
     }
 
     case StyleAppearance::Searchfield:
