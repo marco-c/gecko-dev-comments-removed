@@ -341,14 +341,56 @@ function executeInContent(name, data = {}, expectResponse = true) {
 
 
 
+async function getRulePropertyValue(styleSheetIndex, ruleIndex, name) {
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [styleSheetIndex, ruleIndex, name],
+    (styleSheetIndexChild, ruleIndexChild, nameChild) => {
+      let value = null;
+
+      info(
+        "Getting the value for property name " +
+          nameChild +
+          " in sheet " +
+          styleSheetIndexChild +
+          " and rule " +
+          ruleIndexChild
+      );
+
+      const sheet = content.document.styleSheets[styleSheetIndexChild];
+      if (sheet) {
+        const rule = sheet.cssRules[ruleIndexChild];
+        if (rule) {
+          value = rule.style.getPropertyValue(nameChild);
+        }
+      }
+
+      return value;
+    }
+  );
+}
+
+
+
+
+
+
+
+
+
 
 
 async function getComputedStyleProperty(selector, pseudo, propName) {
-  return executeInContent("Test:GetComputedStylePropertyValue", {
-    selector,
-    pseudo,
-    name: propName,
-  });
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [selector, pseudo, propName],
+    (selectorChild, pseudoChild, propNameChild) => {
+      const element = content.document.querySelector(selectorChild);
+      return content.document.defaultView
+        .getComputedStyle(element, pseudoChild)
+        .getPropertyValue(propNameChild);
+    }
+  );
 }
 
 
@@ -364,15 +406,25 @@ async function getComputedStyleProperty(selector, pseudo, propName) {
 
 
 
-
-
-async function waitForComputedStyleProperty(selector, pseudo, name, expected) {
-  return executeInContent("Test:WaitForComputedStylePropertyValue", {
-    selector,
-    pseudo,
-    expected,
-    name,
-  });
+async function waitForComputedStyleProperty(
+  selector,
+  pseudo,
+  propName,
+  expected
+) {
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [selector, pseudo, propName, expected],
+    (selectorChild, pseudoChild, propNameChild, expectedChild) => {
+      const element = content.document.querySelector(selectorChild);
+      return ContentTaskUtils.waitForCondition(() => {
+        const value = content.document.defaultView
+          .getComputedStyle(element, pseudoChild)
+          .getPropertyValue(propNameChild);
+        return value === expectedChild;
+      });
+    }
+  );
 }
 
 

@@ -20,7 +20,6 @@ var {
 } = require("devtools/client/shared/inplace-editor");
 
 const ROOT_TEST_DIR = getRootDirectory(gTestPath);
-const FRAME_SCRIPT_URL = ROOT_TEST_DIR + "doc_frame_script.js";
 
 const STYLE_INSPECTOR_L10N = new LocalizationHelper(
   "devtools/shared/locales/styleinspector.properties"
@@ -29,23 +28,6 @@ const STYLE_INSPECTOR_L10N = new LocalizationHelper(
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.defaultColorUnit");
 });
-
-
-
-
-
-
-
-
-var _addTab = addTab;
-addTab = function(url) {
-  return _addTab(url).then(tab => {
-    info("Loading the helper frame script " + FRAME_SCRIPT_URL);
-    const browser = tab.linkedBrowser;
-    browser.messageManager.loadFrameScript(FRAME_SCRIPT_URL, false);
-    return tab;
-  });
-};
 
 
 
