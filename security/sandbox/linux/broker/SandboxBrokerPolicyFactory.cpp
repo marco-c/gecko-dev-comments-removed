@@ -12,10 +12,11 @@
 #include "mozilla/Array.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/SandboxLaunch.h"
 #include "mozilla/SandboxSettings.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
-#include "mozilla/SandboxLaunch.h"
 #include "mozilla/dom/ContentChild.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
@@ -291,16 +292,21 @@ static void AddDynamicPathList(SandboxBroker::Policy* policy,
 }
 
 void SandboxBrokerPolicyFactory::InitContentPolicy() {
+  const bool headless =
+      StaticPrefs::security_sandbox_content_headless_AtStartup();
+
   
   
   SandboxBroker::Policy* policy = new SandboxBroker::Policy;
   
   
-  
-  policy->AddFilePrefix(rdwr, "/dev", "nvidia");
+  if (!headless) {
+    
+    policy->AddFilePrefix(rdwr, "/dev", "nvidia");
 
-  
-  policy->AddDir(rdwr, "/dev/dri");
+    
+    policy->AddDir(rdwr, "/dev/dri");
+  }
 
   
   policy->AddPath(rdwr, "/dev/null");
@@ -326,12 +332,16 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
   policy->AddDir(rdonly, "/run/host/user-fonts");
   policy->AddDir(rdonly, "/var/cache/fontconfig");
 
-  AddMesaSysfsPaths(policy);
+  if (!headless) {
+    AddMesaSysfsPaths(policy);
+  }
   AddLdconfigPaths(policy);
   AddLdLibraryEnvPaths(policy);
 
-  
-  policy->AddPath(rdonly, "/proc/modules");
+  if (!headless) {
+    
+    policy->AddPath(rdonly, "/proc/modules");
+  }
 
   
   if (const auto xdgConfigPath = PR_GetEnv("XDG_CONFIG_PATH")) {
@@ -484,28 +494,30 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
   }
 #endif
 
-  
-  
-  const char* bumblebeeSocket = PR_GetEnv("BUMBLEBEE_SOCKET");
-  if (bumblebeeSocket == nullptr) {
-    bumblebeeSocket = "/var/run/bumblebee.socket";
-  }
-  policy->AddPath(SandboxBroker::MAY_CONNECT, bumblebeeSocket);
+  if (!headless) {
+    
+    
+    const char* bumblebeeSocket = PR_GetEnv("BUMBLEBEE_SOCKET");
+    if (bumblebeeSocket == nullptr) {
+      bumblebeeSocket = "/var/run/bumblebee.socket";
+    }
+    policy->AddPath(SandboxBroker::MAY_CONNECT, bumblebeeSocket);
 
 #if defined(MOZ_WIDGET_GTK)
-  
-  
+    
+    
 #  if defined(MOZ_WAYLAND)
-  if (GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
-    policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
-  }
+    if (GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
+      policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
+    }
 #  else
-  policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
+    policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
 #  endif
-  if (const auto xauth = PR_GetEnv("XAUTHORITY")) {
-    policy->AddPath(rdonly, xauth);
-  }
+    if (const auto xauth = PR_GetEnv("XAUTHORITY")) {
+      policy->AddPath(rdonly, xauth);
+    }
 #endif
+  }
 
   
   
@@ -606,7 +618,7 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
 
   
   
-  if (HasAtiDrivers()) {
+  if (!headless && HasAtiDrivers()) {
     policy->AddDir(rdonly, "/opt/amdgpu/share");
     policy->AddPath(rdonly, "/sys/module/amdgpu");
     
