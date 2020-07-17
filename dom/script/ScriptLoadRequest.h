@@ -307,7 +307,6 @@ class ScriptLoadRequest
   bool mScriptFromHead;    
                            
   bool mIsInline;          
-  bool mHasSourceMapURL;   
   bool mInDeferList;       
   bool mInAsyncList;       
                            
@@ -323,7 +322,7 @@ class ScriptLoadRequest
   RefPtr<ScriptFetchOptions> mFetchOptions;
 
   JS::OffThreadToken* mOffThreadToken;  
-  nsString mSourceMapURL;  
+  Maybe<nsString> mSourceMapURL;  
 
   
   
