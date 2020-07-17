@@ -283,7 +283,7 @@ class TaskController {
   void ExecuteNextTaskOnlyMainThread();
 
   
-  void ProcessPendingMTTask();
+  void ProcessPendingMTTask(bool aMayWait = false);
 
   
   
@@ -296,10 +296,14 @@ class TaskController {
 
   bool HasMainThreadPendingTasks();
 
+  
+  bool MTTaskRunnableProcessedTask() { return mMTTaskRunnableProcessedTask; }
+
  private:
   
   
-  void ExecuteNextTaskOnlyMainThreadInternal(const MutexAutoLock& aProofOfLock);
+  
+  bool ExecuteNextTaskOnlyMainThreadInternal(const MutexAutoLock& aProofOfLock);
 
   
   
@@ -339,9 +343,12 @@ class TaskController {
   bool mMayHaveMainThreadTask = true;
 
   
+  bool mMTTaskRunnableProcessedTask = false;
+
   
-  bool mHasScheduledMTRunnable = false;
+  
   RefPtr<nsIRunnable> mMTProcessingRunnable;
+  RefPtr<nsIRunnable> mMTBlockingProcessingRunnable;
 
   
   nsIThreadObserver* mObserver = nullptr;

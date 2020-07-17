@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <initializer_list>
 #include "mozilla/AbstractEventQueue.h"
+#include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
@@ -80,6 +81,9 @@ bool TaskController::InitializeInternal() {
   mMTProcessingRunnable = NS_NewRunnableFunction(
       "TaskController::ExecutePendingMTTasks()",
       []() { TaskController::Get()->ProcessPendingMTTask(); });
+  mMTBlockingProcessingRunnable = NS_NewRunnableFunction(
+      "TaskController::ExecutePendingMTTasks()",
+      []() { TaskController::Get()->ProcessPendingMTTask(true); });
 
   return true;
 }
@@ -134,6 +138,7 @@ void TaskController::AddTask(already_AddRefed<Task>&& aTask) {
 void TaskController::WaitForTaskOrMessage() {
   MutexAutoLock lock(mGraphMutex);
   while (!mMayHaveMainThreadTask) {
+    AUTO_PROFILER_LABEL("TaskController::WaitForTaskOrMessage", IDLE);
     mMainThreadCV.Wait();
   }
 }
@@ -144,12 +149,40 @@ void TaskController::ExecuteNextTaskOnlyMainThread() {
   ExecuteNextTaskOnlyMainThreadInternal(lock);
 }
 
-void TaskController::ProcessPendingMTTask() {
+void TaskController::ProcessPendingMTTask(bool aMayWait) {
   MOZ_ASSERT(NS_IsMainThread());
   MutexAutoLock lock(mGraphMutex);
-  mHasScheduledMTRunnable = false;
 
-  ExecuteNextTaskOnlyMainThreadInternal(lock);
+  for (;;) {
+    
+    
+    
+    
+
+    mMTTaskRunnableProcessedTask = ExecuteNextTaskOnlyMainThreadInternal(lock);
+
+    if (mMTTaskRunnableProcessedTask || !aMayWait) {
+      break;
+    }
+    nsCOMPtr<nsIThread> mainIThread;
+    NS_GetMainThread(getter_AddRefs(mainIThread));
+    nsThread* mainThread = static_cast<nsThread*>(mainIThread.get());
+    mainThread->SetRunningEventDelay(TimeDuration(), TimeStamp());
+
+    BackgroundHangMonitor().NotifyWait();
+
+    {
+      
+      
+      
+      AUTO_PROFILER_LABEL("TaskController::ProcessPendingMTTask", IDLE);
+      mMainThreadCV.Wait();
+    }
+
+    
+    mainThread->SetRunningEventDelay(TimeDuration(), TimeStamp::Now());
+    BackgroundHangMonitor().NotifyActivity();
+  }
 
   if (mMayHaveMainThreadTask) {
     EnsureMainThreadTasksScheduled();
@@ -247,7 +280,7 @@ nsIRunnable* TaskController::GetRunnableForMTTask(bool aReallyWait) {
     mMainThreadCV.Wait();
   }
 
-  return mMTProcessingRunnable;
+  return aReallyWait ? mMTBlockingProcessingRunnable : mMTProcessingRunnable;
 }
 
 bool TaskController::HasMainThreadPendingTasks() {
@@ -330,11 +363,12 @@ bool TaskController::HasMainThreadPendingTasks() {
   return false;
 }
 
-void TaskController::ExecuteNextTaskOnlyMainThreadInternal(
+bool TaskController::ExecuteNextTaskOnlyMainThreadInternal(
     const MutexAutoLock& aProofOfLock) {
   
+  bool taskRan = false;
   do {
-    bool taskRan = DoExecuteNextTaskOnlyMainThreadInternal(aProofOfLock);
+    taskRan = DoExecuteNextTaskOnlyMainThreadInternal(aProofOfLock);
     if (taskRan) {
       break;
     }
@@ -357,7 +391,7 @@ void TaskController::ExecuteNextTaskOnlyMainThreadInternal(
 
     
     
-    Unused << DoExecuteNextTaskOnlyMainThreadInternal(aProofOfLock);
+    taskRan = DoExecuteNextTaskOnlyMainThreadInternal(aProofOfLock);
   } while (false);
 
   if (mIdleTaskManager) {
@@ -375,6 +409,8 @@ void TaskController::ExecuteNextTaskOnlyMainThreadInternal(
       mIdleTaskManager->State().RanOutOfTasks(unlock);
     }
   }
+
+  return taskRan;
 }
 
 bool TaskController::DoExecuteNextTaskOnlyMainThreadInternal(
