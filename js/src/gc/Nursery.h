@@ -426,6 +426,10 @@ class Nursery {
 
   void joinDecommitTask() { decommitTask.join(); }
 
+  mozilla::TimeStamp collectionStartTime() {
+    return startTimes_[ProfileKey::Total];
+  }
+
   
   static size_t roundSize(size_t size);
 

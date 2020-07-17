@@ -1558,9 +1558,21 @@ size_t js::Nursery::targetSize(JSGCInvocationKind kind, JS::GCReason reason) {
       double(previousGC.tenuredBytes) / double(previousGC.nurseryCapacity);
 
   
-  static const double PromotionGoal = 0.02;
+  double timeFraction = 0.0;
+#ifndef JS_MORE_DETERMINISTIC
+  if (lastResizeTime) {
+    TimeDuration collectorTime = now - collectionStartTime();
+    TimeDuration totalTime = now - lastResizeTime;
+    timeFraction = collectorTime.ToSeconds() / totalTime.ToSeconds();
+  }
+#endif
 
-  double growthFactor = fractionPromoted / PromotionGoal;
+  
+  
+  static const double PromotionGoal = 0.02;
+  static const double TimeGoal = 0.01;
+  double growthFactor =
+      std::max(fractionPromoted / PromotionGoal, timeFraction / TimeGoal);
 
   
   
@@ -1574,6 +1586,7 @@ size_t js::Nursery::targetSize(JSGCInvocationKind kind, JS::GCReason reason) {
       now - lastResizeTime < TimeDuration::FromMilliseconds(200)) {
     growthFactor = 0.75 * smoothedGrowthFactor + 0.25 * growthFactor;
   }
+
   lastResizeTime = now;
   smoothedGrowthFactor = growthFactor;
 #endif
