@@ -206,7 +206,12 @@ class span_iterator {
 
   constexpr friend bool operator==(const span_iterator& lhs,
                                    const span_iterator& rhs) {
-    return lhs.span_ == rhs.span_ && lhs.index_ == rhs.index_;
+    
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(lhs.span_ == rhs.span_);
+    return lhs.index_ == rhs.index_ && lhs.span_ == rhs.span_;
   }
 
   constexpr friend bool operator!=(const span_iterator& lhs,
@@ -216,7 +221,7 @@ class span_iterator {
 
   constexpr friend bool operator<(const span_iterator& lhs,
                                   const span_iterator& rhs) {
-    MOZ_RELEASE_ASSERT(lhs.span_ == rhs.span_);
+    MOZ_DIAGNOSTIC_ASSERT(lhs.span_ == rhs.span_);
     return lhs.index_ < rhs.index_;
   }
 
@@ -292,6 +297,10 @@ class extent_type<dynamic_extent> {
   index_type size_;
 };
 }  
+
+
+
+
 
 
 
