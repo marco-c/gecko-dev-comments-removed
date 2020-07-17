@@ -7,7 +7,7 @@ function expectedTabInfo(tab, window) {
   return {
     url: browser.currentURI.spec,
     title: browser.contentTitle,
-    favIconUrl: window.gBrowser.getIcon(tab),
+    favIconUrl: window.gBrowser.getIcon(tab) || undefined,
     
     
     selected: undefined,
