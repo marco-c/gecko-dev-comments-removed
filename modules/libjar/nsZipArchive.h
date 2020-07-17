@@ -101,7 +101,13 @@ class nsZipArchive final {
 
 
 
-  nsresult OpenArchive(nsZipHandle* aZipHandle, PRFileDesc* aFd = nullptr);
+
+
+
+
+  nsresult OpenArchive(nsZipHandle* aZipHandle, PRFileDesc* aFd = nullptr,
+                       const uint8_t* aCachedCentral = nullptr,
+                       size_t aCachedCentralSize = 0);
 
   
 
@@ -111,7 +117,11 @@ class nsZipArchive final {
 
 
 
-  nsresult OpenArchive(nsIFile* aFile);
+
+
+
+  nsresult OpenArchive(nsIFile* aFile, const uint8_t* aCachedCentral = nullptr,
+                       size_t aCachedCentralSize = 0);
 
   
 
@@ -181,6 +191,17 @@ class nsZipArchive final {
 
   const uint8_t* GetData(nsZipItem* aItem);
 
+  
+
+
+
+
+
+
+
+
+  mozilla::UniquePtr<uint8_t[]> CopyCentralDirectoryBuffer(size_t* aSize);
+
   bool GetComment(nsACString& aComment);
 
   
@@ -204,6 +225,8 @@ class nsZipArchive final {
   mozilla::ArenaAllocator<1024, sizeof(void*)> mArena;
 
   const char* mCommentPtr;
+  size_t mZipCentralOffset;
+  size_t mZipCentralSize;
   uint16_t mCommentLen;
 
   
@@ -223,6 +246,7 @@ class nsZipArchive final {
   
   nsZipItem* CreateZipItem();
   nsresult BuildFileList(PRFileDesc* aFd = nullptr);
+  nsresult BuildFileListFromBuffer(const uint8_t* aBuf, const uint8_t* aEnd);
   nsresult BuildSynthetics();
 
   nsZipArchive& operator=(const nsZipArchive& rhs) = delete;
