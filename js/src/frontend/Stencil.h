@@ -39,6 +39,7 @@
 #include "vm/Scope.h"  
 #include "vm/ScopeKind.h"      
 #include "vm/SharedStencil.h"  
+#include "vm/StencilEnums.h"   
 
 class JS_PUBLIC_API JSTracer;
 
@@ -342,9 +343,6 @@ using ScriptThingsVector = Vector<ScriptThingVariant>;
 class ScriptStencil {
  public:
   
-  mozilla::Maybe<FunctionIndex> functionIndex;
-
-  
   ImmutableScriptFlags immutableFlags;
 
   
@@ -406,7 +404,10 @@ class ScriptStencil {
   
   void trace(JSTracer* trc);
 
-  bool isFunction() const { return functionIndex.isSome(); }
+  bool isFunction() const {
+    return isAsmJSModule ||
+           immutableFlags.hasFlag(ImmutableScriptFlagsEnum::IsFunction);
+  }
 };
 
 } 

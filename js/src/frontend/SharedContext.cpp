@@ -248,16 +248,6 @@ FunctionBox::FunctionBox(JSContext* cx, FunctionBox* traceListHead,
       usesThis(false),
       usesReturn(false),
       isFunctionFieldCopiedToStencil(false) {
-  if (functionStencil().get().functionIndex.isSome()) {
-    
-    
-    
-    MOZ_ASSERT(isTopLevel_ == TopLevelFunction::Yes);
-    MOZ_ASSERT(*functionStencil().get().functionIndex ==
-               FunctionIndex(funcDataIndex_));
-  } else {
-    functionStencil().get().functionIndex.emplace(index);
-  }
   setFlag(ImmutableFlags::IsGenerator,
           generatorKind == GeneratorKind::Generator);
   setFlag(ImmutableFlags::IsAsync,
