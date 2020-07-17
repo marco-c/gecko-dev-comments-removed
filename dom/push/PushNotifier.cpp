@@ -103,8 +103,7 @@ nsresult PushNotifier::Dispatch(PushDispatcher& aDispatcher) {
         
         
         
-        if (!contentActors[i]->GetRemoteType().EqualsLiteral(
-                DEFAULT_REMOTE_TYPE)) {
+        if (contentActors[i]->GetRemoteType() != DEFAULT_REMOTE_TYPE) {
           continue;
         }
 

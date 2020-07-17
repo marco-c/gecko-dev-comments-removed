@@ -42,8 +42,8 @@ class PreallocatedProcessManager final {
 
 
 
-  static void AddBlocker(const nsAString& aRemoteType, ContentParent* aParent);
-  static void RemoveBlocker(const nsAString& aRemoteType,
+  static void AddBlocker(const nsACString& aRemoteType, ContentParent* aParent);
+  static void RemoveBlocker(const nsACString& aRemoteType,
                             ContentParent* aParent);
 
   
@@ -56,7 +56,7 @@ class PreallocatedProcessManager final {
 
 
 
-  static already_AddRefed<ContentParent> Take(const nsAString& aRemoteType);
+  static already_AddRefed<ContentParent> Take(const nsACString& aRemoteType);
 
   
 
