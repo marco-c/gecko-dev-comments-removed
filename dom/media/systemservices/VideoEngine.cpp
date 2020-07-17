@@ -5,6 +5,7 @@
 
 
 #include "VideoEngine.h"
+#include "video_engine/browser_capture_impl.h"
 #include "video_engine/desktop_capture_impl.h"
 #include "webrtc/system_wrappers/include/clock.h"
 #ifdef WEBRTC_ANDROID
@@ -182,8 +183,13 @@ VideoEngine::GetOrCreateVideoCaptureDeviceInfo() {
       LOG(("webrtc::CaptureDeviceType::Camera: Finished creating new device."));
       break;
     }
+    case webrtc::CaptureDeviceType::Browser: {
+      mDeviceInfo.reset(webrtc::BrowserDeviceInfoImpl::CreateDeviceInfo());
+      LOG((
+          "webrtc::CaptureDeviceType::Browser: Finished creating new device."));
+      break;
+    }
     
-    case webrtc::CaptureDeviceType::Browser:
     case webrtc::CaptureDeviceType::Window:
     case webrtc::CaptureDeviceType::Screen: {
 #if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
