@@ -25,10 +25,6 @@ gfx::QuaternionDouble XRNativeOriginTracker::GetOrientation() {
   gfx::QuaternionDouble orientation(
       mPose->orientation[0], mPose->orientation[1], mPose->orientation[2],
       mPose->orientation[3]);
-  
-  
-  
-  orientation.Invert();
   return orientation;
 }
 

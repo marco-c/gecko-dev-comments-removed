@@ -60,10 +60,6 @@ XRRigidTransform::XRRigidTransform(nsISupports* aParent,
   gfx::PointDouble3D scale;
   mRawTransformMatrix = aTransform;
   mRawTransformMatrix.Decompose(mRawPosition, mRawOrientation, scale);
-  
-  
-  
-  mRawOrientation.Invert();
 }
 
 XRRigidTransform::~XRRigidTransform() { mozilla::DropJSObjects(this); }
@@ -128,10 +124,6 @@ void XRRigidTransform::Update(const gfx::Matrix4x4Double& aTransform) {
   mRawTransformMatrix = aTransform;
   gfx::PointDouble3D scale;
   mRawTransformMatrix.Decompose(mRawPosition, mRawOrientation, scale);
-  
-  
-  
-  mRawOrientation.Invert();
   UpdateInternal();
 }
 
