@@ -55,7 +55,7 @@ async function simulateRestart(
     );
   }
 
-  if (withAutoShutdownWrite && AboutHomeStartupCache.initted) {
+  if (withAutoShutdownWrite) {
     info("Simulating shutdown write");
     await AboutHomeStartupCache.onShutdown();
     info("Shutdown write done");
@@ -76,26 +76,24 @@ async function simulateRestart(
 
   AboutHomeStartupCache.init();
 
-  if (AboutHomeStartupCache.initted) {
-    AboutHomeStartupCache.sendCacheInputStreams(processManager);
+  AboutHomeStartupCache.sendCacheInputStreams(processManager);
 
-    info("Waiting for AboutHomeStartupCache cache entry");
-    await AboutHomeStartupCache.ensureCacheEntry();
-    info("Got AboutHomeStartupCache cache entry");
+  info("Waiting for AboutHomeStartupCache cache entry");
+  await AboutHomeStartupCache.ensureCacheEntry();
+  info("Got AboutHomeStartupCache cache entry");
 
-    if (ensureCacheWinsRace) {
-      info("Ensuring cache bytes are available");
-      await SpecialPowers.spawn(browser, [], async () => {
-        let { AboutHomeStartupCacheChild } = ChromeUtils.import(
-          "resource:///modules/AboutNewTabService.jsm"
-        );
-        let pageStream = AboutHomeStartupCacheChild._pageInputStream;
-        let scriptStream = AboutHomeStartupCacheChild._scriptInputStream;
-        await ContentTaskUtils.waitForCondition(() => {
-          return pageStream.available() && scriptStream.available();
-        });
+  if (ensureCacheWinsRace) {
+    info("Ensuring cache bytes are available");
+    await SpecialPowers.spawn(browser, [], async () => {
+      let { AboutHomeStartupCacheChild } = ChromeUtils.import(
+        "resource:///modules/AboutNewTabService.jsm"
+      );
+      let pageStream = AboutHomeStartupCacheChild._pageInputStream;
+      let scriptStream = AboutHomeStartupCacheChild._scriptInputStream;
+      await ContentTaskUtils.waitForCondition(() => {
+        return pageStream.available() && scriptStream.available();
       });
-    }
+    });
   }
 
   info("Waiting for about:home to load");
@@ -163,25 +161,6 @@ async function clearCache() {
 
 
 
-function assertCacheResultScalar(cacheResultScalar) {
-  let parentScalars = Services.telemetry.getSnapshotForScalars("main").parent;
-  Assert.equal(
-    parentScalars["browser.startup.abouthome_cache_result"],
-    cacheResultScalar,
-    "Expected the right value set to browser.startup.abouthome_cache_result " +
-      "scalar."
-  );
-}
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -215,9 +194,6 @@ async function ensureCachedAboutHome(browser) {
       "Should have found the Discovery Stream top sites."
     );
   });
-  assertCacheResultScalar(
-    AboutHomeStartupCache.CACHE_RESULT_SCALARS.VALID_AND_USED
-  );
 }
 
 
@@ -239,13 +215,7 @@ async function ensureCachedAboutHome(browser) {
 
 
 
-
-
-
-
-
-
-async function ensureDynamicAboutHome(browser, expectedResultScalar) {
+async function ensureDynamicAboutHome(browser) {
   await SpecialPowers.spawn(browser, [], async () => {
     let scripts = Array.from(content.document.querySelectorAll("script"));
     Assert.equal(scripts.length, 0, "There should be no page scripts.");
@@ -265,6 +235,4 @@ async function ensureDynamicAboutHome(browser, expectedResultScalar) {
       "Should have found the Discovery Stream top sites."
     );
   });
-
-  assertCacheResultScalar(expectedResultScalar);
 }

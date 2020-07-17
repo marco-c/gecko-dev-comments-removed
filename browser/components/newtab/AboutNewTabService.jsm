@@ -88,7 +88,6 @@ const AboutHomeStartupCacheChild = {
   _initted: false,
   CACHE_REQUEST_MESSAGE: "AboutHomeStartupCache:CacheRequest",
   CACHE_RESPONSE_MESSAGE: "AboutHomeStartupCache:CacheResponse",
-  CACHE_USAGE_RESULT_MESSAGE: "AboutHomeStartupCache:UsageResult",
 
   
 
@@ -180,12 +179,10 @@ const AboutHomeStartupCacheChild = {
           !this._scriptInputStream.available() ||
           !this._pageInputStream.available()
         ) {
-          this.reportUsageResult(false );
           return null;
         }
       } catch (e) {
         if (e.result === Cr.NS_BASE_STREAM_CLOSED) {
-          this.reportUsageResult(false );
           return null;
         }
         throw e;
@@ -201,8 +198,6 @@ const AboutHomeStartupCacheChild = {
     channel.contentStream = isScriptRequest
       ? this._scriptInputStream
       : this._pageInputStream;
-
-    this.reportUsageResult(true );
 
     return channel;
   },
@@ -228,13 +223,7 @@ const AboutHomeStartupCacheChild = {
 
     let worker = this.getOrCreateWorker();
 
-    TelemetryStopwatch.start("FX_ABOUTHOME_CACHE_CONSTRUCTION");
-
-    let { page, script } = await worker
-      .post("construct", [state])
-      .finally(() => {
-        TelemetryStopwatch.finish("FX_ABOUTHOME_CACHE_CONSTRUCTION");
-      });
+    let { page, script } = await worker.post("construct", [state]);
 
     let pageInputStream = Cc[
       "@mozilla.org/io/string-input-stream;1"
@@ -269,12 +258,6 @@ const AboutHomeStartupCacheChild = {
       let { state } = message.data;
       this.constructAndSendCache(state);
     }
-  },
-
-  reportUsageResult(success) {
-    Services.cpmm.sendAsyncMessage(this.CACHE_USAGE_RESULT_MESSAGE, {
-      success,
-    });
   },
 };
 

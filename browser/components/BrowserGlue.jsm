@@ -4945,7 +4945,6 @@ var AboutHomeStartupCache = {
   
   CACHE_REQUEST_MESSAGE: "AboutHomeStartupCache:CacheRequest",
   CACHE_RESPONSE_MESSAGE: "AboutHomeStartupCache:CacheResponse",
-  CACHE_USAGE_RESULT_MESSAGE: "AboutHomeStartupCache:UsageResult",
 
   
   
@@ -4956,27 +4955,6 @@ var AboutHomeStartupCache = {
   
   
   CACHE_DEBOUNCE_RATE_MS: 5000,
-
-  
-  
-  
-  
-  CACHE_RESULT_SCALARS: {
-    UNSET: 0,
-    DOES_NOT_EXIST: 1,
-    CORRUPT_PAGE: 2,
-    CORRUPT_SCRIPT: 3,
-    INVALIDATED: 4,
-    LATE: 5,
-    VALID_AND_USED: 6,
-    DISABLED: 7,
-    NOT_LOADING_ABOUTHOME: 8,
-    PRELOADING_DISABLED: 9,
-  },
-
-  
-  
-  _cacheDeferredResultScalar: -1,
 
   
   _cacheEntry: null,
@@ -5003,12 +4981,9 @@ var AboutHomeStartupCache = {
       throw new Error("AboutHomeStartupCache already initted.");
     }
 
-    this.setDeferredResult(this.CACHE_RESULT_SCALARS.UNSET);
-
     this._enabled = Services.prefs.getBoolPref(this.ENABLED_PREF, false);
 
     if (!this._enabled) {
-      this.recordResult(this.CACHE_RESULT_SCALARS.DISABLED);
       return;
     }
 
@@ -5028,13 +5003,11 @@ var AboutHomeStartupCache = {
 
     if (!willLoadAboutHome) {
       this.log.trace("Not configured to load about:home by default.");
-      this.recordResult(this.CACHE_RESULT_SCALARS.NOT_LOADING_ABOUTHOME);
       return;
     }
 
     if (!Services.prefs.getBoolPref(this.PRELOADED_NEWTAB_PREF, false)) {
       this.log.trace("Preloaded about:newtab disabled.");
-      this.recordResult(this.CACHE_RESULT_SCALARS.PRELOADING_DISABLED);
       return;
     }
 
@@ -5077,25 +5050,15 @@ var AboutHomeStartupCache = {
     this.log.trace("Initialized.");
   },
 
-  get initted() {
-    return this._initted;
-  },
-
   uninit() {
-    if (!this._enabled) {
+    if (!this._enabled || !this._initted) {
       return;
     }
 
-    try {
-      Services.obs.removeObserver(this, "ipc:content-created");
-      Services.obs.removeObserver(this, "process-type-set");
-      Services.obs.removeObserver(this, "ipc:content-shutdown");
-      Services.obs.removeObserver(this, "intl:app-locales-changed");
-    } catch (e) {
-      
-      
-      
-    }
+    Services.obs.removeObserver(this, "ipc:content-created");
+    Services.obs.removeObserver(this, "process-type-set");
+    Services.obs.removeObserver(this, "ipc:content-shutdown");
+    Services.obs.removeObserver(this, "intl:app-locales-changed");
 
     if (this._cacheTask) {
       this._cacheTask.disarm();
@@ -5109,14 +5072,10 @@ var AboutHomeStartupCache = {
     this._hasWrittenThisSession = false;
     this._cacheEntryPromise = null;
     this._cacheEntryResolver = null;
-    this._cacheDeferredResultScalar = -1;
 
-    if (this.log) {
-      this.log.trace("Uninitialized.");
-      this.log.removeAppender(this._appender);
-      this.log = null;
-    }
-
+    this.log.trace("Uninitialized.");
+    this.log.removeAppender(this._appender);
+    this.log = null;
     this._appender = null;
     this._cacheDeferred = null;
   },
@@ -5155,11 +5114,6 @@ var AboutHomeStartupCache = {
       this.log.trace("Never wrote a cache this session. Arming cache task.");
       this._cacheTask.arm();
     }
-
-    Services.telemetry.scalarSet(
-      "browser.startup.abouthome_cache_shutdownwrite",
-      this._cacheTask.isArmed
-    );
 
     if (this._cacheTask.isArmed) {
       this.log.trace("Finalizing cache task on shutdown");
@@ -5296,7 +5250,6 @@ var AboutHomeStartupCache = {
         this.log.debug("Cache meta data does not exist. Closing streams.");
         this.pagePipe.outputStream.close();
         this.scriptPipe.outputStream.close();
-        this.setDeferredResult(this.CACHE_RESULT_SCALARS.DOES_NOT_EXIST);
         return;
       }
 
@@ -5311,7 +5264,6 @@ var AboutHomeStartupCache = {
       this.clearCache();
       this.pagePipe.outputStream.close();
       this.scriptPipe.outputStream.close();
-      this.setDeferredResult(this.CACHE_RESULT_SCALARS.INVALIDATED);
       return;
     }
 
@@ -5323,7 +5275,6 @@ var AboutHomeStartupCache = {
       this.log.error("Failed to open main input stream for cache entry", e);
       this.pagePipe.outputStream.close();
       this.scriptPipe.outputStream.close();
-      this.setDeferredResult(this.CACHE_RESULT_SCALARS.CORRUPT_PAGE);
       return;
     }
 
@@ -5353,13 +5304,11 @@ var AboutHomeStartupCache = {
         
         this.log.error("Script stream not available! Closing pipe.");
         this.scriptPipe.outputStream.close();
-        this.setDeferredResult(this.CACHE_RESULT_SCALARS.CORRUPT_SCRIPT);
       } else {
         throw e;
       }
     }
 
-    this.setDeferredResult(this.CACHE_RESULT_SCALARS.VALID_AND_USED);
     this.log.trace("Streams connected to pipes. Dropping references to pipes.");
     this._pagePipe = null;
     this._scriptPipe = null;
@@ -5545,7 +5494,6 @@ var AboutHomeStartupCache = {
       );
       this.sendCacheInputStreams(procManager);
       procManager.addMessageListener(this.CACHE_RESPONSE_MESSAGE, this);
-      procManager.addMessageListener(this.CACHE_USAGE_RESULT_MESSAGE, this);
       this._procManager = procManager;
       this._procManagerID = childID;
     }
@@ -5564,10 +5512,6 @@ var AboutHomeStartupCache = {
     if (this._procManagerID == childID) {
       this._procManager.removeMessageListener(
         this.CACHE_RESPONSE_MESSAGE,
-        this
-      );
-      this._procManager.removeMessageListener(
-        this.CACHE_USAGE_RESULT_MESSAGE,
         this
       );
       this._procManager = null;
@@ -5591,86 +5535,6 @@ var AboutHomeStartupCache = {
     this._cacheTask.arm();
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  setDeferredResult(result) {
-    if (this._cacheDeferredResultScalar < result) {
-      this._cacheDeferredResultScalar = result;
-    }
-  },
-
-  
-
-
-
-  recordResult(result) {
-    
-    
-    Services.telemetry.scalarSet(
-      "browser.startup.abouthome_cache_result",
-      result
-    );
-  },
-
-  
-
-
-
-
-
-
-
-  onUsageResult(success) {
-    this.log.trace(`Received usage result. Success = ${success}`);
-    if (success) {
-      if (
-        this._cacheDeferredResultScalar !=
-        this.CACHE_RESULT_SCALARS.VALID_AND_USED
-      ) {
-        this.log.error(
-          "Somehow got a success result despite having never " +
-            "successfully sent down the cache streams"
-        );
-        this.recordResult(this._cacheDeferredResultScalar);
-      } else {
-        this.recordResult(this.CACHE_RESULT_SCALARS.VALID_AND_USED);
-      }
-
-      return;
-    }
-
-    if (
-      this._cacheDeferredResultScalar ==
-      this.CACHE_RESULT_SCALARS.VALID_AND_USED
-    ) {
-      
-      
-      
-      this.recordResult(this.CACHE_RESULT_SCALARS.LATE);
-    } else {
-      
-      
-      this.recordResult(this._cacheDeferredResultScalar);
-    }
-  },
-
   QueryInterface: ChromeUtils.generateQI([
     Ci.nsICacheEntryOpenallback,
     Ci.nsIObserver,
@@ -5687,22 +5551,15 @@ var AboutHomeStartupCache = {
       return;
     }
 
-    switch (message.name) {
-      case this.CACHE_RESPONSE_MESSAGE: {
-        this.log.trace("Parent received cache streams.");
-        if (!this._cacheDeferred) {
-          this.log.error("Parent doesn't have _cacheDeferred set up!");
-          return;
-        }
+    if (message.name == this.CACHE_RESPONSE_MESSAGE) {
+      this.log.trace("Parent received cache streams.");
+      if (!this._cacheDeferred) {
+        this.log.error("Parent doesn't have _cacheDeferred set up!");
+        return;
+      }
 
-        this._cacheDeferred(message.data);
-        this._cacheDeferred = null;
-        break;
-      }
-      case this.CACHE_USAGE_RESULT_MESSAGE: {
-        this.onUsageResult(message.data.success);
-        break;
-      }
+      this._cacheDeferred(message.data);
+      this._cacheDeferred = null;
     }
   },
 
