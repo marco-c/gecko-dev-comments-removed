@@ -4,12 +4,13 @@
 
 
 
+
+
+
 #ifndef nsAutoRef_h_
 #define nsAutoRef_h_
 
 #include "mozilla/Attributes.h"
-
-#include "nscore.h"  
 
 template <class T>
 class nsSimpleRef;
@@ -117,7 +118,7 @@ class nsAutoRef : public nsAutoRefBase<T> {
   typedef typename BaseClass::LocalSimpleRef LocalSimpleRef;
 
  public:
-  nsAutoRef() {}
+  nsAutoRef() = default;
 
   
   
@@ -219,7 +220,7 @@ class nsCountedRef : public nsAutoRef<T> {
   typedef typename BaseClass::RawRef RawRef;
 
  public:
-  nsCountedRef() {}
+  nsCountedRef() = default;
 
   
   
@@ -283,7 +284,7 @@ class nsReturnRef : public nsAutoRefBase<T> {
 
  public:
   
-  nsReturnRef() {}
+  nsReturnRef() = default;
 
   
   
@@ -493,7 +494,7 @@ class nsAutoRefBase : public nsSimpleRef<T> {
   typedef nsSimpleRef<T> SimpleRef;
   typedef typename SimpleRef::RawRef RawRef;
 
-  nsAutoRefBase() {}
+  nsAutoRefBase() = default;
 
   
   
@@ -524,7 +525,7 @@ class nsAutoRefBase : public nsSimpleRef<T> {
   
   class LocalSimpleRef : public SimpleRef {
    public:
-    LocalSimpleRef() {}
+    LocalSimpleRef() = default;
     explicit LocalSimpleRef(RawRef aRawRef) : SimpleRef(aRawRef) {}
   };
 

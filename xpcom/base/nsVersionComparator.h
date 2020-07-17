@@ -4,11 +4,13 @@
 
 
 
+
+
+
 #ifndef nsVersionComparator_h__
 #define nsVersionComparator_h__
 
 #include "mozilla/Char16.h"
-#include "nscore.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>

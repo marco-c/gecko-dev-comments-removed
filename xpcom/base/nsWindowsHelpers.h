@@ -4,12 +4,14 @@
 
 
 
+
+
+
 #ifndef nsWindowsHelpers_h
 #define nsWindowsHelpers_h
 
 #include <windows.h>
 #include "nsAutoRef.h"
-#include "nscore.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/UniquePtr.h"
 

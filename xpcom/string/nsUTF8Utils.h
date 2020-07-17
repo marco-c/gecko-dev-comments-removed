@@ -10,9 +10,10 @@
 
 
 
+
+
 #include <type_traits>
 
-#include "nscore.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/EndianUtils.h"
 

@@ -4,6 +4,7 @@
 
 
 
+#include "nscore.h"
 #include "mozilla/NativeNt.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/UniquePtr.h"
