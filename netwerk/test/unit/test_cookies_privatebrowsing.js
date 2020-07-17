@@ -45,7 +45,7 @@ add_task(async () => {
   let uri2 = NetUtil.newURI("http://bar.com/bar.html");
 
   
-  Services.cookiesvc.setCookieStringFromHttp(
+  Services.cookies.setCookieStringFromHttp(
     uri1,
     "oh=hai; max-age=1000",
     make_channel(uri1.spec)
@@ -61,11 +61,7 @@ add_task(async () => {
   chan2.QueryInterface(Ci.nsIPrivateBrowsingChannel);
   chan2.setPrivate(true);
 
-  Services.cookiesvc.setCookieStringFromHttp(
-    uri2,
-    "oh=hai; max-age=1000",
-    chan2
-  );
+  Services.cookies.setCookieStringFromHttp(uri2, "oh=hai; max-age=1000", chan2);
   Assert.equal(await getCookieStringFromPrivateDocument(uri1.spec), "");
   Assert.equal(await getCookieStringFromPrivateDocument(uri2.spec), "oh=hai");
 
@@ -74,11 +70,7 @@ add_task(async () => {
   Assert.equal(await getCookieStringFromPrivateDocument(uri1.spec), "");
   Assert.equal(await getCookieStringFromPrivateDocument(uri2.spec), "");
 
-  Services.cookiesvc.setCookieStringFromHttp(
-    uri2,
-    "oh=hai; max-age=1000",
-    chan2
-  );
+  Services.cookies.setCookieStringFromHttp(uri2, "oh=hai; max-age=1000", chan2);
   Assert.equal(await getCookieStringFromPrivateDocument(uri2.spec), "oh=hai");
 
   
@@ -97,11 +89,7 @@ add_task(async () => {
   
   Assert.equal(await getCookieStringFromPrivateDocument(uri1.spec), "");
   Assert.equal(await getCookieStringFromPrivateDocument(uri2.spec), "");
-  Services.cookiesvc.setCookieStringFromHttp(
-    uri2,
-    "oh=hai; max-age=1000",
-    chan2
-  );
+  Services.cookies.setCookieStringFromHttp(uri2, "oh=hai; max-age=1000", chan2);
   Assert.equal(await getCookieStringFromPrivateDocument(uri2.spec), "oh=hai");
 
   

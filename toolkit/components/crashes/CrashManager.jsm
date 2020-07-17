@@ -18,7 +18,7 @@ const { TelemetryController } = ChromeUtils.import(
 ChromeUtils.import("resource://gre/modules/Timer.jsm", this);
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
 
-var EXPORTED_SYMBOLS = ["CrashManager", "getCrashManager"];
+var EXPORTED_SYMBOLS = ["CrashManager"];
 
 
 
@@ -1545,7 +1545,3 @@ XPCOMUtils.defineLazyGetter(CrashManager, "Singleton", function() {
 
   return gCrashManager;
 });
-
-function getCrashManager() {
-  return CrashManager.Singleton;
-}

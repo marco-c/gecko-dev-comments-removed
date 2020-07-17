@@ -193,7 +193,7 @@ const clearLocalStorage = async function(options) {
     Services.obs.notifyObservers(null, "extension:purge-localStorage");
   }
 
-  if (Services.domStorageManager.nextGenLocalStorageEnabled) {
+  if (Services.lsm.nextGenLocalStorageEnabled) {
     
     
     

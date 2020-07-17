@@ -37,7 +37,7 @@ add_task(async function() {
   do_get_profile(true);
   await TelemetryController.testSetup();
 
-  Services.io.socketProcessTelemetryPing();
+  Services.netUtils.socketProcessTelemetryPing();
 
   
   

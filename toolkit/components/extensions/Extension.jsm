@@ -382,7 +382,7 @@ var ExtensionAddonObserver = {
 
       
       
-      if (!Services.domStorageManager.nextGenLocalStorageEnabled) {
+      if (!Services.lsm.nextGenLocalStorageEnabled) {
         
         let storage = Services.domStorageManager.getStorage(
           null,

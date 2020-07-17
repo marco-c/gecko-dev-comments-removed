@@ -87,7 +87,7 @@ requestLongerTimeout(4);
 
 
 add_task(async function() {
-  if (!Services.domStorageManager.nextGenLocalStorageEnabled) {
+  if (!Services.lsm.nextGenLocalStorageEnabled) {
     ok(true, "Test ignored when the next gen local storage is not enabled.");
     return;
   }

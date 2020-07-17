@@ -10,7 +10,7 @@
 
 
 
-const EXPORTED_SYMBOLS = ["XULStore", "getXULStore"];
+const EXPORTED_SYMBOLS = ["XULStore"];
 
 
 
@@ -98,10 +98,4 @@ class XULStoreEnumerator {
       yield this.enumerator.getNext();
     }
   }
-}
-
-
-
-function getXULStore() {
-  return XULStore;
 }
