@@ -613,6 +613,28 @@ var UrlbarUtils = {
 
 
 
+
+
+
+  stripURLPrefix(str) {
+    const REGEXP_STRIP_PREFIX = /^[a-z]+:(?:\/){0,2}/i;
+    let match = REGEXP_STRIP_PREFIX.exec(str);
+    if (!match) {
+      return ["", str];
+    }
+    let prefix = match[0];
+    if (prefix.length < str.length && str[prefix.length] == " ") {
+      return ["", str];
+    }
+    return [prefix, str.substr(prefix.length)];
+  },
+
+  
+
+
+
+
+
   async getHeuristicResultFor(
     searchString,
     window = BrowserWindowTracker.getTopWindow()
@@ -1008,7 +1030,7 @@ class UrlbarQueryContext {
 
 
   get fixupInfo() {
-    if (this.searchString && !this._fixupInfo) {
+    if (this.searchString.trim() && !this._fixupInfo) {
       let flags =
         Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
         Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
@@ -1016,17 +1038,34 @@ class UrlbarQueryContext {
         flags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
       }
 
-      let info = Services.uriFixup.getFixupURIInfo(
-        this.searchString.trim(),
-        flags
-      );
-      this._fixupInfo = {
-        href: info.fixedURI.spec,
-        isSearch: !!info.keywordAsSent,
-      };
+      try {
+        let info = Services.uriFixup.getFixupURIInfo(
+          this.searchString.trim(),
+          flags
+        );
+        this._fixupInfo = {
+          href: info.fixedURI.spec,
+          isSearch: !!info.keywordAsSent,
+        };
+      } catch (ex) {
+        this._fixupError = ex.result;
+      }
     }
 
     return this._fixupInfo || null;
+  }
+
+  
+
+
+
+
+  get fixupError() {
+    if (!this.fixupInfo) {
+      return this._fixupError;
+    }
+
+    return null;
   }
 }
 
