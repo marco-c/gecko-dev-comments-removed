@@ -305,7 +305,8 @@ void ContentMediaAgent::UpdatePositionState(uint64_t aBrowsingContextId,
     return;
   }
   if (XRE_IsContentProcess()) {
-    
+    ContentChild* contentChild = ContentChild::GetSingleton();
+    Unused << contentChild->SendNotifyPositionStateChanged(bc, aState);
     return;
   }
   
