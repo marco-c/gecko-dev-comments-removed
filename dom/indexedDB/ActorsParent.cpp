@@ -24174,17 +24174,6 @@ nsresult DeleteIndexOp::RemoveReferencesToIndex(
   MOZ_ASSERT(!aObjectStoreKey.IsUnset());
   MOZ_ASSERT_IF(!mIsLastIndex, !aIndexValues.IsEmpty());
 
-  struct MOZ_STACK_CLASS IndexIdComparator final {
-    bool Equals(const IndexDataValue& aA, const IndexDataValue& aB) const {
-      
-      return aA.mIndexId == aB.mIndexId;
-    };
-
-    bool LessThan(const IndexDataValue& aA, const IndexDataValue& aB) const {
-      return aA.mIndexId < aB.mIndexId;
-    };
-  };
-
   AUTO_PROFILER_LABEL("DeleteIndexOp::RemoveReferencesToIndex", DOM);
 
   if (mIsLastIndex) {
@@ -24220,52 +24209,31 @@ nsresult DeleteIndexOp::RemoveReferencesToIndex(
     return NS_OK;
   }
 
-  IndexDataValue search;
-  search.mIndexId = mIndexId;
+  {
+    IndexDataValue search;
+    search.mIndexId = mIndexId;
 
-  
-  
-  size_t firstElementIndex =
-      aIndexValues.BinaryIndexOf(search, IndexIdComparator());
-  if (NS_WARN_IF(firstElementIndex == aIndexValues.NoIndex) ||
-      NS_WARN_IF(aIndexValues[firstElementIndex].mIndexId != mIndexId)) {
-    IDB_REPORT_INTERNAL_ERR();
-    return NS_ERROR_FILE_CORRUPTED;
-  }
+    
+    
+    const auto* const begin = aIndexValues.Elements();
+    const auto* const end = aIndexValues.Elements() + aIndexValues.Length();
 
-  MOZ_ASSERT(aIndexValues[firstElementIndex].mIndexId == mIndexId);
+    const auto indexIdComparator = [](const IndexDataValue& aA,
+                                      const IndexDataValue& aB) {
+      return aA.mIndexId < aB.mIndexId;
+    };
 
-  
-  while (firstElementIndex) {
-    if (aIndexValues[firstElementIndex - 1].mIndexId == mIndexId) {
-      firstElementIndex--;
-    } else {
-      break;
+    MOZ_ASSERT(std::is_sorted(begin, end, indexIdComparator));
+
+    const auto [beginRange, endRange] =
+        std::equal_range(begin, end, search, indexIdComparator);
+    if (beginRange == end) {
+      IDB_REPORT_INTERNAL_ERR();
+      return NS_ERROR_FILE_CORRUPTED;
     }
+
+    aIndexValues.RemoveElementsAt(beginRange - begin, endRange - beginRange);
   }
-
-  MOZ_ASSERT(aIndexValues[firstElementIndex].mIndexId == mIndexId);
-
-  const size_t indexValuesLength = aIndexValues.Length();
-
-  
-  size_t lastElementIndex = firstElementIndex;
-
-  while (lastElementIndex < indexValuesLength) {
-    if (aIndexValues[lastElementIndex].mIndexId == mIndexId) {
-      lastElementIndex++;
-    } else {
-      break;
-    }
-  }
-
-  MOZ_ASSERT(lastElementIndex > firstElementIndex);
-  MOZ_ASSERT_IF(lastElementIndex < indexValuesLength,
-                aIndexValues[lastElementIndex].mIndexId != mIndexId);
-  MOZ_ASSERT(aIndexValues[lastElementIndex - 1].mIndexId == mIndexId);
-
-  aIndexValues.RemoveElementsAt(firstElementIndex,
-                                lastElementIndex - firstElementIndex);
 
   nsresult rv = UpdateIndexValues(aConnection, mObjectStoreId, aObjectStoreKey,
                                   aIndexValues);
