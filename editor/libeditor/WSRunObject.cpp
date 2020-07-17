@@ -960,6 +960,14 @@ void WSRunScanner::EnsureWSFragments() {
     return;
   }
 
+  TextFragmentData textFragmentData(mStart, mEnd, mNBSPData, mPRE);
+  textFragmentData.InitializeWSFragmentArray(mFragments);
+}
+
+void WSRunScanner::TextFragmentData::InitializeWSFragmentArray(
+    WSFragmentArray& aFragments) const {
+  MOZ_ASSERT(aFragments.IsEmpty());
+
   
   
   
@@ -967,10 +975,10 @@ void WSRunScanner::EnsureWSFragments() {
 
   
   
-  if (mPRE ||
+  if (mIsPreformatted ||
       ((StartsFromNormalText() || StartsFromSpecialContent()) &&
        (EndsByNormalText() || EndsBySpecialContent() || EndsByBRElement()))) {
-    WSFragment* startRun = mFragments.AppendElement();
+    WSFragment* startRun = aFragments.AppendElement();
     startRun->MarkAsVisible();
     if (mStart.PointRef().IsSet()) {
       startRun->mStartNode = mStart.PointRef().GetContainer();
@@ -989,7 +997,7 @@ void WSRunScanner::EnsureWSFragments() {
   
   if (!mNBSPData.FoundNBSP() &&
       (StartsFromHardLineBreak() || EndsByBlockBoundary())) {
-    WSFragment* startRun = mFragments.AppendElement();
+    WSFragment* startRun = aFragments.AppendElement();
     if (StartsFromHardLineBreak()) {
       startRun->MarkAsStartOfHardLine();
     }
@@ -1010,7 +1018,7 @@ void WSRunScanner::EnsureWSFragments() {
   }
 
   if (!StartsFromHardLineBreak()) {
-    WSFragment* startRun = mFragments.AppendElement();
+    WSFragment* startRun = aFragments.AppendElement();
     startRun->MarkAsVisible();
     if (mStart.PointRef().IsSet()) {
       startRun->mStartNode = mStart.PointRef().GetContainer();
@@ -1037,7 +1045,7 @@ void WSRunScanner::EnsureWSFragments() {
     }
 
     
-    WSFragment* lastRun = mFragments.AppendElement();
+    WSFragment* lastRun = aFragments.AppendElement();
     lastRun->MarkAsEndOfHardLine();
     if (mNBSPData.LastPointRef().IsSet()) {
       lastRun->mStartNode = mNBSPData.LastPointRef().GetContainer();
@@ -1051,7 +1059,7 @@ void WSRunScanner::EnsureWSFragments() {
 
   MOZ_ASSERT(StartsFromHardLineBreak());
 
-  WSFragment* startRun = mFragments.AppendElement();
+  WSFragment* startRun = aFragments.AppendElement();
   startRun->MarkAsStartOfHardLine();
   if (mStart.PointRef().IsSet()) {
     startRun->mStartNode = mStart.PointRef().GetContainer();
@@ -1065,7 +1073,7 @@ void WSRunScanner::EnsureWSFragments() {
   startRun->SetEndByNormalWiteSpaces();
 
   
-  WSFragment* normalRun = mFragments.AppendElement();
+  WSFragment* normalRun = aFragments.AppendElement();
   normalRun->MarkAsVisible();
   if (mNBSPData.FirstPointRef().IsSet()) {
     normalRun->mStartNode = mNBSPData.FirstPointRef().GetContainer();
@@ -1104,7 +1112,7 @@ void WSRunScanner::EnsureWSFragments() {
   normalRun->SetEndByTrailingWhiteSpaces();
 
   
-  WSFragment* lastRun = mFragments.AppendElement();
+  WSFragment* lastRun = aFragments.AppendElement();
   lastRun->MarkAsEndOfHardLine();
   if (mNBSPData.LastPointRef().IsSet()) {
     lastRun->mStartNode = mNBSPData.LastPointRef().GetContainer();
